@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/05/15 15:51:29  nmw
+ * ssawli and ssawlf traversals added
+ *
  * Revision 3.16  2001/05/14 15:59:55  nmw
  * ssawlt_tab added
  *
@@ -253,6 +256,8 @@ extern funtab *lirmov_tab;
 extern funtab *w2d_tab;
 extern funtab *ssalur_tab;
 extern funtab *ssawlt_tab;
+extern funtab *ssawli_tab;
+extern funtab *ssawlf_tab;
 
 extern int nnode[];
 

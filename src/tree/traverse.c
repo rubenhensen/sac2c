@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/05/15 15:51:29  nmw
+ * ssawli and ssawlf traversals added
+ *
  * Revision 3.22  2001/05/14 15:59:55  nmw
  * ssawlt_tab added
  *
@@ -178,6 +181,8 @@
 #include "while2do.h"
 #include "SSALUR.h"
 #include "SSAWLT.h"
+#include "SSAWLI.h"
+#include "SSAWLF.h"
 
 #include "traverse.h"
 
@@ -496,15 +501,15 @@ static funtab unique_tab_rec = {{
 funtab *unique_tab = &unique_tab_rec;
 
 /*
- *  (29) unused1
+ *  (29) unused0
  */
-static funtab unused1_tab_rec = {{
-#define NIFunused1(it_unused1) it_unused1
+static funtab unused0_tab_rec = {{
+#define NIFunused0(it_unused0) it_unused0
 #include "node_info.mac"
                                  },
                                  NULL,
                                  NULL};
-funtab *unused1_tab = &unused1_tab_rec;
+funtab *unused0_tab = &unused0_tab_rec;
 
 /*
  *  (30) precomp2_tab
@@ -1264,6 +1269,28 @@ static funtab ssawlt_tab_rec = {{
                                 NULL,
                                 NULL};
 funtab *ssawlt_tab = &ssawlt_tab_rec;
+
+/*
+ *  (99) ssawli_tab
+ */
+static funtab ssawli_tab_rec = {{
+#define NIFssawli(it_ssawli) it_ssawli
+#include "node_info.mac"
+                                },
+                                NULL,
+                                NULL};
+funtab *ssawli_tab = &ssawli_tab_rec;
+
+/*
+ *  (100) ssawlf_tab
+ */
+static funtab ssawlf_tab_rec = {{
+#define NIFssawlf(it_ssawlf) it_ssawlf
+#include "node_info.mac"
+                                },
+                                NULL,
+                                NULL};
+funtab *ssawlf_tab = &ssawlf_tab_rec;
 
 /*
  *  nnode
