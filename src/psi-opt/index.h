@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/10/14 14:13:56  sbs
+ * provided IdxChangeIdOld in addition to IdxChangeId to ensure
+ * compatibility in ReuseArray.c if needed.
+ * Eventually, this function should be deleted.
+ *
  * Revision 3.4  2004/10/14 13:40:11  sbs
  * changed types component within Vinfo into shape and copied these explicihan sharing a
  * pointer.
@@ -72,6 +77,7 @@
 extern node *IndexVectorElimination (node *syntax_tree);
 
 extern char *IdxChangeId (char *varname, shape *shp);
+extern char *IdxChangeIdOld (char *varname, types *shp);
 
 extern node *IdxModul (node *arg_node, info *arg_info);
 extern node *IdxFundef (node *arg_node, info *arg_info);
