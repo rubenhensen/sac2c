@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2000/12/06 18:12:16  cg
+ * Re-introduced code for the elimination of function bodies
+ * of imported, non-specialized functions. This was disabled
+ * due to a resource conflict with new MT compilation. However
+ * this turned out to be erroneous.
+ *
  * Revision 3.3  2000/12/04 13:34:45  dkr
  * PREC2array added: ARRAY_TYPE renamed correctly now
  *
@@ -1179,21 +1185,12 @@ PREC2fundef (node *arg_node, node *arg_info)
     /*
      * The body of an imported inline function is removed.
      */
-#if 0
-  /*
-   * FUNDEF_ATTRIB is reused by multithread ...
-   * this here seems to be superfluous (?)
-   * if problems occur we need another way to store ST_call_[rep|any|mt|st]
-   * (jhs)
-   */
-  if (((FUNDEF_STATUS(arg_node) == ST_imported_mod)
-       || (FUNDEF_STATUS(arg_node) == ST_imported_class)) &&
-      (FUNDEF_ATTRIB(arg_node) != ST_generic) &&
-      (FUNDEF_BODY(arg_node) != NULL)) {
-    FUNDEF_BODY(arg_node) = FreeTree(FUNDEF_BODY(arg_node));
-    FUNDEF_RETURN(arg_node) = NULL;
-  }
-#endif
+    if (((FUNDEF_STATUS (arg_node) == ST_imported_mod)
+         || (FUNDEF_STATUS (arg_node) == ST_imported_class))
+        && (FUNDEF_ATTRIB (arg_node) != ST_generic) && (FUNDEF_BODY (arg_node) != NULL)) {
+        FUNDEF_BODY (arg_node) = FreeTree (FUNDEF_BODY (arg_node));
+        FUNDEF_RETURN (arg_node) = NULL;
+    }
 
     /*
      * unset inline flag
