@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/06/04 14:32:48  cg
+ * added global variable cachesim_host
+ *
  * Revision 2.7  1999/05/27 08:50:04  cg
  * global variable show_icm made obsolete and removed.
  *
@@ -346,6 +349,7 @@ unsigned int profileflag = PROFILE_NONE;
 unsigned int runtimecheck = RUNTIMECHECK_NONE;
 unsigned int intrinsics = INTRINSIC_NONE;
 unsigned int cachesim = CACHESIM_NO | CACHESIM_PIPE;
+char cachesim_host[MAX_FILE_NAME] = "";
 
 /*
  * Profiling information storage facilities

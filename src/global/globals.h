@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/06/04 14:32:48  cg
+ * added global variable cachesim_host
+ *
  * Revision 2.7  1999/05/27 08:50:04  cg
  * global variable show_icm made obsolete and removed.
  *
@@ -182,6 +185,8 @@ extern unsigned int cachesim;
 #define CACHESIM_PIPE 0x0008
 #define CACHESIM_IMMEDIATE 0x0010
 #define CACHESIM_BLOCK 0x0020
+
+extern char cachesim_host[];
 
 extern unsigned int runtimecheck;
 
