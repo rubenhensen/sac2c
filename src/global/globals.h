@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  1998/05/13 13:52:09  srs
+ * added wlunrnum
+ *
  * Revision 1.27  1998/05/13 13:38:30  srs
  * added opt_wlunr
  *
@@ -156,6 +159,7 @@ extern int opt_rco;
 extern int optvar;
 extern int inlnum;
 extern int unrnum;
+extern int wlunrnum;
 extern int minarray;
 extern int max_overload;
 extern int max_optcycles;

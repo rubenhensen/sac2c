@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/05/13 13:52:57  srs
+ * added wlunrnum
+ *
  * Revision 1.16  1998/05/13 13:38:57  srs
  * added opt_wlunr and renamed opt_unr to opt_lunr
  *
@@ -229,6 +232,7 @@ int opt_rco = 1;
 int optvar = 50;
 int inlnum = 1;
 int unrnum = 2;
+int wlunrnum = 9;
 int minarray = 4;
 int max_overload = 10;
 int max_optcycles = 4;
