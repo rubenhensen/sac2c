@@ -5,3 +5,4 @@ src/flatten
 src/global
 src/print
 src/scanparse
+src/typecheck
