@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.65  2004/09/22 12:00:19  ktr
+ * F_idx_shape_sel and F_shape_sel are now evaluated as well
+ *
  * Revision 1.64  2004/09/22 10:06:58  ktr
  * Shape structures obtained via COGetShape are not freed any longer.
  *
@@ -1758,6 +1761,37 @@ SSACFCatVxV (node *vec1, node *vec2)
 /******************************************************************************
  *
  * function:
+ *   node *SSACFShapeSel(constant *idx, node *array_expr)
+ *
+ * description:
+ *   selects element idx from the shape vector of array_expr if
+ *   its shape is known
+ *
+ *****************************************************************************/
+static node *
+SSACFShapeSel (constant *idx, node *array_expr)
+{
+    node *res = NULL;
+
+    int shape_elem;
+
+    DBUG_ENTER ("SSACFShapeSel");
+
+    if (TYIsAKS (AVIS_TYPE (ID_AVIS (array_expr)))
+        || TYIsAKV (AVIS_TYPE (ID_AVIS (array_expr)))) {
+
+        shape_elem = ((int *)COGetDataVec (idx))[0];
+
+        res = MakeNum (
+          SHGetExtent (TYGetShape (AVIS_TYPE (ID_AVIS (array_expr))), shape_elem));
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *SSACFSel(node *idx_expr, node *array_expr)
  *
  * description:
@@ -3135,6 +3169,16 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
                 }
             }
         }
+        break;
+
+    case F_idx_shape_sel:
+    case F_shape_sel:
+        if
+            FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
+            {
+                /* for some none constant expression and constant index vector */
+                new_node = SSACFShapeSel (arg_co, arg_expr[1]);
+            }
         break;
 
     case F_sel:
