@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.16  1997/11/23 18:00:23  dkr
+ * in ChgId(): strdup -> StringCopy (strdup do not use malloc !!)
+ *
  * Revision 1.15  1997/11/05 11:30:48  dkr
  * removed a bug with NEWTREE
  *
@@ -380,7 +383,7 @@ ChgId (char *varname, types *type)
         sprintf (buffer2, "_%d", shp[i]);
         strcat (buffer, buffer2);
     }
-    DBUG_RETURN (strdup (buffer));
+    DBUG_RETURN (StringCopy (buffer));
 }
 
 /*
