@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.152  1998/05/04 17:56:41  sbs
+ * LET_VARDEC(n) moved from tree_basic.h to tree_compound.h!!!!
+ *
  * Revision 1.151  1998/05/02 17:44:34  dkr
  * added macros for N_with2, N_sync, N_spmd
  *
@@ -1399,7 +1402,6 @@ extern node *MakeLet (node *expr, ids *ids);
 
 #define LET_EXPR(n) (n->node[0])
 #define LET_IDS(n) (n->info.ids)
-#define LET_VARDEC(n) (n->info.ids->node)
 
 /*--------------------------------------------------------------------------*/
 

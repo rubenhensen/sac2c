@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.66  1998/05/04 17:56:41  sbs
+ * LET_VARDEC(n) moved from tree_basic.h to tree_compound.h!!!!
+ *
  * Revision 1.65  1998/05/02 17:44:52  dkr
  * added macros VARDEC_OR_ARG_...
  *
@@ -1183,6 +1186,7 @@ extern node *GetCompoundNode (node *arg_node);
  */
 
 #define LET_NAME(n) (IDS_NAME (LET_IDS (n)))
+#define LET_VARDEC(n) (IDS_VARDEC (LET_IDS (n)))
 #define LET_MOD(n) (IDS_MOD (LET_IDS (n)))
 #define LET_STATUS(n) (IDS_STATUS (LET_IDS (n)))
 #define LET_VARNO(n) (VARDEC_VARNO (LET_VARDEC (n)))
