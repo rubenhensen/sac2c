@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.7  1999/05/07 14:54:30  jhs
+ * bug fixed in CheckGeneratorBounds.
+ *
  * Revision 2.6  1999/04/29 07:34:36  bs
  * New function 'CheckGeneratorBounds' added. It is used to check whether
  * the boundaries of WL-generators have got the compact vector propagation.
@@ -306,25 +309,31 @@ CheckGeneratorBounds (node *arg_node, node *arg_info)
                     ARRAY_INTVEC (array)
                       = Array2IntVec (ARRAY_AELEMS (array), &ARRAY_VECLEN (array));
                     ARRAY_VECTYPE (array) = T_int;
+                    *bound = array;
                 }
             } else /* (NODE_TYPE(*bound) == N_id) */ {
                 nbound = *bound;
 
-                DBUG_ASSERT ((ID_VECLEN (nbound) >= 0), "No empty array allowed here!");
+                DBUG_ASSERT ((NODE_TYPE (nbound) == N_id),
+                             "N_id expected in generator-position");
 
-                aelems = IntVec2Array (ID_VECLEN (nbound), ID_INTVEC (nbound));
-                array = MakeArray (aelems);
-                shpnums = MakeNums (ID_VECLEN (nbound), NULL);
-                ARRAY_VECLEN (array) = ID_VECLEN (nbound);
-                ARRAY_INTVEC (array)
-                  = CopyIntVector (ID_VECLEN (nbound), ID_INTVEC (nbound));
-                ARRAY_TYPE (array) = MakeType (T_int, ARRAY_VECLEN (array),
-                                               MakeShpseg (shpnums), NULL, NULL);
-                ARRAY_VECTYPE (array) = T_int;
-                FREE (shpnums);
-                FreeTree (nbound);
+                if (ID_CONSTARRAY (nbound)) {
+                    DBUG_ASSERT ((ID_VECLEN (nbound) >= 0), "corrupted VECLEN-entry!");
+
+                    aelems = IntVec2Array (ID_VECLEN (nbound), ID_INTVEC (nbound));
+                    array = MakeArray (aelems);
+                    shpnums = MakeNums (ID_VECLEN (nbound), NULL);
+                    ARRAY_VECLEN (array) = ID_VECLEN (nbound);
+                    ARRAY_INTVEC (array)
+                      = CopyIntVector (ID_VECLEN (nbound), ID_INTVEC (nbound));
+                    ARRAY_TYPE (array) = MakeType (T_int, ARRAY_VECLEN (array),
+                                                   MakeShpseg (shpnums), NULL, NULL);
+                    ARRAY_VECTYPE (array) = T_int;
+                    FREE (shpnums);
+                    FreeTree (nbound);
+                    *bound = array;
+                }
             }
-            *bound = array;
         }
     }
 
