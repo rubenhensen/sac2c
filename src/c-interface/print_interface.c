@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/04/03 12:08:56  dkr
+ * GSCPrintInternalInitFileHeader modified:
+ * GSCPrintDefines separated.
+ *
  * Revision 3.4  2001/03/22 18:54:06  dkr
  * include of tree.h eliminated
  *
@@ -229,6 +233,7 @@ PrintSACRuntimeInitExit (node *arg_node)
     /* general preload for codefile */
     fprintf (outfile, "/* startup functions and global code */\n\n");
     GSCPrintInternalInitFileHeader (arg_node);
+    GSCPrintDefines ();
     fprintf (outfile, "void SAC_InitRuntimeSystem()\n"
                       "{\n"
                       "  int __argc=0;\n"
