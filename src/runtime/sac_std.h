@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2003/09/29 17:10:56  dkr
+ * bug in SAC_ND_FREE_ARRAY fixed (relevant for SECURE_ALLOC_FREE only)
+ *
  * Revision 3.14  2003/09/25 19:20:16  dkr
  * bug in SAC_ND_WRITE_READ_COPY fixed
  *
@@ -291,7 +294,7 @@
         SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (name),                                   \
                                 SAC_ND_A_SIZE (name) * sizeof (*SAC_ND_A_FIELD (name))); \
     }                                                                                    \
-    SAC_FREE_FIXED_SIZE (SAC_ND_A_RCP (name), sizeof (int));                             \
+    SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_RCP (name), sizeof (int));                          \
     SAC_TR_MEM_PRINT (("ND_FREE_ARRAY(%s) at addr: %p", #name, name));                   \
     SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                      \
     SAC_CS_UNREGISTER_ARRAY (name);
