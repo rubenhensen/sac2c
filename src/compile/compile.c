@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.133  2004/09/20 15:51:24  ktr
+ * Fixed a nasty bug related to new WL_ icms and multithreading.
+ *
  * Revision 3.132  2004/08/27 08:13:55  ktr
  * Removed a DBUG_ASSERT in MakeSetShapeIcm after creation of ND_WL_GENARRAY
  * _SHAPE_id_arr.
@@ -6900,52 +6903,56 @@ COMPWith2 (node *arg_node, info *arg_info)
                        && (strcmp (sub_name, VARDEC_NAME (sub_vardec)))) {
                     sub_vardec = VARDEC_NEXT (sub_vardec);
                 }
-                DBUG_ASSERT (sub_vardec != NULL, "No vardec for subarray found!");
                 Free (sub_name);
 
-                /*
-                 * Calculate dimension of subarray
-                 *
-                 * dim( A_sub) = dim( A) - size( iv)
-                 */
-                sub_get_dim = MakeIcm3 ("ND_BINOP", MakeId_Copy (prf_symbol[F_sub_SxS]),
-                                        MakeIcm1 ("ND_A_DIM", DupIds_Id_NT (tmp_ids)),
-                                        MakeNum (NWITH2_DIMS (arg_node)));
+                if (sub_vardec != NULL) {
+                    /*
+                     * Calculate dimension of subarray
+                     *
+                     * dim( A_sub) = dim( A) - size( iv)
+                     */
+                    sub_get_dim
+                      = MakeIcm3 ("ND_BINOP", MakeId_Copy (prf_symbol[F_sub_SxS]),
+                                  MakeIcm1 ("ND_A_DIM", DupIds_Id_NT (tmp_ids)),
+                                  MakeNum (NWITH2_DIMS (arg_node)));
 
-                /*
-                 * Calculate shape of subarray
-                 *
-                 * shape( A_sub) = shape( sel( iv, A))
-                 */
-                sub_icm_args = NULL;
-                for (i = 0; i < NWITH2_DIMS (arg_node); i++) {
-                    sub_icm_args = MakeExprs (MakeNum (0), sub_icm_args);
+                    /*
+                     * Calculate shape of subarray
+                     *
+                     * shape( A_sub) = shape( sel( iv, A))
+                     */
+                    sub_icm_args = NULL;
+                    for (i = 0; i < NWITH2_DIMS (arg_node); i++) {
+                        sub_icm_args = MakeExprs (MakeNum (0), sub_icm_args);
+                    }
+                    sub_icm_args
+                      = MakeTypeArgs (VARDEC_NAME (sub_vardec), VARDEC_TYPE (sub_vardec),
+                                      FALSE, TRUE, FALSE,
+                                      MakeTypeArgs (IDS_NAME (tmp_ids),
+                                                    IDS_TYPE (tmp_ids), FALSE, TRUE,
+                                                    FALSE,
+                                                    MakeExprs (MakeNum (
+                                                                 NWITH2_DIMS (arg_node)),
+                                                               sub_icm_args)));
+
+                    sub_set_shape = MakeIcm1 ("ND_PRF_SEL__SHAPE_arr", sub_icm_args);
+
+                    /*
+                     * Allocate descriptor of subarray
+                     */
+                    alloc_icms
+                      = MakeAllocDescIcm (VARDEC_NAME (sub_vardec),
+                                          VARDEC_TYPE (sub_vardec), 1, sub_get_dim,
+                                          MakeAssign (sub_set_shape, alloc_icms));
+
+                    /*
+                     * Free descriptor of subarray
+                     */
+                    free_icms = MakeAssignIcm1 ("ND_FREE__DESC",
+                                                MakeId_Copy_NT (VARDEC_NAME (sub_vardec),
+                                                                VARDEC_TYPE (sub_vardec)),
+                                                free_icms);
                 }
-                sub_icm_args
-                  = MakeTypeArgs (VARDEC_NAME (sub_vardec), VARDEC_TYPE (sub_vardec),
-                                  FALSE, TRUE, FALSE,
-                                  MakeTypeArgs (IDS_NAME (tmp_ids), IDS_TYPE (tmp_ids),
-                                                FALSE, TRUE, FALSE,
-                                                MakeExprs (MakeNum (
-                                                             NWITH2_DIMS (arg_node)),
-                                                           sub_icm_args)));
-
-                sub_set_shape = MakeIcm1 ("ND_PRF_SEL__SHAPE_arr", sub_icm_args);
-
-                /*
-                 * Allocate descriptor of subarray
-                 */
-                alloc_icms = MakeAllocDescIcm (VARDEC_NAME (sub_vardec),
-                                               VARDEC_TYPE (sub_vardec), 1, sub_get_dim,
-                                               MakeAssign (sub_set_shape, alloc_icms));
-
-                /*
-                 * Free descriptor of subarray
-                 */
-                free_icms = MakeAssignIcm1 ("ND_FREE__DESC",
-                                            MakeId_Copy_NT (VARDEC_NAME (sub_vardec),
-                                                            VARDEC_TYPE (sub_vardec)),
-                                            free_icms);
             }
 
             if (NWITHOP_IS_FOLD (withop)) {
@@ -8319,8 +8326,7 @@ COMPSync (node *arg_node, info *arg_info)
 
         if (NODE_TYPE (instr) == N_icm) {
 
-            if ((!strcmp (ICM_NAME (instr), "WL_BEGIN__OFFSET"))
-                || (!strcmp (ICM_NAME (instr), "WL_BEGIN"))) {
+            if (!strcmp (ICM_NAME (instr), "WL_SCHEDULE__BEGIN")) {
                 /*
                  *  begin of with-loop code found
                  *  -> skip with-loop code
@@ -8329,8 +8335,7 @@ COMPSync (node *arg_node, info *arg_info)
                 var_name = NULL;
                 count_nesting++;
                 DBUG_PRINT ("COMP_MT", ("ICM: %s is ++", ICM_NAME (instr)));
-            } else if ((!strcmp (ICM_NAME (instr), "WL_END__OFFSET"))
-                       || (!strcmp (ICM_NAME (instr), "WL_END"))) {
+            } else if (!strcmp (ICM_NAME (instr), "WL_SCHEDULE__END")) {
                 /*
                  *  end of with-loop code found?
                  *  -> end of one (possibly nested) with loop
