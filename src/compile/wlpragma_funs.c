@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1998/08/11 14:45:27  dkr
+ * support for N_WLsegVar added (not yet completed)
+ *
  * Revision 1.15  1998/08/11 00:26:21  dkr
  * support for N_WLsegVar added
  *
@@ -272,19 +275,27 @@ CalcSV (node *stride, long *sv)
 
     if (stride != NULL) {
 
-        do {
-            sv[WLSTRIDE_DIM (stride)]
-              = lcm (sv[WLSTRIDE_DIM (stride)], WLSTRIDE_STEP (stride));
+        if (NODE_TYPE (stride) == N_WLstride) {
 
-            grid = WLSTRIDE_CONTENTS (stride);
-            DBUG_ASSERT ((grid != NULL), "no grid found");
             do {
-                sv = CalcSV (WLGRID_NEXTDIM (grid), sv);
-                grid = WLGRID_NEXT (grid);
-            } while (grid != NULL);
+                sv[WLSTRIDE_DIM (stride)]
+                  = lcm (sv[WLSTRIDE_DIM (stride)], WLSTRIDE_STEP (stride));
 
-            stride = WLSTRIDE_NEXT (stride);
-        } while (stride != NULL);
+                grid = WLSTRIDE_CONTENTS (stride);
+                DBUG_ASSERT ((grid != NULL), "no grid found");
+                do {
+                    sv = CalcSV (WLGRID_NEXTDIM (grid), sv);
+                    grid = WLGRID_NEXT (grid);
+                } while (grid != NULL);
+
+                stride = WLSTRIDE_NEXT (stride);
+            } while (stride != NULL);
+
+        } else {
+            /* non-constant segment */
+
+            /* not yet implemented :-( */
+        }
     }
 
     DBUG_RETURN (sv);
@@ -435,29 +446,19 @@ All (node *segs, node *parms, node *cubes, int dims, int line)
     }
 
     if (NODE_TYPE (cubes) == N_WLstride) {
-
         segs = MakeWLseg (dims, DupTree (cubes, NULL), NULL);
-
-        /*
-         * we compute the infimum and supremum of the index-vector
-         *  for the current segment.
-         */
-        ComputeIndexMinMax (WLSEG_IDX_MIN (segs), WLSEG_IDX_MAX (segs), WLSEG_DIMS (segs),
-                            WLSEG_CONTENTS (segs));
-
-        WLSEG_SV (segs) = CalcSV (WLSEG_CONTENTS (segs), WLSEG_SV (segs));
-
     } else {
-
         segs = MakeWLsegVar (dims, DupTree (cubes, NULL), NULL);
-
-        /*
-         * we compute the infimum and supremum of the index-vector
-         *  for the current segment.
-         */
-        ComputeIndexMinMax (WLSEGVAR_IDX_MIN (segs), WLSEGVAR_IDX_MAX (segs),
-                            WLSEGVAR_DIMS (segs), WLSEGVAR_CONTENTS (segs));
     }
+
+    WLSEGX_SV (segs) = CalcSV (WLSEGX_CONTENTS (segs), WLSEGX_SV (segs));
+
+    /*
+     * we compute the infimum and supremum of the index-vector
+     *  for the current segment.
+     */
+    ComputeIndexMinMax (WLSEGX_IDX_MIN (segs), WLSEGX_IDX_MAX (segs), WLSEGX_DIMS (segs),
+                        WLSEGX_CONTENTS (segs));
 
     segs = NoBlocking (segs, parms, cubes, dims, line);
 
@@ -496,29 +497,19 @@ Cubes (node *segs, node *parms, node *cubes, int dims, int line)
          * build new segment
          */
         if (NODE_TYPE (cubes) == N_WLstride) {
-
             new_seg = MakeWLseg (dims, DupNode (cubes), NULL);
-
-            /*
-             * we compute the infimum and supremum of the index-vector
-             *  for the current segment.
-             */
-            ComputeIndexMinMax (WLSEG_IDX_MIN (new_seg), WLSEG_IDX_MAX (new_seg),
-                                WLSEG_DIMS (new_seg), WLSEG_CONTENTS (new_seg));
-
-            WLSEG_SV (new_seg) = CalcSV (WLSEG_CONTENTS (new_seg), WLSEG_SV (new_seg));
-
         } else {
-
             new_seg = MakeWLsegVar (dims, DupNode (cubes), NULL);
-
-            /*
-             * we compute the infimum and supremum of the index-vector
-             *  for the current segment.
-             */
-            ComputeIndexMinMax (WLSEGVAR_IDX_MIN (new_seg), WLSEGVAR_IDX_MAX (new_seg),
-                                WLSEGVAR_DIMS (new_seg), WLSEGVAR_CONTENTS (new_seg));
         }
+
+        WLSEGX_SV (new_seg) = CalcSV (WLSEGX_CONTENTS (new_seg), WLSEGX_SV (new_seg));
+
+        /*
+         * we compute the infimum and supremum of the index-vector
+         *  for the current segment.
+         */
+        ComputeIndexMinMax (WLSEGX_IDX_MIN (new_seg), WLSEGX_IDX_MAX (new_seg),
+                            WLSEGX_DIMS (new_seg), WLSEGX_CONTENTS (new_seg));
 
         /*
          * append 'new_seg' at 'segs'
@@ -526,11 +517,7 @@ Cubes (node *segs, node *parms, node *cubes, int dims, int line)
         if (segs == NULL) {
             segs = new_seg;
         } else {
-            if (NODE_TYPE (last_seg) == N_WLseg) {
-                WLSEG_NEXT (last_seg) = new_seg;
-            } else {
-                WLSEGVAR_NEXT (last_seg) = new_seg;
-            }
+            WLSEGX_NEXT (last_seg) = new_seg;
         }
         last_seg = new_seg;
 
@@ -609,7 +596,7 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
     } else {
 
         WARN (line, ("wlcomp-pragma function ConstSeg() ignored"
-                     " because generator is not constant."));
+                     " because generator is not constant"));
     }
 
     DBUG_RETURN (segs);
@@ -641,46 +628,23 @@ NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
 
     while (seg != NULL) {
 
-        if (NODE_TYPE (seg) == N_WLseg) {
-
-            /*
-             * set ubv
-             */
-            for (d = 0; d < dims; d++) {
-                (WLSEG_UBV (seg))[d] = 1;
-            }
-
-            /*
-             * set bv[]
-             */
-            for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
-                for (d = 0; d < dims; d++) {
-                    (WLSEG_BV (seg, b))[d] = 1;
-                }
-            }
-
-            seg = WLSEG_NEXT (seg);
-
-        } else {
-
-            /*
-             * set ubv
-             */
-            for (d = 0; d < dims; d++) {
-                (WLSEGVAR_UBV (seg))[d] = 1;
-            }
-
-            /*
-             * set bv[]
-             */
-            for (b = 0; b < WLSEGVAR_BLOCKS (seg); b++) {
-                for (d = 0; d < dims; d++) {
-                    (WLSEGVAR_BV (seg, b))[d] = 1;
-                }
-            }
-
-            seg = WLSEGVAR_NEXT (seg);
+        /*
+         * set ubv
+         */
+        for (d = 0; d < dims; d++) {
+            (WLSEGX_UBV (seg))[d] = 1;
         }
+
+        /*
+         * set bv[]
+         */
+        for (b = 0; b < WLSEGX_BLOCKS (seg); b++) {
+            for (d = 0; d < dims; d++) {
+                (WLSEGX_BV (seg, b))[d] = 1;
+            }
+        }
+
+        seg = WLSEGX_NEXT (seg);
     }
 
     DBUG_RETURN (segs);
@@ -696,7 +660,7 @@ NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
  *   The level number is given as first element in 'parms' (N_num);
  *    the rest of 'parms' contains the blocking-vectors for different
  *    segments (N_array).
- *   If ('level' == 'WLSEG_BLOCKS( seg)'), the ubv is changed.
+ *   If ('level' == 'WLSEGX_BLOCKS( seg)'), the ubv is changed.
  *   If 'parms' contains less elements than 'segs', the last bv in
  *    'parms' is mapped to all remaining 'segs'.
  *   If 'parms' contains more elements than 'segs', the tail of 'parms'
@@ -724,78 +688,37 @@ Bv (node *segs, node *parms, node *cubes, int dims, int line)
     level = NUM_VAL (EXPRS_EXPR (parms));
     parms = EXPRS_NEXT (parms);
 
-    if (NODE_TYPE (seg) == N_WLseg) {
+    if ((parms != NULL) && (seg != NULL) && (level <= WLSEGX_BLOCKS (seg))) {
 
-        if ((parms != NULL) && (seg != NULL) && (level <= WLSEG_BLOCKS (seg))) {
-
-            while ((seg != NULL) && (EXPRS_NEXT (parms) != NULL)) {
-                if (NODE_TYPE (EXPRS_EXPR (parms)) != N_array) {
-                    ABORT (line, ("Illegal argument in wlcomp-pragma found; "
-                                  "Bv(): Blocking-vector is not an array"));
-                }
-
-                if (level < WLSEG_BLOCKS (seg)) {
-                    WLSEG_BV (seg, level)
-                      = Array2Bv (EXPRS_EXPR (parms), WLSEG_BV (seg, level), dims, line);
-                } else {
-                    WLSEG_UBV (seg)
-                      = Array2Bv (EXPRS_EXPR (parms), WLSEG_UBV (seg), dims, line);
-                }
-
-                seg = WLSTRIDE_NEXT (seg);
-                parms = EXPRS_NEXT (parms);
+        while ((seg != NULL) && (EXPRS_NEXT (parms) != NULL)) {
+            if (NODE_TYPE (EXPRS_EXPR (parms)) != N_array) {
+                ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                              "Bv(): Blocking-vector is not an array"));
             }
 
-            while (seg != NULL) {
-
-                if (level < WLSEG_BLOCKS (seg)) {
-                    WLSEG_BV (seg, level)
-                      = Array2Bv (EXPRS_EXPR (parms), WLSEG_BV (seg, level), dims, line);
-                } else {
-                    WLSEG_UBV (seg)
-                      = Array2Bv (EXPRS_EXPR (parms), WLSEG_UBV (seg), dims, line);
-                }
-
-                seg = WLSTRIDE_NEXT (seg);
+            if (level < WLSEGX_BLOCKS (seg)) {
+                WLSEGX_BV (seg, level)
+                  = Array2Bv (EXPRS_EXPR (parms), WLSEGX_BV (seg, level), dims, line);
+            } else {
+                WLSEGX_UBV (seg)
+                  = Array2Bv (EXPRS_EXPR (parms), WLSEGX_UBV (seg), dims, line);
             }
+
+            seg = WLSTRIDE_NEXT (seg);
+            parms = EXPRS_NEXT (parms);
         }
 
-    } else {
+        while (seg != NULL) {
 
-        if ((parms != NULL) && (seg != NULL) && (level <= WLSEGVAR_BLOCKS (seg))) {
-
-            while ((seg != NULL) && (EXPRS_NEXT (parms) != NULL)) {
-                if (NODE_TYPE (EXPRS_EXPR (parms)) != N_array) {
-                    ABORT (line, ("Illegal argument in wlcomp-pragma found; "
-                                  "Bv(): Blocking-vector is not an array"));
-                }
-
-                if (level < WLSEGVAR_BLOCKS (seg)) {
-                    WLSEGVAR_BV (seg, level)
-                      = Array2Bv (EXPRS_EXPR (parms), WLSEGVAR_BV (seg, level), dims,
-                                  line);
-                } else {
-                    WLSEGVAR_UBV (seg)
-                      = Array2Bv (EXPRS_EXPR (parms), WLSEGVAR_UBV (seg), dims, line);
-                }
-
-                seg = WLSTRIDE_NEXT (seg);
-                parms = EXPRS_NEXT (parms);
+            if (level < WLSEGX_BLOCKS (seg)) {
+                WLSEGX_BV (seg, level)
+                  = Array2Bv (EXPRS_EXPR (parms), WLSEGX_BV (seg, level), dims, line);
+            } else {
+                WLSEGX_UBV (seg)
+                  = Array2Bv (EXPRS_EXPR (parms), WLSEGX_UBV (seg), dims, line);
             }
 
-            while (seg != NULL) {
-
-                if (level < WLSEGVAR_BLOCKS (seg)) {
-                    WLSEGVAR_BV (seg, level)
-                      = Array2Bv (EXPRS_EXPR (parms), WLSEGVAR_BV (seg, level), dims,
-                                  line);
-                } else {
-                    WLSEGVAR_UBV (seg)
-                      = Array2Bv (EXPRS_EXPR (parms), WLSEGVAR_UBV (seg), dims, line);
-                }
-
-                seg = WLSTRIDE_NEXT (seg);
-            }
+            seg = WLSTRIDE_NEXT (seg);
         }
     }
 
@@ -884,10 +807,7 @@ Ubv (node *segs, node *parms, node *cubes, int dims, int line)
     DBUG_ENTER ("Ubv");
 
     if (segs != NULL) {
-        parms
-          = MakeExprs (MakeNum ((NODE_TYPE (segs) == N_WLseg) ? WLSEG_BLOCKS (segs)
-                                                              : WLSEGVAR_BLOCKS (segs)),
-                       parms);
+        parms = MakeExprs (MakeNum (WLSEGX_BLOCKS (segs)), parms);
         segs = Bv (segs, parms, cubes, dims, line);
         parms = FreeNode (parms);
     }
