@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/08/11 09:31:54  skt
+ * ASMRAPrintCluster bug fixed
+ *
  * Revision 1.4  2004/08/11 08:38:44  skt
  * full redesigned, still under construction but looks well
  *
@@ -29,7 +32,6 @@
 #define ASSIGNMENTS_REARRANGE_H
 
 #define ASMRA_DEBUG 1
-#define ASMRA_NODEUSED -1
 
 /*
  * some structures
@@ -104,5 +106,7 @@ struct asmra_list_s *ASMRAMakeList (void *element);
 struct asmra_list_s *ASMRAFreeList (struct asmra_list_s *list);
 
 struct asmra_list_s *ASMRAListAppend (struct asmra_list_s *list, void *element);
+
+node *ASMRAPrepareDataflowgraph (node *graph);
 
 #endif /* ASSIGNMENTS_REARRANGE_H */

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/08/11 09:31:54  skt
+ * ASMRAPrintCluster bug fixed
+ *
  * Revision 1.5  2004/08/11 08:38:44  skt
  * full redesigned, still under construction but looks well
  *
@@ -177,10 +180,15 @@ node *
 ASMRACreateNewAssignmentOrder (node *arg_node)
 {
     struct asmra_list_s *my_list;
+    node *graph;
     DBUG_ENTER ("ASMRACreateNewAssignmentOrder");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_block), "node is not a N_block");
 
-    my_list = ASMRABuildListOfCluster (BLOCK_DATAFLOWGRAPH (arg_node));
+    graph = BLOCK_DATAFLOWGRAPH (arg_node);
+
+    graph = ASMRAPrepareDataflowgraph (graph);
+
+    my_list = ASMRABuildListOfCluster (graph);
 
     my_list = ASMRADissolveAllCluster (my_list);
 
@@ -202,7 +210,7 @@ ASMRABuildListOfCluster (node *graph)
     list_of_cluster = NULL;
 
     /* deal with the graph as long as it contains more than one unused node */
-    while (DATAFLOWNODE_REFCOUNT (DATAFLOWGRAPH_SINK (graph)) != 0) {
+    while (DATAFLOWNODE_REFLEFT (DATAFLOWGRAPH_SINK (graph)) != 0) {
         new_cluster = NULL;
 
         while (new_cluster == NULL) {
@@ -272,14 +280,14 @@ ASMRAFindElement (node *graph, int execmode)
     while (member_iterator != NULL) {
         if (((DATAFLOWNODE_EXECMODE (NODELIST_NODE (member_iterator)) == execmode)
              || (DATAFLOWNODE_EXECMODE (NODELIST_NODE (member_iterator)) == MUTH_ANY))
-            && (DATAFLOWNODE_REFCOUNT (NODELIST_NODE (member_iterator)) == 1)
-            && (DATAFLOWNODE_REFLEFT (NODELIST_NODE (member_iterator)) == 0)) {
+            && (DATAFLOWNODE_REFLEFT (NODELIST_NODE (member_iterator)) == 1)
+            && (DATAFLOWNODE_USED (NODELIST_NODE (member_iterator)) == FALSE)) {
             result = NODELIST_NODE (member_iterator);
 
             /* set the executionmode of the result
              * (important for ASMRADissolveCLuster) */
             DATAFLOWNODE_EXECMODE (result) = execmode;
-            DATAFLOWNODE_REFLEFT (result) = -1;
+            DATAFLOWNODE_USED (result) = TRUE;
             member_iterator = NULL;
         } else {
             member_iterator = NODELIST_NEXT (member_iterator);
@@ -480,13 +488,14 @@ ASMRAClusterRefUpdate (struct asmra_cluster_s *cluster)
 
     tmp = cluster;
     while (tmp != NULL) {
-        /* update the refcounts in the member of the cluster */
-        DATAFLOWNODE_REFCOUNT (ASMRA_CLUSTER_DFN (tmp))--;
+        /* update the reflefts in the member of the cluster */
+        DATAFLOWNODE_REFLEFT (ASMRA_CLUSTER_DFN (tmp))--;
 
-        /* update the refcount in its dependent nodes */
+        /* update the re#define DATAFLOWNODE_USED(n)          ((bool)(n->varno))flefts in
+         * its dependent nodes */
         dependent_iterator = DATAFLOWNODE_DEPENDENT (ASMRA_CLUSTER_DFN (tmp));
         while (dependent_iterator != NULL) {
-            DATAFLOWNODE_REFCOUNT (NODELIST_NODE (dependent_iterator))--;
+            DATAFLOWNODE_REFLEFT (NODELIST_NODE (dependent_iterator))--;
             dependent_iterator = NODELIST_NEXT (dependent_iterator);
         }
 
@@ -501,8 +510,8 @@ ASMRAPrintCluster (struct asmra_cluster_s *cluster)
     DBUG_ENTER ("ASMRAPrintCluster");
 
     if (cluster != NULL) {
-        fprintf (stdout, "%s," DATAFLOWNODE_NAME (ASMRA_CLUSTER_DFN (cluster)));
-        ASMRAPrintCluster (cluster);
+        fprintf (stdout, "%s,", DATAFLOWNODE_NAME (ASMRA_CLUSTER_DFN (cluster)));
+        ASMRAPrintCluster (ASMRA_CLUSTER_NEXT (cluster));
     }
     DBUG_VOID_RETURN;
 }
@@ -554,6 +563,28 @@ ASMRAListAppend (struct asmra_list_s *list, void *element)
     }
 
     DBUG_RETURN (list);
+}
+
+node *
+ASMRAPrepareDataflowgraph (node *graph)
+{
+    nodelist *iter;
+    DBUG_ENTER ("ASMRAPrepareDAtaflowgraph");
+    DBUG_ASSERT ((NODE_TYPE (graph) == N_dataflowgraph), "N_dataflowgraph expected");
+
+    iter = DATAFLOWGRAPH_MEMBERS (graph);
+
+    while (iter != NULL) {
+        DATAFLOWNODE_REFLEFT (NODELIST_NODE (iter))
+          = DATAFLOWNODE_REFCOUNT (NODELIST_NODE (iter));
+        DATAFLOWNODE_USED (NODELIST_NODE (iter)) = FALSE;
+        iter = NODELIST_NEXT (iter);
+    }
+
+    /* guarantee the non-use of the source */
+    DATAFLOWNODE_USED (DATAFLOWGRAPH_SOURCE (graph)) = TRUE;
+
+    DBUG_RETURN (graph);
 }
 
 /**
