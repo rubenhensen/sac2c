@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.21  2000/10/31 22:43:56  dkr
+ * bug in WLTNgenerator() fixed
+ * semantics of CreateZeroVector() modified
+ * CreateZeroScalar() added
+ *
  * Revision 2.20  2000/08/14 13:20:35  dkr
  * bug in WLTNgenerator fixed:
  * When normalizing generator bounds not only the EXPRS-representation
@@ -441,7 +446,7 @@ CreateFullPartition (node *wln, node *arg_info)
         /* create code for all new parts */
         if (NWITH_TYPE (wln) == WO_genarray) {
             /* create a zero of the correct type */
-            coden = CreateZeroVector (0, TYPES_BASETYPE (type));
+            coden = CreateZeroScalar (TYPES_BASETYPE (type));
         } else { /* modarray */
             _ids = NWITH_VEC (wln);
             psi_index = MakeId (StringCopy (IDS_NAME (_ids)), NULL, ST_regular);
@@ -950,7 +955,7 @@ WLTNgenerator (node *arg_node, node *arg_info)
 {
     node *tmpn, **bound, *lb, *ub, *lbe, *ube, *assignn, *blockn, *wln, *idn;
     int i, check_bounds, empty, warning;
-    int lbnum, ubnum, tnum, dim;
+    int lbnum, ubnum, tnum, dim, null_dim;
     ids *_ids, *let_ids;
     char *varname;
     types *type;
@@ -1090,7 +1095,8 @@ WLTNgenerator (node *arg_node, node *arg_info)
                     lbe = ARRAY_AELEMS (lb);
                     ube = ARRAY_AELEMS (ub);
 
-                    for (i = 0; i < dim; i++) {
+                    i = 0;
+                    while ((i < dim) && (lbe != NULL)) {
                         NUM_VAL (EXPRS_EXPR (lbe)) = 0;
                         if (ARRAY_ISCONST (lb)) {
                             DBUG_ASSERT ((i < ARRAY_VECLEN (lb)),
@@ -1107,6 +1113,7 @@ WLTNgenerator (node *arg_node, node *arg_info)
 
                         lbe = EXPRS_NEXT (lbe);
                         ube = EXPRS_NEXT (ube);
+                        i++;
                     }
 
                     if (NGEN_STEP (arg_node)) {
@@ -1135,12 +1142,14 @@ WLTNgenerator (node *arg_node, node *arg_info)
                         /* varname is duplicated here (own mem) */
 
                         /* create nullvec */
-                        tmpn
-                          = CreateZeroVector (TYPES_DIM (IDS_TYPE (let_ids))
-                                                - ARRAY_SHAPE (NWITH_SHAPE (
-                                                                 INFO_WLI_WL (arg_info)),
-                                                               0),
-                                              T_int);
+                        null_dim
+                          = TYPES_DIM (IDS_TYPE (let_ids))
+                            - ARRAY_SHAPE (NWITH_SHAPE (INFO_WLI_WL (arg_info)), 0);
+                        if (null_dim > 0) {
+                            tmpn = CreateZeroVector (null_dim, T_int);
+                        } else {
+                            tmpn = CreateZeroScalar (T_int);
+                        }
                         /* replace N_empty with new assignment "_ids = [0,..,0]" */
                         assignn = MakeAssign (MakeLet (tmpn, _ids), NULL);
                         ASSIGN_MASK (assignn, 0) = GenMask (INFO_VARNO (arg_info));
@@ -1165,12 +1174,15 @@ WLTNgenerator (node *arg_node, node *arg_info)
                         FreeTree (BLOCK_INSTR (blockn));
                         FreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
                         BLOCK_INSTR (blockn) = assignn;
-                        LET_EXPR (ASSIGN_INSTR (assignn))
-                          = CreateZeroVector (TYPES_DIM (IDS_TYPE (let_ids))
-                                                - ARRAY_SHAPE (NWITH_SHAPE (
-                                                                 INFO_WLI_WL (arg_info)),
-                                                               0),
-                                              T_int);
+                        null_dim
+                          = TYPES_DIM (IDS_TYPE (let_ids))
+                            - ARRAY_SHAPE (NWITH_SHAPE (INFO_WLI_WL (arg_info)), 0);
+                        if (null_dim > 0) {
+                            LET_EXPR (ASSIGN_INSTR (assignn))
+                              = CreateZeroVector (null_dim, T_int);
+                        } else {
+                            LET_EXPR (ASSIGN_INSTR (assignn)) = CreateZeroScalar (T_int);
+                        }
                         ASSIGN_MASK (assignn, 0) = GenMask (INFO_VARNO (arg_info));
                         ASSIGN_MASK (assignn, 1) = GenMask (INFO_VARNO (arg_info));
                     }
