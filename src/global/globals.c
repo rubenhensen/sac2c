@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/02/27 13:37:25  srs
+ * activated opt_wlf again
+ *
  * Revision 1.2  1998/02/26 15:22:58  cg
  * target_name now initialized as 'default'
  *
@@ -134,7 +137,7 @@ int opt_cse = 1;
 int opt_dfr = 1;
 /* enable/disable dead function removal */
 
-int opt_wlf = 0;
+int opt_wlf = 1;
 /* enable/disable with loop folding */
 
 int psi_optimize = 1;
