@@ -22,7 +22,6 @@
 /* interface identifier */
 #define SACARGTYPE "SAC_arg"
 #define SACPREFIX "SAC_"
-#define NO_SIMPLE_RETURN -1
 
 #define PIH_PRINT_COMMENT 1
 #define PIH_PRINT_PROTOTYPE 2
@@ -50,7 +49,6 @@ static node *PIHcwrapperPrototype (node *wrapper, node *arg_info);
 static node *PIWfundefSwitch (node *arg_node, node *arg_info);
 static node *PIWfundefCall (node *arg_node, node *arg_info);
 static node *PIWfundefRefcounting (node *arg_node, node *arg_info);
-static int GetReturnPos (node *fundef);
 
 /******************************************************************************
  *
@@ -604,7 +602,7 @@ PIWtypes (types *arg_type, node *arg_info)
 
     case PIW_CALL_RESULTS:
         /* create macros for reference result types */
-        if (INFO_PIW_RETPOS (arg_info) != INFO_PIW_COUNTER (arg_info)) {
+        if (TYPES_STATUS (arg_type) != ST_crettype) {
             if (TYPES_DIM (arg_type) == 0) {
                 /* macro for simple type without refcounting */
                 fprintf (outfile, "SAC_RESULT_SIMPLE");
@@ -620,9 +618,8 @@ PIWtypes (types *arg_type, node *arg_info)
 
         /* is there at least one more result?
          * check, if there is a comma needef */
-        if ((TYPES_NEXT (arg_type) != NULL)
-            && (INFO_PIW_RETPOS (arg_info) != INFO_PIW_COUNTER (arg_info))) {
-            if (!((INFO_PIW_RETPOS (arg_info) == INFO_PIW_COUNTER (arg_info) + 1)
+        if ((TYPES_NEXT (arg_type) != NULL) && (TYPES_STATUS (arg_type) != ST_crettype)) {
+            if (!((TYPES_STATUS (TYPES_NEXT (arg_type)) == ST_crettype)
                   && (TYPES_NEXT (TYPES_NEXT (arg_type)) == NULL))) {
                 fprintf (outfile, ", ");
             }
@@ -631,9 +628,9 @@ PIWtypes (types *arg_type, node *arg_info)
 
     case PIW_CALL_RETPOS:
         /* create macro for simple direct return value */
-        if (INFO_PIW_RETPOS (arg_info) == INFO_PIW_COUNTER (arg_info)) {
-            fprintf (outfile, "SAC_ASSIGN_RESULT( out%d, %s)",
-                     INFO_PIW_COUNTER (arg_info),
+        if (TYPES_STATUS (arg_type) == ST_crettype) {
+            fprintf (outfile,
+                     "SAC_ASSIGN_RESULT( out%d, %s) = ", INFO_PIW_COUNTER (arg_info),
                      ctype_string[TYPES_BASETYPE (arg_type)]);
         }
         break;
@@ -702,21 +699,21 @@ PIWfundefCall (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PIWfundefCall");
 
-    INFO_PIW_RETPOS (arg_info) = GetReturnPos (arg_node);
+    /* print reference return parameters */
 
-    if (INFO_PIW_RETPOS (arg_info) != NO_SIMPLE_RETURN) {
+    if (FUNDEF_TYPES (arg_node) != NULL) {
         /* print direct return parameter */
         INFO_PIW_FLAG (arg_info) = PIW_CALL_RETPOS;
         INFO_PIW_COUNTER (arg_info) = 0;
         FUNDEF_TYPES (arg_node) = TravTW (FUNDEF_TYPES (arg_node), arg_info);
-        fprintf (outfile, "=");
     }
-    fprintf (outfile, "  %s(", FUNDEF_NAME (arg_node));
 
+    fprintf (outfile, "  %s(", FUNDEF_NAME (arg_node));
     INFO_PIW_COMMA (arg_info) = FALSE;
 
-    /* print reference return parameters */
     if (FUNDEF_TYPES (arg_node) != NULL) {
+        /* print reference return parameters */
+
         INFO_PIW_FLAG (arg_info) = PIW_CALL_RESULTS;
         INFO_PIW_COUNTER (arg_info) = 0;
         FUNDEF_TYPES (arg_node) = TravTW (FUNDEF_TYPES (arg_node), arg_info);
@@ -767,47 +764,6 @@ PIWfundefRefcounting (node *arg_node, node *arg_info)
 
     fprintf (outfile, "\n");
     DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   int GetReturnPos( node *fundef)
- *
- * description:
- *   Looks for the one returntype that can be passed by the function
- *   return value. This must be a simple type without refcounting.
- *
- * return:
- *   the position (1 to n) in the functions return list or NO_SIMPLE_RETURN
- *
- * remark:
- *   this implemenatation depends on compile.h!
- *   should be changed to a flag based variant
- *
- ******************************************************************************/
-
-static int
-GetReturnPos (node *fundef)
-{
-    int count = 0;
-    types *rettypes;
-
-    DBUG_ENTER ("GetReturnPos");
-
-    rettypes = FUNDEF_TYPES (fundef);
-
-    while (rettypes != NULL) {
-        count++;
-        if (TYPES_DIM (rettypes) == 0) {
-            /* found a simple type */
-            DBUG_RETURN (count);
-        }
-        rettypes = TYPES_NEXT (rettypes);
-    }
-
-    /* no simple return type found */
-    DBUG_RETURN (NO_SIMPLE_RETURN);
 }
 
 /******************************************************************************
