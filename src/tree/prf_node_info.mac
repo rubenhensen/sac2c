@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2004/06/03 15:21:53  ktr
+ * F_fill and F_alloc_or_reuse inserted
+ *
  * Revision 3.24  2004/04/21 16:33:02  ktr
  * Added traversal ssarefcount
  *
@@ -165,6 +168,9 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCPRF_toiS, COToi),
   PRF_IF (F_drop_SxV, "F_drop_SxV", "_drop_SxV_", "drop", FALSE, 2, NTCPRF_drop_SxV,
           CODrop),
 
+  PRF_IF (F_alloc_or_reuse, "F_alloc_or_reuse", "_alloc_or_reuse_", "alloc_or_reuse",
+          FALSE, 0, NTCPRF_dummy, NULL),
+  PRF_IF (F_fill, "F_fill", "_fill_", "fill", FALSE, 0, NTCPRF_dummy, NULL),
   PRF_IF (F_adjust_rc, "F_adjust_rc", "_adjust_rc_", "adjust_rc", FALSE, 2, NTCPRF_dummy,
           NULL),
 
