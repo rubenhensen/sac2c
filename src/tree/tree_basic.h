@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.223  2004/10/04 17:14:23  sah
+ * moved WLNODE_xxx macros to tree_compound
+ * remove MT/ST/EX-Identifier
+ *
  * Revision 3.222  2004/09/28 16:40:17  skt
  * added DATAFLOWNODE_USEDNODES support
  *
@@ -3697,7 +3701,6 @@ extern node *MakeSync (node *region);
 
 extern node *MakeMT (node *region);
 
-#define MT_IDENTIFIER(n) (n->int_data)
 #define MT_REGION(n) (n->node[0])
 #define MT_USEMASK(n) (n->dfmask[0])
 #define MT_DEFMASK(n) (n->dfmask[1])
@@ -3729,7 +3732,6 @@ extern node *MakeMT (node *region);
 
 extern node *MakeEX (node *region);
 
-#define EX_IDENTIFIER(n) (n->int_data)
 #define EX_REGION(n) (n->node[0])
 #define EX_USEMASK(n) (n->dfmask[0])
 #define EX_DEFMASK(n) (n->dfmask[1])
@@ -3757,7 +3759,6 @@ extern node *MakeEX (node *region);
 
 extern node *MakeST (node *region);
 
-#define ST_IDENTIFIER(n) (n->int_data)
 #define ST_REGION(n) (n->node[0])
 #define ST_USEMASK(n) (n->dfmask[0])
 #define ST_DEFMASK(n) (n->dfmask[1])
@@ -4153,30 +4154,11 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 /*--------------------------------------------------------------------------*/
 
 /*
- * Here are some macros for N_WL... nodes
+ * Here were some macros for N_WL... nodes. They have been moved to
+ * tree_compund.h !!!
  *
- * CAUTION: Not every macro is suitable for all node types.
- *          e.g. NEXTDIM is not a son of N_WLstride nodes
- *
- *          It would be better to contruct these macros like this:
- *            #define WLNODE_NEXTDIM(n) ((NODE_TYPE(n) == N_WLstride) ?
- *                                        DBUG_ASSERT(...) :
- *                                        (NODE_TYPE(n) == N_WLblock) ?
- *                                         WLBLOCK_NEXTDIM(n) :
- *                                         (NODE_TYPE(n) == N_WLublock) ?
- *                                          WLUBLOCK_NEXTDIM(n) : ...)
- *          but unfortunately this is not a modifiable l-value in ANSI-C :(
- *          so it would be impossible to use them on the left side of an
- *          assignment.
- */
 
-#define WLNODE_LEVEL(n) ((n)->int_data)
-#define WLNODE_DIM(n) ((n)->refcnt)
-#define WLNODE_BOUND1(n) ((n)->flag)
-#define WLNODE_BOUND2(n) ((n)->counter)
-#define WLNODE_STEP(n) ((n)->varno)
-#define WLNODE_NEXTDIM(n) ((n)->node[0])
-#define WLNODE_NEXT(n) ((n)->node[1])
+*/
 
 /*--------------------------------------------------------------------------*/
 
@@ -4307,14 +4289,14 @@ extern node *MakeWLsegVar (int dims, node *contents, node *next);
 extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
                           node *nextdim, node *contents, node *next);
 
-#define WLBLOCK_LEVEL(n) (WLNODE_LEVEL (n))
-#define WLBLOCK_DIM(n) (WLNODE_DIM (n))
-#define WLBLOCK_BOUND1(n) (WLNODE_BOUND1 (n))
-#define WLBLOCK_BOUND2(n) (WLNODE_BOUND2 (n))
-#define WLBLOCK_STEP(n) (WLNODE_STEP (n))
-#define WLBLOCK_NEXTDIM(n) (WLNODE_NEXTDIM (n))
+#define WLBLOCK_LEVEL(n) ((n)->int_data)
+#define WLBLOCK_DIM(n) ((n)->refcnt)
+#define WLBLOCK_BOUND1(n) ((n)->flag)
+#define WLBLOCK_BOUND2(n) ((n)->counter)
+#define WLBLOCK_STEP(n) ((n)->varno)
+#define WLBLOCK_NEXTDIM(n) ((n)->node[0])
 #define WLBLOCK_CONTENTS(n) ((n)->node[2])
-#define WLBLOCK_NEXT(n) (WLNODE_NEXT (n))
+#define WLBLOCK_NEXT(n) ((n)->node[1])
 
 /*--------------------------------------------------------------------------*/
 
@@ -4347,14 +4329,14 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
 extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
                            node *nextdim, node *contents, node *next);
 
-#define WLUBLOCK_LEVEL(n) (WLNODE_LEVEL (n))
-#define WLUBLOCK_DIM(n) (WLNODE_DIM (n))
-#define WLUBLOCK_BOUND1(n) (WLNODE_BOUND1 (n))
-#define WLUBLOCK_BOUND2(n) (WLNODE_BOUND2 (n))
-#define WLUBLOCK_STEP(n) (WLNODE_STEP (n))
-#define WLUBLOCK_NEXTDIM(n) (WLNODE_NEXTDIM (n))
+#define WLUBLOCK_LEVEL(n) ((n)->int_data)
+#define WLUBLOCK_DIM(n) ((n)->refcnt)
+#define WLUBLOCK_BOUND1(n) ((n)->flag)
+#define WLUBLOCK_BOUND2(n) ((n)->counter)
+#define WLUBLOCK_STEP(n) ((n)->varno)
+#define WLUBLOCK_NEXTDIM(n) ((n)->node[0])
 #define WLUBLOCK_CONTENTS(n) ((n)->node[2])
-#define WLUBLOCK_NEXT(n) (WLNODE_NEXT (n))
+#define WLUBLOCK_NEXT(n) ((n)->node[1])
 
 /*--------------------------------------------------------------------------*/
 
@@ -4388,9 +4370,9 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
 
 #define WLSTRIDE_LEVEL(n) ((n)->int_data)
 #define WLSTRIDE_DIM(n) ((n)->refcnt)
-#define WLSTRIDE_BOUND1(n) (WLNODE_BOUND1 (n))
-#define WLSTRIDE_BOUND2(n) (WLNODE_BOUND2 (n))
-#define WLSTRIDE_STEP(n) (WLNODE_STEP (n))
+#define WLSTRIDE_BOUND1(n) ((n)->flag)
+#define WLSTRIDE_BOUND2(n) ((n)->counter)
+#define WLSTRIDE_STEP(n) ((n)->varno)
 #define WLSTRIDE_UNROLLING(n) ((bool)((n)->info.prf_dec.tc))
 #define WLSTRIDE_CONTENTS(n) ((n)->node[0])
 #define WLSTRIDE_NEXT(n) ((n)->node[1])
@@ -4474,8 +4456,8 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, bool unroll
 
 #define WLGRID_LEVEL(n) ((n)->int_data)
 #define WLGRID_DIM(n) ((n)->refcnt)
-#define WLGRID_BOUND1(n) (WLNODE_BOUND1 (n))
-#define WLGRID_BOUND2(n) (WLNODE_BOUND2 (n))
+#define WLGRID_BOUND1(n) ((n)->flag)
+#define WLGRID_BOUND2(n) ((n)->counter)
 #define WLGRID_UNROLLING(n) ((bool)((n)->info.prf_dec.tc))
 #define WLGRID_FITTED(n) ((bool)((n)->varno))
 #define WLGRID_NEXTDIM(n) ((n)->node[0])
