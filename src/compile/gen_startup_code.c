@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/29 01:40:11  dkr
+ * CHECK_NULL used
+ *
  * Revision 3.3  2001/02/12 21:50:33  dkr
  * GSCfundef: comment added
  *
@@ -541,7 +544,7 @@ PrintGlobalSettings (node *syntax_tree)
              ((float)config.cache3_msca_factor) / 100);
 
     fprintf (outfile, "#define SAC_SET_CACHESIM_HOST        \"%s\"\n",
-             cachesim_host[0] == '\0' ? "" : cachesim_host);
+             CHECK_NULL (cachesim_host));
 
     if (cachesim_file[0] == '\0') {
         fprintf (outfile, "#define SAC_SET_CACHESIM_FILE        \"%s.cs\"\n",
