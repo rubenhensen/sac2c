@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.22  1996/01/02 12:48:41  cg
+ * Revision 1.23  1996/01/05 18:20:22  asi
+ * bug fixed in GetCompoundNode
+ *
+ * Revision 1.22  1996/01/02  12:48:41  cg
  * added function StringsLength
  *
  * Revision 1.21  1995/12/29  12:53:23  cg
@@ -634,6 +637,7 @@ GetCompoundNode (node *arg_node)
             compound_node = arg_node;
         else
             compound_node = NULL;
+        break;
     default:
         compound_node = NULL;
     }
