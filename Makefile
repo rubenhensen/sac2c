@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.130  2004/10/28 17:15:49  sah
+# added stringset.o and prepareinline.o
+#
 # Revision 3.129  2004/10/26 11:28:38  sah
 # moved some newast .o files
 #
@@ -321,7 +324,8 @@ ifeq ($(NEWAST),yes)
                src/modules/libbuilder.o src/tree/serialize_helper.o \
                src/modules/resolveall.o src/modules/annotatenamespace.o \
                src/modules/usesymbols.o src/tree/serialize_link.o \
-               src/tree/serialize.o src/tree/serialize_stack.o 
+               src/tree/serialize.o src/tree/serialize_stack.o  \
+               src/modules/prepareinline.o
   NEWASTFLAGS = -ldl --export-dynamic
 endif
 
@@ -403,7 +407,7 @@ PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
 PSIOPT_OLD=
 
 MODULES= src/modules/symboltable.o src/modules/filemgr.o \
-         src/modules/implicittypes.o 
+         src/modules/implicittypes.o src/modules/stringset.o
 MODULES_OLD= src/modules/import.o src/modules/writesib.o \
              src/modules/analysis.o src/modules/cccall.o \
              src/modules/checkdec.o src/modules/readsib.o
