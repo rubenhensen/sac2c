@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.14  2004/09/27 13:19:41  sah
+# added symboltable
+#
 # Revision 3.13  2004/09/27 12:55:25  sah
 # added local directory to includes
 #
@@ -69,7 +72,7 @@ INCS = -I../global -I../tree -I../../inc -I../scanparse -I../print  \
 
 
 all: filemgr.o import.o readsib.o writesib.o implicittypes.o analysis.o \
-     checkdec.o cccall.o
+     checkdec.o cccall.o symboltable.o
 
 
 %.o: %.c
