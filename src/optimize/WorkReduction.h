@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/03/17 17:45:41  asi
+ * Revision 1.2  1995/04/04 12:23:08  asi
+ * added WRfundef
+ *
+ * Revision 1.1  1995/03/17  17:45:41  asi
  * Initial revision
  *
  */
@@ -11,5 +14,7 @@
 #define _WorkReduction_h
 
 extern node *WorkReduction (node *arg_node, node *arg_info);
+
+extern node *WRfundef (node *arg_node, node *arg_info);
 
 #endif /* _WorkReduction_h */
