@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/11/23 20:42:47  sbs
+ * message_indent globalised.
+ *
  * Revision 3.8  2004/11/23 13:23:28  sbs
  * SACDevCamp04
  *
@@ -388,7 +391,8 @@
         ERROR_INDENT (((global.verbose_level > 1) ? 2 : 0));                             \
         fprintf (stderr, "SYSTEM:");                                                     \
         global.last_indent = ((global.verbose_level > 1) ? 2 : 0) + 7;                   \
-        PRINT_MESSAGE (message, ":ERROR: ", global.last_indent, message_indent, 0, 1);   \
+        PRINT_MESSAGE (message, ":ERROR: ", global.last_indent, global.message_indent,   \
+                       0, 1);                                                            \
         global.errors_cnt++;                                                             \
     }
 
@@ -407,7 +411,7 @@
     }
 
 #define CONT_ERROR(message)                                                              \
-    PRINT_MESSAGE (message, ":ERROR: ", global.last_indent, message_indent, 1, 0);
+    PRINT_MESSAGE (message, ":ERROR: ", global.last_indent, global.message_indent, 1, 0);
 
 #define ABORT_ON_ERROR                                                                   \
     {                                                                                    \
@@ -474,8 +478,8 @@
 #define CONT_WARN(message)                                                               \
     {                                                                                    \
         if (global.verbose_level > 0) {                                                  \
-            PRINT_MESSAGE (message, ":WARNING: ", global.last_indent, message_indent, 1, \
-                           0);                                                           \
+            PRINT_MESSAGE (message, ":WARNING: ", global.last_indent,                    \
+                           global.message_indent, 1, 0);                                 \
         }                                                                                \
     }
 
