@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2002/04/29 14:30:21  sbs
+ * Now, identifier are copied when creating new vardecs 8-))))
+ *
  * Revision 1.5  2002/03/12 15:11:12  sbs
  * dummy vardecs now have a T_unknown rather than a null type pointer.
  *
@@ -104,7 +107,8 @@ CheckIds (ids *idents, node *vardecs, node *args)
              * The identifyer we are looking for does not have a
              * vardec yet! So we allocate one and prepand it to vardecs.
              */
-            vardec = MakeVardec (IDS_NAME (idents), MakeTypes1 (T_unknown), vardecs);
+            vardec = MakeVardec (StringCopy (IDS_NAME (idents)), MakeTypes1 (T_unknown),
+                                 vardecs);
             vardecs = vardec;
         }
         IDS_VARDEC (idents) = vardec;
