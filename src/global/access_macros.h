@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/09/27 15:58:57  cg
+ * Revision 1.9  1995/10/12 08:33:07  cg
+ * new #undef ID_MOD avoids many warnings due to macro redefining
+ *
+ * Revision 1.8  1995/09/27  15:58:57  cg
  * some undefs for compatibility with new syntax tree structures added.
  *
  * Revision 1.7  1995/08/14  13:54:03  cg
@@ -36,6 +39,7 @@
 #undef IDS_DEF
 #undef IDS_REFCNT
 #undef IDS_NEXT
+#undef ID_MOD
 
 /* macros for access to elements of struct info.types */
 #define TYPES info.types
