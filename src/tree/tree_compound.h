@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.111  2004/11/23 13:52:52  skt
+ * ismop in SACDEvCampDK 2k4
+ *
  * Revision 3.110  2004/11/23 13:18:28  skt
  * SacDevCampDK 2k4
  *
@@ -1657,7 +1660,7 @@ extern node *TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_Ncode :
+ ***  N_code :
  ***/
 
 #define CODE_CBLOCK_INSTR(n) (BLOCK_INSTR (CODE_CBLOCK (n)))
@@ -1673,27 +1676,19 @@ extern node *TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no
 #define CODE_WLAA_INDEXDIM(n) VARDEC_SHAPE (CODE_WLAA_INDEXVAR (n), 0)
 #define CODE_WLAA_ARRAYDIM(n) VARDEC_DIM (CODE_WLAA_WLARRAY (n))
 
-#define CODE_INC_USED(n) NCODE_USED (n) = NCODE_USED (n) + 1
+#define CODE_INC_USED(n) CODE_USED (n) = CODE_USED (n) + 1
 #define CODE_DEC_USED(n)                                                                 \
-    if (NCODE_USED (n) == 0) {                                                           \
-        DBUG_ASSERT (0, "NCODE_USED dropped below 0");                                   \
+    if (CODE_USED (n) == 0) {                                                            \
+        DBUG_ASSERT (0, "CODE_USED dropped below 0");                                    \
     } else {                                                                             \
-        NCODE_USED (n) = NCODE_USED (n) - 1;                                             \
+        CODE_USED (n) = CODE_USED (n) - 1;                                               \
     }
 
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_Nwithop :
+ ***  N_withop :
  ***/
-
-#define NWITHOP_OPARG(n)                                                                 \
-    ((WO_modarray == NWITHOP_TYPE (n))                                                   \
-       ? NWITHOP_ARRAY (n)                                                               \
-       : (WO_genarray == NWITHOP_TYPE (n)) ? NWITHOP_SHAPE (n) : NWITHOP_NEUTRAL (n))
-
-#define NWITHOP_IS_FOLD(n)                                                               \
-    ((NWITHOP_TYPE (n) == WO_foldprf) || (NWITHOP_TYPE (n) == WO_foldfun))
 
 #define WITHOP_NEXT(n)                                                                   \
    ( ( NODE_TYPE(n) == N_genarray) ? GENARRAY_NEXT(n) :          \
@@ -1703,90 +1698,72 @@ extern node *TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_Nwith2 :
+ ***  N_with2 :
  ***/
 
-#define NWITH2_TYPE(n) (NWITHOP_TYPE (NWITH2_WITHOP (n)))
+#define WITH2_TYPE(n) (WITHOP_TYPE (WITH2_WITHOP (n)))
 
-#define NWITH2_IDS(n) (NWITHID_IDS (NWITH2_WITHID (n)))
-#define NWITH2_VEC(n) (NWITHID_VEC (NWITH2_WITHID (n)))
-
-#define NWITH2_FUN(n) (NWITHOP_FUN (NWITH2_WITHOP (n)))
-#define NWITH2_MOD(n) (NWITHOP_MOD (NWITH2_WITHOP (n)))
-#define NWITH2_FUNDEF(n) (NWITHOP_FUNDEF (NWITH2_WITHOP (n)))
-#define NWITH2_SHAPE(n) (NWITHOP_SHAPE (NWITH2_WITHOP (n)))
-#define NWITH2_DEFAULT(n) (NWITHOP_DEFAULT (NWITH2_WITHOP (n)))
-#define NWITH2_ARRAY(n) (NWITHOP_ARRAY (NWITH2_WITHOP (n)))
-#define NWITH2_NEUTRAL(n) (NWITHOP_NEUTRAL (NWITH2_WITHOP (n)))
-#define NWITH2_MEM(n) (NWITHOP_MEM (NWITH2_WITHOP (n)))
+#define WITH2_IDS(n) (WITHID_IDS (WITH2_WITHID (n)))
+#define WITH2_VEC(n) (WITHID_VEC (WITH2_WITHID (n)))
 
 /*
- * CBLOCK, CEXPR of the *first* N_Ncode-node
+ * CBLOCK, CEXPR of the *first* N_code-node
  * (useful in case of single-generator with-loops only,
  *  e.g. before with-loop-folding)
  */
-#define NWITH2_CBLOCK(n) (NCODE_CBLOCK (NWITH2_CODE (n)))
-#define NWITH2_CEXPR(n) (NCODE_CEXPR (NWITH2_CODE (n)))
-
-#define NWITH2_IS_FOLD(n)                                                                \
-    ((NWITH2_TYPE (n) == WO_foldprf) || (NWITH2_TYPE (n) == WO_foldfun))
+#define WITH2_CBLOCK(n) (CODE_CBLOCK (WITH2_CODE (n)))
+#define WITH2_CEXPR(n) (CODE_CEXPR (WITH2_CODE (n)))
 
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_Nwith :  *and*  N_Nwith2 :
+ ***  N_with :  *and*  N_with2 :
  ***/
 
-#define NWITH_OR_NWITH2_TYPE(n)                                                          \
-    ((NODE_TYPE (n) == N_Nwith) ? NWITH_TYPE (n) : NWITH2_TYPE (n))
-#define NWITH_OR_NWITH2_IDS(n)                                                           \
-    ((NODE_TYPE (n) == N_Nwith) ? NWITH_IDS (n) : NWITH2_IDS (n))
-#define NWITH_OR_NWITH2_VEC(n)                                                           \
-    ((NODE_TYPE (n) == N_Nwith) ? NWITH_VEC (n) : NWITH2_VEC (n))
+#define WITH_OR_WITH2_TYPE(n) ((NODE_TYPE (n) == N_with) ? WITH_TYPE (n) : WITH2_TYPE (n))
+#define WITH_OR_WITH2_IDS(n) ((NODE_TYPE (n) == N_with) ? WITH_IDS (n) : WITH2_IDS (n))
+#define WITH_OR_WITH2_VEC(n) ((NODE_TYPE (n) == N_with) ? WITH_VEC (n) : WITH2_VEC (n))
 
-#define NWITH_OR_NWITH2_CEXPR(n)                                                         \
-    ((NODE_TYPE (n) == N_Nwith) ? NWITH_CEXPR (n) : NWITH2_CEXPR (n))
+#define WITH_OR_WITH2_CEXPR(n)                                                           \
+    ((NODE_TYPE (n) == N_with) ? WITH_CEXPR (n) : WITH2_CEXPR (n))
 
-#define NWITH_OR_NWITH2_DEC_RC_IDS(n)                                                    \
-    ((NODE_TYPE (n) == N_Nwith) ? NWITH_DEC_RC_IDS (n) : NWITH2_DEC_RC_IDS (n))
+#define WITH_OR_WITH2_DEC_RC_IDS(n)                                                      \
+    ((NODE_TYPE (n) == N_with) ? WITH_DEC_RC_IDS (n) : WITH2_DEC_RC_IDS (n))
 
-#define NWITH_OR_NWITH2_IN_MASK(n)                                                       \
-    ((NODE_TYPE (n) == N_Nwith) ? NWITH_IN_MASK (n) : NWITH2_IN_MASK (n))
-#define NWITH_OR_NWITH2_OUT_MASK(n)                                                      \
-    ((NODE_TYPE (n) == N_Nwith) ? NWITH_OUT_MASK (n) : NWITH2_OUT_MASK (n))
-#define NWITH_OR_NWITH2_LOCAL_MASK(n)                                                    \
-    ((NODE_TYPE (n) == N_Nwith) ? NWITH_LOCAL_MASK (n) : NWITH2_LOCAL_MASK (n))
+#define WITH_OR_WITH2_IN_MASK(n)                                                         \
+    ((NODE_TYPE (n) == N_with) ? WITH_IN_MASK (n) : WITH2_IN_MASK (n))
+#define WITH_OR_WITH2_OUT_MASK(n)                                                        \
+    ((NODE_TYPE (n) == N_with) ? WITH_OUT_MASK (n) : WITH2_OUT_MASK (n))
+#define WITH_OR_WITH2_LOCAL_MASK(n)                                                      \
+    ((NODE_TYPE (n) == N_with) ? WITH_LOCAL_MASK (n) : WITH2_LOCAL_MASK (n))
 
-#define L_NWITH_OR_NWITH2_DEC_RC_IDS(n, rhs)                                             \
-    if (NODE_TYPE (n) == N_Nwith) {                                                      \
-        NWITH_DEC_RC_IDS (n) = (rhs);                                                    \
+#define L_WITH_OR_WITH2_DEC_RC_IDS(n, rhs)                                               \
+    if (NODE_TYPE (n) == N_with) {                                                       \
+        WITH_DEC_RC_IDS (n) = (rhs);                                                     \
     } else {                                                                             \
-        NWITH2_DEC_RC_IDS (n) = (rhs);                                                   \
+        WITH2_DEC_RC_IDS (n) = (rhs);                                                    \
     }
 
-#define L_NWITH_OR_NWITH2_IN_MASK(n, rhs)                                                \
-    if (NODE_TYPE (n) == N_Nwith) {                                                      \
-        NWITH_IN_MASK (n) = (rhs);                                                       \
+#define L_WITH_OR_WITH2_IN_MASK(n, rhs)                                                  \
+    if (NODE_TYPE (n) == N_with) {                                                       \
+        WITH_IN_MASK (n) = (rhs);                                                        \
     } else {                                                                             \
-        NWITH2_IN_MASK (n) = (rhs);                                                      \
+        WITH2_IN_MASK (n) = (rhs);                                                       \
     }
 
-#define L_NWITH_OR_NWITH2_OUT_MASK(n, rhs)                                               \
-    if (NODE_TYPE (n) == N_Nwith) {                                                      \
-        NWITH_OUT_MASK (n) = (rhs);                                                      \
+#define L_WITH_OR_WITH2_OUT_MASK(n, rhs)                                                 \
+    if (NODE_TYPE (n) == N_with) {                                                       \
+        WITH_OUT_MASK (n) = (rhs);                                                       \
     } else {                                                                             \
-        NWITH2_OUT_MASK (n) = (rhs);                                                     \
+        WITH2_OUT_MASK (n) = (rhs);                                                      \
     }
 
-#define L_NWITH_OR_NWITH2_LOCAL_MASK(n, rhs)                                             \
-    if (NODE_TYPE (n) == N_Nwith) {                                                      \
-        NWITH_LOCAL_MASK (n) = (rhs);                                                    \
+#define L_WITH_OR_WITH2_LOCAL_MASK(n, rhs)                                               \
+    if (NODE_TYPE (n) == N_with) {                                                       \
+        WITH_LOCAL_MASK (n) = (rhs);                                                     \
     } else {                                                                             \
-        NWITH2_LOCAL_MASK (n) = (rhs);                                                   \
+        WITH2_LOCAL_MASK (n) = (rhs);                                                    \
     }
-
-#define NWITH_OR_NWITH2_IS_FOLD(n)                                                       \
-    ((NWITH_OR_NWITH2_TYPE (n) == WO_foldprf) || (NWITH_OR_NWITH2_TYPE (n) == WO_foldfun))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1957,8 +1934,8 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
  ***  N_WLgrid :
  ***/
 
-#define WLGRID_CBLOCK(n) (NCODE_CBLOCK (WLGRID_CODE (n)))
-#define WLGRID_CEXPR(n) (NCODE_CEXPR (WLGRID_CODE (n)))
+#define WLGRID_CBLOCK(n) (CODE_CBLOCK (WLGRID_CODE (n)))
+#define WLGRID_CEXPR(n) (CODE_CEXPR (WLGRID_CODE (n)))
 
 #define WLGRID_CBLOCK_INSTR(n) (BLOCK_INSTR (WLGRID_CBLOCK (n)))
 
@@ -1968,8 +1945,8 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
  ***  N_WLgridVar :
  ***/
 
-#define WLGRIDVAR_CBLOCK(n) (NCODE_CBLOCK (WLGRIDVAR_CODE (n)))
-#define WLGRIDVAR_CEXPR(n) (NCODE_CEXPR (WLGRIDVAR_CODE (n)))
+#define WLGRIDVAR_CBLOCK(n) (CODE_CBLOCK (WLGRIDVAR_CODE (n)))
+#define WLGRIDVAR_CEXPR(n) (CODE_CEXPR (WLGRIDVAR_CODE (n)))
 
 #define WLGRIDVAR_CBLOCK_INSTR(n) (BLOCK_INSTR (WLGRIDVAR_CBLOCK (n)))
 
@@ -1999,8 +1976,8 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
 #define WLGRIDX_NOOP(n)                                                                  \
     ((NODE_TYPE (n) == N_WLgrid) ? WLGRID_NOOP (n) : WLGRIDVAR_NOOP (n))
 
-#define WLGRIDX_CBLOCK(n) (NCODE_CBLOCK (WLGRIDX_CODE (n)))
-#define WLGRIDX_CEXPR(n) (NCODE_CEXPR (WLGRIDX_CODE (n)))
+#define WLGRIDX_CBLOCK(n) (CODE_CBLOCK (WLGRIDX_CODE (n)))
+#define WLGRIDX_CEXPR(n) (CODE_CEXPR (WLGRIDX_CODE (n)))
 
 #define WLGRIDX_CBLOCK_INSTR(n) (BLOCK_INSTR (WLGRIDX_CBLOCK (n)))
 
@@ -2231,28 +2208,10 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_info :
- ***/
-
-/*
- *  compound access macros
- */
-
-#define INFO_WLAA_ARRAYSHP(n) VARDEC_SHPSEG (INFO_WLAA_WLARRAY (n))
-#define INFO_WLAA_INDEXDIM(n) VARDEC_SHAPE (INFO_WLAA_INDEXVAR (n), 0)
-#define INFO_WLAA_ARRAYDIM(n) VARDEC_DIM (INFO_WLAA_WLARRAY (n))
-
-#define INFO_TSI_ARRAYSHP(n) VARDEC_SHPSEG (INFO_TSI_WLARRAY (n))
-#define INFO_TSI_INDEXDIM(n) VARDEC_SHAPE (INFO_TSI_INDEXVAR (n), 0)
-#define INFO_TSI_ARRAYDIM(n) VARDEC_DIM (INFO_TSI_WLARRAY (n))
-
-/*--------------------------------------------------------------------------*/
-
-/***
  ***  N_str :
  ***/
 
-extern node *MakeStr_Copy (char *str);
+extern node *TCmakeStr_Copy (const char *str);
 
 /*--------------------------------------------------------------------------*/
 
@@ -2260,13 +2219,9 @@ extern node *MakeStr_Copy (char *str);
  ***  N_linklist
  ***/
 
-#ifdef NEW_AST
-
 extern int AddLinkToLinks (node **links, node *link);
 extern int AddLinksToLinks (node **links, node *add);
 extern bool LinklistContains (node *set, node *link);
 extern bool LinklistIsSubset (node *super, node *sub);
-
-#endif
 
 #endif /* _SAC_TREE_COMPOUND_H_ */
