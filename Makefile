@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.31  2000/03/09 18:31:31  jhs
+# Added blkpp and dfa.
+#
 # Revision 2.30  2000/03/02 13:09:55  jhs
 # Added src/multithread/(mtfuns_init|blkco_cons).(c|h).
 #
@@ -224,7 +227,9 @@ CONCURRENT= src/concurrent/concurrent.o \
 MULTITHREAD= src/multithread/multithread.o src/multithread/schedule_init.o \
              src/multithread/repfuns_init.o src/multithread/blocks_init.o \
              src/multithread/blocks_expand.o src/multithread/multithread_lib.o \
-             src/multithread/mtfuns_init.o src/multithread/blocks_cons.o
+             src/multithread/mtfuns_init.o src/multithread/blocks_cons.o \
+             src/multithread/blocks_propagate.o \
+             src/multithread/dataflow_analysis.o 
 COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/precompile.o \
           src/compile/compile.o src/compile/gen_startup_code.o \
