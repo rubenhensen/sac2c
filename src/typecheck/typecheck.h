@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  2000/10/20 15:37:49  dkr
+ * macros GET_DIM, GET_LENGTH, GET_BASIC_SIMPLETYPE removed
+ *
  * Revision 2.7  2000/08/04 17:19:24  dkr
  * NEWTREE removed
  *
@@ -85,63 +88,19 @@ extern char *module_name; /* name of module to typecheck;
 
 /* and now some useful macros to get some information */
 
-#define GET_DIM(result, type)                                                            \
-    if (T_user == type->simpletype) {                                                    \
-        result = LookupType (type->name, type->name_mod, 042)->info.types->dim;          \
-        result += type->dim;                                                             \
-    } else                                                                               \
-        result = type->dim
-
-#define GET_BASIC_SIMPLETYPE(res, type)                                                  \
-    if (T_user == type->simpletype)                                                      \
-        res = LookupType (type->name, type->name_mod, 042)->info.types->simpletype;      \
-    else                                                                                 \
-        res = type->simpletype
-
 #define GET_BASIC_SIMPLETYPE_OF_NODE(stype, Node)                                        \
     if (N_array == Node->nodetype) {                                                     \
         DBUG_ASSERT (NULL != Node->info.types, "info.types of node N_array missing");    \
-        GET_BASIC_SIMPLETYPE (stype, Node->info.types);                                  \
+        stype = GetSimpletype (Node->info.types);                                        \
     } else if (N_id == Node->nodetype) {                                                 \
         DBUG_ASSERT (NULL != Node->info.ids->node, "pointer to var_dec missing");        \
-        GET_BASIC_SIMPLETYPE (stype, Node->info.ids->node->info.types);                  \
+        stype = GetSimpletype (Node->info.ids->node->info.types);                        \
     } else                                                                               \
         DBUG_ASSERT (0, "wrong nodetype != N_id,N_array")
 
 /* a new types-stucture will be created */
 #define GET_BASIC_TYPE(res_type, arg_type, line)                                         \
-    {                                                                                    \
-        if (T_user == arg_type->simpletype) {                                            \
-            node *t_node = LookupType (arg_type->name, arg_type->name_mod, line);        \
-            if (NULL == t_node)                                                          \
-                ABORT (line, ("type '%s' is unknown",                                    \
-                              ModName (TYPES_MOD (arg_type), TYPES_NAME (arg_type))))    \
-            else {                                                                       \
-                res_type = DupTypes (t_node->info.types);                                \
-            }                                                                            \
-        } else                                                                           \
-            res_type = DupTypes (arg_type);                                              \
-    }
-
-/* number of total elements of an array */
-#define GET_LENGTH(length, type)                                                         \
-    {                                                                                    \
-        int i;                                                                           \
-        if (T_user == type->simpletype) {                                                \
-            types *b_type = LookupType (type->name, type->name_mod, 042)->info.types;    \
-            if (0 < b_type->dim + type->dim) {                                           \
-                for (i = 0, length = 1; i < type->dim; i++)                              \
-                    length *= type->shpseg->shp[i];                                      \
-                for (i = 0; i < b_type->dim; i++)                                        \
-                    length *= b_type->shpseg->shp[i];                                    \
-            } else                                                                       \
-                length = 0;                                                              \
-        } else if (0 < type->dim)                                                        \
-            for (i = 0, length = 1; i < type->dim; i++)                                  \
-                length *= type->shpseg->shp[i];                                          \
-        else                                                                             \
-            length = 0;                                                                  \
-    }
+    res_type = DupTypes (GetTypes_Line (arg_type, line))
 
 #define SAC_PRG F_prog
 #define SAC_MOD F_modimp
