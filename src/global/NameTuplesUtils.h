@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/26 21:30:51  ktr
+ * ntype backend stage 0
+ *
  * Revision 1.6  2004/11/26 11:56:11  skt
  * added const for first arg of NTUgetShapeClassFromTypes
  *
@@ -34,10 +37,15 @@
  *
  *****************************************************************************/
 extern char *NTUcreateNtTag (const char *name, types *type);
+
 extern node *NTUaddNtTag (node *id);
 
 extern shape_class_t NTUgetShapeClassFromTypes (types *type);
 extern hidden_class_t NTUgetHiddenClassFromTypes (types *type);
 extern unique_class_t NTUgetUniqueClassFromTypes (types *type);
+
+extern shape_class_t NTUgetShapeClassFromNType (ntype *ntype);
+extern hidden_class_t NTUgetHiddenClassFromNType (ntype *ntype);
+extern unique_class_t NTUgetUniqueClassFromNType (ntype *ntype);
 
 #endif /* _SAC_NAMETUPLESUTILS_H_ */

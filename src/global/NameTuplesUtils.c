@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/11/26 21:30:51  ktr
+ * ntype backend stage 0
+ *
  * Revision 1.11  2004/11/26 16:36:38  cg
  * const specifier added.
  *
@@ -41,9 +44,10 @@
 
 #include "dbug.h"
 #include "internal_lib.h"
-#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "new_types.h"
+#include "type_utils.h"
 
 #include "NameTuplesUtils.h"
 
@@ -235,4 +239,172 @@ NTUaddNtTag (node *id)
     }
 
     DBUG_RETURN (id);
+}
+
+/******************************************************************************
+ *
+ * Name Tuples Utils
+ *
+ * ---- NTYPE VERSION ----
+ *
+ * Prefix: NTU
+ *
+ *****************************************************************************/
+
+/******************************************************************************
+ *
+ * function:
+ *   shape_class_t NTUgetShapeClassFromNType( ntype *ntype)
+ *
+ * description:
+ *   Returns the Shape Class of an object (usually an array) from its ntype.
+ *
+ ******************************************************************************/
+
+shape_class_t
+NTUgetShapeClassFromNType (ntype *ntype)
+{
+    shape_class_t z;
+
+    DBUG_ENTER ("NTUgetShapeClassFromNType");
+
+    DBUG_ASSERT ((ntype != NULL), "No type found!");
+
+    switch (TYgetConstr (ntype)) {
+    case TC_akv:
+    case TC_aks:
+        if (TYgetDim (ntype) == 0) {
+            z = C_scl;
+        } else {
+            z = C_aks;
+        }
+        break;
+
+    case TC_akd:
+        if (TYgetDim (ntype) == 0) {
+            z = C_scl;
+        } else {
+            z = C_akd;
+        }
+        break;
+
+    case TC_aud:
+    case TC_audgz:
+        z = C_aud;
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Illegal Shape Class");
+        break;
+    }
+
+    /*
+     * Adapt to minimal array representation
+     *
+     * C_scl can not be deactivated for hidden objects in order to prevent
+     * inconsistency with the implementation of the hidden type.
+     */
+    if (!((z == C_scl) && TUisHidden (ntype))) {
+
+        switch (global.min_array_rep) {
+        case MAR_scl_aud:
+            z = C_aud;
+            break;
+
+        case MAR_scl_akd:
+            switch (z) {
+            case C_scl:
+            case C_aks:
+                z = C_akd;
+                break;
+
+            case C_akd:
+            case C_aud:
+                break;
+
+            default:
+                DBUG_ASSERT ((0), "Illegal shape class");
+                break;
+            }
+            break;
+
+        case MAR_scl_aks:
+            switch (z) {
+            case C_scl:
+                z = C_aks;
+                break;
+
+            case C_aks:
+            case C_akd:
+            case C_aud:
+                break;
+                break;
+            default:
+                DBUG_ASSERT ((0), "Illegal shape class");
+                break;
+            }
+        default:
+            break;
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   hidden_class_t NTUgetHiddenClassFromNType( ntype *ntype)
+ *
+ * description:
+ *   Returns the Hiddenness Class of an object (usually an array) from
+ *   its type.
+ *
+ ******************************************************************************/
+
+hidden_class_t
+NTUgetHiddenClassFromNType (ntype *ntype)
+{
+    hidden_class_t z;
+
+    DBUG_ENTER ("NTUgetHiddenClassFromNType");
+
+    DBUG_ASSERT ((ntype != NULL), "No type found!");
+
+    if (TUisHidden (ntype)) {
+        z = C_hid;
+    } else {
+        z = C_nhd;
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   unique_class_t NTUgetUniqueClassFromNType( ntype *ntype)
+ *
+ * description:
+ *   Returns the Uniqueness Class of an object (usually an array) from
+ *   its type.
+ *
+ ******************************************************************************/
+
+unique_class_t
+NTUgetUniqueClassFromNType (ntype *ntype)
+{
+    unique_class_t z;
+
+    DBUG_ENTER ("NTUgetUniqueClassFromNType");
+
+    DBUG_ASSERT ((ntype != NULL), "No type found!");
+
+    if (TUisUniqueUserType (ntype)) {
+        z = C_unq;
+    } else {
+        z = C_nuq;
+    }
+
+    DBUG_RETURN (z);
 }
