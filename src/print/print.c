@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.76  2000/05/30 12:36:30  dkr
+ * DoPrintTypesAST() added
+ *
  * Revision 2.75  2000/05/29 17:23:27  dkr
  * new function PrintRC()
  * DBUG-string PRINT_RC no longer used
@@ -108,8 +110,6 @@
  *
  * Revision 1.6  1994/11/10  15:34:26  sbs
  * RCS-header inserted
- *
- *
  */
 
 /*
@@ -246,10 +246,9 @@ char *prf_string[] = {
 static void
 DbugPrintArray (node *arg_node)
 {
-    int *intptr, i;
-    void *constvec;
+    int *intptr, veclen, i;
     simpletype vectype;
-    int veclen;
+    void *constvec;
     char *chrptr;
     float *fltptr;
     double *dblptr;
@@ -258,11 +257,14 @@ DbugPrintArray (node *arg_node)
         veclen = ARRAY_VECLEN (arg_node);
         vectype = ARRAY_VECTYPE (arg_node);
         constvec = ARRAY_CONSTVEC (arg_node);
-    } else /* (NODE_TYPE(arg_node) == N_id) */ {
+    } else {
+        DBUG_ASSERT ((NODE_TYPE (arg_node) == N_id),
+                     "argument is neither a N_array nor a N_id node");
         veclen = ID_VECLEN (arg_node);
         vectype = ID_VECTYPE (arg_node);
         constvec = ID_CONSTVEC (arg_node);
     }
+
     switch (vectype) {
     case T_nothing:
         fprintf (outfile, ":[");
@@ -3309,6 +3311,34 @@ DoPrintSonAST (int num, node *arg_node, int skip_node)
 /******************************************************************************
  *
  * function:
+ *   void DoPrintTypesAST( types *type)
+ *
+ * description:
+ *   This function is called from 'DoPrintAST' only.
+ *   Prints a types-structure.
+ *
+ ******************************************************************************/
+
+static void
+DoPrintTypesAST (types *type)
+{
+    DBUG_ENTER ("DoPrintTypesAST");
+
+    fprintf (outfile, "%s", mdb_type[TYPES_BASETYPE (type)]);
+    if (TYPES_BASETYPE (type) == T_user) {
+        if (TYPES_TDEF (type) != NULL) {
+            fprintf (outfile, "[%p]", TYPES_TDEF (type));
+        } else {
+            fprintf (outfile, "[NULL]");
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void DoPrintIdsAST( ids *vars)
  *
  * description:
@@ -3322,7 +3352,7 @@ DoPrintIdsAST (ids *vars)
 {
     DBUG_ENTER ("DoPrintIdsAST");
 
-    fprintf (outfile, "( ");
+    fprintf (outfile, "< ");
     while (vars != NULL) {
         fprintf (outfile, "%s", IDS_NAME (vars));
         PrintRC (IDS_REFCNT (vars), IDS_NAIVE_REFCNT (vars), 1);
@@ -3330,7 +3360,7 @@ DoPrintIdsAST (ids *vars)
 
         vars = IDS_NEXT (vars);
     }
-    fprintf (outfile, ")");
+    fprintf (outfile, ">");
 
     DBUG_VOID_RETURN;
 }
@@ -3414,6 +3444,12 @@ DoPrintAST (node *arg_node, int skip_next)
             fprintf (outfile, "(%i)\n", NUM_VAL (arg_node));
             break;
 
+        case N_array:
+            fprintf (outfile, "(");
+            DoPrintTypesAST (ARRAY_TYPE (arg_node));
+            fprintf (outfile, ")");
+            break;
+
         case N_prf:
             fprintf (outfile, "(%s)\n", mdb_prf[PRF_PRF (arg_node)]);
             break;
@@ -3423,7 +3459,9 @@ DoPrintAST (node *arg_node, int skip_next)
             break;
 
         case N_arg:
-            fprintf (outfile, "(%s %s", mdb_type[TYPES_BASETYPE (ARG_TYPE (arg_node))],
+            fprintf (outfile, "(");
+            DoPrintTypesAST (ARG_TYPE (arg_node));
+            fprintf (outfile, " %s",
                      (ARG_NAME (arg_node) != NULL) ? ARG_NAME (arg_node) : "?");
             PrintRC (ARG_REFCNT (arg_node), ARG_NAIVE_REFCNT (arg_node), 1);
             fprintf (outfile, ")\n");
@@ -3432,7 +3470,9 @@ DoPrintAST (node *arg_node, int skip_next)
             break;
 
         case N_vardec:
-            fprintf (outfile, "(%s %s", mdb_type[TYPES_BASETYPE (VARDEC_TYPE (arg_node))],
+            fprintf (outfile, "(");
+            DoPrintTypesAST (ARG_TYPE (arg_node));
+            fprintf (outfile, " %s",
                      (VARDEC_NAME (arg_node) != NULL) ? VARDEC_NAME (arg_node) : "?");
             PrintRC (VARDEC_REFCNT (arg_node), VARDEC_NAIVE_REFCNT (arg_node), 1);
             fprintf (outfile, ")\n");
