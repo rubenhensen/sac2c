@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.6  1998/04/08 07:46:05  srs
+ * fixed bug in CreateFullPartition
+ *
  * Revision 1.5  1998/04/07 15:49:16  srs
  * removed unused variable base_wl
  *
@@ -257,11 +260,12 @@ CreateFullPartition (node *wln, node *arg_info)
         /* create lower array bound */
         array_null = NULL;
         ArrayST2ArrayInt (NULL, &array_null, gen_shape);
-        if (WO_genarray == NWITH_TYPE (wln))
+        if (WO_genarray == NWITH_TYPE (wln)) {
             /* create upper array bound */
+            array_shape = NULL;
             ArrayST2ArrayInt (NWITHOP_SHAPE (NWITH_WITHOP (wln)), &array_shape,
                               gen_shape);
-        else /* modarray */
+        } else /* modarray */
             /* We can use the *int array of shpseg to create the upper array bound */
             array_shape
               = TYPES_SHPSEG (ID_TYPE (NWITHOP_ARRAY (NWITH_WITHOP (wln))))->shp;
@@ -309,7 +313,7 @@ CreateFullPartition (node *wln, node *arg_info)
         /* free the above made arrays */
         FREE (array_null);
         if (WO_genarray == NWITH_TYPE (wln))
-            FREE (array_shape);
+            FREE (array_shape); /* no mem allocated in case of modarray. */
     }
 
     DBUG_RETURN (wln);
