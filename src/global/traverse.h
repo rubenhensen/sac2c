@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.5  1994/12/16 14:22:10  sbs
+ * Revision 1.6  1995/01/02 16:04:46  asi
+ * Renamed opt_tab in opt1_tab and all OPT.. in OPT1..
+ * Added OPT1while, OPT1do, OPT1cond, OPT1cc
+ * Added opt2_tab
+ *
+ * Revision 1.5  1994/12/16  14:22:10  sbs
  * imp_tab inserted and NIF macro enlarged
  *
  * Revision 1.4  1994/12/09  10:45:33  sbs
@@ -36,6 +41,8 @@ extern funptr prnt_tab[];
 
 extern funptr type_tab[];
 
-extern funptr opt_tab[];
+extern funptr opt1_tab[];
+
+extern funptr opt2_tab[];
 
 #endif /* _sac_traverse_h */

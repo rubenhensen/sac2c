@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.6  1994/12/31 14:09:00  sbs
+ * Revision 1.7  1995/01/02 16:04:46  asi
+ * Renamed opt_tab in opt1_tab and all OPT.. in OPT1..
+ * Added OPT1while, OPT1do, OPT1cond, OPT1cc
+ * Added opt2_tab
+ *
+ * Revision 1.6  1994/12/31  14:09:00  sbs
  * DBUG_ASSERT inserted checking the range of node-types!
  *
  * Revision 1.5  1994/12/16  14:22:10  sbs
@@ -79,12 +84,12 @@ funptr type_tab[] = {
 #undef NIF
 
 /*
- * 4) opt_tab
+ * 4) opt1_tab
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z) o
 
-funptr opt_tab[] = {
+funptr opt1_tab[] = {
 #include "node_info.mac"
 };
 
@@ -97,6 +102,18 @@ funptr opt_tab[] = {
 #define NIF(n, s, i, f, p, t, o, x, y, z) i
 
 funptr imp_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 6) opt2_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z) x
+
+funptr opt2_tab[] = {
 #include "node_info.mac"
 };
 
