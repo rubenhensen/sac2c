@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2004/10/04 17:15:42  sah
+ * fixed a small bug. NCODE_WLAA_INFO is a access_info_t structure,
+ * not an info structure
+ *
  * Revision 3.18  2004/07/31 13:44:44  sah
  * removed function MakeNCodeExprs. Instead, MakeNCode now expects
  * an exprs node as its second argument!
@@ -530,7 +534,7 @@ AddDummyCode (node *wl)
      * annotate the Ncode node with.
      */
 
-    NCODE_WLAA_INFO (code) = MakeInfo ();
+    NCODE_WLAA_INFO (code) = Malloc (sizeof (access_info_t));
 
     NCODE_WLAA_ACCESS (code) = NULL;
     NCODE_WLAA_ACCESSCNT (code) = 0;
