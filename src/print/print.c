@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2001/04/10 09:37:03  dkr
+ * macro F_PTR moved to internal_lib.h
+ *
  * Revision 3.44  2001/04/03 17:51:17  dkr
  * PrintWLsegx modified: output for WLSEG_SV, WLSEG_MAXHOMDIM added
  *
@@ -192,13 +195,6 @@
 #include "wl_bounds.h"
 
 #define WARN_INDENT
-
-/* format string for pointers */
-#ifdef SAC_FOR_SOLARIS_SPARC
-#define F_PTR "0x%p"
-#else
-#define F_PTR "%p"
-#endif
 
 /*
  * PrintNode(): INFO_PRINT_CONT(arg_info) contains the root of syntaxtree.
