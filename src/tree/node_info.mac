@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.206  2004/09/30 19:51:24  sah
+ * renamed CSEInfo to CSEinfo
+ *
  * Revision 3.205  2004/09/28 16:34:05  ktr
  * cleaned up concurrent (removed everything not working / not working with emm)
  *
@@ -2852,8 +2855,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_cseinfo, "N_cseinfo", TravSons, TravSons, PrintCSEinfo, TravSons, TravSons,
-       TravSons, TravSons, FreeCSEInfo, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, SETCSEInfo, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeCSEinfo, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, SETCSEinfo, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
