@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/02/07 21:14:52  dkr
+ * space after keyword 'extern' added
+ *
  * Revision 3.17  2001/02/07 20:15:03  dkr
  * fixed a bug in PrintWLgridx()
  *
@@ -1020,7 +1023,7 @@ PrintFundef (node *arg_node, node *arg_info)
                 || ((FUNDEF_RETURN (arg_node) != NULL)
                     && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm)
                     && (strcmp (FUNDEF_NAME (arg_node), "main") != 0))) {
-                fprintf (outfile, "extern");
+                fprintf (outfile, "extern ");
 
                 if ((FUNDEF_ICM (arg_node) == NULL)
                     || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
