@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.27  2002/10/07 23:41:19  dkr
- * SAC_ND_A_SHAPE__SCL modified
+ * Revision 3.28  2002/10/08 01:53:54  dkr
+ * collisions with CAT?? macros removed
  *
  * Revision 3.26  2002/08/05 18:57:20  dkr
  * SAC_ND_A_MIRROR_... added
@@ -1029,6 +1029,13 @@ typedef int *SAC_array_descriptor_t;
     }
 #endif
 
+/************************
+ ************************
+ ***
+ *** CAT14, CAT15, CAT16
+ ***
+ ***/
+
 /******************************************************************************
  *
  * ICMs for assigning data objects
@@ -1058,9 +1065,9 @@ typedef int *SAC_array_descriptor_t;
 /* ND_ASSIGN( ...)  is a C-ICM */
 
 #define SAC_ND_ASSIGN__DATA(to_nt, from_nt, copyfun)                                     \
-    CAT11 (SAC_ND_ASSIGN__DATA__,                                                        \
-           CAT11 (NT_SHP (to_nt),                                                        \
-                  CAT11 (__, CAT11 (NT_SHP (from_nt),                                    \
+    CAT14 (SAC_ND_ASSIGN__DATA__,                                                        \
+           CAT14 (NT_SHP (to_nt),                                                        \
+                  CAT14 (__, CAT14 (NT_SHP (from_nt),                                    \
                                     BuildArgs3 (to_nt, from_nt, copyfun)))))
 
 /* ND_ASSIGN__DESC( ...)  is a C-ICM */
@@ -1070,9 +1077,9 @@ typedef int *SAC_array_descriptor_t;
 /* ND_COPY( ...)  is a C-ICM */
 
 #define SAC_ND_COPY__DATA(to_nt, from_nt, copyfun)                                       \
-    CAT11 (SAC_ND_COPY__DATA__,                                                          \
-           CAT11 (NT_SHP (to_nt),                                                        \
-                  CAT11 (__, CAT11 (NT_SHP (from_nt),                                    \
+    CAT14 (SAC_ND_COPY__DATA__,                                                          \
+           CAT14 (NT_SHP (to_nt),                                                        \
+                  CAT14 (__, CAT14 (NT_SHP (from_nt),                                    \
                                     BuildArgs3 (to_nt, from_nt, copyfun)))))
 
 /* ND_COPY__SHPDIM( ...)  is a C-ICM */
@@ -1088,19 +1095,19 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_ASSIGN__DATA__SCL__AKS(to_nt, from_nt, copyfun) SAC_ICM_UNDEF ();
 #define SAC_ND_ASSIGN__DATA__SCL__AKD(to_nt, from_nt, copyfun) SAC_ICM_UNDEF ();
 #define SAC_ND_ASSIGN__DATA__SCL__AUD(to_nt, from_nt, copyfun)                           \
-    CAT12 (SAC_ND_ASSIGN__DATA__SCL_,                                                    \
-           CAT12 (NT_HID (to_nt),                                                        \
-                  CAT12 (__AUD_, CAT12 (NT_HID (from_nt),                                \
+    CAT15 (SAC_ND_ASSIGN__DATA__SCL_,                                                    \
+           CAT15 (NT_HID (to_nt),                                                        \
+                  CAT15 (__AUD_, CAT15 (NT_HID (from_nt),                                \
                                         BuildArgs3 (to_nt, from_nt, copyfun)))))
 #define SAC_ND_ASSIGN__DATA__SCL_NHD__AUD_NHD(to_nt, from_nt, copyfun)                   \
     {                                                                                    \
         SAC_ND_WRITE_READ_COPY (to_nt, 0, from_nt, 0, copyfun)                           \
-        SAC_ND_DEC_RC_FREE (from_nt, 1)                                                  \
+        SAC_ND_DEC_RC_FREE (from_nt, 1, )                                                \
     }
 #define SAC_ND_ASSIGN__DATA__SCL_HID__AUD_HID(to_nt, from_nt, copyfun)                   \
-    CAT13 (SAC_ND_ASSIGN__DATA__SCL_HID_,                                                \
-           CAT13 (NT_UNQ (to_nt),                                                        \
-                  CAT13 (__AUD_HID_, CAT13 (NT_UNQ (from_nt),                            \
+    CAT16 (SAC_ND_ASSIGN__DATA__SCL_HID_,                                                \
+           CAT16 (NT_UNQ (to_nt),                                                        \
+                  CAT16 (__AUD_HID_, CAT16 (NT_UNQ (from_nt),                            \
                                             BuildArgs3 (to_nt, from_nt, copyfun)))))
 #define SAC_ND_ASSIGN__DATA__SCL_HID_NUQ__AUD_HID_NUQ(to_nt, from_nt, copyfun)           \
     SAC_ND_ASSIGN__DATA__SCL_NHD__AUD_NHD (to_nt, from_nt, copyfun)
@@ -1181,9 +1188,9 @@ typedef int *SAC_array_descriptor_t;
  */
 
 #define SAC_ND_ASSIGN__DATA__AUD__SCL(to_nt, from_nt, copyfun)                           \
-  CAT12( SAC_ND_ASSIGN__DATA__AUD_, CAT12( NT_HID( to_nt), CAT12( __SCL_, \
-                                    CAT12( NT_HID( from_nt), CAT12( _,    \
-                                    CAT12( NT_UNQ( from_nt),              \
+  CAT15( SAC_ND_ASSIGN__DATA__AUD_, CAT15( NT_HID( to_nt), CAT15( __SCL_, \
+                                    CAT15( NT_HID( from_nt), CAT15( _,    \
+                                    CAT15( NT_UNQ( from_nt),              \
                                     BuildArgs3( to_nt, from_nt, copyfun)))))
 #define SAC_ND_ASSIGN__DATA__AUD_NHD__SCL_NHD_NUQ(to_nt, from_nt, copyfun)               \
     SAC_ND_WRITE_READ_COPY (to_nt, 0, from_nt, 0, copyfun)
@@ -1192,7 +1199,7 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_ASSIGN__DATA__AUD_HID__SCL_HID_NUQ(to_nt, from_nt, copyfun)               \
     {                                                                                    \
         SAC_ND_WRITE_READ_COPY (to_nt, 0 from_nt, 0, copyfun)                            \
-        SAC_ND_DEC_RC_FREE (from_nt, 1)                                                  \
+        SAC_ND_DEC_RC_FREE (from_nt, 1, )                                                \
     }
 #define SAC_ND_ASSIGN__DATA__AUD_HID__SCL_HID_UNQ(to_nt, from_nt, copyfun)               \
     SAC_ND_ASSIGN__DATA__AUD_NHD__SCL_NHD_NUQ (to_nt, from_nt, copyfun)
@@ -1250,7 +1257,7 @@ typedef int *SAC_array_descriptor_t;
 /************************
  ************************
  ***
- *** CAT14, CAT15, CAT16
+ *** CAT17, CAT18, CAT19
  ***
  ***/
 
@@ -1271,33 +1278,33 @@ typedef int *SAC_array_descriptor_t;
  ******************************************************************************/
 
 #define SAC_ND_SET__RC(nt, rc)                                                           \
-    CAT14 (SAC_ND_SET__RC__, CAT14 (NT_UNQ (nt), BuildArgs2 (nt, rc)))
+    CAT17 (SAC_ND_SET__RC__, CAT17 (NT_UNQ (nt), BuildArgs2 (nt, rc)))
 
 #define SAC_ND_INC_RC(nt, rc)                                                            \
-    CAT14 (SAC_ND_INC_RC__, CAT14 (NT_UNQ (nt), BuildArgs2 (nt, rc)))
+    CAT17 (SAC_ND_INC_RC__, CAT17 (NT_UNQ (nt), BuildArgs2 (nt, rc)))
 
 #define SAC_ND_DEC_RC(nt, rc)                                                            \
-    CAT14 (SAC_ND_DEC_RC__, CAT14 (NT_UNQ (nt), BuildArgs2 (nt, rc)))
+    CAT17 (SAC_ND_DEC_RC__, CAT17 (NT_UNQ (nt), BuildArgs2 (nt, rc)))
 
 #define SAC_ND_DEC_RC_FREE(nt, rc, freefun)                                              \
-    CAT14 (SAC_ND_DEC_RC_FREE__, CAT14 (NT_UNQ (nt), BuildArgs3 (nt, rc, freefun)))
+    CAT17 (SAC_ND_DEC_RC_FREE__, CAT17 (NT_UNQ (nt), BuildArgs3 (nt, rc, freefun)))
 
 /*
  * NUQ
  */
 
 #define SAC_ND_SET__RC__NUQ(nt, rc)                                                      \
-    CAT15 (SAC_ND_SET__RC__, CAT15 (NT_SHP (nt), CAT15 (_NUQ, BuildArgs2 (nt, rc))))
+    CAT18 (SAC_ND_SET__RC__, CAT18 (NT_SHP (nt), CAT18 (_NUQ, BuildArgs2 (nt, rc))))
 
 #define SAC_ND_INC_RC__NUQ(nt, rc)                                                       \
-    CAT15 (SAC_ND_INC_RC__, CAT15 (NT_SHP (nt), CAT15 (_NUQ, BuildArgs2 (nt, rc))))
+    CAT18 (SAC_ND_INC_RC__, CAT18 (NT_SHP (nt), CAT18 (_NUQ, BuildArgs2 (nt, rc))))
 
 #define SAC_ND_DEC_RC__NUQ(nt, rc)                                                       \
-    CAT15 (SAC_ND_DEC_RC__, CAT15 (NT_SHP (nt), CAT15 (_NUQ, BuildArgs2 (nt, rc))))
+    CAT18 (SAC_ND_DEC_RC__, CAT18 (NT_SHP (nt), CAT18 (_NUQ, BuildArgs2 (nt, rc))))
 
 #define SAC_ND_DEC_RC_FREE__NUQ(nt, rc, freefun)                                         \
-    CAT15 (SAC_ND_DEC_RC_FREE__,                                                         \
-           CAT15 (NT_SHP (nt), CAT15 (_NUQ, BuildArgs3 (nt, rc, freefun))))
+    CAT18 (SAC_ND_DEC_RC_FREE__,                                                         \
+           CAT18 (NT_SHP (nt), CAT18 (_NUQ, BuildArgs3 (nt, rc, freefun))))
 
 /*
  * UNQ
@@ -1317,23 +1324,23 @@ typedef int *SAC_array_descriptor_t;
  */
 
 #define SAC_ND_SET__RC__SCL_NUQ(nt, rc)                                                  \
-    CAT16 (SAC_ND_SET__RC__SCL_, CAT16 (NT_HID (nt), CAT16 (_NUQ, BuildArgs2 (nt, rc))))
+    CAT19 (SAC_ND_SET__RC__SCL_, CAT19 (NT_HID (nt), CAT19 (_NUQ, BuildArgs2 (nt, rc))))
 #define SAC_ND_SET__RC__SCL_NHD_NUQ(nt, rc) SAC_NOOP ()
 #define SAC_ND_SET__RC__SCL_HID_NUQ(nt, rc) SAC_ND_SET__RC__AKS_NUQ (nt, rc)
 
 #define SAC_ND_INC_RC__SCL_NUQ(nt, rc)                                                   \
-    CAT16 (SAC_ND_INC_RC__SCL_, CAT16 (NT_HID (nt), CAT16 (_NUQ, BuildArgs2 (nt, rc))))
+    CAT19 (SAC_ND_INC_RC__SCL_, CAT19 (NT_HID (nt), CAT19 (_NUQ, BuildArgs2 (nt, rc))))
 #define SAC_ND_INC_RC__SCL_NHD_NUQ(nt, rc) SAC_NOOP ()
 #define SAC_ND_INC_RC__SCL_HID_NUQ(nt, rc) SAC_ND_INC_RC__AKS_NUQ (nt, rc)
 
 #define SAC_ND_DEC_RC__SCL_NUQ(nt, rc)                                                   \
-    CAT16 (SAC_ND_DEC_RC__SCL_, CAT16 (NT_HID (nt), CAT16 (_NUQ, BuildArgs2 (nt, rc))))
+    CAT19 (SAC_ND_DEC_RC__SCL_, CAT19 (NT_HID (nt), CAT19 (_NUQ, BuildArgs2 (nt, rc))))
 #define SAC_ND_DEC_RC__SCL_NHD_NUQ(nt, rc) SAC_NOOP ()
 #define SAC_ND_DEC_RC__SCL_HID_NUQ(nt, rc) SAC_ND_DEC_RC__AKS_NUQ (nt, rc)
 
 #define SAC_ND_DEC_RC_FREE__SCL_NUQ(nt, rc, freefun)                                     \
-    CAT16 (SAC_ND_DEC_RC_FREE__SCL_,                                                     \
-           CAT16 (NT_HID (nt), CAT16 (_NUQ, BuildArgs3 (nt, rc, freefun))))
+    CAT19 (SAC_ND_DEC_RC_FREE__SCL_,                                                     \
+           CAT19 (NT_HID (nt), CAT19 (_NUQ, BuildArgs3 (nt, rc, freefun))))
 #define SAC_ND_DEC_RC_FREE__SCL_NHD_NUQ(nt, rc, freefun) SAC_NOOP ()
 #define SAC_ND_DEC_RC_FREE__SCL_HID_NUQ(nt, rc, freefun)                                 \
     SAC_ND_DEC_RC_FREE__AKS_NUQ (nt, rc, freefun)
@@ -1414,7 +1421,7 @@ typedef int *SAC_array_descriptor_t;
  *
  ******************************************************************************/
 
-#define SAC_IS_LASTREF__THEN(nt) CAT14 (SAC_IS_LASTREF__THEN__, CAT14 (NT_UNQ (nt), (nt)))
+#define SAC_IS_LASTREF__THEN(nt) CAT17 (SAC_IS_LASTREF__THEN__, CAT17 (NT_UNQ (nt), (nt)))
 #define SAC_IS_LASTREF__ELSE(nt) else
 
 #define SAC_IS_LASTREF__BLOCK_BEGIN(nt)                                                  \
@@ -1431,7 +1438,7 @@ typedef int *SAC_array_descriptor_t;
  */
 
 #define SAC_IS_LASTREF__THEN__NUQ(nt)                                                    \
-    CAT15 (SAC_IS_LASTREF__THEN__, CAT15 (NT_SHP (nt), CAT15 (_NUQ, (nt))))
+    CAT18 (SAC_IS_LASTREF__THEN__, CAT18 (NT_SHP (nt), CAT18 (_NUQ, (nt))))
 
 /*
  * UNQ
@@ -1444,7 +1451,7 @@ typedef int *SAC_array_descriptor_t;
  */
 
 #define SAC_IS_LASTREF__THEN__SCL_NUQ(nt)                                                \
-    CAT16 (SAC_IS_LASTREF__THEN__SCL_, CAT16 (NT_HID (nt), CAT16 (_NUQ, (nt))))
+    CAT19 (SAC_IS_LASTREF__THEN__SCL_, CAT19 (NT_HID (nt), CAT19 (_NUQ, (nt))))
 #define SAC_IS_LASTREF__THEN__SCL_NHD_NUQ(nt) if (0)
 #define SAC_IS_LASTREF__THEN__SCL_HID_NUQ(nt) SAC_IS_LASTREF__THEN__AKS_NUQ (nt)
 
