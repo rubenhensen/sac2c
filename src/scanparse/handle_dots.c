@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2003/11/05 16:31:52  sah
+ * solves bug #30
+ *
  * Revision 1.28  2003/11/05 14:14:23  sah
  * fixes bugs #28 and #29
  *
@@ -762,18 +765,22 @@ BuildRightShape (node *args, node *array, dotinfo *info)
 
     for (cnt = 1; cnt <= maxdot; cnt++) {
         result = MakeExprs (
-          MAKE_BIN_PRF (F_sel,
-                        MakeFlatArray (MakeExprs (
-                          MAKE_BIN_PRF (F_sub_SxS,
-                                        MakePrf (F_dim,
-                                                 MakeExprs (MakePrf (F_shape,
-                                                                     MakeExprs (DupTree (
-                                                                                  array),
-                                                                                NULL)),
-                                                            NULL)),
-                                        MakeNum (RDot2Pos (cnt, info))),
-                          NULL)),
-                        MakePrf (F_shape, MakeExprs (DupTree (array), NULL))),
+          MAKE_BIN_PRF (
+            F_sel,
+            MakeFlatArray (
+              MakeExprs (MAKE_BIN_PRF (
+                           F_sub_SxS,
+                           MAKE_BIN_PRF (F_sel,
+                                         MakeFlatArray (MakeExprs (MakeNum (0), NULL)),
+                                         MakePrf (F_shape,
+                                                  MakeExprs (MakePrf (F_shape,
+                                                                      MakeExprs (DupTree (
+                                                                                   array),
+                                                                                 NULL)),
+                                                             NULL))),
+                           MakeNum (RDot2Pos (cnt, info))),
+                         NULL)),
+            MakePrf (F_shape, MakeExprs (DupTree (array), NULL))),
           result);
     }
 
