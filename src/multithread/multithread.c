@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2004/08/31 16:58:17  skt
+ * new phase (ReplicateFunctions) added
+ *
  * Revision 3.17  2004/08/26 17:01:36  skt
  * moved MUTHDecodeExecmode from multithread to multithread_lib
  *
@@ -199,6 +202,7 @@
 #include "assignments_rearrange.h"
 #include "create_cells.h"
 #include "cell_growth.h"
+#include "replicate_functions.h"
 
 /*
  * INFO structure
@@ -485,6 +489,17 @@ MUTHmodul (node *arg_node, info *arg_info)
         goto cont;
     }
 
+    /*
+     * --- ReplicateFunctions (repfu) ---
+     */
+    DBUG_PRINT ("MUTH", ("begin ReplicateFunctions"));
+
+    arg_node = ReplicateFunctions (arg_node);
+
+    DBUG_PRINT ("MUTH", ("end ReplicateFunctions"));
+    if ((break_after == PH_multithread) && (strcmp ("repfu", break_specifier) == 0)) {
+        goto cont;
+    }
     executionmodes_available = FALSE;
 
     /*
