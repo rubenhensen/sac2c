@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.44  1995/03/14 10:54:29  hw
+ * Revision 1.45  1995/03/14 15:46:01  asi
+ * printing of basic block numbers
+ *
+ * Revision 1.44  1995/03/14  10:54:29  hw
  * changed PrintId
  *
  * Revision 1.43  1995/03/13  16:54:00  asi
@@ -189,7 +192,10 @@ PrintAssign (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
-    DBUG_EXECUTE ("MASK", PrintMasks (arg_node, arg_info););
+    DBUG_EXECUTE ("BBLOCK", fprintf (outfile, "[%d]", arg_node->bblock););
+
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "**MASKS - assign\n");
+                  PrintMasks (arg_node, arg_info););
 
     for (i = 0; i < arg_node->nnode; i++) {
         INDENT;
@@ -324,7 +330,8 @@ PrintFundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
     arg_info = MakeNode (N_info);
     VARNO = arg_node->varno;
-    DBUG_EXECUTE ("MASK", PrintMasks (arg_node, arg_info););
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "**MASKS - function\n");
+                  PrintMasks (arg_node, arg_info););
 
     fprintf (outfile, "\n");
     if (arg_node->node[0] == NULL) /* pure fundec! */
@@ -496,7 +503,8 @@ node *
 PrintArg (node *arg_node, node *info_node)
 {
     DBUG_ENTER ("PrintArg");
-    DBUG_PRINT ("MASK", ("Number= : %d", arg_node->varno));
+
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "**Number = %d\n", arg_node->varno););
 
     fprintf (outfile, "%s", Type2String (arg_node->info.types, 1));
 
@@ -514,7 +522,8 @@ PrintVardec (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintVardec");
 
     INDENT;
-    DBUG_PRINT ("MASK", ("Number= : %d", arg_node->varno));
+
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "**Number = %d\n", arg_node->varno););
 
     fprintf (outfile, "%s;\n", Type2String (arg_node->info.types, 1));
     if (1 == arg_node->nnode)
@@ -530,15 +539,20 @@ PrintDo (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintDo");
 
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "**MASKS - do body\n");
+                  PrintMasks (arg_node->node[1], arg_info););
+
     fprintf (outfile, "do\n");
     if (NULL != arg_node->node[1]) {
         indent++;
         Trav (arg_node->node[1], arg_info); /* traverse body of loop */
         indent--;
     }
+
     DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
-                  DBUG_PRINT ("MASK", ("Used Variables (do-cnd) : %s", text));
+                  fprintf (outfile, "**Used Variables (do-cnd) : %s\n", text);
                   free (text););
+
     INDENT;
     fprintf (outfile, "while( ");
     Trav (arg_node->node[0], arg_info);
@@ -564,12 +578,16 @@ PrintWhile (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintWhile");
 
     DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
-                  DBUG_PRINT ("MASK", ("Used Variables (while-cnd) : %s", text));
+                  fprintf (outfile, "**Used Variables (while-cnd) : %s\n", text);
                   free (text););
 
     fprintf (outfile, "while( ");
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, " )\n");
+
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "**MASKS - while body\n");
+                  PrintMasks (arg_node->node[1], arg_info););
+
     Trav (arg_node->node[1], arg_info); /* traverse body of loop */
 
     DBUG_RETURN (arg_node);
@@ -612,18 +630,21 @@ PrintCond (node *arg_node, node *arg_info)
     indent++;
 
     DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
-                  DBUG_PRINT ("MASK", ("Used Variables (Cond): %s", text)); free (text););
+                  fprintf (outfile, "**Used Variables (Cond) : %s\n", text);
+                  free (text););
 
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, "\n");
 
-    DBUG_EXECUTE ("MASK", PrintMasks (arg_node->node[1], arg_info););
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "**MASKS - then\n");
+                  PrintMasks (arg_node->node[1], arg_info););
 
     Trav (arg_node->node[1], arg_info);
     fprintf (outfile, "\n");
     indent--;
 
-    DBUG_EXECUTE ("MASK", PrintMasks (arg_node->node[2], arg_info););
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "**MASKS - else\n");
+                  PrintMasks (arg_node->node[2], arg_info););
 
     INDENT;
     fprintf (outfile, "else\n");
@@ -639,10 +660,18 @@ PrintWith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWith");
 
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "**MASKS - generator\n");
+                  PrintMasks (arg_node->node[0], arg_info););
     fprintf (outfile, "with (");
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, ")\n");
-    DBUG_EXECUTE ("MASK", PrintMasks (arg_node, arg_info););
+
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
+                  fprintf (outfile, "**Used Variables (gen-,modarray) : %s\n", text);
+                  free (text););
+
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "**MASKS - with body\n");
+                  PrintMasks (arg_node, arg_info););
     Trav (arg_node->node[1], arg_info);
 
     DBUG_RETURN (arg_node);
@@ -652,14 +681,6 @@ node *
 PrintGenator (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintGenator");
-
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[0], VARNO);
-                  DBUG_PRINT ("MASK", ("Bound Variable (generator) : %s", text));
-                  free (text););
-
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
-                  DBUG_PRINT ("MASK", ("Used Variables (generator) : %s", text));
-                  free (text););
 
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, " <= %s <= ", arg_node->info.ids->id);
@@ -674,9 +695,6 @@ PrintConexpr (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintConexpr");
 
     INDENT;
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
-                  DBUG_PRINT ("MASK", ("Used Variables (gen-mod-fold) : %s", text));
-                  free (text););
 
     if (N_genarray == arg_node->nodetype) {
         fprintf (outfile, "genarray( ");
