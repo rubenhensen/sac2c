@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/04/10 15:43:21  jhs
+ * Added dbprint.
+ *
  * Revision 1.6  2000/03/31 16:24:45  jhs
  * improved
  *
@@ -231,6 +234,7 @@ BLKCOfundef (node *arg_node, node *arg_info)
          *  all functions should be set to something != ST_call_any,
          *  by RFIN or MTFIN by now ...
          */
+        DBUG_PRINT ("BLKCO", ("fundef_name: %s", FUNDEF_NAME (arg_node)));
         DBUG_ASSERT (0, ("ST_call_any not allowed for here!!!"));
     }
 
