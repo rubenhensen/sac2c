@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.97  2001/05/18 07:57:54  nmw
+ * INFO_CSE_macros added
+ *
  * Revision 3.96  2001/05/14 10:21:20  cg
  * Removed attribute BLOCK_SCHEDULER_NUM.
  *
@@ -2542,6 +2545,8 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      CSE               (cseinfo chain of available expressions)
  ***    node*      MODUL             (current working modul)
  ***    node*      ASSIGN            (current working assignment)
+ ***    bool       RECFUNAP          (== TRUE when processing recursive ap)
+ ***    nodelist*  RESULTARG         (args that are results of a loop fun)
  ***
  ***  when used in compare_tree.c
  ***    cmptree_t  EQFLAG            (current equal flag for whole tree)
@@ -3037,6 +3042,8 @@ extern node *MakeInfo ();
 #define INFO_SSACSE_CSE(n) (n->node[1])
 #define INFO_SSACSE_MODUL(n) (n->node[2])
 #define INFO_SSACSE_ASSIGN(n) (n->node[3])
+#define INFO_SSACSE_RECFUNAP(n) ((bool)(n->int_data))
+#define INFO_SSACSE_RESULTARG(n) ((nodelist *)(n->node[5]))
 
 /* when used in compare_tree.c */
 #define INFO_CMPT_EQFLAG(n) ((cmptree_t) (n->flag))
