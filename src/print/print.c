@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.164  1998/03/20 17:38:45  srs
+ * added DBUG information to PrintNwith()
+ *
  * Revision 1.163  1998/03/20 17:23:53  dkr
  * in N_WL... nodes: INNER is now called CONTENTS
  *
@@ -1949,6 +1952,11 @@ PrintNwith (node *arg_node, node *arg_info)
 
     DBUG_ASSERT (arg_info, "arg_info is NULL");
     buffer = arg_info->node[2];
+
+    DBUG_EXECUTE ("WLI", fprintf (outfile, "\n** WLI N_Nwith : (%d,%d,%d,%d,%d)\n",
+                                  NWITH_PARTS (arg_node), NWITH_REFERENCED (arg_node),
+                                  NWITH_REFERENCED_FOLD (arg_node),
+                                  NWITH_COMPLEX (arg_node), NWITH_FOLDABLE (arg_node)););
 
     /* check wether to use output format 1 (multiple
        NParts) or 2 (only one NPart) and use
