@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2004/07/29 13:06:29  ktr
+ * LiftArgs now allocates memory for scalars explicitly, although this should
+ * be necessaray as scalars are now flattened out of function applications.
+ *
  * Revision 3.82  2004/07/23 15:54:53  ktr
  * exchanged ktr by emm
  *
@@ -3973,16 +3977,23 @@ LiftArg (node *arg, node *fundef, types *new_type, bool do_rc, node **new_assign
             case N_double:
             case N_bool:
             case N_char:
+                /* Explicit allocation needed */
+                (*new_assigns)
+                  = MakeAssign (MakeLet (MakePrf3 (F_alloc, MakeNum (1), MakeNum (0),
+                                                   CreateZeroVector (0, T_int)),
+                                         DupOneIds (new_ids)),
+                                (*new_assigns));
+                DBUG_ASSERT ((0), "There should be constants here, anyways!");
+                break;
+            case N_id:
+                /*
+                 * ID-Lifting is allowed in order to enable the shape-class
+                 * conversion hack
+                 */
                 break;
             default:
                 DBUG_ASSERT ((0), "illegal node type found");
             }
-            /* Explicit allocation needed */
-            (*new_assigns)
-              = MakeAssign (MakeLet (MakePrf3 (F_alloc, MakeNum (1), MakeNum (0),
-                                               CreateZeroVector (0, T_int)),
-                                     DupOneIds (new_ids)),
-                            (*new_assigns));
         } else {
             /* old refcounting */
             if (NODE_TYPE (arg) == N_id) {
