@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/07/07 05:59:33  sbs
+ * Added function MakeVinfoDollar
+ *
  * Revision 2.7  1999/05/12 08:38:14  sbs
  * ID_CONSTARRAY changed into ID_ISCONST
  *
@@ -763,6 +766,29 @@ GetCompoundNode (node *arg_node)
         compound_node = NULL;
     }
     DBUG_RETURN (compound_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeVinfoDollar( node * next)
+ *
+ * description:
+ *   create N_vinfo node with Dollar-Tag and self-ref in VINFO_DOLLAR!
+ *
+ ******************************************************************************/
+
+node *
+MakeVinfoDollar (node *next)
+{
+    node *vinfo;
+
+    DBUG_ENTER ("MakeVinfoDollar");
+
+    vinfo = MakeVinfo (DOLLAR, NULL, next, NULL);
+    VINFO_DOLLAR (vinfo) = vinfo;
+
+    DBUG_RETURN (vinfo);
 }
 
 /******************************************************************************

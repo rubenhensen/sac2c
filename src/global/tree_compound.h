@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/07/07 05:59:33  sbs
+ * Added function MakeVinfoDollar
+ *
  * Revision 2.7  1999/06/17 14:31:34  sbs
  * added new compound-macro TYPES_DIM
  *
@@ -1451,6 +1454,8 @@ extern double *Array2DblVec (node *aelems, int *length);
 #define VINFO_DIM(n) SHAPES_DIM (VINFO_TYPE (n))
 #define VINFO_SHPSEG(n) SHAPES_SHPSEG (VINFO_TYPE (n))
 #define VINFO_SELEMS(n) SHAPES_SELEMS (VINFO_TYPE (n))
+
+extern node *MakeVinfoDollar (node *next);
 
 /*--------------------------------------------------------------------------*/
 
