@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.54  2000/07/04 14:38:11  jhs
+ * Added Dups for MTalloc, MTsignal, MTsync.
+ *
  * Revision 1.53  2000/06/29 10:26:13  mab
  * added functions for APTpart, APTwithid, APTgenerator, APTcode, APTwithop
  * renamed APTNwith to APTwith
@@ -948,8 +951,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_MTsignal, "N_MTsignal", TravSons, TravSons, PrintMTsignal, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, COMPMTsignal, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, COMPMTsignal, TravSons,
+       DupMTsignal, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -966,7 +969,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_MTsync, "N_MTsync", TravSons, TravSons, PrintMTsync, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, COMPMTsync, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, COMPMTsync, TravSons, DupMTsync,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -984,8 +987,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_MTalloc, "N_MTalloc", TravSons, TravSons, PrintMTalloc, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, COMPMTalloc, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, COMPMTalloc, TravSons,
+       DupMTalloc, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,

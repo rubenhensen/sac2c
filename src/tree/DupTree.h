@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2000/07/04 14:38:11  jhs
+ * Added Dups for MTalloc, MTsignal, MTsync.
+ *
  * Revision 1.10  2000/06/23 15:33:27  dkr
  * signature of DupTree changed
  * function DupTreeInfo added
@@ -128,6 +131,9 @@ extern node *DupSpmd (node *arg_node, node *arg_info);
 extern node *DupSync (node *arg_node, node *arg_info);
 extern node *DupMt (node *arg_node, node *arg_info);
 extern node *DupSt (node *arg_node, node *arg_info);
+extern node *DupMTsignal (node *arg_node, node *arg_info);
+extern node *DupMTsync (node *arg_node, node *arg_info);
+extern node *DupMTalloc (node *arg_node, node *arg_info);
 
 /* new with-loop */
 extern node *DupNwith (node *arg_node, node *arg_info);
