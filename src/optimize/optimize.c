@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2003/03/26 15:22:36  sbs
+ * doxygen again.
+ *
  * Revision 3.44  2003/03/26 14:56:40  sbs
  * further doxygen
  *
@@ -296,7 +299,9 @@
 
 /**
  *
- * global variables to keep track of optimization's success
+ * @name Global variables to keep track of optimization's success:
+ *
+ * @{
  */
 int dead_expr;
 int dead_var;
@@ -319,6 +324,7 @@ int ap_padded;
 int ap_unsupported;
 int al_expr;
 int dl_expr;
+/* @} */
 
 /**
  *
@@ -333,7 +339,7 @@ bool do_break = FALSE;
  *
  * @name Functions for optimization statistics:
  *
- * <--
+ * <!--
  * void ResetCounters()       : resets all global optimization counters
  * void PrintStatistics(....) : prints all counters (given as args explicitly!)
  * -->
