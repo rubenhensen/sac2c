@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2000/06/21 13:32:46  jhs
+ * fixed comment
+ *
  * Revision 1.2  2000/05/31 13:21:22  dkr
  * function DFMPrintMaskDetailed() added
  *
@@ -94,7 +97,7 @@
  *   functions modifies the first or only given mask rather than generating
  *   a new mask.
  *
- *   The function DFMTestMask() counts how mny bits in the given mask ist set.
+ *   The function DFMTestMask() counts how many bits in the given mask are set.
  *   The functions DFMTest2Masks() and DFMTest3Masks() count how many bits
  *   are set at the same positions in every mask (and-combination).
  *
