@@ -5,7 +5,6 @@ multithread.c
 multithread.h
 multithread_lib.c
 multithread_lib.h
-schedule_init.h
 assignments_rearrange.c
 assignments_rearrange.h
 tag_executionmode.h
