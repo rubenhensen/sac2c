@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1994/12/13 11:26:34  hw
+ * Revision 1.6  1995/05/04 11:39:51  sbs
+ * DoPrint implemented by vfprintf!
+ *
+ * Revision 1.5  1994/12/13  11:26:34  hw
  * added function: void DoPrint( char *format, ...)
  * added macro : PUTC_STDERR(c)
  *
@@ -50,45 +53,12 @@ void
 DoPrint (char *format, ...)
 {
     va_list arg_p;
-    char *p, *sval;
-    int ival;
 
     DBUG_ENTER ("DoPrint");
     va_start (arg_p, format);
 
-    for (p = format; *p; p++) {
-        if ('\\' == *p)
-            switch (*++p) {
-            case 'n':
-                fprintf (stderr, "\n");
-                break;
-
-            case 't':
-                fprintf (stderr, "\t");
-                break;
-            default:
-                PUTC_STDERR (*p);
-                break;
-            }
-        else if ('%' == *p)
-            switch (*++p) {
-            case 'd':
-                ival = va_arg (arg_p, int);
-                fprintf (stderr, "%d", ival);
-                break;
-            case 's':
-                for (sval = va_arg (arg_p, char *); *sval; sval++)
-                    PUTC_STDERR (*sval);
-                break;
-            default:
-                PUTC_STDERR (*p);
-                break;
-            }
-        else
-            PUTC_STDERR (*p);
-    }
+    vfprintf (stderr, format, arg_p);
     va_end (arg_p);
-
     DBUG_VOID_RETURN;
 }
 

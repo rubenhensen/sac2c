@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1994/12/20 14:01:14  hw
+ * Revision 1.7  1995/05/04 11:39:51  sbs
+ * DoPrint implemented by vfprintf!
+ *
+ * Revision 1.6  1994/12/20  14:01:14  hw
  * bug fixed in ERROR1
  *
  * Revision 1.5  1994/12/13  11:26:34  hw
@@ -40,8 +43,8 @@
     }
 #define ERROR1(s)                                                                        \
     {                                                                                    \
-        fprintf (stderr, "\n");                                                          \
         DoPrint s;                                                                       \
+        fprintf (stderr, "\n");                                                          \
         errors += 1;                                                                     \
     }
 
