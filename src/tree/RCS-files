@@ -10,6 +10,8 @@ free.c
 free.h
 node_info.mac
 prf_node_info.mac
+scheduling.c
+scheduling.h
 traverse.c
 traverse.h
 tree.c

@@ -5,8 +5,6 @@ concurrent_lib.c
 concurrent_lib.h
 schedule.c
 schedule.h
-scheduling.c
-scheduling.h
 spmd_cons.c
 spmd_cons.h
 spmd_init.c
