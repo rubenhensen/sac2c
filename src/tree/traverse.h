@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2002/03/05 15:52:04  sbs
+ * CRTWRP-tab added
+ *
  * Revision 3.22  2002/02/22 12:30:00  sbs
  * insvd_tab added.
  *
@@ -278,6 +281,7 @@ extern funtab *rmcasts_tab;
 extern funtab *ssaili_tab;
 extern funtab *comp2_tab;
 extern funtab *insvd_tab;
+extern funtab *crtwrp_tab;
 
 extern int nnode[];
 

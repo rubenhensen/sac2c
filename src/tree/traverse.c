@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2002/03/05 15:52:04  sbs
+ * CRTWRP-tab added
+ *
  * Revision 3.29  2002/02/22 12:30:00  sbs
  * insvd_tab added.
  *
@@ -205,6 +208,7 @@
 #include "SSAWLF.h"
 #include "rmcasts.h"
 #include "SSAInferLI.h"
+#include "create_wrappers.h"
 
 #include "traverse.h"
 
@@ -1357,6 +1361,17 @@ static funtab insvd_tab_rec = {{
                                NULL,
                                NULL};
 funtab *insvd_tab = &insvd_tab_rec;
+
+/*
+ *  (105) crtwrp_tab
+ */
+static funtab crtwrp_tab_rec = {{
+#define NIFcrtwrp(it_crtwrp) it_crtwrp
+#include "node_info.mac"
+                                },
+                                NULL,
+                                NULL};
+funtab *crtwrp_tab = &crtwrp_tab_rec;
 
 /*
  *  nnode
