@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2001/05/03 16:55:13  nmw
+ * COTypes2OldShapes can handle scalars correctly now
+ *
  * Revision 1.3  2001/04/30 12:31:34  nmw
  * SHShape2IntVec added
  *
@@ -389,7 +392,7 @@ SHShape2String (int dots, shape *shp)
  *    shape *SHOldTypes2Shape( types * types)
  *
  * description:
- *    if types has a dim>0 a shape structure is created which carries the same
+ *    if types has a dim>=0 a shape structure is created which carries the same
  *    shape info as the types-node does. Otherwise, NULL is returned.
  *
  ******************************************************************************/
@@ -405,21 +408,23 @@ SHOldTypes2Shape (types *types)
     DBUG_ASSERT ((types != NULL), ("SHOldTypes2Shape called with NULL types!"));
 
     dim = TYPES_DIM (types);
-    if (dim > 0) {
+    if (dim >= 0) {
         res = SHMakeShape (dim);
 
-        i = 0;
-        shpseg = TYPES_SHPSEG (types);
-        while (dim > SHP_SEG_SIZE) {
-            DBUG_ASSERT ((shpseg != NULL), "types structure corrupted!");
-            for (j = 0; j < SHP_SEG_SIZE; j++, i++) {
+        if (dim > 0) {
+            i = 0;
+            shpseg = TYPES_SHPSEG (types);
+            while (dim > SHP_SEG_SIZE) {
+                DBUG_ASSERT ((shpseg != NULL), "types structure corrupted!");
+                for (j = 0; j < SHP_SEG_SIZE; j++, i++) {
+                    SHAPE_EXT (res, i) = SHPSEG_SHAPE (shpseg, j);
+                }
+                shpseg = SHPSEG_NEXT (shpseg);
+                dim -= SHP_SEG_SIZE;
+            }
+            for (j = 0; j < dim; j++, i++) {
                 SHAPE_EXT (res, i) = SHPSEG_SHAPE (shpseg, j);
             }
-            shpseg = SHPSEG_NEXT (shpseg);
-            dim -= SHP_SEG_SIZE;
-        }
-        for (j = 0; j < dim; j++, i++) {
-            SHAPE_EXT (res, i) = SHPSEG_SHAPE (shpseg, j);
         }
     } else {
         res = NULL;
