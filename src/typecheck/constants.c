@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2000/10/24 12:46:59  dkr
+ * MakeType renamed into MakeTypes
+ *
  * Revision 1.5  2000/10/24 10:04:49  dkr
  * simpletype_size renamed into basetype_size
  *
@@ -635,8 +638,8 @@ COConstant2AST (constant *a)
          * After creating the array, we have to create a types-node to preserve
          * the shape of the array!
          */
-        ARRAY_TYPE (res) = MakeType (CONSTANT_TYPE (a), CONSTANT_DIM (a),
-                                     SHShape2OldShpseg (CONSTANT_SHAPE (a)), NULL, NULL);
+        ARRAY_TYPE (res) = MakeTypes (CONSTANT_TYPE (a), CONSTANT_DIM (a),
+                                      SHShape2OldShpseg (CONSTANT_SHAPE (a)), NULL, NULL);
         /*
          * Note here, that in some situation the calling function has to add
          * constvec infos. This is not done here, since it is not yet clear how
