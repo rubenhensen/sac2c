@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/03/21 18:15:26  dkr
+ * All DupTreeInfo eliminated now
+ *
  * Revision 3.6  2001/03/21 18:07:08  dkr
  * DupTreeInfo replaced by DupTree_Type
  *
@@ -1328,11 +1331,9 @@ InvarUnswitch (node *arg_node, node *loop_node, node *arg_info)
                 ("Moving nodetype %s up", mdb_nodetype[arg_node->node[0]->nodetype]));
     if (NONE != MOVE) {
         arg_info->node[0] = arg_node->node[0]->node[1]->node[0];
-        arg_node->node[0]->node[1]->node[0]
-          = DupTree_Type (loop_node, arg_info, DUP_INVARIANT);
+        arg_node->node[0]->node[1]->node[0] = DupTree_Type (loop_node, DUP_INVARIANT);
         arg_info->node[0] = arg_node->node[0]->node[2]->node[0];
-        arg_node->node[0]->node[2]->node[0]
-          = DupTree_Type (loop_node, arg_info, DUP_INVARIANT);
+        arg_node->node[0]->node[2]->node[0] = DupTree_Type (loop_node, DUP_INVARIANT);
         MOVE = NONE;
     } else {
         arg_node = AppendNodeChain (1, arg_node, loop_node);
@@ -1458,7 +1459,13 @@ LIRsubexpr (node *arg_node, node *arg_info)
 
                 /* Duplicate while-condition and use it with if-then-else-clause */
                 new_node->node[0]->node[0]
-                  = DupTreeInfo (WHILE_COND (arg_node)->node[0], arg_info);
+                  = DupTree_Type (WHILE_COND (arg_node)->node[0], DUP_NORMAL);
+                /*                                       ^^^^^^^^^^
+                 * dkr:
+                 * I am not sure whether this must be DUP_INVARIANT or DUP_NORMAL
+                 * :-((
+                 */
+
                 new_node->node[0]->mask[1]
                   = DupMask (WHILE_COND (arg_node)->mask[1], INFO_VARNO (arg_info));
                 PlusMask (new_node->mask[1], arg_node->node[0]->mask[1],
