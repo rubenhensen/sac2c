@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.7  2001/03/02 16:13:52  dkr
+# make deps done
+#
 # Revision 3.6  2001/02/23 13:38:39  nmw
 # SSADeadCodeRemoval added
 #
@@ -171,7 +174,8 @@ SSADeadCodeRemoval.o: ../global/Error.h /usr/include/string.h
 SSADeadCodeRemoval.o: /usr/include/stdlib.h ../global/internal_lib.h
 SSADeadCodeRemoval.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
 SSADeadCodeRemoval.o: ../tree/DupTree.h ../tree/LookUpTable.h
-SSADeadCodeRemoval.o: SSADeadCodeRemoval.h
+SSADeadCodeRemoval.o: SSADeadCodeRemoval.h optimize.h
+SSADeadCodeRemoval.o: ../tree/change_signature.h
 Unroll.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 Unroll.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 Unroll.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
