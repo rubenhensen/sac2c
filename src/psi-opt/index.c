@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.17  2000/10/26 23:10:32  dkr
+ * functions GetDim(), Type2Shpseg() instead of TYPES_DIM, TYPES_SHPSEG
+ * in order to get correct results even for user-defined types!!
+ *
  * Revision 2.16  2000/10/24 11:53:44  dkr
  * MakeTypes renamed into MakeTypes1
  *
@@ -1032,29 +1036,32 @@ MergeCopyTop (node *actchn)
  * function:
  *  char *IdxChangeId( char *varname, types *type)
  *
- * description: appends the shape given by type to the varname; e.g:
- *              test, int[1,4,2,3]  =>  test_1_4_2_3__
- *              does not free the argument space!
+ * description:
+ *    appends the shape given by type to the varname; e.g:
+ *    test, int[1,4,2,3]  =>  test_1_4_2_3__
+ *    does not free the argument space!
  *
  ******************************************************************************/
 
 char *
 IdxChangeId (char *varname, types *type)
 {
+    shpseg *tmp_shpseg;
     static char buffer[1024];
     static char buffer2[32];
     int i;
-    int *shp;
 
     DBUG_ENTER ("IdxChangeId");
     sprintf (buffer, "%s", varname);
-    shp = SHAPES_SELEMS (type);
-    for (i = 0; i < TYPES_DIM (type); i++) {
-        sprintf (buffer2, "_%d", shp[i]);
+    tmp_shpseg = Type2Shpseg (type);
+    for (i = 0; i < GetDim (type); i++) {
+        sprintf (buffer2, "_%d", SHPSEG_SHAPE (tmp_shpseg, i));
         strcat (buffer, buffer2);
     }
     sprintf (buffer2, "__");
     strcat (buffer, buffer2);
+    tmp_shpseg = FreeShpseg (tmp_shpseg);
+
     DBUG_RETURN (StringCopy (buffer));
 }
 
@@ -1063,7 +1070,8 @@ IdxChangeId (char *varname, types *type)
  * function:
  *  node *VardecIdx(node *vardec, types *type)
  *
- * description: vardec points to the N_vardec/ N_arg node of the original
+ * description:
+ *    vardec points to the N_vardec/ N_arg node of the original
  *    declaration, i.e. the "VECT"-version, of an index variable.
  *    VardecIdx looks up, whether there already exists a declaration of the
  *    "IDX(type)" variant. If so, the pointer to that declaration is returned,
@@ -1135,17 +1143,13 @@ CreateVect2OffsetIcm (node *vardec, types *type)
 {
     node *exprs, *icm, *iv_off_id, *iv_vect_id;
     char *iv_name;
-    int i;
 
     DBUG_ENTER ("CreateVect2OffsetIcm");
 
     /*
      * First, we create an N_exprs-chain containing the shape of type!
      */
-    exprs = NULL;
-    for (i = TYPES_DIM (type) - 1; i >= 0; i--) {
-        exprs = MakeExprs (MakeNum (TYPES_SHAPE (type, i)), exprs);
-    }
+    exprs = Type2Exprs (type);
 
     /*
      * Now, we create two N_id nodes containing the name of the iv itself
@@ -1163,7 +1167,7 @@ CreateVect2OffsetIcm (node *vardec, types *type)
      * Now, we create the desired icm:
      */
     icm = MakeIcm5 ("ND_KS_VECT2OFFSET", iv_off_id, iv_vect_id,
-                    MakeNum (VARDEC_OR_ARG_SHAPE (vardec, 0)), MakeNum (TYPES_DIM (type)),
+                    MakeNum (VARDEC_OR_ARG_SHAPE (vardec, 0)), MakeNum (GetDim (type)),
                     exprs);
 
     /*
@@ -1705,10 +1709,11 @@ IdxPrf (node *arg_node, node *arg_info)
         arg2 = PRF_ARG2 (arg_node);
         DBUG_ASSERT (((arg2->nodetype == N_id) || (arg2->nodetype == N_array)),
                      "wrong arg in F_psi application");
-        if (NODE_TYPE (arg2) == N_id)
+        if (NODE_TYPE (arg2) == N_id) {
             type = ID_TYPE (arg2);
-        else
+        } else {
             type = ARRAY_TYPE (arg2);
+        }
         /*
          * if the shape of the array is unknown, do not(!) replace
          * psi by idx_psi but mark the selecting vector as VECT !
@@ -1735,10 +1740,11 @@ IdxPrf (node *arg_node, node *arg_info)
         arg3 = PRF_ARG3 (arg_node);
         DBUG_ASSERT (((arg1->nodetype == N_id) || (arg1->nodetype == N_array)),
                      "wrong arg in F_modarray application");
-        if (NODE_TYPE (arg1) == N_id)
+        if (NODE_TYPE (arg1) == N_id) {
             type = ID_TYPE (arg1);
-        else
+        } else {
             type = ARRAY_TYPE (arg1);
+        }
         /*
          * if the shape of the array is unknown, do not(!) replace
          * modarray by idx_modarray but mark the selecting vector as VECT !
@@ -1762,55 +1768,63 @@ IdxPrf (node *arg_node, node *arg_info)
         break;
     case F_add_SxA:
         INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
-        if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)
+        if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL) {
             PRF_PRF (arg_node) = F_add;
+        }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         ive_op++;
         break;
     case F_add_AxS:
         INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
     case F_add_AxA:
-        if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)
+        if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL) {
             PRF_PRF (arg_node) = F_add;
+        }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         ive_op++;
         break;
     case F_sub_SxA:
         INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
-        if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)
+        if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL) {
             PRF_PRF (arg_node) = F_sub;
+        }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         ive_op++;
         break;
     case F_sub_AxS:
         INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
     case F_sub_AxA:
-        if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)
+        if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL) {
             PRF_PRF (arg_node) = F_sub;
+        }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         ive_op++;
         break;
     case F_mul_SxA:
-        if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)
+        if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL) {
             PRF_PRF (arg_node) = F_mul;
+        }
         PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
         ive_op++;
         break;
     case F_mul_AxS:
-        if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)
+        if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL) {
             PRF_PRF (arg_node) = F_mul;
+        }
         PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
         ive_op++;
         break;
     case F_div_SxA:
-        if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)
+        if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL) {
             PRF_PRF (arg_node) = F_div;
+        }
         PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
         ive_op++;
         break;
     case F_div_AxS:
-        if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)
+        if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL) {
             PRF_PRF (arg_node) = F_div;
+        }
         PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
         ive_op++;
         break;
@@ -1924,12 +1938,14 @@ IdxId (node *arg_node, node *arg_info)
 node *
 IdxArray (node *arg_node, node *arg_info)
 {
-    int i;
-    int *shp;
+    shpseg *tmp_shpseg;
+    types *type;
     node *idx;
     node *expr;
+    int i;
 
     DBUG_ENTER ("IdxArray");
+
     if (INFO_IVE_TRANSFORM_VINFO (arg_info) == NULL) {
         if (ARRAY_AELEMS (arg_node) != NULL) {
             ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
@@ -1937,28 +1953,35 @@ IdxArray (node *arg_node, node *arg_info)
     } else {
         if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
             expr = ARRAY_AELEMS (arg_node);
-            shp = VINFO_SELEMS (INFO_IVE_TRANSFORM_VINFO (arg_info));
+            type = VINFO_TYPE (INFO_IVE_TRANSFORM_VINFO (arg_info));
+            tmp_shpseg = Type2Shpseg (type);
             idx = EXPRS_EXPR (expr);
             expr = EXPRS_NEXT (expr);
-            for (i = 1; i < VINFO_DIM (INFO_IVE_TRANSFORM_VINFO (arg_info)); i++) {
+            for (i = 1; i < GetDim (type); i++) {
                 if (expr != NULL) {
                     DBUG_ASSERT ((NODE_TYPE (expr) == N_exprs),
                                  "corrupted syntax tree at N_array(N_exprs expected)!");
-                    idx = MakeExprs (idx, MakeExprs (MakeNum (shp[i]), NULL));
+                    idx
+                      = MakeExprs (idx, MakeExprs (MakeNum (SHPSEG_SHAPE (tmp_shpseg, i)),
+                                                   NULL));
                     idx = MakePrf (F_mul, idx);
                     idx = MakeExprs (idx, expr);
                     expr = EXPRS_NEXT (expr);
                     EXPRS_NEXT (EXPRS_NEXT (idx)) = NULL;
                     idx = MakePrf (F_add, idx);
                 } else {
-                    idx = MakeExprs (idx, MakeExprs (MakeNum (shp[i]), NULL));
+                    idx
+                      = MakeExprs (idx, MakeExprs (MakeNum (SHPSEG_SHAPE (tmp_shpseg, i)),
+                                                   NULL));
                     idx = MakePrf (F_mul, idx);
                 }
             }
             arg_node = idx;
             ive_expr++;
+            tmp_shpseg = FreeShpseg (tmp_shpseg);
         }
     }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1978,26 +2001,32 @@ node *
 IdxNum (node *arg_node, node *arg_info)
 {
     int val, i, len_iv, dim_array, sum;
-    int *shp;
+    types *type;
+    shpseg *tmp_shpseg;
 
     DBUG_ENTER ("IdxNum");
+
     if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL) {
         DBUG_ASSERT ((NODE_TYPE (INFO_IVE_TRANSFORM_VINFO (arg_info)) == N_vinfo),
                      "corrupted arg_info node in IdxNum!");
-        shp = VINFO_SELEMS (INFO_IVE_TRANSFORM_VINFO (arg_info));
+        type = VINFO_TYPE (INFO_IVE_TRANSFORM_VINFO (arg_info));
+        tmp_shpseg = Type2Shpseg (type);
         val = NUM_VAL (arg_node);
-        dim_array = VINFO_DIM (INFO_IVE_TRANSFORM_VINFO (arg_info));
+        dim_array = GetDim (type);
         len_iv = INFO_IVE_NON_SCAL_LEN (arg_info);
 
         sum = val;
         for (i = 1; i < len_iv; i++) {
-            sum = (sum * shp[i]) + val;
+            sum = (sum * SHPSEG_SHAPE (tmp_shpseg, i)) + val;
         }
         for (; i < dim_array; i++) {
-            sum = sum * shp[i];
+            sum = sum * SHPSEG_SHAPE (tmp_shpseg, i);
         }
         NUM_VAL (arg_node) = sum;
+
+        tmp_shpseg = FreeShpseg (tmp_shpseg);
     }
+
     DBUG_RETURN (arg_node);
 }
 
