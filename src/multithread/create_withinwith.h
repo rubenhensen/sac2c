@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/22 17:59:48  skt
+ * code brushing in SACDevCampDK 2004
+ *
  * Revision 1.3  2004/08/31 11:56:05  skt
  * CRWIWBuildReplication removed
  *
@@ -20,11 +23,11 @@
  *
  *****************************************************************************/
 
-#ifndef CREATE_WITHINWITH_H
+#ifndef _SAC_CREATE_WITHINWITH_H
+#define _SAC_CREATE_WITHINWITH_H
 
-#define CREATE_WITHINWITH_H
-
-extern node *CreateWithinwith (node *arg_node);
+#include "types.h"
+extern node *CRWIWdoCreateWithinwith (node *arg_node);
 
 extern node *CRWIWfundef (node *arg_node, info *arg_info);
 
@@ -32,4 +35,4 @@ extern node *CRWIWassign (node *arg_node, info *arg_info);
 
 extern node *CRWIWap (node *arg_node, info *arg_info);
 
-#endif /* CREATE_WITHINWITH_H */
+#endif /* _SAC_CREATE_WITHINWITH_H */

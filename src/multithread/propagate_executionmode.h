@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/11/22 17:59:48  skt
+ * code brushing in SACDevCampDK 2004
+ *
  * Revision 1.4  2004/08/18 13:24:31  skt
  * switch to mtexecmode_t done
  *
@@ -23,13 +26,12 @@
  *
  *****************************************************************************/
 
-#ifndef PROPAGATE_EXECUTIONMODE_H
+#ifndef _SAC_PROPAGATE_EXECUTIONMODE_H
+#define _SAC_PROPAGATE_EXECUTIONMODE_H
 
-#define PROPAGATE_EXECUTIONMODE_H
+#include "types.h"
 
-#define PEM_DEBUG 0
-
-extern node *PropagateExecutionmode (node *arg_node);
+extern node *PEMdoPropagateExecutionmode (node *arg_node);
 
 extern node *PEMfundef (node *arg_node, info *arg_info);
 
@@ -41,16 +43,4 @@ extern node *PEMcond (node *arg_node, info *arg_info);
 
 extern node *PEMwith2 (node *arg_node, info *arg_info);
 
-void UpdateExecmodes (node *assign, info *arg_info);
-
-void UpdateFundefExecmode (node *fundef, mtexecmode_t execmode);
-
-void UpdateCondExecmode (node *condassign, mtexecmode_t execmode);
-
-void UpdateWithExecmode (node *withloop_assign, mtexecmode_t execmode);
-
-#if PEM_DEBUG
-char *DecodeExecmode (execmode_t execmode);
-#endif
-
-#endif /* PROPAGATE_EXECUTIONMODE_H */
+#endif /* _SAC_PROPAGATE_EXECUTIONMODE_H */

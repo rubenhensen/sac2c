@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/11/22 17:59:48  skt
+ * code brushing in SACDevCampDK 2004
+ *
  * Revision 3.10  2004/11/21 14:22:39  skt
  * uncomment some old stuff to make it run this newast
  *
@@ -57,32 +60,12 @@
 #ifndef _SAC_MULTITHREAD_LIB_H_
 #define _SAC_MULTITHREAD_LIB_H_
 
-#include "tree_compound.h"
+#include "types.h"
 
-/*
- *  returns 0 for refcounting-objects and -1 otherwise
- */
-#define GET_ZERO_REFCNT(prefix, node)                                                    \
-    (RC_IS_ACTIVE (prefix##_REFCNT (node)) ? 0 : RC_INACTIVE)
+#define MUTH_SPLITPHASE_ENABLED TRUE
 
-/*
- *  returns 1 for refcounting-objects and -1 otherwise
- */
-#define GET_STD_REFCNT(prefix, node)                                                     \
-    (RC_IS_ACTIVE (prefix##_REFCNT (node)) ? 1 : RC_INACTIVE)
+extern node *MUTHLIBexpandFundefName (node *fundef, char *prefix);
+extern void MUTHLIBtagAllocs (node *withloop, mtexecmode_t executionmode);
+extern char *MUTHLIBdecodeExecmode (mtexecmode_t execmode);
 
-extern node *MUTHBlocksLastInstruction (node *block);
-extern node *MUTHMeltBlocks (node *first_block, node *second_block);
-/*extern node *MUTHMeltBlocksOnCopies (node *first_block, node *second_block);*/
-extern node *MUTHExchangeApplication (node *arg_node, node *new_fundef);
-extern node *MUTHExpandFundefName (node *fundef, char *prefix);
-extern node *MUTHReduceFundefName (node *fundef, int count);
-extern node *MUTHInsertEX (node *assign, node *fundef);
-extern node *MUTHInsertST (node *assign, node *fundef);
-extern node *MUTHInsertMT (node *assign, node *fundef);
-extern node *MUTHGetLastExpression (node *expression);
-void TagAllocs (node *withloop, mtexecmode_t executionmode);
-node *RenewExecutionmode (node *assign, mtexecmode_t executionmode);
-extern char *MUTHDecodeExecmode (mtexecmode_t execmode);
-
-#endif /* _SAC_CONCURRENT_LIB_H_ */
+#endif /* _SAC_MULTITHREAD_LIB_H_ */

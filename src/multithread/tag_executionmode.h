@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2004/11/22 17:59:48  skt
+ * code brushing in SACDevCampDK 2004
+ *
  * Revision 1.10  2004/08/06 11:14:54  skt
  * DecodeExecmode deleted - it had been moved into multithread.[ch]
  *
@@ -42,16 +45,10 @@
  *
  *****************************************************************************/
 
-#ifndef TAG_EXECUTIONMODE_H
+#ifndef _SAC_TAG_EXECUTIONMODE_H
+#define _SAC_TAG_EXECUTIONMODE_H
 
-#define TAG_EXECUTIONMODE_H
-
-#define TEM_TRAVMODE_DEFAULT 0
-#define TEM_TRAVMODE_MUSTEX 1
-#define TEM_TRAVMODE_MUSTST 2
-#define TEM_TRAVMODE_COULDMT 3
-
-extern node *TagExecutionmode (node *arg_node);
+extern node *TEMdoTagExecutionmode (node *arg_node);
 
 extern node *TEMassign (node *arg_node, info *arg_info);
 
@@ -65,20 +62,4 @@ extern node *TEMap (node *arg_node, info *arg_info);
 
 extern node *TEMarray (node *arg_node, info *arg_info);
 
-int IsMTAllowed (node *withloop);
-
-int IsGeneratorBigEnough (ids *test_variables);
-
-int IsMTClever (ids *test_variables);
-
-int IsSTClever (ids *test_variables);
-
-int MustExecuteExclusive (node *assign, info *arg_info);
-
-int CouldExecuteMulti (node *assign, info *arg_info);
-
-int MustExecuteSingle (node *assign, info *arg_info);
-
-int AnyUniqueTypeInThere (ids *letids);
-
-#endif /* TAG_EXECUTIONMODE_H */
+#endif /* _SAC_TAG_EXECUTIONMODE_H */
