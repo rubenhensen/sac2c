@@ -1,3 +1,5 @@
+CSE.c
+CSE.h
 ConstantFolding.c
 ConstantFolding.h
 DeadCodeRemoval.c
