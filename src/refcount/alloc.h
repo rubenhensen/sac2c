@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/28 18:14:21  ktr
+ * added traversal functions for bool, num, float, double, char
+ *
  * Revision 1.5  2004/11/21 20:43:42  ktr
  * Ismop 2004
  *
@@ -33,11 +36,16 @@
  *****************************************************************************/
 extern node *EMALdoAlloc (node *syntax_tree);
 
+extern node *EMALbool (node *arg_node, info *arg_info);
+extern node *EMALchar (node *arg_node, info *arg_info);
+extern node *EMALdouble (node *arg_node, info *arg_info);
+extern node *EMALfloat (node *arg_node, info *arg_info);
+extern node *EMALnum (node *arg_node, info *arg_info);
+
 extern node *EMALap (node *arg_node, info *arg_info);
 extern node *EMALarray (node *arg_node, info *arg_info);
 extern node *EMALassign (node *arg_node, info *arg_info);
 extern node *EMALcode (node *arg_node, info *arg_info);
-extern node *EMALconst (node *arg_node, info *arg_info);
 extern node *EMALfold (node *arg_node, info *arg_info);
 extern node *EMALfuncond (node *arg_node, info *arg_info);
 extern node *EMALfundef (node *arg_node, info *arg_info);

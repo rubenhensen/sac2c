@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2004/11/28 18:14:21  ktr
+ * added traversal functions for bool, num, float, double, char
+ *
  * Revision 1.29  2004/11/24 13:59:04  ktr
  * MakeLet permuted
  *
@@ -915,7 +918,7 @@ EMALcode (node *arg_node, info *arg_info)
  *  @return constant
  *
  ***************************************************************************/
-node *
+static node *
 EMALconst (node *arg_node, info *arg_info)
 {
     alloclist_struct *als;
@@ -933,6 +936,116 @@ EMALconst (node *arg_node, info *arg_info)
          */
         INFO_EMAL_MUSTFILL (arg_info) = TRUE;
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn EMALbool
+ *
+ *  @brief
+ *
+ *  @param arg_node N_bool
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+node *
+EMALbool (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMALbool");
+
+    arg_node = EMALconst (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn EMALchar
+ *
+ *  @brief
+ *
+ *  @param arg_node N_char
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+node *
+EMALchar (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMALchar");
+
+    arg_node = EMALconst (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn EMALdouble
+ *
+ *  @brief
+ *
+ *  @param arg_node N_double
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+node *
+EMALdouble (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMALdouble");
+
+    arg_node = EMALconst (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn EMALfloat
+ *
+ *  @brief
+ *
+ *  @param arg_node N_float
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+node *
+EMALfloat (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMALfloat");
+
+    arg_node = EMALconst (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn EMALnum
+ *
+ *  @brief
+ *
+ *  @param arg_node N_num
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+node *
+EMALnum (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMALnum");
+
+    arg_node = EMALconst (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
