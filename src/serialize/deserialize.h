@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/02/16 22:29:13  sah
+ * changed link handling
+ *
  * Revision 1.1  2004/11/23 22:40:40  sah
  * Initial revision
  *
@@ -27,19 +30,16 @@ extern node *DSaddSymbolById (const char *symbid, const char *module);
 extern ntype *DSloadUserType (const char *mod, const char *name);
 extern ntype *DSloadSymbolType (const char *mod, const char *name);
 extern node *DSlookupFunction (const char *module, const char *symbol);
+extern node *DSfetchArgAvis (int pos);
 
 /*
  * DS traversal
  */
 extern node *DSdoDeserialize (node *fundef);
 
-extern node *DSFundef (node *arg_node, info *arg_info);
-extern node *DSReturn (node *arg_node, info *arg_info);
-extern node *DSBlock (node *arg_node, info *arg_info);
-extern node *DSArg (node *arg_node, info *arg_info);
-extern node *DSVardec (node *arg_node, info *arg_info);
-extern node *DSId (node *arg_node, info *arg_info);
-extern node *DSLet (node *arg_node, info *arg_info);
-extern node *DSNWithid (node *arg_node, info *arg_info);
+extern node *DSfundef (node *arg_node, info *arg_info);
+extern node *DSreturn (node *arg_node, info *arg_info);
+extern node *DSblock (node *arg_node, info *arg_info);
+extern node *DSarg (node *arg_node, info *arg_info);
 
 #endif /* _SAC_DESERIALIZE_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/02/16 22:29:13  sah
+ * changed link handling
+ *
  * Revision 1.5  2005/02/15 21:07:40  sah
  * module system fixes
  *
@@ -315,7 +318,34 @@ SATserializeLink (info *info, node *attr, node *parent)
 {
     DBUG_ENTER ("SATserializeLink");
 
-    fprintf (INFO_SER_FILE (info), "NULL");
+    if (attr != NULL) {
+        /*
+         * if it is a link to an avis node, we have to check whether this
+         * avis belongs to an arg. In that case, we serialize it here by
+         * storing the arg-no. During deserialisation, this can be reconstructed
+         * when the body is loaded.
+         * All other links are handeled by the addLink traversal.
+         */
+        if ((NODE_TYPE (attr) == N_avis) && (NODE_TYPE (AVIS_DECL (attr)) == N_arg)
+            && (INFO_SER_ARGAVISDIRECT (info))) {
+            int pos = 0;
+            node *args = FUNDEF_ARGS (INFO_SER_CURRENT (info));
+
+            while ((args != NULL) && (ARG_AVIS (args) != attr)) {
+                pos++;
+                args = ARG_NEXT (args);
+            }
+
+            DBUG_ASSERT ((args != NULL), "found a link to an ARG_AVIS which does not "
+                                         "belong to current fundef");
+
+            fprintf (INFO_SER_FILE (info), "DSfetchArgAvis( %d)", pos);
+        } else {
+            fprintf (INFO_SER_FILE (info), "NULL");
+        }
+    } else {
+        fprintf (INFO_SER_FILE (info), "NULL");
+    }
 
     DBUG_VOID_RETURN;
 }

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2005/02/16 22:29:13  sah
+ * changed link handling
+ *
  * Revision 1.7  2005/02/15 21:07:40  sah
  * module system fixes
  *
@@ -59,6 +62,8 @@ MakeInfo ()
     INFO_SER_STACK (result) = NULL;
     INFO_SER_TABLE (result) = STinit ();
     INFO_SER_AST (result) = NULL;
+    INFO_SER_CURRENT (result) = NULL;
+    INFO_SER_ARGAVISDIRECT (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -250,7 +255,7 @@ GenerateSerDependencyTableTail (node *module, FILE *file)
 static void *
 SerTableEntriesFoldFun (const char *val, strstype_t kind, void *rest)
 {
-    str_buf *result;
+    str_buf *result = (str_buf *)rest;
 
     DBUG_ENTER ("SerTableEntriesFoldFun");
 
@@ -420,6 +425,17 @@ SerializeFundefBody (node *fundef, info *info)
 
     INFO_SER_STACK (info) = SERbuildSerStack (FUNDEF_BODY (fundef));
 
+    /*
+     * this flag indicates, whether we should link to the ais of an arg
+     * directly using DSfetchArgAvis or by using the usual link
+     * mechanism.
+     * As we serialize the body, the head (including the args) is not in
+     * scope, so we have to use the DSfetchArgAvis which gets the right
+     * avis by looking it up in the fundef node that has already been
+     * deserialized.
+     */
+    INFO_SER_ARGAVISDIRECT (info) = TRUE;
+
     if (FUNDEF_ISEXPORTED (fundef)) {
         vis = SVT_exported;
     } else if (FUNDEF_ISPROVIDED (fundef)) {
@@ -442,6 +458,7 @@ SerializeFundefBody (node *fundef, info *info)
 
     GenerateSerFunTail (fundef, SET_funbody, info);
 
+    INFO_SER_ARGAVISDIRECT (info) = FALSE;
     INFO_SER_STACK (info) = SSdestroy (INFO_SER_STACK (info));
 
     DBUG_VOID_RETURN;
@@ -612,9 +629,14 @@ SERserializeFundefLink (node *fundef, FILE *file)
 node *
 SERfundef (node *arg_node, info *arg_info)
 {
+    node *last;
+
     DBUG_ENTER ("SERfundef");
 
     DBUG_PRINT ("SER", ("Serializing function %s", FUNDEF_NAME (arg_node)));
+
+    last = INFO_SER_CURRENT (arg_info);
+    INFO_SER_CURRENT (arg_info) = arg_node;
 
     /*
      * only serialize functions that are not available
@@ -635,15 +657,22 @@ SERfundef (node *arg_node, info *arg_info)
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
+    INFO_SER_CURRENT (arg_info) = last;
+
     DBUG_RETURN (arg_node);
 }
 
 node *
 SERtypedef (node *arg_node, info *arg_info)
 {
+    node *last;
+
     DBUG_ENTER ("SERtypedef");
 
     DBUG_PRINT ("SER", ("Serializing typedef %s", TYPEDEF_NAME (arg_node)));
+
+    last = INFO_SER_CURRENT (arg_info);
+    INFO_SER_CURRENT (arg_info) = arg_node;
 
     /*
      * Only serialize typedefs that are not available in another
@@ -657,15 +686,22 @@ SERtypedef (node *arg_node, info *arg_info)
         TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
     }
 
+    INFO_SER_CURRENT (arg_info) = last;
+
     DBUG_RETURN (arg_node);
 }
 
 node *
 SERobjdef (node *arg_node, info *arg_info)
 {
+    node *last;
+
     DBUG_ENTER ("SERobjdef");
 
     DBUG_PRINT ("SER", ("Serializing objdef %s", OBJDEF_NAME (arg_node)));
+
+    last = INFO_SER_CURRENT (arg_info);
+    INFO_SER_CURRENT (arg_info) = arg_node;
 
     /*
      * only serialize objdefs that are not available in another
@@ -678,6 +714,8 @@ SERobjdef (node *arg_node, info *arg_info)
     if (OBJDEF_NEXT (arg_node) != NULL) {
         OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
     }
+
+    INFO_SER_CURRENT (arg_info) = last;
 
     DBUG_RETURN (arg_node);
 }

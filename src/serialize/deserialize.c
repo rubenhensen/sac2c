@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/02/16 22:29:13  sah
+ * changed link handling
+ *
  * Revision 1.5  2004/12/19 18:09:33  sah
  * post dk fixes
  *
@@ -47,6 +50,7 @@ struct INFO {
     node *objdefs;
     node *vardecs;
     node *args;
+    node *funhead;
 };
 
 /*
@@ -61,6 +65,7 @@ struct INFO {
 #define INFO_DS_OBJDEFS(n) (n->objdefs)
 #define INFO_DS_VARDECS(n) (n->vardecs)
 #define INFO_DS_ARGS(n) (n->args)
+#define INFO_DS_FUNHEAD(n) (n->funhead)
 
 /*
  * INFO functions
@@ -83,6 +88,7 @@ MakeInfo ()
     INFO_DS_OBJDEFS (result) = NULL;
     INFO_DS_VARDECS (result) = NULL;
     INFO_DS_ARGS (result) = NULL;
+    INFO_DS_FUNHEAD (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -162,6 +168,31 @@ InsertIntoState (node *item)
         DBUG_ASSERT (0, "Unhandeled node in InsertIntoState!");
         break;
     }
+
+    DBUG_VOID_RETURN;
+}
+
+static node *
+getCurrentFundefHead ()
+{
+    DBUG_ENTER ("getCurrentFundefHead");
+
+    DBUG_ASSERT ((DSstate != NULL), "called getCurrentFundefHead without starting DS...");
+
+    DBUG_ASSERT ((INFO_DS_FUNHEAD (DSstate) != NULL),
+                 "called getCurrentFundefHead but there is none!");
+
+    DBUG_RETURN (INFO_DS_FUNHEAD (DSstate));
+}
+
+static void
+setCurrentFundefHead (node *fundef)
+{
+    DBUG_ENTER ("setCurrentFundefHead");
+
+    DBUG_ASSERT ((DSstate != NULL), "called setCurrentFundefHead without starting DS...");
+
+    INFO_DS_FUNHEAD (DSstate) = fundef;
 
     DBUG_VOID_RETURN;
 }
@@ -485,7 +516,11 @@ DSdoDeserialize (node *fundef)
     DBUG_PRINT ("DS", ("Adding function body to `%s:%s'.", FUNDEF_MOD (fundef),
                        FUNDEF_NAME (fundef)));
 
+    setCurrentFundefHead (fundef);
+
     body = LoadFunctionBody (fundef);
+
+    setCurrentFundefHead (NULL);
 
     FUNDEF_BODY (fundef) = body;
 
@@ -532,38 +567,60 @@ LookUpArg (const char *name, node *args)
     DBUG_RETURN (args);
 }
 
+node *
+DSfetchArgAvis (int pos)
+{
+    node *arg;
+
+    DBUG_ENTER ("DSfetchArgAvis");
+
+    arg = FUNDEF_ARGS (getCurrentFundefHead ());
+
+    while ((arg != NULL) && (pos != 0)) {
+        pos--;
+        arg = ARG_NEXT (arg);
+    }
+
+    DBUG_ASSERT ((pos == 0), "Referenced arg does not exist!");
+
+    DBUG_RETURN (ARG_AVIS (arg));
+}
+
 /*
  * traversal functions
  */
 
-node *
-DSids (node *arg_node, info *arg_info)
+#if 0
+node *DSids( node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DSids");
+  DBUG_ENTER("DSids");
 
-    DBUG_PRINT ("DS", ("Restoring ids `%s'", IDS_NAME (arg_node)));
+  DBUG_PRINT( "DS", ("Restoring ids `%s'", IDS_NAME( arg_node)));
 
-    /*
-     * if there is no vardec for this node, it must have been
-     * linked to an arg prior to deserialization!
-     */
-    if (IDS_DECL (arg_node) == NULL) {
-        IDS_DECL (arg_node) = LookUpArg (IDS_NAME (arg_node), INFO_DS_ARGS (arg_info));
+  /* 
+   * if there is no vardec for this node, it must have been
+   * linked to an arg prior to deserialization!
+   */
+  if (IDS_DECL( arg_node)  == NULL) {
+    IDS_DECL( arg_node) = LookUpArg( IDS_NAME( arg_node), INFO_DS_ARGS( arg_info));
+    
+    DBUG_ASSERT( (IDS_DECL( arg_node) != NULL),
+      "Cannot find vardec or arg for ids!");
 
-        DBUG_ASSERT ((IDS_DECL (arg_node) != NULL), "Cannot find vardec or arg for ids!");
-
-        /* now update the avis link of the ids node to the args avis */
-        if (IDS_AVIS (arg_node) == NULL) {
-            IDS_AVIS (arg_node) = ARG_AVIS (IDS_DECL (arg_node));
-        }
+    /* now update the avis link of the ids node to the args avis */
+    if (IDS_AVIS( arg_node) == NULL) {
+      IDS_AVIS( arg_node) = ARG_AVIS( IDS_DECL( arg_node));
     }
+  }
 
-    /* Finally make sure, that the backref avis->vardec is correct */
-    DBUG_ASSERT ((AVIS_DECL (DECL_AVIS (IDS_DECL (arg_node))) == IDS_DECL (arg_node)),
-                 "backref from avis to vardec is wrong!");
+  /* Finally make sure, that the backref avis->vardec is correct */
+  DBUG_ASSERT( (AVIS_DECL( DECL_AVIS( IDS_DECL( arg_node)))
+               == IDS_DECL( arg_node)),
+    "backref from avis to vardec is wrong!");
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN( arg_node);
 }
+#endif
 
 node *
 DSfundef (node *arg_node, info *arg_info)
@@ -619,7 +676,7 @@ DSarg (node *arg_node, info *arg_info)
     AVIS_SSACOUNT (ARG_AVIS (arg_node))
       = LookUpSSACounter (INFO_DS_SSACOUNTER (arg_info), arg_node);
 
-    arg_node = TRAVdo (arg_node, arg_info);
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
