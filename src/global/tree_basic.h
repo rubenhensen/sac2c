@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.68  1998/02/10 12:28:54  srs
+ * added macro for N_block
+ *
  * Revision 1.67  1998/02/09 16:07:51  srs
  * changed N_Nwithid and introduced new
  * macros for N_info
@@ -1019,6 +1022,7 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
  ***    nodelist*  NEEDTYPES  (O)         (analysis -> )
  ***                                      ( -> write-SIB -> )
  ***    long*      MASK[x]                (optimize -> )
+ ***    int        VARNO                  (optimize -> )
  ***/
 
 extern node *MakeBlock (node *instr, node *vardec);
@@ -1028,6 +1032,7 @@ extern node *MakeBlock (node *instr, node *vardec);
 #define BLOCK_MASK(n, x) (n->mask[x])
 #define BLOCK_NEEDFUNS(n) ((nodelist *)(n->node[2]))
 #define BLOCK_NEEDTYPES(n) ((nodelist *)(n->node[3]))
+#define BLOCK_VARNO(n) (n->varno)
 
 /*--------------------------------------------------------------------------*/
 
@@ -1917,10 +1922,10 @@ extern node *MakePragma ();
  ***    node**     ICMTAB        (O)
  ***    types**    TYPETAB       (O)
  ***
- ***  when used in compile.c :
- ***    int        IS_WL
- ***    node*      NEXT
- ***    node*      WL
+ ***  when used in WithloopFolding.c :
+ ***    int        IS_WL              (0/1)
+ ***    node*      NEXT               (N_info)
+ ***    node*      WL                 (N_Nwith)
  ***
  ***/
 
