@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2003/11/11 18:19:33  dkr
+ * some code brushing done.
+ * CheckWith() added, NWITH_DEFAULT used.
+ *
  * Revision 3.80  2003/11/10 20:50:28  dkrHH
  * some error messages modified
  *
@@ -4417,7 +4421,7 @@ GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
 /******************************************************************************
  *
  * Function:
- *   node *BuildCubes( node *strides, node *wl2, int dims, shpseg *shape,
+ *   node *BuildCubes( node *strides, bool is_fold, int dims, shpseg *shape,
  *                     bool *do_naive_comp)
  *
  * Description:
@@ -4426,7 +4430,7 @@ GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
  ******************************************************************************/
 
 static node *
-BuildCubes (node *strides, node *wl2, int dims, shpseg *shape, bool *do_naive_comp)
+BuildCubes (node *strides, bool is_fold, int dims, shpseg *shape, bool *do_naive_comp)
 {
     bool all_const;
     node *cubes = NULL;
@@ -4449,7 +4453,7 @@ BuildCubes (node *strides, node *wl2, int dims, shpseg *shape, bool *do_naive_co
          *  -> the index-range of the stride is possibly a *proper* subset
          *     of the index-vector-space.
          */
-        if (!NWITH2_IS_FOLD (wl2)) {
+        if (!is_fold) {
             /* no fold with-loop  ->  add missing indices (init/copy) */
             if (all_const && (shape != NULL)) {
                 cubes = GenerateCompleteDomain (strides, dims, shape);
@@ -6977,7 +6981,8 @@ ProcessSegments (node *segs, int dims, shpseg *shape, bool do_naive_comp)
  *   node *ConvertWith( node *wl, int dims)
  *
  * Description:
- *
+ *   Converts the given N_Nwith node into a N_Nwith2 node with empty segment
+ *   information.
  *
  ******************************************************************************/
 
@@ -7077,6 +7082,77 @@ EmptyWl2Expr (node *wl, node *arg_info)
 /******************************************************************************
  *
  * Function:
+ *   node *CheckWith( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Checks whether the given WL fullfills certain side-conditions and throws
+ *   error messages if not.
+ *
+ * Remark:
+ *   'INFO_WL_TYPES( arg_info)' points to the type of the (first) let-ids.
+ *
+ ******************************************************************************/
+
+node *
+CheckWith (node *arg_node, node *arg_info)
+{
+    node *cexpr;
+    int wlids_sdim;
+    int cexpr_sdim;
+
+    DBUG_ENTER ("CheckWith");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Nwith), "no N_Nwith node found!");
+
+    switch (NWITH_TYPE (arg_node)) {
+    case WO_genarray:
+        /*
+         * A = with( iv)
+         *       (...) : val;
+         *     genarray( sv, def);
+         *
+         * shape( A)  ==  sv ++ shape( val)  ==  sv ++ shape( def)
+         *
+         * If 'A' or 'val' are SCL/AKS, everything is fine. Otherwise we need
+         * an explicit default expression (which must not depend on the index
+         * vector).
+         *
+         * Without this pre-condition it would be impossible to pre-allocate
+         * the memory for the result before computing any with-loop elements.
+         * Even worse, if the generator is empty (i.e. it exists no legal
+         * index vector) and the WL expression depends on the index vector,
+         * it would be impossible to compute the shape of the result at all!
+         */
+        wlids_sdim = GetShapeDim (INFO_WL_TYPES (arg_info));
+        cexpr = NWITH_CEXPR (arg_node);
+        DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "NWITH_CEXPR is not a N_id");
+        cexpr_sdim = GetShapeDim (ID_TYPE (cexpr));
+
+        if ((!KNOWN_SHAPE (wlids_sdim)) && (!KNOWN_SHAPE (cexpr_sdim))
+            && (NWITH_DEFAULT (arg_node) == NULL)) {
+            ERROR (linenum, ("genarray with-loop with result/expression of"
+                             " unknown shape and missing default expression found!"));
+        }
+        break;
+
+    case WO_modarray:
+        break;
+
+    case WO_foldfun:
+        /* here is no break missing! */
+    case WO_foldprf:
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "illegal NWITH_TYPE found");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *WLTRAwith( node *arg_node, node *arg_info)
  *
  * Description:
@@ -7091,7 +7167,8 @@ node *
 WLTRAwith (node *arg_node, node *arg_info)
 {
     types *idx_type;
-    int idx_dim;
+    int idx_sdim;
+    bool is_fold;
     node *new_node = NULL;
 
     DBUG_ENTER ("WLTRAwith");
@@ -7101,9 +7178,13 @@ WLTRAwith (node *arg_node, node *arg_info)
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
     idx_type = IDS_TYPE (NWITH_VEC (arg_node));
-    idx_dim = GetShapeDim (idx_type);
-    if (!KNOWN_SHAPE (idx_dim)) {
-        DBUG_ASSERT ((idx_dim != SCALAR), "scalar index vector found!");
+    idx_sdim = GetShapeDim (idx_type);
+    is_fold = NWITH_IS_FOLD (arg_node);
+
+    arg_node = CheckWith (arg_node, arg_info);
+
+    if (!KNOWN_SHAPE (idx_sdim)) {
+        DBUG_ASSERT ((idx_sdim != SCALAR), "scalar index vector found!");
 
         /*
          * index vector is AKD or AUD
@@ -7173,7 +7254,7 @@ WLTRAwith (node *arg_node, node *arg_info)
                  * build the cubes
                  */
                 DBUG_EXECUTE ("WLtrans", NOTE (("step 2: build cubes")););
-                cubes = BuildCubes (strides, new_node, idx_size, wl_shp, &do_naive_comp);
+                cubes = BuildCubes (strides, is_fold, idx_size, wl_shp, &do_naive_comp);
                 if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "cubes"))) {
                     goto DONE;
                 }
@@ -7194,8 +7275,7 @@ WLTRAwith (node *arg_node, node *arg_info)
                 } else {
                     simpletype wl_btype = GetBasetype (INFO_WL_TYPES (arg_info));
                     bool fold_float
-                      = (NWITH2_IS_FOLD (new_node)
-                         && ((wl_btype == T_float) || (wl_btype == T_double)));
+                      = (is_fold && ((wl_btype == T_float) || (wl_btype == T_double)));
                     segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, idx_size, fold_float);
                 }
                 if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "segs"))) {
