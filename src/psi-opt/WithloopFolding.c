@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/04/30 12:21:56  nmw
+ * integrate traversal of special fundefs in both WithloopFolding traversals
+ *
  * Revision 3.5  2001/04/19 07:55:58  dkr
  * macro F_PTR used as format string for pointers
  *
@@ -1275,47 +1278,55 @@ WithloopFolding (node *arg_node, int loop)
 
     DBUG_ENTER ("WithloopFolding");
 
-    arg_info = MakeInfo ();
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
+                 "WithloopFolding called for non fundef node");
 
-    /* WLI traversal: create MRD
-       This phase does NOTHING important but to create MRD lists which are needed
-       for SearchWL in phase 2. SearchWLHelp does not work properly when
-       the end of a compound node is searched and then (not existing) MRD
-       masks are needed. When the new flatten exists we can remove this
-       phase because SearchWLHelp will not need MRD masks. The DEF mask can be
-       used to finde the wanted definition (which IS the last definition
-       because of unique names. */
+    if (!(FUNDEF_IS_LACFUN (arg_node))) {
+        arg_info = MakeInfo ();
 
-    DBUG_PRINT ("OPT", ("WLI 1"));
-    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
-    wli_phase = 1;
-    tmp_tab = act_tab;
-    act_tab = wli_tab;
-    arg_node = Trav (arg_node, arg_info);
+        /* WLI traversal: create MRD
+         This phase does NOTHING important but to create MRD lists which are needed
+         for SearchWL in phase 2. SearchWLHelp does not work properly when
+         the end of a compound node is searched and then (not existing) MRD
+         masks are needed. When the new flatten exists we can remove this
+         phase because SearchWLHelp will not need MRD masks. The DEF mask can be
+         used to finde the wanted definition (which IS the last definition
+         because of unique names. */
 
-    /* WLI traversal: search information */
-    DBUG_PRINT ("OPT", ("WLI 2"));
-    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
-    wli_phase = 2;
-    act_tab = wli_tab;
-    arg_node = Trav (arg_node, arg_info);
-
-    /* break after WLI? */
-    if ((break_after != PH_sacopt) || (break_cycle_specifier != loop)
-        || strcmp (break_specifier, "wli")) {
-        /* WLF traversal: fold WLs */
-        DBUG_PRINT ("OPT", ("WLF"));
+        DBUG_PRINT ("OPT", ("WLI 1"));
         DBUG_PRINT ("OPTMEM",
                     ("mem currently allocated: %d bytes", current_allocated_mem));
-        act_tab = wlf_tab;
+        wli_phase = 1;
+        tmp_tab = act_tab;
+        act_tab = wli_tab;
         arg_node = Trav (arg_node, arg_info);
-        expr = (wlf_expr - old_wlf_expr);
-        DBUG_PRINT ("OPT", ("                        result: %d", expr));
-    }
-    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
 
-    act_tab = tmp_tab;
-    arg_info = FreeTree (arg_info);
+        /* WLI traversal: search information */
+        DBUG_PRINT ("OPT", ("WLI 2"));
+        DBUG_PRINT ("OPTMEM",
+                    ("mem currently allocated: %d bytes", current_allocated_mem));
+        wli_phase = 2;
+        act_tab = wli_tab;
+        arg_node = Trav (arg_node, arg_info);
+
+        /* break after WLI? */
+        if ((break_after != PH_sacopt) || (break_cycle_specifier != loop)
+            || strcmp (break_specifier, "wli")) {
+            /* WLF traversal: fold WLs */
+            DBUG_PRINT ("OPT", ("WLF"));
+            DBUG_PRINT ("OPTMEM",
+                        ("mem currently allocated: %d bytes", current_allocated_mem));
+            act_tab = wlf_tab;
+            arg_node = Trav (arg_node, arg_info);
+            expr = (wlf_expr - old_wlf_expr);
+            DBUG_PRINT ("OPT", ("                        result: %d", expr));
+        }
+        DBUG_PRINT ("OPTMEM",
+                    ("mem currently allocated: %d bytes", current_allocated_mem));
+
+        act_tab = tmp_tab;
+        arg_info = FreeTree (arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1339,20 +1350,28 @@ WithloopFoldingWLT (node *arg_node)
 
     DBUG_ENTER ("WithloopFoldingWLT");
 
-    arg_info = MakeInfo ();
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
+                 "WithloopFoldingWLT not called for fundef node");
 
-    /* WLT traversal: transform WLs */
-    DBUG_PRINT ("OPT", ("WLT"));
-    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
-    tmp_tab = act_tab;
-    act_tab = wlt_tab;
-    arg_node = Trav (arg_node, arg_info);
-    expr = (wlt_expr - old_wlt_expr);
-    DBUG_PRINT ("OPT", ("                        result: %d", expr));
-    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
+    if (!(FUNDEF_IS_LACFUN (arg_node))) {
+        /* start wlt traversal only in non-special fundefs */
+        arg_info = MakeInfo ();
 
-    arg_info = FreeTree (arg_info);
-    act_tab = tmp_tab;
+        /* WLT traversal: transform WLs */
+        DBUG_PRINT ("OPT", ("WLT"));
+        DBUG_PRINT ("OPTMEM",
+                    ("mem currently allocated: %d bytes", current_allocated_mem));
+        tmp_tab = act_tab;
+        act_tab = wlt_tab;
+        arg_node = Trav (arg_node, arg_info);
+        expr = (wlt_expr - old_wlt_expr);
+        DBUG_PRINT ("OPT", ("                        result: %d", expr));
+        DBUG_PRINT ("OPTMEM",
+                    ("mem currently allocated: %d bytes", current_allocated_mem));
+
+        arg_info = FreeTree (arg_info);
+        act_tab = tmp_tab;
+    }
 
     DBUG_RETURN (arg_node);
 }
