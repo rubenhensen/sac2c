@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/26 16:09:53  jhb
+ * compile
+ *
  * Revision 1.3  2004/11/22 18:55:29  cg
  * Moved all definitions/declarations of global variables to globals.mac
  *
@@ -54,42 +57,42 @@
 
 #define str(s) #s
 
-#define COBaseCvTEMPLATE(fun_ext, s_type, arg_t, arg_ext, value)                         \
-    constant *COBaseCv##arg_ext##fun_ext (shape *shp)                                    \
+#define CObaseCvTEMPLATE(fun_ext, s_type, arg_t, arg_ext, value)                         \
+    constant *CObaseCv##arg_ext##fun_ext (shape *shp)                                    \
     {                                                                                    \
         int i;                                                                           \
         int unrlen;                                                                      \
         arg_t *data_vec;                                                                 \
-        DBUG_ENTER (str (COBaseCv##arg_ext##fun_ext));                                   \
-        unrlen = SHGetUnrLen (shp);                                                      \
-        data_vec = (arg_t *)Malloc (unrlen * sizeof (arg_t));                            \
+        DBUG_ENTER (str (CObaseCv##arg_ext##fun_ext));                                   \
+        unrlen = SHgetUnrLen (shp);                                                      \
+        data_vec = (arg_t *)ILIBmalloc (unrlen * sizeof (arg_t));                        \
         for (i = 0; i < unrlen; i++)                                                     \
             data_vec[i] = value;                                                         \
-        DBUG_RETURN (COMakeConstant (s_type, shp, (void *)data_vec));                    \
+        DBUG_RETURN (COmakeConstant (s_type, shp, (void *)data_vec));                    \
     }
 
-#define COBaseCvDUMMYTEMP(arg_ext, fun_ext)                                              \
-    constant *COBaseCv##arg_ext##fun_ext (shape *shp)                                    \
+#define CObaseCvDUMMYTEMP(arg_ext, fun_ext)                                              \
+    constant *CObaseCv##arg_ext##fun_ext (shape *shp)                                    \
     {                                                                                    \
-        DBUG_ENTER (str (COBaseCv##arg_ext##fun_ext));                                   \
+        DBUG_ENTER (str (CObaseCv##arg_ext##fun_ext));                                   \
         DBUG_RETURN ((constant *)NULL);                                                  \
     }
 
 #define MAP(fname, const)                                                                \
-    COBaseCvTEMPLATE (fname, T_ushort, unsigned short, UShort, const)                    \
-      COBaseCvTEMPLATE (fname, T_uint, unsigned int, UInt, const)                        \
-        COBaseCvTEMPLATE (fname, T_ulong, unsigned long, ULong, const)                   \
-          COBaseCvTEMPLATE (fname, T_short, short, Short, const)                         \
-            COBaseCvTEMPLATE (fname, T_int, int, Int, const)                             \
-              COBaseCvTEMPLATE (fname, T_long, long, Long, const)                        \
-                COBaseCvTEMPLATE (fname, T_float, float, Float, const)                   \
-                  COBaseCvTEMPLATE (fname, T_double, double, Double, const)              \
-                    COBaseCvTEMPLATE (fname, T_longdbl, long double, LongDouble, const)  \
-                      COBaseCvDUMMYTEMP (Dummy, fname)
+    CObaseCvTEMPLATE (fname, T_ushort, unsigned short, UShort, const)                    \
+      CObaseCvTEMPLATE (fname, T_uint, unsigned int, UInt, const)                        \
+        CObaseCvTEMPLATE (fname, T_ulong, unsigned long, ULong, const)                   \
+          CObaseCvTEMPLATE (fname, T_short, short, Short, const)                         \
+            CObaseCvTEMPLATE (fname, T_int, int, Int, const)                             \
+              CObaseCvTEMPLATE (fname, T_long, long, Long, const)                        \
+                CObaseCvTEMPLATE (fname, T_float, float, Float, const)                   \
+                  CObaseCvTEMPLATE (fname, T_double, double, Double, const)              \
+                    CObaseCvTEMPLATE (fname, T_longdbl, long double, LongDouble, const)  \
+                      CObaseCvDUMMYTEMP (Dummy, fname)
 
 MAP (Zero, 0)
 MAP (One, 1)
 
 /* special versions for Boolean (Zero == False, One == True) */
-COBaseCvTEMPLATE (Zero, T_bool, bool, Bool, FALSE)
-  COBaseCvTEMPLATE (One, T_bool, bool, Bool, TRUE)
+CObaseCvTEMPLATE (Zero, T_bool, bool, Bool, FALSE)
+  CObaseCvTEMPLATE (One, T_bool, bool, Bool, TRUE)
