@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1997/08/07 15:24:33  dkr
+ * added DBUG_OFF at CHECK_DBUG_START, CHECK_DBUG_STOP
+ *
  * Revision 1.8  1997/08/07 11:12:33  dkr
  * added macros CHECK_DBUG_START, CHECK_DBUG_STOP for new compiler option -_DBUG (main.c)
  *
@@ -52,6 +55,7 @@ extern char *TmpVar ();
 #define MAX(a, b) ((a < b) ? b : a)
 #define MIN(a, b) ((a < b) ? a : b)
 
+#ifndef DBUG_OFF
 #define CHECK_DBUG_START                                                                 \
     {                                                                                    \
         if ((!dbug_active) && (compiler_phase >= dbug_from)                              \
@@ -66,5 +70,9 @@ extern char *TmpVar ();
         if ((dbug_active) && (compiler_phase <= dbug_to))                                \
             DBUG_POP ();                                                                 \
     }
+#else /* DBUG_OFF */
+#define CHECK_DBUG_START
+#define CHECK_DBUG_STOP
+#endif /* DBUG_OFF */
 
 #endif /* _internal_lib_h */
