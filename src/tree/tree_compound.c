@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.92  2004/10/14 13:38:04  sbs
+ * eliminated second parameter ot Type2Shape
+ *
  * Revision 3.91  2004/10/14 12:43:19  sbs
  * Type2Shape added.
  *
@@ -1018,7 +1021,7 @@ Type2Shpseg (types *type, int *ret_dim)
 /******************************************************************************
  *
  * Function:
- *   shape *Type2Shape( types *type, int *ret_dim)
+ *   shape *Type2Shape( types *type)
  *
  * Description:
  *
@@ -1026,7 +1029,7 @@ Type2Shpseg (types *type, int *ret_dim)
  ******************************************************************************/
 
 shape *
-Type2Shape (types *type, int *ret_dim)
+Type2Shape (types *type)
 {
     shape *shp = NULL;
     shpseg *new_shpseg = NULL;
@@ -1035,7 +1038,7 @@ Type2Shape (types *type, int *ret_dim)
     DBUG_ENTER ("Type2Shape");
 
     dim = GetShapeDim (type);
-    new_shpseg = Type2Shpseg (type, ret_dim);
+    new_shpseg = Type2Shpseg (type, NULL);
 
     if (new_shpseg != NULL) {
         shp = SHOldShpseg2Shape (dim, new_shpseg);

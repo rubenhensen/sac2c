@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.102  2004/10/14 13:38:04  sbs
+ * eliminated second parameter ot Type2Shape
+ *
  * Revision 3.101  2004/10/14 13:18:04  sbs
  * eliminated VINFO_DIM VINFO_SHPSEG VINFO_SELEMS
  *
@@ -532,7 +535,7 @@ extern int GetBasetypeSize (types *type);
 extern int GetTypesLength (types *type);
 extern int CompareTypesImplementation (types *t1, types *t2);
 extern shpseg *Type2Shpseg (types *type, int *ret_dim);
-extern shape *Type2Shape (types *type, int *ret_dim);
+extern shape *Type2Shape (types *type);
 extern node *Type2Exprs (types *type);
 extern node *CreateZeroFromType (types *type, bool unroll, node *fundef);
 
