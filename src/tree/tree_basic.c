@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.20  2000/07/11 10:24:11  dkr
+ * definition of macro ALLOCATE changed
+ *
  * Revision 1.19  2000/07/10 14:22:57  cg
  * Added new field type_status in types struct as a dedicated status field
  * for the type itself.
@@ -90,7 +93,7 @@ char *prf_name_str[] = {
 /* local macros for heap allocation                                         */
 /*--------------------------------------------------------------------------*/
 
-#define ALLOCATE(var, type) var = (type *)Malloc (sizeof (type))
+#define ALLOCATE(type) (type *)MALLOC (sizeof (type))
 
 /*--------------------------------------------------------------------------*/
 /* local functions for node initialization                                  */
@@ -104,7 +107,7 @@ CreateCleanNode (nodetype nt)
 
     DBUG_ENTER ("CreateCleanNode");
 
-    ALLOCATE (new_node, node);
+    new_node = ALLOCATE (node);
 
     new_node->nodetype = nt;
 
@@ -150,7 +153,7 @@ MakeShpseg (nums *numsp)
 
     DBUG_ENTER ("MakeShpseg");
 
-    ALLOCATE (tmp, shpseg);
+    tmp = ALLOCATE (shpseg);
 
     tmp->next = NULL;
 
@@ -184,7 +187,7 @@ MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name, char *mod)
 
     DBUG_ENTER ("MakeType");
 
-    ALLOCATE (tmp, types);
+    tmp = ALLOCATE (types);
 
     tmp->simpletype = basetype;
     tmp->name = name;
@@ -214,7 +217,7 @@ MakeIds (char *name, char *mod, statustype status)
     ids *tmp;
     DBUG_ENTER ("MakeIds");
 
-    ALLOCATE (tmp, ids);
+    tmp = ALLOCATE (ids);
     IDS_NAME (tmp) = name;
     IDS_MOD (tmp) = mod;
     IDS_REFCNT (tmp) = 0;
@@ -251,7 +254,7 @@ MakeNums (int num, nums *next)
     nums *tmp;
     DBUG_ENTER ("MakeNums");
 
-    ALLOCATE (tmp, nums);
+    tmp = ALLOCATE (nums);
     NUMS_NUM (tmp) = num;
     NUMS_NEXT (tmp) = next;
 
@@ -267,7 +270,7 @@ MakeDeps (char *name, char *decname, char *libname, statustype status, deps *sub
     deps *tmp;
     DBUG_ENTER ("MakeDeps");
 
-    ALLOCATE (tmp, deps);
+    tmp = ALLOCATE (deps);
     DEPS_NAME (tmp) = name;
     DEPS_DECNAME (tmp) = decname;
     DEPS_LIBNAME (tmp) = libname;
@@ -286,7 +289,7 @@ MakeStrings (char *string, strings *next)
     strings *tmp;
     DBUG_ENTER ("MakeStrings");
 
-    ALLOCATE (tmp, strings);
+    tmp = ALLOCATE (strings);
     STRINGS_STRING (tmp) = string;
     STRINGS_NEXT (tmp) = next;
 
@@ -304,7 +307,7 @@ MakeNodelist (node *node, statustype status, nodelist *next)
     DBUG_PRINT ("ANA",
                 ("New nodelist entry : %s (%s)", ItemName (node), NODE_TEXT (node)));
 
-    ALLOCATE (tmp, nodelist);
+    tmp = ALLOCATE (nodelist);
     NODELIST_NODE (tmp) = node;
     NODELIST_STATUS (tmp) = status;
     NODELIST_NEXT (tmp) = next;
@@ -334,7 +337,7 @@ MakeNodelistNode (node *node, nodelist *next)
     nodelist *tmp;
     DBUG_ENTER ("MakeNodelistNode");
 
-    ALLOCATE (tmp, nodelist);
+    tmp = ALLOCATE (nodelist);
     NODELIST_NODE (tmp) = node;
     NODELIST_NEXT (tmp) = next;
 
@@ -351,7 +354,7 @@ MakeAccess (node *array, node *iv, accessclass_t class, shpseg *offset,
 
     DBUG_ENTER ("MakeAccess");
 
-    ALLOCATE (tmp, access_t);
+    tmp = ALLOCATE (access_t);
 
     ACCESS_ARRAY (tmp) = array;
     ACCESS_IV (tmp) = iv;
@@ -372,7 +375,7 @@ MakeDFMfoldmask (char *name, node *foldop, DFMfoldmask_t *next)
 
     DBUG_ENTER ("MakeDFMfoldmask");
 
-    ALLOCATE (tmp, DFMfoldmask_t);
+    tmp = ALLOCATE (DFMfoldmask_t);
 
     DFMFM_NAME (tmp) = name;
     DFMFM_FOLDOP (tmp) = foldop;
@@ -389,7 +392,7 @@ CopyDFMfoldmask (DFMfoldmask_t *mask)
     DBUG_ENTER ("CopyDFMfoldmask");
 
     if (mask != NULL) {
-        ALLOCATE (tmp, DFMfoldmask_t);
+        tmp = ALLOCATE (DFMfoldmask_t);
 
         DFMFM_NAME (tmp) = DFMFM_NAME (mask);
         DFMFM_FOLDOP (tmp) = DFMFM_FOLDOP (mask);
@@ -1544,7 +1547,7 @@ MakeNWith (node *part, node *code, node *withop)
     NWITH_CODE (tmp) = code;
     NWITH_WITHOP (tmp) = withop;
 
-    tmp->info2 = Malloc (sizeof (wl_info));
+    tmp->info2 = MALLOC (sizeof (wl_info));
     NWITH_PARTS (tmp) = -1;
     NWITH_REFERENCED (tmp) = 0;
     NWITH_REFERENCED_FOLD (tmp) = 0;
