@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/05/07 10:00:41  sbs
+ * rules with overlength changed; they now contain { instead of being
+ * terminated by \.
+ *
  * Revision 2.5  1999/05/06 15:36:55  sbs
  * the global var filename now is copied whenever yyparse is called
  * or a line-pragma is found. This allows to attach the filename
@@ -323,8 +327,8 @@ int start_token;
                                   FREE(yylval.id);
                                 }
 
-[A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*             	\
-                                { yylval.id=StringCopy(yytext);
+[A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])* {
+                                  yylval.id=StringCopy(yytext);
                                   FILTER( ID );
                                   FREE(yylval.id);
                                 }
@@ -351,19 +355,19 @@ int start_token;
                                  FILTER( NUM);
                                }
 
-(0?|([1-9][0-9]*))[.][0-9]+(e([+]?|[-]?)[0-9]+)?		\
-                               { yylval.cdbl=atof(yytext);
+(0?|([1-9][0-9]*))[.][0-9]+(e([+]?|[-]?)[0-9]+)? {
+                                 yylval.cdbl=atof(yytext);
                                  FILTER( DOUBLE);
                                }
 
-(0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[fF]		\
-                               { yytext[strlen(yytext)]='\0';
+(0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[fF] {
+                                 yytext[strlen(yytext)]='\0';
                                  yylval.cfloat=atof(yytext);
                                  FILTER( FLOAT);
                                }
 
-(0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[Dd]		\
-                               { yytext[strlen(yytext)]='\0';
+(0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[Dd] {
+                                 yytext[strlen(yytext)]='\0';
                                  yylval.cdbl=atof(yytext);
                                  FILTER( DOUBLE);
                                }
