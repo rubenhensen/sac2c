@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/05/18 09:26:43  cg
+ * MALLOC and FREE transformed into Malloc and Free.
+ *
  * Revision 3.21  2001/04/26 12:21:16  dkr
  * GetExprsLength() renamed into CountExprs()
  *
@@ -1223,8 +1226,7 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R exprblock
                            MakeTypes1( T_int),
                            NULL, $5, NULL);
 
-          FUNDEF_NAME( $$) = (char *) MALLOC(sizeof(char)*5);
-          strcpy( FUNDEF_NAME( $$), "main");       /* Funktionsnamen eintragen */
+          FUNDEF_NAME( $$) = StringCopy("main");
           FUNDEF_STATUS( $$) = ST_exported;
 
           DBUG_PRINT("GENTREE",("%s:"F_PTR", main "F_PTR
@@ -1339,7 +1341,7 @@ exprblock2: typeNOudt_arr ids SEMIC exprblock2
                  * the ptr to the "next $2" and manually free the current $2.
                  */
                 ids_ptr = IDS_NEXT( $2);
-                FREE( $2);
+                Free( $2);
                 $2 = ids_ptr;
               }
               /*
@@ -1351,7 +1353,7 @@ exprblock2: typeNOudt_arr ids SEMIC exprblock2
               BLOCK_VARDEC( $$) = MakeVardec( IDS_NAME( $2),
                                               $1,
                                               vardec_ptr);
-              FREE( $2); /* Finally, we free the last IDS-node! */
+              Free( $2); /* Finally, we free the last IDS-node! */
 
             }
           | assignsOPTret BRACE_R { $$ = MakeBlock( $1, NULL); }
@@ -1992,11 +1994,9 @@ string: STR
         }
       | STR string
         {
-          $$ = (char *) MALLOC( strlen( $1) + strlen( $2) + 1);
-          strcpy( $$, $1);
-          strcat( $$, $2);
-          FREE( $1);
-          FREE( $2);
+          $$ = StringConcat( $1, $2);
+          Free( $1);
+          Free( $2);
         }
       ;
 
@@ -2530,7 +2530,7 @@ int My_yyparse()
    * make a copy of the actual filename, which will be used for
    * all subsequent nodes...
    */
-  tmp = (char *) MALLOC( (strlen(filename)+1) * sizeof( char));
+  tmp = (char *) Malloc( (strlen(filename)+1) * sizeof( char));
   strcpy( tmp, filename);
   filename = tmp;
 
@@ -2695,7 +2695,7 @@ types *GenComplexType( types *types, nums *numsp)
     DBUG_PRINT("GENTREE",("shape-element: %d",numsp->num));
     tmp=numsp;
     numsp=numsp->next;
-    FREE(tmp);
+    Free(tmp);
   }
   while (numsp != NULL);
 

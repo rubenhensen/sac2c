@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/05/18 09:26:43  cg
+ * MALLOC and FREE transformed into Malloc and Free.
+ *
  * Revision 3.5  2001/03/22 20:10:22  dkr
  * include of tree.h eliminated
  *
@@ -257,7 +260,7 @@ int charpos = 0;
 "cat"                           { if (compiler_phase==PH_setup) {
                                     yylval.id=StringCopy(yytext);
                                     FILTER( ID );
-                                    FREE(yylval.id);
+                                    Free(yylval.id);
                                   } else {
                                     FILTER( CAT );
                                   }
@@ -352,13 +355,13 @@ int charpos = 0;
                                   } else {
                                     yylval.id=StringCopy(yytext);
                                     FILTER( ID );
-                                    FREE(yylval.id);
+                                    Free(yylval.id);
                                   }
                                 }
 "default"                       { if( compiler_phase==PH_setup) {
                                     yylval.id=StringCopy(yytext);
                                     FILTER( ID );
-                                    FREE(yylval.id);
+                                    Free(yylval.id);
                                   } else {
                                     FILTER( C_KEYWORD );
                                   }
@@ -367,7 +370,7 @@ int charpos = 0;
 [-/][_A-Za-z0-9]*               { if( compiler_phase==PH_setup) {
                                     yylval.id=StringCopy(yytext);
                                     FILTER( OPTION );
-                                    FREE(yylval.id);
+                                    Free(yylval.id);
                                   } else {
                                     switch (yytext[0]) {
                                     case '-':
@@ -381,12 +384,12 @@ int charpos = 0;
                                     case '_':
                                       yylval.id=StringCopy(yytext);
                                       FILTER( PRIVATEID);
-                                      FREE(yylval.id);
+                                      Free(yylval.id);
                                       break;
                                     default:
                                       yylval.id=StringCopy(yytext);
                                       FILTER( ID);
-                                      FREE(yylval.id);
+                                      Free(yylval.id);
                                     }
                                   }
                                 }
@@ -395,18 +398,18 @@ int charpos = 0;
 \"([^"\n]|(\\\"))*\"            { yylval.id=StringCopy(yytext+sizeof(char));
                                   yylval.id[strlen(yylval.id)-1]='\0';
                                   FILTER( STR );
-                                  FREE(yylval.id);
+                                  Free(yylval.id);
                                 }
 
 [A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*_? {
                                   yylval.id=StringCopy(yytext);
                                   FILTER( ID );
-                                  FREE(yylval.id);
+                                  Free(yylval.id);
                                 }
 
 [_A-Za-z][_A-Za-z0-9]*          { yylval.id=StringCopy(yytext);
                                   FILTER( PRIVATEID );
-                                  FREE(yylval.id);
+                                  Free(yylval.id);
                                 }
 
 '.'                             { yylval.cchar=yytext[1];
@@ -459,9 +462,8 @@ int charpos = 0;
                                     linebuf_ptr = linebuf;
                                   }
                                   else {
-                                    if( tmp_buf != NULL)
-                                      FREE( tmp_buf);
-                                    tmp_buf = MALLOC( (yyleng) * sizeof(char));
+                                    Free( tmp_buf);
+                                    tmp_buf = Malloc( (yyleng) * sizeof(char));
                                     strncpy( tmp_buf, yytext+1,yyleng);
                                     linebuf_ptr = tmp_buf;
                                   }
