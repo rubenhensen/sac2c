@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.102  1996/01/05 12:32:12  cg
+ * Revision 1.103  1996/01/05 13:13:08  cg
+ * added function PrintStr, modified PrintPragma for new storage
+ * format of strings.
+ *
+ * Revision 1.102  1996/01/05  12:32:12  cg
  * Now, function WriteOpen is used to open c-file
  *
  * Revision 1.101  1996/01/02  15:52:59  cg
@@ -814,6 +818,16 @@ PrintPrf (node *arg_node, node *arg_info)
 }
 
 node *
+PrintStr (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintStr");
+
+    fprintf (outfile, "\"%s\"", STR_STRING (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 PrintId (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintId");
@@ -1399,7 +1413,7 @@ PrintPragma (node *arg_node, node *arg_info)
     if (PRAGMA_LINKNAME (arg_node) != NULL) {
         if (arg_info == NULL)
             fprintf (outfile, " *  ");
-        fprintf (outfile, "#pragma linkname %s\n", PRAGMA_LINKNAME (arg_node));
+        fprintf (outfile, "#pragma linkname \"%s\"\n", PRAGMA_LINKNAME (arg_node));
     }
 
     if (PRAGMA_LINKSIGN (arg_node) != NULL) {
@@ -1473,13 +1487,13 @@ PrintPragma (node *arg_node, node *arg_info)
     if (PRAGMA_COPYFUN (arg_node) != NULL) {
         if (arg_info == NULL)
             fprintf (outfile, " *  ");
-        fprintf (outfile, "#pragma copyfun %s\n", PRAGMA_COPYFUN (arg_node));
+        fprintf (outfile, "#pragma copyfun \"%s\"\n", PRAGMA_COPYFUN (arg_node));
     }
 
     if (PRAGMA_FREEFUN (arg_node) != NULL) {
         if (arg_info == NULL)
             fprintf (outfile, " *  ");
-        fprintf (outfile, "#pragma freefun %s\n", PRAGMA_FREEFUN (arg_node));
+        fprintf (outfile, "#pragma freefun \"%s\"\n", PRAGMA_FREEFUN (arg_node));
     }
 
     if (arg_info == NULL) {
