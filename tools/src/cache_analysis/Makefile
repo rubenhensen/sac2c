@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.7  2001/11/20 10:42:09  sacbase
+# mkdir integrated into make rule rather than separate rule
+#
 # Revision 1.6  2001/11/20 10:18:15  sacbase
 # missing dep for $(LIBS) added.
 #
@@ -37,11 +40,10 @@ bits.o: bits.c bits.h
 %.o: %.c
 	$(CC) $(CCFLAGS) $(INCS) -c $<
 
-$(TOOLS)/bin/ctest: $(TOOLS)/bin accesstime.o ctest.o verbose.o l1.o l2.o bits.o $(LIBS)
+$(TOOLS)/bin/ctest: accesstime.o ctest.o verbose.o l1.o l2.o bits.o $(LIBS)
+	mkdir -p $(TOOLS)/bin
 	$(CC) $(CCFLAGS) -o $@ $(LIBS) accesstime.o ctest.o verbose.o l1.o l2.o bits.o
 
-$(TOOLS)/bin:
-	mkdir -p $(TOOLS)/bin
 
 $(LIBS):
 	$(MAKE) -C $(LIBDIR)/src

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.8  2001/11/20 10:42:09  sacbase
+# mkdir integrated into make rule rather than separate rule
+#
 # Revision 1.7  2001/11/20 10:34:13  sacbase
 # $(TOOLS)/bin added.
 #
@@ -22,14 +25,14 @@ TOOLS = ../../
 
 all: $(TOOLS)/bin/csd $(TOOLS)/bin/cse
 
-$(TOOLS)/bin/csd: $(TOOLS)/bin csd.c
+$(TOOLS)/bin/csd: csd.c
+	mkdir -p $(TOOLS)/bin
 	$(CC) $(CCFLAGS) -o $@ csd.c
 
-$(TOOLS)/bin/cse: $(TOOLS)/bin cse.c $(LIBS) 
+$(TOOLS)/bin/cse: cse.c $(LIBS) 
+	mkdir -p $(TOOLS)/bin
 	$(CC) $(CCFLAGS) -o $@ cse.c $(INCS) $(LIBS) 
 
-$(TOOLS)/bin:
-	mkdir -p $(TOOLS)/bin
 
 $(LIBS):
 	$(MAKE) -C $(LIBDIR)/src
