@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.3  2003/02/10 18:01:30  mwe
+ * removed needles functions
+ *
  * Revision 1.2  2003/02/09 22:32:19  mwe
  * removed bugs
  *
@@ -18,43 +21,43 @@ extern node *DLassign (node *, node *);
 extern node *DLlet (node *, node *);
 extern node *DLPrfOrAp (node *, node *);
 
-extern node *SearchTravElems (node *, node *);
-extern bool CheckOperator (node *, node *);
-extern bool DLIsConstant (node *);
-extern bool DLReachedArgument (node *);
-extern bool DLReachedDefinition (node *);
-extern node *RegisterNode (node *, node *);
-extern bool IsSupportedOperator (node *, node *);
-extern bool IsValidSecondOperator (node *, node *);
-extern node *GetUsedOperator (node *, node *);
-extern node *SearchMostFrequentNode (node *, node *);
-extern int GetPriority (node *);
-extern bool IsThirdOperatorReached (node *, node *);
-extern bool IsSameOperator (node *, node *);
-extern nodelist *FindNodeInList (nodelist *, node *, node *);
-extern node *FindAndSetMostFrequentNode (node *);
-extern nodelist *DeleteNodelist (nodelist *);
-extern node *CreateOptLists (node *, node *);
-extern node *OptTravElems (node *, node *);
-extern node *CheckNode (node *, node *);
-extern bool IsIdenticalNode (node *, node *);
-extern node *RemoveMostFrequentNode (node *);
-extern node *ResetFlags (node *);
-extern nodelist *CommitAssignNodes (nodelist *, node *);
-extern node *IncludeMostFrequentNode (node *);
-extern node *MakeAllNodelistnodesToAssignNodes (nodelist *, node *);
-extern node *IntegrateResults (node *);
-extern node *GetNeutralElement (node *);
-extern bool ExistKnownNeutralElement (node *);
-extern node *CreateAssignNodes (node *);
-extern node *MakeExprsNodeFromAssignNode (node *);
-extern node *MakeAssignLetNodeFromCurrentNode (node *, node *);
-extern node *MakeExprNodes (node *);
-extern node *MakeOperatorNode (node *, node *);
-extern node *AddNodeToOptimizedNodes (node *, node *);
-extern node *RegisterMultipleUsableNodes (node *);
-extern node *GetOperator (node *);
-extern bool OperatorIsSupported (node *);
-extern node *AddToOptimizedNodes (node *, node *);
+node *SearchTravElems (node *, node *);
+bool CheckOperator (node *, node *);
+bool DLIsConstant (node *, node *);
+bool DLReachedArgument (node *);
+bool DLReachedDefinition (node *);
+node *RegisterNode (node *, node *);
+bool IsSupportedOperator (node *, node *);
+bool IsValidSecondOperator (node *, node *);
+node *GetUsedOperator (node *, node *);
+node *SearchMostFrequentNode (node *, node *);
+int GetPriority (node *);
+bool IsThirdOperatorReached (node *, node *);
+bool IsSameOperator (node *, node *);
+nodelist *FindNodeInList (nodelist *, node *, node *);
+node *FindAndSetMostFrequentNode (node *);
+nodelist *DeleteNodelist (nodelist *);
+node *CreateOptLists (node *, node *);
+node *OptTravElems (node *, node *);
+node *CheckNode (node *, node *);
+bool IsIdenticalNode (node *, node *);
+node *RemoveMostFrequentNode (node *);
+node *ResetFlags (node *);
+nodelist *CommitAssignNodes (nodelist *, node *);
+node *IncludeMostFrequentNode (node *);
+node *MakeAllNodelistnodesToAssignNodes (nodelist *, node *);
+node *IntegrateResults (node *);
+node *GetNeutralElement (node *);
+bool ExistKnownNeutralElement (node *);
+node *CreateAssignNodes (node *);
+node *MakeExprsNodeFromAssignNode (node *);
+node *MakeAssignLetNodeFromCurrentNode (node *, node *);
+node *MakeExprNodes (node *);
+node *MakeOperatorNode (node *, node *);
+node *AddNodeToOptimizedNodes (node *, node *);
+node *RegisterMultipleUsableNodes (node *);
+node *GetOperator (node *);
+bool OperatorIsSupported (node *);
+node *AddToOptimizedNodes (node *, node *);
 
 #endif
