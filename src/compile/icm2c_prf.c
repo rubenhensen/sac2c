@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2003/09/29 18:17:24  dkr
+ * fixed a bug in PrfReshape_Shape()
+ *
  * Revision 1.5  2003/09/25 13:45:41  dkr
  * new argument 'copyfun' added to some ICMs.
  * ND_WRITE replaced by ND_WRITE_READ_COPY.
@@ -312,7 +315,10 @@ PrfReshape_Shape (char *to_NT, int to_sdim, void *shp, int shp_size,
      */
     switch (to_sc) {
     case C_scl:
-        DBUG_ASSERT ((0), "illegal dimension found!");
+        ASSURE_TYPE_ASS (GetAttr (shp, shp_size, shp_size_fun);
+                         fprintf (outfile, " == 0");
+                         ,
+                         fprintf (outfile, "Assignment with incompatible types found!"););
         break;
 
     case C_aks:
