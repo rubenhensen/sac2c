@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2001/04/04 09:55:44  nmw
+ * missing include added
+ *
  * Revision 1.3  2001/04/02 11:08:20  nmw
  * handling for multiple used special functions added
  *
@@ -33,6 +36,7 @@
 #include "DupTree.h"
 #include "optimize.h"
 #include "SSALIR.h"
+#include "tree_compound.h"
 
 /* functions for local usage only */
 static ids *TravIDS (ids *arg_ids, node *arg_info);
@@ -59,9 +63,7 @@ SSALIRfundef (node *arg_node, node *arg_info)
     INFO_SSALIR_FUNDEF (arg_info) = arg_node;
 
     /* traverse args of do/while special functions to infere loop invariant args */
-    if ((FUNDEF_ARGS (arg_node) != NULL)
-        && ((FUNDEF_STATUS (arg_node) == ST_dofun)
-            || (FUNDEF_STATUS (arg_node) == ST_whilefun))) {
+    if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_IS_LOOPFUN (arg_node))) {
 
         DBUG_ASSERT ((FUNDEF_INT_ASSIGN (INFO_SSALIR_FUNDEF (arg_info)) != NULL),
                      "missing assignment link to internal recursive call");
