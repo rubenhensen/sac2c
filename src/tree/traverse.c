@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2002/04/09 08:11:50  ktr
+ * Support for WithloopScalarization added.
+ *
  * Revision 3.30  2002/03/05 15:52:04  sbs
  * CRTWRP-tab added
  *
@@ -154,6 +157,7 @@
 #include "WLT.h"
 #include "WLI.h"
 #include "WLF.h"
+#include "WithloopScalarization.h"
 #include "gen_startup_code.h"
 #include "scheduling.h"
 #include "concurrent.h"
@@ -1372,6 +1376,17 @@ static funtab crtwrp_tab_rec = {{
                                 NULL,
                                 NULL};
 funtab *crtwrp_tab = &crtwrp_tab_rec;
+
+/*
+ *  (106) wls_tab
+ */
+static funtab wls_tab_rec = {{
+#define NIFwls(it_wls) it_wls
+#include "node_info.mac"
+                             },
+                             NULL,
+                             NULL};
+funtab *wls_tab = &wls_tab_rec;
 
 /*
  *  nnode

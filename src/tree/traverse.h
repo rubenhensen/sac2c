@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2002/04/09 08:11:50  ktr
+ * Support for WithloopScalarization added.
+ *
  * Revision 3.23  2002/03/05 15:52:04  sbs
  * CRTWRP-tab added
  *
@@ -282,6 +285,7 @@ extern funtab *ssaili_tab;
 extern funtab *comp2_tab;
 extern funtab *insvd_tab;
 extern funtab *crtwrp_tab;
+extern funtab *wls_tab;
 
 extern int nnode[];
 
