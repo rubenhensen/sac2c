@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/05/13 09:26:07  dkr
+ * added dummy function to fool the linker
+ *
  * Revision 1.3  1998/05/13 07:14:06  cg
  * added icm2c_mt.h
  *
@@ -31,6 +34,30 @@ node *arg_info = NULL;
 #define ICM_ALL
 #include "icm_vars.c"
 #undef ICM_ALL
+
+/******************************************************************************
+ *
+ * function:
+ *   void GSCPrintMainEnd()
+ *
+ * description:
+ *   This is a dummy function:
+ *   'ICMCompileND_FUN_RET' needs a function of this name, normally defined
+ *   in modul 'gen_startup_code.o'. Because 'GSCPrintMainEnd' is never called
+ *   in 'BEtest' and we do not want to link 'gen_startup_code.o' (to keep
+ *   'BEtest' small), this dummy is defined for linkage only.
+ *
+ ******************************************************************************/
+
+void
+GSCPrintMainEnd ()
+{
+    DBUG_ENTER ("GSCPrintMainEnd");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************/
 
 MAIN
 {
