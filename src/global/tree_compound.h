@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/06/17 14:31:34  sbs
+ * added new compound-macro TYPES_DIM
+ *
  * Revision 2.6  1999/06/15 12:31:13  jhs
  * Added VARDEC_OR_ARG_NAIVE_REFCNT.
  *
@@ -1292,6 +1295,7 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
 #define NWITH_TYPE(n) (NWITHOP_TYPE (NWITH_WITHOP (n)))
 #define NWITH_IDS(n) (NPART_IDS (NWITH_PART (n)))
 #define NWITH_VEC(n) (NPART_VEC (NWITH_PART (n)))
+#define NWITH_BOUND2(n) (NPART_BOUND2 (NWITH_PART (n)))
 /*
  * remark: We only need to inspect the withid of the first part,
  *         because the withid is in *all* parts the same!!
@@ -1306,6 +1310,7 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
 
 #define NPART_IDS(n) (NWITHID_IDS (NPART_WITHID (n)))
 #define NPART_VEC(n) (NWITHID_VEC (NPART_WITHID (n)))
+#define NPART_BOUND2(n) (NGEN_BOUND2 (NPART_GEN (n)))
 
 /*--------------------------------------------------------------------------*/
 
