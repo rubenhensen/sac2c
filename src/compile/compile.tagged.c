@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.65  2003/04/14 16:37:47  dkr
+ * functions headers corrected (Doxygen)
+ *
  * Revision 1.64  2003/04/14 15:16:09  dkr
  * COMPPrfReshape(): reuse of 2nd arg added
  *
@@ -285,9 +288,8 @@ static node *wlstride = NULL;
  *
  * @fn  char *GetBasetypeStr( types *type)
  *
- * @brief
- *   Returns the basetype string of the given type, i.e. "TYPES_NAME" if type
- *   represents a user-defined type and "TYPES_BASETYPE" otherwise.
+ * @brief  Returns the basetype string of the given type, i.e. "TYPES_NAME" if
+ *         type represents a user-defined type and "TYPES_BASETYPE" otherwise.
  *
  ******************************************************************************/
 
@@ -315,8 +317,8 @@ GetBasetypeStr (types *type)
  *
  * @fn  node *MakeBasetypeArg( types *type)
  *
- * @brief
- *   Creates a new N_id node containing the basetype string of the given type.
+ * @brief  Creates a new N_id node containing the basetype string of the given
+ *         type.
  *
  ******************************************************************************/
 
@@ -339,8 +341,8 @@ MakeBasetypeArg (types *type)
  *
  * @fn  node *MakeBasetypeArg_NT( types *type)
  *
- * @brief
- *   Creates a new N_id node containing the basetype string of the given type.
+ * @brief  Creates a new N_id node containing the basetype string of the given
+ *         type.
  *
  ******************************************************************************/
 
@@ -365,9 +367,8 @@ MakeBasetypeArg_NT (types *type)
  *                          bool add_type, bool add_dim, bool add_shape,
  *                          node *exprs)
  *
- * @brief
- *   Creates a chain of N_exprs nodes containing name, type, dimensionality
- *   and shape components of the given object.
+ * @brief  Creates a chain of N_exprs nodes containing name, type,
+ *         dimensionality and shape components of the given object.
  *
  ******************************************************************************/
 
@@ -417,10 +418,10 @@ MakeTypeArgs (char *name, types *type, bool add_type, bool add_dim, bool add_sha
  *
  * @fn  node *MakeDimArg( node *arg, bool int_only)
  *
- * @brief
- *   Creates an ICM which computes the dimension of 'arg'.
- *   In case of nested arrays, i.e. a constant array which contains
- *   identifiers as elements, only the top-level dimension (1) is returned.
+ * @brief  Creates an ICM which computes the dimension of 'arg'.
+ *         In case of nested arrays, i.e. a constant array which contains
+ *         identifiers as elements, only the top-level dimension (1) is
+ *         returned.
  *
  ******************************************************************************/
 
@@ -469,8 +470,7 @@ MakeDimArg (node *arg, bool int_only)
  *
  * @fn  node *MakeSizeArg( node *arg, bool int_only)
  *
- * @brief
- *
+ * @brief  ...
  *
  ******************************************************************************/
 
@@ -515,8 +515,8 @@ MakeSizeArg (node *arg, bool int_only)
  *
  * @fn  char *GenericFun( int which, types *type)
  *
- * @brief
- *   Returns the name of the specified generic function of the given type
+ * @brief  Returns the name of the specified generic function of the given
+ *         type.
  *
  ******************************************************************************/
 
@@ -565,8 +565,7 @@ GenericFun (int which, types *type)
  *
  * @fn  node *GetFoldCode( node *fundef)
  *
- * @brief
- *   Returns the foldop-code of the special fold-fun 'fundef'.
+ * @brief  Returns the foldop-code of the special fold-fun 'fundef'.
  *
  *   This function simply extract the assignments of the fundef-body.
  *   It is assumed that the names of the variables are the same is in the
@@ -627,8 +626,7 @@ node *GetFoldCode( node *fundef)
  *
  * @fn  node *GetFoldVardecs( node *fundef)
  *
- * @brief
- *   returns the vardecs of the special fold-fun 'fundef'.
+ * @brief  Returns the vardecs of the special fold-fun 'fundef'.
  *
  ******************************************************************************/
 
@@ -657,10 +655,10 @@ GetFoldVardecs (node *fundef)
  *
  * @fn  ids *GetIndexIds( ids *index_ids, int dim)
  *
- * @brief
- *   returns the index-ids for dimension 'dim' found in 'index_ids'.
- *   'index_ids' is a vector of index-ids (e.g. NWITHID_IDS(...)) containing
- *   at least 'dim' elements.
+ * @brief  Returns the index-ids for dimension 'dim' found in 'index_ids'.
+ *
+ * @param  index_ids  A vector of index-ids (e.g. NWITHID_IDS(...)) containing
+ *                    at least 'dim' elements.
  *
  ******************************************************************************/
 
@@ -687,9 +685,8 @@ static /* forward declaration */
  *
  * @fn  node *DupExpr_NT_AddReadIcms( node *expr)
  *
- * @brief
- *   dublicates the whole tree 'expr' and wraps a ND_READ-icm around each N_id
- *   which denotes a scalar.
+ * @brief  Dublicates the whole tree 'expr' and wraps a ND_READ-icm around each
+ *         N_id which denotes a scalar.
  *
  ******************************************************************************/
 
@@ -721,8 +718,7 @@ DupExpr_NT_AddReadIcms (node *expr)
  *
  * @fn  node *DupExprs_NT_AddReadIcms( node *exprs)
  *
- * @brief
- *
+ * @brief  ...
  *
  ******************************************************************************/
 
@@ -748,8 +744,7 @@ DupExprs_NT_AddReadIcms (node *exprs)
  * @fn  node *MakeAllocDescIcm( char *name, types *type, int rc,
  *                              node *assigns)
  *
- * @brief
- *   Builds a ND_ALLOC__DESC( name) icm if needed.
+ * @brief  Builds a ND_ALLOC__DESC( name) icm if needed.
  *
  ******************************************************************************/
 
@@ -782,8 +777,7 @@ MakeAllocDescIcm (char *name, types *type, int rc, int line, node *assigns)
  *
  * @fn  node *MakeSetRcIcm( char *name, types *type, int rc, node *assigns)
  *
- * @brief
- *   Builds a ND_SET__RC( name, num) icm if needed.
+ * @brief  Builds a ND_SET__RC( name, num) icm if needed.
  *
  ******************************************************************************/
 
@@ -812,8 +806,7 @@ MakeSetRcIcm (char *name, types *type, int rc, node *assigns)
  * @fn  node *MakeIncRcIcm( char *name, types *type, int rc, int num,
  *                          node *assigns)
  *
- * @brief
- *   Builds a ND_INC_RC( name, num) icm if needed.
+ * @brief  Builds a ND_INC_RC( name, num) icm if needed.
  *
  ******************************************************************************/
 
@@ -841,11 +834,10 @@ MakeIncRcIcm (char *name, types *type, int rc, int num, node *assigns)
  * @fn  node *MakeDecRcIcm( char *name, types *type, int rc, int num,
  *                          node *assigns)
  *
- * @brief
- *   According to 'type', 'rc' and 'num', builds either
- *             a ND_DEC_RC( name, num) icm,
- *          or a ND_DEC_RC_FREE( name, num, freefun) icm,
- *          or no icm at all.
+ * @brief  According to 'type', 'rc' and 'num', builds either
+ *            a ND_DEC_RC( name, num) icm,
+ *         or a ND_DEC_RC_FREE( name, num, freefun) icm,
+ *         or no icm at all.
  *
  ******************************************************************************/
 
@@ -879,11 +871,10 @@ MakeDecRcIcm (char *name, types *type, int rc, int num, node *assigns)
  * @fn  node *MakeAdjustRcIcm( char *name, types *type, int rc,
  *                             node *assigns)
  *
- * @brief
- *   According to num=rc-1, either a ND_INC_RC( varname, num) icm,
- *                            or   no ICM at all,
- *                            or   a ND_DEC_RC_...( varname, -num) icm
- *   is created.
+ * @brief  According to num = rc-1, either a ND_INC_RC( varname, num) icm,
+ *                               or no ICM at all,
+ *                               or a ND_DEC_RC_...( varname, -num) icm
+ *         is created.
  *
  ******************************************************************************/
 
@@ -911,9 +902,8 @@ MakeAdjustRcIcm (char *name, types *type, int rc, node *assigns)
  *
  * @fn  node *Ids2IncRcIcms( ids *ids_chain, node *assigns)
  *
- * @brief
- *   Builds a ND_INC_RC( name, rc) icm for each ids in 'ids_chain'.
- *   The given node 'assigns' is appended to the created assign-chain.
+ * @brief  Builds a ND_INC_RC( name, rc) icm for each ids in 'ids_chain'.
+ *         The given node 'assigns' is appended to the created assign-chain.
  *
  ******************************************************************************/
 
@@ -936,12 +926,11 @@ Ids2IncRcIcms (ids *ids_chain, node *assigns)
  *
  * @fn  node *Ids2DecRcIcms( ids *ids_chain, node *assigns)
  *
- * @brief
- *   According to rc and type, builds either
- *             a ND_DEC_RC( name, 1)
- *          or a ND_DEC_RC_FREE( name, 1, freefun)
- *   icm for each ids in 'ids_chain'.
- *   The given node 'assigns' is appended to the created assign-chain.
+ * @brief  According to rc and type, builds either
+ *               a ND_DEC_RC( name, 1)
+ *            or a ND_DEC_RC_FREE( name, 1, freefun)
+ *         icm for each ids in 'ids_chain'.
+ *         The given node 'assigns' is appended to the created assign-chain.
  *
  ******************************************************************************/
 
@@ -966,9 +955,8 @@ Ids2DecRcIcms (ids *ids_chain, node *assigns)
  *                          node *get_dim, node *set_shape_icm,
  *                          node *pragma, node *assign)
  *
- * @brief
- *   Builds a ND_ALLOC icm.
- *   The given node 'assigns' is appended to the created assignment.
+ * @brief  Builds a ND_ALLOC icm.
+ *         The given node 'assigns' is appended to the created assignment.
  *
  ******************************************************************************/
 
@@ -1019,11 +1007,10 @@ MakeAllocIcm (char *name, types *type, int rc, node *get_dim, node *set_shape_ic
  *                                node *get_dim, node *set_shape_icm,
  *                                node *pragma, node *assigns)
  *
- * @brief
- *   Builds a ND_ALLOC and a ND_INC_RC icm.
- *   The extra ND_INC_RC is needed, if there are any ND_CHECK_REUSE ICMs above
- *   ND_ALLOC!!
- *   The given node 'assigns' is appended to the created assignment.
+ * @brief  Builds a ND_ALLOC and a ND_INC_RC icm.
+ *         The extra ND_INC_RC is needed, if there are any ND_CHECK_REUSE ICMs
+ *         above ND_ALLOC!!
+ *         The given node 'assigns' is appended to the created assignment.
  *
  ******************************************************************************/
 
@@ -1053,8 +1040,8 @@ MakeAllocIcm_IncRc (char *name, types *type, int rc, node *get_dim, node *set_sh
  *
  * @fn  int CheckReuse( int rc, node *reuse_id1, node *reuse_id2)
  *
- * @brief
- *   Determines which of the arrays 'reuse_id1', 'reuse_id2' could be reused.
+ * @brief  Determines which of the arrays 'reuse_id1', 'reuse_id2' could be
+ *         reused.
  *
  ******************************************************************************/
 
@@ -1088,11 +1075,10 @@ CheckReuse (int rc, node *reuse_id1, node *reuse_id2)
  *                                     node *reuse_id1, node *reuse_id2,
  *                                     node *assigns)
  *
- * @brief
- *   Builds ND_CHECK_REUSE icms and a ND_ALLOC/ND_INC_RC icm.
- *   The extra ND_INC_RC is needed, if there are any ND_CHECK_REUSE ICMs above
- *   ND_ALLOC!!
- *   The given node 'assigns' is appended to the created assignment.
+ * @brief  Builds ND_CHECK_REUSE icms and a ND_ALLOC/ND_INC_RC icm.
+ *         The extra ND_INC_RC is needed, if there are any ND_CHECK_REUSE ICMs
+ *         above ND_ALLOC!!
+ *         The given node 'assigns' is appended to the created assignment.
  *
  ******************************************************************************/
 
@@ -1148,11 +1134,10 @@ MakeAllocIcm_CheckReuse (char *name, types *type, int rc, node *get_dim,
  *                                     DFMmask_t *reuse_dfm,
  *                                     node *assigns)
  *
- * @brief
- *   Builds ND_CHECK_REUSE icms and a ND_ALLOC/ND_INC_RC icm.
- *   The extra ND_INC_RC is needed, if there are any ND_CHECK_REUSE ICMs above
- *   ND_ALLOC!!
- *   The given node 'assigns' is appended to the created assignment.
+ * @brief  Builds ND_CHECK_REUSE icms and a ND_ALLOC/ND_INC_RC icm.
+ *         The extra ND_INC_RC is needed, if there are any ND_CHECK_REUSE ICMs
+ *         above ND_ALLOC!!
+ *         The given node 'assigns' is appended to the created assignment.
  *
  ******************************************************************************/
 
@@ -1206,8 +1191,7 @@ DFM2AllocIcm_CheckReuse (char *name, types *type, int rc, node *get_dim,
  *
  * @fn  node *AddThreadIdIcm_ND_FUN_DEC( node *icm)
  *
- * @brief
- *
+ * @brief  ...
  *
  ******************************************************************************/
 
@@ -1245,8 +1229,7 @@ AddThreadIdIcm_ND_FUN_DEC (node *icm)
  *
  * @fn  node *AddThreadIdIcm_ND_FUN_AP( node *icm_assign)
  *
- * @brief
- *
+ * @brief  ...
  *
  ******************************************************************************/
 
@@ -1287,8 +1270,7 @@ AddThreadIdIcm_ND_FUN_AP (node *icm_assign)
  *
  * @fn  node *MakeArgNode( int idx, types *type)
  *
- * @brief
- *
+ * @brief  ...
  *
  ******************************************************************************/
 
@@ -1320,9 +1302,8 @@ MakeArgNode (int idx, types *type)
  *
  * @fn  node *MakeIcm_ND_FUN_DEC( node *fundef)
  *
- * @brief
- *   Creates a ND_FUN_DEC ICM, which has the following format:
- *     ND_FUN_DEC( name, rettype, narg, [TAG, type, arg]*),
+ * @brief  Creates a ND_FUN_DEC ICM, which has the following format:
+ *         ND_FUN_DEC( name, rettype, narg, [TAG, type, arg]*),
  *
  ******************************************************************************/
 
@@ -1408,8 +1389,7 @@ MakeIcm_ND_FUN_DEC (node *fundef)
  *
  * @fn  node *MakeIcm_MT_SPMD_FUN_DEC( node *fundef)
  *
- * @brief
- *   creates a MT_SPMD_FUN_DEC ICM.
+ * @brief  Creates a MT_SPMD_FUN_DEC ICM.
  *
  ******************************************************************************/
 
@@ -1476,8 +1456,7 @@ MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
  *
  * @fn  node *MakeIcm_MT2_FUN_DEC( char *kindof, node *fundef)
  *
- * @brief
- *   creates a MT2_FUN_DEC ICM.
+ * @brief  Creates a MT2_FUN_DEC ICM.
  *
  ******************************************************************************/
 
@@ -1522,8 +1501,7 @@ MakeIcm_MT2_FUN_DEC (char *kindof, node *fundef)
  *
  * @fn  node *MakeFundefIcm( node *fundef, node *arg_info)
  *
- * @brief
- *
+ * @brief  ...
  *
  ******************************************************************************/
 
@@ -1580,8 +1558,7 @@ MakeFundefIcm (node *fundef, node *arg_info)
  *
  * @fn  node *MakeIcm_ND_FUN_AP( node *ap, node *fundef, node *assigns)
  *
- * @brief
- *   Builds a N_assign node with the ND_FUN_AP icm.
+ * @brief  Builds a N_assign node with the ND_FUN_AP icm.
  *
  ******************************************************************************/
 
@@ -1654,9 +1631,8 @@ MakeIcm_ND_FUN_AP (node *ap, node *fundef, node *assigns)
  *
  * @fn  bool CheckPrf( ids *let_ids, node *prf, node *arg_info)
  *
- * @brief
- *   Checks whether no one of the refcounted arguments occurs on LHS of the
- *   given application. (precompile should guarantee that!)
+ * @brief  Checks whether no one of the refcounted arguments occurs on LHS of
+ *         the given application. (precompile should guarantee that!)
  *
  ******************************************************************************/
 
@@ -1696,10 +1672,9 @@ CheckPrf (ids *let_ids, node *prf, node *arg_info)
  *
  * @fn  bool CheckAp( node *ap, node *arg_info)
  *
- * @brief
- *   Checks whether no one of the externally refcounted in-arguments occurs
- *   on the LHS of the given application as well. (precompile should guarantee
- *   that!)
+ * @brief  Checks whether no one of the externally refcounted in-arguments
+ *         occurs on the LHS of the given application as well. (precompile
+ *         should guarantee that!)
  *
  ******************************************************************************/
 
@@ -1754,12 +1729,10 @@ CheckAp (node *ap, node *arg_info)
  * @fn  node *MakeParamsByDFM( DFMmask_t *mask,
  *                             char *tag, int *num_args, node *icm_args)
  *
- * @brief
- *   Builds triplet-chain (tag, type, name) from dfm-mask mask,
- *   tag will we used as base for the tags (used raw or _rc is added),
- *   num_args will be incremented for each triplet added (maybe NULL),
- *   at the end of this chain icm_args will be concatenated.
- *
+ * @brief  Builds triplet-chain (tag, type, name) from dfm-mask mask,
+ *         'tag' will we used as base for the tags (used raw or _rc is added),
+ *         'num_args' will be incremented for each triplet added (maybe NULL),
+ *         at the end of this chain icm_args will be concatenated.
  *
  * ### CODE NOT BRUSHED YET ###
  * ### USED BY NEW MT ONLY ####
@@ -1806,12 +1779,10 @@ MakeParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
  * @fn  node *MakeParamsByDFMfold( DFMmask_t *mask,
  *                                 char *tag, int *num_args, node *icm_args)
  *
- * @brief
- *   Builds tuple-chain (tag, type, name, fun) from dfm-foldmask mask,
- *   tag will we used as base for the tags (used raw or _rc is added),
- *   num_args will be incremented for each triplet added (maybe NULL),
- *   at the end of this chain icm_args will be concatenated.
- *
+ * @brief  Builds tuple-chain (tag, type, name, fun) from dfm-foldmask mask,
+ *         'tag' will we used as base for the tags (used raw or _rc is added),
+ *         'num_args' will be incremented for each triplet added (maybe NULL),
+ *         at the end of this chain icm_args will be concatenated.
  *
  * ### CODE NOT BRUSHED YET ###
  * ### USED BY NEW MT ONLY ####
@@ -1857,8 +1828,7 @@ MakeParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args, node *icm_ar
  *
  * @fn  node *DoSomeReallyUglyTransformations_MT2( node *fundef)
  *
- * @brief
- *
+ * @brief  ...
  *
  * ### CODE NOT BRUSHED YET ###
  * ### USED BY NEW MT ONLY ####
@@ -1941,8 +1911,7 @@ DoSomeReallyUglyTransformations_MT2 (node *fundef)
  *
  * @fn  node *Compile( node *arg_node)
  *
- * @brief
- *   Starts compilation.
+ * @brief  Starts compilation.
  *
  ******************************************************************************/
 
@@ -1970,8 +1939,7 @@ Compile_Tagged (node *arg_node)
  *
  * @fn  node *COMPModul( node *arg_node, node *arg_info)
  *
- * @brief
- *   Compiles a N_modul node: traverses sons.
+ * @brief  Compiles a N_modul node: traverses sons.
  *
  ******************************************************************************/
 
@@ -2011,9 +1979,8 @@ COMP2Modul (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPTypedef( node *arg_node, node *arg_info)
  *
- * @brief
- *   If needed an appropriate ICM is generated and stored in TYPEDEF_ICM.
- *   The rest of the N_typdef node ist left untouched!
+ * @brief  If needed an appropriate ICM is generated and stored in TYPEDEF_ICM.
+ *         The rest of the N_typdef node ist left untouched!
  *
  ******************************************************************************/
 
@@ -2041,9 +2008,8 @@ COMP2Typedef (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPObjdef( node *arg_node, node *arg_info)
  *
- * @brief
- *   If needed an appropriate ICM is generated and stored in OBJDEF_ICM.
- *   The rest of the N_objdef node ist left untouched!
+ * @brief  If needed an appropriate ICM is generated and stored in OBJDEF_ICM.
+ *         The rest of the N_objdef node ist left untouched!
  *
  ******************************************************************************/
 
@@ -2077,8 +2043,7 @@ COMP2Objdef (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPFundefArgs( node *fundef, node *arg_info)
  *
- * @brief
- *
+ * @brief  ...
  *
  ******************************************************************************/
 
@@ -2161,8 +2126,7 @@ COMPFundefArgs (node *fundef, node *arg_info)
  *
  * @fn  node *COMPFundef( node *arg_node, node *arg_info)
  *
- * @brief
- *
+ * @brief  ...
  *
  ******************************************************************************/
 
@@ -2304,11 +2268,10 @@ COMP2Fundef (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPVardec( node *arg_node, node *arg_info)
  *
- * @brief
- *   Compiles a N_vardec node. The generated ICM chain is stored in
- *   VARDEC_ICM. The rest of the N_vardec node is left untouched in order
- *   to have the declarations still available. (Note, that each id contains a
- *   pointer to its vardec ...!)
+ * @brief  Compiles a N_vardec node. The generated ICM chain is stored in
+ *         VARDEC_ICM. The rest of the N_vardec node is left untouched in order
+ *         to have the declarations still available. (Note, that each id
+ *         contains a pointer to its vardec ...!)
  *
  ******************************************************************************/
 
@@ -2332,8 +2295,7 @@ COMP2Vardec (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPBlock( node *arg_node, node *arg_info)
  *
- * @brief
- *   Compiles a N_block node.
+ * @brief  Compiles a N_block node.
  *
  ******************************************************************************/
 
@@ -2389,10 +2351,9 @@ COMP2Block (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPAssign( node *arg_node, node *arg_info)
  *
- * @brief
- *   Compiles a N_assign node.
- *   Note, that the traversal of ASSIGN_INSTR(arg_node) may return a N_assign
- *   chain instead of an expression.
+ * @brief  Compiles a N_assign node.
+ *         Note, that the traversal of ASSIGN_INSTR( arg_node) may return a
+ *         N_assign chain instead of an expression.
  *
  ******************************************************************************/
 
@@ -2445,8 +2406,8 @@ COMP2Assign (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPNormalFunReturn( node *arg_node, node *arg_info)
  *
- * @brief
- *   Generates ICMs for N_return-node found in body of a non-SPMD-function.
+ * @brief  Generates ICMs for N_return-node found in body of a
+ *         non-SPMD-function.
  *
  ******************************************************************************/
 
@@ -2560,8 +2521,7 @@ COMPNormalFunReturn (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPSpmdFunReturn( node *arg_node, node *arg_info)
  *
- * @brief
- *   Generates ICMs for N_return-node found in body of a SPMD-function.
+ * @brief  Generates ICMs for N_return-node found in body of a SPMD-function.
  *
  ******************************************************************************/
 
@@ -2629,8 +2589,7 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPMT2FunReturn( node *arg_node, node *arg_info)
  *
- * @brief
- *   Generates ICMs for N_return-node found in body of a MT2-function.
+ * @brief  Generates ICMs for N_return-node found in body of a MT2-function.
  *
  ******************************************************************************/
 
@@ -2646,8 +2605,7 @@ COMPMT2FunReturn (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPReturn( node *arg_node, node *arg_info)
  *
- * @brief
- *   Generates ICMs for N_return of a function (ND or MT).
+ * @brief  Generates ICMs for N_return of a function (ND or MT).
  *
  ******************************************************************************/
 
@@ -2693,10 +2651,9 @@ COMP2Return (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPLet( node *arg_node, node *arg_info)
  *
- * @brief
- *   Compiles a N_let node.
- *   The return value is a RHS expression or a N_assign chain of ICMs.
- *   In the latter case the old 'arg_node' is removed.
+ * @brief  Compiles a N_let node.
+ *         The return value is a RHS expression or a N_assign chain of ICMs.
+ *         In the latter case the old 'arg_node' is removed.
  *
  ******************************************************************************/
 
@@ -2741,8 +2698,7 @@ COMP2Let (node *arg_node, node *arg_info)
  *
  * @fn  ids *COMPApIds( node *ap, node *arg_info)
  *
- * @brief
- *   Traverses ids on LHS of application.
+ * @brief  Traverses ids on LHS of application.
  *
  ******************************************************************************/
 
@@ -2820,8 +2776,7 @@ COMPApIds (node *ap, node *arg_info)
  *
  * @fn  node *COMPApArgs( node *ap, node *arg_info)
  *
- * @brief
- *
+ * @brief  ...
  *
  ******************************************************************************/
 
@@ -2867,8 +2822,7 @@ COMPApArgs (node *ap, node *arg_info)
  *
  * @fn  node *COMPAp( node *arg_node, node *arg_info)
  *
- * @brief
- *   Compiles N_ap node.
+ * @brief  Compiles N_ap node.
  *   Creates an ICM for function application and insert ICMs to decrement the
  *   RC of function arguments. (The return value is a N_assign chain of ICMs.)
  *   Note, that the old 'arg_node' is removed by COMPLet.
@@ -2934,8 +2888,7 @@ COMP2Ap (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPIdLet( node *arg_node, node *arg_info)
  *
- * @brief
- *   Compiles let expression with id on RHS.
+ * @brief  Compiles let expression with id on RHS.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -2984,9 +2937,8 @@ COMPIdLet (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPIdFromUnique( node *arg_node, node *arg_info)
  *
- * @brief
- *   Compiles let expression with a N_id node representing an application of
- *   the from_class() conversion function on RHS.
+ * @brief  Compiles let expression with a N_id node representing an application
+ *         of the from_class() conversion function on RHS.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -3066,9 +3018,8 @@ COMPIdFromUnique (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPIdToUnique( node *arg_node, node *arg_info)
  *
- * @brief
- *   Compiles let expression with a N_id node representing an application of
- *   the to_class() conversion function on RHS.
+ * @brief  Compiles let expression with a N_id node representing an application
+ *   of the to_class() conversion function on RHS.
  *   The return value is a (possibly empty) N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -3209,8 +3160,7 @@ COMP2Id (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPScalar( node *arg_node, node *arg_info)
  *
- * @brief
- *   Compiles let expression with a constant scalar on the RHS.
+ * @brief  Compiles let expression with a constant scalar on the RHS.
  *   The return value is a N_assign chain of ICMs (the old 'arg_node' is
  *   removed by COMPLet) or the unchanged N_id node.
  *
@@ -3246,8 +3196,7 @@ COMP2Scalar (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPArray( node *arg_node, node *arg_info)
  *
- * @brief
- *   Compiles let expression with a constant array on the RHS.
+ * @brief  Compiles let expression with a constant array on the RHS.
  *   The return value is a N_assign chain of ICMs (the old 'arg_node' is
  *   removed by COMPLet) or the unchanged N_id node.
  *
@@ -3338,8 +3287,7 @@ COMP2Array (node *arg_node, node *arg_info)
  *                        node **check_reuse1, node **check_reuse2,
  *                        node **get_dim, node **set_shape_icm)
  *
- * @brief
- *   Compiles N_prf node of type F_dim.
+ * @brief  Compiles N_prf node of type F_dim.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -3384,8 +3332,7 @@ COMPPrfDim (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
  *                          node **check_reuse1, node **check_reuse2,
  *                          node **get_dim, node **set_shape_icm)
  *
- * @brief
- *   Compiles N_prf node of type F_shape.
+ * @brief  Compiles N_prf node of type F_shape.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -3431,8 +3378,7 @@ COMPPrfShape (node *arg_node, node *arg_info, node **check_reuse1, node **check_
  *                            node **check_reuse1, node **check_reuse2,
  *                            node **get_dim, node **set_shape_icm)
  *
- * @brief
- *   Compiles N_prf node of type F_reshape.
+ * @brief  Compiles N_prf node of type F_reshape.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -3518,8 +3464,7 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **check_reuse1, node **chec
  *                        node **check_reuse1, node **check_reuse2,
  *                        node **get_dim, node **set_shape_icm)
  *
- * @brief
- *   Compiles N_prf node of type F_sel.
+ * @brief  Compiles N_prf node of type F_sel.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -3592,8 +3537,7 @@ COMPPrfSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
  *                             node **check_reuse1, node **check_reuse2,
  *                             node **get_dim, node **set_shape_icm)
  *
- * @brief
- *   Compiles N_prf node of type F_modarray.
+ * @brief  Compiles N_prf node of type F_modarray.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -3666,8 +3610,7 @@ COMPPrfModarray (node *arg_node, node *arg_info, node **check_reuse1, node **che
  *                           node **check_reuse1, node **check_reuse2,
  *                           node **get_dim, node **set_shape_icm)
  *
- * @brief
- *   Compiles N_prf node of type F_idx_sel.
+ * @brief  Compiles N_prf node of type F_idx_sel.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -3729,8 +3672,7 @@ COMPPrfIdxSel (node *arg_node, node *arg_info, node **check_reuse1, node **check
  *                                node **check_reuse1, node **check_reuse2,
  *                                node **get_dim, node **set_shape_icm)
  *
- * @brief
- *   Compiles N_prf node of type F_idx_modarray.
+ * @brief  Compiles N_prf node of type F_idx_modarray.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -3795,9 +3737,8 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info, node **check_reuse1,
  *                                  node **check_reuse1, node **check_reuse2,
  *                                  node **get_dim, node **set_shape_icm)
  *
- * @brief
- *   Compiles N_prf node of type F_toi_S, F_tod_S, F_tof_S:
- *   We can simply remove the conversion function :-)
+ * @brief  Compiles N_prf node of type F_toi_S, F_tod_S, F_tof_S:
+ *         We can simply remove the conversion function :-)
  *
  ******************************************************************************/
 
@@ -3836,8 +3777,7 @@ COMPPrfConvertScalar (node *arg_node, node *arg_info, node **check_reuse1,
  *                                 node **check_reuse1, node **check_reuse2,
  *                                 node **get_dim, node **set_shape_icm)
  *
- * @brief
- *   Compiles N_prf node of type F_toi_A, F_tod_A, F_tof_A.
+ * @brief  Compiles N_prf node of type F_toi_A, F_tod_A, F_tof_A.
  *
  ******************************************************************************/
 
@@ -3881,10 +3821,9 @@ COMPPrfConvertArray (node *arg_node, node *arg_info, node **check_reuse1,
  *                              node **check_reuse1, node **check_reuse2,
  *                              node **get_dim, node **set_shape_icm)
  *
- * @brief
- *   Compiles a unary scalar N_prf node into a ND_PRF_S__DATA-icm.
- *   The return value is a N_assign chain of ICMs.
- *   Note, that the old 'arg_node' is removed by COMPLet.
+ * @brief  Compiles a unary scalar N_prf node into a ND_PRF_S__DATA-icm.
+ *         The return value is a N_assign chain of ICMs.
+ *         Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
  *   INFO_COMP2_LASTIDS contains name of assigned variable.
@@ -3932,10 +3871,9 @@ COMPPrfUniScalar (char *icm_name, node *arg_node, node *arg_info, node **check_r
  *                        node **check_reuse1, node **check_reuse2,
  *                        node **get_dim, node **set_shape_icm)
  *
- * @brief
- *   Compiles a binary N_prf node into a ND_PRF_?x?__DATA-icm.
- *   The return value is a N_assign chain of ICMs.
- *   Note, that the old 'arg_node' is removed by COMPLet.
+ * @brief  Compiles a binary N_prf node into a ND_PRF_?x?__DATA-icm.
+ *         The return value is a N_assign chain of ICMs.
+ *         Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
  *   INFO_COMP2_LASTIDS contains name of assigned variable.
@@ -4018,8 +3956,7 @@ COMPPrfBin (char *icm_name, node *arg_node, node *arg_info, node **check_reuse1,
  *
  * @fn  node *COMPPrfTypeError( node *arg_node, node *arg_info)
  *
- * @brief
- *
+ * @brief  ...
  *
  ******************************************************************************/
 
@@ -4050,10 +3987,9 @@ COMPPrfTypeError (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPPrf( node *arg_node, node *arg_info)
  *
- * @brief
- *   Compilation of a N_prf node.
- *   The return value is a N_assign chain of ICMs.
- *   Note, that the old 'arg_node' is removed by COMPLet.
+ * @brief  Compilation of a N_prf node.
+ *         The return value is a N_assign chain of ICMs.
+ *         Note, that the old 'arg_node' is removed by COMPLet.
  *
  ******************************************************************************/
 
@@ -4257,17 +4193,16 @@ COMP2Prf (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPLoop( node *arg_node, node *arg_info)
  *
- * @brief
- *   I brushed the whole function and named the variables ingenious, but I
- *   still do not unterstand the whole exercise. But I think the following:
+ * @brief  I brushed the whole function and named the variables ingeniously,
+ *   but I still do not fully unterstand the whole exercise. My opinion:
  *     Compiling a loop is easy, but here are refcount-corrections done also.
  *   Special ids-chains are inferred in refcounting and now used to produce
- *   corecctions in the body and after the loop. Thats all I think ... (jhs)
+ *   corrections in the body and after the loop.
+ *   Thats all I can figure out ... (jhs)
  *
- * attention:
+ * Attention:
  *   This function is used to compile N_do *and* N_while nodes, meaning it
  *   compiles do- *and* while-loops!
- *
  *
  * ### CODE NOT BRUSHED YET ###
  *
@@ -4486,10 +4421,8 @@ COMP2Loop (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPCond( node *arg_node, node *arg_info)
  *
- * @brief
- *   Compiling a conditional, that should be easy, except for the fact
- *   that refcount corrections are needed in both branches.
- *
+ * @brief  Compiling a conditional, that should be easy, except for the fact
+ *         that refcount corrections are needed in both branches.
  *
  * ### CODE NOT BRUSHED YET ###
  *
@@ -4538,9 +4471,9 @@ COMP2Cond (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPIcm( node *arg_node, node *arg_info)
  *
- * @brief
- *   Insert reference-counting ICMs for some ICM arguments!
- *   If new ICMs are inserted, the return value is a N_assign chain of ICMs.
+ * @brief  Insert reference-counting ICMs for some ICM arguments!
+ *         If new ICMs are inserted, the return value is a N_assign chain of
+ *         ICMs.
  *
  ******************************************************************************/
 
@@ -4645,8 +4578,7 @@ COMP2Icm (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPCast( node *arg_node, node *arg_info)
  *
- * @brief
- *   Compiles a N_cast node: The cast is simply removed.
+ * @brief  Compiles a N_cast node: The cast is simply removed.
  *
  ******************************************************************************/
 
@@ -4678,8 +4610,7 @@ COMP2Cast (node *arg_node, node *arg_info)
  *
  * @fn  node *MakeIcmArgs_WL_LOOP1( node *arg_node)
  *
- * @brief
- *   ICM args without 'step'.
+ * @brief  ICM args without 'step'.
  *
  ******************************************************************************/
 
@@ -4713,8 +4644,7 @@ MakeIcmArgs_WL_LOOP1 (node *arg_node)
  *
  * @fn  node *MakeIcmArgs_WL_LOOP2( node *arg_node)
  *
- * @brief
- *   ICM args with 'step'.
+ * @brief  ICM args with 'step'.
  *
  ******************************************************************************/
 
@@ -4739,8 +4669,7 @@ MakeIcmArgs_WL_LOOP2 (node *arg_node)
  *
  * @fn  node *MakeIcmArgs_WL_OP1( node *arg_node)
  *
- * @brief
- *   ICM args without names of loop variables.
+ * @brief  ICM args without names of loop variables.
  *
  ******************************************************************************/
 
@@ -4762,8 +4691,7 @@ MakeIcmArgs_WL_OP1 (node *arg_node)
  *
  * @fn  node *MakeIcmArgs_WL_OP2( node *arg_node)
  *
- * @brief
- *   ICM args with names of loop variables.
+ * @brief  ICM args with names of loop variables.
  *
  ******************************************************************************/
 
@@ -4802,8 +4730,7 @@ MakeIcmArgs_WL_OP2 (node *arg_node)
  *
  * @fn  node *MakeIcm_MT_ADJUST_SCHEDULER( node *arg_node, node *assigns)
  *
- * @brief
- *
+ * @brief  ...
  *
  ******************************************************************************/
 
@@ -4849,8 +4776,7 @@ MakeIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
  *
  * @fn  node *MakeIcm_WL_INIT_OFFSET( node *arg_node, node *assigns)
  *
- * @brief
- *
+ * @brief  ...
  *
  ******************************************************************************/
 
@@ -4871,8 +4797,7 @@ MakeIcm_WL_INIT_OFFSET (node *arg_node, node *assigns)
  *
  * @fn  node *MakeIcm_WL_ADJUST_OFFSET( node *arg_node, node *assigns)
  *
- * @brief
- *
+ * @brief  ...
  *
  ******************************************************************************/
 
@@ -4893,8 +4818,7 @@ MakeIcm_WL_ADJUST_OFFSET (node *arg_node, node *assigns)
  *
  * @fn  node *MakeIcm_WL_SET_OFFSET( node *arg_node, node *assigns)
  *
- * @brief
- *   Inserts the ICM WL_SET_OFFSET if needed.
+ * @brief  Inserts the ICM WL_SET_OFFSET if needed.
  *
  *   Blocking is inactive:
  *     The WL_SET_OFFSET-icm is needed, if the offset is needed in the wl-code
@@ -5007,8 +4931,7 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
  *
  * @fn  node *COMP2With( node *arg_node, node *arg_info)
  *
- * @brief
- *
+ * @brief  ...
  *
  ******************************************************************************/
 
@@ -5029,8 +4952,7 @@ COMP2With (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPWith2( node *arg_node, node *arg_info)
  *
- * @brief
- *   Compilation of a N_with2 node.
+ * @brief  Compilation of a N_with2 node.
  *   If this is a fold-with-loop, we append the vardecs of all special fold-funs
  *    to the vardec-chain of the current function.
  *   The return value is a N_assign chain of ICMs.
@@ -5330,8 +5252,7 @@ COMP2With2 (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPWLsegx( node *arg_node, node *arg_info)
  *
- * @brief
- *   Compilation of a N_WLseg- or N_WLsegVar-node:
+ * @brief  Compilation of a N_WLseg- or N_WLsegVar-node:
  *   Returns a N_assign-chain with ICMs and leaves 'arg_node' untouched!!
  *   (The whole with-loop-tree should be freed by COMPWith2() only!!)
  *
@@ -5411,9 +5332,8 @@ COMP2WLsegx (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPWLxblock( node *arg_node, node *arg_info)
  *
- * @brief
- *   compilation of a N_WLblock- or N_WLublock-node:
- *     returns a N_assign-chain with ICMs and leaves 'arg_node' untouched!!
+ * @brief  Compilation of a N_WLblock- or N_WLublock-node:
+ *     Returns a N_assign-chain with ICMs and leaves 'arg_node' untouched!!
  *     (the whole with-loop-tree should be freed by COMPWith2() only!!)
  *
  * remarks:
@@ -5561,9 +5481,8 @@ COMP2WLxblock (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPWLstridex( node *arg_node, node *arg_info)
  *
- * @brief
- *   compilation of a N_WLstride- or N_WLstrideVar-node:
- *     returns a N_assign-chain with ICMs and leaves 'arg_node' untouched!!
+ * @brief  Compilation of a N_WLstride- or N_WLstrideVar-node:
+ *     Returns a N_assign-chain with ICMs and leaves 'arg_node' untouched!!
  *     (the whole with-loop-tree should be freed by COMPWith2() only!!)
  *
  * remarks:
@@ -5723,9 +5642,8 @@ COMP2WLstridex (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPWLgridx( node *arg_node, node *arg_info)
  *
- * @brief
- *   compilation of a N_WLgrid- or N_WLgridVar-node:
- *     returns a N_assign-chain with ICMs and leaves 'arg_node' untouched!!
+ * @brief  Compilation of a N_WLgrid- or N_WLgridVar-node:
+ *     Returns a N_assign-chain with ICMs and leaves 'arg_node' untouched!!
  *     (the whole with-loop-tree should be freed by COMPWith2() only!!)
  *
  * remarks:
@@ -6003,8 +5921,7 @@ COMP2WLgridx (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPWLcode( node *arg_node, node *arg_info)
  *
- * @brief
- *   compiles a N_Ncode node.
+ * @brief  Compiles a N_Ncode node.
  *
  ******************************************************************************/
 
@@ -6057,8 +5974,7 @@ COMP2WLcode (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPSpmd( node *arg_node, node *arg_info)
  *
- * @brief
- *   compiles a N_spmd node.
+ * @brief  Compiles a N_spmd node.
  *
  ******************************************************************************/
 
@@ -6141,8 +6057,7 @@ COMP2Spmd (node *arg_node, node *arg_info)
  *
  * @fn  char *GetFoldTypeTag( ids *with_ids)
  *
- * @brief
- *
+ * @brief  ...
  *
  ******************************************************************************/
 
@@ -6178,8 +6093,7 @@ GetFoldTypeTag (ids *with_ids)
  *
  * @fn  node *COMPSync( node *arg_node, node *arg_info)
  *
- * @brief
- *   compiles a N_sync node:
+ * @brief  Compiles a N_sync node:
  *
  *     < malloc-ICMs >                   // if (FIRST == 0) only
  *     MT_CONTINUE( ...)                 // if (FIRST == 0) only
@@ -6715,8 +6629,7 @@ MakeAllocs (DFMmask_t mask)
  *
  * @fn  node *COMPMt( node *arg_node, node *arg_info)
  *
- * @brief
- *   compiles a N_mt-node
+ * @brief  Compiles a N_mt-node.
  *
  ******************************************************************************/
 
@@ -6787,8 +6700,7 @@ COMP2Mt (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPSt( node *arg_node, node *arg_info)
  *
- * @brief
- *   compiles a N_st-node
+ * @brief  Compiles a N_st-node.
  *
  ******************************************************************************/
 
@@ -6851,8 +6763,7 @@ COMP2St (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPMTsignal( node *arg_node, node *arg_info)
  *
- * @brief
- *   ####
+ * @brief  ...
  *
  ******************************************************************************/
 
@@ -6883,8 +6794,7 @@ COMP2MTsignal (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPMTalloc( node *arg_node, node *arg_info)
  *
- * @brief
- *   ####
+ * @brief  ...
  *
  ******************************************************************************/
 
@@ -6947,8 +6857,7 @@ COMP2MTalloc (node *arg_node, node *arg_info)
  *
  * @fn  node *COMPMTsync( node *arg_node, node *arg_info)
  *
- * @brief
- *
+ * @brief  ...
  *
  ******************************************************************************/
 
