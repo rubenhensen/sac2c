@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2001/05/09 12:21:55  nmw
+ * cse checks expressions for their used shape before substituting them
+ *
  * Revision 1.13  2001/04/20 11:18:02  nmw
  * unused code removed
  *
@@ -67,6 +70,7 @@
 #include "SSACSE.h"
 #include "compare_tree.h"
 #include "optimize.h"
+#include "typecheck.h"
 
 static ids *TravIDS (ids *arg_ids, node *arg_info);
 static ids *SSACSEids (ids *arg_ids, node *arg_info);
@@ -80,6 +84,7 @@ static ids *SetSubstAttributes (ids *subst, ids *with);
 /* helper functions for internal use only */
 static node *FindCSE (node *cselist, node *let);
 static bool ForbiddenSubstitution (ids *chain);
+static bool CmpIdsTypes (ids *ichain1, ids *ichain2);
 
 /******************************************************************************
  *
@@ -184,6 +189,10 @@ RemoveTopCSElayer (node *cseinfo)
  *   traverses the cseinfo chain until matching expression is found and
  *   return this let node. else return NULL.
  *
+ * remark:
+ *   the additional type compare is necessary to avoid wrong array replacements,
+ *   e.g. [1,2,3,4] that is used as [[1,2],[3,4]] or [1,2,3,4].
+ *
  ******************************************************************************/
 static node *
 FindCSE (node *cselist, node *let)
@@ -199,14 +208,48 @@ FindCSE (node *cselist, node *let)
 
     while ((csetmp != NULL) && (match == NULL)) {
         if ((CSEINFO_LET (csetmp) != NULL)
-            && (CompareTree (LET_EXPR (let), LET_EXPR (CSEINFO_LET (csetmp)))
-                == CMPT_EQ)) {
+            && (CompareTree (LET_EXPR (let), LET_EXPR (CSEINFO_LET (csetmp))) == CMPT_EQ)
+            && (CmpIdsTypes (LET_IDS (let), LET_IDS (CSEINFO_LET (csetmp))) == TRUE)) {
             match = CSEINFO_LET (csetmp);
         }
         csetmp = CSEINFO_NEXT (csetmp);
     }
 
     DBUG_RETURN (match);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    bool CmpIdsTypes(ids *ichain1, ids *ichain2)
+ *
+ * description:
+ *    compares the types of all ids in two given ids chains.
+ *    return TRUE if the types of eqch two corresponding ids are equal.
+ *
+ ******************************************************************************/
+static bool
+CmpIdsTypes (ids *ichain1, ids *ichain2)
+{
+    bool result;
+    DBUG_ENTER ("CmpIdsTypes");
+
+    if (ichain1 != NULL) {
+        DBUG_ASSERT ((ichain2 != NULL), "comparing different ids chains");
+        if (CmpTypes (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (IDS_AVIS (ichain1))),
+                      VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (IDS_AVIS (ichain2))))
+            == 1) {
+            result = CmpIdsTypes (IDS_NEXT (ichain1), IDS_NEXT (ichain2));
+        } else {
+            result = FALSE;
+        }
+    } else {
+        /* no types are equal */
+        DBUG_ASSERT ((ichain2 == NULL), "comparing different ids chains");
+        result = TRUE;
+    }
+
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************
