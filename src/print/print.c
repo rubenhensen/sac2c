@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.54  2000/03/02 13:08:48  jhs
+ * Added some \n.
+ *
  * Revision 2.53  2000/02/24 17:59:35  dkr
  * Fixed a bug: PrintIds() has an arg_info now
  *
@@ -2165,7 +2168,7 @@ PrintMT (node *arg_node, node *arg_info)
     indent--;
 
     INDENT
-    fprintf (outfile, "/*** end of mt region ***/\n");
+    fprintf (outfile, "\n/*** end of mt region ***/\n");
     /* PrintAssign already prints \n */
 
     DBUG_RETURN (arg_node);
@@ -2186,7 +2189,7 @@ PrintST (node *arg_node, node *arg_info)
     indent--;
 
     INDENT
-    fprintf (outfile, "/*** end of st region ***/");
+    fprintf (outfile, "\n/*** end of st region ***/");
     /* PrintAssign already prints \n */
 
     DBUG_RETURN (arg_node);
