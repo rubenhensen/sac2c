@@ -1,5 +1,9 @@
 /*
  *
+ * $Log$
+ * Revision 1.5  2005/02/10 14:08:49  jhb
+ * change the revisionslog
+ *
  * Revision 1.0  2004/11/22 13:50:34  jhb
  * first functions inserted
  *
