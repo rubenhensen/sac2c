@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.38  1999/11/18 12:52:28  bs
+ *  FEATURE_UNKNOWN added.
+ *
  * Revision 2.37  1999/11/11 18:26:03  dkr
  * PrintNgenerator is now called by Trav only :))
  *
@@ -425,6 +428,10 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
         INDENT;
         fprintf (outfile, " *   primitive arithmetic operation on arrays "
                           "(without index vector access)\n");
+    }
+    if ((feature & FEATURE_UNKNOWN) == FEATURE_UNKNOWN) {
+        INDENT;
+        fprintf (outfile, " *   primitive function psi with unknown indexvector\n");
     }
 
     dim = SHP_SEG_SIZE;
