@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.203  2005/02/10 14:27:23  jhb
+ * added PRTerror
+ *
  * Revision 3.202  2005/01/11 13:09:05  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -4353,6 +4356,24 @@ PRTdataflownode (node *arg_node, info *arg_info)
             fprintf (global.outfile, "  -> No dependent nodes\n");
         }
     }
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PRTerror( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   This function print all the errors
+ *
+ ******************************************************************************/
+
+node *
+PRTerror (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTerror");
+
     DBUG_RETURN (arg_node);
 }
 
