@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.67  1998/05/15 13:48:22  dkr
+ * added flag -bn:conv
+ *
  * Revision 1.66  1998/05/15 11:33:22  srs
  * added -no:wli
  *
@@ -286,6 +289,7 @@ usage ()
             "\t-bo:wli   \t-b15:wli   \tstop after withloop information gathering\n"
             "\t-bo:cyc   \t-b15:cyc   \tstop after one complete optimization cycle\n\n"
 
+            "\t-bn:conv  \t-b18:conv  \tstop after converting\n"
             "\t-bn:cubes \t-b18:cubes \tstop after cube-building\n"
             "\t-bn:segs  \t-b18:segs  \tstop after choice of segments\n"
             "\t-bn:split \t-b18:split \tstop after splitting\n"
