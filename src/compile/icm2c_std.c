@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2003/06/12 17:23:12  dkr
+ * support for multi-dimensional constant arrays added:
+ * ICMs CREATE__VECT__... renamed into CREATE__ARRAY__... and modified
+ *
  * Revision 3.45  2003/04/15 19:05:50  dkr
  * macro SET_SHAPES_AUD__XXX used. now it is possible to implement AKS,
  * AKD arrays as AUD arrays (sac2c flag -minarrayrep)
@@ -1607,29 +1611,36 @@ ICMCompileND_MAKE_UNIQUE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
 }
 
 /******************************************************************************
- *C
+ *
  * function:
- *   void ICMCompileND_CREATE__VECT__DIM( int val_size, char **vala_any)
+ *   void ICMCompileND_CREATE__ARRAY__DIM( int dim,
+ *                                         int val_size, char **vala_any)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_CREATE__VECT__DIM( val_size, [ vala_any ]* )
+ *   ND_CREATE__ARRAY__DIM( dim, val_size, [ vala_any ]* )
+ *
+ *   dim: top-level dimension
+ *           [a,b,c,d]       ->   dim == 1
+ *           [[a,b],[c,d]]   ->   dim == 2
+ *   val_size: size of data vector
+ *   vala_any: data vector
  *
  ******************************************************************************/
 
 void
-ICMCompileND_CREATE__VECT__DIM (int val_size, char **vala_any)
+ICMCompileND_CREATE__ARRAY__DIM (int dim, int val_size, char **vala_any)
 {
     bool entries_are_scalars;
     int i;
 
-    DBUG_ENTER ("ICMCompileND_CREATE__VECT__DIM");
+    DBUG_ENTER ("ICMCompileND_CREATE__ARRAY__DIM");
 
-#define ND_CREATE__VECT__DIM
+#define ND_CREATE__ARRAY__DIM
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_CREATE__VECT__DIM
+#undef ND_CREATE__ARRAY__DIM
 
     /*
      * CAUTION:
@@ -1651,10 +1662,10 @@ ICMCompileND_CREATE__VECT__DIM (int val_size, char **vala_any)
          */
         fprintf (outfile, "SAC_ICM_UNDEF()");
     } else if (entries_are_scalars) {
-        fprintf (outfile, "1");
+        fprintf (outfile, "%d", dim);
     } else {
         /* 'vala_any[i]' is a tagged identifier! */
-        fprintf (outfile, "SAC_ND_A_DIM( %s) +1", vala_any[0]);
+        fprintf (outfile, "SAC_ND_A_DIM( %s) + %d", vala_any[0], dim);
     }
 
     DBUG_VOID_RETURN;
@@ -1663,21 +1674,30 @@ ICMCompileND_CREATE__VECT__DIM (int val_size, char **vala_any)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_CREATE__VECT__SHAPE( char *to_nt, int to_sdim,
- *                                          int val_size, char **vala_any,
- *                                          int val0_sdim)
+ *   void ICMCompileND_CREATE__ARRAY__SHAPE( char *to_nt, int to_sdim,
+ *                                           int dim, int *shp,
+ *                                           int val_size, char **vala_any,
+ *                                           int val0_sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_CREATE__VECT__SHAPE( to_nt, to_sdim,
- *                           val_size, [ vala_any ]* , val0_sdim )
+ *   ND_CREATE__ARRAY__SHAPE( to_nt, to_sdim, dim, [ shp ]* ,
+ *                            val_size, [ vala_any ]* , val0_sdim )
+ *
+ *   dim: top-level dimension
+ *   shape: top-level shape
+ *           [a,b,c,d]       ->   dim == 1, shape == [4]
+ *           [[a,b],[c,d]]   ->   dim == 2, shape == [2,2]
+ *   val_size: size of data vector
+ *   vala_any: data vector
+ *   val0_sdim: shape-encoded dimension of the data vector elements
  *
  ******************************************************************************/
 
 void
-ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char **vala_any,
-                                  int val0_sdim)
+ICMCompileND_CREATE__ARRAY__SHAPE (char *to_nt, int to_sdim, int dim, int *shp,
+                                   int val_size, char **vala_any, int val0_sdim)
 {
     bool entries_are_scalars;
     int i;
@@ -1685,12 +1705,12 @@ ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char *
     int to_dim = DIM_NO_OFFSET (to_sdim);
     int val0_dim = DIM_NO_OFFSET (val0_sdim);
 
-    DBUG_ENTER ("ICMCompileND_CREATE__VECT__SHAPE");
+    DBUG_ENTER ("ICMCompileND_CREATE__ARRAY__SHAPE");
 
-#define ND_CREATE__VECT__SHAPE
+#define ND_CREATE__ARRAY__SHAPE
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_CREATE__VECT__SHAPE
+#undef ND_CREATE__ARRAY__SHAPE
 
     /*
      * CAUTION:
@@ -1712,10 +1732,16 @@ ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char *
          */
         DBUG_ASSERT ((to_sc == C_aks), "[] with unknown shape found!");
     } else if (entries_are_scalars) {
-        char *val_size_str = Malloc (20 * sizeof (char));
-        sprintf (val_size_str, "%d", val_size);
-        ICMCompileND_SET__SHAPE (to_nt, 1, &val_size_str);
-        val_size_str = Free (val_size_str);
+        char **shp_str = (char **)Malloc (dim * sizeof (char *));
+        for (i = 0; i < dim; i++) {
+            shp_str[i] = (char *)Malloc (20 * sizeof (char));
+            sprintf (shp_str[i], "%d", shp[i]);
+        }
+        ICMCompileND_SET__SHAPE (to_nt, dim, shp_str);
+        for (i = 0; i < dim; i++) {
+            shp_str[i] = Free (shp_str[i]);
+        }
+        shp_str = Free (shp_str);
     } else {
         /* 'vala_any[i]' is a tagged identifier */
 
@@ -1750,22 +1776,24 @@ ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char *
              *                                                      ND_ALLOC__DESC!
              */
             ASSURE_TYPE_ASS (fprintf (outfile,
-                                      "SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s) +1", to_nt,
-                                      vala_any[0]);
+                                      "SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s) + %d",
+                                      to_nt, vala_any[0], dim);
                              , fprintf (outfile,
                                         "Assignment with incompatible types found!"););
 
-            SET_SHAPE_AUD__NUM (to_nt, 0, fprintf (outfile, "%d", val_size););
+            for (i = 0; i < dim; i++) {
+                SET_SHAPE_AUD__NUM (to_nt, i, fprintf (outfile, "%d", shp[i]););
+            }
             SET_SHAPES_AUD__XXX (to_nt, i, fprintf (outfile, "SAC_i");
-                                 , 1, fprintf (outfile, "1");
-                                 , val0_dim,
+                                 , dim, fprintf (outfile, "%d", dim);
+                                 , dim + val0_dim,
                                  fprintf (outfile, "SAC_ND_A_DIM( %s)", to_nt);
                                  ,
                                  /* noop */
                                  , fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)",
-                                            vala_any[0], i - 1);
-                                 , fprintf (outfile, "SAC_ND_A_SHAPE( %s, SAC_i-1)",
-                                            vala_any[0]);
+                                            vala_any[0], i - dim);
+                                 , fprintf (outfile, "SAC_ND_A_SHAPE( %s, SAC_i-%d)",
+                                            vala_any[0], dim);
                                  /* SAC_ND_A_SHAPE() with variable index works for AUD
                                     only! */
             );
@@ -1792,10 +1820,12 @@ ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char *
                 }
             }
 
-            SET_SHAPE_AKD (to_nt, 0, fprintf (outfile, "%d", val_size););
-            SET_SHAPES_AKD (to_nt, i, 1, to_dim, ,
+            for (i = 0; i < dim; i++) {
+                SET_SHAPE_AKD (to_nt, i, fprintf (outfile, "%d", shp[i]););
+            }
+            SET_SHAPES_AKD (to_nt, i, dim, to_dim, ,
                             fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", vala_any[0],
-                                     i - 1););
+                                     i - dim););
 
             SET_SIZE (to_nt, fprintf (outfile, "%d * SAC_ND_A_SIZE( %s)", val_size,
                                       vala_any[0]););
@@ -1821,16 +1851,19 @@ ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char *
             break;
 
         case C_aks:
-            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SHAPE( %s, 0) == %d", to_nt,
-                                      val_size);
-                             , fprintf (outfile,
-                                        "Assignment with incompatible types found!"););
+            for (i = 0; i < dim; i++) {
+                ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d) == %d", to_nt,
+                                          i, shp[i]);
+                                 ,
+                                 fprintf (outfile,
+                                          "Assignment with incompatible types found!"););
+            }
             DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
-            for (i = 1; i < to_dim; i++) {
+            for (i = dim; i < to_dim; i++) {
                 ASSURE_TYPE_ASS (fprintf (outfile,
                                           "SAC_ND_A_SHAPE( %s, %d) == SAC_ND_A_SHAPE( "
                                           "%s, %d)",
-                                          to_nt, i, vala_any[0], i - 1);
+                                          to_nt, i, vala_any[0], i - dim);
                                  ,
                                  fprintf (outfile,
                                           "Assignment with incompatible types found!"););
@@ -1839,8 +1872,8 @@ ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char *
 
         case C_akd:
             ASSURE_TYPE_ASS (fprintf (outfile,
-                                      "SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s) +1", to_nt,
-                                      vala_any[0]);
+                                      "SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s) + %d",
+                                      to_nt, vala_any[0], dim);
                              , fprintf (outfile,
                                         "Assignment with incompatible types found!"););
             break;
@@ -1861,9 +1894,9 @@ ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char *
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_CREATE__VECT__DATA( char *to_nt, int to_sdim,
- *                                         int val_size, char **vala_any,
- *                                         char *copyfun)
+ *   void ICMCompileND_CREATE__ARRAY__DATA( char *to_nt, int to_sdim,
+ *                                          int val_size, char **vala_any,
+ *                                          char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -1873,18 +1906,18 @@ ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char *
  ******************************************************************************/
 
 void
-ICMCompileND_CREATE__VECT__DATA (char *to_nt, int to_sdim, int val_size, char **vala_any,
-                                 char *copyfun)
+ICMCompileND_CREATE__ARRAY__DATA (char *to_nt, int to_sdim, int val_size, char **vala_any,
+                                  char *copyfun)
 {
     bool entries_are_scalars;
     int i;
 
-    DBUG_ENTER ("ICMCompileND_CREATE__VECT__DATA");
+    DBUG_ENTER ("ICMCompileND_CREATE__ARRAY__DATA");
 
-#define ND_CREATE__VECT__DATA
+#define ND_CREATE__ARRAY__DATA
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_CREATE__VECT__DATA
+#undef ND_CREATE__ARRAY__DATA
 
     /*
      * CAUTION:
