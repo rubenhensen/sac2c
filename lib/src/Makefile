@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.5  1999/07/05 12:34:48  sbs
+# debugging enabled with -g!
+#
 # Revision 2.4  1999/05/12 14:36:50  cg
 # added compilation of main_args.c
 #
@@ -31,8 +34,8 @@
 #
 
 CC        := gcc
-#MYFLAGS   := -g
-MYFLAGS   := 
+MYFLAGS   := -g
+# MYFLAGS   := 
 
 
 INCS=
