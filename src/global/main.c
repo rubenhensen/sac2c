@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2004/07/19 12:43:29  ktr
+ * Added EM Reference counting.
+ *
  * Revision 3.45  2004/07/15 13:40:49  ktr
  * removed show_refcount = FALSE in PH_refcnt
  *
@@ -186,6 +189,7 @@
 #include "import.h"
 #include "refcount.h"
 #include "alloc.h"
+#include "refcounting.h"
 #include "scnprs.h"
 #include "writesib.h"
 #include "readsib.h"
@@ -621,7 +625,7 @@ main (int argc, char *argv[])
     if (ktr) {
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
-        /* syntax_tree = EMRefcount( syntax_tree); */ /* emrc_tab */
+        syntax_tree = EMRefCount (syntax_tree); /* emrefcnt_tab */
         PHASE_DONE_EPILOG;
         PHASE_EPILOG;
     }
