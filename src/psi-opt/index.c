@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/07/12 22:53:23  dkr
+ * ND_USE_GENVAR_OFFSET-ICM modified for TAGGED_ARRAYS
+ *
  * Revision 3.19  2002/07/11 17:28:35  dkr
  * code for TAGGED_ARRAYS corrected ...
  *
@@ -2227,7 +2230,7 @@ IdxNcode (node *arg_node, node *arg_info)
                     /*
                      * we can reuse the genvar as index directly!
                      * therefore we create an ICM of the form:
-                     * ND_KS_USE_GENVAR_OFFSET( <idx-varname>, <result-array-varname>)
+                     * ND_USE_GENVAR_OFFSET( <idx-varname>, <result-array-varname>)
                      */
 
                     new_id = MakeId (IdxChangeId (IDS_NAME (NWITH_VEC (with)), arr_type),
@@ -2258,9 +2261,17 @@ IdxNcode (node *arg_node, node *arg_info)
                     ID_VARDEC (array_id) = LET_VARDEC (let_node);
 #endif
 
+#ifdef TAGGED_ARRAYS
+                    array_id = AddNtTag (array_id);
+
+                    new_assign
+                      = MakeAssign (MakeIcm2 ("ND_USE_GENVAR_OFFSET", new_id, array_id),
+                                    NULL);
+#else
                     new_assign = MakeAssign (MakeIcm2 ("ND_KS_USE_GENVAR_OFFSET", new_id,
                                                        array_id),
                                              NULL);
+#endif
                 } else {
                     /*
                      * we have to instanciate the idx-variable by an ICM of the form:
