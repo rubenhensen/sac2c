@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2001/06/14 12:39:51  dkr
+ * PREC2WLseg(): call of SCHPrecompileTasksel() added
+ *
  * Revision 3.23  2001/05/17 12:02:28  dkr
  * MALLOC, FREE eliminated
  *
@@ -2053,6 +2056,7 @@ PREC2WLsegx (node *arg_node, node *arg_info)
     if (WLSEGX_SCHEDULING (arg_node) != NULL) {
         WLSEGX_SCHEDULING (arg_node)
           = SCHPrecompileScheduling (WLSEGX_SCHEDULING (arg_node));
+        WLSEGX_TASKSEL (arg_node) = SCHPrecompileTasksel (WLSEGX_TASKSEL (arg_node));
     }
 
     if (NODE_TYPE (arg_node) == N_WLsegVar) {
