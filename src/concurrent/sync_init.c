@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/08/27 12:48:03  jhs
+ * Added comments.
+ * Added possibility to inserted SYNC blokcs around non with-loop code.
+ *
  * Revision 2.7  1999/08/09 11:32:20  jhs
  * Cleaned up info-macros for concurrent-phase.
  *
@@ -46,11 +50,13 @@
 
 #include "types.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "traverse.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "globals.h"
 #include "internal_lib.h"
+#include "refcount.h"
 
 /******************************************************************************
  *
@@ -74,8 +80,18 @@ SYNCIassign (node *arg_node, node *arg_info)
     node *with, *sync_let, *sync;
     node *withop;
     ids *with_ids;
+    DFMmask_base_t maskbase;
+    int i;
 
     DBUG_ENTER ("SYNCIassign");
+
+    DBUG_PRINT ("SYNCI", ("frontwards"));
+
+    /*
+     *  the maskbase is needed at several spots, and does not change, so one
+     *  can initialize it here.
+     */
+    maskbase = FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info));
 
     sync_let = ASSIGN_INSTR (arg_node);
 
@@ -84,6 +100,7 @@ SYNCIassign (node *arg_node, node *arg_info)
      */
     if ((NODE_TYPE (sync_let) == N_let)
         && (NODE_TYPE (LET_EXPR (sync_let)) == N_Nwith2)) {
+        DBUG_PRINT ("SYNCI", ("build sync-block around with-loop"));
 
         with_ids = LET_IDS (sync_let);
         with = LET_EXPR (sync_let);
@@ -111,27 +128,113 @@ SYNCIassign (node *arg_node, node *arg_info)
         SYNC_IN (sync) = DFMGenMaskCopy (NWITH2_IN (with));
         SYNC_INOUT (sync) = DFMGenMaskCopy (NWITH2_INOUT (with));
         SYNC_OUT (sync) = DFMGenMaskCopy (NWITH2_OUT (with));
+        SYNC_OUTREP (sync) = DFMGenMaskClear (maskbase);
         SYNC_LOCAL (sync) = DFMGenMaskCopy (NWITH2_LOCAL (with));
 
         /*
          * unset flag: next N_sync node is not the first one in SPMD-region
          */
         INFO_SYNCI_FIRST (arg_info) = 0;
+    } else if ((NODE_TYPE (sync_let) == N_while) || (NODE_TYPE (sync_let) == N_do)) {
+        DBUG_PRINT ("SYNCI", ("trav into loop"));
+        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        DBUG_PRINT ("SYNCI", ("trav from loop"));
+        sync = NULL;
+    } else if (NODE_TYPE (sync_let) == N_return) {
+        DBUG_PRINT ("SYNCI", ("return reached (no sync-block inserted)"));
+        sync = NULL;
+    } else {
+        DBUG_PRINT ("SYNCI", ("build sync-block around non with-loop"));
+        sync = MakeSync (MakeBlock (MakeAssign (sync_let, NULL), NULL));
+        SYNC_FIRST (sync) = INFO_SYNCI_FIRST (arg_info);
+        ASSIGN_INSTR (arg_node) = sync;
+        INFO_SYNCI_FIRST (arg_info) = 0;
+
+        SYNC_IN (sync) = DFMGenMaskClear (maskbase);
+        SYNC_INOUT (sync) = DFMGenMaskClear (maskbase);
+        SYNC_OUT (sync) = DFMGenMaskClear (maskbase);
+        SYNC_OUTREP (sync) = DFMGenMaskClear (maskbase);
+        SYNC_LOCAL (sync) = DFMGenMaskClear (maskbase);
+
+        DBUG_PRINT ("SYNCI", ("varno %i", FUNDEF_VARNO (INFO_CONC_FUNDEF (arg_info))));
+        for (i = 0; i < FUNDEF_VARNO (INFO_CONC_FUNDEF (arg_info)); i++) {
+            DBUG_PRINT ("SYNCI", ("begin step i %i", i));
+            if ((ASSIGN_DEFMASK (arg_node) != NULL)
+                && (ASSIGN_DEFMASK (arg_node)[i] > 0)) {
+                DBUG_PRINT ("SYNCI", ("def[i=%i]=%i", i, ASSIGN_DEFMASK (arg_node)[i]));
+                DFMSetMaskEntrySet (SYNC_OUTREP (sync), NULL,
+                                    FindVardec (i, INFO_CONC_FUNDEF (arg_info)));
+            }
+            if ((ASSIGN_USEMASK (arg_node) != NULL)
+                && (ASSIGN_USEMASK (arg_node)[i] > 0)) {
+                DBUG_PRINT ("SYNCI", ("use i %i", i));
+                DFMSetMaskEntrySet (SYNC_IN (sync), NULL,
+                                    FindVardec (i, INFO_CONC_FUNDEF (arg_info)));
+            }
+            DBUG_PRINT ("SYNCI", ("end step i %i", i));
+        }
 
         /*
-         * we only traverse the following assignments to prevent nested
-         *  sync-regions
+         * unset flag: next N_sync node is not the first one in SPMD-region
          */
-    } else {
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        INFO_SYNCI_FIRST (arg_info) = 0;
     }
+    DBUG_PRINT ("SYNCI", ("inbetween"));
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
+        DBUG_PRINT ("SYNCI", ("into assign next"));
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        DBUG_PRINT ("SYNCI", ("from assign next"));
 
-        SYNC_LAST (sync) = INFO_SYNCI_LAST (arg_info);
+        if (sync != NULL) {
+            SYNC_LAST (sync) = INFO_SYNCI_LAST (arg_info);
+        }
         INFO_SYNCI_LAST (arg_info) = 0;
+    } else {
+        DBUG_PRINT ("SYNCI", ("turnaround"));
     }
+
+    DBUG_PRINT ("SYNCI", ("backwards"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SYNCIwhile( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   ####
+ ******************************************************************************/
+node *
+SYNCIwhile (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("SYNCIwhile");
+
+    DBUG_PRINT ("SYNCI", ("trav into while"));
+    WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
+    DBUG_PRINT ("SYNCI", ("trav from while"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SYNCIdo( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   ####
+ ******************************************************************************/
+node *
+SYNCIdo (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("SYNCIdo");
+
+    DBUG_PRINT ("SYNCI", ("trav into do"));
+    DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
+    DBUG_PRINT ("SYNCI", ("trav from do"));
 
     DBUG_RETURN (arg_node);
 }
