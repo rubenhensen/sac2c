@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.8  2000/01/21 12:53:35  dkr
+# target clean changed
+#
 # Revision 2.7  2000/01/21 12:02:30  dkr
 # lac2fun.o added
 #
@@ -98,7 +101,7 @@ deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) flatten.o lac2fun.o *.bak
+	$(RM) *.o *.bak
 	$(RM) -r .sb SunWS_cache
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
