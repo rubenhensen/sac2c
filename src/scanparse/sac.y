@@ -3,7 +3,14 @@
 /*
  *
  * $Log$
- * Revision 1.21  1994/12/07 17:37:15  sbs
+ * Revision 1.22  1994/12/08 14:15:04  hw
+ * changed node[1] and node[2] of N_fundef
+ * now node[1] points to the next function and
+ *
+ * node[2] points to the formal parameters
+ * added rule to parse functions without parameters
+ *
+ * Revision 1.21  1994/12/07  17:37:15  sbs
  * err1 fixed: multiple vardecs
  *
  * Revision 1.20  1994/11/29  10:56:38  hw
@@ -125,8 +132,8 @@ node *syntax_tree;
 
 prg: funs {syntax_tree=$1;}
 
-funs:  fundef funs  { $1->node[2]=$2;
-                      $1->nnode=3;
+funs:  fundef funs  { $1->node[1]=$2;
+                      $1->nnode+=1;
                       $$=$1;
                     }
      | main  {$$=$1;}
@@ -136,7 +143,7 @@ fundef:  types ID BRACKET_L args BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
           { 
             $$=$<node>6;
             $$->node[0]=$7;             /* Funktionsrumpf  */
-            $$->node[1]=$4;             /* Funktionsargumente */
+            $$->node[2]=$4;             /* Funktionsargumente */
             $$->info.types=$1;          /*  Typ der Funktion */
             $$->info.types->id=$2;      /* Name der Funktion */
             $$->nnode=2;
@@ -145,21 +152,49 @@ fundef:  types ID BRACKET_L args BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
                        ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT" %s," P_FORMAT,
                         mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
                         mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0],
-                        mdb_nodetype[ $$->node[1]->nodetype ], $$->node[1]));
+                        mdb_nodetype[ $$->node[2]->nodetype ], $$->node[2]));
           }
 
        | types INLINE {warn("inline not yet implemented!");} ID BRACKET_L
          args BRACKET_R  {$$=MakeNode(N_fundef);} exprblock 
           { $$=$<node>8;
             $$->node[0]=$9;              /* Funktionsrumpf  */
-            $$->node[1]=$6;              /* Funktionsargumente */
+            $$->node[2]=$6;              /* Funktionsargumente */
             $$->info.types=$1;        /*  Typ der Funktion */
             $$->info.types->id=$4;    /* Name der Funktion */
+            $$->nnode=2;
+            
             DBUG_PRINT("GENTREE",
                        ("%s: "P_FORMAT", Id: %s , %s "P_FORMAT" %s, "P_FORMAT,
                         mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
                         mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0],
-                        mdb_nodetype[ $$->node[1]->nodetype ], $$->node[1]));
+                        mdb_nodetype[ $$->node[2]->nodetype ], $$->node[2]));
+          }
+       | types ID BRACKET_L BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
+          { 
+            $$=$<node>5;
+            $$->node[0]=$6;             /* Funktionsrumpf  */
+            $$->info.types=$1;          /*  Typ der Funktion */
+            $$->info.types->id=$2;      /* Name der Funktion */
+            $$->nnode=1;
+         
+            DBUG_PRINT("GENTREE",
+                       ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT,
+                        mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
+                        mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
+         }
+       | types INLINE {warn("inline not yet implemented!");} ID BRACKET_L
+         BRACKET_R  {$$=MakeNode(N_fundef);} exprblock 
+          { $$=$<node>7;
+            $$->node[0]=$8;              /* Funktionsrumpf  */
+            $$->info.types=$1;        /*  Typ der Funktion */
+            $$->info.types->id=$4;    /* Name der Funktion */
+            $$->nnode=1;
+            
+            DBUG_PRINT("GENTREE",
+                       ("%s: "P_FORMAT", Id: %s , %s "P_FORMAT,
+                        mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
+                        mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
           }
         ;
 
