@@ -3,7 +3,16 @@
 /*
  *
  * $Log$
- * Revision 1.28  1994/12/14 16:52:46  sbs
+ * Revision 1.29  1994/12/15 17:09:16  sbs
+ * typecasts as (: type) inserted.
+ * The colon is due the context dependencies resulting from
+ * expressions like ( ID ) [ expr ]
+ * or ( ID ) + expr
+ * or ( ID ) - expr
+ * In later versions this has to be changed to a context sensitive
+ * version which distinguishes between ID and TYPEID.....:-<
+ *
+ * Revision 1.28  1994/12/14  16:52:46  sbs
  * user defined types integrated :->>>>
  *
  * Revision 1.27  1994/12/14  13:57:26  sbs
@@ -122,11 +131,11 @@ node *syntax_tree;
        RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE,CAT,PSI,
        MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, GENARRAY, MODARRAY,
        MODDEC, MODIMP, CLASSDEC, IMPORT, ALL, IMPLICIT, EXPLICIT, TYPES, FUNS, OWN,
-       ARRAY,SC, TRUE, FALSE;
-%token <id> ID;
-%token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL;
-%token <cint> NUM;
-%token <cfloat> FLOAT;
+       ARRAY,SC, TRUE, FALSE
+%token <id> ID
+%token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL
+%token <cint> NUM
+%token <cfloat> FLOAT
 
 %type <ids> ids,
 %type <nums> nums;
@@ -757,6 +766,17 @@ expr:   ID  BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
 
            DBUG_PRINT("GENTREE",("%s " P_FORMAT ": %s ",
                                 mdb_nodetype[$$->nodetype], $$, $$->info.id));  
+         }
+      | BRACKET_L COLON type BRACKET_R expr %prec UMINUS
+         {$$=MakeNode(N_cast);
+          $$->info.types=$3;
+          $$->node[0]=$5;
+          $$->nnode=1;
+
+          DBUG_PRINT("GENTREE",
+                     ("%s "P_FORMAT": %s: " P_FORMAT ,
+                      mdb_nodetype[ $$->nodetype], $$,
+                      mdb_nodetype[ $$->node[0]->nodetype], $$->node[0]));
          }
       | BRACKET_L expr BRACKET_R 
          { $$=$2;
