@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/11/23 22:24:25  ktr
+ * some renaming.
+ *
  * Revision 1.9  2004/11/23 19:52:59  ktr
  * COMPILES!!!
  *
@@ -602,7 +605,7 @@ RIwith2 (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn ReuseInference
+ * @fn EMRIdoReuseInference
  *
  *   @brief
  *
@@ -611,11 +614,11 @@ RIwith2 (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-ReuseInference (node *arg_node)
+EMRIdoReuseInference (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("ReuseInference");
+    DBUG_ENTER ("EMRIdoReuseInference");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
                  "ReuseInference not started with modul node");
@@ -623,9 +626,7 @@ ReuseInference (node *arg_node)
     arg_info = MakeInfo ();
 
     TRAVpush (TR_emri);
-
     arg_node = TRAVdo (arg_node, arg_info);
-
     TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
