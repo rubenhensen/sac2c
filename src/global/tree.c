@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1994/12/30 16:57:48  sbs
+ * Revision 1.4  1994/12/31 14:09:37  sbs
+ * DBUG_PRINT in MakeTypes inserted
+ *
+ * Revision 1.3  1994/12/30  16:57:48  sbs
  * added MakeTypes
  *
  * Revision 1.2  1994/12/20  17:42:51  hw
@@ -49,6 +52,8 @@ MakeTypes (simpletype simple)
     tmp->next = NULL;
     tmp->id = NULL;
     tmp->id_mod = NULL;
+
+    DBUG_PRINT ("MAKETYPES", (P_FORMAT, tmp));
 
     DBUG_RETURN (tmp);
 }
