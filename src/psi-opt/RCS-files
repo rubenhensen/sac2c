@@ -3,14 +3,12 @@ ArrayElimination.h
 Makefile
 SSAWLF.c
 SSAWLF.h
-SSAWLI.h
 SSAWLT.c
 SSAWLT.h
 SSAWithloopFolding.c
 SSAWithloopFolding.h
 WLF.c
 WLF.h
-WLI.h
 WLT.c
 WLT.h
 WithloopFolding.c
