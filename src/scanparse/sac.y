@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.161  1998/07/20 15:54:23  sbs
+ * wlcomp_pragma_local now always returns a pragma-node8-)
+ *
  * Revision 1.160  1998/07/07 13:41:49  cg
  * improved the resource management by implementing multiple inheritence
  * between targets
@@ -1637,7 +1640,9 @@ wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_expr
                        PRAGMA_WLCOMP_APS($$) = $3;
                      }
                    | /* empty */
-                     { $$ = NULL;
+                     { $$ = MakePragma();
+                       PRAGMA_WLCOMP_APS($$)
+                        = DupTree(PRAGMA_WLCOMP_APS(store_wlcomp_pragma_global), NULL);
                      }
                    ;
 
@@ -2075,17 +2080,7 @@ expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
              NWITHOP_EXPR($8) = NULL;
              NCODE_USED(NWITH_CODE($$))++;
              NODE_LINE($$)= $<cint>3;
-
-             if ($1 == NULL) {
-               if (store_wlcomp_pragma_global != NULL) {
-                 NWITH_PRAGMA($$) = MakePragma();
-                 PRAGMA_WLCOMP_APS(NWITH_PRAGMA($$))
-                   = DupTree(PRAGMA_WLCOMP_APS(store_wlcomp_pragma_global), NULL);
-               }
-             }
-             else {
-               NWITH_PRAGMA($$) = $1;
-             }
+             NWITH_PRAGMA($$) = $1;
 
              /*
               * Finally, we generate the connection between the 
