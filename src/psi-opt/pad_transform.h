@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.9  2000/08/03 15:36:33  mab
+ * debugged transformation
+ * (conversion functions not yet supported)
+ *
  * Revision 1.8  2000/07/07 12:05:27  mab
  * added APTassign
  *
@@ -55,13 +59,9 @@ extern node *APTvardec (node *arg_node, node *arg_info);
 extern node *APTassign (node *arg_node, node *arg_info);
 extern node *APTarray (node *arg_node, node *arg_info);
 extern node *APTwith (node *arg_node, node *arg_info);
-extern node *APTpart (node *arg_node, node *arg_info);
-extern node *APTwithid (node *arg_node, node *arg_info);
-extern node *APTgenerator (node *arg_node, node *arg_info);
 extern node *APTcode (node *arg_node, node *arg_info);
 extern node *APTwithop (node *arg_node, node *arg_info);
 extern node *APTap (node *arg_node, node *arg_info);
-extern node *APTexprs (node *arg_node, node *arg_info);
 extern node *APTid (node *arg_node, node *arg_info);
 extern node *APTprf (node *arg_node, node *arg_info);
 extern node *APTfundef (node *arg_node, node *arg_info);

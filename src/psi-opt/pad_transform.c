@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.13  2000/08/03 15:36:33  mab
+ * debugged transformation
+ * (conversion functions not yet supported)
+ *
  * Revision 1.12  2000/07/19 12:38:23  mab
  * *** empty log message ***
  *
@@ -338,7 +342,13 @@ AddDummyCode (node *with_node)
     DBUG_ENTER ("AddDummyCode");
 
     /* find last vardec */
-    vardec_node = ID_VARDEC (NCODE_CEXPR (NWITH_CODE (with_node)));
+
+    /* BUG, if CODE is empty and result is specified by ARG instead if VARDEC !!!
+       vardec_node=ID_VARDEC(NCODE_CEXPR(NWITH_CODE(with_node)));
+    */
+
+    vardec_node = ID_VARDEC (NPART_WITHID (NWITH_PART (with_node)));
+
     while (VARDEC_NEXT (vardec_node) != NULL) {
         vardec_node = VARDEC_NEXT (vardec_node);
     }
@@ -632,7 +642,7 @@ APTarray (node *arg_node, node *arg_info)
  *   node *APTwith(node *arg_node, node *arg_info)
  *
  * description:
- *   only a dummy for now
+ *   check withop-node first, then traverse code-nodes
  *
  *****************************************************************************/
 
@@ -651,77 +661,13 @@ APTwith (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NWITH_WITHOP (arg_node) != NULL), " unexpected empty WITHOP!");
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
-    /* @@@ arg_info passes check result to part- and code-nodes */
-    DBUG_ASSERT ((NWITH_PART (arg_node) != NULL), " unexpected empty PART!");
-    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
-
+    /* arg_info passes check result to code-nodes */
     DBUG_ASSERT ((NWITH_CODE (arg_node) != NULL), " unexpected empty CODE!");
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
+    /* no need to traverse part-nodes */
+
     /* EXPRESSION_PADDED is returned to upper function */
-
-    DBUG_RETURN (arg_node);
-}
-
-/*****************************************************************************
- *
- * function:
- *   node *APTpart(node *arg_node, node *arg_info)
- *
- * description:
- *   only a dummy for now
- *
- *****************************************************************************/
-
-node *
-APTpart (node *arg_node, node *arg_info)
-{
-
-    DBUG_ENTER ("APTpart");
-
-    DBUG_PRINT ("APT", ("part-node detected"));
-
-    DBUG_RETURN (arg_node);
-}
-
-/*****************************************************************************
- *
- * function:
- *   node *APTwithid(node *arg_node, node *arg_info)
- *
- * description:
- *   only a dummy for now
- *
- *****************************************************************************/
-
-node *
-APTwithid (node *arg_node, node *arg_info)
-{
-
-    DBUG_ENTER ("APTwithid");
-
-    DBUG_PRINT ("APT", ("withid-node detected"));
-
-    DBUG_RETURN (arg_node);
-}
-
-/*****************************************************************************
- *
- * function:
- *   node *APTgenerator(node *arg_node, node *arg_info)
- *
- * description:
- *   only a dummy for now
- *
- *****************************************************************************/
-
-node *
-APTgenerator (node *arg_node, node *arg_info)
-{
-
-    DBUG_ENTER ("APTgenerator");
-
-    DBUG_PRINT ("APT", ("generator-node detected"));
 
     DBUG_RETURN (arg_node);
 }
@@ -862,6 +808,8 @@ APTwithop (node *arg_node, node *arg_info)
 
     case WO_foldfun:
 
+        DBUG_PRINT ("APT", (" foldfun-loop"));
+
         /* check all sons for paddable code */
         NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
         break;
@@ -923,33 +871,6 @@ APTap (node *arg_node, node *arg_info)
     } else {
         /* the result of an unser-defined function might be of a padded shape */
         INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/*****************************************************************************
- *
- * function:
- *   node *APTexprs(node *arg_node, node *arg_info)
- *
- * description:
- *   only a dummy for now
- *
- *****************************************************************************/
-
-node *
-APTexprs (node *arg_node, node *arg_info)
-{
-
-    DBUG_ENTER ("APTexprs");
-
-    DBUG_PRINT ("APT", ("exprs-node detected"));
-
-    DBUG_ASSERT ((EXPRS_EXPR (arg_node) != NULL), " unexpected empty EXPR!");
-    EXPRS_EXPR (arg_node) = Trav (EXPRS_EXPR (arg_node), arg_info);
-    if (EXPRS_NEXT (arg_node) != NULL) {
-        EXPRS_NEXT (arg_node) = Trav (EXPRS_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1021,7 +942,7 @@ APTprf (node *arg_node, node *arg_info)
     switch (PRF_PRF (arg_node)) {
 
     case F_psi:
-        DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL), " psi() has empty argmuent list!");
+        DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL), " psi() has empty argument list!");
         /* traverse arguments to apply padding */
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
 
@@ -1032,7 +953,7 @@ APTprf (node *arg_node, node *arg_info)
         break;
 
     case F_dim:
-        DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL), " dim() has empty argmuent list!");
+        DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL), " dim() has empty argument list!");
         /* traverse arguments to apply padding */
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
 
@@ -1043,7 +964,7 @@ APTprf (node *arg_node, node *arg_info)
         break;
 
     case F_shape:
-        DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL), " shape() has empty argmuent list!");
+        DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL), " shape() has empty argument list!");
         /* check, if argument has paddable shape */
 
         if (ID_PADDED (PRF_ARG1 (arg_node))) {
@@ -1116,10 +1037,10 @@ APTprf (node *arg_node, node *arg_info)
          */
 
         /* do not traverse sons */
-
         DBUG_PRINT ("APT", (" unsupported PRF '%s'!", prf_string[PRF_PRF (arg_node)]));
 
         INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
+
         break;
     }
 
@@ -1235,8 +1156,9 @@ APTlet (node *arg_node, node *arg_info)
      * => right hand side can possibly be padded, so it may be an ap
      *    refering to fundef with body or a variable with padded shape
      * rhs_padded==FALSE
-     * right hand side may be an ap refering to fundef without a body,
-     * prf, array, constant (num, ...) or a variable with unpadded shape */
+     * => right hand side may be an ap refering to fundef without a body,
+     *    prf, array, constant (num, ...) or a variable with unpadded shape
+     */
 
     INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
     /* manually traverse ids */
