@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/08 14:20:38  sah
+ * moved some code
+ *
  * Revision 1.1  2004/11/07 18:04:33  sah
  * Initial revision
  *
@@ -13,10 +16,50 @@
 #include "resolvepragma.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "stringset.h"
 #include "traverse.h"
 #include "free.h"
 #include "dbug.h"
 #include "Error.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *module;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_RSP_MODULE(n) ((n)->module)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_RSP_MODULE (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 static int *
 Nums2BoolArray (int line, int size, nums *numsp)
@@ -200,10 +243,36 @@ RSPFundef (node *arg_node, info *arg_info)
         }
 
         /*
+         * if this function needs an external module, add it to
+         * the external dependencies of this module.
+         */
+        if (PRAGMA_LINKMOD (pragma) != NULL) {
+            MODUL_DEPENDENCIES (INFO_RSP_MODULE (arg_info))
+              = SSAdd (PRAGMA_LINKMOD (pragma), SS_extlib,
+                       MODUL_DEPENDENCIES (INFO_RSP_MODULE (arg_info)));
+
+            PRAGMA_LINKMOD (pragma) = Free (PRAGMA_LINKMOD (pragma));
+        }
+
+        /*
+         * if this function is defined by an external object file,
+         * add it to the dependencies
+         */
+        if (PRAGMA_LINKOBJ (pragma) != NULL) {
+            MODUL_DEPENDENCIES (INFO_RSP_MODULE (arg_info))
+              = SSAdd (PRAGMA_LINKOBJ (pragma), SS_objfile,
+                       MODUL_DEPENDENCIES (INFO_RSP_MODULE (arg_info)));
+
+            PRAGMA_LINKOBJ (pragma) = Free (PRAGMA_LINKOBJ (pragma));
+        }
+
+        /*
          * TODO: implement TOUCH and EFFECT, as soon as classes work
          */
 
-        if ((PRAGMA_LINKNAME (pragma) == NULL) && (PRAGMA_LINKSIGN (pragma) == NULL)
+        if ((PRAGMA_LINKNAME (pragma) == NULL) && (PRAGMA_LINKOBJ (pragma) == NULL)
+            && (PRAGMA_LINKNAME (pragma) == NULL) && (PRAGMA_LINKMOD (pragma) == NULL)
+            && (PRAGMA_LINKSIGN (pragma) == NULL)
             && (PRAGMA_REFCOUNTING (pragma) == NULL)) {
             FUNDEF_PRAGMA (arg_node) = FreeNode (pragma);
         }
@@ -221,6 +290,8 @@ RSPModul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSPModul");
 
+    INFO_RSP_MODULE (arg_info) = arg_node;
+
     if (MODUL_FUNDECS (arg_node) != NULL) {
         MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
     }
@@ -232,13 +303,18 @@ void
 DoResolvePragmas (node *syntax_tree)
 {
     funtab *store_tab;
+    info *info;
 
     DBUG_ENTER ("DoResolvePragmas");
 
     store_tab = act_tab;
     act_tab = rsp_tab;
 
-    syntax_tree = Trav (syntax_tree, NULL);
+    info = MakeInfo ();
+
+    syntax_tree = Trav (syntax_tree, info);
+
+    info = FreeInfo (info);
 
     act_tab = store_tab;
 

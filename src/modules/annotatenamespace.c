@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/11/08 14:20:38  sah
+ * moved some code
+ *
  * Revision 1.10  2004/11/07 18:05:35  sah
  * added handling of external function
  * dependencies
@@ -296,34 +299,6 @@ ANSFundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_TYPES (arg_node) != NULL) {
         FUNDEF_TYPES (arg_node) = ANSTypes (FUNDEF_TYPES (arg_node), arg_info);
-    }
-
-    /*
-     * if this function needs an external module, add it to
-     * the external dependencies of this module.
-     */
-    if (FUNDEF_PRAGMA (arg_node) != NULL) {
-        if (PRAGMA_LINKMOD (FUNDEF_PRAGMA (arg_node)) != NULL) {
-            MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
-              = SSAdd (PRAGMA_LINKMOD (FUNDEF_PRAGMA (arg_node)), SS_extlib,
-                       MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
-            PRAGMA_LINKMOD (FUNDEF_PRAGMA (arg_node))
-              = Free (PRAGMA_LINKMOD (FUNDEF_PRAGMA (arg_node)));
-        }
-    }
-
-    /*
-     * if this function is defined by an external object file,
-     * add it to the dependencies
-     */
-    if (FUNDEF_PRAGMA (arg_node) != NULL) {
-        if (PRAGMA_LINKOBJ (FUNDEF_PRAGMA (arg_node)) != NULL) {
-            MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
-              = SSAdd (PRAGMA_LINKOBJ (FUNDEF_PRAGMA (arg_node)), SS_objfile,
-                       MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
-            PRAGMA_LINKOBJ (FUNDEF_PRAGMA (arg_node))
-              = Free (PRAGMA_LINKOBJ (FUNDEF_PRAGMA (arg_node)));
-        }
     }
 
     arg_node = TravSons (arg_node, arg_info);
