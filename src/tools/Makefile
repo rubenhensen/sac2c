@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.9  2002/06/06 19:35:17  dkr
+# target clean: *.old removed
+#
 # Revision 3.8  2001/11/21 18:38:20  sbs
 # strange requirement on MACOS to re-run ranlib on libsac.a 8-(
 #
@@ -94,7 +97,7 @@ CacheSimTest: CacheSimTest.o $(LIBDIR)/libsac.a
 
 
 clean:
-	$(RM) *.o *.a *.bak *.old *~ .*.d
+	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) -r .sb SunWS_cache
 	$(RM) CacheSimTest CacheSimAnalyser
 

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.9  2002/06/06 19:35:17  dkr
+# target clean: *.old removed
+#
 # Revision 3.8  2001/11/15 15:36:48  sacbase
 # CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
 #
@@ -97,7 +100,7 @@ runtime.tar: *.h sac2crc.README
 	$(CLOCK_SKEW_ELIMINATION) $@
 
 clean:
-	$(RM) *.o *.a *.bak *.old *~ .*.d
+	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) -r .sb  SunWS_cache
 	$(RM) runtime.tar
 	$(RM) sac2crc CacheSimAnalyser

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.12  2002/06/06 19:35:17  dkr
+# target clean: *.old removed
+#
 # Revision 3.11  2001/11/15 15:36:48  sacbase
 # CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
 #
@@ -126,7 +129,7 @@ prod:
 
 
 clean:
-	$(RM) *.o *.a *.bak *.old *~ .*.d
+	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) -r .sb SunWS_cache
 
 
