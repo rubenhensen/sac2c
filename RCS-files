@@ -1,2 +1,4 @@
 Makefile
+Makefile.Deps
+Makefile.Config
 RCS-directories
