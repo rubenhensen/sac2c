@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/07/16 11:40:51  sbs
+ * exported DoInline which is needed in WLUnroll.c
+ *
  * Revision 1.6  1998/04/16 16:06:29  srs
  * removed INL_TYPES
  *
@@ -27,6 +30,7 @@
 #define _Inline_h
 
 extern node *Inline (node *arg_node, node *arg_info);
+extern node *DoInline (node *let_node, node *ap_node, node *arg_info);
 
 extern node *INLmodul (node *arg_node, node *arg_info);
 extern node *INLfundef (node *arg_node, node *arg_info);
