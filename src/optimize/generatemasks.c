@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1999/02/11 12:54:52  srs
+ * fixed bug in GNMassign()
+ *
  * Revision 1.3  1999/02/10 09:52:06  srs
  * inserted access macros in GNMassign
  *
@@ -2052,8 +2055,10 @@ GNMassign (node *arg_node, node *arg_info)
         tmp_node = ASSIGN_NEXT (arg_node);
         ASSIGN_NEXT (arg_node) = NULL;
         FreeTree (arg_node);
-        arg_node = Trav (tmp_node, arg_info);
-        ;
+        if (tmp_node)
+            arg_node = Trav (tmp_node, arg_info);
+        else
+            arg_node = NULL;
         break;
     case N_assign:
         /* e.g. unswitching */
