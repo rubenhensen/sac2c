@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.55  2000/07/07 12:04:26  mab
+ * added APTassign
+ *
  * Revision 1.54  2000/07/04 14:38:11  jhs
  * Added Dups for MTalloc, MTsignal, MTsync.
  *
@@ -1019,7 +1022,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, SCHINassign, BLKINassign, TravSons, FUN2LACassign, AIassign, BLKEXassign,
        TravSons, TravSons, BLKCOassign, DFAassign, BLKPPassign, TravSons, BARINassign,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, APTassign,
 
        TravSons, TravSons, TravSons, TravSons, 2),
 

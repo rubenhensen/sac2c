@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2000/07/07 12:05:27  mab
+ * added APTassign
+ *
  * Revision 1.7  2000/06/29 10:23:38  mab
  * added dummy functions for APTpart, APTwithid, APTgenerator, APTcode, APTwithop
  * renamed APTNwith to APTwith
@@ -49,6 +52,7 @@ extern void APtransform ();
 
 extern node *APTarg (node *arg_node, node *arg_info);
 extern node *APTvardec (node *arg_node, node *arg_info);
+extern node *APTassign (node *arg_node, node *arg_info);
 extern node *APTarray (node *arg_node, node *arg_info);
 extern node *APTwith (node *arg_node, node *arg_info);
 extern node *APTpart (node *arg_node, node *arg_info);
