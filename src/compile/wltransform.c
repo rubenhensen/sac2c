@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2001/06/28 09:30:42  sbs
+ * catenation in WP macro def eliminated
+ *
  * Revision 3.51  2001/05/18 12:04:52  dkr
  * no changes done
  *
@@ -2988,7 +2991,7 @@ SetSegs (node *pragma, node *cubes, int dims)
 #undef WLP
             {
                 fun_names =
-#define WLP(fun, str) " "##str
+#define WLP(fun, str) str
 #include "wlpragma_funs.mac"
 #undef WLP
                   ;
