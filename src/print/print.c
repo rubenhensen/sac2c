@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/04/19 17:08:56  jhs
+ * DbugPrintArray now fit for empty arrays.
+ *
  * Revision 2.11  1999/04/15 15:00:56  cg
  * ICMs are no longer printed with ';' behind. This was a bug.
  *
@@ -250,6 +253,9 @@ DbugPrintArray (node *arg_node)
     if (NODE_TYPE (arg_node) == N_array) {
         length = ARRAY_VECLEN (arg_node);
         switch (ARRAY_VECTYPE (arg_node)) {
+        case T_nothing:
+            fprintf (outfile, ":[");
+            break;
         case T_int:
             intptr = ARRAY_INTVEC (arg_node);
             if ((intptr == NULL) || (length < 1))
@@ -315,12 +321,20 @@ DbugPrintArray (node *arg_node)
     } else /* (NODE_TYPE(arg_node) == N_id) */ {
         length = ID_VECLEN (arg_node);
         intptr = ID_INTVEC (arg_node);
-        if ((intptr == NULL) || (length < 1))
-            return;
+        /*    if ((intptr == NULL) || (length < 0))
+          return;
         else {
-            fprintf (outfile, ":[%d", intptr[0]);
+        */
+        if (ID_CONSTARRAY (arg_node)) {
+            fprintf (outfile, ":[");
+
+            if (0 < length)
+                fprintf (outfile, "%d", intptr[0]);
+
             for (i = 1; i < ((length < 10) ? (length) : (10)); i++)
                 fprintf (outfile, ",%d", intptr[i]);
+        } else {
+            return;
         }
     }
     if (length > 10)
