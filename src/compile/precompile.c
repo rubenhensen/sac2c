@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.40  1998/03/31 00:03:52  dkr
+ * removed unused vars
+ *
  * Revision 1.39  1998/03/30 23:57:51  dkr
  * fixed a bug in PRECnwith:
  *   default value for 'PREC_break_after' is now correct
@@ -1543,8 +1546,8 @@ int
 IntersectOutline (node *stride1, node *stride2, node **i_stride1, node **i_stride2)
 {
     node *grid1, *grid2, *new_i_stride1, *new_i_stride2;
-    int bound11, bound21, step1, grid1_b1, grid1_b2, bound12, bound22, step2, grid2_b1,
-      grid2_b2, head1, rear1, head2, rear2, i_bound1, i_bound2, i_offset1, i_offset2;
+    int bound11, bound21, grid1_b1, grid1_b2, bound12, bound22, grid2_b1, grid2_b2, head1,
+      rear1, head2, rear2, i_bound1, i_bound2, i_offset1, i_offset2;
     int flag = 0;
     int result = 1;
 
@@ -1577,7 +1580,6 @@ IntersectOutline (node *stride1, node *stride2, node **i_stride1, node **i_strid
 
         bound12 = WLSTRIDE_BOUND1 (stride2);
         bound22 = WLSTRIDE_BOUND2 (stride2);
-        step2 = WLSTRIDE_STEP (stride2);
         grid2_b1 = WLGRID_BOUND1 (grid2);
         grid2_b2 = WLGRID_BOUND2 (grid2);
 
@@ -2420,7 +2422,6 @@ NewStepGrids (node *grids, int step, int new_step, int offset)
 void
 IntersectGrid (node *grid1, node *grid2, int step, node **i_grid1, node **i_grid2)
 {
-    node *new_grid1, *new_grid2;
     int bound11, bound21, bound12, bound22, i_bound1, i_bound2;
 
     DBUG_ENTER ("IntersectGrid");
