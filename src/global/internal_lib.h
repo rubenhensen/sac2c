@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2004/11/27 01:43:41  ktr
+ * removed ILIBrenamelocalidentifier
+ *
  * Revision 3.33  2004/11/26 23:01:36  ktr
  * From denmark with love.
  *
@@ -215,7 +218,6 @@ extern char *ILIBtmpVar (void);
 extern char *ILIBtmpVarName (char *postfix);
 
 extern char *ILIBreplaceSpecialCharacters (char *name);
-extern char *ILIBrenameLocalIdentifier (char *name);
 
 #ifdef SHOW_MALLOC
 extern void ILIBcomputeMallocAlignStep (void);
