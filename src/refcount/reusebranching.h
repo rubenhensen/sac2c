@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/12/14 12:51:44  ktr
+ * added EMRBwithid
+ *
  * Revision 1.3  2004/12/13 13:55:59  ktr
  * added functionality to branch over with-loops (work in progress)
  *
@@ -34,5 +37,6 @@ extern node *EMRBmodarray (node *arg_node, info *arg_info);
 extern node *EMRBprf (node *arg_node, info *arg_info);
 extern node *EMRBwith (node *arg_node, info *arg_info);
 extern node *EMRBwith2 (node *arg_node, info *arg_info);
+extern node *EMRBwithid (node *arg_node, info *arg_info);
 
 #endif /* _SAC_REUSEBRANCHING_H_ */

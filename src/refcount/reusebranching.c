@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2004/12/14 12:51:44  ktr
+ * added EMRBwithid
+ *
  * Revision 1.14  2004/12/13 18:54:49  ktr
  * Withids contain N_id/N_exprs of N_id after explicit allocation now.
  *
@@ -91,6 +94,7 @@ struct INFO {
     dfmask_base_t *maskbase;
     dfmask_t *drcs;
     dfmask_t *localvars;
+    node *precode;
 };
 
 /*
@@ -103,6 +107,7 @@ struct INFO {
 #define INFO_RB_MASKBASE(n) ((n)->maskbase)
 #define INFO_RB_DRCS(n) ((n)->drcs)
 #define INFO_RB_LOCALVARS(n) ((n)->localvars)
+#define INFO_RB_PRECODE(n) ((n)->precode)
 
 /*
  * INFO functions
@@ -123,6 +128,7 @@ MakeInfo ()
     INFO_RB_MASKBASE (result) = NULL;
     INFO_RB_DRCS (result) = NULL;
     INFO_RB_LOCALVARS (result) = NULL;
+    INFO_RB_PRECODE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -523,58 +529,73 @@ EMRBassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-
-    if (INFO_RB_BRANCHES (arg_info) != NULL) {
-        node *next, *newass, *lastass;
-        node *lhs;
-        dfmask_t *inmask;
-        lut_t *lut;
-
-        next = ASSIGN_NEXT (arg_node);
-        ASSIGN_NEXT (arg_node) = NULL;
-
-        /*
-         * Determine in parameters of the assignment
-         */
-        lut = LUTgenerateLut ();
-        inmask = INFDFMSdoInferInDfmAssignChain (arg_node, INFO_RB_FUNDEF (arg_info));
-
-        newass = BuildCondTree (arg_node, INFO_RB_BRANCHES (arg_info),
-                                INFO_RB_MEMVARS (arg_info), INFO_RB_FUNDEF (arg_info),
-                                inmask, lut);
-
-        INFO_RB_BRANCHES (arg_info) = FREEdoFreeTree (INFO_RB_BRANCHES (arg_info));
-        INFO_RB_MEMVARS (arg_info) = FREEdoFreeTree (INFO_RB_MEMVARS (arg_info));
-
-        FUNDEF_DFM_BASE (INFO_RB_FUNDEF (arg_info))
-          = DFMremoveMaskBase (FUNDEF_DFM_BASE (INFO_RB_FUNDEF (arg_info)));
-        inmask = DFMremoveMask (inmask);
-        lut = LUTremoveLut (lut);
-
-        /*
-         * Replace LHS of new assignment in order to match current funcion
-         */
-        lastass = newass;
-        while (ASSIGN_NEXT (lastass) != NULL) {
-            lastass = ASSIGN_NEXT (lastass);
-        }
-        ASSIGN_LHS (lastass) = FREEdoFreeTree (ASSIGN_LHS (lastass));
-        ASSIGN_LHS (lastass) = ASSIGN_LHS (arg_node);
-        ASSIGN_LHS (arg_node) = NULL;
-
-        lhs = ASSIGN_LHS (lastass);
-        while (lhs != NULL) {
-            AVIS_SSAASSIGN (IDS_AVIS (lhs)) = lastass;
-            lhs = IDS_NEXT (lhs);
-        }
-
-        /*
-         * Put new assignments into assignment chain
-         */
+    /*
+     * In case this assigment was holding some memory operations for a
+     * with-loop, ASSIGN_INSTR can be empty
+     */
+    if (ASSIGN_INSTR (arg_node) == NULL) {
         arg_node = FREEdoFreeNode (arg_node);
-        arg_node = TCappendAssign (newass, arg_node);
-        arg_node = TCappendAssign (arg_node, next);
+    } else {
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
+        if (INFO_RB_BRANCHES (arg_info) != NULL) {
+            node *next, *newass, *lastass;
+            node *lhs;
+            dfmask_t *inmask;
+            lut_t *lut;
+
+            next = ASSIGN_NEXT (arg_node);
+            ASSIGN_NEXT (arg_node) = NULL;
+
+            INFO_RB_PRECODE (arg_info)
+              = TCappendAssign (INFO_RB_PRECODE (arg_info), arg_node);
+
+            /*
+             * Determine in parameters of the assignment
+             */
+            lut = LUTgenerateLut ();
+            inmask = INFDFMSdoInferInDfmAssignChain (INFO_RB_PRECODE (arg_info),
+                                                     INFO_RB_FUNDEF (arg_info));
+
+            newass
+              = BuildCondTree (INFO_RB_PRECODE (arg_info), INFO_RB_BRANCHES (arg_info),
+                               INFO_RB_MEMVARS (arg_info), INFO_RB_FUNDEF (arg_info),
+                               inmask, lut);
+
+            INFO_RB_BRANCHES (arg_info) = FREEdoFreeTree (INFO_RB_BRANCHES (arg_info));
+            INFO_RB_MEMVARS (arg_info) = FREEdoFreeTree (INFO_RB_MEMVARS (arg_info));
+
+            FUNDEF_DFM_BASE (INFO_RB_FUNDEF (arg_info))
+              = DFMremoveMaskBase (FUNDEF_DFM_BASE (INFO_RB_FUNDEF (arg_info)));
+            inmask = DFMremoveMask (inmask);
+            lut = LUTremoveLut (lut);
+
+            /*
+             * Replace LHS of new assignment in order to match current funcion
+             */
+            DBUG_PRINT ("EMRB", ("New assignments: "));
+            DBUG_EXECUTE ("EMRB", PRTdoPrint (newass););
+
+            lastass = newass;
+            while (ASSIGN_NEXT (lastass) != NULL) {
+                lastass = ASSIGN_NEXT (lastass);
+            }
+            ASSIGN_LHS (lastass) = FREEdoFreeTree (ASSIGN_LHS (lastass));
+            ASSIGN_LHS (lastass) = ASSIGN_LHS (arg_node);
+            ASSIGN_LHS (arg_node) = NULL;
+
+            lhs = ASSIGN_LHS (lastass);
+            while (lhs != NULL) {
+                AVIS_SSAASSIGN (IDS_AVIS (lhs)) = lastass;
+                lhs = IDS_NEXT (lhs);
+            }
+
+            /*
+             * Put new assignments into assignment chain
+             */
+            INFO_RB_PRECODE (arg_info) = FREEdoFreeTree (INFO_RB_PRECODE (arg_info));
+            arg_node = TCappendAssign (newass, next);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -859,6 +880,10 @@ EMRBwith (node *arg_node, info *arg_info)
     INFO_RB_DRCS (arg_info) = DFMremoveMask (INFO_RB_DRCS (arg_info));
     INFO_RB_DRCS (arg_info) = olddrcs;
 
+    if (INFO_RB_BRANCHES (arg_info) != NULL) {
+        WITH_WITHID (arg_node) = TRAVdo (WITH_WITHID (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -895,6 +920,76 @@ EMRBwith2 (node *arg_node, info *arg_info)
      */
     INFO_RB_DRCS (arg_info) = DFMremoveMask (INFO_RB_DRCS (arg_info));
     INFO_RB_DRCS (arg_info) = olddrcs;
+
+    if (INFO_RB_BRANCHES (arg_info) != NULL) {
+        WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *StealLet( node *assign)
+ *
+ * @brief
+ *
+ * @param assign
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+static node *
+StealLet (node *assign)
+{
+    node *let;
+    node *res;
+
+    DBUG_ENTER ("StealLet");
+
+    let = ASSIGN_INSTR (assign);
+    ASSIGN_INSTR (assign) = NULL;
+
+    res = TBmakeAssign (let, NULL);
+    AVIS_SSAASSIGN (IDS_AVIS (LET_IDS (let))) = res;
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMRBwithid( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+node *
+EMRBwithid (node *arg_node, info *arg_info)
+{
+    node *id;
+    node *exprs;
+
+    DBUG_ENTER ("EMRBwithid");
+
+    id = WITHID_VEC (arg_node);
+    INFO_RB_PRECODE (arg_info)
+      = TCappendAssign (INFO_RB_PRECODE (arg_info),
+                        StealLet (AVIS_SSAASSIGN (ID_AVIS (id))));
+
+    exprs = WITHID_IDS (arg_node);
+    while (exprs != NULL) {
+        id = EXPRS_EXPR (exprs);
+        INFO_RB_PRECODE (arg_info)
+          = TCappendAssign (INFO_RB_PRECODE (arg_info),
+                            StealLet (AVIS_SSAASSIGN (ID_AVIS (id))));
+
+        exprs = EXPRS_NEXT (exprs);
+    }
 
     DBUG_RETURN (arg_node);
 }
