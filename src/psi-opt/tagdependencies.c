@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/09/21 17:03:34  khf
+ * memory allocation has to be done first
+ *
  * Revision 1.2  2004/09/02 15:27:01  khf
  * TDEPENDwithop removed, additional traverse in NWITHOP and NPART added
  *
@@ -73,10 +76,10 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
+    result = Malloc (sizeof (info));
+
     INFO_TDEPEND_INSIDEWL (result) = FALSE;
     INFO_TDEPEND_FUSIONABLE_WL (result) = NULL;
-
-    result = Malloc (sizeof (info));
 
     DBUG_RETURN (result);
 }
