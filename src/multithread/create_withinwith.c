@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/08/26 17:05:04  skt
+ * implementation finished
+ *
  * Revision 1.1  2004/08/24 16:48:56  skt
  * Initial revision
  *
@@ -38,8 +41,6 @@
 #include "create_withinwith.h"
 #include "multithread_lib.h"
 
-#define MUTH_MULTI_SPECIALIZED 4
-
 /*
  * INFO structure
  */
@@ -47,6 +48,8 @@ struct INFO {
     bool withinmulti;
     bool createspecialized;
     bool duplicatemode;
+    node *actassign;
+    node *modul;
 };
 
 /*
@@ -58,6 +61,8 @@ struct INFO {
 #define INFO_CRWIW_WITHINMULTI(n) (n->withinmulti)
 #define INFO_CRWIW_CREATESPECIALIZED(n) (n->createspecialized)
 #define INFO_CRWIW_DUPLICATEMODE(n) (n->duplicatemode)
+#define INFO_CRWIW_ACTASSIGN(n) (n->actassign)
+#define INFO_CRWIW_MODUL(n) (n->modul)
 
 /*
  * INFO functions
@@ -74,6 +79,8 @@ MakeInfo ()
     INFO_CRWIW_WITHINMULTI (result) = FALSE;
     INFO_CRWIW_CREATESPECIALIZED (result) = FALSE;
     INFO_CRWIW_DUPLICATEMODE (result) = FALSE;
+    INFO_CRWIW_ACTASSIGN (result) = NULL;
+    INFO_CRWIW_MODUL (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -95,7 +102,7 @@ FreeInfo (info *info)
  *   @brief  Inits the traversal for this phase
  *
  *   @param arg_node a N_modul
- *   @return the N_modul with duplicated/specialised functions within
+ *   @return the N_modul with duplicated/specialized functions within
  *           multithreaded withloops
  *
  *****************************************************************************/
@@ -112,15 +119,39 @@ CreateWithinwith (node *arg_node)
     /* push info ... */
     old_tab = act_tab;
     act_tab = crwiw_tab;
-    fprintf (stdout, "Hello again\n");
+
+    INFO_CRWIW_MODUL (arg_info) = arg_node;
+
     DBUG_PRINT ("CRWIW", ("trav into modul-funs"));
-    MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    Trav (MODUL_FUNS (arg_node), arg_info);
     DBUG_PRINT ("CRWIW", ("trav from modul-funs"));
+
+    arg_node = INFO_CRWIW_MODUL (arg_info);
 
     /* pop info ... */
     act_tab = old_tab;
 
     arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+CRWIWfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CRWIWfundef");
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        /*FUNDEF_NEXT(arg_node) = */
+        Trav (FUNDEF_NEXT (arg_node), arg_info);
+        /* (the FUNDEF_NEXT could change during the traversal - the pointer
+         * is handled correct during CRWIWap)
+         */
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -136,38 +167,38 @@ CreateWithinwith (node *arg_node)
  *   @return
  *
  *****************************************************************************/
-
 node *
 CRWIWassign (node *arg_node, info *arg_info)
 {
+    bool old_flag;
+    node *old_actassign;
     DBUG_ENTER ("CRWIWassign");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign), "arg_node is no a N_assign");
 
-    if (INFO_CRWIW_DUPLICATEMODE (arg_info) == FALSE) {
-        /* traverse only into MUTH_MULTI-assignments, cause you are on the hunt
-         * for with-loops, that will be executed parallel*/
-        if ((ASSIGN_EXECMODE (arg_node) == MUTH_MULTI)
-            && (ASSIGN_INSTR (arg_node) != NULL)) {
-
-            /* set the within_multi-flag */
-            INFO_CRWIW_WITHINMULTI (arg_info) = TRUE;
-
-            DBUG_PRINT ("CRWIW", ("trav into instruction"));
-            ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-            DBUG_PRINT ("CRWIW", ("trav from instruction"));
-
-            /* reset the within_multi-flag */
-            INFO_CRWIW_WITHINMULTI (arg_info) = FALSE;
-        } else if (INFO_CRWIW_WITHINMULTI (arg_info) == TRUE) {
-            DBUG_PRINT ("CRWIW", ("trav into instruction"));
-            ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-            DBUG_PRINT ("CRWIW", ("trav from instruction"));
-        }
-    } else {
-        DBUG_PRINT ("CRWIW", ("Duplicate :trav into instruction"));
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-        DBUG_PRINT ("CRWIW", ("Duplicate: trav from instruction"));
+    /* set the executionmode to MUTH_MULTI_SPECIALIZED if in MULTI-environment */
+    if (INFO_CRWIW_WITHINMULTI (arg_info) == TRUE) {
+        ASSIGN_EXECMODE (arg_node) = MUTH_MULTI_SPECIALIZED;
     }
+
+    if (ASSIGN_EXECMODE (arg_node) == MUTH_MULTI) {
+        /* set the within_multi-flag */
+        old_flag = INFO_CRWIW_WITHINMULTI (arg_info);
+        INFO_CRWIW_WITHINMULTI (arg_info) = TRUE;
+    }
+
+    old_actassign = INFO_CRWIW_ACTASSIGN (arg_info);
+    INFO_CRWIW_ACTASSIGN (arg_info) = arg_node;
+
+    DBUG_PRINT ("CRWIW", ("trav into instruction"));
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    DBUG_PRINT ("CRWIW", ("trav from instruction"));
+
+    if (ASSIGN_EXECMODE (arg_node) == MUTH_MULTI) {
+        /* reset the within_multi-flag */
+        INFO_CRWIW_WITHINMULTI (arg_info) = old_flag;
+    }
+
+    INFO_CRWIW_ACTASSIGN (arg_info) = old_actassign;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("CRWIW", ("trav into next"));
@@ -192,98 +223,53 @@ CRWIWassign (node *arg_node, info *arg_info)
 node *
 CRWIWap (node *arg_node, info *arg_info)
 {
+    node *my_fundef;
+    node *tmp;
     DBUG_ENTER ("CRWIWap");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_ap), "arg_node is no a N_ap");
 
-    fprintf (stdout, "Hello again\n");
+    my_fundef = AP_FUNDEF (arg_node);
 
-    if (INFO_CRWIW_DUPLICATEMODE (arg_info) == FALSE) {
-        /* replicate the function, if needed */
-        AP_FUNDEF (arg_node) = CRWIWBuildReplication (AP_FUNDEF (arg_node), arg_info);
-    } else {
+    if (INFO_CRWIW_WITHINMULTI (arg_info) == TRUE) {
+        if (FUNDEF_COMPANION (my_fundef) != NULL) {
+            AP_FUNDEF (arg_node) = FUNDEF_COMPANION (my_fundef);
+            DBUG_ASSERT ((FUNDEF_EXECMODE (AP_FUNDEF (arg_node))
+                          == MUTH_MULTI_SPECIALIZED),
+                         "my_fundef mut have execmode MUTH_MULTI_SPECIALIZED");
+        }
+        /* let's duplicate it */
+        else {
+            /* LaC-functions are handled seperatly */
+            if (((FUNDEF_STATUS (my_fundef) != ST_dofun)
+                 && (FUNDEF_STATUS (my_fundef) != ST_whilefun)
+                 && (FUNDEF_STATUS (my_fundef) != ST_condfun))) {
+                tmp = DupNode (my_fundef);
+                FUNDEF_NEXT (tmp) = FUNDEF_NEXT (my_fundef);
+                FUNDEF_NEXT (my_fundef) = tmp;
+            } else {
+                INFO_CRWIW_MODUL (arg_info)
+                  = CheckAndDupSpecialFundef (INFO_CRWIW_MODUL (arg_info), my_fundef,
+                                              INFO_CRWIW_ACTASSIGN (arg_info));
+                tmp
+                  = AP_FUNDEF (LET_EXPR (ASSIGN_INSTR (INFO_CRWIW_ACTASSIGN (arg_info))));
+            }
+
+            FUNDEF_EXECMODE (tmp) = MUTH_MULTI_SPECIALIZED;
+            tmp = MUTHExpandFundefName (tmp, "__MULTI_");
+
+            FUNDEF_COMPANION (my_fundef) = tmp;
+            FUNDEF_COMPANION (tmp) = my_fundef;
+
+            AP_FUNDEF (arg_node) = tmp;
+
+            /* time to check the body of the function - perhaps we have to duplicate
+             * somebody within it */
+            DBUG_PRINT ("CRWIW", ("Duplicate: trav into function-body"));
+            FUNDEF_BODY (AP_FUNDEF (arg_node))
+              = Trav (FUNDEF_BODY (AP_FUNDEF (arg_node)), arg_info);
+            DBUG_PRINT ("CRWIW", ("Duplicate: trav from function-body"));
+        }
     }
+
     DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *CRWIWBuildReplication(node *fundef, info *arg_info)
- *
- *   @brief
- *
- *   @param node a N_fundef
- *   @param info the traversal INFO-struct
- *   @return
- *
- *****************************************************************************/
-node *
-CRWIWBuildReplication (node *fundef, info *arg_info)
-{
-    node *result;
-    DBUG_ENTER ("CRWIWBuildReplication");
-
-    /* first: do we really need to build a replication of this function? */
-
-    if (((FUNDEF_COMPANION (fundef) == NULL)
-         && (INFO_CRWIW_WITHINMULTI (arg_info) == FALSE))
-        || ((FUNDEF_COMPANION (fundef) == fundef)
-            && (((FUNDEF_EXECMODE (fundef) != MUTH_MULTI_SPECIALIZED)
-                 && (INFO_CRWIW_WITHINMULTI (arg_info) == FALSE))
-                || ((FUNDEF_EXECMODE (fundef) == MUTH_MULTI_SPECIALIZED)
-                    && (INFO_CRWIW_WITHINMULTI (arg_info) == TRUE))))) {
-        /* no replication needed */
-        result = fundef;
-    } else if (FUNDEF_COMPANION (fundef) != NULL) {
-        /* no replication needed, too, but we have to figure out, which of these
-         * both functions fit */
-        if (((FUNDEF_EXECMODE (fundef) == MUTH_MULTI_SPECIALIZED)
-             && (INFO_CRWIW_WITHINMULTI (arg_info) == TRUE))
-            || ((FUNDEF_EXECMODE (fundef) != MUTH_MULTI_SPECIALIZED)
-                && (INFO_CRWIW_WITHINMULTI (arg_info) == FALSE))) {
-            result = fundef;
-        } else {
-            result = FUNDEF_COMPANION (fundef);
-        }
-    } else {
-        /* 1. companion== NULL   && WITHINMULTI == TRUE
-         * 2. companion== fundef && WITHINMULTI == TRUE  && EXECMODE != SPECIALIZED
-         * 3. companion== fundef && WITHINMULTI == FALSE && EXECMODE == SPECIALIZED
-         */
-
-        if (FUNDEF_COMPANION (fundef) == NULL) {
-            /* 1. */
-            result = fundef;
-            FUNDEF_COMPANION (result) = result;
-        } else {
-            /* 2. & 3. */
-            result = DupNode (fundef);
-            FUNDEF_COMPANION (result) = fundef;
-            FUNDEF_COMPANION (fundef) = result;
-        }
-
-        if (INFO_CRWIW_WITHINMULTI (arg_info) == TRUE) {
-            /* 1. & 2. */
-            FUNDEF_EXECMODE (result) = MUTH_MULTI_SPECIALIZED;
-            INFO_CRWIW_CREATESPECIALIZED (arg_info) = TRUE;
-            result = MUTHExpandFundefName (result, "__MULTI__");
-        } else {
-            /* 3. */
-            FUNDEF_EXECMODE (result) = MUTH_ANY;
-            INFO_CRWIW_CREATESPECIALIZED (arg_info) = FALSE;
-            result = MUTHExpandFundefName (result, "__SINGLE__");
-        }
-
-        FUNDEF_NEXT (result) = FUNDEF_NEXT (fundef);
-        FUNDEF_NEXT (fundef) = result;
-
-        INFO_CRWIW_DUPLICATEMODE (arg_info) = TRUE;
-        /*
-        DBUG_PRINT("CRWIW",("Duplicate: trav into function-body"));
-        FUNDEF_BODY(result) = Trav(FUNDEF_BODY(result), arg_info);
-        DBUG_PRINT("CRWIW",("Duplicate: trav from function-body"));
-        */
-        INFO_CRWIW_DUPLICATEMODE (arg_info) = FALSE;
-    }
-
-    DBUG_RETURN (result);
 }
