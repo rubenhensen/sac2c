@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.6  1999/04/29 07:47:48  bs
+ * unused variable declaration erased.
+ *
  * Revision 2.5  1999/04/29 07:37:46  bs
  * Function CreateIndexInfoA modified: N_id nodes made by flattening
  * arrays will be used like arrays.
@@ -417,7 +420,7 @@ CreateIndexInfoSxS (node *prfn, node *arg_info)
 void
 CreateIndexInfoA (node *prfn, node *arg_info)
 {
-    int id_no = 0, elts, i, index, val, *tmpiv;
+    int id_no = 0, elts, i, index, val;
     node *idn, *constn, *tmpn, *cf_node, *args[2], *assignn, *wln;
     index_info *iinfo, *tmpinfo;
     types *type;
