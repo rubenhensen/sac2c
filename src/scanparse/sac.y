@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.94  2004/07/11 18:08:56  sah
+ * updated some ast accesses to macro abstraction
+ *
  * Revision 3.93  2004/02/24 14:46:54  cg
  * Bug fixed in parsing of loops whose body is a single
  * assignment rather than a whole block.
@@ -537,7 +540,7 @@ imports: import imports
 
 import: IMPORT id COLON impdesc
         { $$ = $4;
-          $$->info.id = $2;
+          IMPLIST_NAME( $$) = $2;
         }
       ;
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2004/07/11 18:08:56  sah
+ * updated some ast accesses to macro abstraction
+ *
  * Revision 3.19  2004/02/20 08:20:35  mwe
  * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
  * changed tree traversal according to that
@@ -382,10 +385,10 @@ GenMod (char *name, int checkdec)
 
         tmp->moddec = decl_tree;
 
-        if (strcmp (decl_tree->info.fun_name.id, name) != 0) {
+        if (strcmp (MODDEC_NAME (decl_tree), name) != 0) {
             SYSERROR (("File \"%s\" does not provide module/class '%s`, "
                        "but module/class '%s`",
-                       buffer, name, decl_tree->info.fun_name.id));
+                       buffer, name, MODDEC_NAME (decl_tree)));
         }
 
         if ((MODDEC_LINKWITH (decl_tree) != NULL) && (!MODDEC_ISEXTERNAL (decl_tree))) {
@@ -1115,7 +1118,7 @@ FindOrAppend (node *implist, int checkdec)
         } while ((current != NULL) && (tmp != 0));
 
         if (tmp != 0) {
-            current = GenMod (implist->info.id, checkdec);
+            current = GenMod (IMPLIST_NAME (implist), checkdec);
             last->next = current;
         }
         implist = IMPLIST_NEXT (implist);
@@ -1236,14 +1239,14 @@ FindSymbolInModul (char *modname, char *name, int symbkind, mods *found, int rec
                  * imported rather than implicitly via a SIB.
                  */
 
-                imports = tmpmod->moddec->node[1]; /* pointer to imports ! */
+                imports = MODDEC_IMPORTS (tmpmod->moddec); /* pointer to imports ! */
 
                 while (imports != NULL) {
                     if ((imports->node[1] == NULL) && (imports->node[2] == NULL)
                         && (imports->node[3] == NULL) && (imports->node[4] == NULL)) {
                         /* import all ! */
                         cnt--;
-                        found = FindSymbolInModul (imports->info.id, name, symbkind,
+                        found = FindSymbolInModul (IMPLIST_NAME (imports), name, symbkind,
                                                    found, 1);
                     } else {
                         /* selective import! */
@@ -1255,8 +1258,8 @@ FindSymbolInModul (char *modname, char *name, int symbkind, mods *found, int rec
 
                         if (tmpids != NULL) { /* Symbol found! */
                             cnt--;
-                            found = FindSymbolInModul (imports->info.id, name, symbkind,
-                                                       found, 1);
+                            found = FindSymbolInModul (IMPLIST_NAME (imports), name,
+                                                       symbkind, found, 1);
                         }
                     }
                     imports = imports->node[0];
@@ -1597,7 +1600,7 @@ DoImport (node *modul, node *implist, char *filename)
     DBUG_ENTER ("DoImport");
 
     while (implist != NULL) {
-        mod = FindModul (implist->info.id);
+        mod = FindModul (IMPLIST_NAME (implist));
 
         if ((implist->node[1] == NULL) && (implist->node[2] == NULL)
             && (implist->node[3] == NULL) && (implist->node[4] == NULL)) {
@@ -1608,32 +1611,33 @@ DoImport (node *modul, node *implist, char *filename)
                 tmp = (ids *)implist->node[i + 1];
 
                 while (tmp != NULL) { /* importing some symbol! */
-                    mods = FindSymbolInModul (implist->info.id, tmp->id, i, NULL, 1);
+                    mods
+                      = FindSymbolInModul (IMPLIST_NAME (implist), tmp->id, i, NULL, 1);
 
                     if (mods == NULL) {
                         switch (i) {
                         case 0:
                             ERROR (implist->lineno,
                                    ("No implicit type '%s` in module/class '%s`", tmp->id,
-                                    implist->info.id));
+                                    IMPLIST_NAME (implist)));
                             break;
 
                         case 1:
                             ERROR (implist->lineno,
                                    ("No explicit type '%s` in module/class '%s`", tmp->id,
-                                    implist->info.id));
+                                    IMPLIST_NAME (implist)));
                             break;
 
                         case 2:
                             ERROR (implist->lineno,
                                    ("No function '%s` in module/class '%s`", tmp->id,
-                                    implist->info.id));
+                                    IMPLIST_NAME (implist)));
                             break;
 
                         case 3:
                             ERROR (implist->lineno,
                                    ("No global object '%s` in module/class '%s`", tmp->id,
-                                    implist->info.id));
+                                    IMPLIST_NAME (implist)));
                             break;
                         }
                     } else {
@@ -1730,7 +1734,8 @@ IMmodul (node *arg_node, node *arg_info)
         modptr = mod_tab;
 
         while (modptr != NULL) {
-            DBUG_PRINT ("IMPORT", ("analyzing module/class %s", modptr->moddec->info.id));
+            DBUG_PRINT ("IMPORT",
+                        ("analyzing module/class %s", MODDEC_NAME (modptr->moddec)));
             if (modptr->moddec->node[1] != NULL) {
                 FindOrAppend (modptr->moddec->node[1], 0);
             }
@@ -1857,8 +1862,7 @@ ImportOwnDeclaration (char *name, file_type modtype)
         decl = decl_tree;
 
         mod_tab->moddec = decl_tree;
-        mod_tab->prefix
-          = MODDEC_ISEXTERNAL (decl_tree) ? NULL : decl_tree->info.fun_name.id;
+        mod_tab->prefix = MODDEC_ISEXTERNAL (decl_tree) ? NULL : MODDEC_NAME (decl_tree);
         mod_tab->next = NULL;
 
         for (i = 0; i < 4; i++) {
