@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2003/03/20 13:57:28  sbs
+ * config.h included; SBRK_T used.
+ *
  * Revision 3.3  2001/11/14 18:35:21  dkr
  * new target architecture SAC_FOR_OSX_MAC added
  *
@@ -228,6 +231,8 @@
 #ifndef HEAPMGR_H
 #define HEAPMGR_H
 
+#include "config.h"
+
 #ifdef MT
 
 #define SAC_DO_MULTITHREAD 1
@@ -250,31 +255,7 @@
  * Macro definition of sbrk() system call
  */
 
-#if defined(SAC_FOR_SOLARIS_SPARC)
-
-#if 0
-#define SBRK(size) sbrk ((intptr_t) (size)) /* works on Solaris 2.7 only !! */
-#else
-#define SBRK(size) sbrk ((size))
-#endif
-
-#elif defined(SAC_FOR_LINUX_X86)
-
-#define SBRK(size) sbrk ((ptrdiff_t) (size))
-
-#elif defined(SAC_FOR_OSF_ALPHA)
-
-#define SBRK(size) sbrk ((int)(size))
-
-#elif defined(SAC_FOR_OSX_MAC)
-
-#define SBRK(size) sbrk ((int)(size))
-
-#else
-
-#define SBRK(size) UNKNOWN_OS
-
-#endif
+#define SBRK(size) sbrk ((SBRK_T) (size))
 
 /*
  * Initialization of some basic values/sizes.
