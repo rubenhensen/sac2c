@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.115  2004/11/27 00:02:11  ktr
+  FPC and TCP added.
+
   Revision 1.114  2004/11/26 22:59:10  khf
   added WLI WLF
 
@@ -1571,6 +1574,24 @@
           <node name="With2" />
           <node name="Wlseg" />
           <node name="Wlsegvar" />
+        </travuser>
+      </traversal>
+      <traversal id="FPC" name="Function Precompilation" default="sons" include="functionprecompile.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Ret" />
+          <node name="Arg" />
+        </travuser>
+      </traversal>
+      <traversal id="TCP" name="Type Conversions" default="sons" include="type_conversions.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Ap" />
         </travuser>
       </traversal>
     </phase>
