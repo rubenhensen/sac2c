@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.97  2002/10/24 20:52:33  dkr
+ * signature of some WL ICMs modified
+ *
  * Revision 3.96  2002/10/08 16:50:25  dkr
  * MakeIcmArgs_WL_OP2(): DBUG_ASSERT modified
  *
@@ -4411,8 +4414,8 @@ MakeIcmArgs_WL_OP1 (node *arg_node)
 
     DBUG_ENTER ("MakeIcmArgs_WL_OP1");
 
-    args = MakeExprs (MakeNum (GetDim (IDS_TYPE (wlids))),
-                      MakeExprs (DupIds_Id (wlids),
+    args = MakeExprs (DupIds_Id (wlids),
+                      MakeExprs (MakeNum (GetDim (IDS_TYPE (wlids))),
                                  MakeExprs (DupIds_Id (NWITH2_VEC (wlnode)),
                                             MakeExprs (MakeNum (NWITH2_DIMS (wlnode)),
                                                        NULL))));
@@ -4798,9 +4801,12 @@ COMPWith2 (node *arg_node, node *arg_info)
     /*
      * build arguments for  'WL_..._BEGIN'-ICM and 'WL_..._END'-ICM
      */
-    icm_args = MakeExprs (DupIds_Id (wlids),
-                          MakeExprs (DupIds_Id (NWITH2_VEC (wlnode)),
-                                     MakeExprs (MakeNum (NWITH2_DIMS (arg_node)), NULL)));
+    icm_args
+      = MakeExprs (DupIds_Id (wlids),
+                   MakeExprs (MakeNum (GetDim (IDS_TYPE (wlids))),
+                              MakeExprs (DupIds_Id (NWITH2_VEC (wlnode)),
+                                         MakeExprs (MakeNum (NWITH2_DIMS (arg_node)),
+                                                    NULL))));
 
     if (NWITH2_OFFSET_NEEDED (wlnode)) {
         icm_name_begin = "WL_BEGIN__OFFSET";
@@ -5423,8 +5429,8 @@ COMPWLgridx (node *arg_node, node *arg_info)
                     DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "code expr is not a id");
 
                     icm_name = "WL_ASSIGN";
-                    icm_args = MakeExprs (MakeNum (GetDim (ID_TYPE (cexpr))),
-                                          MakeExprs (DupNode (cexpr),
+                    icm_args = MakeExprs (DupNode (cexpr),
+                                          MakeExprs (MakeNum (GetDim (ID_TYPE (cexpr))),
                                                      MakeIcmArgs_WL_OP2 (arg_node)));
                     /*
                      * we must decrement the RC of 'cexpr' (consumed argument)
