@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/04/04 09:57:26  nmw
+ * DupSSAcnt added
+ *
  * Revision 3.12  2001/04/02 11:10:17  nmw
  * DupAp increments used counter of special fundefs and adds external
  * assignment to FUNDEF_EXT_ASSIGNS list
@@ -156,6 +159,7 @@ extern node *DupMTsync (node *arg_node, node *arg_info);
 extern node *DupMTalloc (node *arg_node, node *arg_info);
 extern node *DupAvis (node *arg_node, node *arg_info);
 extern node *DupSSAstack (node *arg_node, node *arg_info);
+extern node *DupSSAcnt (node *arg_node, node *arg_info);
 
 /* frontend with-loop: */
 extern node *DupNwith (node *arg_node, node *arg_info);

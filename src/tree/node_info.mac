@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2001/04/04 09:57:39  nmw
+ * DupSSAcnt added
+ *
  * Revision 3.39  2001/03/29 16:30:47  nmw
  * SSACFNgen added
  *
@@ -2082,7 +2085,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_ssacnt, "N_ssacnt", TravSons, TravSons, PrintSSAcnt, TravSons, TravSons,
-       TravSons, TravSons, FreeSSAcnt, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeSSAcnt, TravSons, TravSons, TravSons, TravSons, DupSSAcnt,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
