@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/14 14:18:51  ben
+ * comment for scheduler_table modified
+ *
  * Revision 3.5  2001/03/14 14:11:32  ben
  * return value of SCHAdjustmentRequired is bool
  *
@@ -179,6 +182,10 @@ typedef sched_t *SCHsched_t;
  *
  *   The adjustment flag specifies whether a particular scheduling produces
  *   legal subsegments with respect to unrolled loops.
+ *   That means:
+ *     adjust == 0: The MT_ADJUST_SCHEDULER-icm is needed for *all* dimensions.
+ *     adjust != 0: This icm is needed for inhomogenous dimensions only
+ *                  (-> WLSEG_MAXHOMDIM).
  *
  *   The maximum scheduling dimension is the highest dimension on which a
  *   particular scheduling will schedule loops. Counting dimensions always
@@ -200,7 +207,7 @@ static struct {
     int num_args;
     char *arg_spec;
 } scheduler_table[] = {
-  /* Name            Class          Adjust Dim  Args    */
+  /* Name            Class          Adjust Dim  Args  ArgTypes */
   {"Block", SC_const_seg, 1, 0, 0, ""},   {"BlockVar", SC_var_seg, 1, 0, 0, ""},
   {"AllByOne", SC_var_seg, 0, 0, 1, "i"}, {"BlockBySome", SC_const_seg, 0, 0, 2, "i,i"},
   {"Static", SC_withloop, 0, 0, 0, ""},   {"", SC_const_seg, 0, 0, 0, ""}};
