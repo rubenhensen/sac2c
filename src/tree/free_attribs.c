@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/11/24 20:44:50  sah
+ * COMPILES!
+ *
  * Revision 1.13  2004/11/23 10:05:24  sah
  * SaC DevCamp 04
  *
@@ -44,10 +47,18 @@
  *
  */
 
-#include "free_attribs.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "stringset.h"
+#include "internal_lib.h"
+#include "free.h"
+#include "LookUpTable.h"
+#include "DataFlowMask.h"
+#include "new_types.h"
+#include "shape.h"
+#include "constants.h"
+#include "scheduling.h"
+#include "dbug.h"
 
 /** <!--******************************************************************-->
  *
@@ -67,7 +78,7 @@ FREEattribString (char *attr)
 
     if (attr != NULL) {
         DBUG_PRINT ("FREE", ("Freeing string '%s' at " F_PTR, attr, attr));
-        attr = FREEfree (attr);
+        attr = ILIBfree (attr);
     }
 
     DBUG_RETURN (attr);
@@ -136,7 +147,7 @@ FREEattribNode (node *attr)
     if (attr != NULL) {
         DBUG_PRINT ("FREE", ("Starting to free %s node attribute at " F_PTR,
                              NODE_TEXT (attr), attr));
-        attr = FREEfreeTree (attr);
+        attr = FREEdoFreeTree (attr);
     }
 
     DBUG_RETURN (attr);
@@ -162,8 +173,8 @@ FREEattribLink (node *attr)
     /* has already been freed. This can be done using the NODE_ISALIVE  */
     /* macro...                                                         */
     if ((attr != NULL) && (NODE_ISALIVE (attr))) {
-        if (NODE_TYPE (attr) == N_ncode) {
-            NCODE_DEC_USED (attr);
+        if (NODE_TYPE (attr) == N_code) {
+            CODE_DEC_USED (attr);
         }
     }
 
@@ -199,8 +210,7 @@ FREEattribExtLink (node *attr)
                              "FUNDEF_USED must be active for LaC functions!");
 
                 /* check whether this function is use-counted */
-                if ((FUNDEF_USED (attr) != USED_INACTIVE)
-                    && (!(FUNDEF_ISLOOPFUN (attr)))) {
+                if ((FUNDEF_USED (attr) != USED_INACTIVE) && (!(FUNDEF_ISDOFUN (attr)))) {
                     (FUNDEF_USED (attr))--;
 
                     DBUG_ASSERT ((FUNDEF_USED (attr) >= 0),
@@ -216,7 +226,7 @@ FREEattribExtLink (node *attr)
                          */
                         DBUG_PRINT ("FREE", ("Use count reached 0 for '%s' at " F_PTR,
                                              FUNDEF_NAME (attr), attr));
-                        attr = FREEfreeNode (attr);
+                        attr = FREEdoFreeNode (attr);
                     }
                 }
             }
@@ -273,37 +283,6 @@ FREEattribIntegerArray (int *attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FREEattribNums
- *
- * @brief Frees Nums attribute
- *
- * @param attr Nums node to process
- *
- * @return result of Free call, usually NULL
- *
- * TODO: remove as soon as nums are removed
- *
- ***************************************************************************/
-nums *
-FREEattribNums (nums *attr)
-{
-    DBUG_ENTER ("FREEattribNums");
-
-    while (attr != NULL) {
-        nums *tmp = attr;
-
-        DBUG_PRINT ("FREE", ("Freeing nums structure at " F_PTR, attr));
-
-        attr = NUMS_NEXT (attr);
-
-        tmp = ILIBfree (tmp);
-    }
-
-    DBUG_RETURN (attr);
-}
-
-/** <!--******************************************************************-->
- *
  * @fn FREEattribLUT
  *
  * @brief Frees LUT attribute
@@ -313,13 +292,13 @@ FREEattribNums (nums *attr)
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
-LUT_t
-FREEattribLUT (LUT_t attr)
+lut_t *
+FREEattribLUT (lut_t *attr)
 {
     DBUG_ENTER ("FREEattribLUT");
 
     if (attr != NULL) {
-        attr = LUTremoveLUT (attr);
+        attr = LUTremoveLut (attr);
     }
 
     DBUG_RETURN (attr);
@@ -431,36 +410,13 @@ FREEattribDFMask (dfmask_t *attr)
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
-DFMmask_base_t
-FREEattribDFMaskBase (DFMmask_base_t attr)
+dfmask_base_t *
+FREEattribDFMaskBase (dfmask_base_t *attr)
 {
     DBUG_ENTER ("FREEattribDFMaskBase");
 
     if (attr != NULL) {
-        attr = DFMRemoveMaskBase (attr);
-    }
-
-    DBUG_RETURN (attr);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn FREEattribDFMFoldMask
- *
- * @brief Frees DFMFoldMask attribute
- *
- * @param attr DFMFoldMask node to process
- *
- * @return result of Free call, usually NULL
- *
- ***************************************************************************/
-DFMfoldmask_t *
-FREEattribDfFoldMask (DFMfoldmask_t *attr)
-{
-    DBUG_ENTER ("FREEattribDfFoldMask");
-
-    if (attr != NULL) {
-        attr = ILIBfree (attr);
+        attr = DFMremoveMaskBase (attr);
     }
 
     DBUG_RETURN (attr);
@@ -605,7 +561,7 @@ FREEattribAccess (access_t *attr)
     while (attr != NULL) {
         access_t *tmp = attr;
         attr = attr->next;
-        tmp->offset = FREEfreeShpSeg (tmp->offset);
+        tmp->offset = FREEfreeShpseg (tmp->offset);
         tmp = ILIBfree (tmp);
     }
 
@@ -717,8 +673,8 @@ FREEattribIntegerPointerArray (int *attr)
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
-SCHsched_t
-FREEattribScheduling (SCHsched_t attr)
+sched_t *
+FREEattribScheduling (sched_t *attr)
 {
     DBUG_ENTER ("FREEattribScheduling");
 
@@ -740,8 +696,8 @@ FREEattribScheduling (SCHsched_t attr)
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
-SCHtasksel_t
-FREEattribTaskSel (SCHtasksel_t attr)
+tasksel_t *
+FREEattribTaskSel (tasksel_t *attr)
 {
     DBUG_ENTER ("FREEattribTaskSel");
 
@@ -833,7 +789,7 @@ FREEattribStringSet (stringset_t *attr)
 {
     DBUG_ENTER ("FREEattribRCCounter");
 
-    attr = SSfree (attr);
+    attr = STRSfree (attr);
 
     DBUG_RETURN (attr);
 }
