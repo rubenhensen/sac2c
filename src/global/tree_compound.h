@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/11/16 19:41:43  cg
+ * Revision 1.17  1995/12/01 17:10:45  cg
+ * new compound access macros for pragmas of functions,
+ * objects and types.
+ *
+ * Revision 1.16  1995/11/16  19:41:43  cg
  * new compound access macros for masks.
  * Function FreeNodelist moved to free.c
  *
@@ -482,6 +486,9 @@ extern nodelist *TidyUpNodelist (nodelist *list);
 #define TYPEDEF_TNAME(n) (TYPES_NAME (TYPEDEF_TYPE (n)))
 #define TYPEDEF_TMOD(n) (TYPES_MOD (TYPEDEF_TYPE (n)))
 
+#define TYPEDEF_COPYFUN(n) (PRAGMA_COPYFUN (TYPEDEF_PRAGMA (n)))
+#define TYPEDEF_FREEFUN(n) (PRAGMA_FREEFUN (TYPEDEF_PRAGMA (n)))
+
 /*
  *  The following compound access macros are useful whenever a typedef
  *  node is used to represent a type declaration rather than a type
@@ -576,6 +583,8 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
 #define OBJDEF_TNAME(n) (TYPES_NAME (OBJDEF_TYPE (n)))
 #define OBJDEF_TMOD(n) (TYPES_MOD (OBJDEF_TYPE (n)))
 
+#define OBJDEF_LINKNAME(n) (PRAGMA_LINKNAME (OBJDEF_PRAGMA (n)))
+
 /*
  *
  *  macro name    : CMP_OBJDEF(a,b)
@@ -663,6 +672,17 @@ extern node *SearchObjdef (char *name, char *mod, node *implementations);
 
 #define FUNDEF_DEFMASK(n) (FUNDEF_MASK (n, 0))
 #define FUNDEF_USEMASK(n) (FUNDEF_MASK (n, 1))
+
+#define FUNDEF_LINKNAME(n) (PRAGMA_LINKNAME (FUNDEF_PRAGMA (n)))
+#define FUNDEF_LINKSIGN(n) (PRAGMA_LINKSIGN (FUNDEF_PRAGMA (n)))
+#define FUNDEF_EFFECT(n) (PRAGMA_EFFECT (FUNDEF_PRAGMA (n)))
+#define FUNDEF_TOUCH(n) (PRAGMA_TOUCH (FUNDEF_PRAGMA (n)))
+#define FUNDEF_READONLY(n) (PRAGMA_READONLY (FUNDEF_PRAGMA (n)))
+#define FUNDEF_REFCOUNTING(n) (PRAGMA_REFCOUNTING (FUNDEF_PRAGMA (n)))
+/*
+#define FUNDEF_NEEDTYPES(n) (PRAGMA_NEEDTYPES(FUNDEF_PRAGMA(n)))
+#define FUNDEF_NEEDFUNS(n) (PRAGMA_NEEDFUNS(FUNDEF_PRAGMA(n)))
+*/
 
 /*
  *  The following compound access macros are useful whenever a fundef
