@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.38  1998/03/06 13:22:29  srs
+ * modified MakeAssign and MakeNwith
+ *
  * Revision 1.37  1998/03/03 19:39:34  dkr
  * renamed N_WLindex to N_WLproj
  *
@@ -606,6 +609,7 @@ MakeAssign (node *instr, node *next)
 
     ASSIGN_INSTR (tmp) = instr;
     ASSIGN_NEXT (tmp) = next;
+    ASSIGN_INDEX (tmp) = NULL;
 
     DBUG_PRINT ("MAKENODE",
                 ("%d:nodetype: %s " P_FORMAT " instr: " P_FORMAT " next: " P_FORMAT,
@@ -1254,7 +1258,13 @@ MakeNWith (node *part, node *code, node *withop)
     NWITH_PART (tmp) = part;
     NWITH_CODE (tmp) = code;
     NWITH_WITHOP (tmp) = withop;
-    NWITH_PARTS (tmp) = -1;
+
+    tmp->info2 = Malloc (sizeof (wl_info));
+    NWITH_PARTS (tmp) = 0;
+    NWITH_REFERENCED (tmp) = 0;
+    NWITH_REFERENCED_FOLD (tmp) = 0;
+    NWITH_COMPLEX (tmp) = 0;
+    NWITH_FOLDABLE (tmp) = 0;
 
     DBUG_RETURN (tmp);
 }
