@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.65  1998/05/02 17:44:52  dkr
+ * added macros VARDEC_OR_ARG_...
+ *
  * Revision 1.64  1998/04/28 15:34:51  dkr
  * added compound macros for N_Nwith2
  *
@@ -639,6 +642,11 @@ extern nodelist *CopyNodelist (nodelist *nl);
 #define BLOCK_INSTR_OR_ASSIGN_NEXT(n)                                                    \
     (NODE_TYPE (n) == N_assign ? ASSIGN_NEXT (n)                                         \
                                : (NODE_TYPE (n) == N_block ? BLOCK_INSTR (n) : NULL))
+
+#define VARDEC_OR_ARG_NAME(n) ((NODE_TYPE (n) == N_arg) ? ARG_NAME (n) : VARDEC_NAME (n))
+
+#define VARDEC_OR_ARG_REFCNT(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_REFCNT (n) : VARDEC_REFCNT (n))
 
 /*--------------------------------------------------------------------------*/
 
