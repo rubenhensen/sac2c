@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/23 16:23:39  sbs
+ * mem_inl_fun in Inline enclosed by ifndef DBUG_OFF to avoid compiler warning
+ * in product version & node_behind initialized by NULL in INLassign to avoid
+ * superfluous warning "might be used uninitialized in this function".
+ *
  * Revision 3.1  2000/11/20 18:00:31  sacbase
  * new release made
  *
@@ -148,7 +153,9 @@ node *
 Inline (node *arg_node, node *arg_info)
 {
     funtab *tmp_tab;
+#ifndef DBUG_OFF
     int mem_inl_fun = inl_fun;
+#endif
 
     DBUG_ENTER ("Inline");
     DBUG_PRINT ("OPT", ("FUNCTION INLINING"));
@@ -405,7 +412,7 @@ InlineSingleApplication (node *let_node, node *fundef_node)
 node *
 INLassign (node *arg_node, node *arg_info)
 {
-    node *node_behind;
+    node *node_behind = NULL;
     node *inlined_nodes = NULL;
 
     DBUG_ENTER ("INLassign");
@@ -433,6 +440,7 @@ INLassign (node *arg_node, node *arg_info)
             ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     } else {
         FUNDEF_INLREC (AP_FUNDEF (node_behind))--;
+        /* node_behind definitly is set, since inlined_nodes != NULL!! */
         inlined_nodes = Trav (inlined_nodes, arg_info);
         FUNDEF_INLREC (AP_FUNDEF (node_behind))++;
 
