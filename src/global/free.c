@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/08/25 16:08:15  bs
+ * FreeNCodeWLAA modified.
+ *
  * Revision 2.9  1999/08/04 14:27:32  bs
  * Function FreeNCodeWLAA added.
  *
@@ -220,7 +223,7 @@ FreeNCodeWLAA (node *arg_node)
 
     if (NCODE_WLAA_INFO (arg_node) != NULL) {
         NCODE_WLAA_ACCESS (arg_node) = FreeAllAccess (NCODE_WLAA_ACCESS (arg_node));
-        Free (NCODE_WLAA_INFO (arg_node));
+        FreeNode (NCODE_WLAA_INFO (arg_node));
     }
 
     DBUG_RETURN (arg_node);
