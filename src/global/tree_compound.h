@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/07/13 16:27:16  sbs
+ * VARDEC_OR_ARG_SHAPE added.
+ *
  * Revision 2.9  1999/07/08 14:59:12  sbs
  * Array2BoolVec added
  *
@@ -588,6 +591,9 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
 #define VARDEC_OR_ARG_TYPE(n) ((NODE_TYPE (n) == N_arg) ? ARG_TYPE (n) : VARDEC_TYPE (n))
 
 #define VARDEC_OR_ARG_DIM(n) ((NODE_TYPE (n) == N_arg) ? ARG_DIM (n) : VARDEC_DIM (n))
+
+#define VARDEC_OR_ARG_SHAPE(n, x)                                                        \
+    ((NODE_TYPE (n) == N_arg) ? ARG_SHAPE (n, x) : VARDEC_SHAPE (n, x))
 
 #define VARDEC_OR_ARG_REFCNT(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_REFCNT (n) : VARDEC_REFCNT (n))
