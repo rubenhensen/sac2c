@@ -1,17 +1,21 @@
 /*
- *  $Log$
- *  Revision 3.1  2000/11/20 18:00:12  sacbase
- *  new release made
  *
- *  Revision 2.1  1999/02/23 12:40:50  sacbase
- *  new release made
+ * $Log$
+ * Revision 3.2  2001/02/06 16:15:34  dkr
+ * no changes done
  *
- *  Revision 1.8  1996/01/25 16:19:07  hw
- *  added typechecking of primitive functions in modules
- *  (in modules the resultung type can be also one with known dimension only
- *   (without known shape). This feature can be added by compiling this file
- *   with #define KNOWN_DIM.
- *   KNOWN_DIM isn't set in this version, but can be added later)
+ * Revision 3.1  2000/11/20 18:00:12  sacbase
+ * new release made
+ *
+ * Revision 2.1  1999/02/23 12:40:50  sacbase
+ * new release made
+ *
+ * Revision 1.8  1996/01/25 16:19:07  hw
+ * added typechecking of primitive functions in modules
+ * (in modules the resultung type can be also one with known dimension only
+ * (without known shape). This feature can be added by compiling this file
+ * with #define KNOWN_DIM.
+ * KNOWN_DIM isn't set in this version, but can be added later)
  *
  * Revision 1.7  1995/12/06  17:03:37  hw
  * added typecheck of primitive function 'genarray'
@@ -37,29 +41,28 @@
  *
  * Revision 1.1  1995/02/03  07:45:32  hw
  * Initial revision
- *,$
  *
  */
 
-#ifndef _prim_fun_h
-
-#define _prim_fun_h
+#ifndef _prim_fun_h_
+#define _prim_fun_h_
 
 typedef struct PRIM_FUN_TAB_ELEM {
     prf prf;       /* kind of primitive function */
     id *id_mod;    /* name of module where userdefined
-                    *  primitive function is defined
+                    * primitive function is defined
                     */
     node *node;    /* pointer to declaration (function header) */
     int typed_tag; /* tag whether function is typechecked */
     int user_tag;  /* tag whether function is userdefined */
     prf new_prf;
     struct PRIM_FUN_TAB_ELEM *next;
-
 } prim_fun_tab_elem;
 
 extern prim_fun_tab_elem *prim_fun_tab;
+
 extern void InitPrimFunTab ();
+
 extern types *AxA (types *array1, types *array2, simpletype s_type);
 extern types *Reshp (node *vec, types *array, types *shp_vec);
 extern types *Shp (types *array);
@@ -74,9 +77,4 @@ extern types *Modarray (types *array, types *vec, types *value, int line);
 extern types *Genarray_S (node *v_node, types *vec, types *array);
 extern types *Genarray_A (node *v_node, types *vec, types *array);
 
-#if 0 
-extern types *Psi(types *array1, types *array2);
-extern types *Axs_F(types *array1);
-#endif
-
-#endif /* _prim_fun_h */
+#endif /* _prim_fun_h_ */
