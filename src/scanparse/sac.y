@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.153  1998/03/17 13:37:14  cg
+ * *** empty log message ***
+ *
  * Revision 1.152  1998/03/17 12:19:52  cg
  * Now, character arrays defined as strings keep the original string
  * throughout the compilation process. This string is reused when
@@ -2928,7 +2931,7 @@ node *string2array(char *str)
   len_exprs=MakeExprs(MakeNum(cnt), NULL);
   array=MakeArray(new_exprs);
 
-#ifndef CHAR_ARRAY_AS_STRING
+#ifndef CHAR_ARRAY_NOT_AS_STRING
   ARRAY_STRING(array)=str;
 #endif  /*  CHAR_ARRAY_AS_STRING  */
 
