@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.43  1995/06/09 17:35:53  hw
+ * Revision 1.44  1995/06/12 09:19:17  hw
+ * bug fixed in CompVardec ( arg_node->nnode is set correctly)
+ *
+ * Revision 1.43  1995/06/09  17:35:53  hw
  * -bug fixed in CompLoop (look whether next there is a assignment ater loop)
  *
  * Revision 1.42  1995/06/09  15:30:42  hw
@@ -761,21 +764,33 @@ CompVardec (node *arg_node, node *arg_info)
         /* now transform current node to one of type N_icm */
         FREE_VARDEC (arg_node);
         arg_node = assign;
-        if (NULL != arg_node->node[1])
+        if (NULL != arg_node->node[1]) {
             arg_node->node[1] = Trav (arg_node->node[1], NULL);
-
+            if (NULL == arg_node->node[1])
+                arg_node->nnode = 1;
+            else
+                arg_node->nnode = 2;
+        }
     } else
 
       if (arg_node->DIM < 0) {
         /* current vardec-node has unknown shape and will be removed */
         node *tmp;
         tmp = arg_node;
-        arg_node = Trav (arg_node->node[0], NULL);
+        if (1 == arg_node->nnode) {
+            arg_node = Trav (arg_node->node[0], NULL);
+            if (NULL == arg_node)
+                arg_node->nnode = 0;
+        } else
+            arg_node = NULL;
         FREE_VARDEC (tmp);
     } else
       /* traverse next N_vardec node if any */
-      if (NULL != arg_node->node[0])
+      if (1 == arg_node->nnode) {
         arg_node->node[0] = Trav (arg_node->node[0], NULL);
+        if (NULL == arg_node->node[0])
+            arg_node->nnode = 0;
+    }
 
     DBUG_RETURN (arg_node);
 }
