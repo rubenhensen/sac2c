@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.23  2000/06/13 13:21:02  dkr
+# module Old2NewWith.[ch] renamed into PatchWith.[ch]
+#
 # Revision 2.22  2000/05/29 14:36:40  dkr
 # make deps done
 #
@@ -95,8 +98,9 @@ INCS=-I../global -I../tree -I../../inc -I../print -I../typecheck -I../refcount \
 MACS=icm.data icm_comment.c icm_trace.c
 
 all: wltransform.o wlpragma_funs.o precompile.o compile.o ReuseWithArrays.o \
-     icm2c.o icm2c_std.o icm2c_wl.o icm2c_mt.o gen_startup_code.o Old2NewWith.o \
-     icm2c_utils.o
+     icm2c.o icm2c_std.o icm2c_wl.o icm2c_mt.o icm2c_utils.o gen_startup_code.o \
+     PatchWith.o
+
 
 #
 # the wltransform.c object is to fool makedepend which does not
