@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/04/02 11:09:14  nmw
+ * handling for multiple used special functions added
+ * the MODUL_FUNS son is not written back after traversal
+ *
  * Revision 3.13  2001/03/27 13:49:09  dkr
  * signature of Inline() modified
  *
@@ -431,6 +435,7 @@ node *
 Optimize (node *arg_node)
 {
     funtab *tmp_tab;
+    node *arg_info;
 
     DBUG_ENTER ("Optimize");
 
@@ -441,7 +446,11 @@ Optimize (node *arg_node)
     tmp_tab = act_tab;
     act_tab = opt_tab;
 
-    Trav (arg_node, NULL);
+    arg_info = MakeInfo ();
+
+    Trav (arg_node, arg_info);
+
+    FREE (arg_info);
 
     act_tab = tmp_tab;
 
@@ -487,6 +496,8 @@ node *
 OPTmodul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("OPTmodul");
+
+    INFO_OPT_MODUL (arg_info) = arg_node;
 
     if (optimize & OPT_INL) {
         arg_node = Inline (arg_node); /* inline_tab */
@@ -544,8 +555,11 @@ OPTmodul (node *arg_node, node *arg_info)
     if (MODUL_FUNS (arg_node)) {
         /*
          * Now, we apply the intra-procedural optimizations function-wise!
+         * The result of Trav is MUST NOT BE STORED in MODUL_FUNS, because
+         * there might be some special fundefs duplicated and added in front
+         * of the fundef chain.
          */
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+        Trav (MODUL_FUNS (arg_node), arg_info);
 
         /*
          * OPTfundef() sets the global variable 'do_break' to report a break!
@@ -765,7 +779,7 @@ OPTfundef (node *arg_node, node *arg_info)
             if (use_ssaform) {
                 arg_node = CheckAvis (arg_node);
                 arg_node = SSATransform (arg_node);
-                arg_node = SSADeadCodeRemoval (arg_node);
+                arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
             } else {
                 arg_node = DeadCodeRemoval (arg_node, arg_info);
             }
@@ -800,7 +814,7 @@ OPTfundef (node *arg_node, node *arg_info)
                 if (use_ssaform) {
                     arg_node = CheckAvis (arg_node);
                     arg_node = SSATransform (arg_node);
-                    arg_node = SSACSE (arg_node);
+                    arg_node = SSACSE (arg_node, INFO_OPT_MODUL (arg_info));
                 } else {
                     arg_node = CSE (arg_node, arg_info);
                 }
@@ -816,7 +830,9 @@ OPTfundef (node *arg_node, node *arg_info)
                 if (use_ssaform) {
                     arg_node = CheckAvis (arg_node);
                     arg_node = SSATransform (arg_node);
-                    arg_node = SSAConstantFolding (arg_node); /* ssacf_tab */
+                    arg_node
+                      = SSAConstantFolding (arg_node,
+                                            INFO_OPT_MODUL (arg_info)); /* ssacf_tab */
                 } else {
                     arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
                 }
@@ -874,7 +890,9 @@ OPTfundef (node *arg_node, node *arg_info)
                     if (use_ssaform) {
                         arg_node = CheckAvis (arg_node);
                         arg_node = SSATransform (arg_node);
-                        arg_node = SSAConstantFolding (arg_node); /* ssacf_tab */
+                        arg_node
+                          = SSAConstantFolding (arg_node, INFO_OPT_MODUL (
+                                                            arg_info)); /* ssacf_tab */
                     } else {
                         arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
                     }
@@ -891,7 +909,7 @@ OPTfundef (node *arg_node, node *arg_info)
                 if (use_ssaform) {
                     arg_node = CheckAvis (arg_node);
                     arg_node = SSATransform (arg_node);
-                    arg_node = SSADeadCodeRemoval (arg_node);
+                    arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
                 } else {
                     arg_node = DeadCodeRemoval (arg_node, arg_info);
                 }
@@ -925,7 +943,8 @@ OPTfundef (node *arg_node, node *arg_info)
                 if (use_ssaform) {
                     arg_node = CheckAvis (arg_node);
                     arg_node = SSATransform (arg_node);
-                    arg_node = SSALoopInvariantRemoval (arg_node);
+                    arg_node
+                      = SSALoopInvariantRemoval (arg_node, INFO_OPT_MODUL (arg_info));
                 } else {
                     arg_node = LoopInvariantRemoval (arg_node, arg_info);
                     /* lir_tab and lir_mov_tab */
@@ -978,7 +997,9 @@ OPTfundef (node *arg_node, node *arg_info)
                 if (use_ssaform) {
                     arg_node = CheckAvis (arg_node);
                     arg_node = SSATransform (arg_node);
-                    arg_node = SSAConstantFolding (arg_node); /* ssacf_tab */
+                    arg_node
+                      = SSAConstantFolding (arg_node,
+                                            INFO_OPT_MODUL (arg_info)); /* ssacf_tab */
                 } else {
                     arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
                 }
@@ -1013,7 +1034,7 @@ OPTfundef (node *arg_node, node *arg_info)
             if (use_ssaform) {
                 arg_node = CheckAvis (arg_node);
                 arg_node = SSATransform (arg_node);
-                arg_node = SSADeadCodeRemoval (arg_node);
+                arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
             } else {
                 arg_node = DeadCodeRemoval (arg_node, arg_info);
             }
