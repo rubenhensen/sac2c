@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/10/22 17:37:59  cg
+ * Revision 1.4  1995/10/24 13:15:02  cg
+ * Some errors corrected, first working revision.
+ *
+ * Revision 1.3  1995/10/22  17:37:59  cg
  * first compilable revision
  *
  * Revision 1.2  1995/10/22  15:56:31  cg
@@ -100,15 +103,18 @@ LoadDeclaration (char *name, file_type modtype)
 
 /*
  *
- *  functionname  : CheckExplicitType
- *  arguments     : 1) declaration of explicit type (N_typedef)
- *                  2) implementation of explicit type (N_typedef)
- *  description   : compares the declaration of an explicit type with its
- *                  implementation
+ *  functionname  : CheckTypes
+ *  arguments     : 1) first type
+ *                  2) second type
+ *                  3) flag to choose between strict(1) and non-strict(0)
+ *                     comparisons of module names in the case of
+ *                     user-defined types
+ *  description   : compares 2 types
+ *
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : ---
- *  macros        : CMP_TYPE_USER
+ *  macros        : CMP_TYPE_USER, CMP_TYPE_USER_NONSTRICT
  *
  *  remarks       : result==1 -> compare positive
  *                  result==0 -> compare negative
@@ -116,21 +122,23 @@ LoadDeclaration (char *name, file_type modtype)
  */
 
 int
-CheckExplicitType (node *decl, node *impl)
+CheckTypes (types *decl, types *impl, int strict)
 {
     int i, result = 1;
 
-    DBUG_ENTER ("CheckExplicitType");
+    DBUG_ENTER ("CheckTypes");
 
-    if (TYPEDEF_BASETYPE (decl) == TYPEDEF_BASETYPE (impl)) {
-        if (TYPEDEF_BASETYPE (decl) == T_user) {
-            if (!CMP_TYPE_USER (TYPEDEF_TYPE (decl), TYPEDEF_TYPE (impl))) {
-                result = 0;
+    if (TYPES_BASETYPE (decl) == TYPES_BASETYPE (impl)) {
+        if (TYPES_BASETYPE (decl) == T_user) {
+            if (strict) {
+                result = CMP_TYPE_USER (decl, impl);
+            } else {
+                result = CMP_TYPE_USER_NONSTRICT (decl, impl);
             }
         }
-        if ((result == 1) && (TYPEDEF_DIM (decl) == TYPEDEF_DIM (impl))) {
-            for (i = 0; i < TYPEDEF_DIM (decl); i++) {
-                if (TYPEDEF_SHAPE (decl, i) != TYPEDEF_SHAPE (impl, i)) {
+        if (result && (TYPES_DIM (decl) == TYPES_DIM (impl))) {
+            for (i = 0; i < TYPES_DIM (decl); i++) {
+                if (TYPES_SHAPE (decl, i) != TYPES_SHAPE (impl, i)) {
                     result = 0;
                     break;
                 }
@@ -274,7 +282,7 @@ CDECexplist (node *arg_node, node *arg_info)
  *                  2) entry point to type definitions of implementation
  *  description   : checks type declaration against type definitions
  *  global vars   : ---
- *  internal funs : CheckExplicitType
+ *  internal funs : CheckTypes
  *  external funs : SearchTypedef, Trav
  *  macros        : DBUG, ERROR, TREE
  *
@@ -292,8 +300,16 @@ CDECtypedef (node *arg_node, node *arg_info)
     if (TYPEDEF_BASETYPE (arg_node) == T_hidden) {
         tdef = SearchTypedef (TYPEDEF_NAME (arg_node), TYPEDEF_MOD (arg_node), arg_info);
         if (tdef == NULL) {
-            ERROR (NODE_LINE (arg_node), ("Implementation of implicit type '%s` missing",
-                                          TYPEDEF_NAME (arg_node)));
+            if (NODE_LINE (arg_node) == 0) {
+
+                ERROR (NODE_LINE (arg_node), ("Implementation of class type '%s` missing",
+                                              TYPEDEF_NAME (arg_node)));
+            } else {
+                ERROR (NODE_LINE (arg_node),
+                       ("Implementation of implicit type '%s` missing",
+                        TYPEDEF_NAME (arg_node)));
+            }
+
         } else {
             if (TYPEDEF_STATUS (tdef) == ST_imported) {
                 ERROR (NODE_LINE (arg_node),
@@ -314,8 +330,9 @@ CDECtypedef (node *arg_node, node *arg_info)
                 ERROR (NODE_LINE (arg_node),
                        ("Implementation of explicit type '%s` missing",
                         TYPEDEF_NAME (arg_node)));
-            } else if (CheckExplicitType (arg_node, tdef) == 0) {
-                ERROR (NODE_LINE (arg_node), ("Implementation of explicit type '%s`\n\t"
+            } else if (CheckTypes (TYPEDEF_TYPE (arg_node), TYPEDEF_TYPE (tdef), 1)
+                       == 0) {
+                ERROR (NODE_LINE (arg_node), ("Implementation of explicit type '%s` "
                                               "different from declaration",
                                               TYPEDEF_NAME (arg_node)));
             }
@@ -361,7 +378,7 @@ CDECobjdef (node *arg_node, node *arg_info)
             ERROR (NODE_LINE (arg_node), ("Implementation of global object '%s` missing",
                                           OBJDEF_NAME (arg_node)));
         } else {
-            if (CMP_TYPE_USER (OBJDEF_TYPE (arg_node), OBJDEF_TYPE (odef)) == 0) {
+            if (!CheckTypes (OBJDEF_TYPE (arg_node), OBJDEF_TYPE (odef), 0)) {
                 ERROR (NODE_LINE (arg_node),
                        ("Type mismatch in declaration of global object '%s`",
                         OBJDEF_NAME (arg_node)));
@@ -395,6 +412,8 @@ node *
 CDECfundef (node *arg_node, node *arg_info)
 {
     node *fundef;
+    types *tmpdec, *tmpdef;
+    int counter;
 
     DBUG_ENTER ("CDECfundef");
 
@@ -409,6 +428,29 @@ CDECfundef (node *arg_node, node *arg_info)
             ERROR (NODE_LINE (arg_node), ("Implementation of function '%s` missing\n\t"
                                           "or type mismatch in arguments",
                                           FUNDEF_NAME (arg_node)));
+        } else {
+            tmpdef = FUNDEF_TYPES (fundef);
+            tmpdec = FUNDEF_TYPES (arg_node);
+            counter = 1;
+
+            while ((tmpdef != NULL) && (tmpdec != NULL)) {
+                if (!CheckTypes (tmpdef, tmpdec, 0)) {
+                    ERROR (NODE_LINE (arg_node),
+                           ("Type mismatch in %d. return value in declaration\n\t"
+                            "of function '%s`",
+                            counter, FUNDEF_NAME (arg_node)));
+                }
+                counter++;
+                tmpdef = TYPES_NEXT (tmpdef);
+                tmpdec = TYPES_NEXT (tmpdec);
+            }
+
+            if (tmpdef != tmpdec) {
+                ERROR (NODE_LINE (arg_node),
+                       ("Wrong number of return values in declaration\n\t"
+                        "of function '%s`",
+                        FUNDEF_NAME (arg_node)));
+            }
         }
     }
 
@@ -440,7 +482,7 @@ WDECmodul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WDECmodul");
 
-    decfile = fopen (FindFile (MODDEC_PATH, filename), "w");
+    decfile = fopen (filename, "w");
 
     if (decfile == NULL) {
         SYSABORT (("Unable to open file \"%s\" for writing", filename));
@@ -537,7 +579,7 @@ WDECobjdef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WDECobjdef");
 
-    fprintf (decfile, "%s %s;\n", Type2String (OBJDEF_TYPE (arg_node), 0),
+    fprintf (decfile, "  %s %s;\n", Type2String (OBJDEF_TYPE (arg_node), 0),
              OBJDEF_NAME (arg_node));
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
@@ -566,7 +608,7 @@ WDECfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WDECfundef");
 
-    fprintf (decfile, "%s %s(", Type2String (FUNDEF_TYPES (arg_node), 0),
+    fprintf (decfile, "  %s %s(", Type2String (FUNDEF_TYPES (arg_node), 0),
              FUNDEF_NAME (arg_node));
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
@@ -574,6 +616,10 @@ WDECfundef (node *arg_node, node *arg_info)
     }
 
     fprintf (decfile, ");\n");
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -606,20 +652,6 @@ WDECarg (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
 
 /*
  *
