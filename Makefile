@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.88  2004/07/06 12:41:19  skt
+# propagate_executionmode added
+#
 # Revision 3.87  2004/07/01 14:35:30  sah
 # added newast target
 #
@@ -260,7 +263,7 @@ MULTITHREAD= src/multithread/multithread.o src/multithread/schedule_init.o \
              src/multithread/dataflow_analysis.o \
              src/multithread/barriers_init.o src/multithread/blocks_lift.o \
              src/multithread/adjust_calls.o src/multithread/assignments_rearrange.o \
-             src/multithread/tag_executionmode.o
+             src/multithread/tag_executionmode.o src/multithread/propagate_executionmode.o
 COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
          src/compile/precompile.o src/compile/gen_startup_code.o src/compile/compile.o \
          src/compile/icm2c.o src/compile/icm2c_basic.o \

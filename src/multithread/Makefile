@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 3.17  2004/07/06 12:40:54  skt
+# propagate_executionmode added
+#
 # Revision 3.16  2004/06/08 14:21:07  skt
 # tag_executionmode.o added
 #
@@ -75,7 +78,7 @@ INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../flatt
 all: multithread.o multithread_lib.o schedule_init.o repfuns_init.o mtfuns_init.o \
      blocks_init.o blocks_propagate.o blocks_expand.o blocks_cons.o blocks_lift.o \
      dataflow_analysis.o barriers_init.o adjust_calls.o assignments_rearrange.o \
-     tag_executionmode.o
+     tag_executionmode.o propagate_executionmode.o
 
 
 %.o: %.c 
