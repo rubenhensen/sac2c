@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2000/10/31 18:13:27  cg
+ * Bug fixed in de-allocation of vector padding in function APinfer.
+ *
  * Revision 1.8  2000/10/27 13:24:56  cg
  * Padding inference partly re-implemented.
  * In particular, the choice of padding dimensions is completely
@@ -2015,7 +2018,6 @@ APinfer ()
              */
             FreeShpseg (shape);
             FreeShpseg (new_shape);
-            FreeShpseg (padding);
         } else {
             PIaddInferredShape (type, dim, shape, new_shape, DupShpseg (padding));
         }
