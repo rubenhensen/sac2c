@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2004/07/13 16:45:11  sah
+ * added WO_unknown WithOpType
+ *
  * Revision 3.55  2004/03/10 00:18:01  dkrHH
  * comment about float.h corrected
  *
@@ -6801,6 +6804,9 @@ TI_Nwith (node *arg_node, node *arg_info)
 
         FreeOneTypes (body_type);
         FreeOneTypes (neutral_type);
+        break;
+    case WO_unknown:
+        DBUG_ASSERT (FALSE, "non initialised WithOpType found.");
         break;
     }
 
