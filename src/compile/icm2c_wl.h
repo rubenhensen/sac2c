@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/05/14 21:37:45  dkr
+ * changed some ICMs
+ *
  * Revision 1.5  1998/05/12 22:46:04  dkr
  * added some macros for fold
  *
@@ -30,10 +33,16 @@ extern void ICMCompileWL_FOLD_BEGIN (char *array, char *idx_vec, int dims, char 
 
 extern void ICMCompileWL_END (char *array, char *idx_vec, int dims, char **args);
 
-extern void ICMCompileWL_ASSIGN (char *expr, char *array, char *idx_vec, int dims,
-                                 char **idx_scalar);
+extern void ICMCompileWL_ASSIGN (char *array, char *idx_vec, int dims, char **idx_scalars,
+                                 int dim_expr, char *expr);
 
-extern void ICMCompileWL_FOLD (char *expr, char *array, char *idx_vec, int dims,
-                               char **idx_scalar);
+extern void ICMCompileWL_ASSIGN_GEN (char *array, char *idx_vec, int dims,
+                                     char **idx_scalars, char *templ);
+
+extern void ICMCompileWL_ASSIGN_MOD (char *source, char *array, char *idx_vec, int dims,
+                                     char **idx_scalars, char *templ);
+
+extern void ICMCompileWL_FOLD (char *array, char *idx_vec, int dims, char **idx_scalars,
+                               int dim_expr, char *expr);
 
 #endif /* _icm2c_wl_h */
