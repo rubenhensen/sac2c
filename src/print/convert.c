@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1994/12/31 13:54:17  sbs
+ * Revision 1.6  1995/01/04 13:32:48  sbs
+ * error in Type2String fixed.
+ *
+ * Revision 1.5  1994/12/31  13:54:17  sbs
  * types->name_mod inserted
  *
  * Revision 1.4  1994/12/20  15:58:18  sbs
@@ -59,8 +62,10 @@ Type2String (types *type, int print_id)
     tmp_string[0] = '\0';
 
     do {
-        if (type->name_mod != NULL)
-            sprintf (tmp_string, "%s__", type->name_mod);
+        if (type->name_mod != NULL) {
+            strcat (tmp_string, type->name_mod);
+            strcat (tmp_string, "__");
+        }
         strcat (tmp_string, SIMPLE2STR (type));
 
         if (0 != type->dim)
