@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/08/29 18:08:38  sah
+ * added some DBUG_PRINTS
+ *
  * Revision 1.3  2004/07/16 14:41:34  sah
  * switch to new INFO structure
  * PHASE I
@@ -491,8 +494,9 @@ CAVids (ids *arg_ids, info *arg_info)
 
     if (IDS_AVIS (arg_ids) != VARDEC_OR_ARG_AVIS (IDS_VARDEC (arg_ids))) {
         /* wrong back reference */
-        DBUG_PRINT ("CAV", ("backreference from ids %s to N_avis corrected.",
-                            IDS_VARDEC_NAME (arg_ids)));
+        DBUG_PRINT ("CAV", ("backreference from ids %s to N_avis (" F_PTR ") corrected.",
+                            IDS_VARDEC_NAME (arg_ids),
+                            VARDEC_OR_ARG_AVIS (IDS_VARDEC (arg_ids))));
         IDS_AVIS (arg_ids) = VARDEC_OR_ARG_AVIS (IDS_VARDEC (arg_ids));
     } else {
         DBUG_PRINT ("CAV", ("backreference from ids %s to N_avis ok.",

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/08/29 18:08:38  sah
+ * added some DBUG_PRINTS
+ *
  * Revision 1.8  2004/07/16 17:36:23  sah
  * switch to new INFO structure
  * PHASE I
@@ -332,6 +335,8 @@ CheckIds (ids *idents, search_for_name_fun_t SearchForName, node *vardecs, node 
             vardec = MakeVardec (StringCopy (IDS_NAME (idents)), MakeTypes1 (T_unknown),
                                  vardecs);
             vardecs = vardec;
+            DBUG_PRINT ("IVD", ("inserting new vardec (" F_PTR ") for id %s.", vardec,
+                                IDS_NAME (idents)));
         }
         IDS_VARDEC (idents) = vardec;
         if (NODE_TYPE (vardec) == N_objdef) {
