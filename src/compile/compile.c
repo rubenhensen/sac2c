@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2001/03/15 21:25:35  dkr
+ * signature of NodeOr..._MakeIndex() modified
+ *
  * Revision 3.27  2001/03/15 11:59:42  dkr
  * ST_inout replaced by ST_reference
  *
@@ -4972,12 +4975,12 @@ BuildIcmArgs_WL_LOOP1 (node *arg_node)
         MakeExprs (DupIds_Id (GetIndexIds (NWITH2_IDS (wl_node), dim)),
                    MakeExprs (NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                    WLNODE_GET_ADDR (arg_node, BOUND1),
-                                                   dim, IDS_NAME (wl_ids), FALSE),
+                                                   dim, IDS_NAME (wl_ids), FALSE, FALSE),
                               MakeExprs (NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                               WLNODE_GET_ADDR (arg_node,
                                                                                BOUND2),
                                                               dim, IDS_NAME (wl_ids),
-                                                              FALSE),
+                                                              FALSE, FALSE),
                                          NULL)))));
 
     DBUG_RETURN (args);
@@ -5005,7 +5008,7 @@ BuildIcmArgs_WL_LOOP2 (node *arg_node)
                    MakeExprs (NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                    WLBLOCKSTR_GET_ADDR (arg_node, STEP),
                                                    WLNODE_DIM (arg_node),
-                                                   IDS_NAME (wl_ids), FALSE),
+                                                   IDS_NAME (wl_ids), FALSE, FALSE),
                               NULL));
 
     DBUG_RETURN (args);
@@ -5111,15 +5114,18 @@ InsertIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
                                   NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                        WLBLOCKSTR_GET_ADDR (arg_node,
                                                                             BOUND1),
-                                                       dim, IDS_NAME (wl_ids), TRUE),
+                                                       dim, IDS_NAME (wl_ids), TRUE,
+                                                       TRUE),
                                   NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                        WLBLOCKSTR_GET_ADDR (arg_node,
                                                                             BOUND2),
-                                                       dim, IDS_NAME (wl_ids), TRUE),
+                                                       dim, IDS_NAME (wl_ids), TRUE,
+                                                       TRUE),
                                   NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                        WLBLOCKSTR_GET_ADDR (arg_node,
                                                                             STEP),
-                                                       dim, IDS_NAME (wl_ids), TRUE),
+                                                       dim, IDS_NAME (wl_ids), TRUE,
+                                                       TRUE),
                                   DupIds_Id (wl_ids),
                                   MakeNum (NWITH2_OFFSET_NEEDED (wl_node))),
                         assigns);
