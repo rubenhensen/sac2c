@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/03/13 16:03:20  ktr
+ * wls_expr declared
+ *
  * Revision 3.2  2001/04/19 16:34:14  nmw
  * statistics for wlir added
  *
@@ -139,6 +142,7 @@ extern int elim_arrays;
 extern int cse_expr;
 extern int wlf_expr;
 extern int wlt_expr;
+extern int wls_expr;
 extern int old_wlf_expr, old_wlt_expr;
 extern int ap_padded;
 extern int ap_unsupported;
