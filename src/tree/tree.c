@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/10/24 14:46:01  dkr
+ * MakeTypes removed
+ *
  * Revision 1.4  2000/07/11 10:23:15  dkr
  * GEN_NODE moved from tree.h to tree.c
  *
@@ -139,106 +142,43 @@
 /* The following functions are supported for compatibility reasons only     */
 /*--------------------------------------------------------------------------*/
 
-/*
- *
- *  functionname  : AppendNodeChain
- *  arguments     : int pos: node-index of chain
- *                  node *first: first node chain
- *                  node *second: node chain to be appended
- *  description   : follows first chain to it's end and
- *                  appends second.
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...
- *
- *  remarks       :
- *
- */
-
 node *
-AppendNodeChain (int pos, node *first, node *second)
-
+AppendNodeChain (int dummy, node *chain, node *item)
 {
-    node *tmp;
+    node *ret;
 
     DBUG_ENTER ("AppendNodeChain");
 
-    if (first == NULL)
-        first = second;
-    else {
-        tmp = first;
-        while (tmp->node[pos])
-            tmp = tmp->node[pos];
-        tmp->node[pos] = second;
-        DBUG_PRINT ("APP", ("Append node chain behind line %d", tmp->lineno));
+    ret = chain;
+
+    if (item != NULL) {
+        switch (NODE_TYPE (item)) {
+        case N_typedef:
+            ret = AppendTypedef (chain, item);
+            break;
+        case N_objdef:
+            ret = AppendObjdef (chain, item);
+            break;
+        case N_fundef:
+            ret = AppendFundef (chain, item);
+            break;
+        case N_vardec:
+            ret = AppendVardec (chain, item);
+            break;
+        case N_assign:
+            ret = AppendAssign (chain, item);
+            break;
+        case N_exprs:
+            ret = ExprsConcat (chain, item);
+            break;
+        default:
+            DBUG_ASSERT ((0), "No suitable append function found!");
+            break;
+        }
     }
 
-    DBUG_RETURN (first);
+    DBUG_RETURN (ret);
 }
-
-/*
- * The function AppendNodeChain should be replaced
- * by a new function in tree_compound.c
- * Unfortunately, this is not directly possible. Different functions are
- * needed for objdef-, fundef-, or typedef-chains.
- */
-
-/*
- *
- *  functionname  : MakeTypes
- *  arguments     :
- *  description   : generates and initialises a new types;
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG..., GEN_NODE
- *
- *  remarks       :
- *
- */
-
-types *
-MakeTypes (simpletype simple)
-{
-    types *tmp;
-
-    DBUG_ENTER ("MakeTypes");
-
-    tmp = GEN_NODE (types);
-    tmp->simpletype = simple;
-    tmp->shpseg = NULL;
-    tmp->name = NULL;
-    tmp->name_mod = NULL;
-    tmp->dim = 0;
-    tmp->type_status = ST_regular;
-    tmp->next = NULL;
-    tmp->id = NULL;
-    tmp->id_mod = NULL;
-    tmp->id_cmod = NULL;
-    tmp->attrib = ST_regular;
-    tmp->status = ST_regular;
-    tmp->tdef = NULL;
-
-    DBUG_PRINT ("MAKETYPES", (P_FORMAT, tmp));
-
-    DBUG_RETURN (tmp);
-}
-
-/*
- *
- *  functionname  : MakeNode
- *  arguments     : nodetype: type of node to be generated
- *  description   : generates and initialises a new node;
- *                  the only field not involved is node->info
- *  global vars   : linenum
- *  internal funs :
- *  external funs :
- *  macros        : DBUG..., GEN_NODE, MAX_MASK
- *
- *  remarks       :
- *
- */
 
 node *
 MakeNode (nodetype nodetype)
