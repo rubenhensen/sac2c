@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.18  2003/03/20 21:52:51  sah
+# added -I../global to includes
+#
 # Revision 3.17  2003/03/20 14:41:09  sbs
 # now builds mt version iff DISABLE_MT is not set
 #
@@ -80,7 +83,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 MTFLAGS   := -DMT -D_REENTRANT -D_POSIX_C_SOURCE=199506L
 
-INCS := -I../tree -I../runtime -I../../inc
+INCS := -I../tree -I../runtime -I../../inc -I../global
 LIBS := -L.
 
 OBJS_LIBSAC := message.o misc.o profile.o trace.o nophm.o sac_arg.o \
