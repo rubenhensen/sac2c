@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2000/12/08 08:31:16  cg
+ * Bug fixed in the handling of typechecker function table.
+ *
  * Revision 3.7  2000/12/06 18:26:04  cg
  * Added new functionality to the typechecker that allows to propagate
  * constant integer arrays in certain situations and to successfully
@@ -8011,8 +8014,7 @@ DoConstantPropagation (fun_tab_elem *fun_p, nodelist *propas)
     newname = TmpVarName (FUNDEF_NAME (new_fun_p->node));
     FREE (FUNDEF_NAME (new_fun_p->node));
     FUNDEF_NAME (new_fun_p->node) = newname;
-    FREE (new_fun_p->id);
-    new_fun_p->id = StringCopy (newname);
+    new_fun_p->id = newname;
 
     old_tab = act_tab;
     act_tab = tccp_tab;
