@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2004/11/24 22:43:37  cg
+ * Moved NumberOfDigits() from Error.c.
+ *
  * Revision 3.66  2004/11/24 22:30:02  ktr
  * replaceSpecialCharacters moved from precompile.
  *
@@ -861,6 +864,29 @@ ILIBstringCompare (const char *first, const char *second)
     DBUG_RETURN (res);
 }
 
+/*
+ *
+ *  functionname  : ILIBnumberOfDigits
+ *  arguments     : 1) integer
+ *  description   : returns the number of digits, e.g 4 for 1000
+ *
+ */
+
+int
+ILIBnumberOfDigits (int number)
+{
+    int i = 1;
+
+    DBUG_ENTER ("ILIBnumberOfDigits");
+
+    while (number / 10 >= 1) {
+        number = number / 10;
+        i += 1;
+    }
+
+    DBUG_RETURN (i);
+}
+
 /******************************************************************************
  *
  * function:
@@ -1077,7 +1103,7 @@ SystemCall2 (char *format, ...)
 /******************************************************************************
  *
  * Function:
- *   int SystemTest( char *format, ...)
+ *   int ILIBsystemTest( char *format, ...)
  *
  * Description:
  *   Evaluates the given string and executes the respective system call.
@@ -1087,13 +1113,13 @@ SystemCall2 (char *format, ...)
  ******************************************************************************/
 
 int
-SystemTest (char *format, ...)
+ILIBsystemTest (char *format, ...)
 {
     va_list arg_p;
     static char syscall[MAX_SYSCALL];
     int exit_code;
 
-    DBUG_ENTER ("SystemTest");
+    DBUG_ENTER ("ILIBsystemTest");
 
     strcpy (syscall, "test ");
 
@@ -1181,7 +1207,7 @@ ILIBtmpVar (void)
     DBUG_ENTER ("ILIBtmpVar");
 
     prefix = TRAVgetName ();
-    result = (char *)ILIBmalloc ((strlen (prefix) + NumberOfDigits (counter) + 3)
+    result = (char *)ILIBmalloc ((strlen (prefix) + ILIBnumberOfDigits (counter) + 3)
                                  * sizeof (char));
     sprintf (result, "_%s_%d", prefix, counter);
     counter++;

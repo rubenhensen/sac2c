@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2004/11/24 22:43:37  cg
+ * Moved NumberOfDigits() from Error.c.
+ *
  * Revision 3.31  2004/11/24 22:30:02  ktr
  * replaceSpecialCharacters moved from precompile.
  *
@@ -192,6 +195,7 @@ extern char *ILIBstringConcat (const char *first, const char *second);
 extern char *ILIBstringConcat3 (const char *first, const char *second, const char *third);
 extern char *ILIBstrTok (char *first, char *sep);
 extern bool ILIBstringCompare (const char *first, const char *second);
+extern int ILIBnumberOfDigits (int number);
 
 extern void *ILIBmemCopy (int size, void *mem);
 
@@ -200,7 +204,7 @@ extern char *ILIBitoa (long number);
 
 extern void ILIBsystemCall (char *format, ...);
 extern int ILIBsystemCall2 (char *format, ...);
-extern int ILIBSystemTest (char *format, ...);
+extern int ILIBsystemTest (char *format, ...);
 
 extern void ILIBcreateCppCallString (char *file, char *cccallstr, char *cppfile);
 
