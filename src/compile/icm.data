@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/07/20 16:54:11  jhs
+ * Added barrier_id to signature of MT_SYNC_FOLD.
+ *
  * Revision 2.6  1999/06/30 16:00:11  jhs
  * Expanded backend, so compilation of fold-with-loops is now possible
  * during SPMD-Blocks containing more than one SYNC-Block.
@@ -630,9 +633,10 @@ ICM_END( MT_SYNC_NONFOLD, (barrier_id))
 
 #if defined(MT_SYNC_FOLD) || defined(ICM_ALL)
 ICM_DEF( MT_SYNC_FOLD, TRACE_NONE)
+  ICM_INT(barrier_id)
   ICM_INT(narg)
   ICM_VAR((4*narg), vararg)
-ICM_END( MT_SYNC_FOLD, (narg, vararg))
+ICM_END( MT_SYNC_FOLD, (barrier_id, narg, vararg))
 #endif
 
 #if defined(MT_SYNC_ONEFOLD) || defined(ICM_ALL)
