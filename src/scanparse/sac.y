@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2002/09/25 14:50:29  sbs
+ * preceedence annotations move to please yacc on OSF
+ *
  * Revision 3.66  2002/09/11 23:22:51  dkr
  * HMAdjustFunNames() removed
  *
@@ -1239,34 +1242,34 @@ expr: fun_id                     { $$ = MakeIdFromIds( $1); }
           MOP_FIX( $$) = TRUE;
         }
       }
-    | expr fun_id expr
+    | expr fun_id expr %prec BM_OP
       {
         $$ = ConstructMop( $1, $2, $3);
-      }   %prec BM_OP
-    | PLUS expr
+      }
+    | PLUS expr %prec MM_OP
       {
         $$ = MakeAp1( StringCopy( "+"),
                       NULL,
                       $2);
-      }   %prec MM_OP
-    | MINUS expr
+      }
+    | MINUS expr %prec MM_OP
       {
         $$ = MakeAp1( StringCopy( "-"),
                       NULL,
                       $2);
-      }   %prec MM_OP
-    | TILDE expr
+      }
+    | TILDE expr %prec MM_OP
       {
         $$ = MakeAp1( StringCopy( "~"),
                       NULL,
                       $2);
-      }   %prec MM_OP
-    | EXCL expr
+      }
+    | EXCL expr %prec MM_OP
       {
         $$ = MakeAp1( StringCopy( "!"),
                       NULL,
                       $2);
-      }   %prec MM_OP
+      }
     | PLUS BRACKET_L expr COMMA exprs BRACKET_R
       {
         $$ = MakeAp( StringCopy( "+"),
