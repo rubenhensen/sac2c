@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/05/17 11:21:26  jhs
+ * CopyConstVec will be called only if ID/ARRAY_ISCONST.
+ *
  * Revision 2.10  1999/05/14 15:20:35  jhs
  * DupId checks whether the ID has a constant vector annotated before
  * it copies this constant vector.
@@ -526,9 +529,14 @@ DupArray (node *arg_node, node *arg_info)
     }
     ARRAY_STRING (new_node) = StringCopy (ARRAY_STRING (arg_node));
 
-    ARRAY_CONSTVEC (new_node)
-      = CopyConstVec (ARRAY_VECTYPE (arg_node), ARRAY_VECLEN (arg_node),
-                      ARRAY_CONSTVEC (arg_node));
+    ARRAY_ISCONST (new_node) = ARRAY_ISCONST (arg_node);
+    ARRAY_VECLEN (new_node) = ARRAY_VECLEN (arg_node);
+    ARRAY_VECTYPE (new_node) = ARRAY_VECTYPE (arg_node);
+    if (ARRAY_ISCONST (new_node)) {
+        ARRAY_CONSTVEC (new_node)
+          = CopyConstVec (ARRAY_VECTYPE (arg_node), ARRAY_VECLEN (arg_node),
+                          ARRAY_CONSTVEC (arg_node));
+    }
 
     DBUG_RETURN (new_node);
 }

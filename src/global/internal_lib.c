@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/05/17 11:24:26  jhs
+ * CopyConstVec will be called only if ID/ARRAY_ISCONST.
+ *
  * Revision 2.6  1999/05/14 09:25:13  jhs
  * Dbugged constvec annotations and their housekeeping in various compilation stages.
  *
@@ -305,7 +308,7 @@ AllocConstVec (simpletype vectype, int veclen)
             res = Malloc (veclen * sizeof (int));
             break;
         default:
-            DBUG_ASSERT ((0), "CopyConstVec called with non-const-type!");
+            DBUG_ASSERT ((0), "AllocConstVec called with non-const-type!");
         }
     } else {
         res = NULL;
@@ -365,7 +368,7 @@ ModConstVec (simpletype vectype, void *const_vec, int idx, node *const_node)
         ((char *)const_vec)[idx] = CHAR_VAL (const_node);
         break;
     default:
-        DBUG_ASSERT ((0), "CopyConstVec called with non-const-type!");
+        DBUG_ASSERT ((0), "ModConstVec called with non-const-type!");
     }
     DBUG_RETURN (const_vec);
 }
@@ -400,16 +403,20 @@ AnnotateIdWithConstVec (node *expr, node *id)
         ID_ISCONST (id) = ARRAY_ISCONST (behind_casts);
         ID_VECTYPE (id) = ARRAY_VECTYPE (behind_casts);
         ID_VECLEN (id) = ARRAY_VECLEN (behind_casts);
-        ID_CONSTVEC (id)
-          = CopyConstVec (ARRAY_VECTYPE (behind_casts), ARRAY_VECLEN (behind_casts),
-                          ARRAY_CONSTVEC (behind_casts));
+        if (ID_ISCONST (id)) {
+            ID_CONSTVEC (id)
+              = CopyConstVec (ARRAY_VECTYPE (behind_casts), ARRAY_VECLEN (behind_casts),
+                              ARRAY_CONSTVEC (behind_casts));
+        }
     } else if (NODE_TYPE (behind_casts) == N_id) {
         ID_ISCONST (id) = ID_ISCONST (behind_casts);
         ID_VECTYPE (id) = ID_VECTYPE (behind_casts);
         ID_VECLEN (id) = ID_VECLEN (behind_casts);
-        ID_CONSTVEC (id)
-          = CopyConstVec (ID_VECTYPE (behind_casts), ID_VECLEN (behind_casts),
-                          ID_CONSTVEC (behind_casts));
+        if (ID_ISCONST (id)) {
+            ID_CONSTVEC (id)
+              = CopyConstVec (ID_VECTYPE (behind_casts), ID_VECLEN (behind_casts),
+                              ID_CONSTVEC (behind_casts));
+        }
     }
 
     DBUG_RETURN (id);
