@@ -15,6 +15,7 @@ main.c
 my_debug.c
 my_debug.h
 node_info.mac
+nt_info.mac
 options.c
 options.h
 prf_node_info.mac
