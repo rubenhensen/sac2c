@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/04/20 11:36:13  jhs
+ * Added COMPMT(signal|alloc|sync)
+ *
  * Revision 2.5  2000/04/18 14:00:48  jhs
  * Added COMPSt and COMPMt.
  *
@@ -150,6 +153,9 @@ extern node *COMPWLstriVar (node *arg_node, node *arg_info);
 extern node *COMPWLgridVar (node *arg_node, node *arg_info);
 extern node *COMPMt (node *arg_node, node *arg_info);
 extern node *COMPSt (node *arg_node, node *arg_info);
+extern node *COMPMTsignal (node *arg_node, node *arg_info);
+extern node *COMPMTalloc (node *arg_node, node *arg_info);
+extern node *COMPMTsync (node *arg_node, node *arg_info);
 
 extern node *GetFoldCode (node *fundef);
 extern node *GetFoldVardecs (node *fundef);
