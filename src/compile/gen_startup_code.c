@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/05/15 09:21:35  cg
+ * tag inout renamed to inout_rc since these arguments are alway
+ * refcounted.
+ *
  * Revision 1.6  1998/05/12 12:35:58  dkr
  * SPMD_ICM can now be NULL (temporary ?!? needed for non-MT-version)
  *
@@ -365,8 +369,8 @@ GSCicm (node *arg_node, node *arg_info)
 
             tag = ID_NAME (EXPRS_EXPR (icm_arg));
 
-            if (0 == strncmp (tag, "inout", 5)) {
-                tag = "inout";
+            if (0 == strncmp (tag, "inout_rc", 8)) {
+                tag = "inout_rc";
             }
 
             DBUG_ASSERT ((EXPRS_NEXT (icm_arg) != NULL),
