@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.94  2004/07/26 16:14:03  skt
+# support for create_cells added
+#
 # Revision 3.93  2004/07/21 16:56:10  ktr
 # added src/compile/markmemval.o
 #
@@ -277,7 +280,8 @@ MULTITHREAD= src/multithread/multithread.o src/multithread/schedule_init.o \
              src/multithread/dataflow_analysis.o \
              src/multithread/barriers_init.o src/multithread/blocks_lift.o \
              src/multithread/adjust_calls.o src/multithread/assignments_rearrange.o \
-             src/multithread/tag_executionmode.o src/multithread/propagate_executionmode.o
+             src/multithread/tag_executionmode.o src/multithread/propagate_executionmode.o \
+            src/multithread/create_cells.o
 COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
          src/compile/precompile.o src/compile/gen_startup_code.o src/compile/compile.o \
          src/compile/icm2c.o src/compile/icm2c_basic.o \
