@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2002/07/03 16:56:01  dkr
+ * ID_UNQCONV removed for TAGGED_ARRAYS
+ *
  * Revision 3.85  2002/07/02 17:52:28  dkr
  * COMPArray(): ARRAY_STRING is copied now
  *
@@ -3753,10 +3756,11 @@ COMPIdToUnique (node *arg_node, node *arg_info)
 node *
 COMPId (node *arg_node, node *arg_info)
 {
-    node *ret_node;
+    node *ret_node = NULL;
 
     DBUG_ENTER ("COMPId");
 
+#ifndef TAGGED_ARRAYS
     switch (ID_UNQCONV (arg_node)) {
     case NO_UNQCONV:
         ret_node = COMPIdLet (arg_node, arg_info);
@@ -3775,6 +3779,7 @@ COMPId (node *arg_node, node *arg_info)
         DBUG_ASSERT (0, "unknown kind of class conversion function found");
         break;
     }
+#endif
 
     /*
      * If (ret_node == NULL) is hold, the expression remains unchanged.

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.99  2002/07/03 16:56:08  dkr
+ * ID_UNQCONV removed for TAGGED_ARRAYS
+ *
  * Revision 3.98  2002/07/03 12:04:31  sbs
  * when breaking after typecheck, the ntype attached to AVIS nodes
  * is printed as acomment to every vardec.
@@ -2326,6 +2329,7 @@ PrintId (node *arg_node, node *arg_info)
 
     PrintRC (ID_REFCNT (arg_node), ID_NAIVE_REFCNT (arg_node), show_refcnt);
 
+#ifndef TAGGED_ARRAYS
     if (compiler_phase == PH_precompile) {
         switch (ID_UNQCONV (arg_node)) {
         case NO_UNQCONV:
@@ -2338,6 +2342,7 @@ PrintId (node *arg_node, node *arg_info)
             break;
         }
     }
+#endif
 
     if (compiler_phase != PH_genccode) {
         DBUG_EXECUTE ("PRINT_CAR", DbugPrintArray (arg_node););

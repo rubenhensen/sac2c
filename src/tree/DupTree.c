@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2002/07/03 16:55:16  dkr
+ * ID_UNQCONV removed for TAGGED_ARRAYS
+ *
  * Revision 3.65  2002/07/02 09:27:59  dkr
  * DupExprs_NT() moved from compile.tagged.c to DupTree.c
  *
@@ -730,7 +733,9 @@ DupId (node *arg_node, node *arg_info)
     ID_ATTRIB (new_node) = ID_ATTRIB (arg_node);
     ID_REFCNT (new_node) = ID_REFCNT (arg_node);
     ID_NAIVE_REFCNT (new_node) = ID_NAIVE_REFCNT (arg_node);
+#ifndef TAGGED_ARRAYS
     ID_UNQCONV (new_node) = ID_UNQCONV (arg_node);
+#endif
 
     ID_AVIS (new_node) = SearchInLUT_P (INFO_DUP_LUT (arg_info), ID_AVIS (arg_node));
 

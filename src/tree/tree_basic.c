@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2002/07/03 16:55:20  dkr
+ * ID_UNQCONV removed for TAGGED_ARRAYS
+ *
  * Revision 3.55  2002/06/25 14:09:29  sbs
  * N_dot added including MakeDot
  *
@@ -1080,7 +1083,9 @@ MakeId (char *name, char *mod, statustype status)
 
     ID_IDS (tmp) = MakeIds (name, mod, status);
 
+#ifndef TAGGED_ARRAYS
     ID_UNQCONV (tmp) = NO_UNQCONV;
+#endif
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
