@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.122  2004/12/06 17:31:50  sbs
+ * eliminated infinite recursion ....
+ *
  * Revision 3.121  2004/12/05 16:45:38  sah
  * added SPIds SPId SPAp in frontend
  *
@@ -1089,6 +1092,7 @@ TCmakeIdsFromVardecs (node *vardecs)
     DBUG_ENTER ("TCmakeIdsFromVardecs");
     while (vardecs != NULL) {
         ids = TBmakeIds (VARDEC_AVIS (vardecs), ids);
+        vardecs = VARDEC_NEXT (vardecs);
     }
     DBUG_RETURN (ids);
 }
