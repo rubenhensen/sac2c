@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.98  1998/12/17 09:48:39  cg
+# added new targets tar, distrib, and fafnir.
+# improved targets src.tar.gz and floppy
+#
 # Revision 1.97  1998/12/10 12:36:37  cg
 # added -DPRODUCTION for production compilations of sac2c in order
 # to allow for different code sections in production and developer
@@ -87,7 +91,7 @@ CCPROD       := gcc
 # gcc specific flags:
 #
 gcc_FLAGS := -ansi -Wall 
-gcc_PROD_FLAGS := -ansi -Wall -O3
+gcc_PROD_FLAGS := -Wall -O3
 
 #
 # cc specific flags:
@@ -131,11 +135,11 @@ LINUX_X86_LIBS      := -lfl
 CCFLAGS :=$($(CC)_FLAGS) -g $($(OS)_FLAGS)
 CCPROD_FLAGS := $($(CC)_PROD_FLAGS) $($(OS)_FLAGS) 
 
-override CFLAGS += -DNEWTREE -DSHOW_MALLOC -D$(OS) 
-CPROD_FLAGS  :=-DDBUG_OFF -DNEWTREE -DPRODUCTION -D$(OS) $(CFLAGS)
+CFLAGS := -DNEWTREE -DSHOW_MALLOC -D$(OS) 
+CPROD_FLAGS  :=-DDBUG_OFF -DNEWTREE -DPRODUCTION -D$(OS)
 
-MAKE         :=$(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)"
-MAKEPROD     :=$(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)"
+MAKE_NORM    :=$(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)"
+MAKE_PROD    :=$(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)"
 MAKEFLAGS    += --no-print-directory
 
 TAR          :=tar
@@ -144,10 +148,24 @@ YACC         :=yacc -dv
 LIBS         :=-lm $($(OS)_LIBS)
 EFLIBS       :=-L/home/sacbase/efence -lefence
 RM           :=rm -f
+GZIP         :=gzip -f
 ECHO         :=echo
 
 LIB          :=lib/dbug.o
 # /usr/lib/debug/malloc.o
+
+
+#
+# Collection of source files
+#
+
+SOURCE_DIRS  := . $(shell cat RCS-directories)
+SOURCE_FILES := $(foreach dir,$(SOURCE_DIRS),$(addprefix $(dir)/,RCS-files $(shell (cd $(dir); cat RCS-files))))
+
+
+#
+# Collection of object files
+#
 
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/my_debug.o src/global/traverse.o  src/global/tree.o \
@@ -189,11 +207,24 @@ COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
     $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT)
 
+
+
+
+#
+#  Rules section
+#
+
+.PHONY: all efence product check_os dummy prod clean tar floppy distrib distrib_product fafnir
+
 all: check_os dummy sac2c
 
 efence: check_os dummy sac2c.efence
 
-product : check_os clean prod sac2c
+product: check_os clean prod sac2c
+
+distrib_product: prod sac2c
+
+
 
 check_os:
 	@ if [ "$(OS)" != "SOLARIS_SPARC" -a "$(OS)" != "LINUX_X86" ]; \
@@ -204,36 +235,36 @@ check_os:
 	  fi
 
 dummy:
-	(cd src/scanparse; $(MAKE) )
-	(cd src/global; $(MAKE) )
-	(cd src/print; $(MAKE) )
-	(cd src/flatten; $(MAKE) )
-	(cd src/typecheck; $(MAKE) )
-	(cd src/optimize; $(MAKE) )
-	(cd src/modules; $(MAKE) )
-	(cd src/objects; $(MAKE) )
-	(cd src/refcount; $(MAKE) )       
-	(cd src/concurrent; $(MAKE) )
-	(cd src/compile; $(MAKE) )
-	(cd src/psi-opt; $(MAKE) )
-	(cd src/runtime; $(MAKE) )
-	(cd lib/src; $(MAKE) )
+	(cd src/scanparse; $(MAKE_NORM) )
+	(cd src/global; $(MAKE_NORM) )
+	(cd src/print; $(MAKE_NORM) )
+	(cd src/flatten; $(MAKE_NORM) )
+	(cd src/typecheck; $(MAKE_NORM) )
+	(cd src/optimize; $(MAKE_NORM) )
+	(cd src/modules; $(MAKE_NORM) )
+	(cd src/objects; $(MAKE_NORM) )
+	(cd src/refcount; $(MAKE_NORM) )       
+	(cd src/concurrent; $(MAKE_NORM) )
+	(cd src/compile; $(MAKE_NORM) )
+	(cd src/psi-opt; $(MAKE_NORM) )
+	(cd src/runtime; $(MAKE_NORM) )
+	(cd lib/src; $(MAKE_NORM) )
 
 prod:
-	(cd src/scanparse; $(MAKEPROD) )
-	(cd src/global; $(MAKEPROD) )
-	(cd src/print; $(MAKEPROD) )
-	(cd src/flatten; $(MAKEPROD) )
-	(cd src/typecheck; $(MAKEPROD) )
-	(cd src/optimize; $(MAKEPROD) )
-	(cd src/modules; $(MAKEPROD) )
-	(cd src/objects; $(MAKEPROD) )
-	(cd src/refcount; $(MAKEPROD) )       
-	(cd src/concurrent; $(MAKEPROD) )
-	(cd src/compile; $(MAKEPROD) )
-	(cd src/psi-opt; $(MAKEPROD) )
-	(cd src/runtime; $(MAKEPROD) )
-	(cd lib/src; $(MAKEPROD) )
+	(cd src/scanparse; $(MAKE_PROD) )
+	(cd src/global; $(MAKE_PROD) )
+	(cd src/print; $(MAKE_PROD) )
+	(cd src/flatten; $(MAKE_PROD) )
+	(cd src/typecheck; $(MAKE_PROD) )
+	(cd src/optimize; $(MAKE_PROD) )
+	(cd src/modules; $(MAKE_PROD) )
+	(cd src/objects; $(MAKE_PROD) )
+	(cd src/refcount; $(MAKE_PROD) )       
+	(cd src/concurrent; $(MAKE_PROD) )
+	(cd src/compile; $(MAKE_PROD) )
+	(cd src/psi-opt; $(MAKE_PROD) )
+	(cd src/runtime; $(MAKE_PROD) )
+	(cd lib/src; $(MAKE_PROD) )
 
 sac2c: $(OBJ) $(LIB)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS)
@@ -276,22 +307,42 @@ clean:
 	$(RM) sac2c.efence
 	$(RM) -r .sb
 
-floppy: 
-	@ if [ ! -f src.tar.gz ] ; \
-	  then $(MAKE) src.tar.gz; \
-	  else echo "re-using existing file \"src.tar.gz\"!"; \
-	  fi; \
-	  tar -cvf /dev/rfd0c src.tar.gz
+floppy: src.tar.gz
+	$(TAR) -cvf /dev/rfd0c src.tar.gz
 
-%.gz: %
-	gzip  $<
+tar: src.tar.gz
 
-src.tar:
-	$(TAR) -cvf src.tar    inc/*.h lib/src/*.c lib/src/Makefile \
-	                       src/*/*.[ch] src/*/*.mac src/*/Makefile \
-	                       src/*/*.inp src/*/*.data \
-	                       src/*/*.y src/*/*.l Makefile \
-	                       src/runtime/sac2crc
+src.tar.gz: $(SOURCE_FILES)
+	$(TAR) -cvf src.tar $(SOURCE_FILES)
+	$(GZIP) src.tar
+
+distrib:
+	(cd distrib/src; $(MAKE))
 
 tags: 
 	ctags src/*/*.[ch] >/dev/null
+
+
+FAFNIR_USER  = sac
+FAFNIR_DIR   = sac2c
+
+fafnir: src.tar.gz
+	@ ping $@ >/dev/null; \
+          if [ $${?} -ne 0 ]; then \
+            echo "Host $@ is down !"; \
+            exit 1; \
+          fi
+	rsh -l $(FAFNIR_USER) $@ mkdir -p $(FAFNIR_DIR)
+	rcp src.tar.gz sac@$@:$(FAFNIR_DIR)
+	rsh -l $(FAFNIR_USER) $@  \
+            'cd $(FAFNIR_DIR);' \
+            'rm -f $(SOURCE_FILES);' \
+            'gunzip -f src.tar.gz;' \
+            'tar xvf src.tar;' \
+            'chmod 644 $(SOURCE_FILES);' \
+            'make deps OS=LINUX_X86;' \
+            'make OS=LINUX_X86'
+
+
+
+
