@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2001/05/22 14:57:19  nmw
+ *  comments corrected
+ *
  * Revision 1.6  2001/05/17 14:09:32  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -578,7 +581,6 @@ SSAInternGen2Tree (node *wln, intern_gen *ig)
 
     NWITH_PARTS (wln) = no_parts;
 
-    /* should this be a FreeTree() ?? ?!! */
     FreeTree (withidn);
     FreeOneTypes (type);
 
@@ -655,7 +657,7 @@ SSAFreeInternGenChain (intern_gen *ig)
  *   new memory is allocated for name. It is expected that type
  *   is a pointer to an existing type  and it is duplicated, too.
  *
- *   does not preserve ssa form ##nmw## because of missing ssacount attribute
+ *   does not preserve ssa form because of missing ssacount attribute
  *
  ******************************************************************************/
 node *
