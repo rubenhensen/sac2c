@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/14 15:22:18  sah
+ * changed signature of serfun_p
+ *
  * Revision 1.5  2004/10/28 17:18:07  sah
  * added support for dependency tables
  *
@@ -28,7 +31,7 @@
 #include "stringset.h"
 
 typedef struct MODULE_T module_t;
-typedef node *(*serfun_p) (info *);
+typedef node *(*serfun_p) ();
 
 extern module_t *LoadModule (const char *name);
 extern module_t *UnLoadModule (module_t *module);
