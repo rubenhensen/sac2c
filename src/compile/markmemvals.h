@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/07/28 12:27:58  khf
+ * MMVassign no longer needed
+ *
  * Revision 1.3  2004/07/28 09:08:19  khf
  * support for ExplicitAccumulate added
  *
@@ -21,7 +24,6 @@ extern node *MarkMemVals (node *syntax_tree);
 
 extern node *MMVdo (node *arg_node, info *arg_info);
 extern node *MMVfundef (node *arg_node, info *arg_info);
-extern node *MMVassign (node *arg_node, info *arg_info);
 extern node *MMVid (node *arg_node, info *arg_info);
 extern node *MMVlet (node *arg_node, info *arg_info);
 extern node *MMVprf (node *arg_node, info *arg_info);
