@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.72  2000/04/27 13:01:59  dkr
+ * system warning about unbalanced indentation deactivated
+ *
  * Revision 2.71  2000/04/27 11:35:18  dkr
  * system warning about unbalanced indentation active in DBUG-mode only now
  *
@@ -715,11 +718,11 @@ PrintBlock (node *arg_node, node *arg_info)
     fprintf (outfile, "}");
 
     if (indent != old_indent) {
-#ifndef DBUG_OFF
-        SYSWARN (("Indentation unbalanced while printing block of function %s."
-                  " Indentation at beginning of block: %i."
-                  " Indentation at end of block: %i",
-                  FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), old_indent, indent));
+#if 0
+    SYSWARN( ("Indentation unbalanced while printing block of function %s."
+              " Indentation at beginning of block: %i."
+              " Indentation at end of block: %i",
+              FUNDEF_NAME( INFO_PRINT_FUNDEF( arg_info)), old_indent, indent));
 #endif
         indent = old_indent;
     }
@@ -1213,11 +1216,11 @@ PrintFundef (node *arg_node, node *arg_info)
     }
 
     if (indent != old_indent) {
-#ifndef DBUG_OFF
-        SYSWARN (("Indentation unbalanced while printing function %s."
-                  " Indentation at beginning of function: %i."
-                  " Indentation at end of function: %i",
-                  FUNDEF_NAME (arg_node), old_indent, indent));
+#if 0
+    SYSWARN( ("Indentation unbalanced while printing function %s."
+              " Indentation at beginning of function: %i."
+              " Indentation at end of function: %i",
+              FUNDEF_NAME( arg_node), old_indent, indent));
 #endif
         indent = old_indent;
     }
