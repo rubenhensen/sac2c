@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1996/01/02 07:57:55  cg
+ * Revision 1.3  1996/01/05 12:35:35  cg
+ * added extern declaration for CreateLibrary
+ *
+ * Revision 1.2  1996/01/02  07:57:55  cg
  * first working revision
  *
  * Revision 1.1  1995/12/29  17:19:26  cg
@@ -16,6 +19,7 @@
 #define _sac_cccall_h
 
 extern void InvokeCC (node *modul);
+extern void CreateLibrary (node *syntax_tree);
 
 extern node *PrepareLinking (node *syntax_tree);
 
