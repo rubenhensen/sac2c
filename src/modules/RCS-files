@@ -1,7 +1,6 @@
 Makefile
 filemgr.c
 filemgr.h
-readsib.c
 writesib.c
 writesib.h
 libmanager.c
