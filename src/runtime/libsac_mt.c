@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1999/02/19 09:28:44  cg
+ * bug fixed in creation of worker threads: a dummy threadid variable is
+ * provided when calling pthread_create. This is not required under Solaris
+ * but Linux does not like the NULL pointer here although the internal thread
+ * ID is never to be used.
+ * Support for MIT-threads discarded.
+ *
  * Revision 1.11  1998/12/10 12:39:05  cg
  * Bug fixed in definition of _MIT_POSIX_THREADS.
  *
@@ -54,12 +61,10 @@
 
 #define _POSIX_C_SOURCE 199506L
 
-#ifdef LINUX_X86
-#define _MIT_POSIX_THREADS 1
-#endif /* LINUX_X86 */
-
 #include <pthread.h>
 #include <stdio.h>
+
+#include "sac_message.h"
 
 /*
  * Definition of trace macros.
@@ -177,6 +182,7 @@ ThreadControl (void *arg)
     unsigned int i;
     unsigned int my_worker_class = ((unsigned int)arg) >> 17;
     const unsigned int my_thread_id = ((unsigned int)arg) & 0xFFFF;
+    pthread_t tmp;
 
 #ifdef TRACE
     pthread_setspecific (SAC_TRMT_threadid_key, &my_thread_id);
@@ -194,8 +200,15 @@ ThreadControl (void *arg)
         TRACE_PRINT (
           ("Creating thread #%u with maximum class %u.", my_thread_id + i, i >> 1));
 
-        pthread_create (NULL, &SAC_MT_thread_attribs, (void *(*)(void *))ThreadControl,
-                        (void *)((i << 16) + (my_thread_id + i)));
+        if (0
+            != pthread_create (&tmp, &SAC_MT_thread_attribs,
+                               (void *(*)(void *))ThreadControl,
+                               (void *)((i << 16) + (my_thread_id + i)))) {
+
+            SAC_RuntimeError ("Multi Thread Error: worker thread #%u failed to create"
+                              "worker thread #%u",
+                              my_thread_id, my_thread_id + i);
+        }
     }
 
     for (;;) {
@@ -220,6 +233,7 @@ SAC_MT_ThreadControl (void *arg)
 {
     unsigned int worker_flag = 0;
     unsigned int i;
+    pthread_t tmp;
 
 #ifdef TRACE
     const unsigned int my_thread_id = 1;
@@ -233,8 +247,15 @@ SAC_MT_ThreadControl (void *arg)
 
         TRACE_PRINT (("Creating thread #%u with maximum class %u.", i, i >> 1));
 
-        pthread_create (NULL, &SAC_MT_thread_attribs, (void *(*)(void *))ThreadControl,
-                        (void *)((i << 16) + i));
+        if (0
+            != pthread_create (&tmp, &SAC_MT_thread_attribs,
+                               (void *(*)(void *))ThreadControl,
+                               (void *)((i << 16) + i))) {
+
+            SAC_RuntimeError ("Multi Thread Error: worker thread #1 failed to create"
+                              "worker thread #%u",
+                              i);
+        }
     }
 
     for (;;) {
