@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/24 11:29:33  sah
+ * COMPILES
+ *
  * Revision 1.3  2004/11/21 22:45:20  sbs
  * SacDevCamp04
  *
@@ -17,6 +20,13 @@
 #define NEW_INFO
 
 #include "resolvepragma.h"
+#include "internal_lib.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "traverse.h"
+#include "stringset.h"
+#include "free.h"
+#include "Error.h"
 #include "dbug.h"
 
 /*
@@ -24,12 +34,16 @@
  */
 struct INFO {
     node *module;
+    node *nums;
+    int counter;
 };
 
 /*
  * INFO macros
  */
 #define INFO_RSP_MODULE(n) ((n)->module)
+#define INFO_RSP_NUMS(n) ((n)->nums)
+#define INFO_RSP_COUNTER(n) ((n)->counter)
 
 /*
  * INFO functions
@@ -44,6 +58,8 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_RSP_MODULE (result) = NULL;
+    INFO_RSP_NUMS (result) = NULL;
+    INFO_RSP_COUNTER (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -59,23 +75,23 @@ FreeInfo (info *info)
 }
 
 static void
-CheckRefReadNums (int line, int size, node *numsp)
+CheckRefReadNums (int line, int size, node *nums)
 {
     int i;
     node *tmp;
 
     DBUG_ENTER ("CheckRefReadNums");
 
-    tmp = numsp;
+    tmp = nums;
     i = 1;
 
     while (tmp != NULL) {
-        DBUG_PRINT ("PRAGMA", ("Nums value is %d", NUMS_NUM (tmp)));
+        DBUG_PRINT ("PRAGMA", ("Nums value is %d", NUMS_VAL (tmp)));
 
-        if ((NUMS_NUM (tmp) < 0) || (NUMS_NUM (tmp) >= size)) {
+        if ((NUMS_VAL (tmp) < 0) || (NUMS_VAL (tmp) >= size)) {
             ERROR (line, ("Invalid argument of pragma 'readonly` or 'refcounting`:"));
             CONT_ERROR (
-              ("Entry no.%d does not match a function parameter !", i, NUMS_NUM (tmp)));
+              ("Entry no.%d does not match a function parameter !", i, NUMS_VAL (tmp)));
         }
 
         tmp = NUMS_NEXT (tmp);
@@ -86,17 +102,17 @@ CheckRefReadNums (int line, int size, node *numsp)
 }
 
 static void
-CheckLinkSignNums (int line, int size, node *numsp)
+CheckLinkSignNums (int line, int size, node *nums)
 {
     int i;
     node *tmp;
 
     DBUG_ENTER ("CheckLinkSignNums");
 
-    for (i = 0, tmp = numsp; (i < size) && (tmp != NULL); i++, tmp = NUMS_NEXT (tmp)) {
-        DBUG_PRINT ("PRAGMA", ("Nums value is %d", NUMS_NUM (tmp)));
+    for (i = 0, tmp = nums; (i < size) && (tmp != NULL); i++, tmp = NUMS_NEXT (tmp)) {
+        DBUG_PRINT ("PRAGMA", ("Nums value is %d", NUMS_VAL (tmp)));
 
-        if ((NUMS_NUM (tmp) < 0) || (NUMS_NUM (tmp) > size)) {
+        if ((NUMS_VAL (tmp) < 0) || (NUMS_VAL (tmp) > size)) {
             ERROR (line, ("Invalid argument of pragma 'linksign`"));
             CONT_ERROR (
               ("Entry no.%d does not match a valid parameter position !", i + 1));
@@ -112,7 +128,7 @@ CheckLinkSignNums (int line, int size, node *numsp)
         do {
             i++;
 
-            DBUG_PRINT ("PRAGMA", ("Nums value is %d", NUMS_NUM (tmp)));
+            DBUG_PRINT ("PRAGMA", ("Nums value is %d", NUMS_VAL (tmp)));
 
             tmp = NUMS_NEXT (tmp);
         } while (tmp != NULL);
@@ -175,6 +191,55 @@ PRAGMA_READONLY(pragma));
  */
 
 node *
+AnnotateRefcounting (node *arg_node, info *arg_info, node *nums)
+{
+    DBUG_ENTER ("AnnotateRefcounting");
+
+    INFO_RSP_COUNTER (arg_info) = 0;
+    INFO_RSP_NUMS (arg_info) = nums;
+
+    FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
+    FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+
+    INFO_RSP_COUNTER (arg_info) = 0;
+    INFO_RSP_NUMS (arg_info) = NULL;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+RSPret (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RSPret");
+
+    if (TCnumsContains (INFO_RSP_COUNTER (arg_info), INFO_RSP_NUMS (arg_info))) {
+        RET_ISREFCOUNTED (arg_node) = TRUE;
+    } else {
+        RET_ISREFCOUNTED (arg_node) = FALSE;
+    }
+
+    INFO_RSP_COUNTER (arg_info)++;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+RSParg (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RSParg");
+
+    if (TCnumsContains (INFO_RSP_COUNTER (arg_info), INFO_RSP_NUMS (arg_info))) {
+        ARG_ISREFCOUNTED (arg_node) = TRUE;
+    } else {
+        ARG_ISREFCOUNTED (arg_node) = FALSE;
+    }
+
+    INFO_RSP_COUNTER (arg_info)++;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 RSPfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSPFundef");
@@ -187,7 +252,7 @@ RSPfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("RSP",
                     ("Processing pragmas for function '%s'...", FUNDEF_NAME (arg_node)));
 
-        PRAGMA_NUMPARAMS (pragma) = CountFunctionParams (arg_node);
+        PRAGMA_NUMPARAMS (pragma) = TCcountFunctionParams (arg_node);
 
         if (PRAGMA_FREEFUN (pragma) != NULL) {
             WARN (NODE_LINE (arg_node), ("Pragma 'freefun` has no effect on function"));
@@ -207,6 +272,11 @@ RSPfundef (node *arg_node, info *arg_info)
         if (PRAGMA_REFCOUNTING (pragma) != NULL) {
             CheckRefReadNums (NODE_LINE (arg_node), PRAGMA_NUMPARAMS (pragma),
                               PRAGMA_REFCOUNTING (pragma));
+
+            arg_node
+              = AnnotateRefcounting (arg_node, arg_info, PRAGMA_REFCOUNTING (pragma));
+
+            PRAGMA_REFCOUNTING (pragma) = FREEdoFreeTree (PRAGMA_REFCOUNTING (pragma));
         }
 
         if (PRAGMA_READONLY (pragma) != NULL) {
@@ -220,8 +290,8 @@ RSPfundef (node *arg_node, info *arg_info)
          */
         if (PRAGMA_LINKMOD (pragma) != NULL) {
             MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info))
-              = SSAdd (PRAGMA_LINKMOD (pragma), SS_extlib,
-                       MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info)));
+              = STRSadd (PRAGMA_LINKMOD (pragma), STRS_extlib,
+                         MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info)));
 
             PRAGMA_LINKMOD (pragma) = ILIBfree (PRAGMA_LINKMOD (pragma));
         }
@@ -232,8 +302,8 @@ RSPfundef (node *arg_node, info *arg_info)
          */
         if (PRAGMA_LINKOBJ (pragma) != NULL) {
             MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info))
-              = SSadd (PRAGMA_LINKOBJ (pragma), SS_objfile,
-                       MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info)));
+              = STRSadd (PRAGMA_LINKOBJ (pragma), STRS_objfile,
+                         MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info)));
 
             PRAGMA_LINKOBJ (pragma) = ILIBfree (PRAGMA_LINKOBJ (pragma));
         }
@@ -246,12 +316,12 @@ RSPfundef (node *arg_node, info *arg_info)
             && (PRAGMA_LINKNAME (pragma) == NULL) && (PRAGMA_LINKMOD (pragma) == NULL)
             && (PRAGMA_LINKSIGN (pragma) == NULL)
             && (PRAGMA_REFCOUNTING (pragma) == NULL)) {
-            FUNDEF_PRAGMA (arg_node) = FREEfreeNode (pragma);
+            FUNDEF_PRAGMA (arg_node) = FREEdoFreeNode (pragma);
         }
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -265,7 +335,7 @@ RSPmodul (node *arg_node, info *arg_info)
     INFO_RSP_MODULE (arg_info) = arg_node;
 
     if (MODULE_FUNDECS (arg_node) != NULL) {
-        MODULE_FUNDECS (arg_node) = Trav (MODULE_FUNDECS (arg_node), arg_info);
+        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -274,21 +344,19 @@ RSPmodul (node *arg_node, info *arg_info)
 void
 RSPdoResolvePragmas (node *syntax_tree)
 {
-    funtab *store_tab;
     info *info;
 
     DBUG_ENTER ("RSPdoResolvePragmas");
 
-    store_tab = act_tab;
-    act_tab = rsp_tab;
-
     info = MakeInfo ();
 
-    syntax_tree = Trav (syntax_tree, info);
+    TRAVpush (TR_rsp);
+
+    syntax_tree = TRAVdo (syntax_tree, info);
+
+    TRAVpop ();
 
     info = FreeInfo (info);
-
-    act_tab = store_tab;
 
     DBUG_VOID_RETURN;
 }
