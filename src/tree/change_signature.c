@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2001/04/10 15:20:09  nmw
+ * wrong macro access eliminated
+ *
  * Revision 1.5  2001/04/09 15:54:19  nmw
  * CSAddArg implemented
  *
@@ -342,7 +345,8 @@ CSAddArg (node *fundef, node *arg, nodelist *letlist)
 
         /* add given node as additional argument of function application */
         new_exprs = MakeExprs (NODELIST_ATTRIB2 (letlist),
-                               EXPRS_NEXT (AP_ARGS (LET_EXPR (NODELIST_NODE (letlist)))));
+                               AP_ARGS (LET_EXPR (NODELIST_NODE (letlist))));
+
         AP_ARGS (LET_EXPR (NODELIST_NODE (letlist))) = new_exprs;
 
         /* traverse to next application */
