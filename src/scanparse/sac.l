@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.29  1996/02/06 08:20:44  sbs
+ * Revision 1.30  1996/02/08 18:05:21  hw
+ * added token DOT
+ *
+ * Revision 1.29  1996/02/06  08:20:44  sbs
  * the scanner now accepts FF's (ctrl-L, bzw. \f in C-Notation)
  *
  * Revision 1.28  1996/01/25  18:40:55  cg
@@ -186,6 +189,7 @@ int start_token;
 ","				{FILTER( COMMA );}
 "="				{FILTER( LET );}
 "&"				{FILTER( AMPERS );}
+"."                             {FILTER( DOT);}
 
 "&&"				{FILTER7( AND,prf_name_str[F_and]);}
 "||"				{FILTER7( OR,prf_name_str[F_or] );}
