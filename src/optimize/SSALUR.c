@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/11/26 20:07:41  mwe
+ * SacDevCamp: Compiles!
+ *
  * Revision 1.16  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -79,11 +82,10 @@
  *
  *****************************************************************************/
 
-#define NEW_INFO
-
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "node_basic.h"
 #include "internal_lib.h"
 #include "dbug.h"
 #include "traverse.h"
@@ -95,6 +97,7 @@
 #include "math.h"
 #include "ssa.h"
 #include "SSAWLUnroll.h"
+#include "Error.h"
 
 /*
  * INFO structure and macros
@@ -112,7 +115,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_SSALUR_ASSIGN (result) = NULL;
     INFO_SSALUR_FUNDEF (result) = NULL;
@@ -128,7 +131,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -224,7 +227,7 @@ SSALURGetDoLoopUnrolling (node *fundef)
     DBUG_ASSERT ((FUNDEF_BODY (fundef) != NULL), "function with body required");
 
     /* check for do special fundef */
-    if (FUNDEF_STATUS (fundef) != ST_dofun) {
+    if (FUNDEF_ISDOFUN (fundef)) {
         DBUG_PRINT ("SSALUR", ("no do-loop special fundef"));
         DBUG_RETURN (UNR_NONE);
     }
@@ -246,7 +249,7 @@ SSALURGetDoLoopUnrolling (node *fundef)
     }
 
     /* identifier must be a localy defined vardec  - no arg */
-    if (NODE_TYPE (AVIS_VARDECORARG (ID_AVIS (condition))) != N_vardec) {
+    if (NODE_TYPE (AVIS_DECL (ID_AVIS (condition))) != N_vardec) {
         DBUG_PRINT ("SSALUR", ("identifier is no locally defined vardec"));
         DBUG_RETURN (UNR_NONE);
     }
@@ -274,7 +277,7 @@ SSALURGetDoLoopUnrolling (node *fundef)
     /* check loop counter identifier to be locally defined vardec */
     if (loop_counter_id == NULL)
         DBUG_RETURN (UNR_NONE);
-    if (NODE_TYPE (AVIS_VARDECORARG (ID_AVIS (loop_counter_id))) != N_vardec) {
+    if (NODE_TYPE (AVIS_DECL (ID_AVIS (loop_counter_id))) != N_vardec) {
         DBUG_PRINT ("SSALUR", ("loop counter is no locally defined vardec"));
         DBUG_RETURN (UNR_NONE);
     }
@@ -314,12 +317,10 @@ SSALURGetDoLoopUnrolling (node *fundef)
      * loop count identifier in and recursive call to be equal
      */
     if (!(SSALURIsEqualParameterPosition (FUNDEF_ARGS (fundef),
-                                          AVIS_VARDECORARG (
-                                            ID_AVIS (loop_entrance_counter_id)),
+                                          AVIS_DECL (ID_AVIS (loop_entrance_counter_id)),
                                           AP_ARGS (LET_EXPR (
                                             ASSIGN_INSTR (FUNDEF_INT_ASSIGN (fundef)))),
-                                          AVIS_VARDECORARG (
-                                            ID_AVIS (loop_counter_id))))) {
+                                          AVIS_DECL (ID_AVIS (loop_counter_id))))) {
         DBUG_PRINT ("SSALUR", ("arg and recursive parameter position don't match"));
         DBUG_RETURN (UNR_NONE);
     }
@@ -507,7 +508,7 @@ SSALURAnalyseLURPredicate (node *expr, prf loop_prf, loopc_t init_counter,
 
 #ifndef DBUG_OFF
     if (result) {
-        DBUG_PRINT ("SSALUR", ("predicate: id %s %d", mdb_prf[pred], term));
+        DBUG_PRINT ("SSALUR", ("predicate: id %s %d", global.mdb_prf[pred], term));
     }
 #endif
 
@@ -654,8 +655,7 @@ SSALURGetLoopIdentifier (node *predicate, node **id)
         *id = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (predicate)));
     }
 
-    DBUG_PRINT ("SSALUR", ("loop identifier: %s",
-                           VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS ((*id))))));
+    DBUG_PRINT ("SSALUR", ("loop identifier: %s", AVIS_NAME (ID_AVIS ((*id)))));
 
     DBUG_ASSERT ((NODE_TYPE (*id) == N_id), "node must be N_id");
 
@@ -701,9 +701,8 @@ SSALURAnalyseLURModifier (node *modifier, node **id, prf *loop_prf, loopc_t *inc
         *inc = NUM_VAL (arg1);
     }
 
-    DBUG_PRINT ("SSALUR", ("LUR modifier: %s %s %d",
-                           VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS ((*id)))),
-                           mdb_prf[(*loop_prf)], (*inc)));
+    DBUG_PRINT ("SSALUR", ("LUR modifier: %s %s %d", AVIS_NAME (ID_AVIS ((*id))),
+                           global.mdb_prf[(*loop_prf)], (*inc)));
 
     DBUG_RETURN (FALSE);
 }
@@ -734,16 +733,16 @@ SSALURGetConstantArg (node *id, node *fundef, loopc_t *init_counter)
     DBUG_ENTER ("SSALURGetConstantArg");
 
     /* check if id is an arg of this fundef */
-    if (NODE_TYPE (AVIS_VARDECORARG (ID_AVIS (id))) != N_arg) {
-        DBUG_PRINT ("SSALUR", ("identifier %s is no fundef argument",
-                               VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (id)))));
+    if (NODE_TYPE (AVIS_DECL (ID_AVIS (id))) != N_arg) {
+        DBUG_PRINT ("SSALUR",
+                    ("identifier %s is no fundef argument", AVIS_NAME (ID_AVIS (id))));
         DBUG_RETURN (FALSE);
     }
 
     /* get argument position in fundef arg chain */
     arg_chain = FUNDEF_ARGS (fundef);
     pos = 1;
-    while ((arg_chain != NULL) && (arg_chain != AVIS_VARDECORARG (ID_AVIS (id)))) {
+    while ((arg_chain != NULL) && (arg_chain != AVIS_DECL (ID_AVIS (id)))) {
         arg_chain = ARG_NEXT (arg_chain);
         pos++;
     }
@@ -763,17 +762,17 @@ SSALURGetConstantArg (node *id, node *fundef, loopc_t *init_counter)
     param = EXPRS_EXPR (param_chain);
 
     /* check parameter to be constant */
-    if (!(COIsConstant (param))) {
+    if (!(COisConstant (param))) {
         DBUG_PRINT ("SSALUR", ("external parameter is not constant"));
         DBUG_RETURN (FALSE);
     }
 
     /* get constant value (conversion with constant resolves propagated data */
-    co = COAST2Constant (param);
-    num = COConstant2AST (co);
-    co = COFreeConstant (co);
+    co = COaST2Constant (param);
+    num = COconstant2AST (co);
+    co = COfreeConstant (co);
     if (NODE_TYPE (num) != N_num) {
-        num = FreeNode (num);
+        num = FREEdoFreeNode (num);
         DBUG_PRINT ("SSALUR", ("external parameter is no numercial constant"));
         DBUG_RETURN (FALSE);
     }
@@ -782,11 +781,10 @@ SSALURGetConstantArg (node *id, node *fundef, loopc_t *init_counter)
     *init_counter = (loopc_t)NUM_VAL (num);
 
     /* free temp. data */
-    num = FreeNode (num);
+    num = FREEdoFreeNode (num);
 
-    DBUG_PRINT ("SSALUR",
-                ("loop entrance counter: %s = %d",
-                 VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (id))), (*init_counter)));
+    DBUG_PRINT ("SSALUR", ("loop entrance counter: %s = %d", AVIS_NAME (ID_AVIS (id)),
+                           (*init_counter)));
 
     DBUG_RETURN (TRUE);
 }
@@ -812,7 +810,7 @@ SSALURIsEqualParameterPosition (node *arg_chain, node *loop_entrance_arg,
     DBUG_ENTER ("SSALURIsEqualParameterPosition");
 
     if (loop_entrance_arg == arg_chain) {
-        if (loop_rec_param == AVIS_VARDECORARG (ID_AVIS (EXPRS_EXPR (param_chain)))) {
+        if (loop_rec_param == AVIS_DECL (ID_AVIS (EXPRS_EXPR (param_chain)))) {
             DBUG_PRINT ("SSALUR", ("arg and rec. parameter position match"));
             result = TRUE;
         } else {
@@ -992,30 +990,31 @@ SSALURUnrollLoopBody (node *fundef, loopc_t unrolling)
 
         /* append copy assignments to loop-body */
         loop_body
-          = AppendAssign (loop_body,
-                          SSALURCreateCopyAssignments (FUNDEF_ARGS (fundef),
-                                                       AP_ARGS (LET_EXPR (ASSIGN_INSTR (
-                                                         FUNDEF_INT_ASSIGN (fundef))))));
+          = TCappendAssign (loop_body,
+                            SSALURCreateCopyAssignments (FUNDEF_ARGS (fundef),
+                                                         AP_ARGS (LET_EXPR (ASSIGN_INSTR (
+                                                           FUNDEF_INT_ASSIGN (
+                                                             fundef))))));
 
         new_body = NULL;
 
         do {
-            new_body = AppendAssign (DupTree (loop_body), new_body);
+            new_body = TCappendAssign (DUPdoDupTree (loop_body), new_body);
             unrolling--;
         } while (unrolling > 1);
 
         /* finally reuse oringinal loop body as last instance */
-        new_body = AppendAssign (loop_body, new_body);
+        new_body = TCappendAssign (loop_body, new_body);
     }
 
     /* set condition of conditional to false -> no more recursion */
     COND_COND (ASSIGN_INSTR (cond_assign))
-      = FreeTree (COND_COND (ASSIGN_INSTR (cond_assign)));
+      = FREEdoFreeTree (COND_COND (ASSIGN_INSTR (cond_assign)));
 
-    COND_COND (ASSIGN_INSTR (cond_assign)) = MakeBool (FALSE);
+    COND_COND (ASSIGN_INSTR (cond_assign)) = TBmakeBool (FALSE);
 
     /* append rest of fundef assignment chain */
-    new_body = AppendAssign (new_body, cond_assign);
+    new_body = TCappendAssign (new_body, cond_assign);
 
     /* add new body to toplevel block of function */
     BLOCK_INSTR (FUNDEF_BODY (fundef)) = new_body;
@@ -1051,17 +1050,16 @@ SSALURCreateCopyAssignments (node *arg_chain, node *rec_chain)
         /* make right identifer as used in recursive call */
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (rec_chain)) == N_id),
                      "non id node as paramter in recursive call");
-        right_id = MakeId_Copy (StringCopy (
-          VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (EXPRS_EXPR (rec_chain))))));
-        ID_VARDEC (right_id) = AVIS_VARDECORARG (ID_AVIS (EXPRS_EXPR (rec_chain)));
+        right_id = TCmakeIdCopyString (
+          ILIBstringCopy (AVIS_NAME (ID_AVIS (EXPRS_EXPR (rec_chain)))));
+
         ID_AVIS (right_id) = ID_AVIS (EXPRS_EXPR (rec_chain));
 
         /* make copy assignment */
-        assignment
-          = MakeAssignLet (StringCopy (ARG_NAME (arg_chain)), arg_chain, right_id);
+        assignment = TCmakeAssignLet (ARG_AVIS (DUPdoDupTree (arg_chain)), right_id);
 
         /* append to assignment chain */
-        copy_assigns = AppendAssign (assignment, copy_assigns);
+        copy_assigns = TCappendAssign (assignment, copy_assigns);
 
     } else {
         DBUG_ASSERT ((rec_chain == NULL),
@@ -1076,7 +1074,7 @@ SSALURCreateCopyAssignments (node *arg_chain, node *rec_chain)
 /******************************************************************************
  *
  * function:
- *   node *SSALURfundef(node *arg_node, info *arg_info)
+ *   node *LURfundef(node *arg_node, info *arg_info)
  *
  * description:
  *   - traverse fundef and subordinated special fundefs for LUR and WLUR
@@ -1085,13 +1083,13 @@ SSALURCreateCopyAssignments (node *arg_chain, node *rec_chain)
  *
  ******************************************************************************/
 node *
-SSALURfundef (node *arg_node, info *arg_info)
+LURfundef (node *arg_node, info *arg_info)
 {
     loopc_t unrolling;
     int start_wlunr_expr;
     int start_lunr_expr;
 
-    DBUG_ENTER ("SSALURfundef");
+    DBUG_ENTER ("LURfundef");
 
     INFO_SSALUR_FUNDEF (arg_info) = arg_node;
     /* save start values of opt counters */
@@ -1108,14 +1106,14 @@ SSALURfundef (node *arg_node, info *arg_info)
      */
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* traverse block of fundef */
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
     /* analyse fundef for possible unrolling */
     unrolling = SSALURGetDoLoopUnrolling (arg_node);
 
     if (unrolling != UNR_NONE) {
-        if (unrolling <= unrnum) {
+        if (unrolling <= global.unrnum) {
             DBUG_PRINT ("SSALUR", ("unrolling loop %s %d times ", FUNDEF_NAME (arg_node),
                                    unrolling));
 
@@ -1127,7 +1125,7 @@ SSALURfundef (node *arg_node, info *arg_info)
         } else {
             DBUG_PRINT ("SSALUR",
                         ("no unrolling of %s: should be %d (but set to maxlur %d)",
-                         FUNDEF_NAME (arg_node), unrolling, unrnum));
+                         FUNDEF_NAME (arg_node), unrolling, global.unrnum));
             if (unrolling <= 32) {
                 NOTE (("LUR: -maxlur %d would unroll loop", unrolling));
             }
@@ -1137,7 +1135,7 @@ SSALURfundef (node *arg_node, info *arg_info)
     /* have we done any unrolling? */
     if ((start_lunr_expr < lunr_expr) || (start_wlunr_expr < wlunr_expr)) {
         /* restore ssa form in this fundef for further processing */
-        arg_node = RestoreSSAOneFundef (arg_node);
+        arg_node = SSArestoreSsaOneFundef (arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -1146,20 +1144,20 @@ SSALURfundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSALURassign(node *arg_node, info *arg_info)
+ *   node *LURassign(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses assignment chain and integrate unrolled with-loop code
  *
  ******************************************************************************/
 node *
-SSALURassign (node *arg_node, info *arg_info)
+LURassign (node *arg_node, info *arg_info)
 {
     node *pre_assigns;
     node *tmp;
     node *old_assign;
 
-    DBUG_ENTER ("SSALURassign");
+    DBUG_ENTER ("LURassign");
 
     DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "assign node without instruction");
 
@@ -1167,7 +1165,7 @@ SSALURassign (node *arg_node, info *arg_info)
     old_assign = INFO_SSALUR_ASSIGN (arg_info);
     INFO_SSALUR_ASSIGN (arg_info) = arg_node;
 
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     pre_assigns = INFO_SSALUR_PREASSIGN (arg_info);
     INFO_SSALUR_PREASSIGN (arg_info) = NULL;
@@ -1177,14 +1175,14 @@ SSALURassign (node *arg_node, info *arg_info)
 
     /* traverse to next assignment in chain */
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     /* integrate pre_assignments in assignment chain and remove this assign */
     if (pre_assigns != NULL) {
         tmp = arg_node;
-        arg_node = AppendAssign (pre_assigns, ASSIGN_NEXT (arg_node));
-        tmp = FreeNode (tmp);
+        arg_node = TCappendAssign (pre_assigns, ASSIGN_NEXT (arg_node));
+        tmp = FREEdoFreeNode (tmp);
     }
 
     DBUG_RETURN (arg_node);
@@ -1193,7 +1191,7 @@ SSALURassign (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSALURap(node *arg_node, info *arg_info)
+ *   node *LURap(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses the args and starts the traversal in the called fundef if it is
@@ -1201,26 +1199,27 @@ SSALURassign (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSALURap (node *arg_node, info *arg_info)
+LURap (node *arg_node, info *arg_info)
 {
     info *new_arg_info;
-    DBUG_ENTER ("SSALURap");
+    DBUG_ENTER ("LURap");
 
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
 
     if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
     /* traverse special fundef without recursion */
-    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
+    if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) != INFO_SSALUR_FUNDEF (arg_info))) {
         DBUG_PRINT ("SSALUR", ("traverse in special fundef %s",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
         INFO_SSALUR_MODUL (arg_info)
-          = CheckAndDupSpecialFundef (INFO_SSALUR_MODUL (arg_info), AP_FUNDEF (arg_node),
-                                      INFO_SSALUR_ASSIGN (arg_info));
+          = DUPcheckAndDupSpecialFundef (INFO_SSALUR_MODUL (arg_info),
+                                         AP_FUNDEF (arg_node),
+                                         INFO_SSALUR_ASSIGN (arg_info));
 
         DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (arg_node)) == 1),
                      "more than one instance of special function used.");
@@ -1231,7 +1230,7 @@ SSALURap (node *arg_node, info *arg_info)
         INFO_SSALUR_MODUL (new_arg_info) = INFO_SSALUR_MODUL (arg_info);
 
         /* start traversal of special fundef */
-        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
 
         DBUG_PRINT ("SSALUR", ("traversal of special fundef %s finished\n",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -1248,7 +1247,7 @@ SSALURap (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSALURNwith(node *arg_node, info *arg_info)
+ *   node *LURwith(node *arg_node, info *arg_info)
  *
  * description:
  *   triggers the withloop-unrolling. for now it uses the old wlur
@@ -1257,55 +1256,55 @@ SSALURap (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSALURNwith (node *arg_node, info *arg_info)
+LURwith (node *arg_node, info *arg_info)
 {
     node *tmpn;
     node *save;
 
-    DBUG_ENTER ("SSALURNwith");
+    DBUG_ENTER ("LURwith");
 
     /* traverse the N_Nwithop node */
-    if (NWITH_WITHOP (arg_node) != NULL) {
-        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    if (WITH_WITHOP (arg_node) != NULL) {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     }
 
     /* traverse all generators */
-    if (NWITH_PART (arg_node) != NULL) {
-        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    if (WITH_PART (arg_node) != NULL) {
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     }
 
     /* traverse bodies */
-    if (NWITH_CODE (arg_node) != NULL) {
-        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    if (WITH_CODE (arg_node) != NULL) {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     }
 
     save = INFO_SSALUR_ASSIGN (arg_info);
 
-    if (optimize & OPT_WLUR) {
+    if (global.optimize.dowlur) {
         /* can this WL be unrolled? */
-        switch (NWITH_TYPE (arg_node)) {
-        case WO_modarray:
-            if (SSACheckUnrollModarray (arg_node)) {
+        switch (NODE_TYPE (WITH_WITHOP (arg_node))) {
+        case N_modarray:
+            if (WLUcheckUnrollModarray (arg_node)) {
                 wlunr_expr++;
 
                 DBUG_PRINT ("SSALUR", ("starting SSADoUnrollModarry()"));
 
                 /* unroll withloop - returns list of assignments */
-                tmpn = SSADoUnrollModarray (arg_node, arg_info);
+                tmpn = WLUdoUnrollModarray (arg_node, arg_info);
 
                 /* code will be inserted by SSALURassign */
                 INFO_SSALUR_PREASSIGN (arg_info) = tmpn;
             }
             break;
 
-        case WO_genarray:
-            if (SSACheckUnrollGenarray (arg_node, arg_info)) {
+        case N_genarray:
+            if (WLUcheckUnrollGenarray (arg_node, arg_info)) {
                 wlunr_expr++;
 
                 DBUG_PRINT ("SSALUR", ("starting SSADoUnrollMGenarry()"));
 
                 /* unroll withloop - returns list of assignments */
-                tmpn = SSADoUnrollGenarray (arg_node, arg_info);
+                tmpn = WLUdoUnrollGenarray (arg_node, arg_info);
 
                 /* code will be inserted by SSALURassign */
                 INFO_SSALUR_PREASSIGN (arg_info) = tmpn;
@@ -1313,13 +1312,13 @@ SSALURNwith (node *arg_node, info *arg_info)
             break;
 
         default:
-            if (SSACheckUnrollFold (arg_node)) {
+            if (WLUcheckUnrollFold (arg_node)) {
                 wlunr_expr++;
 
                 DBUG_PRINT ("SSALUR", ("starting SSADoUnrollFold()"));
 
                 /* unroll withloop - returns list of assignments */
-                tmpn = SSADoUnrollFold (arg_node, arg_info);
+                tmpn = WLUdoUnrollFold (arg_node, arg_info);
 
                 /* code will be inserted by SSALURassign */
                 INFO_SSALUR_PREASSIGN (arg_info) = tmpn;
@@ -1342,10 +1341,9 @@ SSALURNwith (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSALoopUnrolling (node *fundef, node *modul)
+LURdoLoopUnrolling (node *fundef, node *modul)
 {
     info *arg_info;
-    funtab *old_tab;
 
     DBUG_ENTER ("SSALoopUnrolling");
 
@@ -1355,16 +1353,13 @@ SSALoopUnrolling (node *fundef, node *modul)
                 ("starting loop unrolling (ssa) in function %s", FUNDEF_NAME (fundef)));
 
     /* do not start traversal in special functions */
-    if (!(FUNDEF_IS_LACFUN (fundef))) {
+    if (!(FUNDEF_ISLACFUN (fundef))) {
         arg_info = MakeInfo ();
         INFO_SSALUR_MODUL (arg_info) = modul;
 
-        old_tab = act_tab;
-        act_tab = ssalur_tab;
-
-        fundef = Trav (fundef, arg_info);
-
-        act_tab = old_tab;
+        TRAVpush (TR_lur);
+        fundef = TRAVdo (fundef, arg_info);
+        TRAVpop ();
 
         arg_info = FreeInfo (arg_info);
     }
