@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  1998/08/07 12:38:08  dkr
+ * WL_ADJUST_OFFSET changed
+ *
  * Revision 1.22  1998/08/06 01:15:40  dkr
  * Fixed a bug in WL_ADJUST_OFFSET
  *
@@ -597,21 +600,22 @@ ICMCompileWL_FOLD_NOOP (int dim, int dims_target, char *target, char *idx_vec, i
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_ADJUST_OFFSET( int dim, int dims_target, char *target,
+ *   void ICMCompileWL_ADJUST_OFFSET( int dim, int first_block_dim,
+ *                                    int dims_target, char *target,
  *                                    char *idx_vec,
  *                                    int dims, char **idx_scalars)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_ADJUST_OFFSET( dim, dims_target, target, idx_vec,
+ *   WL_ADJUST_OFFSET( dim, first_block_dim, dims_target, target, idx_vec,
  *                     dims, [ idx_scalars ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_ADJUST_OFFSET (int dim, int dims_target, char *target, char *idx_vec,
-                            int dims, char **idx_scalars)
+ICMCompileWL_ADJUST_OFFSET (int dim, int first_block_dim, int dims_target, char *target,
+                            char *idx_vec, int dims, char **idx_scalars)
 {
     int i;
 
@@ -633,7 +637,11 @@ ICMCompileWL_ADJUST_OFFSET (int dim, int dims_target, char *target, char *idx_ve
         if (i <= dim) {
             fprintf (outfile, " + %s )", idx_scalars[i]);
         } else {
-            fprintf (outfile, " + SAC_WL_VAR( start, %s) )", idx_scalars[i]);
+            if (i < first_block_dim) {
+                fprintf (outfile, " + SAC_WL_MT_SCHEDULE_START( %d)", i);
+            } else {
+                fprintf (outfile, " + SAC_WL_VAR( start, %s) )", idx_scalars[i]);
+            }
         }
     }
 
