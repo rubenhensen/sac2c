@@ -68,9 +68,6 @@
 
 #include "stdio.h"
 
-extern char *sys_errlist[]; /* Fehlerliste des Systems ( fuer Direktzugriffe ) */
-extern int errno;
-
 #ifndef DBUG_OFF
 extern int _db_on_;          /* TRUE if debug currently enabled */
 extern int _db_dummy_;       /* dummy for fooling macro preprocessor */
