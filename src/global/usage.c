@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.90  1999/02/19 17:26:03  dkr
+ * changed -efence to -defence
+ *
  * Revision 1.89  1999/02/19 17:06:13  dkr
  * flag -efence added
  *
@@ -367,6 +370,9 @@ usage ()
 
     printf ("\n\nDEBUG OPTIONS:\n\n"
 
+            "\t -defence\t\tfor compilation of programs:\n"
+            "\t\t\t\t  link executable with ElectricFence\n"
+            "\t\t\t\t  (malloc debugger)\n"
             "\t -dcheck_boundary\tcheck boundary of arrays upon access\n"
             "\t -dnocleanup\t\tdon't remove temporary files and directories\n"
             "\t -dshow_syscall\t\tshow all system calls during compilation\n"
@@ -380,9 +386,6 @@ usage ()
             "\t\t\t\t<from>..<to>\n"
             "\t\t\t\t  Default: <from> = 1,\n"
             "\t\t\t\t           <to> = last compiler phase\n"
-            "\n\t -efence\t\tfor compilation of programs:\n"
-            "\t\t\t\t  link executable with ElectricFence\n"
-            "\t\t\t\t  (Malloc Debugger)\n"
 
             "\n\nTRACE OPTIONS:\n\n"
 
