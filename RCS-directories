@@ -9,3 +9,4 @@ src/typecheck
 src/optimize
 src/modules
 src/compile
+src/refcount
