@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2003/11/18 17:21:57  dkr
+ * NWITHOP_DEFAULT added
+ *
  * Revision 1.14  2003/09/08 13:14:33  sbs
  * some more debug prints added
  *
@@ -327,8 +330,9 @@ CreateFuntype (node *fundef)
  *    Assumes act_args to be an N_exprs chain of actual arguments and args to
  *    be an N_args chain of formal parameters of the same or less (...) length.
  *    For each param that is tagged as ST_reference, the according N_id expr
- *    is flagged as IS_REFERENCE TRUE and IS_READ_ONLY FALSE;
- *    a ST_readonly_reference param is flagged IS_REFERENCE TRUE and IS_READ_ONLY TRUE;
+ *      is flagged as IS_REFERENCE TRUE and IS_READ_ONLY FALSE;
+ *    a ST_readonly_reference param is flagged IS_REFERENCE TRUE and
+ *      IS_READ_ONLY TRUE;
  *    all others are flagged IS_REFERENCE FALSE !
  *
  ******************************************************************************/
@@ -587,7 +591,7 @@ CRTWRPid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *CRTWRPNwithop(node *arg_node, node *arg_info)
+ *    node *CRTWRPNwithop( node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -605,11 +609,15 @@ CRTWRPNwithop (node *arg_node, node *arg_info)
     switch (NWITHOP_TYPE (arg_node)) {
     case WO_genarray:
         NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
+        if (NWITHOP_DEFAULT (arg_node) != NULL) {
+            NWITHOP_DEFAULT (arg_node) = Trav (NWITHOP_DEFAULT (arg_node), arg_info);
+        }
         break;
 
     case WO_modarray:
         NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
         break;
+
     case WO_foldfun:
         NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
 
@@ -632,6 +640,7 @@ CRTWRPNwithop (node *arg_node, node *arg_info)
             NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
         }
         break;
+
     default:
         DBUG_ASSERT (FALSE, "corrupted WL tag found");
         break;
