@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.108  2004/11/26 19:35:37  skt
+  added Module for RSP traversal
+
   Revision 1.107  2004/11/26 18:13:19  ktr
   Added some comments to COMP trversal.
 
@@ -404,8 +407,9 @@
       </traversal>
       <traversal id="RSP" name="Resolve pragmas" default="sons" include="resolvepragma.h">
         <travuser>
-	  <node name="Fundef" />
 	  <node name="Arg" />
+	  <node name="Fundef" />
+	  <node name="Module" />
 	  <node name="Ret" />
 	</travuser>
       </traversal>
@@ -1155,10 +1159,10 @@
       </traversal>
       <traversal id="SCHED" name="Schedule" default="sons" include="schedule.h">
         <travuser>
+          <node name="Wlsegvar" />
           <node name="Sync" />
           <node name="With2" />
           <node name="Wlseg" />
-          <node name="Wlsegvar" />
         </travuser>
         <travsons>
         </travsons>
