@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.9  2000/07/14 10:11:12  dkr
+ * DupIds() called with arg_info=NULL now
+ *
  * Revision 2.8  2000/06/13 12:28:55  dkr
  * function for old with-loop removed
  *
@@ -526,9 +529,9 @@ Eliminate (node *arg_node, node *equal_node, node *arg_info)
     case N_double:
     case N_str:
     case N_bool:
-        ids_node = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), arg_info);
+        ids_node = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), NULL);
         id_node = MakeId2 (ids_node);
-        ids_node = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), arg_info);
+        ids_node = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), NULL);
         let_node = MakeLet (id_node, ids_node);
         new_node = MakeAssign (let_node, NULL);
         break;
@@ -537,9 +540,9 @@ Eliminate (node *arg_node, node *equal_node, node *arg_info)
 #endif
     case N_prf:
         if (CheckScope (MRD_LIST, equal_node, INFO_VARNO (arg_info), TRUE)) {
-            ids_node = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), arg_info);
+            ids_node = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), NULL);
             id_node = MakeId2 (ids_node);
-            ids_node = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), arg_info);
+            ids_node = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), NULL);
             let_node = MakeLet (id_node, ids_node);
             new_node = MakeAssign (let_node, NULL);
         } else {
@@ -550,8 +553,8 @@ Eliminate (node *arg_node, node *equal_node, node *arg_info)
         if (CheckScope (MRD_LIST, equal_node, INFO_VARNO (arg_info), TRUE)) {
             ids *ids1, *ids2;
 
-            ids1 = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), arg_info);
-            ids2 = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), arg_info);
+            ids1 = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), NULL);
+            ids2 = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), NULL);
             new_node = GenNodes4Ap (ids1, ids2, arg_info);
         } else {
             new_node = NULL;
