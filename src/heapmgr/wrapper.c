@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/29 14:24:41  cg
+ * When compiling for multithreaded execution, any function gets one additional
+ * parameter to hold the thread ID, which is needed for heap management.
+ * Thread-specific data is only used by malloc().
+ *
  * Revision 3.1  2000/11/20 18:02:57  sacbase
  * new release made
  *
@@ -198,7 +203,7 @@ SAC_HM_MallocAnyChunk_mt (SAC_HM_size_byte_t size, unsigned int thread_id)
 /******************************************************************************
  *
  * function:
- *   void *SAC_HM_MallocAnyChunk_at(SAC_HM_size_byte_t size)
+ *   void *SAC_HM_MallocAnyChunk_at(SAC_HM_size_byte_t size, unsigned int thread_id)
  *
  * description:
  *
@@ -216,18 +221,21 @@ SAC_HM_MallocAnyChunk_mt (SAC_HM_size_byte_t size, unsigned int thread_id)
 #ifdef MT
 
 void *
-SAC_HM_MallocAnyChunk_at (SAC_HM_size_byte_t size)
+SAC_HM_MallocAnyChunk_at (SAC_HM_size_byte_t size, unsigned int thread_id)
 {
     SAC_HM_size_unit_t units;
     void *mem;
-    unsigned int thread_id;
+    /* unsigned int thread_id; */
     const int multi_threaded = !SAC_MT_not_yet_parallel;
 
-    if (multi_threaded && (size <= SAC_HM_ARENA_7_MAXCS_BYTES)) {
-        thread_id = *((unsigned int *)pthread_getspecific (SAC_MT_threadid_key));
-    } else {
-        thread_id = 0;
-    }
+#if 0
+  if (multi_threaded && (size <= SAC_HM_ARENA_7_MAXCS_BYTES)) {
+    thread_id = *((unsigned int *) pthread_getspecific(SAC_MT_threadid_key));
+  }
+  else {
+    thread_id = 0;
+  }
+#endif
 
     if (size <= SAC_HM_ARENA_4_MAXCS_BYTES) {
         /* Now, it's arena 1, 2, 3, or 4. */
@@ -289,7 +297,7 @@ SAC_HM_MallocAnyChunk_at (SAC_HM_size_byte_t size)
 #else /* MT */
 
 void *
-SAC_HM_MallocAnyChunk_at (SAC_HM_size_byte_t size)
+SAC_HM_MallocAnyChunk_at (SAC_HM_size_byte_t size, unsigned int thread_id)
 {
     return (SAC_HM_MallocAnyChunk_st (size));
 }

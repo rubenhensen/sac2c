@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2000/12/29 14:24:41  cg
+ * When compiling for multithreaded execution, any function gets one additional
+ * parameter to hold the thread ID, which is needed for heap management.
+ * Thread-specific data is only used by malloc().
+ *
  * Revision 3.5  2000/12/12 15:32:28  dkr
  * functions Make...RcIcms() are not static anymore
  *
@@ -1466,6 +1471,54 @@ CreateIcmMT2_FUN_DEC (char *kindof, node *fundef, node **icm_tab, int tab_size)
     DBUG_RETURN (icm);
 }
 
+static node *
+AddThreadIdIcmND_FUN_DEC (node *icm)
+{
+    node *args;
+
+    DBUG_ENTER ("AddThreadIdIcmND_FUN_DEC");
+
+    args = EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (icm)));
+
+    EXPRS_NEXT (args) = MakeExprs (MakeId_Copy ("in"),
+                                   MakeExprs (MakeId_Copy ("unsigned int"),
+                                              MakeExprs (MakeId_Copy ("SAC_MT_mythread"),
+                                                         EXPRS_NEXT (args))));
+
+    NUM_VAL (EXPRS_EXPR (args)) = NUM_VAL (EXPRS_EXPR (args)) + 1;
+
+    DBUG_RETURN (icm);
+}
+
+static node *
+AddThreadIdVardec (node *block)
+{
+    DBUG_ENTER ("AddThreadIdVardec");
+
+    BLOCK_VARDEC (block) = MakeVardec (StringCopy ("SAC_MT_mythread"), MakeTypes1 (T_int),
+                                       BLOCK_VARDEC (block));
+    VARDEC_ICM (BLOCK_VARDEC (block)) = MakeIcm (StringCopy ("MT_DECL_MYTHREAD"), NULL);
+
+    DBUG_RETURN (block);
+}
+
+static node *
+AddThreadIdIcmND_FUN_AP (node *icm_assign)
+{
+    node *args;
+
+    DBUG_ENTER ("AddThreadIdIcmND_FUN_AP");
+
+    args = EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (ASSIGN_INSTR (icm_assign))));
+
+    EXPRS_NEXT (args)
+      = MakeExprs (MakeId_Copy ("in"),
+                   MakeExprs (MakeId_Copy ("SAC_MT_mythread"), EXPRS_NEXT (args)));
+    NUM_VAL (EXPRS_EXPR (args)) = NUM_VAL (EXPRS_EXPR (args)) + 1;
+
+    DBUG_RETURN (icm_assign);
+}
+
 /******************************************************************************
  *
  * Function:
@@ -2428,6 +2481,15 @@ COMPFundef (node *arg_node, node *arg_info)
         FUNDEF_RETURN (arg_node) = ReorganizeReturnIcm (FUNDEF_RETURN (arg_node));
         FUNDEF_ICM (arg_node)
           = CreateIcmND_FUN_DEC (FUNDEF_NAME (arg_node), icm_tab, tab_size);
+
+        if ((gen_mt_code == GEN_MT_OLD) && (FUNDEF_BODY (arg_node) != NULL)
+            && (optimize & OPT_PHM)) {
+            if (0 == strcmp (FUNDEF_NAME (arg_node), "main")) {
+                FUNDEF_BODY (arg_node) = AddThreadIdVardec (FUNDEF_BODY (arg_node));
+            } else {
+                FUNDEF_ICM (arg_node) = AddThreadIdIcmND_FUN_DEC (FUNDEF_ICM (arg_node));
+            }
+        }
     }
 
     /*
@@ -3403,6 +3465,12 @@ COMPAp (node *arg_node, node *arg_info)
 
     /* create ND_FUN_AP ICM */
     icm_node = CreateIcmND_FUN_AP (FUNDEF_NAME (AP_FUNDEF (arg_node)), icm_tab, tab_size);
+
+    if ((gen_mt_code == GEN_MT_OLD) && (FUNDEF_BODY (AP_FUNDEF (arg_node)) != NULL)
+        && (optimize & OPT_PHM)) {
+        icm_node = AddThreadIdIcmND_FUN_AP (icm_node);
+    }
+
     /* insert ND_FUN_AP ICM at head of assignment chain */
     ASSIGN_NEXT (icm_node) = ASSIGN_NEXT (ret_node);
     ASSIGN_NEXT (ret_node) = icm_node;

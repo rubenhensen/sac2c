@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/29 14:26:48  cg
+ * When compiling for multithreaded execution, any function gets one additional
+ * parameter to hold the thread ID, which is needed for heap management.
+ * Thread-specific data is only used by malloc().
+ *
  * Revision 3.1  2000/11/20 18:02:45  sacbase
  * new release made
  *
@@ -113,7 +118,7 @@ SAC_HM_MallocAnyChunk_mt (SAC_HM_size_byte_t size, unsigned int thread_id)
 }
 
 void *
-SAC_HM_MallocAnyChunk_at (SAC_HM_size_byte_t size)
+SAC_HM_MallocAnyChunk_at (SAC_HM_size_byte_t size, unsigned int thread_id)
 {
     return (malloc (size));
 }

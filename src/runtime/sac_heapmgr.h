@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/29 14:24:41  cg
+ * When compiling for multithreaded execution, any function gets one additional
+ * parameter to hold the thread ID, which is needed for heap management.
+ * Thread-specific data is only used by malloc().
+ *
  * Revision 3.2  2000/12/06 18:29:10  cg
  * Added declaration of function SAC_HM_PlaceArray
  *
@@ -378,7 +383,7 @@ extern void *SAC_HM_MallocLargeChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *
 extern void SAC_HM_FreeSmallChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena);
 extern void SAC_HM_FreeLargeChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena);
 
-extern void *SAC_HM_MallocAnyChunk_at (SAC_HM_size_byte_t size);
+extern void *SAC_HM_MallocAnyChunk_at (SAC_HM_size_byte_t size, unsigned int thread_id);
 extern void *SAC_HM_MallocAnyChunk_st (SAC_HM_size_byte_t size);
 extern void *SAC_HM_MallocAnyChunk_mt (SAC_HM_size_byte_t size, unsigned int thread_id);
 
@@ -478,7 +483,7 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
             var = SAC_HM_MallocAnyChunk_mt (size, SAC_MT_MYTHREAD ());                   \
             break;                                                                       \
         case SAC_HM_any_threaded:                                                        \
-            var = SAC_HM_MallocAnyChunk_at (size);                                       \
+            var = SAC_HM_MallocAnyChunk_at (size, SAC_MT_MYTHREAD ());                   \
             break;                                                                       \
         }                                                                                \
     }
@@ -528,7 +533,9 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
                                                                  [arena_num]));          \
             break;                                                                       \
         case SAC_HM_any_threaded:                                                        \
-            var = SAC_HM_MallocSmallChunk_at (units, arena_num);                         \
+            /* var = SAC_HM_MallocSmallChunk_at(units, arena_num); */                    \
+            var = SAC_HM_MallocSmallChunk (units, &(SAC_HM_arenas[SAC_MT_MYTHREAD ()]    \
+                                                                 [arena_num]));          \
             break;                                                                       \
         }                                                                                \
     }
@@ -544,7 +551,9 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
                                                                  [arena_num]));          \
             break;                                                                       \
         case SAC_HM_any_threaded:                                                        \
-            var = SAC_HM_MallocLargeChunk_at (units, arena_num);                         \
+            /* var = SAC_HM_MallocLargeChunk_at(units, arena_num);  */                   \
+            var = SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[SAC_MT_MYTHREAD ()]    \
+                                                                 [arena_num]));          \
             break;                                                                       \
         }                                                                                \
     }

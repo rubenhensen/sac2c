@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/29 14:24:41  cg
+ * When compiling for multithreaded execution, any function gets one additional
+ * parameter to hold the thread ID, which is needed for heap management.
+ * Thread-specific data is only used by malloc().
+ *
  * Revision 3.2  2000/12/14 10:25:49  sbs
  * _REENTRANT not preset on alpha anymore!
  *
@@ -377,9 +382,15 @@ typedef union {
 
 #define SAC_MT_MYWORKERCLASS() SAC_MT_myworkerclass
 
+#define SAC_MT_DECL_MYTHREAD() const unsigned int SAC_MT_mythread = 0
+
+#if 0
 #define SAC_MT_DETERMINE_THREAD_ID()                                                     \
     const unsigned int SAC_MT_mythread                                                   \
       = *((unsigned int *)pthread_getspecific (SAC_MT_threadid_key));
+#else
+#define SAC_MT_DETERMINE_THREAD_ID()
+#endif
 
 #define SAC_MT_SPMD_SPECIAL_FRAME(spmdname)                                              \
     SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().##spmdname
@@ -783,6 +794,8 @@ SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
 #define SAC_MT_THREADS() 1
 
 #define SAC_MT_MYTHREAD() 0
+
+#define SAC_MT_DECL_MYTHREAD() const unsigned int SAC_MT_mythread = 0
 
 #define SAC_MT_SETUP()
 #define SAC_MT_SETUP_INITIAL()
