@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1996/01/02 15:45:44  cg
+ * Revision 1.3  1996/01/05 12:25:18  cg
+ * added cleanup and targetdir[]
+ *
+ * Revision 1.2  1996/01/02  15:45:44  cg
  * include of filemgr.h no longer necessary
  *
  * Revision 1.1  1995/12/30  14:47:06  cg
@@ -28,6 +31,7 @@ extern char prgname[];
 extern char outfilename[];
 extern char cfilename[];
 extern char ccflagsstr[];
+extern char targetdir[];
 
 extern int Ccodeonly;
 extern int break_compilation;
@@ -61,5 +65,6 @@ extern int traceflag;
 extern int breakae;
 
 extern int check_boundary;
+extern int cleanup;
 
 #endif /* _sac_globals_h */
