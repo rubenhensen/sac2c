@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/11/26 17:54:18  skt
+ * renamed OPTmodul into OPTmodule
+ *
  * Revision 3.11  2004/11/22 18:10:19  sbs
  * SacDevCamp04
  *
@@ -79,7 +82,7 @@ extern int cvp_expr;
 extern int wlfs_expr;
 
 extern node *OPTdoOptimize (node *arg_node);
-extern node *OPTmodul (node *arg_node, info *arg_info);
+extern node *OPTmodule (node *arg_node, info *arg_info);
 extern node *OPTfundef (node *arg_node, info *arg_info);
 
 #endif /* _SAC_OPTIMIZE_H_ */
