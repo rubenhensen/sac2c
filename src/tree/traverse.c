@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2000/05/31 14:38:22  mab
+ * renamed tables for array padding
+ *
  * Revision 1.19  2000/05/31 11:26:29  mab
  * added includes and traversal tables for array padding
  *
@@ -1110,26 +1113,26 @@ static funtab precomp1_tab_rec = {{
 funtab *precomp1_tab = &precomp1_tab_rec;
 
 /*
- *  (80) padcoll_tab
+ *  (80) apc_tab
  */
-static funtab padcoll_tab_rec = {{
-#define NIFpadcoll(it_padcoll) it_padcoll
+static funtab apc_tab_rec = {{
+#define NIFapc(it_apc) it_apc
 #include "node_info.mac"
-                                 },
-                                 NULL,
-                                 NULL};
-funtab *padcoll_tab = &padcoll_tab_rec;
+                             },
+                             NULL,
+                             NULL};
+funtab *apc_tab = &apc_tab_rec;
 
 /*
- *  (81) padtrans_tab
+ *  (81) apt_tab
  */
-static funtab padtrans_tab_rec = {{
-#define NIFpadtrans(it_padtrans) it_padtrans
+static funtab apt_tab_rec = {{
+#define NIFapt(it_apt) it_apt
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *padtrans_tab = &padtrans_tab_rec;
+                             },
+                             NULL,
+                             NULL};
+funtab *apt_tab = &apt_tab_rec;
 
 /*
  *  nnode

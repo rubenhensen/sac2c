@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.18  2000/05/31 14:39:33  mab
+ * renamed tables for array padding
+ *
  * Revision 2.17  2000/05/31 11:23:17  mab
  * added traversal tables for array padding
  *
@@ -631,10 +634,10 @@ TmpVar ()
         s = "fun2lac";
     } else if (act_tab == ai_tab) {
         s = "ai";
-    } else if (act_tab == padcoll_tab) {
-        s = "padc";
-    } else if (act_tab == padtrans_tab) {
-        s = "padt";
+    } else if (act_tab == apc_tab) {
+        s = "apc";
+    } else if (act_tab == apt_tab) {
+        s = "apt";
     } else {
         s = "unknown";
     }

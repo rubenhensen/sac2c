@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2000/05/31 14:38:22  mab
+ * renamed tables for array padding
+ *
  * Revision 1.16  2000/05/31 11:25:22  mab
  * added traversal tables for array padding
  *
@@ -168,8 +171,8 @@ extern funtab *barin_tab;
 extern funtab *blkli_tab;
 extern funtab *adjca1_tab;
 extern funtab *adjca2_tab;
-extern funtab *padcoll_tab;
-extern funtab *padtrans_tab;
+extern funtab *apc_tab;
+extern funtab *apt_tab;
 
 extern int nnode[];
 
