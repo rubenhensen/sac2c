@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/05/07 15:36:04  cg
+ * mechanism added that allows general updates of data flow masks,
+ * i.e. with newly introduced identifiers as well as old ones removed.
+ *
  * Revision 1.4  1998/05/07 10:08:31  dkr
  * uses now StringCopy() in DFMGenMaskBase(), DFMExtendMaskBase() when
  *   extracting the vardec-, arg-names (no sharing!!).
@@ -28,6 +32,10 @@
  *
  *   This module implements support for binary data flow masks.
  *   See the header file DataFlowMask.h for a detailed description.
+ *
+ *   In this module the names of local identifiers are shared with the
+ *   actual syntax tree by purpose. The way this module is encapsulated
+ *   justifies this decision.
  *
  *****************************************************************************/
 
@@ -71,6 +79,35 @@ typedef struct {
     unsigned int *bitfield;
     mask_base_t *mask_base;
 } mask_t;
+
+/*
+ * internal functions
+ */
+
+static void
+CheckMask (mask_t *mask)
+{
+    int i;
+    unsigned int *old;
+
+    DBUG_ENTER ("CheckMask");
+
+    if (mask->num_bitfields < mask->mask_base->num_bitfields) {
+        old = mask->bitfield;
+        mask->bitfield = (unsigned int *)Malloc (mask->mask_base->num_bitfields
+                                                 * sizeof (unsigned int));
+        for (i = 0; i < mask->num_bitfields; i++) {
+            mask->bitfield[i] = old[i];
+        }
+        for (i = mask->num_bitfields; i < mask->mask_base->num_bitfields; i++) {
+            mask->bitfield[i] = 0;
+        }
+        mask->num_bitfields = mask->mask_base->num_bitfields;
+        FREE (old);
+    }
+
+    DBUG_VOID_RETURN;
+}
 
 /*
  * functions for dealing with mask data bases
@@ -143,7 +180,7 @@ DFMGenMaskBase (node *arguments, node *vardecs)
     cnt = 0;
 
     while (tmp != NULL) {
-        base->ids[cnt] = StringCopy (ARG_NAME (tmp));
+        base->ids[cnt] = ARG_NAME (tmp);
         cnt += 1;
         tmp = ARG_NEXT (tmp);
     }
@@ -151,7 +188,7 @@ DFMGenMaskBase (node *arguments, node *vardecs)
     tmp = vardecs;
 
     while (tmp != NULL) {
-        base->ids[cnt] = StringCopy (VARDEC_NAME (tmp));
+        base->ids[cnt] = VARDEC_NAME (tmp);
         cnt += 1;
         tmp = VARDEC_NEXT (tmp);
     }
@@ -159,57 +196,194 @@ DFMGenMaskBase (node *arguments, node *vardecs)
     DBUG_RETURN (base);
 }
 
+#if 0
+mask_base_t *DFMExtendMaskBase( mask_base_t *mask_base,
+                                node *arguments,
+                                node *vardecs)
+{
+  int cnt, old_num_ids, i;
+  node *tmp;
+  char **old_ids;
+  
+  DBUG_ENTER("DFMExtendMaskBase");
+
+
+  /*
+   * The new number of local identifiers is counted.
+   */
+  
+  tmp=arguments;
+  cnt=0;
+
+  while (tmp!=NULL) {
+    cnt+=1;
+    tmp=ARG_NEXT(tmp);
+  }
+  
+  tmp=vardecs;
+
+  while (tmp!=NULL) {
+    cnt+=1;
+    tmp=VARDEC_NEXT(tmp);
+  }
+
+  DBUG_ASSERT((cnt>=mask_base->num_ids), "Number of local identifiers decreased");
+  
+
+  /*
+   * The mask data base is updated with the new values and a new identifier
+   * table is allocated.
+   */
+
+  old_ids=mask_base->ids;
+  
+  mask_base->ids = (char **)Malloc(cnt*sizeof(char*));
+
+  old_num_ids=mask_base->num_ids;
+  
+  mask_base->num_ids=cnt;
+  
+  mask_base->num_bitfields=(cnt/(sizeof(unsigned int)*8))+1;
+  
+  
+  /*
+   * The old identifier table is copied to the newly allocated one and
+   * its space is de-allocated afterwards.
+   */
+
+  for (i=0; i<mask_base->num_ids; i++) {
+    mask_base->ids[i]=old_ids[i];
+  }
+  
+  FREE(old_ids);
+  
+
+  /*
+   * New local identifiers are appended to the identifier table.
+   */
+
+  tmp=arguments;
+  cnt=mask_base->num_ids;
+  
+  while (tmp!=NULL) {
+    
+    for (i=0; i<old_num_ids; i++) {
+      if (0==strcmp(mask_base->ids[i], ARG_NAME(tmp))) {
+        goto arg_found;
+      }
+    }
+    
+    mask_base->ids[cnt]=ARG_NAME(tmp);
+    cnt+=1;
+
+    arg_found:
+    tmp=ARG_NEXT(tmp);
+  }
+  
+  tmp=vardecs;
+
+  while (tmp!=NULL) {
+    
+    for (i=0; i<old_num_ids; i++) {
+      if (0==strcmp(mask_base->ids[i], VARDEC_NAME(tmp))) {
+        goto vardec_found;
+      }
+    }
+    
+    mask_base->ids[cnt]=VARDEC_NAME(tmp);
+    cnt+=1;
+
+    vardec_found:
+    tmp=ARG_NEXT(tmp);
+    }
+  
+  DBUG_RETURN(mask_base);
+}
+#endif
+
 mask_base_t *
-DFMExtendMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
+DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
 {
     int cnt, old_num_ids, i;
     node *tmp;
     char **old_ids;
 
-    DBUG_ENTER ("DFMExtendMaskBase");
+    DBUG_ENTER ("DFMUpdateMaskBase");
 
     /*
-     * The new number of local identifiers is counted.
+     * The number of new local identifiers is counted.
+     * All those identifiers that already exist within the old identifier table
+     * are copied to a new temporary table of identical size which is initialized with
+     * NULL-pointers, i.e. all pointers in the new identifier table that are still
+     * set to NULL afterwards belong to identifiers which have been removed from
+     * the set of local identifiers. These remain subsequently set to NULL, i.e.
+     * the respective bits in the data flow masks are not going to be reused.
      */
 
+    old_ids = (char **)Malloc (mask_base->num_ids * sizeof (char *));
+
+    for (i = 0; i < mask_base->num_ids; i++) {
+        old_ids[i] = NULL;
+    }
+
     tmp = arguments;
-    cnt = 0;
+    cnt = mask_base->num_ids;
 
     while (tmp != NULL) {
+
+        for (i = 0; i < mask_base->num_ids; i++) {
+            if (mask_base->ids[i] == ARG_NAME (tmp)) {
+                old_ids[i] = mask_base->ids[i];
+                goto old_arg_found;
+            }
+        }
+
         cnt += 1;
+
+    old_arg_found:
         tmp = ARG_NEXT (tmp);
     }
 
     tmp = vardecs;
 
     while (tmp != NULL) {
+
+        for (i = 0; i < mask_base->num_ids; i++) {
+            if (mask_base->ids[i] == VARDEC_NAME (tmp)) {
+                old_ids[i] = mask_base->ids[i];
+                goto old_vardec_found;
+            }
+        }
+
         cnt += 1;
-        tmp = VARDEC_NEXT (tmp);
+
+    old_vardec_found:
+        tmp = ARG_NEXT (tmp);
     }
 
-    DBUG_ASSERT ((cnt >= mask_base->num_ids), "Number of local identifiers decreased");
-
     /*
+     * The original identifier table may now be released.
      * The mask data base is updated with the new values and a new identifier
-     * table is allocated.
+     * table is allocated that provides sufficient space for all new local
+     * identifiers.
      */
 
-    old_ids = mask_base->ids;
-
-    mask_base->ids = (char **)Malloc (cnt * sizeof (char *));
+    FREE (mask_base->ids);
 
     old_num_ids = mask_base->num_ids;
 
-    mask_base->num_ids = cnt;
+    mask_base->num_ids += cnt;
 
-    mask_base->num_bitfields = (cnt / (sizeof (unsigned int) * 8)) + 1;
+    mask_base->num_bitfields = (mask_base->num_ids / (sizeof (unsigned int) * 8)) + 1;
+
+    mask_base->ids = (char **)Malloc ((mask_base->num_ids) * sizeof (char *));
 
     /*
-     * The old identifier table is copied to the newly allocated one and
+     * The temporary identifier table is copied to the newly allocated one and
      * its space is de-allocated afterwards.
      */
 
-    for (i = 0; i < mask_base->num_ids; i++) {
+    for (i = 0; i < old_num_ids; i++) {
         mask_base->ids[i] = old_ids[i];
     }
 
@@ -220,17 +394,17 @@ DFMExtendMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
      */
 
     tmp = arguments;
-    cnt = mask_base->num_ids;
+    cnt = old_num_ids;
 
     while (tmp != NULL) {
 
         for (i = 0; i < old_num_ids; i++) {
-            if (0 == strcmp (mask_base->ids[i], ARG_NAME (tmp))) {
+            if (mask_base->ids[i] == ARG_NAME (tmp)) {
                 goto arg_found;
             }
         }
 
-        mask_base->ids[cnt] = StringCopy (ARG_NAME (tmp));
+        mask_base->ids[cnt] = ARG_NAME (tmp);
         cnt += 1;
 
     arg_found:
@@ -242,12 +416,12 @@ DFMExtendMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
     while (tmp != NULL) {
 
         for (i = 0; i < old_num_ids; i++) {
-            if (0 == strcmp (mask_base->ids[i], VARDEC_NAME (tmp))) {
+            if (mask_base->ids[i] == VARDEC_NAME (tmp)) {
                 goto vardec_found;
             }
         }
 
-        mask_base->ids[cnt] = StringCopy (VARDEC_NAME (tmp));
+        mask_base->ids[cnt] = VARDEC_NAME (tmp);
         cnt += 1;
 
     vardec_found:
@@ -328,6 +502,8 @@ DFMGenMaskCopy (mask_t *mask)
 
     DBUG_ENTER ("DFMGenMaskCopy");
 
+    CheckMask (mask);
+
     new_mask = Malloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask->num_bitfields;
@@ -351,6 +527,8 @@ DFMGenMaskInv (mask_t *mask)
     int i;
 
     DBUG_ENTER ("DFMGenMaskInv");
+
+    CheckMask (mask);
 
     new_mask = Malloc (sizeof (mask_t));
 
@@ -378,6 +556,9 @@ DFMGenMaskAnd (mask_t *mask1, mask_t *mask2)
 
     DBUG_ASSERT ((mask1->mask_base == mask2->mask_base), "Combining incompatible masks");
 
+    CheckMask (mask1);
+    CheckMask (mask2);
+
     new_mask = Malloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask1->num_bitfields;
@@ -404,6 +585,9 @@ DFMGenMaskOr (mask_t *mask1, mask_t *mask2)
 
     DBUG_ASSERT ((mask1->mask_base == mask2->mask_base), "Combining incompatible masks");
 
+    CheckMask (mask1);
+    CheckMask (mask2);
+
     new_mask = Malloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask1->num_bitfields;
@@ -429,6 +613,9 @@ DFMGenMaskMinus (mask_t *mask1, mask_t *mask2)
     DBUG_ENTER ("DFMGenMaskMinus");
 
     DBUG_ASSERT ((mask1->mask_base == mask2->mask_base), "Combining incompatible masks");
+
+    CheckMask (mask1);
+    CheckMask (mask2);
 
     new_mask = Malloc (sizeof (mask_t));
 
@@ -457,6 +644,8 @@ DFMSetMaskClear (mask_t *mask)
 
     DBUG_ENTER ("DFMSetMaskClear");
 
+    CheckMask (mask);
+
     for (i = 0; i < mask->num_bitfields; i++) {
         mask->bitfield[i] = 0;
     }
@@ -470,6 +659,8 @@ DFMSetMaskSet (mask_t *mask)
     int i;
 
     DBUG_ENTER ("DFMSetMaskSet");
+
+    CheckMask (mask);
 
     for (i = 0; i < mask->num_bitfields; i++) {
         mask->bitfield[i] = ~((unsigned int)0);
@@ -487,6 +678,9 @@ DFMSetMaskCopy (mask_t *mask, mask_t *mask2)
 
     DBUG_ASSERT ((mask->mask_base == mask2->mask_base), "Combining incompatible masks");
 
+    CheckMask (mask);
+    CheckMask (mask2);
+
     for (i = 0; i < mask->num_bitfields; i++) {
         mask->bitfield[i] = mask2->bitfield[i];
     }
@@ -500,6 +694,8 @@ DFMSetMaskInv (mask_t *mask)
     int i;
 
     DBUG_ENTER ("DFMSetMaskInv");
+
+    CheckMask (mask);
 
     for (i = 0; i < mask->num_bitfields; i++) {
         mask->bitfield[i] = ~mask->bitfield[i];
@@ -517,6 +713,9 @@ DFMSetMaskAnd (mask_t *mask, mask_t *mask2)
 
     DBUG_ASSERT ((mask->mask_base == mask2->mask_base), "Combining incompatible masks");
 
+    CheckMask (mask);
+    CheckMask (mask2);
+
     for (i = 0; i < mask->num_bitfields; i++) {
         mask->bitfield[i] = mask->bitfield[i] & mask2->bitfield[i];
     }
@@ -533,6 +732,9 @@ DFMSetMaskOr (mask_t *mask, mask_t *mask2)
 
     DBUG_ASSERT ((mask->mask_base == mask2->mask_base), "Combining incompatible masks");
 
+    CheckMask (mask);
+    CheckMask (mask2);
+
     for (i = 0; i < mask->num_bitfields; i++) {
         mask->bitfield[i] = mask->bitfield[i] | mask2->bitfield[i];
     }
@@ -548,6 +750,9 @@ DFMSetMaskMinus (mask_t *mask, mask_t *mask2)
     DBUG_ENTER ("DFMSetMaskMinus");
 
     DBUG_ASSERT ((mask->mask_base == mask2->mask_base), "Combining incompatible masks");
+
+    CheckMask (mask);
+    CheckMask (mask2);
 
     for (i = 0; i < mask->num_bitfields; i++) {
         mask->bitfield[i] = mask->bitfield[i] & ~(mask2->bitfield[i]);
@@ -566,6 +771,8 @@ DFMTestMask (mask_t *mask)
     int i, res;
 
     DBUG_ENTER ("DFMTestMask");
+
+    CheckMask (mask);
 
     res = 0;
 
@@ -587,6 +794,9 @@ DFMTest2Masks (mask_t *mask1, mask_t *mask2)
     DBUG_ENTER ("DFMTest2Masks");
 
     DBUG_ASSERT ((mask1->mask_base == mask2->mask_base), "Combining incompatible masks");
+
+    CheckMask (mask1);
+    CheckMask (mask2);
 
     res = 0;
 
@@ -610,6 +820,10 @@ DFMTest3Masks (mask_t *mask1, mask_t *mask2, mask_t *mask3)
     DBUG_ASSERT (((mask1->mask_base == mask2->mask_base)
                   && (mask1->mask_base == mask3->mask_base)),
                  "Combining incompatible masks");
+
+    CheckMask (mask1);
+    CheckMask (mask2);
+    CheckMask (mask3);
 
     res = 0;
 
@@ -653,7 +867,8 @@ DFMPrintMask (FILE *handle, const char *format, mask_t *mask)
     j = 0;
 
     for (cnt = 0; cnt < mask->mask_base->num_ids; cnt++) {
-        if (mask->bitfield[i] & access_mask_table[j]) {
+        if ((mask->bitfield[i] & access_mask_table[j])
+            && (mask->mask_base->ids[cnt] != NULL)) {
             fprintf (handle, format, mask->mask_base->ids[cnt]);
         }
 
@@ -679,8 +894,11 @@ DFMSetMaskEntryClear (mask_t *mask, char *id)
 
     DBUG_ENTER ("DFMSetMaskEntryClear");
 
+    CheckMask (mask);
+
     for (i = 0; i < mask->mask_base->num_ids; i++) {
-        if (0 == strcmp (mask->mask_base->ids[i], id)) {
+        if ((mask->mask_base->ids[i] != NULL)
+            && (0 == strcmp (mask->mask_base->ids[i], id))) {
             break;
         }
     }
@@ -700,8 +918,11 @@ DFMSetMaskEntrySet (mask_t *mask, char *id)
 
     DBUG_ENTER ("DFMSetMaskEntrySet");
 
+    CheckMask (mask);
+
     for (i = 0; i < mask->mask_base->num_ids; i++) {
-        if (0 == strcmp (mask->mask_base->ids[i], id)) {
+        if ((mask->mask_base->ids[i] != NULL)
+            && (0 == strcmp (mask->mask_base->ids[i], id))) {
             break;
         }
     }
@@ -721,8 +942,11 @@ DFMTestMaskEntry (mask_t *mask, char *id)
 
     DBUG_ENTER ("FMTestMaskEntry");
 
+    CheckMask (mask);
+
     for (i = 0; i < mask->mask_base->num_ids; i++) {
-        if (0 == strcmp (mask->mask_base->ids[i], id)) {
+        if ((mask->mask_base->ids[i] != NULL)
+            && (0 == strcmp (mask->mask_base->ids[i], id))) {
             break;
         }
     }

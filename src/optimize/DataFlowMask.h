@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/05/07 15:36:04  cg
+ * mechanism added that allows general updates of data flow masks,
+ * i.e. with newly introduced identifiers as well as old ones removed.
+ *
  * Revision 1.4  1998/05/06 21:19:03  dkr
  * corrected signature of DFMSetMaskCopy
  *
@@ -36,10 +40,11 @@
  *   DFMGenMaskBase() to a function's parameter list and local variable
  *   declarations, thereby storing the required data in an internal format
  *   suitable for further processing. An existing mask data base may be
- *   extended when additional parameters or local variables have been
- *   introduced by applying the function DFMExtendMaskBase() to the perhaps
+ *   updated when additional parameters or local variables have been newly
+ *   introduced or removed by applying the function DFMUpdateMaskBase() to the perhaps
  *   modified representations of parameters and local variables as well as
- *   the existing mask data base.
+ *   the existing mask data base. Each data flow mask that belongs to the
+ *   updated mask data base will be updated automatically.
  *
  *   An existing mask data base may also be removed by a call to the function
  *   DFMRemoveMaskBase() which always returns the NULL pointer.
@@ -93,7 +98,7 @@ typedef void *DFMmask_t;
  */
 
 extern DFMmask_base_t DFMGenMaskBase (node *arguments, node *vardecs);
-extern DFMmask_base_t DFMExtendMaskBase (DFMmask_base_t mask_base, node *arguments,
+extern DFMmask_base_t DFMUpdateMaskBase (DFMmask_base_t mask_base, node *arguments,
                                          node *vardecs);
 extern DFMmask_base_t DFMRemoveMaskBase (DFMmask_base_t mask_base);
 
