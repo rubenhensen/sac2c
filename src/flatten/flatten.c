@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.62  1998/02/19 11:45:22  srs
+ * fixed bug in FltnNwith
+ *
  * Revision 1.61  1998/02/18 11:34:10  srs
  * fixed bug in FltnNgenerator
  *
@@ -1557,17 +1560,14 @@ FltnNwith (node *arg_node, node *arg_info)
     with_level++;
     tmp_tos = tos; /* store tos */
 
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+
     /* The N_Ncode has to be flattened after the N_Npart node. */
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
     with_level--;
     tos = tmp_tos;
-
-    /* the modarray array and the neutral elt must not be affected
-       by the renaming of WL variables. They are always bound to
-       variables outside the WL.*/
-    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
