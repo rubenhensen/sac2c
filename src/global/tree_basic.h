@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.147  1998/04/26 21:51:53  dkr
+ * MakeSPMD renamed to MakeSpmd
+ * added macro SYNC_OUT
+ *
  * Revision 1.146  1998/04/26 12:32:06  dkr
  * changed a comment for N_fundef
  *
@@ -2333,7 +2337,7 @@ extern node *MakeInfo ();
  ***
  ***/
 
-extern node *MakeSPMD (node *region);
+extern node *MakeSpmd (node *region);
 
 #define SPMD_REGION(n) (n->node[0])
 
@@ -2359,6 +2363,9 @@ extern node *MakeSPMD (node *region);
  ***
  ***  permanent attributes:
  ***
+ ***    int        FIRST       (0)     (is the sync-region the first one
+ ***                                    of the current SPMD-region?)
+ ***    ids*       OUT         (0)
  ***    ids*       INOUT       (0)
  ***
  ***  temporary attributes:
@@ -2367,11 +2374,13 @@ extern node *MakeSPMD (node *region);
  ***
  ***/
 
-extern node *MakeSync (node *region);
+extern node *MakeSync (node *region, int first);
 
 #define SYNC_REGION(n) (n->node[0])
+#define SYNC_FIRST(n) (n->flag)
 
-#define SYNC_INOUT(n) ((ids *)n->node[1])
+#define SYNC_OUT(n) ((ids *)n->node[1])
+#define SYNC_INOUT(n) ((ids *)n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
