@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.19  1999/07/09 14:17:27  jhs
+ * Added some DBUG_PRINTs.
+ *
  * Revision 2.18  1999/07/07 15:52:01  jhs
  * Removed SYNC_WITH_PTRS.
  *
@@ -6842,6 +6845,10 @@ COMPSync (node *arg_node, node *arg_info)
         }
     } else {
         DBUG_ASSERT ((DFMTestMask (SYNC_OUT (arg_node)) > 0), "no target found");
+
+        DBUG_PRINT ("COMPi",
+                    ("DFMTestMask( OUT ): %i", DFMTestMask (SYNC_OUT (arg_node))));
+
         if (DFMTestMask (SYNC_OUT (arg_node)) > 1) {
             icm_name = "MT_SYNC_FOLD";
         } else {
@@ -6850,6 +6857,8 @@ COMPSync (node *arg_node, node *arg_info)
             icm_name = "MT_SYNC_ONEFOLD";
         }
     }
+
+    DBUG_PRINT ("COMPi", ("using syncronisation: %s", icm_name));
 
     assigns = AppendAssignIcm (assigns, icm_name, icm_args2);
 
