@@ -3,5 +3,7 @@ blocks_init.c
 blocks_init.h
 multithread.c
 multithread.h
+repfuns_init.c
+repfuns_init.h
 schedule_init.c
 schedule_init.h
