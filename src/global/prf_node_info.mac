@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/08/11 17:26:00  hw
- * N_modarray & N_genarray inserted
+ * Revision 1.12  1995/12/04 16:13:56  hw
+ * added primitve functions toi, tof & tod
  *
+;; Revision 1.11  1995/08/11  17:26:00  hw
+;; N_modarray & N_genarray inserted
+;;
 ;; Revision 1.10  1995/08/03  12:35:13  asi
 ;; some dbug-string's corrected and prim. functions with only one argument seperated
 ;;
@@ -53,10 +56,11 @@
 
 /*   Node_name       dbug-string[]  prf_string[]        prf_name_str[]*/
 
-PRF_IF (F_ftoi, "F_ftoi", "ftoi", "_ftoi"), PRF_IF (F_ftod, "F_ftod", "ftod", "_ftod"),
-  PRF_IF (F_itof, "F_itof", "itof", "_itof"), PRF_IF (F_itod, "F_itod", "itod", "_itod"),
-  PRF_IF (F_dtoi, "F_dtoi", "dtoi", "_dtoi"), PRF_IF (F_dtof, "F_dtof", "dtof", "_dtof"),
-  PRF_IF (F_not, "F_not", "!", "_not"),
+PRF_IF (F_toi, "F_foi", "toi", "_toi"), PRF_IF (F_tof, "F_fof", "tof", "_tof"),
+  PRF_IF (F_tod, "F_fod", "tod", "_tod"), PRF_IF (F_ftoi, "F_ftoi", "ftoi", "_ftoi"),
+  PRF_IF (F_ftod, "F_ftod", "ftod", "_ftod"), PRF_IF (F_itof, "F_itof", "itof", "_itof"),
+  PRF_IF (F_itod, "F_itod", "itod", "_itod"), PRF_IF (F_dtoi, "F_dtoi", "dtoi", "_dtoi"),
+  PRF_IF (F_dtof, "F_dtof", "dtof", "_dtof"), PRF_IF (F_not, "F_not", "!", "_not"),
 
   PRF_IF (F_add, "F_add", "+", "_add"), PRF_IF (F_sub, "F_sub", "-", "_sub"),
   PRF_IF (F_mul, "F_mul", "*", "_mul"), PRF_IF (F_div, "F_div", "/", "_div"),
@@ -72,6 +76,8 @@ PRF_IF (F_ftoi, "F_ftoi", "ftoi", "_ftoi"), PRF_IF (F_ftod, "F_ftod", "ftod", "_
   PRF_IF (F_reshape, "F_reshape", "reshape", "_reshape"),
   PRF_IF (F_cat, "F_cat", "cat", "_cat"), PRF_IF (F_dim, "F_dim", "dim", "_dim"),
   PRF_IF (F_rotate, "F_rotate", "rotate", "_rotate"),
+  PRF_IF (F_toi_A, "F_toi_A", "toi", "_toi"), PRF_IF (F_tof_A, "F_tof_A", "tof", "_tof"),
+  PRF_IF (F_tod_A, "F_tod_A", "tod", "_tod"),
   PRF_IF (F_ftoi_A, "F_ftoi_A", "ftoi", "_ftoi"),
   PRF_IF (F_ftod_A, "F_ftod_A", "ftod", "_ftod"),
   PRF_IF (F_itof_A, "F_itof_A", "itof", "_itof"),

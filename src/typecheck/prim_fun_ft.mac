@@ -1,8 +1,11 @@
 /*
  *  $Log$
- *  Revision 1.10  1995/08/11 17:33:21  hw
- *   added macros-calls for typechecking of function 'modarray'
+ *  Revision 1.11  1995/12/04 16:15:15  hw
+ *  added primitve functions toi, tof & tod
  *
+;; Revision 1.10  1995/08/11  17:33:21  hw
+;;  added macros-calls for typechecking of function 'modarray'
+;;
 ;; Revision 1.9  1995/07/04  08:43:28  hw
 ;; primitive functions F_itod, F_dtof F_dtoi & F_ftod inserted
 ;;
@@ -86,6 +89,18 @@ FT (F_rotate, SxSxA_A, F_rotate)
 FT (F_not, B_B, F_not)
 FT (F_and, BxB_B, F_and)
 FT (F_or, BxB_B, F_or)
+FT (F_toi, f_i, F_toi)
+FT (F_toi, d_i, F_toi)
+FT (F_toi, F_I, F_toi_A)
+FT (F_toi, D_I, F_toi_A)
+FT (F_tof, i_f, F_tof)
+FT (F_tof, d_f, F_tof)
+FT (F_tof, I_F, F_tof_A)
+FT (F_tof, D_F, F_tof_A)
+FT (F_tod, i_d, F_tod)
+FT (F_tod, f_d, F_tod)
+FT (F_tod, I_D, F_tod_A)
+FT (F_tod, F_D, F_tod_A)
 FT (F_ftoi, f_i, F_ftoi)
 FT (F_ftoi, F_I, F_ftoi_A)
 FT (F_ftod, f_d, F_ftod)

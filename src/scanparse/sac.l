@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.22  1995/12/01 17:15:44  cg
+ * Revision 1.23  1995/12/04 16:17:21  hw
+ * added primitve functions toi, tof & tod
+ *
+ * Revision 1.22  1995/12/01  17:15:44  cg
  * added key words for new pragmas
  * added: Command not found.
  * added PRIVATEID to allow identifiers without SAC restrictions
@@ -184,6 +187,9 @@ int start_token;
 "itod"                          {FILTER( I2D );}
 "dtoi"                          {FILTER( D2I );}
 "dtof"                          {FILTER( D2F );}
+"toi"                           {FILTER( TOI );}
+"tof"                           {FILTER( TOF );}
+"tod"                           {FILTER( TOD );}
 "typedef"			{FILTER( TYPEDEF );}
 "constdef"		        {FILTER( CONSTDEF );}
 "objdef"		        {FILTER( OBJDEF );}

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.94  1995/12/01 20:27:18  cg
+ * Revision 1.95  1995/12/04 16:18:25  hw
+ * added primitve functions toi, tof & tod
+ *
+ * Revision 1.94  1995/12/01  20:27:18  cg
  * now init expressions are only printed if present and not if the
  * object is not imported
  *
@@ -760,6 +763,12 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_dtoi:
     case F_dtof:
     case F_dtof_A:
+    case F_toi:
+    case F_toi_A:
+    case F_tof:
+    case F_tof_A:
+    case F_tod:
+    case F_tod_A:
     case F_idx_psi:
     case F_modarray:
     case F_genarray: {
