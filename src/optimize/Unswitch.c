@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/07/12 15:33:53  asi
- * bug removed
+ * Revision 1.5  1995/07/19 18:52:23  asi
+ * added loop dependent unswitching
  *
  * Revision 1.3  1995/07/12  15:24:43  asi
  * added UNSid and WhereUnswitch
@@ -40,7 +40,17 @@
 #define COND arg_info->node[0]
 #define LOOP_INFO arg_info->node[1]
 
-typedef enum { undef, first, medium, last } position;
+typedef enum { nothing, first, last, between, split, oneloop } todo;
+
+typedef struct CINFO {
+    prf test_prf;      /* test function					 */
+    long test_num;     /* test nummber						 */
+    long last_test;    /* last number which will be tested			 */
+    todo todo;         /* what shall be done					 */
+    node *insert_node; /* ptr to assign-node the conditional has been linked to */
+    node *chain1;      /* assign-chain						 */
+    node *chain2;      /* assign-chain						 */
+} cinfo;
 
 /*
  *
@@ -137,8 +147,6 @@ UNSid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNSid");
     arg_node->flag = LEVEL;
-    DBUG_PRINT ("UNS",
-                ("%s defined at %06x", arg_node->IDS_ID, VAR (arg_node->IDS_VARNO)));
     arg_node->IDS_DEF = VAR (arg_node->IDS_VARNO);
     DBUG_RETURN (arg_node);
 }
@@ -175,10 +183,9 @@ UNSlet (node *arg_node, node *arg_info)
     }
     DBUG_RETURN (arg_node);
 }
-
 /*
  *
- *  functionname  : GetPosition
+ *  functionname  : InversePrf
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -189,18 +196,38 @@ UNSlet (node *arg_node, node *arg_info)
  *  remarks       :
  *
  */
-position
-GetPosition (int num, prf test_prf, linfo *loop_info)
+prf
+InversePrf (prf fun)
 {
-    position pos = undef;
-
-    DBUG_ENTER ("GetPosition");
-
-    DBUG_RETURN (pos);
+    DBUG_ENTER ("InversePrf");
+    switch (fun) {
+    case F_eq:
+        fun = F_neq;
+        break;
+    case F_neq:
+        fun = F_eq;
+        break;
+    case F_gt:
+        fun = F_le;
+        break;
+    case F_ge:
+        fun = F_lt;
+        break;
+    case F_lt:
+        fun = F_ge;
+        break;
+    case F_le:
+        fun = F_gt;
+        break;
+    default:
+        break;
+    }
+    DBUG_RETURN (fun);
 }
+
 /*
  *
- *  functionname  : WhereUnswitch
+ *  functionname  : DoesItHappen1
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -211,37 +238,326 @@ GetPosition (int num, prf test_prf, linfo *loop_info)
  *  remarks       :
  *
  */
-position
-WhereUnswitch (linfo *loop_info, node *cond_node, int level)
+int
+DoesItHappen1 (cinfo *cond_info, linfo *loop_info)
 {
-    node *test, *arg[2];
-    prf test_prf;
-    position pos = undef;
+    int rest, inside;
+    int answer = TRUE;
 
-    DBUG_ENTER ("DoUnswitch");
+    DBUG_ENTER ("DoesItHappen1");
+    switch (loop_info->test_prf) {
+    case F_le:
+        switch (loop_info->mod_prf) {
+        case F_add:
+            cond_info->last_test = loop_info->end_num - loop_info->mod_num;
+            rest = (cond_info->test_num - loop_info->start_num) % loop_info->mod_num;
+            break;
+        case F_mul:
+            cond_info->last_test = loop_info->end_num / loop_info->mod_num;
+            rest = (cond_info->test_num / loop_info->start_num) % loop_info->mod_num;
+            break;
+        default:
+            break;
+        }
+
+        /* is test number of conditional inside this range */
+        inside = ((loop_info->start_num <= cond_info->test_num)
+                  && (cond_info->test_num <= cond_info->last_test));
+
+        /* if not inside this range */
+        if ((rest && inside) || !inside) {
+            answer = FALSE;
+        }
+        break;
+    case F_ge:
+
+        cond_info->last_test = loop_info->end_num + loop_info->mod_num;
+        rest = (cond_info->test_num + loop_info->start_num) % loop_info->mod_num;
+
+        /* is test number of conditional inside this range */
+        inside = ((loop_info->start_num >= cond_info->test_num)
+                  && (cond_info->test_num >= cond_info->last_test));
+
+        /* if not inside this range */
+        if ((rest && inside) || !inside) {
+            answer = FALSE;
+        }
+        break;
+    default:
+        break;
+    }
+    DBUG_RETURN (answer);
+}
+
+/*
+ *
+ *  functionname  : DoesItHappen2
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+int
+DoesItHappen2 (cinfo *cond_info, linfo *loop_info)
+{
+    int inside;
+    int answer = TRUE;
+
+    DBUG_ENTER ("DoesItHappen2");
+    switch (loop_info->test_prf) {
+    case F_le:
+        switch (loop_info->mod_prf) {
+        case F_add:
+            cond_info->last_test = loop_info->end_num - loop_info->mod_num;
+            break;
+        case F_mul:
+            cond_info->last_test = loop_info->end_num / loop_info->mod_num;
+            break;
+        default:
+            break;
+        }
+
+        /* is test number of conditional inside this range */
+        inside = ((loop_info->start_num <= cond_info->test_num)
+                  && (cond_info->test_num <= cond_info->last_test));
+
+        /* if not inside this range */
+        if (!inside) {
+            answer = FALSE;
+        }
+        break;
+    case F_ge:
+        cond_info->last_test = loop_info->end_num + loop_info->mod_num;
+
+        /* is test number of conditional inside this range */
+        inside = ((loop_info->start_num >= cond_info->test_num)
+                  && (cond_info->test_num >= cond_info->last_test));
+
+        /* if not inside this range */
+        if (!inside) {
+            answer = FALSE;
+        }
+        break;
+    default:
+        break;
+    }
+
+    DBUG_RETURN (answer);
+}
+
+/*
+ *
+ *  functionname  : HowUnswitch
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+cinfo *
+HowUnswitch (cinfo *cond_info, linfo *loop_info)
+{
+    DBUG_ENTER ("HowUnswitch");
+
+    switch (cond_info->test_prf) {
+    case F_neq:
+        if (DoesItHappen1 (cond_info, loop_info)) {
+            switch (loop_info->test_prf) {
+            case F_le:
+                cond_info->test_prf = F_lt;
+                cond_info->todo = between;
+                break;
+            case F_ge:
+                cond_info->test_prf = F_gt;
+                cond_info->todo = between;
+                break;
+            default:
+                break;
+            }
+        } else {
+            cond_info->todo = oneloop;
+            FreeTree (cond_info->chain2);
+            cond_info->chain2 = NULL;
+        }
+        break;
+    case F_le:
+        if (DoesItHappen2 (cond_info, loop_info)) {
+            cond_info->todo = split;
+        } else {
+            if (loop_info->start_num > cond_info->test_num)
+                SWAP (cond_info->chain1, cond_info->chain2);
+            cond_info->todo = oneloop;
+            FreeTree (cond_info->chain2);
+            cond_info->chain2 = NULL;
+        }
+        break;
+    case F_ge:
+        if (DoesItHappen2 (cond_info, loop_info)) {
+            cond_info->todo = split;
+        } else {
+            if (loop_info->start_num < cond_info->test_num)
+                SWAP (cond_info->chain1, cond_info->chain2);
+            cond_info->todo = oneloop;
+            FreeTree (cond_info->chain2);
+            cond_info->chain2 = NULL;
+        }
+        break;
+    default:
+        break;
+    }
+
+    DBUG_RETURN (cond_info);
+}
+
+/*
+ *
+ *  functionname  : AnalyseCond
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+cinfo *
+AnalyseCond (linfo *loop_info, node *cond, int level)
+{
+    node *test, *arg[2], *cond_var;
+    prf test_prf;
+    cinfo *cond_info;
+
+    DBUG_ENTER ("AnalyseCond");
+    cond_info = (cinfo *)MAlloc (sizeof (cinfo));
+    cond_info->todo = nothing;
+    cond_var = cond->node[0]->node[0];
+
     if (NULL != loop_info) {
-        if (N_id == cond_node->nodetype) {
-            test = cond_node->IDS_DEF;
+        if (N_id == cond_var->nodetype) {
+            test = cond_var->IDS_DEF;
             if ((NULL != test) && (N_prf == test->nodetype)
                 && (F_le <= (test_prf = test->info.prf)) && (F_neq >= test_prf)
-                && (test->flag == level))
+                && (test->flag == level)) {
+
                 /* the constant value shall be on the right side of the expression */
                 /* i.e. cond = Num op i will be changed to cond = i op Num         */
                 if (IsConst (test->ARG2)) {
                     arg[0] = test->ARG1;
                     arg[1] = test->ARG2;
                 } else {
-                    test_prf = InversePrf (test_prf);
+                    test_prf = ReversePrf (test_prf);
                     arg[0] = test->ARG2;
                     arg[1] = test->ARG1;
                 }
-            if ((N_id == arg[0]->nodetype) && (loop_info->varno == arg[0]->IDS_VARNO)
-                && (N_num == arg[1]->nodetype)) {
-                pos = GetPosition (arg[1]->info.cint, test_prf, loop_info);
+
+                /* adjust definition of conditional variable */
+                test->info.prf = test_prf;
+                test->ARG1 = arg[0];
+                test->ARG2 = arg[1];
+
+                /* do i have the same variable and is the calculations  */
+                /* of the condition in  the loop ? 			*/
+                if ((N_id == arg[0]->nodetype)
+                    && (loop_info->decl_node->varno == arg[0]->IDS_VARNO)
+                    && (N_num == arg[1]->nodetype)) {
+                    cond_info->test_prf = test_prf;
+                    cond_info->test_num = arg[1]->info.cint;
+                    cond_info->chain1 = cond->node[0]->node[1]->node[0];
+                    cond_info->chain2 = cond->node[0]->node[2]->node[0];
+
+                    /* adjust the test prim.-function of conditional to the of the loop */
+                    switch (loop_info->test_prf) {
+                    case F_le:
+                        if ((F_ge == cond_info->test_prf)
+                            || (F_gt == cond_info->test_prf)) {
+                            cond_info->test_prf = InversePrf (cond_info->test_prf);
+                            SWAP (cond_info->chain1, cond_info->chain2);
+                        }
+                        break;
+                    case F_ge:
+                        if ((F_le == cond_info->test_prf)
+                            || (F_lt == cond_info->test_prf)) {
+                            cond_info->test_prf = InversePrf (cond_info->test_prf);
+                            SWAP (cond_info->chain1, cond_info->chain2);
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+
+                    /* reduce numbers of different conditions */
+                    switch (cond_info->test_prf) {
+                    case F_eq:
+                        cond_info->test_prf = InversePrf (cond_info->test_prf);
+                        SWAP (cond_info->chain1, cond_info->chain2);
+                        break;
+                    case F_lt:
+                        cond_info->test_prf = F_le;
+                        cond_info->test_num--;
+                        break;
+                    case F_gt:
+                        cond_info->test_prf = F_ge;
+                        cond_info->test_num++;
+                        break;
+                    default:
+                        break;
+                    }
+
+                    cond_info->insert_node = cond;
+                    cond_info = HowUnswitch (cond_info, loop_info);
+                }
             }
         }
     }
-    DBUG_RETURN (pos);
+    DBUG_RETURN (cond_info);
+}
+
+/*
+ *
+ *  functionname  : GenLetNode
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+node *
+GenLetNode (linfo *loop_info, node *arg_info)
+{
+    node *assign_node;
+
+    DBUG_ENTER ("GenLetNode");
+    assign_node = MakeNode (N_assign);
+    assign_node->mask[0] = GenMask (VARNO);
+    assign_node->mask[1] = GenMask (VARNO);
+    INC_VAR (assign_node->mask[0], loop_info->decl_node->varno);
+    INC_VAR (arg_info->mask[0], loop_info->decl_node->varno);
+    assign_node->nnode = 1;
+
+    assign_node->node[0] = MakeNode (N_let);
+    assign_node->node[0]->info.ids = MakeIds (loop_info->decl_node->info.types->id);
+    assign_node->node[0]->info.ids->node = loop_info->decl_node;
+
+    assign_node->node[0]->nnode = 1;
+    assign_node->node[0]->node[0] = MakeNode (N_num);
+    assign_node->node[0]->node[0]->info.cint = loop_info->start_num;
+
+    DBUG_RETURN (assign_node);
 }
 
 /*
@@ -258,17 +574,179 @@ WhereUnswitch (linfo *loop_info, node *cond_node, int level)
  *
  */
 node *
-DoUnswitch (node *arg_node, node *arg_info, position pos)
+DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
 {
+    int old_nnode;
+    long old_test_num;
+    node *second_loop = NULL;
+    node *unrolled_loop = NULL;
+    node *tmp_node;
+    node *let_index;
+
     DBUG_ENTER ("DoUnswitch");
-    switch (pos) {
-    case first:
+    switch (cond_info->todo) {
+
+    case oneloop:
+
+        DBUG_PRINT ("UNS", ("conditional removed in loop at line %d", arg_node->lineno));
+
+        uns_expr++;
+        /* subtract all variables used and defined in loop from modification masks */
+        MinusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
+        MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
+
+        /* isulate loop */
+        old_nnode = arg_node->nnode;
+        arg_node->nnode = 1;
+
+        /* modify first loop */
+        cond_info->insert_node->node[0] = cond_info->chain1;
+
+        /* Generate masks */
+        arg_node = GenerateMasks (arg_node, arg_info);
+
+        /* append assign-chain below loop-assign */
+        arg_node->nnode = old_nnode;
+
         break;
-    case medium:
+
+    case between:
+
+        DBUG_PRINT ("UNS", ("Move between loops at line %d", arg_node->lineno));
+
+        uns_expr++;
+        /* subtract all variables used and defined in loop from modification masks */
+        MinusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
+        MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
+
+        /* isulate loop */
+        arg_node->nnode = 1;
+
+        if (cond_info->last_test != cond_info->test_num) {
+            /* creat second loop */
+            cond_info->insert_node->node[0] = cond_info->chain1;
+            second_loop = DupTree (arg_node, NULL);
+
+            /* Generate masks */
+            second_loop = GenerateMasks (second_loop, arg_info);
+
+            old_test_num = loop_info->test_num;
+            loop_info->test_num = cond_info->test_num;
+
+            loop_info = LoopIterations (loop_info);
+
+            loop_info->test_num = old_test_num;
+            loop_info->start_num = loop_info->end_num;
+
+            loop_info = LoopIterations (loop_info);
+
+            if (0 != loop_info->loop_num) {
+                tmp_node = second_loop;
+                second_loop
+                  = DoUnroll (second_loop->node[0], arg_info, (linfo *)loop_info);
+                if (tmp_node->node[0] == second_loop) {
+                    second_loop = tmp_node;
+                    let_index = GenLetNode (loop_info, arg_info);
+                    second_loop = AppendNodeChain (1, let_index, second_loop);
+                }
+            } else {
+                FreeTree (second_loop);
+                second_loop = NULL;
+            }
+        }
+
+        /* create unrolled loop */
+        cond_info->insert_node->node[0] = cond_info->chain2;
+        unrolled_loop = DupTree (arg_node->node[0]->node[1]->node[0], NULL);
+
+        /* Generate masks */
+        unrolled_loop = GenerateMasks (unrolled_loop, arg_info);
+
+        /* modify first loop */
+        cond_info->insert_node->node[0] = cond_info->chain1;
+        arg_node->node[0]->node[0]->IDS_DEF->info.prf = cond_info->test_prf;
+        arg_node->node[0]->node[0]->IDS_DEF->ARG2->info.cint = cond_info->test_num;
+
+        /* Generate masks */
+        arg_node = GenerateMasks (arg_node, arg_info);
+
+        /* append later assign nodes to second loop */
+        second_loop = AppendNodeChain (1, second_loop, arg_node->node[1]);
+
+        /* , unrolled loop to second loop */
+        unrolled_loop = AppendNodeChain (1, unrolled_loop, second_loop);
+
+        /* and second loop to first loop */
+        arg_node->node[1] = unrolled_loop;
+        arg_node->nnode = 2;
+
         break;
-    case last:
+
+    case split:
+
+        DBUG_PRINT ("UNS", ("Splitting loop at line %d", arg_node->lineno));
+
+        uns_expr++;
+        /* subtract all variables used and defined in loop from modification masks */
+        MinusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
+        MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
+
+        /* isulate loop */
+        arg_node->nnode = 1;
+
+        if (cond_info->test_num != cond_info->last_test) {
+            /* creat second loop */
+            cond_info->insert_node->node[0] = cond_info->chain2;
+            second_loop = DupTree (arg_node, NULL);
+
+            /* Generate masks */
+            second_loop = GenerateMasks (second_loop, arg_info);
+
+            old_test_num = loop_info->test_num;
+            loop_info->test_num = cond_info->test_num;
+
+            loop_info = LoopIterations (loop_info);
+
+            loop_info->test_num = old_test_num;
+            loop_info->start_num = loop_info->end_num;
+
+            loop_info = LoopIterations (loop_info);
+
+            if (0 != loop_info->loop_num) {
+                tmp_node = second_loop;
+                second_loop
+                  = DoUnroll (second_loop->node[0], arg_info, (linfo *)loop_info);
+                if (tmp_node->node[0] == second_loop) {
+                    second_loop = tmp_node;
+                    let_index = GenLetNode (loop_info, arg_info);
+                    second_loop = AppendNodeChain (1, let_index, second_loop);
+                }
+            } else {
+                FreeTree (second_loop);
+                second_loop = NULL;
+            }
+        }
+
+        /* modify first loop */
+        cond_info->insert_node->node[0] = cond_info->chain1;
+        arg_node->node[0]->node[0]->IDS_DEF->info.prf = cond_info->test_prf;
+        arg_node->node[0]->node[0]->IDS_DEF->ARG2->info.cint = cond_info->test_num;
+
+        /* Generate masks */
+        arg_node = GenerateMasks (arg_node, arg_info);
+
+        /* append later assign nodes to second loop */
+        second_loop = AppendNodeChain (1, second_loop, arg_node->node[1]);
+
+        /* and second loop to first loop */
+        arg_node->node[1] = second_loop;
+        arg_node->nnode = 2;
+
         break;
+
+    case nothing:
     default:
+
         break;
     }
     DBUG_RETURN (arg_node);
@@ -290,29 +768,47 @@ DoUnswitch (node *arg_node, node *arg_info, position pos)
 node *
 UNSassign (node *arg_node, node *arg_info)
 {
-    position pos;
+    cinfo *cond_info;
+    int once_more = FALSE;
+    node *tmp;
 
     DBUG_ENTER ("UNSassign");
+
+    if (N_cond == arg_node->node[0]->nodetype)
+        COND = arg_node;
+
+    tmp = COND;
+
+    PushDupVL (VARNO);
 
     /* unswitch subexpressions */
     arg_node = OptTrav (arg_node, arg_info, 0);
 
-    switch (arg_node->node[0]->nodetype) {
-    case N_cond:
-        COND = arg_node;
-        break;
-    case N_do:
-        pos = WhereUnswitch ((linfo *)LOOP_INFO, COND->node[0]->node[0], LEVEL);
-        if (undef != pos)
-            arg_node = DoUnswitch (arg_node, arg_info, pos);
-        break;
-    default:
-        break;
+    if (N_do == arg_node->node[0]->nodetype) {
+        if ((NULL != COND) && (NULL != LOOP_INFO)) {
+            cond_info = AnalyseCond ((linfo *)LOOP_INFO, COND, LEVEL + 1);
+            if (nothing != cond_info->todo) {
+                arg_node = DoUnswitch (arg_node, arg_info, cond_info, (linfo *)LOOP_INFO);
+                once_more = TRUE;
+            }
+        }
+        if (NULL != LOOP_INFO) {
+            FREE (LOOP_INFO);
+            LOOP_INFO = NULL;
+        }
     }
 
-    /* next assign node */
-    if (1 < arg_node->nnode) {
-        arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+    COND = tmp;
+
+    if (once_more) {
+        PopVL ();
+        arg_node = Trav (arg_node, arg_info);
+    } else {
+        PopVL2 ();
+        /* next assign node */
+        if (1 < arg_node->nnode) {
+            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+        }
     }
     DBUG_RETURN (arg_node);
 }
@@ -335,7 +831,7 @@ UNSdo (node *arg_node, node *arg_info)
 {
     int i;
     linfo *loop_info;
-    node *cond_node;
+    node *id_node;
 
     DBUG_ENTER ("UNSdo");
     PushDupVL (VARNO);
@@ -350,24 +846,26 @@ UNSdo (node *arg_node, node *arg_info)
 
     COND = NULL;
 
-    DBUG_PRINT ("UNR", ("Trav do loop in line %d", arg_node->lineno));
+    DBUG_PRINT ("UNS", ("Trav do loop in line %d", arg_node->lineno));
     arg_node = OptTrav (arg_node, arg_info, 1); /* Trav do-body */
     arg_node = OptTrav (arg_node, arg_info, 0); /* Trav do-condition */
 
-    cond_node = arg_node->node[0];
+    id_node = arg_node->node[0];
+
+    loop_info = (linfo *)MAlloc (sizeof (linfo));
+    loop_info->loop_num = UNDEF;
+    loop_info->ltype = N_do;
 
     /* Calculate numbers of iterations */
-    if (N_id == cond_node->nodetype)
-        loop_info = AnalyseLoop (cond_node, LEVEL);
+    if (N_id == id_node->nodetype) {
+        loop_info = AnalyseLoop (loop_info, id_node, LEVEL);
+    }
 
-    if (NULL != loop_info) {
-        /* do-loops minimum iterations number is one */
-        if (0 == loop_info->loop_num)
-            loop_info->loop_num = 1;
-        LOOP_INFO = (node *)loop_info;
+    if (2 > loop_info->loop_num) {
+        LOOP_INFO = NULL;
         FREE (loop_info);
     } else
-        LOOP_INFO = NULL;
+        LOOP_INFO = (node *)loop_info;
 
     LEVEL--;
     PopVL2 ();
@@ -391,14 +889,14 @@ node *
 UNSwhile (node *arg_node, node *arg_info)
 {
     int i;
-    node *cond_node;
+    node *id_node;
 
     DBUG_ENTER ("UNSwhile");
-    cond_node = arg_node->node[0];
+    id_node = arg_node->node[0];
 
-    if ((NULL != cond_node) && (N_id == cond_node->nodetype)
-        && (N_bool == VAR (cond_node->IDS_VARNO)->nodetype)
-        && (TRUE == VAR (cond_node->IDS_VARNO)->info.cint)) {
+    if ((NULL != id_node) && (N_id == id_node->nodetype)
+        && (N_bool == VAR (id_node->IDS_VARNO)->nodetype)
+        && (TRUE == VAR (id_node->IDS_VARNO)->info.cint)) {
         arg_node->nodetype = N_do;
         arg_node = Trav (arg_node, arg_info);
     } else {
@@ -411,7 +909,7 @@ UNSwhile (node *arg_node, node *arg_info)
             }
         }
 
-        DBUG_PRINT ("UNR", ("Trav while loop in line %d", arg_node->lineno));
+        DBUG_PRINT ("UNS", ("Trav while loop in line %d", arg_node->lineno));
         arg_node = OptTrav (arg_node, arg_info, 1); /* Trav while-body */
 
         LOOP_INFO = NULL;
