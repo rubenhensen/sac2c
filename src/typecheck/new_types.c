@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2003/03/12 14:50:03  dkr
+ * bug in BuildApAssign() fixed:
+ * functions with multiple return values are handled correctly now
+ *
  * Revision 3.41  2002/11/04 17:39:27  sbs
  * call SHOldTypes2Shape changed into SHOldShpseg2Shape to avoid implicit
  * flattening of user defined types...
@@ -5039,9 +5043,9 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
     assigns = NULL;
     lhs = NULL;
     ret_type = FUNDEF_RET_TYPE (fundef);
-    i = 0;
-    while (vardecs != NULL) {
-        DBUG_ASSERT ((i < NTYPE_ARITY (ret_type)), "inconsistant application found");
+    i = NTYPE_ARITY (ret_type) - 1;
+    while (i >= 0) {
+        DBUG_ASSERT ((vardecs != NULL), "inconsistant application found");
 
         tmp_id = BuildTmpId (PROD_MEMBER (ret_type, i), new_vardecs);
         assigns = MakeAssign (MakeLet (tmp_id, VardecOrArg2Ids (vardecs)), assigns);
@@ -5050,8 +5054,10 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
         IDS_NEXT (tmp_ids) = lhs;
         lhs = tmp_ids;
 
+        i--;
         vardecs = VARDEC_NEXT (vardecs);
     }
+    DBUG_ASSERT ((vardecs == NULL), "inconsistant application found");
 
     ap = MakeAp (StringCopy (FUNDEF_NAME (fundef)), NULL, Args2Exprs (args));
     AP_FUNDEF (ap) = fundef;
