@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/09/30 15:11:18  sbs
+ * CreteFuntype splitted into CreateFuntype and CreateFunRettype
+ *
  * Revision 1.9  2004/07/30 17:29:21  sbs
  * switch to new INFO structure
  * PHASE I
@@ -42,6 +45,7 @@
 #include "internal_lib.h"
 
 extern node *CreateWrappers (node *arg_node);
+extern ntype *CreateFunRettype (types *old_ret);
 extern ntype *CreateFuntype (node *fundef);
 
 extern node *CRTWRPmodul (node *arg_node, info *arg_info);
