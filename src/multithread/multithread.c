@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/06/08 14:51:39  skt
+ * tag_executionmode added
+ *
  * Revision 3.3  2001/05/17 11:47:00  dkr
  * FREE eliminated
  *
@@ -71,16 +74,22 @@
  *
  */
 
-/******************************************************************************
+/**
+ * @defgroup muth Multithread
  *
- * file:        multithread.c
+ * This group contains all those files/ modules that apply support for
+ * multithreaded execution for sac-code (mtmode 3)
+ */
+
+/**
+ * @file multithread.c
+ *
+ * @brief This file iniates and guides the compilation process of the new
+ *        multihread-support (mtmode 3)
+ * @attention The entire process is still under development
+ *
  *
  * prefix:      MUTH
- *
- * description:
- *   This file initiates and guides the compilation process of the new
- *   multithread-support.
- *   ... The entire process is still under development ...
  *
  *   The step of exploiting concurrency is done step by step in several
  *   miniphases. Each miniphase will be done on *all* functions before
@@ -119,7 +128,8 @@
  *      .
  *   - ...
  *
- ******************************************************************************/
+ *
+ */
 
 #include "dbug.h"
 
@@ -141,18 +151,22 @@
 #include "barriers_init.h"
 #include "blocks_lift.h"
 #include "adjust_calls.h"
+#include "tag_executionmode.h"
+#include "assignments_rearrange.h"
 
-/******************************************************************************
+/** <!--*********************************************************************->
  *
- * function:
- *   node *BuildMultiThread( node *syntax_tree)
+ * @fn node *BuildMultiThread( node *syntax_tree)
  *
- * description:
  *   This function starts the process of building the *new* support for
  *   multithread. Throughout this process arg_info points to an N_info which
  *   is generated here.
  *
- ******************************************************************************/
+ * @param syntax_tree The whole syntax-tree of the SAC-program
+ * @pre syntax_tree is flat and in SSA-form
+ * @return The whole syntax-tree, prepared to be compiled as a multithreaded
+ *         application
+ *****************************************************************************/
 node *
 BuildMultiThread (node *syntax_tree)
 {
@@ -178,17 +192,17 @@ BuildMultiThread (node *syntax_tree)
 
 typedef int (*ignorefun) (node *arg_node, node *arg_info);
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *MUTHdriver(node *arg_node,
- *                    node *arg_info,
- *                    int allowOOOCs,  / * bool * /
- *                    int topdown, / * bool * /
- *                    funptr driver,
- *                    ignorefun ignore)
+ * @fn: node *MUTHdriver(node *arg_node,
+ *                      node *arg_info,
+ *                      int allowOOOCs,
+ *                      int topdown,
+ *                      funptr driver,
+ *                      ignorefun ignore)
  *
- * description:
+ * @brief
+ *
  *   This is not function of the traversal itself, but behaves like a
  *   normal traversal function.
  *
@@ -202,21 +216,25 @@ typedef int (*ignorefun) (node *arg_node, node *arg_info);
  *   Ignore says which nodes can be applied to the driver function,
  *   these node will be applied to the driver function then,
  *
- *   The *driver* function is a simple function that behaves like an
- *   ordinary traversal function, but can contain whole mini-phases or
- *   simple actions.
- *   The *ignore* function takes an arg_node and an arg_info and decides
- *   if the node should be ignored (Result == TRUE == 1) or not
- *   (Result == FALSE = 0).
- *
  *   This function is used to customize the traversal for these many many
  *   miniphases simply on-the-fly.
  *
- * attention:
- *   This function can handle OOOCs on demand, which are explained below at
- *   MUTHfundef.
+ * @attention This function can handle OOOCs on demand, which are explained
+ *            below at MUTHfundef
+ * @param arg_node Usually the syntax-tree
+ * @param arg_info An information container
+ * @param allowOOOCs Shows, if out of order changes are allowed; interpreted
+ *                   as boolean
+ * @param topdown Shows, whether to traverse top-down or bottom-up; interpreted
+ *                   as boolean
+ * @param driver Simple function that behaves like an ordinary traversal
+ *               function, but can contain whole mini-phases or simple actions.
+ * @param ignore takes an arg_node and an arg_info and decides if the node
+ *               should be ignored (Result == TRUE == 1) or not
+ *               (Result == FALSE = 0).
+ * @return The syntax-tree with driver operated on every node
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 MUTHdriver_ (node *arg_node, node *arg_info, int allowOOOCs, /* bool */
              int topdown,                                    /* bool */
@@ -257,6 +275,26 @@ MUTHdriver_ (node *arg_node, node *arg_info, int allowOOOCs, /* bool */
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ * @fn node *MUTHdriver(node *arg_node,
+ *                      node *arg_info,
+ *                      int allowOOOCs,
+ *                      funptr driver,
+ *                      ignorefun ignore)
+ *
+ * @brief calls MUTHdriver_ with parameter topdown=TRUE
+ *
+ * @param arg_node Usually the syntax-tree
+ * @param arg_info An information container
+ * @param allowOOOCs Shows, if out of order changes are allowed; interpreted
+ *                   as boolean
+ * @param driver Simple function that behaves like an ordinary traversal
+ *               function, but can contain whole mini-phases or simple actions.
+ * @param ignore takes an arg_node and an arg_info and decides if the node
+ *               should be ignored (Result == TRUE == 1) or not
+ *               (Result == FALSE = 0).
+ * @return The syntax-tree with driver operated on every node
+ *****************************************************************************/
 node *
 MUTHdriver (node *arg_node, node *arg_info, int allowOOOCs, /* bool */
             funptr driver, ignorefun ignore)
@@ -264,7 +302,7 @@ MUTHdriver (node *arg_node, node *arg_info, int allowOOOCs, /* bool */
     return (MUTHdriver_ (arg_node, arg_info, allowOOOCs, TRUE, driver, ignore));
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
  * function:
  *   node *MUTHfundef(node *arg_node, node *arg_info)
@@ -458,6 +496,9 @@ ClearCOMPANION (node *arg_node, node *arg_info)
 
     FUNDEF_COMPANION (arg_node) = NULL;
 
+    DBUG_PRINT ("MUT", ("cleared companion"));
+    DBUG_PRINT ("MUT", (FUNDEF_NAME (arg_node)));
+
     DBUG_RETURN (arg_node);
 }
 
@@ -517,6 +558,7 @@ MUTHignore_none (node *arg_node, node *arg_info)
 node *
 MUTHmodul (node *arg_node, node *arg_info)
 {
+    node *old_arg_info;
     DBUG_ENTER ("MUTHmodul");
 
     /*
@@ -528,6 +570,25 @@ MUTHmodul (node *arg_node, node *arg_info)
     DBUG_PRINT ("MUTH", ("end initializing"));
 
     if ((break_after == PH_multithread) && (strcmp ("init", break_specifier) == 0)) {
+        goto cont;
+    }
+
+    /*
+     *  --- TagExecutionmode (TEM) ---
+     */
+    DBUG_PRINT ("MUTH", ("begin TagExecutionmode"));
+
+    old_arg_info = arg_info;
+    arg_info = MakeInfo ();
+
+    arg_node = TagExecutionmode (arg_node, arg_info);
+
+    arg_info = FreeTree (arg_info);
+    arg_info = old_arg_info;
+
+    DBUG_PRINT ("MUTH", ("end TagExecutionmode"));
+
+    if ((break_after == PH_multithread) && (strcmp ("tem", break_specifier) == 0)) {
         goto cont;
     }
 
@@ -549,16 +610,16 @@ MUTHmodul (node *arg_node, node *arg_info)
      *  FUNDEF_COMPANION only used within this traversal!!
      *  It can be reused afterwards
      */
-    DBUG_PRINT ("MUTH", ("begin RepfunsInit"));
-    MODUL_FUNS (arg_node) = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE,
-                                        ClearCOMPANION, MUTHignore_none);
-    MODUL_FUNS (arg_node)
-      = MUTHdriver (MODUL_FUNS (arg_node), arg_info, TRUE, RepfunsInit, MUTHignore);
-    DBUG_PRINT ("MUTH", ("end RepfunsInit"));
+    /*DBUG_PRINT( "MUTH", ("begin RepfunsInit"));
+    MODUL_FUNS( arg_node) =
+      MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, ClearCOMPANION,
+    MUTHignore_none); MODUL_FUNS( arg_node) = MUTHdriver (MODUL_FUNS( arg_node), arg_info,
+    TRUE, RepfunsInit, MUTHignore); DBUG_PRINT( "MUTH", ("end RepfunsInit"));
 
-    if ((break_after == PH_multithread) && (strcmp ("rfin", break_specifier) == 0)) {
-        goto cont;
-    }
+    if ((break_after == PH_multithread) &&
+        (strcmp("rfin", break_specifier)==0)) {
+      goto cont;
+      }*/
 
     /*
      *  --- BlocksInit (blkin) ---
@@ -574,6 +635,25 @@ MUTHmodul (node *arg_node, node *arg_info)
     DBUG_PRINT ("MUTH", ("end BlocksInit"));
 
     if ((break_after == PH_multithread) && (strcmp ("blkin", break_specifier) == 0)) {
+        goto cont;
+    }
+
+    /*
+     *  --- AssignmentsRearrange (asmra) ---
+     */
+    DBUG_PRINT ("MUTH", ("begin AssignmentsRearrange"));
+
+    old_arg_info = arg_info;
+    arg_info = MakeInfo ();
+
+    arg_node = AssignmentsRearrange (arg_node, arg_info);
+
+    arg_info = FreeTree (arg_info);
+    arg_info = old_arg_info;
+
+    DBUG_PRINT ("MUTH", ("end AssignmentsRearrange"));
+
+    if ((break_after == PH_multithread) && (strcmp ("asmra", break_specifier) == 0)) {
         goto cont;
     }
 
@@ -687,3 +767,7 @@ cont:
 
     DBUG_RETURN (arg_node);
 }
+
+/**
+ * @}
+ */
