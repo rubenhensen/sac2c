@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.56  1995/07/24 09:08:55  hw
+ * Revision 1.57  1995/07/24 11:41:35  asi
+ * added ArrayElimination and new parameters
+ * -noarray_elimination, -noAE and -minarray <nr> for it
+ *
+ * Revision 1.56  1995/07/24  09:08:55  hw
  * compilation of SAC-modules inserted
  *
  * Revision 1.55  1995/07/19  18:43:49  asi
@@ -208,10 +212,13 @@ char filename[MAX_FILE_NAME];
 int optimize = 1;
 int sac_optimize = 1;
 int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1, opt_inl = 1, opt_unr = 1,
-    opt_uns = 1;
+    opt_uns = 1, opt_ae = 1;
+
 int optvar = 50;
 int inlnum = 1;
 int unrnum = 2;
+int minarray = 4;
+
 int max_overload = 10;
 int max_optcycles = 4;
 int psi_optimize = 1;
@@ -397,6 +404,10 @@ MAIN
             psi_opt_ive = 0;
         if (!strncmp (*argv, "oIVE", 3))
             psi_opt_ive = 0;
+        if (!strncmp (*argv, "oarray_elimination", 19))
+            opt_ae = 0;
+        if (!strncmp (*argv, "oAE", 3))
+            opt_ae = 0;
     }
     NEXTOPT
     ARG 'm' : PARM
@@ -425,6 +436,12 @@ MAIN
                             ++argv;
                             --argc;
                             max_optcycles = atoi (*argv);
+                        } else {
+                            if (!strncmp (*argv, "inarray", 10)) {
+                                ++argv;
+                                --argc;
+                                minarray = atoi (*argv);
+                            }
                         }
                     }
                 }
