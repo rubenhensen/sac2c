@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.209  2004/08/06 11:27:37  skt
+ * deleted parameter executionmode of MakeDataflownode
+ *
  * Revision 3.208  2004/08/05 15:34:42  skt
  * added support for N_dataflownode and N_dataflowgraph
  *
@@ -4560,12 +4563,12 @@ extern node *MakeModspec (char *name, node *exports);
  ***                            (CreateDataflowgraph -> AssignmentsRearrange!!)
  ***/
 
-extern node *MakeDataflownode (node *assignment, int executionmode);
+extern node *MakeDataflownode (node *assignment);
 
 #define DATAFLOWNODE_DEPENDENT(n) ((nodelist *)(n->dfmask[0]))
 #define DATAFLOWNODE_REFCOUNT(n) (n->refcnt)
 #define DATAFLOWNODE_ASSIGN(n) (n->node[0])
-#define DATAFLOWNODE_EXECMODE(n) (n->flag)
+#define DATAFLOWNODE_EXECMODE(n) (ASSIGN_EXECMODE (DATAFLOWNODE_ASSIGN (n)))
 #define DATAFLOWNODE_REFLEFT(n) (n->counter)
 
 /*--------------------------------------------------------------------------*/

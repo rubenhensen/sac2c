@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.92  2004/08/06 11:27:37  skt
+ * deleted parameter executionmode of MakeDataflownode
+ *
  * Revision 3.91  2004/08/05 15:34:42  skt
  * added support for N_dataflownode and N_dataflowgraph
  *
@@ -2264,7 +2267,7 @@ MakeModspec (char *name, node *exports)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeDataflownode (node *assignment, int executionmode)
+MakeDataflownode (node *assignment)
 {
     node *tmp;
 
@@ -2273,7 +2276,6 @@ MakeDataflownode (node *assignment, int executionmode)
     tmp = CreateCleanNode (N_dataflownode);
 
     DATAFLOWNODE_ASSIGN (tmp) = assignment;
-    DATAFLOWNODE_EXECMODE (tmp) = executionmode;
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
