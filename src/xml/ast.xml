@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.25  2004/11/23 20:52:46  khf
+  added WLE and EA
+
   Revision 1.24  2004/11/23 20:24:40  mwe
   UndoElimSubDiv added
 
@@ -166,6 +169,33 @@
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
     </general>
     <phase id="typecheck" name="Running type inference system">
+    </phase>
+    <phase id="wlenhance" name="Enhancement of With-Loops">
+      <traversal id="WLE" name="With-Loop Enhancement" default="sons" include="WLEnhancement.h" >
+        <travuser>
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="EA" name="Explicit Accumulate" default="sons" include="ExplicitAccumulate.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Let" />
+          <node name="With" />
+          <node name="Code" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
     </phase>
     <phase id="sacopt" name="Running SAC optimizations">
       <traversal id="CF" name="Constant Folding" default="sons" include="SSAConstantFolding.h" >
