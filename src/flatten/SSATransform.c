@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.31  2005/01/27 16:37:30  mwe
+ * no fungroups for lacfuns are created now
+ *
  * Revision 1.30  2005/01/26 17:32:20  mwe
  * initialization of fungroups added
  *
@@ -677,6 +680,7 @@ GetSsacnt (char *baseid, int initvalue, node *block)
  *
  * @brief This function looks for existing fungroups or creates a
  *        fungroup-node from corresponding fundef-node.
+ *        Do-funs and Cond-funs did not need a fungroup.
  *
  ************************************************************************/
 static node *
@@ -685,33 +689,35 @@ InitializeFungroup (node *arg_node, info *arg_info)
     node *tmp, *fg;
     DBUG_ENTER ("InitializeFungroup");
 
-    tmp = INFO_SSA_FUNGROUP (arg_info);
+    if ((!FUNDEF_ISDOFUN (arg_node)) && (!FUNDEF_ISCONDFUN (arg_node))) {
+        tmp = INFO_SSA_FUNGROUP (arg_info);
 
-    /*
-     * search for corresponding fungroup in grouplist
-     * nothing found: create new fungroup
-     */
+        /*
+         * search for corresponding fungroup in grouplist
+         * nothing found: create new fungroup
+         */
 
-    while (tmp != NULL) {
-        if (ILIBstringCompare (FUNDEF_NAME (arg_node),
-                               FUNDEF_NAME (LINKLIST_LINK (
-                                 FUNGROUP_FUNLIST (LINKLIST_LINK (tmp)))))) {
-            FUNGROUP_FUNLIST (LINKLIST_LINK (tmp))
-              = TBmakeLinklist (arg_node, FUNGROUP_FUNLIST (LINKLIST_LINK (tmp)));
-            (FUNGROUP_REFCOUNTER (LINKLIST_LINK (tmp))) += 1;
-            FUNDEF_FUNGROUP (arg_node) = LINKLIST_LINK (tmp);
-            break;
+        while (tmp != NULL) {
+            if (ILIBstringCompare (FUNDEF_NAME (arg_node),
+                                   FUNDEF_NAME (LINKLIST_LINK (
+                                     FUNGROUP_FUNLIST (LINKLIST_LINK (tmp)))))) {
+                FUNGROUP_FUNLIST (LINKLIST_LINK (tmp))
+                  = TBmakeLinklist (arg_node, FUNGROUP_FUNLIST (LINKLIST_LINK (tmp)));
+                (FUNGROUP_REFCOUNTER (LINKLIST_LINK (tmp))) += 1;
+                FUNDEF_FUNGROUP (arg_node) = LINKLIST_LINK (tmp);
+                break;
+            }
+            tmp = LINKLIST_NEXT (tmp);
         }
-        tmp = LINKLIST_NEXT (tmp);
+        if (tmp == NULL) {
+            fg = TBmakeFungroup ();
+            FUNGROUP_FUNLIST (fg) = TBmakeLinklist (arg_node, NULL);
+            FUNGROUP_REFCOUNTER (fg) = 1;
+            INFO_SSA_FUNGROUP (arg_info)
+              = TBmakeLinklist (fg, INFO_SSA_FUNGROUP (arg_info));
+            FUNDEF_FUNGROUP (arg_node) = fg;
+        }
     }
-    if (tmp == NULL) {
-        fg = TBmakeFungroup ();
-        FUNGROUP_FUNLIST (fg) = TBmakeLinklist (arg_node, NULL);
-        FUNGROUP_REFCOUNTER (fg) = 1;
-        INFO_SSA_FUNGROUP (arg_info) = TBmakeLinklist (fg, INFO_SSA_FUNGROUP (arg_info));
-        FUNDEF_FUNGROUP (arg_node) = fg;
-    }
-
     DBUG_RETURN (arg_node);
 }
 
