@@ -1,9 +1,9 @@
 /*
  *
- * Revision 1.3  1998/02/27 13:37:25  srs
- * activated opt_wlf again
- *
  * $Log$
+ * Revision 1.7  1998/03/13 13:35:00  dkr
+ * fixed corrupted header ?!?
+ *
  * Revision 1.6  1998/03/13 13:15:02  dkr
  * removed a bug with flag _DBUG:
  *   new var 'my?dbug'
@@ -16,6 +16,9 @@
  * Revision 1.4  1998/03/02 13:56:02  cg
  * global variables psi_optimize and backend_optimize removed.
  * Loop Invariant Removal disabled by default.
+ *
+ * Revision 1.3  1998/02/27 13:37:25  srs
+ * activated opt_wlf again
  *
  * Revision 1.2  1998/02/26 15:22:58  cg
  * target_name now initialized as 'default'
