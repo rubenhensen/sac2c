@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2003/09/30 22:44:44  dkrHH
+ * Free(): DBUG_ASSERT put into if-clause to ease debugging
+ *
  * Revision 3.39  2003/09/30 22:39:52  dkrHH
  * Malloc(): DBUG_ASSERT put into if-clause to ease debugging
  *
@@ -241,8 +244,9 @@ Free (void *address)
         DBUG_PRINT ("MEM_ALLOC",
                     ("Free memory: %d Bytes at adress: " F_PTR, size, address));
 
-        DBUG_ASSERT ((current_allocated_mem >= current_allocated_mem - size),
-                     "counter for allocated memory: overflow detected");
+        if (current_allocated_mem < current_allocated_mem - size) {
+            DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
+        }
         current_allocated_mem -= size;
 
         free (orig_address);
