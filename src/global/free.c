@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1996/01/07 16:52:11  cg
+ * Revision 1.18  1996/01/22 09:38:55  cg
+ * modified FreeObjdef with respect to new pragmas
+ *
+ * Revision 1.17  1996/01/07  16:52:11  cg
  * N_typedef and N_objdef node have no longer N_pragma subnodes
  *
  * Revision 1.16  1995/12/29  10:22:52  cg
@@ -571,11 +574,12 @@ FreeObjdef (node *arg_node, node *arg_info)
     tmp = FREECONT (OBJDEF_NEXT (arg_node));
 
     FREETRAV (OBJDEF_EXPR (arg_node));
-    FREE (OBJDEF_LINKNAME (arg_node));
+    FREETRAV (OBJDEF_PRAGMA (arg_node));
 
     FREE (OBJDEF_NAME (arg_node));
     FREE (OBJDEF_VARNAME (arg_node));
     FreeOneTypes (OBJDEF_TYPE (arg_node));
+    /*  FreeNodelist(OBJDEF_NEEDOBJS(arg_node));  */
 
     DBUG_PRINT ("FREE", ("Removing N_objdef node ..."));
 
@@ -1300,6 +1304,8 @@ FreePragma (node *arg_node, node *arg_info)
     FREE (PRAGMA_LINKNAME (arg_node));
     FREE (PRAGMA_COPYFUN (arg_node));
     FREE (PRAGMA_FREEFUN (arg_node));
+    FREE (PRAGMA_INITFUN (arg_node));
+
     /*
     FreeAllIds(PRAGMA_NEEDTYPES(arg_node));
     FREETRAV(PRAGMA_NEEDFUNS(arg_node));
