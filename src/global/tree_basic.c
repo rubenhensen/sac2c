@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1997/05/14 08:16:43  sbs
+ * Revision 1.20  1997/05/16 09:54:01  sbs
+ * ANALSE-TOOL extended to function-application specific timing
+ *
+ * Revision 1.19  1997/05/14  08:16:43  sbs
  * N_annotate added
  *
  * Revision 1.18  1997/04/25  09:12:13  sbs
@@ -708,7 +711,7 @@ While2Do (node *while_node)
 }
 
 node *
-MakeAnnotate (int tag, int funno)
+MakeAnnotate (int tag, int funno, int funapno)
 {
     node *tmp;
     DBUG_ENTER ("MakeAnnotate");
@@ -719,6 +722,7 @@ MakeAnnotate (int tag, int funno)
 
     ANNOTATE_TAG (tmp) = tag;
     ANNOTATE_FUNNUMBER (tmp) = funno;
+    ANNOTATE_FUNAPNUMBER (tmp) = funapno;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
@@ -739,6 +743,7 @@ MakeAp (char *name, char *mod, node *args)
     AP_NAME (tmp) = name;
     AP_MOD (tmp) = mod;
     AP_ARGS (tmp) = args;
+    AP_ATFLAG (tmp) = 0;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));

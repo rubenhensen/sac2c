@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.52  1997/05/14 08:16:43  sbs
+ * Revision 1.53  1997/05/16 09:54:01  sbs
+ * ANALSE-TOOL extended to function-application specific timing
+ *
+ * Revision 1.52  1997/05/14  08:16:43  sbs
  * N_annotate added
  *
  * Revision 1.51  1997/05/02  13:52:39  sbs
@@ -1230,14 +1233,16 @@ extern node *While2Do (node *while_node);
  ***
  ***    int    TAG
  ***	int    FUNNUMBER
+ ***    int    FUNAPNUMBER
  ***/
 
-extern node *MakeAnnotate (int tag, int funnumber);
+extern node *MakeAnnotate (int tag, int funnumber, int funapnumber);
 
 #define CALL_FUN 0
 #define RETURN_FROM_FUN 1
 #define ANNOTATE_TAG(n) (n->flag)
 #define ANNOTATE_FUNNUMBER(n) (n->counter)
+#define ANNOTATE_FUNAPNUMBER(n) (n->varno)
 
 /*--------------------------------------------------------------------------*/
 
@@ -1252,6 +1257,7 @@ extern node *MakeAnnotate (int tag, int funnumber);
  ***
  ***    char*  NAME
  ***    char*  MOD     (O)
+ ***    int    ATFLAG  (O)
  ***
  ***  temporary attributes:
  ***
@@ -1263,6 +1269,7 @@ extern node *MakeAp (char *name, char *mod, node *args);
 
 #define AP_NAME(n) (n->info.fun_name.id)
 #define AP_MOD(n) (n->info.fun_name.id_mod)
+#define AP_ATFLAG(n) (n->counter)
 #define AP_ARGS(n) (n->node[0])
 #define AP_FUNDEF(n) (n->node[1])
 

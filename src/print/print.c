@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.123  1997/05/14 08:14:41  sbs
+ * Revision 1.124  1997/05/16 09:54:29  sbs
+ * ANALSE-TOOL extended to function-application specific timing
+ *
+ * Revision 1.123  1997/05/14  08:14:41  sbs
  * ANALYSE-Macros inserted in PrintReturn and PrintIcm;
  * PrintAnnotate added
  *
@@ -472,8 +475,9 @@ PrintFileHeader ()
         }
 
         if (analyseflag != 0) {
-            fprintf (outfile, "#include <sys/types.h>\n");
-            fprintf (outfile, "#include <sys/times.h>\n");
+            fprintf (outfile, "#include <sys/time.h>\n");
+            fprintf (outfile, "#include <sys/resource.h>\n");
+            fprintf (outfile, "extern int getrusage(int who, struct rusage *rusage);\n");
         }
         fprintf (outfile, "#include \"libsac.h\"\n");
         fprintf (outfile, "#include \"icm2c.h\"\n");
@@ -548,15 +552,15 @@ PrintAssign (node *arg_node, node *arg_info)
     } else {
         DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", arg_node->lineno););
 
-        if (!((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_return)
-              && (RETURN_EXPRS (ASSIGN_INSTR (arg_node)) == NULL))) {
+        if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return)
+            || (RETURN_EXPRS (ASSIGN_INSTR (arg_node)) != NULL)) {
             INDENT;
             Trav (arg_node->node[0], arg_info);
             fprintf (outfile, "\n");
         }
 
         if (2 == arg_node->nnode) {
-            Trav (arg_node->node[1], arg_info);
+            Trav (ASSIGN_NEXT (arg_node), arg_info);
         }
     }
 
@@ -624,10 +628,12 @@ PrintAnnotate (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
     if (ANNOTATE_TAG (arg_node) == CALL_FUN) {
-        fprintf (outfile, "ANALYSE_BEGIN_UDF( %d );", ANNOTATE_FUNNUMBER (arg_node));
+        fprintf (outfile, "ANALYSE_BEGIN_UDF( %d ,%d );", ANNOTATE_FUNNUMBER (arg_node),
+                 ANNOTATE_FUNAPNUMBER (arg_node));
     } else {
         if (ANNOTATE_TAG (arg_node) == RETURN_FROM_FUN) {
-            fprintf (outfile, "ANALYSE_END_UDF( %d );", ANNOTATE_FUNNUMBER (arg_node));
+            fprintf (outfile, "ANALYSE_END_UDF( %d ,%d );", ANNOTATE_FUNNUMBER (arg_node),
+                     ANNOTATE_FUNAPNUMBER (arg_node));
 
         } else {
             DBUG_ASSERT ((1 == 0), "wrong tag at N_annotate");
@@ -1649,7 +1655,7 @@ PrintIcm (node *arg_node, node *arg_info)
 
     if ((show_icm == 1) || (compiled_icm == 0)) {
         if ((strcmp (ICM_NAME (arg_node), "ND_FUN_RET") == 0)
-            & (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
+            && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
             INDENT;
             fprintf (outfile, "ANALYSE_PRINT();\n");
         }
@@ -1795,6 +1801,7 @@ Print (node *arg_node)
         }
 
         PrintFileHeader ();
+        ATprintInitGlobals ();
 
         arg_node = Trav (arg_node, NULL);
 
