@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.23  2000/03/21 11:05:16  dkr
+ * code brushed
+ *
  * Revision 2.22  2000/03/21 10:39:02  dkr
  * -lac2fun and -fun2lac added
  *
@@ -74,63 +77,6 @@
  * Revision 2.1  1999/02/23 12:40:16  sacbase
  * new release made
  *
- * Revision 1.90  1999/02/19 17:26:03  dkr
- * changed -efence to -defence
- *
- * Revision 1.89  1999/02/19 17:06:13  dkr
- * flag -efence added
- *
- * Revision 1.88  1999/02/15 13:34:09  sbs
- * added -noDLAW opt_dlaw;
- *
- * Revision 1.87  1999/02/15 10:33:12  sbs
- * added some .... bugs
- *
- * Revision 1.86  1999/02/06 16:38:04  dkr
- * output of 'sac2c -h' fitted to terminal size of 80 cols
- *
- * Revision 1.85  1999/02/01 19:46:19  srs
- * fixed typo
- *
- * Revision 1.84  1999/01/26 14:25:08  cg
- * Added option -intrinsic p for intrinsic array-valued psi().
- *
- * Revision 1.83  1999/01/18 12:53:29  sbs
- * -b15:cycN:wlt, -b15:cycN:wlf, -b15:cycN:cf2 inserted
- *
- * Revision 1.82  1999/01/15 15:21:58  cg
- * modified intrinsic option.
- *
- * Revision 1.81  1999/01/07 14:01:01  sbs
- * more sophisticated breaking facilities inserted;
- * Now, a break in a specific cycle can be triggered!
- *
- * Revision 1.80  1998/12/07 17:31:04  cg
- * Now, the version identifier and the target platform are
- * printed as well with the -h and -i options.
- * The information is taken from global vars version_id and
- * target_platform
- *
- * Revision 1.79  1998/12/01 09:41:24  cg
- * bug fixed in description of -trace, -profile, and -intrinsic options.
- * added new section DESCRIPTION with general information on sac2c.
- * some more polishing on the help text
- * copyright/license notice updated.
- *
- * Revision 1.78  1998/10/26 12:50:18  cg
- * Mechanism to store sac2c build information now works correctly.
- * Compiler options renamed:
- * -t -> -trace
- * -p -> -profile
- * new compiler option -intrinsic to select intrinsic implementations
- * of array operations instead of with-loop based ones.
- *
- * Revision 1.77  1998/10/23 14:29:46  cg
- * added the new command line option -inparsize <no> which allows to
- * specify a minimum generator size for with-loops to be executed in
- * parallel if such execution is enabled.
- * The information stored by the global variable min_parallel_size.
- *
  * [...]
  *
  * Revision 1.2  1994/11/10  15:44:34  sbs
@@ -158,14 +104,16 @@
 void
 usage ()
 {
+    int ph;
+
     DBUG_ENTER ("usage");
 
     printf ("\n\n\t  sac2c  --  The ultimate SAC compiler\n"
             "\t----------------------------------------\n\n"
 
-            "NAME:     \tsac2c\n"
+            "NAME:     \tsac2c\n\n\n"
 
-            "\n\nDESCRIPTION:\n\n"
+            "DESCRIPTION:\n\n"
 
             "\tThe sac2c compiler transforms SAC source code into executable programs\n"
             "\t(SAC programs) or into a SAC specific library format (SAC module and\n"
@@ -188,9 +136,9 @@ usage ()
             "\tHowever, when compiling a SAC module/class implementation, the\n"
             "\tresulting SAC library is stored in the file <mod/class name>.lib in the\n"
             "\tcurrent directory. In this case, the -o option may be used to specify a\n"
-            "\tdifferent directory but not a different file name.\n"
+            "\tdifferent directory but not a different file name.\n");
 
-            "\n\nSPECIAL OPTIONS:\n\n"
+    printf ("\n\nSPECIAL OPTIONS:\n\n"
 
             "\t -h\t\tdisplay this helptext.\n"
             "\t -help\t\tdisplay this helptext.\n"
@@ -211,9 +159,9 @@ usage ()
             "\t\t\t  as library files are (recursively) considered.\n"
             "\n"
             "\tWhen called with one of these options, sac2c does not perform\n"
-            "\tany compilation steps.\n"
+            "\tany compilation steps.\n");
 
-            "\n\nGENERAL OPTIONS:\n\n"
+    printf ("\n\nGENERAL OPTIONS:\n\n"
 
             "\t -D <cpp-var>[=<value>]?\n"
             "\t\t\tset <cpp-var> (to <value>) when\n"
@@ -233,40 +181,26 @@ usage ()
             "\t\t\t  default: -v %d\n",
             verbose_level);
 
-    printf ("\n\nBREAK OPTIONS:\n\n");
+    printf ("\n\nBREAK OPTIONS:\n\n"
 
-    printf ("\tBreak options allow you to stop the compilation process\n"
+            "\tBreak options allow you to stop the compilation process\n"
             "\tafter a particular phase.\n"
             "\tPer default the programm will then be printed out, but\n"
             "\t\t-noPAB\tdeactivates print\n"
             "\t\t-doPAB\tactivates print\n\n");
 
-    printf ("\t -b1\tstop after: %s\n", compiler_phase_name[1]);
-    printf ("\t -b2\tstop after: %s\n", compiler_phase_name[2]);
-    printf ("\t -b3\tstop after: %s\n", compiler_phase_name[3]);
-    printf ("\t -b4\tstop after: %s\n", compiler_phase_name[4]);
-    printf ("\t -b5\tstop after: %s\n", compiler_phase_name[5]);
-    printf ("\t -b6\tstop after: %s\n", compiler_phase_name[6]);
-    printf ("\t -b7\tstop after: %s\n", compiler_phase_name[7]);
-    printf ("\t -b8\tstop after: %s\n", compiler_phase_name[8]);
-    printf ("\t -b9\tstop after: %s\n", compiler_phase_name[9]);
-    printf ("\t -b10\tstop after: %s\n", compiler_phase_name[10]);
-    printf ("\t -b11\tstop after: %s\n", compiler_phase_name[11]);
-    printf ("\t -b12\tstop after: %s\n", compiler_phase_name[12]);
-    printf ("\t -b13\tstop after: %s\n", compiler_phase_name[13]);
-    printf ("\t -b14\tstop after: %s\n", compiler_phase_name[14]);
-    printf ("\t -b15\tstop after: %s\n", compiler_phase_name[15]);
-    printf ("\t -b16\tstop after: %s\n", compiler_phase_name[16]);
-    printf ("\t -b17\tstop after: %s\n", compiler_phase_name[17]);
-    printf ("\t -b18\tstop after: %s\n", compiler_phase_name[18]);
-    printf ("\t -b19\tstop after: %s\n", compiler_phase_name[19]);
-    printf ("\t -b20\tstop after: %s\n", compiler_phase_name[20]);
-    printf ("\t -b21\tstop after: %s\n", compiler_phase_name[21]);
+    for (ph = 1; ph <= 21; ph++)
+        ;
+    {
+        printf ("\t -b%i\tstop after: %s\n", ph, compiler_phase_name[ph]);
+    }
 
     printf (
       "\n\nBREAK SPECIFIERS:\n\n"
+
       "\tBreak specifiers allow you to stop the compilation process\n"
       "\twithin a particular phase.\n\n"
+
       "\tCurrently supported:\n\n"
 
       "\t-b15:inl       \tstop after function inlining\n"
@@ -310,6 +244,7 @@ usage ()
             "\t -do <opt>\tenable optimization technique <opt>\n"
             "\n"
             "\t The following optimization techniques are currently supported:\n\n"
+
             "\t\tCF  \t constant folding\n"
             "\t\tINL \t function inlining\n"
             "\t\tLUR \t loop unrolling\n"
@@ -344,9 +279,9 @@ usage ()
             "\t\"-no OPT -do INL\" disables all optimizations except for\n"
             "\tfunction inlining.\n\n");
 
-    printf ("\tOptimization side conditions:\n\n");
+    printf ("\tOptimization side conditions:\n\n"
 
-    printf ("\t -maxoptcyc <no>    \trepeat optimization phase <no> times.\n"
+            "\t -maxoptcyc <no>    \trepeat optimization phase <no> times.\n"
             "\t\t\t\t  Default: -maxoptcyc %d\n",
             max_optcycles);
     printf ("\t -maxoptvar <no>    \treserve <no> variables for optimization.\n"
@@ -393,8 +328,10 @@ usage ()
             "\t\t\t\t  \"-numthreads\" or dynamically upon application\n"
             "\t\t\t\t  startup using the generic command line option\n"
             "\t\t\t\t  \"-mt <no>\".\n\n"
+
             "\t -mtn \t\t\tnew support for multi-threading\n"
             "\t\t\t\t  UNDER CONSTRUCTION!!!\n\n"
+
             "\t -numthreads <no>\tstatically specify exact number of threads\n"
             "\t\t\t\tto be used.\n"
             "\t -maxthreads <no>\tmaximum number of threads to be used when exact\n"
@@ -411,6 +348,7 @@ usage ()
             "\t -minmtsize <no>\tminimum generator size for parallel execution\n"
             "\t\t\t\tof with-loops.\n"
             "\t\t\t\t  Default: -minmtsize %d.\n\n"
+
             "\t -maxrepsize <no>\t(-mtn) maximum size for arrays to be replicated\n"
             "\t\t\t\t  Default: -maxrepsize %d.\n",
             max_threads, max_sync_fold, min_parallel_size, max_replication_size);
@@ -421,26 +359,28 @@ usage ()
             "\t -d syscall\t\tshow all system calls during compilation.\n"
             "\t -d cccall\t\tgenerate shell script '.sac2c' that contains C\n"
             "\t\t\t\tcompiler call.\n"
-            "\t\t\t\tThis implies option \"-d nocleanup\".\n"
+            "\t\t\t\tThis implies option \"-d nocleanup\".\n");
 
-            "\n\nINTERNAL DEBUG OPTIONS:\n\n"
+    printf ("\n\nINTERNAL DEBUG OPTIONS:\n\n"
 
             "\t -d efence\t\tfor compilation of programs:\n"
             "\t\t\t\t  link executable with ElectricFence\n"
             "\t\t\t\t  (malloc debugger).\n\n"
+
             "\t -# <str>\t\toptions (string) for DBUG information\n"
             "\t -# <from>/<to>/<str>\tDBUG information only in compiler phases\n"
             "\t\t\t\t<from>..<to>\n"
             "\t\t\t\t  Default: <from> = first compiler phase,\n"
             "\t\t\t\t           <to>   = last compiler phase\n\n"
+
             "\t -lac2fun <ph>[:<ph>]*\ttransformation of loops and conditions into\n"
             "\t\t\t\tfunctions before the compiler phases <ph>.\n"
             "\t -fun2lac <ph>[:<ph>]*\ttransformation vice versa after the compiler\n"
             "\t\t\t\tphases <ph>.\n"
             "\t\t\t\tNote: -b<ph> stops the compiler *after* the\n"
-            "\t\t\t\tlac2fun transformation of phase <ph+1>!\n"
+            "\t\t\t\tlac2fun transformation of phase <ph+1>!\n");
 
-            "\n\nRUNTIME CHECK OPTIONS:\n\n"
+    printf ("\n\nRUNTIME CHECK OPTIONS:\n\n"
 
             "\t -check [abmeh]+ \tinclude runtime checks into executable program.\n"
             "\t\t\t\t  a: include all checks available.\n"
@@ -449,9 +389,9 @@ usage ()
             "\t\t\t\t  m: check success of memory allocations.\n"
             "\t\t\t\t  e: check errno variable upon applications of\n"
             "\t\t\t\t     external functions.\n"
-            "\t\t\t\t  h: use diagnostic heap manager.\n"
+            "\t\t\t\t  h: use diagnostic heap manager.\n");
 
-            "\n\nRUNTIME TRACE OPTIONS:\n\n"
+    printf ("\n\nRUNTIME TRACE OPTIONS:\n\n"
 
             "\t -trace [amrfpowt]+ \tinclude runtime program tracing.\n"
             "\t\t\t\t  a: trace all (same as mrfpowt).\n"
@@ -461,22 +401,23 @@ usage ()
             "\t\t\t\t  p: trace primitive function calls.\n"
             "\t\t\t\t  o: trace old with-loop execution.\n"
             "\t\t\t\t  w: trace new with-loop execution.\n"
-            "\t\t\t\t  t: trace multi-threading specific operations.\n"
+            "\t\t\t\t  t: trace multi-threading specific operations.\n");
 
-            "\n\nRUNTIME PROFILING OPTIONS:\n\n"
+    printf ("\n\nRUNTIME PROFILING OPTIONS:\n\n"
 
             "\t -profile [afilw]+ \tinclude runtime profiling analysis.\n"
             "\t\t\t\t  a: analyse all (same as filw).\n"
             "\t\t\t\t  f: analyse time spent in non-inline functions.\n"
             "\t\t\t\t  i: analyse time spent in inline functions.\n"
             "\t\t\t\t  l: analyse time spent in library functions.\n"
-            "\t\t\t\t  w: analyse time spent in with-loops.\n"
+            "\t\t\t\t  w: analyse time spent in with-loops.\n");
 
-            "\n\nCACHE SIMULATION OPTIONS:\n\n"
+    printf ("\n\nCACHE SIMULATION OPTIONS:\n\n"
 
             "\t -cs\t\tenable runtime cache simulation\n"
             "\n"
             "\t -csdefaults [sagbifp]+\n\n"
+
             "\t\tThis option sets default parameters for cache simulation.\n"
             "\t\tThese settings may be overridden when starting the analysis of\n"
             "\t\tan application program.\n"
@@ -566,9 +507,15 @@ usage ()
             "\t\t\tusing this option when starting the compiled application\n"
             "\t\t\tprogram.\n"
             "\t\t\tThe general default directory is the tmp directory\n"
-            "\t\t\tspecified in your sac2crc file.\n"
+            "\t\t\tspecified in your sac2crc file.\n",
+            (NULL == getenv ("SACBASE")) ? "" : getenv ("SACBASE"),
+            ((NULL != getenv ("SACBASE")
+              && getenv ("SACBASE")[strlen (getenv ("SACBASE")) - 1] != '/'))
+              ? "/"
+              : "",
+            version_id);
 
-            "\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
+    printf ("\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
 
             "\t -intrinsic [a+-x/tdcrpo]+ \tuse intrinsic array operations.\n"
             "\t\t\t\t\t  a: use all intrinsic operations\n"
@@ -582,16 +529,17 @@ usage ()
             "\t\t\t\t\t  c: use intrinsic cat.\n"
             "\t\t\t\t\t  r: use intrinsic rotate.\n"
             "\t\t\t\t\t  p: use intrinsic psi.\n"
-            "\t\t\t\t\t  o: use intrinsic type conversion.\n"
+            "\t\t\t\t\t  o: use intrinsic type conversion.\n");
 
-            "\n\nLINK OPTIONS:\n\n"
+    printf ("\n\nLINK OPTIONS:\n\n"
 
             "\t -l <n>\t\tlink level for generating SAC library.\n"
             "\t\t\t  1: compile to one large object file.\n"
             "\t\t\t  2: compile to archive of object files.\n"
-            "\t\t\t  Default: -l %d\n"
+            "\t\t\t  Default: -l %d\n",
+            linkstyle);
 
-            "\n\nC-COMPILER OPTIONS:\n\n"
+    printf ("\n\nC-COMPILER OPTIONS:\n\n"
 
             "\t -g     \tinclude debug information into object code.\n"
             "\n"
@@ -602,9 +550,10 @@ usage ()
             "\t\t\t  3: full C compiler optimizations.\n"
             "\t\t\t  Default: -O %d\n"
             "\n"
-            "\tThe actual effects of these options are C compiler specific!\n"
+            "\tThe actual effects of these options are C compiler specific!\n",
+            cc_optimize);
 
-            "\n\nCUSTOMIZATION:\n\n"
+    printf ("\n\nCUSTOMIZATION:\n\n"
 
             "\t-target <name>\tspecify a particular compilation target.\n"
             "\t\t\tCompilation targets are used to customize sac2c for\n"
@@ -613,9 +562,9 @@ usage ()
             "\t\t\tThe target description is either read from the\n"
             "\t\t\tinstallation specific file $SACBASE/runtime/sac2crc or\n"
             "\t\t\tfrom a file named .sac2crc within the user's home\n"
-            "\t\t\tdirectory.\n"
+            "\t\t\tdirectory.\n");
 
-            "\n\nENVIRONMENT VARIABLES:\n\n"
+    printf ("\n\nENVIRONMENT VARIABLES:\n\n"
 
             "\tSACBASE\t\t\tbase directory of SAC installation\n"
             "\tSAC_PATH\t\tsearch paths for program source\n"
@@ -624,9 +573,9 @@ usage ()
             "\n"
             "\tThe following environment variables must be set correctly when compiling\n"
             "\ta SAC module/class implementation in order to enable full usability of\n"
-            "\tsac2c command line option \"-libstat\": PWD, USER, and HOST.\n"
+            "\tsac2c command line option \"-libstat\": PWD, USER, and HOST.\n");
 
-            "\n\nAUTHORS:\n\n"
+    printf ("\n\nAUTHORS:\n\n"
 
             "\tSven-Bodo Scholz\n"
             "\tHenning Wolf\n"
@@ -636,14 +585,14 @@ usage ()
             "\tSoeren Schwartz\n"
             "\tBjoern Schierau\n"
             "\tHelge Ernst\n"
-            "\tJan-Hendrik Schoeler\n"
+            "\tJan-Hendrik Schoeler\n");
 
-            "\n\nCONTACT:\n\n"
+    printf ("\n\nCONTACT:\n\n"
 
             "\tWorld Wide Web: http://www.informatik.uni-kiel.de/~sacbase/\n"
-            "\tE-Mail: sacbase@informatik.uni-kiel.de\n"
+            "\tE-Mail: sacbase@informatik.uni-kiel.de\n");
 
-            "\n\nBUGS:\n\n"
+    printf ("\n\nBUGS:\n\n"
 
             "\tBugs??  We????\n"
             "\n"
@@ -652,15 +601,7 @@ usage ()
             "\n"
             "\tUnfortunately, two of our optimizations are quite buggy 8-(\n"
             "\tTherefore, we decided to preset -noLIR and -noDLAW in the current\n"
-            "\tcompiler release!\n"
-
-            "\n",
-            (NULL == getenv ("SACBASE")) ? "" : getenv ("SACBASE"),
-            ((NULL != getenv ("SACBASE")
-              && getenv ("SACBASE")[strlen (getenv ("SACBASE")) - 1] != '/'))
-              ? "/"
-              : "",
-            version_id, linkstyle, cc_optimize);
+            "\tcompiler release!\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -670,17 +611,18 @@ version ()
 {
     DBUG_ENTER ("version");
 
-    printf ("\n\t\tSAC - Single Assignment C\n"
-            "\t--------------------------------------------\n"
-            "\n"
+    printf ("\n\t\t  SAC - Single Assignment C\n"
+            "\t---------------------------------------------\n\n"
+
             "NAME:      sac2c\n"
             "VERSION:   %s\n"
-            "PLATFORM:  %s\n\n"
+            "PLATFORM:  %s\n"
+            "\n"
+
             "BUILD:     %s\n"
             "BY USER:   %s\n"
             "ON HOST:   %s\n"
-            "\n"
-            "\n"
+            "\n\n"
 
             "(c) Copyright 1994 - 2000 by\n\n"
 
@@ -703,11 +645,11 @@ copyright ()
 {
     DBUG_ENTER ("copyright");
 
-    printf ("\n\t\tSAC - Single Assignment C\n"
-            "\t--------------------------------------------\n"
-            "\n"
+    printf ("\n\t\t  SAC - Single Assignment C\n"
+            "\t---------------------------------------------\n\n"
 
             "\tSAC COPYRIGHT NOTICE, LICENSE, AND DISCLAIMER\n\n"
+
             "(c) Copyright 1994 - 2000 by\n\n"
 
             "  Christian-Albrechts-Universitaet zu Kiel\n"
