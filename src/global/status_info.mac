@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/11/13 19:19:46  dkr
+ * comment is no longer part of the SELECT macro
+ *
  * Revision 3.8  2001/07/19 16:19:57  cg
  * Added new status entries ST_imported_extmod and ST_imported_extclass.
  *
@@ -65,138 +68,133 @@
 #define SELECTtext(it_text)
 #endif
 
-/*
- * the comment is selected nowhere yet ...
- */
-#define SELECT(it_element, it_text, it_comment)                                          \
-    SELECTelement (it_element) SELECTtext (it_text)
+#define SELECT(it_element, it_text) SELECTelement (it_element) SELECTtext (it_text)
 
-SELECT (ST_undef, "ST_undef",
-        /* undefined                                                       */),
+SELECT (ST_undef, "ST_undef"),
+  /* undefined                                                       */
 
-  SELECT (ST_sac, "ST_sac",
-          /* deps: SAC module/class                                          */),
+  SELECT (ST_sac, "ST_sac"),
+  /* deps: SAC module/class                                          */
 
-  SELECT (ST_external, "ST_external",
-          /* deps: external module/class                                     */),
+  SELECT (ST_external, "ST_external"),
+  /* deps: external module/class                                     */
 
-  SELECT (ST_system, "ST_system",
-          /* deps: external system library                                   */),
+  SELECT (ST_system, "ST_system"),
+  /* deps: external system library                                   */
 
-  SELECT (ST_own, "ST_own",
-          /* deps: own declaration of module implementation                  */),
+  SELECT (ST_own, "ST_own"),
+  /* deps: own declaration of module implementation                  */
 
-  SELECT (ST_regular, "ST_regular",
-          /* typedef, objdef, fundef, vardec, type, arg, id, ids: default    */),
+  SELECT (ST_regular, "ST_regular"),
+  /* typedef, objdef, fundef, vardec, type, arg, id, ids: default    */
 
-  SELECT (ST_imported_class, "ST_imported_class",
-          /* typedef, objdef, fundef: imported from other class              */),
+  SELECT (ST_imported_class, "ST_imported_class"),
+  /* typedef, objdef, fundef: imported from other class              */
 
-  SELECT (ST_imported_mod, "ST_imported_mod",
-          /* typedef, objdef, fundef: imported from other module             */),
+  SELECT (ST_imported_mod, "ST_imported_mod"),
+  /* typedef, objdef, fundef: imported from other module             */
 
-  SELECT (ST_imported_extclass, "ST_imported_extclass",
-          /* typedef, objdef, fundef: imported from external class           */),
+  SELECT (ST_imported_extclass, "ST_imported_extclass"),
+  /* typedef, objdef, fundef: imported from external class           */
 
-  SELECT (ST_imported_extmod, "ST_imported_extmod",
-          /* typedef, objdef, fundef: imported from external module          */),
+  SELECT (ST_imported_extmod, "ST_imported_extmod"),
+  /* typedef, objdef, fundef: imported from external module          */
 
-  SELECT (ST_exported, "ST_exported",
-          /* fundef: exported by module or program                           */),
+  SELECT (ST_exported, "ST_exported"),
+  /* fundef: exported by module or program                           */
 
-  SELECT (ST_unique, "ST_unique",
-          /* typedef, vardec, arg: unique                                    */),
+  SELECT (ST_unique, "ST_unique"),
+  /* typedef, vardec, arg: unique                                    */
 
-  SELECT (ST_resolved, "ST_resolved",
-          /* objdef: objects from called function are analysed               */),
+  SELECT (ST_resolved, "ST_resolved"),
+  /* objdef: objects from called function are analysed               */
 
-  SELECT (ST_unresolved, "ST_unresolved",
-          /* objdef: objects from called function are not yet analysed       */),
+  SELECT (ST_unresolved, "ST_unresolved"),
+  /* objdef: objects from called function are not yet analysed       */
 
-  SELECT (ST_artificial, "ST_artificial",
-          /* vardec, type, arg, id, ids: inserted during signature expansion (unique) */),
+  SELECT (ST_artificial, "ST_artificial"),
+  /* vardec, type, arg, id, ids: inserted during signature expansion (unique) */
 
-  SELECT (ST_used, "ST_used",
-          /* vardec: is used in body                                         */),
+  SELECT (ST_used, "ST_used"),
+  /* vardec: is used in body                                         */
 
-  SELECT (ST_crettype, "ST_crettype",
-          /* type: real return type of compiled C function                   */),
+  SELECT (ST_crettype, "ST_crettype"),
+  /* type: real return type of compiled C function                   */
 
-  SELECT (ST_reference, "ST_reference",
-          /* arg, id: (unique) reference parameter                           */),
+  SELECT (ST_reference, "ST_reference"),
+  /* arg, id: (unique) reference parameter                           */
 
-  SELECT (ST_readonly_reference, "ST_readonly_refernce",
-          /* arg, id: (unique) read-only reference parameter                 */),
+  SELECT (ST_readonly_reference, "ST_readonly_refernce"),
+  /* arg, id: (unique) read-only reference parameter                 */
 
-  SELECT (ST_was_reference, "ST_was_reference",
-          /* arg, id: eliminated (unique) reference parameter                */),
+  SELECT (ST_was_reference, "ST_was_reference"),
+  /* arg, id: eliminated (unique) reference parameter                */
 
-  SELECT (ST_global, "ST_global",
-          /* id, ids: reference of a global object                           */),
+  SELECT (ST_global, "ST_global"),
+  /* id, ids: reference of a global object                           */
 
-  SELECT (ST_shp_indep, "ST_shp_indep",
-          /* fundef: shape-independent but dimension-dependent               */),
+  SELECT (ST_shp_indep, "ST_shp_indep"),
+  /* fundef: shape-independent but dimension-dependent               */
 
-  SELECT (ST_dim_indep, "ST_dim_indep",
-          /* fundef: dimension-independent                                   */),
+  SELECT (ST_dim_indep, "ST_dim_indep"),
+  /* fundef: dimension-independent                                   */
 
-  SELECT (ST_generic, "ST_generic",
-          /* fundef: generic function derived from dimension-independent function */),
+  SELECT (ST_generic, "ST_generic"),
+  /* fundef: generic function derived from dimension-independent function */
 
-  SELECT (ST_gen_remove, "ST_gen_remove",
-          /* fundef: generic function to be removed after specialization     */),
+  SELECT (ST_gen_remove, "ST_gen_remove"),
+  /* fundef: generic function to be removed after specialization     */
 
-  SELECT (
-    ST_objinitfun, "ST_objinitfun",
-    /* fundef: automatically generated to contain global object init expressions */),
+  SELECT (ST_objinitfun, "ST_objinitfun"),
+  /* fundef: automatically generated to contain global object init expressions */
 
-  SELECT (ST_classfun, "ST_classfun",
-          /* fundef: generic function for class conversion                   */),
+  SELECT (ST_classfun, "ST_classfun"),
+  /* fundef: generic function for class conversion                   */
 
-  SELECT (ST_Cfun, "ST_Cfun",
-          /* fundef: implemented in C                                        */),
+  SELECT (ST_Cfun, "ST_Cfun"),
+  /* fundef: implemented in C                                        */
 
-  SELECT (ST_foldfun, "ST_foldfun",
-          /* fundef: artificial function containing the fold code            */),
+  SELECT (ST_foldfun, "ST_foldfun"),
+  /* fundef: artificial function containing the fold code            */
 
-  SELECT (ST_condfun, "ST_condfun",
-          /* fundef: artificial function representing an if-else-clause      */),
+  SELECT (ST_condfun, "ST_condfun"),
+  /* fundef: artificial function representing an if-else-clause      */
 
-  SELECT (ST_dofun, "ST_dofun",
-          /* fundef: artificial function representing a do-loop              */),
+  SELECT (ST_dofun, "ST_dofun"),
+  /* fundef: artificial function representing a do-loop              */
 
-  SELECT (ST_whilefun, "ST_whilefun",
-          /* fundef: artificial function representing a while-loop           */),
+  SELECT (ST_whilefun, "ST_whilefun"),
+  /* fundef: artificial function representing a while-loop           */
 
-  SELECT (ST_spmdfun, "ST_spmdfun",
-          /* fundef: generated from a spmd-region                            */),
+  SELECT (ST_spmdfun, "ST_spmdfun"),
+  /* fundef: generated from a spmd-region                            */
 
-  SELECT (ST_call_rep, "ST_call_rep",
-          /* fundef: replicated for mt-execution                             */),
+  SELECT (ST_call_rep, "ST_call_rep"),
+  /* fundef: replicated for mt-execution                             */
 
-  SELECT (ST_call_st, "ST_call_st",
-          /* fundef: for st-execution                                        */),
+  SELECT (ST_call_st, "ST_call_st"),
+  /* fundef: for st-execution                                        */
 
-  SELECT (ST_call_mt_master, "ST_call_mt_master",
-          /* fundef: for master-mt-execution                                 */),
+  SELECT (ST_call_mt_master, "ST_call_mt_master"),
+  /* fundef: for master-mt-execution                                 */
 
-  SELECT (ST_call_mt_worker, "ST_call_mt_worker",
-          /* fundef: for worker-mt-execution                                 */),
+  SELECT (ST_call_mt_worker, "ST_call_mt_worker"),
+  /* fundef: for worker-mt-execution                                 */
 
-  SELECT (ST_call_any, "ST_call_any",
-          /* fundef: default flag, used during inferation                    */),
+  SELECT (ST_call_any, "ST_call_any"),
+  /* fundef: default flag, used during inferation                    */
 
-  SELECT (ST_call_mtlift, "ST_call_mtlift",
-          /* fundef: lifted from N_mt                                        */),
+  SELECT (ST_call_mtlift, "ST_call_mtlift"),
+  /* fundef: lifted from N_mt                                        */
 
-  SELECT (ST_ignore, "ST_ignore",
-          /* fundef: unused generic fundef when compiling for c library      */),
+  SELECT (ST_ignore, "ST_ignore"),
+  /* fundef: unused generic fundef when compiling for c library      */
 
-  SELECT (ST_inlinefun, "ST_inlinefun",
-          /* fundef: special function without conditional - to be inlined    */),
+  SELECT (ST_inlinefun, "ST_inlinefun"),
+  /* fundef: special function without conditional - to be inlined    */
 
-  SELECT (ST_zombiefun, "ST_zombiefun",
-          /* fundef: zombie function                                         */)
+  SELECT (ST_zombiefun, "ST_zombiefun")
+/* fundef: zombie function                                         */
 
 #undef SELECT
 
