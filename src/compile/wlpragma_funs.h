@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/01/08 11:41:28  dkr
+ * wlpragma_funs.mac used for generation of function prototypes now
+ *
  * Revision 3.1  2000/11/20 18:01:29  sacbase
  * new release made
  *
@@ -22,17 +25,12 @@
  *
  */
 
-#ifndef _sac_wlpragma_funs_h
-#define _sac_wlpragma_funs_h
+#ifndef _sac_wlpragma_funs_h_
+#define _sac_wlpragma_funs_h_
 
-extern node *All (node *segs, node *parms, node *cubes, int dims, int line);
-extern node *Cubes (node *segs, node *parms, node *cubes, int dims, int line);
-extern node *ConstSegs (node *segs, node *parms, node *cubes, int dims, int line);
-extern node *NoBlocking (node *segs, node *parms, node *cubes, int dims, int line);
-extern node *Bv (node *segs, node *parms, node *cubes, int dims, int line);
-extern node *BvL0 (node *segs, node *parms, node *cubes, int dims, int line);
-extern node *BvL1 (node *segs, node *parms, node *cubes, int dims, int line);
-extern node *BvL2 (node *segs, node *parms, node *cubes, int dims, int line);
-extern node *Ubv (node *segs, node *parms, node *cubes, int dims, int line);
+#define WLP(fun, str)                                                                    \
+    extern node *fun (node *segs, node *parms, node *cubes, int dims, int line);
+#include "wlpragma_funs.mac"
+#undef WLP
 
-#endif /* _sac_wlpragma_funs_h */
+#endif /* _sac_wlpragma_funs_h_ */
