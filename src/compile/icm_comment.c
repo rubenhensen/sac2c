@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/04/13 09:11:01  sbs
+ * Revision 1.5  1995/05/04 11:42:34  sbs
+ * trf inserted in ICM-macros
+ *
+ * Revision 1.4  1995/04/13  09:11:01  sbs
  * sep=1 was missing in ICM_VAR
  *
  * Revision 1.3  1995/04/11  15:02:33  sbs
@@ -20,7 +23,7 @@
     if (sep)                                                                             \
         fprintf (outfile, ", ");
 
-#define ICM_DEF(prf)                                                                     \
+#define ICM_DEF(prf, trf)                                                                \
     {                                                                                    \
         int sep = 0;                                                                     \
         fprintf (outfile, "/*\n * %s( ", #prf);

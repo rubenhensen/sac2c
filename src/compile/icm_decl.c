@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/04/03 13:58:57  sbs
+ * Revision 1.3  1995/05/04 11:42:34  sbs
+ * trf inserted in ICM-macros
+ *
+ * Revision 1.2  1995/04/03  13:58:57  sbs
  * first "complete" version
  *
  * Revision 1.1  1995/03/10  17:26:51  sbs
@@ -10,7 +13,7 @@
  *
  */
 
-#define ICM_DEF(prf)                                                                     \
+#define ICM_DEF(prf, trf)                                                                \
     void Print##prf (node *exprs)                                                        \
     {
 #define ICM_STR(name) char *name;
