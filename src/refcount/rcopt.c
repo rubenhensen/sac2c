@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/11/27 03:11:25  ktr
+ * added EMRCOgenarray
+ *
  * Revision 1.9  2004/11/27 01:58:46  ktr
  * EMRCOdoRefCountOpt
  *
@@ -389,6 +392,35 @@ EMRCOprf (node *arg_node, info *arg_info)
                 break;
             }
         }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMRCOgenarray(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+node *
+EMRCOgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMRCOgenarray");
+
+    INFO_RCO_FILLLUT (arg_info) = LUTinsertIntoLutP (INFO_RCO_FILLLUT (arg_info),
+                                                     IDS_AVIS (INFO_RCO_LHS (arg_info)),
+                                                     ID_AVIS (GENARRAY_MEM (arg_node)));
+
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        INFO_RCO_LHS (arg_info) = IDS_NEXT (INFO_RCO_LHS (arg_info));
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
