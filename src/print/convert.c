@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.4  2001/03/15 12:42:13  dkr
- * print.h included
+ * Revision 3.5  2001/03/15 15:48:28  dkr
+ * Type2String streamlined
  *
  * Revision 3.3  2001/03/15 11:59:16  dkr
  * ST_inout replaced by ST_reference
@@ -61,7 +61,6 @@
 #include "dbug.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "print.h"
 
 #define TYPE_LENGTH 256      /* dimension of array of char */
 #define INT_STRING_LENGTH 16 /* dimension of array of char */
@@ -149,18 +148,18 @@ Double2String (double val)
  *  functionname  : Type2String
  *  arguments     :  1) pointer to type-structure
  *                   2) flag
- *  description   : convertes the infomation in type to a string
- *                  flag == 1: the identifier type->id is also put into
- *                             the resulting string
+ *  description   : convertes the infomation in type into a string
+ *
  *                  flag == 2: used for renaming of functions( lookup type-name
  *                             in rename_type[] instead of type_string[])
  *                  flag == 3: the module name is not included into string
- *                  flag  & 4: force Type2String only print 1st type in list
+ *
+ *                  ! all: force Type2String only print 1st type in list
  *
  */
 
 char *
-Type2String (types *type, int flag)
+Type2String (types *type, int flag, bool all)
 {
     char *tmp_string;
 
@@ -187,8 +186,6 @@ Type2String (types *type, int flag)
                 strcat (tmp_string, type_string[TYPES_BASETYPE (type)]);
             }
         }
-
-        PrintStatus (TYPES_STATUS (type), FALSE);
 
         if (TYPES_DIM (type) != 0) {
             if (TYPES_DIM (type) == -1) {
@@ -250,26 +247,17 @@ Type2String (types *type, int flag)
             }
         }
 
-        if ((type->attrib == ST_reference) || (type->attrib == ST_readonly_reference)
-            || (flag == 1)) {
-            strcat (tmp_string, " ");
-        }
-
+#if 1
         if (type->attrib == ST_reference) {
-            strcat (tmp_string, "&");
-        } else {
-            if (type->attrib == ST_readonly_reference) {
-                strcat (tmp_string, "(&)");
-            }
+            strcat (tmp_string, " &");
+        } else if (type->attrib == ST_readonly_reference) {
+            strcat (tmp_string, " (&)");
         }
-
-        if ((type->id != NULL) && (flag == 1)) {
-            strcat (tmp_string, type->id);
-        }
+#endif
 
         type = TYPES_NEXT (type);
 
-        if (flag & 4) { /* break after first type in list*/
+        if (!all) { /* break after first type in list */
             type = NULL;
         }
 
