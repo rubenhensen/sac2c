@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/11/14 18:35:21  dkr
+ * new target architecture SAC_FOR_OSX_MAC added
+ *
  * Revision 3.2  2000/12/14 10:26:20  sbs
  * Neither _REENTRANT nor POSIX_SOURCE preset anymore since these will be set
  * in sac_mt.h anyways!
@@ -249,14 +252,21 @@
 
 #if defined(SAC_FOR_SOLARIS_SPARC)
 
-/*#define SBRK(size)  sbrk((intptr_t) (size))  works on Solaris 2.7 only !! */
-#define SBRK(size) sbrk (size)
+#if 0
+#define SBRK(size) sbrk ((intptr_t) (size)) /* works on Solaris 2.7 only !! */
+#else
+#define SBRK(size) sbrk ((size))
+#endif
 
 #elif defined(SAC_FOR_LINUX_X86)
 
 #define SBRK(size) sbrk ((ptrdiff_t) (size))
 
 #elif defined(SAC_FOR_OSF_ALPHA)
+
+#define SBRK(size) sbrk ((int)(size))
+
+#elif defined(SAC_FOR_OSX_MAC)
 
 #define SBRK(size) sbrk ((int)(size))
 
