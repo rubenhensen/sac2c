@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.65  1997/11/26 11:01:05  srs
+ * removed use of old macros from acssass_macros.h
+ *
  * Revision 1.64  1996/02/12 16:32:47  cg
  * macro MAKENODE_ID_REUSE_IDS corrected: refcount will be copied
  * from ids-structure to node-structure now
@@ -249,7 +252,7 @@
 
 #define MAKENODE_ID_REUSE_IDS(no, Ids)                                                   \
     no = MakeNode (N_id);                                                                \
-    no->IDS = Ids;                                                                       \
+    no->info.ids = Ids;                                                                  \
     no->refcnt = Ids->refcnt
 
 extern char *prf_name_str[];
