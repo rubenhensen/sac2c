@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2004/11/26 12:01:16  cg
+ * Brushed function symbols.
+ *
  * Revision 3.41  2004/11/25 10:37:56  jhb
  * maybe compile
  *
@@ -57,73 +60,6 @@
  * Revision 3.23  2003/03/09 19:15:59  dkr
  * TRACE_AA added
  *
- * Revision 3.22  2002/11/08 13:29:45  cg
- * Removed TRACE_OWL macro since old with-loops left sac2c several
- * years ago.  :-))))
- *
- * Revision 3.21  2002/10/04 14:12:15  cg
- * Non-existent or unspecified caches are now specified by cache size -1
- * instead of 0. This avoids nasty warnings on the Alpha system.
- *
- * Revision 3.20  2002/09/11 23:14:17  dkr
- * renaming of function names modified
- *
- * Revision 3.19  2002/08/07 10:07:25  dkr
- * bug in GSCPrintMain() fixed: SAC_argc/v renamed into __argc/v
- *
- * Revision 3.18  2002/08/06 08:52:31  dkr
- * cc warning eliminated
- *
- * Revision 3.17  2002/07/30 16:09:34  dkr
- * GSCPrintMain() modified:
- * CreateNtTag() used to create the tag for the argument of SACf_main_()
- *
- * Revision 3.16  2002/07/03 15:34:38  dkr
- * some spaces added :)
- *
- * Revision 3.15  2002/07/03 15:28:01  dkr
- * RUNTIMECHECK_TYPE added (for new backend)
- *
- * Revision 3.14  2002/06/02 21:39:47  dkr
- * support for new backend added
- *
- * Revision 3.13  2002/04/16 21:12:48  dkr
- * GSCPrintMain() added
- *
- * Revision 3.12  2002/04/16 18:39:21  dkr
- * signature of ObjInitFunctionName() modified
- *
- * Revision 3.11  2002/03/07 18:52:43  dkr
- * GSCPrintMainEnd(): a '\n' removed
- *
- * Revision 3.10  2001/05/21 12:44:03  ben
- * SAC_MT_SET_MAX_SCHEDULERS renamed to SAC_MR_SET_NUM_SCHEDULERS
- *
- * Revision 3.9  2001/05/17 12:08:44  dkr
- * FREE, MALLOC eliminated
- *
- * Revision 3.8  2001/05/14 10:21:20  cg
- * Added new setting SAC_SET_MAX_SCHEDULERS to make maximum number
- * of schedulings within single SPMD function available to macro
- * implementations of schedulers
- *
- * Revision 3.7  2001/04/24 09:39:58  dkr
- * CHECK_NULL renamed into STR_OR_EMPTY
- *
- * Revision 3.6  2001/04/03 12:06:43  dkr
- * GSCPrintDefines added
- *
- * Revision 3.5  2001/04/02 15:24:17  dkr
- * no changes done
- *
- * Revision 3.4  2001/03/29 01:40:11  dkr
- * CHECK_NULL used
- *
- * Revision 3.3  2001/02/12 21:50:33  dkr
- * GSCfundef: comment added
- *
- * Revision 3.2  2000/12/08 10:11:42  nmw
- * no more warnings on alpha
  *
  * [...]
  *
@@ -148,8 +84,6 @@
  *   right before the return() statement of the main() function.
  *
  *****************************************************************************/
-
-#define NEW_INFO
 
 #include <stdio.h>
 #include <string.h>
@@ -186,7 +120,7 @@ static int spmd_block_counter;
 /******************************************************************************
  *
  * function:
- *   int GSCCalcMasterclass(int num_threads)
+ *   int CalcMasterclass(int num_threads)
  *
  * description:
  *   For a given number of thread used, this function calculates the worker
@@ -195,12 +129,12 @@ static int spmd_block_counter;
  *
  ******************************************************************************/
 
-int
-GSCCalcMasterclass (int num_threads)
+static int
+CalcMasterclass (int num_threads)
 {
     unsigned int res;
 
-    DBUG_ENTER ("GSCCalcMasterclass");
+    DBUG_ENTER ("GSCcalcMasterclass");
 
     for (res = 1; res < (unsigned int)num_threads; res <<= 1)
         ;
@@ -469,7 +403,7 @@ PrintGlobalSettings (node *syntax_tree)
 
     fprintf (global.outfile, "#ifndef SAC_SET_MASTERCLASS\n");
     fprintf (global.outfile, "#define SAC_SET_MASTERCLASS          %d\n",
-             GSCCalcMasterclass (global.num_threads));
+             CalcMasterclass (global.num_threads));
     fprintf (global.outfile, "#endif\n\n");
 
     if (global.max_sync_fold == -1) {
@@ -748,7 +682,7 @@ GSCfundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   void GSCPrintFileHeader( node *syntax_tree)
+ *   void GSCprintFileHeader( node *syntax_tree)
  *
  * description:
  *
@@ -756,9 +690,9 @@ GSCfundef (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 void
-GSCPrintFileHeader (node *syntax_tree)
+GSCprintFileHeader (node *syntax_tree)
 {
-    DBUG_ENTER ("GSCPrintFileHeader");
+    DBUG_ENTER ("GSCprintFileHeader");
 
     PrintGlobalSwitches ();
     PrintGlobalSettings (syntax_tree);
@@ -771,7 +705,7 @@ GSCPrintFileHeader (node *syntax_tree)
 /******************************************************************************
  *
  * function:
- *   void GSCPrintInternalInitFileHeader( node *syntax_tree)
+ *   void GSCprintInternalInitFileHeader( node *syntax_tree)
  *
  * description:
  *   generates header part of internal_runtime_init.c
@@ -781,9 +715,9 @@ GSCPrintFileHeader (node *syntax_tree)
  ******************************************************************************/
 
 void
-GSCPrintInternalInitFileHeader (node *syntax_tree)
+GSCprintInternalInitFileHeader (node *syntax_tree)
 {
-    DBUG_ENTER ("GSCPrintCWrapperFileHeader");
+    DBUG_ENTER ("GSCprintCWrapperFileHeader");
 
     PrintGlobalSwitches ();
     PrintGlobalSettings (syntax_tree);
@@ -799,7 +733,7 @@ GSCPrintInternalInitFileHeader (node *syntax_tree)
 /******************************************************************************
  *
  * function:
- *   void GSCPrintDefines()
+ *   void GSCprintDefines()
  *
  * description:
  *
@@ -810,9 +744,9 @@ GSCPrintInternalInitFileHeader (node *syntax_tree)
  ******************************************************************************/
 
 void
-GSCPrintDefines ()
+GSCprintDefines ()
 {
-    DBUG_ENTER ("GSCPrintDefines");
+    DBUG_ENTER ("GSCprintDefines");
 
     PrintDefines ();
 
@@ -822,7 +756,7 @@ GSCPrintDefines ()
 /******************************************************************************
  *
  * Function:
- *   void GSCPrintMainBegin()
+ *   void GSCprintMainBegin()
  *
  * Description:
  *
@@ -830,11 +764,11 @@ GSCPrintDefines ()
  ******************************************************************************/
 
 void
-GSCPrintMainBegin ()
+GSCprintMainBegin ()
 {
     char *funname;
 
-    DBUG_ENTER ("GSCPrintMainBegin");
+    DBUG_ENTER ("GSCprintMainBegin");
 
     funname = PRECobjInitFunctionName (FALSE);
 
@@ -865,7 +799,7 @@ GSCPrintMainBegin ()
 /******************************************************************************
  *
  * Function:
- *   void GSCPrintMainEnd()
+ *   void GSCprintMainEnd()
  *
  * Description:
  *
@@ -873,9 +807,9 @@ GSCPrintMainBegin ()
  ******************************************************************************/
 
 void
-GSCPrintMainEnd ()
+GSCprintMainEnd ()
 {
-    DBUG_ENTER ("GSCPrintMainEnd");
+    DBUG_ENTER ("GSCprintMainEnd");
 
     /*
      * global.outfile is already indented by 2
@@ -893,7 +827,7 @@ GSCPrintMainEnd ()
 /******************************************************************************
  *
  * Function:
- *   void GSCPrintMain()
+ *   void GSCprintMain()
  *
  * Description:
  *
@@ -901,7 +835,7 @@ GSCPrintMainEnd ()
  ******************************************************************************/
 
 void
-GSCPrintMain ()
+GSCprintMain ()
 {
     char *res_NT, *mythread_NT;
     types *tmp_type;
@@ -909,7 +843,7 @@ GSCPrintMain ()
       = (((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop))
          && (global.optimize.dophm));
 
-    DBUG_ENTER ("GSCPrintMain");
+    DBUG_ENTER ("GSCprintMain");
 
     INDENT;
     fprintf (global.outfile, "int main( int __argc, char *__argv[])\n");
@@ -925,7 +859,7 @@ GSCPrintMain ()
     mythread_NT = NTUcreateNtTag ("SAC_MT_mythread", tmp_type);
     tmp_type = FREEfreeAllTypes (tmp_type);
     ICMCompileND_DECL (res_NT, "int", 0, NULL); /* create ND_DECL icm */
-    GSCPrintMainBegin ();
+    GSCprintMainBegin ();
 
     INDENT;
     fprintf (global.outfile, "SACf_main( ");
@@ -934,7 +868,7 @@ GSCPrintMain ()
     }
     fprintf (global.outfile, "SAC_ND_ARG_out( %s)", res_NT);
     fprintf (global.outfile, ");\n\n");
-    GSCPrintMainEnd ();
+    GSCprintMainEnd ();
     INDENT;
     fprintf (global.outfile, "return( SAC_ND_READ( %s, 0));\n", res_NT);
     res_NT = ILIBfree (res_NT);
