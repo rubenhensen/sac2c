@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1996/01/07 16:51:59  cg
+ * Revision 1.19  1996/01/25 18:37:21  cg
+ * renamed compiler phase objinit resoltutio
+ *
+ * Revision 1.18  1996/01/07  16:51:59  cg
  * renamed some compiler phases
  *
  * Revision 1.17  1996/01/05  12:23:42  cg
@@ -102,7 +105,7 @@ char *compiler_phase_name[] = {"",
                                "Loading SAC program",
                                "Resolving imports from modules and classes",
                                "Checking required SAC libraries",
-                               "Resolving global object initializations",
+                               "Generating generic types and functions",
                                "Simplifying source code",
                                "Running type inference system",
                                "Checking module/class declaration file",
