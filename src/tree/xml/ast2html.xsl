@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/11/22 13:57:56  sah
+  better looking now
+
   Revision 1.3  2004/11/22 12:36:13  sah
   extended layout
 
@@ -16,6 +19,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
 
   <xsl:import href="common-key-tables.xsl" />
   <xsl:import href="common-make-head.xsl" />
+  <xsl:import href="common-name-to-nodeenum.xsl" />
 
   <!-- this xslt script generates a nice html view given the ast xml
        definition file. It is no good example to get an overview, as 
@@ -44,12 +48,12 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
                      font-weight: bold } 
           td.heading { background-color: #999999; font-weight:
                        bold } 
-          td.heading div.description { font-size: smaller }
+          div.description { font-size: smaller; }
           td.subheading { background-color: #999999; padding: 2pt;
                           margin: 0pt } 
-          td.toclink { text-align: right; font-size: smaller } 
+          td.toclink { text-align: right; font-size: smaller; } 
           td.hidden { padding: 0pt } 
-          td.makefun { font-family: courier; }
+          td.ccode { font-family: courier; }
           table.hidden { border-style: none; margin: 0pt; width: 100%; 
                          padding: 2pt } 
           tr.nonmandatory { color: #666666; font-style: italic } 
@@ -112,8 +116,11 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
           <xsl:value-of select="'#'" />
           <xsl:value-of select="@name" />
         </xsl:attribute>
-        <xsl:value-of select="'N_'" />
-        <xsl:value-of select="@name" />
+        <xsl:call-template name="name-to-nodeenum" >
+          <xsl:with-param name="name" >
+            <xsl:value-of select="@name" />
+          </xsl:with-param>
+        </xsl:call-template>
       </xsl:element>
     </li>
   </xsl:template>
@@ -233,8 +240,11 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
     <table>
       <tr>
         <td class="title">
-          <xsl:value-of select="'N_'" />
-          <xsl:value-of select="@name" />
+          <xsl:call-template name="name-to-nodeenum" >
+            <xsl:with-param name="name" >
+              <xsl:value-of select="@name" />
+            </xsl:with-param>
+          </xsl:call-template>
           <xsl:apply-templates select="description" mode="table" />
         </td>
       </tr>
@@ -244,7 +254,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         </td>
       </tr>
       <tr>
-        <td class="makefun">
+        <td class="ccode">
           <xsl:apply-templates select="." mode="make-head" />
         </td>
       </tr>
@@ -347,7 +357,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       <td>
         <xsl:apply-templates select="target" mode="table" />
       </td>
-      <td>
+      <td class="ccode" >
         <xsl:value-of select="@default" />
       </td>
       <td>
@@ -365,8 +375,11 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
        <xsl:value-of select="'#'" />
        <xsl:value-of select="@name" />
       </xsl:attribute>
-      <xsl:value-of select="'N_'" />
-      <xsl:value-of select="@name" />
+      <xsl:call-template name="name-to-nodeenum" >
+        <xsl:with-param name="name" >
+          <xsl:value-of select="@name" />
+        </xsl:with-param>
+      </xsl:call-template>
     </xsl:element>
   </xsl:template>
 
@@ -407,7 +420,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
           <xsl:apply-templates select="phases" mode="table" />
         </td>
       </xsl:if>
-      <td>
+      <td class="ccode" >
         <xsl:value-of select="@default" />
       </td>
       <td>
@@ -462,7 +475,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       <td>
         <xsl:value-of select="@name" />
       </td>
-      <td>
+      <td class="ccode" >
         <xsl:if test="not( @default)" >
           <xsl:value-of select="'FALSE'" />
         </xsl:if>
