@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.116  1996/02/21 18:02:09  cg
+ * Revision 1.117  1996/03/21 18:01:08  cg
+ * improved function PrintChar
+ *
+ * Revision 1.116  1996/02/21  18:02:09  cg
  * now, special characters such as '\n' or '\0' are accepted for printing
  *
  * Revision 1.115  1996/02/12  14:13:46  asi
@@ -923,7 +926,8 @@ PrintChar (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintChar");
 
-    if ((arg_node->info.cchar >= '!') && (arg_node->info.cchar <= 'z')) {
+    if ((arg_node->info.cchar >= ' ') && (arg_node->info.cchar <= '~')
+        && (arg_node->info.cchar != '\'')) {
         fprintf (outfile, "'%c'", arg_node->info.cchar);
     } else {
         fprintf (outfile, "'\\%d'", arg_node->info.cchar);
