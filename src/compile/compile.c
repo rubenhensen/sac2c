@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.67  2000/07/10 14:23:26  cg
+ * The return type of a function that will become the actual return
+ * type of the corresponding compiled C function is tagged as ST_crettype.
+ *
  * Revision 2.66  2000/07/06 17:34:04  dkr
  * some obsolete TAGGED_ARRAY stuff removed
  *
@@ -1666,18 +1670,34 @@ InsertDefArgParam (node **icm_tab, node *icm_arg, types **type_tab, types *type_
     DBUG_VOID_RETURN;
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : InsertDefReturnParam
- *  description   :
- *  remarks       :
+ * function:
+ *   statustype InsertDefReturnParam(node **icm_tab, node *icm_arg,
+ *                                   types **type_tab, types *type_arg,
+ *                                   int *linksign, int cnt_param, int line)
  *
- */
+ * description:
+ *
+ *   This function creates an entry in the icm_tab for a return type of a
+ *   function definition. The location of the given return type is identified
+ *   either by inspection of the linksign pragma or by maintaining the original
+ *   sequence. However, the first non-refcounted return type is compiled to
+ *   the corresponding C function's only return type while all others are
+ *   indirectly implemented by means of reference parameters.
+ *
+ *   The function either returns ST_crettype for the designated return type
+ *   or ST_regular for all other return types that will be mapped to
+ *   reference parameters.
+ *
+ ******************************************************************************/
 
-static void
+static statustype
 InsertDefReturnParam (node **icm_tab, node *icm_arg, types **type_tab, types *type_arg,
                       int *linksign, int cnt_param, int line)
 {
+    statustype ret = ST_regular;
+
     DBUG_ENTER ("InsertDefReturnParam");
 
     DBUG_PRINT ("COMP", ("Inserting arg #%d, tag=\"%s\"", cnt_param,
@@ -1691,17 +1711,24 @@ InsertDefReturnParam (node **icm_tab, node *icm_arg, types **type_tab, types *ty
         if ((0 == strcmp (ID_NAME (EXPRS_EXPR (icm_arg)), "out"))
             && (icm_tab[1] == NULL)) {
             icm_tab[1] = icm_arg;
+            ret = ST_crettype;
         } else {
             icm_tab[cnt_param + 2] = icm_arg;
+            ret = ST_regular;
         }
     } else {
         /*
-         *  create special icm table depending on pragma liksign
+         *  create special icm table depending on pragma linksign
          */
 
         if (icm_tab[linksign[cnt_param] + 1] == NULL) {
             icm_tab[linksign[cnt_param] + 1] = icm_arg;
             type_tab[linksign[cnt_param] + 1] = type_arg;
+            if (linksign[cnt_param] == 0) {
+                ret = ST_crettype;
+            } else {
+                ret = ST_regular;
+            }
         } else {
             ERROR (line, ("Pragma 'linksign` illegal"));
             CONT_ERROR (("2 return parameters mapped to same position !"));
@@ -1709,7 +1736,7 @@ InsertDefReturnParam (node **icm_tab, node *icm_arg, types **type_tab, types *ty
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (ret);
 }
 
 /******************************************************************************
@@ -2109,11 +2136,12 @@ COMPFundef (node *arg_node, node *arg_info)
 
         MAKE_NEXT_ICM_ARG (icm_arg, var_name_node);
 
-        InsertDefReturnParam (icm_tab, icm_tab_entry, type_tab, rettypes,
-                              (FUNDEF_PRAGMA (arg_node) == NULL)
-                                ? NULL
-                                : FUNDEF_LINKSIGN (arg_node),
-                              cnt_param, NODE_LINE (arg_node));
+        TYPES_STATUS (rettypes)
+          = InsertDefReturnParam (icm_tab, icm_tab_entry, type_tab, rettypes,
+                                  (FUNDEF_PRAGMA (arg_node) == NULL)
+                                    ? NULL
+                                    : FUNDEF_LINKSIGN (arg_node),
+                                  cnt_param, NODE_LINE (arg_node));
 
         rettypes = TYPES_NEXT (rettypes);
         cnt_param++;
