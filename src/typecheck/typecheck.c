@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.52  2000/10/20 15:38:12  dkr
+ * macros GET_DIM, GET_LENGTH, GET_BASIC_SIMPLETYPE replaced by
+ * equivalent functions in tree_compound.[ch]
+ *
  * Revision 2.51  2000/10/18 09:42:26  dkr
  * bug in UpdateType() fixed
  *
@@ -1539,7 +1543,7 @@ LookupObject (char *name, char *mod, int line)
 /******************************************************************************
  *
  * Function:
- *   node *LookupType(char *type_name, char *mod_name, int line)
+ *   node *LookupType( char *type_name, char *mod_name, int line)
  *
  * Description:
  *   Looks type up and returns pointer to corresponding N_typedef node if
@@ -1790,8 +1794,8 @@ ComputeNeutralElem (prf prf_fun, types *neutral_type)
 
     DBUG_ENTER ("ComputeNeutralElem");
 
-    GET_LENGTH (length, neutral_type);
-    GET_BASIC_SIMPLETYPE (stype, neutral_type);
+    length = GetTypesLength (neutral_type);
+    stype = GetSimpletype (neutral_type);
 
     switch (prf_fun) {
     case F_add:
