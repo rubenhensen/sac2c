@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.24  1995/10/18 16:48:19  cg
+ * Revision 1.25  1995/10/24 13:14:30  cg
+ *  Now, all file names in error messages are written with "
+ *
+ * Revision 1.24  1995/10/18  16:48:19  cg
  * converted to new error macros.
  * improved error messages.
  *
@@ -294,7 +297,7 @@ GenMod (char *name)
     yyin = fopen (FindFile (MODDEC_PATH, buffer), "r");
 
     if (yyin == NULL) {
-        SYSERROR (("Unable to open file '%s`", buffer));
+        SYSERROR (("Unable to open file \"%s\"", buffer));
     }
 
     linenum = 1;
@@ -303,7 +306,7 @@ GenMod (char *name)
 
     tmp->moddec = decl_tree;
     if (strcmp (decl_tree->info.fun_name.id, name) != 0)
-        SYSERROR (("File '%s` does not provide module/class '%s`,\n\t"
+        SYSERROR (("File \"%s\" does not provide module/class '%s`,\n\t"
                    "but module/class '%s`",
                    buffer, name, decl_tree->info.fun_name.id));
 
@@ -656,7 +659,7 @@ AppendModnameToSymbol (node *symbol, char *modname)
 
                 if (mods != NULL)
                     if (mods2 != NULL) {
-                        ERROR (symbol->lineno, ("Implicit type '%s:%s` and\n\t"
+                        ERROR (symbol->lineno, ("Implicit type '%s:%s` and "
                                                 "explicit type '%s:%s` available",
                                                 mods->mod->name, types->name,
                                                 mods2->mod->name, types->name));
@@ -1630,7 +1633,7 @@ GenLinkerList ()
             strcat (list, " ");
             strcat (list, file);
         } else {
-            SYSERROR (("Unable to find file '%s`", buffer));
+            SYSERROR (("Unable to find file \"%s\"", buffer));
         }
         linklist = linklist->next;
     }
