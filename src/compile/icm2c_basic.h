@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2004/11/24 17:40:59  jhb
+ * changend outfile and indent to global
+ *
  * Revision 3.21  2004/11/21 22:04:36  ktr
  * Ismop SacDevCamp 04
  *
@@ -77,12 +80,12 @@ extern int print_comment; /* bool */
 #define ASSURE_TYPE_ASS(cond_expr, msg_expr)                                             \
     INDENT;                                                                              \
     ASSURE_TYPE_EXPR (cond_expr, msg_expr);                                              \
-    fprintf (outfile, ";\n")
+    fprintf (global.outfile, ";\n")
 
 #define ASSURE_TYPE_EXPR(cond_expr, msg_expr)                                            \
-    fprintf (outfile, "SAC_ASSURE_TYPE( (");                                             \
-    cond_expr fprintf (outfile, "), (\"");                                               \
-    msg_expr fprintf (outfile, "\"))")
+    fprintf (global.outfile, "SAC_ASSURE_TYPE( (");                                      \
+    cond_expr fprintf (global.outfile, "), (\"");                                        \
+    msg_expr fprintf (global.outfile, "\"))")
 
 #define BLOCK(ass)                                                                       \
     INDENT;                                                                              \
@@ -95,72 +98,74 @@ extern int print_comment; /* bool */
 #define BLOCK__NOINDENT(ass) BLOCK_VARDECS__NOINDENT (, ass)
 
 #define BLOCK_VARDECS__NOINDENT(vardecs, ass)                                            \
-    fprintf (outfile, "{ ");                                                             \
-    vardecs fprintf (outfile, "\n");                                                     \
-    indent++;                                                                            \
-    ass indent--;                                                                        \
+    fprintf (global.outfile, "{ ");                                                      \
+    vardecs fprintf (global.outfile, "\n");                                              \
+    global.indent++;                                                                     \
+    ass global.indent--;                                                                 \
     INDENT;                                                                              \
-    fprintf (outfile, "}\n")
+    fprintf (global.outfile, "}\n")
 
 #define FOR_LOOP(init, cond, post, ass)                                                  \
     INDENT;                                                                              \
-    fprintf (outfile, "for (");                                                          \
-    init fprintf (outfile, "; ");                                                        \
-    cond fprintf (outfile, "; ");                                                        \
-    post fprintf (outfile, ") ");                                                        \
+    fprintf (global.outfile, "for (");                                                   \
+    init fprintf (global.outfile, "; ");                                                 \
+    cond fprintf (global.outfile, "; ");                                                 \
+    post fprintf (global.outfile, ") ");                                                 \
     BLOCK__NOINDENT (ass)
 
 #define FOR_LOOP_VARDECS(vardecs, init, cond, post, ass)                                 \
     BLOCK_VARDECS (vardecs, FOR_LOOP (init, cond, post, ass);)
 
 #define FOR_LOOP_INC(idx_var, start, stop, ass)                                          \
-    FOR_LOOP (idx_var fprintf (outfile, " = "); start, idx_var fprintf (outfile, " < "); \
-              stop, idx_var fprintf (outfile, "++");, ass)
+    FOR_LOOP (idx_var fprintf (global.outfile, " = ");                                   \
+              start, idx_var fprintf (global.outfile, " < ");                            \
+              stop, idx_var fprintf (global.outfile, "++");, ass)
 
 #define FOR_LOOP_INC_VARDEC(idx_var, start, stop, ass)                                   \
-    BLOCK_VARDECS (fprintf (outfile, "int "); idx_var fprintf (outfile, ";");            \
+    BLOCK_VARDECS (fprintf (global.outfile, "int ");                                     \
+                   idx_var fprintf (global.outfile, ";");                                \
                    , FOR_LOOP_INC (idx_var, start, stop, ass);)
 
 #define COND1(cond, ass)                                                                 \
     INDENT;                                                                              \
-    fprintf (outfile, "if (");                                                           \
-    cond fprintf (outfile, ") ");                                                        \
+    fprintf (global.outfile, "if (");                                                    \
+    cond fprintf (global.outfile, ") ");                                                 \
     BLOCK__NOINDENT (ass)
 
 #define COND2(cond, then_ass, else_ass)                                                  \
     INDENT;                                                                              \
-    fprintf (outfile, "if (");                                                           \
-    cond fprintf (outfile, ") ");                                                        \
+    fprintf (global.outfile, "if (");                                                    \
+    cond fprintf (global.outfile, ") ");                                                 \
     BLOCK__NOINDENT (then_ass);                                                          \
     INDENT;                                                                              \
-    fprintf (outfile, "else ");                                                          \
+    fprintf (global.outfile, "else ");                                                   \
     BLOCK__NOINDENT (else_ass)
 
 #define SET_SIZE(to_NT, set_expr)                                                        \
     INDENT;                                                                              \
-    fprintf (outfile, "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_MIRROR_SIZE( %s) = ", to_NT,   \
-             to_NT);                                                                     \
-    set_expr fprintf (outfile, ";\n");                                                   \
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_MIRROR_SIZE( %s) >= 0", to_NT);         \
-                     , fprintf (outfile, "Array with size <0 found!"););
+    fprintf (global.outfile,                                                             \
+             "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_MIRROR_SIZE( %s) = ", to_NT, to_NT);    \
+    set_expr fprintf (global.outfile, ";\n");                                            \
+    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_MIRROR_SIZE( %s) >= 0", to_NT);  \
+                     , fprintf (global.outfile, "Array with size <0 found!"););
 
 #define SET_SHAPE_AUD(to_NT, idx_expr, set_expr)                                         \
     INDENT;                                                                              \
-    fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, ", to_NT);                               \
-    idx_expr fprintf (outfile, ") = ");                                                  \
-    set_expr fprintf (outfile, ";\n")
+    fprintf (global.outfile, "SAC_ND_A_DESC_SHAPE( %s, ", to_NT);                        \
+    idx_expr fprintf (global.outfile, ") = ");                                           \
+    set_expr fprintf (global.outfile, ";\n")
 
 #define SET_SHAPE_AUD__NUM(to_NT, idx_num, set_expr)                                     \
     INDENT;                                                                              \
-    fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_NT, idx_num);                \
-    set_expr fprintf (outfile, ";\n")
+    fprintf (global.outfile, "SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_NT, idx_num);         \
+    set_expr fprintf (global.outfile, ";\n")
 
 #define SET_SHAPE_AKD(to_NT, idx_num, set_expr)                                          \
     INDENT;                                                                              \
-    fprintf (outfile, "SAC_ND_A_MIRROR_SHAPE( %s, %d) = \n", to_NT, idx_num);            \
+    fprintf (global.outfile, "SAC_ND_A_MIRROR_SHAPE( %s, %d) = \n", to_NT, idx_num);     \
     INDENT;                                                                              \
-    fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_NT, idx_num);                \
-    set_expr fprintf (outfile, ";\n")
+    fprintf (global.outfile, "SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_NT, idx_num);         \
+    set_expr fprintf (global.outfile, ";\n")
 
 #define SET_SHAPES_AUD(to_NT, idx_var, idx_start_expr, idx_stop_expr, prolog_ass,        \
                        set_expr)                                                         \
