@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.66  1998/04/30 13:26:22  dkr
+ * added support for ST_spmdfun
+ *
  * Revision 1.65  1998/04/29 18:25:14  dkr
  * include missing header-file
  *
@@ -689,7 +692,7 @@ PRECFundef (node *arg_node, node *arg_info)
         FUNDEF_BODY (arg_node) = InsertObjInits (FUNDEF_BODY (arg_node),
                                                  MODUL_OBJS (INFO_PREC_MODUL (arg_info)));
     } else {
-        if (FUNDEF_MOD (arg_node) == NULL) {
+        if ((FUNDEF_MOD (arg_node) == NULL) && (FUNDEF_STATUS (arg_node) != ST_spmdfun)) {
             FUNDEF_STATUS (arg_node) = ST_Cfun;
         }
 
