@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.101  1996/01/02 15:52:59  cg
+ * Revision 1.102  1996/01/05 12:32:12  cg
+ * Now, function WriteOpen is used to open c-file
+ *
+ * Revision 1.101  1996/01/02  15:52:59  cg
  * function Print now opens outfile itself.
  * If compilation process is interrupted (break parameter), then the
  * resulting program is written to stdout, otherwise to the file
@@ -333,7 +336,7 @@
 #include "convert.h"
 #include "optimize.h"
 #include "trace.h"
-
+#include "filemgr.h"
 #include "globals.h"
 
 int indent;
@@ -1501,10 +1504,8 @@ Print (node *arg_node)
         outfile = stdout;
         fprintf (outfile, "\n-----------------------------------------------\n");
     } else {
-        outfile = fopen (cfilename, "w");
-        if (outfile == NULL) {
-            SYSABORT (("Unable to open file \"%s\" for writing", cfilename));
-        }
+        outfile = WriteOpen ("%s%s", targetdir, cfilename);
+        NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
     }
 
     if (show_icm == 0) {
