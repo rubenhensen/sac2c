@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.74  1995/06/28 15:54:22  hw
+ * Revision 1.75  1995/06/30 12:00:30  hw
+ * changed PrintPrf
+ *  -  renamed F_trunc with F_ftoi
+ *  - added F_itof, F_ftoi_A, F_itof_A & F_itof
+ *
+ * Revision 1.74  1995/06/28  15:54:22  hw
  * changed PrintPrf( trunc & idx_psi added)
  *
  * Revision 1.73  1995/06/19  16:27:41  asi
@@ -588,8 +593,10 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_dim:
     case F_rotate:
     case F_not:
-    case F_trunc:
-    case F_trunc_A:
+    case F_ftoi:
+    case F_ftoi_A:
+    case F_itof:
+    case F_itof_A:
     case F_idx_psi: {
         /* primitive functions that are printed as function application */
         fprintf (outfile, "%s( ", prf_string[arg_node->info.prf]);
