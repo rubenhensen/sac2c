@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/05/26 14:22:26  asi
+ * Revision 1.2  1995/06/14 13:31:23  asi
+ * added Unroll, UNRdo, UNRwhile and UNRassign
+ *
+ * Revision 1.1  1995/05/26  14:22:26  asi
  * Initial revision
  *
  *
@@ -17,6 +20,7 @@
 #include "traverse.h"
 
 #include "optimize.h"
+#include "ConstantFolding.h"
 #include "Unroll.h"
 
 /*
@@ -35,20 +39,38 @@
 node *
 Unroll (node *arg_node, node *info_node)
 {
+    funptr *tmp_tab;
+
     DBUG_ENTER ("Unroll");
+    tmp_tab = act_tab;
     act_tab = unroll_tab;
-    info_node = MakeNode (N_info);
 
     arg_node = Trav (arg_node, info_node);
 
-    FREE (info_node);
+    act_tab = tmp_tab;
     DBUG_RETURN (arg_node);
 }
 
 node *
-UNRfundef (node *arg_node, node *info_node)
+UNRdo (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("UNRfundef");
+    DBUG_ENTER ("UNRdo");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+UNRwhile (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("UNRwhile");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+UNRassign (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("UNRassign");
 
     DBUG_RETURN (arg_node);
 }
