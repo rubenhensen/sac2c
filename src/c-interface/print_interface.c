@@ -165,6 +165,7 @@ PIHfundef (node *arg_node, node *arg_info)
         fprintf (outfile, " * ");
 
         /* first print accepted arguments */
+        INFO_PIH_COUNTER (arg_info) = 0;
         if (FUNDEF_ARGS (arg_node) != NULL) {
             FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
         } else {
@@ -173,6 +174,7 @@ PIHfundef (node *arg_node, node *arg_info)
 
         fprintf (outfile, " -> ");
 
+        INFO_PIH_COUNTER (arg_info) = 0;
         /* then print resulting types */
         if (FUNDEF_TYPES (arg_node) != NULL) {
             FUNDEF_TYPES (arg_node) = TravTH (FUNDEF_TYPES (arg_node), arg_info);
@@ -237,21 +239,32 @@ static types *
 PIHtypes (types *arg_type, node *arg_info)
 {
     char *typestring;
+
     DBUG_ENTER ("PIHtypes");
 
-    if (INFO_PIH_FLAG (arg_info) == PIH_PRINT_COMMENT) {
-        /* print resulting types */
+    INFO_PIH_COUNTER (arg_info) = INFO_PIH_COUNTER (arg_info) + 1;
 
-        typestring = Type2String (arg_type, 0);
+    switch (INFO_PIH_FLAG (arg_info)) {
+    case PIH_PRINT_COMMENT:
+        typestring = Type2String (arg_type, 0 | 4);
 
-        fprintf (outfile, "%s", typestring);
+        fprintf (outfile, "%s out%d", typestring, INFO_PIH_COUNTER (arg_info));
         FREE (typestring);
 
         if (TYPES_NEXT (arg_type) != NULL) {
             fprintf (outfile, ", ");
-            TYPES_NEXT (arg_type) = TravTH (TYPES_NEXT (arg_type), arg_info);
         }
+        break;
+
+    default:
+        SYSERROR (("undefined case in PIWtypes!\n"));
     }
+
+    /* traverse to next returntype */
+    if (TYPES_NEXT (arg_type) != NULL) {
+        TYPES_NEXT (arg_type) = TravTH (TYPES_NEXT (arg_type), arg_info);
+    }
+
     DBUG_RETURN (arg_type);
 }
 
@@ -564,12 +577,15 @@ PIWtypes (types *arg_type, node *arg_info)
 
         /* write shape data*/
         for (i = 0; i < TYPES_DIM (arg_type); i++) {
-            fprintf (outfile, "%d", TYPES_SHAPE (arg_type, i));
-            if (i < (TYPES_DIM (arg_type)) - 1) {
-                fprintf (outfile, ", ");
-            }
+            fprintf (outfile, ", %d", TYPES_SHAPE (arg_type, i));
         }
         fprintf (outfile, ");\n");
+
+        /* for simple types, alloc data memory */
+        if (TYPES_DIM (arg_type) == 0) {
+            fprintf (outfile, "  SAC_CI_INIT_SIMPLE_RESULT(out%d, %d );\n",
+                     INFO_PIW_COUNTER (arg_info), TYPES_BASETYPE (arg_type));
+        }
         break;
 
     case PIW_CALL_RESULTS:
@@ -609,9 +625,8 @@ PIWtypes (types *arg_type, node *arg_info)
         break;
 
     case PIW_REFCOUNT_RESULTS:
-        /* create macro, setting result refcount to 1 */
-        fprintf (outfile, "  SAC_SETREFCOUNT(out%d , 1 );\n",
-                 INFO_PIW_COUNTER (arg_info));
+        /* init refcounts with 1 */
+        fprintf (outfile, "  SAC_SETLOCALRC(out%d , 1 );\n", INFO_PIW_COUNTER (arg_info));
         break;
 
     default:
