@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.109  1998/02/11 16:39:46  dkr
+ * now the type cmp_types is used (CMP_equal, CmpTypes())
+ *
  * Revision 1.108  1998/02/11 16:30:36  dkr
  * removed NEWTREE, access-macros used
  *
@@ -1149,7 +1152,7 @@ MergeIcmsFundef (node *out_icm, node *in_icm, types *out_type, types *in_type, i
         ABORT_ON_ERROR;
     }
 
-    if (1 == CmpTypes (out_type, in_type)) {
+    if (CMP_equal == CmpTypes (out_type, in_type)) {
         if (IsBoxed (out_type)) {
             ID_NAME (EXPRS_EXPR (out_icm)) = "upd_bx";
         } else {
