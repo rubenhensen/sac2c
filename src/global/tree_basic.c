@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.64  1998/04/25 12:36:03  dkr
+ * NCODE_COPY is now initialized in MakeNCode
+ *
  * Revision 1.63  1998/04/24 01:14:59  dkr
  * added N_sync
  *
@@ -1562,9 +1565,10 @@ MakeNCode (node *block, node *expr)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_Ncode;
-    NCODE_USED (tmp) = 0;
     NCODE_CBLOCK (tmp) = block;
     NCODE_CEXPR (tmp) = expr;
+    NCODE_USED (tmp) = 0;
+    NCODE_COPY (tmp) = NULL;
 
     DBUG_RETURN (tmp);
 }
