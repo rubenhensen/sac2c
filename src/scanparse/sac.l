@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/06 12:48:03  sbs
+ * ugly hack for avoiding warning that yy_cp or yy_bp might be used un-initialized.
+ *
  * Revision 3.2  2000/11/24 11:58:30  sbs
  * YY_NO_UNPUT defined for avoiding warning message ....
  *
@@ -178,6 +181,12 @@ int charpos = 0;
 
 %%
 %{
+
+#ifdef SAC_FOR_SOLARIS_SPARC
+/* the next two lines are a very dirty hack for avoiding a gcc-warning 8-(( */
+  yy_cp = NULL;
+  yy_bp = NULL;
+#endif
 
 /* the next few lines allow for smuggling in a start_token! */
      if (start_token) {
