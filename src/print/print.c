@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.69  1995/06/06 14:04:53  cg
+ * Revision 1.70  1995/06/09 13:31:42  asi
+ * inline will be printed now
+ *
+ * Revision 1.69  1995/06/06  14:04:53  cg
  * constants and objects will be printed now.
  *
  * Revision 1.68  1995/06/06  07:53:11  sbs
@@ -529,6 +532,8 @@ PrintFundef (node *arg_node, node *arg_info)
         fprintf (outfile, "extern ");
     if (0 == print_icm) {
         fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
+        if (0 != arg_node->flag)
+            fprintf (outfile, "inline ");
         if (arg_node->info.types->id_mod != NULL)
             fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.types->id_mod);
         fprintf (outfile, "%s(", arg_node->info.types->id);
