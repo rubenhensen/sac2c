@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.99  2004/10/22 14:12:00  ktr
+ * added emre_tab
+ *
  * Revision 3.98  2004/10/22 12:09:01  sah
  * ans tab is hidden in old ast mode now
  *
@@ -436,6 +439,7 @@
 #include "filterrc.h"
 #include "aliasanalysis.h"
 #include "staticreuse.h"
+#include "reuseelimination.h"
 
 #include "traverse.h"
 
@@ -2005,15 +2009,15 @@ static funtab ans_tab_rec = {{
 funtab *ans_tab = &ans_tab_rec;
 
 /*
- *  (137) unused_tab17
+ *  (137) emre_tab
  */
-static funtab unused_tab17_rec = {{
-#define NIFunused_17(it_unused_17) it_unused_17
+static funtab emre_tab_rec = {{
+#define NIFemre(it_emre) it_emre
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab17 = &unused_tab17_rec;
+                              },
+                              NULL,
+                              NULL};
+funtab *emre_tab = &emre_tab_rec;
 
 /*
  *  (138) unused_tab18

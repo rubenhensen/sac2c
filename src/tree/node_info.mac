@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.221  2004/10/22 14:12:23  ktr
+ * added emre_tab
+ *
  * Revision 3.220  2004/10/22 12:13:12  ktr
  * Removed EMRCOfundef
  *
@@ -484,8 +487,8 @@
  *   asmra_tab       tem_tab         pem_tab         emalloc_tab
  *   ddepend_tab     tdepend_tab     wlsc_tab        wlsb_tab
  *   wlsw_tab        emrco_tab       emfrc_tab       emaa_tab
- *   exp_tab         rdepend_tab     emsr_tab        unused_tab16
- *   unused_tab17    unused_tab18    unused_tab19    unused_tab20
+ *   exp_tab         rdepend_tab     emsr_tab        ans_tab
+ *   emre_tab        unused_tab18    unused_tab19    unused_tab20
  *
  *   number_of_sons
  *
@@ -977,8 +980,8 @@
 #define NIFans(it_ans)
 #endif
 
-#ifndef NIFunused_17
-#define NIFunused_17(it_unused_17)
+#ifndef NIFemre
+#define NIFemre(it_emre)
 #endif
 #ifndef NIFunused_18
 #define NIFunused_18(it_unused_18)
@@ -1031,8 +1034,8 @@
   it_cvp, it_wlfs,                                                                                     \
                                                                                                        \
   it_asmra, it_tem, it_pem, it_emalloc, it_ddepend, it_tdepend, it_wlsc, it_wlsb,                      \
-  it_wlsw, it_emrco, it_emfrc, it_emaa, it_exp, it_rdepend, it_emsr, it_ans,                           \
-  it_unused_17, it_unused_18, it_unused_19, it_unused_20,                                              \
+  it_wlsw, it_emrco, it_emfrc, it_emaa, it_exp, it_rdepend, it_emsr, it_ans, it_emre,                  \
+  it_unused_18, it_unused_19, it_unused_20,                                                            \
                                                                                                        \
   nnode)                                                                                               \
                                                                                                        \
@@ -1116,8 +1119,8 @@
                                                                             it_rdepend)                \
                                                                             NIFemsr (it_emsr) NIFans ( \
                                                                               it_ans)                  \
-                                                                              NIFunused_17 (           \
-                                                                                it_unused_17)          \
+                                                                              NIFemre (                \
+                                                                                it_emre)               \
                                                                                 NIFunused_18 (         \
                                                                                   it_unused_18)        \
                                                                                   NIFunused_19 (       \
@@ -1892,7 +1895,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
        TravSons, TEMassign, PEMassign, EMALassign, DDEPENDassign, TDEPENDassign, TravSons,
        TravSons, TravSons, EMRCOassign, EMFRCassign, EMAAassign, TravSons, RDEPENDassign,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 2),
+       TravSons, TravSons, EMREassign, TravSons, TravSons, TravSons, 2),
 
   NIF (N_annotate, "N_annotate", TravSons, TravSons, PrintAnnotate, TravSons, SBTAnnotate,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -2060,7 +2063,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
        TravSons, TEMlet, TravSons, EMALlet, TravSons, TravSons, TravSons, TravSons,
        WLSWlet, EMRCOlet, TravSons, EMAAlet, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 1),
+       EMRElet, TravSons, TravSons, TravSons, 1),
 
   NIF (N_prf, "N_prf", TravSons, FltnPrf, PrintPrf, TravSons, SBTPrf, TravSons, TravSons,
        FreePrf, SPMDEMMprf, TravSons, EMRCprf, RIprf, DupPrf, TravSons, SETPrf, TravSons,
@@ -2088,7 +2091,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
        TravSons, TEMprf, TravNone, EMALprf, DDEPENDprf, TravSons, TravSons, TravSons,
        TravSons, EMRCOprf, EMFRCprf, EMAAprf, TravSons, RDEPENDprf, EMSRprf, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 1),
+       EMREprf, TravSons, TravSons, TravSons, 1),
 
   NIF (N_ap, "N_ap", TravSons, FltnAp, PrintAp, TravSons, SBTAp, TravSons, TravSons,
        FreeAp, TravNone, TravSons, EMRCap, TravSons, DupAp, TravSons, SETAp, TravSons,
@@ -2541,7 +2544,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
        TravSons, TravSons, TravSons, EMALwithop, TravSons, TravSons, WLSCwithop,
        WLSBwithop, TravSons, EMRCOwithop, EMFRCwithop, EMAAwithop, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 4),
+       TravSons, TravSons, EMREwithop, TravSons, TravSons, TravSons, 4),
 
   NIF (N_ncode, "N_ncode", TravSons, FltnNcode, PrintNcode, TCNcode, SBTNCode, TravSons,
        TravSons, FreeNCode, TravSons, TravSons, EMRCNcode, RIcode, DupNcode, TravSons,
@@ -2686,7 +2689,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
        TravSons, TravSons, TravSons, TravNone, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravNone, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 3),
+       EMREblock, TravSons, TravSons, TravSons, 3),
 
   NIF (N_WLublock, "N_WLublock", TravSons, TravSons, PrintWLxblock, TravSons, SBTWLublock,
        TravSons, TravSons, FreeWLublock, TravSons, TravSons, TravSons, TravSons,
@@ -3563,7 +3566,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 #undef NIFemsr
 #undef NIFans
 
-#undef NIFunused_17
+#undef NIFemre
 #undef NIFunused_18
 #undef NIFunused_19
 #undef NIFunused_20

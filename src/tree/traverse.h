@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2004/10/22 14:12:00  ktr
+ * added emre_tab
+ *
  * Revision 3.74  2004/10/22 09:01:55  sah
  * added annotatenamespace traversal.
  *
@@ -472,7 +475,7 @@ extern funtab *exp_tab;
 extern funtab *rdepend_tab;
 extern funtab *emsr_tab;
 extern funtab *ans_tab;
-extern funtab *unused_tab17;
+extern funtab *emre_tab;
 extern funtab *unused_tab18;
 extern funtab *unused_tab19;
 extern funtab *unused_tab20;
