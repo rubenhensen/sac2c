@@ -18,7 +18,6 @@ options.h
 phase_info.mac
 resource.c
 resource.h
-status_info.mac
 usage.c
 usage.h
 config.h.in
