@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2001/06/20 12:24:14  ben
+ * some tracing output added for Selfscheduling
+ *
  * Revision 3.29  2001/06/19 12:32:34  ben
  * SCHEDULER_SET_TASKS modified with parameter max_tasks
  *
@@ -1006,11 +1009,13 @@ typedef union {
 #define SAC_MT_SCHEDULER_Self_FIRST_TASK_STATIC(sched_id, taskid)                        \
     {                                                                                    \
         taskid = SAC_MT_MYTHREAD ();                                                     \
+        SAC_TR_MT_PRINT (("SAC_MT_SCHEDULER_Self_FIRST_TASK_STATIC"));                   \
     }
 
 #define SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC(sched_id, taskid)                       \
     {                                                                                    \
-        SAC_MT_SCHEDULER_Self_NEXT_TASK (sched_id, , taskid);                            \
+        SAC_MT_SCHEDULER_Self_NEXT_TASK (sched_id, taskid);                              \
+        SAC_TR_MT_PRINT (("SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC"));                  \
     }
 
 #define SAC_MT_SCHEDULER_Self_NEXT_TASK(sched_id, taskid)                                \
