@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/08/13 10:27:48  skt
+ * comments, comments, comments...
+ *
  * Revision 1.5  2004/08/12 12:39:28  skt
  * killed a bug in CDFGFirstIsWithinSecond
  * moved PrintDataflowgraph and PrintDataflownode to print
@@ -47,10 +50,7 @@ extern node *CDFGid (node *arg_node, info *arg_info);
 
 node *CDFGwithid (node *arg_node, info *arg_info);
 
-/* Some functions to create, administrate and delete dataflowgraphs */
-
-node *CDFGUpdateDependencies (node *dfn_assign, node *current_graph, node *outer_graph,
-                              node *current_node, node *outer_node);
+node *CDFGUpdateDependency (node *dfn_assign, node *outer_graph, node *current_node);
 
 node *CDFGFindAssignCorrespondingNode (node *graph, node *dfn_assign);
 
@@ -60,6 +60,6 @@ void CDFGUpdateDataflowgraph (node *graph, node *node_one, node *two);
 
 bool CDFGFirstIsWithinSecond (node *node_one, node *node_two);
 
-char *CDFGSetName (node *assign);
+char *CDFGGetName (node *assign);
 
 #endif /* CREATE_DATAFLOWGRAPH_H */

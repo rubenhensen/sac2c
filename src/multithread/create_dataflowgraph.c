@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/08/13 10:27:48  skt
+ * comments, comments, comments...
+ *
  * Revision 1.6  2004/08/12 12:39:28  skt
  * killed a bug in CDFGFirstIsWithinSecond
  * moved PrintDataflowgraph and PrintDataflownode to print
@@ -48,7 +51,6 @@
 #define NEW_INFO
 
 #include "dbug.h"
-
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -64,8 +66,6 @@ struct INFO {
     node *currentdfg;
     node *outermostdfg;
     node *currentdfn;
-    node *outermostdfn;
-    int withdeep;
 };
 
 /*
@@ -77,8 +77,6 @@ struct INFO {
  *                              of the block which belongs direct to the
  *                              function)
  *   node*      CURRENTDFN     (the dataflownode in CURRENTDFG, belonging to
- *                              the current assignment)
- *   node*      OUTERMOSTDFN   (the dataflownode in OUTERMOSTDFG, belonging to
  *                              the current assignment)
  *   a little bit confused? It doesn't matter - here's an example:
  *
@@ -103,13 +101,11 @@ struct INFO {
  *     CURRENTDFG points to dfg_then
  *     OUTERMOSTDFG points to dfg_tutu
  *     CURRENTDFN points to result_then/sink
- *     OUTERMOSTDFN points to conditional
  *
  */
 #define INFO_CDFG_CURRENTDFG(n) (n->currentdfg)
 #define INFO_CDFG_OUTERMOSTDFG(n) (n->outermostdfg)
 #define INFO_CDFG_CURRENTDFN(n) (n->currentdfn)
-#define INFO_CDFG_OUTERMOSTDFN(n) (n->outermostdfn)
 
 /*
  * INFO functions
@@ -126,7 +122,6 @@ MakeInfo ()
     INFO_CDFG_CURRENTDFG (result) = NULL;
     INFO_CDFG_OUTERMOSTDFG (result) = NULL;
     INFO_CDFG_CURRENTDFN (result) = NULL;
-    INFO_CDFG_OUTERMOSTDFN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -141,15 +136,16 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/******************************************************************************
+/** <!--********************************************************************->>
  *
- * function:
- *   node *CreateDataflowgraph(node *arg_node)
+ * @fn  node *CreateDataflowgraph(node *arg_node)
  *
- * description:
- *   Inits the traversal for this phase
+ * @brief inits the traversal for this phase
  *
- ******************************************************************************/
+ * @param arg_node
+ * @return
+ *
+ *****************************************************************************/
 node *
 CreateDataflowgraph (node *arg_node)
 {
@@ -181,7 +177,8 @@ CreateDataflowgraph (node *arg_node)
  *
  * @fn node *CDFGblock(node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief builds the dataflowgraph for this block and traverses into its
+ *        instructions to enable dataflowgraph-building in their subblocks
  *
  * @param arg_node
  * @param arg_info
@@ -206,8 +203,9 @@ CDFGblock (node *arg_node, info *arg_info)
      * otherwise the current dataflownode gets a new dataflowgraph*/
     if (old_dataflowgraph == NULL) {
         INFO_CDFG_OUTERMOSTDFG (arg_info) = INFO_CDFG_CURRENTDFG (arg_info);
-    } else {
-        /* so we've got a "home dataflownode" */
+    }
+    /* so we've got a "home dataflownode" */
+    else {
         DATAFLOWGRAPH_MYHOMEDFN (BLOCK_DATAFLOWGRAPH (arg_node))
           = INFO_CDFG_CURRENTDFN (arg_info);
 
@@ -228,8 +226,12 @@ CDFGblock (node *arg_node, info *arg_info)
     BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
     DBUG_PRINT ("CDFG", ("trav from instruction(s)"));
 
+    /* As a fact of beeing very complex, additional output will only take place
+     * if the compilation breaks with the cdfg-specifier */
     if ((break_after == PH_multithread) && (strcmp ("cdfg", break_specifier) == 0)) {
+        fprintf (stdout, "A N_block...\n");
         PrintNode (arg_node);
+        fprintf (stdout, "...and its dataflowgraph:\n");
         PrintNode (INFO_CDFG_CURRENTDFG (arg_info));
     }
 
@@ -243,7 +245,9 @@ CDFGblock (node *arg_node, info *arg_info)
  *
  * @fn node *CDFGassign(node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief if arg_node isn't the last assignment of its block, CDFGassign builds
+ *        a new dataflownode for this assignment;
+ *        updates the INFO_CDFG_CURRENTDFN
  *
  * @param arg_node
  * @param arg_info
@@ -261,15 +265,15 @@ CDFGassign (node *arg_node, info *arg_info)
     /* push info... */
     old_dataflownode = INFO_CDFG_CURRENTDFN (arg_info);
 
-    /* only assignments on the top-level will be represented in the dataflowgraph
-     */
-    /* Are we the last mohican? */
+    /* Are we the last mohican?
+     * no => let's build a new dataflownode */
     if (ASSIGN_NEXT (arg_node) != NULL) {
         INFO_CDFG_CURRENTDFN (arg_info)
           = MakeDataflownode (INFO_CDFG_CURRENTDFG (arg_info), arg_node,
-                              CDFGSetName (arg_node));
+                              CDFGGetName (arg_node));
     }
-    /* yes => the coresponding dataflownode still exists as DF__sink */
+    /* yes => the coresponding dataflownode still exists as DF__sink
+     * (it had been builded by the first call of MakeDataflowgraph) */
     else {
         INFO_CDFG_CURRENTDFN (arg_info)
           = DATAFLOWGRAPH_SINK (INFO_CDFG_CURRENTDFG (arg_info));
@@ -277,16 +281,12 @@ CDFGassign (node *arg_node, info *arg_info)
         DATAFLOWNODE_EXECMODE (INFO_CDFG_CURRENTDFN (arg_info))
           = ASSIGN_EXECMODE (arg_node);
     }
-    /* Do we have to update the outermost dataflownode? */
-    if (INFO_CDFG_CURRENTDFG (arg_info) == INFO_CDFG_OUTERMOSTDFG (arg_info)) {
-        INFO_CDFG_OUTERMOSTDFN (arg_info) = INFO_CDFG_CURRENTDFN (arg_info);
-    }
 
+    /* continue traversal */
     DBUG_PRINT ("CDFG", ("trav into instruction"));
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     DBUG_PRINT ("CDFG", ("trav from instruction"));
 
-    /* continue traversal */
     if (ASSIGN_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("CDFG", ("trav into next"));
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
@@ -303,7 +303,9 @@ CDFGassign (node *arg_node, info *arg_info)
  *
  * @fn node *CDFGid(node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief updates the dependenciy of the INDO_CDFG_CURRENTDFN, concerning
+ *        the N_id (arg_node) and its defining assignment
+ *        (in AVIS_SSAASSIGN(ID_AVIS(arg_node)))
  *
  * @param arg_node
  * @param arg_info
@@ -317,20 +319,14 @@ CDFGid (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_id), "node is not a N_id");
 
-    /*#if CDFG_DEBUG*/
-    /*fprintf(stdout,"act. id = %s\n",ID_NAME(arg_node));*/
-    /* if (AVIS_SSAASSIGN(ID_AVIS(arg_node)) == NULL)
-       fprintf(stdout,"ssaassign is NULL!\n");*/
-    /* fprintf(stdout,"outermost DFG:\n");
-       fprintf(stdout,"\n");*/
-    /*#endif*/
+#if CDFG_DEBUG
+    fprintf (stdout, "act. id = %s\n", ID_NAME (arg_node));
+#endif
 
     INFO_CDFG_OUTERMOSTDFG (arg_info)
-      = CDFGUpdateDependencies (AVIS_SSAASSIGN (ID_AVIS (arg_node)),
-                                INFO_CDFG_CURRENTDFG (arg_info),
-                                INFO_CDFG_OUTERMOSTDFG (arg_info),
-                                INFO_CDFG_CURRENTDFN (arg_info),
-                                INFO_CDFG_OUTERMOSTDFN (arg_info));
+      = CDFGUpdateDependency (AVIS_SSAASSIGN (ID_AVIS (arg_node)),
+                              INFO_CDFG_OUTERMOSTDFG (arg_info),
+                              INFO_CDFG_CURRENTDFN (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -339,7 +335,10 @@ CDFGid (node *arg_node, info *arg_info)
  *
  * @fn node *CDFGwithid(node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief updates the dependency of the INDO_CDFG_CURRENTDFN, concerning
+ *        the N_id (arg_node) and its defining assignment
+ *        (in AVIS_SSAASSIGN(IDS_AVIS(NWITHID_VEC(arg_node))) and in
+ *         AVIS_SSAASSIGN(IDS_AVIS(NWITHID_IDS(arg_node)))) respectively
  *
  * @param arg_node
  * @param arg_info
@@ -354,68 +353,89 @@ CDFGwithid (node *arg_node, info *arg_info)
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_nwithid), "node is not a N_nwithid");
 
     /* handle the with-id vector */
-    iterator = NWITHID_VEC (arg_node);
     INFO_CDFG_OUTERMOSTDFG (arg_info)
-      = CDFGUpdateDependencies (AVIS_SSAASSIGN (IDS_AVIS (NWITHID_VEC (arg_node))),
-                                INFO_CDFG_CURRENTDFG (arg_info),
-                                INFO_CDFG_OUTERMOSTDFG (arg_info),
-                                INFO_CDFG_CURRENTDFN (arg_info),
-                                INFO_CDFG_OUTERMOSTDFN (arg_info));
+      = CDFGUpdateDependency (AVIS_SSAASSIGN (IDS_AVIS (NWITHID_VEC (arg_node))),
+                              INFO_CDFG_OUTERMOSTDFG (arg_info),
+                              INFO_CDFG_CURRENTDFN (arg_info));
 
     /* handle the with-id vector elements */
     iterator = NWITHID_IDS (arg_node);
     while (iterator != NULL) {
         INFO_CDFG_OUTERMOSTDFG (arg_info)
-          = CDFGUpdateDependencies (AVIS_SSAASSIGN (IDS_AVIS (iterator)),
-                                    INFO_CDFG_CURRENTDFG (arg_info),
-                                    INFO_CDFG_OUTERMOSTDFG (arg_info),
-                                    INFO_CDFG_CURRENTDFN (arg_info),
-                                    INFO_CDFG_OUTERMOSTDFN (arg_info));
+          = CDFGUpdateDependency (AVIS_SSAASSIGN (IDS_AVIS (iterator)),
+                                  INFO_CDFG_OUTERMOSTDFG (arg_info),
+                                  INFO_CDFG_CURRENTDFN (arg_info));
         iterator = IDS_NEXT (iterator);
     }
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************->>
+ *
+ * @fn node *CDFGUpdateDependency(node *dfn_assign, node *outer_graph,
+ *                                node *current_node)
+ *
+ * @brief Updates the dependency between the assignment dfn_assign and the
+ *        current dataflownode current_node in the dataflowgraph outer_graph
+ *
+ * @param dfn_assign
+ * @param outer_graph the dataflowgraph of the N_block in top-level
+ *        (i.e. the dataflowgraph, who contains in some deepnees of its
+ *         structure both the current_node and the dataflownode belonging to
+ *         dfn_assign; also outer_graph has no MYHOMEDFN)
+ * @param current_node the dataflownode the traversal is in
+ * @return
+ *
+ *****************************************************************************/
 node *
-CDFGUpdateDependencies (node *dfn_assign, node *current_graph, node *outer_graph,
-                        node *current_node, node *outer_node)
+CDFGUpdateDependency (node *dfn_assign, node *outer_graph, node *current_node)
 {
     node *node_found;
     node *common_graph;
-    DBUG_ENTER ("CDFGUpdateDependencies");
-    DBUG_ASSERT ((NODE_TYPE (current_graph) == N_dataflowgraph),
-                 "CDFGUpdadeDependencies's 2nd parameter is no N_dataflowgraph");
+    DBUG_ENTER ("CDFGUpdateDependency");
     DBUG_ASSERT ((NODE_TYPE (outer_graph) == N_dataflowgraph),
-                 "CDFGUpdadeDependencies's 3rd parameter is no N_dataflowgraph");
+                 "2nd parameter is no N_dataflowgraph");
     DBUG_ASSERT ((NODE_TYPE (current_node) == N_dataflownode),
-                 "CDFGUpdadeDependencies's 4th parameter is no N_dataflownode");
-    DBUG_ASSERT ((NODE_TYPE (outer_node) == N_dataflownode),
-                 "CDFGUpdadeDependencies's 5th parameter is no N_dataflownode");
+                 "3rd parameter is no N_dataflownode");
 
     /* Is there an assignment to depend on?
      * yes -> then let's search for it in the dataflowgraph(s) */
     if (dfn_assign != NULL) {
         DBUG_ASSERT ((NODE_TYPE (dfn_assign) == N_assign),
-                     "CDFGUpdadeDependencies's 1st parameter is no N_assign");
+                     "1st parameter is no N_assign");
 
+        /* first you've to find the dataflownode which assignment is dfn_assign */
         node_found = CDFGFindAssignCorrespondingNode (outer_graph, dfn_assign);
-        /*fprintf(stdout,"Assignment:");
-        PrintNode(dfn_assign);
-        fprintf(stdout,"corresponds to:");
-        PrintNode(DATAFLOWNODE_ASSIGN(node_found));*/
 
         DBUG_ASSERT ((node_found != NULL), "No corresponding node found");
 
+        /* then you've to find the graph which the lowest level, which includes
+         * both nodes */
         common_graph = CDFGLowestCommonLevel (node_found, current_node);
 
         DBUG_ASSERT ((common_graph != NULL), "don't found lowest common level");
 
+        /* finally you've to update the dependency whitin the common_graph;
+         * finding the nodes of the graph's to-level that corresponds to
+         * node_found and current_node is made, too */
         CDFGUpdateDataflowgraph (common_graph, node_found, current_node);
     }
     /* no -> nothing to do */
     DBUG_RETURN (outer_graph);
 }
 
+/** <!--********************************************************************->>
+ *
+ * @fn node *CDFGFindAssignCorrespondingNode(node *graph, node *dfn_assign)
+ *
+ * @brief finds the dataflownode in the graph, which assignment equals
+ *        dfn_assign, and returns the dataflownode
+ *
+ * @param graph
+ * @param dfn_assign
+ * @return the node, somewhere in graph, which has dfn_assign as its assignment
+ *
+ *****************************************************************************/
 node *
 CDFGFindAssignCorrespondingNode (node *graph, node *dfn_assign)
 {
@@ -423,11 +443,9 @@ CDFGFindAssignCorrespondingNode (node *graph, node *dfn_assign)
     nodelist *member_iterator;
     DBUG_ENTER ("CDFGFindAssignCorrespondingNode");
     DBUG_ASSERT ((NODE_TYPE (graph) == N_dataflowgraph),
-                 "FindCorrespondingNode's 1st parameter is no N_dataflowgraph");
-    DBUG_ASSERT ((NODE_TYPE (dfn_assign) == N_assign),
-                 "CDFGFindAssignCorrespondingNode's 2nd parameter is no N_assign");
-    DBUG_ASSERT ((dfn_assign != NULL),
-                 "CDFGFindAssignCorrespondingNode's 2nd parameter is NULL");
+                 "1st parameter is no N_dataflowgraph");
+    DBUG_ASSERT ((dfn_assign != NULL), "2nd parameter is NULL");
+    DBUG_ASSERT ((NODE_TYPE (dfn_assign) == N_assign), "2nd parameter is no N_assign");
 
 #if CDFG_DEBUG
     /*fprintf(stdout,"searching for node which corresponds to");
@@ -437,6 +455,7 @@ CDFGFindAssignCorrespondingNode (node *graph, node *dfn_assign)
     result = NULL;
     member_iterator = DATAFLOWGRAPH_MEMBERS (graph);
     while ((result == NULL) && (member_iterator != NULL)) {
+
         /* Is this node the one? */
         if ((DATAFLOWNODE_ASSIGN (NODELIST_NODE (member_iterator))) == dfn_assign) {
             result = NODELIST_NODE (member_iterator);
@@ -459,12 +478,40 @@ CDFGFindAssignCorrespondingNode (node *graph, node *dfn_assign)
                 }
             }
         } /* else */
+
         member_iterator = NODELIST_NEXT (member_iterator);
-    }
+    } /* while */
 
     DBUG_RETURN (result);
 }
 
+/** <!--********************************************************************->>
+ *
+ * @fn node *CDFGLowestCommonLevel(node *node_one, node *node_two)
+ *
+ * @brief finds the graph, which consists both, node_one and node_two somewhere
+ *        in its structure and which is also the smallest one that matches
+ * <pre> example:
+ *       let node_one be B and node_two be D
+ *
+ *       DFG1: A->B->C
+ *       DFG2: DATAFLOWNODE_DFGTHEN(B): BA->BB->BC->BD
+ *       DFG3: DATAFLOWNODE_DFGTHEN(BA): BAA->BAB->BAC->BAD
+ *       DFG4: DATAFLOWNODE_DFGELSE(BA): BAa->BAb->BAc->BAd
+ *       let node_one be B and node_two be C => return(DFG1)
+ *       let node_one be BA and node_two be C => return(DFG1)
+ *       let node_one be BAA and node_two be C => return(DFG1)
+ *       let node_one be BA and node_two be BAA => return(DFG2)
+ *       let node_one be BA and node_two be BAa => return(DFG2)
+ *       let node_one be BAA and node_two be BAa => return(DFG2)
+ *       let node_one be BAA and node_two be BAC => return(DFG3)
+ *
+ * @param node_one
+ * @param node_two
+ * @return the dataflowgraph who contains both, node_one and node_two, could
+ *         be NULL if no dataflowgraph with this properties exists
+ *
+ *****************************************************************************/
 node *
 CDFGLowestCommonLevel (node *node_one, node *node_two)
 {
@@ -472,23 +519,41 @@ CDFGLowestCommonLevel (node *node_one, node *node_two)
     node *iterator;
     bool found_lcl;
     DBUG_ENTER ("CDFGLowestCommonLevel");
+    DBUG_ASSERT ((NODE_TYPE (node_one) == N_dataflownode),
+                 "1st parameter is no N_dataflownode");
+    DBUG_ASSERT ((NODE_TYPE (node_two) == N_dataflownode),
+                 "2nd parameter is no N_dataflownode");
 
     result = DATAFLOWNODE_GRAPH (node_one);
 
     found_lcl = FALSE;
 
+    /* as long as you haven't found the common graph, iterate over the dataflow-
+       graphs which include node_one */
     while ((found_lcl == FALSE) && (result != NULL)) {
         iterator = DATAFLOWNODE_GRAPH (node_two);
-        while ((found_lcl == FALSE) && (iterator != NULL)) {
 
+        /* as long as you haven't found the common graph, iterate over the data-
+         * flowgraphs which includes node_two */
+        while ((found_lcl == FALSE) && (iterator != NULL)) {
+            /* compare the dataflowgraph, which contains node_two (iterator), with
+             * the dataflowgraph, which contains node_one (result) */
             if (iterator == result) {
                 found_lcl = TRUE;
-            } else if (DATAFLOWGRAPH_MYHOMEDFN (iterator) != NULL) {
+            }
+            /* if the comparision of both dataflowgraph fails, "increment" the
+             * dataflowgraph of node_two (iterator)... */
+            else if (DATAFLOWGRAPH_MYHOMEDFN (iterator) != NULL) {
                 iterator = DATAFLOWNODE_GRAPH (DATAFLOWGRAPH_MYHOMEDFN (iterator));
-            } else {
+            }
+            /* ... as long as this is possible */
+            else {
                 iterator = NULL;
             }
         } /* while */
+
+        /* still found => go the dataflowgraph-level of node_one/result one step
+         * up, is possible; set result to NULL otherwise */
         if (found_lcl == FALSE) {
             if (DATAFLOWGRAPH_MYHOMEDFN (result) != NULL) {
                 result = DATAFLOWNODE_GRAPH (DATAFLOWGRAPH_MYHOMEDFN (result));
@@ -501,6 +566,23 @@ CDFGLowestCommonLevel (node *node_one, node *node_two)
     DBUG_RETURN (result);
 }
 
+/** <!--********************************************************************->>
+ *
+ * @fn void CDFGUpdateDataflowgraph(node *graph, node *node_one,
+ *                                  node *node_two)
+ *
+ * @brief Updates the dependency between node_one and node_two in graph;
+ *        as a fact node_one and node_two needn't to be in the same level
+ *        in this graph, the coresponding nodes of graph-level must be found;
+ *        no dependency will be adde if the corresponding nodes are equal or
+ *        the dependency still exists
+ *
+ * @param graph the common dataflowgraph of node_one and node_two
+ * @param node_one a dataflownode somewhere in graph
+ * @param node_two a dataflownode somewhere in graph
+ * @return the dataflowgraph graph with updated dependency
+ *
+ *****************************************************************************/
 void
 CDFGUpdateDataflowgraph (node *graph, node *node_one, node *node_two)
 {
@@ -508,22 +590,33 @@ CDFGUpdateDataflowgraph (node *graph, node *node_one, node *node_two)
     node *from_node;
     node *to_node;
     DBUG_ENTER ("CDFGUpdateDataflowgraph");
+    DBUG_ASSERT ((NODE_TYPE (graph) == N_dataflowgraph),
+                 "1st parameter is no N_dataflowgraph");
+    DBUG_ASSERT ((NODE_TYPE (node_one) == N_dataflownode),
+                 "2nd parameter is no N_dataflownode");
+    DBUG_ASSERT ((NODE_TYPE (node_two) == N_dataflownode),
+                 "3rd parameter is no N_dataflownode");
 
     from_node = NULL;
     to_node = NULL;
 
+    /* good luck - if the dataflowgraphs of both dataflownodes are identical */
     if (DATAFLOWNODE_GRAPH (node_one) == DATAFLOWNODE_GRAPH (node_two)) {
         from_node = node_one;
         to_node = node_two;
     } else {
+        /* bad luck - iterate over the members of the dataflowgraph graph and
+         * search for dataflownodes, who contains node_one and/or node_two */
         iterator = DATAFLOWGRAPH_MEMBERS (graph);
         while ((iterator != NULL) && ((from_node == NULL) || (to_node == NULL))) {
 
+            /* find from_node, if it's node done yet */
             if ((from_node == NULL)
                 && (CDFGFirstIsWithinSecond (node_one, NODELIST_NODE (iterator))
                     == TRUE)) {
                 from_node = NODELIST_NODE (iterator);
             }
+            /* find to_node, if it's node done yet */
             if ((to_node == NULL)
                 && (CDFGFirstIsWithinSecond (node_two, NODELIST_NODE (iterator))
                     == TRUE)) {
@@ -538,18 +631,29 @@ CDFGUpdateDataflowgraph (node *graph, node *node_one, node *node_two)
         DBUG_ASSERT ((to_node != NULL), "don't found to_node");
     }
 
-    /* update dependency only if both nodes are not identical */
-    if (to_node != from_node) {
-        if (NodeListFind (DATAFLOWNODE_DEPENDENT (from_node), to_node) == NULL) {
-            DATAFLOWNODE_DEPENDENT (from_node)
-              = NodeListAppend (DATAFLOWNODE_DEPENDENT (from_node), to_node, NULL);
-            DATAFLOWNODE_REFCOUNT (to_node)++;
-        }
+    /* update dependency only if both nodes are not identical and the dependency
+     * does not exist yet */
+    if ((to_node != from_node)
+        && (NodeListFind (DATAFLOWNODE_DEPENDENT (from_node), to_node) == NULL)) {
+        DATAFLOWNODE_DEPENDENT (from_node)
+          = NodeListAppend (DATAFLOWNODE_DEPENDENT (from_node), to_node, NULL);
+        DATAFLOWNODE_REFCOUNT (to_node)++;
     }
 
     DBUG_VOID_RETURN;
 }
 
+/** <!--********************************************************************->>
+ *
+ * @fn bool CDFGFirstIsWithinSecond(node *inner_node, node* outer_node)
+ *
+ * @brief
+ *
+ * @param inner_node
+ * @param outer_node
+ * @return true, if inner_node is somewhere within the outer_node, else false
+ *
+ *****************************************************************************/
 bool
 CDFGFirstIsWithinSecond (node *inner_node, node *outer_node)
 {
@@ -558,11 +662,14 @@ CDFGFirstIsWithinSecond (node *inner_node, node *outer_node)
     DBUG_ENTER ("CDFGFirstIsWithinSecond");
     DBUG_ASSERT (((NODE_TYPE (inner_node) == N_dataflownode)
                   && (NODE_TYPE (outer_node) == N_dataflownode)),
-                 "dataflownodes as parameter expected");
+                 "dataflownodes as parameters (1st,2nd) expected");
 
     continue_search = TRUE;
 
     while (continue_search == TRUE) {
+        /* stop the search
+         * - if you'd found a common dataflowgraph
+         * - if there's no upper dataflowgraph left */
         if ((DATAFLOWNODE_GRAPH (inner_node) == DATAFLOWNODE_GRAPH (outer_node))
             || (DATAFLOWGRAPH_MYHOMEDFN (DATAFLOWNODE_GRAPH (inner_node)) == NULL)) {
             continue_search = FALSE;
@@ -571,6 +678,8 @@ CDFGFirstIsWithinSecond (node *inner_node, node *outer_node)
         }
     }
 
+    /* test of identity - if it fails, inner_node and outer_node a members of the
+     * same dataflowgraph, but that's is */
     if (inner_node == outer_node) {
         result = TRUE;
     } else {
@@ -580,23 +689,49 @@ CDFGFirstIsWithinSecond (node *inner_node, node *outer_node)
     DBUG_RETURN (result);
 }
 
+/** <!--********************************************************************->>
+ *
+ * @fn char *CDFGGetName(node* assign)
+ *
+ * @brief gets a name for the assignment, to store it in the dataflowgraph
+ *        usually it's the name of the leftmost ids (at a let-instruction);
+ *        other possibilities are "DF__void" (if an assignment hat no return
+ *        value - see below) or "DF__conditional"
+ *
+ *  <pre> as far as I know is the only possibility to get an let-assignment
+ *        a programm like this:
+ *        {
+ *        if(cond) {
+ *          a=1;
+ *        }
+ *        return(0);
+ *
+ *  </pre>
+ *
+ * @param assign the assignment
+ * @return
+ *
+ *****************************************************************************/
 char *
-CDFGSetName (node *assign)
+CDFGGetName (node *assign)
 {
     node *instr;
     char *return_value;
-    DBUG_ENTER ("SetName");
-    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "SetName expects a N_assign");
+    DBUG_ENTER ("CDFGGetName");
+    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "CDFGGetName expects a N_assign");
 
     instr = ASSIGN_INSTR (assign);
     return_value = NULL;
     if (NODE_TYPE (instr) == N_let) {
-        return_value = IDS_NAME (LET_IDS (ASSIGN_INSTR (assign)));
+        if (LET_IDS (ASSIGN_INSTR (assign)) != NULL) {
+            return_value = IDS_NAME (LET_IDS (ASSIGN_INSTR (assign)));
+        } else {
+            return_value = StringCopy ("DF__void");
+        }
     } else if (NODE_TYPE (instr) == N_cond) {
-        return_value = StringCopy ("DF__condition");
+        return_value = StringCopy ("DF__conditional");
     } else {
-        PrintNode (assign);
-        DBUG_ASSERT (0, "SetName was called with an invalid assignment");
+        DBUG_ASSERT (0, "CDFGGetName was called with an invalid assignment");
     }
     DBUG_RETURN (return_value);
 }
