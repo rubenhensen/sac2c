@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/11/21 17:32:02  skt
+ * make it runable with the new info structure
+ *
  * Revision 3.7  2004/10/07 15:35:31  khf
  * added support for multioperator WLs
  *
@@ -73,8 +76,9 @@
  *
  *****************************************************************************/
 
-#include "dbug.h"
+#define NEW_INFO
 
+#include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -83,11 +87,12 @@
 #include "DataFlowMask.h"
 #include "globals.h"
 #include "internal_lib.h"
+#include "concurrent_info.h"
 
 /******************************************************************************
  *
  * function:
- *   node *SYNCIassign( node *arg_node, node *arg_info)
+ *   node *SYNCIassign( node *arg_node, info *arg_info)
  *
  * description:
  *   Generates a sync-region for each first level with-loop.
@@ -101,7 +106,7 @@
  ******************************************************************************/
 
 node *
-SYNCIassign (node *arg_node, node *arg_info)
+SYNCIassign (node *arg_node, info *arg_info)
 {
     node *with, *sync_let, *sync, *withop;
     ids *with_ids;
@@ -231,7 +236,7 @@ SYNCIassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SYNCIwhile( node *arg_node, node *arg_info)
+ *   node *SYNCIwhile( node *arg_node, info *arg_info)
  *
  * description:
  *   ####
@@ -239,7 +244,7 @@ SYNCIassign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SYNCIwhile (node *arg_node, node *arg_info)
+SYNCIwhile (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SYNCIwhile");
 
@@ -253,14 +258,14 @@ SYNCIwhile (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SYNCIdo( node *arg_node, node *arg_info)
+ *   node *SYNCIdo( node *arg_node, info *arg_info)
  *
  * description:
  *   ####
  ******************************************************************************/
 
 node *
-SYNCIdo (node *arg_node, node *arg_info)
+SYNCIdo (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SYNCIdo");
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/11/21 17:32:02  skt
+ * make it runable with the new info structure
+ *
  * Revision 3.1  2000/11/20 18:02:31  sacbase
  * new release made
  *
@@ -31,11 +34,11 @@
 
 #include "types.h"
 
-extern node *SPMDLspmd (node *arg_node, node *arg_info);
-extern node *SPMDLid (node *arg_node, node *arg_info);
-extern node *SPMDLlet (node *arg_node, node *arg_info);
-extern node *SPMDLnwith2 (node *arg_node, node *arg_info);
-extern node *SPMDLnwithid (node *arg_node, node *arg_info);
-extern ids *SPMDLids (ids *arg_node, node *arg_info);
+extern node *SPMDLspmd (node *arg_node, info *arg_info);
+extern node *SPMDLid (node *arg_node, info *arg_info);
+extern node *SPMDLlet (node *arg_node, info *arg_info);
+extern node *SPMDLnwith2 (node *arg_node, info *arg_info);
+extern node *SPMDLnwithid (node *arg_node, info *arg_info);
+extern ids *SPMDLids (ids *arg_node, info *arg_info);
 
 #endif /* SPMD_LIFT_H */

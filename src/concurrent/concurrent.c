@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/11/21 17:32:02  skt
+ * make it runable with the new info structure
+ *
  * Revision 3.10  2004/09/28 16:33:12  ktr
  * cleaned up concurrent (removed everything not working / not working with emm)
  *
@@ -112,8 +115,9 @@
  *
  *****************************************************************************/
 
-#include "dbug.h"
+#define NEW_INFO
 
+#include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "traverse.h"
@@ -123,6 +127,37 @@
 #include "InferDFMs.h"
 #include "spmd_emm.h"
 #include "ssa.h"
+#include "concurrent_info.h"
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_CONC_FUNDEF (result) = NULL;
+    INFO_SPMDL_MT (result) = 0;
+    INFO_SYNCI_FIRST (result) = 0;
+    INFO_SYNCI_LAST (result) = 0;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /******************************************************************************
  *
@@ -142,7 +177,7 @@
 node *
 BuildSpmdRegions (node *syntax_tree)
 {
-    node *arg_info;
+    info *arg_info;
 
     DBUG_ENTER ("BuildSpmdRegions");
 
@@ -153,7 +188,7 @@ BuildSpmdRegions (node *syntax_tree)
 
     syntax_tree = Trav (syntax_tree, arg_info);
 
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -161,7 +196,7 @@ BuildSpmdRegions (node *syntax_tree)
 /******************************************************************************
  *
  * function:
- *   node *CONCmodul(node *arg_node, node *arg_info)
+ *   node *CONCmodul(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -173,7 +208,7 @@ BuildSpmdRegions (node *syntax_tree)
  ******************************************************************************/
 
 node *
-CONCmodul (node *arg_node, node *arg_info)
+CONCmodul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CONCmodul");
 
@@ -193,7 +228,7 @@ CONCmodul (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CONCfundef(node *arg_node, node *arg_info)
+ *   node *CONCfundef(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -212,7 +247,7 @@ CONCmodul (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-CONCfundef (node *arg_node, node *arg_info)
+CONCfundef (node *arg_node, info *arg_info)
 {
     node *first_spmdfun, *last_spmdfun, *current_fun;
 

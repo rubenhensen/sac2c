@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/11/21 17:32:02  skt
+ * make it runable with the new info structure
+ *
  * Revision 3.9  2004/09/28 16:33:12  ktr
  * cleaned up concurrent (removed everything not working / not working with emm)
  *
@@ -69,8 +72,9 @@
  *
  *****************************************************************************/
 
-#include <stdio.h>
+#define NEW_INFO
 
+#include <stdio.h>
 #include "dbug.h"
 #include "DataFlowMask.h"
 #include "traverse.h"
@@ -79,6 +83,63 @@
 #include "tree_compound.h"
 #include "free.h"
 #include "spmd_trav.h"
+
+/*
+ * INFO structure
+ */
+
+struct INFO {
+    DFMmask_t in;
+    DFMmask_t inout;
+    DFMmask_t out;
+    DFMmask_t local;
+    DFMmask_t shared;
+    bool nested;
+    node *fundef;
+};
+
+/* INFO macros */
+#define INFO_SPMDDN_NESTED(n) (n->nested)
+#define INFO_SPMDPM_IN(n) (n->in)
+#define INFO_SPMDPM_INOUT(n) (n->inout)
+#define INFO_SPMDPM_OUT(n) (n->out)
+#define INFO_SPMDPM_LOCAL(n) (n->local)
+#define INFO_SPMDPM_SHARED(n) (n->shared)
+#define INFO_SPMDDN_NESTED(n) (n->nested)
+#define INFO_SPMDPM_FUNDEF(n) (n->fundef)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_SPMDPM_IN (result) = NULL;
+    INFO_SPMDPM_INOUT (result) = NULL;
+    INFO_SPMDPM_OUT (result) = NULL;
+    INFO_SPMDPM_LOCAL (result) = NULL;
+    INFO_SPMDPM_SHARED (result) = NULL;
+    INFO_SPMDDN_NESTED (result) = FALSE;
+    INFO_SPMDPM_FUNDEF (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /******************************************************************************
  ******************************************************************************
@@ -115,7 +176,7 @@
 node *
 DeleteNested (node *arg_node)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("DeleteNested");
@@ -130,7 +191,7 @@ DeleteNested (node *arg_node)
     arg_node = Trav (arg_node, arg_info);
     DBUG_PRINT ("SPMDDN", ("trav from"));
 
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeInfo (arg_info);
     DBUG_PRINT ("SPMDI", ("free arg_info"));
 
     act_tab = old_tab;
@@ -141,7 +202,7 @@ DeleteNested (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node *SPMDDNspmd (node *arg_node, node *arg_info)
+ *   node *SPMDDNspmd (node *arg_node, info *arg_info)
  *
  * descriptiom:
  *   - If a spmd-block was already hit, this function deletes the actual spmd,
@@ -151,7 +212,7 @@ DeleteNested (node *arg_node)
  *
  ******************************************************************************/
 node *
-SPMDDNspmd (node *arg_node, node *arg_info)
+SPMDDNspmd (node *arg_node, info *arg_info)
 {
     node *spmd;
 
@@ -210,7 +271,7 @@ SPMDDNspmd (node *arg_node, node *arg_info)
 void
 ProduceMasks (node *arg_node, node *spmd, node *fundef)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("ProduceMasks");
@@ -219,7 +280,7 @@ ProduceMasks (node *arg_node, node *spmd, node *fundef)
     act_tab = spmdpm_tab;
 
     arg_info = MakeInfo ();
-    INFO_CONC_FUNDEF (arg_info) = fundef;
+    INFO_SPMDPM_FUNDEF (arg_info) = fundef;
     INFO_SPMDPM_IN (arg_info) = SPMD_IN (spmd);
     INFO_SPMDPM_INOUT (arg_info) = SPMD_INOUT (spmd);
     INFO_SPMDPM_OUT (arg_info) = SPMD_OUT (spmd);
@@ -233,7 +294,7 @@ ProduceMasks (node *arg_node, node *spmd, node *fundef)
     INFO_SPMDPM_OUT (arg_info) = NULL;
     INFO_SPMDPM_LOCAL (arg_info) = NULL;
     INFO_SPMDPM_SHARED (arg_info) = NULL;
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     act_tab = old_tab;
 
@@ -245,7 +306,7 @@ ProduceMasks (node *arg_node, node *spmd, node *fundef)
         to do that, one must check whether are variables is set and do not count
         further uses as in-variables ...  */
 node *
-SPMDPMassign (node *arg_node, node *arg_info)
+SPMDPMassign (node *arg_node, info *arg_info)
 {
     node *with;
 
@@ -282,7 +343,7 @@ SPMDPMassign (node *arg_node, node *arg_info)
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     } else {
         DBUG_PRINT ("SPMDPM",
-                    ("for pm -> %i", FUNDEF_VARNO (INFO_CONC_FUNDEF (arg_info))));
+                    ("for pm -> %i", FUNDEF_VARNO (INFO_SPMDPM_FUNDEF (arg_info))));
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/11/21 17:32:02  skt
+ * make it runable with the new info structure
+ *
  * Revision 3.8  2002/10/18 13:28:16  sbs
  * ID_ATTRIB replaced by accesses to the FLAGS of N_id
  *
@@ -89,6 +92,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"
@@ -100,11 +105,12 @@
 #include "concurrent_lib.h"
 #include "LookUpTable.h"
 #include "InferDFMs.h"
+#include "concurrent_info.h"
 
 /******************************************************************************
  *
  * function:
- *   ids *SPMDLids( ids *arg_node, node *arg_info)
+ *   ids *SPMDLids( ids *arg_node, info *arg_info)
  *
  * description:
  *
@@ -112,7 +118,7 @@
  ******************************************************************************/
 
 ids *
-SPMDLids (ids *arg_node, node *arg_info)
+SPMDLids (ids *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPMDLids");
 
@@ -122,7 +128,7 @@ SPMDLids (ids *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPMDLspmd( node *arg_node, *arg_info)
+ *   node *SPMDLspmd( node *arg_node, info *arg_info)
  *
  * description:
  *   lifts a SPMD-region into a function.
@@ -133,7 +139,7 @@ SPMDLids (ids *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SPMDLspmd (node *arg_node, node *arg_info)
+SPMDLspmd (node *arg_node, info *arg_info)
 {
     node *vardec, *fundef, *new_fundef, *body;
     node *fvardecs, *new_fvardec;
@@ -351,7 +357,7 @@ SPMDLspmd (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPMDLid( node *arg_node, node *arg_info)
+ *   node *SPMDLid( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -359,7 +365,7 @@ SPMDLspmd (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SPMDLid (node *arg_node, node *arg_info)
+SPMDLid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPMDLid");
 
@@ -369,7 +375,7 @@ SPMDLid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPMDLlet( node *arg_node, node *arg_info)
+ *   node *SPMDLlet( node *arg_node, info *arg_info)
  *
  * description:
  *   Corrects the vardec-pointers of 'LET_IDS( arg_node)' in SPMD-funs
@@ -378,7 +384,7 @@ SPMDLid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SPMDLlet (node *arg_node, node *arg_info)
+SPMDLlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPMDLlet");
 
@@ -391,7 +397,7 @@ SPMDLlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPMDLnwithid( node *arg_node, node *arg_info)
+ *   node *SPMDLnwithid( node *arg_node, info *arg_info)
  *
  * description:
  *   Corrects the vardec-pointers of the with-ids in SPMD-funs.
@@ -399,7 +405,7 @@ SPMDLlet (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SPMDLnwithid (node *arg_node, node *arg_info)
+SPMDLnwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPMDLnwithid");
 
@@ -412,7 +418,7 @@ SPMDLnwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPMDLnwith2( node *arg_node, node *arg_info)
+ *   node *SPMDLnwith2( node *arg_node, info *arg_info)
  *
  * description:
  *   Generates new DFMasks in NWITH2_IN/INOUT/OUT/LOCAL.
@@ -426,7 +432,7 @@ SPMDLnwithid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SPMDLnwith2 (node *arg_node, node *arg_info)
+SPMDLnwith2 (node *arg_node, info *arg_info)
 {
     node *vardec;
     DFMmask_t in, out, local;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/11/21 17:32:02  skt
+ * make it runable with the new info structure
+ *
  * Revision 3.1  2000/11/20 18:02:30  sacbase
  * new release made
  *
@@ -31,6 +34,6 @@
 
 #include "types.h"
 
-extern node *SPMDIassign (node *arg_node, node *arg_info);
+extern node *SPMDIassign (node *arg_node, info *arg_info);
 
 #endif /* SPMD_INIT_H */

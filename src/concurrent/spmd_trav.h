@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/11/21 17:32:02  skt
+ * make it runable with the new info structure
+ *
  * Revision 3.3  2004/09/28 16:33:12  ktr
  * cleaned up concurrent (removed everything not working / not working with emm)
  *
@@ -44,9 +47,9 @@
 #include "DataFlowMask.h"
 
 extern node *DeleteNested (node *arg_node);
-extern node *SPMDDNspmd (node *arg_node, node *arg_info);
+extern node *SPMDDNspmd (node *arg_node, info *arg_info);
 
 extern void ProduceMasks (node *arg_node, node *spmd, node *fundef);
-extern node *SPMDPMassign (node *arg_node, node *arg_info);
+extern node *SPMDPMassign (node *arg_node, info *arg_info);
 
 #endif /* _spmd_trav_h */

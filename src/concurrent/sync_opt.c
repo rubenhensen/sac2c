@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/11/21 17:32:02  skt
+ * make it runable with the new info structure
+ *
  * Revision 3.3  2001/03/29 14:04:10  dkr
  * no changes done
  *
@@ -66,8 +69,9 @@
  *
  *****************************************************************************/
 
-#include "dbug.h"
+#define NEW_INFO
 
+#include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "traverse.h"
@@ -78,8 +82,48 @@
 #include "globals.h"
 #include "Error.h"
 #include "concurrent_lib.h"
-
 #include "sync_opt.h"
+
+/*
+ * INFO structure
+ */
+
+struct INFO {
+    node *thisassign;
+    node *nextassign;
+};
+
+/* INFO macros */
+#define INFO_SYNCO_THISASSIGN(n) (n->thisassign)
+#define INFO_SYNCO_NEXTASSIGN(n) (n->nextassign)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_SYNCO_THISASSIGN (result) = NULL;
+    INFO_SYNCO_NEXTASSIGN (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /******************************************************************************
  *
@@ -272,7 +316,7 @@ MeltSYNCsOnCopies (node *first_sync, node *second_sync)
 /******************************************************************************
  *
  * function:
- *   node *SYNCOsync( node *arg_node, node *arg_info)
+ *   node *SYNCOsync( node *arg_node, info *arg_info)
  *
  * description:
  *   Stops on an sync-block, ans melts all *directly* following sync-blocks
@@ -280,7 +324,7 @@ MeltSYNCsOnCopies (node *first_sync, node *second_sync)
  *
  ******************************************************************************/
 node *
-SYNCOsync (node *arg_node, node *arg_info)
+SYNCOsync (node *arg_node, info *arg_info)
 {
     node *result;
 
@@ -330,7 +374,7 @@ SYNCOsync (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SYNCOassign (node* arg_node, node* arg_info)
+ *   node *SYNCOassign (node* arg_node, info *arg_info)
  *
  * description:
  *   Traversal of N_assign during SYNCO.
@@ -343,7 +387,7 @@ SYNCOsync (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-SYNCOassign (node *arg_node, node *arg_info)
+SYNCOassign (node *arg_node, info *arg_info)
 {
     int own_arg_info;
     node *old_thisassign = NULL;
@@ -378,7 +422,7 @@ SYNCOassign (node *arg_node, node *arg_info)
     }
 
     if (own_arg_info) {
-        FreeTree (arg_info);
+        FreeInfo (arg_info);
     } else {
         INFO_SYNCO_THISASSIGN (arg_info) = old_thisassign;
         INFO_SYNCO_NEXTASSIGN (arg_info) = old_nextassign;

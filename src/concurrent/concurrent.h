@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/11/21 17:32:02  skt
+ * make it runable with the new info structure
+ *
  * Revision 3.1  2000/11/20 18:02:25  sacbase
  * new release made
  *
@@ -36,7 +39,7 @@
 
 extern node *BuildSpmdRegions (node *syntax_tree);
 
-extern node *CONCmodul (node *arg_node, node *arg_info);
-extern node *CONCfundef (node *arg_node, node *arg_info);
+extern node *CONCmodul (node *arg_node, info *arg_info);
+extern node *CONCfundef (node *arg_node, info *arg_info);
 
 #endif /* CONCURRENT_H */

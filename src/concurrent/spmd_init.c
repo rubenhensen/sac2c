@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/11/21 17:32:02  skt
+ * make it runable with the new info structure
+ *
  * Revision 3.11  2004/10/12 09:59:15  khf
  * initialised a variable to please the compiler
  *
@@ -96,8 +99,9 @@
  *
  *****************************************************************************/
 
-#include "dbug.h"
+#define NEW_INFO
 
+#include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -108,6 +112,7 @@
 #include "internal_lib.h"
 #include "my_debug.h"
 #include "spmd_trav.h"
+#include "concurrent_info.h"
 
 /******************************************************************************
  *
@@ -302,7 +307,7 @@ InsertSPMD (node *assign, node *fundef)
 /******************************************************************************
  *
  * function:
- *   node *SPMDIassign( node *arg_node, node *arg_info)
+ *   node *SPMDIassign( node *arg_node, info *arg_info)
  *
  * description:
  *   Generates a SPMD-region for each first level with-loop.
@@ -312,7 +317,7 @@ InsertSPMD (node *assign, node *fundef)
  ******************************************************************************/
 
 node *
-SPMDIassign (node *arg_node, node *arg_info)
+SPMDIassign (node *arg_node, info *arg_info)
 {
     node *spmd_let;
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/11/21 17:32:02  skt
+ * make it runable with the new info structure
+ *
  * Revision 3.3  2001/03/29 14:03:39  dkr
  * no changes done
  *
@@ -183,17 +186,12 @@ node *
 MeltBlocksOnCopies (node *first_block, node *second_block)
 {
     node *result;
-    node *arg_info;
 
     DBUG_ENTER ("MeltBlocksOnCopies");
 
-    arg_info = MakeInfo ();
     first_block = DupTree (first_block);
-    arg_info = FreeTree (arg_info);
 
-    arg_info = MakeInfo ();
     second_block = DupTree (second_block);
-    arg_info = FreeTree (arg_info);
 
     result = MeltBlocks (first_block, second_block);
 
