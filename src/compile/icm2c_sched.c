@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/07/16 11:56:44  dkr
+ * MT_ADJUST_SCHEDULER__OFFSET(): modification for TAGGED_ARRAYS done
+ *
  * Revision 3.20  2001/11/21 11:04:21  dkr
  * support for BEtest added
  *
@@ -261,7 +264,7 @@ TaskSelector (int sched_id, char *ts_name, int ts_dims, int ts_arg_num, char **t
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_ADJUST_SCHEDULER__OFFSET( char *array, int array_dim,
+ *   void ICMCompileMT_ADJUST_SCHEDULER__OFFSET( char *to_nt, int to_dim,
  *                                               int current_dim,
  *                                               char *lower, char *upper,
  *                                               char *unrolling)
@@ -272,7 +275,7 @@ TaskSelector (int sched_id, char *ts_name, int ts_dims, int ts_arg_num, char **t
  ******************************************************************************/
 
 void
-ICMCompileMT_ADJUST_SCHEDULER__OFFSET (char *array, int array_dim, int current_dim,
+ICMCompileMT_ADJUST_SCHEDULER__OFFSET (char *to_nt, int to_dim, int current_dim,
                                        char *lower, char *upper, char *unrolling)
 {
     int i;
@@ -288,15 +291,15 @@ ICMCompileMT_ADJUST_SCHEDULER__OFFSET (char *array, int array_dim, int current_d
     fprintf (outfile,
              "SAC_MT_ADJUST_SCHEDULER__OFFSET( %s, %d, %d, %s, %s, %s"
              ", (",
-             array, array_dim, current_dim, lower, upper, unrolling);
+             to_nt, to_dim, current_dim, lower, upper, unrolling);
 
-    if (current_dim == (array_dim - 1)) {
+    if (current_dim == (to_dim - 1)) {
         fprintf (outfile, "1");
     } else {
-        fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", array, current_dim + 1);
+        fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", to_nt, current_dim + 1);
 
-        for (i = (current_dim + 2); i < array_dim; i++) {
-            fprintf (outfile, " * SAC_ND_A_SHAPE( %s, %d)", array, current_dim + i);
+        for (i = (current_dim + 2); i < to_dim; i++) {
+            fprintf (outfile, " * SAC_ND_A_SHAPE( %s, %d)", to_nt, current_dim + i);
         }
     }
 
