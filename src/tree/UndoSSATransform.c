@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2001/05/09 12:31:29  nmw
+ * remove unused vardecs after renaming operation
+ *
  * Revision 1.13  2001/04/19 08:03:27  dkr
  * macro F_PTR used as format string for pointers
  *
@@ -122,12 +125,13 @@ static ids *TravIDS (ids *arg_ids, node *arg_info);
 static ids *USSAids (ids *arg_ids, node *arg_info);
 
 /* helper functions for local use */
-static void SSADCRInitAvisFlags (node *fundef);
+static void USSAInitAvisFlags (node *fundef);
+static node *USSARemoveUnusedVardecs (node *vardecs);
 
 /******************************************************************************
  *
  * function:
- *   void SSADCRInitAvisFlags(node *fundef)
+ *   void USSAInitAvisFlags(node *fundef)
  *
  * description:
  *   inits flags AVIS_SUBST, AVIS_SUBSTUSSA needed for this module
@@ -135,11 +139,11 @@ static void SSADCRInitAvisFlags (node *fundef);
  *
  ******************************************************************************/
 static void
-SSADCRInitAvisFlags (node *fundef)
+USSAInitAvisFlags (node *fundef)
 {
     node *tmp;
 
-    DBUG_ENTER ("SSADCRInitAvisFlags");
+    DBUG_ENTER ("USSAInitAvisFlags");
 
     /* process args */
     tmp = FUNDEF_ARGS (fundef);
@@ -160,6 +164,35 @@ SSADCRInitAvisFlags (node *fundef)
     }
 
     DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *USSARemoveUnusedVardecs(node *vardecs)
+ *
+ * description:
+ *   free all vardecs marked for complete substitution.
+ *
+ ******************************************************************************/
+static node *
+USSARemoveUnusedVardecs (node *vardecs)
+{
+    DBUG_ENTER ("USSARemoveUnusedVardecs");
+
+    /* traverse rest of chain */
+    if (VARDEC_NEXT (vardecs) != NULL) {
+        VARDEC_NEXT (vardecs) = USSARemoveUnusedVardecs (VARDEC_NEXT (vardecs));
+    }
+
+    /* check vardec for removal */
+    if ((AVIS_SUBSTUSSA (VARDEC_AVIS (vardecs)) != NULL)
+        && (AVIS_SUBSTUSSA (VARDEC_AVIS (vardecs)) != VARDEC_AVIS (vardecs))) {
+        DBUG_PRINT ("USSA", ("remove unused vardec %s", VARDEC_NAME (vardecs)));
+        vardecs = FreeNode (vardecs);
+    }
+
+    DBUG_RETURN (vardecs);
 }
 
 /******************************************************************************
@@ -218,7 +251,7 @@ USSAarg (node *arg_node, node *arg_info)
  * 1. if a vardec is marked with SSAUNDOFALG the corresponsing original vardec
  *    or arg is searched. if the original node has been deleted by optimizations
  *    the actual node is renamed to this orginal name (stored in SSACNT_BASEID).
- *    in the follwing tree traversal all corresponding identifiers are renamed
+ *    in the following tree traversal all corresponding identifiers are renamed
  *    back to their original name.
  *
  * 2. if a vardec is marked as SSAPHITRAGET, the complete copy assignment must
@@ -287,6 +320,7 @@ USSAvardec (node *arg_node, node *arg_info)
 
             DBUG_PRINT ("USSA", ("set %s as new baseid", VARDEC_NAME (arg_node)));
         }
+
         DBUG_PRINT ("USSA", ("-> rename %s to %s", VARDEC_NAME (arg_node),
                              SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (arg_node)))));
 
@@ -613,7 +647,7 @@ USSAfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("USSAfundef");
 
-    SSADCRInitAvisFlags (arg_node);
+    USSAInitAvisFlags (arg_node);
 
     DBUG_PRINT ("USSA", ("\nrestoring names in function %s", FUNDEF_NAME (arg_node)));
 
@@ -670,6 +704,16 @@ USSAblock (node *arg_node, node *arg_info)
     if (BLOCK_INSTR (arg_node) == NULL) {
         /* insert N_empty node in empty block */
         BLOCK_INSTR (arg_node) = MakeEmpty ();
+    }
+
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        /* remove unused vardecs (marked for complete substitution) */
+        BLOCK_VARDEC (arg_node) = USSARemoveUnusedVardecs (BLOCK_VARDEC (arg_node));
+    }
+
+    if (BLOCK_SSACOUNTER (arg_node) != NULL) {
+        /* remove all ssacnt nodes - they are not needed anymore */
+        BLOCK_SSACOUNTER (arg_node) = FreeTree (BLOCK_SSACOUNTER (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -831,6 +875,9 @@ UndoSSATransform (node *modul)
     act_tab = old_tab;
 
     FREE (arg_info);
+
+    /* ast is no longer in ssaform */
+    valid_ssaform = FALSE;
 
     DBUG_RETURN (modul);
 }
