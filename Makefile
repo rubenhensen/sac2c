@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.144  2004/11/23 12:34:08  cg
+# Removed some files.
+#
 # Revision 3.143  2004/11/21 11:22:03  sah
 # removed some old ast infos
 #
@@ -353,10 +356,9 @@ SOURCE_FILES := $(foreach dir,$(SOURCE_DIRS),$(addprefix $(dir)/,$(filter-out RC
 #
 
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
-        src/global/my_debug.o src/global/internal_lib.o src/global/globals.o \
+        src/global/internal_lib.o src/global/globals.o \
         src/global/resource.o src/global/build.o src/global/interrupt.o \
-        src/global/options.o src/global/NameTuples.o \
-        src/global/NameTuplesUtils.o
+        src/global/options.o src/global/NameTuplesUtils.o
 
 TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/tree_compound.o src/tree/DupTree.o src/tree/LookUpTable.o \
