@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 1.13  1998/04/20 09:07:59  srs
+ * changed CreateInternGen() and WithloopFoldingWLT()
+ *
  * Revision 1.12  1998/04/08 20:37:40  srs
  * Added several functions, changed arguments of Tree2InternGen(),
  * InternGen2Tree() counts NWITH_PARTS.
@@ -77,8 +80,8 @@
 #include "my_debug.h"
 #include "traverse.h"
 #include "optimize.h"
-#include "Inline.h"
-#include "typecheck.h"
+#include "Inline.h"    /* SearchDecl() */
+#include "typecheck.h" /* DuplicateTypes() */
 #include "ConstantFolding.h"
 #include "WithloopFolding.h"
 #include "WLT.h"
@@ -360,7 +363,6 @@ LocateIndexVar (node *idn, node *wln)
  *   allocate memory for an intern_gen struct. The parameter shape is needed
  *   to allocate right sized mem for the bounds. If stepwidth is not 0,
  *   memory for step/width is allocated, too.
- *   No initialisations are done.
  *
  ******************************************************************************/
 
@@ -372,6 +374,10 @@ CreateInternGen (int shape, int stepwidth)
     DBUG_ENTER ("CreateInternGen");
 
     ig = Malloc (sizeof (intern_gen));
+    ig->shape = shape;
+    ig->code = NULL;
+    ig->next = NULL;
+
     ig->l = Malloc (sizeof (int) * shape);
     ig->u = Malloc (sizeof (int) * shape);
     if (stepwidth) {
@@ -419,11 +425,9 @@ AppendInternGen (intern_gen *append_to, int shape, node *code, int stepwidth)
     if (append_to) {
         ig->next = append_to->next;
         append_to->next = ig;
-    } else
-        ig->next = NULL;
+    }
 
     ig->code = code;
-    ig->shape = shape;
 
     DBUG_RETURN (ig);
 }
@@ -438,7 +442,7 @@ AppendInternGen (intern_gen *append_to, int shape, node *code, int stepwidth)
  *   is copied, not the structs which can be reached with ->next.
  *
  * attention:
- *   the 'next' component is not copied but set to NULL.
+ *   the 'next' component is not copied and instead set to NULL.
  *
  ******************************************************************************/
 
@@ -451,9 +455,7 @@ CopyInternGen (intern_gen *source)
     DBUG_ENTER ("CopyInternGen");
 
     ig = CreateInternGen (source->shape, NULL != source->step);
-    ig->shape = source->shape;
     ig->code = source->code;
-    ig->next = source->next;
 
     for (i = 0; i < ig->shape; i++) {
         ig->l[i] = source->l[i];
@@ -541,7 +543,7 @@ NormalizeInternGen (intern_gen *ig)
             else if (ig->width[i] == ig->step[i] && ig->step[i] != 1)
                 ig->step[i] = ig->width[i] = 1;
 
-            is_1 = is_1 && 1 == ig->step[1];
+            is_1 = is_1 && 1 == ig->step[i];
             i++;
         }
 
@@ -759,7 +761,7 @@ FreeInternGenChain (intern_gen *ig)
         FREE_INTERN_GEN (tmpig);
     }
 
-    DBUG_RETURN (NULL);
+    DBUG_RETURN (ig);
 }
 
 /******************************************************************************
@@ -770,6 +772,7 @@ FreeInternGenChain (intern_gen *ig)
  * description:
  *   creates a new Vardec with 'name' of type 'type' at the beginning of
  *   the 'vardecs' chain. The node of the new Vardec is returned.
+ *   If a vardec for this name already exists, this node is returned.
  *
  * remark:
  *   new memory is allocated for name. It is expected that type
@@ -782,13 +785,14 @@ CreateVardec (char *name, types *type, node **vardecs)
 {
     node *vardecn;
 
-    DBUG_ENTER (" CreateVardec");
+    DBUG_ENTER ("CreateVardec");
 
     /* search for already existing vardec for this name. */
     vardecn = SearchDecl (name, *vardecs); /* from Inline.c */
 
     /* if not found, create vardec. */
     if (!vardecn) {
+        DBUG_ASSERT (type, ("wrong parameters"));
         type = DuplicateTypes (type, 42);
         vardecn = MakeVardec (StringCopy (name), type, *vardecs);
         *vardecs = vardecn;
@@ -860,7 +864,7 @@ SearchWLHelp (int id_varno, node *assignn, int *valid, int mode, int ol)
  *
  * remarks:
  *   The assign node is only returned if *valid is 1. Else we would have a
- *   problem returning multiple nodes if a WL is defined inside of both
+ *   problem returning many nodes if a WL is defined inside of both
  *   trees of a conditional or a loop, which could be recursive.
  *   If this happens (*valid==0) we still continue to find the WL to
  *   mark it (see mode).
@@ -1019,7 +1023,7 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
  * 2:
  *   No special behaviour, just returns found WL or NULL.
  *
- *   This functions can affect multiple WL. See SearchWL for more details.
+ *   This functions can affect various WL. See SearchWL for more details.
  *
  ******************************************************************************/
 
@@ -1095,15 +1099,56 @@ WithloopFolding (node *arg_node, node *arg_info)
     arg_node = Trav (arg_node, arg_info);
 
     /* WLF traversal: fold WLs */
+
     DBUG_PRINT ("OPT", ("  WLF"));
+    DBUG_PRINT ("WLI", ("currently allocated mem : %d", current_allocated_mem));
     act_tab = wlf_tab;
-    /*   arg_node = Trav(arg_node,arg_info); */
+    arg_node = Trav (arg_node, arg_info);
     expr = (wlf_expr - old_wlf_expr);
     if (expr)
         DBUG_PRINT ("OPT", ("                        result: %d", expr));
+    DBUG_PRINT ("WLI", ("currently allocated mem : %d", current_allocated_mem));
 
     /* rebuild mask which is necessary because of WL-body-substitutions and
        inserted new variables to prevent wrong variable bindings. */
+    DBUG_PRINT ("OPT", ("  GENERATEMASKS"));
+    arg_node = GenerateMasks (arg_node, NULL);
+
+    FREE (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *WithloopFoldingWLT(node *arg_node, node* arg_info)
+ *
+ * description:
+ *   executes only WLT phase, not WLI and WLF.
+ *
+ *
+ ******************************************************************************/
+
+node *
+WithloopFoldingWLT (node *arg_node, node *arg_info)
+{
+    int expr;
+
+    DBUG_ENTER ("WithloopFoldingWLT");
+    DBUG_ASSERT (!arg_info, ("at the beginning of WLF: arg_info != NULL"));
+
+    arg_info = MakeInfo ();
+
+    /* WLT traversal: transform WLs */
+    DBUG_PRINT ("OPT", ("  WLT"));
+    act_tab = wlt_tab;
+    arg_node = Trav (arg_node, arg_info);
+    expr = (wlt_expr - old_wlt_expr);
+    if (expr)
+        DBUG_PRINT ("OPT", ("                        result: %d", expr));
+
+    /* rebuild mask which is necessary because of the transformations in WLT. */
     DBUG_PRINT ("OPT", ("  GENERATEMASKS"));
     arg_node = GenerateMasks (arg_node, NULL);
 
