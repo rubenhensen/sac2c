@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/02/02 09:45:02  dkr
+ * minor changes in output for with-loop done
+ *
  * Revision 3.14  2001/01/30 09:56:00  dkr
  * output for N_WLgrid(Var)-nodes modified
  *
@@ -3383,18 +3386,16 @@ PrintWLxblock (node *arg_node, node *arg_info)
     if (NODE_TYPE (arg_node) == N_WLublock) {
         fprintf (outfile, "u");
     }
-    fprintf (outfile, "block%d[%d] %d: ", WLXBLOCK_LEVEL (arg_node),
+    fprintf (outfile, "block%d[%d] %d:\n", WLXBLOCK_LEVEL (arg_node),
              WLXBLOCK_DIM (arg_node), WLXBLOCK_STEP (arg_node));
 
     if (WLXBLOCK_NEXTDIM (arg_node) != NULL) {
-        fprintf (outfile, "\n");
         indent++;
         Trav (WLXBLOCK_NEXTDIM (arg_node), arg_info);
         indent--;
     }
 
     if (WLXBLOCK_CONTENTS (arg_node) != NULL) {
-        fprintf (outfile, "\n");
         indent++;
         Trav (WLXBLOCK_CONTENTS (arg_node), arg_info);
         indent--;
@@ -3529,6 +3530,8 @@ PrintWLcode (node *arg_node, node *arg_info)
 node *
 PrintWLgridx (node *arg_node, node *arg_info)
 {
+    char *str;
+
     DBUG_ENTER ("PrintWLgridx");
 
     INDENT;
@@ -3537,19 +3540,15 @@ PrintWLgridx (node *arg_node, node *arg_info)
                   WLGRIDX_DIM (arg_node));
     fprintf (outfile, " ");
     if (NODE_TYPE (arg_node) == N_WLgrid) {
-        fprintf (outfile, "-");
-        if (WLGRIDX_FITTED (arg_node)) {
-            fprintf (outfile, "-");
-        } else {
-            fprintf (outfile, ">");
-        }
+        str = "-";
     } else {
-        fprintf (outfile, "=");
-        if (WLGRIDX_FITTED (arg_node)) {
-            fprintf (outfile, "=");
-        } else {
-            fprintf (outfile, ">");
-        }
+        str = "=";
+    }
+    fprintf (outfile, str);
+    if (WLGRIDX_FITTED (arg_node)) {
+        fprintf (outfile, str);
+    } else {
+        fprintf (outfile, ">");
     }
     fprintf (outfile, "> ");
     PrintWLbound (NODE_TYPE (arg_node), WLGRIDX_GET_ADDR (arg_node, BOUND2),
