@@ -15,6 +15,9 @@
 #include "free.h"
 #include "resource.h"
 
+/* interface identifier */
+#define SACARGTYPE "SAC_arg"
+
 /* ??? copied from print.c */
 #define TYPE_LENGTH 256      /* dimension of array of char */
 #define INT_STRING_LENGTH 16 /* dimension of array of char */
@@ -45,8 +48,7 @@ PIHarg (node *arg_node, node *arg_info)
     char *typestring;
     DBUG_ENTER ("PIHArg");
 
-    typestring = Type2CTypeString (ARG_TYPE (arg_node), 0);
-    fprintf (outfile, " %s%s", typestring, truncArgName (ARG_NAME (arg_node)));
+    fprintf (outfile, " %s *%s", SACARGTYPE, truncArgName (ARG_NAME (arg_node)));
     FREE (typestring);
 
     if (ARG_NEXT (arg_node) != NULL) {
@@ -102,9 +104,7 @@ PIHfundef (node *arg_node, node *arg_info)
             separator_needed = FALSE;
             while (rettypes != NULL) {
                 i++;
-                typestring = Type2CTypeString (rettypes, 0);
-                fprintf (outfile, "%s*out%d", typestring, i);
-                FREE (typestring);
+                fprintf (outfile, "%s **out%d", SACARGTYPE, i);
                 rettypes = TYPES_NEXT (rettypes);
                 if (rettypes != NULL)
                     fprintf (outfile, ", ");
@@ -213,10 +213,7 @@ PIWfundef (node *arg_node, node *arg_info)
 
             /* print wrapper-prototype to headerfile */
             /* comment header */
-            fprintf (outfile, "/* function declaration for %s */\n",
-                     truncFunName (FUNDEF_NAME (arg_node)));
-
-            fprintf (outfile, "extern ");
+            fprintf (outfile, "/* wrapper function for %s */\n", FUNDEF_NAME (arg_node));
 
             /* simple return type */
             fprintf (outfile, "int ");
@@ -246,8 +243,18 @@ PIWfundef (node *arg_node, node *arg_info)
                 FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
             }
 
-            /* EOL */
-            fprintf (outfile, ");\n\n");
+            /* End Of Header */
+            fprintf (outfile, "){\n");
+
+            /* wrapper body */
+            if ((NULL != FUNDEF_ICM (arg_node))
+                && (N_icm == NODE_TYPE (FUNDEF_ICM (arg_node)))
+                && (FUNDEF_STATUS (arg_node) != ST_spmdfun)) {
+                Trav (FUNDEF_ICM (arg_node), arg_info); /* print N_icm ND_FUN_DEC */
+            }
+
+            /* end of wrapper */
+            fprintf (outfile, "\n}\n\n");
         }
     }
 
@@ -265,23 +272,32 @@ PIWfundef (node *arg_node, node *arg_info)
  *
  * description:
  *   truncates the actual function name after some renaming by removing
- *   SAC-prefix and modulename. returns the offset-pointer in the funname string
- *   NOT a new copy of that string!
+ *   SAC-type postfixes.
+ * returns new allocated string
  *
  ******************************************************************************/
 char *
 truncFunName (char *funname)
 {
     int offset;
+    char *endpos;
     char *result;
+    char *tmp_string;
     DBUG_ENTER ("truncFunName");
 
+    tmp_string = (char *)Malloc (sizeof (char) * strlen (funname));
+    tmp_string[0] = '\0';
+    strcat (tmp_string, "SAC_");     /* set standard Prefix */
+    strcat (tmp_string, modulename); /* add modulename*/
+    strcat (tmp_string, "_");
+    /* add funname */
     /* behind the modulename in the current funname skip additional inserted "__" */
     offset = strlen (modulename) + strlen ("__");
-
     result = strstr (funname, modulename) + offset;
+    endpos = strstr (result, "__");
+    strncat (tmp_string, result, strlen (result) - strlen (endpos)); /* isolate funname */
 
-    DBUG_RETURN (result);
+    DBUG_RETURN (tmp_string);
 }
 
 /******************************************************************************
@@ -363,6 +379,33 @@ Type2CTypeString (types *type, int flag)
 
     DBUG_RETURN (tmp_string);
 }
+/******************************************************************************
+ *
+ * function:
+ *  extern node *MapFunctionToWrapper(node *syntaxtree)
+ *
+ * description:
+ *  builds a simple tree of N_info nodes which mapps all exportable functions
+ *  to their wrapper function. uses fundefs from syntaxtree.
+ * returns root of mappedtree
+ *
+ ******************************************************************************/
+node *
+MapFunctionToWrapper (node *syntax_tree)
+{
+    node *mappingtree = NULL;
+    node *funs;
+    node *wrapper;
+
+    funs = MODUL_FUNS (syntax_tree);
+    while (funs != NULL) { /* look for all fundefs in tree */
+
+        NOTE (("found a fundef node (%s)...\n", FUNDEF_NAME (funs)));
+        funs = FUNDEF_NEXT (funs);
+    }
+
+    return mappingtree;
+}
 
 /******************************************************************************
  *
@@ -382,8 +425,13 @@ PrintInterface (node *syntax_tree)
     node *arg_info;
     funtab *old_tab;
 
+    node *mappingtree;
+
     DBUG_ENTER ("PrintInterface");
     NOTE (("Generating c library interface files\n"));
+
+    /* sort specialized functions to get needed wrapper functions */
+    mappingtree = MapFunctionToWrapper (syntax_tree);
 
     /* open <module>.h in tmpdir for writing*/
     outfile = WriteOpen ("%s/%s.h", tmp_dirname, modulename);
@@ -405,10 +453,39 @@ PrintInterface (node *syntax_tree)
     INFO_PRINT_CONT (arg_info) = NULL;
 
     /*start travesal of tree, looking for fundef & arg nodes*/
-    syntax_tree
-      = Trav (syntax_tree,
-              arg_info); /*start travesal of tree, looking for fundef & arg nodes*/
+    syntax_tree = Trav (syntax_tree, arg_info);
     FREE (arg_info);
+
+    fprintf (outfile,
+             "/* generated headerfile, please do not modify function prototypes */\n");
+    fclose (outfile);
+
+    /* header file finished - now generating code for wrapper functions */
+
+    /* open <module>_wrapper.c in tmpdir for writing*/
+    outfile = WriteOpen ("%s/%s_wrapper.c", tmp_dirname, modulename);
+    fprintf (outfile, "/* Interface SAC-C for %s */\n", modulename);
+    fprintf (outfile, "/* this file is only used when compiling the c-library lib%s.a\n",
+             modulename);
+    fprintf (outfile, "#include \"sacinterface.h\"\n");
+    fprintf (outfile, "\n");
+
+    /* general preload for codefile */
+    /* to be implemented */
+    fprintf (outfile, "/* <insert some useful things here...> */");
+
+    /* print all function headers */
+    /* only printing selected functions: to be implemented */
+    act_tab = piw_tab;
+
+    arg_info = MakeInfo ();
+
+    INFO_PRINT_CONT (arg_info) = NULL;
+
+    /*start travesal of tree, looking for fundef & arg nodes*/
+    syntax_tree = Trav (syntax_tree, arg_info);
+    FREE (arg_info);
+    act_tab = old_tab;
 
     fprintf (outfile,
              "/* generated headerfile, please do not modify function prototypes */\n");
@@ -417,7 +494,7 @@ PrintInterface (node *syntax_tree)
     /* print all wrapper functions */
     /* do be implemented */
 
-    /* beautify the headerfile, removing ICMs */
+    /* resolving ICMs */
     /* to be implemented */
 
     /* Systemcall to resolve ICM Makros in a file using the cpp */
@@ -426,3 +503,12 @@ PrintInterface (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+/* when used in print_interface.c  (sorting of fundefs -> wrapper funs)
+#define INFO_PIW_FUNDEF(n)       (n->node[0])
+#define INFO_PIW_NEXT_FUNDEF(n)  (n->node[1])
+#define INFO_PIW_NEXT_WRAPPER(n) (n->node[2])
+#define INFO_PIW_RETPOS(n)       (n->int_data)
+#define INFO_PIW_ARGCOUNT(n)     (n->counter)
+#define INFO_PIW_WRAPPERNAME(n)  (n->src_file)
+*/

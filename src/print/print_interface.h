@@ -14,4 +14,6 @@ extern char *truncFunName (char *funname);
 extern char *truncArgName (char *argname);
 extern node *PrintInterface (node *syntax_tree);
 
+extern node *MapFunctionToWrapper (node *syntax_tree);
+
 #endif /* _sac_print_interface_h */
