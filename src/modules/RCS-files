@@ -9,6 +9,8 @@ implicittypes.c
 implicittypes.h
 import.c
 import.h
+readsib.c
+readsib.h
 sib.c
 sib.h
 writesib.c
