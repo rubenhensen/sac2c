@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/12/09 18:15:09  ktr
+ * IsConstantArray fixed.
+ *
  * Revision 1.13  2004/12/08 18:00:42  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -245,24 +248,22 @@ IsConstant (node *arg_node)
 static bool
 IsConstantArray (node *arg_node)
 {
-    bool ret;
-    node *elems;
+    bool ret = TRUE;
 
     DBUG_ENTER ("IsConstantArray");
 
     if (NODE_TYPE (arg_node) == N_array) {
-        ret = TRUE;
+        node *elems = ARRAY_AELEMS (arg_node);
+
+        while (ret && (elems != NULL)) {
+            if (!IsConstant (EXPRS_EXPR (elems))) {
+                ret = FALSE;
+                break;
+            }
+            elems = EXPRS_NEXT (elems);
+        }
     } else {
         ret = FALSE;
-    }
-
-    elems = ARRAY_AELEMS (arg_node);
-    while (ret && (elems != NULL)) {
-        if (!IsConstant (EXPRS_EXPR (elems))) {
-            ret = FALSE;
-            break;
-        }
-        elems = EXPRS_NEXT (elems);
     }
 
     DBUG_RETURN (ret);
