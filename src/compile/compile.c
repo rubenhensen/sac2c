@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.93  1997/10/09 13:58:56  srs
+ * modified CompPrf() to compile F_min and F_max
+ *
  * Revision 1.92  1997/08/29 09:58:41  sbs
  * Compilation of F_cat changed.
  * the refcnt of the result is set at the array allocation only.
@@ -4249,6 +4252,12 @@ CompPrf (node *arg_node, node *arg_info)
     } else if ((PRF_PRF (arg_node) == F_toi) || (PRF_PRF (arg_node) == F_tof)
                || (PRF_PRF (arg_node) == F_tod))
         arg_node = CompConvert (arg_node, arg_info);
+
+    else if ((PRF_PRF (arg_node) == F_min) || (PRF_PRF (arg_node) == F_max)) {
+        /* srs: replace N_prf with icm-macros for min() and max() */
+        NODE_TYPE (arg_node) = N_icm;
+        ICM_NAME (arg_node) = PRF_PRF (arg_node) == F_min ? "ND_MIN" : "ND_MAX";
+    }
 
     DBUG_RETURN (arg_node);
 }
