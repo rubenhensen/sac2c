@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  1998/02/11 17:15:19  srs
+ * changed NPART_IDX to NPART_WITHID
+ *
  * Revision 1.30  1998/01/28 18:02:05  srs
  * *** empty log message ***
  *
@@ -1469,7 +1472,7 @@ FreeNPart (node *arg_node, node *arg_info)
 
     tmp = FREECONT (NPART_NEXT (arg_node));
     FREETRAV (NPART_NEXT (arg_node));
-    FREETRAV (NPART_IDX (arg_node));
+    FREETRAV (NPART_WITHID (arg_node));
     FREETRAV (NPART_GEN (arg_node));
     FREE (arg_node);
 

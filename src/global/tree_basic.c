@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  1998/02/11 17:14:37  srs
+ * changed NPART_IDX to NPART_WITHID
+ *
  * Revision 1.29  1998/02/10 14:56:19  dkr
  * changed MakeWith (node[2] not allocated anymore)
  *
@@ -1349,7 +1352,7 @@ MakeNPart (node *withid, node *generator)
 
     NODE_TYPE (tmp) = N_Npart;
     NPART_GEN (tmp) = generator;
-    NPART_IDX (tmp) = withid;
+    NPART_WITHID (tmp) = withid;
 
     DBUG_RETURN (tmp);
 }
