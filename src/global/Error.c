@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  1998/03/04 16:18:12  cg
+ * removed functions postmortem(), Error(), and polished cleanup()
+ *
  * Revision 1.24  1998/02/25 09:05:55  cg
  * All global variables moved to globals.[ch]
  *
@@ -98,20 +101,7 @@
 #include "globals.h"
 
 #include "filemgr.h"
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
+#include "resource.h"
 
 /*
  *
@@ -324,7 +314,7 @@ ItemName (node *item)
  *                  termination.
  *  global vars   : tmp_dirname, cleanup
  *  internal funs : ---
- *  external funs : RemoveDirectory
+ *  external funs : SystemCall
  *  macros        :
  *
  *  remarks       :
@@ -336,24 +326,9 @@ CleanUp ()
 {
     DBUG_ENTER ("CleanUp");
 
-    if (cleanup) {
-        RemoveDirectory (tmp_dirname);
+    if (cleanup && (tmp_dirname != NULL)) {
+        SystemCall ("%s %s", config.rmdir, tmp_dirname);
     }
 
     DBUG_VOID_RETURN;
 }
-
-void
-Error (char *string, int status)
-{
-    fprintf (stderr, "\n%s\n", string);
-    exit (status);
-}
-
-/*
-void postmortem(char *s)
-{
-   fprintf(stderr,"\n\nPostMortem: %s \n",s);
-   exit(99);
-}
-*/
