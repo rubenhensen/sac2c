@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2004/09/21 16:34:57  sah
+ * added serialize traversal in NEW_AST mode
+ *
  * Revision 3.54  2004/09/18 16:10:29  ktr
  * Old MT has been moved into phase 21 to be compatible with EMM
  *
@@ -238,6 +241,7 @@
 #include "options.h"
 #include "multithread.h"
 #include "WLEnhancement.h"
+#include "serialize.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -754,6 +758,8 @@ main (int argc, char *argv[])
     }
     PHASE_EPILOG;
 
+#else  /* NEW_AST */
+    SerializeModule (syntax_tree);
 #endif /* NEW_AST */
 
     compiler_phase = PH_final;
@@ -776,7 +782,9 @@ BREAK:
      *  Finally, we do some clean up ...
      */
 
+#ifndef NEW_AST
     CleanUp ();
+#endif
 
     /*
      *  ... and display a success message.
