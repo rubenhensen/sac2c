@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.106  1996/01/09 08:54:58  cg
+ * Revision 1.107  1996/01/10 15:13:48  cg
+ * now at least one newline is printed after vardecs
+ *
+ * Revision 1.106  1996/01/09  08:54:58  cg
  * added new version of function Print in comments
  *
  * Revision 1.105  1996/01/07  16:55:50  cg
@@ -465,8 +468,6 @@ PrintAssign (node *arg_node, node *arg_info)
 node *
 PrintBlock (node *arg_node, node *arg_info)
 {
-    int i;
-
     DBUG_ENTER ("PrintBlock");
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
@@ -474,10 +475,18 @@ PrintBlock (node *arg_node, node *arg_info)
     INDENT;
     fprintf (outfile, "{ \n");
     indent++;
-    for (i = arg_node->nnode - 1; 0 <= i; i--)
-        Trav (arg_node->node[i], arg_info);
+
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        Trav (BLOCK_VARDEC (arg_node), arg_info);
+        fprintf (outfile, "\n");
+    }
+
+    if (BLOCK_INSTR (arg_node) != NULL) {
+        Trav (BLOCK_INSTR (arg_node), arg_info);
+    }
+
     indent--;
-    fprintf (outfile, "\n");
+    /*   fprintf(outfile,"\n");  */
     INDENT;
     fprintf (outfile, "}\n");
 
