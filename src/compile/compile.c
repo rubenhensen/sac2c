@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.35  1995/05/24 13:45:24  hw
+ * Revision 1.36  1995/05/24 15:28:37  hw
+ * bug fixed in creation of N_icm ND_END_MODARRAY_S\A ( last arg is
+ *  a N_exprs node now ;-)) )
+ *
+ * Revision 1.35  1995/05/24  13:45:24  hw
  * - changed args of N_icm FUN_DEC ( back to rev 1.33 )
  *   and added N_icm ND_KS_DECL_ARRAY_ARG instead ( this N_icm will be put
  *    at beginning of the block of a function)
@@ -1935,12 +1939,8 @@ CompReturn (node *arg_node, node *arg_info)
             /* add name of modified array */
             with_icm_arg = with_icm_arg->node[1];
             MAKE_NEXT_ICM_ARG (icm_arg, with_icm_arg->node[0]);
-
             /* add name of return value */
-            icm_arg->node[1] = ret_val;
-            icm_arg->nnode = 2;
-            icm_arg = icm_arg->node[1];
-
+            MAKE_NEXT_ICM_ARG (icm_arg, ret_val);
             if (0 == is_array) {
                 MAKE_ICM_NAME (arg_node, "ND_END_MODARRAY_S");
             } else {
@@ -1957,11 +1957,6 @@ CompReturn (node *arg_node, node *arg_info)
             /* N_return belongs to a 'genarray' with-loop */
             /* add name of return value */
             MAKE_NEXT_ICM_ARG (icm_arg, ret_val);
-#if 0
-               icm_arg->node[1]=ret_val;
-               icm_arg->nnode=2;
-               icm_arg=icm_arg->node[1];
-#endif
             if (0 == is_array) {
                 MAKE_ICM_NAME (arg_node, "ND_END_GENARRAY_S");
             } else {
