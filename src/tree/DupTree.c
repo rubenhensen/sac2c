@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2000/03/15 12:59:16  dkr
+ * macro DUPVECT added
+ * WL..._INNERSTEP removed
+ *
  * Revision 1.14  2000/03/09 18:36:12  jhs
  * Comments, comments, comments, ...
  * DFMbases copied now ...
@@ -243,6 +247,7 @@ static lut_t *dup_lut;
  *     If you want to use yout own LUT you can hand it over here.
  *
  ******************************************************************************/
+
 static node *
 DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, lut_t *lut)
 {
@@ -350,6 +355,7 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, lut_t *lut)
  *   at DupTreeOrNodeLUT.
  *
  ******************************************************************************/
+
 node *
 DupTreeLUT (node *arg_node, node *arg_info, lut_t *lut)
 {
@@ -410,6 +416,7 @@ DupNode (node *arg_node)
  *   This function is called before the traversal of each node.
  *
  ******************************************************************************/
+
 node *
 DupTreePre (node *arg_node, node *arg_info)
 {
@@ -429,6 +436,7 @@ DupTreePre (node *arg_node, node *arg_info)
  *   This function is called after the traversal of each node.
  *
  ******************************************************************************/
+
 node *
 DupTreePost (node *arg_node, node *arg_info)
 {
@@ -1719,56 +1727,33 @@ node *
 DupWLseg (node *arg_node, node *arg_info)
 {
     node *new_node;
-    int i, d;
+    int i;
 
     DBUG_ENTER ("DupWLseg");
 
     new_node = MakeWLseg (WLSEG_DIMS (arg_node), DUPTRAV (WLSEG_CONTENTS (arg_node)),
                           DUPCONT (WLSEG_NEXT (arg_node)));
 
-    if (WLSEG_IDX_MIN (arg_node) != NULL) {
-        WLSEG_IDX_MIN (new_node) = (int *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
-        for (d = 0; d < WLSEG_DIMS (new_node); d++) {
-            (WLSEG_IDX_MIN (new_node))[d] = (WLSEG_IDX_MIN (arg_node))[d];
-        }
-    }
-    if (WLSEG_IDX_MAX (arg_node) != NULL) {
-        WLSEG_IDX_MAX (new_node) = (int *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
-        for (d = 0; d < WLSEG_DIMS (new_node); d++) {
-            (WLSEG_IDX_MAX (new_node))[d] = (WLSEG_IDX_MAX (arg_node))[d];
-        }
-    }
+    DUPVECT (WLSEG_IDX_MIN (new_node), WLSEG_IDX_MIN (arg_node), WLSEG_DIMS (new_node),
+             int);
+    DUPVECT (WLSEG_IDX_MAX (new_node), WLSEG_IDX_MAX (arg_node), WLSEG_DIMS (new_node),
+             int);
 
     WLSEG_BLOCKS (new_node) = WLSEG_BLOCKS (arg_node);
 
     for (i = 0; i < WLSEG_BLOCKS (new_node); i++) {
-        if (WLSEG_BV (arg_node, i) != NULL) {
-            WLSEG_BV (new_node, i)
-              = (long *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
-            for (d = 0; d < WLSEG_DIMS (new_node); d++) {
-                (WLSEG_BV (new_node, i))[d] = (WLSEG_BV (arg_node, i))[d];
-            }
-        }
+        DUPVECT (WLSEG_BV (new_node, i), WLSEG_BV (arg_node, i), WLSEG_DIMS (new_node),
+                 int);
     }
 
-    if (WLSEG_UBV (arg_node) != NULL) {
-        WLSEG_UBV (new_node) = (long *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
-        for (d = 0; d < WLSEG_DIMS (new_node); d++) {
-            (WLSEG_UBV (new_node))[d] = (WLSEG_UBV (arg_node))[d];
-        }
-    }
-
-    if (WLSEG_SV (arg_node) != NULL) {
-        WLSEG_SV (new_node) = (long *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
-        for (d = 0; d < WLSEG_DIMS (new_node); d++) {
-            (WLSEG_SV (new_node))[d] = (WLSEG_SV (arg_node))[d];
-        }
-    }
+    DUPVECT (WLSEG_UBV (new_node), WLSEG_UBV (arg_node), WLSEG_DIMS (new_node), int);
+    DUPVECT (WLSEG_SV (new_node), WLSEG_SV (arg_node), WLSEG_DIMS (new_node), int);
 
     if (WLSEG_SCHEDULING (arg_node) != NULL) {
         WLSEG_SCHEDULING (new_node) = SCHCopyScheduling (WLSEG_SCHEDULING (arg_node));
     }
     WLSEG_MAXHOMDIM (new_node) = WLSEG_MAXHOMDIM (arg_node);
+    DUPVECT (WLSEG_HOMSV (new_node), WLSEG_HOMSV (arg_node), WLSEG_DIMS (new_node), int);
 
     DBUG_RETURN (new_node);
 }
@@ -1861,7 +1846,7 @@ node *
 DupWLsegVar (node *arg_node, node *arg_info)
 {
     node *new_node;
-    int i, d;
+    int i;
 
     DBUG_ENTER ("DupWLsegVar");
 
@@ -1869,47 +1854,22 @@ DupWLsegVar (node *arg_node, node *arg_info)
       = MakeWLsegVar (WLSEGVAR_DIMS (arg_node), DUPTRAV (WLSEGVAR_CONTENTS (arg_node)),
                       DUPCONT (WLSEGVAR_NEXT (arg_node)));
 
-    if (WLSEGVAR_IDX_MIN (arg_node) != NULL) {
-        WLSEGVAR_IDX_MIN (new_node)
-          = (int *)MALLOC (WLSEGVAR_DIMS (new_node) * sizeof (int));
-        for (d = 0; d < WLSEGVAR_DIMS (new_node); d++) {
-            (WLSEGVAR_IDX_MIN (new_node))[d] = (WLSEGVAR_IDX_MIN (arg_node))[d];
-        }
-    }
-    if (WLSEGVAR_IDX_MAX (arg_node) != NULL) {
-        WLSEGVAR_IDX_MAX (new_node)
-          = (int *)MALLOC (WLSEGVAR_DIMS (new_node) * sizeof (int));
-        for (d = 0; d < WLSEGVAR_DIMS (new_node); d++) {
-            (WLSEGVAR_IDX_MAX (new_node))[d] = (WLSEGVAR_IDX_MAX (arg_node))[d];
-        }
-    }
+    DUPVECT (WLSEGVAR_IDX_MIN (new_node), WLSEGVAR_IDX_MIN (arg_node),
+             WLSEGVAR_DIMS (new_node), int);
+    DUPVECT (WLSEGVAR_IDX_MAX (new_node), WLSEGVAR_IDX_MAX (arg_node),
+             WLSEGVAR_DIMS (new_node), int);
 
     WLSEGVAR_BLOCKS (new_node) = WLSEGVAR_BLOCKS (arg_node);
 
     for (i = 0; i < WLSEGVAR_BLOCKS (new_node); i++) {
-        if (WLSEGVAR_BV (arg_node, i) != NULL) {
-            WLSEGVAR_BV (new_node, i)
-              = (long *)MALLOC (WLSEGVAR_DIMS (new_node) * sizeof (int));
-            for (d = 0; d < WLSEGVAR_DIMS (new_node); d++) {
-                (WLSEGVAR_BV (new_node, i))[d] = (WLSEGVAR_BV (arg_node, i))[d];
-            }
-        }
+        DUPVECT (WLSEGVAR_BV (new_node, i), WLSEGVAR_BV (arg_node, i),
+                 WLSEGVAR_DIMS (new_node), int);
     }
 
-    if (WLSEGVAR_UBV (arg_node) != NULL) {
-        WLSEGVAR_UBV (new_node)
-          = (long *)MALLOC (WLSEGVAR_DIMS (new_node) * sizeof (int));
-        for (d = 0; d < WLSEGVAR_DIMS (new_node); d++) {
-            (WLSEGVAR_UBV (new_node))[d] = (WLSEGVAR_UBV (arg_node))[d];
-        }
-    }
-
-    if (WLSEGVAR_SV (arg_node) != NULL) {
-        WLSEGVAR_SV (new_node) = (long *)MALLOC (WLSEGVAR_DIMS (new_node) * sizeof (int));
-        for (d = 0; d < WLSEGVAR_DIMS (new_node); d++) {
-            (WLSEGVAR_SV (new_node))[d] = (WLSEGVAR_SV (arg_node))[d];
-        }
-    }
+    DUPVECT (WLSEGVAR_UBV (new_node), WLSEGVAR_UBV (arg_node), WLSEGVAR_DIMS (new_node),
+             int);
+    DUPVECT (WLSEGVAR_SV (new_node), WLSEGVAR_SV (arg_node), WLSEGVAR_DIMS (new_node),
+             int);
 
     if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
         WLSEGVAR_SCHEDULING (new_node)
