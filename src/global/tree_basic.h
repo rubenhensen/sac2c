@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/11/02 13:13:31  cg
+ * Revision 1.16  1995/11/06 09:22:21  cg
+ * added macro VARDEC_ATTRIB
+ *
+ * Revision 1.15  1995/11/02  13:13:31  cg
  * added new macros OBJDEF_ARG(n) and renamed IDS_DECL(i)
  * to IDS_VARDEC(i).
  *
@@ -707,11 +710,15 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***    node        TYPEDEF  (O)  (N_typedef)  (typecheck -> fun_analysis -> )
  ***    int         REFCNT                     (refcount -> compile -> )
  ***    int         VARNO                      (optimize -> )
+ ***    statustype  ATTRIB                     (typecheck -> uniquecheck -> )
  ***/
 
 /*
  * STATUS : ST_regular :  original vardec in source code
  *          ST_used    :  after typecheck detected necessity of vardec
+ *
+ * ATTRIB : ST_regular :  normal variable
+ *          ST_unique  :  unique variable
  *
  * TYPEDEF is a reference to the respective typedef node if the type of
  * the declared variable is user-defined.
@@ -726,6 +733,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
 #define VARDEC_VARNO(n) (n->varno)
 #define VARDEC_REFCNT(n) (n->refcnt)
 #define VARDEC_STATUS(n) (n->info.types->status)
+#define VARDEC_ATTRIB(n) (n->info.types->attrib)
 #define VARDEC_TYPEDEF(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
