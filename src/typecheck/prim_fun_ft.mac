@@ -1,18 +1,27 @@
 /*
  *  $Log$
- *  Revision 1.1  1995/02/03 07:45:32  hw
- *  Initial revision
- * $
+ *  Revision 1.2  1995/02/03 16:04:56  hw
+ *  extended /changed macro
+ *
+;; Revision 1.1  1995/02/03  07:45:32  hw
+;; Initial revision
+;; $
  */
 
-FT (F_add, ARI, F_add)
-FT (F_sub, ARI, F_sub)
-FT (F_mul, ARI, F_mul)
-FT (F_eq, B, F_eq)
-FT (F_eq, ARI_B, F_eq)
-FT (F_neq, B, F_neq)
-FT (F_neq, ARI_B, F_neq)
-FT (F_le, ARI_B, F_le)
-FT (F_lt, ARI_B, F_lt)
-FT (F_ge, ARI_B, F_ge)
-FT (F_gt, ARI_B, F_gt)
+FT (F_add, SxS_S, F_add)
+FT (F_add, AxA_A, F_add)
+FT (F_add, AxS_A, F_add)
+FT (F_sub, SxS_S, F_sub)
+FT (F_sub, AxA_A, F_sub)
+FT (F_sub, AxS_A, F_sub)
+FT (F_mul, SxS_S, F_mul)
+FT (F_mul, AxA_A, F_mul)
+FT (F_mul, AxS_A, F_mul)
+FT (F_eq, BxB_B, F_eq)
+FT (F_eq, SxS_B, F_eq)
+FT (F_neq, BxB_B, F_neq)
+FT (F_neq, SxS_B, F_neq)
+FT (F_le, SxS_B, F_le)
+FT (F_lt, SxS_B, F_lt)
+FT (F_ge, SxS_B, F_ge)
+FT (F_gt, SxS_B, F_gt)

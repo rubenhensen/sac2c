@@ -1,16 +1,31 @@
 /*
  *  $Log$
- *  Revision 1.1  1995/02/03 07:46:01  hw
- *  Initial revision
- * $
+ *  Revision 1.2  1995/02/03 16:04:56  hw
+ *  extended /changed macro
+ *
+;; Revision 1.1  1995/02/03  07:46:01  hw
+;; Initial revision
+;; $
  */
 
-TT2 (0, ARI, INT, INT, MakeTypes (T_int))
-TT2 (1, ARI, INT, FLOAT, MakeTypes (T_float))
-TT2 (2, ARI, FLOAT, INT, MakeTypes (T_float))
-TT2 (3, ARI, FLOAT, FLOAT, MakeTypes (T_float))
-TT2 (4, B, BOOL, BOOL, MakeTypes (T_bool))
-TT2 (5, ARI_B, INT, INT, MakeTypes (T_bool))
-TT2 (6, ARI_B, INT, FLOAT, MakeTypes (T_bool))
-TT2 (7, ARI_B, FLOAT, INT, MakeTypes (T_bool))
-TT2 (8, ARI_B, FLOAT, FLOAT, MakeTypes (T_bool))
+TT2 (0, SxS_S, INT, INT, MakeTypes (T_int))
+TT2 (1, SxS_S, INT, FLOAT, MakeTypes (T_float))
+TT2 (2, SxS_S, FLOAT, INT, MakeTypes (T_float))
+TT2 (3, SxS_S, FLOAT, FLOAT, MakeTypes (T_float))
+TT2 (4, BxB_B, BOOL, BOOL, MakeTypes (T_bool))
+TT2 (5, SxS_B, INT, INT, MakeTypes (T_bool))
+TT2 (6, SxS_B, INT, FLOAT, MakeTypes (T_bool))
+TT2 (7, SxS_B, FLOAT, INT, MakeTypes (T_bool))
+TT2 (8, SxS_B, FLOAT, FLOAT, MakeTypes (T_bool))
+TT2 (9, AxA_A, INT_A, INT_A, AxA (arg_type[0], arg_type[1]))
+TT2 (10, AxA_A, INT_A, FLOAT_A, AxA (arg_type[1], arg_type[0]))
+TT2 (11, AxA_A, FLOAT_A, INT_A, AxA (arg_type[0], arg_type[1]))
+TT2 (12, AxA_A, FLOAT_A, FLOAT_A, AxA (arg_type[0], arg_type[1]))
+TT2 (13, AxS_A, INT_A, INT, DuplicateTypes (arg_type[0]))
+TT2 (14, AxS_A, INT, INT_A, DuplicateTypes (arg_type[1]))
+TT2 (15, AxS_A, INT, FLOAT_A, DuplicateTypes (arg_type[1]))
+TT2 (16, AxS_A, FLOAT_A, INT, DuplicateTypes (arg_type[1]))
+TT2 (17, AxS_A, FLOAT, INT_A, Ixf_F (arg_type[1]))
+TT2 (18, AxS_A, INT_A, FLOAT, Ixf_F (arg_type[0]))
+TT2 (19, AxS_A, FLOAT_A, FLOAT, DuplicateTypes (arg_type[0]))
+TT2 (20, AxS_A, FLOAT, FLOAT_A, DuplicateTypes (arg_type[1]))
