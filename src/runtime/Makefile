@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 2.8  1999/05/20 14:13:44  cg
+# Compilation of CacheSimAnalyser streamlined:
+# it is now linked with the SAC runtime library.
+#
 # Revision 2.7  1999/05/12 15:13:30  cg
 # make deps done
 #
@@ -79,8 +83,10 @@ CC        := gcc
 CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g -O3
 
 INCS := -I../global -I../../inc
+LIBS := -L.
+
 OBJS := $(patsubst %.c,%.o,$(wildcard libsac_*.c)) libsac_trace_mt.o\
-        libsac_cachesim_access_advanced.o
+        libsac_cachesim_access_advanced.o ../../lib/main_args.o
 
 
 .PHONY: all tar
@@ -113,15 +119,13 @@ clean:
 	$(RM) *.o libsac.a *.bak *.old *~
 	$(RM) -r .sb
 	$(RM) runtime.tar
-	$(RM) sac2crc CacheSimTest
+	$(RM) sac2crc CacheSimTest CacheSimAnalyser
 
-CacheSimAnalyser: CacheSimAnalyser.o libsac_cachesim_basic.o libsac_message.o\
-                  libsac_cachesim_access.o libsac_cachesim_access_advanced.o
-	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -lm -o $@ $^ 
+CacheSimAnalyser: CacheSimAnalyser.o libsac.a
+	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(LIBS) -o $@ $< -lsac -lm
 
-CacheSimTest: CacheSimTest.o libsac_cachesim_basic.o libsac_message.o\
-              libsac_cachesim_access.o libsac_cachesim_access_advanced.o
-	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -lm -o $@ $^
+CacheSimTest: CacheSimTest.o libsac.a
+	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(LIBS) -o $@ $< -lsac -lm
 
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
