@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1998/05/15 14:42:45  srs
+ * removed NEWTREE
+ * added WL unrolling (UNRNwith() UNRassign())
+ *
  * Revision 1.13  1998/05/13 13:46:35  srs
  * added WL unrolling
  *
@@ -176,7 +180,7 @@ node *
 UNRlet (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNRlet");
-    /* maybe trav with-loop */
+
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     arg_node->node[0]->flag = LEVEL;
@@ -504,9 +508,6 @@ DoUnroll (node *arg_node, node *arg_info, linfo *loop_info)
             MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
             unroll = arg_node->node[1]->node[0];
             arg_node->node[1]->node[0] = NULL;
-#ifndef NEWTREE
-            arg_node->node[1]->nnode = 0;
-#endif
             FreeTree (arg_node);
             arg_node = unroll;
             break;
@@ -699,11 +700,13 @@ UNRwith (node *arg_node, node *arg_info)
 node *
 UNRNwith (node *arg_node, node *arg_info)
 {
-    node *tmpn;
+    node *tmpn, *save;
 
     DBUG_ENTER ("UNRNwith");
 
     LEVEL++;
+
+    save = INFO_UNR_ASSIGN (arg_info);
 
     /* traverse the N_Nwithop node */
     NWITH_WITHOP (arg_node) = OPTTrav (NWITH_WITHOP (arg_node), arg_info, arg_node);
@@ -722,29 +725,57 @@ UNRNwith (node *arg_node, node *arg_info)
         tmpn = NCODE_NEXT (tmpn);
     }
 
-    /* can this WL be unrolled? */
-    switch (NWITH_TYPE (arg_node)) {
-    case WO_modarray:
-        if (CheckUnrollModarray (arg_node)) {
-            tmpn = DoUnrollModarray (arg_node); /* returns list of assignments */
-            FreeTree (arg_node);
-            arg_node = tmpn;
+    INFO_UNR_ASSIGN (arg_info) = save;
+
+    if (opt_wlunr) {
+        /* can this WL be unrolled? */
+        switch (NWITH_TYPE (arg_node)) {
+        case WO_modarray:
+            if (CheckUnrollModarray (arg_node)) {
+                wlunr_expr++;
+                /* remove old mask information */
+                MinusMask (INFO_DEF, ASSIGN_MASK (save, 0), VARNO);
+                MinusMask (INFO_USE, ASSIGN_MASK (save, 1), VARNO);
+                /* unroll and generate new masks */
+                tmpn = DoUnrollModarray (arg_node,
+                                         arg_info); /* returns list of assignments */
+                tmpn = GenerateMasks (tmpn, arg_info);
+                /* delete old WL and insert new code */
+                FreeTree (arg_node);
+                arg_node = tmpn;
+            }
+            break;
+        case WO_genarray:
+            if (CheckUnrollGenarray (arg_node, arg_info)) {
+                wlunr_expr++;
+                /* remove old mask information */
+                MinusMask (INFO_DEF, ASSIGN_MASK (save, 0), VARNO);
+                MinusMask (INFO_USE, ASSIGN_MASK (save, 1), VARNO);
+                /* unroll and generate new masks */
+                tmpn = DoUnrollGenarray (arg_node,
+                                         arg_info); /* returns list of assignments */
+                tmpn = GenerateMasks (tmpn, arg_info);
+                /* delete old WL and insert new code */
+                FreeTree (arg_node);
+                arg_node = tmpn;
+            }
+            break;
+        default:
+            if (CheckUnrollFold (arg_node)) {
+                wlunr_expr++;
+                /* remove old mask information */
+                MinusMask (INFO_DEF, ASSIGN_MASK (save, 0), VARNO);
+                MinusMask (INFO_USE, ASSIGN_MASK (save, 1), VARNO);
+                /* unroll and generate new masks */
+                tmpn
+                  = DoUnrollFold (arg_node, arg_info); /* returns list of assignments */
+                tmpn = GenerateMasks (tmpn, arg_info);
+                /* delete old WL and insert new code */
+                FreeTree (arg_node);
+                arg_node = tmpn;
+            }
+            break;
         }
-        break;
-    case WO_genarray:
-        if (CheckUnrollGenarray (arg_node)) {
-            tmpn = DoUnrollGenarray (arg_node); /* returns list of assignments */
-            FreeTree (arg_node);
-            arg_node = tmpn;
-        }
-        break;
-    default:
-        if (CheckUnrollFold (arg_node)) {
-            tmpn = DoUnrollFold (arg_node); /* returns list of assignments */
-            FreeTree (arg_node);
-            arg_node = tmpn;
-        }
-        break;
     }
 
     LEVEL--;
@@ -776,6 +807,7 @@ UNRassign (node *arg_node, node *arg_info)
     ntype = NODE_TYPE (ASSIGN_INSTR (arg_node));
 
     /* unroll subexpressions */
+    INFO_UNR_ASSIGN (arg_info) = arg_node;
     ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
 
     switch (NODE_TYPE (ASSIGN_INSTR (arg_node))) {
@@ -785,6 +817,7 @@ UNRassign (node *arg_node, node *arg_info)
         FreeNode (arg_node);
         arg_node = tmp_node;
         break;
+
     case N_assign:
         DBUG_PRINT ("UNR", ("double assign node moved into tree"));
         if (N_do == ntype) {
@@ -804,6 +837,21 @@ UNRassign (node *arg_node, node *arg_info)
             arg_node = UNRassign (tmp_node, arg_info);
         }
         break;
+
+    case N_let:
+        /* if WL unrolling was done (modarray and fold), an N_assign node is
+           received and put into the LET_EXPR. Insert this subtree into the tree. */
+        if (N_assign == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node)))) {
+            tmp_node = AppendNodeChain (1, LET_EXPR (ASSIGN_INSTR (arg_node)),
+                                        ASSIGN_NEXT (arg_node));
+            LET_EXPR (ASSIGN_INSTR (arg_node)) = NULL;
+            ASSIGN_NEXT (arg_node) = NULL;
+            FreeTree (arg_node);
+            arg_node = UNRassign (tmp_node, arg_info);
+        } else
+            ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
+        break;
+
     default:
         ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
         break;
