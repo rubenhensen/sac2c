@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/04/29 08:00:56  bs
+ * print routines modified.
+ *
  * Revision 2.4  1999/04/12 18:00:54  bs
- * Two functions added: TSIprintAccesses and TSIprintFestures.
+ * Two functions added: TSIprintAccesses and TSIprintFeatures.
  *
  * Revision 2.3  1999/04/08 12:49:37  bs
  * The TSI is analysing withloops now.
@@ -33,14 +36,15 @@
  *   The following access macros are defined for the info-node:
  *
  *   INFO_TSI_ACCESS(n)     ((access_t*)n->info2)
- *   INFO_TSI_INDEXVAR(n)   (n->node[0])
+ *   INFO_TSI_INDEXVAR(n)              (n->node[0])
  *   INFO_TSI_FEATURE(n)    ((feature_t)n->lineno)
- *   INFO_TSI_WOTYPE(n)     ((WithOpType)n->varno)
- *   INFO_TSI_LASTLETIDS(n) (n->info.ids)
- *   INFO_TSI_BELOWAP(n)    (n->flag)
- *   INFO_TSI_WLLEVEL(n)    (n->counter)
- *   INFO_TSI_ACCESSVEC(n)  ((shpseg*)n->node[1])
+ *   INFO_TSI_WOTYPE(n)    ((WithOpType)n->varno)
+ *   INFO_TSI_LASTLETIDS(n)            (n->info.ids)
+ *   INFO_TSI_BELOWAP(n)               (n->flag)
+ *   INFO_TSI_WLLEVEL(n)               (n->counter)
+ *   INFO_TSI_ACCESSVEC(n)    ((shpseg*)n->node[1])
  *   INFO_TSI_TMPACCESS(n)  ((access_t*)n->node[2])
+ *   INFO_TSI_WLARRAY(n)               (n->node[3])
  *
  *****************************************************************************/
 
@@ -110,67 +114,76 @@ TileSizeInference (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
-static void
-TSIprint (node *arg_node, node *arg_info, int status)
+#if 0
+static
+void TSIprint(node *arg_node, node *arg_info, int status)
 {
-    int i, dim;
-    access_t *access;
-    shpseg *offset;
-
-    DBUG_ENTER ("TSIprint");
-
-    switch (NODE_TYPE (arg_node)) {
-    case N_Nwith:
-        if (status == _ENTER) {
-            indent = indent + 2;
-            INDENT;
-            fprintf (outfile, "WL_LEVEL: %d \n", INFO_TSI_WLLEVEL (arg_info));
-        } else
-            indent = indent - 2;
-        break;
-    case N_Ncode:
-        dim = SHP_SEG_SIZE;
-        if (status == _EXIT) {
-            access = INFO_TSI_ACCESS (arg_info);
-            do {
-                if (access == NULL) {
-                    INDENT;
-                    fprintf (outfile, "No accesses! \n");
-                } else {
-                    dim = VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access));
-                    offset = ACCESS_OFFSET (access);
-                    INDENT;
-                    fprintf (outfile, "Access-class: ");
-                    fprintf (outfile, "%s\n", ACLT (ACCESS_CLASS (access)));
-                    INDENT;
-                    do {
-                        INDENT;
-                        if (offset == NULL)
-                            fprintf (outfile, "no offset\n");
-                        else {
-                            fprintf (outfile, "read( [ %d", SHPSEG_SHAPE (offset, 0));
-                            for (i = 1; i < dim; i++)
-                                fprintf (outfile, ",%d", SHPSEG_SHAPE (offset, i));
-                            fprintf (outfile, " ], %s)\n",
-                                     VARDEC_NAME (ACCESS_ARRAY (access)));
-                            offset = SHPSEG_NEXT (offset);
-                        }
-                    } while (offset != NULL);
-                    access = ACCESS_NEXT (access);
-                }
-                fprintf (outfile, "\n");
-            } while (access != NULL);
-        }
-        break;
-    default:
-        /*
-         * Nothing to do!
-         */
-        break;
+  int i, dim;
+  access_t *access;
+  shpseg *offset;
+  
+  DBUG_ENTER("TSIprint");
+  
+  switch (NODE_TYPE(arg_node)) {
+  case N_Nwith:
+    if (status == _ENTER) {
+      indent = indent +2;
+      INDENT;
+      fprintf(outfile,"WL_LEVEL: %d \n",INFO_TSI_WLLEVEL(arg_info));
     }
-
-    DBUG_VOID_RETURN;
+    else
+      indent = indent -2;
+    break;
+  case N_Ncode:
+    dim = SHP_SEG_SIZE;
+    if (status == _EXIT) {
+      access = INFO_TSI_ACCESS(arg_info);
+      do {
+        if (access == NULL) {
+          INDENT;
+          fprintf(outfile,"No accesses! \n");
+        }
+        else {
+          dim = VARDEC_OR_ARG_DIM(ACCESS_ARRAY(access));
+          offset = ACCESS_OFFSET(access);
+          INDENT;
+          fprintf(outfile,"Access-class: ");
+          fprintf(outfile,"%s\n",ACLT(ACCESS_CLASS(access)));
+          INDENT;
+          do {
+            INDENT;
+            if (offset == NULL)
+              fprintf(outfile,"no offset\n");
+            else {
+              if (ACCESS_DIR(access) == ADIR_read)
+                fprintf(outfile,"read ( [ %d",SHPSEG_SHAPE(offset,0));
+              else
+                fprintf(outfile,"write( [ %d",SHPSEG_SHAPE(offset,0));
+              for (i=1; i<dim; i++)
+                fprintf(outfile,",%d",SHPSEG_SHAPE(offset,i));
+              if (VARDEC_NAME(ACCESS_ARRAY(access)) != NULL)
+                fprintf(outfile," ], %s)\n", VARDEC_NAME(ACCESS_ARRAY(access)));
+              else
+                fprintf(outfile," ], ?)\n");
+              offset = SHPSEG_NEXT(offset);
+            }
+          } while (offset != NULL);
+          access = ACCESS_NEXT(access);
+        }
+        fprintf(outfile,"\n");
+      } while (access != NULL);
+    }
+    break;
+  default:
+    /*
+     * Nothing to do!
+     */
+    break;
+  }
+  
+  DBUG_VOID_RETURN;
 }
+#endif
 
 void
 TSIprintAccesses (node *arg_node, node *arg_info)
@@ -216,12 +229,19 @@ TSIprintAccesses (node *arg_node, node *arg_info)
                     if (offset == NULL)
                         fprintf (outfile, "no offset\n");
                     else {
-                        fprintf (outfile, "read( %s[ %d", IV (iv),
-                                 SHPSEG_SHAPE (offset, 0));
+                        if (ACCESS_DIR (access) == ADIR_read)
+                            fprintf (outfile, "read ( %s[ %d", IV (iv),
+                                     SHPSEG_SHAPE (offset, 0));
+                        else
+                            fprintf (outfile, "write( %s[ %d", IV (iv),
+                                     SHPSEG_SHAPE (offset, 0));
                         for (i = 1; i < dim; i++)
                             fprintf (outfile, ",%d", SHPSEG_SHAPE (offset, i));
-                        fprintf (outfile, " ], %s)\n",
-                                 VARDEC_NAME (ACCESS_ARRAY (access)));
+                        if (VARDEC_NAME (ACCESS_ARRAY (access)) != NULL)
+                            fprintf (outfile, " ], %s)\n",
+                                     VARDEC_NAME (ACCESS_ARRAY (access)));
+                        else
+                            fprintf (outfile, " ], ??)\n");
                         offset = SHPSEG_NEXT (offset);
                     }
                 } while (offset != NULL);
@@ -616,15 +636,16 @@ TSInwith (node *arg_node, node *arg_info)
     INFO_TSI_WOTYPE (arg_info) = NWITH_TYPE (arg_node);
     INFO_TSI_BELOWAP (arg_info) = 0;
     INFO_TSI_WLLEVEL (arg_info) = INFO_TSI_WLLEVEL (old_arg_info) + 1;
-
-    TSIprint (arg_node, arg_info, _ENTER);
-
+    INFO_TSI_WLARRAY (arg_info) = NWITHOP_ARRAY (NWITH_WITHOP (arg_node));
+    /*
+     *  TSIprint(arg_node, arg_info, _ENTER);
+     */
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
     INFO_TSI_FEATURE (arg_info) = INFO_TSI_FEATURE (old_arg_info) | FEATURE_WL;
-
-    TSIprint (arg_node, arg_info, _EXIT);
-
+    /*
+     *  TSIprint(arg_node, arg_info, _EXIT);
+     */
     NWITH_TSI (arg_node) = arg_info;
     arg_info = old_arg_info;
 
@@ -664,9 +685,23 @@ TSIncode (node *arg_node, node *arg_info)
     INFO_TSI_FEATURE (arg_info) = FEATURE_NONE;
 
     if (NCODE_CBLOCK (arg_node) != NULL) {
-        TSIprint (arg_node, arg_info, _ENTER);
+        /*
+         *    TSIprint(arg_node, arg_info, _ENTER);
+         */
+        if ((INFO_TSI_WOTYPE (arg_info) == WO_genarray)
+            || (INFO_TSI_WOTYPE (arg_info) == WO_modarray)) {
+
+            INFO_TSI_ACCESS (arg_info)
+              = MakeAccess (INFO_TSI_WLARRAY (arg_info), INFO_TSI_INDEXVAR (arg_info),
+                            ACL_offset, NULL, ADIR_write, INFO_TSI_ACCESS (arg_info));
+            ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info))
+              = IntVec2Shpseg (1, 0, NULL, ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info)));
+        }
+
         NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
-        TSIprint (arg_node, arg_info, _EXIT);
+        /*
+         *    TSIprint(arg_node, arg_info, _EXIT);
+         */
     }
 
     NCODE_ACCESS (arg_node) = INFO_TSI_ACCESS (arg_info);
@@ -910,7 +945,7 @@ TSIprf (node *arg_node, node *arg_info)
 
                 INFO_TSI_ACCESS (arg_info)
                   = MakeAccess (ID_VARDEC (arg_node_arg2), ID_VARDEC (arg_node_arg1),
-                                ACL_unknown, NULL, INFO_TSI_ACCESS (arg_info));
+                                ACL_unknown, NULL, ADIR_read, INFO_TSI_ACCESS (arg_info));
 
                 if (ACCESS_IV (INFO_TSI_ACCESS (arg_info))
                     == INFO_TSI_INDEXVAR (arg_info)) {
