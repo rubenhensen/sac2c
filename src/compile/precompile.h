@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  2000/10/09 19:16:04  dkr
+ * prototype for AdjustFoldFundef() removed
+ *
  * Revision 2.8  2000/08/17 10:12:25  dkr
  * all the NT stuff is now in a separate modul (NameTuples.[ch])
  *
@@ -86,6 +89,7 @@
 
 extern node *Precompile (node *syntax_tree);
 
+extern node *PREC1fundef (node *arg_node, node *arg_info);
 extern node *PREC1let (node *arg_node, node *arg_info);
 
 extern node *PREC2modul (node *arg_node, node *arg_info);
@@ -110,7 +114,6 @@ extern node *PREC2sync (node *arg_node, node *arg_info);
 extern node *PREC2WLseg (node *arg_node, node *arg_info);
 extern node *PREC2WLsegVar (node *arg_node, node *arg_info);
 
-extern node *AdjustFoldFundef (node *fundef, ids *acc, node *cexpr);
 extern char *ObjInitFunctionName ();
 
 extern char *RenameLocalIdentifier (char *id);
