@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2004/02/03 11:25:44  sbs
+ * NTCPRF_phi added.
+ *
  * Revision 1.19  2003/09/10 09:42:35  sbs
  * NTCPRF_drop_SxV improved /
  * NTCPRF_take_SxV added.
@@ -1204,6 +1207,36 @@ NTCPRF_cat_VxV (te_info *info, ntype *args)
     } else {
         res = TYMakeAKD (TYCopyType (TYGetScalar (array1)), 1, SHMakeShape (0));
     }
+
+    DBUG_RETURN (TYMakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCPRF_phi( te_info *info, ntype *args)
+ *
+ * description:
+ *    alpha [*]  x alpha [*]  ->  alpha [*]
+ *
+ ******************************************************************************/
+
+ntype *
+NTCPRF_phi (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *array1, *array2;
+
+    DBUG_ENTER ("NTCPRF_phi");
+    DBUG_ASSERT (TYGetProductSize (args) == 2,
+                 "phi called with incorrect number of arguments");
+
+    array1 = TYGetProductMember (args, 0);
+    array2 = TYGetProductMember (args, 1);
+
+    TEAssureSameScalarType (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
+                            array2);
+    res = TYLubOfTypes (array1, array2);
 
     DBUG_RETURN (TYMakeProductType (1, res));
 }

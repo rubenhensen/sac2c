@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2004/02/03 11:25:44  sbs
+ * NTCPRF_phi added.
+ *
  * Revision 1.8  2003/09/10 09:42:35  sbs
  * NTCPRF_drop_SxV improved /
  * NTCPRF_take_SxV added.
@@ -65,5 +68,6 @@ extern ntype *NTCPRF_int_op_SxS (te_info *info, ntype *args);
 extern ntype *NTCPRF_drop_SxV (te_info *info, ntype *args);
 extern ntype *NTCPRF_take_SxV (te_info *info, ntype *args);
 extern ntype *NTCPRF_cat_VxV (te_info *info, ntype *args);
+extern ntype *NTCPRF_phi (te_info *info, ntype *args);
 
 #endif /* _ct_prf_h */
