@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.16  2004/08/07 13:20:11  sbs
+ * code brushing finished for now. WL treatment redone.
+ *
  * Revision 1.15  2004/08/07 10:10:27  sbs
  * SSANwithXXX renamed into SSAwithXXXX
  * further code brushing made
@@ -248,21 +251,25 @@ static node *SaveTopSSAstackElse (node *avis);
  *
  * The local info structure contains the following fields:
  *
- * SINGLEFUNDEF  : steers how much code is to be traversed; legal values
- *                 are defined below.
- * ALLOW_GOS     : flag indicating whether global objects are potentially
- *                 contained in the code to be reformed
+ * SINGLEFUNDEF     : steers how much code is to be traversed; legal values
+ *                    are defined below.
+ * ALLOW_GOS        : flag indicating whether global objects are potentially
+ *                    contained in the code to be reformed
+ * EXPLICIT_ALLOCS  : flag indicating whether mem allocs have been made
+ *                    explicit.
  *
  * GENERATE_FUNCOND : indicates funcond generation mode rather than
  *                    renaming mode (toggled by SSAreturn)
- * RENAMING_MODE : used in funconds only; steers renaming in SSArightids;
- *                 legal values are defined below.
+ * RENAMING_MODE    : used in funconds only; steers renaming in SSArightids;
+ *                    legal values are defined below.
  *
  * FUNDEF        : ptr to the actual fundef
  * ASSIGN        : ptr to the actual assign; if modified during RHS traversal
  *                 the new ptr has to be inserted and traversed again!
  * CONDSTMT      : ptr to the cond node passed by if any
  * FUNCOND_FOUND : flag indicating presence of funcond node
+ * WITHID        : ptr to actual withid node
+ * FIRST_WITHID  : ptr to the first withid node of a mgWL
  *
  */
 /*@{*/
@@ -270,16 +277,17 @@ static node *SaveTopSSAstackElse (node *avis);
 struct INFO {
     int singlefundef;
     bool allow_gos;
+    bool explicit_allocs;
+
     bool generate_funcond;
     int renaming_mode;
+
     node *fundef;
     node *assign;
     node *condstmt;
     bool funcond_found;
-
-    node *withvec;
-    node *withids;
     node *withid;
+    node *first_withid;
 };
 
 /**
@@ -302,6 +310,7 @@ struct INFO {
  */
 #define INFO_SSA_SINGLEFUNDEF(n) (n->singlefundef)
 #define INFO_SSA_ALLOW_GOS(n) (n->allow_gos)
+#define INFO_SSA_EXPLICIT_ALLOCS(n) (n->explicit_allocs)
 
 #define INFO_SSA_GENERATE_FUNCOND(n) (n->generate_funcond)
 #define INFO_SSA_RENAMING_MODE(n) (n->renaming_mode)
@@ -310,10 +319,8 @@ struct INFO {
 #define INFO_SSA_ASSIGN(n) (n->assign)
 #define INFO_SSA_CONDSTMT(n) (n->condstmt)
 #define INFO_SSA_FUNCOND_FOUND(n) (n->funcond_found)
-
-#define INFO_SSA_WITHVEC(n) (n->withvec)
-#define INFO_SSA_WITHIDS(n) (n->withids)
 #define INFO_SSA_WITHID(n) (n->withid)
+#define INFO_SSA_FIRST_WITHID(n) (n->first_withid)
 
 /*
  * INFO functions:
@@ -329,16 +336,17 @@ MakeInfo ()
 
     INFO_SSA_SINGLEFUNDEF (result) = 0;
     INFO_SSA_ALLOW_GOS (result) = FALSE;
+    INFO_SSA_EXPLICIT_ALLOCS (result) = FALSE;
+
     INFO_SSA_GENERATE_FUNCOND (result) = FALSE;
     INFO_SSA_RENAMING_MODE (result) = SSA_USE_TOP;
+
     INFO_SSA_FUNDEF (result) = NULL;
     INFO_SSA_ASSIGN (result) = NULL;
     INFO_SSA_CONDSTMT (result) = NULL;
     INFO_SSA_FUNCOND_FOUND (result) = FALSE;
-
-    INFO_SSA_WITHVEC (result) = NULL;
-    INFO_SSA_WITHIDS (result) = NULL;
     INFO_SSA_WITHID (result) = NULL;
+    INFO_SSA_FIRST_WITHID (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -1008,68 +1016,51 @@ SSAap (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *SSAwith(node *arg_node, info *arg_info)
+ * @fn node *SSAwith(node *arg_node, info *arg_info)
  *
- * description:
- *  traverses with-op, partitions and code in this order
+ *   @brief traverses with-op, partitions and code in this order
  *
  ******************************************************************************/
 node *
 SSAwith (node *arg_node, info *arg_info)
 {
-    node *withid;
-
     DBUG_ENTER ("SSAwith");
 
     /* traverse in with-op */
     DBUG_ASSERT ((NWITH_WITHOP (arg_node) != NULL), "Nwith without WITHOP node!");
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
-    /*
-     * before traversing all partions, init with-ids/-vec to check all
-     * partions for identical index variables
+    /**
+     * traverse partitions: this implicitly checks withid consistency between
+     * several partitions!
      */
     DBUG_ASSERT ((NWITH_PART (arg_node) != NULL), "Nwith without PART node!");
-
-    withid = NPART_WITHID (NWITH_PART (arg_node));
-    if (NWITHID_IDS (withid) != NULL) {
-        INFO_SSA_WITHIDS (arg_info) = IDS_AVIS (NWITHID_IDS (withid));
-    } else {
-        INFO_SSA_WITHIDS (arg_info) = NULL;
-    }
-    if (NWITHID_VEC (withid) != NULL) {
-        INFO_SSA_WITHVEC (arg_info) = IDS_AVIS (NWITHID_VEC (withid));
-    } else {
-        INFO_SSA_WITHVEC (arg_info) = NULL;
-    }
-
-    /* traverse partitions */
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    /**
+     * reset FIRST_WITHID (being set in SSAwithid) for the next with loop
+     * traversal
+     */
+    INFO_SSA_FIRST_WITHID (arg_info) = NULL;
 
-    /* do stacking of current renaming status */
-    FOR_ALL_AVIS (DupTopSSAstack, INFO_SSA_FUNDEF (arg_info));
-
-    /* traverse code */
+    /**
+     * traverse code: as we may have more than one code stacking is done
+     * at the code nodes themselves!
+     */
     DBUG_ASSERT ((NWITH_CODE (arg_node) != NULL), "Nwith without CODE node!");
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-
-    /* pop old renaming status from stack */
-    FOR_ALL_AVIS (PopSSAstack, INFO_SSA_FUNDEF (arg_info));
 
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *SSApart(node *arg_node, info *arg_info)
+ * @fn node *SSApart(node *arg_node, info *arg_info)
  *
- * description:
- *  traverses generator in this order for all partitions and last
- * (only one time!) withid
+ *   @brief as all generators have to be done BEFORE any of the withids (these
+ *          are treated as LHS which should not be visible in the generators),
+ *          we traverse the generators top down and the withids bottom up.
  *
  ******************************************************************************/
 node *
@@ -1081,53 +1072,113 @@ SSApart (node *arg_node, info *arg_info)
     DBUG_ASSERT ((NPART_GEN (arg_node) != NULL), "Npart without Ngen node!");
     NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
 
-    DBUG_ASSERT ((NPART_WITHID (arg_node) != NULL), "Npart without Nwithid node!");
-
-    /* assert unique withids/withvec !!! */
-    if (INFO_SSA_WITHIDS (arg_info) == NULL) {
-        DBUG_ASSERT ((NWITHID_IDS (NPART_WITHID (arg_node)) == NULL),
-                     "multigenerator withloop with inconsistent withids");
-    } else {
-        DBUG_ASSERT ((INFO_SSA_WITHIDS (arg_info)
-                      == IDS_AVIS (NWITHID_IDS (NPART_WITHID (arg_node)))),
-                     "multigenerator withloop with inconsistent withids");
-    }
-    if (INFO_SSA_WITHVEC (arg_info) == NULL) {
-        DBUG_ASSERT ((NWITHID_VEC (NPART_WITHID (arg_node)) == NULL),
-                     "multigenerator withloop with inconsistent withvec");
-    } else {
-        DBUG_ASSERT ((INFO_SSA_WITHVEC (arg_info)
-                      == IDS_AVIS (NWITHID_VEC (NPART_WITHID (arg_node)))),
-                     "multigenerator withloop with inconsistent withvec");
-    }
-
     if (NPART_NEXT (arg_node) != NULL) {
-        /* traverse next part */
         NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
-        /*
-         * not the last withid -> traverse it as RHS occurance
-         */
-        NWITHID_VEC (NPART_WITHID (arg_node))
-          = SSArightids (NWITHID_VEC (NPART_WITHID (arg_node)), arg_info);
-        NWITHID_IDS (NPART_WITHID (arg_node))
-          = SSArightids (NWITHID_IDS (NPART_WITHID (arg_node)), arg_info);
-    } else {
-        /*
-         * last withid -> traverse it as LHS occurance
-         */
-        NPART_WITHID (arg_node) = Trav (NPART_WITHID (arg_node), arg_info);
     }
+
+    /* traverse withid on our way back up: */
+    DBUG_ASSERT ((NPART_WITHID (arg_node) != NULL), "Npart without Nwithid node!");
+    NPART_WITHID (arg_node) = Trav (NPART_WITHID (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *SSAcode(node *arg_node, info *arg_info)
+ * @fn node *SSAwithid(node *arg_node, info *arg_info)
  *
- * description:
- *  traverses block and expr in this order. then next Ncode node
+ *   @brief In principle, the withids have to be treated as LHS, as they
+ *          introduce new variables. However, if we do have multi generator
+ *          with loops, we expect all withids to be identical. Therefore,
+ *          we only have to treat the very first one as LHS, all others as
+ *          RHS. To distinguish these cases, we use INFO_SSA_FIRST_WITHID,
+ *          which is reset in SSAwith.
+ *          Another exception arises if SSATransform is called after memory
+ *          allocation has been made explicit. In this case
+ *          SSATransformExplicitAllocs has to be called which sets
+ *          INFO_SSA_EXPLICIT_ALLOCS which forces ALL withids to be treated
+ *          as RHSs.
+ *
+ ******************************************************************************/
+node *
+SSAwithid (node *arg_node, info *arg_info)
+{
+    node *assign;
+    node *first;
+
+    DBUG_ENTER ("SSAwithid");
+
+    /* Set current assign to NULL for these special ids! */
+    assign = INFO_SSA_ASSIGN (arg_info);
+    INFO_SSA_ASSIGN (arg_info) = NULL;
+    INFO_SSA_WITHID (arg_info) = arg_node;
+
+    if (INFO_SSA_FIRST_WITHID (arg_info) == NULL) {
+        /**
+         * This is the first withid. Therefore, we have to treat it as LHS.
+         * The only exception is when withids have been allocated explicitly
+         * (refcounting). In that case, we treat them as RHSs like all the others.
+         */
+        INFO_SSA_FIRST_WITHID (arg_info) = arg_node;
+
+        if (NWITHID_VEC (arg_node) != NULL) {
+            if (INFO_SSA_EXPLICIT_ALLOCS (arg_info)) {
+                NWITHID_VEC (arg_node) = TravRightIDS (NWITHID_VEC (arg_node), arg_info);
+            } else {
+                NWITHID_VEC (arg_node) = TravLeftIDS (NWITHID_VEC (arg_node), arg_info);
+            }
+        }
+
+        if (NWITHID_IDS (arg_node) != NULL) {
+            if (INFO_SSA_EXPLICIT_ALLOCS (arg_info)) {
+                NWITHID_IDS (arg_node) = TravRightIDS (NWITHID_IDS (arg_node), arg_info);
+            } else {
+                NWITHID_IDS (arg_node) = TravLeftIDS (NWITHID_IDS (arg_node), arg_info);
+            }
+        }
+    } else {
+        /**
+         * There have been prior partitions in this WL. INFO_SSA_FIRST_WITHID
+         * points to the topmost one (in renamed form). => treat as RHS!
+         * First, we do the renaming, if necessary. Then, we check consistency with
+         * INFO_SSA_FIRST_WITHID.
+         */
+        first = INFO_SSA_FIRST_WITHID (arg_info);
+        if (NWITHID_VEC (arg_node) != NULL) {
+            NWITHID_VEC (arg_node) = TravRightIDS (NWITHID_VEC (arg_node), arg_info);
+            DBUG_ASSERT (IDS_AVIS (NWITHID_VEC (arg_node))
+                           == IDS_AVIS (NWITHID_VEC (first)),
+                         "multigenerator withloop with inconsistent withvec");
+        } else {
+            DBUG_ASSERT (NWITHID_VEC (first) == NULL,
+                         "multigenerator withloop with inconsistent withvec");
+        }
+
+        if (NWITHID_IDS (arg_node) != NULL) {
+            NWITHID_IDS (arg_node) = TravRightIDS (NWITHID_IDS (arg_node), arg_info);
+            DBUG_ASSERT (IDS_AVIS (NWITHID_IDS (arg_node))
+                           == IDS_AVIS (NWITHID_IDS (first)),
+                         "multigenerator withloop with inconsistent withids");
+        } else {
+            DBUG_ASSERT (NWITHID_IDS (first) == NULL,
+                         "multigenerator withloop with inconsistent withids");
+        }
+    }
+
+    /* restore currect assign for further processing */
+    INFO_SSA_ASSIGN (arg_info) = assign;
+    INFO_SSA_WITHID (arg_info) = NULL;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SSAcode(node *arg_node, info *arg_info)
+ *
+ *   @brief traverses block and expr and potentially epilogue in this order.
+ *          While doing so, create new scope by pushing renaming stacks.
+ *          Before traversing further code nodes reset the scope by popping.
  *
  ******************************************************************************/
 node *
@@ -1159,63 +1210,6 @@ SSAcode (node *arg_node, info *arg_info)
         /* traverse next part */
         NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *  node *SSAwithid(node *arg_node, info *arg_info)
- *
- * description:
- *  traverses in vector and ids strutures. because the withids do not have a
- *  defining assignment. we set the current assignment to NULL when processing
- *  these ids. NEW: instead we annotate the current withid
- *
- ******************************************************************************/
-node *
-SSAwithid (node *arg_node, info *arg_info)
-{
-    node *assign;
-
-    DBUG_ENTER ("SSAwithid");
-
-    /* set current assign to NULL for these special ids */
-    assign = INFO_SSA_ASSIGN (arg_info);
-    INFO_SSA_ASSIGN (arg_info) = NULL;
-    INFO_SSA_WITHID (arg_info) = arg_node;
-
-    /* The WITH must be treated like a RHS iff
-       the index vector has been allocated explicitly */
-    if ((IDS_AVIS (NWITHID_VEC (arg_node)) != NULL)
-        && (AVIS_SSAASSIGN (IDS_AVIS (NWITHID_VEC (arg_node))) != NULL)
-        && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (IDS_AVIS (NWITHID_VEC (arg_node)))))
-            == N_prf)
-        && ((PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (IDS_AVIS (NWITHID_VEC (arg_node)))))
-             == F_alloc_or_reuse)
-            || (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (IDS_AVIS (NWITHID_VEC (arg_node)))))
-                == F_alloc))) {
-        if (NWITHID_VEC (arg_node) != NULL) {
-            NWITHID_VEC (arg_node) = TravRightIDS (NWITHID_VEC (arg_node), arg_info);
-        }
-
-        if (NWITHID_IDS (arg_node) != NULL) {
-            NWITHID_IDS (arg_node) = TravRightIDS (NWITHID_IDS (arg_node), arg_info);
-        }
-    } else {
-        if (NWITHID_VEC (arg_node) != NULL) {
-            NWITHID_VEC (arg_node) = TravLeftIDS (NWITHID_VEC (arg_node), arg_info);
-        }
-
-        if (NWITHID_IDS (arg_node) != NULL) {
-            NWITHID_IDS (arg_node) = TravLeftIDS (NWITHID_IDS (arg_node), arg_info);
-        }
-    }
-
-    /* restore currect assign for further processing */
-    INFO_SSA_ASSIGN (arg_info) = assign;
-    INFO_SSA_WITHID (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -1579,6 +1573,8 @@ TravRightIDS (ids *arg_ids, info *arg_info)
  * <!--
  * node *SSATransform(node *ast)            : general traversal function
  * node *SSATransformAllowGOs(node *ast)    : ignore usages of non-defined vars
+ * node *SSATransformExplicitAllocs(node *syntax_tree) : support explicit
+ *                                                       withid allocations
  * node *SSATransformOneFunction(node *ast) : one fundef + included LC funs
  * node *SSATransformOneFundef(node *ast)   : one fundef only
  *
@@ -1664,6 +1660,53 @@ SSATransformAllowGOs (node *syntax_tree)
     arg_info = MakeInfo ();
     INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_FUNDEFS;
     INFO_SSA_ALLOW_GOS (arg_info) = TRUE;
+
+    old_tab = act_tab;
+    act_tab = ssafrm_tab;
+
+    syntax_tree = Trav (syntax_tree, arg_info);
+
+    act_tab = old_tab;
+    arg_info = FreeInfo (arg_info);
+
+    valid_ssaform = TRUE;
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SSATransformExplicitAllocs(node *syntax_tree)
+ *
+ *   @brief In principle, this is only a wrapper for SSATransform. The only
+ *          difference is that it assumes the withid elements to be initialized
+ *          explicitlt BEFORE each WL. Therefore, SSAWithid has to behave
+ *          slightly different.
+ *          This variant is required after explicit reference counting
+ *          has been introduced in the syntax tree.
+ *
+ ******************************************************************************/
+node *
+SSATransformExplicitAllocs (node *syntax_tree)
+{
+    info *arg_info;
+    funtab *old_tab;
+
+    DBUG_ENTER ("SSATransformExplicitAllocs");
+
+    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_modul),
+                 "SSATransformExplicitAllocs is used for module nodes only");
+
+#ifndef DBUG_OFF
+    if (compiler_phase == PH_sacopt) {
+        DBUG_PRINT ("OPT",
+                    ("starting ssa transformation expecting explicit withid allocs"));
+    }
+#endif
+
+    arg_info = MakeInfo ();
+    INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_FUNDEFS;
+    INFO_SSA_EXPLICIT_ALLOCS (arg_info) = TRUE;
 
     old_tab = act_tab;
     act_tab = ssafrm_tab;
