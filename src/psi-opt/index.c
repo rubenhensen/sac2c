@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2002/10/07 04:51:05  dkr
+ * some modifications for dynamic shapes added
+ *
  * Revision 3.26  2002/09/11 23:13:38  dkr
  * IdxLet(): entries of prf_node_info.mac can be arranged in any order
  * now
@@ -564,7 +567,7 @@
  *    INFO_IVE_TRANSFORM_VINFO - indicates whether N_nums, N_prfs, and N_arrays
  *                               should be transformed or not.
  *    INFO_IVE_NON_SCAL_LEN - needed for F_add_SxA, F_add_AxS, F_sub_SxA, and
- *                            F_sub_AxS if the are used for pure iv address
+ *                            F_sub_AxS if they are used for pure iv address
  *                            computations on ivs of non-maximal length!
  *                            In these situations the length of the non-scalar
  *                            argument has to be known when traversing the
@@ -622,10 +625,11 @@ FindVect (node *chain)
  *
  */
 
-int
+bool
 EqTypes (types *type1, types *type2)
 {
-    int i, res;
+    int i;
+    bool res;
     int dim1, dim2;
     shpseg *shpseg1, *shpseg2;
 
@@ -635,16 +639,16 @@ EqTypes (types *type1, types *type2)
     shpseg2 = Type2Shpseg (type2, &dim2);
 
     if (dim1 == dim2) {
-        res = 1;
+        res = TRUE;
         DBUG_ASSERT ((shpseg1 != NULL) && (shpseg2 != NULL),
                      "EqTypes used on type without shape");
         for (i = 0; i < dim2; i++) {
             if (SHPSEG_SHAPE (shpseg1, i) != SHPSEG_SHAPE (shpseg2, i)) {
-                res = 0;
+                res = FALSE;
             }
         }
     } else {
-        res = 0;
+        res = FALSE;
     }
 
     DBUG_RETURN (res);
@@ -1900,7 +1904,9 @@ IdxPrf (node *arg_node, node *arg_info)
         break;
 
     case F_add_SxA:
-        INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
+        if (GetShapeDim (ID_TYPE (PRF_ARG2 (arg_node))) >= 0) {
+            INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
+        }
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_add_SxS;
@@ -1910,7 +1916,9 @@ IdxPrf (node *arg_node, node *arg_info)
         break;
 
     case F_add_AxS:
-        INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
+        if (GetShapeDim (ID_TYPE (PRF_ARG1 (arg_node))) >= 0) {
+            INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
+        }
         /* here is no break missing */
     case F_add_AxA:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
@@ -1922,7 +1930,9 @@ IdxPrf (node *arg_node, node *arg_info)
         break;
 
     case F_sub_SxA:
-        INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
+        if (GetShapeDim (ID_TYPE (PRF_ARG2 (arg_node))) >= 0) {
+            INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
+        }
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_sub_SxS;
@@ -1932,7 +1942,9 @@ IdxPrf (node *arg_node, node *arg_info)
         break;
 
     case F_sub_AxS:
-        INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
+        if (GetShapeDim (ID_TYPE (PRF_ARG1 (arg_node))) >= 0) {
+            INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
+        }
         /* here is no break missing */
     case F_sub_AxA:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
@@ -2339,7 +2351,6 @@ IdxNcode (node *arg_node, node *arg_info)
                 DBUG_ASSERT ((arr_type != NULL), "missing type-info for LHS of let!");
 
                 switch (NWITH_TYPE (with)) {
-
                 case WO_modarray:
                     withop_arr = NWITHOP_ARRAY (NWITH_WITHOP (with));
                     break;

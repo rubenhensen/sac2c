@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/10/07 04:51:05  dkr
+ * some modifications for dynamic shapes added
+ *
  * Revision 3.11  2002/09/16 14:27:50  dkr
  * no changes done
  *
@@ -277,55 +280,59 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
     DBUG_ENTER ("Scalar2ArrayIndex");
     DBUG_ASSERT (N_array == NODE_TYPE (arrayn), ("wrong nodetype (array)"));
 
-    elts = TYPES_SHAPE (ARRAY_TYPE (arrayn), 0);
-    arrayn = ARRAY_AELEMS (arrayn);
+    if (GetShapeDim (ARRAY_TYPE (arrayn)) >= 0) {
+        elts = TYPES_SHAPE (ARRAY_TYPE (arrayn), 0);
+        arrayn = ARRAY_AELEMS (arrayn);
 
-    iinfo = CreateIndex (elts);
-    valid_permutation = Malloc (sizeof (int) * elts);
-    for (i = 0; i < elts;) {
-        valid_permutation[i++] = 0;
-    }
-
-    for (i = 0; i < elts && ok; i++) {
-        /* check each element. */
-        ok = 0;
-        iinfo->last[i] = NULL;
-        idn = EXPRS_EXPR (arrayn);
-        if (N_num == NODE_TYPE (idn)) { /* this is a constant */
-            iinfo->permutation[i] = 0;
-            iinfo->const_arg[i] = NUM_VAL (idn);
-            ok = 1;
+        iinfo = CreateIndex (elts);
+        valid_permutation = Malloc (sizeof (int) * elts);
+        for (i = 0; i < elts;) {
+            valid_permutation[i++] = 0;
         }
 
-        if (N_id == NODE_TYPE (idn)) {
-            tmpii = ValidLocalId (idn);
-            if (tmpii &&          /* this is a local id, not index var */
-                !tmpii->vector) { /* and scalar, not vector */
-                iinfo->permutation[i] = tmpii->permutation[0];
-                iinfo->last[i] = tmpii;
-                /* may only be incremented once */
-#ifdef TRANSF_TRUE_PERMUTATIONS
-                ok = 1 == ++valid_permutation[iinfo->permutation[i] - 1];
-#else
+        for (i = 0; i < elts && ok; i++) {
+            /* check each element. */
+            ok = 0;
+            iinfo->last[i] = NULL;
+            idn = EXPRS_EXPR (arrayn);
+            if (N_num == NODE_TYPE (idn)) { /* this is a constant */
+                iinfo->permutation[i] = 0;
+                iinfo->const_arg[i] = NUM_VAL (idn);
                 ok = 1;
-#endif
-            } else if (0 < (iinfo->permutation[i] = LocateIndexVar (idn, wln))) {
-                /* index scalar */
-#ifdef TRANSF_TRUE_PERMUTATIONS
-                ok = 1 == ++valid_permutation[iinfo->permutation[i] - 1];
-#else
-                ok = 1;
-#endif
             }
+
+            if (N_id == NODE_TYPE (idn)) {
+                tmpii = ValidLocalId (idn);
+                if (tmpii &&          /* this is a local id, not index var */
+                    !tmpii->vector) { /* and scalar, not vector */
+                    iinfo->permutation[i] = tmpii->permutation[0];
+                    iinfo->last[i] = tmpii;
+                    /* may only be incremented once */
+#ifdef TRANSF_TRUE_PERMUTATIONS
+                    ok = 1 == ++valid_permutation[iinfo->permutation[i] - 1];
+#else
+                    ok = 1;
+#endif
+                } else if (0 < (iinfo->permutation[i] = LocateIndexVar (idn, wln))) {
+                    /* index scalar */
+#ifdef TRANSF_TRUE_PERMUTATIONS
+                    ok = 1 == ++valid_permutation[iinfo->permutation[i] - 1];
+#else
+                    ok = 1;
+#endif
+                }
+            }
+
+            arrayn = EXPRS_NEXT (arrayn);
         }
 
-        arrayn = EXPRS_NEXT (arrayn);
+        if (!ok) {
+            iinfo = Free (iinfo);
+        }
+        valid_permutation = Free (valid_permutation);
+    } else {
+        iinfo = NULL;
     }
-
-    if (!ok) {
-        iinfo = Free (iinfo);
-    }
-    valid_permutation = Free (valid_permutation);
 
     DBUG_RETURN (iinfo);
 }
@@ -357,27 +364,29 @@ CreateIndexInfoId (node *idn, node *arg_info)
 
     DBUG_ASSERT (!INDEX (assignn), ("index_info already assigned"));
 
-    /* index var? */
-    index_var = LocateIndexVar (idn, wln);
-    if (index_var) {
-        iinfo = CreateIndex ((index_var > 0) ? 0 : ID_SHAPE (idn, 0));
-        INDEX (assignn) = iinfo; /* make this N_assign valid */
+    if (GetShapeDim (ID_TYPE (idn)) >= 0) {
+        /* index var? */
+        index_var = LocateIndexVar (idn, wln);
+        if (index_var) {
+            iinfo = CreateIndex ((index_var > 0) ? 0 : ID_SHAPE (idn, 0));
+            INDEX (assignn) = iinfo; /* make this N_assign valid */
 
-        if (-1 == index_var) { /* index vector */
-            elts = ID_SHAPE (idn, 0);
-            for (i = 0; i < elts; i++) {
-                iinfo->last[i] = NULL;
-                iinfo->permutation[i] = i + 1;
+            if (-1 == index_var) { /* index vector */
+                elts = ID_SHAPE (idn, 0);
+                for (i = 0; i < elts; i++) {
+                    iinfo->last[i] = NULL;
+                    iinfo->permutation[i] = i + 1;
+                }
+            } else { /* index scalar */
+                iinfo->permutation[0] = index_var;
+                iinfo->last[0] = NULL;
             }
-        } else { /* index scalar */
-            iinfo->permutation[0] = index_var;
-            iinfo->last[0] = NULL;
-        }
-    } else {
-        /* valid local variable */
-        iinfo = ValidLocalId (idn);
-        if (iinfo) {
-            INDEX (assignn) = DuplicateIndexInfo (iinfo);
+        } else {
+            /* valid local variable */
+            iinfo = ValidLocalId (idn);
+            if (iinfo) {
+                INDEX (assignn) = DuplicateIndexInfo (iinfo);
+            }
         }
     }
 
@@ -522,16 +531,17 @@ CreateIndexInfoA (node *prfn, node *arg_info)
     }
 
     /* Is idn an Id of an index vector (or transformation)? */
-    if (id_no && NODE_TYPE (idn) == N_id) {
+    if (id_no && (NODE_TYPE (idn) == N_id)) {
         tmpinfo = ValidLocalId (idn);
         index = LocateIndexVar (idn, wln);
 
         /* The Id is the index vector itself or, else it has to
            be an Id which is a valid vector. It must not be based
            on an index scalar (we do want "i prfop [c,c,c]"). */
-        if ((-1 == index) ||
-            /* ^^^ index vector itself */
-            (tmpinfo && (1 == TYPES_DIM (ID_TYPE (idn))))) {
+        if ((GetShapeDim (ID_TYPE (idn)) >= 0)
+            && ((-1 == index) ||
+                /* ^^^ index vector itself */
+                (tmpinfo && (1 == TYPES_DIM (ID_TYPE (idn)))))) {
             /* ^^^ valid local Id (vector) */
             elts = ID_SHAPE (idn, 0);
             iinfo = CreateIndex (elts);
@@ -642,7 +652,7 @@ CreateIndexInfoA (node *prfn, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLIfundef(node *arg_node, node *arg_info)
+ *   node *WLIfundef( node *arg_node, node *arg_info)
  *
  * description:
  *   The optimization traversal OPTTrav is included in WLI traversal to
@@ -658,8 +668,9 @@ WLIfundef (node *arg_node, node *arg_info)
     INFO_WLI_WL (arg_info) = NULL;
     INFO_WLI_FUNDEF (arg_info) = arg_node;
 
-    if (FUNDEF_BODY (arg_node))
+    if (FUNDEF_BODY (arg_node)) {
         FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
+    }
 
     DBUG_RETURN (arg_node);
 }

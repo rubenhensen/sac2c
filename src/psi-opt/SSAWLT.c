@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2002/10/07 04:51:05  dkr
+ * some modifications for dynamic shapes added
+ *
  * Revision 1.12  2002/09/16 14:27:54  dkr
  * no changes done
  *
@@ -238,11 +241,13 @@ CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
  *
  ******************************************************************************/
 
-static int
+static bool
 check_genarray_full_part (node *wln)
 {
     node *lowern, *uppern, *shapen;
-    int result;
+    bool result;
+
+    DBUG_ENTER ("check_genarray_full_part");
 
     shapen = NWITH_SHAPE (wln);
     lowern = NWITH_BOUND1 (wln);
@@ -251,35 +256,39 @@ check_genarray_full_part (node *wln)
     DBUG_ASSERT (((NODE_TYPE (lowern) == N_array) && (NODE_TYPE (uppern) == N_array)),
                  "generator bounds must be arrays!");
 
-    result = 1;
+    if (NODE_TYPE (shapen) == N_array) {
+        result = TRUE;
 
-    /* check lower bound */
-    lowern = ARRAY_AELEMS (lowern);
-    while (result && lowern) {
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (lowern)) == N_num),
-                     "lower generator bound must be constant!");
-        if (NUM_VAL (EXPRS_EXPR (lowern)) != 0) {
-            result = 0;
+        /* check lower bound */
+        lowern = ARRAY_AELEMS (lowern);
+        while (result && lowern) {
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (lowern)) == N_num),
+                         "lower generator bound must be constant!");
+            if (NUM_VAL (EXPRS_EXPR (lowern)) != 0) {
+                result = FALSE;
+            }
+            lowern = EXPRS_NEXT (lowern);
         }
-        lowern = EXPRS_NEXT (lowern);
+
+        /* check upper bound */
+        uppern = ARRAY_AELEMS (uppern);
+        shapen = ARRAY_AELEMS (shapen);
+        while (result && uppern) {
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (uppern)) == N_num),
+                         "shape must be constant!");
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (shapen)) == N_num),
+                         "upper generator bound must be constant!");
+            if (NUM_VAL (EXPRS_EXPR (shapen)) != NUM_VAL (EXPRS_EXPR (uppern))) {
+                result = FALSE;
+            }
+            uppern = EXPRS_NEXT (uppern);
+            shapen = EXPRS_NEXT (shapen);
+        }
+    } else {
+        result = FALSE;
     }
 
-    /* check upper bound */
-    uppern = ARRAY_AELEMS (uppern);
-    shapen = ARRAY_AELEMS (shapen);
-    while (result && uppern) {
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (uppern)) == N_num),
-                     "shape must be constant!");
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (shapen)) == N_num),
-                     "upper generator bound must be constant!");
-        if (NUM_VAL (EXPRS_EXPR (shapen)) != NUM_VAL (EXPRS_EXPR (uppern))) {
-            result = 0;
-        }
-        uppern = EXPRS_NEXT (uppern);
-        shapen = EXPRS_NEXT (shapen);
-    }
-
-    return (result);
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************
@@ -315,14 +324,12 @@ CreateFullPartition (node *wln, node *arg_info)
     DBUG_ENTER ("CreateFullPartition");
 
     /*
-     * only if we do not have a full partition yet.
+     * only if we do not have a full partition yet
+     * and the index vector has known shape.
      */
-    do_create = (NWITH_PARTS (wln) < 0);
+    do_create
+      = ((NWITH_PARTS (wln) < 0) && (GetShapeDim (IDS_TYPE (NWITH_VEC (wln))) >= 0));
 
-    /*
-     * this is the shape of the index vector (generator)
-     */
-    gen_shape = IDS_SHAPE (NWITH_VEC (wln), 0);
     /* determine type of expr in the operator (result of body) */
     type = ID_TYPE (NWITH_CEXPR (wln));
 
@@ -367,6 +374,9 @@ CreateFullPartition (node *wln, node *arg_info)
      * start creation
      */
     if (do_create) {
+        /* this is the shape of the index vector (generator) */
+        gen_shape = IDS_SHAPE (NWITH_VEC (wln), 0);
+
         /* create lower array bound */
         array_null = NULL;
         SSAArrayST2ArrayInt (NULL, &array_null, gen_shape);
@@ -539,29 +549,31 @@ CheckOptimizeArray (node *array, node *arg_info)
         /* shape of index vector */
         _ids = NWITH_VEC (INFO_WLI_WL (arg_info));
 
-        tmpn = ARRAY_AELEMS (array);
-        elts = 0;
-        while (tmpn) {
-            if ((N_id == NODE_TYPE (EXPRS_EXPR (tmpn)))
-                && (SSALocateIndexVar (EXPRS_EXPR (tmpn), INFO_WLI_WL (arg_info))
-                    == elts + 1)) {
-                elts++;
-                tmpn = EXPRS_NEXT (tmpn);
-            } else {
-                tmpn = NULL;
-                elts = 0;
+        if (GetShapeDim (IDS_TYPE (_ids)) >= 0) {
+            tmpn = ARRAY_AELEMS (array);
+            elts = 0;
+            while (tmpn) {
+                if ((N_id == NODE_TYPE (EXPRS_EXPR (tmpn)))
+                    && (SSALocateIndexVar (EXPRS_EXPR (tmpn), INFO_WLI_WL (arg_info))
+                        == elts + 1)) {
+                    elts++;
+                    tmpn = EXPRS_NEXT (tmpn);
+                } else {
+                    tmpn = NULL;
+                    elts = 0;
+                }
             }
-        }
 
-        if (elts == IDS_SHAPE (_ids, 0)) { /* change to index vector */
-            /* free subtree and make new id node. */
-            array = FreeTree (array);
-            vec_name = StringCopy (IDS_NAME (_ids));
-            array = MakeId (vec_name, NULL, ST_regular);
-            ID_VARDEC (array) = IDS_VARDEC (_ids);
-            ID_AVIS (array) = IDS_AVIS (_ids);
-            wlt_expr++;
-            break;
+            if (elts == IDS_SHAPE (_ids, 0)) { /* change to index vector */
+                /* free subtree and make new id node. */
+                array = FreeTree (array);
+                vec_name = StringCopy (IDS_NAME (_ids));
+                array = MakeId (vec_name, NULL, ST_regular);
+                ID_VARDEC (array) = IDS_VARDEC (_ids);
+                ID_AVIS (array) = IDS_AVIS (_ids);
+                wlt_expr++;
+                break;
+            }
         }
 
         arg_info = INFO_WLI_NEXT (arg_info);
@@ -982,7 +994,8 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
         /*
          * check bound ranges
          */
-        if (check_bounds) {
+        let_ids = LET_IDS (INFO_WLI_LET (arg_info));
+        if (check_bounds && (GetShapeDim (IDS_TYPE (let_ids)) >= 0)) {
             empty = 0;
             warning = 0;
             lb = NGEN_BOUND1 (arg_node);
@@ -990,7 +1003,6 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
             lbe = ARRAY_AELEMS (lb);
             ube = ARRAY_AELEMS (ub);
 
-            let_ids = LET_IDS (INFO_WLI_LET (arg_info));
             dim = 0;
             while (lbe) {
                 DBUG_ASSERT ((ube != NULL),
