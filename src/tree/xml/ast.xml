@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.23  2004/10/15 12:04:57  sah
+  removed old module system nodes
+  added AVIS_ALIAS and ARG_ALIAS
+
   Revision 1.22  2004/10/14 14:23:30  sah
   modified Vinfo:
   attribute Type renamed to Shape (and changed type accrodingly)
@@ -259,16 +263,6 @@
             <range from="check-dec" to="write-sib" />
           </phases>
         </attribute>
-        <attribute name="Store_Imports" mandatory="yes">
-          <type name="Link">
-            <target>
-              <node name="Implist" />
-            </target>
-          </type>
-          <phases>
-            <range from="import" to="check-dec" />
-          </phases>
-        </attribute>
         <attribute name="WrapperFuns" mandatory="yes">
           <type name="LUT" />
           <phases>
@@ -287,190 +281,6 @@
           </phases>
         </attribute>
       </attributes>
-      <flags></flags>
-    </node>
-    <node name="Moddec">
-      <sons>
-        <son name="Imports" mandatory="no">
-          <target>
-            <node name="Implist" />
-          </target>
-        </son>
-        <son name="Own" mandatory="no">
-          <target>
-            <node name="Explist" />
-          </target>
-        </son>
-      </sons>
-      <attributes>
-        <attribute name="Name" mandatory="yes">
-          <type name="String" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="LinkWith" mandatory="no">
-          <type name="Deps" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="IsExternal" mandatory="yes">
-          <type name="Integer" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-      </attributes>
-      <flags></flags>
-    </node>
-    <node name="Classdec">
-      <sons>
-        <son name="Imports" mandatory="no">
-          <target>
-            <node name="Implist" />
-          </target>
-        </son>
-        <son name="Own" mandatory="no">
-          <target>
-            <node name="Explist" />
-          </target>
-        </son>
-      </sons>
-      <attributes>
-        <attribute name="Name" mandatory="yes">
-          <type name="String" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="LinkWith" mandatory="no">
-          <type name="Deps" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="IsExternal" mandatory="yes">
-          <type name="Integer" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-      </attributes>
-      <flags></flags>
-    </node>
-    <node name="Sib">
-      <description>stores a SaC information block</description>
-      <sons>
-        <son name="Types" mandatory="no">
-          <target>
-            <node name="Typedef" />
-          </target>
-        </son>
-        <son name="Objs" mandatory="no">
-          <target>
-            <node name="Objdef" />
-          </target>
-        </son>
-        <son name="Funs" mandatory="no">
-          <target>
-            <node name="Fundef" />
-          </target>
-        </son>
-        <son name="Next" default="NULL" mandatory="no">
-          <target>
-            <node name="Sib" />
-          </target>
-        </son>
-      </sons>
-      <attributes>
-        <attribute name="Name" mandatory="yes">
-          <type name="String" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="LinkStyle" mandatory="yes">
-          <type name="Integer" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="LinkWith" mandatory="yes">
-          <type name="Deps" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-      </attributes>
-      <flags></flags>
-    </node>
-    <node name="Implist">
-      <sons>
-        <son name="Next" mandatory="no">
-          <target>
-            <node name="Implist" />
-          </target>
-        </son>
-      </sons>
-      <attributes>
-        <attribute name="Name" mandatory="yes">
-          <type name="String" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="ITypes" mandatory="no">
-          <type name="Ids" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="ETypes" mandatory="no">
-          <type name="Ids" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Objs" mandatory="no">
-          <type name="Ids" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Funs" mandatory="no">
-          <type name="Ids" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-      </attributes>
-      <flags></flags>
-    </node>
-    <node name="Explist">
-      <sons>
-        <son name="ITypes" mandatory="no">
-          <target>
-            <node name="Typedef" />
-          </target>
-        </son>
-        <son name="ETypes" mandatory="no">
-          <target>
-            <node name="Typedef" />
-          </target>
-        </son>
-        <son name="Objs" mandatory="no">
-          <target>
-            <node name="Objdef" />
-          </target>
-        </son>
-        <son name="Funs" mandatory="no">
-          <target>
-            <node name="Fundef" />
-          </target>
-        </son>
-      </sons>
-      <attributes></attributes>
       <flags></flags>
     </node>
     <node name="Typedef">
@@ -1089,6 +899,12 @@
             <range from="psi-optimize" to="final" />
           </phases>
         </attribute>
+	<attribute name="Alias" default="TRUE" mandatory="yes">
+	  <type name="Bool" />
+	  <phases>
+	    <phase name="aliasanalysis" />
+	  </phases>
+	</attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -2566,6 +2382,12 @@
 	    <phase name="emmrc" />
 	  </phases>
 	</attribute>
+	<attribute name="Alias" default="TRUE" mandatory="yes">
+	  <type name="Bool" />
+	  <phases>
+	    <phase name="aliasanalysis" />
+	  </phases>
+	</attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -3954,38 +3776,6 @@
         </attribute>
         <attribute name="ResCount" mandatory="yes">
           <type name="Integer" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-      </attributes>
-      <flags></flags>
-    </node>
-    <node name="Modspec">
-      <sons></sons>
-      <attributes>
-        <attribute name="Name" mandatory="yes">
-          <type name="String" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Imports" mandatory="no">
-          <type name="Node">
-            <target>
-              <node name="Implist" />
-            </target>
-          </type>
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Own" default="NULL" mandatory="no">
-          <type name="Node">
-            <target>
-              <node name="Explist" />
-            </target>
-          </type>
           <phases>
             <all />
           </phases>
