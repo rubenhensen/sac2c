@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/06/07 17:12:56  mwe
+ * AssociativeLaw deactivated in compiler by default
+ *
  * Revision 3.17  2002/03/13 16:03:20  ktr
  * Withloop-Scalarization deactivated in compilation by default
  *
@@ -386,11 +389,11 @@ bool patch_with = FALSE;
  */
 
 #ifdef PRODUCTION
-unsigned int optimize
-  = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_WLS);
+unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI)
+                        & (~OPT_APL) & (~OPT_WLS) & (~OPT_AL);
 #else /* PRODUCTION */
 unsigned int optimize
-  = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_WLS);
+  = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_WLS) & (~OPT_AL);
 
 #endif /* PRODUCTION */
 
