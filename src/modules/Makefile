@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.5  1995/08/08 09:52:15  cg
+# Revision 1.6  1995/08/30 14:02:17  cg
+# now print.o depends on compare_macros.h
+#
+# Revision 1.5  1995/08/08  09:52:15  cg
 # include of typecheck.h made possible.
 #
 # Revision 1.4  1994/12/31  14:31:32  sbs
@@ -48,4 +51,11 @@ import.o: /usr/include/stdio.h ../global/tree.h ../global/type_info.mac
 import.o: ../global/node_info.mac ../global/prf_node_info.mac
 import.o: ../global/free.h ../global/Error.h ../global/my_debug.h
 import.o: ../scanparse/scnprs.h ../scanparse/y.tab.h ../global/traverse.h
-import.o: ../typecheck/typecheck.h filemgr.h import.h
+import.o: ../global/access_macros.h filemgr.h import.h compare_macros.h
+sib.o: /usr/include/malloc.h /usr/include/string.h
+sib.o: /usr/include/sys/stdtypes.h /usr/include/limits.h ../../inc/dbug.h
+sib.o: /usr/include/stdio.h ../global/tree.h ../global/type_info.mac
+sib.o: ../global/node_info.mac ../global/prf_node_info.mac ../global/free.h
+sib.o: ../global/Error.h ../global/my_debug.h ../scanparse/scnprs.h
+sib.o: ../scanparse/y.tab.h ../global/traverse.h ../global/access_macros.h
+sib.o: filemgr.h import.h
