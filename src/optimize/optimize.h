@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.52  1998/03/21 22:46:54  srs
+ * added wlt_tab to MRD_TAB
+ *
  * Revision 1.51  1998/03/04 14:39:16  srs
  * changed wlf_tab to wli_tab in MRD_TAB
  *
@@ -217,7 +220,7 @@ extern stack *mrdl_stack;
 #define MRD_TOS mrdl_stack->stack[mrdl_stack->tos]
 #define MRD_TAB                                                                          \
     (cf_tab == act_tab || unroll_tab == act_tab || unswitch_tab == act_tab               \
-     || cse_tab == act_tab || wli_tab == act_tab)
+     || cse_tab == act_tab || wli_tab == act_tab || wlt_tab == act_tab)
 #define MRD_LIST (long *)MRD_TOS.varlist
 #define MRD(i) MRD_TOS.varlist[i]
 
