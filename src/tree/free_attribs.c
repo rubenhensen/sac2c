@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/10/05 16:16:05  sah
+ * recursive self calls of loopfuns are handled
+ * correctly now
+ *
  * Revision 1.6  2004/10/04 17:17:00  sah
  * fixed bug and rearranged some code
  *
@@ -165,7 +169,8 @@ FreeApLinkAttrib (node *attr)
                       || (FUNDEF_USED (attr) != USED_INACTIVE)),
                      "FUNDEF_USED must be active for LaC functions!");
 
-        if (FUNDEF_USED (attr) != USED_INACTIVE) {
+        /* check whether this function is use-counted */
+        if ((FUNDEF_USED (attr) != USED_INACTIVE) && (!(FUNDEF_IS_LOOPFUN (attr)))) {
             (FUNDEF_USED (attr))--;
 
             DBUG_ASSERT ((FUNDEF_USED (attr) >= 0), "FUNDEF_USED dropped below 0");
