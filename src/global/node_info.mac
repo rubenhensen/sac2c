@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.151  1998/02/15 19:53:21  srs
+ * *** empty log message ***
+ *
  * Revision 1.150  1998/02/12 16:57:28  dkr
  * DupTree() now works with the new with-loop
  *
@@ -809,13 +812,13 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    */
 
   NIF (N_Nwith, "N_Nwith", TravSons, FltnNwith, PrintNWith, TravSons, OPTNwith, TravSons,
-       TravSons, FreeNWith, TravSons, RCNwith, CompNWith, TravSons, DupChain, TravSons,
+       TravSons, FreeNWith, CFNwith, RCNwith, CompNWith, TravSons, DupChain, TravSons,
        TravSons, TravSons, TravSons, TravSons, WLFNwith, TravSons, PrintNWith, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, UNQNwith, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_Npart, "N_Npart", TravSons, FltnNpart, PrintNPart, TravSons, TravSons, TravSons,
-       TravSons, FreeNPart, TravSons, RCNpart, TravSons, TravSons, DupNpart, TravSons,
+       TravSons, FreeNPart, CFNpart, RCNpart, TravSons, TravSons, DupNpart, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrintNPart, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, O2NNpart, 3),
@@ -839,7 +842,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_Ncode, "N_Ncode", TravSons, FltnNcode, NoTrav, TCNcode, TravSons, TravSons,
-       TravSons, FreeNCode, TravSons, RCNcode, TravSons, TravSons, DupChain, TravSons,
+       TravSons, FreeNCode, CFNcode, RCNcode, TravSons, TravSons, DupChain, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, NoTrav, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
