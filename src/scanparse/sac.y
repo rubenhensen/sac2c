@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/01/07 13:04:53  dkr
+ * tabs in source code replaced by spaces
+ *
  * Revision 2.15  1999/10/07 13:57:31  sbs
  * YYMAXDEPTH is preset to 10000 to ensure a reasonable stack size for
  * the parser.
@@ -463,9 +466,7 @@ file:   PARSE_PRG prg {syntax_tree=$2;}
       | PARSE_DEC moddec {decl_tree=$2;}
       | PARSE_SIB sib {sib_tree=$2;}
       | PARSE_RC  targets {target_list=RSCAddTargetList($2, target_list);}
-                 
-  
-	;
+      ;
 
 id: ID
       {
@@ -515,7 +516,7 @@ moddec: modheader evimport OWN COLON expdesc
                         mdb_nodetype[ $$->nodetype ], $$, $$->info.fun_name.id,
                         mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
           }
-	     }
+             }
       | modheader evimport
         {
           $$=$1;
@@ -536,7 +537,7 @@ moddec: modheader evimport OWN COLON expdesc
                         mdb_nodetype[ $$->nodetype ], $$, $$->info.fun_name.id,
                         mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
           }
-	}
+        }
       ;
 
 modheader: modclass evextern id COLON linkwith
@@ -560,63 +561,64 @@ modheader: modclass evextern id COLON linkwith
          ;                 
 
 modclass: MODDEC {$$=N_moddec; file_kind=F_moddec;}
-	     | CLASSDEC {$$=N_classdec; file_kind=F_classdec;}
-	     ;
+        | CLASSDEC {$$=N_classdec; file_kind=F_classdec;}
+        ;
 
 evextern: EXTERN 
           {
             file_kind++;
             $$=1;
           }
-	|
+        |
           {
             $$=0;
           }
-	;
+        ;
 
-linkwith: PRAGMA LINKWITH linklist {$$=$3;}
-        | {$$=NULL;}
+linkwith: PRAGMA LINKWITH linklist
+            { $$=$3; }
+        |   { $$=NULL; }
         ;
 
 linklist: string COMMA linklist 
            {
              $$=MakeDeps($1, NULL, NULL, ST_system, NULL, $3);
            }
-       | string
+        | string
            {
              $$=MakeDeps($1, NULL, NULL, ST_system, NULL, NULL);
            }
-       ;
+        ;
 
 evimport: imports {$$=$1;}
-	  | {$$=NULL;}
-	  ;
+          | {$$=NULL;}
+          ;
 
 imports: import imports { $$=$1;
                           $$->node[0]=$2;
                         }
 
-	| import { $$=$1; }
-	;
+       | import { $$=$1; }
+       ;
 
 import: IMPORT id COLON impdesc { $$=$4; $$->info.id=$2; }
-	;
+        ;
 
 impdesc: ALL SEMIC
-            { $$=MakeNode( N_implist );
+           { $$=MakeNode( N_implist );
 
-              DBUG_PRINT("GENTREE",
-                         ("%s:"P_FORMAT,mdb_nodetype[ $$->nodetype ], $$));
-            }
-	| BRACE_L IMPLICIT TYPES COLON ids SEMIC impdesc2
-            { $$=$7;
-              $$->node[1]=(node *)$5; /* dirty trick for keeping ids !*/
-            }
-	| BRACE_L IMPLICIT TYPES COLON SEMIC impdesc2
-            { $$=$6;
-            }
-	| BRACE_L impdesc2 { $$=$2; }
-	;
+             DBUG_PRINT("GENTREE",
+                        ("%s:"P_FORMAT,mdb_nodetype[ $$->nodetype ], $$));
+           }
+       | BRACE_L IMPLICIT TYPES COLON ids SEMIC impdesc2
+           { $$=$7;
+             $$->node[1]=(node *)$5; /* dirty trick for keeping ids !*/
+           }
+       | BRACE_L IMPLICIT TYPES COLON SEMIC impdesc2
+           { $$=$6;
+           }
+       | BRACE_L impdesc2 { $$=$2; }
+       ;
 
 impdesc2: EXPLICIT TYPES COLON ids SEMIC impdesc3
             { $$=$6;
@@ -625,8 +627,8 @@ impdesc2: EXPLICIT TYPES COLON ids SEMIC impdesc3
         | EXPLICIT TYPES COLON SEMIC impdesc3
             { $$=$5;
             }
-	     | impdesc3 { $$=$1; }
-	     ;
+        | impdesc3 { $$=$1; }
+        ;
 
 impdesc3: GLOBAL OBJECTS COLON ids SEMIC impdesc4
             { $$=$6;
@@ -635,8 +637,8 @@ impdesc3: GLOBAL OBJECTS COLON ids SEMIC impdesc4
         | GLOBAL OBJECTS COLON SEMIC impdesc4
             { $$=$5;
             }
-	     | impdesc4 { $$=$1; }
-	;
+        | impdesc4 { $$=$1; }
+        ;
 
 impdesc4: FUNS COLON funids SEMIC BRACE_R
             { $$=MakeNode( N_implist );
@@ -651,141 +653,143 @@ impdesc4: FUNS COLON funids SEMIC BRACE_R
               DBUG_PRINT("GENTREE",
                          ("%s:"P_FORMAT,mdb_nodetype[ $$->nodetype ], $$));
             }
-	     | BRACE_R
+        | BRACE_R
             { $$=MakeNode( N_implist );
 
               DBUG_PRINT("GENTREE",
                          ("%s:"P_FORMAT,mdb_nodetype[ $$->nodetype ], $$));
             }
-	;
-
-expdesc: BRACE_L IMPLICIT TYPES COLON imptypes expdesc2
-         { $$=$6;
-           $$->node[0]=$5;
-         }
-        | BRACE_L expdesc2 
-           {$$=$2;}
-        | BRACE_L IMPLICIT TYPES COLON expdesc2
-           { $$=$5;}
         ;
 
+expdesc: BRACE_L IMPLICIT TYPES COLON imptypes expdesc2
+           { $$=$6;
+             $$->node[0]=$5;
+           }
+       | BRACE_L expdesc2 
+           {$$=$2;}
+       | BRACE_L IMPLICIT TYPES COLON expdesc2
+           { $$=$5;}
+       ;
+
 expdesc2: EXPLICIT TYPES COLON exptypes expdesc3
-          { $$=$5;
-            $$->node[1]=$4;
-          }
+            { $$=$5;
+              $$->node[1]=$4;
+            }
         | EXPLICIT TYPES COLON expdesc3
-          { $$=$4;
-          }
+            { $$=$4;
+            }
         | expdesc3 {$$=$1;}
         ;
 
 expdesc3: GLOBAL OBJECTS COLON objdecs expdesc4
-          { $$=$5;
-            $$->node[3]=$4;
-          }
+            { $$=$5;
+              $$->node[3]=$4;
+            }
         | GLOBAL OBJECTS COLON expdesc4
-          { $$=$4;
-          }
+            { $$=$4;
+            }
         | expdesc4 {$$=$1;}
         ;
 
 expdesc4: FUNS COLON fundecs BRACE_R
-          { $$=MakeNode(N_explist);
-            $$->node[2]=$3;
+            { $$=MakeNode(N_explist);
+              $$->node[2]=$3;
 
-            DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT,
-                        mdb_nodetype[ $$->nodetype ], $$));
-          }
+              DBUG_PRINT("GENTREE",
+                         ("%s:"P_FORMAT,
+                          mdb_nodetype[ $$->nodetype ], $$));
+            }
         | FUNS COLON BRACE_R
-          { $$=MakeNode(N_explist);
+            { $$=MakeNode(N_explist);
 
-            DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT,
-                        mdb_nodetype[ $$->nodetype ], $$));
-          }
+              DBUG_PRINT("GENTREE",
+                         ("%s:"P_FORMAT,
+                          mdb_nodetype[ $$->nodetype ], $$));
+            }
         | BRACE_R
-          { $$=MakeNode(N_explist);
+            { $$=MakeNode(N_explist);
          
-            DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT,
-                        mdb_nodetype[ $$->nodetype ], $$));
-          }
+              DBUG_PRINT("GENTREE",
+                         ("%s:"P_FORMAT,
+                          mdb_nodetype[ $$->nodetype ], $$));
+            }
         ;
 
-imptypes: imptype imptypes {$$=$1;
-                            $1->node[0]=$2;
-                           }
-	| imptype {$$=$1;}
-	;
+imptypes: imptype imptypes
+            { $$=$1;
+              $1->node[0]=$2;
+            }
+        | imptype {$$=$1;}
+        ;
 
 imptype: id SEMIC pragmas
-              {
-              $$=MakeNode(N_typedef);
-              $$->info.types=MakeTypes(T_hidden);
+           {
+             $$=MakeNode(N_typedef);
+             $$->info.types=MakeTypes(T_hidden);
 
-              DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s",
-                                    $$->info.types,
-                                    mdb_type[$$->info.types->simpletype]));
+             DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s",
+                                   $$->info.types,
+                                   mdb_type[$$->info.types->simpletype]));
 
-              $$->info.types->id=$1;
-              $$->info.types->id_mod=mod_name;
-              $$->info.types->id_cmod=link_mod_name;
-              $$->info.types->status=ST_imported;
-              TYPEDEF_PRAGMA($$)=$3;
+             $$->info.types->id=$1;
+             $$->info.types->id_mod=mod_name;
+             $$->info.types->id_cmod=link_mod_name;
+             $$->info.types->status=ST_imported;
+             TYPEDEF_PRAGMA($$)=$3;
               
-              DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT","P_FORMAT", Id: %s",
-                        mdb_nodetype[ $$->nodetype ], $$,
-                        $$->info.types, $$->info.types->id));
+             DBUG_PRINT("GENTREE",
+                      ("%s:"P_FORMAT","P_FORMAT", Id: %s",
+                       mdb_nodetype[ $$->nodetype ], $$,
+                       $$->info.types, $$->info.types->id));
+           }
+       ;
 
-             }
-             ;
-
-exptypes: exptype exptypes {$$=$1;
-                            $1->node[0]=$2;
-                           }
-	| exptype {$$=$1;}
-	;
+exptypes: exptype exptypes
+            { $$=$1;
+              $1->node[0]=$2;
+            }
+        | exptype {$$=$1;}
+        ;
 
 exptype: id LET type SEMIC pragmas
            { $$=MakeNode(N_typedef);
-            $$->info.types=$3;
-            $$->info.types->id=$1;
-            $$->info.types->id_mod=mod_name;
-            $$->info.types->id_cmod=link_mod_name;
-            $$->info.types->status=ST_imported;
-            TYPEDEF_PRAGMA($$)=$5;
+             $$->info.types=$3;
+             $$->info.types->id=$1;
+             $$->info.types->id_mod=mod_name;
+             $$->info.types->id_cmod=link_mod_name;
+             $$->info.types->status=ST_imported;
+             TYPEDEF_PRAGMA($$)=$5;
 
-            DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT","P_FORMAT", Id: %s",
-                        mdb_nodetype[ $$->nodetype ], $$, 
-                        $$->info.types, $$->info.types->id));
-          }
-         ;
+             DBUG_PRINT("GENTREE",
+                        ("%s:"P_FORMAT","P_FORMAT", Id: %s",
+                         mdb_nodetype[ $$->nodetype ], $$, 
+                         $$->info.types, $$->info.types->id));
+           }
+       ;
 
-objdecs: objdec objdecs    {$$=$1;
-                            $$->node[0]=$2;
-                           }
-	| objdec {$$=$1;}
-	;
+objdecs: objdec objdecs
+           { $$=$1;
+             $$->node[0]=$2;
+           }
+        | objdec {$$=$1;}
+        ;
 
 objdec: type id SEMIC pragmas
-           { $$=MakeNode(N_objdef);
-             $$->info.types=$1;
-             $$->info.types->id=$2;              /* object name */
-             $$->info.types->id_mod=mod_name;    /* SAC module name */
-             $$->info.types->id_cmod=link_mod_name; /* external module name */
-             $$->info.types->status=ST_imported;
-             $$->node[1]=NULL;	/* there is no object init here! */
-             OBJDEF_PRAGMA($$)=$4;
+          { $$=MakeNode(N_objdef);
+            $$->info.types=$1;
+            $$->info.types->id=$2;              /* object name */
+            $$->info.types->id_mod=mod_name;    /* SAC module name */
+            $$->info.types->id_cmod=link_mod_name; /* external module name */
+            $$->info.types->status=ST_imported;
+            $$->node[1]=NULL;  /* there is no object init here! */
+            OBJDEF_PRAGMA($$)=$4;
              
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT","P_FORMAT", Id: %s",
                         mdb_nodetype[ $$->nodetype ], $$, 
                         $$->info.types, $$->info.types->id));
           }
-         ;
+      ;
 
 fundecs: fundec fundecs 
            {
@@ -816,99 +820,99 @@ fundec: varreturntypes id BRACKET_L fundec2
           { 
 /*
             if(!((F_moddec == file_kind) || (F_classdec == file_kind)))
-             {
-                strcpy(yytext,"(");
-                yyerror("syntax error");
-             }
+            {
+              strcpy(yytext,"(");
+              yyerror("syntax error");
+            }
             else
-             {
+            {
 */
-                $$=$4;
-                $$->info.types=$1;
-                $$->info.types->id=$2;              /* function name */
-                $$->info.types->id_mod=mod_name;    /* SAC module name */
-                $$->info.types->id_cmod=link_mod_name; 
-                                              /* external module name */
-                $$->info.types->status=ST_imported;
+              $$=$4;
+              $$->info.types=$1;
+              $$->info.types->id=$2;              /* function name */
+              $$->info.types->id_mod=mod_name;    /* SAC module name */
+              $$->info.types->id_cmod=link_mod_name; 
+                                                  /* external module name */
+              $$->info.types->status=ST_imported;
                 
-            DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT" Id: %s"P_FORMAT", NULL body,  %s"
-                        P_FORMAT,
-                        mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
-                        $$->info.types->id,
-                        mdb_nodetype[ ($$->node[2]==NULL)
-                                      ?T_void:($$->node[2]->nodetype) ],
-                        $$->node[2]));
+              DBUG_PRINT("GENTREE",
+                         ("%s:"P_FORMAT" Id: %s"P_FORMAT", NULL body,  %s"
+                          P_FORMAT,
+                          mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
+                          $$->info.types->id,
+                          mdb_nodetype[ ($$->node[2]==NULL)
+                                        ?T_void:($$->node[2]->nodetype) ],
+                          $$->node[2]));
 
 /*
-             }
+            }
 */
              
           }
-        ;
+      ;
 
-fundec2 : varargtypes BRACKET_R SEMIC pragmas
-            {
-              $$=MakeNode(N_fundef);
-              $$->node[2]=$1;        /* argument declarations */
-              FUNDEF_PRAGMA($$)=$4;
-            }
-        | varargs BRACKET_R SEMIC pragmas
-            {
-              $$=MakeNode(N_fundef);
-              $$->node[2]=$1;        /* argument declarations */
-              FUNDEF_PRAGMA($$)=$4;
-            }
-        | TYPE_DOTS BRACKET_R SEMIC pragmas
+fundec2: varargtypes BRACKET_R SEMIC pragmas
            {
-              if((F_extmoddec != file_kind) && (F_extclassdec != file_kind))
-              {
-                strcpy(yytext,"...");
-                yyerror("syntax error");
-              }
-              else
-              {
-                $$=MakeNode(N_fundef);
-                $$->node[2]=MakeNode(N_arg);
-                $$->node[2]->info.types=MakeTypes(T_dots);
-                FUNDEF_PRAGMA($$)=$4;
-              }
-            }
-        | BRACKET_R SEMIC pragmas
-            {
-              $$=MakeNode(N_fundef);
-              FUNDEF_PRAGMA($$)=$3;
-            }
-        ;
+             $$=MakeNode(N_fundef);
+             $$->node[2]=$1;        /* argument declarations */
+             FUNDEF_PRAGMA($$)=$4;
+           }
+       | varargs BRACKET_R SEMIC pragmas
+           {
+             $$=MakeNode(N_fundef);
+             $$->node[2]=$1;        /* argument declarations */
+             FUNDEF_PRAGMA($$)=$4;
+           }
+       | TYPE_DOTS BRACKET_R SEMIC pragmas
+           {
+             if((F_extmoddec != file_kind) && (F_extclassdec != file_kind))
+             {
+               strcpy(yytext,"...");
+               yyerror("syntax error");
+             }
+             else
+             {
+               $$=MakeNode(N_fundef);
+               $$->node[2]=MakeNode(N_arg);
+               $$->node[2]->info.types=MakeTypes(T_dots);
+               FUNDEF_PRAGMA($$)=$4;
+             }
+           }
+       | BRACKET_R SEMIC pragmas
+           {
+             $$=MakeNode(N_fundef);
+             FUNDEF_PRAGMA($$)=$3;
+           }
+       ;
 
-fundec3 : argtypes BRACKET_R SEMIC pragmas
-            {
-              $$=MakeNode(N_fundef);
-              $$->node[2]=$1;        /* argument declarations */
-              FUNDEF_PRAGMA($$)=$4;
-            }
-        | args BRACKET_R SEMIC pragmas
-            {
-              $$=MakeNode(N_fundef);
-              $$->node[2]=$1;        /* argument declarations */
-              FUNDEF_PRAGMA($$)=$4;
-            }
-        | BRACKET_R SEMIC pragmas
-            {
-              $$=MakeNode(N_fundef);
-              FUNDEF_PRAGMA($$)=$3;
-            }
-        ;
+fundec3: argtypes BRACKET_R SEMIC pragmas
+           {
+             $$=MakeNode(N_fundef);
+             $$->node[2]=$1;        /* argument declarations */
+             FUNDEF_PRAGMA($$)=$4;
+           }
+       | args BRACKET_R SEMIC pragmas
+           {
+             $$=MakeNode(N_fundef);
+             $$->node[2]=$1;        /* argument declarations */
+             FUNDEF_PRAGMA($$)=$4;
+           }
+       | BRACKET_R SEMIC pragmas
+           {
+             $$=MakeNode(N_fundef);
+             FUNDEF_PRAGMA($$)=$3;
+           }
+       ;
 
 pragmas: pragmalist
-         {
-           $$=store_pragma;
-           store_pragma=NULL;
-         }
+           {
+             $$=store_pragma;
+             store_pragma=NULL;
+           }
        |
-         {
-           $$=NULL;
-         }
+           {
+             $$=NULL;
+           }
        ;
 
 pragmalist: pragmalist pragma
@@ -916,89 +920,89 @@ pragmalist: pragmalist pragma
           ;
 
 pragma: PRAGMA LINKNAME string
-        { 
-          if (store_pragma==NULL) store_pragma=MakePragma();
-          if (PRAGMA_LINKNAME(store_pragma)!=NULL)
-            WARN(linenum, ("Conflicting definitions of pragma 'linkname`"))
-          PRAGMA_LINKNAME(store_pragma)=$3;
-        }
+          {
+            if (store_pragma==NULL) store_pragma=MakePragma();
+            if (PRAGMA_LINKNAME(store_pragma)!=NULL)
+              WARN(linenum, ("Conflicting definitions of pragma 'linkname`"))
+            PRAGMA_LINKNAME(store_pragma)=$3;
+          }
       | PRAGMA LINKSIGN SQBR_L nums SQBR_R
-        {
-          if (store_pragma==NULL) store_pragma=MakePragma();
-          if (PRAGMA_LINKSIGNNUMS(store_pragma)!=NULL)
-            WARN(linenum, ("Conflicting definitions of pragma 'linksign`"))
-         PRAGMA_LINKSIGNNUMS(store_pragma)=$4;
-        }
+          {
+            if (store_pragma==NULL) store_pragma=MakePragma();
+            if (PRAGMA_LINKSIGNNUMS(store_pragma)!=NULL)
+              WARN(linenum, ("Conflicting definitions of pragma 'linksign`"))
+            PRAGMA_LINKSIGNNUMS(store_pragma)=$4;
+          }
       | PRAGMA REFCOUNTING SQBR_L nums SQBR_R
-        {
-          if (store_pragma==NULL) store_pragma=MakePragma();
-          if (PRAGMA_REFCOUNTINGNUMS(store_pragma)!=NULL)
-            WARN(linenum, ("Conflicting definitions of pragma 'refcounting`"))
-          PRAGMA_REFCOUNTINGNUMS(store_pragma)=$4;
-        }
+          {
+            if (store_pragma==NULL) store_pragma=MakePragma();
+            if (PRAGMA_REFCOUNTINGNUMS(store_pragma)!=NULL)
+              WARN(linenum, ("Conflicting definitions of pragma 'refcounting`"))
+            PRAGMA_REFCOUNTINGNUMS(store_pragma)=$4;
+          }
       | PRAGMA READONLY SQBR_L nums SQBR_R
-        {
-          if (store_pragma==NULL) store_pragma=MakePragma();
-          if (PRAGMA_READONLYNUMS(store_pragma)!=NULL)
-            WARN(linenum, ("Conflicting definitions of pragma 'readonly`"))
-          PRAGMA_READONLYNUMS(store_pragma)=$4;
-        }
+          {
+            if (store_pragma==NULL) store_pragma=MakePragma();
+            if (PRAGMA_READONLYNUMS(store_pragma)!=NULL)
+              WARN(linenum, ("Conflicting definitions of pragma 'readonly`"))
+            PRAGMA_READONLYNUMS(store_pragma)=$4;
+          }
       | PRAGMA EFFECT modnames
-        {
-          if (store_pragma==NULL) store_pragma=MakePragma();
-          if (PRAGMA_EFFECT(store_pragma)!=NULL)
-            WARN(linenum, ("Conflicting definitions of pragma 'effect`"))
-          PRAGMA_EFFECT(store_pragma)=$3;
-        }
+          {
+            if (store_pragma==NULL) store_pragma=MakePragma();
+            if (PRAGMA_EFFECT(store_pragma)!=NULL)
+              WARN(linenum, ("Conflicting definitions of pragma 'effect`"))
+            PRAGMA_EFFECT(store_pragma)=$3;
+          }
       | PRAGMA TOUCH modnames
-        {
-          if (store_pragma==NULL) store_pragma=MakePragma();
-          if (PRAGMA_TOUCH(store_pragma)!=NULL)
-            WARN(linenum, ("Conflicting definitions of pragma 'touch`"))
-          PRAGMA_TOUCH(store_pragma)=$3;
-        }
+          {
+            if (store_pragma==NULL) store_pragma=MakePragma();
+            if (PRAGMA_TOUCH(store_pragma)!=NULL)
+              WARN(linenum, ("Conflicting definitions of pragma 'touch`"))
+            PRAGMA_TOUCH(store_pragma)=$3;
+          }
       | PRAGMA COPYFUN string
-        {
-          if (store_pragma==NULL) store_pragma=MakePragma();
-          if (PRAGMA_COPYFUN(store_pragma)!=NULL)
-            WARN(linenum, ("Conflicting definitions of pragma 'copyfun`"))
-          PRAGMA_COPYFUN(store_pragma)=$3;
-        }
+          {
+            if (store_pragma==NULL) store_pragma=MakePragma();
+            if (PRAGMA_COPYFUN(store_pragma)!=NULL)
+              WARN(linenum, ("Conflicting definitions of pragma 'copyfun`"))
+            PRAGMA_COPYFUN(store_pragma)=$3;
+          }
       | PRAGMA FREEFUN string
-        {
-          if (store_pragma==NULL) store_pragma=MakePragma();
-          if (PRAGMA_FREEFUN(store_pragma)!=NULL)
-            WARN(linenum, ("Conflicting definitions of pragma 'freefun`"))
-          PRAGMA_FREEFUN(store_pragma)=$3;
-        }
+          {
+            if (store_pragma==NULL) store_pragma=MakePragma();
+            if (PRAGMA_FREEFUN(store_pragma)!=NULL)
+              WARN(linenum, ("Conflicting definitions of pragma 'freefun`"))
+            PRAGMA_FREEFUN(store_pragma)=$3;
+          }
       | PRAGMA INITFUN string
-        {
-          if (store_pragma==NULL) store_pragma=MakePragma();
-          if (PRAGMA_INITFUN(store_pragma)!=NULL)
-            WARN(linenum, ("Conflicting definitions of pragma 'initfun`"))
-          PRAGMA_INITFUN(store_pragma)=$3;
-        }
+          {
+            if (store_pragma==NULL) store_pragma=MakePragma();
+            if (PRAGMA_INITFUN(store_pragma)!=NULL)
+              WARN(linenum, ("Conflicting definitions of pragma 'initfun`"))
+            PRAGMA_INITFUN(store_pragma)=$3;
+          }
       ;
 
 modnames: modname COMMA modnames
-          {
-            $$=$1;
-            IDS_NEXT($$)=$3;
-          }
+            {
+              $$=$1;
+              IDS_NEXT($$)=$3;
+            }
         | modname
-          {
-            $$=$1;
-          }
+            {
+              $$=$1;
+            }
         ;
 
 modname: id
-         {
-           $$=MakeIds($1, NULL, ST_regular);
-         }
+           {
+             $$=MakeIds($1, NULL, ST_regular);
+           }
        | id COLON id
-         {
-           $$=MakeIds($3, $1, ST_regular);
-         }
+           {
+             $$=MakeIds($3, $1, ST_regular);
+           }
        ;
 
 
@@ -1013,82 +1017,91 @@ modname: id
  */
 
 
-defs: imports def2 {$$=$2;
-                    $$->node[0]=$1;
-                   }
-	| def2 {$$=$1;}
+defs: imports def2
+        { $$=$2;
+          $$->node[0]=$1;
+        }
+    | def2
+        { $$=$1; }
 
-def2: typedefs def3 {$$=$2;
-                     $$->node[1]=$1;
-                    }
-	|def3 {$$=$1;}
+def2: typedefs def3
+        { $$=$2;
+          $$->node[1]=$1;
+        }
+    | def3
+        { $$=$1; }
 
-def3: objdefs def4 { $$=$2;
-                     $$->node[3]=$1;
-                   }
-      | def4 { $$=$1;}
-      ;
+def3: objdefs def4
+        { $$=$2;
+          $$->node[3]=$1;
+        }
+    | def4
+        { $$=$1;}
+    ;
 
-def4: fundefs { $$=MakeNode(N_modul);
-                $$->info.id=NULL;
-                $$->node[2]=$1;
+def4: fundefs
+        { $$=MakeNode(N_modul);
+          $$->info.id=NULL;
+          $$->node[2]=$1;
 
-                DBUG_PRINT("GENTREE",
-                           ("%s:"P_FORMAT"  %s"P_FORMAT,
-                            mdb_nodetype[ $$->nodetype ], $$, 
-                            mdb_nodetype[ $$->node[2]->nodetype ],
-                            $$->node[2]));
-              }
-    |         { $$=MakeNode(N_modul);  /* module impl with no functions */
-                $$->info.id=NULL;
-                $$->node[2]=NULL;
+          DBUG_PRINT("GENTREE",
+                     ("%s:"P_FORMAT"  %s"P_FORMAT,
+                      mdb_nodetype[ $$->nodetype ], $$, 
+                      mdb_nodetype[ $$->node[2]->nodetype ],
+                      $$->node[2]));
+        }
+    |   { $$=MakeNode(N_modul);  /* module impl with no functions */
+          $$->info.id=NULL;
+          $$->node[2]=NULL;
 
-                DBUG_PRINT("GENTREE",
-                           ("%s:"P_FORMAT,
-                            mdb_nodetype[ $$->nodetype ], $$));
-                
-              }
-	;
+          DBUG_PRINT("GENTREE",
+                     ("%s:"P_FORMAT,
+                      mdb_nodetype[ $$->nodetype ], $$));
+        }
+    ;
 
 modimp: module
-        {
-          $$=$1;
-        }
+          {
+            $$=$1;
+          }
       | class
-        {
-          $$=$1;
-        }
+          {
+            $$=$1;
+          }
       ;
 
-module: MODIMP { file_kind=F_modimp;} id {  mod_name=$3; } COLON defs
+module: MODIMP { file_kind=F_modimp; } id { mod_name=$3; } COLON defs
           {
             $$=$6;
             MODUL_NAME($$)=mod_name;
             MODUL_FILETYPE($$)=file_kind;
           }
-	;
-
-class: CLASSIMP { file_kind=F_classimp;} id {  mod_name=$3; } COLON 
-       CLASSTYPE type SEMIC defs
-          { 
-            $$=$9;
-            MODUL_NAME($$)=mod_name;
-            MODUL_FILETYPE($$)=file_kind;
-            MODUL_CLASSTYPE($$)=$7;
-          }
-	;
-
-prg: defs { $$=$1;
-            MODUL_NAME($$)=mod_name;
-            MODUL_FILETYPE($$)=F_prog;
-          }
         ;
 
-typedefs: typedef typedefs {$$=$1;
-                            $1->node[0]=$2;
-                           }
-	| typedef {$$=$1; }
-	;
+class: CLASSIMP { file_kind=F_classimp; } id { mod_name=$3; } COLON 
+       CLASSTYPE type SEMIC defs
+         { 
+           $$=$9;
+           MODUL_NAME($$)=mod_name;
+           MODUL_FILETYPE($$)=file_kind;
+           MODUL_CLASSTYPE($$)=$7;
+         }
+     ;
+
+prg: defs
+       { $$=$1;
+          MODUL_NAME($$)=mod_name;
+          MODUL_FILETYPE($$)=F_prog;
+       }
+   ;
+
+typedefs: typedef typedefs
+            { $$=$1;
+              $1->node[0]=$2;
+            }
+        | typedef
+            { $$=$1; }
+        ;
 
 typedef: TYPEDEF type id SEMIC 
           { $$=MakeNode(N_typedef);
@@ -1105,11 +1118,13 @@ typedef: TYPEDEF type id SEMIC
                         $$->info.types, $$->info.types->id));
           }
 
-objdefs: objdef objdefs {$$=$1;
-                         $$->node[0]=$2;
-                           }
-	| objdef {$$=$1; }
-	;
+objdefs: objdef objdefs
+           { $$=$1;
+             $$->node[0]=$2;
+           }
+       | objdef
+           { $$=$1; }
+       ;
 
 objdef: OBJDEF type id LET expr SEMIC 
           { $$=MakeNode(N_objdef);
@@ -1129,86 +1144,88 @@ objdef: OBJDEF type id LET expr SEMIC
 
 
 fundefs: wlcomp_pragma_global fundef fundefs
-         { $$ = $2;
-           FUNDEF_NEXT($$) = $3;
-         }
+           { $$ = $2;
+             FUNDEF_NEXT($$) = $3;
+           }
        | wlcomp_pragma_global main
-         { $$ = $2;
-         }
+           { $$ = $2;
+           }
        | wlcomp_pragma_global fundef
-         { $$ = $2;
-         }
+           { $$ = $2;
+           }
        ;
 
 fundef: returntypes fun_name BRACKET_L fundef2 
-        {  $$=$4;
-           $$->info.types=$1;          		/*  result type(s) */
-           $$->info.types->id=$2;      		/*  function name  */
-           $$->info.types->id_mod=mod_name;     /*  module name    */
-           $$->flag=0;                          /*  inline flag    */
+          { $$=$4;
+            $$->info.types=$1;                   /*  result type(s) */
+            $$->info.types->id=$2;               /*  function name  */
+            $$->info.types->id_mod=mod_name;     /*  module name    */
+            $$->flag=0;                          /*  inline flag    */
 
-           DBUG_PRINT("GENTREE",
-                      ("%s: %s:%s "P_FORMAT,
-                       mdb_nodetype[ $$->nodetype ],
-                       $$->info.types->id_mod,
-                       $$->info.types->id,
-                       $$->info.types->id));
+            DBUG_PRINT("GENTREE",
+                       ("%s: %s:%s "P_FORMAT,
+                        mdb_nodetype[ $$->nodetype ],
+                        $$->info.types->id_mod,
+                        $$->info.types->id,
+                        $$->info.types->id));
 
-        }
+          }
       | INLINE returntypes fun_name BRACKET_L fundef2 
-        {  $$=$5;
-           $$->info.types=$2;          		/*  result type(s) */
-           $$->info.types->id=$3;      		/*  function name  */
-           $$->info.types->id_mod=mod_name;     /*  module name    */
-           $$->flag=1;                          /*  inline flag    */
+          { $$=$5;
+            $$->info.types=$2;                   /*  result type(s) */
+            $$->info.types->id=$3;               /*  function name  */
+            $$->info.types->id_mod=mod_name;     /*  module name    */
+            $$->flag=1;                          /*  inline flag    */
 
-           DBUG_PRINT("GENTREE",
-                      ("%s: %s:%s "P_FORMAT,
-                       mdb_nodetype[ $$->nodetype ],
-                       $$->info.types->id_mod,
-                       $$->info.types->id,
-                       $$->info.types->id));
+            DBUG_PRINT("GENTREE",
+                        ("%s: %s:%s "P_FORMAT,
+                        mdb_nodetype[ $$->nodetype ],
+                        $$->info.types->id_mod,
+                        $$->info.types->id,
+                        $$->info.types->id));
 
-        }
+          }
       ;
 
 fundef2: args BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
-          { 
-            $$=$<node>3;
-            $$->node[0]=$4;             /* Funktionsrumpf  */
-            $$->node[2]=$1;             /* Funktionsargumente */
+           { 
+             $$=$<node>3;
+             $$->node[0]=$4;             /* Funktionsrumpf  */
+             $$->node[2]=$1;             /* Funktionsargumente */
          
-            DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT", Id: %s"P_FORMAT" %s," P_FORMAT,
-                        mdb_nodetype[ $$->nodetype ], $$, 
-                        mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0],
-                        mdb_nodetype[ $$->node[2]->nodetype ], $$->node[2]));
-          }
+             DBUG_PRINT("GENTREE",
+                        ("%s:"P_FORMAT", Id: %s"P_FORMAT" %s," P_FORMAT,
+                         mdb_nodetype[ $$->nodetype ], $$, 
+                         mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0],
+                         mdb_nodetype[ $$->node[2]->nodetype ], $$->node[2]));
+           }
 
        | BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
-          { 
-            $$=$<node>2;
-            $$->node[0]=$3;             /* Funktionsrumpf  */
+           { 
+             $$=$<node>2;
+             $$->node[0]=$3;             /* Funktionsrumpf  */
          
-            DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT" %s"P_FORMAT,
-                        mdb_nodetype[ $$->nodetype ], $$, 
-                        mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
-         }
-        ;
+             DBUG_PRINT("GENTREE",
+                        ("%s:"P_FORMAT" %s"P_FORMAT,
+                         mdb_nodetype[ $$->nodetype ], $$, 
+                         mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
+           }
+       ;
 
 
-args:   arg COMMA args  {$1->node[0]=$3;
-                         $$=$1;
-                        }
-      | arg {$$=$1;}
-      ;
+args: arg COMMA args
+        { $1->node[0]=$3;
+          $$=$1;
+        }
+    | arg
+        { $$=$1; }
+    ;
 
 varargs: arg COMMA varargs
-         {
-           $1->node[0]=$3;
-           $$=$1;
-                           }
+           {
+             $1->node[0]=$3;
+             $$=$1;
+           }
        | arg COMMA TYPE_DOTS
            {
              if((F_extmoddec != file_kind) && (F_extclassdec != file_kind))
@@ -1222,105 +1239,110 @@ varargs: arg COMMA varargs
                $$->node[0]=MakeNode(N_arg);
                $$->node[0]->info.types=MakeTypes(T_dots);
                
-              DBUG_PRINT("GENTREE",
-                         ("%s: "P_FORMAT", Id: ..., Attrib: %d  ",
-                          mdb_nodetype[ $$->nodetype ], $$, 
-                          $$->info.types->attrib));
+               DBUG_PRINT("GENTREE",
+                          ("%s: "P_FORMAT", Id: ..., Attrib: %d  ",
+                           mdb_nodetype[ $$->nodetype ], $$, 
+                           $$->info.types->attrib));
              } 
            }
        | arg
-         {
-           $$=$1;
-         }
-      ;
+           {
+             $$=$1;
+           }
+       ;
 
-arg: type id {$$=MakeNode(N_arg); 
-              $$->info.types=$1;         /* Argumenttyp */
-              $$->info.types->id=$2;     /* Argumentname */
-              $$->info.types->next=NULL; /* keine weiteren Argumente */
+arg: type id
+       { $$=MakeNode(N_arg); 
+         $$->info.types=$1;         /* Argumenttyp */
+         $$->info.types->id=$2;     /* Argumentname */
+         $$->info.types->next=NULL; /* keine weiteren Argumente */
 
-              DBUG_PRINT("GENTREE",
-                         ("%s: "P_FORMAT", Id: %s, Attrib: %d  ",
-                          mdb_nodetype[ $$->nodetype ], $$, 
-                          $$->info.types->id, $$->info.types->attrib));
-             }
-     |
-     type AMPERS id {$$=MakeNode(N_arg); 
-              $$->info.types=$1;         /* Argumenttyp */
-              $$->info.types->id=$3;     /* Argumentname */
-              $$->info.types->next=NULL; /* keine weiteren Argumente */
-              $$->info.types->attrib=ST_reference;
+         DBUG_PRINT("GENTREE",
+                    ("%s: "P_FORMAT", Id: %s, Attrib: %d  ",
+                     mdb_nodetype[ $$->nodetype ], $$, 
+                     $$->info.types->id, $$->info.types->attrib));
+       }
+   | type AMPERS id
+       { $$=MakeNode(N_arg); 
+         $$->info.types=$1;         /* Argumenttyp */
+         $$->info.types->id=$3;     /* Argumentname */
+         $$->info.types->next=NULL; /* keine weiteren Argumente */
+         $$->info.types->attrib=ST_reference;
                      
-              DBUG_PRINT("GENTREE",
-                         ("%s: "P_FORMAT", Id: %s, Attrib: %d ",
-                          mdb_nodetype[ $$->nodetype ], $$, 
-                          $$->info.types->id, $$->info.types->attrib));
-             }
-     ;
+         DBUG_PRINT("GENTREE",
+                    ("%s: "P_FORMAT", Id: %s, Attrib: %d ",
+                     mdb_nodetype[ $$->nodetype ], $$, 
+                     $$->info.types->id, $$->info.types->attrib));
+       }
+   ;
 
 argtypes: argtype COMMA argtypes
-          {
-            $1->node[0]=$3;
-            $$=$1;
-          }
+            {
+              $1->node[0]=$3;
+              $$=$1;
+            }
         | argtype
-          {
-            $$=$1;
-          }
-      ;
+            {
+              $$=$1;
+            }
+        ;
 
 varargtypes: argtype COMMA varargtypes
-             {
-               $1->node[0]=$3;
-               $$=$1;
-             }
-       | argtype COMMA TYPE_DOTS
-           {
-             if((F_extmoddec != file_kind) && (F_extclassdec != file_kind))
-             {
-               strcpy(yytext,"...");
-               yyerror("syntax error");
-             }
-             else
-             {
-               $$=$1;
-               $$->node[0]=MakeNode(N_arg);
-               $$->node[0]->info.types=MakeTypes(T_dots);
+               {
+                 $1->node[0]=$3;
+                 $$=$1;
+               }
+           | argtype COMMA TYPE_DOTS
+               {
+                 if ((F_extmoddec != file_kind) && (F_extclassdec != file_kind))
+                 {
+                   strcpy(yytext,"...");
+                   yyerror("syntax error");
+                 }
+                 else
+                 {
+                   $$=$1;
+                   $$->node[0]=MakeNode(N_arg);
+                   $$->node[0]->info.types=MakeTypes(T_dots);
 
-              DBUG_PRINT("GENTREE",
-                         ("%s: "P_FORMAT", Attrib: %d  ",
-                          mdb_nodetype[ $$->nodetype ], $$, 
-                          $$->info.types->attrib));
+                   DBUG_PRINT("GENTREE",
+                              ("%s: "P_FORMAT", Attrib: %d  ",
+                               mdb_nodetype[ $$->nodetype ], $$, 
+                               $$->info.types->attrib));
 
-             }
+                 }
+               }
+           | argtype
+               { $$=$1; }
+           ;
+
+argtype: type
+           { $$=MakeNode(N_arg); 
+             $$->info.types=$1;         /* Argumenttyp */
+             $$->info.types->next=NULL; /* keine weiteren Argumente */
+
+             DBUG_PRINT("GENTREE",
+                        ("%s: "P_FORMAT", Attrib: %d  ",
+                         mdb_nodetype[ $$->nodetype ], $$, 
+                         $$->info.types->attrib));
            }
-      | argtype {$$=$1;}
-      ;
-
-argtype: type {$$=MakeNode(N_arg); 
-              $$->info.types=$1;         /* Argumenttyp */
-              $$->info.types->next=NULL; /* keine weiteren Argumente */
-
-              DBUG_PRINT("GENTREE",
-                         ("%s: "P_FORMAT", Attrib: %d  ",
-                          mdb_nodetype[ $$->nodetype ], $$, 
-                          $$->info.types->attrib));
-             }
-     |
-     type AMPERS {$$=MakeNode(N_arg); 
-              $$->info.types=$1;         /* Argumenttyp */
-              $$->info.types->next=NULL; /* keine weiteren Argumente */
-              $$->info.types->attrib=ST_reference;
+       | type AMPERS
+           { $$=MakeNode(N_arg); 
+             $$->info.types=$1;         /* Argumenttyp */
+             $$->info.types->next=NULL; /* keine weiteren Argumente */
+             $$->info.types->attrib=ST_reference;
                      
-              DBUG_PRINT("GENTREE",
-                         ("%s: "P_FORMAT", Attrib: %d ",
-                          mdb_nodetype[ $$->nodetype ], $$, 
-                          $$->info.types->attrib));
-             }
-     ;
+             DBUG_PRINT("GENTREE",
+                        ("%s: "P_FORMAT", Attrib: %d ",
+                         mdb_nodetype[ $$->nodetype ], $$, 
+                         $$->info.types->attrib));
+           }
+       ;
 
-fun_name : id { $$=$1; }
-         | prf_name { $$=$1; }
+fun_name : id
+             { $$=$1; }
+         | prf_name
+             { $$=$1; }
          ;
 
 prf_name : AND        { $$=StringCopy(prf_name_str[F_and]); }
@@ -1354,111 +1376,108 @@ prf_name : AND        { $$=StringCopy(prf_name_str[F_and]); }
          | PRF_MIN    { $$=StringCopy(prf_name_str[F_min]); }
          | PRF_MAX    { $$=StringCopy(prf_name_str[F_max]); }
          | ALL        { $$=StringCopy("all");
-                        /* necessary because function 'all()' from array library conflicts
-                           with key word. */}
+           /* necessary because function 'all()' from array library conflicts 
+              with key word. */}
         ;
 
-main: TYPE_INT K_MAIN BRACKET_L BRACKET_R {$$=MakeNode(N_fundef);} exprblock 
-      {
-        $$=$<node>5;     /* $$=$5 */
-        $$->node[0]=$6;                 /* Funktionsrumpf */
+main: TYPE_INT K_MAIN BRACKET_L BRACKET_R { $$=MakeNode(N_fundef); } exprblock
+        {
+          $$=$<node>5;     /* $$=$5 */
+          $$->node[0]=$6;                 /* Funktionsrumpf */
 
-        $$->info.types=MakeTypes(T_int);  /* Knoten fu"r Typinformation */ 
-        $$->info.types->id=(char *)Malloc(sizeof(char)*5); 
-        strcpy($$->info.types->id, "main");   /* Funktionsnamen eintragen */
+          $$->info.types=MakeTypes(T_int);  /* Knoten fu"r Typinformation */ 
+          $$->info.types->id=(char *)Malloc(sizeof(char)*5); 
+          strcpy($$->info.types->id, "main");   /* Funktionsnamen eintragen */
 
-        DBUG_PRINT("GENTREE",("%s:"P_FORMAT", main "P_FORMAT
-                              "  %s (" P_FORMAT ") ",
-                              mdb_nodetype[$$->nodetype], $$, 
-                              $$->info.types->id,
-                              mdb_nodetype[ $$->node[0]->nodetype], 
-                              $$->node[0]));
-        
-      }
+          DBUG_PRINT("GENTREE",("%s:"P_FORMAT", main "P_FORMAT
+                                "  %s (" P_FORMAT ") ",
+                                mdb_nodetype[$$->nodetype], $$, 
+                                $$->info.types->id,
+                                mdb_nodetype[ $$->node[0]->nodetype], 
+                                $$->node[0]));
+        }
     ;
 
 
 wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_expr
-                      {
-                        if (store_wlcomp_pragma_global != NULL) {
-                          /* remove old global pragma */
-                          store_wlcomp_pragma_global
-                            = FreeTree(store_wlcomp_pragma_global);
+                        {
+                          if (store_wlcomp_pragma_global != NULL) {
+                            /* remove old global pragma */
+                            store_wlcomp_pragma_global
+                              = FreeTree(store_wlcomp_pragma_global);
+                          }
+                          if ($3 != NULL) {
+                            store_wlcomp_pragma_global = MakePragma();
+                            PRAGMA_WLCOMP_APS(store_wlcomp_pragma_global) = $3;
+                          }
+                          else {
+                            store_wlcomp_pragma_global = NULL;
+                          }
                         }
-                        if ($3 != NULL) {
-                          store_wlcomp_pragma_global = MakePragma();
-                          PRAGMA_WLCOMP_APS(store_wlcomp_pragma_global) = $3;
-                        }
-                        else {
-                          store_wlcomp_pragma_global = NULL;
-                        }
-                      }
                     | /* empty */
-                      {
-                      }
+                        {
+                        }
                     ;
 
 wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_expr
-                     {
-                       if ($3 != NULL) {
-                         $$ = MakePragma();
-                         PRAGMA_WLCOMP_APS($$) = $3;
+                       {
+                         if ($3 != NULL) {
+                           $$ = MakePragma();
+                           PRAGMA_WLCOMP_APS($$) = $3;
+                         }
+                         else {
+                           $$ = NULL;
+                         }
                        }
-                       else {
-                         $$ = NULL;
-                       }
-                     }
                    | /* empty */
-                     { if (store_wlcomp_pragma_global != NULL) {
-                         $$ = MakePragma();
-                         PRAGMA_WLCOMP_APS($$)
-                          = DupTree(PRAGMA_WLCOMP_APS(store_wlcomp_pragma_global), NULL);
-                       } else {
-                         $$ = NULL;
+                       { if (store_wlcomp_pragma_global != NULL) {
+                           $$ = MakePragma();
+                           PRAGMA_WLCOMP_APS($$)
+                             = DupTree(PRAGMA_WLCOMP_APS(store_wlcomp_pragma_global), NULL);
+                         } else {
+                           $$ = NULL;
+                         }
                        }
-                     }
                    ;
 
 wlcomp_expr: DEFAULT
-             {
-               $$ = NULL;
-             }
-           | id BRACKET_L wlcomp_args wlcomp_expr BRACKET_R
-             {
-               node *tmp = $4;
-
-               if ((!(optimize & OPT_TSP))
-                   && ((0==strcmp( $1, "BvL0"))
-                       || (0==strcmp( $1, "BvL1"))
-                       || (0==strcmp( $1, "BvL2")))) {
-                 $$ = $4;
+               {
+                 $$ = NULL;
                }
-               else {
-                 $$ = MakeExprs(MakeAp($1, NULL, $3), NULL);
-                 /* append $$ to $4 */
-                 if (tmp != NULL) {
-                   while (EXPRS_NEXT(tmp) != NULL) {
-                     tmp = EXPRS_NEXT(tmp);
-                   }
-                   EXPRS_NEXT(tmp) = $$;
+           | id BRACKET_L wlcomp_args wlcomp_expr BRACKET_R
+               {
+                 node *tmp = $4;
+
+                 if ((!(optimize & OPT_TSP))
+                     && ((0==strcmp( $1, "BvL0"))
+                         || (0==strcmp( $1, "BvL1"))
+                         || (0==strcmp( $1, "BvL2")))) {
                    $$ = $4;
                  }
+                 else {
+                   $$ = MakeExprs(MakeAp($1, NULL, $3), NULL);
+                   /* append $$ to $4 */
+                   if (tmp != NULL) {
+                     while (EXPRS_NEXT(tmp) != NULL) {
+                       tmp = EXPRS_NEXT(tmp);
+                     }
+                     EXPRS_NEXT(tmp) = $$;
+                     $$ = $4;
+                   }
+                 }
                }
-             }
            ;
 
 wlcomp_args: expr_ar COMMA wlcomp_args
-             { $$ = MakeExprs($1, $3);
-             }
+               { $$ = MakeExprs($1, $3);
+               }
            | expr_num COMMA wlcomp_args
-             { $$ = MakeExprs($1, $3);
-             }
+               { $$ = MakeExprs($1, $3);
+               }
            |
-             { $$ = NULL;
-             }
+               { $$ = NULL;
+               }
            ;
-
-
 
 
 /* BRUSH BEGIN */
@@ -1859,9 +1878,9 @@ expr_ap: id BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
          }
        ;
 
-opt_arguments: exprs   { $$=$1; }
-            |          { $$=NULL; }
-            ;
+opt_arguments: exprs { $$=$1; }
+             |       { $$=NULL; }
+             ;
 
 expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
          | id COLON id  { $$=MakeId( $3, $1, ST_regular); }
@@ -1970,7 +1989,7 @@ Ngenidx: id LET SQBR_L ids SQBR_R
        ;
 
 Ngenop:   LT {$$=F_lt;}
-	| LE {$$=F_le;}
+        | LE {$$=F_le;}
         ;
 
 Nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
@@ -2026,7 +2045,7 @@ generator: exprNOdot  LE id LE exprNOdot
             }
         ;
 
-conexpr: wlassignblock GENARRAY BRACKET_L expr COMMA {$$=MakeGenarray($4, NULL);}
+conexpr: wlassignblock GENARRAY BRACKET_L expr COMMA { $$=MakeGenarray($4, NULL); }
          expr BRACKET_R
            { node *ret;
 
@@ -2038,7 +2057,7 @@ conexpr: wlassignblock GENARRAY BRACKET_L expr COMMA {$$=MakeGenarray($4, NULL);
              
            }
          | wlassignblock MODARRAY BRACKET_L expr COMMA id COMMA
-           {$$=MakeModarray($4, NULL);} expr BRACKET_R
+           { $$=MakeModarray($4, NULL); } expr BRACKET_R
            { node *ret;
 
              $$=$<node>8;
@@ -2047,7 +2066,6 @@ conexpr: wlassignblock GENARRAY BRACKET_L expr COMMA {$$=MakeGenarray($4, NULL);
 
              MODARRAY_BODY($$)=Append( $1, ret);
              MODARRAY_ID($$)=$6;
-             
            }
          | wlassignblock FOLD BRACKET_L foldop COMMA expr BRACKET_R
            { node *ret;
@@ -2081,18 +2099,18 @@ conexpr: wlassignblock GENARRAY BRACKET_L expr COMMA {$$=MakeGenarray($4, NULL);
          ;
 
 
-foldfun:  id COMMA 
-     {
-        $$=MakeNode(N_foldfun);
-        $$->info.fun_name.id=$1;
-     }
-    | id COLON id COMMA
-     {
-        $$=MakeNode(N_foldfun);
-        $$->info.fun_name.id=$3;
-        $$->info.fun_name.id_mod=$1;
-     }
-    ;
+foldfun: id COMMA 
+         {
+           $$=MakeNode(N_foldfun);
+           $$->info.fun_name.id=$1;
+         }
+       | id COLON id COMMA
+         {
+           $$=MakeNode(N_foldfun);
+           $$->info.fun_name.id=$3;
+           $$->info.fun_name.id_mod=$1;
+         }
+       ;
      
 /* NOT BRUSHED END  */
  
@@ -2115,14 +2133,12 @@ monop: ABS   { $$=F_abs;   }
 /* left for later BRUSHING BEGIN */
 /*
 unaryop: INC
-          { $$=MakeNode(N_inc);
-          }
-
-   
+         { $$=MakeNode(N_inc);
+         }
        | DEC
-          { $$=MakeNode(N_dec);
-          }
-           ;
+         { $$=MakeNode(N_dec);
+         }
+       ;
 */
 /* left for later BRUSHING END */
 
@@ -2164,9 +2180,9 @@ ids: id COMMA ids
    ;
 
 funids: fun_name COMMA funids 
-       { $$=MakeIds($1, NULL, ST_regular);
-         IDS_NEXT($$)=$3;
-       }
+        { $$=MakeIds($1, NULL, ST_regular);
+          IDS_NEXT($$)=$3;
+        }
       | fun_name 
         { $$=MakeIds($1, NULL, ST_regular);
         }
@@ -2287,16 +2303,16 @@ simpletype_main: TYPE_INT   { $$=MakeTypes(T_int);    }
 
 string: STR
         {
-	  $$=$1;
-	}
+          $$=$1;
+        }
       | STR string
         {
-	  $$=(char *)Malloc(strlen($1)+strlen($2)+1);
-	  strcpy($$, $1);
-	  strcat($$, $2);
-	  FREE($1);
-	  FREE($2);
-	}
+          $$=(char *)Malloc(strlen($1)+strlen($2)+1);
+          strcpy($$, $1);
+          strcat($$, $2);
+          FREE($1);
+          FREE($2);
+        }
       ;
 
 
@@ -2339,7 +2355,7 @@ sibheader: LT id GT
 
 siblinkwith: LINKWITH siblinklist {$$=$2;}
              | {$$=NULL;}
-	          ;
+                  ;
 
 siblinklist: siblinkliststatus string sibsublinklist COMMA siblinklist
              {
@@ -2352,28 +2368,28 @@ siblinklist: siblinkliststatus string sibsublinklist COMMA siblinklist
            ;
 
 siblinkliststatus: EXTERN 
-             {
-               $$=ST_external;
-             }
-	        | LINKWITH
-             {
-               $$=ST_system;
-             }
-	        |
-             {
-               $$=ST_sac;
-             }
-	        ;
+                   {
+                     $$=ST_external;
+                   }
+                 | LINKWITH
+                   {
+                     $$=ST_system;
+                   }
+                 |
+                   {
+                     $$=ST_sac;
+                   }
+                 ;
 
 sibsublinklist: BRACE_L siblinklist BRACE_R
-             {
-               $$=$2;
-             }
-           | 
-             {
-               $$=NULL;
-             }
-           ;
+                {
+                  $$=$2;
+                }
+              | 
+                {
+                  $$=NULL;
+                }
+              ;
 
 
 sibtypes: sibtype sibtypes
@@ -2386,7 +2402,7 @@ sibtypes: sibtype sibtypes
             {
               $$=$1;
             } 
-          ;
+        ;
 
 sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
            {
@@ -2438,20 +2454,21 @@ sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
            }
         ;
 
-sibevclass: CLASSTYPE {$$=ST_unique;}
-          |           {$$=ST_regular;}
+sibevclass: CLASSTYPE
+              { $$=ST_unique; }
+          |   { $$=ST_regular; }
 
 sibobjs: sibobj sibobjs
-            {
-              $$=$2;
-              OBJDEF_NEXT($1)=SIB_OBJS($2);
-              SIB_OBJS($2)=$1;
-            }
-        | sibfuns
-            {
-              $$=$1;
-            } 
-          ;
+         {
+           $$=$2;
+           OBJDEF_NEXT($1)=SIB_OBJS($2);
+           SIB_OBJS($2)=$1;
+         }
+       | sibfuns
+         {
+           $$=$1;
+         } 
+       ;
 
 sibobj: OBJDEF type id SEMIC sibpragmas
           {
@@ -2475,18 +2492,18 @@ sibobj: OBJDEF type id SEMIC sibpragmas
                         mdb_nodetype[ $$->nodetype ], $$, 
                         OBJDEF_TYPE($$), ItemName($$)));
           }
-       ;
+      ;
 
 sibfuns: sibfun sibfuns
-            {
-              $$ = $2;
-              FUNDEF_NEXT($1)=SIB_FUNS($2);
-              SIB_FUNS($$) = $1;
-            }
+         {
+           $$ = $2;
+           FUNDEF_NEXT($1)=SIB_FUNS($2);
+           SIB_FUNS($$) = $1;
+         }
        | 
-            {
-              $$ = MakeSib( mod_name, 0, NULL, NULL, NULL, NULL);
-            }
+         {
+           $$ = MakeSib( mod_name, 0, NULL, NULL, NULL, NULL);
+         }
        ;
 
 sibfun: sibevmarker varreturntypes fun_name 
@@ -2535,86 +2552,87 @@ sibfun: sibevmarker varreturntypes fun_name
             }
             FUNDEF_PRAGMA($$)=$10;
 
-           DBUG_PRINT("GENSIB",("%s"P_FORMAT"SibFun %s",
-                               mdb_nodetype[$$->nodetype],$$,
-                               ItemName($$)));
+            DBUG_PRINT("GENSIB",("%s"P_FORMAT"SibFun %s",
+                                mdb_nodetype[$$->nodetype],$$,
+                                ItemName($$)));
 
           }
         ;
 
-sibevmarker: INLINE    {$$=1;} 
-        | CLASSTYPE {$$=2;}
-        |           {$$=0;}
-        ;
+sibevmarker: INLINE   
+             { $$=1; } 
+           | CLASSTYPE { $$=2; }
+           | { $$=0; }
+           ;
 
-sibarglist: sibargs {$$=$1;}
-          |         {$$=NULL;}
+sibarglist: sibargs
+            { $$=$1; }
+          | { $$=NULL; }
           ;
 
 sibargs: sibarg COMMA sibargs
-           {
-             $$=$1;
-             ARG_NEXT($$)=$3;
-           }
+         {
+           $$=$1;
+           ARG_NEXT($$)=$3;
+         }
        | sibarg
-           {
-             $$=$1;
-           }
+         {
+           $$=$1;
+         }
        ;
 
 sibarg: type sibreference sibparam
-          {
-            $$=MakeArg($3, $1, ST_regular, $2, NULL);
+        {
+          $$=MakeArg($3, $1, ST_regular, $2, NULL);
 
-              DBUG_PRINT("GENSIB",
-                         ("%s: "P_FORMAT", Id: %s, Attrib: %d, Status: %d  ",
-                          mdb_nodetype[ $$->nodetype ], $$, 
-                          CHECK_NULL( ARG_NAME($$)), ARG_ATTRIB($$), ARG_STATUS($$)));
-          }
+            DBUG_PRINT("GENSIB",
+                       ("%s: "P_FORMAT", Id: %s, Attrib: %d, Status: %d  ",
+                        mdb_nodetype[ $$->nodetype ], $$, 
+                        CHECK_NULL( ARG_NAME($$)), ARG_ATTRIB($$), ARG_STATUS($$)));
+        }
       | TYPE_DOTS
-          {
-            $$=MakeArg(NULL, MakeTypes(T_dots), ST_regular, ST_regular, NULL); 
+        {
+          $$=MakeArg(NULL, MakeTypes(T_dots), ST_regular, ST_regular, NULL); 
 
-              DBUG_PRINT("GENSIB",
-                         ("%s: "P_FORMAT", ... , Attrib: %d, Status: %d  ",
-                          mdb_nodetype[ $$->nodetype ], $$, 
-                          ARG_ATTRIB($$), ARG_STATUS($$)));
-          }
+          DBUG_PRINT("GENSIB",
+                     ("%s: "P_FORMAT", ... , Attrib: %d, Status: %d  ",
+                      mdb_nodetype[ $$->nodetype ], $$, 
+                      ARG_ATTRIB($$), ARG_STATUS($$)));
+        }
       ;
 
 sibparam: id
+          {
+            $$=$1;
+          }
+        |
+          {
+            $$=NULL;
+          }
+        ;
+
+sibreference: BRACKET_L AMPERS BRACKET_R
+              {
+                $$=ST_readonly_reference;
+              }
+            | AMPERS
+              {
+                $$=ST_reference;
+              }
+            |
+              {
+                $$=ST_regular;
+              }
+            ;
+
+sibfunbody: exprblock
             {
               $$=$1;
             }
-        |
+          | SEMIC
             {
               $$=NULL;
             }
-        ;
-
-
-sibreference: BRACKET_L AMPERS BRACKET_R
-                 {
-                   $$=ST_readonly_reference;
-                 }
-             | AMPERS
-                 {
-                   $$=ST_reference;
-                 }
-             |
-                 {
-                   $$=ST_regular;
-                 }
-             ;
-
-sibfunbody: exprblock
-              {
-                $$=$1;
-              }
-          | SEMIC
-              {
-                $$=NULL;
-              }
           ;
 
 
@@ -2701,11 +2719,11 @@ sibfunlistentry: id BRACKET_L sibarglist BRACKET_R
 targets: TARGET ID COLON inherits resources targets
          {
            $$=RSCMakeTargetListEntry($2, $4, $5, $6);
-	 }
+         }
        | /* empty */
          {
-	   $$=NULL;
-	 }
+           $$=NULL;
+         }
        ;
 
 inherits: COLON ID COLON inherits
@@ -2715,63 +2733,59 @@ inherits: COLON ID COLON inherits
           }
         | /* empty */
           {
-	    $$=NULL;
-	  } 
+            $$=NULL;
+          } 
         ;
 
 resources: ID COLON LET string resources
            {
              $$=RSCMakeResourceListEntry($1, $4, 0, 0, $5);
-	   }
+           }
          | ID ADDON string resources
            {
              $$=RSCMakeResourceListEntry($1, $3, 0, 1, $4);
-	   }
+           }
          | 
            ID COLON LET OPTION resources
            {
              $$=RSCMakeResourceListEntry($1, $4, 0, 0, $5);
-	   }
+           }
          | ID ADDON OPTION resources
            {
              $$=RSCMakeResourceListEntry($1, $3, 0, 1, $4);
-	   }
+           }
          | ID COLON LET ID resources
            {
              $$=RSCMakeResourceListEntry($1, $4, 0, 0, $5);
-	   }
+           }
          | ID ADDON ID resources
            {
              $$=RSCMakeResourceListEntry($1, $3, 0, 1, $4);
-	   }
+           }
          | ID COLON LET PRIVATEID resources
            {
              $$=RSCMakeResourceListEntry($1, $4, 0, 0, $5);
-	   }
-         | 
-           ID ADDON PRIVATEID resources
+           }
+         | ID ADDON PRIVATEID resources
            {
              $$=RSCMakeResourceListEntry($1, $3, 0, 1, $4);
-	   }
-         | 
-           ID COLON LET NUM resources
+           }
+         | ID COLON LET NUM resources
            {
              $$=RSCMakeResourceListEntry($1, NULL, $4, 0, $5);
-	   }
-         | 
-           ID ADDON NUM resources
+           }
+         | ID ADDON NUM resources
            {
              $$=RSCMakeResourceListEntry($1, NULL, $3, 1, $4);
-	   }
-         |  /* empty */
+           }
+         | /* empty */
            {
-	     $$=NULL;
-	   }
+             $$=NULL;
+           }
          ;
 
 
 %%
-
 
 
 /*
@@ -2797,6 +2811,7 @@ int My_yyparse()
   return(yyparse());
 }
 
+
 int yyerror(char *errname)
 {
   int offset=0;
@@ -2807,8 +2822,8 @@ int yyerror(char *errname)
   size_of_output = MAX_LINE_LENGTH -
                    (((verbose_level>1)?2:0) + strlen(filename)
                     + NumberOfDigits(linenum) + 9 );
-  if( strlen( linebuf_ptr) > size_of_output) {
-    if( charpos >= size_of_output-15) {
+  if (strlen( linebuf_ptr) > size_of_output) {
+    if (charpos >= size_of_output-15) {
       offset = charpos-size_of_output+15;
       strncpy( linebuf_ptr +offset, "... ", 4);
     }
@@ -2824,7 +2839,7 @@ int CountArguments(node *args)
 {
   int res=0;
   
-  while (args!=NULL){
+  while (args!=NULL) {
     res++;
     args=EXPRS_NEXT(args);
   }
@@ -2852,12 +2867,9 @@ node *string2array(char *str)
 
   cnt=0;
   
-  for (i=strlen(str)-1; i>=0; i--)
-  {
-    if ((i>0) && (str[i-1]=='\\'))
-    {
-      switch (str[i])
-      {
+  for (i=strlen(str)-1; i>=0; i--) {
+    if ((i>0) && (str[i-1]=='\\')) {
+      switch (str[i]) {
       case 'n':
         new_exprs=MakeExprs(MakeChar('\n'), new_exprs);
         i-=1;
@@ -2895,8 +2907,7 @@ node *string2array(char *str)
         break;
       }
     }
-    else
-    {
+    else {
       new_exprs=MakeExprs(MakeChar(str[i]), new_exprs);
     }
     
@@ -2935,9 +2946,12 @@ types *GenComplexType( types *types, nums *numsp)
     tmp=numsp;
     numsp=numsp->next;
     FREE(tmp);
-  } while (numsp != NULL);
+  }
+  while (numsp != NULL);
+
   DBUG_RETURN(types);
 }
+
 
 node *GenVardec( types *type, ids *ids_p)
 {
@@ -2948,21 +2962,23 @@ node *GenVardec( types *type, ids *ids_p)
   DBUG_ENTER("GenVardec");
 
   vardec_p=NULL;
-  do
-   {
-     tmp=MakeNode(N_vardec);
-     tmp->node[0]=vardec_p;
-     vardec_p=tmp;
-     type_p=MakeType(T_int, 0, NULL, NULL, NULL);
-     type_p=(types*) memcpy((void*)type_p, (void*)type, sizeof(types)) ;
-     vardec_p->info.types=type_p;
-     vardec_p->info.types->id=ids_p->id;
-     tmp2=ids_p;
-     ids_p=ids_p->next;
-     FREE(tmp2);
-  } while (ids_p != NULL);
+  do {
+    tmp=MakeNode(N_vardec);
+    tmp->node[0]=vardec_p;
+    vardec_p=tmp;
+    type_p=MakeType(T_int, 0, NULL, NULL, NULL);
+    type_p=(types*) memcpy((void*)type_p, (void*)type, sizeof(types)) ;
+    vardec_p->info.types=type_p;
+    vardec_p->info.types->id=ids_p->id;
+    tmp2=ids_p;
+    ids_p=ids_p->next;
+    FREE(tmp2);
+  }
+  while (ids_p != NULL);
+
   DBUG_RETURN(vardec_p);
 }
+
 
 /*
  *
@@ -2981,53 +2997,52 @@ node *GenVardec( types *type, ids *ids_p)
  */
 node *Append(node *target_node, node *append_node)
 {
-   node *tmp;
+  node *tmp;
    
-   DBUG_ENTER("Append");
-   if (N_block == target_node->nodetype)
-      tmp=target_node->node[0];
-   else
-      tmp=target_node;
-   if (N_assign == tmp->nodetype) 
-   {
-      while( tmp->node[1] )      /* look for last N_assign node */
-        tmp=tmp->node[1];
-   
-      if (N_assign != append_node->nodetype)
-      {
-         tmp->node[1]=MakeNode(N_assign);
-         tmp->node[1]->node[0]=append_node;
-      }
-      else
-         tmp->node[1]=append_node;
-      
-      DBUG_PRINT("GENTREE",("%s"P_FORMAT": %s"P_FORMAT" %s"P_FORMAT,
-                            mdb_nodetype[tmp->nodetype],tmp,
-                            mdb_nodetype[tmp->node[0]->nodetype],tmp->node[0],
-                            mdb_nodetype[tmp->node[1]->nodetype],tmp->node[1]));
-   }
-   else
-   {  /* target_node has type N_empty */
+  DBUG_ENTER("Append");
+  if (N_block == target_node->nodetype) {
+     tmp=target_node->node[0];
+  }
+  else {
+    tmp=target_node;
+  }
+  if (N_assign == tmp->nodetype) {
+    while (tmp->node[1]) {      /* look for last N_assign node */
+      tmp=tmp->node[1];
+    }
 
-      FREE(tmp);     /* delete node of type N_empty */
-      if (N_assign != append_node->nodetype)
-      {
-         tmp=MakeNode(N_assign);  
-         tmp->node[0]=append_node;
-         DBUG_PRINT("GENTREE",("%s"P_FORMAT": %s"P_FORMAT,
-                               mdb_nodetype[tmp->nodetype],tmp,
-                               mdb_nodetype[tmp->node[0]->nodetype],
-                               tmp->node[0]));
-      } 
-      else
-      {
-         tmp=append_node;
-         
-         DBUG_PRINT("GENTREE",("%s"P_FORMAT,
-                               mdb_nodetype[tmp->nodetype],tmp));
-      }
-   }
+    if (N_assign != append_node->nodetype) {
+      tmp->node[1]=MakeNode(N_assign);
+      tmp->node[1]->node[0]=append_node;
+    }
+    else {
+      tmp->node[1]=append_node;
+    }
       
-   DBUG_RETURN(target_node);
+    DBUG_PRINT("GENTREE",("%s"P_FORMAT": %s"P_FORMAT" %s"P_FORMAT,
+                          mdb_nodetype[tmp->nodetype],tmp,
+                          mdb_nodetype[tmp->node[0]->nodetype],tmp->node[0],
+                          mdb_nodetype[tmp->node[1]->nodetype],tmp->node[1]));
+  }
+  else {
+    /* target_node has type N_empty */
+    FREE(tmp);     /* delete node of type N_empty */
+    if (N_assign != append_node->nodetype) {
+      tmp=MakeNode(N_assign);  
+      tmp->node[0]=append_node;
+      DBUG_PRINT("GENTREE",("%s"P_FORMAT": %s"P_FORMAT,
+                            mdb_nodetype[tmp->nodetype],tmp,
+                            mdb_nodetype[tmp->node[0]->nodetype],
+                            tmp->node[0]));
+    } 
+    else {
+      tmp=append_node;
+         
+      DBUG_PRINT("GENTREE",("%s"P_FORMAT,
+                            mdb_nodetype[tmp->nodetype],tmp));
+    }
+  }
+
+  DBUG_RETURN(target_node);
 }
 

@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/01/07 13:04:30  dkr
+ * tabs in source code replaced by spaces
+ *
  * Revision 2.9  1999/10/19 17:03:51  sbs
  * yy_init only reset for OSF_ALPHA...
  *
@@ -114,8 +117,8 @@
 #include "globals.h"
 
 
-#define FILTER(token) 	charpos += yyleng; \
-			if (0==commlevel)  return(token)
+#define FILTER(token)   charpos += yyleng; \
+                        if (0==commlevel)  return(token)
 
 #define LINEBUF_SIZE 256
 
@@ -152,51 +155,51 @@ int start_token;
      }
 %}
 
-"{"				{ FILTER( BRACE_L );}
-"}"				{ FILTER( BRACE_R );}
-"("				{ FILTER( BRACKET_L );}
-")"				{ FILTER( BRACKET_R );}
-"["				{ FILTER( SQBR_L );}
-"]"				{ FILTER( SQBR_R );}
-":"				{ FILTER( COLON );}
-";"				{ FILTER( SEMIC );}
-","				{ FILTER( COMMA );}
-"="				{ FILTER( LET );}
-"&"				{ FILTER( AMPERS );}
-"?"				{ FILTER( QUESTION );}
+"{"                             { FILTER( BRACE_L );}
+"}"                             { FILTER( BRACE_R );}
+"("                             { FILTER( BRACKET_L );}
+")"                             { FILTER( BRACKET_R );}
+"["                             { FILTER( SQBR_L );}
+"]"                             { FILTER( SQBR_R );}
+":"                             { FILTER( COLON );}
+";"                             { FILTER( SEMIC );}
+","                             { FILTER( COMMA );}
+"="                             { FILTER( LET );}
+"&"                             { FILTER( AMPERS );}
+"?"                             { FILTER( QUESTION );}
 "."                             { FILTER( DOT);}
 
-"&&"				{ FILTER( AND );}
-"||"				{ FILTER( OR );}
-"=="				{ FILTER( EQ );}
-"!="				{ FILTER( NEQ );}
+"&&"                            { FILTER( AND );}
+"||"                            { FILTER( OR );}
+"=="                            { FILTER( EQ );}
+"!="                            { FILTER( NEQ );}
 "!"                             { FILTER( NOT );}
-"<="				{ FILTER( LE );}
-"<"				{ FILTER( LT );}
-">="				{ FILTER( GE );}
-">"				{ FILTER( GT );}
-"+"				{ FILTER( PLUS );}
-"-"				{ FILTER( MINUS );}
-"/"				{ FILTER( DIV );}
-"*"				{ FILTER( MUL );}
-"%"				{ FILTER( PRF_MOD );}
+"<="                            { FILTER( LE );}
+"<"                             { FILTER( LT );}
+">="                            { FILTER( GE );}
+">"                             { FILTER( GT );}
+"+"                             { FILTER( PLUS );}
+"-"                             { FILTER( MINUS );}
+"/"                             { FILTER( DIV );}
+"*"                             { FILTER( MUL );}
+"%"                             { FILTER( PRF_MOD );}
 
-"++"				{ FILTER( INC );}
-"--" 				{ FILTER( DEC );}
+"++"                            { FILTER( INC );}
+"--"                            { FILTER( DEC );}
 
-"+="				{ FILTER( ADDON );}
-"-="				{ FILTER( SUBON );}
-"*="				{ FILTER( MULON );}
-"/="				{ FILTER( DIVON );}
-"%="				{ FILTER( MODON );}
+"+="                            { FILTER( ADDON );}
+"-="                            { FILTER( SUBON );}
+"*="                            { FILTER( MULON );}
+"/="                            { FILTER( DIVON );}
+"%="                            { FILTER( MODON );}
 
-"abs"				{ FILTER( ABS );}
-"reshape"			{ FILTER( RESHAPE );}
-"shape"				{ FILTER( SHAPE );}
-"take"				{ FILTER( TAKE );}
-"drop"				{ FILTER( DROP );}
-"dim"				{ FILTER( DIM );}
-"rotate"			{ FILTER( ROTATE );}
+"abs"                           { FILTER( ABS );}
+"reshape"                       { FILTER( RESHAPE );}
+"shape"                         { FILTER( SHAPE );}
+"take"                          { FILTER( TAKE );}
+"drop"                          { FILTER( DROP );}
+"dim"                           { FILTER( DIM );}
+"rotate"                        { FILTER( ROTATE );}
 "cat"                           { if (compiler_phase==PH_setup) {
                                     yylval.id=StringCopy(yytext);
                                     FILTER( ID );
@@ -211,39 +214,39 @@ int start_token;
 "tod"                           { FILTER( TOD );}
 "min"                           { FILTER( PRF_MIN );}
 "max"                           { FILTER( PRF_MAX );}
-"typedef"			{ FILTER( TYPEDEF );}
-"classtype"			{ FILTER( CLASSTYPE );}
-"objdef"		        { FILTER( OBJDEF );}
-"main"				{ FILTER( K_MAIN );}
-"return"			{ FILTER( RETURN );}
-"if"				{ FILTER( IF );}
-"else"				{ FILTER( ELSE );}
-"do"				{ FILTER( DO );}
-"while"				{ FILTER( WHILE );}
-"for"				{ FILTER( FOR );}
-"old_with" 		       	{ FILTER( WITH );}
-"with" 	  	 	       	{ FILTER( NWITH );}
-"step" 				{ FILTER( STEP );}
-"width" 			{ FILTER( WIDTH );}
-"genarray"			{ FILTER( GENARRAY );}
-"modarray"			{ FILTER( MODARRAY );}
-"fold"				{ FILTER( FOLD );}
-"inline"			{ FILTER( INLINE );}
+"typedef"                       { FILTER( TYPEDEF );}
+"classtype"                     { FILTER( CLASSTYPE );}
+"objdef"                        { FILTER( OBJDEF );}
+"main"                          { FILTER( K_MAIN );}
+"return"                        { FILTER( RETURN );}
+"if"                            { FILTER( IF );}
+"else"                          { FILTER( ELSE );}
+"do"                            { FILTER( DO );}
+"while"                         { FILTER( WHILE );}
+"for"                           { FILTER( FOR );}
+"old_with"                      { FILTER( WITH );}
+"with"                          { FILTER( NWITH );}
+"step"                          { FILTER( STEP );}
+"width"                         { FILTER( WIDTH );}
+"genarray"                      { FILTER( GENARRAY );}
+"modarray"                      { FILTER( MODARRAY );}
+"fold"                          { FILTER( FOLD );}
+"inline"                        { FILTER( INLINE );}
 
-"ModuleDec"			{ FILTER( MODDEC );}
-"Module"		       	{ FILTER( MODIMP );}
-"ClassDec"			{ FILTER( CLASSDEC );}
-"Class"	                        { FILTER( CLASSIMP );}
+"ModuleDec"                     { FILTER( MODDEC );}
+"Module"                        { FILTER( MODIMP );}
+"ClassDec"                      { FILTER( CLASSDEC );}
+"Class"                         { FILTER( CLASSIMP );}
 
-"import"			{ FILTER( IMPORT );}
-"all"				{ FILTER( ALL );}
-"implicit"			{ FILTER( IMPLICIT );}
-"explicit"			{ FILTER( EXPLICIT );}
-"types"				{ FILTER( TYPES );}
-"funs"				{ FILTER( FUNS );}
-"functions"			{ FILTER( FUNS );}
-"own"				{ FILTER( OWN );}
-"external"			{ FILTER( EXTERN );}
+"import"                        { FILTER( IMPORT );}
+"all"                           { FILTER( ALL );}
+"implicit"                      { FILTER( IMPLICIT );}
+"explicit"                      { FILTER( EXPLICIT );}
+"types"                         { FILTER( TYPES );}
+"funs"                          { FILTER( FUNS );}
+"functions"                     { FILTER( FUNS );}
+"own"                           { FILTER( OWN );}
+"external"                      { FILTER( EXTERN );}
 "global"                        { FILTER( GLOBAL );}
 "objects"                       { FILTER( OBJECTS );}
 
@@ -262,17 +265,17 @@ int start_token;
 "cachesim"                      { FILTER( CACHESIM );}
 "Default"                       { FILTER( DEFAULT );}
 
-"int"				{ FILTER( TYPE_INT );}
-"float"				{ FILTER( TYPE_FLOAT );}
-"bool"				{ FILTER( TYPE_BOOL );}
-"unsigned" 		        { FILTER( TYPE_UNS );}
-"short"             		{ FILTER( TYPE_SHORT );}
-"long"    		        { FILTER( TYPE_LONG );}
-"char"     		        { FILTER( TYPE_CHAR );}
-"double"		        { FILTER( TYPE_DBL );}
+"int"                           { FILTER( TYPE_INT );}
+"float"                         { FILTER( TYPE_FLOAT );}
+"bool"                          { FILTER( TYPE_BOOL );}
+"unsigned"                      { FILTER( TYPE_UNS );}
+"short"                         { FILTER( TYPE_SHORT );}
+"long"                          { FILTER( TYPE_LONG );}
+"char"                          { FILTER( TYPE_CHAR );}
+"double"                        { FILTER( TYPE_DBL );}
 
-"void"		                { FILTER( TYPE_VOID );}
-"..."		                { FILTER( TYPE_DOTS );}
+"void"                          { FILTER( TYPE_VOID );}
+"..."                           { FILTER( TYPE_DOTS );}
 
 "true"                          { FILTER( TRUETOKEN );}
 "false"                         { FILTER( FALSETOKEN );}
@@ -335,7 +338,7 @@ int start_token;
                                 }
 
 
-\"([^"\n]|(\\\"))*\"		{ yylval.id=StringCopy(yytext+sizeof(char));
+\"([^"\n]|(\\\"))*\"            { yylval.id=StringCopy(yytext+sizeof(char));
                                   yylval.id[strlen(yylval.id)-1]='\0';
                                   FILTER( STR );
                                   FREE(yylval.id);
@@ -358,72 +361,70 @@ int start_token;
 '\\[0-9]*'                      { yylval.cchar=(char)atoi(yytext+2);
                                   FILTER( CHAR );
                                 }
-'\\n'                          { yylval.cchar='\n';
-                                 FILTER( CHAR );
-                               }
-'\\t'                          { yylval.cchar='\t';
-                                 FILTER( CHAR );
-                               }
+'\\n'                           { yylval.cchar='\n';
+                                  FILTER( CHAR );
+                                }
+'\\t'                           { yylval.cchar='\t';
+                                  FILTER( CHAR );
+                                }
 
-(0?|([1-9][0-9]*))             { yylval.cint=atoi(yytext);
-                                 FILTER( NUM);
-                               }
+(0?|([1-9][0-9]*))              { yylval.cint=atoi(yytext);
+                                  FILTER( NUM);
+                                }
 
 (0?|([1-9][0-9]*))[.][0-9]+(e([+]?|[-]?)[0-9]+)? {
-                                 yylval.cdbl=atof(yytext);
-                                 FILTER( DOUBLE);
-                               }
+                                  yylval.cdbl=atof(yytext);
+                                  FILTER( DOUBLE);
+                                }
 
 (0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[fF] {
-                                 yytext[strlen(yytext)]='\0';
-                                 yylval.cfloat=atof(yytext);
-                                 FILTER( FLOAT);
-                               }
+                                  yytext[strlen(yytext)]='\0';
+                                  yylval.cfloat=atof(yytext);
+                                  FILTER( FLOAT);
+                                }
 
 (0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[Dd] {
-                                 yytext[strlen(yytext)]='\0';
-                                 yylval.cdbl=atof(yytext);
-                                 FILTER( DOUBLE);
-                               }
+                                  yytext[strlen(yytext)]='\0';
+                                  yylval.cdbl=atof(yytext);
+                                  FILTER( DOUBLE);
+                                }
 
 
-"/*"	                      { if (commlevel++ == 1)
-                                  WARN(linenum, ("Nested comment eleminated"));
-                                charpos += yyleng;
-                               }
-"*/"	                      { charpos +=yyleng;
-                                if (commlevel) commlevel--;
-                                else return(SC);
-                              }
-\n.*	                      { linenum++;
-                                charpos = 0;
-                                if( yyleng <= LINEBUF_SIZE) {
-                                  strncpy( linebuf, yytext+1,yyleng);
-                                  linebuf_ptr = linebuf;
-                                } else {
-                                  if( tmp_buf != NULL)
-                                    FREE( tmp_buf);
-                                  tmp_buf = MALLOC( (yyleng) * sizeof(char));
-                                  strncpy( tmp_buf, yytext+1,yyleng);
-                                  linebuf_ptr = tmp_buf;
+"/*"                            { if (commlevel++ == 1)
+                                    WARN(linenum, ("Nested comment eleminated"));
+                                  charpos += yyleng;
                                 }
-                                yyless(1);
-                              }
-[ \t]	                      { charpos += yyleng;}
-"\f"                          { charpos += yyleng;}
-#\ .*\n                       { linenum=atoi(yytext+2);
-                                { int start, len;
-                                  start = strcspn( yytext, "\"")+1;
-                                  len   = strcspn( yytext+start, "\"");
-                                  filename = (char *)Malloc( (len+1)*sizeof(char)); 
-                                  strncpy( filename , yytext + start, len);
-                                  filename[len] = '\0';
+"*/"                            { charpos +=yyleng;
+                                  if (commlevel) commlevel--;
+                                  else return(SC);
                                 }
-                              }
-.	                      { charpos += yyleng;
-                                FILTER( SC );
-                              }
+\n.*                            { linenum++;
+                                  charpos = 0;
+                                  if( yyleng <= LINEBUF_SIZE) {
+                                    strncpy( linebuf, yytext+1,yyleng);
+                                    linebuf_ptr = linebuf;
+                                  } else {
+                                    if( tmp_buf != NULL)
+                                      FREE( tmp_buf);
+                                    tmp_buf = MALLOC( (yyleng) * sizeof(char));
+                                    strncpy( tmp_buf, yytext+1,yyleng);
+                                    linebuf_ptr = tmp_buf;
+                                  }
+                                  yyless(1);
+                                }
+[ \t]                           { charpos += yyleng;}
+"\f"                            { charpos += yyleng;}
+#\ .*\n                         { linenum=atoi(yytext+2);
+                                  { int start, len;
+                                    start = strcspn( yytext, "\"")+1;
+                                    len   = strcspn( yytext+start, "\"");
+                                    filename = (char *)Malloc( (len+1)*sizeof(char)); 
+                                    strncpy( filename , yytext + start, len);
+                                    filename[len] = '\0';
+                                  }
+                                }
+.                               { charpos += yyleng;
+                                  FILTER( SC );
+                                }
 
 %%
-
-
