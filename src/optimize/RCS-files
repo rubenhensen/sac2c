@@ -2,14 +2,10 @@ CSE.c
 CSE.h
 ConstantFolding.c
 ConstantFolding.h
-DataFlowMask.c
-DataFlowMask.h
 DeadCodeRemoval.c
 DeadCodeRemoval.h
 DeadFunctionRemoval.c
 DeadFunctionRemoval.h
-DupTree.c
-DupTree.h
 Inline.c
 Inline.h
 LoopInvariantRemoval.c
