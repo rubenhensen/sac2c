@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/11/27 01:33:56  sah
+  implemented TRAVgetName
+
   Revision 1.2  2004/11/26 11:58:04  sah
   implemented pre/post tables
 
@@ -49,6 +52,7 @@ typedef travfun_p preposttable_t [</xsl:text><xsl:value-of select="count(//trave
 extern travtables_t travtables;
 extern preposttable_t pretable;
 extern preposttable_t posttable;
+extern const char *travnames[</xsl:text><xsl:value-of select="count(//traversal)+1" /><xsl:text>];
 
 #endif /* _SAC_TRAVERSE_TABLES_H_ */
     </xsl:text>

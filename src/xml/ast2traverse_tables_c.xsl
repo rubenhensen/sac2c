@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2004/11/27 01:33:56  sah
+  implemented TRAVgetName
+
   Revision 1.4  2004/11/26 19:58:50  sah
   bugfix
 
@@ -67,6 +70,13 @@ preposttable_t posttable = {
     NULL
     </xsl:text>
     <xsl:apply-templates select="/definition/phases//traversal" mode="posttable" />
+    <xsl:text>
+};
+
+const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/phases//traversal) + 1"/><xsl:text>] = {
+    "unknown"
+    </xsl:text>
+    <xsl:apply-templates select="/definition/phases//traversal" mode="travnames" />
     <xsl:text>
 };
 
@@ -206,6 +216,14 @@ preposttable_t posttable = {
 
   <xsl:template match="traversal" mode="posttable">
     <xsl:value-of select="', NULL'" />
+  </xsl:template>
+
+  <xsl:template match="/definition/phases//traversal" mode="travnames">
+    <xsl:value-of select="', &quot;'" />
+    <xsl:call-template name="lowercase" >
+      <xsl:with-param name="string" select="@id" />
+    </xsl:call-template>
+    <xsl:value-of select="'&quot;'" />
   </xsl:template>
 
 </xsl:stylesheet>

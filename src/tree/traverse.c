@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.116  2004/11/27 01:33:21  sah
+ * implemented TRAVgetName
+ *
  * Revision 3.115  2004/11/26 11:56:41  sah
  * *** empty log message ***
  *
@@ -113,6 +116,22 @@ TRAVpop ()
     result = tmp->traversal;
 
     tmp = ILIBfree (tmp);
+
+    DBUG_RETURN (result);
+}
+
+const char *
+TRAVgetName (trav_t trav)
+{
+    const char *result;
+
+    DBUG_ENTER ("TRAVgetName");
+
+    if (travstack == NULL) {
+        result = "no_active_traversal";
+    } else {
+        result = travnames[trav];
+    }
 
     DBUG_RETURN (result);
 }
