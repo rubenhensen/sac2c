@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/07/29 12:08:16  ktr
+ * MakeDimArg, MakeShapeArg and MakeSizeArg added.
+ * Constants must now only be filled if they are used on a RHS of an assignment
+ *
  * Revision 1.13  2004/07/27 17:21:12  ktr
  * minor changes
  *
@@ -285,13 +289,13 @@ MakeAllocAssignment (alloclist_struct *als, node *next_node)
     /*
      * Annotate exact dim/shape information if available
      */
+#ifdef USEAKS
     if ((TYIsAKD (AVIS_TYPE (als->avis))) || (TYIsAKS (AVIS_TYPE (als->avis)))
         || (TYIsAKV (AVIS_TYPE (als->avis)))) {
         als->dim = FreeTree (als->dim);
         als->dim = MakeNum (TYGetDim (AVIS_TYPE (als->avis)));
     }
 
-#ifdef USEAKS
     if ((TYIsAKS (AVIS_TYPE (als->avis))) || (TYIsAKV (AVIS_TYPE (als->avis)))) {
         als->shape = FreeTree (als->shape);
         als->shape = SHShape2Array (TYGetShape (AVIS_TYPE (als->avis)));
@@ -307,6 +311,121 @@ MakeAllocAssignment (alloclist_struct *als, node *next_node)
     AVIS_SSAASSIGN (IDS_AVIS (ids)) = alloc;
 
     DBUG_RETURN (alloc);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn MakeDimArg
+ *
+ *  @brief returns MakeNum( 0) for primitive data types and dim( a) for N_ids
+ *
+ *  @param arg
+ *  @param
+ *
+ *  @return
+ *
+ ***************************************************************************/
+static node *
+MakeDimArg (node *arg)
+{
+    DBUG_ENTER ("MakeDimArg");
+
+    switch (NODE_TYPE (arg)) {
+    case N_num:
+    case N_float:
+    case N_double:
+    case N_char:
+    case N_bool:
+        arg = MakeNum (0);
+        break;
+
+    case N_id:
+        arg = MakePrf1 (F_dim, DupNode (arg));
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Invalid argument");
+    }
+
+    DBUG_RETURN (arg);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn MakeShapeArg
+ *
+ *  @brief returns [] for primitive data types and shape( a) for N_ids
+ *
+ *  @param arg
+ *  @param
+ *
+ *  @return
+ *
+ ***************************************************************************/
+static node *
+MakeShapeArg (node *arg)
+{
+    DBUG_ENTER ("MakeShapeArg");
+
+    switch (NODE_TYPE (arg)) {
+    case N_num:
+    case N_float:
+    case N_double:
+    case N_char:
+    case N_bool:
+        arg = CreateZeroVector (0, T_int);
+        break;
+
+    case N_id:
+        arg = MakePrf1 (F_shape, DupNode (arg));
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Invalid argument");
+    }
+
+    DBUG_RETURN (arg);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn MakeSizeArg
+ *
+ *  @brief
+ *
+ *  @param arg
+ *  @param
+ *
+ *  @return
+ *
+ ***************************************************************************/
+static node *
+MakeSizeArg (node *arg)
+{
+    DBUG_ENTER ("MakeSizeArg");
+
+    switch (NODE_TYPE (arg)) {
+    case N_num:
+    case N_float:
+    case N_double:
+    case N_char:
+    case N_bool:
+        arg = MakeNum (1);
+        break;
+
+    case N_array:
+        arg = MakeNum (SHGetUnrLen (ARRAY_SHAPE (arg)));
+        break;
+
+    case N_id:
+        arg = MakePrf2 (F_sel, MakeNum (0), MakePrf1 (F_shape, DupNode (arg)));
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Invalid argument");
+    }
+
+    DBUG_RETURN (arg);
 }
 
 /**
@@ -375,35 +494,40 @@ EMALarray (node *arg_node, info *arg_info)
 
     als = INFO_EMAL_ALLOCLIST (arg_info);
 
-    if (ARRAY_AELEMS (arg_node) != NULL) {
-        /*
-         * [ a, ... ]
-         * alloc( outer_dim + dim(a), shape( [a, ...]))
-         */
-        if (NODE_TYPE (ARRAY_AELEMS (arg_node)) == N_id) {
-            als->dim
-              = MakePrf2 (F_add_SxS, MakeNum (SHGetDim (ARRAY_SHAPE (arg_node))),
-                          MakePrf1 (F_dim,
-                                    DupNode (EXPRS_EXPR (ARRAY_AELEMS (arg_node)))));
-        } else {
-            als->dim = MakeNum (SHGetDim (ARRAY_SHAPE (arg_node)));
-        }
-
-        als->shape = MakePrf1 (F_shape, DupTree (arg_node));
+    if (ARRAY_STRING (arg_node) != NULL) {
+        /* array is a string */
+        als->dim = MakeNum (1);
+        als->shape = SHShape2Array (ARRAY_SHAPE (arg_node));
     } else {
-        /*
-         * []: empty array
-         * alloc_or_reuse( 1, outer_dim, shape( []))
-         *
-         * The dimension of the right-hand-side is unknown
-         *   -> A has to be a AKD array!
-         */
-        DBUG_ASSERT (TYGetDim (AVIS_TYPE (als->avis)) >= 0,
-                     "assignment  A = [];  found, where A has unknown shape!");
+        if (ARRAY_AELEMS (arg_node) != NULL) {
+            /*
+             * [ a, ... ]
+             * alloc( outer_dim + dim(a), shape( [a, ...]))
+             */
+            if (NODE_TYPE (ARRAY_AELEMS (arg_node)) == N_id) {
+                als->dim
+                  = MakePrf2 (F_add_SxS, MakeNum (SHGetDim (ARRAY_SHAPE (arg_node))),
+                              MakeDimArg (EXPRS_EXPR (ARRAY_AELEMS (arg_node))));
+            } else {
+                als->dim = MakeNum (SHGetDim (ARRAY_SHAPE (arg_node)));
+            }
 
-        als->dim = MakeNum (TYGetDim (AVIS_TYPE (als->avis)));
+            als->shape = MakePrf1 (F_shape, DupTree (arg_node));
+        } else {
+            /*
+             * []: empty array
+             * alloc_or_reuse( 1, outer_dim, shape( []))
+             *
+             * The dimension of the right-hand-side is unknown
+             *   -> A has to be a AKD array!
+             */
+            DBUG_ASSERT (TYGetDim (AVIS_TYPE (als->avis)) >= 0,
+                         "assignment  A = [];  found, where A has unknown shape!");
 
-        als->shape = MakePrf1 (F_shape, DupTree (arg_node));
+            als->dim = MakeNum (TYGetDim (AVIS_TYPE (als->avis)));
+
+            als->shape = MakePrf1 (F_shape, DupTree (arg_node));
+        }
     }
 
     /*
@@ -447,6 +571,7 @@ EMALassign (node *arg_node, info *arg_info)
      * Traverse RHS of assignment
      */
     if (ASSIGN_INSTR (arg_node) != NULL) {
+        DBUG_EXECUTE ("EMAL", PrintNode (arg_node););
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     }
 
@@ -540,12 +665,8 @@ EMALcode (node *arg_node, info *arg_info)
 
             if (als->dim == NULL) {
                 if (TYIsAKS (AVIS_TYPE (cexavis))) {
-                    als->dim
-                      = MakePrf2 (F_add_SxS,
-                                  MakePrf2 (F_sel, MakeNum (0),
-                                            MakePrf1 (F_shape,
-                                                      DupNode (NWITHOP_SHAPE (withops)))),
-                                  MakeNum (TYGetDim (AVIS_TYPE (cexavis))));
+                    als->dim = MakePrf2 (F_add_SxS, MakeSizeArg (NWITHOP_SHAPE (withops)),
+                                         MakeNum (TYGetDim (AVIS_TYPE (cexavis))));
                 }
             }
             if (als->shape == NULL) {
@@ -695,13 +816,15 @@ EMALconst (node *arg_node, info *arg_info)
 
     als = INFO_EMAL_ALLOCLIST (arg_info);
 
-    als->dim = MakeNum (0);
-    als->shape = CreateZeroVector (0, T_int);
+    if (als != NULL) {
+        als->dim = MakeNum (0);
+        als->shape = CreateZeroVector (0, T_int);
 
-    /*
-     * Signal EMALlet to wrap this RHS in a fill operation
-     */
-    INFO_EMAL_MUSTFILL (arg_info) = TRUE;
+        /*
+         * Signal EMALlet to wrap this RHS in a fill operation
+         */
+        INFO_EMAL_MUSTFILL (arg_info) = TRUE;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -752,8 +875,8 @@ EMALfundef (node *fundef, info *arg_info)
      * Traverse fundef body
      */
     if (FUNDEF_BODY (fundef) != NULL) {
+        DBUG_EXECUTE ("EMAL", PrintNode (fundef););
         FUNDEF_BODY (fundef) = Trav (FUNDEF_BODY (fundef), arg_info);
-
         DBUG_EXECUTE ("EMAL", PrintNode (fundef););
     }
 
@@ -949,9 +1072,7 @@ EMALprf (node *arg_node, info *arg_info)
          * reshape( sh, A );
          * alloc( shape( sh )[0], sh );
          */
-        als->dim = MakePrf2 (F_sel, MakeNum (0),
-                             MakePrf1 (F_shape, DupNode (PRF_ARG1 (arg_node))));
-
+        als->dim = MakeSizeArg (PRF_ARG1 (arg_node));
         als->shape = MakePrf1 (F_shape, DupTree (arg_node));
         break;
 
@@ -975,10 +1096,8 @@ EMALprf (node *arg_node, info *arg_info)
          * sel( iv, A );
          * alloc( dim(A) - shape(iv)[0], shape( sel( iv, A)))
          */
-        als->dim
-          = MakePrf2 (F_sub_SxS, MakePrf1 (F_dim, DupNode (PRF_ARG2 (arg_node))),
-                      MakePrf2 (F_sel, MakeNum (0),
-                                MakePrf1 (F_shape, DupNode (PRF_ARG1 (arg_node)))));
+        als->dim = MakePrf2 (F_sub_SxS, MakePrf1 (F_dim, DupNode (PRF_ARG2 (arg_node))),
+                             MakeSizeArg (PRF_ARG1 (arg_node)));
 
         als->shape = MakePrf1 (F_shape, DupNode (arg_node));
         break;
@@ -1000,8 +1119,8 @@ EMALprf (node *arg_node, info *arg_info)
          * idx_modarray( A, idx, val);
          * alloc( dim( A ), shape ( A ));
          */
-        als->dim = MakePrf1 (F_dim, DupNode (PRF_ARG1 (arg_node)));
-        als->shape = MakePrf1 (F_shape, DupNode (PRF_ARG1 (arg_node)));
+        als->dim = MakeDimArg (PRF_ARG1 (arg_node));
+        als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         break;
 
     case F_add_SxS:
@@ -1051,11 +1170,11 @@ EMALprf (node *arg_node, info *arg_info)
         if ((CountExprs (PRF_ARGS (arg_node)) < 2)
             || (NODE_TYPE (PRF_ARG2 (arg_node)) != N_id)
             || (GetShapeDim (ID_TYPE (PRF_ARG2 (arg_node))) == SCALAR)) {
-            als->dim = MakePrf1 (F_dim, DupNode (PRF_ARG1 (arg_node)));
-            als->shape = MakePrf1 (F_shape, DupNode (PRF_ARG1 (arg_node)));
+            als->dim = MakeDimArg (PRF_ARG1 (arg_node));
+            als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         } else {
-            als->dim = MakePrf1 (F_dim, DupNode (PRF_ARG2 (arg_node)));
-            als->shape = MakePrf1 (F_shape, DupNode (PRF_ARG2 (arg_node)));
+            als->dim = MakeDimArg (PRF_ARG2 (arg_node));
+            als->shape = MakeShapeArg (PRF_ARG2 (arg_node));
         }
         break;
 
@@ -1078,6 +1197,8 @@ EMALprf (node *arg_node, info *arg_info)
     case F_dec_rc:
     case F_free:
     case F_copy:
+    case F_to_unq:
+    case F_from_unq:
         DBUG_ASSERT ((0), "invalid prf found!");
         break;
 
@@ -1095,8 +1216,6 @@ EMALprf (node *arg_node, info *arg_info)
          */
 
     case F_type_error:
-    case F_to_unq:
-    case F_from_unq:
         INFO_EMAL_MUSTFILL (arg_info) = FALSE;
         break;
 
@@ -1165,7 +1284,7 @@ EMALwith (node *arg_node, info *arg_info)
     if (NWITH_VEC (arg_node) != NULL) {
         INFO_EMAL_ALLOCLIST (arg_info)
           = MakeALS (INFO_EMAL_ALLOCLIST (arg_info), IDS_AVIS (NWITH_VEC (arg_node)),
-                     MakeNum (1), MakePrf1 (F_shape, DupNode (NWITH_BOUND1 (arg_node))));
+                     MakeNum (1), MakeShapeArg (NWITH_BOUND1 (arg_node)));
     }
 
     /*
@@ -1234,6 +1353,9 @@ EMALwith2 (node *arg_node, info *arg_info)
         NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
     }
 
+    /*
+     * Allocate memory for the index vector
+     */
     if (NWITH2_VEC (arg_node) != NULL) {
         INFO_EMAL_ALLOCLIST (arg_info)
           = MakeALS (INFO_EMAL_ALLOCLIST (arg_info), IDS_AVIS (NWITH2_VEC (arg_node)),
@@ -1304,11 +1426,8 @@ EMALwithop (node *arg_node, info *arg_info)
          */
         if (als->dim == NULL) {
             DBUG_ASSERT (NWITHOP_DEFAULT (arg_node) != NULL, "Default element required!");
-            als->dim = MakePrf2 (F_add_SxS,
-                                 MakePrf2 (F_sel, MakeNum (0),
-                                           MakePrf1 (F_shape,
-                                                     DupNode (NWITHOP_SHAPE (arg_node)))),
-                                 MakePrf1 (F_dim, DupNode (NWITHOP_DEFAULT (arg_node))));
+            als->dim = MakePrf2 (F_add_SxS, MakeSizeArg (NWITHOP_SHAPE (arg_node)),
+                                 MakeDimArg (NWITHOP_DEFAULT (arg_node)));
         }
 
         if (als->shape == NULL) {
