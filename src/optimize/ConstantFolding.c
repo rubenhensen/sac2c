@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/03/15 17:25:50  bs
+ * Bugs fixed!
+ *
  * Revision 2.4  1999/03/15 15:43:14  bs
  * Comments added.
  *
@@ -292,23 +295,38 @@ CompareNumArrayElts (node *array1, node *array2)
 
     /* compare elements */
 
-    if (ARRAY_VECLEN (array1) == ARRAY_VECLEN (array2))
-        for (i = 0; i < ARRAY_VECLEN (array1); i++)
-            ok = (ARRAY_INTVEC (array1)[i] == ARRAY_INTVEC (array2)[i]);
-    else
+    if ((ARRAY_VECLEN (array1) == ARRAY_VECLEN (array2))
+        && (ARRAY_VECTYPE (array1) == ARRAY_VECTYPE (array2))) {
+        switch (ARRAY_VECTYPE (array1)) {
+        case T_int:
+            for (i = 0; i < ARRAY_VECLEN (array1); i++)
+                ok = (ARRAY_INTVEC (array1)[i] == ARRAY_INTVEC (array2)[i]);
+            break;
+        case T_float:
+            for (i = 0; i < ARRAY_VECLEN (array1); i++)
+                ok = (ARRAY_FLOATVEC (array1)[i] == ARRAY_FLOATVEC (array2)[i]);
+            break;
+        case T_double:
+            for (i = 0; i < ARRAY_VECLEN (array1); i++)
+                ok = (ARRAY_DOUBLEVEC (array1)[i] == ARRAY_DOUBLEVEC (array2)[i]);
+            break;
+        default:
+            ok = 0;
+        }
+    } else
         ok = 0;
 
-#ifdef 0
-    array1 = ARRAY_AELEMS (array1);
-    array2 = ARRAY_AELEMS (array2);
-    while (ok && array1 && array2) {
-        ok = (N_num == NODE_TYPE (EXPRS_EXPR (array1))
-              && N_num == NODE_TYPE (EXPRS_EXPR (array2))
-              && NUM_VAL (EXPRS_EXPR (array1)) == NUM_VAL (EXPRS_EXPR (array2)));
-
-        array1 = EXPRS_NEXT (array1);
-        array2 = EXPRS_NEXT (array2);
-    }
+#if 0
+  array1 = ARRAY_AELEMS(array1);
+  array2 = ARRAY_AELEMS(array2);
+  while (ok && array1 && array2) {
+    ok = (N_num == NODE_TYPE(EXPRS_EXPR(array1)) &&
+          N_num == NODE_TYPE(EXPRS_EXPR(array2)) &&
+          NUM_VAL(EXPRS_EXPR(array1)) == NUM_VAL(EXPRS_EXPR(array2)));
+    
+    array1 = EXPRS_NEXT(array1);
+    array2 = EXPRS_NEXT(array2);
+  }
 #endif
     DBUG_RETURN (ok);
 }
@@ -333,7 +351,6 @@ int
 IsConst (node *arg_node)
 {
     int isit;
-    node *expr;
 
     DBUG_ENTER ("IsConst");
 
@@ -347,19 +364,10 @@ IsConst (node *arg_node)
             isit = TRUE;
             break;
         case N_array:
-            isit = TRUE;
             if (ARRAY_VECTYPE (arg_node) == T_unknown)
                 isit = FALSE;
-#ifdef 0
-            if (ARRAY_INTVEC (arg_node) == NULL) {
-                expr = ARRAY_AELEMS (arg_node);
-                while ((expr != NULL) && (isit == TRUE)) {
-                    if (NODE_TYPE (EXPRS_EXPR (expr)) == N_id)
-                        isit = FALSE;
-                    expr = EXPRS_NEXT (expr);
-                }
-            } /* else : isit == TRUE */
-#endif
+            else
+                isit = TRUE;
             break;
         default:
             isit = FALSE;
@@ -781,13 +789,15 @@ CFwhile (node *arg_node, node *arg_info)
     WHILE_COND (arg_node) = OPTTrav (WHILE_COND (arg_node), arg_info, arg_node);
 
     /* is the condition FALSE? */
-    if (N_bool == NODE_TYPE (WHILE_COND (arg_node)))
+    if (N_bool == NODE_TYPE (WHILE_COND (arg_node))) {
         if (!BOOL_VAL (WHILE_COND (arg_node)))
             trav_body = FALSE;
         else
             arg_node = While2Do (arg_node);
-
-    /* is the condition a variable, which can be infered to false? */
+    }
+    /*
+     * is the condition a variable, which can be infered to false?
+     */
     if (N_id == NODE_TYPE (WHILE_COND (arg_node))) {
         MRD_GETLAST (last_value, ID_VARNO (WHILE_COND (arg_node)),
                      INFO_CF_VARNO (arg_info));
@@ -1175,8 +1185,10 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
     node *new_node;
     node *expr0, *expr1;
     node *r_expr = NULL;
-    int i, isconst = 1;
-    int *tmp_vec;
+    int i;
+    int *tmp_ivec;
+    float *tmp_fvec;
+    double *tmp_dvec;
 
     DBUG_ENTER ("DupPartialArray");
 
@@ -1225,19 +1237,19 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
         switch (ARRAY_VECTYPE (array)) {
         case T_int:
             FREE (ARRAY_INTVEC (new_node));
-            tmp_vec = Array2IntVec (ARRAY_AELEMS (new_node), NULL);
+            tmp_ivec = Array2IntVec (ARRAY_AELEMS (new_node), NULL);
             ARRAY_INTVEC (new_node) = tmp_vec;
             ARRAY_VECLEN (new_node) = length;
             break;
         case T_float:
             FREE (ARRAY_FLOATVEC (new_node));
-            tmp_vec = Array2FloatVec (ARRAY_AELEMS (new_node), NULL);
+            tmp_fvec = Array2FloatVec (ARRAY_AELEMS (new_node), NULL);
             ARRAY_FLOATVEC (new_node) = tmp_vec;
             ARRAY_VECLEN (new_node) = length;
             break;
         case T_double:
             FREE (ARRAY_DOUBLEVEC (new_node));
-            tmp_vec = Array2DblVec (ARRAY_AELEMS (new_node), NULL);
+            tmp_dvec = Array2DblVec (ARRAY_AELEMS (new_node), NULL);
             ARRAY_DOUBLEVEC (new_node) = tmp_vec;
             ARRAY_VECLEN (new_node) = length;
             break;
@@ -2347,6 +2359,7 @@ ArrayPrf (node *arg_node, node *arg_info)
             break;
         default:
             /* Nothing to do ! */
+            break;
         }
     }
 
