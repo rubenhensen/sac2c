@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2004/08/19 17:45:53  skt
+ * initialization of new_assign added
+ *
  * Revision 1.13  2004/08/18 13:24:31  skt
  * switch to mtexecmode_t done
  *
@@ -234,6 +237,8 @@ CRECEInsertCell (node *act_assign)
     node *new_assign;
     DBUG_ENTER ("MUTHInsertCell");
     DBUG_ASSERT ((NODE_TYPE (act_assign) == N_assign), "N_assign expected");
+
+    new_assign = NULL;
 
     switch (ASSIGN_EXECMODE (act_assign)) {
     case MUTH_EXCLUSIVE:
