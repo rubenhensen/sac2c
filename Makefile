@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.80  2004/02/26 13:04:21  khf
+# WLPartitionGeneration.o added
+#
 # Revision 3.79  2004/02/25 08:17:44  cg
 # Elimination of while-loops by conversion into do-loops with
 # leading conditional integrated into flatten.
@@ -176,7 +179,7 @@ FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o \
          src/flatten/fun2lac.o src/flatten/insert_vardec.o \
          src/flatten/handle_mops.o src/flatten/UndoSSATransform.o \
          src/flatten/CheckAvis.o src/flatten/SSATransform.o \
-         src/flatten/ssa.o
+         src/flatten/ssa.o src/flatten/WLPartitionGeneration.o
 
 CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/constants_struc_ops.o \

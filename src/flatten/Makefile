@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.28  2004/02/26 13:04:21  khf
+# WLPartitionGeneration.o added
+#
 # Revision 3.27  2004/02/25 08:17:44  cg
 # Elimination of while-loops by conversion into do-loops with
 # leading conditional integrated into flatten.
@@ -89,7 +92,8 @@ INCS = -I../global -I../../inc -I../tree -I../print -I../optimize -I../constants
 
 
 all: flatten.o lac2fun.o fun2lac.o insert_vardec.o handle_mops.o \
-     CheckAvis.o SSATransform.o UndoSSATransform.o ssa.o
+     CheckAvis.o SSATransform.o UndoSSATransform.o ssa.o \
+     WLPartitionGeneration.o
 
 
 %.o: %.c
