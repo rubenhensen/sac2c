@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.116  1996/01/05 12:29:05  cg
- * new function RSIBobjdef in readsib_tab
+ * Revision 1.117  1996/01/05 13:12:22  cg
+ * added function PrintStr in print_tab
  *
+;; Revision 1.116  1996/01/05  12:29:05  cg
+;; new function RSIBobjdef in readsib_tab
+;;
 ;; Revision 1.115  1996/01/02  15:48:55  cg
 ;; added link_tab
 ;;
@@ -404,7 +407,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons),
 
-  NIF (N_str, "N_str", TravSons, TravSons, PrintId, TravSons, TravSons, TravSons,
+  NIF (N_str, "N_str", TravSons, TravSons, PrintStr, TravSons, TravSons, TravSons,
        TravSons, FreeStr, TravSons, TravSons, TravSons, TravSons, DupStr, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrintId, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
