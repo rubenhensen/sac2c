@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.160  1998/03/19 19:06:27  dkr
+ * changed output in PrintWL...
+ *
  * Revision 1.159  1998/03/17 20:52:22  dkr
  * removed bugs in PrintWL...()
  *
@@ -2265,7 +2268,6 @@ PrintWLseg (node *arg_node, node *arg_info)
         INDENT
         fprintf (outfile, "/* segment %d: */\n", i++);
         WLSEG_INNER (seg) = Trav (WLSEG_INNER (seg), arg_info);
-        fprintf (outfile, "\n");
         seg = WLSEG_NEXT (seg);
     }
 
@@ -2307,7 +2309,6 @@ PrintWLblock (node *arg_node, node *arg_info)
     }
 
     if (WLBLOCK_NEXT (arg_node) != NULL) {
-        fprintf (outfile, "\n");
         WLBLOCK_NEXT (arg_node) = Trav (WLBLOCK_NEXT (arg_node), arg_info);
     }
 
@@ -2334,9 +2335,19 @@ PrintWLublock (node *arg_node, node *arg_info)
              WLUBLOCK_BOUND2 (arg_node), WLUBLOCK_DIM (arg_node),
              WLUBLOCK_BLOCKING (arg_node));
 
-    indent++;
-    WLUBLOCK_INNER (arg_node) = Trav (WLUBLOCK_INNER (arg_node), arg_info);
-    indent--;
+    if (WLUBLOCK_NEXTDIM (arg_node) != NULL) {
+        fprintf (outfile, "\n");
+        indent++;
+        WLUBLOCK_NEXTDIM (arg_node) = Trav (WLUBLOCK_NEXTDIM (arg_node), arg_info);
+        indent--;
+    }
+
+    if (WLUBLOCK_INNER (arg_node) != NULL) {
+        fprintf (outfile, "\n");
+        indent++;
+        WLUBLOCK_INNER (arg_node) = Trav (WLUBLOCK_INNER (arg_node), arg_info);
+        indent--;
+    }
 
     if (WLUBLOCK_NEXT (arg_node) != NULL) {
         WLUBLOCK_NEXT (arg_node) = Trav (WLUBLOCK_NEXT (arg_node), arg_info);
@@ -2405,7 +2416,6 @@ PrintWLgrid (node *arg_node, node *arg_info)
     indent--;
 
     if (WLGRID_NEXT (arg_node) != NULL) {
-        fprintf (outfile, "\n");
         WLGRID_NEXT (arg_node) = Trav (WLGRID_NEXT (arg_node), arg_info);
     }
 
