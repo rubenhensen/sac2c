@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/21 20:43:42  ktr
+ * Ismop 2004
+ *
  * Revision 1.5  2004/11/21 18:07:02  ktr
  * the big 2004 codebrushing event
  *
@@ -19,7 +22,7 @@
  *
  */
 #ifndef _SAC_ALIASANALYSIS_H_
-#define _SAC_ALIASANALYSIS_H__
+#define _SAC_ALIASANALYSIS_H_
 
 #include "types.h"
 
@@ -52,7 +55,6 @@ extern node *EMAAvardec (node *arg_node, info *arg_info);
  *
  * Nodes which MUST NOT be traversed
  *
- * - N_icm
  * - N_return
  * - N_array
  * - N_objdef
