@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2003/10/09 16:51:18  dkrHH
+ * syntax error fixed
+ *
  * Revision 1.5  2003/10/08 15:50:23  cg
  * Added appropriate implementations for tagged versions of descriptor
  * allocation optimization (DAO) related ICMs.
@@ -527,15 +530,15 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
         if ((size) <= SAC_HM_ARENA_4_MAXCS_BYTES) {                                      \
             if ((size) <= SAC_HM_ARENA_2_MAXCS_BYTES) {                                  \
                 if ((size) <= SAC_HM_ARENA_1_MAXCS_BYTES) {                              \
-                    SAC_HM_MALLOC_SMALL_CHUNK (var, 2, 1);                               \
+                    SAC_HM_MALLOC_SMALL_CHUNK (var, 2, 1)                                \
                 } else {                                                                 \
-                    SAC_HM_MALLOC_SMALL_CHUNK (var, 4, 2);                               \
+                    SAC_HM_MALLOC_SMALL_CHUNK (var, 4, 2)                                \
                 }                                                                        \
             } else {                                                                     \
                 if ((size) <= SAC_HM_ARENA_3_MAXCS_BYTES) {                              \
-                    SAC_HM_MALLOC_SMALL_CHUNK (var, 8, 3);                               \
+                    SAC_HM_MALLOC_SMALL_CHUNK (var, 8, 3)                                \
                 } else {                                                                 \
-                    SAC_HM_MALLOC_SMALL_CHUNK (var, 16, 4);                              \
+                    SAC_HM_MALLOC_SMALL_CHUNK (var, 16, 4)                               \
                 }                                                                        \
             }                                                                            \
         } else {                                                                         \
@@ -555,15 +558,15 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
                                                                                          \
             if (_units < SAC_HM_ARENA_7_MINCS) {                                         \
                 if (_units < SAC_HM_ARENA_6_MINCS) {                                     \
-                    SAC_HM_MALLOC_LARGE_CHUNK (var, _units, 5);                          \
+                    SAC_HM_MALLOC_LARGE_CHUNK (var, _units, 5)                           \
                 } else {                                                                 \
-                    SAC_HM_MALLOC_LARGE_CHUNK (var, _units, 6);                          \
+                    SAC_HM_MALLOC_LARGE_CHUNK (var, _units, 6)                           \
                 }                                                                        \
             } else {                                                                     \
                 if (_units < SAC_HM_ARENA_8_MINCS) {                                     \
-                    SAC_HM_MALLOC_LARGE_CHUNK (var, _units, 7);                          \
+                    SAC_HM_MALLOC_LARGE_CHUNK (var, _units, 7)                           \
                 } else {                                                                 \
-                    SAC_HM_MALLOC_TOP_ARENA (var, _units);                               \
+                    SAC_HM_MALLOC_TOP_ARENA (var, _units)                                \
                 }                                                                        \
             }                                                                            \
         }                                                                                \
@@ -576,30 +579,30 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
         if ((size) <= SAC_HM_ARENA_4_MAXCS_BYTES) {                                      \
             if ((size) <= SAC_HM_ARENA_2_MAXCS_BYTES) {                                  \
                 if ((size) <= SAC_HM_ARENA_1_MAXCS_BYTES) {                              \
-                    SAC_HM_MALLOC_SMALL_CHUNK (var, 2, 1);                               \
+                    SAC_HM_MALLOC_SMALL_CHUNK (var, 2, 1)                                \
                 } else {                                                                 \
-                    SAC_HM_MALLOC_SMALL_CHUNK (var, 4, 2);                               \
+                    SAC_HM_MALLOC_SMALL_CHUNK (var, 4, 2)                                \
                 }                                                                        \
             } else {                                                                     \
                 if ((size) <= SAC_HM_ARENA_3_MAXCS_BYTES) {                              \
-                    SAC_HM_MALLOC_SMALL_CHUNK (var, 8, 3);                               \
+                    SAC_HM_MALLOC_SMALL_CHUNK (var, 8, 3)                                \
                 } else {                                                                 \
-                    SAC_HM_MALLOC_SMALL_CHUNK (var, 16, 4);                              \
+                    SAC_HM_MALLOC_SMALL_CHUNK (var, 16, 4)                               \
                 }                                                                        \
             }                                                                            \
         } else {                                                                         \
             const SAC_HM_size_unit_t units = SAC_HM_BYTES_2_UNITS (size) + 2;            \
             if (units < SAC_HM_ARENA_7_MINCS) {                                          \
                 if (units < SAC_HM_ARENA_6_MINCS) {                                      \
-                    SAC_HM_MALLOC_LARGE_CHUNK (var, units, 5);                           \
+                    SAC_HM_MALLOC_LARGE_CHUNK (var, units, 5)                            \
                 } else {                                                                 \
-                    SAC_HM_MALLOC_LARGE_CHUNK (var, units, 6);                           \
+                    SAC_HM_MALLOC_LARGE_CHUNK (var, units, 6)                            \
                 }                                                                        \
             } else {                                                                     \
                 if (units < SAC_HM_ARENA_8_MINCS) {                                      \
-                    SAC_HM_MALLOC_LARGE_CHUNK (var, units, 7);                           \
+                    SAC_HM_MALLOC_LARGE_CHUNK (var, units, 7)                            \
                 } else {                                                                 \
-                    SAC_HM_MALLOC_TOP_ARENA (var, units);                                \
+                    SAC_HM_MALLOC_TOP_ARENA (var, units)                                 \
                 }                                                                        \
             }                                                                            \
         }                                                                                \
@@ -617,9 +620,8 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 
 #define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim)                     \
     {                                                                                    \
-  SAC_HM_MALLOC_FIXED_SIZE( var, ((size)                                                \
-                                  + BYTE_SIZE_OF_DESC( dim)                             \
-                                  + 2 * SAC_HM_UNIT_SIZE)));                             \
+        SAC_HM_MALLOC_FIXED_SIZE (var, ((size) + BYTE_SIZE_OF_DESC (dim)                 \
+                                        + 2 * SAC_HM_UNIT_SIZE))                         \
                                                                                          \
         var_desc = (SAC_array_descriptor_t) (((SAC_HM_header_t *)var)                    \
                                              + (SAC_HM_BYTES_2_UNITS (size) + 1));       \
@@ -630,7 +632,7 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 
 #define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim)                     \
     {                                                                                    \
-        SAC_HM_MALLOC_FIXED_SIZE (var, (size));                                          \
+        SAC_HM_MALLOC_FIXED_SIZE (var, (size))                                           \
         SAC_HM_MALLOC_FIXED_SIZE (var_desc, BYTE_SIZE_OF_DESC (dim))                     \
     }
 
@@ -720,7 +722,7 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 #define SAC_HM_FREE_DESC(addr)                                                           \
     {                                                                                    \
         if (SAC_HM_ADDR_ARENA (addr) != NULL) {                                          \
-            SAC_HM_FREE (addr);                                                          \
+            SAC_HM_FREE (addr)                                                           \
         }                                                                                \
     }
 
@@ -798,8 +800,8 @@ extern void *SAC_HM_MallocCheck (unsigned int);
 
 #define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim)                     \
     {                                                                                    \
-        SAC_HM_MALLOC_FIXED_SIZE (var, (size));                                          \
-        SAC_HM_MALLOC_FIXED_SIZE (var_desc, SIZE_OF_DESC (dim) * sizeof (*var_desc))     \
+        SAC_HM_MALLOC_FIXED_SIZE (var, (size))                                           \
+        SAC_HM_MALLOC_FIXED_SIZE (var_desc, BYTE_SIZE_OF_DESC (dim))                     \
     }
 
 #define SAC_HM_DEFINE_THREAD_STATUS(status)
