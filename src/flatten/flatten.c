@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.59  1998/02/11 17:14:14  srs
+ * changed NPART_IDX to NPART_WITHID.
+ * fixed bug in FltnNwithop.
+ *
  * Revision 1.58  1998/02/06 16:45:57  srs
  * *** empty log message ***
  *
@@ -1583,9 +1587,9 @@ FltnNpart (node *arg_node, node *arg_info)
     NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
 
     /* rename index-vector or index scalars if necessary */
-    _ids = NWITHID_IDS (NPART_IDX (arg_node));
+    _ids = NWITHID_IDS (NPART_WITHID (arg_node));
     if (!_ids)
-        _ids = NWITHID_VEC (NPART_IDX (arg_node));
+        _ids = NWITHID_VEC (NPART_WITHID (arg_node));
 
     while (_ids) {
         lstack = FindId (IDS_NAME (_ids));
@@ -1699,7 +1703,7 @@ FltnNwithop (node *arg_node, node *arg_info)
     switch (NWITHOP_TYPE (arg_node)) {
     case WO_genarray:
         break;
-    case WO_modarray: {
+    case WO_modarray:
         if ((N_prf == NODE_TYPE (NWITHOP_ARRAY (arg_node)))
             || (N_ap == NODE_TYPE (NWITHOP_ARRAY (arg_node)))
             || (N_array == NODE_TYPE (NWITHOP_ARRAY (arg_node)))) {
@@ -1711,10 +1715,10 @@ FltnNwithop (node *arg_node, node *arg_info)
             arg_info->info.cint = old_tag;
             NWITHOP_ARRAY (arg_node) = EXPRS_EXPR (exprs);
             FREE (exprs);
-        }
+        } else /* eventually replace id. */
+            NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
         break;
-    }
-    default: {
+    default:
         if (NWITHOP_NEUTRAL (arg_node)) {
             old_tag = arg_info->info.cint;
             /* exprs is only used temporary to call FltnExprs */
@@ -1725,7 +1729,6 @@ FltnNwithop (node *arg_node, node *arg_info)
             NWITHOP_NEUTRAL (arg_node) = EXPRS_EXPR (exprs);
             FREE (exprs);
         }
-    }
     }
 
     DBUG_RETURN (arg_node);
