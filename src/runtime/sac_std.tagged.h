@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2003/10/14 14:56:30  cg
+ * some superfluous calls of SAC_TR_REF_PRINT_RC removed.
+ * some calls of SAC_TR_MEM_PRINT corrected.
+ *
  * Revision 3.50  2003/10/08 15:50:23  cg
  * De-allocation of descriptors is now done using tailor-made ICM.
  *
@@ -1040,7 +1044,7 @@ typedef int *SAC_array_descriptor_t;
                           NT_NAME (var_NT)));                                            \
         SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (var_NT),                                \
                                   BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)))      \
-        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %d) at addr: %p", #var_NT, #dim,         \
+        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", #var_NT, #dim,         \
                            SAC_ND_A_DESC (var_NT)))                                      \
     }
 
@@ -1052,7 +1056,6 @@ typedef int *SAC_array_descriptor_t;
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DATA( %s) at addr: %p", #var_NT, SAC_ND_A_FIELD (var_NT)))         \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
-        SAC_TR_REF_PRINT_RC (var_NT)                                                     \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
 
@@ -1066,12 +1069,11 @@ typedef int *SAC_array_descriptor_t;
                                             SAC_ND_A_MIRROR_SIZE (var_NT)                \
                                               * sizeof (*SAC_ND_A_FIELD (var_NT)),       \
                                             SAC_ND_A_MIRROR_DIM (var_NT))                \
-        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %d) at addr: %p", #var_NT, #dim,         \
+        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", #var_NT, #dim,         \
                            SAC_ND_A_DESC (var_NT)))                                      \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DATA( %s) at addr: %p", #var_NT, SAC_ND_A_FIELD (var_NT)))         \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
-        SAC_TR_REF_PRINT_RC (var_NT)                                                     \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
 
@@ -1107,7 +1109,6 @@ typedef int *SAC_array_descriptor_t;
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DATA( %s) at addr: %p", #var_NT, SAC_ND_A_FIELD (var_NT)))         \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
-        SAC_TR_REF_PRINT_RC (var_NT)                                                     \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
 
@@ -1128,7 +1129,7 @@ typedef int *SAC_array_descriptor_t;
         SAC_ASSURE_TYPE ((dim >= 0),                                                     \
                          ("Illegal dimension for array %s found!", NT_NAME (var_NT)));   \
         SAC_HM_MALLOC (SAC_ND_A_DESC (var_NT), BYTE_SIZE_OF_DESC (dim))                  \
-        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %d) at addr: %p", #var_NT, #dim,         \
+        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", #var_NT, #dim,         \
                            SAC_ND_A_DESC (var_NT)))                                      \
         SAC_ND_A_DESC_DIM (var_NT) = SAC_ND_A_MIRROR_DIM (var_NT) = dim;                 \
     }
