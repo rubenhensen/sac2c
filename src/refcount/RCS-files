@@ -1,4 +1,3 @@
 Makefile
 refcount.c
 refcount.h
-SSARefCount.h
