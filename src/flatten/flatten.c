@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2004/07/29 12:05:15  ktr
+ * Constants are now always abstracted out of function applications
+ * as they would be abstracted out later by precompile anyways.
+ *
  * Revision 3.30  2004/07/23 14:14:25  ktr
  * NWITHOP_NEUTRAL is now always flattened out as it must later be reference
  * counted like a variable.
@@ -1444,9 +1448,12 @@ FltnExprs (node *arg_node, info *arg_info)
      */
     switch (INFO_FLTN_CONTEXT (arg_info)) {
     case CT_ap:
-        abstract = ((NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array)
-                    || (NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
-                    || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_cast));
+        abstract = ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
+                    || (NODE_TYPE (expr) == N_double) || (NODE_TYPE (expr) == N_bool)
+                    || (NODE_TYPE (expr) == N_char) || (NODE_TYPE (expr) == N_str)
+                    || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_ap)
+                    || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_Nwith)
+                    || (NODE_TYPE (expr) == N_cast));
         break;
     case CT_return:
         abstract = ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
