@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.55  1998/02/12 11:09:53  srs
+ * removed NEWTREE
+ * replaced some direct accesses with access macros
+ *
  * Revision 1.54  1997/11/07 10:24:13  dkr
  * with defined NEWTREE node.nnode is not used anymore
  *
@@ -186,6 +190,13 @@
  *
  */
 
+/******************************************************************************
+ * srs: Usage of arg_info in the CF context
+ *
+ * info.types  : type of primitive function (CFlet)
+ *
+ *
+ ******************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -207,8 +218,6 @@
 #include "ConstantFolding.h"
 
 #define MAXARG 3
-#define INFO_TYPE arg_info->info.types
-#define INFO_ASSIGN arg_info->node[0]
 #define FALSE 0
 #define TRUE 1
 
@@ -358,7 +367,7 @@ CFassign (node *arg_node, node *arg_info)
     NODE_LINE (arg_info) = NODE_LINE (arg_node);
     ntype = NODE_TYPE (ASSIGN_INSTR (arg_node));
     if (N_return != ntype) {
-        INFO_ASSIGN = arg_node;
+        INFO_ASSIGN (arg_info) = arg_node;
         ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
 
         switch (NODE_TYPE (ASSIGN_INSTR (arg_node))) {
@@ -389,9 +398,9 @@ CFassign (node *arg_node, node *arg_info)
             returnnode = arg_node;
             break;
         }
-    } else {
+    } else
         returnnode = arg_node;
-    }
+
     DBUG_RETURN (returnnode);
 }
 
@@ -445,12 +454,12 @@ CFlet (node *arg_node, node *arg_info)
     DBUG_ENTER ("CFlet");
 
     /* get result type for potential primitive function */
-    INFO_TYPE = GetType (VARDEC_TYPE (IDS_VARDEC (LET_IDS (arg_node))));
+    INFO_TYPE (arg_info) = GetType (VARDEC_TYPE (IDS_VARDEC (LET_IDS (arg_node))));
 
     /* Trav expression */
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
-    INFO_TYPE = NULL;
+    INFO_TYPE (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -482,7 +491,7 @@ CFid (node *arg_node, node *arg_info)
     if (NULL != mrd) {
         switch (NODE_TYPE (mrd)) {
         case N_id:
-            DEC_VAR (ASSIGN_USEMASK (INFO_ASSIGN), ID_VARNO (arg_node));
+            DEC_VAR (ASSIGN_USEMASK (INFO_ASSIGN (arg_info)), ID_VARNO (arg_node));
 
             if ((VARDEC_SHPSEG (ID_VARDEC (mrd)) == NULL)
                 && (VARDEC_SHPSEG (ID_VARDEC (arg_node)) != NULL)) {
@@ -539,7 +548,7 @@ CFid (node *arg_node, node *arg_info)
 
             FreeTree (arg_node);
             arg_node = DupTree (mrd, NULL);
-            INC_VAR (ASSIGN_USEMASK (INFO_ASSIGN), ID_VARNO (arg_node));
+            INC_VAR (ASSIGN_USEMASK (INFO_ASSIGN (arg_info)), ID_VARNO (arg_node));
             break;
         case N_num:
         case N_float:
@@ -801,12 +810,12 @@ CFwith (node *arg_node, node *arg_info)
     types *oldtype;
 
     DBUG_ENTER ("CFwith");
-    oldtype = INFO_TYPE;
-    INFO_TYPE = VARDEC_TYPE (GEN_VARDEC (WITH_GEN (arg_node)));
+    oldtype = INFO_TYPE (arg_info);
+    INFO_TYPE (arg_info) = VARDEC_TYPE (GEN_VARDEC (WITH_GEN (arg_node)));
 
     WITH_GEN (arg_node) = OPTTrav (WITH_GEN (arg_node), arg_info, arg_node);
 
-    INFO_TYPE = oldtype;
+    INFO_TYPE (arg_info) = oldtype;
 
     switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
     case N_genarray:
@@ -898,12 +907,7 @@ ArraySize (node *array)
     DBUG_ENTER ("ArraySize");
     size = 1;
     array = array->node[0];
-#ifndef NEWTREE
-    while (2 == array->nnode)
-#else
-    while (array->node[1] != NULL)
-#endif
-    {
+    while (array->node[1]) {
         array = array->node[1];
         size++;
     }
@@ -952,9 +956,6 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
         expr->node[0] = DupTree (array->node[0], NULL);
         if (N_id == expr->node[0]->nodetype)
             DEC_VAR (arg_info->mask[1], expr->node[0]->info.ids->node->varno);
-#ifndef NEWTREE
-        expr->nnode = 1;
-#endif
         array = array->node[1];
         r_expr = expr;
 
@@ -962,17 +963,11 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
          * Duplicate rest of array till length reached
          */
         for (i = 1; i < length; i++) {
-#ifndef NEWTREE
-            expr->nnode++;
-#endif
             expr->node[1] = MakeNode (N_exprs);
             expr = expr->node[1];
             expr->node[0] = DupTree (array->node[0], NULL);
             if (N_id == expr->node[0]->nodetype)
                 DEC_VAR (arg_info->mask[1], expr->node[0]->info.ids->node->varno);
-#ifndef NEWTREE
-            expr->nnode = 1;
-#endif
             array = array->node[1];
         }
     }
@@ -1414,16 +1409,16 @@ CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
     node *res_node = NULL;
 
     DBUG_ENTER ("CalcPsi");
-    GET_BASIC_TYPE (INFO_TYPE, INFO_TYPE, 47);
+    GET_BASIC_TYPE (INFO_TYPE (arg_info), INFO_TYPE (arg_info), 47);
     GET_BASIC_TYPE (array_type, array_type, 47);
 
     /* Calculate dimension and shape vector of first argument */
     vec_dim = GetShapeVector (shape, vec_shape);
     array_dim = TYPES_DIM (array_type);
     array_shape = TYPES_SHPSEG (array_type);
-    result_dim = TYPES_DIM (INFO_TYPE);
+    result_dim = TYPES_DIM (INFO_TYPE (arg_info));
     if (0 < result_dim)
-        result_shape = TYPES_SHPSEG (INFO_TYPE);
+        result_shape = TYPES_SHPSEG (INFO_TYPE (arg_info));
 
     /* Calculate length of result array */
     length = 1;
@@ -1454,13 +1449,11 @@ CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
             res_node = FetchNum (start, array);
         } else {
             res_node = MakeNode (N_array);
-#ifndef NEWTREE
-            res_node->nnode = 1;
-#endif
             res_node->node[0] = DupPartialArray (start, length, array, arg_info);
         }
     } else {
-        WARN (NODE_LINE (INFO_ASSIGN), ("Illegal vector for primitive function psi"));
+        WARN (NODE_LINE (INFO_ASSIGN (arg_info)),
+              ("Illegal vector for primitive function psi"));
     }
     DBUG_RETURN (res_node);
 }
@@ -1615,7 +1608,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                 expr_arg[0] = expr[0]->node[0];
                 expr_arg[1] = expr[1]->node[0];
                 expr[0]->node[0]
-                  = SkalarPrf (expr_arg, arg_node->info.prf, INFO_TYPE, swap);
+                  = SkalarPrf (expr_arg, arg_node->info.prf, INFO_TYPE (arg_info), swap);
                 expr[0] = expr[0]->node[1];
                 expr[1] = expr[1]->node[1];
             } while ((NULL != expr[0]) && (NULL != expr[1]));
@@ -1628,7 +1621,7 @@ ArrayPrf (node *arg_node, node *arg_info)
             do {
                 expr_arg[0] = expr[0]->node[0];
                 expr[0]->node[0]
-                  = SkalarPrf (expr_arg, arg_node->info.prf, INFO_TYPE, swap);
+                  = SkalarPrf (expr_arg, arg_node->info.prf, INFO_TYPE (arg_info), swap);
                 expr[0] = expr[0]->node[1];
             } while ((NULL != expr[0]));
         }
@@ -1691,9 +1684,6 @@ ArrayPrf (node *arg_node, node *arg_info)
              */
             if (NULL != arg[0]->node[0]->node[1])
                 FreeTree (arg[0]->node[0]->node[1]);
-#ifndef NEWTREE
-            arg[0]->node[0]->nnode = 0;
-#endif
             arg[0]->node[0]->node[1] = NULL; /* ??? */
             FREE (arg_node);
 
@@ -1701,7 +1691,7 @@ ArrayPrf (node *arg_node, node *arg_info)
              * Gives Array the correct type
              */
             ARRAY_TYPE (arg[0]) = FreeOneTypes (ARRAY_TYPE (arg[0]));
-            ARRAY_TYPE (arg[0]) = DuplicateTypes (INFO_TYPE, 0);
+            ARRAY_TYPE (arg[0]) = DuplicateTypes (INFO_TYPE (arg_info), 0);
 
             /*
              * Store result
@@ -1712,7 +1702,7 @@ ArrayPrf (node *arg_node, node *arg_info)
         case N_id:
             DBUG_PRINT ("CF",
                         ("primitive function %s folded", prf_string[arg_node->info.prf]));
-            SHAPE_2_ARRAY (tmp, arg[0]->info.ids->node->info.types, INFO_TYPE);
+            SHAPE_2_ARRAY (tmp, arg[0]->info.ids->node->info.types, INFO_TYPE (arg_info));
             DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
             FreeTree (arg_node);
             arg_node = tmp;
@@ -1741,13 +1731,6 @@ ArrayPrf (node *arg_node, node *arg_info)
              * Free argument of prim function
              */
             FreeTree (arg_node->node[0]);
-#ifndef NEWTREE
-            /*
-            arg_node->node[0]=NULL;
-            */
-            arg_node->nnode = 0;
-#endif
-
             cf_expr++;
             break;
         case N_id:
@@ -1763,13 +1746,6 @@ ArrayPrf (node *arg_node, node *arg_info)
              * Free argument of prim function
              */
             FreeTree (arg_node->node[0]);
-#ifndef NEWTREE
-            /*
-            arg_node->node[0]=NULL;
-            */
-            arg_node->nnode = 0;
-#endif
-
             DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
             cf_expr++;
             break;
@@ -1827,8 +1803,10 @@ ArrayPrf (node *arg_node, node *arg_info)
         if (NULL != res_array) {
             DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
                                prf_string[arg_node->info.prf], NODE_LINE (arg_info)));
-            MinusMask (INFO_USE, ASSIGN_USEMASK (INFO_ASSIGN), INFO_VARNO);
+            MinusMask (INFO_USE, ASSIGN_USEMASK (INFO_ASSIGN (arg_info)), INFO_VARNO);
             FreeTree (arg_node);
+            /* srs: arg_info is modifies within GenMasks. As least ->mask[0],
+               mask[1], nodetype and node[2]. Is this intended to happen? */
             arg_node = GenerateMasks (res_array, arg_info);
             cf_expr++;
         }
@@ -1893,7 +1871,7 @@ CFprf (node *arg_node, node *arg_info)
             && ((F_abs == PRF_PRF (arg_node)) || (F_not == PRF_PRF (arg_node))
                 || (IsConst (arg[1])))) {
             if (!((F_div == PRF_PRF (arg_node)) && (TRUE == FoundZero (arg[1])))) {
-                arg[0] = SkalarPrf (arg, PRF_PRF (arg_node), INFO_TYPE, FALSE);
+                arg[0] = SkalarPrf (arg, PRF_PRF (arg_node), INFO_TYPE (arg_info), FALSE);
                 FreePrf2 (arg_node, 0);
                 arg_node = arg[0];
             }
