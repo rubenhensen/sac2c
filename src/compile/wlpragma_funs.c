@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/05/22 15:07:28  dkr
+ * bug in WLCOMP_Scheduling() fixed:
+ * SCHRemoveScheduling called with non-NULL argument only
+ *
  * Revision 3.22  2001/05/18 12:17:02  dkr
  * WLCOMP_Scheduling: call of SCHRemoveScheduling() added
  *
@@ -884,7 +888,9 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
             /*
              * set SCHEDULING
              */
-            WLSEGX_SCHEDULING (seg) = SCHRemoveScheduling (WLSEGX_SCHEDULING (seg));
+            if (WLSEGX_SCHEDULING (seg) != NULL) {
+                WLSEGX_SCHEDULING (seg) = SCHRemoveScheduling (WLSEGX_SCHEDULING (seg));
+            }
             WLSEGX_SCHEDULING (seg) = SCHMakeSchedulingByPragma (arg, line);
 
             seg = WLSEGX_NEXT (seg);
