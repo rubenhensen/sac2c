@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/02/26 15:22:58  cg
+ * added declaration of target_name
+ *
  * Revision 1.16  1998/02/25 09:21:08  cg
  * Unnecessary global variable removed.
  *
@@ -82,6 +85,8 @@ extern char ccflagsstr[];
 extern char targetdir[];
 extern char commandline[];
 extern file_type filetype;
+
+extern char target_name[];
 
 extern char *cppvars[];
 extern int num_cpp_vars;
