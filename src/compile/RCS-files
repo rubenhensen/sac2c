@@ -7,3 +7,5 @@ icm2c.h
 icm_args.c
 icm_comment.c
 icm_decl.c
+icm_trace.c
+trace.h
