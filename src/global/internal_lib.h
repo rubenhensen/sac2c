@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.13  2000/03/17 11:12:51  dkr
+ * definition of macro PHASE_EPILOG modified:
+ * ABORT_ON_ERROR embedded, lac<->fun rearranged
+ *
  * Revision 2.12  2000/03/16 16:38:10  dkr
  * fixed a bug in PHASE_EPILOG
  *
@@ -145,19 +149,19 @@ extern void ComputeMallocAlignStep (void);
 
 #define MALLOC(size) Malloc (size)
 
-#define PHASE_PROLOG                                                                     \
-    CHECK_DBUG_START;                                                                    \
-    if (do_lac2fun[compiler_phase]) {                                                    \
-        syntax_tree = Lac2Fun (syntax_tree);                                             \
-        ABORT_ON_ERROR;                                                                  \
-    }
+#define PHASE_PROLOG CHECK_DBUG_START
 
 #define PHASE_EPILOG                                                                     \
-    if (do_fun2lac[compiler_phase + 1]) {                                                \
+    ABORT_ON_ERROR;                                                                      \
+    if (do_fun2lac[compiler_phase]) {                                                    \
         syntax_tree = Fun2Lac (syntax_tree);                                             \
         ABORT_ON_ERROR;                                                                  \
     }                                                                                    \
-    CHECK_DBUG_STOP
+    CHECK_DBUG_STOP;                                                                     \
+    if (do_lac2fun[compiler_phase + 1]) {                                                \
+        syntax_tree = Lac2Fun (syntax_tree);                                             \
+        ABORT_ON_ERROR;                                                                  \
+    }
 
 #ifndef DBUG_OFF
 #define CHECK_DBUG_START                                                                 \
