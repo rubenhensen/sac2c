@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.43  2004/11/26 19:43:43  khf
+ * SacDevCamp04: COMPILES!!!!
+ *
  * Revision 1.42  2004/11/26 15:00:42  khf
  * SacDevCamp04: COMPILES!!!
  *
@@ -1502,7 +1505,7 @@ CSEcode (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-CSEdoCse (node *fundef, node *modul)
+CSEdoCse (node *fundef, node *module)
 {
     info *arg_info;
 
@@ -1520,7 +1523,7 @@ CSEdoCse (node *fundef, node *modul)
         arg_info = MakeInfo ();
 
         INFO_CSE_CSE (arg_info) = NULL;
-        INFO_CSE_MODULE (arg_info) = modul;
+        INFO_CSE_MODULE (arg_info) = module;
 
         TRAVpush (TR_cse);
         fundef = TRAVdo (fundef, arg_info);
