@@ -1,6 +1,10 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.11  2000/05/25 14:59:48  dkr
+ * WLFNcode(): NCODE_CEXPR is traversed now
+ * (This allows for consistent renaming of variables now :-)
+ *
  * Revision 2.10  2000/05/11 15:54:40  dkr
  * reverse computation of bounds is now correct :-))
  *
@@ -273,7 +277,8 @@ long *subst_mask;  /* mrd mask of subst WL. */
 /******************************************************************************
  *
  * function:
- *   renaming_type *AddRen(node *old_name, char *new_name, types *type, node *arg_info)
+ *   renaming_type *AddRen( node *old_name, char *new_name,
+ *                          types *type, node *arg_info, int insert)
  *
  * description:
  *   Add new entry to renaiming list. No own mem for strings (old and new) is
@@ -293,7 +298,7 @@ long *subst_mask;  /* mrd mask of subst WL. */
  *
  ******************************************************************************/
 
-renaming_type *
+static renaming_type *
 AddRen (node *old_name, char *new_name, types *type, node *arg_info, int insert)
 {
     renaming_type *ren;
@@ -338,7 +343,7 @@ AddRen (node *old_name, char *new_name, types *type, node *arg_info, int insert)
  *
  ******************************************************************************/
 
-renaming_type *
+static renaming_type *
 FreeRen (void)
 {
     renaming_type *ren;
@@ -365,7 +370,7 @@ FreeRen (void)
  *
  ******************************************************************************/
 
-renaming_type *
+static renaming_type *
 SearchRen (char *old_name)
 {
     renaming_type *ren;
@@ -382,11 +387,10 @@ SearchRen (char *old_name)
 /******************************************************************************
  *
  * function:
- *   void DbugRen()
+ *   void DbugRen( void)
  *
  * description:
  *   prints whole renaming list
- *
  *
  ******************************************************************************/
 
@@ -399,7 +403,7 @@ DbugRen (void)
 
     ren = renaming;
     while (ren) {
-        printf ("%s -> %s,    Vardec :%p\n", ren->old, ren->new, ren->vardec);
+        printf ("%s -> %s,    Vardec: 0x%p\n", ren->old, ren->new, ren->vardec);
         ren = ren->next;
     }
 
@@ -414,10 +418,9 @@ DbugRen (void)
  * description:
  *   adds entry to the global code_constr list.
  *
- *
  ******************************************************************************/
 
-void
+static void
 AddCC (node *targetn, node *substn, node *resultn)
 {
     code_constr_type *cc;
@@ -445,7 +448,7 @@ AddCC (node *targetn, node *substn, node *resultn)
  *
  ******************************************************************************/
 
-code_constr_type *
+static code_constr_type *
 SearchCC (node *targetn, node *substn)
 {
     code_constr_type *cc;
@@ -467,10 +470,9 @@ SearchCC (node *targetn, node *substn)
  * description:
  *   sets whole cc list free
  *
- *
  ******************************************************************************/
 
-void
+static void
 FreeCC (code_constr_type *cc)
 {
     code_constr_type *tmpcc;
@@ -500,7 +502,7 @@ FreeCC (code_constr_type *cc)
  *
  ******************************************************************************/
 
-intern_gen *
+static intern_gen *
 MergeGenerators (intern_gen *ig)
 {
     DBUG_ENTER ("MergeGenerators");
@@ -521,7 +523,7 @@ MergeGenerators (intern_gen *ig)
  *
  ******************************************************************************/
 
-intern_gen *
+static intern_gen *
 LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int constval)
 {
     int lbuf, ubuf, cut, buf;
@@ -691,7 +693,8 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
 /******************************************************************************
  *
  * function:
- *   void LinearTransformationsScalar(intern_gen *ig, index_info *transformations, dim)
+ *   void LinearTransformationsScalar( intern_gen *ig,
+ *                                     index_info *transformations, int dim)
  *
  * description:
  *   like LinearTransformationsVector(), but only transforms one dimension of ig.
@@ -699,7 +702,7 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
  *
  ******************************************************************************/
 
-intern_gen *
+static intern_gen *
 LinearTransformationsScalar (intern_gen *ig, index_info *transformations, int dim)
 {
     intern_gen *actig, *newig;
@@ -743,7 +746,7 @@ LinearTransformationsScalar (intern_gen *ig, index_info *transformations, int di
  *
  ******************************************************************************/
 
-intern_gen *
+static intern_gen *
 LinearTransformationsVector (intern_gen *ig, index_info *transformations)
 {
     int dim, act_dim;
@@ -788,8 +791,9 @@ LinearTransformationsVector (intern_gen *ig, index_info *transformations)
 /******************************************************************************
  *
  * function:
- *   intern_gen *FinalTransformations(intern_gen *ig, index_info *transformations, int
- *target_dim);
+ *   intern_gen *FinalTransformations( intern_gen *ig,
+ *                                     index_info *transformations,
+ *                                     int target_dim);
  *
  * description:
  *   transforms list of ig into cuboids of dimension target_dim.
@@ -797,7 +801,7 @@ LinearTransformationsVector (intern_gen *ig, index_info *transformations)
  *
  ******************************************************************************/
 
-intern_gen *
+static intern_gen *
 FinalTransformations (intern_gen *substig, index_info *transformations, int target_dim)
 {
     intern_gen *tmpig, *newig, *rootig;
@@ -889,7 +893,7 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
  *
  ******************************************************************************/
 
-node *
+static node *
 CreateCode (node *target, node *subst)
 {
     node *coden, *new_arg_info, *dup_info;
@@ -938,7 +942,7 @@ CreateCode (node *target, node *subst)
  *
  ******************************************************************************/
 
-void
+static void
 IntersectGrids (int dim)
 {
     int dc, first, last, d;
@@ -952,25 +956,25 @@ IntersectGrids (int dim)
 
     while (dc < intersect_grids_baseig->step[dim]) {
         /* search common dc */
-        if ((!intersect_grids_tig->step
-             || (dc + intersect_grids_ot[dim]) % intersect_grids_tig->step[dim]
-                  < intersect_grids_tig->width[dim])
-            && (!intersect_grids_sig->step
-                || (dc + intersect_grids_os[dim]) % intersect_grids_sig->step[dim]
-                     < intersect_grids_sig->width[dim])) {
+        if (((!intersect_grids_tig->step)
+             || ((dc + intersect_grids_ot[dim]) % intersect_grids_tig->step[dim]
+                 < intersect_grids_tig->width[dim]))
+            && ((!intersect_grids_sig->step)
+                || ((dc + intersect_grids_os[dim]) % intersect_grids_sig->step[dim]
+                    < intersect_grids_sig->width[dim]))) {
             first = dc;
             /* search first dc where either in tig or sig the element is
                not present. */
             do {
                 dc++;
             } while (
-              (!intersect_grids_tig->step
-               || (dc + intersect_grids_ot[dim]) % intersect_grids_tig->step[dim]
-                    < intersect_grids_tig->width[dim])
-              && (!intersect_grids_sig->step
-                  || (dc + intersect_grids_os[dim]) % intersect_grids_sig->step[dim]
-                       < intersect_grids_sig->width[dim])
-              && dc < intersect_grids_baseig->step[dim]);
+              ((!intersect_grids_tig->step)
+               || ((dc + intersect_grids_ot[dim]) % intersect_grids_tig->step[dim]
+                   < intersect_grids_tig->width[dim]))
+              && ((!intersect_grids_sig->step)
+                  || ((dc + intersect_grids_os[dim]) % intersect_grids_sig->step[dim]
+                      < intersect_grids_sig->width[dim]))
+              && (dc < intersect_grids_baseig->step[dim]));
             last = dc;
 
             if (dim < intersect_grids_baseig->shape - 1) {
@@ -1038,7 +1042,7 @@ IntersectGrids (int dim)
  *
  ******************************************************************************/
 
-intern_gen *
+static intern_gen *
 IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
 {
     intern_gen *sig, *new_gen, *new_gen_step, *new_gen_nostep;
@@ -1156,8 +1160,8 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
 /******************************************************************************
  *
  * function:
- *   intern_gen *RemoveDoubleIndexVectors(intern_gen *subst_ig, index_info
- **transformations)
+ *   intern_gen *RemoveDoubleIndexVectors( intern_gen *subst_ig,
+ *                                         index_info *transformations)
  *
  * description:
  *   only used if permutations of index scalar variables are enabled.
@@ -1165,7 +1169,7 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
  *
  ******************************************************************************/
 
-intern_gen *
+static intern_gen *
 RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
 {
     int *found, i, act_dim, dim, fdim;
@@ -1241,7 +1245,7 @@ RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
  *
  ******************************************************************************/
 
-int
+static int
 TransformationRangeCheck (index_info *transformations, node *substwln,
                           intern_gen *target_ig)
 {
@@ -1307,7 +1311,7 @@ TransformationRangeCheck (index_info *transformations, node *substwln,
  *
  ******************************************************************************/
 
-void
+static void
 Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
 {
     intern_gen *target_ig; /* transformed igs of target WL */
@@ -1396,7 +1400,7 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
  *
  ******************************************************************************/
 
-int
+static int
 FoldDecision (node *target_wl, node *subst_wl)
 {
     int result;
@@ -1426,7 +1430,7 @@ FoldDecision (node *target_wl, node *subst_wl)
  *
  ******************************************************************************/
 
-node *
+static node *
 CheckForSuperfluousCodes (node *wln)
 {
     node **tmp;
@@ -1459,7 +1463,7 @@ CheckForSuperfluousCodes (node *wln)
  *
  ******************************************************************************/
 
-node *
+static node *
 Modarray2Genarray (node *wln, node *substwln)
 {
     node *shape, *eltn;
@@ -1542,11 +1546,10 @@ WLFfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLFassign(node *arg_node, node *arg_info)
+ *   node *WLFassign( node *arg_node, node *arg_info)
  *
  * description:
  *   set arg_info to remember this N_assign node.
- *
  *
  ******************************************************************************/
 
@@ -1631,28 +1634,33 @@ WLFassign (node *arg_node, node *arg_info)
                 ASSIGN_INSTR (arg_node) = ASSIGN_INSTR (substn);
                 ASSIGN_NEXT (arg_node) = ASSIGN_NEXT (substn);
 
-                /* fisrt assignment node of substn is not needed anymore. */
+                /* first assignment node of substn is not needed anymore. */
                 ASSIGN_INSTR (substn) = NULL;
                 FreeNode (substn); /* free only node, not tree! */
 
                 tmpn = arg_node;
-                while (ASSIGN_NEXT (tmpn))
+                while (ASSIGN_NEXT (tmpn)) {
                     tmpn = ASSIGN_NEXT (tmpn);
+                }
                 ASSIGN_NEXT (tmpn) = last_assign;
                 tmpn = ASSIGN_NEXT (tmpn);
-            } else
+            } else {
                 tmpn = arg_node;
+            }
 
             /* transform psi(.,array) into Id. */
             tmpn = ASSIGN_INSTR (tmpn);
             LET_EXPR (tmpn) = FreeTree (LET_EXPR (tmpn));
             LET_EXPR (tmpn) = INFO_WLI_NEW_ID (arg_info);
-        } else if (ASSIGN_NEXT (arg_node))
-            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        } else {
+            if (ASSIGN_NEXT (arg_node)) {
+                ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+            }
+        }
         break;
 
     default:
-        /* Do not assign ASSIGN_NEXT(arg_node) here.
+        /* Do not assign ASSIGN_NEXT(arg_node) here!
            Why? See comment in wlfm_search_wl branch of this function. */
         if (ASSIGN_NEXT (arg_node))
             Trav (ASSIGN_NEXT (arg_node), arg_info);
@@ -1703,6 +1711,7 @@ WLFid (node *arg_node, node *arg_info)
                 ID_WL (arg_node) = NULL;
         }
         break;
+
     case wlfm_search_ref:
         /* conditional of N_do, N_while or N_cond. Do nothing. */
         break;
@@ -1723,15 +1732,17 @@ WLFid (node *arg_node, node *arg_info)
                               ID_TYPE (NCODE_CEXPR (coden)), arg_info, 1);
                 INFO_WLI_NEW_ID (arg_info) = MakeId (new_name, NULL, ST_regular);
                 ID_VARDEC (INFO_WLI_NEW_ID (arg_info)) = ren->vardec;
-            } else
+            } else {
                 /* keep original name */
                 INFO_WLI_NEW_ID (arg_info) = DupTree (NCODE_CEXPR (coden), NULL);
+            }
 
             /* Create substitution code. */
-            if (N_empty == NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (coden))))
+            if (N_empty == NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (coden)))) {
                 substn = NULL;
-            else
+            } else {
                 substn = DupTree (BLOCK_INSTR (NCODE_CBLOCK (coden)), NULL);
+            }
 
             /* create assignments to rename variables which index the array we want
                to replace.
@@ -1853,7 +1864,6 @@ WLFid (node *arg_node, node *arg_info)
             ID_NAME (arg_node) = new_name;
             ID_VARDEC (arg_node) = ren->vardec;
         }
-
         break;
 
     default:
@@ -2087,7 +2097,7 @@ WLFNwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLFNcode(node *arg_node, node *arg_info)
+ *   node *WLFNcode( node *arg_node, node *arg_info)
  *
  * description:
  *   If in wlfm_search_ref phase, create list new_ig of gererators which
@@ -2101,14 +2111,14 @@ WLFNcode (node *arg_node, node *arg_info)
     intern_gen *ig;
 
     DBUG_ENTER ("WLFNcode");
-    DBUG_ASSERT (0 != NCODE_USED (arg_node), ("traversing unusd code"));
+    DBUG_ASSERT ((NCODE_USED (arg_node)), "traversing unused code");
 
     switch (wlf_mode) {
     case wlfm_search_WL:
+        /* here is no break missing! */
     case wlfm_rename:
         NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
-        if (NCODE_NEXT (arg_node))
-            NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+        NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
         break;
 
     case wlfm_search_ref:
@@ -2119,25 +2129,27 @@ WLFNcode (node *arg_node, node *arg_info)
 
         /* traverse Code, create new_ig, fold. */
         NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+        NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
 
         /* copy new generators to all_new_ig and clear new_ig. */
-        if (!all_new_ig)
+        if (!all_new_ig) {
             all_new_ig = new_ig;
-        else {
+        } else {
             ig = all_new_ig;
-            while (ig->next)
+            while (ig->next) {
                 ig = ig->next;
+            }
             ig->next = new_ig;
         }
         new_ig = NULL;
-
-        /* traverse next code block. */
-        if (NCODE_NEXT (arg_node))
-            NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
         break;
 
     default:
-        DBUG_ASSERT (0, ("Not expected"));
+        DBUG_ASSERT (0, ("Unexpected WLF mode"));
+    }
+
+    if (NCODE_NEXT (arg_node) != NULL) {
+        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
