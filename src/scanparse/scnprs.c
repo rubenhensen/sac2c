@@ -1,12 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/08/13 14:54:07  dkr
+ * stephan's dot elimination completely disabled now ;-)
+ *
  * Revision 3.9  2002/08/13 14:45:59  sbs
  * Stefan's dot elimination disabled due to scrambled code on several examples
  * ... 8-(
- *
- * Revision 3.8  2002/08/08 13:30:27  sbs
- * *** empty log message ***
  *
  * Revision 3.7  2002/07/09 12:52:35  sbs
  * dots integrated in the other branch as well 8-))
@@ -17,9 +17,6 @@
  * Revision 3.5  2002/04/16 18:41:47  dkr
  * bug in SetFileNames() fixed:
  * F_prog -> 'modulename' is set correctly now
- *
- * Revision 3.4  2001/11/14 19:16:07  sbs
- * *** empty log message ***
  *
  * Revision 3.3  2001/11/14 19:10:00  sbs
  * generic preprocessor-flag -DSAC_FOR_OSxxx inserted.
@@ -51,7 +48,7 @@
  * to provide better error messages is now handled correctly.
  *
  * Revision 1.16  1998/03/04 16:23:27  cg
- *  C compiler invocations and file handling converted to new
+ * C compiler invocations and file handling converted to new
  * to usage of new  configuration files.
  *
  * Revision 1.15  1998/02/27 16:31:40  cg
@@ -106,8 +103,6 @@
  *
  * Revision 1.1  1995/12/29  17:22:05  cg
  * Initial revision
- *
- *
  *
  */
 
@@ -340,7 +335,9 @@ ScanParse ()
         goto DONE;
     }
 
-    syntax_tree = EliminateSelDots (syntax_tree);
+#if 0
+  syntax_tree = EliminateSelDots( syntax_tree);
+#endif
 
 DONE:
     DBUG_RETURN (syntax_tree);
