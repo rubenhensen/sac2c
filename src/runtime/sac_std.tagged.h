@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/07/12 16:58:42  dkr
+ * some comments corrected
+ *
  * Revision 3.12  2002/07/12 15:50:27  dkr
  * first complete revision 8-))
  *
@@ -1349,7 +1352,7 @@ typedef int SAC_hidden_descriptor; /* reference count */
  *
  * ND_PRF_IDX_MODARRAY__DATA( to_nt, to_sdim, from_nt, from_sdim, idx, val)
  *
- * ND_USE_GENVAR_OFFSET( offsetvar, res)
+ * ND_USE_GENVAR_OFFSET( offset, wl)
  *
  ******************************************************************************/
 
