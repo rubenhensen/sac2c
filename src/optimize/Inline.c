@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/12/07 16:17:40  asi
+ * Revision 1.10  1995/12/13 17:33:40  asi
+ * added #ifndef NEWTREE for new virtuell syntaxtree
+ *
+ * Revision 1.9  1995/12/07  16:17:40  asi
  * changed to new access macros and new Make-functions
  * bug fixed: functions without arguments or without local variables
  *            will be inlined correctly now
@@ -249,8 +252,10 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
         vardec_node = SearchDecl (new_name, INL_TYPES);
         new_expr = DupTree (ASSIGN_INSTR (expr_node), arg_info);
         inl_nodes = MakeAssignLet (new_name, vardec_node, new_expr);
-        /*-----------------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------------*/
+#ifndef NEWTREE
         inl_nodes->nnode = 1;
+#endif
         /*-----------------------------------------------------------------------------------*/
         header_nodes = AppendNodeChain (1, inl_nodes, header_nodes);
         var_node = VARDEC_NEXT (var_node);
@@ -269,8 +274,10 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
         new_name = StringCopy (IDS_NAME (ids_node));
         new_expr = DupTree (EXPRS_EXPR (expr_node), arg_info);
         inl_nodes = MakeAssignLet (new_name, IDS_VARDEC (ids_node), new_expr);
-        /*-----------------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------------*/
+#ifndef NEWTREE
         inl_nodes->nnode = 1;
+#endif
         /*-----------------------------------------------------------------------------------*/
         bottom_nodes = AppendNodeChain (1, inl_nodes, bottom_nodes);
         ids_node = IDS_NEXT (ids_node);
@@ -436,9 +443,11 @@ INLvar (node *arg_node, node *arg_info)
         if (NULL == SearchDecl (new_name, INL_TYPES)) {
             new_type = DuplicateTypes (VARDEC_TYPE (arg_node), 2);
             INL_TYPES = MakeVardec (new_name, new_type, INL_TYPES);
-            /*-----------------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------------*/
+#ifndef NEWTREE
             if (NULL == VARDEC_NEXT (INL_TYPES))
                 INL_TYPES->nnode = 0;
+#endif
             /*-----------------------------------------------------------------------------------*/
         } else {
             FREE (new_name);
@@ -451,9 +460,11 @@ INLvar (node *arg_node, node *arg_info)
         if (NULL == SearchDecl (new_name, INL_TYPES)) {
             new_type = DuplicateTypes (ARG_TYPE (arg_node), 2);
             INL_TYPES = MakeVardec (new_name, new_type, INL_TYPES);
-            /*-----------------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------------*/
+#ifndef NEWTREE
             if (NULL == VARDEC_NEXT (INL_TYPES))
                 INL_TYPES->nnode = 0;
+#endif
             /*-----------------------------------------------------------------------------------*/
         } else {
             FREE (new_name);
