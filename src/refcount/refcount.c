@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.42  1998/04/23 19:13:40  dkr
+ * changed RCnwith
+ *
  * Revision 1.41  1998/04/19 21:19:09  dkr
  * changed FindVardec
  *
@@ -36,9 +39,6 @@
  *
  * Revision 1.31  1998/02/09 17:41:31  dkr
  * declaration of function GenerateMasks is now taken from optimize.h
- *
- * Revision 1.30  1998/02/08 12:02:49  dkr
- * *** empty log message ***
  *
  * Revision 1.29  1998/02/06 18:49:14  dkr
  * new function RCNwithid()
@@ -277,6 +277,7 @@ IsUnique (types *type)
  *  remarks       :
  *
  */
+
 int
 IsArray (types *type)
 {
@@ -415,6 +416,7 @@ FindVardec (int varno, node *fundef)
  *  remarks       :
  *
  */
+
 node *
 LookupId (char *id, node *id_chain)
 {
@@ -423,13 +425,14 @@ LookupId (char *id, node *id_chain)
     DBUG_ENTER ("LookupId");
 
     tmp = id_chain;
-    while (NULL != tmp)
+    while (NULL != tmp) {
         if (0 == strcmp (id, ID_NAME (EXPRS_EXPR (tmp)))) {
             ret_node = EXPRS_EXPR (tmp);
             break;
         } else {
             tmp = EXPRS_NEXT (tmp);
         }
+    }
 
     DBUG_PRINT ("RC", ("found %s:" P_FORMAT, id, ret_node));
 
@@ -452,6 +455,7 @@ LookupId (char *id, node *id_chain)
  *  remarks       :
  *
  */
+
 int *
 StoreAndInit (int n)
 {
@@ -463,8 +467,9 @@ StoreAndInit (int n)
     var_dec = fundef_node->node[2]; /* arguments of function */
     for (i = 0; i < args_no; i++) {
         dump[i] = var_dec->refcnt;
-        if (var_dec->refcnt > 0)
+        if (var_dec->refcnt > 0) {
             var_dec->refcnt = n;
+        }
         var_dec = var_dec->node[0];
     }
     var_dec = fundef_node->node[0]->node[1]; /* variable declaration */
@@ -475,10 +480,11 @@ StoreAndInit (int n)
             if (var_dec->refcnt > 0)
                 var_dec->refcnt = n;
             var_dec = var_dec->node[0];
-        } else
+        } else {
             dump[k] = -1; /* var_dec belonging to 'k' was eliminated while
                            * optimasation, so store -1 at this position
                            */
+        }
     }
 
     DBUG_RETURN (dump);
@@ -498,6 +504,7 @@ StoreAndInit (int n)
  *  remarks       :
  *
  */
+
 int *
 Store ()
 {
@@ -512,15 +519,17 @@ Store ()
         var_dec = var_dec->node[0];
     }
     var_dec = fundef_node->node[0]->node[1]; /* variable declaration */
-    for (k = i; k < varno; k++)
+    for (k = i; k < varno; k++) {
         if (k == var_dec->varno) {
             /* var_dec is the right node belonging to 'k', so store the refcount */
             dump[k] = var_dec->refcnt;
             var_dec = var_dec->node[0];
-        } else
+        } else {
             dump[k] = -1; /* var_dec belonging to 'k' was eliminated while
                            * optimasation, so store -1 at this position
                            */
+        }
+    }
 
     DBUG_RETURN (dump);
 }
@@ -538,6 +547,7 @@ Store ()
  *  remarks       :
  *
  */
+
 void
 Restore (int *dump)
 {
@@ -573,6 +583,7 @@ Restore (int *dump)
  *  remarks       :
  *
  */
+
 node *
 Refcount (node *arg_node)
 {
@@ -649,6 +660,7 @@ RCarg (node *arg_node, node *arg_info)
  *  remarks       :
  *
  */
+
 node *
 RCfundef (node *arg_node, node *arg_info)
 {
@@ -674,7 +686,7 @@ RCfundef (node *arg_node, node *arg_info)
         args = FUNDEF_ARGS (arg_node);
         args_no = 0;
         while (NULL != args) {
-            args_no += 1;
+            args_no++;
             args = ARG_NEXT (args);
         }
 
@@ -702,6 +714,7 @@ RCfundef (node *arg_node, node *arg_info)
  *  remarks       :
  *
  */
+
 node *
 RCassign (node *arg_node, node *arg_info)
 {
@@ -711,8 +724,9 @@ RCassign (node *arg_node, node *arg_info)
     if (NULL != ASSIGN_NEXT (arg_node)) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-    } else /* this must be the return-statement!!! */
+    } else { /* this must be the return-statement!!! */
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), NULL);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -734,6 +748,7 @@ RCassign (node *arg_node, node *arg_info)
  *                        and are used in the rest of the program
  *                  ( array-vars are only considered )
  */
+
 node *
 RCloop (node *arg_node, node *arg_info)
 {
@@ -916,6 +931,7 @@ RCloop (node *arg_node, node *arg_info)
  *  remarks       :
  *
  */
+
 node *
 RCprf (node *arg_node, node *arg_info)
 {
@@ -949,6 +965,7 @@ RCprf (node *arg_node, node *arg_info)
  *  remarks       :
  *
  */
+
 node *
 RCid (node *arg_node, node *arg_info)
 {
@@ -1002,6 +1019,7 @@ RCid (node *arg_node, node *arg_info)
  *  remarks       :
  *
  */
+
 node *
 RClet (node *arg_node, node *arg_info)
 {
@@ -1041,6 +1059,7 @@ RClet (node *arg_node, node *arg_info)
  *  remarks       :
  *
  */
+
 node *
 RCcond (node *arg_node, node *arg_info)
 {
@@ -1168,6 +1187,7 @@ RCprepost (node *arg_node, node *arg_info)
  *  remarks       :
  *
  */
+
 node *
 RCwith (node *arg_node, node *arg_info)
 {
@@ -1262,6 +1282,7 @@ RCwith (node *arg_node, node *arg_info)
  *  remarks       :
  *
  */
+
 node *
 RCcon (node *arg_node, node *arg_info)
 {
@@ -1287,6 +1308,7 @@ RCcon (node *arg_node, node *arg_info)
  *  remarks       :
  *
  */
+
 node *
 RCgen (node *arg_node, node *arg_info)
 {
@@ -1301,10 +1323,9 @@ RCgen (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCNwith(node *arg_node, node *arg_info)
+ *   node *RCNwith( node *arg_node, node *arg_info)
  *
  * description:
- *
  *
  *
  ******************************************************************************/
@@ -1322,7 +1343,7 @@ RCNwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCNpart(node *arg_node, node *arg_info)
+ *   node *RCNpart( node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -1333,9 +1354,6 @@ node *
 RCNpart (node *arg_node, node *arg_info)
 {
     int *ref_dump, *with_dump, i;
-#if 0
-  long *used_mask;
-#endif
     node *var_dec;
 
     DBUG_ENTER ("RCNpart");
@@ -1349,24 +1367,25 @@ RCNpart (node *arg_node, node *arg_info)
     with_dump = Store (); /* store refcounts of with-loop */
 
 #if 0
+  long *used_mask;
   /*
    * store refcounts of variables that are used in body
    *  before they will be defined in a with_loop
    *  in NPART_USEDVARS(arg_node).
    */
-  used_mask=NPART_MASK(arg_node, 1);
-  NPART_USEDVARS(arg_node) = MakeInfo();
-  for (i=0; i<varno; i++)
+  used_mask = NPART_MASK( arg_node, 1);
+  NPART_USEDVARS( arg_node) = MakeInfo();
+  for (i = 0; i < varno; i++)
     if (used_mask[i] > 0) {
-      var_dec=FindVardec(i, fundef_node);
-      DBUG_ASSERT((NULL!=var_dec),"variable not found");
-      if (0 < VARDEC_REFCNT(var_dec)) {
+      var_dec = FindVardec( i, fundef_node);
+      DBUG_ASSERT( (NULL != var_dec), "variable not found");
+      if (0 < VARDEC_REFCNT( var_dec)) {
         /* store refcount of used variables in NPART_USEDVARS() */
-        VAR_DEC_2_ID_NODE(id_node, var_dec);
-        id_node->node[0]= NPART_USEDVARS(arg_node)->node[0];
-        NPART_USEDVARS(arg_node)->node[0]=id_node;
-        DBUG_PRINT("RC",("store used variables %s:%d",
-                         ID_NAME(id_node), ID_REFCNT(id_node)));
+        VAR_DEC_2_ID_NODE( id_node, var_dec);
+        id_node->node[0] = NPART_USEDVARS( arg_node)->node[0];
+        NPART_USEDVARS( arg_node)->node[0] = id_node;
+        DBUG_PRINT( "RC", ("store used variables %s:%d",
+                           ID_NAME( id_node), ID_REFCNT( id_node)));
       }
     }
 #endif
@@ -1395,7 +1414,7 @@ RCNpart (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCNcode(node *arg_node, node *arg_info)
+ *   node *RCNcode( node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -1416,7 +1435,7 @@ RCNcode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCNgen(node *arg_node, node *arg_info)
+ *   node *RCNgen( node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -1443,7 +1462,7 @@ RCNgen (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCNwithid(node *arg_node, node *arg_info)
+ *   node *RCNwithid( node *arg_node, node *arg_info)
  *
  * description:
  *
