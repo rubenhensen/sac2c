@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.7  1995/03/28 12:08:53  hw
+# Revision 1.8  1995/06/23 13:06:58  hw
+# -I../optimize added
+#
+# Revision 1.7  1995/03/28  12:08:53  hw
 # make deps done
 #
 # Revision 1.6  1995/03/17  15:50:48  hw
@@ -28,7 +31,7 @@
 
 CC=gcc -ansi -g
 RM=rm -f
-INCS=-I../global -I../../inc -I../print -I../modules
+INCS=-I../global -I../../inc -I../print -I../modules -I../optimize
 
 all: typecheck.o prim_fun.o
 
