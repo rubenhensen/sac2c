@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2001/07/10 11:27:44  nmw
+ * ifdef added to disable uniqueness special handling in cse and lir
+ * so long expressions with unique identifiers are not touched at all
+ *
  * Revision 1.25  2001/05/31 11:34:19  nmw
  * additional conditional inserted in SSALIRassign to handle blocks with
  * empty return assignment only
@@ -190,6 +194,10 @@
  *   on bottom up traversal we check, if all results of an assignment are marked
  *   for move-down, so we can move down the whole expression.
  *
+ * Remark: because the concept of global objects cannot handle withloops
+ *   correctly, assignments that define unique identifier are not moved
+ *   at all. if this problem is fixed later you can set CREATE_UNIQUE_BY_HEAP
+ *   to enable loop independent removal for unique identifier, too.
  *
  *   in a second traversal (lirmov) the marked do-invariant expressions are
  *   moved in the surrounding fundef and the function signature is adjusted.
@@ -244,6 +252,9 @@
 /* functions for local usage only */
 static ids *SSALIRleftids (ids *arg_ids, node *arg_info);
 static ids *LIRMOVleftids (ids *arg_ids, node *arg_info);
+#ifndef CREATE_UNIQUE_BY_HEAP
+static bool ForbiddenMovement (ids *chain);
+#endif
 static node *CheckMoveDownFlag (node *instr, node *arg_info);
 static node *CreateNewResult (node *avis, node *arg_info);
 static LUT_t InsertMappingsIntoLUT (LUT_t move_table, nodelist *mappings);
@@ -254,6 +265,34 @@ static nodelist *InsListAppendAssigns (nodelist *il, node *assign, int depth);
 static nodelist *InsListSetAssigns (nodelist *il, node *assign, int depth);
 static node *InsListGetAssigns (nodelist *il, int depth);
 static nodelist *InsListGetFrame (nodelist *il, int depth);
+
+#ifndef CREATE_UNIQUE_BY_HEAP
+/******************************************************************************
+ *
+ * function:
+ *   bool ForbiddenMovement(ids *chain)
+ *
+ * description:
+ *   Checks if there is any ids in chain with vardec marked as ST_unique so
+ *   we should better not move it out of withloops to avoid problems with
+ *   global objects.
+ *
+ *****************************************************************************/
+static bool
+ForbiddenMovement (ids *chain)
+{
+    bool res;
+
+    DBUG_ENTER ("ForbiddenMovement");
+    res = FALSE;
+    while ((chain != NULL) && (res == FALSE)) {
+        res |= (VARDEC_OR_ARG_ATTRIB (AVIS_VARDECORARG (IDS_AVIS (chain))) == ST_unique);
+        chain = IDS_NEXT (chain);
+    }
+
+    DBUG_RETURN (res);
+}
+#endif
 
 /******************************************************************************
  *
@@ -1036,6 +1075,9 @@ SSALIRassign (node *arg_node, node *arg_info)
 
     if ((INFO_SSALIR_MAXDEPTH (arg_info) < INFO_SSALIR_WITHDEPTH (arg_info))
         && (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
+#ifndef CREATE_UNIQUE_BY_HEAP
+        && (!ForbiddenMovement (LET_IDS (ASSIGN_INSTR (arg_node))))
+#endif
         && (!((NODE_TYPE (ASSIGN_RHS (arg_node)) == N_Nwith) && (pre_assign != NULL)))) {
         wlir_move_up = INFO_SSALIR_MAXDEPTH (arg_info);
 
@@ -1187,6 +1229,9 @@ SSALIRlet (node *arg_node, node *arg_info)
 
     /* detect withloop independend expression, will be moved up */
     if ((INFO_SSALIR_MAXDEPTH (arg_info) < INFO_SSALIR_WITHDEPTH (arg_info))
+#ifndef CREATE_UNIQUE_BY_HEAP
+        && (!ForbiddenMovement (LET_IDS (arg_node)))
+#endif
         && (!((NODE_TYPE (LET_EXPR (arg_node)) == N_Nwith)
               && (INFO_SSALIR_PREASSIGN (arg_info) != NULL)))) {
         /* set new target definition depth */

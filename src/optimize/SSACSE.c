@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2001/07/10 11:27:44  nmw
+ * ifdef added to disable uniqueness special handling in cse and lir
+ * so long expressions with unique identifiers are not touched at all
+ *
  * Revision 1.22  2001/06/01 10:01:30  nmw
  * insert N_empty node in empty blocks
  *
@@ -114,7 +118,8 @@
  *       obj2' = modify(2, obj2);       obj2' = modify(obj1);
  *                                                    ******
  *   this is wrong code and no more unique (two accesses to obj1)!!!
- *
+ *   if this issue is ressolved you can disable this handling by
+ *   defining CREATE_UNIQUE_BY_HEAP
  *
  *   the copy propagation information is propagates in special fundefs for
  *   the called args (all for cond-funs, loop invariant ones for loop-funs).
@@ -152,7 +157,9 @@ static ids *SetSubstAttributes (ids *subst, ids *with);
 
 /* helper functions for internal use only */
 static node *FindCSE (node *cselist, node *let);
+#ifndef CREATE_UNIQUE_BY_HEAP
 static bool ForbiddenSubstitution (ids *chain);
+#endif
 static bool CmpIdsTypes (ids *ichain1, ids *ichain2);
 static node *SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef);
 static ids *SSACSEPropagateReturn2Results (node *ap_fundef, ids *ids_chain);
@@ -373,6 +380,7 @@ SetSubstAttributes (ids *subst, ids *with)
     DBUG_RETURN (subst);
 }
 
+#ifndef CREATE_UNIQUE_BY_HEAP
 /******************************************************************************
  *
  * function:
@@ -398,6 +406,7 @@ ForbiddenSubstitution (ids *chain)
 
     DBUG_RETURN (res);
 }
+#endif
 
 /******************************************************************************
  *
@@ -1047,7 +1056,10 @@ SSACSElet (node *arg_node, node *arg_info)
      */
     if ((match != NULL)
         && (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == PHIT_NONE)
-        && (ForbiddenSubstitution (LET_IDS (arg_node)) == FALSE)) {
+#ifndef CREATE_UNIQUE_BY_HEAP
+        && (ForbiddenSubstitution (LET_IDS (arg_node)) == FALSE)
+#endif
+    ) {
         /* set subst attributes for results */
         LET_IDS (arg_node) = SetSubstAttributes (LET_IDS (arg_node), LET_IDS (match));
 
@@ -1060,7 +1072,10 @@ SSACSElet (node *arg_node, node *arg_info)
 
     } else if ((NODE_TYPE (LET_EXPR (arg_node)) == N_id)
                && (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == PHIT_NONE)
-               && (ForbiddenSubstitution (LET_IDS (arg_node)) == FALSE)) {
+#ifndef CREATE_UNIQUE_BY_HEAP
+               && (ForbiddenSubstitution (LET_IDS (arg_node)) == FALSE)
+#endif
+    ) {
         /* only substitute ids of equal types */
         DBUG_ASSERT ((CompareTypesImplementation (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (
                                                     IDS_AVIS (LET_IDS (arg_node)))),
