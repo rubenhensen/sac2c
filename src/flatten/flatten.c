@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.37  1995/08/15 12:36:55  hw
+ * Revision 1.38  1995/09/05 09:50:15  hw
+ * changed FltnExprs (constants of type N_double will be considered too)
+ *
+ * Revision 1.37  1995/08/15  12:36:55  hw
  * changed FltnLet (now the left part of a let can be empty)
  *
  * Revision 1.36  1995/07/13  15:21:56  hw
@@ -508,9 +511,10 @@ FltnExprs (node *arg_node, node *arg_info)
         break;
     case RET:
         abstract = ((tmp_arg->nodetype == N_num) || (tmp_arg->nodetype == N_float)
-                    || (tmp_arg->nodetype == N_bool) || (tmp_arg->nodetype == N_str)
-                    || (tmp_arg->nodetype == N_array) || (tmp_arg->nodetype == N_ap)
-                    || (tmp_arg->nodetype == N_prf) || (tmp_arg->nodetype == N_with));
+                    || (tmp_arg->nodetype == N_double) || (tmp_arg->nodetype == N_bool)
+                    || (tmp_arg->nodetype == N_str) || (tmp_arg->nodetype == N_array)
+                    || (tmp_arg->nodetype == N_ap) || (tmp_arg->nodetype == N_prf)
+                    || (tmp_arg->nodetype == N_with));
         break;
     case AP:
     case MODARRAY:
