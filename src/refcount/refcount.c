@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.56  1998/05/21 13:33:22  dkr
+ * renamed NCODE_DEC_RC_IDS into NCODE_INC_RC_IDS
+ *
  * Revision 1.55  1998/05/19 08:54:21  cg
  * new functions for retrieving variables from masks provided by
  * DataFlowMask.c utilized.
@@ -1698,7 +1701,7 @@ RCNwith (node *arg_node, node *arg_info)
      * RCO: with-loops are handled like prfs:
      *      when RCO is active, we only count the last occur of IN-vars.
      *
-     * CAUTION: we must initialize NCODE_DEC_RC_IDS because some subtrees
+     * CAUTION: we must initialize NCODE_INC_RC_IDS because some subtrees
      *          (e.g. bodies of while-loops) are traversed twice!!!
      */
 
@@ -1847,26 +1850,26 @@ RCNcode (node *arg_node, node *arg_info)
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
     /*
-     * We collect all ids, which RC is >1, in 'NCODE_DEC_RC_IDS( arg_node)'.
+     * We collect all ids, which RC is >1, in 'NCODE_INC_RC_IDS( arg_node)'.
      * In 'IDS_REFCNT' we store (RC - 1) --- because we started the refcounting
      *  of these vars with (RC == 1)!!!
-     * 'compile' generates for each var in 'NCODE_DEC_RC_IDS' a 'ND_INC_RC'-ICM
+     * 'compile' generates for each var in 'NCODE_INC_RC_IDS' a 'ND_INC_RC'-ICM
      *  as first statement of the code-block!
      *
-     * CAUTION: we must initialize NCODE_DEC_RC_IDS because some subtrees
+     * CAUTION: we must initialize NCODE_INC_RC_IDS because some subtrees
      *          (e.g. bodies of while-loops) are traversed two times!!!
      */
 
-    if (NCODE_DEC_RC_IDS (arg_node) != NULL) {
-        NCODE_DEC_RC_IDS (arg_node) = FreeAllIds (NCODE_DEC_RC_IDS (arg_node));
+    if (NCODE_INC_RC_IDS (arg_node) != NULL) {
+        NCODE_INC_RC_IDS (arg_node) = FreeAllIds (NCODE_INC_RC_IDS (arg_node));
     }
     FOREACH_VARDEC_AND_ARG (fundef_node, vardec, if (VARDEC_OR_ARG_REFCNT (vardec) > 1) {
         new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL, ST_regular);
         IDS_VARDEC (new_ids) = vardec;
         IDS_REFCNT (new_ids) = VARDEC_REFCNT (vardec) - 1;
 
-        if (NCODE_DEC_RC_IDS (arg_node) == NULL) {
-            NCODE_DEC_RC_IDS (arg_node) = new_ids;
+        if (NCODE_INC_RC_IDS (arg_node) == NULL) {
+            NCODE_INC_RC_IDS (arg_node) = new_ids;
         } else {
             IDS_NEXT (last_ids) = new_ids;
         }

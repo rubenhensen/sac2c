@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.65  1998/05/21 13:30:35  dkr
+ * renamed NCODE_DEC_RC_IDS into NCODE_INC_RC_IDS
+ *
  * Revision 1.64  1998/05/17 00:08:46  dkr
  * changed FreeWLgrid, FreeWLgridVar
  *
@@ -1817,7 +1820,7 @@ FreeNCode (node *arg_node, node *arg_info)
     FREETRAV (NCODE_CBLOCK (arg_node));
     FREETRAV (NCODE_CEXPR (arg_node));
 
-    NCODE_DEC_RC_IDS (arg_node) = FreeAllIds (NCODE_DEC_RC_IDS (arg_node));
+    NCODE_INC_RC_IDS (arg_node) = FreeAllIds (NCODE_INC_RC_IDS (arg_node));
 
     FREE (arg_node);
 

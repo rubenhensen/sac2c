@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.92  1998/05/21 13:31:12  dkr
+ * renamed NCODE_DEC_RC_IDS into NCODE_INC_RC_IDS
+ *
  * Revision 1.91  1998/05/21 10:16:14  dkr
  * fixed a bug in DupNcode, DupNwith2:
  *   now ..._DEC_RC_IDS is duplicated, too
@@ -1030,6 +1033,7 @@ DupNwith (node *arg_node, node *arg_info)
     NWITH_NO_CHANCE (new_node) = NWITH_NO_CHANCE (arg_node);
 
     NWITH_PRAGMA (new_node) = DUPTRAV (NWITH_PRAGMA (arg_node));
+    NWITH_DEC_RC_IDS (new_node) = DupIds (NWITH_DEC_RC_IDS (arg_node), arg_info);
 
     if (NWITH_IN (arg_node) != NULL) {
         NWITH_IN (new_node) = DFMGenMaskCopy (NWITH_IN (arg_node));
@@ -1127,7 +1131,7 @@ DupNcode (node *arg_node, node *arg_info)
     NCODE_USED (new_node) = 0;
     NCODE_NO (new_node) = NCODE_NO (arg_node);
     NCODE_FLAG (new_node) = NCODE_FLAG (arg_node);
-    NCODE_DEC_RC_IDS (new_node) = DupIds (NCODE_DEC_RC_IDS (arg_node), arg_info);
+    NCODE_INC_RC_IDS (new_node) = DupIds (NCODE_INC_RC_IDS (arg_node), arg_info);
 
     NCODE_COPY (arg_node) = new_node;
 

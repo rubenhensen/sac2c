@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.178  1998/05/21 13:29:42  dkr
+ * renamed NCODE_DEC_RC_IDS into NCODE_INC_RC_IDS
+ *
  * Revision 1.177  1998/05/21 10:14:42  dkr
  * changed some comments
  *
@@ -2751,7 +2754,7 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_MASK(n, x) (n->mask[x])
 #define NCODE_NO(n) (n->refcnt)
 #define NCODE_FLAG(n) (n->flag)
-#define NCODE_DEC_RC_IDS(n) ((ids *)(n->node[3]))
+#define NCODE_INC_RC_IDS(n) ((ids *)(n->node[3]))
 
 #define NCODE_COPY(n) (n->node[4])
 
@@ -2763,7 +2766,7 @@ extern node *MakeNCode (node *block, node *expr);
  ***  sons:
  ***
  ***    node*      WITHID        (N_Nwithid)
- ***    node*      SEG           (N_WLseg)
+ ***    node*      SEGS          (N_WLseg)
  ***    node*      CODE          (N_Ncode)
  ***    node*      WITHOP        (N_Nwithop)
  ***
