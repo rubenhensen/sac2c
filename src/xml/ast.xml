@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.99  2004/11/26 14:10:32  skt
+  CODE_WLAAFEATURE killed
+
   Revision 1.98  2004/11/26 13:30:09  sbs
   feature_t changed from function to literal
 
@@ -3957,12 +3960,6 @@
         </attribute>
         <attribute name="WLAA_Info" mandatory="yes">
           <type name="AccessInfo" />
-          <phases>
-            <range from="wlaa" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="WLAA_Feature" mandatory="yes">
-          <type name="AccessFeature" />
           <phases>
             <range from="wlaa" to="final" />
           </phases>
