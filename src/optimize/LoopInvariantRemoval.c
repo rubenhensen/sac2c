@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/06/08 15:07:31  asi
+ * Revision 1.8  1995/06/11 18:18:09  asi
+ * now calculating used variables in with-statement correctly
+ *
+ * Revision 1.7  1995/06/08  15:07:31  asi
  * now considering conditional of while loops
  *
  * Revision 1.6  1995/06/02  14:37:09  asi
@@ -177,7 +180,8 @@ LIRloop (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("LIRloop");
 
-    DBUG_PRINT ("LIR", ("Begin Loop - %s", mdb_nodetype[arg_node->nodetype]));
+    DBUG_PRINT ("LIR", ("Begin Loop - [%d] %s", arg_node->lineno,
+                        mdb_nodetype[arg_node->nodetype]));
     oldtype = LOOP_TYPE;
 
     switch (oldtype) {
@@ -1189,9 +1193,6 @@ LIRsubexpr (node *arg_node, node *arg_info)
                     arg_node->node[0]->mask[2][i] = TRUE;
             }
 
-            if (NULL != UP)
-                arg_node->node[0]->flag = DONE;
-
             act_tab = lir_tab;
 
             if ((NULL != UP) || (NULL != DOWN)) {
@@ -1281,9 +1282,13 @@ LIRsubexpr (node *arg_node, node *arg_info)
                     if ((NULL != arg_node->node[1]->mask[1])
                         && (0 < arg_node->node[1]->mask[1][i]))
                         node_behind->mask[2][i] = TRUE;
+                    /* variables used and not defined in with-body are relative free */
+                    if ((0 == node_behind->mask[0][i]) && (0 < node_behind->mask[1][i]))
+                        node_behind->mask[2][i] = TRUE;
                 }
 
-                arg_node->node[0]->flag = DONE;
+                if (NULL != UP)
+                    arg_node->node[0]->flag = DONE;
                 act_tab = lir_tab;
                 PlusChainMasks (1, UP, arg_info);
                 arg_node = AppendNodeChain (1, UP, arg_node);
@@ -1295,7 +1300,8 @@ LIRsubexpr (node *arg_node, node *arg_info)
         }
     } else {
         arg_node->node[0]->flag = NONE;
-        DBUG_PRINT ("LIR", ("Loop already done"));
+        DBUG_PRINT ("LIR", ("Loop already done - [%d] %s", arg_node->lineno,
+                            mdb_nodetype[arg_node->node[0]->nodetype]));
     }
     DBUG_RETURN (arg_node);
 } /* END - LIRsubexpr */
