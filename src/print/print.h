@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/12/29 10:36:39  cg
+ * Revision 1.18  1996/01/05 13:12:55  cg
+ * added function PrintStr.
+ *
+ * Revision 1.17  1995/12/29  10:36:39  cg
  * new functions PrintFoldfun, PrintFoldprf, PrintGenarray, PrintModarray
  *
  * Revision 1.16  1995/12/20  08:18:38  cg
@@ -78,6 +81,7 @@ extern node *PrintModul (node *, node *);
 extern node *PrintImplist (node *, node *);
 extern node *PrintPrf (node *, node *);
 extern node *PrintId (node *, node *);
+extern node *PrintStr (node *, node *);
 extern node *PrintNum (node *, node *);
 extern node *PrintChar (node *, node *);
 extern node *PrintFloat (node *, node *);
