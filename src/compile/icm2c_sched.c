@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/06/12 11:01:18  ben
+ *  SAC_MT_SCHEDULER_Self called without tasks_per_thread now
+ *
  * Revision 3.9  2001/06/05 09:53:22  ben
  * TaskSelector and Affinity_INIT modified
  *
@@ -610,13 +613,11 @@ ICMCompileMT_SCHEDULER_Self_BEGIN (int sched_id, int tasks_per_thread, int dim,
     fprintf (outfile, "int SAC_MT_taskid,SAC_MT_worktodo;\n");
     INDENT;
     if (sched_id > 0) {
-        fprintf (outfile,
-                 "SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC(%d,%d,SAC_MT_taskid);\n",
-                 sched_id, tasks_per_thread);
+        fprintf (outfile, "SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC(%d,SAC_MT_taskid);\n",
+                 sched_id);
     } else {
-        fprintf (outfile,
-                 "SAC_MT_SCHEDULER_Self_FIRST_TASK_STATIC(%d,%d,SAC_MT_taskid);\n",
-                 sched_id, tasks_per_thread);
+        fprintf (outfile, "SAC_MT_SCHEDULER_Self_FIRST_TASK_STATIC(%d,SAC_MT_taskid);\n",
+                 sched_id);
     }
     InitializeBoundaries (dim, vararg, 0);
 
