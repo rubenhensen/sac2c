@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2000/06/08 15:28:59  nmw
+ * pih and piw added, counting comments corrected
+ *
  * Revision 1.21  2000/06/07 14:08:28  dkr
  * DBUG-string 'TRAVjhs' renamed into 'TRAV'
  *
@@ -903,11 +906,7 @@ static funtab ntc_tab_rec = {{
 funtab *ntc_tab = &ntc_tab_rec;
 
 /*
- *  (60) unused_tab1
- */
-
-/*
- *  (61) muth_tab
+ *  (60) muth_tab
  */
 static funtab muth_tab_rec = {{
 #define NIFmuth(it_muth) it_muth
@@ -918,7 +917,7 @@ static funtab muth_tab_rec = {{
 funtab *muth_tab = &muth_tab_rec;
 
 /*
- *  (62) schin_tab
+ *  (61) schin_tab
  */
 static funtab schin_tab_rec = {{
 #define NIFschin(it_schin) it_schin
@@ -929,7 +928,7 @@ static funtab schin_tab_rec = {{
 funtab *schin_tab = &schin_tab_rec;
 
 /*
- *  (63) blkin_tab
+ *  (62) blkin_tab
  */
 static funtab blkin_tab_rec = {{
 #define NIFblkin(it_blkin) it_blkin
@@ -940,7 +939,7 @@ static funtab blkin_tab_rec = {{
 funtab *blkin_tab = &blkin_tab_rec;
 
 /*
- *  (64) rfin_tab
+ *  (63) rfin_tab
  */
 static funtab rfin_tab_rec = {{
 #define NIFrfin(it_rfin) it_rfin
@@ -951,7 +950,7 @@ static funtab rfin_tab_rec = {{
 funtab *rfin_tab = &rfin_tab_rec;
 
 /*
- *  (65) fun2lac_tab
+ *  (64) fun2lac_tab
  */
 static funtab fun2lac_tab_rec = {{
 #define NIFfun2lac(it_fun2lac) it_fun2lac
@@ -962,7 +961,7 @@ static funtab fun2lac_tab_rec = {{
 funtab *fun2lac_tab = &fun2lac_tab_rec;
 
 /*
- *  (66) ai_tab
+ *  (65) ai_tab
  */
 static funtab ai_tab_rec = {{
 #define NIFai(it_ai) it_ai
@@ -973,7 +972,7 @@ static funtab ai_tab_rec = {{
 funtab *ai_tab = &ai_tab_rec;
 
 /*
- *  (67) blkex_tab
+ *  (66) blkex_tab
  */
 static funtab blkex_tab_rec = {{
 #define NIFblkex(it_blkex) it_blkex
@@ -984,7 +983,7 @@ static funtab blkex_tab_rec = {{
 funtab *blkex_tab = &blkex_tab_rec;
 
 /*
- *  (68) mtfin_tab
+ *  (67) mtfin_tab
  */
 static funtab mtfin_tab_rec = {{
 #define NIFmtfin(it_mtfin) it_mtfin
@@ -995,7 +994,7 @@ static funtab mtfin_tab_rec = {{
 funtab *mtfin_tab = &mtfin_tab_rec;
 
 /*
- *  (69) l2f_infer_tab
+ *  (68) l2f_infer_tab
  */
 static funtab l2f_infer_tab_rec = {{
 #define NIFl2f_infer(it_l2f_infer) it_l2f_infer
@@ -1006,7 +1005,7 @@ static funtab l2f_infer_tab_rec = {{
 funtab *l2f_infer_tab = &l2f_infer_tab_rec;
 
 /*
- *  (70) l2f_lift_tab
+ *  (69) l2f_lift_tab
  */
 static funtab l2f_lift_tab_rec = {{
 #define NIFl2f_lift(it_l2f_lift) it_l2f_lift
@@ -1017,7 +1016,7 @@ static funtab l2f_lift_tab_rec = {{
 funtab *l2f_lift_tab = &l2f_lift_tab_rec;
 
 /*
- *  (71) blkco_tab
+ *  (70) blkco_tab
  */
 static funtab blkco_tab_rec = {{
 #define NIFblkco(it_blkco) it_blkco
@@ -1028,7 +1027,7 @@ static funtab blkco_tab_rec = {{
 funtab *blkco_tab = &blkco_tab_rec;
 
 /*
- *  (72) dfa_tab
+ *  (71) dfa_tab
  */
 static funtab dfa_tab_rec = {{
 #define NIFdfa(it_dfa) it_dfa
@@ -1039,7 +1038,7 @@ static funtab dfa_tab_rec = {{
 funtab *dfa_tab = &dfa_tab_rec;
 
 /*
- *  (73) blkpp_tab
+ *  (72) blkpp_tab
  */
 static funtab blkpp_tab_rec = {{
 #define NIFblkpp(it_blkpp) it_blkpp
@@ -1050,7 +1049,7 @@ static funtab blkpp_tab_rec = {{
 funtab *blkpp_tab = &blkpp_tab_rec;
 
 /*
- *  (74) cudecls_tab
+ *  (73) cudecls_tab
  */
 static funtab cudecls_tab_rec = {{
 #define NIFcudecls(it_cudecls) it_cudecls
@@ -1061,7 +1060,7 @@ static funtab cudecls_tab_rec = {{
 funtab *cudecls_tab = &cudecls_tab_rec;
 
 /*
- *  (75) barin_tab
+ *  (74) barin_tab
  */
 static funtab barin_tab_rec = {{
 #define NIFbarin(it_barin) it_barin
@@ -1072,7 +1071,7 @@ static funtab barin_tab_rec = {{
 funtab *barin_tab = &barin_tab_rec;
 
 /*
- *  (76) blkli_tab
+ *  (75) blkli_tab
  */
 static funtab blkli_tab_rec = {{
 #define NIFblkli(it_blkli) it_blkli
@@ -1083,7 +1082,7 @@ static funtab blkli_tab_rec = {{
 funtab *blkli_tab = &blkli_tab_rec;
 
 /*
- *  (77) adjca1_tab
+ *  (76) adjca1_tab
  */
 static funtab adjca1_tab_rec = {{
 #define NIFadjca1(it_adjca1) it_adjca1
@@ -1094,7 +1093,7 @@ static funtab adjca1_tab_rec = {{
 funtab *adjca1_tab = &adjca1_tab_rec;
 
 /*
- *  (78) adjca2_tab
+ *  (77) adjca2_tab
  */
 static funtab adjca2_tab_rec = {{
 #define NIFadjca2(it_adjca2) it_adjca2
@@ -1105,7 +1104,7 @@ static funtab adjca2_tab_rec = {{
 funtab *adjca2_tab = &adjca2_tab_rec;
 
 /*
- *  (79) precomp1_tab
+ *  (78) precomp1_tab
  */
 static funtab precomp1_tab_rec = {{
 #define NIFprecomp1(it_precomp1) it_precomp1
@@ -1116,7 +1115,7 @@ static funtab precomp1_tab_rec = {{
 funtab *precomp1_tab = &precomp1_tab_rec;
 
 /*
- *  (80) apc_tab
+ *  (79) apc_tab
  */
 static funtab apc_tab_rec = {{
 #define NIFapc(it_apc) it_apc
@@ -1127,7 +1126,7 @@ static funtab apc_tab_rec = {{
 funtab *apc_tab = &apc_tab_rec;
 
 /*
- *  (81) apt_tab
+ *  (80) apt_tab
  */
 static funtab apt_tab_rec = {{
 #define NIFapt(it_apt) it_apt
@@ -1136,6 +1135,28 @@ static funtab apt_tab_rec = {{
                              NULL,
                              NULL};
 funtab *apt_tab = &apt_tab_rec;
+
+/*
+ *  (81) pih_tab
+ */
+static funtab pih_tab_rec = {{
+#define NIFpih(it_pih) it_pih
+#include "node_info.mac"
+                             },
+                             NULL,
+                             NULL};
+funtab *pih_tab = &pih_tab_rec;
+
+/*
+ *  (82) piw_tab
+ */
+static funtab piw_tab_rec = {{
+#define NIFpiw(it_piw) it_piw
+#include "node_info.mac"
+                             },
+                             NULL,
+                             NULL};
+funtab *piw_tab = &piw_tab_rec;
 
 /*
  *  nnode
