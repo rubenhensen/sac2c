@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/01/09 16:55:13  dkr
+ * some redundant macros for WL-nodes removed
+ *
  * Revision 3.4  2001/01/09 16:42:13  dkr
  * macros WLNODE_..., WLSEGX_..., WLSTRIX_..., WLGRIDX_... moved to
  * tree_compound.h
@@ -1818,13 +1821,6 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 #define WLSTRIX_CONTENTS(n) ((n)->node[0])
 #define WLSTRIX_NEXT(n) (WLNODE_NEXT (n))
 
-#define WLSTRIX_BOUND1(n)                                                                \
-    ((NODE_TYPE (n) == N_WLstride) ? WLSTRIDE_BOUND1 (n) : WLSTRIVAR_BOUND1 (n))
-#define WLSTRIX_BOUND2(n)                                                                \
-    ((NODE_TYPE (n) == N_WLstride) ? WLSTRIDE_BOUND2 (n) : WLSTRIVAR_BOUND2 (n))
-#define WLSTRIX_STEP(n)                                                                  \
-    ((NODE_TYPE (n) == N_WLstride) ? WLSTRIDE_STEP (n) : WLSTRIVAR_STEP (n))
-
 /*
  * some macros for N_WLgrid, N_WLgridVar nodes
  */
@@ -1834,11 +1830,6 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 #define WLGRIDX_NEXTDIM(n) (WLNODE_NEXTDIM (n))
 #define WLGRIDX_NEXT(n) (WLNODE_NEXT (n))
 #define WLGRIDX_CODE(n) ((n)->node[4])
-
-#define WLGRIDX_BOUND1(n)                                                                \
-    ((NODE_TYPE (n) == N_WLgrid) ? WLGRID_BOUND1 (n) : WLGRIDVAR_BOUND1 (n))
-#define WLGRIDX_BOUND2(n)                                                                \
-    ((NODE_TYPE (n) == N_WLgrid) ? WLGRID_BOUND2 (n) : WLGRIDVAR_BOUND2 (n))
 
 /*--------------------------------------------------------------------------*/
 
