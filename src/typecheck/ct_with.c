@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2003/11/26 14:22:44  sbs
+ * default value of new genarray WLs now is checked as well.
+ *
  * Revision 1.4  2003/04/11 17:55:59  sbs
  * COConstant2Shape used in Idx2Outer.
  *
@@ -115,7 +118,7 @@ NTCWL_idx (te_info *info, ntype *args)
 ntype *
 NTCWL_gen (te_info *info, ntype *args)
 {
-    ntype *idx, *shp, *expr, *res;
+    ntype *idx, *shp, *expr, *dexpr, *res;
     ntype *dummy;
 
     DBUG_ENTER ("NTCWL_gen");
@@ -123,10 +126,14 @@ NTCWL_gen (te_info *info, ntype *args)
     idx = TYGetProductMember (args, 0);
     shp = TYGetProductMember (args, 1);
     expr = TYGetProductMember (args, 2);
+    dexpr = TYGetProductMember (args, 3);
 
     TEAssureIntVect ("shape expression of genarray with loop", shp);
     idx = TEAssureSameShape ("shape expression", shp,
                              "generator boundaries of genarray with loop", idx);
+
+    TEAssureSameScalarType ("body expression", expr, "default expression", dexpr);
+    expr = TEAssureSameShape ("body expression", expr, "default expression", dexpr);
 
     if (TYGetConstr (shp) == TC_akv) {
         dummy = Idx2Outer (shp);
