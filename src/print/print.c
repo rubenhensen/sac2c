@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.52  1995/04/04 09:34:26  sbs
+ * Revision 1.53  1995/04/04 11:33:49  sbs
+ * ";" at the end of ICM-Assigns eleminated; include inserted
+ *
+ * Revision 1.52  1995/04/04  09:34:26  sbs
  * parameter to ICM_END macro inserted
  *
  * Revision 1.51  1995/04/03  14:02:56  sbs
@@ -239,7 +242,7 @@ PrintAssign (node *arg_node, node *arg_info)
 
     if (N_icm == arg_node->node[0]->nodetype) {
         PrintIcm (arg_node->node[0], arg_info);
-        fprintf (outfile, ";\n");
+        fprintf (outfile, "\n");
         if (2 == arg_node->nnode)
             Trav (arg_node->node[1], arg_info);
     } else {
@@ -874,6 +877,8 @@ Print (node *arg_node)
     DBUG_ENTER ("Print");
 
     act_tab = print_tab;
+    if (show_icm == 0)
+        fprintf (outfile, "#include \"icm2c.h\"\n");
 
     DBUG_RETURN (Trav (arg_node, NULL));
 }
