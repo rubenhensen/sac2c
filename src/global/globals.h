@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2004/06/09 13:28:34  skt
+ * min_parallel_size_per_thread added
+ *
  * Revision 3.40  2004/03/26 14:36:23  khf
  * OPT_WLPG added
  *
@@ -247,6 +250,7 @@ extern int max_threads;
 extern int min_parallel_size;
 extern int max_replication_size;
 extern int max_schedulers;
+extern int min_parallel_size_per_thread;
 
 #define MAX_CPP_VARS 32
 #define MAX_CPP_INCS 32

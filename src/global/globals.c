@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2004/06/09 13:28:34  skt
+ * min_parallel_size_per_thread added
+ *
  * Revision 3.48  2004/04/30 13:21:03  ktr
  * Nothing really changed.
  *
@@ -424,6 +427,13 @@ int max_schedulers = 0;
  *  This variable is used to collect the maximum number of schedulers in a
  *  single SPMD block/function in order to generate an appropriate number
  *  of local data structure sets for the scheduler implementations.
+ */
+
+int min_parallel_size_per_thread = 8;
+/*
+ * minimum generator size per thread for parallel execution of with-loops
+ * e.g., max_threads = 4, min_parallel_size_per_thread=8
+ *       => generator size must be >= 32 to be executed parallel
  */
 
 /*
