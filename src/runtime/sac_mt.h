@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/06/29 08:57:13  cg
+ * added tracing facilities
+ *
  * Revision 1.7  1998/06/25 08:07:56  cg
  * various small syntactic bugs fixed
  *
@@ -181,6 +184,7 @@ typedef union {
 
 #define SAC_MT_SETUP()                                                                   \
     {                                                                                    \
+        SAC_MT_SETUP_TRACE ();                                                           \
         SAC_MT_SETUP_BARRIER ();                                                         \
         SAC_MT_SETUP_NUMTHREADS ();                                                      \
         SAC_MT_SETUP_MASTERCLASS ();                                                     \
@@ -193,9 +197,16 @@ typedef union {
         pthread_attr_init (&SAC_MT_thread_attribs);                                      \
         pthread_attr_setscope (&SAC_MT_thread_attribs, PTHREAD_SCOPE_SYSTEM);            \
         pthread_attr_setdetachstate (&SAC_MT_thread_attribs, PTHREAD_CREATE_DETACHED);   \
+        SAC_TR_MT_PRINT (("Creating worker thread #1 of class 0"));                      \
         pthread_create (NULL, &SAC_MT_thread_attribs,                                    \
-                        (void *(*)(void *))SAC_MT_ThreadControl, NULL);                  \
+                        (void *(*)(void *))THREAD_CONTROL (), NULL);                     \
     }
+
+#if SAC_DO_TRACE_MT
+#define THREAD_CONTROL() SAC_TRMT_ThreadControl
+#else /* SAC_DO_TRACE_MT */
+#define THREAD_CONTROL() SAC_MT_ThreadControl
+#endif /* SAC_DO_TRACE_MT */
 
 #if SAC_MT_CACHE_LINE_MAX()
 
@@ -204,6 +215,8 @@ typedef union {
         SAC_MT_barrier = (SAC_MT_barrier_t *)((char *)(SAC_MT_barrier_space + 1)         \
                                               - ((unsigned long int)SAC_MT_barrier_space \
                                                  % SAC_MT_BARRIER_OFFSET ()));           \
+                                                                                         \
+        SAC_TR_MT_PRINT (("Barrier base address is %p", SAC_MT_barrier));                \
     }
 
 #else /* SAC_MT_CACHE_LINE_MAX() */
@@ -211,9 +224,24 @@ typedef union {
 #define SAC_MT_SETUP_BARRIER()
 {
     SAC_MT_barrier = SAC_MT_barrier_space;
+    SAC_TR_MT_PRINT (("Barrier base address is %p", SAC_MT_barrier));
 }
 
 #endif /* SAC_MT_CACHE_LINE_MAX() */
+
+#if SAC_DO_TRACE_MT
+
+#define SAC_MT_SETUP_TRACE()                                                             \
+    {                                                                                    \
+        pthread_key_create (&SAC_TRMT_threadid_key, NULL);                               \
+        pthread_setspecific (SAC_TRMT_threadid_key, &SAC_TRMT_master_id);                \
+    }
+
+#else /* SAC_DO_TRACE_MT */
+
+#define SAC_MT_SETUP_TRACE()
+
+#endif /* SAC_DO_TRACE_MT */
 
 /*
  *  Definition of macro implemented ICMs for handling of spmd-function
@@ -221,9 +249,11 @@ typedef union {
 
 #define SAC_MT_START_SPMD(name)                                                          \
     {                                                                                    \
+        SAC_TR_MT_PRINT (("Parallel execution of spmd-block %s started.", #name));       \
         SAC_MT_spmd_function = &name;                                                    \
         SAC_MT_START_WORKERS ();                                                         \
         name (0, SAC_MT_MASTERCLASS (), 0);                                              \
+        SAC_TR_MT_PRINT (("Parallel execution of spmd-block %s finished.", #name));      \
     }
 
 #define SAC_MT_START_WORKERS() SAC_MT_master_flag = 1 - SAC_MT_master_flag;
@@ -307,6 +337,8 @@ typedef union {
         unsigned int i;                                                                  \
                                                                                          \
         for (i = 1; i <= SAC_MT_MYWORKERCLASS (); i <<= 1) {                             \
+            SAC_TR_MT_PRINT (                                                            \
+              ("Waiting for worker thread #%u.", SAC_MT_MYTHREAD () + i));               \
             while (!SAC_MT_CHECK_BARRIER (SAC_MT_MYTHREAD () + i))                       \
                 ;                                                                        \
             SAC_MT_CLEAR_BARRIER (SAC_MT_MYTHREAD () + i);                               \
@@ -314,6 +346,7 @@ typedef union {
                                                                                          \
         SAC_MT_SET_BARRIER (SAC_MT_MYTHREAD (), 1);                                      \
                                                                                          \
+        SAC_TR_MT_PRINT (("Synchronisation block %d finished", id));                     \
         if (SAC_MT_MYTHREAD ())                                                          \
             goto label_worker_continue_##id;                                             \
     }
@@ -322,6 +355,7 @@ typedef union {
     {                                                                                    \
         if (!SAC_MT_MYWORKERCLASS ()) {                                                  \
             SAC_MT_SET_BARRIER_RESULT (SAC_MT_MYTHREAD (), 1, type, accu_var);           \
+            SAC_TR_MT_PRINT (("Synchronisation block %d finished", id));                 \
             goto label_worker_continue_##id;                                             \
         }                                                                                \
                                                                                          \
@@ -394,15 +428,18 @@ typedef union {
         const int iterations_rest = iterations % SAC_MT_THREADS ();                      \
                                                                                          \
         if (iterations_rest && (SAC_MT_MYTHREAD () < iterations_rest)) {                 \
-            SAC_WL_SCHEDULE_START (0)                                                    \
+            SAC_WL_MT_SCHEDULE_START (0)                                                 \
               = lower + SAC_MT_MYTHREAD () * (iterations_per_thread + 1);                \
-            SAC_WL_SCHEDULE_STOP (0)                                                     \
-              = SAC_WL_SCHEDULE_START (0) + (iterations_per_thread + 1);                 \
+            SAC_WL_MT_SCHEDULE_STOP (0)                                                  \
+              = SAC_WL_MT_SCHEDULE_START (0) + (iterations_per_thread + 1);              \
         } else {                                                                         \
-            SAC_WL_SCHEDULE_START (0)                                                    \
+            SAC_WL_MT_SCHEDULE_START (0)                                                 \
               = (lower + iterations_rest) + SAC_MT_MYTHREAD () * iterations_per_thread;  \
-            SAC_WL_SCHEDULE_STOP (0)                                                     \
-              = SAC_WL_SCHEDULE_START (0) + iterations_per_thread;                       \
+            SAC_WL_MT_SCHEDULE_STOP (0)                                                  \
+              = SAC_WL_MT_SCHEDULE_START (0) + iterations_per_thread;                    \
+            SAC_TR_MT_PRINT (("Scheduler 'Block': dim 0: %d -> %d",                      \
+                              SAC_WL_MT_SCHEDULE_START (0),                              \
+                              SAC_WL_MT_SCHEDULE_STOP (0)));                             \
         }                                                                                \
     }
 
@@ -438,6 +475,18 @@ extern volatile unsigned int (*SAC_MT_spmd_function) (const unsigned int,
 extern void SAC_MT_ThreadControl (void *arg);
 
 extern int atoi (const char *str);
+
+#if SAC_DO_TRACE_MT
+
+extern void SAC_TRMT_ThreadControl (void *arg);
+
+extern pthread_mutex_t SAC_TRMT_array_memcnt_lock;
+extern pthread_mutex_t SAC_TRMT_hidden_memcnt_lock;
+
+extern pthread_key_t SAC_TRMT_threadid_key;
+extern const unsigned int SAC_TRMT_master_id;
+
+#endif /* SAC_DO_TRACE_MT */
 
 /*****************************************************************************/
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1998/06/29 08:57:13  cg
+ * added tracing facilities
+ *
  * Revision 1.11  1998/06/25 08:05:29  cg
  * syntax bug in produced C code fixed.
  *
@@ -294,6 +297,10 @@ ICMCompileMT_START_SYNCBLOCK (int narg, char **vararg)
                      vararg[i + 2]);
         }
     }
+
+    INDENT;
+    fprintf (outfile,
+             "SAC_TR_MT_PRINT((\"Starting execution of synchronisation block\"));\n");
 
     DBUG_VOID_RETURN;
 }
@@ -770,27 +777,14 @@ ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, int *varint)
 #undef MT_SCHEDULER_Block_BEGIN
 
     INDENT;
-    fprintf (outfile, "{\n");
-    indent++;
-
-    for (i = 0; i < dim; i++) {
-        INDENT;
-        fprintf (outfile, "int SAC_WL_SCHEDULE_START(%d);\n", i);
-        INDENT;
-        fprintf (outfile, "int SAC_WL_SCHEDULE_STOP(%d);\n", i);
-    }
-
-    fprintf (outfile, "\n");
-
-    INDENT;
     fprintf (outfile, "SAC_MT_SCHEDULER_Block_DIM0(%d, %d);\n", lower_bound[0],
              upper_bound[0]);
 
     for (i = 1; i < dim; i++) {
         INDENT;
-        fprintf (outfile, "SAC_WL_SCHEDULE_START(%d) = %d;\n", i, lower_bound[i]);
+        fprintf (outfile, "SAC_WL_MT_SCHEDULE_START(%d) = %d;\n", i, lower_bound[i]);
         INDENT;
-        fprintf (outfile, "SAC_WL_SCHEDULE_STOP(%d) = %d;\n", i, upper_bound[i]);
+        fprintf (outfile, "SAC_WL_MT_SCHEDULE_STOP(%d) = %d;\n", i, upper_bound[i]);
     }
 
     DBUG_VOID_RETURN;
@@ -806,9 +800,7 @@ ICMCompileMT_SCHEDULER_Block_END (int dim, int *varint)
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Block_END
 
-    indent--;
-    INDENT;
-    fprintf (outfile, "}\n");
+    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
