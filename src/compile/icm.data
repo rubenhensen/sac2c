@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2003/06/12 17:22:34  dkr
+ * support for multi-dimensional constant arrays added:
+ * ICMs CREATE__VECT__... renamed into CREATE__ARRAY__...
+ *
  * Revision 3.57  2003/03/14 13:22:33  dkr
  * all arguments of WL-ICMs are tagged now
  *
@@ -339,32 +343,35 @@ ICM_END( ND_MAKE_UNIQUE, (to_nt, to_sdim, from_nt, from_sdim, copyfun))
 #endif
 
 
-#if defined(ND_CREATE__VECT__DIM) || defined(ICM_ALL)
-ICM_DEF( ND_CREATE__VECT__DIM, TRACE_NONE)
+#if defined(ND_CREATE__ARRAY__DIM) || defined(ICM_ALL)
+ICM_DEF( ND_CREATE__ARRAY__DIM, TRACE_NONE)
+  ICM_INT( dim)
   ICM_INT( val_size)
   ICM_VARANY( val_size, vala_any)
-ICM_END( ND_CREATE__VECT__DIM, (val_size, vala_any))
+ICM_END( ND_CREATE__ARRAY__DIM, (dim, val_size, vala_any))
 #endif
 
-#if defined(ND_CREATE__VECT__SHAPE) || defined(ICM_ALL)
-ICM_DEF( ND_CREATE__VECT__SHAPE, TRACE_NONE)
+#if defined(ND_CREATE__ARRAY__SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_CREATE__ARRAY__SHAPE, TRACE_NONE)
   ICM_NT( to_nt)
   ICM_INT( to_sdim)
+  ICM_INT( dim)
+  ICM_VARINT( dim, shp)
   ICM_INT( val_size)
   ICM_VARANY( val_size, vala_any)
   ICM_INT( val0_sdim)
-ICM_END( ND_CREATE__VECT__SHAPE, (to_nt, to_sdim,
-                                  val_size, vala_any, val0_sdim))
+ICM_END( ND_CREATE__ARRAY__SHAPE, (to_nt, to_sdim, dim, shp,
+                                   val_size, vala_any, val0_sdim))
 #endif
 
-#if defined(ND_CREATE__VECT__DATA) || defined(ICM_ALL)
-ICM_DEF( ND_CREATE__VECT__DATA, TRACE_NONE)
+#if defined(ND_CREATE__ARRAY__DATA) || defined(ICM_ALL)
+ICM_DEF( ND_CREATE__ARRAY__DATA, TRACE_NONE)
   ICM_NT( to_nt)
   ICM_INT( to_sdim)
   ICM_INT( val_size)
   ICM_VARANY( val_size, vala_any)
   ICM_ID( copyfun)
-ICM_END( ND_CREATE__VECT__DATA, (to_nt, to_sdim, val_size, vala_any, copyfun))
+ICM_END( ND_CREATE__ARRAY__DATA, (to_nt, to_sdim, val_size, vala_any, copyfun))
 #endif
 
 
