@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.45  1998/03/25 17:03:47  srs
+# made deps
+#
 # Revision 1.44  1998/03/22 18:03:15  srs
 # added rules for WLT, WLI, WLF
 #
@@ -298,7 +301,8 @@ WithloopFolding.o: /usr/include/string.h ../global/globals.h
 WithloopFolding.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 WithloopFolding.o: ../global/my_debug.h /usr/include/malloc.h
 WithloopFolding.o: ../print/print.h DupTree.h ../global/traverse.h optimize.h
-WithloopFolding.o: ConstantFolding.h WithloopFolding.h WLT.h WLI.h WLF.h
+WithloopFolding.o: Inline.h ../typecheck/typecheck.h ConstantFolding.h
+WithloopFolding.o: WithloopFolding.h WLT.h WLI.h WLF.h
 WorkReduction.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WorkReduction.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 WorkReduction.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
