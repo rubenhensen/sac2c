@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.82  2004/03/09 23:47:40  dkrHH
+# compile.tagged.o removed
+#
 # Revision 3.81  2004/03/02 16:39:40  mwe
 # ConstVarPropagation added
 #
@@ -242,8 +245,7 @@ MULTITHREAD= src/multithread/multithread.o src/multithread/schedule_init.o \
              src/multithread/barriers_init.o src/multithread/blocks_lift.o \
              src/multithread/adjust_calls.o
 COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
-         src/compile/precompile.o src/compile/gen_startup_code.o \
-         src/compile/compile.o src/compile/compile.tagged.o \
+         src/compile/precompile.o src/compile/gen_startup_code.o src/compile/compile.o \
          src/compile/icm2c.o src/compile/icm2c_basic.o \
          src/compile/icm2c_utils.o src/compile/icm2c_std.o src/compile/icm2c_prf.o \
          src/compile/icm2c_mt.o src/compile/icm2c_sched.o \
@@ -276,9 +278,6 @@ product: check_os tools/bin/cse clean prod sac2c.prod
 distrib_product: check_os tools/bin/cse prod sac2c.prod
 
 twice: check_os tools/bin/cse dummy sac2c sac2c.twice
-
-tagged:
-	touch _TAGGED_ARRAYS
 
 tools/bin/cse:
 	$(MAKE) -C tools
