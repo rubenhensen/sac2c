@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.29  1995/07/04 16:32:58  asi
+ * Revision 1.30  1995/07/05 14:17:04  asi
+ * bug fixed in ArrayPrf - F_psi
+ *
+ * Revision 1.29  1995/07/04  16:32:58  asi
  * IsConst defined global
  * CFwhile enhanced - consider cast-nodes
  *
@@ -594,12 +597,15 @@ CFlet (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CFlet");
 
+    /* get result type for potential primitive function */
     arg_info->info.types = GetType (arg_node->info.ids->node->info.types);
 
-    arg_node = OptTrav (arg_node, arg_info, 0); /* Trav expression */
+    /* Trav expression */
+    arg_node = OptTrav (arg_node, arg_info, 0);
 
     arg_info->info.types = NULL;
 
+    /* primitive function reshape will not be folded, but result is obviously */
     if ((N_prf == arg_node->node[0]->nodetype)
         && (F_reshape == arg_node->node[0]->info.prf)) {
         arg2 = arg_node->node[0]->node[0]->node[1]->node[0];
@@ -1097,7 +1103,7 @@ FoundZero (node *arg_node)
  *  global vars   : N_float, ... , N_not, ..., prf_string
  *  internal funs : --
  *  external funs : --
- *  macros        : DBUG..., NULL, FREE
+ *  macros        : DBUG..., NULL, FREE, SELARG
  *
  *  remarks       : arguments have to be constants before calling this function
  *
@@ -1107,7 +1113,7 @@ SkalarPrf (node **arg, prf prf_type, types *res_type, int swap)
 {
 
 /*
- * This macro calculates all non prefix, non array primitive functions
+ * This macro calculates all non array primitive functions
  */
 #define ARI(op, a1, a2)                                                                  \
     {                                                                                    \
@@ -1407,9 +1413,8 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
                 break;
             }
         } else {
-            if (1 == IsConst (arg[0]))
-                arg[0] = Trav (arg[0], arg_info);
-            else
+            arg[0] = Trav (arg[0], arg_info);
+            if (1 != IsConst (arg[0]))
                 break;
         }
 
@@ -1431,9 +1436,8 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
                 break;
             }
         } else {
-            if (1 == IsConst (arg[1]))
-                arg[1] = Trav (arg[1], arg_info);
-            else {
+            arg[1] = Trav (arg[1], arg_info);
+            if (1 != IsConst (arg[1])) {
                 if (N_id == old_arg[0]->nodetype) {
                     INC_VAR (arg_info->mask[1], old_arg[0]->info.ids->node->varno);
                     FreeTree (arg[0]);
@@ -1713,7 +1717,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
              * Substitution of shape-vector successful ?
              */
             if ((1 != IsConst (arg[0]))
-                || (NULL == VAR (arg[1]->info.ids->node->varno))) {
+                || (0 == IsConst (VAR (arg[1]->info.ids->node->varno)))) {
                 if (N_id == old_arg_0->nodetype) {
                     INC_VAR (arg_info->mask[1], old_arg_0->info.ids->node->varno);
                     FreeTree (arg[0]);
