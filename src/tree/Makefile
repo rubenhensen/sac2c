@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.43  2005/02/10 13:02:11  jhb
+# added check.o check_lib.o
+#
 # Revision 3.42  2004/11/29 15:02:16  ktr
 # removed xml directory.
 #
@@ -119,7 +122,7 @@ OBJS := tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
         LookUpTable.o adjust_ids.o cleanup_decls.o scheduling.o \
         change_signature.o compare_tree.o wl_bounds.o \
         node_basic.o free_node.o free_attribs.o \
-        traverse_tables.o traverse_helper.o
+        traverse_tables.o traverse_helper.o check_lib.o check.o
 
 
 all: $(OBJS)
