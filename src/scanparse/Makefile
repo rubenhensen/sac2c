@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 2.19  2000/11/13 15:53:08  sbs
+# definition of YACC made dependent on OS-version.
+#
 # Revision 2.18  2000/11/02 14:22:37  dkr
 # header compressed
 #
@@ -76,8 +79,14 @@ cc_FLAGS  := -xsb -erroff=E_CAST_DOESNT_YIELD_LVALUE
 
 CCL_FLAGS := $($(CC)_FLAGS) -g
 
-LEX       :=flex -n
-YACC      :=bison -y -dv
+ifeq ($(OS),OSF_ALPHA)
+  LEX       :=flex -n
+  YACC      :=yacc -dv
+else
+  LEX       :=flex -n
+  YACC      :=bison -y -dv
+endif
+
 LIBS      :=-ly -ll
 
 INCS=-I../global -I../tree -I../../inc -I../modules -I../typecheck
