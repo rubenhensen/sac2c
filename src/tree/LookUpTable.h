@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/08/01 16:27:45  sah
+ * added import of types.h as bool
+ * is defined there
+ *
  * Revision 3.11  2004/08/01 15:51:35  sah
  * changed the type of LUT_t from void*
  * to struct LUT_T *. This change is
@@ -128,6 +132,8 @@
 
 #ifndef _sac_LookUpTable_h_
 #define _sac_LookUpTable_h_
+
+#include "types.h"
 
 typedef struct LUT_T *LUT_t;
 
