@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2002/04/16 18:27:15  dkr
+ * INFO_DFMBASE renamed into INFO_DFM_BASE
+ *
  * Revision 1.19  2002/02/22 13:23:43  dkr
  * INFDFMSwithx() modified: & is used correctly now
  *
@@ -148,7 +151,7 @@
 /*
  * compound macro
  */
-#define INFO_DFMBASE(arg_info) FUNDEF_DFM_BASE (INFO_INFDFMS_FUNDEF (arg_info))
+#define INFO_DFM_BASE(arg_info) FUNDEF_DFM_BASE (INFO_INFDFMS_FUNDEF (arg_info))
 
 #ifndef DBUG_OFF
 /******************************************************************************
@@ -469,9 +472,9 @@ GenerateMasks (node *arg_info, DFMmask_t in, DFMmask_t out, DFMmask_t needed)
 {
     DBUG_ENTER ("GenerateMasks");
 
-    INFO_INFDFMS_IN (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
-    INFO_INFDFMS_OUT (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
-    INFO_INFDFMS_LOCAL (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
+    INFO_INFDFMS_IN (arg_info) = DFMGenMaskClear (INFO_DFM_BASE (arg_info));
+    INFO_INFDFMS_OUT (arg_info) = DFMGenMaskClear (INFO_DFM_BASE (arg_info));
+    INFO_INFDFMS_LOCAL (arg_info) = DFMGenMaskClear (INFO_DFM_BASE (arg_info));
     INFO_INFDFMS_NEEDED (arg_info) = DFMGenMaskCopy (needed);
 
     INFO_INFDFMS_NEEDED (arg_info)
@@ -1099,9 +1102,9 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
          * first traversal
          *  -> init the given in/out/local-masks!!!!
          */
-        (*in) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
-        (*out) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
-        (*local) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
+        (*in) = DFMGenMaskClear (INFO_DFM_BASE (arg_info));
+        (*out) = DFMGenMaskClear (INFO_DFM_BASE (arg_info));
+        (*local) = DFMGenMaskClear (INFO_DFM_BASE (arg_info));
     }
 
     /*
