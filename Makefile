@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.161  2005/03/10 09:41:09  cg
+# Added linking of phase.o and setup.o.
+#
 # Revision 3.160  2005/02/14 11:25:52  cg
 # Added linking of prepare_inlining and inlining.
 #
@@ -103,7 +106,8 @@ GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/internal_lib.o src/global/globals.o \
         src/global/resource.o src/global/build.o src/global/interrupt.o \
         src/global/options.o src/global/NameTuplesUtils.o\
-        src/global/filemgr.o src/global/ctinfo.o
+        src/global/filemgr.o src/global/ctinfo.o src/global/phase.o \
+        src/global/setup.o
 
 TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/tree_compound.o src/tree/DupTree.o src/tree/LookUpTable.o \
