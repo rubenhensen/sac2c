@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2002/07/12 19:37:24  dkr
+ * TAGGED_ARRAYS: constants propagation for N_ap deactivated
+ *
  * Revision 1.27  2002/06/21 14:02:05  dkr
  * no changes done
  *
@@ -1704,6 +1707,9 @@ SSACFap (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
 
+#ifdef TAGGED_ARRAYS
+    INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
+#else
     /* substitute scalar constants in arguments (if no special function) */
     if (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node))) {
         INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
@@ -1711,6 +1717,7 @@ SSACFap (node *arg_node, node *arg_info)
         INFO_SSACF_INSCONST (arg_info)
           = SUBST_SCALAR && SUBST_ID_WITH_CONSTANT_IN_AP_ARGS;
     }
+#endif
 
     /* traverse arg chain */
     if (AP_ARGS (arg_node) != NULL) {
