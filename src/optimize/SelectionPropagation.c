@@ -80,6 +80,7 @@ getScalarPrf (prf Prf)
     default:
         printf ("%s", prf_string[Prf]);
         DBUG_ASSERT (FALSE, "Invalid PRF");
+        return 0;
     }
 }
 
