@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2002/08/06 08:26:49  sbs
+ * some vars initialized to please gcc for the product version.
+ *
  * Revision 1.1  2002/08/05 16:57:53  sbs
  * Initial revision
  *
@@ -38,6 +41,7 @@ Idx2Outer (ntype *idx)
         break;
     default:
         DBUG_ASSERT (FALSE, "Idx2Outer applied to non-array type idx");
+        res = NULL; /* just to please gcc 8-) */
     }
 
     DBUG_RETURN (res);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2002/08/06 08:26:49  sbs
+ * some vars initialized to please gcc for the product version.
+ *
  * Revision 1.1  2002/08/05 16:58:34  sbs
  * Initial revision
  *
@@ -108,7 +111,7 @@ SDCreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args)
     node *wrapper;
     ntype *arg_t, *res_t;
     int num_args, num_res, i;
-    bool ok;
+    bool ok = TRUE;
 #ifndef DBUG_OFF
     char *tmp_str;
 #endif

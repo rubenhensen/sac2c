@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/08/06 08:26:49  sbs
+ * some vars initialized to please gcc for the product version.
+ *
  * Revision 3.9  2002/08/05 17:00:38  sbs
  * first alpha version of the new type checker !!
  *
@@ -891,7 +894,7 @@ NTCarray (node *arg_node, node *arg_info)
     int num_elems;
     ntype *scalar = NULL;
     ntype *tmp;
-    ntype *type;
+    ntype *type = NULL;
     shape *shp;
     int i;
 
@@ -1227,15 +1230,18 @@ NTCNwithid (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("NTCNwithid");
 
-    if (NWITHID_IDS (arg_node) != NULL) {
-        while (idxs) {
-            AVIS_TYPE (IDS_AVIS (idxs))
-              = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (0));
-            idxs = IDS_NEXT (idxs);
-        }
+    idxs = NWITHID_IDS (arg_node);
+    while (idxs) {
+        /*
+         * single genvars always have to be scalar int s
+         */
+        AVIS_TYPE (IDS_AVIS (idxs))
+          = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (0));
+        idxs = IDS_NEXT (idxs);
     }
-    if (NWITHID_VEC (arg_node) != NULL) {
-        vec = NWITHID_VEC (arg_node);
+
+    vec = NWITHID_VEC (arg_node);
+    if (vec != NULL) {
         /*
          * we have to leave the generator type intact, therefore, we copy it:
          */
@@ -1363,6 +1369,7 @@ NTCNwithop (node *arg_node, node *arg_info)
     case WO_foldprf:
     default:
         DBUG_ASSERT (FALSE, "fold WL with prf not yet implemented");
+        res = NULL; /* just to please gcc 8-) */
     }
     INFO_NTC_TYPE (arg_info) = res;
 

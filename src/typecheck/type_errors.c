@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2002/08/06 08:26:49  sbs
+ * some vars initialized to please gcc for the product version.
+ *
  * Revision 1.1  2002/08/05 16:58:39  sbs
  * Initial revision
  *
@@ -46,6 +49,7 @@ MatchScalar (ntype *type)
         break;
     default:
         DBUG_ASSERT (FALSE, "MatchScalar applied to non-array type");
+        res = FALSE; /* just to please gcc 8-) */
     }
 
     DBUG_RETURN (res);

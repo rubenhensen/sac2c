@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/08/06 08:26:49  sbs
+ * some vars initialized to please gcc for the product version.
+ *
  * Revision 3.8  2002/08/05 17:00:38  sbs
  * first alpha version of the new type checker !!
  *
@@ -1598,13 +1601,14 @@ DFT_res *
 TYDispatchFunType (ntype *fun, ntype *args)
 {
     int lower;
-    int i, j, k;
-    int n, max_funs;
+    int i, j, k, n;
+    int max_funs = 0;
     ntype *arg, *ires;
     node *fundef;
     DFT_res *res;
-    int *ups, *downs;
-    node **fundefs;
+    int *ups = NULL;
+    int *downs = NULL;
+    node **fundefs = NULL;
     int max_deriveable;
 #ifndef DBUG_OFF
     char *tmp_str;
@@ -1617,82 +1621,87 @@ TYDispatchFunType (ntype *fun, ntype *args)
 
     n = NTYPE_ARITY (args);
 
-    for (i = 0; i < n; i++) {
-        arg = PROD_MEMBER (args, i);
-        ires = DispatchOneArg (&lower, fun, arg);
-        if (ires == NULL) {
-            fundef = IRES_FUNDEF (IBASE_GEN (FUN_IBASE (fun, 0)), 0);
-            ABORT (linenum, ("no definition found for a function \"%s\" that accepts"
-                             " an argument of type \"%s\" as parameter no %d",
-                             FUNDEF_NAME (fundef), TYType2String (arg, FALSE, 0), i + 1));
-        }
-
-        DBUG_EXECUTE ("NTDIS", tmp_str = TYType2String (arg, FALSE, 0););
-        DBUG_PRINT ("NTDIS", ("arg #%d: %s yields:", i, tmp_str));
-        DBUG_EXECUTE ("NTDIS", tmp_str = Free (tmp_str););
-        DBUG_EXECUTE ("NTDIS", DebugPrintDispatchInfo ("NTDIS", ires););
-
-        /*
-         * Now, we accumulate the ups and downs:
-         */
-        if (i == 0) {
-            max_funs = IRES_NUMFUNS (ires);
-            ups = (int *)Malloc (sizeof (int) * max_funs);
-            downs = (int *)Malloc (sizeof (int) * max_funs);
-            fundefs = (node **)Malloc (sizeof (node *) * max_funs);
-
-            for (j = 0; j < max_funs; j++) {
-                if ((IRES_POS (ires, j) <= 0) || (lower == 0)) {
-                    fundefs[j] = IRES_FUNDEF (ires, j);
-                    if (IRES_POS (ires, j) > 0) {
-                        ups[j] = IRES_POS (ires, j);
-                        downs[j] = 0;
-                    } else {
-                        ups[j] = 0;
-                        downs[j] = IRES_POS (ires, j) - lower;
-                    }
-                } else {
-                    fundefs[j] = NULL;
-                }
-            }
-            k = max_funs; /* in case we have only one arg (cf. comment below!) */
-        } else {
-            for (j = 0, k = 0; j < max_funs; j++) {
-                if ((k < IRES_NUMFUNS (ires)) && (IRES_FUNDEF (ires, k) == fundefs[j])) {
-                    if (IRES_POS (ires, k) > 0) {
-                        if (lower > 0) {
-                            fundefs[j] = NULL;
-                        } else {
-                            ups[j] += IRES_POS (ires, k);
-                        }
-                    } else {
-                        downs[j] += IRES_POS (ires, k) - lower;
-                    }
-                    k++;
-                } else {
-                    fundefs[j] = NULL;
-                }
-            }
-        }
-
-        DBUG_PRINT ("NTDIS", ("accumulated ups and downs:"));
-        DBUG_EXECUTE ("NTDIS", DebugPrintUpsAndDowns (max_funs, fundefs, ups, downs););
-
-        fun = IRES_TYPE (ires);
-    }
-
-    /*
-     * Finally, we export our findings via a DFT_res structure.
-     *   in order to avoid multiple allocations we allocate
-     *   space for a maximum of "k" fundefs. This is ok as
-     *   k denotes the number of fundefs found at the last ires
-     *   node!
-     * However, in case of 0 args (n==0), no dispatch has to be made
-     * (since no overloading is allowed) so we return NULL!!
-     */
     if (n == 0) {
         res = NULL;
+
     } else {
+
+        for (i = 0; i < n; i++) {
+            arg = PROD_MEMBER (args, i);
+            ires = DispatchOneArg (&lower, fun, arg);
+            if (ires == NULL) {
+                fundef = IRES_FUNDEF (IBASE_GEN (FUN_IBASE (fun, 0)), 0);
+                ABORT (linenum,
+                       ("no definition found for a function \"%s\" that accepts"
+                        " an argument of type \"%s\" as parameter no %d",
+                        FUNDEF_NAME (fundef), TYType2String (arg, FALSE, 0), i + 1));
+            }
+
+            DBUG_EXECUTE ("NTDIS", tmp_str = TYType2String (arg, FALSE, 0););
+            DBUG_PRINT ("NTDIS", ("arg #%d: %s yields:", i, tmp_str));
+            DBUG_EXECUTE ("NTDIS", tmp_str = Free (tmp_str););
+            DBUG_EXECUTE ("NTDIS", DebugPrintDispatchInfo ("NTDIS", ires););
+
+            /*
+             * Now, we accumulate the ups and downs:
+             */
+            if (i == 0) {
+                max_funs = IRES_NUMFUNS (ires);
+                ups = (int *)Malloc (sizeof (int) * max_funs);
+                downs = (int *)Malloc (sizeof (int) * max_funs);
+                fundefs = (node **)Malloc (sizeof (node *) * max_funs);
+
+                for (j = 0; j < max_funs; j++) {
+                    if ((IRES_POS (ires, j) <= 0) || (lower == 0)) {
+                        fundefs[j] = IRES_FUNDEF (ires, j);
+                        if (IRES_POS (ires, j) > 0) {
+                            ups[j] = IRES_POS (ires, j);
+                            downs[j] = 0;
+                        } else {
+                            ups[j] = 0;
+                            downs[j] = IRES_POS (ires, j) - lower;
+                        }
+                    } else {
+                        fundefs[j] = NULL;
+                    }
+                }
+                k = max_funs; /* in case we have only one arg (cf. comment below!) */
+            } else {
+                for (j = 0, k = 0; j < max_funs; j++) {
+                    if ((k < IRES_NUMFUNS (ires))
+                        && (IRES_FUNDEF (ires, k) == fundefs[j])) {
+                        if (IRES_POS (ires, k) > 0) {
+                            if (lower > 0) {
+                                fundefs[j] = NULL;
+                            } else {
+                                ups[j] += IRES_POS (ires, k);
+                            }
+                        } else {
+                            downs[j] += IRES_POS (ires, k) - lower;
+                        }
+                        k++;
+                    } else {
+                        fundefs[j] = NULL;
+                    }
+                }
+            }
+
+            DBUG_PRINT ("NTDIS", ("accumulated ups and downs:"));
+            DBUG_EXECUTE ("NTDIS",
+                          DebugPrintUpsAndDowns (max_funs, fundefs, ups, downs););
+
+            fun = IRES_TYPE (ires);
+        }
+
+        /*
+         * Finally, we export our findings via a DFT_res structure.
+         *   in order to avoid multiple allocations we allocate
+         *   space for a maximum of "k" fundefs. This is ok as
+         *   k denotes the number of fundefs found at the last ires
+         *   node!
+         * However, in case of 0 args (n==0), no dispatch has to be made
+         * (since no overloading is allowed) so we return NULL!!
+         */
 
         res = TYMakeDFT_res (fun, k);
 
@@ -2371,6 +2380,8 @@ TYLubOfTypes (ntype *t1, ntype *t2)
     case TY_dis:
         res = NULL;
         break;
+    default:
+        res = NULL;
     }
     DBUG_RETURN (res);
 }
@@ -3445,7 +3456,8 @@ TYOldType2Type (types *old)
 static types *
 Type2OldType (ntype *new)
 {
-    types *res, *tmp = NULL;
+    types *res = NULL;
+    types *tmp = NULL;
     int i;
 
     DBUG_ENTER ("Type2OldType");
