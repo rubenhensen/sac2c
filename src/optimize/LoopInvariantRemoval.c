@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.23  1998/04/09 21:22:52  dkr
+ *  renamed macros:
+ *    INLINE -> DUP_INLINE
+ *    NORMAL -> DUP_NORMAL
+ *    INVARIANT -> DUP_INVARIANT
+ *
  * Revision 1.22  1997/11/26 14:21:03  srs
  * *** empty log message ***
  *
@@ -153,7 +159,7 @@ LoopInvariantRemoval (node *arg_node, node *arg_info)
     DBUG_ENTER ("LoopInvariantRemoval");
     act_tab = lir_tab;
     arg_info = MakeNode (N_info);
-    DUPTYPE = NORMAL;
+    DUPTYPE = DUP_NORMAL;
 
     arg_node = Trav (arg_node, arg_info);
 
@@ -1324,7 +1330,7 @@ InvarUnswitch (node *arg_node, node *loop_node, node *arg_info)
         /* only DupInfo depends on this assignment ?!? it is a kind of dirty trick, ey ??
          */
 #endif
-        DUPTYPE = INVARIANT; /* arg_info->flag = 2 */
+        DUPTYPE = DUP_INVARIANT; /* arg_info->flag = 2 */
         UNS_NODES
           = arg_node->node[0]->node[1]->node[0]; /* UNS_NODES: arg_info->node[0] */
         arg_node->node[0]->node[1]->node[0] = DupTree (loop_node, arg_info);
