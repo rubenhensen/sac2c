@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2001/04/09 15:54:19  nmw
+ * CSAddArg implemented
+ *
  * Revision 1.4  2001/03/29 09:19:09  nmw
  * tabs2spaces done
  *
@@ -220,7 +223,7 @@ CSFreeApNarg (node *exprs, int actpos, int freepos)
  *   static node *CSFreeFundefNarg(node *args, int actpos, int freepos)
  *
  * description:
- *   recurive traversal of args list of
+ *   recursive traversal of args list of
  *   fundef to free the arg at freepos..
  *****************************************************************************/
 static node *
@@ -306,4 +309,74 @@ CSFreeFundefNtype (types *typelist, int actpos, int freepos)
     }
 
     DBUG_RETURN (typelist);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CSAddArg(node *fundef,
+ *                  node *arg,
+ *                  nodelist *letlist)
+ *
+ * description:
+ *   adds the given new arg to the fundefs argument chain and adjusts all
+ *   let-ap nodes of this fundef (given in nodelist). as you need a new
+ *   parameter in all calling contexts the NODELIST_ATTRIB2 parameter that
+ *   will be set by NodeListAppend(nl, node, attrib2) points to the node
+ *   that should be inserted in the function application.
+ *   the result is the modified fundef
+ *
+ ******************************************************************************/
+node *
+CSAddArg (node *fundef, node *arg, nodelist *letlist)
+{
+    node *new_exprs;
+
+    DBUG_ENTER ("CSAddArg");
+
+    if (letlist != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (LET_EXPR (NODELIST_NODE (letlist))) == N_ap),
+                     "no function application");
+        DBUG_ASSERT ((AP_FUNDEF (LET_EXPR (NODELIST_NODE (letlist))) == fundef),
+                     "call to different fundef");
+
+        /* add given node as additional argument of function application */
+        new_exprs = MakeExprs (NODELIST_ATTRIB2 (letlist),
+                               EXPRS_NEXT (AP_ARGS (LET_EXPR (NODELIST_NODE (letlist)))));
+        AP_ARGS (LET_EXPR (NODELIST_NODE (letlist))) = new_exprs;
+
+        /* traverse to next application */
+        fundef = CSAddArg (fundef, arg, NODELIST_NEXT (letlist));
+    } else {
+        /* all applictions adjusted, now adjust prototype */
+        ARG_NEXT (arg) = FUNDEF_ARGS (fundef);
+        FUNDEF_ARGS (fundef) = arg;
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *
+ * description:
+ *   adds the given id as additional result to the given fundef. all let-ap
+ *   nodes of this fundef are adjusted to deal with the additional result.
+ *   the NODELIST_ATTRIB2 parameter gives the necessary vardecs for the
+ *   additional result identifier.
+ * remark: the AVIS_SSAASSIGN attribute is not set by this function
+ *   if you are in ssaform, you have to correct the attribute on your own for
+ *   all new identifiers.
+ *
+ ******************************************************************************/
+node *
+CSAddResult (node *fundef, node *id, nodelist *letlist)
+{
+    DBUG_ENTER ("CSAddResult");
+
+    DBUG_ASSERT ((FALSE), "CSAddResult not implemented yet");
+    /* remember the types chain!!! */
+
+    DBUG_RETURN (fundef);
 }
