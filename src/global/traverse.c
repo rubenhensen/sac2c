@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.42  1996/01/17 16:49:21  asi
+ * Revision 1.43  1996/01/22 08:15:23  asi
+ * includes CSE.h now
+ *
+ * Revision 1.42  1996/01/17  16:49:21  asi
  * added common subexpression elimination
  *
  * Revision 1.41  1996/01/02  15:49:35  cg
@@ -154,6 +157,7 @@
 #include "DeadCodeRemoval.h"
 #include "WorkReduction.h"
 #include "LoopInvariantRemoval.h"
+#include "CSE.h"
 #include "import.h"
 #include "refcount.h"
 #include "compile.h"
