@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/06/29 08:50:14  cg
+ * added '#define _POSIX_C_SOURCE 199506L' for multi-threaded execution.
+ *
  * Revision 1.3  1998/05/07 08:13:24  cg
  * SAC runtime library implementation converted to new naming conventions.
  *
@@ -29,6 +32,8 @@
  *   imported external modules may occur.
  *
  *****************************************************************************/
+
+#define _POSIX_C_SOURCE 199506L
 
 #include <stdio.h>
 #include <stdarg.h>
