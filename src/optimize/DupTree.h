@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  1997/11/04 13:32:29  dkr
+ * with defined NEWTREE node.nnode is not in use anymore
+ *
  * Revision 1.12  1997/09/05 17:46:02  dkr
  * added the declaration of the new function DupShpSeg
  *
@@ -49,15 +52,27 @@
 #define NORMAL 0
 #define INLINE 1
 #define INVARIANT 2
+
+#ifndef NEWTREE
 #define UNS_NO arg_info->nnode
+#endif /* NEWTREE */
+
 #define UNS_NODES arg_info->node[0]
 
+#ifndef NEWTREE
 #define DUP(s, d)                                                                        \
     d->refcnt = s->refcnt;                                                               \
     d->flag = s->flag;                                                                   \
     d->varno = s->varno;                                                                 \
     d->nnode = s->nnode;                                                                 \
     d->lineno = s->lineno;
+#else
+#define DUP(s, d)                                                                        \
+    d->refcnt = s->refcnt;                                                               \
+    d->flag = s->flag;                                                                   \
+    d->varno = s->varno;                                                                 \
+    d->lineno = s->lineno;
+#endif /* NEWTREE */
 
 extern node *DupTree (node *arg_node, node *arg_info);
 
