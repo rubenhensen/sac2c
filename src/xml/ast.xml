@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.76  2004/11/25 17:50:46  sbs
+  traversals for create wrappers and ntc patched
+
   Revision 1.75  2004/11/25 17:46:29  ktr
   N_objdef modified.
 
@@ -320,7 +323,6 @@
           <node name="Fundef" />
           <node name="Let" />
           <node name="Ap" />
-          <node name="Id" />
           <node name="Genarray" />
           <node name="Fold" />
         </travuser>  
@@ -344,6 +346,7 @@
           <node name="cast" />
           <node name="exprs" />
           <node name="id" />
+          <node name="globobj" />
           <node name="num" />
           <node name="bool" />
           <node name="char" />
