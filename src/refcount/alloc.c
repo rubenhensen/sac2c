@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2004/11/23 22:12:35  ktr
+ * renaming done.
+ *
  * Revision 1.27  2004/11/23 17:32:58  ktr
  * COMPILES!!!
  *
@@ -1709,7 +1712,7 @@ EMALfold (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMAllocateFill
+ * @fn EMALdoAlloc
  *
  *  @brief Starting function of transformation SAC -> SAC-MemVal.
  *
@@ -1719,11 +1722,11 @@ EMALfold (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-EMAllocateFill (node *syntax_tree)
+EMALdoAlloc (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("EMALAllocateFill");
+    DBUG_ENTER ("EMALdoAlloc");
 
     info = MakeInfo ();
 

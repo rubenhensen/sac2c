@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/23 22:16:18  ktr
+ * renaming done.
+ *
  * Revision 1.6  2004/11/23 21:00:52  ktr
  * COMPILES!!!
  *
@@ -104,7 +107,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMFRCFilterReuseCandidates( node *syntax_tree)
+ * @fn node *EMFRCdoFilterReuseCandidates( node *syntax_tree)
  *
  * @brief starting point of filter reuse candidates traversal
  *
@@ -114,11 +117,11 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-EMFRCFilterReuseCandidates (node *syntax_tree)
+EMFRCdoFilterReuseCandidates (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("EMFRCFilterReuseCandidates");
+    DBUG_ENTER ("EMFRCdoFilterReuseCandidates");
 
     DBUG_PRINT ("EMFRC", ("Starting to filter reuse candidates..."));
 

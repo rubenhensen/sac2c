@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/23 22:15:12  ktr
+ * renaming done.
+ *
  * Revision 1.3  2004/11/23 20:33:20  ktr
  * COMPILES!!!
  *
@@ -84,7 +87,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMECExplicitCopy( node *syntax_tree)
+ * @fn node *EMECdoExplicitCopy( node *syntax_tree)
  *
  * @brief
  *
@@ -94,11 +97,11 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-EMECExplicitCopy (node *syntax_tree)
+EMECdoExplicitCopy (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("EMECExplicitCopy");
+    DBUG_ENTER ("EMECdoExplicitCopy");
 
     DBUG_PRINT ("EMEC", ("Starting explicit copy traversal."));
 
