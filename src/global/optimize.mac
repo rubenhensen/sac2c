@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/02/15 14:52:22  mwe
+ * esd_rec und esd_neg
+ * added
+ *
  * Revision 1.9  2005/02/03 18:28:22  mwe
  * some new flags added
  *
@@ -96,6 +100,7 @@ OPTIMIZE ("sisi", sisi, FALSE, FALSE, "signature simplification")
 OPTIMIZE ("rtup", rtup, FALSE, FALSE, "reverse type upgrade")
 OPTIMIZE ("fdp", fdp, FALSE, FALSE, "function dispatch")
 OPTIMIZE ("fsp", fsp, FALSE, FALSE, "function specilization")
+OPTIMIZE ("esd", esd, FALSE, FALSE, "eliminate substraction and division")
 
 #undef OPTIMIZEstr
 #undef OPTIMIZEabbr
