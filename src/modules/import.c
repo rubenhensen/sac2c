@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.42  1996/09/11 06:25:15  cg
+ * Revision 1.43  1997/03/11 16:27:10  cg
+ * new function PrintDependencies corresponding to compiler option -M
+ * old compiler option -deps (updating makefile) no longer supported
+ * absolute pathnams used for all dependencies
+ *
+ * Revision 1.42  1996/09/11  06:25:15  cg
  * Imported modules are stored in special structure to create libstat
  * information later.
  *
@@ -191,6 +196,7 @@
 extern void DoImport (node *modul, node *implist, char *mastermod);
 
 static mod *mod_tab = NULL;
+static strings *dependencies = NULL;
 
 /*
  *
@@ -228,6 +234,55 @@ Import (node *arg_node)
     act_tab = imp_tab;
 
     DBUG_RETURN (Trav (arg_node, NULL));
+}
+
+/*
+ *
+ *  functionname  : PrintDependencies
+ *  arguments     : N_modul node of syntax tree
+ *  description   : For module/class implementations, the own declaration
+ *                  file is looked for and added to the list of dependencies.
+ *                  A list of dependencies is printed in Makefile-style
+ *                  to stdout.
+ *  global vars   : dependencies
+ *  internal funs : FindFile
+ *  external funs : strcpy, strcat, StringCopy, MakeStrings
+ *  macros        :
+ *
+ *  remarks       : This function corresponds to the -M compiler option.
+ *
+ */
+
+void
+PrintDependencies (node *arg_node)
+{
+    strings *deps;
+    static char buffer[MAX_FILE_NAME];
+    char *pathname;
+
+    DBUG_ENTER ("PrintDependencies");
+
+    if (MODUL_FILETYPE (arg_node) != F_prog) {
+        strcpy (buffer, MODUL_NAME (arg_node));
+        strcat (buffer, ".dec");
+
+        pathname = FindFile (MODDEC_PATH, buffer);
+        if (pathname != NULL) {
+            dependencies
+              = MakeStrings (StringCopy (AbsolutePathname (pathname)), dependencies);
+        }
+    }
+
+    deps = dependencies;
+
+    printf ("%s: ", outfilename);
+    while (deps != NULL) {
+        printf ("  \\\n  %s", STRINGS_STRING (deps));
+        deps = STRINGS_NEXT (deps);
+    }
+    printf ("\n");
+
+    DBUG_VOID_RETURN;
 }
 
 /*
@@ -983,8 +1038,8 @@ IMobjdef (node *arg_node, node *arg_info)
 
             if (PRAGMA_EFFECT (pragma) != NULL) {
                 OBJDEF_NEEDOBJS (arg_node)
-                  = CheckExistObjects (PRAGMA_EFFECT (pragma), arg_info,
-                                       ST_readonly_reference, NODE_LINE (arg_node));
+                  = CheckExistObjects (PRAGMA_EFFECT (pragma), arg_info, ST_reference,
+                                       NODE_LINE (arg_node));
                 PRAGMA_EFFECT (pragma) = NULL;
             }
 
@@ -1125,9 +1180,10 @@ GenMod (char *name, int checkdec)
         NOTE (("  Parsing file \"%s\" ...", pathname));
 
         if (!checkdec) {
-            sprintf (libinfo, "  %-15sfound : %s", name, pathname);
+            sprintf (libinfo, "  %-15sfound : %s", name, AbsolutePathname (pathname));
             imported_decs = MakeStrings (StringCopy (libinfo), imported_decs);
-            dependencies = MakeStrings (StringCopy (pathname), dependencies);
+            dependencies
+              = MakeStrings (StringCopy (AbsolutePathname (pathname)), dependencies);
         }
 
         filename = buffer;
@@ -1143,11 +1199,13 @@ GenMod (char *name, int checkdec)
                        "but module/class '%s`",
                        buffer, name, decl_tree->info.fun_name.id));
         }
-
-        if (strlen (name) > 13) {
-            SYSERROR (("Module/class name '%s` too long (maximum: 13 characters)", name));
+        /*
+        if (strlen(name)>13)
+        {
+          SYSERROR(("Module/class name '%s` too long (maximum: 13 characters)",
+                    name));
         }
-
+        */
         tmp->prefix = decl_tree->info.fun_name.id_mod;
         tmp->name = decl_tree->info.fun_name.id;
         tmp->next = NULL;
@@ -1395,23 +1453,27 @@ FindSymbolInModul (char *modname, char *name, int symbkind, mods *found, int rec
  *
  */
 
-char *
-ModulePrefix (char *name)
+#if 0
+char *ModulePrefix(char *name)
 {
-    mod *module;
-    char *prefix;
-
-    DBUG_ENTER ("ModulePrefix");
-
-    module = FindModul (name);
-    if (module == NULL) {
-        prefix = NULL;
-    } else {
-        prefix = module->prefix;
-    }
-
-    DBUG_RETURN (prefix);
+  mod *module;
+  char *prefix;
+  
+  DBUG_ENTER("ModulePrefix");
+  
+  module=FindModul(name);
+  if (module==NULL)
+  {
+    prefix=NULL;
+  }
+  else
+  {
+    prefix=module->prefix;
+  }
+  
+  DBUG_RETURN(prefix);
 }
+#endif
 
 /*
  *
@@ -1926,9 +1988,8 @@ ImportOwnDeclaration (char *name, file_type modtype)
         NOTE (("Loading own declaration !"));
         NOTE (("  Parsing file \"%s\" ...", pathname));
 
-        sprintf (libinfo, "  %-15sfound : %s", name, pathname);
+        sprintf (libinfo, "  %-15sfound : %s", name, AbsolutePathname (pathname));
         imported_decs = MakeStrings (StringCopy (libinfo), imported_decs);
-        dependencies = MakeStrings (StringCopy (pathname), dependencies);
 
         linenum = 1;
         start_token = PARSE_DEC;

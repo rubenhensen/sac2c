@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.21  1996/01/07 17:00:38  cg
+ * Revision 1.22  1997/03/11 16:27:10  cg
+ * new function PrintDependencies corresponding to compiler option -M
+ * old compiler option -deps (updating makefile) no longer supported
+ * absolute pathnams used for all dependencies
+ *
+ * Revision 1.21  1996/01/07  17:00:38  cg
  * added functions IMfundef  IMtypedef IMobjdef InitGenericFuns
  * and ResolvePragmaReadonly
  *
@@ -126,5 +131,7 @@ extern int *Nums2IntArray (int line, int size, nums *numsp);
 extern int *Nums2BoolArray (int line, int size, nums *numsp);
 extern node *InitGenericFuns (node *arg_node, node *pragma);
 extern node *ResolvePragmaReadonly (node *arg_node, node *pragma, int);
+
+extern void PrintDependencies (node *syntax_tree);
 
 #endif /* _sac_import_h */
