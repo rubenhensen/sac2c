@@ -15,7 +15,6 @@ SSALUR.c
 SSALUR.h
 WorkReduction.c
 WorkReduction.h
-freemasks.h
 generatemasks.c
 generatemasks.h
 optimize.c
