@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.28  1999/06/16 10:35:27  jhs
+ * Added INFO_SPMDT_FIRSTOUT.
+ *
  * Revision 2.27  1999/06/15 12:30:07  jhs
  * Added some missing Macros to access NAIVE_REFCNT.
  * Added INFO_RC_NAIVE_RCDUMP.
@@ -2185,10 +2188,13 @@ extern node *MakePragma ();
  ***    long*      ACT
  ***
  ***  when used in managing spmd- and sync blocks :
+ ***  also when used in spmd traversal (spmd_trav.[ch]) :
  ***
  ***    node*      INFO_SPMD_FUNDEF   (N_fundef)
  ***    int        INFO_SPMD_FIRST
  ***    int        INFO_SPMD_MT
+ ***
+ ***    DFMmask_t  INFO_SPMDT_FIRSTOUT
  ***
  ***  when used in tile_size_inference.c :
  ***
@@ -2306,6 +2312,8 @@ extern node *MakeInfo ();
 #define INFO_SPMD_FUNDEF(n) (n->node[0])
 #define INFO_SPMD_FIRST(n) (n->flag)
 #define INFO_SPMD_MT(n) (n->counter)
+
+#define INFO_SPMDT_FIRSTOUT(n) (n->dfmask[0])
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
