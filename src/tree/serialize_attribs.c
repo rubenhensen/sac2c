@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/11/02 12:14:46  sah
+ * added support for ConstVect
+ *
  * Revision 1.12  2004/11/01 21:52:15  sah
  * added SerialiyezeDownLinkAttrib
  *
@@ -886,10 +889,39 @@ SerializeConstVecPointerAttrib (info *info, void *attr, node *parent)
 {
     DBUG_ENTER ("SerializeConstVecPointerAttrib");
 
-    DBUG_ASSERT ((NODE_TYPE (parent) == N_array),
-                 "Found ConstVecPointer as attribute of a node different to N_array!");
+    DBUG_ASSERT (((NODE_TYPE (parent) == N_array) || (NODE_TYPE (parent) == N_id)),
+                 "Found ConstVecPointer as attribute of a node different to N_array"
+                 " and N_id!");
 
-    fprintf (INFO_SER_FILE (info), "NULL");
+    if (attr == NULL) {
+        fprintf (INFO_SER_FILE (info), "NULL");
+    } else {
+        int size;
+        int veclen;
+        simpletype vectype;
+        char *vect;
+        int cnt;
+
+        if (NODE_TYPE (parent) == N_array) {
+            veclen = ARRAY_VECLEN (parent);
+            vectype = ARRAY_VECTYPE (parent);
+        } else {
+            veclen = ARRAY_VECLEN (parent);
+            vectype = ARRAY_VECTYPE (parent);
+        }
+
+        vect = (char *)attr;
+
+        size = basetype_size[vectype] * veclen;
+
+        fprintf (INFO_SER_FILE (info), "MemCopy( %d, \"", size);
+
+        for (cnt = 0; cnt < size; cnt++) {
+            fprintf (INFO_SER_FILE (info), "\%d", (int)vect[cnt]);
+        }
+
+        fprintf (INFO_SER_FILE (info), "\")");
+    }
 
     DBUG_VOID_RETURN;
 }
