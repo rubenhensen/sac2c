@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/10/08 17:08:55  dkr
+ * Support for dynamic shapes added:
+ * TypesAreEqual(), ReuseLet() modified.
+ *
  * Revision 3.3  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -55,29 +59,29 @@
  * arrays:
  *
  *     A = with (... <= idx < ...) {       A = with (... <= idx < ...) {
- *           <assigns>                       <assigns>
- *         }                               }
- *         genarray( ...)                  modarray( B, ...)
+ *           <assigns>                           <assigns>
+ *         }                                   }
+ *         genarray( ...)                      modarray( B, ...)
  *
  * In modarray with-loops we can possibly reuse "B".
  * In modarray/genarray with-loops we can possibly reuse all arrays ("C")
- * found in <assings> with the following characteristic:
+ * found in <assigns> with the following characteristics:
  *
  *   +) basetype( C) == basetype( A)
  *   +) dim( C) == dim( A)
- *   +) shape( C) == shape( A)
+ *   +) shape( C) == shape( A)  [and these shapes are statically known]
  *
  *   +) "C" does not occur on a left side.
- *      [Because such arrays do not exist outside the with-loop]
+ *      [Because such arrays do not exist outside the with-loop.]
  *
- *   +) If "C" occurs on a right side, it looks like
+ *   +) If "C" occurs on a right side, it always looks like
  *          "sel( idx, C)"  or  "idx_sel( idx_flat, C)"
  *      where "idx_flat" is the flat offset of "idx" (IVE).
- *      [Otherwise reuse might miss data dependencies.]
+ *      [Otherwise reuse might miss data dependencies!]
  *
  *   +) "C" is found in 'NWITH2_DEC_RC_IDS'!!!!!
  *      [Otherwise "C" is not consumed by the with-loop because of RCO
- *       --- it is not the last occur --- therefore must not be reused!!!]
+ *       --- it is not the last occurance --- therefore must not be reused!!!]
  *
  * The arrays that are identified to be reuseable are stored in NWITH2_REUSE.
  *
@@ -95,30 +99,32 @@
 /******************************************************************************
  *
  * function:
- *   int CompareTypes( types *t1, types *t2)
+ *   bool TypesAreEqual( types *t1, types *t2)
  *
  * description:
- *   returns ...
- *      ... 0, if 't1' and 't2' are equal types (only basetype, dim, shape);
- *      ... 1, otherwise.
+ *   returns TRUE iff 't1' and 't2' are equal types (only basetype, dim, shape).
  *
  ******************************************************************************/
 
-int
-CompareTypes (types *t1, types *t2)
+bool
+TypesAreEqual (types *t1, types *t2)
 {
-    int compare, d;
+    bool compare;
+    shpseg *shpseg1, *shpseg2;
+    int dim1, dim2;
+    int d;
 
-    DBUG_ENTER ("CompareTypes");
+    DBUG_ENTER ("TypesAreEqual");
 
-    compare = ((TYPES_BASETYPE (t1) != TYPES_BASETYPE (t2))
-               || (TYPES_DIM (t1) != TYPES_DIM (t2)));
+    shpseg1 = Type2Shpseg (t1, &dim1);
+    shpseg2 = Type2Shpseg (t2, &dim2);
 
-    if (compare == 0) {
-        for (d = 0; d < TYPES_DIM (t1); d++) {
-            if (SHPSEG_SHAPE (TYPES_SHPSEG (t1), d)
-                != SHPSEG_SHAPE (TYPES_SHPSEG (t2), d)) {
-                compare = 1;
+    compare = ((dim1 >= 0) && (dim1 == dim2) && (GetBasetype (t1) == GetBasetype (t2)));
+
+    if (compare) {
+        for (d = 0; d < dim1; d++) {
+            if (SHPSEG_SHAPE (shpseg1, d) != SHPSEG_SHAPE (shpseg2, d)) {
+                compare = FALSE;
             }
         }
     }
@@ -129,25 +135,23 @@ CompareTypes (types *t1, types *t2)
 /******************************************************************************
  *
  * function:
- *   int IsFound( char *varname, ids *ids_chain)
+ *   bool IsFound( char *varname, ids *ids_chain)
  *
  * description:
- *   returns ...
- *     ... 1, if 'varname' is found in 'ids_chain';
- *     ... 0, otherwise.
+ *   returns TRUE iff 'varname' is found in 'ids_chain'.
  *
  ******************************************************************************/
 
-int
+bool
 IsFound (char *varname, ids *ids_chain)
 {
-    int found = 0;
+    bool found = FALSE;
 
     DBUG_ENTER ("IsFound");
 
     while (ids_chain != NULL) {
-        if (strcmp (varname, IDS_NAME (ids_chain)) == 0) {
-            found = 1;
+        if (!strcmp (varname, IDS_NAME (ids_chain))) {
+            found = TRUE;
             break;
         }
         ids_chain = IDS_NEXT (ids_chain);
@@ -321,7 +325,7 @@ ReuseLet (node *arg_node, node *arg_info)
     node *arg1, *arg2;
     ids *tmp;
     char *idx_sel_name;
-    int traverse;
+    bool traverse;
 
     DBUG_ENTER ("ReuseLet");
 
@@ -336,7 +340,7 @@ ReuseLet (node *arg_node, node *arg_info)
         tmp = IDS_NEXT (tmp);
     }
 
-    traverse = 1;
+    traverse = TRUE;
     DBUG_ASSERT ((INFO_REUSE_IDX (arg_info) != NULL), "no idx found");
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf) {
         switch (PRF_PRF (LET_EXPR (arg_node))) {
@@ -344,10 +348,9 @@ ReuseLet (node *arg_node, node *arg_info)
             arg1 = EXPRS_EXPR (PRF_ARGS (LET_EXPR (arg_node)));
             arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (arg_node))));
             if ((NODE_TYPE (arg1) == N_id)
-                && (strcmp (ID_NAME (arg1), IDS_NAME (INFO_REUSE_IDX (arg_info))) == 0)
+                && (!strcmp (ID_NAME (arg1), IDS_NAME (INFO_REUSE_IDX (arg_info))))
                 && (NODE_TYPE (arg2) == N_id)
-                && (CompareTypes (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)))
-                    == 0)
+                && TypesAreEqual (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)))
                 && (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info)))
                 && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
                     == 0)) {
@@ -359,33 +362,33 @@ ReuseLet (node *arg_node, node *arg_info)
                 /*
                  * we must not traverse the args!
                  */
-                traverse = 0;
+                traverse = FALSE;
             }
             break;
 
         case F_idx_sel:
             arg1 = EXPRS_EXPR (PRF_ARGS (LET_EXPR (arg_node)));
             arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (arg_node))));
-            idx_sel_name = IdxChangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)),
-                                        IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)));
-            if ((NODE_TYPE (arg1) == N_id) && (strcmp (ID_NAME (arg1), idx_sel_name) == 0)
-                && (NODE_TYPE (arg2) == N_id)
-                && (CompareTypes (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)))
-                    == 0)
+            if ((NODE_TYPE (arg1) == N_id) && (NODE_TYPE (arg2) == N_id)
+                && TypesAreEqual (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)))
                 && (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info)))
                 && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
                     == 0)) {
-                /*
-                 * 'arg2' is used in a (flattened) normal WL-sel()
-                 *  -> we can possibly reuse this array
-                 */
-                DFMSetMaskEntrySet (INFO_REUSE_MASK (arg_info), ID_NAME (arg2), NULL);
-                /*
-                 * we must not traverse the args!
-                 */
-                traverse = 0;
+                idx_sel_name = IdxChangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)),
+                                            IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)));
+                if (!strcmp (ID_NAME (arg1), idx_sel_name)) {
+                    /*
+                     * 'arg2' is used in a (flattened) normal WL-sel()
+                     *  -> we can possibly reuse this array
+                     */
+                    DFMSetMaskEntrySet (INFO_REUSE_MASK (arg_info), ID_NAME (arg2), NULL);
+                    /*
+                     * we must not traverse the args!
+                     */
+                    traverse = FALSE;
+                }
+                idx_sel_name = Free (idx_sel_name);
             }
-            idx_sel_name = Free (idx_sel_name);
             break;
 
         default:
@@ -393,7 +396,7 @@ ReuseLet (node *arg_node, node *arg_info)
         }
     }
 
-    if (traverse == 1) {
+    if (traverse) {
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
     }
 
