@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2004/11/27 01:34:45  jhb
+ * fixed bug
+ *
  * Revision 3.59  2004/11/27 00:23:44  sbs
  * *** empty log message ***
  *
@@ -278,10 +281,10 @@ NTCdoNewTypeCheck (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("NewTypeCheck");
+    DBUG_ENTER ("NTCdoNewTypeCheck");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
-                 "NewTypeCheck() not called with N_module node!");
+                 "NTCdoNewTypeCheck() not called with N_module node!");
 
 #ifndef NEW_AST
     /*
@@ -311,7 +314,7 @@ NTCdoNewTypeCheck (node *arg_node)
 /******************************************************************************
  *
  * function:
- *    ntype *NewTypeCheck_Expr( node *arg_node)
+ *    ntype *NTCNewTypeCheck_Expr( node *arg_node)
  *
  * description:
  *    Infers the type of an expression and fixes/eliminates alpha types.
@@ -325,7 +328,7 @@ NTCnewTypeCheck_Expr (node *arg_node)
     info *arg_info;
     ntype *type;
 
-    DBUG_ENTER ("NewTypeCheck_Expr");
+    DBUG_ENTER ("NTCnewTypeCheck_Expr");
 
     TRAVpush (TR_ntc);
 
@@ -737,7 +740,7 @@ DONE:
  ******************************************************************************/
 
 ntype *
-CheckUdtAndSetBaseType (usertype udt, int *visited)
+NTCcheckUdtAndSetBaseType (usertype udt, int *visited)
 {
     ntype *base, *base_elem;
     usertype inner_udt;
@@ -745,7 +748,7 @@ CheckUdtAndSetBaseType (usertype udt, int *visited)
     ntype *new_base, *new_base_elem;
     int num_udt, i;
 
-    DBUG_ENTER ("CheckUdt");
+    DBUG_ENTER ("NTCcheckUdtandSetBaseType");
 
     base = UTgetBaseType (udt);
     if (base == NULL) {
@@ -803,7 +806,7 @@ CheckUdtAndSetBaseType (usertype udt, int *visited)
                                                 UTgetMod (udt), UTgetName (udt)));
                     } else {
                         visited[udt] = 1;
-                        inner_base = CheckUdtAndSetBaseType (inner_udt, visited);
+                        inner_base = NTCcheckUdtAndSetBaseType (inner_udt, visited);
                         /*
                          * Finally, we compute the resulting base-type by nesting
                          * the inner base type with the actual typedef!
@@ -887,7 +890,7 @@ NTCtypedef (node *arg_node, info *arg_info)
         TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
 
     if (TYPEDEF_ISLOCAL (arg_node)) {
-        base = CheckUdtAndSetBaseType (udt, NULL);
+        base = NTCcheckUdtAndSetBaseType (udt, NULL);
     } else {
         base = UTgetBaseType (udt);
     }
