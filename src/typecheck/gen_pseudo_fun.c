@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/10/18 14:30:58  sbs
+ * several FLAGS set appropriately after creating fresh N_id nodes
+ *
  * Revision 3.9  2002/10/08 10:39:51  dkr
  * function CreateFoldFun() for new type system added
  *
@@ -224,9 +227,13 @@ CreateFoldFun (types *elem_type, node *fold_fundef, prf fold_prf, char *res_name
                           ST_regular, NULL));
 
     res_id = MakeId_Copy (res_name);
+    SET_FLAG (ID, res_id, IS_GLOBAL, FALSE);
+    SET_FLAG (ID, res_id, IS_REFERENCE, FALSE);
     ID_VARDEC (res_id) = formal_args;
 
     cexpr_id = MakeId_Copy (cexpr_name);
+    SET_FLAG (ID, cexpr_id, IS_GLOBAL, FALSE);
+    SET_FLAG (ID, cexpr_id, IS_REFERENCE, FALSE);
     ID_VARDEC (cexpr_id) = ARG_NEXT (formal_args);
 
     args = MakeExprs (DupNode (res_id), MakeExprs (cexpr_id, NULL));
@@ -258,6 +265,8 @@ CreateFoldFun (types *elem_type, node *fold_fundef, prf fold_prf, char *res_name
     tmp_res_vardec
       = MakeVardec (StringCopy (tmp_res_name), DupAllTypes (elem_type), NULL);
     tmp_res_id = MakeId_Copy (tmp_res_name);
+    SET_FLAG (ID, tmp_res_id, IS_GLOBAL, FALSE);
+    SET_FLAG (ID, tmp_res_id, IS_REFERENCE, FALSE);
     ID_VARDEC (tmp_res_id) = tmp_res_vardec;
 
     ret_ass = MakeReturn (MakeExprs (res_id, NULL));
