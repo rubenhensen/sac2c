@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/05/15 15:11:31  dkr
+ * added WLTRALet
+ *
  * Revision 1.5  1998/05/06 22:19:27  dkr
  * removed WLTRALet
  *
@@ -25,6 +28,7 @@ extern node *WlTransform (node *syntax_tree);
 extern node *WLTRANwith (node *arg_node, node *arg_info);
 extern node *WLTRANcode (node *arg_node, node *arg_info);
 extern node *WLTRAFundef (node *arg_node, node *arg_info);
+extern node *WLTRALet (node *arg_node, node *arg_info);
 
 extern int GridOffset (int new_bound1, int bound1, int step, int grid_b2);
 extern node *InsertWLnodes (node *nodes, node *insert_nodes);
