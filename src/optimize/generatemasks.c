@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/01/26 14:53:23  dkr
+ * type of traverse-function-table changed
+ *
  * Revision 2.14  1999/11/15 18:07:05  dkr
  * some macros changed, replaced or modified (VARNO, MRD, ...)
  *
@@ -2518,7 +2521,7 @@ GNMicm (node *arg_node, node *arg_info)
 node *
 GenerateMasks (node *arg_node, node *arg_info)
 {
-    funptr *tmp_tab;
+    funtab tmp_tab;
 
     DBUG_ENTER ("GenerateMasks");
     DBUG_PRINT ("OPT", ("GENERATEMASKS"));

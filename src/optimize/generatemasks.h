@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  2000/01/26 14:53:15  dkr
+ * type of traverse-function-table changed
+ *
  * Revision 2.6  1999/11/15 18:07:26  dkr
  * some macros changed, replaced or modified (VARNO, MRD, ...)
  *
@@ -61,9 +64,10 @@ extern stack *mrdl_stack;
 
 #define MRD_TOS mrdl_stack->stack[mrdl_stack->tos]
 #define MRD_TAB                                                                          \
-    (cf_tab == act_tab || unroll_tab == act_tab || unswitch_tab == act_tab               \
-     || cse_tab == act_tab || ae_tab == act_tab || wli_tab == act_tab                    \
-     || wlt_tab == act_tab)
+    (cf_tab.trav_tab == act_tab.trav_tab || unroll_tab.trav_tab == act_tab.trav_tab      \
+     || unswitch_tab.trav_tab == act_tab.trav_tab                                        \
+     || cse_tab.trav_tab == act_tab.trav_tab || ae_tab.trav_tab == act_tab.trav_tab      \
+     || wli_tab.trav_tab == act_tab.trav_tab || wlt_tab.trav_tab == act_tab.trav_tab)
 #define MRD_LIST (long *)MRD_TOS.varlist
 #define MRD_VLEN MRD_TOS.vl_len
 #define MRD(i) MRD_TOS.varlist[i]
