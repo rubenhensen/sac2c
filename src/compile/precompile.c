@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.62  1998/04/26 16:47:26  dkr
+ * fixed a bug in Parts2Strides
+ *
  * Revision 1.61  1998/04/25 14:21:05  dkr
  * removed a bug in PRECNcode: sons are traversed now!!
  *
@@ -228,16 +231,30 @@
 
 #define GET_CURRENT_COMPONENT(node, comp)                                                \
     if (node != NULL) {                                                                  \
-        if (NODE_TYPE (node) == N_id) {                                                  \
+        switch (NODE_TYPE (node)) {                                                      \
+        case N_id:                                                                       \
+            /* here is no break missing!! */                                             \
+        case N_num:                                                                      \
             comp = DupTree (node, NULL);                                                 \
-        } else {                                                                         \
-            DBUG_ASSERT ((NODE_TYPE (node) == N_exprs), "wrong node type found");        \
+            break;                                                                       \
+        case N_exprs:                                                                    \
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (node)) == N_num),                       \
+                         "wrong node type found");                                       \
             comp = MakeNum (NUM_VAL (EXPRS_EXPR (node)));                                \
             node = EXPRS_EXPR (node);                                                    \
+            break;                                                                       \
+        default:                                                                         \
+            DBUG_ASSERT ((0), "wrong node type found");                                  \
         }                                                                                \
     } else {                                                                             \
         comp = MakeNum (1);                                                              \
     }
+
+/*
+ * returns 0 for refcounting-objects and -1 otherwise
+ *  (used in 'PRECSPMD')
+ */
+#define GET_ZERO_REFCNT(prefix, node) ((prefix##_REFCNT (node) >= 0) ? 0 : -1)
 
 /*
  * these macros are used in 'CompareWlnode' for compare purpose
@@ -1153,6 +1170,7 @@ PRECSPMD (node *arg_node, node *arg_info)
 {
     node *vardecs, *vardec, *last_vardec;
     node *fargs, *farg, *last_farg;
+    node *refexprs, *refexpr, *last_refexpr;
     node *retexprs, *retexpr, *last_retexpr;
     types *rettypes, *rettype, *last_rettype;
     ids *spmd_ids;
@@ -1217,34 +1235,75 @@ PRECSPMD (node *arg_node, node *arg_info)
     }
     VARDEC_NEXT (last_vardec) = NULL;
 
-    /*
+    /****************************************************************************
      * generate SPMD_FUNDEF for this spmd region
      */
 
-    fargs = NULL; /* build formal parameters (use SPMD_IN) */
+    fargs = NULL;
+    refexprs = NULL;
+    retexprs = NULL;
+    rettypes = NULL;
+
+    /*
+     * use SPMD_IN: build formal parameters.
+     */
 
     spmd_ids = SPMD_IN (arg_node);
     while (spmd_ids != NULL) {
         farg = MakeArg (StringCopy (IDS_NAME (spmd_ids)),
                         DuplicateTypes (IDS_TYPE (spmd_ids), 1), IDS_STATUS (spmd_ids),
                         IDS_ATTRIB (spmd_ids), NULL);
+        ARG_REFCNT (farg) = -1; /* IDS_REFCNT( spmd_ids) ??? */
 
         if (fargs == NULL) {
             fargs = farg;
         } else {
-            ARG_NEXT (fargs) = farg;
+            ARG_NEXT (last_farg) = farg;
         }
         last_farg = farg;
 
         spmd_ids = IDS_NEXT (spmd_ids);
     }
 
-    retexprs = NULL; /* build return exprs/types (use SPMD_OUT/INOUT) */
-    rettypes = NULL;
+    /*
+     * use SPMD_INOUT: build formal parameters,
+     *                 build reference parameters.
+     */
 
-    spmd_ids = SPMD_INOUT (arg_node); /* INOUT */
+    spmd_ids = SPMD_INOUT (arg_node);
+    while (spmd_ids != NULL) {
+        farg = MakeArg (StringCopy (IDS_NAME (spmd_ids)),
+                        DuplicateTypes (IDS_TYPE (spmd_ids), 1), IDS_STATUS (spmd_ids),
+                        ST_inout, NULL);
+        ARG_REFCNT (farg) = IDS_REFCNT (spmd_ids); /* ??? */
+
+        refexpr = MakeExprs (MakeId2 (DupOneIds (spmd_ids, NULL)), NULL);
+
+        if (fargs == NULL) {
+            fargs = farg;
+            refexprs = refexpr;
+        } else {
+            ARG_NEXT (last_farg) = farg;
+            if (refexprs == NULL) {
+                refexprs = refexpr;
+            } else {
+                EXPRS_NEXT (last_refexpr) = refexpr;
+            }
+        }
+        last_farg = farg;
+        last_refexpr = refexpr;
+
+        spmd_ids = IDS_NEXT (spmd_ids);
+    }
+
+    /*
+     * use SPMD_OUT: build return exprs/types.
+     */
+
+    spmd_ids = SPMD_OUT (arg_node);
     while (spmd_ids != NULL) {
         retexpr = MakeExprs (MakeId2 (DupOneIds (spmd_ids, NULL)), NULL);
+
         rettype = DuplicateTypes (IDS_TYPE (spmd_ids), 1);
 
         if (retexprs == NULL) {
@@ -1260,28 +1319,24 @@ PRECSPMD (node *arg_node, node *arg_info)
         spmd_ids = IDS_NEXT (spmd_ids);
     }
 
-    spmd_ids = SPMD_OUT (arg_node); /* OUT */
-    while (spmd_ids != NULL) {
-        retexpr = MakeExprs (MakeId2 (DupOneIds (spmd_ids, NULL)), NULL);
-        rettype = DuplicateTypes (IDS_TYPE (spmd_ids), 1);
-
-        if (retexprs == NULL) {
-            retexprs = retexpr;
-            rettypes = rettype;
-        } else {
-            EXPRS_NEXT (last_retexpr) = retexpr;
-            TYPES_NEXT (last_rettype) = rettype;
-        }
-        last_retexpr = retexpr;
-        last_rettype = rettype;
-
-        spmd_ids = IDS_NEXT (spmd_ids);
+    /*
+     * CAUTION: FUNDEF_NAME is for the time being a part of FUNDEF_TYPES!!
+     *          That's why we must build a void-type, when ('rettypes' == NULL).
+     */
+    if (rettypes == NULL) {
+        rettypes = MakeType (T_void, 0, NULL, "", "");
     }
 
     SPMD_FUNDEC (arg_node)
       = MakeFundef (SpmdFunName (FUNDEF_NAME (INFO_PREC_FUNDEF (arg_info))), NULL,
                     rettypes, fargs, NULL, NULL);
+    FUNDEF_STATUS (SPMD_FUNDEC (arg_node)) = ST_spmdfun;
     FUNDEF_RETURN (SPMD_FUNDEC (arg_node)) = MakeReturn (retexprs);
+    RETURN_REFERENCE (FUNDEF_RETURN (SPMD_FUNDEC (arg_node))) = refexprs;
+
+    /*
+     * generate SPMD_FUNDEF for this spmd region
+     ****************************************************************************/
 
 #if 0
   ap = MakeAp(StringCopy(name), NULL, args);
