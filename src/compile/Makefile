@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.28  2000/07/06 14:51:48  dkr
+# target BEtest modified
+#
 # Revision 2.27  2000/07/05 14:23:45  dkr
 # make deps done
 #
@@ -127,11 +130,13 @@ wltransform.c: wlpragma_funs.mac
 
 
 BEtest: BEtest.c icm_vars.c icm_betest.c icm.data \
-          icm2c_std.BEtest.o icm2c_wl.BEtest.o icm2c_utils.BEtest.o icm2c_mt.BEtest.o \
-          ../global/globals.o ../../lib/dbug.o
+          ../global/globals.o ../../lib/dbug.o \
+          icm2c_std.BEtest.o icm2c_wl.BEtest.o icm2c_utils.BEtest.o \
+          icm2c_mt.BEtest.o
 	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest BEtest.c $(INCS) \
-          ../../lib/dbug.o icm2c_std.BEtest.o icm2c_wl.BEtest.o \
-          icm2c_utils.BEtest.o icm2c_mt.BEtest.o ../global/globals.o 
+          ../global/globals.o  ../../lib/dbug.o \
+          icm2c_std.BEtest.o icm2c_wl.BEtest.o icm2c_utils.BEtest.o \
+          icm2c_mt.BEtest.o
 
 icm2c_std.BEtest.o: icm2c_std.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_std.BEtest.o -c icm2c_std.c $(INCS)
