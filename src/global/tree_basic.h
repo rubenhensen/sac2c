@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.38  1996/01/12 15:53:00  asi
+ * Revision 1.39  1996/01/15 11:06:07  asi
+ * added ID_DEF
+ *
+ * Revision 1.38  1996/01/12  15:53:00  asi
  * added LET_VARDEC
  *
  * Revision 1.37  1996/01/12  14:56:36  cg
@@ -1359,6 +1362,7 @@ extern node *MakeVinfo (useflag flag, shapes *shp, node *next);
  ***    node*  OBJDEF    (N_objdef)  (typecheck -> )
  ***                                 ( -> analysis -> )
  ***    int    REFCNT                (refcount -> compile -> )
+ ***    node*  DEF                   (Unroll !, Unswitch !)
  ***/
 
 /*
@@ -1378,6 +1382,7 @@ extern node *MakeVinfo (useflag flag, shapes *shp, node *next);
 extern node *MakeId (char *name, char *mod, statustype status);
 
 #define ID_NAME(n) (n->info.ids->id)
+#define ID_DEF(n) (n->info.ids->def)
 #define ID_VARDEC(n) (n->info.ids->node)
 #define ID_REFCNT(n) (n->refcnt)
 #define ID_MOD(n) (n->info.ids->mod)
