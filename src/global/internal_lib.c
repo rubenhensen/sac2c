@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2004/04/08 08:17:45  khf
+ * TmpVar(): wlfs_tab added
+ *
  * Revision 3.42  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -1148,6 +1151,8 @@ PrefixForTmpVar (void)
         s = "sp";
     } else if (act_tab == wlpg_tab) {
         s = "wlpg";
+    } else if (act_tab == wlfs_tab) {
+        s = "wlfs";
     } else {
         s = "unknown";
         DBUG_ASSERT ((0), "PrefixForTmpVar(): unknown trav-tab found!");
