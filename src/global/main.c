@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.125  1998/05/12 07:21:02  cg
+ * Bug fixed: temporary directories are now removed even if the
+ * compiler is called with a break-option.
+ *
  * Revision 1.124  1998/05/11 16:10:54  dkr
  * with flag -c Print() is now called only once
  *
@@ -1342,6 +1346,18 @@ BREAK:
     } else {
         RSCShowResources ();
     }
+
+    /*
+     *  Finally, we do some clean up.....
+     */
+
+    CleanUp ();
+
+    FreeTree (syntax_tree);
+
+    /*
+     * ....and display a success message.
+     */
 
     NEWLINE (2);
     NOTE2 (("*** Compilation successful ***"));
