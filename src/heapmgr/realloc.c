@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2003/04/14 14:45:37  sbs
+ * cast from SAC_HM_size_unit_t to size_t added in comparison.
+ *
  * Revision 3.1  2000/11/20 18:02:56  sacbase
  * new release made
  *
@@ -87,7 +90,7 @@ realloc (void *ptr, size_t size)
 
     if (arena->num < SAC_HM_NUM_SMALLCHUNK_ARENAS) {
         old_size_units = arena->min_chunk_size;
-        if (size <= old_size_units) {
+        if (size <= (size_t)old_size_units) {
             /*
              * The given memory location is in a small chunk arena and the requested
              * new memory size is less than the old one.
