@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2001/12/13 11:12:06  dkr
+ * some functions removed
+ *
  * Revision 1.1  2001/12/10 15:34:16  dkr
  * Initial revision
  *
@@ -8,12 +11,6 @@
 
 #ifndef _sac_compile_tagged_h
 #define _sac_compile_tagged_h
-
-#if 0
-extern node *MakeAdjustRcIcm( char *name, types* type, int rc, int num);
-extern node *MakeIncRcIcm( char *name, types *type, int rc, int num);
-extern node *MakeDecRcIcm( char *name, types* type, int rc, int num);
-#endif
 
 extern node *Compile_Tagged (node *arg_node);
 

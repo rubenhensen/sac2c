@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/12/13 11:12:15  dkr
+ * some functions removed
+ *
  * Revision 3.9  2001/12/10 14:51:46  dkr
  * some functions renamed
  *
@@ -63,10 +66,6 @@
 
 #ifndef _sac_compile_h
 #define _sac_compile_h
-
-extern node *MakeAdjustRcIcm (char *name, types *type, int rc, int num);
-extern node *MakeIncRcIcm (char *name, types *type, int rc, int num);
-extern node *MakeDecRcIcm (char *name, types *type, int rc, int num);
 
 extern node *Compile (node *arg_node);
 
