@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.34  2000/07/21 08:22:54  nmw
+ * F_modspec filetype added
+ * ,
+ *
  * Revision 2.33  2000/07/11 15:38:51  jhs
  * changed DFMfoldmask.name => DFMfoldmask.vardec
  *
@@ -212,7 +216,8 @@ typedef enum {
     F_extmoddec,
     F_classdec,
     F_extclassdec,
-    F_sib
+    F_sib,
+    F_modspec
 } file_type;
 
 typedef enum { CT_normal, CT_ap, CT_array, CT_return, CT_wl } contextflag;
