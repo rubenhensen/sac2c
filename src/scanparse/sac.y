@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/24 11:59:19  sbs
+ * yyparse and yylex prototypes given for avoiding
+ * warnings in bison.simple....
+ *
  * Revision 3.1  2000/11/20 17:59:50  sacbase
  * new release made
  *
@@ -388,17 +392,21 @@ extern int charpos;
 extern char *linebuf_ptr;
 extern char *yytext;
 
+extern int yylex();
+
+
 node *syntax_tree;
 node *decl_tree;
 node *sib_tree;
 node *spec_tree;
-
 
 static char *mod_name = MAIN_MOD_NAME;
 static char *link_mod_name = NULL;
 static node *store_pragma = NULL;
 static node *store_wlcomp_pragma_global = NULL;
 
+static int yyerror(char *errname);
+int yyparse();
 
 /*
  * used to distinguish the different kinds of files
@@ -2832,7 +2840,7 @@ int My_yyparse()
 }
 
 
-int yyerror(char *errname)
+static int yyerror(char *errname)
 {
   int offset=0;
   int size_of_output;
