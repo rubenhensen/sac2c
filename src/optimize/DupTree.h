@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.34  1998/08/07 14:37:06  dkr
+ * DupWLsegVar added
+ *
  * Revision 1.33  1998/05/12 15:00:52  srs
  * added constant DUP_WLF
  *
@@ -177,6 +180,7 @@ extern node *DupWLblock (node *arg_node, node *arg_info);
 extern node *DupWLublock (node *arg_node, node *arg_info);
 extern node *DupWLstride (node *arg_node, node *arg_info);
 extern node *DupWLgrid (node *arg_node, node *arg_info);
+extern node *DupWLsegVar (node *arg_node, node *arg_info);
 extern node *DupWLstriVar (node *arg_node, node *arg_info);
 extern node *DupWLgridVar (node *arg_node, node *arg_info);
 

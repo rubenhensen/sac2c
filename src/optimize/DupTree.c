@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.104  1998/08/07 14:36:57  dkr
+ * DupWLsegVar added
+ *
  * Revision 1.103  1998/07/20 19:06:50  dkr
  * In DupOneIds:
  *   ASSERT is replaced by a warning
@@ -1358,6 +1361,7 @@ DupWLseg (node *arg_node, node *arg_info)
     if (WLSEG_SCHEDULING (arg_node) != NULL) {
         WLSEG_SCHEDULING (new_node) = SCHCopyScheduling (WLSEG_SCHEDULING (arg_node));
     }
+    WLSEG_MAXHOMDIM (new_node) = WLSEG_MAXHOMDIM (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1451,6 +1455,29 @@ DupWLgrid (node *arg_node, node *arg_info)
      * duplicated grids are not modified yet ;)
      */
     WLGRID_MODIFIED (new_node) = 0;
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupWLsegVar (node *arg_node, node *arg_info)
+{
+    node *new_node;
+    int i, d;
+
+    DBUG_ENTER ("DupWLsegVar");
+
+    new_node
+      = MakeWLsegVar (WLSEGVAR_DIMS (arg_node), DUPTRAV (WLSEGVAR_CONTENTS (arg_node)),
+                      DUPCONT (WLSEGVAR_NEXT (arg_node)));
+
+    if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
+        WLSEGVAR_SCHEDULING (new_node)
+          = SCHCopyScheduling (WLSEGVAR_SCHEDULING (arg_node));
+    }
+    WLSEGVAR_MAXHOMDIM (new_node) = WLSEGVAR_MAXHOMDIM (arg_node);
 
     DBUG_RETURN (new_node);
 }
