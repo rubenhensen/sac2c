@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.176  2004/08/05 15:34:42  skt
+ * added support for N_dataflownode and N_dataflowgraph
+ *
  * Revision 3.175  2004/08/05 12:06:01  skt
- * MUTHassign added, TEMassign removed
+ * MUTHassign added, TEMfundef removed
  *
  * Revision 3.174  2004/08/05 11:09:24  sah
  * the N_Nxxx nodes are now called N_nxxx, until the leading
@@ -3002,6 +3005,64 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, EMALfuncond, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
+
+  NIF (N_dataflownode, "N_dataflownode", TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError,
+
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError,
+
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError,
+
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError,
+
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError,
+
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError,
+
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, 0),
+
+  NIF (N_dataflowgraph, "N_dataflowgraph", TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError,
+
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError,
+
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError,
+
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError,
+
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError,
+
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError,
+
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, TravError,
+       TravError, TravError, TravError, TravError, TravError, TravError, 0),
 
   /* ATTENTION !!!! N_ok has to be the last node declared here;
    *                otherwise a DBUG_ASSERT in traverse.c: Trav will

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.208  2004/08/05 15:34:42  skt
+ * added support for N_dataflownode and N_dataflowgraph
+ *
  * Revision 3.207  2004/08/05 11:37:55  ktr
  * New flag NWITHID_VECNEEDED indicates in EMM whether the index vector
  * must be maintained throughout the with-loop
@@ -1280,7 +1283,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    node*           COMPANION   (N_fundef)    (rfin, mtfin -> )
  ***
  *** temporary attribute for mtmode 3 (multithread) only
- ***    int             EXECMODE    (propagate_assignments !!)
+ ***    int             EXECMODE    (BuildMultithread -> CreateCells)
  ***/
 
 /*
@@ -1616,7 +1619,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***    node*  CF                         (CF !!)
  ***    void*  INDEX    (O)               (wli -> wlf -> )
  ***    int    LEVEL                      (wli !!)
- ***    int    EXECMODE                   (mtmode3 ->)
+ ***    int    EXECMODE                   (BuildMultithread -> CreateCells)
  ***
  ***  remarks:
  ***
@@ -4535,6 +4538,56 @@ extern node *MakeModspec (char *name, node *exports);
 #define MODSPEC_NAME(n) (n->info.fun_name.id)
 #define MODSPEC_OWN(n) (n->node[0])
 #define MODSPEC_IMPORTS(n) (n->node[1])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_dataflownode :
+ ***
+ ***  sons:
+ ***
+ ***  permanent attributes:
+ ***
+ ***    nodelist*  DEPENDENT    (all dataflownodes that depend on this node)
+ ***    int        REFCOUNT     (number of references of this node within
+ ***                             the corresponding dataflowgraph)
+ ***    node*      ASSIGN       (the corresponding assignment)
+ ***    int        EXECMODE     (the executionmode of the corresponding assign)
+ ***
+ ***  temporary attributes:
+ ***
+ ***    int        REFLEFT      #refcounts left, initialized with REFCOUNT
+ ***                            (CreateDataflowgraph -> AssignmentsRearrange!!)
+ ***/
+
+extern node *MakeDataflownode (node *assignment, int executionmode);
+
+#define DATAFLOWNODE_DEPENDENT(n) ((nodelist *)(n->dfmask[0]))
+#define DATAFLOWNODE_REFCOUNT(n) (n->refcnt)
+#define DATAFLOWNODE_ASSIGN(n) (n->node[0])
+#define DATAFLOWNODE_EXECMODE(n) (n->flag)
+#define DATAFLOWNODE_REFLEFT(n) (n->counter)
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_dataflowgraph :
+ ***
+ ***  sons:
+ ***
+ ***  permanent attributes:
+ ***
+ ***    nodelist*  MEMBERS      (all nodes of the dataflowgraph)
+ ***    node*      SOURCE       (the source of the dataflowgraph)
+ ***    node*      SINK         (the sink of the dataflowgraph)
+ ***                            (CreateDataflowgraph -> AssignmentsRearrange!!)
+ ***/
+
+extern node *MakeDataflowgraph ();
+
+#define DATAFLOWGRAPH_MEMBERS(n) ((nodelist *)(n->dfmask[0]))
+#define DATAFLOWGRAPH_SOURCE(n) (n->node[0])
+#define DATAFLOWGRAPH_SINK(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 

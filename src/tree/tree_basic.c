@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.91  2004/08/05 15:34:42  skt
+ * added support for N_dataflownode and N_dataflowgraph
+ *
  * Revision 3.90  2004/08/05 11:37:55  ktr
  * New flag NWITHID_VECNEEDED indicates in EMM whether the index vector
  * must be maintained throughout the with-loop
@@ -2251,6 +2254,42 @@ MakeModspec (char *name, node *exports)
 
     MODDEC_NAME (tmp) = name;
     MODDEC_OWN (tmp) = exports;
+
+    DBUG_PRINT ("MAKE",
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeDataflownode (node *assignment, int executionmode)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeDataflownode");
+
+    tmp = CreateCleanNode (N_dataflownode);
+
+    DATAFLOWNODE_ASSIGN (tmp) = assignment;
+    DATAFLOWNODE_EXECMODE (tmp) = executionmode;
+
+    DBUG_PRINT ("MAKE",
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+
+    DBUG_RETURN (tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeDataflowgraph ()
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeDataflowgraph");
+
+    tmp = CreateCleanNode (N_dataflowgraph);
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
