@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  1998/04/26 21:49:40  dkr
+ * COMPSPMD renamed to COMPSpmd
+ *
  * Revision 1.30  1998/04/24 17:14:40  dkr
  * renamed Comp...() to COMP...()
  *
@@ -112,7 +115,7 @@ extern node *COMPCast (node *arg_node, node *arg_info);
 extern node *COMPTypedef (node *arg_node, node *arg_info);
 extern node *COMPObjdef (node *arg_node, node *arg_info);
 extern node *COMPWith (node *arg_node, node *arg_info);
-extern node *COMPSPMD (node *arg_node, node *arg_info);
+extern node *COMPSpmd (node *arg_node, node *arg_info);
 extern node *COMPSync (node *arg_node, node *arg_info);
 extern node *COMPNcode (node *arg_node, node *arg_info);
 extern node *COMPNwith2 (node *arg_node, node *arg_info);
