@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/05/24 00:42:26  dkr
+ * changed some assert-messages
+ *
  * Revision 1.10  1998/04/29 17:14:03  dkr
  * includes now wltransform.h instead of precompile.h
  *
@@ -86,10 +89,10 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2)
     if (strides != NULL) {
 
         DBUG_ASSERT (((aelems1 != NULL) && (aelems2 != NULL)),
-                     "ConstSegs(): arg has wrong dim");
+                     "error in wlcomp-pragma:\n ConstSegs(): arg has wrong dim");
         DBUG_ASSERT (((NODE_TYPE (EXPRS_EXPR (aelems1)) == N_num)
                       && (NODE_TYPE (EXPRS_EXPR (aelems2)) == N_num)),
-                     "ConstSegs(): array element not an int");
+                     "error in wlcomp-pragma:\n ConstSegs(): array element not an int");
 
         /* compute outline of intersection in current dim */
         bound1 = MAX (WLSTRIDE_BOUND1 (strides), NUM_VAL (EXPRS_EXPR (aelems1)));
@@ -209,13 +212,14 @@ Array2Bv (node *array, long *bv, int dims)
 
     array = ARRAY_AELEMS (array);
     for (d = 0; d < dims; d++) {
-        DBUG_ASSERT ((array != NULL), "Bv(): bv-arg has wrong dim");
+        DBUG_ASSERT ((array != NULL),
+                     "error in wlcomp-pragma:\n Bv(): bv-arg has wrong dim");
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (array)) == N_num),
-                     "Bv(): bv-arg not an int-array");
+                     "error in wlcomp-pragma:\n Bv(): bv-arg not an int-array");
         bv[d] = NUM_VAL (EXPRS_EXPR (array));
         array = EXPRS_NEXT (array);
     }
-    DBUG_ASSERT ((array == NULL), "Bv(): bv-arg has wrong dim");
+    DBUG_ASSERT ((array == NULL), "error in wlcomp-pragma:\n Bv(): bv-arg has wrong dim");
 
     DBUG_RETURN (bv);
 }
@@ -273,6 +277,9 @@ CalcSV (node *stride, long *sv)
  *   choose the hole array as the only segment;
  *   init blocking vectors ('NoBlocking')
  *
+ * caution:
+ *   in 'segs' are possibly N_WLstriVar- and N_WLgridVar-nodes!!
+ *
  ******************************************************************************/
 
 node *
@@ -280,14 +287,19 @@ All (node *segs, node *parms, node *cubes, int dims)
 {
     DBUG_ENTER ("All");
 
-    DBUG_ASSERT ((parms == NULL), "All(): too many parms found");
+    DBUG_ASSERT ((parms == NULL),
+                 "error in wlcomp-pragma:\n All(): too many parms found");
 
     if (segs != NULL) {
         segs = FreeTree (segs);
     }
 
     segs = MakeWLseg (dims, DupTree (cubes, NULL), NULL);
-    WLSEG_SV (segs) = CalcSV (WLSEG_CONTENTS (segs), WLSEG_SV (segs));
+    if (NODE_TYPE (WLSEG_CONTENTS (segs)) == N_WLstride) {
+        WLSEG_SV (segs) = CalcSV (WLSEG_CONTENTS (segs), WLSEG_SV (segs));
+    } else {
+        WLSEG_SV (segs) = NULL;
+    }
 
     segs = NoBlocking (segs, parms, cubes, dims);
 
@@ -312,7 +324,8 @@ Cubes (node *segs, node *parms, node *cubes, int dims)
 
     DBUG_ENTER ("Cubes");
 
-    DBUG_ASSERT ((parms == NULL), "Cubes(): too many parms found");
+    DBUG_ASSERT ((parms == NULL),
+                 "error in wlcomp-pragma:\n Cubes(): too many parms found");
 
     if (segs != NULL) {
         segs = FreeTree (segs);
@@ -366,10 +379,11 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims)
     }
 
     while (parms != NULL) {
-        DBUG_ASSERT ((EXPRS_NEXT (parms) != NULL), "ConstSegs(): upper bound not found");
+        DBUG_ASSERT ((EXPRS_NEXT (parms) != NULL),
+                     "error in wlcomp-pragma:\n ConstSegs(): upper bound not found");
         DBUG_ASSERT (((NODE_TYPE (EXPRS_EXPR (parms)) == N_array)
                       && (NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (parms))) == N_array)),
-                     "ConstSegs(): argument is not an array");
+                     "error in wlcomp-pragma:\n ConstSegs(): argument is not an array");
 
         new_cubes
           = IntersectStridesArray (cubes, ARRAY_AELEMS (EXPRS_EXPR (parms)),
@@ -413,7 +427,8 @@ NoBlocking (node *segs, node *parms, node *cubes, int dims)
 
     DBUG_ENTER ("NoBlocking");
 
-    DBUG_ASSERT ((parms == NULL), "NoBlocking(): too many parms found");
+    DBUG_ASSERT ((parms == NULL),
+                 "error in wlcomp-pragma:\n NoBlocking(): too many parms found");
 
     while (seg != NULL) {
 
@@ -465,9 +480,9 @@ Bv (node *segs, node *parms, node *cubes, int dims)
 
     DBUG_ENTER ("Bv");
 
-    DBUG_ASSERT ((parms != NULL), "Bv(): first parm not found");
+    DBUG_ASSERT ((parms != NULL), "error in wlcomp-pragma:\n Bv(): first parm not found");
     DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (parms)) == N_num),
-                 "Bv(): first argument not an int");
+                 "error in wlcomp-pragma:\n Bv(): first argument not an int");
 
     level = NUM_VAL (EXPRS_EXPR (parms));
     parms = EXPRS_NEXT (parms);
@@ -476,7 +491,7 @@ Bv (node *segs, node *parms, node *cubes, int dims)
 
         while ((seg != NULL) && (EXPRS_NEXT (parms) != NULL)) {
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (parms)) == N_array),
-                         "Bv(): bv-arg not an array");
+                         "error in wlcomp-pragma:\n Bv(): bv-arg not an array");
 
             if (level < WLSEG_BLOCKS (seg)) {
                 WLSEG_BV (seg, level)
