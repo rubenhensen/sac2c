@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.166  1998/05/14 12:50:12  sbs
+ * N_info  accesses added for flatten:  INFO_FLTN_xxx
+ *
  * Revision 1.165  1998/05/13 14:39:48  srs
  * added NPART_COPY
  *
@@ -2237,6 +2240,11 @@ extern node *MakePragma ();
  ***  outside the syntax tree. So, its concrete look depends on the
  ***  specific task.
  ***
+ ***  when used in flatten.c:
+ ***
+ ***    contextflag CONTEXT       (O)
+ ***    node *      LASTASSIGN    (O)  (N_assign)
+ ***
  ***  when used in typecheck.c :
  ***
  ***    node *     NEXTASSIGN    (O)  (N_assign)
@@ -2310,6 +2318,10 @@ extern node *MakeInfo ();
  *            to avoid overlapping addresses.
  */
 #define INFO_DUP_CONT(n) (n->node[1])
+
+/* flatten */
+#define INFO_FLTN_CONTEXT(n) (n->flag)
+#define INFO_FLTN_LASTASSIGN(n) (n->node[0])
 
 /* typecheck */
 #define INFO_TC_NEXTASSIGN(n) (n->node[1])
