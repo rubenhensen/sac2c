@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/04/09 16:38:30  dkr
+ * break specifier for -b18 added
+ *
  * Revision 3.18  2002/03/13 16:03:20  ktr
  * Help information for Withloop-Scalarization added
  *
@@ -273,7 +276,7 @@ usage ()
     PRINT_BREAK_SPEC (PH_wltrans, "fill2", "stop after gap filling (all nodes)");
 
     printf ("\n");
-    printf ("\twith -mt\n");
+    printf ("\t with -mt\n");
 
     PRINT_BREAK_SPEC (PH_multithread, "spmdinit", "stop after building SPMD blocks");
     PRINT_BREAK_SPEC (PH_multithread, "spmdopt", "stop after optimizing SPMD blocks");
@@ -288,7 +291,7 @@ usage ()
 
     printf ("\t                     (same as [-mt] -b16 only)\n");
     printf ("\n");
-    printf ("\twith -mtn (UNDER CONSTRUCTION!!!)\n");
+    printf ("\t with -mtn (UNDER CONSTRUCTION!!!)\n");
 
     PRINT_BREAK_SPEC (PH_multithread, "init", "stop after internal initialization");
     PRINT_BREAK_SPEC (PH_multithread, "schin", "stop after schedulings initialized");
@@ -303,6 +306,12 @@ usage ()
     PRINT_BREAK_SPEC (PH_multithread, "barin", "stop after barriers initialized");
     PRINT_BREAK_SPEC (PH_multithread, "blkli", "stop after blocks lifted");
     PRINT_BREAK_SPEC (PH_multithread, "adjca", "stop after adjusted calls");
+
+    printf ("\n");
+
+    PRINT_BREAK_SPEC (PH_precompile, "prec1", "stop after first traversal");
+    PRINT_BREAK_SPEC (PH_precompile, "prec2", "stop after second traversal");
+    PRINT_BREAK_SPEC (PH_precompile, "prec3", "stop after third traversal");
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
             "\t -ssa\t\tuse optimizations based on ssa-form.\n"
