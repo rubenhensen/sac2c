@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/03/22 14:30:47  nmw
+ * SSAConstantFolding added
+ *
  * Revision 3.9  2001/03/15 17:01:39  dkr
  * OPTfundef: FREE(tmp_str) added
  *
@@ -220,7 +223,7 @@
 #include "lac2fun.h"
 #include "SSADeadCodeRemoval.h"
 #include "SSACSE.h"
-#include "cleanup_decls.h"
+#include "SSAConstantFolding.h"
 
 /*
  * global variables to keep track of optimization's success
@@ -798,7 +801,13 @@ OPTfundef (node *arg_node, node *arg_info)
             }
 
             if (optimize & OPT_CF) {
-                arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
+                if (use_ssaform) {
+                    arg_node = CheckAvis (arg_node);
+                    arg_node = SSATransform (arg_node);
+                    arg_node = SSAConstantFolding (arg_node); /* ssacf_tab */
+                } else {
+                    arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
+                }
                 /* srs: CF does not handle the USE mask correctly. For example
                    a = f(3);
                    b = a;
@@ -850,7 +859,13 @@ OPTfundef (node *arg_node, node *arg_info)
                  * has been inserted by WLF.
                  */
                 if (optimize & OPT_CF) {
-                    arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
+                    if (use_ssaform) {
+                        arg_node = CheckAvis (arg_node);
+                        arg_node = SSATransform (arg_node);
+                        arg_node = SSAConstantFolding (arg_node); /* ssacf_tab */
+                    } else {
+                        arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
+                    }
                     arg_node = GenerateMasks (arg_node, NULL);
                 }
             }
@@ -942,7 +957,13 @@ OPTfundef (node *arg_node, node *arg_info)
                          loop2));
 
             if (optimize & OPT_CF) {
-                arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
+                if (use_ssaform) {
+                    arg_node = CheckAvis (arg_node);
+                    arg_node = SSATransform (arg_node);
+                    arg_node = SSAConstantFolding (arg_node); /* ssacf_tab */
+                } else {
+                    arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
+                }
                 /* srs: CF does not handle the USE mask correctly. */
                 /* quick fix: always rebuild masks after CF */
                 arg_node = GenerateMasks (arg_node, NULL);
