@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2003/03/25 15:50:24  sbs
+ * dox...
+ *
  * Revision 3.38  2003/03/25 15:33:45  sbs
  * doxygen again
  *
@@ -175,7 +178,7 @@
  *
  * @file index.c
  *
- * @brief This file contains the implementation of IVE (index vector elimination).
+ *  This file contains the implementation of IVE (index vector elimination).
  *
  *
  * <pre>
@@ -622,29 +625,17 @@ int ive_expr, ive_op;
  *
  * @name Some functions for handling N_vinfo nodes
  *
- * <pre>
- *
- * node * FindVect( node *N_vinfo_chain)	: checks whether VECT is in
- *                                                  the chain of N_vinfo nodes
- * node * FindIdx( node *chain, types *shape)	: dito for a specific shape
- *
- * node * SetVect( node *chain)	                : inserts VECT-node in chain if
- *                                                  not already present
- * node * SetIdx( node *chain, types *shape)    : inserts IDX-node if not
- *                                                  already present
- * </pre>
  */
 /*@{*/
 
 /*!****************************************************************************
  *
- * @fn: node *FindVect( node *chain)
+ * @fn node *FindVect( node *chain)
  *
- * description:
- *   @param chain  chain of vinfo-nodes to be searched
- *   @return the address of the VECT-node or the address of a vinfo-node with
- *           DOLLAR-flag (= no VECT in chain)
- *   @brief checks whether VECT is in the chain.
+ * @param chain  chain of vinfo-nodes to be searched
+ * @return the address of the VECT-node or the address of a vinfo-node with
+ *         DOLLAR-flag (= no VECT in chain)
+ * @brief checks whether VECT is in the chain.
  *
  ******************************************************************************/
 
@@ -660,7 +651,7 @@ FindVect (node *chain)
     DBUG_RETURN (chain);
 }
 
-/** ****************************************************************************
+/*!*****************************************************************************
  *
  * @fn  bool EqTypes( types *type1, types *type2)
  *
@@ -704,7 +695,7 @@ EqTypes (types *type1, types *type2)
     DBUG_RETURN (res);
 }
 
-/** ****************************************************************************
+/*!*****************************************************************************
  *
  * function:
  *   @fn  node *FindIdx( node *chain, types *vshape)
@@ -730,18 +721,17 @@ FindIdx (node *chain, types *vshape)
     DBUG_RETURN (chain);
 }
 
-/*
+/*!*****************************************************************************
  *
- *  functionname  : SetVect
- *  arguments     : 1) node * chain
- *  description   : inserts a Vect node in the given node-chain
- *                  if there exists none
- *  global vars   : ---
- *  internal funs : FindVect, GenVect, InsertInChain
- *  external funs : ---
- *  macros        : DBUG...
+ * function:
+ *   @fn  node *SetVect( node *chain)
  *
- */
+ * description:
+ *   @param  chain
+ *   @return potentially extended chain
+ *   @brief  inserts a VECT node in the given node-chain if there exists none yet.
+ *
+ ******************************************************************************/
 
 node *
 SetVect (node *chain)
