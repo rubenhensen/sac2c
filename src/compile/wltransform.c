@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.89  2004/07/04 03:46:11  dkrHH
+ * NOTE-output about naive compilation added
+ *
  * Revision 3.88  2004/07/04 02:44:42  dkrHH
  * use/definition of GET_SHAPE_IDX modified (iter_shp may be NULL!)
  * function GetWlIterShape streamlined
@@ -7860,6 +7863,11 @@ WLTRAwith (node *arg_node, node *arg_info)
                 if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "cubes"))) {
                     goto DONE;
                 }
+
+                DBUG_EXECUTE ("WLtrans",
+                              if (do_naive_comp) {
+                                  NOTE (("  naive compilation active"));
+                              } else { NOTE (("  naive compilation inactive")); });
 
                 /*
                  * normalize grids and fill gaps
