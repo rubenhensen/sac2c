@@ -4,6 +4,12 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2001/06/21 15:51:33  dkr
+ * problem with sign operators partially fixed. Open problems:
+ *   - (: ... ) ...     still causes a syntax error,
+ *   - ( ... ) [ ... ]  is parsed wrongly as  (- ( ... )) [ ... ]
+ * (+ analogous)
+ *
  * Revision 3.25  2001/06/20 13:27:30  sbs
  * changed priority of SIGN (unary minus) now less than sel!
  *
@@ -182,8 +188,8 @@ static node *CheckWlcompConf( node *ap, node *exprs);
        INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF, CLASSTYPE,
        INC, DEC, ADDON, SUBON, MULON, DIVON, MODON
        K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, NWITH, FOLD,
-       MODDEC, MODSPEC, MODIMP, CLASSDEC, IMPORT, IMPLICIT, EXPLICIT, TYPES, FUNS,
-       OWN, CONSTANTS, GLOBAL, OBJECTS, CLASSIMP,
+       MODDEC, MODSPEC, MODIMP, CLASSDEC, IMPORT, IMPLICIT, EXPLICIT, TYPES,
+       FUNS, OWN, CONSTANTS, GLOBAL, OBJECTS, CLASSIMP,
        ARRAY, SC, TRUETOKEN, FALSETOKEN, EXTERN, C_KEYWORD,
        PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
        TOUCH, COPYFUN, FREEFUN, INITFUN, LINKWITH,
@@ -202,7 +208,7 @@ static node *CheckWlcompConf( node *ap, node *exprs);
 %token <cdbl> DOUBLE
 %token <cchar> CHAR
 
-%type <prf> foldop, Ngenop, monop, binop, triop
+%type <prf> foldop, genop, monop, binop, triop
 %type <nodetype> modclass
 %type <cint> evextern, sibheader, sibevmarker, dots
 %type <ids> ids, funids, modnames, modname, inherits
@@ -221,9 +227,11 @@ static node *CheckWlcompConf( node *ap, node *exprs);
              objdefs, objdef, exprblock, exprblock2,
              assign, assigns, assignblock, letassign, 
              selassign, forassign, assignsOPTret, wlassignblock, optelse,
-             exprsNOar, exprORdot, exprNOar, 
-             expr, expr_main, expr_ap, expr_ar, expr_num, exprs,
-             Ngenerator, Nsteps, Nwidth, Nwithop, Ngenidx,
+             expr, expr_main,
+             expr_br, expr_sel, expr_expr, expr_sign, expr_ap, expr_ar,
+             exprORdot, exprNOar, exprNObr, expr_selNObr,
+             exprs, exprsNOar,
+             generator, steps, width, withop, genidx,
              moddec, modspec, expdesc, expdesc2, expdesc3, expdesc4,
              fundecs, fundec,
              exptypes, exptype, objdecs, objdec, evimport, modheader,
@@ -478,7 +486,7 @@ impdesc: ALL SEMIC
            }
        | BRACE_L IMPLICIT TYPES COLON ids SEMIC impdesc2
            { $$ = $7;
-             $$->node[1] = (node *) $5;  /* dirty trick for keeping ids !*/
+             $$->node[1] = (node *) $5;  /* dirty trick for keeping ids! */
            }
        | BRACE_L IMPLICIT TYPES COLON SEMIC impdesc2
            { $$ = $6;
@@ -488,7 +496,7 @@ impdesc: ALL SEMIC
 
 impdesc2: EXPLICIT TYPES COLON ids SEMIC impdesc3
             { $$ = $6;
-              $$->node[2] = (node *) $4;  /* dirty trick for keeping ids !*/
+              $$->node[2] = (node *) $4;  /* dirty trick for keeping ids! */
             }
         | EXPLICIT TYPES COLON SEMIC impdesc3
             { $$ = $5;
@@ -498,7 +506,7 @@ impdesc2: EXPLICIT TYPES COLON ids SEMIC impdesc3
 
 impdesc3: GLOBAL OBJECTS COLON ids SEMIC impdesc4
             { $$ = $6;
-              $$->node[4] = (node *) $4;  /* dirty trick for keeping ids !*/
+              $$->node[4] = (node *) $4;  /* dirty trick for keeping ids! */
             }
         | GLOBAL OBJECTS COLON SEMIC impdesc4
             { $$ = $5;
@@ -1220,37 +1228,37 @@ fun_name : id
              { $$ = $1; }
          ;
 
-prf_name : AND        { $$ = StringCopy(prf_name_str[F_and]); }
-         | OR         { $$ = StringCopy(prf_name_str[F_or]); }
-         | EQ         { $$ = StringCopy(prf_name_str[F_eq]); }
-         | NEQ        { $$ = StringCopy(prf_name_str[F_neq]); }
-         | NOT        { $$ = StringCopy(prf_name_str[F_not]); }
-         | LE         { $$ = StringCopy(prf_name_str[F_le]); }
-         | LT         { $$ = StringCopy(prf_name_str[F_lt]); }
-         | GE         { $$ = StringCopy(prf_name_str[F_ge]); }
-         | GT         { $$ = StringCopy(prf_name_str[F_gt]); }
-         | ABS        { $$ = StringCopy(prf_name_str[F_abs]); }
-         | PLUS       { $$ = StringCopy(prf_name_str[F_add]); }
-         | MINUS      { $$ = StringCopy(prf_name_str[F_sub]); }
-         | DIV        { $$ = StringCopy(prf_name_str[F_div]); }
-         | MUL        { $$ = StringCopy(prf_name_str[F_mul]); }
-         | PRF_MOD    { $$ = StringCopy(prf_name_str[F_mod]); }
-         | RESHAPE    { $$ = StringCopy(prf_name_str[F_reshape]); }
-         | SHAPE      { $$ = StringCopy(prf_name_str[F_shape]); }
-         | TAKE       { $$ = StringCopy(prf_name_str[F_take]); }
-         | DROP       { $$ = StringCopy(prf_name_str[F_drop]); }
-         | DIM        { $$ = StringCopy(prf_name_str[F_dim]); }
-         | ROTATE     { $$ = StringCopy(prf_name_str[F_rotate]); }
-         | CAT        { $$ = StringCopy(prf_name_str[F_cat]); }
-         | PSI        { $$ = StringCopy(prf_name_str[F_psi]); }
-         | GENARRAY   { $$ = StringCopy(prf_name_str[F_genarray]); }
-         | MODARRAY   { $$ = StringCopy(prf_name_str[F_modarray]); }
-         | TOI        { $$ = StringCopy(prf_name_str[F_toi]); }
-         | TOF        { $$ = StringCopy(prf_name_str[F_tof]); }
-         | TOD        { $$ = StringCopy(prf_name_str[F_tod]); }
-         | PRF_MIN    { $$ = StringCopy(prf_name_str[F_min]); }
-         | PRF_MAX    { $$ = StringCopy(prf_name_str[F_max]); }
-         | ALL        { $$ = StringCopy("all");
+prf_name : AND        { $$ = StringCopy( prf_name_str[F_and]); }
+         | OR         { $$ = StringCopy( prf_name_str[F_or]); }
+         | EQ         { $$ = StringCopy( prf_name_str[F_eq]); }
+         | NEQ        { $$ = StringCopy( prf_name_str[F_neq]); }
+         | NOT        { $$ = StringCopy( prf_name_str[F_not]); }
+         | LE         { $$ = StringCopy( prf_name_str[F_le]); }
+         | LT         { $$ = StringCopy( prf_name_str[F_lt]); }
+         | GE         { $$ = StringCopy( prf_name_str[F_ge]); }
+         | GT         { $$ = StringCopy( prf_name_str[F_gt]); }
+         | ABS        { $$ = StringCopy( prf_name_str[F_abs]); }
+         | PLUS       { $$ = StringCopy( prf_name_str[F_add]); }
+         | MINUS      { $$ = StringCopy( prf_name_str[F_sub]); }
+         | DIV        { $$ = StringCopy( prf_name_str[F_div]); }
+         | MUL        { $$ = StringCopy( prf_name_str[F_mul]); }
+         | PRF_MOD    { $$ = StringCopy( prf_name_str[F_mod]); }
+         | RESHAPE    { $$ = StringCopy( prf_name_str[F_reshape]); }
+         | SHAPE      { $$ = StringCopy( prf_name_str[F_shape]); }
+         | TAKE       { $$ = StringCopy( prf_name_str[F_take]); }
+         | DROP       { $$ = StringCopy( prf_name_str[F_drop]); }
+         | DIM        { $$ = StringCopy( prf_name_str[F_dim]); }
+         | ROTATE     { $$ = StringCopy( prf_name_str[F_rotate]); }
+         | CAT        { $$ = StringCopy( prf_name_str[F_cat]); }
+         | PSI        { $$ = StringCopy( prf_name_str[F_psi]); }
+         | GENARRAY   { $$ = StringCopy( prf_name_str[F_genarray]); }
+         | MODARRAY   { $$ = StringCopy( prf_name_str[F_modarray]); }
+         | TOI        { $$ = StringCopy( prf_name_str[F_toi]); }
+         | TOF        { $$ = StringCopy( prf_name_str[F_tof]); }
+         | TOD        { $$ = StringCopy( prf_name_str[F_tod]); }
+         | PRF_MIN    { $$ = StringCopy( prf_name_str[F_min]); }
+         | PRF_MAX    { $$ = StringCopy( prf_name_str[F_max]); }
+         | ALL        { $$ = StringCopy( "all");
            /* necessary because function 'all()' from array library conflicts 
               with key word. */}
         ;
@@ -1262,7 +1270,7 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R exprblock
                            MakeTypes1( T_int),
                            NULL, $5, NULL);
 
-          FUNDEF_NAME( $$) = StringCopy("main");
+          FUNDEF_NAME( $$) = StringCopy( "main");
           FUNDEF_STATUS( $$) = ST_exported;
 
           DBUG_PRINT("GENTREE",("%s:"F_PTR", main "F_PTR
@@ -1433,7 +1441,7 @@ pragmacachesim: PRAGMA CACHESIM string
                 }
               | PRAGMA CACHESIM 
                 {
-                  $$ = StringCopy("");
+                  $$ = StringCopy( "");
                 }
               |
                 {
@@ -1471,9 +1479,10 @@ assignsOPTret: /*
                     *      \
                     *     NULL
                     */
-                   DBUG_ASSERT( (NODE_TYPE( ASSIGN_INSTR( ASSIGN_NEXT( $1))) == N_while)
-                                 && (ASSIGN_NEXT( ASSIGN_NEXT( $1)) == NULL),
-                                "corrupted node returned for \"assign\"!");
+                   DBUG_ASSERT(
+                     (NODE_TYPE( ASSIGN_INSTR( ASSIGN_NEXT( $1))) == N_while)
+                       && (ASSIGN_NEXT( ASSIGN_NEXT( $1)) == NULL),
+                     "corrupted node returned for \"assign\"!");
                    $$ = $1;
                    ASSIGN_NEXT( ASSIGN_NEXT( $$)) = $2;
                  }
@@ -1499,9 +1508,10 @@ assigns: /* empty */
               *      \
               *     NULL
               */
-             DBUG_ASSERT( (NODE_TYPE( ASSIGN_INSTR( ASSIGN_NEXT( $1))) == N_while)
-                           && (ASSIGN_NEXT( ASSIGN_NEXT( $1)) == NULL),
-                          "corrupted node returned for \"assign\"!");
+             DBUG_ASSERT(
+               (NODE_TYPE( ASSIGN_INSTR( ASSIGN_NEXT( $1))) == N_while)
+                 && (ASSIGN_NEXT( ASSIGN_NEXT( $1)) == NULL),
+               "corrupted node returned for \"assign\"!");
              $$ = $1;
              ASSIGN_NEXT( ASSIGN_NEXT( $$)) = $2;
            }
@@ -1542,14 +1552,10 @@ letassign: ids LET { $<cint>$ = linenum; } expr
          | expr_ap
              { $$ = MakeLet( $1, NULL);
              }
-
-/* left for later BRUSHING BEGIN */
          | id INC { $$ = MAKE_INCDEC_LET( $1, F_add); }
          | INC id { $$ = MAKE_INCDEC_LET( $2, F_add); }
          | id DEC { $$ = MAKE_INCDEC_LET( $1, F_sub); }
          | DEC id { $$ = MAKE_INCDEC_LET( $2, F_sub); }
-/* left for later BRUSHING END */
-
          | id ADDON expr { $$ = MAKE_OPON_LET( $1, $3, F_add); }
          | id SUBON expr { $$ = MAKE_OPON_LET( $1, $3, F_sub); }
          | id MULON expr { $$ = MAKE_OPON_LET( $1, $3, F_mul); }
@@ -1604,23 +1610,159 @@ exprsNOar: exprNOar COMMA exprsNOar { $$ = MakeExprs( $1, $3);   }
          | exprNOar                 { $$ = MakeExprs( $1, NULL); }
          ;
 
+
 exprORdot: expr  %prec GENERATOR { $$ = $1;   }
          | DOT                   { $$ = NULL; }
          ;
 
+
 exprNOar: expr_main { $$ = $1; }
+        | expr_br   { $$ = $1; }
+        | expr_sel  { $$ = $1; }
+        | expr_expr { $$ = $1; }
+        | expr_sign { $$ = $1; }
         | expr_ap   { $$ = $1; }
-        | expr_num  { $$ = $1; }
         ;
+
+/* 'expr_expr' without brackets is superfluous here! */
+exprNObr: expr_main     { $$ = $1; }
+        | expr_selNObr  { $$ = $1; }
+        | expr_sign     { $$ = $1; }
+        | expr_ap       { $$ = $1; }
+        | expr_ar       { $$ = $1; }
+        ;
+
+/* see 'expr_sel' */
+expr_selNObr: exprNObr SQBR_L expr SQBR_R
+              { $$ = MAKE_BIN_PRF( F_psi, $3, $1);
+                NODE_LINE( $$) = NODE_LINE( $1);
+              }
+            | exprNObr SQBR_L expr COMMA exprs SQBR_R
+              { $$ = MAKE_BIN_PRF( F_psi,
+                                   MakeArray( MakeExprs( $3, $5)),
+                                   $1);
+                NODE_LINE( $$) = NODE_LINE( $1);
+              }
+            ;
 
 expr: expr_main { $$ = $1; }
-    | expr_ar   { $$ = $1; }
+    | expr_br   { $$ = $1; }
+    | expr_sel  { $$ = $1; }
+    | expr_expr { $$ = $1; }
+    | expr_sign { $$ = $1; }
     | expr_ap   { $$ = $1; }
-    | expr_num  { $$ = $1; }
+    | expr_ar   { $$ = $1; }
     ;
 
-expr_num: NUM { $$ = MakeNum( $1); }
+expr_main: id                          { $$ = MakeId( $1, NULL, ST_regular); }
+         | id COLON id                 { $$ = MakeId( $3, $1, ST_regular); }
+         | NUM                         { $$ = MakeNum( $1); }
+         | FLOAT                       { $$ = MakeFloat( $1); }
+         | DOUBLE                      { $$ = MakeDouble( $1); }
+         | CHAR                        { $$ = MakeChar( $1); }
+         | TRUETOKEN                   { $$ = MakeBool( 1); }
+         | FALSETOKEN                  { $$ = MakeBool( 0); }
+         | string                      { $$ = String2Array( $1); }
+         | NOT expr
+           { $$ = MakePrf( F_not, MakeExprs( $2, NULL));
+           }
+         | wlcomp_pragma_local
+           NWITH { $<cint>$ = linenum; } BRACKET_L generator BRACKET_R
+           wlassignblock withop
+           { /*
+              * the tricky part about this rule is that $8 (an N_Nwithop node)
+              * carries the goal-expression of the With-Loop, i.e., the "N-expr"
+              * node which belongs into the N_Ncode node!!!
+              * The reason for this is that an exclusion of the goal expression
+              * from the non-terminal withop would lead to a shift/reduce
+              * conflict in that rule!
+              */
+             $$ = MakeNWith( $5, MakeNCode( $7, NWITHOP_EXPR( $8)), $8);
+             NWITHOP_EXPR( $8) = NULL;
+             NCODE_USED( NWITH_CODE( $$))++;
+             NODE_LINE( $$)= $<cint>3;
+             NWITH_PRAGMA( $$) = $1;
+
+             /*
+              * Finally, we generate the link between the (only) partition
+              * and the (only) code!
+              */
+             NPART_CODE( NWITH_PART( $$)) = NWITH_CODE( $$);
+           }
+         ;
+
+expr_br: BRACKET_L expr BRACKET_R
+         { $$ = $2;
+         }
+       | BRACKET_L COLON type BRACKET_R expr  %prec CAST
+         { $$ = MakeCast( $5, $3);
+         }
+       ;
+
+/* see 'expr_selNObr' */
+expr_sel: expr SQBR_L expr SQBR_R
+          { $$ = MAKE_BIN_PRF( F_psi, $3, $1);
+            NODE_LINE( $$) = NODE_LINE( $1);
+          }
+        | expr SQBR_L expr COMMA exprs SQBR_R
+          { $$ = MAKE_BIN_PRF( F_psi,
+                               MakeArray( MakeExprs( $3, $5)),
+                               $1);
+            NODE_LINE( $$) = NODE_LINE( $1);
+          }
         ;
+
+expr_expr: expr AND expr     { $$ = MAKE_BIN_PRF( F_and, $1, $3); }
+         | expr OR expr      { $$ = MAKE_BIN_PRF( F_or,  $1, $3); }
+         | expr EQ expr      { $$ = MAKE_BIN_PRF( F_eq,  $1, $3); }
+         | expr NEQ expr     { $$ = MAKE_BIN_PRF( F_neq, $1, $3); }
+         | expr LE expr      { $$ = MAKE_BIN_PRF( F_le,  $1, $3); }
+         | expr LT expr      { $$ = MAKE_BIN_PRF( F_lt,  $1, $3); }
+         | expr GE expr      { $$ = MAKE_BIN_PRF( F_ge,  $1, $3); }
+         | expr GT expr      { $$ = MAKE_BIN_PRF( F_gt,  $1, $3); }
+         | expr PLUS expr    { $$ = MAKE_BIN_PRF( F_add, $1, $3); }
+         | expr MINUS expr   { $$ = MAKE_BIN_PRF( F_sub, $1, $3); }
+         | expr DIV expr     { $$ = MAKE_BIN_PRF( F_div, $1, $3); }
+         | expr MUL expr     { $$ = MAKE_BIN_PRF( F_mul, $1, $3); }
+         | expr PRF_MOD expr { $$ = MAKE_BIN_PRF( F_mod, $1, $3); }
+         ;
+
+/*
+ * Open problems (+ analogous):
+ *   - (: ... ) ...
+ * causes a syntax error,
+ *   - ( ... ) [ ... ]
+ * is parsed wrongly as  (- ( ... )) [ ... ]
+ */
+expr_sign: MINUS exprNObr  %prec SIGN
+           {
+             switch (NODE_TYPE( $2)) {
+               case N_num:
+                 $$ = $2;
+                 NUM_VAL( $$) = (0 - NUM_VAL( $$));
+                 break;
+               case N_float:
+                 $$ = $2;
+                 NUM_VAL( $$) = (0 - FLOAT_VAL( $$));
+                 break;
+               case N_double:
+                 $$ = $2;
+                 NUM_VAL( $$) = (0 - DOUBLE_VAL( $$));
+                 break;
+               default:
+                 /*
+                  * Substitute unary minus by (0 - x).
+                  *
+                  * dkr:
+                  * This might cause a type error if $2 has not the type 'int'
+                  * !!!
+                  */
+                 $$ = MAKE_BIN_PRF( F_sub, MakeNum( 0), $2);
+                 break;
+             }
+           }
+         | PLUS exprNObr  %prec SIGN  { $$ = $2; }
+         ;
 
 expr_ar: SQBR_L { $<cint>$ = linenum; } exprsNOar SQBR_R
          { $$ = MakeArray( $3);
@@ -1650,14 +1792,20 @@ expr_ap: id BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
            }
            NODE_LINE( $$) = $<cint>3;
          }
-       | id COLON monop BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
+       | id COLON monop BRACKET_L { $<cint>$ = linenum; } opt_arguments
+         BRACKET_R
          { 
            $$ = MakeAp( StringCopy( prf_name_str[ $3]), $1, $6);
            NODE_LINE( $$) = $<cint>5;
          }
        | binop BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
-         { 
-           if (CountExprs( $4) == 2) {
+         {
+           int cnt = CountExprs( $4);
+
+           if (cnt == 1) {
+             $$ = MakePrf( $1, MakeExprs( MakeNum( 0), $4));
+           }
+           else if (cnt == 2) {
              $$ = MakePrf( $1, $4);
            }
            else {
@@ -1665,7 +1813,8 @@ expr_ap: id BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
            }
            NODE_LINE( $$) = $<cint>3;
          }
-       | id COLON binop BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
+       | id COLON binop BRACKET_L { $<cint>$ = linenum; } opt_arguments
+         BRACKET_R
          { 
            $$ = MakeAp( StringCopy( prf_name_str[ $3]), $1, $6);
            NODE_LINE( $$) = $<cint>5;
@@ -1680,7 +1829,8 @@ expr_ap: id BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
            }
            NODE_LINE( $$) = $<cint>3;
          }
-       | id COLON triop BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
+       | id COLON triop BRACKET_L { $<cint>$ = linenum; } opt_arguments
+         BRACKET_R
          { 
            $$ = MakeAp( StringCopy( prf_name_str[ $3]), $1, $6);
            NODE_LINE( $$) = $<cint>5;
@@ -1701,147 +1851,70 @@ opt_arguments: exprs { $$ = $1; }
              |       { $$ = NULL; }
              ;
 
-expr_main: id  { $$ = MakeId( $1, NULL, ST_regular); }
-         | id COLON id { $$ = MakeId( $3, $1, ST_regular); }
-         | MINUS id  %prec SIGN
-           { /*
-              * substitute unary minus by multiplication
-              * with -1!
-              */
-             $$ = MAKE_BIN_PRF( F_mul, 
-                                  MakeNum( -1),
-                                    MakeId( $2, NULL, ST_regular));
-           }
-         | BRACKET_L COLON type BRACKET_R expr  %prec CAST
-           { $$ = MakeCast( $5, $3);
-           }
-         | NOT expr
-           { $$ = MakePrf( F_not, MakeExprs( $2, NULL));
-           }
-         | BRACKET_L expr BRACKET_R { $$ = $2; }
-         | expr SQBR_L expr SQBR_R
-           { $$ = MAKE_BIN_PRF( F_psi, $3, $1);
-             NODE_LINE( $$) = NODE_LINE( $1);
-           }
-         | expr SQBR_L expr COMMA exprs SQBR_R
-           { $$ = MakePrf( F_psi,
-                    MakeExprs( MakeArray( MakeExprs( $3, $5)), 
-                      MakeExprs( $1,
-                        NULL)));
-             NODE_LINE( $$) = NODE_LINE( $1);
-           }
-         | expr AND expr     { $$ = MAKE_BIN_PRF( F_and,$1,$3); }
-         | expr OR expr      { $$ = MAKE_BIN_PRF( F_or ,$1,$3); }
-         | expr EQ expr      { $$ = MAKE_BIN_PRF( F_eq ,$1,$3); }
-         | expr NEQ expr     { $$ = MAKE_BIN_PRF( F_neq,$1,$3); }
-         | expr LE expr      { $$ = MAKE_BIN_PRF( F_le ,$1,$3); }
-         | expr LT expr      { $$ = MAKE_BIN_PRF( F_lt ,$1,$3); }
-         | expr GE expr      { $$ = MAKE_BIN_PRF( F_ge ,$1,$3); }
-         | expr GT expr      { $$ = MAKE_BIN_PRF( F_gt ,$1,$3); }
-         | expr PLUS expr    { $$ = MAKE_BIN_PRF( F_add,$1,$3); }
-         | expr MINUS expr   { $$ = MAKE_BIN_PRF( F_sub,$1,$3); }
-         | expr DIV expr     { $$ = MAKE_BIN_PRF( F_div,$1,$3); }
-         | expr MUL expr     { $$ = MAKE_BIN_PRF( F_mul,$1,$3); }
-         | expr PRF_MOD expr { $$ = MAKE_BIN_PRF( F_mod,$1,$3); }
-         | MINUS NUM  %prec SIGN    { $$ = MakeNum( -$2);     }
-         | PLUS  NUM  %prec SIGN    { $$ = MakeNum( $2);      }
-         | CHAR                     { $$ = MakeChar( $1);     }
-         | FLOAT                    { $$ = MakeFloat( $1);    }
-         | MINUS FLOAT  %prec SIGN  { $$ = MakeFloat( -$2);   }
-         | PLUS  FLOAT  %prec SIGN  { $$ = MakeFloat( $2);    }
-         | DOUBLE                   { $$ = MakeDouble( $1);   }
-         | MINUS DOUBLE  %prec SIGN { $$ = MakeDouble( -$2);  }
-         | PLUS  DOUBLE  %prec SIGN { $$ = MakeDouble( $2);   }
-         | TRUETOKEN                { $$ = MakeBool( 1);      }
-         | FALSETOKEN               { $$ = MakeBool( 0);      }
-         | string                   { $$ = String2Array( $1); }
-         | wlcomp_pragma_local
-           NWITH { $<cint>$ = linenum; } BRACKET_L Ngenerator BRACKET_R
-           wlassignblock Nwithop
-           { /*
-              * the tricky part about this rule is that $8 (an N_Nwithop node)
-              * carries the goal-expression of the With-Loop, i.e., the "N-expr"
-              * node which belongs into the N_Ncode node!!!
-              * The reason for this is that an exclusion of the goal expression
-              * from the non-terminal Nwithop would lead to a shift/reduce
-              * conflict in that rule!
-              */
-             $$ = MakeNWith( $5, MakeNCode( $7, NWITHOP_EXPR( $8)), $8);
-             NWITHOP_EXPR( $8) = NULL;
-             NCODE_USED( NWITH_CODE( $$))++;
-             NODE_LINE( $$)= $<cint>3;
-             NWITH_PRAGMA( $$) = $1;
 
-             /*
-              * Finally, we generate the connection between the 
-              * (only) partition and the (only) code!
-              */
-             NPART_CODE( NWITH_PART( $$)) = NWITH_CODE( $$);
+generator: exprORdot genop genidx genop exprORdot steps width
+           { 
+             $$ = MakeNPart( $3,
+                             MakeNGenerator( $1, $5, $2,  $4, $6, $7),
+                             NULL);
            }
          ;
 
+steps: /* empty */ { $$ = NULL; }
+     | STEP expr   { $$ = $2; }
+     ;
 
-Ngenerator: exprORdot Ngenop Ngenidx Ngenop exprORdot Nsteps Nwidth
-            { 
-              $$ = MakeNPart( $3, MakeNGenerator( $1, $5, $2,  $4, $6, $7), NULL);
-            }
-          ;
+width: /* empty */ { $$ = NULL; }
+     | WIDTH expr  { $$ = $2; }
+     ;
 
-Nsteps: /* empty */ { $$ = NULL; }
-      | STEP expr   { $$ = $2; }
+genidx: id LET SQBR_L ids SQBR_R 
+        { 
+          $$ = MakeNWithid( MakeIds( $1, NULL, ST_regular), $4); 
+        }
+      | id { $$ = MakeNWithid( MakeIds( $1, NULL, ST_regular), NULL); }
+      | SQBR_L ids SQBR_R { $$ = MakeNWithid( NULL, $2); }
       ;
 
-Nwidth: /* empty */ { $$ = NULL; }
-      | WIDTH expr  { $$ = $2; }
+genop:   LT { $$ = F_lt; }
+       | LE { $$ = F_le; }
+       ;
+
+withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
+        { $$ = MakeNWithOp( WO_genarray);
+          NWITHOP_SHAPE( $$) = $3;
+          NWITHOP_EXPR( $$) = $5;
+        }
+      | MODARRAY BRACKET_L expr COMMA id COMMA expr BRACKET_R
+        { $$ = MakeNWithOp( WO_modarray);
+          NWITHOP_ARRAY( $$) = $3;
+          NWITHOP_EXPR( $$) = $7;
+        }
+      | FOLD BRACKET_L foldop COMMA expr BRACKET_R
+        { $$ = MakeNWithOp( WO_foldprf);
+          NWITHOP_PRF( $$) = $3;
+          NWITHOP_EXPR( $$) = $5;
+        }
+      | FOLD BRACKET_L foldop COMMA expr COMMA expr BRACKET_R
+        { $$ = MakeNWithOp( WO_foldprf);
+          NWITHOP_PRF( $$) = $3;
+          NWITHOP_NEUTRAL( $$) = $5;
+          NWITHOP_EXPR( $$) = $7;
+        }
+      | FOLD BRACKET_L id COMMA expr COMMA expr BRACKET_R
+        { $$ = MakeNWithOp( WO_foldfun);
+          NWITHOP_FUN( $$) = $3;
+          NWITHOP_NEUTRAL( $$) = $5;
+          NWITHOP_EXPR( $$) = $7;
+        }
+      | FOLD BRACKET_L id COLON id COMMA expr COMMA expr BRACKET_R
+        { $$ = MakeNWithOp( WO_foldfun);
+          NWITHOP_FUN( $$) = $5;
+          NWITHOP_MOD( $$) = $3;
+          NWITHOP_NEUTRAL( $$) = $7;
+          NWITHOP_EXPR( $$) = $9;
+        }
       ;
-
-Ngenidx: id LET SQBR_L ids SQBR_R 
-         { 
-           $$ = MakeNWithid( MakeIds( $1, NULL, ST_regular), $4); 
-         }
-       | id { $$ = MakeNWithid( MakeIds( $1, NULL, ST_regular), NULL); }
-       | SQBR_L ids SQBR_R { $$ = MakeNWithid( NULL, $2); }
-       ;
-
-Ngenop:   LT { $$ = F_lt; }
-        | LE { $$ = F_le; }
-        ;
-
-Nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
-         { $$ = MakeNWithOp( WO_genarray);
-           NWITHOP_SHAPE( $$) = $3;
-           NWITHOP_EXPR( $$) = $5;
-         }
-       | MODARRAY BRACKET_L expr COMMA id COMMA expr BRACKET_R
-         { $$ = MakeNWithOp( WO_modarray);
-           NWITHOP_ARRAY( $$) = $3;
-           NWITHOP_EXPR( $$) = $7;
-         }
-       | FOLD BRACKET_L foldop COMMA expr BRACKET_R
-         { $$ = MakeNWithOp( WO_foldprf);
-           NWITHOP_PRF( $$) = $3;
-           NWITHOP_EXPR( $$) = $5;
-         }
-       | FOLD BRACKET_L foldop COMMA expr COMMA expr BRACKET_R
-         { $$ = MakeNWithOp( WO_foldprf);
-           NWITHOP_PRF( $$) = $3;
-           NWITHOP_NEUTRAL( $$) = $5;
-           NWITHOP_EXPR( $$) = $7;
-         }
-       | FOLD BRACKET_L id COMMA expr COMMA expr BRACKET_R
-         { $$ = MakeNWithOp( WO_foldfun);
-           NWITHOP_FUN( $$) = $3;
-           NWITHOP_NEUTRAL( $$) = $5;
-           NWITHOP_EXPR( $$) = $7;
-         }
-       | FOLD BRACKET_L id COLON id COMMA expr COMMA expr BRACKET_R
-         { $$ = MakeNWithOp( WO_foldfun);
-           NWITHOP_FUN( $$) = $5;
-           NWITHOP_MOD( $$) = $3;
-           NWITHOP_NEUTRAL( $$) = $7;
-           NWITHOP_EXPR( $$) = $9;
-         }
-       ;
 
 
 foldop: PLUS    { $$ = F_add; }
@@ -2331,23 +2404,18 @@ sibarg: type sibreference sibparam
         }
       | TYPE_DOTS
         {
-          $$ = MakeArg( NULL, MakeTypes1( T_dots), ST_regular, ST_regular, NULL); 
+          $$ = MakeArg( NULL, MakeTypes1( T_dots),
+                        ST_regular, ST_regular, NULL); 
 
-          DBUG_PRINT("GENSIB",
-                     ("%s: "F_PTR", ... , Attrib: %d, Status: %d  ",
-                      mdb_nodetype[ NODE_TYPE( $$)],
-                      $$, ARG_ATTRIB($$), ARG_STATUS($$)));
+          DBUG_PRINT( "GENSIB",
+                      ("%s: "F_PTR", ... , Attrib: %d, Status: %d  ",
+                       mdb_nodetype[ NODE_TYPE( $$)],
+                       $$, ARG_ATTRIB( $$), ARG_STATUS( $$)));
         }
       ;
 
-sibparam: id
-          {
-            $$ = $1;
-          }
-        |
-          {
-            $$ = NULL;
-          }
+sibparam: id { $$ = $1; }
+        |    { $$ = NULL; }
         ;
 
 sibreference: BRACKET_L AMPERS BRACKET_R
