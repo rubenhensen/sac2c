@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2003/09/30 22:10:41  dkrHH
+ * bug in Set_Shape() fixed
+ *
  * Revision 1.21  2003/09/30 21:49:18  dkrHH
  * comments for Set_Shape() and Check_Mirror() updated.
  *
@@ -439,7 +442,7 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
                                      shp1_prod_fun (shp1);
                                  } if (shp2_prod_fun != NULL) {
                                      fprintf (outfile, " * ");
-                                     shp1_prod_fun (shp2);
+                                     shp2_prod_fun (shp2);
                                  }););
         break;
 
