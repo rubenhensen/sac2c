@@ -21,7 +21,6 @@ ElimSubDiv.c
 ElimSubDiv.h
 UndoElimSubDiv.c
 UndoElimSubDiv.h
-SelectionPropagation.h
 ConstVarPropagation.c
 ConstVarPropagation.h
 SSACSE.c
