@@ -1,8 +1,12 @@
 /*
  * $Log$
- * Revision 1.8  1994/12/20 14:46:25  hw
- * added information about references to the variable declaration
+ * Revision 1.9  1994/12/21 13:22:34  hw
+ * removed N_addon etc
+ * changed information about N_typedef
  *
+# Revision 1.8  1994/12/20  14:46:25  hw
+# added information about references to the variable declaration
+#
 # Revision 1.7  1994/12/20  13:12:29  sbs
 # some typos corrected
 #
@@ -79,7 +83,7 @@ info.id    : name of import-file.
 N_typedef:
 ==========
 node[0]    : subsequent typedefs if present...
-info.types : containes type and new typename (info.type->name) in one types-structure.
+info.types : containes type and new typename (info.type->id) in one types-structure.
 
 N_fundef:
 =========
@@ -124,8 +128,8 @@ N_assign:
 node[0]    : instruction (N_let, N_cond, N_while, N_do, N_return, ...)
 node[1]    : next assign node(N_assign), if any
 
-N_let, N_addon, N_mulon, N_subon, N_divon:
-==========================================
+N_let:
+======
 node[0]    : expression 
 info.ids   : names of variables to assign to.
 	     The structure of ids is:
