@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.101  1998/03/26 11:03:22  dkr
+ * changed WLNODE-macros
+ *
  * Revision 1.100  1998/03/25 18:11:52  srs
  * added INFO_WLI_FUNDEF
  *
@@ -2359,8 +2362,6 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 #define WLNODE_STEP(n) (n->varno)
 #define WLNODE_NEXT(n) (n->node[4])
 
-#define WLNODE_MODIFIED(n) (n->info.prf_dec.tc)
-
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -2382,7 +2383,7 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***
  ***  temporary attributes:
  ***
- ***    int      MODIFIED  (!)    (Precompile ! )
+ ***    ---
  ***
  ***
  ***  remark:
@@ -2401,8 +2402,6 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
 #define WLBLOCK_NEXTDIM(n) (n->node[0])
 #define WLBLOCK_CONTENTS(n) (n->node[1])
 #define WLBLOCK_NEXT(n) (WLNODE_NEXT (n))
-
-#define WLBLOCK_MODIFIED(n) (WLNODE_MODIFIED (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2425,7 +2424,7 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  temporary attributes:
  ***
- ***    int      MODIFIED  (!)    (Precompile ! )
+ ***    ---
  ***
  ***
  ***  remark:
@@ -2444,8 +2443,6 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
 #define WLUBLOCK_NEXTDIM(n) (WLBLOCK_NEXTDIM (n))
 #define WLUBLOCK_CONTENTS(n) (WLBLOCK_CONTENTS (n))
 #define WLUBLOCK_NEXT(n) (WLBLOCK_NEXT (n))
-
-#define WLUBLOCK_MODIFIED(n) (WLBLOCK_MODIFIED (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2486,7 +2483,7 @@ extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
 #define WLPROJ_NEXT(n) (WLNODE_NEXT (n))
 
 #define WLPROJ_PART(n) (n->node[5])
-#define WLPROJ_MODIFIED(n) (WLNODE_MODIFIED (n))
+#define WLPROJ_MODIFIED(n) (n->info.prf_dec.tc)
 
 /*--------------------------------------------------------------------------*/
 
