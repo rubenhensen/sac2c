@@ -1,15 +1,18 @@
 #
 # $Log$
+# Revision 1.2  2000/01/17 16:25:58  cg
+# Reorganzied compilation of heap manager library with respect
+# to the integration of a multi-threaded heap manager
+#
 # Revision 1.1  2000/01/03 17:33:17  cg
 # Initial revision
 #
 #
 
 
-CC        := gcc
-CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g 
-
-MTFLAGS   := -D_REENTRANT -D_POSIX_C_SOURCE=199506L
+CC          := gcc
+CCFLAGS     := -ansi -Wall -D__EXTENSIONS__ -g 
+CCFLAGSPROD := -ansi -Wall -D__EXTENSIONS__ -O3
 
 INCS := -I../runtime -I../../inc
 LIBS := -L.
@@ -31,8 +34,7 @@ OBJS_HEAPMGR_MT_DIAG := $(patsubst %.c, %_mt_diag.o, $(FILES_HEAPMGR))
 
 
 all: libsac_heapmgr.a libsac_heapmgr_diag.a   \
-     libsac_heapmgr_mt.a libsac_heapmgr_mt_diag.a   \
-     libsac_heapmgr_nophm.a
+     libsac_heapmgr_mt.a libsac_heapmgr_mt_diag.a 
 
 
 libsac_heapmgr.a: $(OBJS_HEAPMGR)
@@ -51,16 +53,12 @@ libsac_heapmgr_mt_diag.a: $(OBJS_HEAPMGR_MT_DIAG)
 	ar rc $@ $^
 	ranlib $@
 
-libsac_heapmgr_nophm.a: nophm.o
-	ar rc $@ $^
-	ranlib $@
-
 
 %_mt_diag.o: %.c
-	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(MTFLAGS) -DMT -DDIAG -o $@ -c $<
+	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -DMT -DDIAG -o $@ -c $<
 
 %_mt.o: %.c
-	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(MTFLAGS) -DMT -o $@ -c $<
+	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -DMT -o $@ -c $<
 
 %_diag.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -DDIAG -o $@ -c $<
@@ -73,7 +71,7 @@ deps:
 	makedepend $(INCS) *.c
 
 prod:
-	$(MAKE) CCFLAGS="$(CCFLAGS) -O3"
+	$(MAKE) CCFLAGS="$(CCFLAGSPROD)"
 
 
 clean:
@@ -81,3 +79,43 @@ clean:
 	$(RM) -r .sb SunWS_cache
 
 
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+calloc.o: /usr/include/string.h /usr/include/sys/feature_tests.h
+calloc.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
+calloc.o: ../runtime/sac_heapmgr.h
+diagnostics.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+diagnostics.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+diagnostics.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h heapmgr.h
+diagnostics.o: ../runtime/sac_mt.h ../runtime/sac_heapmgr.h
+diagnostics.o: ../runtime/sac_message.h
+internal.o: /usr/include/unistd.h /usr/include/sys/feature_tests.h
+internal.o: /usr/include/sys/isa_defs.h /usr/include/sys/types.h
+internal.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+internal.o: /usr/include/sys/unistd.h heapmgr.h ../runtime/sac_mt.h
+internal.o: ../runtime/sac_heapmgr.h ../runtime/sac_message.h
+large_chunks.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
+large_chunks.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
+large_chunks.o: ../runtime/sac_heapmgr.h
+malloc.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
+malloc.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
+malloc.o: ../runtime/sac_heapmgr.h
+memalign.o: /usr/include/unistd.h /usr/include/sys/feature_tests.h
+memalign.o: /usr/include/sys/isa_defs.h /usr/include/sys/types.h
+memalign.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+memalign.o: /usr/include/sys/unistd.h heapmgr.h ../runtime/sac_mt.h
+memalign.o: ../runtime/sac_heapmgr.h
+realloc.o: /usr/include/string.h /usr/include/sys/feature_tests.h
+realloc.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
+realloc.o: ../runtime/sac_heapmgr.h
+setup.o: /usr/include/unistd.h /usr/include/sys/feature_tests.h
+setup.o: /usr/include/sys/isa_defs.h /usr/include/sys/types.h
+setup.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+setup.o: /usr/include/sys/unistd.h heapmgr.h ../runtime/sac_mt.h
+setup.o: ../runtime/sac_heapmgr.h ../runtime/sac_message.h
+small_chunks.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
+small_chunks.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
+small_chunks.o: ../runtime/sac_heapmgr.h
+wrapper.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
+wrapper.o: /usr/include/sys/isa_defs.h heapmgr.h ../runtime/sac_mt.h
+wrapper.o: ../runtime/sac_heapmgr.h
