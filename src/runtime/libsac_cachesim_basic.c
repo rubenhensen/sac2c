@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.3  1999/04/06 13:45:39  cg
+ * added extended setup of cache parameters.
+ *
  * Revision 2.2  1999/03/26 14:34:21  her
  * new functions SAC_CS_Start and SAC_CS_Stop added
  *
@@ -14,7 +17,11 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+
 #include "sac_cachesim.h"
+#include "libsac_cachesim.h"
+#include "sac_message.h"
 
 /* BEGIN: The folowing variables are declared as extern in the
  * ´libsac_cachesim_access.c´-file. Changes here have to be done there
@@ -67,7 +74,7 @@ void SAC_CS_Access_AS4WA_D (void *baseaddress, void *elemaddress);
  * or there exists no n with power(2,n)==value
  * then fastlog2 returns -1. Otherwise fastlog2 returns n.
  */
-int
+static int
 fastlog2 (int value)
 {
     switch (value) {
@@ -131,6 +138,259 @@ fastlog2 (int value)
     }
 } /* fastlog2 */
 
+static char *
+WritePolicyName (tWritePolicy wpol)
+{
+    switch (wpol) {
+    case SAC_CS_default:
+        return ("default");
+    case SAC_CS_fetch_on_write:
+        return ("fetch_on_write");
+    case SAC_CS_write_validate:
+        return ("write_validate");
+    case SAC_CS_write_around:
+        return ("write_around");
+    default:
+        return ("");
+    }
+}
+
+static void
+ResetCacheParms (char *spec, unsigned long int *cachesize, int *cachelinesize,
+                 int *associativity, tWritePolicy *writepolicy)
+{
+    char *field, *full_spec;
+
+    full_spec = (char *)malloc (strlen (spec) + 1);
+    strcpy (full_spec, spec);
+
+    field = strtok (spec, "/");
+
+    if (field == NULL) {
+        SAC_RuntimeError ("Invalid cache parameter specification: '%s`", full_spec);
+    }
+
+    *cachesize = atoi (field);
+
+    field = strtok (NULL, "/");
+
+    if (field != NULL) {
+        *cachelinesize = atoi (field);
+
+        field = strtok (NULL, "/");
+
+        if (field != NULL) {
+            *associativity = atoi (field);
+
+            field = strtok (NULL, "/");
+
+            if (field != NULL) {
+                if (field[1] == '\0') {
+                    switch (field[0]) {
+                    case 'd':
+                        *writepolicy = SAC_CS_default;
+                        break;
+                    case 'f':
+                        *writepolicy = SAC_CS_fetch_on_write;
+                        break;
+                    case 'v':
+                        *writepolicy = SAC_CS_write_validate;
+                        break;
+                    case 'a':
+                        *writepolicy = SAC_CS_write_around;
+                        break;
+                    default:
+                        SAC_RuntimeError ("Invalid cache parameter specification: '%s`",
+                                          full_spec);
+                    }
+                } else {
+                    SAC_RuntimeError ("Invalid cache parameter specification: '%s`",
+                                      full_spec);
+                }
+            }
+        }
+    }
+
+    free (full_spec);
+}
+
+void
+SAC_CS_CheckArguments (int argc, char *argv[], unsigned long int *cachesize1,
+                       int *cachelinesize1, int *associativity1,
+                       tWritePolicy *writepolicy1, unsigned long int *cachesize2,
+                       int *cachelinesize2, int *associativity2,
+                       tWritePolicy *writepolicy2, unsigned long int *cachesize3,
+                       int *cachelinesize3, int *associativity3,
+                       tWritePolicy *writepolicy3)
+{
+    int i;
+
+    for (i = 1; i < argc - 1; i++) {
+        if ((argv[i][0] == '-') && (argv[i][1] == 'c') && (argv[i][2] == 's')
+            && (argv[i][4] == '\0')) {
+            switch (argv[i][3]) {
+            case '1':
+                ResetCacheParms (argv[i + 1], cachesize1, cachelinesize1, associativity1,
+                                 writepolicy1);
+                break;
+            case '2':
+                ResetCacheParms (argv[i + 1], cachesize2, cachelinesize2, associativity2,
+                                 writepolicy2);
+                break;
+            case '3':
+                ResetCacheParms (argv[i + 1], cachesize3, cachelinesize3, associativity3,
+                                 writepolicy3);
+                break;
+            default:
+                break;
+            }
+        }
+    }
+}
+
+static void
+InitializeOneCacheLevel (int L, int nr_of_cpu, tProfilingLevel profilinglevel,
+                         ULINT cachesize, int cachelinesize, int associativity,
+                         tWritePolicy writepolicy)
+{
+    int i, integretyError;
+
+    tCacheLevel *act_cl /* pointer to the ACTual CacheLevel */;
+
+    /* ATTENTION: calloc initates the allocated memory by 0. That is important
+     *            for the cachesimulation to function correctly!!!
+     */
+
+    /* bind the right Access_XX functions to Read- WriteAccess userfunction
+     * and read- write_access_table */
+    if (profilinglevel == SAC_CS_advanced) {
+        if (associativity == 1) {
+            SAC_CS_read_access_table[L] = &SAC_CS_Access_DMRead_D;
+            switch (writepolicy) {
+            case SAC_CS_default:
+                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMFOW_D;
+                break;
+            case SAC_CS_fetch_on_write:
+                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMFOW_D;
+                break;
+            case SAC_CS_write_validate:
+                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMWV_D;
+                break;
+            case SAC_CS_write_around:
+                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMWA_D;
+                break;
+            } /* switch */
+        } else {
+            SAC_CS_read_access_table[L] = &SAC_CS_Access_AS4Read_D;
+            switch (writepolicy) {
+            case SAC_CS_default:
+                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4FOW_D;
+                break;
+            case SAC_CS_fetch_on_write:
+                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4FOW_D;
+                break;
+            case SAC_CS_write_validate:
+                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4WV_D;
+                break;
+            case SAC_CS_write_around:
+                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4WA_D;
+                break;
+            } /* switch */
+        }     /* if:associativity */
+    } else {
+        if (associativity == 1) {
+            SAC_CS_read_access_table[L] = &SAC_CS_Access_DMRead_S;
+            switch (writepolicy) {
+            case SAC_CS_default:
+                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMFOW_S;
+                break;
+            case SAC_CS_fetch_on_write:
+                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMFOW_S;
+                break;
+            case SAC_CS_write_validate:
+                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMWV_S;
+                break;
+            case SAC_CS_write_around:
+                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMWA_S;
+                break;
+            } /* switch */
+        } else {
+            SAC_CS_read_access_table[L] = &SAC_CS_Access_AS4Read_S;
+            switch (writepolicy) {
+            case SAC_CS_default:
+                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4FOW_S;
+                break;
+            case SAC_CS_fetch_on_write:
+                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4FOW_S;
+                break;
+            case SAC_CS_write_validate:
+                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4WV_S;
+                break;
+            case SAC_CS_write_around:
+                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4WA_S;
+                break;
+            } /* switch */
+        }     /* if:associativity */
+    }         /* if:profilinglevel */
+
+    act_cl = (tCacheLevel *)calloc (1, sizeof (tCacheLevel));
+    SAC_CS_cachelevel[L] = act_cl;
+    if ((cachesize > 0) && (act_cl != NULL)) {
+        /* init main-structure */
+        act_cl->cachesize = cachesize * 1024; /* kbyte -> byte */
+        act_cl->cachelinesize = cachelinesize;
+        act_cl->associativity = associativity;
+        act_cl->data = (ULINT *)calloc (1, act_cl->cachesize * sizeof (ULINT));
+
+        /* integrety checks && evaluate some vars */
+        integretyError = 0;
+        if (associativity == 0) {
+            integretyError = 1;
+        } else {
+            integretyError = integretyError || (act_cl->cachesize % associativity != 0);
+            act_cl->internsize = act_cl->cachesize / associativity;
+        }
+
+        if (cachelinesize == 0) {
+            integretyError = 1;
+        } else {
+            integretyError
+              = integretyError
+                || (fastlog2 (act_cl->internsize) <= fastlog2 (cachelinesize))
+                || (fastlog2 (cachelinesize) == -1);
+            act_cl->cls_bits = fastlog2 (act_cl->cachelinesize);
+            act_cl->cls_mask = ~(0ul) << act_cl->cls_bits;
+            act_cl->is_bits = fastlog2 (act_cl->internsize);
+            act_cl->is_mask = ~(0ul) >> ((sizeof (ULINT) * 8) - act_cl->is_bits);
+            act_cl->nr_cachelines = act_cl->internsize / act_cl->cachelinesize;
+        }
+
+        if (integretyError) {
+            SAC_CS_read_access_table[L] = &SAC_CS_Access_MM;
+            free (act_cl);
+            act_cl = NULL;
+            SAC_CS_cachelevel[L] = NULL;
+            SAC_RuntimeError ("Invalid cache parameters for L1 cache:\n"
+                              "cache size        : %ul KByte\n"
+                              "cache line size   : %d Byte\n"
+                              "associativity     : %d\n"
+                              "write miss policy : %s\n",
+                              cachesize, cachelinesize, associativity,
+                              WritePolicyName (writepolicy));
+        }
+    } else {
+        SAC_CS_read_access_table[L] = &SAC_CS_Access_MM;
+        free (act_cl);
+        act_cl = NULL;
+        SAC_CS_cachelevel[L] = NULL;
+    }
+
+    /* init array of shadowarrays */
+    for (i = 0; (i < MAX_SHADOWARRAYS) && (act_cl != NULL); i++) {
+        act_cl->shadowarrays[i] = NULL;
+    }
+}
+
 void
 SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, ULINT cachesize1,
                    int cachelinesize1, int associativity1, tWritePolicy writepolicy1,
@@ -138,367 +398,32 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, ULINT cachesiz
                    tWritePolicy writepolicy2, ULINT cachesize3, int cachelinesize3,
                    int associativity3, tWritePolicy writepolicy3)
 {
-    int i, integretyError, L /* very short-form for Level
-                              * (so short to avoid expansion of programmcode)
-                              */
-      ;
-    tCacheLevel *act_cl /* pointer to the ACTual CacheLevel */;
-
-    /* ATTENTION: calloc initates the allocated memory by 0. That is important
-     *            for the cachesimulation to function correctly!!!
-     */
     profiling_level = profilinglevel;
 
-    /* BEGIN: cachelevel 1 */
-    L = 1;
-    /* bind the right Access_XX functions to Read- WriteAccess userfunction
-     * and read- write_access_table */
-    if (profilinglevel == detailed) {
-        if (associativity1 == 1) {
-            SAC_CS_read_access_table[L] = &SAC_CS_Access_DMRead_D;
-            switch (writepolicy1) {
-            case Default:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMFOW_D;
-                break;
-            case fetch_on_write:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMFOW_D;
-                break;
-            case write_validate:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMWV_D;
-                break;
-            case write_around:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMWA_D;
-                break;
-            } /* switch */
-        } else {
-            SAC_CS_read_access_table[L] = &SAC_CS_Access_AS4Read_D;
-            switch (writepolicy1) {
-            case Default:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4FOW_D;
-                break;
-            case fetch_on_write:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4FOW_D;
-                break;
-            case write_validate:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4WV_D;
-                break;
-            case write_around:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4WA_D;
-                break;
-            } /* switch */
-        }     /* if:associativity */
-    } else {
-        if (associativity1 == 1) {
-            SAC_CS_read_access_table[L] = &SAC_CS_Access_DMRead_S;
-            switch (writepolicy1) {
-            case Default:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMFOW_S;
-                break;
-            case fetch_on_write:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMFOW_S;
-                break;
-            case write_validate:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMWV_S;
-                break;
-            case write_around:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMWA_S;
-                break;
-            } /* switch */
-        } else {
-            SAC_CS_read_access_table[L] = &SAC_CS_Access_AS4Read_S;
-            switch (writepolicy1) {
-            case Default:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4FOW_S;
-                break;
-            case fetch_on_write:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4FOW_S;
-                break;
-            case write_validate:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4WV_S;
-                break;
-            case write_around:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4WA_S;
-                break;
-            } /* switch */
-        }     /* if:associativity */
-    }         /* if:profilinglevel */
-
-    act_cl = (tCacheLevel *)calloc (1, sizeof (tCacheLevel));
-    SAC_CS_cachelevel[L] = act_cl;
-    if ((cachesize1 > 0) && (act_cl != NULL)) {
-        /* init main-structure */
-        act_cl->cachesize = cachesize1 * 1024; /* kbyte -> byte */
-        act_cl->cachelinesize = cachelinesize1;
-        act_cl->associativity = associativity1;
-        act_cl->data = (ULINT *)calloc (1, act_cl->cachesize * sizeof (ULINT));
-        /* integrety checks && evaluate some vars */
-        integretyError = 0;
-        integretyError = integretyError || (act_cl->cachesize % associativity1 != 0);
-        act_cl->internsize = act_cl->cachesize / associativity1;
-        integretyError = integretyError
-                         || (fastlog2 (act_cl->internsize) <= fastlog2 (cachelinesize1))
-                         || (fastlog2 (cachelinesize1) == -1);
-        act_cl->cls_bits = fastlog2 (act_cl->cachelinesize);
-        act_cl->cls_mask = ~(0ul) << act_cl->cls_bits;
-        act_cl->is_bits = fastlog2 (act_cl->internsize);
-        act_cl->is_mask = ~(0ul) >> ((sizeof (ULINT) * 8) - act_cl->is_bits);
-        act_cl->nr_cachelines = act_cl->internsize / act_cl->cachelinesize;
-        if (integretyError) {
-            SAC_CS_read_access_table[L] = &SAC_CS_Access_MM;
-            free (act_cl);
-            act_cl = NULL;
-            SAC_CS_cachelevel[L] = NULL;
-            fprintf (stderr,
-                     "libsac_cachesim: "
-                     "invalid cacheparameters for level %d\n",
-                     L);
-        }
-    } else {
-        SAC_CS_read_access_table[L] = &SAC_CS_Access_MM;
-        free (act_cl);
-        act_cl = NULL;
-        SAC_CS_cachelevel[L] = NULL;
+    if (nr_of_cpu) {
+        SAC_RuntimeError ("Cache simulation does not support multi-threaded execution");
     }
 
-    /* init array of shadowarrays */
-    for (i = 0; (i < MAX_SHADOWARRAYS) && (act_cl != NULL); i++) {
-        act_cl->shadowarrays[i] = NULL;
-    }
-    /* END: cachelevel 1 */
-
-    /* BEGIN: cachelevel 2 */
-    L = 2;
-    /* bind the right Access_XX functions to Read- WriteAccess userfunction
-     * and read- write_access_table */
-    if (profilinglevel == detailed) {
-        if (associativity2 == 1) {
-            SAC_CS_read_access_table[L] = &SAC_CS_Access_DMRead_D;
-            switch (writepolicy2) {
-            case Default:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMFOW_D;
-                break;
-            case fetch_on_write:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMFOW_D;
-                break;
-            case write_validate:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMWV_D;
-                break;
-            case write_around:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMWA_D;
-                break;
-            } /* switch */
-        } else {
-            SAC_CS_read_access_table[L] = &SAC_CS_Access_AS4Read_D;
-            switch (writepolicy2) {
-            case Default:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4FOW_D;
-                break;
-            case fetch_on_write:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4FOW_D;
-                break;
-            case write_validate:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4WV_D;
-                break;
-            case write_around:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4WA_D;
-                break;
-            } /* switch */
-        }     /* if:associativity */
-    } else {
-        if (associativity2 == 1) {
-            SAC_CS_read_access_table[L] = &SAC_CS_Access_DMRead_S;
-            switch (writepolicy2) {
-            case Default:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMFOW_S;
-                break;
-            case fetch_on_write:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMFOW_S;
-                break;
-            case write_validate:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMWV_S;
-                break;
-            case write_around:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMWA_S;
-                break;
-            } /* switch */
-        } else {
-            SAC_CS_read_access_table[L] = &SAC_CS_Access_AS4Read_S;
-            switch (writepolicy2) {
-            case Default:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4FOW_S;
-                break;
-            case fetch_on_write:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4FOW_S;
-                break;
-            case write_validate:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4WV_S;
-                break;
-            case write_around:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4WA_S;
-                break;
-            } /* switch */
-        }     /* if:associativity */
-    }         /* if:profilinglevel */
-
-    act_cl = (tCacheLevel *)calloc (1, sizeof (tCacheLevel));
-    SAC_CS_cachelevel[L] = act_cl;
-    if ((cachesize2 > 0) && (act_cl != NULL)) {
-        /* init main-structure */
-        act_cl->cachesize = cachesize2 * 1024; /* kbyte -> byte */
-        act_cl->cachelinesize = cachelinesize2;
-        act_cl->associativity = associativity2;
-        act_cl->data = (ULINT *)calloc (1, act_cl->cachesize * sizeof (ULINT));
-        /* integrety checks && evaluate some vars */
-        integretyError = 0;
-        integretyError = integretyError || (act_cl->cachesize % associativity2 != 0);
-        act_cl->internsize = act_cl->cachesize / associativity2;
-        integretyError = integretyError
-                         || (fastlog2 (act_cl->internsize) <= fastlog2 (cachelinesize2))
-                         || (fastlog2 (cachelinesize2) == -1);
-        act_cl->cls_bits = fastlog2 (act_cl->cachelinesize);
-        act_cl->cls_mask = ~(0ul) << act_cl->cls_bits;
-        act_cl->is_bits = fastlog2 (act_cl->internsize);
-        act_cl->is_mask = ~(0ul) >> ((sizeof (ULINT) * 8) - act_cl->is_bits);
-        act_cl->nr_cachelines = act_cl->internsize / act_cl->cachelinesize;
-        if (integretyError) {
-            SAC_CS_read_access_table[L] = &SAC_CS_Access_MM;
-            free (act_cl);
-            act_cl = NULL;
-            SAC_CS_cachelevel[L] = NULL;
-            fprintf (stderr,
-                     "libsac_cachesim: "
-                     "invalid cacheparameters for level %d\n",
-                     L);
-        }
-    } else {
-        SAC_CS_read_access_table[L] = &SAC_CS_Access_MM;
-        free (act_cl);
-        act_cl = NULL;
-        SAC_CS_cachelevel[L] = NULL;
+    if ((cachesize3 != 0) && ((cachesize1 == 0) || (cachesize2 == 0))) {
+        SAC_RuntimeError ("L3 cache specified but L1 or L2 cache missing");
     }
 
-    /* init array of shadowarrays */
-    for (i = 0; (i < MAX_SHADOWARRAYS) && (act_cl != NULL); i++) {
-        act_cl->shadowarrays[i] = NULL;
-    }
-    /* END: cachelevel 2 */
-
-    /* BEGIN: cachelevel 3 */
-    L = 3;
-    /* bind the right Access_XX functions to Read- WriteAccess userfunction
-     * and read- write_access_table */
-    if (profilinglevel == detailed) {
-        if (associativity3 == 1) {
-            SAC_CS_read_access_table[L] = &SAC_CS_Access_DMRead_D;
-            switch (writepolicy3) {
-            case Default:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMFOW_D;
-                break;
-            case fetch_on_write:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMFOW_D;
-                break;
-            case write_validate:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMWV_D;
-                break;
-            case write_around:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMWA_D;
-                break;
-            } /* switch */
-        } else {
-            SAC_CS_read_access_table[L] = &SAC_CS_Access_AS4Read_D;
-            switch (writepolicy3) {
-            case Default:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4FOW_D;
-                break;
-            case fetch_on_write:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4FOW_D;
-                break;
-            case write_validate:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4WV_D;
-                break;
-            case write_around:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4WA_D;
-                break;
-            } /* switch */
-        }     /* if:associativity */
-    } else {
-        if (associativity3 == 1) {
-            SAC_CS_read_access_table[L] = &SAC_CS_Access_DMRead_S;
-            switch (writepolicy3) {
-            case Default:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMFOW_S;
-                break;
-            case fetch_on_write:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMFOW_S;
-                break;
-            case write_validate:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMWV_S;
-                break;
-            case write_around:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_DMWA_S;
-                break;
-            } /* switch */
-        } else {
-            SAC_CS_read_access_table[L] = &SAC_CS_Access_AS4Read_S;
-            switch (writepolicy3) {
-            case Default:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4FOW_S;
-                break;
-            case fetch_on_write:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4FOW_S;
-                break;
-            case write_validate:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4WV_S;
-                break;
-            case write_around:
-                SAC_CS_write_access_table[L] = &SAC_CS_Access_AS4WA_S;
-                break;
-            } /* switch */
-        }     /* if:associativity */
-    }         /* if:profilinglevel */
-
-    act_cl = (tCacheLevel *)calloc (1, sizeof (tCacheLevel));
-    SAC_CS_cachelevel[L] = act_cl;
-    if ((cachesize3 > 0) && (act_cl != NULL)) {
-        /* init main-structure */
-        act_cl->cachesize = cachesize3 * 1024; /* kbyte -> byte */
-        act_cl->cachelinesize = cachelinesize3;
-        act_cl->associativity = associativity3;
-        act_cl->data = (ULINT *)calloc (1, act_cl->cachesize * sizeof (ULINT));
-        /* integrety checks && evaluate some vars */
-        integretyError = 0;
-        integretyError = integretyError || (act_cl->cachesize % associativity3 != 0);
-        act_cl->internsize = act_cl->cachesize / associativity3;
-        integretyError = integretyError
-                         || (fastlog2 (act_cl->internsize) <= fastlog2 (cachelinesize3))
-                         || (fastlog2 (cachelinesize3) == -1);
-        act_cl->cls_bits = fastlog2 (act_cl->cachelinesize);
-        act_cl->cls_mask = ~(0ul) << act_cl->cls_bits;
-        act_cl->is_bits = fastlog2 (act_cl->internsize);
-        act_cl->is_mask = ~(0ul) >> ((sizeof (ULINT) * 8) - act_cl->is_bits);
-        act_cl->nr_cachelines = act_cl->internsize / act_cl->cachelinesize;
-        if (integretyError) {
-            SAC_CS_read_access_table[L] = &SAC_CS_Access_MM;
-            free (act_cl);
-            act_cl = NULL;
-            SAC_CS_cachelevel[L] = NULL;
-            fprintf (stderr,
-                     "libsac_cachesim: "
-                     "invalid cacheparameters for level %d\n",
-                     L);
-        }
-    } else {
-        SAC_CS_read_access_table[L] = &SAC_CS_Access_MM;
-        free (act_cl);
-        act_cl = NULL;
-        SAC_CS_cachelevel[L] = NULL;
+    if ((cachesize2 != 0) && (cachesize1 == 0)) {
+        SAC_RuntimeError ("L2 cache specified but L1 cache missing");
     }
 
-    /* init array of shadowarrays */
-    for (i = 0; (i < MAX_SHADOWARRAYS) && (act_cl != NULL); i++) {
-        act_cl->shadowarrays[i] = NULL;
+    if (cachesize1 == 0) {
+        SAC_RuntimeError ("No caches specified for cache simulation");
     }
-    /* END: cachelevel 3 */
+
+    InitializeOneCacheLevel (1, nr_of_cpu, profilinglevel, cachesize1, cachelinesize1,
+                             associativity1, writepolicy1);
+
+    InitializeOneCacheLevel (2, nr_of_cpu, profilinglevel, cachesize2, cachelinesize2,
+                             associativity2, writepolicy2);
+
+    InitializeOneCacheLevel (3, nr_of_cpu, profilinglevel, cachesize3, cachelinesize3,
+                             associativity3, writepolicy3);
 
     /* the 4th level in memory hierachy is the MainMemory
      */
@@ -510,6 +435,38 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, ULINT cachesiz
      */
     SAC_CS_ReadAccess = SAC_CS_read_access_table[1];
     SAC_CS_WriteAccess = SAC_CS_write_access_table[1];
+
+    printf ("====================================================\n"
+            "SAC program running with cache simulation enabled!\n"
+            "====================================================\n"
+            "L1 cache:  cache size        : %lu KByte\n"
+            "           cache line size   : %d Byte\n"
+            "           associativity     : %d\n"
+            "           write miss policy : %s\n",
+            cachesize1, cachelinesize1, associativity1, WritePolicyName (writepolicy1));
+
+    if (cachesize2 > 0) {
+        printf ("====================================================\n"
+                "L2 cache:  cache size        : %lu KByte\n"
+                "           cache line size   : %d Byte\n"
+                "           associativity     : %d\n"
+                "           write miss policy : %s\n",
+                cachesize2, cachelinesize2, associativity2,
+                WritePolicyName (writepolicy2));
+    }
+
+    if (cachesize3 > 0) {
+        printf ("====================================================\n"
+                "L3 cache:  cache size        : %lu KByte\n"
+                "           cache line size   : %d Byte\n"
+                "           associativity     : %d\n"
+                "           write miss policy : %s\n",
+                cachesize3, cachelinesize3, associativity3,
+                WritePolicyName (writepolicy3));
+    }
+
+    printf ("====================================================\n");
+
 } /* SAC_CS_Initialize */
 
 void
@@ -576,10 +533,9 @@ SAC_CS_RegisterArray (void *baseaddress, int size /* in byte */)
             } else {
                 if (!error_msg_done) {
                     error_msg_done = 1;
-                    fprintf (stderr,
-                             "libsac_cachesim: more "
-                             "than %d registered arrays (baseaddress: %lu)\n",
-                             MAX_SHADOWARRAYS, (ULINT)baseaddress);
+                    SAC_RuntimeError ("libsac_cachesim: more "
+                                      "than %d registered arrays (baseaddress: %lu)\n",
+                                      MAX_SHADOWARRAYS, (ULINT)baseaddress);
                 } /* if: !error_msg_done */
             }     /* if-else: i<MAX_SHADOWARRAYS */
         }         /* if: cl != NULL */
@@ -654,7 +610,7 @@ SAC_CS_ShowResults (void)
                      (double)SAC_CS_miss[i] / (double)(SAC_CS_hit[i] + SAC_CS_miss[i])
                        * 100.0);
 
-            if ((profiling_level == detailed)) {
+            if ((profiling_level == SAC_CS_advanced)) {
                 fprintf (stdout, "  -Cold: %lu   Cross: %lu   Self: %lu   Invalid: %lu\n",
                          SAC_CS_cold[i], SAC_CS_cross[i], SAC_CS_self[i],
                          SAC_CS_invalid[i]);
