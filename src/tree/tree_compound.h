@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/02/07 21:14:04  dkr
+ * some WL... macros corrected: all ?-expressions in brackets now
+ *
  * Revision 3.15  2001/02/07 20:16:56  dkr
  * N_WL?block, N_WLstride?: NOOP not an attribute but a macro now
  *
@@ -1701,7 +1704,7 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
  ***/
 
 #define WLXBLOCK_NOOP(n)                                                                 \
-    (NODE_TYPE (n) == N_WLblock) ? WLBLOCK_NOOP (n) : WLUBLOCK_NOOP (n)
+    ((NODE_TYPE (n) == N_WLblock) ? WLBLOCK_NOOP (n) : WLUBLOCK_NOOP (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1726,13 +1729,13 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
  ***/
 
 #define WLSTRIDEX_GET_ADDR(node, field)                                                  \
-    (NODE_TYPE (node) == N_WLstride)                                                     \
-      ? (void *)&(WLSTRIDE_##field (node))                                               \
-      : ((NODE_TYPE (node) == N_WLstrideVar) ? (void *)&(WLSTRIDEVAR_##field (node))     \
-                                             : NULL)
+    ((NODE_TYPE (node) == N_WLstride)                                                    \
+       ? (void *)&(WLSTRIDE_##field (node))                                              \
+       : ((NODE_TYPE (node) == N_WLstrideVar) ? (void *)&(WLSTRIDEVAR_##field (node))    \
+                                              : NULL))
 
 #define WLSTRIDEX_NOOP(n)                                                                \
-    (NODE_TYPE (n) == N_WLstride) ? WLSTRIDE_NOOP (n) : WLSTRIDEVAR_NOOP (n)
+    ((NODE_TYPE (n) == N_WLstride) ? WLSTRIDE_NOOP (n) : WLSTRIDEVAR_NOOP (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1768,9 +1771,10 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
 #define WLGRIDX_CBLOCK_INSTR(n) (BLOCK_INSTR (WLGRIDX_CBLOCK (n)))
 
 #define WLGRIDX_GET_ADDR(node, field)                                                    \
-    (NODE_TYPE (node) == N_WLgrid)                                                       \
-      ? (void *)&(WLGRID_##field (node))                                                 \
-      : ((NODE_TYPE (node) == N_WLgridVar) ? (void *)&(WLGRIDVAR_##field (node)) : NULL)
+    ((NODE_TYPE (node) == N_WLgrid)                                                      \
+       ? (void *)&(WLGRID_##field (node))                                                \
+       : ((NODE_TYPE (node) == N_WLgridVar) ? (void *)&(WLGRIDVAR_##field (node))        \
+                                            : NULL))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1780,14 +1784,14 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
  ***/
 
 #define WLBLOCKSTR_GET_ADDR(node, field)                                                 \
-    (NODE_TYPE (node) == N_WLstride)                                                     \
-      ? (void *)&(WLSTRIDE_##field (node))                                               \
-      : ((NODE_TYPE (node) == N_WLstrideVar)                                             \
-           ? (void *)&(WLSTRIDEVAR_##field (node))                                       \
-           : ((NODE_TYPE (node) == N_WLblock)                                            \
-                ? (void *)&(WLBLOCK_##field (node))                                      \
-                : ((NODE_TYPE (node) == N_WLublock) ? (void *)&(WLUBLOCK_##field (node)) \
-                                                    : NULL)))
+    ((NODE_TYPE (node) == N_WLstride)                                                    \
+       ? (void *)&(WLSTRIDE_##field (node))                                              \
+       : ((NODE_TYPE (node) == N_WLstrideVar)                                            \
+            ? (void *)&(WLSTRIDEVAR_##field (node))                                      \
+            : ((NODE_TYPE (node) == N_WLblock) ? (void *)&(WLBLOCK_##field (node))       \
+                                               : ((NODE_TYPE (node) == N_WLublock)       \
+                                                    ? (void *)&(WLUBLOCK_##field (node)) \
+                                                    : NULL))))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1798,33 +1802,33 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
  ***/
 
 #define WLNODE_GET_ADDR(node, field)                                                     \
-    (NODE_TYPE (node) == N_WLstride)                                                     \
-      ? (void *)&(WLSTRIDE_##field (node))                                               \
-      : ((NODE_TYPE (node) == N_WLstrideVar)                                             \
-           ? (void *)&(WLSTRIDEVAR_##field (node))                                       \
-           : ((NODE_TYPE (node) == N_WLgrid)                                             \
-                ? (void *)&(WLGRID_##field (node))                                       \
-                : ((NODE_TYPE (node) == N_WLgridVar)                                     \
-                     ? (void *)&(WLGRIDVAR_##field (node))                               \
-                     : ((NODE_TYPE (node) == N_WLblock)                                  \
-                          ? (void *)&(WLBLOCK_##field (node))                            \
-                          : ((NODE_TYPE (node) == N_WLublock)                            \
-                               ? (void *)&(WLUBLOCK_##field (node))                      \
-                               : NULL)))))
+    ((NODE_TYPE (node) == N_WLstride)                                                    \
+       ? (void *)&(WLSTRIDE_##field (node))                                              \
+       : ((NODE_TYPE (node) == N_WLstrideVar)                                            \
+            ? (void *)&(WLSTRIDEVAR_##field (node))                                      \
+            : ((NODE_TYPE (node) == N_WLgrid)                                            \
+                 ? (void *)&(WLGRID_##field (node))                                      \
+                 : ((NODE_TYPE (node) == N_WLgridVar)                                    \
+                      ? (void *)&(WLGRIDVAR_##field (node))                              \
+                      : ((NODE_TYPE (node) == N_WLblock)                                 \
+                           ? (void *)&(WLBLOCK_##field (node))                           \
+                           : ((NODE_TYPE (node) == N_WLublock)                           \
+                                ? (void *)&(WLUBLOCK_##field (node))                     \
+                                : NULL))))))
 
 #define WLNODE_NOOP(n)                                                                   \
-    (NODE_TYPE (n) == N_WLblock)                                                         \
-      ? WLBLOCK_NOOP (n)                                                                 \
-      : ((NODE_TYPE (n) == N_WLublock)                                                   \
-           ? WLUBLOCK_NOOP (n)                                                           \
-           : ((NODE_TYPE (n) == N_WLstride)                                              \
-                ? WLSTRIDE_NOOP (n)                                                      \
-                : ((NODE_TYPE (n) == N_WLstrideVar)                                      \
-                     ? WLSTRIDEVAR_NOOP (n)                                              \
-                     : ((NODE_TYPE (n) == N_WLgrid)                                      \
-                          ? WLGRID_NOOP (n)                                              \
-                          : ((NODE_TYPE (n) == N_WLgridVar) ? WLGRIDVAR_NOOP (n)         \
-                                                            : FALSE)))))
+    ((NODE_TYPE (n) == N_WLblock)                                                        \
+       ? WLBLOCK_NOOP (n)                                                                \
+       : ((NODE_TYPE (n) == N_WLublock)                                                  \
+            ? WLUBLOCK_NOOP (n)                                                          \
+            : ((NODE_TYPE (n) == N_WLstride)                                             \
+                 ? WLSTRIDE_NOOP (n)                                                     \
+                 : ((NODE_TYPE (n) == N_WLstrideVar)                                     \
+                      ? WLSTRIDEVAR_NOOP (n)                                             \
+                      : ((NODE_TYPE (n) == N_WLgrid)                                     \
+                           ? WLGRID_NOOP (n)                                             \
+                           : ((NODE_TYPE (n) == N_WLgridVar) ? WLGRIDVAR_NOOP (n)        \
+                                                             : FALSE))))))
 
 extern void NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt,
                                     void *node_or_int);
