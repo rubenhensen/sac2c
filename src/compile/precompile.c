@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2004/07/27 12:17:58  khf
+ * PREC2apORprf(): args of F_alloc are not traversed
+ *
  * Revision 3.81  2004/07/23 15:25:17  khf
  * if explicit accumulation was applied, the generatsted
  * dummy fold-functions is no longer needed
@@ -1840,7 +1843,11 @@ PREC2apORprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("PREC2apORprf");
 
-    if (AP_OR_PRF_ARGS (arg_node) != NULL) {
+    /*
+     * prf F_alloc is only pseudo syntax which will be eliminated in compile.c.
+     * It's args must not be traversed.
+     */
+    if ((PRF_PRF (arg_node) != F_alloc) && (AP_OR_PRF_ARGS (arg_node) != NULL)) {
         L_AP_OR_PRF_ARGS (arg_node, Trav (AP_OR_PRF_ARGS (arg_node), arg_info));
     }
 
