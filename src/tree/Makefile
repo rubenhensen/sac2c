@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.41  2004/11/23 22:42:12  sah
+# removed serialize*
+#
 # Revision 3.40  2004/11/23 12:07:02  sbs
 # INCS eliminated
 #
@@ -113,28 +116,14 @@ OBJS := tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
         LookUpTable.o adjust_ids.o cleanup_decls.o scheduling.o \
         change_signature.o compare_tree.o wl_bounds.o \
         node_basic.o free_node.o free_attribs.o \
-        serialize_node.o serialize_attribs.o \
-        deserialize.o serialize_buildstack.o \
-        serialize_helper.o serialize_link.o \
-        serialize.o serialize_stack.o
+        traverse_tables.o traverse_helper.o
 
 
 all: $(OBJS)
 
-#
-# the *.[ch] objects are to fool makedepend which does not
-# recognize the dependency between *.[ch] and the .mac files!
-#
-traverse.c: node_info.mac
-	touch $@
-	$(CLOCK_SKEW_ELIMINATION) $@
-
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 	$(CLOCK_SKEW_ELIMINATION) $@
-
-%.c: xml/ast2%_c.xsl xml/ast.xml
-	$(MAKE) -C xml ../$@
 
 clean:
 	$(RM) *.o *.a *.bak *~ .*.d
