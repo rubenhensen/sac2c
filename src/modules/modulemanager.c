@@ -1,28 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.7  2004/10/28 22:09:19  sah
- * fixed small allocation problem
+ * Revision 1.8  2004/11/25 21:57:09  sah
+ * COMPILES
  *
- * Revision 1.6  2004/10/28 17:18:07  sah
- * added support for dependency tables
- *
- * Revision 1.5  2004/10/26 09:32:36  sah
- * changed functiontype for serialize functions
- *
- * Revision 1.4  2004/10/25 11:58:47  sah
- * major code cleanup
- *
- * Revision 1.3  2004/10/21 17:20:24  sah
- * modules are now pooled internally
- *
- * Revision 1.2  2004/09/23 21:14:23  sah
- * ongoing implementation
  *
  * Revision 1.1  2004/09/21 20:37:57  sah
  * Initial revision
- *
- *
  *
  */
 
@@ -42,7 +26,7 @@ struct MODULE_T {
 
 static module_t *modulepool = NULL;
 
-typedef STtable_t *(*symtabfun_p) ();
+typedef sttable_t *(*symtabfun_p) ();
 typedef stringset_t *(*deptabfun_p) ();
 
 static module_t *
@@ -71,13 +55,13 @@ AddModuleToPool (const char *name)
 
     DBUG_ENTER ("AddModuleToPool");
 
-    result = Malloc (sizeof (module_t));
+    result = ILIBmalloc (sizeof (module_t));
 
-    result->sofile = Malloc (sizeof (char) * (strlen (name) + 7));
+    result->sofile = ILIBmalloc (sizeof (char) * (strlen (name) + 7));
     sprintf (result->sofile, "lib%s.so", name);
 
-    result->name = StringCopy (name);
-    result->lib = LoadLibrary (result->sofile);
+    result->name = ILIBstringCopy (name);
+    result->lib = LIBMloadLibrary (result->sofile);
     result->next = modulepool;
     modulepool = result;
     result->usecount = 1;
@@ -108,12 +92,12 @@ RemoveModuleFromPool (module_t *module)
 
         /* unload the library */
 
-        module->lib = UnLoadLibrary (module->lib);
+        module->lib = LIBMunLoadLibrary (module->lib);
 
         /* free the structure */
 
-        module->sofile = Free (module->sofile);
-        module->name = Free (module->name);
+        module->sofile = ILIBfree (module->sofile);
+        module->name = ILIBfree (module->name);
     }
 
     module = NULL;
@@ -122,21 +106,21 @@ RemoveModuleFromPool (module_t *module)
 }
 
 const char *
-GetModuleName (module_t *module)
+MODMgetModuleName (module_t *module)
 {
-    DBUG_ENTER ("GetModuleName");
+    DBUG_ENTER ("MODMgetModuleName");
 
-    DBUG_ASSERT ((module != NULL), "GetModuleName called with NULL pointer");
+    DBUG_ASSERT ((module != NULL), "MODMgetModuleName called with NULL pointer");
 
     DBUG_RETURN (module->name);
 }
 
 module_t *
-LoadModule (const char *name)
+MODMloadModule (const char *name)
 {
     module_t *result;
 
-    DBUG_ENTER ("LoadModule");
+    DBUG_ENTER ("MODMloadModule");
 
     result = LookupModuleInPool (name);
 
@@ -148,9 +132,9 @@ LoadModule (const char *name)
 }
 
 module_t *
-UnLoadModule (module_t *module)
+MODMunLoadModule (module_t *module)
 {
-    DBUG_ENTER ("UnLoadModule");
+    DBUG_ENTER ("MODMunLoadModule");
 
     module = RemoveModuleFromPool (module);
 
@@ -165,21 +149,21 @@ GetSymbolTableFunction (module_t *module)
 
     DBUG_ENTER ("GetSymbolTableFunction");
 
-    name = Malloc (sizeof (char) * (strlen (module->name) + 11));
+    name = ILIBmalloc (sizeof (char) * (strlen (module->name) + 11));
     sprintf (name, "__%s__SYMTAB", module->name);
 
-    result = (symtabfun_p)GetLibraryFunction (name, module->lib);
+    result = (symtabfun_p)LIBMgetLibraryFunction (name, module->lib);
 
     DBUG_RETURN (result);
 }
 
-STtable_t *
-GetSymbolTable (module_t *module)
+sttable_t *
+MODMgetSymbolTable (module_t *module)
 {
     symtabfun_p symtabfun;
-    STtable_t *result;
+    sttable_t *result;
 
-    DBUG_ENTER ("GetSymbolTable");
+    DBUG_ENTER ("MODMgetSymbolTable");
 
     symtabfun = GetSymbolTableFunction (module);
 
@@ -196,21 +180,21 @@ GetDependencyTableFunction (module_t *module)
 
     DBUG_ENTER ("GetDependencyTableFunction");
 
-    name = Malloc (sizeof (char) * (strlen (module->name) + 11));
+    name = ILIBmalloc (sizeof (char) * (strlen (module->name) + 11));
     sprintf (name, "__%s__DEPTAB", module->name);
 
-    result = (deptabfun_p)GetLibraryFunction (name, module->lib);
+    result = (deptabfun_p)LIBMgetLibraryFunction (name, module->lib);
 
     DBUG_RETURN (result);
 }
 
 stringset_t *
-GetDependencyTable (module_t *module)
+MODMgetDependencyTable (module_t *module)
 {
     deptabfun_p deptabfun;
     stringset_t *result;
 
-    DBUG_ENTER ("GetDependencyTable");
+    DBUG_ENTER ("MODMgetDependencyTable");
 
     deptabfun = GetDependencyTableFunction (module);
 
@@ -220,13 +204,13 @@ GetDependencyTable (module_t *module)
 }
 
 serfun_p
-GetDeSerializeFunction (const char *name, module_t *module)
+MODMgetDeSerializeFunction (const char *name, module_t *module)
 {
     serfun_p result;
 
-    DBUG_ENTER ("GetDeSerializeFunction");
+    DBUG_ENTER ("MODMgetDeSerializeFunction");
 
-    result = (serfun_p)GetLibraryFunction (name, module->lib);
+    result = (serfun_p)LIBMgetLibraryFunction (name, module->lib);
 
     DBUG_RETURN (result);
 }
