@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2001/05/17 14:44:03  dkr
+ * FREE, MALLOC eliminated
+ *
  * Revision 3.37  2001/05/14 10:21:20  cg
  * Bug in indentation of SPMD_BEGIN/END ICMs fixed.
  *
@@ -147,7 +150,7 @@ char *prf_name_str[] = {
 /* local macros for heap allocation                                         */
 /*--------------------------------------------------------------------------*/
 
-#define ALLOCATE(type) (type *)MALLOC (sizeof (type))
+#define ALLOCATE(type) (type *)Malloc (sizeof (type))
 
 /*--------------------------------------------------------------------------*/
 /* local functions for node initialization                                  */
@@ -230,7 +233,7 @@ MakeShpseg (nums *numsp)
         i++;
         oldnumsp = numsp;
         numsp = NUMS_NEXT (numsp);
-        FREE (oldnumsp);
+        oldnumsp = Free (oldnumsp);
     }
 
     SHPSEG_NEXT (tmp) = NULL;
@@ -642,13 +645,13 @@ MakeTypedef (char *name, char *mod, types *type, statustype attrib, node *next)
     TYPEDEF_TYPE (tmp) = type;
 #if NAMES_IN_TYPES
     if (TYPEDEF_NAME (tmp) != NULL) {
-        FREE (TYPEDEF_NAME (tmp));
+        Free (TYPEDEF_NAME (tmp));
     }
 #endif
     TYPEDEF_NAME (tmp) = name;
 #if NAMES_IN_TYPES
     if (TYPEDEF_MOD (tmp) != NULL) {
-        FREE (TYPEDEF_MOD (tmp));
+        Free (TYPEDEF_MOD (tmp));
     }
 #endif
     TYPEDEF_MOD (tmp) = mod;
@@ -681,13 +684,13 @@ MakeObjdef (char *name, char *mod, types *type, node *expr, node *next)
     OBJDEF_TYPE (tmp) = type;
 #if NAMES_IN_TYPES
     if (OBJDEF_NAME (tmp) != NULL) {
-        FREE (OBJDEF_NAME (tmp));
+        Free (OBJDEF_NAME (tmp));
     }
 #endif
     OBJDEF_NAME (tmp) = name;
 #if NAMES_IN_TYPES
     if (OBJDEF_MOD (tmp) != NULL) {
-        FREE (OBJDEF_MOD (tmp));
+        Free (OBJDEF_MOD (tmp));
     }
 #endif
     OBJDEF_MOD (tmp) = mod;
@@ -721,8 +724,8 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
 
 #if NAMES_IN_TYPES
     if (FUNDEF_TYPES (tmp) != NULL) {
-        FREE (FUNDEF_NAME (tmp));
-        FREE (FUNDEF_MOD (tmp));
+        FUNDEF_NAME (tmp) = Free (FUNDEF_NAME (tmp));
+        FUNDEF_MOD (tmp) = Free (FUNDEF_MOD (tmp));
     }
 #endif
 
@@ -769,7 +772,7 @@ MakeArg (char *name, types *type, statustype status, statustype attrib, node *ne
     ARG_TYPE (tmp) = type;
 #if NAMES_IN_TYPES
     if (ARG_NAME (tmp) != NULL) {
-        FREE (ARG_NAME (tmp));
+        Free (ARG_NAME (tmp));
     }
 #endif
     ARG_NAME (tmp) = name;
@@ -822,7 +825,7 @@ MakeVardec (char *name, types *type, node *next)
     VARDEC_TYPE (tmp) = type;
 #if NAMES_IN_TYPES
     if (VARDEC_NAME (tmp) != NULL) {
-        FREE (VARDEC_NAME (tmp));
+        Free (VARDEC_NAME (tmp));
     }
 #endif
     VARDEC_NAME (tmp) = name;
@@ -1138,7 +1141,7 @@ MakeId_Num (int val)
 
     DBUG_ENTER ("MakeId_Num");
 
-    str = (char *)MALLOC (20 * sizeof (char));
+    str = (char *)Malloc (20 * sizeof (char));
     sprintf (str, "%d", val);
     result = MakeId (str, NULL, ST_regular);
 
@@ -1651,7 +1654,7 @@ MakeNWith (node *part, node *code, node *withop)
     NWITH_CODE (tmp) = code;
     NWITH_WITHOP (tmp) = withop;
 
-    tmp->info2 = MALLOC (sizeof (wl_info));
+    tmp->info2 = Malloc (sizeof (wl_info));
     NWITH_PARTS (tmp) = -1;
     NWITH_REFERENCED (tmp) = 0;
     NWITH_REFERENCED_FOLD (tmp) = 0;
@@ -1733,7 +1736,7 @@ MakeNWithOp (WithOpType WithOp)
     tmp = CreateCleanNode (N_Nwithop);
 
     /* allocate mem to store WithOpType in. */
-    tmp->info2 = MALLOC (sizeof (WithOpType));
+    tmp->info2 = Malloc (sizeof (WithOpType));
     NWITHOP_TYPE (tmp) = WithOp;
 
     DBUG_RETURN (tmp);

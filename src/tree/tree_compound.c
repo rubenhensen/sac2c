@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2001/05/17 14:43:58  dkr
+ * FREE, MALLOC eliminated
+ *
  * Revision 3.38  2001/05/11 13:34:11  nmw
  * AdjustAvisData fixed for handling multiple inlined ssacounters
  *
@@ -984,22 +987,22 @@ CopyConstVec (simpletype vectype, int veclen, void *const_vec)
         case T_bool:
         case T_int:
             n = veclen * sizeof (int);
-            res = MALLOC (n);
+            res = Malloc (n);
             res = memcpy (res, const_vec, n);
             break;
         case T_float:
             n = veclen * sizeof (float);
-            res = MALLOC (n);
+            res = Malloc (n);
             res = memcpy (res, const_vec, n);
             break;
         case T_double:
             n = veclen * sizeof (double);
-            res = MALLOC (n);
+            res = Malloc (n);
             res = memcpy (res, const_vec, n);
             break;
         case T_char:
             n = veclen * sizeof (char);
-            res = MALLOC (n);
+            res = Malloc (n);
             res = memcpy (res, const_vec, n);
             break;
         default:
@@ -1034,16 +1037,16 @@ AllocConstVec (simpletype vectype, int veclen)
         switch (vectype) {
         case T_bool:
         case T_int:
-            res = MALLOC (veclen * sizeof (int));
+            res = Malloc (veclen * sizeof (int));
             break;
         case T_float:
-            res = MALLOC (veclen * sizeof (float));
+            res = Malloc (veclen * sizeof (float));
             break;
         case T_double:
-            res = MALLOC (veclen * sizeof (double));
+            res = Malloc (veclen * sizeof (double));
             break;
         case T_char:
-            res = MALLOC (veclen * sizeof (int));
+            res = Malloc (veclen * sizeof (int));
             break;
         default:
             DBUG_ASSERT ((0), "AllocConstVec called with non-const-type!");
@@ -1276,7 +1279,7 @@ TidyUpNodelist (nodelist *list)
     while ((list != NULL) && (NODELIST_STATUS (list) == ST_artificial)) {
         tmp = list;
         list = NODELIST_NEXT (list);
-        FREE (tmp);
+        tmp = Free (tmp);
     }
 
     first = list;
@@ -1290,7 +1293,7 @@ TidyUpNodelist (nodelist *list)
                 tmp = list;
                 NODELIST_NEXT (last) = NODELIST_NEXT (list);
                 list = NODELIST_NEXT (list);
-                FREE (tmp);
+                tmp = Free (tmp);
             } else {
                 last = list;
                 list = NODELIST_NEXT (list);
@@ -1368,7 +1371,7 @@ NodeListDelete (nodelist *nl, node *node, bool free_attrib)
 
     while (nl && NODELIST_NODE (nl) == node) {
         if (free_attrib && NODELIST_ATTRIB2 (nl)) {
-            FREE (NODELIST_ATTRIB2 (nl));
+            NODELIST_ATTRIB2 (nl) = Free (NODELIST_ATTRIB2 (nl));
         }
         nl = FreeNodelistNode (nl);
     }
@@ -1378,7 +1381,7 @@ NodeListDelete (nodelist *nl, node *node, bool free_attrib)
     while (tmpnl) {
         if (NODELIST_NODE (tmpnl) == node) {
             if (free_attrib && NODELIST_ATTRIB2 (tmpnl)) {
-                FREE (NODELIST_ATTRIB2 (tmpnl));
+                NODELIST_ATTRIB2 (tmpnl) = Free (NODELIST_ATTRIB2 (tmpnl));
             }
 
             NODELIST_NEXT (prevnl) = FreeNodelistNode (tmpnl);
@@ -1399,7 +1402,7 @@ NodeListFree (nodelist *nl, bool free_attrib)
 
     while (nl) {
         if (free_attrib && NODELIST_ATTRIB2 (nl)) {
-            FREE (NODELIST_ATTRIB2 (nl));
+            NODELIST_ATTRIB2 (nl) = Free (NODELIST_ATTRIB2 (nl));
         }
         nl = FreeNodelistNode (nl);
     }
@@ -2615,7 +2618,7 @@ Array2IntVec (node *aelems, int *length)
         *length = i;
     }
 
-    intvec = MALLOC (i * sizeof (int));
+    intvec = Malloc (i * sizeof (int));
 
     for (j = 0; j < i; j++) {
         intvec[j] = NUM_VAL (EXPRS_EXPR (tmp));
@@ -2646,7 +2649,7 @@ Array2BoolVec (node *aelems, int *length)
         *length = i;
     }
 
-    intvec = MALLOC (i * sizeof (int));
+    intvec = Malloc (i * sizeof (int));
 
     for (j = 0; j < i; j++) {
         intvec[j] = BOOL_VAL (EXPRS_EXPR (tmp));
@@ -2678,7 +2681,7 @@ Array2CharVec (node *aelems, int *length)
         *length = i;
     }
 
-    charvec = MALLOC (i * sizeof (char));
+    charvec = Malloc (i * sizeof (char));
 
     for (j = 0; j < i; j++) {
         charvec[j] = CHAR_VAL (EXPRS_EXPR (tmp));
@@ -2710,7 +2713,7 @@ Array2FloatVec (node *aelems, int *length)
         *length = i;
     }
 
-    floatvec = MALLOC (i * sizeof (float));
+    floatvec = Malloc (i * sizeof (float));
 
     for (j = 0; j < i; j++) {
         floatvec[j] = FLOAT_VAL (EXPRS_EXPR (tmp));
@@ -2742,7 +2745,7 @@ Array2DblVec (node *aelems, int *length)
         *length = i;
     }
 
-    dblvec = MALLOC (i * sizeof (double));
+    dblvec = Malloc (i * sizeof (double));
 
     for (j = 0; j < i; j++) {
         dblvec[j] = DOUBLE_VAL (EXPRS_EXPR (tmp));
