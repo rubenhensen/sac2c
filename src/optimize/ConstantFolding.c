@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.48  1996/09/10 14:31:25  asi
+ * Revision 1.49  1996/09/23 16:51:08  asi
+ * bug fixed in CalcPsi
+ *
+ * Revision 1.48  1996/09/10  14:31:25  asi
  * bug fixed in ArrayPrf
  *
  * Revision 1.47  1996/08/08  13:51:42  asi
@@ -1250,11 +1253,11 @@ FetchNum (int pos, node *array)
 /*
  *
  *  functionname  : CalcPsi
- *  arguments     : 1) first argument of primitive function psi
- *		    2) second argument of primitive function psi
- *		    3)
- *		    4)
- *		    R)
+ *  arguments     : 1) shape vector function psi is applied to
+ *		    2) array the function psi is applied to
+ *		    3) type of array the function psi is applied to
+ *		    4) arg_info containing f.e. type of result
+ *		    R) calculated result
  *  description   :
  *  global vars   :
  *  internal funs : --
@@ -1268,28 +1271,35 @@ node *
 CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
 {
     int length, start, mult, i, j, arg_length;
-    int vec_dim;
+    int vec_dim, array_dim, result_dim;
     int vec_shape[SHP_SEG_SIZE];
+    shpseg *array_shape, *result_shape;
     node *res_node = NULL;
 
     DBUG_ENTER ("CalcPsi");
     GET_BASIC_TYPE (INFO_TYPE, INFO_TYPE, 47);
     GET_BASIC_TYPE (array_type, array_type, 47);
+
     /* Calculate dimension and shape vector of first argument */
     vec_dim = GetShapeVector (shape, vec_shape);
+    array_dim = TYPES_DIM (array_type);
+    array_shape = TYPES_SHPSEG (array_type);
+    result_dim = TYPES_DIM (INFO_TYPE);
+    if (0 < result_dim)
+        result_shape = TYPES_SHPSEG (INFO_TYPE);
 
     /* Calculate length of result array */
     length = 1;
-    for (i = 0; i < TYPES_DIM (INFO_TYPE); i++)
-        length *= SHPSEG_SHAPE (TYPES_SHPSEG (INFO_TYPE), i);
+    for (i = 0; i < result_dim; i++)
+        length *= SHPSEG_SHAPE (result_shape, i);
 
     /* Calculate startposition of result array in argument array */
     start = 0;
     for (i = 0; i < vec_dim; i++) {
         if (vec_shape[i] >= 0) {
             mult = 1;
-            for (j = i + 1; j < TYPES_DIM (array_type); j++)
-                mult *= SHPSEG_SHAPE (TYPES_SHPSEG (array_type), i);
+            for (j = i + 1; j < array_dim; j++)
+                mult *= SHPSEG_SHAPE (array_shape, j);
             start += vec_shape[i] * mult;
         } else {
             start = -1;
@@ -1297,13 +1307,13 @@ CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
     }
 
     arg_length = 1;
-    for (i = 0; i < TYPES_DIM (array_type); i++)
-        arg_length *= SHPSEG_SHAPE (TYPES_SHPSEG (array_type), i);
+    for (i = 0; i < array_dim; i++)
+        arg_length *= SHPSEG_SHAPE (array_shape, i);
 
     DBUG_PRINT ("CF",
                 ("start = %d, lenght = %d, arg_length = %d", start, length, arg_length));
     if ((start + length <= arg_length) && (start >= 0)) {
-        if (vec_dim == TYPES_DIM (array_type)) {
+        if (vec_dim == array_dim) {
             res_node = FetchNum (start, array);
         } else {
             res_node = MakeNode (N_array);
@@ -1653,11 +1663,14 @@ ArrayPrf (node *arg_node, node *arg_info)
             array = arg[1];
         }
 
+        /* Arrays like [a,...] with a = [...] cannot be foldet til now */
         first_elem = EXPRS_EXPR (ARRAY_AELEMS (array));
         if (N_id == NODE_TYPE (first_elem)) {
             GET_DIM (dim, VARDEC_TYPE (ID_VARDEC (first_elem)));
-            if (0 != dim)
+            if (0 != dim) {
                 break;
+                /* make array flat here !!! */
+            }
         }
 
         res_array = CalcPsi (shape, array, array_type, arg_info);
