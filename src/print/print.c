@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/11/27 21:05:17  cg
+ * Added print support for APL pragma in Nwith2 nodes.
+ *
  * Revision 3.2  2000/11/23 16:08:29  sbs
  * definitions of DbugPrintArray, WLAAprintAccesses, and TSIprintInfo
  * enclosed in ifndef DBUG_OFF to avoid warnings in product version!
@@ -2479,6 +2482,12 @@ PrintPragma (node *arg_node, node *arg_info)
         fprintf (outfile, "\n");
     }
 
+    if (PRAGMA_APL (arg_node) != NULL) {
+        fprintf (outfile, "#pragma wlcomp ");
+        Trav (PRAGMA_APL (arg_node), arg_info);
+        fprintf (outfile, "\n");
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -3192,6 +3201,11 @@ PrintNwith2 (node *arg_node, node *arg_info)
     node *code, *tmp_nwith2;
 
     DBUG_ENTER ("PrintNwith2");
+
+    if (NWITH2_PRAGMA (arg_node) != NULL) {
+        Trav (NWITH2_PRAGMA (arg_node), arg_info);
+        INDENT;
+    }
 
     tmp_nwith2 = INFO_PRINT_NWITH (arg_info);
     INFO_PRINT_NWITH (arg_info) = arg_node;
