@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2003/04/14 14:39:45  sbs
+ * cast of the result of strlen into int eliminated; constantant
+ * casted into size_t instead.
+ *
  * Revision 3.44  2003/04/14 13:51:05  sbs
  * return value of strlen casted to int now.
  *
@@ -135,7 +139,7 @@
     {                                                                                    \
         int _i;                                                                          \
         printf ("    -b %2i:%s", ph, spec);                                              \
-        for (_i = 0; _i < (12 - (int)strlen (spec)); _i++) {                             \
+        for (_i = 0; (size_t)_i < (12 - strlen (spec)); _i++) {                          \
             printf (" ");                                                                \
         }                                                                                \
         printf ("%s\n", comment);                                                        \
