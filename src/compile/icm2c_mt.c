@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/11/18 12:07:12  jhs
+ * Added multi-thread-tracing in MULTIFOLD icm's.
+ *
  * Revision 2.8  1999/09/01 17:12:39  jhs
  * Expanded COMPSync to refcounters in barriers.
  *
@@ -389,6 +392,16 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
 
     for (i = 0; i < narg; i++) {
         INDENT;
+        fprintf (outfile,
+                 "SAC_TR_MT_PRINT_FOLD_RESULT(%s, %s, \"Pure thread fold result:\");\n",
+                 vararg[(i * 4) + 0], vararg[(i * 4) + 1]);
+    }
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_1B( %d)\n", barrier_id);
+
+    for (i = 0; i < narg; i++) {
+        INDENT;
         if (0 != strcmp ("array_rc", vararg[(i * 4)])) {
             fprintf (outfile,
                      "SAC_MT_SET_BARRIER_RESULT(SAC_MT_MYTHREAD(), %i, %s, %s);\n", i + 1,
@@ -401,7 +414,18 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
     }
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_1B( %d)\n", barrier_id);
+    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_1C( %d)\n", barrier_id);
+
+    for (i = 0; i < narg; i++) {
+        INDENT;
+        fprintf (outfile,
+                 "SAC_TR_MT_PRINT_FOLD_RESULT(%s, %s, \"Partial thread fold "
+                 "result:\");\n",
+                 vararg[(i * 4) + 0], vararg[(i * 4) + 1]);
+    }
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_1D( %d)\n", barrier_id);
 
     for (i = 0; i < narg; i++) {
         if (0 != strcmp ("array_rc", vararg[(i * 4)])) {
@@ -447,6 +471,17 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
     fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_2B( %d)\n", barrier_id);
 
     for (i = 0; i < narg; i++) {
+        INDENT;
+        fprintf (outfile,
+                 "SAC_TR_MT_PRINT_FOLD_RESULT(%s, %s, \"Partial thread fold "
+                 "result:\");\n",
+                 vararg[(i * 4) + 0], vararg[(i * 4) + 1]);
+    }
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_2C( %d)\n", barrier_id);
+
+    for (i = 0; i < narg; i++) {
         if (0 != strcmp ("array_rc", vararg[(i * 4)])) {
             INDENT;
             fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT(SAC_MT_son_id, %i, %s);\n",
@@ -488,6 +523,17 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
 
     INDENT;
     fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_3B( %d)\n", barrier_id);
+
+    for (i = 0; i < narg; i++) {
+        INDENT;
+        fprintf (outfile,
+                 "SAC_TR_MT_PRINT_FOLD_RESULT(%s, %s, \"Partial thread fold "
+                 "result:\");\n",
+                 vararg[(i * 4) + 0], vararg[(i * 4) + 1]);
+    }
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_3C( %d)\n", barrier_id);
 
     indent--;
     INDENT;
