@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.7  2001/03/02 10:36:44  dkr
+# /home/dkr/sac/BASE/sac2c/src/typecheck/RCS/Makefile,v used in touch-rules
+#
 # Revision 3.6  2001/02/23 18:04:22  sbs
 # extended for negative take's and drop's in genarray
 #
@@ -88,25 +91,25 @@ all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o \
 # recognize the dependency between *.[ch] and the .mac files!
 #
 typecheck.h: cmp_type.mac
-	touch typecheck.h
+	touch $@
 
 typecheck.c: prim_fun_tt.mac cmp_type.mac
-	touch typecheck.c
+	touch $@
 
 prim_fun.c: prim_fun_ft.mac
-	touch prim_fun.c
+	touch $@
 
 cv2cv.c: ../tree/type_info.mac
-	touch cv2cv.c
+	touch $@
 
 cv2scalar.c: ../tree/type_info.mac
-	touch cv2scalar.c
+	touch $@
 
 cv2str.c: ../tree/type_info.mac
-	touch cv2scalar.c
+	touch $@
 
 new_types.c: type_constructor_info.mac
-	touch new_types.c
+	touch $@
 
 
 %.o: %.c
@@ -121,14 +124,15 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-constants.o: ../global/globals.h /usr/include/stdio.h
-constants.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-constants.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-constants.o: /usr/include/stdio_impl.h ../global/types.h ../tree/free.h
-constants.o: /usr/include/stdlib.h ../../inc/dbug.h ../global/my_debug.h
-constants.o: ../global/internal_lib.h shape.h cv2scalar.h cv2cv.h
-constants.o: ../tree/tree_compound.h ../tree/tree_basic.h ../global/Error.h
-constants.o: /usr/include/string.h constants.h
+constants.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
+constants.o: /usr/include/sys/isa_defs.h ../global/globals.h
+constants.o: /usr/include/stdio.h /usr/include/sys/va_list.h
+constants.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+constants.o: ../global/types.h ../tree/free.h ../../inc/dbug.h
+constants.o: ../global/my_debug.h ../global/internal_lib.h shape.h
+constants.o: cv2scalar.h cv2cv.h cv2str.h ../tree/tree_compound.h
+constants.o: ../tree/tree_basic.h ../global/Error.h /usr/include/string.h
+constants.o: constants.h
 cv2cv.o: ../../inc/dbug.h /usr/include/stdio.h
 cv2cv.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 cv2cv.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -138,6 +142,12 @@ cv2scalar.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 cv2scalar.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 cv2scalar.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h cv2scalar.h
 cv2scalar.o: ../tree/type_info.mac
+cv2str.o: /usr/include/strings.h /usr/include/sys/types.h
+cv2str.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
+cv2str.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+cv2str.o: /usr/include/stdlib.h ../../inc/dbug.h /usr/include/stdio.h
+cv2str.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+cv2str.o: /usr/include/stdio_impl.h cv2str.h
 gen_pseudo_fun.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 gen_pseudo_fun.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
 gen_pseudo_fun.o: /usr/include/stdio.h /usr/include/sys/va_list.h
