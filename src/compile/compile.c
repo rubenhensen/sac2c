@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.75  2000/07/17 14:34:56  jhs
+ * all allocs of mt2 are now done by MakeAllocs.
+ *
  * Revision 2.74  2000/07/14 14:43:11  nmw
  * free changed to FREE, when used with StringConcat()
  *
@@ -7600,6 +7603,7 @@ MakeAssigns9 (node *part1, node *part2, node *part3, node *part4, node *part5,
                                               part8, part9)));
 }
 
+/* #### */
 node *
 MakeAllocs (DFMmask_t mask)
 {
@@ -7619,6 +7623,8 @@ MakeAllocs (DFMmask_t mask)
             result = MakeAssign (icm, result);
             name = DFMGetMaskEntryNameSet (NULL);
         }
+
+        result = MakeAssign (MakeIcm1 ("COMMENT", MakeId1 ("ALLOCS")), result);
 
     } else {
         result = MakeAssigns1 (MakeIcm1 ("COMMENT", MakeId1 ("NO ALLOCS")));
@@ -7752,8 +7758,14 @@ COMPSt (node *arg_node, node *arg_info)
     if (FUNDEF_ATTRIB (fundef) == ST_call_mt_master) {
         barrier = MakeIcm1 ("MT2_MASTER_BARRIER", MakeNum (ST_IDENTIFIER (arg_node)));
         code = MakeIcm0 ("CODE");
-        allocate = MakeIcm2 ("MT2_ALLOCATE", MakeNum (DFMTestMask (ST_ALLOC (arg_node))),
-                             BuildParamsByDFM (ST_ALLOC (arg_node), "alloc", NULL, NULL));
+
+        allocate = MakeAllocs (ST_ALLOC (arg_node));
+        /*
+            allocate  = MakeIcm2( "MT2_ALLOCATE",
+                                  MakeNum( DFMTestMask( ST_ALLOC( arg_node))),
+                                  BuildParamsByDFM( ST_ALLOC( arg_node), "alloc", NULL,
+           NULL));
+        */
         broadcast
           = MakeIcm4 ("MT2_MASTER_BROADCAST", MakeId1 ("SYNC"),
                       MakeNum (MT_IDENTIFIER (arg_node)), MakeNum (DFMTestMask (bset)),
@@ -7863,7 +7875,7 @@ COMPMTalloc (node *arg_node, node *arg_info)
     }
 
     if_ = MakeIcm0 ("MT2_IF_I_AM_FIRST");
-    alloc = MakeIcm0 ("MT2_ALLOCATE");
+    alloc = MakeAllocs (MTALLOC_IDSET (arg_node));
     broadcast
       = MakeIcm3 (broadcast_icm, MakeId1 ("ALLOC"),
                   MakeNum (DFMTestMask (MTALLOC_IDSET (arg_node))),
@@ -7926,7 +7938,7 @@ COMPMTsync (node *arg_node, node *arg_info)
     /* if */
     if_ = MakeIcm0 ("MT2_IF_I_AM_FIRST");
     /* alloc */
-    alloc = MakeIcm0 ("ALLOC");
+    alloc = MakeAllocs (MTSYNC_ALLOC (arg_node));
     /* wait */
     nums = 0;
     args = BuildParamsByDFMfold (MTSYNC_FOLD (arg_node), "sync", &nums, NULL);
