@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/11/27 21:04:38  cg
+ * Added general support for new optimization APL,
+ * "array placement"
+ *
  * Revision 3.2  2000/11/24 16:30:07  nmw
  * TRACE_CENV added
  *
@@ -175,6 +179,7 @@ extern unsigned int optimize;
 #define OPT_RCAO 0x00800000 /* ref count allocation optimization (for PHM) */
 #define OPT_MSCA 0x01000000 /* memory size cache adjustment (for PHM)      */
 #define OPT_AP 0x02000000   /* array padding                               */
+#define OPT_APL 0x04000000  /* array placement                             */
 
 extern int optvar;
 extern int inlnum;

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/11/27 21:04:38  cg
+ * Added general support for new optimization APL,
+ * "array placement"
+ *
  * Revision 3.2  2000/11/24 16:30:24  nmw
  * -trace c for c library runtime enviroment tracing added
  *
@@ -392,6 +396,9 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("ap", optimize |= OPT_AP);
         ARG_CHOICE ("AP", optimize |= OPT_AP);
+
+        ARG_CHOICE ("apl", optimize |= OPT_APL);
+        ARG_CHOICE ("APL", optimize |= OPT_APL);
 
         ARG_CHOICE ("tsp", optimize |= OPT_TSP);
         ARG_CHOICE ("TSP", optimize |= OPT_TSP);

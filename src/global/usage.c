@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/11/27 21:04:38  cg
+ * Added general support for new optimization APL,
+ * "array placement"
+ *
  * Revision 3.2  2000/11/24 16:31:06  nmw
  * trace option -trace c added
  *
@@ -369,6 +373,7 @@ usage ()
             "\t\tRCO \trefcount optimization\n"
             "\t\tUIP \tupdate-in-place\n"
             "\t\tAP  \tarray padding\n"
+            "\t\tAPL \tarray placement\n"
             "\t\tTSI \ttile size inference (blocking)\n"
             "\t\tTSP \ttile size pragmas (blocking)\n"
             "\t\tMTO \tmulti-thread optimization\n"

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/27 21:04:38  cg
+ * Added general support for new optimization APL,
+ * "array placement"
+ *
  * Revision 3.1  2000/11/20 17:59:28  sacbase
  * new release made
  *
@@ -320,9 +324,10 @@ int make_patchwith = 0;
  */
 
 #ifdef PRODUCTION
-unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI);
+unsigned int optimize
+  = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL);
 #else  /* PRODUCTION */
-unsigned int optimize = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI);
+unsigned int optimize = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL);
 #endif /* PRODUCTION */
 
 /*
