@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2004/08/31 16:57:28  skt
+ * added support for function replication (mtmode 3)
+ * -
+ *
  * Revision 3.56  2004/08/26 15:02:08  khf
  * ddepend_tab and tdepend_tab added
  *
@@ -346,7 +350,7 @@ extern funtab *ntc_tab;
 extern funtab *muth_tab;
 extern funtab *crwiw_tab;
 extern funtab *unused_tab32;
-extern funtab *unused_tab37;
+extern funtab *repfun_tab;
 extern funtab *fun2lac_tab;
 extern funtab *ai_tab;
 extern funtab *unused_tab31;

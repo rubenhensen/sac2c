@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2004/08/31 16:57:28  skt
+ * added support for function replication (mtmode 3)
+ * -
+ *
  * Revision 3.71  2004/08/29 16:52:24  sah
  * InferDFMs now part of miniSaC ;)
  *
@@ -309,10 +313,11 @@
 #include "tag_executionmode.h"
 #include "create_withinwith.h"
 #include "propagate_executionmode.h"
-#include "create_cells.h"
-#include "cell_growth.h"
 #include "create_dataflowgraph.h"
 #include "assignments_rearrange.h"
+#include "create_cells.h"
+#include "cell_growth.h"
+#include "replicate_functions.h"
 #include "blocks_lift.h"
 #include "adjust_calls.h"
 #include "pad_collect.h"
@@ -1044,15 +1049,15 @@ static funtab unused_tab32_rec = {{
 funtab *unused_tab32 = &unused_tab32_rec;
 
 /*
- *  (63) unused_tab37
+ *  (63) repfun_tab
  */
-static funtab unused_tab37_rec = {{
-#define NIFunused_37(it_unused_37) it_unused_37
+static funtab repfun_tab_rec = {{
+#define NIFrepfun(it_repfun) it_repfun
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab37 = &unused_tab37_rec;
+                                },
+                                NULL,
+                                NULL};
+funtab *repfun_tab = &repfun_tab_rec;
 
 #endif /* NEW_AST */
 /*
