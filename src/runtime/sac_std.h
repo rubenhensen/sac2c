@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/04/30 09:12:32  dkr
+ * no changes done
+ *
  * Revision 3.8  2002/04/17 15:55:48  dkr
  * ooops... bug in SAC_INITGLOBALOBJECT_BEGIN fixed...
  *
@@ -97,8 +100,6 @@
  * Revision 1.1  1998/05/07 08:38:05  cg
  * Initial revision
  *
- *
- *
  */
 
 /*****************************************************************************
@@ -161,7 +162,9 @@
 #define SAC_ND_A_SHAPE_AKD(name, dim) CAT0 (name, __s[dim])
 
 #define SAC_ND_WRITE_ARRAY(name, pos)                                                    \
-    SAC_BC_WRITE (name, pos) SAC_CS_WRITE_ARRAY (name, pos) SAC_ND_A_FIELD (name)[pos]
+    SAC_BC_WRITE (name, pos)                                                             \
+    SAC_CS_WRITE_ARRAY (name, pos)                                                       \
+    SAC_ND_A_FIELD (name)[pos]
 
 #define SAC_ND_READ_ARRAY(name, pos)                                                     \
     (SAC_BC_READ (name, pos) SAC_CS_READ_ARRAY (name, pos) SAC_ND_A_FIELD (name)[pos])
@@ -170,8 +173,8 @@
  * ICMs for refcount access:
  * ===========================
  *
- * ND_A_RC(name)   : accesses the refcnt
- * ND_A_RCP(name)  : accesses the pointer to the refcnt
+ * ND_A_RC( name)   : accesses the refcnt
+ * ND_A_RCP( name)  : accesses the pointer to the refcnt
  *
  */
 
@@ -195,13 +198,13 @@
  * ICMs for declaring refcounted data:
  * =====================================
  *
- * ND_KD_DECL_ARRAY(basetype, name, dim)
+ * ND_KD_DECL_ARRAY( basetype, name, dim)
  *   declares an array with dimension but without shape information
  *
- * ND_DECL_ARRAY(basetype, name)
+ * ND_DECL_ARRAY( basetype, name)
  *   declares an array without dimension and shape information
  *
- * ND_DECL_RC(type, name)
+ * ND_DECL_RC( type, name)
  *   declares a refcounted variable in general
  *
  */
@@ -483,7 +486,6 @@
  *   assigns old to new if refcount is zero and copies the hidden otherwise
  *   No new refcount is allocated, the old one is freed when not copying
  *
- *
  */
 
 #define SAC_ND_SET_RC(name, num)                                                         \
@@ -625,10 +627,16 @@
  *   macro for returning refcounted data
  *
  * ND_RET_inout( name, namep)
- *   macro for returning "inout" non-refcounted data
+ *   macro for returning non-refcounted "inout" data
  *
  * ND_RET_inout_rc( name, namep)
- *   macro for returning "inout" refcounted data
+ *   macro for returning refcounted "inout" data
+ *
+ * ND_DECL_PARAM_inout( type, name)
+ *   macro for declaration of non-refcounted "inout" parameter
+ *
+ * ND_DECL_PARAM_inout_rc( type, name)
+ *   macro for declaration of refcounted "inout" parameter
  *
  */
 
