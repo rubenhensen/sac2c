@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/08/11 09:38:03  skt
+ * assignments rearrange enabled
+ *
  * Revision 3.12  2004/08/09 03:47:34  skt
  * master run warning fixed
  *
@@ -419,6 +422,15 @@ MUTHmodul (node *arg_node, info *arg_info)
     /*
      *  --- AssignmentsRearange (asmra) ---
      */
+    DBUG_PRINT ("MUTH", ("begin AssignmentsRearrange"));
+
+    arg_node = AssignmentsRearrange (arg_node);
+
+    DBUG_PRINT ("MUTH", ("end AssignmentsRearrange"));
+
+    if ((break_after == PH_multithread) && (strcmp ("asmra", break_specifier) == 0)) {
+        goto cont;
+    }
 
     /*
      *  --- CreateCells (crece) ---
