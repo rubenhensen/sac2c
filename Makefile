@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.142  2004/11/19 21:01:58  sah
+# added objanalysis.o
+#
 # Revision 3.141  2004/11/18 15:18:03  mwe
 # ChackAvis changed to ToNewTypes
 #
@@ -360,7 +363,7 @@ ifeq ($(NEWAST),yes)
                src/modules/usesymbols.o src/tree/serialize_link.o \
                src/tree/serialize.o src/tree/serialize_stack.o  \
                src/modules/prepareinline.o src/modules/dependencies.o \
-               src/scanparse/resolvepragma.o
+               src/scanparse/resolvepragma.o src/objects/objanalysis.o
   NEWASTFLAGS = $(LDDYNFLAG)
 endif
 
