@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2002/08/09 12:38:36  dkr
+ * - more code brushing done
+ * - INFO_WL_TYPES move from tree_basic.h to wltransform.c
+ *
  * Revision 3.59  2002/08/08 12:34:58  dkr
  * code brushed, some DBUG_ASSERTs added for AKD, AUD
  *
@@ -204,6 +208,11 @@
 #include "wl_bounds.h"
 #include "wlpragma_funs.h"
 #include "wltransform.h"
+
+/*
+ * access macros for 'arg_info'
+ */
+#define INFO_WL_TYPES(n) (n->info.types)
 
 typedef enum {
     WL_PH_conv,
@@ -3019,7 +3028,7 @@ ret:
  *
  ******************************************************************************/
 
-node *
+static node *
 ConvertWith (node *wl, int dims)
 {
     node *new_node;
@@ -4333,7 +4342,7 @@ GenerateCompleteDomainVar (node *stride, int dims, int *shape)
  *
  ******************************************************************************/
 
-node *
+static node *
 BuildCubes (node *strides, node *wl2, int dims, int *wl_shp, bool do_naive_comp)
 {
     bool all_const;
@@ -6724,6 +6733,136 @@ InferFitted (node *wlnode)
 /******************************************************************************
  *
  * Function:
+ *   node *ProcessSegments( node *segs, int dims, int *shape,
+ *                          bool do_naive_comp, wl_bs_t wl_break_after)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+ProcessSegments (node *segs, int dims, int *shape, bool do_naive_comp,
+                 wl_bs_t wl_break_after)
+{
+    node *seg;
+
+    DBUG_ENTER ("ProcessSegments");
+
+    /* compute SEGX_IDX_MIN, SEGX_IDX_MAX and SEG_SV */
+    segs = InferSegsParams_Pre (segs, shape);
+
+    seg = segs;
+    while (seg != NULL) {
+        DBUG_EXECUTE ("WLtrans", NOTE ((">>> entering segment\n")));
+
+        /* check params of segment */
+        CheckParams (seg);
+
+        /*
+         * splitting
+         */
+        if (wl_break_after >= WL_PH_split) {
+            if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
+                DBUG_EXECUTE ("WLtrans", NOTE (("step 4: split\n")));
+                WLSEG_CONTENTS (seg) = SplitWL (WLSEG_CONTENTS (seg));
+            }
+        }
+
+        /*
+         * hierarchical blocking
+         */
+        if (wl_break_after >= WL_PH_block) {
+            if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
+                int b;
+                DBUG_EXECUTE ("WLtrans", NOTE (("step 5: hierarchical blocking\n")));
+                for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
+                    DBUG_EXECUTE ("WLtrans",
+                                  NOTE (("step 5.%d: hierarchical blocking (level %d)\n",
+                                         b + 1, b)));
+                    WLSEG_CONTENTS (seg)
+                      = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_BV (seg, b), FALSE);
+                }
+            }
+        }
+
+        /*
+         * unrolling-blocking
+         */
+        if (wl_break_after >= WL_PH_ublock) {
+            if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
+                DBUG_EXECUTE ("WLtrans", NOTE (("step 6: unrolling-blocking\n")));
+                WLSEG_CONTENTS (seg)
+                  = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_UBV (seg), TRUE);
+            }
+        }
+
+        /*
+         * merging
+         */
+        if (wl_break_after >= WL_PH_merge) {
+            if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
+                DBUG_EXECUTE ("WLtrans", NOTE (("step 7: merge\n")));
+                WLSEG_CONTENTS (seg) = MergeWL (WLSEG_CONTENTS (seg));
+            }
+        }
+
+        /*
+         * optimization
+         */
+        if (wl_break_after >= WL_PH_opt) {
+            if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
+                DBUG_EXECUTE ("WLtrans", NOTE (("step 8: optimize\n")));
+                WLSEG_CONTENTS (seg) = OptWL (WLSEG_CONTENTS (seg));
+            }
+        }
+
+        /*
+         * fitting
+         */
+        if (wl_break_after >= WL_PH_fit) {
+            if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
+                DBUG_EXECUTE ("WLtrans", NOTE (("step 9: fit\n")));
+                WLSEG_CONTENTS (seg) = FitWL (WLSEG_CONTENTS (seg));
+            }
+        }
+
+        /*
+         * normalization
+         */
+        if (wl_break_after >= WL_PH_norm) {
+            if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
+                DBUG_EXECUTE ("WLtrans", NOTE (("step 10: normalize\n")));
+                WLSEG_CONTENTS (seg)
+                  = NormWL (dims, shape, WLSEG_IDX_MAX (seg), WLSEG_CONTENTS (seg));
+            }
+        }
+
+        if (wl_break_after >= WL_PH_fill2) {
+            /*
+             * fill all gaps
+             */
+            DBUG_EXECUTE ("WLtrans", NOTE (("step 11: fill gaps (all)\n")));
+            InsertNoopNodes (WLSEGX_CONTENTS (seg));
+        }
+
+        /* compute GRIDX_FITTED */
+        WLSEGX_CONTENTS (seg) = InferFitted (WLSEGX_CONTENTS (seg));
+
+        DBUG_EXECUTE ("WLtrans", NOTE (("<<< leaving segment\n")));
+
+        seg = WLSEGX_NEXT (seg);
+    }
+
+    /* recompute SEG_SV and compute SEG_HOMSV */
+    segs = InferSegsParams_Post (segs);
+
+    DBUG_RETURN (segs);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   wl_bs_t AnalyzeBreakSpecifier( void)
  *
  * Description:
@@ -6786,7 +6925,7 @@ AnalyzeBreakSpecifier (void)
 node *
 WLTRAwith (node *arg_node, node *arg_info)
 {
-    wl_bs_t WL_break_after;
+    wl_bs_t wl_break_after;
     types *idx_type;
     shape_class_t idx_sc;
     node *new_node = NULL;
@@ -6799,7 +6938,7 @@ WLTRAwith (node *arg_node, node *arg_info)
     line = NODE_LINE (arg_node);
 
     /* analyse 'break_specifier' */
-    WL_break_after = AnalyzeBreakSpecifier ();
+    wl_break_after = AnalyzeBreakSpecifier ();
 
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
@@ -6852,172 +6991,63 @@ WLTRAwith (node *arg_node, node *arg_info)
             /* all parts are empty  ->  set 'new_node' */
             new_node = EmptyParts2Expr (arg_node);
         } else {
-            node *segs;
+            node *cubes = NULL;
+            node *segs = NULL;
+            bool do_naive_comp = ExtractNaiveCompPragma (NWITH_PRAGMA (arg_node), line);
 
             new_node = ConvertWith (arg_node, idx_size);
 
-            if (WL_break_after < WL_PH_cubes) {
-                /*
-                 * stop after converting
-                 *   ->  build one segment containing the strides
-                 */
-                segs = WLCOMP_All (NULL, NULL, strides, idx_size, line);
+            if (wl_break_after <= WL_PH_conv) {
+                goto DONE;
+            }
+
+            /*
+             * build the cubes
+             */
+            DBUG_EXECUTE ("WLtrans", NOTE (("step 1: build cubes\n")));
+            cubes = BuildCubes (strides, new_node, idx_size, wl_shp, do_naive_comp);
+
+            if (wl_break_after <= WL_PH_cubes) {
+                goto DONE;
+            }
+
+            /*
+             * normalize grids and fill gaps
+             */
+            DBUG_EXECUTE ("WLtrans", NOTE (("step 2: fill gaps (grids)\n")));
+            cubes = InsertNoopGrids (cubes);
+
+            if (wl_break_after <= WL_PH_fill1) {
+                goto DONE;
+            }
+
+            DBUG_EXECUTE ("WLtrans", NOTE (("step 3: choose segments\n")));
+
+            if (do_naive_comp) {
+                /* naive compilation  ->  put each stride in a separate segment */
+                segs = WLCOMP_Cubes (NULL, NULL, cubes, idx_size, line);
             } else {
-                node *cubes;
-                bool do_naive_comp
-                  = ExtractNaiveCompPragma (NWITH_PRAGMA (arg_node), line);
+                segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, idx_size);
+            }
 
-                /*
-                 * build the cubes
-                 */
-                DBUG_EXECUTE ("WLtrans", NOTE (("step 1: build cubes\n")));
-                cubes = BuildCubes (strides, new_node, idx_size, wl_shp, do_naive_comp);
+            /*
+             * do all the segment-wise transformation stuff (step 4 -- 11)
+             */
+            segs
+              = ProcessSegments (segs, idx_size, wl_shp, do_naive_comp, wl_break_after);
 
-                if (WL_break_after >= WL_PH_fill1) {
-                    /*
-                     * normalize grids and fill gaps
-                     */
-                    DBUG_EXECUTE ("WLtrans", NOTE (("step 2: fill gaps (grids)\n")));
-                    cubes = InsertNoopGrids (cubes);
-                }
-
-                if (WL_break_after < WL_PH_segs) {
-                    /* stop after cube building  ->  build one segment containing cubes */
-                    segs = WLCOMP_All (NULL, NULL, cubes, idx_size, line);
+        DONE:
+            if (segs == NULL) {
+                if (cubes == NULL) {
+                    segs = WLCOMP_All (NULL, NULL, strides, idx_size, line);
                 } else {
-                    node *seg;
-
-                    DBUG_EXECUTE ("WLtrans", NOTE (("step 3: choose segments\n")));
-
-                    if (do_naive_comp) {
-                        /* naive compilation  ->  put each stride in a separate segment */
-                        segs = WLCOMP_Cubes (NULL, NULL, cubes, idx_size, line);
-                    } else {
-                        segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, idx_size);
-                    }
-
-                    /* compute SEGX_IDX_MIN, SEGX_IDX_MAX and SEG_SV */
-                    segs = InferSegsParams_Pre (segs, wl_shp);
-
-                    seg = segs;
-                    while (seg != NULL) {
-                        /* check params of segment */
-                        CheckParams (seg);
-
-                        if (!do_naive_comp) {
-                            /*
-                             * splitting
-                             */
-                            if (WL_break_after >= WL_PH_split) {
-                                if (NODE_TYPE (seg) == N_WLseg) {
-                                    DBUG_EXECUTE ("WLtrans", NOTE (("step 4: split\n")));
-                                    WLSEG_CONTENTS (seg) = SplitWL (WLSEG_CONTENTS (seg));
-                                }
-                            }
-
-                            /*
-                             * hierarchical blocking
-                             */
-                            if (WL_break_after >= WL_PH_block) {
-                                if (NODE_TYPE (seg) == N_WLseg) {
-                                    int b;
-                                    DBUG_EXECUTE ("WLtrans",
-                                                  NOTE (
-                                                    ("step 5: hierarchical blocking\n")));
-                                    for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
-                                        DBUG_EXECUTE ("WLtrans",
-                                                      NOTE (("step 5.%d: hierarchical "
-                                                             "blocking (level %d)\n",
-                                                             b + 1, b)));
-                                        WLSEG_CONTENTS (seg)
-                                          = BlockWL (WLSEG_CONTENTS (seg), idx_size,
-                                                     WLSEG_BV (seg, b), FALSE);
-                                    }
-                                }
-                            }
-
-                            /*
-                             * unrolling-blocking
-                             */
-                            if (WL_break_after >= WL_PH_ublock) {
-                                if (NODE_TYPE (seg) == N_WLseg) {
-                                    DBUG_EXECUTE ("WLtrans",
-                                                  NOTE (
-                                                    ("step 6: unrolling-blocking\n")));
-                                    WLSEG_CONTENTS (seg)
-                                      = BlockWL (WLSEG_CONTENTS (seg), idx_size,
-                                                 WLSEG_UBV (seg), TRUE);
-                                }
-                            }
-
-                            /*
-                             * merging
-                             */
-                            if (WL_break_after >= WL_PH_merge) {
-                                if (NODE_TYPE (seg) == N_WLseg) {
-                                    DBUG_EXECUTE ("WLtrans", NOTE (("step 7: merge\n")));
-                                    WLSEG_CONTENTS (seg) = MergeWL (WLSEG_CONTENTS (seg));
-                                }
-                            }
-
-                            /*
-                             * optimization
-                             */
-                            if (WL_break_after >= WL_PH_opt) {
-                                if (NODE_TYPE (seg) == N_WLseg) {
-                                    DBUG_EXECUTE ("WLtrans",
-                                                  NOTE (("step 8: optimize\n")));
-                                    WLSEG_CONTENTS (seg) = OptWL (WLSEG_CONTENTS (seg));
-                                }
-                            }
-
-                            /*
-                             * fitting
-                             */
-                            if (WL_break_after >= WL_PH_fit) {
-                                if (NODE_TYPE (seg) == N_WLseg) {
-                                    DBUG_EXECUTE ("WLtrans", NOTE (("step 9: fit\n")));
-                                    WLSEG_CONTENTS (seg) = FitWL (WLSEG_CONTENTS (seg));
-                                }
-                            }
-
-                            /*
-                             * normalization
-                             */
-                            if (WL_break_after >= WL_PH_norm) {
-                                if (NODE_TYPE (seg) == N_WLseg) {
-                                    DBUG_EXECUTE ("WLtrans",
-                                                  NOTE (("step 10: normalize\n")));
-                                    WLSEG_CONTENTS (seg)
-                                      = NormWL (idx_size, wl_shp, WLSEG_IDX_MAX (seg),
-                                                WLSEG_CONTENTS (seg));
-                                }
-                            }
-                        }
-
-                        if (WL_break_after >= WL_PH_fill2) {
-                            /*
-                             * fill all gaps
-                             */
-                            DBUG_EXECUTE ("WLtrans",
-                                          NOTE (("step 11: fill gaps (all)\n")));
-                            InsertNoopNodes (WLSEGX_CONTENTS (seg));
-                        }
-
-                        /* compute GRIDX_FITTED */
-                        WLSEGX_CONTENTS (seg) = InferFitted (WLSEGX_CONTENTS (seg));
-
-                        seg = WLSEGX_NEXT (seg);
-                    }
-
-                    /* recompute SEG_SV and compute SEG_HOMSV */
-                    segs = InferSegsParams_Post (segs);
+                    segs = WLCOMP_All (NULL, NULL, cubes, idx_size, line);
                 }
+            }
 
-                /* free temporary data */
-                if (cubes != NULL) {
-                    cubes = FreeTree (cubes);
-                }
+            /* free temporary data */
+            if (cubes != NULL) {
+                cubes = FreeTree (cubes);
             }
 
             NWITH2_SEGS (new_node) = segs;
