@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/25 22:00:41  sah
+  ...
+
   Revision 1.1  2004/11/23 11:30:11  sah
   Initial revision
 
@@ -13,6 +16,7 @@ version="1.0">
 <xsl:import href="common-key-tables.xsl"/>
 <xsl:import href="common-travfun.xsl"/>
 <xsl:import href="common-node-access.xsl"/>
+<xsl:import href="common-name-to-nodeenum.xsl"/>
 
 <xsl:output method="text" indent="no"/>
 <xsl:strip-space elements="*"/>
@@ -78,7 +82,7 @@ version="1.0">
 #include "internal_lib.h"
 #include "dbug.h"
 
-#define FREETRAV( node, info) (node != NULL) ? Trav( node, info) : node
+#define FREETRAV( node, info) (node != NULL) ? FREEdo( node, info) : node
 #define FREECOND( node, info)                                    \
   (INFO_FREE_FLAG( info) != arg_node)                            \
     ? FREETRAV( node, info)                                      \
@@ -150,9 +154,9 @@ version="1.0">
     <xsl:with-param name="nodetype">
       <xsl:value-of select="@name"/>
     </xsl:with-param>
-    <xsl:with-param name="field">Status</xsl:with-param>
+    <xsl:with-param name="field">IsZombie</xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="' = ST_zombiefun;'"/>
+  <xsl:value-of select="' = TRUE;'"/>
   <!-- first free everything downwards in the ast -->
   <xsl:apply-templates select="sons/son[@name = &quot;Next&quot;]"/>
   <!-- free all attributes, except NAME, MOD, LINKMOD. IMPL and TYPES --> 
@@ -214,21 +218,35 @@ version="1.0">
   </xsl:call-template>
   <xsl:value-of select="'&quot;);'"/>
   <!-- give hint we start to free now -->
-  <xsl:value-of select="'DBUG_PRINT( &quot;FREE&quot;, (&quot;Processing node %s at &quot; F_PTR, mdb_nodetype[ NODE_TYPE( arg_node)], arg_node));'"/>
+  <xsl:value-of select="'DBUG_PRINT( &quot;FREE&quot;, (&quot;Processing node %s at &quot; F_PTR, NODE_TEXT( arg_node), arg_node));'"/>
   <!-- first free everything downwards in the ast -->
   <xsl:apply-templates select="sons/son[@name = &quot;Next&quot;]"/>
   <!-- call free for attributes -->
   <xsl:apply-templates select="attributes/attribute"/>
   <!-- call free for all other sons -->
   <xsl:apply-templates select="sons/son[not( @name= &quot;Next&quot;)]"/>
+  <!-- free sons structure -->
+  <xsl:value-of select="'arg_node->sons.'"/>
+  <xsl:call-template name="name-to-nodeenum" >
+    <xsl:with-param name="name" select="@name"/>
+  </xsl:call-template>
+  <xsl:value-of select="' = ILIBfree( arg_node->attribs.'"/>
+  <xsl:call-template name="name-to-nodeenum" >
+    <xsl:with-param name="name" select="@name"/>
+  </xsl:call-template>
+  <xsl:value-of select="');'"/>
   <!-- free attribute structure -->
-  <xsl:value-of select="'arg_node->attribs.N_'"/>
-  <xsl:value-of select="@name"/>
-  <xsl:value-of select="' = ILIBfree( arg_node->attribs.N_'"/>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="'arg_node->attribs.'"/>
+  <xsl:call-template name="name-to-nodeenum" >
+    <xsl:with-param name="name" select="@name"/>
+  </xsl:call-template>
+  <xsl:value-of select="' = ILIBfree( arg_node->attribs.'"/>
+  <xsl:call-template name="name-to-nodeenum" >
+    <xsl:with-param name="name" select="@name"/>
+  </xsl:call-template>
   <xsl:value-of select="');'"/>
   <!-- calculate return value and free node -->
-  <xsl:value-of select="'DBUG_PRINT( &quot;FREE&quot;, (&quot;Freeing node %s at &quot; F_PTR, mdb_nodetype[ NODE_TYPE( arg_node)], arg_node));'"/>
+  <xsl:value-of select="'DBUG_PRINT( &quot;FREE&quot;, (&quot;Freeing node %s at &quot; F_PTR, NODE_TEXT( arg_node), arg_node));'"/>
   <xsl:choose>
     <xsl:when test="sons/son[@name = &quot;Next&quot;]">
       <xsl:value-of select="'result = '"/>

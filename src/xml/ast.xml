@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.87  2004/11/25 22:00:14  sah
+  ...
+
   Revision 1.86  2004/11/25 21:41:34  khf
   added WLTRA
 
@@ -348,6 +351,22 @@
 	  <node name="Import" />
 	  <node name="Provide" />
 	  <node name="Export" />
+	  <node name="Module" />
+	</travuser>
+      </traversal>
+      <traversal id="ANS" name="Annotate Namespaces" default="sons" include="annotatenamespace.h">
+        <travuser>
+	  <node name="Symbol" />
+	  <node name="Use" />
+	  <node name="Import" />
+	  <node name="Export" />
+	  <node name="Provide" />
+	  <node name="Fundef" />
+	  <node name="Typedef" />
+	  <node name="Objdef" />
+	  <node name="Ap" />
+	  <node name="Arg" />
+	  <node name="Vardec" />
 	  <node name="Module" />
 	</travuser>
       </traversal>
