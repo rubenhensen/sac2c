@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.29  1995/10/08 11:29:45  sbs
+# Revision 1.30  1995/10/16 12:00:32  cg
+# path to new directory objects added
+#
+# Revision 1.29  1995/10/08  11:29:45  sbs
 # make deps done
 #
 # Revision 1.28  1995/09/27  13:04:32  cg
@@ -98,7 +101,7 @@ CC=gcc -ansi -g
 
 INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules -I../global -I../refcount -I../compile \
-     -I../psi-opt \
+     -I../psi-opt -I../objects \
      -I/usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include
 
 all: main.o Error.o traverse.o usage.o my_debug.o tree.o free.o  \
@@ -167,7 +170,7 @@ main.o: ../flatten/flatten.h ../print/print.h ../typecheck/typecheck.h
 main.o: ../optimize/optimize.h ../modules/filemgr.h ../modules/import.h
 main.o: ../refcount/refcount.h ../scanparse/scnprs.h ../scanparse/y.tab.h
 main.o: ../compile/trace.h ../compile/compile.h ../psi-opt/psi-opt.h
-main.o: ../modules/sib.h ../modules/implicittypes.h
+main.o: ../modules/sib.h ../modules/implicittypes.h ../objects/objinit.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
@@ -186,7 +189,7 @@ traverse.o: ../modules/import.h ../refcount/refcount.h ../compile/compile.h
 traverse.o: ../optimize/DupTree.h ../optimize/Inline.h ../optimize/Unroll.h
 traverse.o: ../optimize/Unswitch.h ../psi-opt/ArrayElimination.h
 traverse.o: ../psi-opt/index.h ../modules/sib.h ../modules/implicittypes.h
-traverse.o: traverse.h node_info.mac
+traverse.o: ../objects/objinit.h traverse.h node_info.mac
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 tree.o: tree.h types.h tree_basic.h tree_compound.h ../../inc/dbug.h
