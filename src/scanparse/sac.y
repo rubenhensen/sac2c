@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.42  1995/01/06 19:05:51  sbs
+ * Revision 1.43  1995/01/09 12:16:07  sbs
+ * bug fixed: mod_name set earlier in moddec.
+ *
+ * Revision 1.42  1995/01/06  19:05:51  sbs
  * no_mod_ext pragma deleted & extern declaration inserted
  *
  * Revision 1.41  1995/01/06  17:51:45  sbs
@@ -221,15 +224,14 @@ file:   PARSE_PRG prg {syntax_tree=$2;}
 	| PARSE_DEC moddec {decl_tree=$2;}
 	;
 
-moddec: modclass ID COLON evextern evimport OWN COLON expdesc
+moddec: modclass ID COLON evextern { if($4 == 1) mod_name=NULL;
+				     else mod_name=$2; }
+				  evimport OWN COLON expdesc
 	  { $$=MakeNode($1);
 	    $$->info.fun_name.id=$2;
-	    if($4 == 1)
-	      $$->info.fun_name.id_mod=mod_name=NULL;
-	    else
-	      $$->info.fun_name.id_mod=mod_name=$2;
-            $$->node[0]=$8;
-	    $$->node[1]=$5;
+	    $$->info.fun_name.id_mod=mod_name;
+            $$->node[0]=$9;
+	    $$->node[1]=$6;
             if($$->node[1] != NULL) {
               $$->nnode=2;
               DBUG_PRINT("GENTREE",
