@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/02/20 15:51:27  nmw
+ * minor changes in INFO_SSA nodes
+ *
  * Revision 3.17  2001/02/16 08:41:50  nmw
  * SSASTACK_INUSE added
  *
@@ -1380,6 +1383,7 @@ MakeAvis (node *vardecOrArg)
     AVIS_VARDECORARG (tmp) = vardecOrArg;
     AVIS_SSAPHITARGET (tmp) = FALSE;
     AVIS_SSALPINV (tmp) = FALSE;
+    AVIS_SSADEFINED (tmp) = FALSE;
 
     /* create empty stack */
     AVIS_SSASTACK (tmp) = MakeSSAstack (NULL, NULL);

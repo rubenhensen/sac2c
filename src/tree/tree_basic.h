@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2001/02/20 15:51:27  nmw
+ * minor changes in INFO_SSA nodes
+ *
  * Revision 3.30  2001/02/16 08:41:50  nmw
  * SSASTACK_INUSE added
  *
@@ -1951,14 +1954,15 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***    node*       VARDECORARG     (N_vardec/N_arg)
  ***    node*       SSACOUNT        (N_ssacnt)       (ssaform -> optimize !!)
  ***    node*       SSAASSIGN       (N_assign)       (ssaform -> optimize !!)
- ***    constant*   SSACONST (0)                     (cf -> optimize !!)
- ***    bool        SSAPHITARGET (0)                 (ssaform -> optimize !!)
- ***    bool        SSALPINV (0)                     (lir -> optimize !!)
+ ***    constant*   SSACONST (O)                     (cf -> optimize !!)
+ ***    bool        SSAPHITARGET (O)                 (ssaform -> optimize !!)
+ ***    bool        SSALPINV (O)                     (lir -> optimize !!)
  ***
  ***    the following attributes are only used within ssaform traversal:
- ***    node*       SSASUBST (0)    (N_ssastack)     (ssaform!!)
- ***    node*       SSATHEN (0)     (N_avis)         (ssaform!!)
- ***    node*       SSAELSE (0)     (N_avis)         (ssaform!!)
+ ***    bool        SSADEFINED (O)                   (ssaform!!)
+ ***    node*       SSASTACK (O)    (N_ssastack)     (ssaform!!)
+ ***    node*       SSATHEN (O)     (N_avis)         (ssaform!!)
+ ***    node*       SSAELSE (O)     (N_avis)         (ssaform!!)
  ***/
 
 /*
@@ -1974,6 +1978,7 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_SSACONST(n) ((constant *)(n->info2))
 #define AVIS_SSAPHITARGET(n) ((bool)(n->flag))
 #define AVIS_SSALPINV(n) ((bool)(n->refcnt))
+#define AVIS_SSADEFINED(n) ((bool)(n->int_data))
 #define AVIS_SSASTACK(n) ((node *)(n->dfmask[0]))
 #define AVIS_SSATHEN(n) ((node *)(n->dfmask[1]))
 #define AVIS_SSAELSE(n) ((node *)(n->dfmask[2]))
@@ -2276,6 +2281,10 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      FUNDEF            (actual working fundef)
  ***    node*      BLOCK             (top-level block of function)
  ***    bool       RETINSTR          (working on return instruction)
+ ***    node*      WITHVEC(n)        (avis of withid vec for multi-part with-loops)
+ ***    node*      WITHIDS(n)        (avis of withid ids for multi-part with-loops)
+ ***    node*      CONDSTMT(n)       (store cond-node for later access)
+ ***    int        CONDSTATUS(n)     (store position in conditional traversal)
  ***
  ***
  *** remarks:
@@ -2671,6 +2680,10 @@ extern node *MakeInfo ();
 #define INFO_SSA_FUNDEF(n) (n->node[0])
 #define INFO_SSA_BLOCK(n) (n->node[1])
 #define INFO_SSA_RETINSTR(n) ((bool)(n->flag))
+#define INFO_SSA_WITHVEC(n) ((node *)(n->node[2]))
+#define INFO_SSA_WITHIDS(n) ((node *)(n->node[3]))
+#define INFO_SSA_CONDSTMT(n) (n->node[4])
+#define INFO_SSA_CONDSTATUS(n) (n->int_data)
 
 /*--------------------------------------------------------------------------*/
 
