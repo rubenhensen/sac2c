@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/07/24 15:06:22  dkr
+ * bug in RCicm() fixed
+ *
  * Revision 3.18  2002/07/24 13:19:39  dkr
  * macro MUST_... renamed
  *
@@ -151,6 +154,82 @@ LookupId (char *id, node *id_chain)
 }
 
 /******************************************************************************
+ *
+ * Function:
+ *   ids *DefinedIds( ids *arg_ids, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static ids *
+DefinedIds (ids *arg_ids, node *arg_info)
+{
+    DBUG_ENTER ("DefinedIds");
+
+    if (!INFO_RC_ONLYNAIVE (arg_info)) {
+        if (DECL_MUST_REFCOUNT (IDS_VARDEC (arg_ids))) {
+            IDS_REFCNT (arg_ids) = VARDEC_OR_ARG_REFCNT (IDS_VARDEC (arg_ids));
+            L_VARDEC_OR_ARG_REFCNT (IDS_VARDEC (arg_ids), 0);
+
+            DBUG_PRINT ("RC", ("(standard) refcount of %s zeroed", IDS_NAME (arg_ids)));
+        } else {
+            IDS_REFCNT (arg_ids) = -1;
+        }
+    }
+    if (DECL_MUST_NAIVEREFCOUNT (IDS_VARDEC (arg_ids))) {
+        IDS_NAIVE_REFCNT (arg_ids) = VARDEC_OR_ARG_NAIVE_REFCNT (IDS_VARDEC (arg_ids));
+        L_VARDEC_OR_ARG_NAIVE_REFCNT (IDS_VARDEC (arg_ids), 0);
+
+        DBUG_PRINT ("RC", ("(naive) refcount of %s zeroed", IDS_NAME (arg_ids)));
+    } else {
+        IDS_NAIVE_REFCNT (arg_ids) = -1;
+    }
+
+    DBUG_RETURN (arg_ids);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *DefinedId( node *arg_id, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+DefinedId (node *arg_id, node *arg_info)
+{
+    DBUG_ENTER ("DefinedId");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "no N_id node found!");
+
+    if (!INFO_RC_ONLYNAIVE (arg_info)) {
+        if (DECL_MUST_REFCOUNT (ID_VARDEC (arg_id))) {
+            ID_REFCNT (arg_id) = VARDEC_OR_ARG_REFCNT (ID_VARDEC (arg_id));
+            L_VARDEC_OR_ARG_REFCNT (ID_VARDEC (arg_id), 0);
+
+            DBUG_PRINT ("RC", ("(standard) refcount of %s zeroed", ID_NAME (arg_id)));
+        } else {
+            ID_REFCNT (arg_id) = -1;
+        }
+    }
+    if (DECL_MUST_NAIVEREFCOUNT (ID_VARDEC (arg_id))) {
+        ID_NAIVE_REFCNT (arg_id) = VARDEC_OR_ARG_NAIVE_REFCNT (ID_VARDEC (arg_id));
+        L_VARDEC_OR_ARG_NAIVE_REFCNT (ID_VARDEC (arg_id), 0);
+
+        DBUG_PRINT ("RC", ("(naive) refcount of %s zeroed", ID_NAME (arg_id)));
+    } else {
+        ID_NAIVE_REFCNT (arg_id) = -1;
+    }
+
+    DBUG_RETURN (arg_id);
+}
+
+/******************************************************************************
  ******************************************************************************
  **
  **  DUMPS
@@ -181,7 +260,7 @@ LookupId (char *id, node *id_chain)
  *
  ******************************************************************************/
 
-int *
+static int *
 AllocDump (int *dump, int varno)
 {
     DBUG_ENTER (" AllocDump");
@@ -204,7 +283,7 @@ AllocDump (int *dump, int varno)
  *
  ******************************************************************************/
 
-void
+static void
 FreeDump (int *dump)
 {
     DBUG_ENTER (" FreeDump");
@@ -214,6 +293,7 @@ FreeDump (int *dump)
     DBUG_VOID_RETURN;
 }
 
+#if 0
 /******************************************************************************
  *
  * function:
@@ -225,24 +305,27 @@ FreeDump (int *dump)
  *
  ******************************************************************************/
 
-void
-InitRC (int n, node *arg_info)
+static
+void InitRC( int n, node *arg_info)
 {
-    node *vardec;
+  node *vardec;
 
-    DBUG_ENTER ("InitRC");
+  DBUG_ENTER( "InitRC");
 
-    FOREACH_VARDEC_AND_ARG (fundef_node, vardec,
-                            if (!INFO_RC_ONLYNAIVE (arg_info)) {
-                                if (VARDEC_OR_ARG_REFCNT (vardec) != RC_INACTIVE) {
-                                    L_VARDEC_OR_ARG_REFCNT (vardec, n);
-                                }
-                            } if (VARDEC_OR_ARG_NAIVE_REFCNT (vardec) != RC_INACTIVE) {
-                                L_VARDEC_OR_ARG_NAIVE_REFCNT (vardec, n);
-                            }) /* FOREACH_VARDEC_AND_ARG */
+  FOREACH_VARDEC_AND_ARG( fundef_node, vardec,
+    if (! INFO_RC_ONLYNAIVE( arg_info)) {
+      if (VARDEC_OR_ARG_REFCNT( vardec) != RC_INACTIVE) {
+        L_VARDEC_OR_ARG_REFCNT( vardec, n);
+      }
+    }
+    if (VARDEC_OR_ARG_NAIVE_REFCNT( vardec) != RC_INACTIVE) {
+      L_VARDEC_OR_ARG_NAIVE_REFCNT( vardec, n);
+    }
+  ) /* FOREACH_VARDEC_AND_ARG */
 
-    DBUG_VOID_RETURN;
+  DBUG_VOID_RETURN;
 }
+#endif
 
 /******************************************************************************
  *
@@ -258,7 +341,7 @@ InitRC (int n, node *arg_info)
  *
  ******************************************************************************/
 
-int *
+static int *
 StoreRC (int which, int varno, node *arg_info)
 {
     node *vardec;
@@ -321,7 +404,7 @@ StoreRC (int which, int varno, node *arg_info)
  *
  ******************************************************************************/
 
-int *
+static int *
 StoreAndInitRC (int which, int varno, int n, node *arg_info)
 {
     node *argvardec;
@@ -393,7 +476,7 @@ StoreAndInitRC (int which, int varno, int n, node *arg_info)
  *
  ******************************************************************************/
 
-void
+static void
 RestoreRC (int which, int *dump, node *arg_info)
 {
     node *vardec;
@@ -1163,26 +1246,33 @@ RCicm (node *arg_node, node *arg_info)
     DBUG_ENTER ("RCicm");
 
     name = ICM_NAME (arg_node);
+
     if (strstr (name, "VECT2OFFSET") != NULL) {
         /*
-         * VECT2OFFSET( var, iv, ...) needs RC on all but the first argument.
-         * It is expanded to    var = ... iv ...    , where 'var' is a scalar
-         * variable (no reference-counted object).
-         *  -> do not traverse the first argument (although it would not do any
-         *     harm for the time being to traverse all arguments, because the
-         *     first one is not reference-counted anyway ...)
+         * VECT2OFFSET( off_nt, ., from_nt, ...)
+         * needs RC on all but the first argument. It is expanded to
+         *     off_nt = ... from_nt ...    ,
+         * where 'off_nt' is a scalar variable.
+         *  -> store actual RC of the first argument (defined)
+         *  -> traverse all but the first argument (used)
          *  -> handle ICM like a prf (RCO)
          */
+        ICM_ARG1 (arg_node) = DefinedId (ICM_ARG1 (arg_node), arg_info);
+
         INFO_RC_PRF (arg_info) = arg_node;
         ICM_EXPRS2 (arg_node) = Trav (ICM_EXPRS2 (arg_node), arg_info);
         INFO_RC_PRF (arg_info) = NULL;
     } else if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
         /*
-         * USE_GENVAR_OFFSET( var, arr) does *not* consume its arguments!
-         * It is expanded to    var = arr__off    , where 'var' is a scalar
-         * and 'arr_off' an internal variable (no reference-counted objects)!
-         *   -> do not traverse the arguments
+         * USE_GENVAR_OFFSET( off_nt, wl_nt)
+         * does *not* consume its arguments! It is expanded to
+         *      off_nt = wl_nt__off    ,
+         * where 'off_nt' is a scalar and 'wl_nt__off' an internal variable!
+         *   -> store actual RC of the first argument (defined)
+         *   -> do NOT traverse the second argument (used)
          */
+        ICM_ARG1 (arg_node) = DefinedId (ICM_ARG1 (arg_node), arg_info);
+
         INFO_RC_PRF (arg_info) = NULL;
     } else {
         DBUG_ASSERT ((0), "unknown ICM found during RC");
@@ -1306,7 +1396,7 @@ RCid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RClet(node *arg_node, node *arg_info)
+ *   node *RClet( node *arg_node, node *arg_info)
  *
  * description:
  *   set the refcnts of the defined variables to the actual refcnt-values of
@@ -1324,24 +1414,7 @@ RClet (node *arg_node, node *arg_info)
 
     ids = LET_IDS (arg_node);
     while (NULL != ids) {
-        if (!INFO_RC_ONLYNAIVE (arg_info)) {
-            if (DECL_MUST_REFCOUNT (IDS_VARDEC (ids))) {
-                IDS_REFCNT (ids) = VARDEC_OR_ARG_REFCNT (IDS_VARDEC (ids));
-                L_VARDEC_OR_ARG_REFCNT (IDS_VARDEC (ids), 0);
-
-                DBUG_PRINT ("RC", ("(standard) refcount of %s zeroed", IDS_NAME (ids)));
-            } else {
-                IDS_REFCNT (ids) = -1;
-            }
-        }
-        if (DECL_MUST_NAIVEREFCOUNT (IDS_VARDEC (ids))) {
-            IDS_NAIVE_REFCNT (ids) = VARDEC_OR_ARG_NAIVE_REFCNT (IDS_VARDEC (ids));
-            L_VARDEC_OR_ARG_NAIVE_REFCNT (IDS_VARDEC (ids), 0);
-
-            DBUG_PRINT ("RC", ("(naive) refcount of %s zeroed", IDS_NAME (ids)));
-        } else {
-            IDS_NAIVE_REFCNT (ids) = -1;
-        }
+        ids = DefinedIds (ids, arg_info);
         ids = IDS_NEXT (ids);
     }
 
