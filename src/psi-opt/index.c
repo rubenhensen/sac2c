@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.12  1997/05/02 15:40:54  sbs
+ * Revision 1.13  1997/05/29 13:41:08  sbs
+ * IVE for modarray integrated
+ *
+ * Revision 1.12  1997/05/02  15:40:54  sbs
  * IdxId reverted but IdxPrf case Psi adapted for arrays of unknown shape
  *
  * Revision 1.11  1997/05/02  14:38:31  sbs
@@ -76,7 +79,7 @@
  *
  * II) to be fixed here:
  * - idx-ops on vects with non-max. shapes for psi
- * - integration of prf modarray
+ *
  *
  * III) to be fixed somewhere else:
  */
@@ -810,7 +813,7 @@ IdxLet (node *arg_node, node *arg_info)
 node *
 IdxPrf (node *arg_node, node *arg_info)
 {
-    node *arg1, *arg2, *vinfo;
+    node *arg1, *arg2, *arg3, *vinfo;
     types *type;
 
     DBUG_ENTER ("IdxPrf");
@@ -843,6 +846,32 @@ IdxPrf (node *arg_node, node *arg_info)
             PRF_ARG1 (arg_node) = Trav (arg1, NULL);
         }
         PRF_ARG2 (arg_node) = Trav (arg2, NULL);
+        break;
+    case F_modarray:
+        arg1 = PRF_ARG1 (arg_node);
+        arg2 = PRF_ARG2 (arg_node);
+        arg3 = PRF_ARG3 (arg_node);
+        DBUG_ASSERT (((arg1->nodetype == N_id) || (arg1->nodetype == N_array)),
+                     "wrong arg in F_modarray application");
+        if (NODE_TYPE (arg2) == N_id)
+            type = ID_TYPE (arg1);
+        else
+            type = ARRAY_TYPE (arg1);
+        /*
+         * if the shape of the array is unknown, do not(!) replace
+         * modarray by idx_modarray but mark the selecting vector as VECT !
+         * this is done by traversal with NULL instead of vinfo!
+         */
+        if (TYPES_SHPSEG (type) != NULL) {
+            vinfo = MakeVinfo (IDX, type, NULL);
+            PRF_ARG2 (arg_node) = Trav (arg2, vinfo);
+            FREE (vinfo);
+            PRF_PRF (arg_node) = F_idx_modarray;
+        } else {
+            PRF_ARG2 (arg_node) = Trav (arg2, NULL);
+        }
+        PRF_ARG1 (arg_node) = Trav (arg1, NULL);
+        PRF_ARG3 (arg_node) = Trav (arg3, NULL);
         break;
     case F_add_SxA:
     case F_add_AxS:
