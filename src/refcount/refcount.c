@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.20  2000/05/30 09:56:45  dkr
+ * RCicm(): arguments of USE_GENVAR_OFFSET-icms are not traversed
+ *
  * Revision 2.19  2000/05/24 18:58:21  dkr
  * DBUG_ASSERT in RCblock added (BLOCK_INSTR must be != NULL)
  *
@@ -123,8 +125,6 @@
  *
  * Revision 1.1  1995/03/09  16:17:01  hw
  * Initial revision
- *
- *
  */
 
 #include <stdlib.h>
@@ -1310,8 +1310,8 @@ RCprf (node *arg_node, node *arg_info)
     } else {
         INFO_RC_PRF (arg_info) = arg_node;
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+        INFO_RC_PRF (arg_info) = NULL;
     }
-    INFO_RC_PRF (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -1321,9 +1321,12 @@ RCprf (node *arg_node, node *arg_info)
  * function:
  *   node *RCicm( node *arg_node, node *arg_info)
  *
- * description:
+ * Description:
  *   Traverses the args with INFO_RC_PRF( arg_info) pointing to the N_icm!
  *   This is done for RCO in RCid().
+ *
+ * Note:
+ *   The arguments of a USE_GENVAR_OFFSET-icm are not traversed.
  *
  ******************************************************************************/
 
@@ -1332,13 +1335,16 @@ RCicm (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("RCicm");
 
-    if (strcmp (ICM_NAME (arg_node), "ND_KS_VECT2OFFSET") == 0) {
+    if (strstr (ICM_NAME (arg_node), "VECT2OFFSET") != NULL) {
+        INFO_RC_PRF (arg_info) = NULL;
+        ICM_ARGS (arg_node) = Trav (ICM_ARGS (arg_node), arg_info);
+    } else if (strstr (ICM_NAME (arg_node), "USE_GENVAR_OFFSET") != NULL) {
         INFO_RC_PRF (arg_info) = NULL;
     } else {
         INFO_RC_PRF (arg_info) = arg_node;
+        ICM_ARGS (arg_node) = Trav (ICM_ARGS (arg_node), arg_info);
+        INFO_RC_PRF (arg_info) = NULL;
     }
-    ICM_ARGS (arg_node) = Trav (ICM_ARGS (arg_node), arg_info);
-    INFO_RC_PRF (arg_info) = NULL;
 
     if (ICM_NEXT (arg_node) != NULL) {
         ICM_NEXT (arg_node) = Trav (ICM_NEXT (arg_node), arg_info);
@@ -1382,7 +1388,6 @@ RCid (node *arg_node, node *arg_info)
             if ((INFO_RC_PRF (arg_info) == NULL)
                 || (VARDEC_REFCNT (ID_VARDEC (arg_node)) == 0)
                 || (!(optimize & OPT_RCO))) {
-
                 /*
                  * This N_id node either is *not* an argument of a primitive
                  *  function, or it is the last usage within the body of the
@@ -1397,11 +1402,11 @@ RCid (node *arg_node, node *arg_info)
                                    ID_REFCNT (arg_node)));
             } else {
                 /*
-                 * This N_id node is argument to the N_prf node *and*
+                 * This N_id node is argument of a N_prf/N_icm node *and*
                  *  it is definitly not the last usage of it.
-                 * Therefore -1 is attached to the refcnt field if N_id
-                 * (to indicate that this operation does not need any refcnt
-                 * adjustments).
+                 * Therefore -1 is attached to the refcnt field of N_id
+                 * to indicate that this operation does not need any refcnt
+                 * adjustments.
                  */
                 ID_REFCNT (arg_node) = -1;
             }
@@ -1412,6 +1417,7 @@ RCid (node *arg_node, node *arg_info)
             ID_REFCNT (arg_node) = -1;
         }
     }
+
     if (MUST_NAIVEREFCOUNT (ID_TYPE (arg_node))) {
         /*
          *  Naive refcounting is always done.
