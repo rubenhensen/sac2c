@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2003/04/10 12:02:01  dkr
+ * CreateFullPartition(): code reordered. the checks which determine the
+ * correct value for the variable do_create are performed in correct
+ * order now.
+ *
  * Revision 1.20  2003/03/14 13:19:32  dkr
  * SSAWLTNwithop(): NWITHOP_ARRAY no longer inlined
  *
@@ -292,9 +297,9 @@ check_genarray_full_part (node *wln)
         shapen = ARRAY_AELEMS (shapen);
         while (result && uppern) {
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (uppern)) == N_num),
-                         "shape must be constant!");
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (shapen)) == N_num),
                          "upper generator bound must be constant!");
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (shapen)) == N_num),
+                         "shape must be constant!");
             if (NUM_VAL (EXPRS_EXPR (shapen)) != NUM_VAL (EXPRS_EXPR (uppern))) {
                 result = FALSE;
             }
@@ -347,58 +352,21 @@ CreateFullPartition (node *wln, node *arg_info)
     do_create
       = ((NWITH_PARTS (wln) < 0) && (GetShapeDim (IDS_TYPE (NWITH_VEC (wln))) >= 0));
 
+    if (do_create) {
+        /* get shape of the index vector (generator) */
+        gen_shape = IDS_SHAPE (NWITH_VEC (wln), 0);
+    }
+
     /* determine type of expr in the operator (result of body) */
     type = ID_TYPE (NWITH_CEXPR (wln));
 
     /*
-     * modarray check
-     */
-    if (do_create && (NWITH_TYPE (wln) == WO_modarray)) {
-        /* noop */
-    }
-
-    /*
-     * genarray check:
-     *
-     * if the CEXPR of a genarray WL is not a scalar, we have to create
-     * new parts where the CEXPR is a null-vector. Other than the
-     * modarray case, we have to create this null-vector first. In general,
-     * this can lead to worse code, because another WL is inserted and
-     * it is not guaranteed that we can fold later. So we don't create
-     * a full partition here.
-     *
-     * But there is a special case: If the original generator is a
-     * full partition itself, we do not have to create the null-vector
-     * and so can create a partition with NWITH_PARTS == 1.
-     */
-    if (do_create && (NWITH_TYPE (wln) == WO_genarray)) {
-        if (!NWITH_STEP (wln) /* no grid */
-            && check_genarray_full_part (wln)) {
-            do_create = FALSE;
-            NWITH_PARTS (wln) = 1;
-        } else {
-            dim = GetShapeDim (type);
-
-            if (optimize & OPT_WLS) {
-                do_create = (dim >= 0);
-            } else {
-                do_create = (dim == 0);
-            }
-        }
-    }
-
-    /*
-     * start creation
+     * allocate "array_shape"
      */
     if (do_create) {
-        /* this is the shape of the index vector (generator) */
-        gen_shape = IDS_SHAPE (NWITH_VEC (wln), 0);
-
-        /* create upper array bound */
-        if (NWITH_TYPE (wln) == WO_genarray) {
-            array_shape = NULL;
-            SSAArrayST2ArrayInt (NWITH_SHAPE (wln), &array_shape, gen_shape);
-        } else { /* modarray */
+        switch (NWITH_TYPE (wln)) {
+        case WO_modarray: {
+            /* create upper array bound */
             shpseg *tmp = Type2Shpseg (ID_TYPE (NWITH_ARRAY (wln)), &dim);
             int i;
 
@@ -413,64 +381,122 @@ CreateFullPartition (node *wln, node *arg_info)
             } else {
                 array_shape = NULL;
             }
+        } break;
+
+        case WO_genarray:
+            array_shape = NULL;
+            SSAArrayST2ArrayInt (NWITH_SHAPE (wln), &array_shape, gen_shape);
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "illegal NWITH_TYPE found!");
+            array_shape = NULL;
+            break;
         }
+        do_create = (array_shape != NULL);
+    } else {
+        array_shape = NULL;
+    }
 
-        if (array_shape != NULL) {
-            /* create lower array bound */
-            array_null = NULL;
-            SSAArrayST2ArrayInt (NULL, &array_null, gen_shape);
+    /*
+     * do some additional checks
+     */
+    if (do_create) {
+        switch (NWITH_TYPE (wln)) {
+        case WO_modarray:
+            /* noop */
+            break;
 
-            /* create code for all new parts */
-            if (NWITH_TYPE (wln) == WO_genarray) {
-                /* create a zero of the correct type */
-                coden = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
-            } else { /* modarray */
-                /*
-                 * we build NO with-loop here in order to ease optimizations
-                 *    B = modarray( A, iv, sel( iv, A));   ->   B = A;
-                 * and to avoid loss of performance
-                 *    sel( iv, A)   ->   idx_sel( ..., A)
-                 */
-                coden = CreateSel (NWITH_VEC (wln), NWITH_IDS (wln), NWITH_ARRAY (wln),
-                                   FALSE, INFO_WLI_FUNDEF (arg_info));
+        case WO_genarray:
+            /*
+             * if the CEXPR of a genarray WL is not a scalar, we have to create
+             * new parts where the CEXPR is a null-vector. Other than the
+             * modarray case, we have to create this null-vector first. In general,
+             * this can lead to worse code, because another WL is inserted and
+             * it is not guaranteed that we can fold later. So we don't create
+             * a full partition here.
+             *
+             * But there is a special case: If the original generator is a
+             * full partition itself, we do not have to create the null-vector
+             * and so can create a partition with NWITH_PARTS == 1.
+             */
+            if ((!NWITH_STEP (wln)) && /* no grid */
+                check_genarray_full_part (wln)) {
+                do_create = FALSE;
+                NWITH_PARTS (wln) = 1;
+            } else {
+                dim = GetShapeDim (type);
+
+                if (optimize & OPT_WLS) {
+                    do_create = (dim >= 0);
+                } else {
+                    do_create = (dim == 0);
+                }
             }
-            varname = TmpVar ();
-            _ids = MakeIds (varname, NULL, ST_regular);
-            IDS_VARDEC (_ids)
-              = SSACreateVardec (varname, type,
-                                 &FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info)));
-            /* varname is duplicated here (own mem) */
-            idn = MakeId (StringCopy (varname), NULL, ST_regular);
-            ID_VARDEC (idn) = IDS_VARDEC (_ids);
+            break;
 
-            /* create new N_Ncode node  */
-            coden = MakeNCode (MakeBlock (MakeAssign (MakeLet (coden, _ids), NULL), NULL),
-                               idn);
-
-            /* now, copy the only part to ig */
-            ig = SSATree2InternGen (wln, NULL);
-            DBUG_ASSERT (!ig->next, ("more than one part exist"));
-            /* create surrounding cuboids */
-            ig = CutSlices (array_null, array_shape, ig->l, ig->u, ig->shape, ig, coden);
-            /* the original part can still be found at *ig. Now create grids. */
-            if (ig->step)
-                ig = CompleteGrid (ig->l, ig->u, ig->step, ig->width, ig->shape, ig,
-                                   coden);
-
-            /* if new codes have been created, add them to code list */
-            if (ig->next) {
-                NCODE_NEXT (coden) = NWITH_CODE (wln);
-                NWITH_CODE (wln) = coden;
-            }
-
-            wln = SSAInternGen2Tree (wln, ig);
-
-            /* free the above made arrays */
-            ig = SSAFreeInternGenChain (ig);
-            array_shape = Free (array_shape);
-            array_null = Free (array_null);
+        default:
+            DBUG_ASSERT ((0), "illegal NWITH_TYPE found!");
+            break;
         }
     }
+
+    /*
+     * start creation
+     */
+    if (do_create) {
+        /* create lower array bound */
+        array_null = NULL;
+        SSAArrayST2ArrayInt (NULL, &array_null, gen_shape);
+
+        /* create code for all new parts */
+        if (NWITH_TYPE (wln) == WO_genarray) {
+            /* create a zero of the correct type */
+            coden = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
+        } else { /* modarray */
+            /*
+             * we build NO with-loop here in order to ease optimizations
+             *    B = modarray( A, iv, sel( iv, A));   ->   B = A;
+             * and to avoid loss of performance
+             *    sel( iv, A)   ->   idx_sel( ..., A)
+             */
+            coden = CreateSel (NWITH_VEC (wln), NWITH_IDS (wln), NWITH_ARRAY (wln), FALSE,
+                               INFO_WLI_FUNDEF (arg_info));
+        }
+        varname = TmpVar ();
+        _ids = MakeIds (varname, NULL, ST_regular);
+        IDS_VARDEC (_ids)
+          = SSACreateVardec (varname, type, &FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info)));
+        /* varname is duplicated here (own mem) */
+        idn = MakeId (StringCopy (varname), NULL, ST_regular);
+        ID_VARDEC (idn) = IDS_VARDEC (_ids);
+
+        /* create new N_Ncode node  */
+        coden
+          = MakeNCode (MakeBlock (MakeAssign (MakeLet (coden, _ids), NULL), NULL), idn);
+
+        /* now, copy the only part to ig */
+        ig = SSATree2InternGen (wln, NULL);
+        DBUG_ASSERT (!ig->next, ("more than one part exist"));
+        /* create surrounding cuboids */
+        ig = CutSlices (array_null, array_shape, ig->l, ig->u, ig->shape, ig, coden);
+        /* the original part can still be found at *ig. Now create grids. */
+        if (ig->step)
+            ig = CompleteGrid (ig->l, ig->u, ig->step, ig->width, ig->shape, ig, coden);
+
+        /* if new codes have been created, add them to code list */
+        if (ig->next) {
+            NCODE_NEXT (coden) = NWITH_CODE (wln);
+            NWITH_CODE (wln) = coden;
+        }
+
+        wln = SSAInternGen2Tree (wln, ig);
+
+        /* free the above made arrays */
+        ig = SSAFreeInternGenChain (ig);
+        array_null = Free (array_null);
+    }
+    array_shape = Free (array_shape);
 
     DBUG_RETURN (wln);
 }
