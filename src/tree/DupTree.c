@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2002/04/09 16:39:20  dkr
+ * okay... *now* DupFundef() should work correctly $%&-(
+ *
  * Revision 3.59  2002/04/08 20:03:51  dkr
  * bug in DupFundef() fixed
  *
@@ -909,8 +912,6 @@ DupFundef (node *arg_node, node *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
-    FUNDEF_ARGTAB (new_node) = DupArgtab_ (FUNDEF_ARGTAB (arg_node), arg_info);
-
     FUNDEF_NEXT (new_node) = DUPCONT (FUNDEF_NEXT (arg_node));
 
     /*
@@ -922,8 +923,8 @@ DupFundef (node *arg_node, node *arg_info)
     }
 
     /*
-     * before duplicating args or vardecs we have to duplicate the ssacounters
-     * (located in the top-block, but traversed here)
+     * before duplicating ARGS or VARDEC (in BODY) we have to duplicate
+     * SSACOUNTER (located in the top-block, but traversed here)
      */
     if ((FUNDEF_BODY (arg_node) != NULL)
         && (BLOCK_SSACOUNTER (FUNDEF_BODY (arg_node)) != NULL)) {
@@ -937,6 +938,11 @@ DupFundef (node *arg_node, node *arg_info)
 
     FUNDEF_ARGS (new_node) = DUPTRAV (FUNDEF_ARGS (arg_node));
     FUNDEF_BODY (new_node) = DUPTRAV (FUNDEF_BODY (arg_node));
+
+    /*
+     * ARGTAB must be duplicated *after* TYPES and ARGS!!!
+     */
+    FUNDEF_ARGTAB (new_node) = DupArgtab_ (FUNDEF_ARGTAB (arg_node), arg_info);
 
     if (FUNDEF_BODY (new_node) != NULL) {
         BLOCK_SSACOUNTER (FUNDEF_BODY (new_node)) = new_ssacnt;
