@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.162  1998/03/20 17:10:42  dkr
+ * changed output in PrintWLblock:
+ *   show LEVEL
+ *
  * Revision 1.161  1998/03/19 20:31:20  dkr
  * changed output in PrintNcode:
  *   prints "{}" if CBLOCK is NULL
@@ -2295,8 +2299,8 @@ PrintWLblock (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintWLblock");
 
     INDENT
-    fprintf (outfile, "(%d -> %d), block[%d] %d: ", WLBLOCK_BOUND1 (arg_node),
-             WLBLOCK_BOUND2 (arg_node), WLBLOCK_DIM (arg_node),
+    fprintf (outfile, "(%d -> %d), block%d[%d] %d: ", WLBLOCK_BOUND1 (arg_node),
+             WLBLOCK_BOUND2 (arg_node), WLBLOCK_LEVEL (arg_node), WLBLOCK_DIM (arg_node),
              WLBLOCK_BLOCKING (arg_node));
 
     if (WLBLOCK_NEXTDIM (arg_node) != NULL) {
