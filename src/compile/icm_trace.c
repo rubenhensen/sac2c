@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1996/01/21 14:15:39  cg
+ * Revision 1.4  1996/01/21 18:06:51  cg
+ * Now, string arguments of icms are printed correctly when traced
+ *
+ * Revision 1.3  1996/01/21  14:15:39  cg
  * Now, routines from the SAC runtime library are used instead
  * of those from stdio
  *
@@ -26,26 +29,38 @@
         int sep = 0;                                                                     \
         INDENT;                                                                          \
         fprintf (outfile, "__SAC__Runtime_Print( \"%s( \");\n", #prf);
+
 #define ICM_STR(name)                                                                    \
     SEP;                                                                                 \
     INDENT;                                                                              \
-    fprintf (outfile, "__SAC__Runtime_Print( \"%s \");\n", name);                        \
+    if (name[0] == '"') {                                                                \
+        fprintf (outfile, "__SAC__Runtime_Print( %s );\n", name);                        \
+    } else {                                                                             \
+        fprintf (outfile, "__SAC__Runtime_Print( \"%s \");\n", name);                    \
+    }                                                                                    \
     sep = 1;
+
 #define ICM_INT(name)                                                                    \
     SEP;                                                                                 \
     INDENT;                                                                              \
     fprintf (outfile, "__SAC__Runtime_Print( \"%d \");\n", name);                        \
     sep = 1;
+
 #define ICM_VAR(dim, name)                                                               \
     {                                                                                    \
         int i;                                                                           \
         for (i = 0; i < dim; i++) {                                                      \
             SEP;                                                                         \
             INDENT;                                                                      \
-            fprintf (outfile, "__SAC__Runtime_Print( \"%s \");\n", name[i]);             \
+            if (name[i][0] == '"') {                                                     \
+                fprintf (outfile, "__SAC__Runtime_Print( \"\\%s\"\\\"\" );\n", name[i]); \
+            } else {                                                                     \
+                fprintf (outfile, "__SAC__Runtime_Print( \"%s \");\n", name[i]);         \
+            }                                                                            \
             sep = 1;                                                                     \
         }                                                                                \
     }
+
 #define ICM_END(prf)                                                                     \
     INDENT;                                                                              \
     fprintf (outfile, "__SAC__Runtime_Print( \")\\n\");\n");                             \
