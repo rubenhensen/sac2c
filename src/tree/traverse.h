@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2004/07/26 16:24:22  skt
+ * added support for cell creation
+ * (part of mt-mode 3)
+ *
  * Revision 3.49  2004/07/21 17:28:10  ktr
  * Added MarkMemVals and removed BLIR
  *
@@ -267,7 +271,7 @@ extern funtab *type_tab;
 extern funtab *genmask_tab;
 extern funtab *mmv_tab;
 extern funtab *unused_tab22;
-extern funtab *unused_tab3;
+extern funtab *crece_tab;
 extern funtab *unused_tab27;
 extern funtab *free_tab;
 extern funtab *unused_tab2;

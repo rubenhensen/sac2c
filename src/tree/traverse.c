@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2004/07/26 16:24:22  skt
+ * added support for cell creation
+ * (part of mt-mode 3)
+ *
  * Revision 3.61  2004/07/21 17:28:10  ktr
  * Added MarkMemVals and removed BLIR
  *
@@ -275,6 +279,7 @@
 #include "barriers_init.h"
 #include "tag_executionmode.h"
 #include "propagate_executionmode.h"
+#include "create_cells.h"
 #include "assignments_rearrange.h"
 #include "blocks_lift.h"
 #include "adjust_calls.h"
@@ -378,15 +383,15 @@ static funtab genmask_tab_rec = {{
 funtab *genmask_tab = &genmask_tab_rec;
 
 /*
- *  (6) unused_tab3
+ *  (6) crece_tab
  */
-static funtab unused_tab3_rec = {{
-#define NIFunused_3(it_unused_3) it_unused_3
+static funtab crece_tab_rec = {{
+#define NIFcrece(it_crece) it_crece
 #include "node_info.mac"
-                                 },
-                                 NULL,
-                                 NULL};
-funtab *unused_tab3 = &unused_tab3_rec;
+                               },
+                               NULL,
+                               NULL};
+funtab *crece_tab = &crece_tab_rec;
 
 /*
  *  (7) unused_tab27
