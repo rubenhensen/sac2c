@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2003/04/04 17:00:09  sbs
+ * prf_node_info.mac extended
+ *
  * Revision 3.20  2002/09/11 23:16:09  dkr
  * prf_node_info.mac modified
  *
@@ -262,7 +265,7 @@ typedef enum {
 } nodetype; /* Type of nodes of syntax tree */
 
 typedef enum {
-#define PRF_IF(a, b, c, d, e, f, g) a
+#define PRF_IF(a, b, c, d, e, f, g, h) a
 #include "prf_node_info.mac"
 #undef PRF_IF
 } prf;

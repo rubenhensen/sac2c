@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2003/04/04 17:01:57  sbs
+ * prf_node_info.mac extended
+ *
  * Revision 3.81  2003/03/21 15:23:27  sbs
  * ifdef YYDEBUG changed into if YYDEBUG
  *
@@ -214,7 +217,7 @@ static node *ConstructMop( node *, ids *, node *);
 static node *CheckWlcompConf( node *ap, node *exprs);
 
 static int prf_arity[] = {
-  #define PRF_IF( a, b, c, d, e, f, g) f
+  #define PRF_IF( a, b, c, d, e, f, g, h) f
   #include "prf_node_info.mac"
   #undef PRF_IF
 };

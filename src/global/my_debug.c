@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2003/04/04 17:01:21  sbs
+ * prf_node_info.mac extended
+ *
  * Revision 3.6  2002/09/11 23:15:31  dkr
  * prf_node_info.mac modified
  *
@@ -64,7 +67,7 @@ char *mdb_nodetype[] = {
 };
 
 char *mdb_prf[] = {
-#define PRF_IF(a, b, c, d, e, f, g) b
+#define PRF_IF(a, b, c, d, e, f, g, h) b
 #include "prf_node_info.mac"
 #undef PRF_IF
 };

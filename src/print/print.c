@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.133  2003/04/04 17:01:02  sbs
+ * prf_node_info.mac extended
+ *
  * Revision 3.132  2002/10/31 19:46:47  dkr
  * DBUG-string PRINT_PTR added
  *
@@ -321,19 +324,19 @@ static node *last_assignment_icm = NULL;
 #undef ICM_ALL
 
 char *prf_string[] = {
-#define PRF_IF(a, b, c, d, e, f, g) c
+#define PRF_IF(a, b, c, d, e, f, g, h) c
 #include "prf_node_info.mac"
 #undef PRF_IF
 };
 
 char *prf_symbol[] = {
-#define PRF_IF(a, b, c, d, e, f, g) d
+#define PRF_IF(a, b, c, d, e, f, g, h) d
 #include "prf_node_info.mac"
 #undef PRF_IF
 };
 
 bool prf_is_infix[] = {
-#define PRF_IF(a, b, c, d, e, f, g) e
+#define PRF_IF(a, b, c, d, e, f, g, h) e
 #include "prf_node_info.mac"
 #undef PRF_IF
 };
