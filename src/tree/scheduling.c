@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2003/04/14 13:54:07  sbs
+ * header file stdarg.h used instead of varargs.h which is not
+ * available under Linux.
+ *
  * Revision 3.34  2002/07/15 14:44:38  dkr
  * function signatures modified
  *
@@ -190,7 +194,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <varargs.h>
+#include <stdarg.h>
 
 #include "types.h"
 #include "tree_basic.h"
