@@ -47,13 +47,14 @@ static void
 usage (char *args)
 {
     fprintf (stderr, "\nUsage:\n");
-    fprintf (stderr, "   %s <filename> [-i<indent>] [-r] [-t]\n", PGM);
+    fprintf (stderr, "   %s [<filename>] [-i<indent>] [-r] [-t]\n", PGM);
     fprintf (stderr, "   %s [-h]\n", PGM);
     fprintf (stderr, "(Executing: %s)\n\n", args);
     fprintf (stderr, "Parameters:\n");
     fprintf (stderr, "   <filename>   Input source file in current directory.\n");
     fprintf (stderr,
              "                Enclose long file name with space in double quotes.\n");
+    fprintf (stderr, "                If the filename is missing, stdin is used.\n");
     fprintf (stderr, "Switches:\n");
     fprintf (stderr, "   -h           Prints this help message\n\n");
     fprintf (stderr, "   -i<indent>   Number of spaces for each indent level\n");
@@ -602,14 +603,16 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             }
             if ((peek = getchr (infile)) != '*') {
                 break;
-            }
-            if (peek == '*') {
+            } else {
                 string[pos--] = '\0';
                 indent_puts (indent, use_tabs);
                 string[pos++] = '/';
                 string[pos++] = '*';
                 peek = -1;
                 comment (infile, indent, use_tabs);
+                if (remove_newlines) {
+                    fprintf (stdout, "\n");
+                }
                 break;
             }
         case ')':
@@ -705,8 +708,7 @@ main (int argc, char *argv[])
     ARGS_END ();
 
     if (!infile) {
-        usage (argv[0]);
-        exit (1);
+        infile = stdin;
     }
 
     /* end of initialization */
