@@ -1,7 +1,7 @@
 /*
  *
  * $Log$
- * Revision 1.30  1998/03/16 00:22:35  dkr
+ * Revision 1.31  1998/03/16 00:33:29  dkr
  * added DupWLseg, DupWLblock, DupWLublock, DupWLproj, DupWLgrid
  *
  * Revision 1.29  1998/03/03 17:32:19  dkr
@@ -760,7 +760,7 @@ DupWLproj (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupWLgridg (node *arg_node, node *arg_info)
+DupWLgrid (node *arg_node, node *arg_info)
 {
     node *new_node;
 
