@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2004/08/17 15:48:32  skt
+ * support for cell-groth added (CEGRO)
+ *
  * Revision 3.53  2004/08/13 18:02:34  skt
  * several mtmode 3 traversals removed
  *
@@ -287,7 +290,7 @@ extern funtab *unused_tab2;
 extern funtab *refcnt_tab;
 extern funtab *emrefcnt_tab;
 extern funtab *emri_tab;
-extern funtab *unused_tab21;
+extern funtab *cegro_tab;
 extern funtab *dup_tab;
 extern funtab *inline_tab;
 extern funtab *unused_tab23;

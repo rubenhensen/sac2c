@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2004/08/17 15:48:32  skt
+ * support for cell-groth added (CEGRO)
+ *
  * Revision 3.67  2004/08/13 18:02:34  skt
  * several mtmode 3 traversals removed
  *
@@ -297,6 +300,7 @@
 #include "tag_executionmode.h"
 #include "propagate_executionmode.h"
 #include "create_cells.h"
+#include "cell_growth.h"
 #include "create_dataflowgraph.h"
 #include "assignments_rearrange.h"
 #include "blocks_lift.h"
@@ -511,15 +515,15 @@ static funtab unused_tab23_rec = {{
 funtab *unused_tab23 = &unused_tab23_rec;
 
 /*
- *  (16) unused_tab21
+ *  (16) cegro_tab
  */
-static funtab unused_tab21_rec = {{
-#define NIFunused_21(it_unused_21) it_unused_21
+static funtab cegro_tab_rec = {{
+#define NIFcegro(it_cegro) it_cegro
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused21_tab = &unused_tab21_rec;
+                               },
+                               NULL,
+                               NULL};
+funtab *cegro_tab = &cegro_tab_rec;
 
 /*
  *  (17) idx_tab
