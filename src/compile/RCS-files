@@ -44,3 +44,4 @@ type_conversions.h
 renameidentifiers.c
 renameidentifiers.c
 renameidentifiers.h
+typeconv_precompile.c
