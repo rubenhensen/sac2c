@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1998/03/13 13:13:47  dkr
+ * removed a bug in macros CHECK_DBUG_START, CHECK_DBUG_STOP
+ *
  * Revision 1.13  1998/03/02 13:57:21  cg
  * added function OptCmp() to compare two strings regardless of lower
  * or upper case letters (used for scanning optimization command line options.
@@ -81,17 +84,19 @@ int malloc_align_step;
 #ifndef DBUG_OFF
 #define CHECK_DBUG_START                                                                 \
     {                                                                                    \
-        if ((!dbug_active) && (compiler_phase >= dbug_from)                              \
-            && (compiler_phase <= dbug_to)) {                                            \
-            DBUG_PUSH (dbug_str);                                                        \
-            dbug_active = 1;                                                             \
+        if ((my_dbug) && (!my_dbug_active) && (compiler_phase >= my_dbug_from)           \
+            && (compiler_phase <= my_dbug_to)) {                                         \
+            DBUG_PUSH (my_dbug_str);                                                     \
+            my_dbug_active = 1;                                                          \
         }                                                                                \
     }
 
 #define CHECK_DBUG_STOP                                                                  \
     {                                                                                    \
-        if ((dbug_active) && (compiler_phase <= dbug_to))                                \
+        if ((my_dbug) && (my_dbug_active) && (compiler_phase <= my_dbug_to)) {           \
             DBUG_POP ();                                                                 \
+            my_dbug_active = 0;                                                          \
+        }                                                                                \
     }
 #else /* DBUG_OFF */
 #define CHECK_DBUG_START
