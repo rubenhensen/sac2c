@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.22  1998/06/07 18:37:05  dkr
+ * ChgId renamed in IdxChangeId
+ *
  * Revision 1.21  1998/06/06 13:55:30  dkr
  * changed ChdId():
  *   switched to new variable names.
@@ -375,7 +378,7 @@ SetIdx (node *chain, types *vartype)
 
 /*
  *
- *  functionname  : ChgId
+ *  functionname  : IdxChangeId
  *  arguments     : 1) string: varname
  *                  2) types*: shape
  *                  R) string: new varname
@@ -392,14 +395,14 @@ SetIdx (node *chain, types *vartype)
  */
 
 char *
-ChgId (char *varname, types *type)
+IdxChangeId (char *varname, types *type)
 {
     static char buffer[1024];
     static char buffer2[32];
     int i;
     int *shp;
 
-    DBUG_ENTER ("ChgId");
+    DBUG_ENTER ("IdxChangeId");
     sprintf (buffer, "%s", varname);
     shp = SHAPES_SELEMS (type);
     for (i = 0; i < TYPES_DIM (type); i++) {
@@ -756,7 +759,7 @@ IdxLet (node *arg_node, node *arg_info)
                 ASSIGN_NEXT (arg_info) = newassign;
             }
             LET_EXPR (act_let) = Trav (LET_EXPR (act_let), vinfo);
-            LET_NAME (act_let) = ChgId (LET_NAME (act_let), VINFO_TYPE (vinfo));
+            LET_NAME (act_let) = IdxChangeId (LET_NAME (act_let), VINFO_TYPE (vinfo));
             LET_VARDEC (act_let)
               = VardecIdx (LET_VARDEC (act_let), VINFO_TYPE (vinfo), LET_NAME (act_let));
             vinfo = VINFO_NEXT (vinfo);
@@ -978,7 +981,7 @@ IdxId (node *arg_node, node *arg_info)
                 DBUG_PRINT ("IDX", ("assigning IDX to %s:", ID_NAME (arg_node)));
                 VARDEC_ACTCHN (vardec) = SetIdx (VARDEC_ACTCHN (vardec), type);
                 VARDEC_COLCHN (vardec) = SetIdx (VARDEC_COLCHN (vardec), type);
-                newid = ChgId (ID_NAME (arg_node), type);
+                newid = IdxChangeId (ID_NAME (arg_node), type);
                 ID_NAME (arg_node) = newid;
                 /* Now, we have to insert the respective declaration */
                 /* If the declaration does not yet exist, it has to be created! */
@@ -996,7 +999,7 @@ IdxId (node *arg_node, node *arg_info)
                 DBUG_PRINT ("IDX", ("assigning IDX to %s:", ID_NAME (arg_node)));
                 ARG_ACTCHN (vardec) = SetIdx (ARG_ACTCHN (vardec), type);
                 ARG_COLCHN (vardec) = SetIdx (ARG_COLCHN (vardec), type);
-                newid = ChgId (ID_NAME (arg_node), type);
+                newid = IdxChangeId (ID_NAME (arg_node), type);
                 ID_NAME (arg_node) = newid;
                 /* Now, we have to insert the respective declaration */
                 /* If the declaration does not yet exist, it has to be created! */
@@ -1206,7 +1209,8 @@ IdxGenerator (node *arg_node, node *arg_info)
                  * therefore we create an ICM of the form:
                  * ND_KS_USE_GENVAR_OFFSET( <idx-varname>, <result-array-varname>)
                  */
-                newid = MakeId (ChgId (GEN_ID (arg_node), artype), NULL, ST_regular);
+                newid
+                  = MakeId (IdxChangeId (GEN_ID (arg_node), artype), NULL, ST_regular);
                 colvinfo = FindIdx (VARDEC_COLCHN (vardec), artype);
                 DBUG_ASSERT (((colvinfo != NULL) && (VINFO_VARDEC (colvinfo) != NULL)),
                              "missing vardec for IDX variable!");
@@ -1361,8 +1365,8 @@ IdxNcode (node *arg_node, node *arg_info)
                  * ND_KS_USE_GENVAR_OFFSET( <idx-varname>, <result-array-varname>)
                  */
 
-                new_id = MakeId (ChgId (IDS_NAME (NWITH_VEC (with)), arr_type), NULL,
-                                 ST_regular);
+                new_id = MakeId (IdxChangeId (IDS_NAME (NWITH_VEC (with)), arr_type),
+                                 NULL, ST_regular);
                 col_vinfo = FindIdx (VARDEC_COLCHN (idx_vardec), arr_type);
                 DBUG_ASSERT (((col_vinfo != NULL) && (VINFO_VARDEC (col_vinfo) != NULL)),
                              "missing vardec for IDX variable");
