@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.162  1998/05/12 15:50:22  dkr
+ * removed ???_VARINFO macros
+ *
  * Revision 1.161  1998/05/12 13:56:29  dkr
  * renamed ???_RC_IDS into ???_DEC_RC_IDS
  *
@@ -1508,9 +1511,8 @@ extern node *MakeCond (node *cond, node *Then, node *Else);
 #define COND_COND(n) (n->node[0])
 #define COND_THEN(n) (n->node[1])
 #define COND_ELSE(n) (n->node[2])
-#define COND_VARINFO(n) (n->node[3])
-#define COND_THENVARS(n) (COND_VARINFO (n)->node[0])
-#define COND_ELSEVARS(n) (COND_VARINFO (n)->node[1])
+#define COND_THENVARS(n) (n->node[3])
+#define COND_ELSEVARS(n) (n->node[4])
 #define COND_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
@@ -1535,9 +1537,8 @@ extern node *MakeDo (node *cond, node *body);
 #define DO_COND(n) (n->node[0])
 #define DO_BODY(n) (n->node[1])
 
-#define DO_VARINFO(n) (n->node[2])
-#define DO_USEVARS(n) (DO_VARINFO (n)->node[0])
-#define DO_DEFVARS(n) (DO_VARINFO (n)->node[1])
+#define DO_USEVARS(n) (n->node[2])
+#define DO_DEFVARS(n) (n->node[3])
 
 #define DO_MASK(n, x) (n->mask[x])
 
@@ -1565,9 +1566,8 @@ extern node *While2Do (node *while_node);
 #define WHILE_COND(n) (n->node[0])
 #define WHILE_BODY(n) (n->node[1])
 
-#define WHILE_VARINFO(n) (n->node[2])
-#define WHILE_USEVARS(n) (WHILE_VARINFO (n)->node[0])
-#define WHILE_DEFVARS(n) (WHILE_VARINFO (n)->node[1])
+#define WHILE_USEVARS(n) (n->node[2])
+#define WHILE_DEFVARS(n) (n->node[3])
 
 #define WHILE_MASK(n, x) (n->mask[x])
 
