@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2001/05/16 13:42:25  nmw
+ * unused old code removed, comments corrected
+ * MALLOC/FREE changed to Malloc/Free
+ *
  * Revision 1.2  2001/05/16 09:24:40  nmw
  * bug fixed that calls wrong traversal functions
  *
@@ -14,8 +18,10 @@
 
 /*******************************************************************************
 
- This file realizes the information gathering for the new SAC-WLs (WLI phase).
- The decision to fold or not to fold (WLF) is based on these informations.
+ This file realizes the information gathering for the new SAC-WLs (SSAWLI phase).
+ The decision to fold or not to fold (SSAWLF) is based on these informations.
+ This implementation is aware of the ssa form and does not use any masks.
+ Most code is unchanged from the original implementation in WLI.c.
 
  *******************************************************************************
 
@@ -41,12 +47,9 @@
 #include "my_debug.h"
 #include "traverse.h"
 #include "optimize.h"
-
 #include "SSAConstantFolding.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLI.h"
-
-int ssawli_phase;
 
 /******************************************************************************
  *
@@ -182,7 +185,7 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
     arrayn = ARRAY_AELEMS (arrayn);
 
     iinfo = SSACreateIndex (elts);
-    valid_permutation = MALLOC (sizeof (int) * elts);
+    valid_permutation = Malloc (sizeof (int) * elts);
     for (i = 0; i < elts;) {
         valid_permutation[i++] = 0;
     }
@@ -224,9 +227,9 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
     }
 
     if (!ok) {
-        FREE (iinfo);
+        Free (iinfo);
     }
-    FREE (valid_permutation);
+    Free (valid_permutation);
 
     DBUG_RETURN (iinfo);
 }
@@ -379,7 +382,6 @@ CreateIndexInfoA (node *prfn, node *arg_info)
     int id_no = 0, elts, i, index, val = 0;
     node *idn = NULL, *constn = NULL, *tmpn = NULL, *cf_node, *args[2], *assignn, *wln;
     index_info *iinfo, *tmpinfo;
-    types *type;
     node *data1, *data2;
 
     DBUG_ENTER (" CreateIndexInfoA");
@@ -483,9 +485,9 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                     DBUG_ASSERT ((NODE_TYPE (cf_node) == N_num),
                                  "non integer result from constant folding");
                     iinfo->const_arg[i] = NUM_VAL (cf_node);
-                    FREE (args[0]);
-                    FREE (args[1]);
-                    FREE (cf_node);
+                    Free (args[0]);
+                    Free (args[1]);
+                    Free (cf_node);
                 }
             }
         } /* this Id is valid. */
@@ -526,9 +528,9 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                     DBUG_ASSERT ((NODE_TYPE (cf_node) == N_num),
                                  "non integer result from constant folding");
                     iinfo->const_arg[i] = NUM_VAL (cf_node);
-                    FREE (args[0]);
-                    FREE (args[1]);
-                    FREE (cf_node);
+                    Free (args[0]);
+                    Free (args[1]);
+                    Free (cf_node);
                 } else {
                     iinfo->const_arg[i] = val;
                 }
@@ -569,7 +571,7 @@ SSAWLIfundef (node *arg_node, node *arg_info)
  *   node *SSAWLIassign(node *arg_node, node *arg_info)
  *
  * description:
- *   set arg_info to remember this N_assign node.
+ *   set arg_info to remember this N_assign node and traverse instruction
  *
  ******************************************************************************/
 node *
@@ -602,7 +604,7 @@ SSAWLIassign (node *arg_node, node *arg_info)
  *   node *SSAWLIcond(node *arg_node, node *arg_info)
  *
  * description:
- *   traverse conditional parts
+ *   traverse conditional parts in the given order.
  *
  ******************************************************************************/
 node *
@@ -631,9 +633,7 @@ node *
 SSAWLIap (node *arg_node, node *arg_info)
 {
     node *new_arg_info;
-    int old_ssawli_phase;
     funtab *tmp_tab;
-    int expr;
 
     DBUG_ENTER ("SSAWLTap");
 
@@ -642,53 +642,27 @@ SSAWLIap (node *arg_node, node *arg_info)
     }
 
     /* non-recursive call of special fundef
-     * (only in WLI traversal with ssawli_phase == 1)
      */
     if ((AP_FUNDEF (arg_node) != NULL) && (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
-        && (INFO_WLI_FUNDEF (arg_info) != AP_FUNDEF (arg_node)) && (ssawli_phase == 1)) {
+        && (INFO_WLI_FUNDEF (arg_info) != AP_FUNDEF (arg_node))) {
 
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
-        old_ssawli_phase = ssawli_phase;
 
-        DBUG_PRINT ("OPT", ("SSAWLI 1"));
-        DBUG_PRINT ("OPTMEM",
-                    ("mem currently allocated: %d bytes", current_allocated_mem));
-#if 0
-    ssawli_phase = 1;
-#endif
         tmp_tab = act_tab;
         act_tab = ssawli_tab;
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
 
-#if 0
-    /* WLI traversal: search information */
-    DBUG_PRINT("OPT",("SSAWLI 2"));
-    DBUG_PRINT("OPTMEM",("mem currently allocated: %d bytes", current_allocated_mem));
-    ssawli_phase = 2;
-    act_tab = ssawli_tab;
-    AP_FUNDEF(arg_node) = Trav( AP_FUNDEF(arg_node), new_arg_info);
-#endif
-
         /* break after WLI? */
         if ((break_after != PH_sacopt) || strcmp (break_specifier, "wli")) {
-            /* WLF traversal: fold WLs */
-            DBUG_PRINT ("OPT", ("WLF"));
-            DBUG_PRINT ("OPTMEM",
-                        ("mem currently allocated: %d bytes", current_allocated_mem));
+            /* SSAWLF traversal: fold WLs */
             act_tab = ssawlf_tab;
             AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
-            expr = (wlf_expr - old_wlf_expr);
-            DBUG_PRINT ("OPT", ("                        result: %d", expr));
         }
-        DBUG_PRINT ("OPTMEM",
-                    ("mem currently allocated: %d bytes", current_allocated_mem));
 
         act_tab = tmp_tab;
 
-        ssawli_phase = old_ssawli_phase;
-
-        FREE (new_arg_info);
+        Free (new_arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -702,7 +676,7 @@ SSAWLIap (node *arg_node, node *arg_info)
  * description:
  *   If this Id is a reference to a WL (N_Nwith) we want to increment
  *   the number of references to it (NWITH_REFERENCED). Therefore the
- *   WL node has to be found.
+ *   WL node has to be found via avis_ssaassign backlink.
  *
  ******************************************************************************/
 node *
@@ -712,12 +686,7 @@ SSAWLIid (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("SSAWLIid");
 
-#if 0
-  if (1 == ssawli_phase)
-    ID_WL(arg_node) = NULL;     /* could be done in phase 2, too. */
-  else {}
-#endif
-
+    /* get the definition assignment via the AVIS_SSAASSIGN backreference */
     assignn = AVIS_SSAASSIGN (ID_AVIS (arg_node));
     if ((assignn != NULL) && (NODE_TYPE (ASSIGN_RHS (assignn)) == N_Nwith)) {
         ID_WL (arg_node) = assignn;
@@ -729,16 +698,6 @@ SSAWLIid (node *arg_node, node *arg_info)
         /* id is not defined by a withloop */
         ID_WL (arg_node) = NULL;
     }
-
-#if 0
-  /* But this must not be done if we have an assignment
-     of the form A = B. */
-  assignn = INFO_WLI_ASSIGN(arg_info);
-  if (N_let != ASSIGN_INSTRTYPE(assignn) ||
-      N_id != NODE_TYPE(LET_EXPR(ASSIGN_INSTR(assignn)))) {
-    ID_WL(arg_node) = SSAStartSearchWL(arg_node,assignn,0);
-  {}
-#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -770,15 +729,15 @@ SSAWLIlet (node *arg_node, node *arg_info)
     INFO_WLI_ASSIGN (arg_info) = old_assignn;
 
     /* if we are inside a WL we have to search for valid index transformations. */
-    if (INFO_WLI_WL (arg_info) /* && (2 == ssawli_phase) */) { /* ##nmw## phase == 2 */
+    if (INFO_WLI_WL (arg_info)) {
         /* if this is a prf, we are interrested in transformations like +,*,-,/
            and in indexing (F_psi). */
         exprn = LET_EXPR (arg_node);
         if (N_prf == NODE_TYPE (exprn)) {
             prf = PRF_PRF (exprn);
             switch (prf) {
-            /* this may ba an assignment which calculates an index for an
-               array to fold. */
+                /* this maybe an assignment which calculates an index for an
+                   array to fold. */
             case F_add:
             case F_sub:
             case F_mul:
@@ -892,7 +851,6 @@ SSAWLINwith (node *arg_node, node *arg_info)
     NWITH_REFERENCED (arg_node) = 0;
     NWITH_REFERENCED_FOLD (arg_node) = 0;
     NWITH_REFERENCES_FOLDED (arg_node) = 0;
-    NWITH_NO_CHANCE (arg_node) = FALSE;
 
     /* traverse N_Nwithop */
     if (NWITH_WITHOP (arg_node) != NULL) {
@@ -909,7 +867,7 @@ SSAWLINwith (node *arg_node, node *arg_info)
     /* restore arg_info */
     tmpn = arg_info;
     arg_info = INFO_WLI_NEXT (arg_info);
-    FREE (tmpn);
+    Free (tmpn);
 
     DBUG_RETURN (arg_node);
 }

@@ -1,11 +1,23 @@
 /*
  * $Log$
+ * Revision 1.3  2001/05/16 13:41:44  nmw
+ * unused old code removed, comments corrected
+ * MALLOC/FREE changed to Malloc/Free
+ *
  * Revision 1.2  2001/05/15 16:39:21  nmw
  * SSAWithloopFolding implemented (but not tested)
  *
  *
  * created from WLT.c, Revision 3.9 on 2001/05/14 by  nmw
  *
+ */
+
+/*
+ * this implements the ssa form aware version of the original
+ * WithloopTransformation implementation. it do not need any masks
+ * instead it uses the advantages of the ssa form.
+ * most code is unchanged from the original implementation and the
+ * comments, too.
  */
 
 /*******************************************************************************
@@ -123,8 +135,8 @@ CutSlices (int *ls, int *us, int *l, int *u, int dim, intern_gen *ig, node *code
         usc[d] = u[d];
     }
 
-    FREE (lsc);
-    FREE (usc);
+    Free (lsc);
+    Free (usc);
 
     DBUG_RETURN (root_ig);
 }
@@ -173,7 +185,7 @@ CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
         nw[d] = width[d];
     }
 
-    FREE (nw);
+    Free (nw);
 
     DBUG_RETURN (root_ig);
 }
@@ -331,7 +343,7 @@ CreateFullPartition (node *wln, node *arg_info)
         idn = MakeId (StringCopy (varname), NULL, ST_regular); /* use new mem */
         ID_VARDEC (idn) = IDS_VARDEC (_ids);
 
-        /* create new N_Ncode node  - destroying SSA form ##nmw## */
+        /* create new N_Ncode node  */
         coden
           = MakeNCode (MakeBlock (MakeAssign (MakeLet (coden, _ids), NULL), NULL), idn);
 
@@ -354,9 +366,9 @@ CreateFullPartition (node *wln, node *arg_info)
 
         /* free the above made arrays */
         ig = SSAFreeInternGenChain (ig);
-        FREE (array_null);
+        Free (array_null);
         if (WO_genarray == NWITH_TYPE (wln))
-            FREE (array_shape); /* no mem allocated in case of modarray. */
+            Free (array_shape); /* no mem allocated in case of modarray. */
     }
 
     DBUG_RETURN (wln);
@@ -510,7 +522,7 @@ SSAWLTfundef (node *arg_node, node *arg_info)
  *   node *SSAWLTassign(node *arg_node, node *arg_info)
  *
  * description:
- *   store actual assign node in arg_info
+ *   store actual assign node in arg_info and traverse instruction
  *
  ******************************************************************************/
 node *
@@ -556,8 +568,8 @@ SSAWLTcond (node *arg_node, node *arg_info)
  *   node *SSAWLTap(node *arg_node, node *arg_info)
  *
  * description:
- *   traverse args
- *   traverse in applicated fundef if special one.
+ *   1. traverse args
+ *   2. traverse in applicated fundef if it is a special one.
  *
  ******************************************************************************/
 node *
@@ -581,7 +593,7 @@ SSAWLTap (node *arg_node, node *arg_info)
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
 
-        FREE (new_arg_info);
+        Free (new_arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -739,7 +751,7 @@ SSAWLTNwith (node *arg_node, node *arg_info)
      */
     tmpn = arg_info;
     arg_info = INFO_WLI_NEXT (arg_info);
-    FREE (tmpn);
+    Free (tmpn);
 
     DBUG_RETURN (arg_node);
 }
@@ -1000,7 +1012,6 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
                           = SSACreateVardec (varname, type,
                                              &FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info)));
                         IDS_AVIS (_ids) = VARDEC_AVIS (IDS_VARDEC (_ids));
-                        /* destroy ssa form ##nmw## */
 
                         /* varname is duplicated here (own mem) */
 
