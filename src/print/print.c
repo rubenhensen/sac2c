@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.60  1995/05/17 14:49:27  hw
+ * Revision 1.61  1995/05/22 15:09:02  sbs
+ * TRACE_MEM included
+ *
+ * Revision 1.60  1995/05/17  14:49:27  hw
  * changed PrintBool (TRUE => true; FALSE =>false )
  *
  * Revision 1.59  1995/05/04  11:41:20  sbs
@@ -927,6 +930,8 @@ Print (node *arg_node)
     if (show_icm == 0) {
         if (traceflag != 0) {
             fprintf (outfile, "#include <stdio.h>\n");
+            if (traceflag & TRACE_MEM)
+                fprintf (outfile, "#define TRACE_MEM\n");
             if (traceflag & TRACE_REF)
                 fprintf (outfile, "#define TRACE_REF\n");
         }
