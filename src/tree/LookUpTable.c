@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/04/06 15:29:09  dkr
+ * function RemoveContentLUT added
+ *
  * Revision 3.8  2001/04/04 14:55:09  sbs
  * pointer casted into long rather than int
  * (for generating hash-keys). This pleases
@@ -527,6 +530,68 @@ GenerateLUT (void)
 /******************************************************************************
  *
  * function:
+ *   lut_t *RemoveContentLUT( lut_t *lut)
+ *
+ * description:
+ *   Removes the content of the given LUT from memory.
+ *
+ ******************************************************************************/
+
+lut_t *
+RemoveContentLUT (lut_t *lut)
+{
+    void **first, **tmp;
+    long k, i;
+
+    DBUG_ENTER ("RemoveContentLUT");
+
+    if (lut != NULL) {
+        /* init LUT for pointers */
+        for (k = 0; k < (HASH_KEYS_POINTER); k++) {
+            DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
+            /* remove all but the first collision table fragments */
+            for (i = 1; i <= lut[k].size / (LUT_SIZE); i++) {
+                tmp = lut[k].first;
+                lut[k].first = lut[k].first[2 * (LUT_SIZE)];
+                FREE (tmp);
+            }
+            lut[k].next = lut[k].first;
+            lut[k].size = 0;
+        }
+        /* init LUT for strings */
+        for (k = (HASH_KEYS_POINTER); k < (HASH_KEYS); k++) {
+            DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
+            tmp = lut[k].first;
+            first = tmp;
+            /* remove all strings and all but the first collision table fragments */
+            for (i = 0; i < lut[k].size; i++) {
+                FREE (tmp[0]);
+                FREE (tmp[1]);
+                tmp += 2;
+                if ((i + 1) % (LUT_SIZE) == 0) {
+                    /*
+                     * the last table entry is reached
+                     *  -> enter the next table of the chain
+                     */
+                    tmp = *tmp;
+                    FREE (first);
+                    first = tmp;
+                }
+            }
+            lut[k].first = lut[k].next = first;
+            lut[k].size = 0;
+        }
+        DBUG_PRINT ("LUT", ("finished"));
+    } else {
+        DBUG_PRINT ("LUT", ("FAILED: lut is NULL"));
+    }
+
+    DBUG_RETURN (lut);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   lut_t *RemoveLUT( lut_t *lut)
  *
  * description:
@@ -558,6 +623,7 @@ RemoveLUT (lut_t *lut)
             tmp = lut[k].first;
             first = tmp;
             for (i = 0; i < lut[k].size; i++) {
+                /* remove the strings */
                 FREE (tmp[0]);
                 FREE (tmp[1]);
                 tmp += 2;

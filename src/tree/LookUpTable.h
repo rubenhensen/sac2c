@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/04/06 15:29:19  dkr
+ * function RemoveContentLUT added
+ *
  * Revision 3.4  2001/04/06 14:56:20  dkr
  * minor changes done
  *
@@ -62,6 +65,7 @@
 typedef void *LUT_t;
 
 extern LUT_t GenerateLUT (void);
+extern LUT_t RemoveContentLUT (LUT_t lut);
 extern LUT_t RemoveLUT (LUT_t lut);
 
 extern void PrintLUT (FILE *handle, LUT_t lut);
