@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.118  1998/04/07 13:33:23  dkr
+ * prints now a message if Old2NewWith is called.
+ *
  * Revision 1.117  1998/04/03 11:27:31  dkr
  * concregs renamed to concregions
  *
@@ -1190,6 +1193,9 @@ MAIN
         goto BREAK;
     compiler_phase++;
 
+    NOTE2 (("   \n"
+            "** Convert old with-loops into new ones ...\n"
+            "   Generate multiple parts in new with-loops ...\n"));
     if (Make_Old2NewWith)
         syntax_tree = Old2NewWith (syntax_tree); /* o2nWith_tab */
 
