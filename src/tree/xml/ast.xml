@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.27  2004/10/19 14:04:21  sah
+  added two more persist attributes
+
   Revision 1.26  2004/10/19 09:09:45  sah
   added persist flag
   fixed syntax error
@@ -108,8 +111,8 @@
     <type name="OldType" ctype="types*" init="NULL"
     copy="function" persist="no" />
     <type name="Node" ctype="node*" init="NULL" copy="function" />
-    <type name="Link" ctype="node*" init="NULL" copy="hash" />
-    <type name="ApLink" ctype="node*" init="NULL" copy="hash" />
+    <type name="Link" ctype="node*" init="NULL" copy="hash" persist="no" />
+    <type name="ApLink" ctype="node*" init="NULL" copy="hash" persist="no" />
     <type name="IntegerArray" ctype="int*" init="NULL"
     copy="function" />
     <type name="Nums" ctype="nums*" init="NULL" copy="function" />
