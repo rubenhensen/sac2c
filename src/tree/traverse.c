@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2000/03/30 15:13:13  jhs
+ * Added adjustcalls
+ *
  * Revision 1.16  2000/03/29 16:10:31  jhs
  * blkli_tab added
  *
@@ -226,6 +229,7 @@
 #include "blocks_propagate.h"
 #include "barriers_init.h"
 #include "blocks_lift.h"
+#include "adjust_calls.h"
 
 #include "traverse.h"
 
@@ -1063,6 +1067,28 @@ static funtab blkli_tab_rec = {{
                                NULL,
                                NULL};
 funtab *blkli_tab = &blkli_tab_rec;
+
+/*
+ *  (77) adjca1_tab
+ */
+static funtab adjca1_tab_rec = {{
+#define NIFadjca1(it_adjca1) it_adjca1
+#include "node_info.mac"
+                                },
+                                NULL,
+                                NULL};
+funtab *adjca1_tab = &adjca1_tab_rec;
+
+/*
+ *  (78) adjca2_tab
+ */
+static funtab adjca2_tab_rec = {{
+#define NIFadjca2(it_adjca2) it_adjca2
+#include "node_info.mac"
+                                },
+                                NULL,
+                                NULL};
+funtab *adjca2_tab = &adjca2_tab_rec;
 
 /*
  *  nnode

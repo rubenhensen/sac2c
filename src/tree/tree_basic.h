@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  2000/03/30 15:13:13  jhs
+ * Added adjustcalls
+ *
  * Revision 1.35  2000/03/29 16:10:49  jhs
  * MT_WORKERFUN and MTMASTERFUN added.
  *
@@ -910,11 +913,6 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *  in order to make the code of this function available. If LINKMOD is
  *  NULL, then link with the module given by MOD.
  *
- *  LIFTEDFROM is a link back to the original function definition in the
- *  case of an SPMD function. Since SPMD functions are generated relatively
- *  late during the entire compilation process when the NEEDOBJS attribute
- *  is no longer required, LIFTEDFROM and NEEDOBJS may share the same node entry.
- *
  *  If the fundef is a definition of a LAC-dummy-function, LAC_LET is a link to
  *  the (unambiguous!) let-node outside of the fundef-body containing a call of
  *  this function.
@@ -938,13 +936,15 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_ICM(n) (n->node[3])
 #define FUNDEC_DEF(n) (n->node[3])
 #define FUNDEF_NEEDOBJS(n) ((nodelist *)(n->node[4]))
-#define FUNDEF_LIFTEDFROM(n) (n->node[4])
 #define FUNDEF_PRAGMA(n) (n->node[5])
 #define FUNDEF_VARNO(n) (n->varno)
 #define FUNDEF_MASK(n, x) (n->mask[x])
 #define FUNDEF_INLINE(n) (n->flag)
 #define FUNDEF_INLREC(n) (n->refcnt)
 #define FUNDEF_DFM_BASE(n) (n->dfmask[0])
+
+#define FUNDEF_LIFTEDFROM(n) ((node *)(n->dfmask[4]))
+#define FUNDEF_WORKER(n) ((node *)(n->dfmask[5]))
 #define FUNDEF_COMPANION(n) ((node *)(n->dfmask[6]))
 
 /*--------------------------------------------------------------------------*/
@@ -2255,11 +2255,13 @@ extern node *MakePragma ();
  ***    (nh) blocks_cons.[ch]
  ***    (ni) dataflow_analysis.[ch]
  ***    (nj) barriers_init.[ch]
+ ***    (nk) blocks_lift.[ch]
+ ***    (nl) adjust_calcc.[ch]
  ***
  ***  in all:
  ***    node*      INFO_MUTH_FUNDEF   (N_fundef)
- ***    funptr     INFO_MUTH_FUNDEF
- ***    ignorefun  INFO_MUTH_FUNDEF
+ ***    funptr     INFO_MUTH_DRIVER
+ ***    ignorefun  INFO_MUTH_IGNORE
  ***
  ***  in (na), (nb):
  ***    node*      INFO_SCHIN_SCHEDULING
@@ -2290,6 +2292,13 @@ extern node *MakePragma ();
  ***
  ***  in (na), (nj):
  ***    int (bool) INFO_BARIN_WITHINMT
+ ***
+ ***  in (na), (nk):
+ ***    ####
+ ***
+ ***  in (na), (nl):
+ ***    statustype INFO_ADJCA_ATTRIB
+ ***
  ***
  ***  when used in tile_size_inference.c :
  ***
@@ -2519,9 +2528,13 @@ extern node *MakeInfo ();
 #define INFO_DFA_CONT(n) (n->node[3])
 #define INFO_DFA_THISASSIGN(n) (n->node[4])
 
-/* multithread - blocks_expand */
+/* multithread - barriers_init */
 /* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
 #define INFO_BARIN_WITHINMT(n) (n->int_data)
+
+/* multithread - adjust_calls */
+/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
+#define INFO_ADJCA_ATTRIB(n) ((statustype) (n->int_data))
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
@@ -2799,8 +2812,7 @@ extern node *MakeMT (node *region);
 #define MT_USEMASK(n) (n->dfmask[0])
 #define MT_DEFMASK(n) (n->dfmask[1])
 #define MT_NEEDLATER(n) (n->dfmask[2])
-#define MT_MASTERFUN(n) (n->node[1])
-#define MT_WORKERFUN(n) (n->node[2])
+#define MT_FUNDEF(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 

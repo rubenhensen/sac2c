@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2000/03/30 15:13:13  jhs
+ * Added adjustcalls
+ *
  * Revision 1.28  2000/03/29 16:10:15  jhs
  * blkli added
  *
@@ -91,9 +94,6 @@
  *
  * [...]
  *
- * Revision 2.2  1999/02/25 10:59:39  bs
- * N_Array: DupTypes changed to DupArray.
- *
  * Revision 2.1  1999/02/23 12:39:34  sacbase
  * new release made
  *
@@ -101,7 +101,7 @@
  * freemask_tab added
  * format slightly changed (empty line after each five lines!)
  *
- * ... [eliminated]
+ * [...]
  *
  * Revision 1.3  1994/11/10  15:44:34  sbs
  * RCS-header inserted
@@ -141,7 +141,8 @@
  *   muth_tab        schin_tab       blkin_tab       rfin_tab
  *   func2lac_tab    ai_tab          blkex_tab       mtfin_tab
  *   l2f_lift_tab    blkco_tab       dfa_tab         blkpp_tab
- *   cudecls_tab     barin_tab       blkli_tab
+ *   cudecls_tab     barin_tab       blkli_tab       adjca1_tab
+ *   adjca2_tab
  *
  *   nnode
  *
@@ -434,6 +435,13 @@
 #ifndef NIFblkli
 #define NIFblkli(it_blkli)
 #endif
+#ifndef NIFadjca1
+#define NIFadjca1(it_adjca1)
+#endif
+
+#ifndef NIFadjca2
+#define NIFadjca2(it_adjca2)
+#endif
 
 #ifndef NIFnnode
 #define NIFnnode(nnode)
@@ -460,8 +468,8 @@
   it_spmdpm, it_spmdco, it_ntc, it_l2f_infer,                                            \
                                                                                          \
   it_muth, it_schin, it_blkin, it_rfin, it_fun2lac, it_ai, it_blkex, it_mtfin,           \
-  it_l2f_lift, it_blkco, it_dfa, it_blkpp, it_cudecls, it_barin, it_blkli, it_unused8,   \
-  it_unused9, it_unusedA, it_unusedB, it_unusedC,                                        \
+  it_l2f_lift, it_blkco, it_dfa, it_blkpp, it_cudecls, it_barin, it_blkli, it_adjca1,    \
+  it_adjca2, it_unusedA, it_unusedB, it_unusedC,                                         \
                                                                                          \
   nnode)                                                                                 \
                                                                                          \
@@ -501,8 +509,10 @@
                                                         NIFcudecls (it_cudecls)          \
                                                           NIFbarin (it_barin)            \
                                                             NIFblkli (it_blkli)          \
+                                                              NIFadjca1 (it_adjca1)      \
+                                                                NIFadjca2 (it_adjca2)    \
                                                                                          \
-                                                              NIFnnode (nnode)
+                                                                  NIFnnode (nnode)
 
 /******************************************************************************
  *
@@ -777,7 +787,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        MUTHfundef, TravSons, TravSons, RFINfundef, FUN2LACfundef, AIfundef, TravSons,
        MTFINfundef, L2F_LIFTfundef, BLKCOfundef, DFAfundef, BLKPPfundef, CUDfundef,
-       TravSons, BLKLIfundef, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, BLKLIfundef, ADJCA1fundef, ADJCA2fundef, TravSons, TravSons, TravSons,
 
        3),
 
@@ -867,7 +877,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, MTFINxt,
        TravSons, BLKCOxt, DFAxt, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       ADJCA2st, TravSons, TravSons, TravSons,
 
        1),
 
@@ -1048,7 +1058,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, RFINlet, FUN2LAClet, AIlet, TravSons, MTFINlet,
        TravSons, TravSons, DFAlet, TravSons, CUDlet, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       ADJCA2let, TravSons, TravSons, TravSons,
 
        1),
 
@@ -1904,6 +1914,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFcudecls
 #undef NIFbarin
 #undef NIFblkli
+#undef NIFadjca1
+
+#undef NIFadjca2
 
 #undef NIFnnode
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2000/03/30 15:13:13  jhs
+ * Added adjustcalls
+ *
  * Revision 1.13  2000/03/29 16:10:31  jhs
  * blkli_tab added
  *
@@ -156,6 +159,8 @@ extern funtab *blkpp_tab;
 extern funtab *cudecls_tab;
 extern funtab *barin_tab;
 extern funtab *blkli_tab;
+extern funtab *adjca1_tab;
+extern funtab *adjca2_tab;
 
 extern int nnode[];
 
