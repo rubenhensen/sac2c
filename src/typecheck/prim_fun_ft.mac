@@ -1,8 +1,11 @@
 /*
  *  $Log$
- *  Revision 1.12  1995/12/06 17:04:34  hw
- *  added typecheck of primitive function 'genarray'
+ *  Revision 1.13  1996/02/06 13:45:04  hw
+ *  added entries for F_toi_A, F_tod_A, F_tof_A, F_ftoi_A, etc
  *
+;; Revision 1.12  1995/12/06  17:04:34  hw
+;; added typecheck of primitive function 'genarray'
+;;
 ;; Revision 1.11  1995/12/04  16:15:15  hw
 ;; added primitve functions toi, tof & tod
 ;;
@@ -96,26 +99,38 @@ FT (F_toi, f_i, F_toi)
 FT (F_toi, d_i, F_toi)
 FT (F_toi, F_I, F_toi_A)
 FT (F_toi, D_I, F_toi_A)
+FT (F_toi_A, F_I, F_toi_A)
+FT (F_toi_A, D_I, F_toi_A)
 FT (F_tof, i_f, F_tof)
 FT (F_tof, d_f, F_tof)
 FT (F_tof, I_F, F_tof_A)
 FT (F_tof, D_F, F_tof_A)
+FT (F_tof_A, I_F, F_tof_A)
+FT (F_tof_A, D_F, F_tof_A)
 FT (F_tod, i_d, F_tod)
 FT (F_tod, f_d, F_tod)
 FT (F_tod, I_D, F_tod_A)
 FT (F_tod, F_D, F_tod_A)
+FT (F_tod_A, I_D, F_tod_A)
+FT (F_tod_A, F_D, F_tod_A)
 FT (F_ftoi, f_i, F_ftoi)
 FT (F_ftoi, F_I, F_ftoi_A)
+FT (F_ftoi_A, F_I, F_ftoi_A)
 FT (F_ftod, f_d, F_ftod)
 FT (F_ftod, F_D, F_ftod_A)
+FT (F_ftod_A, F_D, F_ftod_A)
 FT (F_itof, i_f, F_itof)
 FT (F_itof, I_F, F_itof_A)
+FT (F_itof_A, I_F, F_itof_A)
 FT (F_itod, i_d, F_itod)
 FT (F_itod, I_D, F_itod_A)
+FT (F_itod_A, I_D, F_itod_A)
 FT (F_dtof, d_f, F_dtof)
 FT (F_dtof, D_F, F_dtof_A)
+FT (F_dtof_A, D_F, F_dtof_A)
 FT (F_dtoi, d_i, F_dtoi)
 FT (F_dtoi, D_I, F_dtoi_A)
+FT (F_dtoi_A, D_I, F_dtoi_A)
 FT (F_modarray, AxAxS_A, F_modarray)
 FT (F_modarray, AxAxA_A, F_modarray)
 FT (F_genarray, VxA_Ag, F_genarray)
