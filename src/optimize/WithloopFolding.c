@@ -1,6 +1,10 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 1.12  1998/04/08 20:37:40  srs
+ * Added several functions, changed arguments of Tree2InternGen(),
+ * InternGen2Tree() counts NWITH_PARTS.
+ *
  * Revision 1.11  1998/04/07 08:21:41  srs
  * changed SearchWL() and inserted second WLI-phase
  *
@@ -80,6 +84,14 @@
 #include "WLT.h"
 #include "WLI.h"
 #include "WLF.h"
+
+/******************************************************************************
+ *
+ *  forward declarations
+ *
+ ******************************************************************************/
+
+node *SearchWL (int, node *, int *, int, int);
 
 /******************************************************************************
  *
@@ -342,6 +354,40 @@ LocateIndexVar (node *idn, node *wln)
 /******************************************************************************
  *
  * function:
+ *   intern_gen *CreateInternGen(int shape, int stepwidth)
+ *
+ * description:
+ *   allocate memory for an intern_gen struct. The parameter shape is needed
+ *   to allocate right sized mem for the bounds. If stepwidth is not 0,
+ *   memory for step/width is allocated, too.
+ *   No initialisations are done.
+ *
+ ******************************************************************************/
+
+intern_gen *
+CreateInternGen (int shape, int stepwidth)
+{
+    intern_gen *ig;
+
+    DBUG_ENTER ("CreateInternGen");
+
+    ig = Malloc (sizeof (intern_gen));
+    ig->l = Malloc (sizeof (int) * shape);
+    ig->u = Malloc (sizeof (int) * shape);
+    if (stepwidth) {
+        ig->step = Malloc (sizeof (int) * shape);
+        ig->width = Malloc (sizeof (int) * shape);
+    } else {
+        ig->step = NULL;
+        ig->width = NULL;
+    }
+
+    DBUG_RETURN (ig);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   intern_gen *AppendInternGen(...)
  *
  * description:
@@ -351,8 +397,8 @@ LocateIndexVar (node *idn, node *wln)
  *
  * parameters:
  *   append_to: see description
- *   shape: number of slots allocated for the arrays *l etc.
- *   stepwidth: if != 0 allocate memory for step array
+ *   shape/stepwidth: see CreateInternGen().
+ *   code: N_Ncode node this intern_gen struct points to.
  *
  ******************************************************************************/
 
@@ -364,18 +410,11 @@ AppendInternGen (intern_gen *append_to, int shape, node *code, int stepwidth)
 
     DBUG_ENTER ("AppendInternGen");
 
-    ig = Malloc (sizeof (intern_gen));
-    ig->l = Malloc (sizeof (int) * shape);
-    ig->u = Malloc (sizeof (int) * shape);
-    if (stepwidth) {
-        ig->step = Malloc (sizeof (int) * shape);
-        ig->width = Malloc (sizeof (int) * shape);
+    ig = CreateInternGen (shape, stepwidth);
+
+    if (stepwidth)
         for (i = 0; i < shape; i++)
             ig->step[i] = ig->width[i] = 1;
-    } else {
-        ig->step = NULL;
-        ig->width = NULL;
-    }
 
     if (append_to) {
         ig->next = append_to->next;
@@ -387,6 +426,72 @@ AppendInternGen (intern_gen *append_to, int shape, node *code, int stepwidth)
     ig->shape = shape;
 
     DBUG_RETURN (ig);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   intern_gen *CopyInternGen(intern_gen *source)
+ *
+ * description:
+ *   Copy the struct source and return it's pointer. Only the first struct
+ *   is copied, not the structs which can be reached with ->next.
+ *
+ * attention:
+ *   the 'next' component is not copied but set to NULL.
+ *
+ ******************************************************************************/
+
+intern_gen *
+CopyInternGen (intern_gen *source)
+{
+    intern_gen *ig;
+    int i;
+
+    DBUG_ENTER ("CopyInternGen");
+
+    ig = CreateInternGen (source->shape, NULL != source->step);
+    ig->shape = source->shape;
+    ig->code = source->code;
+    ig->next = source->next;
+
+    for (i = 0; i < ig->shape; i++) {
+        ig->l[i] = source->l[i];
+        ig->u[i] = source->u[i];
+        if (source->step) {
+            ig->step[i] = source->step[i];
+            ig->width[i] = source->width[i];
+        }
+    }
+
+    DBUG_RETURN (ig);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   intern_gen *MoveInternGen(intern_gen *source, intern_gen *dest)
+ *
+ * description:
+ *   expects two intern_gen structs and inserts the first struct from source
+ *   at the beginning of dest (*dest is changed). The next struct of source
+ *   is returned.
+ *
+ ******************************************************************************/
+
+intern_gen *
+MoveInternGen (intern_gen *source, intern_gen **dest)
+{
+    intern_gen *ret;
+
+    DBUG_ENTER ("MoveInternGen");
+    DBUG_ASSERT (source, ("source is NULL"));
+
+    ret = source->next;
+    source->next = *dest;
+    *dest = source;
+
+    DBUG_RETURN (ret);
 }
 
 /******************************************************************************
@@ -493,13 +598,13 @@ ArrayST2ArrayInt (node *arrayn, int **iarray, int shape)
  *   intern_gen *Tree2InternGen(node *wln)
  *
  * description:
- *
- *
+ *   copies generators of given WL to intern_gen struct. If filter is not
+ *   NULL, only generators pointing at the N_Ncode node filter are copied.
  *
  ******************************************************************************/
 
 intern_gen *
-Tree2InternGen (node *wln)
+Tree2InternGen (node *wln, node *filter)
 {
     intern_gen *root, *tmp_ig;
     node *partn, *genn;
@@ -512,29 +617,31 @@ Tree2InternGen (node *wln)
     tmp_ig = NULL;
 
     while (partn) {
-        genn = NPART_GEN (partn);
-        shape = IDS_SHAPE (NPART_VEC (partn), 0);
-        tmp_ig = AppendInternGen (tmp_ig, shape, NPART_CODE (partn),
-                                  (int)NGEN_STEP (genn) || (int)NGEN_WIDTH (genn));
-        if (!root)
-            root = tmp_ig;
+        if (!filter || NPART_CODE (partn) == filter) {
+            genn = NPART_GEN (partn);
+            shape = IDS_SHAPE (NPART_VEC (partn), 0);
+            tmp_ig = AppendInternGen (tmp_ig, shape, NPART_CODE (partn),
+                                      (int)NGEN_STEP (genn) || (int)NGEN_WIDTH (genn));
+            if (!root)
+                root = tmp_ig;
 
-        /* copy vector information to intern_gen */
-        ArrayST2ArrayInt (NGEN_BOUND1 (genn), &tmp_ig->l, shape); /* l */
-        ArrayST2ArrayInt (NGEN_BOUND2 (genn), &tmp_ig->u, shape); /* u */
-        if (NGEN_STEP (genn))
-            ArrayST2ArrayInt (NGEN_STEP (genn), &tmp_ig->step, shape); /* step */
-        if (NGEN_WIDTH (genn))
-            ArrayST2ArrayInt (NGEN_WIDTH (genn), &tmp_ig->width, shape); /* width */
+            /* copy vector information to intern_gen */
+            ArrayST2ArrayInt (NGEN_BOUND1 (genn), &tmp_ig->l, shape); /* l */
+            ArrayST2ArrayInt (NGEN_BOUND2 (genn), &tmp_ig->u, shape); /* u */
+            if (NGEN_STEP (genn))
+                ArrayST2ArrayInt (NGEN_STEP (genn), &tmp_ig->step, shape); /* step */
+            if (NGEN_WIDTH (genn))
+                ArrayST2ArrayInt (NGEN_WIDTH (genn), &tmp_ig->width, shape); /* width */
 
-        /* normalize step and width */
-        switch (NormalizeInternGen (tmp_ig)) {
-        case 1:
-            ABORT (NODE_LINE (wln), ("component of width greater than step"));
-        case 2:
-            ABORT (NODE_LINE (wln), ("component of width less 0"));
-        case 3:
-            ABORT (NODE_LINE (wln), ("width vector without step vector"));
+            /* normalize step and width */
+            switch (NormalizeInternGen (tmp_ig)) {
+            case 1:
+                ABORT (NODE_LINE (wln), ("component of width greater than step"));
+            case 2:
+                ABORT (NODE_LINE (wln), ("component of width less 0"));
+            case 3:
+                ABORT (NODE_LINE (wln), ("width vector without step vector"));
+            }
         }
 
         partn = NPART_NEXT (partn);
@@ -575,8 +682,12 @@ CreateArrayFromInternGen (int *source, int number, types *type)
  *   node *InternGen2Tree(node *arg_node, intern_gen *ig)
  *
  * description:
- *   copies intern_gen struct to the generators of the given WL. All existing
- *   N_Npart nodes are deleted before. Returns wln.
+ *   copy intern_gen struct to the generators of the given WL. All existing
+ *   N_Npart nodes are deleted before. Count number of N_Npart nodes and
+ *   set NWITH_PARTS. Return wln.
+ *
+ * remark:
+ *  don't forget to free intern_gen chain.
  *
  ******************************************************************************/
 
@@ -586,12 +697,14 @@ InternGen2Tree (node *wln, intern_gen *ig)
     node **part, *withidn, *genn, *b1n, *b2n, *stepn, *widthn;
     types *type;
     shpseg *shpseg;
+    int no_parts; /* number of N_Npart nodes */
 
     DBUG_ENTER ("InternGen2Tree");
 
     withidn = DupTree (NPART_WITHID (NWITH_PART (wln)), NULL);
     FreeTree (NWITH_PART (wln));
     part = &(NWITH_PART (wln));
+    no_parts = 0;
 
     /* create type for N_array nodes*/
     shpseg = MakeShpseg (
@@ -608,14 +721,45 @@ InternGen2Tree (node *wln, intern_gen *ig)
         /* create tree structures */
         genn = MakeNGenerator (b1n, b2n, F_le, F_lt, stepn, widthn);
         *part = MakeNPart (DupTree (withidn, NULL), genn, ig->code);
+
         ig = ig->next;
         part = &(NPART_NEXT ((*part)));
+        no_parts++;
     }
+
+    NWITH_PARTS (wln) = no_parts;
 
     FREE (withidn);
     FreeOneTypes (type);
 
     DBUG_RETURN (wln);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void FreeInternGenChain(intern_gen *ig)
+ *
+ * description:
+ *   Frees all memory allocated by ig and returns NULL (ig is NOT set to NULL).
+ *
+ *
+ ******************************************************************************/
+
+void *
+FreeInternGenChain (intern_gen *ig)
+{
+    intern_gen *tmpig;
+
+    DBUG_ENTER ("FreeInternGenChain");
+
+    while (ig) {
+        tmpig = ig;
+        ig = ig->next;
+        FREE_INTERN_GEN (tmpig);
+    }
+
+    DBUG_RETURN (NULL);
 }
 
 /******************************************************************************
@@ -953,7 +1097,7 @@ WithloopFolding (node *arg_node, node *arg_info)
     /* WLF traversal: fold WLs */
     DBUG_PRINT ("OPT", ("  WLF"));
     act_tab = wlf_tab;
-    arg_node = Trav (arg_node, arg_info);
+    /*   arg_node = Trav(arg_node,arg_info); */
     expr = (wlf_expr - old_wlf_expr);
     if (expr)
         DBUG_PRINT ("OPT", ("                        result: %d", expr));
