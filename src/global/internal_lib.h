@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2004/11/24 22:30:02  ktr
+ * replaceSpecialCharacters moved from precompile.
+ *
  * Revision 3.30  2004/11/24 22:19:44  cg
  * SacDevCamp approved.
  *
@@ -203,6 +206,7 @@ extern void ILIBcreateCppCallString (char *file, char *cccallstr, char *cppfile)
 
 extern char *ILIBtmpVar (void);
 extern char *ILIBtmpVarName (char *postfix);
+extern char *ILIBreplaceSpecialCharacters (char *name);
 
 #ifdef SHOW_MALLOC
 extern void ILIBcomputeMallocAlignStep (void);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2004/11/24 22:30:02  ktr
+ * replaceSpecialCharacters moved from precompile.
+ *
  * Revision 3.65  2004/11/24 22:19:44  cg
  * SacDevCamp approved.
  *
@@ -1223,6 +1226,145 @@ ILIBtmpVarName (char *postfix)
     ILIBfree (prefix);
 
     DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char *ILIBreplaceSpecialCharacters( char *name)
+ *
+ * description:
+ *   Replaces special characters such that they can be used as identifiers
+ *   in a C program.
+ *
+ *****************************************************************************/
+char *
+ILIBreplaceSpecialCharacters (char *name)
+{
+    char *new_name;
+    char *tmp;
+    int i, j;
+
+    DBUG_ENTER ("ILIBreplaceSpecialCharacters");
+
+    new_name = ILIBmalloc ((3 * strlen (name)) * sizeof (char));
+    new_name[0] = '\0';
+
+    for (i = 0, j = 0; (size_t)i < strlen (name); i++, j++) {
+        switch (name[i]) {
+        case '.':
+            tmp = "_DO";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '+':
+            tmp = "_PL";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '-':
+            tmp = "_MI";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '*':
+            tmp = "_ST";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '/':
+            tmp = "_DI";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '%':
+            tmp = "_PR";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '<':
+            tmp = "_LT";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '>':
+            tmp = "_GT";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '=':
+            tmp = "_EQ";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '&':
+            tmp = "_AM";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '|':
+            tmp = "_VE";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '!':
+            tmp = "_EX";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '[':
+            tmp = "_BL";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case ']':
+            tmp = "_BR";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '~':
+            tmp = "_TI";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '@':
+            tmp = "_AT";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '#':
+            tmp = "_HA";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '$':
+            tmp = "_DO";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '^':
+            tmp = "_PO";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '\\':
+            tmp = "_BS";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case ':':
+            tmp = "_CL";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        default:
+            new_name[j] = name[i];
+            new_name[j + 1] = '\0';
+            break;
+        }
+    }
+
+    DBUG_RETURN (new_name);
 }
 
 #ifdef SHOW_MALLOC
