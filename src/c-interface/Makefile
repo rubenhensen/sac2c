@@ -1,11 +1,16 @@
 #
 #
 # $Log$
+# Revision 1.12  2000/11/02 14:54:48  dkr
+# deps made
+#
 # Revision 1.11  2000/11/02 14:54:34  dkr
 # RCS header added
 # explicit .mac dependencies added
 #
 #
+
+
 
 #
 # OS setup:
