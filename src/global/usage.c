@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/05/25 09:21:56  nmw
+ * ssa form related break specifier in optimizations added
+ *
  * Revision 3.13  2001/05/07 15:13:28  dkr
  * minor changes done
  *
@@ -205,6 +208,12 @@ usage ()
 
     PRINT_BREAK_SPEC (PH_sacopt, "inl", "stop after function inlining");
     PRINT_BREAK_SPEC (PH_sacopt, "dfr", "stop after initial dead function removal");
+    PRINT_BREAK_SPEC (PH_sacopt, "w2d",
+                      "stop after transf. of while into do loops (ssa only)");
+    PRINT_BREAK_SPEC (PH_sacopt, "l2f",
+                      "stop after transf. into fun representation (ssa only)");
+    PRINT_BREAK_SPEC (PH_sacopt, "ssa",
+                      "stop after initial ssa transformation (ssa only)");
     PRINT_BREAK_SPEC (PH_sacopt, "ae", "stop after array elimination");
     PRINT_BREAK_SPEC (PH_sacopt, "dcr", "stop after dead code removal");
 
@@ -219,10 +228,15 @@ usage ()
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:dcr", "stop after dead code removal ...");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:lur", "stop after (with-)loop unrolling ...");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:lus", "stop after loop unswitching ...");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:lir", "stop after loop invariant removal ...");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:lir",
+                      "stop after (with-)loop invariant removal ...");
 
     printf ("\t                     ... in cycle <N>\n");
 
+    PRINT_BREAK_SPEC (PH_sacopt, "funopt", "stop after fundef optimization cycle");
+    PRINT_BREAK_SPEC (PH_sacopt, "ussa", "stop after undo ssa transformation (ssa only)");
+    PRINT_BREAK_SPEC (PH_sacopt, "f2l",
+                      "stop after transf. into lac representation (ssa only)");
     PRINT_BREAK_SPEC (PH_sacopt, "wlaa", "stop after with loop array access inference");
     PRINT_BREAK_SPEC (PH_sacopt, "ap", "stop after array padding");
     PRINT_BREAK_SPEC (PH_sacopt, "tsi", "stop after tile size inference");
@@ -277,7 +291,7 @@ usage ()
     PRINT_BREAK_SPEC (PH_multithread, "adjca", "stop after adjusted calls");
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
-            "\t -ssa\tuse optimizations based on ssa-form.\n"
+            "\t -ssa\t\tuse optimizations based on ssa-form.\n"
             "\t -no <opt>\tdisable optimization technique <opt>\n"
             "\t -do <opt>\tenable optimization technique <opt>\n"
             "\n"
@@ -306,7 +320,7 @@ usage ()
             "\t\tMTO \tmulti-thread optimization\n"
             "\t\tSBE \tsyncronisation barrier elimination\n"
             "\t\tPHM \tprivate heap management\n"
-            "\t\tAPS \tarena preselection (in conjunction with PHM)\n"
+            "\t\tAPS \tarena preselection           (in conjunction with PHM)\n"
             "\t\tRCAO\trefcount allocation optimiz. (in conjunction with PHM)\n"
             "\t\tMSCA\tmemory size cache adjustment (in conjunction with PHM)\n"
             "\n"
@@ -601,8 +615,8 @@ usage ()
             "\t\t\tsac: generate SAC library.\n"
             "\t\t\t  c: generate C library and headerfile. Be careful to\n"
             "\t\t\t     use same switches for PHM and profiling in all\n"
-            "\t\t\t     modules you link to one c executeable!\n"
-            "\t\t\t     Multithreading is not yet available for c libraries!\n"
+            "\t\t\t     modules you link to one c executeable! Multi-\n"
+            "\t\t\t     threading is not yet available for c libraries!\n"
             "\t\t\t     (see also documentation in sac_cinterface.h)\n"
             "\t\t\tdefault: -genlib sac\n"
 
@@ -660,7 +674,8 @@ usage ()
             "\tHelge Ernst\n"
             "\tJan-Hendrik Schoeler\n"
             "\tNico Marcussen-Wulff\n"
-            "\tMarkus Bradtke\n");
+            "\tMarkus Bradtke\n"
+            "\tBorg Enders\n");
 
     printf ("\n\nCONTACT:\n\n"
 
