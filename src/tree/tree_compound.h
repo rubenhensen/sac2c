@@ -1,15 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/01/10 11:30:18  dkr
+ * some WLGRIDX_... macros added
+ *
  * Revision 3.6  2001/01/09 17:26:49  dkr
  * N_WLstriVar renamed into N_WLstrideVar
  *
  * Revision 3.5  2001/01/09 16:55:13  dkr
  * some redundant macros for WL-nodes removed
- *
- * Revision 3.4  2001/01/09 16:42:13  dkr
- * macros WLNODE_..., WLSEGX_..., WLSTRIX_..., WLGRIDX_... moved to
- * tree_compound.h
  *
  * Revision 3.3  2000/12/12 15:34:07  dkr
  * some macros renamed
@@ -138,22 +137,6 @@
  *
  * [...]
  *
- * Revision 1.1  2000/01/21 15:38:29  dkr
- * Initial revision
- *
- * Revision 2.25  1999/12/01 15:20:55  dkr
- * macro VARDEC_OR_ARG_SHPSEG added
- *
- * [...]
- *
- * Revision 2.1  1999/02/23 12:40:11  sacbase
- * new release made
- *
- * Revision 1.79  1999/02/06 12:50:27  srs
- * declared four functions to handle Nodelist
- *
- * ... [eliminated] ...
- *
  * Revision 1.1  1995/09/27  15:13:12  cg
  * Initial revision
  *
@@ -181,7 +164,6 @@ specific implementation of a function should remain with the source code.
 ============================================================================*/
 
 #ifndef _sac_tree_compound_h
-
 #define _sac_tree_compound_h
 
 #include "types.h"
@@ -1771,71 +1753,6 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 
 /*--------------------------------------------------------------------------*/
 
-/*
- * here are some macros for N_WL... nodes
- *
- *
- * CAUTION: not every macro is suitable for all node tpyes.
- *          e.g. NEXTDIM is not a son of N_WLstride nodes
- *
- *          it would be better to contruct these macros like this:
- *            #define WLNODE_NEXTDIM(n) ((NODE_TYPE(n) == N_WLstride) ?
- *                                        DBUG_ASSERT(...) :
- *                                        (NODE_TYPE(n) == N_WLblock) ?
- *                                         WLBLOCK_NEXTDIM(n) :
- *                                         (NODE_TYPE(n) == N_WLublock) ?
- *                                          WLUBLOCK_NEXTDIM(n) : ...)
- *          but unfortunately this is not a modifiable l-value in ANSI-C :(
- *          so it would be impossible to use them on the left side of an
- *          assignment.
- *          because of that I designed this "static" macros to make a
- *          concise modelling of routines still possible.
- */
-
-#define WLNODE_LEVEL(n) ((n)->lineno)
-#define WLNODE_DIM(n) ((n)->refcnt)
-#define WLNODE_BOUND1(n) ((n)->flag)
-#define WLNODE_BOUND2(n) ((n)->counter)
-#define WLNODE_STEP(n) ((n)->varno)
-#define WLNODE_NEXTDIM(n) ((n)->node[0])
-#define WLNODE_NEXT(n) ((n)->node[1])
-
-/*
- * some macros for N_WLseg, N_WLsegVar nodes
- */
-
-#define WLSEGX_DIMS(n) ((n)->refcnt)
-#define WLSEGX_CONTENTS(n) ((n)->node[0])
-#define WLSEGX_NEXT(n) (WLNODE_NEXT (n))
-#define WLSEGX_IDX_MIN(n) (*((int **)(&((n)->node[2]))))
-#define WLSEGX_IDX_MAX(n) (*((int **)(&((n)->node[3]))))
-#define WLSEGX_BLOCKS(n) ((n)->flag)
-#define WLSEGX_SV(n) ((int *)(n)->mask[0])
-#define WLSEGX_BV(n, level) ((int *)(n)->mask[level + 2])
-#define WLSEGX_UBV(n) ((int *)(n)->mask[1])
-#define WLSEGX_SCHEDULING(n) ((SCHsched_t *)(n)->info2)
-
-/*
- * some macros for N_WLstride, N_WLstrideVar nodes
- */
-
-#define WLSTRIDEX_LEVEL(n) (WLNODE_LEVEL (n))
-#define WLSTRIDEX_DIM(n) (WLNODE_DIM (n))
-#define WLSTRIDEX_CONTENTS(n) ((n)->node[0])
-#define WLSTRIDEX_NEXT(n) (WLNODE_NEXT (n))
-
-/*
- * some macros for N_WLgrid, N_WLgridVar nodes
- */
-
-#define WLGRIDX_LEVEL(n) (WLNODE_LEVEL (n))
-#define WLGRIDX_DIM(n) (WLNODE_DIM (n))
-#define WLGRIDX_NEXTDIM(n) (WLNODE_NEXTDIM (n))
-#define WLGRIDX_NEXT(n) (WLNODE_NEXT (n))
-#define WLGRIDX_CODE(n) ((n)->node[4])
-
-/*--------------------------------------------------------------------------*/
-
 /***
  ***  N_WLseg :
  ***/
@@ -1891,6 +1808,17 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 #define WLGRIDVAR_CEXPR(n) (NCODE_CEXPR (WLGRIDVAR_CODE (n)))
 
 #define WLGRIDVAR_CBLOCK_INSTR(n) (BLOCK_INSTR (WLGRIDVAR_CBLOCK (n)))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_WLgrid :  *and*  N_WLgridVar :
+ ***/
+
+#define WLGRIDX_CBLOCK(n) (NCODE_CBLOCK (WLGRIDX_CODE (n)))
+#define WLGRIDX_CEXPR(n) (NCODE_CEXPR (WLGRIDX_CODE (n)))
+
+#define WLGRIDX_CBLOCK_INSTR(n) (BLOCK_INSTR (WLGRIDX_CBLOCK (n)))
 
 /*--------------------------------------------------------------------------*/
 
