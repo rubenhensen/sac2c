@@ -162,8 +162,8 @@ base=$ask_res
 if [ $SACBASE != $base ] 
 then
   SACBASE=$base
-  export SACBASE
 fi
+export SACBASE
 
 insert_component d runtime.tar $base/runtime
 if [ -f $SACBASE/runtime/runtime.tar ] ; then
