@@ -1,11 +1,9 @@
 /*
  *
  * $Log$
- * Revision 3.7  2001/05/08 12:07:06  dkr
- * macros RC_INACTIVE, RC_UNDEF added
- *
- * Revision 3.6  2001/04/26 15:16:58  dkr
- * no changes done
+ * Revision 3.8  2001/05/08 12:30:38  dkr
+ * macro IS_REFCOUNTED removed (use new macros RC_IS_ACTIVE, ... instead
+ * !)
  *
  * Revision 3.5  2001/02/09 13:33:40  dkr
  * COMPIcm added
@@ -21,9 +19,6 @@
  *
  * Revision 3.1  2000/11/20 18:01:10  sacbase
  * new release made
- *
- * Revision 2.15  2000/10/24 11:08:35  dkr
- * all deprecated macros have been moved to compile.c
  *
  * Revision 2.14  2000/10/17 13:03:30  dkr
  * macro COUNT_ELEMS renamed into EXPRS_LENGTH and moved to tree_compound.h
@@ -59,17 +54,12 @@
  * Revision 2.5  2000/04/18 14:00:48  jhs
  * Added COMPSt and COMPMt.
  *
- * Revision 2.4  2000/03/21 15:46:43  dkr
- * ICM_INDENT explcitly set to 0 if nodes are reused as icm-nodes
- *
  * [ eliminated ]
  *
  */
 
 #ifndef _sac_compile_h
 #define _sac_compile_h
-
-#define IS_REFCOUNTED(item, arg) (item##_REFCNT (arg) != RC_INACTIVE)
 
 extern node *MakeAdjustRcIcm (char *name, types *type, int rc, int num);
 extern node *MakeIncRcIcm (char *name, types *type, int rc, int num);
