@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.25  2004/10/18 15:18:00  ktr
+  added FUNDEF_RETALIAS
+
   Revision 1.24  2004/10/15 15:02:08  sah
   added new module system nodes
 
@@ -683,6 +686,16 @@
           </type>
           <phases>
             <range from="import" to="liftspmd" />
+          </phases>
+        </attribute>
+        <attribute name="RetAlias" mandatory="no">
+          <type name="NodeList">
+            <target>
+              <node name="Bool">
+            </target>
+          </type>
+          <phases>
+            <range from="emaa" to="final" />
           </phases>
         </attribute>
         <attribute name="Icm" mandatory="yes">
