@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2001/03/29 14:48:16  dkr
+ * SYNC_SCHEDULING removed
+ *
  * Revision 3.31  2001/03/29 01:36:00  dkr
  * WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX are now node-vectors
  *
@@ -6733,15 +6736,12 @@ COMPSync (node *arg_node, node *arg_info)
     barrier_id++;
 
     /*
-     * insert ICM 'MT_START_SYNCBLOCK',
-     * ICM 'MT_SCHEDULER_BEGIN', and contents of modified sync-region-block
+     * insert ICM 'MT_START_SYNCBLOCK' and contents of modified sync-region-block
      */
-    assigns = AppendAssign (
-      assigns,
-      MakeAssign (MakeIcm2 ("MT_START_SYNCBLOCK", MakeNum (barrier_id), icm_args3),
-                  /*                        MakeAssign(
-                     SCHCompileSchedulingBegin(SYNC_SCHEDULING(arg_node), arg_node), */
-                  BLOCK_INSTR (SYNC_REGION (arg_node)) /*  )*/));
+    assigns
+      = AppendAssign (assigns, MakeAssign (MakeIcm2 ("MT_START_SYNCBLOCK",
+                                                     MakeNum (barrier_id), icm_args3),
+                                           BLOCK_INSTR (SYNC_REGION (arg_node))));
 
     /*
      *  see comment on setting backup!
@@ -6749,13 +6749,6 @@ COMPSync (node *arg_node, node *arg_info)
      */
     BLOCK_INSTR (SYNC_REGION (arg_node)) = backup;
 
-    /*
-     * insert ICM 'MT_SCHEDULER_END'
-     */
-
-    /*  assigns = AppendAssign(assigns,
-                             MakeAssign(
-       SCHCompileSchedulingEnd(SYNC_SCHEDULING(arg_node), arg_node), NULL));  */
     /*
      * insert ICM 'MT_SYNC_...'
      *
