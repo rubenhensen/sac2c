@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2001/03/07 14:24:19  dkr
+ * PrintAssign modified:
+ * N_annotate nodes are printed after phase 20 only
+ *
  * Revision 3.25  2001/03/05 15:11:12  dkr
  * NCODE_NO renamed into NCODE_ID
  * handling of NCODE_ID modified
@@ -1169,11 +1173,11 @@ PrintAnnotate (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
     if (ANNOTATE_TAG (arg_node) & CALL_FUN) {
-        sprintf (strbuffer1, "PROFILE_BEGIN_UDF( %d ,%d )", ANNOTATE_FUNNUMBER (arg_node),
+        sprintf (strbuffer1, "PROFILE_BEGIN_UDF( %d, %d)", ANNOTATE_FUNNUMBER (arg_node),
                  ANNOTATE_FUNAPNUMBER (arg_node));
     } else {
         if (ANNOTATE_TAG (arg_node) & RETURN_FROM_FUN) {
-            sprintf (strbuffer1, "PROFILE_END_UDF( %d ,%d )",
+            sprintf (strbuffer1, "PROFILE_END_UDF( %d, %d)",
                      ANNOTATE_FUNNUMBER (arg_node), ANNOTATE_FUNAPNUMBER (arg_node));
         } else {
             DBUG_ASSERT ((1 == 0), "wrong tag at N_annotate");
@@ -1181,13 +1185,13 @@ PrintAnnotate (node *arg_node, node *arg_info)
     }
 
     if (ANNOTATE_TAG (arg_node) & INL_FUN) {
-        sprintf (strbuffer2, "PROFILE_INLINE( %s )", strbuffer1);
+        sprintf (strbuffer2, "PROFILE_INLINE( %s)", strbuffer1);
     } else {
         strcpy (strbuffer2, strbuffer1);
     }
 
     if (ANNOTATE_TAG (arg_node) & LIB_FUN) {
-        sprintf (strbuffer1, "PROFILE_LIBRARY( %s )", strbuffer2);
+        sprintf (strbuffer1, "PROFILE_LIBRARY( %s)", strbuffer2);
     } else {
         strcpy (strbuffer1, strbuffer2);
     }
@@ -1426,6 +1430,8 @@ PrintReturn (node *arg_node, node *arg_info)
 node *
 PrintAssign (node *arg_node, node *arg_info)
 {
+    node *instr;
+
     DBUG_ENTER ("PrintAssign");
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
@@ -1459,11 +1465,12 @@ PrintAssign (node *arg_node, node *arg_info)
 
         DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", arg_node->lineno););
 
-        if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return)
-            || ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_return)
-                && (RETURN_EXPRS (ASSIGN_INSTR (arg_node)) != NULL))) {
+        instr = ASSIGN_INSTR (arg_node);
+        if (((NODE_TYPE (instr) != N_return) && (NODE_TYPE (instr) != N_annotate))
+            || ((NODE_TYPE (instr) == N_return) && (RETURN_EXPRS (instr) != NULL))
+            || ((NODE_TYPE (instr) == N_annotate) && (compiler_phase >= PH_compile))) {
             INDENT;
-            Trav (ASSIGN_INSTR (arg_node), arg_info);
+            Trav (instr, arg_info);
             fprintf (outfile, "\n");
         }
 
@@ -3720,7 +3727,7 @@ Print (node *syntax_tree)
 
     FREE (arg_info);
 
-    /*if generating c library, invoke the headerfile generator */
+    /* if generating c library, invoke the headerfile generator */
     if ((generatelibrary & GENERATELIBRARY_C) && (compiler_phase == PH_genccode)) {
         PrintInterface (syntax_tree);
     }
