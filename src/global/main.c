@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.27  1995/03/10 11:08:29  hw
+ * Revision 1.28  1995/03/13 17:00:06  asi
+ * calls Optimize even if no optimization shall be done
+ *
+ * Revision 1.27  1995/03/10  11:08:29  hw
  * - Refcount inserted
  * - new parameters -noRC, -r (show refcounts while Print) added
  *
@@ -114,12 +117,13 @@
 FILE *outfile;
 char filename[256];
 int opt_dcr = 1, opt_cf = 1;
+int optimize = 1;
 int show_refcnt = 0;
 
 MAIN
 {
     int set_outfile = 0;
-    int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, optimize = 1,
+    int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0,
         print_refcnt = 0, refcount = 1;
     char prgname[256];
     char outfilename[256] = "out.txt";
@@ -220,10 +224,7 @@ MAIN
                 Typecheck (syntax_tree);
                 NOTE (("\n%d Warnings, %d Errors \n", warnings, errors));
                 if ((!breaktype) && (errors == 0)) {
-                    if (optimize) {
-                        NOTE (("Optimizing: ...\n"));
-                        syntax_tree = Optimize (syntax_tree);
-                    }
+                    syntax_tree = Optimize (syntax_tree);
                     if (refcount) {
                         syntax_tree = Refcount (syntax_tree);
                         if (1 == print_refcnt) {
