@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/03/29 12:00:31  hw
+ * Revision 1.17  1995/04/04 12:21:56  asi
+ * added include files WorkReduction.h
+ *
+ * Revision 1.16  1995/03/29  12:00:31  hw
  * comp_tab inserted
  *
  * Revision 1.15  1995/03/17  17:41:48  asi
@@ -69,6 +72,7 @@
 #include "optimize.h"
 #include "ConstantFolding.h"
 #include "DeadCodeRemoval.h"
+#include "WorkReduction.h"
 #include "import.h"
 #include "refcount.h"
 #include "compile.h"
