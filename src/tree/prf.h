@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/10/16 13:55:41  dkr
+ * order of array-prfs changed
+ *
  * Revision 1.1  2000/10/12 15:46:27  dkr
  * Initial revision
  *
@@ -17,7 +20,7 @@
 
 #define FIRST_LEGAL_PRF F_toi
 
-#define LAST_LEGAL_PRF F_genarray
+#define LAST_LEGAL_PRF F_div_AxA
 
 /* ... */
 
@@ -31,9 +34,9 @@
 
 #define MULTI_SCALAR_ARGS(prf) ((prf > F_not) && (prf <= F_neq))
 
-#define ARRAY_ARGS_INTRINSIC(prf) ((prf > F_neq) && (prf <= F_idx_modarray))
+#define ARRAY_ARGS_INTRINSIC(prf) ((prf > F_neq) && (prf <= F_modarray))
 
-#define ARRAY_ARGS_NON_INTRINSIC(prf) ((prf > F_idx_modarray) && (prf <= LAST_LEGAL_PRF))
+#define ARRAY_ARGS_NON_INTRINSIC(prf) ((prf > F_modarray) && (prf <= LAST_LEGAL_PRF))
 
 /* combinations of categories */
 

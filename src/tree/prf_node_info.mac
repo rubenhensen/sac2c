@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/10/16 13:55:36  dkr
+ * order of array-prfs changed
+ *
  * Revision 1.3  2000/10/12 15:44:51  dkr
  * comments changed
  *
@@ -99,13 +102,13 @@
  *
  *       - funs that require at least one non-scalar (array) argument
  *         and are purely intrinsics.
- *         The last fun of this category HAS TO BE  "F_idx_modarray" !!
+ *         The last fun of this category HAS TO BE  "F_modarray" !!
  *
  *       - funs that require at least one non-scalar (array) argument
  *         and are not purely intrinsics (i.e. they can be found in the
  *         Array module, too).
  *
- *       - the last legal prf is "F_genarray" !!
+ *       - the last legal prf is "F_div_AxA" !!
  *
  * These side-conditions are used in prf.h !!!
  * And they should be be used ONLY in prf.h !!!!!!!
@@ -126,10 +129,12 @@ PRF_IF (F_toi, "F_foi", "toi", "toi"), PRF_IF (F_tof, "F_fof", "tof", "tof"),
   PRF_IF (F_ge, "F_ge", ">=", "_ge"), PRF_IF (F_gt, "F_gt", ">", "_gt"),
   PRF_IF (F_neq, "F_neq", "!=", "_neq"),
 
+  PRF_IF (F_genarray, "F_genarray", "genarray", "genarray"),
   PRF_IF (F_dim, "F_dim", "dim", "dim"), PRF_IF (F_shape, "F_shape", "shape", "shape"),
   PRF_IF (F_reshape, "F_reshape", "reshape", "reshape"),
   PRF_IF (F_idx_psi, "F_idx_psi", "idx_psi", "idx_psi"),
   PRF_IF (F_idx_modarray, "F_idx_modarray", "idx_modarray", "idx_modarray"),
+  PRF_IF (F_modarray, "F_modarray", "modarray", "modarray"),
 
   PRF_IF (F_take, "F_take", "take", "take"), PRF_IF (F_psi, "F_psi", "psi", "psi"),
   PRF_IF (F_drop, "F_drop", "drop", "drop"), PRF_IF (F_cat, "F_cat", "cat", "cat"),
@@ -146,6 +151,4 @@ PRF_IF (F_toi, "F_foi", "toi", "toi"), PRF_IF (F_tof, "F_fof", "tof", "tof"),
   PRF_IF (F_mul_AxA, "F_mul_AxA", "*", "_mul"),
   PRF_IF (F_div_SxA, "F_div_SxA", "/", "_div"),
   PRF_IF (F_div_AxS, "F_div_AxS", "/", "_div"),
-  PRF_IF (F_div_AxA, "F_div_AxA", "/", "_div"),
-  PRF_IF (F_modarray, "F_modarray", "modarray", "modarray"),
-  PRF_IF (F_genarray, "F_genarray", "genarray", "genarray")
+  PRF_IF (F_div_AxA, "F_div_AxA", "/", "_div")
