@@ -1,6 +1,11 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/08/07 16:19:05  sah
+  most xsl files use key-tables for type lookups
+  now which increases speed significantly.
+  lots of small improvements
+
   Revision 1.1  2004/07/11 18:22:40  sah
   Initial revision
 
@@ -45,9 +50,9 @@ version="1.0">
   <xsl:if test="position() != 1">
     <xsl:value-of select="' ,'"/>   
   </xsl:if>
-  <xsl:value-of select="//attributetypes/type[@name = current()/type/@name]/@ctype"/>
+  <xsl:value-of select="key( &quot;types&quot;, ./type/@name)/@ctype"/>
   <!-- if it is an array, we have to add an indirection to the type -->
-  <xsl:if test="//attributetypes/type[@name = current()/type/@name]/@size">
+  <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
     <xsl:value-of select="'*'" />
   </xsl:if>
   <xsl:value-of select="' '"/>

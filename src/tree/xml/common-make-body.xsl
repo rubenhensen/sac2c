@@ -1,6 +1,11 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2004/08/07 16:19:05  sah
+  most xsl files use key-tables for type lookups
+  now which increases speed significantly.
+  lots of small improvements
+
   Revision 1.4  2004/08/06 21:19:57  sah
   uses common-node-access.xsl common-name-to-nodeenum.xsl now
   and generates assertions using common-make-assertion.xsl
@@ -35,7 +40,7 @@ version="1.0">
   <xsl:value-of select="'node *this;'" />
   <!-- if there is a for loop for initialising attributes, we 
        need a variable cnt, which is created here -->
-  <xsl:if test="attributes/attribute/type[@name = //attributetypes/type[@size]/@name]">
+  <xsl:if test="attributes/attribute[key(&quot;arraytypes&quot;, ./type/@name)]">
     <xsl:value-of select="'int cnt;'" />
   </xsl:if>
   <!-- DBUG_ENTER call -->
@@ -65,8 +70,14 @@ version="1.0">
   <!-- assign sons and attributes a value -->
   <xsl:apply-templates select="sons/son" mode="make-body"/>
   <xsl:apply-templates select="attributes/attribute" mode="make-body"/>
-  <!-- check for valid arguments -->
+  <!-- if DBUG enabled, check for valid arguments -->
+  <xsl:call-template name="newline" />
+  <xsl:value-of select="'#ifndef DBUG_OFF'" />
+  <xsl:call-template name="newline" />
   <xsl:apply-templates select="sons/son[not( @default)]" mode="make-assertion" />
+  <xsl:call-template name="newline" />
+  <xsl:value-of select="'#endif /* DBUG_OFF */'" />
+  <xsl:call-template name="newline" />
   <!-- DBUG_RETURN call -->
   <xsl:value-of select="'DBUG_RETURN( this);'"/>
   <xsl:value-of select="'}'"/>
@@ -101,9 +112,9 @@ version="1.0">
 <!-- generate the assignmnent for an attribute -->
 <xsl:template match="attributes/attribute" mode="make-body">
   <!-- if it is an array, we have to build a for loop over its elements -->
-  <xsl:if test="//attributetypes/type[@name = current()/type/@name][@size]">
+  <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
     <xsl:value-of select="'for( cnt = 0; cnt &lt; '" />
-    <xsl:value-of select="//attributetypes/type[@name = current()/type/@name]/@size" />
+    <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@size"/>
     <xsl:value-of select="'; cnt++) { '" />
   </xsl:if>
   <!-- left side of assignment -->
@@ -119,7 +130,7 @@ version="1.0">
     </xsl:with-param>
     <!-- if its is an array, we have to add another parameter -->
     <xsl:with-param name="index">
-      <xsl:if test="//attributetypes/type[@name = current()/type/@name]/@size">
+      <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
         <xsl:value-of select="'cnt'"/>
       </xsl:if>
     </xsl:with-param>
@@ -129,7 +140,7 @@ version="1.0">
   <xsl:apply-templates select="@name" mode="make-body" />
   <xsl:value-of select="';'"/>
   <!-- finally, end the for loop if it was an array -->
-  <xsl:if test="//attributetypes/type[@name = current()/type/@name]/@size">
+  <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
     <xsl:value-of select="'}'" />
   </xsl:if>
 </xsl:template> 
@@ -147,7 +158,7 @@ version="1.0">
 <xsl:template match="@name[not(../@default)][../phases/all]" mode="make-body">
   <xsl:value-of select="."/>
   <!-- if its an array, we have to add the selector -->
-  <xsl:if test="//attributetypes/type[@name = current()/type/@name]/@size">
+  <xsl:if test="key(&quot;arraytypes&quot;, ../type/@name)">
     <xsl:value-of select="'[x]'" />
   </xsl:if>
 </xsl:template>
@@ -155,7 +166,7 @@ version="1.0">
 <!-- no default and beeing a temporary attribute implies using the
      init value for this attributes type -->
 <xsl:template match="@name[not(../@default)][not(../phases/all)]" mode="make-body">
-  <xsl:value-of select="//attributetypes/type[@name = current()/../type/@name]/@init"/>
+  <xsl:value-of select="key(&quot;types&quot;, ../type/@name)/@init"/>
 </xsl:template>
 
 </xsl:stylesheet>

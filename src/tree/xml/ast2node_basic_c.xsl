@@ -1,6 +1,11 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/08/07 16:19:05  sah
+  most xsl files use key-tables for type lookups
+  now which increases speed significantly.
+  lots of small improvements
+
   Revision 1.3  2004/08/06 14:39:48  sah
   some ast improvements
 
@@ -14,6 +19,7 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">
 
+<xsl:import href="common-key-tables.xsl"/>
 <xsl:import href="common-make-head.xsl"/>
 <xsl:import href="common-make-body.xsl"/>
 
@@ -53,7 +59,7 @@ version="1.0">
   <xsl:text>
 
 /*****************************************************************************
- * functions for N_</xsl:text><xsl:value-of select="@name"/><xsl:text>
+ * N_</xsl:text><xsl:value-of select="@name"/><xsl:text> :
  *****************************************************************************/
 
   </xsl:text>

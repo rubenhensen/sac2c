@@ -1,6 +1,11 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/08/07 16:19:05  sah
+  most xsl files use key-tables for type lookups
+  now which increases speed significantly.
+  lots of small improvements
+
   Revision 1.2  2004/07/31 16:16:57  sah
   added support for flags and moved to memory saving attribute
   structure.
@@ -14,6 +19,9 @@
      > sabcmd ast2node.xslt ast.xml node.h
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  
+  <xsl:import href="common-key-tables.xsl"/>
+
   <xsl:output method="text" indent="no"/>
   <xsl:strip-space elements="*"/>
 
@@ -66,12 +74,12 @@
 
   <!-- generate an entry for an attribute within the attribute structure -->
   <xsl:template match="attribute" mode="generate-attrib-structs">
-    <xsl:value-of select="//attributetypes/type[@name = current()/type/@name]/@ctype"/>
+    <xsl:value-of select="key( &quot;types&quot;, ./type/@name)/@ctype"/>
     <xsl:value-of select="' '"/>
     <xsl:value-of select="@name"/>
-    <xsl:if test="//attributetypes/type[@name = current()/type/@name]/@size">
+    <xsl:if test="key( &quot;arraytypes&quot;, ./type/@name)">
       <xsl:value-of select="'['" />
-      <xsl:value-of select="//attributetypes/type[@name = current()/type/@name]/@size" />
+      <xsl:value-of select="key( &quot;types&quot;, ./type/@name)/@size"/>
       <xsl:value-of select="']'" />
     </xsl:if>
     <xsl:value-of select="'; '"/>

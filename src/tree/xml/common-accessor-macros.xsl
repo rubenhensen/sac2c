@@ -1,8 +1,13 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/08/07 16:19:05  sah
+  most xsl files use key-tables for type lookups
+  now which increases speed significantly.
+  lots of small improvements
+
   Revision 1.3  2004/08/06 21:19:57  sah
-  uses common-node-access.xsl to define thae macros now
+  uses common-node-access.xsl to define the macros now
 
   Revision 1.2  2004/07/31 16:16:57  sah
   added support for flags and moved to memory saving attribute
@@ -54,7 +59,7 @@ version="1.0">
     </xsl:with-param>
     <!-- if the attribute is an array, we need to add the index to the macro -->
     <xsl:with-param name="index">
-      <xsl:if test="//attributetypes/type[@name = current()/type/@name]/@size" >
+      <xsl:if test="key( &quot;arraytypes&quot;, ./type/@name)">
         <xsl:value-of select="'x'" />
       </xsl:if>
     </xsl:with-param>
@@ -65,7 +70,7 @@ version="1.0">
   <xsl:value-of select="'->'"/>
   <xsl:value-of select="@name"/>
   <!-- if the attribute is an array, we need to add the index to the macro -->
-  <xsl:if test="//attributetypes/type[@name = current()/type/@name]/@size" >
+  <xsl:if test="key( &quot;arraytypes&quot;, ./type/@name)">
     <xsl:value-of select="'[x]'" />
   </xsl:if>
   <xsl:call-template name="newline"/>

@@ -1,6 +1,11 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/08/07 16:19:05  sah
+  most xsl files use key-tables for type lookups
+  now which increases speed significantly.
+  lots of small improvements
+
   Revision 1.1  2004/08/06 21:19:01  sah
   Initial revision
 
@@ -51,7 +56,8 @@ version="1.0">
 
 <!-- check whether the value is of the right target -->
 <xsl:template match="son" mode="make-assertion-target">
-  <xsl:value-of select="'DBUG_ASSERT( ( ( '"/>
+  <xsl:call-template name="newline" />
+  <xsl:value-of select="'if ( ( '"/>
   <!-- check non-zero -->
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
@@ -64,20 +70,33 @@ version="1.0">
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="' == NULL) '"/>
+  <xsl:value-of select="' != NULL) '"/>
   <!-- check for target types -->
   <xsl:apply-templates select="target" mode="make-assertion-target" />
   <!-- a reasonable errormessage -->
-  <xsl:value-of select="'), &quot; Field '" />
+  <xsl:value-of select="') SYSWARN(( &quot;Field '" />
   <xsl:value-of select="@name" />
   <xsl:value-of select="' of node N_'" />
   <xsl:value-of select="../../@name" />
-  <xsl:value-of select="' has non-allowed target node&quot;);'" />
+  <xsl:value-of select="' has non-allowed target node: %s&quot;, '" />
+  <xsl:value-of select="'mdb_nodetype[ NODE_TYPE( '" />
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">
+      <xsl:value-of select="'this'" />
+    </xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name" />
+    </xsl:with-param>
+    <xsl:with-param name="field" >
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="')]));'" />
 </xsl:template>
 
 <!-- for each target node we generate one N_xxx for the conditional -->
 <xsl:template match="target/node" mode="make-assertion-target">
-  <xsl:value-of select="'|| ( NODE_TYPE( '" />
+  <xsl:value-of select="'&amp;&amp; ( NODE_TYPE( '" />
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
       <xsl:value-of select="'this'" />
@@ -89,7 +108,7 @@ version="1.0">
       <xsl:value-of select="../../@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="') == '" />
+  <xsl:value-of select="') != '" />
   <xsl:call-template name="name-to-nodeenum">
     <xsl:with-param name="name">
       <xsl:value-of select="@name" />
@@ -108,7 +127,7 @@ version="1.0">
   </xsl:variable>
   <!-- iterate over all nodeset members -->
   <xsl:for-each select="//nodesets/nodeset[@name = current()/@name]/target/node">
-    <xsl:value-of select="'|| ( NODE_TYPE( '" />
+    <xsl:value-of select="'&amp;&amp; ( NODE_TYPE( '" />
     <xsl:call-template name="node-access">
       <xsl:with-param name="node">
         <xsl:value-of select="'this'" />
@@ -120,7 +139,7 @@ version="1.0">
         <xsl:value-of select="$field" />
       </xsl:with-param>
     </xsl:call-template>
-    <xsl:value-of select="') == '" />
+    <xsl:value-of select="') != '" />
     <xsl:call-template name="name-to-nodeenum">
       <xsl:with-param name="name">
         <xsl:value-of select="@name" />
@@ -131,7 +150,7 @@ version="1.0">
 </xsl:template>
 
 <xsl:template match="target/unknown" mode="make-assertion-target">
-  <xsl:value-of select="'|| TRUE'" />
+  <xsl:value-of select="'&amp;&amp; FALSE'" />
 </xsl:template>
 
 </xsl:stylesheet>
