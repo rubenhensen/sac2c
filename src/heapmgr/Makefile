@@ -1,19 +1,13 @@
 #
 #
 # $Log$
+# Revision 3.8  2001/11/14 18:49:32  dkr
+# explicit depedency 'heapmgr.h' added
+#
 # Revision 3.7  2001/11/14 12:59:48  sbs
 # deps line replaced by inclusion of Makefile.Deps
 # ( .xxx.d mechanism)
 # global setup included via Makefile.Config
-#
-# Revision 3.6  2001/11/13 20:32:50  dkr
-# make deps done
-#
-# Revision 3.5  2001/07/18 13:08:21  cg
-# make deps done
-#
-# Revision 3.4  2000/12/06 20:09:10  dkr
-# make deps done
 #
 # Revision 3.3  2000/12/06 18:11:01  cg
 # Added initial version of array placement.
@@ -89,16 +83,16 @@ libsac_heapmgr_mt_diag.a: $(OBJS_HEAPMGR_MT_DIAG)
 	ranlib $@
 
 
-%_mt_diag.o: %.c
+%_mt_diag.o: %.c heapmgr.h
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -DMT -DDIAG -o $@ -c $<
 
-%_mt.o: %.c
+%_mt.o: %.c heapmgr.h
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -DMT -o $@ -c $<
 
-%_diag.o: %.c
+%_diag.o: %.c heapmgr.h
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -DDIAG -o $@ -c $<
 
-%.o: %.c 
+%.o: %.c heapmgr.h
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 
 
