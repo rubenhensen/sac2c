@@ -1,11 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2002/06/10 20:44:09  ktr
+ * Bugfix: Only scalarize fully partitioned Withloops.
+ *
  * Revision 1.6  2002/06/09 21:04:46  ktr
  * Update due to problems with RCS/CVS
- *
- * Revision 1.3  2002/06/09 20:52:12  trojahne
- * Das update der SACBASE
  *
  * Revision 1.5  2002/06/09 20:40:09  ktr
  * works so good, it should be called alpha. :)
@@ -57,9 +57,6 @@
 #define wls_distribute 1
 #define wls_transform 2
 #define wls_codecorrect 3
-
-#define INFO_WLS_WITHVEC(n) (n->info.ids)
-#define INFO_WLS_WITHOP(n) (n->node[1])
 
 node *
 WLSfundef (node *arg_node, node *arg_info)
@@ -148,13 +145,33 @@ WLSNwith (node *arg_node, node *arg_info)
 
     /* Check if WLS is possible vor all parts */
 
-    INFO_WLS_POSSIBLE (arg_info) = TRUE;
-    INFO_WLS_PHASE (arg_info) = wls_probe;
-    INFO_WLS_WITHOP (arg_info) = NWITH_WITHOP (arg_node);
+    INFO_WLS_PARTS (arg_info) = NWITH_PARTS (arg_node);
 
-    if (NWITH_PART (arg_node) != NULL) {
-        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    INFO_WLS_POSSIBLE (arg_info) = TRUE;
+
+    if (INFO_WLS_POSSIBLE (arg_info)) {
+        INFO_WLS_PHASE (arg_info) = wls_probe;
+        INFO_WLS_WITHOP (arg_info) = NWITH_WITHOP (arg_node);
+
+        if (NWITH_PART (arg_node) != NULL) {
+            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+        }
     }
+
+    /* create full partitioned outer Withloop */
+    if (INFO_WLS_PARTS (arg_info) < 0) {
+        /*
+
+          CODE TO CREATE A FULL PARTITIONED WITHLOOP
+
+        */
+
+        INFO_WLS_PARTS (arg_info) = NWITH_PARTS (arg_node);
+    }
+
+    /* Scalarize only complete partitions */
+    INFO_WLS_POSSIBLE (arg_info)
+      = INFO_WLS_POSSIBLE (arg_info) && (INFO_WLS_PARTS (arg_info) > 0);
 
     /* If all parts are ready for scalarization we can start */
 
@@ -164,7 +181,6 @@ WLSNwith (node *arg_node, node *arg_info)
 
         INFO_WLS_PHASE (arg_info) = wls_distribute;
 
-        INFO_WLS_PARTS (arg_info) = NWITH_PARTS (arg_node);
         /* traverse all parts */
 
         if (NWITH_PART (arg_node) != NULL) {
@@ -456,7 +472,7 @@ distributePart (node *arg_node, node *arg_info)
         NCODE_NEXT (NPART_CODE (arg_node)) = NPART_CODE (tmpnode);
         NPART_NEXT (arg_node) = tmpnode;
 
-        NWITH_PARTS (innerwith) = 1;
+        NWITH_PARTS (innerwith) = -1;
         NPART_NEXT (NWITH_PART (innerwith)) = NULL;
         NCODE_NEXT (NWITH_CODE (innerwith)) = NULL;
 
@@ -580,6 +596,13 @@ WLSNpart (node *arg_node, node *arg_info)
                 AVIS_SSAASSIGN (ID_AVIS (NCODE_CEXPR (NPART_CODE (arg_node)))))))
               == N_Nwith)
              &&
+
+             /* Ist die innere WL vollständig partitioniert? */
+             (NWITH_PARTS (LET_EXPR (ASSIGN_INSTR (
+                AVIS_SSAASSIGN (ID_AVIS (NCODE_CEXPR (NPART_CODE (arg_node)))))))
+              > 0)
+             &&
+
              /* Ist der innere Withloop wirklich innen? */
              (isAssignInsideBlock (AVIS_SSAASSIGN (
                                      ID_AVIS (NCODE_CEXPR (NPART_CODE (arg_node)))),
