@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.178  2004/11/25 22:03:58  cg
+ * Changed access to library target format information.
+ *
  * Revision 3.177  2004/11/22 15:49:41  sbs
  * print_info.h inlined.
  *
@@ -1627,7 +1630,7 @@ PrintObjdef (node *arg_node, info *arg_info)
      * this has to placed before the if switch, because the ICM_Trav seems
      * to leave with no return...
      */
-    if ((generatelibrary & GENERATELIBRARY_C) && (print_objdef_for_header_file)) {
+    if (global.genlib.c && print_objdef_for_header_file) {
         fprintf (outfile,
                  "/* flag, if object has been initialized */\n"
                  "extern bool SAC_INIT_FLAG_%s;\n",
@@ -4805,7 +4808,7 @@ Print (node *syntax_tree)
 
 #ifndef NEW_AST
     /* if generating c library, invoke the headerfile generator */
-    if ((generatelibrary & GENERATELIBRARY_C) && (compiler_phase == PH_genccode)) {
+    if (global.genlib.c && (compiler_phase == PH_genccode)) {
         PrintInterface (syntax_tree);
     }
 #endif /* NEW_AST */
