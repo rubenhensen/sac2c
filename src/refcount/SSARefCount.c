@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/05/06 17:51:10  ktr
+ * SSARefCount now should handle IVE ICMs, too. :)
+ *
  * Revision 1.10  2004/05/05 20:23:31  ktr
  * Home -> ISP
  *
@@ -38,6 +41,7 @@ typedef enum {
     rc_cond,
     rc_funcond,
     rc_cexprs,
+    rc_icm,
     rc_with
 } rc_rhs_type;
 
@@ -55,7 +59,7 @@ typedef struct RC_COUNTER {
     struct RC_COUNTER *next;
 } rc_counter;
 
-/* Oracle to tell which paramters of a external function must be
+/* Oracle to tell which parameters of a external function must be
    refcounted like primitive function parameters */
 #define FUNDEF_EXT_NOT_REFCOUNTED(n, idx)                                                \
     ((FUNDEF_STATUS (n) == ST_Cfun)                                                      \
@@ -352,6 +356,7 @@ MakeAdjustRCfromRLS (rc_list_struct *rls, node *next_node)
 node *
 SSARCfundef (node *fundef, node *arg_info)
 {
+    int i;
     node *arg;
 
     DBUG_ENTER ("SSARCfundef");
@@ -363,14 +368,19 @@ SSARCfundef (node *fundef, node *arg_info)
         if (((sbs == 1) && (strcmp (FUNDEF_MOD (fundef), EXTERN_MOD_NAME) == 0))
             || ((sbs == 0) && (FUNDEF_MOD (fundef) == NULL))) {
             FUNDEF_STATUS (fundef) = ST_Cfun;
+
+            printf ("%s : ", FUNDEF_NAME (fundef));
+            if (FUNDEF_PRAGMA (fundef) && PRAGMA_REFCOUNTING (FUNDEF_PRAGMA (fundef)))
+                for (i = 0; i < PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (fundef)); i++) {
+                    printf ("%d ,", PRAGMA_REFCOUNTING (FUNDEF_PRAGMA (fundef))[i]);
+                }
+            printf ("\n");
         }
         if (FUNDEF_NEXT (fundef) != NULL)
             FUNDEF_NEXT (fundef) = Trav (FUNDEF_NEXT (fundef), arg_info);
 
         DBUG_RETURN (fundef);
     }
-
-    PrintNode (fundef);
 
     INFO_SSARC_FUNDEF (arg_info) = fundef;
     INFO_SSARC_DEPTH (arg_info) = 0;
@@ -466,14 +476,41 @@ SSARCprf (node *arg_node, node *arg_info)
 node *
 SSARCap (node *arg_node, node *arg_info)
 {
+    node *args, *id;
     DBUG_ENTER ("SSARCap");
 
     INFO_SSARC_RHS (arg_info) = rc_funap;
 
     INFO_SSARC_FUNAP (arg_info) = AP_FUNDEF (arg_node);
 
-    if (AP_ARGS (arg_node) != NULL)
-        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+    args = AP_ARGS (arg_node);
+    while (args != NULL) {
+        if ((EXPRS_EXPR (args) != NULL) && (NODE_TYPE (EXPRS_EXPR (args)) == N_id)) {
+            id = EXPRS_EXPR (args);
+
+            printf ("%s %d: ", FUNDEF_NAME (INFO_SSARC_FUNAP (arg_info)),
+                    INFO_SSARC_LHS_COUNT (arg_info));
+
+            if (FUNDEF_EXT_NOT_REFCOUNTED (INFO_SSARC_FUNAP (arg_info),
+                                           INFO_SSARC_LHS_COUNT (arg_info))) {
+                printf ("prfAp\n");
+                /* Add one to the environment iff it is zero */
+                if (IncreaseEnvOnZero (ID_AVIS (id), arg_info))
+
+                    /* Put id into declist as we are traversing a N_prf */
+                    DecList_Insert (arg_info, ID_AVIS (id));
+            } else {
+                printf ("FunAp\n");
+                /* Add one to the environment */
+                IncreaseEnv (ID_AVIS (id), arg_info);
+
+                /* Don't put id into declist as we N_return and N_funap
+                   are implicitly consuming references */
+            }
+        }
+        INFO_SSARC_LHS_COUNT (arg_info) += 1;
+        args = EXPRS_NEXT (args);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -602,9 +639,12 @@ SSARClet (node *arg_node, node *arg_info)
             IncList_Insert (arg_info, IDS_AVIS (ids),
                             PopEnv (IDS_AVIS (ids), arg_info)
                               + (FUNDEF_EXT_NOT_REFCOUNTED (INFO_SSARC_FUNAP (arg_info),
-                                                            n++)
+                                                            n)
                                    ? 0
                                    : -1));
+            printf ("%s %d: %d\n", FUNDEF_NAME (INFO_SSARC_FUNAP (arg_info)), n,
+                    FUNDEF_EXT_NOT_REFCOUNTED (INFO_SSARC_FUNAP (arg_info), n) ? 0 : -1);
+            n = n + 1;
             ids = IDS_NEXT (ids);
         }
         break;
@@ -649,6 +689,62 @@ SSARClet (node *arg_node, node *arg_info)
 }
 
 node *
+SSARCicm (node *arg_node, node *arg_info)
+{
+    char *name;
+
+    DBUG_ENTER ("SSARCicm");
+
+    INFO_SSARC_RHS (arg_info) = rc_icm;
+
+    name = ICM_NAME (arg_node);
+
+    if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
+        /*
+         * USE_GENVAR_OFFSET( off_nt, wl_nt)
+         * does *not* consume its arguments! It is expanded to
+         *      off_nt = wl_nt__off    ,
+         * where 'off_nt' is a scalar and 'wl_nt__off' an internal variable!
+         *   -> store actual RC of the first argument (defined)
+         *   -> do NOT traverse the second argument (used)
+         */
+        IncList_Insert (arg_info, IDS_AVIS (ID_IDS (ICM_ARG1 (arg_node))),
+                        PopEnv (IDS_AVIS (ID_IDS (ICM_ARG1 (arg_node))), arg_info));
+    } else if (strstr (name, "VECT2OFFSET") != NULL) {
+        /*
+         * VECT2OFFSET( off_nt, ., from_nt, ., ., ...)
+         * needs RC on all but the first argument. It is expanded to
+         *     off_nt = ... from_nt ...    ,
+         * where 'off_nt' is a scalar variable.
+         *  -> store actual RC of the first argument (defined)
+         *  -> traverse all but the first argument (used)
+         *  -> handle ICM like a prf (RCO)
+         */
+        IncList_Insert (arg_info, IDS_AVIS (ID_IDS (ICM_ARG1 (arg_node))),
+                        PopEnv (IDS_AVIS (ID_IDS (ICM_ARG1 (arg_node))), arg_info));
+
+        ICM_EXPRS2 (arg_node) = Trav (ICM_EXPRS2 (arg_node), arg_info);
+    } else if (strstr (name, "IDXS2OFFSET") != NULL) {
+        /*
+         * IDXS2OFFSET( off_nt, ., idx_1_nt ... idx_n_nt, ., ...)
+         * needs RC on all but the first argument. It is expanded to
+         *     off_nt = ... idx_1_nt[i] ... idx_n_nt[i] ...   ,
+         * where 'off_nt' is a scalar variable.
+         *  -> store actual RC of the first argument (defined)
+         *  -> traverse all but the first argument (used)
+         *  -> handle ICM like a prf (RCO)
+         */
+        IncList_Insert (arg_info, IDS_AVIS (ID_IDS (ICM_ARG1 (arg_node))),
+                        PopEnv (IDS_AVIS (ID_IDS (ICM_ARG1 (arg_node))), arg_info));
+
+        ICM_EXPRS2 (arg_node) = Trav (ICM_EXPRS2 (arg_node), arg_info);
+    } else {
+        DBUG_ASSERT ((0), "unknown ICM found during SSARC");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+node *
 SSARCfuncond (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSARCfuncond");
@@ -667,26 +763,6 @@ SSARCid (node *arg_node, node *arg_info)
     case rc_undef:
         INFO_SSARC_RHS (arg_info) = rc_copy;
         break;
-    case rc_funcond:
-        /* We don't need to do anything */
-        break;
-    case rc_funap:
-        if (FUNDEF_EXT_NOT_REFCOUNTED (INFO_SSARC_FUNAP (arg_info),
-                                       INFO_SSARC_LHS_COUNT (arg_info))) {
-            /* Add one to the environment iff it is zero */
-            if (IncreaseEnvOnZero (ID_AVIS (arg_node), arg_info))
-
-                /* Put id into declist as we are traversing a N_prf */
-                DecList_Insert (arg_info, ID_AVIS (arg_node));
-        } else {
-            /* Add one to the environment */
-            IncreaseEnv (ID_AVIS (arg_node), arg_info);
-
-            /* Don't put id into declist as we N_return and N_funap
-               are implicitly consuming references */
-        }
-        INFO_SSARC_LHS_COUNT (arg_info) += 1;
-        break;
     case rc_return:
         /* Add one to the environment */
         IncreaseEnv (ID_AVIS (arg_node), arg_info);
@@ -696,9 +772,15 @@ SSARCid (node *arg_node, node *arg_info)
         break;
 
     case rc_array:
+        /* Here is no break missing! */
     case rc_prfap:
+        /* Here is no break missing! */
     case rc_cond:
+        /* Here is no break missing! */
+    case rc_icm:
+        /* Here is no break missing! */
     case rc_cexprs:
+        /* Here is no break missing! */
     case rc_with:
         /* Add one to the environment iff it is zero */
         if (IncreaseEnvOnZero (ID_AVIS (arg_node), arg_info))
@@ -706,7 +788,12 @@ SSARCid (node *arg_node, node *arg_info)
             /* Put id into declist as we are traversing a N_prf */
             DecList_Insert (arg_info, ID_AVIS (arg_node));
         break;
+    case rc_funcond:
+        /* Here is no break missing! */
+    case rc_funap:
+        /* Here is no break missing! */
     case rc_const:
+        /* Here is no break missing! */
     case rc_copy:
         Print (arg_node);
         DBUG_ASSERT (FALSE, "No ID node must appear in this context");
