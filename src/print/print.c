@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/04/12 17:58:43  bs
+ * PrintNpart and PrintNcode modified: now there is a possibility to print
+ * TSI informations using the dbug flag 'TSI_INFO'
+ *
  * Revision 2.7  1999/04/08 17:18:05  jhs
  * Handling for empty arrays added.
  *
@@ -176,6 +180,7 @@
 #include "gen_startup_code.h"
 #include "WithloopFolding.h"
 #include "scheduling.h"
+#include "tile_size_inference.h"
 
 /******************************************************************************/
 
@@ -1925,6 +1930,8 @@ PrintNwith (node *arg_node, node *arg_info)
 
     indent += 2;
 
+    INFO_PRINT_ACCESS (arg_info) = NWITH_TSI (arg_node);
+
     /*
      * check wether to use output format 1 (multiple NParts)
      * or 2 (only one NPart) and use INFO_PRINT_INT_SYN(arg_info)
@@ -2087,6 +2094,11 @@ PrintNcode (node *arg_node, node *arg_info)
         indent--;
         INDENT;
     }
+
+    DBUG_EXECUTE ("TSI_INFO", if (NCODE_ACCESS (arg_node) != NULL) {
+        TSIprintAccesses (arg_node, arg_info);
+    });
+
     fprintf (outfile, "}");
 
     /*
@@ -2130,6 +2142,11 @@ PrintNpart (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((NPART_CODE (arg_node) != NULL),
                  "part within WL without pointer to N_Ncode");
+
+    DBUG_EXECUTE ("TSI_INFO", if (INFO_PRINT_ACCESS (arg_info) != NULL) {
+        TSIprintFeatures (arg_node, arg_info);
+    });
+
     NPART_CODE (arg_node) = Trav (NPART_CODE (arg_node), arg_info);
 
     if (NPART_NEXT (arg_node) != NULL) {
