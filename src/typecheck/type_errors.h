@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2003/04/09 15:35:34  sbs
+ * TEAssureNumS and TEAssureNumA added.
+ *
  * Revision 1.6  2003/04/07 14:32:39  sbs
  * type assertions extended for AKV types.
  * signature of TEMakeInfo extended
@@ -39,6 +42,8 @@ extern void TEAssureScalar (char *obj, ntype *type);
 extern void TEAssureVect (char *obj, ntype *type);
 extern void TEAssureBoolS (char *obj, ntype *type);
 extern void TEAssureBoolA (char *obj, ntype *type);
+extern void TEAssureNumS (char *obj, ntype *type);
+extern void TEAssureNumA (char *obj, ntype *type);
 extern void TEAssureSimpleType (char *obj, ntype *type);
 extern void TEAssureIntS (char *obj, ntype *type);
 extern void TEAssureIntVect (char *obj, ntype *type);

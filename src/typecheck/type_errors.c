@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2003/04/09 15:35:34  sbs
+ * TEAssureNumS and TEAssureNumA added.
+ *
  * Revision 1.7  2003/04/07 14:32:39  sbs
  * type assertions extended for AKV types.
  * signature of TEMakeInfo extended
@@ -122,6 +125,21 @@ MatchBoolA (ntype *type)
 
     res = ((TYGetConstr (TYGetScalar (type)) == TC_simple)
            && (TYGetSimpleType (TYGetScalar (type)) == T_bool));
+
+    DBUG_RETURN (res);
+}
+
+static bool
+MatchNumA (ntype *type)
+{
+    bool res;
+
+    DBUG_ENTER ("MatchNumA");
+
+    res = ((TYGetConstr (TYGetScalar (type)) == TC_simple)
+           && ((TYGetSimpleType (TYGetScalar (type)) == T_int)
+               || (TYGetSimpleType (TYGetScalar (type)) == T_float)
+               || (TYGetSimpleType (TYGetScalar (type)) == T_double)));
 
     DBUG_RETURN (res);
 }
@@ -384,6 +402,50 @@ TEAssureBoolA (char *obj, ntype *type)
 
     if (!MatchBoolA (type)) {
         ABORT (linenum, ("element type of %s should be boolean; type found: %s", obj,
+                         TYType2String (type, FALSE, 0)));
+    }
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void TEAssureNumS( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+TEAssureNumS (char *obj, ntype *type)
+{
+    DBUG_ENTER ("TEAssureNumS");
+
+    if (!MatchScalar (type) || !MatchNumA (type)) {
+        ABORT (linenum, ("%s should be of type int / float / double; type found: %s", obj,
+                         TYType2String (type, FALSE, 0)));
+    }
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void TEAssureNumA( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+TEAssureNumA (char *obj, ntype *type)
+{
+    DBUG_ENTER ("TEAssureNumA");
+
+    if (!MatchNumA (type)) {
+        ABORT (linenum, ("element type of %s should be numeric; type found: %s", obj,
                          TYType2String (type, FALSE, 0)));
     }
     DBUG_VOID_RETURN;
