@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/07/08 15:01:48  jhs
+ * Changed a "]" to ")" in ICMCompileND_PRF_MODARRAY_AxCxS.
+ *
  * Revision 2.9  1999/07/02 16:17:30  rob
  * Begin to replace ScanArglist with the hopefully more readable,
  * table-driven ScanArglist2.
@@ -1499,7 +1502,7 @@ ICMCompileND_PRF_MODARRAY_AxCxS (int line, char *res_type, int dimres, char *res
     INDENT;
     fprintf (outfile,
              "    SAC_ND_WRITE_ARRAY(%s, SAC_i) "
-             "= SAC_ND_READ_ARRAY(%s, SAC_i];\n",
+             "= SAC_ND_READ_ARRAY(%s, SAC_i);\n",
              res, old);
     INDENT;
     fprintf (outfile, "}\n");
