@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2002/09/25 11:34:34  sbs
+ * CompareTypesImplementation now allways initializes res !!!
+ *
  * Revision 3.71  2002/09/06 10:03:15  sbs
  * Ids2Exprs added.
  *
@@ -854,6 +857,7 @@ CompareTypesImplementation (types *t1, types *t2)
             res = (DIM_NO_OFFSET (shpdim1) != DIM_NO_OFFSET (shpdim2)) ? 2 : -1;
         } else {
             DBUG_ASSERT ((0), "illegal shape constellation found!");
+            res = 0; /* just to please gcc */
         }
     } else {
         res = 2;
