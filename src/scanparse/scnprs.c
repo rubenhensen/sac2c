@@ -1,19 +1,25 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/12/29 17:22:05  cg
+ * Revision 1.2  1996/01/02 08:16:29  cg
+ * first compilable revision
+ *
+ * Revision 1.1  1995/12/29  17:22:05  cg
  * Initial revision
  *
  *
  *
  */
 
-#include "types.h"
+#include <stdio.h>
 
+#include "types.h"
 #include "Error.h"
 #include "dbug.h"
-
 #include "filemgr.h"
+#include "globals.h"
+
+#include "scnprs.h"
 
 /*
  *
@@ -55,14 +61,14 @@ ScanParse ()
 
     DBUG_ENTER ("ScanParse");
 
-    if (filename[0] == '\0') {
+    if (sacfilename[0] == '\0') {
         yyin = stdin;
-        strcpy (filename, "stdin");
+        strcpy (sacfilename, "stdin");
     } else {
-        pathname = FindFile (PATH, filename);
+        pathname = FindFile (PATH, sacfilename);
 
         if (pathname == NULL) {
-            SYSABORT (("Unable to open file \"%s\"", filename));
+            SYSABORT (("Unable to open file \"%s\"", sacfilename));
         }
 
         yyin = fopen (pathname, "r");
@@ -92,14 +98,14 @@ ScanParse ()
 
     DBUG_ENTER ("ScanParse");
 
-    if (filename[0] == '\0') {
+    if (sacfilename[0] == '\0') {
         sprintf (cccallstr, "cpp -P -C ");
-        strcpy (filename, "stdin");
+        strcpy (sacfilename, "stdin");
     } else {
-        pathname = FindFile (PATH, filename);
+        pathname = FindFile (PATH, sacfilename);
 
         if (pathname == NULL) {
-            SYSABORT (("Unable to open file \"%s\"", filename));
+            SYSABORT (("Unable to open file \"%s\"", sacfilename));
         }
 
         sprintf (cccallstr, "gcc -E -P -C -x c %s", pathname);
@@ -108,7 +114,7 @@ ScanParse ()
     yyin = popen (cccallstr, "r");
 
     if (yyin == NULL) {
-        SYSABORT (("Unable to open file \"%s\"", filename));
+        SYSABORT (("Unable to open file \"%s\"", sacfilename));
     }
 
     NOTE (("Parsing file \"%s\" ...", pathname));
