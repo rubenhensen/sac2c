@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.2  2000/05/11 10:38:00  dkr
+ * Signature of ReduceGenarrayShape modified
+ *
  * Revision 2.1  1999/02/23 12:41:01  sacbase
  * new release made
  *
@@ -11,14 +14,14 @@
  * Initial revision
  *
  */
-#ifndef _typecheck_WL_h
 
+#ifndef _typecheck_WL_h
 #define _typecheck_WL_h
 
 extern node *TCWLnull (node *arg_node, node *arg_info);
 extern node *TCWLarray (node *arg_node, node *arg_info);
 extern node *TCWLprf (node *arg_node, node *arg_info);
 
-extern node *ReduceGenarrayShape (node *arg_node, types *expr_type);
+extern node *ReduceGenarrayShape (node *arg_node, node *arg_info, types *expr_type);
 
 #endif
