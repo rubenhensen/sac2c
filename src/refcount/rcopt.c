@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/02 14:29:58  ktr
+ * Support for F_free added.
+ *
  * Revision 1.4  2004/10/22 15:18:40  ktr
  * Moved some functionality into reuseelimination.c
  *
@@ -354,6 +357,14 @@ EMRCOprf (node *arg_node, info *arg_info)
                     INFO_RCO_REMNEXT (arg_info) = TRUE;
                     INFO_RCO_REMASSIGN (arg_info) = TRUE;
                 }
+                if ((PRF_PRF (prf) == F_free)
+                    && (ID_AVIS (PRF_ARG1 (prf)) == IDS_AVIS (INFO_RCO_LHS (arg_info)))) {
+
+                    DBUG_PRINT ("EMRCO", ("Superfluous alloc/free combination found!"));
+                    INFO_RCO_REMNEXT (arg_info) = TRUE;
+                    INFO_RCO_REMASSIGN (arg_info) = TRUE;
+                }
+
                 break;
 
             default:
