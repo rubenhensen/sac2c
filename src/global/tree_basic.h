@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.37  1996/01/12 14:56:36  cg
+ * Revision 1.38  1996/01/12 15:53:00  asi
+ * added LET_VARDEC
+ *
+ * Revision 1.37  1996/01/12  14:56:36  cg
  * added some new macros for N_info node, corrected ID_REFCNT.
  *
  * Revision 1.36  1996/01/09  12:04:59  cg
@@ -956,12 +959,18 @@ extern node *MakeAssign (node *instr, node *next);
  ***  permanent attributes:
  ***
  ***    ids*   IDS   (O)
+ ***
+ ***  temporary attributes:
+ ***
+ ***    node*  VARDEC    (N_vardec)  (typecheck -> )
+ ***
  ***/
 
 extern node *MakeLet (node *expr, ids *ids);
 
 #define LET_EXPR(n) (n->node[0])
 #define LET_IDS(n) (n->info.ids)
+#define LET_VARDEC(n) (n->info.ids->node)
 
 /*--------------------------------------------------------------------------*/
 
