@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.38  1998/03/24 15:16:39  cg
+# make deps done
+#
 # Revision 1.37  1998/03/24 14:41:50  dkr
 # make deps done
 #
@@ -125,7 +128,7 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount -I../optimize
 MACS=icm.data icm_decl.c icm_args.c icm_comment.c icm_trace.c
 
-all: compile.o icm2c.o precompile.o libsac.a profile.o Old2NewWith.o gen_startup_code.o
+all: compile.o icm2c.o precompile.o profile.o Old2NewWith.o gen_startup_code.o
 
 BEtest: icm2c.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest icm2c.c -DTEST_BACKEND $(INCS) ../../lib/dbug.o
