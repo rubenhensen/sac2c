@@ -1,6 +1,9 @@
-/*      $Id$
+/*
  *
  * $Log$
+ * Revision 2.14  2000/07/28 14:35:11  dkr
+ * minor changes in DBUG output done
+ *
  * Revision 2.13  2000/07/12 15:13:17  dkr
  * function DuplicateTypes renamed into DupTypes
  *
@@ -110,13 +113,6 @@
  *
  * Revision 1.5  1998/02/27 13:38:10  srs
  * checkin with deactivated traversal
- *
- * Revision 1.4  1998/02/24 14:19:20  srs
- * *** empty log message ***
- *
- * Revision 1.3  1998/02/09 15:58:20  srs
- * *** empty log message ***
- *
  *
  */
 
@@ -342,7 +338,6 @@ CreateIndex (int vector)
  *
  * description:
  *   duplicates struct
- *
  *
  ******************************************************************************/
 
@@ -843,7 +838,6 @@ InternGen2Tree (node *wln, intern_gen *ig)
  * description:
  *   Frees all memory allocated by ig and returns NULL (ig is NOT set to NULL).
  *
- *
  ******************************************************************************/
 
 intern_gen *
@@ -1326,7 +1320,6 @@ CreateZeroVector (int dim, simpletype type)
  * description:
  *   starting point for the withloop folding.
  *
- *
  ******************************************************************************/
 
 node *
@@ -1348,7 +1341,7 @@ WithloopFolding (node *arg_node, node *arg_info)
        phase because SeachWLHelp will not need MRD masks. The DEF mask can be
        used to finde the wanted definition (which IS the last definition
        because of unique names. */
-    DBUG_PRINT ("OPT", ("  WLI 1"));
+    DBUG_PRINT ("OPT", ("WLI 1"));
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
     wli_phase = 1;
     tmp_tab = act_tab;
@@ -1356,7 +1349,7 @@ WithloopFolding (node *arg_node, node *arg_info)
     arg_node = Trav (arg_node, arg_info);
 
     /* WLI traversal: search information */
-    DBUG_PRINT ("OPT", ("  WLI 2"));
+    DBUG_PRINT ("OPT", ("WLI 2"));
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
     wli_phase = 2;
     act_tab = wli_tab;
@@ -1365,7 +1358,7 @@ WithloopFolding (node *arg_node, node *arg_info)
     /* break after WLI? */
     if (break_after != PH_sacopt || strcmp (break_specifier, "wli")) {
         /* WLF traversal: fold WLs */
-        DBUG_PRINT ("OPT", ("  WLF"));
+        DBUG_PRINT ("OPT", ("WLF"));
         DBUG_PRINT ("OPTMEM",
                     ("mem currently allocated: %d bytes", current_allocated_mem));
         act_tab = wlf_tab;
@@ -1394,7 +1387,6 @@ WithloopFolding (node *arg_node, node *arg_info)
  * description:
  *   executes only WLT phase, not WLI and WLF.
  *
- *
  ******************************************************************************/
 
 node *
@@ -1409,7 +1401,7 @@ WithloopFoldingWLT (node *arg_node, node *arg_info)
     arg_info = MakeInfo ();
 
     /* WLT traversal: transform WLs */
-    DBUG_PRINT ("OPT", ("  WLT"));
+    DBUG_PRINT ("OPT", ("WLT"));
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
     tmp_tab = act_tab;
     act_tab = wlt_tab;
