@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/04/10 15:45:08  jhs
+ * Added Reduce
+ *
  * Revision 1.4  2000/03/09 18:34:40  jhs
  * Additional features.
  *
@@ -249,5 +252,24 @@ MUTHExpandFundefName (node *fundef, char *prefix)
     FUNDEF_NAME (fundef) = new_name;
     FREE (old_name);
 
+    DBUG_RETURN (fundef);
+}
+
+node *
+MUTHReduceFundefName (node *fundef, int count)
+{
+    int i;
+
+    DBUG_ENTER ("MUTHReduceFundefName");
+    DBUG_PRINT ("BARIN", ("begin %i %i", strlen (FUNDEF_NAME (fundef)), count));
+
+    for (i = 0; (i < ((int)strlen (FUNDEF_NAME (fundef)) - count + 1)); i++) {
+        DBUG_PRINT ("BARIN", ("%i %i", i, (strlen (FUNDEF_NAME (fundef)) - count + 1)));
+        FUNDEF_NAME (fundef)[i] = FUNDEF_NAME (fundef)[i + count];
+    }
+    /*
+        FUNDEF_NAME( fundef)[0] = FUNDEF_NAME( fundef)[0 + count];
+    */
+    DBUG_PRINT ("BARIN", ("end"));
     DBUG_RETURN (fundef);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/04/10 15:45:08  jhs
+ * Added Reduce
+ *
  * Revision 1.4  2000/03/28 09:48:44  jhs
  * Added refcunt-macros
  *
@@ -37,5 +40,6 @@ extern node *MUTHMeltBlocks (node *first_block, node *second_block);
 extern node *MUTHMeltBlocksOnCopies (node *first_block, node *second_block);
 extern node *MUTHExchangeApplication (node *arg_node, node *new_fundef);
 extern node *MUTHExpandFundefName (node *fundef, char *prefix);
+extern node *MUTHReduceFundefName (node *fundef, int count);
 
 #endif /* CONCURRENT_LIB_H */
