@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/03/29 14:47:25  dkr
+ * bug in CheckWlcompConf() fixed
+ *
  * Revision 3.15  2001/03/26 08:22:45  sbs
  * next_conf preset to NULL in order to please the compiler...
  *
@@ -119,7 +122,7 @@ static int yyparse();
 
 static node *string2array( char *str);
 static types *GenComplexType( types *types, nums *numsp);
-static node *CheckWlcompConf( node *ap);
+static node *CheckWlcompConf( node *ap, node *exprs);
 
 
 %}
@@ -1231,7 +1234,7 @@ wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_conf
                             global_wlcomp_pragma
                               = FreeTree( global_wlcomp_pragma);
                           }
-                          $3 = CheckWlcompConf( $3);
+                          $3 = CheckWlcompConf( $3, NULL);
                           if ($3 != NULL) {
                             global_wlcomp_pragma = MakePragma();
                             PRAGMA_WLCOMP_APS( global_wlcomp_pragma) = $3;
@@ -1244,7 +1247,7 @@ wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_conf
 
 wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_conf
                        {
-                         $3 = CheckWlcompConf( $3);
+                         $3 = CheckWlcompConf( $3, NULL);
                          if ($3 != NULL) {
                            $$ = MakePragma();
                            PRAGMA_WLCOMP_APS( $$) = $3;
@@ -2693,7 +2696,7 @@ types *GenComplexType( types *types, nums *numsp)
 /******************************************************************************
  *
  * Function:
- *   node *CheckWlcompConf( node *conf)
+ *   node *CheckWlcompConf( node *conf, node *exprs)
  *
  * Description:
  *   Checks and converts the given wlcomp-pragma expression.
@@ -2728,10 +2731,8 @@ types *GenComplexType( types *types, nums *numsp)
  ******************************************************************************/
 
 static
-node *CheckWlcompConf( node *conf)
+node *CheckWlcompConf( node *conf, node *exprs)
 {
-  node *exprs = NULL;
-
   DBUG_ENTER( "CheckWlcompConf");
 
   DBUG_ASSERT( (conf != NULL), "wlcomp-pragma is empty!");
@@ -2741,6 +2742,9 @@ node *CheckWlcompConf( node *conf)
       strcpy( yytext, ID_NAME( conf));
       yyerror( "trivial configuration is not 'Default'");
     }
+    /*
+     * unmodified 'exprs' is returned
+     */
   }
   else if (NODE_TYPE( conf) == N_ap) {
     node *arg;
@@ -2774,7 +2778,11 @@ node *CheckWlcompConf( node *conf)
         yyerror( "wlcomp-function with illegal configuration found");
       }
       else {
-        exprs = MakeExprs( conf, CheckWlcompConf( next_conf));
+        /*
+         * insert new configuration at head of 'exprs'
+         */
+        exprs = MakeExprs( conf, exprs);
+        exprs = CheckWlcompConf( next_conf, exprs);
       }
     }
   }
