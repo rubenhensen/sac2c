@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.28  1999/09/10 14:27:22  jhs
+ * Removed those ugly MAKENODE_xxx macros.
+ *
  * Revision 2.27  1999/07/15 20:57:26  sbs
  * some bugs concerning missing CONSTVEC decls eliminated.
  * In particular BuildCatWIthLoop1/2 had to be improved!
@@ -465,16 +468,16 @@ static node *top_fundef;
 #define MAKE_NEUTRAL_ELEM(Node, Simpletype, neutral)                                     \
     switch (Simpletype) {                                                                \
     case T_int:                                                                          \
-        MAKENODE_NUM (Node, neutral);                                                    \
+        Node = MakeNum (neutral);                                                        \
         break;                                                                           \
     case T_float:                                                                        \
-        MAKENODE_FLOAT (Node, neutral);                                                  \
+        Node = MakeFloat (neutral);                                                      \
         break;                                                                           \
     case T_bool:                                                                         \
-        MAKENODE_BOOL (Node, neutral);                                                   \
+        Node = MakeBool (neutral);                                                       \
         break;                                                                           \
     case T_double:                                                                       \
-        MAKENODE_DOUBLE (Node, neutral);                                                 \
+        Node = MakeDouble (neutral);                                                     \
         break;                                                                           \
     default:                                                                             \
         DBUG_ASSERT (0, "wrong value of simpletype");                                    \

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.2  1999/09/10 14:27:22  jhs
+ * Removed those ugly MAKENODE_xxx macros.
+ *
  * Revision 2.1  1999/02/23 12:40:58  sacbase
  * new release made
  *
@@ -223,24 +226,24 @@ extern char *module_name; /* name of module to typecheck;
                 ARRAY_TYPE (Shape_array) = DuplicateTypes (res_type, 0);                 \
                 Shape_array->node[0] = dummy;                                            \
                 for (i = 0; i < Type->dim - 1; i++) {                                    \
-                    MAKENODE_NUM (dummy->node[0], Type->shpseg->shp[i]);                 \
+                    dummy->node[0] = MakeNum (Type->shpseg->shp[i]);                     \
                     dummy->node[1] = MakeNode (N_exprs);                                 \
                     dummy = dummy->node[1];                                              \
                 }                                                                        \
                 if (0 < Type->dim) {                                                     \
-                    MAKENODE_NUM (dummy->node[0], Type->shpseg->shp[i]);                 \
+                    dummy->node[0] = MakeNum (Type->shpseg->shp[i]);                     \
                     if (0 < b_type->dim) {                                               \
                         dummy->node[1] = MakeNode (N_exprs);                             \
                         dummy = dummy->node[1];                                          \
                     }                                                                    \
                 }                                                                        \
                 for (i = 0; i < b_type->dim - 1; i++) {                                  \
-                    MAKENODE_NUM (dummy->node[0], b_type->shpseg->shp[i]);               \
+                    dummy->node[0] = MakeNum (b_type->shpseg->shp[i]);                   \
                     dummy->node[1] = MakeNode (N_exprs);                                 \
                     dummy = dummy->node[1];                                              \
                 }                                                                        \
                 if (0 < b_type->dim) {                                                   \
-                    MAKENODE_NUM (dummy->node[0], b_type->shpseg->shp[i]);               \
+                    dummy->node[0] = MakeNum (b_type->shpseg->shp[i]);                   \
                 }                                                                        \
             }                                                                            \
         } else if (0 < Type->dim) {                                                      \
@@ -249,11 +252,11 @@ extern char *module_name; /* name of module to typecheck;
             ARRAY_TYPE (Shape_array) = DuplicateTypes (res_type, 0);                     \
             Shape_array->node[0] = dummy;                                                \
             for (i = 0; i < Type->dim - 1; i++) {                                        \
-                MAKENODE_NUM (dummy->node[0], Type->shpseg->shp[i]);                     \
+                dummy->node[0] = MakeNum (Type->shpseg->shp[i]);                         \
                 dummy->node[1] = MakeNode (N_exprs);                                     \
                 dummy = dummy->node[1];                                                  \
             }                                                                            \
-            MAKENODE_NUM (dummy->node[0], Type->shpseg->shp[i]);                         \
+            dummy->node[0] = MakeNum (Type->shpseg->shp[i]);                             \
         } else                                                                           \
             Shape_array = NULL;                                                          \
     }
