@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/10/04 12:33:53  sbs
+ * globals.h included
+ * (needed by FREE
+ *
  * Revision 2.2  1999/02/28 21:07:40  srs
  * added macro FREE_INDEX_INFO
  *
@@ -110,6 +114,7 @@
 #include "dbug.h"
 #include "my_debug.h"
 #include "malloc.h"
+#include "globals.h"
 #include "internal_lib.h"
 
 #ifdef DBUG_OFF
