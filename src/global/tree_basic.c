@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/05/06 15:39:29  sbs
+ * Now, the src_file will be set in INIT_NODE as well.
+ *
  * Revision 2.3  1999/05/05 13:04:39  jhs
  * MakeNGenerator now sets also the values of the original
  * withloop operators, which are equivalent to the operators
@@ -326,6 +329,7 @@ char *prf_name_str[] = {
         v->varno = 0;                                                                    \
         v->counter = 0;                                                                  \
         v->lineno = linenum;                                                             \
+        v->src_file = filename;                                                          \
         v->info2 = NULL;                                                                 \
         for (i = 0; i < MAX_SONS; i++) {                                                 \
             v->node[i] = NULL;                                                           \
