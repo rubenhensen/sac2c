@@ -2169,6 +2169,13 @@
              <range from="typecheck" to="final" />
           </phases>
          </attribute>
+        <attribute name="AkvId" default="0" mandatory="yes">
+	  <description>Identifier for function instances with akv-arguments (used for function naming in renameidentifiers.c)</description>
+          <type name="Integer" />
+          <phases>
+             <all />
+          </phases>
+         </attribute>
       </attributes>
       <flags>
         <flag name="IsExported" />
@@ -5500,6 +5507,7 @@
       <sons></sons>
       <attributes>
         <attribute name="Funlist" mandatory="yes">
+	  <description>Pointerlist to all function instances</description>
           <type name="Link">
             <target>
               <node name="Linklist" />
@@ -5509,19 +5517,31 @@
             <range from="typecheck" to="final" />
           </phases>
         </attribute>
-        <attribute name="Speccounter" default="0" mandatory="yes">
+        <attribute name="SpecCounter" default="0" mandatory="yes">
+	  <description>Number of specialized function instances</description>
           <type name="Integer" />
           <phases>
             <range from="typecheck" to="final" />
           </phases>
         </attribute>
-        <attribute name="Refcounter" default="0" mandatory="yes">
+        <attribute name="RefCounter" default="0" mandatory="yes">
+	  <description>Number of all (known) function instances</description>
           <type name="Integer" />
           <phases>
             <range from="typecheck" to="final" />
           </phases>
         </attribute>
-        <attribute name="Inlcounter" default="0" mandatory="yes" >
+        <attribute name="InlCounter" default="0" mandatory="yes" >
+          <type name="Integer" />
+          <phases>
+            <range from="typecheck" to="final" />
+          </phases>
+        </attribute>
+        <attribute name="AkvCounter" default="0" mandatory="yes" >
+	  <description>
+	    Used in type_upgrade for counting created function instances with
+	    AKV-arguments
+	  </description>
           <type name="Integer" />
           <phases>
             <range from="typecheck" to="final" />
