@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2004/11/22 21:07:39  skt
+ * moved 'typedef struct SERSTACK_T serstack_t' from serialize_stack.h
+ *
  * Revision 3.58  2004/11/22 21:05:30  ktr
  * ISMOP
  *
@@ -1129,5 +1132,11 @@ typedef struct FUNREC {
     funptr prefun;
     funptr postfun;
 } funtab;
+
+/*******************************************************************************
+ * moved from serialize_stack.h
+ */
+
+typedef struct SERSTACK_T serstack_t;
 
 #endif /* _SAC_TYPES_H_ */
