@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2001/05/17 12:05:53  nmw
+ * MALLOC/FREE changed to Malloc/Free (using Free() result)
+ *
  * Revision 1.7  2001/05/09 12:26:01  nmw
  * debug prints for WLUnroll calls added
  *
@@ -1185,7 +1188,7 @@ SSALURap (node *arg_node, node *arg_info)
 
         DBUG_PRINT ("SSALUR", ("traversal of special fundef %s finished\n",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
-        FREE (new_arg_info);
+        new_arg_info = FreeTree (new_arg_info);
 
     } else {
         DBUG_PRINT ("SSALUR", ("do not traverse in normal fundef %s",
@@ -1386,7 +1389,7 @@ SSALoopUnrolling (node *fundef, node *modul)
 
         act_tab = old_tab;
 
-        FREE (arg_info);
+        arg_info = FreeTree (arg_info);
     }
 
     DBUG_RETURN (fundef);

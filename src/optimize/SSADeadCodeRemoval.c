@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2001/05/17 12:05:53  nmw
+ * MALLOC/FREE changed to Malloc/Free (using Free() result)
+ *
  * Revision 1.15  2001/05/15 07:59:59  nmw
  * macro FUNDEF_IS_LACFUN used
  *
@@ -593,7 +596,7 @@ SSADCRap (node *arg_node, node *arg_info)
                                FUNDEF_NAME (AP_FUNDEF (arg_node)),
                                FUNDEF_NAME (INFO_SSADCR_FUNDEF (arg_info))));
 
-        FREE (new_arg_info);
+        new_arg_info = FreeTree (new_arg_info);
     } else {
         DBUG_PRINT ("SSADCR", ("do not traverse in normal fundef %s",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -972,7 +975,7 @@ SSADeadCodeRemoval (node *fundef, node *modul)
 
         act_tab = old_tab;
 
-        FREE (arg_info);
+        arg_info = FreeTree (arg_info);
     }
 
     DBUG_RETURN (fundef);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2001/05/17 12:05:53  nmw
+ * MALLOC/FREE changed to Malloc/Free (using Free() result)
+ *
  * Revision 1.16  2001/05/15 15:52:05  nmw
  * access to PrfFolding for external modules implemented SSACFFoldPrfExpr
  *
@@ -540,7 +543,7 @@ SSACFArray2StructConstant (node *expr)
         /* alloc hidden vector */
         ashape = SHOldTypes2Shape (atype);
         elem_count = SHGetUnrLen (ashape);
-        node_vec = (node **)MALLOC (elem_count * sizeof (node *));
+        node_vec = (node **)Malloc (elem_count * sizeof (node *));
 
         /* copy element pointers from array to vector */
         valid_const = TRUE;
@@ -557,7 +560,7 @@ SSACFArray2StructConstant (node *expr)
         DBUG_ASSERT ((tmp == NULL), "array contains to much elements");
 
         /* create struc_constant */
-        struc_co = (struc_constant *)MALLOC (sizeof (struc_constant));
+        struc_co = (struc_constant *)Malloc (sizeof (struc_constant));
         SCO_BASETYPE (struc_co) = TYPES_BASETYPE (atype);
         SCO_NAME (struc_co) = TYPES_NAME (atype);
         SCO_MOD (struc_co) = TYPES_MOD (atype);
@@ -605,13 +608,13 @@ SSACFScalar2StructConstant (node *expr)
 
         /* alloc hidden vector */
         cshape = SHMakeShape (0);
-        elem = (node **)MALLOC (sizeof (node *));
+        elem = (node **)Malloc (sizeof (node *));
 
         /* copy element pointers from array to vector */
         *elem = expr;
 
         /* create struc_constant */
-        struc_co = (struc_constant *)MALLOC (sizeof (struc_constant));
+        struc_co = (struc_constant *)Malloc (sizeof (struc_constant));
         SCO_BASETYPE (struc_co) = TYPES_BASETYPE (ctype);
         SCO_NAME (struc_co) = TYPES_NAME (ctype);
         SCO_MOD (struc_co) = TYPES_MOD (ctype);
@@ -692,7 +695,7 @@ SCOFreeStructConstant (struc_constant *struc_co)
     SCO_HIDDENCO (struc_co) = COFreeConstant (SCO_HIDDENCO (struc_co));
 
     /* free structure */
-    FREE (struc_co);
+    struc_co = Free (struc_co);
 
     DBUG_RETURN ((struc_constant *)NULL);
 }
@@ -1591,7 +1594,7 @@ SSACFap (node *arg_node, node *arg_info)
 
         DBUG_PRINT ("SSACF", ("traversal of special fundef %s finished\n",
                               FUNDEF_NAME (AP_FUNDEF (arg_node))));
-        FREE (new_arg_info);
+        new_arg_info = FreeTree (new_arg_info);
 
     } else {
         /* no traversal into a normal fundef */
@@ -1775,7 +1778,7 @@ SSACFids (ids *arg_ids, node *arg_info)
          * there is no real need for name string in ids structure because
          * you can get it from vardec without redundancy.
          */
-        FREE (IDS_NAME (arg_ids));
+        IDS_NAME (arg_ids) = Free (IDS_NAME (arg_ids));
         IDS_NAME (arg_ids) = StringCopy (VARDEC_NAME (new_vardec));
 #endif
     }
@@ -2283,7 +2286,7 @@ SSAConstantFolding (node *fundef, node *modul)
 
         act_tab = old_tab;
 
-        FREE (arg_info);
+        arg_info = FreeTree (arg_info);
     }
 
     DBUG_RETURN (fundef);

@@ -1,7 +1,9 @@
-
 /*
  *
  * $Log$
+ * Revision 1.20  2001/05/17 12:05:53  nmw
+ * MALLOC/FREE changed to Malloc/Free (using Free() result)
+ *
  * Revision 1.19  2001/05/17 09:43:44  nmw
  * bug fixed when moving down argument expressions
  * InsertLUT changed to UpdateLUT to avoid duplicate entries
@@ -216,7 +218,7 @@ CreateNewResult (node *avis, node *arg_info)
 
     new_ext_avis = AdjustAvisData (new_ext_vardec, INFO_SSALIR_EXTFUNDEF (arg_info));
     new_name = TmpVarName (VARDEC_NAME (new_ext_vardec));
-    FREE (VARDEC_NAME (new_ext_vardec));
+    VARDEC_NAME (new_ext_vardec) = Free (VARDEC_NAME (new_ext_vardec));
     VARDEC_NAME (new_ext_vardec) = new_name;
 
     DBUG_PRINT ("SSALIR", ("create external vardec %s for %s", new_name,
@@ -419,7 +421,7 @@ AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef)
                      * there is no real need for name string in ids structure because
                      * you can get it from vardec without redundancy.
                      */
-                    FREE (IDS_NAME (result_chain));
+                    IDS_NAME (result_chain) = Free (IDS_NAME (result_chain));
                     IDS_NAME (result_chain) = StringCopy (VARDEC_NAME (new_vardec));
 #endif
                     /* stop seerching */
@@ -1248,7 +1250,7 @@ SSALIRap (node *arg_node, node *arg_info)
         INFO_SSALIR_PREASSIGN (arg_info) = INFO_SSALIR_EXTPREASSIGN (new_arg_info);
         INFO_SSALIR_POSTASSIGN (arg_info) = INFO_SSALIR_EXTPOSTASSIGN (new_arg_info);
 
-        FREE (new_arg_info);
+        new_arg_info = FreeTree (new_arg_info);
     } else {
         /* no traversal into a normal fundef */
         DBUG_PRINT ("SSALIR", ("do not traverse in normal fundef %s",
@@ -1760,7 +1762,7 @@ LIRMOVid (node *arg_node, node *arg_info)
          * there is no real need for name string in ids structure because
          * you can get it from vardec without redundancy.
          */
-        FREE (ID_NAME (arg_node));
+        ID_NAME (arg_node) = Free (ID_NAME (arg_node));
         ID_NAME (arg_node) = StringCopy (VARDEC_OR_ARG_NAME (ID_VARDEC (arg_node)));
 #endif
     }
@@ -1878,7 +1880,7 @@ LIRMOVleftids (ids *arg_ids, node *arg_info)
         new_vardec = DupNode (IDS_VARDEC (arg_ids));
         new_avis = AdjustAvisData (new_vardec, INFO_SSALIR_EXTFUNDEF (arg_info));
         new_name = TmpVarName (VARDEC_NAME (new_vardec));
-        FREE (VARDEC_NAME (new_vardec));
+        VARDEC_NAME (new_vardec) = Free (VARDEC_NAME (new_vardec));
         VARDEC_NAME (new_vardec) = new_name;
 
         DBUG_PRINT ("SSALIR",
@@ -1926,7 +1928,7 @@ LIRMOVleftids (ids *arg_ids, node *arg_info)
 
             /* make new arg for this functions (instead of vardec) */
             new_arg = MakeArgFromVardec (AVIS_VARDECORARG (IDS_AVIS (arg_ids)));
-            FREE (ARG_NAME (new_arg));
+            ARG_NAME (new_arg) = Free (ARG_NAME (new_arg));
             ARG_NAME (new_arg) = StringCopy (new_name);
 
             /* make identifier for recursive function call */
@@ -2008,7 +2010,7 @@ SSALoopInvariantRemoval (node *fundef, node *modul)
 
         act_tab = old_tab;
 
-        FREE (arg_info);
+        arg_info = Free (arg_info);
     }
 
     DBUG_RETURN (fundef);
