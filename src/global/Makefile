@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.7  1994/12/11 17:30:14  sbs
+# Revision 1.8  1994/12/13 14:57:18  hw
+# added -I/usr/local/lib/gcc-include/ to rule for Error.o
+#
+# Revision 1.7  1994/12/11  17:30:14  sbs
 # -I, -L + environment vars inserted
 #
 # Revision 1.6  1994/12/09  10:43:42  sbs
@@ -33,7 +36,7 @@ main.o: main.c
 	$(CC) -c main.c $(INCS)
 
 Error.o: Error.c 
-	$(CC) -o Error.o -c Error.c $(INCS)
+	$(CC) -o Error.o -c Error.c $(INCS) -I/usr/local/lib/gcc-include/
 
 traverse.o: traverse.c
 	$(CC) -o traverse.o -c traverse.c $(INCS)
@@ -52,7 +55,7 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-Error.o: Error.h /usr/include/stdio.h
+Error.o: /usr/include/stdio.h Error.h ../../inc/dbug.h
 main.o: ../../inc/main.h ../../inc/dbug.h /usr/include/stdio.h tree.h
 main.o: node_info.mac prf_node_info.mac Error.h usage.h ../flatten/flatten.h
 main.o: ../print/print.h ../typecheck/typecheck.h ../optimize/optimize.h
