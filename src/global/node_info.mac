@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.92  1995/08/09 15:53:59  cg
- * IMfundef inserted for inline functions from other modules.
+ * Revision 1.93  1995/08/16 09:23:55  asi
+ * changed DupChain to DupTypes for N_array (duplicating info.types now)
  *
+;; Revision 1.92  1995/08/09  15:53:59  cg
+;; IMfundef inserted for inline functions from other modules.
+;;
 ;; Revision 1.91  1995/08/08  09:56:28  cg
 ;; IMtypedef for SIB-retrieval added.
 ;;
@@ -441,7 +444,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        FreeInfoId, CFap, DummyFun, CompAp, DummyFun, DupFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_cast, "N_cast", DummyFun, DummyFun, PrintCast, DummyFun, DummyFun, DummyFun,
-       DummyFun, FreeInfoType, CFcast, DummyFun, CompCast, DummyFun, DupCast, DummyFun,
+       DummyFun, FreeInfoType, CFcast, DummyFun, CompCast, DummyFun, DupTypes, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
   NIF (N_exprs, "N_exprs", DummyFun, FltnExprs, PrintExprs, DummyFun, DummyFun, DummyFun,
@@ -449,7 +452,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
   NIF (N_array, "N_array", DummyFun, DummyFun, PrintArray, DummyFun, DummyFun, DummyFun,
-       DummyFun, FreeNoInfo, DummyFun, DummyFun, CompArray, DummyFun, DupChain, DummyFun,
+       DummyFun, FreeNoInfo, DummyFun, DummyFun, CompArray, DummyFun, DupTypes, DummyFun,
        DummyFun, DummyFun, IdxArray, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
   NIF (N_info, "N_info", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
