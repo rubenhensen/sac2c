@@ -1324,6 +1324,10 @@ case $target_os in
  *solaris*) target_os=SOLARIS;;
 esac
 
+case $target_cpu in
+ sparc) target_cpu=SPARC;;
+esac
+
 
 cat >>confdefs.h <<_ACEOF
 #define OS "$target_os"
@@ -3287,7 +3291,7 @@ rm testfile test.ar
 cd ..
 rmdir .ar_magic_file_test
 
-if test $YACC = yacc; then
+if test "$YACC" = "yacc"; then
 
 cat >>confdefs.h <<\_ACEOF
 #define MUST_REFERENCE_YYLABELS 1
