@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2004/07/23 14:14:25  ktr
+ * NWITHOP_NEUTRAL is now always flattened out as it must later be reference
+ * counted like a variable.
+ *
  * Revision 3.29  2004/07/16 14:41:34  sah
  * switch to new INFO structure
  * PHASE I
@@ -1834,8 +1838,8 @@ FltnNwith (node *arg_node, info *arg_info)
  *   flattens N_Nwithop
  *   - genarray: the shape is NOT flattened!
  *   - modarray: the array has to be an id or is flattened otherwise.
- *   - fold: the neutral element has to be an id or a constant scalar
- *           or is flattened otherwise. It is optional.
+ *   - fold: the neutral element has to be an id  or is flattened otherwise.
+ *           It is optional.
  *
  ******************************************************************************/
 
@@ -1893,10 +1897,7 @@ FltnNwithop (node *arg_node, info *arg_info)
         /* here is no break missing! */
     case WO_foldprf:
         expr = NWITHOP_NEUTRAL (arg_node);
-        if ((expr != NULL)
-            && ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap)
-                || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_Nwith)
-                || (NODE_TYPE (expr) == N_cast))) {
+        if ((expr != NULL) && (NODE_TYPE (expr) != N_id)) {
             NWITHOP_NEUTRAL (arg_node) = Abstract (expr, arg_info);
             expr2 = Trav (expr, arg_info);
             AnnotateIdWithConstVec (expr, NWITHOP_NEUTRAL (arg_node));
