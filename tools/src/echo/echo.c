@@ -17,6 +17,7 @@
 
 #include <sys/types.h>
 #include <strings.h>
+#include <string.h>
 #include <stdio.h>
 
 #define _(text) text
