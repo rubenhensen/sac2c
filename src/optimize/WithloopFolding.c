@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 1.15  1998/04/24 18:57:54  srs
+ * added creation of types for N_array node
+ *
  * Revision 1.14  1998/04/24 17:31:44  srs
  * added MakeNullVec() and changed CreateVardec()
  *
@@ -1067,6 +1070,7 @@ MakeNullVec (int dim)
 {
     node *resultn, *tmpn;
     int i;
+    shpseg *shpseg;
 
     DBUG_ENTER ("MakeNullVec");
 
@@ -1078,6 +1082,10 @@ MakeNullVec (int dim)
             tmpn = MakeExprs (MakeNum (0), tmpn);
 
         resultn = MakeArray (tmpn);
+
+        shpseg = MakeShpseg (
+          MakeNums (dim, NULL)); /* nums struct is freed inside MakeShpseg. */
+        ARRAY_TYPE (resultn) = MakeType (T_int, 1, shpseg, NULL, NULL);
     }
 
     DBUG_RETURN (resultn);

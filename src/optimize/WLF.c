@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.6  1998/04/24 18:57:48  srs
+ * added creation of types for N_array node
+ *
  * Revision 1.5  1998/04/24 17:27:27  srs
  * added linear transformations
  *
@@ -969,7 +972,7 @@ FoldDecision (node *target_wl, node *subst_wl)
 /******************************************************************************
  *
  * function:
- *   node *CheckForSuperfuousCodes(node *wln)
+ *   node *CheckForSuperfluousCodes(node *wln)
  *
  * description:
  *   remove all unused N_Ncode nodes of the given WL.
@@ -978,11 +981,11 @@ FoldDecision (node *target_wl, node *subst_wl)
  ******************************************************************************/
 
 node *
-CheckForSuperfuousCodes (node *wln)
+CheckForSuperfluousCodes (node *wln)
 {
     node **tmp;
 
-    DBUG_ENTER ("CheckForSuperfuousCodes");
+    DBUG_ENTER ("CheckForSuperfluousCodes");
 
     tmp = &NWITH_CODE (wln);
     while (*tmp)
@@ -1011,6 +1014,7 @@ Modarray2Genarray (node *wln)
     node *shape, *eltn;
     types *type;
     int dimensions, i;
+    shpseg *shpseg;
 
     DBUG_ENTER ("Modarray2Genarray");
     DBUG_ASSERT (WO_modarray == NWITH_TYPE (wln), ("wrong withop for Modarray2Genarray"));
@@ -1024,6 +1028,10 @@ Modarray2Genarray (node *wln)
         eltn = MakeExprs (MakeNum (TYPES_SHAPE (type, i)), eltn);
 
     shape = MakeArray (eltn);
+
+    shpseg = MakeShpseg (
+      MakeNums (dimensions, NULL)); /* nums struct is freed inside MakeShpseg. */
+    ARRAY_TYPE (shape) = MakeType (T_int, 1, shpseg, NULL, NULL);
 
     /* delete old withop and create new one */
     FreeTree (NWITH_WITHOP (wln));
@@ -1152,11 +1160,12 @@ WLFassign (node *arg_node, node *arg_info)
 node *
 WLFid (node *arg_node, node *arg_info)
 {
-    node *substn, *vectorn, *argsn, *letn, *partn, *old_arg_info_assign;
+    node *substn, *vectorn, *argsn, *letn, *partn, *old_arg_info_assign, *arrayn;
     ids *subst_wl_ids, *_ids;
     int count, varno;
     char *new_name;
     renaming_type *ren;
+    shpseg *shpseg;
 
     DBUG_ENTER ("WLFid");
 
@@ -1211,8 +1220,11 @@ WLFid (node *arg_node, node *arg_info)
             subst_wl_ids = NPART_IDS (partn);
             count = 0;
             while (subst_wl_ids) {
-                argsn = MakeExprs (MakeArray (MakeExprs (MakeNum (count++), NULL)),
-                                   MakeExprs (DupTree (vectorn, NULL), NULL));
+                arrayn = MakeArray (MakeExprs (MakeNum (count++), NULL));
+                shpseg = MakeShpseg (
+                  MakeNums (1, NULL)); /* nums struct is freed inside MakeShpseg. */
+                ARRAY_TYPE (arrayn) = MakeType (T_int, 1, shpseg, NULL, NULL);
+                argsn = MakeExprs (arrayn, MakeExprs (DupTree (vectorn, NULL), NULL));
                 _ids = MakeIds (IDS_NAME (subst_wl_ids), NULL, ST_regular);
                 IDS_VARDEC (_ids) = IDS_VARDEC (subst_wl_ids);
                 letn = MakeLet (MakePrf (F_psi, argsn), _ids);
@@ -1420,7 +1432,7 @@ WLFNwith (node *arg_node, node *arg_info)
 
                 arg_node = InternGen2Tree (arg_node, all_new_ig);
                 all_new_ig = FreeInternGenChain (all_new_ig);
-                arg_node = CheckForSuperfuousCodes (arg_node);
+                arg_node = CheckForSuperfluousCodes (arg_node);
 
                 /* After successful folding every modarray-WL has to be transformed
                    into a genarray-WL. DCR has no chance to remove the subst WL with
