@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.127  2004/12/17 09:27:20  khf
+ * TCgetNthExpr corrected
+ *
  * Revision 3.126  2004/12/08 18:15:24  ktr
  * usage of SHmakeShape corrected.
  *
@@ -2388,7 +2391,7 @@ TCgetNthExpr (int n, node *exprs)
 
     DBUG_ENTER ("TCgetNthExpr");
 
-    for (cnt = 1; cnt < n; cnt++) {
+    for (cnt = 0; cnt < n; cnt++) {
         if (exprs == NULL) {
             break;
         }
