@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/12 10:24:55  ktr
+ * added Filter reuse candidates traversal.
+ *
  * Revision 1.1  2004/10/11 14:45:07  ktr
  * Initial revision
  *
@@ -29,6 +32,7 @@
 #include "print.h"
 #include "refcounting.h"
 #include "rcopt.h"
+#include "filterrc.h"
 
 /** <!--*******************************************************************-->
  *
@@ -48,6 +52,14 @@ RCphase (node *syntax_tree)
 
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_modul),
                  "RCphase not started with N_modul node");
+
+    /*
+     * Filter reuse candidates
+     */
+    syntax_tree = EMFRCFilterReuseCandidates (syntax_tree);
+    if ((break_after == PH_refcnt) && (0 == strcmp (break_specifier, "frc"))) {
+        goto DONE;
+    }
 
     /*
      * Reference counting
