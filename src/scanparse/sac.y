@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2002/06/20 15:34:23  dkr
+ * signature of MakeNWithOP modified
+ *
  * Revision 3.39  2002/04/16 21:11:55  dkr
  * main() function has a modname now, too
  *
@@ -1901,37 +1904,32 @@ genop:   LT { $$ = F_lt; }
        ;
 
 withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
-        { $$ = MakeNWithOp( WO_genarray);
-          NWITHOP_SHAPE( $$) = $3;
+        { $$ = MakeNWithOp( WO_genarray, $3);
           NWITHOP_EXPR( $$) = $5;
         }
       | MODARRAY BRACKET_L expr COMMA id COMMA expr BRACKET_R
-        { $$ = MakeNWithOp( WO_modarray);
-          NWITHOP_ARRAY( $$) = $3;
+        { $$ = MakeNWithOp( WO_modarray, $3);
           NWITHOP_EXPR( $$) = $7;
         }
       | FOLD BRACKET_L foldop COMMA expr BRACKET_R
-        { $$ = MakeNWithOp( WO_foldprf);
+        { $$ = MakeNWithOp( WO_foldprf, NULL);
           NWITHOP_PRF( $$) = $3;
           NWITHOP_EXPR( $$) = $5;
         }
       | FOLD BRACKET_L foldop COMMA expr COMMA expr BRACKET_R
-        { $$ = MakeNWithOp( WO_foldprf);
+        { $$ = MakeNWithOp( WO_foldprf, $5);
           NWITHOP_PRF( $$) = $3;
-          NWITHOP_NEUTRAL( $$) = $5;
           NWITHOP_EXPR( $$) = $7;
         }
       | FOLD BRACKET_L id COMMA expr COMMA expr BRACKET_R
-        { $$ = MakeNWithOp( WO_foldfun);
+        { $$ = MakeNWithOp( WO_foldfun, $5);
           NWITHOP_FUN( $$) = $3;
-          NWITHOP_NEUTRAL( $$) = $5;
           NWITHOP_EXPR( $$) = $7;
         }
       | FOLD BRACKET_L id COLON id COMMA expr COMMA expr BRACKET_R
-        { $$ = MakeNWithOp( WO_foldfun);
+        { $$ = MakeNWithOp( WO_foldfun, $7);
           NWITHOP_FUN( $$) = $5;
           NWITHOP_MOD( $$) = $3;
-          NWITHOP_NEUTRAL( $$) = $7;
           NWITHOP_EXPR( $$) = $9;
         }
       ;
