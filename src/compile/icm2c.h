@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/05/24 13:58:31  sbs
+ * Revision 1.18  1995/05/24 16:56:05  sbs
+ * now, the memory for the refcnts is freed as well :->>
+ *
+ * Revision 1.17  1995/05/24  13:58:31  sbs
  * ND_KS_DECL_ARRAY_ARG inserted
  *
  * Revision 1.16  1995/05/19  13:41:41  hw
@@ -204,6 +207,7 @@
         sprintf (__trace_buffer, "ND_DEC_RC_FREE(%s, %d)", #name, num);                  \
         PRINT_TRACE_BUFFER;                                                              \
         free (ND_A_FIELD (name));                                                        \
+        free (ND_A_RCP (name));                                                          \
         __trace_mem_cnt -= ND_A_SIZE (name);                                             \
         PRINTMEM (name);                                                                 \
     }
@@ -233,6 +237,7 @@
         PRINT_TRACE_INDENT;                                                              \
         PRINTMEM (name);                                                                 \
         free (ND_A_FIELD (name));                                                        \
+        free (ND_A_RCP (name));                                                          \
     } else                                                                               \
         PRINTREF (name);
 
@@ -257,6 +262,7 @@
     if ((ND_A_RC (name) -= num) == 0) {                                                  \
         fprintf (stderr, "freeing %s\n", #name);                                         \
         free (ND_A_FIELD (name));                                                        \
+        free (ND_A_RCP (name));                                                          \
     } else                                                                               \
         PRINTREF (name);
 
@@ -271,8 +277,10 @@
         ND_A_RC (name) = rc;                                                             \
     }
 #define ND_DEC_RC_FREE(name, num)                                                        \
-    if ((ND_A_RC (name) -= num) == 0)                                                    \
-        free (ND_A_FIELD (name));
+    if ((ND_A_RC (name) -= num) == 0) {                                                  \
+        free (ND_A_FIELD (name));                                                        \
+        free (ND_A_RCP (name));                                                          \
+    }
 
 #endif /* !TRACE_MEM && !TRACE_REF */
 /*----------------------------------------------------------------------------*/
