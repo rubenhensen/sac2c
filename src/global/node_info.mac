@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.147  1998/02/08 10:56:10  dkr
+ * added RCNwithid
+ *
  * Revision 1.146  1998/02/07 19:05:06  srs
  * *** empty log message ***
  *
@@ -809,7 +812,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_Nwithid, "N_Nwithid", TravSons, NoTrav, NoTrav, TravSons, TravSons, TravSons,
-       TravSons, FreeNWithID, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, FreeNWithID, TravSons, RCNwithid, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, NoTrav, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 0),
