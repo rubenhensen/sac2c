@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.19  1995/03/29 12:10:37  hw
+# Revision 1.20  1995/04/03 10:11:30  sbs
+# src/compile/icm2c.o inserted
+#
+# Revision 1.19  1995/03/29  12:10:37  hw
 # *** empty log message ***
 #
 # Revision 1.18  1995/03/29  11:49:43  hw
@@ -74,7 +77,7 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/DeadCodeRemoval.o src/optimize/WorkReduction.o
 MODULES= src/modules/filemgr.o src/modules/import.o
 REFCOUNT= src/refcount/refcount.o
-COMPILE= src/compile/compile.o
+COMPILE= src/compile/compile.o src/compile/icm2c.o
 
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) $(MODULES) \
     $(REFCOUNT) $(COMPILE)
