@@ -1,6 +1,11 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.11  1998/05/15 14:46:40  srs
+ * fixed bug in WLTlet()
+ * adjusted MakeNullVec()
+ * added warning for empty generator sets
+ *
  * Revision 1.10  1998/04/29 12:49:06  srs
  * changed macro name
  *
@@ -634,7 +639,7 @@ WLTwith (node *arg_node, node *arg_info)
 node *
 WLTlet (node *arg_node, node *arg_info)
 {
-    node *exprn;
+    node *exprn, *tmpn;
 
     DBUG_ENTER ("WLTlet");
 
@@ -650,10 +655,12 @@ WLTlet (node *arg_node, node *arg_info)
             if (F_psi == PRF_PRF (exprn)) /* 3) */
                 CheckOptimizePsi (&LET_EXPR (arg_node), arg_info);
             else {
-                if (N_array == NODE_TYPE (PRF_ARG1 (exprn))) /* 1) */
-                    CheckOptimizeArray (&PRF_ARG1 (exprn), arg_info);
-                if (N_array == NODE_TYPE (PRF_ARG2 (exprn)))
-                    CheckOptimizeArray (&PRF_ARG2 (exprn), arg_info);
+                tmpn = PRF_ARGS (exprn);
+                while (tmpn) {
+                    if (N_array == NODE_TYPE (EXPRS_EXPR (tmpn))) /* 1) */
+                        CheckOptimizeArray (&EXPRS_EXPR (tmpn), arg_info);
+                    tmpn = EXPRS_NEXT (tmpn);
+                }
             }
 
         if (N_array == NODE_TYPE (exprn)) /* 2) */
@@ -741,7 +748,9 @@ WLTNwith (node *arg_node, node *arg_info)
 
         /* If withop if fold, we cannot create additional N_Npart nodes (based on what?)
          */
-        if (WO_foldfun == NWITH_TYPE (arg_node) || WO_foldprf == NWITH_TYPE (arg_node))
+        if (NWITH_FOLDABLE (arg_node)
+            && (WO_foldfun == NWITH_TYPE (arg_node)
+                || WO_foldprf == NWITH_TYPE (arg_node)))
             NWITH_PARTS (arg_node) = 1;
     }
 
@@ -897,8 +906,10 @@ WLTNgenerator (node *arg_node, node *arg_info)
             if (warning)
                 WARN (NODE_LINE (arg_node), ("Withloop generator out of range"));
 
-            /* the one and only N_Npart is empty. Trandform WL. */
-            if (empty)
+            /* the one and only N_Npart is empty. Transform WL. */
+            if (empty) {
+                WARN (NODE_LINE (arg_node),
+                      ("Withloop generator specifies empty index set"));
                 if (WO_genarray == NWITH_TYPE (INFO_WLI_WL (arg_info))) {
                     /* change generator: full scope.  */
                     dim = TYPES_DIM (IDS_TYPE (_ids));
@@ -931,9 +942,10 @@ WLTNgenerator (node *arg_node, node *arg_info)
                     BLOCK_INSTR (blockn) = assignn;
                     LET_EXPR (ASSIGN_INSTR (assignn))
                       = MakeNullVec (TYPES_DIM (IDS_TYPE (_ids))
-                                     - ARRAY_SHAPE (NWITHOP_SHAPE (NWITH_WITHOP (
-                                                      INFO_WLI_WL (arg_info))),
-                                                    0));
+                                       - ARRAY_SHAPE (NWITHOP_SHAPE (NWITH_WITHOP (
+                                                        INFO_WLI_WL (arg_info))),
+                                                      0),
+                                     T_int);
                     ASSIGN_MASK (assignn, 0) = GenMask (INFO_VARNO);
                     ASSIGN_MASK (assignn, 1) = GenMask (INFO_VARNO);
                 } else {
@@ -942,6 +954,7 @@ WLTNgenerator (node *arg_node, node *arg_info)
                     tmpn = NWITHOP_NEUTRAL (NWITH_WITHOP (INFO_WLI_WL (arg_info)));
                     INFO_WLI_REPLACE (arg_info) = DupTree (tmpn, NULL);
                 }
+            }
         } /* check_bounds */
 
         arg_node = TravSons (arg_node, arg_info);
