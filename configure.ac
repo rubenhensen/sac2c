@@ -1,5 +1,9 @@
 dnl
 dnl $Log$
+dnl Revision 1.29  2004/08/07 13:55:22  sah
+dnl if available, gnu indent is used instead of cb
+dnl which improves readability of generated code
+dnl
 dnl Revision 1.28  2003/11/24 16:57:46  sah
 dnl fixed bison/yacc test
 dnl
@@ -186,6 +190,9 @@ fi
 
 dnl check, whether we need -traditinal flag
 AC_PROG_GCC_TRADITIONAL
+
+dnl check for gnu indent 
+AC_CHECK_PROG( [CB], [indent], [indent -o -], [[\$(PROJECT_ROOT)/tools/bin/cb]])
 
 dnl search for bison, byacc or yacc
 AC_PROG_YACC()

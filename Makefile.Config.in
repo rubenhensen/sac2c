@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 1.13  2004/08/07 13:55:22  sah
+# if available, gnu indent is used instead of cb
+# which improves readability of generated code
+#
 # Revision 1.12  2004/07/03 15:20:20  sah
 # added dummy XSLTENGINE for old ast mode
 #
@@ -103,5 +107,5 @@ else
 endif
 
 CLOCK_SKEW_ELIMINATION   := $(PROJECT_ROOT)/tools/bin/cse
-CODE_BEAUTIFIER          := $(PROJECT_ROOT)/tools/bin/cb
+CODE_BEAUTIFIER          := @CB@
 ICM_TESTER               := $(PROJECT_ROOT)/tools/bin/icm_tester
