@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/05/17 10:03:24  nmw
+ * type mistake in IntByte2String corrected, warning eliminated
+ *
  * Revision 3.7  2001/05/17 07:35:11  sbs
  * IntBytes2String added
  * Malloc / Free checked
@@ -361,7 +364,7 @@ char *
 IntBytes2String (int bytes)
 {
     static char res[32];
-    char *tmp = &res;
+    char *tmp = &res[0];
     int factor = 1000000000;
     int num;
 
