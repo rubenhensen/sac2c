@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.3  2001/03/22 20:38:52  dkr
+ * include of tre.h eliminated
+ *
  * Revision 3.2  2001/03/15 15:17:47  dkr
  * signature of Type2String modified
  *
@@ -17,7 +21,6 @@
  *
  * Revision 1.1  1999/10/20 12:52:00  sbs
  * Initial revision
- *
  *
  */
 
@@ -64,12 +67,15 @@
  *
  */
 
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
+
 #include "dbug.h"
 
 #include "free.h"
-#include "tree.h"
 #include "convert.h"
-#include "types.h"
 
 #include "shape.h"
 
