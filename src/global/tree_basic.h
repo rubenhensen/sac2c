@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.80  1998/03/03 19:39:27  dkr
+ * renamed N_WLindex to N_WLproj
+ *
  * Revision 1.79  1998/03/03 19:16:05  dkr
  * changed something in N_WLgrid
  *
@@ -2237,7 +2240,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
  ***
  ***  sons:
  ***
- ***    node*    INDEX    (0)     (N_WLindex)
+ ***    node*    PROJ     (0)     (N_WLproj)
  ***    node*    NEXT     (0)     (N_WLseg)
  ***
  ***  temporary attributes:
@@ -2246,15 +2249,15 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
  ***
  ***/
 
-extern node *MakeWLseg (node *index, node *next);
+extern node *MakeWLseg (node *proj, node *next);
 
-#define WLSEG_INDEX(n) (n->node[0])
+#define WLSEG_PROJ(n) (n->node[0])
 #define WLSEG_NEXT(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
 /*
- *  N_WLindex :
+ *  N_WLproj :
  *
  *  sons:
  *
@@ -2262,7 +2265,7 @@ extern node *MakeWLseg (node *index, node *next);
  *    node*    BOUND2   (0)     (int)
  *    node*    STEP     (0)     (int)
  *    node*    GRID     (0)     (N_WLgrid)
- *    node*    NEXT     (0)     (N_WLindex)
+ *    node*    NEXT     (0)     (N_WLproj)
  *
  *  temporary attributes:
  *
@@ -2270,13 +2273,13 @@ extern node *MakeWLseg (node *index, node *next);
  *
  */
 
-extern node *MakeWLindex (int bound1, int bound2, int step, node *grid, node *next);
+extern node *MakeWLproj (int bound1, int bound2, int step, node *grid, node *next);
 
-#define WLINDEX_BOUND1(n) (n->refcnt)
-#define WLINDEX_BOUND2(n) (n->flag)
-#define WLINDEX_STEP(n) (n->counter)
-#define WLINDEX_GRID(n) (n->node[0])
-#define WLINDEX_NEXT(n) (n->node[1])
+#define WLPROJ_BOUND1(n) (n->refcnt)
+#define WLPROJ_BOUND2(n) (n->flag)
+#define WLPROJ_STEP(n) (n->counter)
+#define WLPROJ_GRID(n) (n->node[0])
+#define WLPROJ_NEXT(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2287,7 +2290,7 @@ extern node *MakeWLindex (int bound1, int bound2, int step, node *grid, node *ne
  ***
  ***    node*    OFFSET   (0)     (int)
  ***    node*    WIDTH    (0)     (int)
- ***    node*    NEXTDIM  (0)     (N_WLindex)
+ ***    node*    NEXTDIM  (0)     (N_WLproj)
  ***    node*    CODE     (0)     (N_Ncode)
  ***    node*    NEXT     (0)     (N_WLgrid)
  ***

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.155  1998/03/03 19:39:02  dkr
+ * renamed N_WLindex to N_WLproj
+ *
  * Revision 1.154  1998/03/02 22:27:59  dkr
  * added nodes for precompilation of new with-loop
  *
@@ -868,7 +871,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
-  NIF (N_WLindex, "N_WLindex", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+  NIF (N_WLproj, "N_WLproj", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.37  1998/03/03 19:39:34  dkr
+ * renamed N_WLindex to N_WLproj
+ *
  * Revision 1.36  1998/03/03 17:50:18  dkr
  * changed MakeWLgrid(), MakeWLindex()
  *
@@ -1368,7 +1371,7 @@ MakeWLseg (node *seg, node *next)
     INIT_NODE (new_node);
 
     NODE_TYPE (new_node) = N_WLseg;
-    WLSEG_INDEX (new_node) = seg;
+    WLSEG_PROJ (new_node) = seg;
     WLSEG_NEXT (new_node) = next;
 
     DBUG_RETURN (new_node);
@@ -1376,20 +1379,20 @@ MakeWLseg (node *seg, node *next)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLindex (int bound1, int bound2, int step, node *grid, node *next)
+MakeWLproj (int bound1, int bound2, int step, node *grid, node *next)
 {
     node *new_node;
 
-    DBUG_ENTER ("MakeWLindex");
+    DBUG_ENTER ("MakeWLproj");
     INIT_NODE (new_node);
 
-    NODE_TYPE (new_node) = N_WLindex;
+    NODE_TYPE (new_node) = N_WLproj;
 
-    WLINDEX_BOUND1 (new_node) = bound1;
-    WLINDEX_BOUND2 (new_node) = bound2;
-    WLINDEX_STEP (new_node) = step;
-    WLINDEX_GRID (new_node) = grid;
-    WLINDEX_NEXT (new_node) = next;
+    WLPROJ_BOUND1 (new_node) = bound1;
+    WLPROJ_BOUND2 (new_node) = bound2;
+    WLPROJ_STEP (new_node) = step;
+    WLPROJ_GRID (new_node) = grid;
+    WLPROJ_NEXT (new_node) = next;
 
     DBUG_RETURN (new_node);
 }
