@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/01/06 19:30:30  sbs
+ * Revision 1.10  1995/01/16 15:34:06  hw
+ * changed description of FindSymbolInModul
+ *
+ * Revision 1.9  1995/01/06  19:30:30  sbs
  * bug fixed in AppendModsToSymbol
  *
  * Revision 1.8  1995/01/06  17:50:43  sbs
@@ -307,9 +310,9 @@ GenSyms (mod *mod)
  *                  3) symbol-kind: 0 : implicit type
  *                                  1 : explicit type
  *                                  2 : fun-declaration
- *                  4) search strategy: 0 : search in the given modul only
+ *                  4) mods found previously; initially a NULL is given here.
+ *                  5) search strategy: 0 : search in the given modul only
  *                                      1 : search in imported modules as well
- *                  5) mods found previously; initially a NULL is given here.
  *  description   : searches for a symbol of given kind in a prespecified
  *                  modul; returns a pointer linked list of modul-entries
  *                  for all those modules which own a definition of the
