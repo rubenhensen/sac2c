@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1995/08/30 14:05:12  cg
+ * Revision 1.20  1995/09/29 12:21:30  cg
+ * charlist renamed to strings.
+ *
+ * Revision 1.19  1995/08/30  14:05:12  cg
  * compare-macros extracted to new header-file.
  *
  * Revision 1.18  1995/08/28  16:15:00  cg
@@ -81,7 +84,6 @@
 #include <string.h>
 #include <limits.h>
 
-#include "dbug.h"
 #include "tree.h"
 #include "free.h"
 #include "Error.h"
@@ -100,12 +102,11 @@
 #include "filemgr.h"
 #include "import.h"
 
-#include "compare_macros.h"
-
 extern void DoImport (node *modul, node *implist, char *mastermod);
 
 static mod *mod_tab = NULL;
-/* static charlist *linker_tab=NULL; */
+
+/* static strings *linker_tab=NULL; */
 
 /*
  *
@@ -941,66 +942,6 @@ IMmodul (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  : CmpDomain
- *  arguments     : 1) N_arg node of one function
- *                  2) N_arg node of another function
- *  description   : checks whether the functions have equal domain
- *                  returns 1 if domain is equal, 0 else
- *  global vars   : ----
- *  internal funs : ----
- *  external funs : ----
- *  macros        : DBUG..., NULL, DIM, TYPES, CMP_TYPE_ID, SIMPLETYPE
- *
- *  remarks       : similar to function CmpFunParams of typechecker.
- *                  some minor changes to fix appearing segmentation
- *                  faults.
- *
- */
-
-int
-CmpDomain (node *arg1, node *arg2)
-{
-    int i, is_equal;
-
-    DBUG_ENTER ("CmpDomain");
-
-    while ((NULL != arg1) && (NULL != arg2)) {
-        if (arg1->SIMPLETYPE == arg2->SIMPLETYPE) {
-            if (arg1->SIMPLETYPE == T_user) {
-                if (!CMP_TYPE_USER (arg1->TYPES, arg2->TYPES)) {
-                    break;
-                }
-            }
-            if (arg1->DIM == arg2->DIM) {
-                for (i = 0; i < arg1->DIM; i++)
-                    if (arg1->SHP[i] != arg2->SHP[i])
-                        break;
-                if (i != arg1->DIM)
-                    break;
-                else {
-                    arg1 = arg1->node[0];
-                    arg2 = arg2->node[0];
-                }
-            } else
-                break;
-        } else
-            break;
-    }
-    if ((NULL == arg1) && (NULL == arg2)) {
-        is_equal = 1;
-
-        DBUG_PRINT ("READSIB", ("Domain compare positive !"));
-    } else {
-        is_equal = 0;
-
-        DBUG_PRINT ("READSIB", ("Domain compare negative !"));
-    }
-
-    DBUG_RETURN (is_equal);
-}
-
-/*
- *
  *  functionname  : FindSibEntry
  *  arguments     : 1) pointer to N_fundef or N_typedef node
  *  description   : finds the respective N_fundef or N_typedef node in the
@@ -1073,7 +1014,7 @@ FindSibEntry (node *orig)
 /*
 void AddToLinkerTab(char *module)
 {
-  charlist *tmp=linker_tab;
+  strings *tmp=linker_tab;
 
   DBUG_ENTER("AddToLinkerTab");
 
@@ -1084,7 +1025,7 @@ void AddToLinkerTab(char *module)
 
   if (tmp==NULL)
   {
-    tmp=(charlist*)malloc(sizeof(charlist));
+    tmp=(strings*)malloc(sizeof(strings));
     tmp->next=linker_tab;
     tmp->name=module;
     linker_tab=tmp;
@@ -1348,36 +1289,6 @@ EnsureExistFuns (node *fundef, node *modul)
 
 /*
  *
- *  functionname  : MakeArgList
- *  arguments     : 1) pointer to chain of objdef nodes
- *  description   : makes an argument list from an objdef chain
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : ---
- *
- *  remarks       :
- *
- */
-
-void
-MakeArgList (node *objdef)
-{
-    node *tmp;
-
-    DBUG_ENTER ("MakeArgList");
-
-    tmp = objdef;
-    while (tmp != NULL) {
-        tmp->nodetype = N_arg;
-        tmp = tmp->node[0];
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/*
- *
  *  functionname  : IMfundef
  *  arguments     : 1) pointer to N_fundef node
  *                  2) pointer to N_modul node of respective program
@@ -1408,7 +1319,7 @@ IMfundef (node *arg_node, node *arg_info)
         {
             if (sib_entry->node[0] == NULL) /* only implicit object information */
             {
-                MakeArgList (sib_entry->node[4]);
+                ObjList2ArgList (sib_entry->node[4]);
                 arg_node->node[4] = sib_entry->node[4];
 
                 DBUG_PRINT ("READSIB",
@@ -1431,7 +1342,7 @@ IMfundef (node *arg_node, node *arg_info)
                 EnsureExistTypes (sib_entry->node[3], arg_info);
                 EnsureExistFuns (sib_entry->node[5], arg_info);
 
-                MakeArgList (arg_node->node[4]);
+                ObjList2ArgList (arg_node->node[4]);
             }
         }
     }
@@ -1500,10 +1411,10 @@ IMtypedef (node *arg_node, node *arg_info)
  *
  */
 
-charlist *
-AddToLinkList (charlist *list, char *name)
+strings *
+AddToLinkList (strings *list, char *name)
 {
-    charlist *tmp = list;
+    strings *tmp = list;
 
     DBUG_ENTER ("AddToLinkList");
 
@@ -1512,7 +1423,7 @@ AddToLinkList (charlist *list, char *name)
     }
 
     if (tmp == NULL) {
-        tmp = (charlist *)malloc (sizeof (charlist));
+        tmp = (strings *)malloc (sizeof (strings));
         tmp->name = name;
         tmp->next = list;
     } else {
@@ -1538,18 +1449,18 @@ AddToLinkList (charlist *list, char *name)
  *
  */
 
-charlist *
+strings *
 GenExtmodlistList ()
 {
     mod *modp = mod_tab;
-    charlist *tmp, *linklist = NULL;
+    strings *tmp, *linklist = NULL;
 
     DBUG_ENTER ("GenExtmodlistList");
 
     while (modp != NULL) {
         if (modp->prefix == NULL) /* external module/class */
         {
-            tmp = (charlist *)malloc (sizeof (charlist));
+            tmp = (strings *)malloc (sizeof (strings));
             tmp->name = modp->name;
             tmp->next = linklist;
             linklist = tmp;
@@ -1577,7 +1488,7 @@ char *
 GenLinkerList ()
 {
     mod *modp = mod_tab;
-    charlist *linklist = NULL, *tmp;
+    strings *linklist = NULL, *tmp;
     static char buffer[MAX_FILE_NAME];
     static char list[MAX_PATH_LEN];
     char *file;
@@ -1587,7 +1498,7 @@ GenLinkerList ()
     while (modp != NULL) {
         linklist = AddToLinkList (linklist, modp->name);
         if (modp->sib != NULL) {
-            tmp = (charlist *)modp->sib->node[2];
+            tmp = (strings *)modp->sib->node[2];
             while (tmp != NULL) {
                 linklist = AddToLinkList (linklist, tmp->name);
                 tmp = tmp->next;
