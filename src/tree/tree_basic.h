@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2001/02/27 16:05:01  nmw
+ * INFO_SSADCR macros added
+ *
  * Revision 3.32  2001/02/22 12:44:54  nmw
  * VARDEC_UNDOAVIS added
  *
@@ -1968,6 +1971,9 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***    node*       SSASTACK (O)    (N_ssastack)     (ssaform!!)
  ***    node*       SSATHEN (O)     (N_avis)         (ssaform!!)
  ***    node*       SSAELSE (O)     (N_avis)         (ssaform!!)
+ ***
+ ***    the following attributes are only used within SSADeadCodeRemoval
+ ***    bool        NEEDCOUNT                        (ssadcr!!)
  ***/
 
 /*
@@ -1983,10 +1989,13 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_SSACONST(n) ((constant *)(n->info2))
 #define AVIS_SSAPHITARGET(n) ((bool)(n->flag))
 #define AVIS_SSALPINV(n) ((bool)(n->refcnt))
+
 #define AVIS_SSADEFINED(n) ((bool)(n->int_data))
 #define AVIS_SSASTACK(n) ((node *)(n->dfmask[0]))
 #define AVIS_SSATHEN(n) ((node *)(n->dfmask[1]))
 #define AVIS_SSAELSE(n) ((node *)(n->dfmask[2]))
+
+#define AVIS_NEEDCOUNT(n) (n->int_data)
 
 /*--------------------------------------------------------------------------*/
 
@@ -2294,6 +2303,15 @@ extern node *MakeAvis (node *vardecOrArg);
  ***  when used in UndoSSATransform.c
  ***    node*      ARGS              (arg chain of fundef)
  ***    node*      VARDECS           (vardec chain in block)
+ ***
+ ***  when used in SSADeadCodeRemoval.c
+ ***    int        DEPTH             (recursion depth of special functions)
+ ***    bool       REMASSIGN         (flag, if assignment can be removed)
+ ***    node*      FUNDEF            (current working fundef)
+ ***    bool       REMRESULTS        (flag to remove unused results from return)
+ ***    node*      APFUNDEF          (called functions to remove results from)
+ ***    int        RESCOUNT          (counter when traversing the results)
+ ***    int        RESNEEDED         (counter for needed results of a fun_ap)
  ***
  *** remarks:
  ***    N_info is used in many other phases without access macros :((
@@ -2696,6 +2714,15 @@ extern node *MakeInfo ();
 /* when used in UndoSSATransform.c */
 #define INFO_USSA_ARGS(n) (n->node[0])
 #define INFO_USSA_VARDECS(n) (n->node[1])
+
+/* when used in SSADeadCodeRemoval.c */
+#define INFO_SSADCR_DEPTH(n) (n->int_data)
+#define INFO_SSADCR_REMASSIGN(n) ((bool)(n->flag))
+#define INFO_SSADCR_FUNDEF(n) (n->node[0])
+#define INFO_SSADCR_REMRESULTS(n) ((bool)(n->varno))
+#define INFO_SSADCR_APFUNDEF(n) (n->node[1])
+#define INFO_SSADCR_RESCOUNT(n) (n->counter)
+#define INFO_SSADCR_RESNEEDED(n) (n->refcnt)
 
 /*--------------------------------------------------------------------------*/
 
