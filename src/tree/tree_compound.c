@@ -1,14 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2002/07/24 13:19:55  dkr
+ * macros MUST_REFCOUNT renamed
+ *
  * Revision 3.65  2002/07/15 17:25:07  dkr
  * LiftArg() moved from precompile.c to tree_compound.[ch]
  *
  * Revision 3.64  2002/07/12 09:07:16  dkr
  * CreateSel: no warning about uninitialized variable anymore :-)
- *
- * Revision 3.63  2002/07/10 21:32:22  ktr
- * *** empty log message ***
  *
  * Revision 3.62  2002/06/27 16:57:00  dkr
  * signature of CreateSel() modified
@@ -3712,7 +3712,7 @@ LiftArg (node *arg, node *fundef, types *new_type, bool do_rc, node **new_assign
             }
         } else {
             IDS_REFCNT (new_ids) = ID_REFCNT (new_arg)
-              = MUST_REFCOUNT (new_type) ? 1 : RC_INACTIVE;
+              = TYPE_MUST_REFCOUNT (new_type) ? 1 : RC_INACTIVE;
         }
     }
 
