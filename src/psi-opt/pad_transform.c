@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.17  2000/10/31 23:02:14  dkr
+ * signature of Array2Shpseg() changed
+ *
  * Revision 1.16  2000/10/24 11:52:25  dkr
  * MakeType renamed into MakeTypes
  *
@@ -777,7 +780,7 @@ APTwithop (node *arg_node, node *arg_info)
     case WO_genarray:
         DBUG_PRINT ("APT", (" genarray-loop"));
 
-        shape = Array2Shpseg (NWITHOP_SHAPE (arg_node));
+        shape = Array2Shpseg (NWITHOP_SHAPE (arg_node), NULL);
         /* constant array has dim=1
          * => number of elements is stored in shpseg[0]
          */

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2000/10/31 23:02:20  dkr
+ * signature of Array2Shpseg() changed
+ *
  * Revision 1.13  2000/10/26 12:55:27  dkr
  * DupShpSeg renamed into DupShpseg
  *
@@ -637,7 +640,7 @@ APCwithop (node *arg_node, node *arg_info)
             /* do not add type of vector, but contents of array to unsupported shapes */
             basetype = TYPES_BASETYPE (ID_TYPE (NWITH_CEXPR (INFO_APC_WITH (arg_info))));
             dim = SHPSEG_SHAPE (TYPES_SHPSEG (ARRAY_TYPE (NWITHOP_SHAPE (arg_node))), 0);
-            shape = Array2Shpseg (NWITHOP_SHAPE (arg_node));
+            shape = Array2Shpseg (NWITHOP_SHAPE (arg_node), NULL);
             type = MakeTypes (basetype, dim, shape, NULL, NULL);
             arg_info = AddUnsupported (arg_info, type);
             FreeOneTypes (type);
