@@ -1,10 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.67  1995/05/15 08:35:09  asi
- * Added DupNum, DupId, DupFloat, DupPrf, DupAp, DupCast, DupExprs, DupArray, DupBool,
- * and LIRfundef, LIRMblock, LIRassign, LIRMassign, LIRloop, LIRMloop, LIRcond.
+ * Revision 1.68  1995/05/22 10:11:39  hw
+ * added function "CompCast" to comp_tab
  *
+;; Revision 1.67  1995/05/15  08:35:09  asi
+;; Added DupNum, DupId, DupFloat, DupPrf, DupAp, DupCast, DupExprs, DupArray, DupBool,
+;; and LIRfundef, LIRMblock, LIRassign, LIRMassign, LIRloop, LIRMloop, LIRcond.
+;;
 ;; Revision 1.66  1995/05/08  15:45:38  hw
 ;; added CompBlock
 ;;
@@ -319,7 +322,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_ap, "N_ap", DummyFun, FltnAp, PrintAp, DummyFun, DummyFun, DummyFun, DummyFun,
        FreeInfoId, CFap, DummyFun, CompAp, DummyFun, DupAp, DummyFun, DummyFun, DummyFun),
   NIF (N_cast, "N_cast", DummyFun, DummyFun, PrintCast, DummyFun, DummyFun, DummyFun,
-       DummyFun, FreeInfoType, CFcast, DummyFun, DummyFun, DummyFun, DupCast, DummyFun,
+       DummyFun, FreeInfoType, CFcast, DummyFun, CompCast, DummyFun, DupCast, DummyFun,
        DummyFun, DummyFun),
   NIF (N_exprs, "N_exprs", DummyFun, FltnExprs, PrintExprs, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun, DupExprs, DummyFun,
