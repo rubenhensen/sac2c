@@ -1,6 +1,9 @@
 /*         $Id$
  *
  * $Log$
+ * Revision 2.6  1999/07/15 20:37:30  sbs
+ * DBUG_ASSERTs in CountElements inserted.
+ *
  * Revision 2.5  1999/07/14 16:11:37  bs
  * Bug fixed in CountElements.
  *
@@ -404,9 +407,17 @@ CountElements (node *genn)
     DBUG_ASSERT ((NODE_TYPE (tmpn) == N_id || NODE_TYPE (tmpn) == N_array),
                  ("generator bounds corrupted!"));
     if (NODE_TYPE (tmpn) == N_id) {
+        DBUG_ASSERT (ID_ISCONST (tmpn),
+                     "CountElements called with non-constant lower bound");
+        DBUG_ASSERT (ID_CONSTVEC (tmpn),
+                     "CountElements called with corrupted CONSTVEC on lower bound");
         dim = ID_VECLEN (tmpn);
         l = (int *)ID_CONSTVEC (tmpn);
     } else /* NODE_TYPE(tmpn) == N_array */ {
+        DBUG_ASSERT (ARRAY_ISCONST (tmpn),
+                     "CountElements called with non-constant lower bound");
+        DBUG_ASSERT (ARRAY_CONSTVEC (tmpn),
+                     "CountElements called with corrupted CONSTVEC on lower bound");
         dim = ARRAY_VECLEN (tmpn);
         l = (int *)ARRAY_CONSTVEC (tmpn);
     }
@@ -414,26 +425,50 @@ CountElements (node *genn)
     tmpn = NGEN_BOUND2 (genn);
     DBUG_ASSERT ((NODE_TYPE (tmpn) == N_id || NODE_TYPE (tmpn) == N_array),
                  ("generator bounds corrupted!"));
-    if (NODE_TYPE (tmpn) == N_id)
+    if (NODE_TYPE (tmpn) == N_id) {
+        DBUG_ASSERT (ID_ISCONST (tmpn),
+                     "CountElements called with non-constant upper bound");
+        DBUG_ASSERT (ID_CONSTVEC (tmpn),
+                     "CountElements called with corrupted CONSTVEC on upper bound");
         u = (int *)ID_CONSTVEC (tmpn);
-    else /* NODE_TYPE(tmpn) == N_array */
+    } else { /* NODE_TYPE(tmpn) == N_array */
+        DBUG_ASSERT (ARRAY_ISCONST (tmpn),
+                     "CountElements called with non-constant upper bound");
+        DBUG_ASSERT (ARRAY_CONSTVEC (tmpn),
+                     "CountElements called with corrupted CONSTVEC on upper bound");
         u = (int *)ARRAY_CONSTVEC (tmpn);
+    }
 
     tmpn = NGEN_STEP (genn);
-    if ((tmpn != NULL) && (NODE_TYPE (tmpn) == N_id))
+    if ((tmpn != NULL) && (NODE_TYPE (tmpn) == N_id)) {
+        DBUG_ASSERT (ID_ISCONST (tmpn), "CountElements called with non-constant step");
+        DBUG_ASSERT (ID_CONSTVEC (tmpn),
+                     "CountElements called with corrupted CONSTVEC on step");
         s = (int *)ID_CONSTVEC (tmpn);
-    else if ((tmpn != NULL) && (NODE_TYPE (tmpn) == N_array))
+    } else if ((tmpn != NULL) && (NODE_TYPE (tmpn) == N_array)) {
+        DBUG_ASSERT (ARRAY_ISCONST (tmpn), "CountElements called with non-constant step");
+        DBUG_ASSERT (ARRAY_CONSTVEC (tmpn),
+                     "CountElements called with corrupted CONSTVEC on step");
         s = (int *)ARRAY_CONSTVEC (tmpn);
-    else
+    } else {
         s = NULL;
+    }
 
     tmpn = NGEN_WIDTH (genn);
-    if ((tmpn != NULL) && (NODE_TYPE (tmpn) == N_id))
+    if ((tmpn != NULL) && (NODE_TYPE (tmpn) == N_id)) {
+        DBUG_ASSERT (ID_ISCONST (tmpn), "CountElements called with non-constant width");
+        DBUG_ASSERT (ID_CONSTVEC (tmpn),
+                     "CountElements called with corrupted CONSTVEC on width");
         w = (int *)ID_CONSTVEC (tmpn);
-    else if ((tmpn != NULL) && (NODE_TYPE (tmpn) == N_array))
+    } else if ((tmpn != NULL) && (NODE_TYPE (tmpn) == N_array)) {
+        DBUG_ASSERT (ARRAY_ISCONST (tmpn),
+                     "CountElements called with non-constant width");
+        DBUG_ASSERT (ARRAY_CONSTVEC (tmpn),
+                     "CountElements called with corrupted CONSTVEC on width");
         w = (int *)ARRAY_CONSTVEC (tmpn);
-    else
+    } else {
         w = NULL;
+    }
 
     elts = 1;
 
