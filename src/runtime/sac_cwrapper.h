@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.3  2002/04/30 08:38:09  dkr
- * no changes done
+ * Revision 3.4  2002/07/30 16:08:35  dkr
+ * _hidden_ renamed into SAC_hidden
  *
  * Revision 3.2  2000/12/05 14:31:28  nmw
  * refcounter handling for T_hidden added to SAC_IW_CHECKDEC_RC
@@ -13,7 +13,6 @@
  *
  * Revision 1.9  2000/08/03 14:16:53  nmw
  * handling macro for T_hidden added
- * ,
  *
  * Revision 1.8  2000/07/28 14:42:59  nmw
  * macros changed to handle T_user types
@@ -39,15 +38,19 @@
  * Revision 1.1  2000/07/05 14:01:58  nmw
  * Initial revision
  *
- * makros for compiling the SAC <-> c Interface wrapper functions
- *
  */
 
 #ifndef _sac_cwrapper_h
 #define _sac_cwrapper_h
 
+/*
+ *
+ * Makros for compiling the SAC <-> c Interface wrapper functions
+ *
+ */
+
 /* this is a workaround to avoid errors after renaming the internal type */
-#define _hidden_ void *
+typedef void *SAC_hidden;
 
 /* check for refcount >=1 , decrement refcounter */
 #define SAC_IW_CHECKDEC_RC(a, CONST_T_HIDDEN)                                            \
