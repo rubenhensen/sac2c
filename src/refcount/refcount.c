@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.26  1997/08/29 09:07:44  sbs
+ * RCprf modified!
+ * if N_prf == F_reshape  do NOT set arg_info to N_prf!
+ * Since F_reshape is compiled in exactly the same way as an assignment,
+ * it has to be refcounted in the same manner!
+ *
  * Revision 1.25  1997/05/02 09:30:51  cg
  * IsArray(): Arrays with known dimension but unknown shape are now recognized.
  *
@@ -842,6 +848,11 @@ RCloop (node *arg_node, node *arg_info)
  *  arguments     : 1) argument node
  *                  2) ignored
  *  description   : traverse the args with arg_info pointing to the N_prf!
+ *                  if N_prf is F_reshape it has to be treated in exactly
+ *                  the same way as if we had an assignment, i.e., traverse
+ *                  with unchanged arg_info!
+ *                  The reason for this situation is that it is compiled
+ *                  as if it would be a simple assignment!
  *  global vars   :
  *  internal funs :
  *  external funs :
@@ -857,7 +868,10 @@ RCprf (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("RC", ("traversing args of prf-node (%08x) %s", arg_node,
                        mdb_prf[PRF_PRF (arg_node)]));
-    PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_node);
+    if (PRF_PRF (arg_node) == F_reshape)
+        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+    else
+        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_node);
 
     DBUG_RETURN (arg_node);
 }
