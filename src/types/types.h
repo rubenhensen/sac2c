@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/12/05 21:06:43  sah
+ * extended stringset type
+ *
  * Revision 1.18  2004/12/01 14:33:07  sah
  * added support for TRAVsetPreFun TRAVsetPostFun
  *
@@ -900,7 +903,7 @@ typedef bool (*tvar_ass_handle_fun) (sig_dep *handle);
  * moved from stringset.h
  */
 
-typedef enum { STRS_saclib, STRS_extlib, STRS_objfile } strstype_t;
+typedef enum { STRS_unknown, STRS_saclib, STRS_extlib, STRS_objfile } strstype_t;
 typedef void *(*strsfoldfun_p) (const char *elem, strstype_t kind, void *rest);
 
 /*
