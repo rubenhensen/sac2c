@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2002/10/07 23:36:10  dkr
+ * some bugs with TAGGED_ARRAYS fixed
+ *
  * Revision 3.35  2002/09/11 23:18:03  dkr
  * name of GlobalObjInit() function modified
  *
@@ -542,32 +545,33 @@ ICMCompileND_DECL__MIRROR (char *nt, int sdim, int *shp)
         DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
-            fprintf (outfile, "const int SAC_ND_A_SHAPE( %s, %d) = %d;\n", nt, i, shp[i]);
+            fprintf (outfile, "const int SAC_ND_A_MIRROR_SHAPE( %s, %d) = %d;\n", nt, i,
+                     shp[i]);
             size *= shp[i];
         }
         INDENT;
-        fprintf (outfile, "const int SAC_ND_A_SIZE( %s) = %d;\n", nt, size);
+        fprintf (outfile, "const int SAC_ND_A_MIRROR_SIZE( %s) = %d;\n", nt, size);
         INDENT;
-        fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", nt, dim);
+        fprintf (outfile, "const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", nt, dim);
         break;
 
     case C_akd:
         DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
-            fprintf (outfile, "int SAC_ND_A_SHAPE( %s, %d);\n", nt, i);
+            fprintf (outfile, "int SAC_ND_A_MIRROR_SHAPE( %s, %d);\n", nt, i);
         }
         INDENT;
-        fprintf (outfile, "int SAC_ND_A_SIZE( %s);\n", nt);
+        fprintf (outfile, "int SAC_ND_A_MIRROR_SIZE( %s);\n", nt);
         INDENT;
-        fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", nt, dim);
+        fprintf (outfile, "const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", nt, dim);
         break;
 
     case C_aud:
         INDENT;
-        fprintf (outfile, "int SAC_ND_A_SIZE( %s);\n", nt);
+        fprintf (outfile, "int SAC_ND_A_MIRROR_SIZE( %s);\n", nt);
         INDENT;
-        fprintf (outfile, "int SAC_ND_A_DIM( %s);\n", nt);
+        fprintf (outfile, "int SAC_ND_A_MIRROR_DIM( %s);\n", nt);
         break;
 
     default:
@@ -615,13 +619,14 @@ ICMCompileND_DECL__MIRROR_PARAM (char *nt, int sdim, int *shp)
         DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
-            fprintf (outfile, "const int SAC_ND_A_SHAPE( %s, %d) = %d;\n", nt, i, shp[i]);
+            fprintf (outfile, "const int SAC_ND_A_MIRROR_SHAPE( %s, %d) = %d;\n", nt, i,
+                     shp[i]);
             size *= shp[i];
         }
         INDENT;
-        fprintf (outfile, "const int SAC_ND_A_SIZE( %s) = %d;\n", nt, size);
+        fprintf (outfile, "const int SAC_ND_A_MIRROR_SIZE( %s) = %d;\n", nt, size);
         INDENT;
-        fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", nt, dim);
+        fprintf (outfile, "const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", nt, dim);
         break;
 
     case C_akd:
@@ -629,21 +634,30 @@ ICMCompileND_DECL__MIRROR_PARAM (char *nt, int sdim, int *shp)
         for (i = 0; i < dim; i++) {
             INDENT;
             fprintf (outfile,
-                     "int SAC_ND_A_SHAPE( %s, %d) "
+                     "int SAC_ND_A_MIRROR_SHAPE( %s, %d) "
                      "= SAC_ND_A_DESC_SHAPE( %s, %d);\n",
                      nt, i, nt, i);
         }
         INDENT;
-        fprintf (outfile, "int SAC_ND_A_SIZE( %s) = SAC_ND_A_DESC_SIZE( %s);\n", nt, nt);
+        fprintf (outfile,
+                 "int SAC_ND_A_MIRROR_SIZE( %s)"
+                 " = SAC_ND_A_DESC_SIZE( %s);\n",
+                 nt, nt);
         INDENT;
-        fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", nt, dim);
+        fprintf (outfile, "const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", nt, dim);
         break;
 
     case C_aud:
         INDENT;
-        fprintf (outfile, "int SAC_ND_A_SIZE( %s) = SAC_ND_A_DESC_SIZE( %s);\n", nt, nt);
+        fprintf (outfile,
+                 "int SAC_ND_A_MIRROR_SIZE( %s)"
+                 " = SAC_ND_A_DESC_SIZE( %s);\n",
+                 nt, nt);
         INDENT;
-        fprintf (outfile, "int SAC_ND_A_DIM( %s) = SAC_ND_A_DESC_DIM( %s);\n", nt, nt);
+        fprintf (outfile,
+                 "int SAC_ND_A_MIRROR_DIM( %s)"
+                 " = SAC_ND_A_DESC_DIM( %s);\n",
+                 nt, nt);
         break;
 
     default:
@@ -692,18 +706,18 @@ ICMCompileND_DECL__MIRROR_EXTERN (char *nt, int sdim)
             INDENT;
             fprintf (outfile,
                      "extern "
-                     "const int SAC_ND_A_SHAPE( %s, %d);\n",
+                     "const int SAC_ND_A_MIRROR_SHAPE( %s, %d);\n",
                      nt, i);
         }
         INDENT;
         fprintf (outfile,
                  "extern "
-                 "const int SAC_ND_A_SIZE( %s);\n",
+                 "const int SAC_ND_A_MIRROR_SIZE( %s);\n",
                  nt);
         INDENT;
         fprintf (outfile,
                  "extern "
-                 "const int SAC_ND_A_DIM( %s);\n",
+                 "const int SAC_ND_A_MIRROR_DIM( %s);\n",
                  nt);
         break;
 
@@ -713,18 +727,18 @@ ICMCompileND_DECL__MIRROR_EXTERN (char *nt, int sdim)
             INDENT;
             fprintf (outfile,
                      "extern "
-                     "int SAC_ND_A_SHAPE( %s, %d);\n",
+                     "int SAC_ND_A_MIRROR_SHAPE( %s, %d);\n",
                      nt, i);
         }
         INDENT;
         fprintf (outfile,
                  "extern "
-                 "int SAC_ND_A_SIZE( %s);\n",
+                 "int SAC_ND_A_MIRROR_SIZE( %s);\n",
                  nt);
         INDENT;
         fprintf (outfile,
                  "extern "
-                 "const int SAC_ND_A_DIM( %s);\n",
+                 "const int SAC_ND_A_MIRROR_DIM( %s);\n",
                  nt);
         break;
 
@@ -732,12 +746,12 @@ ICMCompileND_DECL__MIRROR_EXTERN (char *nt, int sdim)
         INDENT;
         fprintf (outfile,
                  "extern "
-                 "int SAC_ND_A_SIZE( %s);\n",
+                 "int SAC_ND_A_MIRROR_SIZE( %s);\n",
                  nt);
         INDENT;
         fprintf (outfile,
                  "extern "
-                 "int SAC_ND_A_DIM( %s);\n",
+                 "int SAC_ND_A_MIRROR_DIM( %s);\n",
                  nt);
         break;
 
@@ -839,19 +853,37 @@ ICMCompileND_SET__SHAPE (char *to_nt, int dim, char **shp_any)
     switch (to_sc) {
     case C_aud:
         /*
-         * ND_A_DESC_DIM, ND_A_DIM have already been set by ND_ALLOC__DESC!
+         * ND_A_DESC_DIM, ND_A_MIRROR_DIM have already been set by ND_ALLOC__DESC!
          */
         INDENT;
 #if 0
-      fprintf( outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_DIM( %s) = %d;\n",
-                        to_nt, to_nt, dim);
+      fprintf( outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_MIRROR_DIM( %s)"
+                        " = %d;\n", to_nt, to_nt, dim);
 #else
         fprintf (outfile,
                  "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == %d),"
                  " (\"Assignment with incompatible types found!\"));\n",
                  to_nt, dim);
 #endif
-        /* here is no break missing! */
+        INDENT;
+        fprintf (outfile, "{ int SAC_size = 1;\n");
+        indent++;
+        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
+        for (i = 0; i < dim; i++) {
+            INDENT;
+            fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_nt, i);
+            ReadScalar (shp_any[i], NULL, 0);
+            fprintf (outfile, ";\n");
+        }
+        INDENT;
+        fprintf (outfile,
+                 "SAC_ND_A_DESC_SIZE( %s)"
+                 " = SAC_ND_A_MIRROR_SIZE( %s) = SAC_size;\n",
+                 to_nt, to_nt);
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
+        break;
 
     case C_akd:
         INDENT;
@@ -860,17 +892,16 @@ ICMCompileND_SET__SHAPE (char *to_nt, int dim, char **shp_any)
         DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
-            fprintf (outfile,
-                     "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d) ="
-                     " SAC_ND_A_SHAPE( %s, %d) = ",
-                     to_nt, i, to_nt, i);
+            fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d)\n", to_nt, i);
+            INDENT;
+            fprintf (outfile, "          = SAC_ND_A_MIRROR_SHAPE( %s, %d) = ", to_nt, i);
             ReadScalar (shp_any[i], NULL, 0);
             fprintf (outfile, ";\n");
         }
         INDENT;
         fprintf (outfile,
-                 "SAC_ND_A_DESC_SIZE( %s) ="
-                 " SAC_ND_A_SIZE( %s) = SAC_size;\n",
+                 "SAC_ND_A_DESC_SIZE( %s)"
+                 " = SAC_ND_A_MIRROR_SIZE( %s) = SAC_size;\n",
                  to_nt, to_nt);
         indent--;
         INDENT;
@@ -971,19 +1002,28 @@ ICMCompileND_REFRESH_MIRROR (char *nt, int sdim)
         for (i = 0; i < dim; i++) {
             INDENT;
             fprintf (outfile,
-                     "SAC_ND_A_SHAPE( %s, %d) "
+                     "SAC_ND_A_MIRROR_SHAPE( %s, %d) "
                      "= SAC_ND_A_DESC_SHAPE( %s, %d);\n",
                      nt, i, nt, i);
         }
         INDENT;
-        fprintf (outfile, "SAC_ND_A_SIZE( %s) = SAC_ND_A_DESC_SIZE( %s);\n", nt, nt);
+        fprintf (outfile,
+                 "SAC_ND_A_MIRROR_SIZE( %s)"
+                 " = SAC_ND_A_DESC_SIZE( %s);\n",
+                 nt, nt);
         break;
 
     case C_aud:
         INDENT;
-        fprintf (outfile, "SAC_ND_A_SIZE( %s) = SAC_ND_A_DESC_SIZE( %s);\n", nt, nt);
+        fprintf (outfile,
+                 "SAC_ND_A_MIRROR_SIZE( %s)"
+                 " = SAC_ND_A_DESC_SIZE( %s);\n",
+                 nt, nt);
         INDENT;
-        fprintf (outfile, "SAC_ND_A_DIM( %s) = SAC_ND_A_DESC_DIM( %s);\n", nt, nt);
+        fprintf (outfile,
+                 "SAC_ND_A_MIRROR_DIM( %s)"
+                 " = SAC_ND_A_DESC_DIM( %s);\n",
+                 nt, nt);
         break;
 
     default:
@@ -1480,7 +1520,7 @@ ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
         INDENT;
 #if 0
       fprintf( outfile, "SAC_ND_A_DESC_DIM( %s)"
-                        " = SAC_ND_A_DIM( %s) = SAC_ND_A_DIM( %s);\n",
+                        " = SAC_ND_A_MIRROR_DIM( %s) = SAC_ND_A_DIM( %s);\n",
                         to_nt, to_nt, from_nt);
 #else
         fprintf (outfile,
@@ -1494,7 +1534,7 @@ ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
         INDENT;
         fprintf (outfile,
                  "SAC_ND_A_DESC_SIZE( %s)"
-                 " = SAC_ND_A_SIZE( %s) = SAC_ND_A_SIZE( %s);\n",
+                 " = SAC_ND_A_MIRROR_SIZE( %s) = SAC_ND_A_SIZE( %s);\n",
                  to_nt, to_nt, from_nt);
         break;
 
@@ -1544,7 +1584,8 @@ ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
         for (i = 0; i < to_dim; i++) {
             INDENT;
             fprintf (outfile,
-                     "SAC_ND_A_DESC_SHAPE( %s, %d) = SAC_ND_A_SHAPE( %s, %d)"
+                     "SAC_ND_A_DESC_SHAPE( %s, %d)"
+                     " = SAC_ND_A_MIRROR_SHAPE( %s, %d)"
                      " = SAC_ND_A_SHAPE( %s, %d);\n",
                      to_nt, i, to_nt, i, from_nt, i);
         }
@@ -1731,11 +1772,12 @@ ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char *
             }
 
             /*
-             * ND_A_DESC_DIM, ND_A_DIM have already been set by ND_ALLOC__DESC!
+             * ND_A_DESC_DIM, ND_A_MIRROR_DIM have already been set by
+             * ND_ALLOC__DESC!
              */
             INDENT;
 #if 0
-        fprintf( outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_DIM( %s)"
+        fprintf( outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_MIRROR_DIM( %s)"
                           " = SAC_ND_A_DIM( %s) + 1;\n",
                           to_nt, to_nt, vala_any[0]);
 #else
@@ -1749,10 +1791,8 @@ ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char *
             fprintf (outfile, "{ int SAC_i, SAC_size = 1;\n");
             indent++;
             INDENT;
-            fprintf (outfile,
-                     "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, 0)"
-                     " = SAC_ND_A_SHAPE( %s, 0) = %d;\n",
-                     to_nt, to_nt, val_size);
+            fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, 0) = %d;\n", to_nt,
+                     val_size);
             INDENT;
             fprintf (outfile,
                      "for (SAC_i = 1; SAC_i < SAC_ND_A_DIM( %s); SAC_i++)"
@@ -1760,18 +1800,18 @@ ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char *
                      to_nt);
             indent++;
             INDENT;
-            fprintf (outfile,
-                     "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, SAC_i)"
-                     " = SAC_ND_A_SHAPE( %s, SAC_i)"
-                     " = SAC_ND_A_SHAPE( %s, SAC_i - 1);\n",
-                     to_nt, to_nt, vala_any[0]);
+            fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, SAC_i)\n", to_nt);
+            INDENT;
+            fprintf (outfile, "          = SAC_ND_A_SHAPE( %s, SAC_i - 1);\n",
+                     vala_any[0]);
             indent--;
             INDENT;
             fprintf (outfile, "}\n");
             INDENT;
             fprintf (outfile,
                      "SAC_ND_A_DESC_SIZE( %s)"
-                     " = SAC_ND_A_SIZE( %s) = SAC_size;\n",
+                     " = SAC_ND_A_MIRROR_SIZE( %s)"
+                     " = SAC_size;\n",
                      to_nt, to_nt);
             indent--;
             INDENT;
@@ -1800,23 +1840,25 @@ ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size, char *
             fprintf (outfile, "{ int SAC_size = 1;\n");
             indent++;
             INDENT;
-            fprintf (outfile,
-                     "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, 0)"
-                     " = SAC_ND_A_SHAPE( %s, 0) = %d;\n",
-                     to_nt, to_nt, val_size);
+            fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, 0)\n", to_nt);
+            INDENT;
+            fprintf (outfile, "          = SAC_ND_A_MIRROR_SHAPE( %s, 0) = %d;\n", to_nt,
+                     val_size);
             DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
             for (i = 1; i < to_dim; i++) {
                 INDENT;
-                fprintf (outfile,
-                         "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d)"
-                         " = SAC_ND_A_SHAPE( %s, %d)"
-                         " = SAC_ND_A_SHAPE( %s, %d);\n",
-                         to_nt, i, to_nt, i, vala_any[0], i - 1);
+                fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d)\n", to_nt, i);
+                INDENT;
+                fprintf (outfile, "          = SAC_ND_A_MIRROR_SHAPE( %s, %d)\n", to_nt,
+                         i);
+                INDENT;
+                fprintf (outfile, "          = SAC_ND_A_SHAPE( %s, %d);\n", vala_any[0],
+                         i - 1);
             }
             INDENT;
             fprintf (outfile,
                      "SAC_ND_A_DESC_SIZE( %s)"
-                     " = SAC_ND_A_SIZE( %s) = SAC_size;\n",
+                     " = SAC_ND_A_MIRROR_SIZE( %s) = SAC_size;\n",
                      to_nt, to_nt);
             indent--;
             INDENT;
@@ -2088,26 +2130,17 @@ PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
     switch (to_sc) {
     case C_aud:
         /*
-         * ND_A_DESC_DIM, ND_A_DIM have already been set by ND_ALLOC__DESC!
+         * ND_A_DESC_DIM, ND_A_MIRROR_DIM have already been set by ND_ALLOC__DESC!
          */
         INDENT;
 #if 0
-      fprintf( outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_DIM( %s) = ",
+      fprintf( outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_MIRROR_DIM( %s) = ",
                         to_nt, to_nt);
-      if (shp_size < 0) {
-        shp_size_fun( shp);
-      }
-      else {
-        fprintf( outfile, "%d", shp_size);
-      }
+      GetAttr( shp, shp_size, shp_size_fun);
       fprintf( outfile, ";\n");
 #else
         fprintf (outfile, "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == ", to_nt);
-        if (shp_size < 0) {
-            shp_size_fun (shp);
-        } else {
-            fprintf (outfile, "%d", shp_size);
-        }
+        GetAttr (shp, shp_size, shp_size_fun);
         fprintf (outfile, "),"
                           " (\"Assignment with incompatible types found!\"));\n");
 #endif
@@ -2121,10 +2154,7 @@ PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
                  to_nt);
         indent++;
         INDENT;
-        fprintf (outfile,
-                 "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, SAC_i)"
-                 " = SAC_ND_A_SHAPE( %s, SAC_i) = ",
-                 to_nt, to_nt);
+        fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, SAC_i) = ", to_nt);
         shp_read_fun (shp, "SAC_i", -1);
         fprintf (outfile, ";\n");
         indent--;
@@ -2133,7 +2163,7 @@ PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
         INDENT;
         fprintf (outfile,
                  "SAC_ND_A_DESC_SIZE( %s)"
-                 " = SAC_ND_A_SIZE( %s) = SAC_size;\n",
+                 " = SAC_ND_A_MIRROR_SIZE( %s) = SAC_size;\n",
                  to_nt, to_nt);
         indent--;
         INDENT;
@@ -2147,17 +2177,16 @@ PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
         DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
         for (i = 0; i < to_dim; i++) {
             INDENT;
-            fprintf (outfile,
-                     "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d)"
-                     " = SAC_ND_A_SHAPE( %s, %d) = ",
-                     to_nt, i, to_nt, i);
+            fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d)\n", to_nt, i);
+            INDENT;
+            fprintf (outfile, "          = SAC_ND_A_MIRROR_SHAPE( %s, %d) = ", to_nt, i);
             shp_read_fun (shp, NULL, i);
             fprintf (outfile, ";\n");
         }
         INDENT;
         fprintf (outfile,
                  "SAC_ND_A_DESC_SIZE( %s)"
-                 " = SAC_ND_A_SIZE( %s) = SAC_size;\n",
+                 " = SAC_ND_A_MIRROR_SIZE( %s) = SAC_size;\n",
                  to_nt, to_nt);
         indent--;
         INDENT;
@@ -2197,11 +2226,7 @@ PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
     case C_akd:
         INDENT;
         fprintf (outfile, "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == ", to_nt);
-        if (shp_size < 0) {
-            shp_size_fun (shp);
-        } else {
-            fprintf (outfile, "%d", shp_size);
-        }
+        GetAttr (shp, shp_size, shp_size_fun);
         fprintf (outfile, "),"
                           " (\"Assignment with incompatible types found!\"));\n");
         break;
@@ -2300,7 +2325,7 @@ ICMCompileND_PRF_RESHAPE__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
             INDENT;
             fprintf (outfile,
                      "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == 0),"
-                     " (\"1st argument of F_reshape has (dim != 1)!\"))\n",
+                     " (\"1st argument of F_reshape has (dim != 1)!\"));\n",
                      shpa_any[i]);
         }
     }
@@ -2351,7 +2376,7 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_nt, int to_sdim, char *from_nt, int fro
         INDENT;
         fprintf (outfile,
                  "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == %d),"
-                 " (\"Result of F_sel has (dim != 0)!\"))\n",
+                 " (\"Result of F_sel has (dim != 0)!\"));\n",
                  from_nt, idx_size);
         ICMCompileND_SET__SHAPE (to_nt, 0, NULL);
         break;
@@ -2422,7 +2447,7 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_nt, int to_sdim, char *from_nt, int fr
         INDENT;
         fprintf (outfile,
                  "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == %d),"
-                 " (\"Result of F_sel has (dim != 0)!\"))\n",
+                 " (\"Result of F_sel has (dim != 0)!\"));\n",
                  from_nt, idx_size);
         ICMCompileND_SET__SHAPE (to_nt, 0, NULL);
         break;
@@ -2544,8 +2569,8 @@ ICMCompileND_PRF_SEL__DATA_id (char *to_nt, int to_sdim, char *from_nt, int from
 
     INDENT;
     fprintf (outfile,
-             "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == 0),"
-             " (\"1st argument of F_sel has (dim != 1)!\"))\n",
+             "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == 1),"
+             " (\"1st argument of F_sel has (dim != 1)!\"));\n",
              idx_nt);
     INDENT;
     fprintf (outfile,
@@ -2604,7 +2629,7 @@ ICMCompileND_PRF_SEL__DATA_arr (char *to_nt, int to_sdim, char *from_nt, int fro
             INDENT;
             fprintf (outfile,
                      "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == 0),"
-                     " (\"1st argument of F_sel has (dim != 1)!\"))\n",
+                     " (\"1st argument of F_sel has (dim != 1)!\"));\n",
                      idxa_any[i]);
         }
     }
@@ -2895,7 +2920,7 @@ ICMCompileND_PRF_MODARRAY__DATA_arr (char *to_nt, int to_sdim, char *from_nt,
             INDENT;
             fprintf (outfile,
                      "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == 0),"
-                     " (\"2nd argument of F_modarray has (dim != 1)!\"))\n",
+                     " (\"2nd argument of F_modarray has (dim != 1)!\"));\n",
                      idxa_any[i]);
         }
     }
