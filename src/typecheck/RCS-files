@@ -6,3 +6,5 @@ prim_fun_ft.mac
 prim_fun_tt.mac
 typecheck.c
 typecheck.h
+typecheck_WL.c
+typecheck_WL.h
