@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/11/10 14:57:11  cg
+ * Revision 1.16  1995/12/01 16:13:21  cg
+ * extern declaration of global variable 'silent' removed
+ * no longer required for optimize.h
+ *
+ * Revision 1.15  1995/11/10  14:57:11  cg
  * Error.h entirely revised !!!
  * Lots of phantastic new macros for error handling and compile time output.
  * Please, have a look at this first when programming compile time output.
@@ -561,7 +565,5 @@ extern int NumberOfDigits (int);
 extern void Error (char *string, int status);
 
 extern void DoPrint (char *format, ...);
-
-extern int silent; /* only needed for asi-compatibility */
 
 #endif /* _sac_Error_h */
