@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/05/05 13:51:35  sbs
+ * declared charpos and linebuf_ptr external and changed yyerror so that MUCH better
+ * error reports are made
+ *
  * Revision 2.6  1999/04/19 13:08:21  jhs
  * Renamed TRUE and FALSE token to TRUETOKEN and FALSETOKEN to
  * avoid conflicts with TRUE and FALSE macros.
@@ -286,7 +290,9 @@
 #include "resource.h"
 
 
+extern int charpos;
 extern int linenum;
+extern char *linebuf_ptr;
 extern char yytext[];
 
 int indent, i;
@@ -2713,7 +2719,23 @@ resources: ID COLON LET string resources
 
 int yyerror(char *errname)
 {
-  ABORT(linenum,("%s at '%s`", errname, yytext));
+  int offset=0;
+  int size_of_output;
+  
+  ERROR( linenum, ("%s at pos %d '%s`", errname, charpos, yytext));
+  size_of_output = MAX_LINE_LENGTH -
+                   (((verbose_level>1)?2:0) + strlen(filename)
+                    + NumberOfDigits(linenum) + 9 );
+  if( strlen( linebuf_ptr) > size_of_output) {
+    if( charpos >= size_of_output-15) {
+      offset = charpos-size_of_output+15;
+      strncpy( linebuf_ptr +offset, "... ", 4);
+    }
+    strcpy( linebuf_ptr +offset+ size_of_output-4, " ...");
+  }
+  CONT_ERROR(( "%s", linebuf_ptr + offset));
+  CONT_ERROR(( "%*s", charpos-offset, "^"));
+  ABORT_ON_ERROR;
 }
 
 
