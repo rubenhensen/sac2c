@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.40  1999/01/15 15:14:32  cg
+ * added opt_tile, modified value constants for intrinsics.
+ *
  * Revision 1.39  1999/01/14 14:25:54  cg
  * added variable opt_tile to enable/disable tiling.
  *
@@ -265,7 +268,7 @@ extern int intrinsics;
 #define INTRINSIC_SUB 0x0002
 #define INTRINSIC_MUL 0x0004
 #define INTRINSIC_DIV 0x0008
-#define INTRINSIC_PSI 0x0010
+#define INTRINSIC_TO 0x0010
 #define INTRINSIC_TAKE 0x0020
 #define INTRINSIC_DROP 0x0040
 #define INTRINSIC_ROT 0x0080
