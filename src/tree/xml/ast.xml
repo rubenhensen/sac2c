@@ -1,10 +1,13 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.36  2004/11/02 10:38:59  sah
+  fixed a typoe
+
   Revision 1.35  2004/11/01 21:54:54  sah
   added new type DownLink for links that point
-  downwards in tehhe ast.
-  Fixed Icm attribute to SHareharedString as the name
+  downwards in the ast.
+  Fixed Icm attribute to SharedString as the name
   seems to be used in sharing
 
   Revision 1.34  2004/10/28 17:26:09  sah
@@ -252,7 +255,7 @@
     <node name="Modul">
       <description>node for a module declaration</description>
       <sons>
-        <son name="Imports" mandatory="yes">
+        <son name="Imports" mandatory="no">
           <description>symbols imported and exported by the module</description>
           <target>
             <set name="Interface" />
