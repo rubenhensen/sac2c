@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/07/28 13:06:57  jhs
+ * CountOccurences gets fundef now.
+ *
  * Revision 2.7  1999/07/20 16:58:52  jhs
  * Added comments.
  *
@@ -177,7 +180,7 @@ MeltBlocksOnCopies (node *first_block, node *second_block)
 /******************************************************************************
  *
  * function:
- *   node *MeltSPMDs (node *first_spmd, node *second_spmd)
+ *   node *MeltSPMDs (node *first_spmd, node *second_spmd, node* fundef)
  *
  * description:
  *   This function takes two N_spmd's and melts them to a new one.
@@ -191,7 +194,6 @@ MeltBlocksOnCopies (node *first_block, node *second_block)
  * remark:
  *   - A version without sideeffects is also available
  *     (see MeltSPMDsOnCopies below).
- *   - fundef is only needed for debugging.
  *
  ******************************************************************************/
 node *
@@ -209,6 +211,7 @@ MeltSPMDs (node *first_spmd, node *second_spmd, node *fundef)
 
     DBUG_ASSERT (NODE_TYPE (first_spmd) == N_spmd, "First argument not a N_spmd!");
     DBUG_ASSERT (NODE_TYPE (second_spmd) == N_spmd, "Second argument not a N_smpd!");
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "fundef argument not a N_fundef!");
 
     /* both static should be the same, otherwise they cannot follow each other on
      * the same level.
@@ -220,7 +223,7 @@ MeltSPMDs (node *first_spmd, node *second_spmd, node *fundef)
      *  Count which variables are consumned how often in second block and ...
      */
     DBUG_PRINT ("SPMD", ("Entering CountOccurences"));
-    counters = CountOccurences (SPMD_REGION (second_spmd), SPMD_OUT (first_spmd));
+    counters = CountOccurences (SPMD_REGION (second_spmd), SPMD_OUT (first_spmd), fundef);
     DBUG_PRINT ("SPMD", ("Leaving CountOccurences"));
 
     /*

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/07/28 13:07:45  jhs
+ * CountOccurences gets fundef now.
+ *
  * Revision 2.2  1999/06/25 15:36:33  jhs
  * Checked these in just to provide compileabilty.
  *
@@ -181,7 +184,7 @@ DestroyCM (int *mask)
 
 /******************************************************************************
  *
- * int * CountOccurences (node *block, DFMmask_t which)
+ * int *CountOccurences (node *block, DFMmask_t which, node* fundef)
  *
  * description:
  *   counts how often certain variables are used in a block (N_block) until
@@ -192,11 +195,11 @@ DestroyCM (int *mask)
  *   so allowed until now are blocks with:
  *   - the block contains only one withloop, but nothing else
  *
- *   other constructions will follow
+ *   other constructions will follow ####
  *
  ******************************************************************************/
 int *
-CountOccurences (node *block, DFMmask_t which)
+CountOccurences (node *block, DFMmask_t which, node *fundef)
 {
     int *result;
     int occurs;
@@ -207,8 +210,10 @@ CountOccurences (node *block, DFMmask_t which)
 
     DBUG_ENTER ("CountOccurences");
 
-    /* check: argument block is really a block? */
+    /* check argument types */
     DBUG_ASSERT ((NODE_TYPE (block) == N_block), ("argument block-node of wrong type"));
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 ("argument fundef-node of wrong type"));
 
     /* check: block contains only one withloop and nothing else? */
     DBUG_ASSERT ((NODE_TYPE (BLOCK_INSTR (block)) == N_assign),
@@ -223,8 +228,8 @@ CountOccurences (node *block, DFMmask_t which)
     DBUG_ASSERT ((ASSIGN_NEXT (assign) == NULL),
                  ("block does not contain only one with-loop and nothing else"));
 
-    /* instead of 99 the varno of function aroud has to be set!!!! #### */
-    result = CreateCM (99);
+    result = CreateCM (FUNDEF_VARNO (fundef));
+    DBUG_PRINT ("SPMDT", ("fundef_varno %i", FUNDEF_VARNO (fundef)));
 
     /* for each which that occurs in the with-loop return 1, others 0 */
     vardec = DFMGetMaskEntryDeclSet (which);

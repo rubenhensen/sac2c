@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/07/28 13:07:45  jhs
+ * CountOccurences gets fundef now.
+ *
  * Revision 2.2  1999/06/25 15:36:33  jhs
  * Checked these in just to provide compileabilty.
  *
@@ -17,7 +20,7 @@
 
 extern void DestroyCM (int *mask);
 
-extern int *CountOccurences (node *block, DFMmask_t which);
+extern int *CountOccurences (node *block, DFMmask_t which, node *fundef);
 
 /******************************************************************************
  ******************************************************************************
