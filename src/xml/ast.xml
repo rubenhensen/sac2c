@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.33  2004/11/24 00:11:35  sah
+  added FUNDEF_ISWRAPPERFUN
+
   Revision 1.32  2004/11/23 23:46:53  mwe
   AssociativeLaw added
 
@@ -1315,6 +1318,7 @@
         <flag name="HasDotArgs" />
         <flag name="HasDotRets" />
         <flag name="IsSpmdfun" />
+	<flag name="IsWrapperfun" />
       </flags>
     </node>
     <node name="Arg">
