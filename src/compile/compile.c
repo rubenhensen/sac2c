@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.194  1998/12/03 09:39:07  sbs
+ * Prf F_ftoi and friends eliminated
+ *
  * Revision 1.193  1998/11/08 15:10:42  dkr
  * changed representation of empty assignment blocks in with-loops:
  *  - NCODE_CBLOCK contains always an N_block node
@@ -3320,7 +3323,7 @@ COMPPrf (node *arg_node, node *arg_info)
       *tmp_rc, *exprs;
     node *old_arg_node;
     simpletype res_stype = LET_BASETYPE (INFO_COMP_LASTLET (arg_info));
-    int dim, is_SxA = 0, n_elems = 0, is_drop = 0, array_is_const = 0, convert = 0;
+    int dim, is_SxA = 0, n_elems = 0, is_drop = 0, array_is_const = 0;
     simpletype s_type;
 
     DBUG_ENTER ("COMPPrf");
@@ -4092,107 +4095,6 @@ COMPPrf (node *arg_node, node *arg_info)
                 FREE (old_arg_node);
             }
             break;
-        case F_itof_A:
-            convert = 2;
-            /* here is NO break missing !! */
-        case F_itod_A:
-            convert = 3;
-            /* here is NO break missing !! */
-        case F_ftod_A:
-            convert = 2;
-            /* here is NO break missing !! */
-        case F_dtoi_A:
-            convert = 4;
-            /* here is NO break missing !! */
-        case F_dtof_A:
-            convert = 5;
-            /* here is NO break missing !! */
-        case F_ftoi_A: {
-            int length;
-            node *res_rc, *n_length;
-
-            arg1 = arg_node->node[0]->node[0];
-            MAKENODE_ID_REUSE_IDS (res, INFO_COMP_LASTIDS (arg_info));
-            /* compute basic type */
-            GET_BASIC_SIMPLETYPE (s_type, VARDEC_TYPE (
-                                            IDS_VARDEC (INFO_COMP_LASTIDS (arg_info))));
-            MAKENODE_ID (type_id_node, type_string[s_type]);
-            MAKENODE_NUM (res_rc, IDS_REFCNT (INFO_COMP_LASTIDS (arg_info)));
-            BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), "ND_ALLOC_ARRAY", type_id_node,
-                           res);
-            MAKE_NEXT_ICM_ARG (icm_arg, res_rc);
-            SET_VARS_FOR_MORE_ICMS;
-
-            if (N_id == arg1->nodetype) {
-                switch (convert) {
-                case 0:
-                    CREATE_2_ARY_ICM (next_assign, "ND_F2I_A", arg1, res);
-                    break;
-                case 1:
-                    CREATE_2_ARY_ICM (next_assign, "ND_F2D_A", arg1, res);
-                    break;
-                case 2:
-                    CREATE_2_ARY_ICM (next_assign, "ND_I2F_A", arg1, res);
-                    break;
-                case 3:
-                    CREATE_2_ARY_ICM (next_assign, "ND_I2D_A", arg1, res);
-                    break;
-                case 4:
-                    CREATE_2_ARY_ICM (next_assign, "ND_D2I_A", arg1, res);
-                    break;
-                case 5:
-                    CREATE_2_ARY_ICM (next_assign, "ND_D2F_A", arg1, res);
-                    break;
-                default:
-                    DBUG_ASSERT (0, "wrong tag (convert)");
-                    break;
-                }
-                APPEND_ASSIGNS (first_assign, next_assign);
-
-                MAKENODE_NUM (n_node, 1);
-                DEC_OR_FREE_RC_ND (arg1, n_node);
-                INSERT_ASSIGN;
-            } else {
-                DBUG_ASSERT (N_array == arg1->nodetype, "wrong node != N_array");
-                DBUG_ASSERT (NULL != ARRAY_TYPE (arg1), " info.types is NULL");
-                COUNT_ELEMS (length, arg1->node[0]);
-                MAKENODE_NUM (n_node, length);
-                if (1 < TYPES_DIM (ARRAY_TYPE (arg1))) {
-                    node *dummy;
-                    /* it is an array of arrays, so we have to use
-                     * ND_CREATE_CONST_ARRAY_A
-                     */
-                    DBUG_ASSERT (N_id == NODE_TYPE (ARRAY_AELEMS (ARRAY_AELEMS (arg1))),
-                                 "wrong node != N_id");
-                    GET_LENGTH (length, VARDEC_TYPE (ID_VARDEC (
-                                          ARRAY_AELEMS (ARRAY_AELEMS (arg1)))));
-                    MAKENODE_NUM (n_length, length);
-
-                    CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_A", res,
-                                      n_length, n_node);
-                    icm_arg->node[1] = arg1->node[0];
-                    APPEND_ASSIGNS (first_assign, next_assign);
-
-                    /* now decrement refcount of the arrays */
-                    dummy = arg1->node[0];
-                    MAKENODE_NUM (n_node, 1);
-                    while (NULL != dummy) {
-                        DBUG_ASSERT (N_id == dummy->node[0]->nodetype,
-                                     "wrong nodetype != N_id");
-                        DEC_OR_FREE_RC_ND (dummy->node[0], n_node);
-                        dummy = dummy->node[1];
-                    }
-                } else {
-                    /* it is an array out of scalar values */
-                    CREATE_2_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_S", res,
-                                      n_node);
-                    icm_arg->node[1] = arg1->node[0];
-                    APPEND_ASSIGNS (first_assign, next_assign);
-                }
-                INSERT_ASSIGN;
-            }
-            break;
-        }
         case F_toi_A:
         case F_tod_A:
         case F_tof_A: {
@@ -4205,21 +4107,8 @@ COMPPrf (node *arg_node, node *arg_info)
 #endif
             break;
         }
-    } else { /* (arg_node->info.prf > F_neq) */
+    } else { /* Here, we have (PRF_PRF(arg_node) <= F_neq) */
         switch (PRF_PRF (arg_node)) {
-        case F_ftoi:
-        case F_ftod:
-        case F_itof:
-        case F_itod:
-        case F_dtof:
-        case F_dtoi: {
-            node *dummy = arg_node;
-            arg_node = arg_node->node[0]->node[0];
-            FREE (dummy->node[0]); /* free N_exprs node */
-            FREE (dummy);          /* free N_prf node */
-            break;
-        }
-
         case F_toi:
         case F_tof:
         case F_tod:
