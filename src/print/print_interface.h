@@ -4,11 +4,7 @@
 #include "tree.h"
 #include "globals.h"
 
-/*extern node *PrintFundef(node *arg_node, node *arg_info);
-extern node *PrintTypedef(node *arg_node, node *arg_info);
-extern node *PrintObjdef(node *arg_node, node *arg_info);
-extern void PrintFunctionHeader(node *arg_node, node *arg_info);
-*/
+extern node *PIHfundef (node *arg_node, node *arg_info);
 
 extern node *PrintInterface (node *syntax_tree);
 
