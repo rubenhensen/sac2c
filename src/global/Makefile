@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.17  2000/01/23 15:01:10  dkr
+# make deps done
+#
 # Revision 2.16  2000/01/21 16:46:12  dkr
 # tree related stuff moved from directory 'global' into 'tree'
 #
@@ -189,17 +192,18 @@ main.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 main.o: /usr/include/string.h /usr/include/stdlib.h globals.h internal_lib.h
 main.o: ../tree/free.h ../../inc/dbug.h my_debug.h /usr/include/malloc.h
 main.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-main.o: /usr/include/sys/int_types.h usage.h ../flatten/flatten.h
-main.o: ../print/print.h ../typecheck/typecheck.h ../optimize/optimize.h
-main.o: ../modules/filemgr.h ../modules/import.h ../refcount/refcount.h
-main.o: ../scanparse/scnprs.h resource.h ../scanparse/y.tab.h
-main.o: ../psi-opt/psi-opt.h ../modules/writesib.h ../modules/readsib.h
-main.o: ../modules/implicittypes.h ../objects/objinit.h ../modules/analysis.h
-main.o: ../modules/checkdec.h ../objects/objects.h ../objects/uniquecheck.h
-main.o: ../objects/rmvoidfun.h ../compile/wltransform.h
-main.o: ../concurrent/concurrent.h ../compile/precompile.h
-main.o: ../compile/compile.h ../modules/cccall.h ../compile/Old2NewWith.h
-main.o: interrupt.h options.h ../multithread/multithread.h
+main.o: /usr/include/sys/int_types.h usage.h ../flatten/lac2fun.h
+main.o: ../flatten/flatten.h ../print/print.h ../typecheck/typecheck.h
+main.o: ../optimize/optimize.h ../modules/filemgr.h ../modules/import.h
+main.o: ../refcount/refcount.h ../scanparse/scnprs.h resource.h
+main.o: ../scanparse/y.tab.h ../psi-opt/psi-opt.h ../modules/writesib.h
+main.o: ../modules/readsib.h ../modules/implicittypes.h ../objects/objinit.h
+main.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
+main.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
+main.o: ../compile/wltransform.h ../concurrent/concurrent.h
+main.o: ../compile/precompile.h ../compile/compile.h ../modules/cccall.h
+main.o: ../compile/Old2NewWith.h interrupt.h options.h
+main.o: ../multithread/multithread.h
 my_debug.o: ../tree/node_info.mac ../tree/prf_node_info.mac
 my_debug.o: ../tree/type_info.mac
 options.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
