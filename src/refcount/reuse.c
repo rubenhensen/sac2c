@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/01/11 13:35:40  cg
+ * Useless include of Error.h removed
+ *
  * Revision 1.14  2004/12/11 14:48:06  ktr
  * bugfix.
  *
@@ -72,11 +75,13 @@
 #include "free.h"
 #include "globals.h"
 #include "dbug.h"
-#include "Error.h"
 #include "print.h"
 #include "ReuseWithArrays.h"
 #include "DataFlowMask.h"
 #include "internal_lib.h"
+
+#include <string.h>
+
 /**
  * traversal modes
  */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2005/01/11 13:33:55  cg
+ * Useless include of Error.h removed
+ *
  * Revision 3.23  2005/01/10 16:06:03  cg
  * Useless AbortOnError removed.
  *
@@ -144,7 +147,6 @@
 #include "free.h"
 #include "globals.h"
 #include "DupTree.h"
-#include "Error.h"
 #include "shape.h"
 
 #include "pad_info.h"
