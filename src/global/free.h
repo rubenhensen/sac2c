@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/03/16 00:07:33  dkr
+ * added FreeWLseg, FreeWLblock, FreeWLublock, FreeWLproj, FreeWLgrid, FreeNwith2
+ *
  * Revision 1.16  1997/12/08 19:19:01  dkr
  * no arithmetic on void-pointers anymore (FREE)
  *
@@ -166,6 +169,13 @@ extern node *FreeNWithID (node *arg_node, node *arg_info);
 extern node *FreeNGenerator (node *arg_node, node *arg_info);
 extern node *FreeNWithOp (node *arg_node, node *arg_info);
 extern node *FreeNCode (node *arg_node, node *arg_info);
+
+extern node *FreeNwith2 (node *arg_node, node *arg_info);
+extern node *FreeWLseg (node *arg_node, node *arg_info);
+extern node *FreeWLblock (node *arg_node, node *arg_info);
+extern node *FreeWLublock (node *arg_node, node *arg_info);
+extern node *FreeWLproj (node *arg_node, node *arg_info);
+extern node *FreeWLgrid (node *arg_node, node *arg_info);
 
 /* special functions */
 extern void FreePrf2 (node *arg_node, int arg_no); /* CF */
