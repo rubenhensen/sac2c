@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2002/06/10 09:18:37  dkr
+ * some structures for argtags (ATG_...) added
+ *
  * Revision 3.14  2002/06/07 17:14:09  mwe
  * OPT_AL added for AssociativeLaw
  *
@@ -364,6 +367,17 @@ extern unsigned int max_allocated_mem;
 #endif
 
 extern int do_lac2fun[], do_fun2lac[];
+
+/*
+ * for arg tags
+ */
+extern bool ATG_has_shp[];
+extern bool ATG_has_rc[];
+extern bool ATG_has_desc[];
+extern bool ATG_is_in[];
+extern bool ATG_is_out[];
+extern bool ATG_is_inout[];
+extern char *ATG_string[];
 
 extern int print_objdef_for_header_file;
 extern int function_counter;
