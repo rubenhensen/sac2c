@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2002/11/14 13:33:12  dkr
+ * minor changes done
+ *
  * Revision 3.34  2002/11/08 13:29:45  cg
  * Added infos concerning Fred Fish DBUG package options.
  * Beautified entire layout of usage screen.
@@ -174,7 +177,7 @@ usage ()
       "                    utility. Only dependencies from declaration files are\n"
       "                    considered.\n"
       "\n"
-      "    -MM             Like `-M' but the output mentions only non-standard \n"
+      "    -MM             Like `-M' but the output mentions only non-standard\n"
       "                    library dependencies.\n"
       "\n"
       "    -Mlib           Detect dependencies from imported modules/classes and\n"
@@ -208,8 +211,8 @@ usage ()
             "                      0: error messages only,\n"
             "                      1: error messages and warnings,\n"
             "                      2: basic compile time information,\n"
-            "                      3: full compile time information,\n"
-            "                    default: -v %d.\n",
+            "                      3: full compile time information.\n"
+            "                    (default: %d)\n",
             verbose_level);
 
     printf ("\n\nBREAK OPTIONS:\n\n"
@@ -326,7 +329,7 @@ usage ()
     PRINT_BREAK_SPEC (PH_wltrans, "fill2", "Stop after gap filling (all nodes).");
 
     printf ("\n");
-    printf ("     with -mt\n");
+    printf ("    with \"-mt\"\n");
 
     PRINT_BREAK_SPEC (PH_multithread, "spmdinit", "Stop after building SPMD blocks.");
     PRINT_BREAK_SPEC (PH_multithread, "spmdopt", "Stop after optimizing SPMD blocks.");
@@ -334,12 +337,11 @@ usage ()
     PRINT_BREAK_SPEC (PH_multithread, "syncinit", "Stop after building SYNC blocks.");
     PRINT_BREAK_SPEC (PH_multithread, "syncopt", "Stop after optimizing SYNC blocks.");
     PRINT_BREAK_SPEC (PH_multithread, "scheduling",
-                      "Stop after scheduling SYNC blocks and with-loop");
-    CONT_BREAK_SPEC ("segments.");
+                      "Stop after scheduling SYNC blocks and with-loop segments.");
     PRINT_BREAK_SPEC (PH_multithread, "spmdcons", "Stop after constraining SPMD blocks.");
 
     printf ("\n");
-    printf ("     with -mtn (UNDER CONSTRUCTION!!!)\n");
+    printf ("    with \"-mtn\" (UNDER CONSTRUCTION!!!)\n");
 
     PRINT_BREAK_SPEC (PH_multithread, "init", "Stop after internal initialization.");
     PRINT_BREAK_SPEC (PH_multithread, "schin", "Stop after schedulings initialized.");
@@ -371,13 +373,12 @@ usage ()
       "                      - associative law optimization,\n"
       "                      - segmentation and tiling of fold-with-loops.\n"
       "\n"
-      "    -ssa            Apply optimizations based on ssa-form, instead of using\n"
-      "                    the old non-ssa based implementations.\n"
+      "    -ssa            Apply optimizations based on ssa-form, instead of using the\n"
+      "                    old non-ssa based implementations.\n"
       "                    NOTE:\n"
-      "                    Some optimizations are exclusively implemented in ssa\n"
-      "                    style.\n"
-      "                    Support for non-ssa based implementations will be removed\n"
-      "                    in future releases.\n"
+      "                    Some optimizations are exclusively implemented in ssa style.\n"
+      "                    Support for non-ssa based implementations will be removed in\n"
+      "                    future releases.\n"
       "\n"
       "    -no <opt>       Disable optimization technique <opt>.\n"
       "\n"
@@ -421,97 +422,106 @@ usage ()
       "\n"
       "    NOTE:\n"
       "    Command line arguments are evaluated from left to right, i.e.,\n"
-      "    \"-no OPT -do INL\" disables all optimizations except for\n"
-      "    function inlining.\n\n");
+      "    \"-no OPT -do INL\" disables all optimizations except for function "
+      "inlining.\n\n");
 
     printf (
       "    Some of the optimization techniques are parameterized by additional side\n"
       "    conditions. They are controlled by the following options:\n"
       "\n"
-      "    -maxoptcyc <n>  Repeat optimization cycle <n> times\n"
-      "                      (default: -maxoptcyc %d).\n\n",
+      "    -maxoptcyc <n>  Repeat optimization cycle <n> times.\n"
+      "                      (default: %d)\n\n",
       max_optcycles);
 
-    printf ("    -maxoptvar <n>  Reserve <n> variables for optimization\n"
-            "                      (default: -maxoptvar %d).\n\n",
+    printf ("    -maxoptvar <n>  Reserve <n> variables for optimization.\n"
+            "                      (default: %d)\n\n",
             optvar);
 
-    printf ("    -maxinl <n>     Inline recursive functions at most <n> times\n"
-            "                      (default: -maxinl %d).\n\n",
+    printf ("    -maxinl <n>     Inline recursive functions at most <n> times.\n"
+            "                      (default: %d)\n\n",
             inlnum);
 
-    printf ("    -maxlur <n>     Unroll loops having at most <n> iterations\n"
-            "                      (default: -maxlur %d).\n\n",
+    printf ("    -maxlur <n>     Unroll loops having at most <n> iterations.\n"
+            "                      (default: %d)\n\n",
             unrnum);
 
-    printf ("    -maxwlur <n>    Unroll with-loops with at most <n> elements generator\n"
-            "                    set size\n"
-            "                      (default: -maxwlur %d).\n\n",
-            wlunrnum);
+    printf (
+      "    -maxwlur <n>    Unroll with-loops with at most <n> elements generator set\n"
+      "                    size.\n"
+      "                      (default: %d)\n\n",
+      wlunrnum);
 
-    printf ("    -maxae <n>      Try to eliminate arrays with at most <n> elements\n"
-            "                      (default: -maxae %d).\n\n",
+    printf ("    -maxae <n>      Try to eliminate arrays with at most <n> elements.\n"
+            "                      (default: %d)\n\n",
             minarray);
 
     printf (
-      "    -maxspec <n>    Individual functions will be specialized at most <n> times\n"
-      "                      (default: -maxspec %d).\n\n",
+      "    -maxspec <n>    Individual functions will be specialized at most <n> times.\n"
+      "                      (default: %d)\n\n",
       max_overload);
 
-    printf ("    -initmheap <n>  At program startup initially request <n> KB\n"
-            "                    of heap memory for  master thread\n"
-            "                      (default: -initmheap %d).\n\n",
-            initial_master_heapsize);
+    printf (
+      "    -initmheap <n>  At program startup initially request <n> KB of heap memory\n"
+      "                    for master thread.\n"
+      "                      (default: %d)\n\n",
+      initial_master_heapsize);
 
-    printf ("    -initwheap <n>  At program startup initially request <n> KB\n"
-            "                    of heap memory for each worker thread\n"
-            "                      (default: -initwheap %d).\n\n",
-            initial_worker_heapsize);
+    printf (
+      "    -initwheap <n>  At program startup initially request <n> KB of heap memory\n"
+      "                    for each worker thread.\n"
+      "                      (default: %d)\n\n",
+      initial_worker_heapsize);
 
-    printf ("    -inituheap <n>  At program startup initially request <n> KB\n"
-            "                    of heap memory for usage by all threads\n"
-            "                      (default: -inituheap %d).\n\n",
-            initial_unified_heapsize);
+    printf (
+      "    -inituheap <n>  At program startup initially request <n> KB of heap memory\n"
+      "                    for usage by all threads.\n"
+      "                      (default: %d)\n\n",
+      initial_unified_heapsize);
 
-    printf ("    -aplimit <n>    Set the array padding resource allocation\n"
-            "                    overhead limit to <n> %%\n"
-            "                      (default: -aplimit %d).\n\n",
-            padding_overhead_limit);
+    printf (
+      "    -aplimit <n>    Set the array padding resource allocation overhead limit\n"
+      "                    to <n> %%.\n"
+      "                      (default: %d)\n\n",
+      padding_overhead_limit);
 
-    printf ("    -apdiag         Print additional information for array padding\n"
-            "                    to file \"<outfile>.ap\", where <outfile> is the\n"
-            "                    name specified via the -o option.\n\n");
+    printf (
+      "    -apdiag         Print additional information for array padding to file\n"
+      "                    \"<outfile>.ap\", where <outfile> is the name specified via\n"
+      "                    the \"-o\" option.\n\n");
 
-    printf ("    -apdiagsize <n> Limit the amount of information written to\n"
-            "                    the diagnostic output file created via the\n"
-            "                    -apdiag option to approximately <n> lines\n"
-            "                      (default: -apdiagsize %d).\n\n",
-            apdiag_limit);
+    printf (
+      "    -apdiagsize <n> Limit the amount of information written to the diagnostic\n"
+      "                    output file created via the -apdiag option to approximately\n"
+      "                    <n> lines.\n"
+      "                      (default: %d)\n\n",
+      apdiag_limit);
 
     printf (
       "    -wls_aggressive Set WLS optimization level to aggressive.\n"
       "                    WARNING:\n"
       "                    Aggressive with-loop scalarization may have the opposite\n"
       "                    effect as with-loop invariant removal and cause duplication\n"
-      "                    of code execution.\n"
-      "\n");
+      "                    of code execution.\n");
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
-            "    -mt             Compile program for multi-threaded execution, \n"
+            "    -mt             Compile program for multi-threaded execution,\n"
             "                    e.g. implicitly parallelize the code for "
             "non-sequential\n"
             "                    execution on shared memory multiprocessors.\n"
             "\n"
-            "                    Note:\n"
-            "                    The number of threads to be used can either\n"
-            "                    be specified statically using the option\n"
-            "                    \"-numthreads\" or dynamically upon application\n"
-            "                    startup using the generic command line option\n"
-            "                    \"-mt <n>\".\n"
+            "                    NOTE:\n"
+            "                    The number of threads to be used can either be "
+            "specified\n"
+            "                    statically using the option \"-numthreads\" or "
+            "dynamically\n"
+            "                    upon application startup using the generic command "
+            "line\n"
+            "                    option \"-mt <n>\".\n"
             "\n"
-            "    -mtn            Enable a new organization scheme for multi-threaded\n"
-            "                    program execution.\n"
+            "    -mtn            Enable a new organization scheme for multi-threaded "
+            "program\n"
+            "                    execution.\n"
             "                    WARNING: UNDER CONSTRUCTION!!!\n"
             "\n"
             "    -numthreads <n> Specify at compile time the exact number of threads to "
@@ -522,29 +532,31 @@ usage ()
             "number\n"
             "                    of threads to be used  for parallel execution when "
             "exact\n"
-            "                    number is determined at runtime\n"
-            "                      (default: -maxthreads %d).\n"
+            "                    number is determined at runtime.\n"
+            "                      (default: %d)\n"
             "\n"
             "    -maxsync <n>    Specify maximum number of fold with-loops to be "
             "combined\n"
             "                    into a single synchronisation block.\n"
             "                    Legal values:\n"
-            "                     -1: maximum number needed (mechanically infered)\n"
-            "                      0: no fold-with-loops are allowed\n"
-            "                         (This implies that fold-with-loops are not\n"
-            "                          executed in parallel.)\n"
-            "                     >0: maximum number set to <n>\n"
-            "                    (default: -maxsyncfold %d).\n"
+            "                      -1: maximum number needed (mechanically infered).\n"
+            "                       0: no fold-with-loops are allowed.\n"
+            "                          (This implies that fold-with-loops are not "
+            "executed\n"
+            "                           in parallel.)\n"
+            "                      >0: maximum number set to <n>.\n"
+            "                      (default: %d)\n"
             "\n"
             "    -minmtsize <n>  Specify minimum generator set size for parallel "
             "execution\n"
-            "                    of with-loops\n"
-            "                      (default: -minmtsize %d).\n"
+            "                    of with-loops.\n"
+            "                      (default: %d)\n"
             "\n"
             "    -maxrepsize <n> Specify maximum size for arrays to be replicated as\n"
-            "                    private data of multiple threads\n"
-            "                      (default: -maxrepsize %d).\n"
-            "                    Option applies to -mtn style parallelization only.\n",
+            "                    private data of multiple threads.\n"
+            "                      (default: %d)\n"
+            "                    Option applies to \"-mtn\" style parallelization "
+            "only.\n",
             max_threads, max_sync_fold, min_parallel_size, max_replication_size);
 
     printf (
@@ -559,36 +571,35 @@ usage ()
     printf (
       "\n\nINTERNAL DEBUG OPTIONS:\n\n"
 
-      "    -d efence       Link executable with ElectricFence\n"
-      "                    (malloc debugger).\n"
+      "    -d efence       Link executable with ElectricFence (malloc debugger).\n"
       "\n"
       "    -# t            Display trace information generated by Fred Fish DBUG\n"
       "                    package.\n"
       "                    Each function entry and exit during program execution is\n"
       "                    printed on the screen.\n"
       "\n"
-      "    -# d            Display debug output information generated by Fred \n"
-      "                    Fish DBUG package.\n"
+      "    -# d            Display debug output information generated by Fred Fish\n"
+      "                    DBUG package.\n"
       "                    Each DBUG_PRINT macro in the code will be executed.\n"
       "                    Each DBUG_EXECUTE macro in the code will be executed.\n"
       "\n"
-      "    -# d,<str>      Restrict -# d option to DBUG_PRINT / DBUG_EXECUTE macros\n"
+      "    -# d,<str>      Restrict \"-# d\" option to DBUG_PRINT / DBUG_EXECUTE macros\n"
       "                    which are tagged with the string <str> (no quotes).\n"
       "\n"
       "    -# <f>/<t>/<o>  Restrict the effect of any Fred Fish DBUG package option <o>\n"
       "                    to the range <f> to <t> of sac2c compiler phases.\n"
-      "                    Default: <f> = first compiler phase,\n"
-      "                             <t> = last compiler phase.\n"
+      "                      (default: <f> = first compiler phase,\n"
+      "                                <t> = last compiler phase.)\n"
       "\n"
       "    -lac2fun <ph>[:<ph>]*\n"
       "                    Transform loops and conditionals into functions before\n"
       "                    compiler phases <ph>.\n"
       "                    NOTE:\n"
-      "                      -b<ph> stops the compiler *after* the\n"
-      "                      lac2fun transformation of phase <ph+1>!\n"
+      "                    \"-b <ph>\" stops the compiler *after* the lac2fun\n"
+      "                    transformation of phase <ph+1>!\n"
       "\n"
       "    -fun2lac <ph>[:<ph>]*\n"
-      "                    Transform specific functions back into loops and \n"
+      "                    Transform specific functions back into loops and\n"
       "                    conditionals after compiler phases <ph>.\n");
 
     printf ("\n\nRUNTIME CHECK OPTIONS:\n\n"
@@ -659,47 +670,52 @@ usage ()
             "                         analyser process.\n"
             "                    The default simulation parameters are \"sgp\".\n"
             "\n"
-            "    -cshost <name>  This option specifies the host machine to run the\n"
-            "                    additional analyser process on when doing piped cache\n"
-            "                    simulation. This is very useful for single processor\n"
-            "                    machines because the rather limited buffer size of the\n"
-            "                    pipe determines the synchronisation distance of the "
-            "two\n"
-            "                    processes, i.e. the application process and the "
-            "analysis\n"
-            "                    process. This results in very frequent context "
-            "switches\n"
-            "                    when both processes are run on the same processor, and\n"
-            "                    consequently, degrades the performance by orders of\n"
-            "                    magnitude. So, when doing piped cache simulation "
-            "always\n"
-            "                    be sure to do so either on a multiprocessor or specify "
-            "a\n"
-            "                    different machine to run the analyser process on.\n"
-            "                    However, this only defines a default which may be\n"
-            "                    overridden by using this option when starting the\n"
-            "                    compiled application program.\n"
+            "    -cshost <name>  This option specifies the host machine to run the "
+            "additional\n"
+            "                    analyser process on when doing piped cache simulation.\n"
+            "                    This is very useful for single processor machines "
+            "because\n"
+            "                    the rather limited buffer size of the pipe determines "
+            "the\n"
+            "                    synchronisation distance of the two processes, i.e. "
+            "the\n"
+            "                    application process and the analysis process. This "
+            "results\n"
+            "                    in very frequent context switches when both processes "
+            "are\n"
+            "                    run on the same processor, and consequently, degrades "
+            "the\n"
+            "                    performance by orders of magnitude. So, when doing "
+            "piped\n"
+            "                    cache simulation always be sure to do so either on a\n"
+            "                    multiprocessor or specify a different machine to run "
+            "the\n"
+            "                    analyser process on. However, this only defines a "
+            "default\n"
+            "                    which may be overridden by using this option when "
+            "starting\n"
+            "                    the compiled application program.\n"
             "\n"
-            "    -csfile <name>  This option specifies a default file where to\n"
-            "                    write the memory access trace when performing cache\n"
-            "                    simulation via a file. This default may be overridden "
-            "by\n"
-            "                    using this option when starting the compiled "
-            "application\n"
-            "                    program.\n"
+            "    -csfile <name>  This option specifies a default file where to write "
+            "the\n"
+            "                    memory access trace when performing cache simulation "
+            "via\n"
+            "                    a file. This default may be overridden by using this "
+            "option\n"
+            "                    when starting the compiled application program.\n"
             "                    The general default name is \"<executable_name>.cs\".\n"
             "\n"
-            "    -csdir <name>   This option specifies a default directory where to\n"
-            "                    write the memory access trace file when performing "
-            "cache\n"
+            "    -csdir <name>   This option specifies a default directory where to "
+            "write\n"
+            "                    the memory access trace file when performing cache\n"
             "                    simulation via a file. This default may be overridden "
             "by\n"
             "                    using this option when starting the compiled "
             "application\n"
             "                    program.\n"
-            "                    The general default directory is the tmp directory\n"
-            "                    specified in your sac2crc file.\n"
-            "\n"
+            "                    The general default directory is the tmp directory "
+            "specified\n"
+            "                    in your sac2crc file.\n"
             "\n\n"
             "CACHE SIMULATION FEATURES:\n"
             "\n"
@@ -736,7 +752,7 @@ usage ()
             "    command line option\n"
             "        -cs [sagbifp]+\n"
             "    where the various flags have the same meaning as described for the\n"
-            "    -csdefaults compiler option.\n"
+            "    \"-csdefaults\" compiler option.\n"
             "\n"
             "    Cache parameters for up to 3 levels of caches may be provided as "
             "target\n"
@@ -809,7 +825,7 @@ usage ()
             "                    Supported values for <style> are:\n"
             "                      1: Compile to one large object file.\n"
             "                      2: Compile to archive of object files.\n"
-            "                    The default link style is: -l %d.\n",
+            "                    (default: %d)\n",
             linkstyle);
 
     printf ("\n\nC-COMPILER OPTIONS:\n\n"
@@ -821,11 +837,11 @@ usage ()
             "                      1: minor C compiler optimizations.\n"
             "                      2: medium C compiler optimizations.\n"
             "                      3: full C compiler optimizations.\n"
-            "                    The default setting is: -O %d.\n"
+            "                    (default: %d)\n"
             "\n"
             "                    NOTE:\n"
-            "                    The actual effects of these options are specific to the "
-            "\n"
+            "                    The actual effects of these options are specific to "
+            "the\n"
             "                    C compiler used for code generation. Both the choice "
             "of\n"
             "                    a C compiler as well as the mapping of these generic\n"
@@ -886,20 +902,23 @@ usage ()
             "    WWW:    http://www.sac-home.org/\n"
             "    E-Mail: info@sac-home.org\n");
 
-    printf ("\n\nBUGS:\n\n"
+    printf (
+      "\n\nBUGS:\n\n"
 
-            "    Bugs??  We????\n"
-            "\n"
-            "    Sac2c is a research compiler!\n"
-            "\n"
-            "    It is intended as a platform for scientific research rather than a \n"
-            "    \"product\" for end users. Although we try to do our very best,\n"
-            "    you may well run into a compiler bug. So, we are happy to receive\n"
-            "    your bug reports (Well, not really \"happy\", but ...)\n"
-            "\n"
-            "    Unfortunately, two of our optimizations are quite buggy 8-(\n"
-            "    Therefore, we decided to preset -noLIR (non-ssa version) \n"
-            "    and -noDL in the current compiler release.\n");
+      "    Bugs??  We????\n"
+      "\n"
+      "    Sac2c is a research compiler!\n"
+      "\n"
+      "    It is intended as a platform for scientific research rather than a\n"
+      "    \"product\" for end users. Although we try to do our very best,\n"
+      "    you may well run into a compiler bug. So, we are happy to receive\n"
+      "    your bug reports (Well, not really \"happy\", but ...)\n"
+      "\n"
+      "    Unfortunately, two of our optimizations are quite buggy 8-(\n"
+      "    Therefore, we decided to preset \"-noLIR\" (non-ssa version) and \"-noDL\"\n"
+      "    in the current compiler release.\n");
+
+    printf ("\n\n");
 
     DBUG_VOID_RETURN;
 }
