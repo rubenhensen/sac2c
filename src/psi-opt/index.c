@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2004/07/15 12:58:14  khf
+ * IdxNcode(): new_assign initialized.
+ * inserted access macros for 'arg_info' from tree_basic.h.
+ *
  * Revision 3.55  2004/06/03 09:25:34  khf
  * Added support for multioperator WLs (makros adjusted
  * and setting of ND_USE_GENVAR_OFFSET adjusted)
@@ -209,6 +213,17 @@
 #include "convert.h"
 #include "NameTuplesUtils.h"
 #include "index.h"
+
+/*
+ * access macros for 'arg_info'
+ */
+#define INFO_IVE_FUNDEF(n) (n->node[0])
+#define INFO_IVE_VARDECS(n) (n->node[1])
+#define INFO_IVE_CURRENTASSIGN(n) (n->node[2])
+#define INFO_IVE_PRE_ASSIGNS(n) (n->node[3])
+#define INFO_IVE_TRANSFORM_VINFO(n) (n->node[4])
+#define INFO_IVE_MODE(n) (n->flag)
+#define INFO_IVE_NON_SCAL_LEN(n) (n->counter)
 
 /*
  * OPEN PROBLEMS:
@@ -2468,8 +2483,11 @@ IdxNcode (node *arg_node, node *arg_info)
         while (VINFO_FLAG (vinfo) != DOLLAR) {
 
             if (VINFO_FLAG (vinfo) == IDX) {
+
+                /* scan all operators and corresponding resultvalues */
                 tmp_ids = LET_IDS (let_node);
                 tmp_withop = NWITH_WITHOP (with);
+                new_assign = NULL;
                 use_genvar_offset = FALSE;
 
                 while (tmp_ids != NULL) {
