@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.20  2000/07/28 21:48:04  dkr
+ * some minor indentation error fixed
+ *
  * Revision 2.19  2000/07/28 14:55:53  dkr
  * typo in ICMCompileND_PRF_MODARRAY_CHECK_REUSE corrected
  * indentation in ICMCompileND_PRF_MODARRAY... is balanced now
@@ -635,8 +638,8 @@ ICMCompileND_CREATE_CONST_ARRAY_A (char *name, int length, int dim, char **A)
 
     for (i = 0; i < dim * length; i++) {
         INDENT;
-        fprintf (outfile, "ARRAY_WRITE( %s, %d) = ARRAY_READ( %s, %d);\n", name, i,
-                 A[i / length], i % length);
+        fprintf (outfile, "SAC_ND_WRITE_ARRAY( %s, %d) = SAC_ND_READ_ARRAY( %s, %d);\n",
+                 name, i, A[i / length], i % length);
     }
 
     DBUG_VOID_RETURN;
@@ -1769,7 +1772,7 @@ ICMCompileND_PRF_MODARRAY_AxVxA_CHECK_REUSE (char *res_type, int dimres, char *r
     INDENT;
     fprintf (outfile, "}\n");
     INDENT;
-    fprintf (outfile, "else{\n");
+    fprintf (outfile, "else {\n");
     indent++;
     INDENT;
     fprintf (outfile, "SAC_ND_ALLOC_ARRAY(%s, %s, 0);\n", res_type, res);
@@ -1805,8 +1808,6 @@ ICMCompileND_PRF_MODARRAY_AxVxA_CHECK_REUSE (char *res_type, int dimres, char *r
     indent -= 2;
     INDENT;
     fprintf (outfile, "}\n");
-    INDENT;
-
     indent--;
     INDENT;
     fprintf (outfile, "}\n\n");
