@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2001/04/24 14:15:01  dkr
+ * some DBUG_ASSERTs about FUNDEF_USED added
+ *
  * Revision 3.42  2001/04/24 09:16:21  dkr
  * P_FORMAT replaced by F_PTR
  *
@@ -221,10 +224,10 @@ static LUT_t dup_lut = NULL;
 #define DUPTRAV(node) ((node) != NULL) ? Trav (node, arg_info) : NULL
 
 /*
- *  If INFO_DUP_CONT contains the root of syntaxtree.
- *    -> traverses son 'node' if and only if its parent is not the root.
- *  If INFO_DUP_CONT is NULL.
- *    -> traverses son 'node'.
+ *  If INFO_DUP_CONT contains the root of syntaxtree
+ *    -> traverses son 'node' if and only if its parent is not the root
+ *  If INFO_DUP_CONT is NULL
+ *    -> traverses son 'node'
  *
  *  The macro is to be used within traversal functions where arg_node and
  *  arg_info exist.
@@ -1401,6 +1404,12 @@ DupAp (node *arg_node, node *arg_info)
          */
 
         AP_FUNDEF (new_node) = AP_FUNDEF (arg_node);
+
+        DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (new_node)) != USED_INACTIVE),
+                     "FUNDEF_USED must be active for special functions!");
+
+        DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (new_node)) >= 0),
+                     "FUNDEF_USED dropped below 0!");
 
         /* increment reference counter */
         (FUNDEF_USED (AP_FUNDEF (new_node)))++;
@@ -2632,6 +2641,8 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
     DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
                  "given assign node is not an assignment");
     DBUG_ASSERT ((FUNDEF_IS_LACFUN (fundef)), "given fundef is not a special fundef");
+    DBUG_ASSERT ((FUNDEF_USED (fundef) != USED_INACTIVE),
+                 "FUNDEF_USED must be active for special functions!");
     DBUG_ASSERT ((FUNDEF_USED (fundef) > 0), "fundef is not used anymore");
     DBUG_ASSERT ((FUNDEF_EXT_ASSIGNS (fundef) != NULL),
                  "fundef has no external assignments");
@@ -2685,8 +2696,8 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
         /* remove assignment from old external assignment list */
         FUNDEF_EXT_ASSIGNS (fundef)
           = NodeListDelete (FUNDEF_EXT_ASSIGNS (fundef), assign, 0);
-        FUNDEF_USED (fundef) = FUNDEF_USED (fundef) - 1;
-
+        (FUNDEF_USED (fundef))--;
+        DBUG_ASSERT ((FUNDEF_USED (fundef) >= 0), "FUNDEF_USED dropped below 0");
     } else {
         /* only single use - no duplication needed */
     }
