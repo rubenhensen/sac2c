@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/07/19 18:54:21  asi
+ * Revision 1.7  1995/07/20 12:23:38  asi
+ * while loop, who's condition is false will be removed now
+ *
+ * Revision 1.6  1995/07/19  18:54:21  asi
  * AnalyseLoop, DoUnroll, ReversePrf and structure linfo modified
  *
  * Revision 1.5  1995/07/12  15:26:24  asi
@@ -171,54 +174,6 @@ UNRlet (node *arg_node, node *arg_info)
     {
         VAR (ids_node->node->varno) = arg_node->node[0];
         ids_node = ids_node->next;
-    }
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : UNRassign
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-node *
-UNRassign (node *arg_node, node *arg_info)
-{
-    node *tmp_node;
-
-    DBUG_ENTER ("UNRassign");
-
-    /* unroll subexpressions */
-    arg_node = OptTrav (arg_node, arg_info, 0);
-
-    switch (arg_node->node[0]->nodetype) {
-    case N_empty:
-        DBUG_PRINT ("UNR", ("empty assign node removed from tree"));
-        arg_node->nnode = 1;
-        tmp_node = arg_node->node[1];
-        FreeTree (arg_node);
-        arg_node = Trav (tmp_node, arg_info);
-        break;
-    case N_assign:
-        DBUG_PRINT ("UNR", ("double assign node moved into tree"));
-        tmp_node = AppendNodeChain (1, arg_node->node[0], arg_node->node[1]);
-        arg_node->nnode = 0;
-        FreeTree (arg_node);
-        arg_node = Trav (tmp_node, arg_info);
-        break;
-    default:
-        /* next assign node */
-        if (1 < arg_node->nnode) {
-            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-        }
-        break;
     }
     DBUG_RETURN (arg_node);
 }
@@ -645,16 +600,25 @@ node *
 UNRwhile (node *arg_node, node *arg_info)
 {
     int i;
-    node *cond_node;
+    node *cond_node, *bool;
 
     DBUG_ENTER ("UNRwhile");
     cond_node = arg_node->node[0];
 
-    if ((NULL != cond_node) && (N_id == cond_node->nodetype)
-        && (N_bool == VAR (cond_node->IDS_VARNO)->nodetype)
-        && (VAR (cond_node->IDS_VARNO)->info.cint)) {
-        arg_node->nodetype = N_do;
-        arg_node = Trav (arg_node, arg_info);
+    if ((NULL != cond_node)
+        && (((N_id == cond_node->nodetype)
+             && (N_bool == (bool = VAR (cond_node->IDS_VARNO))->nodetype))
+            || ((N_bool == (bool = cond_node)->nodetype) && (!bool->info.cint)))) {
+        if (bool->info.cint) {
+            arg_node->nodetype = N_do;
+            arg_node = Trav (arg_node, arg_info);
+        } else {
+            MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
+            MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0], VARNO);
+            MinusMask (arg_info->mask[1], arg_node->node[1]->mask[1], VARNO);
+            FreeTree (arg_node);
+            arg_node = MakeNode (N_empty);
+        }
     } else {
         PushVL (VARNO);
         LEVEL++;
@@ -748,5 +712,53 @@ UNRwith (node *arg_node, node *arg_info)
     LEVEL--;
 
     PopVL ();
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : UNRassign
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+node *
+UNRassign (node *arg_node, node *arg_info)
+{
+    node *tmp_node;
+
+    DBUG_ENTER ("UNRassign");
+
+    /* unroll subexpressions */
+    arg_node = OptTrav (arg_node, arg_info, 0);
+
+    switch (arg_node->node[0]->nodetype) {
+    case N_empty:
+        DBUG_PRINT ("UNR", ("empty assign node removed from tree"));
+        arg_node->nnode = 1;
+        tmp_node = arg_node->node[1];
+        FreeTree (arg_node);
+        arg_node = Trav (tmp_node, arg_info);
+        break;
+    case N_assign:
+        DBUG_PRINT ("UNR", ("double assign node moved into tree"));
+        tmp_node = AppendNodeChain (1, arg_node->node[0], arg_node->node[1]);
+        arg_node->nnode = 0;
+        FreeTree (arg_node);
+        arg_node = Trav (tmp_node, arg_info);
+        break;
+    default:
+        /* next assign node */
+        if (1 < arg_node->nnode) {
+            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+        }
+        break;
+    }
     DBUG_RETURN (arg_node);
 }
