@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/05/02 07:11:31  sbs
+ * Revision 1.19  1995/05/04 11:43:51  sbs
+ * icm_trace.c inserted
+ *
+ * Revision 1.18  1995/05/02  07:11:31  sbs
  * with-constructs debugged
  *
  * Revision 1.17  1995/04/27  12:57:05  sbs
@@ -386,6 +389,8 @@ MAIN
     int catdim = 2;
     int rotdim = 1;
 
+    int trace_flag = 0xffff;
+
     OPT OTHER
     {
     }
@@ -413,6 +418,7 @@ extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
     INDENT;
     FirstOut (tyarg, 3 * narg, fprintf (outfile, "%s ", tyarg[i]),
@@ -454,6 +460,7 @@ extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 INDENT;
 FirstOut (arg, 2 * narg, fprintf (outfile, "%s =", arg[i]), {}, 1);
@@ -490,6 +497,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 INDENT;
 ScanArglist (arg, 2 * narg, i++; sep = 0, i++;
@@ -524,6 +532,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 {
     int i;
@@ -556,6 +565,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 INDENT;
 fprintf (outfile, "%s *%s;\n", type, name);
@@ -601,6 +611,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 {
     int i;
@@ -636,6 +647,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 INDENT;
 fprintf (outfile, "%s=ND_A_FIELD(%s)[", res, a);
@@ -665,6 +677,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 INDENT;
 fprintf (outfile, "%s=ND_A_FIELD(%s)[", res, a);
@@ -695,6 +708,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 INDENT;
 CopyBlock (a, VectToOffset (dimv, AccessConst (vi, i), dima, a), res);
@@ -724,6 +738,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 INDENT;
 CopyBlock (a, VectToOffset (dimv, AccessVect (v, i), dima, a), res);
@@ -748,6 +763,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 INDENT;
 TakeSeg (a, dima, fprintf (outfile, "0"), /* offset */
@@ -778,6 +794,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 INDENT;
 TakeSeg (a, dima, VectToOffset (dimv, AccessConst (vi, i), dima, a), /* offset */
@@ -808,6 +825,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 INDENT;
 NewBlock (
@@ -851,6 +869,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 INDENT;
 NewBlock (
@@ -903,6 +922,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 BeginWith (res, dimres, from, to, idx, idxlen, fprintf (outfile, "0"));
 
@@ -929,6 +949,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 BeginWith (res, dimres, from, to, idx, idxlen,
            fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]", a, res));
@@ -956,6 +977,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 #ifdef TEST_BACKEND
 indent += dimres + 1;
@@ -983,6 +1005,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 #ifdef TEST_BACKEND
 indent += idxlen + 1;
@@ -1010,6 +1033,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 #ifdef TEST_BACKEND
 indent += dimres + 1;
@@ -1037,6 +1061,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
+#include "icm_trace.c"
 
 #ifdef TEST_BACKEND
 indent += idxlen + 1;
