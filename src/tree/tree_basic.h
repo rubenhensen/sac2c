@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.97  2000/10/17 16:27:46  dkr
+ * some comments corrected
+ *
  * Revision 1.96  2000/10/16 13:56:00  dkr
  * INFO_PREC_LASTASSIGN added
  *
@@ -398,11 +401,11 @@ extern shpseg *MakeShpseg (nums *num);
  ***/
 
 /*
- *  STATUS is usually ST_regular, but
- *    ST_artificial marks artificial return types due to the resolution of
- *      reference parameters and global objects and
- *    ST_crettype marks that return type of a function that is compiled
- *      to the actual return type of the resulting C function.
+ *  STATUS: ST_artificial : artificial return type due to the resolution of
+ *                          reference parameters and global objects.
+ *          ST_crettype   : return type of a function that is compiled to the
+ *                          actual return type of the resulting C function.
+ *          ST_regular    : otherwise
  *
  *  TDEF is a reference to the defining N_typedef node of a user-defined
  *  type.
@@ -443,12 +446,11 @@ extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name
  ***/
 
 /*
- *  ATTRIB: ST_regular    :  local variable or function parameter
- *          ST_global     :  reference to global object
+ *  STATUS: ST_regular    : from original source code
+ *          ST_artificial : added by obj-handling
  *
- *  STATUS: ST_regular    :  from original source code
- *          ST_artificial :  added by obj-handling
- *
+ *  ATTRIB: ST_regular    : local variable or function parameter
+ *          ST_global     : reference to global object
  */
 
 extern ids *MakeIds (char *name, char *mod, statustype status);
@@ -512,6 +514,13 @@ extern strings *MakeStrings (char *string, strings *next);
  ***    deps*       SUB        (O)
  ***    deps*       NEXT       (O)
  ***/
+
+/*
+ * STATUS: ST_sac      : SAC module/class
+ *         ST_external : external module/class
+ *         ST_system   : external system library
+ *         ST_own      : own declaration of module implementation
+ */
 
 extern deps *MakeDeps (char *name, char *decname, char *libname, statustype status,
                        deps *sub, deps *next);
@@ -987,19 +996,20 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***  temporary attributes for ST_spmdfun fundefs only:
  ***
  ***    node*           LIFTEDFROM  (N_fundef)    (liftspmd -> compile -> )
- ***    node*           COMPANION (N_fundef)         (rfin and mtfin)
+ ***    node*           COMPANION (N_fundef)      (rfin and mtfin)
  ***                                      FLAG WILL BE CLEANED before mt-phases!!!
  ***/
 
 /*
  *  STATUS: ST_regular      function defined in this module
- *          ST_objinitfun   generic function for object initialization
  *          ST_imported     imported function (maybe declaration only)
- *          ST_generic      class conversion function
- *          ST_foldfun      function used within fold-operation of with-loop
- *          ST_spmdfun      function containing lifted SPMD-region
- *          ST_loopfun      function represents a loop
- *          ST_repfun       function replicated for multithreaded execution
+ *          ST_Cfun         function implemented in C
+ *          ST_objinitfun   generic function for object initialization
+ *          ST_classfun     class conversion function
+ *          ST_foldfun      dummy function containing fold code for with-loop
+ *          ST_condfun      function representing an if-else-clause
+ *          ST_dofun        function representing a do-loop
+ *          ST_whilefun     function representing a while-loop
  *
  *  before multithreading:
  *  ATTRIB: ST_regular      shape-dependent or non-array function
@@ -1010,7 +1020,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *          ST_gen_remove   generic function that has been specialized and will
  *                          be removed before typechecking
  *
- *  whlie/after multithreading:
+ *  while/after multithreading:
  *  ATTRIB: ST_call_any       default_flag
  *                            (will be installed before using ATTRIB in mt-phases,
  *                             should not occur after mt-phases done)
@@ -1210,14 +1220,14 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***/
 
 /*
- * STATUS : ST_regular    :  original vardec in source code
- *          ST_used       :  after typecheck detected necessity of vardec
- *          ST_artificial :  artificial vardec produced by function inlining
- *                           of a function which uses a global object.
- *                           Such vardecs are removed by the precompiler.
+ * STATUS : ST_regular    : original vardec in source code
+ *          ST_used       : after typecheck detected necessity of vardec
+ *          ST_artificial : artificial vardec produced by function inlining
+ *                          of a function which uses a global object.
+ *                          Such vardecs are removed by the precompiler.
  *
- * ATTRIB : ST_regular :  normal variable
- *          ST_unique  :  unique variable
+ * ATTRIB : ST_regular : normal variable
+ *          ST_unique  : unique variable
  *
  * TYPEDEF is a reference to the respective typedef node if the type of
  * the declared variable is user-defined.
