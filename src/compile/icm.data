@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2002/08/06 08:58:54  dkr
+ * ND_WL_GENARRAY__SHAPE removed if TAGGED_ARRAYS is undefined
+ *
  * Revision 3.48  2002/08/05 20:41:44  dkr
  * ND_WL_GENARRAY__SHAPE... added
  *
@@ -700,6 +703,8 @@ ICM_END( ND_KS_VECT2OFFSET, (off_name, arr_name, dim, dims, shp_any))
  * ICMs for compilation of new with-loop
  */
 
+#ifdef TAGGED_ARRAYS
+
 #if defined(ND_WL_GENARRAY__SHAPE_id) || defined(ICM_ALL)
 ICM_DEF( ND_WL_GENARRAY__SHAPE_id, TRACE_NONE)
   ICM_NT( to_nt)
@@ -719,6 +724,8 @@ ICM_DEF( ND_WL_GENARRAY__SHAPE_arr, TRACE_NONE)
 ICM_END( ND_WL_GENARRAY__SHAPE_arr, (to_nt, to_sdim, shp_size, shpa_any,
                                      val_nt))
 #endif
+
+#endif /* TAGGED_ARRAYS */
 
 #if defined(WL_BEGIN__OFFSET) || defined(ICM_ALL)
 ICM_DEF( WL_BEGIN__OFFSET, TRACE_NONE)
