@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1998/05/12 22:40:36  dkr
+ * removed attributes for N_sync
+ *
  * Revision 1.21  1998/05/12 14:54:09  dkr
  * fixed a bug in SPMDLift...:
  *   in lifted regions the vardec-pointers of ids are now corrected, too.
@@ -260,7 +263,7 @@ SPMDLiftFundef (node *arg_node, node *arg_info)
 node *
 SPMDLiftSpmd (node *arg_node, node *arg_info)
 {
-    node *vardec, *fundef, *new_fundef, *body, *tmp;
+    node *vardec, *fundef, *new_fundef, *body;
     node *new_vardec, *last_vardec;
     node *fargs, *new_farg, *last_farg;
     node *retexprs, *new_retexpr, *last_retexpr;
@@ -414,17 +417,16 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
     body = Trav (body, arg_info);
     INFO_SPMD_FUNDEF (arg_info) = fundef;
 
-#if 0
-  /*
-   * insert SPMD-function into fundef-chain of modul
-   */
-  if (FUNDEF_NEXT( fundef) != NULL) {
-    FUNDEF_NEXT( new_fundef) = FUNDEF_NEXT( fundef);
-    FUNDEF_NEXT( fundef) = new_fundef;
-  }
-  else {
-    FUNDEF_NEXT( fundef) = new_fundef;
-  }
+#if 00
+    /*
+     * insert SPMD-function into fundef-chain of modul
+     */
+    if (FUNDEF_NEXT (fundef) != NULL) {
+        FUNDEF_NEXT (new_fundef) = FUNDEF_NEXT (fundef);
+        FUNDEF_NEXT (fundef) = new_fundef;
+    } else {
+        FUNDEF_NEXT (fundef) = new_fundef;
+    }
 #endif
 
     /*
@@ -616,13 +618,8 @@ SYNCInitAssign (node *arg_node, node *arg_info)
         ASSIGN_INSTR (arg_node) = sync;
 
         /*
-         * get INOUT_IDS/DEC_RC_IDS, IN/INOUT/OUT/LOCAL from the N_Nwith2 node.
+         * get IN/INOUT/OUT/LOCAL from the N_Nwith2 node.
          */
-
-        SYNC_INOUT_IDS (sync) = DupOneIds (LET_IDS (sync_let), NULL);
-        if (NWITH2_DEC_RC_IDS (with) != NULL) {
-            SYNC_DEC_RC_IDS (sync) = DupIds (NWITH2_DEC_RC_IDS (with), NULL);
-        }
 
         SYNC_IN (sync) = DFMGenMaskCopy (NWITH2_IN (with));
         SYNC_INOUT (sync) = DFMGenMaskCopy (NWITH2_INOUT (with));
