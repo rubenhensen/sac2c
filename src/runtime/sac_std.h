@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.13  2000/09/25 15:14:50  dkr
+ * ICM ND_TYPEDEF_ARRAY moved from sac_misc.h to sac_std.h
+ * ICM ND_TYPEDEF_HIDDEN created
+ *
  * Revision 2.12  2000/08/24 11:29:05  dkr
  * macros cat? renamed into CAT?
  *
@@ -147,6 +151,19 @@
 
 #define SAC_ND_A_RC(name) *CAT0 (name, __rc)
 #define SAC_ND_A_RCP(name) CAT0 (name, __rc)
+
+/*
+ * ICMs for typedefs:
+ * ====================
+ *
+ * ND_TYPEDEF_HIDDEN( name)
+ * ND_TYPEDEF_ARRAY( basetype, name)
+ *
+ */
+
+#define SAC_ND_TYPEDEF_HIDDEN(name) typedef void *name
+
+#define SAC_ND_TYPEDEF_ARRAY(basetype, name) typedef basetype *name;
 
 /*
  * ICMs for declaring refcounted data:
