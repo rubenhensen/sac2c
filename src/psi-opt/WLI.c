@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 2.13  2000/08/14 12:41:47  dkr
+ * some comments added
+ *
  * Revision 2.12  2000/06/23 14:17:34  dkr
  * NWITH_COMPLEX removed
  *
@@ -63,6 +67,7 @@
  *
  * Revision 1.1  1998/03/22 18:21:43  srs
  * Initial revision
+ *
  */
 
 /*******************************************************************************
@@ -236,8 +241,9 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
 
     iinfo = CreateIndex (elts);
     valid_permutation = Malloc (sizeof (int) * elts);
-    for (i = 0; i < elts;)
+    for (i = 0; i < elts;) {
         valid_permutation[i++] = 0;
+    }
 
     for (i = 0; i < elts && ok; i++) {
         /* check each element. */
@@ -275,8 +281,9 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
         arrayn = EXPRS_NEXT (arrayn);
     }
 
-    if (!ok)
+    if (!ok) {
         FREE (iinfo);
+    }
     FREE (valid_permutation);
 
     DBUG_RETURN (iinfo);
@@ -328,8 +335,9 @@ CreateIndexInfoId (node *idn, node *arg_info)
     } else {
         /* valid local variable */
         iinfo = ValidLocalId (idn);
-        if (iinfo)
+        if (iinfo) {
             INDEX (assignn) = DuplicateIndexInfo (iinfo);
+        }
     }
 
     DBUG_RETURN (NULL != INDEX (assignn));
@@ -444,10 +452,12 @@ CreateIndexInfoA (node *prfn, node *arg_info)
     wln = INFO_WLI_WL (arg_info);
 
     data1 = data2 = NULL;
-    if (N_id == NODE_TYPE (PRF_ARG1 (prfn)))
+    if (N_id == NODE_TYPE (PRF_ARG1 (prfn))) {
         data1 = MRD_GETDATA (ID_VARNO (PRF_ARG1 (prfn)), INFO_VARNO (arg_info));
-    if (N_id == NODE_TYPE (PRF_ARG2 (prfn)))
+    }
+    if (N_id == NODE_TYPE (PRF_ARG2 (prfn))) {
         data2 = MRD_GETDATA (ID_VARNO (PRF_ARG2 (prfn)), INFO_VARNO (arg_info));
+    }
 
     /* Which argument is the constant (so which will be the Id)? */
     if (N_num == NODE_TYPE (PRF_ARG1 (prfn)) || IsConstArray (PRF_ARG1 (prfn))) {
@@ -487,8 +497,9 @@ CreateIndexInfoA (node *prfn, node *arg_info)
             iinfo->arg_no = (1 == id_no) ? (2) : (1);
             iinfo->prf = SimplifyFun (PRF_PRF (prfn));
 
-            if (NODE_TYPE (constn) == N_array)
+            if (NODE_TYPE (constn) == N_array) {
                 tmpn = ARRAY_AELEMS (constn);
+            }
 
             for (i = 0; i < elts; i++) {
                 switch (NODE_TYPE (constn)) {
@@ -501,8 +512,9 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                     tmpn = EXPRS_NEXT (tmpn);
                     break;
                 case N_id:
-                    if (!IsConstArray (constn))
+                    if (!IsConstArray (constn)) {
                         break;
+                    }
                     val = ((int *)ID_CONSTVEC (constn))[i];
                     break;
                 default:
@@ -519,9 +531,9 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                         iinfo->last[i] = NULL; /* elt is constant */
                 }
 
-                if (iinfo->permutation[i])
+                if (iinfo->permutation[i]) {
                     iinfo->const_arg[i] = val;
-                else {
+                } else {
                     /* constant. Use FoldPrfScalars() to constantfold. */
                     type = MakeType (T_int, 0, NULL, NULL, NULL);
                     args[0] = MakeNum (val);
@@ -549,13 +561,13 @@ CreateIndexInfoA (node *prfn, node *arg_info)
             iinfo->arg_no = (1 == id_no) ? (2) : (1);
             iinfo->prf = SimplifyFun (PRF_PRF (prfn));
 
-            if (N_num == NODE_TYPE (constn))
+            if (N_num == NODE_TYPE (constn)) {
                 val = NUM_VAL (constn);
-            else
+            } else {
                 tmpn = ARRAY_AELEMS (constn);
+            }
             for (i = 0; i < elts; i++) {
                 if (N_num != NODE_TYPE (constn)) {
-
                     DBUG_ASSERT (tmpn, ("Too few elements in array"));
 
                     val = NUM_VAL (EXPRS_EXPR (tmpn));
@@ -574,8 +586,9 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                     FREE (type);
                     FREE (args[0]); /* *cf_node == *args[0] */
                     FREE (args[1]);
-                } else
+                } else {
                     iinfo->const_arg[i] = val;
+                }
             }
         }
     }
@@ -626,12 +639,13 @@ WLIassign (node *arg_node, node *arg_info)
 
     INFO_WLI_ASSIGN (arg_info) = arg_node;
 
-    if (INDEX (arg_node))
+    if (INDEX (arg_node)) {
         /* this is important. Only index transformations
            with a non-null INDEX are valid. See WLIlet. Before WLI, this
            pointer may be non null (somwhere wrong initialisation -> better
            use MakeAssign()!!! ) */
         FREE_INDEX_INFO (INDEX (arg_node));
+    }
 
     ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
     ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
@@ -831,8 +845,9 @@ WLIlet (node *arg_node, node *arg_info)
                        mean that we want to fold. */
                     tmpn
                       = CheckArrayFoldable (PRF_ARG1 (exprn), PRF_ARG2 (exprn), arg_info);
-                    if (!tmpn)
+                    if (!tmpn) {
                         FREE_INDEX_INFO (INDEX (INFO_WLI_ASSIGN (arg_info)));
+                    }
                 }
                 break;
 
@@ -984,8 +999,9 @@ WLINpart (node *arg_node, node *arg_info)
        one referencing generators.
        This is just a cross reference, so just traverse, do not assign the
        resulting node.*/
-    if (!NCODE_FLAG (NPART_CODE (arg_node)))
+    if (!NCODE_FLAG (NPART_CODE (arg_node))) {
         OPTTrav (NPART_CODE (arg_node), arg_info, INFO_WLI_WL (arg_info));
+    }
 
     DBUG_RETURN (arg_node);
 }
