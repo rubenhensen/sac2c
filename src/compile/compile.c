@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.37  1995/06/02 08:43:34  hw
+ * Revision 1.38  1995/06/06 11:39:02  hw
+ * changed CompPrf (F_take/F_drop) (first argument can be a scalar too, now)
+ *
+ * Revision 1.37  1995/06/02  08:43:34  hw
  * - renamed N_icm ND_END_FOLDPRF to ND_END_FOLD
  * - compilation of N_foldfun inserted
  *
@@ -1053,11 +1056,14 @@ CompPrf (node *arg_node, node *arg_info)
         case F_take: {
             /* store arguments and result (res contains refcount and pointer to
              * vardec ( don't free arg_info->IDS !!! )
+             *
+             * if first argument of prf is a scalar (N_um), it will be compiled
+             * like an vector (array) with one element
              */
             arg1 = arg_node->node[0]->node[0];
             arg2 = arg_node->node[0]->node[1]->node[0];
-            DBUG_ASSERT ((N_array == arg1->nodetype),
-                         "first argument of take/drop isn't an array");
+            DBUG_ASSERT (((N_array == arg1->nodetype) || (N_num == arg1->nodetype)),
+                         "first argument of take/drop isn't an array or scalar");
 
             MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
 
@@ -1084,12 +1090,15 @@ CompPrf (node *arg_node, node *arg_info)
                 CONST_ARRAY (arg2, res_ref);
             }
 
-            exprs = arg1->node[0];
-            n_elems = 0;
-            do {
-                n_elems += 1;
-                exprs = exprs->node[1];
-            } while (NULL != exprs);
+            if (N_array == arg1->nodetype) {
+                exprs = arg1->node[0];
+                n_elems = 0;
+                do {
+                    n_elems += 1;
+                    exprs = exprs->node[1];
+                } while (NULL != exprs);
+            } else
+                n_elems = 1;
 
             MAKENODE_NUM (n_node, n_elems);
             if (1 == is_drop) {
@@ -1099,8 +1108,12 @@ CompPrf (node *arg_node, node *arg_info)
                 CREATE_4_ARY_ICM (next_assign, "ND_KD_TAKE_CxA_A", dim_node, arg2, res,
                                   n_node);
             }
-            icm_arg->node[1] = arg1->node[0];
-            icm_arg->nnode = 2;
+            if (N_num == arg1->nodetype) {
+                MAKE_NEXT_ICM_ARG (icm_arg, arg1);
+            } else {
+                icm_arg->node[1] = arg1->node[0];
+                icm_arg->nnode = 2;
+            }
             APPEND_ASSIGNS (first_assign, next_assign);
 
             MAKENODE_NUM (n_node, 1);
