@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/11/26 00:20:39  sah
+  fixed bug
+
   Revision 1.2  2004/11/25 23:49:26  sah
   added ugly funs for CMPtree
 
@@ -164,7 +167,7 @@ node *TRAVgetSon( int no, node *parent)
 
   <xsl:template match="son" mode="travgetson" >
     <xsl:value-of select="'case '" />
-    <xsl:value-of select="position()" />
+    <xsl:value-of select="position()-1" />
     <xsl:value-of select="': result = '" />
     <xsl:call-template name="node-access">
       <xsl:with-param name="node" select="'parent'" />
