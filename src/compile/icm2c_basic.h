@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2003/09/25 10:58:18  dkr
+ * no changes done
+ *
  * Revision 3.15  2003/09/19 15:39:21  dkr
  * postfix _nt of varnames renamed into _NT
  *
@@ -47,16 +50,7 @@
  * VectToOffset2 changed, it prints "0" for empty arrays now.
  * So it is able to handle empty arays now.
  *
- * Revision 2.2  1999/04/12 09:37:48  cg
- * All accesses to C arrays are now performed through the new ICMs
- * ND_WRITE_ARRAY and ND_READ_ARRAY. This allows for an integration
- * of cache simulation as well as boundary checking.
- *
- * Revision 2.1  1999/02/23 12:42:37  sacbase
- * new release made
- *
- * Revision 1.2  1998/05/07 11:27:08  dkr
- * ICM names converted to new naming conventions.
+ * [...]
  *
  * Revision 1.1  1998/05/03 13:07:29  dkr
  * Initial revision
