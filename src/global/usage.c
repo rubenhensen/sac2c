@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.58  1998/03/02 13:59:02  cg
+ * added new option -target
+ *
  * Revision 1.57  1998/02/25 09:13:39  cg
  * usage.c streamlined
  * break specifiers added
@@ -262,21 +265,20 @@ usage ()
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
 
-            "\t -noopt \t\t\t\t  no optimizations at all\n"
-            "\n\t -nosacopt \t\t\t\t  no sac optimizations\n"
-            "\t -noconstant_folding or -noCF \t\t  no constant folding \n"
-            "\t -noinline_functions or -noINL\t\t  no function inlining \n"
-            "\t -nounroll_loops or -noUNR \t\t  no loop unrolling \n"
-            "\t -nounswitch_loops or -noUNS \t\t  no loop unswitching \n"
-            "\t -nodead_code_removal or -noDCR \t  no dead code removal \n"
-            "\t -nodead_function_removal or -noDFR \t  no dead function removal \n"
-            "\t -noloop_invariant_removal or -noLIR \t  no loop invariant removal \n"
-            "\t -nocse or -noCSE \t\t\t  no common subexpression elimination \n"
-            "\t -nowlf or -noWLF \t\t\t  no withloop folding \n"
-            "\n\t -nopsiopt\t\t\t\t  no psi optimisations\n"
-            "\t -noindex_vect_elimination or -noIVE \t  no index vector elimination \n"
-            "\t -noarray_elimination or -noAE \t\t  no array elimination \n"
-            "\n\t -norefcount_opt or -noRCO \t\t  no refcount optimization \n");
+            "\t -noOPT\t\tno optimizations at all\n"
+            "\n\t -noCF \t\tno constant folding \n"
+            "\t -noINL\t\tno function inlining \n"
+            "\t -noUNR\t\tno loop unrolling \n"
+            "\t -noUNS\t\tno loop unswitching \n"
+            "\t -noDCR\t\tno dead code removal \n"
+            "\t -noDFR\t\tno dead function removal \n"
+            "\t -noLIR\t\tno loop invariant removal \n"
+            "\t -noCSE\t\tno common subexpression elimination \n"
+            "\t -noWLF\t\tno withloop folding \n"
+            "\t -noIVE\t\tno index vector elimination \n"
+            "\t -noAE \t\tno array elimination \n"
+            "\t -noRCO\t\tno refcount optimization \n"
+            "\n\tLower case letters may be used instead!\n");
 
     printf ("\n\t -maxoptvar <no>\treserve <no> variables for optimization\n"
             "\t\t\t\t  Default: -maxoptvar %d\n",
@@ -320,15 +322,25 @@ usage ()
 
             "\n\nLINK OPTIONS:\n\n"
 
-            "\t -noranlib\t\tdon't use ranlib (for systems without ranlib)\n"
             "\t -l <n>\t\t\tlink level for generating SAC library\n"
             "\t\t\t\t  1: compile to one large object file\n"
             "\t\t\t\t  2: compile to archive of object files (default)\n"
 
-            "\n\nC-COMPILER OPTIONS:\t(handed to the C-compiler)\n\n"
+            "\n\nC-COMPILER OPTIONS:\n\n"
 
-            "\t -g \t\t\tinclude debug information\n"
-            "\t -O [123] \t\tC-compiler level of optimization\n"
+            "\t -g \t\t\tinclude debug information into object code\n"
+            "\t -O [0123] \t\tC compiler level of optimization\n"
+            "\t\t\t\tdefault: 0\n"
+            "\n\tThe actual effects of the above options are C compiler specific!\n"
+
+            "\n\nCUSTOMIZATION\n\n"
+
+            "\t-target <name>\tspecify a particular compilation target.\n"
+            "\t\t\tCompilation targets are used to customize sac2c for various\n"
+            "\t\t\ttarget architectures, operating systems, and C compilers.\n"
+            "\t\t\tThe target description is read either from the installation\n"
+            "\t\t\tspecific file $SACBASE/runtime/sac2crc or from a file named\n"
+            "\t\t\t.sac2crc within the user's home directory.\n"
 
             "\n\nENVIRONMENT VARIABLES:\n\n"
 
