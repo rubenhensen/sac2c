@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2004/09/15 17:07:14  ktr
+ * code brushing after code audit with Karsten
+ *
  * Revision 1.19  2004/09/06 13:53:56  ktr
  * Reordered alloc sequence.
  *
@@ -1019,6 +1022,31 @@ EMALid (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
+ * @fn Ids2ALS
+ *
+ *  @brief
+ *
+ *  @param ids
+ *
+ *  @return alloclist_struct
+ *
+ ***************************************************************************/
+alloclist_struct *
+Ids2ALS (ids *i)
+{
+    alloclist_struct *res;
+
+    if (i == NULL) {
+        res = NULL;
+    } else {
+        res = MakeALS (Ids2ALS (IDS_NEXT (i)), IDS_AVIS (i), NULL, NULL);
+    }
+
+    return (res);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn EMALlet
  *
  *  @brief
@@ -1040,13 +1068,7 @@ EMALlet (node *arg_node, info *arg_info)
     /*
      * Put all LHS identifiers into ALLOCLIST
      */
-    ids = LET_IDS (arg_node);
-
-    while (ids != NULL) {
-        INFO_EMAL_ALLOCLIST (arg_info)
-          = MakeALS (INFO_EMAL_ALLOCLIST (arg_info), IDS_AVIS (ids), NULL, NULL);
-        ids = IDS_NEXT (ids);
-    }
+    INFO_EMAL_ALLOCLIST (arg_info) = Ids2ALS (LET_IDS (arg_node));
 
     /*
      * Traverse RHS
