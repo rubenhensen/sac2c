@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2004/09/28 14:31:29  skt
+ * skipped superflous mt-header files
+ *
  * Revision 3.81  2004/09/28 14:11:18  ktr
  * removed old refcount and generatemasks
  *
@@ -327,15 +330,6 @@
 #include "cleanup_decls.h"
 #include "fun2lac.h"
 #include "adjust_ids.h"
-#include "schedule_init.h"
-#include "blocks_init.h"
-#include "blocks_expand.h"
-#include "repfuns_init.h"
-#include "mtfuns_init.h"
-#include "blocks_cons.h"
-#include "dataflow_analysis.h"
-#include "blocks_propagate.h"
-#include "barriers_init.h"
 #include "tag_executionmode.h"
 #include "create_withinwith.h"
 #include "propagate_executionmode.h"
@@ -345,8 +339,6 @@
 #include "cell_growth.h"
 #include "replicate_functions.h"
 #include "consolidate_cells.h"
-#include "blocks_lift.h"
-#include "adjust_calls.h"
 #include "pad_collect.h"
 #include "pad_transform.h"
 #include "print_interface_header.h"
