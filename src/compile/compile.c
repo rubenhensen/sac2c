@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/03/02 16:11:27  dkr
+ * some comments and DBUG_ASSERTs added
+ *
  * Revision 3.21  2001/02/22 12:51:19  nmw
  * check for empty assignment chain in blocks after removing
  * artificial variables in precompile
@@ -296,8 +299,8 @@ GetFoldCode (node *fundef)
 
     DBUG_ENTER ("GetFoldCode");
 
-    DBUG_ASSERT ((fundef != NULL), "fundef is NULL!");
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "no fundef found!");
+    DBUG_ASSERT ((fundef != NULL), "no pseudo fold-fun found!");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "corrupted pseudo fold-fun found!");
 
     /*
      * get code of the pseudo fold-fun
@@ -341,6 +344,12 @@ GetFoldVardecs (node *fundef)
     node *fold_vardecs;
 
     DBUG_ENTER ("GetFoldVardecs");
+
+    DBUG_ASSERT ((fundef != NULL), "no pseudo fold-fun found!");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "corrupted pseudo fold-fun found!");
+
+    DBUG_ASSERT ((FUNDEF_BODY (fundef) != NULL),
+                 "pseudo fold-fun with empty body found!");
 
     /*
      * get vardecs of the pseudo fold-fun
@@ -5262,7 +5271,7 @@ InsertIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
  *
  * Description:
  *   Compilation of a N_with2 node.
- *   If this is a fold-with-loop, we append the vardecs of the pseudo fold-fun
+ *   If this is a fold-with-loop, we append the vardecs of all pseudo fold-funs
  *    to the vardec-chain of the current function.
  *   The return value is a N_assign chain of ICMs.
  *   The old 'arg_node' is removed by COMPLet.
@@ -5296,20 +5305,16 @@ COMPNwith2 (node *arg_node, node *arg_info)
     old_wl_node = wl_node; /* stack 'wl_node' */
     wl_node = arg_node;
 
-    /*
-     * When update-in-place is active:
-     *   Insert ICMs for memory management (ND_CHECK_REUSE_ARRAY, ND_ALLOC_ARRAY),
-     *    if we have a genarray- or modarray-op.
-     *   (If we have a fold, this is done automaticly when compiling the
-     *    init-assignment 'wl_ids = neutral' !!!)
-     *
-     * If we have a fold-op, insert the vardecs of the pseudo fold-fun
-     *  into the vardec-chain of the current function.
-     * Afterwards an update of the DFM-base is done.
-     * (This must be done here, because 'COMPSync()' needs the corrected masks)
-     */
     if ((NWITH2_TYPE (arg_node) == WO_genarray)
         || (NWITH2_TYPE (arg_node) == WO_modarray)) {
+        /*
+         * genarray/modarray with-loop:
+         *
+         * Insert ICMs for memory management (ND_CHECK_REUSE_ARRAY, ND_ALLOC_ARRAY),
+         * Note: In case of a fold with-loop, this is done automaticly when
+         * compiling the init-assignment 'wl_ids = neutral' !!!
+         */
+
         if (optimize & OPT_UIP) {
             /*
              * find all arrays, that possibly can be reused.
@@ -5338,15 +5343,17 @@ COMPNwith2 (node *arg_node, node *arg_info)
           = AppendAssign (assigns, Ids2AllocArrayICMs_reuse (wl_ids, NULL,
                                                              NWITH2_PRAGMA (arg_node)));
     } else {
-        /* fold-with-loop */
+        /*
+         * fold with-loop:
+         *
+         * Insert the vardecs of all pseudo fold-funs into the vardec-chain of the
+         * current function. Afterwards an update of the DFM-base is needed.
+         * (This must be done here, because 'COMPSync()' needs the corrected masks)
+         */
 
         fundef = INFO_COMP_FUNDEF (arg_info);
-
         fold_vardecs = GetFoldVardecs (NWITH2_FUNDEF (arg_node));
         if (fold_vardecs != NULL) {
-            /*
-             * insert vardecs of pseudo fold-fun
-             */
             FUNDEF_VARDEC (fundef) = AppendVardec (FUNDEF_VARDEC (fundef), fold_vardecs);
 
             /*
