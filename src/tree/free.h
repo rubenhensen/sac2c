@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/06/23 15:32:44  nmw
+ * FreeCWrapper added
+ *
  * Revision 1.3  2000/06/13 12:25:28  dkr
  * functions for old with-loop removed
  *
@@ -259,6 +262,7 @@ extern node *FreeWLsegVar (node *arg_node, node *arg_info);
 extern node *FreeWLstriVar (node *arg_node, node *arg_info);
 extern node *FreeWLgridVar (node *arg_node, node *arg_info);
 
+extern node *FreeCWrapper (node *arg_node, node *arg_info);
 /* special functions */
 extern void FreePrf2 (node *arg_node, int arg_no); /* CF */
 

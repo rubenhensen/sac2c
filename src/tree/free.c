@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2000/06/23 15:32:30  nmw
+ * FreeCWrapper added
+ *
  * Revision 1.6  2000/06/13 12:24:55  dkr
  * functions for old with-loop removed
  *
@@ -1940,6 +1943,31 @@ FreeWLgridVar (node *arg_node, node *arg_info)
     if (WLGRIDVAR_CODE (arg_node) != NULL) {
         NCODE_USED (WLGRIDVAR_CODE (arg_node))--;
     }
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeCWrapper (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeCWrapper");
+
+    DBUG_PRINT ("FREE", ("Removing N_cwrapper node ..."));
+
+    tmp = FREECONT (CWRAPPER_NEXT (arg_node));
+
+    FREE (CWRAPPER_NAME (arg_node));
+
+    /* modulename is usually shared - no free!
+     * FREE( CWRAPPER_MOD(arg_node)); */
+
+    FreeNodelist (CWRAPPER_FUNS (arg_node));
 
     FREE (arg_node);
 
