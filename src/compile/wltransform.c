@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.101  2004/11/25 15:24:13  skt
+ * moved two macros from wl_bounds
+ *
  * Revision 3.100  2004/11/25 15:15:07  skt
  * some code brushing - lookfor HERE to go on
  *
@@ -54,6 +57,14 @@
 #include "wl_bounds.h"
 #include "wlpragma_funs.h"
 #include "wltransform.h"
+
+/*
+ * moved from wl_bounds.h
+ */
+#define IDX_IS_NUM(idx) ((idx) >= 0)
+
+#define GET_SHAPE_IDX(shape, dim)                                                        \
+    (((shape) != NULL) ? SHPSEG_SHAPE ((shape), (dim)) : IDX_SHAPE)
 
 /*
  * INFO structure
