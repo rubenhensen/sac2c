@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  2000/10/26 12:44:35  dkr
+ * signature of DupOneIds changed
+ *
  * Revision 2.16  2000/10/24 11:48:31  dkr
  * MakeType renamed into MakeTypes
  *
@@ -164,7 +167,7 @@ CreateBodyCode (node *partn, node *index)
 
     /* index vector */
     if (coden->mask[1][IDS_VARNO (NPART_VEC (partn))]) {
-        letn = MakeLet (DupTree (index), DupOneIds (NPART_VEC (partn), NULL));
+        letn = MakeLet (DupTree (index), DupOneIds (NPART_VEC (partn)));
         res = MakeAssign (letn, res);
     }
 
@@ -174,7 +177,7 @@ CreateBodyCode (node *partn, node *index)
 
     while (_ids) {
         if (coden->mask[1][IDS_VARNO (_ids)]) {
-            letn = MakeLet (DupTree (EXPRS_EXPR (index)), DupOneIds (_ids, NULL));
+            letn = MakeLet (DupTree (EXPRS_EXPR (index)), DupOneIds (_ids));
             res = MakeAssign (letn, res);
         }
 
@@ -219,7 +222,7 @@ CreateModGenarray (node *assignn, node *index)
 
     letexpr = MakePrf (F_modarray, exprs);
 
-    assignn = MakeAssign (MakeLet (letexpr, DupOneIds (array, NULL)), assignn);
+    assignn = MakeAssign (MakeLet (letexpr, DupOneIds (array)), assignn);
 
     /* append assignn to bodyn */
     if (bodyn) {
@@ -280,7 +283,7 @@ CreateFold (node *assignn, node *index)
                     MakeExprs (accvar, MakeExprs (DupTree (cexpr), NULL)));
     AP_FUNDEF (funap) = NWITHOP_FUNDEF (withop);
 
-    assigns = MakeAssign (MakeLet (funap, DupOneIds (acc, NULL)), NULL);
+    assigns = MakeAssign (MakeLet (funap, DupOneIds (acc)), NULL);
 
     /*
      * The following code is ment to inline the pseudo-funs for
@@ -651,9 +654,8 @@ DoUnrollModarray (node *wln, node *arg_info)
     }
 
     /* finally add Dupilcation of new array name */
-    letn
-      = MakeLet (DupTree (NWITH_ARRAY (wln)),
-                 DupOneIds (LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info))), NULL));
+    letn = MakeLet (DupTree (NWITH_ARRAY (wln)),
+                    DupOneIds (LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info)))));
     res = MakeAssign (letn, res);
 
     DBUG_RETURN (res);
@@ -768,7 +770,7 @@ DoUnrollGenarray (node *wln, node *arg_info)
     } else {
         let_expr = MakeArray (NULL);
     }
-    letn = MakeLet (let_expr, DupOneIds (arrayname, NULL));
+    letn = MakeLet (let_expr, DupOneIds (arrayname));
     res = MakeAssign (letn, res);
 
     DBUG_RETURN (res);
@@ -868,9 +870,8 @@ DoUnrollFold (node *wln, node *arg_info)
     }
 
     /* finally add initialisation of accumulator with neutral element. */
-    letn
-      = MakeLet (DupTree (NWITH_NEUTRAL (wln)),
-                 DupOneIds (LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info))), NULL));
+    letn = MakeLet (DupTree (NWITH_NEUTRAL (wln)),
+                    DupOneIds (LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info)))));
 
     res = MakeAssign (letn, res);
 
