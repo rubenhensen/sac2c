@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.197  1998/04/20 14:21:23  sbs
+ * inserted some comments in PrintIcm that relate to the usage of ICM_NEXT!
+ *
  * Revision 1.196  1998/04/20 02:37:26  dkr
  * changed PrintNodeTree
  *
@@ -1976,9 +1979,16 @@ PrintIcm (node *arg_node, node *arg_info)
     if (NULL != ICM_NEXT (arg_node)) {
         if ((1 == show_icm) || (0 == compiled_icm)) {
             if (0 == strcmp (ICM_NAME (arg_node), "ND_TYPEDEF_ARRAY")) {
+                /*
+                 * ICM's within the typedef-chain are connected via ICM_NEXT!
+                 */
                 fprintf (outfile, "\n");
                 INDENT;
             } else {
+                /*
+                 * ICM's that handle the arguments in fun-decl's are linked
+                 * via ICM_NEXT as well!! These have to be connected by colons!
+                 */
                 fprintf (outfile, ", ");
             }
 
