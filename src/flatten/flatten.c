@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2004/11/27 05:11:03  ktr
+ * late night fix
+ *
  * Revision 3.36  2004/11/27 03:08:01  ktr
  * pup
  *
@@ -686,7 +689,7 @@ Abstract (node *arg_node, info *arg_info)
 
     tmp = ILIBtmpVar ();
     ids = TBmakeIds (NULL, NULL);
-    IDS_SPNAME (ids) = tmp;
+    IDS_SPNAME (ids) = ILIBstringCopy (tmp);
 
     INFO_FLAT_LASTASSIGN (arg_info)
       = TBmakeAssign (TBmakeLet (ids, arg_node), INFO_FLAT_LASTASSIGN (arg_info));
@@ -696,7 +699,7 @@ Abstract (node *arg_node, info *arg_info)
                  ASSIGN_NEXT (INFO_FLAT_LASTASSIGN (arg_info))));
 
     res = TBmakeId (NULL);
-    ID_SPNAME (res) = ILIBstringCopy (tmp);
+    ID_SPNAME (res) = tmp;
 
     DBUG_RETURN (res);
 }
