@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.11  2004/11/19 21:05:12  sah
+# added objanalysis
+#
 # Revision 3.10  2004/01/29 13:06:05  skt
 # some adaptions because of moving ssa-files
 # from src/tree to src/flatten
@@ -59,8 +62,13 @@ include $(PROJECT_ROOT)/Makefile.Config
 INCS = -I../global -I../tree -I../../inc -I../typecheck -I../modules -I../print \
        -I../constants -I../flatten
 
+OBJS := objinit.o objects.o uniquecheck.o
 
-all: objinit.o objects.o uniquecheck.o
+ifeq ($(NEWAST),yes)
+  OBJS := objanalysis.o $(OBJS)
+endif
+
+all: $(OBJS)
 
 
 %.o: %.c
