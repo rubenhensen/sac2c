@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.22  2003/10/20 14:35:53  dkr
+# target icm_test modified
+#
 # Revision 3.21  2003/09/29 23:38:54  dkr
 # target icm_test modified: more GREPs added
 #
@@ -149,7 +152,7 @@ icm_test: icm_test.C
 	$(CC) -D_SHP_=AUD -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ | sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
 	$(CC) -D_SHP_=AUD -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ | sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
 	-grep CAT[0-9] icm_test.log
-	-grep NT icm_test.log
+	-grep "[^A-Z]NT_" icm_test.log
 	-grep Item icm_test.log
 	-grep __SCL icm_test.log
 	-grep __AKS icm_test.log
