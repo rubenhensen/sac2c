@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/03/08 17:01:41  hw
+ * Revision 1.15  1995/03/13 17:03:44  hw
+ * changover from 'info.id' to 'info.ids' of node N_id,
+ * N_post, N_pre done
+ *
+ * Revision 1.14  1995/03/08  17:01:41  hw
  * changed FltnExprs (if an N_array node is a child of N_exprs node
  *                    then N_array will be flattened too)
  *
@@ -234,14 +238,11 @@ FltnPrf (node *arg_node, node *arg_info)
             tmp_node1 = arg_node->node[i];
 
             id_node = MakeNode (N_id);
-            id_node->info.id = GenTmpVar (var_counter);
+            id_node->info.ids = MakeIds (GenTmpVar (var_counter));
             arg_node->node[i] = id_node;
 
             let_node = MakeNode (N_let);
-            let_node->info.ids = GEN_NODE (ids);
-            let_node->info.ids->id = GenTmpVar (var_counter++);
-            let_node->info.ids->next = NULL;
-            let_node->info.ids->node = NULL;
+            let_node->info.ids = MakeIds (GenTmpVar (var_counter++));
 
             assign_node = MakeNode (N_assign);
             assign_node->node[0] = let_node;
@@ -293,14 +294,11 @@ FltnExprs (node *arg_node, node *arg_info)
         tmp_node1 = arg_node->node[0];
 
         id_node = MakeNode (N_id);
-        id_node->info.id = GenTmpVar (var_counter);
+        id_node->info.ids = MakeIds (GenTmpVar (var_counter));
         arg_node->node[0] = id_node;
 
         let_node = MakeNode (N_let);
-        let_node->info.ids = GEN_NODE (ids);
-        let_node->info.ids->id = GenTmpVar (var_counter++);
-        let_node->info.ids->next = NULL;
-        let_node->info.ids->node = NULL;
+        let_node->info.ids = MakeIds (GenTmpVar (var_counter++));
 
         assign_node = MakeNode (N_assign);
         assign_node->node[0] = let_node;
@@ -638,14 +636,11 @@ FltnGen (node *arg_node, node *arg_info)
             tmp_node1 = arg_node->node[i];
 
             id_node = MakeNode (N_id);
-            id_node->info.id = GenTmpVar (var_counter);
+            id_node->info.ids = MakeIds (GenTmpVar (var_counter));
             arg_node->node[i] = id_node;
 
             let_node = MakeNode (N_let);
-            let_node->info.ids = GEN_NODE (ids);
-            let_node->info.ids->id = GenTmpVar (var_counter++);
-            let_node->info.ids->next = NULL;
-            let_node->info.ids->node = NULL;
+            let_node->info.ids = MakeIds (GenTmpVar (var_counter++));
 
             assign_node = MakeNode (N_assign);
             assign_node->node[0] = let_node;
