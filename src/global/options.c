@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2003/03/20 14:02:29  sbs
+ * config.h included; DISABLE_MT and DISABLE_PHM used.
+ *
  * Revision 3.37  2003/03/13 17:18:26  dkr
  * -minarrayrep activated for TAGGED_ARRAYS only
  *
@@ -306,6 +309,7 @@
 
 #include <stdlib.h>
 
+#include "config.h"
 #include "dbug.h"
 
 #define ARGS_ERROR(msg)                                                                  \
@@ -961,6 +965,25 @@ CheckOptionConsistency ()
                   "Array padding disabled"));
     }
 
+#ifdef DISABLE_MT
+    if (gen_mt_code != GEN_MT_NONE) {
+        gen_mt_code = GEN_MT_NONE;
+        num_threads = 1;
+        SYSWARN (("Code generation for multi-threaded program execution not"
+                  " yet available for " ARCH " running " OS ".\n"
+                  "Code for sequential execution generated instead"));
+    }
+#endif
+
+#ifdef DISABLE_PHM
+    if (optimize & OPT_PHM) {
+        SYSWARN (("Private heap management is not yet available for " ARCH " running " OS
+                  ".\n"
+                  "Conventional heap management is used instead"));
+        optimize &= ~OPT_PHM;
+    }
+#endif
+
 #ifdef TAGGED_ARRAYS
     if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
         gen_mt_code = GEN_MT_NONE;
@@ -974,14 +997,6 @@ CheckOptionConsistency ()
                   " management is not yet available for TAGGED_ARRAYS.\n"
                   "RCAO disabled"));
         optimize &= ~OPT_RCAO;
-    }
-#endif
-
-#ifdef SAC_FOR_OSX_MAC
-    if (optimize & OPT_PHM) {
-        SYSWARN (("Private heap management is not yet available for Mac OSX.\n"
-                  "Conventional heap management is used instead"));
-        optimize &= ~OPT_PHM;
     }
 #endif
 
