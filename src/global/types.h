@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1997/10/29 17:16:02  dkr
+ * with defined NEWTREE the component node.nnode does not longer exist
+ *
  * Revision 1.18  1997/10/07 16:04:41  srs
  * removed some unused typedefs
  *
@@ -291,17 +294,19 @@ typedef union {
  */
 
 typedef struct NODE {
-    nodetype nodetype;           /* type of node */
-    infotype info;               /* node dependent information */
-    int refcnt;                  /* reference count information */
-    int flag;                    /* the flag is used for node-status */
-                                 /* (loop invariant/not loop invariant,...) */
-    int counter;                 /* needed for the enumeration of fundefs!  */
-    int varno;                   /* number of variables - 1 */
-    long *mask[MAX_MASK];        /* special information about variables */
-                                 /* mainly used for optimizations       */
-    int nnode;                   /* number of used child nodes */
-                                 /* the traversal mechanism depends on it */
+    nodetype nodetype;    /* type of node */
+    infotype info;        /* node dependent information */
+    int refcnt;           /* reference count information */
+    int flag;             /* the flag is used for node-status */
+                          /* (loop invariant/not loop invariant,...) */
+    int counter;          /* needed for the enumeration of fundefs!  */
+    int varno;            /* number of variables - 1 */
+    long *mask[MAX_MASK]; /* special information about variables */
+                          /* mainly used for optimizations       */
+#ifndef NEWTREE
+    int nnode; /* number of used child nodes */
+               /* the traversal mechanism depends on it */
+#endif
     int lineno;                  /* line number in source code */
     struct NODE *node[MAX_SONS]; /* pointers to child nodes */
 } node;
