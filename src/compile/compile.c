@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.83  1996/05/29 16:47:48  sbs
+ * Revision 1.84  1996/08/01 09:53:18  cg
+ * bug fixed in compiling applications of functions with a
+ * variable number of return values.
+ *
+ * Revision 1.83  1996/05/29  16:47:48  sbs
  * -Inserted tree-macros in Compile, CompBlock, CompAssign
  *
  * expanded macros CHECK_REUSE__ALLOC_ARRAY_ND and DEC_OR_FREE_RC_ND
@@ -4383,6 +4387,7 @@ CompAp (node *arg_node, node *arg_info)
                 if (IDS_NEXT (ids) == NULL) {
                     InsertApDotsParam (icm_tab, icm_tab_entry);
                 }
+                cnt_param++;
             } else {
                 MAKE_ICM_ARG (icm_arg, tag_node);
                 icm_tab_entry = icm_arg;
@@ -4397,11 +4402,11 @@ CompAp (node *arg_node, node *arg_info)
                                      cnt_param);
 
                 fundef_rettypes = TYPES_NEXT (fundef_rettypes);
+                cnt_param++;
             }
         }
 
         ids = IDS_NEXT (ids);
-        cnt_param++;
     }
 
     /*
