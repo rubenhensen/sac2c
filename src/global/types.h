@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.18  1999/10/01 14:57:31  sbs
+ * typedef int bool added!
+ *
  * Revision 2.17  1999/07/23 17:17:46  jhs
  * Restructured node_info.mac and simplified it's usage.
  *
@@ -234,6 +237,8 @@ typedef /* unsigned */ int feature_t;
  * we better use 'int' here, to fool the cc compiler.
  * (a cast to 'unsigned int' is not a l-value !!)
  */
+
+typedef int bool;
 
 #define FEATURE_NONE 0  /* no special features at all */
 #define FEATURE_WL 1    /* with-loop containing array accesses */
