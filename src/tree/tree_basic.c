@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2002/03/01 02:38:43  dkr
+ * MakeArgtab() added
+ *
  * Revision 3.45  2002/02/22 12:04:10  dkr
  * NAMES_IN_TYPES hack is no longer needed :-)
  *
@@ -368,6 +371,32 @@ MakeAccess (node *array, node *iv, accessclass_t class, shpseg *offset,
 
 /*--------------------------------------------------------------------------*/
 
+argtab_t *
+MakeArgtab (int size)
+{
+    argtab_t *argtab;
+    int i;
+
+    DBUG_ENTER ("MakeArgtab");
+
+    argtab = Malloc (sizeof (argtab_t));
+
+    argtab->size = size + 1;
+    argtab->ptr_in = Malloc (argtab->size * sizeof (node *));
+    argtab->ptr_out = Malloc (argtab->size * sizeof (types *));
+    argtab->tag = Malloc (argtab->size * sizeof (argtag_t));
+
+    for (i = 0; i < argtab->size; i++) {
+        argtab->ptr_in[i] = NULL;
+        argtab->ptr_out[i] = NULL;
+        argtab->tag[i] = ATG_notag;
+    }
+
+    DBUG_RETURN (argtab);
+}
+
+/*--------------------------------------------------------------------------*/
+
 DFMfoldmask_t *
 MakeDFMfoldmask (node *vardec, node *foldop, DFMfoldmask_t *next)
 {
@@ -634,6 +663,8 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
     FUNDEF_INLINE (tmp) = FALSE;
 
     FUNDEF_USED (tmp) = USED_INACTIVE;
+
+    FUNDEF_ARGTAB (tmp) = NULL;
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
@@ -903,7 +934,9 @@ MakeAp (char *name, char *mod, node *args)
     AP_NAME (tmp) = name;
     AP_MOD (tmp) = mod;
     AP_ARGS (tmp) = args;
+
     AP_ATFLAG (tmp) = 0;
+    AP_ARGTAB (tmp) = NULL;
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
