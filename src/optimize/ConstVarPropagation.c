@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/11/26 13:14:48  ktr
+ * Comment of CVPprf enhanced.
+ *
  * Revision 1.11  2004/11/26 12:44:05  mwe
  * changes according to changes in ast.xml
  *
@@ -578,15 +581,17 @@ CVPexprs (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/********************************************************************
+/*****************************************************************************
  *
  * function:
  *   node* CVPprf(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse in the arguments of the prf node
+ *   Some prf arguments must not become constants.
+ *   E.g. The prf implementation of F_dim cannot handle constants at all!
  *
- ********************************************************************/
+ *****************************************************************************/
 
 node *
 CVPprf (node *arg_node, info *arg_info)
