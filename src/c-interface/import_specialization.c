@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.6  2001/03/22 18:03:00  dkr
+ * tree.h no longer included
+ *
  * Revision 3.5  2001/02/13 12:58:38  dkr
  * AddSpecializedFundef: access macros used
  *
@@ -44,14 +48,16 @@
  * Revision 1.1  2000/07/21 08:18:37  nmw
  * Initial revision
  *
- *
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "my_debug.h"
 #include "dbug.h"
 #include "traverse.h"
@@ -63,7 +69,6 @@
 #include "DupTree.h"
 #include "resource.h"
 #include "scnprs.h"
-#include "internal_lib.h"
 #include "import_specialization.h"
 
 /* datatype for local usage */
