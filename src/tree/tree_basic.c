@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2001/04/24 14:14:33  dkr
+ * MakeFundef: works correctly even with 'types == NULL' now
+ *
  * Revision 3.31  2001/04/24 13:28:08  dkr
  * MakeFundef: FUNDEF_USED initialized correctly
  *
@@ -698,18 +701,29 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
     FUNDEF_ARGS (tmp) = args;
     FUNDEF_NEXT (tmp) = next;
 
+#ifdef NAMES_IN_TYPES
+    if (FUNDEF_TYPES (tmp) != NULL) {
+        FREE (FUNDEF_NAME (tmp));
+        FREE (FUNDEF_MOD (tmp));
+    }
+#endif
+
     FUNDEF_TYPES (tmp) = types;
+
 #ifdef NAMES_IN_TYPES
-    FREE (FUNDEF_NAME (tmp));
+    if (FUNDEF_TYPES (tmp) != NULL) {
 #endif
-    FUNDEF_NAME (tmp) = name;
+        FUNDEF_NAME (tmp) = name;
+        FUNDEF_MOD (tmp) = mod;
+        FUNDEF_LINKMOD (tmp) = NULL;
+        FUNDEF_STATUS (tmp) = ST_regular;
+        FUNDEF_ATTRIB (tmp) = ST_regular;
 #ifdef NAMES_IN_TYPES
-    FREE (FUNDEF_MOD (tmp));
+    } else {
+        DBUG_ASSERT (((name == NULL) && (mod == NULL)),
+                     "FUNDEF_TYPES is needed for storing FUNDEF_NAME, FUNDEF_MOD");
+    }
 #endif
-    FUNDEF_MOD (tmp) = mod;
-    FUNDEF_LINKMOD (tmp) = NULL;
-    FUNDEF_STATUS (tmp) = ST_regular;
-    FUNDEF_ATTRIB (tmp) = ST_regular;
 
     FUNDEF_FUNNO (tmp) = 0;
     FUNDEF_INLINE (tmp) = FALSE;
