@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/11/23 13:48:40  skt
+ * moved 2 INFO compound macros from tree_compound.h
+ *
  * Revision 3.13  2004/07/29 15:05:03  sah
  * added access_info_t structure to annotate acces information
  * to the syntax tree (instead of using a N_info node). This
@@ -193,6 +196,9 @@ struct INFO {
 #define INFO_WLAA_WLLEVEL(n) (n->wllevel)
 #define INFO_WLAA_INDEXVAR(n) (n->indexvar)
 #define INFO_WLAA_WLARRAY(n) (n->wlarray)
+/* moved from tree_compound.h */
+#define INFO_WLAA_INDEXDIM(n) VARDEC_SHAPE (INFO_WLAA_INDEXVAR (n), 0)
+#define INFO_WLAA_ARRAYDIM(n) VARDEC_DIM (INFO_WLAA_WLARRAY (n))
 
 /*
  * INFO functions
