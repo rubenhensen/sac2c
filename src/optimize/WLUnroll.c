@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/10/18 09:44:07  dkr
+ * fixed a bug with user-defined types in DoUnrollGenarray
+ *
  * Revision 2.13  2000/06/23 15:21:10  dkr
  * signature of function DupTree changed
  *
@@ -743,12 +746,21 @@ DoUnrollGenarray (node *wln, node *arg_info)
      */
     args = DupTree (NWITH_SHAPE (wln));
 
-    type = IDS_TYPE (LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info))));
-    stype = TYPES_BASETYPE (type);
-
+    type = LET_TYPE (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info)));
     elements = 1;
-    for (i = 0; i < TYPES_DIM (type); i++)
+    for (i = 0; i < TYPES_DIM (type); i++) {
         elements *= TYPES_SHAPE (type, i);
+    }
+    if (TYPES_BASETYPE (type) == T_user) {
+        /*
+         * user-defined type -> get type implementation
+         */
+        type = TYPEDEF_TYPE (TYPES_TDEF (type));
+        for (i = 0; i < TYPES_DIM (type); i++) {
+            elements *= TYPES_SHAPE (type, i);
+        }
+    }
+    stype = TYPES_BASETYPE (type);
 
 #if 0
   /* drop reshape() */
