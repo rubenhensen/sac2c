@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/12/15 14:13:56  asi
+ * Revision 1.19  1995/12/21 10:36:55  cg
+ * added function CountFunctionParams
+ *
+ * Revision 1.18  1995/12/15  14:13:56  asi
  * added GetCompoundNode
  *
  * Revision 1.17  1995/12/07  16:25:14  asi
@@ -555,4 +558,36 @@ GetCompoundNode (node *arg_node)
         compound_node = NULL;
     }
     DBUG_RETURN (compound_node);
+}
+
+/***
+ ***  CountFunctionParams
+ ***/
+
+int
+CountFunctionParams (node *fundef)
+{
+    int count = 0;
+    types *tmp;
+    node *tmp2;
+
+    DBUG_ENTER ("CountFunctionParams");
+
+    if (FUNDEF_BASETYPE (fundef) != T_void) {
+        tmp = FUNDEF_TYPES (fundef);
+
+        do {
+            count++;
+            tmp = TYPES_NEXT (tmp);
+        } while (tmp != NULL);
+    }
+
+    tmp2 = FUNDEF_ARGS (fundef);
+
+    while (tmp2 != NULL) {
+        count++;
+        tmp2 = ARG_NEXT (tmp2);
+    }
+
+    DBUG_RETURN (count);
 }

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.24  1995/12/20 08:16:50  cg
+ * Revision 1.25  1995/12/21 10:36:55  cg
+ * added function CountFunctionParams
+ *
+ * Revision 1.24  1995/12/20  08:16:50  cg
  * added compound access macros for N_pragma node
  *
  * Revision 1.23  1995/12/18  14:41:51  asi
@@ -723,6 +726,23 @@ extern node *SearchObjdef (char *name, char *mod, node *implementations);
 #define FUNDEC_SHPSEG(n) (FUNDEF_SHPSEG (FUNDEC_DEF (n)))
 #define FUNDEC_TNAME(n) (FUNDEF_NAME (FUNDEC_DEF (n)))
 #define FUNDEC_TMOD(n) (FUNDEF_MOD (FUNDEC_DEF (n)))
+
+/*
+ *
+ *  functionname  : CountFunctionParams
+ *  arguments     : 1) N_fundef node
+ *  description   : counts the number of parameters of a function.
+ *                  This includes return values AND formal arguments.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : DBUG, TREE
+ *
+ *  remarks       :
+ *
+ */
+
+extern int CountFunctionParams (node *fundef);
 
 /*
  *
