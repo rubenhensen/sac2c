@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2002/04/09 16:34:55  dkr
+ * debug output for FUNDEF_ARGTAB and AP_ARGTAB added
+ *
  * Revision 3.79  2002/04/08 19:59:51  dkr
  * PrintAvis() and PrintSSAcnt() modified.
  * DBUG-strings PRINT_AVIS, PRINT_SSA added.
@@ -602,6 +605,74 @@ PrintStatus (statustype status, bool do_it)
 /******************************************************************************
  *
  * Function:
+ *   void PrintArgtab( argtab_t *argtab, bool is_def)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+void
+PrintArgtab (argtab_t *argtab, bool is_def)
+{
+    int i;
+
+    DBUG_ENTER ("PrintArgtab");
+
+    fprintf (outfile, "[");
+    for (i = 0; i < argtab->size; i++) {
+        if (argtab->tag[i] != ATG_notag) {
+            fprintf (outfile, " %s:", mdb_argtag[argtab->tag[i]]);
+
+            if (argtab->ptr_in[i] != NULL) {
+                PRINT_POINTER_BRACKETS (outfile, argtab->ptr_in[i]);
+                if (is_def) {
+                    DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_arg),
+                                 "illegal argtab entry found!");
+
+                    fprintf (outfile, "%s", ARG_NAME (argtab->ptr_in[i]));
+                } else {
+                    DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_exprs),
+                                 "illegal argtab entry found!");
+
+                    fprintf (outfile, "%s",
+                             mdb_nodetype[NODE_TYPE (EXPRS_EXPR (argtab->ptr_in[i]))]);
+                }
+            } else {
+                fprintf (outfile, "-");
+            }
+
+            fprintf (outfile, "/");
+
+            if (argtab->ptr_out[i] != NULL) {
+                PRINT_POINTER_BRACKETS (outfile, argtab->ptr_out[i]);
+                if (is_def) {
+                } else {
+                    fprintf (outfile, "%s",
+                             STR_OR_EMPTY (IDS_NAME (((ids *)argtab->ptr_out[i]))));
+                }
+            } else {
+                fprintf (outfile, "-");
+            }
+        } else {
+            DBUG_ASSERT ((argtab->ptr_in[i] == NULL), "illegal argtab entry found!");
+            DBUG_ASSERT ((argtab->ptr_out[i] == NULL), "illegal argtab entry found!");
+
+            fprintf (outfile, " ---");
+        }
+
+        if (i < argtab->size - 1) {
+            fprintf (outfile, ",");
+        }
+    }
+    fprintf (outfile, " ]");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *Argtab2Fundef( node *fundef)
  *
  * Description:
@@ -1025,22 +1096,22 @@ PrintImplist (node *arg_node, node *arg_info)
         if (IMPLIST_ITYPES (arg_node) != NULL) {
             fprintf (outfile, "\n  implicit types: ");
             PrintIds (IMPLIST_ITYPES (arg_node), arg_info);
-            fprintf (outfile, ";");
+            fprintf (outfile, "; ");
         }
         if (IMPLIST_ETYPES (arg_node) != NULL) {
             fprintf (outfile, "\n  explicit types: ");
             PrintIds (IMPLIST_ETYPES (arg_node), arg_info);
-            fprintf (outfile, ";");
+            fprintf (outfile, "; ");
         }
         if (IMPLIST_OBJS (arg_node) != NULL) {
             fprintf (outfile, "\n  global objects: ");
             PrintIds (IMPLIST_OBJS (arg_node), arg_info);
-            fprintf (outfile, ";");
+            fprintf (outfile, "; ");
         }
         if (IMPLIST_FUNS (arg_node) != NULL) {
             fprintf (outfile, "\n  funs: ");
             PrintIds (IMPLIST_FUNS (arg_node), arg_info);
-            fprintf (outfile, ";");
+            fprintf (outfile, "; ");
         }
         fprintf (outfile, "\n}\n");
     }
@@ -1197,23 +1268,48 @@ PrintFunctionHeader (node *arg_node, node *arg_info)
 {
     types *ret_types;
     char *type_str;
+    bool print_old = TRUE;
+    bool print_new = FALSE;
+    bool print_argtab = FALSE;
 
     DBUG_ENTER ("PrintFunctionHeader");
 
     PRINT_LINE_PRAGMA_IN_SIB (outfile, arg_node);
 
+    if (FUNDEF_ARGTAB (arg_node) != NULL) {
+        print_old = FALSE;
+        print_new = TRUE;
+
+        DBUG_EXECUTE ("PRINT_ARGTAB", fprintf (outfile, "/* \n"); INDENT;
+                      fprintf (outfile, " *  ");
+                      PrintArgtab (FUNDEF_ARGTAB (arg_node), TRUE);
+                      fprintf (outfile, "  */\n"); INDENT; print_old = TRUE;
+                      print_argtab = TRUE;);
+    }
+
     if (FUNDEF_INLINE (arg_node)) {
         fprintf (outfile, "inline ");
     }
 
-    if (FUNDEF_ARGTAB (arg_node) != NULL) {
+    if (print_new) {
         node *tmp = Argtab2Fundef (arg_node);
 
         PrintFunctionHeader (tmp, arg_info);
         tmp = FreeZombie (FreeTree (tmp));
 
-        PrintArgtags (FUNDEF_ARGTAB (arg_node));
-    } else {
+        fprintf (outfile, " ");
+        if (!print_argtab) {
+            PrintArgtags (FUNDEF_ARGTAB (arg_node));
+        }
+    }
+
+    if (print_old) {
+        if (print_new) {
+            fprintf (outfile, "\n");
+            INDENT;
+            fprintf (outfile, "/*  ");
+        }
+
         ret_types = FUNDEF_TYPES (arg_node);
         while (ret_types != NULL) {
             type_str = Type2String (ret_types, 0, FALSE);
@@ -1248,6 +1344,12 @@ PrintFunctionHeader (node *arg_node, node *arg_info)
         }
 
         fprintf (outfile, ")");
+
+        if (print_new) {
+            fprintf (outfile, "\n");
+            INDENT;
+            fprintf (outfile, " */ ");
+        }
     }
 
     DBUG_VOID_RETURN;
@@ -1564,7 +1666,7 @@ PrintVardec (node *arg_node, node *arg_info)
             Trav (VARDEC_COLCHN (arg_node), arg_info);
         }
 
-        fprintf (outfile, ";");
+        fprintf (outfile, "; ");
 
         Trav (VARDEC_AVIS (arg_node), arg_info);
 
@@ -1703,7 +1805,7 @@ PrintReturn (node *arg_node, node *arg_info)
         Trav (RETURN_EXPRS (arg_node), arg_info);
         fprintf (outfile, ")");
     }
-    fprintf (outfile, ";");
+    fprintf (outfile, "; ");
 
     DBUG_RETURN (arg_node);
 }
@@ -1946,6 +2048,9 @@ node *
 PrintLet (node *arg_node, node *arg_info)
 {
     node *expr;
+    bool print_old = TRUE;
+    bool print_new = FALSE;
+    bool print_argtab = FALSE;
 
     DBUG_ENTER ("PrintLet");
 
@@ -1966,13 +2071,33 @@ PrintLet (node *arg_node, node *arg_info)
 
     expr = LET_EXPR (arg_node);
     if ((NODE_TYPE (expr) == N_ap) && (AP_ARGTAB (expr) != NULL)) {
+        print_old = FALSE;
+        print_new = TRUE;
+
+        DBUG_EXECUTE ("PRINT_ARGTAB", fprintf (outfile, "/* \n"); INDENT;
+                      fprintf (outfile, " *  "); PrintArgtab (AP_ARGTAB (expr), FALSE);
+                      fprintf (outfile, "  */\n"); INDENT; print_old = TRUE;
+                      print_argtab = TRUE;);
+    }
+
+    if (print_new) {
         node *tmp = Argtab2Let (expr);
 
         Trav (tmp, arg_info);
         tmp = FreeTree (tmp);
 
-        PrintArgtags (AP_ARGTAB (expr));
-    } else {
+        if (!print_argtab) {
+            PrintArgtags (AP_ARGTAB (expr));
+        }
+    }
+
+    if (print_old) {
+        if (print_new) {
+            fprintf (outfile, "\n");
+            INDENT;
+            fprintf (outfile, "/*  ");
+        }
+
         if (LET_IDS (arg_node) != NULL) {
             PrintIds (LET_IDS (arg_node), arg_info);
             fprintf (outfile, " = ");
@@ -1980,6 +2105,12 @@ PrintLet (node *arg_node, node *arg_info)
         Trav (expr, arg_info);
 
         fprintf (outfile, "; ");
+
+        if (print_new) {
+            fprintf (outfile, "\n");
+            INDENT;
+            fprintf (outfile, " */ ");
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -4113,7 +4244,7 @@ DoPrintShapeAST (int dim, shpseg *shape)
  *
  * description:
  *   Prints a basic types-structure.
- *   This function is called from 'DoPrintAllTypeAST' only.
+ *   This function is called from 'DoPrintAllTypesAST' only.
  *
  ******************************************************************************/
 
@@ -4138,7 +4269,7 @@ DoPrintBasicTypeAST (types *type)
 /******************************************************************************
  *
  * Function:
- *   void DoPrintAllTypeAST( types *type, bool print_status)
+ *   void DoPrintAllTypesAST( types *type, bool print_status, bool print_addr)
  *
  * Description:
  *   Prints a single types-structure.
@@ -4147,9 +4278,13 @@ DoPrintBasicTypeAST (types *type)
  ******************************************************************************/
 
 static void
-DoPrintAllTypeAST (types *type, bool print_status)
+DoPrintAllTypesAST (types *type, bool print_status, bool print_addr)
 {
-    DBUG_ENTER ("DoPrintAllTypeAST");
+    DBUG_ENTER ("DoPrintAllTypesAST");
+
+    if (print_addr) {
+        PRINT_POINTER_BRACKETS (outfile, type);
+    }
 
     if (TYPES_BASETYPE (type) == T_user) {
         PRINT_STRING (outfile, TYPES_NAME (type));
@@ -4171,7 +4306,7 @@ DoPrintAllTypeAST (types *type, bool print_status)
 
     if (TYPES_NEXT (type) != NULL) {
         fprintf (outfile, " ");
-        DoPrintAllTypeAST (TYPES_NEXT (type), print_status);
+        DoPrintAllTypesAST (TYPES_NEXT (type), print_status, print_addr);
     }
 
     DBUG_VOID_RETURN;
@@ -4180,7 +4315,7 @@ DoPrintAllTypeAST (types *type, bool print_status)
 /******************************************************************************
  *
  * Function:
- *   void DoPrintTypesAST( types *type, bool print_status)
+ *   void DoPrintTypesAST( types *type, bool print_status, bool print_addr)
  *
  * Description:
  *   Prints all the data of a types-structure.
@@ -4188,7 +4323,7 @@ DoPrintAllTypeAST (types *type, bool print_status)
  ******************************************************************************/
 
 static void
-DoPrintTypesAST (types *type, bool print_status)
+DoPrintTypesAST (types *type, bool print_status, bool print_addr)
 {
     DBUG_ENTER ("DoPrintTypesAST");
 
@@ -4196,7 +4331,7 @@ DoPrintTypesAST (types *type, bool print_status)
         if (TYPES_NEXT (type) != NULL) {
             fprintf (outfile, "{ ");
         }
-        DoPrintAllTypeAST (type, print_status);
+        DoPrintAllTypesAST (type, print_status, print_addr);
         if (TYPES_NEXT (type) != NULL) {
             fprintf (outfile, " }");
         }
@@ -4226,7 +4361,7 @@ DoPrintIdsAST (ids *vars, bool print_status)
     fprintf (outfile, "{ ");
     while (vars != NULL) {
         if (IDS_VARDEC (vars) != NULL) {
-            DoPrintTypesAST (IDS_TYPE (vars), TRUE);
+            DoPrintTypesAST (IDS_TYPE (vars), TRUE, FALSE);
             PRINT_POINTER_BRACKETS (outfile, IDS_VARDEC (vars));
         } else {
             fprintf (outfile, "/*no decl*/");
@@ -4390,7 +4525,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_typedef:
             fprintf (outfile, "(");
 
-            DoPrintTypesAST (TYPEDEF_TYPE (arg_node), TRUE);
+            DoPrintTypesAST (TYPEDEF_TYPE (arg_node), TRUE, FALSE);
             fprintf (outfile, " ");
 
             PRINT_STRING (outfile, TYPEDEF_NAME (arg_node));
@@ -4406,7 +4541,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_objdef:
             fprintf (outfile, "(");
 
-            DoPrintTypesAST (OBJDEF_TYPE (arg_node), TRUE);
+            DoPrintTypesAST (OBJDEF_TYPE (arg_node), TRUE, FALSE);
             fprintf (outfile, " ");
 
             PRINT_STRING (outfile, OBJDEF_NAME (arg_node));
@@ -4422,7 +4557,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_fundef:
             fprintf (outfile, "(");
 
-            DoPrintTypesAST (FUNDEF_TYPES (arg_node), TRUE);
+            DoPrintTypesAST (FUNDEF_TYPES (arg_node), TRUE, TRUE);
             fprintf (outfile, " ");
 
             PRINT_STRING (outfile, FUNDEF_NAME (arg_node));
@@ -4431,11 +4566,15 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             PrintStatus (FUNDEF_STATUS (arg_node), TRUE);
 
             fprintf (outfile, ", ");
-            fprintf (outfile, "used: %d", FUNDEF_USED (arg_node));
+            fprintf (outfile, "argtab: ");
+            PrintArgtab (FUNDEF_ARGTAB (arg_node), TRUE);
 
             fprintf (outfile, ", ");
             fprintf (outfile, "mask base: ");
             PRINT_POINTER_BRACKETS (outfile, FUNDEF_DFM_BASE (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "used: %d", FUNDEF_USED (arg_node));
 
             if (FUNDEF_IS_LACFUN (arg_node)) {
                 fprintf (outfile, ", ");
@@ -4468,7 +4607,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_arg:
             fprintf (outfile, "(");
 
-            DoPrintTypesAST (ARG_TYPE (arg_node), TRUE);
+            DoPrintTypesAST (ARG_TYPE (arg_node), TRUE, FALSE);
             fprintf (outfile, " ");
 
             PRINT_STRING (outfile, ARG_NAME (arg_node));
@@ -4489,7 +4628,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_vardec:
             fprintf (outfile, "(");
 
-            DoPrintTypesAST (VARDEC_TYPE (arg_node), TRUE);
+            DoPrintTypesAST (VARDEC_TYPE (arg_node), TRUE, FALSE);
             fprintf (outfile, " ");
 
             PRINT_STRING (outfile, VARDEC_NAME (arg_node));
@@ -4587,6 +4726,10 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, "fundef: ");
             PRINT_POINTER_BRACKETS (outfile, AP_FUNDEF (arg_node));
 
+            fprintf (outfile, ", ");
+            fprintf (outfile, "argtab: ");
+            PrintArgtab (AP_ARGTAB (arg_node), FALSE);
+
             fprintf (outfile, ")");
             break;
 
@@ -4602,7 +4745,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, "(");
 
             if (ID_VARDEC (arg_node) != NULL) {
-                DoPrintTypesAST (ID_TYPE (arg_node), TRUE);
+                DoPrintTypesAST (ID_TYPE (arg_node), TRUE, FALSE);
                 PRINT_POINTER_BRACKETS (outfile, ID_VARDEC (arg_node));
             } else {
                 fprintf (outfile, "/*no decl*/");
@@ -4630,7 +4773,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_array:
             fprintf (outfile, "(");
 
-            DoPrintTypesAST (ARRAY_TYPE (arg_node), TRUE);
+            DoPrintTypesAST (ARRAY_TYPE (arg_node), TRUE, FALSE);
 
             fprintf (outfile, ")");
             break;
