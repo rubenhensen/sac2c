@@ -1,6 +1,9 @@
-/*      $Id$
+/*
  *
  * $Log$
+ * Revision 3.4  2001/03/22 20:41:10  dkr
+ * no changes done
+ *
  * Revision 3.3  2001/03/05 17:02:39  sbs
  * switched from CF to CO for prf_add_AxA.
  *
@@ -43,20 +46,24 @@
  *
  * Revision 1.1  1998/04/28 15:48:09  srs
  * Initial revision
+ *
  */
 
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
 
-#include "tree.h"
+#include "tree.h" /* MakeNode() */
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "print.h"
 #include "my_debug.h"
 #include "dbug.h"
 #include "traverse.h"
 #include "Error.h"
 #include "free.h"
-#include "internal_lib.h"
 #include "globals.h"
 #include "ConstantFolding.h"
 #include "constants.h"

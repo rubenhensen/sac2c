@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/03/22 20:37:49  dkr
+ * no changes done
+ *
  * Revision 3.6  2001/03/22 14:02:27  sbs
  * S_S added for F_abs
  *
@@ -105,13 +108,17 @@
  */
 
 #include <stdlib.h>
+
+#include "tree.h" /* old tree definition */
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "globals.h"
-#include "tree.h"
 #include "prim_fun.h"
 #include "dbug.h"
 #include "Error.h"
 #include "my_debug.h"
-#include "internal_lib.h"
 #include "DupTree.h"
 #include "convert.h"
 #include "free.h"
