@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.144  1998/01/30 17:49:15  srs
+ * modified printing of new WL generator
+ *
  * Revision 1.143  1998/01/22 12:04:31  srs
  * *** empty log message ***
  *
@@ -2005,11 +2008,15 @@ PrintNGenerator (node *gen, node *idx, node *arg_info)
     fprintf (outfile, " %s ", prf_string[NGEN_OP1 (gen)]);
 
     /* print indices */
-    if (WI_scalars == NWITHID_TYPE (idx))
+    if (NWITHID_VEC (idx))
+        PrintIds (NWITHID_VEC (idx));
+    if (NWITHID_VEC (idx) && NWITHID_IDS (idx))
+        fprintf (outfile, ":");
+    if (NWITHID_IDS (idx)) {
         fprintf (outfile, "[");
-    PrintIds (NWITHID_IDS (idx));
-    if (WI_scalars == NWITHID_TYPE (idx))
+        PrintIds (NWITHID_IDS (idx));
         fprintf (outfile, "]");
+    }
 
     /* print second operator and lower bound */
     fprintf (outfile, " %s ", prf_string[NGEN_OP2 (gen)]);
