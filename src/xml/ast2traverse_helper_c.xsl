@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/25 23:49:26  sah
+  added ugly funs for CMPtree
+
   Revision 1.1  2004/11/24 17:55:56  sah
   Initial revision
 
@@ -60,7 +63,7 @@ node *TRAVsons(node *arg_node, info *arg_info)
 
   switch (NODE_TYPE( arg_node)) {
   </xsl:text>
-  <xsl:apply-templates select="/definition/syntaxtree" />
+  <xsl:apply-templates select="/definition/syntaxtree" mode="travsons" />
   <xsl:text>
     default:
       DBUG_ASSERT( (FALSE), 
@@ -71,20 +74,57 @@ node *TRAVsons(node *arg_node, info *arg_info)
   DBUG_RETURN( arg_node);
 }
 
+int TRAVnumSons( node *node)
+{
+  int result = 0;
+
+  DBUG_ENTER("TRAVnumSons");
+
+  switch (NODE_TYPE( node)) {
+  </xsl:text>
+  <xsl:apply-templates select="/definition/syntaxtree" mode="travnumsons" />
+  <xsl:text>
+    default:
+      DBUG_ASSERT( (FALSE),
+         "Illegal nodetype found!" );
+      break;
+  }
+
+  DBUG_RETURN( result);
+}
+
+node *TRAVgetSon( int no, node *parent)
+{
+  node * result;
+
+  DBUG_ENTER("TRAVgetSon");
+
+  switch (NODE_TYPE( parent)) {
+  </xsl:text>
+  <xsl:apply-templates select="/definition/syntaxtree" mode="travgetson" />
+  <xsl:text>
+    default:
+      DBUG_ASSERT( (FALSE),
+         "Illegal nodetype found!" );
+      break;
+  }
+
+  DBUG_RETURN( result);
+}
     </xsl:text>
   </xsl:template>
 
-  <xsl:template match="node" >
+  <xsl:template match="node" mode="travsons" >
     <xsl:value-of select="'case '" />
     <xsl:call-template name="name-to-nodeenum">
       <xsl:with-param name="name" select="@name" />
     </xsl:call-template>
     <xsl:value-of select="': '" />
-      <xsl:apply-templates select="sons/son" />
+      <xsl:apply-templates select="sons/son" mode="travsons" />
     <xsl:value-of select="'break;'" />
   </xsl:template>
 
-  <xsl:template match="sons/son" >
+  <xsl:template match="sons/son" mode="travsons" >
     <xsl:value-of select="'TRAV( '" />
     <xsl:call-template name="node-access">
       <xsl:with-param name="node">
@@ -100,5 +140,38 @@ node *TRAVsons(node *arg_node, info *arg_info)
     <xsl:value-of select="', arg_info);'" />
   </xsl:template>
 
-    
+  <xsl:template match="node" mode="travnumsons" >
+    <xsl:value-of select="'case '" />
+    <xsl:call-template name="name-to-nodeenum">
+      <xsl:with-param name="name" select="@name" />
+    </xsl:call-template>
+    <xsl:value-of select="': '" />
+    <xsl:value-of select="'result = '" />
+    <xsl:value-of select="count( sons/son)" />
+    <xsl:value-of select="';'" />
+    <xsl:value-of select="'break;'" />
+  </xsl:template>
+
+  <xsl:template match="node" mode="travgetson" >
+    <xsl:value-of select="'case '" />
+    <xsl:call-template name="name-to-nodeenum">
+      <xsl:with-param name="name" select="@name" />
+    </xsl:call-template>
+    <xsl:value-of select="': switch (no) { '" />
+    <xsl:apply-templates select="sons/son" mode="travgetson" />
+    <xsl:value-of select="'default: DBUG_ASSERT( (FALSE), &quot;index out of range!&quot;); break; } break;'" />
+  </xsl:template>
+
+  <xsl:template match="son" mode="travgetson" >
+    <xsl:value-of select="'case '" />
+    <xsl:value-of select="position()" />
+    <xsl:value-of select="': result = '" />
+    <xsl:call-template name="node-access">
+      <xsl:with-param name="node" select="'parent'" />
+      <xsl:with-param name="nodetype" select="../../@name" />
+      <xsl:with-param name="field" select="@name" />
+    </xsl:call-template>
+    <xsl:value-of select="'; break;'" />
+  </xsl:template>
+
 </xsl:stylesheet>
