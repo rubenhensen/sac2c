@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.9  2003/04/24 21:51:52  mwe
+ * big fixed (SacZilla Bug-ID: 13)
+ *
  * Revision 1.8  2003/04/23 19:53:44  mwe
  * support for F_add_AxA,... and F_mul_AxA,... added
  *
@@ -2009,6 +2012,24 @@ RemoveMostFrequentNode (node *arg_info)
     DBUG_RETURN (arg_info);
 }
 
+static bool
+IsMainOrSecondOperator (node *id, node *arg_info)
+{
+
+    bool result = FALSE;
+    node *operator;
+
+    DBUG_ENTER ("IsMainOrSecondOperator");
+
+    operator= GetUsedOperator (id, arg_info);
+
+    if ((IsSameOperator (operator, INFO_DL_SECONDOPERATOR (arg_info)))
+        || (IsSameOperator (operator, INFO_DL_MAINOPERATOR (arg_info))))
+        result = TRUE;
+
+    DBUG_RETURN (result);
+}
+
 /*****************************************************************************
  *
  * function:
@@ -2048,7 +2069,8 @@ OptTravElems (node *arg_node, node *arg_info)
         || ReachedArgument (EXPRS_EXPR (arg_node))
         || ReachedDefinition (EXPRS_EXPR (arg_node))
         || (!IsSupportedOperator (EXPRS_EXPR (arg_node), arg_info))
-        || IsThirdOperatorReached (EXPRS_EXPR (arg_node), arg_info)) {
+        || IsThirdOperatorReached (EXPRS_EXPR (arg_node), arg_info)
+        || (!IsMainOrSecondOperator (EXPRS_EXPR (arg_node), arg_info))) {
 
         /*
          * termination-condition reached
@@ -2499,7 +2521,12 @@ SearchTravElems (node *arg_node, node *arg_info)
     } else if (ReachedArgument (EXPRS_EXPR (arg_node))
                || ReachedDefinition (EXPRS_EXPR (arg_node))
                || (!IsSupportedOperator (EXPRS_EXPR (arg_node), arg_info))
-               || IsThirdOperatorReached (EXPRS_EXPR (arg_node), arg_info)) {
+               || IsThirdOperatorReached (EXPRS_EXPR (arg_node), arg_info)
+               || ((IsSupportedOperator (EXPRS_EXPR (arg_node), arg_info))
+                   && (!IsValidSecondOperator (EXPRS_EXPR (arg_node), arg_info))
+                   && (!IsSameOperator (INFO_DL_MAINOPERATOR (arg_info),
+                                        GetUsedOperator (EXPRS_EXPR (arg_node),
+                                                         arg_info))))) {
 
         /*
          * other termination-condition reached
