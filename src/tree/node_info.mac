@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2001/03/19 14:24:06  nmw
+ * USSAassign added
+ *
  * Revision 3.31  2001/03/12 13:40:42  nmw
  * USSANwith and USSANcode added
  *
@@ -1258,9 +1261,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, L2Fassign, BLKCOassign, DFAassign, BLKPPassign, TravSons, BARINassign,
        TravSons, TravSons, TravSons, PREC1assign, TravSons, APTassign,
 
-       TravSons, TravSons, TravSons, TravSons, TCCPassign, SSAassign, TravSons, TravSons,
-       SSADCRassign, SSACSEassign, CMPTTravSons, PFassign, TravSons, TravSons, TravSons,
-       TravSons, 2),
+       TravSons, TravSons, TravSons, TravSons, TCCPassign, SSAassign, TravSons,
+       USSAassign, SSADCRassign, SSACSEassign, CMPTTravSons, PFassign, TravSons, TravSons,
+       TravSons, TravSons, 2),
 
   NIF (N_return, "N_return", TravSons, FltnReturn, PrintReturn, TCreturn, TravSons,
        TravSons, TravSons, FreeReturn, TravSons, TravSons, COMPReturn, TravSons,
