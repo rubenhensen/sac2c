@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2003/04/14 17:38:34  sbs
+ * in SAC_MT_SCHEDULER_Block_DIM0: casted iterations_rest into unsigned int
+ * for compatibility with SAC_MT_MYTHREAD() in comparison.
+ *
  * Revision 3.46  2003/03/20 13:53:50  sbs
  * config.h included; NEED_REENTRANT used.
  *
@@ -789,7 +793,7 @@ typedef union {
         const int iterations_per_thread = (iterations / SAC_MT_THREADS ()) * unrolling;  \
         const int iterations_rest = iterations % SAC_MT_THREADS ();                      \
                                                                                          \
-        if (iterations_rest && (SAC_MT_MYTHREAD () < iterations_rest)) {                 \
+        if (iterations_rest && (SAC_MT_MYTHREAD () < (unsigned int)iterations_rest)) {   \
             SAC_WL_MT_SCHEDULE_START (0)                                                 \
               = lower + SAC_MT_MYTHREAD () * (iterations_per_thread + unrolling);        \
             SAC_WL_MT_SCHEDULE_STOP (0)                                                  \
