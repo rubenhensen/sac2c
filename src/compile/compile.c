@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.192  1998/10/29 20:37:00  dkr
+ * signature of WL_FOLD_NOOP changed
+ *
  * Revision 1.191  1998/10/26 20:33:18  dkr
  * fixed a bug in COMPLet:
  *   no DBUG_PRINT on NULL-pointers!
@@ -7597,20 +7600,6 @@ COMPWLgrid (node *arg_node, node *arg_info)
             case WO_foldfun:
                 /* here is no break missing! */
             case WO_foldprf:
-                icm_args2 = MakeExprs (MakeNum (WLGRID_DIM (arg_node)), icm_args2);
-                /*
-                 * we must use the ICM_VAR mechanismus for 'bound1' and 'bound2',
-                 *  because these parameters can have type N_num (here) or N_id
-                 *  ('COMPWLgridVar').
-                 */
-                icm_args2
-                  = AppendExprs (icm_args2,
-                                 MakeExprs (MakeNum (2),
-                                            MakeExprs (MakeNum (WLGRID_BOUND1 (arg_node)),
-                                                       MakeExprs (MakeNum (WLGRID_BOUND2 (
-                                                                    arg_node)),
-                                                                  NULL))));
-
                 icm_name = "WL_FOLD_NOOP";
                 break;
 
@@ -8014,22 +8003,6 @@ COMPWLgridVar (node *arg_node, node *arg_info)
             case WO_foldfun:
                 /* here is no break missing! */
             case WO_foldprf:
-                icm_args2 = MakeExprs (MakeNum (WLGRID_DIM (arg_node)), icm_args2);
-                /*
-                 * we must use the ICM_VAR mechanismus for 'bound1' and 'bound2',
-                 *  because these parameters can have type N_num (here) or N_id
-                 *  ('COMPWLgridVar').
-                 */
-                icm_args2
-                  = AppendExprs (icm_args2,
-                                 MakeExprs (MakeNum (2),
-                                            MakeExprs (DupNode (
-                                                         WLGRIDVAR_BOUND1 (arg_node)),
-                                                       MakeExprs (DupNode (
-                                                                    WLGRIDVAR_BOUND2 (
-                                                                      arg_node)),
-                                                                  NULL))));
-
                 icm_name = "WL_FOLD_NOOP";
                 break;
 
