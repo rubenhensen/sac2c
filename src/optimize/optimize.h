@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.26  1995/05/26 12:46:20  asi
+ * Revision 1.27  1995/06/02 11:36:15  asi
+ * Added function inlining
+ *
+ * Revision 1.26  1995/05/26  12:46:20  asi
  * new debug option MTOOL added
  *
  * Revision 1.25  1995/05/16  12:46:09  asi
@@ -104,6 +107,8 @@ extern int opt_dcr;
 extern int opt_cf;
 extern int opt_wr;
 extern int opt_lir;
+extern int opt_inl;
+extern int opt_unr;
 extern int optvar;
 /* main.c end */
 
@@ -112,6 +117,7 @@ extern int dead_var;
 extern int cf_expr;
 extern int wr_expr;
 extern int lir_expr;
+extern int inl_fun;
 extern int optvar_counter;
 
 #define INC_VAR(mask, var) mask[var] += 1
