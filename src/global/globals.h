@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2003/03/24 16:35:56  sbs
+ * cpp_incs added.
+ *
  * Revision 3.25  2003/03/13 13:59:57  dkr
  * min_array_rep added
  *
@@ -202,6 +205,10 @@ extern int max_replication_size;
 extern int max_schedulers;
 
 #define MAX_CPP_VARS 32
+#define MAX_CPP_INCS 32
+
+extern char *cppincs[MAX_CPP_INCS];
+extern int num_cpp_incs;
 
 extern char *cppvars[MAX_CPP_VARS];
 extern int num_cpp_vars;

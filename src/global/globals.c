@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2003/03/24 16:35:56  sbs
+ * cpp_incs added.
+ *
  * Revision 3.32  2003/03/20 14:01:13  sbs
  * config.h included; OS and ARCH used.
  *
@@ -374,14 +377,20 @@ int max_schedulers = 0;
 /*
  * Preprocessor options
  *
- *  refer to -D command line option
+ *  refer to -D, -cppI command line options:
  */
 
 char *cppvars[MAX_CPP_VARS];
 /* pointer to respective argv field */
 
 int num_cpp_vars = 0;
-/* number of preprocessor options */
+/* number of preprocessor -D options */
+
+char *cppincs[MAX_CPP_INCS];
+/* pointer to respective argv field */
+
+int num_cpp_incs = 0;
+/* number of preprocessor -cppI options */
 
 /*
  * C compiler options
