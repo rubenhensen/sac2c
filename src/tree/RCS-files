@@ -37,7 +37,6 @@ node_compat.h
 free_attribs.c
 free_info.h
 serialize_info.h
-serialize_helper.h
 serialize.c
 serialize.h
 serialize_stack.c
