@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.36  2005/01/26 10:34:45  mwe
+ * just edited last log message...
+ *
  * Revision 1.35  2005/01/26 10:24:38  mwe
- * AVIS_SSAASSIGN removed and replaced by usage of akv types
+ * AVIS_SSACONST removed and replaced by usage of akv types
  *
  * Revision 1.34  2004/12/14 17:05:43  ktr
  * COAST2constant corrected.

@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.145  2005/01/26 10:34:45  mwe
+ * just edited last log message...
+ *
  * Revision 3.144  2005/01/26 10:24:38  mwe
- * AVIS_SSAASSIGN removed and replaced by usage of akv types
+ * AVIS_SSACONST removed and replaced by usage of akv types
  *
  * Revision 3.143  2005/01/20 14:16:06  ktr
  * some bugfixing
