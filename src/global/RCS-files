@@ -30,3 +30,4 @@ config.h.in
 globals.mac
 filemgr.c
 filemgr.h
+optimize.mac
