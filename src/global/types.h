@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1996/01/26 15:29:22  cg
+ * Revision 1.16  1997/03/19 13:39:07  cg
+ * Added new data type 'deps'
+ *
+ * Revision 1.15  1996/01/26  15:29:22  cg
  * added statustype entry ST_classfun
  *
  * Revision 1.14  1996/01/25  16:35:06  hw
@@ -103,7 +106,6 @@ typedef enum {
                            /* analysed.                              */
     ST_unresolved,         /* objects from called function are not   */
                            /* yet analysed.                          */
-    ST_local,              /* identifier is local                    */
     ST_global,             /* identifier is global object            */
     ST_imported,           /* function, type, or object imported     */
                            /* from other module                      */
@@ -111,8 +113,11 @@ typedef enum {
     ST_used,               /* var declaration is used in body        */
     ST_objinitfun,         /* function is automatically generated    */
                            /* to contain global object init expr     */
-    ST_classfun            /* generic function for class conversion  */
-
+    ST_classfun,           /* generic function for class conversion  */
+    ST_sac,                /* SAC module/class                       */
+    ST_external,           /* external module/class                  */
+    ST_system,             /* external system library                */
+    ST_own                 /* own declaration of module impl.        */
 } statustype;
 
 typedef enum { VECT, IDX } useflag;
@@ -144,6 +149,15 @@ typedef struct NODELIST {
     statustype status;
     struct NODELIST *next;
 } nodelist;
+
+typedef struct DEPS {
+    char *name;
+    char *decname;
+    char *libname;
+    statustype status;
+    struct DEPS *sub;
+    struct DEPS *next;
+} deps;
 
 typedef struct IDS {
     char *id;
