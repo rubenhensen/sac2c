@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.1  1995/03/29 12:12:52  hw
+# Revision 1.2  1995/03/31 14:05:38  sbs
+# BEtest inserted
+#
+# Revision 1.1  1995/03/29  12:12:52  hw
 # Initial revision
 #
 #
@@ -11,8 +14,12 @@ MAKE=make
 CC=gcc -ansi -g
 
 INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount
+MACS=icm.data icm_decl.c icm_args.c icm_comment.c
 
 all: compile.o
+
+BEtest: icm2c.c $(MACS)
+	$(CC) -o BEtest icm2c.c -DTEST_BACKEND $(INCS)
 
 compile.o: compile.c
 	$(CC) -o compile.o -c compile.c $(INCS)
@@ -21,7 +28,7 @@ deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) compile.o *.bak
+	$(RM) compile.o *.bak BEtest
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
