@@ -1,6 +1,10 @@
 #
 # $Log$
-# Revision 1.33  1995/10/22 17:24:56  cg
+# Revision 1.34  1995/10/26 17:59:36  cg
+# Makefile prepared for usage of shell script sac_gcc to avoid
+# the boring warning 'casts not allowed as lvalues'.
+#
+# Revision 1.33  1995/10/22  17:24:56  cg
 # added checkdec.o
 #
 # Revision 1.32  1995/10/20  09:21:38  cg
@@ -97,6 +101,7 @@
 #
 #
 
+SACGCC=sac_gcc -ansi -Wall -pedantic -g 
 CC=gcc -ansi -Wall -pedantic -g 
 CCPROD=gcc -ansi -Wall -pedantic -DDBUG_OFF -O3
 MAKE=make CC="$(CC)"
