@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/04/09 08:03:43  ktr
+ * Support for WithloopScalarization added at TmpVar()
+ *
  * Revision 3.16  2002/04/05 10:27:18  dkr
  * TmpVar(): precomp3_tab added
  *
@@ -702,6 +705,8 @@ TmpVar ()
         s = "swli";
     } else if (act_tab == ssawlf_tab) {
         s = "swlf";
+    } else if (act_tab == wls_tab) {
+        s = "swls";
     } else {
         s = "unknown";
     }
