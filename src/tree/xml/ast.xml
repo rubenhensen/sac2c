@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.39  2004/11/14 15:26:27  sah
+  added local flag and TYPEDEF_NTYPE
+
   Revision 1.38  2004/11/07 18:11:45  sah
   lots of small changes due to new module system
 
@@ -371,8 +374,14 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="Type" mandatory="yes">
+        <attribute name="Type" default="NULL" mandatory="no">
           <type name="OldType" />
+          <phases>
+            <all />
+          </phases>
+        </attribute>
+        <attribute name="NType" mandatory="yes">
+          <type name="NewType" />
           <phases>
             <all />
           </phases>
@@ -445,7 +454,11 @@
 	  </phases>
 	</attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="Exported" />
+        <flag name="Provided" />
+	<flag name="Local" default="true"/>
+      </flags>
     </node>
     <node name="Objdef">
       <sons>
@@ -853,6 +866,7 @@
       <flags>
         <flag name="Exported" />
         <flag name="Provided" />
+	<flag name="Local" default="true" />
       </flags>
     </node>
     <node name="TCFunInfo">
