@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/02/23 13:28:22  jhs
+ * Expansion stops above first block in a function now.
+ *
  * Revision 1.3  2000/02/22 15:49:33  jhs
  * Melting now works for N_mt and N_st.
  *
@@ -52,6 +55,7 @@
 node *
 BlocksExpand (node *arg_node, node *arg_info)
 {
+    int old_blockabove; /* bool */
     funtab *old_tab;
 
     DBUG_ENTER ("BlocksExpand");
@@ -63,16 +67,20 @@ BlocksExpand (node *arg_node, node *arg_info)
     act_tab = blkex_tab;
 
     /* push info ... */
+    old_blockabove = INFO_BLKEX_BLOCKABOVE (arg_info);
+    INFO_BLKEX_BLOCKABOVE (arg_info) = FALSE;
 
     FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 
     /* pop info ... */
+    INFO_BLKEX_BLOCKABOVE (arg_info) = old_blockabove;
 
     act_tab = old_tab;
 
     DBUG_RETURN (arg_node);
 }
 
+/* #### comment missing */
 node *
 BLKEXassign (node *arg_node, node *arg_info)
 {
@@ -80,32 +88,51 @@ BLKEXassign (node *arg_node, node *arg_info)
     node *this_instr;
     node *next;
     node *next_instr;
-    node *block;
+    int old_blockabove; /* bool */
 
     DBUG_ENTER ("BLKEXassign");
 
+    /*
+     *  push the block above information
+     *  note the occurence of an N_mt or N_st
+     */
+    old_blockabove = INFO_BLKEX_BLOCKABOVE (arg_info);
+    if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_mt)
+        || (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_st)) {
+        INFO_BLKEX_BLOCKABOVE (arg_info) = TRUE;
+    }
+
+    /* bottom-up-traversal!!! */
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     }
+
+    /*
+     *  pop the block above information
+     */
+    INFO_BLKEX_BLOCKABOVE (arg_info) = old_blockabove;
 
     this = arg_node;
     this_instr = ASSIGN_INSTR (arg_node);
 
     if (NODE_TYPE (this_instr) == N_let) {
-        if (ASSIGN_NEXT (arg_node) != NULL) {
-            next = ASSIGN_NEXT (arg_node);
-            next_instr = ASSIGN_INSTR (next);
+        if (INFO_BLKEX_BLOCKABOVE (arg_info)) {
+            if (ASSIGN_NEXT (arg_node) != NULL) {
+                next = ASSIGN_NEXT (arg_node);
+                next_instr = ASSIGN_INSTR (next);
 
-            if ((NODE_TYPE (next_instr) == N_mt) || (NODE_TYPE (next_instr) == N_st)) {
-                /* swap this assignment into the N_mt/N_st */
-                DBUG_PRINT ("BLKEX", ("swap into %s", NODE_TEXT (next_instr)));
+                if ((NODE_TYPE (next_instr) == N_mt)
+                    || (NODE_TYPE (next_instr) == N_st)) {
+                    /* swap this assignment into the N_mt/N_st */
+                    DBUG_PRINT ("BLKEX", ("swap into %s", NODE_TEXT (next_instr)));
 
-                ASSIGN_INSTR (this) = next_instr;
-                ASSIGN_NEXT (this) = ASSIGN_NEXT (next);
+                    ASSIGN_INSTR (this) = next_instr;
+                    ASSIGN_NEXT (this) = ASSIGN_NEXT (next);
 
-                ASSIGN_INSTR (next) = this_instr;
-                ASSIGN_NEXT (next) = BLOCK_INSTR (MT_OR_ST_REGION (next_instr));
-                BLOCK_INSTR (MT_OR_ST_REGION (next_instr)) = next;
+                    ASSIGN_INSTR (next) = this_instr;
+                    ASSIGN_NEXT (next) = BLOCK_INSTR (MT_OR_ST_REGION (next_instr));
+                    BLOCK_INSTR (MT_OR_ST_REGION (next_instr)) = next;
+                }
             }
         }
     } else if ((NODE_TYPE (this_instr) == N_mt) || (NODE_TYPE (this_instr) == N_st)) {
