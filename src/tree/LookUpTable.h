@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/04/06 14:56:20  dkr
+ * minor changes done
+ *
  * Revision 3.3  2001/03/23 17:59:34  dkr
  * functions UpdateLUT_? added
  *
@@ -63,8 +66,8 @@ extern LUT_t RemoveLUT (LUT_t lut);
 
 extern void PrintLUT (FILE *handle, LUT_t lut);
 
-extern void *SearchInLUT_P (LUT_t *lut, void *old_item);
-extern void *SearchInLUT_S (LUT_t *lut, char *old_item);
+extern void *SearchInLUT_P (LUT_t lut, void *old_item);
+extern void *SearchInLUT_S (LUT_t lut, char *old_item);
 
 extern LUT_t InsertIntoLUT_P (LUT_t lut, void *old_item, void *new_item);
 extern LUT_t InsertIntoLUT_S (LUT_t lut, char *old_item, char *new_item);
