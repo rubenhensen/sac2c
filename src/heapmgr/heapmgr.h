@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/11/13 16:45:40  cg
+ * Added correct sbrk() casts for OSF_ALPHA platform.
+ *
  * Revision 1.3  2000/01/17 19:47:44  cg
  * Adjusted target architecture discrimination to new project wide standard.
  *
@@ -256,7 +259,7 @@
 
 #elif defined(SAC_FOR_OSF_ALPHA)
 
-#define SBRK(size) UNKNOWN_SBRK
+#define SBRK(size) sbrk ((int)(size))
 
 #else
 
