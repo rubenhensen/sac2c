@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/24 17:57:18  sah
+ * COMPILES.
+ *
  * Revision 1.6  2004/11/07 18:06:28  sah
  * added support for different stringkinds
  *
@@ -35,16 +38,16 @@
 
 struct STRINGSET_T {
     char *val;
-    SStype_t kind;
+    strstype_t kind;
     stringset_t *next;
 };
 
 bool
-SSContains (const char *string, stringset_t *set)
+STRScontains (const char *string, stringset_t *set)
 {
     bool result;
 
-    DBUG_ENTER ("SSContains");
+    DBUG_ENTER ("STRScontains");
 
     if (set == NULL) {
         result = FALSE;
@@ -52,7 +55,7 @@ SSContains (const char *string, stringset_t *set)
         if (!strcmp (set->val, string)) {
             result = TRUE;
         } else {
-            result = SSContains (string, set->next);
+            result = STRScontains (string, set->next);
         }
     }
 
@@ -60,16 +63,16 @@ SSContains (const char *string, stringset_t *set)
 }
 
 stringset_t *
-SSAdd (const char *string, SStype_t kind, stringset_t *set)
+STRSadd (const char *string, strstype_t kind, stringset_t *set)
 {
-    DBUG_ENTER ("SSAdd");
+    DBUG_ENTER ("STRSadd");
 
-    if (!SSContains (string, set)) {
-        stringset_t *new = Malloc (sizeof (stringset_t));
+    if (!STRScontains (string, set)) {
+        stringset_t *new = ILIBmalloc (sizeof (stringset_t));
 
-        DBUG_PRINT ("SS", ("adding %s.", string));
+        DBUG_PRINT ("STRS", ("adding %s.", string));
 
-        new->val = StringCopy (string);
+        new->val = ILIBstringCopy (string);
         new->kind = kind;
         new->next = set;
 
@@ -80,9 +83,9 @@ SSAdd (const char *string, SStype_t kind, stringset_t *set)
 }
 
 void *
-SSFold (SSfoldfun_p fun, stringset_t *set, void *init)
+STRSfold (strsfoldfun_p fun, stringset_t *set, void *init)
 {
-    DBUG_ENTER ("SSFold");
+    DBUG_ENTER ("STRSfold");
 
     while (set != NULL) {
         init = fun (set->val, set->kind, init);
@@ -93,11 +96,11 @@ SSFold (SSfoldfun_p fun, stringset_t *set, void *init)
 }
 
 stringset_t *
-SSJoin (stringset_t *one, stringset_t *two)
+STRSjoin (stringset_t *one, stringset_t *two)
 {
     stringset_t *result;
 
-    DBUG_ENTER ("SSJoin");
+    DBUG_ENTER ("STRSjoin");
 
     result = one;
 
@@ -105,9 +108,9 @@ SSJoin (stringset_t *one, stringset_t *two)
         stringset_t *act = two;
         two = two->next;
 
-        if (SSContains (act->val, result)) {
+        if (STRScontains (act->val, result)) {
             act->next = NULL;
-            act = SSFree (act);
+            act = STRSfree (act);
         } else {
             act->next = result;
             result = act;
@@ -118,31 +121,31 @@ SSJoin (stringset_t *one, stringset_t *two)
 }
 
 stringset_t *
-SSFree (stringset_t *set)
+STRSfree (stringset_t *set)
 {
-    DBUG_ENTER ("SSFree");
+    DBUG_ENTER ("STRSfree");
 
     if (set != NULL) {
-        set->val = Free (set->val);
-        set->next = SSFree (set->next);
-        set = Free (set);
+        set->val = ILIBfree (set->val);
+        set->next = STRSfree (set->next);
+        set = ILIBfree (set);
     }
 
     DBUG_RETURN (set);
 }
 
 void *
-SSPrintFoldFun (const char *entry, SStype_t kind, void *rest)
+STRSprintFoldFun (const char *entry, strstype_t kind, void *rest)
 {
-    DBUG_ENTER ("SSPrintFoldFun");
+    DBUG_ENTER ("STRSprintFoldFun");
 
     printf ("%s ", entry);
 
     switch (kind) {
-    case SS_saclib:
+    case STRS_saclib:
         printf ("(sac library)\n");
         break;
-    case SS_extlib:
+    case STRS_extlib:
         printf ("(external library)\n");
         break;
     default:
@@ -154,11 +157,11 @@ SSPrintFoldFun (const char *entry, SStype_t kind, void *rest)
 }
 
 void
-SSPrint (stringset_t *set)
+STRSprint (stringset_t *set)
 {
-    DBUG_ENTER ("SSPrint");
+    DBUG_ENTER ("STRSprint");
 
-    SSFold (&SSPrintFoldFun, set, NULL);
+    STRSfold (&STRSprintFoldFun, set, NULL);
 
     DBUG_VOID_RETURN;
 }
