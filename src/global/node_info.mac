@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.149  1998/02/11 17:16:02  srs
+ * *** empty log message ***
+ *
  * Revision 1.148  1998/02/09 16:08:05  srs
  * *** empty log message ***
  *
@@ -802,7 +805,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    *
    */
 
-  NIF (N_Nwith, "N_Nwith", TravSons, FltnNwith, PrintNWith, TravSons, TravSons, TravSons,
+  NIF (N_Nwith, "N_Nwith", TravSons, FltnNwith, PrintNWith, TravSons, OPTNwith, TravSons,
        TravSons, FreeNWith, TravSons, RCNwith, CompNWith, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, WLFNwith, TravSons, PrintNWith, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, UNQNwith, TravSons, TravSons,
