@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2003/09/16 15:57:57  dkr
+ * some comments modified
+ *
  * Revision 3.38  2003/08/04 14:01:59  dkr
  * comment for SAC_ND_PARAM_ added
  *
@@ -875,7 +878,7 @@ typedef int *SAC_array_descriptor_t;
  * ===================================
  *
  * ND_ALLOC( nt, rc, dim, set_shape_icm) :
- *   allocates a data object (no initialization but descriptor!)
+ *   allocates a data object (no initialization apart from descriptor!)
  * ND_FREE( nt, freefun) :
  *   frees a data object
  *
@@ -885,7 +888,7 @@ typedef int *SAC_array_descriptor_t;
  *   frees memory for a data object (without descriptor)
  *
  * ND_ALLOC__DESC( nt, dim) :
- *   allocates memory for descriptor (no initialization but dimension!)
+ *   allocates memory for descriptor (no initialization apart from dimension!)
  * ND_FREE__DESC( nt) :
  *   frees memory for descriptor
  *
