@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/12/06 11:53:34  sah
+ * fixed handling of fundefs
+ *
  * Revision 1.17  2004/12/06 09:58:11  sah
  * fixed handling of args
  *
@@ -338,6 +341,10 @@ ANSfundef (node *arg_node, info *arg_info)
     }
 
     INFO_ANS_IDS (arg_info) = STRSfree (INFO_ANS_IDS (arg_info));
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
