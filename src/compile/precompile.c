@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2002/07/15 15:24:59  dkr
+ * comment in file header corrected
+ *
  * Revision 3.49  2002/07/15 15:24:35  dkr
  * - LiftIds() and LiftArg() modified
  * - bug in PREC2let() fixed: args for T_dots are not lifted
@@ -148,13 +151,6 @@
  *   - A function with code for object initialization is created.
  *
  * Things done during second traversal:
- *   - Constant arguments of function applications are abstracted out:
- *       a = fun( 1);   =>   _tmp = 1; a = fun( _tmp);
- *     This can be done *after* type-checking only, because this modification
- *     should not be done for primitive functions (it is superfluous for prfs
- *     and we should minimize the number of local variables used ...).
- *     Unfortunately, only the type system can decide whether an application
- *     uses a primitive or a user-defined function (overloading!).
  *   - Function signatures are transformed into the final form:
  *     At most a single return value, remapping because of a linksign pragma,
  *     parameter tags (in, out, inout, ...).
