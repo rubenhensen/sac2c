@@ -1,6 +1,10 @@
 
 /*
  * $Log$
+ * Revision 2.5  1999/08/31 10:01:31  jhs
+ * switched traversal of block and expr in IdxNcode; now, we do the
+ * expr BEFORE we take care of the block...
+ *
  * Revision 2.4  1999/07/14 12:11:16  sbs
  * Major re-implementation of IVE!
  * - stacking of ACTCHNs for proper handling of CONDs and LOOPs
@@ -2111,8 +2115,8 @@ IdxNcode (node *arg_node, node *arg_info)
     current_assign = INFO_IVE_CURRENTASSIGN (arg_info);
     let_node = ASSIGN_INSTR (current_assign);
 
-    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
     NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
     DBUG_ASSERT (((NODE_TYPE (let_node) == N_let)
                   && (NODE_TYPE (LET_EXPR (let_node)) == N_Nwith)),
