@@ -1,11 +1,19 @@
 /*
- * This file can be used to test the expansion of H-ICMs
  *
- * Apply the CC preprocessor to this file and verify the generated output:
- *   gcc -I$SACHOME/runtime -E icm_test.C
+ * $Log$
+ * Revision 1.2  2003/06/17 18:49:01  dkr
+ * RCS header added
  *
- * It exists a Makefile target for this purpose (icm_test) !!!
  */
+
+/**
+ **  This file can be used to test the expansion of H-ICMs
+ **
+ **  Apply the CC preprocessor to this file and verify the generated output:
+ **    gcc -I$SACHOME/runtime -E icm_test.C
+ **
+ **  It exists a Makefile target for this purpose (icm_test) !!!
+ **/
 
 #ifndef _SHP_
 #define _SHP_ SCL /* SCL, AKS, AKD, AUD */
