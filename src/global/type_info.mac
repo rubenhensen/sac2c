@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/01/05 11:58:57  sbs
- * T_str inserted
+ * Revision 1.3  1995/01/05 12:45:12  sbs
+ * third component done
  *
+;; Revision 1.2  1995/01/05  11:58:57  sbs
+;; T_str inserted
+;;
 ;; Revision 1.1  1994/12/21  11:32:37  hw
 ;; Initial revision
 ;;
@@ -20,8 +23,9 @@
 **
 */
 
-/*   type_name       dbug-string    */
+/*   type_name       dbug-string    print-string */
 
-TYP_IF (T_int, "int"), TYP_IF (T_float, "float"), TYP_IF (T_bool, "bool"),
-  TYP_IF (T_str, "string"), TYP_IF (T_hidden, "hidden"), TYP_IF (T_user, "user"),
-  TYP_IF (T_unknown, "unknown")
+TYP_IF (T_int, "int", "int"), TYP_IF (T_float, "float", "float"),
+  TYP_IF (T_bool, "bool", "int"), TYP_IF (T_str, "string", "char *"),
+  TYP_IF (T_hidden, "hidden", "void *"), TYP_IF (T_user, "user", "_user_"),
+  TYP_IF (T_unknown, "unknown", "_unknown_")
