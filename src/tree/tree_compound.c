@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/03/28 14:56:31  dkr
+ * NodeOrInt_SetNameOrVal added
+ *
  * Revision 3.22  2001/03/27 23:01:20  dkr
  * NodeOrInt_GetNameOrVal() modified
  *
@@ -2949,6 +2952,48 @@ NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt, void *node_o
 /******************************************************************************
  *
  * Function:
+ *   void NodeOrInt_SetNameOrVal( char *name, int val,
+ *                                nodetype nt, void *node_or_int)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+void
+NodeOrInt_SetNameOrVal (char *name, int val, nodetype nt, void *node_or_int)
+{
+    DBUG_ENTER ("NodeOrInt_SetNameOrVal");
+
+    DBUG_ASSERT ((node_or_int != NULL), "no address found!");
+
+    switch (nt) {
+    case N_WLsegVar:
+    case N_WLstrideVar:
+    case N_WLgridVar:
+        FreeTree ((*((node **)node_or_int)));
+        (*((node **)node_or_int)) = NameOrVal_MakeNode (name, val, NULL);
+        break;
+
+    case N_WLseg:
+    case N_WLblock:
+    case N_WLublock:
+    case N_WLstride:
+    case N_WLgrid:
+        (*((int *)node_or_int)) = val;
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "wrong node type found!");
+        break;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *NameOrVal_MakeNode( char *name, int val, void *node_or_int)
  *
  * Description:
@@ -2967,6 +3012,15 @@ NameOrVal_MakeNode (char *name, int val, void *node_or_int)
         ret = MakeNum (val);
     } else {
         if (node_or_int != NULL) {
+            if (NODE_TYPE ((*((node **)node_or_int))) == N_num) {
+                DBUG_ASSERT ((NUM_VAL ((*((node **)node_or_int))) == val),
+                             "NUM_VAL( node) != val");
+            } else {
+                DBUG_ASSERT ((NODE_TYPE ((*((node **)node_or_int))) == N_id),
+                             "wrong node type found!");
+                DBUG_ASSERT ((!strcmp (ID_NAME ((*((node **)node_or_int))), name)),
+                             "ID_NAME( node) != name");
+            }
             /*
              * we better *duplicate* the node instead of building a new one
              * in order to get the right back pointers and these sort of things ...
@@ -3222,6 +3276,10 @@ NameOrVal_Le (char *name1, int val1, char *name2, int val2)
         || ((val2 > 0) && (val1 > 0) && (val1 < val2))) {
         ret = TRUE;
     }
+
+    DBUG_PRINT ("NodeOrInt",
+                ("[ %s, %i ] %s<= [ %s, %i ]", (name1 == NULL) ? "NULL" : name1, val1,
+                 ret ? "" : "!", (name2 == NULL) ? "NULL" : name2, val2));
 
     DBUG_RETURN (ret);
 }
