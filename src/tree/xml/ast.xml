@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.41  2004/11/17 19:50:33  sah
+  added some flags
+
   Revision 1.40  2004/11/14 15:46:48  sah
   fixed a malformed xml document
 
@@ -589,7 +592,11 @@
 	  </phases>
 	</attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="Exported" />
+        <flag name="Provided" />
+	<flag name="Local" default="true"/>
+      </flags>
     </node>
     <node name="Fundef">
       <sons>
