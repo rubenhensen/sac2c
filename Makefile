@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.31  1995/10/16 11:59:58  cg
+# Revision 1.32  1995/10/20 09:21:38  cg
+# added compilation of 'analyse.c`
+#
+# Revision 1.31  1995/10/16  11:59:58  cg
 # objinit.o and new directory objects added.
 #
 # Revision 1.30  1995/10/05  15:56:11  cg
@@ -116,7 +119,7 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
 	  src/psi-opt/ArrayElimination.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/sib.o  \
-         src/modules/implicittypes.o
+         src/modules/implicittypes.o src/modules/analysis.o
 OBJECTS= src/objects/objinit.o
 REFCOUNT= src/refcount/refcount.o
 COMPILE= src/compile/compile.o src/compile/icm2c.o
