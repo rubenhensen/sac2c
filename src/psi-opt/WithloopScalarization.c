@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2002/11/04 21:16:10  ktr
+ * New feature: Index Vector acceleration!!!
+ *
  * Revision 1.23  2002/11/02 18:46:47  ktr
  * Withloopification phase now handles arrays of arrays correctly.
  *
@@ -562,60 +565,63 @@ probePart (node *arg_node, node *arg_info)
     DBUG_ENTER ("probePart");
 
     /* Inner CEXPR must be a nonscalar */
-    if ((VARDEC_DIM (AVIS_VARDECORARG (ID_AVIS (NPART_CEXPR (arg_node)))) == 0) ||
-
-        /* CEXPR of the withloop me be assigned in a known place */
-        (NPART_SSAASSIGN (arg_node) == NULL)) {
+    if (VARDEC_DIM (AVIS_VARDECORARG (ID_AVIS (NPART_CEXPR (arg_node)))) == 0) {
         INFO_WLS_POSSIBLE (arg_info) = FALSE;
     } else {
-        /* Check whether inner CEXPR is computer by an INNER withloop */
-        if ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_Nwith)
-            && (isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
-                                     BLOCK_INSTR (NPART_CBLOCK (arg_node))))) {
+        /* special case: array is to be filled with the index vector */
+        if (NPART_SSAASSIGN (arg_node) != NULL) {
+            /* Check whether inner CEXPR is computer by an INNER withloop */
+            if ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_Nwith)
+                && (isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
+                                         BLOCK_INSTR (NPART_CBLOCK (arg_node))))) {
 
-            /* initialize INFO_WLS_DIMS */
-            if (INFO_WLS_DIMS (arg_info) == -1)
-                INFO_WLS_DIMS (arg_info)
-                  = VARDEC_SHAPE (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))), 0);
+                /* initialize INFO_WLS_DIMS */
+                if (INFO_WLS_DIMS (arg_info) == -1)
+                    INFO_WLS_DIMS (arg_info)
+                      = VARDEC_SHAPE (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))),
+                                      0);
 
-            INFO_WLS_POSSIBLE (arg_info) =
-              /* Inner withloop must be MG-WL */
-              ((NWITH_PARTS (NPART_LETEXPR (arg_node)) > 0) &&
+                INFO_WLS_POSSIBLE (arg_info) =
+                  /* Inner withloop must be MG-WL */
+                  ((NWITH_PARTS (NPART_LETEXPR (arg_node)) > 0) &&
 
-               /* Inner generators must be independent from the outer */
-               (checkGeneratorDependencies (arg_node,
-                                            NWITH_PART (NPART_LETEXPR (arg_node))))
-               &&
+                   /* Inner generators must be independent from the outer */
+                   (checkGeneratorDependencies (arg_node,
+                                                NWITH_PART (NPART_LETEXPR (arg_node))))
+                   &&
 
-               /* Both WLs must have compatible types */
-               (compatWLTypes (INFO_WLS_WITHOP (arg_info),
-                               NWITH_WITHOP (NPART_LETEXPR (arg_node))))
-               &&
+                   /* Both WLs must have compatible types */
+                   (compatWLTypes (INFO_WLS_WITHOP (arg_info),
+                                   NWITH_WITHOP (NPART_LETEXPR (arg_node))))
+                   &&
 
-               /* In non aggressive mode, the nesting must be perfect */
-               ((wls_aggressive)
-                || (BLOCK_INSTR (NPART_CBLOCK (arg_node)) == NPART_SSAASSIGN (arg_node)))
-               &&
+                   /* In non aggressive mode, the nesting must be perfect */
+                   ((wls_aggressive)
+                    || (BLOCK_INSTR (NPART_CBLOCK (arg_node))
+                        == NPART_SSAASSIGN (arg_node)))
+                   &&
 
-               /* In non aggressive mode, all the inner WLs must
-                  iterate over the same dimensions */
-               ((wls_aggressive)
-                || (INFO_WLS_DIMS (arg_info)
-                    == VARDEC_SHAPE (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))),
-                                     0))));
+                   /* In non aggressive mode, all the inner WLs must
+                      iterate over the same dimensions */
+                   ((wls_aggressive)
+                    || (INFO_WLS_DIMS (arg_info)
+                        == VARDEC_SHAPE (IDS_VARDEC (
+                                           NWITH_VEC (NPART_LETEXPR (arg_node))),
+                                         0))));
 
-        } else {
-            INFO_WLS_POSSIBLE (arg_info) =
-              /* In non aggressive mode, assignment of CEXPR
-                 must not be inside the WL */
-              (((wls_aggressive)
-                || (!isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
-                                          BLOCK_INSTR (NPART_CBLOCK (arg_node)))))
-               &&
+            } else {
+                INFO_WLS_POSSIBLE (arg_info) =
+                  /* In non aggressive mode, assignment of CEXPR
+                     must not be inside the WL */
+                  (((wls_aggressive)
+                    || (!isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
+                                              BLOCK_INSTR (NPART_CBLOCK (arg_node)))))
+                   &&
 
-               /* In non aggressive mode, CBLOCK must be empty */
-               ((wls_aggressive)
-                || (NODE_TYPE (BLOCK_INSTR (NPART_CBLOCK (arg_node))) == N_empty)));
+                   /* In non aggressive mode, CBLOCK must be empty */
+                   ((wls_aggressive)
+                    || (NODE_TYPE (BLOCK_INSTR (NPART_CBLOCK (arg_node))) == N_empty)));
+            }
         }
     }
     DBUG_RETURN (arg_node);
@@ -751,10 +757,6 @@ CreateExprsPart (node *exprs, int *partcount, node *withid, shpseg *shppos,
         expr = DupNode (EXPRS_EXPR (exprs));
 
         if (NODE_TYPE (expr) == N_id) {
-            /* vardec = MakeVardec( StringCopy( ID_NAME(assid)),
-                                 DupOneTypes( ID_TYPE(expr)),
-                                 vardec); */
-
             res = MakeNPart (withid,
                              MakeNGenerator (Shpseg2Array (shppos, dim),
                                              Shpseg2Array (UpperBound (shppos, dim), dim),
@@ -933,6 +935,60 @@ Array2Withloop (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *insertIndexDefinition(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   creates an assignment for the index vector's variables.
+ *   this allows the withloopification of the special case where an
+ *   array is to be filled with the index vector.
+ *
+ * parameters:
+ *   node *arg_node:   N_node
+ *   node *arg_info:   N_INFO
+ *
+ ******************************************************************************/
+node *
+insertIndexDefinition (node *arg_node, node *arg_info)
+{
+    node *assign;
+    node *assid;
+    node *vardec = NULL;
+
+    node *array;
+
+    DBUG_ENTER ("Array2Withloop");
+
+    assid = MakeId (TmpVar (), NULL, ST_regular);
+    vardec = MakeVardec (StringCopy (ID_NAME (assid)),
+                         DupOneTypes (ID_TYPE (NPART_CEXPR (arg_node))), vardec);
+
+    ID_VARDEC (assid) = vardec;
+    ID_AVIS (assid) = VARDEC_AVIS (vardec);
+
+    AddVardecs (INFO_WLS_FUNDEF (arg_info), vardec);
+
+    array = MakeArray (
+      MakeExprsIdChain (DupAllIds (NWITHID_IDS (INFO_WLS_WITHID (arg_node)))));
+
+    ARRAY_TYPE (array)
+      = MakeTypes (T_int, 1,
+                   MakeShpseg (MakeNums (CountExprs (ARRAY_AELEMS (array)), NULL)), NULL,
+                   NULL);
+
+    assign = MakeAssignLet (StringCopy (ID_NAME (assid)), vardec, array);
+
+    ID_SSAASSIGN (assid) = assign;
+
+    NPART_CEXPR (arg_node) = DupNode (assid);
+    BLOCK_INSTR (NPART_CBLOCK (arg_node))
+      = AppendAssign (BLOCK_INSTR (NPART_CBLOCK (arg_node)), assign);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *withloopifyPart(node *arg_node, node *arg_info)
  *
  * description:
@@ -949,6 +1005,11 @@ node *
 withloopifyPart (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("withloopifyPart");
+
+    /* if the part's expr is the index vector we need to insert
+       a definition of it into the codeblock */
+    if (NPART_SSAASSIGN (arg_node) == NULL)
+        insertIndexDefinition (arg_node, arg_info);
 
     /* if the part's LETEXPR is a withloop itself, we don't need to
        perform the withloopification */
