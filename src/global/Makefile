@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.15  2000/01/21 14:27:04  jhs
+# Makedeps ...
+#
 # Revision 2.14  2000/01/21 13:19:53  jhs
 # Added new mt ... infrastructure expanded ...
 #
@@ -275,7 +278,8 @@ traverse.o: ../concurrent/sync_init.h ../concurrent/sync_opt.h
 traverse.o: ../concurrent/spmd_trav.h ../tree/DataFlowMask.h
 traverse.o: ../concurrent/spmd_cons.h ../concurrent/schedule.h
 traverse.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
-traverse.o: ../typecheck/new_typecheck.h traverse.h node_info.mac
+traverse.o: ../typecheck/new_typecheck.h ../multithread/multithread.h
+traverse.o: ../flatten/lac2fun.h traverse.h node_info.mac
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 tree.o: /usr/include/sys/isa_defs.h tree.h types.h tree_basic.h
 tree.o: tree_compound.h Error.h /usr/include/stdio.h
