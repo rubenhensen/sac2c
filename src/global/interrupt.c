@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/11/25 17:53:48  cg
+ * SacDevCamp 04
+ *
  * Revision 3.3  2003/07/28 15:35:06  cg
  * Changed quoted mail addresses to sac-home.org.
  *
@@ -53,12 +56,12 @@
  *
  ******************************************************************************/
 
-void
+static void
 CompilerErrorBreak (int sig)
 {
     FILE *error_file;
+    int i;
 
-    /* should we use SYSERROR from Error.h here?? */
     fprintf (stderr, "\n\nOOOPS your program crashed the compiler 8-((\n");
     fprintf (stderr, "Please send a bug report to bug@sac-home.org.\n\n");
     fprintf (stderr,
@@ -70,6 +73,7 @@ CompilerErrorBreak (int sig)
              "  mail bug@sac-home.org < SACbugreport\n\n");
 
     error_file = fopen ("SACbugreport", "w");
+
     if (error_file != NULL) {
         fprintf (error_file, "/*\n"
                              " * SAC - bug report\n"
@@ -77,35 +81,38 @@ CompilerErrorBreak (int sig)
                              " *\n"
                              " * automatically generated on ");
         fclose (error_file);
-        SystemCall2 ("date >> SACbugreport");
+        ILIBsystemCall2 ("date >> SACbugreport");
         error_file = fopen ("SACbugreport", "a");
 
         fprintf (error_file, " *\n");
-        fprintf (error_file, " * using sac2c %s for %s\n", version_id, target_platform);
+        fprintf (error_file, " * using sac2c %s for %s\n", global.version_id,
+                 global.target_platform);
         fprintf (error_file, " * built %s.\n", build_date);
         fprintf (error_file, " * by user %s on host %s for %s.\n", build_user, build_host,
                  build_os);
         fprintf (error_file, " *\n");
-        if (commandline[0] != '\0') {
-            fprintf (error_file, " * The compiler was called by\n");
-            fprintf (error_file, " * %s\n", commandline);
-        } else {
-            fprintf (error_file,
-                     " * Compiler crashed before the commandline has been examined!\n");
+
+        fprintf (error_file, " * The compiler was called by\n");
+        fprintf (error_file, " *  %s", global.argv[0]);
+        for (i = 1; i < global.argc; i++) {
+            fprintf (error_file, " %s", global.argv[i]);
         }
+        fprintf (error_file, "\n");
         fprintf (error_file, " *\n");
-        if (sacfilename[0] != '\0') {
-            fprintf (error_file, " * The contents of %s is:\n", sacfilename);
+
+        if (global.sacfilename != NULL) {
+            fprintf (error_file, " * The contents of %s is:\n", global.sacfilename);
             fprintf (error_file, " */\n\n");
-            fclose (error_file);
-            SystemCall2 ("cat %s >> SACbugreport", sacfilename);
+            ILIBsystemCall2 ("cat %s >> SACbugreport", global.sacfilename);
         } else {
             fprintf (error_file,
-                     " * Compiler crashed before sacfilename could be determined!\n");
+                     " * Compiler crashed before SAC file name could be determined!\n");
             fprintf (error_file, " */\n\n");
-            fclose (error_file);
         }
+
+        fclose (error_file);
     }
+
     EXIT (0);
 }
 
@@ -119,7 +126,7 @@ CompilerErrorBreak (int sig)
  *
  ******************************************************************************/
 
-void
+static void
 UserForcedBreak (int sig)
 {
     EXIT (0);
@@ -127,16 +134,20 @@ UserForcedBreak (int sig)
 
 /******************************************************************************
  *
- * function: void SetupInterruptHandlers()
+ * function: void IRQsetupInterruptHandlers()
  *
  * description: installs new signal handlers for some interrupts.
  *
  ******************************************************************************/
 
 void
-SetupInterruptHandlers ()
+IRQsetupInterruptHandlers ()
 {
+    DBUG_ENTER ("IRQsetupInterruptHandlers");
+
     signal (SIGSEGV, CompilerErrorBreak); /* Segmentation Fault */
     signal (SIGBUS, CompilerErrorBreak);  /* Bus Error */
     signal (SIGINT, UserForcedBreak);     /* Interrupt (Control-C) */
+
+    DBUG_VOID_RETURN;
 }

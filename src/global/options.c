@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2004/11/25 17:53:48  cg
+ * SacDevCamp 04
+ *
  * Revision 3.78  2004/11/24 16:02:03  cg
  * file streamlined.
  *
@@ -447,7 +450,7 @@ OPTanalyseCommandline (int argc, char *argv[])
 
     ARGS_OPTION ("maxwlur", ARG_NUM (global.wlunrnum));
 
-    ARGS_OPTION ("maxspec", ARG_NUM (global.max_overload));
+    ARGS_OPTION ("maxspec", ARG_NUM (global.maxspec));
 
     ARGS_OPTION ("maxthreads", ARG_NUM (global.max_threads));
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2004/11/25 17:53:48  cg
+ * SacDevCamp 04
+ *
  * Revision 3.81  2004/11/24 23:26:44  skt
  * big compiler brushing during SACDevCampDK 2k4
  *
@@ -338,34 +341,27 @@ main (int argc, char *argv[])
 {
     node *syntax_tree = NULL;
     stringset_t *dependencies;
-    int i;
-
-#ifdef SHOW_MALLOC
-    ILIBcomputeMallocAlignStep ();
-#endif
 
     /*
      * Initializations
      */
+
+    global.argc = argc;
+    global.argv = argv;
+
+#ifdef SHOW_MALLOC
+    ILIBcomputeMallocAlignStep ();
+#endif
 
     GLOBinitializeGlobal ();
     FMGRinitPaths ();
     IRQsetupInterruptHandlers ();
     DUPinitDupTree ();
 
-    /*
-     *  The command line is written to a single string.
-     */
-    strcpy (global.commandline, argv[0]);
-    for (i = 1; i < argc; i++) {
-        strcat (global.commandline, " ");
-        strcat (global.commandline, argv[i]);
-    }
-
     OPTanalyseCommandline (argc, argv);
     OPTcheckOptionConsistency ();
 
-    if (global.sacfilename[0] == '\0') {
+    if (global.sacfilename == NULL) {
         global.puresacfilename = "stdin";
     }
 
@@ -453,7 +449,7 @@ main (int argc, char *argv[])
     if (global.libstat) {
         LIBSprintLibStat (global.sacfilename);
 
-        CleanUp ();
+        ERRcleanUp ();
 
         exit (0);
     }

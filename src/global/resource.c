@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/11/25 17:53:48  cg
+ * SacDevCamp 04
+ *
  * Revision 3.11  2004/11/22 19:24:35  cg
  * Moved all definitions/declarations of global variables to globals.mac
  *
@@ -136,12 +139,9 @@
 #include <string.h>
 
 #include "types.h"
-#include "tree_basic.h"
 #include "dbug.h"
 #include "resource.h"
 #include "scnprs.h"
-#include "filemgr.h"
-#include "free.h"
 #include "globals.h"
 #include "Error.h"
 
@@ -171,57 +171,57 @@ static struct {
     void *store;
 } resource_table[] = {
 
-  {"CC", str, &config.cc},
-  {"CCFLAGS", str, &config.ccflags},
-  {"CCDIR", str, &config.ccdir},
-  {"LDFLAGS", str, &config.ldflags},
-  {"CCLINK", str, &config.cclink},
-  {"CCMTLINK", str, &config.ccmtlink},
-  {"OPT_O0", str, &config.opt_O0},
-  {"OPT_O1", str, &config.opt_O1},
-  {"OPT_O2", str, &config.opt_O2},
-  {"OPT_O3", str, &config.opt_O3},
-  {"OPT_g", str, &config.opt_g},
-  {"OPT_D", str, &config.opt_D},
-  {"OPT_I", str, &config.opt_I},
+  {"CC", str, &global.config.cc},
+  {"CCFLAGS", str, &global.config.ccflags},
+  {"CCDIR", str, &global.config.ccdir},
+  {"LDFLAGS", str, &global.config.ldflags},
+  {"CCLINK", str, &global.config.cclink},
+  {"CCMTLINK", str, &global.config.ccmtlink},
+  {"OPT_O0", str, &global.config.opt_O0},
+  {"OPT_O1", str, &global.config.opt_O1},
+  {"OPT_O2", str, &global.config.opt_O2},
+  {"OPT_O3", str, &global.config.opt_O3},
+  {"OPT_g", str, &global.config.opt_g},
+  {"OPT_D", str, &global.config.opt_D},
+  {"OPT_I", str, &global.config.opt_I},
 
-  {"CPP_STDIN", str, &config.cpp_stdin},
-  {"CPP_FILE", str, &config.cpp_file},
-  {"TAR_CREATE", str, &config.tar_create},
-  {"TAR_EXTRACT", str, &config.tar_extract},
-  {"AR_CREATE", str, &config.ar_create},
-  {"LD_DYNAMIC", str, &config.ld_dynamic},
-  {"RANLIB", str, &config.ranlib},
-  {"MKDIR", str, &config.mkdir},
-  {"RMDIR", str, &config.rmdir},
-  {"CHDIR", str, &config.chdir},
-  {"CAT", str, &config.cat},
-  {"MOVE", str, &config.move},
-  {"RSH", str, &config.rsh},
-  {"DUMP_OUTPUT", str, &config.dump_output},
+  {"CPP_STDIN", str, &global.config.cpp_stdin},
+  {"CPP_FILE", str, &global.config.cpp_file},
+  {"TAR_CREATE", str, &global.config.tar_create},
+  {"TAR_EXTRACT", str, &global.config.tar_extract},
+  {"AR_CREATE", str, &global.config.ar_create},
+  {"LD_DYNAMIC", str, &global.config.ld_dynamic},
+  {"RANLIB", str, &global.config.ranlib},
+  {"MKDIR", str, &global.config.mkdir},
+  {"RMDIR", str, &global.config.rmdir},
+  {"CHDIR", str, &global.config.chdir},
+  {"CAT", str, &global.config.cat},
+  {"MOVE", str, &global.config.move},
+  {"RSH", str, &global.config.rsh},
+  {"DUMP_OUTPUT", str, &global.config.dump_output},
 
-  {"STDLIB_DECPATH", str, &config.stdlib_decpath},
-  {"STDLIB_LIBPATH", str, &config.stdlib_libpath},
-  {"SYSTEM_LIBPATH", str, &config.system_libpath},
-  {"TMPDIR", str, &config.tmpdir},
+  {"STDLIB_DECPATH", str, &global.config.stdlib_decpath},
+  {"STDLIB_LIBPATH", str, &global.config.stdlib_libpath},
+  {"SYSTEM_LIBPATH", str, &global.config.system_libpath},
+  {"TMPDIR", str, &global.config.tmpdir},
 
-  {"CACHE1_SIZE", num, &config.cache1_size},
-  {"CACHE1_LINE", num, &config.cache1_line},
-  {"CACHE1_ASSOC", num, &config.cache1_assoc},
-  {"CACHE1_WRITEPOL", str, &config.cache1_writepol},
-  {"CACHE1_MSCA", num, &config.cache1_msca_factor},
+  {"CACHE1_SIZE", num, &global.config.cache1_size},
+  {"CACHE1_LINE", num, &global.config.cache1_line},
+  {"CACHE1_ASSOC", num, &global.config.cache1_assoc},
+  {"CACHE1_WRITEPOL", str, &global.config.cache1_writepol},
+  {"CACHE1_MSCA", num, &global.config.cache1_msca_factor},
 
-  {"CACHE2_SIZE", num, &config.cache2_size},
-  {"CACHE2_LINE", num, &config.cache2_line},
-  {"CACHE2_ASSOC", num, &config.cache2_assoc},
-  {"CACHE2_WRITEPOL", str, &config.cache2_writepol},
-  {"CACHE2_MSCA", num, &config.cache2_msca_factor},
+  {"CACHE2_SIZE", num, &global.config.cache2_size},
+  {"CACHE2_LINE", num, &global.config.cache2_line},
+  {"CACHE2_ASSOC", num, &global.config.cache2_assoc},
+  {"CACHE2_WRITEPOL", str, &global.config.cache2_writepol},
+  {"CACHE2_MSCA", num, &global.config.cache2_msca_factor},
 
-  {"CACHE3_SIZE", num, &config.cache3_size},
-  {"CACHE3_LINE", num, &config.cache3_line},
-  {"CACHE3_ASSOC", num, &config.cache3_assoc},
-  {"CACHE3_WRITEPOL", str, &config.cache3_writepol},
-  {"CACHE3_MSCA", num, &config.cache3_msca_factor},
+  {"CACHE3_SIZE", num, &global.config.cache3_size},
+  {"CACHE3_LINE", num, &global.config.cache3_line},
+  {"CACHE3_ASSOC", num, &global.config.cache3_assoc},
+  {"CACHE3_WRITEPOL", str, &global.config.cache3_writepol},
+  {"CACHE3_MSCA", num, &global.config.cache3_msca_factor},
 
   {"", 0, NULL},
 };
@@ -229,7 +229,35 @@ static struct {
 /*****************************************************************************
  *
  * function:
- *  resource_list_t *RSCMakeResourceListEntry(char *name,
+ *  inheritence_list_t *RSCmakeInheritenceListEntry( char *name,
+ *                                                   inheritence_list_t *next)
+ *
+ * description:
+ *
+ *   creates inheritence list
+ *
+ *
+ ******************************************************************************/
+
+inheritence_list_t *
+RSCmakeInheritenceListEntry (char *name, inheritence_list_t *next)
+{
+    inheritence_list_t *new;
+
+    DBUG_ENTER ("RSCmakeInheritenceListEntry");
+
+    new = (inheritence_list_t *)ILIBmalloc (sizeof (inheritence_list_t));
+
+    new->name = name;
+    new->next = next;
+
+    DBUG_RETURN (new);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *  resource_list_t *RSCmakeResourceListEntry(char *name,
  *                                            char *value_str,
  *                                            int  value_num,
  *                                            int  add_flag,
@@ -237,7 +265,7 @@ static struct {
  *
  * description:
  *
- *  Along with RSCMakeTargetListEntry(), this function is used in sac.y
+ *  Along with RSCmakeTargetListEntry(), this function is used in sac.y
  *  to construct the tree-like structure for temporary storage
  *  of resource information.
  *
@@ -246,14 +274,14 @@ static struct {
  ******************************************************************************/
 
 resource_list_t *
-RSCMakeResourceListEntry (char *name, char *value_str, int value_num, int add_flag,
+RSCmakeResourceListEntry (char *name, char *value_str, int value_num, int add_flag,
                           resource_list_t *next)
 {
     resource_list_t *tmp;
 
-    DBUG_ENTER ("MakeResourceListEntry");
+    DBUG_ENTER ("RSCmakeResourceListEntry");
 
-    tmp = (resource_list_t *)Malloc (sizeof (resource_list_t));
+    tmp = (resource_list_t *)ILIBmalloc (sizeof (resource_list_t));
 
     tmp->name = name;
     tmp->value_str = value_str;
@@ -268,13 +296,14 @@ RSCMakeResourceListEntry (char *name, char *value_str, int value_num, int add_fl
 /*****************************************************************************
  *
  * function:
- *  resource_list_t *RSCMakeTargetListEntry(char *name, ids *super_targets,
+ *  resource_list_t *RSCmakeTargetListEntry(char *name,
+ *                                          inheritence_list_t *super_targets,
  *                                          resource_list_t *resource_list,
  *                                          target_list_t *next)
  *
  * description:
  *
- *  Along with RSCMakeResourceListEntry(), this function is used in sac.y
+ *  Along with RSCmakeResourceListEntry(), this function is used in sac.y
  *  to construct the tree-like structure for temporary storage
  *  of resource information.
  *
@@ -283,14 +312,14 @@ RSCMakeResourceListEntry (char *name, char *value_str, int value_num, int add_fl
  ******************************************************************************/
 
 target_list_t *
-RSCMakeTargetListEntry (char *name, ids *super_targets, resource_list_t *resource_list,
-                        target_list_t *next)
+RSCmakeTargetListEntry (char *name, inheritence_list_t *super_targets,
+                        resource_list_t *resource_list, target_list_t *next)
 {
     target_list_t *tmp;
 
-    DBUG_ENTER ("MakeTargetListEntry");
+    DBUG_ENTER ("RSCmakeTargetListEntry");
 
-    tmp = (target_list_t *)Malloc (sizeof (target_list_t));
+    tmp = (target_list_t *)ILIBmalloc (sizeof (target_list_t));
 
     tmp->name = name;
     tmp->super_targets = super_targets;
@@ -303,7 +332,7 @@ RSCMakeTargetListEntry (char *name, ids *super_targets, resource_list_t *resourc
 /*****************************************************************************
  *
  * function:
- *  target_list_t *RSCAddTargetList(target_list_t *list1,
+ *  target_list_t *RSCaddTargetList(target_list_t *list1,
  *                                  target_list_t *list2)
  *
  * description:
@@ -315,19 +344,20 @@ RSCMakeTargetListEntry (char *name, ids *super_targets, resource_list_t *resourc
  ******************************************************************************/
 
 target_list_t *
-RSCAddTargetList (target_list_t *list1, target_list_t *list2)
+RSCaddTargetList (target_list_t *list1, target_list_t *list2)
 {
     target_list_t *tmp;
 
-    DBUG_ENTER ("AddTargetList");
+    DBUG_ENTER ("RSCaddTargetList");
 
     if (list1 == NULL) {
         list1 = list2;
     } else {
         tmp = list1;
 
-        while (tmp->next != NULL)
+        while (tmp->next != NULL) {
             tmp = tmp->next;
+        }
 
         tmp->next = list2;
     }
@@ -352,6 +382,7 @@ FreeTargetList (target_list_t *target)
 {
     resource_list_t *resource, *tmp;
     target_list_t *tmp_target;
+    inheritence_list_t *tmp_inherit, *inherit;
 
     DBUG_ENTER ("FreeTargetList");
 
@@ -364,16 +395,21 @@ FreeTargetList (target_list_t *target)
             tmp = resource;
             resource = resource->next;
 
-            tmp->name = Free (tmp->name);
-            tmp->value_str = Free (tmp->value_str);
-            tmp = Free (tmp);
-        }
-        tmp_target->name = Free (tmp_target->name);
-        if (tmp_target->super_targets != NULL) {
-            FreeAllIds (tmp_target->super_targets);
+            tmp->name = ILIBfree (tmp->name);
+            tmp->value_str = ILIBfree (tmp->value_str);
+            tmp = ILIBfree (tmp);
         }
 
-        tmp_target = Free (tmp_target);
+        tmp_target->name = ILIBfree (tmp_target->name);
+
+        inherit = tmp_target->super_targets;
+        while (inherit != NULL) {
+            tmp_inherit = inherit;
+            inherit = inherit->next;
+            tmp_inherit = ILIBfree (tmp_inherit);
+        }
+
+        tmp_target = ILIBfree (tmp_target);
     }
 
     DBUG_RETURN ((target_list_t *)NULL);
@@ -382,7 +418,7 @@ FreeTargetList (target_list_t *target)
 /******************************************************************************
  *
  * function:
- *  void RSCShowResources()
+ *  void RSCshowResources()
  *
  * description:
  *  This function displays the current configuration. It's called in main.c
@@ -392,13 +428,13 @@ FreeTargetList (target_list_t *target)
  ******************************************************************************/
 
 void
-RSCShowResources ()
+RSCshowResources ()
 {
     int i;
 
-    DBUG_ENTER ("ShowResources");
+    DBUG_ENTER ("RSCshowResources");
 
-    printf ("\nConfiguration for target '%s`:\n\n", target_name);
+    printf ("\nConfiguration for target '%s`:\n\n", global.target_name);
 
     for (i = 0; resource_table[i].name[0] != '\0'; i++) {
         switch (resource_table[i].tag) {
@@ -421,7 +457,7 @@ RSCShowResources ()
 /******************************************************************************
  *
  * function:
- *  void ParseResourceFile()
+ *  void RSCparseResourceFile()
  *
  * description:
  *  This function parses a single resource file and adds its content to the
@@ -430,26 +466,27 @@ RSCShowResources ()
  ******************************************************************************/
 
 bool
-RSCParseResourceFile (char *buffer)
+RSCparseResourceFile (char *buffer)
 {
     bool ok = TRUE;
 
-    DBUG_ENTER ("RSCParseResourceFile");
+    DBUG_ENTER ("RSCparseResourceFile");
 
-    yyin = fopen (buffer, "r");
+    global.yyin = fopen (buffer, "r");
 
-    if (yyin == NULL) {
+    if (global.yyin == NULL) {
         ok = FALSE;
     } else {
 
         NOTE (("  Parsing configuration file \"%s\" ...", buffer));
 
-        linenum = 1;
-        filename = buffer; /* set for better error messages only */
-        start_token = PARSE_RC;
+        global.linenum = 1;
+        global.filename = buffer; /* set for better error messages only */
+        global.start_token = PARSE_RC;
 
-        My_yyparse ();
-        fclose (yyin);
+        SPmyYyparse ();
+
+        fclose (global.yyin);
     }
 
     DBUG_RETURN (ok);
@@ -492,7 +529,7 @@ ParseResourceFiles ()
     strcpy (buffer, envvar);
     strcat (buffer, "/runtime/sac2crc");
 
-    ok = RSCParseResourceFile (buffer);
+    ok = RSCparseResourceFile (buffer);
 
     if (!ok) {
         SYSABORT (("Unable to parse public sac2crc file.\n"
@@ -511,10 +548,10 @@ ParseResourceFiles ()
         strcpy (buffer, envvar);
         strcat (buffer, "/.sac2crc");
 
-        ok = RSCParseResourceFile (buffer);
+        ok = RSCparseResourceFile (buffer);
     }
 
-    filename = puresacfilename;
+    global.filename = global.puresacfilename;
 
     DBUG_VOID_RETURN;
 }
@@ -541,8 +578,9 @@ EvaluateDefaultTarget (target_list_t *target)
 
     DBUG_ENTER ("EvaluateDefaultTarget");
 
-    while ((target != NULL) && (0 != strcmp (target->name, "default")))
+    while ((target != NULL) && (!ILIBstringCompare (target->name, "default"))) {
         target = target->next;
+    }
 
     if (target == NULL) {
         SYSABORT (("Configuration files do not contain default target specification"));
@@ -553,7 +591,7 @@ EvaluateDefaultTarget (target_list_t *target)
         resource = target->resource_list;
 
         while ((resource != NULL)
-               && (0 != strcmp (resource_table[i].name, resource->name))) {
+               && (!ILIBstringCompare (resource_table[i].name, resource->name))) {
             resource = resource->next;
         }
 
@@ -609,26 +647,27 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
     target_list_t *tmp;
     resource_list_t *resource;
     int i;
-    ids *super_target;
+    inheritence_list_t *super_target;
 
     DBUG_ENTER ("EvaluateCustomTarget");
 
     tmp = target_list;
 
-    while ((tmp != NULL) && (0 != strcmp (tmp->name, target)))
+    while ((tmp != NULL) && (!ILIBstringCompare (tmp->name, target))) {
         tmp = tmp->next;
+    }
 
     if (tmp == NULL) {
-        SYSABORT (
-          ("Configuration files do not contain specification of custom target '%s`",
-           target));
+        SYSABORT (("Configuration files do not contain specification of custom "
+                   "target '%s`",
+                   target));
     }
 
     super_target = tmp->super_targets;
 
     while (super_target != NULL) {
-        EvaluateCustomTarget (IDS_NAME (super_target), target_list);
-        super_target = IDS_NEXT (super_target);
+        EvaluateCustomTarget (super_target->name, target_list);
+        super_target = super_target->next;
     }
 
     resource = tmp->resource_list;
@@ -636,7 +675,7 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
     while (resource != NULL) {
         i = 0;
         while ((resource_table[i].name[0] != '\0')
-               && (0 != strcmp (resource_table[i].name, resource->name))) {
+               && (!ILIBstringCompare (resource_table[i].name, resource->name))) {
             i++;
         }
 
@@ -653,18 +692,14 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
                 } else {
                     if (resource->add_flag) {
                         char *new;
-                        new = (char *)Malloc (
-                          strlen (resource->value_str)
-                          + strlen (*((char **)(resource_table[i].store))) + 2);
-                        strcpy (new, *((char **)(resource_table[i].store)));
-                        strcat (new, " ");
-                        strcat (new, resource->value_str);
-                        Free (*((char **)(resource_table[i].store)));
+                        new = ILIBstringConcat3 (*((char **)(resource_table[i].store)),
+                                                 " ", resource->value_str);
+                        ILIBfree (*((char **)(resource_table[i].store)));
                         *((char **)(resource_table[i].store)) = new;
                     } else {
-                        Free (*((char **)(resource_table[i].store)));
+                        ILIBfree (*((char **)(resource_table[i].store)));
                         *((char **)(resource_table[i].store))
-                          = StringCopy (resource->value_str);
+                          = ILIBstringCopy (resource->value_str);
                     }
                 }
                 break;
@@ -695,7 +730,7 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
 /******************************************************************************
  *
  * function:
- *  void RSCEvaluateConfiguration(char *target)
+ *  void RSCevaluateConfiguration(char *target)
  *
  * description:
  *  This function triggers the whole process of evaluating the configuration
@@ -704,19 +739,19 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
  ******************************************************************************/
 
 void
-RSCEvaluateConfiguration (char *target)
+RSCevaluateConfiguration (char *target)
 {
-    DBUG_ENTER ("RSCEvaluateConfiguration");
+    DBUG_ENTER ("RSCevaluateConfiguration");
 
     ParseResourceFiles ();
 
-    EvaluateDefaultTarget (target_list);
+    EvaluateDefaultTarget (global.target_list);
 
-    if (0 != strcmp (target, "default")) {
-        EvaluateCustomTarget (target, target_list);
+    if (!ILIBstringCompare (target, "default")) {
+        EvaluateCustomTarget (target, global.target_list);
     }
 
-    target_list = FreeTargetList (target_list);
+    global.target_list = FreeTargetList (global.target_list);
 
     DBUG_VOID_RETURN;
 }

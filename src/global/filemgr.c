@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/25 17:53:48  cg
+ * SacDevCamp 04
+ *
  * Revision 1.2  2004/11/22 15:49:57  cg
  * Moved from subdirectory modules to global.
  *
@@ -109,16 +112,17 @@
 #include "internal_lib.h"
 #include "Error.h"
 #include "free.h"
-
+#include "types.h"
 #include "filemgr.h"
 #include "resource.h"
+#include "tree_basic.h"
 
 static char path_bufs[4][MAX_PATH_LEN];
 static int bufsize[4];
 
 /*
  *
- *  functionname  : FindFile
+ *  functionname  : FMGRfindFile
  *  arguments     :
  *  description   :
  *  global vars   : ---
@@ -131,7 +135,7 @@ static int bufsize[4];
  */
 
 char *
-FindFile (pathkind p, char *name)
+FMGRfindFile (pathkind_t p, char *name)
 {
     FILE *file = NULL;
     static char buffer[MAX_FILE_NAME];
@@ -139,7 +143,7 @@ FindFile (pathkind p, char *name)
     char *path;
     char *result = NULL;
 
-    DBUG_ENTER ("FindFile");
+    DBUG_ENTER ("FMGRfindFile");
 
     if (name[0] == '/') { /* absolute path specified! */
         strcpy (buffer, name);
@@ -151,14 +155,14 @@ FindFile (pathkind p, char *name)
             strcpy (buffer, path);
             strcat (buffer, "/");
             strcat (buffer, name);
-            DBUG_PRINT ("FILE", ("trying file %s\n", buffer));
+            DBUG_PRINT ("FMGR", ("trying file %s\n", buffer));
             file = fopen (buffer, "r");
             if (file == NULL) {
                 path = strtok (NULL, ":");
             }
         }
     }
-    if (file) {
+    if (file != NULL) {
         fclose (file);
         result = buffer;
     }
@@ -169,7 +173,7 @@ FindFile (pathkind p, char *name)
 /******************************************************************************
  *
  * function:
- *   int CheckSystemLibrary( char *name)
+ *   bool FMGRcheckSystemLibrary( char *name)
  *
  * description:
  *
@@ -179,32 +183,36 @@ FindFile (pathkind p, char *name)
  *
  ******************************************************************************/
 
-int
-CheckSystemLibrary (char *name)
+bool
+FMGRcheckSystemLibrary (char *name)
 {
     int result;
 
-    /* remove trailing 'lib' */
+    DBUG_ENTER ("FMGRcheckSystemLibrary");
 
+    /* remove trailing 'lib' */
     name += 3;
 
     /* create a dummy C program to compile and link against */
     /* the library.                                         */
 
-    SystemCall ("echo \"int main(){return(0);}\" >%s/SAC_XX_syslibtest.c", tmp_dirname);
-    result = SystemCall2 ("%s %s %s -l%s -o %s/SAC_XX_syslibtest %s/SAC_XX_syslibtest.c",
-                          config.cc, config.ccflags, config.ldflags, name, tmp_dirname,
-                          tmp_dirname);
+    ILIBsystemCall ("echo \"int main(){return(0);}\" >%s/SAC_XX_syslibtest.c",
+                    global.tmp_dirname);
+
+    result
+      = ILIBsystemCall2 ("%s %s %s -l%s -o %s/SAC_XX_syslibtest %s/SAC_XX_syslibtest.c",
+                         global.config.cc, global.config.ccflags, global.config.ldflags,
+                         name, global.tmp_dirname, global.tmp_dirname);
 
     /* reverse result, because a result of 0 means true here. */
 
-    return (!result);
+    DBUG_RETURN (result != 0);
 }
 
 /******************************************************************************
  *
  * function:
- *   int CheckExistFile(char *dir, char *name)
+ *   bool FMGRcheckExistFile(char *dir, char *name)
  *
  * description:
  *
@@ -215,34 +223,30 @@ CheckSystemLibrary (char *name)
  *
  ******************************************************************************/
 
-int
-CheckExistFile (char *dir, char *name)
+bool
+FMGRcheckExistFile (char *dir, char *name)
 {
     char *tmp;
     FILE *file;
-    int res;
+    bool res;
 
-    DBUG_ENTER ("CheckExistFile");
+    DBUG_ENTER ("FMGRcheckExistFile");
 
-    DBUG_ASSERT ((name != NULL), "Function CheckExistFile called with name NULL");
+    DBUG_ASSERT ((name != NULL), "Function FMGRcheckExistFile() called with name NULL");
 
     if (dir == NULL) {
         dir = "";
     }
 
-    tmp = (char *)Malloc ((strlen (dir) + strlen (name) + 3) * sizeof (char));
-
-    strcpy (tmp, dir);
-    strcat (tmp, "/");
-    strcat (tmp, name);
+    tmp = ILIBstringConcat3 (dir, "/", name);
 
     file = fopen (tmp, "r");
-    tmp = Free (tmp);
+    tmp = ILIBfree (tmp);
 
     if (file == NULL) {
-        res = 0;
+        res = FALSE;
     } else {
-        res = 1;
+        res = TRUE;
         fclose (file);
     }
 
@@ -251,7 +255,7 @@ CheckExistFile (char *dir, char *name)
 
 /*
  *
- *  functionname  : InitPaths
+ *  functionname  : FMGRinitPaths
  *  arguments     :
  *  description   :
  *  global vars   : ---
@@ -264,11 +268,11 @@ CheckExistFile (char *dir, char *name)
  */
 
 void
-InitPaths ()
+FMGRinitPaths ()
 {
     int i;
 
-    DBUG_ENTER ("InitPaths");
+    DBUG_ENTER ("FMGRinitPaths");
 
     for (i = 0; i < 4; i++) {
         bufsize[i] = 1;
@@ -280,7 +284,7 @@ InitPaths ()
 
 /*
  *
- *  functionname  : AppendPath
+ *  functionname  : FMGRappendPath
  *  arguments     : pathkind, path to be appended
  *  description   :
  *  global vars   : ---
@@ -293,19 +297,19 @@ InitPaths ()
  */
 
 void
-AppendPath (pathkind p, char *path)
+FMGRappendPath (pathkind_t p, char *path)
 {
     int len;
 
-    DBUG_ENTER ("AppendPath");
+    DBUG_ENTER ("FMGRappendPath");
 
-    len = (strlen (path) + 1);
+    len = strlen (path) + 1;
     if (len + bufsize[p] >= MAX_PATH_LEN) {
         SYSABORT (("MAX_PATH_LEN too low"));
     } else {
         strcat (path_bufs[p], ":");
         strcat (path_bufs[p], path);
-        DBUG_PRINT ("FILE", ("appending \":%s\" to path %d", path, p));
+        DBUG_PRINT ("FMGR", ("appending \":%s\" to path %d", path, p));
         bufsize[p] += len;
     }
 
@@ -327,7 +331,7 @@ AppendPath (pathkind p, char *path)
  */
 
 static void
-AppendEnvVar (pathkind p, char *var)
+AppendEnvVar (pathkind_t p, char *var)
 {
     int len;
     char *buffer;
@@ -342,7 +346,7 @@ AppendEnvVar (pathkind p, char *var)
         } else {
             strcat (path_bufs[p], ":");
             strcat (path_bufs[p], buffer);
-            DBUG_PRINT ("FILE", ("appending \":%s\" to path %d", buffer, p));
+            DBUG_PRINT ("FMGR", ("appending \":%s\" to path %d", buffer, p));
             bufsize[p] += len;
         }
     }
@@ -363,7 +367,7 @@ AppendEnvVar (pathkind p, char *var)
  ******************************************************************************/
 
 static void
-AppendConfigPaths (int pathkind, char *path)
+AppendConfigPaths (pathkind_t pathkind, char *path)
 {
     char *pathentry;
     char buffer[MAX_PATH_LEN];
@@ -381,7 +385,7 @@ AppendConfigPaths (int pathkind, char *path)
             if (envvar_end == NULL) {
                 envvar = getenv (pathentry);
                 if (envvar != NULL) {
-                    AppendPath (pathkind, envvar);
+                    FMGRappendPath (pathkind, envvar);
                 }
             } else {
                 envvar_length = strlen (pathentry + 1) - strlen (envvar_end);
@@ -394,10 +398,10 @@ AppendConfigPaths (int pathkind, char *path)
                 } else {
                     strcpy (buffer, envvar_end);
                 }
-                AppendPath (pathkind, buffer);
+                FMGRappendPath (pathkind, buffer);
             }
         } else {
-            AppendPath (pathkind, pathentry);
+            FMGRappendPath (pathkind, pathentry);
         }
 
         if (pathentry != path) {
@@ -412,7 +416,7 @@ AppendConfigPaths (int pathkind, char *path)
 
 /*
  *
- *  functionname  : RearrangePaths
+ *  functionname  : FMGRrearrangePaths
  *  arguments     : ---
  *  description   : If additional search paths are provided as command line
  *                  parameters, then these have a higher priority than the
@@ -429,12 +433,12 @@ AppendConfigPaths (int pathkind, char *path)
  */
 
 void
-RearrangePaths ()
+FMGRrearrangePaths ()
 {
     int i;
     char buffer[MAX_PATH_LEN];
 
-    DBUG_ENTER ("RearrangePaths");
+    DBUG_ENTER ("FMGRrearrangePaths");
 
     for (i = 0; i <= 2; i++) {
         if (strlen (path_bufs[i]) > 1) {
@@ -444,43 +448,25 @@ RearrangePaths ()
         }
     }
 
-    AppendEnvVar (MODDEC_PATH, "SAC_DEC_PATH");
-    AppendEnvVar (MODIMP_PATH, "SAC_LIBRARY_PATH");
-    AppendEnvVar (PATH, "SAC_PATH");
+    AppendEnvVar (PK_moddec_path, "SAC_DEC_PATH");
+    AppendEnvVar (PK_modimp_path, "SAC_LIBRARY_PATH");
+    AppendEnvVar (PK_path, "SAC_PATH");
 
-    AppendConfigPaths (MODDEC_PATH, config.stdlib_decpath);
-    AppendConfigPaths (MODIMP_PATH, config.stdlib_libpath);
-    AppendConfigPaths (SYSTEMLIB_PATH, config.system_libpath);
+    AppendConfigPaths (PK_moddec_path, global.config.stdlib_decpath);
+    AppendConfigPaths (PK_modimp_path, global.config.stdlib_libpath);
+    AppendConfigPaths (PK_systemlib_path, global.config.system_libpath);
 
-#if 0
-    for (i=0; i<NUMDECPATHS; i++)
-    {
-      strcpy(buffer, sac_home);
-      strcat(buffer, "/");
-      strcat(buffer, stddecpaths[i]);
-      AppendPath(MODDEC_PATH, buffer);
-    }
-    
-    for (i=0; i<NUMLIBPATHS; i++)
-    {
-      strcpy(buffer, sac_home);
-      strcat(buffer, "/");
-      strcat(buffer, stdlibpaths[i]);
-      AppendPath(MODIMP_PATH, buffer);
-    }
-#endif
-
-    DBUG_PRINT ("PATH", ("PATH is %s", path_bufs[PATH]));
-    DBUG_PRINT ("PATH", ("MODDEC_PATH is %s", path_bufs[MODDEC_PATH]));
-    DBUG_PRINT ("PATH", ("MODIMP_PATH is %s", path_bufs[MODIMP_PATH]));
-    DBUG_PRINT ("PATH", ("SYSTEMLIB_PATH is %s", path_bufs[SYSTEMLIB_PATH]));
+    DBUG_PRINT ("FMGR", ("PATH is %s", path_bufs[PK_path]));
+    DBUG_PRINT ("FMGR", ("MODDEC_PATH is %s", path_bufs[PK_moddec_path]));
+    DBUG_PRINT ("FMGR", ("MODIMP_PATH is %s", path_bufs[PK_modimp_path]));
+    DBUG_PRINT ("FMGR", ("SYSTEMLIB_PATH is %s", path_bufs[PK_systemlib_path]));
 
     DBUG_VOID_RETURN;
 }
 
 /*
  *
- *  functionname  : AbsolutePathname
+ *  functionname  : FMGRabsolutePathname
  *  arguments     : 1) path name
  *  description   : turns relative path names into absolute path names
  *  global vars   : ---
@@ -493,12 +479,12 @@ RearrangePaths ()
  */
 
 char *
-AbsolutePathname (char *path)
+FMGRabsolutePathname (char *path)
 {
     char *tmp;
     static char buffer[MAX_PATH_LEN];
 
-    DBUG_ENTER ("AbsolutePathname");
+    DBUG_ENTER ("FMGRabsolutePathname");
 
     if (path[0] == '/') {
         strcpy (buffer, path);
@@ -524,7 +510,7 @@ AbsolutePathname (char *path)
 
 /*
  *
- *  functionname  : WriteOpen
+ *  functionname  : FMGRwriteOpen
  *  arguments     : 1) format string like that of printf
  *                  2) variable argument list for 1)
  *  description   : opens the given file for writing. If this fails,
@@ -540,13 +526,13 @@ AbsolutePathname (char *path)
  */
 
 FILE *
-WriteOpen (char *format, ...)
+FMGRwriteOpen (char *format, ...)
 {
     va_list arg_p;
     static char buffer[MAX_PATH_LEN];
     FILE *file;
 
-    DBUG_ENTER ("WriteOpen");
+    DBUG_ENTER ("FMGRwriteOpen");
 
     va_start (arg_p, format);
     vsprintf (buffer, format, arg_p);
@@ -591,4 +577,68 @@ FindLocationOfFile (char *file)
     }
 
     return (loc);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void FMGRsetFileNames( node *module)
+ *
+ * Description:
+ *   Sets the global variables
+ *     modulename, outfilename, cfilename, targetdir
+ *   according to the kind of file and the -o command line option.
+ *
+ ******************************************************************************/
+
+void
+FMGRsetFileNames (node *module)
+{
+    char *buffer;
+
+    DBUG_ENTER ("FMGRsetFileNames");
+
+    global.filetype = MODULE_FILETYPE (module);
+
+    if (MODULE_FILETYPE (module) == F_prog) {
+
+        global.modulename = MODULE_NAME (module);
+
+        if (global.outfilename == NULL) {
+            global.outfilename = "a.out";
+            global.cfilename = "a.out.c";
+        } else {
+            global.cfilename = ILIBstringConcat (global.outfilename, ".c");
+        }
+    } else {
+        if (global.doprofile && global.genlib.sac) {
+            SYSWARN (("-p option turned off for module/class compilation"));
+            global.doprofile = FALSE;
+        }
+
+        if (global.sacfilename != NULL) {
+            buffer = ILIBstringConcat (MODULE_NAME (module), ".sac");
+
+            if (!ILIBstringCompare (buffer, global.puresacfilename)) {
+                SYSWARN (("Module/class '%s` should be in a file named \"%s\" "
+                          "instead of \"%s\"",
+                          MODULE_NAME (module), buffer, global.sacfilename));
+            }
+            ILIBfree (buffer);
+        }
+
+        if (global.outfilename == NULL) {
+            global.targetdir = "./";
+        } else {
+            global.targetdir = ILIBstringConcat (global.outfilename, "/");
+        }
+
+        global.modulename = MODULE_NAME (module);
+        global.cfilename = ILIBstringConcat (MODULE_NAME (module), ".c");
+        global.outfilename = ILIBstringConcat (MODULE_NAME (module), ".lib");
+
+        global.targetdir = FMGRabsolutePathname (global.targetdir);
+    }
+
+    DBUG_VOID_RETURN;
 }
