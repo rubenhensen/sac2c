@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.104  1997/11/23 15:18:26  dkr
+ * CC-flag: show_malloc -> SHOW_MALLOC
+ *
  * Revision 1.103  1997/11/20 18:37:17  dkr
  * moved call of Old2NewWith().
  * the call is now after compiler-phase 18 (RefCount()) --- use: sac2c -b18 -2 ...
@@ -1298,7 +1301,7 @@ MAIN
         if (break_compilation) {
             NOTE2 (("*** BREAK after: %s", compiler_phase_name[compiler_phase - 1]));
         }
-#ifdef show_malloc
+#ifdef SHOW_MALLOC
         NOTE2 (("*** maximal allocated memory (bytes): %u", max_allocated_mem));
 #endif
 

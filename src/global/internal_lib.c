@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1997/11/23 15:18:45  dkr
+ * CC-flag: show_malloc -> SHOW_MALLOC
+ *
  * Revision 1.18  1997/10/29 14:56:07  srs
  * changed Malloc() and removed HAVE_MALLOC_O
  *
@@ -101,7 +104,7 @@ Malloc (int size)
     DBUG_ENTER ("Malloc");
     DBUG_PRINT ("MEMALLOC_TRY", ("trying to allocate %d bytes", size));
 
-#ifdef show_malloc
+#ifdef SHOW_MALLOC
     tmp = malloc (size + sizeof (int));
     if (NULL == tmp)
         SYSABORT (("Out of memory"));
@@ -113,7 +116,7 @@ Malloc (int size)
     if (max_allocated_mem < current_allocated_mem)
         max_allocated_mem = current_allocated_mem;
 
-#else /* not show_malloc */
+#else /* not SHOW_MALLOC */
     tmp = malloc (size);
     if (NULL == tmp)
         SYSABORT (("Out of memory"));

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1997/11/23 15:17:52  dkr
+ * CC-flag: show_malloc -> SHOW_MALLOC
+ *
  * Revision 1.13  1997/11/13 16:11:31  srs
  * free functions for the new WL-syntaxtree
  *
@@ -62,7 +65,7 @@
 
 #ifndef NOFREE
 
-#ifdef show_malloc
+#ifdef SHOW_MALLOC
 #define FREE(address)                                                                    \
     if ((address) != NULL) {                                                             \
         DBUG_PRINT ("FREEMEM", ("Free memory at adress: " P_FORMAT, (address)));         \
@@ -71,7 +74,7 @@
         free (address);                                                                  \
         address = NULL;                                                                  \
     }
-#else /* not show_malloc */
+#else /* not SHOW_MALLOC */
 #define FREE(address)                                                                    \
     if ((address) != NULL) {                                                             \
         DBUG_PRINT ("FREEMEM", ("Free memory at adress: " P_FORMAT, (address)));         \
