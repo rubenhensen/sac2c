@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/07/21 12:47:35  khf
+ * switch to new INFO structure
+ *
  * Revision 1.4  2004/06/30 12:24:54  khf
  * Only WLs with non-empty iteration space are considered
  *
@@ -17,25 +20,7 @@
  *
  */
 
-/* usage of arg_info: */
-#define INFO_WLFS_WL(n) (n->node[0])
-#define INFO_WLFS_FUNDEF(n) (n->node[1])
-#define INFO_WLFS_ASSIGN(n) (n->node[2])
-#define INFO_WLFS_LET(n) (n->node[3])
-#define INFO_WLFS_WLACTION(n) (n->flag)
-#define INFO_WLFS_GENAREEQUAL(n) ((bool)(n->varno))
-#define INFO_WLFS_INSIDEWL(n) ((bool)(n->varno))
-#define INFO_WLFS_WOTYPE(n) (n->counter)
-#define INFO_WLFS_DCTDEPENDENCIES(n) ((bool)(n->int_data))
-#define INFO_WLFS_TAGDEPENDENCIES(n) ((bool)(n->lineno))
-#define INFO_WLFS_WLDEPENDENT(n) ((bool)(n->refcnt))
-#define INFO_WLFS_WL2EXTEND(n) (n->dfmask[0])
-#define INFO_WLFS_SONSOFWL2EXTEND(n) ((nodelist *)(n->dfmask[1]))
-#define INFO_WLFS_ASSIGNS2SHIFT(n) (n->dfmask[2])
-
-/* Macros for N_assign: */
-#define WLFS_TRAVWITHWL2EXTEND(n) (n->dfmask[0])
-#define WLFS_TAGGEDWITHWL(n) (n->dfmask[1])
+#define NEW_INFO
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,6 +39,86 @@
 #include "ssa.h"
 #include "optimize.h"
 #include "WithloopFusion.h"
+
+/**
+ * INFO structure
+ */
+struct INFO {
+    node *wl;
+    node *fundef;
+    node *assign;
+    node *let;
+    int wlaction;
+    bool genareequal;
+    bool insidewl;
+    int wotype;
+    bool dctdependencies;
+    bool tagdependencies;
+    bool wldependent;
+    node *wl2extend;
+    nodelist *sonsofwl2extend;
+    node *assigns2shift;
+};
+
+/* usage of arg_info: */
+#define INFO_WLFS_WL(n) (n->wl)
+#define INFO_WLFS_FUNDEF(n) (n->fundef)
+#define INFO_WLFS_ASSIGN(n) (n->assign)
+#define INFO_WLFS_LET(n) (n->let)
+#define INFO_WLFS_WLACTION(n) (n->wlaction)
+#define INFO_WLFS_GENAREEQUAL(n) (n->genareequal)
+#define INFO_WLFS_INSIDEWL(n) (n->insidewl)
+#define INFO_WLFS_WOTYPE(n) (n->wotype)
+#define INFO_WLFS_DCTDEPENDENCIES(n) (n->dctdependencies)
+#define INFO_WLFS_TAGDEPENDENCIES(n) (n->tagdependencies)
+#define INFO_WLFS_WLDEPENDENT(n) (n->wldependent)
+#define INFO_WLFS_WL2EXTEND(n) (n->wl2extend)
+#define INFO_WLFS_SONSOFWL2EXTEND(n) (n->sonsofwl2extend)
+#define INFO_WLFS_ASSIGNS2SHIFT(n) (n->assigns2shift)
+
+/* Macros for N_assign: */
+#define WLFS_TRAVWITHWL2EXTEND(n) (n->dfmask[0])
+#define WLFS_TAGGEDWITHWL(n) (n->dfmask[1])
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_WLFS_WL (result) = NULL;
+    INFO_WLFS_FUNDEF (result) = NULL;
+    INFO_WLFS_ASSIGN (result) = NULL;
+    INFO_WLFS_LET (result) = NULL;
+    INFO_WLFS_WLACTION (result) = 0;
+    INFO_WLFS_GENAREEQUAL (result) = FALSE;
+    INFO_WLFS_INSIDEWL (result) = FALSE;
+    INFO_WLFS_WOTYPE (result) = 0;
+    INFO_WLFS_DCTDEPENDENCIES (result) = FALSE;
+    INFO_WLFS_TAGDEPENDENCIES (result) = FALSE;
+    INFO_WLFS_WLDEPENDENT (result) = FALSE;
+    INFO_WLFS_WL2EXTEND (result) = NULL;
+    INFO_WLFS_SONSOFWL2EXTEND (result) = NULL;
+    INFO_WLFS_ASSIGNS2SHIFT (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 typedef enum { WO_gen, WO_mod, WO_fold, WL_unkown } wo_type_t;
 
@@ -371,20 +436,20 @@ FuseNCodes (node *extend_part, node *fit_part, bool unique_ref, node *wl2extend,
 
 /** <!--********************************************************************-->
  *
- * @fn node *FuseWithloops( node *wl, node *arg_info, node *wl2extend_assign)
+ * @fn node *FuseWithloops( node *wl, info *arg_info, node *wl2extend_assign)
  *
  *   @brief Fuses the two withloops together. Important for dependencies
  *          in code the current withloop has to fuse with the other in such
  *          way the current WL can be removed later.
  *
  *   @param  node *wl               :  current N_Nwith node
- *           node *arg_info         :  N_INFO
+ *           info *arg_info         :  N_INFO
  *           node *wl2extend_assign :  N_assign node of the second withloop where the
  *                                     current withloop will be fused to
  *   @return node *                 :  modified current N_Nwith node for DCR
  ******************************************************************************/
 static node *
-FuseWithloops (node *wl, node *arg_info, node *wl2extend_assign)
+FuseWithloops (node *wl, info *arg_info, node *wl2extend_assign)
 {
     node *wl2extend, *tmp_withop, *parts, *fitting_part;
     ids *tmp_ids;
@@ -449,17 +514,17 @@ FuseWithloops (node *wl, node *arg_info, node *wl2extend_assign)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLFSfundef(node *arg_node, node *arg_info)
+ * @fn node *WLFSfundef(node *arg_node, info *arg_info)
  *
  *   @brief starts the traversal of the given fundef
  *
  *   @param  node *arg_node:  N_fundef
- *           node *arg_info:  N_info
+ *           info *arg_info:  N_info
  *   @return node *        :  N_fundef
  ******************************************************************************/
 
 node *
-WLFSfundef (node *arg_node, node *arg_info)
+WLFSfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLFSfundef");
 
@@ -483,17 +548,17 @@ WLFSfundef (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLFSassign(node *arg_node, node *arg_info)
+ * @fn node *WLFSassign(node *arg_node, info *arg_info)
  *
  *   @brief store actual assign node in arg_info and traverse instruction
  *
  *   @param  node *arg_node:  N_assign
- *           node *arg_info:  N_info
+ *           info *arg_info:  N_info
  *   @return node *        :  N_assign
  ******************************************************************************/
 
 node *
-WLFSassign (node *arg_node, node *arg_info)
+WLFSassign (node *arg_node, info *arg_info)
 {
     node *iterator, *assignn;
     node *wl2extend_tmp = NULL;
@@ -697,7 +762,7 @@ WLFSassign (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLFSid(node *arg_node, node *arg_info)
+ * @fn node *WLFSid(node *arg_node, info *arg_info)
  *
  *   @brief  Checks if this Id is contained in
  *             INFO_WLFS_SONSOFWL2EXTEND( arg_info).
@@ -705,11 +770,11 @@ WLFSassign (node *arg_node, node *arg_info)
  *           dependent from the extendable withloop.
  *
  *   @param  node *arg_node:  N_id
- *           node *arg_info:  N_info
+ *           info *arg_info:  N_info
  *   @return node *        :  N_id
  ******************************************************************************/
 node *
-WLFSid (node *arg_node, node *arg_info)
+WLFSid (node *arg_node, info *arg_info)
 {
     node *assignn;
     bool is_dependent, insidewl_tmp;
@@ -770,7 +835,7 @@ WLFSid (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLFSNwith(node *arg_node, node *arg_info)
+ * @fn node *WLFSNwith(node *arg_node, info *arg_info)
  *
  *   @brief  start traversal of this WL and store information in new arg_info
  *           node. The only N_Npart node (inclusive body) is traversed.
@@ -779,12 +844,12 @@ WLFSid (node *arg_node, node *arg_info)
  *           partition.
  *
  *   @param  node *arg_node:  N_Nwith
- *           node *arg_info:  N_info
+ *           info *arg_info:  N_info
  *   @return node *        :  N_Nwith
  ******************************************************************************/
 
 node *
-WLFSNwith (node *arg_node, node *arg_info)
+WLFSNwith (node *arg_node, info *arg_info)
 {
     node *assign_tmp, *wl2extend_tmp, *wln;
     nodelist *sonsofwl2extend_tmp;
@@ -981,18 +1046,18 @@ WLFSNwith (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLFSNwithop( node *arg_node, node *arg_info)
+ * @fn node *WLFSNwithop( node *arg_node, info *arg_info)
  *
  *   @brief checks the type of withloop and checks dependencies,
  *          if the type is modarray or fold.
  *
  *   @param  node *arg_node:  N_Nwithop
- *           node *arg_info:  N_info
+ *           info *arg_info:  N_info
  *   @return node *        :  N_Nwithop
  ******************************************************************************/
 
 node *
-WLFSNwithop (node *arg_node, node *arg_info)
+WLFSNwithop (node *arg_node, info *arg_info)
 {
     wo_type_t current_type = WL_unkown;
 
@@ -1061,17 +1126,17 @@ WLFSNwithop (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLFSNpart(node *arg_node, node *arg_info)
+ * @fn node *WLFSNpart(node *arg_node, info *arg_info)
  *
  *   @brief traverse only generator to check bounds, step and width
  *
  *   @param  node *arg_node:  N_Npart
- *           node *arg_info:  N_info
+ *           info *arg_info:  N_info
  *   @return node *        :  N_Npart
  ******************************************************************************/
 
 node *
-WLFSNpart (node *arg_node, node *arg_info)
+WLFSNpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLFSNpart");
 
@@ -1086,7 +1151,7 @@ WLFSNpart (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLFSNgenerator(node *arg_node, node *arg_info)
+ * @fn node *WLFSNgenerator(node *arg_node, info *arg_info)
  *
  *   @brief  bounds, step and width vectors are compared with bounds, step
  *           and width of all generators of the withloop out of
@@ -1100,12 +1165,12 @@ WLFSNpart (node *arg_node, node *arg_info)
  *                   comparative withloop!
  *
  *   @param  node *arg_node:  N_Ngenerator
- *           node *arg_info:  N_info
+ *           info *arg_info:  N_info
  *   @return node *        :  N_Ngenerator
  ******************************************************************************/
 
 node *
-WLFSNgenerator (node *arg_node, node *arg_info)
+WLFSNgenerator (node *arg_node, info *arg_info)
 {
     node *wl_assign, *parts, *gen;
     bool is_equal = FALSE;
@@ -1147,7 +1212,7 @@ node *
 WithloopFusion (node *arg_node)
 {
     funtab *tmp_tab;
-    node *arg_info;
+    info *arg_info;
 
     DBUG_ENTER ("WithloopFusion");
 
@@ -1167,7 +1232,7 @@ WithloopFusion (node *arg_node)
         INFO_WLFS_SONSOFWL2EXTEND (arg_info)
           = NodeListFree (INFO_WLFS_SONSOFWL2EXTEND (arg_info), TRUE);
     }
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeInfo (arg_info);
     act_tab = tmp_tab;
 
     DBUG_RETURN (arg_node);
