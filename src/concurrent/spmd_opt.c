@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/07/20 16:58:52  jhs
+ * Added comments.
+ *
  * Revision 2.6  1999/07/07 15:53:51  jhs
  * Added comments, code brushed and assertions ordered correctly.
  *
@@ -273,8 +276,10 @@ MeltSPMDs (node *first_spmd, node *second_spmd, node *fundef)
     DBUG_PRINT ("SPMD", ("Leaving ReduceMasks"));
 
     /* -> SHARED <- */
-    /* dummy = intersection of first's outs and second's ins */
-    /* complete = dummy and already shared's */
+    /* combination of - (first's outs and second's ins)
+     *                - inouts, to share pointer to memory
+     *                - already shared's
+     */
     newshared = DFMGenMaskAnd (SPMD_OUT (first_spmd), SPMD_IN (second_spmd));
     DFMSetMaskOr (newshared, SPMD_INOUT (second_spmd));
     DFMSetMaskOr (newshared, SPMD_SHARED (first_spmd));
