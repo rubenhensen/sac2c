@@ -1,3 +1,13 @@
+/*
+ * $Log$
+ * Revision 1.2  2000/07/12 10:06:40  nmw
+ * RCS-Header added
+ *
+ *
+ *
+ *
+ */
+
 #ifndef _sac_map_cwrapper_h
 #define _sac_map_cwrapper_h
 

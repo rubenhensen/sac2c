@@ -1,4 +1,9 @@
 /*
+ * $Log$
+ * Revision 1.6  2000/07/12 10:05:13  nmw
+ * RCS-Header added
+ *
+ *
  *
  */
 
