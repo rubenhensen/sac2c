@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.40  2004/11/23 12:07:02  sbs
+# INCS eliminated
+#
 # Revision 3.39  2004/11/21 11:22:03  sah
 # removed some old ast infos
 #
@@ -104,11 +107,6 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 # local settings:
 #
-
-INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
-     -I../optimize -I../modules -I../global -I../refcount -I../compile \
-     -I../psi-opt -I../objects -I../concurrent -I../multithread \
-     -I../c-interface -I../constants -I../profile -I.
 
 OBJS := tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
         DataFlowMask.o DataFlowMaskUtils.o InferDFMs.o \

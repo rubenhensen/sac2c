@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.20  2004/11/23 12:08:38  sbs
+# INCS eliminated
+#
 # Revision 3.19  2004/11/21 11:22:03  sah
 # removed some old ast infos
 #
@@ -85,9 +88,6 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 LIBS      := -ly -ll
-
-INCS=-I../global -I../tree -I../../inc -I../modules -I../typecheck \
-     -I../flatten -I../constants
 
 SAC_L := nsac.l
 SAC_Y := nsac.y
