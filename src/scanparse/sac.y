@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.150  1998/03/04 16:25:23  cg
+ * Now, adjacent strings are concatenated to a single one.
+ *
  * Revision 1.149  1998/03/02 19:47:55  srs
  * removed now unused rule 'unaryop' from %type declaration
  *
@@ -607,7 +610,7 @@ static file_type file_kind = F_prog;
 %type <cint> evextern, sibheader, sibevmarker, dots
 %type <ids> ids, modnames, modname
 %type <deps> linkwith, linklist, siblinkwith, siblinklist, sibsublinklist
-%type <id> fun_name, prf_name, sibparam, id
+%type <id> fun_name, prf_name, sibparam, id, string
 %type <nums> nums
 %type <statustype> sibreference, sibevclass, siblinkliststatus
 %type <types> simpletype, simpletype_main, 
@@ -776,11 +779,11 @@ linkwith: PRAGMA LINKWITH linklist {$$=$3;}
         | {$$=NULL;}
         ;
 
-linklist: STR COMMA linklist 
+linklist: string COMMA linklist 
            {
              $$=MakeDeps($1, NULL, NULL, ST_system, NULL, $3);
            }
-       | STR
+       | string
            {
              $$=MakeDeps($1, NULL, NULL, ST_system, NULL, NULL);
            }
@@ -1113,7 +1116,7 @@ pragmalist: pragmalist pragma
           | pragma
           ;
 
-pragma: PRAGMA LINKNAME STR
+pragma: PRAGMA LINKNAME string
         { 
           if (store_pragma==NULL) store_pragma=MakePragma();
           if (PRAGMA_LINKNAME(store_pragma)!=NULL)
@@ -1155,21 +1158,21 @@ pragma: PRAGMA LINKNAME STR
             WARN(linenum, ("Conflicting definitions of pragma 'touch`"))
           PRAGMA_TOUCH(store_pragma)=$3;
         }
-      | PRAGMA COPYFUN STR
+      | PRAGMA COPYFUN string
         {
           if (store_pragma==NULL) store_pragma=MakePragma();
           if (PRAGMA_COPYFUN(store_pragma)!=NULL)
             WARN(linenum, ("Conflicting definitions of pragma 'copyfun`"))
           PRAGMA_COPYFUN(store_pragma)=$3;
         }
-      | PRAGMA FREEFUN STR
+      | PRAGMA FREEFUN string
         {
           if (store_pragma==NULL) store_pragma=MakePragma();
           if (PRAGMA_FREEFUN(store_pragma)!=NULL)
             WARN(linenum, ("Conflicting definitions of pragma 'freefun`"))
           PRAGMA_FREEFUN(store_pragma)=$3;
         }
-      | PRAGMA INITFUN STR
+      | PRAGMA INITFUN string
         {
           if (store_pragma==NULL) store_pragma=MakePragma();
           if (PRAGMA_INITFUN(store_pragma)!=NULL)
@@ -1958,7 +1961,7 @@ expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
          | PLUS DOUBLE %prec UMINUS  { $$=MakeDouble( $2);         }
          | TRUE                      { $$=MakeBool( 1);            }
          | FALSE                     { $$=MakeBool( 0);            }
-         | STR                       { $$=string2array2string($1); }
+         | string                       { $$=string2array2string($1); }
          | NWITH {$<cint>$=linenum;} BRACKET_L Ngenerator BRACKET_R
            optassignblock Nwithop 
            { /*
@@ -2370,6 +2373,22 @@ simpletype_main: TYPE_INT   { $$=MakeTypes(T_int);    }
                | TYPE_DBL   { $$=MakeTypes(T_double); }
                ;
 
+
+string: STR
+        {
+	  $$=$1;
+	}
+      | STR string
+        {
+	  $$=(char *)Malloc(strlen($1)+strlen($2)+1);
+	  strcpy($$, $1);
+	  strcat($$, $2);
+	  FREE($1);
+	  FREE($2);
+	}
+      ;
+
+
 /*       BRUSH END    */
 
 
@@ -2411,11 +2430,11 @@ siblinkwith: LINKWITH siblinklist {$$=$2;}
              | {$$=NULL;}
 	          ;
 
-siblinklist: siblinkliststatus STR sibsublinklist COMMA siblinklist
+siblinklist: siblinkliststatus string sibsublinklist COMMA siblinklist
              {
                $$=MakeDeps($2, NULL, NULL, $1, $3, $5);
              }
-           | siblinkliststatus STR sibsublinklist 
+           | siblinkliststatus string sibsublinklist 
              {
                $$=MakeDeps($2, NULL, NULL, $1, $3, NULL);
              }
@@ -2778,7 +2797,7 @@ targets: TARGET ID COLON resources targets
 	 }
        ;
 
-resources: ID EQUALS STR resources
+resources: ID EQUALS string resources
            {
              $$=RSCMakeResourceListEntry($1, $3, 0, $4);
 	   }
