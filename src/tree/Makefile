@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.22  2001/07/18 12:57:45  cg
+# Compilation of file tree.c eliminated.
+#
 # Revision 3.21  2001/05/08 13:29:45  dkr
 # make deps done
 #
@@ -90,7 +93,7 @@ INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck
      -I../psi-opt -I../objects -I../concurrent -I../multithread \
      -I../c-interface -I../constants -I../profile
 
-all: tree.o tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
+all: tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
      DataFlowMask.o DataFlowMaskUtils.o InferDFMs.o CheckAvis.o \
      LookUpTable.o adjust_ids.o cleanup_decls.o scheduling.o \
      SSATransform.o UndoSSATransform.o change_signature.o \
