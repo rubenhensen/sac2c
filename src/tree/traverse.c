@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2004/08/29 16:52:24  sah
+ * InferDFMs now part of miniSaC ;)
+ *
  * Revision 3.70  2004/08/26 15:02:08  khf
  * ddepend_tab and tdepend_tab added
  *
@@ -1096,7 +1099,7 @@ static funtab unused_tab36_rec = {{
                                   NULL,
                                   NULL};
 funtab *unused_tab36 = &unused_tab36_rec;
-
+#endif /* NEW_AST */
 /*
  *  (68) infdfms_tab
  */
@@ -1107,7 +1110,7 @@ static funtab infdfms_tab_rec = {{
                                  NULL,
                                  NULL};
 funtab *infdfms_tab = &infdfms_tab_rec;
-#endif /* NEW_AST */
+
 /*
  *  (69) l2f_tab
  */
