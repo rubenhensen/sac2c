@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/06/14 12:18:00  cg
+ * Bug fixed in function PrintDecTypes: each return type of a function declaration
+ * is now printed exactly once.
+ *
  * Revision 2.3  2000/02/23 20:16:34  cg
  * Node status ST_imported replaced by ST_imported_mod and
  * ST_imported_class in order to allow distinction between enteties
@@ -77,6 +81,31 @@
  *
  *
  */
+
+/*****************************************************************************
+ *
+ * file:   checkdec.c
+ *
+ * prefix: CDEC, WDEC
+ *
+ * description:
+ *
+ *   This compiler module is used only for the compilation of module/class
+ *   implementations.
+ *
+ *   The own declaration file of a module/class is read, parsed, and eventually
+ *   for consistency with the module/class implementation, i.e., any symbol
+ *   declared in the module/class declaration must have an appropriate
+ *   definition in the currently compiled module/class implementation.
+ *
+ *   If no declaration file can be found, a warning is issued and a suitable
+ *   module/class declaration is created. All global objects and all functions
+ *   defined in the module/class implementation are exported, all types are
+ *   exported as implicit types, i.e. without type definition. Subsequently,
+ *   the newly generated declaration file is read in again and the checks
+ *   are performed which now trivially succeed.
+ *
+ *****************************************************************************/
 
 #include <string.h>
 
@@ -156,27 +185,50 @@ CheckTypes (types *decl, types *impl)
  *  external funs : Type2String
  *  macros        : DBUG, TREE
  *
- *  remarks       :
+ *  remarks       : The function Type@String from print/convert.c is used
+ *                  to print the return types of a function declaration.
+ *                  This function dynamically allocates memory to hold the
+ *                  result string; this memory has to be freed after printing.
+ *                  Omitting certain module names of types while
+ *                  considering others is a capability beyond that of Type2String.
+ *                  So, we have to check this for each return type separately.
+ *                  However, Type2String usually converts entire sequences of types
+ *                  where and when applicable. This forces us to cut the actual
+ *                  sequence of return types into peaces and reconstruct the sequence
+ *                  after conversion into strings.
  *
  */
 
 static void
 PrintDecTypes (types *type, char *modname)
 {
+    int mode_for_type2string;
+    char *type_string;
+    types *next_type;
+
     DBUG_ENTER ("PrintDecTypes");
 
     do {
         if (strcmp (CHECK_NULL (TYPES_MOD (type)), modname) == 0) {
-            fprintf (outfile, "%s", Type2String (type, 3));
+            mode_for_type2string = 3;
         } else {
-            fprintf (outfile, "%s", Type2String (type, 0));
+            mode_for_type2string = 0;
         }
 
-        if (TYPES_NEXT (type) != NULL) {
+        next_type = TYPES_NEXT (type);
+        TYPES_NEXT (type) = NULL;
+
+        type_string = Type2String (type, mode_for_type2string);
+        fprintf (outfile, "%s", type_string);
+        FREE (type_string);
+
+        TYPES_NEXT (type) = next_type;
+
+        if (next_type != NULL) {
             fprintf (outfile, ", ");
         }
 
-        type = TYPES_NEXT (type);
+        type = next_type;
     } while (type != NULL);
 
     DBUG_VOID_RETURN;
