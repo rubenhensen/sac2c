@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.108  1996/01/16 16:57:00  cg
+ * Revision 1.109  1996/01/21 13:56:54  cg
+ * bugs fixed in PrintArg and PrintIds
+ *
+ * Revision 1.108  1996/01/16  16:57:00  cg
  * extended macro TYP_IF to 5 entries
  *
  * Revision 1.107  1996/01/10  15:13:48  cg
@@ -393,24 +396,24 @@ char *prf_string[] = {
  *
  */
 void
-PrintIds (ids *ids)
+PrintIds (ids *arg)
 {
     DBUG_ENTER ("PrintIds");
 
     do {
-        DBUG_PRINT ("PRINT", ("%s", ids->id));
+        DBUG_PRINT ("PRINT", ("%s", arg->id));
 
-        if (ids->mod != NULL)
-            fprintf (outfile, "%s:", ids->mod);
-        fprintf (outfile, "%s", ids->id);
-        if ((ids->refcnt != -1) && show_refcnt)
-            fprintf (outfile, ":%d", ids->refcnt);
-        if (show_idx && ids->use)
-            Trav (ids->use, NULL);
-        if (NULL != ids->next)
+        if (arg->mod != NULL)
+            fprintf (outfile, "%s:", arg->mod);
+        fprintf (outfile, "%s", arg->id);
+        if ((arg->refcnt != -1) && show_refcnt)
+            fprintf (outfile, ":%d", arg->refcnt);
+        if (show_idx && arg->use)
+            Trav (arg->use, NULL);
+        if (NULL != arg->next)
             fprintf (outfile, ", ");
-        ids = ids->next;
-    } while (NULL != ids);
+        arg = arg->next;
+    } while (NULL != arg);
 
     DBUG_VOID_RETURN;
 }
@@ -997,7 +1000,7 @@ PrintArg (node *arg_node, node *arg_info)
     fprintf (outfile, "%s",
              Type2String (arg_node->info.types, (arg_info == NULL) ? 0 : 1));
 
-    if ((0 != show_refcnt) || (-1 != ARG_REFCNT (arg_node))) {
+    if ((1 == show_refcnt) && (-1 != ARG_REFCNT (arg_node))) {
         fprintf (outfile, ":%d", ARG_REFCNT (arg_node));
     }
 
