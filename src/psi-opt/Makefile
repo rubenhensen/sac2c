@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.23  2004/10/07 12:37:32  ktr
+# Replaced the old With-Loop Scalarization with a new implementation.
+#
 # Revision 3.22  2004/08/26 15:02:08  khf
 # detectdependencies.o and tagdependencies.o added
 #
@@ -78,9 +81,9 @@ INCS = -I../global -I../../inc -I../tree -I../compile -I../typecheck -I../module
 
 all: index.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
      SSAWithloopFolding.o SSAWLT.o SSAWLI.o SSAWLF.o \
+     wls.o wlscheck.o wlsbuild.o wlswithloopification.o \
      pad.o pad_info.o pad_collect.o pad_infer.o pad_transform.o \
-     WithloopScalarization.o WithloopFusion.o detectdependencies.o \
-     tagdependencies.o
+     WithloopFusion.o detectdependencies.o tagdependencies.o
 
 
 #

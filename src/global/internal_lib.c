@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2004/10/07 12:38:37  ktr
+ * Replaced the old With-Loop Scalarization with a new implementation.
+ *
  * Revision 3.56  2004/10/05 13:48:50  sah
  * added some more funtabs to TmpVar in
  * NEW_AST mode
@@ -1147,6 +1150,10 @@ PrefixForTmpVar (void)
         s = "wlf";
     } else if (act_tab == wls_tab) {
         s = "wls";
+    } else if (act_tab == wlsb_tab) {
+        s = "wls";
+    } else if (act_tab == wlsw_tab) {
+        s = "wls";
     } else if (act_tab == hd_tab) {
         s = "hd";
     } else if (act_tab == cwc_tab) {
@@ -1236,6 +1243,10 @@ PrefixForTmpVar (void)
     } else if (act_tab == ssawlf_tab) {
         s = "wlf";
     } else if (act_tab == wls_tab) {
+        s = "wls";
+    } else if (act_tab == wlsb_tab) {
+        s = "wls";
+    } else if (act_tab == wlsw_tab) {
         s = "wls";
     } else if (act_tab == hd_tab) {
         s = "hd";

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2004/10/07 12:38:00  ktr
+ * Replaced the old With-Loop Scalarization with a new implementation.
+ *
  * Revision 3.67  2004/10/05 13:52:33  sah
  * disabled DistributiveLaw in NEW_AST mode
  *
@@ -331,7 +334,7 @@
 #include "DeadFunctionRemoval.h"
 #include "Inline.h"
 #include "ArrayElimination.h"
-#include "WithloopScalarization.h"
+#include "wls.h"
 #include "AssociativeLaw.h"
 #include "DistributiveLaw.h"
 #include "wl_access_analyze.h"
@@ -1153,7 +1156,7 @@ OPTfundef (node *arg_node, info *arg_info)
             }
 
             if (optimize & OPT_WLS) {
-                arg_node = WithloopScalarization (arg_node);
+                arg_node = WLSWithloopScalarization (arg_node);
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2004/10/07 12:37:00  ktr
+ * Replaced the old With-Loop Scalarization with a new implementation.
+ *
  * Revision 3.85  2004/10/05 13:52:10  sah
  * added some more NEW_AST defines
  *
@@ -315,7 +318,7 @@
 #include "ReuseWithArrays.h"
 #include "cccall.h"
 #include "PatchWith.h"
-#include "WithloopScalarization.h"
+#include "wls.h"
 #include "AssociativeLaw.h"
 #include "DistributiveLaw.h"
 #include "gen_startup_code.h"
@@ -1809,37 +1812,37 @@ static funtab tdepend_tab_rec = {{
 funtab *tdepend_tab = &tdepend_tab_rec;
 
 /*
- *  (127) unused_tab7
+ *  (127) wlsc_tab
  */
-static funtab unused_tab7_rec = {{
-#define NIFunused_7(it_unused_7) it_unused_7
+static funtab wlsc_tab_rec = {{
+#define NIFwlsc(it_wlsc) it_wlsc
 #include "node_info.mac"
-                                 },
-                                 NULL,
-                                 NULL};
-funtab *unused_tab7 = &unused_tab7_rec;
+                              },
+                              NULL,
+                              NULL};
+funtab *wlsc_tab = &wlsc_tab_rec;
 
 /*
- *  (128) unused_tab8
+ *  (128) wlsb_tab
  */
-static funtab unused_tab8_rec = {{
-#define NIFunused_8(it_unused_8) it_unused_8
+static funtab wlsb_tab_rec = {{
+#define NIFwlsb(it_wlsb) it_wlsb
 #include "node_info.mac"
-                                 },
-                                 NULL,
-                                 NULL};
-funtab *unused_tab8 = &unused_tab8_rec;
+                              },
+                              NULL,
+                              NULL};
+funtab *wlsb_tab = &wlsb_tab_rec;
 
 /*
- *  (129) unused_tab9
+ *  (129) wlsw_tab
  */
-static funtab unused_tab9_rec = {{
-#define NIFunused_9(it_unused_9) it_unused_9
+static funtab wlsw_tab_rec = {{
+#define NIFwlsw(it_wlsw) it_wlsw
 #include "node_info.mac"
-                                 },
-                                 NULL,
-                                 NULL};
-funtab *unused_tab9 = &unused_tab9_rec;
+                              },
+                              NULL,
+                              NULL};
+funtab *wlsw_tab = &wlsw_tab_rec;
 
 /*
  *  (130) unused_tab10

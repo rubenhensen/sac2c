@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2004/10/07 12:37:00  ktr
+ * Replaced the old With-Loop Scalarization with a new implementation.
+ *
  * Revision 3.64  2004/09/28 16:34:05  ktr
  * cleaned up concurrent (removed everything not working / not working with emm)
  *
@@ -432,9 +435,9 @@ extern funtab *pem_tab;
 extern funtab *emalloc_tab;
 extern funtab *ddepend_tab;
 extern funtab *tdepend_tab;
-extern funtab *unused_tab7;
-extern funtab *unused_tab8;
-extern funtab *unused_tab9;
+extern funtab *wlsc_tab;
+extern funtab *wlsb_tab;
+extern funtab *wlsw_tab;
 extern funtab *unused_tab10;
 extern funtab *unused_tab11;
 extern funtab *unused_tab12;

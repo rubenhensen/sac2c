@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.112  2004/10/07 12:38:11  ktr
+# Replaced the old With-Loop Scalarization with a new implementation.
+#
 # Revision 3.111  2004/10/05 14:11:52  sah
 # added oldast target
 #
@@ -334,7 +337,8 @@ PROFILE_OLD=
 
 PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
         src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
-        src/psi-opt/WithloopScalarization.o \
+        src/psi-opt/wls.o src/psi-opt/wlscheck.o \
+        src/psi-opt/wlsbuild.o src/psi-opt/wlswithloopification.o \
         src/psi-opt/SSAWithloopFolding.o src/psi-opt/SSAWLT.o \
         src/psi-opt/SSAWLI.o src/psi-opt/SSAWLF.o \
         src/psi-opt/pad.o src/psi-opt/pad_collect.o src/psi-opt/pad_infer.o \

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.72  2004/10/07 12:38:00  ktr
+ * Replaced the old With-Loop Scalarization with a new implementation.
+ *
  * Revision 1.71  2004/09/27 08:37:57  ktr
  * yet another silly bug fixed.
  *
@@ -2978,10 +2981,9 @@ SSACFNgen (node *arg_node, info *arg_info)
          * covers just one element, the index vector is constant
          */
         if ((NGEN_BOUND1 (arg_node) != NULL) && (NGEN_BOUND2 (arg_node) != NULL)) {
-            constant *lower, *upper, *diff, *idx;
+            constant *lower, *upper, *diff;
             shape *diffshp;
             ids *_ids;
-            int i;
 
             lower = COAST2Constant (NGEN_BOUND1 (arg_node));
             upper = COAST2Constant (NGEN_BOUND2 (arg_node));
@@ -3000,28 +3002,53 @@ SSACFNgen (node *arg_node, info *arg_info)
                         AVIS_SSACONST (IDS_AVIS (_ids)) = COCopyConstant (lower);
                     }
                 }
-
-                /*
-                 * Check whether the index scalars are constant
-                 */
-                i = 0;
-                _ids = NWITHID_IDS (INFO_SSACF_WITHID (arg_info));
-                while (_ids != NULL) {
-                    if (SHGetExtent (diffshp, i) == 1) {
-                        idx = COMakeConstantFromInt (i);
-                        AVIS_SSACONST (IDS_AVIS (_ids)) = COIdxSel (idx, lower);
-                        idx = COFreeConstant (idx);
-                    }
-                    _ids = IDS_NEXT (_ids);
-                    i += 1;
-                }
                 diffshp = SHFreeShape (diffshp);
             }
+
             if (lower != NULL) {
                 lower = COFreeConstant (lower);
             }
             if (upper != NULL) {
                 upper = COFreeConstant (upper);
+            }
+
+            if ((NODE_TYPE (NGEN_BOUND1 (arg_node)) == N_array)
+                && (NODE_TYPE (NGEN_BOUND2 (arg_node)) == N_array)) {
+                /*
+                 * Check whether the index scalars are constant
+                 */
+                ids *_ids;
+                node *lb, *ub;
+                constant *lbc, *ubc;
+
+                lb = ARRAY_AELEMS (NGEN_BOUND1 (arg_node));
+                ub = ARRAY_AELEMS (NGEN_BOUND2 (arg_node));
+                _ids = NWITHID_IDS (INFO_SSACF_WITHID (arg_info));
+
+                while (_ids != NULL) {
+                    lbc = COAST2Constant (EXPRS_EXPR (lb));
+                    ubc = COAST2Constant (EXPRS_EXPR (ub));
+
+                    if ((lbc != NULL) && (ubc != NULL)) {
+                        diff = COSub (ubc, lbc);
+                        if (COIsOne (diff, TRUE)) {
+                            AVIS_SSACONST (IDS_AVIS (_ids)) = COCopyConstant (lbc);
+                        }
+                        diff = COFreeConstant (diff);
+                    }
+
+                    if (lbc != NULL) {
+                        lbc = COFreeConstant (lbc);
+                    }
+
+                    if (ubc != NULL) {
+                        ubc = COFreeConstant (ubc);
+                    }
+
+                    lb = EXPRS_NEXT (lb);
+                    ub = EXPRS_NEXT (ub);
+                    _ids = IDS_NEXT (_ids);
+                }
             }
         }
         INFO_SSACF_WITHID (arg_info) = NULL;
