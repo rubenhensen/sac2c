@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.152  1998/03/15 13:07:48  srs
+ * added DBUG macros to ass MASK information to N_Ncode, N_Npart and
+ * N_Nwithop
+ *
  * Revision 1.151  1998/03/13 16:21:55  dkr
  * new nodes added:
  *   N_WLblock, N_WLublock
@@ -2047,6 +2051,8 @@ PrintNcode (node *arg_node, node *arg_info)
     node *block;
 
     DBUG_ENTER ("PrintNcode");
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - Ncode\n");
+                  PrintMasks (arg_node, arg_info););
 
     /* print the code section; first the body */
     block = NCODE_CBLOCK (arg_node);
@@ -2095,6 +2101,8 @@ node *
 PrintNpart (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintNpart");
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - Npart\n");
+                  PrintMasks (arg_node, arg_info););
 
     /* print generator */
     if (!arg_info->node[2])
@@ -2133,6 +2141,10 @@ node *
 PrintNwithop (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintNwithop");
+
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - Nwithop\n");
+                  PrintMasks (arg_node, arg_info););
+
     INDENT;
     switch (NWITHOP_TYPE (arg_node)) {
     case WO_genarray:
