@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.7  2004/11/26 20:27:30  jhb
+ * ccompile
+ *
  * Revision 3.6  2004/07/17 14:30:09  sah
  * switch to INFO structure
  * PHASE I
@@ -84,6 +87,8 @@
 #include "Error.h"
 #include "free.h"
 
+#ifndef OBJUC_DEACTIVATED
+
 /*
  * INFO structure
  */
@@ -106,7 +111,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_UNQ_INSIDEWITH (result) = FALSE;
 
@@ -118,7 +123,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -272,22 +277,34 @@ static unqstatelist *unqstate;
  *
  */
 
+#endif /*  OBJUC_DEACTIVATED  */
+
 node *
-UniquenessCheck (node *syntax_tree)
+UNQdoUniquenessCheck (node *syntax_tree)
 {
-    info *info;
 
     DBUG_ENTER ("UniquenessCheck");
 
-    act_tab = unique_tab;
+#ifndef OBJUC_DEACTIVATED
+
+    info *info;
+
     info = MakeInfo ();
 
-    syntax_tree = Trav (syntax_tree, info);
+    TRAVpush (TR_unique);
+
+    syntax_tree = TRAVdo (syntax_tree, info);
+
+    TRAVpop ();
 
     info = FreeInfo (info);
 
+#endif /*  OBJUC_DEACTIVATED  */
+
     DBUG_RETURN (syntax_tree);
 }
+
+#ifndef OBJUC_DEACTIVATED
 
 /************************************************************************
  *  Basic manipulation functions for local data structures
@@ -1255,3 +1272,5 @@ UNQNwith (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#endif /*  OBJUC_DEACTIVATED  */

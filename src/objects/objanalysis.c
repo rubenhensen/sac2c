@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/26 20:27:30  jhb
+ * ccompile
+ *
  * Revision 1.1  2004/11/20 17:19:36  sah
  * Initial revision
  *
@@ -14,6 +17,8 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "free.h"
+#include "internal_lib.h"
 
 /*
  * INFO structure
@@ -39,7 +44,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_OAN_OBJECTS (result) = NULL;
     INFO_OAN_CHANGES (result) = 0;
@@ -52,7 +57,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -64,35 +69,33 @@ FreeInfo (info *info)
 /*
  * start of traversal
  */
-void
-ObjectAnalysis (node *syntax_tree)
+node *
+OANdoObjectAnalysis (node *syntax_tree)
 {
     info *info;
-    funtab *store_tab;
 
-    DBUG_ENTER ("ObjectAnalysis");
+    DBUG_ENTER ("OANdoObjectAnalysis");
 
     info = MakeInfo ();
 
-    store_tab = act_tab;
-    act_tab = oan_tab;
+    TRAVpush (TR_oan);
 
-    syntax_tree = Trav (syntax_tree, info);
+    syntax_tree = TRAVdo (syntax_tree, info);
 
-    act_tab = store_tab;
+    TRAVpop ();
 
     info = FreeInfo (info);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (syntax_tree);
 }
 
 /*
  * Traversal functions
  */
 node *
-OANModul (node *arg_node, info *arg_info)
+OANmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("OANModul");
+    DBUG_ENTER ("OANModule");
 
     /*
      * iterate until the set of objects does not
@@ -109,8 +112,8 @@ OANModul (node *arg_node, info *arg_info)
          * so we only traverse FUNS
          */
 
-        if (MODUL_FUNS (arg_node) != NULL) {
-            MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+        if (MODULE_FUNS (arg_node) != NULL) {
+            MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
         }
 
         DBUG_PRINT ("OAN",
@@ -122,42 +125,37 @@ OANModul (node *arg_node, info *arg_info)
 }
 
 node *
-OANId (node *arg_node, info *arg_info)
+OANglobobj (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("OANId");
+    DBUG_ENTER ("OANglobobj");
 
-    if (GET_FLAG (ID, arg_node, IS_GLOBAL)) {
-        /*
-         * we found a global object, so add the objdef to the list
-         */
-
-        DBUG_ASSERT ((ID_OBJDEF (arg_node) != NULL), "found a global id without objdef!");
-
-        INFO_OAN_CHANGES (arg_info)
-          += AddLinkToLinks (&INFO_OAN_OBJECTS (arg_info), ID_OBJDEF (arg_node));
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-OANAp (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("OANAp");
+    DBUG_ASSERT ((GLOBOBJ_OBJDEF (arg_node) != NULL),
+                 "found a global id without objdef!");
 
     INFO_OAN_CHANGES (arg_info)
-      += AddLinksToLinks (&INFO_OAN_OBJECTS (arg_info),
-                          FUNDEF_OBJECTS (AP_FUNDEF (arg_node)));
-
-    arg_node = TravSons (arg_node, arg_info);
+      += TCaddLinkToLinks (&INFO_OAN_OBJECTS (arg_info), GLOBOBJ_OBJDEF (arg_node));
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-OANFundef (node *arg_node, info *arg_info)
+OANap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("OANFundef");
+    DBUG_ENTER ("OANap");
+
+    INFO_OAN_CHANGES (arg_info)
+      += TCaddLinksToLinks (&INFO_OAN_OBJECTS (arg_info),
+                            FUNDEF_OBJECTS (AP_FUNDEF (arg_node)));
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+OANfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("OANfundef");
 
     DBUG_ASSERT ((INFO_OAN_OBJECTS (arg_info) == NULL),
                  "entering fundef with objects left over ?!?");
@@ -166,11 +164,11 @@ OANFundef (node *arg_node, info *arg_info)
      * only process local functions, all others do have
      * correct annotations already!
      */
-    if (GET_FLAG (FUNDEF, arg_node, IS_LOCAL)) {
+    if (FUNDEF_ISLOCAL (arg_node)) {
         INFO_OAN_OBJECTS (arg_info) = FUNDEF_OBJECTS (arg_node);
 
         if (FUNDEF_BODY (arg_node) != NULL) {
-            FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         }
 
         FUNDEF_OBJECTS (arg_node) = INFO_OAN_OBJECTS (arg_info);
@@ -178,7 +176,7 @@ OANFundef (node *arg_node, info *arg_info)
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

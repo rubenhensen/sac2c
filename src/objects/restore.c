@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/26 20:27:30  jhb
+ * ccompile
+ *
  * Revision 1.1  2004/11/26 17:43:04  cg
  * Initial revision
  *
@@ -35,6 +38,8 @@
 #include "traverse.h"
 #include "globals.h"
 #include "free.h"
+
+#ifndef OBJR_DEACTIVATED
 
 /*
  * INFO structure
@@ -100,13 +105,16 @@ FreeInfo (info *info)
  *          references to global objects again.
  *
  ***************************************************************************/
+#endif /*  OBJR_DEACTIVATED  */
 
 node *
 RSTOdoRestoreObjects (node *syntax_tree)
 {
-    info *info;
-
     DBUG_ENTER ("RSTOdoRestoreObjects");
+
+#ifndef OBJR_DEACTIVATED
+
+    info *info; /* must before DBUG_ENTER */
 
     info = MakeInfo ();
 
@@ -116,8 +124,12 @@ RSTOdoRestoreObjects (node *syntax_tree)
 
     info = FreeInfo (info);
 
+#endif /*  OBJR_DEACTIVATED  */
+
     DBUG_RETURN (syntax_tree);
 }
+
+#ifndef OBJR_DEACTIVATED
 
 /******************************************************************************
  *
@@ -799,4 +811,5 @@ RSTOids (node *arg_node, info *arg_info)
         DBUG_RETURN (arg_node);
     }
 
-    /* @} */
+/* @} */
+#endif /*  OBJR_DEACTIVATED  */
