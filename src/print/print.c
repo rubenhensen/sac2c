@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.207  1998/04/29 20:16:10  dkr
+ * changed PrintSpmd, PrintSync
+ *
  * Revision 1.206  1998/04/29 09:38:58  dkr
  * changed output for N_Nwith2: (code == NULL -> 'noop')
  *
@@ -1219,7 +1222,7 @@ PrintFundef (node *arg_node, node *arg_info)
          * print function definition
          */
 
-        if (FUNDEF_BODY (arg_node)) {
+        if (FUNDEF_BODY (arg_node) != NULL) {
             if (print_separate) {
                 outfile = WriteOpen ("%s/fun%d.c", tmp_dirname, function_counter);
 
@@ -1243,7 +1246,7 @@ PrintFundef (node *arg_node, node *arg_info)
 
             if (print_separate) {
                 fclose (outfile);
-                function_counter += 1;
+                function_counter++;
             }
         }
     } else {
@@ -2120,42 +2123,15 @@ PrintSpmd (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintSpmd");
 
     fprintf (outfile, "/*** begin of SPMD region ***\n");
-    INDENT;
-    fprintf (outfile, " ***\n");
-    INDENT;
-    fprintf (outfile, " *** in:    ");
-
-    if (SPMD_IN (arg_node) != NULL) {
-        PrintIds (SPMD_IN (arg_node));
-    }
-
-    fprintf (outfile, "\n");
-    INDENT;
-    fprintf (outfile, " *** out:   ");
-
-    if (SPMD_OUT (arg_node) != NULL) {
-        PrintIds (SPMD_OUT (arg_node));
-    }
-
-    fprintf (outfile, "\n");
-    INDENT;
-    fprintf (outfile, " *** inout: ");
-
-    if (SPMD_INOUT (arg_node) != NULL) {
-        PrintIds (SPMD_INOUT (arg_node));
-    }
-
-    fprintf (outfile, "\n");
-    INDENT;
-    fprintf (outfile, " *** local: ");
-
-    if (SPMD_LOCAL (arg_node) != NULL) {
-        PrintIds (SPMD_LOCAL (arg_node));
-    }
-
-    fprintf (outfile, "\n");
-    INDENT;
-    fprintf (outfile, " ***/\n");
+    DBUG_EXECUTE ("MASK", char *text;
+                  text = PrintMask (SPMD_IN (arg_node), SPMD_VARNO (arg_node));
+                  fprintf (outfile, "**IN:    %s\n", text);
+                  text = PrintMask (SPMD_INOUT (arg_node), SPMD_VARNO (arg_node));
+                  fprintf (outfile, "**INOUT: %s\n", text);
+                  text = PrintMask (SPMD_OUT (arg_node), SPMD_VARNO (arg_node));
+                  fprintf (outfile, "**OUT:   %s\n", text);
+                  text = PrintMask (SPMD_LOCAL (arg_node), SPMD_VARNO (arg_node));
+                  fprintf (outfile, "**LOCAL: %s\n", text); FREE (text););
 
     indent++;
     SPMD_REGION (arg_node) = Trav (SPMD_REGION (arg_node), arg_info);
@@ -2176,17 +2152,15 @@ PrintSync (node *arg_node, node *arg_info)
 
     fprintf (outfile, "/*** begin of sync region ***\n");
     INDENT;
-    fprintf (outfile, " ***\n");
-    INDENT;
-    fprintf (outfile, " *** inout: ");
-
-    if (SYNC_INOUT (arg_node) != NULL) {
-        PrintIds (SYNC_INOUT (arg_node));
-    }
-
-    fprintf (outfile, "\n");
-    INDENT;
-    fprintf (outfile, " ***/\n");
+    DBUG_EXECUTE ("MASK", char *text;
+                  text = PrintMask (SYNC_IN (arg_node), SYNC_VARNO (arg_node));
+                  fprintf (outfile, "**IN:    %s\n", text);
+                  text = PrintMask (SYNC_INOUT (arg_node), SYNC_VARNO (arg_node));
+                  fprintf (outfile, "**INOUT: %s\n", text);
+                  text = PrintMask (SYNC_OUT (arg_node), SYNC_VARNO (arg_node));
+                  fprintf (outfile, "**OUT:   %s\n", text);
+                  text = PrintMask (SYNC_LOCAL (arg_node), SYNC_VARNO (arg_node));
+                  fprintf (outfile, "**LOCAL: %s\n", text); FREE (text););
 
     indent++;
     SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
