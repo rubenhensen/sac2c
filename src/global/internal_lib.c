@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.30  1998/06/03 14:24:00  cg
+ * added some new fun_tabs for TmpVar.
+ * now, sufficient memory is allocated even for unknown fun_tabs in TmpVar
+ *
  * Revision 1.29  1998/03/25 19:22:53  srs
  * added new WL phases to TmpVar()
  *
@@ -541,11 +545,26 @@ TmpVar ()
     if (act_tab == o2nWith_tab) {
         s = "o2nW";
     }
+    if (act_tab == spmdinit_tab) {
+        s = "spmdi";
+    }
+    if (act_tab == spmdopt_tab) {
+        s = "spmdo";
+    }
+    if (act_tab == spmdlift_tab) {
+        s = "spmdl";
+    }
+    if (act_tab == syncinit_tab) {
+        s = "synci";
+    }
+    if (act_tab == syncopt_tab) {
+        s = "synco";
+    }
 
     if (!s)
-        s = "unknown_Phase";
+        s = "unknown";
 
-    sprintf (result, "__%s_%d", s, counter);
+    sprintf (result, "_%s_%d", s, counter);
     counter++;
 
     DBUG_RETURN (result);
