@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.87  2000/07/24 14:51:18  nmw
+ * generation of global object init flag in globals.c removed
+ * now every global var is a separate c file
+ *
  * Revision 2.86  2000/07/19 16:36:30  nmw
  * flag ICM_END_OF_STATEMENT implemented
  * output of init flags for objects in header.h and globals.c
@@ -1087,18 +1091,11 @@ PrintObjdef (node *arg_node, node *arg_info)
         fprintf (outfile, "\n");
 
         /* print objinit flag */
-        if (generatelibrary & GENERATELIBRARY_C) {
-            if (print_objdef_for_header_file) {
-                fprintf (outfile,
-                         "/* flag, if object has been initialized */\n"
-                         "extern bool SAC_INIT_FLAG_%s;\n",
-                         OBJDEF_NAME (arg_node));
-            } else {
-                fprintf (outfile,
-                         "/* flag, if object has been initialized */\n"
-                         "bool SAC_INIT_FLAG_%s=false;\n",
-                         OBJDEF_NAME (arg_node));
-            }
+        if ((generatelibrary & GENERATELIBRARY_C) && (print_objdef_for_header_file)) {
+            fprintf (outfile,
+                     "/* flag, if object has been initialized */\n"
+                     "extern bool SAC_INIT_FLAG_%s;\n",
+                     OBJDEF_NAME (arg_node));
         }
     }
 
