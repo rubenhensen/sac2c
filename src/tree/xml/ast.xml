@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.24  2004/10/15 15:02:08  sah
+  added new module system nodes
+
   Revision 1.23  2004/10/15 12:04:57  sah
   removed old module system nodes
   added AVIS_ALIAS and ARG_ALIAS
@@ -194,15 +197,23 @@
         <node name="Icm" />
       </target>
     </nodeset>
+    <nodeset name="Interface">
+      <target>
+        <node name="Import" />
+	<node name="Export" />
+	<node name="Use" />
+	<node name="Provide" />
+      </target>
+    </nodeset>
   </nodesets>
   <syntaxtree version="1.0">
     <node name="Modul">
       <description>node for a module declaration</description>
       <sons>
         <son name="Imports" mandatory="yes">
-          <description>modules imported by the module</description>
+          <description>symbols imported and exported by the module</description>
           <target>
-            <node name="Implist" />
+            <set name="Interface" />
           </target>
         </son>
         <son name="Types" mandatory="no">
@@ -3906,6 +3917,128 @@
 	      <node name="Dataflownode"/>
 	    </target>
 	  </type>
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+    <node name="Import">
+      <sons>
+        <son name="Next" mandatory="no">
+	  <target>
+	    <set name="Interface" />
+	  </target>
+	</son>
+	<son name="Symbol" mandatory="no">
+	  <target>
+	    <node name="Symbol" />
+	  </target>
+	</son>
+      </sons>
+      <attributes>
+        <attribute name="Mod" mandatory="yes">
+	  <type name="String" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="All" mandatory="yes">
+	  <type name="Bool" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+    <node name="Export">
+      <sons>
+        <son name="Next" mandatory="no">
+	  <target>
+	    <set name="Interface" />
+	  </target>
+	</son>
+	<son name="Symbol" mandatory="no">
+	  <target>
+	    <node name="Symbol" />
+	  </target>
+	</son>
+      </sons>
+      <attributes>
+	<attribute name="All" mandatory="yes">
+	  <type name="Bool" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+    <node name="Use">
+      <sons>
+        <son name="Next" mandatory="no">
+	  <target>
+	    <set name="Interface" />
+	  </target>
+	</son>
+	<son name="Symbol" mandatory="no">
+	  <target>
+	    <node name="Symbol" />
+	  </target>
+	</son>
+      </sons>
+      <attributes>
+        <attribute name="Mod" mandatory="yes">
+	  <type name="String" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="All" mandatory="yes">
+	  <type name="Bool" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+    <node name="Provide">
+      <sons>
+        <son name="Next" mandatory="no">
+	  <target>
+	    <set name="Interface" />
+	  </target>
+	</son>
+	<son name="Symbol" mandatory="no">
+	  <target>
+	    <node name="Symbol" />
+	  </target>
+	</son>
+      </sons>
+      <attributes>
+	<attribute name="All" mandatory="yes">
+	  <type name="Bool" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+    <node name="Symbol">
+      <sons>
+        <son name="Next" mandatory="no">
+	  <target>
+	    <node name="Symbol" />
+	  </target>
+	</son>
+      </sons>
+      <attributes>
+        <attribute name="Id" mandatory="yes">
+	  <type name="String" />
 	  <phases>
 	    <all />
 	  </phases>
