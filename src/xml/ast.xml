@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.67  2004/11/25 12:09:09  skt
+  Cleanup Declaration Traversal added
+
   Revision 1.66  2004/11/25 12:01:38  sah
   added travs
 
@@ -146,6 +149,15 @@
 	  <node name="Do" />
 	  <node name="Fundef" />
 	  <node name="Cond" />
+	</travuser>
+      </traversal>
+      <traversal id="CUD" name="Cleanup Declarations" default="sons" include="cleanup_decls.h" >
+	<travuser>
+	  <node name="Block" />
+	  <node name="Fundef" />
+	  <node name="Id" />
+	  <node name="Ids" />
+	  <node name="Vardec" />
 	</travuser>
       </traversal>
       <traversal id="F2L" name="Fun2Lac Traversal" default="sons" include="fun2lac.h" >
