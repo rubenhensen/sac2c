@@ -1,6 +1,12 @@
 
 /*
  * $Log$
+ * Revision 1.23  1998/07/16 13:47:35  sbs
+ * the arraytype for WLs (modarray + genarray)
+ * is now deduced from the LHS of the previous Let-Node
+ * rather than ( in the old genarray-case) from the type!!!
+ * of the first arg of the operation part !!!
+ *
  * Revision 1.22  1998/06/07 18:37:05  dkr
  * ChgId renamed in IdxChangeId
  *
@@ -1174,23 +1180,14 @@ IdxGenerator (node *arg_node, node *arg_info)
     while (vinfo != NULL) {
         DBUG_PRINT ("IDX", ("examining vinfo(%p)", vinfo));
         if (VINFO_FLAG (vinfo) == IDX) {
+            artype = LET_TYPE (arg_info);
+            DBUG_ASSERT ((artype != NULL), "missing type-info for LHS of let!");
             switch (body->nodetype) {
             case N_modarray:
                 block = MODARRAY_BODY (body);
-                if (NODE_TYPE (MODARRAY_ARRAY (body)) == N_array) {
-                    artype = ARRAY_TYPE (MODARRAY_ARRAY (body));
-                } else {
-                    DBUG_ASSERT ((NODE_TYPE (MODARRAY_ARRAY (body)) == N_id),
-                                 "array of modarray neither N_array nor N_id!");
-                    artype = ID_TYPE (MODARRAY_ARRAY (body));
-                }
                 break;
             case N_genarray:
                 block = GENARRAY_BODY (body);
-                DBUG_ASSERT ((NODE_TYPE (GENARRAY_ARRAY (body)) == N_array),
-                             "array of genarray is not N_array!");
-                artype = ARRAY_TYPE (GENARRAY_ARRAY (body));
-                DBUG_ASSERT ((artype != NULL), "missing type-info in genarray!");
                 break;
             case N_foldprf:
                 block = FOLDPRF_BODY (body);
@@ -1288,7 +1285,7 @@ IdxNwith (node *arg_node, node *arg_info)
  *   node *IdxNcode( node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   arg_info points to the previous N_let node!
  *
  ******************************************************************************/
 
@@ -1311,7 +1308,7 @@ IdxNcode (node *arg_node, node *arg_info)
 
     DBUG_ASSERT (((NODE_TYPE (arg_info) == N_let)
                   && (NODE_TYPE (LET_EXPR (arg_info)) == N_Nwith)),
-                 "arg_info contains no with-loop");
+                 "arg_info contains no let with a with-loop on the RHS!");
 
     /*
      * we insert instances of the index-vector-var as first statement of the
@@ -1326,25 +1323,19 @@ IdxNcode (node *arg_node, node *arg_info)
     while (vinfo != NULL) {
 
         if (VINFO_FLAG (vinfo) == IDX) {
+            arr_type = LET_TYPE (arg_info);
+            DBUG_ASSERT ((arr_type != NULL), "missing type-info for LHS of let!");
 
             switch (NWITH_TYPE (with)) {
 
             case WO_modarray:
                 withop_arr = NWITHOP_ARRAY (NWITH_WITHOP (with));
-                if (NODE_TYPE (withop_arr) == N_array) {
-                    arr_type = ARRAY_TYPE (withop_arr);
-                } else {
-                    DBUG_ASSERT ((NODE_TYPE (withop_arr) == N_id),
-                                 "array of modarray neither N_array nor N_id");
-                    arr_type = ID_TYPE (withop_arr);
-                }
                 break;
 
             case WO_genarray:
                 withop_arr = NWITHOP_SHAPE (NWITH_WITHOP (with));
                 DBUG_ASSERT ((NODE_TYPE (withop_arr) == N_array),
                              "shape of genarray is not N_array");
-                arr_type = ARRAY_TYPE (withop_arr);
                 break;
 
             case WO_foldprf:
