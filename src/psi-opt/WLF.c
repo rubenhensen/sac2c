@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 12:32:57  sbs
+ * warnings eliminated.
+ *
  * Revision 3.1  2000/11/20 18:01:39  sacbase
  * new release made
  *
@@ -2038,7 +2041,7 @@ WLFlet (node *arg_node, node *arg_info)
 node *
 WLFNwith (node *arg_node, node *arg_info)
 {
-    node *tmpn, *substwln;
+    node *tmpn, *substwln = NULL;
 
     DBUG_ENTER ("WLFNwith");
 

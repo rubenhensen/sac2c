@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 12:32:57  sbs
+ * warnings eliminated.
+ *
  * Revision 3.1  2000/11/20 18:01:42  sacbase
  * new release made
  *
@@ -996,6 +999,9 @@ WLTNgenerator (node *arg_node, node *arg_info)
                 break;
             case 4:
                 bound = &NGEN_WIDTH (arg_node);
+                break;
+            default: /* just to please the compiler 8-) */
+                bound = NULL;
                 break;
             }
 

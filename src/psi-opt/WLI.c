@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 12:32:57  sbs
+ * warnings eliminated.
+ *
  * Revision 3.1  2000/11/20 18:01:41  sacbase
  * new release made
  *
@@ -365,7 +368,7 @@ CreateIndexInfoSxS (node *prfn, node *arg_info)
 {
     int id_no = 0, index_var = 0;
     index_info *iinfo;
-    node *idn, *assignn, *wln;
+    node *idn = NULL, *assignn, *wln;
 
     DBUG_ENTER (" CreateIndexInfoSxS");
 
@@ -446,8 +449,8 @@ CreateIndexInfoSxS (node *prfn, node *arg_info)
 static void
 CreateIndexInfoA (node *prfn, node *arg_info)
 {
-    int id_no = 0, elts, i, index, val;
-    node *idn, *constn, *tmpn, *cf_node, *args[2], *assignn, *wln;
+    int id_no = 0, elts, i, index, val = 0;
+    node *idn = NULL, *constn = NULL, *tmpn = NULL, *cf_node, *args[2], *assignn, *wln;
     index_info *iinfo, *tmpinfo;
     types *type;
     node *data1, *data2;
