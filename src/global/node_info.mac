@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.20  1999/11/11 18:26:51  dkr
+ * PrintNgenerator is now called by Trav only :))
+ *
  * Revision 2.19  1999/10/19 17:09:50  sbs
  * ntc_tab added
  *
@@ -1075,9 +1078,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
-  NIF (N_Ngenerator, "N_Ngenerator", TravSons, FltnNgenerator, NoTrav, TravSons, TravSons,
-       TravSons, TravSons, FreeNGenerator, TravSons, RCNgen, TravSons, TravSons, DupNgen,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+  NIF (N_Ngenerator, "N_Ngenerator", TravSons, FltnNgenerator, PrintNgenerator, TravSons,
+       TravSons, TravSons, TravSons, FreeNGenerator, TravSons, RCNgen, TravSons, TravSons,
+       DupNgen, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        NoTrav, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, WLTNgenerator, TravSons, TravSons,

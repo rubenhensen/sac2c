@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/11/11 18:26:32  dkr
+ * PrintNgenerator is now called by Trav only :))
+ *
  * Revision 2.1  1999/02/23 12:40:27  sacbase
  * new release made
  *
@@ -169,6 +172,7 @@ extern node *PrintNwith (node *arg_node, node *arg_info);
 extern node *PrintNwithid (node *arg_node, node *arg_info);
 extern node *PrintNcode (node *arg_node, node *arg_info);
 extern node *PrintNpart (node *arg_node, node *arg_info);
+extern node *PrintNgenerator (node *arg_node, node *arg_info);
 extern node *PrintNwithop (node *arg_node, node *arg_info);
 
 extern node *PrintNwith2 (node *arg_node, node *arg_info);

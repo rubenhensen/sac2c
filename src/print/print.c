@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.37  1999/11/11 18:26:03  dkr
+ * PrintNgenerator is now called by Trav only :))
+ *
  * Revision 2.36  1999/10/28 19:58:45  sbs
  * ARRAY_FLAT changed to PRINT_CAR
  * PRINT_WLAA added.
@@ -2210,12 +2213,17 @@ PrintSync (node *arg_node, node *arg_info)
 node *
 PrintNwith (node *arg_node, node *arg_info)
 {
-    node *buffer;
+    node *buffer, *tmp_nwith;
 
     DBUG_ENTER ("PrintNwith");
 
     DBUG_ASSERT (arg_info, "arg_info is NULL");
+
     buffer = INFO_PRINT_INT_SYN (arg_info);
+    tmp_nwith = INFO_PRINT_NWITH (arg_info);
+    INFO_PRINT_NWITH (arg_info) = arg_node;
+
+    indent += 2;
 
     DBUG_EXECUTE ("WLI",
                   fprintf (outfile,
@@ -2226,8 +2234,6 @@ PrintNwith (node *arg_node, node *arg_info)
                            NWITH_REFERENCED_FOLD (arg_node),
                            NWITH_REFERENCES_FOLDED (arg_node), NWITH_COMPLEX (arg_node),
                            NWITH_FOLDABLE (arg_node), NWITH_NO_CHANCE (arg_node)););
-
-    indent += 2;
 
     INFO_PRINT_ACCESS (arg_info) = NWITH_WLAA (arg_node);
 
@@ -2272,6 +2278,7 @@ PrintNwith (node *arg_node, node *arg_info)
 
     indent -= 2;
 
+    INFO_PRINT_NWITH (arg_info) = tmp_nwith;
     INFO_PRINT_INT_SYN (arg_info) = buffer;
 
     DBUG_RETURN (arg_node);
@@ -2311,61 +2318,69 @@ PrintNwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PrintNgenerator(node *gen, node *idx, node *arg_info)
+ *   node *PrintNgenerator(node *arg_node, node *arg_info)
  *
  * description:
  *   prints a generator
  *
- *   ATTENTION: this function is not being used by the conventional
- *   traversation algorithm but from within PrintNPart.
+ *   The index variable is found in NWITH_WITHID( INFO_PRINT_NWITH( arg_info)).
  *
  ******************************************************************************/
 
 node *
-PrintNgenerator (node *gen, node *idx, node *arg_info)
+PrintNgenerator (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintNgenerator");
 
     fprintf (outfile, "(");
 
     /* print upper bound */
-    if (NGEN_BOUND1 (gen))
-        Trav (NGEN_BOUND1 (gen), arg_info);
-    else
+    if (NGEN_BOUND1 (arg_node)) {
+        Trav (NGEN_BOUND1 (arg_node), arg_info);
+    } else {
         fprintf (outfile, ".");
+    }
     /* print first operator and eventually original first operator */
-    fprintf (outfile, " %s", prf_string[NGEN_OP1 (gen)]);
+    fprintf (outfile, " %s", prf_string[NGEN_OP1 (arg_node)]);
     DBUG_EXECUTE ("ORIG_GENS",
-                  fprintf (outfile, "::%s", prf_string[NGEN_OP1_ORIG (gen)]););
+                  fprintf (outfile, "::%s", prf_string[NGEN_OP1_ORIG (arg_node)]););
     fprintf (outfile, " ");
 
     /* print indices */
-    idx = Trav (idx, arg_info);
+    if (INFO_PRINT_NWITH (arg_info) != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NWITH (arg_info)) == N_Nwith),
+                     "INFO_PRINT_NWITH is no N_Nwith node");
+        NWITH_WITHID (INFO_PRINT_NWITH (arg_info))
+          = Trav (NWITH_WITHID (INFO_PRINT_NWITH (arg_info)), arg_info);
+    } else {
+        fprintf (outfile, "?");
+    }
 
     /* print second operator and eventually original operator */
-    fprintf (outfile, " %s", prf_string[NGEN_OP2 (gen)]);
+    fprintf (outfile, " %s", prf_string[NGEN_OP2 (arg_node)]);
     DBUG_EXECUTE ("ORIG_GENS",
-                  fprintf (outfile, "::%s", prf_string[NGEN_OP2_ORIG (gen)]););
+                  fprintf (outfile, "::%s", prf_string[NGEN_OP2_ORIG (arg_node)]););
     fprintf (outfile, " ");
     /* print lower bound */
-    if (NGEN_BOUND2 (gen))
-        Trav (NGEN_BOUND2 (gen), arg_info);
-    else
+    if (NGEN_BOUND2 (arg_node)) {
+        Trav (NGEN_BOUND2 (arg_node), arg_info);
+    } else {
         fprintf (outfile, " .");
+    }
 
     /* print step and width */
-    if (NGEN_STEP (gen)) {
+    if (NGEN_STEP (arg_node)) {
         fprintf (outfile, " step ");
-        Trav (NGEN_STEP (gen), arg_info);
+        Trav (NGEN_STEP (arg_node), arg_info);
     }
-    if (NGEN_WIDTH (gen)) {
+    if (NGEN_WIDTH (arg_node)) {
         fprintf (outfile, " width ");
-        Trav (NGEN_WIDTH (gen), arg_info);
+        Trav (NGEN_WIDTH (arg_node), arg_info);
     }
 
     fprintf (outfile, ")");
 
-    DBUG_RETURN ((node *)NULL);
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -2457,7 +2472,7 @@ PrintNpart (node *arg_node, node *arg_info)
     if (INFO_PRINT_INT_SYN (arg_info) == NULL) {
         INDENT; /* each gen in a new line. */
     }
-    PrintNgenerator (NPART_GEN (arg_node), NPART_WITHID (arg_node), arg_info);
+    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
 
     DBUG_ASSERT ((NPART_CODE (arg_node) != NULL),
                  "part within WL without pointer to N_Ncode");
@@ -2548,8 +2563,9 @@ PrintNwith2 (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintNwith2");
 
-    tmp_nwith2 = INFO_PRINT_NWITH2 (arg_info);
-    INFO_PRINT_NWITH2 (arg_info) = arg_node;
+    tmp_nwith2 = INFO_PRINT_NWITH (arg_info);
+    INFO_PRINT_NWITH (arg_info) = arg_node;
+
     indent += 2;
 
     fprintf (outfile, "with2 (");
@@ -2591,7 +2607,8 @@ PrintNwith2 (node *arg_node, node *arg_info)
     fprintf (outfile, ")");
 
     indent -= 2;
-    INFO_PRINT_NWITH2 (arg_info) = tmp_nwith2;
+
+    INFO_PRINT_NWITH (arg_info) = tmp_nwith2;
 
     DBUG_RETURN (arg_node);
 }
@@ -2784,20 +2801,26 @@ PrintWLgrid (node *arg_node, node *arg_info)
         if (WLGRID_CODE (arg_node) != NULL) {
             fprintf (outfile, "op_%d\n", NCODE_NO (WLGRID_CODE (arg_node)));
         } else {
-            switch (NWITH2_TYPE (INFO_PRINT_NWITH2 (arg_info))) {
-            case WO_genarray:
-                fprintf (outfile, "init\n");
-                break;
-            case WO_modarray:
-                fprintf (outfile, "copy\n");
-                break;
-            case WO_foldfun:
-                /* here is no break missing! */
-            case WO_foldprf:
-                fprintf (outfile, "noop\n");
-                break;
-            default:
-                DBUG_ASSERT ((0), "wrong with-loop type found");
+            if (INFO_PRINT_NWITH (arg_info) != NULL) {
+                DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NWITH (arg_info)) == N_Nwith2),
+                             "INFO_PRINT_NWITH( arg_info) contains no N_Nwith2 node");
+                switch (NWITH2_TYPE (INFO_PRINT_NWITH (arg_info))) {
+                case WO_genarray:
+                    fprintf (outfile, "init\n");
+                    break;
+                case WO_modarray:
+                    fprintf (outfile, "copy\n");
+                    break;
+                case WO_foldfun:
+                    /* here is no break missing! */
+                case WO_foldprf:
+                    fprintf (outfile, "noop\n");
+                    break;
+                default:
+                    DBUG_ASSERT ((0), "wrong with-loop type found");
+                }
+            } else {
+                fprintf (outfile, "?\n");
             }
         }
     }
@@ -2959,20 +2982,26 @@ PrintWLgridVar (node *arg_node, node *arg_info)
         if (WLGRIDVAR_CODE (arg_node) != NULL) {
             fprintf (outfile, "op_%d\n", NCODE_NO (WLGRIDVAR_CODE (arg_node)));
         } else {
-            switch (NWITH2_TYPE (INFO_PRINT_NWITH2 (arg_info))) {
-            case WO_genarray:
-                fprintf (outfile, "init\n");
-                break;
-            case WO_modarray:
-                fprintf (outfile, "copy\n");
-                break;
-            case WO_foldfun:
-                /* here is no break missing! */
-            case WO_foldprf:
-                fprintf (outfile, "noop\n");
-                break;
-            default:
-                DBUG_ASSERT ((0), "wrong with-loop type found");
+            if (INFO_PRINT_NWITH (arg_info) != NULL) {
+                DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NWITH (arg_info)) == N_Nwith2),
+                             "INFO_PRINT_NWITH( arg_info) contains no N_Nwith2 node");
+                switch (NWITH2_TYPE (INFO_PRINT_NWITH (arg_info))) {
+                case WO_genarray:
+                    fprintf (outfile, "init\n");
+                    break;
+                case WO_modarray:
+                    fprintf (outfile, "copy\n");
+                    break;
+                case WO_foldfun:
+                    /* here is no break missing! */
+                case WO_foldprf:
+                    fprintf (outfile, "noop\n");
+                    break;
+                default:
+                    DBUG_ASSERT ((0), "wrong with-loop type found");
+                }
+            } else {
+                fprintf (outfile, "?\n");
             }
         }
     }
