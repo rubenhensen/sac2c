@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/07/12 20:43:53  dkr
+ * bug in ND_PARAM_..., ND_ARG_..., ND_RET_... icms fixed
+ *
  * Revision 3.15  2002/07/12 19:32:10  dkr
  * bug in SAC_IS_LASTREF__BLOCK_... fixed
  *
@@ -748,14 +751,16 @@ typedef int SAC_hidden_descriptor; /* reference count */
 #define SAC_ND_PARAM_(dummy, basetype) basetype
 
 #define SAC_ND_PARAM_in(nt, basetype)                                                    \
-    CAT3 (SAC_ND_PARAM_in__, CAT3 (NT_DATA (nt), BuildArgs2 (nt, basetype)))
+    CAT3 (SAC_ND_PARAM_in__,                                                             \
+          CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), BuildArgs2 (nt, basetype)))))
 
 #define SAC_ND_PARAM_in_nodesc(nt, basetype)                                             \
     SAC_ND_TYPE (nt, basetype)                                                           \
     SAC_ND_A_FIELD (nt)
 
 #define SAC_ND_PARAM_out(nt, basetype)                                                   \
-    CAT3 (SAC_ND_PARAM_out__, CAT3 (NT_DATA (nt), BuildArgs2 (nt, basetype)))
+    CAT3 (SAC_ND_PARAM_out__,                                                            \
+          CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), BuildArgs2 (nt, basetype)))))
 
 #define SAC_ND_PARAM_out_nodesc(nt, basetype)                                            \
     SAC_ND_TYPE (nt, basetype)                                                           \
@@ -767,11 +772,13 @@ typedef int SAC_hidden_descriptor; /* reference count */
 
 #define SAC_ND_PARAM_inout_nodesc_bx(nt, basetype) SAC_ND_PARAM_in_nodesc (nt, basetype)
 
-#define SAC_ND_ARG_in(nt) CAT3 (SAC_ND_ARG_in__, CAT3 (NT_DATA (nt), (nt)))
+#define SAC_ND_ARG_in(nt)                                                                \
+    CAT3 (SAC_ND_ARG_in__, CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), (nt)))))
 
 #define SAC_ND_ARG_in_nodesc(nt) SAC_ND_A_FIELD (nt)
 
-#define SAC_ND_ARG_out(nt) CAT3 (SAC_ND_ARG_out__, CAT3 (NT_DATA (nt), (nt)))
+#define SAC_ND_ARG_out(nt)                                                               \
+    CAT3 (SAC_ND_ARG_out__, CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), (nt)))))
 
 #define SAC_ND_ARG_out_nodesc(nt) &SAC_ND_A_FIELD (nt)
 
@@ -782,111 +789,148 @@ typedef int SAC_hidden_descriptor; /* reference count */
 #define SAC_ND_ARG_inout_nodesc_bx(nt) SAC_ND_ARG_in_nodesc (nt)
 
 #define SAC_ND_RET_out(nt, ntp)                                                          \
-    CAT3 (SAC_ND_RET_out__, CAT3 (NT_DATA (nt), BuildArgs2 (nt, ntp)))
+    CAT3 (SAC_ND_RET_out__,                                                              \
+          CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), BuildArgs2 (nt, ntp)))))
 
 #define SAC_ND_RET_inout(nt, ntp) SAC_ND_RET_out (nt, ntp)
 
 #define SAC_ND_DECL_PARAM_inout(nt, basetype)                                            \
-    CAT3 (SAC_ND_DECL_PARAM_inout__, CAT3 (NT_DATA (nt), BuildArgs2 (nt, basetype)))
+    CAT3 (SAC_ND_DECL_PARAM_inout__,                                                     \
+          CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), BuildArgs2 (nt, basetype)))))
 
 /*
  * SCL
  */
 
-#define SAC_ND_PARAM_in__SCL(nt, basetype) SAC_ND_PARAM_in_nodesc (nt, basetype)
+#define SAC_ND_PARAM_in__SCL_NUQ(nt, basetype) SAC_ND_PARAM_in_nodesc (nt, basetype)
+#define SAC_ND_PARAM_in__SCL_UNQ(nt, basetype) SAC_ND_PARAM_in__SCL_NUQ (nt, basetype)
 
-#define SAC_ND_PARAM_out__SCL(nt, basetype) SAC_ND_PARAM_out_nodesc (nt, basetype)
+#define SAC_ND_PARAM_out__SCL_NUQ(nt, basetype) SAC_ND_PARAM_out_nodesc (nt, basetype)
+#define SAC_ND_PARAM_out__SCL_UNQ(nt, basetype) SAC_ND_PARAM_out__SCL_NUQ (nt, basetype)
 
-#define SAC_ND_ARG_in__SCL(nt) SAC_ND_ARG_in_nodesc (nt)
+#define SAC_ND_ARG_in__SCL_NUQ(nt) SAC_ND_ARG_in_nodesc (nt)
+#define SAC_ND_ARG_in__SCL_UNQ(nt) SAC_ND_ARG_in__SCL_NUQ (nt)
 
-#define SAC_ND_ARG_out__SCL(nt) SAC_ND_ARG_out_nodesc (nt)
+#define SAC_ND_ARG_out__SCL_NUQ(nt) SAC_ND_ARG_out_nodesc (nt)
+#define SAC_ND_ARG_out__SCL_UNQ(nt) SAC_ND_ARG_out__SCL_NUQ (nt)
 
-#define SAC_ND_RET_out__SCL(nt, ntp)                                                     \
+#define SAC_ND_RET_out__SCL_NUQ(nt, ntp)                                                 \
     {                                                                                    \
         *SAC_NAMEP (SAC_ND_A_FIELD (ntp)) = SAC_ND_A_FIELD (nt);                         \
     }
+#define SAC_ND_RET_out__SCL_UNQ(nt, ntp) SAC_ND_RET_out__SCL_NUQ (nt, ntp)
 
-#define SAC_ND_DECL_PARAM_inout__SCL(nt, basetype)                                       \
+#define SAC_ND_DECL_PARAM_inout__SCL_NUQ(nt, basetype)                                   \
     SAC_ND_TYPE (nt, basetype)                                                           \
     SAC_ND_A_FIELD (nt) = *SAC_NAMEP (SAC_ND_A_FIELD (nt));
+#define SAC_ND_DECL_PARAM_inout__SCL_UNQ(nt, basetype)                                   \
+    SAC_ND_DECL_PARAM_inout__SCL_NUQ (nt, basetype)
 
 /*
  * AKS
  */
 
-#define SAC_ND_PARAM_in__AKS(nt, basetype)                                               \
+#define SAC_ND_PARAM_in__AKS_NUQ(nt, basetype)                                           \
     SAC_ND_PARAM_in_nodesc (nt, basetype), SAC_ND_DESC_TYPE (nt) SAC_ND_A_DESC (nt)
+#define SAC_ND_PARAM_in__AKS_UNQ(nt, basetype) SAC_ND_PARAM_in__AKS_NUQ (nt, basetype)
 
-#define SAC_ND_PARAM_out__AKS(nt, basetype)                                              \
+#define SAC_ND_PARAM_out__AKS_NUQ(nt, basetype)                                          \
     SAC_ND_PARAM_out_nodesc (nt, basetype),                                              \
       SAC_ND_DESC_TYPE (nt) * SAC_NAMEP (SAC_ND_A_DESC (nt))
+#define SAC_ND_PARAM_out__AKS_UNQ(nt, basetype) SAC_ND_PARAM_out__AKS_NUQ (nt, basetype)
 
-#define SAC_ND_ARG_in__AKS(nt) SAC_ND_ARG_in_nodesc (nt), SAC_ND_A_DESC (nt)
+#define SAC_ND_ARG_in__AKS_NUQ(nt) SAC_ND_ARG_in_nodesc (nt), SAC_ND_A_DESC (nt)
+#define SAC_ND_ARG_in__AKS_UNQ(nt) SAC_ND_ARG_in__AKS_NUQ (nt)
 
-#define SAC_ND_ARG_out__AKS(nt) SAC_ND_ARG_out_nodesc (nt), &SAC_ND_A_DESC (nt)
+#define SAC_ND_ARG_out__AKS_NUQ(nt) SAC_ND_ARG_out_nodesc (nt), &SAC_ND_A_DESC (nt)
+#define SAC_ND_ARG_out__AKS_UNQ(nt) SAC_ND_ARG_out__AKS_NUQ (nt)
 
-#define SAC_ND_RET_out__AKS(nt, ntp)                                                     \
+#define SAC_ND_RET_out__AKS_NUQ(nt, ntp)                                                 \
     {                                                                                    \
         *SAC_NAMEP (SAC_ND_A_FIELD (ntp)) = SAC_ND_A_FIELD (nt);                         \
         *SAC_NAMEP (SAC_ND_A_DESC (ntp)) = SAC_ND_A_DESC (nt);                           \
     }
+#define SAC_ND_RET_out__AKS_UNQ(nt, ntp) SAC_ND_RET_out__AKS_NUQ (nt, ntp)
 
-#define SAC_ND_DECL_PARAM_inout__AKS(nt, basetype)                                       \
+#define SAC_ND_DECL_PARAM_inout__AKS_NUQ(nt, basetype)                                   \
     SAC_ND_TYPE (nt, basetype)                                                           \
     SAC_ND_A_FIELD (nt) = *SAC_NAMEP (SAC_ND_A_FIELD (nt));                              \
     SAC_ND_DESC_TYPE (nt)                                                                \
     SAC_ND_A_DESC (nt) = *SAC_NAMEP (SAC_ND_A_DESC (nt));
+#define SAC_ND_DECL_PARAM_inout__AKS_UNQ(nt, basetype)                                   \
+    SAC_ND_DECL_PARAM_inout__AKS_NUQ (nt, basetype)
 
 /*
  * AKD
  */
 
-#define SAC_ND_PARAM_in__AKD(nt, basetype) SAC_ND_PARAM_in__AKS (nt, basetype)
+#define SAC_ND_PARAM_in__AKD_NUQ(nt, basetype) SAC_ND_PARAM_in__AKS_NUQ (nt, basetype)
+#define SAC_ND_PARAM_in__AKD_UNQ(nt, basetype) SAC_ND_PARAM_in__AKD_NUQ (nt, basetype)
 
-#define SAC_ND_PARAM_out__AKD(nt, basetype) SAC_ND_PARAM_out__AKS (nt, basetype)
+#define SAC_ND_PARAM_out__AKD_NUQ(nt, basetype) SAC_ND_PARAM_out__AKS_NUQ (nt, basetype)
+#define SAC_ND_PARAM_out__AKD_UNQ(nt, basetype) SAC_ND_PARAM_out__AKD_NUQ (nt, basetype)
 
-#define SAC_ND_ARG_in__AKD(nt) SAC_ND_ARG_in__AKS (nt)
+#define SAC_ND_ARG_in__AKD_NUQ(nt) SAC_ND_ARG_in__AKS_NUQ (nt)
+#define SAC_ND_ARG_in__AKD_UNQ(nt) SAC_ND_ARG_in__AKD_NUQ (nt)
 
-#define SAC_ND_ARG_out__AKD(nt) SAC_ND_ARG_out__AKS (nt)
+#define SAC_ND_ARG_out__AKD_NUQ(nt) SAC_ND_ARG_out__AKS_NUQ (nt)
+#define SAC_ND_ARG_out__AKD_UNQ(nt) SAC_ND_ARG_out__AKD_NUQ (nt)
 
-#define SAC_ND_RET_out__AKD(nt, ntp) SAC_ND_RET_out__AKS (nt, ntp)
+#define SAC_ND_RET_out__AKD_NUQ(nt, ntp) SAC_ND_RET_out__AKS_NUQ (nt, ntp)
+#define SAC_ND_RET_out__AKD_UNQ(nt, ntp) SAC_ND_RET_out__AKD_NUQ (nt, ntp)
 
-#define SAC_ND_DECL_PARAM_inout__AKD(nt, basetype)                                       \
-    SAC_ND_DECL_PARAM_inout__AKS (nt, basetype)
+#define SAC_ND_DECL_PARAM_inout__AKD_NUQ(nt, basetype)                                   \
+    SAC_ND_DECL_PARAM_inout__AKS_NUQ (nt, basetype)
+#define SAC_ND_DECL_PARAM_inout__AKD_UNQ(nt, basetype)                                   \
+    SAC_ND_DECL_PARAM_inout__AKD_NUQ (nt, basetype)
 
 /*
  * AUD
  */
 
-#define SAC_ND_PARAM_in__AUD(nt, basetype) SAC_ND_PARAM_in__AKS (nt, basetype)
+#define SAC_ND_PARAM_in__AUD_NUQ(nt, basetype) SAC_ND_PARAM_in__AKS_NUQ (nt, basetype)
+#define SAC_ND_PARAM_in__AUD_UNQ(nt, basetype) SAC_ND_PARAM_in__AUD_NUQ (nt, basetype)
 
-#define SAC_ND_PARAM_out__AUD(nt, basetype) SAC_ND_PARAM_out__AKS (nt, basetype)
+#define SAC_ND_PARAM_out__AUD_NUQ(nt, basetype) SAC_ND_PARAM_out__AKS_NUQ (nt, basetype)
+#define SAC_ND_PARAM_out__AUD_UNQ(nt, basetype) SAC_ND_PARAM_out__AUD_NUQ (nt, basetype)
 
-#define SAC_ND_ARG_in__AUD(nt) SAC_ND_ARG_in__AKS (nt)
+#define SAC_ND_ARG_in__AUD_NUQ(nt) SAC_ND_ARG_in__AKS_NUQ (nt)
+#define SAC_ND_ARG_in__AUD_UNQ(nt) SAC_ND_ARG_in__AUD_NUQ (nt)
 
-#define SAC_ND_ARG_out__AUD(nt) SAC_ND_ARG_out__AKS (nt)
+#define SAC_ND_ARG_out__AUD_NUQ(nt) SAC_ND_ARG_out__AKS_NUQ (nt)
+#define SAC_ND_ARG_out__AUD_UNQ(nt) SAC_ND_ARG_out__AUD_NUQ (nt)
 
-#define SAC_ND_RET_out__AUD(nt, ntp) SAC_ND_RET_out__AKS (nt, ntp)
+#define SAC_ND_RET_out__AUD_NUQ(nt, ntp) SAC_ND_RET_out__AKS_NUQ (nt, ntp)
+#define SAC_ND_RET_out__AUD_UNQ(nt, ntp) SAC_ND_RET_out__AUD_NUQ (nt, ntp)
 
-#define SAC_ND_DECL_PARAM_inout__AUD(nt, basetype)                                       \
-    SAC_ND_DECL_PARAM_inout__AKS (nt, basetype)
+#define SAC_ND_DECL_PARAM_inout__AUD_NUQ(nt, basetype)                                   \
+    SAC_ND_DECL_PARAM_inout__AKS_NUQ (nt, basetype)
+#define SAC_ND_DECL_PARAM_inout__AUD_UNQ(nt, basetype)                                   \
+    SAC_ND_DECL_PARAM_inout__AUD_NUQ (nt, basetype)
 
 /*
  * HID
  */
 
-#define SAC_ND_PARAM_in__HID(nt, basetype) SAC_ND_PARAM_in__AKS (nt, basetype)
+#define SAC_ND_PARAM_in__HID_NUQ(nt, basetype) SAC_ND_PARAM_in__AKS_NUQ (nt, basetype)
+#define SAC_ND_PARAM_in__HID_UNQ(nt, basetype) SAC_ND_PARAM_in__SCL_UNQ (nt, basetype)
 
-#define SAC_ND_PARAM_out__HID(nt, basetype) SAC_ND_PARAM_out__AKS (nt, basetype)
+#define SAC_ND_PARAM_out__HID_NUQ(nt, basetype) SAC_ND_PARAM_out__AKS_NUQ (nt, basetype)
+#define SAC_ND_PARAM_out__HID_UNQ(nt, basetype) SAC_ND_PARAM_out__SCL_UNQ (nt, basetype)
 
-#define SAC_ND_ARG_in__HID(nt) SAC_ND_ARG_in__AKS (nt)
+#define SAC_ND_ARG_in__HID_NUQ(nt) SAC_ND_ARG_in__AKS_NUQ (nt)
+#define SAC_ND_ARG_in__HID_UNQ(nt) SAC_ND_ARG_in__SCL_UNQ (nt)
 
-#define SAC_ND_ARG_out__HID(nt) SAC_ND_ARG_out__AKS (nt)
+#define SAC_ND_ARG_out__HID_NUQ(nt) SAC_ND_ARG_out__AKS_NUQ (nt)
+#define SAC_ND_ARG_out__HID_UNQ(nt) SAC_ND_ARG_out__SCL_UNQ (nt)
 
-#define SAC_ND_RET_out__HID(nt, ntp) SAC_ND_RET_out__AKS (nt, ntp)
+#define SAC_ND_RET_out__HID_NUQ(nt, ntp) SAC_ND_RET_out__AKS_NUQ (nt, ntp)
+#define SAC_ND_RET_out__HID_UNQ(nt, ntp) SAC_ND_RET_out__SCL_UNQ (nt, ntp)
 
-#define SAC_ND_DECL_PARAM_inout__HID(nt, basetype)                                       \
-    SAC_ND_DECL_PARAM_inout__AKS (nt, basetype)
+#define SAC_ND_DECL_PARAM_inout__HID_NUQ(nt, basetype)                                   \
+    SAC_ND_DECL_PARAM_inout__AKS_NUQ (nt, basetype)
+#define SAC_ND_DECL_PARAM_inout__HID_UNQ(nt, basetype)                                   \
+    SAC_ND_DECL_PARAM_inout__SCL_UNQ (nt, basetype)
 
 /******************************************************************************
  *
