@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2004/11/22 14:39:10  sbs
+ * stuff from ssi.h
+ *
  * Revision 3.44  2004/11/22 14:37:51  ktr
  * Ismop SacDevCamp 04
  *
@@ -912,5 +915,13 @@ typedef struct {
     char *cache3_writepol;
     int cache3_msca_factor;
 } configuration_t;
+
+/*******************************************************************************
+ *
+ * moved from ssi.h
+ */
+
+typedef struct TVAR tvar;
+typedef bool (*tvar_ass_handle_fun) (sig_dep *handle);
 
 #endif /* _SAC_TYPES_H_ */
