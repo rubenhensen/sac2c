@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  1998/03/17 11:23:11  srs
+ * added comments to WL_INFO
+ *
  * Revision 1.25  1998/03/06 13:28:35  srs
  * added new type WL_INFO
  *
@@ -344,11 +347,11 @@ typedef types shapes; /* this definition is primarily needed for
                        */
 
 typedef struct WL_INFO {
-    int referenced;
-    int referenced_fold;
-    int parts;
-    int complex;
-    int foldable;
+    int referenced;      /* number of references in function */
+    int referenced_fold; /* number of foldable references */
+    int parts;           /* number of N_part nodes */
+    int complex;         /* indicator of fold complexity */
+    int foldable;        /* has constant generator */
 } wl_info;
 
 typedef struct FUN_NAME {
