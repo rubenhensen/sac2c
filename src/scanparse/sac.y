@@ -4,6 +4,11 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/05/22 15:06:22  dkr
+ * function CleanUpParser() added.
+ * rule 'eof' replaced by rule 'all'.
+ * space leak in function CheckWlcompConf() removed.
+ *
  * Revision 3.22  2001/05/18 09:26:43  cg
  * MALLOC and FREE transformed into Malloc and Free.
  *
@@ -118,7 +123,7 @@ node *spec_tree;
 static char *mod_name = MAIN_MOD_NAME;
 static char *link_mod_name = NULL;
 static node *store_pragma = NULL;
-static node *global_wlcomp_pragma = NULL;
+static node *global_wlcomp_aps = NULL;
 
 /*
  * used to distinguish the different kinds of files
@@ -135,7 +140,8 @@ static statustype sib_imported_status;
 static int yyerror( char *errname);
 static int yyparse();
 
-static node *string2array( char *str);
+static void CleanUpParser();
+static node *String2Array( char *str);
 static types *GenComplexType( types *types, nums *numsp);
 static node *CheckWlcompConf( node *ap, node *exprs);
 
@@ -170,7 +176,7 @@ static node *CheckWlcompConf( node *ap, node *exprs);
        K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, NWITH, FOLD,
        MODDEC, MODSPEC, MODIMP, CLASSDEC, IMPORT, IMPLICIT, EXPLICIT, TYPES, FUNS,
        OWN, CONSTANTS, GLOBAL, OBJECTS, CLASSIMP,
-       ARRAY,SC, TRUETOKEN, FALSETOKEN, EXTERN, C_KEYWORD,
+       ARRAY, SC, TRUETOKEN, FALSETOKEN, EXTERN, C_KEYWORD,
        PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
        TOUCH, COPYFUN, FREEFUN, INITFUN, LINKWITH,
        WLCOMP, DEFAULT, CACHESIM, SPECIALIZE, 
@@ -238,7 +244,7 @@ static node *CheckWlcompConf( node *ap, node *exprs);
 %nonassoc GENERATOR
 
 
-%start file
+%start all
 
 %{
 
@@ -250,32 +256,34 @@ static node *CheckWlcompConf( node *ap, node *exprs);
 %}
 %%
 
-file:   PARSE_PRG prg { syntax_tree = $2; } eof
-      | PARSE_PRG modimp { syntax_tree = $2; } eof
-      | PARSE_DEC moddec { decl_tree = $2; } eof
-      | PARSE_SIB sib { sib_tree = $2; } eof
-      | PARSE_RC  targets { target_list = RSCAddTargetList( $2, target_list); } eof
-      | PARSE_SPEC modspec { spec_tree = $2; } eof
-      ;
+all: file { CleanUpParser(); }
 
-eof:
-     {
-       if (commlevel) {
-         ABORT( linenum, ("Unterminated comment found"));
+file: PARSE_PRG prg
+        {
+          syntax_tree = $2;
+        }
+    | PARSE_PRG modimp
+        {
+          syntax_tree = $2;
+        }
+    | PARSE_DEC moddec
+        {
+          decl_tree = $2;
+        }
+    | PARSE_SIB sib
+        {
+          sib_tree = $2;
+        }
+    | PARSE_RC targets
+        {
+          target_list = RSCAddTargetList( $2, target_list);
+        }
+    | PARSE_SPEC modspec
+        {
+          spec_tree = $2;
+        }
+    ;
 
-#ifdef SAC_FOR_OSF_ALPHA
-         /* 
-          * The follwing command is a veeeeeeery ugly trick to avoid warnings
-          * on the alpha: the YYBACKUP-macro contains jumps to two labels
-          * yyerrlab  and  yynewstate  which are not used otherwise.
-          * Hence, the usage here, which in fact never IS (and never SHOULD)
-          * be carried out, prevents the gcc from complaining about the two
-          * aforementioned labels not to be used!!
-          */
-         YYBACKUP( NUM, yylval);
-#endif
-       }
-     }
 
 id: ID
       {
@@ -1240,17 +1248,18 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R exprblock
     ;
 
 
+/* BRUSH BEGIN */
+
+
 wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_conf
                         {
-                          if (global_wlcomp_pragma != NULL) {
+                          if (global_wlcomp_aps != NULL) {
                             /* remove old global pragma */
-                            global_wlcomp_pragma
-                              = FreeTree( global_wlcomp_pragma);
+                            global_wlcomp_aps = FreeTree( global_wlcomp_aps);
                           }
                           $3 = CheckWlcompConf( $3, NULL);
                           if ($3 != NULL) {
-                            global_wlcomp_pragma = MakePragma();
-                            PRAGMA_WLCOMP_APS( global_wlcomp_pragma) = $3;
+                            global_wlcomp_aps = $3;
                           }
                         }
                     | /* empty */
@@ -1270,10 +1279,9 @@ wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_conf
                          }
                        }
                    | /* empty */
-                       { if (global_wlcomp_pragma != NULL) {
+                       { if (global_wlcomp_aps != NULL) {
                            $$ = MakePragma();
-                           PRAGMA_WLCOMP_APS( $$)
-                             = DupTree( PRAGMA_WLCOMP_APS( global_wlcomp_pragma));
+                           PRAGMA_WLCOMP_APS( $$) = DupTree( global_wlcomp_aps);
                          }
                          else {
                            $$ = NULL;
@@ -1284,9 +1292,6 @@ wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_conf
 wlcomp_conf: id      { $$ = MakeId( $1, NULL, ST_regular); }
            | expr_ap { $$ = $1; }
            ;
-
-
-/* BRUSH BEGIN */
 
 
 /*
@@ -1721,7 +1726,7 @@ expr_main: id  { $$ = MakeId( $1, NULL, ST_regular); }
          | PLUS  DOUBLE  %prec SIGN { $$ = MakeDouble( $2);   }
          | TRUETOKEN                { $$ = MakeBool( 1);      }
          | FALSETOKEN               { $$ = MakeBool( 0);      }
-         | string                   { $$ = string2array( $1); }
+         | string                   { $$ = String2Array( $1); }
          | wlcomp_pragma_local
            NWITH { $<cint>$ = linenum; } BRACKET_L Ngenerator BRACKET_R
            wlassignblock Nwithop
@@ -2584,7 +2589,7 @@ int yyerror( char *errname)
 /******************************************************************************
  *
  * Function:
- *   node *string2array(char *str)
+ *   void CleanUpParser()
  *
  * Description:
  *   
@@ -2592,7 +2597,47 @@ int yyerror( char *errname)
  ******************************************************************************/
 
 static
-node *string2array(char *str)
+void CleanUpParser()
+{
+  DBUG_ENTER( "CleanUpParser");
+
+  if (global_wlcomp_aps != NULL) {
+    global_wlcomp_aps = FreeTree( global_wlcomp_aps);
+  }
+
+  if (commlevel) {
+    ABORT( linenum, ("Unterminated comment found"));
+
+#ifdef SAC_FOR_OSF_ALPHA
+    /* 
+     * The follwing command is a veeeeeeery ugly trick to avoid warnings
+     * on the alpha: the YYBACKUP-macro contains jumps to two labels
+     * yyerrlab  and  yynewstate  which are not used otherwise.
+     * Hence, the usage here, which in fact never IS (and never SHOULD)
+     * be carried out, prevents the gcc from complaining about the two
+     * aforementioned labels not to be used!!
+     */
+    YYBACKUP( NUM, yylval);
+#endif
+  }
+
+  DBUG_VOID_RETURN;
+}
+
+
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *String2Array(char *str)
+ *
+ * Description:
+ *   
+ *
+ ******************************************************************************/
+
+static
+node *String2Array(char *str)
 {
   node *new_exprs;
   int i, cnt;
@@ -2600,7 +2645,7 @@ node *string2array(char *str)
   node *len_exprs;
   node *res;
 
-  DBUG_ENTER("string2array");
+  DBUG_ENTER( "String2Array");
 
   new_exprs = MakeExprs( MakeChar( '\0'), NULL);
 
@@ -2751,16 +2796,20 @@ node *CheckWlcompConf( node *conf, node *exprs)
   if (NODE_TYPE( conf) == N_id) {
     if (strcmp( ID_NAME( conf), "Default")) {
       strcpy( yytext, ID_NAME( conf));
-      yyerror( "trivial configuration is not 'Default'");
+      yyerror( "innermost configuration is not 'Default'");
     }
+
+    /*
+     * free N_id node
+     */
+    conf = FreeTree( conf);
+
     /*
      * unmodified 'exprs' is returned
      */
   }
   else if (NODE_TYPE( conf) == N_ap) {
-    node *arg;
-
-    arg = AP_ARGS( conf);
+    node *arg = AP_ARGS( conf);
 
     /*
      * look for last argument -> next 'conf'
@@ -2770,10 +2819,12 @@ node *CheckWlcompConf( node *conf, node *exprs)
       yyerror( "wlcomp-function with missing configuration found");
     }
     else {
-      node *next_conf=NULL;
+      node *tmp;
+      node *next_conf = NULL;
 
       if (EXPRS_NEXT( arg) == NULL) {
         next_conf = EXPRS_EXPR( arg);
+        tmp = arg;
         AP_ARGS( conf) = NULL;
       }
       else {
@@ -2781,8 +2832,15 @@ node *CheckWlcompConf( node *conf, node *exprs)
           arg = EXPRS_NEXT( arg);
         }
         next_conf = EXPRS_EXPR( EXPRS_NEXT( arg));
+        tmp = EXPRS_NEXT( arg);
         EXPRS_NEXT( arg) = NULL;
       }
+
+      /*
+       * free last N_exprs node
+       */
+      EXPRS_EXPR( tmp) = NULL;
+      tmp = FreeTree( tmp);
 
       if ((NODE_TYPE( next_conf) != N_id) && (NODE_TYPE( next_conf) != N_ap)) {
         strcpy( yytext, AP_NAME( conf));
