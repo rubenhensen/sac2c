@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.55  2000/03/02 15:56:00  jhs
+ * Added printing of FUNDEF_ATTRIB at N_fundef.:w
+ *
  * Revision 2.54  2000/03/02 13:08:48  jhs
  * Added some \n.
  *
@@ -27,149 +30,7 @@
  * Removed superfluous variable nametab and replaced it's only usage with
  * mdb_nodetype, already used at other places within this file
  *
- * Revision 2.46  2000/02/11 18:31:27  dkr
- * PrintNode() added
- *
- * Revision 2.45  2000/02/09 12:00:46  dkr
- * function declarations are separated by a n now
- *
- * Revision 2.44  2000/02/09 11:47:57  dkr
- * superfluous \n after the last vardec removed from output
- *
- * Revision 2.43  2000/02/03 15:20:31  jhs
- * Added PrintMT and PrintSt.
- *
- * Revision 2.41  2000/01/31 19:15:29  bs
- * Function WLAAprintAccesse modified.
- * Function TSIprintInfo added.
- *
- * Revision 2.40  2000/01/26 17:29:30  dkr
- * type of traverse-function-table changed.
- *
- * Revision 2.38  1999/11/18 12:52:28  bs
- *  FEATURE_UNKNOWN added.
- *
- * Revision 2.37  1999/11/11 18:26:03  dkr
- * PrintNgenerator is now called by Trav only :))
- *
- * Revision 2.36  1999/10/28 19:58:45  sbs
- * ARRAY_FLAT changed to PRINT_CAR
- * PRINT_WLAA added.
- *
- * Revision 2.35  1999/10/28 17:09:12  dkr
- * output of use/def/mrd masks changed
- *
- * Revision 2.34  1999/10/28 09:43:42  sbs
- * printing of RC made optional via DBUG_FLAG "PRINT_RC" and
- * "PRINT_NRC".
- *
- * Revision 2.33  1999/10/19 08:09:11  dkr
- * comment corrected
- *
- * Revision 2.32  1999/09/20 11:37:12  jhs
- * Added USE/DEFVARS to do-loop.
- *
- * Revision 2.31  1999/09/10 14:26:03  jhs
- * Added printing of NAIVE_VARS of loops and conds.
- *
- * Revision 2.30  1999/09/01 17:10:03  jhs
- * SYNC_SCHEDULING
- *
- * Revision 2.29  1999/08/27 11:09:40  jhs
- * Delete the long message for different refcounters, instead only "**"
- * will be printed (keep in mind, naive-refcounters are done one
- * variables that will normally not be refcounted, e.g. scalars).
- *
- * Revision 2.28  1999/08/25 15:26:41  bs
- * Bug fixed in PrintNcode.
- *
- * Revision 2.27  1999/08/04 14:30:39  bs
- * WLAAprintAccesses modified, using new access macros now.
- *
- * Revision 2.26  1999/07/28 10:41:51  bs
- * Function WLAAprintAccesses modified.
- *
- * Revision 2.25  1999/07/08 16:00:52  bs
- * Bug fixed in WLAAprintAccesses.
- *
- * Revision 2.24  1999/07/07 05:57:44  sbs
- * adjust the function for printing Vinfo-Nodes for the new Dollar separated chains
- *
- * Revision 2.23  1999/06/15 12:32:14  jhs
- * Added code to print out the naive refcounters, when the normal refcounters
- * are printed. The naive one is introduced by "::" in front, an error message is
- * printed as comment, when refcounters are NOT optimized and normal and naive
- * refcounters differ.
- *
- * Revision 2.22  1999/06/08 08:32:42  cg
- * The print phase now always carries an N_info node with it in order
- * to distinguish between different layouts. The distinction between
- * arg_info ==NULL and arg_info !=NULL is no longer used.
- *
- * Revision 2.21  1999/06/03 08:45:00  cg
- * Added correct printing of wlcomp pragmas.
- *
- * Revision 2.20  1999/05/27 08:50:04  cg
- * global variable show_icm made obsolete and removed.
- *
- * Revision 2.19  1999/05/12 15:29:35  jhs
- * DbugPrintArray dbugged.
- *
- * Revision 2.18  1999/05/12 08:51:52  jhs
- * Changed attribute names to access constatnt vectors.
- *
- * Revision 2.17  1999/05/11 08:57:43  sbs
- * PRINT_LINE_PRAGMA_IN_SIB added. It allows for identifying errorneous
- * code from modules that is imported via the sib!.
- *
- * Revision 2.16  1999/05/10 15:52:30  bs
- * Bug fixed in WLAAprintAccesses
- *
- * Revision 2.15  1999/05/10 13:24:36  bs
- * WLAA infos will be printed if compilation breaks after phase 15 (sacopt).
- *
- * Revision 2.14  1999/05/10 12:02:28  bs
- * WLAA printfunction(s) modified.
- *
- * Revision 2.13  1999/05/05 12:20:31  jhs
- * PrintNGenerators enhanced, with ORIG_GENERATORS it is possible to
- * see the original operators of any generator. These values are not
- * modified by flatten or elsewhere.
- *
- * Revision 2.12  1999/04/19 17:08:56  jhs
- * DbugPrintArray now fit for empty arrays.
- *
- * Revision 2.11  1999/04/15 15:00:56  cg
- * ICMs are no longer printed with ';' behind. This was a bug.
- *
- * Revision 2.10  1999/04/14 09:24:31  cg
- * ICMs are now printed with a following ';'
- *
- * Revision 2.9  1999/04/13 14:02:27  cg
- * added printing of #pragma cachesim.
- *
- * Revision 2.8  1999/04/12 17:58:43  bs
- * PrintNpart and PrintNcode modified: now there is a possibility to print
- * TSI informations using the dbug flag 'TSI_INFO'
- *
- * Revision 2.7  1999/04/08 17:18:05  jhs
- * Handling for empty arrays added.
- *
- * Revision 2.6  1999/03/17 22:22:22  bs
- * DbugPrintArray modified. Printing of character- and boolean arrays possible.
- *
- * Revision 2.5  1999/03/17 15:37:09  bs
- * DbugPrintArray modified.
- *
- * Revision 2.4  1999/03/15 15:57:29  sbs
- * braces for if's inserted which might cause ambiguities.
- *
- * Revision 2.3  1999/03/15 14:19:19  bs
- * Access macros renamed (take a look at tree_basic.h).
- *
- * Revision 2.2  1999/03/09 11:21:23  bs
- * Debugging-information in PrintArray and PrintId added. Using the debug flag
- * "ARRAY_FLAT" the compact form of integer vectors will be printed.
+ * [...]
  *
  * Revision 2.1  1999/02/23 12:40:24  sacbase
  * new release made
@@ -177,35 +38,6 @@
  * Revision 1.261  1999/02/15 15:11:50  cg
  * Defines with function name before each function definition
  * moved into ND_FUNDEC ICM.
- *
- * Revision 1.260  1999/02/10 10:00:20  srs
- * bugfix in PrintAssign()
- *
- * Revision 1.259  1999/02/10 09:19:41  srs
- * added DBUG output for WLI
- *
- * Revision 1.258  1999/02/10 08:44:22  cg
- * bug fixed in PrintModul(), added some useful comments.
- *
- * Revision 1.257  1999/02/09 17:27:57  dkr
- * fixed a bug in PrintModul:
- *   no printf-comands on closed files ... :^)
- *
- * Revision 1.255  1999/02/04 17:23:37  srs
- * added check if arg_info is not NULL.
- *
- * Revision 1.254  1999/01/07 14:00:18  sbs
- * MRD list printing inserted.
- *
- * Revision 1.253  1998/12/21 10:52:25  sbs
- * MRD lists now can be printed by using #d,MRD,MASK !
- *
- * Revision 1.252  1998/12/03 09:21:31  sbs
- * ftoi, ftod, and friends eliminated
- *
- * Revision 1.251  1998/10/30 09:51:32  cg
- * primtive functions min and max or no longer printed
- * in infix notation.
  *
  * ... [eliminated] ...
  *
@@ -1208,7 +1040,9 @@ PrintFundef (node *arg_node, node *arg_info)
                 }
 
                 fprintf (outfile, ";\n");
-
+                DBUG_EXECUTE ("PRINT_FUNATR",
+                              fprintf (outfile, "/* ATTRIB = %s */\n",
+                                       mdb_statustype[FUNDEF_ATTRIB (arg_node)]););
                 if (FUNDEF_PRAGMA (arg_node) != NULL) {
                     Trav (FUNDEF_PRAGMA (arg_node), arg_info);
                 }
@@ -1249,6 +1083,9 @@ PrintFundef (node *arg_node, node *arg_info)
             }
 
             fprintf (outfile, "\n");
+            DBUG_EXECUTE ("PRINT_FUNATR",
+                          fprintf (outfile, "/* ATTRIB = %s */\n",
+                                   mdb_statustype[FUNDEF_ATTRIB (arg_node)]););
             Trav (FUNDEF_BODY (arg_node), arg_info); /* traverse function body */
 
             if (FUNDEF_PRAGMA (arg_node) != NULL) {
@@ -2168,8 +2005,9 @@ PrintMT (node *arg_node, node *arg_info)
     indent--;
 
     INDENT
-    fprintf (outfile, "\n/*** end of mt region ***/\n");
-    /* PrintAssign already prints \n */
+    fprintf (outfile, "\n");
+    INDENT
+    fprintf (outfile, "/*** end of mt region ***/\n");
 
     DBUG_RETURN (arg_node);
 }
@@ -2189,8 +2027,9 @@ PrintST (node *arg_node, node *arg_info)
     indent--;
 
     INDENT
-    fprintf (outfile, "\n/*** end of st region ***/");
-    /* PrintAssign already prints \n */
+    fprintf (outfile, "\n");
+    INDENT
+    fprintf (outfile, "/*** end of st region ***/\n");
 
     DBUG_RETURN (arg_node);
 }
