@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2000/12/14 17:48:13  dkr
+ * internal flag 'dkr' replaced by 'xxx'
+ *
  * Revision 3.5  2000/12/12 12:15:57  dkr
  * internal flag 'dkr' added
  *
@@ -705,7 +708,7 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK_END ();
     });
 
-    ARGS_FLAG ("dkr", dkr = 1);
+    ARGS_FLAG ("xxx", dkr = 1);
 
     ARGS_FLAG ("sbs", sbs = 1);
 
