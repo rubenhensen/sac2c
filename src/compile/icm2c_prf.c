@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2003/09/22 11:59:21  dkr
+ * _take_SxV_, _drop_SxV_ can handle negative 1st arguments as well now
+ *
  * Revision 1.2  2003/09/20 14:38:28  dkr
  * C-ICMs for F_take_SxV, F_drop_SxV, F_cat_VxV added
  *
@@ -1180,11 +1183,11 @@ ICMCompileND_PRF_TAKE__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
                      , fprintf (outfile, "2nd argument of F_take_SxV is not a vector!"););
 
     shp = (char **)Malloc (sizeof (char *));
-    shp[0] = (char *)Malloc ((strlen (cnt_ANY) + 20) * sizeof (char));
+    shp[0] = (char *)Malloc ((strlen (cnt_ANY) + 30) * sizeof (char));
     if (cnt_ANY[0] == '(') {
-        sprintf (shp[0], "SAC_ND_A_FIELD( %s)", cnt_ANY);
+        sprintf (shp[0], "SAC_ABS( SAC_ND_A_FIELD( %s))", cnt_ANY);
     } else {
-        sprintf (shp[0], "%s", cnt_ANY);
+        sprintf (shp[0], "SAC_ABS( %s)", cnt_ANY);
     }
     ICMCompileND_SET__SHAPE (to_NT, 1, shp);
     shp[0] = Free (shp[0]);
@@ -1230,18 +1233,29 @@ ICMCompileND_PRF_TAKE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_s
              " (\"ND_PRF_TAKE__DATA( %s, %d, %s, %d, %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
 
-    ASSURE_TYPE_ASS (ReadScalar (cnt_ANY, NULL, 0); fprintf (outfile, " >= 0");
-                     , fprintf (outfile, "1st argument of F_take_SxV is out of range!"););
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SIZE( %s) >= ", from_NT);
-                     ReadScalar (cnt_ANY, NULL, 0);
-                     , fprintf (outfile, "1st argument of F_take_SxV is out of range!"););
+    BLOCK_VARDECS (fprintf (outfile, "int SAC_cnt, SAC_off;");, INDENT;
+                   fprintf (outfile, "SAC_cnt = "); ReadScalar (cnt_ANY, NULL, 0);
+                   fprintf (outfile, ";\n");
 
-    FOR_LOOP_INC_VARDEC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
-                         , ReadScalar (cnt_ANY, NULL, 0);, INDENT;
-                         fprintf (outfile,
-                                  "SAC_ND_WRITE( %s, SAC_i) = "
-                                  "SAC_ND_READ( %s, SAC_i);\n",
-                                  to_NT, from_NT););
+                   COND2 (fprintf (outfile, "("); ReadScalar (cnt_ANY, NULL, 0);
+                          fprintf (outfile, " < 0)");, INDENT;
+                          fprintf (outfile, "SAC_cnt = - SAC_cnt;\n"); INDENT;
+                          fprintf (outfile, "SAC_off = SAC_ND_SIZE( %s) - SAC_cnt;\n",
+                                   from_NT);
+                          , INDENT; fprintf (outfile, "SAC_off = 0;\n"););
+
+                   ASSURE_TYPE_ASS (fprintf (outfile, "SAC_cnt <= SAC_ND_SIZE( %s)",
+                                             from_NT);
+                                    , fprintf (outfile, "1st argument of F_take_SxV is "
+                                                        "out of range!"););
+
+                   FOR_LOOP_INC_VARDEC (fprintf (outfile, "SAC_i");
+                                        , fprintf (outfile, "0");
+                                        , fprintf (outfile, "SAC_cnt");, INDENT;
+                                        fprintf (outfile,
+                                                 "SAC_ND_WRITE( %s, SAC_i) = "
+                                                 "SAC_ND_READ( %s, SAC_off + SAC_i);\n",
+                                                 to_NT, from_NT);););
 
     DBUG_VOID_RETURN;
 }
@@ -1295,11 +1309,12 @@ ICMCompileND_PRF_DROP__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
                      , fprintf (outfile, "2nd argument of F_drop_SxV is not a vector!"););
 
     shp = (char **)Malloc (sizeof (char *));
-    shp[0] = (char *)Malloc ((strlen (from_NT) + strlen (cnt_ANY) + 40) * sizeof (char));
+    shp[0] = (char *)Malloc ((strlen (from_NT) + strlen (cnt_ANY) + 50) * sizeof (char));
     if (cnt_ANY[0] == '(') {
-        sprintf (shp[0], "SAC_ND_A_SIZE( %s) - SAC_ND_A_FIELD( %s)", from_NT, cnt_ANY);
+        sprintf (shp[0], "SAC_ND_A_SIZE( %s) - SAC_ABS( SAC_ND_A_FIELD( %s))", from_NT,
+                 cnt_ANY);
     } else {
-        sprintf (shp[0], "SAC_ND_A_SIZE( %s) - %s", from_NT, cnt_ANY);
+        sprintf (shp[0], "SAC_ND_A_SIZE( %s) - SAC_ABS( %s)", from_NT, cnt_ANY);
     }
     ICMCompileND_SET__SHAPE (to_NT, 1, shp);
     shp[0] = Free (shp[0]);
@@ -1345,19 +1360,30 @@ ICMCompileND_PRF_DROP__DATA (char *to_NT, int to_sdim, char *from_NT, int from_s
              " (\"ND_PRF_DROP__DATA( %s, %d, %s, %d, %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
 
-    ASSURE_TYPE_ASS (ReadScalar (cnt_ANY, NULL, 0); fprintf (outfile, " >= 0");
-                     , fprintf (outfile, "1st argument of F_drop_SxV is out of range!"););
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SIZE( %s) >= ", from_NT);
-                     ReadScalar (cnt_ANY, NULL, 0);
-                     , fprintf (outfile, "1st argument of F_drop_SxV is out of range!"););
+    BLOCK_VARDECS (fprintf (outfile, "int SAC_cnt, SAC_off;");, INDENT;
+                   fprintf (outfile, "SAC_off = "); ReadScalar (cnt_ANY, NULL, 0);
+                   fprintf (outfile, ";\n");
 
-    FOR_LOOP_INC_VARDEC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
-                         , fprintf (outfile, "SAC_ND_A_SIZE( %s) - ", from_NT);
-                         ReadScalar (cnt_ANY, NULL, 0);, INDENT;
-                         fprintf (outfile,
-                                  "SAC_ND_WRITE( %s, SAC_i) = SAC_ND_READ( %s, SAC_i + ",
-                                  to_NT, from_NT);
-                         ReadScalar (cnt_ANY, NULL, 0); fprintf (outfile, ");\n"););
+                   COND2 (fprintf (outfile, "("); ReadScalar (cnt_ANY, NULL, 0);
+                          fprintf (outfile, " < 0)");, INDENT;
+                          fprintf (outfile, "SAC_cnt = SAC_ND_SIZE( %s) + SAC_off;\n",
+                                   from_NT);
+                          INDENT; fprintf (outfile, "SAC_off = 0;\n");, INDENT;
+                          fprintf (outfile, "SAC_cnt = SAC_ND_SIZE( %s) - SAC_off;\n",
+                                   from_NT););
+
+                   ASSURE_TYPE_ASS (fprintf (outfile, "SAC_cnt <= SAC_ND_SIZE( %s)",
+                                             from_NT);
+                                    , fprintf (outfile, "1st argument of F_drop_SxV is "
+                                                        "out of range!"););
+
+                   FOR_LOOP_INC_VARDEC (fprintf (outfile, "SAC_i");
+                                        , fprintf (outfile, "0");
+                                        , fprintf (outfile, "SAC_cnt");, INDENT;
+                                        fprintf (outfile,
+                                                 "SAC_ND_WRITE( %s, SAC_i) = "
+                                                 "SAC_ND_READ( %s, SAC_off + SAC_i);\n",
+                                                 to_NT, from_NT);););
 
     DBUG_VOID_RETURN;
 }
