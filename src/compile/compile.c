@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.75  1996/01/25 15:00:00  cg
+ * Revision 1.76  1996/01/26 15:34:29  cg
+ * CompId now inserts the right icms to copy arays and hidden objects
+ * where necessary at the positions of former class conversion functions
+ *
+ * Revision 1.75  1996/01/25  15:00:00  cg
  * renamed some icm macros
  *
  * Revision 1.74  1996/01/23  09:02:25  cg
@@ -509,6 +513,10 @@ int basetype_size[] = {
     CREATE_2_ARY_ICM (next_assign, "ND_INC_RC", array, num_node);                        \
     APPEND_ASSIGNS (first_assign, next_assign)
 
+#define SET_RC_ND(array, num_node) /* create ND_SET_RC */                                \
+    CREATE_2_ARY_ICM (next_assign, "ND_SET_RC", array, num_node);                        \
+    APPEND_ASSIGNS (first_assign, next_assign)
+
 #define CREATE_TMP_CONST_ARRAY(array, rc)                                                \
     array_is_const = 1;                                                                  \
     old_arg_node = arg_node;                                                             \
@@ -704,7 +712,8 @@ AdjustAddedAssigns (node *before, node *after)
 
     while (before != NULL) {
         if (NODE_TYPE (ASSIGN_INSTR (before)) == N_icm) {
-            if ((0 == strcmp (ICM_NAME (ASSIGN_INSTR (before)), "ND_MAKE_UNIQUE_ARRAY"))
+            if ((0
+                 == strcmp (ICM_NAME (ASSIGN_INSTR (before)), "ND_KS_MAKE_UNIQUE_ARRAY"))
                 || (0
                     == strcmp (ICM_NAME (ASSIGN_INSTR (before)),
                                "ND_MAKE_UNIQUE_HIDDEN"))) {
@@ -973,7 +982,7 @@ MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc)
                                          ID_NAME (ICMPARAM_ARG1 (in_icm)),
                                          ID_NAME (ICMPARAM_ARG1 (out_icm))));
 
-                    CREATE_3_ARY_ICM (new_assign, "ND_MAKE_UNIQUE_ARRAY",
+                    CREATE_3_ARY_ICM (new_assign, "ND_KS_MAKE_UNIQUE_ARRAY",
                                       MAKE_IDNODE (ID_NAME (ICMPARAM_ARG1 (in_icm))),
                                       MAKE_IDNODE (
                                         StringCopy (ID_NAME (ICMPARAM_ARG1 (out_icm)))),
@@ -2759,7 +2768,7 @@ CompPrf (node *arg_node, node *arg_info)
                             insert_vardec = 1;
                         if (1 == insert_vardec) {
                             new_vardec = MakeNode (N_vardec);
-                            new_vardec->TYPES = DuplicateTypes (vardec_p->TYPES, 0);
+                            new_vardec->TYPES = DuplicateTypes (vardec_p->TYPES, 1);
                             new_vardec->ID = RenameVar (let_ids->id, 0);
                             new_vardec->node[0] = vardec_p->node[0];
                             vardec_p->node[0] = new_vardec;
@@ -3834,21 +3843,78 @@ CompId (node *arg_node, node *arg_info)
         if (NULL != arg_info) {
             MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
 
-            if (IsArray (VARDEC_TYPE (ID_VARDEC (arg_node)))) {
-                BIN_ICM_REUSE (arg_info->node[1], "ND_KS_ASSIGN_ARRAY", arg_node, res);
-            } else {
-                BIN_ICM_REUSE (arg_info->node[1], "ND_ASSIGN_HIDDEN", arg_node, res);
-            }
+            if (ID_MAKEUNIQUE (arg_node)) {
+                if (ID_REFCNT (arg_node) == 1) {
+                    if (IsArray (VARDEC_TYPE (ID_VARDEC (arg_node)))) {
+                        TRI_ICM_REUSE (arg_info->node[1], "ND_KS_MAKE_UNIQUE_ARRAY",
+                                       arg_node, res,
+                                       MakeNum (BasetypeSize (
+                                         VARDEC_TYPE (ID_VARDEC (arg_node)))));
 
-            SET_VARS_FOR_MORE_ICMS;
-            if (0 == IDS_REFCNT (INFO_LASTIDS (arg_info))) {
-                MAKENODE_NUM (n_node, 1);
-                DEC_RC_FREE_ND (res, n_node);
-            } else if (1 < IDS_REFCNT (INFO_LASTIDS (arg_info))) {
-                MAKENODE_NUM (n_node, IDS_REFCNT (INFO_LASTIDS (arg_info)) - 1);
-                INC_RC_ND (res, n_node);
+                        SET_VARS_FOR_MORE_ICMS;
+                        SET_RC_ND (res, MakeNum (IDS_REFCNT (INFO_LASTIDS (arg_info))));
+                        INSERT_ASSIGN;
+                    } else {
+                        TRI_ICM_REUSE (arg_info->node[1], "ND_NO_RC_MAKE_UNIQUE_HIDDEN",
+                                       arg_node, res,
+                                       MAKE_IDNODE (StringCopy (
+                                         GenericFun (0, VARDEC_TYPE (
+                                                          ID_VARDEC (arg_node))))));
+                    }
+                } else {
+                    if (IsArray (VARDEC_TYPE (ID_VARDEC (arg_node)))) {
+                        TRI_ICM_REUSE (arg_info->node[1], "ND_KS_COPY_ARRAY", arg_node,
+                                       res,
+                                       MakeNum (BasetypeSize (
+                                         VARDEC_TYPE (ID_VARDEC (arg_node)))));
+
+                        SET_VARS_FOR_MORE_ICMS;
+
+                        CREATE_1_ARY_ICM (next_assign, "ND_ALLOC_RC",
+                                          MAKE_IDNODE (StringCopy (ID_NAME (res))));
+                        APPEND_ASSIGNS (first_assign, next_assign);
+
+                        SET_RC_ND (res, MakeNum (IDS_REFCNT (INFO_LASTIDS (arg_info))));
+                        DEC_RC_ND (MAKE_IDNODE (StringCopy (ID_NAME (arg_node))),
+                                   MakeNum (1));
+
+                        INSERT_ASSIGN;
+                    } else {
+                        TRI_ICM_REUSE (arg_info->node[1], "ND_COPY_HIDDEN", arg_node, res,
+                                       MAKE_IDNODE (StringCopy (
+                                         GenericFun (0, VARDEC_TYPE (
+                                                          ID_VARDEC (arg_node))))));
+
+                        SET_VARS_FOR_MORE_ICMS;
+
+                        DEC_RC_ND (MAKE_IDNODE (StringCopy (ID_NAME (arg_node))),
+                                   MakeNum (1));
+
+                        INSERT_ASSIGN;
+                    }
+                }
+            } else {
+                if (IsArray (VARDEC_TYPE (ID_VARDEC (arg_node)))) {
+                    BIN_ICM_REUSE (arg_info->node[1], "ND_KS_ASSIGN_ARRAY", arg_node,
+                                   res);
+                } else {
+                    BIN_ICM_REUSE (arg_info->node[1], "ND_ASSIGN_HIDDEN", arg_node, res);
+                }
+
+                SET_VARS_FOR_MORE_ICMS;
+
+                if (0 == IDS_REFCNT (INFO_LASTIDS (arg_info))) {
+                    MAKENODE_NUM (n_node, 1);
+                    DEC_RC_FREE_ND (res, n_node);
+                } else {
+                    if (1 < IDS_REFCNT (INFO_LASTIDS (arg_info))) {
+                        MAKENODE_NUM (n_node, IDS_REFCNT (INFO_LASTIDS (arg_info)) - 1);
+                        INC_RC_ND (res, n_node);
+                    }
+                }
+
+                INSERT_ASSIGN;
             }
-            INSERT_ASSIGN;
         } else {
             icm_node = MakeNode (N_icm);
             MAKE_ICM_NAME (icm_node, "ND_KS_RET_ARRAY");
@@ -5028,7 +5094,7 @@ CompFundef (node *arg_node, node *arg_info)
 
         if (NULL != arg_info->node[3]) {
             /* compile vardecs */
-            arg_node->node[0]->node[1] = Trav (arg_info->node[3], arg_info);
+            arg_node->node[0]->node[1] = Trav (arg_node->node[0]->node[1], arg_info);
             arg_node->node[0]->nnode = 2;
         }
     }
