@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/04/16 16:06:29  srs
+ * removed INL_TYPES
+ *
  * Revision 1.5  1995/12/21 15:26:46  asi
  * INLblock removed
  *
@@ -23,14 +26,13 @@
 
 #define _Inline_h
 
-#define INL_TYPES arg_info->node[2]
-
 extern node *Inline (node *arg_node, node *arg_info);
 
 extern node *INLmodul (node *arg_node, node *arg_info);
 extern node *INLfundef (node *arg_node, node *arg_info);
 extern node *INLassign (node *arg_node, node *arg_info);
-extern node *INLvar (node *arg_node, node *arg_info);
+extern node *INLarg (node *arg_node, node *arg_info);
+extern node *INLvardec (node *arg_node, node *arg_info);
 
 extern node *SearchDecl (char *name, node *decl_node);
 extern char *RenameInlinedVar (char *old_name);
