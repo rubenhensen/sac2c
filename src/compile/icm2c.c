@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.39  1996/09/09 12:32:05  cg
+ * Revision 1.40  1996/09/11 06:28:20  cg
+ * Modified ICMs FUNDEC and FUNAP in order to support analysis
+ * of command line parameters via standard class CommandLine.
+ *
+ * Revision 1.39  1996/09/09  12:32:05  cg
  * ICMs for global objects modified in order allow construction of header files.
  *
  * Revision 1.38  1996/08/04  14:40:12  sbs
@@ -654,41 +658,47 @@ extern int check_boundary; /* defined in main.c */
 
     INDENT;
     fprintf (outfile, "%s ", rettype);
-    fprintf (outfile, "%s( ", name);
-    ScanArglist (
-      tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]);
-      sep = 1, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
-      sep = 1, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
-      sep = 1, fprintf (outfile, " %s *%s", tyarg[i++], tyarg[i++]);
-      sep = 1, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]);
-      sep = 1,
+    if (strcmp (name, "main") == 0) {
+        fprintf (outfile, "%s( int __argc, char *__argv[])", name);
+    } else if (strcmp (name, "create_Parameters") == 0) {
+        fprintf (outfile, "%s( int __argc, char **__argv)", name);
+    } else {
+        fprintf (outfile, "%s( ", name);
+        ScanArglist (
+          tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]);
+          sep = 1, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
+          sep = 1, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
+          sep = 1, fprintf (outfile, " %s *%s", tyarg[i++], tyarg[i++]);
+          sep = 1, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]);
+          sep = 1,
 
-      if (NULL != (tyarg[i + 1])[0])
-        fprintf (outfile, " ND_KS_DEC_IN_RC(%s, %s)", tyarg[i++], tyarg[i++]);
-      else {
-          fprintf (outfile, "ND_KS_DEC_IMPORT_IN_RC(%s)", tyarg[i++]);
-          i++;
-      };
-      sep = 1,
+          if (NULL != (tyarg[i + 1])[0])
+            fprintf (outfile, " ND_KS_DEC_IN_RC(%s, %s)", tyarg[i++], tyarg[i++]);
+          else {
+              fprintf (outfile, "ND_KS_DEC_IMPORT_IN_RC(%s)", tyarg[i++]);
+              i++;
+          };
+          sep = 1,
 
-      if (NULL != (tyarg[i + 1])[0])
-        fprintf (outfile, " ND_KS_DEC_OUT_RC(%s, %s)", tyarg[i++], tyarg[i++]);
-      else {
-          fprintf (outfile, "ND_KS_DEC_IMPORT_OUT_RC(%s)", tyarg[i++]);
-          i++;
-      };
-      sep = 1,
+          if (NULL != (tyarg[i + 1])[0])
+            fprintf (outfile, " ND_KS_DEC_OUT_RC(%s, %s)", tyarg[i++], tyarg[i++]);
+          else {
+              fprintf (outfile, "ND_KS_DEC_IMPORT_OUT_RC(%s)", tyarg[i++]);
+              i++;
+          };
+          sep = 1,
 
-      if (NULL != (tyarg[i + 1])[0])
-        fprintf (outfile, " ND_KS_DEC_INOUT_RC(%s, %s)", tyarg[i++], tyarg[i++]);
-      else {
-          fprintf (outfile, "ND_KS_DEC_IMPORT_INOUT_RC(%s)", tyarg[i++]);
-          i++;
-      };
-      sep = 1,
+          if (NULL != (tyarg[i + 1])[0])
+            fprintf (outfile, " ND_KS_DEC_INOUT_RC(%s, %s)", tyarg[i++], tyarg[i++]);
+          else {
+              fprintf (outfile, "ND_KS_DEC_IMPORT_INOUT_RC(%s)", tyarg[i++]);
+              i++;
+          };
+          sep = 1,
 
-      ",");
-    fprintf (outfile, ")");
+          ",");
+        fprintf (outfile, ")");
+    }
 
 #undef ND_FUN_DEC
 
@@ -720,17 +730,21 @@ extern int check_boundary; /* defined in main.c */
 INDENT;
 if (0 != strcmp (retname, ""))
     fprintf (outfile, "%s =", retname);
-fprintf (outfile, "%s( ", name);
-ScanArglist (arg, 2 * narg, fprintf (outfile, " %s", arg[i++]);
-             sep = 1, fprintf (outfile, " &%s", arg[i++]);
-             sep = 1, fprintf (outfile, " &%s", arg[i++]);
-             sep = 1, fprintf (outfile, " &%s", arg[i++]);
-             sep = 1, fprintf (outfile, " %s", arg[i++]);
-             sep = 1, fprintf (outfile, " ND_KS_AP_IN_RC(%s)", arg[i++]);
-             sep = 1, fprintf (outfile, " ND_KS_AP_OUT_RC(%s)", arg[i++]);
-             sep = 1, fprintf (outfile, " ND_KS_AP_INOUT_RC(%s)", arg[i++]);
-             sep = 1, ",");
-fprintf (outfile, ");");
+if (strcmp (name, "create_Parameters") == 0) {
+    fprintf (outfile, "%s( __argc, __argv);", name);
+} else {
+    fprintf (outfile, "%s( ", name);
+    ScanArglist (arg, 2 * narg, fprintf (outfile, " %s", arg[i++]);
+                 sep = 1, fprintf (outfile, " &%s", arg[i++]);
+                 sep = 1, fprintf (outfile, " &%s", arg[i++]);
+                 sep = 1, fprintf (outfile, " &%s", arg[i++]);
+                 sep = 1, fprintf (outfile, " %s", arg[i++]);
+                 sep = 1, fprintf (outfile, " ND_KS_AP_IN_RC(%s)", arg[i++]);
+                 sep = 1, fprintf (outfile, " ND_KS_AP_OUT_RC(%s)", arg[i++]);
+                 sep = 1, fprintf (outfile, " ND_KS_AP_INOUT_RC(%s)", arg[i++]);
+                 sep = 1, ",");
+    fprintf (outfile, ");");
+}
 
 #undef ND_FUN_AP
 
