@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2003/05/30 16:58:05  dkr
+ * WrapperCodeIsNeeded() and WrapperCodeIsPossible() added
+ *
  * Revision 1.15  2003/05/30 15:10:13  dkr
  * InsertWrapperCode() modified: wrapper code is build for all
  * non-var-args functions now,
@@ -180,6 +183,61 @@ SplitWrapper (node *fundef)
     DBUG_RETURN (new_fundefs);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn  bool WrapperCodeIsNeeded( node *fundef)
+ *
+ * @brief
+ *
+ * @param
+ * @return
+ *
+ ******************************************************************************/
+
+static bool
+WrapperCodeIsNeeded (node *fundef)
+{
+    bool result;
+
+    DBUG_ENTER ("WrapperCodeIsNeeded");
+
+    /*
+     * for the time being we always create the wrapper code although it
+     * might never actually be used!!
+     */
+    result = TRUE;
+
+    DBUG_RETURN (result);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  bool WrapperCodeIsPossible( node *fundef)
+ *
+ * @brief
+ *
+ * @param
+ * @return
+ *
+ ******************************************************************************/
+
+static bool
+WrapperCodeIsPossible (node *fundef)
+{
+    bool result;
+
+    DBUG_ENTER ("WrapperCodeIsPossible");
+
+    /*
+     * SAC functions with var-args are not allowed
+     *   -> no wrapper functions for C functions with var-args!!
+     */
+    result
+      = (!(HasDotTypes (FUNDEF_TYPES (fundef)) || HasDotArgs (FUNDEF_ARGS (fundef))));
+
+    DBUG_RETURN (result);
+}
+
 /******************************************************************************
  *
  * Function:
@@ -206,11 +264,7 @@ InsertWrapperCode (node *fundef)
                   && (FUNDEF_BODY (fundef) == NULL)),
                  "inconsistant wrapper function found!");
 
-    /*
-     * SAC functions with var-args are not allowed
-     *   -> no wrapper functions for C functions with var-args!!
-     */
-    if (!HasDotTypes (FUNDEF_TYPES (fundef)) && !HasDotArgs (FUNDEF_ARGS (fundef))) {
+    if (WrapperCodeIsNeeded (fundef) && WrapperCodeIsPossible (fundef)) {
         /*
          * generate wrapper code together with the needed vardecs
          */
@@ -392,12 +446,11 @@ CorrectFundefPointer (node *fundef, char *funname, node *args)
                 fundef = dft_res->deriveable;
             }
             DBUG_PRINT ("CWC", ("  dispatched statically", funname));
-        } else if (HasDotTypes (FUNDEF_TYPES (fundef))
-                   || HasDotArgs (FUNDEF_ARGS (fundef))) {
+        } else if (!WrapperCodeIsPossible (fundef)) {
             /*
-             * static dispatch impossible, but function header contains dots
-             *   -> no wrapper function could be created
-             * if only a single instance available do the dispatch statically and
+             * static dispatch impossible,
+             *    but no wrapper function could be created either!!
+             * if only a single instance is available, do the dispatch statically and
              * give a warning message, otherwise we are stuck here!
              */
             if ((dft_res->num_partials + dft_res->num_deriveable_partials == 1)
