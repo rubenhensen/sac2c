@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.125  2002/10/18 13:32:50  sbs
+ * accesses to ID_ATTRIB replaced by FLAGS.
+ * Function PrintFlag added
+ *
  * Revision 3.124  2002/10/10 23:50:56  dkr
  * ICM_STR added
  *
@@ -664,6 +668,30 @@ TSIprintInfo (node *arg_node, node *arg_info)
 }
 
 #endif /* ! DBUG_OFF */
+
+/******************************************************************************
+ *
+ * Function:
+ *   void PrintFlag( char *flag, bool do_it)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static void
+PrintFlag (char *flag, bool do_it)
+{
+    DBUG_ENTER ("PrintFlag");
+
+    DBUG_EXECUTE ("PRINT_FLAGS", do_it = TRUE;);
+
+    if (do_it) {
+        fprintf (outfile, ": %s", flag);
+    }
+
+    DBUG_VOID_RETURN;
+}
 
 /******************************************************************************
  *
@@ -2464,7 +2492,7 @@ PrintId (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintId");
 
-    if ((ID_ATTRIB (arg_node) == ST_global) && (ID_MOD (arg_node) != NULL)) {
+    if (ID_MOD (arg_node) != NULL) {
         fprintf (outfile, "%s:", ID_MOD (arg_node));
     }
 
@@ -2476,7 +2504,9 @@ PrintId (node *arg_node, node *arg_info)
                ? ID_NT_TAG (arg_node)
                : ID_NAME (arg_node));
 
-    PrintStatus (ID_ATTRIB (arg_node), FALSE);
+    PrintFlag (FLAG2STRING (ID, arg_node, IS_GLOBAL), FALSE);
+    PrintFlag (FLAG2STRING (ID, arg_node, IS_REFERENCE), FALSE);
+    PrintFlag (FLAG2STRING (ID, arg_node, IS_READ_ONLY), FALSE);
     PrintStatus (ID_STATUS (arg_node), FALSE);
 
     PrintRC (ID_REFCNT (arg_node), ID_NAIVE_REFCNT (arg_node), show_refcnt);
@@ -4786,6 +4816,8 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             DoPrintTypesAST (FUNDEF_TYPES (arg_node), TRUE, TRUE);
             fprintf (outfile, " ");
 
+            PRINT_STRING (outfile, FUNDEF_MOD (arg_node));
+            fprintf (outfile, ":");
             PRINT_STRING (outfile, FUNDEF_NAME (arg_node));
 
             PrintStatus (FUNDEF_ATTRIB (arg_node), TRUE);
@@ -4992,7 +5024,9 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             PRINT_STRING (outfile, ID_NAME (arg_node));
 
-            PrintStatus (ID_ATTRIB (arg_node), TRUE);
+            PrintFlag (FLAG2STRING (ID, arg_node, IS_GLOBAL), TRUE);
+            PrintFlag (FLAG2STRING (ID, arg_node, IS_REFERENCE), TRUE);
+            PrintFlag (FLAG2STRING (ID, arg_node, IS_READ_ONLY), TRUE);
             PrintStatus (ID_STATUS (arg_node), TRUE);
 
             PrintRC (ID_REFCNT (arg_node), ID_NAIVE_REFCNT (arg_node), TRUE);
