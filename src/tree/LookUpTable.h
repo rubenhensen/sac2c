@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/08/13 13:21:49  dkr
+ * - !!!! string support modified !!!!
+ *   Now, only the compare-data is a string, the associated-data is always
+ *   a (void*) pointer!
+ * - functions ApplyToEach_?() added.
+ *
  * Revision 3.7  2001/05/18 11:39:45  dkr
  * function IsEmptyLUT added
  *
@@ -40,29 +46,56 @@
  */
 
 /*
+ *
  *  Look-Up-Table (LUT) for Pointers and Strings
  *  --------------------------------------------
  *
- *  Each entry of a LUT can hold a pair [old, new] of pointers (void*) or
- *  strings (char*).
+ *  Each entry of a LUT can hold a pair [old, new] where 'old' is either a
+ *  pointer (void*) or a string (char*) and 'new' is always a pointer (void*).
  *
- *  To insert a pair of pointers or strings into the LUT use the function
- *  InsertIntoLUT_P()  or  InsertIntoLUT_S()  respectively.
+ *  To insert a pair [old, new] into the LUT where 'old' represents a pointer
+ *  or a string, use the function  InsertIntoLUT_P( lut, old, new)  or
+ *  InsertIntoLUT_S( lut, old, new)  respectively.
+ *  Note here, that  InsertIntoLUT_?()  should only be used if the compare-data
+ *  'old' is not present in the LUT yet!!!
+ *
+ *  The function  UpdateLUT_?( lut, old, new, &act_new)  checks whether there
+ *  is already a pair [old, act_new] in the LUT. If so, 'act_new' is replaced
+ *  by 'new', otherwise  InsertIntoLUT_?()  is called to insert the pair into
+ *  the LUT.
  *
  *  The function  SearchInLUT_?( lut, old)  searches the LUT for an entry
- *  [old, new]. If the LUT contains such an entry the associated data
- *  'new' is returned. Otherwise the return value equals 'old'.
+ *  [old, new]. If the LUT contains such an entry, a pointer to the associated
+ *  data 'new' is returned. Otherwise the return value equals NULL.
  *  SearchInLUT_P()  searches for a pointer (pointer compare),
  *  SearchInLUT_S()  searches for a string (string compare).
  *
+ *  If both values of the pairs [old, new] have the same type (both strings or
+ *  both pointers), you may want to use the function  SearchInLUT_SS( lut, old)
+ *  or  SearchInLUT_PP( lut, old)  instead.
+ *  If the LUT contains an entry [old, new] the associated data 'new' itself
+ *  is returned (not a pointer to it). Otherwise the return value equals 'old'
+ *  (not NULL).
+ *  SearchInLUT_PP()  searches for a pointer (pointer compare) and expects
+ *                    to find a pointer,
+ *  SearchInLUT_SS()  searches for a string (string compare) and expects
+ *                    to find a string.
+ *
  *  *** CAUTION ***
- *  - InsertIntoLUT_S() copies the strings before inserting them into the LUT.
- *  - RemoveLUT() removes all the stored strings from heap memory.
- *  - SearchInLUT_S() returns a pointer to the argument string (if no string
- *    entry of the same name is found in the LUT) or a *pointer* to the found
- *    look-up string. In the latter case the returned pointer will be undefined
- *    if RemoveLUT() has been called.
- *    Therefore you should not forget to use StringCopy() here ... :-/
+ *  - InsertIntoLUT_S()  copies the compare-string ('old') before inserting
+ *    it into the LUT. But the associated data is never copied!!
+ *    If the associated data is also a string, you may want to duplicate it
+ *    with  StringCopy()  first.
+ *  - InsertIntoLUT_?()  does *not* check for consistency! Thus, it is possible
+ *    to put pairs [a,b] and [a,c] into the LUT. When looking-up 'a' now, the
+ *    return value might be 'b' or 'c' --- depending on the concrete
+ *    implementation of this library :-((
+ *    Therefore, it may be better to use the function  UpdateLUT_?()  instead!!!
+ *  - RemoveLUT()  removes all the stored compare-strings from heap memory.
+ *  - SearchInLUT_?()  returns a *pointer* to the found associated data. Thus,
+ *    the returned pointer will be undefined if RemoveLUT() has been called.
+ *    Therefore you should not forget to duplicate the data first ... :-/
+ *
  */
 
 #ifndef _sac_LookUpTable_h_
@@ -79,13 +112,19 @@ extern bool IsEmptyLUT (LUT_t lut);
 
 extern void PrintLUT (FILE *handle, LUT_t lut);
 
-extern void *SearchInLUT_P (LUT_t lut, void *old_item);
-extern void *SearchInLUT_S (LUT_t lut, char *old_item);
+extern void **SearchInLUT_P (LUT_t lut, void *old_item);
+extern void **SearchInLUT_S (LUT_t lut, char *old_item);
+
+extern void *SearchInLUT_PP (LUT_t lut, void *old_item);
+extern char *SearchInLUT_SS (LUT_t lut, char *old_item);
 
 extern LUT_t InsertIntoLUT_P (LUT_t lut, void *old_item, void *new_item);
-extern LUT_t InsertIntoLUT_S (LUT_t lut, char *old_item, char *new_item);
+extern LUT_t InsertIntoLUT_S (LUT_t lut, char *old_item, void *new_item);
 
 extern LUT_t UpdateLUT_P (LUT_t lut, void *old_item, void *new_item, void **found_item);
-extern LUT_t UpdateLUT_S (LUT_t lut, char *old_item, char *new_item, char **found_item);
+extern LUT_t UpdateLUT_S (LUT_t lut, char *old_item, void *new_item, void **found_item);
+
+extern LUT_t ApplyToEach_S (LUT_t lut, void *(*fun) (void *));
+extern LUT_t ApplyToEach_P (LUT_t lut, void *(*fun) (void *));
 
 #endif /* _sac_LookUpTable_h_ */
