@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.46  1999/02/11 09:18:45  bs
+ * contextflag CT_array added.
+ *
  * Revision 1.45  1999/02/06 12:50:45  srs
  * expanded type NODELIST
  *
@@ -305,7 +308,7 @@ typedef enum {
     F_sib
 } file_type;
 
-typedef enum { CT_normal, CT_ap, CT_return, CT_wl } contextflag;
+typedef enum { CT_normal, CT_ap, CT_array, CT_return, CT_wl } contextflag;
 
 typedef enum { ACL_irregular, ACL_unknown, ACL_offset, ACL_const } accessclass_t;
 
