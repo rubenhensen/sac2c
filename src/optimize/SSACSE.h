@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/03/07 15:58:35  nmw
+ * SSA Common Subexpression Elimination implemented
+ *
  * Revision 1.1  2001/03/05 16:02:25  nmw
  * Initial revision
  *
@@ -41,8 +44,4 @@ extern node *SSACSENcode (node *arg_node, node *arg_info);
 extern node *SSACSEwhile (node *arg_node, node *arg_info);
 extern node *SSACSEdo (node *arg_node, node *arg_info);
 
-/* travesal functions for a tree compare */
-/*extern node *CSECMPid     (node *arg_node, node *arg_info);
-extern node *CSECMPap     (node *arg_node, node *arg_info);
-extern node *CSECMP*/
 #endif /* SAC_SSACSE_H */
