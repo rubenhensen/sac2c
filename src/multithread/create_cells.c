@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/07/28 23:37:23  skt
+ * improved the handling of the indexvectors
+ *
  * Revision 1.3  2004/07/28 22:45:22  skt
  * changed CRECEAddIv into CRECEHandleIv,
  * implementation changed & tested
@@ -197,6 +200,8 @@ CRECEHandleIv (node *withloop, node *arg_info)
         executionmode = ASSIGN_EXECMODE (AVIS_SSAASSIGN (IDS_AVIS (iterator)));
         DBUG_ASSERT ((executionmode == MUTH_ANY) || (executionmode == MUTH_MULTI),
                      "Executionmode of iv-alloc must be MUTH_ANY or MUTH_MULTI");
+        ASSIGN_EXECMODE (AVIS_SSAASSIGN (IDS_AVIS (iterator))) = MUTH_MULTI;
+
         AVIS_SSAASSIGN (IDS_AVIS (iterator))
           = MUTHInsertMT (AVIS_SSAASSIGN (IDS_AVIS (iterator)), arg_info);
         iterator = IDS_NEXT (iterator);
