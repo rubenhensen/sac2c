@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.5  1995/02/02 14:59:05  hw
+# Revision 1.6  1995/03/17 15:50:48  hw
+# make deps done
+#
+# Revision 1.5  1995/02/02  14:59:05  hw
 # added rule prim_fun.o
 # make deps done
 #
@@ -50,4 +53,4 @@ typecheck.o: ../global/type_info.mac ../global/node_info.mac
 typecheck.o: ../global/prf_node_info.mac ../global/my_debug.h
 typecheck.o: ../../inc/dbug.h /usr/include/stdio.h ../global/traverse.h
 typecheck.o: typecheck.h ../global/Error.h ../print/convert.h
-typecheck.o: ../modules/import.h prim_fun.h prim_fun_tt.mac
+typecheck.o: ../modules/import.h prim_fun.h ../global/free.h prim_fun_tt.mac
