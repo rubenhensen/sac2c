@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2003/03/20 13:54:32  sbs
+ * config.h included;  MUST_INIT_YY used.
+ *
  * Revision 3.20  2003/03/18 16:30:34  sah
  * added new prf cat_VxV, take_SxV, drop_SxV
  *
@@ -82,6 +85,7 @@
 
 #include <stdlib.h>
 
+#include "config.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -119,7 +123,7 @@ int charpos = 0;
 %%
 %{
 
-#ifdef SAC_FOR_SOLARIS_SPARC
+#ifdef MUST_INIT_YY
 /* the next two lines are a very dirty hack for avoiding a gcc-warning 8-(( */
   yy_cp = NULL;
   yy_bp = NULL;
