@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.31  2000/05/26 14:22:11  sbs
+ * AP, TSI, WLAA added
+ *
  * Revision 2.30  2000/05/25 23:03:19  dkr
  * usage(): fold-inline-bug removed from BUGS section :-))
  *
@@ -242,6 +245,9 @@ usage ()
             "\t -b15:cyc<N>:lus   stop after loop unswitching ...\n"
             "\t -b15:cyc<N>:lir   stop after loop invariant removal ...\n"
             "\t                     ... in cycle <N>\n"
+            "\t -b15:wlaa         stop after with loop array access inference\n"
+            "\t -b15:ap           stop after array padding\n"
+            "\t -b15:tsi          stop after tile size inference\n"
             "\n"
             "\t -b18:conv         stop after converting\n"
             "\t -b18:cubes        stop after cube-building\n"
@@ -303,6 +309,7 @@ usage ()
             "\t\tAE  \tarray elimination\n"
             "\t\tRCO \trefcount optimization\n"
             "\t\tUIP \tupdate-in-place\n"
+            "\t\tAP  \tarray padding\n"
             "\t\tTSI \ttile size inference (blocking)\n"
             "\t\tTSP \ttile size pragmas (blocking)\n"
             "\t\tMTO \tmulti-thread optimization\n"
