@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  1997/09/05 17:47:41  dkr
+ * added the function DupShpSeg
+ *
  * Revision 1.23  1997/04/30 11:50:21  cg
  * *** empty log message ***
  *
@@ -308,6 +311,19 @@ DupTypes (node *arg_node, node *arg_info)
         new_node->node[i] = Trav (arg_node->node[i], arg_info);
     }
     DBUG_RETURN (new_node);
+}
+
+shpseg *
+DupShpSeg (shpseg *shp_seg)
+{
+    int i;
+    shpseg *new_shpseg;
+
+    DBUG_ENTER ("DupShpSeg");
+    new_shpseg = MakeShpseg (NULL);
+    for (i = 0; i < SHP_SEG_SIZE; i++)
+        SHPSEG_SHAPE (new_shpseg, i) = SHPSEG_SHAPE (shp_seg, i);
+    DBUG_RETURN (new_shpseg);
 }
 
 node *
