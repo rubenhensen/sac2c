@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.174  2004/08/05 11:09:24  sah
+ * the N_Nxxx nodes are now called N_nxxx, until the leading
+ * n will be completly removed.
+ *
  * Revision 3.173  2004/08/01 13:18:11  ktr
  * added call to MMVwlsegx
  *
@@ -2259,7 +2263,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    * Here is the node information for the NEW withloop.
    */
 
-  NIF (N_Nwith, "N_Nwith", TravSons, FltnNwith, PrintNwith, TravSons, GNMwith, TravSons,
+  NIF (N_nwith, "N_nwith", TravSons, FltnNwith, PrintNwith, TravSons, GNMwith, TravSons,
        TravSons, FreeNWith, TravSons, RCNwith, EMRCNwith, TravSons, DupNwith, TravSons,
        TravSons, TravSons, IdxNwith, TravSons, TravSons, AENwith,
 
@@ -2287,7 +2291,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
-  NIF (N_Npart, "N_Npart", TravSons, FltnNpart, PrintNpart, TravSons, TravSons, TravSons,
+  NIF (N_npart, "N_npart", TravSons, FltnNpart, PrintNpart, TravSons, TravSons, TravSons,
        TravSons, FreeNPart, TravSons, RCNpart, TravSons, TravSons, DupNpart, TravSons,
        TravSons, TravSons, IdxNpart, TravSons, TravSons, TravSons,
 
@@ -2315,7 +2319,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
-  NIF (N_Nwithid, "N_Nwithid", TravSons, FltnNwithid, PrintNwithid, TravSons, TravSons,
+  NIF (N_nwithid, "N_nwithid", TravSons, FltnNwithid, PrintNwithid, TravSons, TravSons,
        TravSons, TravSons, FreeNWithID, TravSons, RCNwithid, EMRCNwithid, TravSons,
        DupNwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -2343,7 +2347,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
-  NIF (N_Ngenerator, "N_Ngenerator", TravSons, FltnNgenerator, PrintNgenerator, TravSons,
+  NIF (N_ngenerator, "N_ngenerator", TravSons, FltnNgenerator, PrintNgenerator, TravSons,
        TravSons, TravSons, TravSons, FreeNGenerator, TravSons, RCNgen, TravSons, TravSons,
        DupNgen, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -2371,7 +2375,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 4),
 
-  NIF (N_Nwithop, "N_Nwithop", TravSons, FltnNwithop, PrintNwithop, TravSons, TravSons,
+  NIF (N_nwithop, "N_nwithop", TravSons, FltnNwithop, PrintNwithop, TravSons, TravSons,
        TravSons, TravSons, FreeNWithOp, TravSons, RCNwithop, EMRCNwithop, TravSons,
        DupNwithop, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -2399,7 +2403,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 4),
 
-  NIF (N_Ncode, "N_Ncode", TravSons, FltnNcode, PrintNcode, TCNcode, TravSons, TravSons,
+  NIF (N_ncode, "N_ncode", TravSons, FltnNcode, PrintNcode, TCNcode, TravSons, TravSons,
        TravSons, FreeNCode, TravSons, RCNcode, EMRCNcode, TravSons, DupNcode, TravSons,
        TravSons, TravSons, IdxNcode, TravSons, TravSons, TravSons,
 
@@ -2431,7 +2435,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    * here is the node information for the transformed new with-loop
    */
 
-  NIF (N_Nwith2, "N_Nwith2", TravSons, TravSons, PrintNwith2, TravSons, GNMwith2,
+  NIF (N_nwith2, "N_nwith2", TravSons, TravSons, PrintNwith2, TravSons, GNMwith2,
        TravSons, CDFGwith2, FreeNwith2, TravSons, RCNwith, EMRCNwith2, TravSons,
        DupNwith2, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 

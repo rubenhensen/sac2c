@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.206  2004/08/05 11:09:24  sah
+ * the N_Nxxx nodes are now called N_nxxx, until the leading
+ * n will be completly removed.
+ *
  * Revision 3.205  2004/08/02 19:30:43  sah
  * moved MakeStr_Copy to tree_compound
  *
@@ -828,6 +832,17 @@ extern DFMfoldmask_t *CopyDFMfoldmask (DFMfoldmask_t *mask);
 #define DFMFM_VARDEC(n) (n->vardec)
 #define DFMFM_FOLDOP(n) (n->foldop)
 #define DFMFM_NEXT(n) (n->next)
+
+/*
+ * N_N compat macros
+ */
+#define N_Nwith N_nwith
+#define N_Nwith2 N_nwith2
+#define N_Ncode N_ncode
+#define N_Npart N_npart
+#define N_Nwithid N_nwithid
+#define N_Nwithop N_nwithop
+#define N_Ngenerator N_ngenerator
 
 #ifdef NEW_AST
 /*
