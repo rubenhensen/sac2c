@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2002/02/21 12:56:14  dkr
+ * comment corrected
+ *
  * Revision 1.16  2001/05/08 20:12:59  dkr
  * - fixed a bug in inference strategy for while-loops
  * - code re-organized and brushed
@@ -71,8 +74,8 @@
  *
  * description:
  *
- *   This compiler module implements the conversion of conditionals and
- *   loops into their true functional representation.
+ *   This compiler module implements the inference of the data flow masks
+ *   and is used by LAC2Fun, Refcounting, SPMD, ...
  *
  * usage of arg_info (INFO_INFDFMS_...):
  *
