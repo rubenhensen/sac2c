@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.74  1998/07/03 10:14:49  cg
+ * function PRECspmd removed because attribute INOUT_IDS is no longer needed.
+ *
  * Revision 1.73  1998/06/25 08:06:10  cg
  * renaming of spmd-functions simplified
  *
@@ -1570,38 +1573,6 @@ PRECsync (node *arg_node, node *arg_info)
     }
 
     SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PRECspmd(node *arg_node, node *arg_info)
- *
- * description:
- *
- *   Since the scheduling specification may contain the names of local
- *   identifiers, these have to be renamed according to the general renaming
- *   scheme implemented by this compiler phase.
- *
- * remark:
- *
- *   This function will be superfluous as soon as the compilation of an
- *   spmd-block to an MT_SPMD_BLOCK ICM has been improved in the sense that
- *   all memory management operations are made explicit rather than hiding
- *   them behind a monster ICM.
- *
- ******************************************************************************/
-
-node *
-PRECspmd (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PRECspmd");
-
-    SPMD_INOUT_IDS (arg_node) = PrecompileIds (SPMD_INOUT_IDS (arg_node));
-
-    SPMD_REGION (arg_node) = Trav (SPMD_REGION (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.217  1998/07/03 10:14:49  cg
+ * function PRECspmd removed because attribute INOUT_IDS is no longer needed.
+ *
  * Revision 1.216  1998/06/23 12:40:07  cg
  * added function PRECspmd for precompile table
  *
@@ -1000,7 +1003,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
   NIF (N_spmd, "N_spmd", TravSons, TravSons, PrintSpmd, TravSons, TravSons, TravSons,
        TravSons, FreeSpmd, TravSons, TravSons, COMPSpmd, TravSons, DupSpmd, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PRECspmd,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        SPMDLspmd, TravSons, TravSons, TravSons, GSCspmd, TravSons, TravSons, TravSons,
        TravSons, TravSons, 1),
