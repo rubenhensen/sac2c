@@ -2,37 +2,40 @@
 
 
 /*
- *
- * $Log$
- * Revision 1.8  2004/11/09 20:03:06  sah
- * fixed q bug
- *
- * Revision 1.7  2004/11/09 18:16:05  sah
- * noew fundefs and fundecs can be mixed
- *
- * Revision 1.6  2004/11/09 15:22:34  sah
- * aadded missing ;...
- *
- * Revision 1.5  2004/11/08 19:07:05  sah
- * added typedef for pragmalist
- *
- * Revision 1.4  2004/11/07 18:03:59  sah
- * added external functions support
- *
- * Revision 1.3  2004/10/22 13:22:31  sah
- * removed all artificial namespaces
- * added during parsing
- *
- * Revision 1.2  2004/10/17 14:52:30  sah
- * added support for except
- * in interface descriptions
- *
- * Revision 1.1  2004/10/15 15:04:27  sah
- * Initial revision
- *
- *
- *
- */
+*
+* $Log$
+* Revision 1.9  2004/11/11 10:43:39  sah
+* intermediate checkin
+*
+* Revision 1.8  2004/11/09 20:03:06  sah
+* fixed q bug
+*
+* Revision 1.7  2004/11/09 18:16:05  sah
+* noew fundefs and fundecs can be mixed
+*
+* Revision 1.6  2004/11/09 15:22:34  sah
+* aadded missing ;...
+*
+* Revision 1.5  2004/11/08 19:07:05  sah
+* added typedef for pragmalist
+*
+* Revision 1.4  2004/11/07 18:03:59  sah
+* added external functions support
+*
+* Revision 1.3  2004/10/22 13:22:31  sah
+* removed all artificial namespaces
+* added during parsing
+*
+* Revision 1.2  2004/10/17 14:52:30  sah
+* added support for except
+* in interface descriptions
+*
+* Revision 1.1  2004/10/15 15:04:27  sah
+* Initial revision
+*
+*
+*
+*/
 
 
 #include <stdio.h>
@@ -71,9 +74,9 @@ static node *global_wlcomp_aps = NULL;
 static node *store_pragma = NULL;
 
 /*
- * used to distinguish the different kinds of files
- * which are parsed with this single parser
- */
+* used to distinguish the different kinds of files
+* which are parsed with this single parser
+*/
 static file_type file_kind = F_prog;
 
 static int yyerror( char *errname);
@@ -82,75 +85,78 @@ static int yyparse();
 static void CleanUpParser();
 static node *String2Array( char *str);
 static types *Exprs2ShpInfo( types *, node *);
+static ntype *Exprs2NType( ntype *basetype, node *exprs);
 static node *ConstructMop( node *, ids *, node *);
 static node *CheckWlcompConf( node *ap, node *exprs);
 
 static int prf_arity[] = {
-  #define PRF_IF( a, b, c, d, e, f, g, h) f
-  #include "prf_node_info.mac"
-  #undef PRF_IF
+#define PRF_IF( a, b, c, d, e, f, g, h) f
+#include "prf_node_info.mac"
+#undef PRF_IF
 };
 
 %}
 
 %union { nodetype        nodetype;
-         char            *id;
-         ids             *ids;
-         types           *types;
-         node            *node;
-         int             cint;
-         char            cchar;
-         float           cfloat;
-         double          cdbl;
-         nums            *nums;
-         deps            *deps;
-         prf             prf;
-         statustype      statustype;
-         strings         *strings;
-         resource_list_t *resource_list_t;
-         target_list_t   *target_list_t;
-       }
+ char            *id;
+ ids             *ids;
+ types           *types;
+ ntype           *ntype;
+ node            *node;
+ int             cint;
+ char            cchar;
+ float           cfloat;
+ double          cdbl;
+ nums            *nums;
+ deps            *deps;
+ prf             prf;
+ shape           *shape;
+ statustype      statustype;
+ strings         *strings;
+ resource_list_t *resource_list_t;
+ target_list_t   *target_list_t;
+}
 
 %token PARSE_PRG  PARSE_RC
 
 %token BRACE_L  BRACE_R  BRACKET_L  BRACKET_R  SQBR_L  SQBR_R  COLON  SEMIC 
-       COMMA  AMPERS  DOT  QUESTION  ARROW 
-       INLINE  LET  TYPEDEF  OBJDEF  CLASSTYPE 
-       INC  DEC  ADDON  SUBON  MULON  DIVON  MODON 
-       K_MAIN  RETURN  IF  ELSE  DO  WHILE  FOR  NWITH  FOLD 
-       MODULE  IMPORT  EXPORT  PROVIDE  USE  GLOBAL  CLASS  ALL  EXCEPT
-       MODSPEC
-       SC  TRUETOKEN  FALSETOKEN  EXTERN  C_KEYWORD 
-       HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT  READONLY  REFCOUNTING 
-       TOUCH  COPYFUN  FREEFUN  INITFUN  LINKWITH LINKOBJ
-       WLCOMP  CACHESIM  SPECIALIZE 
-       TARGET  STEP  WIDTH  GENARRAY  MODARRAY 
-       LE  LT  GT 
-       STAR  PLUS  MINUS  TILDE  EXCL 
+COMMA  AMPERS  DOT  QUESTION  ARROW 
+INLINE  LET  TYPEDEF  OBJDEF  CLASSTYPE 
+INC  DEC  ADDON  SUBON  MULON  DIVON  MODON 
+K_MAIN  RETURN  IF  ELSE  DO  WHILE  FOR  NWITH  FOLD 
+MODULE  IMPORT  EXPORT  PROVIDE  USE  GLOBAL  CLASS  ALL  EXCEPT
+MODSPEC
+SC  TRUETOKEN  FALSETOKEN  EXTERN  C_KEYWORD 
+HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT  READONLY  REFCOUNTING 
+TOUCH  COPYFUN  FREEFUN  INITFUN  LINKWITH LINKOBJ
+WLCOMP  CACHESIM  SPECIALIZE 
+TARGET  STEP  WIDTH  GENARRAY  MODARRAY 
+LE  LT  GT 
+STAR  PLUS  MINUS  TILDE  EXCL 
 
-       PRF_DIM  PRF_SHAPE  PRF_RESHAPE  PRF_SEL  PRF_GENARRAY  PRF_MODARRAY 
-       PRF_ADD_SxS  PRF_ADD_SxA  PRF_ADD_AxS  PRF_ADD_AxA 
-       PRF_SUB_SxS  PRF_SUB_SxA  PRF_SUB_AxS  PRF_SUB_AxA 
-       PRF_MUL_SxS  PRF_MUL_SxA  PRF_MUL_AxS  PRF_MUL_AxA 
-       PRF_DIV_SxS  PRF_DIV_SxA  PRF_DIV_AxS  PRF_DIV_AxA 
-       PRF_MOD  PRF_MIN  PRF_MAX  PRF_ABS  PRF_NEG 
-       PRF_EQ  PRF_NEQ  PRF_LE  PRF_LT  PRF_GE  PRF_GT 
-       PRF_AND  PRF_OR  PRF_NOT 
-       PRF_TOI_S  PRF_TOI_A  PRF_TOF_S  PRF_TOF_A  PRF_TOD_S  PRF_TOD_A 
-       PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
+PRF_DIM  PRF_SHAPE  PRF_RESHAPE  PRF_SEL  PRF_GENARRAY  PRF_MODARRAY 
+PRF_ADD_SxS  PRF_ADD_SxA  PRF_ADD_AxS  PRF_ADD_AxA 
+PRF_SUB_SxS  PRF_SUB_SxA  PRF_SUB_AxS  PRF_SUB_AxA 
+PRF_MUL_SxS  PRF_MUL_SxA  PRF_MUL_AxS  PRF_MUL_AxA 
+PRF_DIV_SxS  PRF_DIV_SxA  PRF_DIV_AxS  PRF_DIV_AxA 
+PRF_MOD  PRF_MIN  PRF_MAX  PRF_ABS  PRF_NEG 
+PRF_EQ  PRF_NEQ  PRF_LE  PRF_LT  PRF_GE  PRF_GT 
+PRF_AND  PRF_OR  PRF_NOT 
+PRF_TOI_S  PRF_TOI_A  PRF_TOF_S  PRF_TOF_A  PRF_TOD_S  PRF_TOD_A 
+PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 
 %token <id> ID  STR  PRIVATEID  OPTION
 
 %token <types> TYPE_INT  TYPE_FLOAT  TYPE_BOOL  TYPE_UNS  TYPE_SHORT 
-               TYPE_LONG  TYPE_CHAR  TYPE_DBL  TYPE_VOID
+       TYPE_LONG  TYPE_CHAR  TYPE_DBL  TYPE_VOID
 %token <cint> NUM
 %token <cfloat> FLOAT
 %token <cdbl> DOUBLE
 %token <cchar> CHAR
 
 /*******************************************************************************
- * SAC programs
- */
+* SAC programs
+*/
 
 %type <node> prg  defs  def2  def3  def4 def5
 
@@ -162,11 +168,11 @@ static int prf_arity[] = {
 %type <node> fundec fundec2 fundecargs varargs
 %type <node> mainargs  fundefargs  args  arg 
 %type <node> exprblock  exprblock2  assignsOPTret  assigns  assign 
-             let cond optelse  doloop whileloop forloop  assignblock
-             lets
+     let cond optelse  doloop whileloop forloop  assignblock
+     lets
 %type <node> exprs  expr  expr_ap  opt_arguments  expr_ar  expr_sel  with 
-             generator  steps  width  nwithop  withop  wlassignblock  genidx 
-             part  parts
+     generator  steps  width  nwithop  withop  wlassignblock  genidx 
+     part  parts
 %type <prf> genop  foldop  prf
 
 %type <id> id  reservedid  symbolid  string
@@ -174,7 +180,7 @@ static int prf_arity[] = {
 
 %type <types> returntypes  types  type  localtype  simpletype
 %type <types> varreturntypes vartypes
-
+%type <ntype> simplentype userntype basentype ntype
 
 /* pragmas */
 %type <id> pragmacachesim
@@ -217,7 +223,7 @@ static int prf_arity[] = {
 
 
 %right INC DEC STAR PLUS MINUS TILDE EXCL LE LT GT ID PRIVATEID 
-       GENARRAY MODARRAY ALL AMPERS
+GENARRAY MODARRAY ALL AMPERS
 %right BM_OP
 %right MM_OP CAST
 %right SQBR_L BRACKET_L
@@ -236,32 +242,32 @@ static int prf_arity[] = {
 %%
 
 all: file eof { CleanUpParser(); }
-   ;
+;
 
 file: PARSE_PRG  prg       { syntax_tree = $2; }
-    | PARSE_PRG  module    { syntax_tree = $2; }
-    | PARSE_PRG  class     { syntax_tree = $2; }
-    | PARSE_RC   targets   { target_list = RSCAddTargetList( $2, target_list); }
+| PARSE_PRG  module    { syntax_tree = $2; }
+| PARSE_PRG  class     { syntax_tree = $2; }
+| PARSE_RC   targets   { target_list = RSCAddTargetList( $2, target_list); }
 /*  | PARSE_SPEC modspec   { spec_tree = $2; } */
-    ;
+;
 
 eof: { if (commlevel) {
-         ABORT( linenum, ("Unterminated comment found"));
+ ABORT( linenum, ("Unterminated comment found"));
 
 #ifdef MUST_REFERENCE_YYLABELS
-        /*
-         * The follwing command is a veeeeeeery ugly trick to avoid warnings
-         * on the alpha: the YYBACKUP-macro contains jumps to two labels
-         * yyerrlab  and  yynewstate  which are not used otherwise.
-         * Hence, the usage here, which in fact never IS (and never SHOULD)
-         * be carried out, prevents the gcc from complaining about the two
-         * aforementioned labels not to be used!!
-         */
-         YYBACKUP( NUM, yylval);
+/*
+ * The follwing command is a veeeeeeery ugly trick to avoid warnings
+ * on the alpha: the YYBACKUP-macro contains jumps to two labels
+ * yyerrlab  and  yynewstate  which are not used otherwise.
+ * Hence, the usage here, which in fact never IS (and never SHOULD)
+ * be carried out, prevents the gcc from complaining about the two
+ * aforementioned labels not to be used!!
+ */
+ YYBACKUP( NUM, yylval);
 #endif
-       }
-     }
-   ;
+}
+}
+;
 
 
 
@@ -275,61 +281,61 @@ eof: { if (commlevel) {
 
 
 prg: defs
-     { $$ = $1;
-       MODUL_NAME( $$) = mod_name;
-       MODUL_FILETYPE( $$) = F_prog;
-     }
-   ;
+{ $$ = $1;
+MODUL_NAME( $$) = mod_name;
+MODUL_FILETYPE( $$) = F_prog;
+}
+;
 
 defs: interface def2
-      { $$ = $2;
-        MODUL_IMPORTS( $$) = $1;
-      }
-    | def2
-      { $$ = $1; }
-    ;
+{ $$ = $2;
+MODUL_IMPORTS( $$) = $1;
+}
+| def2
+{ $$ = $1; }
+;
 
 def2: typedefs def3
-      { $$ = $2;
-        MODUL_TYPES( $$) = $1;
-      }
-    | def3
-      { $$ = $1; }
-    ;
+{ $$ = $2;
+MODUL_TYPES( $$) = $1;
+}
+| def3
+{ $$ = $1; }
+;
 
 def3: objdefs def4
-      { $$ = $2;
-        MODUL_OBJS( $$) = $1;
-      }
-    | def4
-      { $$ = $1; }
-    ;
+{ $$ = $2;
+MODUL_OBJS( $$) = $1;
+}
+| def4
+{ $$ = $1; }
+;
 
 def4: fundec def4
-      { $$ = $2;
-        MODUL_FUNDECS( $$) = AppendFundef( MODUL_FUNDECS( $$), $1);
-      }
-    | wlcomp_pragma_global main def5
-      { $$ = $3;
-        MODUL_FUNS( $$) = AppendFundef( MODUL_FUNS( $$), $2);
-      } 
-    | wlcomp_pragma_global fundef def4
-      { $$ = $3;
-        MODUL_FUNS( $$) = AppendFundef( MODUL_FUNS( $$), $2);
-      }
-    | def5
-      { $$ = $1;
-      }
-    ;
+{ $$ = $2;
+MODUL_FUNDECS( $$) = AppendFundef( MODUL_FUNDECS( $$), $1);
+}
+| wlcomp_pragma_global main def5
+{ $$ = $3;
+MODUL_FUNS( $$) = AppendFundef( MODUL_FUNS( $$), $2);
+} 
+| wlcomp_pragma_global fundef def4
+{ $$ = $3;
+MODUL_FUNS( $$) = AppendFundef( MODUL_FUNS( $$), $2);
+}
+| def5
+{ $$ = $1;
+}
+;
 
 def5: { $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, NULL, NULL);
 
-        DBUG_PRINT( "PARSE",
-                    ("%s:"F_PTR,
-                     mdb_nodetype[ NODE_TYPE( $$)],
-                     $$));
-      }
-    ;
+DBUG_PRINT( "PARSE",
+	    ("%s:"F_PTR,
+	     mdb_nodetype[ NODE_TYPE( $$)],
+	     $$));
+}
+;
 
 
 /*
@@ -340,92 +346,92 @@ def5: { $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, NULL, NULL);
 *********************************************************************
 */
 interface: import interface
-           { $$ = $1;
-             IMPORT_NEXT($$) = $2;
-           }
-         | import
-           {
-             $$ = $1;
-           }
-         | use interface
-           { $$ = $1;
-             USE_NEXT($$) = $2;
-           }
-         | use
-           { $$ = $1;
-           }
-         | export interface
-           { $$ = $1;
-             EXPORT_NEXT($$) = $2;
-           }
-         | export
-           { $$ = $1;
-           }
-         | provide interface
-           { $$ = $1;
-             PROVIDE_NEXT($$) = $2;
-           }
-         | provide
-           { $$ = $1;
-           }
-         ;
+   { $$ = $1;
+     IMPORT_NEXT($$) = $2;
+   }
+ | import
+   {
+     $$ = $1;
+   }
+ | use interface
+   { $$ = $1;
+     USE_NEXT($$) = $2;
+   }
+ | use
+   { $$ = $1;
+   }
+ | export interface
+   { $$ = $1;
+     EXPORT_NEXT($$) = $2;
+   }
+ | export
+   { $$ = $1;
+   }
+ | provide interface
+   { $$ = $1;
+     PROVIDE_NEXT($$) = $2;
+   }
+ | provide
+   { $$ = $1;
+   }
+ ;
 
 import: IMPORT id COLON ALL SEMIC
-        { $$ = MakeImport( $2, TRUE, NULL, NULL);
-        }
-      | IMPORT id COLON ALL EXCEPT symbolset SEMIC
-        { $$ = MakeImport( $2, TRUE, NULL, $6);
-        }
-      | IMPORT id COLON symbolset SEMIC
-        { $$ = MakeImport( $2, FALSE, NULL, $4);
-        }
-      ;
+{ $$ = MakeImport( $2, TRUE, NULL, NULL);
+}
+| IMPORT id COLON ALL EXCEPT symbolset SEMIC
+{ $$ = MakeImport( $2, TRUE, NULL, $6);
+}
+| IMPORT id COLON symbolset SEMIC
+{ $$ = MakeImport( $2, FALSE, NULL, $4);
+}
+;
 
 use: USE id COLON ALL SEMIC
-       { $$ = MakeUse( $2, TRUE, NULL, NULL);
-       }
-     | USE id COLON ALL EXCEPT symbolset SEMIC
-       { $$ = MakeUse( $2, TRUE, NULL, $6);
-       }
-     | USE id COLON symbolset SEMIC
-       { $$ = MakeUse( $2, FALSE, NULL, $4);
-       }
-     ;
+{ $$ = MakeUse( $2, TRUE, NULL, NULL);
+}
+| USE id COLON ALL EXCEPT symbolset SEMIC
+{ $$ = MakeUse( $2, TRUE, NULL, $6);
+}
+| USE id COLON symbolset SEMIC
+{ $$ = MakeUse( $2, FALSE, NULL, $4);
+}
+;
 
 export: EXPORT ALL SEMIC
-        { $$ = MakeExport( TRUE, NULL, NULL);
-        }
-      | EXPORT ALL EXCEPT symbolset SEMIC
-        { $$ = MakeExport( TRUE, NULL, $4);
-        }
-      | EXPORT symbolset SEMIC
-        { $$ = MakeExport( FALSE, NULL, $2);
-        }
-      ;
+{ $$ = MakeExport( TRUE, NULL, NULL);
+}
+| EXPORT ALL EXCEPT symbolset SEMIC
+{ $$ = MakeExport( TRUE, NULL, $4);
+}
+| EXPORT symbolset SEMIC
+{ $$ = MakeExport( FALSE, NULL, $2);
+}
+;
 
 provide: PROVIDE ALL SEMIC
-         { $$ = MakeProvide( TRUE, NULL, NULL);
-         }
-       | PROVIDE ALL EXCEPT symbolset SEMIC
-         { $$ = MakeProvide( TRUE, NULL, $4);
-         }
-       | PROVIDE symbolset SEMIC
-         { $$ = MakeProvide( FALSE, NULL, $2);
-         }
-       ;
+ { $$ = MakeProvide( TRUE, NULL, NULL);
+ }
+| PROVIDE ALL EXCEPT symbolset SEMIC
+ { $$ = MakeProvide( TRUE, NULL, $4);
+ }
+| PROVIDE symbolset SEMIC
+ { $$ = MakeProvide( FALSE, NULL, $2);
+ }
+;
 
 symbolset: BRACE_L symbolsetentries BRACE_R
-           { $$ = $2;
-           }
-         ;
+   { $$ = $2;
+   }
+ ;
 
 symbolsetentries: symbolid COMMA symbolsetentries
-               { $$ = MakeSymbol( $1, $3);
-               }
-             | symbolid
-               { $$ = MakeSymbol( $1, NULL);
-               }
-             ;
+       { $$ = MakeSymbol( $1, $3);
+       }
+     | symbolid
+       { $$ = MakeSymbol( $1, NULL);
+       }
+     ;
 
 symbolid: id                { $$ = $1; }
         | reservedid        { $$ = $1; }
@@ -448,14 +454,14 @@ typedefs: typedef typedefs
           }
         ;
 
-typedef: TYPEDEF type id SEMIC 
+typedef: TYPEDEF ntype id SEMIC 
          { $$ = MakeTypedef( $3, mod_name, $2, ST_regular, NULL);
 
            DBUG_PRINT( "PARSE",
                        ("%s:"F_PTR","F_PTR", Id: %s",
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$, 
-                        TYPEDEF_TYPE( $$),
+                        TYPEDEF_NTYPE( $$),
                         TYPEDEF_NAME( $$)));
          }
        ;
@@ -1677,7 +1683,48 @@ simpletype: TYPE_INT     { $$ = MakeTypes1( T_int);    }
           ;
 
 
+
+/*
+ *********************************************************************
+ *
+ *  rules for ntype
+ *
+ *********************************************************************
+ */
 
+ntype: basentype
+       { $$ = $1; 
+       }
+     | basentype SQBR_L SQBR_R
+       { $$ = $1;
+       }
+     | basentype SQBR_L exprs SQBR_R
+       { $$ = Exprs2NType( $1, $3);
+       }
+     ;
+
+basentype: simplentype
+           { $$ = $1;
+           }
+         | userntype
+           { $$ = $1;
+           }
+         ;
+
+simplentype: TYPE_INT    { $$ = TYMakeSimpleType( T_int);    }
+           | TYPE_FLOAT  { $$ = TYMakeSimpleType( T_float);  }
+           | TYPE_BOOL   { $$ = TYMakeSimpleType( T_bool);   }
+           | TYPE_CHAR   { $$ = TYMakeSimpleType( T_char);   }
+           | TYPE_DBL    { $$ = TYMakeSimpleType( T_double); }
+           ;
+
+userntype: id
+           { $$ = TYMakeSymbType( $1, NULL);
+           }
+         | id COLON id
+           { $$ = TYMakeSymbType( $3, $1);
+           }
+         ;
 
 /******************************************************************************
  ******************************************************************************
@@ -2250,3 +2297,101 @@ node *CheckWlcompConf( node *conf, node *exprs)
 
   DBUG_RETURN( exprs);
 }
+
+static int CountDotsInExprs( node *exprs)
+{
+  int result = 0;
+
+  DBUG_ENTER("CountDotsInExprs");
+
+  while (exprs != NULL) {
+    if (NODE_TYPE( EXPRS_EXPR( exprs)) == N_dot) {
+      result++;
+    }
+
+    exprs = EXPRS_NEXT( exprs);
+  }
+
+  DBUG_RETURN( result);
+}
+
+static shape *Exprs2Shape( node *exprs)
+{
+  shape *result;
+  int n;
+  int cnt = 0;
+
+  DBUG_ENTER("Exprs2Shape");
+  
+  n = CountExprs( exprs);
+
+  result = SHMakeShape( n);
+
+  while ((exprs != NULL) && (result != NULL)) {
+    if (NODE_TYPE( EXPRS_EXPR( exprs)) == N_num) {
+      result = SHSetExtent( result, cnt, NUM_VAL( EXPRS_EXPR( exprs)));
+    } else {
+      result = SHFreeShape( result);
+    }
+    exprs = EXPRS_NEXT( exprs);
+    cnt++;
+  }
+
+  DBUG_RETURN( result);
+}
+
+static ntype *Exprs2NType( ntype *basetype, node *exprs)
+{
+  int n;
+  int dots = 0;
+  shape *shp;
+  ntype *result = NULL;
+
+  DBUG_ENTER("Exprs2NType");
+
+  n = CountExprs( exprs);
+
+  switch (NODE_TYPE( EXPRS_EXPR1( exprs))) {
+    case N_id:
+      if (ID_MOD(  EXPRS_EXPR1( exprs)) != NULL) {
+        yyerror("illegal shape specification");
+      } else {
+        switch (ID_MOD(  EXPRS_EXPR1( exprs))[0]) {
+          case '*':
+            result = TYMakeAUD( basetype);
+            break;
+          case '+':
+            result = TYMakeAUDGZ( basetype);
+            break;
+          default:
+            yyerror("illegal shape specification");
+            break;
+        }
+      }
+      break;
+    case N_dot:
+      dots = CountDotsInExprs( exprs);
+      if (dots != n) {
+        yyerror("illegal shape specification");
+      } else {
+        result = TYMakeAKD( basetype, dots, NULL);
+      }
+      break;
+    case N_num:
+      shp = Exprs2Shape( exprs);
+      if (shp != NULL) {
+        result = TYMakeAKS( basetype, shp);
+      } else {
+        yyerror("illegal shape specification");
+      }
+      break;
+    default:
+      yyerror("illegal shape specification");
+      break;
+  }
+
+  exprs = FreeTree( exprs);
+
+  DBUG_RETURN( result);
+}
+      
