@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/06/23 12:56:32  cg
+ * added handling of new attribute NWITH2_MT
+ *
  * Revision 1.1  1998/06/18 14:35:53  cg
  * Initial revision
  *
@@ -127,6 +130,8 @@ CONCfundef (node *arg_node, node *arg_info)
 
         if (FUNDEF_STATUS (arg_node) != ST_spmdfun) {
 
+            INFO_SPMD_MT (arg_info) = 0;
+
             /*
              * First, spmd-blocks are built around with-loops.
              */
@@ -177,8 +182,10 @@ CONCfundef (node *arg_node, node *arg_info)
 
             /*
              * Third, local back references within spmd-functions are adjusted, e.g.
-             * refernces to identifer declarations or data flow masks.
+             * references to identifer declarations or data flow masks.
              */
+            INFO_SPMD_MT (arg_info) = 1;
+
             act_tab = spmdlift_tab;
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 

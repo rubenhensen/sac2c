@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/06/23 12:56:32  cg
+ * added handling of new attribute NWITH2_MT
+ *
  * Revision 1.1  1998/06/18 14:35:53  cg
  * Initial revision
  *
@@ -266,11 +269,11 @@ SPMDLspmd (node *arg_node, node *arg_info)
 
     new_fundef = MakeFundef (TmpVarName (FUNDEF_NAME (fundef)), "_SPMD", rettypes, fargs,
                              body, NULL);
+
     FUNDEF_STATUS (new_fundef) = ST_spmdfun;
     FUNDEF_LIFTEDFROM (new_fundef) = fundef;
 
-    SPMD_LIFTED_FROM (arg_node) = StringCopy (FUNDEF_NAME (fundef));
-    SPMD_FUNNAME (arg_node) = StringCopy (FUNDEF_NAME (new_fundef));
+    SPMD_FUNDEF (arg_node) = new_fundef;
 
     /*
      * append return expressions to body of SPMD-function
@@ -393,6 +396,12 @@ SPMDLnwithid (node *arg_node, node *arg_info)
  * description:
  *   Generates new DFMasks in NWITH2_IN/INOUT/OUT/LOCAL.
  *
+ * remark:
+ *   During this phase each with-loop is marked as being multi-threaded
+ *   or not. A with-loop is multi-threaded iff it is situated on the top level
+ *   of an spmd-function. This information is used during code generation
+ *   in order to produce slightly different ICMs.
+ *
  ******************************************************************************/
 
 node *
@@ -404,11 +413,19 @@ SPMDLnwith2 (node *arg_node, node *arg_info)
     DBUG_ENTER ("SPMDLnwith2");
 
     /*
+     * mark with-loop as being multi-threaded or not depending on arg_info
+     */
+
+    NWITH2_MT (arg_node) = INFO_SPMD_MT (arg_info);
+
+    /*
      * traverse sons
      */
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+    INFO_SPMD_MT (arg_info) = 0;
     NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    INFO_SPMD_MT (arg_info) = NWITH2_MT (arg_node);
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
 
     /*
