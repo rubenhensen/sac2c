@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.24  1997/03/19 15:29:59  cg
+ * Revision 1.25  1997/05/02 09:30:51  cg
+ * IsArray(): Arrays with known dimension but unknown shape are now recognized.
+ *
+ * Revision 1.24  1997/03/19  15:29:59  cg
  * Now, module/class implementations without any functions are supported
  *
  * Revision 1.23  1996/09/02  17:41:51  sbs
@@ -240,7 +243,7 @@ IsArray (types *type)
 
     DBUG_PRINT ("RC", ("looking for %s", type->id));
 
-    if ((1 <= TYPES_DIM (type)) || (-1 == TYPES_DIM (type))) {
+    if ((SCALAR != TYPES_DIM (type)) && (ARRAY_OR_SCALAR != TYPES_DIM (type))) {
         ret = 1;
     } else {
         if (T_user == TYPES_BASETYPE (type)) {
@@ -248,7 +251,8 @@ IsArray (types *type)
             /* 042 is only a dummy argument */
             DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
 
-            if ((1 <= TYPEDEF_DIM (tdef)) || (-1 == TYPEDEF_DIM (tdef))) {
+            if ((SCALAR != TYPEDEF_DIM (tdef))
+                && (ARRAY_OR_SCALAR != TYPEDEF_DIM (tdef))) {
                 ret = 1;
             }
         }
