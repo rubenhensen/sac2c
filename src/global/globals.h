@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.16  1999/07/21 16:28:19  jhs
+ * needed_sync_fold introduced, max_sync_fold adjusted, command-line and usage
+ * updated.
+ *
  * Revision 2.15  1999/07/20 12:00:11  cg
  * Added global variable malloc_align_step.
  *
@@ -8,6 +12,10 @@
  * Added global variable malloc_align_step.
  *
  * $Log$
+ * Revision 2.16  1999/07/21 16:28:19  jhs
+ * needed_sync_fold introduced, max_sync_fold adjusted, command-line and usage
+ * updated.
+ *
  * Revision 2.15  1999/07/20 12:00:11  cg
  * Added global variable malloc_align_step.
  *
@@ -129,6 +137,7 @@ extern char *target_name;
 extern int gen_mt_code;
 extern int num_threads;
 extern int max_sync_fold;
+extern int needed_sync_fold;
 extern int max_threads;
 extern int min_parallel_size;
 

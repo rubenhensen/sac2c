@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.14  1999/07/21 16:28:19  jhs
+ * needed_sync_fold introduced, max_sync_fold adjusted, command-line and usage
+ * updated.
+ *
  * Revision 2.13  1999/07/20 07:56:22  cg
  * Added global variable malloc_align_step.
  *
@@ -273,10 +277,19 @@ int num_threads = 1;
  *  >1 : exact number of threads to be started
  */
 
-int max_sync_fold = 3;
+int max_sync_fold = -1;
+/*
+ * maximum number of fold operations in a single synchronisation block.
+ *   -1 => value of infered needed_sync_fold will be used
+ *    0 => no fold-with-loops, will be executed concurrently,
+ *         because no fold are allowed to be contained in a spmd/sync-block.
+ *   >0 => as much folds will be contained in one sync-block as maximum.
+ */
+
+int needed_sync_fold = 0;
 /*
  * maximum number of fold operations in a single synchronisation block,
- * should always be 2**n-1
+ * will be infered mechanically.
  */
 
 int max_threads = 32;

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/07/21 16:28:19  jhs
+ * needed_sync_fold introduced, max_sync_fold adjusted, command-line and usage
+ * updated.
+ *
  * Revision 2.11  1999/07/09 07:31:24  cg
  * SAC heap manager integrated into sac2c.
  *
@@ -422,6 +426,10 @@ usage ()
             "\t\t\t\t  Default: -maxthreads %d.\n"
             "\t -maxsyncfold <no>\tmaximum number of fold with-loops in a single\n"
             "\t\t\t\tsynchronisation block.\n"
+            "\t\t\t\t  -1: maximum of needed (mechanical infered)\n"
+            "\t\t\t\t   0: no fold-with-loops are allowed\n"
+            "\t\t\t\t      (implies fold-with-loop will not be executed concurrently)\n"
+            "\t\t\t\t  >0: number is limited by value of maxsyncfold\n"
             "\t\t\t\t  Default: -maxsyncfold %d.\n"
             "\t -minmtsize <no>\tminimum generator size for parallel execution\n"
             "\t\t\t\tof with-loops.\n"

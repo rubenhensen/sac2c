@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.19  1999/07/21 16:28:19  jhs
+ * needed_sync_fold introduced, max_sync_fold adjusted, command-line and usage
+ * updated.
+ *
  * Revision 2.18  1999/07/20 08:00:44  cg
  * Bug in consistency check fixed: Combination of -mt and -cs
  * now checked correctly.
@@ -337,7 +341,7 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_OPTION ("maxthreads", ARG_NUM (max_threads));
 
-    ARGS_OPTION ("maxsyncfold", ARG_NUM (max_sync_fold));
+    ARGS_OPTION ("maxsyncfold", ARG_RANGE (max_sync_fold, -1, 64));
 
     ARGS_OPTION ("maxae", ARG_NUM (minarray));
 
