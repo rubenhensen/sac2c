@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2004/11/27 02:17:29  cg
+ * Functions renamed according to standard.
+ *
  * Revision 3.67  2004/11/27 01:49:28  mwe
  * remaining Idx to IVE renaimed
  *
@@ -1296,7 +1299,7 @@ MergeCopyTop (node *actchn)
 
 /** <!--********************************************************************-->
  *
- * @fn char *IdxChangeId( char *varname, shape *shp)
+ * @fn char *IVEChangeId( char *varname, shape *shp)
  *
  * @brief appends the shape given by type to the varname.
  *
@@ -1328,7 +1331,7 @@ IVEchangeId (char *varname, shape *shp)
 
 /** <!--********************************************************************-->
  *
- * @fn char *IdxChangeIdOld( char *varname, types *type)
+ * @fn char *IVEchangeIdOld( char *varname, types *type)
  *
  * @brief appends the shape given by type to the varname.
  *
@@ -1346,7 +1349,7 @@ IVEchangeIdOld (char *varname, types *type)
     static char buffer2[32];
     int i;
 
-    DBUG_ENTER ("IVEchangeIdExt");
+    DBUG_ENTER ("IVEchangeIdOld");
 
     sprintf (buffer, "%s", varname);
     tmp_shpseg = TCtype2Shpseg (type, NULL);
@@ -1388,7 +1391,7 @@ VardecIdx (node *vardec, shape *shp)
         /*
          * A vardec does not yet exist !
          */
-        varname = IdxChangeId (VARDEC_OR_ARG_NAME (vardec), shp);
+        varname = IVEchangeId (VARDEC_OR_ARG_NAME (vardec), shp);
         if (NODE_TYPE (vardec) == N_vardec) {
 #ifdef MWE_NTYPE_READY
             newvardec
@@ -2032,7 +2035,7 @@ IVElet (node *arg_node, info *arg_info)
 
                     /* Make sure we do have a vardec! */
                     LET_NAME (act_let)
-                      = IdxChangeId (LET_NAME (act_let), VINFO_SHAPE (vinfo));
+                      = IVEchangeId (LET_NAME (act_let), VINFO_SHAPE (vinfo));
                     IDS_AVIS (LET_IDS (act_let)) = VARDEC_AVIS (
                       VardecIdx (IDS_DECL (LET_IDS (act_let)), VINFO_SHAPE (vinfo)));
 
@@ -2445,7 +2448,7 @@ IVEid (node *arg_node, info *arg_info)
                 VARDEC_ACTCHN (vardec) = SetIdx (VARDEC_ACTCHN (vardec), shp);
                 VARDEC_COLCHN (vardec) = SetIdx (VARDEC_COLCHN (vardec), shp);
                 if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
-                    newid = IdxChangeId (ID_NAME (arg_node), shp);
+                    newid = IVEchangeId (ID_NAME (arg_node), shp);
                     DBUG_PRINT ("IVE",
                                 ("renaming id %s into %s", ID_NAME (arg_node), newid));
                     ID_NAME (arg_node) = ILIBfree (ID_NAME (arg_node));
@@ -2473,7 +2476,7 @@ IVEid (node *arg_node, info *arg_info)
                 ARG_ACTCHN (vardec) = SetIdx (ARG_ACTCHN (vardec), shp);
                 ARG_COLCHN (vardec) = SetIdx (ARG_COLCHN (vardec), shp);
                 if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
-                    newid = IdxChangeId (ID_NAME (arg_node), shp);
+                    newid = IVEchangeId (ID_NAME (arg_node), shp);
                     DBUG_PRINT ("IVE",
                                 ("renaming id %s into %s", ID_NAME (arg_node), newid));
                     newid = ILIBfree (newid);
@@ -2771,7 +2774,7 @@ IVEcode (node *arg_node, info *arg_info)
                              */
 
                             new_id = TCmakeIdCopyString (
-                              IdxChangeId (IDS_NAME (WITH_VEC (with)), arr_shape));
+                              IVEchangeId (IDS_NAME (WITH_VEC (with)), arr_shape));
                             col_vinfo
                               = FindIdx (VARDEC_OR_ARG_COLCHN (idx_decl), arr_shape);
                             DBUG_ASSERT (((col_vinfo != NULL)
