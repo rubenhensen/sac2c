@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2002/03/05 15:40:40  sbs
+ * CRTWRP traversal embedded.
+ *
  * Revision 1.1  2002/03/05 13:59:29  sbs
  * Initial revision
  *
@@ -16,5 +19,8 @@
 #include "internal_lib.h"
 
 extern node *CreateWrappers (node *arg_node);
+
+extern node *
+CRTWRPFundef (node *arg_node, node *arg_info)
 
 #endif /* _create_wrappers_h */
