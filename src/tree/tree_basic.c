@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2003/10/15 12:15:29  dkrHH
+ * MakeIcm(): icm indentation corrected
+ *
  * Revision 3.75  2003/09/25 13:53:03  dkr
  * ID_UNQCONV removed
  *
@@ -1477,13 +1480,7 @@ MakeIcm (char *name, node *args)
 
     DBUG_ASSERT ((name != NULL), "MakeIcm called with empty ICM name.");
 
-    if (!strcmp (name, "MT_START_SYNCBLOCK")) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (!strncmp (name, "MT_SYNC_", 8)) {
-        ICM_INDENT_BEFORE (tmp) = -1;
-        ICM_INDENT_AFTER (tmp) = 0;
-    } else if (!strcmp (name, "MT2_IF_I_AM_FIRST")) {
+    if (!strcmp (name, "MT2_IF_I_AM_FIRST")) {
         ICM_INDENT_BEFORE (tmp) = 0;
         ICM_INDENT_AFTER (tmp) = 1;
     } else if (!strcmp (name, "MT2_ELSE_IF_I_AM_NOT_FIRST")) {
