@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2003/09/09 14:57:23  sbs
+ * PtrBuf support added.
+ *
  * Revision 3.23  2003/03/24 16:36:16  sbs
  * CreateCppCallString added.
  *
@@ -133,6 +136,7 @@
 #include "types.h"
 
 typedef struct STR_BUF str_buf;
+typedef struct PTR_BUF ptr_buf;
 
 /*********************************
  * function prototypes
@@ -140,6 +144,13 @@ typedef struct STR_BUF str_buf;
 
 extern void *Malloc (int size);
 extern void *Free (void *address);
+
+extern ptr_buf *PtrBufCreate (int size);
+extern ptr_buf *PtrBufAdd (ptr_buf *s, void *ptr);
+extern int PtrBufGetSize (ptr_buf *s);
+extern void *PtrBufGetPtr (ptr_buf *s, int pos);
+extern void PtrBufFlush (ptr_buf *s);
+extern void *PtrBufFree (ptr_buf *s);
 
 extern str_buf *StrBufCreate (int size);
 extern str_buf *StrBufprint (str_buf *s, const char *string);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2003/09/09 14:57:23  sbs
+ * PtrBuf support added.
+ *
  * Revision 3.37  2003/08/16 08:38:03  ktr
  * SelectionPropagation added. Must currently be activated with -dosp.
  *
@@ -314,6 +317,171 @@ Free (void *address)
 #endif /* NOFREE */
 
 #endif /* SHOW_MALLOC */
+
+struct PTR_BUF {
+    void **buf;
+    int pos;
+    int size;
+};
+
+/** <!--********************************************************************-->
+ *
+ * @fn  ptr_buf *PtrBufCreate( int size)
+ *
+ *   @brief  creates an (unbound) pointer buffer
+ *
+ *           Similar mechanism as used for StrBuf's.
+ *           Here, instead of characters, void pointers are stored.
+ *   @param  size
+ *   @return the pointer to the freshly allocated buffer.
+ *
+ ******************************************************************************/
+
+ptr_buf *
+PtrBufCreate (int size)
+{
+    ptr_buf *res;
+
+    DBUG_ENTER ("PtrBufCreate");
+
+    res = (ptr_buf *)Malloc (sizeof (ptr_buf));
+    res->buf = (void **)Malloc (size * sizeof (void *));
+    res->pos = 0;
+    res->size = size;
+
+    DBUG_PRINT ("PTRBUF", ("allocating buffer size %d : %p", size, res));
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  ptr_buf *PtrBufAdd(  ptr_buf *s, void *ptr)
+ *
+ *   @brief  adds ptr to buffer s (new last element)
+ *
+ *   @param  s
+ *   @param  ptr
+ *   @return the modified buffer
+ *
+ ******************************************************************************/
+
+ptr_buf *
+PtrBufAdd (ptr_buf *s, void *ptr)
+{
+    int new_size;
+    void **new_buf;
+    int i;
+
+    DBUG_ENTER ("PtrBufAdd");
+
+    if (s->pos == s->size) {
+        new_size = 2 * s->size;
+        DBUG_PRINT ("PTRBUF", ("increasing buffer %p from size %d to size %d", s, s->size,
+                               new_size));
+
+        new_buf = (void **)Malloc (new_size * sizeof (void *));
+        for (i = 0; i < s->pos; i++) {
+            new_buf[i] = s->buf[i];
+        }
+        s->buf = Free (s->buf);
+        s->buf = new_buf;
+        s->size = new_size;
+    }
+    s->buf[s->pos] = ptr;
+    s->pos++;
+    DBUG_PRINT ("PTRBUF", ("%p added to buffer %p", ptr, s));
+    DBUG_PRINT ("PTRBUF", ("pos of buffer %p now is %d", s, s->pos));
+
+    DBUG_RETURN (s);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  int PtrBufGetSize(  ptr_buf *s)
+ *
+ *   @brief  retrieve size of given pointer buffer
+ *
+ *   @param  s
+ *   @return size of the buffer
+ *
+ ******************************************************************************/
+
+int
+PtrBufGetSize (ptr_buf *s)
+{
+    DBUG_ENTER ("PtrBufGetSize");
+    DBUG_RETURN (s->size);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  void *PtrBufGetPtr(  ptr_buf *s, int pos)
+ *
+ *   @brief  get pointer entry at specified position
+ *
+ *   @param  s
+ *   @param  pos
+ *   @return entry
+ *
+ ******************************************************************************/
+
+void *
+PtrBufGetPtr (ptr_buf *s, int pos)
+{
+    void *res;
+
+    DBUG_ENTER ("PtrBufGetPtr");
+    if (pos < s->pos) {
+        res = s->buf[pos];
+    } else {
+        res = NULL;
+    }
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  void PtrBufFlush(  ptr_buf *s)
+ *
+ *   @brief  flushes the given pointer buffer (no deallocation!)
+ *
+ *   @param  s
+ *
+ ******************************************************************************/
+
+void
+PtrBufFlush (ptr_buf *s)
+{
+    DBUG_ENTER ("PtrBufFlush");
+
+    s->pos = 0;
+    DBUG_PRINT ("PTRBUF", ("pos of buffer %p reset to %d", s, s->pos));
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  void *PtrBufFree(  ptr_buf *s)
+ *
+ *   @brief  deallocates the given pointer buffer!
+ *
+ *   @param  s
+ *
+ ******************************************************************************/
+
+void *
+PtrBufFree (ptr_buf *s)
+{
+    DBUG_ENTER ("PtrBufFree");
+
+    DBUG_PRINT ("PTRBUF", ("freeing buffer %p", s));
+    s->buf = Free (s->buf);
+    s = Free (s);
+
+    DBUG_RETURN (s);
+}
 
 struct STR_BUF {
     char *buf;
