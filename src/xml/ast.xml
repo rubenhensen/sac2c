@@ -105,7 +105,6 @@
           <node name="WLblock" />
           <node name="WLublock" />
           <node name="Linklist" />
-          <node name="Ids" />
           <node name="Nums" />
           <node name="CWrapper" />
           <node name="Globobj" />
@@ -379,61 +378,61 @@
       </traversal>
       <traversal id="NTC" name="New Type Inference" default="sons" include="new_typecheck.h" >
         <travuser> 
-          <node name="typedef" />
-          <node name="module" />
-          <node name="fundef" />
-          <node name="arg" />
-          <node name="block" />
-          <node name="vardec" />
-          <node name="assign" />
-          <node name="cond" />
-          <node name="funcond" />
-          <node name="let" />
-          <node name="return" />
-          <node name="ap" />
-          <node name="prf" />
-          <node name="array" />
-          <node name="cast" />
-          <node name="exprs" />
-          <node name="id" />
-          <node name="globobj" />
-          <node name="num" />
-          <node name="bool" />
-          <node name="char" />
-          <node name="double" />
-          <node name="float" />
-          <node name="with" />
-          <node name="generator" />
-          <node name="part" />
-          <node name="withid" />
-          <node name="code" />
-          <node name="genarray" />
-          <node name="modarray" />
-          <node name="fold" />
+          <node name="Typedef" />
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Block" />
+          <node name="Vardec" />
+          <node name="Assign" />
+          <node name="Cond" />
+          <node name="Funcond" />
+          <node name="Let" />
+          <node name="Return" />
+          <node name="Ap" />
+          <node name="Prf" />
+          <node name="Array" />
+          <node name="Cast" />
+          <node name="Exprs" />
+          <node name="Id" />
+          <node name="Globobj" />
+          <node name="Num" />
+          <node name="Bool" />
+          <node name="Char" />
+          <node name="Double" />
+          <node name="Float" />
+          <node name="With" />
+          <node name="Generator" />
+          <node name="Part" />
+          <node name="Withid" />
+          <node name="Code" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+          <node name="Fold" />
         </travuser>
       </traversal>
       <traversal id="CWC" name="Create Wrapper Code" default="sons" include="create_wrapper_code.h" >
         <travuser>
-          <node name="module" />
-          <node name="fundef" />
-          <node name="ap" />
-          <node name="with" />
-          <node name="genarray" />
-          <node name="fold" />
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Ap" />
+          <node name="With" />
+          <node name="Genarray" />
+          <node name="Fold" />
         </travuser>
       </traversal>
       <traversal id="NT2OT" name="Convert from new to old types and do some cleanup" default="sons" include="new2old.h" >
         <travuser>
-          <node name="module" />
-          <node name="fundef" />
-          <node name="arg" />
-          <node name="block" />
-          <node name="vardec" />
-          <node name="array" />
-          <node name="cast" />
-          <node name="let" />
-          <node name="fold" />
-          <node name="withid" />
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Block" />
+          <node name="Vardec" />
+          <node name="Array" />
+          <node name="Cast" />
+          <node name="Let" />
+          <node name="Fold" />
+          <node name="Withid" />
         </travuser>
       </traversal>
       <traversal id="PF" name="Annotate Function Calls " default="sons" include="annotate_fun_calls.h">
@@ -1380,7 +1379,7 @@
           <node name="Prf" />
           <node name="Return" />
           <node name="Vardec" />
-          <node name="with" />
+          <node name="With" />
           <node name="With2" />
           <node name="Withid" />
         </travuser>
