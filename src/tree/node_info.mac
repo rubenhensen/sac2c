@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2000/03/29 16:10:15  jhs
+ * blkli added
+ *
  * Revision 1.27  2000/03/23 17:37:48  dkr
  * L2F_INFERap and L2F_INFERarg added
  *
@@ -138,7 +141,7 @@
  *   muth_tab        schin_tab       blkin_tab       rfin_tab
  *   func2lac_tab    ai_tab          blkex_tab       mtfin_tab
  *   l2f_lift_tab    blkco_tab       dfa_tab         blkpp_tab
- *   cudecls_tab     barin_tab
+ *   cudecls_tab     barin_tab       blkli_tab
  *
  *   nnode
  *
@@ -428,6 +431,9 @@
 #ifndef NIFbarin
 #define NIFbarin(it_barin)
 #endif
+#ifndef NIFblkli
+#define NIFblkli(it_blkli)
+#endif
 
 #ifndef NIFnnode
 #define NIFnnode(nnode)
@@ -454,7 +460,7 @@
   it_spmdpm, it_spmdco, it_ntc, it_l2f_infer,                                            \
                                                                                          \
   it_muth, it_schin, it_blkin, it_rfin, it_fun2lac, it_ai, it_blkex, it_mtfin,           \
-  it_l2f_lift, it_blkco, it_dfa, it_blkpp, it_cudecls, it_barin, it_unused7, it_unused8, \
+  it_l2f_lift, it_blkco, it_dfa, it_blkpp, it_cudecls, it_barin, it_blkli, it_unused8,   \
   it_unused9, it_unusedA, it_unusedB, it_unusedC,                                        \
                                                                                          \
   nnode)                                                                                 \
@@ -494,8 +500,9 @@
                                                       NIFblkpp (it_blkpp)                \
                                                         NIFcudecls (it_cudecls)          \
                                                           NIFbarin (it_barin)            \
+                                                            NIFblkli (it_blkli)          \
                                                                                          \
-                                                            NIFnnode (nnode)
+                                                              NIFnnode (nnode)
 
 /******************************************************************************
  *
@@ -770,7 +777,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        MUTHfundef, TravSons, TravSons, RFINfundef, FUN2LACfundef, AIfundef, TravSons,
        MTFINfundef, L2F_LIFTfundef, BLKCOfundef, DFAfundef, BLKPPfundef, CUDfundef,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, BLKLIfundef, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        3),
 
@@ -829,7 +836,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        1),
 
   NIF (N_mt, "N_mt", TravSons, TravSons, PrintMT, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, DupMt, TravSons, TravSons,
+       FreeMT, TravSons, TravSons, TravSons, TravSons, DupMt, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -841,13 +848,13 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, MTFINxt,
-       TravSons, BLKCOxt, DFAxt, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, BLKCOxt, DFAxt, TravSons, TravSons, TravSons, BLKLImt, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        1),
 
   NIF (N_st, "N_st", TravSons, TravSons, PrintST, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, DupSt, TravSons, TravSons,
+       FreeST, TravSons, TravSons, TravSons, TravSons, DupSt, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1896,6 +1903,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
 #undef NIFcudecls
 #undef NIFbarin
+#undef NIFblkli
 
 #undef NIFnnode
 
