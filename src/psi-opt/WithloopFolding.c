@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/08/01 13:16:10  dkr
+ * WithloopFolding(), WithloopFoldingWLT(): parameter arg_info removed
+ * WithloopFolding(): paramter loop added in order to handle break
+ * specifiers correctly
+ *
  * Revision 2.14  2000/07/28 14:35:11  dkr
  * minor changes in DBUG output done
  *
@@ -1158,8 +1163,9 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
                     /*             NWITH_REFERENCED_FOLD(LET_EXPR(ASSIGN_INSTR(startn)))++;
                      */
                 }
-            } else
+            } else {
                 startn = NULL; /* this is not a WL. */
+            }
             break;
 
         default:
@@ -1315,21 +1321,24 @@ CreateZeroVector (int dim, simpletype type)
 /******************************************************************************
  *
  * function:
- *   node *WithloopFolding(node *arg_node, node* arg_info)
+ *   node *WithloopFolding( node *arg_node, int loop)
  *
  * description:
  *   starting point for the withloop folding.
  *
+ *   'loop' specifies the number of the current optimization cycle and is
+ *   needed for correct handling of break specifiers.
+ *
  ******************************************************************************/
 
 node *
-WithloopFolding (node *arg_node, node *arg_info)
+WithloopFolding (node *arg_node, int loop)
 {
     funtab *tmp_tab;
+    node *arg_info;
     int expr;
 
     DBUG_ENTER ("WithloopFolding");
-    DBUG_ASSERT (!arg_info, ("at the beginning of WLF: arg_info != NULL"));
 
     arg_info = MakeInfo ();
 
@@ -1338,9 +1347,10 @@ WithloopFolding (node *arg_node, node *arg_info)
        for SearchWL in phase 2. SearchWLHelp does not work properly when
        the end of a compound node is searched and then (not existing) MRD
        masks are needed. When the new flatten exists we can remove this
-       phase because SeachWLHelp will not need MRD masks. The DEF mask can be
+       phase because SearchWLHelp will not need MRD masks. The DEF mask can be
        used to finde the wanted definition (which IS the last definition
        because of unique names. */
+
     DBUG_PRINT ("OPT", ("WLI 1"));
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
     wli_phase = 1;
@@ -1356,7 +1366,8 @@ WithloopFolding (node *arg_node, node *arg_info)
     arg_node = Trav (arg_node, arg_info);
 
     /* break after WLI? */
-    if (break_after != PH_sacopt || strcmp (break_specifier, "wli")) {
+    if ((break_after != PH_sacopt) || (break_cycle_specifier != loop)
+        || strcmp (break_specifier, "wli")) {
         /* WLF traversal: fold WLs */
         DBUG_PRINT ("OPT", ("WLF"));
         DBUG_PRINT ("OPTMEM",
@@ -1365,16 +1376,11 @@ WithloopFolding (node *arg_node, node *arg_info)
         arg_node = Trav (arg_node, arg_info);
         expr = (wlf_expr - old_wlf_expr);
         DBUG_PRINT ("OPT", ("                        result: %d", expr));
-        DBUG_PRINT ("OPTMEM",
-                    ("mem currently allocated: %d bytes", current_allocated_mem));
-
-    } else {
-        DBUG_PRINT ("OPTMEM",
-                    ("mem currently allocated: %d bytes", current_allocated_mem));
     }
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
 
     act_tab = tmp_tab;
-    FREE (arg_info);
+    arg_info = FreeTree (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1382,7 +1388,7 @@ WithloopFolding (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WithloopFoldingWLT(node *arg_node, node* arg_info)
+ *   node *WithloopFoldingWLT( node *arg_node)
  *
  * description:
  *   executes only WLT phase, not WLI and WLF.
@@ -1390,13 +1396,13 @@ WithloopFolding (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-WithloopFoldingWLT (node *arg_node, node *arg_info)
+WithloopFoldingWLT (node *arg_node)
 {
     funtab *tmp_tab;
+    node *arg_info;
     int expr;
 
     DBUG_ENTER ("WithloopFoldingWLT");
-    DBUG_ASSERT (!arg_info, ("at the beginning of WLF: arg_info != NULL"));
 
     arg_info = MakeInfo ();
 
@@ -1410,7 +1416,7 @@ WithloopFoldingWLT (node *arg_node, node *arg_info)
     DBUG_PRINT ("OPT", ("                        result: %d", expr));
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
 
-    FREE (arg_info);
+    arg_info = FreeTree (arg_info);
     act_tab = tmp_tab;
 
     DBUG_RETURN (arg_node);
