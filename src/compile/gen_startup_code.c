@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2004/02/05 10:39:30  cg
+ * Implementation for MT mode 1 (thread create/join) added.
+ *
  * Revision 3.35  2003/12/10 16:07:14  skt
  * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
  *
@@ -436,6 +439,10 @@ PrintGlobalSettings (node *syntax_tree)
     fprintf (outfile, "#define SAC_SET_INITIAL_UNIFIED_HEAPSIZE     %d\n\n",
              initial_unified_heapsize * 1024);
 
+    fprintf (outfile, "#ifndef SAC_SET_MTMODE\n");
+    fprintf (outfile, "#define SAC_SET_MTMODE               %d\n", (int)mtmode);
+    fprintf (outfile, "#endif\n\n");
+
     fprintf (outfile, "#ifndef SAC_SET_THREADS_MAX\n");
     fprintf (outfile, "#define SAC_SET_THREADS_MAX          %d\n", max_threads);
     fprintf (outfile, "#endif\n\n");
@@ -513,7 +520,7 @@ PrintGlobalSettings (node *syntax_tree)
 
     PrintProfileData ();
 
-    if ((gen_mt_mode >= GEN_MT_STARTSTOP) && (gen_mt_mode <= GEN_MT_MTSTBLOCK)) {
+    if (mtmode != MT_none) {
         PrintSpmdData (syntax_tree);
     }
 
@@ -886,7 +893,8 @@ GSCPrintMain ()
     char *res_NT, *mythread_NT;
     types *tmp_type;
 #endif
-    bool print_thread_id = ((gen_mt_mode == GEN_MT_LIFTWAIT) && (optimize & OPT_PHM));
+    bool print_thread_id
+      = (((mtmode == MT_createjoin) || (mtmode == MT_startstop)) && (optimize & OPT_PHM));
 
     DBUG_ENTER ("GSCPrintMain");
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2004/02/05 10:39:30  cg
+ * Implementation for MT mode 1 (thread create/join) added.
+ *
  * Revision 3.50  2003/09/19 12:25:17  dkr
  * postfix _nt removed from varnames
  *
@@ -422,13 +425,28 @@ typedef union {
 #endif
 
 #if SAC_DO_TRACE_MT
+
+#if SAC_SET_MTMODE == 1
+#define SAC_MT_SETUP()                                                                   \
+    SAC_MT1_TR_Setup (SAC_MT_CACHE_LINE_MAX (), SAC_MT_BARRIER_OFFSET (),                \
+                      SAC_SET_NUM_SCHEDULERS);
+#else
 #define SAC_MT_SETUP()                                                                   \
     SAC_MT_TR_Setup (SAC_MT_CACHE_LINE_MAX (), SAC_MT_BARRIER_OFFSET (),                 \
                      SAC_SET_NUM_SCHEDULERS);
+#endif
+
+#else
+
+#if SAC_SET_MTMODE == 1
+#define SAC_MT_SETUP()                                                                   \
+    SAC_MT1_Setup (SAC_MT_CACHE_LINE_MAX (), SAC_MT_BARRIER_OFFSET (),                   \
+                   SAC_SET_NUM_SCHEDULERS);
 #else
 #define SAC_MT_SETUP()                                                                   \
     SAC_MT_Setup (SAC_MT_CACHE_LINE_MAX (), SAC_MT_BARRIER_OFFSET (),                    \
                   SAC_SET_NUM_SCHEDULERS);
+#endif
 #endif
 
 /*
@@ -446,7 +464,11 @@ typedef union {
         SAC_TR_MT_PRINT (("Parallel execution of spmd-block %s finished.", #name));      \
     }
 
+#if SAC_SET_MTMODE == 1
+#define SAC_MT_START_WORKERS() SAC_MT1_StartWorkers ();
+#else
 #define SAC_MT_START_WORKERS() SAC_MT_master_flag = 1 - SAC_MT_master_flag;
+#endif
 
 #define SAC_MT_WORKER_WAIT()                                                             \
     {                                                                                    \
@@ -559,6 +581,23 @@ typedef union {
  *  Definition of macro implemented ICMs for synchronisation
  */
 
+#if SAC_SET_MTMODE == 1
+
+#define SAC_MT_SYNC_NONFOLD_1(id)                                                        \
+    {                                                                                    \
+        unsigned int SAC_MT_i;                                                           \
+                                                                                         \
+        if (SAC_MT_MYTHREAD ()) {                                                        \
+            goto label_worker_continue_##id;                                             \
+        } else {                                                                         \
+            for (SAC_MT_i = 1; SAC_MT_i < SAC_MT_THREADS (); SAC_MT_i++) {               \
+                pthread_join (SAC_MT1_internal_id[SAC_MT_i], NULL);                      \
+            }                                                                            \
+        }                                                                                \
+    }
+
+#else
+
 #define SAC_MT_SYNC_NONFOLD_1(id)                                                        \
     {                                                                                    \
         unsigned int i;                                                                  \
@@ -577,6 +616,35 @@ typedef union {
         if (SAC_MT_MYTHREAD ())                                                          \
             goto label_worker_continue_##id;                                             \
     }
+
+#endif
+
+#if SAC_SET_MTMODE == 1
+
+#define SAC_MT_SYNC_ONEFOLD_1(type, accu_var, tmp_var, id)                               \
+    {                                                                                    \
+        SAC_MT_SET_BARRIER_RESULT (SAC_MT_MYTHREAD (), 1, type, accu_var);               \
+        SAC_TR_MT_PRINT (("Synchronisation block %d finished", id));                     \
+        SAC_TR_MT_PRINT_FOLD_RESULT (type, accu_var, "Partial fold result:");            \
+                                                                                         \
+        if (SAC_MT_MYTHREAD ()) {                                                        \
+            goto label_worker_continue_##id;                                             \
+        } else {                                                                         \
+            unsigned int SAC_MT_i;                                                       \
+                                                                                         \
+            for (SAC_MT_i = 1; SAC_MT_i < SAC_MT_THREADS (); SAC_MT_i++) {               \
+                pthread_join (SAC_MT1_internal_id[SAC_MT_i], NULL);                      \
+                tmp_var = SAC_MT_GET_BARRIER_RESULT (SAC_MT_i, 1, type);
+
+#define SAC_MT_SYNC_ONEFOLD_2(type, accu_var, tmp_var, id)                               \
+    }                                                                                    \
+    if (0) {
+
+#define SAC_MT_SYNC_ONEFOLD_3(type, accu_var, tmp_var, id)                               \
+    }                                                                                    \
+    }
+
+#else
 
 #define SAC_MT_SYNC_ONEFOLD_1(type, accu_var, tmp_var, id)                               \
     {                                                                                    \
@@ -650,6 +718,45 @@ typedef union {
     }                                                                                    \
     }
 
+#endif
+
+#if SAC_SET_MTMODE == 1
+
+#define SAC_MT_SYNC_MULTIFOLD_1A(id) {
+
+#define SAC_MT_SYNC_MULTIFOLD_1B(id)
+
+#define SAC_MT_SYNC_MULTIFOLD_1C(id)                                                     \
+    SAC_TR_MT_PRINT (("Synchronisation block %d finished", id));
+
+#define SAC_MT_SYNC_MULTIFOLD_1D(id)                                                     \
+    if (SAC_MT_MYTHREAD ()) {                                                            \
+        goto label_worker_continue_##id;                                                 \
+    } else {                                                                             \
+        unsigned int SAC_MT_son_id;                                                      \
+                                                                                         \
+        for (SAC_MT_son_id = 1; SAC_MT_son_id < SAC_MT_THREADS (); SAC_MT_son_id++) {    \
+            pthread_join (SAC_MT1_internal_id[SAC_MT_son_id], NULL);
+
+#define SAC_MT_SYNC_MULTIFOLD_2A(id)                                                     \
+    }                                                                                    \
+    if (0) {
+
+#define SAC_MT_SYNC_MULTIFOLD_2B(id)
+
+#define SAC_MT_SYNC_MULTIFOLD_2C(id)
+
+#define SAC_MT_SYNC_MULTIFOLD_3A(id)
+
+#define SAC_MT_SYNC_MULTIFOLD_3B(id)
+
+#define SAC_MT_SYNC_MULTIFOLD_3C(id)                                                     \
+    }                                                                                    \
+    }                                                                                    \
+    }
+
+#else
+
 #define SAC_MT_SYNC_MULTIFOLD_1A(id) {
 
 #define SAC_MT_SYNC_MULTIFOLD_1B(id) if (!SAC_MT_MYWORKERCLASS ()) {
@@ -721,6 +828,8 @@ typedef union {
     }                                                                                    \
     }                                                                                    \
     }
+
+#endif
 
 /*
  * Definition of macros implementing a general locking mechanism
@@ -1053,6 +1162,8 @@ extern unsigned int SAC_MT_masterclass;
 
 extern unsigned int SAC_MT_threads;
 
+extern pthread_t *SAC_MT1_internal_id;
+
 extern volatile unsigned int (*SAC_MT_spmd_function) (const unsigned int,
                                                       const unsigned int, unsigned int);
 
@@ -1066,6 +1177,10 @@ extern void SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_thread
 extern void SAC_MT_TR_SetupInitial (int argc, char *argv[], unsigned int num_threads,
                                     unsigned int max_threads);
 
+extern void SAC_MT_CreateInitialWorker ();
+
+extern void SAC_MT_TR_CreateInitialWorker ();
+
 extern int atoi (const char *str);
 
 extern pthread_key_t SAC_MT_threadid_key;
@@ -1075,6 +1190,12 @@ extern unsigned int SAC_MT_master_id;
 SAC_MT_DECLARE_LOCK (SAC_MT_output_lock)
 
 SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
+
+extern void SAC_MT1_StartWorkers ();
+
+extern void SAC_MT1_Setup (int cache_line_max, int barrier_offset, int num_schedulers);
+
+extern void SAC_MT1_TR_Setup (int cache_line_max, int barrier_offset, int num_schedulers);
 
 /*****************************************************************************/
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2004/02/05 10:39:30  cg
+ * Implementation for MT mode 1 (thread create/join) added.
+ *
  * Revision 3.29  2003/12/10 16:07:14  skt
  * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
  *
@@ -460,7 +463,7 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (gen_mt_mode != GEN_MT_MTSTBLOCK) {
+    if (mtmode != MT_mtstblock) {
         compiler_phase += 2;
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
@@ -496,20 +499,34 @@ main (int argc, char *argv[])
     }
 
     PHASE_PROLOG;
-    /*
-     * gen_mt_mode can be GEN_MT_NONE, GEN_MT_STARTSTOP, GEN_MT_LIFTWAIT
-     * or GEN_MT_MTSTBLOCK
-     */
-    if (gen_mt_mode == GEN_MT_LIFTWAIT) {
+
+    switch (mtmode) {
+    case MT_none:
+        break;
+    case MT_createjoin:
         NOTE_COMPILER_PHASE;
-        NOTE (("using lift-wait version of mt"));
+        NOTE (("Using create-join version of multithreading (MT1)"));
         syntax_tree = BuildSpmdRegions (syntax_tree); /* spmd..._tab, sync..._tab */
         PHASE_DONE_EPILOG;
-    } else if (gen_mt_mode == GEN_MT_MTSTBLOCK) {
+        break;
+    case MT_startstop:
         NOTE_COMPILER_PHASE;
-        NOTE (("using mt/st-block version of mt"));
+        NOTE (("Using start-stop version of multithreading (MT2)"));
+        syntax_tree = BuildSpmdRegions (syntax_tree); /* spmd..._tab, sync..._tab */
+        PHASE_DONE_EPILOG;
+        break;
+    case MT_mtstblock:
+        NOTE_COMPILER_PHASE;
+        NOTE (("Using mt/st-block version of multithreading (MT3)"));
         syntax_tree = BuildMultiThread (syntax_tree);
         PHASE_DONE_EPILOG;
+        SYSABORT (("Mt/st-block version of multithreading de-activated !!"));
+        /* following comment concerning for mt/st-block version:
+         * The core problem is that new-mt reuses the FUNDEF ATTRIB attribute
+         * and thereby destroys its old contents. Unfortunately, it has turned
+         * that this information is vital for precompile.
+         */
+        break;
     }
     PHASE_EPILOG;
 
@@ -517,7 +534,7 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (gen_mt_mode == GEN_MT_MTSTBLOCK) {
+    if (mtmode == MT_mtstblock) {
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
         syntax_tree = Refcount (syntax_tree); /* refcnt_tab */
@@ -528,15 +545,6 @@ main (int argc, char *argv[])
             goto BREAK;
     }
     compiler_phase++;
-
-    if ((gen_mt_mode == GEN_MT_MTSTBLOCK) || (gen_mt_mode == GEN_MT_STARTSTOP)) {
-        SYSABORT (("Version of multithreading de-activated !!"));
-        /* following comment concerning for mt/st-block version:
-         * The core problem is that new-mt reuses the FUNDEF ATTRIB attribute
-         * and thereby destroys its old contents. Unfortunately, it has turned
-         * that this information is vital for precompile.
-         */
-    }
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;

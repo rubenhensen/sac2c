@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2004/02/05 10:39:30  cg
+ * Implementation for MT mode 1 (thread create/join) added.
+ *
  * Revision 3.14  2003/09/17 17:22:59  dkr
  * a typo in trace message corrected
  *
@@ -132,6 +135,7 @@
 
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "sac_misc.h"
 #include "sac_message.h"
@@ -195,6 +199,8 @@ volatile unsigned int SAC_MT_not_yet_parallel = 1;
 unsigned int SAC_MT_masterclass;
 
 unsigned int SAC_MT_threads;
+
+pthread_t *SAC_MT1_internal_id;
 
 volatile unsigned int (*SAC_MT_spmd_function) (const unsigned int, const unsigned int,
                                                unsigned int);
@@ -342,7 +348,7 @@ ThreadControlInitialWorker (void *arg)
  *   multi-threaded program execution. Here initializations are made which
  *   may not wait till worker thread creation. Basically, these are
  *   - the creation of the thread speicific data key which holds the thread ID,
- *   - the initialization of the  thread speicific data for the master thread,
+ *   - the initialization of the  thread specific data for the master thread,
  *   - the evaluation of the -mt command line option.
  *
  ******************************************************************************/
@@ -359,16 +365,17 @@ SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
 {
     int i;
 
+    SAC_TR_PRINT (("Creating thread specific data key to hold thread ID."));
+
     if (0 != pthread_key_create (&SAC_MT_threadid_key, NULL)) {
         SAC_RuntimeError ("Unable to create thread specific data key.");
     }
 
+    SAC_TR_PRINT (("Initializing thread specific data for master thread."));
+
     if (0 != pthread_setspecific (SAC_MT_threadid_key, &SAC_MT_master_id)) {
         SAC_RuntimeError ("Unable to initialize thread specific data.");
     }
-
-    SAC_TR_PRINT (("Creating thread specific data key to hold thread ID."));
-    SAC_TR_PRINT (("Initializing thread specific data for master thread."));
 
     if (num_threads == 0) {
         for (i = 1; i < argc - 1; i++) {
@@ -492,5 +499,129 @@ SAC_MT_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
         }
     }
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_MT1_Setup( int cache_line_max, int barrier_offset,int num_schedulers)
+ *   void SAC_MT1_TR_Setup( int cache_line_max, int barrier_offset,int num_schedulers)
+ *
+ * description:
+ *
+ *   This function initializes the runtime system for multi-threaded
+ *   program execution. The basic steps performed are
+ *   - aligning the synchronization barrier data structure so that no two
+ *     threads write to the same cache line,
+ *   - Initialisation of the Scheduler Mutexlocks SAC_MT_TASKLOCKS
+ *   - determining the thread class of the master thread,
+ *   - creation and initialization of POSIX thread attributes,
+ *
+ ******************************************************************************/
+
+#ifdef TRACE
+void
+SAC_MT1_TR_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
+#else
+void
+SAC_MT1_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
+#endif
+{
+    int i, n;
+
+    SAC_TR_PRINT (("Aligning synchronization barrier data structure "
+                   "to data cache specification."));
+
+    if (cache_line_max > 0) {
+        SAC_MT_barrier = (SAC_MT_barrier_t *)((char *)(SAC_MT_barrier_space + 1)
+                                              - ((unsigned long int)SAC_MT_barrier_space
+                                                 % barrier_offset));
+    } else {
+        SAC_MT_barrier = SAC_MT_barrier_space;
+    }
+
+    SAC_TR_PRINT (("Barrier base address is %p", SAC_MT_barrier));
+
+    SAC_TR_PRINT (("Initializing Tasklocks."));
+
+    for (n = 0; n < num_schedulers; n++) {
+        pthread_mutex_init (&(SAC_MT_TS_TASKLOCK (n)), NULL);
+        for (i = 0; (unsigned int)i < SAC_MT_threads; i++) {
+            pthread_mutex_init (&(SAC_MT_TASKLOCK_INIT (n, i, num_schedulers)), NULL);
+        }
+    }
+
+    SAC_TR_PRINT (("Computing thread class of master thread."));
+
+    for (SAC_MT_masterclass = 1; SAC_MT_masterclass < SAC_MT_threads;
+         SAC_MT_masterclass <<= 1) {
+        SAC_MT_CLEAR_BARRIER (SAC_MT_masterclass);
+    }
+
+    SAC_MT_masterclass >>= 1;
+
+    SAC_TR_PRINT (("Thread class of master thread is %d.", (int)SAC_MT_masterclass));
+
+    if (SAC_MT_threads > 1) {
+
+        SAC_MT1_internal_id = (pthread_t *)malloc (SAC_MT_threads * sizeof (pthread_t));
+
+        if (SAC_MT1_internal_id == NULL) {
+            SAC_RuntimeError (
+              "Unable to allocate memory for internal thread identifiers");
+        }
+
+        SAC_TR_PRINT (("Setting up POSIX thread attributes"));
+
+        if (0 != pthread_attr_init (&SAC_MT_thread_attribs)) {
+            SAC_RuntimeError ("Unable to initialize POSIX thread attributes");
+        }
+
+        if (0 != pthread_attr_setscope (&SAC_MT_thread_attribs, PTHREAD_SCOPE_SYSTEM)) {
+            SAC_RuntimeWarning ("Unable to set POSIX thread attributes to "
+                                "PTHREAD_SCOPE_SYSTEM.\n"
+                                "Probably, your PTHREAD implementation does "
+                                "not support system \n"
+                                "scope threads, i.e. threads are likely not "
+                                "to be executed in \n"
+                                "parallel, but in time-sharing mode.");
+        }
+    }
+}
+
+static void
+ThreadControl_mt0 (void *arg)
+{
+    const unsigned int my_thread_id = (unsigned int)arg;
+    unsigned int worker_flag = 0;
+
+    SAC_MT_ACQUIRE_LOCK (SAC_MT_init_lock);
+
+    pthread_setspecific (SAC_MT_threadid_key, &my_thread_id);
+
+    SAC_TR_PRINT (("This is worker thread #%u.", my_thread_id));
+
+    SAC_MT_RELEASE_LOCK (SAC_MT_init_lock);
+
+    worker_flag = (*SAC_MT_spmd_function) (my_thread_id, 0, worker_flag);
+}
+
+#ifndef TRACE
+
+void
+SAC_MT1_StartWorkers ()
+{
+    unsigned int i;
+
+    for (i = 1; i < SAC_MT_threads; i++) {
+        if (0
+            != pthread_create (&SAC_MT1_internal_id[i], &SAC_MT_thread_attribs,
+                               (void *(*)(void *))ThreadControl_mt0, (void *)(i))) {
+
+            SAC_RuntimeError ("Master thread failed to create worker thread #%u", i);
+        }
+    }
+}
+
+#endif
 
 #endif /* DISABLE_MT */
