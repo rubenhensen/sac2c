@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2003/03/09 17:15:00  ktr
+ * added basic support for BLIR
+ *
  * Revision 3.31  2003/02/08 15:56:07  mwe
  * support for DistributiveLaw added
  *
@@ -314,6 +317,7 @@ extern funtab *nt2ot_tab;
 extern funtab *cwc_tab;
 extern funtab *hm_tab;
 extern funtab *dl_tab;
+extern funtab *blir_tab;
 
 extern int nnode[];
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2003/03/09 17:15:00  ktr
+ * added basic support for BLIR
+ *
  * Revision 3.40  2003/02/08 16:50:57  mwe
  * remove copy and paste mistake
  *
@@ -1496,6 +1499,17 @@ static funtab dl_tab_rec = {{
                             NULL,
                             NULL};
 funtab *dl_tab = &dl_tab_rec;
+
+/*
+ *  (113) blir_tab
+ */
+static funtab blir_tab_rec = {{
+#define NIFblir(it_blir) it_blir
+#include "node_info.mac"
+                              },
+                              NULL,
+                              NULL};
+funtab *blir_tab = &blir_tab_rec;
 
 /*
  *  nnode
