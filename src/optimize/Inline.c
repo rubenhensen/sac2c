@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/12/21 15:26:46  asi
+ * Revision 1.12  1996/01/17 14:40:57  asi
+ * added globals.h
+ *
+ * Revision 1.11  1995/12/21  15:26:46  asi
  * INLblock removed
  *
  * Revision 1.10  1995/12/13  17:33:40  asi
@@ -43,6 +46,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "globals.h"
 #include "tree.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
