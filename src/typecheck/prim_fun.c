@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.5  1995/02/27 11:09:35  hw
+ * Revision 1.6  1995/03/08 14:03:54  hw
+ * added enumerator  SxA_A, SxA_F to enum type_class
+ *
+ * Revision 1.5  1995/02/27  11:09:35  hw
  * bug fixed in function `Psi`
  *
  * Revision 1.4  1995/02/13  17:51:38  hw
@@ -53,7 +56,9 @@ enum type_class {
     A_S,
     SxSxA_A,
     SxAxA_A,
-    B_B
+    B_B,
+    SxA_A,
+    SxA_F
 };
 
 #define GEN_TYPE_NODE(node, type)                                                        \
