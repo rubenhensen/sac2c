@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/09/23 12:01:20  khf
+ * some DBUG_PRINTs inserted
+ *
  * Revision 1.4  2004/08/09 13:13:31  khf
  * some comments added
  *
@@ -54,6 +57,7 @@ WLEnhancement (node *arg_node)
 
     DBUG_PRINT ("WLE", ("starting WLEnhancement"));
 
+    DBUG_PRINT ("WLE", ("call DoSSA"));
     /* transformation in ssa-form */
     arg_node = DoSSA (arg_node);
     /* necessary to guarantee, that the compilation can be stopped
@@ -66,6 +70,7 @@ WLEnhancement (node *arg_node)
     }
 
     if (emm) {
+        DBUG_PRINT ("WLE", ("call ExplicitAccumulate"));
         arg_node = ExplicitAccumulate (arg_node);
 
         if ((break_after == PH_wlenhance) && (0 == strcmp (break_specifier, "ea"))) {
@@ -73,6 +78,7 @@ WLEnhancement (node *arg_node)
         }
     }
 
+    DBUG_PRINT ("WLE", ("call WLPartitionGeneration"));
     arg_node = WLPartitionGeneration (arg_node);
 
     if ((break_after == PH_wlenhance)
@@ -81,6 +87,7 @@ WLEnhancement (node *arg_node)
         goto DONE;
     }
 
+    DBUG_PRINT ("WLE", ("call UndoSSA"));
     /* undo tranformation in ssa-form */
     arg_node = UndoSSA (arg_node);
     /* necessary to guarantee, that the compilation can be stopped
