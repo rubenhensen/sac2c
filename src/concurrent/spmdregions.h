@@ -1,13 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/04/17 17:50:59  dkr
+ * modified header
+ *
  * Revision 1.1  1998/04/17 17:22:04  dkr
- * Initial revision
- *
- * Revision 1.2  1998/04/09 14:02:22  dkr
- * new funs ConcFundef, ConcNcode, ConcNpart, ...
- *
- * Revision 1.1  1998/04/03 11:37:24  dkr
  * Initial revision
  *
  *
