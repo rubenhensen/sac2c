@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2001/04/25 12:27:57  dkr
+ * NodeListDelete: works correctly even for empty nodelists now
+ *
  * Revision 3.33  2001/04/17 15:26:37  nmw
  * AppendTypes added
  *
@@ -1297,8 +1300,8 @@ ConcatNodelist (nodelist *first, nodelist *second)
  *
  * function:
  *   nodelist *NodeListAppend(nodelist *nl, node *newnode, void *attrib)
- *   nodelist *NodeListDelete(nodelist *nl, node *node, int free_attrib)
- *   nodelist *NodeListFree(nodelist *nl, int free_attrib)
+ *   nodelist *NodeListDelete(nodelist *nl, node *node, bool free_attrib)
+ *   nodelist *NodeListFree(nodelist *nl, bool free_attrib)
  *   nodelist *NodeListFind(nodelist *nl, node *node)
  *
  * description:
@@ -1309,9 +1312,9 @@ ConcatNodelist (nodelist *first, nodelist *second)
  *           not appended but put in front of the given list to speed
  *           up execution.
  *           Create a list: newlist = Append(NULL, newnode, attrib);
- *   Delete: deletes all elements of the given node. If free_attrib is 0,
+ *   Delete: deletes all elements of the given node. If free_attrib is FALSE,
  *           the attribut is not set free, else a FREE(attrib) is executed.
- *   Free  : frees whole list. If free_attrib is 0, the attributes are
+ *   Free  : frees whole list. If free_attrib is FALSE, the attributes are
  *           not set free, else a FREE(attrib) is executed.
  *   Find  : returns the nodelist node of the first found item
  *           with fitting node. If not found, returns NULL.
@@ -1321,30 +1324,35 @@ ConcatNodelist (nodelist *first, nodelist *second)
 nodelist *
 NodeListAppend (nodelist *nl, node *newnode, void *attrib)
 {
+    DBUG_ENTER ("NodeListAppend");
+
     nl = MakeNodelistNode (newnode, nl);
     NODELIST_ATTRIB2 (nl) = attrib;
-    return nl;
+
+    DBUG_RETURN (nl);
 }
 
 nodelist *
-NodeListDelete (nodelist *nl, node *node, int free_attrib)
+NodeListDelete (nodelist *nl, node *node, bool free_attrib)
 {
     nodelist *tmpnl, *prevnl;
 
-    do {
-        if (NODELIST_NODE (nl) == node) {
-            if (free_attrib && NODELIST_ATTRIB2 (nl))
-                FREE (NODELIST_ATTRIB2 (nl));
-            nl = FreeNodelistNode (nl);
+    DBUG_ENTER ("NodeListDelete");
+
+    while (nl && NODELIST_NODE (nl) == node) {
+        if (free_attrib && NODELIST_ATTRIB2 (nl)) {
+            FREE (NODELIST_ATTRIB2 (nl));
         }
-    } while (nl && NODELIST_NODE (nl) == node);
+        nl = FreeNodelistNode (nl);
+    }
 
     tmpnl = nl;
     prevnl = NULL;
     while (tmpnl) {
         if (NODELIST_NODE (tmpnl) == node) {
-            if (free_attrib && NODELIST_ATTRIB2 (tmpnl))
+            if (free_attrib && NODELIST_ATTRIB2 (tmpnl)) {
                 FREE (NODELIST_ATTRIB2 (tmpnl));
+            }
 
             NODELIST_NEXT (prevnl) = FreeNodelistNode (tmpnl);
         } else {
@@ -1354,28 +1362,34 @@ NodeListDelete (nodelist *nl, node *node, int free_attrib)
         tmpnl = NODELIST_NEXT (prevnl);
     }
 
-    return nl;
+    DBUG_RETURN (nl);
 }
 
 nodelist *
-NodeListFree (nodelist *nl, int free_attrib)
+NodeListFree (nodelist *nl, bool free_attrib)
 {
+    DBUG_ENTER ("NodeListFree");
+
     while (nl) {
-        if (free_attrib && NODELIST_ATTRIB2 (nl))
+        if (free_attrib && NODELIST_ATTRIB2 (nl)) {
             FREE (NODELIST_ATTRIB2 (nl));
+        }
         nl = FreeNodelistNode (nl);
     }
 
-    return nl;
+    DBUG_RETURN (nl);
 }
 
 nodelist *
 NodeListFind (nodelist *nl, node *node)
 {
-    while (nl && NODELIST_NODE (nl) != node)
-        nl = NODELIST_NEXT (nl);
+    DBUG_ENTER ("NodeListFind");
 
-    return nl;
+    while (nl && NODELIST_NODE (nl) != node) {
+        nl = NODELIST_NEXT (nl);
+    }
+
+    DBUG_RETURN (nl);
 }
 
 /*--------------------------------------------------------------------------*/
