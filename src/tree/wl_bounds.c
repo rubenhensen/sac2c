@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2002/08/07 09:46:13  dkr
+ * ifdef added to please cc (no warnings anymore)
+ *
  * Revision 1.6  2002/07/15 14:49:34  dkr
  * signature of NodeOrInt_MakeIndex() modified:
  * parameters 'no_num' and 'no_icm' removed
@@ -353,7 +356,9 @@ NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, ids *wl_ids)
             index = MakeNum (val);
         }
     } else {
+#ifdef TAGGED_ARRAYS
         int sel_dim;
+#endif
 
         DBUG_ASSERT ((ID_VARDEC ((*((node **)node_or_int))) != NULL), "no vardec found!");
 
