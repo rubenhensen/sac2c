@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/06/16 17:11:23  rob
+ * Add code for C macros for TAGGED ARRAY support.
+ * These are intended to eventually supplant the extant
+ * ARRAY macros.
+ *
  * Revision 2.1  1999/02/23 12:42:42  sacbase
  * new release made
  *
@@ -22,6 +27,8 @@
 #ifndef _icm2c_std_h
 #define _icm2c_std_h
 
+#include "types.h"
+
 extern void ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **tyarg);
 extern void ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg);
 extern void ICMCompileND_FUN_RET (char *retname, int narg, char **arg, node *arg_info);
@@ -29,7 +36,13 @@ extern void ICMCompileND_CREATE_CONST_ARRAY_S (char *name, int dim, char **s);
 extern void ICMCompileND_CREATE_CONST_ARRAY_H (char *name, char *copyfun, int dim,
                                                char **A);
 extern void ICMCompileND_CREATE_CONST_ARRAY_A (char *name, int length, int dim, char **s);
+#ifdef TAGGED_ARRAYS
+extern void ICMCompileND_DECL_DATA (char *type, char *nt, int dim, char **s);
+extern void ICMCompileND_DECL_DATA_AKS_NUQ (char *type, char *nt, int dim, char **s);
+extern void ICMCompileND_DECL_DATA_AKS_UNQ (char *type, char *nt, int dim, char **s);
+#else
 extern void ICMCompileND_KS_DECL_ARRAY (char *type, char *name, int dim, char **s);
+#endif
 extern void ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *type, char *name, int dim, char **s);
 extern void ICMCompileND_KD_DECL_EXTERN_ARRAY (char *basetype, char *name, int dim);
 extern void ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s);

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/06/16 17:11:23  rob
+ * Add code for C macros for TAGGED ARRAY support.
+ * These are intended to eventually supplant the extant
+ * ARRAY macros.
+ *
  * Revision 2.5  1999/05/19 18:58:59  dkr
  * added missing {s in BeginFold
  *
@@ -69,6 +74,11 @@
 #include <ctype.h>
 
 #include "icm2c_basic.h"
+#include "icm2c_std.h"
+
+#ifdef TAGGED_ARRAYS
+#include "icm2c_utils.h"
+#endif
 
 #include "dbug.h"
 #include "my_debug.h"
@@ -686,8 +696,163 @@ ICMCompileND_CREATE_CONST_ARRAY_A (char *name, int length, int dim, char **A)
     DBUG_VOID_RETURN;
 }
 
+#ifdef TAGGED_ARRAYS
 /******************************************************************************
  *
+ * function:
+ *   void ICMCompileND_DECL_DATA( char *type, char *nt, int dim, char **s)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_DECL_DATA( basetype, nt, dim, s0,..., sn)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_DECL_DATA (char *type, char *nt, int dim, char **s)
+{
+    DBUG_ENTER ("ICMCompileND_DECL_DATA");
+
+#define ND_DECL_DATA
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_DECL_DATA
+
+    switch (ICUNameClass (nt)) {
+    case AKS:
+        switch (ICUUniClass (nt)) {
+        case UNQ:
+            ICMCompileND_DECL_DATA_AKS_UNQ (type, nt, dim, s);
+            break;
+        case NUQ:
+            ICMCompileND_DECL_DATA_AKS_NUQ (type, nt, dim, s);
+            break;
+        };
+        break;
+    case AKD:
+        switch (ICUUniClass (nt)) {
+        case UNQ:
+            INDENT;
+            fprintf (outfile, "SAC_ND_DECL_DATA_AKD_UNQ(%s*, %s, %d)\n", type, nt, dim);
+            break;
+        case NUQ:
+            INDENT;
+            fprintf (outfile, "SAC_ND_DECL_DATA_AKD_NUQ(%s*, %s, %d)\n", type, nt, dim);
+            break;
+        };
+        break;
+    case HID:
+        switch (ICUUniClass (nt)) {
+        case UNQ:
+            INDENT;
+            fprintf (outfile, "SAC_ND_DECL_DATA_HID_UNQ(%s, %s, %d)\n", type, nt, dim);
+            break;
+        case NUQ:
+            INDENT;
+            fprintf (outfile, "SAC_ND_DECL_DATA_HID_NUQ(%s, %s, %d)\n", type, nt, dim);
+            break;
+        };
+        break;
+    };
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_DECL_DATA_AKS_NUQ( char *type, char *nt, int dim, char **s)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_DECL_DATA_AKS_NUQ( basetype, nt, dim, s0,..., sn)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_DECL_DATA_AKS_NUQ (char *type, char *nt, int dim, char **s)
+{
+    DBUG_ENTER ("ICMCompileND_DECL_DATA_AKS_NUQ");
+
+#define ND_DECL_DATA_AKS_NUQ
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_DECL_DATA_AKS_NUQ
+
+    INDENT;
+    fprintf (outfile, "%s *SAC_ND_A_FIELD(%s);\n", type, nt);
+    INDENT;
+    fprintf (outfile, "SAC_array_descriptor *SAC_ND_A_DESC(%s);\n", nt);
+    INDENT;
+    fprintf (outfile, "int SAC_ND_A_SIZE(%s)=", nt);
+    fprintf (outfile, "%s", s[0]);
+    {
+        int i;
+        for (i = 1; i < dim; i++)
+            fprintf (outfile, "*%s", s[i]);
+        fprintf (outfile, ";\n");
+        INDENT;
+        fprintf (outfile, "int SAC_ND_A_DIM(%s)=%d;\n", nt, dim);
+        for (i = 0; i < dim; i++) {
+            INDENT;
+            fprintf (outfile, "int SAC_ND_A_SHAPE(%s, %d)=%s;\n", nt, i, s[i]);
+        }
+    }
+    fprintf (outfile, "\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_DECL_DATA_AKS_UNQ( char *type, char *nt, int dim, char **s)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_DECL_DATA_AKS_UNQ( basetype, nt, dim, s0,..., sn)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_DECL_DATA_AKS_UNQ (char *type, char *nt, int dim, char **s)
+{
+    DBUG_ENTER ("ICMCompileND_DECL_DATA_AKS_UNQ");
+
+#define ND_DECL_DATA_AKS_UNQ
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_DECL_DATA_AKS_UNQ
+
+    INDENT;
+    fprintf (outfile, "%s *SAC_ND_A_FIELD(%s);\n", type, nt);
+    INDENT;
+    fprintf (outfile, "int SAC_ND_A_SIZE(%s)=", nt);
+    fprintf (outfile, "%s", s[0]);
+    {
+        int i;
+        for (i = 1; i < dim; i++)
+            fprintf (outfile, "*%s", s[i]);
+        fprintf (outfile, ";\n");
+        INDENT;
+        fprintf (outfile, "int SAC_ND_A_DIM(%s)=%d;\n", nt, dim);
+        for (i = 0; i < dim; i++) {
+            INDENT;
+            fprintf (outfile, "int SAC_ND_A_SHAPE(%s, %d)=%s;\n", nt, i, s[i]);
+        }
+    }
+    fprintf (outfile, "\n");
+
+    DBUG_VOID_RETURN;
+}
+
+#else /* TAGGED_ARRAYS */
+/******************************************************************************
+ *
+
  * function:
  *   void ICMCompileND_KS_DECL_ARRAY( char *type, char *name, int dim, char **s)
  *
@@ -731,6 +896,8 @@ ICMCompileND_KS_DECL_ARRAY (char *type, char *name, int dim, char **s)
 
     DBUG_VOID_RETURN;
 }
+
+#endif /* TAGGED_ARRAYS */
 
 /******************************************************************************
  *
