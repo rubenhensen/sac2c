@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/07/23 16:14:13  dkr
+ * more CAT? macros added
+ *
  * Revision 3.4  2002/07/15 19:44:19  dkr
  * CAT6 added
  *
@@ -150,6 +153,15 @@
 
 #define CAT6(x, y) xCAT6 (x, y)
 #define xCAT6(x, y) x##y
+
+#define CAT7(x, y) xCAT7 (x, y)
+#define xCAT7(x, y) x##y
+
+#define CAT8(x, y) xCAT8 (x, y)
+#define xCAT8(x, y) x##y
+
+#define CAT9(x, y) xCAT9 (x, y)
+#define xCAT9(x, y) x##y
 
 #define AddParens(a) xAddParens (a)
 #define xAddParens(a) (##a##)
