@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.37  1999/07/14 18:21:49  bs
+ * Access macros added: INFO_WLAA_COUNT, NCODE_ACCESSNO
+ *
  * Revision 2.36  1999/07/14 12:14:36  sbs
  * proper support for arg_info during IVE added.
  *
@@ -2460,10 +2463,11 @@ extern node *MakeInfo ();
 /* WL access analyze */
 #define INFO_WLAA_LASTLETIDS(n) (n->info.ids)
 #define INFO_WLAA_ACCESS(n) ((access_t *)(n->info2))
+#define INFO_WLAA_COUNT(n) (n->counter)
 #define INFO_WLAA_FEATURE(n) ((feature_t) (n->lineno))
 #define INFO_WLAA_WOTYPE(n) ((WithOpType) (n->varno))
 #define INFO_WLAA_BELOWAP(n) (n->flag)
-#define INFO_WLAA_WLLEVEL(n) (n->counter)
+#define INFO_WLAA_WLLEVEL(n) (n->refcnt)
 #define INFO_WLAA_INDEXVAR(n) (n->node[0])
 #define INFO_WLAA_ACCESSVEC(n) ((shpseg *)(n->node[1]))
 #define INFO_WLAA_TMPACCESS(n) ((access_t *)(n->node[2]))
@@ -2818,8 +2822,11 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***
  ***    FEATURE is a bit mask which characterizes the code of CBLOCK
  ***    (see types.h for details).
+ ***
  ***    ACCESS is a list of array accesses.
  ***    Both FEATURE and ACCESS are used for the tile size inference scheme.
+ ***
+ ***    ACCESSNO is the number of array accesses stored in ACCESS.
  ***/
 
 extern node *MakeNCode (node *block, node *expr);
@@ -2836,6 +2843,7 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_FLAG(n) (n->flag)
 #define NCODE_FEATURE(n) ((feature_t) (n->varno))
 #define NCODE_ACCESS(n) ((access_t *)(n->info2))
+#define NCODE_ACCESSNO(n) (n->counter)
 
 /*--------------------------------------------------------------------------*/
 
