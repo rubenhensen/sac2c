@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1998/02/05 17:17:21  srs
+ * new function UNQNwith
+ *
  * Revision 1.11  1997/10/29 14:38:52  srs
  * free -> FREE
  *
@@ -1249,30 +1252,45 @@ UNQwith (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * function:
+ *   node *UNQNwith(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * description:
+ *   compare UNQwith.
  *
- */
+ *
+ ******************************************************************************/
 
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
+node *
+UNQNwith (node *arg_node, node *arg_info)
+{
+    unqstatelist *skipped_state;
+
+    DBUG_ENTER ("UNQNwith");
+
+    skipped_state = CopyUnqstate (unqstate);
+
+    DBUG_EXECUTE ("UNQ", fprintf (stderr, "\nskipped state of with\n");
+                  PrintUnqstate (skipped_state););
+
+    AddHistory (unqstate, H_with_enter);
+    AddHistory (skipped_state, H_with_skipped);
+
+    /*   Trav(WITH_OPERATOR(arg_node), arg_node);  */
+    /* traverse same elements as in the old withloop: */
+    Trav (NWITH_CODE (arg_node), arg_node);
+
+    DBUG_EXECUTE ("UNQ", fprintf (stderr, "\nUnq-state after with\n");
+                  PrintUnqstate (unqstate););
+
+    AddHistory (unqstate, H_with_leave);
+
+    unqstate = MergeUnqstate (skipped_state, unqstate);
+
+    DBUG_EXECUTE ("UNQ", fprintf (stderr, "\nUnq-state after merging skip and with\n");
+                  PrintUnqstate (unqstate););
+
+    DBUG_RETURN (arg_node);
+}
