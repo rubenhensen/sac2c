@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2005/02/11 14:40:30  jhb
+ * added tree_check to PHASE_DONE_EPILOG
+ *
  * Revision 3.34  2004/11/27 01:43:41  ktr
  * removed ILIBrenamelocalidentifier
  *
@@ -169,6 +172,7 @@
 #include "types.h"
 #include "dbug.h"
 #include "globals.h"
+#include "check_lib.h"
 
 /*********************************
  *
@@ -257,7 +261,10 @@ extern void ILIBdbugMemoryLeakCheck (void);
 
 #define PHASE_DONE_EPILOG                                                                \
     ABORT_ON_ERROR;                                                                      \
-    DBUG_EXECUTE ("MEM_LEAK", ILIBdbugMemoryLeakCheck ();)
+    DBUG_EXECUTE ("MEM_LEAK", ILIBdbugMemoryLeakCheck (););                              \
+    if (global.treecheck) {                                                              \
+        global.syntax_tree = CHKdoTreeCheck (global.syntax_tree);                        \
+    }
 
 #define PHASE_EPILOG                                                                     \
     if (global.do_fun2lac[global.compiler_phase]) {                                      \
