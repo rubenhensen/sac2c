@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1994/12/05 13:20:47  hw
+ * Revision 1.2  1994/12/14 16:35:39  sbs
+ * userdef types integrated
+ *
+ * Revision 1.1  1994/12/05  13:20:47  hw
  * Initial revision
  *
  *
@@ -48,15 +51,15 @@ Type2String (types *type, int print_id)
 
     do {
         if (0 == type->dim)
-            strcat (tmp_string, type_string[type->simpletype]);
+            strcat (tmp_string, SIMPLE2STR (type));
         else if (-1 == type->dim) {
-            strcat (tmp_string, type_string[type->simpletype]);
+            strcat (tmp_string, SIMPLE2STR (type));
             strcat (tmp_string, "[]");
         } else {
             int i;
             static char int_string[INT_STRING_LENGTH];
 
-            strcat (tmp_string, type_string[type->simpletype]);
+            strcat (tmp_string, SIMPLE2STR (type));
             strcat (tmp_string, "[ ");
             for (i = 0; i < type->dim; i++)
                 if (i != (type->dim - 1)) {
