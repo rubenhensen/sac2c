@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2003/03/13 15:49:09  dkr
+ * handling of -minarrayrep option added
+ *
  * Revision 1.7  2002/07/31 15:35:02  dkr
  * new hidden tag added
  *
@@ -59,11 +62,11 @@ GetShapeClassFromTypes (types *type)
     } else {
         int dim = GetShapeDim (type);
 
-        if (dim == SCALAR) {
+        if ((dim == SCALAR) && (min_array_rep <= MIN_ARRAY_REP_SCL_AUD)) {
             z = C_scl;
-        } else if (KNOWN_SHAPE (dim)) {
+        } else if (KNOWN_SHAPE (dim) && (min_array_rep <= MIN_ARRAY_REP_SCL_AKS)) {
             z = C_aks;
-        } else if (KNOWN_DIMENSION (dim)) {
+        } else if (KNOWN_DIMENSION (dim) && (min_array_rep <= MIN_ARRAY_REP_SCL_AKD)) {
             z = C_akd;
         } else {
             z = C_aud;
