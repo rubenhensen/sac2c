@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/07/23 13:35:46  khf
+ * F_accu contains no longer the neutral elements of fold operators
+ *
  * Revision 1.1  2004/07/21 12:35:31  khf
  * Initial revision
  *
@@ -71,8 +74,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *MakeAccuAssign( node *fundef, ids *lhs_ids, ids *idx_vec,
- *                           node *neutral)
+ * @fn node *MakeAccuAssign( node *fundef, ids *lhs_ids, ids *idx_vec)
  *
  *   @brief
  *
@@ -81,16 +83,13 @@ FreeInfo (info *info)
  *   @return node *      :  a chained list of N_assign nodes
  ******************************************************************************/
 static node *
-MakeAccuAssign (node *fundef, ids *lhs_ids, ids *idx_vec, node *neutral)
+MakeAccuAssign (node *fundef, ids *lhs_ids, ids *idx_vec)
 {
     node *vardec, *tmp, *nassign;
     ids *_ids;
     char *nvarname;
 
     DBUG_ENTER ("MakeAccuAssign");
-
-    DBUG_ASSERT (((neutral != NULL) && (NODE_TYPE (neutral) == N_id)),
-                 "neutral not found or no id");
 
     nvarname = TmpVarName (IDS_NAME (lhs_ids));
     _ids = MakeIds (nvarname, NULL, ST_regular);
@@ -102,8 +101,8 @@ MakeAccuAssign (node *fundef, ids *lhs_ids, ids *idx_vec, node *neutral)
 
     fundef = AddVardecs (fundef, vardec);
 
-    /* F_accu( <idx-varname>, <neutral-element-of-foldfun>) */
-    tmp = MakePrf2 (F_accu, DupIds_Id (idx_vec), DupNode (neutral));
+    /* F_accu( <idx-varname>) */
+    tmp = MakePrf1 (F_accu, DupIds_Id (idx_vec));
 
     nassign = MakeAssign (MakeLet (tmp, _ids), NULL);
 
@@ -303,7 +302,7 @@ EANcode (node *arg_node, info *arg_info)
     nblock = NCODE_CBLOCK (arg_node);
 
     accuassign = MakeAccuAssign (INFO_EA_FUNDEF (arg_info), INFO_EA_LHS_IDS (arg_info),
-                                 NWITH_VEC (wl), NWITH_NEUTRAL (wl));
+                                 NWITH_VEC (wl));
     ffassign = MakeFoldFunAssign (INFO_EA_FUNDEF (arg_info), NWITH_WITHOP (wl),
                                   ASSIGN_LHS (accuassign), NWITH_CEXPR (wl));
 
