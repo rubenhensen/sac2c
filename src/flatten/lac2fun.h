@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/11/22 12:37:33  ktr
+ * Ismop SacDevCamp 04
+ * ,.
+ *
  * Revision 3.6  2004/11/17 09:05:08  ktr
  * GetLacFunName is now exported
  *
@@ -47,15 +51,24 @@
  *
  */
 
-#ifndef _sac_lac2fun_h
-#define _sac_lac2fun_h
+#ifndef _SAC_LAC2FUN_H_
+#define _SAC_LAC2FUN_H_
 
-extern node *Lac2Fun (node *syntaxtree);
-extern char *GetLacFunName (char *suffix);
+#include "types.h"
+
+/******************************************************************************
+ *
+ * Lac2fun traversal ( l2f_tab)
+ *
+ * Prefix: L2F
+ *
+ *****************************************************************************/
+extern node *L2FdoLac2Fun (node *syntaxtree);
+extern char *L2FgetLacFunName (char *suffix);
 
 extern node *L2Ffundef (node *arg_node, info *arg_info);
 extern node *L2Fcond (node *arg_node, info *arg_info);
 extern node *L2Fdo (node *arg_node, info *arg_info);
 extern node *L2Fassign (node *arg_node, info *arg_info);
 
-#endif /* _sac_lac2fun_h */
+#endif /* _SAC_LAC2FUN_H_ */

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/22 12:37:33  ktr
+ * Ismop SacDevCamp 04
+ * ,.
+ *
  * Revision 1.3  2004/09/18 15:58:34  ktr
  * added RestoreSSAExplicitAllocs
  *
@@ -15,18 +19,22 @@
  *
  */
 
-/*
- * Tool package to create resp. to reverse the ssa-form
- */
-
-#ifndef _ssa_h
-#define _ssa_h
+#ifndef _SAC_SSA_H_
+#define _SAC_SSA_H_
 
 #include "types.h"
 
-extern node *DoSSA (node *syntax_tree);
-extern node *UndoSSA (node *syntax_tree);
-extern node *RestoreSSAExplicitAllocs (node *syntax_tree);
-extern node *RestoreSSAOneFunction (node *fundef);
-extern node *RestoreSSAOneFundef (node *fundef);
-#endif /* ssa_h */
+/******************************************************************************
+ *
+ * Tool package to create resp. to reverse the ssa-form
+ *
+ * Prefix: SSA
+ *
+ *****************************************************************************/
+extern node *SSAdoSSA (node *syntax_tree);
+extern node *SSAundoSSA (node *syntax_tree);
+extern node *SSArestoreSSAExplicitAllocs (node *syntax_tree);
+extern node *SSArestoreSSAOneFunction (node *fundef);
+extern node *SSArestoreSSAOneFundef (node *fundef);
+
+#endif /* _SAC_SSA_H_ */

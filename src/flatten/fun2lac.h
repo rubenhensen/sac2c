@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/22 12:37:33  ktr
+ * Ismop SacDevCamp 04
+ * ,.
+ *
  * Revision 3.2  2004/07/16 17:36:23  sah
  * switch to new INFO structure
  * PHASE I
@@ -15,29 +19,29 @@
  *
  */
 
+#ifndef _SAC_FUN2LAC_H_
+#define _SAC_FUN2LAC_H_
+
+#include "types.h"
+
 /*****************************************************************************
  *
- * file:   fun2lac.h
+ * Fun2lac traversal ( fun2lac_tab)
  *
- * prefix: FUN2LAC
+ * prefix: F2L
  *
  * description:
  *
  *   header file for fun2lac.c.
  *
- *
  *****************************************************************************/
+extern node *F2LdoFun2Lac (node *syntax_tree);
 
-#ifndef FUN2LAC_H
-#define FUN2LAC_H
+extern node *F2Lmodule (node *arg_node, info *arg_info);
+extern node *F2Lfundef (node *arg_node, info *arg_info);
+extern node *F2Lblock (node *arg_node, info *arg_info);
+extern node *F2Lassign (node *arg_node, info *arg_info);
+extern node *F2Llet (node *arg_node, info *arg_info);
+extern node *F2Lap (node *arg_node, info *arg_info);
 
-extern node *Fun2Lac (node *syntax_tree);
-
-extern node *FUN2LACmodul (node *arg_node, info *arg_info);
-extern node *FUN2LACfundef (node *arg_node, info *arg_info);
-extern node *FUN2LACblock (node *arg_node, info *arg_info);
-extern node *FUN2LACassign (node *arg_node, info *arg_info);
-extern node *FUN2LAClet (node *arg_node, info *arg_info);
-extern node *FUN2LACap (node *arg_node, info *arg_info);
-
-#endif /* FUN2LAC_H */
+#endif /* _SAC_FUN2LAC_H_ */

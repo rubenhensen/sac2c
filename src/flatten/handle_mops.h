@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/22 12:37:33  ktr
+ * Ismop SacDevCamp 04
+ * ,.
+ *
  * Revision 1.7  2004/07/16 14:41:34  sah
  * switch to new INFO structure
  * PHASE I
@@ -26,18 +30,22 @@
  *
  */
 
-#ifndef _handle_mops_h
-#define _handle_mops_h
+#ifndef _SAC_HANDLE_MOPS_H_
+#define _SAC_HANDLE_MOPS_H_
 
 #include "types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "internal_lib.h"
 
-extern node *HandleMops (node *arg_node);
+/******************************************************************************
+ *
+ * Handle mops traversal ( hm_tab)
+ *
+ * Prefix: HM
+ *
+ *****************************************************************************/
+extern node *HMdoHandleMops (node *arg_node);
 
-extern node *HMmop (node *arg_node, info *arg_info);
 extern node *HMap (node *arg_node, info *arg_info);
-extern node *HMNwithop (node *arg_node, info *arg_info);
+extern node *HMfold (node *arg_node, info *arg_info);
+extern node *HMmop (node *arg_node, info *arg_info);
 
-#endif /* _handle_mops_h */
+#endif /* _SAC_HANDLE_MOPS_H_ */

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/22 12:37:33  ktr
+ * Ismop SacDevCamp 04
+ * ,.
+ *
  * Revision 1.3  2004/07/16 17:36:23  sah
  * switch to new INFO structure
  * PHASE I
@@ -14,14 +18,23 @@
  *
  */
 
-#ifndef _sac_insert_vardec_h
-#define _sac_insert_vardec_h
+#ifndef _SAC_INSERT_VARDEC_H_
+#define _SAC_INSERT_VARDEC_H_
 
-extern node *InsertVardec (node *syntaxtree);
+#include "types.h"
+
+/******************************************************************************
+ *
+ * Insert Vardec traversal ( insvd_tab)
+ *
+ * Prefix: INSVD
+ *
+ *****************************************************************************/
+extern node *INSVDdoInsertVardec (node *syntaxtree);
 
 extern node *INSVDfundef (node *arg_node, info *arg_info);
 extern node *INSVDid (node *arg_node, info *arg_info);
 extern node *INSVDwithid (node *arg_node, info *arg_info);
 extern node *INSVDlet (node *arg_node, info *arg_info);
 
-#endif /* _sac_insert_vardec_h */
+#endif /* _SAC_INSERT_VARDEC_H_ */

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.3  2004/11/22 12:37:33  ktr
+ * Ismop SacDevCamp 04
+ * ,.
+ *
  * Revision 1.2  2004/11/21 20:10:20  khf
  * the big 2004 codebrushing event
  *
@@ -41,25 +45,23 @@
  *
  */
 
-/*****************************************************************************
+#ifndef _SAC_TONEWTYPES_H_
+#define _SAC_TONEWTYPES_H_
+
+#include "types.h"
+
+/******************************************************************************
  *
- * file:   ToNewTypes.h
+ * To new types traversal ( tonewtypes_tab)
  *
- * prefix: TNT
+ * Prefix: TNT
  *
  * description:
  *
  *   This module restores the AVIS attribute in N_id, N_vardec/N_arg
  *   when old code did not updates all references correctly.
  *
- *
  *****************************************************************************/
-
-#include "types.h"
-
-#ifndef _SAC_TONEWTYPES_H_
-#define _SAC_TONEWTYPES_H_
-
 extern node *TNTdoToNewTypes (node *syntax_tree);
 extern node *TNTdoToNewTypesOneFunction (node *fundef);
 extern node *TNTdoToNewTypesOneFundef (node *fundef);
@@ -77,4 +79,4 @@ extern node *TNTcast (node *arg_node, info *arg_info);
 extern node *TNTtypedef (node *arg_node, info *arg_info);
 extern node *TNTarray (node *arg_node, info *arg_info);
 
-#endif /* SAC_TONEWTYPES_H_ */
+#endif /* _SAC_TONEWTYPES_H_ */

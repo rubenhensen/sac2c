@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.3  2004/11/22 12:37:33  ktr
+ * Ismop SacDevCamp 04
+ * ,.
+ *
  * Revision 1.2  2004/07/16 17:36:23  sah
  * switch to new INFO structure
  * PHASE I
@@ -29,29 +33,30 @@
  *
  */
 
+#ifndef _SAC_UNDOSSATRANSFORM_H_
+#define _SAC_UNDOSSATRANSFORM_H_
+
+#include "types.h"
+
 /*****************************************************************************
  *
- * file:   UndoSSATransform.h
+ * Undo SSA-Transform traversal ( ussa_tab)
  *
- * prefix: USSA
+ * prefix: USSAT
  *
  *
  *****************************************************************************/
+extern node *USSATdoUndoSSATransform (node *syntax_tree);
 
-#ifndef SAC_UNDOSSATRANSFORM_H
+extern node *USSATarg (node *arg_node, info *arg_info);
+extern node *USSATvardec (node *arg_node, info *arg_info);
+extern node *USSATid (node *arg_node, info *arg_info);
+extern node *USSATlet (node *arg_node, info *arg_info);
+extern node *USSATassign (node *arg_node, info *arg_info);
+extern node *USSATfundef (node *arg_node, info *arg_info);
+extern node *USSATblock (node *arg_node, info *arg_info);
+extern node *USSATwithid (node *arg_node, info *arg_info);
+extern node *USSATcode (node *arg_node, info *arg_info);
+extern node *USSATwith (node *arg_node, info *arg_info);
 
-#define SAC_UNDOSSATRANSFORM_H
-
-extern node *UndoSSATransform (node *syntax_tree);
-
-extern node *USSAarg (node *arg_node, info *arg_info);
-extern node *USSAvardec (node *arg_node, info *arg_info);
-extern node *USSAid (node *arg_node, info *arg_info);
-extern node *USSAlet (node *arg_node, info *arg_info);
-extern node *USSAassign (node *arg_node, info *arg_info);
-extern node *USSAfundef (node *arg_node, info *arg_info);
-extern node *USSAblock (node *arg_node, info *arg_info);
-extern node *USSANwithid (node *arg_node, info *arg_info);
-extern node *USSANcode (node *arg_node, info *arg_info);
-extern node *USSANwith (node *arg_node, info *arg_info);
-#endif /* SAC_UNDOSSATRANSFORM_H */
+#endif /* _SAC_UNDOSSATRANSFORM_H_ */

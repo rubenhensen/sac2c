@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/22 12:37:33  ktr
+ * Ismop SacDevCamp 04
+ * ,.
+ *
  * Revision 1.7  2004/11/21 20:10:20  khf
  * the big 2004 codebrushing event
  *
@@ -27,11 +31,18 @@
  *
  */
 
-#include "types.h"
-
 #ifndef _SAC_WLPARTIONGENERATION_H_
 #define _SAC_WLPARTIONGENERATION_H_
 
+#include "types.h"
+
+/******************************************************************************
+ *
+ * WLPartition Generation traversal ( wlpg_tab)
+ *
+ * Prefix: WLPG
+ *
+ *****************************************************************************/
 extern node *WLPGdoWlPartitionGeneration (node *arg_node);
 extern node *WLPGdoWlPartitionGenerationOpt (node *arg_node);
 

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.8  2004/11/22 12:37:33  ktr
+ * Ismop SacDevCamp 04
+ * ,.
+ *
  * Revision 1.7  2004/09/18 15:57:51  ktr
  * added header for SSATransformExplicitAllocs
  *
@@ -61,34 +65,43 @@
  */
 
 /* this module traverses the AST and transformes the code in SSA form */
-#ifndef _SSAtransform_h
 
-#define _SSAtransform_h
+#ifndef _SAC_SSATRANSFORM_H_
+#define _SAC_SSATRANSFORM_H_
 
-extern node *SSAfundef (node *arg_node, info *arg_info);
-extern node *SSAblock (node *arg_node, info *arg_info);
-extern node *SSAassign (node *arg_node, info *arg_info);
-extern node *SSAlet (node *arg_node, info *arg_info);
-extern node *SSAicm (node *arg_node, info *arg_info);
-extern node *SSAarg (node *arg_node, info *arg_info);
-extern node *SSAvardec (node *arg_node, info *arg_info);
-extern node *SSAid (node *arg_node, info *arg_info);
-extern node *SSAwith (node *arg_node, info *arg_info);
-extern node *SSAwith2 (node *arg_node, info *arg_info);
-extern node *SSAcode (node *arg_node, info *arg_info);
-extern node *SSApart (node *arg_node, info *arg_info);
-extern node *SSAwithid (node *arg_node, info *arg_info);
-extern node *SSAcond (node *arg_node, info *arg_info);
-extern node *SSAfuncond (node *arg_node, info *arg_info);
-extern node *SSAreturn (node *arg_node, info *arg_info);
-extern node *SSAap (node *arg_node, info *arg_info);
+#include "types.h"
 
-extern node *SSATransform (node *ast);
-extern node *SSATransformAllowGOs (node *ast);
-extern node *SSATransformExplicitAllocs (node *ast);
-extern node *SSATransformOneFunction (node *fundef);
-extern node *SSATransformOneFundef (node *fundef);
+/******************************************************************************
+ *
+ * SSATransform traversal ( ssafrm_tab)
+ *
+ * Prefix: SSAT
+ *
+ *****************************************************************************/
+extern node *SSATdoTransform (node *ast);
+extern node *SSATdoTransformAllowGOs (node *ast);
+extern node *SSATdoTransformExplicitAllocs (node *ast);
+extern node *SSATdoTransformOneFunction (node *fundef);
+extern node *SSATdoTransformOneFundef (node *fundef);
 
-extern node *SSANewVardec (node *old_vardec_or_arg);
+extern node *SSATap (node *arg_node, info *arg_info);
+extern node *SSATassign (node *arg_node, info *arg_info);
+extern node *SSATblock (node *arg_node, info *arg_info);
+extern node *SSATcode (node *arg_node, info *arg_info);
+extern node *SSATcond (node *arg_node, info *arg_info);
+extern node *SSATfundef (node *arg_node, info *arg_info);
+extern node *SSATlet (node *arg_node, info *arg_info);
+extern node *SSATicm (node *arg_node, info *arg_info);
+extern node *SSATarg (node *arg_node, info *arg_info);
+extern node *SSATvardec (node *arg_node, info *arg_info);
+extern node *SSATid (node *arg_node, info *arg_info);
+extern node *SSATwith (node *arg_node, info *arg_info);
+extern node *SSATwith2 (node *arg_node, info *arg_info);
+extern node *SSATpart (node *arg_node, info *arg_info);
+extern node *SSATwithid (node *arg_node, info *arg_info);
+extern node *SSATfuncond (node *arg_node, info *arg_info);
+extern node *SSATreturn (node *arg_node, info *arg_info);
 
-#endif /* _SSAtransform_h */
+extern node *SSATnewVardec (node *old_vardec_or_arg); /* TODO use AVIS instead */
+
+#endif /* _SAC_SSATRANSFORM_H_ */

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/11/22 12:37:33  ktr
+ * Ismop SacDevCamp 04
+ * ,.
+ *
  * Revision 3.3  2004/07/16 14:41:34  sah
  * switch to new INFO structure
  * PHASE I
@@ -57,30 +61,42 @@
  *
  */
 
-#ifndef _flatten_h
-#define _flatten_h
+#ifndef _SAC_FLATTEN_H_
+#define _SAC_FLATTEN_H_
 
-extern node *Flatten (node *);
-extern node *FltnBlock (node *arg_node, info *arg_info);
-extern node *FltnAssign (node *arg_node, info *arg_info);
-extern node *FltnExprs (node *arg_node, info *arg_info);
-extern node *FltnCond (node *arg_node, info *arg_info);
-extern node *FltnWhile (node *arg_node, info *arg_info);
-extern node *FltnDo (node *arg_node, info *arg_info);
-extern node *FltnModul (node *arg_node, info *arg_info);
-extern node *FltnFundef (node *arg_node, info *arg_info);
-extern node *FltnAp (node *arg_node, info *arg_info);
-extern node *FltnArray (node *arg_node, info *arg_info);
-extern node *FltnReturn (node *arg_node, info *arg_info);
-extern node *FltnId (node *arg_node, info *arg_info);
-extern node *FltnLet (node *arg_node, info *arg_info);
-extern node *FltnArgs (node *arg_node, info *arg_info);
-extern node *FltnPrf (node *arg_node, info *arg_info);
-extern node *FltnNwith (node *arg_node, info *arg_info);
-extern node *FltnNwithid (node *arg_node, info *arg_info);
-extern node *FltnNpart (node *arg_node, info *arg_info);
-extern node *FltnNgenerator (node *arg_node, info *arg_info);
-extern node *FltnNwithop (node *arg_node, info *arg_info);
-extern node *FltnNcode (node *arg_node, info *arg_info);
+#include "types.h"
 
-#endif /* _flatten_h  */
+/******************************************************************************
+ *
+ * Flatten traversal ( flat_tab)
+ *
+ * Prefix: FLAT
+ *
+ *****************************************************************************/
+extern node *FLATdoFlatten (node *syntax_tree);
+
+extern node *FLATblock (node *arg_node, info *arg_info);
+extern node *FLATassign (node *arg_node, info *arg_info);
+extern node *FLATexprs (node *arg_node, info *arg_info);
+extern node *FLATcond (node *arg_node, info *arg_info);
+extern node *FLATwhile (node *arg_node, info *arg_info);
+extern node *FLATdo (node *arg_node, info *arg_info);
+extern node *FLATmodule (node *arg_node, info *arg_info);
+extern node *FLATfundef (node *arg_node, info *arg_info);
+extern node *FLATap (node *arg_node, info *arg_info);
+extern node *FLATarray (node *arg_node, info *arg_info);
+extern node *FLATreturn (node *arg_node, info *arg_info);
+extern node *FLATid (node *arg_node, info *arg_info);
+extern node *FLATlet (node *arg_node, info *arg_info);
+extern node *FLATargs (node *arg_node, info *arg_info);
+extern node *FLATprf (node *arg_node, info *arg_info);
+extern node *FLATwith (node *arg_node, info *arg_info);
+extern node *FLATwithid (node *arg_node, info *arg_info);
+extern node *FLATpart (node *arg_node, info *arg_info);
+extern node *FLATgenerator (node *arg_node, info *arg_info);
+extern node *FLATgenarray (node *arg_node, info *arg_info);
+extern node *FLATmodarray (node *arg_node, info *arg_info);
+extern node *FLATfold (node *arg_node, info *arg_info);
+extern node *FLATcode (node *arg_node, info *arg_info);
+
+#endif /* _SAC_FLATTEN_H_ */
