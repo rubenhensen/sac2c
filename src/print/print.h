@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/02/12 15:57:34  nmw
+ * Print functions for N_cseinfo, N_ssacnt and N_avis added
+ *
  * Revision 3.7  2001/02/06 01:21:35  dkr
  * macros INDENT_STR and DO_INDENT added
  *
@@ -129,6 +132,9 @@ extern node *PrintST (node *arg_node, node *arg_info);
 extern node *PrintMTsignal (node *arg_node, node *arg_info);
 extern node *PrintMTsync (node *arg_node, node *arg_info);
 extern node *PrintMTalloc (node *arg_node, node *arg_info);
+extern node *PrintSSAcnt (node *arg_node, node *arg_info);
+extern node *PrintCSEinfo (node *arg_node, node *arg_info);
+extern node *PrintAvis (node *arg_node, node *arg_info);
 
 /* new with-loop */
 extern node *PrintNwith (node *arg_node, node *arg_info);

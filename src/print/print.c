@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/02/12 15:57:34  nmw
+ * Print functions for N_cseinfo, N_ssacnt and N_avis added
+ *
  * Revision 3.18  2001/02/07 21:14:52  dkr
  * space after keyword 'extern' added
  *
@@ -3450,6 +3453,71 @@ PrintCWrapper (node *arg_node, node *arg_info)
             }
         });
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintSSAcnt( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Prints list of SSA rename counters (for debug only).
+ *
+ ******************************************************************************/
+
+node *
+PrintSSAcnt (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintSSAcnt");
+
+    fprintf (outfile, "baseid: %s, counter: %d\n", SSACNT_BASEID (arg_node),
+             SSACNT_COUNT (arg_node));
+
+    if (SSACNT_NEXT (arg_node) != NULL) {
+        PRINT_CONT (Trav (SSACNT_NEXT (arg_node), arg_info), "\n\n");
+    }
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintCSEinfo( node *arg_node, node *arg_info);
+ *
+ * description:
+ *   Prints sets of available common subexpressions (debug only).
+ *
+ ******************************************************************************/
+node *
+PrintCSEinfo (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintCSEinfo");
+
+    /* to be implemnted */
+
+    if (CSEINFO_NEXT (arg_node) != NULL) {
+        PRINT_CONT (Trav (CSEINFO_NEXT (arg_node), arg_info), "\n\n");
+    }
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintAvis( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Prints elements of avis node connected to vardec or arg.
+ *
+ ******************************************************************************/
+node *
+PrintAvis (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintAvis");
+
+    /* to be implemnted */
 
     DBUG_RETURN (arg_node);
 }
