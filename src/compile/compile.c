@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.131  1998/04/20 14:07:25  sbs
+ * revised CompTypedef !!
+ *
  * Revision 1.130  1998/04/20 12:46:50  dkr
  * fixed a bug in CompSPMD
  *
@@ -5432,31 +5435,39 @@ CompTypedef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CompTypedef");
 
-    if (0 != TYPES_DIM (TYPEDEF_TYPE (arg_node))) {
-        char *typename, *new_typename;
-        node *type1, *type2, *icm_arg;
+    if (0 != TYPEDEF_DIM (arg_node)) {
+        /*
+         * Here, a new type is defined as a composite type
+         * ( for the time being an array type!)
+         * Therefore, we have to translate the typedef-node
+         * into an ICM-node "ND_TYPEDEF_ARRAY" ....
+         */
+        node *type1, *type2, icm_node;
 
-        typename = type_string[TYPES_BASETYPE (VARDEC_TYPE (arg_node))];
+        type1 = MakeId (StringCopy (type_string[TYPEDEF_BASETYPE (arg_node)]), NULL,
+                        ST_regular);
 
-        new_typename = StringCopy (VARDEC_NAME (arg_node));
-        FREE_TYPE (ARRAY_TYPE (arg_node));
-        NODE_TYPE (arg_node) = N_icm;
-        ICM_NAME (arg_node) = "ND_TYPEDEF_ARRAY";
-        if (TYPEDEC_DEF (arg_node) == NULL) {
-            tmp_node = TYPEDEF_NEXT (arg_node);
-        } else {
-            tmp_node = NULL;
+        type2 = MakeId (StringCopy (TYPEDEF_NAME (arg_node)), NULL, ST_regular);
+
+        icm_node = MakeIcm ("ND_TYPEDEF_ARRAY",
+                            MakeExprs (type1, MakeExprs (type2, NULL)), NULL);
+
+        /*
+         * Now, we free the old typedef node and implicitly set arg_node to the
+         * TYPEDEF_NEXT(arg_node)!
+         */
+        arg_node = FreeNode (arg_node);
+
+        if (arg_node != NULL) {
+            ICM_NEXT (icm_node) = Trav (arg_node, arg_info);
         }
-        MAKENODE_ID (type1, typename);
-        MAKE_ICM_ARG (TYPEDEF_NEXT (arg_node), type1);
-        icm_arg = TYPEDEF_NEXT (arg_node);
-        MAKENODE_ID (type2, new_typename);
-        MAKE_NEXT_ICM_ARG (icm_arg, type2);
-
-        if (tmp_node != NULL) {
-            TYPEDEC_DEF (arg_node) = Trav (tmp_node, arg_info);
-        }
+        arg_node = icm_node; /* for returning the new node 8-) */
     } else {
+        /*
+         * arg_node defines a type-synonym of a simple type and
+         * therefore has not to be translated into an ICM!!
+         * Hence, we simply traverse the next typedef!
+         */
         if (TYPEDEF_NEXT (arg_node) != NULL) {
             TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
         }
