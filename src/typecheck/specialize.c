@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2005/03/04 21:21:42  cg
+ * FUNDEF_USED counter etc removed.
+ * LaC functions are now always duplicated along with the
+ * corresponding application.
+ *
  * Revision 1.22  2004/12/09 12:33:10  sbs
  * when specializing LaCfuns we have to call TUrettypes2alphaAUD as well rather than
  * TUrettypes2AUD
@@ -338,7 +343,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
         FUNDEF_SYMBOLNAME (res) = ILIBfree (FUNDEF_SYMBOLNAME (res));
     }
 
-    /* insert the new fundef into the specialiazed chain */
+    /* insert the new fundef into the specialized chain */
     FUNDEF_NEXT (res) = specialized_fundefs;
     specialized_fundefs = res;
 
@@ -443,32 +448,10 @@ SPEChandleDownProjections (dft_res *dft, node *wrapper, ntype *args)
 node *
 SPEChandleLacFun (node *fundef, node *assign, ntype *args)
 {
-    node *fun, *module;
-
     DBUG_ENTER ("SPEChandleLacFun");
+
     DBUG_ASSERT (FUNDEF_ISLACFUN (fundef), "SPEChandleLacFun called with non LaC fun!");
 
-    if (FUNDEF_USED (fundef) > 1) {
-        /*
-         * The function that calls this LACfun has been specialized.
-         * Unfortunately, the "specialization" of LAC functions is postponed
-         * until actualy found for type checking, i.e., until here:
-         */
-        module = TBmakeModule ("dummy", F_prog, NULL, NULL, NULL, NULL, NULL);
-        module = DUPcheckAndDupSpecialFundef (module, fundef, assign);
-        fun = MODULE_FUNS (module);
-        MODULE_FUNS (module) = NULL;
-        module = FREEdoFreeNode (module);
-
-        FUNDEF_TCSTAT (fun) = 0; /* NTC_not_checked; */
-
-        /* insert the new fundef into the specialized chain */
-        FUNDEF_NEXT (fun) = specialized_fundefs;
-        specialized_fundefs = fun;
-
-    } else {
-        fun = fundef;
-    }
     /**
      * Now, we update the signature of fundef. In case of conditionals, we can
      * directly specialize the signature, using "UpdateFixSignature".
@@ -479,15 +462,15 @@ SPEChandleLacFun (node *fundef, node *assign, ntype *args)
      * types minima of these, i.e., we make the overall types potentially
      * less precise. This is done by "UpdateVarSignature".
      */
-    if (FUNDEF_ISCONDFUN (fun)) {
-        UpdateFixSignature (fun, args);
+    if (FUNDEF_ISCONDFUN (fundef)) {
+        UpdateFixSignature (fundef, args);
     } else {
-        UpdateVarSignature (fun, args);
+        UpdateVarSignature (fundef, args);
     }
 
-    FUNDEF_RETS (fun) = TUrettypes2alphaAUD (FUNDEF_RETS (fun));
+    FUNDEF_RETS (fundef) = TUrettypes2alphaAUD (FUNDEF_RETS (fundef));
 
-    DBUG_RETURN (fun);
+    DBUG_RETURN (fundef);
 }
 
 /******************************************************************************
@@ -508,6 +491,8 @@ SPECresetSpecChain ()
 
     res = specialized_fundefs;
     specialized_fundefs = NULL;
+
+    res = TCappendFundef (res, DUPgetCopiedSpecialFundefs ());
 
     DBUG_RETURN (res);
 }
