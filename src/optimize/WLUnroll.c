@@ -1,6 +1,9 @@
 /*         $Id$
  *
  * $Log$
+ * Revision 2.9  2000/05/11 11:16:06  dkr
+ * Function MakeNullVec renamed into CreateZeroVector
+ *
  * Revision 2.8  2000/02/23 19:08:50  cg
  * The optimizations LUR and WLUR now issue a notification if
  * the setting of -maxlur or -maxwlur, respectively, prevents
@@ -746,11 +749,15 @@ DoUnrollGenarray (node *wln, node *arg_info)
     for (i = 0; i < TYPES_DIM (type); i++)
         elements *= TYPES_SHAPE (type, i);
 
-    /* drop reshape() */
-    /*   args = MakeExprs(args, MakeExprs(MakeNullVec(elements, stype), NULL)); */
-    /*   let_expr = MakePrf(F_reshape,args); */
+#if 0
+  /* drop reshape() */
+  args = MakeExprs( args,
+                    MakeExprs( CreateZeroVector( elements, stype),
+                               NULL));
+  let_expr = MakePrf( F_reshape, args);
+#endif
     if (elements != 0) {
-        let_expr = MakeNullVec (elements, stype);
+        let_expr = CreateZeroVector (elements, stype);
     } else {
         let_expr = MakeArray (NULL);
     }

@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.4  2000/05/11 11:15:55  dkr
+ * Function MakeNullVec renamed into CreateZeroVector
+ *
  * Revision 2.3  1999/02/28 21:45:21  srs
  * moved two types to types.h and FREE_INDEX to free.h
  *
@@ -41,18 +44,7 @@
  * Revision 1.7  1998/03/06 13:29:05  srs
  * added new WLI functions
  *
- * Revision 1.6  1998/02/24 14:19:26  srs
- * *** empty log message ***
- *
- * Revision 1.5  1998/02/09 15:58:47  srs
- * *** empty log message ***
- *
- * Revision 1.4  1998/02/06 14:33:29  srs
- * RCS-Test
- *
- * Revision 1.3  1998/02/06 14:32:49  srs
- * *** empty log message ***
- *
+ * [...]
  */
 
 #ifndef _WithloopFolding_h
@@ -71,7 +63,7 @@ extern int LocateIndexVar (node *idn, node *wln);
 extern node *CreateVardec (char *name, types *type, node **vardecs);
 extern node *StartSearchWL (node *idn, node *assignn, int mode);
 extern void ArrayST2ArrayInt (node *arrayn, int **iarray, int shape);
-extern node *MakeNullVec (int dim, simpletype type);
+extern node *CreateZeroVector (int dim, simpletype type);
 
 /* index_info related functions */
 extern void DbugIndexInfo (index_info *iinfo);

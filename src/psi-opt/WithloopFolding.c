@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.10  2000/05/11 11:15:46  dkr
+ * Function MakeNullVec renamed into CreateZeroVector
+ *
  * Revision 2.9  2000/01/26 17:26:04  dkr
  * type of traverse-function-table changed.
  *
@@ -1216,7 +1219,7 @@ StartSearchWL (node *idn, node *assignn, int mode)
 /******************************************************************************
  *
  * function:
- *   node *MakeNullVec(int dim)
+ *   node *CreateZeroVector( int dim, simpletype type)
  *
  * description:
  *   returns an N_array node with 'dim' components, each 0. If dim == 0,
@@ -1225,13 +1228,13 @@ StartSearchWL (node *idn, node *assignn, int mode)
  ******************************************************************************/
 
 node *
-MakeNullVec (int dim, simpletype type)
+CreateZeroVector (int dim, simpletype type)
 {
     node *resultn, *tmpn;
     int i;
     shpseg *shpseg;
 
-    DBUG_ENTER ("MakeNullVec");
+    DBUG_ENTER ("CreateZeroVector");
 
     if (dim == 0) {
         switch (type) {
