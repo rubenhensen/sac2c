@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.33  1995/12/01 17:12:23  cg
+ * Revision 1.34  1995/12/01 20:26:49  cg
+ * changed compilation sequence: objinit.c now after import.c
+ *
+ * Revision 1.33  1995/12/01  17:12:23  cg
  * added break parameter -bl to stop after precompiler
  *
  * Revision 1.32  1995/11/16  19:43:21  cg
@@ -131,8 +134,8 @@ usage (char *prg_name)
 
     printf ("\nSTOP OPTIONS:\n");
     printf ("\t -bp \t\t\tstop after scan/parse\n");
-    printf ("\t -bj \t\t\tstop after object init transformation\n");
     printf ("\t -bi \t\t\tstop after module imports\n");
+    printf ("\t -bj \t\t\tstop after object init transformation\n");
     printf ("\t -bf \t\t\tstop after flatten\n");
     printf ("\t -bt \t\t\tstop after typecheck\n");
     printf ("\t -bd \t\t\tstop after checking module/class declaration\n");

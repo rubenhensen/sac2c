@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.76  1995/12/01 17:05:47  cg
+ * Revision 1.77  1995/12/01 20:23:56  cg
+ * changed compilation sequence: objinit.c now after import.c
+ *
+ * Revision 1.76  1995/12/01  17:05:47  cg
  * removed global variable 'silent'
  * new compilation phase 'precompile'
  * new break parameter '-bl' to stop after it
@@ -691,22 +694,22 @@ MAIN
     compiler_phase++;
 
     if (!breakparse) {
-        if (MODUL_OBJS (syntax_tree) != NULL) {
+        if (MODUL_IMPORTS (syntax_tree) != NULL) {
             NOTE_COMPILER_PHASE;
-            syntax_tree = objinit (syntax_tree);
+            syntax_tree = Import (syntax_tree);
             ABORT_ON_ERROR;
         }
         compiler_phase++;
 
-        if (!breakobjinit) {
-            if (MODUL_IMPORTS (syntax_tree) != NULL) {
+        if (!breakimport) {
+            if (MODUL_OBJS (syntax_tree) != NULL) {
                 NOTE_COMPILER_PHASE;
-                syntax_tree = Import (syntax_tree);
+                syntax_tree = objinit (syntax_tree);
                 ABORT_ON_ERROR;
             }
             compiler_phase++;
 
-            if (!breakimport) {
+            if (!breakobjinit) {
                 NOTE_COMPILER_PHASE;
                 syntax_tree = Flatten (syntax_tree);
                 ABORT_ON_ERROR;

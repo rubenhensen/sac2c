@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/12/01 16:09:58  cg
+ * Revision 1.13  1995/12/01 20:23:23  cg
+ * changed compilation sequence: objinit.c now after import.c
+ *
+ * Revision 1.12  1995/12/01  16:09:58  cg
  * added name of new compilation phase 'precompile'
  *
  * Revision 1.11  1995/11/16  19:32:38  cg
@@ -73,8 +76,8 @@ char error_message_buffer[MAX_ERROR_MESSAGE_LENGTH];
 
 char *compiler_phase_name[] = {"",
                                "Loading SAC program",
-                               "Resolving global object initializations",
                                "Resolving imports from modules and classes",
+                               "Resolving global object initializations",
                                "Simplifying source code",
                                "Running type inference system",
                                "Checking module/class declaration file",
