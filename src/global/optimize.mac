@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/02/03 18:28:22  mwe
+ * some new flags added
+ *
  * Revision 1.8  2005/02/02 18:09:50  mwe
  * sisi added
  *
@@ -90,6 +93,9 @@ OPTIMIZE ("wlfs", wlfs, FALSE, FALSE, "with-loop fusion")
 OPTIMIZE ("lro", lro, TRUE, TRUE, "loop reuse optimization")
 OPTIMIZE ("tup", tup, FALSE, FALSE, "type upgrade")
 OPTIMIZE ("sisi", sisi, FALSE, FALSE, "signature simplification")
+OPTIMIZE ("rtup", rtup, FALSE, FALSE, "reverse type upgrade")
+OPTIMIZE ("fdp", fdp, FALSE, FALSE, "function dispatch")
+OPTIMIZE ("fsp", fsp, FALSE, FALSE, "function specilization")
 
 #undef OPTIMIZEstr
 #undef OPTIMIZEabbr
