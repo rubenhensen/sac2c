@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.60  1998/03/12 14:05:32  srs
+ * new macro IDS_SHAPE
+ *
  * Revision 1.59  1998/03/10 11:10:47  srs
  * changed parameters of IsConstantArray
  *
@@ -366,8 +369,8 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
  ***/
 
 #define IDS_VARNO(n) VARDEC_VARNO (IDS_VARDEC (n))
-
 #define IDS_VARDEC_TYPE(n) VARDEC_TYPE (IDS_VARDEC (n))
+#define IDS_SHAPE(n, x) SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (IDS_VARDEC (n))), x)
 
 /*
  *
