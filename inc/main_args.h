@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/11/26 16:32:19  cg
+ * ARGS_OPTION_BEGIN/END added.
+ *
  * Revision 3.1  2000/11/20 17:59:15  sacbase
  * new release made
  *
@@ -50,7 +53,7 @@
  *
  *   ARGS_OPTION( "O", ARG_RANGE(cc_optimize, 0, 3));
  *
- *   ARGS_OPTION( "d",
+ *   ARGS_OPTION_BEGIN( "d")
  *   {
  *     ARG_CHOICE_BEGIN();
  *     ARG_CHOICE("efence",    use_efence=1);
@@ -58,9 +61,10 @@
  *     ARG_CHOICE("syscall",   show_syscall=1);
  *     ARG_CHOICE("cccall",    gen_cccall=1; cleanup=0);
  *     ARG_CHOICE_END();
- *   });
+ *   }
+ *   ARGS_OPTION_END( "d");
  *
- *   ARGS_OPTION( "check",
+ *   ARGS_OPTION_BEGIN( "check")
  *   {
  *     ARG_FLAGMASK_BEGIN();
  *     ARG_FLAGMASK( 'a', runtimecheck = RUNTIMECHECK_ALL);
@@ -68,7 +72,8 @@
  *     ARG_FLAGMASK( 'b', runtimecheck = RUNTIMECHECK_BOUNDARY);
  *     ARG_FLAGMASK( 'e', runtimecheck = RUNTIMECHECK_ERRNO);
  *     ARG_FLAGMASK_END();
- *   });
+ *   }
+ *   ARGS_OPTION_END( "check");
  *
  *   ARGS_ARGUMENT(
  *   {
@@ -167,6 +172,22 @@ extern int ARGS_CheckOption (char *pattern, char *argv1, char *argv2, char **opt
                                                                                          \
         ARGS_i += ARGS_shift;                                                            \
         continue;                                                                        \
+    }
+
+#define ARGS_OPTION_BEGIN(s)                                                             \
+    if ((ARGS_shift                                                                      \
+         = ARGS_CheckOption (s, ARGS_argv[ARGS_i],                                       \
+                             ARGS_i < ARGS_argc - 1 ? ARGS_argv[ARGS_i + 1] : NULL,      \
+                             &OPT, &ARG))) {                                             \
+        if (ARG == NULL) {                                                               \
+            ARGS_ERROR ("Missing argument for option");                                  \
+        } else {
+
+#define ARGS_OPTION_END(s)                                                               \
+    }                                                                                    \
+                                                                                         \
+    ARGS_i += ARGS_shift;                                                                \
+    continue;                                                                            \
     }
 
 #define ARGS_ARGUMENT(action)                                                            \
