@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2003/05/14 19:59:07  ktr
+ * replaced createInlineName with TmpVarName
+ *
  * Revision 3.30  2002/10/18 17:01:13  dkr
  * InlineArg() modified: support for ID_FLAGs added
  *
@@ -168,37 +171,6 @@
  */
 #define INL_COUNT 1
 
-static int inline_nr = 0;
-
-/******************************************************************************
- *
- * Function:
- *   char *CreateInlineName( char *old_name, node *arg_info)
- *
- * Description:
- *   Renames the given variable:
- *     a  ->  _inl100_a     iff (inline_nr == 100)
- *
- ******************************************************************************/
-
-static char *
-CreateInlineName (char *old_name, node *arg_info)
-{
-    char *prefix;
-    char *new_name;
-
-    DBUG_ENTER ("CreateInlineName");
-
-    prefix = PrefixForTmpVar ();
-    new_name = (char *)Malloc (
-      (strlen (old_name) + strlen (prefix) + NumberOfDigits (inline_nr) + 3)
-      * sizeof (char));
-
-    sprintf (new_name, "_%s%d_%s", prefix, inline_nr, old_name);
-
-    DBUG_RETURN (new_name);
-}
-
 /******************************************************************************
  *
  * Function:
@@ -347,7 +319,7 @@ InlineArg (node *arg_node, node *arg_info)
      * build a new vardec based on 'arg_node' and rename it
      */
     new_vardec = MakeVardecFromArg (arg_node);
-    new_name = CreateInlineName (ARG_NAME (arg_node), arg_info);
+    new_name = TmpVarName (ARG_NAME (arg_node));
     VARDEC_NAME (new_vardec) = Free (VARDEC_NAME (new_vardec));
     VARDEC_NAME (new_vardec) = new_name;
 
@@ -451,7 +423,7 @@ InlineVardec (node *arg_node, node *arg_info)
      */
     new_vardec = DupNode (arg_node);
 
-    new_name = CreateInlineName (VARDEC_NAME (arg_node), arg_info);
+    new_name = TmpVarName (VARDEC_NAME (arg_node));
     VARDEC_NAME (new_vardec) = Free (VARDEC_NAME (new_vardec));
     VARDEC_NAME (new_vardec) = new_name;
 
@@ -626,7 +598,6 @@ DoInline (node *let_node, node *arg_info)
   }
 #endif
 
-    inline_nr++;
     INFO_INL_LUT (arg_info) = RemoveLUT (INFO_INL_LUT (arg_info));
 
     DBUG_RETURN (inl_nodes);
