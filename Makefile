@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.116  2004/10/12 10:23:46  ktr
+# added src/refcount/filterrc.o
+#
 # Revision 3.115  2004/10/11 16:47:45  sah
 # added serialze_buildstack.o
 #
@@ -366,8 +369,9 @@ OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
 OBJECTS_OLD=
 
 REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
-          src/refcount/rcphase.o \
-          src/refcount/alloc.o src/refcount/refcounting.o src/refcount/reuse.o
+          src/refcount/rcphase.o src/refcount/filterrc.o \
+          src/refcount/alloc.o src/refcount/refcounting.o \
+          src/refcount/reuse.o
 REFCOUNT_OLD=
 
 CONCURRENT=
