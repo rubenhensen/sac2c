@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2004/11/26 23:44:17  ktr
+ * some changes.
+ *
  * Revision 1.26  2004/11/24 14:10:12  ktr
  * MakeLet permutation.
  *
@@ -281,7 +284,7 @@ FreeInfo (info *info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMRefCount
+ * @fn EMRCdoRefCount
  *
  *  @brief Starting function of EM based reference counting inference.
  *
@@ -292,9 +295,9 @@ FreeInfo (info *info)
  *
  ***************************************************************************/
 node *
-EMRefCount (node *syntax_tree)
+EMRCdoRefCount (node *syntax_tree)
 {
-    DBUG_ENTER ("EMRefCount");
+    DBUG_ENTER ("EMRCdoRefCount");
 
     DBUG_PRINT ("EMRC", ("Starting reference counting inference..."));
 
