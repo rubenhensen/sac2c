@@ -1,5 +1,10 @@
 /*
+ *
  * $Log$
+ * Revision 1.14  2002/06/21 14:05:25  dkr
+ * COConstant2AST() modified:
+ * arrays with (dim > 1) are embedded into F_reshape now
+ *
  * Revision 1.13  2001/05/25 14:57:34  nmw
  * Access to Basetypes via GetBasetype instead of TYPES_BASETYPE
  *
@@ -26,9 +31,6 @@
  *
  * Revision 1.5  2001/04/19 07:49:26  dkr
  * macro F_PTR used as format string for pointers
- *
- * Revision 1.4  2001/03/30 16:31:32  nmw
- * *** empty log message ***
  *
  * Revision 1.3  2001/03/26 08:22:07  sbs
  * new_co in COAST2Constant now also initialized in default case as well
@@ -479,7 +481,7 @@ COCopyConstant (constant *a)
 /******************************************************************************
  *
  * function:
- *    void COPrintConstant( FILE * file, constant *a)
+ *    void COPrintConstant( FILE *file, constant *a)
  *
  * description:
  *    prints the value of a to file
@@ -491,7 +493,7 @@ COPrintConstant (FILE *file, constant *a)
 {
     DBUG_ENTER ("COPrintConstant");
 
-    fprintf (file, "constant at " F_PTR ": type %s, ", a, mdb_type[CONSTANT_TYPE (a)]);
+    fprintf (file, "constant at " F_PTR ": %s ", a, mdb_type[CONSTANT_TYPE (a)]);
     SHPrintShape (file, CONSTANT_SHAPE (a));
     fprintf (file, " [%s]\n",
              cv2str[CONSTANT_TYPE (a)](CONSTANT_ELEMS (a), 0, CONSTANT_VLEN (a)));
@@ -542,11 +544,12 @@ node *
 COConstant2AST (constant *a)
 {
     node *res, *exprs;
-    int i;
+    int dim, i;
 
     DBUG_ENTER ("COConstant2AST");
 
-    if (COGetDim (a) == 0) {
+    dim = COGetDim (a);
+    if (dim == 0) {
         res = cv2scalar[CONSTANT_TYPE (a)](CONSTANT_ELEMS (a), 0);
     } else {
         /* First, we build the exprs! */
@@ -572,7 +575,16 @@ COConstant2AST (constant *a)
         ARRAY_VECTYPE (res) = CONSTANT_TYPE (a);
         ARRAY_VECLEN (res) = CONSTANT_VLEN (a);
         ARRAY_CONSTVEC (res) = Array2Vec (CONSTANT_TYPE (a), ARRAY_AELEMS (res), NULL);
+
+        /*
+         * if (dim > dim_elem) the array must be put into a reshape() prf!
+         */
+        if (dim > 1) {
+            res = MakePrf (F_reshape, MakeExprs (SHShape2Array (COGetShape (a)),
+                                                 MakeExprs (res, NULL)));
+        }
     }
+
     DBUG_RETURN (res);
 }
 
@@ -591,6 +603,7 @@ COConstant2AST (constant *a)
  *    and identifier (N_id with marked AVIS_SSACONST attribute)
  *
  ******************************************************************************/
+
 constant *
 COAST2Constant (node *n)
 {
@@ -672,6 +685,7 @@ COAST2Constant (node *n)
  *    and identifier (N_id with marked AVIS_SSACONST attribute)
  *
  ******************************************************************************/
+
 bool
 COIsConstant (node *n)
 {
@@ -763,6 +777,7 @@ COMakeFalse (shape *shp)
  *   if "all" is set to false, the condition must hold for at least one element.
  *
  ******************************************************************************/
+
 bool
 COIsZero (constant *a, bool all)
 {
@@ -866,6 +881,7 @@ COIsFalse (constant *a, bool all)
  *    checks two constants for being equal in type, shape and all elements.
  *
  ******************************************************************************/
+
 bool
 COCompareConstants (constant *c1, constant *c2)
 {
