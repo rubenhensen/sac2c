@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1994/12/14 16:51:24  sbs
+ * Revision 1.9  1994/12/15 14:19:11  asi
+ * added member char *mask[2] to union node->info
+ *
+ * Revision 1.8  1994/12/14  16:51:24  sbs
  * type->name for T_user inserted
  *
  * Revision 1.7  1994/12/14  10:59:16  sbs
@@ -94,16 +97,19 @@ typedef enum {
 typedef struct NODE {
     nodetype nodetype;
     union {
-        ids *ids;     /* Liste von Identifikatoren  */
-        id *id;       /* Identifikator              */
-        types *types; /* Typinformation             */
-        int cint;     /* Integer-Wert               */
-        float cfloat; /* Float-Wert                 */
-        prf prf;      /* tag for primitive functions */
-
+        ids *ids;         /* Liste von Identifikatoren          */
+        id *id;           /* Identifikator                      */
+        types *types;     /* Typinformation                     */
+        int cint;         /* Integer-Wert                       */
+        float cfloat;     /* Float-Wert                         */
+        prf prf;          /* tag for primitive functions        */
+        char *mask[2];    /* Variablen, die in einem Grundblock */
+                          /* 1) "uberschrieben werden           */
+                          /* 2) benutzt werden                  */
     } info;               /* fu"r spezielle Informationen */
     int nnode;            /* Anzahl der benutzten Knoten */
     int lineno;           /* Zeilennummer in der ein Befehl steht */
+                          /* bzw. Nummer der Varible nach dem Optimieren */
     struct NODE *node[4]; /* Diese Eintra"ge sind knotenspezifisch */
 } node;                   /* Knoten des Syntaxbaums  */
 
