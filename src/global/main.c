@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.24  1995/02/13 17:21:03  asi
+ * Revision 1.25  1995/02/15 14:32:05  asi
+ * PARM-macro added for ARG 'n'
+ *
+ * Revision 1.24  1995/02/13  17:21:03  asi
  * parmeters noOPT, noCF and noDCR added
  *
  * Revision 1.23  1995/01/18  17:31:48  asi
@@ -139,13 +142,13 @@ MAIN
     {
         silent = 1;
     }
-    ARG 'n':
+    ARG 'n' : PARM
     {
-        if (strcmp (*argv, "oDCR"))
+        if (!strncmp (*argv, "oDCR", 4))
             opt_dcr = 0;
-        if (strcmp (*argv, "oCF"))
+        if (!strncmp (*argv, "oCF", 3))
             opt_cf = 0;
-        if (strcmp (*argv, "oOPT"))
+        if (!strncmp (*argv, "oOPT", 4))
             optimize = 0;
     }
     NEXTOPT
