@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2002/03/01 03:20:50  dkr
+ * support for ARGTABs added
+ *
  * Revision 3.73  2002/02/25 17:25:33  dkr
  * minor changes done
  *
@@ -82,6 +85,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "DupTree.h"
 #include "print.h"
 #include "print_interface.h"
 #include "my_debug.h"
@@ -583,6 +587,138 @@ PrintStatus (statustype status, bool do_it)
 /******************************************************************************
  *
  * Function:
+ *   node *Argtab2Fundef( node *fundef)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+Argtab2Fundef (node *fundef)
+{
+    node *new_fundef;
+    argtab_t *argtab;
+    int i;
+    types *rettypes = NULL;
+    node *args = NULL;
+
+    DBUG_ENTER ("Argtab2Fundef");
+
+    argtab = FUNDEF_ARGTAB (fundef);
+    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
+
+    DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent");
+
+    if (argtab->ptr_out[0] == NULL) {
+        rettypes = MakeTypes1 (T_void);
+    } else {
+        rettypes = DupOneTypes (argtab->ptr_out[0]);
+    }
+
+    for (i = argtab->size - 1; i >= 1; i--) {
+        if (argtab->ptr_in[i] != NULL) {
+            node *arg = DupNode (argtab->ptr_in[i]);
+            ARG_NEXT (arg) = args;
+            args = arg;
+        } else if (argtab->ptr_out[i] != NULL) {
+            args = MakeArg (NULL, DupOneTypes (argtab->ptr_out[i]), ST_regular,
+                            ST_regular, args);
+        }
+    }
+
+    new_fundef = MakeFundef (StringCopy (FUNDEF_NAME (fundef)), FUNDEF_MOD (fundef),
+                             rettypes, args, NULL, NULL);
+
+    DBUG_RETURN (new_fundef);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *ArgtabLet( node *ap)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+Argtab2Let (node *ap)
+{
+    node *new_let;
+    argtab_t *argtab;
+    int i;
+    ids *_ids = NULL;
+    node *exprs = NULL;
+
+    DBUG_ENTER ("Argtab2Let");
+
+    argtab = AP_ARGTAB (ap);
+    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
+
+    DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent");
+
+    if (argtab->ptr_out[0] != NULL) {
+        _ids = DupOneIds (argtab->ptr_out[0]);
+    }
+
+    for (i = argtab->size - 1; i >= 1; i--) {
+        if (argtab->ptr_out[i] != NULL) {
+            exprs = MakeExprs (DupIds_Id (argtab->ptr_out[i]), exprs);
+        } else if (argtab->ptr_in[i] != NULL) {
+            node *expr = DupNode (argtab->ptr_in[i]);
+            EXPRS_NEXT (expr) = exprs;
+            exprs = expr;
+        }
+    }
+
+    new_let = MakeLet (MakeAp (StringCopy (AP_NAME (ap)), AP_MOD (ap), exprs), _ids);
+
+    DBUG_RETURN (new_let);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void PrintArgtags( argtab_t *argtab)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static void
+PrintArgtags (argtab_t *argtab)
+{
+    int i;
+
+    DBUG_ENTER ("PrintArgtags");
+
+    fprintf (outfile, " /*");
+
+    /* return value */
+    if (argtab->tag[0] != ATG_notag) {
+        DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent");
+        fprintf (outfile, " %s", mdb_argtag[argtab->tag[0]]);
+    }
+
+    fprintf (outfile, " <-");
+
+    /* arguments */
+    for (i = 1; i < argtab->size; i++) {
+        DBUG_ASSERT ((argtab->tag[i] != ATG_notag), "argtab is uncompressed");
+        fprintf (outfile, " %s", mdb_argtag[argtab->tag[i]]);
+    }
+
+    fprintf (outfile, " */ ");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   void PrintRC( int rc, int nrc, bool do_it)
  *
  * Description:
@@ -1055,38 +1191,49 @@ PrintFunctionHeader (node *arg_node, node *arg_info)
         fprintf (outfile, "inline ");
     }
 
-    ret_types = FUNDEF_TYPES (arg_node);
-    while (ret_types != NULL) {
-        type_str = Type2String (ret_types, 0, FALSE);
-        fprintf (outfile, "%s", type_str);
-        type_str = Free (type_str);
+    if (FUNDEF_ARGTAB (arg_node) != NULL) {
+        node *tmp = Argtab2Fundef (arg_node);
 
-        PrintStatus (TYPES_STATUS (FUNDEF_TYPES (arg_node)), FALSE);
+        PrintFunctionHeader (tmp, arg_info);
+        tmp = FreeZombie (FreeTree (tmp));
 
-        ret_types = TYPES_NEXT (ret_types);
-        if (ret_types != NULL) {
-            fprintf (outfile, ", ");
+        PrintArgtags (FUNDEF_ARGTAB (arg_node));
+    } else {
+        ret_types = FUNDEF_TYPES (arg_node);
+        while (ret_types != NULL) {
+            type_str = Type2String (ret_types, 0, FALSE);
+            fprintf (outfile, "%s", type_str);
+            type_str = Free (type_str);
+
+            PrintStatus (TYPES_STATUS (FUNDEF_TYPES (arg_node)), FALSE);
+
+            ret_types = TYPES_NEXT (ret_types);
+            if (ret_types != NULL) {
+                fprintf (outfile, ", ");
+            }
         }
+
+        fprintf (outfile, " ");
+
+        if (FUNDEF_MOD (arg_node) != NULL) {
+            fprintf (outfile, "%s:", FUNDEF_MOD (arg_node));
+        }
+
+        if (FUNDEF_NAME (arg_node) != NULL) {
+            fprintf (outfile, "%s", FUNDEF_NAME (arg_node));
+        }
+
+        PrintStatus (FUNDEF_ATTRIB (arg_node), FALSE);
+        PrintStatus (FUNDEF_STATUS (arg_node), FALSE);
+
+        fprintf (outfile, "(");
+
+        if (FUNDEF_ARGS (arg_node) != NULL) {
+            Trav (FUNDEF_ARGS (arg_node), arg_info); /* print args of function */
+        }
+
+        fprintf (outfile, ")");
     }
-
-    fprintf (outfile, " ");
-
-    if (FUNDEF_MOD (arg_node) != NULL) {
-        fprintf (outfile, "%s:", FUNDEF_MOD (arg_node));
-    }
-
-    fprintf (outfile, "%s", FUNDEF_NAME (arg_node));
-
-    PrintStatus (FUNDEF_ATTRIB (arg_node), FALSE);
-    PrintStatus (FUNDEF_STATUS (arg_node), FALSE);
-
-    fprintf (outfile, "(");
-
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        Trav (FUNDEF_ARGS (arg_node), arg_info); /* print args of function */
-    }
-
-    fprintf (outfile, ")");
 
     DBUG_VOID_RETURN;
 }
@@ -1134,7 +1281,10 @@ PrintFundef (node *arg_node, node *arg_info)
             INDENT;
             fprintf (outfile, " */\n\n");
         } else {
-            /* do not print zombie code in header files, do not generate separate files */
+            /*
+             * do not print zombie code in header files,
+             * do not generate separate files
+             */
         }
     } else {
 
@@ -1747,6 +1897,8 @@ PrintCast (node *arg_node, node *arg_info)
 node *
 PrintLet (node *arg_node, node *arg_info)
 {
+    node *ap;
+
     DBUG_ENTER ("PrintLet");
 
     DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
@@ -1764,12 +1916,23 @@ PrintLet (node *arg_node, node *arg_info)
         INDENT;
     }
 
-    if (LET_IDS (arg_node)) {
-        PrintIds (LET_IDS (arg_node), arg_info);
-        fprintf (outfile, " = ");
+    ap = LET_EXPR (arg_node);
+    if ((NODE_TYPE (ap) == N_ap) && (AP_ARGTAB (ap) != NULL)) {
+        node *tmp = Argtab2Let (ap);
+
+        Trav (tmp, arg_info);
+        tmp = FreeTree (tmp);
+
+        PrintArgtags (AP_ARGTAB (ap));
+    } else {
+        if (LET_IDS (arg_node) != NULL) {
+            PrintIds (LET_IDS (arg_node), arg_info);
+            fprintf (outfile, " = ");
+        }
+        Trav (LET_EXPR (arg_node), arg_info);
+
+        fprintf (outfile, "; ");
     }
-    Trav (LET_EXPR (arg_node), arg_info);
-    fprintf (outfile, "; ");
 
     DBUG_RETURN (arg_node);
 }
@@ -1843,7 +2006,7 @@ PrintPrf (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintAp(node  *arg_node, node *arg_info)
+ *   node *PrintAp( node  *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -1987,6 +2150,19 @@ PrintId (node *arg_node, node *arg_info)
     PrintStatus (ID_STATUS (arg_node), FALSE);
 
     PrintRC (ID_REFCNT (arg_node), ID_NAIVE_REFCNT (arg_node), show_refcnt);
+
+    if (compiler_phase == PH_precompile) {
+        switch (ID_UNQCONV (arg_node)) {
+        case NO_UNQCONV:
+            break;
+        case TO_UNQ:
+            fprintf (outfile, " /* to_unq */ ");
+            break;
+        case FROM_UNQ:
+            fprintf (outfile, " /* from_unq */ ");
+            break;
+        }
+    }
 
     if (compiler_phase != PH_genccode) {
         DBUG_EXECUTE ("PRINT_CAR", DbugPrintArray (arg_node););
@@ -3676,8 +3852,8 @@ PrintTravPre (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintTravPre");
 
-    DBUG_PRINT ("PRINT_LINE", ("line (%s) %i\n", mdb_nodetype[NODE_TYPE (arg_node)],
-                               NODE_LINE (arg_node)));
+    DBUG_PRINT ("PRINT_LINE", ("line (%s) %s:%i\n", mdb_nodetype[NODE_TYPE (arg_node)],
+                               NODE_FILE (arg_node), NODE_LINE (arg_node)));
 
     DBUG_RETURN (arg_node);
 }
