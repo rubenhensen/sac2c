@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.19  2003/03/20 22:13:11  sah
+# removed fixed -DREENTRANT setting
+# as it is set by configure
+#
 # Revision 3.18  2003/03/20 21:52:51  sah
 # added -I../global to includes
 #
@@ -81,7 +85,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-MTFLAGS   := -DMT -D_REENTRANT -D_POSIX_C_SOURCE=199506L
+MTFLAGS   := -DMT -D_POSIX_C_SOURCE=199506L
 
 INCS := -I../tree -I../runtime -I../../inc -I../global
 LIBS := -L.
