@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/11/19 20:19:59  dkr
+ * global vars 'errors' and 'warnings' renamed into
+ * 'errors_cnt' and 'warnings_cnt' respectively in order
+ * to avoid linker warning
+ *
  * Revision 3.10  2001/07/13 13:23:41  cg
  * Useless global variable total_allocated_memory eliminated.
  *
@@ -321,8 +326,8 @@ extern int makedeps;
 extern bool gen_cccall;
 extern bool show_syscall;
 
-extern int errors;
-extern int warnings;
+extern int errors_cnt;
+extern int warnings_cnt;
 
 extern int verbose_level;
 extern compiler_phase_t compiler_phase;

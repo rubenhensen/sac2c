@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/11/19 20:21:16  dkr
+ * global vars 'errors' and 'warnings' renamed into
+ * 'errors_cnt' and 'warnings_cnt' respectively in order
+ * to avoid linker warning
+ *
  * Revision 3.15  2001/06/18 14:55:40  cg
  * SYSABORT which breaks compilation with -mtn (new multithreading)
  * moved directly before precompile.
@@ -254,7 +259,7 @@ main (int argc, char *argv[])
         NEWLINE (2);
         NOTE2 (("*** Dependency Detection successful ***"));
         NOTE2 (("*** Exit code 0"));
-        NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
+        NOTE2 (("*** 0 error(s), %d warning(s)", warnings_cnt));
         NEWLINE (2);
 
         return (0);
@@ -549,7 +554,7 @@ BREAK:
 #endif
 
     NOTE2 (("*** Exit code 0"));
-    NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
+    NOTE2 (("*** 0 error(s), %d warning(s)", warnings_cnt));
     NEWLINE (2);
 
     return (0);

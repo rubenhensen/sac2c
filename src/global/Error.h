@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/11/19 20:21:35  dkr
+ * global vars 'errors' and 'warnings' renamed into
+ * 'errors_cnt' and 'warnings_cnt' respectively in order
+ * to avoid linker warning
+ *
  * Revision 3.3  2001/04/24 09:34:00  dkr
  * CHECK_NULL renamed into STR_OR_EMPTY
  *
@@ -234,7 +239,8 @@
         fprintf (stderr, "\n*** Compilation failed ***\n");                              \
         fprintf (stderr, "*** Exit code %d (%s)\n", compiler_phase,                      \
                  compiler_phase_name[(int)compiler_phase]);                              \
-        fprintf (stderr, "*** %d Error(s), %d Warning(s)\n\n", errors, warnings);        \
+        fprintf (stderr, "*** %d Error(s), %d Warning(s)\n\n", errors_cnt,               \
+                 warnings_cnt);                                                          \
     }
 
 #define ERROR_INDENT(n)                                                                  \
@@ -359,7 +365,7 @@
         last_indent = ((verbose_level > 1) ? 2 : 0) + strlen (filename)                  \
                       + NumberOfDigits (line) + 1;                                       \
         PRINT_MESSAGE (message, ":ERROR: ", last_indent, message_indent, 0, 1);          \
-        errors++;                                                                        \
+        errors_cnt++;                                                                    \
     }
 
 #define SYSERROR(message)                                                                \
@@ -368,7 +374,7 @@
         fprintf (stderr, "SYSTEM:");                                                     \
         last_indent = ((verbose_level > 1) ? 2 : 0) + 7;                                 \
         PRINT_MESSAGE (message, ":ERROR: ", last_indent, message_indent, 0, 1);          \
-        errors++;                                                                        \
+        errors_cnt++;                                                                    \
     }
 
 #define ABORT(line, message)                                                             \
@@ -390,7 +396,7 @@
 
 #define ABORT_ON_ERROR                                                                   \
     {                                                                                    \
-        if (errors > 0) {                                                                \
+        if (errors_cnt > 0) {                                                            \
             ABORT_MESSAGE;                                                               \
             EXIT ((int)compiler_phase);                                                  \
         }                                                                                \
@@ -433,7 +439,7 @@
             last_indent = ((verbose_level > 1) ? 2 : 0) + strlen (filename)              \
                           + NumberOfDigits (line) + 1;                                   \
             PRINT_MESSAGE (message, ":WARNING: ", last_indent, message_indent, 0, 1);    \
-            warnings++;                                                                  \
+            warnings_cnt++;                                                              \
         }                                                                                \
     }
 
@@ -444,7 +450,7 @@
             fprintf (stderr, "SYSTEM:");                                                 \
             last_indent = ((verbose_level > 1) ? 2 : 0) + 7;                             \
             PRINT_MESSAGE (message, ":WARNING: ", last_indent, message_indent, 0, 1);    \
-            warnings++;                                                                  \
+            warnings_cnt++;                                                              \
         }                                                                                \
     }
 
@@ -572,7 +578,7 @@ extern void CleanUp ();
 
 #define WARN1(s)                                                                         \
     if (verbose_level > 0) {                                                             \
-        warnings += 1;                                                                   \
+        warnings_cnt++;                                                                  \
         fprintf (stderr, "\n");                                                          \
         DoPrint s;                                                                       \
     }
@@ -581,7 +587,7 @@ extern void CleanUp ();
     {                                                                                    \
         fprintf (stderr, "\n");                                                          \
         DoPrint s;                                                                       \
-        errors += 1;                                                                     \
+        errors_cnt++;                                                                    \
     }
 
 #define ERROR2(n, s)                                                                     \

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/11/19 20:21:01  dkr
+ * global vars 'errors' and 'warnings' renamed into
+ * 'errors_cnt' and 'warnings_cnt' respectively in order
+ * to avoid linker warning
+ *
  * Revision 3.14  2001/11/13 22:17:30  dkr
  * platform OSX_MAC added
  *
@@ -522,8 +527,8 @@ int apdiag_limit = 20000;
  *  glorious SAC2C compile time information system
  */
 
-int errors = 0;   /* counter for number of errors   */
-int warnings = 0; /* counter for number of warnings */
+int errors_cnt = 0;   /* counter for number of errors   */
+int warnings_cnt = 0; /* counter for number of warnings */
 
 #ifdef PRODUCTION
 int verbose_level = 1; /* controls compile time output   */
