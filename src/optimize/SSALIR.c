@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2002/08/13 13:43:08  dkr
+ * return value of RemoveLUT() no longer ignored
+ *
  * Revision 1.26  2001/07/10 11:27:44  nmw
  * ifdef added to disable uniqueness special handling in cse and lir
  * so long expressions with unique identifiers are not touched at all
@@ -851,7 +854,7 @@ SSALIRfundef (node *arg_node, node *arg_info)
 
     /* clean up LUT */
     if (INFO_SSALIR_MOVELUT (arg_info) != NULL) {
-        RemoveLUT (INFO_SSALIR_MOVELUT (arg_info));
+        INFO_SSALIR_MOVELUT (arg_info) = RemoveLUT (INFO_SSALIR_MOVELUT (arg_info));
     }
 
     /* clean up result map nodelist */
