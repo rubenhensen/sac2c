@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2003/09/22 12:38:40  dkr
+ * minor bugs fixed
+ *
  * Revision 1.3  2003/09/22 11:59:21  dkr
  * _take_SxV_, _drop_SxV_ can handle negative 1st arguments as well now
  *
@@ -1240,11 +1243,11 @@ ICMCompileND_PRF_TAKE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_s
                    COND2 (fprintf (outfile, "("); ReadScalar (cnt_ANY, NULL, 0);
                           fprintf (outfile, " < 0)");, INDENT;
                           fprintf (outfile, "SAC_cnt = - SAC_cnt;\n"); INDENT;
-                          fprintf (outfile, "SAC_off = SAC_ND_SIZE( %s) - SAC_cnt;\n",
+                          fprintf (outfile, "SAC_off = SAC_ND_A_SIZE( %s) - SAC_cnt;\n",
                                    from_NT);
                           , INDENT; fprintf (outfile, "SAC_off = 0;\n"););
 
-                   ASSURE_TYPE_ASS (fprintf (outfile, "SAC_cnt <= SAC_ND_SIZE( %s)",
+                   ASSURE_TYPE_ASS (fprintf (outfile, "SAC_cnt <= SAC_ND_A_SIZE( %s)",
                                              from_NT);
                                     , fprintf (outfile, "1st argument of F_take_SxV is "
                                                         "out of range!"););
@@ -1366,13 +1369,13 @@ ICMCompileND_PRF_DROP__DATA (char *to_NT, int to_sdim, char *from_NT, int from_s
 
                    COND2 (fprintf (outfile, "("); ReadScalar (cnt_ANY, NULL, 0);
                           fprintf (outfile, " < 0)");, INDENT;
-                          fprintf (outfile, "SAC_cnt = SAC_ND_SIZE( %s) + SAC_off;\n",
+                          fprintf (outfile, "SAC_cnt = SAC_ND_A_SIZE( %s) + SAC_off;\n",
                                    from_NT);
                           INDENT; fprintf (outfile, "SAC_off = 0;\n");, INDENT;
-                          fprintf (outfile, "SAC_cnt = SAC_ND_SIZE( %s) - SAC_off;\n",
+                          fprintf (outfile, "SAC_cnt = SAC_ND_A_SIZE( %s) - SAC_off;\n",
                                    from_NT););
 
-                   ASSURE_TYPE_ASS (fprintf (outfile, "SAC_cnt <= SAC_ND_SIZE( %s)",
+                   ASSURE_TYPE_ASS (fprintf (outfile, "SAC_cnt <= SAC_ND_A_SIZE( %s)",
                                              from_NT);
                                     , fprintf (outfile, "1st argument of F_drop_SxV is "
                                                         "out of range!"););
