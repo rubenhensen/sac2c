@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2003/04/14 15:14:37  dkr
+ * MakeIcm(): settings for ICM_INDENT_... updated
+ *
  * Revision 3.69  2002/10/18 13:45:12  sbs
  * handling of ID_ATTRIB replaced by FLAGS
  *
@@ -1452,10 +1455,7 @@ MakeIcm (char *name, node *args)
 
     DBUG_ASSERT ((name != NULL), "MakeIcm called with empty ICM name.");
 
-    if (!strcmp (name, "IS_LASTREF__BLOCK_ELSE")) {
-        ICM_INDENT_BEFORE (tmp) = -1;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (!strcmp (name, "MT_START_SYNCBLOCK")) {
+    if (!strcmp (name, "MT_START_SYNCBLOCK")) {
         ICM_INDENT_BEFORE (tmp) = 0;
         ICM_INDENT_AFTER (tmp) = 1;
     } else if (!strncmp (name, "MT_SYNC_", 8)) {
@@ -1489,6 +1489,9 @@ MakeIcm (char *name, node *args)
     } else if (strstr (name, "_BEGIN")) {
         ICM_INDENT_BEFORE (tmp) = 0;
         ICM_INDENT_AFTER (tmp) = 1;
+    } else if (strstr (name, "_ELSE")) {
+        ICM_INDENT_BEFORE (tmp) = -1;
+        ICM_INDENT_AFTER (tmp) = 1;
     } else if (strstr (name, "_END")) {
         ICM_INDENT_BEFORE (tmp) = -1;
         ICM_INDENT_AFTER (tmp) = 0;
@@ -1496,6 +1499,8 @@ MakeIcm (char *name, node *args)
         ICM_INDENT_BEFORE (tmp) = 0;
         ICM_INDENT_AFTER (tmp) = 0;
     }
+
+    ICM_FUNDEF (tmp) = NULL;
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
