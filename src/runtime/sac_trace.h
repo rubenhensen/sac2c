@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/07/02 09:28:49  cg
+ * added macro SAC_TR_MT_PRINT_FOLD_RESULT
+ *
  * Revision 1.4  1998/06/29 08:52:19  cg
  * streamlined tracing facilities
  * tracing on new with-loop and multi-threading operations implemented
@@ -125,11 +128,35 @@ extern void SAC_TR_Print (char *format, ...);
 
 #if SAC_DO_TRACE_MT
 
+typedef enum { FOLD_int, FOLD_float, FOLD_double, FOLD_array, FOLD_hidden } foldres_t;
+
 #define SAC_TR_MT_PRINT(msg) SAC_TR_PRINT (msg)
+
+#define SAC_TR_MT_PRINT_FOLD_RESULT(type, accu_var, msg)                                 \
+    {                                                                                    \
+        switch (FOLD_##type) {                                                           \
+        case FOLD_int:                                                                   \
+            SAC_TR_MT_PRINT ((msg " (int) %d", accu_var));                               \
+            break;                                                                       \
+        case FOLD_float:                                                                 \
+            SAC_TR_MT_PRINT ((msg " (float) %.15g", accu_var));                          \
+            break;                                                                       \
+        case FOLD_double:                                                                \
+            SAC_TR_MT_PRINT ((msg " (double) %.15g", accu_var));                         \
+            break;                                                                       \
+        case FOLD_array:                                                                 \
+            SAC_TR_MT_PRINT ((msg " (array) %p", accu_var));                             \
+            break;                                                                       \
+        case FOLD_hidden:                                                                \
+            SAC_TR_MT_PRINT ((msg " (hidden)"));                                         \
+            break;                                                                       \
+        }                                                                                \
+    }
 
 #else
 
 #define SAC_TR_MT_PRINT(msg)
+#define SAC_TR_MT_PRINT_FOLD_RESULT(type, accu_var, msg)
 
 #endif
 
