@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2004/11/02 14:23:11  ktr
+ * Added F_noop.
+ *
  * Revision 3.30  2004/10/12 10:26:32  ktr
  * Added F_reuse.
  *
@@ -197,6 +200,7 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCPRF_toiS, COToi),
           NULL),
   PRF_IF (F_fill, "F_fill", "_fill_", "fill", FALSE, 0, NTCPRF_dummy, NULL),
   PRF_IF (F_copy, "F_copy", "_copy_", "copy", FALSE, 0, NTCPRF_dummy, NULL),
+  PRF_IF (F_noop, "F_noop", "_noop_", "noop", FALSE, 0, NTCPRF_dummy, NULL),
   PRF_IF (F_inc_rc, "F_inc_rc", "_inc_rc_", "inc_rc", FALSE, 0, NTCPRF_dummy, NULL),
   PRF_IF (F_dec_rc, "F_dec_rc", "_dec_rc_", "dec_rc", FALSE, 0, NTCPRF_dummy, NULL),
   PRF_IF (F_free, "F_free", "_free_", "free", FALSE, 0, NTCPRF_dummy, NULL),
