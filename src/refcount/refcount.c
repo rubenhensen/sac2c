@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/09/01 17:12:57  jhs
+ * Parly fixed the BBIIGG BBUUGG.
+ *
  * Revision 2.7  1999/08/27 11:52:42  jhs
  * Added comments.
  *
@@ -139,6 +142,7 @@
  *  Steering the variables to be refcounted.
  */
 #define MUST_REFCOUNT(type) (IsArray (type) || IsNonUniqueHidden (type))
+#define xxxMUST_REFCOUNT(type) TRUE
 #define MUST_NAIVEREFCOUNT(type) TRUE
 
 static int args_no;       /* number of arguments of current function */
@@ -989,12 +993,15 @@ RCloop (node *arg_node, node *arg_info)
 {
     node *vardec;
     long *defined_mask, *used_mask;
-    int i, again = 0, use_old = 0;
+    int i, naive_again = 0, again_ = 0, use_old_ = 0, naive_use_old = 0;
     int *ref_dump;
     int *naive_ref_dump;
-    ids *usevars, *defvars, *new_ids;
+    ids *usevars_, *defvars_, *new_ids_;
+    ids *naive_usevars;
+    ids *naive_defvars;
+    ids *naive_new_ids;
 
-    int dumpcompare, refcompare, do_on_ids, do_on_normal;
+    int dumpcompare, refcompare, do_on_ids, do_on_normal, do_again;
 
     DBUG_ENTER ("RCloop");
 
@@ -1010,11 +1017,16 @@ RCloop (node *arg_node, node *arg_info)
     WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
     DBUG_PRINT ("RC", ("line: %d : body finished:", NODE_LINE (arg_node)));
 
-    usevars = DO_USEVARS (arg_node);
-    defvars = DO_DEFVARS (arg_node);
+    usevars_ = DO_USEVARS (arg_node);
+    naive_usevars = DO_NAIVE_USEVARS (arg_node);
+    defvars_ = DO_DEFVARS (arg_node);
+    naive_defvars = DO_NAIVE_DEFVARS (arg_node);
 
-    if ((usevars != NULL) || (defvars != NULL)) {
-        use_old = 1;
+    if ((usevars_ != NULL) || (defvars_ != NULL)) {
+        use_old_ = 1;
+    }
+    if ((naive_usevars != NULL) || (naive_defvars != NULL)) {
+        naive_use_old = 1;
     }
 
     /* masks of defines and used variables */
@@ -1031,16 +1043,19 @@ RCloop (node *arg_node, node *arg_info)
              *  Depending on which refcounters have to be done here normal and naive
              *  ones, only naive-ones, or none. The following is only done in the
              *  first two cases. We setup the values needed for some comparisons.
-             *  it is not necessary to know what is counted here.
              */
             if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+                DBUG_PRINT ("RC", ("do_on_normal %i", i));
                 dumpcompare = ref_dump[i];
                 refcompare = VARDEC_OR_ARG_REFCNT (vardec);
                 do_on_ids = TRUE;
+                do_on_normal = TRUE;
             } else if (MUST_NAIVEREFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+                DBUG_PRINT ("RC", ("do_on_naive %i", i));
                 dumpcompare = naive_ref_dump[i];
                 refcompare = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
-                do_on_ids = TRUE;
+                do_on_ids = FALSE;
+                do_on_normal = FALSE;
             } else {
                 do_on_ids = FALSE;
             }
@@ -1051,96 +1066,183 @@ RCloop (node *arg_node, node *arg_info)
                     /*
                      *  store refcount of defined variables in defvars
                      */
-                    if (0 == use_old) {
-                        new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
-                                           ST_regular);
-                        IDS_REFCNT (new_ids) = ref_dump[i];
-                        IDS_NAIVE_REFCNT (new_ids) = naive_ref_dump[i];
-                        IDS_VARDEC (new_ids) = vardec;
-                        IDS_NEXT (new_ids) = defvars;
-                        defvars = new_ids;
-                        /* insert 'new_ids' at the begining of 'defvars' */
-                        DBUG_PRINT ("RC", ("store defined var (defvars) %s:%d::%d",
-                                           IDS_NAME (new_ids), IDS_REFCNT (new_ids),
-                                           IDS_NAIVE_REFCNT (new_ids)));
+                    if (0 == use_old_) {
+                        if (do_on_normal) {
+                            new_ids_ = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
+                                                NULL, ST_regular);
+                            IDS_REFCNT (new_ids_) = ref_dump[i];
+                            IDS_NAIVE_REFCNT (new_ids_) = naive_ref_dump[i];
+                            IDS_VARDEC (new_ids_) = vardec;
+                            IDS_NEXT (new_ids_) = defvars_;
+                            defvars_ = new_ids_;
+                            /* insert 'new_ids' at the begining of 'defvars' */
+                            DBUG_PRINT ("RC", ("store defined var (defvars) %s:%d::%d",
+                                               IDS_NAME (new_ids_), IDS_REFCNT (new_ids_),
+                                               IDS_NAIVE_REFCNT (new_ids_)));
+                        }
                     } else {
-                        new_ids = LookupIds (VARDEC_OR_ARG_NAME (vardec), defvars);
-                        DBUG_ASSERT ((NULL != new_ids), "var not found");
-                        IDS_REFCNT (new_ids) = ref_dump[i];
-                        IDS_NAIVE_REFCNT (new_ids) = naive_ref_dump[i];
-                        DBUG_PRINT ("RC", ("changed defined var (defvars) %s:%d::%d",
-                                           IDS_NAME (new_ids), IDS_REFCNT (new_ids),
-                                           IDS_NAIVE_REFCNT (new_ids)));
+                        if (do_on_normal) {
+                            new_ids_ = LookupIds (VARDEC_OR_ARG_NAME (vardec), defvars_);
+                            DBUG_ASSERT ((NULL != new_ids_), "var not found");
+                            IDS_REFCNT (new_ids_) = ref_dump[i];
+                            IDS_NAIVE_REFCNT (new_ids_) = naive_ref_dump[i];
+                            DBUG_PRINT ("RC", ("changed defined var (defvars) %s:%d::%d",
+                                               IDS_NAME (new_ids_), IDS_REFCNT (new_ids_),
+                                               IDS_NAIVE_REFCNT (new_ids_)));
+                        }
+                    }
+                    if (naive_use_old == 0) {
+                        naive_new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
+                                                 NULL, ST_regular);
+                        IDS_REFCNT (naive_new_ids) = ref_dump[i];
+                        IDS_NAIVE_REFCNT (naive_new_ids) = naive_ref_dump[i];
+                        IDS_VARDEC (naive_new_ids) = vardec;
+                        IDS_NEXT (naive_new_ids) = naive_defvars;
+                        naive_defvars = naive_new_ids;
+                        DBUG_PRINT ("RC",
+                                    ("store defined var (naive_defvars) %s:%d::%d",
+                                     IDS_NAME (naive_new_ids), IDS_REFCNT (naive_new_ids),
+                                     IDS_NAIVE_REFCNT (naive_new_ids)));
+                    } else {
+                        naive_new_ids
+                          = LookupIds (VARDEC_OR_ARG_NAME (vardec), naive_defvars);
+                        DBUG_ASSERT ((NULL != naive_new_ids), "var not found");
+                        IDS_REFCNT (naive_new_ids) = ref_dump[i];
+                        IDS_NAIVE_REFCNT (naive_new_ids) = naive_ref_dump[i];
+                        DBUG_PRINT ("RC",
+                                    ("changed defined var (naive_defvars) %s:%d::%d",
+                                     IDS_NAME (naive_new_ids), IDS_REFCNT (naive_new_ids),
+                                     IDS_NAIVE_REFCNT (naive_new_ids)));
                     }
                 }
                 if ((used_mask[i] > 0) && (refcompare > 0)) {
                     /*
                      *  store refcount of used variables in usevars
                      */
-                    if (0 == use_old) {
-                        new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
-                                           ST_regular);
-                        IDS_REFCNT (new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
-                        IDS_NAIVE_REFCNT (new_ids) = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
-                        IDS_VARDEC (new_ids) = vardec;
-                        IDS_NEXT (new_ids) = usevars;
-                        usevars = new_ids;
+                    if (0 == naive_use_old) {
+                        naive_new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
+                                                 NULL, ST_regular);
+                        IDS_REFCNT (naive_new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
+                        IDS_NAIVE_REFCNT (naive_new_ids)
+                          = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
+                        IDS_VARDEC (naive_new_ids) = vardec;
+                        IDS_NEXT (naive_new_ids) = naive_usevars;
+                        naive_usevars = naive_new_ids;
                         /* insert 'new_ids' at the begining of 'usevars' */
-                        DBUG_PRINT ("RC", ("store used var (usevars) %s:%d::%d",
-                                           IDS_NAME (new_ids), IDS_REFCNT (new_ids),
-                                           IDS_NAIVE_REFCNT (new_ids)));
+                        DBUG_PRINT ("RC",
+                                    ("store used var (naive_usevars) %s:%d::%d",
+                                     IDS_NAME (naive_new_ids), IDS_REFCNT (naive_new_ids),
+                                     IDS_NAIVE_REFCNT (naive_new_ids)));
                     } else {
-                        new_ids = LookupIds (VARDEC_OR_ARG_NAME (vardec), usevars);
-                        DBUG_ASSERT ((NULL != new_ids), "var not found");
-                        IDS_REFCNT (new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
-                        IDS_NAIVE_REFCNT (new_ids) = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
-                        DBUG_PRINT ("RC", ("changed used var (usevars) %s:%d::%d",
-                                           IDS_NAME (new_ids), IDS_REFCNT (new_ids),
-                                           IDS_NAIVE_REFCNT (new_ids)));
+                        naive_new_ids
+                          = LookupIds (VARDEC_OR_ARG_NAME (vardec), naive_usevars);
+                        DBUG_ASSERT ((NULL != naive_new_ids), "var not found");
+                        IDS_REFCNT (naive_new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
+                        IDS_NAIVE_REFCNT (naive_new_ids)
+                          = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
+                        DBUG_PRINT ("RC",
+                                    ("changed used var (naive_usevars) %s:%d::%d",
+                                     IDS_NAME (naive_new_ids), IDS_REFCNT (naive_new_ids),
+                                     IDS_NAIVE_REFCNT (naive_new_ids)));
+                    }
+                    if (use_old_ == 0) {
+                        if (do_on_normal) {
+                            new_ids_ = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
+                                                NULL, ST_regular);
+                            IDS_REFCNT (new_ids_) = VARDEC_OR_ARG_REFCNT (vardec);
+                            IDS_NAIVE_REFCNT (new_ids_)
+                              = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
+                            IDS_VARDEC (new_ids_) = vardec;
+                            IDS_NEXT (new_ids_) = usevars_;
+                            usevars_ = new_ids_;
+                            /* insert 'new_ids' at the begining of 'usevars' */
+                            DBUG_PRINT ("RC", ("store used var (usevars) %s:%d::%d",
+                                               IDS_NAME (new_ids_), IDS_REFCNT (new_ids_),
+                                               IDS_NAIVE_REFCNT (new_ids_)));
+                        }
+                    } else {
+                        if (do_on_normal) {
+                            new_ids_ = LookupIds (VARDEC_OR_ARG_NAME (vardec), usevars_);
+                            DBUG_ASSERT ((NULL != new_ids_), "var not found");
+                            IDS_REFCNT (new_ids_) = VARDEC_OR_ARG_REFCNT (vardec);
+                            IDS_NAIVE_REFCNT (new_ids_)
+                              = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
+                            DBUG_PRINT ("RC", ("changed used var (usevars) %s:%d::%d",
+                                               IDS_NAME (new_ids_), IDS_REFCNT (new_ids_),
+                                               IDS_NAIVE_REFCNT (new_ids_)));
+                        }
                     }
                 }
             }
         }
     } /* for i */
 
-    if (NULL != usevars) {
-        new_ids = usevars;
-        while ((0 == again) && (NULL != new_ids)) {
-            if (((0 < VARDEC_OR_ARG_REFCNT (IDS_VARDEC (new_ids)))
-                 && (0 == ref_dump[VARDEC_OR_ARG_VARNO (IDS_VARDEC (new_ids))]))
-                || ((0 < VARDEC_OR_ARG_REFCNT (IDS_VARDEC (new_ids)))
-                    && (0 == ref_dump[VARDEC_OR_ARG_VARNO (IDS_VARDEC (new_ids))]))) {
-                again = 1;
+    if (NULL != naive_usevars) {
+        naive_new_ids = naive_usevars;
+        while ((0 == naive_again) && (NULL != naive_new_ids)) {
+            if ((0 < VARDEC_OR_ARG_NAIVE_REFCNT (IDS_VARDEC (naive_new_ids)))
+                && (0
+                    == naive_ref_dump[VARDEC_OR_ARG_VARNO (
+                         IDS_VARDEC (naive_new_ids))])) {
+                naive_again = 1;
             } else {
-                new_ids = IDS_NEXT (new_ids);
+                naive_new_ids = IDS_NEXT (naive_new_ids);
             }
         } /* while */
-        if (1 == again) {
-            DBUG_PRINT ("RC", ("while loop again"));
-            RestoreRC (RC_REAL, ref_dump);
-            RestoreRC (RC_NAIVE, naive_ref_dump);
-            FreeDump (ref_dump);
-            FreeDump (naive_ref_dump);
-            ref_dump = StoreAndInitRC (RC_REAL, INFO_RC_VARNO (arg_info), 1);
-            naive_ref_dump = StoreAndInitRC (RC_NAIVE, INFO_RC_VARNO (arg_info), 1);
-            new_ids = usevars;
-            /* init all variables that are member of usevars with refcount 1 */
-            while (NULL != new_ids) {
-                L_VARDEC_OR_ARG_REFCNT (IDS_VARDEC (new_ids), 1);
-                L_VARDEC_OR_ARG_NAIVE_REFCNT (IDS_VARDEC (new_ids), 1);
-                new_ids = IDS_NEXT (new_ids);
+    }
+    if (NULL != usevars_) {
+        new_ids_ = usevars_;
+        while ((0 == again_) && (NULL != new_ids_)) {
+            if ((0 < VARDEC_OR_ARG_REFCNT (IDS_VARDEC (new_ids_)))
+                && (0 == ref_dump[VARDEC_OR_ARG_VARNO (IDS_VARDEC (new_ids_))])) {
+                again_ = 1;
+            } else {
+                new_ids_ = IDS_NEXT (new_ids_);
             }
+        } /* while */
+    }
+    naive_again = 0;
 
-            /* refcount body of while loop again */
-            DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
-            /*
-             * traversing the loop body may change its masks!
-             * Therefore, the local pointers have to be updated accordingly:
-             */
-            defined_mask = BLOCK_MASK (WHILE_BODY (arg_node), 0);
-            used_mask = BLOCK_MASK (WHILE_BODY (arg_node), 1);
+    DBUG_PRINT ("RCi", ("again???"));
+    if (again_) {
+        DBUG_PRINT ("RC", ("while loop again"));
+        RestoreRC (RC_REAL, ref_dump);
+        RestoreRC (RC_NAIVE, naive_ref_dump);
+        FreeDump (ref_dump);
+        FreeDump (naive_ref_dump);
+        ref_dump = StoreAndInitRC (RC_REAL, INFO_RC_VARNO (arg_info), 1);
+        naive_ref_dump = StoreAndInitRC (RC_NAIVE, INFO_RC_VARNO (arg_info), 1);
+        /* init all variables that are member of usevars with refcount 1 */
+        if (again_) {
+            DBUG_PRINT ("RCi", ("again"));
+            new_ids_ = usevars_;
+            while (NULL != new_ids_) {
+                L_VARDEC_OR_ARG_REFCNT (IDS_VARDEC (new_ids_), 1);
+                L_VARDEC_OR_ARG_NAIVE_REFCNT (IDS_VARDEC (new_ids_), 1);
+                new_ids_ = IDS_NEXT (new_ids_);
+            }
         }
-    } /* if (NULL != usevars) */
+#if 0
+    if (naive_again) {
+      DBUG_PRINT( "RCi", ("naive_again"));
+      naive_new_ids = naive_usevars;
+      while (NULL != naive_new_ids) {
+      /*  L_VARDEC_OR_ARG_REFCNT( IDS_VARDEC( naive_new_ids), 1); */
+        L_VARDEC_OR_ARG_NAIVE_REFCNT( IDS_VARDEC( naive_new_ids), 1);
+        naive_new_ids = IDS_NEXT(naive_new_ids);
+      }
+    }
+#endif
+
+        /* refcount body of while loop again */
+        DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
+        /*
+         * traversing the loop body may change its masks!
+         * Therefore, the local pointers have to be updated accordingly:
+         */
+        defined_mask = BLOCK_MASK (WHILE_BODY (arg_node), 0);
+        used_mask = BLOCK_MASK (WHILE_BODY (arg_node), 1);
+    }
 
     /* compute new refcounts because of 'virtual function application' */
     for (i = 0; i < INFO_RC_VARNO (arg_info); i++) {
@@ -1161,26 +1263,40 @@ RCloop (node *arg_node, node *arg_info)
                 do_on_normal = TRUE;
                 refcompare = VARDEC_OR_ARG_REFCNT (vardec);
                 dumpcompare = ref_dump[i];
+                do_again = again_;
             } else if (MUST_NAIVEREFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
-                do_on_ids = TRUE;
+                do_on_ids = FALSE;
                 do_on_normal = FALSE;
                 refcompare = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
                 dumpcompare = naive_ref_dump[i];
+                do_again = naive_again;
             } else {
                 do_on_ids = FALSE;
             }
             if (do_on_ids) {
-                if ((used_mask[i] > 0) && (refcompare > 0) && (1 == again)) {
+                if ((used_mask[i] > 0) && (refcompare > 0) && (1 == do_again)) {
                     /*
                      * update refcount of used variables (v1)
                      */
-                    new_ids = LookupIds (VARDEC_OR_ARG_NAME (vardec), usevars);
-                    DBUG_ASSERT ((NULL != new_ids), "var not found");
-
-                    IDS_REFCNT (new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
-                    IDS_NAIVE_REFCNT (new_ids) = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
-                    DBUG_PRINT ("RC", ("(usevars) %s:%d::%d", IDS_NAME (new_ids),
-                                       IDS_REFCNT (new_ids), IDS_NAIVE_REFCNT (new_ids)));
+                    naive_new_ids
+                      = LookupIds (VARDEC_OR_ARG_NAME (vardec), naive_usevars);
+                    DBUG_ASSERT ((NULL != naive_new_ids), "var not found");
+                    IDS_REFCNT (naive_new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
+                    IDS_NAIVE_REFCNT (naive_new_ids)
+                      = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
+                    DBUG_PRINT ("RC",
+                                ("(naive_usevars) %s:%d::%d", IDS_NAME (naive_new_ids),
+                                 IDS_REFCNT (naive_new_ids),
+                                 IDS_NAIVE_REFCNT (naive_new_ids)));
+                    if (do_on_normal) {
+                        new_ids_ = LookupIds (VARDEC_OR_ARG_NAME (vardec), usevars_);
+                        DBUG_ASSERT ((NULL != new_ids_), "var not found");
+                        IDS_REFCNT (new_ids_) = VARDEC_OR_ARG_REFCNT (vardec);
+                        IDS_NAIVE_REFCNT (new_ids_) = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
+                        DBUG_PRINT ("RC",
+                                    ("(usevars) %s:%d::%d", IDS_NAME (new_ids_),
+                                     IDS_REFCNT (new_ids_), IDS_NAIVE_REFCNT (new_ids_)));
+                    }
                 }
                 /*
                  * now compute new refcounts, because of 'virtual function application'
@@ -1189,8 +1305,7 @@ RCloop (node *arg_node, node *arg_info)
                     /*
                      *  these will be the return-values of the virtual function
                      */
-                    if ((N_do == NODE_TYPE (arg_node))
-                        && (0 == VARDEC_OR_ARG_REFCNT (vardec))) {
+                    if ((N_do == NODE_TYPE (arg_node)) && (0 == refcompare)) {
                         /*
                          *  Current variable is an argument of the virtual function and
                          *  so it will be defined before it will be used, so we don't need
@@ -1212,7 +1327,7 @@ RCloop (node *arg_node, node *arg_info)
                                        VARDEC_OR_ARG_NAME (vardec), i, ref_dump[i],
                                        naive_ref_dump[i]));
                 } else {
-                    if ((used_mask[i] > 0) && (0 < VARDEC_OR_ARG_REFCNT (vardec))) {
+                    if ((used_mask[i] > 0) && (0 < refcompare)) {
                         /* these variables are arguments of the virtual function */
                         if (do_on_normal) {
                             ref_dump[i]++;
@@ -1228,8 +1343,10 @@ RCloop (node *arg_node, node *arg_info)
     }
 
     /* store new_info for use while compilation */
-    DO_USEVARS (arg_node) = usevars;
-    DO_DEFVARS (arg_node) = defvars;
+    DO_USEVARS (arg_node) = usevars_;
+    DO_NAIVE_USEVARS (arg_node) = naive_usevars;
+    DO_DEFVARS (arg_node) = defvars_;
+    DO_NAIVE_DEFVARS (arg_node) = naive_defvars;
 
     /* restore old vardec refcounts */
     RestoreRC (RC_REAL, ref_dump);
