@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.87  2004/08/03 09:22:32  ktr
+ * CreateScalarWith used to call MakeNCode without wrapping CEXPR in an
+ * EXPRS-chain.
+ *
  * Revision 3.86  2004/08/02 20:46:54  sah
  * added lots if ifdefs for mini sac compiler
  * using the new ast...
@@ -4302,7 +4306,7 @@ CreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr, node *fu
                     MakeNCode (MakeBlock (MakeAssignLet (StringCopy (ID_NAME (id)),
                                                          vardecs, expr),
                                           NULL),
-                               id),
+                               MakeExprs (id, NULL)),
                     MakeNWithOp (WO_genarray, Shpseg2Array (shape, dim)));
     NCODE_USED (NWITH_CODE (wl))++;
     NPART_CODE (NWITH_PART (wl)) = NWITH_CODE (wl);
