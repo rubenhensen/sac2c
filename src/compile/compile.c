@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2002/06/07 15:51:32  dkr
+ * mdb_argtag renamed into ATG_string
+ *
  * Revision 3.81  2002/05/31 17:26:21  dkr
  * new argtags for TAGGED_ARRAYS used
  *
@@ -846,7 +849,7 @@ AddThreadIdIcm_ND_FUN_DEC (node *icm)
                      "wrong argument in ND_FUN_DEC icm found!");
 
         EXPRS_NEXT (args)
-          = MakeExprs (MakeId_Copy (mdb_argtag[ATG_in]),
+          = MakeExprs (MakeId_Copy (ATG_string[ATG_in]),
                        MakeExprs (MakeId_Copy ("unsigned int"),
                                   MakeExprs (MakeId_Copy ("SAC_MT_mythread"),
                                              EXPRS_NEXT (args))));
@@ -889,7 +892,7 @@ AddThreadIdIcm_ND_FUN_AP (node *icm_assign)
                      "wrong argument in ND_FUN_AP icm found!");
 
         EXPRS_NEXT (args)
-          = MakeExprs (MakeId_Copy (mdb_argtag[ATG_in]),
+          = MakeExprs (MakeId_Copy (ATG_string[ATG_in]),
                        MakeExprs (MakeId_Copy ("SAC_MT_mythread"), EXPRS_NEXT (args)));
 
         (NUM_VAL (EXPRS_EXPR (args)))++;
@@ -985,7 +988,7 @@ MakeIcm_ND_FUN_DEC (node *fundef)
             id = MakeId_Copy ("");
         }
 
-        icm_args = MakeExprs (MakeId_Copy (mdb_argtag[tag]),
+        icm_args = MakeExprs (MakeId_Copy (ATG_string[tag]),
                               MakeExprs (MakeTypeNode (type), MakeExprs (id, icm_args)));
     }
 
@@ -1058,7 +1061,7 @@ MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
             type = ARG_TYPE (argtab->ptr_in[i]);
         }
 
-        icm_args = MakeExprs (MakeId_Copy (mdb_argtag[argtab->tag[i]]),
+        icm_args = MakeExprs (MakeId_Copy (ATG_string[argtab->tag[i]]),
                               MakeExprs (MakeTypeNode (type), MakeExprs (id, icm_args)));
     }
     size = argtab->size - 1;
@@ -1066,7 +1069,7 @@ MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
     /* return value */
     DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab is inconsistent!");
     if (argtab->ptr_out[0] != NULL) {
-        icm_args = MakeExprs (MakeId_Copy (mdb_argtag[argtab->tag[0]]),
+        icm_args = MakeExprs (MakeId_Copy (ATG_string[argtab->tag[0]]),
                               MakeExprs (MakeTypeNode (argtab->ptr_out[0]),
                                          MakeExprs (MakeArgNode (0), icm_args)));
         size++;
@@ -1226,7 +1229,7 @@ MakeIcm_ND_FUN_AP (node *ap, node *fundef, node *assigns)
             exprs = DupNode (argtab->ptr_in[i]);
             EXPRS_NEXT (exprs) = icm_args;
         }
-        icm_args = MakeExprs (MakeId_Copy (mdb_argtag[argtab->tag[i]]), exprs);
+        icm_args = MakeExprs (MakeId_Copy (ATG_string[argtab->tag[i]]), exprs);
     }
 
     icm_args = MakeExprs (MakeNum (argtab->size - 1), icm_args);
@@ -2175,7 +2178,7 @@ COMPNormalFunReturn (node *arg_node, node *arg_info)
                 DBUG_ASSERT ((ret_exprs != NULL), "not enough return values found!");
             }
 
-            new_args = MakeExprs (MakeId_Copy (mdb_argtag[argtab->tag[i]]),
+            new_args = MakeExprs (MakeId_Copy (ATG_string[argtab->tag[i]]),
                                   MakeExprs (DupTree (EXPRS_EXPR (ret_exprs)),
                                              MakeExprs (MakeArgNode (i), NULL)));
 
@@ -2208,7 +2211,7 @@ COMPNormalFunReturn (node *arg_node, node *arg_info)
 #endif
 
         new_args
-          = MakeExprs (MakeId_Copy (mdb_argtag[tag]),
+          = MakeExprs (MakeId_Copy (ATG_string[tag]),
                        MakeExprs (DupTree (EXPRS_EXPR (ret_exprs)),
                                   MakeExprs (DupTree (EXPRS_EXPR (ret_exprs)), NULL)));
 
@@ -2281,7 +2284,7 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ret_exprs)) == N_id),
                          "no N_id node found!");
 
-            new_args = MakeExprs (MakeId_Copy (mdb_argtag[argtab->tag[i]]),
+            new_args = MakeExprs (MakeId_Copy (ATG_string[argtab->tag[i]]),
                                   MakeExprs (DupTree (EXPRS_EXPR (ret_exprs)),
                                              /*
                                                   MakeExprs( MakeArgNode( i),
@@ -5726,7 +5729,7 @@ COMPSync (node *arg_node, node *arg_info)
 #endif
         icm_args3
           = AppendExprs (icm_args3,
-                         MakeExprs (MakeId_Copy (mdb_argtag[tag]),
+                         MakeExprs (MakeId_Copy (ATG_string[tag]),
                                     MakeExprs (MakeTypeNode (VARDEC_OR_ARG_TYPE (vardec)),
                                                MakeExprs (MakeId_Copy (
                                                             VARDEC_OR_ARG_NAME (vardec)),
