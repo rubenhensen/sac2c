@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/10/18 15:31:52  dkr
+ * EXTERN_MOD_NAME added
+ *
  * Revision 3.18  2002/10/18 14:16:50  ktr
  * changed option -wlsx to -wls <level>
  *
@@ -141,6 +144,7 @@
 #include "types.h"
 
 #define MAIN_MOD_NAME "_MAIN"
+#define EXTERN_MOD_NAME "_EXT"
 
 extern bool sbs;
 
