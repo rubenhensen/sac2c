@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.95  1998/12/07 09:41:28  sbs
+# check_os added. check_os makes sure that OS is set properly!
+#
 # Revision 1.94  1998/12/04 15:02:34  sbs
 # some LOGs killed and OS diversification standardized 8-)
 # i.e., during compilation a flag -DSOLARIS_SPARC or
@@ -129,6 +132,7 @@ YACC         :=yacc -dv
 LIBS         :=-ly -ll -lm
 EFLIBS       :=-L/home/dkr/c/lib/ElectricFence -lefence
 RM           :=rm -f
+ECHO         :=echo
 
 LIB          :=lib/dbug.o
 # /usr/lib/debug/malloc.o
@@ -173,11 +177,19 @@ COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
     $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT)
 
-all: dummy sac2c
+all: check_os dummy sac2c
 
-efence: dummy sac2c.efence
+efence: check_os dummy sac2c.efence
 
-product : clean prod sac2c
+product : check_os clean prod sac2c
+
+check_os:
+	@ if [ "$(OS)" != "SOLARIS_SPARC" -a "$(OS)" != "LINUX_X86" ]; \
+	  then $(ECHO) "*** Unknown OS! Please specify:"; \
+               $(ECHO) "SOLARIS_SPARC (default)"; \
+               $(ECHO) "LINUX_X86"; \
+	       exit 1; \
+	  fi
 
 dummy:
 	(cd src/scanparse; $(MAKE) )
