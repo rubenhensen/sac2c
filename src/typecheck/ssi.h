@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2002/05/31 14:51:54  sbs
+ * intermediate version to ensure compilable overall state.
+ *
  * Revision 1.1  2002/03/12 15:16:29  sbs
  * Initial revision
  *
@@ -31,5 +34,6 @@ extern bool SSIIsFix (tvar *var);
 extern ntype *SSIGetMax (tvar *var);
 extern ntype *SSIGetMin (tvar *var);
 
+extern char *SSIVariable2String (tvar *var);
 extern char *SSIVariable2DebugString (tvar *var);
 #endif /* _ssi_h */

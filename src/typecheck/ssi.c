@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2002/05/31 14:51:54  sbs
+ * intermediate version to ensure compilable overall state.
+ *
  * Revision 1.2  2002/03/12 16:47:40  sbs
  * ; after DBUG_VOID_REturn added.
  *
@@ -182,6 +185,7 @@ SSIMakeVariable ()
  *    bool    SSINewMax( tvar *var, ntype *cmax)
  *
  * description:
+ *    Note here, that cmax is inspected only!!
  *
  *
  ******************************************************************************/
@@ -198,14 +202,14 @@ SSINewMax (tvar *var, ntype *cmax)
         /*
          * we did not have a maximum yet
          */
-        TVAR_MAX (var) = cmax;
+        TVAR_MAX (var) = TYCopyType (cmax);
         res = TRUE;
     } else {
         /*
          * we do have a maximum
          */
         cmp = TYCmpTypes (cmax, TVAR_MAX (var));
-        if (cmp == TY_unrel) {
+        if (cmp == TY_dis) {
             res = FALSE;
         } else {
             if (cmp == TY_lt) {
@@ -214,11 +218,13 @@ SSINewMax (tvar *var, ntype *cmax)
                  * Therefore, we have to check compatibility with the minimum!
                  */
                 if (TVAR_MIN (var) == NULL) {
-                    TVAR_MAX (var) = cmax;
+                    TYFreeType (TVAR_MAX (var));
+                    TVAR_MAX (var) = TYCopyType (cmax);
                     res = TRUE;
                 } else {
                     if (TYLeTypes (TVAR_MIN (var), cmax)) {
-                        TVAR_MAX (var) = cmax;
+                        TYFreeType (TVAR_MAX (var));
+                        TVAR_MAX (var) = TYCopyType (cmax);
                         res = TRUE;
                     } else {
                         res = FALSE;
@@ -257,8 +263,50 @@ bool
 SSINewMin (tvar *var, ntype *cmin)
 {
     bool res = TRUE;
+    ntype *tmp;
+    int i = 0;
 
     DBUG_ENTER ("SSINewMin");
+
+    if (TVAR_MIN (var) == NULL) {
+        /*
+         * we did not have a minimum yet
+         */
+        tmp = TYCopyType (cmin);
+    } else {
+        /*
+         * we do have a minimum
+         */
+        tmp = TYLubOfTypes (cmin, TVAR_MIN (var));
+    }
+
+    /*
+     * Now, we check whether tmp can be used as new minimum:
+     */
+    if (TVAR_MAX (var) == NULL) {
+        TVAR_MIN (var) = tmp;
+    } else {
+        if (TYLeTypes (tmp, TVAR_MAX (var))) {
+            /*
+             * tmp is a subtype of the existing maximum
+             * Therefore, tmp can replace the old minimum (iff it exists)
+             */
+            if (TVAR_MIN (var) != NULL) {
+                TYFreeType (TVAR_MIN (var));
+            }
+            TVAR_MIN (var) = tmp;
+            /*
+             * if the min has been changed we have to enforce new mins to all BIGs
+             */
+            while (res && (i < TVAR_NBIG (var))) {
+                res = SSINewMin (TVAR_BIG (var, i), tmp);
+                i++;
+            }
+        } else {
+            res = FALSE;
+        }
+    }
+
     DBUG_RETURN (res);
 }
 
@@ -365,7 +413,7 @@ bool
 SSIIsFix (tvar *var)
 {
     DBUG_ENTER ("SSIIsFix");
-    DBUG_RETURN ((TVAR_MAX (var) != NULL) && (TVAR_MAX (var) != NULL)
+    DBUG_RETURN ((TVAR_MIN (var) != NULL) && (TVAR_MAX (var) != NULL)
                  && TYEqTypes (TVAR_MAX (var), TVAR_MIN (var)));
 }
 
@@ -381,6 +429,33 @@ SSIGetMin (tvar *var)
 {
     DBUG_ENTER ("SSIGetMin");
     DBUG_RETURN (TVAR_MIN (var));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    char  * SSIVariable2String( tvar *var)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+char *
+SSIVariable2String (tvar *var)
+{
+    char buf[256];
+    char *tmp = &buf[0];
+    char *tmp_str, *tmp_str2;
+
+    DBUG_ENTER ("SSIVariable2String");
+    tmp_str = TYType2String (TVAR_MIN (var), FALSE, 0);
+    tmp_str2 = TYType2String (TVAR_MAX (var), FALSE, 0);
+    tmp += sprintf (tmp, "[ %s, %s]", tmp_str, tmp_str2);
+    tmp_str = Free (tmp_str);
+    tmp_str2 = Free (tmp_str2);
+
+    DBUG_RETURN (StringCopy (buf));
 }
 
 /******************************************************************************

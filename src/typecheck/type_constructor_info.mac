@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2002/05/31 14:51:54  sbs
+ * intermediate version to ensure compilable overall state.
+ *
  * Revision 3.2  2002/03/12 15:12:13  sbs
  * variable arity added
  * type constructors for function types added.
@@ -49,11 +52,11 @@
 
 TCI (TC_simple, 0, "Simple", 0), TCI (TC_symbol, 0, "Symbol", 0),
   TCI (TC_user, 0, "User", 0), TCI (TC_aks, 1, "AKS", 0), TCI (TC_akd, 1, "AKD", 0),
-  TCI (TC_aud, 1, "AUD", 0), TCI (TC_audgz, 1, "AUDGZ", 0), TCI (TC_prod, 1, "PROD", 0),
+  TCI (TC_aud, 1, "AUD", 0), TCI (TC_audgz, 1, "AUDGZ", 0), TCI (TC_prod, 0, "PROD", 1),
   TCI (TC_union, 2, "UNION", 1), TCI (TC_fun, 1, "FUN", 1), TCI (TC_ibase, 3, "IBASE", 0),
   TCI (TC_iarr, 1, "IARR", 1), TCI (TC_idim, 1, "IDIM", 1),
   TCI (TC_ishape, 1, "ISHAPE", 0), TCI (TC_ires, 1, "IRES", 0),
-  TCI (TC_dummy, 0, "LastTCI", 0)
+  TCI (TC_alpha, 0, "ALPHA", 0), TCI (TC_dummy, 0, "LastTCI", 0)
 
 #undef TCITypeConstr
 #undef TCIArity

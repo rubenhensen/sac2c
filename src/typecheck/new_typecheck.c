@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/05/31 14:51:54  sbs
+ * intermediate version to ensure compilable overall state.
+ *
  * Revision 3.7  2002/03/12 15:15:24  sbs
  * wrapepr creation inserted.
  *
@@ -72,8 +75,15 @@
 /*
  * Thus, we finally find the following usages of the arg_info node:
  *
- *    INFO_NTC_????  -
+ *    INFO_NTC_TYPE             the inferred type of the expression traversed
+ *    INFO_NTC_NUM_EXPRS_SOFAR  is used to count the number of exprs while
+ *                              traversing them
  */
+
+#define INFO_NTC_TYPE(n) ((ntype *)(n->dfmask[0]))
+#define INFO_NTC_NUM_EXPRS_SOFAR(n) (n->flag)
+
+typedef enum { NTC_not_checked, NTC_checking, NTC_checked } NTC_stat;
 
 /******************************************************************************
  *
@@ -89,17 +99,105 @@ node *
 NewTypeCheck (node *arg_node)
 {
     funtab *tmp_tab;
+    node *info_node;
 
     DBUG_ENTER ("NewTypeCheck");
 
     tmp_tab = act_tab;
     act_tab = ntc_tab;
 
-    arg_node = Trav (arg_node, NULL);
+    info_node = MakeInfo ();
+
+    arg_node = Trav (arg_node, info_node);
+
+    info_node = FreeNode (info_node);
 
     act_tab = tmp_tab;
 
     DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ ***
+ ***          local helper functions
+ ***          ----------------------
+ ***
+ ******************************************************************************/
+
+/******************************************************************************
+ *
+ * function:
+ *    node *UpdateSignature( node *fundef, ntype *args)
+ *
+ * description:
+ *    Here, we assume that all argument types are either array types or
+ *    type variables with identical Min and Max!
+ *    This function replaces the old type siganture (in the N_arg nodes)
+ *    by the given argument types (arg_ts), and updates the function type
+ *    ( FUNDEF_TYPE( fundef) ) as well. It returns the modified N_fundef
+ *    node.
+ *
+ ******************************************************************************/
+
+static node *
+UpdateSignature (node *fundef, ntype *arg_ts)
+{
+    node *args;
+    ntype *type;
+    int i = 0;
+
+    DBUG_ENTER ("UpdateSignature");
+    DBUG_ASSERT ((CountArgs (FUNDEF_ARGS (fundef)) == TYGetProductSize (arg_ts)),
+                 "UpdateSignature called with incompatible no of arguments!");
+    DBUG_ASSERT ((TYIsProdOfArrayOrFixedAlpha (arg_ts)),
+                 "UpdateSignature called with non-fixed args!");
+
+    args = FUNDEF_ARGS (fundef);
+    while (args) {
+        type = TYGetProductMember (arg_ts, i);
+        ARG_TYPE (args) = FreeOneTypes (ARG_TYPE (args));
+        ARG_TYPE (args) = TYType2OldType (type);
+        args = ARG_NEXT (args);
+        i++;
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *DispatchFunction( node *fundef, ntype *args)
+ *
+ * description:
+ *    Here, we assume that all argument types are either array types or
+ *    type variables with identical Min and Max!
+ *
+ ******************************************************************************/
+
+static node *
+DispatchFunction (node *fundef, ntype *args)
+{
+#ifndef DBUG_OFF
+    char *tmp_str;
+#endif
+    node *res;
+
+    DBUG_ENTER ("DispatchFunction");
+    DBUG_ASSERT ((TYIsProdOfArrayOrFixedAlpha (args)),
+                 "DispatchFunction called with non-fixed args!");
+
+    if (FUNDEF_IS_LACFUN (fundef)) {
+        UpdateSignature (fundef, args);
+        FUNDEF_TYPE (fundef) = CreateFuntype (fundef);
+        res = fundef;
+    } else {
+        DBUG_EXECUTE ("NTC", tmp_str = TYType2String (args, 0, 0););
+        DBUG_PRINT ("NTC", ("dispatching %s for %s", FUNDEF_NAME (fundef), tmp_str));
+        DBUG_EXECUTE ("NTC", Free (tmp_str););
+        res = fundef;
+    }
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -121,6 +219,8 @@ NewTypeCheck (node *arg_node)
 node *
 NTCmodul (node *arg_node, node *arg_info)
 {
+    node *fundef;
+
     DBUG_ENTER ("NTCmodul");
 #if 0
   /*
@@ -134,7 +234,7 @@ NTCmodul (node *arg_node, node *arg_info)
 #endif
 
     /*
-     * Gefore doing the actual type inference, we want to switch to the FUN-
+     * Before doing the actual type inference, we want to switch to the FUN-
      * representation. This requires seeral preparational steps:
      *
      * I) Inserting Vardecs
@@ -187,11 +287,23 @@ NTCmodul (node *arg_node, node *arg_info)
 
     /*
      * Now, we do the actual type inference ....
+     *
+     * First, we mark all functions that need to be checked as NTC_not_checked.
+     * All others are marked NTC_checked:
      */
-#if 0
-    if ( NULL != MODUL_FUNS(arg_node))
-      MODUL_FUNS(arg_node)=Trav(MODUL_FUNS(arg_node), arg_info);
-#endif
+
+    fundef = MODUL_FUNS (arg_node);
+    while (fundef != NULL) {
+        if (FUNDEF_STATUS (fundef) != ST_wrapperfun) {
+            FUNDEF_TCSTAT (fundef) = NTC_not_checked;
+        } else {
+            FUNDEF_TCSTAT (fundef) = NTC_checked;
+        }
+        fundef = FUNDEF_NEXT (fundef);
+    }
+
+    if (NULL != MODUL_FUNS (arg_node))
+        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
 
 DONE:
     DBUG_RETURN (arg_node);
@@ -358,1075 +470,507 @@ NTCtypedef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCfundef(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+static node *
+TypeCheckFunctionBody (node *arg_node, node *arg_info)
+{
+    ntype *res_type;
+    ntype *ret_type;
+    ntype *dtype, *itype;
+    tvar *alpha;
+    int i;
+    bool ok;
+
+    DBUG_ENTER ("TypeCheckFunctionBody");
+
+    FUNDEF_TCSTAT (arg_node) = NTC_checking;
+
+    /*
+     * First, we put the ntype info into the AVIS_TYPE fields:
+     */
+    if (NULL != FUNDEF_ARGS (arg_node)) {
+        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+    }
+
+    /*
+     * Then, we infer the type of the body:
+     */
+    if (NULL != FUNDEF_BODY (arg_node)) {
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+
 #if 0
-/******************************************************************************
- *
- * function:
- *    node *NTCFundef(node *arg_node, node *arg_info)
- *
- * description:
- *
- ******************************************************************************/
-
-node *NTCFundef(node *arg_node, node *arg_info)
-{
-  DBUG_ENTER("NTCFundef");
-    if ( NULL != FUNDEF_NEXT(arg_node))
-      FUNDEF_NEXT(arg_node)=Trav(FUNDEF_NEXT(arg_node), arg_info);
-  DBUG_RETURN(arg_node);
-}
-
-
-/******************************************************************************
- *
- * function:
- *    node *NTCArg(node *arg_node, node *arg_info)
- *
- * description: 
- *
- ******************************************************************************/
-
-node *NTCArg(node *arg_node, node *arg_info)
-{
-  DBUG_ENTER("NTCArg");
-
-  if( NULL != ARG_NEXT(arg_node))
-    ARG_NEXT(arg_node)=Trav(ARG_NEXT(arg_node), arg_info);
-  DBUG_RETURN(arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *  node * NTCBlock( node *arg_node, node *arg_info )
- *
- * description:
- *
- ******************************************************************************/
-
-node *NTCBlock(node *arg_node, node *arg_info)
-{
-  DBUG_ENTER("NTCBlock");
-
-  /*
-   * First pass through the vardecs: all int[.] vars are initialized by $!
-   */
-  if( BLOCK_VARDEC( arg_node) != NULL) {
-    BLOCK_VARDEC( arg_node) = Trav( BLOCK_VARDEC( arg_node), arg_info);
-  }
-
-  if( BLOCK_INSTR( arg_node) != NULL) {
-    BLOCK_INSTR( arg_node) = Trav( BLOCK_INSTR( arg_node), arg_info);
-  }
-
-  /* 
-   * Second pass through the vardecs: we eliminate all superfluous int[.]
-   * vardecs. This is indicated by arg_info == NULL !
-   */
-  if( BLOCK_VARDEC( arg_node) != NULL) {
-    BLOCK_VARDEC( arg_node) = Trav( BLOCK_VARDEC( arg_node), NULL);
-  }
-
-  DBUG_RETURN(arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *  node * NTCVardec( node *arg_node, node *arg_info )
- *
- * description:
- *   if( arg_info != NULL) 
- *       create an N_vinfo node for all vars with either type int[x]
- *       or type int[.] (needed for the AKD-case!).
- *   else
- *       eliminate all those vardecs, whose COLCHNs do not contain VECT.
- *
- ******************************************************************************/
-
-node *NTCVardec(node *arg_node, node *arg_info)
-{
-  int dim;
-  node * next;
-
-  DBUG_ENTER("NTCVardec");
-
-  if( arg_info != NULL) {
     /*
-     * This is the first traversal which initializes the int[.]
-     * vardecs with $!
+     * The result type is now available in INFO_NTC_TYPE( arg_info).
+     * It should be a product type of array types or type variables
+     * with identical lower and upper limits !!! (cf. NTCreturn).
      */
-    dim = VARDEC_DIM( arg_node);
-    if( (VARDEC_BASETYPE( arg_node) == T_int) 
-        && ((dim == 1 ) || (dim == KNOWN_DIM_OFFSET - 1 ))) {
-      /* we are dealing with a potential indexing vector ! */
-      VARDEC_ACTCHN( arg_node) = MakeVinfoDollar( NULL);
-      VARDEC_COLCHN( arg_node) = MakeVinfoDollar( NULL);
-    }
 
-    if (VARDEC_NEXT( arg_node) != NULL) {
-      VARDEC_NEXT( arg_node) = Trav( VARDEC_NEXT( arg_node), arg_info);
-    }
-  } else {
-   /*
-    * This is the second traversal which is done after traversing the body
-    * and is used to eliminate index vectors which are no longer needed.
-    * As criterium for need the existance of VECT in the COLCHN is taken.
-    * I hope that this is sufficient, since I add VECT whenever Vect2Offset
-    * is introduced ( see "CreateVect2OffsetIcm").
-    */
-    dim = VARDEC_DIM( arg_node);
-    if( (VARDEC_BASETYPE( arg_node) == T_int)
-        && ((dim == 1 ) || (dim == KNOWN_DIM_OFFSET - 1 ))
-        && (VINFO_FLAG( FindVect( VARDEC_COLCHN( arg_node))) == DOLLAR )) {
-      /* 
-       * we are dealing with an indexing vector that is not
-       * needed as a vector anymore!
-       */
-      next = VARDEC_NEXT( arg_node);
-      VARDEC_NEXT( arg_node) = NULL;
-      arg_node = FreeTree( arg_node);
-      if( next != NULL)
-        arg_node = Trav( next, arg_info);
-      else
-        arg_node = NULL;
-    }
-    else {
-      if (VARDEC_NEXT( arg_node) != NULL) {
-        VARDEC_NEXT( arg_node) = Trav( VARDEC_NEXT( arg_node), arg_info);
-      }
-    }
-    
-  }
+    DBUG_ASSERT( TYIsProdOfArrayOrFixedAlpha( INFO_NTC_TYPE( arg_info)),
+                 "type inference of a function body did not return a fixed product type");
+#endif
 
-  DBUG_RETURN(arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *  node * NTCAssign( node *arg_node, node *arg_info )
- *
- * description:
- *
- ******************************************************************************/
-
-node *NTCAssign(node *arg_node, node *arg_info)
-{
-  DBUG_ENTER("NTCAssign");
-
-  /* Bottom up traversal!! */
-  if(NULL != ASSIGN_NEXT(arg_node)) {
-    ASSIGN_NEXT(arg_node)=Trav(ASSIGN_NEXT(arg_node), arg_info);
-  }
-  /* store the current N_assign in INFO_IVE_CURRENTASSIGN */
-  INFO_IVE_CURRENTASSIGN( arg_info) = arg_node;
-  ASSIGN_INSTR(arg_node)=Trav(ASSIGN_INSTR(arg_node), arg_info);
-  DBUG_RETURN(arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *  node *NTCReturn(node *arg_node, node *arg_info)
- *
- * description:
- *   initiates the uses-collection. In order to guarantee a "VECT" attribution
- *   for array-variables, INFO_IVE_TRANSFORM_VINFO( arg_info) has to be NULL,
- *   when traversing the return expressions!
- *
- ******************************************************************************/
-
-node *NTCReturn(node *arg_node, node *arg_info)
-{
-  DBUG_ENTER("NTCReturn");
-  INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL;
-  RETURN_EXPRS( arg_node) = Trav( RETURN_EXPRS( arg_node), arg_info);
-  DBUG_RETURN(arg_node);
-}
-
-
-
-/******************************************************************************
- *
- * function:
- *    node *NTCLet(node *arg_node, node *arg_info)
- *
- * description: This is the central mechanism for steering the code
- *    transformation. It Duplicates assignments - if required - and adds
- *    the transformation information into arg_info.
- *
- ******************************************************************************/
-
-node *NTCLet(node *arg_node, node *arg_info)
-{
-  ids *vars;
-  node *vardec, *vinfo, *act_let, *newassign;
-  node *current_assign, *next_assign, *chain, *rest_chain;
-
-  DBUG_ENTER("NTCLet");
-  /* 
-   * First, we attach the collected uses-attributes( they are in the
-   * actual chain of the vardec) to the variables of the LHS of the
-   * assignment!
-   */
-  vars=LET_IDS(arg_node);
-  do {
-    vardec = IDS_VARDEC(vars);
-    if( NODE_TYPE( vardec) == N_vardec) {
-      if( VARDEC_COLCHN( vardec) != NULL) { 
-        /* So we are dealing with a potential index var! */
-        chain                 = VARDEC_ACTCHN(vardec);
-        IDS_USE(vars)         = chain;
-        rest_chain            = CutVinfoChn( chain);
-        /* Now, re-initialize the actual chain! */
-        VARDEC_ACTCHN(vardec) = MakeVinfoDollar( rest_chain);
-      }
-    }
-    else {
-      DBUG_ASSERT((  NODE_TYPE( vardec) == N_arg),
-                  "backref from let-var neither vardec nor arg!");
-      if( ARG_COLCHN( vardec) != NULL) {
-        /* So we are dealing with a potential index var! */
-        chain              = ARG_ACTCHN(vardec);
-        IDS_USE(vars)      = chain;
-         rest_chain        = CutVinfoChn( chain);
-        /* Now, re-initialize the actual chain! */
-        ARG_ACTCHN(vardec) = MakeVinfoDollar( rest_chain);
-      }
-    }
-    vars = IDS_NEXT(vars);
-  } while(vars);
-
-
-  if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) { /* normal run! */
-
-    /* Now, that we have done all that is needed for the "Uses" inference,
-     * we do some modifications of the assignment based on the "Uses" information
-     * gained.
-     * Therefore, we first have to find out, what kind of RHS we are dealing with.
-     *  - If it is (an arithmetic operation( +,-,*,\), a variable or a constant),
-     *    AND it is neither F_mul_AxA nor F_div_AxA !!!
-     *    AND the LHS variable is NOT used as VECT
-     *    AND the LHS variable IS used as IDX(...):
-     *    we duplicate the assignment for each IDX(shape) and traverse the new
-     *    assignments with INFO_IVE_TRANSFORM_VINFO( arginfo) being set to the
-     *    N_vinfo that carries IDX(shape)! This traversal will replace
-     *    the index-array operations by integer-index operations.The original
-     *    (VECT-) version is eliminated (more precisely: reused for the last
-     *    IDX(...) version).
-     *  - in all other cases:
-     *    for each variable of the LHS that is needed as IDX(shape) we
-     *    generate an assignment of the form:
-     *    ND_KS_VECT2OFFSET( off-name, var-name, dim, dims, shape) 
-     *    this instruction will calculate the indices needed from the vector
-     *    generated by the RHS.
-     *    After doing so, we traverse the assignment with 
-     *    INFO_IVE_TRANSFORM_VINFO( arginfo) being set to NULL.
-     */
-    vars  = LET_IDS(arg_node);  /* pick the first LHS variable */
-    vinfo = IDS_USE(vars); /* pick the "Uses"set from the first LHS var */
-    if((vinfo != NULL) && (VINFO_FLAG( FindVect(vinfo)) == DOLLAR) && 
-       (VINFO_FLAG( vinfo) == IDX) &&
-       (
-       ((NODE_TYPE( LET_EXPR(arg_node)) == N_prf) 
-       && (F_add_SxA <= PRF_PRF(LET_EXPR(arg_node)))
-       && (PRF_PRF(LET_EXPR(arg_node)) <= F_div_AxA)
-       && (PRF_PRF(LET_EXPR(arg_node)) != F_mul_AxA)
-       && (PRF_PRF(LET_EXPR(arg_node)) != F_div_AxA))
-
-       || (NODE_TYPE( LET_EXPR(arg_node)) == N_id)
-       || (NODE_TYPE( LET_EXPR(arg_node)) == N_array)
-       )) {
-      DBUG_ASSERT(((NODE_TYPE( LET_EXPR(arg_node)) == N_id) ||
-                   (NODE_TYPE( LET_EXPR(arg_node)) == N_array) ||
-                   (PRF_PRF(LET_EXPR(arg_node)) == F_add_SxA) ||
-                   (PRF_PRF(LET_EXPR(arg_node)) == F_add_AxS) ||
-                   (PRF_PRF(LET_EXPR(arg_node)) == F_add_AxA) ||
-                   (PRF_PRF(LET_EXPR(arg_node)) == F_sub_SxA) ||
-                   (PRF_PRF(LET_EXPR(arg_node)) == F_sub_AxS) ||
-                   (PRF_PRF(LET_EXPR(arg_node)) == F_sub_AxA) ||
-                   (PRF_PRF(LET_EXPR(arg_node)) == F_mul_SxA) ||
-                   (PRF_PRF(LET_EXPR(arg_node)) == F_mul_AxS) ||
-                   (PRF_PRF(LET_EXPR(arg_node)) == F_div_SxA) ||
-                   (PRF_PRF(LET_EXPR(arg_node)) == F_div_AxS)),
-                   " wrong prf sequence in \"prf_node_info.mac\"!");
-      /* Here, we duplicate the operation
-       * as many times as we do have different shapes in LET_USE(arg_node)
-       * and successively traverse these assignments supplying the resp. N_vinfo
-       * in each call's  INFO_IVE_TRANSFORM_VINFO( arg_info)!
-       */
-      act_let=arg_node;
-      while(VINFO_FLAG(vinfo) != DOLLAR) {
-        DBUG_ASSERT(((NODE_TYPE(act_let)==N_let)
-                    && (NODE_TYPE(INFO_IVE_CURRENTASSIGN( arg_info)) == N_assign)),
-                    "wrong let/assign node generated in IdxLet!");
-        if(VINFO_FLAG( VINFO_NEXT( vinfo)) != DOLLAR){
-          /* There are more indices needed, so we have to duplicate the let
-           * node and repeat the let-traversal until there are no shapes left!
-           * More precisely, we have to copy the Assign node, who is the father
-           * of the let node and whose adress is given by arg_info!
-           */
-          current_assign = INFO_IVE_CURRENTASSIGN( arg_info);
-          next_assign = ASSIGN_NEXT( current_assign);
-          ASSIGN_NEXT( current_assign) = NULL;
-          newassign=DupTree( current_assign, NULL);
-
-          ASSIGN_NEXT(current_assign)  = newassign;
-          ASSIGN_NEXT(newassign) = next_assign;
-        }
-        /* Now, we transform the RHS of act_let ! */
-        INFO_IVE_TRANSFORM_VINFO( arg_info) = vinfo;
-        LET_EXPR( act_let) = Trav( LET_EXPR( act_let), arg_info);
-        /* Make sure we do have a vardec! */
-        LET_NAME( act_let)  = IdxChangeId( LET_NAME(act_let), VINFO_TYPE( vinfo));
-        LET_VARDEC( act_let)= VardecIdx( LET_VARDEC(act_let),
-                                         VINFO_TYPE( vinfo));
-        vinfo = VINFO_NEXT( vinfo);
-        DBUG_ASSERT( (vinfo != NULL), " non $-terminated N_vinfo chain encountered!");
-        if( VINFO_FLAG( vinfo) != DOLLAR) {
-          INFO_IVE_CURRENTASSIGN( arg_info) = newassign;
-          act_let  = ASSIGN_INSTR( newassign);
-        }
-      } 
-    }
-    else {
-      /* We do not have a "pure" address calculation here!
-       * Therefore, we insert for each shape-index needed for each variable of
-       * the LHS an assignment of the form :
-       * ND_KS_VECT2OFFSET( <off-name>, <var-name>, <dim>, <dims>, <shape> )
-       */
-      do { /* loop over all LHS-Vars */
-        vinfo= IDS_USE( vars);
-        vardec = IDS_VARDEC(vars);
-
-        while(vinfo != NULL) { /* loop over all "Uses" attributes */
-          if (VINFO_FLAG( vinfo)==IDX) {
-            newassign = CreateVect2OffsetIcm( vardec, VINFO_TYPE( vinfo));
-
-            current_assign                 = INFO_IVE_CURRENTASSIGN( arg_info);
-            ASSIGN_NEXT( newassign)        = ASSIGN_NEXT( current_assign);
-            ASSIGN_NEXT( current_assign)   = newassign;
-
-            INFO_IVE_CURRENTASSIGN( arg_info) = newassign;
-          }
-          vinfo = VINFO_NEXT( vinfo);
-        } 
-
-        /* 
-         * Now, we take care of the "VECT" version!
-         * Make sure, that no transformations are done while traversing
-         * the RHS!
+        /*
+         * Finaly, we insert the inferred type into the result type, iff legal
          */
-        INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL;
+        ret_type = INFO_NTC_TYPE (arg_info);
+        res_type = FUNDEF_RET_TYPE (arg_node);
 
-        LET_EXPR( arg_node) = Trav(LET_EXPR( arg_node), arg_info);
-
-        vars=IDS_NEXT( vars);
-      } while( vars != NULL);
+        for (i = 0; i < TYGetProductSize (ret_type); i++) {
+            dtype = TYGetProductMember (res_type, i);
+            alpha = TYGetAlpha (dtype);
+            itype = TYGetProductMember (ret_type, i);
+            /*
+             * Since we know that INFO_NTC_TYPE( arg_info) is fixed now, we can convert
+             * it into a type varibale free form (which is required by SSINewMin and
+             * SSINewMax)
+             */
+            itype = TYEliminateAlpha (itype);
+            ok = (SSINewMin (alpha, itype) && SSINewMax (alpha, itype));
+            if (!ok) {
+                ABORT (NODE_LINE (arg_node),
+                       ("component #%d of inferred return type (%s) is not within %s", i,
+                        TYType2String (itype, FALSE, 0),
+                        TYType2String (dtype, FALSE, 0)));
+            } else {
+                TYFreeType (itype);
+            }
+        }
+        TYFreeTypeConstructor (ret_type);
     }
-
-  } else { /* uses inference only! */
-    DBUG_ASSERT( INFO_IVE_MODE( arg_info) == M_uses_only,
-                 "MODE-flag is neither M_uses_only nod M_uses_and_transform!");
-    /* 
-     * make sure that no transformations are done while traversing
-     * the RHS!
-     */
-    INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL;
-
-    LET_EXPR( arg_node) = Trav(LET_EXPR( arg_node), arg_info);
-  }
-
-
-  DBUG_RETURN(arg_node);
+    DBUG_RETURN (arg_node);
 }
 
-/*
- *
- *  functionname  : NTCPrf
- *  arguments     :
- *  description   : case prf of:
- *                    sel   : SetIdx
- *                    binop : SetVect
- *                    others: SetVect
- *  global vars   : ive_op
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-node *NTCPrf( node *arg_node, node *arg_info)
+node *
+NTCfundef (node *arg_node, node *arg_info)
 {
-  node *arg1, *arg2, *arg3, *vinfo;
-  types *type;
 
-  DBUG_ENTER("IdxPrf");
-  /*
-   * INFO_IVE_TRANSFORM_VINFO( arg_info) indicates whether this is just a
-   * normal traverse (NULL), or the transformation of an arithmetic
-   * index calculation (N_vinfo-node).
-   */
-  switch( PRF_PRF( arg_node)) {
-    case F_sel: 
-      arg1 = PRF_ARG1( arg_node);
-      arg2 = PRF_ARG2( arg_node);
-      DBUG_ASSERT(((arg2->nodetype == N_id) || (arg2->nodetype == N_array)),
-                    "wrong arg in F_sel application");
-      if( NODE_TYPE( arg2) == N_id)
-        type = ID_TYPE( arg2);
-      else
-        type = ARRAY_TYPE( arg2);
-      /*
-       * if the shape of the array is unknown, do not(!) replace
-       * sel by idx_sel but mark the selecting vector as VECT !
-       * this is done by traversal with NULL instead of vinfo!
-       */
-      if (TYPES_SHPSEG( type) != NULL) { 
-        vinfo = MakeVinfo( IDX, type, NULL, NULL);
-        INFO_IVE_TRANSFORM_VINFO( arg_info) = vinfo;
-        PRF_ARG1( arg_node) = Trav(arg1, arg_info);
-        FreeNode( vinfo);
-        if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
-          PRF_PRF( arg_node)  = F_idx_sel;
-        }
-      } else {
-        INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL;
-        PRF_ARG1( arg_node) = Trav(arg1, arg_info);
-      }
-      INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL;
-      PRF_ARG2( arg_node) = Trav(arg2, arg_info);
-      break;
-    case F_modarray: 
-      arg1 = PRF_ARG1( arg_node);
-      arg2 = PRF_ARG2( arg_node);
-      arg3 = PRF_ARG3( arg_node);
-      DBUG_ASSERT(((arg1->nodetype == N_id) || (arg1->nodetype == N_array)),
-                    "wrong arg in F_modarray application");
-      if( NODE_TYPE( arg1) == N_id)
-        type = ID_TYPE( arg1);
-      else
-        type = ARRAY_TYPE( arg1);
-      /*
-       * if the shape of the array is unknown, do not(!) replace
-       * modarray by idx_modarray but mark the selecting vector as VECT !
-       * this is done by traversal with NULL instead of vinfo!
-       */
-      if (TYPES_SHPSEG( type) != NULL) { 
-        vinfo = MakeVinfo( IDX, type, NULL, NULL);
-        INFO_IVE_TRANSFORM_VINFO( arg_info) = vinfo;
-        PRF_ARG2( arg_node) = Trav(arg2, arg_info);
-        FreeNode( vinfo);
-        if(INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
-          PRF_PRF( arg_node)  = F_idx_modarray;
-        }
-      } else {
-        INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL;
-        PRF_ARG2( arg_node) = Trav(arg2, arg_info);
-      }
-      INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL;
-      PRF_ARG1( arg_node) = Trav(arg1, arg_info);
-      PRF_ARG3( arg_node) = Trav(arg3, arg_info);
-      break;
-    case F_add_SxA:
-      INFO_IVE_NON_SCAL_LEN( arg_info) = ID_SHAPE(PRF_ARG2( arg_node), 0);
-      if(INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)
-        PRF_PRF( arg_node) = F_add;
-      PRF_ARGS( arg_node) = Trav(PRF_ARGS( arg_node), arg_info);
-      ive_op++;
-      break;
-    case F_add_AxS:
-      INFO_IVE_NON_SCAL_LEN( arg_info) = ID_SHAPE(PRF_ARG1( arg_node), 0);
-    case F_add_AxA:
-      if(INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)
-        PRF_PRF( arg_node) = F_add;
-      PRF_ARGS( arg_node) = Trav(PRF_ARGS( arg_node), arg_info);
-      ive_op++;
-      break;
-    case F_sub_SxA:
-      INFO_IVE_NON_SCAL_LEN( arg_info) = ID_SHAPE(PRF_ARG2( arg_node), 0);
-      if(INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)
-        PRF_PRF( arg_node) = F_sub;
-      PRF_ARGS( arg_node) = Trav(PRF_ARGS( arg_node), arg_info);
-      ive_op++;
-      break;
-    case F_sub_AxS:
-      INFO_IVE_NON_SCAL_LEN( arg_info) = ID_SHAPE(PRF_ARG1( arg_node), 0);
-    case F_sub_AxA:
-      if(INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)
-        PRF_PRF( arg_node) = F_sub;
-      PRF_ARGS( arg_node) = Trav(PRF_ARGS( arg_node), arg_info);
-      ive_op++;
-      break;
-    case F_mul_SxA:
-      if( INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)
-        PRF_PRF( arg_node) =F_mul;
-      PRF_ARG2( arg_node) = Trav( PRF_ARG2( arg_node), arg_info);
-      ive_op++;
-      break;
-    case F_mul_AxS:
-      if( INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)
-        PRF_PRF( arg_node) =F_mul;
-      PRF_ARG1( arg_node) = Trav( PRF_ARG1( arg_node), arg_info);
-      ive_op++;
-      break;
-    case F_div_SxA:
-      if( INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)
-        PRF_PRF( arg_node) =F_div;
-      PRF_ARG2( arg_node) = Trav( PRF_ARG2( arg_node), arg_info);
-      ive_op++;
-      break;
-    case F_div_AxS:
-      if( INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)
-        PRF_PRF( arg_node) =F_div;
-      PRF_ARG1( arg_node) = Trav( PRF_ARG1( arg_node), arg_info);
-      ive_op++;
-      break;
-    default:
-      DBUG_ASSERT( (INFO_IVE_TRANSFORM_VINFO( arg_info) == NULL),
-                   "Inconsistency between IdxLet and IdxPrf");
-      PRF_ARGS( arg_node) = Trav(PRF_ARGS( arg_node), arg_info);
-      break;
-  }
-  DBUG_RETURN(arg_node);
-}
+    DBUG_ENTER ("NTCfundef");
 
-/*
- *
- *  functionname  : NTCId
- *  arguments     :
- *  description   : examines whether variable is a one-dimensional array;
- *                  if so, examine INFO_IVE_TRANSFORM_VINFO( arg_info):
- *                    if NULL :
- *                        SetVect on "N_vardec" belonging to the "N_id" node.
- *                    otherwise: change varname according to shape from arg_info!
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-node *NTCId( node *arg_node, node *arg_info)
-{
-  types *type;
-  node *vardec;
-  char *newid;
-
-  DBUG_ENTER("NTCId");
-  vardec = ID_VARDEC( arg_node);
-  DBUG_ASSERT(((NODE_TYPE( vardec) == N_vardec) || (NODE_TYPE( vardec) == N_arg)),
-              "non vardec/arg node as backref in N_id!");
-  if( NODE_TYPE( vardec) == N_vardec) {
-    if ((VARDEC_BASETYPE(vardec) == T_int) 
-        && ((VARDEC_DIM( vardec) == 1) || (VARDEC_DIM( vardec) == KNOWN_DIM_OFFSET - 1))) {
-      if ( INFO_IVE_TRANSFORM_VINFO( arg_info) == NULL ) {
-        DBUG_PRINT("IDX",("assigning VECT to %s:", ID_NAME( arg_node)));
-        VARDEC_ACTCHN( vardec) = SetVect( VARDEC_ACTCHN( vardec));
-        VARDEC_COLCHN( vardec) = SetVect( VARDEC_COLCHN( vardec));
-      }
-      else {
-        type = VINFO_TYPE( INFO_IVE_TRANSFORM_VINFO( arg_info));
-        DBUG_PRINT("IDX",("assigning IDX to %s:", ID_NAME( arg_node)));
-        VARDEC_ACTCHN( vardec) = SetIdx( VARDEC_ACTCHN( vardec), type);
-        VARDEC_COLCHN( vardec) = SetIdx( VARDEC_COLCHN( vardec), type);
-        if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
-          newid = IdxChangeId( ID_NAME(arg_node), type);
-          ID_NAME(arg_node) = Free( ID_NAME(arg_node));
-          ID_NAME(arg_node) = newid;
-          /* Now, we have to insert the respective declaration */
-          /* If the declaration does not yet exist, it has to be created! */
-          ID_VARDEC( arg_node) = VardecIdx( vardec, type);
-        }
-      }
+    if ((FUNDEF_TCSTAT (arg_node) == NTC_not_checked) && !FUNDEF_IS_LACFUN (arg_node)) {
+        arg_node = TypeCheckFunctionBody (arg_node, arg_info);
     }
-  }
-  else {
-    if (( ARG_BASETYPE( vardec) == T_int)
-        && ( (ARG_DIM( vardec) == 1) || (ARG_DIM( vardec) == KNOWN_DIM_OFFSET - 1))) {
-      if ( INFO_IVE_TRANSFORM_VINFO( arg_info) == NULL ) {
-        DBUG_PRINT("IDX",("assigning VECT to %s:", ID_NAME( arg_node)));
-        ARG_ACTCHN( vardec) = SetVect( ARG_ACTCHN( vardec));
-        ARG_COLCHN( vardec) = SetVect( ARG_COLCHN( vardec));
-      }
-      else {
-        type = VINFO_TYPE( INFO_IVE_TRANSFORM_VINFO(arg_info));
-        DBUG_PRINT("IDX",("assigning IDX to %s:", ID_NAME( arg_node)));
-        ARG_ACTCHN( vardec) = SetIdx( ARG_ACTCHN( vardec), type);
-        ARG_COLCHN( vardec) = SetIdx( ARG_COLCHN( vardec), type);
-        if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
-          newid = IdxChangeId( ID_NAME(arg_node), type);
-          ID_NAME(arg_node) = Free( ID_NAME(arg_node));
-          ID_NAME(arg_node) = newid;
-          /* Now, we have to insert the respective declaration */
-          /* If the declaration does not yet exist, it has to be created! */
-          ID_VARDEC( arg_node) = VardecIdx( vardec, type);
-        }
-      }
-    }
-  }
-  DBUG_RETURN(arg_node);
+
+    if (NULL != FUNDEF_NEXT (arg_node))
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
 }
-
-/*
- *
- *  functionname  : IdxArray
- *  arguments     : 1) node*: N_array node
- *                  2) node*: INFO_IVE_TRANSFORM_VINFO( arg_info) = vinfo
- *                  R) node*: index of N_array in unrolling of shape 
- *  description   : if vinfo == NULL all Array-Elements are traversed with
- *                  INFO_IVE_TRANSFORM_VINFO( arg_info) NULL, since there may be
- *                  some array_variables;
- *                  otherwise the index of the vector N_array in
- *                  the unrolling of an array of shape from vinfo is calculated; e.g.
- *                  [ 2, 3, 1] in int[7,7,7] => 2*49 + 3*7 +1 = 120
- *                  [ 2] in int[7, 7, 7] => 2*49 = 98
- *                  Since we may have identifyers as components, this calculation
- *                  is not done, but generated as syntax-tree!!!
- *                  WARNING!  this penetrates the flatten-consistency!!
- *  global vars   : ive_expr
- *
- */
-
-node *IdxArray( node * arg_node, node *arg_info)
-{
-  int i;
-  int *shp;
-  node *idx;
-  node *expr;
-
-  DBUG_ENTER("IdxArray");
-  if( INFO_IVE_TRANSFORM_VINFO( arg_info)==NULL) {
-    if (ARRAY_AELEMS(arg_node) != NULL) {
-       ARRAY_AELEMS( arg_node) = Trav( ARRAY_AELEMS( arg_node), arg_info);
-    }
-  }
-  else {
-    if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
-      expr= ARRAY_AELEMS( arg_node);
-      shp= VINFO_SELEMS( INFO_IVE_TRANSFORM_VINFO( arg_info));
-      idx = EXPRS_EXPR( expr);
-      expr = EXPRS_NEXT( expr);
-      for(i=1; i<VINFO_DIM( INFO_IVE_TRANSFORM_VINFO( arg_info)); i++) {
-        if(expr != NULL) {
-          DBUG_ASSERT((NODE_TYPE(expr) == N_exprs),
-                      "corrupted syntax tree at N_array(N_exprs expected)!");
-          idx = MakeExprs( idx, MakeExprs( MakeNum( shp[i]), NULL));
-          idx = MakePrf( F_mul, idx);
-          idx = MakeExprs( idx, expr);
-          expr= EXPRS_NEXT( expr);
-          EXPRS_NEXT( EXPRS_NEXT( idx)) = NULL;
-          idx = MakePrf( F_add, idx);
-        }
-        else {
-          idx = MakeExprs( idx, MakeExprs( MakeNum( shp[i]), NULL));
-          idx = MakePrf( F_mul, idx);
-        }
-      } 
-      arg_node = idx;
-      ive_expr++;
-    }
-  }
-  DBUG_RETURN(arg_node);
-}
-
-/*
- *
- *  functionname  : IdxNum
- *  arguments     : 1) node*: N_num node
- *                  2) node*: INFO_IVE_TRANSFORM_VINFO( arg_info) = shape
- *                  R) node*: index of N_array in unrolling of shape
- *  description   : if shape == NULL nothing has to be done; otherwise
- *                  the index of the vector N_array in
- *                  the unrolling of an array of shape is calculated;
- *
- */
-
-node *IdxNum( node * arg_node, node *arg_info)
-{
-  int val,i,len_iv, dim_array, sum;
-  int *shp;
-
-  DBUG_ENTER("IdxNum");
-  if( INFO_IVE_TRANSFORM_VINFO( arg_info)!=NULL) {
-    DBUG_ASSERT( (NODE_TYPE( INFO_IVE_TRANSFORM_VINFO(arg_info)) == N_vinfo),
-                 "corrupted arg_info node in IdxNum!");
-    shp = VINFO_SELEMS( INFO_IVE_TRANSFORM_VINFO( arg_info));
-    val = NUM_VAL(arg_node);
-    dim_array = VINFO_DIM( INFO_IVE_TRANSFORM_VINFO( arg_info));
-    len_iv =  INFO_IVE_NON_SCAL_LEN( arg_info);
-
-    sum = val;
-    for(i=1; i< len_iv; i++) {
-      sum = (sum * shp[i]) + val;
-    } 
-    for(; i< dim_array; i++) {
-      sum = sum * shp[i];
-    } 
-    NUM_VAL(arg_node) = sum;
-  }
-  DBUG_RETURN(arg_node);
-}
-
-
 
 /******************************************************************************
  *
  * function:
- *   node *IdxNwith( node *arg_node, node *arg_info)
+ *    node *NTCarg(node *arg_node, node *arg_info)
  *
  * description:
- *   
  *
  ******************************************************************************/
 
-node *IdxNwith( node *arg_node, node *arg_info)
+node *
+NTCarg (node *arg_node, node *arg_info)
 {
-  DBUG_ENTER( "IdxNwith");
+    DBUG_ENTER ("NTCarg");
 
-  NWITH_WITHOP( arg_node) = Trav( NWITH_WITHOP( arg_node), arg_info);
-  NWITH_CODE( arg_node) = Trav( NWITH_CODE( arg_node), arg_info);
+    AVIS_TYPE (ARG_AVIS (arg_node)) = TYOldType2Type (ARG_TYPE (arg_node), TY_symb);
 
-  /*
-   * Finally, we traverse the Npart nodes in order to eliminate
-   * superfluous index-vectors!
-   */
-  NWITH_PART( arg_node) = Trav( NWITH_PART( arg_node), arg_info);
+    if (NULL != ARG_NEXT (arg_node))
+        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
 
-  DBUG_RETURN( arg_node);
+    DBUG_RETURN (arg_node);
 }
-
 
 /******************************************************************************
  *
  * function:
- *   node *IdxNpart( node *arg_node, node *arg_info)
+ *  node * NTCblock( node *arg_node, node *arg_info )
  *
  * description:
- *    Here we make sure that all parts of the generator will be traversed
- *    correctly. Furthermore, we eliminate superfluous generator vars
- *    (provided REFCOUNT_PROBLEM_SOLVED holds).
  *
  ******************************************************************************/
 
-node *IdxNpart( node *arg_node, node *arg_info)
+node *
+NTCblock (node *arg_node, node *arg_info)
 {
-  node * vardec, *mem_transform;
+    DBUG_ENTER ("NTCblock");
 
-  DBUG_ENTER( "IdxNpart");
-
-#ifdef REFCOUNT_PROBLEM_SOLVED
-  if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
-    if( VINFO_FLAG( FindVect( NCODE_USE( NPART_CODE( arg_node)))) == DOLLAR) {
-      /*
-       * The index vector variable is used as IDX(...) only!
-       * => we can eliminate the vector completely!
-       */
-      NPART_VEC(arg_node) = Free( NPART_VEC(arg_node));
-    }
-  }
-#else
-  if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
     /*
-     * This makes sure, that the declaration of the index vector variable
-     * will survive the second traversal of the vardecs, even if there is 
-     * no further reference to it but the one in the generator!
-     * IF REFCOUNT_PROBLEM_SOLVED this can be spared since the one in the
-     * generator would be deleted anyways ( see above)!!
+     * The vardecs can be ignored as they are modified during the traversal of the
+     * instructions!
      */
-    vardec = IDS_VARDEC( NPART_VEC( arg_node));
-    L_VARDEC_OR_ARG_COLCHN( vardec, SetVect( VARDEC_COLCHN( vardec)));
-  }
-#endif
 
-  /*
-   * Now, we want to traverse the bounds and filters in order
-   * to obtain all potential VECT uses.
-   * For preventing any transformations of these, we have to make
-   * sure, that (INFO_IVE_TRANSFORM_VINFO( arg_info) == NULL) during
-   * that traversal!
-   */
-  mem_transform = INFO_IVE_TRANSFORM_VINFO( arg_info);
-  INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL; 
-  if( NPART_GEN( arg_node) != NULL)
-    NPART_GEN( arg_node) = Trav( NPART_GEN( arg_node), arg_info);
-  INFO_IVE_TRANSFORM_VINFO( arg_info) = mem_transform;
-
-  /* 
-   * Finally, we take care of any subsequent generators!
-   */
-  if( NPART_NEXT( arg_node) != NULL)
-    NPART_NEXT( arg_node) = Trav( NPART_NEXT( arg_node), arg_info);
-
-  DBUG_RETURN( arg_node);
-}
-
-
-/******************************************************************************
- *
- * function:
- *   node *IdxNcode( node *arg_node, node *arg_info)
- *
- * description:
- *   arg_info points to the previous N_let node!
- *
- ******************************************************************************/
-
-node *IdxNcode( node *arg_node, node *arg_info)
-{
-  node *with, *idx_vardec, *vinfo, *withop_arr, *col_vinfo,
-       *new_assign, *let_node, *current_assign,
-       *new_id, *array_id;
-  types *arr_type;
-
-  DBUG_ENTER( "IdxNcode");
-
-  /*
-   * we traverse the current code block
-   */
-  current_assign = INFO_IVE_CURRENTASSIGN( arg_info);
-  let_node = ASSIGN_INSTR( current_assign);
-
-  NCODE_CEXPR( arg_node) = Trav( NCODE_CEXPR( arg_node), arg_info);
-  NCODE_CBLOCK( arg_node) = Trav( NCODE_CBLOCK( arg_node), arg_info);
-
-  DBUG_ASSERT( ((NODE_TYPE( let_node) == N_let) &&
-                (NODE_TYPE( LET_EXPR( let_node)) == N_Nwith)),
-               "arg_info contains no let with a with-loop on the RHS!");
-
-  /*
-   * we insert instances of the index-vector-var as first statement of the
-   *  current code block.
-   */
-
-  with = LET_EXPR( let_node);
-  idx_vardec = IDS_VARDEC( NWITH_VEC( with));
-  vinfo = VARDEC_ACTCHN( idx_vardec);
-  NCODE_USE( arg_node) = vinfo;
-  VARDEC_ACTCHN( idx_vardec) = MakeVinfoDollar( CutVinfoChn( vinfo));
-
-  if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
-    while (VINFO_FLAG( vinfo) != DOLLAR) {
-
-      if (VINFO_FLAG( vinfo) == IDX) {
-        arr_type = LET_TYPE( let_node);
-        DBUG_ASSERT((arr_type != NULL),"missing type-info for LHS of let!");
-
-        switch (NWITH_TYPE( with)) {
-
-          case WO_modarray:
-            withop_arr = NWITHOP_ARRAY( NWITH_WITHOP( with));
-            break;
-
-          case WO_genarray:
-            withop_arr = NWITHOP_SHAPE( NWITH_WITHOP( with));
-            DBUG_ASSERT( (NODE_TYPE( withop_arr) == N_array),
-                         "shape of genarray is not N_array");
-            break;
-
-          case WO_foldprf:
-            /* here is no break missing! */
-          case WO_foldfun:
-            break;
-
-          default:
-            DBUG_ASSERT( (0), "wrong with-loop type");
-
-        }
-
-        if (((NWITH_TYPE( with) == WO_modarray) ||
-             (NWITH_TYPE( with) == WO_genarray)) &&
-            EqTypes( VINFO_TYPE( vinfo), arr_type)) {
-
-          /*
-           * we can reuse the genvar as index directly!
-           * therefore we create an ICM of the form:
-           * ND_KS_USE_GENVAR_OFFSET( <idx-varname>, <result-array-varname>)
-           */
-
-          new_id = MakeId( IdxChangeId( IDS_NAME( NWITH_VEC( with)), arr_type),
-                           NULL, ST_regular);
-          col_vinfo = FindIdx( VARDEC_COLCHN( idx_vardec), arr_type);
-          DBUG_ASSERT( ((col_vinfo != NULL) && (VINFO_VARDEC( col_vinfo) != NULL)),
-                       "missing vardec for IDX variable");
-          ID_VARDEC( new_id) = VINFO_VARDEC( col_vinfo);
-          array_id = MakeId( StringCopy( LET_NAME( let_node)), NULL, ST_regular);
-
-          /* 
-           * The backref of the arrayid is set wrongly to the actual
-           * integer index-variable. This is done on purpose for
-           * fooling the refcount-inference system.
-           * The "correct" backref would be LET_VARDEC( let_node) !
-           */
-          ID_VARDEC( array_id) = VINFO_VARDEC( col_vinfo);
-
-          new_assign = MakeAssign( MakeIcm2( "ND_KS_USE_GENVAR_OFFSET",
-                                             new_id,
-                                             array_id),
-                                   NULL);
-        }
-        else {
-          /*
-           * we have to instanciate the idx-variable by an ICM of the form:
-           * ND_KS_VECT2OFFSET( <off-name>, <var-name>,
-           *                    <dim of var>, <dim of array>, shape_elems)
-           */
-          new_assign = CreateVect2OffsetIcm( idx_vardec, VINFO_TYPE( vinfo));
-        }
-
-        ASSIGN_NEXT( new_assign) = BLOCK_INSTR( NCODE_CBLOCK( arg_node));
-        DBUG_ASSERT( (NODE_TYPE( BLOCK_INSTR( NCODE_CBLOCK( arg_node))) != N_empty),
-                     "N_empty node in block found");
-        BLOCK_INSTR( NCODE_CBLOCK( arg_node)) = new_assign;
-      }
-
-      vinfo = VINFO_NEXT( vinfo);
+    if (BLOCK_INSTR (arg_node) != NULL) {
+        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
     }
-  }
 
-  /*
-   * now we traverse the next code block
-   */
-
-  if (NCODE_NEXT( arg_node) != NULL) {
-    /* restore valid CURRENTASSIGN!! */
-    INFO_IVE_CURRENTASSIGN( arg_info) = current_assign;
-    NCODE_NEXT( arg_node) = Trav( NCODE_NEXT( arg_node), arg_info);
-  }
-
-  DBUG_RETURN( arg_node);
-}
-
-
-
-/******************************************************************************
- *
- * function:
- *  node * IdxCond( node * arg_node, node * arg_info)
- *
- * description:
- *
- ******************************************************************************/
-
-node * IdxCond( node * arg_node, node * arg_info)
-{
-  DBUG_ENTER( "IdxCond");
-
-  /* Now, we duplicate the topmost chain of actchn! */
-  MAP_TO_ALL_VARDEC_ACTCHNS( DuplicateTop, INFO_IVE_VARDECS( arg_info));
-
-  if( COND_THEN( arg_node) != NULL)
-    COND_THEN( arg_node) = Trav( COND_THEN( arg_node), arg_info);
-
-  /* Now, we switch the two topmost chains of actchn! */
-  MAP_TO_ALL_VARDEC_ACTCHNS( SwitchTop, INFO_IVE_VARDECS( arg_info));
-
-  if( COND_ELSE( arg_node) != NULL)
-    COND_ELSE( arg_node) = Trav( COND_ELSE( arg_node), arg_info);
-
-  /* Now, we merge the topmost chain of actchn into the rest of actchn! */
-  MAP_TO_ALL_VARDEC_ACTCHNS( MergeTop, INFO_IVE_VARDECS( arg_info));
-   
-  DBUG_RETURN( arg_node);
-}
-
-
-/******************************************************************************
- *
- * function:
- *  node * IdxWhile( node * arg_node, node * arg_info)
- *
- * description:
- *
- ******************************************************************************/
-
-node * IdxWhile( node * arg_node, node * arg_info)
-{
-  int old_uses_mode;
-
-  DBUG_ENTER( "IdxWhile");
-
-  /* Now, we duplicate the topmost chain of actchn! */
-  MAP_TO_ALL_VARDEC_ACTCHNS( DuplicateTop, INFO_IVE_VARDECS( arg_info));
-
-  /*
-   * We have to memorize the old uses_mode in order to
-   * prevent code-transformations during the second traversal of the loop
-   * in case the entire loop resides within an outer loop whose body is
-   * traversed the first time!
-   */
-  old_uses_mode = INFO_IVE_MODE( arg_info);
-  INFO_IVE_MODE( arg_info) = M_uses_only;
-
-  if( WHILE_BODY( arg_node) != NULL)
-    WHILE_BODY( arg_node) = Trav( WHILE_BODY( arg_node), arg_info);
-
-  /* Now, we merge the topmost chain of actchn into the rest of actchn! */
-  MAP_TO_ALL_VARDEC_ACTCHNS( MergeTop, INFO_IVE_VARDECS( arg_info));
-  MAP_TO_ALL_VARDEC_ACTCHNS( DuplicateTop, INFO_IVE_VARDECS( arg_info));
-
-  /*
-   * Now, we restore the uses_mode to the value set before entering the loop 
-   * (see comment above!)
-   */
-  INFO_IVE_MODE( arg_info) = old_uses_mode;
-  if( WHILE_BODY( arg_node) != NULL)
-    WHILE_BODY( arg_node) = Trav( WHILE_BODY( arg_node), arg_info);
-
-  MAP_TO_ALL_VARDEC_ACTCHNS( FreeTop, INFO_IVE_VARDECS( arg_info));
-
-  DBUG_RETURN( arg_node);
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
  *
  * function:
- *  node * IdxDo( node * arg_node, node * arg_info)
+ *    node *NTClet(node *arg_node, node *arg_info)
  *
  * description:
  *
+ *
+ *
  ******************************************************************************/
 
-node * IdxDo( node * arg_node, node * arg_info)
+node *
+NTClet (node *arg_node, node *arg_info)
 {
-  int old_uses_mode;
-
-  DBUG_ENTER( "IdxDo");
-
-  /* Now, we duplicate the topmost chain of actchn! */
-  MAP_TO_ALL_VARDEC_ACTCHNS( DuplicateTop, INFO_IVE_VARDECS( arg_info));
-
-  /*
-   * We have to memorize the old uses_mode in order to
-   * prevent code-transformations during the second traversal of the loop
-   * in case the entire loop resides within an outer loop whose body is
-   * traversed the first time!
-   */
-  old_uses_mode = INFO_IVE_MODE( arg_info);
-  INFO_IVE_MODE( arg_info) = M_uses_only;
-
-  if( DO_BODY( arg_node) != NULL)
-    DO_BODY( arg_node) = Trav( DO_BODY( arg_node), arg_info);
-
-  /* Now, we merge the topmost chain of actchn into the rest of actchn! */
-  MAP_TO_ALL_VARDEC_ACTCHNS( MergeCopyTop, INFO_IVE_VARDECS( arg_info));
-
-  /*
-   * Now, we restore the uses_mode to the value set before entering the loop
-   * (see comment above!)
-   */
-  INFO_IVE_MODE( arg_info) = old_uses_mode;
-  if( DO_BODY( arg_node) != NULL)
-    DO_BODY( arg_node) = Trav( DO_BODY( arg_node), arg_info);
-
-  MAP_TO_ALL_VARDEC_ACTCHNS( FreeTop, INFO_IVE_VARDECS( arg_info));
-
-  DBUG_RETURN( arg_node);
-}
-
+    ntype *rhs_type;
+    ntype *type;
+    node *avis;
+    ids *lhs;
+    int i;
+#ifndef DBUG_OFF
+    char *tmp_str, *tmp_str2;
 #endif
+
+    DBUG_ENTER ("NTClet");
+
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    rhs_type = INFO_NTC_TYPE (arg_info);
+
+    lhs = LET_IDS (arg_node);
+
+    if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
+        DBUG_ASSERT ((CountIds (lhs) == TYGetProductSize (rhs_type)),
+                     "fun ap does not match no of lhs vars!");
+        i = 0;
+        while (lhs) {
+            AVIS_TYPE (IDS_AVIS (lhs)) = TYGetProductMember (rhs_type, i);
+            i++;
+            lhs = IDS_NEXT (lhs);
+        }
+        TYFreeTypeConstructor (rhs_type);
+    } else {
+        /* lhs must be one ids only since rhs is not a function application! */
+        DBUG_ASSERT ((CountIds (lhs) == 1),
+                     "more than one lhs var without a function call on the rhs");
+        avis = IDS_AVIS (lhs);
+        /*
+         * Now, we must check whether we do have a pseudo PHI function here
+         */
+        if ((AVIS_SSAPHITARGET (avis) == PHIT_NONE) || (AVIS_TYPE (avis) == NULL)) {
+            AVIS_TYPE (avis) = rhs_type;
+        } else {
+            /*
+             * "second branch of a conditional"!
+             */
+            rhs_type = TYEliminateAlpha (rhs_type);
+            AVIS_TYPE (avis) = TYEliminateAlpha (AVIS_TYPE (avis));
+
+            DBUG_EXECUTE ("NTC", tmp_str = TYType2String (rhs_type, FALSE, 0););
+            DBUG_EXECUTE ("NTC", tmp_str2 = TYType2String (AVIS_TYPE (avis), FALSE, 0););
+            DBUG_PRINT ("NTC", ("fusing types \"%s\" and \"%s\"...", tmp_str, tmp_str2));
+            DBUG_EXECUTE ("NTC", Free (tmp_str););
+            DBUG_EXECUTE ("NTC", Free (tmp_str2););
+
+            if (TYIsArray (rhs_type)) {
+                if (TYIsArray (AVIS_TYPE (avis))) {
+                    /* both are array types! */
+                    type = TYLubOfTypes (rhs_type, AVIS_TYPE (avis));
+                    if (type == NULL) {
+                        ABORT (NODE_LINE (arg_node),
+                               ("variable \"%s\" has two alternative definitions of "
+                                "types \"%s\" and \"%s\""
+                                " which do not have a common supertype",
+                                strtok (IDS_NAME (lhs), "__SSA"),
+                                TYType2String (AVIS_TYPE (avis), FALSE, 0),
+                                TYType2String (rhs_type, FALSE, 0)));
+                    } else {
+                        AVIS_TYPE (avis) = type;
+                    }
+                } else {
+                    /* first is alpha! */
+                }
+            } else {
+                if (TYIsArray (AVIS_TYPE (avis))) {
+                    /* second is alpha! */
+                } else {
+                    /* both are alpha! */
+                }
+            }
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *NTCreturn(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+NTCreturn (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("NTCreturn");
+
+    /*
+     * First we collect the return types. NTCexprs puts them into a product type
+     * which is expected in INFO_NTC_TYPE( arg_info) afterwards (cf. NTCfundef)!
+     * INFO_NTC_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
+     */
+    INFO_NTC_NUM_EXPRS_SOFAR (arg_info) = 0;
+
+    RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+
+    DBUG_ASSERT (TYIsProd (INFO_NTC_TYPE (arg_info)),
+                 "NTCexprs did not create a product type");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCap(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+NTCap (node *arg_node, node *arg_info)
+{
+    node *fundef;
+    DBUG_ENTER ("NTCap");
+
+    /*
+     * First we collect the argument types. NTCexprs puts them into a product type
+     * which is expected in INFO_NTC_TYPE( arg_info) afterwards!
+     * INFO_NTC_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
+     */
+    INFO_NTC_NUM_EXPRS_SOFAR (arg_info) = 0;
+
+    if (NULL != AP_ARGS (arg_node)) {
+        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+    } else {
+        INFO_NTC_TYPE (arg_info) = TYMakeProductType (0);
+    }
+
+    DBUG_ASSERT (TYIsProd (INFO_NTC_TYPE (arg_info)),
+                 "NTCexprs did not create a product type");
+
+    /*
+     * At this point, we have to distinguish two fundamentally different
+     * situations:
+     * -  either all argument types are fixed; then we try to infer the exact
+     *    result shape!!
+     * -  or at least one argument type is not yet fixed! In this case we
+     *    are dealing with a recursive call, which means that we have to
+     *    postpone the inference and try to go one with freshly introduced
+     *    result type variables!
+     */
+    if (TYIsProdOfArrayOrFixedAlpha (INFO_NTC_TYPE (arg_info))) {
+        /*
+         * all argument types are fixed:
+         */
+        fundef = DispatchFunction (AP_FUNDEF (arg_node), INFO_NTC_TYPE (arg_info));
+        if (FUNDEF_TCSTAT (fundef) == NTC_not_checked) {
+            fundef = TypeCheckFunctionBody (fundef, arg_info);
+        }
+        if (TYIsProdOfArrayOrFixedAlpha (FUNDEF_RET_TYPE (fundef))) {
+            INFO_NTC_TYPE (arg_info) = FUNDEF_RET_TYPE (fundef);
+        } else {
+#if 0
+      DBUG_ASSERT( 0, "TypeCheckFunctionBody did not yield a fixed return type!");
+#endif
+        }
+
+    } else {
+        /*
+         * At least one argument type is not yet fixed:
+         *
+         * we push this function application on the postponed stack and
+         * generate a product type with fresh type variables for the result!
+         */
+        fundef = AP_FUNDEF (arg_node); /* wrapper or LaC function !*/
+        INFO_NTC_TYPE (arg_info) = TYDeriveSubtype (FUNDEF_RET_TYPE (fundef));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCexprs(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+NTCexprs (node *arg_node, node *arg_info)
+{
+    ntype *type = NULL;
+
+    DBUG_ENTER ("NTCexprs");
+
+    if (NULL != EXPRS_EXPR (arg_node)) {
+        EXPRS_EXPR (arg_node) = Trav (EXPRS_EXPR (arg_node), arg_info);
+        type = INFO_NTC_TYPE (arg_info);
+    }
+    INFO_NTC_NUM_EXPRS_SOFAR (arg_info)++;
+
+    if (NULL != EXPRS_NEXT (arg_node)) {
+        EXPRS_NEXT (arg_node) = Trav (EXPRS_NEXT (arg_node), arg_info);
+    } else {
+        INFO_NTC_TYPE (arg_info)
+          = TYMakeEmptyProductType (INFO_NTC_NUM_EXPRS_SOFAR (arg_info));
+    }
+
+    INFO_NTC_NUM_EXPRS_SOFAR (arg_info)--;
+    INFO_NTC_TYPE (arg_info)
+      = TYSetProductMember (INFO_NTC_TYPE (arg_info), INFO_NTC_NUM_EXPRS_SOFAR (arg_info),
+                            type);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCarray(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+NTCarray (node *arg_node, node *arg_info)
+{
+    int num_elems;
+    ntype *scalar = NULL;
+    ntype *tmp;
+    ntype *type;
+    int i;
+
+    DBUG_ENTER ("NTCarray");
+
+    /*
+     * First we collect the element types. NTCexprs puts them into a product type
+     * which is expected in INFO_NTC_TYPE( arg_info) afterwards!
+     * INFO_NTC_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
+     */
+    INFO_NTC_NUM_EXPRS_SOFAR (arg_info) = 0;
+
+    if (NULL != ARRAY_AELEMS (arg_node)) {
+        ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+    } else {
+        INFO_NTC_TYPE (arg_info) = TYMakeProductType (0);
+    }
+
+    DBUG_ASSERT (TYIsProd (INFO_NTC_TYPE (arg_info)),
+                 "NTCexprs did not create a product type");
+
+    /*
+     * Now, we built the resulting (AKS-)type type from the product type found:
+     */
+    num_elems = TYGetProductSize (INFO_NTC_TYPE (arg_info));
+    if (num_elems > 0) {
+        /*
+         * We are dealing with a non-empty array here. So we can derive
+         * the element type from the first element found.
+         * Then, we check that all elems are of the same type "scalar".
+         * Note here, that "scalar" points (should point) to an AKS-type with
+         * an empty shape!!
+         */
+        scalar = TYGetProductMember (INFO_NTC_TYPE (arg_info), 0);
+        for (i = 1; i < num_elems; i++) {
+            tmp = TYGetProductMember (INFO_NTC_TYPE (arg_info), i);
+            if (TYCmpTypes (scalar, tmp) != TY_eq) {
+                ABORT (NODE_LINE (arg_node),
+                       ("Different element types used in one array"));
+            }
+            TYFreeType (tmp);
+        }
+
+        type = TYMakeAKS (TYGetScalar (scalar), SHCreateShape (1, num_elems));
+        TYFreeTypeConstructor (scalar);
+        TYFreeTypeConstructor (INFO_NTC_TYPE (arg_info));
+    } else {
+        /* we are dealing with an empty array here! */
+        type = NULL;
+        DBUG_ASSERT ((0), "empty arrays are not yet supported!");
+    }
+
+    INFO_NTC_TYPE (arg_info) = type;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCid( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+NTCid (node *arg_node, node *arg_info)
+{
+    ntype *type;
+
+    DBUG_ENTER ("NTCid");
+
+    type = AVIS_TYPE (ID_AVIS (arg_node));
+
+    if (type == NULL) {
+        ABORT (
+          NODE_LINE (arg_node),
+          ("Cannot infer type for %s as it may be used without a previous definition",
+           ID_NAME (arg_node)));
+    } else {
+        INFO_NTC_TYPE (arg_info) = TYCopyType (type);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCnum( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+#define NTCBASIC(name, base)                                                             \
+    node *NTC##name (node *arg_node, node *arg_info)                                     \
+    {                                                                                    \
+                                                                                         \
+        DBUG_ENTER ("NTC" #name);                                                        \
+                                                                                         \
+        INFO_NTC_TYPE (arg_info)                                                         \
+          = TYMakeAKS (TYMakeSimpleType (base), SHCreateShape (0));                      \
+        DBUG_RETURN (arg_node);                                                          \
+    }
+
+NTCBASIC (num, T_int)
+NTCBASIC (double, T_double)
+NTCBASIC (float, T_float)
+NTCBASIC (char, T_char)
+NTCBASIC (bool, T_bool)
