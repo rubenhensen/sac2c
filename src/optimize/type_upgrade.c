@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.27  2005/02/20 19:43:42  mwe
+ * trytospecialize changed
+ *
  * Revision 1.26  2005/02/20 16:55:06  mwe
  * some assertions updated
  *
@@ -903,13 +906,14 @@ SpecializationOracle (node *fundef, node *args)
  *   Every other kind of functions: call SpecializationOracle
  *
  * @param fundef fundef to be specialized
- * @args arguments function is called with
+ * @args ap_node ap-node, where function is called
+ * @args arg_info
  *
  * @result if possible specialized fundef, otherwise unchanged fundef
  *
  ***************************************************************************/
 static node *
-TryToSpecializeFunction (node *fundef, node *ap_node)
+TryToSpecializeFunction (node *fundef, node *ap_node, info *arg_info)
 {
 
     node *fun_args, *given_args, *args;
@@ -976,7 +980,8 @@ TryToSpecializeFunction (node *fundef, node *ap_node)
                 node *module;
 
                 module = TBmakeModule ("dummy", F_prog, NULL, NULL, NULL, NULL, NULL);
-                module = DUPcheckAndDupSpecialFundef (module, fundef, ap_node);
+                module = DUPcheckAndDupSpecialFundef (module, fundef,
+                                                      INFO_TUP_ASSIGN (arg_info));
                 fun = MODULE_FUNS (module);
                 MODULE_FUNS (module) = NULL;
                 module = FREEdoFreeNode (module);
@@ -2087,7 +2092,8 @@ TUPap (node *arg_node, info *arg_info)
                 if ((!FUNDEF_ISPROVIDED (AP_FUNDEF (arg_node)))
                     && (!FUNDEF_ISEXPORTED (AP_FUNDEF (arg_node)))
                     && (FUNDEF_BODY (AP_FUNDEF (arg_node)) != NULL)) {
-                    result = TryToSpecializeFunction (AP_FUNDEF (arg_node), arg_node);
+                    result = TryToSpecializeFunction (AP_FUNDEF (arg_node), arg_node,
+                                                      arg_info);
                 }
             }
             if (result != AP_FUNDEF (arg_node)) {
