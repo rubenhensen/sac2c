@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.15  2003/06/11 21:50:17  ktr
+# included ../constants
+#
 # Revision 3.14  2002/09/25 14:23:14  sbs
 # dangerous space eliminated 8-)
 #
@@ -68,7 +71,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 INCS = -I../global -I../tree -I../../inc -I../flatten -I../typecheck \
-       -I../optimize -I../compile
+       -I../optimize -I../compile -I../constants
 
 
 all: refcount.o

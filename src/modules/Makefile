@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.12  2003/06/11 21:48:16  ktr
+# included ../constants
+#
 # Revision 3.11  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -59,7 +62,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 INCS = -I../global -I../tree -I../../inc -I../scanparse -I../print -I../typecheck \
-       -I../compile
+       -I../compile -I../constants
 
 
 all: filemgr.o import.o readsib.o writesib.o implicittypes.o analysis.o \

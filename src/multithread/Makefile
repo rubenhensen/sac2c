@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 3.14  2003/06/11 21:54:11  ktr
+# included ../constants
+#
 # Revision 3.13  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -60,7 +63,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 
 INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../flatten \
-       -I../print -I../compile -I../refcount
+       -I../print -I../compile -I../refcount -I../constants
 
 
 all: multithread.o multithread_lib.o schedule_init.o repfuns_init.o mtfuns_init.o \

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.14  2003/06/11 21:53:26  ktr
+# included ../constants
+#
 # Revision 3.13  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -66,7 +69,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 
 INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../refcount \
-       -I../flatten -I../print -I../compile
+       -I../flatten -I../print -I../compile -I../constants
 
 
 all: concurrent.o spmd_init.o spmd_opt.o spmd_lift.o sync_init.o \
