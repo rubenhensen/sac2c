@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/23 16:29:17  sbs
+ * warnings of product version eliminated.
+ *
  * Revision 3.1  2000/11/20 18:00:35  sacbase
  * new release made
  *
@@ -262,7 +265,7 @@ LoopIterations (linfo *loop_info)
 linfo *
 AnalyseLoop (linfo *loop_info, node *id_node, int level)
 {
-    node *init, *test, *mod, *index, *arg[2];
+    node *init, *test, *mod, *index = NULL, *arg[2];
     int allright = TRUE;
     prf test_prf;
 
@@ -313,7 +316,7 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
     /* Do I have somthing like i = i op Num1 ...  cond = i op Num2 */
     /*                               ^^^^^^^^^             |         */
     /*                                  mod  <-------------|         */
-    if (allright) {
+    if (allright) { /* this implies that index is set!! */
         mod = ID_DEF (index);
         if ((NULL != mod) && (N_prf == NODE_TYPE (mod))
             && ((F_add == (loop_info->mod_prf = PRF_PRF (mod)))
@@ -865,8 +868,10 @@ UNRassign (node *arg_node, node *arg_info)
 node *
 Unroll (node *arg_node, node *arg_info)
 {
+#ifndef DBUG_OFF
     int mem_lunr_expr = lunr_expr;
     int mem_wlunr_expr = wlunr_expr;
+#endif
     funtab *tmp_tab;
 
     DBUG_ENTER ("Unroll");
