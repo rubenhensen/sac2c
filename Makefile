@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.8  2000/12/13 17:00:38  sbs
+# on solaris -D__STDC__ is set now for preventing wrong initialization of mutex locks.
+#
 # Revision 3.7  2000/12/13 16:37:01  dkr
 # -g flag added to gcc_PROD_FLAGS
 #
@@ -88,7 +91,7 @@ OS        := SOLARIS_SPARC
 # when using non-ANSI-compliant functions.
 # Currently, these are popen(), pclose(), tempnam(), and strdup().
 #
-SOLARIS_SPARC_FLAGS := -D__EXTENSIONS__
+SOLARIS_SPARC_FLAGS := -D__EXTENSIONS__ -D__STDC__=0
 SOLARIS_SPARC_LIBS  := -ll
 
 #
