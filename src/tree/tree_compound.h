@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 1.21  2000/06/23 14:16:59  dkr
+ * macros for old with-loop removed
+ *
  * Revision 1.20  2000/06/23 13:04:31  mab
  * renamed *_VNAME to *_VARDEC_NAME, *_VNEXT to *_VARDEC_NEXT
  *
@@ -36,36 +38,7 @@
  * Revision 1.10  2000/03/15 15:59:53  dkr
  * SET_VARDEC_OR_ARG_ACTCHN renamed to L_VARDEC_OR_ARG_ACTCHN, ...
  *
- * Revision 1.9  2000/03/09 18:35:32  jhs
- * Additional macros.
- *
- * Revision 1.8  2000/03/01 17:44:20  dkr
- * macros for N_Nwith2 nodes reorganized
- *
- * Revision 1.7  2000/02/23 17:49:22  cg
- * Type property functions IsUnique(<type>), IsBoxed(<type>)
- * moved from refcount.c to tree_compound.c.
- *
- * Revision 1.6  2000/02/21 17:58:41  jhs
- * Fixed Bug in MT_OTR_ST_REGION
- *
- * Revision 1.5  2000/02/14 14:48:54  dkr
- * The Macro IDS_IS_UNIQUE is already defined in uniquecheck.c and designed
- * specificly for this compiler phase. Therefore it is removed from
- * tree_compound.h
- *
- * Revision 1.4  2000/02/02 12:29:09  jhs
- * Added INFO_MUTH_FUNDEF.
- * Added N_mt and N_st.
- * Added ST_xxx-macros, added MT_OR_ST_xxx-macros.
- *
- * Revision 1.3  2000/01/26 13:47:00  jhs
- * L_BLOCK_INSTR_OR_ASSIGN_NEXT added.
- *
- * Revision 1.2  2000/01/25 13:40:34  dkr
- * some rearrangements made
- * all the constvec stuff moved from internal_lib.h
- * function FindVardec_Name and FindVardec_Varno added
+ * [...]
  *
  * Revision 1.1  2000/01/21 15:38:29  dkr
  * Initial revision
@@ -85,9 +58,6 @@
  *
  * Revision 1.1  1995/09/27  15:13:12  cg
  * Initial revision
- *
- *
- *
  */
 
 /*============================================================================
@@ -1752,86 +1722,5 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 
 #define WLGRIDVAR_CBLOCK(n) (NCODE_CBLOCK (WLGRIDVAR_CODE (n)))
 #define WLGRIDVAR_CEXPR(n) (NCODE_CEXPR (WLGRIDVAR_CODE (n)))
-
-/*--------------------------------------------------------------------------*/
-
-/*************************
- * start of OLD WITH-LOOP
- */
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_with :
- ***/
-
-/*
- *  compound access macros
- */
-
-#define WITH_LEFT(n) (GEN_LEFT (WITH_GEN (n)))
-#define WITH_RIGHT(n) (GEN_RIGHT (WITH_GEN (n)))
-#define WITH_ID(n) (GEN_ID (WITH_GEN (n)))
-
-#define WITH_GENDEFMASK(n) (GEN_DEFMASK (WITH_GEN (n)))
-#define WITH_GENUSEMASK(n) (GEN_USEMASK (WITH_GEN (n)))
-
-#define WITH_OPERATORDEFMASK(n) (OPERATOR_USEMASK (WITH_OPERATOR (n)))
-#define WITH_OPERATORUSEMASK(n) (OPERATOR_USEMASK (WITH_OPERATOR (n)))
-
-#define WITH_BODYDEFMASK(n) (WITH_MASK (n, 0))
-#define WITH_BODYUSEMASK(n) (WITH_MASK (n, 0))
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_generator :
- ***/
-
-/*
- *  compound access macros
- */
-
-#define GEN_DEFMASK(n) (GEN_MASK (n, 0))
-#define GEN_USEMASK(n) (GEN_MASK (n, 1))
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_genarray :
- ***/
-
-#define OPERATOR_DEFMASK(n) OPERATOR_MASK (n, 0)
-#define OPERATOR_USEMASK(n) OPERATOR_MASK (n, 1)
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_modarray :
- ***/
-
-/* see N_genarray for OPERATOR_DEFMASK and OPERATOR_USEMASK */
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_foldprf :
- ***/
-
-/* see N_genarray for OPERATOR_DEFMASK and OPERATOR_USEMASK */
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_foldfun :
- ***/
-
-/* see N_genarray for OPERATOR_DEFMASK and OPERATOR_USEMASK */
-
-/*--------------------------------------------------------------------------*/
-
-/*
- * end of OLD WITH-LOOP
- ***********************/
 
 #endif /* _sac_tree_compound_h */
