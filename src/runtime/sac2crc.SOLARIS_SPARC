@@ -12,7 +12,7 @@
 
 /*******************************************************************************
  *
- * target default: default settings for all configuration entries
+ * Target default: default settings for all configuration entries
  *
  */
 
@@ -62,19 +62,10 @@ STDLIB_LIBPATH   :=  "$SACBASE/stdlib/modules/structures/lib:"
                      "$SACBASE/stdlib/world/x-window/lib:"
                      "$SACBASE/stdlib/hidden/lib"
  
-SYSTEM_LIBPATH   :=  "/opt/gnu/lib/gcc-lib/sparc-sun-solaris2.5.1/2.7.2.1:"
-                     "/usr/lib/gcc/sparc-sun-solaris2.5.1/2.7.2.1:"
-                     "/opt/gnu/sparc-sun-solaris2.5.1/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
-                     "/opt/gnu/sparc-sun-solaris2.5.1/lib:"
-                     "/usr/ccs/bin/sparc-sun-solaris2.5.1/2.7.2.1:"
-                     "/usr/ccs/bin:"
-                     "/usr/ccs/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+SYSTEM_LIBPATH   :=  "/usr/ccs/bin:"
                      "/usr/ccs/lib:"
-                     "/opt/gnu/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
                      "/opt/gnu/lib:"
-                     "/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
                      "/lib:"
-                     "/usr/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
                      "/usr/lib:"
                      "/home/sacbase/efence"
 
@@ -102,7 +93,7 @@ CACHE3_MSCA      :=  0
  
 /*******************************************************************************
  *
- * target suncc: use the Sun C compiler instead of gcc
+ * Target suncc: use the Sun C compiler instead of gcc
  *
  */
 
@@ -116,13 +107,9 @@ OPT_O1         :=  -xO2
 OPT_O2         :=  -xO4
 OPT_O3         :=  -xO5
  
-SYSTEM_LIBPATH :=  "/usr/ccs/bin/sparc-sun-solaris2.5.1/2.7.2.1:"
-                   "/usr/ccs/bin:"
-                   "/usr/ccs/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+SYSTEM_LIBPATH :=  "/usr/ccs/bin:"
                    "/usr/ccs/lib:"
-                   "/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
                    "/lib:"
-                   "/usr/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
                    "/usr/lib"
 
 
@@ -131,29 +118,7 @@ SYSTEM_LIBPATH :=  "/usr/ccs/bin/sparc-sun-solaris2.5.1/2.7.2.1:"
  
 /*******************************************************************************
  *
- * target hoard: use the Hoard memory allocator instead of regular malloc
- *
- */
-
-target hoard:
-
-CCMTLINK        :=  "-lhoard -lpthread -lthread -lrt"
-
-
-/*******************************************************************************
- *
- * target mtmalloc: use the Sun mtmalloc library instead of regular malloc
- *
- */
-
-target mtmalloc:
-
-CCMTLINK        +=  -lmtmalloc
-
-
-/*******************************************************************************
- *
- * targets for the specification of different cache architectures
+ * Targets for the specification of different cache architectures
  *
  */
 
@@ -238,24 +203,82 @@ CACHE2_MSCA    :=  3
 
 /*******************************************************************************
  *
- * specific machine targets using gcc
+ * Target hoard: use the Hoard memory allocator instead of regular malloc
  *
+ * NOTE: This requires the proper installation of the Hoard memory allocator!
+ */
+
+target hoard:
+
+CCMTLINK        :=  "-lhoard -lpthread -lthread -lrt"
+
+
+/*******************************************************************************
+ *
+ * Target ptmalloc: use the ptmalloc implementation instead of regular malloc
+ *
+ * NOTE: This requires the proper installation of the PTmalloc memory allocator!
+ */
+
+target ptmalloc:
+
+CCMTLINK        +=  -lptmalloc
+
+
+/*******************************************************************************
+ *
+ * Target mtmalloc: use the Sun mtmalloc library instead of regular malloc
+ *
+ */
+
+target mtmalloc:
+
+CCMTLINK        +=  -lmtmalloc
+
+
+/*******************************************************************************
+ *
+ * Target gnumalloc: use the GNU glibc library instead of Solaris libc
+ *
+ * NOTE: This is mostly intended to test the GNU memory allocator!
+ */
+
+target gnumalloc:
+
+CCMTLINK        +=  -lglib
+
+
+
+/*******************************************************************************
+ *
+ * All remaining targets are specific to machines at the 
+ * 
+ * Department of Computer Science and Applied Mathematics
+ *  of the
+ * University of Kiel
+ *
+ * They are of no use outside of this facility but may give you an idea how
+ * to use the target mechanism to make life simpler.
+ *   
+ *******************************************************************************/
+
+
+/*******************************************************************************
+ *
+ * Specific machine targets using gcc
+ *
+ *   
  */
 
 target tummy::sparc_5:
 
-
 target cheops::sparc_20_61:
-
 
 target twice::sparc_20_71:
 
-
 target dali::ultra2:
 
-
 target blitz::ultra_entr3000:
-
 
 target picard::ultra2_entr4000:
 
@@ -263,7 +286,7 @@ target picard::ultra2_entr4000:
 
 /*******************************************************************************
  *
- * specific machine targets using Sun cc
+ * Specific machine targets using Sun cc
  *
  */
 
@@ -301,64 +324,53 @@ CCFLAGS        +=  "-xtarget=ultra2 -xcache=16/32/1:1024/64/1"
 
 /*******************************************************************************
  *
- * specific machine targets using gcc and SUN mtmalloc
+ * Specific machine targets using SUN mtmalloc
  *
  */
 
-target blitz_mtmalloc::ultra_entr3000::mtmalloc:
+target picard_mtmalloc::picard::mtmalloc:
 
-
-target picard_mtmalloc::ultra2_entr4000::mtmalloc:
-
+target picard_cc_mtmalloc::picard_cc::mtmalloc:
 
 
 
 /*******************************************************************************
  *
- * specific machine targets using Sun cc and SUN mtmalloc
+ * Specific machine targets using Hoard
  *
  */
 
-target blitz_cc_mtmalloc::suncc::ultra_entr3000::mtmalloc:
+target picard_hoard::picard::hoard:
 
-CCFLAGS        +=  "-xtarget=ultra -xcache=16/32/1:512/64/1"
-
-
-target picard_cc_mtmalloc::suncc::ultra2_entr4000::mtmalloc:
-
-CCFLAGS        +=  "-xtarget=ultra2 -xcache=16/32/1:1024/64/1"
-
+target picard_cc_hoard::picard_cc::hoard:
 
 
 
 /*******************************************************************************
  *
- * specific machine targets using gcc and Hoard
+ * Specific machine targets using GNU malloc
  *
  */
 
-target blitz_hoard::ultra_entr3000::hoard:
+target picard_gnumalloc::picard::gnumalloc:
 
-
-target picard_hoard::ultra2_entr4000::hoard:
-
+target picard_cc_gnumalloc::picard_cc::gnumalloc:
 
 
 
 /*******************************************************************************
  *
- * specific machine targets using Sun cc and Hoard
+ * Specific machine targets using ptmalloc
  *
  */
 
-target blitz_cc_hoard::suncc::ultra_entr3000::hoard:
+target picard_ptmalloc::picard::ptmalloc:
 
-CCFLAGS        +=  "-xtarget=ultra -xcache=16/32/1:512/64/1"
+target picard_cc_ptmalloc::picard_cc::ptmalloc:
 
 
-target picard_cc_hoard::suncc::ultra2_entr4000::hoard:
 
-CCFLAGS        +=  "-xtarget=ultra2 -xcache=16/32/1:1024/64/1"
+
 
 
 
