@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/05/29 09:40:29  sbs
+ * Revision 1.6  1995/06/02 08:46:33  hw
+ * - macro GetNextFloat inserted
+ * - changed macro GetShape ( N_float added)
+ *
+ * Revision 1.5  1995/05/29  09:40:29  sbs
  * N_bool inserted
  *
  * Revision 1.4  1995/05/24  15:17:26  sbs
@@ -47,9 +51,20 @@
         ex = ex->node[1];                                                                \
     }
 
+#define GetNextFloat(res, ex)                                                            \
+    {                                                                                    \
+        DBUG_ASSERT ((ex->nodetype == N_exprs), "wrong icm-arg: N_exprs expected");      \
+        DBUG_ASSERT ((ex->node[0]->nodetype == N_float),                                 \
+                     "wrong icm-arg: N_float expected");                                 \
+        res = ex->node[0]->info.cfloat;                                                  \
+        DBUG_PRINT ("PRINT", ("icm-arg found: %d", res));                                \
+        ex = ex->node[1];                                                                \
+    }
+
 #define GetShape(dim, v, ex)                                                             \
     {                                                                                    \
         int i, num;                                                                      \
+        float cfloat;                                                                    \
         v = (char **)malloc (sizeof (char *) * dim);                                     \
         DBUG_ASSERT ((ex->nodetype == N_exprs), "wrong icm-arg: N_exprs expected");      \
         for (i = 0; i < dim; i++)                                                        \
@@ -69,6 +84,11 @@
                     sprintf (v[i], "true");                                              \
                 else                                                                     \
                     sprintf (v[i], "false");                                             \
+                break;                                                                   \
+            case N_float:                                                                \
+                GetNextFloat (cfloat, ex);                                               \
+                v[i] = (char *)malloc (sizeof (char) * 32);                              \
+                sprintf (v[i], "%f", cfloat);                                            \
                 break;                                                                   \
             default:                                                                     \
                 DBUG_PRINT ("PRINT", ("found icm_arg of type: %s",                       \
