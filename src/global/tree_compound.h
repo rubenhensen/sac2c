@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.56  1998/02/23 13:05:37  srs
+ * added macro for new WL
+ *
  * Revision 1.55  1998/02/12 11:06:39  srs
  * added FUNDEF_BODY_VARNO and two compound macros for the new WL
  *
@@ -1280,6 +1283,10 @@ extern node *GetCompoundNode (node *arg_node);
 
 #define NPART_IDS(n) (NWITHID_IDS (NPART_WITHID (n)))
 #define NPART_VEC(n) (NWITHID_VEC (NPART_WITHID (n)))
+#define NWITHOP_OPARG(n)                                                                 \
+    (WO_modarray == NWITHOP_TYPE (n)                                                     \
+       ? NWITHOP_ARRAY (n)                                                               \
+       : WO_genarray == NWITHOP_TYPE (n) ? NWITHOP_SHAPE (n) : NWITHOP_NEUTRAL (n))
 
 /*--------------------------------------------------------------------------*/
 
