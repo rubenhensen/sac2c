@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.24  1995/10/05 16:04:03  cg
+ * Revision 1.25  1995/10/16 17:56:25  cg
+ * new break option '-bj' to stop after object init transformation
+ *
+ * Revision 1.24  1995/10/05  16:04:03  cg
  * break option -bm added.
  *
  * Revision 1.23  1995/09/01  07:48:46  cg
@@ -98,6 +101,7 @@ usage (char *prg_name)
 
     printf ("\nSTOP OPTIONS:\n");
     printf ("\t -bp \t\t\tstop after scan/parse\n");
+    printf ("\t -bj \t\t\tstop after object init transformation\n");
     printf ("\t -bi \t\t\tstop after module imports\n");
     printf ("\t -bf \t\t\tstop after flatten\n");
     printf ("\t -bt \t\t\tstop after typecheck\n");
