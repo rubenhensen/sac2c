@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2004/11/26 18:22:51  jhb
+ * compile
+ *
  * Revision 3.3  2004/11/22 16:34:41  sbs
  * SacDevCamp04
  *
@@ -63,6 +66,8 @@
 
 extern void APTdoTransform ();
 
+#ifndef PADT_DEACTIVATED
+
 extern node *APTarg (node *arg_node, info *arg_info);
 extern node *APTvardec (node *arg_node, info *arg_info);
 extern node *APTassign (node *arg_node, info *arg_info);
@@ -77,4 +82,5 @@ extern node *APTfundef (node *arg_node, info *arg_info);
 extern node *APTblock (node *arg_node, info *arg_info);
 extern node *APTlet (node *arg_node, info *arg_info);
 
+#endif /*  PADT_DEACTIVATED */
 #endif /* _SAC_PAD_TRANSFORM_H_ */
