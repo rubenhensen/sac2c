@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/03/21 15:46:43  dkr
+ * ICM_INDENT explcitly set to 0 if nodes are reused as icm-nodes
+ *
  * Revision 2.3  2000/02/11 16:28:31  dkr
  * COMPWith removed
  * Some superfluous and outdated macros removed
@@ -206,6 +209,7 @@ extern node *GetFoldVardecs (node *fundef);
     NODE_TYPE (reuse) = N_icm;                                                           \
     ICM_NAME (reuse) = str;                                                              \
     ICM_ARGS (reuse) = MakeExprs (arg1, NULL);                                           \
+    ICM_INDENT (reuse) = 0;                                                              \
     icm_arg = ICM_ARGS (reuse);                                                          \
     MAKE_NEXT_ICM_ARG (icm_arg, arg2)
 
@@ -213,6 +217,7 @@ extern node *GetFoldVardecs (node *fundef);
     NODE_TYPE (reuse) = N_icm;                                                           \
     ICM_NAME (reuse) = str;                                                              \
     ICM_ARGS (reuse) = MakeExprs (arg1, NULL);                                           \
+    ICM_INDENT (reuse) = 0;                                                              \
     icm_arg = ICM_ARGS (reuse);                                                          \
     MAKE_NEXT_ICM_ARG (icm_arg, arg2);                                                   \
     MAKE_NEXT_ICM_ARG (icm_arg, arg3)
