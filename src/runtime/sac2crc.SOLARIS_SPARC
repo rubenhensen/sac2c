@@ -84,16 +84,19 @@ CACHE1_SIZE      :=  0
 CACHE1_LINE      :=  0
 CACHE1_ASSOC     :=  0
 CACHE1_WRITEPOL  :=  "default"
+CACHE1_MSCA      :=  0
 
 CACHE2_SIZE      :=  0
 CACHE2_LINE      :=  0
 CACHE2_ASSOC     :=  0
 CACHE2_WRITEPOL  :=  "default"
- 
+CACHE2_MSCA      :=  0
+
 CACHE3_SIZE      :=  0
 CACHE3_LINE      :=  0
 CACHE3_ASSOC     :=  0
 CACHE3_WRITEPOL  :=  "default"
+CACHE3_MSCA      :=  0
  
  
  

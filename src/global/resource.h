@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/02/03 17:20:55  cg
+ * Added new resource table entries CACHE[123]_MSCA
+ *
  * Revision 2.5  1999/06/10 09:47:56  cg
  * added new resource entry RSH for the specification of how to
  * invoke a remote shell.
@@ -136,16 +139,19 @@ typedef struct {
     int cache1_line;
     int cache1_assoc;
     char *cache1_writepol;
+    int cache1_msca_factor;
 
     int cache2_size;
     int cache2_line;
     int cache2_assoc;
     char *cache2_writepol;
+    int cache2_msca_factor;
 
     int cache3_size;
     int cache3_line;
     int cache3_assoc;
     char *cache3_writepol;
+    int cache3_msca_factor;
 } configuration_t;
 
 /*****************************************************************************

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/02/03 17:20:55  cg
+ * Added new resource table entries CACHE[123]_MSCA
+ *
  * Revision 2.5  1999/06/10 09:47:56  cg
  * added new resource entry RSH for the specification of how to
  * invoke a remote shell.
@@ -196,16 +199,19 @@ static struct {
   {"CACHE1_LINE", num, &config.cache1_line},
   {"CACHE1_ASSOC", num, &config.cache1_assoc},
   {"CACHE1_WRITEPOL", str, &config.cache1_writepol},
+  {"CACHE1_MSCA", num, &config.cache1_msca_factor},
 
   {"CACHE2_SIZE", num, &config.cache2_size},
   {"CACHE2_LINE", num, &config.cache2_line},
   {"CACHE2_ASSOC", num, &config.cache2_assoc},
   {"CACHE2_WRITEPOL", str, &config.cache2_writepol},
+  {"CACHE2_MSCA", num, &config.cache2_msca_factor},
 
   {"CACHE3_SIZE", num, &config.cache3_size},
   {"CACHE3_LINE", num, &config.cache3_line},
   {"CACHE3_ASSOC", num, &config.cache3_assoc},
   {"CACHE3_WRITEPOL", str, &config.cache3_writepol},
+  {"CACHE3_MSCA", num, &config.cache3_msca_factor},
 
   {"", 0, NULL},
 };

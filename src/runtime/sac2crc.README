@@ -147,6 +147,10 @@
  *                  Supported policies are "default", "fetch_on_write",  
  *                  "write_validate", and "write_around".
  *
+ *  CACHE1_MSCA     CACHE1_MSCA specifies the memory size cache adjustment factor
+ *                  for the L1 cache given in percentage. This entry refers to
+ *                  the MSCA optimization technique.
+ *
  *  CACHE2_SIZE     CACHE2_SIZE specifies the size of the L2 (data) cache in kb.
  *                  A size of 0 means that the system has no L2 cache or its
  *                  characteristics are unknown.
@@ -159,6 +163,10 @@
  *                  Supported policies are "default", "fetch_on_write",  
  *                  "write_validate", and "write_around".
  *
+ *  CACHE2_MSCA     CACHE2_MSCA specifies the memory size cache adjustment factor
+ *                  for the L1 cache given in percentage. This entry refers to
+ *                  the MSCA optimization technique.
+ *
  *  CACHE3_SIZE     CACHE3_SIZE specifies the size of the L3 (data) cache in kb.
  *                  A size of 0 means that the system has no L3 cache or its
  *                  characteristics are unknown.
@@ -170,6 +178,10 @@
  *  CACHE3_WRITEPOL CACHE3_WRITEPOL specifies the write policy of the L3 cache.
  *                  Supported policies are "default", "fetch_on_write",  
  *                  "write_validate", and "write_around".
+ *
+ *  CACHE3_MSCA     CACHE3_MSCA specifies the memory size cache adjustment factor
+ *                  for the L3 cache given in percentage. This entry refers to
+ *                  the MSCA optimization technique.
  *
  * 
  *
