@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  1998/04/30 13:00:15  dkr
+ * fixed a bug in SPMDLift
+ *
  * Revision 1.12  1998/04/29 20:15:29  dkr
  * *** empty log message ***
  *
@@ -394,10 +397,10 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
      */
     INFO_SPMD_FIRST (arg_info) = 1;
     act_tab = syncinit_tab; /* first traversal */
-    new_fundef = Trav (new_fundef, arg_info);
+    FUNDEF_BODY (new_fundef) = Trav (FUNDEF_BODY (new_fundef), arg_info);
 
     act_tab = syncopt_tab; /* second traversal */
-    new_fundef = Trav (new_fundef, arg_info);
+    FUNDEF_BODY (new_fundef) = Trav (FUNDEF_BODY (new_fundef), arg_info);
 
     act_tab = old_tab;
 
