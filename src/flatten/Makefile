@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.25  2004/01/28 18:02:41  skt
+# some adaptions, because of moving of CheckAvis.[hc],
+# SSATransform.[hc] and UndoSSATransform.[hs] from
+# src/tree to src/flatten
+#
 # Revision 3.24  2003/09/09 12:53:33  sbs
 # -I../typecheck added
 #
@@ -73,7 +78,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 INCS = -I../global -I../../inc -I../tree -I../print -I../optimize -I../constants -I../typecheck
 
 
-all: flatten.o lac2fun.o fun2lac.o while2do.o insert_vardec.o handle_mops.o
+all: flatten.o lac2fun.o fun2lac.o while2do.o insert_vardec.o handle_mops.o\
+     CheckAvis.o SSATransform.o UndoSSATransform.o
 
 
 %.o: %.c
