@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/08/06 15:52:52  sbs
+ * F_xxx_SxS added.
+ *
  * Revision 3.4  2002/08/05 17:03:45  sbs
  * several extensions required for the alpha version of the new type checker
  *
@@ -68,7 +71,7 @@ PRF_IF (F_toi, "F_foi", "toi", "toi", NTCPRF_dummy),
   PRF_IF (F_sub, "F_sub", "-", "_sub", NTCPRF_dummy),
   PRF_IF (F_mul, "F_mul", "*", "_mul", NTCPRF_dummy),
   PRF_IF (F_div, "F_div", "/", "_div", NTCPRF_dummy),
-  PRF_IF (F_mod, "F_mod", "%", "_mod", NTCPRF_dummy),
+  PRF_IF (F_mod, "F_mod", "%", "_mod", NTCPRF_int_op_SxS),
   PRF_IF (F_and, "F_and", "&&", "_and", NTCPRF_log_op_AxA),
   PRF_IF (F_or, "F_or", "||", "_or", NTCPRF_log_op_AxA),
   PRF_IF (F_le, "F_le", "<=", "_le", NTCPRF_rel_op_AxA),
@@ -82,18 +85,22 @@ PRF_IF (F_toi, "F_foi", "toi", "toi", NTCPRF_dummy),
   PRF_IF (F_dim, "F_dim", "dim", "dim", NTCPRF_dim),
   PRF_IF (F_shape, "F_shape", "shape", "shape", NTCPRF_shape),
   PRF_IF (F_reshape, "F_reshape", "reshape", "reshape", NTCPRF_reshape),
-  PRF_IF (F_add_SxA, "F_add_SxA", "+", "_add", NTCPRF_ari_op_SxA),
-  PRF_IF (F_add_AxS, "F_add_AxS", "+", "_add", NTCPRF_ari_op_AxS),
-  PRF_IF (F_add_AxA, "F_add_AxA", "+", "_add", NTCPRF_ari_op_AxA),
-  PRF_IF (F_sub_SxA, "F_sub_SxA", "-", "_sub", NTCPRF_dummy),
-  PRF_IF (F_sub_AxS, "F_sub_AxS", "-", "_sub", NTCPRF_ari_op_AxS),
-  PRF_IF (F_sub_AxA, "F_sub_AxA", "-", "_sub", NTCPRF_ari_op_AxA),
-  PRF_IF (F_mul_SxA, "F_mul_SxA", "*", "_mul", NTCPRF_ari_op_SxA),
-  PRF_IF (F_mul_AxS, "F_mul_AxS", "*", "_mul", NTCPRF_ari_op_AxS),
-  PRF_IF (F_mul_AxA, "F_mul_AxA", "*", "_mul", NTCPRF_ari_op_AxA),
-  PRF_IF (F_div_SxA, "F_div_SxA", "/", "_div", NTCPRF_ari_op_SxA),
-  PRF_IF (F_div_AxS, "F_div_AxS", "/", "_div", NTCPRF_ari_op_AxS),
-  PRF_IF (F_div_AxA, "F_div_AxA", "/", "_div", NTCPRF_ari_op_AxA),
+  PRF_IF (F_add_SxS, "F_add_SxS", "+", "_add_SxS_", NTCPRF_ari_op_SxS),
+  PRF_IF (F_add_SxA, "F_add_SxA", "+", "_add_SxA_", NTCPRF_ari_op_SxA),
+  PRF_IF (F_add_AxS, "F_add_AxS", "+", "_add_AxS_", NTCPRF_ari_op_AxS),
+  PRF_IF (F_add_AxA, "F_add_AxA", "+", "_add_AxA_", NTCPRF_ari_op_AxA),
+  PRF_IF (F_sub_SxS, "F_sub_SxS", "-", "_sub_SxS_", NTCPRF_ari_op_SxS),
+  PRF_IF (F_sub_SxA, "F_sub_SxA", "-", "_sub_SxA_", NTCPRF_ari_op_SxA),
+  PRF_IF (F_sub_AxS, "F_sub_AxS", "-", "_sub_AxS_", NTCPRF_ari_op_AxS),
+  PRF_IF (F_sub_AxA, "F_sub_AxA", "-", "_sub_AxA_", NTCPRF_ari_op_AxA),
+  PRF_IF (F_mul_SxS, "F_mul_SxS", "-", "_mul_SxS_", NTCPRF_ari_op_SxS),
+  PRF_IF (F_mul_SxA, "F_mul_SxA", "*", "_mul_SxA_", NTCPRF_ari_op_SxA),
+  PRF_IF (F_mul_AxS, "F_mul_AxS", "*", "_mul_AxS_", NTCPRF_ari_op_AxS),
+  PRF_IF (F_mul_AxA, "F_mul_AxA", "*", "_mul_AxA_", NTCPRF_ari_op_AxA),
+  PRF_IF (F_div_SxS, "F_div_SxS", "/", "_div_SxS_", NTCPRF_ari_op_SxS),
+  PRF_IF (F_div_SxA, "F_div_SxA", "/", "_div_SxA_", NTCPRF_ari_op_SxA),
+  PRF_IF (F_div_AxS, "F_div_AxS", "/", "_div_AxS_", NTCPRF_ari_op_AxS),
+  PRF_IF (F_div_AxA, "F_div_AxA", "/", "_div_AxA_", NTCPRF_ari_op_AxA),
   PRF_IF (F_idx_sel, "F_idx_sel", "idx_sel", "idx_sel", NTCPRF_dummy),
   PRF_IF (F_idx_modarray, "F_idx_modarray", "idx_modarray", "idx_modarray", NTCPRF_dummy),
   PRF_IF (F_sel, "F_sel", "sel", "sel", NTCPRF_selS),
