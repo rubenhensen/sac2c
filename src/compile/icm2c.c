@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.34  1996/01/25 15:03:03  cg
+ * Revision 1.35  1996/01/25 15:44:20  cg
+ * renamed last forgotten ND_REUSE_ARRAY to ND_KS_ASSIGN_ARRAY
+ *
+ * Revision 1.34  1996/01/25  15:03:03  cg
  * renamed some icm macros
  *
  * Revision 1.33  1996/01/21  14:52:31  cg
@@ -1604,7 +1607,7 @@ if (check_boundary) {
 fprintf (outfile, "if(ND_A_RC(%s)==1){\n", old);
 indent++;
 INDENT;
-fprintf (outfile, "ND_REUSE_ARRAY(%s,%s)\n", old, res);
+fprintf (outfile, "ND_KS_ASSIGN_ARRAY(%s,%s)\n", old, res);
 INDENT;
 fprintf (outfile, "for(__i=__idx,__j=0; __j<ND_A_SIZE(%s); __i++,__j++)\n", value);
 indent++;
