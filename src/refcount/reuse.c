@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/08/10 16:14:33  ktr
+ * RIicm added.
+ *
  * Revision 1.1  2004/08/10 13:30:03  ktr
  * Initial revision
  *
@@ -185,7 +188,8 @@ RIarg (node *arg_node, info *arg_info)
 
         id = MakeId (ARG_NAME (arg_node), NULL, ST_regular);
 
-        ID_VARDEC (id) = MakeVardecFromArg (arg_node);
+        ID_VARDEC (id) = arg_node;
+        ID_AVIS (id) = ARG_AVIS (arg_node);
 
         INFO_RI_CANDIDATES (arg_info) = MakeExprs (id, INFO_RI_CANDIDATES (arg_info));
     }
@@ -249,6 +253,11 @@ RIcode (node *arg_node, info *arg_info)
      */
     candidates = INFO_RI_CANDIDATES (arg_info);
     INFO_RI_CANDIDATES (arg_info) = NULL;
+
+    /*
+     * Traverse CBLOCK
+     */
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
     /*
      * Erase the code block's candidate list before traversing on
@@ -355,6 +364,45 @@ RIfundef (node *arg_node, info *arg_info)
      * Remove DFM-base
      */
     FUNDEF_DFM_BASE (arg_node) = DFMRemoveMaskBase (FUNDEF_DFM_BASE (arg_node));
+
+    /*
+     * Traverse other fundefs
+     */
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn RIicm
+ *
+ *  @brief
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *****************************************************************************/
+node *
+RIicm (node *arg_node, info *arg_info)
+{
+    char *name;
+
+    DBUG_ENTER ("RIicm");
+
+    name = ICM_NAME (arg_node);
+
+    if ((strstr (name, "USE_GENVAR_OFFSET") != NULL)
+        || (strstr (name, "VECT2OFFSET") != NULL)
+        || (strstr (name, "IDXS2OFFSET") != NULL)) {
+        INFO_RI_CANDIDATES (arg_info)
+          = MakeExprs (DupNode (ICM_ARG1 (arg_node)), INFO_RI_CANDIDATES (arg_info));
+    } else {
+        DBUG_ASSERT ((0), "Unknown ICM found during EMRI");
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -421,6 +469,7 @@ RIprf (node *arg_node, info *arg_info)
 
     case F_fill:
         PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+
         if (INFO_RI_RHSCAND (arg_info) != NULL) {
             INFO_RI_TRAVMODE (arg_info) = ri_annotate;
             AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)))
@@ -462,11 +511,16 @@ RIwith2 (node *arg_node, info *arg_info)
     while (withop != NULL) {
         if ((NWITHOP_TYPE (withop) == WO_genarray)
             || (NWITHOP_TYPE (withop) == WO_modarray)) {
+
             rhc = GetReuseCandidates (arg_node, INFO_RI_FUNDEF (arg_info), wlids);
-            INFO_RI_TRAVMODE (arg_info) = ri_annotate;
-            AVIS_SSAASSIGN (ID_AVIS (NWITHOP_MEM (withop)))
-              = Trav (AVIS_SSAASSIGN (ID_AVIS (NWITHOP_MEM (withop))), arg_info);
-            INFO_RI_TRAVMODE (arg_info) = ri_default;
+            INFO_RI_RHSCAND (arg_info) = CutExprs (INFO_RI_CANDIDATES (arg_info), rhc);
+
+            if (INFO_RI_RHSCAND (arg_info) != NULL) {
+                INFO_RI_TRAVMODE (arg_info) = ri_annotate;
+                AVIS_SSAASSIGN (ID_AVIS (NWITHOP_MEM (withop)))
+                  = Trav (AVIS_SSAASSIGN (ID_AVIS (NWITHOP_MEM (withop))), arg_info);
+                INFO_RI_TRAVMODE (arg_info) = ri_default;
+            }
         }
         wlids = IDS_NEXT (wlids);
         withop = NWITHOP_NEXT (withop);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.186  2004/08/10 16:15:15  ktr
+ * RIicm added.
+ *
  * Revision 3.185  2004/08/10 13:42:56  sah
  * renamed FreeNWithId to FreeNWithid and
  * added switch to new xml generated free
@@ -2266,7 +2269,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_icm, "N_icm", TravSons, TravSons, PrintIcm, TravSons, GNMicm, TravSons, TravSons,
-       FreeIcm, TravSons, RCicm, EMRCicm, TravSons, DupIcm, TravSons, TravSons, TravSons,
+       FreeIcm, TravSons, RCicm, EMRCicm, RIicm, DupIcm, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -2287,7 +2290,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, COMPIcm, TravSons, TravSons, TravSons, TravSons, PREC4icm, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravNone, TravSons,
 
        TravSons, TravSons, TravSons, EMALicm, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
