@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/05/15 23:55:40  dkr
+ * added SAC_WL_GRIDVAR_LOOP_... macros
+ * fixed some minor bugs
+ *
  * Revision 1.5  1998/05/14 21:37:20  dkr
  * removed WL_NOOP
  *
@@ -60,11 +64,15 @@
 
 #define MIN(x, y) SAC_ND_MIN (x, y)
 
+#define MAX(x, y) SAC_ND_MAX (x, y)
+
 #define SAC_WL_BLOCK_LOOP0_BEGIN(level, next_level, dim, idx_vec, idx_scalar, bound1,    \
                                  bound2, step)                                           \
     {                                                                                    \
+        int VAR (start, level, idx_scalar) = MAX (bound1, __start_##idx_scalar);         \
         int VAR (stop, level, idx_scalar) = MIN (bound2, __stop_##idx_scalar);           \
-        for (idx_scalar = bound1; idx_scalar < VAR (stop, level, idx_scalar);) {         \
+        for (idx_scalar = VAR (start, level, idx_scalar);                                \
+             idx_scalar < VAR (stop, level, idx_scalar);) {                              \
             int VAR (start, next_level, idx_scalar) = idx_scalar;                        \
             int VAR (stop, next_level, idx_scalar)                                       \
               = MIN (VAR (start, next_level, idx_scalar) + step, __stop_##idx_scalar);
@@ -86,8 +94,10 @@
 #define SAC_WL_UBLOCK_LOOP0_BEGIN(level, next_level, dim, idx_vec, idx_scalar, bound1,   \
                                   bound2, step)                                          \
     {                                                                                    \
+        int VAR (start, level, idx_scalar) = MAX (bound1, __start_##idx_scalar);         \
         int VAR (stop, level, idx_scalar) = MIN (bound2, __stop_##idx_scalar);           \
-        for (idx_scalar = bound1; idx_scalar < VAR (stop, level, idx_scalar);) {         \
+        for (idx_scalar = VAR (start, level, idx_scalar);                                \
+             idx_scalar < VAR (stop, level, idx_scalar);) {                              \
             int VAR (start, next_level, idx_scalar) = idx_scalar;
 
 #define SAC_WL_UBLOCK_LOOP_BEGIN(level, next_level, dim, idx_vec, idx_scalar, bound1,    \
@@ -105,8 +115,10 @@
 #define SAC_WL_STRIDE_LOOP0_BEGIN(level, next_level, dim, idx_vec, idx_scalar, bound1,   \
                                   bound2, step)                                          \
     {                                                                                    \
+        int VAR (start, level, idx_scalar) = MAX (bound1, __start_##idx_scalar);         \
         int VAR (stop, level, idx_scalar) = MIN (bound2, __stop_##idx_scalar);           \
-        for (idx_scalar = bound1; idx_scalar < VAR (stop, level, idx_scalar);) {
+        for (idx_scalar = VAR (start, level, idx_scalar);                                \
+             idx_scalar < VAR (stop, level, idx_scalar);) {
 
 #define SAC_WL_STRIDE_LOOP_BEGIN(level, next_level, dim, idx_vec, idx_scalar, bound1,    \
                                  bound2, step)                                           \
@@ -130,6 +142,18 @@
 
 #define SAC_WL_GRID_LOOP_END(level, next_level, dim, idx_vec, idx_scalar, bound1,        \
                              bound2)                                                     \
+    }                                                                                    \
+    }
+
+#define SAC_WL_GRIDVAR_LOOP_BEGIN(level, next_level, dim, idx_vec, idx_scalar, bound1,   \
+                                  bound2)                                                \
+    {                                                                                    \
+        int grid_##idx_scalar                                                            \
+          = MIN (idx_scalar + bound2 - bound1, VAR (stop, level, idx_scalar));           \
+        for (; idx_scalar < grid_##idx_scalar; idx_scalar++) {
+
+#define SAC_WL_GRIDVAR_LOOP_END(level, next_level, dim, idx_vec, idx_scalar, bound1,     \
+                                bound2)                                                  \
     }                                                                                    \
     }
 
