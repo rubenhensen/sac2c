@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2000/12/06 11:06:00  dkr
+ * NODE_LINE for with-loops is set correctly now
+ *
  * Revision 3.3  2000/11/27 21:06:51  cg
  * Added support for APL entry in wlcomp pragma.
  *
@@ -2060,7 +2063,7 @@ expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
              $$=MakeNWith( $5, MakeNCode( $7, NWITHOP_EXPR($8)), $8);
              NWITHOP_EXPR($8) = NULL;
              NCODE_USED(NWITH_CODE($$))++;
-             NODE_LINE($$)= $<cint>4;
+             NODE_LINE($$)= $<cint>3;
              NWITH_PRAGMA($$) = $1;
 
              /*
