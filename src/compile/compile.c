@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.112  2004/07/27 20:11:46  ktr
+ * minor bugfix in MakeSetShapeIcm
+ * ,
+ *
  * Revision 3.111  2004/07/27 17:21:47  ktr
  * completed MakeSetShapeIcm
  *
@@ -1590,7 +1594,7 @@ MakeSetShapeIcm (node *arg_node, ids *let_ids)
                     break;
 
                 case F_sel:
-                    switch (NODE_TYPE (PRF_ARG1 (arg1))) {
+                    switch (NODE_TYPE (arg1)) {
                     case N_array:
                         /*
                          * shape( sel( [ 1, ...], b))
@@ -1671,7 +1675,7 @@ MakeSetShapeIcm (node *arg_node, ids *let_ids)
                     break;
 
                 case F_reshape:
-                    switch (NODE_TYPE (PRF_ARG1 (arg1))) {
+                    switch (NODE_TYPE (arg1)) {
                     case N_array:
                         /*
                          * shape( reshape( [ 1, ...], b))
