@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/03/29 16:12:11  jhs
+ * Added ST_call_mtlift
+ *
  * Revision 1.2  2000/03/23 10:28:32  jhs
  * Added the log message ...
  *
@@ -114,7 +117,10 @@ SELECT (ST_regular, "ST_regular",
           /* function for mt-execution               */),
 
   SELECT (ST_call_any, "ST_call_any",
-          /* default flag, used during inferation    */)
+          /* default flag, used during inferation    */),
+
+  SELECT (ST_call_mtlift, "ST_call_mtlift",
+          /* lifted from N_mt                        */)
 
 #undef SELECT
 
