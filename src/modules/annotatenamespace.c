@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/11/07 18:05:35  sah
+ * added handling of external function
+ * dependencies
+ *
  * Revision 1.9  2004/11/03 17:22:55  sah
  * types now get a namespace assigned as well
  *
@@ -8,7 +12,7 @@
  * namespaces are annotated correctly now
  *
  * Revision 1.7  2004/11/01 21:49:31  sah
- * asdded adding of dependencies for directly referenced namespaces
+ * added adding of dependencies for directly referenced namespaces
  *
  * Revision 1.6  2004/10/28 17:19:32  sah
  * now when annotating namespaces, the used namespaces
@@ -151,35 +155,43 @@ ANSTypes (types *arg_types, info *arg_info)
 {
     DBUG_ENTER ("ANSTypes");
 
-    if (TYPES_MOD (arg_types) == NULL) {
-        /* look up correct type */
-        if (STContains (TYPES_NAME (arg_types), INFO_ANS_SYMBOLS (arg_info))) {
-            /*
-             * There is a namespace annotated to this symbolname, e.g. it was used
-             * -> use that namespace
-             */
-            STentry_t *entry
-              = STGetFirstEntry (TYPES_NAME (arg_types), INFO_ANS_SYMBOLS (arg_info));
-            TYPES_MOD (arg_types) = StringCopy (STEntryName (entry));
-
-            MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
-              = SSAdd (TYPES_MOD (arg_types),
-                       MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
-        } else {
-            /*
-             * must be a local typedef
-             * -> use local namespace
-             */
-            TYPES_MOD (arg_types) = StringCopy (MODUL_NAME (INFO_ANS_MODULE (arg_info)));
-        }
-    } else if (strcmp (MODUL_NAME (INFO_ANS_MODULE (arg_info)), TYPES_MOD (arg_types))) {
+    if (TYPES_NAME (arg_types) != NULL) {
         /*
-         * this typedef comes from another namespace
-         *  -> add the namespace to the dependency list
+         * this is not a T_dots type (which has no name and therefore cannot
+         * have a namespace!)
          */
-        MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
-          = SSAdd (TYPES_MOD (arg_types),
-                   MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
+        if (TYPES_MOD (arg_types) == NULL) {
+            /* look up correct type */
+            if (STContains (TYPES_NAME (arg_types), INFO_ANS_SYMBOLS (arg_info))) {
+                /*
+                 * There is a namespace annotated to this symbolname, e.g. it was used
+                 * -> use that namespace
+                 */
+                STentry_t *entry
+                  = STGetFirstEntry (TYPES_NAME (arg_types), INFO_ANS_SYMBOLS (arg_info));
+                TYPES_MOD (arg_types) = StringCopy (STEntryName (entry));
+
+                MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
+                  = SSAdd (TYPES_MOD (arg_types), SS_saclib,
+                           MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
+            } else {
+                /*
+                 * must be a local typedef
+                 * -> use local namespace
+                 */
+                TYPES_MOD (arg_types)
+                  = StringCopy (MODUL_NAME (INFO_ANS_MODULE (arg_info)));
+            }
+        } else if (strcmp (MODUL_NAME (INFO_ANS_MODULE (arg_info)),
+                           TYPES_MOD (arg_types))) {
+            /*
+             * this typedef comes from another namespace
+             *  -> add the namespace to the dependency list
+             */
+            MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
+              = SSAdd (TYPES_MOD (arg_types), SS_saclib,
+                       MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
+        }
     }
 
     DBUG_RETURN (arg_types);
@@ -286,6 +298,34 @@ ANSFundef (node *arg_node, info *arg_info)
         FUNDEF_TYPES (arg_node) = ANSTypes (FUNDEF_TYPES (arg_node), arg_info);
     }
 
+    /*
+     * if this function needs an external module, add it to
+     * the external dependencies of this module.
+     */
+    if (FUNDEF_PRAGMA (arg_node) != NULL) {
+        if (PRAGMA_LINKMOD (FUNDEF_PRAGMA (arg_node)) != NULL) {
+            MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
+              = SSAdd (PRAGMA_LINKMOD (FUNDEF_PRAGMA (arg_node)), SS_extlib,
+                       MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
+            PRAGMA_LINKMOD (FUNDEF_PRAGMA (arg_node))
+              = Free (PRAGMA_LINKMOD (FUNDEF_PRAGMA (arg_node)));
+        }
+    }
+
+    /*
+     * if this function is defined by an external object file,
+     * add it to the dependencies
+     */
+    if (FUNDEF_PRAGMA (arg_node) != NULL) {
+        if (PRAGMA_LINKOBJ (FUNDEF_PRAGMA (arg_node)) != NULL) {
+            MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
+              = SSAdd (PRAGMA_LINKOBJ (FUNDEF_PRAGMA (arg_node)), SS_objfile,
+                       MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
+            PRAGMA_LINKOBJ (FUNDEF_PRAGMA (arg_node))
+              = Free (PRAGMA_LINKOBJ (FUNDEF_PRAGMA (arg_node)));
+        }
+    }
+
     arg_node = TravSons (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
@@ -346,7 +386,7 @@ ANSAp (node *arg_node, info *arg_info)
             AP_MOD (arg_node) = StringCopy (STEntryName (entry));
 
             MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
-              = SSAdd (AP_MOD (arg_node),
+              = SSAdd (AP_MOD (arg_node), SS_saclib,
                        MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
         } else {
             /*
@@ -361,7 +401,8 @@ ANSAp (node *arg_node, info *arg_info)
          *  -> add the namespace to the dependency list
          */
         MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
-          = SSAdd (AP_MOD (arg_node), MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
+          = SSAdd (AP_MOD (arg_node), SS_saclib,
+                   MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
     }
 
     arg_node = TravSons (arg_node, arg_info);
