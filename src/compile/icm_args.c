@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1996/01/21 14:14:51  cg
+ * Revision 1.11  1996/02/06 16:11:37  sbs
+ * using Double2String and Float2String in icm_args.c
+ *
+ * Revision 1.10  1996/01/21  14:14:51  cg
  * bug fixed in printing strings in function applications
  *
  * Revision 1.9  1995/12/18  16:29:25  cg
@@ -124,13 +127,11 @@
                 break;                                                                   \
             case N_float:                                                                \
                 GetNextFloat (cfloat, ex);                                               \
-                v[i] = (char *)malloc (sizeof (char) * 40);                              \
-                sprintf (v[i], "%16.16g", cfloat);                                       \
+                v[i] = Float2String (cfloat);                                            \
                 break;                                                                   \
             case N_double:                                                               \
                 GetNextDouble (cdbl, ex);                                                \
-                v[i] = (char *)malloc (sizeof (char) * 40);                              \
-                sprintf (v[i], "%16.16g", cdbl);                                         \
+                v[i] = Double2String (cdbl);                                             \
                 break;                                                                   \
             default:                                                                     \
                 DBUG_PRINT ("PRINT", ("found icm_arg of type: %s",                       \

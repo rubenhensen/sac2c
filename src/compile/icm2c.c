@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.35  1996/01/25 15:44:20  cg
+ * Revision 1.36  1996/02/06 16:11:37  sbs
+ * using Double2String and Float2String in icm_args.c
+ *
+ * Revision 1.35  1996/01/25  15:44:20  cg
  * renamed last forgotten ND_REUSE_ARRAY to ND_KS_ASSIGN_ARRAY
  *
  * Revision 1.34  1996/01/25  15:03:03  cg
@@ -127,6 +130,7 @@
 #include "my_debug.h"
 #include "main.h"
 #include "trace.h"
+#include "convert.h"
 
 #define RetWithScal(res, val)                                                            \
     INDENT;                                                                              \
