@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2000/03/02 13:07:02  jhs
+ * Added several macros for multithreaded.
+ *
  * Revision 1.22  2000/03/01 19:01:32  dkr
  * macros for WL...-nodes reorganized
  *
@@ -992,7 +995,8 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    char*           LINKMOD  (O)
  ***    types*          TYPES
  ***    statustype      STATUS
- ***    statustype      ATTRIB
+ ***    statustype      ATTRIB        (?? -> multithread  && multithread!! )
+ ***                                  FLAGS IS CHANGED IN multithread!!!
  ***    int             INLINE
  ***    int             FUNNO
  ***    node*           PRAGMA   (O)   (N_pragma)
@@ -1018,7 +1022,8 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    node*           FUNDEC_DEF (O) (N_fundef) (checkdec -> writesib !!)
  ***    node*           LIFTEDFROM (O) (N_fundef) (liftspmd -> compile -> )
  ***
- ***    node*           REPFUN (N_fundef)         (rfin only)
+ ***    node*           COMPANION (N_fundef)         (rfin and mtfin)
+ ***                                      FLAG WILL BE CLEANED before these phases!!!
  ***
  ***/
 
@@ -1031,10 +1036,16 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *          ST_loopfun      function represents a loop
  *          ST_repfun       function replicated for multithreaded execution
  *
+ *  before multithreading:
  *  ATTRIB: ST_regular      dimension-dependent or non-array function
  *          ST_independent  dimension-independent array function
  *          ST_generic      generic function derived from dimension-
  *                          independent array function
+ *  after multithreading:
+ *  ATTRIB: ST_call_any     default_flag (will be installed before using)
+ *          ST_call_st      function is CALL_ST
+ *          ST_call_mt      function is CALL_MT
+ *          ST_call_rep     function is CALL_REP
  *
  *
  *  The FUNDEC_DEF slot is only used when a fundef node is used as a
@@ -1080,7 +1091,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_INLINE(n) (n->flag)
 #define FUNDEF_INLREC(n) (n->refcnt)
 #define FUNDEF_DFM_BASE(n) (n->dfmask[0])
-#define FUNDEF_REPFUN(n) ((node *)(n->int_data))
+#define FUNDEF_COMPANION(n) ((node *)(n->int_data))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2381,9 +2392,13 @@ extern node *MakePragma ();
  ***    (nd) blocks_init.[ch]
  ***    (ne)  ...
  ***    (nf) blocks_expand.[ch]
+ ***    (ng) mtfuns_init.[ch]
+ ***    (nh) blocks_cons.[ch]
  ***
  ***  in all:
  ***    node*      INFO_MUTH_FUNDEF   (N_fundef)
+ ***    funptr     INFO_MUTH_FUNDEF
+ ***    ignorefun  INFO_MUTH_FUNDEF
  ***
  ***  in (na), (nb):
  ***    node*      INFO_SCHIN_SCHEDULING
@@ -2404,6 +2419,13 @@ extern node *MakePragma ();
  ***
  ***  in (na), (nf):
  ***    int(bool)  INFO_BLKEX_BLOCKABOVE
+ ***
+ ***  in (na), (ng):
+ ***    statustype INFO_MTFIN_CURRENTATTRIB(n)
+ ***
+ ***  in (na), (nh):
+ ***    statustype INFO_BLKCO_CURRENTATTRIB(n)
+ ***    node*      INFO_BLKCO_THISASSIGN(n)     (N_assign)
  ***
  ***  when used in tile_size_inference.c :
  ***
@@ -2587,23 +2609,34 @@ extern node *MakeInfo ();
 /* multithread - all mini-phases */
 /* DO NOT OVERRIDE ANY INFO_YYYY_xxx HERE, were YYYY is any other miniphase!!! */
 #define INFO_MUTH_FUNDEF(n) (n->node[0])
+#define INFO_MUTH_DRIVER(n) ((funptr) (n->node[1]))
+#define INFO_MUTH_IGNORE(n) ((ignorefun) (n->node[4]))
 
 /* multithread - schedule_init */
 /* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
-#define INFO_SCHIN_SCHEDULING(n) (n->node[1])
+#define INFO_SCHIN_SCHEDULING(n) (n->node[2])
 #define INFO_SCHIN_INNERWLS(n) (n->int_data)
 #define INFO_SCHIN_ALLOWED(n) (n->flag)
 
 /* multithread - repfuns_init */
 /* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
 #define INFO_RFIN_WITHINWITH(n) (n->int_data)
-#define INFO_RFIN_FIRSTFUNDEF(n) (n->node[1])
-#define INFO_RFIN_LASTFUNDEF(n) (n->node[2])
+#define INFO_RFIN_FIRSTFUNDEF(n) (n->node[2])
+#define INFO_RFIN_LASTFUNDEF(n) (n->node[3])
 #define INFO_RFIN_SEARCH(n) (n->flag)
 
 /* multithread - blocks_expand */
 /* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
 #define INFO_BLKEX_BLOCKABOVE(n) (n->int_data)
+
+/* multithread - blocks_expand */
+/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
+#define INFO_MTFIN_CURRENTATTRIB(n) ((statustype) (n->int_data))
+
+/* multithread - blocks_expand */
+/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
+#define INFO_BLKCO_CURRENTATTRIB(n) ((statustype) (n->int_data))
+#define INFO_BLKCO_THISASSIGN(n) (n->node[2])
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
