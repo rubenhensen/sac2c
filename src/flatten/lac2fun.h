@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/03/23 17:38:05  dkr
+ * L2F_INFERarg and L2F_INFERap added
+ *
  * Revision 1.7  2000/02/23 23:07:40  dkr
  * some new functions added
  *
@@ -27,8 +30,10 @@
 extern node *Lac2Fun (node *syntaxtree);
 
 extern node *L2F_INFERfundef (node *arg_node, node *arg_info);
+extern node *L2F_INFERarg (node *arg_node, node *arg_info);
 extern node *L2F_INFERassign (node *arg_node, node *arg_info);
 extern node *L2F_INFERlet (node *arg_node, node *arg_info);
+extern node *L2F_INFERap (node *arg_node, node *arg_info);
 extern node *L2F_INFERid (node *arg_node, node *arg_info);
 extern node *L2F_INFERwithid (node *arg_node, node *arg_info);
 extern node *L2F_INFERcode (node *arg_node, node *arg_info);
