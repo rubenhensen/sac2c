@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/02/03 08:35:20  dkr
+ * GenLUT renamed to GenerateLUT
+ *
  * Revision 1.2  2000/01/31 20:18:57  dkr
  * support for hashing added
  *
@@ -76,7 +79,7 @@ GetHashKey (void *data)
 /******************************************************************************
  *
  * function:
- *   lut_t *GenLUT( void)
+ *   lut_t *GenerateLUT( void)
  *
  * description:
  *   Generates a new LUT: All the needed hash tables are created and the
@@ -85,12 +88,12 @@ GetHashKey (void *data)
  ******************************************************************************/
 
 lut_t *
-GenLUT (void)
+GenerateLUT (void)
 {
     lut_t *lut;
     long k;
 
-    DBUG_ENTER ("GenLUT");
+    DBUG_ENTER ("GenerateLUT");
 
     lut = (lut_t *)MALLOC (LUT_KEYS * sizeof (lut_t));
     for (k = 0; k < LUT_KEYS; k++) {

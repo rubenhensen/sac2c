@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/02/03 08:35:10  dkr
+ * GenLUT renamed to GenerateLUT
+ *
  * Revision 1.2  2000/01/31 20:18:48  dkr
  * support for hashing added
  *
@@ -14,7 +17,7 @@
 
 typedef void *lut_t;
 
-extern lut_t *GenLUT (void);
+extern lut_t *GenerateLUT (void);
 extern lut_t *RemoveLUT (lut_t *lut);
 extern lut_t *InsertIntoLUT (lut_t *lut, void *old_entry, void *new_entry);
 extern void *SearchInLUT (lut_t *lut, void *old_entry);

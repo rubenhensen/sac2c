@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/02/03 08:35:43  dkr
+ * GenLUT renamed to GenerateLUT
+ *
  * Revision 1.6  2000/01/31 14:00:30  dkr
  * redundant macro DUP removed
  *
@@ -193,7 +196,7 @@ DupTree (node *arg_node, node *arg_info)
          * we want to duplicate all sons
          */
         INFO_DUP_CONT (arg_info) = NULL;
-        lut = GenLUT ();
+        lut = GenerateLUT ();
         new_node = Trav (arg_node, arg_info);
         lut = RemoveLUT (lut);
 
