@@ -56,6 +56,20 @@ STDLIB_LIBPATH :=  "$SACBASE/stdlib/modules/structures/lib:"
                    "$SACBASE/stdlib/world/x-window/lib:"
                    "$SACBASE/stdlib/hidden/lib"
 
+SYSTEM_LIBPATH :=  "/opt/gnu/lib/gcc-lib/sparc-sun-solaris2.5.1/2.7.2.1/:"
+                   "/usr/lib/gcc/sparc-sun-solaris2.5.1/2.7.2.1/:"
+                   "/opt/gnu/sparc-sun-solaris2.5.1/lib/sparc-sun-solaris2.5.1/2.7.2.1/:"
+                   "/opt/gnu/sparc-sun-solaris2.5.1/lib/:"
+                   "/usr/ccs/bin/sparc-sun-solaris2.5.1/2.7.2.1/:"
+                   "/usr/ccs/bin/:"
+                   "/usr/ccs/lib/sparc-sun-solaris2.5.1/2.7.2.1/:"
+                   "/usr/ccs/lib/:"
+                   "/opt/gnu/lib/sparc-sun-solaris2.5.1/2.7.2.1/:"
+                   "/opt/gnu/lib/:"
+                   "/lib/sparc-sun-solaris2.5.1/2.7.2.1/:"
+                   "/lib/:"
+                   "/usr/lib/sparc-sun-solaris2.5.1/2.7.2.1/:"
+                   "/usr/lib/"
 
 CACHE1_SIZE    :=  0
 CACHE1_LINE    :=  0
