@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2002/06/07 14:41:11  dkr
+ * info added: shp, rc, desc, in, out, inout
+ *
  * Revision 1.4  2002/06/04 12:08:11  dkr
  * comments added
  *
@@ -19,59 +22,98 @@
 #define SELECTelement(it_element)
 #endif
 
+#ifndef SELECTshp
+#define SELECTshp(it_shp)
+#endif
+
+#ifndef SELECTrc
+#define SELECTrc(it_rc)
+#endif
+
+#ifndef SELECTdesc
+#define SELECTdesc(it_desc)
+#endif
+
+#ifndef SELECTin
+#define SELECTin(it_in)
+#endif
+
+#ifndef SELECTout
+#define SELECTout(it_out)
+#endif
+
+#ifndef SELECTinout
+#define SELECTinout(it_inout)
+#endif
+
 #ifndef SELECTtext
 #define SELECTtext(it_text)
 #endif
 
-#define SELECT(it_element, it_text) SELECTelement (it_element) SELECTtext (it_text)
+#define SELECT(it_element, it_shp, /* contains shape information? (bool) */              \
+               it_rc,              /* contains reference counter? (bool) */              \
+               it_desc,            /* contains descriptor?        (bool) */              \
+               it_in,              /* is a 'in' parameter?        (bool) */              \
+               it_out,             /* is a 'out' parameter?       (bool) */              \
+               it_inout,           /* is a 'inout' parameter?     (bool) */              \
+               it_text)                                                                  \
+    SELECTelement (it_element) SELECTshp (it_shp) SELECTrc (it_rc) SELECTdesc (it_desc)  \
+      SELECTin (it_in) SELECTout (it_out) SELECTinout (it_inout) SELECTtext (it_text)
 
-SELECT (ATG_notag, ""),
+SELECT (ATG_notag, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, ""),
 
 #ifdef TAGGED_ARRAYS
 
-  SELECT (ATG_in, "in"),
+  SELECT (ATG_in, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, "in"),
 
-  SELECT (ATG_in_norc, "in_norc"), /* not fully implemented yet */
+  SELECT (ATG_in_norc, TRUE, FALSE, TRUE, TRUE, FALSE, FALSE,
+          "in_norc"), /* not fully implemented yet */
 
-  SELECT (ATG_in_noshp, "in_noshp"), /* not fully implemented yet */
+  SELECT (ATG_in_noshp, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE,
+          "in_noshp"), /* not fully implemented yet */
 
-  SELECT (ATG_in_nodesc, "in_nodesc"),
+  SELECT (ATG_in_nodesc, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, "in_nodesc"),
 
-  SELECT (ATG_inout, "inout"),
+  SELECT (ATG_inout, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, "inout"),
 
-  SELECT (ATG_inout_norc, "inout_norc"), /* not fully implemented yet */
+  SELECT (ATG_inout_norc, TRUE, FALSE, TRUE, FALSE, FALSE, TRUE,
+          "inout_norc"), /* not fully implemented yet */
 
-  SELECT (ATG_inout_noshp, "inout_noshp"), /* not fully implemented yet */
+  SELECT (ATG_inout_noshp, FALSE, TRUE, TRUE, FALSE, FALSE, TRUE,
+          "inout_noshp"), /* not fully implemented yet */
 
-  SELECT (ATG_inout_nodesc, "inout_nodesc"),
+  SELECT (ATG_inout_nodesc, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, "inout_nodesc"),
 
-  SELECT (ATG_inout_nodesc_bx, "inout_nodesc_bx"),
+  SELECT (ATG_inout_nodesc_bx, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE,
+          "inout_nodesc_bx"),
 
-  SELECT (ATG_out, "out"),
+  SELECT (ATG_out, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, "out"),
 
-  SELECT (ATG_out_norc, "out_norc"), /* not fully implemented yet */
+  SELECT (ATG_out_norc, TRUE, FALSE, TRUE, FALSE, TRUE, FALSE,
+          "out_norc"), /* not fully implemented yet */
 
-  SELECT (ATG_out_noshp, "out_noshp"), /* not fully implemented yet */
+  SELECT (ATG_out_noshp, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE,
+          "out_noshp"), /* not fully implemented yet */
 
-  SELECT (ATG_out_nodesc, "out_nodesc"),
+  SELECT (ATG_out_nodesc, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, "out_nodesc"),
 
 #else
 
-  SELECT (ATG_in, "in"),
+  SELECT (ATG_in, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, "in"),
 
-  SELECT (ATG_in_rc, "in_rc"),
+  SELECT (ATG_in_rc, FALSE, TRUE, FALSE, TRUE, FALSE, FALSE, "in_rc"),
 
-  SELECT (ATG_inout, "inout"),
+  SELECT (ATG_inout, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, "inout"),
 
-  SELECT (ATG_inout_rc, "inout_rc"),
+  SELECT (ATG_inout_rc, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, "inout_rc"),
 
-  SELECT (ATG_upd, "upd"),
+  SELECT (ATG_upd, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, "upd"),
 
-  SELECT (ATG_upd_bx, "upd_bx"),
+  SELECT (ATG_upd_bx, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, "upd_bx"),
 
-  SELECT (ATG_out, "out"),
+  SELECT (ATG_out, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, "out"),
 
-  SELECT (ATG_out_rc, "out_rc"),
+  SELECT (ATG_out_rc, FALSE, TRUE, FALSE, FALSE, TRUE, FALSE, "out_rc"),
 
 #endif
 
@@ -79,3 +121,9 @@ SELECT (ATG_notag, ""),
 
 #undef SELECTelement
 #undef SELECTtext
+#undef SELECTshp
+#undef SELECTrc
+#undef SELECTdesc
+#undef SELECTin
+#undef SELECTout
+#undef SELECTinout
