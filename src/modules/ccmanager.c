@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/10/28 17:18:58  sah
+ * added handling of dependencies
+ *
  * Revision 1.2  2004/10/17 17:49:19  sah
  * fixed shell command
  *
@@ -19,6 +22,10 @@
 #include "config.h"
 #include "filemgr.h"
 #include "resource.h"
+#include "stringset.h"
+#include "filemgr.h"
+
+#include <string.h>
 
 static char *
 GetCCCall ()
@@ -172,12 +179,45 @@ GetLibs ()
     DBUG_RETURN (result);
 }
 
-static void
-InvokeCCProg (char *cccall, char *ccflags, char *libs)
+static void *
+BuildDepLibsString (const char *lib, void *rest)
 {
+    char *result;
+    char *libname;
+
+    DBUG_ENTER ("BuildDepLibsString");
+
+    libname = Malloc (sizeof (char) * (strlen (lib) + 6));
+
+    sprintf (libname, "lib%s.a", lib);
+
+    result = FindFile (MODIMP_PATH, libname);
+
+    if (rest != NULL) {
+        char *temp = Malloc (sizeof (char) * (strlen (rest) + strlen (result) + 2));
+
+        sprintf (temp, "%s %s", (char *)rest, result);
+
+        result = Free (result);
+        result = temp;
+    }
+
+    libname = Free (libname);
+
+    DBUG_RETURN (result);
+}
+
+static void
+InvokeCCProg (char *cccall, char *ccflags, char *libs, stringset_t *deps)
+{
+    char *deplibs;
+
     DBUG_ENTER ("InvokeCCProg");
 
-    SystemCall ("%s %s -o %s %s %s", cccall, ccflags, outfilename, cfilename, libs);
+    deplibs = (char *)SSFold (&BuildDepLibsString, deps, NULL);
+
+    SystemCall ("%s %s -o %s %s %s %s", cccall, ccflags, outfilename, cfilename, deplibs,
+                libs);
 
     DBUG_VOID_RETURN;
 }
@@ -193,7 +233,7 @@ InvokeCCModule (char *cccall, char *ccflags)
 }
 
 void
-InvokeCC ()
+InvokeCC (stringset_t *deps)
 {
     char *ccflags;
     char *cccall;
@@ -206,13 +246,14 @@ InvokeCC ()
     libs = GetLibs ();
 
     if (filetype == F_prog)
-        InvokeCCProg (cccall, ccflags, libs);
+        InvokeCCProg (cccall, ccflags, libs, deps);
     else
         InvokeCCModule (cccall, ccflags);
 
     cccall = Free (cccall);
     ccflags = Free (ccflags);
     libs = Free (libs);
+    deps = SSFree (deps);
 
     DBUG_VOID_RETURN;
 }
