@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1999/08/02 09:48:35  jhs
+ * Moved MeltBlocks[OnCopies] from spmd_opt.[ch] to concurrent_lib.[ch].
+ *
  * Revision 1.2  1999/07/30 13:45:44  jhs
  * Added initial macros and functions.
  *
@@ -23,6 +26,9 @@
 
 #include "dbug.h"
 
+#include "tree_basic.h"
+#include "free.h"
+#include "DupTree.h"
 #include "DataFlowMask.h"
 
 /******************************************************************************
@@ -52,4 +58,124 @@ CONLDisplayMask (char *tag, char *name, DFMmask_t mask)
     DBUG_PRINT (tag, ("%s-mask end", name));
 
     DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void AssertSimpleBlock (node *block)
+ *
+ * description:
+ *   Asserts whether the block is an N_block and has only the attribute
+ *   BLOCK_INSTR set. This check is needed at various places to check wether
+ *   the block was newly introduced, and has no extra information that cannot
+ *   be handled by the calling routines.
+ *
+ ******************************************************************************/
+void
+AssertSimpleBlock (node *block)
+{
+    DBUG_ENTER ("AssertBlock");
+
+    DBUG_ASSERT (NODE_TYPE (block) == N_block, "Wrong NODE_TYPE, not a N_block");
+
+    DBUG_ASSERT (BLOCK_VARDEC (block) == NULL, "BLOCK_VARDEC not NULL");
+    DBUG_ASSERT (BLOCK_NEEDFUNS (block) == NULL, "BLOCK_NEEDFUNS not NULL");
+    DBUG_ASSERT (BLOCK_NEEDTYPES (block) == NULL, "BLOCK_NEEDTYPES not NULL");
+    DBUG_ASSERT (BLOCK_SPMD_PROLOG_ICMS (block) == NULL, "BLOCK_SPMD_... not NULL");
+    DBUG_ASSERT (BLOCK_CACHESIM (block) == NULL, "BLOCK_CACHESIM not NULL");
+    DBUG_ASSERT (BLOCK_VARNO (block) == 0, "BLOCK_VARNO not 0");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *BlocksLastInstruction(node *block)
+ *
+ * description:
+ *   Find last instruction of a block
+ *
+ * attention:
+ *   One can only step over N_assign until now, N_empty is not handled yet.
+ *
+ ******************************************************************************/
+node *
+BlocksLastInstruction (node *block)
+{
+    node *result;
+
+    DBUG_ENTER ("BlocksLastInstruction");
+
+    DBUG_ASSERT (NODE_TYPE (block) == N_block, "Wrong NODE_TYPE of argument");
+
+    result = BLOCK_INSTR (block);
+    DBUG_ASSERT (NODE_TYPE (result) == N_assign, "Wrong node for instruction");
+
+    while (ASSIGN_NEXT (result) != NULL) {
+        result = ASSIGN_NEXT (result);
+        DBUG_ASSERT (NODE_TYPE (result) == N_assign,
+                     "Wrong node for further instruction");
+    }
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ * #### used by sync_opt also, move to more global place
+ * functions:
+ *   (1) node *MeltBlocks (node *first_block, node *second_block)
+ *   (2) node *MeltBlocksOnCopies (node *first_block, node *second_block)
+ *
+ * description:
+ *   Melts to N_blocks to one.
+ *
+ *   (1) normal version:
+ *   If the normal version is used the first entry is reused, and the second
+ *   one is given free. That means both arguments are modified!
+ *
+ *   (2) copying version:
+ *   Both arguments (and also the two complete trees!) are copied here, and
+ *   no harm is done to them, one gets a complety new node as result.
+ *
+ ******************************************************************************/
+node *
+MeltBlocks (node *first_block, node *second_block)
+{
+    node *result;
+    node *lassign;
+
+    DBUG_ENTER ("MeltBlocks");
+
+    AssertSimpleBlock (first_block);
+    AssertSimpleBlock (second_block);
+
+    lassign = BlocksLastInstruction (first_block);
+    ASSIGN_NEXT (lassign) = BLOCK_INSTR (second_block);
+    /* cut old connection */
+    BLOCK_INSTR (second_block) = NULL;
+
+    FreeTree (second_block);
+    result = first_block;
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *  see comment above
+ ******************************************************************************/
+node *
+MeltBlocksOnCopies (node *first_block, node *second_block)
+{
+    node *result;
+
+    DBUG_ENTER ("MeltBlocksOnCopies");
+
+    first_block = DupTree (first_block, NULL);
+    second_block = DupTree (second_block, NULL);
+
+    result = MeltBlocks (first_block, second_block);
+
+    DBUG_RETURN (result);
 }

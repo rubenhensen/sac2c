@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/08/02 09:48:35  jhs
+ * Moved MeltBlocks[OnCopies] from spmd_opt.[ch] to concurrent_lib.[ch].
+ *
  * Revision 2.7  1999/07/30 13:49:12  jhs
  * Removed old warnings, added comments.
  *
@@ -55,9 +58,9 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "spmd_trav.h"
-#include "spmd_opt.h"
 #include "globals.h"
 #include "Error.h"
+#include "concurrent_lib.h"
 
 #include "sync_opt.h"
 

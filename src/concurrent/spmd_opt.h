@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/08/02 09:48:35  jhs
+ * Moved MeltBlocks[OnCopies] from spmd_opt.[ch] to concurrent_lib.[ch].
+ *
  * Revision 2.4  1999/07/07 15:56:45  jhs
  * Declared MeltBlocks(OnnCopies) as external
  * (should be moved to another, more global place later).
@@ -41,8 +44,5 @@
 extern node *SPMDOspmd (node *arg_node, node *arg_info);
 extern node *SPMDOassign (node *arg_node, node *arg_info);
 extern node *SPMDOfundef (node *arg_node, node *arg_info);
-
-extern node *MeltBlocks (node *first_block, node *second_block);
-extern node *MeltBlocksOnCopies (node *first_block, node *second_block);
 
 #endif /* SPMD_OPT_H */
