@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2001/04/30 12:25:40  nmw
+ * some XXXap calls added to get special function traversals
+ *
  * Revision 3.48  2001/04/26 17:06:43  dkr
  * rmvoidtab removed
  *
@@ -1517,13 +1520,13 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, CMPTprf, TravSons, SSACFprf, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
-  NIF (N_ap, "N_ap", TravSons, FltnAp, PrintAp, TravSons, TravSons, TravSons, TravSons,
-       FreeAp, CFap, TravSons, COMPAp, TravSons, DupAp, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+  NIF (N_ap, "N_ap", TravSons, FltnAp, PrintAp, TravSons, GNMap, TravSons, TravSons,
+       FreeAp, CFap, TravSons, COMPAp, TravSons, DupAp, TravSons, UNRap, TravSons,
+       TravSons, TravSons, WLIap, TravSons,
 
        PrintAp, OBJap, TravSons, TravSons, ANAap, TravSons, TravSons, TravSons, TravSons,
-       PREC2ap, TravSons, TravSons, TravSons, TravSons, DFRap, TravSons, TravSons,
-       TravSons, TravSons, TravSons,
+       PREC2ap, TravSons, TravSons, WLTap, TravSons, DFRap, TravSons, TravSons, TravSons,
+       TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        WLAAap, TravSons, TravSons, TravSons, TravSons, TravSons, SPMDLCap, TravSons,
