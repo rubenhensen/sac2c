@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.41  1996/02/13 13:58:14  asi
+ * Revision 1.42  1996/08/09 16:42:52  asi
+ * dead function removal added
+ *
+ * Revision 1.41  1996/02/13  13:58:14  asi
  * MRD_GETCSE changed
  *
  * Revision 1.40  1996/01/17  16:49:21  asi
@@ -148,6 +151,7 @@
 
 extern int dead_expr;
 extern int dead_var;
+extern int dead_fun;
 extern int cf_expr;
 extern int wr_expr;
 extern int lir_expr;

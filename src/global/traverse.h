@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.33  1996/01/17 16:49:21  asi
+ * Revision 1.34  1996/08/09 16:44:12  asi
+ * dead function removal added
+ *
+ * Revision 1.33  1996/01/17  16:49:21  asi
  * added common subexpression elimination
  *
  * Revision 1.32  1996/01/02  15:49:35  cg
@@ -187,5 +190,7 @@ extern funptr readsib_tab[];
 extern funptr link_tab[];
 
 extern funptr cse_tab[];
+
+extern funptr dfr_tab[];
 
 #endif /* _sac_traverse_h */

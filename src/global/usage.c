@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.41  1996/05/29 14:18:57  sbs
+ * Revision 1.42  1996/08/09 16:44:12  asi
+ * dead function removal added
+ *
+ * Revision 1.41  1996/05/29  14:18:57  sbs
  * inserted noRCO opt_rco!
  *
  * Revision 1.40  1996/01/25  18:39:25  cg
@@ -198,8 +201,7 @@ usage (char *prg_name)
     printf ("\t -nounroll_loops or -noUNR \t\t  no loop unrolling \n");
     printf ("\t -nounswitch_loops or -noUNS \t\t  no loop unswitching \n");
     printf ("\t -nodead_code_removal or -noDCR \t  no dead code removal \n");
-    printf (
-      "\t -nopartial_dead_code_removal or -noPDCR  no partial_dead code removal \n");
+    printf ("\t -nodead_function_removal or -noDFR  no dead function removal \n");
     printf ("\t -noloop_invariant_removal or -noLIR \t  no loop invariant removal \n");
     printf ("\t -nocse or -noCSE \t\t\t  no common subexpression elimination \n");
     printf ("\n\t -nopsiopt\t\t\t\t  no psi optimisations\n");

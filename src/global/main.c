@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.87  1996/07/14 13:02:19  sbs
+ * Revision 1.88  1996/08/09 16:44:12  asi
+ * dead function removal added
+ *
+ * Revision 1.87  1996/07/14  13:02:19  sbs
  * -opt_rco disabled whith noOPT !
  *
  * Revision 1.86  1996/05/29  14:18:57  sbs
@@ -356,7 +359,7 @@ int break_compilation = 0;
 int optimize = 1;
 int sac_optimize = 1;
 int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1, opt_inl = 1, opt_unr = 1,
-    opt_uns = 1, opt_ae = 1, opt_cse = 1;
+    opt_uns = 1, opt_ae = 1, opt_cse = 1, opt_dfr = 1;
 
 int optvar = 50;
 int inlnum = 1;
@@ -622,8 +625,8 @@ MAIN
             opt_cf = 0;
         else if (!strncmp (*argv, "oPDCR", 5))
             opt_wr = 0;
-        else if (!strncmp (*argv, "opartial_dead_code_removal", 26))
-            opt_wr = 0;
+        else if (!strncmp (*argv, "odead_function_removal", 22))
+            opt_dfr = 0;
         else if (!strncmp (*argv, "oSACOPT", 7))
             sac_optimize = 0;
         else if (!strncmp (*argv, "osacopt", 7))
@@ -670,6 +673,8 @@ MAIN
             opt_cse = 0;
         else if (!strncmp (*argv, "oCSE", 4))
             opt_cse = 0;
+        else if (!strncmp (*argv, "oDFR", 4))
+            opt_dfr = 0;
         else if (!strncmp (*argv, "orefcount_opt", 3))
             opt_rco = 0;
         else if (!strncmp (*argv, "oRCO", 3))

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1996/01/17 14:39:34  asi
+ * Revision 1.12  1996/08/09 16:42:52  asi
+ * dead function removal added
+ *
+ * Revision 1.11  1996/01/17  14:39:34  asi
  * bug fixed: INFO_DEF and INFO_USE masks now updated correctly
  *
  * Revision 1.10  1995/12/21  13:27:48  asi
@@ -48,6 +51,7 @@
 #include "free.h"
 #include "Error.h"
 #include "dbug.h"
+#include "globals.h"
 #include "my_debug.h"
 #include "traverse.h"
 
@@ -90,6 +94,13 @@ DeadCodeRemoval (node *arg_node, node *info_node)
     info_node = MakeNode (N_info);
     arg_node = Trav (arg_node, info_node);
     FREE (info_node);
+
+    if (opt_dfr) {
+        act_tab = dfr_tab;
+        info_node = MakeNode (N_info);
+        arg_node = Trav (arg_node, info_node);
+        FREE (info_node);
+    }
     DBUG_RETURN (arg_node);
 }
 
@@ -165,6 +176,64 @@ ACTfundef (node *arg_node, node *arg_info)
 
     if (NULL != FUNDEF_NEXT (arg_node))
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : DFRfundef
+ *  arguments     : 1) N_fundef - node
+ *                  2) N_info - node
+ *                  R) N_fundef - node
+ *  description   : Traverses instruction- (if not inline marked) and function-chain
+ *                  in this sequence.
+ *  global vars   : --
+ *  internal funs : --
+ *  external funs : Trav (optimize.h)
+ *  macros        : FUNDEF_NAME, FUNDEF_BODY, FUNDEF_INSTR, FUNDEF_NEXT
+ *
+ *  remarks       : --
+ *
+ */
+node *
+DFRfundef (node *arg_node, node *arg_info)
+{
+    node *nextfun;
+
+    DBUG_ENTER ("DFRfundef");
+    DBUG_PRINT ("DCR", ("Dead Function Removal in function: %s", FUNDEF_NAME (arg_node)));
+
+    if ((NULL != FUNDEF_BODY (arg_node)) && (0 == FUNDEF_INLINE (arg_node)))
+        FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
+
+    if (NULL != FUNDEF_NEXT (arg_node))
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+
+    if (1 == FUNDEF_INLINE (arg_node)) {
+        dead_fun++;
+        nextfun = FUNDEF_NEXT (arg_node);
+        FUNDEF_NEXT (arg_node) = NULL;
+/*-----------------------------------------------------------------------------------*/
+#ifndef NEWTREE
+        arg_node->nnode = 1;
+#endif
+        /*-----------------------------------------------------------------------------------*/
+        FreeTree (arg_node);
+        arg_node = nextfun;
+    }
+    DBUG_RETURN (arg_node);
+}
+
+node *
+DFRap (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DFRap");
+    if ((1 == FUNDEF_INLINE (AP_FUNDEF (arg_node)))
+        && (NULL != FUNDEF_INSTR (AP_FUNDEF (arg_node)))) {
+        FUNDEF_INLINE (AP_FUNDEF (arg_node)) = 0;
+        FUNDEF_INSTR (AP_FUNDEF (arg_node))
+          = Trav (FUNDEF_INSTR (AP_FUNDEF (arg_node)), arg_info);
+    }
     DBUG_RETURN (arg_node);
 }
 

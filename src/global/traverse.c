@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.43  1996/01/22 08:15:23  asi
+ * Revision 1.44  1996/08/09 16:44:12  asi
+ * dead function removal added
+ *
+ * Revision 1.43  1996/01/22  08:15:23  asi
  * includes CSE.h now
  *
  * Revision 1.42  1996/01/17  16:49:21  asi
@@ -658,6 +661,20 @@ funptr link_tab[] = {
     an
 
 funptr cse_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 35) dfr_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+    ao
+
+funptr dfr_tab[] = {
 #include "node_info.mac"
 };
 

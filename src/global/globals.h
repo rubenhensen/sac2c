@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1996/05/29 14:18:57  sbs
+ * Revision 1.7  1996/08/09 16:44:12  asi
+ * dead function removal added
+ *
+ * Revision 1.6  1996/05/29  14:18:57  sbs
  * inserted noRCO opt_rco!
  *
  * Revision 1.5  1996/01/17  16:49:21  asi
@@ -48,6 +51,7 @@ extern int break_compilation;
 extern int optimize;
 extern int sac_optimize;
 extern int opt_dcr;
+extern int opt_dfr;
 extern int opt_cf;
 extern int opt_wr;
 extern int opt_lir;
