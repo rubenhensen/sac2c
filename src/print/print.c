@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.169  1998/03/22 15:47:47  dkr
+ * N_WLblock: BLOCKING -> STEP
+ *
  * Revision 1.168  1998/03/22 15:32:48  dkr
  * N_WLproj: OFFSET, WIDTH -> BOUND1, BOUND2
  *
@@ -2319,7 +2322,7 @@ PrintWLblock (node *arg_node, node *arg_info)
     INDENT
     fprintf (outfile, "(%d -> %d), block%d[%d] %d: ", WLBLOCK_BOUND1 (arg_node),
              WLBLOCK_BOUND2 (arg_node), WLBLOCK_LEVEL (arg_node), WLBLOCK_DIM (arg_node),
-             WLBLOCK_BLOCKING (arg_node));
+             WLBLOCK_STEP (arg_node));
 
     if (WLBLOCK_NEXTDIM (arg_node) != NULL) {
         fprintf (outfile, "\n");
@@ -2360,7 +2363,7 @@ PrintWLublock (node *arg_node, node *arg_info)
     INDENT
     fprintf (outfile, "(%d -> %d), ublock%d[%d] %d: ", WLUBLOCK_BOUND1 (arg_node),
              WLUBLOCK_BOUND2 (arg_node), WLUBLOCK_LEVEL (arg_node),
-             WLUBLOCK_DIM (arg_node), WLUBLOCK_BLOCKING (arg_node));
+             WLUBLOCK_DIM (arg_node), WLUBLOCK_STEP (arg_node));
 
     if (WLUBLOCK_NEXTDIM (arg_node) != NULL) {
         fprintf (outfile, "\n");
