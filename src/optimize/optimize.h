@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.54  1998/04/02 13:47:23  srs
+ * NOTE_OPTIMIZER_PHASE() deleted
+ *
  * Revision 1.53  1998/03/22 18:11:56  srs
  * added wlt_expr and NOTE_OPTIMIZER_PHASE()
  *
@@ -254,12 +257,6 @@ extern void PopMRDL2 ();
 #define INFO_USE arg_info->mask[1] /* added or removed variable useages         */
 
 #define VAR_LENGTH 10
-
-#define NOTE_OPTIMIZER_PHASE(phase)                                                      \
-    {                                                                                    \
-        if (verbose_level == 3)                                                          \
-            fprintf (stderr, "         %s ...\n", phase);                                \
-    }
 
 /*
  *  The following lines should no longer be used.
