@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.98  1997/11/02 13:57:57  dkr
+ * with defined NEWTREE, node->nnode is not used anymore
+ *
  * Revision 1.97  1997/11/02 13:01:23  dkr
  * with defined NEWTREE, node->nnode is not used anymore
  *
@@ -629,7 +632,7 @@ int basetype_size[] = {
     icm_arg->node[1] = array->node[0];                                                   \
     icm_arg->nnode = 2;                                                                  \
     APPEND_ASSIGNS (first_assign, next_assign)
-#else
+#else /* NEWTREE */
 #define CREATE_CONST_ARRAY(array, name, type, rc)                                        \
     CREATE_3_ARY_ICM (next_assign, "ND_ALLOC_ARRAY", type, name, rc);                    \
     APPEND_ASSIGNS (first_assign, next_assign);                                          \
@@ -638,7 +641,7 @@ int basetype_size[] = {
     CREATE_2_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_S", name, n_node);             \
     icm_arg->node[1] = array->node[0];                                                   \
     APPEND_ASSIGNS (first_assign, next_assign)
-#endif
+#endif /* NEWTREE */
 
 #define DECL_ARRAY(assign, Node, var_str, var_str_node)                                  \
     COUNT_ELEMS (n_elems, Node);                                                         \
@@ -656,13 +659,13 @@ int basetype_size[] = {
     tmp->nnode = 2;                                                                      \
     last->node[1] = tmp;                                                                 \
     last->nnode = 2
-#else
+#else /* NEWTREE */
 #define INSERT_ID_NODE(no, last, str)                                                    \
     tmp = MakeNode (N_exprs);                                                            \
     MAKENODE_ID (tmp->node[0], str);                                                     \
     tmp->node[1] = no;                                                                   \
     last->node[1] = tmp;
-#endif
+#endif /* NEWTREE */
 
 /* following macros are used to compute last but one or next N_assign form
  * a 'arg_info' node
@@ -704,14 +707,14 @@ int basetype_size[] = {
         DBUG_ASSERT (N_exprs == last_exprs->nodetype, " nodetype  != N_expr");           \
         last_exprs = last_exprs->node[1];                                                \
     }
-#else
+#else /* NEWTREE */
 #define GOTO_LAST_N_EXPRS(exprs, last_exprs)                                             \
     last_exprs = exprs;                                                                  \
     while (last_exprs->node[1] != NULL) {                                                \
         DBUG_ASSERT (N_exprs == last_exprs->nodetype, " nodetype  != N_expr");           \
         last_exprs = last_exprs->node[1];                                                \
     }
-#endif
+#endif /* NEWTREE */
 
 #ifndef NEWTREE
 #define GOTO_LAST_BUT_LEAST_N_EXPRS(exprs, lbl_exprs)                                    \
@@ -728,7 +731,7 @@ int basetype_size[] = {
             tmp = tmp->node[1];                                                          \
         }                                                                                \
     }
-#else
+#else /* NEWTREE */
 #define GOTO_LAST_BUT_LEAST_N_EXPRS(exprs, lbl_exprs)                                    \
     {                                                                                    \
         node *tmp;                                                                       \
@@ -744,7 +747,7 @@ int basetype_size[] = {
             tmp = tmp->node[1];                                                          \
         }                                                                                \
     }
-#endif
+#endif /* NEWTREE */
 
 #define FREE_TYPE(a)                                                                     \
     if (NULL != a->shpseg)                                                               \

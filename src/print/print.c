@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.133  1997/11/02 13:59:14  dkr
+ * with defined NEWTREE, node->nnode is not used anymore
+ *
  * Revision 1.132  1997/10/29 14:31:59  srs
  * free -> FREE
  *
@@ -590,7 +593,11 @@ PrintAssign (node *arg_node, node *arg_info)
     if (N_icm == arg_node->node[0]->nodetype) {
         PrintIcm (arg_node->node[0], arg_info);
         fprintf (outfile, "\n");
+#ifndef NEWTREE
         if (2 == arg_node->nnode)
+#else
+        if (arg_node->node[1] != NULL)
+#endif
             Trav (arg_node->node[1], arg_info);
     } else {
         DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", arg_node->lineno););
@@ -602,9 +609,12 @@ PrintAssign (node *arg_node, node *arg_info)
             fprintf (outfile, "\n");
         }
 
-        if (2 == arg_node->nnode) {
+#ifndef NEWTREE
+        if (2 == arg_node->nnode)
+#else
+        if (arg_node->node[1] != NULL)
+#endif
             Trav (ASSIGN_NEXT (arg_node), arg_info);
-        }
     }
 
     DBUG_RETURN (arg_node);
@@ -858,7 +868,11 @@ PrintImplist (node *arg_node, node *arg_info)
         fprintf (outfile, "\n}\n");
     }
 
+#ifndef NEWTREE
     if (1 == arg_node->nnode)
+#else
+    if (arg_node->node[0] != NULL)
+#endif
         Trav (arg_node->node[0], arg_info); /* print further imports */
 
     DBUG_RETURN (arg_node);
@@ -881,7 +895,11 @@ PrintTypedef (node *arg_node, node *arg_info)
         fprintf (outfile, "extern void %s(void *);\n\n", TYPEDEF_FREEFUN (arg_node));
     }
 
+#ifndef NEWTREE
     if (1 == arg_node->nnode)
+#else
+    if (arg_node->node[0] != NULL)
+#endif
         Trav (arg_node->node[0], arg_info); /* traverse next typedef/fundef */
 
     DBUG_RETURN (arg_node);
@@ -1269,7 +1287,12 @@ PrintExprs (node *arg_node, node *arg_info)
 
     Trav (arg_node->node[0], arg_info);
 
-    if (2 == arg_node->nnode) {
+#ifndef NEWTREE
+    if (2 == arg_node->nnode)
+#else
+    if (arg_node->node[1] != NULL)
+#endif
+    {
         fprintf (outfile, ", ");
         Trav (arg_node->node[1], arg_info);
     }
@@ -1295,7 +1318,12 @@ PrintArg (node *arg_node, node *arg_info)
         Trav (ARG_COLCHN (arg_node), arg_info);
     }
 
-    if (1 == arg_node->nnode) {
+#ifndef NEWTREE
+    if (1 == arg_node->nnode)
+#else
+    if (arg_node->node[0] != NULL)
+#endif
+    {
         fprintf (outfile, ", ");
         Trav (arg_node->node[0], arg_info);
     }
@@ -1316,7 +1344,11 @@ PrintVardec (node *arg_node, node *arg_info)
     if (VARDEC_COLCHN (arg_node) && show_idx)
         Trav (VARDEC_COLCHN (arg_node), arg_info);
     fprintf (outfile, ";\n");
+#ifndef NEWTREE
     if (1 == arg_node->nnode)
+#else
+    if (arg_node->node[0] != NULL)
+#endif
         Trav (arg_node->node[0], arg_info);
     else
         fprintf (outfile, "\n");

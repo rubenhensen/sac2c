@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.47  1997/11/02 13:57:37  dkr
+ * with defined NEWTREE, node->nnode is not used anymore
+ *
  * Revision 1.46  1997/11/02 13:31:37  dkr
  * with defined NEWTREE, node->nnode is not used anymore
  *
@@ -282,7 +285,7 @@ DuplicateNode (node *source_node)
             dest_node->node[i] = DuplicateNode (source_node->node[i]);
         dest_node->nnode = i;
 #else
-        for (i = 0; i < MAXSONS; i++)
+        for (i = 0; i < MAX_SONS; i++)
             if (source_node->node[i] != NULL)
                 dest_node->node[i] = DuplicateNode (source_node->node[i]);
             else
@@ -703,7 +706,7 @@ FltnCond (node *arg_node, node *arg_info)
 #ifndef NEWTREE
     for (i = 1; i < arg_node->nnode; i++)
 #else
-    for (i = 1; i < MAXSONS; i++)
+    for (i = 1; i < MAX_SONS; i++)
         if (arg_node->node[i] != NULL)
 #endif
     {
@@ -1111,7 +1114,7 @@ FltnGen (node *arg_node, node *arg_info)
 #ifndef NEWTREE
     for (i = 0; i < arg_node->nnode; i++)
 #else
-    for (i = 0; i < MAXSONS; i++)
+    for (i = 0; i < MAX_SONS; i++)
         if (arg_node->node[i] != NULL)
 #endif
         if ((arg_node->node[i]->nodetype == N_ap)
