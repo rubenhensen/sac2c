@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 2.9  1999/10/08 08:34:05  sbs
+# in build.c :
+# changed more into cat since some systems (eg alpha) do request an
+# acknowledge of more!
+#
 # Revision 2.8  1999/08/05 13:32:04  jhs
 # build.c is displayed (more) after creation
 # (I like to see the values ...).
@@ -118,7 +123,7 @@ build.c:
 	echo "char build_date[] = \"`date`\";"  >  build.c
 	echo "char build_user[] = \"$(USER)\";" >> build.c
 	echo "char build_host[] = \"$(HOST)\";" >> build.c
-	more build.c
+	cat build.c
 
 deps:
 	makedepend $(INCS) *.c
