@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.153  2005/02/24 15:53:47  cg
+ * Removed obsolete code for handling LaC funs.
+ *
  * Revision 3.152  2005/01/14 09:57:50  cg
  * Converted compile time output from Error.h to ctinfo.c
  *
@@ -2821,20 +2824,6 @@ COMPap (node *arg_node, info *arg_info)
 
     /* insert ND_FUN_AP icm at head of assignment chain */
     ret_node = MakeIcm_ND_FUN_AP (arg_node, fundef, ret_node);
-
-    /*
-     * increment FUNDEF_USED counter for external call to special loop fundefs
-     * or some cond special fundef
-     */
-    if (FUNDEF_USED (fundef) != USED_INACTIVE) {
-        if (((FUNDEF_ISDOFUN (fundef))
-             && (INFO_COMP_ASSIGN (arg_info) != FUNDEF_INT_ASSIGN (fundef)))
-            || (FUNDEF_ISCONDFUN (fundef))) {
-            (FUNDEF_USED (fundef))++;
-            DBUG_PRINT ("COMP", ("incrementing FUNDEF_USED: new value = %d",
-                                 FUNDEF_USED (fundef)));
-        }
-    }
 
     DBUG_RETURN (ret_node);
 }
