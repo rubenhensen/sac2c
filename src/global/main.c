@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1994/12/15 16:37:49  asi
+ * Revision 1.12  1994/12/16 14:23:10  sbs
+ * Import inserted
+ *
+ * Revision 1.11  1994/12/15  16:37:49  asi
  * *** empty log message ***
  *
  * Revision 1.10  1994/12/13  11:23:54  hw
@@ -53,19 +56,18 @@
 #include "typecheck.h"
 #include "optimize.h"
 #include "filemgr.h"
+#include "import.h"
 
 #include "scnprs.h"
 #include <stdlib.h>
 #include <string.h>
-
-extern FILE *yyin;
 
 FILE *outfile;
 
 MAIN
 {
     int set_outfile = 0;
-    int breakparse = 0, breakflatten = 0, breaktype = 0;
+    int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0;
     char prgname[256];
     char outfilename[256] = "out.txt";
 
@@ -79,6 +81,10 @@ MAIN
     ARG 'p':
     {
         breakparse = 1;
+    }
+    ARG 'i':
+    {
+        breakimport = 1;
     }
     ARG 'f':
     {
@@ -129,18 +135,22 @@ MAIN
     } else
         outfile = stdout;
 
+    start_token = PARSE_PRG;
     yyparse ();
 
     if (!breakparse) {
-        syntax_tree = Flatten (syntax_tree);
-        if (!breakflatten) {
-            NOTE (("Typechecking: ..."));
-            Typecheck (syntax_tree);
-            NOTE (("%d Warnings, %d Errors \n", warnings, errors));
-            if (!breaktype) {
-                NOTE (("Optimizing: ...\n"));
-                syntax_tree = Optimize (syntax_tree);
-                /*  GenCCode(); */
+        syntax_tree = Import (syntax_tree);
+        if (!breakimport) {
+            syntax_tree = Flatten (syntax_tree);
+            if (!breakflatten) {
+                NOTE (("Typechecking: ..."));
+                Typecheck (syntax_tree);
+                NOTE (("%d Warnings, %d Errors \n", warnings, errors));
+                if (!breaktype) {
+                    NOTE (("Optimizing: ...\n"));
+                    syntax_tree = Optimize (syntax_tree);
+                    /*  GenCCode(); */
+                }
             }
         }
     }
