@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.42  1996/01/17 16:49:21  asi
+# Revision 1.43  1996/02/16 09:37:55  sbs
+# -lm inserted; floor is needed in src/print/convert.c !
+#
+# Revision 1.42  1996/01/17  16:49:21  asi
 # added common subexpression elimination
 #
 # Revision 1.40  1996/01/02  15:37:13  cg
@@ -137,7 +140,7 @@ MAKE=make CC="$(CC)"
 MAKEPROD=make CC="$(CCPROD)"
 LEX=lex
 YACC=yacc -dv
-LIBS=-ly -ll
+LIBS=-ly -ll -lm
 RM=rm -f
 
 LIB=lib/dbug.o /usr/lib/debug/malloc.o /usr/lib/libm.a
