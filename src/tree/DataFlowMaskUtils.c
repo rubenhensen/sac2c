@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2005/02/16 22:29:13  sah
+ * minor change
+ *
  * Revision 3.19  2004/11/30 21:57:31  ktr
  * exxxtreme codebrushing.
  *
@@ -157,6 +160,8 @@ DFMUdfm2Args (dfmask_t *mask, lut_t *lut)
     avis = DFMgetMaskEntryAvisSet (mask);
     while (avis != NULL) {
         args = TBmakeArg (DUPdoDupNode (avis), args);
+
+        DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "AAAHHH");
 
         lut = LUTinsertIntoLutP (lut, avis, ARG_AVIS (args));
 
