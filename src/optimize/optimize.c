@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/02/28 21:06:21  srs
+ * removed DBUG output for WLF
+ *
  * Revision 2.1  1999/02/23 12:41:53  sacbase
  * new release made
  *
@@ -578,7 +581,6 @@ OPTfundef (node *arg_node, node *arg_info)
             goto INFO;
 
         if (opt_wlt) {
-            DBUG_PRINT ("WLF", ("WITHLOOP TRANSFORMATIONS"));
             arg_node = WithloopFoldingWLT (arg_node, arg_info); /* wlt */
             arg_node = GenerateMasks (arg_node, NULL);
         }
@@ -588,7 +590,6 @@ OPTfundef (node *arg_node, node *arg_info)
             goto INFO;
 
         if (opt_wlf) {
-            DBUG_PRINT ("WLF", ("WITHLOOP FOLDING"));
             arg_node = WithloopFolding (arg_node, arg_info); /* wli, wlf */
             /*
              * rebuild mask which is necessary because of WL-body-substitutions
