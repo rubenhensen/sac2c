@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/07/20 07:53:42  cg
+ * Multiple definition of global variable indent removed.
+ *
  * Revision 2.12  1999/06/03 08:43:42  cg
  * The command line option -noTSP / -doTSP is now implemented by
  * patching or completely removing the related wlcomp pragmas right
@@ -315,7 +318,7 @@ extern int linenum;
 extern char *linebuf_ptr;
 extern char yytext[];
 
-int indent, i;
+int i;
 
 node *syntax_tree;
 node *decl_tree;
