@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.23  2000/02/11 16:20:29  jhs
+ * Added St_repfun
+ * /
+ *
  * Revision 2.22  2000/01/21 12:43:18  dkr
  * new statustypes ST_condfun, ST_dofun and ST_whilefun added
  *
@@ -367,7 +371,8 @@ typedef enum {
     ST_spmdfun,            /* function generated from a spmd-region   */
     ST_condfun,            /* function representing an if-else-clause */
     ST_dofun,              /* function representing a do-loop         */
-    ST_whilefun            /* function representing a while-loop      */
+    ST_whilefun,           /* function representing a while-loop      */
+    ST_repfun              /* function replicated for mt-execution    */
 } statustype;
 
 typedef enum { DOLLAR, VECT, IDX } useflag;
