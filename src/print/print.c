@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.89  1995/11/01 09:33:56  cg
+ * Revision 1.90  1995/11/01 16:28:21  cg
+ * bug fixed in writing module/class name as comment in beginning of
+ * C program. Now, macro MODUL_FILETYPE used for distinction.
+ *
+ * Revision 1.89  1995/11/01  09:33:56  cg
  * Bug fixed in PrintArg.
  *
  * Revision 1.88  1995/10/31  08:55:23  cg
@@ -422,12 +426,11 @@ PrintModul (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
-    if (arg_node->info.id != NULL) {
-        if (arg_node->node[4] == NULL)
-            fprintf (outfile, "\n\n/** Module %s : **/\n", arg_node->info.id);
-        else
-            fprintf (outfile, "\n\n/** Class %s : **/\n", arg_node->info.id);
-    }
+    if (MODUL_FILETYPE (arg_node) == F_modimp)
+        fprintf (outfile, "\n\n/** Module %s : **/\n", arg_node->info.id);
+    else if (MODUL_FILETYPE (arg_node) == F_classimp)
+        fprintf (outfile, "\n\n/** Class %s : **/\n", arg_node->info.id);
+
     if (NULL != arg_node->node[0]) {
         fprintf (outfile, "\n");
         Trav (arg_node->node[0], arg_info); /* print import-list */
