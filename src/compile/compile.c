@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.130  2004/08/16 17:47:12  khf
+ * some code brushing done
+ *
  * Revision 3.129  2004/08/13 16:38:37  khf
  * added support for multioperator WLs:
  * - create own offset for every operator (if needed)
@@ -6237,6 +6240,10 @@ MakeIcm_WL_INIT_OFFSET (node *arg_node, node *assigns)
     /* for every ids of wlids (multioperator WL) */
     tmp_ids = wlids;
     withop = NWITH2_WITHOP (wlnode);
+    if (NWITHOP_NEXT (withop) != NULL) {
+        DBUG_ASSERT ((emm), "withloop fusion enabled while emm is disabled!");
+    }
+
     while (tmp_ids != NULL) {
         if (NWITHOP_OFFSET_NEEDED (withop)) {
             assigns = MakeAssignIcm1 ("WL_INIT_OFFSET",
@@ -6269,6 +6276,10 @@ MakeIcm_WL_ADJUST_OFFSET (node *arg_node, node *assigns)
     /* for every ids of wlids (multioperator WL) */
     tmp_ids = wlids;
     withop = NWITH2_WITHOP (wlnode);
+    if (NWITHOP_NEXT (withop) != NULL) {
+        DBUG_ASSERT ((emm), "withloop fusion enabled while emm is disabled!");
+    }
+
     while (tmp_ids != NULL) {
         if (NWITHOP_OFFSET_NEEDED (withop)) {
             assigns = MakeAssignIcm2 ("WL_ADJUST_OFFSET", MakeNum (WLNODE_DIM (arg_node)),
@@ -6310,8 +6321,13 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
 
     DBUG_ENTER ("MakeIcm_WL_SET_OFFSET");
 
+    /* for every ids of wlids (multioperator WL) */
     tmp_ids = wlids;
     withop = NWITH2_WITHOP (wlnode);
+    if (NWITHOP_NEXT (withop) != NULL) {
+        DBUG_ASSERT ((emm), "withloop fusion enabled while emm is disabled!");
+    }
+
     while (tmp_ids != NULL) {
         if (NWITHOP_OFFSET_NEEDED (withop)) {
             dim = WLNODE_DIM (arg_node);
@@ -6449,7 +6465,7 @@ COMPWith2 (node *arg_node, info *arg_info)
     ids *old_wlids;
     node *icm_args;
     ids *vec_ids;
-    char *profile_name;
+    char *profile_name = NULL;
     node *ret_node;
     node *alloc_icms = NULL;
     node *free_icms = NULL;
@@ -6830,7 +6846,7 @@ COMPWith2 (node *arg_node, info *arg_info)
          *******************************************/
 
         /*
-         * build arguments for  'WL_SCHEDULE__BEGIN'-ICM and 'WL_SCHEDULE__END...'-ICM
+         * build arguments for  'WL_SCHEDULE__BEGIN'-ICM and 'WL_SCHEDULE__END'-ICM
          */
 
         icm_args = MakeExprs (MakeNum (NWITH2_DIMS (arg_node)), NULL);
@@ -7443,36 +7459,32 @@ COMPWLgridx (node *arg_node, info *arg_info)
             node *icm_args;
             char *icm_name;
             node *code_rc_icms = NULL;
-            node *cexprs, *cexpr, *def;
-            node *withop;
-            ids *tmp_ids;
+            node *cexpr, *def;
 
-            if (WLGRIDX_CODE (arg_node) == NULL) {
-                /*
-                 * no code found  ->  default value / noop
-                 */
+            if (!emm) {
 
-                /* for every ids of wlids (multioperator WL) */
-                tmp_ids = wlids;
-                withop = NWITH2_WITHOP (wlnode);
-                while (tmp_ids != NULL) {
+                if (WLGRIDX_CODE (arg_node) == NULL) {
+                    /*
+                     * no code found  ->  default value / noop
+                     */
+
                     /*
                      * choose right ICM
                      */
-                    switch (NWITHOP_TYPE (withop)) {
+                    switch (NWITH2_TYPE (wlnode)) {
                     case WO_genarray:
-                        DBUG_ASSERT ((NWITHOP_OFFSET_NEEDED (withop)),
+                        DBUG_ASSERT ((NWITH2_OFFSET_NEEDED (wlnode)),
                                      "wrong value for OFFSET_NEEDED found!");
-                        def = NWITHOP_DEFAULT (withop);
+                        def = NWITH2_DEFAULT (wlnode);
                         if (def != NULL) {
                             DBUG_ASSERT ((NODE_TYPE (def) == N_id),
-                                         "NWITHOP_DEFAULT is no N_id node");
+                                         "NWITH2_DEFAULT is no N_id node");
                             icm_name = "WL_ASSIGN";
                             icm_args
                               = AppendExprs (MakeTypeArgs (ID_NAME (def), ID_TYPE (def),
                                                            FALSE, TRUE, FALSE,
                                                            MakeIcmArgs_WL_OP2 (arg_node,
-                                                                               tmp_ids)),
+                                                                               wlids)),
                                              MakeExprs (MakeId_Copy (
                                                           GenericFun (0, ID_TYPE (def))),
                                                         NULL));
@@ -7481,25 +7493,24 @@ COMPWLgridx (node *arg_node, info *arg_info)
                              * no default value found  ->  fill with 0
                              */
                             icm_name = "WL_ASSIGN__INIT";
-                            icm_args = MakeIcmArgs_WL_OP2 (arg_node, tmp_ids);
+                            icm_args = MakeIcmArgs_WL_OP2 (arg_node, wlids);
                         }
                         break;
 
                     case WO_modarray:
-                        DBUG_ASSERT ((NWITHOP_OFFSET_NEEDED (withop)),
+                        DBUG_ASSERT ((NWITH2_OFFSET_NEEDED (wlnode)),
                                      "wrong value for OFFSET_NEEDED found!");
-                        DBUG_ASSERT ((NODE_TYPE (NWITHOP_ARRAY (withop)) == N_id),
+                        DBUG_ASSERT ((NODE_TYPE (NWITH2_ARRAY (wlnode)) == N_id),
                                      "no N_id node found!");
 
                         icm_name = "WL_ASSIGN__COPY";
                         icm_args
-                          = AppendExprs (MakeExprs (DupId_NT (NWITHOP_ARRAY (withop)),
-                                                    MakeIcmArgs_WL_OP2 (arg_node,
-                                                                        tmp_ids)),
+                          = AppendExprs (MakeExprs (DupId_NT (NWITHOP_ARRAY (wlnode)),
+                                                    MakeIcmArgs_WL_OP2 (arg_node, wlids)),
                                          MakeExprs (MakeId_Copy (
                                                       GenericFun (0,
-                                                                  ID_TYPE (NWITHOP_ARRAY (
-                                                                    withop)))),
+                                                                  ID_TYPE (NWITH2_ARRAY (
+                                                                    wlnode)))),
                                                     NULL));
                         break;
 
@@ -7524,88 +7535,67 @@ COMPWLgridx (node *arg_node, info *arg_info)
                                                                      code_rc_icms));
                     }
 
-                    tmp_ids = IDS_NEXT (tmp_ids);
-                    withop = NWITHOP_NEXT (withop);
-                }
+                } else {
+                    /*
+                     * insert compiled code.
+                     */
+                    cexpr = NWITH2_CEXPR (wlnode);
+                    DBUG_ASSERT ((cexpr != NULL), "no code expr found");
 
-            } else {
-                /*
-                 * insert compiled code.
-                 */
-                cexprs = NCODE_CEXPRS (WLGRIDX_CODE (arg_node));
-                DBUG_ASSERT ((cexprs != NULL), "no code exprs found");
+                    DBUG_ASSERT ((WLGRIDX_CBLOCK (arg_node) != NULL),
+                                 "no code block found in N_Ncode node");
+                    DBUG_ASSERT ((WLGRIDX_CBLOCK_INSTR (arg_node) != NULL),
+                                 "first instruction of block is NULL"
+                                 " (should be a N_empty node)");
 
-                DBUG_ASSERT ((WLGRIDX_CBLOCK (arg_node) != NULL),
-                             "no code block found in N_Ncode node");
-                DBUG_ASSERT ((WLGRIDX_CBLOCK_INSTR (arg_node) != NULL),
-                             "first instruction of block is NULL"
-                             " (should be a N_empty node)");
+                    if (NODE_TYPE (WLGRIDX_CBLOCK_INSTR (arg_node)) != N_empty) {
+                        node_icms = DupTree (WLGRIDX_CBLOCK_INSTR (arg_node));
+                    }
 
-                if (NODE_TYPE (WLGRIDX_CBLOCK_INSTR (arg_node)) != N_empty) {
-                    node_icms = DupTree (WLGRIDX_CBLOCK_INSTR (arg_node));
-                }
-
-                /* for every ids of wlids (multioperator WL) */
-                tmp_ids = wlids;
-                withop = NWITH2_WITHOP (wlnode);
-                while (tmp_ids != NULL) {
-                    cexpr = EXPRS_EXPR (cexprs);
                     /*
                      * choose right ICM
                      */
-                    switch (NWITHOP_TYPE (withop)) {
+                    switch (NWITH2_TYPE (wlnode)) {
                     case WO_genarray:
                         /* here is no break missing! */
                     case WO_modarray:
-                        DBUG_ASSERT ((NWITHOP_OFFSET_NEEDED (withop)),
+                        DBUG_ASSERT ((NWITH2_OFFSET_NEEDED (wlnode)),
                                      "wrong value for OFFSET_NEEDED found!");
                         DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id),
                                      "code expr is not a id");
 
-                        if (!emm) {
-                            icm_name = "WL_ASSIGN";
-                            icm_args
-                              = AppendExprs (MakeTypeArgs (ID_NAME (cexpr),
-                                                           ID_TYPE (cexpr), FALSE, TRUE,
-                                                           FALSE,
-                                                           MakeIcmArgs_WL_OP2 (arg_node,
-                                                                               tmp_ids)),
-                                             MakeExprs (MakeId_Copy (
-                                                          GenericFun (0,
-                                                                      ID_TYPE (cexpr))),
-                                                        NULL));
-                            /*
-                             * we must decrement the RC of 'cexpr' (consumed argument)
-                             */
-                            code_rc_icms = MakeDecRcIcm (ID_NAME (cexpr), ID_TYPE (cexpr),
-                                                         ID_REFCNT (cexpr), 1, NULL);
-                        } else {
-                            icm_name = "WL_INC_OFFSET";
-                            icm_args = MakeExprs (DupIds_Id_NT (tmp_ids),
-                                                  MakeExprs (DupId_NT (cexpr), NULL));
-                            code_rc_icms = NULL;
-                        }
+                        icm_name = "WL_ASSIGN";
+                        icm_args
+                          = AppendExprs (MakeTypeArgs (ID_NAME (cexpr), ID_TYPE (cexpr),
+                                                       FALSE, TRUE, FALSE,
+                                                       MakeIcmArgs_WL_OP2 (arg_node,
+                                                                           wlids)),
+                                         MakeExprs (MakeId_Copy (
+                                                      GenericFun (0, ID_TYPE (cexpr))),
+                                                    NULL));
+                        /*
+                         * we must decrement the RC of 'cexpr' (consumed argument)
+                         */
+                        code_rc_icms = MakeDecRcIcm (ID_NAME (cexpr), ID_TYPE (cexpr),
+                                                     ID_REFCNT (cexpr), 1, NULL);
                         break;
 
                     case WO_foldfun:
                         /* here is no break missing! */
                     case WO_foldprf:
-                        if (NWITHOP_OFFSET_NEEDED (withop)) {
+                        if (NWITH2_OFFSET_NEEDED (wlnode)) {
                             icm_name = "WL_FOLD__OFFSET";
                         } else {
                             icm_name = "WL_FOLD";
                         }
 
-                        icm_args = MakeIcmArgs_WL_OP2 (arg_node, tmp_ids);
+                        icm_args = MakeIcmArgs_WL_OP2 (arg_node, wlids);
 
-                        if (!emm) {
-                            /*
-                             * insert code of the special fold-fun
-                             */
-                            node_icms
-                              = AppendAssign (node_icms,
-                                              GetFoldCode (NWITH2_FUNDEF (wlnode)));
-                        }
+                        /*
+                         * insert code of the special fold-fun
+                         */
+                        node_icms = AppendAssign (node_icms,
+                                                  GetFoldCode (NWITH2_FUNDEF (wlnode)));
 
                         break;
 
@@ -7621,10 +7611,163 @@ COMPWLgridx (node *arg_node, info *arg_info)
                           = AppendAssign (node_icms, MakeAssignIcm1 (icm_name, icm_args,
                                                                      code_rc_icms));
                     }
+                }
+            } else {
+                /* if (emm) */
+                ids *tmp_ids;
+                node *withop;
+                node *cexprs;
 
-                    cexprs = EXPRS_NEXT (cexprs);
-                    tmp_ids = IDS_NEXT (tmp_ids);
-                    withop = NWITHOP_NEXT (withop);
+                if (WLGRIDX_CODE (arg_node) == NULL) {
+                    /*
+                     * no code found  ->  default value / noop
+                     */
+
+                    /* for every ids of wlids (multioperator WL) */
+                    tmp_ids = wlids;
+                    withop = NWITH2_WITHOP (wlnode);
+                    while (tmp_ids != NULL) {
+                        /*
+                         * choose right ICM
+                         */
+                        switch (NWITHOP_TYPE (withop)) {
+                        case WO_genarray:
+                            DBUG_ASSERT ((NWITHOP_OFFSET_NEEDED (withop)),
+                                         "wrong value for OFFSET_NEEDED found!");
+                            def = NWITHOP_DEFAULT (withop);
+                            if (def != NULL) {
+                                DBUG_ASSERT ((NODE_TYPE (def) == N_id),
+                                             "NWITHOP_DEFAULT is no N_id node");
+                                icm_name = "WL_ASSIGN";
+                                icm_args = AppendExprs (
+                                  MakeTypeArgs (ID_NAME (def), ID_TYPE (def), FALSE, TRUE,
+                                                FALSE,
+                                                MakeIcmArgs_WL_OP2 (arg_node, tmp_ids)),
+                                  MakeExprs (MakeId_Copy (GenericFun (0, ID_TYPE (def))),
+                                             NULL));
+                            } else {
+                                /*
+                                 * no default value found  ->  fill with 0
+                                 */
+                                icm_name = "WL_ASSIGN__INIT";
+                                icm_args = MakeIcmArgs_WL_OP2 (arg_node, tmp_ids);
+                            }
+                            break;
+
+                        case WO_modarray:
+                            DBUG_ASSERT ((NWITHOP_OFFSET_NEEDED (withop)),
+                                         "wrong value for OFFSET_NEEDED found!");
+                            DBUG_ASSERT ((NODE_TYPE (NWITHOP_ARRAY (withop)) == N_id),
+                                         "no N_id node found!");
+
+                            icm_name = "WL_ASSIGN__COPY";
+                            icm_args
+                              = AppendExprs (MakeExprs (DupId_NT (NWITHOP_ARRAY (withop)),
+                                                        MakeIcmArgs_WL_OP2 (arg_node,
+                                                                            tmp_ids)),
+                                             MakeExprs (MakeId_Copy (
+                                                          GenericFun (0, ID_TYPE (
+                                                                           NWITHOP_ARRAY (
+                                                                             withop)))),
+                                                        NULL));
+                            break;
+
+                        case WO_foldfun:
+                            /* here is no break missing! */
+                        case WO_foldprf:
+                            DBUG_ASSERT ((0), "illegal NOOP value found!");
+                            icm_name = NULL;
+                            icm_args = NULL;
+                            break;
+
+                        default:
+                            DBUG_ASSERT ((0), "illegal withop type found!");
+                            icm_name = NULL;
+                            icm_args = NULL;
+                            break;
+                        }
+
+                        if (icm_name != NULL) {
+                            node_icms = AppendAssign (node_icms,
+                                                      MakeAssignIcm1 (icm_name, icm_args,
+                                                                      code_rc_icms));
+                        }
+
+                        tmp_ids = IDS_NEXT (tmp_ids);
+                        withop = NWITHOP_NEXT (withop);
+                    }
+
+                } else {
+                    /*
+                     * insert compiled code.
+                     */
+                    cexprs = NCODE_CEXPRS (WLGRIDX_CODE (arg_node));
+                    DBUG_ASSERT ((cexprs != NULL), "no code exprs found");
+
+                    DBUG_ASSERT ((WLGRIDX_CBLOCK (arg_node) != NULL),
+                                 "no code block found in N_Ncode node");
+                    DBUG_ASSERT ((WLGRIDX_CBLOCK_INSTR (arg_node) != NULL),
+                                 "first instruction of block is NULL"
+                                 " (should be a N_empty node)");
+
+                    if (NODE_TYPE (WLGRIDX_CBLOCK_INSTR (arg_node)) != N_empty) {
+                        node_icms = DupTree (WLGRIDX_CBLOCK_INSTR (arg_node));
+                    }
+
+                    /* for every ids of wlids (multioperator WL) */
+                    tmp_ids = wlids;
+                    withop = NWITH2_WITHOP (wlnode);
+                    while (tmp_ids != NULL) {
+                        cexpr = EXPRS_EXPR (cexprs);
+                        /*
+                         * choose right ICM
+                         */
+                        switch (NWITHOP_TYPE (withop)) {
+                        case WO_genarray:
+                            /* here is no break missing! */
+                        case WO_modarray:
+                            DBUG_ASSERT ((NWITHOP_OFFSET_NEEDED (withop)),
+                                         "wrong value for OFFSET_NEEDED found!");
+                            DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id),
+                                         "code expr is not a id");
+
+                            icm_name = "WL_INC_OFFSET";
+                            icm_args = MakeExprs (DupIds_Id_NT (tmp_ids),
+                                                  MakeExprs (DupId_NT (cexpr), NULL));
+                            code_rc_icms = NULL;
+
+                            break;
+
+                        case WO_foldfun:
+                            /* here is no break missing! */
+                        case WO_foldprf:
+                            if (NWITHOP_OFFSET_NEEDED (withop)) {
+                                icm_name = "WL_FOLD__OFFSET";
+                            } else {
+                                icm_name = "WL_FOLD";
+                            }
+
+                            icm_args = MakeIcmArgs_WL_OP2 (arg_node, tmp_ids);
+
+                            break;
+
+                        default:
+                            DBUG_ASSERT ((0), "illegal withop type found");
+                            icm_name = NULL;
+                            icm_args = NULL;
+                            break;
+                        }
+
+                        if (icm_name != NULL) {
+                            node_icms = AppendAssign (node_icms,
+                                                      MakeAssignIcm1 (icm_name, icm_args,
+                                                                      code_rc_icms));
+                        }
+
+                        cexprs = EXPRS_NEXT (cexprs);
+                        tmp_ids = IDS_NEXT (tmp_ids);
+                        withop = NWITHOP_NEXT (withop);
+                    }
                 }
             }
         }
