@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2001/12/13 11:49:08  dkr
+ * some more functions removed
+ *
  * Revision 1.2  2001/12/13 11:12:06  dkr
  * some functions removed
  *
@@ -11,6 +14,10 @@
 
 #ifndef _sac_compile_tagged_h
 #define _sac_compile_tagged_h
+
+#if 0
+extern node *GetFoldCode( node *fundef);
+#endif
 
 extern node *Compile_Tagged (node *arg_node);
 
@@ -47,11 +54,5 @@ extern node *COMP2St (node *arg_node, node *arg_info);
 extern node *COMP2MTsignal (node *arg_node, node *arg_info);
 extern node *COMP2MTalloc (node *arg_node, node *arg_info);
 extern node *COMP2MTsync (node *arg_node, node *arg_info);
-
-#if 0
-extern char *GenericFun( int which, types *type);
-extern node *GetFoldCode( node *fundef);
-extern node *GetFoldVardecs( node *fundef);
-#endif
 
 #endif /* _sac_compile_tagged_h */

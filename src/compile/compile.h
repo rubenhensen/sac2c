@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/12/13 11:49:14  dkr
+ * some more functions removed
+ *
  * Revision 3.10  2001/12/13 11:12:15  dkr
  * some functions removed
  *
@@ -67,6 +70,8 @@
 #ifndef _sac_compile_h
 #define _sac_compile_h
 
+extern node *GetFoldCode (node *fundef);
+
 extern node *Compile (node *arg_node);
 
 extern node *COMPModul (node *arg_node, node *arg_info);
@@ -102,9 +107,5 @@ extern node *COMPSt (node *arg_node, node *arg_info);
 extern node *COMPMTsignal (node *arg_node, node *arg_info);
 extern node *COMPMTalloc (node *arg_node, node *arg_info);
 extern node *COMPMTsync (node *arg_node, node *arg_info);
-
-extern char *GenericFun (int which, types *type);
-extern node *GetFoldCode (node *fundef);
-extern node *GetFoldVardecs (node *fundef);
 
 #endif /* _sac_compile_h */
