@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2004/11/27 02:11:57  jhb
+ * fixed bug with header and c-file functions-declaration
+ *
  * Revision 1.27  2004/11/25 17:52:55  sbs
  * compiles
  *
@@ -834,11 +837,11 @@ CWCfold (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-CreateWrapperCode (node *ast)
+CWCdoCreateWrapperCode (node *ast)
 {
     info *info_node;
 
-    DBUG_ENTER ("CreateWrapperCode");
+    DBUG_ENTER ("CWCdoCreateWrapperCode");
 
     TRAVpush (TR_cwc);
 
