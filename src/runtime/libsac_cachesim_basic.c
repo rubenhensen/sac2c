@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.8  1999/05/06 14:05:45  her
+ * eliminated THE segmentation fault caused by pde1-64
+ *
  * Revision 2.7  1999/04/26 11:55:34  her
  * modifications for the piped-cachesimulation
  *
@@ -597,7 +600,7 @@ RegisterArray (void *baseaddress, int size /* in byte */)
       ,
         error_msg_done = 0 /* to avoid more than one errormessage */;
     tCacheLevel *cl; /* pointer to the actual CacheLevel */
-    ;
+    ULINT aligned_baseaddr;
 
     for (level = 1; level <= MAX_CACHELEVEL; level++) {
         cl = SAC_CS_cachelevel[level];
@@ -614,18 +617,21 @@ RegisterArray (void *baseaddress, int size /* in byte */)
                 /* nr_blocks is only correct if baseaddress is aligned to the
                  * blocksize, but if not...
                  */
+
+                aligned_baseaddr = (ULINT)baseaddress & cl->cls_mask;
                 if (((ULINT)baseaddress % cl->cachelinesize)
-                    > (cl->cachelinesize
-                       - (((ULINT)baseaddress + size - 1) % cl->cachelinesize) - 1)) {
+                    > (cl->cachelinesize - 1
+                       - ((aligned_baseaddr + size - 1) % cl->cachelinesize))) {
                     nr_blocks++;
                 }
+
                 cl->shadowbases[i] = (ULINT)baseaddress;
                 cl->shadowalignedtop[i] = ((ULINT)baseaddress + size - 1) & cl->cls_mask;
                 cl->shadowmaxindices[i] = ((nr_blocks + 1) / 2) - 1;
                 cl->shadownrcols[i]
                   = (nr_blocks + (cl->nr_cachelines - 1)) / cl->nr_cachelines;
                 cl->shadowarrays[i]
-                  = (char *)calloc ((cl->nr_cachelines * cl->shadownrcols[i]) / 2,
+                  = (char *)calloc (((cl->nr_cachelines * cl->shadownrcols[i]) + 1) / 2,
                                     sizeof (char));
                 /* already initiated by 0 */
 
