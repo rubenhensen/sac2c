@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.58  1997/11/24 15:43:39  srs
+# NEWTREE is now defined by default.
+# removed duplicate __EXTENSIONS__
+#
 # Revision 1.57  1997/11/20 15:11:50  dkr
 # changed the path to Old2NewWith.o
 #
@@ -193,7 +197,7 @@ cc_FLAGS  := -xsb
 
 CCFLAGS :=$($(CC)_FLAGS) -g
 
-override CFLAGS +=-D__EXTENSIONS__
+override CFLAGS :=-D__EXTENSIONS__ -DNEWTREE $(CFLAGS)
 
 CCPROD       :=gcc
 
@@ -201,7 +205,7 @@ gcc_PROD_FLAGS := -ansi -Wall -pedantic -O3
 cc_PROD_FLAGS  := 
 
 CCPROD_FLAGS := $($(CC)_PROD_FLAGS)
-CPROD_FLAGS  :=-DDBUG_OFF -D__EXTENSIONS__ $(CFLAGS)
+CPROD_FLAGS  :=-DDBUG_OFF $(CFLAGS)
 
 MAKE         :=$(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)"
 MAKEPROD     :=$(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)"
