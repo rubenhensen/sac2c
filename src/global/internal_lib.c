@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2004/10/05 13:48:50  sah
+ * added some more funtabs to TmpVar in
+ * NEW_AST mode
+ *
  * Revision 3.55  2004/09/29 16:42:33  sbs
  * fixed a memory leak in StrBufprint
  *
@@ -1179,24 +1183,82 @@ PrefixForTmpVar (void)
         s = "flat";
     } else if (act_tab == print_tab) {
         s = "prt";
-    } else if (act_tab == ntc_tab) {
-        s = "ntc";
     } else if (act_tab == free_tab) {
         s = "free";
+    } else if (act_tab == comp_tab) {
+        s = "comp";
     } else if (act_tab == dup_tab) {
         s = "dup";
+    } else if (act_tab == inline_tab) {
+        s = "inl";
+    } else if (act_tab == idx_tab) {
+        s = "idx";
+    } else if (act_tab == ae_tab) {
+        s = "ae";
+    } else if (act_tab == obj_tab) {
+        s = "obj";
+    } else if (act_tab == objinit_tab) {
+        s = "obji";
+    } else if (act_tab == unique_tab) {
+        s = "uniq";
+    } else if (act_tab == precomp1_tab) {
+        s = "pcomp1";
+    } else if (act_tab == precomp2_tab) {
+        s = "pcomp2";
+    } else if (act_tab == precomp3_tab) {
+        s = "pcomp3";
+    } else if (act_tab == dfr_tab) {
+        s = "dfr";
+    } else if (act_tab == patchwith_tab) {
+        s = "pw";
     } else if (act_tab == fun2lac_tab) {
         s = "f2l";
+    } else if (act_tab == ai_tab) {
+        s = "ai";
+    } else if (act_tab == apc_tab) {
+        s = "apc";
+    } else if (act_tab == apt_tab) {
+        s = "apt";
     } else if (act_tab == ssafrm_tab) {
         s = "ssa";
     } else if (act_tab == undossa_tab) {
         s = "ussa";
+    } else if (act_tab == ssacf_tab) {
+        s = "cf";
+    } else if (act_tab == ssalir_tab) {
+        s = "lir";
+    } else if (act_tab == lirmov_tab) {
+        s = "lir";
+    } else if (act_tab == ssawlt_tab) {
+        s = "wlt";
+    } else if (act_tab == ssawli_tab) {
+        s = "wli";
+    } else if (act_tab == ssawlf_tab) {
+        s = "wlf";
+    } else if (act_tab == wls_tab) {
+        s = "wls";
     } else if (act_tab == hd_tab) {
         s = "hd";
     } else if (act_tab == cwc_tab) {
         s = "cwc";
+    } else if (act_tab == ntc_tab) {
+        s = "ntc";
+    } else if (act_tab == al_tab) {
+        s = "al";
     } else if (act_tab == nt2ot_tab) {
         s = "nt2ot";
+    } else if (act_tab == esd_tab) {
+        s = "esd";
+    } else if (act_tab == sp_tab) {
+        s = "sp";
+    } else if (act_tab == wlpg_tab) {
+        s = "wlpg";
+    } else if (act_tab == wlfs_tab) {
+        s = "wlfs";
+    } else if (act_tab == emalloc_tab) {
+        s = "emal";
+    } else if (act_tab == ea_tab) {
+        s = "ea";
     } else if (act_tab == set_tab) {
         s = "set";
     } else
