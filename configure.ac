@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.17  2003/03/26 16:34:02  sah
+dnl added mkdtemp test
+dnl
 dnl Revision 1.16  2003/03/26 09:18:30  sbs
 dnl -pthread option added for DEC cc.
 dnl
@@ -157,6 +160,9 @@ AC_PROG_LEX()
 
 dnl search for malloc.h
 AC_CHECK_HEADERS(malloc.h)
+
+dnl check for mkdtemp
+AC_CHECK_FUNCS(mkdtemp)
 
 dnl search for pthread.h
 AC_CHECK_HEADER(pthread.h,[
