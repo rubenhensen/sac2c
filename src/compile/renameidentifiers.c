@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/29 15:03:57  sah
+ * made it more obust wrt missing old types.
+ *
  * Revision 1.5  2004/11/27 02:31:00  jhb
  * maybe fixed the multiple FreeInfo definition
  *
@@ -504,7 +507,9 @@ RIDfundef (node *arg_node, info *arg_info)
 
     arg_node = RenameFun (arg_node);
 
-    FUNDEF_TYPES (arg_node) = RenameTypes (FUNDEF_TYPES (arg_node));
+    if (FUNDEF_TYPES (arg_node) != NULL) {
+        FUNDEF_TYPES (arg_node) = RenameTypes (FUNDEF_TYPES (arg_node));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -529,7 +534,10 @@ RIDarg (node *arg_node, info *arg_info)
      * is lateron used when renaming the function
      */
     ARG_TYPESTRING (arg_node) = TYtype2String (ARG_NTYPE (arg_node), FALSE, 0);
-    ARG_TYPE (arg_node) = RenameTypes (ARG_TYPE (arg_node));
+
+    if (ARG_TYPE (arg_node) != NULL) {
+        ARG_TYPE (arg_node) = RenameTypes (ARG_TYPE (arg_node));
+    }
 
     if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
@@ -553,7 +561,9 @@ RIDvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RIDvardec");
 
-    VARDEC_TYPE (arg_node) = RenameTypes (VARDEC_TYPE (arg_node));
+    if (VARDEC_TYPE (arg_node) != NULL) {
+        VARDEC_TYPE (arg_node) = RenameTypes (VARDEC_TYPE (arg_node));
+    }
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
@@ -651,7 +661,9 @@ RIDarray (node *arg_node, info *arg_info)
         ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
     }
 
-    ARRAY_TYPE (arg_node) = RenameTypes (ARRAY_TYPE (arg_node));
+    if (ARRAY_TYPE (arg_node) != NULL) {
+        ARRAY_TYPE (arg_node) = RenameTypes (ARRAY_TYPE (arg_node));
+    }
 
     DBUG_RETURN (arg_node);
 }
