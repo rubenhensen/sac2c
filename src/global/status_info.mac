@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/07/10 14:19:49  cg
+ * Added new status entry ST_crettype to tag actual return types
+ * of compiled C functions.
+ *
  * Revision 1.4  2000/03/30 15:12:14  jhs
  * Changed St_call_mt to St_call_mt_master
  * Added ST_call_mt_worker
@@ -127,7 +131,10 @@ SELECT (ST_regular, "ST_regular",
           /* default flag, used during inferation    */),
 
   SELECT (ST_call_mtlift, "ST_call_mtlift",
-          /* lifted from N_mt                        */)
+          /* lifted from N_mt                        */),
+
+  SELECT (ST_crettype, "ST_crettype",
+          /* real return type of compiled C function */)
 
 #undef SELECT
 
