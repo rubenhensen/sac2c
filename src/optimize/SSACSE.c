@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.35  2004/03/05 19:14:27  mwe
+ * representation of conditional changed
+ * using N_funcond node instead of phi
+ *
  * Revision 1.34  2004/03/02 17:26:32  mwe
  * constant propagation deactivated
  *
@@ -730,16 +734,16 @@ SSACSEPropagateReturn2Results (node *ap_fundef, ids *ids_chain)
              */
 
             if ((AVIS_SUBST (IDS_AVIS (act_result)) == NULL)
-                && (NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (
-                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (act_exprs))))))))
+                && (NODE_TYPE (EXPRS_EXPR (FUNCOND_ELSE (
+                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (act_exprs)))))))
                     == N_id)
-                && (NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (ASSIGN_RHS (
-                      AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (search_exprs))))))))
+                && (NODE_TYPE (EXPRS_EXPR (FUNCOND_ELSE (
+                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (search_exprs)))))))
                     == N_id)
-                && (ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (
-                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (act_exprs))))))))
-                    == ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (ASSIGN_RHS (
-                         AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (search_exprs)))))))))) {
+                && (ID_AVIS (EXPRS_EXPR (FUNCOND_ELSE (
+                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (act_exprs)))))))
+                    == ID_AVIS (EXPRS_EXPR (FUNCOND_ELSE (ASSIGN_RHS (
+                         AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (search_exprs))))))))) {
                 /* stop further searching */
                 found_match = TRUE;
                 AVIS_SUBST (IDS_AVIS (act_result)) = IDS_AVIS (search_result);
@@ -786,12 +790,12 @@ GetResultArgAvis (node *id, condpart cp)
 
         defassign = AVIS_SSAASSIGN (ID_AVIS (id));
 
-        defassign = PRF_ARGS (ASSIGN_RHS (defassign));
+        defassign = (ASSIGN_RHS (defassign));
 
         if (cp == THENPART) {
-            defassign = EXPRS_EXPR (defassign);
+            defassign = EXPRS_EXPR (FUNCOND_THEN (defassign));
         } else {
-            defassign = EXPRS_EXPR (EXPRS_NEXT (defassign));
+            defassign = EXPRS_EXPR (FUNCOND_ELSE (defassign));
         }
 
         /* check if id is defined as arg */

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2004/03/05 19:14:27  mwe
+ * representation of conditional changed
+ * using N_funcond node instead of phi
+ *
  * Revision 3.45  2004/03/02 16:48:25  mwe
  * OPT_CVP added
  *
@@ -463,7 +467,10 @@ unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_M
                         & (~OPT_APL) & (~OPT_DL) & (~OPT_BLIR) & (~OPT_SP) & (~OPT_WLFS)
                         & (~OPT_CVP);
 #else /* PRODUCTION */
-unsigned int optimize = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL)
+/* as long as OPT_SBE is shared with OPT_CVP OPT_SBE should be not used here
+ * to allow to work with OPT_CVP
+ */
+unsigned int optimize = OPT_ALL & (~OPT_MTO) /*& (~OPT_SBE)*/ & (~OPT_MTI) & (~OPT_APL)
                         & (~OPT_BLIR) & (~OPT_WLFS);
 
 #endif /* PRODUCTION */

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.4  2004/03/05 19:14:27  mwe
+ * representation of conditional changed
+ * using N_funcond node instead of phi
+ *
  * Revision 1.3  2004/02/25 08:22:32  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -438,8 +442,11 @@ SSAInsertCopyAssignments (node *condassign, node *avis, node *arg_info)
     /* create let assign with prf_phi for then and else part */
     assign_let = MakeAssignLet (StringCopy (VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (avis))),
                                 AVIS_VARDECORARG (avis),
-                                MakePrf (F_phi, MakeExprs (right_id1,
-                                                           MakeExprs (right_id2, NULL))));
+                                MakeFuncond (MakeExprs (DupTree (COND_COND (
+                                                          INFO_SSA_CONDSTMT (arg_info))),
+                                                        NULL),
+                                             MakeExprs (right_id1, NULL),
+                                             MakeExprs (right_id2, NULL)));
 
     /* redefinition requieres new target variable (standard ssa mechanism) */
     LET_IDS (ASSIGN_INSTR (assign_let))
@@ -527,6 +534,8 @@ SSAfundef (node *arg_node, node *arg_info)
     /*
      * process only fundefs with body
      */
+
+    INFO_SSA_PHIASSIGN (arg_info) = INFO_SSA_LASTPHIASSIGN (arg_info) = NULL;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* stores access points for later insertions in this fundef */

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.54  2004/03/05 19:14:27  mwe
+ * representation of conditional changed
+ * using N_funcond node instead of phi
+ *
  * Revision 1.53  2004/03/02 09:17:07  khf
  * setting of AVIS_SSACONST in SSACFlet modified
  *
@@ -1497,31 +1501,41 @@ RemovePhiCopyTargetAttributes (bool thenpart, node *arg_info)
 
     DBUG_ENTER ("RemovePhiCopyTargetAttributes");
 
-    /* pointer to first assign node behind conditional */
-    phifun = ASSIGN_NEXT (INFO_SSACF_ASSIGN (arg_info));
+    /* pointer to first assign node behind conditional N_cond */
 
-    /* update all phi functions */
-    while (NODE_TYPE (ASSIGN_INSTR (phifun)) != N_return) {
+    if (NODE_TYPE (ASSIGN_INSTR (INFO_SSACF_ASSIGN (arg_info))) == N_cond) {
+        phifun = ASSIGN_NEXT (INFO_SSACF_ASSIGN (arg_info));
+    } else if (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (INFO_SSACF_ASSIGN (arg_info))))
+               == N_funcond) {
+        phifun = INFO_SSACF_ASSIGN (arg_info);
+    } else {
+        phifun = NULL;
+    }
 
-        tmp = ASSIGN_INSTR (phifun);
-        del = LET_EXPR (tmp);
+    if (phifun != NULL) {
+        /* update all phi functions */
+        while (NODE_TYPE (ASSIGN_INSTR (phifun)) != N_return) {
 
-        if (thenpart) {
-            /* append then argument to assignment */
-            LET_EXPR (tmp) = EXPRS_EXPR (PRF_ARGS (LET_EXPR (tmp)));
-            EXPRS_EXPR (PRF_ARGS (del)) = NULL;
+            tmp = ASSIGN_INSTR (phifun);
+            del = LET_EXPR (tmp);
 
-        } else {
-            /* append else argument to assignment */
-            LET_EXPR (tmp) = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (tmp))));
-            EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (del))) = NULL;
+            if (thenpart) {
+                /* append then argument to assignment */
+                LET_EXPR (tmp) = EXPRS_EXPR (FUNCOND_THEN (LET_EXPR (tmp)));
+                EXPRS_EXPR (FUNCOND_THEN (del)) = NULL;
+
+            } else {
+                /* append else argument to assignment */
+                LET_EXPR (tmp) = EXPRS_EXPR (FUNCOND_ELSE (LET_EXPR (tmp)));
+                EXPRS_EXPR (FUNCOND_ELSE (del)) = NULL;
+            }
+
+            /* delete obsolete argument */
+            FreeTree (del);
+
+            /* next assignment node */
+            phifun = ASSIGN_NEXT (phifun);
         }
-
-        /* delete obsolete argument */
-        FreeTree (del);
-
-        /* next assignment node */
-        phifun = ASSIGN_NEXT (phifun);
     }
 
     DBUG_RETURN (arg_info);
@@ -1681,6 +1695,50 @@ SSACFassign (node *arg_node, node *arg_info)
         tmp = FreeNode (tmp);
     }
 
+    DBUG_RETURN (arg_node);
+}
+
+/***********************************************************************
+ *
+ *  function:
+ *    node *SSACFfuncond(node *arg_node, node* arg_info)
+ *
+ *  description:
+ *    Check if the conditional predicate is constant.
+ *    If it is constant, than resolve all funcond nodes according
+ *    to the predicate and set the inline flag.
+ *
+ **********************************************************************/
+
+node *
+SSACFfuncond (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("SSACFfuncond");
+
+    DBUG_ASSERT ((FUNCOND_IF (arg_node) != NULL), "missing condition in conditional");
+    DBUG_ASSERT ((FUNCOND_THEN (arg_node) != NULL), "missing then part in conditional");
+    DBUG_ASSERT ((FUNCOND_ELSE (arg_node) != NULL), "missing else part in conditional");
+
+    /*
+     * traverse condition to analyse for constant expression
+     * and substitute constants with their values to get
+     * a simple N_bool node for the condition (if constant)
+     */
+    INFO_SSACF_INSCONST (arg_info) = SUBST_SCALAR;
+    EXPRS_EXPR (FUNCOND_IF (arg_node))
+      = Trav (EXPRS_EXPR (FUNCOND_IF (arg_node)), arg_info);
+    INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
+
+    /* check for constant condition */
+    if (NODE_TYPE (EXPRS_EXPR (FUNCOND_IF (arg_node))) == N_bool) {
+
+        INFO_SSACF_POSTASSIGN (arg_info) = NULL;
+        /* ex special function can be simply inlined in calling context */
+        INFO_SSACF_INLFUNDEF (arg_info) = TRUE;
+        /*FUNDEF_VARDEC(INFO_SSACF_FUNDEF(arg_info))*/
+        arg_info
+          = RemovePhiCopyTargetAttributes (BOOL_VAL (COND_COND (arg_node)), arg_info);
+    }
     DBUG_RETURN (arg_node);
 }
 

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2004/03/05 19:14:27  mwe
+ * representation of conditional changed
+ * using N_funcond node instead of phi
+ *
  * Revision 1.30  2004/02/06 14:19:33  mwe
  * remove usage of PHIASSIGN and ASSIGN2
  * implement usage of primitive phi function instead
@@ -473,7 +477,8 @@ CreateNewResult (node *avis, node *arg_info)
     /* create one let assign for then part */
     assign_let
       = MakeAssignLet (StringCopy (VARDEC_OR_ARG_NAME (new_pct_vardec)), new_pct_vardec,
-                       MakePrf (F_phi, MakeExprs (right_id, NULL)));
+                       MakeFuncond (MakeExprs (DupTree (COND_COND (cond)), NULL),
+                                    MakeExprs (right_id, NULL), NULL));
 
     AVIS_SSAASSIGN (VARDEC_AVIS (new_pct_vardec)) = assign_let;
 
@@ -484,7 +489,7 @@ CreateNewResult (node *avis, node *arg_info)
     ID_AVIS (right_id) = avis;
 
     /* create one exprs for else part */
-    EXPRS_NEXT (PRF_ARGS (ASSIGN_RHS (assign_let))) = MakeExprs (right_id, NULL);
+    FUNCOND_ELSE (ASSIGN_RHS (assign_let)) = MakeExprs (right_id, NULL);
 
     /* append new phi function behind cond block */
     ASSIGN_NEXT (assign_let) = ASSIGN_NEXT (tmp);
@@ -1327,8 +1332,7 @@ SSALIRid (node *arg_node, node *arg_info)
 
     case SSALIR_INRETURN:
         if (isPhiFun (arg_node)) {
-            DBUG_ASSERT ((EXPRS_NEXT (
-                            PRF_ARGS (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (arg_node)))))
+            DBUG_ASSERT ((FUNCOND_ELSE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (arg_node))))
                           != NULL),
                          "missing definition assignment in else part");
 
@@ -1336,15 +1340,15 @@ SSALIRid (node *arg_node, node *arg_info)
                           == N_let),
                          "non let assignment node");
 
-            if ((NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (
-                   PRF_ARGS (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (arg_node)))))))
+            if ((NODE_TYPE (EXPRS_EXPR (
+                   FUNCOND_ELSE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (arg_node))))))
                  == N_id)) {
                 /*
                  * this is the identifier in the loop, that is returned via the
                  * ssa-phicopy assignment
                  */
-                id = EXPRS_EXPR (EXPRS_NEXT (
-                  PRF_ARGS (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (arg_node))))));
+                id = EXPRS_EXPR (
+                  FUNCOND_ELSE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (arg_node)))));
 
                 /*
                  * look for the corresponding result ids in the let_node of

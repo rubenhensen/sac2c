@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2004/03/05 19:14:27  mwe
+ * representation of conditional changed
+ * using N_funcond node instead of phi
+ *
  * Revision 1.19  2004/02/06 14:19:33  mwe
  * remove usage of PHIASSIGN and ASSIGN2
  * implement usage of primitive phi function instead
@@ -174,9 +178,9 @@ SSADCRCondIsEmpty (node *cond)
     }
 
     /* else part */
-    if (COND_THEN (cond) != NULL) {
-        if (BLOCK_INSTR (COND_THEN (cond)) != NULL) {
-            if (NODE_TYPE (BLOCK_INSTR (COND_THEN (cond))) != N_empty) {
+    if (COND_ELSE (cond) != NULL) {
+        if (BLOCK_INSTR (COND_ELSE (cond)) != NULL) {
+            if (NODE_TYPE (BLOCK_INSTR (COND_ELSE (cond))) != N_empty) {
                 result = FALSE;
             }
         }
@@ -536,7 +540,7 @@ SSADCRcond (node *arg_node, node *arg_info)
         COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
     }
 
-    if ((SSADCRCondIsEmpty (arg_node)) && (COND_COND (arg_node) == NULL)) {
+    if ((SSADCRCondIsEmpty (arg_node)) /*&& (COND_COND(arg_node) == NULL)*/) {
         /* remove whole conditional */
 
         arg_node = FreeNode (arg_node);

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.4  2004/03/05 19:14:27  mwe
+ * representation of conditional changed
+ * using N_funcond node instead of phi
+ *
  * Revision 1.3  2004/02/09 15:23:53  mwe
  * PHIT_NONE assignments for PHITARGET added
  *
@@ -169,7 +173,7 @@ static ids *USSAids (ids *arg_ids, node *arg_info);
 static void USSAInitAvisFlags (node *fundef);
 static node *USSARemoveUnusedVardecs (node *vardecs);
 
-static node *condTransform (node *arg_node, node *arg_info);
+static node *CondTransform (node *arg_node, node *arg_info);
 
 /******************************************************************************
  *
@@ -711,7 +715,7 @@ node *
 USSAfundef (node *arg_node, node *arg_info)
 {
 
-    node *block, *assign;
+    node *block, *assign, *cond;
     DBUG_ENTER ("USSAfundef");
 
     /* pre-traversal to find all cond nodes */
@@ -724,10 +728,19 @@ USSAfundef (node *arg_node, node *arg_info)
         block = FUNDEF_BODY (arg_node);
         if (block != NULL) {
             assign = BLOCK_INSTR (block);
+            if ((assign != NULL)
+                && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assign))) == N_funcond)) {
+                /* condition function without N_cond node found */
+                cond = MakeCond (DupTree (EXPRS_EXPR (
+                                   FUNCOND_IF (LET_EXPR (ASSIGN_INSTR (assign))))),
+                                 NULL, NULL);
+                assign = MakeAssign (cond, assign);
+                BLOCK_INSTR (block) = assign;
+            }
             while (assign != NULL) {
                 if (NODE_TYPE (ASSIGN_INSTR (assign)) == N_cond) {
                     INFO_USSA_PHIFUN (arg_info) = assign;
-                    condTransform (ASSIGN_INSTR (assign), arg_info);
+                    CondTransform (ASSIGN_INSTR (assign), arg_info);
                 } else if ((NODE_TYPE (ASSIGN_INSTR (assign)) == N_let)
                            && (LET_IDS (ASSIGN_INSTR (assign)) != NULL)
                            && (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign))) != NULL)) {
@@ -880,7 +893,7 @@ USSAassign (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *USSAcond(node *arg_node, node* arg_info)
+ *   node *CondTransform(node *arg_node, node* arg_info)
  *
  * description:
  *   This method is executed at the begining of the traversal for each
@@ -910,15 +923,15 @@ USSAassign (node *arg_node, node *arg_info)
  *
  ****************************************************************************/
 static node *
-condTransform (node *arg_node, node *arg_info)
+CondTransform (node *arg_node, node *arg_info)
 {
 
     node *then_node, *else_node;
-    node *phifun, *old_assign, *then_assign, *else_assign, *old_prf;
+    node *phifun, *old_assign, *then_assign, *else_assign, *old_cond;
     ids *left_ids;
     node *return_node;
 
-    DBUG_ENTER ("USSAcond");
+    DBUG_ENTER ("CondTransform");
 
     /* traverse to last assignment in then block*/
     then_node = BLOCK_INSTR (COND_THEN (arg_node));
@@ -956,27 +969,27 @@ condTransform (node *arg_node, node *arg_info)
         /* pointer to ids */
         left_ids = LET_IDS (ASSIGN_INSTR (old_assign));
 
-        /* separate prf subtree from assignment */
-        old_prf = LET_EXPR (ASSIGN_INSTR (old_assign));
+        /* separate funcond subtree from assignment */
+        old_cond = LET_EXPR (ASSIGN_INSTR (old_assign));
         LET_EXPR (ASSIGN_INSTR (old_assign)) = NULL;
 
         /* reuse original phi-function assign node for then block */
         then_assign = old_assign;
 
         /* create let assign for else part with same left side as then part
-           (right side from old prf subtree) */
+           (right side from old funcond subtree) */
         else_assign = MakeAssignLet (StringCopy (VARDEC_OR_ARG_NAME (
                                        AVIS_VARDECORARG (IDS_AVIS (left_ids)))),
                                      AVIS_VARDECORARG (IDS_AVIS (left_ids)),
-                                     EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (old_prf))));
+                                     EXPRS_EXPR (FUNCOND_ELSE (old_cond)));
 
-        /* add correct id node from prf subtree to assignment for then block */
-        LET_EXPR (ASSIGN_INSTR (then_assign)) = EXPRS_EXPR (PRF_ARGS (old_prf));
+        /* add correct id node from funcond subtree to assignment for then block */
+        LET_EXPR (ASSIGN_INSTR (then_assign)) = EXPRS_EXPR (FUNCOND_THEN (old_cond));
 
         /* delete unused prf subtree */
-        EXPRS_EXPR (PRF_ARGS (old_prf)) = NULL;
-        EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (old_prf))) = NULL;
-        FreeTree (old_prf);
+        EXPRS_EXPR (FUNCOND_THEN (old_cond)) = NULL;
+        EXPRS_EXPR (FUNCOND_ELSE (old_cond)) = NULL;
+        FreeTree (old_cond);
 
         /* append then_assignment to then block */
         if (then_node != NULL) {
