@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.52  1998/02/25 10:08:23  srs
+# make deps done
+#
 # Revision 1.51  1998/02/25 09:06:27  cg
 # added file globals.c for compilation
 #
@@ -232,12 +235,16 @@ free.o: /usr/include/stdio.h /usr/include/sys/va_list.h ../../inc/dbug.h
 free.o: my_debug.h types.h tree_basic.h tree_compound.h Error.h
 free.o: /usr/include/string.h globals.h traverse.h free.h
 free.o: /usr/include/malloc.h internal_lib.h
+globals.o: ../modules/filemgr.h /usr/include/stdio.h
+globals.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+globals.o: types.h globals.h ../scanparse/scnprs.h ../scanparse/y.tab.h
+globals.o: Error.h /usr/include/string.h /usr/include/stdlib.h
 internal_lib.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 internal_lib.o: /usr/include/math.h /usr/include/string.h
 internal_lib.o: /usr/include/stdarg.h /usr/include/varargs.h
 internal_lib.o: /usr/include/sys/va_list.h Error.h /usr/include/stdio.h
-internal_lib.o: types.h globals.h ../../inc/dbug.h my_debug.h internal_lib.h
-internal_lib.o: traverse.h
+internal_lib.o: types.h globals.h free.h ../../inc/dbug.h my_debug.h
+internal_lib.o: /usr/include/malloc.h internal_lib.h traverse.h
 main.o: ../../inc/main.h ../../inc/dbug.h /usr/include/stdio.h
 main.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h tree.h
 main.o: types.h tree_basic.h tree_compound.h Error.h /usr/include/string.h
@@ -291,8 +298,5 @@ tree_compound.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 tree_compound.o: /usr/include/sys/va_list.h /usr/include/string.h
 tree_compound.o: /usr/include/stdlib.h globals.h ../../inc/dbug.h my_debug.h
 tree_compound.o: free.h /usr/include/malloc.h internal_lib.h
-usage.o: usage.h /usr/include/stdio.h /usr/include/sys/feature_tests.h
-usage.o: /usr/include/sys/va_list.h globals.h types.h ../../inc/dbug.h tree.h
-usage.o: tree_basic.h tree_compound.h Error.h /usr/include/string.h
-usage.o: /usr/include/stdlib.h internal_lib.h ../optimize/optimize.h free.h
-usage.o: my_debug.h /usr/include/malloc.h
+usage.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+usage.o: /usr/include/sys/va_list.h globals.h types.h ../../inc/dbug.h
