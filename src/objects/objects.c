@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/06/23 14:00:16  dkr
+ * nodetype N_with removed
+ *
  * Revision 2.2  2000/02/23 17:27:01  cg
  * The entry TYPES_TDEF of the TYPES data structure now contains a
  * reference to the corresponding N_typedef node for all user-defined
@@ -701,7 +704,7 @@ OBJlet (node *arg_node, node *arg_info)
         }
 
         if (NODE_TYPE (let_expr) != N_ap) {
-            if (NODE_TYPE (let_expr) == N_with || NODE_TYPE (let_expr) == N_Nwith) {
+            if (NODE_TYPE (let_expr) == N_Nwith) {
                 let_expr = Trav (let_expr, arg_info);
             }
         } else {
@@ -726,10 +729,8 @@ OBJlet (node *arg_node, node *arg_info)
                     /*
                      *  task done by uniqueness checker
                      *
-                              while (old_ids!=NULL)
-                              {
-                                if (strcmp(IDS_NAME(old_ids), IDS_NAME(last_ids))==0)
-                                {
+                              while (old_ids!=NULL) {
+                                if (strcmp(IDS_NAME(old_ids), IDS_NAME(last_ids))==0) {
                                   ERROR(NODE_LINE(arg_node),
                                         ("Object '%s` already existing",
                                          IDS_NAME(old_ids)));

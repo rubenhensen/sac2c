@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  2000/06/23 13:58:26  dkr
+ * nodetype N_with removed
+ *
  * Revision 2.6  2000/05/30 12:34:50  dkr
  * functions for old with-loop removed
  *
@@ -323,7 +326,6 @@ DCRassign (node *arg_node, node *arg_info)
             case N_cond:
                 /* 	WARN(NODE_LINE(tmp), ("Conditional removed")); */
                 break;
-            case N_with:
             case N_Nwith:
                 /* 	WARN(NODE_LINE(tmp), ("With-expression removed")); */
                 break;
@@ -423,7 +425,6 @@ ACTassign (node *arg_node, node *arg_info)
             case N_do:
                 ASSIGN_INSTR (arg_node) = Trav (instr, arg_info);
                 break;
-            case N_with:
             case N_Nwith:
                 /* i is varno of the resulting WL array. */
                 i = VARDEC_VARNO (IDS_VARDEC (LET_IDS (ASSIGN_INSTR (arg_node))));

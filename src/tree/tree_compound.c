@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/06/23 14:04:54  dkr
+ * nodetype N_with removed
+ *
  * Revision 1.6  2000/05/30 14:06:27  dkr
  * some helper functions moved from compile.c to tree_compound.c
  *
@@ -1291,25 +1294,35 @@ GetCompoundNode (node *arg_node)
 
     DBUG_ENTER ("GetCompoundNode");
 
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign),
+                 "GetCompoundNode() can handle N_assign nodes only!");
+
     arg_node = ASSIGN_INSTR (arg_node);
     switch (NODE_TYPE (arg_node)) {
     case N_cond:
+        /* here is no break missing */
     case N_do:
+        /* here is no break missing */
     case N_while:
         compound_node = arg_node;
         break;
+
     case N_let:
         arg_node = LET_EXPR (arg_node);
-        while (N_cast == NODE_TYPE (arg_node))
+        while (N_cast == NODE_TYPE (arg_node)) {
             arg_node = CAST_EXPR (arg_node);
-        if (N_with == NODE_TYPE (arg_node) || N_Nwith == NODE_TYPE (arg_node))
+        }
+        if (N_Nwith == NODE_TYPE (arg_node)) {
             compound_node = arg_node;
-        else
+        } else {
             compound_node = NULL;
+        }
         break;
+
     default:
         compound_node = NULL;
     }
+
     DBUG_RETURN (compound_node);
 }
 

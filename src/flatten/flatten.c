@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.23  2000/06/23 13:53:39  dkr
+ * nodetype N_with removed
+ *
  * Revision 2.22  2000/05/30 12:35:26  dkr
  * functions for old with-loop removed
  *
@@ -820,9 +823,7 @@ FltnLet (node *arg_node, node *arg_info)
              * has been pushed anyway!!
              */
         } else {
-            if ((NODE_TYPE (LET_EXPR (arg_node)) == N_with)
-                || (NODE_TYPE (LET_EXPR (arg_node))
-                    == N_Nwith)) { /* the let expr is a WL */
+            if (NODE_TYPE (LET_EXPR (arg_node)) == N_Nwith) { /* the let expr is a WL */
                 DBUG_PRINT ("RENAME", ("renaming LHS of WL-assignment"));
                 tmp_var = TmpVar ();
                 /*
@@ -1079,21 +1080,19 @@ FltnExprs (node *arg_node, node *arg_info)
                     || (NODE_TYPE (expr) == N_double) || (NODE_TYPE (expr) == N_bool)
                     || (NODE_TYPE (expr) == N_char) || (NODE_TYPE (expr) == N_str)
                     || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_ap)
-                    || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_Nwith)
-                    || (NODE_TYPE (expr) == N_with));
+                    || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_Nwith));
         break;
     case CT_ap:
         abstract = ((NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_prf)
-                    || (NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_Nwith)
-                    || (NODE_TYPE (expr) == N_with));
+                    || (NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_Nwith));
         break;
     case CT_normal:
         abstract = ((NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
-                    || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_with));
+                    || (NODE_TYPE (expr) == N_Nwith));
         break;
     case CT_array:
         abstract = ((NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
-                    || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_with));
+                    || (NODE_TYPE (expr) == N_Nwith));
         INFO_FLTN_VECTYPE (arg_info)
           = FltnPreTypecheck (NODE_TYPE (expr), INFO_FLTN_VECTYPE (arg_info));
         INFO_FLTN_VECLEN (arg_info) = info_fltn_array_index + 1;
@@ -1558,8 +1557,7 @@ FltnNwithop (node *arg_node, node *arg_info)
         expr = NWITHOP_NEUTRAL (arg_node);
         if ((expr != NULL)
             && ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap)
-                || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_with)
-                || (NODE_TYPE (expr) == N_Nwith))) {
+                || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_Nwith))) {
             NWITHOP_NEUTRAL (arg_node) = Abstract (expr, arg_info);
             expr2 = Trav (expr, arg_info);
             AnnotateIdWithConstVec (expr, NWITHOP_NEUTRAL (arg_node));

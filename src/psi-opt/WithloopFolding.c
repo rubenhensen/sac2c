@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.11  2000/06/23 14:03:41  dkr
+ * nodetype N_with removed
+ *
  * Revision 2.10  2000/05/11 11:15:46  dkr
  * Function MakeNullVec renamed into CreateZeroVector
  *
@@ -397,7 +400,7 @@ ValidLocalId (node *idn)
  *
  * description:
  *   Searches for the Id (idn) in the WL generator (index var).
- *   The N_with node has to be available to find the index vars.
+ *   The N_Nwith node has to be available to find the index vars.
  *
  * return:
  *   -1: Id is the index vector
@@ -931,7 +934,7 @@ SearchWLHelp (int id_varno, node *assignn, int *valid, int mode, int ol)
                 && N_Nwith == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assignn)))) {
                 /* this is the bad boy */
                 if (0 == mode || 1 == mode)
-                    NWITH_NO_CHANCE (LET_EXPR (ASSIGN_INSTR (assignn))) = 1;
+                    NWITH_NO_CHANCE (LET_EXPR (ASSIGN_INSTR (assignn))) = TRUE;
                 if (0 == mode)
                     NWITH_REFERENCED (LET_EXPR (ASSIGN_INSTR (assignn)))++;
             } else /* if not, this may be a compound node. */
@@ -988,10 +991,11 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
 
     DBUG_ENTER ("SearchWL");
 
-    /* MRDs point at N_assign, N_Npart or N_with nodes.
-       If N_Npart or N_with, the Id is an index vector, not a WL. Return NULL */
-    if (startn && (N_Npart == NODE_TYPE (startn) || N_with == NODE_TYPE (startn)))
+    /* MRDs point at N_assign or N_Npart nodes.
+       If N_Npart, the Id is an index vector, not a WL. Return NULL */
+    if (startn && (N_Npart == NODE_TYPE (startn))) {
         startn = NULL;
+    }
 
     /* If we reached a node which is marked in search_wl_nodelist we
        abort recursion because this node has already been traversed. */
@@ -1149,7 +1153,7 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
                     NWITH_REFERENCED (LET_EXPR (ASSIGN_INSTR (startn)))++;
                 if (-1 == *valid) { /* but we cannot use it for folding */
                     if (0 == mode || 1 == mode)
-                        NWITH_NO_CHANCE (LET_EXPR (ASSIGN_INSTR (startn))) = 1;
+                        NWITH_NO_CHANCE (LET_EXPR (ASSIGN_INSTR (startn))) = TRUE;
                 } else { /* *valid is 1 and the assign node of the WL is in startn. */
                     DBUG_ASSERT (1 == *valid, ("wrong value for variable valid"));
                     /*           if (1 == mode) */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  2000/06/23 13:58:17  dkr
+ * nodetype N_with removed
+ *
  * Revision 2.7  2000/01/26 23:21:53  dkr
  * macro DUP_UNS removed
  *
@@ -270,7 +273,9 @@ LIRloop (node *arg_node, node *arg_info)
     oldtype = LOOP_TYPE;
 
     switch (oldtype) {
-    case N_with:
+#if 0
+      case N_with:
+#endif
     case N_while:
     case N_do:
     case N_cond:
@@ -280,39 +285,37 @@ LIRloop (node *arg_node, node *arg_info)
         oldmask[3] = UBD_MAKE;
     default:
         switch (arg_node->nodetype) {
-        case N_with:
-            UBD = GenMask (
-              INFO_VARNO (arg_info)); /* all variables automaticly set to FALSE */
-            LINVAR = GenMask (INFO_VARNO (arg_info));
-            SetMask (LINVAR, TRUE, MAXVARNO);
-            UBD_MAKE = GenMask (INFO_VARNO (arg_info));
-            SetMask (UBD_MAKE, UNDEF, MAXVARNO);
-            for (i = 0; i < INFO_VARNO (arg_info); i++) {
-                /* all variables defined in with body may be used before defined */
-                if (0 < arg_node->mask[0][i])
-                    UBD[i] = UNDEF;
-                /* All variables defined in generator are not loop invariant */
-                if (0 < arg_node->node[0]->mask[0][i])
-                    LINVAR[i] = FALSE;
-                /* All variables used in generator are not loop invariant, and */
-                /* perhaps used before defined. */
-                if (0 < arg_node->node[0]->mask[1][i]) {
-                    if (0 < arg_node->mask[0][i])
-                        UBD[i] = TRUE;
-                    LINVAR[i] = FALSE;
-                }
-                /* If there are usages for genarray or modarray they are not loop */
-                /* invariant too                                                  */
-                if ((NULL != arg_node->node[1]->mask[1])
-                    && (0 < arg_node->node[1]->mask[1][i])) {
-                    if (0 < arg_node->mask[0][i])
-                        UBD[i] = TRUE;
-                    LINVAR[i] = FALSE;
-                }
+#if 0
+          case N_with:
+            UBD = GenMask(INFO_VARNO(arg_info)); /* all variables automaticly set to FALSE */
+            LINVAR = GenMask(INFO_VARNO(arg_info));
+            SetMask(LINVAR, TRUE, MAXVARNO);
+            UBD_MAKE = GenMask(INFO_VARNO(arg_info));
+            SetMask(UBD_MAKE, UNDEF, MAXVARNO);
+            for (i=0; i<INFO_VARNO(arg_info); i++) {
+              /* all variables defined in with body may be used before defined */
+              if (0<arg_node->mask[0][i])
+                UBD[i] = UNDEF;
+              /* All variables defined in generator are not loop invariant */
+              if (0<arg_node->node[0]->mask[0][i])
+                LINVAR[i]=FALSE;
+              /* All variables used in generator are not loop invariant, and */
+              /* perhaps used before defined. */
+              if (0<arg_node->node[0]->mask[1][i]) {
+                if (0<arg_node->mask[0][i]) UBD[i] = TRUE;
+                LINVAR[i]=FALSE;
+              }
+              /* If there are usages for genarray or modarray they are not loop */
+              /* invariant too                                                  */
+              if ((NULL!=arg_node->node[1]->mask[1]) && (0<arg_node->node[1]->mask[1][i])) {
+                if (0<arg_node->mask[0][i]) UBD[i] = TRUE;
+                LINVAR[i]=FALSE; 
+              }
             }
             COND_USE = NULL;
             LOOP_TYPE = arg_node->nodetype;
             break;
+#endif
         case N_while:
         case N_do:
             UBD = GenMask (
@@ -338,7 +341,9 @@ LIRloop (node *arg_node, node *arg_info)
     arg_node->node[1] = Trav (arg_node->node[1], arg_info);
 
     switch (oldtype) {
-    case N_with:
+#if 0
+      case N_with:
+#endif
     case N_while:
     case N_cond:
     case N_do:
@@ -355,7 +360,9 @@ LIRloop (node *arg_node, node *arg_info)
         break;
     default:
         switch (arg_node->nodetype) {
-        case N_with:
+#if 0
+          case N_with:
+#endif
         case N_while:
         case N_do:
             COND_USE = NULL;
@@ -698,10 +705,12 @@ node *
 LIRMloop (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("LIRMloop");
-    if (N_with == arg_node->nodetype)
-        arg_node = OptTrav (arg_node, arg_info, 2);
-    else
-        arg_node = OptTrav (arg_node, arg_info, 1);
+#if 0
+  if (N_with==arg_node->nodetype)
+    arg_node=OptTrav(arg_node, arg_info, 2);
+  else
+#endif
+    arg_node = OptTrav (arg_node, arg_info, 1);
     DBUG_RETURN (arg_node);
 }
 
@@ -858,11 +867,13 @@ GetUsed (node *arg_node, node *node_behind)
     case N_post:
     case N_pre:
     case N_return:
-        if (N_with == node_behind->nodetype) {
-            used_vars = node_behind->mask[2];
-        } else {
-            used_vars = USE;
-        }
+#if 0
+      if (N_with==node_behind->nodetype) {
+        used_vars = node_behind->mask[2];
+      }
+      else
+#endif
+        used_vars = USE;
         break;
     default:
         ERROR2 (1,
@@ -977,7 +988,9 @@ CheckUp (node *arg_node, node *arg_info)
             switch (node_behind->nodetype) {
             case N_ap:
             case N_prf:
-            case N_with:
+#if 0
+        case N_with:
+#endif
                 i = 0;
                 ids_node = arg_node->node[0]->info.ids;
                 do {
@@ -1199,8 +1212,11 @@ CheckDown (node *arg_node, node *arg_info)
     /*
      * If all all terms TRUE mark this node as MOVE_DOWN
      */
-    if (term1 && term2 && term3 && (N_with != node_behind->nodetype)
-        && (N_return != arg_node->node[0]->nodetype)) {
+    if (term1 && term2 && term3 &&
+#if 0
+      (N_with!=node_behind->nodetype) &&
+#endif
+        (N_return != arg_node->node[0]->nodetype)) {
         MOVE = MOVE_DOWN;
     }
 
@@ -1490,33 +1506,36 @@ LIRsubexpr (node *arg_node, node *arg_info)
 
             node_behind = NodeBehindCast (arg_node->node[0]->node[0]);
 
-            if (N_with == node_behind->nodetype) {
-                arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-                act_tab = lir_mov_tab;
-
-                arg_node = OptTrav (arg_node, arg_info, 0);
-
-                /* Calculate variables, which are relative in loop */
-                for (i = 0; i < INFO_VARNO (arg_info); i++) {
-                    /* variables used in generator are relative free */
-                    if (0 < node_behind->node[0]->mask[1][i])
-                        node_behind->mask[2][i] = TRUE;
-                    /* variables used for genarray or modarray are relative free */
-                    if ((NULL != arg_node->node[1]->mask[1])
-                        && (0 < arg_node->node[1]->mask[1][i]))
-                        node_behind->mask[2][i] = TRUE;
-                    /* variables used and not defined in with-body are relative free */
-                    if ((0 == node_behind->mask[0][i]) && (0 < node_behind->mask[1][i]))
-                        node_behind->mask[2][i] = TRUE;
-                }
-
-                if (NULL != UP)
-                    arg_node->node[0]->flag = DONE;
-                act_tab = lir_tab;
-                PlusChainMasks (1, UP, arg_info);
-                arg_node = AppendNodeChain (1, UP, arg_node);
-                UP = NULL;
-            }
+#if 0
+	  if (N_with==node_behind->nodetype)
+	    {
+	    arg_node->node[0] = Trav(arg_node->node[0], arg_info);
+	    act_tab=lir_mov_tab;
+	    
+	    arg_node = OptTrav(arg_node, arg_info, 0);
+            
+	    /* Calculate variables, which are relative in loop */
+	    for (i=0; i<INFO_VARNO(arg_info); i++)
+	      {
+	      /* variables used in generator are relative free */
+	      if (0 < node_behind->node[0]->mask[1][i])
+	        node_behind->mask[2][i]=TRUE;
+	      /* variables used for genarray or modarray are relative free */
+	      if ((NULL!=arg_node->node[1]->mask[1]) && (0<arg_node->node[1]->mask[1][i]))
+	        node_behind->mask[2][i]=TRUE;
+	      /* variables used and not defined in with-body are relative free */
+	      if ((0==node_behind->mask[0][i]) && (0<node_behind->mask[1][i]))
+	        node_behind->mask[2][i]=TRUE;
+	      }
+	    
+	    if (NULL!=UP)
+	      arg_node->node[0]->flag=DONE;
+	    act_tab=lir_tab;
+	    PlusChainMasks(1, UP, arg_info);
+	    arg_node = AppendNodeChain(1, UP, arg_node);
+	    UP = NULL;
+	    }
+#endif
         } break;
         default:
             break;
@@ -1558,10 +1577,12 @@ LIRassign (node *arg_node, node *arg_info)
     /* consider in which expession we are:    */
     /******************************************/
     switch (LOOP_TYPE) {
-    /**************************/
-    /* 1) loop expression !!  */
-    /**************************/
-    case N_with:
+        /**************************/
+        /* 1) loop expression !!  */
+        /**************************/
+#if 0
+      case N_with:
+#endif
     case N_while:
     case N_do:
         DBUG_PRINT ("LIR", ("Travers assign - %s, line - %d",
@@ -1603,15 +1624,17 @@ LIRassign (node *arg_node, node *arg_info)
                      */
                     SetMask (LINVAR, TRUE, MAXVARNO);
 
-                    if (N_with != LOOP_TYPE) {
-                        for (i = 0; i < INFO_VARNO (arg_info); i++) {
-                            if ((0 != COND_USE[i])
-                                && ((N_do == LOOP_TYPE) || (N_while == LOOP_TYPE)))
-                                LINVAR[i] = FALSE;
-                            if (TRUE == UBD[i])
-                                UBD[i] = UNDEF;
-                        }
-                    }
+#if 0
+		if (N_with!=LOOP_TYPE)
+		  {
+		  for (i=0; i<INFO_VARNO(arg_info); i++)
+		    {
+		    if ((0!=COND_USE[i]) && ((N_do==LOOP_TYPE) || (N_while==LOOP_TYPE)))
+		      LINVAR[i] = FALSE;
+		    if (TRUE==UBD[i]) UBD[i]=UNDEF;
+		    }
+		  }
+#endif
                 }
 
                 if (MOVE_UP == MOVE) {
