@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.34  2000/10/31 13:47:52  dkr
+ * bug in PREC1let fixed:
+ * dummy fold-funs have unique names now
+ *
  * Revision 2.33  2000/10/31 13:05:27  dkr
  * bug in PREC1fundef fixed:
  * status flag of main function is not set to ST_Cfun anymore
@@ -443,7 +447,7 @@ PREC1let (node *arg_node, node *arg_info)
 {
     node *expr, *new_foldfun, *arg, *arg_id, *tmp_vardec;
     ids *let_ids, *tmp_ids;
-    char *ids_name, *tmp_name;
+    char *ids_name, *tmp_name, *old_name;
     prf prf;
     int arg_idx;
     bool flatten, is_prf;
@@ -576,6 +580,15 @@ PREC1let (node *arg_node, node *arg_info)
          * Therefore we have to create new unique fold-funs first!
          */
         new_foldfun = DupNode (NWITH2_FUNDEF (expr));
+
+        /*
+         * Create a unique name for the new fold-fun
+         * (This is needed for SearchFoldImplementation() in icm2c_mt.c !!)
+         */
+        old_name = FUNDEF_NAME (new_foldfun);
+        FUNDEF_NAME (new_foldfun) = TmpVarName (FUNDEF_NAME (new_foldfun));
+        FREE (old_name);
+
         new_foldfun = AdjustFoldFundef (new_foldfun, let_ids,
                                         /*
                                          * It is sufficient to take the CEXPR of the first
