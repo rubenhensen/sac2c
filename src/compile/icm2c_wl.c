@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2002/10/28 13:18:03  dkr
+ * bug in WL_BEGIN__OFFSET fixed
+ *
  * Revision 3.24  2002/10/28 09:25:04  dkr
  * bugs in WLGenarray_Shape() fixed
  *
@@ -131,6 +134,8 @@ DefineShapeFactor (char *to_nt, int to_sdim, int current_dim)
 
     DBUG_ENTER ("DefineShapeFactor");
 
+    INDENT;
+    fprintf (outfile, "int SAC_i;\n");
     INDENT;
 #ifdef TAGGED_ARRAYS
     fprintf (outfile, "int SAC_WL_SHAPE_FACTOR( NT_NAME( %s), %d) = 1", to_nt,
@@ -561,15 +566,16 @@ ICMCompileWL_BEGIN__OFFSET (char *to_nt, int to_sdim, char *idx_vec_nt, int dims
     INDENT;
     fprintf (outfile, "{ int SAC_WL_OFFSET( %s);\n", to_nt);
     indent++;
-    for (i = 0; i < dims; i++) {
-        DefineShapeFactor (to_nt, to_sdim, i);
-    }
 
     for (i = 0; i < dims; i++) {
         INDENT;
         fprintf (outfile, "int SAC_WL_MT_SCHEDULE_START( %d);\n", i);
         INDENT;
         fprintf (outfile, "int SAC_WL_MT_SCHEDULE_STOP( %d);\n", i);
+    }
+
+    for (i = 0; i < dims; i++) {
+        DefineShapeFactor (to_nt, to_sdim, i);
     }
 
     DBUG_VOID_RETURN;
