@@ -1,11 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.13  2002/10/07 04:51:05  dkr
- * some modifications for dynamic shapes added
- *
- * Revision 1.12  2002/09/16 14:27:54  dkr
- * no changes done
+ * Revision 1.14  2002/10/08 10:33:47  dkr
+ * CreateFullPartition(): modifications for dynamic shapes done
  *
  * Revision 1.11  2002/09/13 20:16:41  dkr
  * genarray-wls with empty index sets allow again... #@%&
@@ -377,73 +374,82 @@ CreateFullPartition (node *wln, node *arg_info)
         /* this is the shape of the index vector (generator) */
         gen_shape = IDS_SHAPE (NWITH_VEC (wln), 0);
 
-        /* create lower array bound */
-        array_null = NULL;
-        SSAArrayST2ArrayInt (NULL, &array_null, gen_shape);
+        /* create upper array bound */
         if (NWITH_TYPE (wln) == WO_genarray) {
-            /* create upper array bound */
             array_shape = NULL;
             SSAArrayST2ArrayInt (NWITH_SHAPE (wln), &array_shape, gen_shape);
         } else { /* modarray */
             shpseg *tmp = Type2Shpseg (ID_TYPE (NWITH_ARRAY (wln)), &dim);
             int i;
 
-            array_shape = (int *)Malloc (dim * sizeof (int));
-            for (i = 0; i < dim; i++) {
-                array_shape[i] = SHPSEG_SHAPE (tmp, i);
+            if (dim >= 0) {
+                array_shape = (int *)Malloc (dim * sizeof (int));
+                for (i = 0; i < dim; i++) {
+                    array_shape[i] = SHPSEG_SHAPE (tmp, i);
+                }
+                if (tmp != NULL) {
+                    tmp = FreeShpseg (tmp);
+                }
+            } else {
+                array_shape = NULL;
             }
-            if (tmp != NULL) {
-                tmp = FreeShpseg (tmp);
+        }
+
+        if (array_shape != NULL) {
+            /* create lower array bound */
+            array_null = NULL;
+            SSAArrayST2ArrayInt (NULL, &array_null, gen_shape);
+
+            /* create code for all new parts */
+            if (NWITH_TYPE (wln) == WO_genarray) {
+                /* create a zero of the correct type */
+                coden = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
+            } else { /* modarray */
+                /*
+                 * we build NO with-loop here in order to ease optimizations
+                 *    B = modarray( A, iv, sel( iv, A));   ->   B = A;
+                 * and to avoid loss of performance
+                 *    sel( iv, A)   ->   idx_sel( ..., A)
+                 */
+                coden = CreateSel (NWITH_VEC (wln), NWITH_IDS (wln), NWITH_ARRAY (wln),
+                                   FALSE, INFO_WLI_FUNDEF (arg_info));
             }
+            varname = TmpVar ();
+            _ids = MakeIds (varname, NULL, ST_regular);
+            IDS_VARDEC (_ids)
+              = SSACreateVardec (varname, type,
+                                 &FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info)));
+            /* varname is duplicated here (own mem) */
+            idn = MakeId (StringCopy (varname), NULL, ST_regular);
+            ID_VARDEC (idn) = IDS_VARDEC (_ids);
+
+            /* create new N_Ncode node  */
+            coden = MakeNCode (MakeBlock (MakeAssign (MakeLet (coden, _ids), NULL), NULL),
+                               idn);
+
+            /* now, copy the only part to ig */
+            ig = SSATree2InternGen (wln, NULL);
+            DBUG_ASSERT (!ig->next, ("more than one part exist"));
+            /* create surrounding cuboids */
+            ig = CutSlices (array_null, array_shape, ig->l, ig->u, ig->shape, ig, coden);
+            /* the original part can still be found at *ig. Now create grids. */
+            if (ig->step)
+                ig = CompleteGrid (ig->l, ig->u, ig->step, ig->width, ig->shape, ig,
+                                   coden);
+
+            /* if new codes have been created, add them to code list */
+            if (ig->next) {
+                NCODE_NEXT (coden) = NWITH_CODE (wln);
+                NWITH_CODE (wln) = coden;
+            }
+
+            wln = SSAInternGen2Tree (wln, ig);
+
+            /* free the above made arrays */
+            ig = SSAFreeInternGenChain (ig);
+            array_shape = Free (array_shape);
+            array_null = Free (array_null);
         }
-
-        /* create code for all new parts */
-        if (NWITH_TYPE (wln) == WO_genarray) {
-            /* create a zero of the correct type */
-            coden = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
-        } else { /* modarray */
-            /*
-             * we build NO with-loop here in order to ease optimizations
-             *    B = modarray( A, iv, sel( iv, A));   ->   B = A;
-             * and to avoid loss of performance
-             *    sel( iv, A)   ->   idx_sel( ..., A)
-             */
-            coden = CreateSel (NWITH_VEC (wln), NWITH_IDS (wln), NWITH_ARRAY (wln), FALSE,
-                               INFO_WLI_FUNDEF (arg_info));
-        }
-        varname = TmpVar ();
-        _ids = MakeIds (varname, NULL, ST_regular);
-        IDS_VARDEC (_ids)
-          = SSACreateVardec (varname, type, &FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info)));
-        /* varname is duplicated here (own mem) */
-        idn = MakeId (StringCopy (varname), NULL, ST_regular);
-        ID_VARDEC (idn) = IDS_VARDEC (_ids);
-
-        /* create new N_Ncode node  */
-        coden
-          = MakeNCode (MakeBlock (MakeAssign (MakeLet (coden, _ids), NULL), NULL), idn);
-
-        /* now, copy the only part to ig */
-        ig = SSATree2InternGen (wln, NULL);
-        DBUG_ASSERT (!ig->next, ("more than one part exist"));
-        /* create surrounding cuboids */
-        ig = CutSlices (array_null, array_shape, ig->l, ig->u, ig->shape, ig, coden);
-        /* the original part can still be found at *ig. Now create grids. */
-        if (ig->step)
-            ig = CompleteGrid (ig->l, ig->u, ig->step, ig->width, ig->shape, ig, coden);
-
-        /* if new codes have been created, add them to code list */
-        if (ig->next) {
-            NCODE_NEXT (coden) = NWITH_CODE (wln);
-            NWITH_CODE (wln) = coden;
-        }
-
-        wln = SSAInternGen2Tree (wln, ig);
-
-        /* free the above made arrays */
-        ig = SSAFreeInternGenChain (ig);
-        array_null = Free (array_null);
-        array_shape = Free (array_shape);
     }
 
     DBUG_RETURN (wln);
