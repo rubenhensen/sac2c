@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.182  1998/08/07 16:04:00  dkr
+ * COMPWLsegVar added
+ * some names of WL-ICMs changed
+ *
  * Revision 1.181  1998/08/06 01:16:43  dkr
  * fixed some minor bugs
  *
@@ -6111,14 +6115,14 @@ COMPSpmd (node *arg_node, node *arg_info)
         } else {
             tag = "in";
         }
-        icm_args = MakeExprs (MakeId (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
-                                      ST_regular),
-                              icm_args);
-        icm_args = MakeExprs (MakeId (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec)), NULL,
-                                      ST_regular),
-                              icm_args);
-        icm_args = MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular), icm_args);
-
+        icm_args
+          = MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
+                       MakeExprs (MakeId (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec)),
+                                          NULL, ST_regular),
+                                  MakeExprs (MakeId (StringCopy (
+                                                       VARDEC_OR_ARG_NAME (vardec)),
+                                                     NULL, ST_regular),
+                                             icm_args)));
         num_args++;
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
@@ -6135,13 +6139,14 @@ COMPSpmd (node *arg_node, node *arg_info)
         } else {
             tag = "inout";
         }
-        icm_args = MakeExprs (MakeId (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
-                                      ST_regular),
-                              icm_args);
-        icm_args = MakeExprs (MakeId (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec)), NULL,
-                                      ST_regular),
-                              icm_args);
-        icm_args = MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular), icm_args);
+        icm_args
+          = MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
+                       MakeExprs (MakeId (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec)),
+                                          NULL, ST_regular),
+                                  MakeExprs (MakeId (StringCopy (
+                                                       VARDEC_OR_ARG_NAME (vardec)),
+                                                     NULL, ST_regular),
+                                             icm_args)));
         num_args++;
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
@@ -6157,22 +6162,22 @@ COMPSpmd (node *arg_node, node *arg_info)
         } else {
             tag = "out";
         }
-        icm_args = MakeExprs (MakeId (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
-                                      ST_regular),
-                              icm_args);
-        icm_args = MakeExprs (MakeId (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec)), NULL,
-                                      ST_regular),
-                              icm_args);
-        icm_args = MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular), icm_args);
+        icm_args
+          = MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
+                       MakeExprs (MakeId (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec)),
+                                          NULL, ST_regular),
+                                  MakeExprs (MakeId (StringCopy (
+                                                       VARDEC_OR_ARG_NAME (vardec)),
+                                                     NULL, ST_regular),
+                                             icm_args)));
         num_args++;
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
 
-    icm_args = MakeExprs (MakeNum (num_args), icm_args);
     icm_args = MakeExprs (MakeId (StringCopy (FUNDEF_NAME (SPMD_FUNDEF (arg_node))), NULL,
                                   ST_regular),
-                          icm_args);
+                          MakeExprs (MakeNum (num_args), icm_args));
 
     assigns = MakeAssign (MakeIcm ("MT_SPMD_SETUP", icm_args, NULL), assigns);
 
@@ -6346,8 +6351,8 @@ COMPSync (node *arg_node, node *arg_info)
              * begin of with-loop code found?
              *  -> prolog finished; skip with-loop code
              */
-            if ((strcmp (ICM_NAME (instr), "WL_MT_FOLD_BEGIN") == 0)
-                || (strcmp (ICM_NAME (instr), "WL_MT_NONFOLD_BEGIN") == 0)) {
+            if ((strcmp (ICM_NAME (instr), "WL_FOLD_BEGIN") == 0)
+                || (strcmp (ICM_NAME (instr), "WL_NONFOLD_BEGIN") == 0)) {
                 DBUG_ASSERT (((prolog == 1) && (epilog == 0)), "wrong ICM order");
                 prolog = 0;
             } else {
@@ -6356,8 +6361,8 @@ COMPSync (node *arg_node, node *arg_info)
                  * end of with-loop code found?
                  *  -> start of epilog
                  */
-                if ((strcmp (ICM_NAME (instr), "WL_MT_FOLD_END") == 0)
-                    || (strcmp (ICM_NAME (instr), "WL_MT_NONFOLD_END") == 0)) {
+                if ((strcmp (ICM_NAME (instr), "WL_FOLD_END") == 0)
+                    || (strcmp (ICM_NAME (instr), "WL_NONFOLD_END") == 0)) {
                     DBUG_ASSERT (((prolog == 0) && (epilog == 0)), "wrong ICM order");
                     epilog = 1;
                 } else {
@@ -6516,6 +6521,7 @@ COMPSync (node *arg_node, node *arg_info)
 ids *wl_ids = NULL;
 node *wl_node = NULL;
 node *wl_seg = NULL;
+int multiple_segs = 0;
 
 /******************************************************************************
  *
@@ -6530,6 +6536,7 @@ node *wl_seg = NULL;
  * remarks:
  *   - 'wl_ids' points always to LET_IDS of the current with-loop.
  *   - 'wl_node' points always to the N_Nwith2-node.
+ *   - 'multiple_segs' indicates whether there are multiple segments or not.
  *
  ******************************************************************************/
 
@@ -6540,6 +6547,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
       *old_wl_node, *rc_icms_wl_ids = NULL, *assigns = NULL;
     ids *old_wl_ids;
     char *icm_name1, *icm_name2;
+    int old_multiple_segs;
 
     DBUG_ENTER ("COMPNwith2");
 
@@ -6551,6 +6559,8 @@ COMPNwith2 (node *arg_node, node *arg_info)
     wl_ids = INFO_COMP_LASTIDS (arg_info);
     old_wl_node = wl_node; /* stack 'wl_node' */
     wl_node = arg_node;
+    old_multiple_segs = multiple_segs; /* stack 'multiple_segs' */
+    multiple_segs = 0;
 
     /*
      * When update-in-place is active:
@@ -6634,24 +6644,18 @@ COMPNwith2 (node *arg_node, node *arg_info)
      * insert 'WL_..._BEGIN'-ICM
      */
 
-    icm_args = NULL;
-    icm_args = MakeExprs (MakeNum (NWITH2_DIMS (arg_node)), icm_args);
     icm_args
-      = MakeExprs (MakeId2 (DupOneIds (NWITHID_VEC (NWITH2_WITHID (wl_node)), NULL)),
-                   icm_args);
-    icm_args = MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)), icm_args);
+      = MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)),
+                   MakeExprs (MakeId2 (
+                                DupOneIds (NWITHID_VEC (NWITH2_WITHID (wl_node)), NULL)),
+                              MakeExprs (MakeNum (NWITH2_DIMS (arg_node)), NULL)));
 
     switch (NWITHOP_TYPE (NWITH2_WITHOP (arg_node))) {
     case WO_genarray:
         /* here is no break missing! */
     case WO_modarray:
-        if (NWITH2_MT (arg_node)) {
-            icm_name1 = "WL_MT_NONFOLD_BEGIN";
-            icm_name2 = "WL_MT_NONFOLD_END";
-        } else {
-            icm_name1 = "WL_NONFOLD_BEGIN";
-            icm_name2 = "WL_NONFOLD_END";
-        }
+        icm_name1 = "WL_NONFOLD_BEGIN";
+        icm_name2 = "WL_NONFOLD_END";
         break;
 
     case WO_foldfun:
@@ -6713,13 +6717,8 @@ COMPNwith2 (node *arg_node, node *arg_info)
          */
         assigns = AppendAssign (assigns, neutral);
 
-        if (NWITH2_MT (arg_node)) {
-            icm_name1 = "WL_MT_FOLD_BEGIN";
-            icm_name2 = "WL_MT_FOLD_END";
-        } else {
-            icm_name1 = "WL_FOLD_BEGIN";
-            icm_name2 = "WL_FOLD_END";
-        }
+        icm_name1 = "WL_FOLD_BEGIN";
+        icm_name2 = "WL_FOLD_END";
         break;
 
     default:
@@ -6763,10 +6762,11 @@ COMPNwith2 (node *arg_node, node *arg_info)
     arg_node = FreeTree (arg_node);
 
     /*
-     * pop 'wl_ids', 'wl_node'.
+     * pop 'wl_ids', 'wl_node', 'multiple_segs'.
      */
     wl_ids = old_wl_ids;
     wl_node = old_wl_node;
+    multiple_segs = old_multiple_segs;
 
     DBUG_RETURN (assigns);
 }
@@ -6819,7 +6819,8 @@ COMPNcode (node *arg_node, node *arg_info)
  *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
  *
  * remark:
- *   'wl_seg' points to the current with-loop segment.
+ *   - 'wl_seg' points to the current with-loop segment.
+ *   - 'multiple_segs' indicates whether there are multiple segments or not.
  *
  ******************************************************************************/
 
@@ -6838,50 +6839,57 @@ COMPWLseg (node *arg_node, node *arg_info)
     wl_seg = arg_node;
 
     /*
+     * multiple segments found?
+     *  -> modify 'multiple_segs'
+     */
+    if ((multiple_segs == 0) && (WLSEG_NEXT (arg_node) != NULL)) {
+        multiple_segs = 1;
+    }
+
+    /*
      * compile the contents of the segment
      *  -> we get an assignment-chain
      */
     assigns = Trav (WLSEG_CONTENTS (arg_node), arg_info);
 
-    if (WLSEG_SCHEDULING (arg_node) != NULL) {
-        /*
-         * If this segment contains a scheduling specification, we must insert
-         * the respective scheduler ICMs.
-         */
-        assigns
-          = AppendAssign (assigns, MakeAssign (SCHCompileSchedulingEnd (WLSEG_SCHEDULING (
-                                                                          arg_node),
-                                                                        arg_node),
-                                               NULL));
-
-        if ((NWITHOP_TYPE (NWITH2_WITHOP (wl_node)) == WO_genarray)
-            || (NWITHOP_TYPE (NWITH2_WITHOP (wl_node)) == WO_modarray)) {
-            assigns = MakeAssign (
-              MakeIcm ("WL_MT_SCHEDULER_SET_OFFSET",
-                       MakeExprs (MakeId (StringCopy (IDS_NAME (wl_ids)), NULL,
-                                          ST_regular),
-                                  MakeExprs (MakeId (StringCopy (IDS_NAME (NWITHID_VEC (
-                                                       NWITH2_WITHID (wl_node)))),
-                                                     NULL, ST_regular),
-                                             MakeExprs (MakeNum (NWITH2_DIMS (wl_node)),
-                                                        MakeExprs (MakeNum (TYPES_DIM (
-                                                                     VARDEC_OR_ARG_TYPE (
-                                                                       IDS_VARDEC (
-                                                                         wl_ids)))),
-                                                                   NULL)))),
-                       NULL),
-              assigns);
-        }
-
-        assigns
-          = MakeAssign (SCHCompileSchedulingBegin (WLSEG_SCHEDULING (arg_node), arg_node),
-                        assigns);
+    /*
+     * insert ICM "WL_INIT_OFFSET"
+     */
+    if ((NWITHOP_TYPE (NWITH2_WITHOP (wl_node)) == WO_genarray)
+        || (NWITHOP_TYPE (NWITH2_WITHOP (wl_node)) == WO_modarray)) {
+        assigns = MakeAssign (
+          MakeIcm ("WL_INIT_OFFSET",
+                   MakeExprs (MakeNum (
+                                TYPES_DIM (VARDEC_OR_ARG_TYPE (IDS_VARDEC (wl_ids)))),
+                              MakeExprs (MakeId (StringCopy (IDS_NAME (wl_ids)), NULL,
+                                                 ST_regular),
+                                         MakeExprs (MakeId (StringCopy (IDS_NAME (
+                                                              NWITHID_VEC (NWITH2_WITHID (
+                                                                wl_node)))),
+                                                            NULL, ST_regular),
+                                                    MakeExprs (MakeNum (
+                                                                 NWITH2_DIMS (wl_node)),
+                                                               NULL)))),
+                   NULL),
+          assigns);
     }
 
+    /*
+     * Insert scheduling specific ICMs.
+     */
+    assigns
+      = AppendAssign (assigns,
+                      MakeAssign (SCHCompileSchedulingEnd (WLSEG_SCHEDULING (arg_node),
+                                                           arg_node),
+                                  NULL));
+    assigns
+      = MakeAssign (SCHCompileSchedulingBegin (WLSEG_SCHEDULING (arg_node), arg_node),
+                    assigns);
+
+    /*
+     * append compilat (assignment-chain) of next segment to 'assigns'
+     */
     if (WLSEG_NEXT (arg_node) != NULL) {
-        /*
-         * append compilat (assignment-chain) of next segment to 'assigns'
-         */
         assigns = AppendAssign (assigns, Trav (WLSEG_NEXT (arg_node), arg_info));
     }
 
@@ -7309,7 +7317,7 @@ COMPWLgrid (node *arg_node, node *arg_info)
     ids *ids_vector, *ids_scalar, *withid_ids;
     char *icm_name, *icm_name_begin, *icm_name_end;
     long *bv;
-    int num_args, last_blocking, cnt_unroll, d, i;
+    int num_args, insert_icm, cnt_unroll, first_block_dim, d, i;
 
     DBUG_ENTER ("COMPWLgrid");
 
@@ -7327,54 +7335,81 @@ COMPWLgrid (node *arg_node, node *arg_info)
         withid_ids = IDS_NEXT (withid_ids);
     }
     icm_args2
-      = MakeExprs (MakeId2 (DupOneIds (NWITHID_VEC (NWITH2_WITHID (wl_node)), NULL)),
-                   MakeExprs (MakeNum (num_args), icm_args2));
+      = MakeExprs (MakeNum (TYPES_DIM (IDS_TYPE (wl_ids))),
+                   MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)),
+                              MakeExprs (MakeId2 (DupOneIds (NWITHID_VEC (
+                                                               NWITH2_WITHID (wl_node)),
+                                                             NULL)),
+                                         MakeExprs (MakeNum (num_args), icm_args2))));
 
     if (WLGRID_NEXTDIM (arg_node) != NULL) {
 
         /**************************************************************************
          * insert ICM 'WL_ADJUST_OFFSET'
-         *  if next dim is the last blocked dim (otherwise the ICM redundant)
-         *  and we do not have a fold with-loop (is this case we do not use any offset!)
+         *
+         * 'multiple_segs' == 0:
+         *    insert ICM, if next dim is the last blocked dim (otherwise the ICM
+         *    redundant) and we do not have a fold with-loop (is this case we do
+         *    not use any offset!).
+         *
+         * 'multiple_segs' == 1:
+         *    insert ICM, if next dim is the last dim and we do not have a fold
+         *    with-loop.
          */
 
-        /*
-         * if (bv0 > 1) get bv0, otherwise ubv
-         */
-        bv = NULL;
-        for (d = 0; d < WLSEG_DIMS (wl_seg); d++) {
-            if ((WLSEG_BV (wl_seg, 0))[d] > 1) {
-                bv = WLSEG_BV (wl_seg, 0);
-                break;
-            }
-        }
-        if (bv == NULL) {
-            bv = WLSEG_UBV (wl_seg);
-        }
+        if ((NWITH2_TYPE (wl_node) != WO_foldprf)
+            && (NWITH2_TYPE (wl_node) != WO_foldfun)) {
 
-        /*
-         * is next dim the last blocked dim?
-         */
-        last_blocking = 0;
-        if ((WLGRID_DIM (arg_node) + 1 < WLSEG_DIMS (wl_seg))) {
-            last_blocking = (bv[WLGRID_DIM (arg_node) + 1] > 1);
-            if (last_blocking > 0) {
-                for (d = WLGRID_DIM (arg_node) + 2; d < WLSEG_DIMS (wl_seg); d++) {
-                    if (bv[d] > 1) {
-                        last_blocking = 0;
+            first_block_dim = WLSEG_DIMS (wl_seg);
+            insert_icm = 0;
+            if (multiple_segs == 0) {
+
+                /*
+                 * if (bv0 > 1) get bv0, otherwise ubv
+                 */
+                bv = NULL;
+                for (d = 0; d < WLSEG_DIMS (wl_seg); d++) {
+                    if ((WLSEG_BV (wl_seg, 0))[d] > 1) {
+                        bv = WLSEG_BV (wl_seg, 0);
+                        break;
                     }
                 }
-            }
-        }
+                if (bv == NULL) {
+                    bv = WLSEG_UBV (wl_seg);
+                }
 
-        if ((NWITH2_TYPE (wl_node) != WO_foldprf) && (NWITH2_TYPE (wl_node) != WO_foldfun)
-            && (last_blocking == 1)) {
-            icm_args2
-              = MakeExprs (MakeNum (WLGRID_DIM (arg_node)),
-                           MakeExprs (MakeNum (TYPES_DIM (IDS_TYPE (wl_ids))),
-                                      MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)),
-                                                 icm_args2)));
-            assigns = MakeAssign (MakeIcm ("WL_ADJUST_OFFSET", icm_args2, NULL), NULL);
+                /*
+                 * is next dim the last blocked dim?
+                 */
+                if ((WLGRID_DIM (arg_node) + 1 < WLSEG_DIMS (wl_seg))) {
+                    insert_icm = (bv[WLGRID_DIM (arg_node) + 1] > 1);
+                    if (insert_icm > 0) {
+                        for (d = WLGRID_DIM (arg_node) + 2; d < WLSEG_DIMS (wl_seg);
+                             d++) {
+                            if (bv[d] > 1) {
+                                insert_icm = 0;
+                            }
+                        }
+                    }
+                }
+
+            } else {
+                /* 'multiple_segs' == 1 */
+
+                if (WLGRID_DIM (arg_node) + 2 == WLSEG_DIMS (wl_seg)) {
+                    insert_icm = 1;
+                }
+            }
+
+            if (insert_icm == 1) {
+                icm_args2 = MakeExprs (MakeNum (WLGRID_DIM (arg_node)),
+                                       MakeExprs (MakeNum (first_block_dim), icm_args2));
+                assigns
+                  = MakeAssign (MakeIcm ("WL_ADJUST_OFFSET", icm_args2, NULL), NULL);
+            } else {
+                icm_args2 = FreeTree (icm_args2);
+            }
+
         } else {
             icm_args2 = FreeTree (icm_args2);
         }
@@ -7392,9 +7427,6 @@ COMPWLgrid (node *arg_node, node *arg_info)
         assigns = AppendAssign (assigns, Trav (WLGRID_NEXTDIM (arg_node), arg_info));
 
     } else {
-
-        icm_args2 = MakeExprs (MakeNum (TYPES_DIM (IDS_TYPE (wl_ids))),
-                               MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)), icm_args2));
 
         if (WLGRID_CODE (arg_node) != NULL) {
 
@@ -7629,6 +7661,62 @@ COMPWLgrid (node *arg_node, node *arg_info)
     if (WLGRID_NEXT (arg_node) != NULL) {
         assigns = AppendAssign (assigns, Trav (WLGRID_NEXT (arg_node), arg_info));
     }
+
+    DBUG_RETURN (assigns);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *COMPWLsegVar(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   compilation of an N_WLsegVar-node:
+ *     returns an N_assign-chain with ICMs and leaves 'arg_node' untouched!!
+ *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
+ *
+ * remark:
+ *   - 'wl_seg' points to the current with-loop segment.
+ *   - 'multiple_segs' indicates whether there are multiple segments or not.
+ *
+ ******************************************************************************/
+
+node *
+COMPWLsegVar (node *arg_node, node *arg_info)
+{
+    node *assigns, *old_wl_seg;
+
+    DBUG_ENTER ("COMPWLsegVar");
+
+    /*
+     * stack old 'wl_seg'.
+     * store pointer to current segment in 'wl_seg'.
+     */
+    old_wl_seg = wl_seg;
+    wl_seg = arg_node;
+
+    /*
+     * multiple segments found?
+     *  -> modify 'multiple_segs'
+     */
+    if ((multiple_segs == 0) && (WLSEG_NEXT (arg_node) != NULL)) {
+        multiple_segs = 1;
+    }
+
+    /*
+     * compile the contents of the segment
+     *  -> we get an assignment-chain
+     */
+    assigns = Trav (WLSEGVAR_CONTENTS (arg_node), arg_info);
+
+    /*
+     * not yet completed!!!!
+     */
+
+    /*
+     * pop 'wl_seg'.
+     */
+    wl_seg = old_wl_seg;
 
     DBUG_RETURN (assigns);
 }
