@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2004/08/08 13:48:41  ktr
+ * Fixed bug #43: accu() can never be removed by DCR.
+ *
  * Revision 1.22  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -506,6 +509,9 @@ SSADCRassign (node *arg_node, info *arg_info)
  *  a functions application of a special function requieres a special
  *  handling because you can remove parts of the results an modify the
  *  functions signature
+ *  a RHS containing a primitive function application of type F_accu
+ *  must never become dead code as we would lose the handle to the
+ *  intermediate fold result (FIXES BUG #43)
  *
  *****************************************************************************/
 node *
@@ -548,7 +554,12 @@ SSADCRlet (node *arg_node, info *arg_info)
         LET_IDS (arg_node) = TravLeftIDS (LET_IDS (arg_node), arg_info);
     }
 
-    if (INFO_SSADCR_RESNEEDED (arg_info) == 0) {
+    /*
+     * FIX TO BUG #43: accu() must never become dead code!
+     */
+    if ((INFO_SSADCR_RESNEEDED (arg_info) == 0)
+        && (!((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
+              && (PRF_PRF (LET_EXPR (arg_node)) == F_accu)))) {
         /* let is useless -> can be removed! */
 
         DBUG_PRINT ("SSADCR", ("removing assignment"));
