@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2002/11/04 17:39:27  sbs
+ * call SHOldTypes2Shape changed into SHOldShpseg2Shape to avoid implicit
+ * flattening of user defined types...
+ *
  * Revision 3.40  2002/11/04 13:21:22  sbs
  * TYDeNestTypes added !
  *
@@ -4295,7 +4299,8 @@ TYOldType2Type (types *old)
 
     if (res != NULL) {
         if (TYPES_DIM (old) > SCALAR) {
-            res = TYMakeAKS (res, SHOldTypes2Shape (old));
+            res
+              = TYMakeAKS (res, SHOldShpseg2Shape (TYPES_DIM (old), TYPES_SHPSEG (old)));
         } else if (TYPES_DIM (old) < KNOWN_DIM_OFFSET) {
             res = TYMakeAKD (res, KNOWN_DIM_OFFSET - TYPES_DIM (old), SHMakeShape (0));
         } else if (TYPES_DIM (old) == UNKNOWN_SHAPE) {
