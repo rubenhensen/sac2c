@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2004/10/15 15:01:18  sah
+ * Serialize is now called for modules only
+ *
  * Revision 3.62  2004/10/11 16:48:10  sah
  * added serialize phase (aka writesib)
  *
@@ -555,16 +558,16 @@ main (int argc, char *argv[])
 #endif /* NEW_AST */
 
     PHASE_PROLOG;
-#ifndef NEW_AST
     if (MODUL_FILETYPE (syntax_tree) != F_prog) {
         NOTE_COMPILER_PHASE;
+#ifndef NEW_AST
         syntax_tree = WriteSib (syntax_tree); /* writesib_tab */
+#else                                         /* NEW_AST */
+        SerializeModule (syntax_tree);
+#endif                                        /* NEW_AST */
         PHASE_DONE_EPILOG;
     }
-#else  /* NEW_AST */
-    SerializeModule (syntax_tree);
     PHASE_DONE_EPILOG;
-#endif /* NEW_AST */
     PHASE_EPILOG;
 
     if (break_after == PH_writesib)
