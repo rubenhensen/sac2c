@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/06/25 15:40:55  jhs
+ * Just to provide compilabilty.
+ *
  * Revision 2.4  1999/06/03 13:31:27  jhs
  * Deleted extra frame, all that can be done with the existing frame.
  *
@@ -199,19 +202,31 @@ typedef union {
 
 #define SAC_MT_BLOCK_FRAME_DUMMY() int dummy;
 
-#define SAC_MT_SPMD_ARG_in(type, name) type name;
+#define I_POST(arg) arg
+#define dddI_POST(arg) CAT (arg, _in)
+#define O_POST(arg) CAT (arg, _out)
+#define S_POST(arg) CAT (arg, _shared)
 
-#define SAC_MT_SPMD_ARG_out(type, name) type *name;
+#define SAC_MT_SPMD_ARG_in(type, name) type I_POST (name);
+
+#define SAC_MT_SPMD_ARG_out(type, name) type *O_POST (name);
+
+#define SAC_MT_SPMD_ARG_shared(type, name) type S_POST (name);
 
 #define SAC_MT_SPMD_ARG_in_rc(type, name)                                                \
-    type name;                                                                           \
-    int SAC_ND_A_RC (name);
+    type I_POST (name);                                                                  \
+    int SAC_ND_A_RC (I_POST (name));
 
 #define SAC_MT_SPMD_ARG_out_rc(type, name)                                               \
-    type *name;                                                                          \
-    int *SAC_ND_A_RC (name);
+    type *O_POST (name);                                                                 \
+    int *SAC_ND_A_RC (O_POST (name));
 
-#define SAC_MT_SPMD_ARG_inout_rc(type, name)                                             \
+#define SAC_MT_SPMD_ARG_shared_rc(type, name)                                            \
+    type S_POST (name);                                                                  \
+    int SAC_ND_A_RC (S_POST (name));
+
+/* out of order */
+#define SAC_MT_SPMD_ARG_inout_rcXXX(type, name)                                          \
     type name;                                                                           \
     int SAC_ND_A_RC (name);
 
@@ -275,11 +290,11 @@ typedef union {
 
 #else /* SAC_MT_CACHE_LINE_MAX() */
 
-#define SAC_MT_SETUP_BARRIER()
-{
-    SAC_MT_barrier = SAC_MT_barrier_space;
-    SAC_TR_MT_PRINT (("Barrier base address is %p", SAC_MT_barrier));
-}
+#define SAC_MT_SETUP_BARRIER()                                                           \
+    {                                                                                    \
+        SAC_MT_barrier = SAC_MT_barrier_space;                                           \
+        SAC_TR_MT_PRINT (("Barrier base address is %p", SAC_MT_barrier));                \
+    }
 
 #endif /* SAC_MT_CACHE_LINE_MAX() */
 
@@ -333,56 +348,79 @@ typedef union {
 
 #define SAC_MT_MYWORKERCLASS() SAC_MT_myworkerclass
 
+#define SAC_MT_SPMD_SPECIAL_FRAME(spmdname)                                              \
+    SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().##spmdname
+
+#define SAC_MT_SPMD_CURRENT_FRAME                                                        \
+    SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ()
+
 #define SAC_MT_SPMD_PARAM_in(type, param)                                                \
-    type param = SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ().param;
+    type param = SAC_MT_CURRENT_FRAME ().I_POST (param);
 
 #define SAC_MT_SPMD_PARAM_in_rc(type, param)                                             \
-    type param = SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ().param;   \
-    int SAC_ND_A_RC (param)                                                              \
-      = SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ().SAC_ND_A_RCP (    \
-        param);
+    type I_POST (param) = SAC_MT_SPMD_CURRENT_FRAME.I_POST (param);                      \
+    int SAC_ND_A_RC (I_POST (param))                                                     \
+      = SAC_MT_SPMD_CURRENT_FRAME.SAC_ND_A_RCP (I_POST (param));
 
 #define SAC_MT_SPMD_PARAM_out(type, param)
 
 #define SAC_MT_SPMD_PARAM_out_rc(type, param)
 
-#define SAC_MT_SPMD_PARAM_inout_rc(type, param)                                          \
+/* out of order #### */
+#define SAC_MT_SPMD_PARAM_inout_rcXXX(type, param)                                       \
     type param = SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ().param;   \
     int SAC_ND_A_RC (param)                                                              \
       = SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ().SAC_ND_A_RCP (    \
         param);
 
 #define SAC_MT_SPMD_SETARG_in(spmdname, arg)                                             \
-    SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.arg = arg;
+    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).I_POST (arg) = arg;
 
 #define SAC_MT_SPMD_SETARG_in_rc(spmdname, arg)                                          \
-    SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.arg = arg;                          \
-    SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.SAC_ND_A_RCP (arg)                  \
-      = SAC_ND_A_RCP (arg);
+    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).I_POST (arg) = arg;                             \
+    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).SAC_ND_A_RCP (I_POST (arg)) = SAC_ND_A_RCP (arg);
 
 #define SAC_MT_SPMD_SETARG_out(spmdname, arg)                                            \
-    SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.arg = &arg;
+    SAC_MT_SPECIAL_FRAME (spmdname).O_POST (arg) = &arg;
 
 #define SAC_MT_SPMD_SETARG_out_rc(spmdname, arg)                                         \
-    SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.arg = &arg;                         \
-    SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.SAC_ND_A_RCP (arg)                  \
+    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).O_POST (arg) = &arg;                            \
+    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).SAC_ND_A_RCP (O_POST (arg))                     \
       = &SAC_ND_A_RCP (arg);
 
-#define SAC_MT_SPMD_SETARG_inout_rc(spmdname, arg)                                       \
+#define SAC_MT_SPMD_SETARG_shared(spmdname, arg)                                         \
+    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).S_POST (arg) = arg;
+
+#define SAC_MT_SPMD_SETARG_shared_rc(spmdname, arg)                                      \
+    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).S_POST (arg) = arg;                             \
+    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).SAC_ND_A_RCP (S_POST (arg)) = SAC_ND_A_RCP (arg);
+
+/* ####  out of order */
+#define SAC_MT_SPMD_SETARG_inout_rcXXX(spmdname, arg)                                    \
     SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.arg = arg;                          \
     SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.SAC_ND_A_RCP (arg)                  \
       = SAC_ND_A_RCP (arg);
 
-#define SAC_MT_SPMD_RET_out(param)                                                       \
-    *(SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ().param) = param;
+#define SAC_MT_SPMD_RET_out(param) *(SAC_MT_SPMD_CURRENT_FRAME.O_POST (param)) = param;
 
 #define SAC_MT_SPMD_RET_out_rc(param)                                                    \
-    *(SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ().param) = param;     \
-    *(SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ().SAC_ND_A_RCP (      \
-      param))                                                                            \
-      = SAC_ND_A_RCP (param);
+    *(SAC_MT_SPMD_CURRENT_FRAME.O_POST (param)) = param;                                 \
+    *(SAC_MT_SPMD_CURRENT_FRAME.SAC_ND_A_RCP (O_POST (param))) = SAC_ND_A_RCP (param);
 
-#define SAC_MT_SPMD_RET_inout_rc(param)
+#define SAC_MT_SPMD_RET_shared(param) SAC_MT_SPMD_CURRENT_FRAME.S_POST (param) = param;
+
+#define SAC_MT_SPMD_RET_shared_rc(param)                                                 \
+    SAC_MT_SPMD_CURRENT_FRAME.S_POST (param) = param;                                    \
+    SAC_MT_SPMD_CURRENT_FRAME.SAC_ND_A_RCP (S_POST (param)) = SAC_ND_A_RCP (param);
+
+#define SAC_MT_SPMD_GET_shared(param) param = SAC_MT_SPMD_CURRENT_FRAME.S_POST (param);
+
+#define SAC_MT_SPMD_GET_shared_rc(param)                                                 \
+    param = SAC_MT_SPMD_CURRENT_FRAME.S_POST (param);                                    \
+    SAC_ND_A_RCP (param) = SAC_MT_SPMD_CURRENT_FRAME.SAC_ND_A_RCP (S_POST (param));
+
+/* out of order  #### */
+#define SAC_MT_SPMD_RET_inout_rcXXX(param)
 
 /*
  *  Definition of macro implemented ICMs for synchronisation
