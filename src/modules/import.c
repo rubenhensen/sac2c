@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.35  1995/12/29 10:39:37  cg
+ * Revision 1.36  1996/01/02 16:03:09  cg
+ * handling of global variable filename simplified
+ *
+ * Revision 1.35  1995/12/29  10:39:37  cg
  * All functions concerning SIBs extracted and moved to readsib.c
  *
  * Revision 1.34  1995/12/21  15:05:28  cg
@@ -149,6 +152,7 @@
 #include "dbug.h"
 #include "my_debug.h"
 #include "internal_lib.h"
+#include "globals.h"
 
 #include "scnprs.h"
 #include "traverse.h"
@@ -302,7 +306,6 @@ AddSymbol (char *name, char *module, int symbkind)
         tmp->flag = 0;
         tmp->allflag = 0;
         tmp->moddec = NULL;
-        tmp->sib = NULL;
 
         tmp->next = mod_tab;
         mod_tab = tmp;
@@ -852,7 +855,6 @@ GenMod (char *name, int checkdec)
 
     tmp->flag = 0;
     tmp->allflag = 0;
-    tmp->sib = NULL;
 
     strcpy (buffer, name);
     strcat (buffer, ".dec");
@@ -871,28 +873,27 @@ GenMod (char *name, int checkdec)
     } else {
         NOTE (("  Parsing file \"%s\" ...", pathname));
 
-        strcpy (filename, buffer);
+        filename = buffer;
 
         linenum = 1;
         start_token = PARSE_DEC;
         yyparse ();
 
         tmp->moddec = decl_tree;
-        if (strcmp (decl_tree->info.fun_name.id, name) != 0)
+
+        if (strcmp (decl_tree->info.fun_name.id, name) != 0) {
             SYSERROR (("File \"%s\" does not provide module/class '%s`, "
                        "but module/class '%s`",
                        buffer, name, decl_tree->info.fun_name.id));
+        }
 
         tmp->prefix = decl_tree->info.fun_name.id_mod;
         tmp->name = decl_tree->info.fun_name.id;
 
-        DBUG_PRINT ("MEMIMPORT", ("Allocating mod at" P_FORMAT " name: %s(" P_FORMAT
-                                  " prefix %s (" P_FORMAT,
-                                  tmp, tmp->name, tmp->name, tmp->prefix, tmp->prefix));
-
         tmp->moddec = CheckPragmas (tmp->moddec, tmp->prefix);
 
         tmp->next = NULL;
+
         for (i = 0; i < 4; i++)
             tmp->syms[i] = NULL;
 
@@ -930,13 +931,10 @@ FindOrAppend (node *implist, int checkdec)
 {
     mod *current, *last;
     int tmp;
-    static char store_filename[MAX_FILE_NAME];
 
     DBUG_ENTER ("FindOrAppend");
 
     DBUG_ASSERT ((implist), "FindOrAppend called with NULL-import-list!");
-
-    strcpy (store_filename, filename);
 
     if (mod_tab == NULL) /* the first modul has to be inserted anyway! */
     {
@@ -962,7 +960,7 @@ FindOrAppend (node *implist, int checkdec)
         implist = implist->node[0];
     }
 
-    strcpy (filename, store_filename);
+    filename = sacfilename;
 
     DBUG_VOID_RETURN;
 }
@@ -1180,13 +1178,13 @@ AppendModnameToSymbol (node *symbol, char *modname)
     mods *mods, *mods2;
     types *types;
     int done;
-    static char store_filename[MAX_FILE_NAME];
+    char decfilename[MAX_FILE_NAME];
 
     DBUG_ENTER ("AppendModnameToSymbol");
 
-    strcpy (store_filename, filename);
-    strcpy (filename, modname);
-    strcat (filename, ".dec");
+    strcpy (decfilename, modname);
+    strcat (decfilename, ".dec");
+    filename = decfilename;
     /* only for error messages */
 
     types = symbol->info.types;
@@ -1290,7 +1288,7 @@ AppendModnameToSymbol (node *symbol, char *modname)
         }
     }
 
-    strcpy (filename, store_filename);
+    filename = sacfilename;
 
     DBUG_VOID_RETURN;
 }
@@ -1713,7 +1711,11 @@ ImportOwnDeclaration (char *name, file_type modtype)
     DBUG_RETURN (decl);
 }
 
+#if 0
+
 /*=========================================================================*/
+
+
 
 /*
  *
@@ -1721,7 +1723,7 @@ ImportOwnDeclaration (char *name, file_type modtype)
  *  arguments     : ---
  *  description   : generates list of modules for C linker.
  *  global vars   : mod_tab, linker_tab
- *  internal funs :
+ *  internal funs : 
  *  external funs : strcpy, strcat, FindFile
  *  macros        :
  *
@@ -1729,27 +1731,32 @@ ImportOwnDeclaration (char *name, file_type modtype)
  *
  */
 
-strings *
-AddToLinkList (strings *list, char *name)
+strings* AddToLinkList(strings *list, char *name)
 {
-    strings *tmp = list;
-
-    DBUG_ENTER ("AddToLinkList");
-
-    while ((tmp != NULL) && (strcmp (tmp->name, name) != 0)) {
-        tmp = tmp->next;
-    }
-
-    if (tmp == NULL) {
-        tmp = (strings *)Malloc (sizeof (strings));
-        tmp->name = name;
-        tmp->next = list;
-    } else {
-        tmp = list;
-    }
-
-    DBUG_RETURN (tmp);
+  strings *tmp=list;
+  
+  DBUG_ENTER("AddToLinkList");
+  
+  while ((tmp!=NULL) && (strcmp(tmp->name,name)!=0))
+  {
+    tmp=tmp->next;
+  }
+  
+  if (tmp==NULL)
+  {
+    tmp=(strings*)Malloc(sizeof(strings));
+    tmp->name=name;
+    tmp->next=list;
+  }
+  else
+  {
+    tmp=list;
+  }
+  
+  DBUG_RETURN(tmp);
 }
+
+
 
 /*
  *
@@ -1759,7 +1766,7 @@ AddToLinkList (strings *list, char *name)
  *                  This list is needed as additional linker list for
  *                  implicitly imported external symbols
  *  global vars   : mod_tab
- *  internal funs :
+ *  internal funs : 
  *  external funs : Malloc
  *  macros        :
  *
@@ -1767,26 +1774,28 @@ AddToLinkList (strings *list, char *name)
  *
  */
 
-strings *
-GenExtmodlistList ()
+strings *GenExtmodlistList()
 {
-    mod *modp = mod_tab;
-    strings *tmp, *linklist = NULL;
-
-    DBUG_ENTER ("GenExtmodlistList");
-
-    while (modp != NULL) {
-        if (modp->prefix == NULL) /* external module/class */
-        {
-            tmp = (strings *)Malloc (sizeof (strings));
-            tmp->name = modp->name;
-            tmp->next = linklist;
-            linklist = tmp;
-        }
+  mod *modp=mod_tab;
+  strings *tmp, *linklist=NULL;
+  
+  DBUG_ENTER("GenExtmodlistList");
+  
+  while (modp!=NULL)
+  {
+    if (modp->prefix==NULL)              /* external module/class */
+    {
+      tmp=(strings*)Malloc(sizeof(strings));
+      tmp->name=modp->name;
+      tmp->next=linklist;
+      linklist=tmp;
     }
-
-    DBUG_RETURN (linklist);
+  }
+  
+  DBUG_RETURN(linklist);
 }
+
+
 
 /*
  *
@@ -1802,42 +1811,53 @@ GenExtmodlistList ()
  *
  */
 
-char *
-GenLinkerList ()
+char *GenLinkerList()
 {
-    mod *modp = mod_tab;
-    strings *linklist = NULL, *tmp;
-    static char buffer[MAX_FILE_NAME];
-    static char list[MAX_PATH_LEN];
-    char *file;
+  mod *modp=mod_tab;
+  strings *linklist=NULL, *tmp;
+  static char buffer[MAX_FILE_NAME];
+  static char list[MAX_PATH_LEN];
+  char *file;
 
-    DBUG_ENTER ("GenLinkerList");
+  DBUG_ENTER("GenLinkerList");
 
-    while (modp != NULL) {
-        linklist = AddToLinkList (linklist, modp->name);
-        if (modp->sib != NULL) {
-            tmp = (strings *)modp->sib->node[2];
-            while (tmp != NULL) {
-                linklist = AddToLinkList (linklist, tmp->name);
-                tmp = tmp->next;
-            }
-        }
-        modp = modp->next;
+  while (modp!=NULL)
+  {
+    linklist=AddToLinkList(linklist, modp->name);
+    if (modp->sib!=NULL)
+    {
+      tmp=(strings*)modp->sib->node[2];
+      while (tmp!=NULL)
+      {
+        linklist=AddToLinkList(linklist,tmp->name);
+        tmp=tmp->next;
+      }
     }
+    modp=modp->next;
+  }
 
-    while (linklist != NULL) {
-        strcpy (buffer, linklist->name);
-        strcat (buffer, ".o");
-        file = FindFile (MODIMP_PATH, buffer);
+  while(linklist!=NULL) 
+  {
+    strcpy(buffer,linklist->name);
+    strcat(buffer,".o");
+    file=FindFile(MODIMP_PATH, buffer);
 
-        if (file) {
-            strcat (list, " ");
-            strcat (list, file);
-        } else {
-            SYSWARN (("Unable to find file \"%s\"", buffer));
-        }
-        linklist = linklist->next;
+    if(file) 
+    {
+      strcat(list," ");
+      strcat(list,file);
     }
+    else
+    {
+      SYSWARN(("Unable to find file \"%s\"", buffer));
+    }
+    linklist=linklist->next;
+  }
 
-    DBUG_RETURN (list);
+
+
+    
+  DBUG_RETURN(list);
 }
+
+#endif
