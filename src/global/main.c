@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.91  1997/03/19 13:36:19  cg
+ * Revision 1.92  1997/04/24 09:54:53  cg
+ * added -Mlib option
+ * dependencies now printed after import
+ *
+ * Revision 1.91  1997/03/19  13:36:19  cg
  * Now, the syntax tree is removed before the gcc is started
  *
  * Revision 1.90  1997/03/11  16:32:44  cg
@@ -494,8 +498,17 @@ MAIN
     NEXTOPT
     ARG 'M':
     {
-        makedeps = 1;
+        if (*++*argv == 0) {
+            makedeps = 1;
+        } else {
+            if (strcmp ((*argv), "lib") == 0) {
+                makedeps = 2;
+            } else {
+                SYSWARN (("Unknown compiler option '-M%s`", *argv));
+            }
+        }
     }
+    NEXTOPT
     ARG 'h':
     {
         usage (prgname);
@@ -857,19 +870,13 @@ MAIN
      * path list because those paths specified on the command line are intended
      * to have a higher priority.
      * At last, the paths specified by environment variables are appended.
-     * These have the lowest priority.
+     * These have a lower priority.
+     * At very last, the required paths for using the SAC standard library
+     * relative to the shell variable SAC_HOME are added. These have the
+     * lowest priority.
      */
 
     RearrangePaths ();
-
-    if (AppendEnvVar (MODDEC_PATH, "SAC_DEC_PATH") == 0)
-        SYSABORT (("MAX_PATH_LEN too low"));
-
-    if (AppendEnvVar (MODIMP_PATH, "SAC_LIBRARY_PATH") == 0)
-        SYSABORT (("MAX_PATH_LEN too low"));
-
-    if (AppendEnvVar (PATH, "SAC_PATH") == 0)
-        SYSABORT (("MAX_PATH_LEN too low"));
 
     /*
      * Now, we create tmp directories for files generated during the
@@ -926,7 +933,7 @@ MAIN
         }
         compiler_phase++;
 
-        if (!breakimport) {
+        if (!breakimport && !makedeps) {
             if (MODUL_STORE_IMPORTS (syntax_tree) != NULL) {
                 NOTE_COMPILER_PHASE;
                 syntax_tree = ReadSib (syntax_tree);
@@ -934,7 +941,7 @@ MAIN
             }
             compiler_phase++;
 
-            if (!breakreadsib && !makedeps) {
+            if (!breakreadsib) {
                 NOTE_COMPILER_PHASE;
                 syntax_tree = objinit (syntax_tree);
                 ABORT_ON_ERROR;
@@ -1062,7 +1069,7 @@ MAIN
     if (makedeps) {
         compiler_phase = 23;
         NOTE_COMPILER_PHASE;
-        PrintDependencies (dependencies);
+        PrintDependencies (dependencies, makedeps);
         ABORT_ON_ERROR;
     } else {
         if (!break_compilation) {
