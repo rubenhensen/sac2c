@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.24  1995/05/15 09:14:51  asi
+ * Revision 1.25  1995/05/16 12:46:09  asi
+ * MALLOC_TOOL renamed to MALLOC_OPT
+ *
+ * Revision 1.24  1995/05/15  09:14:51  asi
  * functions malloc_debug & malloc_verify will onlu be called
  * if macro MALLOC_TOOL is defined.
  *
@@ -117,7 +120,12 @@ extern int optvar_counter;
 
 #define VAR_LENGTH 10
 
-#ifdef MALLOC_TOOL
+#ifdef MALLOC_OPT
+extern int malloc_verify ();
+extern int malloc_debug (int level);
+#endif /*MALLOC_OPT */
+
+#ifdef MALLOC_OPT
 #define FREE(address)                                                                    \
     DBUG_PRINT ("MEM", ("Give memory free at adress: %08x", address));                   \
     free (address);                                                                      \
@@ -126,7 +134,7 @@ extern int optvar_counter;
 #define FREE(address)                                                                    \
     DBUG_PRINT ("MEM", ("Give memory free at adress: %08x", address));                   \
     free (address)
-#endif /*MALLOC_TOOL */
+#endif /*MALLOC_OPT */
 
 extern node *Optimize (node *arg_node);
 
