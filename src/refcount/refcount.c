@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.8  2001/02/02 09:58:23  dkr
+ * superfluous include of compile.h removed
+ *
  * Revision 3.7  2000/12/15 18:24:59  dkr
  * infer_dfms.h renamed into InferDFMs.h
  *
@@ -165,20 +168,19 @@
 
 #include <stdlib.h>
 
+#include "my_debug.h"
+#include "dbug.h"
+#include "internal_lib.h"
 #include "tree.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "my_debug.h"
-#include "dbug.h"
+#include "traverse.h"
+#include "free.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
-#include "traverse.h"
-#include "optimize.h"
-#include "generatemasks.h"
-#include "internal_lib.h"
-#include "free.h"
 #include "InferDFMs.h"
-#include "compile.h"
+#include "generatemasks.h"
+#include "optimize.h"
 #include "refcount.h"
 
 /* sorry, but there is no description of the refcouting available here ... */

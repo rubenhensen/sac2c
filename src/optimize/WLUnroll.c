@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/02/02 09:55:52  dkr
+ * superfluous include of compile.h removed
+ *
  * Revision 3.1  2000/11/20 18:00:38  sacbase
  * new release made
  *
@@ -122,7 +125,6 @@
 #include "traverse.h"
 #include "internal_lib.h"
 #include "typecheck.h"
-#include "compile.h"
 
 #include "optimize.h"
 #include "Inline.h"

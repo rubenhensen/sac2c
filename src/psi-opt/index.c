@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/02/02 09:55:09  dkr
+ * superfluous include of compile.h removed
+ *
  * Revision 3.3  2000/12/13 14:03:47  sbs
  * EqTypes is now based on Type2Shpseg as well for avoiding
  * IDX( cplx[4]) and IDX( double[4,2]) to co-exist !!
@@ -177,9 +180,7 @@
  * That can happen if an external function is involved that returns an
  * array of unknown shape, e.g. FibreScanIntArray.
  *
- *
  * ... [eliminated] ...
- *
  *
  * Revision 1.1  1995/06/02  10:06:56  sbs
  * Initial revision
@@ -188,17 +189,14 @@
 
 #include <stdio.h>
 #include <string.h>
+
 #include "dbug.h"
 #include "tree.h"
 #include "print.h"
 #include "traverse.h"
 #include "DupTree.h"
-#include "index.h"
 #include "free.h"
-
-#include "access_macros.h"
-
-#include "compile.h"
+#include "index.h"
 
 /*
  * OPEN PROBLEMS:
