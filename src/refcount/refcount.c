@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/07/24 13:19:39  dkr
+ * macro MUST_... renamed
+ *
  * Revision 3.17  2002/04/16 21:11:04  dkr
  * cpp-flag MAIN_HAS_MODNAME no longer needed
  *
@@ -52,141 +55,6 @@
  *
  * Revision 3.1  2000/11/20 18:01:35  sacbase
  * new release made
- *
- * Revision 2.24  2000/10/31 23:23:02  dkr
- * Trav: NWITH2_CODE might be NULL
- *
- * Revision 2.23  2000/07/31 10:45:52  cg
- * Eventually, the son ICM_NEXT is removed from the N_icm node.
- * The creation function MakeIcm is adjusted accordingly.
- *
- * Revision 2.22  2000/06/13 14:18:53  dkr
- * macros L_NWITH_OR_NWITH2_... used (for the cc-compiler)
- *
- * Revision 2.21  2000/06/08 12:13:54  jhs
- * abstraction of InferWithDFM, used to infer DFMs of with-loops,
- * can be used by other phases now
- *
- * Revision 2.20  2000/05/30 09:56:45  dkr
- * RCicm(): arguments of USE_GENVAR_OFFSET-icms are not traversed
- *
- * Revision 2.19  2000/05/24 18:58:21  dkr
- * DBUG_ASSERT in RCblock added (BLOCK_INSTR must be != NULL)
- *
- * Revision 2.18  2000/05/24 13:31:03  nmw
- * (jhs) Added workaround for BLOCK_INSTR == NULL
- *
- * Revision 2.17  2000/03/31 14:09:34  dkr
- * refcounting for N_Nwith2 added
- *
- * Revision 2.16  2000/03/30 12:23:30  dkr
- * some comments added
- *
- * Revision 2.15  2000/02/24 15:55:43  dkr
- * RC functions for old with-loop removed
- *
- * Revision 2.14  2000/02/23 17:49:22  cg
- * Type property functions IsUnique(<type>), IsBoxed(<type>)
- * moved from refcount.c to tree_compound.c.
- *
- * Revision 2.13  2000/02/23 17:27:01  cg
- * The entry TYPES_TDEF of the TYPES data structure now contains a
- * reference to the corresponding N_typedef node for all user-defined
- * types.
- * Therefore, most calls to LookupType() are eliminated.
- * Please, keep the back references up to date!!
- *
- * Revision 2.12  2000/01/25 13:38:07  dkr
- * function FindVardec renamed to FindVardec_Varno and moved to
- * tree_compound.c
- *
- * Revision 2.11  1999/11/09 21:16:13  dkr
- * In RCNwith(): call of Trav() with NWITH_PART restored.
- *
- * Revision 2.10  1999/11/02 14:30:47  sbs
- * Now, the IVE-created ICM Index2Offset is refcounted the same way as user
- * defined functions are! This makes sure, that the vector's refcount always
- * can be decremented (cf. icm2c_std.c!).
- *
- * Revision 2.9  1999/09/10 14:28:46  jhs
- * Hopefully I fixed all the problems with naive-refcounting disturbing
- * normal-refcounting.
- *
- * Revision 2.8  1999/09/01 17:12:57  jhs
- * Partly fixed the BBIIGG BBUUGG.
- *
- * Revision 2.7  1999/08/27 11:52:42  jhs
- * Added comments.
- *
- * Revision 2.6  1999/08/27 11:50:22  jhs
- * Expanded naive-refcounting on *all* variables.
- * Corrected inferring of naive-refcounters in loops.
- *
- * Revision 2.5  1999/08/09 15:38:10  dkr
- * VARDEC_OR_ARG_REFCNT is no l-value
- * Therefore this is replaced by new macro L_VARDEC_OR_ARG_REFCNT
- *
- * Revision 2.4  1999/06/30 09:49:15  cg
- * Bug fixed in handling of naive refcounts
- *
- * Revision 2.3  1999/06/15 12:37:23  jhs
- * Added naive refcounting. The naive refcounters will be infered besides the
- * normal refcounters. The naive refcounters will NOT be optimized, no matter
- * if optimisation of refcounters is set or not.
- * I also removed some possible memory leaks.
- *
- * Revision 2.2  1999/05/12 14:35:16  cg
- * Optimizations are now triggered by bit field optimize instead
- * of single individual int variables.
- *
- * Revision 2.1  1999/02/23 12:43:05  sacbase
- * new release made
- *
- * Revision 1.64  1999/02/06 14:46:20  dkr
- * RC can handle nested WLs now
- *
- * Revision 1.62  1998/12/21 10:50:43  sbs
- * error in RCloop:
- * when traversing the loop body "again", the masks are re-generated!
- * Therefore, the local pointers have to be updated accordingly!
- *
- * Revision 1.61  1998/06/05 19:52:58  dkr
- * fixed some bugs in RC for new with
- *
- * Revision 1.60  1998/06/04 17:00:54  cg
- * information about refcounted variables in the context of loops,
- * conditionals and the old with-loop are now stored in ids-chains
- * instead of N_exprs lists.
- *
- * Revision 1.59  1998/06/03 14:54:47  cg
- * Attribute WITH_USEDVARS renamed to WITH_USEVARS and built correctly
- *
- * Revision 1.58  1998/05/28 23:52:30  dkr
- * fixed a bug in RCNwith:
- *   NWITH_DEC_RC_IDS is now set correctly for fold
- *
- * Revision 1.57  1998/05/21 15:00:06  dkr
- * changed RCNwith
- *
- * Revision 1.56  1998/05/21 13:33:22  dkr
- * renamed NCODE_DEC_RC_IDS into NCODE_INC_RC_IDS
- *
- * Revision 1.55  1998/05/19 08:54:21  cg
- * new functions for retrieving variables from masks provided by
- * DataFlowMask.c utilized.
- *
- * Revision 1.54  1998/05/15 15:17:36  dkr
- * fixed a bug in RCNwith
- *
- * Revision 1.52  1998/05/12 15:52:07  dkr
- * removed ???_VARINFO
- *
- * Revision 1.51  1998/05/12 14:52:24  dkr
- * renamed ???_RC_IDS to ???_DEC_RC_IDS
- *
- * Revision 1.50  1998/05/11 15:15:58  dkr
- * added RCicm:
- *   no refcounting of ICM-args
  *
  * ... [eliminated]
  *
@@ -601,10 +469,11 @@ Refcount (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node *RCarg(node *arg_node, node *arg_info)
+ *   node *RCarg( node *arg_node, node *arg_info)
  *
  * description:
- *   Initializes ARG_REFCNT for refcounted (0) and not refcounted parameters (-1).
+ *   Initializes ARG_REFCNT for refcounted and non-refcounted parameters with
+ *   0 and (-1) respectively.
  *   This information is needed by compile.c to distinguish between refcounted
  *   and not refcounted parameters.
  *
@@ -619,7 +488,7 @@ RCarg (node *arg_node, node *arg_info)
      *  Decides if the refcounters have to be normal-refcounted or not.
      */
     if (!INFO_RC_ONLYNAIVE (arg_info)) {
-        if (MUST_REFCOUNT (ARG_TYPE (arg_node))) {
+        if (DECL_MUST_REFCOUNT (arg_node)) {
             ARG_REFCNT (arg_node) = 0;
         } else {
             ARG_REFCNT (arg_node) = -1;
@@ -628,7 +497,7 @@ RCarg (node *arg_node, node *arg_info)
     /*
      *  Decides if the refcounters have to be normal-refcounted or not.
      */
-    if (MUST_NAIVEREFCOUNT (ARG_TYPE (arg_node))) {
+    if (DECL_MUST_NAIVEREFCOUNT (arg_node)) {
         ARG_NAIVE_REFCNT (arg_node) = 0;
     } else {
         ARG_NAIVE_REFCNT (arg_node) = -1;
@@ -755,13 +624,13 @@ RCvardec (node *arg_node, node *arg_info)
     DBUG_ENTER ("RCvardec");
 
     if (!INFO_RC_ONLYNAIVE (arg_info)) {
-        if (MUST_REFCOUNT (VARDEC_TYPE (arg_node))) {
+        if (DECL_MUST_REFCOUNT (arg_node)) {
             VARDEC_REFCNT (arg_node) = 0;
         } else {
             VARDEC_REFCNT (arg_node) = -1;
         }
     }
-    if (MUST_NAIVEREFCOUNT (VARDEC_TYPE (arg_node))) {
+    if (DECL_MUST_NAIVEREFCOUNT (arg_node)) {
         VARDEC_NAIVE_REFCNT (arg_node) = 0;
     } else {
         VARDEC_NAIVE_REFCNT (arg_node) = -1;
@@ -890,14 +759,14 @@ RCloop (node *arg_node, node *arg_info)
              *  ones, only naive-ones, or none. The following is only done in the
              *  first two cases. We setup the values needed for some comparisons.
              */
-            if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+            if (DECL_MUST_REFCOUNT (vardec)) {
                 DBUG_PRINT ("RC", ("do_on_normal %i", i));
                 dumpcompare = ref_dump[i];
                 refcompare = VARDEC_OR_ARG_REFCNT (vardec);
                 do_on_ids = TRUE;
                 do_on_normal = (!INFO_RC_ONLYNAIVE (arg_info));
                 do_on_naive = TRUE;
-            } else if (MUST_NAIVEREFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+            } else if (DECL_MUST_NAIVEREFCOUNT (vardec)) {
                 DBUG_PRINT ("RC", ("do_on_naive %i", i));
                 dumpcompare = naive_ref_dump[i];
                 refcompare = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
@@ -1145,13 +1014,13 @@ RCloop (node *arg_node, node *arg_info)
              *  a value, if some things are to do on normal-refcounters too (everything
              *  is done on the naive refcounters without further switches).
              */
-            if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+            if (DECL_MUST_REFCOUNT (vardec)) {
                 do_on_ids = TRUE;
                 do_on_normal = (!INFO_RC_ONLYNAIVE (arg_info));
                 refcompare = VARDEC_OR_ARG_REFCNT (vardec);
                 dumpcompare = ref_dump[i];
                 do_again = again_;
-            } else if (MUST_NAIVEREFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+            } else if (DECL_MUST_NAIVEREFCOUNT (vardec)) {
                 do_on_ids = TRUE;
                 do_on_normal = FALSE;
                 refcompare = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
@@ -1353,7 +1222,7 @@ RCid (node *arg_node, node *arg_info)
     DBUG_ENTER ("RCid");
 
     if (!INFO_RC_ONLYNAIVE (arg_info)) {
-        if (MUST_REFCOUNT (ID_TYPE (arg_node))) {
+        if (DECL_MUST_REFCOUNT (ID_VARDEC (arg_node))) {
             if ((INFO_RC_PRF (arg_info) == NULL)
                 || (RC_IS_ZERO (VARDEC_OR_ARG_REFCNT (ID_VARDEC (arg_node))))
                 || (!(optimize & OPT_RCO))) {
@@ -1391,7 +1260,7 @@ RCid (node *arg_node, node *arg_info)
         }
     }
 
-    if (MUST_NAIVEREFCOUNT (ID_TYPE (arg_node))) {
+    if (DECL_MUST_NAIVEREFCOUNT (ID_VARDEC (arg_node))) {
         /*
          *  Naive refcounting is always done.
          */
@@ -1456,7 +1325,7 @@ RClet (node *arg_node, node *arg_info)
     ids = LET_IDS (arg_node);
     while (NULL != ids) {
         if (!INFO_RC_ONLYNAIVE (arg_info)) {
-            if (MUST_REFCOUNT (IDS_TYPE (ids))) {
+            if (DECL_MUST_REFCOUNT (IDS_VARDEC (ids))) {
                 IDS_REFCNT (ids) = VARDEC_OR_ARG_REFCNT (IDS_VARDEC (ids));
                 L_VARDEC_OR_ARG_REFCNT (IDS_VARDEC (ids), 0);
 
@@ -1465,7 +1334,7 @@ RClet (node *arg_node, node *arg_info)
                 IDS_REFCNT (ids) = -1;
             }
         }
-        if (MUST_NAIVEREFCOUNT (IDS_TYPE (ids))) {
+        if (DECL_MUST_NAIVEREFCOUNT (IDS_VARDEC (ids))) {
             IDS_NAIVE_REFCNT (ids) = VARDEC_OR_ARG_NAIVE_REFCNT (IDS_VARDEC (ids));
             L_VARDEC_OR_ARG_NAIVE_REFCNT (IDS_VARDEC (ids), 0);
 
@@ -1788,12 +1657,12 @@ RCNwith (node *arg_node, node *arg_info)
     vardec = DFMGetMaskEntryDeclSet (NWITH_OR_NWITH2_IN_MASK (arg_node));
     while (vardec != NULL) {
         if (!INFO_RC_ONLYNAIVE (arg_info)) {
-            if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+            if (DECL_MUST_REFCOUNT (vardec)) {
                 L_VARDEC_OR_ARG_REFCNT (vardec, 1);
                 DBUG_PRINT ("RC", ("  %s", VARDEC_OR_ARG_NAME (vardec)));
             }
         }
-        if (MUST_NAIVEREFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+        if (DECL_MUST_NAIVEREFCOUNT (vardec)) {
             L_VARDEC_OR_ARG_NAIVE_REFCNT (vardec, 1);
         }
         vardec = DFMGetMaskEntryDeclSet (NULL);
@@ -1802,12 +1671,12 @@ RCNwith (node *arg_node, node *arg_info)
     DBUG_PRINT ("RC", ("  /* index-vector */"));
     vardec = IDS_VARDEC (NWITH_OR_NWITH2_VEC (arg_node));
     if (!INFO_RC_ONLYNAIVE (arg_info)) {
-        if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+        if (DECL_MUST_REFCOUNT (vardec)) {
             L_VARDEC_OR_ARG_REFCNT (vardec, 1);
             DBUG_PRINT ("RC", ("  %s", VARDEC_OR_ARG_NAME (vardec)));
         }
     }
-    if (MUST_NAIVEREFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+    if (DECL_MUST_NAIVEREFCOUNT (vardec)) {
         L_VARDEC_OR_ARG_NAIVE_REFCNT (vardec, 1);
     }
 
@@ -1908,7 +1777,7 @@ RCNwith (node *arg_node, node *arg_info)
     }
     while (vardec != NULL) {
         if (!INFO_RC_ONLYNAIVE (arg_info)) {
-            if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+            if (DECL_MUST_REFCOUNT (vardec)) {
                 if ((RC_IS_ZERO (VARDEC_OR_ARG_REFCNT (vardec)))
                     || (!(optimize & OPT_RCO))) {
                     /*
@@ -1932,7 +1801,7 @@ RCNwith (node *arg_node, node *arg_info)
             }
         }
 
-        if (MUST_NAIVEREFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+        if (DECL_MUST_NAIVEREFCOUNT (vardec)) {
             /*
              * Naive refcounting is always done.
              */
