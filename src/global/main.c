@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.133  1998/06/23 13:13:15  sbs
+ * de-bugged -b1
+ *
  * Revision 1.132  1998/06/19 16:35:09  dkr
  * added -noUIP
  *
@@ -753,7 +756,10 @@ MAIN
     ARG 't' : PARM
     {
         if (0 == strcmp (*argv, "arget")) {
-            strcpy (target_name, *(argv + 1));
+            if (--argc >= 1)
+                strcpy (target_name, *(++argv));
+            else
+                SYSERROR (("Missing target parameter"));
         } else {
 
             while (**argv) {
@@ -1392,6 +1398,8 @@ BREAK:
         if (compiler_phase < PH_genccode) {
             Print (syntax_tree);
         }
+        FreeTree (syntax_tree);
+
     } else {
         RSCShowResources ();
     }
@@ -1401,8 +1409,6 @@ BREAK:
      */
 
     CleanUp ();
-
-    FreeTree (syntax_tree);
 
     /*
      * ....and display a success message.
