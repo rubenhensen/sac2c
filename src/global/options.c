@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2005/03/10 09:41:09  cg
+ * Removed options to control application of fun2lac and lac2fun
+ * conversion.
+ *
  * Revision 3.83  2005/02/18 15:52:38  sbs
  * strgcpy changed into ILIBstringCopy
  * i.e., no more SEGFAULT on -o option
@@ -197,28 +201,136 @@
 #include "globals.h"
 #include "internal_lib.h"
 #include "ctinfo.h"
+#include "libstat.h"
+
+void
+OPTcheckSpecialOptions (int argc, char *argv[])
+{
+    DBUG_ENTER ("OPTcheckSpecialOptions");
+
+    ARGS_BEGIN (argc, argv);
+
+    ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
+
+    ARGS_FLAG ("h", USGprintUsage (); exit (0));
+    ARGS_FLAG ("help", USGprintUsage (); exit (0));
+
+    ARGS_OPTION ("libstat", LIBSprintLibStat (ARG));
+
+    ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 3));
+
+    ARGS_FLAG ("V", USGprintVersion (); exit (0));
+
+    ARGS_FLAG ("VV", USGprintVersionVerbose (); exit (0));
+
+    ARGS_END ();
+
+    DBUG_VOID_RETURN;
+}
 
 /******************************************************************************
  *
  * function:
- *   void OPTanalyseCommandline(int argc, char *argv[])
+ *   void CheckOptionConsistency()
+ *
+ * description:
+ *   This function is called from main() right after command line arguments
+ *   have been analysed. Errors and warnings are produced whenever the user
+ *   has selected an incompatible combination of options.
+ *
+ ******************************************************************************/
+
+static void
+CheckOptionConsistency ()
+{
+    DBUG_ENTER ("CheckOptionConsistency");
+
+    if (global.runtimecheck.boundary && global.optimize.doap) {
+        global.optimize.doap = FALSE;
+        CTIwarn ("Boundary check (-check b) and array padding (AP) may not be used"
+                 " simultaneously.\n"
+                 "Array padding disabled");
+    }
+
+#ifdef DISABLE_MT
+    if (global.mtmode != MT_none) {
+        global.mtmode = MT_none;
+        global.num_threads = 1;
+        CTIwarn ("Code generation for multi-threaded program execution not"
+                 " yet available for " ARCH " running " OS ".\n"
+                 "Code for sequential execution generated instead");
+    }
+#endif
+
+#ifdef DISABLE_PHM
+    if (global.optimize.dophm) {
+        CTIwarn ("Private heap management is not yet available for " ARCH " running " OS
+                 ".\n"
+                 "Conventional heap management is used instead");
+        global.optimize.dophm = FALSE;
+    }
+#endif
+
+    if (global.mtmode != MT_none) {
+        if (global.docachesim) {
+            CTIerror ("Cache simulation is not available for multi-threaded "
+                      "program execution");
+        }
+
+        if (global.doprofile) {
+            CTIerror ("Profiling is not available for multi-threaded "
+                      "program execution");
+        }
+    }
+
+    if (global.runtimecheck.heap && !global.optimize.dophm) {
+        CTIwarn ("Diagnostic heap management is only available in "
+                 "conjunction with private heap management.\n"
+                 "Diagnostic disabled");
+        global.runtimecheck.heap = FALSE;
+    }
+
+    /*
+     * commandline switch for library generation not used,
+     * set it to default and generate a standard SAC Library
+     */
+    if (!global.genlib.c && !global.genlib.sac) {
+        global.genlib.sac = TRUE;
+    }
+
+    if (global.genlib.c && (global.mtmode != MT_none)) {
+        CTIwarn ("Multithreading is not yet available when compiling for "
+                 "a C-library.\n"
+                 "Generation of C-library disabled");
+        global.genlib.c = FALSE;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *OPTanalyseCommandline( node *syntax_tree)
  *
  * description:
  *   This function analyses the commandline options given to sac2c.
  *   Usually selections made are stored in global variables for later
  *   reference.
  *
+ *   The non-obvious signature is to obey the compiler subphase standard.
+ *
  ******************************************************************************/
 
-void
-OPTanalyseCommandline (int argc, char *argv[])
+node *
+OPTanalyseCommandline (node *syntax_tree)
 {
     int store_num_threads = 0;
     mtmode_t store_mtmode = MT_none;
 
     DBUG_ENTER ("OPTanalyseCommandline");
 
-    ARGS_BEGIN (argc, argv);
+    ARGS_BEGIN (global.argc, global.argv);
 
     ARGS_FLAG ("apdiag", global.apdiag = TRUE);
 
@@ -255,7 +367,7 @@ OPTanalyseCommandline (int argc, char *argv[])
                         ARG = break_arg;
                         ARGS_ERROR ("Break specifier missing");
                     } else {
-                        strncpy (global.break_specifier, ARG, MAX_BREAK_SPECIFIER - 1);
+                        global.break_specifier = ILIBstringCopy (ARG);
                     }
                 }
             } else {
@@ -265,7 +377,7 @@ OPTanalyseCommandline (int argc, char *argv[])
                     ARG = break_arg;
                     ARGS_ERROR ("Break specifier missing");
                 } else {
-                    strncpy (global.break_specifier, ARG, MAX_BREAK_SPECIFIER - 1);
+                    global.break_specifier = ILIBstringCopy (ARG);
                 }
             }
         }
@@ -284,8 +396,6 @@ OPTanalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK_END ();
     }
     ARGS_OPTION_END ("check");
-
-    ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
 
     ARGS_OPTION ("cppI", global.cpp_incs[global.num_cpp_incs++] = ILIBstringCopy (ARG));
 
@@ -367,59 +477,11 @@ OPTanalyseCommandline (int argc, char *argv[])
 
     ARGS_FLAG ("g", global.cc_debug = TRUE);
 
-    ARGS_FLAG ("h", USGprintUsage (); exit (0));
-    ARGS_FLAG ("help", USGprintUsage (); exit (0));
-
     ARGS_OPTION ("initmheap", ARG_NUM (global.initial_master_heapsize));
     ARGS_OPTION ("initwheap", ARG_NUM (global.initial_worker_heapsize));
     ARGS_OPTION ("inituheap", ARG_NUM (global.initial_unified_heapsize));
 
     ARGS_OPTION ("I", FMGRappendPath (PK_moddec_path, FMGRabsolutePathname (ARG)));
-
-    ARGS_FLAG ("libstat", global.libstat = TRUE);
-
-#define LAC_FUN(array)                                                                   \
-    {                                                                                    \
-        int phase;                                                                       \
-        char *old_s;                                                                     \
-        char *new_s;                                                                     \
-                                                                                         \
-        for (phase = 0; phase < PH_final; phase++) {                                     \
-            array[phase] = FALSE;                                                        \
-        }                                                                                \
-                                                                                         \
-        old_s = ARG;                                                                     \
-        while (*old_s) {                                                                 \
-            if (*old_s == ':') {                                                         \
-                old_s++;                                                                 \
-            } else {                                                                     \
-                if (old_s != ARG) {                                                      \
-                    ARGS_ERROR ("Illegal separation symbol found");                      \
-                    break;                                                               \
-                }                                                                        \
-            }                                                                            \
-                                                                                         \
-            phase = strtol (old_s, &new_s, 10);                                          \
-                                                                                         \
-            if (phase >= PH_final) {                                                     \
-                ARGS_ERROR ("Illegal phase number found");                               \
-                break;                                                                   \
-            } else {                                                                     \
-                if (new_s != old_s) {                                                    \
-                    array[phase] = TRUE;                                                 \
-                } else {                                                                 \
-                    ARGS_ERROR ("No phase number found");                                \
-                    break;                                                               \
-                }                                                                        \
-            }                                                                            \
-                                                                                         \
-            old_s = new_s;                                                               \
-        }                                                                                \
-    }
-    /* "-lac2fun 8:14" means: call Lac2fun() before phases 8 and 14 */
-    ARGS_OPTION ("lac2fun", LAC_FUN (global.do_lac2fun));
-    /* "-fun2lac 8:21" means: call Fun2lac() after phases 8 and 21 */
-    ARGS_OPTION ("fun2lac", LAC_FUN (global.do_fun2lac));
 
     ARGS_OPTION_BEGIN ("L")
     {
@@ -576,12 +638,6 @@ OPTanalyseCommandline (int argc, char *argv[])
     }
     ARGS_OPTION_END ("trace");
 
-    ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 3));
-
-    ARGS_FLAG ("V", USGprintVersion (); exit (0));
-
-    ARGS_FLAG ("VV", USGprintVersionVerbose (); exit (0));
-
     ARGS_FLAG ("wls_aggressive", global.wls_aggressive = TRUE);
 
     ARGS_OPTION ("maxwls", ARG_NUM (global.maxwls));
@@ -655,85 +711,7 @@ OPTanalyseCommandline (int argc, char *argv[])
 
     ARGS_END ();
 
-    DBUG_VOID_RETURN;
-}
+    CheckOptionConsistency ();
 
-/******************************************************************************
- *
- * function:
- *   void OPTcheckOptionConsistency()
- *
- * description:
- *   This function is called from main() right after command line arguments
- *   have been analysed. Errors and warnings are produced whenever the user
- *   has selected an incompatible combination of options.
- *
- ******************************************************************************/
-
-void
-OPTcheckOptionConsistency ()
-{
-    DBUG_ENTER ("OPTcheckOptionConsistency");
-
-    if (global.runtimecheck.boundary && global.optimize.doap) {
-        global.optimize.doap = FALSE;
-        CTIwarn ("Boundary check (-check b) and array padding (AP) may not be used"
-                 " simultaneously.\n"
-                 "Array padding disabled");
-    }
-
-#ifdef DISABLE_MT
-    if (global.mtmode != MT_none) {
-        global.mtmode = MT_none;
-        global.num_threads = 1;
-        CTIwarn ("Code generation for multi-threaded program execution not"
-                 " yet available for " ARCH " running " OS ".\n"
-                 "Code for sequential execution generated instead");
-    }
-#endif
-
-#ifdef DISABLE_PHM
-    if (global.optimize.dophm) {
-        CTIwarn ("Private heap management is not yet available for " ARCH " running " OS
-                 ".\n"
-                 "Conventional heap management is used instead");
-        global.optimize.dophm = FALSE;
-    }
-#endif
-
-    if (global.mtmode != MT_none) {
-        if (global.docachesim) {
-            CTIerror ("Cache simulation is not available for multi-threaded "
-                      "program execution");
-        }
-
-        if (global.doprofile) {
-            CTIerror ("Profiling is not available for multi-threaded "
-                      "program execution");
-        }
-    }
-
-    if (global.runtimecheck.heap && !global.optimize.dophm) {
-        CTIwarn ("Diagnostic heap management is only available in "
-                 "conjunction with private heap management.\n"
-                 "Diagnostic disabled");
-        global.runtimecheck.heap = FALSE;
-    }
-
-    /*
-     * commandline switch for library generation not used,
-     * set it to default and generate a standard SAC Library
-     */
-    if (!global.genlib.c && !global.genlib.sac) {
-        global.genlib.sac = TRUE;
-    }
-
-    if (global.genlib.c && (global.mtmode != MT_none)) {
-        CTIwarn ("Multithreading is not yet available when compiling for "
-                 "a C-library.\n"
-                 "Generation of C-library disabled");
-        global.genlib.c = FALSE;
-    }
-
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (syntax_tree);
 }
