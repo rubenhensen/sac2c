@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.16  2003/03/20 14:23:56  sbs
+# libsac_mt.a hidden behind $(LIBSAC_MT).
+#
 # Revision 3.15  2002/07/03 13:49:05  dkr
 # type corrected #$%-(
 #
@@ -88,7 +91,7 @@ OBJS_LIBSAC_MT := message_mt.o misc_mt.o trace_mt.o mt.o mt_trace.o \
 .PHONY: all tar clean prod
 
 
-all: libsac.a libsac_mt.a 
+all: libsac.a $(LIBSAC_MT)
 
 
 #
