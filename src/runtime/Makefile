@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.11  2003/03/20 23:18:22  sah
+# updated link sac2crc link creation
+# to confirm with new configure
+#
 # Revision 3.10  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -88,8 +92,8 @@ lib%.a :
 
 sac2crc: 
 	@ if [ ! -f $@ ]; \
-	    then ln -s $@.$(OS) $@; \
-                 echo ln -s $@.$(OS) $@;  \
+	    then ln -s $@.$(OS)_$(ARCH) $@; \
+                 echo ln -s $@.$(OS)_$(ARCH) $@;  \
 	  fi
 	$(CLOCK_SKEW_ELIMINATION) $@
 
