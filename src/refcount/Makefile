@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.32  2004/11/23 15:06:27  ktr
+# Removed INCS
+#
 # Revision 3.31  2004/11/14 13:43:59  ktr
 # added reusebranching.o
 #
@@ -117,11 +120,6 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 # local settings:
 #
-
-INCS = -I../global -I../tree -I../../inc -I../flatten -I../typecheck \
-       -I../compile -I../constants -I../print -I../optimize
-
-
 all: allocation.o alloc.o refcounting.o reuse.o rcopt.o rcphase.o \
      filterrc.o aliasanalysis.o staticreuse.o reuseelimination.o \
      interfaceanalysis.o loopreuseopt.o datareuse.o explicitcopy.o \
