@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/03/24 15:54:25  asi
+ * Revision 1.13  1995/04/03 16:17:42  asi
+ * Bug fixed in psi-calculation
+ *
+ * Revision 1.12  1995/03/24  15:54:25  asi
  * changed free() -> FREE()
  * changed Trav() -> OptTrav()
  * changed CFdo - replaced PopVL() with PopVL2()
@@ -1203,7 +1206,8 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             int vec_dim;
             int vec_shape[4];
 
-            if (NULL == TOS.varlist[arg[1]->info.ids->node->varno]) {
+            if ((NULL == TOS.varlist[arg[1]->info.ids->node->varno])
+                || (N_id == arg[0]->nodetype)) {
                 returnnode = arg_node;
                 arg_info->nnode = 0;
                 break;
@@ -1282,7 +1286,7 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
 node *
 CFprf (node *arg_node, node *arg_info)
 {
-    node *returnnode = NULL;
+    node *returnnode = arg_node;
     node *arg[3];
     short res_int;
     int i, arg_no;
@@ -1316,8 +1320,9 @@ CFprf (node *arg_node, node *arg_info)
         }
     }
     arg_no = 3;
-    while ((arg[arg_no - 1] == NULL) && (arg_no != 1))
+    while ((NULL == arg[arg_no - 1]) && (1 != arg_no)) {
         arg_no--;
+    }
 
     if (arg_info->info.types == NULL) {
         returnnode = SkalarPrf (-1, arg, arg_no, 0, arg_node, arg_info);
