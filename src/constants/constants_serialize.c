@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/26 16:23:52  jhb
+ * compile
+ *
  * Revision 1.3  2004/11/26 14:47:47  sbs
  * *** empty log message ***
  *
@@ -67,10 +70,10 @@ CODeserializeConstant (simpletype type, shape *shp, int vlen, char *vec)
     DBUG_ENTER ("CODeserializeConstant");
 
     /* we have to copy the data vector as it is static */
-    data = AllocCV (type, vlen);
-    CopyElemsFromCVToCV (type, (void *)vec, 0, vlen, data, 0);
+    data = COINTallocCV (type, vlen);
+    COINTcopyElemsFromCVToCV (type, (void *)vec, 0, vlen, data, 0);
 
-    result = MakeConstant (type, shp, data, vlen);
+    result = COINTmakeConstant (type, shp, data, vlen);
 
     DBUG_RETURN (result);
 }

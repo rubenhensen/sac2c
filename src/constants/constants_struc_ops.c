@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/11/26 16:23:52  jhb
+ * compile
+ *
  * Revision 1.13  2004/11/26 14:35:31  sbs
  * compiles
  *
@@ -192,7 +195,7 @@ TileFromArray (constant *idx, shape *res_shp, constant *a)
      * First, we allocate the CV for the result:
      */
     res_vlen = SHgetUnrLen (res_shp);
-    res_elems = AllocCV (CONSTANT_TYPE (a), res_vlen);
+    res_elems = COINTallocCV (CONSTANT_TYPE (a), res_vlen);
 
     /*
      * Now, we create an offset-vector 'off' = drop( -1, idx)
@@ -201,11 +204,11 @@ TileFromArray (constant *idx, shape *res_shp, constant *a)
     off_shp = SHmakeShape (1);
     off_len = CONSTANT_VLEN (idx) - 1;
     SHsetExtent (off_shp, 0, off_len);
-    off_elems = AllocCV (T_int, off_len);
+    off_elems = COINTallocCV (T_int, off_len);
     for (i = 0; i < off_len; i++) {
         ((int *)off_elems)[i] = ((int *)CONSTANT_ELEMS (idx))[i];
     }
-    off = MakeConstant (T_int, off_shp, off_elems, off_len);
+    off = COINTmakeConstant (T_int, off_shp, off_elems, off_len);
 
     /*
      * Now, we compute the minimum and maximum index
@@ -233,9 +236,9 @@ TileFromArray (constant *idx, shape *res_shp, constant *a)
      */
     res_off = 0;
     do {
-        CopyElemsFromCVToCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a),
-                             Idx2Offset (off, a) + off_size, chunk_size, res_elems,
-                             res_off);
+        COINTcopyElemsFromCVToCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a),
+                                  Idx2Offset (off, a) + off_size, chunk_size, res_elems,
+                                  res_off);
         res_off += chunk_size;
         off
           = IncrementIndex (min, off, max); /* This function eventually frees 'off' !!! */
@@ -246,7 +249,7 @@ TileFromArray (constant *idx, shape *res_shp, constant *a)
     /*
      * Finally, the resulting constant node is created:
      */
-    res = MakeConstant (CONSTANT_TYPE (a), res_shp, res_elems, res_vlen);
+    res = COINTmakeConstant (CONSTANT_TYPE (a), res_shp, res_elems, res_vlen);
 
     DBUG_RETURN (res);
 }
@@ -308,13 +311,13 @@ COReshape (constant *new_shp, constant *a)
     /*
      * Now, we copy the elems CV:
      */
-    elems = PickNElemsFromCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a), 0, res_vlen);
+    elems = COINTpickNElemsFromCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a), 0, res_vlen);
     /*
      * Finally, we create thre result node:
      */
-    res = MakeConstant (CONSTANT_TYPE (a), res_shp, elems, res_vlen);
+    res = COINTmakeConstant (CONSTANT_TYPE (a), res_shp, elems, res_vlen);
 
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COReshape", new_shp, a, res););
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COReshape", new_shp, a, res););
 
     DBUG_RETURN (res);
 }
@@ -359,12 +362,12 @@ COSel (constant *idx, constant *a)
      * Now we pick the desired elems from a:
      */
     res_vlen = SHgetUnrLen (res_shp);
-    elems = PickNElemsFromCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a), Idx2Offset (idx, a),
-                              res_vlen);
+    elems = COINTpickNElemsFromCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a),
+                                   Idx2Offset (idx, a), res_vlen);
     /*
      * Finally, the result node is created:
      */
-    res = MakeConstant (CONSTANT_TYPE (a), res_shp, elems, res_vlen);
+    res = COINTmakeConstant (CONSTANT_TYPE (a), res_shp, elems, res_vlen);
 
     DBUG_RETURN (res);
 }
@@ -399,11 +402,11 @@ COIdxSel (constant *idx, constant *a)
      * Pick the desired element from a:
      */
 
-    elem = PickNElemsFromCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a), index, 1);
+    elem = COINTpickNElemsFromCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a), index, 1);
     /*
      * Finally, the result node is created:
      */
-    res = MakeConstant (CONSTANT_TYPE (a), SHmakeShape (0), elem, 1);
+    res = COINTmakeConstant (CONSTANT_TYPE (a), SHmakeShape (0), elem, 1);
 
     DBUG_RETURN (res);
 }
@@ -490,7 +493,7 @@ COTake (constant *idx, constant *a)
 
         res = COcopyConstant (a);
     }
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COTake", idx, a, res););
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COTake", idx, a, res););
 
     if (new_idx != NULL) {
         new_idx = COfreeConstant (new_idx);
@@ -580,7 +583,7 @@ CODrop (constant *idx, constant *a)
         res = COcopyConstant (a);
     }
 
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("CODrop", idx, a, res););
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("CODrop", idx, a, res););
 
     if (new_idx != NULL) {
         new_idx = COfreeConstant (new_idx);
@@ -652,18 +655,18 @@ COCat (constant *a, constant *b)
      * Then, we concatenate the data vectors:
      */
     vlen = CONSTANT_VLEN (a) + CONSTANT_VLEN (b);
-    cv = AllocCV (type, vlen);
+    cv = COINTallocCV (type, vlen);
 
-    CopyElemsFromCVToCV (type, CONSTANT_ELEMS (a), 0, CONSTANT_VLEN (a), cv, 0);
-    CopyElemsFromCVToCV (type, CONSTANT_ELEMS (b), 0, CONSTANT_VLEN (b), cv,
-                         CONSTANT_VLEN (a));
+    COINTcopyElemsFromCVToCV (type, CONSTANT_ELEMS (a), 0, CONSTANT_VLEN (a), cv, 0);
+    COINTcopyElemsFromCVToCV (type, CONSTANT_ELEMS (b), 0, CONSTANT_VLEN (b), cv,
+                              CONSTANT_VLEN (a));
 
     /**
      * Finally, we create the result:
      */
-    res = MakeConstant (type, shp, cv, vlen);
+    res = COINTmakeConstant (type, shp, cv, vlen);
 
-    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COCat", a, b, res););
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COCat", a, b, res););
 
     if (new_a != NULL) {
         new_a = COfreeConstant (new_a);
@@ -753,12 +756,12 @@ COModarray (constant *a, constant *idx, constant *elem)
     res = COcopyConstant (a);
 
     /* now we copy the modified elements into the target constant vector */
-    CopyElemsFromCVToCV (CONSTANT_TYPE (res),                 /* basetype */
-                         CONSTANT_ELEMS (elem),               /* from */
-                         0,                                   /* offset */
-                         SHgetUnrLen (CONSTANT_SHAPE (elem)), /* len */
-                         CONSTANT_ELEMS (res),                /* to */
-                         Idx2Offset (idx, res));              /* offset */
+    COINTcopyElemsFromCVToCV (CONSTANT_TYPE (res),                 /* basetype */
+                              CONSTANT_ELEMS (elem),               /* from */
+                              0,                                   /* offset */
+                              SHgetUnrLen (CONSTANT_SHAPE (elem)), /* len */
+                              CONSTANT_ELEMS (res),                /* to */
+                              Idx2Offset (idx, res));              /* offset */
 
     DBUG_RETURN (res);
 }
