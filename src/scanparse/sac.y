@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.59  1995/05/30 07:17:18  hw
+ * Revision 1.60  1995/05/30 08:22:28  cg
+ * sac_grammar version 0.5 tokens inserted.
+ *
+ * Revision 1.59  1995/05/30  07:17:18  hw
  * - N_foldfun has now two child nodes (node[0]: body of with-loop
  *    node[1]: expr to compute neutral element of userdefined function
  *             that is used in fold
@@ -239,16 +242,20 @@ static char *mod_name;
        }
 
 %token PARSE_PRG, PARSE_DEC
-%token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC, COMMA,
-       INLINE, LET, TYPEDEF
+%token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC,
+       COMMA,
+       INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF
        AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PLUS, MINUS, 
        INC, DEC, ADDON, SUBON, MULON, DIVON,
        RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE,CAT,PSI,
-       K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, GENARRAY, MODARRAY, FOLD,
-       MODDEC, MODIMP, CLASSDEC, IMPORT, ALL, IMPLICIT, EXPLICIT, TYPES, FUNS, OWN,
+       K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, GENARRAY, MODARRAY,
+       FOLD,
+       MODDEC, MODIMP, CLASSDEC, IMPORT, ALL, IMPLICIT, EXPLICIT, TYPES, FUNS,
+       OWN, CONSTANTS, GLOBAL, OBJECTS, CLASSIMP,
        ARRAY,SC, TRUE, FALSE, EXTERN
 %token <id> ID, STR
-%token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_STR
+%token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_STR, TYPE_UNS, TYPE_SHORT,
+               TYPE_LONG, TYPE_CHAR, TYPE_DBL, TYPE_VOID, TYPE_DOTS
 %token <cint> NUM
 %token <cfloat> FLOAT
 
