@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/07/30 13:49:12  jhs
+ * Removed old warnings, added comments.
+ *
  * Revision 2.6  1999/07/28 13:08:17  jhs
  * Bug fixed: Allsync-blocks are melted (erarlier versions left the
  * first synd-block out).
@@ -54,6 +57,7 @@
 #include "spmd_trav.h"
 #include "spmd_opt.h"
 #include "globals.h"
+#include "Error.h"
 
 #include "sync_opt.h"
 
@@ -79,29 +83,25 @@ Disjunctive (DFMmask_t mask1, DFMmask_t mask2)
 /******************************************************************************
  *
  * function:
- *   ####
+ *   int MeltableSYNCs (node *first_sync, node *second_sync)
  *
  * description:
  *   Tests whether the two syncs specified can be melted together, i.e. whether
- *   their dataflow maske are disjunctive and do not contain too much
- *   fold-with-loops.
+ *   their dataflow masks (except for the two IN-masks) are disjunctive and do
+ *   not contain too much fold-with-loops if limited by max_sync_fold.
  *
  *   Returns TRUE if both blocks can be melted together, FALSE otherwise.
  *
- *   Blocks can be melted if
- *   - The out-mask of the first block is disjunct to the in-mask of the
- *     second block. This includes implicitly the inout-masks.
- *   ####
- *
  ******************************************************************************/
 int
-MeltableSYNCs (node *first_sync, node *second_sync /* , ... */)
+MeltableSYNCs (node *first_sync, node *second_sync)
 {
     int result;
 
     DBUG_ENTER ("MeltableSYNCs");
 
-    /* ... #### */
+    DBUG_ASSERT (NODE_TYPE (first_sync) == N_sync, ("first_sync not a N_sync"));
+    DBUG_ASSERT (NODE_TYPE (second_sync) == N_sync, ("second_sync not a N_sync"));
 
     result = 1;
     result = result & Disjunctive (SYNC_IN (first_sync), SYNC_INOUT (second_sync));
@@ -119,19 +119,30 @@ MeltableSYNCs (node *first_sync, node *second_sync /* , ... */)
         DBUG_PRINT ("SYNCO", ("non-disjunctive"));
     }
 
-    needed_sync_fold = MAX (needed_sync_fold,
-                            SYNC_FOLDCOUNT (first_sync) + SYNC_FOLDCOUNT (second_sync));
-    if (max_sync_fold != -1) {
-        result = result
-                 & ((SYNC_FOLDCOUNT (first_sync) + SYNC_FOLDCOUNT (second_sync))
-                    <= max_sync_fold);
-        /* warning if max reached #### */
-    }
-
     if (result) {
-        DBUG_PRINT ("SYNCO", ("folds ok"));
-    } else {
-        DBUG_PRINT ("SYNCO", ("too much folds"));
+        if (max_sync_fold == -1) {
+            /* auto-inferation */
+            needed_sync_fold = MAX (needed_sync_fold, SYNC_FOLDCOUNT (first_sync)
+                                                        + SYNC_FOLDCOUNT (second_sync));
+            DBUG_PRINT ("SYNCO", ("folds ok (auto-inferation"));
+        } else {
+            DBUG_PRINT ("SYNCO",
+                        ("foldcounts are: %i + %i = %i", SYNC_FOLDCOUNT (first_sync),
+                         SYNC_FOLDCOUNT (second_sync),
+                         SYNC_FOLDCOUNT (first_sync) + SYNC_FOLDCOUNT (second_sync)));
+            /* limited by max_sync_fold */
+            if ((SYNC_FOLDCOUNT (first_sync) + SYNC_FOLDCOUNT (second_sync))
+                <= max_sync_fold) {
+                DBUG_PRINT ("SYNCO", ("folds ok (<= max_sync_fold %i)", max_sync_fold));
+            } else {
+                result = FALSE;
+                DBUG_PRINT ("SYNCO",
+                            ("too much folds (max_sync_fold %i reached)", max_sync_fold));
+                WARN (NODE_LINE (second_sync),
+                      ("Maximum number of fold-with-loops per sync-block (%i) reached",
+                       max_sync_fold));
+            }
+        }
     }
 
     DBUG_RETURN (result);
@@ -140,11 +151,11 @@ MeltableSYNCs (node *first_sync, node *second_sync /* , ... */)
 /******************************************************************************
  *
  * function:
- *   ####
+ *   node *MeltSYNCs (node *first_sync, node *second_sync)
  *
  * description:
- *   melts blocks with sideeffects
- *   ####
+ *   Melts sync-blocks with sideeffects. Builds one new sync-block from the
+ *   two sync-blocks handed over. Both arguments are overwritten or destroyed.
  *
  * attention:
  *   - Both SYNCs have to be meltable, or this function will fail!!!
@@ -160,7 +171,7 @@ MeltableSYNCs (node *first_sync, node *second_sync /* , ... */)
  *
  ******************************************************************************/
 node *
-MeltSYNCs (node *first_sync, node *second_sync /*,  ...  #### */)
+MeltSYNCs (node *first_sync, node *second_sync)
 {
     node *result; /* result value of this function */
 
@@ -202,7 +213,7 @@ MeltSYNCs (node *first_sync, node *second_sync /*,  ...  #### */)
 /******************************************************************************
  *
  * function:
- *   ####
+ *   node *MeltSYNCsOnCopies (node *first_sync, node *second_sync)
  *
  * description:
  *   Same functinality as MeltSYNCs, but the arguments are not touched, because
@@ -214,7 +225,7 @@ MeltSYNCs (node *first_sync, node *second_sync /*,  ...  #### */)
  *
  ******************************************************************************/
 node *
-MeltSYNCsOnCopies (node *first_sync, node *second_sync /* , ...  #### */)
+MeltSYNCsOnCopies (node *first_sync, node *second_sync)
 {
     node *result;
 
@@ -223,12 +234,21 @@ MeltSYNCsOnCopies (node *first_sync, node *second_sync /* , ...  #### */)
     first_sync = DupTree (first_sync, NULL);
     second_sync = DupTree (second_sync, NULL);
 
-    result = MeltSYNCs (first_sync, second_sync /* , ... #### */);
+    result = MeltSYNCs (first_sync, second_sync);
 
     DBUG_RETURN (result);
 }
 
-/* #### comment missing */
+/******************************************************************************
+ *
+ * function:
+ *   node *SYNCOsync( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Stops on an sync-block, ans melts all *directly* following sync-blocks
+ *   with this one.
+ *
+ ******************************************************************************/
 node *
 SYNCOsync (node *arg_node, node *arg_info)
 {
@@ -243,26 +263,20 @@ SYNCOsync (node *arg_node, node *arg_info)
 
     result = arg_node;
     /*
-     *  if this SYNC-block is followed directly (!) by another SYNC-block
+     *  while this SYNC-block is followed directly (!) by another SYNC-block
      *  and both blocks are meltable, i.e. their masks are disjunctive,
      *  blocks are melted together here.
      */
     DBUG_PRINT ("SYNCO", ("try melting sync-blocks"));
-    if (SYNC_FIRST (arg_node)) {
-        DBUG_PRINT ("SYNCO", ("cannot melt first sync-block *<:("));
-    }
-    while (/* (! SYNC_FIRST( arg_node)) &&  */
-           (INFO_SYNCO_NEXTASSIGN (arg_info) != NULL)
-           && (NODE_TYPE (ASSIGN_INSTR (INFO_SYNCO_NEXTASSIGN (arg_info))) == N_sync)
-           && (MeltableSYNCs (arg_node,
-                              ASSIGN_INSTR (INFO_SYNCO_NEXTASSIGN (arg_info))))) {
+    while (
+      (INFO_SYNCO_NEXTASSIGN (arg_info) != NULL)
+      && (NODE_TYPE (ASSIGN_INSTR (INFO_SYNCO_NEXTASSIGN (arg_info))) == N_sync)
+      && (MeltableSYNCs (arg_node, ASSIGN_INSTR (INFO_SYNCO_NEXTASSIGN (arg_info))))) {
         DBUG_PRINT ("SYNCO", ("melting sync-blocks"));
         /*
          *  The actual optimazation of SYNC-blocks takes place here.
          */
-        result = MeltSYNCs ( arg_node,
-                         ASSIGN_INSTR( INFO_SYNCO_NEXTASSIGN( arg_info)) /* ,
-                         ... ####  */ );
+        result = MeltSYNCs (arg_node, ASSIGN_INSTR (INFO_SYNCO_NEXTASSIGN (arg_info)));
 
         DBUG_PRINT ("SYNCO", ("rearranging assigments around sync-blocks"));
         /*
