@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.13  2003/03/20 20:36:36  sah
+# added global to includes
+#
 # Revision 3.12  2003/03/20 14:39:13  sbs
 # now builds the mt version iff DISABLE_MT is not set!
 #
@@ -54,7 +57,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-INCS := -I../runtime -I../../inc
+INCS := -I../runtime -I../../inc -I../global
 LIBS := -L.
 
 FILES_HEAPMGR := calloc.c diagnostics.c internal.c large_chunks.c malloc.c memalign.c  \
