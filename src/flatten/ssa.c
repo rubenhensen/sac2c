@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/11/24 19:15:29  mwe
+ * SacDevCamp: compiles!!\
+ *
  * Revision 1.7  2004/11/18 14:34:31  mwe
  * changed CheckAvis and chkavis to ToNewTypes and to tonewtypes
  *
@@ -53,6 +56,8 @@
 #include "ToNewTypes.h"
 #include "SSATransform.h"
 #include "fun2lac.h"
+#include "node_basic.h"
+#include "internal_lib.h"
 #include "UndoSSATransform.h"
 #include "string.h"
 #include "tree_basic.h"
@@ -60,7 +65,7 @@
 
 /** <!--********************************************************************-->
  *
- * @fn node *DoSSA(node *syntax_tree)
+ * @fn node *SSAdoSsa(node *syntax_tree)
  *
  *   @brief  takes the syntax_tree and return it in ssa-form
  *
@@ -82,24 +87,26 @@
  *****************************************************************************/
 
 node *
-DoSSA (node *syntax_tree)
+SSAdoSsa (node *syntax_tree)
 {
-    DBUG_ENTER ("DoSSA");
+    DBUG_ENTER ("SSAdoSsa");
 
     DBUG_PRINT ("SSA", ("call Lac2Fun"));
-    syntax_tree = Lac2Fun (syntax_tree);
-    if ((break_after == compiler_phase) && (0 == strcmp (break_specifier, "l2f"))) {
+    syntax_tree = L2FdoLac2Fun (syntax_tree);
+    if ((global.break_after == global.compiler_phase)
+        && (0 == strcmp (global.break_specifier, "l2f"))) {
         goto DONE;
     }
 
     DBUG_PRINT ("SSA", ("call ToNewTypes"));
-    syntax_tree = ToNewTypes (syntax_tree);
-    if ((break_after == compiler_phase) && (0 == strcmp (break_specifier, "cha"))) {
+    syntax_tree = TNTdoToNewTypes (syntax_tree);
+    if ((global.break_after == global.compiler_phase)
+        && (0 == strcmp (global.break_specifier, "cha"))) {
         goto DONE;
     }
 
     DBUG_PRINT ("SSA", ("call SSATransform"));
-    syntax_tree = SSATransform (syntax_tree);
+    syntax_tree = SSATdoTransform (syntax_tree);
 
 DONE:
 
@@ -108,7 +115,7 @@ DONE:
 
 /** <!--********************************************************************-->
  *
- * @fn node *UndoSSA(node *syntax_tree)
+ * @fn node *SSAundoSsa(node *syntax_tree)
  *
  *   @brief  takes the syntax_tree and return it in nonssa-form
  *
@@ -130,19 +137,20 @@ DONE:
  *****************************************************************************/
 
 node *
-UndoSSA (node *syntax_tree)
+SSAundoSsa (node *syntax_tree)
 {
-    DBUG_ENTER ("UndoSSA");
+    DBUG_ENTER ("SSAundoSsa");
 
-    DBUG_PRINT ("SSA", ("call UndoSSATransform"));
-    syntax_tree = UndoSSATransform (syntax_tree);
-    if ((break_after == compiler_phase) && (0 == strcmp (break_specifier, "ussa"))) {
+    DBUG_PRINT ("SSA", ("call SSAundoSsa"));
+    syntax_tree = USSATdoUndoSsaTransform (syntax_tree);
+    if ((global.break_after == global.compiler_phase)
+        && (0 == strcmp (global.break_specifier, "ussa"))) {
         goto DONE;
     }
 
     DBUG_PRINT ("SSA", ("call Fun2Lac"));
     /* undo lac2fun transformation */
-    syntax_tree = Fun2Lac (syntax_tree);
+    syntax_tree = F2LdoFun2Lac (syntax_tree);
 
 DONE:
     DBUG_RETURN (syntax_tree);
@@ -150,7 +158,7 @@ DONE:
 
 /** <!--********************************************************************-->
  *
- * @fn node *RestoreSSAOneFunction(node *syntax_tree)
+ * @fn node *SSArestoreSsaOneFunction(node *syntax_tree)
  *
  *   @brief  takes an N_fundef node and restores ssa-form
  *
@@ -173,23 +181,23 @@ DONE:
  *****************************************************************************/
 
 node *
-RestoreSSAOneFunction (node *fundef)
+SSArestoreSsaOneFunction (node *fundef)
 {
-    DBUG_ENTER ("RestoreSSAOneFunction");
+    DBUG_ENTER ("SSArestoreSsaOneFunction");
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
-                 "RestoreSSAOneFunction called without N_fundef node.");
+                 "SSArestoreSsaOneFunction called without N_fundef node.");
 
-    fundef = ToNewTypesOneFunction (fundef);
+    fundef = TNTdoToNewTypesOneFunction (fundef);
 
-    fundef = SSATransformOneFunction (fundef);
+    fundef = SSATdoTransformOneFunction (fundef);
 
     DBUG_RETURN (fundef);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *RestoreSSAOneFundef(node *syntax_tree)
+ * @fn node *SSArestoreSsaOneFundef(node *syntax_tree)
  *
  *   @brief  takes an N_fundef node and restores ssa-form
  *
@@ -212,23 +220,23 @@ RestoreSSAOneFunction (node *fundef)
  *****************************************************************************/
 
 node *
-RestoreSSAOneFundef (node *fundef)
+SSArestoreSsaOneFundef (node *fundef)
 {
-    DBUG_ENTER ("RestoreSSAOneFundef");
+    DBUG_ENTER ("SSArestoreSsaOneFundef");
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
-                 "RestoreSSAOneFundef called without N_fundef node.");
+                 "SSArestoreSsaOneFundef called without N_fundef node.");
 
-    fundef = ToNewTypesOneFundef (fundef);
+    fundef = TNTdoToNewTypesOneFundef (fundef);
 
-    fundef = SSATransformOneFundef (fundef);
+    fundef = SSATdoTransformOneFundef (fundef);
 
     DBUG_RETURN (fundef);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *RestoreSSAExplicitAllocs(node *syntax_tree)
+ * @fn node *SSArestoreSsaExplicitAllocs(node *syntax_tree)
  *
  *   @brief  takes an Nmodul node and restores ssa-form
  *
@@ -252,16 +260,16 @@ RestoreSSAOneFundef (node *fundef)
  *****************************************************************************/
 
 node *
-RestoreSSAExplicitAllocs (node *syntax_tree)
+SSArestoreSsaExplicitAllocs (node *syntax_tree)
 {
-    DBUG_ENTER ("RestoreSSAExplicitAllocs");
+    DBUG_ENTER ("SSArestoreSsaExplicitAllocs");
 
-    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_modul,
-                 "RestoreSSAExplicitAllocs called without N_modul node.");
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module,
+                 "SSArestoreSsaExplicitAllocs called without N_module node.");
 
-    syntax_tree = ToNewTypes (syntax_tree);
+    syntax_tree = TNTdoToNewTypes (syntax_tree);
 
-    syntax_tree = SSATransformExplicitAllocs (syntax_tree);
+    syntax_tree = SSATdoTransformExplicitAllocs (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
