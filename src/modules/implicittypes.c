@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/10/26 21:23:41  dkr
+ * DupTree.h included
+ *
  * Revision 2.5  2000/10/26 13:58:25  dkr
  * CopyShpseg replaced by DupShpseg (DupTree.[ch])
  *
@@ -33,6 +36,7 @@
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "DupTree.h"
 
 #include "convert.h"
 #include "free.h"
