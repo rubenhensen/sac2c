@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.40  1998/03/04 14:52:54  srs
+# made deps
+#
 # Revision 1.39  1998/03/04 00:10:26  dkr
 # 'clean' now deletes the subdir .sb, too
 #
@@ -249,7 +252,8 @@ WithloopFolding.o: ../global/tree_compound.h ../global/Error.h
 WithloopFolding.o: /usr/include/string.h ../global/globals.h
 WithloopFolding.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 WithloopFolding.o: ../global/my_debug.h /usr/include/malloc.h
-WithloopFolding.o: ../global/traverse.h optimize.h WithloopFolding.h
+WithloopFolding.o: ../print/print.h ../global/traverse.h optimize.h
+WithloopFolding.o: WithloopFolding.h
 WorkReduction.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WorkReduction.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 WorkReduction.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
