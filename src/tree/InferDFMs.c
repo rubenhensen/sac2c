@@ -1,8 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2001/04/19 15:37:36  dkr
+ * fixed some bugs:
+ *  - fixpoint iteration works correctly now
+ *  - out-parameters of loops are infered correctly now
+ *
  * Revision 1.9  2001/04/19 10:09:26  dkr
- * InferMasksWith(), InferMasksWith2() replaced by InferMasksWithx()
+ * INFDFMSwith(), INFDFMSwith2() replaced by INFDFMSwithx()
  *
  * Revision 1.8  2001/04/19 07:40:33  dkr
  * macro F_PTR used as format string for pointers
@@ -105,7 +110,7 @@
  */
 #define COMPARE_AND_UPDATE(old, new, arg_info)                                           \
     if ((old) != NULL) {                                                                 \
-        if (DFMTestMask (old) != DFMTest2Masks (old, new)) {                             \
+        if (DFMTestMask (old) + DFMTestMask (new) != 2 * DFMTest2Masks (old, new)) {     \
             /* 'old' and 'new' differs */                                                \
             INFO_INFDFMS_ISFIX (arg_info) = FALSE;                                       \
         }                                                                                \
@@ -523,19 +528,15 @@ InferMasksWhile (node *arg_node, node *arg_info)
     DBUG_ENTER ("InferMasksWhile");
 
     /*
-     * traverse body
-     */
-    WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
-
-    /*
-     * calculate new in-, out-, local-masks
-     */
-    /*
+     * Example:
+     * --------
+     *
      * a = 1;
      * b = 1;
      * c = 1;
-     * while (...)    <--- in: a,b   out: a,b   local: c,d
-     * {              <--- in: a     out: b     local: b,c,d
+     * while (...)     <---   in: a,b   out: a,b   local: c,d
+     * {               <--1   in: a     out: b     local: b,c,d   (needed: b)
+     *                 <--2   in: a     out: a,b   local: b,c,d   (needed: a,b)
      *   ... a ...
      *   a = 2;
      *   b = 2;
@@ -544,24 +545,32 @@ InferMasksWhile (node *arg_node, node *arg_info)
      *   d = 1;
      * }
      * ... b ...
-     *
+     */
+
+    /*
+     * All vars that are in-vars of the loop body must be marked as needed
+     * in order to detect all out-vars.
+     *   -> 'a' in the example
+     */
+    /* needed' = needed u in */
+    DFMSetMaskOr (INFO_INFDFMS_NEEDED (arg_info), INFO_INFDFMS_IN (arg_info));
+
+    WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
+    WHILE_COND (arg_node) = Trav (WHILE_COND (arg_node), arg_info);
+
+    /*
+     * calculate new in-, out-, local-masks
+     */
+    /*
      * All vars that are out-vars of the loop body have to be arguments of the
-     * loop-dummy-function as well. (Even if they are local-vars!) This is
-     * important in the case that the loop body is not executed at all.
+     * loop-dummy-function as well. (Even if they are local-vars!)
+     * This is important in the case that the loop body is not executed at all.
+     *   -> 'b' in the example
      */
     /* in' = in u out */
     DFMSetMaskOr (INFO_INFDFMS_IN (arg_info), INFO_INFDFMS_OUT (arg_info));
-    /* out' = out u ... */
-#if 0
-  DFMSetMaskOr( INFO_INFDFMS_OUT( arg_info), ...);
-#endif
     /* local' = local \ in' */
     DFMSetMaskMinus (INFO_INFDFMS_LOCAL (arg_info), INFO_INFDFMS_IN (arg_info));
-
-    /*
-     * traverse condition
-     */
-    WHILE_COND (arg_node) = Trav (WHILE_COND (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -580,6 +589,34 @@ node *
 InferMasksDo (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("InferMasksDo");
+
+    /*
+     * Example:
+     * --------
+     *
+     * a = 1;
+     * b = 1;
+     * c = 1;
+     * do              <---   in: a   out: a,b   local: b,c,d
+     * {               <--1   in: a   out: b     local: b,c,d   (needed: b)
+     *                 <--2   in: a   out: a,b   local: b,c,d   (needed: a,b)
+     *   ... a ...
+     *   a = 2;
+     *   b = 2;
+     *   c = 2;
+     *   ... c ...
+     *   d = 1;
+     * } while (...)
+     * ... b ...
+     */
+
+    /*
+     * All vars that are in-vars of the loop body must be temporaryly marked as
+     * needed in order to detect all out-vars.
+     *   -> 'a' in the example
+     */
+    /* needed' = needed u in */
+    DFMSetMaskOr (INFO_INFDFMS_NEEDED (arg_info), INFO_INFDFMS_IN (arg_info));
 
     DO_COND (arg_node) = Trav (DO_COND (arg_node), arg_info);
     DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
@@ -641,11 +678,8 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
     /*
      * setup in-, out-, local-masks
      */
-    INFO_INFDFMS_IN (arg_info)
-      = (*in != NULL) ? DFMGenMaskCopy (*in) : DFMGenMaskClear (INFO_DFMBASE (arg_info));
-    INFO_INFDFMS_OUT (arg_info) = (*out != NULL)
-                                    ? DFMGenMaskCopy (*out)
-                                    : DFMGenMaskClear (INFO_DFMBASE (arg_info));
+    INFO_INFDFMS_IN (arg_info) = DFMGenMaskCopy (*in);
+    INFO_INFDFMS_OUT (arg_info) = DFMGenMaskCopy (*out);
     INFO_INFDFMS_LOCAL (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
 
     arg_node = InferMasksFunction (arg_node, arg_info);
@@ -670,6 +704,21 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
     DbugPrintSignature (NODE_TEXT (arg_node), *in, *out, *local);
 
     /*
+     * update old local-mask
+     */
+    if (TEST_HIDE_LOCALS (INFO_INFDFMS_HIDELOC (arg_info), arg_node)) {
+        /*
+         * we have to hide the local vars!!
+         */
+        DBUG_PRINT ("INFDFMS",
+                    ("local vars of node %s are hid!!!", NODE_TEXT (arg_node)));
+    } else {
+        DBUG_PRINT ("INFDFMS",
+                    ("local vars of node %s are not hid.", NODE_TEXT (arg_node)));
+        DFMSetMaskOr (old_local, *local);
+    }
+
+    /*
      * restore old needed-mask
      */
     INFO_INFDFMS_NEEDED (arg_info) = DFMRemoveMask (INFO_INFDFMS_NEEDED (arg_info));
@@ -681,21 +730,6 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
     INFO_INFDFMS_IN (arg_info) = old_in;
     INFO_INFDFMS_OUT (arg_info) = old_out;
     INFO_INFDFMS_LOCAL (arg_info) = old_local;
-
-    /*
-     * update local-mask
-     */
-    if (TEST_HIDE_LOCALS (INFO_INFDFMS_HIDELOC (arg_info), arg_node)) {
-        /*
-         * we have to hide the local vars!!
-         */
-        DBUG_PRINT ("INFDFMS",
-                    ("local vars of node %s are hid!!!", NODE_TEXT (arg_node)));
-    } else {
-        DBUG_PRINT ("INFDFMS",
-                    ("local vars of node %s are not hid.", NODE_TEXT (arg_node)));
-        DFMSetMaskOr (INFO_INFDFMS_LOCAL (arg_info), *local);
-    }
 
     /*
      * The whole conditional/loop can be represented by a single function call
@@ -993,38 +1027,40 @@ INFDFMSwithx (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("INFDFMSwithx");
 
+    /*
+     * Stricly speaking, the scope of all vars defined within a with-loop
+     * is restricted to the with-loop itself:
+     *
+     *   val = 1;
+     *   with (...) {
+     *     val = 2;
+     *   }
+     *   genarray( ...)
+     *   ... val ...         <---  here, 'val' still contains the value 1
+     *
+     * That means, we have to clear the INFO_INFDFMS_NEEDED mask here!
+     *
+     * BUT, in case of global objects this behaviour is NOT wanted.
+     * Therefore, during the flattening phase all not-global vars defined
+     * within a with-loop are renamed:
+     *
+     *   val = 1;
+     *   with (...) {
+     *     _val = val;
+     *     _val = 2;
+     *   }
+     *   genarray( ...)
+     *   ... val ...         <---  here, 'val' still contains the value 1
+     *
+     * Because of that, we can leave the INFO_INFDFMS_NEEDED mask untouched
+     * here in order to detect OUT- (global-) vars :-)
+     */
 #if 0
-  /*
-   * Stricly speaking, the scope of all vars defined within a with-loop
-   * is restricted to the with-loop itself:
-   *
-   *   val = 1;
-   *   with (...) {
-   *     val = 2;
-   *   }
-   *   genarray( ...)
-   *   ... val ...         <---  here, 'val' still contains the value 1
-   *
-   * That means, we have to clear the INFO_INFDFMS_NEEDED mask here!
-   *
-   * BUT, in case of global objects this behaviour is NOT wanted.
-   * Therefore, during the flattening phase all not-global vars defined
-   * within a with-loop are renamed:
-   *
-   *   val = 1;
-   *   with (...) {
-   *     _val = val;
-   *     _val = 2;
-   *   }
-   *   genarray( ...)
-   *   ... val ...         <---  here, 'val' still contains the value 1
-   *
-   * Because of that, we can leave the INFO_INFDFMS_NEEDED mask untouched
-   * here in order to detect OUT- (global-) vars :-)
-   */
   INFO_INFDFMS_NEEDED( arg_info)
     = DFMRemoveMask( INFO_INFDFMS_NEEDED( arg_info));
   INFO_INFDFMS_NEEDED( arg_info) = DFMGenMaskClear( INFO_DFMBASE( arg_info));
+#else
+
 #endif
 
     arg_node
