@@ -1,5 +1,11 @@
 /*
  * $Log$
+ * Revision 2.40  2000/06/07 15:53:33  dkr
+ * pseudo-fold-fundefs are no longer inserted into the AST directly
+ * during the traversal (*very* error prone!!).
+ * Now, they are accumulated in an extra node-chain which is
+ * inserted into the AST when the traversal is finished.
+ *
  * Revision 2.39  2000/05/30 14:14:07  dkr
  * TypecheckFunctionDeclarations() is called for pseudo-fold-functions,
  * too, in order to get the correct back references to corresponding
@@ -300,7 +306,7 @@
 
 #include "new_typecheck.h"
 
-static node *top_fundef;
+static node *pseudo_fold_fundefs;
 
 #define LOCAL_STACK_SIZE 1000 /* used for scope stack */
 #define MAX_ARG_TYPE_LENGTH                                                              \
@@ -517,19 +523,20 @@ char *module_name = NULL; /* name of module to typecheck;
 /*
  *  forward declarations
  */
-types *TI_prf (node *arg_node, node *arg_info);
-types *TI_ap (node *arg_node, node *arg_info);
-types *TI_array (node *arg_node, node *arg_info);
-types *TI (node *arg_node, node *arg_info);
-types *TI_cast (node *arg_node, node *arg_info);
+static types *TI_prf (node *arg_node, node *arg_info);
+static types *TI_ap (node *arg_node, node *arg_info);
+static types *TI (node *arg_node, node *arg_info);
+static types *TI_cast (node *arg_node, node *arg_info);
 
-types *TI_Nwith (node *, node *);
-types *TI_Npart (node *, types *, node *, node *);
-types *TI_Ngenarray (node *, node *, node **);
-void ConsistencyCheckModarray (int lineno, types *array_type, types *generator_type,
-                               types *body_type);
-types *TI_Nfoldprf (node *arg_node, types *block_type, types *neutral, node *arg_info);
-types *TI_Nfoldfun (node *arg_node, types *body_type, types *neutral, node *arg_info);
+static types *TI_Nwith (node *, node *);
+static types *TI_Npart (node *, types *, node *, node *);
+static types *TI_Ngenarray (node *, node *, node **);
+static void ConsistencyCheckModarray (int lineno, types *array_type,
+                                      types *generator_type, types *body_type);
+static types *TI_Nfoldprf (node *arg_node, types *block_type, types *neutral,
+                           node *arg_info);
+static types *TI_Nfoldfun (node *arg_node, types *body_type, types *neutral,
+                           node *arg_info);
 
 /* some local typedefs */
 typedef struct STACK_ELEM {
@@ -643,12 +650,13 @@ Types2Array (types *type, types *res_type)
 /******************************************************************************
  *
  * function:
- *   Type2Vec(types *type)
+ *   node *Type2Vec(types *type)
  *
  * description:
  *   builds an N_array alike shape of types
  *
  ******************************************************************************/
+
 static node *
 Type2Vec (types *type)
 {
@@ -679,12 +687,13 @@ Type2Vec (types *type)
 /******************************************************************************
  *
  * function:
- *   static node *ArrayOfZeros (int count)
+ *   node *ArrayOfZeros (int count)
  *
  * description:
  *   Produces an Array (N_array) with count elements, which are all zero (0).
  *
  ******************************************************************************/
+
 static node *
 ArrayOfZeros (int count)
 {
@@ -706,7 +715,7 @@ ArrayOfZeros (int count)
 /******************************************************************************
  *
  * function:
- *   static node *TypeToZeros (types *type)
+ *   node *TypeToZeros (types *type)
  *  
  * description:
  *   type has to be an array-type.
@@ -716,7 +725,9 @@ ArrayOfZeros (int count)
  *   known, perhaps this can be expanded ... (jhs)
  *
  ******************************************************************************/
-static node *TypeToZeros (types *type)
+
+static
+node *TypeToZeros (types *type)
 {
   node *res;
 
@@ -732,13 +743,14 @@ static node *TypeToZeros (types *type)
 /******************************************************************************
  *
  * function:
- *   static int TypeToCount (types *type)
+ *   int TypeToCount (types *type)
  *
  * description:
  *   type has to be an array-type.
  *   Calculates how many Elements are contained in an array of Type type.
  *
  ******************************************************************************/
+
 static int
 TypeToCount (types *type)
 {
@@ -880,9 +892,6 @@ BuildPsiWithLoop (types *restype, node *idx, node *array)
  * description:
  *
  *
- *
- *
- *
  ******************************************************************************/
 
 static node *
@@ -951,8 +960,6 @@ BuildGenarrayWithLoop (node *shp, node *val)
  *   node *BuildTakeWithLoop(node *take_shp, node *array)
  *
  * description:
- *
- *
  *
  *
  *
@@ -1156,7 +1163,6 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
  *
  * function:
  *   node *BuildCatWithLoop1(types *new_shape, node *array1)
- *   node *BuildCatWithLoop2(ids *lhs, node *arg1, node *arg2, node *arg3)
  *
  * description:
  *
@@ -1205,6 +1211,16 @@ BuildCatWithLoop1 (types *new_shape, node *array1)
 
     DBUG_RETURN (res);
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   node *BuildCatWithLoop2(ids *lhs, node *arg1, node *arg2, node *arg3)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
 
 static node *
 BuildCatWithLoop2 (ids *lhs, node *arg1, node *arg2, node *arg3)
@@ -1300,36 +1316,31 @@ BuildCatWithLoop2 (ids *lhs, node *arg1, node *arg2, node *arg3)
     DBUG_RETURN (res);
 }
 
-/*
- *
- *  functionname  : LookupObject
- *  arguments     : 1) name of object
- *                  2) module name to look for object (maybe NULL)
- *                  3) line number (for error messages only)
- *  description   : searches for the objdef-node which defines the given
- *                  object. The pointer to this objdef node is returned,
- *                  if it's found and NULL else.
- *  global vars   : object_table
- *  internal funs : ---
- *  external funs : FindSymbolInModul, ModulePrefix, strcmp
- *  macros        : CMP_OBJ_OBJDEF
- *
- *  remarks       : Search-Strategy:
- *
- *                  If no module name is given, then the object is first
- *                  searched in the current module. If it's not found there,
- *                  it is looked for in all imported modules. An error
- *                  message occurs if more than one object matches.
- *
- *                  If a module name is given, then the object is first
- *                  searched in this particular module. If it's not found
- *                  there, then the search is continued in all modules
- *                  which are imported by this module. An error
- *                  message occurs if more than one object matches.
- *
- */
-
 #if 0
+/******************************************************************************
+ *
+ * Function:
+ *   node *LookupObject(char *name, char *mod, int line)
+ *
+ * Description:
+ *   Searches for the objdef-node which defines the given object. The pointer
+ *   to this objdef node is returned, if it's found and NULL else.
+ *
+ * Remarks:
+ *   Search-Strategy:
+ *                  
+ *   If no module name is given, then the object is first searched in the
+ *   current module. If it's not found there, it is looked for in all imported
+ *   modules. An error message occurs if more than one object matches.
+ *                  
+ *   If a module name is given, then the object is first searched in this
+ *   particular module. If it's not found there, then the search is continued
+ *   in all modules which are imported by this module. An error message occurs
+ *   if more than one object matches.
+ *
+ ******************************************************************************/
+
+static
 node *LookupObject(char *name, char *mod, int line)
 {
   node *tmp, *found=NULL;
@@ -1391,7 +1402,17 @@ node *LookupObject(char *name, char *mod, int line)
 }
 #endif
 
-node *
+/******************************************************************************
+ *
+ * Function:
+ *   node *LookupObject(char *name, char *mod, int line)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
 LookupObject (char *name, char *mod, int line)
 {
     node *tmp, *found = NULL;
@@ -1479,21 +1500,17 @@ LookupObject (char *name, char *mod, int line)
     DBUG_RETURN (found);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : LookupType
- *  arguments     : 1) name of type
- *                  2) name of modul, where type is defined
- *  description   : looks type up and returns pointer to corresponding
- *                  N_typedef node if found or NULL if not found
- *  global vars   : type_table, type_tab_size, filename
- *  internal funs :
- *  external funs :
- *  macros        : DBUG..., NULL, ID_MOD, ID, CMP_MOD, ABORT
+ * Function:
+ *   node *LookupType(char *type_name, char *mod_name, int line)
  *
- *  remarks       :
+ * Description:
+ *   Looks type up and returns pointer to corresponding N_typedef node if
+ *   found or NULL if not found.
  *
- */
+ ******************************************************************************/
+
 node *
 LookupType (char *type_name, char *mod_name, int line)
 {
@@ -1573,14 +1590,10 @@ LookupType (char *type_name, char *mod_name, int line)
  *  description   : looks for 1) on the scope stack
  *                  returns pointer to stack if found, NULL otherwise
  *  global vars   : tos, type_string, stack
- *  internal funs :
- *  external funs : strcmp, Type2String
- *  macros        : DBUG..., P_FORMAT
- *
- *  remarks       :
  *
  */
-stack_elem *
+
+static stack_elem *
 LookupVar (char *id)
 {
     stack_elem *tmp, *bottom;
@@ -1637,7 +1650,8 @@ LookupVar (char *id)
  *                   else  if 2) is NULL then look only 1) up
  *
  */
-fun_tab_elem *
+
+static fun_tab_elem *
 LookupFun (char *fun_name, char *mod_name, node *fun_node)
 {
     fun_tab_elem *tmp;
@@ -1687,7 +1701,8 @@ LookupFun (char *fun_name, char *mod_name, node *fun_node)
  *  remarks       : ----
  *
  */
-prim_fun_tab_elem *
+
+static prim_fun_tab_elem *
 LookupPrf (int prf, char *mod_name)
 {
     prim_fun_tab_elem *prf_p;
@@ -1706,19 +1721,17 @@ LookupPrf (int prf, char *mod_name)
     DBUG_RETURN (prf_p);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : Compute NeutralElem
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs : ----
- *  external funs : ----
- *  macros        : DBUG...,
- *  remarks       : ----
+ * Function:
+ *   node *ComputeNeutralElem(prf prf_fun, types *neutral_type)
  *
- */
-node *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
 ComputeNeutralElem (prf prf_fun, types *neutral_type)
 {
     node *neutral_elem = NULL;
@@ -1998,7 +2011,8 @@ TypecheckFunctionDeclarations (node *fundef)
  *                    it is defined) will not be added or updated while
  *                    typechecking, if the macro is set.
  */
-types *
+
+static types *
 TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
 {
     types *return_type;
@@ -2097,7 +2111,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static node *LookupVardec(char *id, node *vardec)
+ *   node *LookupVardec(char *id, node *vardec)
  *
  * description:
  *   Searches the next vardec (begining from given vardec itself) with
@@ -2120,7 +2134,7 @@ LookupVardec (char *id, node *vardec)
 /******************************************************************************
  *
  * function:
- *   static node *LookupArg(char *id, node *arg)
+ *   node *LookupArg(char *id, node *arg)
  *
  * description:
  *   Searches the next arg (begining from given arg itself) with
@@ -2128,7 +2142,7 @@ LookupVardec (char *id, node *vardec)
  *
  ******************************************************************************/
 
-node *
+static node *
 LookupArg (char *id, node *arg)
 {
     DBUG_ENTER ("LookupArg");
@@ -2163,7 +2177,8 @@ LookupArg (char *id, node *arg)
  *                                             (or produces an error)
  *     (jhs)
  */
-int
+
+static int
 CheckIds (ids *arg_ids, node *vardec, int line)
 {
     ids *tmp, *not_checked_ids;
@@ -2225,7 +2240,8 @@ CheckIds (ids *arg_ids, node *vardec, int line)
  *                    (NULL==info.types->id_mod) will not be checked
  *                    (only result_type)
  */
-int
+
+static int
 CheckFunctionDeclaration (node *arg_node, int all)
 {
     int ret_value = 0;
@@ -2309,7 +2325,8 @@ CheckFunctionDeclaration (node *arg_node, int all)
  *  remarks       : ----
  *
  */
-int
+
+static int
 CmpFunParams (node *arg1, node *arg2)
 {
     int i, is_equal;
@@ -2362,7 +2379,8 @@ CmpFunParams (node *arg1, node *arg2)
  *  remarks       : fundef node must have a body.
  *
  */
-void
+
+static void
 CheckKnownTypes (node *arg_node)
 {
     types *fun_type;
@@ -2479,7 +2497,8 @@ CheckKnownTypes (node *arg_node)
  *
  *
  */
-int
+
+static int
 AllChecked ()
 {
     fun_tab_elem *tmp;
@@ -2507,7 +2526,8 @@ AllChecked ()
  *  remarks       : ----
  *
  */
-node *
+
+static node *
 DeleteFun (node *arg_node, node *tree)
 {
     node *fun_node, *last_node;
@@ -2561,7 +2581,8 @@ DeleteFun (node *arg_node, node *tree)
  *
  *
  */
-node *
+
+static node *
 CheckRest (node *arg_node, int kind)
 {
     fun_tab_elem *fun_p;
@@ -2689,7 +2710,8 @@ CheckRest (node *arg_node, int kind)
  *
  *
  */
-int
+
+static int
 IsNameInMods (char *name, mods *mods)
 {
     int found = 0;
@@ -2730,7 +2752,8 @@ IsNameInMods (char *name, mods *mods)
  *  remarks       : a new N_typedef chain is made too (new order)
  *
  */
-type_tab_elem *
+
+static type_tab_elem *
 InitTypeTab (node *modul_node)
 {
     node *tmp, *last_node;
@@ -3063,7 +3086,8 @@ InitTypeTab (node *modul_node)
  *  remarks       : ----
  *
  */
-void
+
+static void
 InitFunTable (node *arg_node)
 {
     node *fun_node;
@@ -3239,47 +3263,50 @@ InitFunTable (node *arg_node)
     DBUG_VOID_RETURN;
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : Typecheck
- *  arguments     : 1) syntax tree
- *  description   : initializes and starts typechecking of a sac programm
- *                  - initializes table of primitive functions
- *                  - set stack (scope stack)
- *                  - initializes table of userdefined types
- *                  - initializes table of userdefined functions
- *                  - call Trav to start checking the main function
- *                  - sets stack_limit (end of scope stack )
+ * Function:
+ *   node *Typecheck( node *arg_node)
  *
- *  global vars   : tos, stack, act_tab type_tab, stack_limit,
- *                  filename
- *  internal funs :  Malloc, CheckRest, InitFunTable, LookupFun, InitTypeTab
- *  external funs : free, Trav, InitPrimFunTab
- *  macros        : DBUG..., MOD_NAME_CON, NULL, LOCAL_STACK_SIZE, P_FORMAT,
- *                  FREE, CHECKING, ABORT
+ * Description:
+ *   Initializes and starts typechecking of a SAC programm
+ *     - initializes table of primitive functions
+ *     - set stack (scope stack)
+ *     - initializes table of userdefined types
+ *     - initializes table of userdefined functions
+ *     - calls Trav() to start checking the main function
+ *     - sets stack_limit (end of scope stack)
  *
- *  remarks       : ----
- *
- */
+ ******************************************************************************/
+
 node *
 Typecheck (node *arg_node)
 {
     fun_tab_elem *tmp_node;
+    node *tmp;
     int i;
 
     DBUG_ENTER ("Typecheck");
 
     /*
+     * dkr: Should be a N_modul-node, right??
+     */
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
+                 "Typecheck() not called with N_modul node!");
+
+    /*
      * initialize profile-tool !
      */
     PFfunapcntr[0] = 1; /* main-function */
-    for (i = 1; i < PF_MAXFUN; i++)
+    for (i = 1; i < PF_MAXFUN; i++) {
         PFfunapcntr[i] = 0;
+    }
 
     if (sbs == 1) {
         NewTypeCheck (arg_node);
         exit (0);
     }
+
     /*
      * generate a table of primitive functions to look up their
      * types later on
@@ -3294,16 +3321,12 @@ Typecheck (node *arg_node)
                 ("local stack from " P_FORMAT "to " P_FORMAT, stack, stack_limit));
     tos = stack;
 
-    if (N_modul == NODE_TYPE (arg_node)) {
-        if (MODUL_TYPES (arg_node) != NULL) {
-            type_table = InitTypeTab (arg_node);
-        }
+    pseudo_fold_fundefs = NULL;
+    module_name = MODUL_NAME (arg_node);
+    object_table = MODUL_OBJS (arg_node);
 
-        top_fundef = MODUL_FUNS (arg_node);
-        module_name = MODUL_NAME (arg_node);
-        object_table = MODUL_OBJS (arg_node);
-    } else {
-        top_fundef = arg_node;
+    if (MODUL_TYPES (arg_node) != NULL) {
+        type_table = InitTypeTab (arg_node);
     }
 
     /*
@@ -3312,20 +3335,18 @@ Typecheck (node *arg_node)
      *  type table and name clashes with user-defined types, functions or
      *  other global objects will be detected.
      *
-     *    prerequisite:  stack != NULL
+     *  prerequisite:  stack != NULL
      */
-
-    if (N_modul == arg_node->nodetype) {
-        if (MODUL_OBJS (arg_node) != NULL) {
-            MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), NULL);
-        }
+    if (MODUL_OBJS (arg_node) != NULL) {
+        MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), NULL);
     }
+
     ABORT_ON_ERROR;
 
-    if (top_fundef != NULL) {
-        InitFunTable (top_fundef);
+    if (MODUL_FUNS (arg_node) != NULL) {
+        InitFunTable (MODUL_FUNS (arg_node));
 
-        /*   ABORT_ON_ERROR;  */
+        /*  ABORT_ON_ERROR;  */
 
         /* traverse main function */
         tmp_node = LookupFun ("main", NULL, NULL);
@@ -3338,22 +3359,22 @@ Typecheck (node *arg_node)
             kind_of_file = SAC_PRG;
             tmp_node->tag = CHECKING; /* set tag, because function will be checked */
             Trav (tmp_node->node, NULL);
+
             /* now check the type of "fastchecked" functions */
-            top_fundef = CheckRest (top_fundef, SAC_PRG);
+            MODUL_FUNS (arg_node) = CheckRest (MODUL_FUNS (arg_node), SAC_PRG);
         } else {
             fun_tab_elem *fun_p;
             kind_of_file = SAC_MOD;
 
             if (tmp_node != NULL) {
                 ABORT (NODE_LINE (tmp_node->node),
-                       ("Function 'main' not allowed in module/"
-                        "class implementations"));
+                       ("Function 'main' not allowed in module/class implementations"));
             }
 
             for (fun_p = fun_table; !END_OF_FUN_TAB (fun_p);
                  fun_p = NEXT_FUN_TAB_ELEM (fun_p)) {
-                DBUG_ASSERT (N_fundef == NODE_TYPE (fun_p->node),
-                             ("wrong node in fun_table"));
+                DBUG_ASSERT ((N_fundef == NODE_TYPE (fun_p->node)),
+                             "wrong node in fun_table");
                 if ((FUNDEF_BODY (fun_p->node) != NULL)
                     && (FUNDEF_STATUS (fun_p->node) != ST_imported_mod)
                     && (FUNDEF_STATUS (fun_p->node) != ST_imported_class)
@@ -3372,7 +3393,7 @@ Typecheck (node *arg_node)
                 }
             }
 
-            top_fundef = CheckRest (top_fundef, SAC_MOD);
+            MODUL_FUNS (arg_node) = CheckRest (MODUL_FUNS (arg_node), SAC_MOD);
         }
 
         FREE (stack);
@@ -3382,10 +3403,19 @@ Typecheck (node *arg_node)
         }
     }
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
-                 "Typecheck() not called with N_modul node.");
-
-    arg_node->node[2] = top_fundef;
+    /*
+     * Prepand pseudo-fold-fundefs to the olf fundefs.
+     * This makes sure that these dummy-funs will be compiled before any other
+     * function!
+     */
+    if (pseudo_fold_fundefs != NULL) {
+        tmp = pseudo_fold_fundefs;
+        while (FUNDEF_NEXT (tmp) != NULL) {
+            tmp = FUNDEF_NEXT (tmp);
+        }
+        FUNDEF_NEXT (tmp) = MODUL_FUNS (arg_node);
+        MODUL_FUNS (arg_node) = pseudo_fold_fundefs;
+    }
 
     MODUL_FUNS (arg_node) = TypecheckFunctionDeclarations (MODUL_FUNS (arg_node));
 
@@ -3413,6 +3443,7 @@ Typecheck (node *arg_node)
  *                  4 equal simpletype, equal dimension, equal number of
  *                    elements, but different shape
  */
+
 cmp_types
 CmpTypes (types *type_one, types *type_two)
 {
@@ -3581,7 +3612,8 @@ CmpTypes (types *type_one, types *type_two)
  *
  *  remarks       :
  */
-cmp_types
+
+static cmp_types
 CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int line)
 {
     int old_dim1, old_dim2, i;
@@ -3777,7 +3809,8 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
  *                       CompatibleTypes. !!!!
  *
  */
-void
+
+static void
 UpdateType (types *type_one, types *type_two, int line)
 {
     int i;
@@ -3914,7 +3947,8 @@ UpdateType (types *type_one, types *type_two, int line)
  *  remarks       :
  *
  */
-fun_tab_elem *
+
+static fun_tab_elem *
 DuplicateFun (fun_tab_elem *fun_p)
 {
     fun_tab_elem *new_fun_p;
@@ -4006,7 +4040,8 @@ DuplicateFun (fun_tab_elem *fun_p)
  *                        unknown shape
  *
  */
-void *
+
+static void *
 FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node *arg_info,
          int line, int *prf_fun)
 {
@@ -4383,7 +4418,8 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
  *  remarks       :
  *
  */
-void
+
+static void
 AddIdToStack (ids *ids, types *type, node *arg_info, int line)
 {
     node *vardec_p;
@@ -4532,6 +4568,7 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
  *                    info_node->node[0]->node[1] : pointer to fun decl.
  *
  */
+
 node *
 TCfundef (node *arg_node, node *arg_info)
 {
@@ -4680,7 +4717,7 @@ TCfundef (node *arg_node, node *arg_info)
  *
  */
 
-void
+static void
 CheckIfGOonlyCBR (node *arg, node *exprs)
 {
     node *expr;
@@ -4726,7 +4763,8 @@ CheckIfGOonlyCBR (node *arg, node *exprs)
  *                  use it any more
  *
  */
-types *
+
+static types *
 TI (node *arg_node, node *arg_info)
 {
     types *return_type, *tmp_types;
@@ -4909,6 +4947,7 @@ TI (node *arg_node, node *arg_info)
  *                  arg_node->info.ids->node
  *
  */
+
 node *
 TClet (node *arg_node, node *arg_info)
 {
@@ -5423,7 +5462,8 @@ TClet (node *arg_node, node *arg_info)
  *                   an N_ap-node
  *
  */
-types *
+
+static types *
 TI_prf (node *arg_node, node *arg_info)
 {
     prim_fun_tab_elem *prf_p;
@@ -5532,6 +5572,7 @@ TI_prf (node *arg_node, node *arg_info)
  *                   node[3] of corresponding N_fundef is set to this N_return
  *                   node. This is done for use while compilation.
  */
+
 node *
 TCreturn (node *arg_node, node *arg_info)
 {
@@ -5756,7 +5797,8 @@ TCreturn (node *arg_node, node *arg_info)
  *                   arg_info->node[0]->nodtype should be N_stop)
  *
  */
-types *
+
+static types *
 TI_ap (node *arg_node, node *arg_info)
 {
     fun_tab_elem *fun_p;
@@ -5972,6 +6014,7 @@ TI_ap (node *arg_node, node *arg_info)
  *  remarks       : the type_information is stored in arg_node->info.types.
  *
  */
+
 types *
 TI_array (node *arg_node, node *arg_info)
 {
@@ -6102,6 +6145,7 @@ TI_array (node *arg_node, node *arg_info)
  *  remarks       :
  *
  */
+
 node *
 TCcond (node *arg_node, node *arg_info)
 {
@@ -6224,6 +6268,7 @@ TCcond (node *arg_node, node *arg_info)
  *                  to N_block
  *
  */
+
 node *
 TCblock (node *arg_node, node *arg_info)
 {
@@ -6388,6 +6433,7 @@ TCassign (node *arg_node, node *arg_info)
  *  remarks       :
  *
  */
+
 node *
 TCdo (node *arg_node, node *arg_info)
 {
@@ -6430,6 +6476,7 @@ TCdo (node *arg_node, node *arg_info)
  *  remarks       :
  *
  */
+
 node *
 TCwhile (node *arg_node, node *arg_info)
 {
@@ -6480,6 +6527,7 @@ TCwhile (node *arg_node, node *arg_info)
  *                  is put to arg_node->node[1], nnode is still 1
  *
  */
+
 node *
 TCunaryOp (node *arg_node, node *arg_info)
 {
@@ -6526,7 +6574,7 @@ TCunaryOp (node *arg_node, node *arg_info)
  *  remarks       :
  *
  */
-types *
+static types *
 TI_cast (node *arg_node, node *arg_info)
 {
     types *ret_type, *type, *tmp, *inf_type, *free_type;
@@ -6770,7 +6818,8 @@ TCobjdef (node *arg_node, node *arg_info)
  *    arg_node is needed only for the line number in abort.
  *
  ******************************************************************************/
-int
+
+static int
 isBoundEmpty (node *arg_node, node *bound_node)
 {
     int i, elements;
@@ -6833,7 +6882,7 @@ isBoundEmpty (node *arg_node, node *bound_node)
  *
  ******************************************************************************/
 
-types *
+static types *
 TI_Nwith (node *arg_node, node *arg_info)
 {
     stack_elem *old_tos;
@@ -7007,12 +7056,10 @@ TI_Nwith (node *arg_node, node *arg_info)
                         PLEASE_CHECK, -2);
 
         /*
-         * prepand new_fundef to the olf fundefs pointed at by top_fundef!
-         * This makes sure that these dummy-funs will be compiled before
-         * any other function!
+         * insert 'new_fundef' into fundef-chain 'pseudo_fold_fundefs'
          */
-        FUNDEF_NEXT (new_fundef) = top_fundef;
-        top_fundef = new_fundef;
+        FUNDEF_NEXT (new_fundef) = pseudo_fold_fundefs;
+        pseudo_fold_fundefs = new_fundef;
 
         FreeOneTypes (body_type);
         FreeOneTypes (neutral_type);
@@ -7048,12 +7095,10 @@ TI_Nwith (node *arg_node, node *arg_info)
                             PLEASE_CHECK, -2);
 
             /*
-             *  prepand new_fundef to the olf fundefs pointed at by top_fundef!
-             *  This makes sure that these dummy-funs will be compiled before
-             *  any other function!
+             * insert 'new_fundef' into fundef-chain 'pseudo_fold_fundefs'
              */
-            FUNDEF_NEXT (new_fundef) = top_fundef;
-            top_fundef = new_fundef;
+            FUNDEF_NEXT (new_fundef) = pseudo_fold_fundefs;
+            pseudo_fold_fundefs = new_fundef;
         } else {
             /*
              * Here, we face a with-loop which has been imported from a module via
@@ -7280,7 +7325,7 @@ TI_Nwith (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
-types *
+static types *
 TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_info)
 {
     types *left_type, *right_type, *step_type, *width_type, *gen_type;
@@ -7526,7 +7571,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
  *   If not, weak TC is applied and int[] is returned
  ******************************************************************************/
 
-types *
+static types *
 TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
 {
     types *ret_type, *expr_type;
@@ -7653,7 +7698,7 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
  *
  ******************************************************************************/
 
-void
+static void
 ConsistencyCheckModarray (int lineno, types *array_type, types *generator_type,
                           types *body_type)
 {
@@ -7701,7 +7746,7 @@ ConsistencyCheckModarray (int lineno, types *array_type, types *generator_type,
  *
  ******************************************************************************/
 
-types *
+static types *
 TI_Nfoldprf (node *arg_node, types *body_type, types *neutral_type, node *arg_info)
 {
     prim_fun_tab_elem *prf_p;
@@ -7792,7 +7837,7 @@ TI_Nfoldprf (node *arg_node, types *body_type, types *neutral_type, node *arg_in
  *
  ******************************************************************************/
 
-types *
+static types *
 TI_Nfoldfun (node *arg_node, types *body_type, types *neutral_type, node *arg_info)
 {
     fun_tab_elem *fun_p;
