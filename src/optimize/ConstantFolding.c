@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  1999/07/08 14:53:59  sbs
+ * Array2BoolVec used instead of Array2IntVec
+ *
  * Revision 2.14  1999/05/14 09:25:13  jhs
  * Dbugged constvec annotations and their housekeeping in various compilation stages.
  *
@@ -2394,10 +2397,15 @@ ArrayPrf (node *arg_node, node *arg_info)
     if (NODE_TYPE (arg_node) == N_array) {
         switch (ARRAY_VECTYPE (arg_node)) {
         case T_int:
-        case T_bool:
             FREE (ARRAY_CONSTVEC (arg_node));
             ((int *)ARRAY_CONSTVEC (arg_node))
               = Array2IntVec (ARRAY_AELEMS (arg_node), &tmp_len);
+            ARRAY_VECLEN (arg_node) = tmp_len;
+            break;
+        case T_bool:
+            FREE (ARRAY_CONSTVEC (arg_node));
+            ((int *)ARRAY_CONSTVEC (arg_node))
+              = Array2BoolVec (ARRAY_AELEMS (arg_node), &tmp_len);
             ARRAY_VECLEN (arg_node) = tmp_len;
             break;
         case T_char:

@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.6  1999/07/08 14:54:27  sbs
+ * Array2BoolVec used instead of Array2IntVec
+ *
  * Revision 2.5  1999/05/12 11:39:24  jhs
  * Adjusted macros to new access on constant vectors.
  *
@@ -1274,7 +1277,7 @@ MakeNullVec (int dim, simpletype type)
             ((double *)ARRAY_CONSTVEC (resultn)) = Array2DblVec (tmpn, NULL);
             break;
         case T_bool:
-            ((int *)ARRAY_CONSTVEC (resultn)) = Array2IntVec (tmpn, NULL);
+            ((int *)ARRAY_CONSTVEC (resultn)) = Array2BoolVec (tmpn, NULL);
             break;
         case T_char:
             ((char *)ARRAY_CONSTVEC (resultn)) = Array2CharVec (tmpn, NULL);
