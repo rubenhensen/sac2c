@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.63  1998/04/20 08:55:51  srs
+ * added incrementations of cf_expr
+ *
  * Revision 1.62  1998/04/01 07:37:56  srs
  * renames INFO_* macros,
  * added struct INSIDE_WL
@@ -602,6 +605,7 @@ CFid (node *arg_node, node *arg_info)
             FreeTree (arg_node);
             arg_node = DupTree (mrd, NULL);
             INC_VAR (ASSIGN_USEMASK (INFO_CF_ASSIGN (arg_info)), ID_VARNO (arg_node));
+            cf_expr++; /* srs: notice this action of CF, too. */
             break;
         case N_num:
         case N_float:
@@ -611,6 +615,7 @@ CFid (node *arg_node, node *arg_info)
             DEC_VAR (INFO_USE, ID_VARNO (arg_node));
             FreeTree (arg_node);
             arg_node = DupTree (mrd, NULL);
+            cf_expr++; /* srs: notice this action of CF, too. */
             break;
         case N_prf:
         case N_array:
