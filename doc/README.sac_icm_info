@@ -1,9 +1,12 @@
 /*
  * $Log$
- * Revision 1.6  1995/04/18 14:49:34  sbs
- * ND_ALLOC_ARRAY modified; initial rc parameter;
- * ND_CREATE_CONST_ARRAY modified; initial basic_type parameter eliminated;
+ * Revision 1.7  1995/04/19 13:39:22  sbs
+ * ND_KD_PSI_VxA_S & ND_KD_PSI_CxA_S updated
  *
+# Revision 1.6  1995/04/18  14:49:34  sbs
+# ND_ALLOC_ARRAY modified; initial rc parameter;
+# ND_CREATE_CONST_ARRAY modified; initial basic_type parameter eliminated;
+#
 # Revision 1.5  1995/04/18  11:24:51  sbs
 # ND_KD_ROT_SxSxA_A eliminated
 #
@@ -109,8 +112,8 @@ Macros for primitve arithmetic operations:
 Macros for PSI-primitves:
 =========================
 
- ND_KD_PSI_CxA_S( dima, a, res, dimv, v0,..., vn): selects a single element of the array
- ND_KD_PSI_VxA_S( dima, a, res, dimv, v )	: selects a single element of the array
+ ND_KD_PSI_CxA_S( a, res, dimv, v0,..., vn): selects a single element of the array
+ ND_KD_PSI_VxA_S( a, res, dimv, v )	: selects a single element of the array
  ND_KD_PSI_CxA_A( dima, a, res, dimv, v0,..., vn): selects a sub-array
  ND_KD_PSI_VxA_A( dima, a, res, dimv, v )	: selects a sub-array
 
