@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.8  1996/09/11 06:19:49  cg
+ * Revision 1.9  1997/03/19 13:43:59  cg
+ * New global variable filetype set.
+ * targetdir converted to absolute pathname
+ *
+ * Revision 1.8  1996/09/11  06:19:49  cg
  * Now, the global variable outfilename is always set correctly.
  *
  * Revision 1.7  1996/01/23  09:57:28  cg
@@ -74,7 +78,7 @@
  *  description   : sets the global
  *                  variables outfilename, cfilename, and targetdir according
  *                  to the kind of file and the -o command line option.
- *  global vars   : outfilename, cfilename, targetdir
+ *  global vars   : outfilename, cfilename, targetdir, filetype
  *  internal funs : ---
  *  external funs : strcmp, strcpy, strcat
  *  macros        :
@@ -89,6 +93,8 @@ SetFileNames (node *modul)
     char buffer[MAX_FILE_NAME];
 
     DBUG_ENTER ("SetFileNames");
+
+    filetype = MODUL_FILETYPE (modul);
 
     if (MODUL_FILETYPE (modul) == F_prog) {
         linkstyle = 0; /* Programs are always linked in style 0, i.e. a single
@@ -127,6 +133,8 @@ SetFileNames (node *modul)
 
         strcpy (outfilename, MODUL_NAME (modul));
         strcat (outfilename, ".lib");
+
+        strcpy (targetdir, AbsolutePathname (targetdir));
     }
 
     DBUG_VOID_RETURN;
