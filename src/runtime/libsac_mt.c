@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1998/12/07 10:00:11  cg
+ * added #define _MIT_POSIX_THREADS to please Linux
+ *
  * Revision 1.9  1998/10/23 13:14:56  cg
  * added explanation for some nasty warnings during compilation
  *
@@ -47,6 +50,10 @@
  *****************************************************************************/
 
 #define _POSIX_C_SOURCE 199506L
+
+#ifdef LINUX_X86
+#define _MIT_POSIX_THREADS
+#endif /* LINUX_X86 */
 
 #include <pthread.h>
 #include <stdio.h>

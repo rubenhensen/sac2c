@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1998/12/07 10:00:11  cg
+ * added #define _MIT_POSIX_THREADS to please Linux
+ *
  * Revision 1.13  1998/08/27 14:47:40  cg
  * bugs fixed in implementations of ICMs ADJUST_SCHEDULER and
  * SCHEDULER_Block_DIM0.
@@ -77,6 +80,11 @@
  ***/
 
 #define _POSIX_C_SOURCE 199506L
+
+#ifdef SAC_FOR_LINUX_X86
+#define _MIT_POSIX_THREADS
+#endif /* SAC_FOR_LINUX_X86 */
+
 #include <pthread.h>
 
 /*
