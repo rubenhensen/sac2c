@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.6  1995/01/11 17:45:12  hw
+# Revision 1.7  1995/02/28 18:27:34  asi
+# added optimize-dir to include-path
+#
+# Revision 1.6  1995/01/11  17:45:12  hw
 # make deps done
 #
 # Revision 1.5  1994/12/05  11:16:46  hw
@@ -13,7 +16,7 @@
 
 CC=gcc -ansi -g
 
-INCS=-I../global -I../../inc
+INCS=-I../global -I../../inc -I../optimize
 
 all: print.o convert.o
 
@@ -41,3 +44,4 @@ print.o: /usr/include/sys/stdtypes.h /usr/include/string.h ../global/tree.h
 print.o: ../global/type_info.mac ../global/node_info.mac
 print.o: ../global/prf_node_info.mac ../global/my_debug.h ../../inc/dbug.h
 print.o: ../global/traverse.h print.h ../global/Error.h convert.h
+print.o: ../optimize/optimize.h
