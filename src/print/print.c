@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.180  1998/04/03 19:43:19  dkr
+ * changed output for N_conc
+ *
  * Revision 1.179  1998/04/02 18:12:01  dkr
  * added PrintConc
  *
@@ -2016,7 +2019,6 @@ PrintConc (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintConc");
 
-    INDENT
     fprintf (outfile, "{ /*** begin of concurrent region ***/\n");
 
     indent++;
@@ -2024,7 +2026,7 @@ PrintConc (node *arg_node, node *arg_info)
     indent--;
 
     INDENT
-    fprintf (outfile, "} /*** end of concurrent region ***/\n");
+    fprintf (outfile, "} /*** end of concurrent region ***/");
 
     DBUG_RETURN (arg_node);
 }
