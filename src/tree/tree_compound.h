@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.148  2004/11/25 18:15:18  mwe
+ * DECL_AVIS fixed
+ *
  * Revision 3.147  2004/11/25 18:10:51  skt
  * superflous _ removed of TCgetTypes_Line
  *
@@ -434,10 +437,7 @@ extern bool TCisFromClass (node *symbol);
  ***  "N_decl" (N_vardec, N_arg, N_objdef)
  ***/
 
-#define DECL_AVIS(n)                                                                     \
-    ((NODE_TYPE (n) == N_arg)                                                            \
-       ? ARG_AVIS (n)                                                                    \
-       : ((NODE_TYPE (n) == N_vardec) ? VARDEC_AVIS (n) : OBJDEF_AVIS (n)))
+#define DECL_AVIS(n) ((NODE_TYPE (n) == N_arg) ? ARG_AVIS (n) : VARDEC_AVIS (n))
 #define DECL_NAME(n) (AVIS_NAME (DECL_AVIS))
 
 /*--------------------------------------------------------------------------*/
