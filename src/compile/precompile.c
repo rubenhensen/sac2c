@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/12/04 13:38:16  cg
+ * Revision 1.5  1995/12/04 17:00:04  cg
+ * added function PRECcast
+ * All casts are now eliminated by the precompiler
+ *
+ * Revision 1.4  1995/12/04  13:38:16  cg
  * bug fixed in string handling of function PRECtypedef
  *
  * Revision 1.3  1995/12/01  20:29:24  cg
@@ -37,6 +41,7 @@
  *  arguments     : 1) syntax tree
  *  description   : prepares syntax tree for code generation.
  *                  - renames functions and global objects
+ *                  - removes all casts
  *                  - inserts extern declarations for function definitions
  *                  - removes all artificial parameters and return values
  *                  - marks reference parameters in function applications
@@ -292,18 +297,24 @@ PRECtypedef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PRECtypedef");
 
-    tmp = (char *)Malloc (sizeof (char)
-                          * (strlen (TYPEDEF_NAME (arg_node))
-                             + strlen (MOD (TYPEDEF_MOD (arg_node)))
-                             + 2 * strlen (mod_name_con) + 5));
-    sprintf (tmp, "SAC%s%s%s%s", mod_name_con, MOD (TYPEDEF_MOD (arg_node)), mod_name_con,
-             TYPEDEF_NAME (arg_node));
+    if (TYPEDEF_MOD (arg_node) != NULL) {
+        tmp = (char *)Malloc (sizeof (char)
+                              * (strlen (TYPEDEF_NAME (arg_node))
+                                 + strlen (MOD (TYPEDEF_MOD (arg_node)))
+                                 + 2 * strlen (mod_name_con) + 5));
+        sprintf (tmp, "SAC%s%s%s%s", mod_name_con, MOD (TYPEDEF_MOD (arg_node)),
+                 mod_name_con, TYPEDEF_NAME (arg_node));
 
-    FREE (TYPEDEF_NAME (arg_node));
-    TYPEDEF_NAME (arg_node) = tmp;
-    TYPEDEF_MOD (arg_node) = NULL;
+        FREE (TYPEDEF_NAME (arg_node));
+        TYPEDEF_NAME (arg_node) = tmp;
+        TYPEDEF_MOD (arg_node) = NULL;
 
-    TYPEDEF_TYPE (arg_node) = RenameTypes (TYPEDEF_TYPE (arg_node));
+        TYPEDEF_TYPE (arg_node) = RenameTypes (TYPEDEF_TYPE (arg_node));
+    }
+
+    if (TYPEDEF_NEXT (arg_node) != NULL) {
+        TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -872,14 +883,31 @@ PRECid (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  functionname  : PRECcast
+ *  arguments     : 1) N_cast node
+ *                  2) arg_info unused
+ *  description   : deletes all casts
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : Trav, FreeOneTypes
+ *  macros        : DBUG, TREE, FREE
  *
  *  remarks       :
  *
  */
+
+node *
+PRECcast (node *arg_node, node *arg_info)
+{
+    node *tmp;
+
+    DBUG_ENTER ("PRECcast");
+
+    tmp = arg_node;
+    arg_node = Trav (CAST_EXPR (arg_node), arg_info);
+
+    FreeOneTypes (CAST_TYPE (tmp));
+    FREE (tmp);
+
+    DBUG_RETURN (arg_node);
+}

@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/12/01 20:29:00  cg
+ * Revision 1.3  1995/12/04 17:00:04  cg
+ * added function PRECcast
+ * All casts are now eliminated by the precompiler
+ *
+ * Revision 1.2  1995/12/01  20:29:00  cg
  * added declarations of PRECvardec and PRECtypedef
  *
  * Revision 1.1  1995/11/28  12:23:34  cg
@@ -28,5 +32,6 @@ extern node *PRECexprs (node *arg_node, node *arg_info);
 extern node *PRECid (node *arg_node, node *arg_info);
 extern node *PRECvardec (node *arg_node, node *arg_info);
 extern node *PRECtypedef (node *arg_node, node *arg_info);
+extern node *PRECcast (node *arg_node, node *arg_info);
 
 #endif /* _sac_precompile_h */
