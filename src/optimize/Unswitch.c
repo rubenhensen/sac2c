@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2000/11/23 16:41:42  sbs
+ * Unswitch.c:139: warning: unused variable `mem_uns_expr' eliminated
+ *
  * Revision 3.1  2000/11/20 18:00:36  sacbase
  * new release made
  *
@@ -124,8 +127,10 @@ typedef struct CINFO {
 node *
 Unswitch (node *arg_node, node *arg_info)
 {
-    int mem_uns_expr = uns_expr;
     funtab *tmp_tab;
+#ifndef DBUG_OFF
+    int mem_uns_expr = uns_expr;
+#endif
 
     DBUG_ENTER ("Unswitch");
 
