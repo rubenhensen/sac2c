@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2002/10/14 12:10:30  mwe
+ * al_expr-counter activated
+ *
  * Revision 1.7  2002/10/10 09:25:06  mwe
  * debugging all functions
  * new functions added
@@ -147,7 +150,7 @@ ALassign (node *arg_node, node *arg_info)
              * delete arg_info nodes
              */
 
-            /*  al_expr++;*/
+            al_expr++;
 
             /* store next N_assign node */
             old_succ = ASSIGN_NEXT (arg_node);
