@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/17 16:25:58  cg
+ * Moved some declarations to sac_heapmgr.h
+ *
  * Revision 1.1  2000/01/03 17:33:17  cg
  * Initial revision
  *
@@ -210,25 +213,36 @@
 #define HEAPMGR_H
 
 #ifdef MT
-#include <pthread.h>
-#define SAC_DO_MULTITHREAD 1
-#define SAC_SET_MAX_SYNC_FOLD 0
-#define SAC_SET_CACHE_1_LINE 0
-#define SAC_SET_CACHE_2_LINE 0
-#define SAC_SET_CACHE_3_LINE 0
-#include "sac_mt.h"
-#undef SAC_DO_MULTITHREAD
-#undef SAC_SET_MAX_SYNC_FOLD
-#undef SAC_SET_CACHE_1_LINE
-#undef SAC_SET_CACHE_2_LINE
-#undef SAC_SET_CACHE_3_LINE
+
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 199506L
 #endif
 
+#ifndef _REENTRANT
+#define _REENTRANT
+#endif
+
+#define SAC_DO_MULTITHREAD 1
+#define SAC_DO_THREADS_STATIC 1
+#else
+#define SAC_DO_MULTITHREAD 0
+#endif /*  MT  */
+
+#include "sac_mt.h"
+
+#undef SAC_DO_MULTITHREAD
+#undef SAC_DO_THREADS_STATIC
+
 #define SAC_DO_PHM 1
-#define SAC_COMPILE_LIB
+#define SAC_COMPILE_SACLIB
 #include "sac_heapmgr.h"
-#undef SAC_DO_PHM
 #undef SAC_COMPILE_LIB
+
+/*
+ * Macro definition of sbrk() system call
+ */
+
+#define SBRK(size) sbrk ((intptr_t) (size))
 
 /*
  * Initialization of some basic values/sizes.
@@ -238,9 +252,6 @@
 #define MB (KB * KB)
 #define SBRK_CHUNK (MB)
 
-#define ARENA_OF_ARENAS 0
-#define TOP_ARENA (NUM_ARENAS - 1)
-
 #define DIAG_FREEPATTERN -123456
 #define DIAG_ALLOCPATTERN 123456
 
@@ -248,29 +259,36 @@
 #define NULL ((void *)0)
 #endif
 
-extern void SAC_HM_OutOfMemory (size_byte_t request);
-extern SAC_HM_header_t *SAC_HM_AllocateNewBinInArenaOfArenas (size_unit_t units,
-                                                              SAC_HM_arena_t *arena);
-extern SAC_HM_header_t *SAC_HM_ExtendTopArenaWilderness (size_unit_t units);
+/*
+ * Declarations of internal heap manager global variables and functions
+ */
 
-extern SAC_HM_arena_t SAC_HM_arenas[][NUM_ARENAS + 2];
+extern void SAC_HM_OutOfMemory (SAC_HM_size_byte_t request);
+extern SAC_HM_header_t *SAC_HM_AllocateNewBinInArenaOfArenas (SAC_HM_size_unit_t units,
+                                                              SAC_HM_arena_t *arena);
+extern SAC_HM_header_t *SAC_HM_ExtendTopArenaWilderness (SAC_HM_size_unit_t units);
+
+extern SAC_HM_arena_t SAC_HM_arenas[][SAC_HM_NUM_ARENAS + 2];
 
 #ifdef DIAG
 extern unsigned long int SAC_HM_call_sbrk;
 extern unsigned long int SAC_HM_call_malloc;
-extern unsigned long int SAC_HM_call_free;
 extern unsigned long int SAC_HM_call_realloc;
 extern unsigned long int SAC_HM_call_calloc;
 extern unsigned long int SAC_HM_call_valloc;
 extern unsigned long int SAC_HM_call_memalign;
 extern unsigned long int SAC_HM_heapsize;
-#endif
 
-#ifdef DIAG
+extern void SAC_HM_ClearDiagCounters (SAC_HM_arena_t *arena);
+extern void SAC_HM_AddDiagCounters (SAC_HM_arena_t *arena, SAC_HM_arena_t *add_arena);
 
-extern void SAC_HM_CheckAllocDiagPattern (size_unit_t diag, int arena_num);
-extern void SAC_HM_CheckFreeDiagPattern (size_unit_t diag, int arena_num);
+extern void SAC_HM_CheckAllocDiagPattern (SAC_HM_size_unit_t diag, int arena_num);
+extern void SAC_HM_CheckFreeDiagPattern (SAC_HM_size_unit_t diag, int arena_num);
 extern void SAC_HM_CheckDiagPatternAnyChunk (SAC_HM_header_t *addr);
+
+/*
+ * Definition of macros for diagnostic heap management
+ */
 
 #define DIAG_INC(cnt) (cnt)++
 #define DIAG_DEC(cnt) (cnt)--
@@ -280,30 +298,30 @@ extern void SAC_HM_CheckDiagPatternAnyChunk (SAC_HM_header_t *addr);
 #ifdef MT
 #define DIAG_INC_LOCK(cnt)                                                               \
     {                                                                                    \
-        pthread_mutex_lock (&SAC_HM_diag_counter_lock);                                  \
+        SAC_MT_ACQUIRE_LOCK (SAC_HM_diag_counter_lock);                                  \
         DIAG_INC (cnt);                                                                  \
-        pthread_mutex_unlock (&SAC_HM_diag_counter_lock);                                \
+        SAC_MT_RELEASE_LOCK (SAC_HM_diag_counter_lock);                                  \
     }
 
 #define DIAG_DEC_LOCK(cnt)                                                               \
     {                                                                                    \
-        pthread_mutex_lock (&SAC_HM_diag_counter_lock);                                  \
+        SAC_MT_ACQUIRE_LOCK (SAC_HM_diag_counter_lock);                                  \
         DIAG_DEC (cnt);                                                                  \
-        pthread_mutex_unlock (&SAC_HM_diag_counter_lock);                                \
+        SAC_MT_RELEASE_LOCK (SAC_HM_diag_counter_lock);                                  \
     }
 
 #define DIAG_ADD_LOCK(cnt, val)                                                          \
     {                                                                                    \
-        pthread_mutex_lock (&SAC_HM_diag_counter_lock);                                  \
+        SAC_MT_ACQUIRE_LOCK (SAC_HM_diag_counter_lock);                                  \
         DIAG_ADD (cnt, val);                                                             \
-        pthread_mutex_unlock (&SAC_HM_diag_counter_lock);                                \
+        SAC_MT_RELEASE_LOCK (SAC_HM_diag_counter_lock);                                  \
     }
 
 #define DIAG_SET_LOCK(cnt, val)                                                          \
     {                                                                                    \
-        pthread_mutex_lock (&SAC_HM_diag_counter_lock);                                  \
+        SAC_MT_ACQUIRE_LOCK (SAC_HM_diag_counter_lock);                                  \
         DIAG_SET (cnt, val);                                                             \
-        pthread_mutex_unlock (&SAC_HM_diag_counter_lock);                                \
+        SAC_MT_RELEASE_LOCK (SAC_HM_diag_counter_lock);                                  \
     }
 
 #else /* MT */
