@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.23  2000/10/27 16:12:13  cg
+ * Converted counters to new data type  unsigned long long int !
+ *
  * Revision 2.22  2000/10/19 13:56:46  cg
  * Presentation of simulation results now includes statistical data
  * for all cache levels combined.
@@ -119,7 +122,7 @@ char SAC_CS_separator_2[]
 tCacheLevel *SAC_CS_cachelevel[MAX_CACHELEVEL + 1];
 /* SAC_CS_cachelevel[0] is unused */
 
-ULINT SAC_CS_rhit[MAX_CACHELEVEL + 1], SAC_CS_rinvalid[MAX_CACHELEVEL + 1],
+CNT_T SAC_CS_rhit[MAX_CACHELEVEL + 1], SAC_CS_rinvalid[MAX_CACHELEVEL + 1],
   SAC_CS_rmiss[MAX_CACHELEVEL + 1], SAC_CS_rcold[MAX_CACHELEVEL + 1],
   SAC_CS_rcross[MAX_CACHELEVEL + 1], SAC_CS_rself[MAX_CACHELEVEL + 1],
   SAC_CS_whit[MAX_CACHELEVEL + 1], SAC_CS_winvalid[MAX_CACHELEVEL + 1],
@@ -1171,35 +1174,35 @@ SAC_CS_Access_MM (void *baseaddress, void *elemaddress)
 } /* SAC_CS_Access_MM */
 
 static void
-PrintSimpleCounters (char *cachelevel_str, int digits, ULINT hit, ULINT miss)
+PrintSimpleCounters (char *cachelevel_str, int digits, CNT_T hit, CNT_T miss)
 {
-    ULINT accesses;
+    CNT_T accesses;
     float hit_ratio;
 
     accesses = hit + miss;
     hit_ratio = (accesses == 0) ? (0) : (((float)hit / (float)accesses) * 100.0);
 
     fprintf (stderr,
-             "# %s:  accesses:  %*lu\n"
-             "#             hits:      %*lu  ( %5.1f %%)\n"
-             "#             misses:    %*lu  ( %5.1f %%)\n",
+             "# %s:  accesses:  %*llu\n"
+             "#             hits:      %*llu  ( %5.1f %%)\n"
+             "#             misses:    %*llu  ( %5.1f %%)\n",
              cachelevel_str, digits, accesses, digits, hit, hit_ratio, digits, miss,
              100.0 - hit_ratio);
 }
 
 static void
-PrintAdvancedCounters (int digits, ULINT hit, ULINT miss, ULINT cold, ULINT cross,
-                       ULINT self, ULINT invalid)
+PrintAdvancedCounters (int digits, CNT_T hit, CNT_T miss, CNT_T cold, CNT_T cross,
+                       CNT_T self, CNT_T invalid)
 {
-    ULINT both, accesses;
+    CNT_T both, accesses;
 
     fprintf (stderr,
              "original:\n"
-             "hit:   %lu\n"
-             "miss:  %lu\n"
-             "cold:  %lu\n"
-             "self:  %lu\n"
-             "cross: %lu\n",
+             "hit:   %llu\n"
+             "miss:  %llu\n"
+             "cold:  %llu\n"
+             "self:  %llu\n"
+             "cross: %llu\n",
              hit, miss, cold, self, cross);
 
     accesses = hit + miss;
@@ -1214,15 +1217,15 @@ PrintAdvancedCounters (int digits, ULINT hit, ULINT miss, ULINT cold, ULINT cros
     cross -= both;
 
     fprintf (stderr,
-             "#               cold start:                 %*lu  ( %5.1f %%)  ( %5.1f "
+             "#               cold start:                 %*llu  ( %5.1f %%)  ( %5.1f "
              "%%)\n"
-             "#               cross interference:         %*lu  ( %5.1f %%)  ( %5.1f "
+             "#               cross interference:         %*llu  ( %5.1f %%)  ( %5.1f "
              "%%)\n"
-             "#               self interference:          %*lu  ( %5.1f %%)  ( %5.1f "
+             "#               self interference:          %*llu  ( %5.1f %%)  ( %5.1f "
              "%%)\n"
-             "#               self & cross interference:  %*lu  ( %5.1f %%)  ( %5.1f "
+             "#               self & cross interference:  %*llu  ( %5.1f %%)  ( %5.1f "
              "%%)\n"
-             "#               invalidation:               %*lu  ( %5.1f %%)  ( %5.1f "
+             "#               invalidation:               %*llu  ( %5.1f %%)  ( %5.1f "
              "%%)\n",
              digits, cold, (miss == 0) ? (0) : (((float)cold / (float)miss) * 100.0),
              (accesses == 0) ? (0) : (((float)cold / (float)accesses) * 100.0), digits,
@@ -1242,8 +1245,8 @@ PrintAdvancedCounters (int digits, ULINT hit, ULINT miss, ULINT cold, ULINT cros
 }
 
 static void
-PrintCounters (char *cachelevel_str, int digits, ULINT hit, ULINT miss, ULINT cold,
-               ULINT cross, ULINT self, ULINT invalid)
+PrintCounters (char *cachelevel_str, int digits, CNT_T hit, CNT_T miss, CNT_T cold,
+               CNT_T cross, CNT_T self, CNT_T invalid)
 {
     PrintSimpleCounters (cachelevel_str, digits, hit, miss);
 
@@ -1253,7 +1256,7 @@ PrintCounters (char *cachelevel_str, int digits, ULINT hit, ULINT miss, ULINT co
 }
 
 static int
-ComputeNumberOfDigits (unsigned long int number)
+ComputeNumberOfDigits (CNT_T number)
 {
     int digits = 1;
 
@@ -1269,7 +1272,7 @@ SAC_CS_ShowResults (void)
 {
     int i, digits;
     char str[20];
-    ULINT rhit_all, whit_all;
+    CNT_T rhit_all, whit_all;
 
     fprintf (stderr,
              "\n"

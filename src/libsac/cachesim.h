@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.2  2000/10/27 16:12:13  cg
+ * Converted counters to new data type  unsigned long long int !
+ *
  * Revision 2.1  1999/07/08 12:26:16  cg
  * File moved to new directory src/libsac.
  *
@@ -44,6 +47,18 @@
 #define LIBSAC_CACHESIM_H
 
 #define ULINT unsigned long int
+
+#define CNT_T unsigned long long int
+/*
+ * Note:
+ *
+ * The long long data type is not covered by the ANSI standard.
+ * However, it is supported both under Solaris as well as Linux.
+ *
+ * So, we use it here because the regular long int is only 32 bits
+ * on both systems which is insufficient for several examples.
+ */
+
 #define MAX_SHADOWARRAYS 100
 #define MAX_CACHELEVEL 3
 
@@ -79,7 +94,7 @@ extern char SAC_CS_separator[];
 extern tCacheLevel *SAC_CS_cachelevel[MAX_CACHELEVEL + 1];
 /* SAC_CS_cachelevel[0] is unused */
 
-extern ULINT SAC_CS_rhit[MAX_CACHELEVEL + 1], SAC_CS_rinvalid[MAX_CACHELEVEL + 1],
+extern CNT_T SAC_CS_rhit[MAX_CACHELEVEL + 1], SAC_CS_rinvalid[MAX_CACHELEVEL + 1],
   SAC_CS_rmiss[MAX_CACHELEVEL + 1], SAC_CS_rcold[MAX_CACHELEVEL + 1],
   SAC_CS_rcross[MAX_CACHELEVEL + 1], SAC_CS_rself[MAX_CACHELEVEL + 1],
   SAC_CS_whit[MAX_CACHELEVEL + 1], SAC_CS_winvalid[MAX_CACHELEVEL + 1],
