@@ -1,4 +1,5 @@
 Makefile
+libsac_cachesim.c
 libsac_malloc.c
 libsac_message.c
 libsac_misc.c
@@ -9,6 +10,7 @@ sac.h
 sac2crc
 sac_bool.h
 sac_boundcheck.h
+sac_cachesim.h
 sac_idx.h
 sac_malloc.h
 sac_message.h
