@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2004/11/27 00:36:39  cg
+ * functions adapted to new naming conventions.
+ *
  * Revision 3.71  2004/11/26 23:55:16  sbs
  * further renamings
  *
@@ -967,7 +970,7 @@ ILIBmemCopy (int size, void *mem)
 /******************************************************************************
  *
  * Function:
- *   char *itoa( long number)
+ *   char *ILIBitoa( long number)
  *
  * Description:
  *   converts long to string
@@ -975,13 +978,13 @@ ILIBmemCopy (int size, void *mem)
  ******************************************************************************/
 
 char *
-itoa (long number)
+ILIBitoa (long number)
 {
     char *str;
     int tmp;
     int length, i;
 
-    DBUG_ENTER ("itoa");
+    DBUG_ENTER ("ILIBitoa");
 
     tmp = number;
     length = 1;
@@ -1004,7 +1007,7 @@ itoa (long number)
 /******************************************************************************
  *
  * function:
- *   int lcm( int x, int y)
+ *   int ILIBlcm( int x, int y)
  *
  * description:
  *   returns the lowest-common-multiple of x, y.
@@ -1012,11 +1015,11 @@ itoa (long number)
  ******************************************************************************/
 
 int
-lcm (int x, int y)
+ILIBlcm (int x, int y)
 {
     int u, v;
 
-    DBUG_ENTER ("lcm");
+    DBUG_ENTER ("ILIBlcm");
 
     DBUG_ASSERT (((x > 0) && (y > 0)), "arguments of lcm() must be >0");
 
