@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/09/27 12:29:02  sah
+ * DFM2FunctionType and DFM2ProductType
+ * handle empty types (prior to ti)
+ * correct now
+ *
  * Revision 3.10  2004/09/27 10:40:26  sah
  * Added DFM2ProductType and DFM2FunctionType
  * both are needed by lac2fun to generate the
@@ -364,8 +369,10 @@ DFM2ProductType (DFMmask_t mask)
 
     while (decl != NULL) {
         if (result == NULL) {
-            result
-              = TYMakeProductType (1, TYCopyType (AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl))));
+            result = TYCopyType (AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl)));
+            if (result != NULL) {
+                result = TYMakeProductType (1, result);
+            }
         } else {
             int cnt;
             ntype *new = TYMakeEmptyProductType (TYGetProductSize (result) + 1);
@@ -413,8 +420,15 @@ DFM2FunctionType (DFMmask_t in, DFMmask_t out, node *fundef)
     decl = DFMGetMaskEntryDeclSet (in);
 
     while (decl != NULL) {
-        result = TYMakeFunType (TYCopyType (AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl))),
-                                result, fundef);
+        ntype *tmp = AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl));
+
+        if (tmp != NULL) {
+            if (result != NULL) {
+                result = TYMakeFunType (TYCopyType (tmp), result, fundef);
+            } else {
+                result = tmp;
+            }
+        }
 
         decl = DFMGetMaskEntryDeclSet (NULL);
     }
