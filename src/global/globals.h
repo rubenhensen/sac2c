@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/12/30 14:47:06  cg
+ * Revision 1.2  1996/01/02 15:45:44  cg
+ * include of filemgr.h no longer necessary
+ *
+ * Revision 1.1  1995/12/30  14:47:06  cg
  * Initial revision
  *
  *
@@ -18,17 +21,16 @@
  *  variables which are defined and initialized in main.c
  */
 
-#include "filemgr.h"
-
 extern FILE *outfile;
 
-extern char filename[MAX_FILE_NAME];
-extern char prgname[MAX_FILE_NAME];
-extern char outfilename[MAX_FILE_NAME];
-extern char cfilename[MAX_FILE_NAME];
-extern char ccflagsstr[MAX_FILE_NAME];
+extern char sacfilename[];
+extern char prgname[];
+extern char outfilename[];
+extern char cfilename[];
+extern char ccflagsstr[];
 
 extern int Ccodeonly;
+extern int break_compilation;
 
 extern int optimize;
 extern int sac_optimize;
