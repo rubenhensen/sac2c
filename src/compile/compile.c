@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.56  2000/05/26 11:11:39  jhs
+ * Added infrastructure for mt2-compiling
+ *
  * Revision 2.55  2000/05/24 19:02:46  dkr
  * Inference for WL_ADJUST_OFFSET-icm lifted into a function
  * macro NCODE_CBLOCK_INSTR used
@@ -2008,11 +2011,23 @@ COMPFundef (node *arg_node, node *arg_info)
     types *rettypes, *fulltype, **type_tab;
     int cnt_param, tab_size, i;
 
+    node *old_fundef;
+    statustype old_actualattrib;
+
     DBUG_ENTER ("COMPFundef");
 
     DBUG_PRINT ("COMP", ("compiling %s", FUNDEF_NAME (arg_node)));
 
+    /*
+     *  "push arg_info"
+     *
+     *  informations changed at arg_info are saved before,
+     *  INFO_COMP_ACTUALATTRIB will be used while compiling mt2 stuff
+     */
+    old_fundef = INFO_COMP_FUNDEF (arg_info);
+    old_actualattrib = INFO_COMP_ACTUALATTRIB (arg_info);
     INFO_COMP_FUNDEF (arg_info) = arg_node;
+    INFO_COMP_ACTUALATTRIB (arg_info) = FUNDEF_ATTRIB (arg_node);
 
     /********** begin: traverse body **********/
 
@@ -2227,6 +2242,10 @@ COMPFundef (node *arg_node, node *arg_info)
 
         arg_node = tmp;
     }
+
+    /* pop arg_info */
+    INFO_COMP_FUNDEF (arg_info) = old_fundef;
+    INFO_COMP_ACTUALATTRIB (arg_info) = old_actualattrib;
 
     DBUG_RETURN (arg_node);
 }
@@ -7478,19 +7497,72 @@ COMPSt (node *arg_node, node *arg_info)
 node *
 COMPMTsignal (node *arg_node, node *arg_info)
 {
+    node *assigns;
+
     DBUG_ENTER ("COMPMTsignal");
 
     DBUG_ASSERT (0, ("COMPMTsignal not implemented yet, cannot compile this"));
 
-    DBUG_RETURN (arg_node);
+    assigns = MakeAssign (MakeIcm1 ("MT2_SIGNAL", NULL /* #### */), NULL);
+
+    FreeTree (arg_node);
+
+    DBUG_RETURN (assigns);
+}
+
+/* move to tree_compound  !!! #### */
+
+node *
+MakeAssigns1 (node *part1)
+{
+    return (MakeAssign (part1, NULL));
+}
+
+node *
+MakeAssigns2 (node *part1, node *part2)
+{
+    return (MakeAssign (part1, MakeAssigns1 (part2)));
+}
+
+node *
+MakeAssigns3 (node *part1, node *part2, node *part3)
+{
+    return (MakeAssign (part1, MakeAssigns2 (part2, part3)));
+}
+
+node *
+MakeAssigns4 (node *part1, node *part2, node *part3, node *part4)
+{
+    return (MakeAssign (part1, MakeAssigns3 (part2, part3, part4)));
+}
+
+node *
+MakeAssigns5 (node *part1, node *part2, node *part3, node *part4, node *part5)
+{
+    return (MakeAssign (part1, MakeAssigns4 (part2, part3, part4, part5)));
 }
 
 node *
 COMPMTalloc (node *arg_node, node *arg_info)
 {
+    node *assigns;
+    node *if_icm;
+    node *if_block;
+    node *else_icm;
+    node *else_block;
+    node *end_icm;
+
     DBUG_ENTER ("COMPMTalloc");
 
     DBUG_ASSERT (0, ("COMPMTalloc not implemented yet, cannot compile this"));
+
+    if_icm = MakeIcm0 ("MT2_IF_I_AM_FIRST");
+    if_block = NULL; /* #### */
+    else_icm = MakeIcm0 ("MT2_ELSE_IF_I_AM_NOT_FIRST");
+    else_block = NULL; /* #### */
+    end_icm = MakeIcm0 ("MT2_END_I_AM_FIRST");
+
+    assigns = MakeAssigns5 (if_icm, if_block, else_icm, else_block, end_icm);
 
     DBUG_RETURN (arg_node);
 }
