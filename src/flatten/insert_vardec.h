@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/12/05 20:12:26  sah
+ * fixes
+ *
  * Revision 1.6  2004/12/05 16:45:38  sah
  * added SPIds SPId SPAp in frontend
  *
@@ -38,6 +41,7 @@
  *****************************************************************************/
 extern node *INSVDdoInsertVardec (node *syntaxtree);
 
+extern node *INSVDmodule (node *arg_node, info *arg_info);
 extern node *INSVDfundef (node *arg_node, info *arg_info);
 extern node *INSVDspap (node *arg_node, info *arg_info);
 extern node *INSVDspid (node *arg_node, info *arg_info);

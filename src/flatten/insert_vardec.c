@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2004/12/05 20:12:26  sah
+ * fixes
+ *
  * Revision 1.14  2004/12/05 16:45:38  sah
  * added SPIds SPId SPAp in frontend
  *
@@ -102,13 +105,15 @@
 struct INFO {
     node *vardecs;
     node *args;
+    node *objdefs;
 };
 
 /*
  * INFO macros
  */
-#define INFO_INSVD_VARDECS(n) (n->vardecs)
-#define INFO_INSVD_ARGS(n) (n->args)
+#define INFO_INSVD_VARDECS(n) ((n)->vardecs)
+#define INFO_INSVD_ARGS(n) ((n)->args)
+#define INFO_INSVD_OBJDEFS(n) ((n)->objdefs)
 
 /*
  * INFO functions
@@ -124,6 +129,7 @@ MakeInfo ()
 
     INFO_INSVD_VARDECS (result) = NULL;
     INFO_INSVD_ARGS (result) = NULL;
+    INFO_INSVD_OBJDEFS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -178,6 +184,52 @@ SearchForNameInArgs (char *name, node *args)
         args = ARG_NEXT (args);
     }
     DBUG_RETURN (args);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node * SearchForNameInObjs( char *mod, char *name, node *args)
+ *
+ * description:
+ *   looks up the name in the args given. Returns the address of the arg
+ *   if found, NULL otherwise.
+ *
+ ******************************************************************************/
+static node *
+SearchForNameInObjs (char *mod, char *name, node *objs)
+{
+    DBUG_ENTER ("SearchForNameInObjs");
+
+    while ((objs != NULL)
+           && ((!ILIBstringCompare (OBJDEF_MOD (objs), mod))
+               || (!ILIBstringCompare (OBJDEF_NAME (objs), name)))) {
+        objs = OBJDEF_NEXT (objs);
+    }
+
+    DBUG_RETURN (objs);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *INSVDmodule( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+node *
+INSVDmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("INSVDmodule");
+
+    INFO_INSVD_OBJDEFS (arg_info) = MODULE_OBJS (arg_node);
+
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -272,21 +324,41 @@ INSVDspid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("INSVDspid");
 
-    vardec = SearchForNameInVardecs (SPID_NAME (arg_node), INFO_INSVD_VARDECS (arg_info));
-    if (vardec == NULL) {
-        vardec = SearchForNameInArgs (SPID_NAME (arg_node), INFO_INSVD_ARGS (arg_info));
-    }
+    if (SPID_MOD (arg_node) == NULL) {
+        vardec
+          = SearchForNameInVardecs (SPID_NAME (arg_node), INFO_INSVD_VARDECS (arg_info));
 
-    if (vardec == NULL) {
-        ERROR (global.linenum, ("Vardec for Identifier with name:%s is not available",
-                                SPID_NAME (arg_node)));
-    }
+        if (vardec == NULL) {
+            vardec
+              = SearchForNameInArgs (SPID_NAME (arg_node), INFO_INSVD_ARGS (arg_info));
+        }
 
-    /*
-     * now we can build a real id and remove the spid node
-     */
-    arg_node = FREEdoFreeNode (arg_node);
-    arg_node = TBmakeId (VARDEC_AVIS (vardec));
+        if (vardec == NULL) {
+            ERROR (global.linenum, ("Vardec for Identifier with name:%s is not available",
+                                    SPID_NAME (arg_node)));
+        } else {
+            /*
+             * now we can build a real id and remove the spid node
+             */
+            arg_node = FREEdoFreeNode (arg_node);
+            arg_node = TBmakeId (VARDEC_AVIS (vardec));
+        }
+    } else {
+        /*
+         * this id is a global object
+         */
+
+        vardec = SearchForNameInObjs (SPID_MOD (arg_node), SPID_NAME (arg_node),
+                                      INFO_INSVD_OBJDEFS (arg_info));
+
+        if (vardec == NULL) {
+            ERROR (global.linenum, ("No definition for global object %s:%s found",
+                                    SPID_MOD (arg_node), SPID_NAME (arg_node)));
+        } else {
+            arg_node = FREEdoFreeNode (arg_node);
+            arg_node = TBmakeGlobobj (vardec);
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
