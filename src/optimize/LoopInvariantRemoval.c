@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/21 18:07:08  dkr
+ * DupTreeInfo replaced by DupTree_Type
+ *
  * Revision 3.5  2001/02/13 17:48:29  dkr
  * some MakeNode() eliminated
  *
@@ -209,7 +212,6 @@ LoopInvariantRemoval (node *arg_node, node *arg_info)
     tmp_tab = act_tab;
     act_tab = lir_tab;
     arg_info = MakeInfo ();
-    INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
 
     arg_node = Trav (arg_node, arg_info);
 
@@ -1315,6 +1317,7 @@ node *
 InvarUnswitch (node *arg_node, node *loop_node, node *arg_info)
 {
     DBUG_ENTER ("InvarUnswitch");
+
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign), "type of node is not N_assign");
     /* it is just a guess from dkr, sbs ! */
 
@@ -1324,11 +1327,12 @@ InvarUnswitch (node *arg_node, node *loop_node, node *arg_info)
     DBUG_PRINT ("LIR",
                 ("Moving nodetype %s up", mdb_nodetype[arg_node->node[0]->nodetype]));
     if (NONE != MOVE) {
-        INFO_DUP_TYPE (arg_info) = DUP_INVARIANT; /* arg_info->flag = 2 */
         arg_info->node[0] = arg_node->node[0]->node[1]->node[0];
-        arg_node->node[0]->node[1]->node[0] = DupTreeInfo (loop_node, arg_info);
+        arg_node->node[0]->node[1]->node[0]
+          = DupTree_Type (loop_node, arg_info, DUP_INVARIANT);
         arg_info->node[0] = arg_node->node[0]->node[2]->node[0];
-        arg_node->node[0]->node[2]->node[0] = DupTreeInfo (loop_node, arg_info);
+        arg_node->node[0]->node[2]->node[0]
+          = DupTree_Type (loop_node, arg_info, DUP_INVARIANT);
         MOVE = NONE;
     } else {
         arg_node = AppendNodeChain (1, arg_node, loop_node);
