@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/07/10 16:20:23  asi
+ * Revision 1.7  1995/08/14 13:54:03  cg
+ * added ATTRIB, STATUS, IDS_ATTR, IDS_STAT
+ *
+ * Revision 1.6  1995/07/10  16:20:23  asi
  * added IDS_DEF
  *
  * Revision 1.5  1995/07/04  16:36:24  asi
@@ -35,6 +38,8 @@
 #define SHP TYPES->shpseg->shp
 #define NAME TYPES->name
 #define NAME_MOD TYPES->name_mod
+#define ATTRIB TYPES->attrib
+#define STATUS TYPES->status
 
 /* macros used for N_ap nodes to get the function's name */
 #define FUN_NAME info.fun_name.id
@@ -48,6 +53,8 @@
 #define IDS_VARNO IDS->node->varno
 #define IDS_REFCNT IDS->refcnt
 #define IDS_NEXT IDS->next
+#define IDS_ATTR IDS->attrib
+#define IDS_STAT IDS->status
 
 /* macros for access arguments of a ap or prf - node */
 #define ARG1 node[0]->node[0]
