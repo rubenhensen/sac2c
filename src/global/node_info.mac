@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.21  1994/12/16 14:20:59  sbs
- * imp_tab inserted and NIF macro enlarged
+ * Revision 1.22  1994/12/19 13:00:44  hw
+ * inserted TCdo & TCwhile
  *
+;; Revision 1.21  1994/12/16  14:20:59  sbs
+;; imp_tab inserted and NIF macro enlarged
+;;
 ;; Revision 1.20  1994/12/16  11:15:42  sbs
 ;; redef of N_moddec and N_explist eliminated:->>>
 ;;
@@ -103,9 +106,9 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun),
   NIF (N_return, "N_return", DummyFun, DummyFun, PrintReturn, TCreturn, DummyFun,
        DummyFun, DummyFun, DummyFun),
-  NIF (N_do, "N_do", DummyFun, FltnDo, PrintDo, DummyFun, OPTdo, DummyFun, DummyFun,
+  NIF (N_do, "N_do", DummyFun, FltnDo, PrintDo, TCdo, OPTdo, DummyFun, DummyFun,
        DummyFun),
-  NIF (N_while, "N_while", DummyFun, FltnWhile, PrintWhile, DummyFun, DummyFun, DummyFun,
+  NIF (N_while, "N_while", DummyFun, FltnWhile, PrintWhile, TCwhile, DummyFun, DummyFun,
        DummyFun, DummyFun),
   NIF (N_cond, "N_cond", DummyFun, FltnCond, PrintCond, TCcond, DummyFun, DummyFun,
        DummyFun, DummyFun),
