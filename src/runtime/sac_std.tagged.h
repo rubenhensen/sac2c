@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2003/04/14 15:15:33  dkr
+ * IS_LASTREF__THEN, IS_LASTREF__ELSE removed
+ * IS_REUSED__BLOCK_... added
+ *
  * Revision 3.33  2003/03/09 21:31:31  dkr
  * , moved from SAC_ND_WRITE__AKS to SAC_TR_AA_PRINT
  *
@@ -1440,69 +1444,75 @@ typedef int *SAC_array_descriptor_t;
 
 /******************************************************************************
  *
- * ICMs for refcount-sensitive operations:
- * =======================================
- *
- * IS_LASTREF__THEN( nt)
- * IS_LASTREF__ELSE( nt)
+ * ICMs for predicate-sensitive operations:
+ * ========================================
  *
  * IS_LASTREF__BLOCK_BEGIN( nt)
  * IS_LASTREF__BLOCK_ELSE( nt)
  * IS_LASTREF__BLOCK_END( nt)
  *
+ * IS_REUSED__BLOCK_BEGIN( to_nt, from_nt)
+ * IS_REUSED__BLOCK_ELSE( to_nt, from_nt)
+ * IS_REUSED__BLOCK_END( to_nt, from_nt)
+ *
  ******************************************************************************/
 
-#define SAC_IS_LASTREF__THEN(nt) CAT17 (SAC_IS_LASTREF__THEN__, NT_UNQ (nt) (nt))
-#define SAC_IS_LASTREF__ELSE(nt) else
-
 #define SAC_IS_LASTREF__BLOCK_BEGIN(nt)                                                  \
-    SAC_IS_LASTREF__THEN (nt)                                                            \
-    {
+    CAT17 (SAC_IS_LASTREF__BLOCK_BEGIN__, NT_UNQ (nt) (nt))
 #define SAC_IS_LASTREF__BLOCK_ELSE(nt)                                                   \
     }                                                                                    \
-    SAC_IS_LASTREF__ELSE (nt)                                                            \
+    else                                                                                 \
     {
 #define SAC_IS_LASTREF__BLOCK_END(nt) }
+
+#define SAC_IS_REUSED__BLOCK_BEGIN(to_nt, from_nt)                                       \
+    if (SAC_ND_A_FIELD (to_nt) == SAC_ND_A_FIELD (from_nt)) {
+#define SAC_IS_REUSED__BLOCK_ELSE(to_nt, from_nt)                                        \
+    }                                                                                    \
+    else                                                                                 \
+    {
+#define SAC_IS_REUSED__BLOCK_END(to_nt, from_nt) }
 
 /*
  * NUQ
  */
 
-#define SAC_IS_LASTREF__THEN__NUQ(nt)                                                    \
-    CAT18 (SAC_IS_LASTREF__THEN__, CAT18 (NT_SHP (nt), _NUQ (nt)))
+#define SAC_IS_LASTREF__BLOCK_BEGIN__NUQ(nt)                                             \
+    CAT18 (SAC_IS_LASTREF__BLOCK_BEGIN__, CAT18 (NT_SHP (nt), _NUQ (nt)))
 
 /*
  * UNQ
  */
 
-#define SAC_IS_LASTREF__THEN__UNQ(nt) if (0)
+#define SAC_IS_LASTREF__BLOCK_BEGIN__UNQ(nt) if (0) {
 
 /*
  * SCL, NUQ
  */
 
-#define SAC_IS_LASTREF__THEN__SCL_NUQ(nt)                                                \
-    CAT19 (SAC_IS_LASTREF__THEN__SCL_, CAT19 (NT_HID (nt), _NUQ (nt)))
-#define SAC_IS_LASTREF__THEN__SCL_NHD_NUQ(nt) if (0)
-#define SAC_IS_LASTREF__THEN__SCL_HID_NUQ(nt) SAC_IS_LASTREF__THEN__AKS_NUQ (nt)
+#define SAC_IS_LASTREF__BLOCK_BEGIN__SCL_NUQ(nt)                                         \
+    CAT19 (SAC_IS_LASTREF__BLOCK_BEGIN__SCL_, CAT19 (NT_HID (nt), _NUQ (nt)))
+#define SAC_IS_LASTREF__BLOCK_BEGIN__SCL_NHD_NUQ(nt) if (0) {
+#define SAC_IS_LASTREF__BLOCK_BEGIN__SCL_HID_NUQ(nt)                                     \
+    SAC_IS_LASTREF__BLOCK_BEGIN__AKS_NUQ (nt)
 
 /*
  * AKS, NUQ
  */
 
-#define SAC_IS_LASTREF__THEN__AKS_NUQ(nt) if (SAC_ND_A_RC (nt) == 1)
+#define SAC_IS_LASTREF__BLOCK_BEGIN__AKS_NUQ(nt) if (SAC_ND_A_RC (nt) == 1) {
 
 /*
  * AKD, NUQ
  */
 
-#define SAC_IS_LASTREF__THEN__AKD_NUQ(nt) SAC_IS_LASTREF__THEN__AKS_NUQ (nt)
+#define SAC_IS_LASTREF__BLOCK_BEGIN__AKD_NUQ(nt) SAC_IS_LASTREF__BLOCK_BEGIN__AKS_NUQ (nt)
 
 /*
  * AUD, NUQ
  */
 
-#define SAC_IS_LASTREF__THEN__AUD_NUQ(nt) SAC_IS_LASTREF__THEN__AKS_NUQ (nt)
+#define SAC_IS_LASTREF__BLOCK_BEGIN__AUD_NUQ(nt) SAC_IS_LASTREF__BLOCK_BEGIN__AKS_NUQ (nt)
 
 /******************************************************************************
  *
