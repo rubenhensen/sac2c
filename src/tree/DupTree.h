@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/02/02 09:23:13  dkr
+ * no changes done
+ *
  * Revision 3.4  2001/01/10 13:37:35  dkr
  * nothing changed
  *
@@ -202,12 +205,12 @@ extern node *DupNgen (node *arg_node, node *arg_info);
 /* backend with-loop: */
 extern node *DupNwith2 (node *arg_node, node *arg_info);
 extern node *DupWLseg (node *arg_node, node *arg_info);
+extern node *DupWLsegVar (node *arg_node, node *arg_info);
 extern node *DupWLblock (node *arg_node, node *arg_info);
 extern node *DupWLublock (node *arg_node, node *arg_info);
 extern node *DupWLstride (node *arg_node, node *arg_info);
-extern node *DupWLgrid (node *arg_node, node *arg_info);
-extern node *DupWLsegVar (node *arg_node, node *arg_info);
 extern node *DupWLstrideVar (node *arg_node, node *arg_info);
+extern node *DupWLgrid (node *arg_node, node *arg_info);
 extern node *DupWLgridVar (node *arg_node, node *arg_info);
 
 /* pre- and post-processing during traversal */

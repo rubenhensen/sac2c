@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/02/02 09:22:42  dkr
+ * no changes done
+ *
  * Revision 3.5  2001/01/09 17:26:26  dkr
  * N_WLstriVar renamed into N_WLstrideVar
  *
@@ -155,12 +158,12 @@ extern node *FreeNCode (node *arg_node, node *arg_info);
 
 extern node *FreeNwith2 (node *arg_node, node *arg_info);
 extern node *FreeWLseg (node *arg_node, node *arg_info);
+extern node *FreeWLsegVar (node *arg_node, node *arg_info);
 extern node *FreeWLblock (node *arg_node, node *arg_info);
 extern node *FreeWLublock (node *arg_node, node *arg_info);
 extern node *FreeWLstride (node *arg_node, node *arg_info);
-extern node *FreeWLgrid (node *arg_node, node *arg_info);
-extern node *FreeWLsegVar (node *arg_node, node *arg_info);
 extern node *FreeWLstrideVar (node *arg_node, node *arg_info);
+extern node *FreeWLgrid (node *arg_node, node *arg_info);
 extern node *FreeWLgridVar (node *arg_node, node *arg_info);
 
 extern node *FreeCWrapper (node *arg_node, node *arg_info);

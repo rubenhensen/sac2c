@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/02/02 09:22:13  dkr
+ * no changes done
+ *
  * Revision 3.5  2001/01/29 18:32:28  dkr
  * some superfluous attributes of N_WLsegVar removed
  *
@@ -1766,6 +1769,33 @@ FreeWLseg (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
+FreeWLsegVar (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeWLsegVar");
+
+    DBUG_PRINT ("FREE", ("Removing N_WLsegVar node ..."));
+
+    FREETRAV (WLSEGVAR_CONTENTS (arg_node));
+    tmp = FREECONT (WLSEGVAR_NEXT (arg_node));
+
+    FREE (WLSEGVAR_IDX_MIN (arg_node));
+    FREE (WLSEGVAR_IDX_MAX (arg_node));
+
+    if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
+        WLSEGVAR_SCHEDULING (arg_node)
+          = SCHRemoveScheduling (WLSEGVAR_SCHEDULING (arg_node));
+    }
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
 FreeWLblock (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
@@ -1825,6 +1855,28 @@ FreeWLstride (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
+FreeWLstrideVar (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeWLstrideVar");
+
+    DBUG_PRINT ("FREE", ("Removing N_WLstrideVar node ..."));
+
+    FREETRAV (WLSTRIDEVAR_BOUND1 (arg_node));
+    FREETRAV (WLSTRIDEVAR_BOUND2 (arg_node));
+    FREETRAV (WLSTRIDEVAR_STEP (arg_node));
+    FREETRAV (WLSTRIDEVAR_CONTENTS (arg_node));
+    tmp = FREECONT (WLSTRIDEVAR_NEXT (arg_node));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
 FreeWLgrid (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
@@ -1839,55 +1891,6 @@ FreeWLgrid (node *arg_node, node *arg_info)
     if (WLGRID_CODE (arg_node) != NULL) {
         NCODE_USED (WLGRID_CODE (arg_node))--;
     }
-
-    FREE (arg_node);
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-FreeWLsegVar (node *arg_node, node *arg_info)
-{
-    node *tmp = NULL;
-
-    DBUG_ENTER ("FreeWLsegVar");
-
-    DBUG_PRINT ("FREE", ("Removing N_WLsegVar node ..."));
-
-    FREETRAV (WLSEGVAR_CONTENTS (arg_node));
-    tmp = FREECONT (WLSEGVAR_NEXT (arg_node));
-
-    FREE (WLSEGVAR_IDX_MIN (arg_node));
-    FREE (WLSEGVAR_IDX_MAX (arg_node));
-
-    if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
-        WLSEGVAR_SCHEDULING (arg_node)
-          = SCHRemoveScheduling (WLSEGVAR_SCHEDULING (arg_node));
-    }
-
-    FREE (arg_node);
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-FreeWLstrideVar (node *arg_node, node *arg_info)
-{
-    node *tmp = NULL;
-
-    DBUG_ENTER ("FreeWLstrideVar");
-
-    DBUG_PRINT ("FREE", ("Removing N_WLstrideVar node ..."));
-
-    FREETRAV (WLSTRIDEVAR_BOUND1 (arg_node));
-    FREETRAV (WLSTRIDEVAR_BOUND2 (arg_node));
-    FREETRAV (WLSTRIDEVAR_STEP (arg_node));
-    FREETRAV (WLSTRIDEVAR_CONTENTS (arg_node));
-    tmp = FREECONT (WLSTRIDEVAR_NEXT (arg_node));
 
     FREE (arg_node);
 

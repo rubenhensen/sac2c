@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/02/02 09:20:56  dkr
+ * no changes done
+ *
  * Revision 3.8  2001/01/29 16:08:51  dkr
  * NameOrVal_Le() and NodeOrInt_Le() added
  *
@@ -2756,9 +2759,9 @@ MakeWLsegX (int dims, node *contents, node *next)
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***  N_WLblock :   *and*  N_WLublock :     *and*
  ***  N_WLstride :  *and*  N_WLstrideVar :  *and*
  ***  N_WLgrid :    *and*  N_WLgridVar :    *and*
- ***  N_WLblock :   *and*  N_WLublock :
  ***/
 
 /******************************************************************************
