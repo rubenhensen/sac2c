@@ -1,19 +1,22 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/04/03 22:29:40  dkr
+ * some minor changes done
+ *
  * Revision 3.17  2001/04/03 19:45:12  dkr
- * MT_ADJUST_SCHEDULER renamed into MT_ADJUST_SCHEDULER__OFFSET.
- * signature for MT_ADJUST_SCHEDULER_... icms modified.
- * MT_ADJUST_SCHEDULER icm is not a c- but a h-icm now.
- *
- * InitializeBoundaries() and SelectTask() marked as static.
- *
- * defines for task selection strategies added.
- *
- * obsolete icm MT_SPMD_BLOCK removed.
+ * - MT_ADJUST_SCHEDULER renamed into MT_ADJUST_SCHEDULER__OFFSET.
+ *   signature for MT_ADJUST_SCHEDULER_... icms modified.
+ *   MT_ADJUST_SCHEDULER icm is not a c- but a h-icm now.
+ * - InitializeBoundaries() and SelectTask() marked as static.
+ * - Defines for task selection strategies added.
+ * - Obsolete icm MT_SPMD_BLOCK removed.
+ * - Signature of MT_SCHEDULER_..._BEGIN, MT_SCHEDULER_..._END icms
+ *   modified: Blocking-vector is now longer given as an argument because
+ *   it is completely useless!!
  *
  * Revision 3.16  2001/03/28 12:52:03  ben
- *  param added to MT_SCHEDULER_(Cyclic,Self,AFS)_...
+ * param added to MT_SCHEDULER_(Cyclic,Self,AFS)_...
  *
  * Revision 3.15  2001/03/28 09:19:53  ben
  * InitializeBoundaries added
@@ -34,7 +37,8 @@
  * Bugs fixed in ICMs MT_SCHEDULER_Even_..., SelectTask
  *
  * Revision 3.9  2001/03/20 16:11:46  ben
- * Just implemented Static renamed to Even, because of existing Static scheduling
+ * Just implemented Static renamed to Even, because of existing Static
+ * scheduling
  *
  * Revision 3.8  2001/03/20 13:19:33  ben
  * ICMs MT_SCHEDULER_Static_... (first version) implemented
