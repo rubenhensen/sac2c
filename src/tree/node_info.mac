@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2001/05/23 15:48:55  nmw
+ * useless SSACFvardec removed
+ *
  * Revision 3.53  2001/05/22 14:58:27  nmw
  * rmcasts traversal added
  *
@@ -1275,7 +1278,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, NoTrav, APTvardec,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, SSAvardec, CAVvardec, USSAvardec,
-       SSADCRvardec, SSACSEvardec, CMPTunknown, TravSons, SSACFvardec, SSALIRvardec,
+       SSADCRvardec, SSACSEvardec, CMPTunknown, TravSons, TravSons, SSALIRvardec,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 1),
