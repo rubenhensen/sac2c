@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/08/25 15:45:34  khf
+ * Bug 44: faulty wlgenerator property for empty bounds resolved.
+ * In ComputeGeneratorProperties only check for emptiness of
+ * generator with non empty bounds
+ *
  * Revision 1.15  2004/08/10 16:07:03  khf
  * CreateStructConstants(): expr can be NULL
  * CreateEmptyGenWLReplacement(): assign of freed LET_EXPR corrected
@@ -1352,7 +1357,7 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
 {
     node *lbe, *ube, *steps, *width;
     gen_prop_t res = GPT_unknown;
-    bool const_bounds;
+    bool const_bounds, non_empty_bounds;
     constant *lbc, *ubc, *shpc, *tmpc, *tmp;
     shape *sh;
 
@@ -1379,11 +1384,15 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
      *  result....)
      */
     if (const_bounds) {
-        tmpc = COGe (lbc, ubc);
-        if (COIsTrue (tmpc, TRUE)) {
-            res = GPT_empty;
+        non_empty_bounds = (SHGetUnrLen (COGetShape (lbc)) > 0);
+
+        if (non_empty_bounds) {
+            tmpc = COGe (lbc, ubc);
+            if (COIsTrue (tmpc, TRUE)) {
+                res = GPT_empty;
+            }
+            tmpc = COFreeConstant (tmpc);
         }
-        tmpc = COFreeConstant (tmpc);
     }
 
     if (res == GPT_unknown) {
