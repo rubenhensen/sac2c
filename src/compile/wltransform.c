@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2003/03/12 17:28:47  dkr
+ * SSA form used if flag -ssa is set
+ *
  * Revision 3.69  2003/03/05 15:33:09  dkr
  * bug in GetWlShape() fixed:
  * works correcly for nested type definitions (user defined types...) now
@@ -231,30 +234,20 @@
 #include "DataFlowMask.h"
 #include "print.h"
 #include "NameTuplesUtils.h"
+#include "constants.h"
 #include "wl_bounds.h"
 #include "wlpragma_funs.h"
 #include "wltransform.h"
+#include "lac2fun.h"
+#include "CheckAvis.h"
+#include "SSATransform.h"
+#include "fun2lac.h"
+#include "UndoSSATransform.h"
 
 /*
  * access macros for 'arg_info'
  */
 #define INFO_WL_TYPES(n) (n->info.types)
-
-typedef enum {
-    WL_PH_conv,
-    WL_PH_cubes,
-    WL_PH_fill1,
-    WL_PH_segs,
-    WL_PH_split,
-    WL_PH_block,
-    WL_PH_ublock,
-    WL_PH_merge,
-    WL_PH_opt,
-    WL_PH_fit,
-    WL_PH_norm,
-    WL_PH_fill2,
-    WL_PH_final /* must be the last item!! */
-} wl_bs_t;
 
 /*
  * here we store the lineno of the current with-loop
@@ -2472,9 +2465,21 @@ GetWlShape (node *wl, int dims, types *wl_type)
         } else {
             DBUG_ASSERT ((NODE_TYPE (shp_node) == N_id),
                          "NWITH_SHAPE is neither N_array nor N_id");
-            /*
-             * missing: check whether 'shp_node' denotes a constant
-             */
+            if (valid_ssaform) {
+                constant *co = COAST2Constant (shp_node);
+                int *dv;
+                if (co != NULL) {
+                    DBUG_ASSERT ((dims <= SHGetUnrLen (COGetShape (co))),
+                                 "genarray with-loop:"
+                                 " size of index vector > dimension of WL shape");
+                    shape = MakeShpseg (NULL);
+                    dv = (int *)COGetDataVec (co);
+                    for (i = 0; i < dims; i++) {
+                        SHPSEG_SHAPE (shape, i) = dv[i];
+                    }
+                    co = COFreeConstant (co);
+                }
+            }
         }
         break;
 
@@ -2889,6 +2894,8 @@ EmptyParts2StridesOrExpr (node **wl, int dims, shpseg *shape)
     node *tmp;
 
     DBUG_ENTER ("EmptyParts2StridesOrExpr");
+
+    DBUG_EXECUTE ("WLtrans", NOTE (("  all parts of WL are empty!")));
 
     switch (NWITH2_TYPE ((*wl))) {
     case WO_genarray:
@@ -4402,6 +4409,14 @@ BuildCubes (node *strides, node *wl2, int dims, shpseg *shape, bool *do_naive_co
     DBUG_ENTER ("BuildCubes");
 
     all_const = AllStridesAreConstant (strides, TRUE, TRUE);
+    DBUG_EXECUTE ("WLtrans", NOTE ((all_const ? "  constant-bounds with-loop: TRUE"
+                                              : "  constant-bounds with-loop: FALSE"));
+                  NOTE (((shape != NULL) ? "  known-shape with-loop: TRUE"
+                                         : "  known-shape with-loop: FALSE (dim = %d)",
+                         dims));
+                  NOTE (((WLSTRIDEX_NEXT (strides) != NULL)
+                           ? "  multi-generator with-loop: TRUE"
+                           : "  multi-generator with-loop: FALSE")););
 
     if (WLSTRIDEX_NEXT (strides) == NULL) {
         /*
@@ -6791,7 +6806,7 @@ InferFitted (node *wlnode)
  *
  * Function:
  *   node *ProcessSegments( node *segs, int dims, shpseg *shape,
- *                          bool do_naive_comp, wl_bs_t wl_break_after)
+ *                          bool do_naive_comp)
  *
  * Description:
  *
@@ -6799,8 +6814,7 @@ InferFitted (node *wlnode)
  ******************************************************************************/
 
 static node *
-ProcessSegments (node *segs, int dims, shpseg *shape, bool do_naive_comp,
-                 wl_bs_t wl_break_after)
+ProcessSegments (node *segs, int dims, shpseg *shape, bool do_naive_comp)
 {
     node *seg;
 
@@ -6811,7 +6825,7 @@ ProcessSegments (node *segs, int dims, shpseg *shape, bool do_naive_comp,
 
     seg = segs;
     while (seg != NULL) {
-        DBUG_EXECUTE ("WLtrans", NOTE ((">>> entering segment\n")));
+        DBUG_EXECUTE ("WLtrans", NOTE ((">>> entering segment")));
 
         /* check params of segment */
         CheckParams (seg);
@@ -6819,94 +6833,103 @@ ProcessSegments (node *segs, int dims, shpseg *shape, bool do_naive_comp,
         /*
          * splitting
          */
-        if (wl_break_after >= WL_PH_split) {
-            if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
-                DBUG_EXECUTE ("WLtrans", NOTE (("step 4: split\n")));
-                WLSEG_CONTENTS (seg) = SplitWL (WLSEG_CONTENTS (seg));
-            }
+        if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
+            DBUG_EXECUTE ("WLtrans", NOTE (("step 5: split")));
+            WLSEG_CONTENTS (seg) = SplitWL (WLSEG_CONTENTS (seg));
+        }
+        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "split"))) {
+            goto DONE;
         }
 
         /*
          * hierarchical blocking
          */
-        if (wl_break_after >= WL_PH_block) {
-            if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
-                int b;
-                DBUG_EXECUTE ("WLtrans", NOTE (("step 5: hierarchical blocking\n")));
-                for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
-                    DBUG_EXECUTE ("WLtrans",
-                                  NOTE (("step 5.%d: hierarchical blocking (level %d)\n",
-                                         b + 1, b)));
-                    WLSEG_CONTENTS (seg)
-                      = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_BV (seg, b), FALSE);
-                }
+        if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
+            int b;
+            DBUG_EXECUTE ("WLtrans", NOTE (("step 6: hierarchical blocking")));
+            for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
+                DBUG_EXECUTE ("WLtrans",
+                              NOTE (("step 6.%d: hierarchical blocking (level %d)", b + 1,
+                                     b)));
+                WLSEG_CONTENTS (seg)
+                  = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_BV (seg, b), FALSE);
             }
+        }
+        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "block"))) {
+            goto DONE;
         }
 
         /*
          * unrolling-blocking
          */
-        if (wl_break_after >= WL_PH_ublock) {
-            if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
-                DBUG_EXECUTE ("WLtrans", NOTE (("step 6: unrolling-blocking\n")));
-                WLSEG_CONTENTS (seg)
-                  = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_UBV (seg), TRUE);
-            }
+        if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
+            DBUG_EXECUTE ("WLtrans", NOTE (("step 7: unrolling-blocking")));
+            WLSEG_CONTENTS (seg)
+              = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_UBV (seg), TRUE);
+        }
+        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "ublock"))) {
+            goto DONE;
         }
 
         /*
          * merging
          */
-        if (wl_break_after >= WL_PH_merge) {
-            if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
-                DBUG_EXECUTE ("WLtrans", NOTE (("step 7: merge\n")));
-                WLSEG_CONTENTS (seg) = MergeWL (WLSEG_CONTENTS (seg));
-            }
+        if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
+            DBUG_EXECUTE ("WLtrans", NOTE (("step 8: merge")));
+            WLSEG_CONTENTS (seg) = MergeWL (WLSEG_CONTENTS (seg));
+        }
+        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "merge"))) {
+            goto DONE;
         }
 
         /*
          * optimization
          */
-        if (wl_break_after >= WL_PH_opt) {
-            if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
-                DBUG_EXECUTE ("WLtrans", NOTE (("step 8: optimize\n")));
-                WLSEG_CONTENTS (seg) = OptWL (WLSEG_CONTENTS (seg));
-            }
+        if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
+            DBUG_EXECUTE ("WLtrans", NOTE (("step 9: optimize")));
+            WLSEG_CONTENTS (seg) = OptWL (WLSEG_CONTENTS (seg));
+        }
+        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "opt"))) {
+            goto DONE;
         }
 
         /*
          * fitting
          */
-        if (wl_break_after >= WL_PH_fit) {
-            if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
-                DBUG_EXECUTE ("WLtrans", NOTE (("step 9: fit\n")));
-                WLSEG_CONTENTS (seg) = FitWL (WLSEG_CONTENTS (seg));
-            }
+        if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
+            DBUG_EXECUTE ("WLtrans", NOTE (("step 10: fit")));
+            WLSEG_CONTENTS (seg) = FitWL (WLSEG_CONTENTS (seg));
+        }
+        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "fit"))) {
+            goto DONE;
         }
 
         /*
          * normalization
          */
-        if (wl_break_after >= WL_PH_norm) {
-            if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
-                DBUG_EXECUTE ("WLtrans", NOTE (("step 10: normalize\n")));
-                WLSEG_CONTENTS (seg)
-                  = NormWL (dims, shape, WLSEG_IDX_MAX (seg), WLSEG_CONTENTS (seg));
-            }
+        if ((NODE_TYPE (seg) == N_WLseg) && (!do_naive_comp)) {
+            DBUG_EXECUTE ("WLtrans", NOTE (("step 11: normalize")));
+            WLSEG_CONTENTS (seg)
+              = NormWL (dims, shape, WLSEG_IDX_MAX (seg), WLSEG_CONTENTS (seg));
+        }
+        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "norm"))) {
+            goto DONE;
         }
 
-        if (wl_break_after >= WL_PH_fill2) {
-            /*
-             * fill all gaps
-             */
-            DBUG_EXECUTE ("WLtrans", NOTE (("step 11: fill gaps (all)\n")));
-            InsertNoopNodes (WLSEGX_CONTENTS (seg));
+        /*
+         * fill all gaps
+         */
+        DBUG_EXECUTE ("WLtrans", NOTE (("step 12: fill gaps (all)")));
+        InsertNoopNodes (WLSEGX_CONTENTS (seg));
+        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "fill2"))) {
+            goto DONE;
         }
 
+    DONE:
         /* compute GRIDX_FITTED */
         WLSEGX_CONTENTS (seg) = InferFitted (WLSEGX_CONTENTS (seg));
 
-        DBUG_EXECUTE ("WLtrans", NOTE (("<<< leaving segment\n")));
+        DBUG_EXECUTE ("WLtrans", NOTE (("<<< leaving segment")));
 
         seg = WLSEGX_NEXT (seg);
     }
@@ -6972,55 +6995,6 @@ ConvertWith (node *wl, int dims)
 /******************************************************************************
  *
  * Function:
- *   wl_bs_t AnalyzeBreakSpecifier( void)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-static wl_bs_t
-AnalyzeBreakSpecifier (void)
-{
-    wl_bs_t bs;
-
-    DBUG_ENTER ("bs");
-
-    bs = WL_PH_final;
-    if (break_after == PH_wltrans) {
-        if (!strcmp (break_specifier, "conv")) {
-            bs = WL_PH_conv;
-        } else if (!strcmp (break_specifier, "cubes")) {
-            bs = WL_PH_cubes;
-        } else if (!strcmp (break_specifier, "fill1")) {
-            bs = WL_PH_fill1;
-        } else if (!strcmp (break_specifier, "segs")) {
-            bs = WL_PH_segs;
-        } else if (!strcmp (break_specifier, "split")) {
-            bs = WL_PH_split;
-        } else if (!strcmp (break_specifier, "block")) {
-            bs = WL_PH_block;
-        } else if (!strcmp (break_specifier, "ublock")) {
-            bs = WL_PH_ublock;
-        } else if (!strcmp (break_specifier, "merge")) {
-            bs = WL_PH_merge;
-        } else if (!strcmp (break_specifier, "opt")) {
-            bs = WL_PH_opt;
-        } else if (!strcmp (break_specifier, "fit")) {
-            bs = WL_PH_fit;
-        } else if (!strcmp (break_specifier, "norm")) {
-            bs = WL_PH_norm;
-        } else if (!strcmp (break_specifier, "fill2")) {
-            bs = WL_PH_fill2;
-        }
-    }
-
-    DBUG_RETURN (bs);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *WLTRAwith( node *arg_node, node *arg_info)
  *
  * Description:
@@ -7034,20 +7008,16 @@ AnalyzeBreakSpecifier (void)
 node *
 WLTRAwith (node *arg_node, node *arg_info)
 {
-    wl_bs_t wl_break_after;
     types *idx_type;
     shape_class_t idx_sc;
     node *new_node = NULL;
 
     DBUG_ENTER ("WLTRAwith");
 
-    DBUG_PRINT ("WLtrans", (">>> entering with-loop"));
+    DBUG_EXECUTE ("WLtrans", NOTE ((">>> >>> entering with-loop")));
 
     /* store the lineno of the current wl (for generation of error-messages) */
     line = NODE_LINE (arg_node);
-
-    /* analyse 'break_specifier' */
-    wl_break_after = AnalyzeBreakSpecifier ();
 
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
@@ -7061,12 +7031,16 @@ WLTRAwith (node *arg_node, node *arg_info)
          *   -> we have to create totally different C code
          *   -> we leave the N_Nwith node untouched
          */
-        DBUG_PRINT ("WLtrans", ("with-loop with non-AKS withid found (line %d)\n", line));
+        DBUG_EXECUTE ("WLtrans",
+                      NOTE (("with-loop with non-AKS withid found (line %d)", line)););
         new_node = arg_node;
     } else {
         node *strides;
         int idx_size;
         shpseg *wl_shp;
+
+        DBUG_EXECUTE ("WLtrans",
+                      NOTE (("with-loop with AKS withid found (line %d)", line)););
 
         /*
          * check whether NWITHID_VEC, NWITHID_IDS of all parts have identical
@@ -7084,13 +7058,13 @@ WLTRAwith (node *arg_node, node *arg_info)
         /*
          * convert parts of with-loop into new format
          */
-        DBUG_EXECUTE ("WLtrans", NOTE (("step 0.1: convert parts into strides\n")));
+        DBUG_EXECUTE ("WLtrans", NOTE (("step 1.1: convert parts into strides")));
         strides = Parts2Strides (NWITH_PART (arg_node), idx_size, wl_shp);
 
         /*
          * consistence check: ensures that the strides are pairwise disjoint
          */
-        DBUG_EXECUTE ("WLtrans", NOTE (("step 0.2: check disjointness of strides\n")));
+        DBUG_EXECUTE ("WLtrans", NOTE (("step 1.2: check disjointness of strides")));
         DBUG_ASSERT ((CheckDisjointness (strides)),
                      "Consistence check failed:"
                      " Not all strides are pairwise disjoint!\n"
@@ -7107,32 +7081,29 @@ WLTRAwith (node *arg_node, node *arg_info)
             node *cubes = NULL;
             node *segs = NULL;
             bool do_naive_comp = ExtractNaiveCompPragma (NWITH_PRAGMA (arg_node), line);
-
-            if (wl_break_after <= WL_PH_conv) {
+            if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "conv"))) {
                 goto DONE;
             }
 
             /*
              * build the cubes
              */
-            DBUG_EXECUTE ("WLtrans", NOTE (("step 1: build cubes\n")));
+            DBUG_EXECUTE ("WLtrans", NOTE (("step 2: build cubes")));
             cubes = BuildCubes (strides, new_node, idx_size, wl_shp, &do_naive_comp);
-
-            if (wl_break_after <= WL_PH_cubes) {
+            if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "cubes"))) {
                 goto DONE;
             }
 
             /*
              * normalize grids and fill gaps
              */
-            DBUG_EXECUTE ("WLtrans", NOTE (("step 2: fill gaps (grids)\n")));
+            DBUG_EXECUTE ("WLtrans", NOTE (("step 3: fill gaps (grids)")));
             cubes = InsertNoopGrids (cubes);
-
-            if (wl_break_after <= WL_PH_fill1) {
+            if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "fill1"))) {
                 goto DONE;
             }
 
-            DBUG_EXECUTE ("WLtrans", NOTE (("step 3: choose segments\n")));
+            DBUG_EXECUTE ("WLtrans", NOTE (("step 4: choose segments")));
             if (do_naive_comp) {
                 /* naive compilation  ->  put each stride in a separate segment */
                 segs = WLCOMP_Cubes (NULL, NULL, cubes, idx_size, line);
@@ -7142,12 +7113,14 @@ WLTRAwith (node *arg_node, node *arg_info)
                                    && ((wl_btype == T_float) || (wl_btype == T_double)));
                 segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, idx_size, fold_float);
             }
+            if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "segs"))) {
+                goto DONE;
+            }
 
             /*
              * do all the segment-wise transformation stuff (step 4 -- 11)
              */
-            segs
-              = ProcessSegments (segs, idx_size, wl_shp, do_naive_comp, wl_break_after);
+            segs = ProcessSegments (segs, idx_size, wl_shp, do_naive_comp);
 
         DONE:
             if (segs == NULL) {
@@ -7167,7 +7140,7 @@ WLTRAwith (node *arg_node, node *arg_info)
         arg_node = FreeTree (arg_node);
     }
 
-    DBUG_PRINT ("WLtrans", ("<<< leaving with-loop\n"));
+    DBUG_EXECUTE ("WLtrans", NOTE (("<<< <<< leaving with-loop")));
 
     DBUG_RETURN (new_node);
 }
@@ -7262,9 +7235,47 @@ WlTransform (node *syntax_tree)
 
     info = MakeInfo ();
 
+    if (use_ssaform) {
+        DBUG_EXECUTE ("WLtrans",
+                      NOTE (("step 0.1: loops and conditionals -> LaC functions")));
+        syntax_tree = Lac2Fun (syntax_tree);
+        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "l2f"))) {
+            goto DONE;
+        }
+
+        DBUG_EXECUTE ("WLtrans", NOTE (("step 0.2: check AVIS consistency")));
+        syntax_tree = CheckAvis (syntax_tree);
+        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "cha"))) {
+            goto DONE;
+        }
+
+        DBUG_EXECUTE ("WLtrans", NOTE (("step 0.3: do SSA form")));
+        syntax_tree = SSATransform (syntax_tree);
+        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "ssa"))) {
+            goto DONE;
+        }
+    }
+
     act_tab = wltrans_tab;
     syntax_tree = Trav (syntax_tree, info);
 
+    if (use_ssaform) {
+        DBUG_EXECUTE ("WLtrans", NOTE (("step 13.1: undo SSA form")));
+        syntax_tree = UndoSSATransform (syntax_tree);
+        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "ussa"))) {
+            goto DONE;
+        }
+
+        /* undo lac2fun transformation */
+        DBUG_EXECUTE ("WLtrans",
+                      NOTE (("step 13.2: LaC functions -> loops and conditionals")));
+        syntax_tree = Fun2Lac (syntax_tree);
+        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "f2l"))) {
+            goto DONE;
+        }
+    }
+
+DONE:
     info = FreeTree (info);
 
     DBUG_RETURN (syntax_tree);
