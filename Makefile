@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.97  2004/08/10 13:32:33  ktr
+# added src/refcount/reuse.o
+#
 # Revision 3.96  2004/08/09 14:55:27  ktr
 # added refcount/allocation.o
 #
@@ -271,7 +274,7 @@ MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o \
          src/modules/checkdec.o src/modules/readsib.o src/modules/cccall.o
 OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
 REFCOUNT= src/refcount/refcount.o src/refcount/allocation.o \
-          src/refcount/alloc.o src/refcount/refcounting.o
+          src/refcount/alloc.o src/refcount/refcounting.o src/refcount/reuse.o
 CONCURRENT= src/concurrent/concurrent.o \
             src/concurrent/spmd_init.o src/concurrent/spmd_opt.o \
             src/concurrent/spmd_lift.o src/concurrent/sync_init.o \
