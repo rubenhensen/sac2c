@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/03/14 18:45:21  hw
+ * Revision 1.4  1995/03/16 17:39:13  hw
+ * RCwith and RCcon (used for N_genarray and N_modarray) inserted
+ *
+ * Revision 1.3  1995/03/14  18:45:21  hw
  * renamed RCwhile to RCloop
  * this version handles do- and while-loops correct.
  * conditionals are not implemented
@@ -24,6 +27,8 @@ extern node *RCid (node *arg_node, node *arg_info);
 extern node *RClet (node *arg_node, node *arg_info);
 extern node *RCcond (node *arg_node, node *arg_info);
 extern node *RCfundef (node *arg_node, node *arg_info);
+extern node *RCwith (node *arg_node, node *arg_info);
+extern node *RCcon (node *arg_node, node *arg_info);
 extern node *Refcount (node *arg_node);
 
 #endif /* _refcount_h */
