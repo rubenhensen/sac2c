@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/09/18 16:01:04  ktr
+ * Moved old multithread to phase 21 and added spmdemm traversal.
+ * Although EMM and old MT work for genarray-wls, further work is needed
+ * for fold-wls.
+ *
  * Revision 3.8  2004/03/26 14:36:23  khf
  * OPT_MTO deaktivated
  *
@@ -90,6 +95,7 @@
  *   SPMD regions within the compiled SAC code. This entire process consists
  *   of 7 consecutive steps:
  *    - building spmd-blocks
+ *    - EMM: Move alloc and dec_rc operations of local vars into spmd-blocks
  *    - optimizing/enlarging spmd-blocks
  *    - lifting spmd-blocks to spmd-functions
  *    - building synchronisation blocks
@@ -98,8 +104,8 @@
  *    - constraining spmd-blocks/spmd-functions
  *
  *   This process may be interruppted after each step by using one of the
- *   break specifiers "spmdinit", "spmdopt", "spmdlift", "syncinit", or
- *   "syncopt".
+ *   break specifiers "spmdinit", "syncemm", "spmdopt", "spmdlift",
+ *   "syncinit", or "syncopt".
  *
  *****************************************************************************/
 
@@ -112,6 +118,8 @@
 #include "free.h"
 #include "Error.h"
 #include "InferDFMs.h"
+#include "spmd_emm.h"
+#include "ssa.h"
 
 /******************************************************************************
  *
@@ -230,14 +238,32 @@ CONCfundef (node *arg_node, node *arg_info)
             DBUG_PRINT ("SPMDI", ("--- end a SPMDI traversal ---"));
             DBUG_PRINT ("CONC", ("--- end a SPMDI traversal ---"));
 
-            if ((break_after == PH_multithread)
+            if ((break_after == PH_multithread_finish)
                 && (0 == strcmp ("spmdinit", break_specifier))) {
                 goto cont;
             }
 
             /*
-             * Second, spmd-blocks are optimized, i.e. two or several adjacent spmd-blocks
-             * are combined into a single larger one.
+             * For EMM it is necessary to move alloc and dec_rc operations of
+             * local variables into SPMD blocks
+             */
+            if (emm) {
+                DBUG_PRINT ("CONC", ("--- begin a SPMDEMM traversal ---"));
+                DBUG_PRINT ("SPMDEMM", ("--- begin a SPMDEMM traversal ---"));
+                arg_node = SpmdEmm (arg_node);
+                DBUG_PRINT ("SPMDEMM", ("--- end a SPMDEMM traversal ---"));
+                DBUG_PRINT ("CONC", ("--- end a SPMDEMM traversal ---"));
+            }
+
+            if ((break_after == PH_multithread_finish)
+                && (0 == strcmp ("spmdemm", break_specifier))) {
+                goto cont;
+            }
+
+            /*
+             * Second, spmd-blocks are optimized,
+             * i.e. two or several adjacent spmd-blocks are combined into a
+             * single larger one.
              *
              * Executed only if optimisation MTO is set.
              */
@@ -258,7 +284,7 @@ CONCfundef (node *arg_node, node *arg_info)
                 DBUG_PRINT ("SPMDO", ("--- no SPMDO traversal ---"));
             }
 
-            if ((break_after == PH_multithread)
+            if ((break_after == PH_multithread_finish)
                 && (0 == strcmp ("spmdopt", break_specifier))) {
                 goto cont;
             }
@@ -275,7 +301,7 @@ CONCfundef (node *arg_node, node *arg_info)
             DBUG_PRINT ("SPMDL", ("--- end a SPMDL (mt = 0) traversal ---"));
             DBUG_PRINT ("CONC", ("--- end a SPMDL (mt = 0) traversal ---"));
 
-            if ((break_after == PH_multithread)
+            if ((break_after == PH_multithread_finish)
                 && (0 == strcmp ("spmdlift", break_specifier))) {
                 goto cont;
             }
@@ -291,7 +317,7 @@ CONCfundef (node *arg_node, node *arg_info)
             DBUG_PRINT ("CONC", ("--- end a SCHED traversal ---"));
         } else {
 
-            if ((break_after == PH_multithread)
+            if ((break_after == PH_multithread_finish)
                 && ((0 == strcmp ("spmdinit", break_specifier))
                     || (0 == strcmp ("spmdopt", break_specifier)))) {
                 goto cont;
@@ -310,7 +336,7 @@ CONCfundef (node *arg_node, node *arg_info)
             DBUG_PRINT ("SPMDL", ("--- end a SPMDL (mt = 1) traversal ---"));
             DBUG_PRINT ("CONC", ("--- end a SPMDL (mt = 1) traversal ---"));
 
-            if ((break_after == PH_multithread)
+            if ((break_after == PH_multithread_finish)
                 && (0 == strcmp ("spmdlift", break_specifier))) {
                 goto cont;
             }
@@ -328,7 +354,7 @@ CONCfundef (node *arg_node, node *arg_info)
             DBUG_PRINT ("SYNCI", ("--- end a SYNCI traversal ---"));
             DBUG_PRINT ("CONC", ("--- end a SYNCI traversal ---"));
 
-            if ((break_after == PH_multithread)
+            if ((break_after == PH_multithread_finish)
                 && (0 == strcmp ("syncinit", break_specifier))) {
                 goto cont;
             }
@@ -345,7 +371,7 @@ CONCfundef (node *arg_node, node *arg_info)
              * with globals.h is fixed and there is no overlaoading anymore only the ' &
              * FALSE' inside the condition has to be removed
              */
-            if (optimize & OPT_SBE & FALSE) {
+            if (emm || optimize & OPT_SBE & FALSE) {
                 DBUG_PRINT ("CONC", ("--- begin a SYNCO traversal ---"));
                 DBUG_PRINT ("SYNCO", ("--- begin a SYNCO traversal ---"));
                 FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
@@ -356,7 +382,7 @@ CONCfundef (node *arg_node, node *arg_info)
                 DBUG_PRINT ("SYNCO", ("--- no SYNCO traversal ---"));
             }
 
-            if ((break_after == PH_multithread)
+            if ((break_after == PH_multithread_finish)
                 && (0 == strcmp ("syncopt", break_specifier))) {
                 goto cont;
             }
@@ -393,8 +419,9 @@ CONCfundef (node *arg_node, node *arg_info)
      */
     if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)) {
 
-        if ((break_after == PH_multithread)
+        if ((break_after == PH_multithread_finish)
             && ((0 == strcmp ("spmdinit", break_specifier))
+                || (0 == strcmp ("spmdemm", break_specifier))
                 || (0 == strcmp ("spmdopt", break_specifier))
                 || (0 == strcmp ("spmdlift", break_specifier))
                 || (0 == strcmp ("syncinit", break_specifier))
@@ -403,20 +430,20 @@ CONCfundef (node *arg_node, node *arg_info)
             goto cont2;
         }
 
-        if (FUNDEF_STATUS (arg_node) != ST_spmdfun) {
+        if ((!emm) && FUNDEF_STATUS (arg_node) != ST_spmdfun) {
             /*
              *  Seventh, each spmd-block and the belonging spmd-function get
              *  additional in-parameters, to be able to pass values from extracted
              *  prolog icms to the spmd-function.
              */
             act_tab = spmdcons_tab;
-
             DBUG_PRINT ("CONC", ("--- begin a SPMDC traversal ---"));
             DBUG_PRINT ("SPMDC", ("--- begin a SPMDC traversal ---"));
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
             DBUG_PRINT ("SPMDC", ("--- end a SPMDC traversal ---"));
             DBUG_PRINT ("CONC", ("--- end a SPMDC traversal ---"));
-            if ((break_after == PH_multithread)
+
+            if ((break_after == PH_multithread_finish)
                 && (0 == strcmp ("spmdcons", break_specifier))) {
                 goto cont2;
             }
