@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.259  1999/02/10 09:19:41  srs
+ * added DBUG output for WLI
+ *
  * Revision 1.258  1999/02/10 08:44:22  cg
  * bug fixed in PrintModul(), added some useful comments.
  *
@@ -1771,9 +1774,11 @@ PrintNwith (node *arg_node, node *arg_info)
     DBUG_EXECUTE ("WLI",
                   fprintf (outfile,
                            "\n** WLI N_Nwith : "
-                           "(PARTS %d, REF %d(%d), CPLX %d, FOLDABLE %d, NO_CHANCE %d)\n",
+                           "(PARTS %d, REF %d(%d,%d), CPLX %d, FOLDABLE %d, NO_CHANCE "
+                           "%d)\n",
                            NWITH_PARTS (arg_node), NWITH_REFERENCED (arg_node),
-                           NWITH_REFERENCED_FOLD (arg_node), NWITH_COMPLEX (arg_node),
+                           NWITH_REFERENCED_FOLD (arg_node),
+                           NWITH_REFERENCES_FOLDED (arg_node), NWITH_COMPLEX (arg_node),
                            NWITH_FOLDABLE (arg_node), NWITH_NO_CHANCE (arg_node)););
 
     indent += 2;
