@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.5  1999/04/26 10:56:14  bs
+ * Some code cosmetics only.
+ *
  * Revision 2.4  1999/03/31 15:41:24  bs
  * braces added.
  *
@@ -251,7 +254,7 @@ CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
  * function:
  *   int check_genarray_full_part(node *ln)
  * description:
- *   check wether the generator of this genarray-WL specifies a full partition
+ *   check whether the generator of this genarray-WL specifies a full partition
  *
  *
  ******************************************************************************/
@@ -270,7 +273,7 @@ check_genarray_full_part (node *wln)
     /* check lower bound */
     lowern = ARRAY_AELEMS (lowern);
     while (result && lowern) {
-        if (0 != NUM_VAL (EXPRS_EXPR (lowern)))
+        if (NUM_VAL (EXPRS_EXPR (lowern)) != 0)
             result = 0;
         lowern = EXPRS_NEXT (lowern);
     }
@@ -318,42 +321,52 @@ CreateFullPartition (node *wln, node *arg_info)
 
     DBUG_ENTER ("CreateFullPartition");
 
-    /* only if we do not have a full partition yet. */
+    /*
+     * only if we do not have a full partition yet.
+     */
     do_create = NWITH_PARTS (wln) < 0;
 
-    /* this is the shape of the index vector (generator) */
+    /*
+     * this is the shape of the index vector (generator)
+     */
     gen_shape = IDS_SHAPE (NPART_VEC (NWITH_PART (wln)), 0);
 
-    /* modarray check */
+    /*
+     * modarray check
+     */
     if (do_create && WO_modarray == NWITH_TYPE (wln)) {
     }
-    /* genarray check
-       if the CEXPR of a genarray WL is not a scalar, we have to create
-       new parts where the CEXPR is a null-vector. Other than the
-       modarray case, we have to create this null-vector first. In general,
-       this can lead to worse code, because another WL is inserted and
-       it is not guaranteed that we can fold later. So we don't create
-       a full partition here.
-
-       But there is a special case: If the original generator is a
-       full partition itself, we do not have to create the null-vector
-       and so can create a partition with NWITH_PARTS == 1.
-       */
-    if (do_create && WO_genarray == NWITH_TYPE (wln)) {
-        if (!NGEN_STEP (NPART_GEN (NWITH_PART (wln))) && /* not grid */
-            check_genarray_full_part (wln)) {
+    /*
+     * genarray check:
+     *
+     * if the CEXPR of a genarray WL is not a scalar, we have to create
+     * new parts where the CEXPR is a null-vector. Other than the
+     * modarray case, we have to create this null-vector first. In general,
+     * this can lead to worse code, because another WL is inserted and
+     * it is not guaranteed that we can fold later. So we don't create
+     * a full partition here.
+     *
+     * But there is a special case: If the original generator is a
+     * full partition itself, we do not have to create the null-vector
+     * and so can create a partition with NWITH_PARTS == 1.
+     */
+    if (do_create && NWITH_TYPE (wln) == WO_genarray) {
+        if (!NGEN_STEP (NPART_GEN (NWITH_PART (wln))) /* not grid */
+            && check_genarray_full_part (wln)) {
             do_create = 0;
             NWITH_PARTS (wln) = 1;
         } else
-            do_create = 0 == TYPES_DIM (ID_TYPE (NCODE_CEXPR (NWITH_CODE (wln))));
+            do_create = (TYPES_DIM (ID_TYPE (NCODE_CEXPR (NWITH_CODE (wln)))) == 0);
     }
 
-    /* start creation*/
+    /*
+     * start creation
+     */
     if (do_create) {
         /* create lower array bound */
         array_null = NULL;
         ArrayST2ArrayInt (NULL, &array_null, gen_shape);
-        if (WO_genarray == NWITH_TYPE (wln)) {
+        if (NWITH_TYPE (wln) == WO_genarray) {
             /* create upper array bound */
             array_shape = NULL;
             ArrayST2ArrayInt (NWITHOP_SHAPE (NWITH_WITHOP (wln)), &array_shape,
@@ -366,7 +379,7 @@ CreateFullPartition (node *wln, node *arg_info)
         /* determine type of expr in the operator (result of body) */
         type = ID_TYPE (NCODE_CEXPR (NWITH_CODE (wln)));
         /* create code for all new parts */
-        if (WO_genarray == NWITH_TYPE (wln))
+        if (NWITH_TYPE (wln) == WO_genarray)
             coden = MakeNum (0);
         else { /* modarray */
             _ids = NPART_VEC (NWITH_PART (wln));
@@ -378,9 +391,8 @@ CreateFullPartition (node *wln, node *arg_info)
         varname = TmpVar ();
         _ids = MakeIds (varname, NULL, ST_regular); /* use memory from GetTmp() */
         IDS_VARDEC (_ids)
-          = CreateVardec (varname, type,
-                          &FUNDEF_VARDEC (INFO_WLI_FUNDEF (
-                            arg_info))); /* varname is duplicated here (own mem) */
+          = CreateVardec (varname, type, &FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info)));
+        /* varname is duplicated here (own mem) */
         idn = MakeId (StringCopy (varname), NULL, ST_regular); /* use new mem */
         ID_VARDEC (idn) = IDS_VARDEC (_ids);
         /* create new N_Ncode node  */
@@ -774,6 +786,7 @@ WLTNwith (node *arg_node, node *arg_info)
 
     /* inside the body of this WL we may find another WL. So we better
        save the old arg_info information. */
+
     tmpn = MakeInfo ();
     tmpn->mask[0] = INFO_DEF; /* DEF and USE information have */
     tmpn->mask[1] = INFO_USE; /* to be identical. */
@@ -929,15 +942,19 @@ WLTNgenerator (node *arg_node, node *arg_info)
                 break;
             }
 
-            if (*bound && N_id == NODE_TYPE ((*bound))) {
+            if (*bound && (NODE_TYPE ((*bound)) == N_id)) {
                 tmpn = MRD_GETDATA (ID_VARNO ((*bound)), INFO_VARNO);
                 if (IsConstantArray (tmpn, N_num)) {
-                    /* this bound references a constant array, which can be substituted.
+                    /* this bound references a constant array, which may be substituted.
                      */
                     INFO_USE[ID_VARNO ((*bound))]--;
                     FreeTree (*bound);
                     /* copy const array to *bound */
                     *bound = DupTree (tmpn, NULL);
+
+                    DBUG_ASSERT ((IsConstantArray ((*bound), N_num)),
+                                 "generator contains non constant vector!!");
+
                 } else { /* not all sons are constant */
                     if (i < 3)
                         check_bounds = 0;
@@ -959,7 +976,9 @@ WLTNgenerator (node *arg_node, node *arg_info)
                 lnum = NUM_VAL (EXPRS_EXPR (lbound));
                 unum = NUM_VAL (EXPRS_EXPR (ubound));
 
-                if (WO_modarray == NWITH_TYPE (wln) || WO_genarray == NWITH_TYPE (wln)) {
+                if ((NWITH_TYPE (wln) == WO_modarray)
+                    || (NWITH_TYPE (wln) == WO_genarray)) {
+
                     tnum = IDS_SHAPE (let_ids, dim);
                     if (lnum < 0) {
                         warning = 1;
@@ -1026,9 +1045,8 @@ WLTNgenerator (node *arg_node, node *arg_info)
                           = ID_TYPE (NCODE_CEXPR (NWITH_CODE (INFO_WLI_WL (arg_info))));
                         IDS_VARDEC (_ids)
                           = CreateVardec (varname, type,
-                                          &FUNDEF_VARDEC (INFO_WLI_FUNDEF (
-                                            arg_info))); /* varname is duplicated here
-                                                            (own mem) */
+                                          &FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info)));
+                        /* varname is duplicated here (own mem) */
 
                         /* create nullvec */
                         tmpn = MakeNullVec (TYPES_DIM (IDS_TYPE (let_ids))
