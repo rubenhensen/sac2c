@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.21  2002/05/31 17:19:55  dkr
+# icm2c_utils.o and NameTuples.o added for target BEtest
+#
 # Revision 3.20  2001/12/10 15:33:03  dkr
 # compile.tagged.o added
 #
@@ -62,6 +65,7 @@ MACS=icm.data icm_comment.c icm_trace.c
 
 BETEST_OBJS = icm2c_std.BEtest.o icm2c_wl.BEtest.o \
               icm2c_mt.BEtest.o icm2c_sched.BEtest.o \
+              icm2c_utils.o ../global/NameTuples.o \
               ../global/globals.o ../../lib/dbug.o
 
 SAC2C_OBJS = wltransform.o wlpragma_funs.o precompile.o compile.o compile.tagged.o \
