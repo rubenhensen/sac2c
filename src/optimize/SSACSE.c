@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2001/03/23 09:29:54  nmw
+ * SSACSEdo/while removed and copy propagation implemented
+ *
  * Revision 1.7  2001/03/22 21:13:23  dkr
  * include of tree.h eliminated
  *
@@ -476,6 +479,10 @@ SSACSEreturn (node *arg_node, node *arg_info)
  *
  *   in a matching case set the necessary SUBST links to the existing variables
  *   and remove this let.
+ *
+ *   if right side is a sipmple identifier (so the let is a copy assignment) the
+ *   left side identifier is subsituted be the right side identifier.
+ *
  ******************************************************************************/
 node *
 SSACSElet (node *arg_node, node *arg_info)
@@ -495,7 +502,7 @@ SSACSElet (node *arg_node, node *arg_info)
     match = FindCSE (INFO_SSACSE_CSE (arg_info), arg_node);
 
     /*
-     * found matching common subexpression?
+     * found matching common subexpression or copy assignment
      * if let is NO phicopytarget
      * and let is NO assignment to some UNIQUE variable
      * do the necessary substitution.
@@ -512,6 +519,21 @@ SSACSElet (node *arg_node, node *arg_info)
 
         /* remove assignment */
         INFO_SSACSE_REMASSIGN (arg_info) = TRUE;
+
+    } else if ((NODE_TYPE (LET_EXPR (arg_node)) == N_id)
+               && (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == PHIT_NONE)
+               && (ForbiddenSubstitution (LET_IDS (arg_node)) == FALSE)) {
+        /* set subst attributes for results */
+        LET_IDS (arg_node)
+          = SetSubstAttributes (LET_IDS (arg_node), ID_IDS (LET_EXPR (arg_node)));
+
+        DBUG_PRINT ("SSACSE",
+                    ("copy assignment eliminated in line %d", NODE_LINE (arg_node)));
+        cse_expr++;
+
+        /* remove copy assignment */
+        INFO_SSACSE_REMASSIGN (arg_info) = TRUE;
+
     } else {
         /* new expression found */
         DBUG_PRINT ("SSACSE", ("add new expression to cselist"));
@@ -655,45 +677,6 @@ SSACSENcode (node *arg_node, node *arg_info)
     if (NCODE_NEXT (arg_node) != NULL) {
         NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SSACSEwhile(node *arg_node, node *arg_info)
- *
- * description:
- *   this function must never be called in ssaform.
- *
- *
- ******************************************************************************/
-node *
-SSACSEwhile (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SSACSEwhile");
-
-    DBUG_ASSERT ((FALSE), "there must not be any while-statement in ssa-form!");
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SSACSEdo(node *arg_node, node *arg_info)
- *
- * description:
- *   this functions must never be called in ssaform.
- *
- ******************************************************************************/
-node *
-SSACSEdo (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SSACSEdo");
-
-    DBUG_ASSERT ((FALSE), "there must not be any do-statement in ssa-form!");
 
     DBUG_RETURN (arg_node);
 }
