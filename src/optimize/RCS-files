@@ -44,3 +44,4 @@ optimize.h
 rmcasts.c
 rmcasts.h
 DistributiveLaw.c
+DistributiveLaw.h
