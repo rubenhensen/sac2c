@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.45  2000/05/29 14:30:18  dkr
+ * minor error in comment of N_Ncode corrected
+ *
  * Revision 1.44  2000/05/26 11:11:12  jhs
  * Added INFO_COMP_ACTUALATTRIB
  *
@@ -2954,7 +2957,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***
  ***    node*      CBLOCK    (O) (N_block)
  ***    node*      CEXPR         ("N_expr")
- ***    node*      NEXT      (O) (N_exprs)
+ ***    node*      NEXT      (O) (N_Ncode)
  ***
  ***  permanent attributes:
  ***
