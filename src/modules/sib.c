@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/10/05 16:05:39  cg
+ * Revision 1.4  1995/10/12 13:57:03  cg
+ * now imported items cannot be exported again (->Error message)
+ *
+ * Revision 1.3  1995/10/05  16:05:39  cg
  * implicit type resolution completely renewed.
  * and afterwards extracted to new file implicittype.c
  *
@@ -310,6 +313,11 @@ HandleImplicitTypes (node *declarations, node *implementations)
                         TYPEDEF_NAME (tmp)));
         }
 
+        if (TYPEDEF_STATUS (tdef) == ST_imported) {
+            ERROR2 (1, ("%s :ERROR: Implementation of implicit type %s not own", filename,
+                        TYPEDEF_NAME (tmp)));
+        }
+
         fprintf (sibfile, "typedef %s ", Type2String (TYPEDEF_TYPE (tdef), 0));
         fprintf (sibfile, "%s;\n", TYPEDEF_NAME (tdef));
 
@@ -330,7 +338,7 @@ HandleImplicitTypes (node *declarations, node *implementations)
  *  global vars   : ---
  *  internal funs : SearchType, CheckExplicitType
  *  external funs : ---
- *  macros        : ERROR2
+ *  macros        : ERROR2, WARN1
  *
  *  remarks       :
  *
@@ -350,7 +358,10 @@ HandleExplicitTypes (node *declarations, node *implementations)
             WARN1 (("%s :WARNING: implementation of explicit type %s missing", filename,
                     TYPEDEF_NAME (tmp)));
         } else {
-            if (CheckExplicitType (tmp, def) == 0) {
+            if (TYPEDEF_STATUS (def) == ST_imported) {
+                ERROR2 (1, ("%s :ERROR: implementation of explicit type %s not own",
+                            filename, TYPEDEF_NAME (tmp)));
+            } else if (CheckExplicitType (tmp, def) == 0) {
                 ERROR2 (1, ("%s :ERROR: implementation of explicit type %s different "
                             "from declaration",
                             filename, TYPEDEF_NAME (tmp)));
