@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.18  2000/07/04 14:35:21  jhs
+ * Added CopyDFMfoldmask.
+ *
  * Revision 1.17  2000/06/23 15:31:54  nmw
  * N_cwrapper node added
  *
@@ -369,6 +372,26 @@ MakeDFMfoldmask (char *name, node *foldop, DFMfoldmask_t *next)
     DFMFM_NAME (tmp) = name;
     DFMFM_FOLDOP (tmp) = foldop;
     DFMFM_NEXT (tmp) = next;
+
+    DBUG_RETURN (tmp);
+}
+
+DFMfoldmask_t *
+CopyDFMfoldmask (DFMfoldmask_t *mask)
+{
+    DFMfoldmask_t *tmp;
+
+    DBUG_ENTER ("CopyDFMfoldmask");
+
+    if (mask != NULL) {
+        ALLOCATE (tmp, DFMfoldmask_t);
+
+        DFMFM_NAME (tmp) = DFMFM_NAME (mask);
+        DFMFM_FOLDOP (tmp) = DFMFM_FOLDOP (mask);
+        DFMFM_NEXT (tmp) = CopyDFMfoldmask (DFMFM_NEXT (mask));
+    } else {
+        tmp = NULL;
+    }
 
     DBUG_RETURN (tmp);
 }

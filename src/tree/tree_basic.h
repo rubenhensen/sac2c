@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.66  2000/07/04 14:35:21  jhs
+ * Added CopyDFMfoldmask.
+ *
  * Revision 1.65  2000/06/30 14:27:46  mab
  * added NCODE_APT_DUMMY_CODE
  *
@@ -496,6 +499,7 @@ extern access_t *MakeAccess (node *array, node *iv, accessclass_t class, shpseg 
  ***/
 
 extern DFMfoldmask_t *MakeDFMfoldmask (char *name, node *foldop, DFMfoldmask_t *next);
+extern DFMfoldmask_t *CopyDFMfoldmask (DFMfoldmask_t *mask);
 
 #define DFMFM_NAME(n) (n->name)
 #define DFMFM_FOLDOP(n) (n->foldop)
