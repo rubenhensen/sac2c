@@ -1,9 +1,9 @@
 /*
  *
  * $Log$
- * Revision 3.9  2001/02/06 01:47:18  dkr
- * fixed a bug in RCwith():
- * INFO_RC_ONLYNAIVE( arg_info) added
+ * Revision 3.10  2001/02/06 15:19:35  dkr
+ * fixed a bug in RCNwith() and RCNwith2():
+ * works correctly now even with INFO_RC_ONLYNAIVE set :-)
  *
  * Revision 3.8  2001/02/02 09:58:23  dkr
  * superfluous include of compile.h removed
@@ -1226,17 +1226,6 @@ RCloop (node *arg_node, node *arg_info)
     RestoreRC (RC_NAIVE, naive_ref_dump, arg_info);
     FREE (ref_dump);
     FREE (naive_ref_dump);
-#if 0
-  if (NODE_TYPE( arg_node) == N_while) {
-    DBUG_PRINT( "RCi", ("N_while cond"));
-    WHILE_COND( arg_node) = Trav( WHILE_COND( arg_node), arg_info);
-  }
-#endif
-
-    /* traverse termination condition */
-#if 0
-  DO_OR_WHILE_COND(arg_node) = Trav(DO_OR_WHILE_COND(arg_node), arg_info);
-#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -1281,20 +1270,30 @@ RCprf (node *arg_node, node *arg_info)
  *   Traverses the args with INFO_RC_PRF( arg_info) pointing to the N_icm!
  *   This is done for RCO in RCid().
  *
- * Note:
- *   The arguments of a USE_GENVAR_OFFSET-icm are not traversed.
- *
  ******************************************************************************/
 
 node *
 RCicm (node *arg_node, node *arg_info)
 {
+    char *name;
+
     DBUG_ENTER ("RCicm");
 
-    if (strstr (ICM_NAME (arg_node), "VECT2OFFSET") != NULL) {
+    name = ICM_NAME (arg_node);
+
+    if (strstr (name, "VECT2OFFSET") != NULL) {
+        /*
+         * VECT2OFFSET decrements the RC of its array argument
+         *  -> no RCO!!
+         *  -> set INFO_RC_PRF to NULL
+         */
         INFO_RC_PRF (arg_info) = NULL;
         ICM_ARGS (arg_node) = Trav (ICM_ARGS (arg_node), arg_info);
-    } else if (strstr (ICM_NAME (arg_node), "USE_GENVAR_OFFSET") != NULL) {
+    } else if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
+        /*
+         * USE_GENVAR_OFFSET does no reference counting
+         *  -> do not traverse the arguments
+         */
         INFO_RC_PRF (arg_info) = NULL;
     } else {
         INFO_RC_PRF (arg_info) = arg_node;
@@ -1758,6 +1757,8 @@ RCNwith (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("RCNwith");
 
+    DBUG_PRINT ("RC", ("\nEntering: count references in with-loop."));
+
     /*
      * insert current WL into 'INFO_RC_WITH( arg_info)' (at head of chain).
      */
@@ -1771,11 +1772,14 @@ RCNwith (node *arg_node, node *arg_info)
     ref_dump = StoreAndInitRC (RC_REAL, INFO_RC_VARNO (arg_info), 0, arg_info);
     naive_ref_dump = StoreAndInitRC (RC_NAIVE, INFO_RC_VARNO (arg_info), 0, arg_info);
 
+    DBUG_PRINT ("RC", ("Init RC with 1 for NWITH_CODE: "));
+    DBUG_PRINT ("RC", ("  /* in-vars */"));
     vardec = DFMGetMaskEntryDeclSet (NWITH_IN_MASK (arg_node));
     while (vardec != NULL) {
         if (!INFO_RC_ONLYNAIVE (arg_info)) {
             if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
                 L_VARDEC_OR_ARG_REFCNT (vardec, 1);
+                DBUG_PRINT ("RC", ("  %s", VARDEC_OR_ARG_NAME (vardec)));
             }
         }
         if (MUST_NAIVEREFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
@@ -1784,10 +1788,12 @@ RCNwith (node *arg_node, node *arg_info)
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
 
+    DBUG_PRINT ("RC", ("  /* index-vector */"));
     vardec = IDS_VARDEC (NWITH_VEC (arg_node));
     if (!INFO_RC_ONLYNAIVE (arg_info)) {
         if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
             L_VARDEC_OR_ARG_REFCNT (vardec, 1);
+            DBUG_PRINT ("RC", ("  %s", VARDEC_OR_ARG_NAME (vardec)));
         }
     }
     if (MUST_NAIVEREFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
@@ -1816,10 +1822,8 @@ RCNwith (node *arg_node, node *arg_info)
      *   it is set correctly!
      */
 
-    DBUG_PRINT ("RC", ("Entering: count references in with-loop."));
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-    DBUG_PRINT ("RC", ("Leaving: count references in with-loop."));
 
     /*
      * count references in with-loop
@@ -1873,10 +1877,15 @@ RCNwith (node *arg_node, node *arg_info)
         neutral_vardec = NULL;
     }
 
-    if (NWITH_DEC_RC_IDS (arg_node) != NULL) {
-        NWITH_DEC_RC_IDS (arg_node) = FreeAllIds (NWITH_DEC_RC_IDS (arg_node));
+    if (!INFO_RC_ONLYNAIVE (arg_info)) {
+        if (NWITH_DEC_RC_IDS (arg_node) != NULL) {
+            NWITH_DEC_RC_IDS (arg_node) = FreeAllIds (NWITH_DEC_RC_IDS (arg_node));
+        }
     }
     vardec = DFMGetMaskEntryDeclSet (NWITH_IN_MASK (arg_node));
+    if (!INFO_RC_ONLYNAIVE (arg_info)) {
+        DBUG_PRINT ("RC", ("NWITH_DEC_RC_IDS:"));
+    }
     while (vardec != NULL) {
         if (!INFO_RC_ONLYNAIVE (arg_info)) {
             if ((MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec)))
@@ -1886,6 +1895,7 @@ RCNwith (node *arg_node, node *arg_info)
                      * increment RC of non-withop-params
                      */
                     L_VARDEC_OR_ARG_REFCNT (vardec, VARDEC_OR_ARG_REFCNT (vardec) + 1);
+                    DBUG_PRINT ("RC", ("  %s", VARDEC_OR_ARG_NAME (vardec)));
 
                     new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
                                        ST_regular);
@@ -1920,6 +1930,8 @@ RCNwith (node *arg_node, node *arg_info)
      */
     EXPRS_EXPR (INFO_RC_WITH (arg_info)) = NULL;
     INFO_RC_WITH (arg_info) = FreeNode (INFO_RC_WITH (arg_info));
+
+    DBUG_PRINT ("RC", ("\nLeaving: count references in with-loop."));
 
     DBUG_RETURN (arg_node);
 }
@@ -2015,6 +2027,7 @@ RCNcode (node *arg_node, node *arg_info)
      */
 
     if (!INFO_RC_ONLYNAIVE (arg_info)) {
+        DBUG_PRINT ("RC", ("NCODE_INC_RC_IDS:"));
         if (NCODE_INC_RC_IDS (arg_node) != NULL) {
             NCODE_INC_RC_IDS (arg_node) = FreeAllIds (NCODE_INC_RC_IDS (arg_node));
         }
@@ -2028,6 +2041,8 @@ RCNcode (node *arg_node, node *arg_info)
                                       = VARDEC_OR_ARG_REFCNT (vardec) - 1;
                                     IDS_NAIVE_REFCNT (new_ids)
                                       = VARDEC_OR_ARG_NAIVE_REFCNT (vardec) - 1;
+                                    DBUG_PRINT ("RC",
+                                                ("  %s", VARDEC_OR_ARG_NAME (vardec)));
 
                                     if (NCODE_INC_RC_IDS (arg_node) == NULL) {
                                         NCODE_INC_RC_IDS (arg_node) = new_ids;
@@ -2041,7 +2056,6 @@ RCNcode (node *arg_node, node *arg_info)
     /*
      * count the references in next code
      */
-
     if (NCODE_NEXT (arg_node) != NULL) {
         NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
     }
@@ -2222,6 +2236,8 @@ RCNwith2 (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("RCNwith2");
 
+    DBUG_PRINT ("RC", ("\nEntering: count references in with-loop."));
+
     /*
      * insert current WL into 'INFO_RC_WITH( arg_info)' (at head of chain).
      */
@@ -2235,11 +2251,14 @@ RCNwith2 (node *arg_node, node *arg_info)
     ref_dump = StoreAndInitRC (RC_REAL, INFO_RC_VARNO (arg_info), 0, arg_info);
     naive_ref_dump = StoreAndInitRC (RC_NAIVE, INFO_RC_VARNO (arg_info), 0, arg_info);
 
+    DBUG_PRINT ("RC", ("Init RC with 1: "));
+    DBUG_PRINT ("RC", ("  /* in-vars */"));
     vardec = DFMGetMaskEntryDeclSet (NWITH2_IN_MASK (arg_node));
     while (vardec != NULL) {
         if (!INFO_RC_ONLYNAIVE (arg_info)) {
             if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
                 L_VARDEC_OR_ARG_REFCNT (vardec, 1);
+                DBUG_PRINT ("RC", ("  %s", VARDEC_OR_ARG_NAME (vardec)));
             }
         }
         if (MUST_NAIVEREFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
@@ -2248,10 +2267,12 @@ RCNwith2 (node *arg_node, node *arg_info)
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
 
+    DBUG_PRINT ("RC", ("  /* index-vector */"));
     vardec = IDS_VARDEC (NWITH2_VEC (arg_node));
     if (!INFO_RC_ONLYNAIVE (arg_info)) {
         if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
             L_VARDEC_OR_ARG_REFCNT (vardec, 1);
+            DBUG_PRINT ("RC", ("  %s", VARDEC_OR_ARG_NAME (vardec)));
         }
     }
     if (MUST_NAIVEREFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
@@ -2280,14 +2301,12 @@ RCNwith2 (node *arg_node, node *arg_info)
      *   it is set correctly!
      */
 
-    DBUG_PRINT ("RC", ("Entering: count references in with-loop."));
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
 
     if (NWITH2_CODE (arg_node) != NULL) {
         NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
     }
-    DBUG_PRINT ("RC", ("Leaving: count references in with-loop."));
 
     /*
      * count references in with-loop
@@ -2341,10 +2360,15 @@ RCNwith2 (node *arg_node, node *arg_info)
         neutral_vardec = NULL;
     }
 
-    if (NWITH2_DEC_RC_IDS (arg_node) != NULL) {
-        NWITH2_DEC_RC_IDS (arg_node) = FreeAllIds (NWITH2_DEC_RC_IDS (arg_node));
+    if (!INFO_RC_ONLYNAIVE (arg_info)) {
+        if (NWITH2_DEC_RC_IDS (arg_node) != NULL) {
+            NWITH2_DEC_RC_IDS (arg_node) = FreeAllIds (NWITH2_DEC_RC_IDS (arg_node));
+        }
     }
     vardec = DFMGetMaskEntryDeclSet (NWITH2_IN_MASK (arg_node));
+    if (!INFO_RC_ONLYNAIVE (arg_info)) {
+        DBUG_PRINT ("RC", ("NWITH2_DEC_RC_IDS:"));
+    }
     while (vardec != NULL) {
         if (!INFO_RC_ONLYNAIVE (arg_info)) {
             if ((MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec)))
@@ -2354,6 +2378,7 @@ RCNwith2 (node *arg_node, node *arg_info)
                      * increment RC of non-withop-params
                      */
                     L_VARDEC_OR_ARG_REFCNT (vardec, VARDEC_OR_ARG_REFCNT (vardec) + 1);
+                    DBUG_PRINT ("RC", (" %s", VARDEC_OR_ARG_NAME (vardec)));
 
                     new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
                                        ST_regular);
@@ -2369,6 +2394,7 @@ RCNwith2 (node *arg_node, node *arg_info)
                     last_ids = new_ids;
                 }
             }
+            DBUG_PRINT ("RC", ("\n"));
         }
 
         if ((MUST_NAIVEREFCOUNT (VARDEC_OR_ARG_TYPE (vardec)))
@@ -2388,6 +2414,8 @@ RCNwith2 (node *arg_node, node *arg_info)
      */
     EXPRS_EXPR (INFO_RC_WITH (arg_info)) = NULL;
     INFO_RC_WITH (arg_info) = FreeNode (INFO_RC_WITH (arg_info));
+
+    DBUG_PRINT ("RC", ("\nLeaving: count references in with-loop."));
 
     DBUG_RETURN (arg_node);
 }
