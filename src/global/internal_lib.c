@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/05/15 15:53:08  nmw
+ * new ssawlX phases added to TmpVar
+ *
  * Revision 3.7  2001/04/26 15:51:44  dkr
  * rmvoidfun removed from TmpVar()
  *
@@ -527,6 +530,12 @@ TmpVar ()
         s = "lir";
     } else if (act_tab == lirmov_tab) {
         s = "lir";
+    } else if (act_tab == ssawlt_tab) {
+        s = "swlt";
+    } else if (act_tab == ssawli_tab) {
+        s = "swli";
+    } else if (act_tab == ssawlf_tab) {
+        s = "swlf";
     } else {
         s = "unknown";
     }
