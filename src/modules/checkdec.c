@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1999/01/19 16:20:47  cg
+ * removed bug in handling of file names;
+ * correct names of overloaded primitive functions including
+ * overloaded operators are now printed to the automatically
+ * generated declaration file.
+ *
  * Revision 1.14  1998/06/05 15:27:49  cg
  * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
  * Now, module name and symbol name are combined correctly by ':'.
@@ -94,7 +100,7 @@
  *
  */
 
-int
+static int
 CheckTypes (types *decl, types *impl)
 {
     int i, result = 1;
@@ -138,7 +144,7 @@ CheckTypes (types *decl, types *impl)
  *
  */
 
-void
+static void
 PrintDecTypes (types *type, char *modname)
 {
     DBUG_ENTER ("PrintDecTypes");
@@ -184,13 +190,14 @@ PrintDecTypes (types *type, char *modname)
 node *
 CheckDec (node *syntax_tree)
 {
-    char decfilename[MAX_FILE_NAME];
+    char decfilename[MAX_FILE_NAME], *old_filename;
     node *decl;
 
     DBUG_ENTER ("CheckDec");
 
     strcpy (decfilename, MODUL_NAME (syntax_tree));
     strcat (decfilename, ".dec");
+    old_filename = filename;
     filename = decfilename;
 
     decl = ImportOwnDeclaration (MODUL_NAME (syntax_tree), MODUL_FILETYPE (syntax_tree));
@@ -229,7 +236,7 @@ CheckDec (node *syntax_tree)
 
     MODUL_DECL (syntax_tree) = Trav (decl, syntax_tree);
 
-    filename = puresacfilename;
+    filename = old_filename;
 
     DBUG_RETURN (syntax_tree);
 }
@@ -678,6 +685,9 @@ WDECobjdef (node *arg_node, node *arg_info)
 node *
 WDECfundef (node *arg_node, node *arg_info)
 {
+    prf tmp_prf;
+    int fun_name_printed = 0;
+
     DBUG_ENTER ("WDECfundef");
 
     if (FUNDEF_STATUS (arg_node) == ST_regular) {
@@ -685,7 +695,23 @@ WDECfundef (node *arg_node, node *arg_info)
 
         PrintDecTypes (FUNDEF_TYPES (arg_node), (char *)arg_info);
 
-        fprintf (outfile, " %s(", FUNDEF_NAME (arg_node));
+        /*
+         * Here, we have to take care of overloaded primitive functions:
+         * '+' e.g. is stored as '_add'. However, '_add' is, of course, unknown
+         * when the declaration file is reloaded. So, we have to replace '_add'
+         * by '+'.
+         */
+        for (tmp_prf = F_toi; tmp_prf <= F_genarray; tmp_prf++) {
+            if (0 == strcmp (FUNDEF_NAME (arg_node), prf_name_str[tmp_prf])) {
+                fprintf (outfile, " %s(", prf_string[tmp_prf]);
+                fun_name_printed = 1;
+                break;
+            }
+        }
+
+        if (!fun_name_printed) {
+            fprintf (outfile, " %s(", FUNDEF_NAME (arg_node));
+        }
 
         if (FUNDEF_ARGS (arg_node) != NULL) {
             Trav (FUNDEF_ARGS (arg_node), arg_info);
