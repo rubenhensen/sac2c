@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.44  1999/02/02 18:47:14  dkr
+ * definition of type 'feature_t' changed, to fool cc
+ *
  * Revision 1.43  1999/01/19 20:32:10  srs
  * added references_folded to struct WL_INFO
  *
@@ -165,7 +168,11 @@ typedef char id; /* kept for compatibility reasons with old version only */
  * with-loop.
  */
 
-typedef unsigned int feature_t;
+typedef /* unsigned */ int feature_t;
+/*
+ * we better use 'int' here, to fool the cc compiler.
+ * (a cast to 'unsigned int' is not a l-value !!)
+ */
 
 #define FEATURE_NONE 0  /* no special features at all */
 #define FEATURE_WL 1    /* with-loop containing array accesses */
