@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.186  1998/06/06 18:30:35  dkr
+ * added SYNC_WITH_PTRS
+ *
  * Revision 1.185  1998/06/04 16:58:52  cg
  *  information about refcounted variables in the context of loops,
  * conditionals and the old with-loop are now stored in ids-chains
@@ -2526,19 +2529,18 @@ extern node *MakeInfo ();
  ***
  ***  permanent attributes:
  ***
- ***    ---
+ ***    DFMmask_t  IN
+ ***    DFMmask_t  OUT
+ ***    DFMmask_t  INOUT
+ ***    DFMmask_t  LOCAL
+ ***
+ ***    char*      LIFTED_FROM
+ ***    char*      FUNNAME
  ***
  ***  temporary attributes:
  ***
  ***    ids*       INOUT_IDS             (spmdinit -> compile -> )
  ***
- ***    DFMmask_t  IN                    (spmdinit -> spmd... -> compile -> )
- ***    DFMmask_t  OUT                   (spmdinit -> spmd... -> compile -> )
- ***    DFMmask_t  INOUT                 (spmdinit -> spmd... -> compile -> )
- ***    DFMmask_t  LOCAL                 (spmdinit -> spmd... -> )
- ***
- ***    char*      LIFTED_FROM           (spmdlift -> compile -> )
- ***    char*      FUNNAME               (spmdlift -> compile -> )
  ***    node*      ICM         (N_icm)   (compile -> print -> )
  ***
  ***  remarks:
@@ -2552,8 +2554,6 @@ extern node *MakeSpmd (node *region);
 
 #define SPMD_REGION(n) (n->node[0])
 
-#define SPMD_INOUT_IDS(n) ((ids *)(n->node[1]))
-
 #define SPMD_IN(n) ((DFMmask_t)n->dfmask[0])
 #define SPMD_INOUT(n) ((DFMmask_t)n->dfmask[1])
 #define SPMD_OUT(n) ((DFMmask_t)n->dfmask[2])
@@ -2561,7 +2561,9 @@ extern node *MakeSpmd (node *region);
 
 #define SPMD_LIFTED_FROM(n) ((char *)(n->node[3]))
 #define SPMD_FUNNAME(n) (n->info.id)
+
 #define SPMD_ICM(n) (n->node[2])
+#define SPMD_INOUT_IDS(n) ((ids *)(n->node[1]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2577,12 +2579,19 @@ extern node *MakeSpmd (node *region);
  ***    int        FIRST            (is the sync-region the first one
  ***                                 of the current SPMD-region?)
  ***
+ ***    DFMmask_t  IN
+ ***    DFMmask_t  OUT
+ ***    DFMmask_t  INOUT
+ ***    DFMmask_t  LOCAL
+ ***
  ***  temporary attributes:
  ***
- ***    DFMmask_t  IN                    (spmdinit -> spmd... -> compile -> )
- ***    DFMmask_t  OUT                   (spmdinit -> spmd... -> compile -> )
- ***    DFMmask_t  INOUT                 (spmdinit -> spmd... -> compile -> )
- ***    DFMmask_t  LOCAL                 (spmdinit -> spmd... -> compile -> )
+ ***    node*      WITH_PTRS   (N_exprs)   (syncinit -> syncopt -> compile ! )
+ ***
+ ***  remarks:
+ ***
+ ***    'WITH_PTRS' is a N_exprs-chain containing pointers to all with-loop
+ ***    assignments of this sync-region.
  ***
  ***/
 
@@ -2595,6 +2604,8 @@ extern node *MakeSync (node *region, int first);
 #define SYNC_INOUT(n) ((DFMmask_t)n->dfmask[1])
 #define SYNC_OUT(n) ((DFMmask_t)n->dfmask[2])
 #define SYNC_LOCAL(n) ((DFMmask_t)n->dfmask[3])
+
+#define SYNC_WITH_PTRS(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  1998/06/06 18:30:59  dkr
+ * added SYNC_WITH_PTRS
+ *
  * Revision 1.29  1998/06/03 15:00:20  cg
  * bugs fixed in lifting spmd function.
  * Now, a link back to the original function is stored for each spmd function.
@@ -16,12 +19,6 @@
  * new functions for retrieving variables from masks provided by
  * DataFlowMask.c utilized.
  *
- * Revision 1.25  1998/05/17 00:12:21  dkr
- * fixed some minor bugs
- *
- * Revision 1.24  1998/05/15 23:05:29  dkr
- * lifting of SPMD-fun deactivated ...
- *
  * Revision 1.23  1998/05/15 15:44:38  cg
  * minor bugs removed in the construction of the spmd-function
  *
@@ -31,9 +28,6 @@
  * Revision 1.21  1998/05/12 14:54:09  dkr
  * fixed a bug in SPMDLift...:
  *   in lifted regions the vardec-pointers of ids are now corrected, too.
- *
- * Revision 1.20  1998/05/12 12:37:00  dkr
- * removed SPMD-funs (temporary)
  *
  * Revision 1.19  1998/05/12 12:21:43  dkr
  * added SPMDLiftNwithid, SPMDLiftLet, SPMDLiftIds
@@ -46,25 +40,6 @@
  *
  * Revision 1.16  1998/05/02 17:46:27  dkr
  * added new attributes to N_spmd, N_sync
- *
- * Revision 1.15  1998/04/30 13:56:47  dkr
- * fixed a bug in SPMDLift...
- *
- * Revision 1.11  1998/04/26 21:54:21  dkr
- * fixed a bug in SPMDInitAssign
- *
- * Revision 1.10  1998/04/26 16:47:07  dkr
- * fixed a bug in SPMDAssign
- *
- * Revision 1.9  1998/04/24 18:03:29  dkr
- * changed comments
- *
- * Revision 1.8  1998/04/24 17:17:11  dkr
- * renamed Spmd...() to SPMD...()
- * fixed a bug in SPMDAssign
- *
- * Revision 1.7  1998/04/24 13:28:03  dkr
- * fixed a bug with LOCAL
  *
  * Revision 1.6  1998/04/24 12:16:11  dkr
  * added SPMD_LOCAL
@@ -310,24 +285,6 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
     /*
      * insert vardecs of SPMD_OUT/LOCAL-vars into body
      */
-#if 00
-    vardec = FUNDEF_VARDEC (fundef);
-    while (vardec != NULL) {
-        if (DFMTestMaskEntry (SPMD_OUT (arg_node), VARDEC_NAME (vardec))
-            || DFMTestMaskEntry (SPMD_LOCAL (arg_node), VARDEC_NAME (vardec))) {
-            new_vardec = DupNode (vardec);
-
-            if (BLOCK_VARDEC (body) == NULL) {
-                BLOCK_VARDEC (body) = new_vardec;
-            } else {
-                VARDEC_NEXT (last_vardec) = new_vardec;
-            }
-            last_vardec = new_vardec;
-        }
-
-        vardec = VARDEC_NEXT (vardec);
-    }
-#else  /* 0 */
     last_vardec = NULL;
     vardec = DFMGetMaskEntryDeclSet (SPMD_OUT (arg_node));
     while (vardec != NULL) {
@@ -357,43 +314,10 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
     BLOCK_VARDEC (body) = last_vardec;
-#endif /* 0 */
 
     /*
      * build formal parameters (SPMD_IN/INOUT).
      */
-#if 00
-    fargs = NULL;
-    FOREACH_VARDEC_AND_ARG (fundef, vardec,
-                            if (DFMTestMaskEntry (SPMD_IN (arg_node),
-                                                  VARDEC_NAME (vardec))
-                                || DFMTestMaskEntry (SPMD_INOUT (arg_node),
-                                                     VARDEC_NAME (vardec))) {
-                                if (NODE_TYPE (vardec) == N_arg) {
-                                    new_farg = DupNode (vardec);
-                                    ARG_REFCNT (new_farg) = GET_STD_REFCNT (ARG, vardec);
-                                } else {
-                                    new_farg
-                                      = MakeArg (StringCopy (VARDEC_NAME (vardec)),
-                                                 DuplicateTypes (VARDEC_TYPE (vardec), 1),
-                                                 VARDEC_STATUS (vardec),
-                                                 VARDEC_ATTRIB (vardec), NULL);
-                                    ARG_REFCNT (new_farg)
-                                      = GET_STD_REFCNT (VARDEC, vardec);
-                                }
-                                if (DFMTestMaskEntry (SPMD_IN (arg_node),
-                                                      VARDEC_NAME (vardec))) {
-                                    ARG_ATTRIB (new_farg) = ST_spmd_inout;
-                                }
-
-                                if (fargs == NULL) {
-                                    fargs = new_farg;
-                                } else {
-                                    ARG_NEXT (last_farg) = new_farg;
-                                }
-                                last_farg = new_farg;
-                            }) /* FOREACH_VARDEC_AND_ARG */
-#else                          /* 0 */
     fargs = NULL;
     vardec = DFMGetMaskEntryDeclSet (SPMD_IN (arg_node));
     while (vardec != NULL) {
@@ -424,61 +348,12 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
         fargs = new_farg;
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
-#endif                         /* 0 */
 
     /*
      * build return types, return exprs (use SPMD_OUT).
      */
     rettypes = NULL;
     retexprs = NULL;
-#if 00
-    FOREACH_VARDEC_AND_ARG (fundef, vardec,
-                            if (DFMTestMaskEntry (SPMD_OUT (arg_node),
-                                                  VARDEC_NAME (vardec))) {
-                                if (NODE_TYPE (vardec) == N_arg) {
-                                    new_rettype = DuplicateTypes (ARG_TYPE (vardec), 1);
-
-                                    new_retexpr
-                                      = MakeExprs (MakeId (StringCopy (ARG_NAME (vardec)),
-                                                           NULL, ARG_STATUS (vardec)),
-                                                   NULL);
-                                    ID_ATTRIB (EXPRS_EXPR (new_retexpr))
-                                      = ARG_ATTRIB (vardec);
-                                    ID_REFCNT (EXPRS_EXPR (new_retexpr))
-                                      = GET_ZERO_REFCNT (ARG, vardec);
-                                } else {
-                                    new_rettype
-                                      = DuplicateTypes (VARDEC_TYPE (vardec), 1);
-
-                                    new_retexpr
-                                      = MakeExprs (MakeId (StringCopy (
-                                                             VARDEC_NAME (vardec)),
-                                                           NULL, VARDEC_STATUS (vardec)),
-                                                   NULL);
-                                    ID_ATTRIB (EXPRS_EXPR (new_retexpr))
-                                      = VARDEC_ATTRIB (vardec);
-                                    ID_REFCNT (EXPRS_EXPR (new_retexpr))
-                                      = GET_ZERO_REFCNT (VARDEC, vardec);
-                                }
-
-                                /*
-                                 * This is only a dummy value for the vardec-pointer.
-                                 * After we have build the new fundef node, we must
-                                 * traverse it to correct the vardec-pointers of all id's.
-                                 */
-                                ID_VARDEC (EXPRS_EXPR (new_retexpr)) = NULL;
-
-                                if (rettypes == NULL) {
-                                    rettypes = new_rettype;
-                                    retexprs = new_retexpr;
-                                } else {
-                                    TYPES_NEXT (last_rettype) = new_rettype;
-                                    EXPRS_NEXT (last_retexpr) = new_retexpr;
-                                }
-                                last_rettype = new_rettype;
-                                last_retexpr = new_retexpr;
-                            }) /* FOREACH_VARDEC_AND_ARG */
-#else                          /* 0 */
     vardec = DFMGetMaskEntryDeclSet (SPMD_OUT (arg_node));
     while (vardec != NULL) {
         if (NODE_TYPE (vardec) == N_arg) {
@@ -513,8 +388,6 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
-
-#endif /* 0 */
 
     /*
      * CAUTION: FUNDEF_NAME is for the time being a part of FUNDEF_TYPES!!
@@ -551,7 +424,7 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
      *          because it must be traversed to correct the vardec-pointers of
      *          all id's and to generate new DFMasks!!
      */
-#if 1
+#if 01
     if (FUNDEF_NEXT (fundef) != NULL) {
         FUNDEF_NEXT (new_fundef) = FUNDEF_NEXT (fundef);
         FUNDEF_NEXT (fundef) = new_fundef;
@@ -774,6 +647,7 @@ node *
 SYNCInitAssign (node *arg_node, node *arg_info)
 {
     node *with, *sync_let, *sync;
+    ids *with_ids;
 
     DBUG_ENTER ("SYNCInitAssign");
 
@@ -783,6 +657,7 @@ SYNCInitAssign (node *arg_node, node *arg_info)
     if ((NODE_TYPE (sync_let) == N_let)
         && (NODE_TYPE (LET_EXPR (sync_let)) == N_Nwith2)) {
 
+        with_ids = LET_IDS (sync_let);
         with = LET_EXPR (sync_let);
 
         /*
@@ -797,11 +672,15 @@ SYNCInitAssign (node *arg_node, node *arg_info)
         /*
          * get IN/INOUT/OUT/LOCAL from the N_Nwith2 node.
          */
-
         SYNC_IN (sync) = DFMGenMaskCopy (NWITH2_IN (with));
         SYNC_INOUT (sync) = DFMGenMaskCopy (NWITH2_INOUT (with));
         SYNC_OUT (sync) = DFMGenMaskCopy (NWITH2_OUT (with));
         SYNC_LOCAL (sync) = DFMGenMaskCopy (NWITH2_LOCAL (with));
+
+        /*
+         * store pointer to with-loop assignment in SYNC_WITH_PTRS
+         */
+        SYNC_WITH_PTRS (sync) = MakeExprs (sync_let, NULL);
 
         /*
          * unset flag: next N_sync node is not the first one in SPMD-region
