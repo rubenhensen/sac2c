@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2004/11/24 17:44:26  mwe
+ * support for N_symbol added
+ *
  * Revision 3.36  2004/11/24 17:42:22  mwe
  * support for new nodes added
  *
@@ -221,6 +224,7 @@ extern node *DUPuse (node *arg_node, info *arg_info);
 extern node *DUPprovide (node *arg_node, info *arg_info);
 extern node *DUPlinklist (node *arg_node, info *arg_info);
 extern node *DUPnums (node *arg_node, info *arg_info);
+extern node *DUPsymbol (node *arg_node, info *arg_info);
 
 /* frontend with-loop */
 extern node *DUPwith (node *arg_node, info *arg_info);
