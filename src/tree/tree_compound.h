@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2002/03/07 16:42:03  sbs
+ * HasDotArgs added.
+ *
  * Revision 3.55  2002/03/01 02:35:14  dkr
  * type ARGTAB added
  *
@@ -1012,6 +1015,7 @@ extern node *AdjustAvisData (node *new_vardec, node *fundef);
 #define ARG_TDEF(n) (TYPES_TDEF (ARG_TYPE (n)))
 
 extern int CountArgs (node *args);
+extern int HasDotArgs (node *args);
 extern int CmpDomain (node *args1, node *args2);
 
 /*--------------------------------------------------------------------------*/

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2002/03/07 16:42:03  sbs
+ * HasDotArgs added.
+ *
  * Revision 3.54  2002/03/07 02:19:02  dkr
  * AdjustAvisData() modified: DBUG_ASSERT added
  *
@@ -2253,6 +2256,32 @@ CountArgs (node *args)
     }
 
     DBUG_RETURN (count);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int HasDotArgs( node *args)
+ *
+ * description:
+ *   Checks whether any T_dot type is contained in the given argument chain.
+ *
+ ******************************************************************************/
+
+int
+HasDotArgs (node *args)
+{
+    int flag = FALSE;
+
+    DBUG_ENTER ("HasDotArgs");
+
+    while (args != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_arg node found!");
+        flag = (flag || (ARG_BASETYPE (args) == T_dots));
+        args = ARG_NEXT (args);
+    }
+
+    DBUG_RETURN (flag);
 }
 
 /******************************************************************************
