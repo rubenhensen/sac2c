@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2004/02/20 08:22:18  mwe
+ * added FUNDECS argument to MakeModul
+ *
  * Revision 3.79  2004/02/06 14:19:33  mwe
  * replace usage of PHITARGET with primitive phi function
  *
@@ -543,7 +546,7 @@ CopyDFMfoldmask (DFMfoldmask_t *mask)
 
 node *
 MakeModul (char *name, file_type filetype, node *imports, node *types, node *objs,
-           node *funs)
+           node *funs, node *fundecs)
 {
     node *tmp;
 
@@ -557,6 +560,7 @@ MakeModul (char *name, file_type filetype, node *imports, node *types, node *obj
     MODUL_OBJS (tmp) = objs;
     MODUL_FUNS (tmp) = funs;
     MODUL_NAME (tmp) = name;
+    MODUL_FUNDECS (tmp) = fundecs;
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
