@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/03/28 14:53:26  dkr
+ * CHECK_NULL moved from tree_compound.h to internal_lib.h
+ *
  * Revision 3.6  2001/03/28 09:12:29  dkr
  * bug in MALLOC_INIT_VECT fixed
  *
@@ -50,7 +53,8 @@
  * malloc_align_step is now defined in globals.c.
  *
  * Revision 2.6  1999/05/14 09:25:13  jhs
- * Dbugged constvec annotations and their housekeeping in various compilation stages.
+ * Dbugged constvec annotations and their housekeeping in various
+ * compilation stages.
  *
  * Revision 2.5  1999/05/12 08:41:11  sbs
  * CopyIntVector and friends eliminated ; instead,
@@ -60,7 +64,8 @@
  * TRUE and FALSE added
  *
  * Revision 2.3  1999/03/15 13:53:25  bs
- * CopyIntArray renamed into CopyIntVector, CopyFloatVector and CopyDoubleVector added.
+ * CopyIntArray renamed into CopyIntVector, CopyFloatVector and
+ * CopyDoubleVector added.
  *
  * Revision 2.2  1999/02/24 20:23:04  bs
  * New function added: CopyIntArray
@@ -103,6 +108,8 @@ extern void ComputeMallocAlignStep (void);
 /*********************************
  * macro definitions
  *********************************/
+
+#define CHECK_NULL(a) ((NULL == a) ? "" : a)
 
 /*
  * swapping two pointers
@@ -148,11 +155,14 @@ extern void ComputeMallocAlignStep (void);
  * macros for handling vectors
  */
 
-/* caution: 'val' should occur in the macro implementation only once! */
-#define MALLOC_INIT_VECT(vect, dims, type, val)                                          \
+#define MALLOC_VECT(vect, dims, type)                                                    \
     if (vect == NULL) {                                                                  \
         (vect) = (type *)MALLOC ((dims) * sizeof (type));                                \
-    }                                                                                    \
+    }
+
+/* caution: 'val' should occur in the macro implementation only once! */
+#define MALLOC_INIT_VECT(vect, dims, type, val)                                          \
+    MALLOC_VECT (vect, dims, type);                                                      \
     INIT_VECT (vect, dims, type, val)
 
 /* caution: 'val' should occur in the macro implementation only once! */
@@ -168,7 +178,7 @@ extern void ComputeMallocAlignStep (void);
     {                                                                                    \
         int d;                                                                           \
         if ((old_vect) != NULL) {                                                        \
-            (new_vect) = (type *)MALLOC ((dims) * sizeof (type));                        \
+            MALLOC_VECT (new_vect, dims, type);                                          \
             for (d = 0; d < (dims); d++) {                                               \
                 (new_vect)[d] = (old_vect)[d];                                           \
             }                                                                            \

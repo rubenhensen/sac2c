@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2001/03/28 14:53:49  dkr
+ * CHECK_NULL moved from tree_compound.h to internal_lib.h
+ *
  * Revision 3.25  2001/03/27 15:40:17  nmw
  * Array2Vec as wrapper for different Array2<XYZ>Vec added
  *
@@ -112,8 +115,6 @@ specific implementation of a function should remain with the source code.
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
-#define CHECK_NULL(a) ((NULL == a) ? "" : a)
-
 /*
  * compares two module names (name maybe NULL)
  * result: 1 - equal, 0 - not equal
@@ -127,7 +128,16 @@ specific implementation of a function should remain with the source code.
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  Shpseg :
+ ***  SHAPE :
+ ***/
+
+#define SHAPES_SELEMS(s) (SHPSEG_ELEMS (SHAPES_SHPSEG (s)))
+#define SHAPES_SNEXT(s) (SHPSEG_NEXT (SHAPES_SHPSEG (s)))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  SHPSEG :
  ***/
 
 extern int GetShpsegLength (int dims, shpseg *shape);
@@ -141,7 +151,7 @@ extern node *Shpseg2Array (shpseg *shape, int dim);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  Types :
+ ***  TTYPES :
  ***/
 
 /*
@@ -1080,6 +1090,20 @@ extern node *MakeExprsNum (int num);
 
 extern int GetExprsLength (node *exprs);
 
+#define EXPRS_EXPRS1(n) (n)
+#define EXPRS_EXPRS2(n) EXPRS_NEXT (n)
+#define EXPRS_EXPRS3(n) EXPRS_NEXT (EXPRS_NEXT (n))
+#define EXPRS_EXPRS4(n) EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (n)))
+#define EXPRS_EXPRS5(n) EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (n))))
+#define EXPRS_EXPRS6(n) EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (n)))))
+
+#define EXPRS_EXPR1(n) EXPRS_EXPR (n)
+#define EXPRS_EXPR2(n) EXPRS_EXPR (EXPRS_EXPRS2 (n))
+#define EXPRS_EXPR3(n) EXPRS_EXPR (EXPRS_EXPRS3 (n))
+#define EXPRS_EXPR4(n) EXPRS_EXPR (EXPRS_EXPRS4 (n))
+#define EXPRS_EXPR5(n) EXPRS_EXPR (EXPRS_EXPRS5 (n))
+#define EXPRS_EXPR6(n) EXPRS_EXPR (EXPRS_EXPRS6 (n))
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1409,8 +1433,8 @@ extern node *MakeVinfoDollar (node *next);
  */
 
 #define PRF_EXPRS1(n) PRF_ARGS (n)
-#define PRF_EXPRS2(n) EXPRS_NEXT (PRF_ARGS (n))
-#define PRF_EXPRS3(n) EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (n)))
+#define PRF_EXPRS2(n) EXPRS_EXPRS2 (PRF_ARGS (n))
+#define PRF_EXPRS3(n) EXPRS_EXPRS3 (PRF_ARGS (n))
 
 #define PRF_ARG1(n) EXPRS_EXPR (PRF_EXPRS1 (n))
 #define PRF_ARG2(n) EXPRS_EXPR (PRF_EXPRS2 (n))
@@ -1440,8 +1464,8 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
  */
 
 #define AP_EXPRS1(n) AP_ARGS (n)
-#define AP_EXPRS2(n) EXPRS_NEXT (AP_ARGS (n))
-#define AP_EXPRS3(n) EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (n)))
+#define AP_EXPRS2(n) EXPRS_EXPRS2 (AP_ARGS (n))
+#define AP_EXPRS3(n) EXPRS_EXPRS3 (AP_ARGS (n))
 
 #define AP_ARG1(n) EXPRS_EXPR (AP_EXPRS1 (n))
 #define AP_ARG2(n) EXPRS_EXPR (AP_EXPRS2 (n))
@@ -1483,12 +1507,11 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
  */
 
 #define ICM_EXPRS1(n) ICM_ARGS (n)
-#define ICM_EXPRS2(n) EXPRS_NEXT (ICM_ARGS (n))
-#define ICM_EXPRS3(n) EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n)))
-#define ICM_EXPRS4(n) EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n))))
-#define ICM_EXPRS5(n) EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n)))))
-#define ICM_EXPRS6(n)                                                                    \
-    EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n))))))
+#define ICM_EXPRS2(n) EXPRS_EXPRS2 (ICM_ARGS (n))
+#define ICM_EXPRS3(n) EXPRS_EXPRS3 (ICM_ARGS (n))
+#define ICM_EXPRS4(n) EXPRS_EXPRS4 (ICM_ARGS (n))
+#define ICM_EXPRS5(n) EXPRS_EXPRS5 (ICM_ARGS (n))
+#define ICM_EXPRS6(n) EXPRS_EXPRS6 (ICM_ARGS (n))
 
 #define ICM_ARG1(n) EXPRS_EXPR (ICM_EXPRS1 (n))
 #define ICM_ARG2(n) EXPRS_EXPR (ICM_EXPRS2 (n))
@@ -1756,6 +1779,12 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 
 extern node *MakeWLsegX (int dims, node *contents, node *next);
 
+#define WLSEGX_IDX_GET_ADDR(n, field, dim)                                               \
+    ((NODE_TYPE (n) == N_WLseg) ? (void *)&(((int *)(WLSEG_##field (n)))[dim])           \
+                                : ((NODE_TYPE (n) == N_WLsegVar)                         \
+                                     ? (void *)&(((node **)(WLSEGVAR_##field (n)))[dim]) \
+                                     : NULL))
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1804,11 +1833,10 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
  ***  N_WLstride :  *and*  N_WLstrideVar :
  ***/
 
-#define WLSTRIDEX_GET_ADDR(node, field)                                                  \
-    ((NODE_TYPE (node) == N_WLstride)                                                    \
-       ? (void *)&(WLSTRIDE_##field (node))                                              \
-       : ((NODE_TYPE (node) == N_WLstrideVar) ? (void *)&(WLSTRIDEVAR_##field (node))    \
-                                              : NULL))
+#define WLSTRIDEX_GET_ADDR(n, field)                                                     \
+    ((NODE_TYPE (n) == N_WLstride)                                                       \
+       ? (void *)&(WLSTRIDE_##field (n))                                                 \
+       : ((NODE_TYPE (n) == N_WLstrideVar) ? (void *)&(WLSTRIDEVAR_##field (n)) : NULL))
 
 #define WLSTRIDEX_NOOP(n)                                                                \
     ((NODE_TYPE (n) == N_WLstride) ? WLSTRIDE_NOOP (n) : WLSTRIDEVAR_NOOP (n))
@@ -1846,11 +1874,10 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
 
 #define WLGRIDX_CBLOCK_INSTR(n) (BLOCK_INSTR (WLGRIDX_CBLOCK (n)))
 
-#define WLGRIDX_GET_ADDR(node, field)                                                    \
-    ((NODE_TYPE (node) == N_WLgrid)                                                      \
-       ? (void *)&(WLGRID_##field (node))                                                \
-       : ((NODE_TYPE (node) == N_WLgridVar) ? (void *)&(WLGRIDVAR_##field (node))        \
-                                            : NULL))
+#define WLGRIDX_GET_ADDR(n, field)                                                       \
+    ((NODE_TYPE (n) == N_WLgrid)                                                         \
+       ? (void *)&(WLGRID_##field (n))                                                   \
+       : ((NODE_TYPE (n) == N_WLgridVar) ? (void *)&(WLGRIDVAR_##field (n)) : NULL))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1859,15 +1886,15 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
  ***  N_WLstride :  *and*  N_WLstrideVar :
  ***/
 
-#define WLBLOCKSTR_GET_ADDR(node, field)                                                 \
-    ((NODE_TYPE (node) == N_WLstride)                                                    \
-       ? (void *)&(WLSTRIDE_##field (node))                                              \
-       : ((NODE_TYPE (node) == N_WLstrideVar)                                            \
-            ? (void *)&(WLSTRIDEVAR_##field (node))                                      \
-            : ((NODE_TYPE (node) == N_WLblock) ? (void *)&(WLBLOCK_##field (node))       \
-                                               : ((NODE_TYPE (node) == N_WLublock)       \
-                                                    ? (void *)&(WLUBLOCK_##field (node)) \
-                                                    : NULL))))
+#define WLBLOCKSTR_GET_ADDR(n, field)                                                    \
+    ((NODE_TYPE (n) == N_WLstride)                                                       \
+       ? (void *)&(WLSTRIDE_##field (n))                                                 \
+       : ((NODE_TYPE (n) == N_WLstrideVar)                                               \
+            ? (void *)&(WLSTRIDEVAR_##field (n))                                         \
+            : ((NODE_TYPE (n) == N_WLblock)                                              \
+                 ? (void *)&(WLBLOCK_##field (n))                                        \
+                 : ((NODE_TYPE (n) == N_WLublock) ? (void *)&(WLUBLOCK_##field (n))      \
+                                                  : NULL))))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1877,19 +1904,19 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
  ***  N_WLgrid :    *and*  N_WLgridVar :
  ***/
 
-#define WLNODE_GET_ADDR(node, field)                                                     \
-    ((NODE_TYPE (node) == N_WLstride)                                                    \
-       ? (void *)&(WLSTRIDE_##field (node))                                              \
-       : ((NODE_TYPE (node) == N_WLstrideVar)                                            \
-            ? (void *)&(WLSTRIDEVAR_##field (node))                                      \
-            : ((NODE_TYPE (node) == N_WLgrid)                                            \
-                 ? (void *)&(WLGRID_##field (node))                                      \
-                 : ((NODE_TYPE (node) == N_WLgridVar)                                    \
-                      ? (void *)&(WLGRIDVAR_##field (node))                              \
-                      : ((NODE_TYPE (node) == N_WLblock)                                 \
-                           ? (void *)&(WLBLOCK_##field (node))                           \
-                           : ((NODE_TYPE (node) == N_WLublock)                           \
-                                ? (void *)&(WLUBLOCK_##field (node))                     \
+#define WLNODE_GET_ADDR(n, field)                                                        \
+    ((NODE_TYPE (n) == N_WLstride)                                                       \
+       ? (void *)&(WLSTRIDE_##field (n))                                                 \
+       : ((NODE_TYPE (n) == N_WLstrideVar)                                               \
+            ? (void *)&(WLSTRIDEVAR_##field (n))                                         \
+            : ((NODE_TYPE (n) == N_WLgrid)                                               \
+                 ? (void *)&(WLGRID_##field (n))                                         \
+                 : ((NODE_TYPE (n) == N_WLgridVar)                                       \
+                      ? (void *)&(WLGRIDVAR_##field (n))                                 \
+                      : ((NODE_TYPE (n) == N_WLblock)                                    \
+                           ? (void *)&(WLBLOCK_##field (n))                              \
+                           : ((NODE_TYPE (n) == N_WLublock)                              \
+                                ? (void *)&(WLUBLOCK_##field (n))                        \
                                 : NULL))))))
 
 #define WLNODE_NOOP(n)                                                                   \
@@ -1908,6 +1935,7 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
 
 extern void NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt,
                                     void *node_or_int);
+extern void NodeOrInt_SetNameOrVal (char *name, int val, nodetype nt, void *node_or_int);
 
 extern node *NameOrVal_MakeNode (char *name, int val, void *node_or_int);
 extern node *NodeOrInt_MakeNode (nodetype nt, void *node_or_int);
