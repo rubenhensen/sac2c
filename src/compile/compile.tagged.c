@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2002/07/12 22:09:15  dkr
+ * bug in COMPPrfConvertScalar() fixed
+ *
  * Revision 1.24  2002/07/12 20:45:03  dkr
  * fixed a bug in compilation of N_ap nodes
  *
@@ -3458,21 +3461,25 @@ COMPPrfConvertScalar (node *arg_node, node *arg_info, node **set_shape_icm)
     let_ids = INFO_COMP_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_... is no N_id!");
-
     (*set_shape_icm)
       = MakeIcm1 ("ND_SET__SHAPE",
                   MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
                                 FALSE, MakeExprs (MakeNum (0), NULL)));
 
-    ret_node = MakeAssignIcm1 ("ND_COPY",
-                               MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                             FALSE, TRUE, FALSE,
-                                             MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
-                                                           FALSE, TRUE, FALSE,
-                                                           MakeExprs (MakeId_Copy (NULL),
-                                                                      NULL))),
-                               NULL);
+    if (NODE_TYPE (arg) == N_id) {
+        ret_node
+          = MakeAssignIcm1 ("ND_COPY",
+                            MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
+                                          TRUE, FALSE,
+                                          MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
+                                                        FALSE, TRUE, FALSE,
+                                                        MakeExprs (MakeId_Copy (NULL),
+                                                                   NULL))),
+                            NULL);
+    } else {
+        ret_node = MakeAssignIcm2 ("ND_CREATE__SCALAR__DATA", DupIds_Id_NT (let_ids),
+                                   DupNode (arg_node), NULL);
+    }
 
     DBUG_RETURN (ret_node);
 }
