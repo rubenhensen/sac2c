@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2002/10/25 16:01:55  mwe
+ * option enforce_ieee added
+ * rename DLAW to DL
+ *
  * Revision 3.31  2002/10/24 13:12:32  ktr
  * level of WLS aggressiveness now controlled by flag -wls_aggressive
  *
@@ -333,6 +337,10 @@ usage ()
     PRINT_BREAK_SPEC (PH_precompile, "prec3", "stop after third traversal");
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
+            "\t -enforceIEEE\ttreat floats as defined in IEEE-754 standard\n"
+            "\t\t\tdisable some algebraical optimizations on float numbers\n"
+            "\t\t\tdisable tiling and segmentation on fold-WithLoops with float numbers\n"
+            "\t\t\tcurrently implemented for: \t- AL (associative law)\n"
             "\t -ssa\t\tuse optimizations based on ssa-form.\n"
             "\t -no <opt>\tdisable optimization technique <opt>\n"
             "\t -do <opt>\tenable optimization technique <opt>\n"
@@ -351,8 +359,8 @@ usage ()
             "\t\tWLT \twith-loop transformation\n"
             "\t\tWLF \twith-loop folding\n"
             "\t\tWLS \twith-loop scalarization\n"
-            "\t\tAL  \tassociative law\n"
-            "\t\tDLAW\tapplication of the distributive law\n"
+            "\t\tAL  \tapplication of associative law\n"
+            "\t\tDL  \tapplication of distributive law\n"
             "\t\tIVE \tindex vector elimination\n"
             "\t\tAE  \tarray elimination\n"
             "\t\tRCO \trefcount optimization\n"

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2002/10/25 16:00:51  mwe
+ * option enforce_ieee added
+ * rename DLAW to DL
+ *
  * Revision 3.30  2002/10/24 13:12:32  ktr
  * level of WLS aggressiveness now controlled by flag -wls_aggressive
  *
@@ -479,8 +483,8 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("ae", optimize |= OPT_AE);
         ARG_CHOICE ("AE", optimize |= OPT_AE);
 
-        ARG_CHOICE ("dlaw", optimize |= OPT_DLAW);
-        ARG_CHOICE ("DLAW", optimize |= OPT_DLAW);
+        ARG_CHOICE ("dl", optimize |= OPT_DL);
+        ARG_CHOICE ("DL", optimize |= OPT_DL);
 
         ARG_CHOICE ("rco", optimize |= OPT_RCO);
         ARG_CHOICE ("RCO", optimize |= OPT_RCO);
@@ -744,8 +748,8 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("ae", optimize &= ~OPT_AE);
         ARG_CHOICE ("AE", optimize &= ~OPT_AE);
 
-        ARG_CHOICE ("dlaw", optimize &= ~OPT_DLAW);
-        ARG_CHOICE ("DLAW", optimize &= ~OPT_DLAW);
+        ARG_CHOICE ("dl", optimize &= ~OPT_DL);
+        ARG_CHOICE ("DL", optimize &= ~OPT_DL);
 
         ARG_CHOICE ("rco", optimize &= ~OPT_RCO);
         ARG_CHOICE ("RCO", optimize &= ~OPT_RCO);
@@ -795,6 +799,8 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_FLAG ("ssa", use_ssaform = TRUE);
 
     ARGS_FLAG ("wls_aggressive", wls_aggressive = TRUE);
+
+    ARGS_FLAG ("enforceIEEE", enforce_ieee = TRUE);
 
     ARGS_OPTION ("o", {
         strcpy (outfilename, ARG);
