@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.81  1999/01/14 13:38:47  sbs
+ * flattening of first arg of genarray suppressed.
+ *
  * Revision 1.80  1998/11/09 13:58:11  sbs
  * flatten applied to arithmetic funs as well -> needed
  * for defining them in libs!!
@@ -1078,7 +1081,7 @@ FltnPrf (node *arg_node, node *arg_info)
     if (PRF_ARGS (arg_node) != NULL) {
         old_ctxt = INFO_FLTN_CONTEXT (arg_info);
         if ((PRF_PRF (arg_node) == F_take) || (PRF_PRF (arg_node) == F_drop)
-            || (PRF_PRF (arg_node) == F_reshape))
+            || (PRF_PRF (arg_node) == F_reshape) || (PRF_PRF (arg_node) == F_genarray))
             INFO_FLTN_CONTEXT (arg_info) = CT_normal;
         else
             INFO_FLTN_CONTEXT (arg_info) = CT_ap;
