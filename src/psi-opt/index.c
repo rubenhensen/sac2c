@@ -1,6 +1,10 @@
 
 /*
  * $Log$
+ * Revision 1.27  1998/11/08 15:08:45  dkr
+ * IdxNcode:
+ *   An assert added to assure non-empty NCODE_CBLOCK fields
+ *
  * Revision 1.26  1998/08/21 12:40:41  sbs
  * some dummy assignments in some default-cases inserted
  * for convincing the C compiler that these vars indeed
@@ -1461,6 +1465,8 @@ IdxNcode (node *arg_node, node *arg_info)
             }
 
             ASSIGN_NEXT (new_assign) = BLOCK_INSTR (NCODE_CBLOCK (arg_node));
+            DBUG_ASSERT ((NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (arg_node))) != N_empty),
+                         "N_empty node in block found");
             BLOCK_INSTR (NCODE_CBLOCK (arg_node)) = new_assign;
         }
 
