@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.167  2004/10/05 09:47:21  sah
+ * changed some NEW_AST defines
+ *
  * Revision 3.166  2004/10/04 16:32:02  skt
  * some adaption for printing ex/st/mt cells without identifiers
  *
@@ -412,7 +415,6 @@ static node *last_assignment_icm = NULL;
  * First, we generate the external declarations for all functions that
  * expand ICMs to C.
  */
-#ifndef NEW_AST
 
 #define ICM_ALL
 #define ICM_DEF(prf, trf) extern void Print##prf (node *exprs, info *arg_info);
@@ -441,8 +443,6 @@ static node *last_assignment_icm = NULL;
 #undef ICM_VARINT
 #undef ICM_END
 #undef ICM_ALL
-
-#endif /* NEW_AST */
 
 char *prf_symbol[] = {
 #define PRF_IF(a, b, c, d, e, f, g, h) d
@@ -1794,10 +1794,12 @@ PrintFundef (node *arg_node, info *arg_info)
          * print function definition
          */
 
+#ifndef NEW_AST
         /* print some extra information during a section of mtmode 3 */
         if (executionmodes_available == TRUE) {
             fprintf (outfile, "%s:", MUTHDecodeExecmode (FUNDEF_EXECMODE (arg_node)));
         }
+#endif /* NEW_AST */
 
         if (FUNDEF_STATUS (arg_node) == ST_zombiefun) {
             if (compiler_phase < PH_genccode) {
@@ -3102,8 +3104,6 @@ PrintIcm (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("PRINT", ("icm-node %s\n", ICM_NAME (arg_node)));
 
-#ifndef NEW_AST
-
     if (compiler_phase == PH_genccode) {
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
@@ -3156,8 +3156,6 @@ PrintIcm (node *arg_node, info *arg_info)
             indent += ICM_INDENT_AFTER (arg_node);
         }
     }
-
-#endif /* NEW_AST */
 
     DBUG_RETURN (arg_node);
 }
