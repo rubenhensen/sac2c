@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1999/07/30 13:48:35  jhs
+ * Brushed DBUG_PRINTs.
+ *
  * Revision 1.2  1999/07/28 13:04:45  jhs
  * Finished implementation of all needed routines.
  *
@@ -41,13 +44,9 @@
 #include "free.h"
 #include "typecheck.h"
 
-#include "spmd_cons.h"
+#include "concurrent_lib.h"
 
-/*
- * returns 1 for refcounting-objects and -1 otherwise
- * #### copy pasted from spmd_lift, reuse it instead
- */
-#define GET_STD_REFCNT(prefix, node) ((prefix##_REFCNT (node) >= 0) ? 1 : -1)
+#include "spmd_cons.h"
 
 /******************************************************************************
  *
@@ -91,21 +90,8 @@ SPMDCspmd (node *arg_node, node *arg_info)
 
     DBUG_ASSERT (first_sync != NULL, "first sync not found");
 
-    DBUG_PRINT ("SPMDC", ("sync names begin"));
-    name = DFMGetMaskEntryNameSet (SYNC_INOUT (first_sync));
-    while (name != NULL) {
-        DBUG_PRINT ("SPMDC", ("%s", name));
-        name = DFMGetMaskEntryNameSet (NULL);
-    }
-    DBUG_PRINT ("SPMDC", ("sync names end"));
-
-    DBUG_PRINT ("SPMDC", ("spmd names begin"));
-    name = DFMGetMaskEntryNameSet (SPMD_IN (arg_node));
-    while (name != NULL) {
-        DBUG_PRINT ("SPMDC", ("%s", name));
-        name = DFMGetMaskEntryNameSet (NULL);
-    }
-    DBUG_PRINT ("SPMDC", ("spmd names end"));
+    CONLDisplayMask ("SPMDC", "sync-inout", SYNC_INOUT (arg_node));
+    CONLDisplayMask ("SPMDC", "spmd-in", SPMD_IN (arg_node));
 
     /*
      *  fetching inouts of first sync-block and adding them to
@@ -143,21 +129,8 @@ SPMDCspmd (node *arg_node, node *arg_info)
     BLOCK_VARDEC (FUNDEF_BODY (fundef)) = new_vardec;
     FUNDEF_ARGS (fundef) = new_args;
 
-    DBUG_PRINT ("SPMDC", ("sync names begin"));
-    name = DFMGetMaskEntryNameSet (SYNC_INOUT (first_sync));
-    while (name != NULL) {
-        DBUG_PRINT ("SPMDC", ("%s", name));
-        name = DFMGetMaskEntryNameSet (NULL);
-    }
-    DBUG_PRINT ("SPMDC", ("sync names end"));
-
-    DBUG_PRINT ("SPMDC", ("spmd names begin"));
-    name = DFMGetMaskEntryNameSet (SPMD_IN (arg_node));
-    while (name != NULL) {
-        DBUG_PRINT ("SPMDC", ("%s", name));
-        name = DFMGetMaskEntryNameSet (NULL);
-    }
-    DBUG_PRINT ("SPMDC", ("spmd names end"));
+    CONLDisplayMask ("SPMDC", "sync-inout", SYNC_INOUT (arg_node));
+    CONLDisplayMask ("SPMDC", "spmd-in", SPMD_IN (arg_node));
 
     if (own_arg_info) {
         FreeTree (arg_info);
