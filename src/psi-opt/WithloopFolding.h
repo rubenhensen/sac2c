@@ -1,6 +1,10 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.5  2000/08/01 13:14:46  dkr
+ * signature of WithloopFolding() and WithLoopFoldingWLT() changed:
+ *   arg_info removed, loop added
+ *
  * Revision 2.4  2000/05/11 11:15:55  dkr
  * Function MakeNullVec renamed into CreateZeroVector
  *
@@ -57,8 +61,8 @@
  ******************************************************************************/
 
 /* general functions */
-extern node *WithloopFolding (node *, node *);
-extern node *WithloopFoldingWLT (node *, node *);
+extern node *WithloopFolding (node *arg_node, int loop);
+extern node *WithloopFoldingWLT (node *arg_node);
 extern int LocateIndexVar (node *idn, node *wln);
 extern node *CreateVardec (char *name, types *type, node **vardecs);
 extern node *StartSearchWL (node *idn, node *assignn, int mode);
