@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.33  2000/11/17 16:18:02  sbs
+ * call of MakeDeps adjusted by LOC_stdlib. ' hope this is correct here...
+ *
  * Revision 2.32  2000/11/15 13:47:21  dkr
  * yyerror: dummy return value added
  * string2array: unused local var removed
@@ -661,11 +664,11 @@ linkwith: PRAGMA LINKWITH linklist
 
 linklist: string COMMA linklist 
            {
-             $$=MakeDeps($1, NULL, NULL, ST_system, NULL, $3);
+             $$=MakeDeps($1, NULL, NULL, ST_system, LOC_stdlib, NULL, $3);
            }
         | string
            {
-             $$=MakeDeps($1, NULL, NULL, ST_system, NULL, NULL);
+             $$=MakeDeps($1, NULL, NULL, ST_system, LOC_stdlib, NULL, NULL);
            }
         ;
 
@@ -2373,11 +2376,11 @@ siblinkwith: LINKWITH siblinklist {$$=$2;}
 
 siblinklist: siblinkliststatus string sibsublinklist COMMA siblinklist
              {
-               $$=MakeDeps($2, NULL, NULL, $1, $3, $5);
+               $$=MakeDeps($2, NULL, NULL, $1, LOC_stdlib, $3, $5);
              }
            | siblinkliststatus string sibsublinklist 
              {
-               $$=MakeDeps($2, NULL, NULL, $1, $3, NULL);
+               $$=MakeDeps($2, NULL, NULL, $1, LOC_stdlib, $3, NULL);
              }
            ;
 
