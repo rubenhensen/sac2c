@@ -1,8 +1,12 @@
 /*
  * $Log$
+ * Revision 1.59  2000/06/29 10:33:09  mab
+ * added NPART_PADDED
+ * changed type of *_PADDED from int to bool
+ *
  * Revision 1.58  2000/06/29 10:25:02  mab
- * added functions for APTpart, APTwithid, APTgenerator, APTcode, APTwithop
- * renamed APTNwith to APTwith
+ * added NPART_PADDED
+ * changed type of *_PADDED from int to bool
  *
  * Revision 1.57  2000/06/28 15:12:46  nmw
  * added macros for INFO_PIW and INFO_PIH
@@ -2832,7 +2836,7 @@ extern node *MakeNWith (node *part, node *code, node *withop);
  ***
  ***    long*  MASK          (optimize -> )
  ***    bool   COPY          (Unroll !)
- ***    bool   PADDED        (ap->)
+ ***    bool   PADDED        (ap-> )
  ***/
 
 extern node *MakeNPart (node *withid, node *generator, node *code);
