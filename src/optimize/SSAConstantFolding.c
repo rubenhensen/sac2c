@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.60  2004/08/25 16:28:19  ktr
+ * ...now it even works :)
+ *
  * Revision 1.59  2004/08/25 16:07:29  ktr
  * cat_VxV of an empty vector now yields the other vector.
  *
@@ -1458,7 +1461,7 @@ SSACFCatVxV (node *vec1, node *vec2)
          * if vec1 is a structural constant of shape [0],
          * the result is a copy of vec2
          */
-        if (SHGetUnrLen (COGetShape (sc_vec1)) == 0) {
+        if (SHGetUnrLen (COGetShape (SCO_HIDDENCO (sc_vec1))) == 0) {
             result = DupNode (vec2);
         }
     } else if (sc_vec2 != NULL) {
@@ -1466,7 +1469,7 @@ SSACFCatVxV (node *vec1, node *vec2)
          * if vec2 is a structural constant of shape [0],
          * the result is a copy of vec1
          */
-        if (SHGetUnrLen (COGetShape (sc_vec2)) == 0) {
+        if (SHGetUnrLen (COGetShape (SCO_HIDDENCO (sc_vec2))) == 0) {
             result = DupNode (vec1);
         }
     }
