@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1996/01/17 14:17:52  asi
+ * Revision 1.4  1996/07/16 15:26:40  asi
+ * macros from access_macros.h no longer used
+ *
+ * Revision 1.3  1996/01/17  14:17:52  asi
  * added globals.h
  *
  * Revision 1.2  1995/10/06  17:07:47  cg
@@ -18,7 +21,6 @@
 #include <string.h>
 
 #include "globals.h"
-#include "tree.h"
 #include "Error.h"
 #include "dbug.h"
 #include "my_debug.h"
@@ -26,7 +28,7 @@
 #include "typecheck.h"
 #include "free.h"
 #include "DupTree.h"
-#include "access_macros.h"
+#include "tree.h"
 #include "internal_lib.h"
 
 #include "optimize.h"
@@ -194,7 +196,7 @@ GenIds (node *arg[2])
 
     DBUG_ENTER ("GenIds");
     number = GetNumber (arg[0]);
-    old_name = arg[1]->IDS_ID;
+    old_name = ID_NAME (arg[1]);
     new_name = (char *)MAlloc (sizeof (char) * (strlen (old_name) + strlen (number))
                                + AE_PREFIX_LENGTH);
     sprintf (new_name, AE_PREFIX "%s%s", number, old_name);
@@ -255,10 +257,10 @@ GenPsi (ids *ids_node, node *arg_info)
         new_let->node[0]->info.prf = F_psi;
         new_let->node[0]->nnode = 1;
         new_let->node[0]->node[0] = MakeNode (N_exprs);
-        new_let->node[0]->ARG1 = arg[0];
+        new_let->node[0]->node[0]->node[0] = arg[0];
         new_let->node[0]->node[0]->nnode = 2;
         new_let->node[0]->node[0]->node[1] = MakeNode (N_exprs);
-        new_let->node[0]->ARG2 = arg[1];
+        new_let->node[0]->node[0]->node[1]->node[0] = arg[1];
         new_let->node[0]->node[0]->node[1]->nnode = 1;
         new_assign = MakeNode (N_assign);
         new_assign->nnode = 1;
@@ -288,32 +290,35 @@ AEassign (node *arg_node, node *arg_info)
     ids *ids_node;
 
     DBUG_ENTER ("AEassign");
-    if (N_let == arg_node->node[0]->nodetype) {
-        ids_node = arg_node->node[0]->IDS;
-        do {
+    if (N_let == NODE_TYPE (ASSIGN_INSTR (arg_node))) {
+        ids_node = LET_IDS (ASSIGN_INSTR (arg_node));
+        if (NULL == IDS_NEXT (ids_node)) {
             if (TRUE == CorrectArraySize (ids_node)) {
-                ids_node->node->flag = TRUE;
+                VARDEC_FLAG (IDS_VARDEC (ids_node)) = TRUE;
                 new_nodes = AppendNodeChain (1, new_nodes, GenPsi (ids_node, arg_info));
             } else {
-                ids_node->node->flag = FALSE;
+                VARDEC_FLAG (IDS_VARDEC (ids_node)) = FALSE;
             }
-            ids_node = ids_node->next;
-        } while (NULL != ids_node);
+        }
     }
 
     if (NULL == new_nodes) {
         /* Trav if-then-else and loops */
-        if (1 <= arg_node->nnode)
-            arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+        if (NULL != ASSIGN_INSTR (arg_node))
+            ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
         /* Trav next assign */
-        if (2 <= arg_node->nnode)
-            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+        if (NULL != ASSIGN_NEXT (arg_node))
+            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     } else {
-        if (2 <= arg_node->nnode)
-            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-        new_nodes = AppendNodeChain (1, new_nodes, arg_node->node[1]);
+        if (NULL != ASSIGN_NEXT (arg_node))
+            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        new_nodes = AppendNodeChain (1, new_nodes, ASSIGN_NEXT (arg_node));
+/*-----------------------------------------------------------------------------------*/
+#ifndef NEWTREE
         arg_node->nnode = 2;
-        arg_node->node[1] = new_nodes;
+#endif
+        /*-----------------------------------------------------------------------------------*/
+        ASSIGN_NEXT (arg_node) = new_nodes;
     }
 
     DBUG_RETURN (arg_node);
@@ -339,16 +344,16 @@ AEprf (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("AEprf");
     if (F_psi == arg_node->info.prf) {
-        arg[0] = NodeBehindCast (arg_node->ARG1);
-        arg[1] = NodeBehindCast (arg_node->ARG2);
+        arg[0] = NodeBehindCast (arg_node->node[0]->node[0]);
+        arg[1] = NodeBehindCast (arg_node->node[0]->node[1]->node[0]);
         if ((N_id == arg[1]->nodetype) && (N_array == arg[0]->nodetype)) {
-            if (TRUE == CorrectArraySize (arg[1]->IDS)) {
+            if (TRUE == CorrectArraySize (arg[1]->info.ids)) {
                 DBUG_PRINT ("AE", ("psi function with array %s to eliminated found",
-                                   arg[1]->IDS_ID));
+                                   arg[1]->info.ids->id));
                 new_node = MakeNode (N_id);
-                new_node->IDS = GenIds (arg);
-                new_node->IDS_NODE = SearchDecl (new_node->IDS_ID, AE_TYPES);
-                if (NULL != new_node->IDS_NODE) {
+                new_node->info.ids = GenIds (arg);
+                new_node->info.ids->node = SearchDecl (new_node->info.ids->id, AE_TYPES);
+                if (NULL != new_node->info.ids->node) {
                     FreeTree (arg_node);
                     arg_node = new_node;
                 } else {
