@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2001/05/07 16:45:06  dkr
+ * COMPIdLet: DBUG_ASSERT message modified
+ *
  * Revision 3.49  2001/04/27 17:33:00  nmw
  * refcounting for special fundef (non recursive) AP icms added
  *
@@ -4785,7 +4788,7 @@ COMPIdLet (node *arg_node, node *arg_info)
     icm_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                 IDS_REFCNT (let_ids), IDS_REFCNT (let_ids) - 1);
     if (icm_node != NULL) {
-        DBUG_ASSERT ((ret_node != NULL), "ICMs missing!");
+        DBUG_ASSERT ((ret_node != NULL), "ICMs missing, RCs inconsistent?");
         ASSIGN_NEXT (ret_node) = icm_node;
     }
 
