@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2004/07/11 18:08:56  sah
+ * ongoing new ast implementation
+ *
  * Revision 3.83  2004/07/03 15:09:35  sah
  * added the new node representation into the source code.
  * the new ast can be enabled by make newast int the
@@ -198,6 +201,7 @@
 /* local functions for node initialization                                  */
 /*--------------------------------------------------------------------------*/
 
+#ifndef NEW_AST
 static node *
 CreateCleanNode (nodetype nt)
 {
@@ -238,6 +242,7 @@ CreateCleanNode (nodetype nt)
 
     DBUG_RETURN (new_node);
 }
+#endif /* NEW_AST */
 
 /*--------------------------------------------------------------------------*/
 /*  Make-functions for non-node structures                                  */
