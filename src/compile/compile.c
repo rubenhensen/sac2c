@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.28  1995/05/08 15:45:53  hw
+ * Revision 1.29  1995/05/09 16:39:35  hw
+ * bug fixed in CompAssign ( arg_info->node[0] will be set correctly now )
+ *
+ * Revision 1.28  1995/05/08  15:45:53  hw
  * added CompBlock
  * compilation (renaming) of expressions like `a=a+a` added
  *
@@ -1446,8 +1449,9 @@ CompAssign (node *arg_node, node *arg_info)
         old_next_assign = arg_node->node[1];
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
         arg_info->node[0] = arg_node;
-        while (N_icm == arg_info->node[0]->node[1]->node[0]->nodetype)
+        while (old_next_assign != arg_info->node[0]->node[1])
             arg_info->node[0] = arg_info->node[0]->node[1];
+
         DBUG_PRINT ("COMP", ("set info->node[0] to :" P_FORMAT " (node[0]:" P_FORMAT,
                              arg_info->node[0], arg_info->node[0]->node[0]));
         DBUG_ASSERT (N_icm != old_next_assign->node[0]->nodetype, "wrong nodetype"
