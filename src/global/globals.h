@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.44  1999/02/19 17:21:41  dkr
+ * *** empty log message ***
+ *
  * Revision 1.43  1999/02/19 17:15:26  dkr
  * use_efence added
  *
@@ -181,6 +184,7 @@ extern char target_platform[];
 extern FILE *outfile;
 
 extern char sacfilename[];
+extern char *puresacfilename;
 extern char outfilename[];
 extern char modulename[];
 extern char cfilename[];
@@ -188,7 +192,6 @@ extern char targetdir[];
 extern char commandline[];
 extern file_type filetype;
 extern char *tmp_dirname;
-extern char *puresacfilename;
 
 extern char target_name[];
 
@@ -204,6 +207,8 @@ extern int num_cpp_vars;
 
 extern int cc_debug;
 extern int cc_optimize;
+
+extern int Make_Old2NewWith;
 
 extern int optimize;
 extern int opt_dcr;
@@ -271,6 +276,9 @@ extern int profileflag;
  * Allowed values of profileflag
  */
 
+extern int check_boundary;
+extern int check_malloc;
+
 extern int intrinsics;
 
 #define INTRINSIC_NONE 0x0000
@@ -296,40 +304,31 @@ extern int PFfunapcntr[PF_MAXFUN];
 extern int PFfunapline[PF_MAXFUN][PF_MAXFUNAP];
 extern int PFfunapmax;
 
-extern int check_boundary;
-extern int check_malloc;
-
 extern int use_efence;
-
-extern int libstat;
-extern int linkstyle;
 extern int cleanup;
+extern int linkstyle;
+extern int libstat;
 extern int makedeps;
 extern int gen_cccall;
 extern int show_syscall;
+
 extern compiler_phase_t break_after;
 extern int break_cycle_specifier;
 extern char break_specifier[];
 
-extern int print_objdef_for_header_file;
-extern int function_counter;
-extern deps *dependencies;
-
-extern unsigned int total_allocated_mem;
-extern unsigned int current_allocated_mem;
-extern unsigned int max_allocated_mem;
-
 extern int errors;
 extern int warnings;
-extern int last_indent;
-extern int current_line_length;
-extern int message_indent;
+
 extern int verbose_level;
 extern compiler_phase_t compiler_phase;
 
+extern int message_indent;
+extern int last_indent;
+extern int current_line_length;
+
+extern char error_message_buffer[];
 extern char *filename;
 extern char *compiler_phase_name[];
-extern char error_message_buffer[];
 
 extern compiler_phase_t my_dbug_from;
 extern compiler_phase_t my_dbug_to;
@@ -337,7 +336,14 @@ extern int my_dbug;
 extern int my_dbug_active;
 extern char *my_dbug_str;
 
-extern int Make_Old2NewWith;
+extern unsigned int total_allocated_mem;
+extern unsigned int current_allocated_mem;
+extern unsigned int max_allocated_mem;
+
+extern int print_objdef_for_header_file;
+extern int function_counter;
+extern deps *dependencies;
+
 extern int indent;
 
 #endif /* _sac_globals_h */
