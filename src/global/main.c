@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/06/18 14:55:40  cg
+ * SYSABORT which breaks compilation with -mtn (new multithreading)
+ * moved directly before precompile.
+ * This allows for testing mtn-code without running into strange
+ * error messages due to missing implementation in the code
+ * generation phase.
+ *
  * Revision 3.14  2001/05/17 11:39:27  dkr
  * InitDupTree() added
  *
@@ -416,12 +423,6 @@ main (int argc, char *argv[])
     } else if (gen_mt_code == GEN_MT_NEW) {
         NOTE_COMPILER_PHASE;
         NOTE (("using new version of mt"));
-        SYSABORT (("New version of multithreading de-activated !!"));
-        /*
-         * The core problem is that new-mt reuses the FUNDEF ATTRIB attribute
-         * and thereby destroys its old contents. Unfortunately, it has turned
-         * that this information is vital for precompile.
-         */
         syntax_tree = BuildMultiThread (syntax_tree);
         PHASE_DONE_EPILOG;
     }
@@ -442,6 +443,15 @@ main (int argc, char *argv[])
             goto BREAK;
     }
     compiler_phase++;
+
+    if (gen_mt_code == GEN_MT_NEW) {
+        SYSABORT (("New version of multithreading de-activated !!"));
+        /*
+         * The core problem is that new-mt reuses the FUNDEF ATTRIB attribute
+         * and thereby destroys its old contents. Unfortunately, it has turned
+         * that this information is vital for precompile.
+         */
+    }
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
