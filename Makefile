@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.49  2000/07/21 09:58:25  jhs
+# Added os lines for easy changes of os.
+#
 # Revision 2.48  2000/07/21 08:23:23  nmw
 # import_specialization.o added
 #
@@ -169,7 +172,12 @@ cc_PROD_FLAGS := -erroff=E_CAST_DOESNT_YIELD_LVALUE -xO4
 #    LINUX_X86
 #    OSF_ALPHA
 #
+# to allow easy changes: 
+# do not delete os lines, but "comment" all not used lines
+#
 OS        := SOLARIS_SPARC
+#OS        := LINUX_X86
+#OS        := OSF_ALPHA
 
 #
 # SOLARIS_SPARC specific flags and libraries:
