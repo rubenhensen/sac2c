@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/05/19 14:25:14  bs
+ * Bug fixed (in WLAAnwith and WLAAncode).
+ *
  * Revision 2.2  1999/05/18 13:08:55  dkr
  * print.h included (for WLAAprintAccesses() )
  *
@@ -398,36 +401,17 @@ WLAAassign (node *arg_node, node *arg_info)
 node *
 WLAAnwith (node *arg_node, node *arg_info)
 {
-    node *old_arg_info;
-
     DBUG_ENTER ("WLAAnwith");
 
     DBUG_ASSERT ((arg_info != NULL), "WLAAnwith called with empty info node!");
 
-    /*
-     * Store old arg_info for the case of nested with-loops.
-     */
-    old_arg_info = arg_info;
-    arg_info = MakeInfo ();
-
-    INFO_WLAA_ACCESS (arg_info) = NULL;
-    INFO_WLAA_TMPACCESS (arg_info) = NULL;
     INFO_WLAA_INDEXVAR (arg_info) = IDS_VARDEC (NWITH_VEC (arg_node));
-    INFO_WLAA_FEATURE (arg_info) = FEATURE_NONE;
     INFO_WLAA_WOTYPE (arg_info) = NWITH_TYPE (arg_node);
-    INFO_WLAA_BELOWAP (arg_info) = 0;
-    INFO_WLAA_WLLEVEL (arg_info) = INFO_WLAA_WLLEVEL (old_arg_info) + 1;
-    INFO_WLAA_WLARRAY (arg_info) = INFO_WLAA_WLARRAY (old_arg_info);
-    /*
-     *  WLAAprint(arg_node, arg_info, _ENTER);
-     */
+    INFO_WLAA_WLLEVEL (arg_info) = INFO_WLAA_WLLEVEL (arg_info) + 1;
+
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
-    /*
-     *  WLAAprint(arg_node, arg_info, _EXIT);
-     */
-    NWITH_WLAA (arg_node) = arg_info;
-    arg_info = old_arg_info;
+    INFO_WLAA_WLLEVEL (arg_info) = INFO_WLAA_WLLEVEL (arg_info) - 1;
 
     DBUG_RETURN (arg_node);
 }
@@ -450,22 +434,29 @@ WLAAnwith (node *arg_node, node *arg_info)
 node *
 WLAAncode (node *arg_node, node *arg_info)
 {
-#if 0
-  access_t* old_access;
-  feature_t old_feature;
-#endif
+    node *old_arg_info;
 
     DBUG_ENTER ("WLAAncode");
 
     if (NCODE_NEXT (arg_node) != NULL) {
         NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
     }
-#if 0  
-  old_access = INFO_WLAA_ACCESS(arg_info);
-  INFO_WLAA_ACCESS(arg_info) = NULL;
-  old_feature = INFO_WLAA_FEATURE(arg_info);
-  INFO_WLAA_FEATURE(arg_info) = FEATURE_NONE;
-#endif
+
+    /*
+     * Store old arg_info for the case of nested with-loops.
+     */
+    old_arg_info = arg_info;
+    arg_info = MakeInfo ();
+
+    INFO_WLAA_ACCESS (arg_info) = NULL;
+    INFO_WLAA_TMPACCESS (arg_info) = NULL;
+    INFO_WLAA_INDEXVAR (arg_info) = INFO_WLAA_INDEXVAR (old_arg_info);
+    INFO_WLAA_FEATURE (arg_info) = FEATURE_NONE;
+    INFO_WLAA_WOTYPE (arg_info) = INFO_WLAA_WOTYPE (old_arg_info);
+    INFO_WLAA_BELOWAP (arg_info) = 0;
+    INFO_WLAA_WLLEVEL (arg_info) = INFO_WLAA_WLLEVEL (old_arg_info);
+    INFO_WLAA_WLARRAY (arg_info) = INFO_WLAA_WLARRAY (old_arg_info);
+
     if (NCODE_CBLOCK (arg_node) != NULL) {
         if ((INFO_WLAA_WOTYPE (arg_info) == WO_genarray)
             || (INFO_WLAA_WOTYPE (arg_info) == WO_modarray)) {
@@ -478,13 +469,12 @@ WLAAncode (node *arg_node, node *arg_info)
         }
 
         NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
-        /*
-         *    WLAAprint(arg_node, arg_info, _EXIT);
-         */
     }
 
     NCODE_ACCESS (arg_node) = INFO_WLAA_ACCESS (arg_info);
     NCODE_FEATURE (arg_node) = INFO_WLAA_FEATURE (arg_info);
+    FreeInfo (arg_info, NULL);
+    arg_info = old_arg_info;
 
     DBUG_RETURN (arg_node);
 }
