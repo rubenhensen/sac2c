@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2002/07/03 13:02:47  sah
+ * changed assert due to incorrect module compiling.
+ *
  * Revision 3.40  2002/07/02 15:27:29  sah
  * added support for N_dot nodes in WL generators
  *
@@ -6855,13 +6858,14 @@ TI_Nwith (node *arg_node, node *arg_info)
     generator_type = TI_Npart (NWITH_PART (arg_node), base_array_type, new_shp, arg_info);
 
     /*
-     *  Now there should be no . in any generator boundary. So check for that.
+     *  If compiling a program file, there now should be no . in any generator boundary.
+     *  So check for that.
      */
 
-    DBUG_ASSERT (!(DOT_ISSINGLE (NWITH_BOUND1 (arg_node))),
-                 "lower bound ist still a N_dot node!");
-    DBUG_ASSERT (!(DOT_ISSINGLE (NWITH_BOUND2 (arg_node))),
-                 "upper bound ist still a N_dot node!");
+    DBUG_ASSERT (((!DOT_ISSINGLE (NWITH_BOUND1 (arg_node))) || (kind_of_file != F_prog)),
+                 "lower bound is still a N_dot node!");
+    DBUG_ASSERT (((!DOT_ISSINGLE (NWITH_BOUND2 (arg_node))) || (kind_of_file != F_prog)),
+                 "upper bound is still a N_dot node!");
 
     /* In case of genarray() check whether generator and base array fit. */
     if (WO_genarray == NWITHOP_TYPE (NWITH_WITHOP (arg_node))
