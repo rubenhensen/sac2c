@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.18  2000/07/07 15:30:59  bs
+ *  DBUG_PRINT in WLAAid modified.
+ *
  * Revision 2.17  2000/07/06 08:23:45  mab
  * syntax error in line 1559 fixed
  *
@@ -1566,7 +1569,7 @@ WLAAid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WLAAid");
 
-    DBUG_PRINT ("WLAA", ("WLAA"));
+    DBUG_PRINT ("WLAA", ("WLAAid"));
 
     if ((INFO_WLAA_WLLEVEL (arg_info) > 0) && (INFO_WLAA_BELOWAP (arg_info))) {
         if (ID_DIM (arg_node) != SCALAR) {
