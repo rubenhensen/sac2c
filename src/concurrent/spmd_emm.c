@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/09/23 16:33:35  ktr
+ * Repaired invalid free traversal.
+ *
  * Revision 1.1  2004/09/18 15:59:35  ktr
  * Initial revision
  *
@@ -90,9 +93,8 @@ FreeInfo (info *info)
     temp = INFO_SPMDEMM_SPMDS (info);
     while (temp != NULL) {
         EXPRS_EXPR (temp) = NULL;
-        temp = EXPRS_NEXT (temp);
+        temp = FreeNode (temp);
     }
-    INFO_SPMDEMM_SPMDS (info) = FreeTree (INFO_SPMDEMM_SPMDS (info));
 
     info = Free (info);
 
