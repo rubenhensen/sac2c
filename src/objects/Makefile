@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 1.12  1997/11/12 15:59:49  sbs
+# CC+CCFLAGS handling changed.
+# Now, it suffices to preset CC=cc if the SUN-compiler isdesired
+# Otherwise, gcc is set with -Wall and -ansi
+#
 # Revision 1.11  1997/11/11 16:49:33  sbs
 # make deps done
 #
@@ -37,8 +42,10 @@
 #
 
 
-MAKE=make
-CC=gcc -ansi -g
+CC        := gcc
+CCFLAGS   := -ansi -Wall -g
+CFLAGS    := -D__EXTENSIONS__
+
 RM=rm -f
 
 INCS=-I../global -I../../inc -I../typecheck -I../modules
@@ -47,16 +54,16 @@ all: objinit.o objects.o uniquecheck.o rmvoidfun.o
 
 
 objinit.o: objinit.c
-	$(CC) -o objinit.o -c objinit.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o objinit.o -c objinit.c $(INCS)
 
 objects.o: objects.c
-	$(CC) -o objects.o -c objects.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o objects.o -c objects.c $(INCS)
 
 uniquecheck.o: uniquecheck.c
-	$(CC) -o uniquecheck.o -c uniquecheck.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o uniquecheck.o -c uniquecheck.c $(INCS)
 
 rmvoidfun.o: rmvoidfun.c
-	$(CC) -o rmvoidfun.o -c rmvoidfun.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o rmvoidfun.o -c rmvoidfun.c $(INCS)
 
 
 deps:

@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 1.29  1997/11/12 15:59:49  sbs
+# CC+CCFLAGS handling changed.
+# Now, it suffices to preset CC=cc if the SUN-compiler isdesired
+# Otherwise, gcc is set with -Wall and -ansi
+#
 # Revision 1.28  1997/11/11 16:49:30  sbs
 # make deps done
 #
@@ -88,8 +93,9 @@
 # 
 
 
-MAKE=make
-CC=gcc -ansi -g
+CC        := gcc
+CCFLAGS   := -ansi -Wall -g
+CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount
 MACS=icm.data icm_decl.c icm_args.c icm_comment.c icm_trace.c
@@ -97,26 +103,26 @@ MACS=icm.data icm_decl.c icm_args.c icm_comment.c icm_trace.c
 all: compile.o icm2c.o precompile.o libsac.a profile.o
 
 BEtest: icm2c.c $(MACS)
-	$(CC) -o BEtest icm2c.c -DTEST_BACKEND $(INCS) ../../lib/dbug.o
+	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest icm2c.c -DTEST_BACKEND $(INCS) ../../lib/dbug.o
 
 compile.o: compile.c
-	$(CC) -o compile.o -c compile.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o compile.o -c compile.c $(INCS)
 
 icm2c.o: icm2c.c
-	$(CC) -o icm2c.o -c icm2c.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o icm2c.o -c icm2c.c $(INCS)
 
 profile.o: profile.c
-	$(CC) -o profile.o -c profile.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o profile.o -c profile.c $(INCS)
 
 precompile.o: precompile.c
-	$(CC) -o precompile.o -c precompile.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o precompile.o -c precompile.c $(INCS)
 
 libsac.a: libsac.o
 	ar rc libsac.a libsac.o
 	ranlib libsac.a
 
 libsac.o: libsac.c
-	$(CC) -o libsac.o -c libsac.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o libsac.o -c libsac.c $(INCS)
 
 
 deps:

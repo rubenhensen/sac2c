@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 1.30  1997/11/12 15:59:49  sbs
+# CC+CCFLAGS handling changed.
+# Now, it suffices to preset CC=cc if the SUN-compiler isdesired
+# Otherwise, gcc is set with -Wall and -ansi
+#
 # Revision 1.29  1997/11/11 16:49:26  sbs
 # make deps done
 #
@@ -86,8 +91,10 @@
 #
 #
 
-MAKE=make
-CC=gcc -ansi -g
+CC        := gcc
+CCFLAGS   := -ansi -Wall -g
+CFLAGS    := -D__EXTENSIONS__
+
 
 INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules
 
@@ -95,34 +102,34 @@ all: optimize.o ConstantFolding.o DeadCodeRemoval.o WorkReduction.o \
      LoopInvariantRemoval.o DupTree.o Inline.o Unroll.o Unswitch.o CSE.o
 
 optimize.o: optimize.c
-	$(CC) -o optimize.o -c optimize.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o optimize.o -c optimize.c $(INCS)
 
 DupTree.o: DupTree.c
-	$(CC) -o DupTree.o -c DupTree.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o DupTree.o -c DupTree.c $(INCS)
 
 ConstantFolding.o: ConstantFolding.c
-	$(CC) -o ConstantFolding.o -c ConstantFolding.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o ConstantFolding.o -c ConstantFolding.c $(INCS)
 
 DeadCodeRemoval.o: DeadCodeRemoval.c
-	$(CC) -o DeadCodeRemoval.o -c DeadCodeRemoval.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o DeadCodeRemoval.o -c DeadCodeRemoval.c $(INCS)
 
 WorkReduction.o: WorkReduction.c
-	$(CC) -o WorkReduction.o -c WorkReduction.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o WorkReduction.o -c WorkReduction.c $(INCS)
 
 LoopInvariantRemoval.o: LoopInvariantRemoval.c
-	$(CC) -o LoopInvariantRemoval.o -c LoopInvariantRemoval.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o LoopInvariantRemoval.o -c LoopInvariantRemoval.c $(INCS)
 
 Inline.o: Inline.c
-	$(CC) -o Inline.o -c Inline.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o Inline.o -c Inline.c $(INCS)
 
 Unroll.o: Unroll.c
-	$(CC) -o Unroll.o -c Unroll.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o Unroll.o -c Unroll.c $(INCS)
 
 Unswitch.o: Unswitch.c
-	$(CC) -o Unswitch.o -c Unswitch.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o Unswitch.o -c Unswitch.c $(INCS)
 
 CSE.o: CSE.c
-	$(CC) -o CSE.o -c CSE.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o CSE.o -c CSE.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c

@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 1.12  1997/11/12 15:59:49  sbs
+# CC+CCFLAGS handling changed.
+# Now, it suffices to preset CC=cc if the SUN-compiler isdesired
+# Otherwise, gcc is set with -Wall and -ansi
+#
 # Revision 1.11  1997/11/11 16:49:21  sbs
 # make deps done
 #
@@ -29,15 +34,17 @@
 #
 #
 
-MAKE=make
-CC=gcc -ansi -g
+CC        := gcc
+CCFLAGS   := -ansi -Wall -g
+CFLAGS    := -D__EXTENSIONS__
+
 
 INCS=-I../global -I../../inc
 
 all: flatten.o
 
 flatten.o: flatten.c
-	$(CC) -o flatten.o -c flatten.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o flatten.o -c flatten.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c

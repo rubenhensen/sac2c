@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 1.24  1997/11/12 15:59:49  sbs
+# CC+CCFLAGS handling changed.
+# Now, it suffices to preset CC=cc if the SUN-compiler isdesired
+# Otherwise, gcc is set with -Wall and -ansi
+#
 # Revision 1.23  1997/11/11 16:49:28  sbs
 # make deps done
 #
@@ -72,8 +77,9 @@
 #
 #
 
-MAKE=make
-CC=gcc -ansi -g
+CC        := gcc
+CCFLAGS   := -ansi -Wall -g
+CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../../inc -I../scanparse -I../print -I../typecheck
 
@@ -81,28 +87,28 @@ all: filemgr.o import.o readsib.o writesib.o implicittypes.o analysis.o \
      checkdec.o cccall.o
 
 filemgr.o: filemgr.c
-	$(CC) -o filemgr.o -c filemgr.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o filemgr.o -c filemgr.c $(INCS)
 
 import.o: import.c
-	$(CC) -o import.o -c import.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o import.o -c import.c $(INCS)
 
 writesib.o: writesib.c
-	$(CC) -o writesib.o -c writesib.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o writesib.o -c writesib.c $(INCS)
 
 readsib.o: readsib.c
-	$(CC) -o readsib.o -c readsib.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o readsib.o -c readsib.c $(INCS)
 
 implicittypes.o: implicittypes.c
-	$(CC) -o implicittypes.o -c implicittypes.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o implicittypes.o -c implicittypes.c $(INCS)
 
 analysis.o: analysis.c
-	$(CC) -o analysis.o -c analysis.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o analysis.o -c analysis.c $(INCS)
 
 checkdec.o: checkdec.c
-	$(CC) -o checkdec.o -c checkdec.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o checkdec.o -c checkdec.c $(INCS)
 
 cccall.o: cccall.c
-	$(CC) -o cccall.o -c cccall.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o cccall.o -c cccall.c $(INCS)
 
 
 deps:

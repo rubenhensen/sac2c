@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 1.55  1997/11/12 15:59:49  sbs
+# CC+CCFLAGS handling changed.
+# Now, it suffices to preset CC=cc if the SUN-compiler isdesired
+# Otherwise, gcc is set with -Wall and -ansi
+#
 # Revision 1.54  1997/11/11 16:49:20  sbs
 # make deps done
 #
@@ -175,17 +180,34 @@
 # Currently, these are popen(), pclose(), tempnam(), and strdup().
 #
 
-CC=cc -g -D__EXTENSIONS__ $(CFLAGS)
-CCPROD=gcc -ansi -Wall -pedantic -DDBUG_OFF -O3 -D__EXTENSIONS__
-MAKE=make CC="$(CC)"
-MAKEPROD=make CC="$(CCPROD)"
-LEX=lex
-YACC=yacc -dv
-LIBS=-ly -ll -lm
-EFLIBS=-L/home/dkr/gcc/lib/ElectricFence -lefence
-RM=rm -f
+CC        := gcc
 
-LIB=lib/dbug.o
+gcc_FLAGS := -ansi -Wall 
+cc_FLAGS  := -xsb
+
+CCFLAGS :=$($(CC)_FLAGS) -g
+
+override CFLAGS +=-D__EXTENSIONS__
+
+CCPROD       :=gcc
+
+gcc_PROD_FLAGS := -ansi -Wall -pedantic -O3
+cc_PROD_FLAGS  := 
+
+CCPROD_FLAGS := $($(CC)_PROD_FLAGS)
+CPROD_FLAGS  :=-DDBUG_OFF -D__EXTENSIONS__ $(CFLAGS)
+
+MAKE         :=$(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)"
+MAKEPROD     :=$(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)"
+MAKEFLAGS    += --no-print-directory
+
+LEX          :=lex
+YACC         :=yacc -dv
+LIBS         :=-ly -ll -lm
+EFLIBS       :=-L/home/dkr/gcc/lib/ElectricFence -lefence
+RM           :=rm -f
+
+LIB          :=lib/dbug.o
 # /usr/lib/debug/malloc.o
 
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
@@ -249,10 +271,10 @@ prod:
 	(cd src/psi-opt; $(MAKEPROD) )
 
 sac2c: $(OBJ) $(LIB)
-	$(CC) -o sac2c $(OBJ) $(LIB) $(LIBS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS)
 
 sac2c.efence: $(OBJ) $(LIB)
-	$(CC) -o sac2c.efence $(OBJ) $(LIB) $(LIBS) $(EFLIBS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c.efence $(OBJ) $(LIB) $(LIBS) $(EFLIBS)
 
 deps:
 	(cd src/scanparse; $(MAKE) deps)

@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 1.21  1997/11/12 15:59:49  sbs
+# CC+CCFLAGS handling changed.
+# Now, it suffices to preset CC=cc if the SUN-compiler isdesired
+# Otherwise, gcc is set with -Wall and -ansi
+#
 # Revision 1.20  1997/11/11 16:49:23  sbs
 # make deps done
 #
@@ -53,17 +58,20 @@
 #
 #
 
-CC=gcc -ansi -g
+CC        := gcc
+CCFLAGS   := -ansi -Wall -g
+CFLAGS    := -D__EXTENSIONS__
+
 
 INCS=-I../global -I../../inc -I../optimize -I../compile -I../modules
 
 all: print.o convert.o
 
 print.o: print.c
-	$(CC) -o print.o -c print.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o print.o -c print.c $(INCS)
 
 convert.o: convert.c
-	$(CC) -o convert.o -c convert.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o convert.o -c convert.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c

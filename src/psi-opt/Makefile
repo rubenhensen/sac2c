@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 1.16  1997/11/12 15:59:49  sbs
+# CC+CCFLAGS handling changed.
+# Now, it suffices to preset CC=cc if the SUN-compiler isdesired
+# Otherwise, gcc is set with -Wall and -ansi
+#
 # Revision 1.15  1997/11/11 16:49:32  sbs
 # make deps done
 #
@@ -47,21 +52,23 @@
 #
 #
 
-MAKE=make
-CC=gcc -ansi -g
+CC        := gcc
+CCFLAGS   := -ansi -Wall -g
+CFLAGS    := -D__EXTENSIONS__
+
 
 INCS=-I../global -I../../inc -I../optimize -I../compile -I../typecheck -I../modules
 
 all: index.o psi-opt.o ArrayElimination.o
 
 index.o: index.c
-	$(CC) -o index.o -c index.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o index.o -c index.c $(INCS)
 
 psi-opt.o: psi-opt.c
-	$(CC) -o psi-opt.o -c psi-opt.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o psi-opt.o -c psi-opt.c $(INCS)
 
 ArrayElimination.o: ArrayElimination.c
-	$(CC) -o ArrayElimination.o -c ArrayElimination.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o ArrayElimination.o -c ArrayElimination.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c

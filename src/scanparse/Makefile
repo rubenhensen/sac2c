@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 1.18  1997/11/12 15:59:49  sbs
+# CC+CCFLAGS handling changed.
+# Now, it suffices to preset CC=cc if the SUN-compiler isdesired
+# Otherwise, gcc is set with -Wall and -ansi
+#
 # Revision 1.17  1997/11/11 16:49:24  sbs
 # make deps done
 #
@@ -50,21 +55,28 @@
 #
 #
 
-CC=gcc -ansi -g
-CCL=gcc -ansi -g $(CFLAGS)
-LEX=lex -n
-YACC=yacc -dv
-LIBS=-ly -ll
+CC        := gcc
+CCFLAGS   := -ansi -Wall -g
+CFLAGS    := -D__EXTENSIONS__
+
+gcc_FLAGS := -ansi
+cc_FLAGS  := -xsb
+
+CCL_FLAGS := $($(CC)_FLAGS) -g
+
+LEX       :=lex -n
+YACC      :=yacc -dv
+LIBS      :=-ly -ll
 
 INCS=-I../global -I../../inc -I../modules
 
 all: y.tab.o lex.yy.o scnprs.o
 
 y.tab.o: y.tab.c
-	$(CCL) -o y.tab.o -DYYDEBUG -c y.tab.c $(INCS)
+	$(CC) $(CCL_FLAGS) $(CFLAGS) -o y.tab.o -DYYDEBUG -c y.tab.c $(INCS)
 
 lex.yy.o: lex.yy.c y.tab.h
-	$(CCL) -o lex.yy.o -c lex.yy.c $(INCS)
+	$(CC) $(CCL_FLAGS) $(CFLAGS) -o lex.yy.o -c lex.yy.c $(INCS)
 
 lex.yy.c: sac.l
 	$(LEX) sac.l
@@ -73,7 +85,7 @@ y.tab.c y.tab.h: sac.y
 	$(YACC)  sac.y
 
 scnprs.o: scnprs.c
-	$(CC) -o scnprs.o -c scnprs.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o scnprs.o -c scnprs.c $(INCS)
 
 
 

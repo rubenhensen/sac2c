@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 1.45  1997/11/12 15:59:49  sbs
+# CC+CCFLAGS handling changed.
+# Now, it suffices to preset CC=cc if the SUN-compiler isdesired
+# Otherwise, gcc is set with -Wall and -ansi
+#
 # Revision 1.44  1997/11/11 16:49:22  sbs
 # make deps done
 #
@@ -139,8 +144,10 @@
 #
 #
 
-MAKE=make
-CC=gcc -ansi -g 
+CC        := gcc
+CCFLAGS   := -ansi -Wall -g
+CFLAGS    := -D__EXTENSIONS__
+
 
 INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules -I../global -I../refcount -I../compile \
@@ -161,31 +168,31 @@ main.o: main.c
 	$(CC) -c main.c $(INCS)
 
 Error.o: Error.c 
-	$(CC) -o Error.o -c Error.c $(INCS) 
+	$(CC) $(CCFLAGS) $(CFLAGS) -o Error.o -c Error.c $(INCS) 
 
 traverse.o: traverse.c
-	$(CC) -o traverse.o -c traverse.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o traverse.o -c traverse.c $(INCS)
 
 usage.o: usage.c usage.h 
-	$(CC) -o usage.o -c usage.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o usage.o -c usage.c $(INCS)
 	
 my_debug.o: my_debug.c
-	$(CC) -o my_debug.o -c my_debug.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o my_debug.o -c my_debug.c $(INCS)
 
 tree.o: tree.c
-	$(CC) -o tree.o -c tree.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o tree.o -c tree.c $(INCS)
 
 tree_basic.o: tree_basic.c
-	$(CC) -o tree_basic.o -c tree_basic.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o tree_basic.o -c tree_basic.c $(INCS)
 
 tree_compound.o: tree_compound.c
-	$(CC) -o tree_compound.o -c tree_compound.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o tree_compound.o -c tree_compound.c $(INCS)
 
 free.o: free.c
-	$(CC) -o free.o -c free.c $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o free.o -c free.c $(INCS)
 
 internal_lib.o: internal_lib.c
-	$(CC) -o internal_lib.o -c internal_lib.c  $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o internal_lib.o -c internal_lib.c  $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
