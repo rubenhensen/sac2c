@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2002/08/05 18:48:54  dkr
+ * comments corrected
+ *
  * Revision 3.29  2002/08/05 18:21:33  dkr
  * - some shape calcualtions for AKD, AUD implemented
  * - ND_ASSIGN__SHAPE renamed into ND_ASSIGN__DIMSHP
@@ -2214,7 +2217,7 @@ PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_RESHAPE__DATA( to_nt, to_sdim, from_nt, from_sdim)
+ *   ND_PRF_RESHAPE__SHAPE_id( to_nt, to_sdim, shp_nt)
  *
  ******************************************************************************/
 
@@ -2254,7 +2257,7 @@ ICMCompileND_PRF_RESHAPE__SHAPE_id (char *to_nt, int to_sdim, char *shp_nt)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_RESHAPE__DATA( to_nt, to_sdim, from_nt, from_sdim)
+ *   ND_PRF_RESHAPE__SHAPE_arr( to_nt, to_sdim, shp_size, shpa_any)
  *
  ******************************************************************************/
 
