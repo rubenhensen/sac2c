@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.126  2004/10/22 14:47:40  sah
+# added usesymbols traversal
+#
 # Revision 3.125  2004/10/22 14:12:43  ktr
 # Added src/refcount/reuseelimination.
 #
@@ -307,7 +310,8 @@ ifeq ($(NEWAST),yes)
                src/tree/deserialize.o src/tree/serialize_buildstack.o \
                src/modules/export.o src/modules/ccmanager.o \
                src/modules/libbuilder.o src/tree/serialize_helper.o \
-               src/modules/resolveall.o src/modules/annotatenamespace.o
+               src/modules/resolveall.o src/modules/annotatenamespace.o \
+               src/modules/usesymbols.o
   NEWASTFLAGS = -ldl --export-dynamic
 endif
 

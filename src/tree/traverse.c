@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.100  2004/10/22 14:47:40  sah
+ * added usesymbols traversal
+ *
  * Revision 3.99  2004/10/22 14:12:00  ktr
  * added emre_tab
  *
@@ -436,6 +439,7 @@
 #include "export.h"
 #include "resolveall.h"
 #include "annotatenamespace.h"
+#include "usesymbols.h"
 #include "filterrc.h"
 #include "aliasanalysis.h"
 #include "staticreuse.h"
@@ -1215,15 +1219,20 @@ static funtab ai_tab_rec = {{
 funtab *ai_tab = &ai_tab_rec;
 
 /*
- *  (66) unused_tab31
+ *  (66) uss_tab
  */
-static funtab unused_tab31_rec = {{
-#define NIFunused_31(it_unused_31) it_unused_31
+static funtab uss_tab_rec = {{
+#ifdef NEW_AST
+#define NIFuss(it_uss) it_uss
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab31 = &unused_tab31_rec;
+#else
+#define NIFunused_39(it_unused39) it_unused39
+#include "node_info.mac"
+#endif
+                             },
+                             NULL,
+                             NULL};
+funtab *uss_tab = &uss_tab_rec;
 
 /*
  *  (67) unused_tab36

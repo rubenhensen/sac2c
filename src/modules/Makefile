@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.22  2004/10/22 14:47:40  sah
+# added usesymbols traversal
+#
 # Revision 3.21  2004/10/22 09:01:55  sah
 # added annotatenamespace traversal.
 #
@@ -100,7 +103,7 @@ ifeq ($(NEWAST),no)
 else
   OBJS := libmanager.o modulemanager.o libstat.o export.o \
           ccmanager.o libbuilder.o resolveall.o annotatenamespace.o \
-          $(OBJS)
+          usesymbols.o $(OBJS)
 endif
 
 all: $(OBJS)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2004/10/22 14:47:40  sah
+ * added usesymbols traversal
+ *
  * Revision 3.75  2004/10/22 14:12:00  ktr
  * added emre_tab
  *
@@ -406,7 +409,7 @@ extern funtab *repfun_tab;
 extern funtab *concel_tab;
 extern funtab *fun2lac_tab;
 extern funtab *ai_tab;
-extern funtab *unused_tab31;
+extern funtab *uss_tab;
 extern funtab *unused_tab36;
 extern funtab *infdfms_tab;
 extern funtab *l2f_tab;

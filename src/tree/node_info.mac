@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.222  2004/10/22 14:47:40  sah
+ * added usesymbols traversal
+ *
  * Revision 3.221  2004/10/22 14:12:23  ktr
  * added emre_tab
  *
@@ -467,7 +470,7 @@
  *   spmdpm_tab      unused_tab47    ntc_tab         infdfms_tab
  *
  *   muth_tab        crwiw_tab       concel_tab      repfun_tab
- *   func2lac_tab    ai_tab          unused_tab31    unused_tab36
+ *   func2lac_tab    ai_tab          uss_tab         unused_tab36
  *   l2f_tab         unused_tab30    unused_tab35    unused_tab34
  *   cudecls_tab     unused_tab29    unused_tab33    unused_tab27
  *   unused_tab28    precomp3_tab    apc_tab         apt_tab
@@ -752,8 +755,8 @@
 #ifndef NIFai
 #define NIFai(it_ai)
 #endif
-#ifndef NIFunused_31
-#define NIFunused_31(it_unused31)
+#ifndef NIFuss
+#define NIFuss(it_uss)
 #endif
 #ifndef NIFunused_36
 #define NIFunused_36(it_unused_36)
@@ -1021,9 +1024,9 @@
   it_wlaa, it_mmv, it_unused_43, it_unused_44, it_unused_45, it_tsi, it_unused_46,                     \
   it_spmddn, it_spmdpm, it_unused_47, it_ntc, it_infdfms,                                              \
                                                                                                        \
-  it_muth, it_crwiw, it_concel, it_repfun, it_fun2lac, it_ai, it_unused_31,                            \
-  it_unused_36, it_l2f, it_unused_30, it_unused_35, it_unused_34, it_cudecls,                          \
-  it_unused_29, it_unused_33, it_unused_27, it_unused_28, it_precomp3, it_apc, it_apt,                 \
+  it_muth, it_crwiw, it_concel, it_repfun, it_fun2lac, it_ai, it_uss, it_unused_36,                    \
+  it_l2f, it_unused_30, it_unused_35, it_unused_34, it_cudecls, it_unused_29,                          \
+  it_unused_33, it_unused_27, it_unused_28, it_precomp3, it_apc, it_apt,                               \
                                                                                                        \
   it_mapcw, it_pih, it_piw, it_impspec, it_tccp, it_ssafrm, it_chkavis, it_undossa,                    \
   it_ssadcr, it_ssacse, it_cmptree, it_profile, it_ssacf, it_ssalir, it_lirmov, it_wlpg,               \
@@ -1068,7 +1071,7 @@
                                                                                                        \
                             NIFmuth (it_muth) NIFcrwiw (it_crwiw) NIFconcel (                          \
                               it_concel) NIFrepfun (it_repfun) NIFfun2lac (it_fun2lac)                 \
-                              NIFai (it_ai) NIFunused_31 (it_unused_31) NIFunused_36 (                 \
+                              NIFai (it_ai) NIFuss (it_uss) NIFunused_36 (                             \
                                 it_unused_36) NIFl2f (it_l2f) NIFunused_30 (it_unused_30)              \
                                 NIFunused_35 (it_unused_35) NIFunused_34 (                             \
                                   it_unused_34) NIFcudecls (it_cudecls)                                \
@@ -1401,7 +1404,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, NTCmodul, TravSons,
 
-       MUTHmodul, TravSons, TravSons, TravSons, FUN2LACmodul, TravSons, TravSons,
+       MUTHmodul, TravSons, TravSons, TravSons, FUN2LACmodul, TravSons, USSModul,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -2105,9 +2108,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        WLAAap, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, NTCap, INFDFMSap,
 
-       TravSons, CRWIWap, TravSons, REPFUNap, FUN2LACap, AIap, TravSons, TravSons,
+       TravSons, CRWIWap, TravSons, REPFUNap, FUN2LACap, AIap, USSAp, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, APCap, APTap,
+       TravSons, APCap, APTap,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, SSAap, CAVap, TravSons, SSADCRap,
        SSACSEap, CMPTap, PFap, SSACFap, SSALIRap, TravSons, WLPGap, SSALURap, SSAWLTap,
@@ -3478,7 +3481,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
 #undef NIFfun2lac
 #undef NIFai
-#undef NIFunused_31
+#undef NIFuss
 #undef NIFunused_36
 
 #undef NIFl2f
