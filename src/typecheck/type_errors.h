@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2003/12/02 09:53:02  sbs
+ * TEAssureNonNegativeValues added.
+ *
  * Revision 1.10  2003/09/10 09:42:13  sbs
  * TEAssureAbsValFitsShape added.
  *
@@ -56,6 +59,7 @@ extern void TEAssureNumA (char *obj, ntype *type);
 extern void TEAssureSimpleType (char *obj, ntype *type);
 extern void TEAssureIntS (char *obj, ntype *type);
 extern void TEAssureIntVect (char *obj, ntype *type);
+extern void TEAssureNonNegativeValues (char *obj, ntype *type);
 extern void TEAssureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEAssureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEAssureAbsValFitsShape (char *obj1, ntype *type1, char *obj2, ntype *type2);

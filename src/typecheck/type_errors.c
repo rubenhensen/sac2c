@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.13  2003/12/02 09:53:02  sbs
+ * TEAssureNonNegativeValues added.
+ *
  * Revision 1.12  2003/09/10 09:42:13  sbs
  * TEAssureAbsValFitsShape added.
  *
@@ -550,6 +553,39 @@ TEAssureIntVect (char *obj, ntype *type)
         ERROR (linenum, ("%s should be an integer vector; type found: %s", obj,
                          TYType2String (type, FALSE, 0)));
         TEExtendedAbort ();
+    }
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void TEAssureNonNegativeValues( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+TEAssureNonNegativeValues (char *obj, ntype *type)
+{
+    int i, dim;
+    int *dv;
+
+    DBUG_ENTER ("TEAssureNonNegativeValues");
+
+    if (TYGetConstr (type) == TC_akv) {
+        dim = SHGetExtent (TYGetShape (type), 0);
+        dv = (int *)COGetDataVec (TYGetValue (type));
+
+        for (i = 0; i < dim; i++) {
+            if (dv[i] < 0) {
+                ERROR (linenum, ("%s should not contain negative values; type found: %s",
+                                 obj, TYType2String (type, FALSE, 0)));
+                TEExtendedAbort ();
+            }
+        }
     }
     DBUG_VOID_RETURN;
 }
