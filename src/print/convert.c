@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/04/09 13:54:07  jhs
+ * No changes made, error not in this file.
+ *
  * Revision 2.3  1999/04/08 17:17:45  jhs
  * Handling for empty arrays added.
  *
