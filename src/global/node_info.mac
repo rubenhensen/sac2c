@@ -1,10 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.75  1995/06/06 14:05:28  cg
- * N_isclass and N_imported added.
- * N_constdef and N_objdef will now be printed.
+ * Revision 1.76  1995/06/07 15:48:59  sbs
+ * DummyFun2 used in N_fundef
  *
+;; Revision 1.75  1995/06/06  14:05:28  cg
+;; N_isclass and N_imported added.
+;; N_constdef and N_objdef will now be printed.
+;;
 ;; Revision 1.74  1995/06/06  08:52:47  sbs
 ;; IdxAp deleted
 ;;
@@ -292,7 +295,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_fundef, "N_fundef", DummyFun, FltnFundef, PrintFundef, TCfundef, OPTfundef,
        DEADfundef, WRfundef, FreeInfoType, CFfundef, RCfundef, CompFundef, LIRfundef,
-       DummyFun, INLfundef, UNRfundef, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
+       DummyFun, INLfundef, UNRfundef, DummyFun, DummyFun2, DummyFun, DummyFun, DummyFun),
   NIF (N_vardec, "N_vardec", DummyFun, DummyFun, PrintVardec, DummyFun, OPTvardec,
        DEADvardec, DummyFun, FreeInfoType, DummyFun, DummyFun, CompVardec, DummyFun,
        DummyFun, INLvar, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
