@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2004/08/06 14:41:32  sah
+ * adding support for new ast
+ *
  * Revision 3.46  2004/07/21 12:40:38  khf
  * TmpVar(): ea_tab added
  *
@@ -1029,7 +1032,7 @@ PrefixForTmpVar (void)
     char *s;
 
     DBUG_ENTER ("PrefixForTmpVar");
-
+#ifndef NEW_AST
     if (act_tab == imp_tab) {
         s = "imp";
     } else if (act_tab == flat_tab) {
@@ -1146,7 +1149,33 @@ PrefixForTmpVar (void)
         s = "emal";
     } else if (act_tab == ea_tab) {
         s = "ea";
-    } else {
+    } else
+#else
+    if (act_tab == flat_tab) {
+        s = "flat";
+    } else if (act_tab == print_tab) {
+        s = "prt";
+    } else if (act_tab == ntc_tab) {
+        s = "ntc";
+    } else if (act_tab == free_tab) {
+        s = "free";
+    } else if (act_tab == dup_tab) {
+        s = "dup";
+    } else if (act_tab == fun2lac_tab) {
+        s = "f2l";
+    } else if (act_tab == ssafrm_tab) {
+        s = "ssa";
+    } else if (act_tab == undossa_tab) {
+        s = "ussa";
+    } else if (act_tab == hd_tab) {
+        s = "hd";
+    } else if (act_tab == cwc_tab) {
+        s = "cwc";
+    } else if (act_tab == nt2ot_tab) {
+        s = "nt2ot";
+    } else
+#endif /* NEW_AST */
+    {
         s = "unknown";
         DBUG_ASSERT ((0), "PrefixForTmpVar(): unknown trav-tab found!");
     }

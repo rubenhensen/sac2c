@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/08/06 14:41:32  sah
+ * adding support for new ast
+ *
  * Revision 1.3  2004/07/31 16:16:57  sah
  * added support for flags and moved to memory saving attribute
  * structure.
@@ -73,7 +76,15 @@
     MakeNWithOp (type, shp_array_neutral, shp_array_neutral, shp_array_neutral)
 
 #define MakeFlatArray(aelems) MakeArray (aelems, SHCreateShape (1, CountExprs (aelems)))
-#else
+
+/* N_annotate uses its own flags, here are the defines */
+#define CALL_FUN 0x0001
+#define RETURN_FROM_FUN 0x0002
+#define INL_FUN 0x0004
+#define LIB_FUN 0x0008
+#define OVRLD_FUN 0x0010
+
+#else /* NO_COMPAT */
 
 #undef MakeIdFromIds
 #undef MakeId
