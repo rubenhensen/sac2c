@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.8  2003/09/22 15:21:57  dkr
+# ICM_TESTER added
+#
 # Revision 1.7  2003/09/19 15:04:39  dkr
 # CODE_BEAUTIFIER added
 #
@@ -85,3 +88,4 @@ endif
 
 CLOCK_SKEW_ELIMINATION   := $(PROJECT_ROOT)/tools/bin/cse
 CODE_BEAUTIFIER          := $(PROJECT_ROOT)/tools/bin/cb
+ICM_TESTER               := $(PROJECT_ROOT)/tools/bin/icm_tester
