@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/01/18 11:39:02  sbs
+ * updated the copyright notice.
+ *
  * Revision 3.16  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -719,12 +722,12 @@ version ()
             "FOR OS:    %s\n"
             "\n\n"
 
-            "(c) Copyright 1994 - 2000 by\n\n"
+            "(c) Copyright 1994 - 2002 by\n\n"
 
             "  Christian-Albrechts-Universitaet zu Kiel\n"
             "  Institut fuer Informatik und Praktische Mathematik\n"
-            "  Preusserstrasse 1 - 9\n"
-            "  D-24105 Kiel\n"
+            "  Herman-Rodewald-Str.3\n"
+            "  D-24118 Kiel\n"
             "  Germany\n\n",
             (version_id[0] == '\0') ? "???" : version_id,
             (target_platform[0] == '\0') ? "???" : target_platform,
