@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2004/11/27 00:52:38  cg
+ * Renamed TYeliminate functions.
+ *
  * Revision 3.73  2004/11/27 00:35:54  sbs
  * *** empty log message ***
  *
@@ -3407,7 +3410,7 @@ TYlubOfTypes (ntype *t1, ntype *t2)
 /******************************************************************************
  *
  * function:
- *    ntype * TYEliminateAlpha( ntype *t1)
+ *    ntype * TYeliminateAlpha( ntype *t1)
  *
  * description:
  *    if t1 is a type variable with identical upper and lower bound the
@@ -3416,17 +3419,17 @@ TYlubOfTypes (ntype *t1, ntype *t2)
  ******************************************************************************/
 
 ntype *
-TYEliminateAlpha (ntype *t1)
+TYeliminateAlpha (ntype *t1)
 {
     ntype *res;
     int i;
 
-    DBUG_ENTER ("TYEliminateAlpha");
+    DBUG_ENTER ("TYeliminateAlpha");
 
     if (TYisProd (t1)) {
         res = MakeNtype (TC_prod, NTYPE_ARITY (t1));
         for (i = 0; i < NTYPE_ARITY (t1); i++) {
-            PROD_MEMBER (res, i) = TYEliminateAlpha (PROD_MEMBER (t1, i));
+            PROD_MEMBER (res, i) = TYeliminateAlpha (PROD_MEMBER (t1, i));
         }
     } else {
         if (TYisFixedAlpha (t1)) {
@@ -3483,7 +3486,7 @@ TYfixAndEliminateAlpha (ntype *t1)
 /******************************************************************************
  *
  * function:
- *    ntype * TYEliminateUser( ntype *t1)
+ *    ntype * TYeliminateUser( ntype *t1)
  *
  * description:
  *    if t1 is a user defined type, its base type is returned;
@@ -3492,17 +3495,17 @@ TYfixAndEliminateAlpha (ntype *t1)
  ******************************************************************************/
 
 ntype *
-TYEliminateUser (ntype *t1)
+TYeliminateUser (ntype *t1)
 {
     ntype *res;
     int i;
 
-    DBUG_ENTER ("TYEliminateUser");
+    DBUG_ENTER ("TYeliminateUser");
 
     if (TYisProd (t1)) {
         res = MakeNtype (TC_prod, NTYPE_ARITY (t1));
         for (i = 0; i < NTYPE_ARITY (t1); i++) {
-            PROD_MEMBER (res, i) = TYEliminateUser (PROD_MEMBER (t1, i));
+            PROD_MEMBER (res, i) = TYeliminateUser (PROD_MEMBER (t1, i));
         }
     } else {
         if (TYisArray (t1) && TYisUser (TYgetScalar (t1))) {
@@ -3517,7 +3520,7 @@ TYEliminateUser (ntype *t1)
 
 /** <!--********************************************************************-->
  *
- * @fn ntype * TYEliminateAKV( ntype *t1)
+ * @fn ntype * TYeliminateAKV( ntype *t1)
  *
  *   @brief if t1 is a AKV type, the respective AKS type is returned;
  *          otherwise, a copy of t1 is returned.
@@ -3525,17 +3528,17 @@ TYEliminateUser (ntype *t1)
  ******************************************************************************/
 
 ntype *
-TYEliminateAKV (ntype *t1)
+TYeliminateAKV (ntype *t1)
 {
     ntype *res;
     int i;
 
-    DBUG_ENTER ("TYEliminateAKV");
+    DBUG_ENTER ("TYeliminateAKV");
 
     if (TYisProd (t1)) {
         res = MakeNtype (TC_prod, NTYPE_ARITY (t1));
         for (i = 0; i < NTYPE_ARITY (t1); i++) {
-            PROD_MEMBER (res, i) = TYEliminateAKV (PROD_MEMBER (t1, i));
+            PROD_MEMBER (res, i) = TYeliminateAKV (PROD_MEMBER (t1, i));
         }
     } else {
         if (TYisAKV (t1)) {
