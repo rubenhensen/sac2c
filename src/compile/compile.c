@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.125  1998/04/14 22:48:10  dkr
+ * some renamed access macros
+ *
  * Revision 1.124  1998/04/14 21:44:24  dkr
  * fixed a bug with COND_VARINFO, DO_VARINFO, ...
  * changed CompConc
@@ -2263,7 +2266,7 @@ ShapeToArray (node *vardec_node)
     } else {
         basic_type_node = LookupType (TYPES_NAME (VARDEC_TYPE (vardec_node)),
                                       TYPES_MOD (VARDEC_TYPE (vardec_node)),
-                                      0815); /* 0815 is dummy argument */
+                                      042); /* 042 is dummy argument */
         if (1 <= TYPES_DIM (VARDEC_TYPE (vardec_node))) {
             ret_node = MakeNode (N_exprs);
             MAKENODE_NUM (ret_node->node[0],
@@ -2358,12 +2361,12 @@ CompModul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("CompModul");
 
-    INFO_COMP_COMP_MODUL (arg_info) = arg_node; /* needed by CompConc */
+    INFO_COMP_MODUL (arg_info) = arg_node; /* needed by CompConc */
 
-    COMP_IMPORTS (arg_node) = Trav (COMP_IMPORTS (arg_node), arg_info);
-    COMP_TYPES (arg_node) = Trav (COMP_TYPES (arg_node), arg_info);
-    COMP_OBJS (arg_node) = Trav (COMP_OBJS (arg_node), arg_info);
-    COMP_FUNS (arg_node) = Trav (COMP_FUNS (arg_node), arg_info);
+    MODUL_IMPORTS (arg_node) = Trav (MODUL_IMPORTS (arg_node), arg_info);
+    MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
+    MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
+    MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
