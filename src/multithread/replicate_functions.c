@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/09/01 16:02:27  skt
+ * implementation finished
+ *
  * Revision 1.1  2004/08/31 16:56:18  skt
  * Initial revision
  *
@@ -244,6 +247,7 @@ REPFUNassign (node *arg_node, info *arg_info)
 node *
 REPFUNap (node *arg_node, info *arg_info)
 {
+    bool build_replications;
     node *my_fundef;
     node *tmp_1, *tmp_2;
     DBUG_ENTER ("REPFUNap");
@@ -254,46 +258,80 @@ REPFUNap (node *arg_node, info *arg_info)
           = INFO_REPFUN_EXECMODE (arg_info);
         my_fundef = AP_FUNDEF (arg_node);
 
-        /* no companions available - replicate function */
-        if (FUNDEF_COMPANION (my_fundef) == NULL) {
+        build_replications = TRUE;
 
+        /* EX/ST/MT-companions available - do not replicate function */
+        if (FUNDEF_COMPANION (my_fundef) != NULL) {
+            if (FUNDEF_EXECMODE (my_fundef) != MUTH_ANY) {
+                build_replications = FALSE;
+            }
+        }
+
+        if (build_replications == TRUE) {
             /* LaC-functions are handled seperatly */
             if (((FUNDEF_STATUS (my_fundef) != ST_dofun)
                  && (FUNDEF_STATUS (my_fundef) != ST_whilefun)
                  && (FUNDEF_STATUS (my_fundef) != ST_condfun))) {
                 tmp_1 = DupNode (my_fundef);
                 tmp_2 = DupNode (my_fundef);
-                FUNDEF_NEXT (tmp_1) = tmp_2;
-                FUNDEF_NEXT (tmp_2) = FUNDEF_NEXT (my_fundef);
-                FUNDEF_NEXT (my_fundef) = tmp_1;
 
                 FUNDEF_EXECMODE (my_fundef) = MUTH_EXCLUSIVE;
+                ASSIGN_EXECMODE (FUNDEF_RETURN (my_fundef)) = MUTH_EXCLUSIVE;
                 FUNDEF_EXECMODE (tmp_1) = MUTH_SINGLE;
+                ASSIGN_EXECMODE (FUNDEF_RETURN (tmp_1)) = MUTH_SINGLE;
                 FUNDEF_EXECMODE (tmp_2) = MUTH_MULTI;
-
-                FUNDEF_COMPANION (my_fundef) = tmp_1;
-                FUNDEF_COMPANION (tmp_1) = tmp_2;
-                FUNDEF_COMPANION (tmp_2) = my_fundef;
+                ASSIGN_EXECMODE (FUNDEF_RETURN (tmp_2)) = MUTH_MULTI;
 
                 my_fundef = MUTHExpandFundefName (my_fundef, "__EX_");
                 tmp_1 = MUTHExpandFundefName (tmp_1, "__ST_");
                 tmp_2 = MUTHExpandFundefName (tmp_2, "__MT_");
+
+                if (FUNDEF_COMPANION (my_fundef) == NULL) {
+                    FUNDEF_NEXT (tmp_2) = FUNDEF_NEXT (my_fundef);
+                    FUNDEF_NEXT (tmp_1) = tmp_2;
+                    FUNDEF_NEXT (my_fundef) = tmp_1;
+
+                    FUNDEF_COMPANION (my_fundef) = tmp_1;
+                    FUNDEF_COMPANION (tmp_1) = tmp_2;
+                    FUNDEF_COMPANION (tmp_2) = my_fundef;
+                }
+                /* there's already a specialisation (MUTH_MULTI_SPECIALIZED) */
+                else {
+                    DBUG_ASSERT ((FUNDEF_EXECMODE (FUNDEF_COMPANION (my_fundef))
+                                  == MUTH_MULTI_SPECIALIZED),
+                                 "companion must have executionmode "
+                                 "MUTH_MULTI_SPECIALIZED");
+                    FUNDEF_NEXT (tmp_2) = FUNDEF_NEXT (FUNDEF_COMPANION (my_fundef));
+                    FUNDEF_NEXT (tmp_1) = tmp_2;
+                    FUNDEF_NEXT (FUNDEF_COMPANION (my_fundef)) = tmp_1;
+
+                    FUNDEF_COMPANION (FUNDEF_COMPANION (my_fundef)) = tmp_1;
+                    FUNDEF_COMPANION (tmp_1) = tmp_2;
+                    FUNDEF_COMPANION (tmp_2) = my_fundef;
+                }
+
+                /* search for the fundef with correct executionmode */
+                while (FUNDEF_EXECMODE (my_fundef) != INFO_REPFUN_EXECMODE (arg_info)) {
+                    my_fundef = FUNDEF_COMPANION (my_fundef);
+                }
+
+                AP_FUNDEF (arg_node) = my_fundef;
+
+            } else {
+                INFO_REPFUN_MODUL (arg_info)
+                  = CheckAndDupSpecialFundef (INFO_REPFUN_MODUL (arg_info), my_fundef,
+                                              INFO_REPFUN_ACTASSIGN (arg_info));
             }
-            /*   else {
-              INFO_REPFUN_MODUL(arg_info)
-                = CheckAndDupSpecialFundef(INFO_REPFUN_MODUL(arg_info),
-                                           my_fundef,
-                                           INFO_REPFUN_ACTASSIGN(arg_info));
-              tmp = AP_FUNDEF(LET_EXPR(ASSIGN_INSTR(INFO_REPFUN_ACTASSIGN(arg_info))));
-              }*/
         }
+        /* => build_replications == FALSE) */
+        else {
+            /* search for the fundef with correct executionmode */
+            while (FUNDEF_EXECMODE (my_fundef) != INFO_REPFUN_EXECMODE (arg_info)) {
+                my_fundef = FUNDEF_COMPANION (my_fundef);
+            }
 
-        /* search for the fundef with correct executionmode */
-        while (FUNDEF_EXECMODE (my_fundef) != INFO_REPFUN_EXECMODE (arg_info)) {
-            my_fundef = FUNDEF_COMPANION (my_fundef);
+            AP_FUNDEF (arg_node) = my_fundef;
         }
-
-        AP_FUNDEF (arg_node) = my_fundef;
 
         /* time to check the body of the function - perhaps we have to duplicate
          * somebody within it */
