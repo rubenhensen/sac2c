@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.26  1995/02/27 15:03:14  hw
+ * Revision 1.27  1995/03/10 11:08:29  hw
+ * - Refcount inserted
+ * - new parameters -noRC, -r (show refcounts while Print) added
+ *
+ * Revision 1.26  1995/02/27  15:03:14  hw
  * set default value for 'filename'
  *
  * Revision 1.25  1995/02/15  14:32:05  asi
@@ -102,7 +106,7 @@
 #include "DeadCodeRemoval.h"
 #include "filemgr.h"
 #include "import.h"
-
+#include "refcount.h"
 #include "scnprs.h"
 #include <stdlib.h>
 #include <string.h>
@@ -110,11 +114,13 @@
 FILE *outfile;
 char filename[256];
 int opt_dcr = 1, opt_cf = 1;
+int show_refcnt = 0;
 
 MAIN
 {
     int set_outfile = 0;
-    int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, optimize = 1;
+    int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, optimize = 1,
+        print_refcnt = 0, refcount = 1;
     char prgname[256];
     char outfilename[256] = "out.txt";
 
@@ -146,6 +152,10 @@ MAIN
     {
         silent = 1;
     }
+    ARG 'r':
+    {
+        print_refcnt = 1;
+    }
     ARG 'n' : PARM
     {
         if (!strncmp (*argv, "oDCR", 4))
@@ -154,6 +164,8 @@ MAIN
             opt_cf = 0;
         if (!strncmp (*argv, "oOPT", 4))
             optimize = 0;
+        if (!strncmp (*argv, "oRC", 3))
+            refcount = 0;
     }
     NEXTOPT
     ARG 'o' : PARM
@@ -212,6 +224,13 @@ MAIN
                         NOTE (("Optimizing: ...\n"));
                         syntax_tree = Optimize (syntax_tree);
                     }
+                    if (refcount) {
+                        syntax_tree = Refcount (syntax_tree);
+                        if (1 == print_refcnt) {
+                            show_refcnt = 1;
+                        }
+                    }
+
                     /*  GenCCode(); */
                 }
             } else
