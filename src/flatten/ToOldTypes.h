@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/11/21 20:10:20  khf
+ * the big 2004 codebrushing event
+ *
  * Revision 1.1  2004/11/19 10:50:57  mwe
  * Initial revision
  *
@@ -19,8 +22,10 @@
  *
  *****************************************************************************/
 
-#ifndef SAC_TONEWTYPES_H
-#define SAC_TONEWTYPES_H
+#include "types.h"
+
+#ifndef _SAC_TONEWTYPES_H_
+#define _SAC_TONEWTYPES_H_
 
 node *TOTcast (node *arg_node, node *arg_info);
 node *TOTarray (node *arg_node, node *arg_info);
@@ -32,6 +37,7 @@ node *TOTblock (node *arg_node, node *arg_info);
 node *TOTfundef (node *arg_node, node *arg_info);
 node *TOTobjdef (node *arg_node, node *arg_info);
 node *TOTtypedef (node *arg_node, node *arg_info);
-node *ToOldTypes (node *syntax_tree);
 
-#endif
+node *TOTdoToOldTypes (node *syntax_tree);
+
+#endif /* _SAC_TONEWTYPES_H_ */

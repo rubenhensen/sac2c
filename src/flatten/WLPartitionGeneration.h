@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/21 20:10:20  khf
+ * the big 2004 codebrushing event
+ *
  * Revision 1.6  2004/07/22 17:26:23  khf
  * added WLPGap
  *
@@ -24,21 +27,25 @@
  *
  */
 
-#ifndef _WLPartitionGeneration_h
-#define _WLPartitionGeneration_h
+#include "types.h"
 
-extern node *WLPartitionGeneration (node *arg_node);
-extern node *WLPartitionGenerationOPT (node *arg_node);
+#ifndef _SAC_WLPARTIONGENERATION_H_
+#define _SAC_WLPARTIONGENERATION_H_
 
-extern node *WLPGmodul (node *arg_node, info *arg_info);
+extern node *WLPGdoWlPartitionGeneration (node *arg_node);
+extern node *WLPGdoWlPartitionGenerationOpt (node *arg_node);
+
+extern node *WLPGmodule (node *arg_node, info *arg_info);
 extern node *WLPGfundef (node *arg_node, info *arg_info);
 extern node *WLPGassign (node *arg_node, info *arg_info);
 extern node *WLPGlet (node *arg_node, info *arg_info);
 extern node *WLPGap (node *arg_node, info *arg_info);
 
-extern node *WLPGNwith (node *arg_node, info *arg_info);
-extern node *WLPGNwithop (node *arg_node, info *arg_info);
-extern node *WLPGNpart (node *arg_node, info *arg_info);
-extern node *WLPGNgenerator (node *arg_node, info *arg_info);
+extern node *WLPGwith (node *arg_node, info *arg_info);
+extern node *WLPGgenarray (node *arg_node, info *arg_info);
+extern node *WLPGmodarray (node *arg_node, info *arg_info);
+extern node *WLPGfold (node *arg_node, info *arg_info);
+extern node *WLPGpart (node *arg_node, info *arg_info);
+extern node *WLPGgenerator (node *arg_node, info *arg_info);
 
-#endif
+#endif /* _SAC_WLPARTIONGENERATION_H_ */
