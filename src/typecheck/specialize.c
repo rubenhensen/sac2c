@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/02/20 15:55:49  sbs
+ * one argument to MakeModul call added.
+ *
  * Revision 1.8  2003/09/11 15:26:44  sbs
  * function specialization now bound by max_overload!
  *
@@ -313,7 +316,7 @@ SPECHandleLacFun (node *fundef, node *assign, ntype *args)
          * Unfortunately, the "specialization" of LAC functions is postponed
          * until actualy found for type checking, i.e., until here:
          */
-        module = MakeModul ("dummy", F_prog, NULL, NULL, NULL, NULL);
+        module = MakeModul ("dummy", F_prog, NULL, NULL, NULL, NULL, NULL);
         module = CheckAndDupSpecialFundef (module, fundef, assign);
         fun = MODUL_FUNS (module);
         MODUL_FUNS (module) = NULL;
