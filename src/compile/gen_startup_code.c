@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.27  2000/08/07 19:47:29  nmw
+ * missing initializing at begin of main() added
+ * should fix the PHM crashes in relax_fix
+ *
  * Revision 2.26  2000/08/01 13:27:51  nmw
  * header generation for c library internal PHM init function added
  *
@@ -851,9 +855,17 @@ GSCPrintMainBegin ()
 
     /* call init function for a c library - no command line available */
     if (generatelibrary & GENERATELIBRARY_C) {
+        /*only call obj init function - runtimesystem already initialized */
         fprintf (outfile, "  %s( 0 , NULL);\n\n", funname);
     } else {
-        fprintf (outfile, "  %s( __argc, __argv);\n\n", funname);
+        fprintf (outfile,
+                 "  SAC_MT_SETUP_INITIAL();\n"
+                 "  SAC_PF_SETUP();\n"
+                 "  SAC_HM_SETUP();\n"
+                 "  SAC_MT_SETUP();\n"
+                 "  SAC_CS_SETUP();\n"
+                 "  %s( __argc, __argv);\n\n",
+                 funname);
     }
     FREE (funname);
 
