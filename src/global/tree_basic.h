@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/10/20 11:29:43  cg
+ * Revision 1.10  1995/10/22 17:33:12  cg
+ * new macros FUNDEC_DEF and TYPEDEC_DEF
+ * new slot DECL of N_modul node to store declaration when compiling
+ * a module/class implementation
+ *
+ * Revision 1.9  1995/10/20  11:29:43  cg
  * *** empty log message ***
  *
  * Revision 1.8  1995/10/19  11:16:00  cg
@@ -306,6 +311,11 @@ extern nodelist *MakeNodelist (node *node, statustype status, nodelist *next);
  ***
  ***    char*      NAME      (O)
  ***    file_type  FILETYPE
+ ***
+ ***  temporary attributes:
+ ***
+ ***    node*      DECL      (O)  (N_moddec, N_classdec)  (check-dec -> )
+ ***                                                      ( -> write-SIB !!)
  ***/
 
 extern node *MakeModul (char *name, file_type filetype, node *imports, node *types,
@@ -317,6 +327,7 @@ extern node *MakeModul (char *name, file_type filetype, node *imports, node *typ
 #define MODUL_TYPES(n) (n->node[1])
 #define MODUL_OBJS(n) (n->node[3])
 #define MODUL_FUNS(n) (n->node[2])
+#define MODUL_DECL(n) (n->node[4])
 
 /*--------------------------------------------------------------------------*/
 
@@ -459,11 +470,16 @@ extern node *MakeExplist (node *itypes, node *etypes, node *objs, node *funs);
  ***
  ***    types*      IMPL  (O)               (import -> )
  ***                                        ( -> writesib !!)
+ ***    node*       TYPEDEC_DEF  (O)        (checkdec -> writesib !!)
  ***/
 
 /*
  *  The STATUS indicates whether a type is defined or imported.
  *  Possible values: ST_regular | ST_imported
+ *
+ *  The TYPEDEC_DEF slot is only used when a typedef node is used as a
+ *  representation of a type declaration. It then points to the
+ *  typedef node which contains the respective definition.
  */
 
 extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
@@ -476,6 +492,8 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
 #define TYPEDEF_STATUS(n) (n->info.types->status)
 #define TYPEDEF_IMPL(n) (n->info.types->next)
 #define TYPEDEF_NEXT(n) (n->node[0])
+
+#define TYPEDEC_DEF(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
@@ -548,11 +566,17 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    int        VARNO                     (optimize -> )
  ***    long*      DEFMASK                   (optimize -> )
  ***    long*      USEMASK                   (optimize -> )
+ ***
+ ***    node*      FUNDEC_DEF (O) (N_fundef) (checkdec -> writesib !!)
  ***/
 
 /*
  *  The STATUS indicates whether a function is defined or imported.
  *  Possible values: ST_regular | ST_imported
+ *
+ *  The FUNDEC_DEF slot is only used when a fundef node is used as a
+ *  representation of a function declaration. It then points to the
+ *  fundef node which contains the respective definition.
  */
 
 extern node *MakeFundef (char *name, char *mod, char *alias, types *types, node *args,
@@ -572,6 +596,8 @@ extern node *MakeFundef (char *name, char *mod, char *alias, types *types, node 
 #define FUNDEF_DEFMASK(n) (n->mask[0])
 #define FUNDEF_USEMASK(n) (n->mask[1])
 #define FUNDEF_STATUS(n) (n->info.types->status)
+
+#define FUNDEC_DEF(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
 
