@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2004/10/28 16:10:23  sah
+ * added deserialisation support needed for
+ * specialising functions
+ *
  * Revision 3.49  2004/10/26 15:37:35  sah
  *  FUNDEF_TCSTAT is set to NTC_checked now
  *
@@ -121,6 +125,9 @@
 #include "type_errors.h"
 #include "specialize.h"
 #include "constants.h"
+#ifdef NEW_AST
+#include "deserialize.h"
+#endif
 
 /*
  * OPEN PROBLEMS:
@@ -602,6 +609,9 @@ NTCmodul (node *arg_node, info *arg_info)
     while (fundef != NULL) {
         if (FUNDEF_STATUS (fundef) != ST_wrapperfun) {
 #ifndef NEW_AST
+            /* the new ast is already marked properly, so there is no need
+             * to do so here
+             */
             FUNDEF_TCSTAT (fundef) = NTC_not_checked;
 #endif
             if (!FUNDEF_IS_LACFUN (fundef) && (NULL != FUNDEF_ARGS (fundef))) {
@@ -612,6 +622,15 @@ NTCmodul (node *arg_node, info *arg_info)
         }
         fundef = FUNDEF_NEXT (fundef);
     }
+
+#ifdef NEW_AST
+    /*
+     * Now we have to initialize the deserialisation unit, as
+     * specializations may add new functions as dependencies
+     * of bodies to the ast
+     */
+    InitDeserialize (arg_node);
+#endif
 
     if (NULL != MODUL_FUNDECS (arg_node)) {
         MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
@@ -624,6 +643,14 @@ NTCmodul (node *arg_node, info *arg_info)
     if ((break_after == PH_typecheck) && (0 == strcmp (break_specifier, "ntc"))) {
         goto DONE;
     }
+
+#ifdef NEW_AST
+    /*
+     * from here on, no more functions are deserialized, so ww can
+     * finish the deseralization engine
+     */
+    FinishDeserialize (arg_node);
+#endif
 
     /*
      * Now, we create SAC code for all wrapper functions
