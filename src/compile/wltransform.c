@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/11/16 15:23:19  dkr
+ * fixed a bug:
+ *   blocking for var.segs. not yet implemented
+ *   therefore WLSEG_BV and WLSEG_UBV are set to (1,1,1,...) in this case
+ *   to prevent the building of an ADJUST_OFFSET-ICM.
+ *
  * Revision 2.2  1999/08/10 15:43:11  dkr
  * bug in cube generation fixed
  *
@@ -2907,10 +2913,8 @@ BlockWL (node *stride, int dims, long *bv, int unroll)
                     do {
                         WLGRID_NEXTDIM (curr_grid)
                           = BlockWL (WLGRID_NEXTDIM (curr_grid), dims, bv, unroll);
-
                         curr_grid = WLGRID_NEXT (curr_grid);
                     } while (curr_grid != NULL);
-
                     curr_stride = WLSTRIDE_NEXT (curr_stride);
                 } else {
                     /*
@@ -2983,6 +2987,9 @@ BlockWL (node *stride, int dims, long *bv, int unroll)
 
         case N_WLstriVar:
             /* not yet implemented :-( */
+            for (d = 0; d < dims; d++) {
+                bv[d] = 1; /* no blocking -> reset blocking vector */
+            }
             break;
         default:
 
