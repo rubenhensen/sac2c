@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.37  2005/03/19 23:11:53  sbs
+ * AUD support added; default partitions are eliminated if a WL is identified as nonAUD.
+ *
  * Revision 1.36  2005/01/26 10:32:10  mwe
  * only edit last log message ...
  *
@@ -1245,6 +1248,11 @@ CreateFullPartition (node *wln, info *arg_info)
 
     DBUG_ENTER ("CreateFullPartition");
 
+    if (PART_NEXT (WITH_PART (wln)) != NULL) {
+        /* we do have a default partition here */
+        PART_NEXT (WITH_PART (wln)) = FREEdoFreeTree (PART_NEXT (WITH_PART (wln)));
+    }
+
     do_create = TRUE;
 
     /* get shape of the index vector (generator) */
@@ -2021,8 +2029,6 @@ WLPGwith (node *arg_node, info *arg_info)
          */
         DBUG_ASSERT ((WITH_PART (arg_node) != NULL),
                      "NWITH_PARTS is -1 although no PART is available!");
-        DBUG_ASSERT ((PART_NEXT (WITH_PART (arg_node)) == NULL),
-                     "NWITH_PARTS is -1 although more than one PART is available!");
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
         /*
