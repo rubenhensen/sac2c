@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2001/04/02 15:21:14  dkr
+ * ups, typo corrected ...
+ *
  * Revision 3.35  2001/04/02 15:17:53  dkr
  * macros FUNDEF_IS_... used
  *
@@ -2545,7 +2548,7 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "given fundef node is not a fundef");
     DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
                  "given assign node is not an assignment");
-    DBUG_ASSERT ((FUNDEF_IS_LAC (fundef)), "given fundef is not a special fundef");
+    DBUG_ASSERT ((FUNDEF_IS_LACFUN (fundef)), "given fundef is not a special fundef");
     DBUG_ASSERT ((FUNDEF_USED (fundef) > 0), "fundef is not used anymore");
     DBUG_ASSERT ((FUNDEF_EXT_ASSIGNS (fundef) != NULL),
                  "fundef has no external assignments");
