@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.108  1996/01/23 09:57:03  cg
+ * Revision 1.109  1996/01/25 18:45:08  cg
+ * added new class header containing definition of class type
+ *
+ * Revision 1.108  1996/01/23  09:57:03  cg
  * warnings about too long module names removed
  *
  * Revision 1.107  1996/01/22  17:30:38  cg
@@ -439,7 +442,7 @@ static file_type file_kind = F_prog;
 %token PARSE_PRG, PARSE_DEC, PARSE_SIB
 %token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC,
        COMMA, AMPERS, ASSIGN,
-       INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF,
+       INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF, CLASSTYPE,
        F2I, F2D, I2F,I2D, D2I, D2F,
        TOI, TOF, TOD, 
        INC, DEC, ADDON, SUBON, MULON, DIVON,
@@ -468,7 +471,7 @@ static file_type file_kind = F_prog;
 %type <statustype> sibreference, evclass
 %type <types> localtype, type, types, simpletype, complextype, returntypes,
               varreturntypes, vartypes;
-%type <node> arg, args, fundefs, fundef, main, prg, modimp,
+%type <node> arg, args, fundefs, fundef, main, prg, modimp, module, class, 
              argtypes, argtype, varargs, varargtypes,
              fundec2, fundec3, pragmas,
              typedefs, typedef, defs, def2, def3, def4, fundef2,
@@ -479,7 +482,7 @@ static file_type file_kind = F_prog;
              conexpr, generator, unaryop,
              moddec, expdesc, expdesc2, expdesc3, expdesc4, fundecs, fundec,
              exptypes, exptype, objdecs, objdec, evimport, modheader,
-             imptypes, imptype, import, imports, impdesc, impdesc2, impdesc3,
+             imptypes, imptype,import, imports, impdesc, impdesc2, impdesc3,
              impdesc4, array, exprORarray, exprsNOarray, foldfun,
              sib, sibtypes, sibtype, sibfuns, sibfun, sibfunbody,
              sibobjs, sibobj, sibpragmas, sibarglist,
@@ -1072,17 +1075,33 @@ def4: fundefs { $$=MakeNode(N_modul);
               }
 	;
 
-modimp: impclass id {  mod_name=$2; } COLON defs
-          { $$=$5;
+modimp: module
+        {
+          $$=$1;
+        }
+      | class
+        {
+          $$=$1;
+        }
+      ;
 
+module: MODIMP { file_kind=F_modimp;} id {  mod_name=$3; } COLON defs
+          {
+            $$=$6;
             MODUL_NAME($$)=mod_name;
             MODUL_FILETYPE($$)=file_kind;
           }
 	;
 
-impclass : MODIMP   { file_kind=F_modimp;}
-         | CLASSIMP { file_kind=F_classimp;}
-         ;
+class: CLASSIMP { file_kind=F_classimp;} id {  mod_name=$3; } COLON 
+       CLASSTYPE type SEMIC defs
+          { 
+            $$=$9;
+            MODUL_NAME($$)=mod_name;
+            MODUL_FILETYPE($$)=file_kind;
+            MODUL_CLASSTYPE($$)=$7;
+          }
+	;
 
 prg: defs { $$=$1;
             MODUL_NAME($$)=mod_name;
@@ -1102,9 +1121,10 @@ typedef: TYPEDEF type id SEMIC
             $$->info.types=$2;
             $$->info.types->id=$3;
             $$->info.types->id_mod=mod_name;
+            /*
             if ((file_kind==F_classimp) && (!strcmp((char*) $3, mod_name)))
                $$->info.types->attrib=ST_unique;
-            
+            */
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT","P_FORMAT", Id: %s",
                         mdb_nodetype[ $$->nodetype ], $$, 
@@ -3222,5 +3242,6 @@ node *MakeLetNode(id *name, node *expr, prf fun)
                          
    DBUG_RETURN(return_node); 
 }
+
 
 
