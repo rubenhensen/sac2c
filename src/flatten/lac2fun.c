@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/10/16 12:09:47  dkr
+ * code for RESOLVE_REFERENCES removed:
+ * LaC functions no longer resolve reference parameters, but reproduce
+ * them.
+ *
  * Revision 3.21  2002/10/16 11:57:54  dkr
  * cpp flag RESOLVE_REFERENCES added
  *
@@ -251,27 +256,10 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFM
     tmp_mask = DFMRemoveMask (tmp_mask);
 
     /*
-     * Iff InferDFMs() marks reference parameters as IN-parameters only,
-     * the ST_reference attribute must be preserved here!
+     * NOTE:
+     * InferDFMs() marks reference parameters as IN-parameters only, therefore
+     * a ST_(readonly_)reference attribute (ARG_ATTRIB) must be preserved here!
      */
-#ifdef RESOLVE_REFERENCES
-    /*
-     * Convert parameters from call-by-reference into call-by-value because
-     * they have already been resolved by InferDFMs()!
-     */
-    tmp = args;
-    while (tmp != NULL) {
-        if ((ARG_ATTRIB (tmp) == ST_reference)
-            || (ARG_ATTRIB (tmp) == ST_readonly_reference)) {
-            ARG_ATTRIB (tmp) = ST_unique;
-
-            DBUG_PRINT ("L2F", ("ARG_ATTRIB[ .. %s( .. %s .. ) { .. } ]: "
-                                " ST_..reference -> ST_unique",
-                                funname, ARG_NAME (tmp)));
-        }
-        tmp = ARG_NEXT (tmp);
-    }
-#endif
 
     /*
      * All args with attrib 'ST_was_reference' which are no out-vars must have
