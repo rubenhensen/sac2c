@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/10/16 11:19:15  dkr
+ * PREC1assign added
+ *
  * Revision 2.9  2000/10/09 19:16:04  dkr
  * prototype for AdjustFoldFundef() removed
  *
@@ -90,6 +93,7 @@
 extern node *Precompile (node *syntax_tree);
 
 extern node *PREC1fundef (node *arg_node, node *arg_info);
+extern node *PREC1assign (node *arg_node, node *arg_info);
 extern node *PREC1let (node *arg_node, node *arg_info);
 
 extern node *PREC2modul (node *arg_node, node *arg_info);

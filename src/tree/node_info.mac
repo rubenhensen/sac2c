@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.64  2000/10/16 11:18:55  dkr
+ * PREC1assign added
+ *
  * Revision 1.63  2000/10/09 16:33:22  dkr
  * PREC1fundef added
  *
@@ -1051,7 +1054,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, SCHINassign, BLKINassign, TravSons, FUN2LACassign, AIassign, BLKEXassign,
        TravSons, TravSons, BLKCOassign, DFAassign, BLKPPassign, TravSons, BARINassign,
-       TravSons, TravSons, TravSons, TravSons, TravSons, APTassign,
+       TravSons, TravSons, TravSons, PREC1assign, TravSons, APTassign,
 
        TravSons, TravSons, TravSons, TravSons, 2),
 
