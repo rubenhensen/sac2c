@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2001/04/19 12:14:50  dkr
+ * INFO_INFDFMS_DEFINED added
+ *
  * Revision 3.80  2001/04/18 12:59:46  nmw
  * SSAap, CAVap for single functions traversals added
  *
@@ -2849,7 +2852,8 @@ extern node *MakeInfo ();
 #define INFO_INFDFMS_IN(n) (n->dfmask[0])
 #define INFO_INFDFMS_OUT(n) (n->dfmask[1])
 #define INFO_INFDFMS_LOCAL(n) (n->dfmask[2])
-#define INFO_INFDFMS_NEEDED(n) (n->dfmask[3])
+#define INFO_INFDFMS_DEFINED(n) (n->dfmask[3])
+#define INFO_INFDFMS_NEEDED(n) (n->dfmask[4])
 #define INFO_INFDFMS_ISFIX(n) ((bool)(n->counter))
 #define INFO_INFDFMS_FIRST(n) ((bool)(n->flag))
 #define INFO_INFDFMS_HIDELOC(n) (n->varno) /* hide locals */
