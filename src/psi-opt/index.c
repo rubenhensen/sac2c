@@ -1,6 +1,15 @@
 
 /*
  * $Log$
+ * Revision 2.6  1999/09/01 14:53:03  sbs
+ * Modified Version of IVE: superfluous int[.] vardecs are eliminated now.
+ * Basically, this required 2 extensions:
+ * 1) after traversing the body of a block the vardecs are traversed a second time.
+ *    This eliminates all those vardecs which do not contain VECT in their COLCHAIN.
+ * 2) Whenever a Vect2Offset Icm is created, VECT is added to the COLCHAIN.
+ *
+ * I do hope that these 2 extensions suffice to do it 8-))))
+ *
  * Revision 2.5  1999/08/31 10:01:31  jhs
  * switched traversal of block and expr in IdxNcode; now, we do the
  * expr BEFORE we take care of the block...
@@ -534,6 +543,16 @@
  *     IdxId, IdxNum, IdxPrf, IdxArray, IdxWith, and IdxNwith
  * are steered by that mechanism.
  *
+ *
+ * 5) Eliminating Superfluous Vardecs
+ * ----------------------------------
+ *
+ * Since DCR will not be run after IVE, IVE tries to eliminate superfluous vardecs
+ * of vectors which were successfully eliminated by IVE. Since the original vardecs
+ * are needed during the traversal of the body, the vardec elimination is done after
+ * traversing the bodies
+
+
  */
 /*
  * Thus, we finally find the following usages of the arg_info node:
@@ -572,8 +591,8 @@
  *  functionname  : FindVect
  *  arguments     : 1) node * chain
  *  description   : checks whether VECT is in the chain and returns
- *                  either NULL (= no VECT in chain) or the adress
- *                  of the VECT-node
+ *                  either a vinfo-node with DOLLAR-flag (= no VECT in chain)
+ *                  or the adress of the VECT-node
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : ---
@@ -1068,6 +1087,9 @@ VardecIdx (node *vardec, types *type)
  *    While doing so it makes sure, that a vardec for iv_3_4_5__ exists and
  *    it insertes back-refs from the N_id nodes of the icm to the respective
  *    vardecs!
+ *    Finally, the index variable is marked as VECT since the vector is
+ *    needed for this ICM!! (This is crucial for the elimination of superfluous
+ *    vector declarations!
  *
  ******************************************************************************/
 
@@ -1100,11 +1122,17 @@ CreateVect2OffsetIcm (node *vardec, types *type)
     ID_VARDEC (iv_vect_id) = vardec;
 
     /*
-     * Finally, we create the desired icm:
+     * Now, we create the desired icm:
      */
     icm = MakeIcm5 ("ND_KS_VECT2OFFSET", iv_off_id, iv_vect_id,
                     MakeNum (VARDEC_OR_ARG_SHAPE (vardec, 0)), MakeNum (TYPES_DIM (type)),
                     exprs);
+
+    /*
+     * Finally, we mark vardec as VECT!
+     */
+
+    SET_VARDEC_OR_ARG_COLCHN (vardec, SetVect (VARDEC_OR_ARG_COLCHN (vardec)));
 
     DBUG_RETURN (MakeAssign (icm, NULL));
 }
@@ -1249,6 +1277,10 @@ IdxArg (node *arg_node, node *arg_info)
  * description:
  *   Make sure that the vardecs are traversed BEFORE the body!
  *   NB: this is done to initialize all int[x] / int[.] vars by DOLLAR!
+ *   After the body has been traversed, a sceond traversal through the
+ *   vardecs is made in order to eliminate superfluous vardecs of index
+ *   vectors that are no longer needed, i.e., which do not have VECT
+ *   in their COLCHN.
  *
  ******************************************************************************/
 
@@ -1257,12 +1289,23 @@ IdxBlock (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("IdxBlock");
 
+    /*
+     * First pass through the vardecs: all int[.] vars are initialized by $!
+     */
     if (BLOCK_VARDEC (arg_node) != NULL) {
         BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
     }
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    }
+
+    /*
+     * Second pass through the vardecs: we eliminate all superfluous int[.]
+     * vardecs. This is indicated by arg_info == NULL !
+     */
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), NULL);
     }
 
     DBUG_RETURN (arg_node);
@@ -1274,8 +1317,11 @@ IdxBlock (node *arg_node, node *arg_info)
  *  node * IdxVardec( node *arg_node, node *arg_info )
  *
  * description:
- *   create an N_vinfo node for all vars with either type int[x]
- *   or type int[.] (needed for the AKD-case!).
+ *   if( arg_info != NULL)
+ *       create an N_vinfo node for all vars with either type int[x]
+ *       or type int[.] (needed for the AKD-case!).
+ *   else
+ *       eliminate all those vardecs, whose COLCHNs do not contain VECT.
  *
  ******************************************************************************/
 
@@ -1283,19 +1329,54 @@ node *
 IdxVardec (node *arg_node, node *arg_info)
 {
     int dim;
+    node *next;
 
     DBUG_ENTER ("IdxVardec");
 
-    dim = VARDEC_DIM (arg_node);
-    if ((VARDEC_BASETYPE (arg_node) == T_int)
-        && ((dim == 1) || (dim == KNOWN_DIM_OFFSET - 1))) {
-        /* we are dealing with a potential indexing vector ! */
-        VARDEC_ACTCHN (arg_node) = MakeVinfoDollar (NULL);
-        VARDEC_COLCHN (arg_node) = MakeVinfoDollar (NULL);
-    }
+    if (arg_info != NULL) {
+        /*
+         * This is the first traversal which initializes the int[.]
+         * vardecs with $!
+         */
+        dim = VARDEC_DIM (arg_node);
+        if ((VARDEC_BASETYPE (arg_node) == T_int)
+            && ((dim == 1) || (dim == KNOWN_DIM_OFFSET - 1))) {
+            /* we are dealing with a potential indexing vector ! */
+            VARDEC_ACTCHN (arg_node) = MakeVinfoDollar (NULL);
+            VARDEC_COLCHN (arg_node) = MakeVinfoDollar (NULL);
+        }
 
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+        if (VARDEC_NEXT (arg_node) != NULL) {
+            VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+        }
+    } else {
+        /*
+         * This is the second traversal which is done after traversing the body
+         * and is used to eliminate index vectors which are no longer needed.
+         * As criterium for need the existance of VECT in the COLCHN is taken.
+         * I hope that this is sufficient, since I add VECT whenever Vect2Offset
+         * is introduced ( see "CreateVect2OffsetIcm").
+         */
+        dim = VARDEC_DIM (arg_node);
+        if ((VARDEC_BASETYPE (arg_node) == T_int)
+            && ((dim == 1) || (dim == KNOWN_DIM_OFFSET - 1))
+            && (VINFO_FLAG (FindVect (VARDEC_COLCHN (arg_node))) == DOLLAR)) {
+            /*
+             * we are dealing with an indexing vector that is not
+             * needed as a vector anymore!
+             */
+            next = VARDEC_NEXT (arg_node);
+            VARDEC_NEXT (arg_node) = NULL;
+            FreeTree (arg_node);
+            if (next != NULL)
+                arg_node = Trav (next, arg_info);
+            else
+                arg_node = NULL;
+        } else {
+            if (VARDEC_NEXT (arg_node) != NULL) {
+                VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+            }
+        }
     }
 
     DBUG_RETURN (arg_node);
