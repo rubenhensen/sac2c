@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.20  2005/02/01 17:50:32  mwe
+ * removed elimination of fungroups
+ *
  * Revision 1.19  2005/01/26 17:32:20  mwe
  * remove fungroups from AST (implemented in USSATfundef)
  *
@@ -754,28 +757,6 @@ USSATfundef (node *arg_node, info *arg_info)
                 }
                 assign = ASSIGN_NEXT (assign);
             }
-        }
-    }
-
-    /*
-     * eleminate fungroups
-     */
-    if (FUNDEF_FUNGROUP (arg_node) != NULL) {
-        /*
-         * fungroup exists
-         */
-
-        if (FUNGROUP_REFCOUNTER (FUNDEF_FUNGROUP (arg_node)) == 1) {
-            /*
-             * last existing fundef with reference to fungroup
-             */
-            FUNDEF_FUNGROUP (arg_node) = FREEdoFreeNode (FUNDEF_FUNGROUP (arg_node));
-        } else {
-            /*
-             * other fundefs with references to fungroups exists
-             */
-            (FUNGROUP_REFCOUNTER (FUNDEF_FUNGROUP (arg_node)))--;
-            FUNDEF_FUNGROUP (arg_node) = NULL;
         }
     }
 
