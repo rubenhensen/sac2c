@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/26 23:34:25  ktr
+ * EMRCdoRefcounting changed to EMRdoRefcounting
+ *
  * Revision 1.5  2004/11/23 22:22:51  ktr
  * COMPILES!!!
  *
@@ -68,7 +71,7 @@ RCphase (node *syntax_tree)
     /*
      * Reference counting
      */
-    syntax_tree = EMRCdoRefcounting (syntax_tree);
+    syntax_tree = EMRdoRefcounting (syntax_tree);
     if ((global.break_after == PH_refcnt)
         && (0 == strcmp (global.break_specifier, "rc"))) {
         goto DONE;
