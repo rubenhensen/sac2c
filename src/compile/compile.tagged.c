@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2002/07/12 23:33:39  dkr
+ * AddReadIcms() corrected and renamed into DupAndAddReadIcms()
+ *
  * Revision 1.25  2002/07/12 22:09:15  dkr
  * bug in COMPPrfConvertScalar() fixed
  *
@@ -454,7 +457,7 @@ GetIndexIds (ids *index_ids, int dim)
 /******************************************************************************
  *
  * Function:
- *   node *AddReadIcms( node *exprs)
+ *   node *DupAndAddReadIcms( node *exprs)
  *
  * Description:
  *
@@ -462,25 +465,29 @@ GetIndexIds (ids *index_ids, int dim)
  ******************************************************************************/
 
 static node *
-AddReadIcms (node *exprs)
+DupAndAddReadIcms (node *exprs)
 {
-    node *tmp;
+    node *expr, *new_expr;
+    node *new_exprs = NULL;
 
-    DBUG_ENTER ("AddReadIcms");
+    DBUG_ENTER ("DupAndAddReadIcms");
 
-    tmp = exprs;
-    while (tmp != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (tmp) == N_exprs), "no N_exprs node found!");
+    if (exprs != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "no N_exprs node found!");
+        expr = EXPRS_EXPR (exprs);
 
-        if (NODE_TYPE (EXPRS_EXPR (tmp)) == N_id) {
-            EXPRS_EXPR (tmp) = MakeIcm2 ("ND_READ", EXPRS_EXPR (tmp), MakeNum (0));
-        } else if (NODE_TYPE (EXPRS_EXPR (tmp)) == N_prf) {
-            PRF_ARGS (EXPRS_EXPR (tmp)) = AddReadIcms (PRF_ARGS (EXPRS_EXPR (tmp)));
+        if (NODE_TYPE (expr) == N_prf) {
+            new_expr = MakePrf (PRF_PRF (expr), DupAndAddReadIcms (PRF_ARGS (expr)));
+        } else if (NODE_TYPE (expr) == N_id) {
+            new_expr = MakeIcm2 ("ND_READ", DupId_NT (expr), MakeNum (0));
+        } else {
+            new_expr = DupNode (expr);
         }
-        tmp = EXPRS_NEXT (tmp);
+
+        new_exprs = MakeExprs (new_expr, DupAndAddReadIcms (EXPRS_NEXT (exprs)));
     }
 
-    DBUG_RETURN (exprs);
+    DBUG_RETURN (new_exprs);
 }
 
 /******************************************************************************
@@ -3478,7 +3485,7 @@ COMPPrfConvertScalar (node *arg_node, node *arg_info, node **set_shape_icm)
                             NULL);
     } else {
         ret_node = MakeAssignIcm2 ("ND_CREATE__SCALAR__DATA", DupIds_Id_NT (let_ids),
-                                   DupNode (arg_node), NULL);
+                                   DupNode (arg), NULL);
     }
 
     DBUG_RETURN (ret_node);
@@ -3520,7 +3527,7 @@ COMPPrfScalar (node *arg_node, node *arg_info, node **set_shape_icm)
      */
     ret_node = MakeAssignIcm2 ("ND_CREATE__SCALAR__DATA", DupIds_Id_NT (let_ids),
                                MakePrf (PRF_PRF (arg_node),
-                                        AddReadIcms (DupExprs_NT (PRF_ARGS (arg_node)))),
+                                        DupAndAddReadIcms (PRF_ARGS (arg_node))),
                                NULL);
 
     DBUG_RETURN (ret_node);
@@ -3560,10 +3567,10 @@ COMPPrfScalarIcm (char *icm_name, node *arg_node, node *arg_info, node **set_sha
     /*
      * replace all arguments  var   by  ND_READ( var, 0)
      */
-    ret_node = MakeAssignIcm2 ("ND_CREATE__SCALAR__DATA", DupIds_Id_NT (let_ids),
-                               MakeIcm (icm_name,
-                                        AddReadIcms (DupExprs_NT (PRF_ARGS (arg_node)))),
-                               NULL);
+    ret_node
+      = MakeAssignIcm2 ("ND_CREATE__SCALAR__DATA", DupIds_Id_NT (let_ids),
+                        MakeIcm (icm_name, DupAndAddReadIcms (PRF_ARGS (arg_node))),
+                        NULL);
 
     DBUG_RETURN (ret_node);
 }
