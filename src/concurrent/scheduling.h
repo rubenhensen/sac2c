@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/08/03 10:51:42  cg
+ * added function SCHAdjustmentRequired that decides for a particular
+ * dimension and a given scheduling whether the scheduling will produce
+ * a legal scheduling or an adjustment has to be done.
+ *
  * Revision 1.2  1998/06/18 14:19:41  cg
  * file now only contains implementation of abstract data type
  * for the representation of schedulings
@@ -47,6 +52,7 @@ extern void SCHPrintScheduling (FILE *outfile, SCHsched_t *sched);
 extern void SCHCheckSuitabilityConstSeg (SCHsched_t *sched);
 extern void SCHCheckSuitabilityVarSeg (SCHsched_t *sched);
 extern void SCHCheckSuitabilitySyncblock (SCHsched_t *sched);
+extern int SCHAdjustmentRequired (int dim, node *wlseg);
 
 extern SCHsched_t *SCHMakeCompatibleSyncblockScheduling (SCHsched_t *old_sched,
                                                          SCHsched_t *new_sched);
