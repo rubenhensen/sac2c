@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.100  1998/06/09 16:52:42  dkr
+ * fixed a bug in DupWLseg()
+ *
  * Revision 1.99  1998/06/09 16:45:49  dkr
  * IDX_MIN, IDX_MAX now segment-specific
  *
@@ -1282,7 +1285,7 @@ DupWLseg (node *arg_node, node *arg_info)
                           DUPCONT (WLSEG_NEXT (arg_node)));
 
     if (WLSEG_SV (arg_node) != NULL) {
-        WLSEG_SV (new_node) = (int *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
+        WLSEG_SV (new_node) = (long *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
         for (d = 0; d < WLSEG_DIMS (new_node); d++) {
             (WLSEG_SV (new_node))[d] = (WLSEG_SV (arg_node))[d];
         }
@@ -1292,7 +1295,8 @@ DupWLseg (node *arg_node, node *arg_info)
 
     for (i = 0; i < WLSEG_BLOCKS (new_node); i++) {
         if (WLSEG_BV (arg_node, i) != NULL) {
-            WLSEG_BV (new_node, i) = (int *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
+            WLSEG_BV (new_node, i)
+              = (long *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
             for (d = 0; d < WLSEG_DIMS (new_node); d++) {
                 (WLSEG_BV (new_node, i))[d] = (WLSEG_BV (arg_node, i))[d];
             }
@@ -1300,7 +1304,7 @@ DupWLseg (node *arg_node, node *arg_info)
     }
 
     if (WLSEG_UBV (arg_node) != NULL) {
-        WLSEG_UBV (new_node) = (int *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
+        WLSEG_UBV (new_node) = (long *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
         for (d = 0; d < WLSEG_DIMS (new_node); d++) {
             (WLSEG_UBV (new_node))[d] = (WLSEG_UBV (arg_node))[d];
         }
