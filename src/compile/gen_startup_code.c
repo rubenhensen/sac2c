@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/10/04 14:12:15  cg
+ * Non-existent or unspecified caches are now specified by cache size -1
+ * instead of 0. This avoids nasty warnings on the Alpha system.
+ *
  * Revision 3.20  2002/09/11 23:14:17  dkr
  * renaming of function names modified
  *
@@ -430,7 +434,8 @@ PrintGlobalSettings (node *syntax_tree)
 
     fprintf (outfile, "#define SAC_SET_NUM_SCHEDULERS       %d\n\n", max_schedulers);
 
-    fprintf (outfile, "#define SAC_SET_CACHE_1_SIZE         %d\n", config.cache1_size);
+    fprintf (outfile, "#define SAC_SET_CACHE_1_SIZE         %d\n",
+             config.cache1_size == 0 ? -1 : config.cache1_size);
     fprintf (outfile, "#define SAC_SET_CACHE_1_LINE         %d\n",
              config.cache1_line == 0 ? 4 : config.cache1_line);
     fprintf (outfile, "#define SAC_SET_CACHE_1_ASSOC        %d\n",
@@ -440,7 +445,8 @@ PrintGlobalSettings (node *syntax_tree)
     fprintf (outfile, "#define SAC_SET_CACHE_1_MSCA_FACTOR  %.2f\n\n",
              ((float)config.cache1_msca_factor) / 100);
 
-    fprintf (outfile, "#define SAC_SET_CACHE_2_SIZE         %d\n", config.cache2_size);
+    fprintf (outfile, "#define SAC_SET_CACHE_2_SIZE         %d\n",
+             config.cache2_size == 0 ? -1 : config.cache2_size);
     fprintf (outfile, "#define SAC_SET_CACHE_2_LINE         %d\n",
              config.cache2_line == 0 ? 4 : config.cache2_line);
     fprintf (outfile, "#define SAC_SET_CACHE_2_ASSOC        %d\n",
@@ -450,7 +456,8 @@ PrintGlobalSettings (node *syntax_tree)
     fprintf (outfile, "#define SAC_SET_CACHE_2_MSCA_FACTOR  %.2f\n\n",
              ((float)config.cache2_msca_factor) / 100);
 
-    fprintf (outfile, "#define SAC_SET_CACHE_3_SIZE         %d\n", config.cache3_size);
+    fprintf (outfile, "#define SAC_SET_CACHE_3_SIZE         %d\n",
+             config.cache3_size == 0 ? -1 : config.cache3_size);
     fprintf (outfile, "#define SAC_SET_CACHE_3_LINE         %d\n",
              config.cache3_line == 0 ? 4 : config.cache3_line);
     fprintf (outfile, "#define SAC_SET_CACHE_3_ASSOC        %d\n",
