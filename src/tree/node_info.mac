@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.194  2004/08/26 18:15:49  sbs
+ * CWCwith added.
+ *
  * Revision 3.193  2004/08/26 15:02:08  khf
  * support for detect dependencies (ddepend) and
  * tag dependencies (tdepend) added
@@ -2345,7 +2348,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        WLPGNwith, SSALURNwith, SSAWLTNwith, SSAWLINwith, SSAWLFNwith,
 
        TravSons, COMPWith, TravSons, TravSons, TravSons, WLSNwith, PREC4with, TravSons,
-       HDwith, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       HDwith, TravSons, CWCwith, TravSons, TravSons, TravSons, TravSons, TravSons,
        SPwith, TravSons, CVPNwith, WLFSNwith,
 
        TravSons, TravSons, TravSons, EMALwith, DDEPENDwith, TDEPENDwith, TravSons,
