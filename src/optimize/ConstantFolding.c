@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/03/08 17:28:09  asi
+ * Revision 1.7  1995/03/13 13:23:53  asi
+ * bug fixed in CFwith : sets c.f. flag to false
+ *
+ * Revision 1.6  1995/03/08  17:28:09  asi
  * folding of primitive function psi() added
  * some changes for new prin. func. ..AxA, ..AxS and ..SxA
  *
@@ -808,6 +811,7 @@ CFwith (node *arg_node, node *arg_info)
     arg_info->mask[0] = oldmask[0];
     arg_info->mask[1] = oldmask[1];
     PopVL ();
+    arg_info->nnode = 0;
     DBUG_RETURN (arg_node);
 }
 
