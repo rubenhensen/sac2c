@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.35  1995/04/05 15:31:24  sbs
+ * Revision 1.36  1995/04/05 15:52:38  asi
+ * loop invariant removal added
+ *
+ * Revision 1.35  1995/04/05  15:31:24  sbs
  * linking phase and -c option inserted
  *
  * Revision 1.34  1995/04/03  14:00:43  sbs
@@ -126,8 +129,6 @@
 #include "print.h"
 #include "typecheck.h"
 #include "optimize.h"
-#include "ConstantFolding.h"
-#include "DeadCodeRemoval.h"
 #include "filemgr.h"
 #include "import.h"
 #include "refcount.h"
@@ -140,7 +141,7 @@ extern int malloc_debug (int level);
 
 FILE *outfile;
 char filename[256];
-int opt_dcr = 1, opt_cf = 1, opt_wr = 1;
+int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1;
 int optimize = 1;
 int show_refcnt = 0;
 int show_icm = 0;
@@ -213,6 +214,8 @@ MAIN
             opt_wr = 0;
         if (!strncmp (*argv, "oOPT", 4))
             optimize = 0;
+        if (!strncmp (*argv, "oLIR", 4))
+            opt_lir = 0;
     }
     NEXTOPT
     ARG 'o' : PARM

@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.55  1995/04/04 12:20:27  asi
- * added WRfundef
+ * Revision 1.56  1995/04/05 15:52:38  asi
+ * loop invariant removal added
  *
+;; Revision 1.55  1995/04/04  12:20:27  asi
+;; added WRfundef
+;;
 ;; Revision 1.54  1995/04/03  16:34:48  hw
 ;; CompFundef inserted
 ;;
@@ -181,7 +184,7 @@
 
 /*   Node_name   dbug-string   imp_tab       flat_tab      print_tab     type_tab
  *                             opt_tab       dead_tab        wr_tab      free_tab
- *                              cf_tab       refcnt_tab    comp_tab         ---
+ *                              cf_tab       refcnt_tab    comp_tab       lir_tab
  */
 
 NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun, DummyFun,
@@ -195,7 +198,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_typedef, "N_typedef", DummyFun, DummyFun, PrintTypedef, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, DummyFun, OPTmodul, OPTmodul,
-       OPTmodul, FreeModul, OPTmodul, DummyFun, DummyFun, DummyFun),
+       OPTmodul, FreeModul, OPTmodul, DummyFun, DummyFun, OPTmodul),
   NIF (N_moddec, "N_moddec", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_classdec, "N_classdec", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,

@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.20  1995/04/03 10:11:30  sbs
+# Revision 1.21  1995/04/05 15:52:38  asi
+# loop invariant removal added
+#
+# Revision 1.20  1995/04/03  10:11:30  sbs
 # src/compile/icm2c.o inserted
 #
 # Revision 1.19  1995/03/29  12:10:37  hw
@@ -74,7 +77,8 @@ PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
-          src/optimize/DeadCodeRemoval.o src/optimize/WorkReduction.o
+          src/optimize/DeadCodeRemoval.o src/optimize/WorkReduction.o \
+	  src/optimize/LoopInvariantRemoval.o
 MODULES= src/modules/filemgr.o src/modules/import.o
 REFCOUNT= src/refcount/refcount.o
 COMPILE= src/compile/compile.o src/compile/icm2c.o

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.21  1995/03/24 15:51:55  asi
+ * Revision 1.22  1995/04/05 15:52:38  asi
+ * loop invariant removal added
+ *
+ * Revision 1.21  1995/03/24  15:51:55  asi
  * added FREE
  *
  * Revision 1.20  1995/03/17  17:43:39  asi
@@ -86,12 +89,14 @@ extern int optimize;
 extern int opt_dcr;
 extern int opt_cf;
 extern int opt_wr;
+extern int opt_lir;
 /* main.c end */
 
 extern int dead_expr;
 extern int dead_var;
 extern int cf_expr;
 extern int wr_expr;
+extern int lir_expr;
 
 #define INC_VAR(mask, var) mask[var] += 1
 #define DEC_VAR(mask, var) mask[var] -= 1

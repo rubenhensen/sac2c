@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/04/04 12:21:56  asi
+ * Revision 1.18  1995/04/05 15:52:38  asi
+ * loop invariant removal added
+ *
+ * Revision 1.17  1995/04/04  12:21:56  asi
  * added include files WorkReduction.h
  *
  * Revision 1.16  1995/03/29  12:00:31  hw
@@ -73,6 +76,7 @@
 #include "ConstantFolding.h"
 #include "DeadCodeRemoval.h"
 #include "WorkReduction.h"
+#include "LoopInvariantRemoval.h"
 #include "import.h"
 #include "refcount.h"
 #include "compile.h"
@@ -212,6 +216,18 @@ funptr refcnt_tab[] = {
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) c
 
 funptr comp_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 12) lir_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) d
+
+funptr lir_tab[] = {
 #include "node_info.mac"
 };
 

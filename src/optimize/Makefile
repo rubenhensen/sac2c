@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.6  1995/04/04 11:03:51  sbs
+# Revision 1.7  1995/04/05 15:52:38  asi
+# loop invariant removal added
+#
+# Revision 1.6  1995/04/04  11:03:51  sbs
 # make deps done
 #
 # Revision 1.5  1995/03/17  17:42:24  asi
@@ -25,7 +28,8 @@ CC=gcc -ansi -g
 
 INCS=-I../global -I../../inc -I../typecheck
 
-all: optimize.o ConstantFolding.o DeadCodeRemoval.o WorkReduction.o
+all: optimize.o ConstantFolding.o DeadCodeRemoval.o WorkReduction.o \
+     LoopInvariantRemoval.o
 
 optimize.o: optimize.c
 	$(CC) -o optimize.o -c optimize.c $(INCS)
@@ -38,6 +42,9 @@ DeadCodeRemoval.o: DeadCodeRemoval.c
 
 WorkReduction.o: WorkReduction.c
 	$(CC) -o WorkReduction.o -c WorkReduction.c $(INCS)
+
+LoopInvariantRemoval.o: LoopInvariantRemoval.c
+	$(CC) -o LoopInvariantRemoval.o -c LoopInvariantRemoval.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
@@ -60,6 +67,13 @@ DeadCodeRemoval.o: ../global/type_info.mac ../global/node_info.mac
 DeadCodeRemoval.o: ../global/prf_node_info.mac ../global/free.h
 DeadCodeRemoval.o: ../global/Error.h ../../inc/dbug.h ../global/my_debug.h
 DeadCodeRemoval.o: ../global/traverse.h optimize.h DeadCodeRemoval.h
+LoopInvariantRemoval.o: /usr/include/stdio.h /usr/include/stdlib.h
+LoopInvariantRemoval.o: /usr/include/sys/stdtypes.h ../global/tree.h
+LoopInvariantRemoval.o: ../global/type_info.mac ../global/node_info.mac
+LoopInvariantRemoval.o: ../global/prf_node_info.mac ../global/Error.h
+LoopInvariantRemoval.o: ../../inc/dbug.h ../global/my_debug.h
+LoopInvariantRemoval.o: ../global/traverse.h optimize.h
+LoopInvariantRemoval.o: LoopInvariantRemoval.h
 WorkReduction.o: /usr/include/stdio.h /usr/include/stdlib.h
 WorkReduction.o: /usr/include/sys/stdtypes.h ../global/tree.h
 WorkReduction.o: ../global/type_info.mac ../global/node_info.mac
