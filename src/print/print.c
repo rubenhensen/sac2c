@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.77  2000/06/08 13:03:26  nmw
+ * call to printinterface inserted when generating c library
+ *
  * Revision 2.76  2000/05/30 12:36:30  dkr
  * DoPrintTypesAST() added
  *
@@ -131,6 +134,7 @@
 #include "tree.h"
 
 #include "print.h"
+#include "print_interface.h"
 #include "my_debug.h"
 #include "dbug.h"
 #include "traverse.h"
@@ -3227,6 +3231,10 @@ Print (node *syntax_tree)
     syntax_tree = PrintTrav (syntax_tree, arg_info);
 
     FREE (arg_info);
+
+    /*if generating c library, invoke the headerfile generator */
+    if (generatelibrary & GENERATELIBRARY_C)
+        PrintInterface (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
