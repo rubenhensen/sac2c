@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/04/19 14:30:32  hw
+ * Revision 1.18  1995/04/24 14:18:53  hw
+ * - CompWhile & CompCond inserted
+ * - changed refcount-parameter of ND_ALLOC_ARRAY if it is used with
+ *   ND_CHECK_REUSE
+ *
+ * Revision 1.17  1995/04/19  14:30:32  hw
  * bug fixed in compilation of 'rotate'
  *
  * Revision 1.16  1995/04/19  14:13:18  hw
@@ -167,16 +172,20 @@ extern int malloc_debug (int level);
 
 #define CHECK_REUSE__ALLOC_ARRAY_ND(test, rc)                                            \
     if (1 >= test->refcnt) { /* create ND_CHECK_REUSE  */                                \
+        node *num;                                                                       \
         BIN_ICM_REUSE (arg_info->node[1], "ND_CHECK_REUSE", test, res);                  \
         first_assign = arg_info->node[0];                                                \
         old_arg_node = arg_node;                                                         \
         arg_node = arg_info->node[1]->node[0];                                           \
         /* create ND_ALLOC_ARRAY */                                                      \
-        CREATE_3_ARY_ICM (next_assign, "ND_ALLOC_ARRAY", type_id_node, res, rc);         \
+        MAKENODE_NUM (num, 0);                                                           \
+        CREATE_3_ARY_ICM (next_assign, "ND_ALLOC_ARRAY", type_id_node, res, num);        \
         APPEND_ASSIGNS (first_assign, next_assign);                                      \
     } else { /* create ND_ALLOC_ARRAY */                                                 \
+        node *num;                                                                       \
+        MAKENODE_NUM (num, 0);                                                           \
         BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);          \
-        MAKE_NEXT_ICM_ARG (icm_arg, rc);                                                 \
+        MAKE_NEXT_ICM_ARG (icm_arg, num);                                                \
         first_assign = arg_info->node[0];                                                \
         old_arg_node = arg_node;                                                         \
         arg_node = arg_info->node[1]->node[0];                                           \
@@ -186,7 +195,7 @@ extern int malloc_debug (int level);
     CREATE_2_ARY_ICM (next_assign, "ND_DEC_RC", array, num_node);                        \
     APPEND_ASSIGNS (first_assign, next_assign)
 
-#define DEC_RC_FREE_ND(array, num_node) /* create ND_DEC_RC */                           \
+#define DEC_RC_FREE_ND(array, num_node) /* create ND_DEC_RC_FREE */                      \
     CREATE_2_ARY_ICM (next_assign, "ND_DEC_RC_FREE", array, num_node);                   \
     APPEND_ASSIGNS (first_assign, next_assign)
 
@@ -632,26 +641,7 @@ CompPrf (node *arg_node, node *arg_info)
 
             if (N_id == array->nodetype) {
                 last_assign = arg_info->node[0]->node[1];
-                if (1 >= array->refcnt) {
-                    /* create ND_CHECK_REUSE  */
-                    BIN_ICM_REUSE (arg_info->node[1], "ND_CHECK_REUSE", array, res);
-                    first_assign = arg_info->node[0];
-                    old_arg_node = arg_node;
-                    arg_node = arg_info->node[1]->node[0];
-
-                    /* create ND_ALLOC_ARRAY */
-                    CREATE_3_ARY_ICM (next_assign, "ND_ALLOC_ARRAY", type_id_node, res,
-                                      res_ref);
-                    APPEND_ASSIGNS (first_assign, next_assign);
-                } else {
-                    /* create ND_ALLOC_ARRAY */
-                    BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node,
-                                   res);
-                    MAKE_NEXT_ICM_ARG (icm_arg, res_ref);
-                    first_assign = arg_info->node[0];
-                    old_arg_node = arg_node;
-                    arg_node = arg_info->node[1]->node[0];
-                }
+                CHECK_REUSE__ALLOC_ARRAY_ND (array, ref_ref);
             } else {
                 /* array is constant, so make a block , declare a temporary
                  * variable __TMP and create a constant array
@@ -736,12 +726,14 @@ CompPrf (node *arg_node, node *arg_info)
             if ((N_id == arg1->nodetype) && (N_id == arg2->nodetype)) {
                 last_assign = arg_info->node[0]->node[1];
                 if ((1 >= arg1->refcnt) && (1 >= arg2->refcnt)) {
+                    node *num;
                     BIN_ICM_REUSE (arg_info->node[1], "ND_CHECK_REUSE", arg1, res);
                     SET_VARS_FOR_MORE_ICMS;
                     CREATE_2_ARY_ICM (next_assign, "ND_CHECK_REUSE", arg2, res);
                     APPEND_ASSIGNS (first_assign, next_assign);
+                    MAKENODE_NUM (num, 0);
                     CREATE_3_ARY_ICM (next_assign, "ND_ALLOC_ARRAY", type_id_node, res,
-                                      res_ref);
+                                      num);
                     APPEND_ASSIGNS (first_assign, next_assign);
                 } else if (1 >= arg1->refcnt) {
                     CHECK_REUSE (arg1);
@@ -1243,8 +1235,8 @@ CompAssign (node *arg_node, node *arg_info)
     node *old_next_assign;
 
     DBUG_ENTER ("CompAssign");
+    arg_info->node[0] = arg_node;
     if (2 == arg_node->nnode) {
-        arg_info->node[0] = arg_node;
         old_next_assign = arg_node->node[1];
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
         arg_info->node[0] = NULL;
@@ -1723,5 +1715,205 @@ CompFundef (node *arg_node, node *arg_info)
     /* traverse next function if any */
     if (NULL != arg_node->node[1])
         arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : CompWhile
+ *  arguments     : 1) arg node
+ *                  2) info node
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs : Trav
+ *  macros        : DBUG...,, NULL
+ *  remarks       :
+ *
+ *
+ */
+node *
+CompWhile (node *arg_node, node *arg_info)
+{
+    node *first_assign, *next_assign, *icm_arg, *n_node, *tmp, *v1, *v2,
+      *dummy_assign = NULL, *V1, *V2, *while_assign;
+    int found;
+
+    DBUG_ENTER ("CompWhile");
+
+    /* first compile termination condition and body of while loop */
+    while_assign = arg_info->node[0];
+    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+    arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+
+    /* now add some INC_RC and DEC_RC at begining of and after the loop */
+    dummy_assign = MakeNode (N_assign);
+    first_assign = dummy_assign;
+    V1 = arg_node->node[2]->node[0];
+    V2 = arg_node->node[2]->node[1];
+    v1 = V1;
+    v2 = V2;
+    if (NULL != v1) {
+        while (NULL != v1) {
+            MAKENODE_NUM (n_node, v1->refcnt);
+            INC_RC_ND (v1, n_node);
+            v1 = v1->node[0];
+        }
+    } else if ((NULL != v2) && (NULL == v1)) {
+        first_assign = dummy_assign;
+        MAKENODE_NUM (n_node, 1);
+        while (NULL != v2) {
+            DEC_RC_FREE_ND (v2, n_node); /* we don`t know the refcount of v2
+                                          * in the current context, so we use
+                                          * DEC_RC_FREE_ND
+                                          */
+            v2 = v2->node[0];
+        }
+    }
+
+    v1 = V1;
+    if ((NULL != v2) && (NULL != v1)) {
+        node *v1_tmp;
+        MAKENODE_NUM (n_node, 1);
+        while (NULL != v2) {
+            /* looking if v2 is in V2/V1 */
+            v1_tmp = v1;
+            found = 0;
+            while ((0 == found) && (NULL != v1_tmp))
+                if (0 == strcmp (v1_tmp->IDS_ID, v2->IDS_ID))
+                    found = 1;
+                else
+                    v1_tmp = v1_tmp->node[0];
+
+            if (0 == found)
+                if (1 < v2->refcnt) {
+                    DEC_RC_ND (v2, n_node);
+                } else {
+                    DEC_RC_FREE_ND (v2, n_node);
+                }
+            v2 = v2->node[0];
+        }
+    }
+
+    /* now insert INC's and DEC's at beginning of the loop */
+    if (NULL != dummy_assign->node[1]) {
+        first_assign->node[1] = arg_node->node[1]->node[0];
+        first_assign->nnode = 2;
+        arg_node->node[1]->node[0] = dummy_assign->node[1];
+    }
+
+    /* now create DEC_RC`s that have to be done after termination
+     * of the loop
+     */
+    v1 = V1;
+    v2 = V2;
+    if (NULL != v1) {
+        first_assign = dummy_assign; /* will be used in some macros */
+        if (NULL != v2) {
+            node *v2_tmp;
+            while (NULL != v1) {
+                /* looking if v1 is in V1/V2 */
+                v2_tmp = v2;
+                found = 0;
+                while ((0 == found) && (NULL != v2_tmp))
+                    if (0 == strcmp (v1->IDS_ID, v2_tmp->IDS_ID))
+                        found = 1;
+                    else
+                        v2_tmp = v2_tmp->node[0];
+
+                if (0 == found) {
+                    MAKENODE_NUM (n_node, v1->refcnt);
+                    if (1 < v1->refcnt) {
+                        DEC_RC_ND (v1, n_node);
+                    } else {
+                        DEC_RC_FREE_ND (v1, n_node);
+                    }
+                }
+                v1 = v1->node[0];
+            }
+        } else
+            while (NULL != v1) {
+                MAKENODE_NUM (n_node, v1->refcnt);
+                if (1 < v1->refcnt) {
+                    DEC_RC_ND (v1, n_node);
+                } else {
+                    DEC_RC_FREE_ND (v1, n_node);
+                }
+                v1 = v1->node[0];
+            }
+    }
+    /* now increase RC of arrays that are defined in the while loop and are
+     * used after it.
+     */
+    v2 = V2;
+    if (NULL != v2)
+        while (NULL != v2) {
+            MAKENODE_NUM (n_node, v2->refcnt);
+            INC_RC_ND (v2, n_node);
+            v2 = v2->node[0];
+        }
+
+    if (NULL != dummy_assign->node[1]) {
+        /* now put dummy_assign->node[1] behind while_loop */
+        first_assign->node[1] = while_assign->node[1];
+        first_assign->nnode = 2;
+        while_assign->node[1] = dummy_assign->node[1];
+    }
+
+    FREE (dummy_assign);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : CompCond
+ *  arguments     : 1) arg node
+ *                  2) info node
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs : Trav
+ *  macros        : DBUG...,, NULL
+ *  remarks       :
+ *
+ *
+ */
+node *
+CompCond (node *arg_node, node *arg_info)
+{
+    node *first_assign, *next_assign, *icm_arg, *n_node, *tmp, *id_node,
+      *dummy_assign = NULL;
+    int i;
+
+    DBUG_ENTER ("CompCond");
+
+    /* compile condition, then and else part */
+    for (i = 0; i < arg_node->nnode; i++)
+        arg_node->node[i] = Trav (arg_node->node[i], arg_info);
+
+    /* insert N_icms to correct refcounts of then and else part */
+    dummy_assign = MakeNode (N_assign);
+    for (i = 0; i < arg_node->nnode; i++)
+        if (NULL != arg_node->node[3]->node[i]) {
+            id_node = arg_node->node[3]->node[i];
+            first_assign = dummy_assign;
+            do {
+                MAKENODE_NUM (n_node, id_node->refcnt);
+                DBUG_PRINT ("COMP", ("%d:create DEC_RC(%s, %d)", i, id_node->IDS_ID,
+                                     id_node->refcnt));
+                if (1 < id_node->refcnt) {
+                    DEC_RC_ND (id_node, n_node);
+                } else {
+                    DEC_RC_FREE_ND (id_node, n_node);
+                }
+                id_node = id_node->node[0];
+            } while (NULL != id_node);
+            first_assign->node[1] = arg_node->node[i + 1]->node[0];
+            first_assign->nnode = 2;
+            arg_node->node[i + 1]->node[0] = dummy_assign->node[1];
+        }
+    FREE (dummy_assign);
+
     DBUG_RETURN (arg_node);
 }
