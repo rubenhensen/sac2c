@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.101  2000/11/13 17:06:21  dkr
+ * code streamlined: MergeIcmsFundef, MergeIcmsAp, AdjustAddedAssigns
+ *
  * Revision 2.100  2000/11/05 13:41:06  dkr
  * some sharing of ICM args removed
  *
@@ -343,9 +346,6 @@ static node *wl_seg = NULL;
 
 #define LABEL_NAME "SAC__Label" /* basic-name for goto label */
 
-#define ICMPARAM_TAG(expr) EXPRS_EXPR (expr)
-#define ICMPARAM_ARG(expr) EXPRS_EXPR (EXPRS_NEXT (expr))
-
 /*
  * This macro indicates whether there are multiple segments present or not.
  * It uses the global variable 'wl_seg'.
@@ -548,9 +548,8 @@ GetFoldCode (node *fundef)
     /*
      * remove declaration-ICMs ('ND_KS_DECL_ARRAY_ARG') from code.
      */
-    while (
-      (NODE_TYPE (ASSIGN_INSTR (fold_code)) == N_icm)
-      && (strcmp (ICM_NAME (ASSIGN_INSTR (fold_code)), "ND_KS_DECL_ARRAY_ARG") == 0)) {
+    while ((NODE_TYPE (ASSIGN_INSTR (fold_code)) == N_icm)
+           && (!strcmp (ICM_NAME (ASSIGN_INSTR (fold_code)), "ND_KS_DECL_ARRAY_ARG"))) {
         fold_code = FreeNode (fold_code);
     }
 
@@ -953,8 +952,6 @@ IdOrNumToIndex (node *id_or_num, int dim)
  * Description:
  *
  *
- * *** CODE NOT BRUSHED YET ***
- *
  ******************************************************************************/
 
 static void
@@ -1029,115 +1026,122 @@ AdjustAddedAssigns (node *before, node *after)
 /******************************************************************************
  *
  * Function:
- *   node *MergeIcmsAp( node *out_icm, node *in_icm, types *type, int rc)
+ *   node *MergeIcmsAp( node *out_icm, node *in_icm, types *type, int rc,
+ *                      int line)
  *
  * Description:
  *   'out_icm': icm for out-parameter which is already situated in the table.
  *   'in_icm' : icm for in-parameter which was to be added to the table when
  *              the mapping was detected.
  *   'type'   : type of parameter
- *   'rc'     : refcount of variable
+ *   'rc'     : refcount of in-parameter
+ *   Returns a N_assign node containing ICM code needed to merge the given
+ *   parameters.
  *
- *
- * *** CODE NOT BRUSHED YET ***
+ * Example:
+ *   signature of external C-function:  cfun( type *a);
+ *     (note, that function 'cfun' does no refcounting on 'a' !!!)
+ *   functional representation in SAC:  type cfun( type a);
+ *   function appl. within SAC code:    b = cfun( a);
+ *   code generated for this appl.:     b = a;  cfun( b);
+ *                                      ^^^^^^
+ *   The ICM code for the additional assignment marked with ^^^'s is returned
+ *   by this function.
  *
  ******************************************************************************/
 
 static node *
-MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc)
+MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc, int line)
 {
+    node *out_id, *in_id;
     node *new_assign = NULL;
 
     DBUG_ENTER ("MergeIcmsAp");
 
-    DBUG_ASSERT ((NODE_TYPE (ICMPARAM_ARG (out_icm)) == N_id),
+    DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (out_icm)) == N_id), "no out-tag found!");
+    DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (in_icm)) == N_id), "no in-tag found!");
+
+    if ((strcmp ("out", ID_NAME (EXPRS_EXPR (out_icm))))
+        || (strcmp ("in", ID_NAME (EXPRS_EXPR (in_icm))))) {
+        ERROR (line, ("Pragma 'linksign` illegal"));
+        CONT_ERROR (("Mappings allowed exclusively between one parameter"
+                     " and one return value on which both the function"
+                     " does no refcounting !"));
+        ABORT_ON_ERROR;
+    }
+
+    out_id = EXPRS_EXPR (EXPRS_NEXT (out_icm));
+    in_id = EXPRS_EXPR (EXPRS_NEXT (in_icm));
+
+    DBUG_ASSERT ((NODE_TYPE (out_id) == N_id),
                  "out-argument of application must be a N_id node");
 
     if (IsBoxed (type)) {
-        ICMPARAM_TAG (out_icm) = FreeTree (ICMPARAM_TAG (out_icm));
-        ICMPARAM_TAG (out_icm) = MakeId_Copy ("upd_bx");
+        FreeTree (EXPRS_EXPR (out_icm));
+        EXPRS_EXPR (out_icm) = MakeId_Copy ("upd_bx");
 
-        DBUG_ASSERT ((NODE_TYPE (ICMPARAM_ARG (in_icm)) == N_id),
+        DBUG_ASSERT ((NODE_TYPE (in_id) == N_id),
                      "boxed in-argument of application must be a N_id node");
 
         if (IsArray (type)) {
             if (IsUnique (type)) {
                 DBUG_PRINT ("COMP", ("Merging ICM-args: unique array %s - %s",
-                                     ID_NAME (ICMPARAM_ARG (in_icm)),
-                                     ID_NAME (ICMPARAM_ARG (out_icm))));
+                                     ID_NAME (in_id), ID_NAME (out_id)));
 
-                if (strcmp (ID_NAME (ICMPARAM_ARG (in_icm)),
-                            ID_NAME (ICMPARAM_ARG (out_icm)))) {
+                if (strcmp (ID_NAME (in_id), ID_NAME (out_id))) {
                     new_assign = MakeAssignIcm2 ("ND_KS_NO_RC_ASSIGN_ARRAY",
-                                                 DupNode (ICMPARAM_ARG (in_icm)),
-                                                 DupNode (ICMPARAM_ARG (out_icm)));
+                                                 DupNode (in_id), DupNode (out_id));
                 }
             } else if (rc == 1) {
                 DBUG_PRINT ("COMP", ("Merging ICM-args non-unique array with rc==1"
                                      " %s - %s",
-                                     ID_NAME (ICMPARAM_ARG (in_icm)),
-                                     ID_NAME (ICMPARAM_ARG (out_icm))));
+                                     ID_NAME (in_id), ID_NAME (out_id)));
 
-                new_assign = MakeAssignIcm3 ("ND_KS_MAKE_UNIQUE_ARRAY",
-                                             DupNode (ICMPARAM_ARG (in_icm)),
-                                             DupNode (ICMPARAM_ARG (out_icm)),
-                                             MakeNum (GetBasetypeSize (type)));
+                new_assign
+                  = MakeAssignIcm3 ("ND_KS_MAKE_UNIQUE_ARRAY", DupNode (in_id),
+                                    DupNode (out_id), MakeNum (GetBasetypeSize (type)));
             } else {
                 DBUG_PRINT ("COMP", ("Merging ICM-args non-unique array with rc>1"
                                      " %s - %s",
-                                     ID_NAME (ICMPARAM_ARG (in_icm)),
-                                     ID_NAME (ICMPARAM_ARG (out_icm))));
+                                     ID_NAME (in_id), ID_NAME (out_id)));
 
                 new_assign
-                  = MakeAssignIcm3 ("ND_KS_COPY_ARRAY", DupNode (ICMPARAM_ARG (in_icm)),
-                                    DupNode (ICMPARAM_ARG (out_icm)),
+                  = MakeAssignIcm3 ("ND_KS_COPY_ARRAY", DupNode (in_id), DupNode (out_id),
                                     MakeNum (GetBasetypeSize (type)));
             }
         } else if (IsUnique (type)) {
             DBUG_PRINT ("COMP", ("Merging ICM-args unique hidden %s - %s",
-                                 ID_NAME (ICMPARAM_ARG (in_icm)),
-                                 ID_NAME (ICMPARAM_ARG (out_icm))));
+                                 ID_NAME (in_id), ID_NAME (out_id)));
 
-            if (strcmp (ID_NAME (ICMPARAM_ARG (in_icm)),
-                        ID_NAME (ICMPARAM_ARG (out_icm)))) {
-                new_assign = MakeAssignIcm2 ("ND_NO_RC_ASSIGN_HIDDEN",
-                                             DupNode (ICMPARAM_ARG (in_icm)),
-                                             DupNode (ICMPARAM_ARG (out_icm)));
+            if (strcmp (ID_NAME (in_id), ID_NAME (out_id))) {
+                new_assign = MakeAssignIcm2 ("ND_NO_RC_ASSIGN_HIDDEN", DupNode (in_id),
+                                             DupNode (out_id));
             }
         } else if (rc == 1) {
             DBUG_PRINT ("COMP", ("Merging ICM-args non-unique hidden %s - %s"
                                  " with rc==1",
-                                 ID_NAME (ICMPARAM_ARG (in_icm)),
-                                 ID_NAME (ICMPARAM_ARG (out_icm))));
+                                 ID_NAME (in_id), ID_NAME (out_id)));
 
             new_assign
-              = MakeAssignIcm3 ("ND_MAKE_UNIQUE_HIDDEN", DupNode (ICMPARAM_ARG (in_icm)),
-                                DupNode (ICMPARAM_ARG (out_icm)),
-                                MakeId_Copy (GenericFun (0, type)));
+              = MakeAssignIcm3 ("ND_MAKE_UNIQUE_HIDDEN", DupNode (in_id),
+                                DupNode (out_id), MakeId_Copy (GenericFun (0, type)));
         } else {
             DBUG_PRINT ("COMP", ("Merging ICM-args non-unique hidden %s - %s"
                                  " with rc>1",
-                                 ID_NAME (ICMPARAM_ARG (in_icm)),
-                                 ID_NAME (ICMPARAM_ARG (out_icm))));
+                                 ID_NAME (in_id), ID_NAME (out_id)));
 
             new_assign
-              = MakeAssignIcm3 ("ND_KS_COPY_HIDDEN", DupNode (ICMPARAM_ARG (in_icm)),
-                                DupNode (ICMPARAM_ARG (out_icm)),
+              = MakeAssignIcm3 ("ND_KS_COPY_HIDDEN", DupNode (in_id), DupNode (out_id),
                                 MakeId_Copy (GenericFun (0, type)));
         }
     } else {
-        ICMPARAM_TAG (out_icm) = FreeTree (ICMPARAM_TAG (out_icm));
-        ICMPARAM_TAG (out_icm) = MakeId_Copy ("upd");
+        FreeTree (EXPRS_EXPR (out_icm));
+        EXPRS_EXPR (out_icm) = MakeId_Copy ("upd");
 
-        DBUG_PRINT ("COMP",
-                    ("Merging ICM-args unboxed %s", ID_NAME (ICMPARAM_ARG (out_icm))));
+        DBUG_PRINT ("COMP", ("Merging ICM-args unboxed %s", ID_NAME (out_id)));
 
-        if ((NODE_TYPE (ICMPARAM_ARG (in_icm)) != N_id)
-            || strcmp (ID_NAME (ICMPARAM_ARG (in_icm)),
-                       ID_NAME (ICMPARAM_ARG (out_icm)))) {
-            new_assign = MakeAssign (MakeLet (DupNode (ICMPARAM_ARG (in_icm)),
-                                              DupId_Ids (ICMPARAM_ARG (out_icm))),
-                                     NULL);
+        if ((NODE_TYPE (in_id) != N_id) || strcmp (ID_NAME (in_id), ID_NAME (out_id))) {
+            new_assign = MakeAssign (MakeLet (DupNode (in_id), DupId_Ids (out_id)), NULL);
         }
     }
 
@@ -1150,12 +1154,11 @@ MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc)
 /******************************************************************************
  *
  * Function:
- *   void MergeIcmsFundef(node *out_icm, node *in_icm,
+ *   void MergeIcmsFundef( node *out_icm, node *in_icm,
+ *                         types *out_type, types *in_type, int line)
  *
  * Description:
  *
- *
- * *** CODE NOT BRUSHED YET ***
  *
  ******************************************************************************/
 
@@ -1164,8 +1167,8 @@ MergeIcmsFundef (node *out_icm, node *in_icm, types *out_type, types *in_type, i
 {
     DBUG_ENTER ("MergeIcmsFundef");
 
-    if ((0 != strcmp ("out", ID_NAME (EXPRS_EXPR (out_icm))))
-        || (0 != strcmp ("in", ID_NAME (EXPRS_EXPR (in_icm))))) {
+    if ((strcmp ("out", ID_NAME (EXPRS_EXPR (out_icm))))
+        || (strcmp ("in", ID_NAME (EXPRS_EXPR (in_icm))))) {
         ERROR (line, ("Pragma 'linksign` illegal"));
         CONT_ERROR (("Mappings allowed exclusively between one parameter"
                      " and one return value on which both the function"
@@ -1485,15 +1488,19 @@ InsertApDotsParam (node **icm_tab, node *icm_arg)
  *
  * Function:
  *   node *InsertApArgParam( node **icm_tab, node *icm_arg, types *type,
+ *                           int rc, int *linksign, int cnt_param,
+ *                           int line)
  *
  * Description:
  *
+ *
+ * *** CODE NOT BRUSHED YET ***
  *
  ******************************************************************************/
 
 static node *
 InsertApArgParam (node **icm_tab, node *icm_arg, types *type, int rc, int *linksign,
-                  int cnt_param)
+                  int cnt_param, int line)
 {
     node *icm_node = NULL;
 
@@ -1515,7 +1522,8 @@ InsertApArgParam (node **icm_tab, node *icm_arg, types *type, int rc, int *links
         if (icm_tab[linksign[cnt_param] + 1] == NULL) {
             icm_tab[linksign[cnt_param] + 1] = icm_arg;
         } else {
-            icm_node = MergeIcmsAp (icm_tab[linksign[cnt_param] + 1], icm_arg, type, rc);
+            icm_node
+              = MergeIcmsAp (icm_tab[linksign[cnt_param] + 1], icm_arg, type, rc, line);
         }
     }
 
@@ -1525,7 +1533,8 @@ InsertApArgParam (node **icm_tab, node *icm_arg, types *type, int rc, int *links
 /******************************************************************************
  *
  * Function:
- *   void InsertApReturnParam(node **icm_tab, node *icm_arg, types *type,
+ *   void InsertApReturnParam( node **icm_tab, node *icm_arg, types *type,
+ *                             int *linksign, int cnt_param)
  *
  * Description:
  *
@@ -1546,8 +1555,7 @@ InsertApReturnParam (node **icm_tab, node *icm_arg, types *type, int *linksign,
          *  create standard icm table
          */
 
-        if ((0 == strcmp (ID_NAME (EXPRS_EXPR (icm_arg)), "out"))
-            && (icm_tab[1] == NULL)) {
+        if ((!strcmp (ID_NAME (EXPRS_EXPR (icm_arg)), "out")) && (icm_tab[1] == NULL)) {
             icm_tab[1] = icm_arg;
         } else {
             icm_tab[cnt_param + 2] = icm_arg;
@@ -1620,8 +1628,7 @@ InsertDefReturnParam (node **icm_tab, node *icm_args, types **type_tab, types *t
          *  create standard icm table
          */
 
-        if ((0 == strcmp (ID_NAME (EXPRS_EXPR (icm_args)), "out"))
-            && (icm_tab[1] == NULL)) {
+        if ((!strcmp (ID_NAME (EXPRS_EXPR (icm_args)), "out")) && (icm_tab[1] == NULL)) {
             icm_tab[1] = icm_args;
             ret = ST_crettype;
         } else {
@@ -1643,7 +1650,7 @@ InsertDefReturnParam (node **icm_tab, node *icm_args, types **type_tab, types *t
             }
         } else {
             ERROR (line, ("Pragma 'linksign` illegal"));
-            CONT_ERROR (("2 return parameters mapped to same position !"));
+            CONT_ERROR (("two return parameters mapped to same position!"));
             ABORT_ON_ERROR;
         }
     }
@@ -1655,6 +1662,9 @@ InsertDefReturnParam (node **icm_tab, node *icm_args, types **type_tab, types *t
  *
  * Function:
  *   void InsertDefArgParam( node **icm_tab, node *icm_args,
+ *                           types **type_tab, types *type_args,
+ *                           int *linksign, int cnt_param,
+ *                           int line)
  *
  * Description:
  *
@@ -1726,8 +1736,7 @@ ReorganizeReturnIcm (node *ret_icm)
             icm_arg = EXPRS_NEXT (pred_arg);
 
             while (icm_arg != NULL) {
-                if ((!first_out)
-                    && (0 == strcmp ("out", ID_NAME (EXPRS_EXPR (icm_arg))))) {
+                if ((!first_out) && (!strcmp ("out", ID_NAME (EXPRS_EXPR (icm_arg))))) {
                     first_out = TRUE;
                     /*
                      * copy the name of the current ICM arg into the first arg.
@@ -2030,7 +2039,7 @@ COMPModul (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *COMPTypedef(node *arg_node, node *arg_info)
+ *   node *COMPTypedef( node *arg_node, node *arg_info)
  *
  * Description:
  *   If needed an appropriate ICM is generated and stored in TYPEDEF_ICM.
@@ -3358,7 +3367,7 @@ COMPAp (node *arg_node, node *arg_info)
                                       FUNDEF_PRAGMA (AP_FUNDEF (arg_node)) == NULL
                                         ? NULL
                                         : FUNDEF_LINKSIGN (AP_FUNDEF (arg_node)),
-                                      cnt_param);
+                                      cnt_param, NODE_LINE (arg_node));
 
                 fundef_args = ARG_NEXT (fundef_args);
             }
@@ -4928,7 +4937,7 @@ COMPLoop (node *arg_node, node *arg_info)
         found = FALSE;
         usevar = DO_OR_WHILE_USEVARS (arg_node);
         while ((usevar != NULL) && (!found)) {
-            found = found || (strcmp (IDS_NAME (usevar), IDS_NAME (defvar)) == 0);
+            found = found || (!strcmp (IDS_NAME (usevar), IDS_NAME (defvar)));
             usevar = IDS_NEXT (usevar);
         }
         if (!found) {
@@ -5007,7 +5016,7 @@ COMPLoop (node *arg_node, node *arg_info)
         found = FALSE;
         defvar = DO_OR_WHILE_DEFVARS (arg_node);
         while ((defvar != NULL) && (!found)) {
-            found = found || (strcmp (IDS_NAME (usevar), IDS_NAME (defvar)) == 0);
+            found = found || (!strcmp (IDS_NAME (usevar), IDS_NAME (defvar)));
             defvar = IDS_NEXT (defvar);
         }
 
@@ -6800,8 +6809,8 @@ COMPSync (node *arg_node, node *arg_info)
         if (NODE_TYPE (instr) == N_icm) {
 
             /* var_name = NULL; */
-            if ((strcmp (ICM_NAME (instr), "WL_FOLD_BEGIN") == 0)
-                || (strcmp (ICM_NAME (instr), "WL_NONFOLD_BEGIN") == 0)) {
+            if ((!strcmp (ICM_NAME (instr), "WL_FOLD_BEGIN"))
+                || (!strcmp (ICM_NAME (instr), "WL_NONFOLD_BEGIN"))) {
                 /*
                  *  begin of with-loop code found
                  *  -> skip with-loop code
@@ -6809,8 +6818,8 @@ COMPSync (node *arg_node, node *arg_info)
                  */
                 count_nesting++;
                 DBUG_PRINT ("COMP", ("ICM: %s is ++", ICM_NAME (instr)));
-            } else if ((strcmp (ICM_NAME (instr), "WL_FOLD_END") == 0)
-                       || (strcmp (ICM_NAME (instr), "WL_NONFOLD_END") == 0)) {
+            } else if ((!strcmp (ICM_NAME (instr), "WL_FOLD_END"))
+                       || (!strcmp (ICM_NAME (instr), "WL_NONFOLD_END"))) {
                 /*
                  *  end of with-loop code found?
                  *  -> end of one (possibly nested) with loop
@@ -6828,20 +6837,20 @@ COMPSync (node *arg_node, node *arg_info)
                  *  epilog == TRUE: current icm (assignment) is part of epilog
                  */
 
-                if ((strcmp (ICM_NAME (instr), "ND_ALLOC_ARRAY") == 0)
-                    || (strcmp (ICM_NAME (instr), "ND_CHECK_REUSE_ARRAY") == 0)
-                    || (strcmp (ICM_NAME (instr), "ND_CHECK_REUSE_HIDDEN") == 0)) {
+                if ((!strcmp (ICM_NAME (instr), "ND_ALLOC_ARRAY"))
+                    || (!strcmp (ICM_NAME (instr), "ND_CHECK_REUSE_ARRAY"))
+                    || (!strcmp (ICM_NAME (instr), "ND_CHECK_REUSE_HIDDEN"))) {
                     var_name = ID_NAME (ICM_ARG2 (instr));
                     prolog = TRUE;
                     epilog = FALSE;
                     DBUG_PRINT ("COMP", ("ICM: %s is prolog", ICM_NAME (instr)));
-                } else if (strcmp (ICM_NAME (instr), "ND_INC_RC") == 0) {
+                } else if (!strcmp (ICM_NAME (instr), "ND_INC_RC")) {
                     var_name = ID_NAME (ICM_ARG1 (instr));
                     prolog = TRUE;
                     epilog = FALSE;
                     DBUG_PRINT ("COMP", ("ICM: %s is prolog", ICM_NAME (instr)));
-                } else if ((strcmp (ICM_NAME (instr), "ND_DEC_RC_FREE_ARRAY") == 0)
-                           || (strcmp (ICM_NAME (instr), "ND_DEC_RC") == 0)) {
+                } else if ((!strcmp (ICM_NAME (instr), "ND_DEC_RC_FREE_ARRAY"))
+                           || (!strcmp (ICM_NAME (instr), "ND_DEC_RC"))) {
                     var_name = ID_NAME (ICM_ARG1 (instr));
                     prolog = FALSE;
                     epilog = TRUE;
