@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2005/03/04 21:21:42  cg
+ * Added application of function inlining after LaC2Fun.
+ *
  * Revision 1.9  2004/12/19 19:49:29  sbs
  * calls to TNTdoToNewTypesXXX ( previously CheckAvis)
  * eliminated
@@ -147,6 +150,16 @@ SSAundoSsa (node *syntax_tree)
     DBUG_PRINT ("SSA", ("call Fun2Lac"));
     /* undo lac2fun transformation */
     syntax_tree = F2LdoFun2Lac (syntax_tree);
+    if ((global.break_after == global.compiler_phase)
+        && (0 == strcmp (global.break_specifier, "f2l"))) {
+        goto DONE;
+    }
+
+    DBUG_PRINT ("SSA", ("call Function Inlining"));
+    /* inline loop and cond functions */
+    if (global.optimize.doinl) {
+        syntax_tree = INLdoInlining (syntax_tree);
+    }
 
 DONE:
     DBUG_RETURN (syntax_tree);
