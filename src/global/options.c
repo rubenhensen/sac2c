@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/18 08:42:32  cg
+ * bug fixed in -o option
+ *
  * Revision 2.1  1999/05/12 14:27:24  cg
  * initial revision
  *
@@ -335,7 +338,7 @@ AnalyseCommandline (int argc, char *argv[])
     });
 
     OPTION ("o", {
-        strcpy (outfilename, *argv);
+        strcpy (outfilename, ARG);
         /*
          * The option is only stored in outfilename,
          * the correct settings of the global variables
