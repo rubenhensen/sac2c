@@ -1,3 +1,16 @@
+/*
+ *
+ * $Log$
+ * Revision 1.2  1999/07/09 07:34:40  cg
+ * Some bugs fixed.
+ *
+ *
+ * Revision 1.1  1998/07/08 16:54:34  cg
+ * Initial revision
+ *
+ *
+ */
+
 /*****************************************************************************
  *
  * file:   sac_heapmgr.h
@@ -133,8 +146,8 @@ extern SAC_HM_arena_t SAC_HM_arenas[NUM_ARENAS];
  * Declaration of specific heap management functions.
  */
 
-extern void SAC_HM_Init (size_unit_t initial_arena_of_arenas_size,
-                         size_unit_t initial_top_arena_size);
+extern void SAC_HM_Setup (size_unit_t initial_arena_of_arenas_size,
+                          size_unit_t initial_top_arena_size);
 
 extern void *SAC_HM_MallocSmallChunk (size_unit_t units, SAC_HM_arena_t *arena);
 extern void *SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena);
@@ -152,7 +165,10 @@ extern void SAC_HM_FreeTopArena (SAC_HM_header_t *addr, SAC_HM_arena_t *arena);
  * Definition of general macros.
  */
 
-#define SAC_HM_INIT() SAC_HM_Init (SAC_SET_SMALL_CHUNK_MEM, SAC_SET_TOP_CHUNK_MEM)
+#define SAC_HM_SETUP()                                                                   \
+    SAC_HM_Setup (SAC_SET_INITIAL_HEAPSIZE > 2 ? 1 : 0, SAC_SET_INITIAL_HEAPSIZE > 2     \
+                                                          ? SAC_SET_INITIAL_HEAPSIZE - 1 \
+                                                          : SAC_SET_INITIAL_HEAPSIZE)
 
 /*
  * Definition of memory allocation macros.
@@ -195,29 +211,36 @@ extern void SAC_HM_FreeTopArena (SAC_HM_header_t *addr, SAC_HM_arena_t *arena);
         if (size <= ARENA_4_MAXCS_BYTES) {                                               \
             if (size <= ARENA_2_MAXCS_BYTES) {                                           \
                 if (size <= ARENA_1_MAXCS_BYTES) {                                       \
-                    SAC_HM_FreeSmallChunk (addr, &(SAC_HM_arenas[1]));                   \
+                    SAC_HM_FreeSmallChunk ((SAC_HM_header_t *)addr,                      \
+                                           &(SAC_HM_arenas[1]));                         \
                 } else {                                                                 \
-                    SAC_HM_FreeSmallChunk (addr, &(SAC_HM_arenas[2]));                   \
+                    SAC_HM_FreeSmallChunk ((SAC_HM_header_t *)addr,                      \
+                                           &(SAC_HM_arenas[2]));                         \
                 }                                                                        \
             } else {                                                                     \
                 if (size <= ARENA_3_MAXCS_BYTES) {                                       \
-                    SAC_HM_FreeSmallChunk (addr, &(SAC_HM_arenas[3]));                   \
+                    SAC_HM_FreeSmallChunk ((SAC_HM_header_t *)addr,                      \
+                                           &(SAC_HM_arenas[3]));                         \
                 } else {                                                                 \
-                    SAC_HM_FreeSmallChunk (addr, &(SAC_HM_arenas[4]));                   \
+                    SAC_HM_FreeSmallChunk ((SAC_HM_header_t *)addr,                      \
+                                           &(SAC_HM_arenas[4]));                         \
                 }                                                                        \
             }                                                                            \
         } else {                                                                         \
             if (size < ARENA_7_MINCS) {                                                  \
                 if (size < ARENA_6_MINCS) {                                              \
-                    SAC_HM_FreeLargeChunk (addr, &(SAC_HM_arenas[5]));                   \
+                    SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr,                      \
+                                           &(SAC_HM_arenas[5]));                         \
                 } else {                                                                 \
-                    SAC_HM_FreeLargeChunk (addr, &(SAC_HM_arenas[6]));                   \
+                    SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr,                      \
+                                           &(SAC_HM_arenas[6]));                         \
                 }                                                                        \
             } else {                                                                     \
                 if (size < ARENA_8_MINCS) {                                              \
-                    SAC_HM_FreeLargeChunk (addr, &(SAC_HM_arenas[7]));                   \
+                    SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr,                      \
+                                           &(SAC_HM_arenas[7]));                         \
                 } else {                                                                 \
-                    SAC_HM_FreeTopArena (addr, &(SAC_HM_arenas[8]));                     \
+                    SAC_HM_FreeTopArena ((SAC_HM_header_t *)addr, &(SAC_HM_arenas[8]));  \
                 }                                                                        \
             }                                                                            \
         }                                                                                \
@@ -229,7 +252,7 @@ extern void SAC_HM_FreeTopArena (SAC_HM_header_t *addr, SAC_HM_arena_t *arena);
 
 extern void *SAC_HM_MallocCheck (unsigned int);
 
-#define SAC_HM_INIT()
+#define SAC_HM_SETUP()
 #define SAC_HM_MALLOC(size) SAC_HM_MallocCheck (size)
 #define SAC_HM_MALLOC_FIXED_SIZE(size) SAC_HM_MallocCheck (size)
 #define SAC_HM_FREE(addr) free (addr)
@@ -237,7 +260,7 @@ extern void *SAC_HM_MallocCheck (unsigned int);
 
 #else /* SAC_DO_CHECK_MALLOC */
 
-#define SAC_HM_INIT()
+#define SAC_HM_SETUP()
 #define SAC_HM_MALLOC(size) malloc (size)
 #define SAC_HM_MALLOC_FIXED_SIZE(size) malloc (size)
 #define SAC_HM_FREE(addr) free (addr)

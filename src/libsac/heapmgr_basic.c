@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1999/07/09 07:35:08  cg
+ * Some bugs fixed.
+ *
  * Revision 1.1  1999/07/08 12:28:56  cg
  * Initial revision
  *
@@ -79,7 +82,8 @@ OutOfMemory (size_byte_t request)
 }
 
 void
-SAC_HM_Init (size_unit_t initial_arena_of_arenas_size, size_unit_t initial_top_arena_size)
+SAC_HM_Setup (size_unit_t initial_arena_of_arenas_size,
+              size_unit_t initial_top_arena_size)
 {
     size_unit_t offset, initial_heap_size;
     int i;
