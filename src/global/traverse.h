@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.30  1995/12/21 13:23:18  asi
+ * Revision 1.31  1995/12/29 10:27:33  cg
+ * added readsib_tab
+ *
+ * Revision 1.30  1995/12/21  13:23:18  asi
  * changed dead_tab to dcr_tab and added active_tab
  *
  * Revision 1.29  1995/12/07  14:15:09  cg
@@ -172,5 +175,7 @@ extern funptr unique_tab[];
 extern funptr rmvoid_tab[];
 
 extern funptr precomp_tab[];
+
+extern funptr readsib_tab[];
 
 #endif /* _sac_traverse_h */
