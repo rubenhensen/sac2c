@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/08/06 17:19:04  dkr
+ * changed signature of ICM ND_KS_VECT2OFFSET
+ *
  * Revision 1.1  1998/04/25 16:20:35  sbs
  * Initial revision
  *
@@ -68,7 +71,8 @@ extern void ICMCompileND_END_GENARRAY_S (char *res, int dimres, char **valstr);
 extern void ICMCompileND_END_GENARRAY_A (char *res, int dimres, char *reta, int idxlen);
 extern void ICMCompileND_END_MODARRAY_S (char *res, int dimres, char *a, char **valstr);
 extern void ICMCompileND_END_FOLD (int idxlen);
-extern void ICMCompileND_KS_VECT2OFFSET (char *name, int dim, int dims, char **s);
+extern void ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim,
+                                         int dims, char **s);
 extern void ICMCompileND_END_MODARRAY_A (char *res, int dimres, char *a, char *reta,
                                          int idxlen);
 

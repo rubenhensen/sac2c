@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.48  1998/08/06 17:19:34  dkr
+ * changed signature of ICM ND_KS_VECT2OFFSET
+ *
  * Revision 1.47  1998/08/03 10:50:52  cg
  * added implementation of new ICM MT_ADJUST_SCHEDULER
  *
@@ -515,11 +518,12 @@ ICM_END( ND_BEGIN_FOLDFUN, (res, dimres, from, to, idx, idxlen, n_neutral, neutr
 
 #if defined(ND_KS_VECT2OFFSET) || defined(ICM_ALL)
 ICM_DEF( ND_KS_VECT2OFFSET, TRACE_PRF)
-  ICM_STR( name)
+  ICM_STR( off_name)
+  ICM_STR( arr_name)
   ICM_INT( dim)
   ICM_INT( dims)
   ICM_VAR( dims, s)
-ICM_END( ND_KS_VECT2OFFSET, (name, dim, dims, s))
+ICM_END( ND_KS_VECT2OFFSET, (off_name, arr_name, dim, dims, s))
 #endif
 
 
