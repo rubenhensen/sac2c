@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/08/01 12:08:41  dkr
+ * macros DESC_... added
+ *
  * Revision 3.21  2002/07/31 16:35:28  dkr
  * tags reorganized: HID/NHD are seperate classes now
  *
@@ -101,12 +104,16 @@ typedef struct {
     int shp[MAXDIM]; /* shape vector    */
 } SAC_array_descriptor;
 
+#define DESC_RC(desc) CAT1 (desc, ->rc)
+#define DESC_DIM(desc) CAT1 (desc, ->dim)
+#define DESC_SIZE(desc) CAT1 (desc, ->sz)
+#define DESC_SHAPE(desc, pos) CAT1 (desc, ->shp[pos])
+
 /**********************************
  **********************************
  ***
- *** CAT1, CAT2, CAT3, CAT4 (desc)
- *** CAT5 (desc_?)
- *** CAT6, CAT7, CAT8
+ *** CAT2, CAT3, CAT4, CAT5 (desc)
+ *** CAT6, CAT7
  ***
  ***/
 
@@ -140,13 +147,13 @@ typedef struct {
  *
  ******************************************************************************/
 
-#define SAC_ND_A_DESC(nt) CAT1 (SAC_ND_A_DESC__, CAT1 (NT_SHP (nt), (nt)))
+#define SAC_ND_A_DESC(nt) CAT2 (SAC_ND_A_DESC__, CAT2 (NT_SHP (nt), (nt)))
 
-#define SAC_ND_A_DESC_DIM(nt) CAT5 (SAC_ND_A_DESC (nt), ->dim)
+#define SAC_ND_A_DESC_DIM(nt) DESC_DIM (SAC_ND_A_DESC (nt))
 
-#define SAC_ND_A_DESC_SIZE(nt) CAT5 (SAC_ND_A_DESC (nt), ->sz)
+#define SAC_ND_A_DESC_SIZE(nt) DESC_SIZE (SAC_ND_A_DESC (nt))
 
-#define SAC_ND_A_DESC_SHAPE(nt, dim) CAT5 (SAC_ND_A_DESC (nt), ->shp[dim])
+#define SAC_ND_A_DESC_SHAPE(nt, dim) DESC_SHAPE (SAC_ND_A_DESC (nt), dim)
 
 #define SAC_ND_A_FIELD(nt) CAT6 (SAC_ND_A_FIELD__, CAT6 (NT_SHP (nt), (nt)))
 
@@ -175,10 +182,10 @@ typedef struct {
  * SCL
  */
 
-#define SAC_ND_A_DESC__SCL(nt) CAT2 (SAC_ND_A_DESC__SCL_, CAT2 (NT_HID (nt), (nt)))
+#define SAC_ND_A_DESC__SCL(nt) CAT3 (SAC_ND_A_DESC__SCL_, CAT3 (NT_HID (nt), (nt)))
 #define SAC_ND_A_DESC__SCL_NHD(nt) SAC_ICM_UNDEF ()
 #define SAC_ND_A_DESC__SCL_HID(nt)                                                       \
-    CAT3 (SAC_ND_A_DESC__SCL_HID_, CAT3 (NT_UNQ (nt), (nt)))
+    CAT4 (SAC_ND_A_DESC__SCL_HID_, CAT4 (NT_UNQ (nt), (nt)))
 #define SAC_ND_A_DESC__SCL_HID_NUQ(nt) SAC_ND_A_DESC__AKS (nt)
 #define SAC_ND_A_DESC__SCL_HID_UNQ(nt) SAC_ICM_UNDEF ()
 
@@ -196,17 +203,17 @@ typedef struct {
  * AKS
  */
 
-#define SAC_ND_A_DESC__AKS(nt) CAT4 (NT_NAME (nt), __desc)
+#define SAC_ND_A_DESC__AKS(nt) CAT5 (NT_NAME (nt), __desc)
 
 #define SAC_ND_A_FIELD__AKS(nt) NT_NAME (nt)
 
-#define SAC_ND_A_RC__AKS_NUQ(nt) CAT8 (SAC_ND_A_DESC (nt), ->rc)
+#define SAC_ND_A_RC__AKS_NUQ(nt) DESC_RC (SAC_ND_A_DESC (nt))
 
-#define SAC_ND_A_DIM__AKS(nt) CAT8 (NT_NAME (nt), __dim)
+#define SAC_ND_A_DIM__AKS(nt) CAT7 (NT_NAME (nt), __dim)
 
-#define SAC_ND_A_SIZE__AKS(nt) CAT8 (NT_NAME (nt), __sz)
+#define SAC_ND_A_SIZE__AKS(nt) CAT7 (NT_NAME (nt), __sz)
 
-#define SAC_ND_A_SHAPE__AKS(nt, dim) CAT8 (NT_NAME (nt), CAT8 (__shp, dim))
+#define SAC_ND_A_SHAPE__AKS(nt, dim) CAT7 (NT_NAME (nt), CAT7 (__shp, dim))
 
 /*
  * AKD
