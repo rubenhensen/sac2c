@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2002/09/06 16:17:35  sbs
+ * new notation for polymorphic fundefs added
+ *
  * Revision 3.63  2002/09/06 12:43:51  sah
  * rules for SetWL modified.
  *
@@ -1530,6 +1533,25 @@ localtype: simpletype
              TYPES_NAME( $$) = $1;
              TYPES_DIM( $$) = 0; 
              $$ = Exprs2ShpInfo( $$, $3);
+           }
+         | LT id GT 
+           { $$ = MakeTypes1( T_user);
+             TYPES_NAME( $$) = $2;
+             TYPES_DIM( $$) = 0;
+             TYPES_POLY( $$) = TRUE;
+           }
+         | LT id GT SQBR_L SQBR_R
+           { $$ = MakeTypes1( T_user);
+             TYPES_NAME( $$) = $2;
+             TYPES_DIM( $$) = 0;
+             TYPES_POLY( $$) = TRUE;
+           }
+         | LT id GT SQBR_L exprs SQBR_R
+           { $$ = MakeTypes1( T_user);
+             TYPES_NAME( $$) = $2;
+             TYPES_DIM( $$) = 0; 
+             TYPES_POLY( $$) = TRUE;
+             $$ = Exprs2ShpInfo( $$, $5);
            }
          ;
 
