@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2003/09/24 14:30:09  sah
+ * small bugfix
+ *
  * Revision 1.24  2003/06/11 21:42:54  ktr
  * replaced calls of MakeArray with MakeFlatArray
  *
@@ -1692,6 +1695,8 @@ HDap (node *arg_node, node *arg_info)
 
             if (INFO_HD_ASSIGNS (arg_info) == NULL) {
                 INFO_HD_ASSIGNS (arg_info) = assigns;
+            } else if (assigns != NULL && NODE_TYPE (assigns) == N_empty) {
+                assigns = FreeTree (assigns);
             } else {
                 INFO_HD_ASSIGNS (arg_info)
                   = AppendAssign (INFO_HD_ASSIGNS (arg_info), assigns);
