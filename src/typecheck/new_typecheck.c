@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2004/11/27 02:31:32  cg
+ * Function name corrected
+ *
  * Revision 3.60  2004/11/27 01:34:45  jhb
  * fixed bug
  *
@@ -2154,7 +2157,7 @@ NTCfold (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCTriggerTypeCheck( node *fundef)
+ *    node *NTCtriggerTypeCheck( node *fundef)
  *
  * description:
  *   external interface for TypeCheckFunctionBody. It is used from ct_fun,
@@ -2164,11 +2167,11 @@ NTCfold (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-NTCTriggerTypeCheck (node *fundef)
+NTCtriggerTypeCheck (node *fundef)
 {
     info *arg_info;
 
-    DBUG_ENTER ("NTCTriggerTypeCheck");
+    DBUG_ENTER ("NTCtriggerTypeCheck");
 
     if (FUNDEF_TCSTAT (fundef) == NTC_not_checked) {
         arg_info = MakeInfo ();
