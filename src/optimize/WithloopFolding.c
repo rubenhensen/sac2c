@@ -1,6 +1,9 @@
 /* 	$Id$
  *
  * $Log$
+ * Revision 1.4  1998/02/24 14:19:20  srs
+ * *** empty log message ***
+ *
  * Revision 1.3  1998/02/09 15:58:20  srs
  * *** empty log message ***
  *
@@ -12,7 +15,7 @@
 
  what happens:
  we search for withloops in the body of all functions.  Any found WL will be
- put in the list wl_found.Only the latest (reachable) WLs are in this list.
+ put in the list wl_found. Only the latest (reachable) WLs are in this list.
    E.g. a WL "A = with..." is replaced by another "A = with2..." or removed
    after "A = nonwithexpr".
 
@@ -33,85 +36,172 @@
 #include "dbug.h"
 #include "my_debug.h"
 #include "traverse.h"
+#include "optimize.h"
 #include "WithloopFolding.h"
-
-/*************** typedefs */
-typedef struct WL_FOUND_TYPE {
-    char *id;
-    struct WL_FOUND_TYPE *next;
-} wl_found_type;
-
-/*************** variable declarations */
-wl_found_type *wl_found;
 
 /******************************************************************************
  *
+ * function:
+ *   node *WLFfundef(node *arg_node, node *arg_info)
+ *
  * description:
- *   functions to handle wl_found list.
- *   ToList     : add element
- *   ClearList  : clear whole list
- *   RemoveList : remove one element
- *   SearchList : search for one element
+ *   we search in every function separately for withloops.
+ *   The folding always happens exclusively in a function body.
+ *
+ *   The optimization traversal OPTTrav is included in WLF traversal to
+ *   modify USE and DEF and to create MRD masks.
  *
  ******************************************************************************/
 
-wl_found_type *
-ToList (char *name)
-{ /* add new entry, return pointer */
-    wl_found_type *tmp;
-    tmp = (wl_found_type *)Malloc (sizeof (wl_found_type));
-    tmp->id = name;
-    tmp->next = wl_found;
-    wl_found = tmp;
-    return (tmp);
+node *
+WLFfundef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("WLFfundef");
+
+    FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
+    FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
+
+    DBUG_RETURN (arg_node);
 }
 
-void
-ClearList (void)
-{ /* clear whole list */
-    wl_found_type *tmp;
-    while (wl_found) {
-        tmp = wl_found->next;
-        FREE (wl_found);
-        wl_found = tmp;
+/******************************************************************************
+ *
+ * function:
+ *   node *WLFassign(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only needed to apply OPTTrav
+ *
+ *
+ ******************************************************************************/
+
+node *
+WLFassign (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("WLFassign");
+
+    ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
+    ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *WLFcond(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only needed to apply OPTTrav
+ *
+ *
+ ******************************************************************************/
+
+node *
+WLFcond (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("WLFcond");
+
+    /* we do not need to traverse the condition
+       COND_COND(arg_node) = OPTTrav(COND_COND(arg_node), arg_info, arg_node);
+    */
+
+    /* traverse bodies. MRDs are build locally in the bodies. The DEF mask is
+       evaluated in the superior OPTTrav to modify the actual MRD list. */
+    COND_THENINSTR (arg_node) = OPTTrav (COND_THENINSTR (arg_node), arg_info, arg_node);
+    COND_ELSEINSTR (arg_node) = OPTTrav (COND_ELSEINSTR (arg_node), arg_info, arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *WLFdo(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only needed to apply OPTTrav
+ *
+ *
+ ******************************************************************************/
+
+node *
+WLFdo (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("WLFdo");
+
+    DO_INSTR (arg_node) = OPTTrav (DO_INSTR (arg_node), arg_info, arg_node);
+    DO_COND (arg_node) = OPTTrav (DO_COND (arg_node), arg_info, arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *WLFwhile(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only needed to apply OPTTrav
+ *
+ *
+ ******************************************************************************/
+
+node *
+WLFwhile (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("WLFwhile");
+
+    WHILE_COND (arg_node) = OPTTrav (WHILE_COND (arg_node), arg_info, arg_node);
+    WHILE_INSTR (arg_node) = OPTTrav (WHILE_INSTR (arg_node), arg_info, arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *WLFwith(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only needed to apply OPTTrav
+ *
+ *
+ ******************************************************************************/
+
+node *
+WLFwith (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("WLFwith");
+
+    WITH_GEN (arg_node) = OPTTrav (WITH_GEN (arg_node), arg_info, arg_node);
+    switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
+    case N_genarray:
+        BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_modarray:
+        BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_foldprf:
+        BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_foldfun:
+        BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    default:
+        DBUG_ASSERT (0, "Operator not implemented for with_node");
+        break;
     }
-}
 
-void
-RemoveList (char *name)
-{ /* remove one element */
-    wl_found_type *tmp, *rm, *pre;
-    tmp = wl_found;
-    pre = NULL;
-    while (tmp)
-        if (!strcmp (tmp->id, name)) {
-            rm = tmp;
-            tmp = tmp->next;
-            if (pre)
-                pre->next = tmp;
-            else
-                wl_found = tmp;
-            FREE (rm);
-        } else {
-            pre = tmp;
-            tmp = tmp->next;
-        }
-}
-
-wl_found_type *
-SearchList (char *name)
-{ /* search list for the entry 'name'. */
-    wl_found_type *tmp;
-    DBUG_ENTER ("SearchList");
-
-    tmp = wl_found;
-    while (tmp)
-        if (!strcmp (tmp->id, name))
-            break;
-        else
-            tmp = tmp->next;
-
-    DBUG_RETURN (tmp);
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -152,64 +242,6 @@ WLFNwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLFlet(node *arg_node, node *arg_info)
- *
- * description:
- *   adds (or replaces) entries to WL_found list if this is an assignment
- *   with a WL expression. Removes entry if assignment is not a WL.
- *
- ******************************************************************************/
-
-node *
-WLFlet (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("WLFlet");
-
-    INFO_IS_WL (arg_info) = 0;
-    arg_node = Trav (LET_EXPR (arg_node), arg_info);
-
-    /* now we modify the WL_found list */
-    RemoveList (LET_NAME (arg_node));
-    if (INFO_IS_WL (arg_info))
-        ToList (LET_NAME (arg_node));
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *WLFfundef(node *arg_node, node *arg_info)
- *
- * description:
- *   we search in every function separately for withloops.
- *   The folding always happens exclusively in a function body, so the
- *   so far found WLs have to be ignored for every new function traversal.
- *
- ******************************************************************************/
-
-node *
-WLFfundef (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("WLFfundef");
-    DBUG_ASSERT (!wl_found, ("There exist WLs in wl_found at the "
-                             "beginning of a function body"));
-
-    /* traverse function body */
-    arg_node = Trav (FUNDEF_BODY (arg_node), arg_info);
-
-    /* clear old wl_found list */
-    ClearList ();
-
-    /* traverse the other FUNDEFs */
-    arg_node = Trav (FUNDEF_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *WLFWithloopFolding(node *arg_node, node* arg_info)
  *
  * description:
@@ -224,12 +256,11 @@ WLFWithloopFolding (node *arg_node, node *arg_info)
     DBUG_ENTER ("WLFWithloopFolding");
 
     act_tab = wlf_tab;
-    wl_found = NULL;
 
     DBUG_ASSERT (!arg_info, ("at the beginning of WLF: arg_info != NULL"));
     arg_info = MakeInfo ();
-
     Trav (arg_node, arg_info);
+    FREE (arg_info);
 
     DBUG_RETURN (arg_node);
 }
