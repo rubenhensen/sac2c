@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1994/12/14 16:35:39  sbs
+ * Revision 1.3  1994/12/19 16:51:48  hw
+ * changed TYPE_LENGTH & INT_STRING_LENGTH
+ *
+ * Revision 1.2  1994/12/14  16:35:39  sbs
  * userdef types integrated
  *
  * Revision 1.1  1994/12/05  13:20:47  hw
@@ -18,8 +21,8 @@
 #include "dbug.h"
 #include "convert.h"
 
-#define TYPE_LENGTH 80      /* dimension of array of char */
-#define INT_STRING_LENGTH 5 /* dimension of array of char */
+#define TYPE_LENGTH 256      /* dimension of array of char */
+#define INT_STRING_LENGTH 16 /* dimension of array of char */
 
 char *type_string[] = {"int", "float", "bool"}; /* strings for primitve types */
 
