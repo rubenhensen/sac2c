@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/01/24 23:33:46  dkr
+ * MakeId_Num() added
+ * signature of MakeWLgrid() and MakeWLgridVar() modified
+ * signature of MakeWLseg() and MakeWLsegVar() modified
+ *
  * Revision 3.7  2001/01/10 14:03:52  dkr
  * new atttribute FULL_RANGE for N_WLseg- and N_WLsegVar-nodes added
  *
@@ -1021,6 +1026,23 @@ MakeId_Copy (char *str)
 /*--------------------------------------------------------------------------*/
 
 node *
+MakeId_Num (int val)
+{
+    char *str;
+    node *result;
+
+    DBUG_ENTER ("MakeId_Num");
+
+    str = (char *)MALLOC (20 * sizeof (char));
+    sprintf (str, "%d", val);
+    result = MakeId (str, NULL, ST_regular);
+
+    DBUG_RETURN (result);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
 MakeNum (int val)
 {
     node *tmp;
@@ -1570,7 +1592,7 @@ MakeNWith2 (node *withid, node *seg, node *code, node *withop, int dims)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLseg (int dims, int full_range, node *contents, node *next)
+MakeWLseg (int dims, node *contents, node *next)
 {
     node *new_node;
     int b;
@@ -1580,7 +1602,6 @@ MakeWLseg (int dims, int full_range, node *contents, node *next)
     new_node = CreateCleanNode (N_WLseg);
 
     WLSEG_DIMS (new_node) = dims;
-    WLSEG_FULL_RANGE (new_node) = full_range;
 
     WLSEG_CONTENTS (new_node) = contents;
     WLSEG_NEXT (new_node) = next;
@@ -1609,7 +1630,7 @@ MakeWLseg (int dims, int full_range, node *contents, node *next)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLsegVar (int dims, int full_range, node *contents, node *next)
+MakeWLsegVar (int dims, node *contents, node *next)
 {
     node *new_node;
     int b;
@@ -1619,7 +1640,6 @@ MakeWLsegVar (int dims, int full_range, node *contents, node *next)
     new_node = CreateCleanNode (N_WLsegVar);
 
     WLSEGVAR_DIMS (new_node) = dims;
-    WLSEGVAR_FULL_RANGE (new_node) = full_range;
 
     WLSEGVAR_CONTENTS (new_node) = contents;
     WLSEGVAR_NEXT (new_node) = next;
@@ -1732,8 +1752,8 @@ MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, node *step,
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling, node *nextdim,
-            node *next, node *code)
+MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling, bool fitted,
+            node *nextdim, node *next, node *code)
 {
     node *new_node;
 
@@ -1746,6 +1766,7 @@ MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling, node *ne
     WLGRID_BOUND1 (new_node) = bound1;
     WLGRID_BOUND2 (new_node) = bound2;
     WLGRID_UNROLLING (new_node) = unrolling;
+    WLGRID_FITTED (new_node) = fitted;
     WLGRID_NEXTDIM (new_node) = nextdim;
     WLGRID_NEXT (new_node) = next;
 
@@ -1762,8 +1783,8 @@ MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling, node *ne
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLgridVar (int level, int dim, node *bound1, node *bound2, node *nextdim, node *next,
-               node *code)
+MakeWLgridVar (int level, int dim, node *bound1, node *bound2, bool fitted, node *nextdim,
+               node *next, node *code)
 {
     node *new_node;
 
@@ -1775,6 +1796,7 @@ MakeWLgridVar (int level, int dim, node *bound1, node *bound2, node *nextdim, no
     WLGRIDVAR_DIM (new_node) = dim;
     WLGRIDVAR_BOUND1 (new_node) = bound1;
     WLGRIDVAR_BOUND2 (new_node) = bound2;
+    WLGRIDVAR_FITTED (new_node) = fitted;
     WLGRIDVAR_NEXTDIM (new_node) = nextdim;
     WLGRIDVAR_NEXT (new_node) = next;
 
