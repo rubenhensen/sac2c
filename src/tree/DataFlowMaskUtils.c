@@ -1,5 +1,9 @@
 /*
  *
+ * $Log$
+ * Revision 1.11  2000/07/12 13:35:24  dkr
+ * DFMDuplicateMask: NOTE replaced by DBUG_PRINT
+ *
  * Revision 1.8  2000/07/04 14:36:43  jhs
  * Added DFMGetMaskBase and used it in DFMDuplicateMask
  *
