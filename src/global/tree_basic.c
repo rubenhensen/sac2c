@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1997/10/30 19:09:14  dkr
+ * with defined NEWTREE, node->nnode is not used anymore
+ *
  * Revision 1.21  1997/10/29 14:32:47  srs
  * free -> FREE
  *
@@ -126,7 +129,11 @@ char *prf_name_str[] = {
 /* more local macros                                                        */
 /*--------------------------------------------------------------------------*/
 
+#ifndef NEWTREE
+
 #define NODE_NNODE(n) (n->nnode)
+
+#endif
 
 /*--------------------------------------------------------------------------*/
 /*  Make-functions for non-node structures                                  */
@@ -303,7 +310,9 @@ MakeModul (char *name, file_type filetype, node *imports, node *types, node *obj
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_modul;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 4;
+#endif
 
     MODUL_FILETYPE (tmp) = filetype;
     MODUL_IMPORTS (tmp) = imports;
@@ -326,7 +335,9 @@ MakeModdec (char *name, deps *linkwith, int isexternal, node *imports, node *exp
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_moddec;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 2;
+#endif
 
     MODDEC_NAME (tmp) = name;
     MODDEC_LINKWITH (tmp) = linkwith;
@@ -348,7 +359,9 @@ MakeClassdec (char *name, deps *linkwith, int isexternal, node *imports, node *e
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_classdec;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 2;
+#endif
 
     CLASSDEC_NAME (tmp) = name;
     CLASSDEC_LINKWITH (tmp) = linkwith;
@@ -370,7 +383,9 @@ MakeSib (char *name, int linkstyle, deps *linkwith, node *types, node *objs, nod
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_sib;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 3;
+#endif
 
     SIB_TYPES (tmp) = types;
     SIB_FUNS (tmp) = funs;
@@ -393,7 +408,9 @@ MakeImplist (char *name, ids *itypes, ids *etypes, ids *objs, ids *funs, node *n
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_implist;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 0;
+#endif
 
     IMPLIST_NAME (tmp) = name;
     IMPLIST_ITYPES (tmp) = itypes;
@@ -416,7 +433,9 @@ MakeExplist (node *itypes, node *etypes, node *objs, node *funs)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_explist;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 4;
+#endif
 
     EXPLIST_ITYPES (tmp) = itypes;
     EXPLIST_ETYPES (tmp) = etypes;
@@ -437,7 +456,9 @@ MakeTypedef (char *name, char *mod, types *type, statustype attrib, node *next)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_typedef;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 1;
+#endif
 
     TYPEDEF_TYPE (tmp) = type;
     TYPEDEF_NAME (tmp) = name;
@@ -459,7 +480,9 @@ MakeObjdef (char *name, char *mod, types *type, node *expr, node *next)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_objdef;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 2;
+#endif
 
     OBJDEF_TYPE (tmp) = type;
     OBJDEF_NAME (tmp) = name;
@@ -481,7 +504,9 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_fundef;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 3;
+#endif
 
     FUNDEF_TYPES (tmp) = types;
     FUNDEF_NAME (tmp) = name;
@@ -505,7 +530,9 @@ MakeArg (char *name, types *type, statustype status, statustype attrib, node *ne
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_arg;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 1;
+#endif
 
     ARG_TYPE (tmp) = type;
     ARG_NAME (tmp) = name;
@@ -529,7 +556,9 @@ MakeBlock (node *instr, node *vardec)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_block;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 2;
+#endif
 
     BLOCK_INSTR (tmp) = instr;
     BLOCK_VARDEC (tmp) = vardec;
@@ -550,7 +579,9 @@ MakeVardec (char *name, types *type, node *next)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_vardec;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 1;
+#endif
 
     VARDEC_TYPE (tmp) = type;
     VARDEC_NAME (tmp) = name;
@@ -570,7 +601,9 @@ MakeAssign (node *instr, node *next)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_assign;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 2;
+#endif
 
     ASSIGN_INSTR (tmp) = instr;
     ASSIGN_NEXT (tmp) = next;
@@ -591,7 +624,9 @@ MakeLet (node *expr, ids *ids)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_let;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 1;
+#endif
 
     LET_EXPR (tmp) = expr;
     LET_IDS (tmp) = ids;
@@ -610,7 +645,9 @@ MakeCast (node *expr, types *type)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_cast;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 1;
+#endif
 
     CAST_TYPE (tmp) = type;
     CAST_EXPR (tmp) = expr;
@@ -629,7 +666,9 @@ MakeReturn (node *exprs)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_return;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 1;
+#endif
 
     RETURN_EXPRS (tmp) = exprs;
 
@@ -647,7 +686,9 @@ MakeCond (node *cond, node *Then, node *Else)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_cond;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 3;
+#endif
 
     COND_COND (tmp) = cond;
     COND_THEN (tmp) = Then;
@@ -669,7 +710,9 @@ MakeDo (node *cond, node *body)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_do;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 2;
+#endif
 
     DO_COND (tmp) = cond;
     DO_BODY (tmp) = body;
@@ -690,7 +733,9 @@ MakeWhile (node *cond, node *body)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_while;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 2;
+#endif
 
     WHILE_COND (tmp) = cond;
     WHILE_BODY (tmp) = body;
@@ -719,7 +764,9 @@ MakeAnnotate (int tag, int funno, int funapno)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_annotate;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 0;
+#endif
 
     ANNOTATE_TAG (tmp) = tag;
     ANNOTATE_FUNNUMBER (tmp) = funno;
@@ -739,7 +786,9 @@ MakeAp (char *name, char *mod, node *args)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_ap;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 1;
+#endif
 
     AP_NAME (tmp) = name;
     AP_MOD (tmp) = mod;
@@ -760,7 +809,9 @@ MakeWith (node *gen, node *operator)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_with;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 2;
+#endif
 
     WITH_GEN (tmp) = gen;
     WITH_OPERATOR (tmp) = operator;
@@ -781,7 +832,9 @@ MakeGenerator (node *left, node *right, char *id)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_generator;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 2;
+#endif
 
     GEN_LEFT (tmp) = left;
     GEN_RIGHT (tmp) = right;
@@ -801,7 +854,9 @@ MakeGenarray (node *array, node *body)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_genarray;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 2;
+#endif
 
     GENARRAY_ARRAY (tmp) = array;
     GENARRAY_BODY (tmp) = body;
@@ -820,7 +875,9 @@ MakeModarray (node *array, node *body)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_modarray;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 2;
+#endif
 
     MODARRAY_ARRAY (tmp) = array;
     MODARRAY_BODY (tmp) = body;
@@ -839,7 +896,9 @@ MakeFoldprf (prf prf, node *body, node *neutral)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_foldprf;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 2;
+#endif
 
     FOLDPRF_PRF (tmp) = prf;
     FOLDPRF_BODY (tmp) = body;
@@ -861,7 +920,9 @@ MakeFoldfun (char *name, char *mod, node *body, node *neutral)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_foldfun;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 2;
+#endif
 
     FOLDFUN_NAME (tmp) = name;
     FOLDFUN_MOD (tmp) = mod;
@@ -882,7 +943,9 @@ MakeExprs (node *expr, node *next)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_exprs;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 2;
+#endif
 
     EXPRS_EXPR (tmp) = expr;
     EXPRS_NEXT (tmp) = next;
@@ -901,7 +964,9 @@ MakeArray (node *aelems)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_array;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 1;
+#endif
 
     ARRAY_AELEMS (tmp) = aelems;
 
@@ -919,7 +984,9 @@ MakeVinfo (useflag flag, types *type, node *next)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_vinfo;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 1;
+#endif
 
     VINFO_FLAG (tmp) = flag;
     VINFO_TYPE (tmp) = type;
@@ -940,7 +1007,9 @@ MakeId (char *name, char *mod, statustype status)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_id;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 0;
+#endif
 
     tmp->info.ids = MakeIds (name, mod, status);
 
@@ -958,7 +1027,9 @@ MakeId2 (ids *ids_node)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_id;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 0;
+#endif
 
     tmp->info.ids = ids_node;
 
@@ -976,7 +1047,9 @@ MakeNum (int val)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_num;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 0;
+#endif
 
     NUM_VAL (tmp) = val;
 
@@ -994,7 +1067,9 @@ MakeChar (char val)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_char;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 0;
+#endif
 
     CHAR_VAL (tmp) = val;
 
@@ -1012,7 +1087,9 @@ MakeFloat (float val)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_float;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 0;
+#endif
 
     FLOAT_VAL (tmp) = val;
 
@@ -1030,7 +1107,9 @@ MakeDouble (double val)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_double;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 0;
+#endif
 
     DOUBLE_VAL (tmp) = val;
 
@@ -1048,7 +1127,9 @@ MakeBool (int val)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_bool;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 0;
+#endif
 
     BOOL_VAL (tmp) = val;
 
@@ -1066,7 +1147,9 @@ MakeStr (char *str)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_str;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 0;
+#endif
 
     STR_STRING (tmp) = str;
 
@@ -1084,7 +1167,9 @@ MakePrf (prf prf, node *args)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_prf;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 1;
+#endif
 
     PRF_PRF (tmp) = prf;
     PRF_ARGS (tmp) = args;
@@ -1103,7 +1188,9 @@ MakeEmpty ()
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_empty;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 0;
+#endif
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
@@ -1119,7 +1206,9 @@ MakePost (int incdec, char *id)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_post;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 0;
+#endif
 
     POST_ID (tmp) = id;
 
@@ -1154,7 +1243,9 @@ MakePre (nodetype incdec, char *id)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_pre;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 0;
+#endif
 
     PRE_ID (tmp) = id;
 
@@ -1189,7 +1280,9 @@ MakeIcm (char *name, node *args, node *next)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_icm;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 2;
+#endif
 
     ICM_NAME (tmp) = name;
     ICM_ARGS (tmp) = args;
@@ -1210,7 +1303,9 @@ MakePragma ()
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_pragma;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 0;
+#endif
 
     PRAGMA_NUMPARAMS (tmp) = 0;
 
@@ -1229,7 +1324,9 @@ MakeInfo ()
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_info;
+#ifndef NEWTREE
     NODE_NNODE (tmp) = 0;
+#endif
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, /**/
                              NODE_LINE (tmp), mdb_nodetype[NODE_TYPE (tmp)], tmp));
