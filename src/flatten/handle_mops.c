@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2002/09/11 23:22:47  dkr
+ * HMAdjustFunNames() removed
+ *
  * Revision 1.13  2002/09/09 19:31:30  dkr
  * prf_name_str renamed into prf_name_string
  *
@@ -46,7 +49,6 @@
 #include "dbug.h"
 #include "free.h"
 #include "LookUpTable.h"
-#include "print.h"
 
 static LUT_t prec_lut;
 
@@ -351,48 +353,46 @@ Name2Prf (char *name, prf *primfun)
 
     DBUG_ENTER ("Name2Prf");
 
-    if (strcmp (name, "abs") == 0) {
-        *primfun = F_abs;
-    } else if (strcmp (name, "reshape") == 0) {
-        *primfun = F_reshape;
+    if (strcmp (name, "dim") == 0) {
+        *primfun = F_dim;
     } else if (strcmp (name, "shape") == 0) {
         *primfun = F_shape;
+    } else if (strcmp (name, "reshape") == 0) {
+        *primfun = F_reshape;
     } else if (strcmp (name, "take") == 0) {
         *primfun = F_take;
     } else if (strcmp (name, "drop") == 0) {
         *primfun = F_drop;
-    } else if (strcmp (name, "dim") == 0) {
-        *primfun = F_dim;
     } else if (strcmp (name, "rotate") == 0) {
         *primfun = F_rotate;
     } else if (strcmp (name, "cat") == 0) {
         *primfun = F_cat;
     } else if (strcmp (name, "sel") == 0) {
         *primfun = F_sel;
-    } else if (strcmp (name, "toi") == 0) {
-        *primfun = F_toi;
-    } else if (strcmp (name, "tof") == 0) {
-        *primfun = F_tof;
-    } else if (strcmp (name, "tod") == 0) {
-        *primfun = F_tod;
-    } else if (strcmp (name, "min") == 0) {
-        *primfun = F_min;
-    } else if (strcmp (name, "max") == 0) {
-        *primfun = F_max;
     } else if (strcmp (name, "genarray") == 0) {
         *primfun = F_genarray;
     } else if (strcmp (name, "modarray") == 0) {
         *primfun = F_modarray;
+    } else if (strcmp (name, "toi") == 0) {
+        *primfun = F_toi_A;
+    } else if (strcmp (name, "tof") == 0) {
+        *primfun = F_tof_A;
+    } else if (strcmp (name, "tod") == 0) {
+        *primfun = F_tod_A;
+    } else if (strcmp (name, "min") == 0) {
+        *primfun = F_min;
+    } else if (strcmp (name, "max") == 0) {
+        *primfun = F_max;
+    } else if (strcmp (name, "abs") == 0) {
+        *primfun = F_abs;
     } else if (strcmp (name, "+") == 0) {
-        *primfun = F_add;
+        *primfun = F_add_AxA;
     } else if (strcmp (name, "-") == 0) {
-        *primfun = F_sub;
+        *primfun = F_sub_AxA;
     } else if (strcmp (name, "*") == 0) {
-        *primfun = F_mul;
+        *primfun = F_mul_AxA;
     } else if (strcmp (name, "/") == 0) {
-        *primfun = F_div;
-    } else if (strcmp (name, "!") == 0) {
-        *primfun = F_not;
+        *primfun = F_div_AxA;
     } else if (strcmp (name, "%") == 0) {
         *primfun = F_mod;
     } else if (strcmp (name, "==") == 0) {
@@ -407,8 +407,8 @@ Name2Prf (char *name, prf *primfun)
         *primfun = F_lt;
     } else if (strcmp (name, "<=") == 0) {
         *primfun = F_le;
-    } else if (strcmp (name, "%") == 0) {
-        *primfun = F_mod;
+    } else if (strcmp (name, "!") == 0) {
+        *primfun = F_not;
     } else if (strcmp (name, "&&") == 0) {
         *primfun = F_and;
     } else if (strcmp (name, "||") == 0) {
@@ -452,7 +452,7 @@ HMap (node *arg_node, node *arg_info)
 
         if (found) {
             exprs = AP_ARGS (arg_node);
-            if ((primfun == F_sub) && (CountExprs (exprs) == 1)) {
+            if ((primfun == F_sub_AxA) && (CountExprs (exprs) == 1)) {
                 switch (NODE_TYPE (EXPRS_EXPR1 (exprs))) {
                 case N_double:
                     res = MakeDouble (-DOUBLE_VAL (EXPRS_EXPR1 (exprs)));
@@ -519,42 +519,4 @@ HMNwithop (node *arg_node, node *arg_info)
     arg_node = TravSons (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *    ids *HMAdjustFunNames(ids *funid)
- *
- * description:
- *   this function is only needed for converting the "new prf notation",
- *   which is needed for the new type checker, into the one that is
- *   required by the old type checker.....8-((
- *   Once the new TC is as powerful as the old one is, this function
- *   (and its call in flatten) becomes obsolete 8-)).
- *
- ******************************************************************************/
-
-ids *
-HMAdjustFunNames (ids *funid)
-{
-    prf primfun;
-    bool found;
-
-    DBUG_ENTER ("HMAdjustFunNames");
-
-    if (sbs != 1) {
-
-        found = Name2Prf (IDS_NAME (funid), &primfun);
-
-        if (found) {
-            IDS_NAME (funid) = Free (IDS_NAME (funid));
-            IDS_NAME (funid) = StringCopy (prf_name_string[primfun]);
-        }
-    }
-    if (IDS_NEXT (funid) != NULL) {
-        IDS_NEXT (funid) = HMAdjustFunNames (IDS_NEXT (funid));
-    }
-
-    DBUG_RETURN (funid);
 }

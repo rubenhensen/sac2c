@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2002/09/11 23:22:51  dkr
+ * HMAdjustFunNames() removed
+ *
  * Revision 3.65  2002/09/11 23:10:03  dkr
  * prf_node_info.mac modified.
  *
@@ -558,8 +561,7 @@ impdesc3: GLOBAL OBJECTS COLON ids SEMIC impdesc4
         ;
 
 impdesc4: FUNS COLON fun_ids SEMIC BRACE_R
-          { $3 = HMAdjustFunNames( $3);
-            $$ = MakeImplist( NULL, NULL, NULL, NULL, $3, NULL);
+          { $$ = MakeImplist( NULL, NULL, NULL, NULL, $3, NULL);
 
             DBUG_PRINT( "PARSE",
                         ("%s:"F_PTR,
@@ -680,7 +682,6 @@ fundef: INLINE fundef1
 
 fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
          { $$ = $6;
-           $3 = HMAdjustFunNames( $3);
            FUNDEF_TYPES( $$) = $1;              /* result type(s) */
            FUNDEF_NAME( $$) = IDS_NAME( $3);    /* function name  */
            FUNDEF_MOD( $$) = mod_name;          /* module name    */
@@ -699,7 +700,6 @@ fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
          }
        | returntypes fun_id BRACKET_L fundef2
          { $$ = $4;
-           $2 = HMAdjustFunNames( $2);
            FUNDEF_TYPES( $$) = $1;              /* result type(s) */
            FUNDEF_NAME( $$) = IDS_NAME( $2);    /* function name  */
            FUNDEF_MOD( $$) = mod_name;          /* module name    */
@@ -919,7 +919,6 @@ pragma: PRAGMA LINKNAME string
           if (PRAGMA_EFFECT( store_pragma) != NULL) {
             WARN(linenum, ("Conflicting definitions of pragma 'effect`"));
           }
-          $3 = HMAdjustFunNames( $3);
           PRAGMA_EFFECT( store_pragma) = $3;
         }
       | PRAGMA TOUCH fun_ids
@@ -929,7 +928,6 @@ pragma: PRAGMA LINKNAME string
           if (PRAGMA_TOUCH( store_pragma) != NULL) {
             WARN(linenum, ("Conflicting definitions of pragma 'touch`"));
           }
-          $3 = HMAdjustFunNames( $3);
           PRAGMA_TOUCH( store_pragma) = $3;
         }
       | PRAGMA COPYFUN string
@@ -2030,7 +2028,6 @@ fundecs: fundec fundecs
 
 fundec: varreturntypes fun_id BRACKET_L fundec2
         { $$ = $4;
-          $2 = HMAdjustFunNames( $2);
           FUNDEF_TYPES( $$) = $1;
           FUNDEF_NAME( $$) = StringCopy( IDS_NAME( $2));  /* function name */
           $2 = FreeOneIds( $2);
@@ -2390,8 +2387,7 @@ sibfuns: sibfun sibfuns
 
 sibfun: sibevmarker varreturntypes fun_id BRACKET_L sibarglist
         BRACKET_R { $<cint>$ = linenum; } sibfunbody sibpragmas
-        { $3 = HMAdjustFunNames( $3);
-          $$ = MakeFundef( StringCopy( IDS_NAME( $3)),
+        { $$ = MakeFundef( StringCopy( IDS_NAME( $3)),
                            IDS_MOD( $3), $2, $5, $8, NULL);
           $3 = FreeOneIds( $3);
           NODE_LINE( $$) = $<cint>7;
@@ -2519,8 +2515,7 @@ sibfunlist: sibfunlistentry COMMA sibfunlist
           ;
 
 sibfunlistentry: fun_id BRACKET_L sibarglist BRACKET_R
-                 { $1 = HMAdjustFunNames( $1);
-                   $$ = MakeFundef( StringCopy( IDS_NAME( $1)),
+                 { $$ = MakeFundef( StringCopy( IDS_NAME( $1)),
                                       IDS_MOD( $1),
                                       MakeTypes1( T_unknown),
                                       $3, NULL, NULL);

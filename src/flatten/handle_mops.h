@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2002/09/11 23:22:42  dkr
+ * HMAdjustFunNames() removed
+ *
  * Revision 1.5  2002/08/14 11:51:22  sbs
  * HMAdjustFunNames debugged....
  *
@@ -17,8 +20,6 @@
  * Revision 1.1  2002/08/13 10:22:40  sbs
  * Initial revision
  *
- *
- *
  */
 
 #ifndef _handle_mops_h
@@ -34,7 +35,5 @@ extern node *HandleMops (node *arg_node);
 extern node *HMmop (node *arg_node, node *arg_info);
 extern node *HMap (node *arg_node, node *arg_info);
 extern node *HMNwithop (node *arg_node, node *arg_info);
-
-extern ids *HMAdjustFunNames (ids *funid);
 
 #endif /* _handle_mops_h */
