@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2001/06/01 14:53:30  dkr
+ * PrintNwith() and PrintNwith2() modified:
+ * output for DEC_RC shifted at end of with-loop.
+ *
  * Revision 3.62  2001/05/17 11:13:02  sbs
  * return values of Free used now 8-()
  *
@@ -2878,18 +2882,6 @@ PrintNwith (node *arg_node, node *arg_info)
         INDENT;
     }
 
-    DBUG_EXECUTE ("PRINT_RC",
-                  if (NWITH_PRAGMA (arg_node) == NULL) {
-                      fprintf (outfile, "\n");
-                      INDENT;
-                  } fprintf (outfile, "/* DEC_RC: ");
-                  if (
-                    NWITH_DEC_RC_IDS (arg_node)
-                    != NULL) { PrintIds (NWITH_DEC_RC_IDS (arg_node), arg_info); } else {
-                      fprintf (outfile, "-");
-                  } fprintf (outfile, " */\n");
-                  INDENT;);
-
     indent++;
 
     /*
@@ -2927,7 +2919,21 @@ PrintNwith (node *arg_node, node *arg_info)
     }
     fprintf (outfile, ")");
 
-    indent -= 2;
+    indent--;
+
+    DBUG_EXECUTE ("PRINT_RC",
+                  if (NWITH_PRAGMA (arg_node) == NULL) {
+                      fprintf (outfile, "\n");
+                      INDENT;
+                  } fprintf (outfile, "/* DEC_RC: ");
+                  if (
+                    NWITH_DEC_RC_IDS (arg_node)
+                    != NULL) { PrintIds (NWITH_DEC_RC_IDS (arg_node), arg_info); } else {
+                      fprintf (outfile, "-");
+                  } fprintf (outfile, " */\n");
+                  INDENT;);
+
+    indent--;
 
     INFO_PRINT_NWITH (arg_info) = tmp_nwith;
     INFO_PRINT_INT_SYN (arg_info) = buffer;
@@ -3232,18 +3238,6 @@ PrintNwith2 (node *arg_node, node *arg_info)
         INDENT;
     }
 
-    DBUG_EXECUTE ("PRINT_RC",
-                  if (NWITH2_PRAGMA (arg_node) == NULL) {
-                      fprintf (outfile, "\n");
-                      INDENT;
-                  } fprintf (outfile, "/* DEC_RC: ");
-                  if (
-                    NWITH2_DEC_RC_IDS (arg_node)
-                    != NULL) { PrintIds (NWITH2_DEC_RC_IDS (arg_node), arg_info); } else {
-                      fprintf (outfile, "-");
-                  } fprintf (outfile, " */\n");
-                  INDENT;);
-
     indent++;
 
     fprintf (outfile, "with2 (");
@@ -3283,7 +3277,21 @@ PrintNwith2 (node *arg_node, node *arg_info)
     Trav (NWITH2_WITHOP (arg_node), arg_info);
     fprintf (outfile, ")");
 
-    indent -= 2;
+    indent--;
+
+    DBUG_EXECUTE ("PRINT_RC",
+                  if (NWITH2_PRAGMA (arg_node) == NULL) {
+                      fprintf (outfile, "\n");
+                      INDENT;
+                  } fprintf (outfile, "/* DEC_RC: ");
+                  if (
+                    NWITH2_DEC_RC_IDS (arg_node)
+                    != NULL) { PrintIds (NWITH2_DEC_RC_IDS (arg_node), arg_info); } else {
+                      fprintf (outfile, "-");
+                  } fprintf (outfile, " */\n");
+                  INDENT;);
+
+    indent--;
 
     INFO_PRINT_NWITH (arg_info) = tmp_nwith2;
 
