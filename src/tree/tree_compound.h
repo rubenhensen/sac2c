@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.174  2004/11/26 17:44:08  sbs
+ * ARRAY_DIM typo fixed
+ *
  * Revision 3.173  2004/11/26 17:33:05  skt
  * changed VARDEC_OR_ARG_AVIS
  *
@@ -1386,7 +1389,7 @@ extern node *TCnodeBehindCast (node *arg_node);
 
 #define ARRAY_NODETYPE(n) (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (n))))
 #define ARRAY_BASETYPE(n) (TYPES_BASETYPE (ARRAY_TYPE (n)))
-#define ARRAY_DIM(n) (SHGetDim (ARRAY_SHAPE (n)))
+#define ARRAY_DIM(n) (SHgetDim (ARRAY_SHAPE (n)))
 #define ARRAY_SHPSEG(n) (TYPES_SHPSEG (ARRAY_TYPE (n)))
 #define ARRAY_TNAME(n) (TYPES_NAME (ARRAY_TYPE (n)))
 #define ARRAY_TMOD(n) (TYPES_MOD (ARRAY_TYPE (n)))
