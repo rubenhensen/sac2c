@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.74  1998/06/07 18:39:29  dkr
+ * addded NWITH2_VEC
+ *
  * Revision 1.73  1998/06/05 15:27:49  cg
  * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
  * Now, module name and symbol name are combined correctly by ':'.
@@ -1422,6 +1425,7 @@ extern node *AppendExpr (node *exprs, node *expr);
  ***/
 
 #define NWITH2_TYPE(n) (NWITHOP_TYPE (NWITH2_WITHOP (n)))
+#define NWITH2_VEC(n) (NWITHID_VEC (NWITH2_WITHID (n)))
 
 /*--------------------------------------------------------------------------*/
 
