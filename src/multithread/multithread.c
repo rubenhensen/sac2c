@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2000/03/21 16:11:19  jhs
+ * Comments.
+ *
  * Revision 1.13  2000/03/21 13:10:10  jhs
  * Added another CleanCOMPANION.
  * Comments.
@@ -344,7 +347,6 @@ MUTHignore_none (node *arg_node, node *arg_info)
  *
  *   ** Each phase is done on all N_fundefs, before the next miniphase **
  *   ** is started!!!!                                                 **
- *
  *
  ******************************************************************************/
 node *
