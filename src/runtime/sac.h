@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/06/24 14:01:27  sbs
+ * sac_icm.h only included iff TAGGED_ARRAYS.
+ *
  * Revision 2.3  1999/06/16 17:36:03  rob
  * Include ifdef to pick different sac_std.h file to ease
  * mental anguish and angry programmers over transition to
@@ -52,8 +55,8 @@
 #include "sac_misc.h"
 #include "sac_message.h"
 #include "sac_bool.h"
-#include "sac_icm.h"
 #ifdef TAGGED_ARRAYS
+#include "sac_icm.h"
 #include "sac_std.tagged.h"
 #else
 #include "sac_std.h"
