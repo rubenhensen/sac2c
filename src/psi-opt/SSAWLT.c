@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2003/03/13 00:06:42  dkr
+ * SSAWLTNwithop() added
+ *
  * Revision 1.18  2002/10/11 14:09:47  dkr
  * SSAWLTNgenerator() works correctly now (really!)
  *
@@ -867,6 +870,82 @@ SSAWLTNwith (node *arg_node, node *arg_info)
     tmpn = arg_info;
     arg_info = INFO_WLI_NEXT (arg_info);
     tmpn = Free (tmpn);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SSAWLTNwithop( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Substitutes the withop-argument into the N_Nwithop node.
+ *
+ ******************************************************************************/
+
+node *
+SSAWLTNwithop (node *arg_node, node *arg_info)
+{
+    node **son;
+
+    DBUG_ENTER ("SSAWLTNwithop");
+
+    switch (NWITHOP_TYPE (arg_node)) {
+    case WO_genarray:
+        if (NWITHOP_SHAPE (arg_node) != NULL) {
+            NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
+        }
+        son = &(NWITHOP_SHAPE (arg_node));
+        break;
+
+    case WO_modarray:
+        if (NWITHOP_ARRAY (arg_node) != NULL) {
+            NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
+        }
+        son = &(NWITHOP_ARRAY (arg_node));
+        break;
+
+    case WO_foldfun:
+        /* here is no break missing */
+    case WO_foldprf:
+        if (NWITHOP_NEUTRAL (arg_node) != NULL) {
+            NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
+        }
+        son = NULL;
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "illegal NWITHOP_TYPE found!");
+        son = NULL;
+        break;
+    }
+
+    if (son != NULL) {
+        constant *son_const = COAST2Constant (*son);
+        node *tmp;
+
+        if (son_const != NULL) {
+            /* substitute son */
+            tmp = *son;
+            (*son) = COConstant2AST (son_const);
+            DBUG_ASSERT ((NODE_TYPE (*son) == N_array), "illegal node found!");
+            tmp = FreeTree (tmp);
+            son_const = COFreeConstant (son_const);
+        } else {
+            /* non-constant son found */
+            struct_constant *son_sco = SCOExpr2StructConstant (*son);
+
+            /* it is a (non-constant) array -> substitute son */
+            if (son_sco != NULL) {
+                tmp = *son;
+                (*son) = SCODupStructConstant2Expr (son_sco);
+                DBUG_ASSERT ((NODE_TYPE (*son) == N_array), "illegal node found!");
+                tmp = FreeTree (tmp);
+                son_sco = SCOFreeStructConstant (son_sco);
+            }
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
