@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/10/22 14:17:27  sbs
+ * added a few new cv2cv funs
+ *
  * Revision 2.5  1999/10/19 12:56:14  sacbase
  * the new .mac mechanism introduced as well as cv2xxx tables added.
  *
@@ -108,26 +111,26 @@
 
 /*
  *      simpletype          mdb_type            type_string        rename_type
- *      cv2scalar           cv2cv               unused             size
+ *      cv2scalar           cv2cv               unused             simpletype_size
  */
 
 TYP_IF (T_unknown, "unknown", "_unknown_", "", COCv2ScalarDummy, COCv2CvDummy, dummy, 0),
 
   TYP_IF (T_int, "int", "int", "i", COCv2Num, COCv2CvInt, dummy, sizeof (int)),
 
-  TYP_IF (T_short, "short", "short", "s", COCv2ScalarDummy, COCv2CvDummy, dummy,
+  TYP_IF (T_short, "short", "short", "s", COCv2ScalarDummy, COCv2CvShort, dummy,
           sizeof (short int)),
 
-  TYP_IF (T_long, "long", "long", "l", COCv2ScalarDummy, COCv2CvDummy, dummy,
+  TYP_IF (T_long, "long", "long", "l", COCv2ScalarDummy, COCv2CvLong, dummy,
           sizeof (long int)),
 
-  TYP_IF (T_uint, "unsigned int", "unsigned int", "ui", COCv2ScalarDummy, COCv2CvDummy,
+  TYP_IF (T_uint, "unsigned int", "unsigned int", "ui", COCv2ScalarDummy, COCv2CvUInt,
           dummy, sizeof (int)),
 
   TYP_IF (T_ushort, "unsigned short", "unsigned short", "us", COCv2ScalarDummy,
-          COCv2CvDummy, dummy, sizeof (short int)),
+          COCv2CvUShort, dummy, sizeof (short int)),
 
-  TYP_IF (T_ulong, "unsigned long", "unsigned long", "ul", COCv2ScalarDummy, COCv2CvDummy,
+  TYP_IF (T_ulong, "unsigned long", "unsigned long", "ul", COCv2ScalarDummy, COCv2CvULong,
           dummy, sizeof (long int)),
 
   TYP_IF (T_float, "float", "float", "f", COCv2ScalarDummy, COCv2CvFloat, dummy,
@@ -136,11 +139,10 @@ TYP_IF (T_unknown, "unknown", "_unknown_", "", COCv2ScalarDummy, COCv2CvDummy, d
   TYP_IF (T_double, "double", "double", "d", COCv2Double, COCv2CvDouble, dummy,
           sizeof (double)),
 
-  TYP_IF (T_longdbl, "long double", "long double", "ld", COCv2ScalarDummy, COCv2CvDummy,
-          dummy, sizeof (long double)),
+  TYP_IF (T_longdbl, "long double", "long double", "ld", COCv2ScalarDummy,
+          COCv2CvLongDouble, dummy, sizeof (long double)),
 
-  TYP_IF (T_bool, "bool", "bool", "b", COCv2ScalarDummy, COCv2CvDummy, dummy,
-          sizeof (int)),
+  TYP_IF (T_bool, "bool", "bool", "b", COCv2ScalarDummy, COCv2CvInt, dummy, sizeof (int)),
 
   TYP_IF (T_str, "string", "string", "st", COCv2ScalarDummy, COCv2CvDummy, dummy,
           sizeof (char *)),
