@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.40  2003/03/18 16:30:34  sah
+ * added new prf cat_VxV, take_SxV, drop_SxV
+ *
  * Revision 1.39  2002/10/09 21:58:22  dkr
  * optimization for 'reshape(shape(a),a)' added
  *
@@ -2364,6 +2367,11 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             }
         break;
 
+    case F_drop_SxV:
+    case F_take_SxV:
+        /* coming soon ;) */
+        break;
+
         /* three-argument functions */
     case F_modarray:
         if
@@ -2378,6 +2386,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         break;
 
     case F_cat:
+    case F_cat_VxV:
         /* not implemeted yet */
         break;
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2003/03/18 16:30:34  sah
+ * added new prf cat_VxV, take_SxV, drop_SxV
+ *
  * Revision 3.23  2002/09/11 23:07:52  dkr
  * rf_node_info.mac modified.
  *
@@ -2748,6 +2751,9 @@ ArrayPrf (node *arg_node, node *arg_info)
     case F_drop:
     case F_cat:
     case F_rotate:
+    case F_take_SxV:
+    case F_drop_SxV:
+    case F_cat_VxV:
     default:
         break;
     }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2003/03/18 16:30:34  sah
+ * added new prf cat_VxV, take_SxV, drop_SxV
+ *
  * Revision 3.9  2002/10/16 13:41:11  sbs
  * changed DBUG_ASSERT(1, ...) into DBUG_ASSERT(0, ...) for better impact 8-)))
  *
@@ -1126,6 +1129,14 @@ WLAAprf (node *arg_node, node *arg_info)
                 DBUG_PRINT ("WLAA_INFO", ("primitive function F_modarray"));
                 INFO_WLAA_FEATURE (arg_info)
                   = INFO_WLAA_FEATURE (arg_info) | FEATURE_MODA;
+                break;
+
+            case F_cat_VxV:
+            case F_take_SxV:
+            case F_drop_SxV:
+                DBUG_PRINT ("WLAA_INFO", ("primitive vector function take/drop/cat"));
+                /* tiling is not apllicable to vectors, so */
+                /* we need not to do anything here ;)      */
                 break;
 
             case F_add_SxA:

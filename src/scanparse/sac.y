@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2003/03/18 16:30:34  sah
+ * added new prf cat_VxV, take_SxV, drop_SxV
+ *
  * Revision 3.77  2003/03/10 09:22:41  sbs
  * corrected errorneos ADDON POSTINC operations.
  *
@@ -251,7 +254,8 @@ static int prf_arity[] = {
        PRF_MOD, PRF_MIN, PRF_MAX, PRF_ABS,
        PRF_EQ, PRF_NEQ, PRF_LE, PRF_LT, PRF_GE, PRF_GT,
        PRF_AND, PRF_OR, PRF_NOT,
-       PRF_TOI_S, PRF_TOI_A, PRF_TOF_S, PRF_TOF_A, PRF_TOD_S, PRF_TOD_A
+       PRF_TOI_S, PRF_TOI_A, PRF_TOF_S, PRF_TOF_A, PRF_TOD_S, PRF_TOD_A,
+       PRF_CAT_VxV, PRF_TAKE_SxV, PRF_DROP_SxV
 
 %token <id> ID, STR, PRIVATEID, OPTION
 
@@ -1499,6 +1503,9 @@ prf: foldop        { $$ = $1;        }
    | PRF_TOF_A     { $$ = F_tof_A;   }
    | PRF_TOD_S     { $$ = F_tod_S;   }
    | PRF_TOD_A     { $$ = F_tod_A;   }
+   | PRF_CAT_VxV   { $$ = F_cat_VxV  }
+   | PRF_TAKE_SxV  { $$ = F_take_SxV }
+   | PRF_DROP_SxV  { $$ = F_drop_SxV }
    ;
 
 fun_ids: fun_id COMMA fun_ids 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2003/03/18 16:30:34  sah
+ * added new prf cat_VxV, take_SxV, drop_SxV
+ *
  * Revision 3.13  2002/09/13 21:51:17  dkr
  * bug in AddDummyCode() fixed:
  * TYPES_NAME used in a wrong manner
@@ -1109,6 +1112,7 @@ APTprf (node *arg_node, node *arg_info)
          * currently unsupported are:
          * F_take, F_drop, F_idx_sel, F_reshape, F_cat, F_rotate,
          * F_toi_A, F_tof_A, F_tod_A, F_div_SxA, F_div_AxS, F_div_AxA,
+         * F_take_SxV, F_drop_SxV, F_cat_VxV,
          * F_modarray, F_idx_modarray, F_genarray
          */
 

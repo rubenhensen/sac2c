@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2003/03/18 16:30:34  sah
+ * added new prf cat_VxV, take_SxV, drop_SxV
+ *
  * Revision 3.19  2003/01/16 12:03:09  cg
  * '#' and 'pragma' scanned separately to please gcc 3.0 and SUN cc.
  *
@@ -172,6 +175,10 @@ int charpos = 0;
 "_sel_"                    { FILTER( PRF_SEL); }
 "_genarray_"               { FILTER( PRF_GENARRAY); }
 "_modarray_"               { FILTER( PRF_MODARRAY); }
+
+"_cat_VxV_"                { FILTER( PRF_CAT_VxV); }
+"_take_SxV_"               { FILTER( PRF_TAKE_SxV); }
+"_drop_SxV_"               { FILTER( PRF_DROP_SxV); }
 
 "_add_SxS_"                { FILTER( PRF_ADD_SxS); }
 "_add_SxA_"                { FILTER( PRF_ADD_SxA); }

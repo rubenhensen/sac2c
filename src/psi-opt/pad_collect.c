@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.10  2003/03/18 16:30:34  sah
+ * added new prf cat_VxV, take_SxV, drop_SxV
+ *
  * Revision 3.9  2002/09/11 23:07:39  dkr
  * prf_node_info.mac modified.
  *
@@ -532,9 +535,12 @@ APCprf (node *arg_node, node *arg_info)
         /* unsupported non-scalar functions */
     case F_take:
     case F_drop:
+    case F_take_SxV:
+    case F_drop_SxV:
     case F_idx_sel:
     case F_reshape:
     case F_cat:
+    case F_cat_VxV:
     case F_rotate:
     case F_toi_A:
     case F_tof_A:

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.63  2003/03/18 16:30:34  sah
+ * added new prf cat_VxV, take_SxV, drop_SxV
+ *
  * Revision 1.62  2003/03/17 14:32:19  dkr
  * memory allocatation for NWITHID_IDS added
  *
@@ -4237,6 +4240,9 @@ COMP2Prf (node *arg_node, node *arg_info)
         case F_drop:
         case F_cat:
         case F_rotate:
+        case F_cat_VxV:
+        case F_take_SxV:
+        case F_drop_SxV:
             DBUG_ASSERT ((0), "Non-instrinsic primitive functions not implemented!"
                               " Use array.lib instead!");
             ret_node = NULL;
