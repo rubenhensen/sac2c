@@ -17,7 +17,7 @@ CFLAGS    := -D__EXTENSIONS__
 
 
 INCS=-I../global -I../tree -I../../inc -I../compile -I../modules \
-     -I../typecheck -I../print
+     -I../typecheck -I../print -I../scanparse
 
 all: print_interface.o map_cwrapper.o import_specialization.o
 
@@ -40,6 +40,25 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
+import_specialization.o: /usr/include/stdio.h
+import_specialization.o: /usr/include/sys/feature_tests.h
+import_specialization.o: /usr/include/sys/isa_defs.h
+import_specialization.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+import_specialization.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+import_specialization.o: /usr/include/string.h ../tree/tree.h
+import_specialization.o: ../global/types.h ../tree/tree_basic.h
+import_specialization.o: ../tree/tree_compound.h ../global/Error.h
+import_specialization.o: ../global/globals.h ../global/internal_lib.h
+import_specialization.o: ../global/my_debug.h ../../inc/dbug.h
+import_specialization.o: ../tree/traverse.h ../print/convert.h
+import_specialization.o: ../modules/filemgr.h ../tree/free.h
+import_specialization.o: /usr/include/malloc.h /usr/include/sys/types.h
+import_specialization.o: /usr/include/sys/machtypes.h
+import_specialization.o: /usr/include/sys/int_types.h
+import_specialization.o: /usr/include/sys/select.h /usr/include/sys/time.h
+import_specialization.o: /usr/include/sys/time.h ../global/resource.h
+import_specialization.o: ../scanparse/scnprs.h ../scanparse/y.tab.h
+import_specialization.o: import_specialization.h
 map_cwrapper.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 map_cwrapper.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 map_cwrapper.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
