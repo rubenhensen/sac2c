@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.53  1995/06/23 13:57:56  hw
+ * Revision 1.54  1995/07/07 14:58:38  asi
+ * added loop unswitching - basic version
+ *
+ * Revision 1.53  1995/06/23  13:57:56  hw
  * added new parameter -maxoverload and variable max_overload
  *
  * Revision 1.52  1995/06/23  10:04:25  sacbase
@@ -198,7 +201,8 @@ char filename[MAX_FILE_NAME];
 
 int optimize = 1;
 int sac_optimize = 1;
-int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1, opt_inl = 1, opt_unr = 1;
+int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1, opt_inl = 1, opt_unr = 1,
+    opt_uns = 1;
 int optvar = 50;
 int inlnum = 1;
 int unrnum = 2;
@@ -374,6 +378,10 @@ MAIN
             opt_unr = 0;
         if (!strncmp (*argv, "ounroll_loops", 13))
             opt_unr = 0;
+        if (!strncmp (*argv, "oUNS", 4))
+            opt_uns = 0;
+        if (!strncmp (*argv, "ounswitch_loops", 15))
+            opt_uns = 0;
         if (!strncmp (*argv, "oPSIOPT", 7))
             psi_optimize = 0;
         if (!strncmp (*argv, "opsiopt", 7))

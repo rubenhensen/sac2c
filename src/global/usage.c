@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/06/26 15:10:50  asi
+ * Revision 1.19  1995/07/07 14:58:38  asi
+ * added loop unswitching - basic version
+ *
+ * Revision 1.18  1995/06/26  15:10:50  asi
  * added shortcuts -noCF -noINL -noUNR -noDCR -noPDCR -noLIR and -noIVE
  *
  * Revision 1.17  1995/06/23  14:05:49  hw
@@ -92,6 +95,7 @@ usage (char *prg_name)
     printf ("\t -noconstant_folding or -noCF \t\t  no constant folding \n");
     printf ("\t -noinline_functions or -noINL\t\t  no function inlineing \n");
     printf ("\t -nounroll_loops or -noUNR \t\t  no loop unrolling \n");
+    printf ("\t -nounswitch_loops or -noUNS \t\t  no loop unswitching \n");
     printf ("\t -nodead_code_removal or -noDCR \t  no dead code removal \n");
     printf (
       "\t -nopartial_dead_code_removal or -noPDCR  no partial_dead code removal \n");

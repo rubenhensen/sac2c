@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.25  1995/06/23 12:04:13  hw
+ * Revision 1.26  1995/07/07 14:58:38  asi
+ * added loop unswitching - basic version
+ *
+ * Revision 1.25  1995/06/23  12:04:13  hw
  * changed name in DBUG_ENTER of function DummyFun2
  *
  * Revision 1.24  1995/06/06  15:19:36  sbs
@@ -104,6 +107,7 @@
 #include "DupTree.h"
 #include "Inline.h"
 #include "Unroll.h"
+#include "Unswitch.h"
 #include "index.h"
 
 #include "traverse.h"
@@ -313,6 +317,18 @@ funptr lir_mov_tab[] = {
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) k
 
 funptr idx_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 18) unswitch_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) l
+
+funptr unswitch_tab[] = {
 #include "node_info.mac"
 };
 

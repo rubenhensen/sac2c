@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/06/06 15:19:36  sbs
+ * Revision 1.19  1995/07/07 14:58:38  asi
+ * added loop unswitching - basic version
+ *
+ * Revision 1.18  1995/06/06  15:19:36  sbs
  * DummyFun2 inserted
  *
  * Revision 1.17  1995/06/02  12:14:19  sbs
@@ -106,6 +109,8 @@ extern funptr dup_tab[];
 extern funptr inline_tab[];
 
 extern funptr unroll_tab[];
+
+extern funptr unswitch_tab[];
 
 extern funptr idx_tab[];
 
