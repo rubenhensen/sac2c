@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2001/04/03 15:27:17  dkr
+ * minor changes in DoPrintAST() done
+ *
  * Revision 3.42  2001/04/03 12:08:32  dkr
  * GSCPrintFileHeader() modified: PrintDefines() must be called *after* the
  * typedefs have been printed because the defines may contain user
@@ -4424,6 +4427,16 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_WLseg:
             fprintf (outfile, "(");
 
+            for (i = 0; i < WLSEG_BLOCKS (arg_node); i++) {
+                fprintf (outfile, "bv%i: ", i);
+                PRINT_VECT (outfile, WLSEG_BV (arg_node, i), WLSEG_DIMS (arg_node), "%i");
+                fprintf (outfile, ", ");
+            }
+
+            fprintf (outfile, "ubv: ");
+            PRINT_VECT (outfile, WLSEG_UBV (arg_node), WLSEG_DIMS (arg_node), "%i");
+
+            fprintf (outfile, ", ");
             fprintf (outfile, "idx_min: ");
             WLSEG_IDX_PRINT (outfile, arg_node, IDX_MIN);
 
@@ -4434,16 +4447,6 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, ", ");
             fprintf (outfile, "sv: ");
             PRINT_VECT (outfile, WLSEG_SV (arg_node), WLSEG_DIMS (arg_node), "%i");
-
-            for (i = 0; i < WLSEG_BLOCKS (arg_node); i++) {
-                fprintf (outfile, ", ");
-                fprintf (outfile, "bv%i: ", i);
-                PRINT_VECT (outfile, WLSEG_BV (arg_node, i), WLSEG_DIMS (arg_node), "%i");
-            }
-
-            fprintf (outfile, ", ");
-            fprintf (outfile, "ubv: ");
-            PRINT_VECT (outfile, WLSEG_UBV (arg_node), WLSEG_DIMS (arg_node), "%i");
 
             fprintf (outfile, ", ");
             fprintf (outfile, "maxhomdim: %i", WLSEG_MAXHOMDIM (arg_node));
