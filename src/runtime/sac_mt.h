@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2001/06/15 12:33:52  ben
+ * Factoring debbuged and optimized
+ *
  * Revision 3.26  2001/06/12 11:01:53  ben
  *   SAC_MT_SCHEDULER_Self called without tasks_per_thread now
  *
@@ -387,11 +390,13 @@ typedef union {
     SAC_MT_DEFINE_BARRIER ()                                                             \
     SAC_MT_DEFINE_SPMD_FRAME ()                                                          \
     SAC_MT_DEFINE_TASKLOCKS ()                                                           \
+    SAC_MT_DEFINE_TS_TASKLOCKS ()                                                        \
     SAC_MT_DEFINE_TASKS ()                                                               \
     SAC_MT_DEFINE_LAST_TASKS ()                                                          \
     SAC_MT_DEFINE_REST_ITERATIONS ()                                                     \
     SAC_MT_DEFINE_ACT_TASKSIZE ()                                                        \
-    SAC_MT_DEFINE_LAST_TASKEND ()
+    SAC_MT_DEFINE_LAST_TASKEND ()                                                        \
+    SAC_MT_DEFINE_TASKCOUNT ()
 
 #define SAC_MT_DEFINE_BARRIER()                                                          \
     volatile SAC_MT_barrier_t SAC_MT_barrier_space[SAC_SET_THREADS_MAX + 1];
@@ -402,19 +407,22 @@ typedef union {
 #define SAC_MT_DEFINE_TASKLOCKS()                                                        \
     pthread_mutex_t SAC_MT_Tasklock[SAC_SET_THREADS_MAX * SAC_SET_NUM_SCHEDULERS];
 
-#define SAC_MT_TASKLOCK(sched_id, num, num_sched)                                        \
+#define SAC_MT_TASKLOCK(sched_id, num)                                                   \
+    SAC_MT_Tasklock[num + SAC_SET_NUM_SCHEDULERS * sched_id]
+
+#define SAC_MT_TASKLOCK_INIT(sched_id, num, num_sched)                                   \
     SAC_MT_Tasklock[num + num_sched * sched_id]
 
 #define SAC_MT_DEFINE_TASKS()                                                            \
     volatile int SAC_MT_Task[SAC_SET_THREADS_MAX * SAC_SET_NUM_SCHEDULERS];
 
-#define SAC_MT_TASK(sched_id, num, num_sched) SAC_MT_Task[num + num_sched * sched_id]
+#define SAC_MT_TASK(sched_id, num) SAC_MT_Task[num + SAC_SET_NUM_SCHEDULERS * sched_id]
 
 #define SAC_MT_DEFINE_LAST_TASKS()                                                       \
     volatile int SAC_MT_LAST_Task[SAC_SET_THREADS_MAX * SAC_SET_NUM_SCHEDULERS];
 
-#define SAC_MT_LAST_TASK(sched_id, num, num_sched)                                       \
-    SAC_MT_LAST_Task[num + num_sched * sched_id]
+#define SAC_MT_LAST_TASK(sched_id, num)                                                  \
+    SAC_MT_LAST_Task[num + SAC_SET_NUM_SCHEDULERS * sched_id]
 
 #define SAC_MT_DEFINE_REST_ITERATIONS()                                                  \
     volatile int SAC_MT_rest_iterations[SAC_SET_NUM_SCHEDULERS];
@@ -430,6 +438,15 @@ typedef union {
     volatile int SAC_MT_last_taskend[SAC_SET_NUM_SCHEDULERS];
 
 #define SAC_MT_LAST_TASKEND(sched_id) SAC_MT_last_taskend[sched_id]
+
+#define SAC_MT_DEFINE_TS_TASKLOCKS()                                                     \
+    pthread_mutex_t SAC_MT_TS_Tasklock[SAC_SET_NUM_SCHEDULERS];
+
+#define SAC_MT_TS_TASKLOCK(sched_id) SAC_MT_TS_Tasklock[sched_id]
+
+#define SAC_MT_DEFINE_TASKCOUNT() volatile int SAC_MT_Taskcount[SAC_SET_NUM_SCHEDULERS];
+
+#define SAC_MT_TASKCOUNT(sched_id) SAC_MT_Taskcount[sched_id]
 
 #define SAC_MT_FUN_FRAME(name, blocks) struct blocks name;
 
@@ -907,39 +924,47 @@ typedef union {
     {                                                                                    \
         SAC_MT_REST_ITERATIONS (sched_id) = (upper - lower);                             \
         SAC_MT_LAST_TASKEND (sched_id) = 0;                                              \
+        SAC_MT_TASKCOUNT (sched_id) = 0;                                                 \
     }
 
 #define SAC_MT_SCHEDULER_TS_Factoring(sched_id, tasks_on_dim, lower, upper, num_tasks,   \
                                       taskid, worktodo)                                  \
     {                                                                                    \
-        SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (sched_id, 1, SAC_SET_NUM_SCHEDULERS));     \
+        int tasksize;                                                                    \
+        int restiter;                                                                    \
+        SAC_MT_ACQUIRE_LOCK (SAC_MT_TS_TASKLOCK (sched_id));                             \
                                                                                          \
-        if (taskid % SAC_MT_threads == 0) {                                              \
-            SAC_MT_ACT_TASKSIZE (sched_id)                                               \
-              = ((SAC_MT_REST_ITERATIONS (sched_id)) / (2 * SAC_MT_threads)) + 1;        \
+        restiter = SAC_MT_REST_ITERATIONS (sched_id);                                    \
+        worktodo = (restiter > 0);                                                       \
+                                                                                         \
+        if (worktodo) {                                                                  \
+            if (SAC_MT_TASKCOUNT (sched_id) == SAC_MT_threads) {                         \
+                SAC_MT_ACT_TASKSIZE (sched_id)                                           \
+                  = ((restiter) / (2 * SAC_MT_threads)) + 1;                             \
+                SAC_MT_TASKCOUNT (sched_id) = 0;                                         \
+            }                                                                            \
+            tasksize = SAC_MT_ACT_TASKSIZE (sched_id);                                   \
+            (SAC_MT_TASKCOUNT (sched_id))++;                                             \
+                                                                                         \
+            (SAC_WL_MT_SCHEDULE_START (tasks_on_dim)) = SAC_MT_LAST_TASKEND (sched_id);  \
+                                                                                         \
+            if (restiter < tasksize)                                                     \
+                tasksize = restiter;                                                     \
+            restiter -= tasksize;                                                        \
+                                                                                         \
+            SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim)                                       \
+              = SAC_WL_MT_SCHEDULE_START (tasks_on_dim) + tasksize;                      \
+                                                                                         \
+            SAC_MT_ACT_TASKSIZE (sched_id) = tasksize;                                   \
+            SAC_MT_REST_ITERATIONS (sched_id) = restiter;                                \
+            SAC_MT_LAST_TASKEND (sched_id) = SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim);     \
+                                                                                         \
+            SAC_TR_MT_PRINT (("'TS_Factoring': dim %d: %d -> %d, Task: %d, Size: %d",    \
+                              tasks_on_dim, SAC_WL_MT_SCHEDULE_START (tasks_on_dim),     \
+                              SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim), taskid,            \
+                              SAC_MT_ACT_TASKSIZE (sched_id)));                          \
         }                                                                                \
-                                                                                         \
-        (SAC_WL_MT_SCHEDULE_START (tasks_on_dim)) = SAC_MT_LAST_TASKEND (sched_id);      \
-                                                                                         \
-        worktodo = (SAC_MT_REST_ITERATIONS (sched_id) > 0);                              \
-                                                                                         \
-        (SAC_MT_REST_ITERATIONS (sched_id)) -= SAC_MT_ACT_TASKSIZE (sched_id);           \
-                                                                                         \
-        if (SAC_MT_REST_ITERATIONS (sched_id) < 0)                                       \
-            SAC_MT_REST_ITERATIONS (sched_id) = 0;                                       \
-                                                                                         \
-        SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim)                                           \
-          = SAC_WL_MT_SCHEDULE_START (tasks_on_dim) + SAC_MT_ACT_TASKSIZE (sched_id);    \
-                                                                                         \
-        if (SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim) > upper)                              \
-            SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim) = upper;                              \
-        SAC_MT_LAST_TASKEND (sched_id) = SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim);         \
-                                                                                         \
-        SAC_TR_MT_PRINT (("'TS_Factoring': dim %d: %d -> %d, Task: %d, Size: %d",        \
-                          tasks_on_dim, SAC_WL_MT_SCHEDULE_START (tasks_on_dim),         \
-                          SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim), taskid,                \
-                          SAC_MT_ACT_TASKSIZE (sched_id)));                              \
-        SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, 1, SAC_SET_NUM_SCHEDULERS));     \
+        SAC_MT_RELEASE_LOCK (SAC_MT_TS_TASKLOCK (sched_id));                             \
     }
 
 #define SAC_MT_SCHEDULER_SET_TASKS(sched_id)                                             \
@@ -973,21 +998,20 @@ typedef union {
 
 #define SAC_MT_SCHEDULER_Self_NEXT_TASK(sched_id, taskid)                                \
     {                                                                                    \
-        SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (sched_id, 0, SAC_SET_NUM_SCHEDULERS));     \
+        SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (sched_id, 0));                             \
                                                                                          \
-        taskid = SAC_MT_TASK (sched_id, 0, SAC_SET_NUM_SCHEDULERS);                      \
-        (SAC_MT_TASK (sched_id, 0, SAC_SET_NUM_SCHEDULERS))++;                           \
+        taskid = SAC_MT_TASK (sched_id, 0);                                              \
+        (SAC_MT_TASK (sched_id, 0))++;                                                   \
                                                                                          \
-        SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, 0, SAC_SET_NUM_SCHEDULERS));     \
+        SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, 0));                             \
     }
 
 #define SAC_MT_SCHEDULER_Affinity_INIT(sched_id, tasks_per_thread)                       \
     {                                                                                    \
         int i;                                                                           \
         for (i = 0; i < SAC_MT_THREADS (); i++) {                                        \
-            SAC_MT_TASK (sched_id, i, SAC_SET_NUM_SCHEDULERS) = i * tasks_per_thread;    \
-            SAC_MT_LAST_TASK (sched_id, i, SAC_SET_NUM_SCHEDULERS)                       \
-              = (i + 1) * tasks_per_thread;                                              \
+            SAC_MT_TASK (sched_id, i) = i * tasks_per_thread;                            \
+            SAC_MT_LAST_TASK (sched_id, i) = (i + 1) * tasks_per_thread;                 \
         }                                                                                \
     }
 
@@ -1006,47 +1030,39 @@ typedef union {
         taskid = 0;                                                                      \
                                                                                          \
         /* first look if MYTHREAD has work to do */                                      \
-        SAC_MT_ACQUIRE_LOCK (                                                            \
-          SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD (), SAC_SET_NUM_SCHEDULERS));       \
-        if (SAC_MT_TASK (sched_id, SAC_MT_MYTHREAD (), SAC_SET_NUM_SCHEDULERS)           \
-            < SAC_MT_LAST_TASK (sched_id, SAC_MT_MYTHREAD (), SAC_SET_NUM_SCHEDULERS)) { \
-            taskid = SAC_MT_TASK (sched_id, SAC_MT_MYTHREAD (), SAC_SET_NUM_SCHEDULERS); \
-            (SAC_MT_TASK (sched_id, SAC_MT_MYTHREAD (), SAC_SET_NUM_SCHEDULERS))++;      \
-            SAC_MT_RELEASE_LOCK (                                                        \
-              SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD (), SAC_SET_NUM_SCHEDULERS));   \
+        SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD ()));            \
+        if (SAC_MT_TASK (sched_id, SAC_MT_MYTHREAD ())                                   \
+            < SAC_MT_LAST_TASK (sched_id, SAC_MT_MYTHREAD ())) {                         \
+            taskid = SAC_MT_TASK (sched_id, SAC_MT_MYTHREAD ());                         \
+            (SAC_MT_TASK (sched_id, SAC_MT_MYTHREAD ()))++;                              \
+            SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD ()));        \
             worktodo = 1;                                                                \
         } else {                                                                         \
             /* if there was no work to do, find the task, which has done,                \
                the smallest work till now*/                                              \
-            SAC_MT_RELEASE_LOCK (                                                        \
-              SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD (), SAC_SET_NUM_SCHEDULERS));   \
+            SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD ()));        \
             maxloadthread = 0;                                                           \
             mintask = SAC_MT_TASK (sched_id, 0, SAC_SET_NUM_SCHEDULERS)                  \
-                      - SAC_MT_LAST_TASK (sched_id, 0, SAC_SET_NUM_SCHEDULERS);          \
+                      - SAC_MT_LAST_TASK (sched_id, 0);                                  \
             for (queueid = 1; queueid < SAC_MT_THREADS (); queueid++)                    \
-                if (SAC_MT_TASK (sched_id, queueid, SAC_SET_NUM_SCHEDULERS)              \
-                      - SAC_MT_LAST_TASK (sched_id, queueid, SAC_SET_NUM_SCHEDULERS)     \
+                if (SAC_MT_TASK (sched_id, queueid)                                      \
+                      - SAC_MT_LAST_TASK (sched_id, queueid)                             \
                     < mintask) {                                                         \
-                    mintask                                                              \
-                      = SAC_MT_TASK (sched_id, queueid, SAC_SET_NUM_SCHEDULERS)          \
-                        - SAC_MT_LAST_TASK (sched_id, queueid, SAC_SET_NUM_SCHEDULERS);  \
+                    mintask = SAC_MT_TASK (sched_id, queueid)                            \
+                              - SAC_MT_LAST_TASK (sched_id, queueid);                    \
                     maxloadthread = queueid;                                             \
                 }                                                                        \
                                                                                          \
             /* if there was a thread with work to do,get his next task */                \
                                                                                          \
-            SAC_MT_ACQUIRE_LOCK (                                                        \
-              SAC_MT_TASKLOCK (sched_id, maxloadthread, SAC_SET_NUM_SCHEDULERS));        \
-            if (SAC_MT_TASK (sched_id, maxloadthread, SAC_SET_NUM_SCHEDULERS)            \
-                < SAC_MT_LAST_TASK (sched_id, maxloadthread, SAC_SET_NUM_SCHEDULERS)) {  \
-                taskid                                                                   \
-                  = SAC_MT_LAST_TASK (sched_id, maxloadthread, SAC_SET_NUM_SCHEDULERS)   \
-                    - 1;                                                                 \
-                (SAC_MT_LAST_TASK (sched_id, maxloadthread, SAC_SET_NUM_SCHEDULERS))--;  \
+            SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (sched_id, maxloadthread));             \
+            if (SAC_MT_TASK (sched_id, maxloadthread)                                    \
+                < SAC_MT_LAST_TASK (sched_id, maxloadthread)) {                          \
+                taskid = SAC_MT_LAST_TASK (sched_id, maxloadthread) - 1;                 \
+                (SAC_MT_LAST_TASK (sched_id, maxloadthread))--;                          \
                 worktodo = 1;                                                            \
             }                                                                            \
-            SAC_MT_RELEASE_LOCK (                                                        \
-              SAC_MT_TASKLOCK (sched_id, maxloadthread, SAC_SET_NUM_SCHEDULERS));        \
+            SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, maxloadthread));             \
         }                                                                                \
     }
 
