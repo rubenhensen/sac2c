@@ -46,3 +46,4 @@ deserialize_info.h
 check_lib.c
 check_lib.h
 traverse_helper.c
+traverse_helper.h
