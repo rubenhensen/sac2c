@@ -1,8 +1,12 @@
 Makefile
+blocks_cons.c
+blocks_cons.h
 blocks_expand.c
 blocks_expand.h
 blocks_init.c
 blocks_init.h
+mtfuns_init.c
+mtfuns_init.h
 multithread.c
 multithread.h
 multithread_lib.c
