@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.103  2004/11/26 16:47:32  sah
+  *** empty log message ***
+
   Revision 1.102  2004/11/26 16:25:52  mwe
   optimize traversal added
 
@@ -5139,6 +5142,7 @@
         <flag name="IsArtificial" />
         <flag name="IsRefcounted" default="TRUE" />
         <flag name="HasLinksignInfo" />
+	<flag name="IsCReturn" />
       </flags>
     </node>
 <!--
