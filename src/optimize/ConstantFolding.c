@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/03/15 15:16:38  asi
+ * Revision 1.12  1995/03/24 15:54:25  asi
+ * changed free() -> FREE()
+ * changed Trav() -> OptTrav()
+ * changed CFdo - replaced PopVL() with PopVL2()
+ * changed CFwith - with-loops handeled like lokal funktions now
+ *
+ * Revision 1.11  1995/03/15  15:16:38  asi
  * modified mask handling in conditionals
  *
  * Revision 1.10  1995/03/13  17:58:12  asi
@@ -95,9 +101,16 @@ stack *cf_stack;
 void
 PushVL (long NumVar)
 {
+    int i;
+
     DBUG_ENTER ("PushVL");
-    cf_stack->stack[++cf_stack->tos].varlist = (node **)MAlloc (sizeof (node *) * NumVar);
+    DBUG_PRINT ("STACK",
+                ("Push Stack TOS = %d -> %d", cf_stack->tos, (cf_stack->tos) + 1));
+    cf_stack->stack[++cf_stack->tos].varlist
+      = (node **)MAlloc (sizeof (node *) * (NumVar + 1));
     cf_stack->stack[cf_stack->tos].vl_len = NumVar;
+    for (i = 0; i < NumVar; i++)
+        cf_stack->stack[cf_stack->tos].varlist[i] = NULL;
     if (cf_stack->tos == cf_stack->st_len) {
         if (NULL != (cf_stack->stack = realloc (cf_stack->stack, 2 * cf_stack->st_len)))
             Error ("out of memory", 1);
@@ -125,8 +138,11 @@ PushDupVL ()
     int NumVar, i;
 
     DBUG_ENTER ("PushDupVL");
+    DBUG_PRINT ("STACK",
+                ("Dup Stack TOS = %d -> %d", cf_stack->tos, (cf_stack->tos) + 1));
     NumVar = cf_stack->stack[cf_stack->tos].vl_len;
-    cf_stack->stack[++cf_stack->tos].varlist = (node **)MAlloc (sizeof (node *) * NumVar);
+    cf_stack->stack[++cf_stack->tos].varlist
+      = (node **)MAlloc (sizeof (node *) * (NumVar + 1));
     for (i = 0; i < NumVar; i++)
         cf_stack->stack[cf_stack->tos].varlist[i]
           = cf_stack->stack[cf_stack->tos - 1].varlist[i];
@@ -151,7 +167,21 @@ void
 PopVL ()
 {
     DBUG_ENTER ("PopVL");
-    free (cf_stack->stack[cf_stack->tos--].varlist);
+    DBUG_PRINT ("STACK", ("Pop TOS = %d -> %d", cf_stack->tos, (cf_stack->tos) - 1));
+    FREE (cf_stack->stack[cf_stack->tos].varlist);
+    cf_stack->tos--;
+    DBUG_VOID_RETURN;
+}
+
+void
+PopVL2 ()
+{
+    DBUG_ENTER ("PopVL2");
+    DBUG_PRINT ("STACK",
+                ("Pop second TOS = %d -> %d", cf_stack->tos, (cf_stack->tos) - 1));
+    FREE (cf_stack->stack[(cf_stack->tos) - 1].varlist);
+    cf_stack->stack[(cf_stack->tos) - 1].varlist = cf_stack->stack[cf_stack->tos].varlist;
+    cf_stack->tos--;
     DBUG_VOID_RETURN;
 }
 
@@ -186,9 +216,9 @@ ConstantFolding (node *arg_node, node *info_node)
 
     arg_node = Trav (arg_node, info_node);
 
-    free (info_node);
-    free (cf_stack->stack);
-    free (cf_stack);
+    FREE (info_node);
+    FREE (cf_stack->stack);
+    FREE (cf_stack);
     DBUG_RETURN (arg_node);
 }
 
@@ -210,7 +240,7 @@ ConstantFolding (node *arg_node, node *info_node)
  *		    - updates masks in fundef node.
  *  global vars   : syntax_tree, cf_stack
  *  internal funs : PushVL, PopVL
- *  external funs : GenMask, MinusMask, Trav
+ *  external funs : GenMask, MinusMask, OptTrav
  *  macros        : DBUG...
  *
  *  remarks       : --
@@ -220,23 +250,16 @@ node *
 CFfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("CFfundef");
-    if (arg_node->node[0] != NULL) {
-        VARNO = arg_node->varno;
-        PushVL (arg_info->varno);
-        arg_info->mask[0] = GenMask (VARNO);
-        arg_info->mask[1] = GenMask (VARNO);
 
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* functionbody */
+    DBUG_PRINT ("OPT", ("Constant folding function: %s", arg_node->info.types->id));
+    VARNO = arg_node->varno;
+    PushVL (arg_info->varno);
 
-        MinusMask (arg_node->mask[0], arg_info->mask[0], VARNO);
-        MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
-        free (arg_info->mask[0]);
-        free (arg_info->mask[1]);
-        PopVL (cf_stack);
-    }
+    arg_node = OptTrav (arg_node, arg_info, 0); /* functionbody */
 
-    if (arg_node->node[1] != NULL)
-        arg_node->node[1] = Trav (arg_node->node[1], arg_info); /* next function */
+    PopVL (cf_stack);
+
+    arg_node = OptTrav (arg_node, arg_info, 1); /* next function */
     DBUG_RETURN (arg_node);
 }
 
@@ -353,19 +376,15 @@ CFid (node *arg_node, node *arg_info)
         case N_float:
         case N_bool:
             return_node = DupConst (value);
-            INC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
+            DEC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
             break;
         case N_array:
             return_node = DupArray (value);
-            INC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
-            break;
-        case N_id:
-        case N_prf:
-            arg_info->nnode = 0;
-            return_node = arg_node;
+            DEC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
             break;
         default:
-            DBUG_ASSERT ((0), "Unknown node-type for beta reduction");
+            arg_info->nnode = 0;
+            return_node = arg_node;
             break;
         }
     } else {
@@ -383,7 +402,7 @@ CFid (node *arg_node, node *arg_info)
  *  description   :
  *  global vars   : syntax_tree, info_node
  *  internal funs : --
- *  external funs : Trav
+ *  external funs : OptTrav
  *  macros        : DBUG...
  *
  *  remarks       : --
@@ -396,7 +415,7 @@ CFcast (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CFcast");
 
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+    arg_node = OptTrav (arg_node, arg_info, 0);
 
     switch (arg_node->node[0]->nodetype) {
     case N_num:
@@ -408,6 +427,7 @@ CFcast (node *arg_node, node *arg_info)
     case N_id:
     case N_with:
     case N_prf:
+    case N_ap:
         returnnode = arg_node;
         break;
     default:
@@ -428,7 +448,7 @@ CFcast (node *arg_node, node *arg_info)
  *		    - construction of a new assign-list if nessessary
  *  global vars   : syntax_tree, cf_stack, info_node
  *  internal funs : --
- *  external funs : GenMask, AppendNodeChain, PlusMask, Trav, MinusMask
+ *  external funs : GenMask, AppendNodeChain, PlusMask, OptTrav, MinusMask
  *  macros        : DBUG..., TOS
  *
  *  remarks       : --
@@ -437,68 +457,39 @@ CFcast (node *arg_node, node *arg_info)
 node *
 CFassign (node *arg_node, node *arg_info)
 {
-    long *oldmask[2];
-    int i;
-    node *tmp;
+    node *returnnode;
+    nodetype ntype;
 
     DBUG_ENTER ("CFassign");
-    oldmask[0] = arg_info->mask[0];
-    oldmask[1] = arg_info->mask[1];
-    arg_info->mask[0] = GenMask (VARNO);
-    arg_info->mask[1] = GenMask (VARNO);
-    arg_info->node[0] = arg_node;
+    returnnode = arg_node;
+    arg_info->lineno = arg_node->lineno;
+    ntype = arg_node->node[0]->nodetype;
 
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* Trav instruction */
+    arg_node = OptTrav (arg_node, arg_info, 0); /* Trav instruction */
 
     arg_info->node[0] = NULL;
-
     switch (arg_node->node[0]->nodetype) {
-    case N_empty: /* a condition or a loop has been destroyed */
-    case N_assign:
-        tmp = arg_node;
-        if (arg_node->node[0]->nodetype != N_empty)
-            arg_node = AppendNodeChain (1, arg_node->node[0], arg_node->node[1]);
-        else {
-            free (arg_node->node[0]);
-            arg_node = arg_node->node[1];
-        }
-        free (tmp);
-        PlusMask (arg_info->mask[0], oldmask[0], VARNO);
-        PlusMask (arg_info->mask[1], oldmask[1], VARNO);
-        free (oldmask[0]);
-        free (oldmask[1]);
-
-        arg_node = Trav (arg_node, arg_info); /* Trav next assign */
-
+    case N_empty:
+        returnnode = arg_node->node[1];
+        arg_node = OptTrav (arg_node, arg_info, 1); /* Trav next assign */
+        arg_node->nnode = 1;
+        FreeTree (arg_node);
         break;
-    case N_cond:
-    case N_do:
-    case N_while:
-        MinusMask (arg_node->mask[0], arg_info->mask[0], VARNO);
-        MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
-        for (i = 0; i < TOS.vl_len; i++) {
-            if (ReadMask (arg_node->mask[0], i) != 0)
-                VAR (i) = NULL;
-        }
-        PlusMask (arg_info->mask[0], oldmask[0], VARNO);
-        PlusMask (arg_info->mask[1], oldmask[1], VARNO);
-        free (oldmask[0]);
-        free (oldmask[1]);
-        if (NULL != arg_node->node[1]) {
-            arg_node->node[1] = Trav (arg_node->node[1], arg_info); /* Trav next assign */
+    case N_assign:
+        if (N_do == ntype) {
+            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+            returnnode = AppendNodeChain (1, arg_node->node[0], arg_node->node[1]);
+        } else {
+            returnnode = AppendNodeChain (1, arg_node->node[0], arg_node->node[1]);
+            arg_node->node[0] = Trav (arg_node->node[0], arg_info);
         }
         break;
     default:
-        MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
-        PlusMask (arg_info->mask[1], oldmask[1], VARNO);
-        free (oldmask[0]);
-        free (oldmask[1]);
-        if (NULL != arg_node->node[1]) {
-            arg_node->node[1] = Trav (arg_node->node[1], arg_info); /* Trav next assign */
-        }
+        arg_node = OptTrav (arg_node, arg_info, 1); /* Trav next assign */
         break;
     }
-    DBUG_RETURN (arg_node);
+
+    DBUG_RETURN (returnnode);
 }
 
 /*
@@ -540,7 +531,7 @@ GetType (types *type)
  *                  - stack-entry modified for left hand expression
  *  global vars   : syntax_tree, cf_stack, info_node
  *  internal funs : --
- *  external funs : Trav
+ *  external funs : OptTrav
  *  macros        : DBUG..., VAR
  *
  *  remarks       :
@@ -555,7 +546,7 @@ CFlet (node *arg_node, node *arg_info)
     arg_info->nnode = 1;
     arg_info->info.types = GetType (arg_node->info.ids->node->info.types);
 
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* Trav expression */
+    arg_node = OptTrav (arg_node, arg_info, 0); /* Trav expression */
 
     arg_info->info.types = NULL;
     if (arg_info->nnode == 1)
@@ -580,7 +571,7 @@ CFlet (node *arg_node, node *arg_info)
  *                  constant folding inside while loop with new stack entry
  *  global vars   : syntax_tree, cf_stack, info_node
  *  internal funs : PushDupVL, PopVL
- *  external funs : MinusMask, PlusMask, FreeTree, ReadMask, Trav
+ *  external funs : MinusMask, PlusMask, FreeTree, ReadMask, OptTrav
  *  macros        : DBUG..., WARN1, VAR
  *
  *  remarks       : --
@@ -590,37 +581,38 @@ node *
 CFwhile (node *arg_node, node *arg_info)
 {
     int i;
-    node *a_node;
 
     DBUG_ENTER ("CFwhile");
     PushDupVL ();
-    a_node = arg_info->node[0];
     for (i = 0; i < TOS.vl_len; i++) {
-        if (ReadMask (arg_info->node[0]->mask[0], i) != 0)
+        if (ReadMask (arg_node->node[1]->mask[0], i) != 0)
             VAR (i) = NULL;
     }
 
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-
-    MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
+    arg_node = OptTrav (arg_node, arg_info, 0); /* Trav while-condition */
 
     switch (arg_node->node[0]->nodetype) {
     case N_bool:
         if (arg_node->node[0]->info.cint) {
-            WARN1 (("WARNING in line %d: endless loop expected\n", a_node->varno));
+            WARN1 (("WARNING in line %d: endless loop expected\n", arg_info->lineno));
         } else {
-            PlusMask (arg_info->mask[0], a_node->mask[0], VARNO);
-            PlusMask (arg_info->mask[1], a_node->mask[1], VARNO);
+            MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0], VARNO);
+            MinusMask (arg_info->mask[1], arg_node->node[1]->mask[1], VARNO);
             FreeTree (arg_node);
             cf_expr++;
             arg_node = MakeNode (N_empty);
+            PopVL ();
             break;
         }
     default:
-        arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+        arg_node = OptTrav (arg_node, arg_info, 1); /* Trav while-body */
+        PopVL ();
+        for (i = 0; i < TOS.vl_len; i++) {
+            if (ReadMask (arg_node->node[1]->mask[0], i) != 0)
+                VAR (i) = NULL;
+        }
         break;
     }
-    PopVL ();
     DBUG_RETURN (arg_node);
 }
 
@@ -633,7 +625,7 @@ CFwhile (node *arg_node, node *arg_info)
  *  description   : initiates constant folding inside do-loop with new stack
  *  global vars   : syntax_tree, cf_stack, info_node
  *  internal funs : PushDupVL, PopVL
- *  external funs : ReadMask, Trav, FreeTree
+ *  external funs : ReadMask, OptTrav, FreeTree
  *  macros        : DBUG..., VAR
  *
  *  remarks       : --
@@ -649,27 +641,28 @@ CFdo (node *arg_node, node *arg_info)
     PushDupVL ();
     a_node = arg_info->node[0];
     for (i = 0; i < TOS.vl_len; i++) {
-        if (ReadMask (arg_info->node[0]->mask[0], i) != 0)
+        if (ReadMask (arg_node->node[1]->mask[0], i) != 0)
             VAR (i) = NULL;
     }
 
-    arg_node->node[1] = Trav (arg_node->node[1], arg_info); /* Trav do-body */
+    arg_node = OptTrav (arg_node, arg_info, 1); /* Trav do-body */
 
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* Trav do-condition */
-
-    MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
+    arg_node = OptTrav (arg_node, arg_info, 0); /* Trav do-condition */
 
     if ((arg_node->node[0]->info.cint) && (arg_node->node[0]->nodetype == N_bool)) {
-        WARN1 (("WARNING in line %d: endless loop expected\n", a_node->varno));
+        WARN1 (("WARNING in line %d: endless loop expected\n", arg_info->lineno));
     }
     if ((!arg_node->node[0]->info.cint) && (arg_node->node[0]->nodetype == N_bool)) {
+        PopVL ();
+        arg_node = OptTrav (arg_node, arg_info, 1); /* Trav do-body */
         cf_expr++;
         tmp = arg_node;
         arg_node = arg_node->node[1]->node[0];
         tmp->node[1]->nnode = 0;
         FreeTree (tmp);
+    } else {
+        PopVL2 ();
     }
-    PopVL ();
     DBUG_RETURN (arg_node);
 }
 
@@ -684,7 +677,7 @@ CFdo (node *arg_node, node *arg_info)
  *		    folding inside the conditional.
  *  global vars   : syntax_tree, info_node, cf_stack
  *  internal funs : PushDupVL, PopVL
- *  external funs : GenMask, Trav, MinusMask, PlusMask, ClearMask, FreeTree
+ *  external funs : GenMask, OptTrav, MinusMask, PlusMask, ClearMask, FreeTree
  *  macros        : DBUG...
  *
  *  remarks       :
@@ -693,64 +686,48 @@ CFdo (node *arg_node, node *arg_info)
 node *
 CFcond (node *arg_node, node *arg_info)
 {
-    long *oldmask[2];
     node *returnnode;
+    int i;
 
     DBUG_ENTER ("CFcond");
     returnnode = arg_node;
-    PushDupVL ();
-    oldmask[1] = arg_info->mask[1];
-    arg_info->mask[1] = GenMask (VARNO);
 
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-
-    MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
-    PlusMask (oldmask[1], arg_info->mask[1], VARNO);
-    ClearMask (arg_info->mask[1], VARNO);
-
-    oldmask[0] = arg_info->mask[0];
-    arg_info->mask[0] = GenMask (VARNO);
+    arg_node = OptTrav (arg_node, arg_info, 0);
 
     if (arg_node->node[0]->nodetype == N_bool) {
         if (arg_node->node[0]->info.cint != 0) {
-            PlusMask (oldmask[0], arg_node->node[2]->mask[0], VARNO);
-            PlusMask (oldmask[1], arg_node->node[2]->mask[1], VARNO);
+            MinusMask (arg_info->mask[0], arg_node->node[2]->mask[0], VARNO);
+            MinusMask (arg_info->mask[1], arg_node->node[2]->mask[1], VARNO);
             FreeTree (arg_node->node[2]);
-            cf_expr++;
             returnnode = arg_node->node[1]->node[0];
-            free (arg_node->node[1]);
-        } else {
-            PlusMask (oldmask[0], arg_node->node[1]->mask[0], VARNO);
-            PlusMask (oldmask[1], arg_node->node[1]->mask[1], VARNO);
-            FreeTree (arg_node->node[1]);
+            FREE (arg_node->node[1]);
             cf_expr++;
+        } else {
+            MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0], VARNO);
+            MinusMask (arg_info->mask[1], arg_node->node[1]->mask[1], VARNO);
+            FreeTree (arg_node->node[1]);
             returnnode = arg_node->node[2]->node[0];
-            free (arg_node->node[2]);
+            FREE (arg_node->node[2]);
+            cf_expr++;
         }
     } else {
-        arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+        PushDupVL ();
 
-        MinusMask (arg_node->node[1]->mask[0], arg_info->mask[0], VARNO);
-        MinusMask (arg_node->node[1]->mask[1], arg_info->mask[1], VARNO);
-        PlusMask (oldmask[0], arg_info->mask[0], VARNO);
-        PlusMask (oldmask[1], arg_info->mask[1], VARNO);
-        ClearMask (arg_info->mask[0], VARNO);
-        ClearMask (arg_info->mask[1], VARNO);
+        arg_node = OptTrav (arg_node, arg_info, 1);
+
         PopVL ();
         PushDupVL ();
 
-        arg_node->node[2] = Trav (arg_node->node[2], arg_info);
+        arg_node = OptTrav (arg_node, arg_info, 2);
 
-        MinusMask (arg_node->node[2]->mask[0], arg_info->mask[0], VARNO);
-        MinusMask (arg_node->node[2]->mask[1], arg_info->mask[1], VARNO);
-        PlusMask (oldmask[0], arg_info->mask[0], VARNO);
-        PlusMask (oldmask[1], arg_info->mask[1], VARNO);
+        PopVL ();
+        for (i = 0; i < TOS.vl_len; i++) {
+            if ((ReadMask (arg_node->node[1]->mask[0], i) != 0)
+                || (ReadMask (arg_node->node[2]->mask[0], i) != 0))
+                VAR (i) = NULL;
+        }
     }
-    free (arg_info->mask[0]);
-    free (arg_info->mask[1]);
-    arg_info->mask[0] = oldmask[0];
-    arg_info->mask[1] = oldmask[1];
-    PopVL ();
+
     DBUG_RETURN (returnnode);
 }
 
@@ -770,56 +747,20 @@ CFcond (node *arg_node, node *arg_info)
 node *
 CFwith (node *arg_node, node *arg_info)
 {
-    long *oldmask[2];
-    int i;
     types *oldtype;
 
     DBUG_ENTER ("CFwith");
-    oldmask[0] = arg_info->mask[0];
-    oldmask[1] = arg_info->mask[1];
-    arg_info->mask[0] = GenMask (VARNO);
-    arg_info->mask[1] = GenMask (VARNO);
     oldtype = arg_info->info.types;
     arg_info->info.types = arg_node->node[0]->info.ids->node->info.types;
 
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* Trav generator */
+    arg_node = OptTrav (arg_node, arg_info, 0); /* Trav generator */
 
     arg_info->info.types = oldtype;
-    MinusMask (arg_node->node[0]->mask[1], arg_info->mask[1], VARNO);
-    PlusMask (oldmask[1], arg_info->mask[1], VARNO);
-    ClearMask (arg_info->mask[1], VARNO);
-
-    if (arg_node->node[1]->nodetype == N_genarray) {
-        arg_node->node[1]->node[0] = Trav (arg_node->node[1]->node[0], arg_info);
-
-        MinusMask (arg_node->node[1]->mask[1], arg_info->mask[1], VARNO);
-        PlusMask (oldmask[1], arg_info->mask[1], VARNO);
-        ClearMask (arg_info->mask[1], VARNO);
-    }
 
     PushDupVL ();
-    for (i = 0; i < TOS.vl_len; i++) {
-        if ((ReadMask (arg_info->mask[0], i) != 0)
-            || (ReadMask (arg_info->node[0]->mask[0], i) != 0))
-            VAR (i) = NULL;
-    }
 
-    if ((arg_node->node[1]->nodetype == N_genarray)
-        || (arg_node->node[1]->nodetype == N_modarray))
-        arg_node->node[1]->node[1]
-          = Trav (arg_node->node[1]->node[1], arg_info); /* Trav body */
-    else
-        arg_node->node[1]->node[0]
-          = Trav (arg_node->node[1]->node[0], arg_info); /* Trav body */
+    arg_node = OptTrav (arg_node, arg_info, 2); /* Trav with-body */
 
-    MinusMask (arg_node->mask[0], arg_info->mask[0], VARNO);
-    MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
-    PlusMask (oldmask[0], arg_info->mask[0], VARNO);
-    PlusMask (oldmask[1], arg_info->mask[1], VARNO);
-    free (arg_info->mask[0]);
-    free (arg_info->mask[1]);
-    arg_info->mask[0] = oldmask[0];
-    arg_info->mask[1] = oldmask[1];
     PopVL ();
     arg_info->nnode = 0;
     DBUG_RETURN (arg_node);
@@ -929,7 +870,7 @@ SkalarPrf (int res_int, node **arg, int arg_no, int swap, node *arg_node, node *
                 ARI (/, arg[0], arg[1]);
             } else {
                 WARN1 (("WARNING %s, %d: division by zero error expected\n", filename,
-                        arg_info->node[0]->lineno));
+                        arg_info->lineno));
                 returnnode = arg_node;
             }
             break;
@@ -1185,7 +1126,7 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
                 FreeTree (arg[0]->node[0]->node[1]);
             arg[0]->node[0]->nnode = 0;
             arg[0]->node[0]->node[1] = 0;
-            free (arg_node);
+            FREE (arg_node);
             returnnode = arg[0];
             cf_expr++;
             break;
@@ -1253,7 +1194,7 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             } else {
                 arg_info->nnode = 0;
                 WARN1 (("WARNING %s, %d: illegal vector for primitive function psi\n",
-                        filename, arg_info->node[0]->lineno));
+                        filename, arg_info->lineno));
                 returnnode = arg_node;
             }
             break;
@@ -1301,7 +1242,7 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             } else {
                 arg_info->nnode = 0;
                 WARN1 (("WARNING %s, %d: illegal vector for primitive function psi\n",
-                        filename, arg_info->node[0]->lineno));
+                        filename, arg_info->lineno));
                 returnnode = arg_node;
             }
 
