@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2005/01/11 14:23:48  cg
+  Removed useless #include Error.h
+
   Revision 1.3  2004/11/26 16:32:06  sah
   *** empty log message ***
 
@@ -44,7 +47,6 @@ version="1.0">
 #include "tree_basic.h"
 #include "internal_lib.h"
 #include "dbug.h"
-#include "Error.h"
 
 static node *MakeEmptyNode()
 {
