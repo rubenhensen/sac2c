@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2002/04/08 19:58:14  dkr
+ * debug code removed
+ *
  * Revision 1.25  2002/04/08 19:57:34  dkr
  * minor changes done
  *
@@ -1412,9 +1415,8 @@ SSACFassign (node *arg_node, node *arg_info)
 
         tmp = arg_node;
         arg_node = ASSIGN_NEXT (arg_node);
-#if 1
+
         tmp = FreeNode (tmp);
-#endif
     }
 
     DBUG_RETURN (arg_node);
