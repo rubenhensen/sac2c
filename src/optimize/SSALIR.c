@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2001/05/11 07:30:26  nmw
+ * comment removed
+ *
  * Revision 1.16  2001/05/09 12:24:34  nmw
  * withloop indendend code moving is done in top-down traversal now
  * to get the correct assignment order
@@ -489,7 +492,6 @@ InsListAppendAssigns (nodelist *il, node *assign, int depth)
     DBUG_ENTER ("InsListAppendAssigns");
 
     tmp = InsListGetFrame (il, depth);
-    /* ##nmw## */
     NODELIST_NODE (tmp) = AppendAssign (NODELIST_NODE (tmp), assign);
 
     DBUG_RETURN (il);
