@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/08/11 14:32:35  dkr
+ * CompileVarSegSchedulingArgs implemented
+ *
  * Revision 1.4  1998/08/07 16:09:23  dkr
  * CompileScheduling, ... can handle (sched == NULL) now.
  * If no 'sched' is present, the ICMs 'MT_SCHEDULER_BEGIN',
@@ -911,10 +914,38 @@ static node *
 CompileVarSegSchedulingArgs (node *wlseg, sched_t *sched)
 {
     node *args;
+    int i;
 
-    DBUG_ENTER ("CompileVarSegSchedulingArgs");
+    DBUG_ENTER ("CompileConstSegSchedulingArgs");
 
     args = NULL;
+
+    if (sched != NULL) {
+
+        for (i = WLSEGVAR_DIMS (wlseg) - 1; i >= 0; i--) {
+            if (SCHAdjustmentRequired (i, wlseg)) {
+                args = MakeExprs (MakeNum (1), args);
+            } else {
+                args = MakeExprs (MakeNum (MAX (WLSEGVAR_UBV (wlseg)[i],
+                                                WLSEGVAR_SV (wlseg)[i])),
+                                  args);
+            }
+        }
+
+        for (i = WLSEGVAR_DIMS (wlseg) - 1; i >= 0; i--) {
+            args = MakeExprs (MakeNum (WLSEGVAR_BV (wlseg, 0)[i]), args);
+        }
+    }
+
+    for (i = WLSEGVAR_DIMS (wlseg) - 1; i >= 0; i--) {
+        args = MakeExprs (MakeNum (WLSEGVAR_IDX_MAX (wlseg)[i]), args);
+    }
+
+    for (i = WLSEGVAR_DIMS (wlseg) - 1; i >= 0; i--) {
+        args = MakeExprs (MakeNum (WLSEGVAR_IDX_MIN (wlseg)[i]), args);
+    }
+
+    args = MakeExprs (MakeNum (WLSEGVAR_DIMS (wlseg)), args);
 
     DBUG_RETURN (args);
 }
