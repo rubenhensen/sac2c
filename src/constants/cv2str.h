@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/04/04 10:00:02  nmw
+ *  missing convert functions for basetype char added
+ *
  * Revision 1.1  2001/03/02 14:33:06  sbs
  * Initial revision
  *
@@ -26,6 +29,8 @@ extern char *COCv2StrLong (void *src, int off, int len);
 extern char *COCv2StrFloat (void *src, int off, int len);
 extern char *COCv2StrDouble (void *src, int off, int len);
 extern char *COCv2StrLongDouble (void *src, int off, int len);
+
+extern char *COCv2StrChar (void *src, int off, int len);
 
 extern char *COCv2StrDummy (void *src, int off, int len);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2001/04/04 10:00:02  nmw
+ *  missing convert functions for basetype char added
+ *
  * Revision 1.1  2001/03/02 14:33:05  sbs
  * Initial revision
  *
@@ -82,6 +85,8 @@ COCv2StrTEMPLATE (unsigned short, UShort, "%d")
 
         COCv2StrTEMPLATE (float, Float, "%f") COCv2StrTEMPLATE (double, Double, "%f")
           COCv2StrTEMPLATE (long double, LongDouble, "%f")
+
+            COCv2StrTEMPLATE (char, Char, "%c")
 
   /*
    * Finally, we provide a dummy function which should never be called!
