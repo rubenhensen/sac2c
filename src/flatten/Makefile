@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.14  2001/04/18 15:39:09  nmw
+# while2to.o added
+#
 # Revision 3.13  2001/03/27 17:45:09  dkr
 # INCS updated
 #
@@ -105,7 +108,7 @@ CFLAGS    := -D__EXTENSIONS__
 
 INCS = -I../global -I../../inc -I../tree -I../print -I../optimize
 
-all: flatten.o lac2fun.o fun2lac.o
+all: flatten.o lac2fun.o fun2lac.o while2do.o
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
@@ -145,3 +148,10 @@ lac2fun.o: ../tree/traverse.h ../tree/free.h ../../inc/dbug.h
 lac2fun.o: ../global/my_debug.h ../tree/DupTree.h ../tree/LookUpTable.h
 lac2fun.o: ../tree/DataFlowMask.h ../tree/DataFlowMaskUtils.h
 lac2fun.o: ../tree/InferDFMs.h ../tree/cleanup_decls.h lac2fun.h
+while2do.o: ../../inc/dbug.h /usr/include/stdio.h
+while2do.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+while2do.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+while2do.o: /usr/include/stdio_impl.h ../global/types.h ../tree/tree_basic.h
+while2do.o: ../tree/traverse.h ../tree/DupTree.h ../tree/LookUpTable.h
+while2do.o: ../tree/free.h /usr/include/stdlib.h ../global/my_debug.h
+while2do.o: ../global/globals.h ../global/internal_lib.h while2do.h
