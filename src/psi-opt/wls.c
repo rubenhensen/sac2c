@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/11 19:08:05  ktr
+ * removed an unused variable.
+ *
  * Revision 1.1  2004/10/07 12:35:45  ktr
  * Initial revision
  *
@@ -300,7 +303,6 @@ node *
 WLSwith (node *arg_node, info *arg_info)
 {
     int innerdims;
-    bool wls_possible;
 
     DBUG_ENTER ("WLSwith");
 
