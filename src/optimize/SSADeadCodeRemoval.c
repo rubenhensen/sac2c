@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2004/11/26 21:32:42  khf
+ * correcte DCRid
+ *
  * Revision 1.25  2004/11/26 21:26:53  khf
  * SacDevCamp04: COMPILES!!!
  *
@@ -548,13 +551,18 @@ DCRlet (node *arg_node, info *arg_info)
  *   node *DCRid(node *arg_node , info *arg_info)
  *
  * description:
- *   "traverses" the contained ids structure.
+ *
  *
  *****************************************************************************/
 node *
 DCRid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCRid");
+
+    /* increments the counter for each identifier usage */
+    DBUG_PRINT ("DCR", ("mark id %s as needed", ID_NAME (arg_node)));
+
+    AVIS_NEEDCOUNT (ID_AVIS (arg_node)) = AVIS_NEEDCOUNT (ID_AVIS (arg_node)) + 1;
 
     DBUG_RETURN (arg_node);
 }
