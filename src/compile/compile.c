@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.114  1998/02/16 21:33:37  dkr
+ * *** empty log message ***
+ *
  * Revision 1.113  1998/02/16 01:11:52  dkr
  * bugs fixed
  *
@@ -5299,7 +5302,8 @@ CompWith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *MakeProj(node *bound1, node *bound2, node *offset, node *step, node *width)
+ *   node *MakeIndex(node *bound1, node *bound2, node *offset, node *step, node *width,
+ *node *next)
  *
  * description:
  *   generates a new N_index-node
@@ -5307,18 +5311,25 @@ CompWith (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-MakeProj (node *bound1, node *bound2, node *offset, node *step, node *width)
+MakeIndex (node *bound1, node *bound2, node *offset, node *step, node *width, node *next)
 {
     node *new_node;
 
-    DBUG_ENTER ("MakeProj");
+    DBUG_ENTER ("MakeIndex");
 
+#if 1
     new_node = MakeEmpty ();
+#else
+    INIT_NODE (new_node);
+
+    NODE_TYPE (new_node) = N_index;
+#endif
     INDEX_BOUND1 (new_node) = bound1;
     INDEX_BOUND2 (new_node) = bound2;
     INDEX_OFFSET (new_node) = offset;
     INDEX_STEP (new_node) = step;
     INDEX_WIDTH (new_node) = width;
+    INDEX_NEXT (new_node) = next;
 
     DBUG_RETURN (new_node);
 }
@@ -5326,16 +5337,16 @@ MakeProj (node *bound1, node *bound2, node *offset, node *step, node *width)
 /******************************************************************************
  *
  * function:
- *   node *ProjNormalize(node *proj, int shape)
+ *   node *ProjNormalize(node *proj, int shape_int)
  *
  * description:
  *   returns the normalized values of the N_index-node 'proj'
- *   (maximally shape; (width < step) or (width = step = 1))
+ *   (maximally outline; (width < step) or (width = step = 1))
  *
  ******************************************************************************/
 
 node *
-ProjNormalize (node *proj, int shape)
+ProjNormalize (node *proj, int shape_int)
 {
     int bound1, bound2, offset, step, width, new_bound1, new_bound2;
 
@@ -5352,13 +5363,13 @@ ProjNormalize (node *proj, int shape)
         step = NUM_VAL (INDEX_STEP (proj)) = width = NUM_VAL (INDEX_WIDTH (proj)) = 1;
     }
 
-    /* maximize the shape */
+    /* maximize the outline */
     new_bound1 = bound1 - (step - offset - width);
     new_bound1 = MAX (0, new_bound1);
 
     if ((bound2 - bound1 - offset) % step >= width) {
         new_bound2 = bound2 + step - ((bound2 - bound1 - offset) % step);
-        new_bound2 = MIN (new_bound2, shape);
+        new_bound2 = MIN (new_bound2, shape_int);
     } else {
         new_bound2 = bound2;
     }
@@ -5462,7 +5473,7 @@ lcm (int x, int y)
  ******************************************************************************/
 
 node *
-ProjIntersect (node *proj1, node *proj2, int shape)
+ProjIntersect (node *proj1, node *proj2, int shape_int)
 {
     node *isection = NULL;
     int k, bound1, bound2, offset, step, bound1_1, bound2_1, offset_1, step_1, width_1,
@@ -5493,23 +5504,22 @@ ProjIntersect (node *proj1, node *proj2, int shape)
         for (k = 0; k < step; k++) {
             if (((k + bound1 - bound1_1 - offset_1) % step_1 < width_1)
                 && ((k + bound1 - bound1_2 - offset_2) % step_2 < width_2)) {
-                /* offset k matches both rasters */
+                /* offset k matches both grids */
                 if (offset == -1)
-                    /* at the beginning of a new intersection-raster */
+                    /* at the beginning of a new intersection-grid */
                     offset = k;
             } else {
                 if (offset >= 0) {
-                    /* a completed intersection-raster is found */
+                    /* a completed intersection-grid is found */
                     if (!IsEmpty (bound1, bound2, offset)) {
                         isection
-                          = MakeExprs (MakeProj (MakeNum (bound1), MakeNum (bound2),
-                                                 MakeNum (offset), MakeNum (step),
-                                                 MakeNum (k - offset)),
+                          = MakeExprs (MakeIndex (MakeNum (bound1), MakeNum (bound2),
+                                                  MakeNum (offset), MakeNum (step),
+                                                  MakeNum (k - offset), NULL),
                                        isection);
-                        /* normalize new intersection-raster and insert it in 'isection'
-                         */
+                        /* normalize new intersection-grid and insert it in 'isection' */
                         EXPRS_EXPR (isection)
-                          = ProjNormalize (EXPRS_EXPR (isection), shape);
+                          = ProjNormalize (EXPRS_EXPR (isection), shape_int);
                     }
 
                     offset = -1;
@@ -5518,19 +5528,159 @@ ProjIntersect (node *proj1, node *proj2, int shape)
         }
 
         if (offset >= 0) {
-            /* a completed intersection-raster is found */
+            /* a completed intersection-grid is found */
             if (!IsEmpty (bound1, bound2, offset)) {
-                isection = MakeExprs (MakeProj (MakeNum (bound1), MakeNum (bound2),
-                                                MakeNum (offset), MakeNum (step),
-                                                MakeNum (k - offset)),
+                isection = MakeExprs (MakeIndex (MakeNum (bound1), MakeNum (bound2),
+                                                 MakeNum (offset), MakeNum (step),
+                                                 MakeNum (k - offset), NULL),
                                       isection);
-                /* normalize new intersection-raster and insert it in 'isection' */
-                EXPRS_EXPR (isection) = ProjNormalize (EXPRS_EXPR (isection), shape);
+                /* normalize new intersection-grid and insert it in 'isection' */
+                EXPRS_EXPR (isection) = ProjNormalize (EXPRS_EXPR (isection), shape_int);
             }
         }
     }
 
     DBUG_RETURN (isection);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int ComputeOffset(int new_bound1, int bound1, int offset, int step)
+ *
+ * description:
+ *   computes a new offset relating to 'new_bound1'
+ *
+ ******************************************************************************/
+
+int
+ComputeOffset (int new_bound1, int bound1, int offset, int step, int width)
+{
+    int new_offset;
+
+    DBUG_ENTER (" ComputeOffset");
+
+    new_offset = offset - ((new_bound1 - bound1) % step);
+
+    if (new_offset < 0)
+        new_offset += step;
+    if (new_offset > step - width)
+        new_offset = 0;
+
+    DBUG_RETURN (new_offset);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *ProjDisjOutline(node *proj1, node *proj2, int shape_int)
+ *
+ * description:
+ *   returns NULL, if 'proj1' and 'proj2' have disjunct outlines.
+ *   otherwise 'proj1', 'proj2' are divided in parts with disjunct outlines;
+ *     these parts are returned as a N_exprs-chain of N_index-nodes.
+ *
+ ******************************************************************************/
+
+node *
+ProjDisjOutline (node *proj1, node *proj2, int shape_int)
+{
+    node *disj_out = NULL;
+    int bound1_1, bound2_1, offset_1, step_1, width_1, bound1_2, bound2_2, offset_2,
+      step_2, width_2, bound1_1b, bound2_1b, offset_1b, offset_1c, bound1_2b, bound2_2b,
+      offset_2b, offset_2c;
+
+    DBUG_ENTER ("ProjDisjOutline");
+
+    bound1_1 = NUM_VAL (INDEX_BOUND1 (proj1));
+    bound2_1 = NUM_VAL (INDEX_BOUND2 (proj1));
+    offset_1 = NUM_VAL (INDEX_OFFSET (proj1));
+    step_1 = NUM_VAL (INDEX_STEP (proj1));
+    width_1 = NUM_VAL (INDEX_WIDTH (proj1));
+
+    bound1_2 = NUM_VAL (INDEX_BOUND1 (proj2));
+    bound2_2 = NUM_VAL (INDEX_BOUND2 (proj2));
+    offset_2 = NUM_VAL (INDEX_OFFSET (proj2));
+    step_2 = NUM_VAL (INDEX_STEP (proj2));
+    width_2 = NUM_VAL (INDEX_WIDTH (proj2));
+
+    if ((bound2_1 > bound1_2) && (bound2_2 > bound1_1)
+        && ((bound1_1 != bound1_2) || (bound2_1 != bound2_2))) {
+        /* 'proj1' and 'proj2' do not have disjunct outlines yet */
+
+        /*
+         * 'proj1' respectively 'proj2' must be devided in at most three parts, called:
+         *    'proj1': (1a), (1b), (1c)
+         *    'proj2': (2a), (2b), (2c)
+         */
+        bound1_1b = MAX (bound1_1, bound1_2);
+        bound2_1b = MIN (bound2_1, bound2_2);
+        offset_1b = ComputeOffset (bound1_1b, bound1_1, offset_1, step_1, width_1);
+        offset_1c = ComputeOffset (bound2_1b, bound1_1, offset_1, step_1, width_1);
+        bound1_2b = bound1_1b;
+        bound2_2b = bound2_1b;
+        offset_2b = ComputeOffset (bound1_2b, bound1_2, offset_2, step_2, width_2);
+        offset_2c = ComputeOffset (bound2_2b, bound1_2, offset_2, step_2, width_2);
+
+        if (IsEmpty (bound1_1b, bound2_1, offset_1b)) { /* is (1b,1c) empty ? */
+            bound2_2b = bound1_2; /* (2a) == empty, (2b) := empty, (2c) := (2) */
+            offset_2c = offset_2;
+        }
+        if (IsEmpty (bound1_2, bound2_2b, offset_2)) { /* is (2a,2b) empty ? */
+            bound2_1b = bound2_1; /* (1c) == empty, (1b) := empty, (1a) := (1) */
+        }
+        if (IsEmpty (bound1_2b, bound2_2, offset_2b)) { /* is (2b,2c) empty ? */
+            bound2_1b = bound1_1; /* (1a) == empty, (1b) := empty, (1c) := (1) */
+            offset_1c = offset_1;
+        }
+        if (IsEmpty (bound1_1, bound2_1b, offset_1)) { /* is (1a,1b) empty ? */
+            bound2_2b = bound2_2; /* (2c) == empty, (2b) := empty, (2a) := (2) */
+        }
+
+        if (!IsEmpty (bound1_1, bound1_1b, offset_1)) { /* insert (1a) if not empty */
+            disj_out = MakeExprs (MakeIndex (MakeNum (bound1_1), MakeNum (bound1_1b),
+                                             MakeNum (offset_1), MakeNum (step_1),
+                                             MakeNum (width_1), NULL),
+                                  disj_out);
+        }
+
+        if (!IsEmpty (bound1_1b, bound2_1b, offset_1b)) { /* insert (1b) if not empty */
+            disj_out = MakeExprs (MakeIndex (MakeNum (bound1_1b), MakeNum (bound2_1b),
+                                             MakeNum (offset_1b), MakeNum (step_1),
+                                             MakeNum (width_1), NULL),
+                                  disj_out);
+        }
+
+        if (!IsEmpty (bound2_1b, bound2_1, offset_1c)) { /* insert (1c) if not empty */
+            disj_out = MakeExprs (MakeIndex (MakeNum (bound2_1b), MakeNum (bound2_1),
+                                             MakeNum (offset_1c), MakeNum (step_1),
+                                             MakeNum (width_1), NULL),
+                                  disj_out);
+        }
+
+        if (!IsEmpty (bound1_2, bound1_2b, offset_2)) { /* insert (2a) if not empty */
+            disj_out = MakeExprs (MakeIndex (MakeNum (bound1_2), MakeNum (bound1_2b),
+                                             MakeNum (offset_2), MakeNum (step_2),
+                                             MakeNum (width_2), NULL),
+                                  disj_out);
+        }
+
+        if (!IsEmpty (bound1_2b, bound2_2b, offset_2b)) { /* insert (2b) if not empty */
+            disj_out = MakeExprs (MakeIndex (MakeNum (bound1_2b), MakeNum (bound2_2b),
+                                             MakeNum (offset_2b), MakeNum (step_2),
+                                             MakeNum (width_2), NULL),
+                                  disj_out);
+        }
+
+        if (!IsEmpty (bound2_2b, bound2_2, offset_2c)) { /* insert (2c) if not empty */
+            disj_out = MakeExprs (MakeIndex (MakeNum (bound2_2b), MakeNum (bound2_2),
+                                             MakeNum (offset_2c), MakeNum (step_2),
+                                             MakeNum (width_2), NULL),
+                                  disj_out);
+        }
+    }
+
+    DBUG_RETURN (disj_out);
 }
 
 /******************************************************************************
@@ -5545,13 +5695,13 @@ ProjIntersect (node *proj1, node *proj2, int shape)
  ******************************************************************************/
 
 int
-ProjEmptyIsect (node *proj1, node *proj2, int shape)
+ProjEmptyIsect (node *proj1, node *proj2, int shape_int)
 {
     int result;
 
     DBUG_ENTER ("ProjEmptyIsect");
 
-    result = (ProjIntersect (proj1, proj2, shape) == NULL);
+    result = (ProjIntersect (proj1, proj2, shape_int) == NULL);
 
     DBUG_RETURN (result);
 }
@@ -5697,11 +5847,11 @@ ProjInsert (node *insert, node *projs)
 /******************************************************************************
  *
  * function:
- *   node *GetRelevantProjs(node *withpart, node *shape, node *prev_projs)
+ *   node *GetRelevantProjs(node *withpart, node *shape_vec, node *prev_projs)
  *
  * description:
  *   withpart: any N_Npart-node
- *   shape: N_array-node containing the shape
+ *   shape_vec: N_array-node containing the shape
  *   prev_projs: set of previous projections (dimensions 0..d-1)
  *               ('prev_proj' is a N_exprs-chain of d N_index-nodes)
  *
@@ -5712,23 +5862,23 @@ ProjInsert (node *insert, node *projs)
  ******************************************************************************/
 
 node *
-GetRelevantProjs (node *withpart, node *shape, node *prev_projs)
+GetRelevantProjs (node *withpart, node *shape_vec, node *prev_projs)
 {
     int relevant;
-    node *part, *shape_, *prev_proj, *projs, *insert, *tmp, *bound1, *bound2, *step,
+    node *part, *shape_vec1, *prev_proj, *projs, *insert, *tmp, *bound1, *bound2, *step,
       *width;
 
     DBUG_ENTER ("GetRelevantProjs");
 
     /* create temporary node */
-    tmp = MakeExprs (MakeProj (NULL, NULL, MakeNum (0), NULL, NULL), NULL);
+    tmp = MakeExprs (MakeIndex (NULL, NULL, MakeNum (0), NULL, NULL, NULL), NULL);
 
     projs = NULL;
     part = withpart;
     /* visit all generator-index-set */
     while (part != NULL) {
         relevant = 1;
-        shape_ = ARRAY_AELEMS (shape);
+        shape_vec1 = ARRAY_AELEMS (shape_vec);
         prev_proj = prev_projs;
 
         /* get components of current generator-index-set */
@@ -5739,7 +5889,7 @@ GetRelevantProjs (node *withpart, node *shape, node *prev_projs)
 
         /* test, if generator-index-set is relevant */
         while (prev_proj != NULL) {
-            DBUG_ASSERT ((shape_ != NULL), "shape component not found");
+            DBUG_ASSERT ((shape_vec1 != NULL), "shape component not found");
             DBUG_ASSERT ((bound1 != NULL), "bound1 of generator not found");
             DBUG_ASSERT ((bound2 != NULL), "bound2 of generator not found");
             DBUG_ASSERT ((step != NULL), "step of generator not found");
@@ -5753,13 +5903,13 @@ GetRelevantProjs (node *withpart, node *shape, node *prev_projs)
 
             if (ProjIsEmpty (EXPRS_EXPR (tmp))
                 || (ProjEmptyIsect (EXPRS_EXPR (tmp), EXPRS_EXPR (prev_proj),
-                                    NUM_VAL (EXPRS_EXPR (shape_))))) {
+                                    NUM_VAL (EXPRS_EXPR (shape_vec1))))) {
                 relevant = 0;
                 break;
             }
 
             prev_proj = EXPRS_NEXT (prev_proj);
-            shape_ = EXPRS_NEXT (shape_);
+            shape_vec1 = EXPRS_NEXT (shape_vec1);
 
             bound1 = EXPRS_NEXT (bound1);
             bound2 = EXPRS_NEXT (bound2);
@@ -5768,7 +5918,7 @@ GetRelevantProjs (node *withpart, node *shape, node *prev_projs)
         }
 
         if (relevant) {
-            DBUG_ASSERT ((shape_ != NULL), "shape component not found");
+            DBUG_ASSERT ((shape_vec1 != NULL), "shape component not found");
             DBUG_ASSERT ((bound1 != NULL), "bound1 of generator not found");
             DBUG_ASSERT ((bound2 != NULL), "bound2 of generator not found");
             DBUG_ASSERT ((step != NULL), "step of generator not found");
@@ -5776,13 +5926,13 @@ GetRelevantProjs (node *withpart, node *shape, node *prev_projs)
 
             /* build a N_index-node */
             insert
-              = MakeExprs (MakeProj (MakeNum (NUM_VAL (EXPRS_EXPR (bound1))),
-                                     MakeNum (NUM_VAL (EXPRS_EXPR (bound2))), MakeNum (0),
-                                     MakeNum (NUM_VAL (EXPRS_EXPR (step))),
-                                     MakeNum (NUM_VAL (EXPRS_EXPR (width)))),
+              = MakeExprs (MakeIndex (MakeNum (NUM_VAL (EXPRS_EXPR (bound1))),
+                                      MakeNum (NUM_VAL (EXPRS_EXPR (bound2))),
+                                      MakeNum (0), MakeNum (NUM_VAL (EXPRS_EXPR (step))),
+                                      MakeNum (NUM_VAL (EXPRS_EXPR (width))), NULL),
                            NULL);
             EXPRS_EXPR (insert)
-              = ProjNormalize (EXPRS_EXPR (insert), NUM_VAL (EXPRS_EXPR (shape_)));
+              = ProjNormalize (EXPRS_EXPR (insert), NUM_VAL (EXPRS_EXPR (shape_vec1)));
             /* store relevant generator-index-set */
             projs = ProjInsert (insert, projs);
         }
@@ -5801,44 +5951,33 @@ GetRelevantProjs (node *withpart, node *shape, node *prev_projs)
 /******************************************************************************
  *
  * function:
- *   node *ProjPartition(node *withpart, node *shape, node *prev_proj)
+ *   node *ProjPartition1(node* old_projs, int shape_int)
  *
  * description:
- *   withpart: NWITH_PART(...)
- *   shape: N_array-node containing the shape
- *   prev_proj: set of previous projections (dimensions 0..d-1)
- *              ('prev_proj' is a N_exprs-chain with d N_index-nodes)
+ *   old_projs: N_exprs-chain of current projections
+ *   shape_int: relevant shape-component
  *
- *   return: partition of the current projection
+ *   return: partition of the current projection (step 1)
  *           (N_exprs-chain of N_index-nodes)
  *
  ******************************************************************************/
 
 node *
-ProjPartition (node *withpart, node *shape, node *prev_proj)
+ProjPartition1 (node *old_projs, int shape_int)
 {
-    node *shape_, *old_projs, *proj1, *proj2, *projs, *isection, *tmp;
+    node *proj1, *proj2, *projs, *isection, *tmp;
     int fixpoint;
 
-    DBUG_ENTER ("ProjPartition");
-
-    old_projs = GetRelevantProjs (withpart, shape, prev_proj);
-
-    /* compute the right shape-component */
-    shape_ = ARRAY_AELEMS (shape);
-    while (prev_proj != NULL) {
-        shape_ = EXPRS_NEXT (shape_);
-        prev_proj = EXPRS_NEXT (prev_proj);
-    }
+    DBUG_ENTER ("ProjPartition1");
 
     do {
         fixpoint = 1;
         projs = NULL;
 
-        /* initialize NPART_ISECTED(...) */
+        /* initialize NPART_MODIFIED(...) */
         proj1 = old_projs;
         while (proj1 != NULL) {
-            INDEX_ISECTED (EXPRS_EXPR (proj1)) = 0;
+            INDEX_MODIFIED (EXPRS_EXPR (proj1)) = 0;
             proj1 = EXPRS_NEXT (proj1);
         }
 
@@ -5848,12 +5987,12 @@ ProjPartition (node *withpart, node *shape, node *prev_proj)
             proj2 = EXPRS_NEXT (proj1);
             while (proj2 != NULL) {
                 /* intersect 'proj1' and 'proj2' */
-                isection = ProjIntersect (EXPRS_EXPR (proj1), EXPRS_EXPR (proj2),
-                                          NUM_VAL (EXPRS_EXPR (shape_)));
+                isection
+                  = ProjIntersect (EXPRS_EXPR (proj1), EXPRS_EXPR (proj2), shape_int);
                 if (isection != NULL) {
                     fixpoint = 0;
-                    INDEX_ISECTED (EXPRS_EXPR (proj1))
-                      = INDEX_ISECTED (EXPRS_EXPR (proj2)) = 1;
+                    INDEX_MODIFIED (EXPRS_EXPR (proj1))
+                      = INDEX_MODIFIED (EXPRS_EXPR (proj2)) = 1;
                     projs = ProjInsert (isection, projs);
                 }
 
@@ -5865,7 +6004,7 @@ ProjPartition (node *withpart, node *shape, node *prev_proj)
             EXPRS_NEXT (tmp) = NULL;
 
             /* have 'proj1' only empty intersections with the others? */
-            if (INDEX_ISECTED (EXPRS_EXPR (tmp)) == 0) {
+            if (INDEX_MODIFIED (EXPRS_EXPR (tmp)) == 0) {
                 /* insert 'proj1' in 'projs' */
                 projs = ProjInsert (tmp, projs);
             } else {
@@ -5885,10 +6024,179 @@ ProjPartition (node *withpart, node *shape, node *prev_proj)
 /******************************************************************************
  *
  * function:
+ *   node *ProjPartition2(node* old_projs, int shape_int)
+ *
+ * description:
+ *   old_projs: partition of the current projection after step 1 (N_exprs-chain)
+ *   shape_int: relevant shape-component
+ *
+ *   return: modified partition of the current projection (step 2):
+ *             outlines are disjunct, too.
+ *           (N_exprs-chain of N_index-nodes)
+ *
+ ******************************************************************************/
+
+node *
+ProjPartition2 (node *old_projs, int shape_int)
+{
+    node *proj1, *proj2, *projs, *disj_out, *tmp;
+    int fixpoint;
+
+    DBUG_ENTER ("ProjPartition2");
+
+    do {
+        fixpoint = 1;
+        projs = NULL;
+
+        /* initialize NPART_MODIFIED(...) */
+        proj1 = old_projs;
+        while (proj1 != NULL) {
+            INDEX_MODIFIED (EXPRS_EXPR (proj1)) = 0;
+            proj1 = EXPRS_NEXT (proj1);
+        }
+
+        /* intersect the outlines of 'old_projs' in pairs */
+        proj1 = old_projs;
+        while (proj1 != NULL) {
+            if (NUM_VAL (INDEX_STEP (EXPRS_EXPR (proj1))) > 1) {
+                proj2 = EXPRS_NEXT (proj1);
+                while (proj2 != NULL) {
+                    if (NUM_VAL (INDEX_STEP (EXPRS_EXPR (proj1))) > 1) {
+                        /* make the outlines of 'proj1' and 'proj2' disjunct */
+                        disj_out = ProjDisjOutline (EXPRS_EXPR (proj1),
+                                                    EXPRS_EXPR (proj2), shape_int);
+                        if (disj_out != NULL) {
+                            fixpoint = 0;
+                            INDEX_MODIFIED (EXPRS_EXPR (proj1))
+                              = INDEX_MODIFIED (EXPRS_EXPR (proj2)) = 1;
+                            projs = ProjInsert (disj_out, projs);
+                        }
+                    }
+
+                    proj2 = EXPRS_NEXT (proj2);
+                }
+            }
+
+            tmp = proj1;
+            proj1 = EXPRS_NEXT (proj1);
+            EXPRS_NEXT (tmp) = NULL;
+
+            /* have 'proj1' only empty intersections with the others? */
+            if (INDEX_MODIFIED (EXPRS_EXPR (tmp)) == 0) {
+                /* insert 'proj1' in 'projs' */
+                projs = ProjInsert (tmp, projs);
+            } else {
+                /* 'proj1' is no longer needed */
+#if 0
+        FreeTree(tmp);
+#endif
+            }
+        }
+
+        old_projs = projs;
+    } while (!fixpoint);
+
+    DBUG_RETURN (projs);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *ProjPartition3(node* projs)
+ *
+ * description:
+ *   projs: partition of the current projection after step 2 (N_exprs-chain)
+ *
+ *   return: modified partition of the current projection (step 3):
+ *             all grids with same outline are put together (INDEX_NEXT)
+ *           (N_exprs_chain of N_index-nodes)
+ *
+ ******************************************************************************/
+
+node *
+ProjPartition3 (node *projs)
+{
+    node *first, *next, *append, *tmp;
+
+    DBUG_ENTER ("ProjPartition3");
+
+    next = projs;
+    while (next != NULL) {
+        first = next;
+        append = EXPRS_EXPR (first); /* store append-position of EXPRS_EXPR(first) */
+        next = EXPRS_NEXT (next);
+        while ((next != NULL)
+               && (NUM_VAL (INDEX_BOUND1 (EXPRS_EXPR (next)))
+                   == NUM_VAL (INDEX_BOUND1 (EXPRS_EXPR (first))))
+               && (NUM_VAL (INDEX_BOUND2 (EXPRS_EXPR (next)))
+                   == NUM_VAL (INDEX_BOUND2 (EXPRS_EXPR (first))))) {
+            /* append EXPRS_EXPR('next') to EXPRS_EXPR('first') */
+            append = INDEX_NEXT (append) = EXPRS_EXPR (next);
+
+            /* remove 'next' from chain */
+            EXPRS_NEXT (first) = EXPRS_NEXT (next);
+            tmp = next;
+
+            next = EXPRS_NEXT (next);
+
+            /* free abandoned N_exprs-node */
+            EXPRS_EXPR (tmp) = EXPRS_NEXT (tmp) = NULL;
+            FreeTree (tmp);
+        }
+    }
+
+    DBUG_RETURN (projs);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *ProjPartition(node *withpart, node *shape_vec, node *prev_proj)
+ *
+ * description:
+ *   withpart: NWITH_PART(...)
+ *   shape_vec: N_array-node containing the shape
+ *   prev_proj: set of previous projections (dimensions 0..d-1)
+ *              ('prev_proj' is a N_exprs-chain with d N_index-nodes)
+ *
+ *   return: partition of the current projection, based on the relevant
+ *           generators (relating to 'prev_proj').
+ *           (N_exprs-chain of N_index-nodes)
+ *
+ ******************************************************************************/
+
+node *
+ProjPartition (node *withpart, node *shape_vec, node *prev_proj)
+{
+    node *projs;
+    int shape_int;
+
+    DBUG_ENTER ("ProjPartition");
+
+    projs = GetRelevantProjs (withpart, shape_vec, prev_proj);
+
+    /* compute the right shape-component */
+    shape_vec = ARRAY_AELEMS (shape_vec);
+    while (prev_proj != NULL) {
+        shape_vec = EXPRS_NEXT (shape_vec);
+        prev_proj = EXPRS_NEXT (prev_proj);
+    }
+    shape_int = NUM_VAL (EXPRS_EXPR (shape_vec));
+
+    projs = ProjPartition1 (projs, shape_int);
+    projs = ProjPartition2 (projs, shape_int);
+    projs = ProjPartition3 (projs);
+
+    DBUG_RETURN (projs);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void BuildProjs(int dim, int max_dim, node *withpart, node *shape, node *proj)
  *
  * description:
- *
+ *   ???
  *
  ******************************************************************************/
 

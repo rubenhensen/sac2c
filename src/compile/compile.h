@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1998/02/16 21:33:51  dkr
+ * *** empty log message ***
+ *
  * Revision 1.20  1998/02/16 01:08:01  dkr
  * bugs fixed
  *
@@ -198,6 +201,7 @@ extern node *CompObjdef (node *arg_node, node *arg_info);
  *    node*    OFFSET   (0)     (N_num)
  *    node*    STEP     (0)     (N_num)
  *    node*    WIDTH    (0)     (N_num)
+ *    node*    NEXT     (0)     (N_index)
  *
  *  temporary attributes:
  *
@@ -205,14 +209,15 @@ extern node *CompObjdef (node *arg_node, node *arg_info);
  *
  */
 
-extern node *MakeIndex (node *bound1, node *bound2, node *offset, node *step,
-                        node *width);
+extern node *MakeIndex (node *bound1, node *bound2, node *offset, node *step, node *width,
+                        node *next);
 
 #define INDEX_BOUND1(n) (n->node[0])
 #define INDEX_BOUND2(n) (n->node[1])
 #define INDEX_OFFSET(n) (n->node[2])
 #define INDEX_STEP(n) (n->node[3])
 #define INDEX_WIDTH(n) (n->node[4])
-#define INDEX_ISECTED(n) (n->flag)
+#define INDEX_NEXT(n) (n->node[5]) /* next raster with same outline */
+#define INDEX_MODIFIED(n) (n->flag)
 
 /****************************************************/

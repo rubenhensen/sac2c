@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.73  1998/02/16 21:38:24  dkr
+ * *** empty log message ***
+ *
  * Revision 1.72  1998/02/16 16:33:55  srs
  * Changed MakeNwith
  *
@@ -1996,7 +1999,7 @@ extern node *MakeInfo ();
  ***  permanent attributes:
  ***
  ***    int    PARTS     (number of N_Npart nodes for this WL.
- ***                      -1: no complete partition, excatly one N_Npart,
+ ***                      -1: no complete partition, exactly one N_Npart,
  ***                      >0: complete partition.
  ***
  ***  temporary attributes:
