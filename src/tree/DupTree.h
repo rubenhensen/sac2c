@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.15  2000/07/14 10:08:50  dkr
+ * signature of DupNodelist changed
+ *
  * Revision 1.14  2000/07/14 09:48:27  dkr
  * some comments about function prototypes added
  *
@@ -116,7 +119,7 @@ extern node *DupNode (node *arg_node);
 extern ids *DupOneIds (ids *ids, node *arg_info);
 extern ids *DupIds (ids *ids, node *arg_info);
 extern shpseg *DupShpSeg (shpseg *shp_seg);
-extern nodelist *DupNodelist (nodelist *nl);
+extern nodelist *DupNodelist (nodelist *nl, node *arg_info);
 extern types *DupTypes (types *source);
 
 /*
