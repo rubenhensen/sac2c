@@ -1,6 +1,13 @@
 
 /*
  * $Log$
+ * Revision 1.18  1998/05/04 19:42:18  dkr
+ * added StringCopy(...) ...
+ *    ... to first argument of each MakeId(...),
+ *    ... to first arguemnt of MakeVardec(...) in VardecIdx(), ArgIdx(),
+ *    ...
+ * to get rid of shared NAME strings
+ *
  * Revision 1.17  1998/05/04 17:46:21  sbs
  * LET_VARDEC(act_let)= VardecIdx( LET_VARDEC(act_let),
  *                                         VINFO_TYPE( vinfo),
@@ -406,12 +413,6 @@ ChgId (char *varname, types *type)
  *                  (as variable declaration); if it does so, the pointer
  *                  to the declaration is given, if not a new declaration
  *                  is created.
- *  global vars   :
- *  internal funs :
- *  external funs : MakeNode
- *  macros        :
- *
- *  remarks       :
  *
  */
 
@@ -424,8 +425,9 @@ VardecIdx (node *vardec, types *type, char *varname)
     vinfo = FindIdx (VARDEC_COLCHN (vardec), type);
     DBUG_ASSERT ((vinfo), "given shape not inserted in collected chain of vardec node!");
     if (VINFO_VARDEC (vinfo) == NULL) {
-        newvardec = MakeVardec (varname, MakeType (T_int, 0, NULL, NULL, NULL),
-                                VARDEC_NEXT (vardec));
+        newvardec
+          = MakeVardec (StringCopy (varname), MakeType (T_int, 0, NULL, NULL, NULL),
+                        VARDEC_NEXT (vardec));
         VARDEC_NEXT (vardec) = newvardec;
         VINFO_VARDEC (vinfo) = newvardec;
         DBUG_PRINT ("IDX",
@@ -455,12 +457,6 @@ VardecIdx (node *vardec, types *type, char *varname)
  *                  ( as variable declaration); if it does so, the pointer
  *                  to the declaration is given, if not a new declaration
  *                  is created.
- *  global vars   :
- *  internal funs :
- *  external funs : MakeNode
- *  macros        :
- *
- *  remarks       :
  *
  */
 
@@ -474,8 +470,9 @@ ArgIdx (node *arg, types *type, char *varname)
     DBUG_ASSERT ((vinfo), "given shape not inserted in collected chain of arg node!");
     if (VINFO_VARDEC (vinfo) == NULL) {
         block = FUNDEF_BODY (ARG_FUNDEF (arg));
-        newvardec = MakeVardec (varname, MakeType (T_int, 0, NULL, NULL, NULL),
-                                BLOCK_VARDEC (block));
+        newvardec
+          = MakeVardec (StringCopy (varname), MakeType (T_int, 0, NULL, NULL, NULL),
+                        BLOCK_VARDEC (block));
         BLOCK_VARDEC (block) = newvardec;
         VINFO_VARDEC (vinfo) = newvardec;
         DBUG_PRINT ("IDX",
@@ -595,7 +592,7 @@ IdxArg (node *arg_node, node *arg_info)
         vinfo = ARG_COLCHN (arg_node);
         while (vinfo != NULL) { /* loop over all "Uses" attributes */
             if (VINFO_FLAG (vinfo) == IDX) {
-                name_node = MakeId (ARG_NAME (arg_node), NULL, ST_regular);
+                name_node = MakeId (StringCopy (ARG_NAME (arg_node)), NULL, ST_regular);
                 ID_VARDEC (name_node) = arg_node;
                 dim_node = MakeNum (ARG_SHAPE (arg_node, 0));
                 dim_node2 = MakeNum (VINFO_DIM (vinfo));
@@ -805,9 +802,8 @@ IdxLet (node *arg_node, node *arg_info)
 #ifndef NEWTREE
                     nnode = arg_info->nnode;
 #endif
-                    name_node = MakeNode (N_id);
-                    name_node->info.ids = MakeIds (vars->id, NULL, ST_regular);
-                    name_node->info.ids->node = vars->node;
+                    name_node = MakeId2 (DupOneIds (vars, NULL));
+                    ID_VARDEC (name_node) = IDS_VARDEC (vars);
                     dim_node = MakeNum (vars->node->info.types->shpseg->shp[0]);
                     dim_node2 = MakeNum (VINFO_DIM (vinfo));
                     CREATE_3_ARY_ICM (newassign, "ND_KS_VECT2OFFSET",
@@ -1055,11 +1051,6 @@ IdxId (node *arg_node, node *arg_info)
  *                  is not done, but generated as syntax-tree!!!
  *                  WARNING!  this penetrates the flatten-consistency!!
  *  global vars   : ive_expr
- *  internal funs :
- *  external funs : MakeNode
- *  macros        :
- *
- *  remarks       :
  *
  */
 
@@ -1109,12 +1100,6 @@ IdxArray (node *arg_node, node *arg_info)
  *  description   : if shape == NULL nothing has to be done; otherwise
  *                  the index of the vector N_array in
  *                  the unrolling of an array of shape is calculated;
- *  global vars   :
- *  internal funs :
- *  external funs : MakeNode
- *  macros        :
- *
- *  remarks       :
  *
  */
 
@@ -1260,7 +1245,7 @@ IdxGenerator (node *arg_node, node *arg_info)
                 DBUG_ASSERT (((colvinfo != NULL) && (VINFO_VARDEC (colvinfo) != NULL)),
                              "missing vardec for IDX variable!");
                 ID_VARDEC (newid) = VINFO_VARDEC (colvinfo);
-                arrayid = MakeId (LET_NAME (arg_info), NULL, ST_regular);
+                arrayid = MakeId (StringCopy (LET_NAME (arg_info)), NULL, ST_regular);
                 /*
                  * The backref of the arrayid is set wrongly to the actual
                  * integer index-variable. This is done on purpose for
@@ -1276,7 +1261,7 @@ IdxGenerator (node *arg_node, node *arg_info)
                  * ND_KS_VECT2OFFSET( <var-name>, <dim of var>, <dim of array>,
                  * shape_elems)
                  */
-                name_node = MakeId (GEN_ID (arg_node), NULL, ST_regular);
+                name_node = MakeId (StringCopy (GEN_ID (arg_node)), NULL, ST_regular);
                 ID_VARDEC (name_node) = vardec;
                 dim_node = MakeNum (VARDEC_SHAPE (vardec, 0));
                 dim_node2 = MakeNum (VINFO_DIM (vinfo));
