@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/03/21 13:09:35  jhs
+ * Comments.
+ *
  * Revision 1.8  2000/03/02 13:03:55  jhs
  * Fixed some minor bugs.
  *
@@ -59,6 +62,15 @@
  *   Call this function to run mini-phase schedule-init.
  *   Expects an N_fundef as arg_node!
  *
+ *   Traverses *only* the function handed over via arg_node with dfa_tab,
+ *   will not traverse FUNDEF_NEXT( arg_node).
+ *
+ *   This routine ignores (returns without changes):
+ *   - functions f with no body (FUNDEF_BODY( f) == NULL)
+ *   - functions f with FUNDEF_STATUS( f) = ST_foldfun
+ *   - repfuns
+ *     functions f with FUNDEF_ATTRIB( f) = ST_call_rep
+ *
  ******************************************************************************/
 node *
 ScheduleInit (node *arg_node, node *arg_info)
@@ -68,40 +80,42 @@ ScheduleInit (node *arg_node, node *arg_info)
     int old_innerwls;
 
     DBUG_ENTER ("ScheduleInit");
+    DBUG_PRINT ("SCHIN", ("begin"));
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
                  "ScheduleInit expects a N_fundef as arg_node");
 
-    DBUG_PRINT ("SCHIN", ("entering ScheduleInit"));
+    if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)
+        && (FUNDEF_ATTRIB (arg_node) != ST_call_rep)) {
+        old_tab = act_tab;
+        act_tab = schin_tab;
 
-    old_tab = act_tab;
-    act_tab = schin_tab;
+        /* pushing arg_info information */
+        old_scheduling = INFO_SCHIN_SCHEDULING (arg_info);
+        old_innerwls = INFO_SCHIN_INNERWLS (arg_info);
+        INFO_SCHIN_SCHEDULING (arg_info) = NULL;
+        INFO_SCHIN_INNERWLS (arg_info) = FALSE;
 
-    /* pushing arg_info information */
-    old_scheduling = INFO_SCHIN_SCHEDULING (arg_info);
-    old_innerwls = INFO_SCHIN_INNERWLS (arg_info);
-    INFO_SCHIN_SCHEDULING (arg_info) = NULL;
-    INFO_SCHIN_INNERWLS (arg_info) = FALSE;
+        DBUG_PRINT ("SCHIN", ("trav into fundef"));
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        DBUG_PRINT ("SCHIN", ("trav from fundef"));
 
-    DBUG_PRINT ("SCHIN", ("trav into fundef"));
-    FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    DBUG_PRINT ("SCHIN", ("trav from fundef"));
+        /* poping arg_info_information */
+        INFO_SCHIN_SCHEDULING (arg_info) = old_scheduling;
+        INFO_SCHIN_INNERWLS (arg_info) = old_innerwls;
 
-    /* poping arg_info_information */
-    INFO_SCHIN_SCHEDULING (arg_info) = old_scheduling;
-    INFO_SCHIN_INNERWLS (arg_info) = old_innerwls;
+        act_tab = old_tab;
+    }
 
-    act_tab = old_tab;
-
-    DBUG_PRINT ("SCHIN", ("leaving ScheduleInit"));
-
+    DBUG_PRINT ("SCHIN", ("end"));
     DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
  *
  * function:
- *   static int WithLoopIsWorthConcurrentExecution(node *withloop, ids *let_var)
+ *   static int WithLoopIsWorthConcurrentExecution( node *withloop,
+ *                                                  ids *let_var)
  *
  * description:
  *   This function decides whether a with-loop is actually worth to be executed
@@ -244,7 +258,8 @@ InferSchedulingConstSegment (node *wlseg, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static SCHsched_t InferSchedulingVarSegment(node *wlsegvar, node *arg_info)
+ *   static SCHsched_t InferSchedulingVarSegment( node *wlsegvar,
+ *                                                node *arg_info)
  *
  * description:
  *   This function defines the inference strategy for the scheduling of
@@ -315,8 +330,12 @@ SCHINassign (node *arg_node, node *arg_info)
         } else {
             /* rhs is not a with: not of interest */
         }
+    } else if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_cond) {
+        DBUG_PRINT ("SCHIN", ("trav into cond"));
+        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        DBUG_PRINT ("SCHIN", ("trav from cond"));
     } else {
-        /* assignment is not a let: not of interest */
+        /* assignment is not let or if : not of interest */
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/03/21 13:09:23  jhs
+ * Comments.
+ *
  * Revision 1.4  2000/03/15 15:49:09  dkr
  * fixed some bugs:
  *   old_attrib has type statustype now
@@ -49,8 +52,20 @@
 
 #include "mtfuns_init.h"
 
-/* #### */
-/* #### ignore functions to be ignored within here!!!! */
+/******************************************************************************
+ *
+ * function:
+ *   node *MtfunsInit( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Traverses *only* the function handed over via arg_node with dfa_tab,
+ *   will not traverse FUNDEF_NEXT( arg_node).
+ *
+ *   This routine ignores (returns without changes):
+ *   - all functions that are not the main function!!!
+ *     Then all functions could be modified.
+ *
+ ******************************************************************************/
 node *
 MtfunsInit (node *arg_node, node *arg_info)
 {
@@ -58,6 +73,9 @@ MtfunsInit (node *arg_node, node *arg_info)
     statustype old_attrib;
 
     DBUG_ENTER ("MtfunsInit");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
+                 "MtfunsInit expects a N_fundef as arg_node");
 
     /*
      *  This traversal starts from function main only!!!
