@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.155  2004/11/25 21:03:34  skt
+ * some parameter change
+ *
  * Revision 3.154  2004/11/25 20:56:01  ktr
  * added TCmakeIdCopyString, TCmakeIdCopyStringNt
  *
@@ -832,7 +835,6 @@ extern node *TCadjustAvisData (node *new_vardec, node *fundef);
 #define ARG_TDEF(n) (TYPES_TDEF (ARG_TYPE (n)))
 
 extern int TCcountArgs (node *args);
-extern int TCcmpDomain (node *args1, node *args2);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1495,8 +1497,8 @@ extern node *TCmakeVinfoDollar (node *next);
 
 #define ID_DECL(n) (AVIS_DECL (ID_AVIS (n)))
 
-extern node *TCmakeIdCopyString (char *str);
-extern node *TCmakeIdCopyStringNt (char *str, types *type);
+extern node *TCmakeIdCopyString (const char *str);
+extern node *TCmakeIdCopyStringNt (const char *str, types *type);
 
 extern node *TCmakeIdFromIds (node *idss);
 
