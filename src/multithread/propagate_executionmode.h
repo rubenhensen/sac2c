@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/08/18 13:24:31  skt
+ * switch to mtexecmode_t done
+ *
  * Revision 1.3  2004/08/05 13:50:18  skt
  * welcome to the new INFO structure
  *
@@ -40,14 +43,14 @@ extern node *PEMwith2 (node *arg_node, info *arg_info);
 
 void UpdateExecmodes (node *assign, info *arg_info);
 
-void UpdateFundefExecmode (node *fundef, int execmode);
+void UpdateFundefExecmode (node *fundef, mtexecmode_t execmode);
 
-void UpdateCondExecmode (node *condassign, int execmode);
+void UpdateCondExecmode (node *condassign, mtexecmode_t execmode);
 
-void UpdateWithExecmode (node *withloop_assign, int execmode);
+void UpdateWithExecmode (node *withloop_assign, mtexecmode_t execmode);
 
 #if PEM_DEBUG
-char *DecodeExecmode (int execmode);
+char *DecodeExecmode (execmode_t execmode);
 #endif
 
 #endif /* PROPAGATE_EXECUTIONMODE_H */

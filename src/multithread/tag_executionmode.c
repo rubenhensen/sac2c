@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2004/08/18 13:24:31  skt
+ * switch to mtexecmode_t done
+ *
  * Revision 1.10  2004/08/06 11:14:54  skt
  * DecodeExecmode deleted - it had been moved into multithread.[ch]
  *
@@ -77,7 +80,7 @@
  */
 struct INFO {
     ids *lefthandside;
-    int executionmode;
+    mtexecmode_t executionmode;
     int withdeep;
     int traversalmode;
 };
@@ -86,9 +89,10 @@ struct INFO {
  *
  *   node*      ORIGLHS    (left-hand-side of the assignemt, before F_fill was
  *                         added / args 2..n of fill())
- *   int        EXECMODE  (the current execution mode)
- *   int        WITHDEEP  (the current with-loop-deepness)
- *   int        TRAVMODE  (the current traversalmode MUSTEX, MUSTST or COULDMT)
+ *   mtexecmode_t EXECMODE  (the current execution mode)
+ *   int          WITHDEEP  (the current with-loop-deepness)
+ *   int          TRAVMODE  (the current traversalmode MUSTEX, MUSTST or
+ *                           COULDMT)
  */
 #define INFO_TEM_LETLHS(n) (n->lefthandside)
 #define INFO_TEM_EXECMODE(n) (n->executionmode)

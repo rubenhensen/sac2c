@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.13  2004/08/18 13:24:31  skt
+ * switch to mtexecmode_t done
+ *
  * Revision 1.12  2004/08/18 12:55:33  skt
  * added case MUTH_ANY into CRECEInsertCell
  * changed int into mtexecmode_t at executionmodes
@@ -163,7 +166,7 @@ node *
 CRECEblock (node *arg_node, info *arg_info)
 {
     int old_cellid;
-    int old_execmode;
+    mtexecmode_t old_execmode;
     DBUG_ENTER ("CRECEblock");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_block), "arg_node is not a N_block");
 

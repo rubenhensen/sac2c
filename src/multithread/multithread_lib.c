@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/08/18 13:24:31  skt
+ * switch to mtexecmode_t done
+ *
  * Revision 3.8  2004/08/05 17:42:19  skt
  * TagAllocs added
  *
@@ -478,7 +481,7 @@ MUTHGetLastExpression (node *expression)
 
 /** <!--********************************************************************-->
  *
- * @fn void TagAllocs(node *withloop, int executionmode)
+ * @fn void TagAllocs(node *withloop, mtexecmode_t executionmode)
  *
  *   @brief This function tags the executionmode of the allocation-assignments
  *          belonging to the with-loop, i.e. the allocations of the withop an
@@ -504,7 +507,7 @@ MUTHGetLastExpression (node *expression)
  *
  *****************************************************************************/
 void
-TagAllocs (node *withloop, int executionmode)
+TagAllocs (node *withloop, mtexecmode_t executionmode)
 {
     node *assign;
     node *wlops;
@@ -512,9 +515,6 @@ TagAllocs (node *withloop, int executionmode)
     DBUG_ENTER ("TagAllocs");
     DBUG_ASSERT ((NODE_TYPE (withloop) == N_Nwith2),
                  "TagAllocs expects a N_Nwith2 as #1 argument");
-    DBUG_ASSERT (((executionmode == MUTH_ANY) || (executionmode == MUTH_EXCLUSIVE)
-                  || (executionmode == MUTH_SINGLE) || (executionmode == MUTH_MULTI)),
-                 "TagAllocs expects a valid executionmode as #2 argument");
 
     /* work on the withop */
     wlops = NWITH2_WITHOP (withloop);
@@ -548,7 +548,7 @@ TagAllocs (node *withloop, int executionmode)
 
 /** <!--********************************************************************-->
  *
- * @fn node *RenewExecutionmode(node *assign, int executionmode)
+ * @fn node *RenewExecutionmode(node *assign, mtexecmode_t executionmode)
  *
  *   @brief renew the executionmode of the assignment
  *
@@ -558,14 +558,11 @@ TagAllocs (node *withloop, int executionmode)
  *
  *****************************************************************************/
 node *
-RenewExecutionmode (node *assign, int executionmode)
+RenewExecutionmode (node *assign, mtexecmode_t executionmode)
 {
     DBUG_ENTER ("RenewExecutionmode");
     DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
                  "RenewExecutionmode expects a N_assign as #1 arg.");
-    DBUG_ASSERT (((executionmode == MUTH_ANY) || (executionmode == MUTH_EXCLUSIVE)
-                  || (executionmode == MUTH_SINGLE) || (executionmode == MUTH_MULTI)),
-                 "RenewExecutionmode expects a valid executionmode as #2 arg.");
 
     /* change the executionmode, if it's no MUTH_EXCLUSIVE already */
     if (ASSIGN_EXECMODE (assign) != MUTH_EXCLUSIVE) {

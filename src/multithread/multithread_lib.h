@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/08/18 13:24:31  skt
+ * switch to mtexecmode_t done
+ *
  * Revision 3.6  2004/08/05 17:42:19  skt
  * TagAllocs added
  *
@@ -69,7 +72,7 @@ extern node *MUTHInsertEX (node *assign, node *fundef);
 extern node *MUTHInsertST (node *assign, node *fundef);
 extern node *MUTHInsertMT (node *assign, node *fundef);
 extern node *MUTHGetLastExpression (node *expression);
-void TagAllocs (node *withloop, int executionmode);
-node *RenewExecutionmode (node *assign, int executionmode);
+void TagAllocs (node *withloop, mtexecmode_t executionmode);
+node *RenewExecutionmode (node *assign, mtexecmode_t executionmode);
 
 #endif /* _SAC_CONCURRENT_LIB_H_ */

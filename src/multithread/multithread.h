@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/08/18 13:24:31  skt
+ * switch to mtexecmode_t done
+ *
  * Revision 3.11  2004/08/16 18:15:26  skt
  * *** empty log message ***
  *
@@ -61,10 +64,6 @@
 #define MULTITHREAD_H
 
 /* definition of the execution modes */
-#define MUTH_ANY 0
-#define MUTH_EXCLUSIVE 1
-#define MUTH_SINGLE 2
-#define MUTH_MULTI 3
 
 #define MUTH_SPLITPHASE_ENABLED TRUE
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2004/08/18 13:24:31  skt
+ * switch to mtexecmode_t done
+ *
  * Revision 1.8  2004/08/06 17:20:24  skt
  * some adaptions for creating the dataflowgraph
  *
@@ -79,8 +82,7 @@ struct INFO {
  *                             somewhere in the current traversal)
  *   int        FIRSTTRAV     (holds the information, wheter this is the first
  *                             traversal (=>1) or not (=>0)
- *   int        FUNEXECMODE   (holds the current executionmode of the function)
- *   node*      ASSIGN        (the current assignment, the traversal.mechanism
+ *   node*      MYASSIGN      (the current assignment, the traversal.mechanism
  *                             is in)
  */
 #define INFO_PEM_ANYCHANGE(n) (n->changeflag)
@@ -202,7 +204,7 @@ PEMfundef (node *arg_node, info *arg_info)
     fprintf (stdout, "current function:\n");
     PrintNode (arg_node);
     fprintf (stdout, "Executionmode was %s.\n",
-             DecodeExecmode (FUNDEF_EXECMODE (arg_node)));
+             MUTHDecodeExecmode (FUNDEF_EXECMODE (arg_node)));
 #endif
     if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into function-body"));
@@ -214,7 +216,7 @@ PEMfundef (node *arg_node, info *arg_info)
 
 #if PEM_DEBUG
     fprintf (stdout, "Executionmode is %s.\n",
-             DecodeExecmode (FUNDEF_EXECMODE (arg_node)));
+             MUTHDecodeExecmode (FUNDEF_EXECMODE (arg_node)));
 #endif
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -241,7 +243,7 @@ node *
 PEMassign (node *arg_node, info *arg_info)
 {
     node *old_assign;
-    int my_old_execmode;
+    mtexecmode_t my_old_execmode;
     DBUG_ENTER ("PEMassign");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign),
                  "PEMassign expects a N_assign as arg_node");
@@ -421,7 +423,7 @@ UpdateExecmodes (node *assign, info *arg_info)
 }
 
 void
-UpdateFundefExecmode (node *fundef, int execmode)
+UpdateFundefExecmode (node *fundef, mtexecmode_t execmode)
 {
     DBUG_ENTER ("UpdateFundefExecmode");
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
@@ -475,7 +477,7 @@ UpdateFundefExecmode (node *fundef, int execmode)
 }
 
 void
-UpdateCondExecmode (node *condassign, int execmode)
+UpdateCondExecmode (node *condassign, mtexecmode_t execmode)
 {
     DBUG_ENTER ("UpdateCondExecmode");
 
@@ -532,7 +534,7 @@ UpdateCondExecmode (node *condassign, int execmode)
 }
 
 void
-UpdateWithExecmode (node *withloop_assign, int execmode)
+UpdateWithExecmode (node *withloop_assign, mtexecmode_t execmode)
 {
     DBUG_ENTER ("UpdateWithExecmode");
     if (withloop_assign != NULL) {
@@ -549,7 +551,7 @@ UpdateWithExecmode (node *withloop_assign, int execmode)
 #if PEM_DEBUG
 /** <!--********************************************************************-->
  *
- * @fn char *DecodeExecmode(int execmode)
+ * @fn char *DecodeExecmode(mtexecmode_t execmode)
  *
  *   @brief A small helper function to make debug-output more readable
  *          !It must be adapted if the names of the modes change!
@@ -559,7 +561,7 @@ UpdateWithExecmode (node *withloop_assign, int execmode)
  *
  *****************************************************************************/
 char *
-DecodeExecmode (int execmode)
+DecodeExecmode (mtexecmode_t execmode)
 {
     switch (execmode) {
     case MUTH_ANY:
