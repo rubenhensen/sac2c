@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.120  2004/08/04 10:29:57  ktr
+ * - MakeGetDimIcm now accepts N_id nodes, too
+ * - Descriptors for external function are built with rc = 1 (EMM)
+ * - Subarrays do have a descriptor now (needed for shape checks) (EMM)
+ *
  * Revision 3.119  2004/08/02 16:19:50  ktr
  * adjusted MakeSetShapeIcm to modified with-loop allocation in alloc.c
  *
@@ -1416,6 +1421,10 @@ MakeGetDimIcm (node *arg_node)
     switch (NODE_TYPE (arg_node)) {
     case N_num:
         get_dim = DupTree (arg_node);
+        break;
+
+    case N_id:
+        get_dim = MakeIcm1 ("ND_A_DIM", DupId_NT (arg_node));
         break;
 
     case N_prf:
@@ -3447,7 +3456,7 @@ COMPApIds (node *ap, info *arg_info)
                 if (!ATG_has_desc[tag]) {
                     /* function uses no descriptor at all */
                     ret_node = MakeAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                 IDS_REFCNT (let_ids),
+                                                 emm ? 1 : IDS_REFCNT (let_ids),
                                                  /* dim should be statically known: */
                                                  NULL, ret_node);
                 }
@@ -6618,6 +6627,70 @@ COMPWith2 (node *arg_node, info *arg_info)
         icm_name_end = "WL_END";
     }
 
+    if (emm) {
+        char *sub_name;
+        node *sub_vardec;
+        node *get_dim;
+        node *set_shape;
+        node *icm_args;
+        int i;
+
+        if ((NWITH2_TYPE (arg_node) == WO_genarray)
+            || (NWITH2_TYPE (arg_node) == WO_modarray)) {
+
+            sub_name = StringConcat (IDS_NAME (wlids), "_sub");
+            sub_vardec = FUNDEF_VARDEC (INFO_COMP_FUNDEF (arg_info));
+            while ((sub_vardec != NULL)
+                   && (strcmp (sub_name, VARDEC_NAME (sub_vardec)))) {
+                sub_vardec = VARDEC_NEXT (sub_vardec);
+            }
+            DBUG_ASSERT (sub_vardec != NULL, "No vardec for subarray found!");
+            Free (sub_name);
+
+            /*
+             * Calculate dimension of subarray
+             *
+             * dim( A_sub) = dim( A) - size( iv)
+             */
+            get_dim = MakeIcm3 ("ND_BINOP", MakeId_Copy (prf_symbol[F_sub_SxS]),
+                                MakeIcm1 ("ND_A_DIM", DupIds_Id_NT (wlids)),
+                                MakeNum (NWITH2_DIMS (arg_node)));
+
+            /*
+             * Calcualte shape of subarray
+             *
+             * shape( A_sub) = shape( sel( iv, A))
+             */
+            icm_args = NULL;
+            for (i = 0; i < NWITH2_DIMS (arg_node); i++) {
+                icm_args = MakeExprs (MakeNum (0), icm_args);
+            }
+            icm_args
+              = MakeTypeArgs (VARDEC_NAME (sub_vardec), VARDEC_TYPE (sub_vardec), FALSE,
+                              TRUE, FALSE,
+                              MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids), FALSE,
+                                            TRUE, FALSE,
+                                            MakeExprs (MakeNum (NWITH2_DIMS (arg_node)),
+                                                       icm_args)));
+
+            set_shape = MakeIcm1 ("ND_PRF_SEL__SHAPE_arr", icm_args);
+
+            /*
+             * Allocate descriptor of subarray
+             */
+            alloc_icms
+              = MakeAllocDescIcm (VARDEC_NAME (sub_vardec), VARDEC_TYPE (sub_vardec), 1,
+                                  get_dim, MakeAssign (set_shape, alloc_icms));
+
+            /*
+             * Free descriptor of subarray
+             */
+            free_icms = MakeAssignIcm1 ("ND_FREE__DESC",
+                                        MakeId_Copy_NT (VARDEC_NAME (sub_vardec),
+                                                        VARDEC_TYPE (sub_vardec)),
+                                        free_icms);
+        }
+    }
     switch (NWITH2_TYPE (arg_node)) {
     case WO_genarray:
         profile_name = "genarray";
