@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2002/08/07 13:49:37  dkr
+ * COMP2With added
+ *
  * Revision 3.84  2002/08/07 12:32:30  dkr
  * FltnNwithid added
  *
@@ -1838,7 +1841,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSADCRNwith, SSACSENwith, CMPTTravSons, TravSons, TravSons, SSALIRNwith, TravSons,
        TravSons, SSALURNwith, SSAWLTNwith, SSAWLINwith, SSAWLFNwith,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, WLSNwith, TravSons, TravSons,
+       TravSons, COMP2With, TravSons, TravSons, TravSons, WLSNwith, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 

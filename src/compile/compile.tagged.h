@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2002/08/07 13:49:46  dkr
+ * COMP2With added
+ *
  * Revision 1.5  2002/06/02 21:39:02  dkr
  * some more TAGGED_ARRAYS stuff added
  *
@@ -48,6 +51,7 @@ extern node *COMP2Cast (node *arg_node, node *arg_info);
 extern node *COMP2Spmd (node *arg_node, node *arg_info);
 extern node *COMP2Sync (node *arg_node, node *arg_info);
 
+extern node *COMP2With (node *arg_node, node *arg_info);
 extern node *COMP2With2 (node *arg_node, node *arg_info);
 extern node *COMP2WLsegx (node *arg_node, node *arg_info);
 extern node *COMP2WLxblock (node *arg_node, node *arg_info);
