@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.101  1995/11/01 08:01:44  cg
- * added obj_tab.
+ * Revision 1.102  1995/11/01 16:23:45  cg
+ * added more functions in obj_tab
  *
+;; Revision 1.101  1995/11/01  08:01:44  cg
+;; added obj_tab.
+;;
 ;; Revision 1.100  1995/10/30  10:20:48  cg
 ;; final version of sib_tab integrated.
 ;;
@@ -348,7 +351,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_id, "N_id", DummyFun, FltnId, PrintId, DummyFun, OPTid, DummyFun, DummyFun,
        FreeInfoId, CFid, RCid, CompId, DummyFun, DupIIds, DummyFun, UNRid, DummyFun,
-       IdxId, UNSid, DummyFun, DummyFun, PrintId, DummyFun, DummyFun, DummyFun, ANAid,
+       IdxId, UNSid, DummyFun, DummyFun, PrintId, OBJid, DummyFun, DummyFun, ANAid,
        DummyFun, DummyFun, DummyFun),
   NIF (N_float, "N_float", DummyFun, DummyFun, PrintFloat, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun, DupFloat, DummyFun,
@@ -427,8 +430,8 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_let, "N_let", DummyFun, FltnLet, PrintLet, TClet, OPTlet, DummyFun, DummyFun,
        FreeInfoIds, CFlet, RClet, CompLet, DummyFun, DupIIds, DummyFun, UNRlet, DummyFun,
-       IdxLet, UNSlet, DummyFun, DummyFun, PrintLet, DummyFun, DummyFun, DummyFun,
-       DummyFun, DummyFun, DummyFun, DummyFun),
+       IdxLet, UNSlet, DummyFun, DummyFun, PrintLet, OBJlet, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun, DummyFun),
   NIF (N_addon, "N_addon", DummyFun, DummyFun, PrintLeton, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeInfoIds, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
@@ -476,8 +479,8 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_ap, "N_ap", DummyFun, FltnAp, PrintAp, DummyFun, DummyFun, DummyFun, DummyFun,
        FreeInfoId, CFap, DummyFun, CompAp, DummyFun, DupFun, DummyFun, DummyFun, DummyFun,
-       DummyFun, DummyFun, DummyFun, DummyFun, PrintAp, DummyFun, DummyFun, DummyFun,
-       ANAap, DummyFun, DummyFun, DummyFun),
+       DummyFun, DummyFun, DummyFun, DummyFun, PrintAp, OBJap, DummyFun, DummyFun, ANAap,
+       DummyFun, DummyFun, DummyFun),
   NIF (N_cast, "N_cast", DummyFun, DummyFun, PrintCast, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeInfoType, CFcast, DummyFun, CompCast, DummyFun, DupTypes, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, PrintCast, DummyFun,
