@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/26 19:18:30  skt
+ * renamed RSPmodul into RSPmodule
+ *
  * Revision 1.5  2004/11/25 18:12:34  sah
  * added proper initialisation of REFCOUNTED and LINKSIGN for
  * args and rets
@@ -422,9 +425,9 @@ RSPfundef (node *arg_node, info *arg_info)
 }
 
 node *
-RSPmodul (node *arg_node, info *arg_info)
+RSPmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSPModul");
+    DBUG_ENTER ("RSPModule");
 
     INFO_RSP_MODULE (arg_info) = arg_node;
 
