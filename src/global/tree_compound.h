@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.77  1999/01/15 15:18:55  cg
+ * added compound macro for type access from ids structures and
+ * N_id nodes.
+ *
  * Revision 1.76  1998/07/16 13:49:30  sbs
  * LET_TYPE inserted
  *
@@ -406,9 +410,11 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
  ***  IDS :
  ***/
 
-#define IDS_VARNO(n) VARDEC_VARNO (IDS_VARDEC (n))
-#define IDS_TYPE(n) VARDEC_TYPE (IDS_VARDEC (n))
-#define IDS_SHAPE(n, x) SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (IDS_VARDEC (n))), x)
+#define IDS_VARNO(n) VARDEC_OR_ARG_VARNO (IDS_VARDEC (n))
+#define IDS_TYPE(n) VARDEC_OR_ARG_TYPE (IDS_VARDEC (n))
+#define IDS_DIM(n) VARDEC_OR_ARG_DIM (IDS_VARDEC (n))
+#define IDS_SHAPE(n, x)                                                                  \
+    SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (IDS_VARDEC (n))), x)
 
 /*
  *
@@ -684,6 +690,8 @@ extern nodelist *CopyNodelist (nodelist *nl);
 #define VARDEC_OR_ARG_NAME(n) ((NODE_TYPE (n) == N_arg) ? ARG_NAME (n) : VARDEC_NAME (n))
 
 #define VARDEC_OR_ARG_TYPE(n) ((NODE_TYPE (n) == N_arg) ? ARG_TYPE (n) : VARDEC_TYPE (n))
+
+#define VARDEC_OR_ARG_DIM(n) ((NODE_TYPE (n) == N_arg) ? ARG_DIM (n) : VARDEC_DIM (n))
 
 #define VARDEC_OR_ARG_REFCNT(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_REFCNT (n) : VARDEC_REFCNT (n))
@@ -1541,9 +1549,10 @@ extern int IsConstantArray (node *array, nodetype type);
  *  compound access macros
  */
 
-#define ID_VARNO(n) VARDEC_VARNO (ID_VARDEC (n))
-#define ID_TYPE(n) VARDEC_TYPE (ID_VARDEC (n))
-#define ID_SHAPE(n, x) SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (ID_VARDEC (n))), x)
+#define ID_VARNO(n) VARDEC_OR_ARG_VARNO (ID_VARDEC (n))
+#define ID_TYPE(n) VARDEC_OR_ARG_TYPE (ID_VARDEC (n))
+#define ID_DIM(n) VARDEC_OR_ARG_DIM (ID_VARDEC (n))
+#define ID_SHAPE(n, x) SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (ID_VARDEC (n))), x)
 
 /*--------------------------------------------------------------------------*/
 
