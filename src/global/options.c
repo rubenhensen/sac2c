@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/06/11 12:54:46  cg
+ * Bug fixed in option -cshost.
+ * Added options -csfile and csdir.
+ *
  * Revision 2.10  1999/06/10 09:49:03  cg
  * Bug fixed in implementation of option -cshost.
  *
@@ -168,6 +172,10 @@ AnalyseCommandline (int argc, char *argv[])
     });
 
     ARGS_OPTION ("cshost", strncpy (cachesim_host, ARG, MAX_FILE_NAME - 1));
+
+    ARGS_OPTION ("csfile", strncpy (cachesim_file, ARG, MAX_FILE_NAME - 1));
+
+    ARGS_OPTION ("csdir", strncpy (cachesim_dir, ARG, MAX_FILE_NAME - 1));
 
     ARGS_FLAG ("cs", cachesim |= CACHESIM_YES);
 
