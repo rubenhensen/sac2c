@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2003/03/12 17:30:02  dkr
+ * some new break specifiers for -b15 added
+ *
  * Revision 3.37  2003/03/09 19:16:06  dkr
  * -tracea added
  *
@@ -271,10 +274,11 @@ usage ()
     PRINT_BREAK_SPEC (PH_sacopt, "dfr", "Stop after initial dead function removal.");
     PRINT_BREAK_SPEC (PH_sacopt, "w2d",
                       "Stop after transf. of while into do loops (ssa only).");
-    PRINT_BREAK_SPEC (PH_sacopt, "l2f",
-                      "Stop after transf. into fun representation (ssa only).");
+    PRINT_BREAK_SPEC (PH_typecheck, "l2f",
+                      "Stop after converting loops and conditionals into");
+    CONT_BREAK_SPEC ("functions (ssa only).");
     PRINT_BREAK_SPEC (PH_sacopt, "ssa",
-                      "Stop after initial ssa transformation (ssa only).");
+                      "Stop after initial SSA transformation (ssa only).");
     PRINT_BREAK_SPEC (PH_sacopt, "ae", "Stop after array elimination.");
     PRINT_BREAK_SPEC (PH_sacopt, "dcr", "Stop after dead code removal.");
 
@@ -310,9 +314,9 @@ usage ()
 
     PRINT_BREAK_SPEC (PH_sacopt, "funopt", "Stop after fundef optimization cycle.");
     PRINT_BREAK_SPEC (PH_sacopt, "ussa",
-                      "Stop after undo ssa transformation (ssa only).");
+                      "Stop after undo SSA transformation (ssa only).");
     PRINT_BREAK_SPEC (PH_sacopt, "f2l",
-                      "Stop after transf. into lac representation (ssa only).");
+                      "Stop after transf. into LaC representation (ssa only).");
     PRINT_BREAK_SPEC (PH_sacopt, "wlaa", "Stop after with loop array access inference.");
     PRINT_BREAK_SPEC (PH_sacopt, "ap", "Stop after array padding.");
     PRINT_BREAK_SPEC (PH_sacopt, "tsi", "Stop after tile size inference.");
@@ -321,6 +325,11 @@ usage ()
 
     printf ("\n");
 
+    PRINT_BREAK_SPEC (PH_wltrans, "l2f",
+                      "Stop after converting loops and conditionals into");
+    CONT_BREAK_SPEC ("functions.");
+    PRINT_BREAK_SPEC (PH_wltrans, "cha", "Stop after checking avis consistency.");
+    PRINT_BREAK_SPEC (PH_wltrans, "ssa", "Stop after converting into SSA form.");
     PRINT_BREAK_SPEC (PH_wltrans, "conv", "Stop after converting.");
     PRINT_BREAK_SPEC (PH_wltrans, "cubes", "Stop after cube-building.");
     PRINT_BREAK_SPEC (PH_wltrans, "fill1", "Stop after gap filling (grids only).");
@@ -333,6 +342,9 @@ usage ()
     PRINT_BREAK_SPEC (PH_wltrans, "fit", "Stop after fitting.");
     PRINT_BREAK_SPEC (PH_wltrans, "norm", "Stop after normalization.");
     PRINT_BREAK_SPEC (PH_wltrans, "fill2", "Stop after gap filling (all nodes).");
+    PRINT_BREAK_SPEC (PH_wltrans, "ussa", "Stop after undo SSA transformation.");
+    PRINT_BREAK_SPEC (PH_wltrans, "f2l",
+                      "Stop after transforming into LaC representation.");
 
     printf ("\n");
     printf ("    with \"-mt\"\n");
