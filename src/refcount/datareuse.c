@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/15 12:28:16  ktr
+ * insignificant change
+ *
  * Revision 1.2  2004/11/09 19:39:37  ktr
  * ongoing implementation
  *
@@ -478,7 +481,7 @@ EMDRprf (node *arg_node, info *arg_info)
     switch (PRF_PRF (arg_node)) {
     case F_reuse:
         /*
-         * b = reuse(a);
+         * b = reuse( a);
          *
          * Insert (b, a) into REUSELUT
          */
