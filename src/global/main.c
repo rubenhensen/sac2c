@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.71  1995/11/01 09:41:46  cg
+ * Revision 1.72  1995/11/01 16:23:05  cg
+ * Information about implicit types will now always be retrieved.
+ *
+ * Revision 1.71  1995/11/01  09:41:46  cg
  * added new compiler phase for object handling and
  * new break parameter -be to stop right after it.
  *
@@ -679,11 +682,9 @@ MAIN
                         compiler_phase++;
 
                         if (!breakcheckdec) {
-                            if (MODUL_IMPORTS (syntax_tree) != NULL) {
-                                NOTE (("\nResolving implicit types: ..."));
-                                syntax_tree = RetrieveImplicitTypeInfo (syntax_tree);
-                                ABORT_ON_ERROR;
-                            }
+                            NOTE (("\nResolving implicit types: ..."));
+                            syntax_tree = RetrieveImplicitTypeInfo (syntax_tree);
+                            ABORT_ON_ERROR;
                             compiler_phase++;
 
                             if (!breakimpltype) {
@@ -746,6 +747,10 @@ MAIN
                 }
             }
         }
+    }
+
+    if (outfile == stdout) {
+        NOTE (("\n------------------------------------------------\n"));
     }
 
     Print (syntax_tree);
