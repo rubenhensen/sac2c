@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2001/06/13 13:09:24  ben
+ * WLCOMP_Tasksel added
+ *
  * Revision 3.23  2001/05/22 15:07:28  dkr
  * bug in WLCOMP_Scheduling() fixed:
  * SCHRemoveScheduling called with non-NULL argument only
@@ -894,6 +897,65 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
             WLSEGX_SCHEDULING (seg) = SCHMakeSchedulingByPragma (arg, line);
 
             seg = WLSEGX_NEXT (seg);
+            if (EXPRS_NEXT (parms) != NULL) {
+                parms = EXPRS_NEXT (parms);
+            }
+        }
+    }
+
+    DBUG_RETURN (segs);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *WLCOMP_Tasksel( node *segs, node *parms, node *cubes, int dims,
+ *                            int line)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, int line)
+{
+    node *arg;
+    node *seg = segs;
+
+    DBUG_ENTER ("WLCOMP_Tasksel");
+
+    if (gen_mt_code == GEN_MT_NONE) {
+        WARN (line, ("wlcomp-pragma function Tasksel() ignored"
+                     " because multi-threading is inactive"));
+    } else {
+        while (seg != NULL) {
+            if (parms == NULL) {
+                ABORT (line, ("Illegal argument in wlcomp-pragma found;"
+                              " Tasksel(): Missing Parameter"));
+            }
+
+            DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
+                         "illegal parameter of wlcomp-pragma found!");
+
+            arg = EXPRS_EXPR (parms);
+            if (NODE_TYPE (arg) != N_ap) {
+                ABORT (line, ("Illegal argument in wlcomp-pragma found;"
+                              " Tasksel(): Argument is not an application"));
+            }
+
+            /*
+             * set TaskSel
+             */
+
+            if (WLSEGX_TASKSEL (seg) != NULL) {
+                WLSEGX_TASKSEL (seg) = SCHRemoveTasksel (WLSEGX_TASKSEL (seg));
+            }
+
+            WLSEGX_TASKSEL (seg) = SCHMakeTaskselByPragma (arg, line);
+
+            seg = WLSEGX_NEXT (seg);
+
             if (EXPRS_NEXT (parms) != NULL) {
                 parms = EXPRS_NEXT (parms);
             }
