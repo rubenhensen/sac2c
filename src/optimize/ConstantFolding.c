@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.67  1998/06/19 13:19:52  srs
+ * added new case to ArrayPrf().
+ * Prf F_modarray now folds sequently defined arrays:
+ * modarray([1,2,3],[1],42) ==> [1,42,3]
+ *
  * Revision 1.66  1998/06/02 17:08:03  sbs
  * CF now eliminates F-reshape-calls
  * (short & dirty hack in ArrayPrf!)
@@ -275,6 +280,46 @@ typedef struct INSIDE_WL {
 } inside_wl;
 
 static inside_wl *inside_wl_root;
+
+/******************************************************************************
+ *
+ * function:
+ *   int CalculateArrayOffset(types *array, node* index)
+ *
+ * description:
+ *   calculates the data vector's element from an index vector.
+ *   The array shape has to be given as a TYPES-struct and the index has
+ *   to be a constant vector (N_array)
+ *
+ ******************************************************************************/
+
+int
+CalculateArrayOffset (types *array, node *index)
+{
+    int offset;
+    int i, n, m;
+
+    DBUG_ENTER ("CalculateArrayOffset");
+    DBUG_ASSERT (IsConstantArray (index, N_num), ("not a constant index vector"));
+    DBUG_ASSERT (1 == TYPES_DIM (ARRAY_TYPE (index)), ("wrong index vector dimension"));
+
+    n = TYPES_SHAPE (ARRAY_TYPE (index), 0); /* length of index vector */
+    m = TYPES_DIM (array);                   /* dimension of array */
+
+    index = ARRAY_AELEMS (index);
+    offset = NUM_VAL (EXPRS_EXPR (index));
+    index = EXPRS_NEXT (index);
+
+    for (i = 1; i < n; i++) {
+        offset = offset * TYPES_SHAPE (array, i) + NUM_VAL (EXPRS_EXPR (index));
+        index = EXPRS_NEXT (index);
+    }
+
+    for (i = n; i < m; i++)
+        offset *= TYPES_SHAPE (array, i);
+
+    DBUG_RETURN (offset);
+}
 
 /******************************************************************************
  *
@@ -2135,6 +2180,70 @@ ArrayPrf (node *arg_node, node *arg_info)
             arg_node = GenerateMasks (res_array, arg_info);
             cf_expr++;
         }
+    } break;
+
+    /* modarray(A,iv,val)
+       if - A is a reference to an N_array,
+          - iv is a reference to a constant index vector and
+          - val is a scalar or an N_array node,
+       we can create a new N_array node which is based on A but contains
+       val at position iv. */
+    case F_modarray: {
+        node *base_array, *vectorn, *valn, *newn, *tmpn;
+        types *base_array_type;
+        int offset;
+
+        base_array = arg[0];
+        vectorn = arg[1];
+        valn = arg[2];
+
+        if (N_array == NODE_TYPE (base_array))
+            base_array_type = ARRAY_TYPE (base_array);
+        else if (N_id == NODE_TYPE (base_array)) {
+            base_array_type = ID_TYPE (base_array);
+            MRD_GETDATA (base_array, ID_VARNO (base_array), INFO_VARNO);
+        }
+
+        if (N_id == NODE_TYPE (vectorn))
+            MRD_GETDATA (vectorn, ID_VARNO (vectorn), INFO_VARNO);
+        if (N_id == NODE_TYPE (valn))
+            MRD_GETDATA (valn, ID_VARNO (valn), INFO_VARNO);
+
+        if (base_array && vectorn && valn && N_array == NODE_TYPE (base_array)
+            && IsConstantArray (vectorn, N_num) &&
+            /* valn should be an N_array or a scalar value, not an id. */
+            (N_array == NODE_TYPE (valn) || N_id != NODE_TYPE (valn))) {
+            offset = CalculateArrayOffset (base_array_type, vectorn);
+
+            /* offset found, now change elements */
+            newn = DupTree (base_array, NULL);
+            tmpn = ARRAY_AELEMS (newn);
+            while (offset--) {
+                tmpn = EXPRS_NEXT (tmpn);
+                if (!tmpn)
+                    ABORT (NODE_LINE (arg_node), ("constant index vector of modarray() "
+                                                  "out of bounds"));
+            }
+
+            if (N_array == NODE_TYPE (valn)) {
+                valn = ARRAY_AELEMS (valn);
+                while (valn) {
+                    DBUG_ASSERT (tmpn, ("array data vector has wrong length"));
+                    FreeTree (EXPRS_EXPR (tmpn));
+                    EXPRS_EXPR (tmpn) = DupTree (EXPRS_EXPR (valn), NULL);
+                    valn = EXPRS_NEXT (valn);
+                    tmpn = EXPRS_NEXT (tmpn);
+                }
+            } else {
+                FreeTree (EXPRS_EXPR (tmpn));
+                EXPRS_EXPR (tmpn) = DupTree (valn, NULL);
+            }
+
+            /* replace F_modarray with newn */
+            FreeTree (arg_node);
+            arg_node = newn;
+        }
+
     } break;
 
     case F_take:
