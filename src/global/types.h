@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/02/22 12:55:08  dkr
+ * argtab_info.mac deactivated
+ *
  * Revision 3.10  2002/02/22 11:49:00  dkr
  * TYPES structure modified
  *
@@ -189,10 +192,12 @@ typedef enum {
 #include "status_info.mac"
 } statustype;
 
+#if 0
 typedef enum {
 #define SELECTelement(it_element) it_element
 #include "argtag_info.mac"
 } argtag_t;
+#endif
 
 typedef enum { DOLLAR, VECT, IDX } useflag;
 
