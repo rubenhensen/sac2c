@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2000/08/02 14:27:33  nmw
+ * PIW and PIH traversal functions moved to separate files
+ *
  * Revision 1.3  2000/07/24 15:01:48  nmw
  * PIWobjdef added
  *
@@ -16,16 +19,6 @@
 
 #include "tree.h"
 #include "globals.h"
-extern node *PIHmodul (node *arg_node, node *arg_info);
-extern node *PIHcwrapper (node *arg_node, node *arg_info);
-extern node *PIHfundef (node *arg_node, node *arg_info);
-extern node *PIHarg (node *arg_node, node *arg_info);
-
-extern node *PIWmodul (node *arg_node, node *arg_info);
-extern node *PIWcwrapper (node *arg_node, node *arg_info);
-extern node *PIWfundef (node *arg_node, node *arg_info);
-extern node *PIWarg (node *arg_node, node *arg_info);
-extern node *PIWobjdef (node *arg_node, node *arg_info);
-
 extern node *PrintInterface (node *syntax_tree);
+
 #endif /* _sac_print_interface_h */
