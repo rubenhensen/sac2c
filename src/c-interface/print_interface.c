@@ -1,9 +1,28 @@
 /*
  * $Log$
+ * Revision 1.8  2000/07/12 15:52:35  nmw
+ * add comment which libraries to link with
+ *
  * Revision 1.7  2000/07/12 10:09:08  nmw
  * RCS-header added
  *
+ * Revision 1.6  2000/07/12 09:24:46  nmw
+ * traversal of returntypes modified. now using TYPE_STATUS()
  *
+ * Revision 1.5  2000/07/07 15:34:56  nmw
+ * beautyfing of generated code
+ *
+ * Revision 1.4  2000/07/06 15:56:10  nmw
+ * debugging in generated cwrapper code
+ *
+ * Revision 1.3  2000/07/05 15:33:25  nmw
+ * filenames modified according to cccalls.c
+ *
+ * Revision 1.2  2000/07/05 12:54:30  nmw
+ * filenames for printed includes adjusted
+ *
+ * Revision 1.1  2000/07/05 11:39:33  nmw
+ * Initial revision
  *
  */
 
@@ -54,6 +73,7 @@ static node *PIHcwrapperPrototype (node *wrapper, node *arg_info);
 static node *PIWfundefSwitch (node *arg_node, node *arg_info);
 static node *PIWfundefCall (node *arg_node, node *arg_info);
 static node *PIWfundefRefcounting (node *arg_node, node *arg_info);
+static strings *PrintDepEntry (deps *depends, statustype stat, strings *done);
 
 /******************************************************************************
  *
@@ -69,6 +89,7 @@ node *
 PIHmodul (node *arg_node, node *arg_info)
 {
     FILE *old_outfile;
+    strings *done;
 
     DBUG_ENTER ("PIHmodul");
 
@@ -89,10 +110,13 @@ PIHmodul (node *arg_node, node *arg_info)
              " *\n"
              " * -I$SACBASE/runtime (for include of 'sac_cinterface.h')\n"
              " *\n"
-             " * when compiling your c code link simply with:\n"
-             " * ... -lsac -l%s\n"
-             " */\n\n",
+             " * when compiling your code add the following files to link with:\n"
+             " * -lsac\n"
+             " * -l%s\n",
              MODUL_NAME (arg_node), MODUL_NAME (arg_node));
+    done = PrintDepEntry (dependencies, ST_external, NULL);
+    done = PrintDepEntry (dependencies, ST_system, NULL);
+    fprintf (outfile, " *\n */\n\n");
 
     fprintf (outfile, "#include \"sac_cinterface.h\"\n\n");
 
@@ -851,6 +875,59 @@ TravTW (types *arg_type, node *arg_info)
     arg_type = PIWtypes (arg_type, arg_info);
 
     DBUG_RETURN (arg_type);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   types *TravTW(types *arg_type, node *arg_info)
+ *
+ * description:
+ *   similar implementation of trav mechanism as used for nodes
+ *   here used dor PIW
+ *
+ ******************************************************************************/
+
+strings *
+PrintDepEntry (deps *depends, statustype stat, strings *done)
+{
+    strings *tmp_done;
+    deps *tmp;
+
+    DBUG_ENTER ("PrintDepEntry");
+
+    tmp = depends;
+
+    while (tmp != NULL) {
+        if (DEPS_STATUS (tmp) == stat) {
+            tmp_done = done;
+
+            while ((tmp_done != NULL)
+                   && (0 != strcmp (DEPS_NAME (tmp), STRINGS_STRING (tmp_done)))) {
+                tmp_done = STRINGS_NEXT (tmp_done);
+            }
+
+            if (tmp_done == NULL) {
+                done = MakeStrings (DEPS_NAME (tmp), done);
+
+                fprintf (outfile, " * %s\n", DEPS_LIBNAME (tmp));
+            }
+        }
+
+        tmp = DEPS_NEXT (tmp);
+    }
+
+    tmp = depends;
+
+    while (tmp != NULL) {
+        if (DEPS_SUB (tmp) != NULL) {
+            done = PrintDepEntry (DEPS_SUB (tmp), stat, done);
+        }
+
+        tmp = DEPS_NEXT (tmp);
+    }
+
+    DBUG_RETURN (done);
 }
 
 /*
