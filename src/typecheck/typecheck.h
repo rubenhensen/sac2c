@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/11/19 20:34:35  dkr
+ * TI() renamed into TypeInference() in order to avoid linker warning
+ *
  * Revision 3.4  2001/02/23 16:41:31  sbs
  * TI made external
  *
@@ -92,7 +95,7 @@ extern node *TCobjdef (node *arg_node, node *arg_info);
 extern node *TCNcode (node *arg_node, node *arg_info);
 
 extern types *TI_array (node *arg_node, node *arg_info);
-extern types *TI (node *arg_node, node *arg_info);
+extern types *TypeInference (node *arg_node, node *arg_info);
 
 extern node *Types2Array (types *type, types *res_type);
 extern node *LookupType (char *type_name, char *mod_name, int line);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2001/11/19 20:34:58  dkr
+ * TI() renamed into TypeInference() in order to avoid linker warning
+ *
  * Revision 3.32  2001/07/18 12:57:45  cg
  * Applications of old tree construction function
  * AppendNodeChain eliminated.
@@ -4858,7 +4861,7 @@ CheckIfGOonlyCBR (node *arg, node *exprs)
 
 /*
  *
- *  functionname  : TI
+ *  functionname  : TypeInference
  *  arguments     : 1) argument node
  *  description   : returns the type of the expression behind 1) if one
  *                  can derive it
@@ -4869,7 +4872,7 @@ CheckIfGOonlyCBR (node *arg, node *exprs)
  */
 
 types *
-TI (node *arg_node, node *arg_info)
+TypeInference (node *arg_node, node *arg_info)
 {
     types *return_type, *tmp_types;
     int cnt;
@@ -5057,7 +5060,8 @@ TClet (node *arg_node, node *arg_info)
      */
     INFO_TC_LHSVARS (arg_info) = ids;
 
-    type = TI (LET_EXPR (arg_node), arg_info); /* type of right side of let-assign */
+    type = TypeInference (LET_EXPR (arg_node),
+                          arg_info); /* type of right side of let-assign */
 
     if (type == NULL)
         ABORT (NODE_LINE (arg_node), ("Type of right hand side of '=` is not inferable"));
@@ -5174,7 +5178,7 @@ TClet (node *arg_node, node *arg_info)
                             arg1 = PRF_ARG1 (LET_EXPR (arg_node));
                             arg2 = PRF_ARG2 (LET_EXPR (arg_node));
                             wl_impl = BuildSelWithLoop (type, arg1, arg2);
-                            new_type = TI (wl_impl, arg_info);
+                            new_type = TypeInference (wl_impl, arg_info);
                             FreeAllTypes (new_type);
 
                             /*
@@ -5216,7 +5220,7 @@ TClet (node *arg_node, node *arg_info)
 
                 wl_impl = BuildGenarrayWithLoop (PRF_ARG1 (LET_EXPR (arg_node)),
                                                  PRF_ARG2 (LET_EXPR (arg_node)));
-                new_type = TI (wl_impl, arg_info);
+                new_type = TypeInference (wl_impl, arg_info);
                 FreeAllTypes (new_type);
 
                 PRF_ARG1 (LET_EXPR (arg_node)) = NULL;
@@ -5252,7 +5256,7 @@ TClet (node *arg_node, node *arg_info)
 
                         LET_EXPR (arg_node) = wl_impl;
 
-                        new_type = TI (wl_impl, arg_info);
+                        new_type = TypeInference (wl_impl, arg_info);
                         FreeAllTypes (new_type);
                     }
                 } else {
@@ -5292,7 +5296,7 @@ TClet (node *arg_node, node *arg_info)
 
                         wl_impl = BuildDropWithLoop (type, PRF_ARG1 (LET_EXPR (arg_node)),
                                                      PRF_ARG2 (LET_EXPR (arg_node)));
-                        new_type = TI (wl_impl, arg_info);
+                        new_type = TypeInference (wl_impl, arg_info);
                         FreeAllTypes (new_type);
 
                         PRF_ARG1 (LET_EXPR (arg_node)) = NULL;
@@ -5339,7 +5343,7 @@ TClet (node *arg_node, node *arg_info)
 
                         wl_impl_1
                           = BuildCatWithLoop1 (type, PRF_ARG2 (LET_EXPR (arg_node)));
-                        new_type = TI (wl_impl_1, arg_info);
+                        new_type = TypeInference (wl_impl_1, arg_info);
                         FreeAllTypes (new_type);
 
                         wl_impl_2 = BuildCatWithLoop2 (LET_IDS (arg_node),
@@ -5584,7 +5588,7 @@ TI_prf (node *arg_node, node *arg_info)
     /* store type of the arguments in arg_type[] */
     current_args = PRF_ARGS (arg_node);
     for (i = 0; i < count_args; i++) {
-        arg_type[i] = TI (EXPRS_EXPR (current_args), arg_info);
+        arg_type[i] = TypeInference (EXPRS_EXPR (current_args), arg_info);
         if (NULL == arg_type[i]) {
             ABORT (NODE_LINE (arg_node), ("%d. argument of function '%s` "
                                           "is not inferable",
@@ -5683,7 +5687,7 @@ TCreturn (node *arg_node, node *arg_info)
 #endif /* NOT_EMPTY_RETURN */
     if (NULL != exprs) {
         /* infer the types of the returnvalue */
-        return_type = TI (exprs->node[0], arg_info);
+        return_type = TypeInference (exprs->node[0], arg_info);
         if (NULL == return_type) {
             ABORT (NODE_LINE (arg_node), ("Return_type cannot be infered"));
         }
@@ -5700,7 +5704,7 @@ TCreturn (node *arg_node, node *arg_info)
             exprs = exprs->node[1];
 
         while (exprs) {
-            return_tmp->next = TI (exprs->node[0], arg_info);
+            return_tmp->next = TypeInference (exprs->node[0], arg_info);
             return_tmp = return_tmp->next;
             if (NULL == return_tmp) {
                 ERROR (NODE_LINE (arg_node), ("Return_type cannot be infered."));
@@ -5897,7 +5901,7 @@ TI_ap (node *arg_node, node *arg_info)
     /* store type of the arguments in arg_type[] */
     current_args = AP_ARGS (arg_node);
     for (i = 0; i < count_args; i++) {
-        arg_type[i] = TI (current_args->node[0], arg_info);
+        arg_type[i] = TypeInference (current_args->node[0], arg_info);
         if (NULL == arg_type[i]) {
             ABORT (NODE_LINE (arg_node), ("%d. argument of function '%s` not inferable",
                                           (i + 1), ModName (mod_name, fun_name)));
@@ -6133,7 +6137,7 @@ TI_array (node *arg_node, node *arg_info)
     elem = ARRAY_AELEMS (arg_node);
     while (NULL != elem) {
         n_elem++;
-        tmp_type = TI (EXPRS_EXPR (elem), arg_info);
+        tmp_type = TypeInference (EXPRS_EXPR (elem), arg_info);
         if (NULL == tmp_type) {
             ABORT (NODE_LINE (arg_node),
                    ("%d. element of array cannot be infered", n_elem));
@@ -6263,7 +6267,7 @@ TCcond (node *arg_node, node *arg_info)
     old_status = arg_info->node[0]->nodetype;
     rest_node = INFO_TC_NEXTASSIGN (arg_info);
 
-    expr_type = TI (COND_COND (arg_node), arg_info);
+    expr_type = TypeInference (COND_COND (arg_node), arg_info);
     if (NULL == expr_type) {
         ABORT (NODE_LINE (arg_node), ("Type not inferable"));
     }
@@ -6542,7 +6546,7 @@ TCdo (node *arg_node, node *arg_info)
     Trav (DO_BODY (arg_node), arg_info);
 
     /* check type of termination condition of do-loop */
-    expr_type = TI (DO_COND (arg_node), arg_info);
+    expr_type = TypeInference (DO_COND (arg_node), arg_info);
     if (NULL == expr_type) {
         ABORT (NODE_LINE (arg_node), ("Type not inferable"));
     } else if ((T_bool != TYPES_BASETYPE (expr_type))
@@ -6586,7 +6590,7 @@ TCwhile (node *arg_node, node *arg_info)
     old_tos = tos;
 
     /* check the termination condition of while-loop */
-    expr_type = TI (WHILE_COND (arg_node), arg_info);
+    expr_type = TypeInference (WHILE_COND (arg_node), arg_info);
     if (!expr_type)
         ABORT (NODE_LINE (arg_node), ("Type not inferable"));
 
@@ -6648,7 +6652,7 @@ TI_cast (node *arg_node, node *arg_info)
         }
     }
 
-    inf_type = TI (CAST_EXPR (arg_node), arg_info);
+    inf_type = TypeInference (CAST_EXPR (arg_node), arg_info);
     if (NULL == inf_type)
         switch (arg_node->nodetype) {
         case N_id: {
@@ -6958,7 +6962,8 @@ TI_Nwith (node *arg_node, node *arg_info)
             new_shp = DupTree (NWITHOP_SHAPE (NWITH_WITHOP (arg_node)));
         }
     } else if (WO_modarray == NWITHOP_TYPE (NWITH_WITHOP (arg_node))) {
-        base_array_type = TI (NWITHOP_ARRAY (NWITH_WITHOP (arg_node)), arg_info);
+        base_array_type
+          = TypeInference (NWITHOP_ARRAY (NWITH_WITHOP (arg_node)), arg_info);
         if (!base_array_type)
             ABORT (NODE_LINE (NWITHOP_ARRAY (NWITH_WITHOP (arg_node))),
                    ("Array component of 'modarray` not inferable"));
@@ -6971,7 +6976,8 @@ TI_Nwith (node *arg_node, node *arg_info)
                                     NULL));
         }
     } else if (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node))) /* only if exists */ {
-        neutral_type = TI (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node)), arg_info);
+        neutral_type
+          = TypeInference (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node)), arg_info);
         if (!neutral_type)
             ABORT (NODE_LINE (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node))),
                    ("Neutral element of 'fold` not inferable"));
@@ -7468,7 +7474,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
     width_type = NULL;
 
     if (NGEN_BOUND1 (gen)) {
-        left_type = TI (NGEN_BOUND1 (gen), arg_info);
+        left_type = TypeInference (NGEN_BOUND1 (gen), arg_info);
         if (!left_type)
             ERROR (NODE_LINE (arg_node), ("lower bound cannot be infered"));
     } else {
@@ -7476,7 +7482,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
     }
 
     if (NGEN_BOUND2 (gen)) {
-        right_type = TI (NGEN_BOUND2 (gen), arg_info);
+        right_type = TypeInference (NGEN_BOUND2 (gen), arg_info);
         if (!right_type)
             ERROR (NODE_LINE (arg_node), ("upper bound cannot be infered"));
     } else {
@@ -7484,12 +7490,12 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
     }
 
     if (NGEN_STEP (gen)) {
-        step_type = TI (NGEN_STEP (gen), arg_info);
+        step_type = TypeInference (NGEN_STEP (gen), arg_info);
         if (!step_type)
             ERROR (NODE_LINE (arg_node), ("step cannot be infered"));
     }
     if (NGEN_WIDTH (gen)) {
-        width_type = TI (NGEN_WIDTH (gen), arg_info);
+        width_type = TypeInference (NGEN_WIDTH (gen), arg_info);
         if (!width_type)
             ERROR (NODE_LINE (arg_node), ("width cannot be infered"));
     }
@@ -7613,7 +7619,7 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
 
     DBUG_ENTER ("TI_Ngenarray");
 
-    expr_type = TI (arg_node, arg_info);
+    expr_type = TypeInference (arg_node, arg_info);
 
     if (expr_type == NULL) {
         ABORT (NODE_LINE (arg_node),
@@ -7948,7 +7954,7 @@ TCNcode (node *arg_node, node *arg_info)
     }
 
     /* now we have to find the vardec for CEXPR and return it in arg_info. */
-    arg_info->node[2]->info.types = TI (NCODE_CEXPR (arg_node), arg_info);
+    arg_info->node[2]->info.types = TypeInference (NCODE_CEXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

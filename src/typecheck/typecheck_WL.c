@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/11/19 20:35:07  dkr
+ * TI() renamed into TypeInference() in order to avoid linker warning
+ *
  * Revision 3.6  2001/07/16 08:23:11  cg
  * Old tree construction function MakeNode eliminated.
  *
@@ -183,10 +186,10 @@ TCWLprf (node *arg_node, node *arg_info)
             }
         }
     } else {
-        expr_type = TI (PRF_ARG1 (arg_node), arg_info);
+        expr_type = TypeInference (PRF_ARG1 (arg_node), arg_info);
         INFO_CF_TYPE (arg_info) = expr_type;
         PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
-        expr_type = TI (PRF_ARG2 (arg_node), arg_info);
+        expr_type = TypeInference (PRF_ARG2 (arg_node), arg_info);
         INFO_CF_TYPE (arg_info) = expr_type;
         PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
 
