@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.31  1995/03/24 15:44:19  asi
+ * Revision 1.32  1995/03/29 11:59:41  hw
+ * option -c (compile) inserted
+ *
+ * Revision 1.31  1995/03/24  15:44:19  asi
  * malloc_debug inserted
  *
  * Revision 1.30  1995/03/17  17:40:37  asi
@@ -120,6 +123,7 @@
 #include "import.h"
 #include "refcount.h"
 #include "scnprs.h"
+#include "compile.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -135,7 +139,7 @@ MAIN
 {
     int set_outfile = 0;
     int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0,
-        print_refcnt = 0, refcount = 1;
+        print_refcnt = 0, refcount = 1, compile = 0;
     char prgname[256];
     char outfilename[256] = "out.txt";
 
@@ -171,6 +175,10 @@ MAIN
     ARG 'r':
     {
         print_refcnt = 1;
+    }
+    ARG 'c':
+    {
+        compile = 1;
     }
     ARG 'n' : PARM
     {
@@ -239,12 +247,13 @@ MAIN
                 NOTE (("\n%d Warnings, %d Errors \n", warnings, errors));
                 if ((!breaktype) && (errors == 0)) {
                     syntax_tree = Optimize (syntax_tree);
-                    if (refcount) {
+                    if ((1 == refcount) || (1 == compile)) {
                         syntax_tree = Refcount (syntax_tree);
-                        if (1 == print_refcnt) {
+                        if (1 == print_refcnt)
                             show_refcnt = 1;
-                        }
                     }
+                    if (1 == compile)
+                        syntax_tree = Compile (syntax_tree);
 
                     /*  GenCCode(); */
                 }
