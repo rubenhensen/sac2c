@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.71  1998/05/27 13:17:03  sbs
+ * Nwith-loop MACROS BRUSHED
+ *
  * Revision 1.70  1998/05/16 19:47:07  dkr
  * added some WLGRID..., WLSTRIDE... macros
  *
@@ -1154,6 +1157,7 @@ extern void ObjList2ArgList (node *objdef);
 #define ASSIGN_USEMASK(n) (ASSIGN_MASK (n, 1))
 #define ASSIGN_MRDMASK(n) (ASSIGN_MASK (n, 2))
 #define ASSIGN_INSTRTYPE(n) (NODE_TYPE (ASSIGN_INSTR (n)))
+#define ASSIGN_NAME(n) (LET_NAME (ASSIGN_INSTR (n)))
 
 /******************************************************************************
  *
@@ -1360,15 +1364,9 @@ extern node *AppendExpr (node *exprs, node *expr);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  compound access macros for the new WL.
+ ***  N_Nwith :
  ***/
 
-#define NPART_IDS(n) (NWITHID_IDS (NPART_WITHID (n)))
-#define NPART_VEC(n) (NWITHID_VEC (NPART_WITHID (n)))
-#define NWITHOP_OPARG(n)                                                                 \
-    (WO_modarray == NWITHOP_TYPE (n)                                                     \
-       ? NWITHOP_ARRAY (n)                                                               \
-       : WO_genarray == NWITHOP_TYPE (n) ? NWITHOP_SHAPE (n) : NWITHOP_NEUTRAL (n))
 #define NWITH_TYPE(n) (NWITHOP_TYPE (NWITH_WITHOP (n)))
 #define NWITH_IDS(n) (NPART_IDS (NWITH_PART (n)))
 #define NWITH_VEC(n) (NPART_VEC (NWITH_PART (n)))
@@ -1376,11 +1374,38 @@ extern node *AppendExpr (node *exprs, node *expr);
  * remark: We only need to inspect the withid of the first part,
  *         because the withid is in *all* parts the same!!
  */
+#define NWITH_CEXPR(n) (NCODE_CEXPR (NWITH_CODE (n)))
 
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_Nwith2:
+ ***  N_Npart:
+ ***/
+
+#define NPART_IDS(n) (NWITHID_IDS (NPART_WITHID (n)))
+#define NPART_VEC(n) (NWITHID_VEC (NPART_WITHID (n)))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Ncode :
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Nwithop :
+ ***/
+
+#define NWITHOP_OPARG(n)                                                                 \
+    (WO_modarray == NWITHOP_TYPE (n)                                                     \
+       ? NWITHOP_ARRAY (n)                                                               \
+       : WO_genarray == NWITHOP_TYPE (n) ? NWITHOP_SHAPE (n) : NWITHOP_NEUTRAL (n))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Nwith2 :
  ***/
 
 #define NWITH2_TYPE(n) (NWITHOP_TYPE (NWITH2_WITHOP (n)))
