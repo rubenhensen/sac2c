@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2000/08/04 14:32:24  mab
+ * did some minor changes
+ *
  * Revision 1.10  2000/08/04 09:36:21  mab
  * fixed bug in RemoveSingleAccessPattern (case at_prv_ptr==NULL)
  *
@@ -388,77 +391,6 @@ RemovePatternElement (pattern_t *element)
 /*****************************************************************************
  *
  * function:
- *   static void RemoveSingleAccessPatterns()
- *
- * description:
- *   remove conflict groups containing only one access pattern
- *   attention: RemoveDuplicateAccesses has to be applied first!
- *
- *****************************************************************************/
-
-static void
-RemoveSingleAccessPatterns ()
-{
-
-    array_type_t *at_ptr;
-    array_type_t *at_prv_ptr;
-    conflict_group_t *cg_ptr;
-    conflict_group_t *cg_prv_ptr;
-
-    DBUG_ENTER ("RemoveSingleAccessPattern");
-
-    DBUG_PRINT ("API", ("  removing conflict groups with single access patterns..."));
-
-    at_ptr = array_type;
-    at_prv_ptr = NULL;
-
-    while (at_ptr != NULL) {
-
-        cg_ptr = AT_GROUPS (at_ptr);
-        cg_prv_ptr = NULL;
-
-        while (cg_ptr != NULL) {
-            /* check, if only one access pattern */
-            if (PT_NEXT (CG_PATTERNS (cg_ptr)) == NULL) {
-                CG_PATTERNS (cg_ptr) = RemovePatternElement (CG_PATTERNS (cg_ptr));
-                if (cg_prv_ptr == NULL) {
-                    /* remove first element from list */
-                    AT_GROUPS (at_ptr) = RemoveConflictGroupElement (cg_ptr);
-                    cg_ptr = AT_GROUPS (at_ptr);
-                } else {
-                    /* remove other element */
-                    CG_NEXT (cg_prv_ptr) = RemoveConflictGroupElement (cg_ptr);
-                    cg_ptr = CG_NEXT (cg_prv_ptr);
-                }
-            } else {
-                cg_prv_ptr = cg_ptr;
-                cg_ptr = CG_NEXT (cg_ptr);
-            }
-        }
-
-        /* check, if current array_type has no conflict groups remaining */
-        if (AT_GROUPS (at_ptr) == NULL) {
-            if (at_prv_ptr == NULL) {
-                /* remove first element from list */
-                array_type = RemoveArrayTypeElement (at_ptr);
-                at_ptr = array_type;
-            } else {
-                /* remove other element */
-                AT_NEXT (at_prv_ptr) = RemoveArrayTypeElement (at_ptr);
-                at_ptr = AT_NEXT (at_prv_ptr);
-            }
-        } else {
-            at_prv_ptr = at_ptr;
-            at_ptr = AT_NEXT (at_ptr);
-        }
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/*****************************************************************************
- *
- * function:
  *   static void SortAccesses()
  *
  * description:
@@ -483,6 +415,7 @@ SortAccesses ()
     DBUG_ENTER ("SortAccesses");
 
     DBUG_PRINT ("API", ("  sorting accesses..."));
+    APprintDiag ("  sorting accesses...\n");
 
     /* for every array type... */
     at_ptr = array_type;
@@ -545,6 +478,78 @@ SortAccesses ()
 /*****************************************************************************
  *
  * function:
+ *   static void RemoveSingleAccessPatterns()
+ *
+ * description:
+ *   remove conflict groups containing only one access pattern
+ *   attention: RemoveDuplicateAccesses has to be applied first!
+ *
+ *****************************************************************************/
+
+static void
+RemoveSingleAccessPatterns ()
+{
+
+    array_type_t *at_ptr;
+    array_type_t *at_prv_ptr;
+    conflict_group_t *cg_ptr;
+    conflict_group_t *cg_prv_ptr;
+
+    DBUG_ENTER ("RemoveSingleAccessPattern");
+
+    DBUG_PRINT ("API", ("  removing conflict groups with single access patterns..."));
+    APprintDiag ("  removing conflict groups with single access patterns...\n");
+
+    at_ptr = array_type;
+    at_prv_ptr = NULL;
+
+    while (at_ptr != NULL) {
+
+        cg_ptr = AT_GROUPS (at_ptr);
+        cg_prv_ptr = NULL;
+
+        while (cg_ptr != NULL) {
+            /* check, if only one access pattern */
+            if (PT_NEXT (CG_PATTERNS (cg_ptr)) == NULL) {
+                CG_PATTERNS (cg_ptr) = RemovePatternElement (CG_PATTERNS (cg_ptr));
+                if (cg_prv_ptr == NULL) {
+                    /* remove first element from list */
+                    AT_GROUPS (at_ptr) = RemoveConflictGroupElement (cg_ptr);
+                    cg_ptr = AT_GROUPS (at_ptr);
+                } else {
+                    /* remove other element */
+                    CG_NEXT (cg_prv_ptr) = RemoveConflictGroupElement (cg_ptr);
+                    cg_ptr = CG_NEXT (cg_prv_ptr);
+                }
+            } else {
+                cg_prv_ptr = cg_ptr;
+                cg_ptr = CG_NEXT (cg_ptr);
+            }
+        }
+
+        /* check, if current array_type has no conflict groups remaining */
+        if (AT_GROUPS (at_ptr) == NULL) {
+            if (at_prv_ptr == NULL) {
+                /* remove first element from list */
+                array_type = RemoveArrayTypeElement (at_ptr);
+                at_ptr = array_type;
+            } else {
+                /* remove other element */
+                AT_NEXT (at_prv_ptr) = RemoveArrayTypeElement (at_ptr);
+                at_ptr = AT_NEXT (at_prv_ptr);
+            }
+        } else {
+            at_prv_ptr = at_ptr;
+            at_ptr = AT_NEXT (at_ptr);
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*****************************************************************************
+ *
+ * function:
  *   static void RemoveDuplicateAccesses()
  *
  * description:
@@ -564,6 +569,7 @@ RemoveDuplicateAccesses ()
     DBUG_ENTER ("RemoveDuplicateAccesses");
 
     DBUG_PRINT ("API", ("  removing duplicate accesses from conflict groups..."));
+    APprintDiag ("  removing duplicate accesses from conflict groups...\n");
 
     /* for every array type... */
     at_ptr = array_type;
@@ -627,6 +633,7 @@ RemoveIdenticalConflictGroups ()
     DBUG_ENTER ("RemoveIdenticalConflictGroups");
 
     DBUG_PRINT ("API", ("  removing conflict groups with identical access patterns..."));
+    APprintDiag ("  removing conflict groups with identical access patterns...\n");
 
     /* for every array type... */
     at_ptr = array_type;
@@ -719,15 +726,6 @@ PIprintShpSeg (int dim, shpseg *shape)
         APprintDiag ("%3d, ", SHPSEG_SHAPE (shape, i));
     }
     APprintDiag ("%3d]", SHPSEG_SHAPE (shape, dim - 1));
-
-    /*   printf("["); */
-    /*   for(i=0;i<dim;i++) { */
-    /*     APprintDiag("%i",SHPSEG_SHAPE(shape,i)); */
-    /*     if((i+1)!=dim) { */
-    /*       APprintDiag(","); */
-    /*     } */
-    /*   } */
-    /*   APprintDiag("]"); */
 
     DBUG_VOID_RETURN;
 }
@@ -1177,6 +1175,9 @@ PItidyAccessPattern ()
 {
 
     DBUG_ENTER ("PItidyAccessPattern");
+
+    DBUG_PRINT ("API", ("Cleaning up access patterns..."));
+    APprintDiag ("\nCleaning up access patterns...\n");
 
     SortAccesses ();
 
