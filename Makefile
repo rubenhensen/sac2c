@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.12  2001/02/13 15:19:45  nmw
+# SSATransform added
+#
 # Revision 3.11  2001/02/12 17:08:33  nmw
 # CheckAvis in /src/tree added to sac2c
 #
@@ -163,7 +166,7 @@ TREE= src/tree/traverse.o src/tree/tree.o src/tree/tree_basic.o src/tree/free.o 
       src/tree/tree_compound.o src/tree/DupTree.o src/tree/LookUpTable.o \
       src/tree/DataFlowMask.o src/tree/DataFlowMaskUtils.o src/tree/InferDFMs.o \
       src/tree/cleanup_decls.o src/tree/adjust_ids.o src/tree/scheduling.o \
-      src/tree/CheckAvis.o
+      src/tree/CheckAvis.o src/tree/SSATransform.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o

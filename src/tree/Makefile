@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.9  2001/02/13 15:15:45  nmw
+# SSATransform added
+#
 # Revision 3.8  2001/02/12 17:02:29  nmw
 # CheckAvis added
 #
@@ -75,7 +78,8 @@ INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck
 
 all: tree.o tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
      DataFlowMask.o DataFlowMaskUtils.o InferDFMs.o CheckAvis.o \
-     LookUpTable.o adjust_ids.o cleanup_decls.o scheduling.o
+     LookUpTable.o adjust_ids.o cleanup_decls.o scheduling.o \
+     SSATransform.o
 
 
 #
@@ -107,7 +111,8 @@ CheckAvis.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 CheckAvis.o: /usr/include/stdio_impl.h tree.h ../global/types.h tree_basic.h
 CheckAvis.o: tree_compound.h ../global/Error.h /usr/include/string.h
 CheckAvis.o: /usr/include/stdlib.h ../global/globals.h
-CheckAvis.o: ../global/internal_lib.h CheckAvis.h
+CheckAvis.o: ../global/internal_lib.h traverse.h free.h ../global/my_debug.h
+CheckAvis.o: CheckAvis.h
 DataFlowMask.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 DataFlowMask.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 DataFlowMask.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -151,6 +156,14 @@ LookUpTable.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 LookUpTable.o: /usr/include/stdlib.h ../global/globals.h
 LookUpTable.o: ../global/internal_lib.h free.h ../../inc/dbug.h
 LookUpTable.o: ../global/my_debug.h
+SSATransform.o: ../../inc/dbug.h /usr/include/stdio.h
+SSATransform.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+SSATransform.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+SSATransform.o: /usr/include/stdio_impl.h tree.h ../global/types.h
+SSATransform.o: tree_basic.h tree_compound.h ../global/Error.h
+SSATransform.o: /usr/include/string.h /usr/include/stdlib.h
+SSATransform.o: ../global/globals.h ../global/internal_lib.h traverse.h
+SSATransform.o: free.h ../global/my_debug.h SSATransform.h
 adjust_ids.o: ../../inc/dbug.h /usr/include/stdio.h
 adjust_ids.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 adjust_ids.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -228,7 +241,8 @@ traverse.o: ../psi-opt/pad_collect.h ../psi-opt/pad_transform.h
 traverse.o: ../c-interface/print_interface_header.h
 traverse.o: ../c-interface/print_interface_wrapper.h
 traverse.o: ../c-interface/map_cwrapper.h
-traverse.o: ../c-interface/import_specialization.h CheckAvis.h traverse.h
+traverse.o: ../c-interface/import_specialization.h CheckAvis.h SSATransform.h
+traverse.o: traverse.h
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 tree.o: /usr/include/sys/isa_defs.h tree.h ../global/types.h tree_basic.h
 tree.o: tree_compound.h ../global/Error.h /usr/include/stdio.h
