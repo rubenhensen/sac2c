@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.26  2000/07/07 15:44:57  bs
+ * The following compound macros moved from tree_basic to tree_compound:
+ * INFO_WLAA_ARRAYSHP, INFO_WLAA_INDEXDIM, INFO_WLAA_ARRAYDIM
+ * INFO_TSI_ARRAYSHP, INFO_TSI_INDEXDIM, INFO_TSI_ARRAYDIM
+ *
  * Revision 1.25  2000/07/05 15:18:02  mab
  * added Shpseg2Array
  *
@@ -1738,5 +1743,23 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 
 #define WLGRIDVAR_CBLOCK(n) (NCODE_CBLOCK (WLGRIDVAR_CODE (n)))
 #define WLGRIDVAR_CEXPR(n) (NCODE_CEXPR (WLGRIDVAR_CODE (n)))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_info :
+ ***/
+
+/*
+ *  compound access macros
+ */
+
+#define INFO_WLAA_ARRAYSHP(n) VARDEC_SHPSEG (INFO_WLAA_WLARRAY (n))
+#define INFO_WLAA_INDEXDIM(n) VARDEC_SHAPE (INFO_WLAA_INDEXVAR (n), 0)
+#define INFO_WLAA_ARRAYDIM(n) VARDEC_DIM (INFO_WLAA_WLARRAY (n))
+
+#define INFO_TSI_ARRAYSHP(n) VARDEC_SHPSEG (INFO_TSI_WLARRAY (n))
+#define INFO_TSI_INDEXDIM(n) VARDEC_SHAPE (INFO_TSI_INDEXVAR (n), 0)
+#define INFO_TSI_ARRAYDIM(n) VARDEC_DIM (INFO_TSI_WLARRAY (n))
 
 #endif /* _sac_tree_compound_h */

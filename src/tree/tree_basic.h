@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.71  2000/07/07 15:48:30  bs
+ * The following compound macros moved from tree_basic to tree_compound:
+ * INFO_WLAA_ARRAYSHP, INFO_WLAA_INDEXDIM, INFO_WLAA_ARRAYDIM
+ * INFO_TSI_ARRAYSHP, INFO_TSI_INDEXDIM, INFO_TSI_ARRAYDIM
+ *
  * Revision 1.70  2000/07/07 08:57:01  nmw
  * MCW_CNT_ARTIFICIAL macro added
  *
@@ -2533,10 +2538,6 @@ extern node *MakeInfo ();
 #define INFO_WLAA_TMPACCESS(n) ((access_t *)(n->node[2]))
 #define INFO_WLAA_WLARRAY(n) (n->node[3])
 
-#define INFO_WLAA_ARRAYSHP(n) VARDEC_SHPSEG (INFO_WLAA_WLARRAY (n))
-#define INFO_WLAA_INDEXDIM(n) VARDEC_SHAPE (INFO_WLAA_INDEXVAR (n), 0)
-#define INFO_WLAA_ARRAYDIM(n) VARDEC_DIM (INFO_WLAA_WLARRAY (n))
-
 /* Tile Size Inference */
 #define INFO_TSI_ACCESS(n) ((access_t *)(n->info2))
 #define INFO_TSI_ACCESSCNT(n) (n->counter)
@@ -2551,10 +2552,6 @@ extern node *MakeInfo ();
 #define INFO_TSI_CACHESIZE(n) ((int *)(n->node[4]))[0]
 #define INFO_TSI_LINESIZE(n) ((int *)(n->node[4]))[1]
 #define INFO_TSI_DATATYPE(n) ((int *)(n->node[4]))[2]
-
-#define INFO_TSI_ARRAYSHP(n) VARDEC_SHPSEG (INFO_TSI_WLARRAY (n))
-#define INFO_TSI_INDEXDIM(n) VARDEC_SHAPE (INFO_TSI_INDEXVAR (n), 0)
-#define INFO_TSI_ARRAYDIM(n) VARDEC_DIM (INFO_TSI_WLARRAY (n))
 
 /* converting loops and conditionals to functions (lac2fun.c) */
 #define INFO_LAC2FUN_FUNDEF(n) (n->node[0])
