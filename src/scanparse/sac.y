@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.33  1994/12/20 13:10:47  sbs
+ * Revision 1.34  1994/12/20 17:43:40  hw
+ * deleted function MakeNode (now in tree.c)
+ * deleted nodes N_addon, etc. they are converted to N_let
+ *
+ * Revision 1.33  1994/12/20  13:10:47  sbs
  * typedef bug fixed (types->id => types->name)
  *
  * Revision 1.32  1994/12/20  11:24:29  sbs
@@ -157,7 +161,7 @@ node *decl_tree;
 %type <node> arg, args, fundefs, fundef, main, prg, modimp,
              typedefs, typedef, defs, def2, def3, fundef2, exprblock, exprblock2,
              exprblock3, assign, assigns, assignblock, letassign, retassign,
-             selassign, forassign, retassignblock, let, 
+             selassign, forassign, retassignblock, 
              expr, exprs, monop, binop, triop, 
              conexpr, generator, unaryop,
              moddec, expdesc, expdesc2, expdesc3, fundecs, fundec, exptypes, exptype,
@@ -649,6 +653,10 @@ assigns: /* empty */
             {
                $$->node[1]=$2;
                $$->nnode=2;
+               DBUG_PRINT("GENTREE",
+                          ("%s "P_FORMAT", next: %s "P_FORMAT,
+                           mdb_nodetype[$$->nodetype], $$,
+                           mdb_nodetype[$$->node[1]->nodetype], $$->node[1]));
             }
          }
          ;
@@ -703,8 +711,8 @@ retassign: RETURN BRACKET_L {$$=MakeNode(N_return);} exprs BRACKET_R
              }
            ;
 
-letassign: ids let expr 
-             { $$=$2;           /* durch "let" erstellten Knoten u"bernehmen */ 
+letassign: ids LET expr 
+             { $$=MakeNode(N_let);
                $$->info.ids=$1;  /* zuzuweisende Variablenliste */
                $$->node[0]=$3;     /* Ausdruck */
                $$->nnode=1;
@@ -738,19 +746,23 @@ letassign: ids let expr
                            mdb_nodetype[$$->nodetype], $$, $$->info.id,
                            mdb_nodetype[$$->node[0]->nodetype] )); 
             }
+        | ID ADDON expr
+           {
+              $$=MakeLet($1,$3,F_add);
+           }
+        | ID SUBON expr
+           {
+              $$=MakeLet($1,$3,F_sub);
+           }
+        | ID MULON expr
+           {
+              $$=MakeLet($1,$3,F_mul);
+           }
+        | ID DIVON expr
+           {
+              $$=MakeLet($1,$3,F_div);
+           }
          ;
-
-
-let: LET { $$=MakeNode(N_let); }
-     | ADDON { $$=MakeNode(N_addon); 
-             }
-     | SUBON { $$=MakeNode(N_subon); 
-             }
-     | MULON { $$=MakeNode(N_mulon);
-             }
-     | DIVON { $$=MakeNode(N_divon);
-             }
-     ;
 
 selassign: IF {$$=MakeNode(N_cond);} BRACKET_L expr BRACKET_R assignblock 
            ELSE assignblock
@@ -1250,31 +1262,6 @@ int warn( char *warnname)
 }
 
 
-/*
- *  MakeNode erzeugt einen Zeiger auf "node" und initialisiert alle Eintra"ge,
- *  bis auf:      node.info
- *
- */
-node *MakeNode(nodetype nodetype)
-{
-   node *tmp;
-   
-   DBUG_ENTER("MakeNode");
-
-   tmp=GEN_NODE(node);
-   tmp->nodetype=nodetype;
-   for(i=0 ;i<4;i++)
-      tmp->node[i]=NULL;
-   tmp->nnode=0;
-   tmp->info.id=NULL;
-   tmp->lineno=linenum;
-   
-   DBUG_PRINT("MAKENODE",("%d nodetype: %s "P_FORMAT,
-                          tmp->lineno,
-                          mdb_nodetype[nodetype],tmp)); 
-
-   DBUG_RETURN(tmp);
-}
 
 
 node *GenPrfNode( prf prf, node *arg1, node *arg2)
@@ -1444,4 +1431,54 @@ node *MakeEmptyBlock()
    DBUG_RETURN(return_node);
 }
 
+/*
+ *
+ *  functionname  : MakeLet
+ *  arguments     : 1) identifier 
+ *                  2) expr node
+ *                  3) primitive function
+ *  description   : genarates a N_let whose childnode is a primitive function
+ *                  that has as one argument the identifier of the left side
+ *                  of the let.
+ *  global vars   : ---
+ *  internal funs : MakeNode, GenPrfNode
+ *  external funs : ---
+ *  macros        : DBUG..., P_FORMAT
+ *
+ *  remarks       : this function is used to convert addon, etc to N_let
+ *
+ */
+node *MakeLet(id *name, node *expr, prf fun)
+{
+   node *return_node,
+        *id_node;
+      
+   DBUG_ENTER("MakeLet");
    
+   return_node=MakeNode(N_let);
+   return_node->info.ids=GEN_NODE(ids);
+   DBUG_ASSERT((NULL != return_node->info.ids),"NULL");
+   return_node->info.ids->id=name;
+   return_node->info.ids->next=NULL;
+   return_node->info.ids->node=NULL;
+   id_node=MakeNode(N_id);
+   id_node->info.id=name;
+
+   DBUG_PRINT("GENTREE",("%s"P_FORMAT": %s",
+                         mdb_nodetype[id_node->nodetype],
+                         id_node,
+                         id_node->info.id));
+   
+   return_node->node[0]=GenPrfNode(fun,id_node,expr);
+   return_node->nnode=1;
+   
+   DBUG_PRINT("GENTREE",("%s"P_FORMAT": %s "P_FORMAT" ids: %s ",
+                         mdb_nodetype[return_node->nodetype], return_node,
+                         mdb_nodetype[return_node->node[0]->nodetype],
+                         return_node->node[0], return_node->info.ids->id));
+   
+                         
+   DBUG_RETURN(return_node); 
+}
+
+
