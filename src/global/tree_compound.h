@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/12/13 17:32:37  asi
+ * Revision 1.21  1995/12/15 13:22:12  asi
+ * added COND_THENINSTR and COND_ELSEINSTR
+ *
+ * Revision 1.20  1995/12/13  17:32:37  asi
  * added ASSIGN_INSTRTYPE
  *
  * Revision 1.19  1995/12/12  15:49:08  hw
@@ -940,6 +943,8 @@ extern node *MakeAssignLet (char *var_name, node *vardec_node, node *let_expr);
 #define COND_THENUSEMASK(n) (BLOCK_USEMASK (COND_THEN (n)))
 #define COND_ELSEDEFMASK(n) (BLOCK_DEFMASK (COND_ELSE (n)))
 #define COND_ELSEUSEMASK(n) (BLOCK_USEMASK (COND_ELSE (n)))
+#define COND_THENINSTR(n) (BLOCK_INSTR (COND_THEN (n)))
+#define COND_ELSEINSTR(n) (BLOCK_INSTR (COND_ELSE (n)))
 
 /*--------------------------------------------------------------------------*/
 
