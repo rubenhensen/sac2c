@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.60  2000/06/29 12:18:21  nmw
+ * additional macros for INFO_PIW_ added
+ *
  * Revision 1.59  2000/06/29 10:33:09  mab
  * added NPART_PADDED
  * changed type of *_PADDED from int to bool
@@ -2166,9 +2169,12 @@ extern node *MakePragma ();
  ***
  ***  when used in print_interface.c
  ***    int        INFO_PIH_FLAG     (switch between comment and prototype)
- ***    int        INFO_PIH_COMMA    )
- ***    int        INFO_PIW_FLAG
+ ***    int        INFO_PIH_COMMA    (flag, comma neede between outputs)
+ ***    int        INFO_PIH_COUNTER  (arg or type position)
+ ***    int        INFO_PIW_FLAG     (switch between different formats)
  ***    int        INFO_PIW_COMMA
+ ***    int        INFO_PIW_COUNTER
+ ***    int        INFO_PIW_RETPOS   (returntypeposition for direct return)
  ***
  ***  when used in map_wrapper.c
  ***    node*      MODUL             (access to module node)
@@ -2557,6 +2563,7 @@ extern node *MakeInfo ();
 #define INFO_PIW_FLAG(n) (n->flag)
 #define INFO_PIW_COMMA(n) (n->varno)
 #define INFO_PIW_COUNTER(n) (n->counter)
+#define INFO_PIW_RETPOS(n) (n->int_data)
 
 /* when used in pad_transform.c */
 #define INFO_APT_EXPRESSION_PADDED(n) ((bool)(n->flag))
