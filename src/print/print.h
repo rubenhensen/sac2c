@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/02/11 18:31:00  dkr
+ * PrintNode() added
+ *
  * Revision 2.3  2000/02/03 15:20:31  jhs
  * Added PrintMT and PrintSt.
  *
@@ -194,6 +197,7 @@ extern void PrintFunctionHeader (node *arg_node, node *arg_info);
 
 extern node *Print (node *syntax_tree);
 
-extern void PrintNodeTree (node *node); /* debugoutput */
+extern node *PrintNode (node *node);
+extern void PrintNodeTree (node *node); /* debug output */
 
 #endif /* _sac_print_h */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.46  2000/02/11 18:31:27  dkr
+ * PrintNode() added
+ *
  * Revision 2.45  2000/02/09 12:00:46  dkr
  * function declarations are separated by a n now
  *
@@ -220,6 +223,17 @@
 #include "scheduling.h"
 #include "wl_access_analyze.h"
 #include "tile_size_inference.h"
+
+/*
+ * PrintNode(): INFO_PRINT_CONT(arg_info) contains the root of syntaxtree.
+ *  -> traverses next-node if and only if its parent is not the root.
+ * Print(): INFO_PRINT_CONT(arg_info) is NULL.
+ *  -> traverses all next-nodes.
+ */
+#define PRINT_CONT(code)                                                                 \
+    if (INFO_PRINT_CONT (arg_info) != arg_node) {                                        \
+        code;                                                                            \
+    }
 
 #define ACLT(arg)                                                                        \
     (arg == ACL_unknown)                                                                 \
@@ -696,8 +710,9 @@ PrintAssign (node *arg_node, node *arg_info)
     if (N_icm == NODE_TYPE (ASSIGN_INSTR (arg_node))) {
         PrintIcm (ASSIGN_INSTR (arg_node), arg_info);
         fprintf (outfile, "\n");
-        if (ASSIGN_NEXT (arg_node))
-            Trav (ASSIGN_NEXT (arg_node), arg_info);
+        if (ASSIGN_NEXT (arg_node) != NULL) {
+            PRINT_CONT (Trav (ASSIGN_NEXT (arg_node), arg_info));
+        }
     } else {
         PRINT_LINE_PRAGMA_IN_SIB (outfile, arg_node);
         DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", arg_node->lineno););
@@ -710,8 +725,8 @@ PrintAssign (node *arg_node, node *arg_info)
             fprintf (outfile, "\n");
         }
 
-        if (ASSIGN_NEXT (arg_node)) {
-            Trav (ASSIGN_NEXT (arg_node), arg_info);
+        if (ASSIGN_NEXT (arg_node) != NULL) {
+            PRINT_CONT (Trav (ASSIGN_NEXT (arg_node), arg_info));
         }
     }
 
@@ -1007,8 +1022,9 @@ PrintImplist (node *arg_node, node *arg_info)
         fprintf (outfile, "\n}\n");
     }
 
-    if (IMPLIST_NEXT (arg_node))
-        Trav (IMPLIST_NEXT (arg_node), arg_info); /* print further imports */
+    if (IMPLIST_NEXT (arg_node) != NULL) { /* print further imports */
+        PRINT_CONT (Trav (IMPLIST_NEXT (arg_node), arg_info));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1033,8 +1049,8 @@ PrintTypedef (node *arg_node, node *arg_info)
         fprintf (outfile, "extern void %s(void *);\n\n", TYPEDEF_FREEFUN (arg_node));
     }
 
-    if (TYPEDEF_NEXT (arg_node)) {
-        Trav (TYPEDEF_NEXT (arg_node), arg_info);
+    if (TYPEDEF_NEXT (arg_node) != NULL) {
+        PRINT_CONT (Trav (TYPEDEF_NEXT (arg_node), arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -1078,7 +1094,7 @@ PrintObjdef (node *arg_node, node *arg_info)
     }
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
-        Trav (OBJDEF_NEXT (arg_node), arg_info);
+        PRINT_CONT (Trav (OBJDEF_NEXT (arg_node), arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -1218,8 +1234,8 @@ PrintFundef (node *arg_node, node *arg_info)
         }
     }
 
-    if (FUNDEF_NEXT (arg_node)) {
-        Trav (FUNDEF_NEXT (arg_node), arg_info); /* traverse next function */
+    if (FUNDEF_NEXT (arg_node) != NULL) { /* traverse next function */
+        PRINT_CONT (Trav (FUNDEF_NEXT (arg_node), arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -1493,11 +1509,11 @@ PrintExprs (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintExprs");
 
-    Trav (EXPRS_EXPR (arg_node), arg_info);
+    EXPRS_EXPR (arg_node) = Trav (EXPRS_EXPR (arg_node), arg_info);
 
     if (EXPRS_NEXT (arg_node) != NULL) {
         fprintf (outfile, ", ");
-        Trav (EXPRS_NEXT (arg_node), arg_info);
+        PRINT_CONT (Trav (EXPRS_NEXT (arg_node), arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -1535,7 +1551,7 @@ PrintArg (node *arg_node, node *arg_info)
 
     if (ARG_NEXT (arg_node) != NULL) {
         fprintf (outfile, ", ");
-        Trav (ARG_NEXT (arg_node), arg_info);
+        PRINT_CONT (Trav (ARG_NEXT (arg_node), arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -1558,7 +1574,7 @@ PrintVardec (node *arg_node, node *arg_info)
     }
     fprintf (outfile, ";\n");
     if (VARDEC_NEXT (arg_node)) {
-        Trav (VARDEC_NEXT (arg_node), arg_info);
+        PRINT_CONT (Trav (VARDEC_NEXT (arg_node), arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -1988,8 +2004,8 @@ PrintVectInfo (node *arg_node, node *arg_info)
             DBUG_ASSERT (0, "illegal N_vinfo-flag!");
         }
 
-        if (VINFO_NEXT (arg_node)) {
-            Trav (VINFO_NEXT (arg_node), arg_info);
+        if (VINFO_NEXT (arg_node) != NULL) {
+            PRINT_CONT (Trav (VINFO_NEXT (arg_node), arg_info));
         }
         fprintf (outfile, " ");
     }
@@ -2067,7 +2083,7 @@ PrintIcm (node *arg_node, node *arg_info)
                 fprintf (outfile, ", ");
             }
 
-            Trav (ICM_NEXT (arg_node), arg_info);
+            PRINT_CONT (Trav (ICM_NEXT (arg_node), arg_info));
         }
     }
 
@@ -2631,7 +2647,7 @@ PrintNpart (node *arg_node, node *arg_info)
         /*
          * continue with other parts
          */
-        NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+        PRINT_CONT (Trav (NPART_NEXT (arg_node), arg_info));
     } else {
         fprintf (outfile, "\n");
     }
@@ -2795,7 +2811,10 @@ PrintWLseg (node *arg_node, node *arg_info)
         }
 
         WLSEG_CONTENTS (seg) = Trav (WLSEG_CONTENTS (seg), arg_info);
-        seg = WLSEG_NEXT (seg);
+        PRINT_CONT (seg = WLSEG_NEXT (seg)) else
+        {
+            seg = NULL;
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -2836,7 +2855,7 @@ PrintWLblock (node *arg_node, node *arg_info)
     }
 
     if (WLBLOCK_NEXT (arg_node) != NULL) {
-        WLBLOCK_NEXT (arg_node) = Trav (WLBLOCK_NEXT (arg_node), arg_info);
+        PRINT_CONT (Trav (WLBLOCK_NEXT (arg_node), arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -2877,7 +2896,7 @@ PrintWLublock (node *arg_node, node *arg_info)
     }
 
     if (WLUBLOCK_NEXT (arg_node) != NULL) {
-        WLUBLOCK_NEXT (arg_node) = Trav (WLUBLOCK_NEXT (arg_node), arg_info);
+        PRINT_CONT (Trav (WLUBLOCK_NEXT (arg_node), arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -2912,7 +2931,7 @@ PrintWLstride (node *arg_node, node *arg_info)
     indent--;
 
     if (WLSTRIDE_NEXT (arg_node) != NULL) {
-        WLSTRIDE_NEXT (arg_node) = Trav (WLSTRIDE_NEXT (arg_node), arg_info);
+        PRINT_CONT (Trav (WLSTRIDE_NEXT (arg_node), arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -2974,7 +2993,7 @@ PrintWLgrid (node *arg_node, node *arg_info)
     indent--;
 
     if (WLGRID_NEXT (arg_node) != NULL) {
-        WLGRID_NEXT (arg_node) = Trav (WLGRID_NEXT (arg_node), arg_info);
+        PRINT_CONT (Trav (WLGRID_NEXT (arg_node), arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -3015,7 +3034,10 @@ PrintWLsegVar (node *arg_node, node *arg_info)
         }
 
         WLSEGVAR_CONTENTS (seg) = Trav (WLSEGVAR_CONTENTS (seg), arg_info);
-        seg = WLSEG_NEXT (seg);
+        PRINT_CONT (seg = WLSEGVAR_NEXT (seg)) else
+        {
+            seg = NULL;
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -3089,7 +3111,7 @@ PrintWLstriVar (node *arg_node, node *arg_info)
     indent--;
 
     if (WLSTRIVAR_NEXT (arg_node) != NULL) {
-        WLSTRIVAR_NEXT (arg_node) = Trav (WLSTRIVAR_NEXT (arg_node), arg_info);
+        PRINT_CONT (Trav (WLSTRIVAR_NEXT (arg_node), arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -3155,7 +3177,7 @@ PrintWLgridVar (node *arg_node, node *arg_info)
     indent--;
 
     if (WLGRIDVAR_NEXT (arg_node) != NULL) {
-        WLGRIDVAR_NEXT (arg_node) = Trav (WLGRIDVAR_NEXT (arg_node), arg_info);
+        PRINT_CONT (Trav (WLGRIDVAR_NEXT (arg_node), arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -3164,28 +3186,27 @@ PrintWLgridVar (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *Print(node *syntax_tree)
+ *   node *PrintTrav( node *syntax_tree, node *arg_info)
  *
  * description:
  *   initiates print of (sub-)tree
  *
  ******************************************************************************/
 
-node *
-Print (node *syntax_tree)
+static node *
+PrintTrav (node *syntax_tree, node *arg_info)
 {
     funtab *old_tab;
-    node *arg_info;
 
-    DBUG_ENTER ("Print");
+    DBUG_ENTER ("PrintTrav");
 
-    /* save act_tab to restore it afterwards. This could be useful if
-       Print() is called from inside a debugger. */
+    /*
+     * Save act_tab to restore it afterwards.
+     * This could be useful if Print() is called from inside a debugger.
+     */
     old_tab = act_tab;
     act_tab = print_tab;
     indent = 0;
-
-    arg_info = MakeInfo ();
 
     if (compiler_phase == PH_genccode) {
         switch (linkstyle) {
@@ -3238,9 +3259,63 @@ Print (node *syntax_tree)
         fprintf (outfile, "\n-----------------------------------------------\n");
     }
 
+    act_tab = old_tab;
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *Print( node *syntax_tree)
+ *
+ * description:
+ *   Prints the whole (sub-) tree behind the given node.
+ *
+ ******************************************************************************/
+
+node *
+Print (node *syntax_tree)
+{
+    node *arg_info;
+
+    DBUG_ENTER ("Print");
+
+    arg_info = MakeInfo ();
+    /* we want to duplicate all sons */
+    INFO_PRINT_CONT (arg_info) = NULL;
+
+    syntax_tree = PrintTrav (syntax_tree, arg_info);
+
     FREE (arg_info);
 
-    act_tab = old_tab;
+    DBUG_RETURN (syntax_tree);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintNode(node *syntax_tree)
+ *
+ * description:
+ *   Prints the given node without next node.
+ *
+ ******************************************************************************/
+
+node *
+PrintNode (node *syntax_tree)
+{
+    node *arg_info;
+
+    DBUG_ENTER ("PrintNode");
+
+    arg_info = MakeInfo ();
+    /* we want to duplicate all sons */
+    INFO_PRINT_CONT (arg_info) = syntax_tree;
+
+    syntax_tree = PrintTrav (syntax_tree, arg_info);
+
+    FREE (arg_info);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -3256,7 +3331,7 @@ Print (node *syntax_tree)
  *
  ******************************************************************************/
 
-void
+static void
 PrintNodeTreeSon (int num, node *node)
 {
     int j;
@@ -3292,7 +3367,7 @@ PrintNodeTreeSon (int num, node *node)
  *
  ******************************************************************************/
 
-void
+static void
 PrintNodeTreeIds (ids *vars)
 {
     DBUG_ENTER ("PrintNodeTreeIds");
