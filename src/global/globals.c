@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/05/07 15:01:48  dkr
+ * PAB_YES, PAB_NO replaced by TRUE, FALSE.
+ *
  * Revision 3.8  2001/03/09 12:43:18  sbs
  * PFfunnme[0] has to be initialized even if profiling is turned off!!!
  * (GenStartupCode breaks otherwise.
@@ -86,8 +89,8 @@
  * top arena.
  *
  * Revision 2.19  1999/10/22 14:16:41  sbs
- * made simpletype_size global, since it is needed in compile, tile_size_inference AND
- * constants already!
+ * made simpletype_size global, since it is needed in compile,
+ * tile_size_inference AND constants already!
  *
  * Revision 2.18  1999/10/04 11:58:34  sbs
  * secret option "sbs" added!
@@ -148,9 +151,6 @@
  *
  * ... [eliminated]
  *
- * Revision 1.1  1998/02/25 09:10:20  cg
- * Initial revision
- *
  */
 
 /*
@@ -176,6 +176,12 @@
 #include "globals.h"
 #include "Error.h"
 #include "internal_lib.h"
+
+/*
+ * special hidden options!
+ */
+bool sbs = FALSE;
+bool dkr = FALSE;
 
 /*
  *  Version control
@@ -252,7 +258,7 @@ char *target_name = "default";
  * Dynamic-sized arrays option
  */
 
-int dynamic_shapes = 0; /* Dynamic shapes are disabled by default */
+bool dynamic_shapes = FALSE; /* Dynamic shapes are disabled by default */
 
 /*
  * Multi-thread options
@@ -322,7 +328,7 @@ int num_cpp_vars = 0;
  * C compiler options
  */
 
-int cc_debug = 0;
+bool cc_debug = FALSE;
 /* Enable/disable inclusion of debug code into object files. */
 
 #ifdef PRODUCTION
@@ -336,7 +342,7 @@ int cc_optimize = 0;
  * Options concerning the new with-loop format
  */
 
-int make_patchwith = 0;
+bool patch_with = FALSE;
 
 /*
  * Command line options for triggering optimizations
@@ -389,19 +395,13 @@ int initial_unified_heapsize = 0;
  */
 
 /*
- * special hidden options!
- */
-int dkr = 0;
-int sbs = 0;
-
-/*
  * Display options
  *
  * These options modify the way print functions behave.
  */
 
-int show_refcnt = 0;
-int show_idx = 0;
+bool show_refcnt = FALSE;
+bool show_idx = FALSE;
 
 /*
  * Runtime options
@@ -411,7 +411,7 @@ int show_idx = 0;
  * implementations of some array operations.
  */
 
-int print_after_break = PAB_YES;
+int print_after_break = TRUE;
 unsigned int traceflag = TRACE_NONE;
 unsigned int profileflag = PROFILE_NONE;
 unsigned int runtimecheck = RUNTIMECHECK_NONE;
@@ -437,27 +437,27 @@ int PFfunapmax = 1;
  * These options specify the way sac2c behaves.
  */
 
-int use_efence = 0;
+bool use_efence = FALSE;
 /* link executable with ElectricFence (Malloc Debugger) */
 
-int cleanup = 1;
+bool cleanup = TRUE;
 /* Don't remove temporary files and directory when compiling
    module/class implementations. */
 
 int linkstyle = 2;
 /* Specify linkage style for module/class implementations */
 
-int libstat = 0;
+bool libstat = FALSE;
 /* Don't actually compile, but display library information. */
 
 int makedeps = 0;
 /* Don't actually compile, but infer module dependencies. */
 
-int gen_cccall = 0;
+bool gen_cccall = FALSE;
 /* Generate shell script '.sac2c' in current directory
    that contains the C compiler call produced by sac2c. */
 
-int show_syscall = 0;
+bool show_syscall = FALSE;
 /* Show system calls during compilation. */
 
 compiler_phase_t break_after = PH_final;
@@ -465,22 +465,20 @@ compiler_phase_t break_after = PH_final;
 
 int break_cycle_specifier = -1;
 /* Additional break specifier that allows a designated break within
-   a particular (optimization) loop */
+   a particular (optimization) loop. */
 
 char break_specifier[MAX_BREAK_SPECIFIER] = "";
 /* Additional break specifier to allow breaking within a particular
    compiler phase at any position. */
 
 unsigned int generatelibrary = GENERATELIBRARY_NOTHING;
-/* Specify interfaces to generate from SAC modules
-   init: nothing, but changed to default standard SAC library
-   if commandline switch is not used */
+/* Specify interfaces to generate from SAC modules.
+   Init: nothing, but changed to default standard SAC library
+         if commandline switch is not used. */
 
 int padding_overhead_limit = 10;
-/*
- * Limit for additional resource allocation due to array padding in percentage.
- * Can be modified via -aplimit option.
- */
+/* Limit for additional resource allocation due to array padding in
+   percentage. Can be modified via -aplimit option. */
 
 bool apdiag = FALSE;
 /* Diagnostics of array padding may be written into a file.
@@ -488,18 +486,15 @@ bool apdiag = FALSE;
    output to "modulename.ap". */
 
 int apdiag_limit = 20000;
-/*
- * Limit for size of diagnostic output given in approximate number of lines.
- * This avoids the creation of extremely huge diagnostic output files.
- */
+/* Limit for size of diagnostic output given in approximate number of lines.
+   This avoids the creation of extremely huge diagnostic output files. */
 
 /*
  *  Definitions of some global variables necessary for the
  *  glorious SAC2C compile time information system
  */
 
-int errors = 0; /* counter for number of errors   */
-
+int errors = 0;   /* counter for number of errors   */
 int warnings = 0; /* counter for number of warnings */
 
 #ifdef PRODUCTION
@@ -508,7 +503,8 @@ int verbose_level = 1; /* controls compile time output   */
 int verbose_level = 3;
 #endif                 /* PRODUCTION */
 
-compiler_phase_t compiler_phase = PH_setup; /* counter for compilation phases */
+/* counter for compilation phases */
+compiler_phase_t compiler_phase = PH_setup;
 
 int message_indent = 0;  /* used for formatting compile time output */
 int last_indent = 0;     /* used for formatting compile time output */
@@ -527,7 +523,7 @@ char *compiler_phase_name[PH_final + 1] = {
 };
 
 /*
- * DBug options
+ * DBUG options
  */
 
 compiler_phase_t my_dbug_from = PH_initial;
@@ -566,7 +562,7 @@ unsigned int max_allocated_mem = 0;
  * Special purpose global variables
  */
 
-int print_objdef_for_header_file = 0;
+bool print_objdef_for_header_file = FALSE;
 /*
  *  This global variable serves a very special purpose.
  *  When generating separate C-files for functions and global variables,

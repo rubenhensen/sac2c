@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/05/07 15:01:42  dkr
+ * PAB_YES, PAB_NO replaced by TRUE, FALSE.
+ *
  * Revision 3.10  2001/04/24 09:36:35  dkr
  * CHECK_NULL renamed into STR_OR_EMPTY
  *
@@ -278,10 +281,10 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_RANGE (break_after, 1, 21);
         switch (break_after) {
         case PH_sacopt:
-            show_idx = 1;
+            show_idx = TRUE;
             break;
         case PH_refcnt:
-            show_refcnt = 1;
+            show_refcnt = TRUE;
             break;
         default:
             break;
@@ -356,7 +359,7 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_FLAG ("c", break_after = PH_genccode);
 
-    ARGS_FLAG ("ds", dynamic_shapes = 1);
+    ARGS_FLAG ("ds", dynamic_shapes = TRUE);
 
     ARGS_OPTION ("do", {
         ARG_CHOICE_BEGIN ();
@@ -445,24 +448,24 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("msca", optimize |= OPT_MSCA);
         ARG_CHOICE ("MSCA", optimize |= OPT_MSCA);
 
-        ARG_CHOICE ("pab", print_after_break = PAB_YES);
-        ARG_CHOICE ("PAB", print_after_break = PAB_YES);
+        ARG_CHOICE ("pab", print_after_break = TRUE);
+        ARG_CHOICE ("PAB", print_after_break = TRUE);
 
         ARG_CHOICE_END ();
     });
 
     ARGS_OPTION ("d", {
         ARG_CHOICE_BEGIN ();
-        ARG_CHOICE ("efence", use_efence = 1);
-        ARG_CHOICE ("nocleanup", cleanup = 0);
-        ARG_CHOICE ("syscall", show_syscall = 1);
-        ARG_CHOICE ("cccall", gen_cccall = 1; cleanup = 0);
+        ARG_CHOICE ("efence", use_efence = TRUE);
+        ARG_CHOICE ("nocleanup", cleanup = FALSE);
+        ARG_CHOICE ("syscall", show_syscall = TRUE);
+        ARG_CHOICE ("cccall", gen_cccall = TRUE; cleanup = FALSE);
         ARG_CHOICE_END ();
     });
 
     ARGS_OPTION ("D", cppvars[num_cpp_vars++] = ARG);
 
-    ARGS_FLAG ("g", cc_debug = 1);
+    ARGS_FLAG ("g", cc_debug = TRUE);
 
     ARGS_OPTION ("genlib", {
         ARG_CHOICE_BEGIN ();
@@ -496,7 +499,7 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_OPTION ("I", AppendPath (MODDEC_PATH, AbsolutePathname (ARG)));
 
-    ARGS_FLAG ("libstat", libstat = 1);
+    ARGS_FLAG ("libstat", libstat = TRUE);
 
 #define LAC_FUN(array)                                                                   \
     {                                                                                    \
@@ -690,8 +693,8 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("msca", optimize &= ~OPT_MSCA);
         ARG_CHOICE ("MSCA", optimize &= ~OPT_MSCA);
 
-        ARG_CHOICE ("pab", print_after_break = PAB_NO);
-        ARG_CHOICE ("PAB", print_after_break = PAB_NO);
+        ARG_CHOICE ("pab", print_after_break = FALSE);
+        ARG_CHOICE ("PAB", print_after_break = FALSE);
 
         ARG_CHOICE_END ();
     });
@@ -722,9 +725,8 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK_END ();
     });
 
-    ARGS_FLAG ("xxx", dkr = 1);
-
-    ARGS_FLAG ("sbs", sbs = 1);
+    ARGS_FLAG ("sbs", sbs = TRUE);
+    ARGS_FLAG ("xxx", dkr = TRUE);
 
     ARGS_OPTION ("target", target_name = ARG);
 
@@ -742,7 +744,7 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK_END ();
     });
 
-    ARGS_FLAG ("wlpatch", make_patchwith = 1);
+    ARGS_FLAG ("wlpatch", patch_with = TRUE);
 
     ARGS_OPTION ("v", ARG_RANGE (verbose_level, 0, 3));
 
