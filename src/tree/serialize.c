@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.8  2004/10/01 08:13:10  sah
+ * fixed include to avoid warning
+ * on linux platform
+ *
  * Revision 1.7  2004/09/30 20:15:52  sah
  * removed some compiler warnings
  *
@@ -37,7 +41,7 @@
 #include "symboltable.h"
 #include "precompile.h"
 #include "convert.h"
-#include <strings.h>
+#include <string.h>
 
 #define MAX_FUN_NAME_LEN 255
 
