@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/03/07 17:50:17  sbs
+ * ST_wrapperfun added
+ *
  * Revision 3.9  2001/11/13 19:19:46  dkr
  * comment is no longer part of the SELECT macro
  *
@@ -192,6 +195,9 @@ SELECT (ST_undef, "ST_undef"),
 
   SELECT (ST_inlinefun, "ST_inlinefun"),
   /* fundef: special function without conditional - to be inlined    */
+
+  SELECT (ST_wrapperfun, "ST_wrapperfun"),
+  /* fundef: wrapper function                                        */
 
   SELECT (ST_zombiefun, "ST_zombiefun")
 /* fundef: zombie function                                         */
