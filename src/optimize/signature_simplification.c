@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/02/18 22:19:02  mwe
+ * bug fixed
+ *
  * Revision 1.5  2005/02/11 12:10:42  mwe
  * now only arguments marked by deadcoderemoval are deleted
  *
@@ -46,6 +49,7 @@ struct INFO {
     node *rets;
     node *apfunrets;
     bool remassign;
+    bool idslet;
 };
 
 #define INFO_SISI_FUNDEF(n) (n->fundef)
@@ -55,6 +59,7 @@ struct INFO {
 #define INFO_SISI_RETS(n) (n->rets)
 #define INFO_SISI_APFUNRETS(n) (n->apfunrets)
 #define INFO_SISI_REMOVEASSIGN(n) (n->remassign)
+#define INFO_SISI_IDSLET(n) (n->idslet)
 
 static info *
 MakeInfo ()
@@ -71,6 +76,7 @@ MakeInfo ()
     INFO_SISI_RETS (result) = NULL;
     INFO_SISI_APFUNRETS (result) = NULL;
     INFO_SISI_REMOVEASSIGN (result) = FALSE;
+    INFO_SISI_IDSLET (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -320,9 +326,12 @@ SISIlet (node *arg_node, info *arg_info)
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
 
-    if ((INFO_SISI_ISAPNODE (arg_info)) && (LET_IDS (arg_node) != NULL)) {
+    if ((INFO_SISI_ISAPNODE (arg_info)) && (LET_IDS (arg_node) != NULL)
+        && (INFO_SISI_APFUNRETS (arg_info) != NULL)) {
         INFO_SISI_REMOVEASSIGN (arg_info) = TRUE;
+        INFO_SISI_IDSLET (arg_info) = TRUE;
         LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+        INFO_SISI_IDSLET (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
@@ -410,36 +419,38 @@ SISIids (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SISIids");
 
-    ret = INFO_SISI_APFUNRETS (arg_info);
-    if (RET_NEXT (INFO_SISI_APFUNRETS (arg_info)) != NULL) {
-        INFO_SISI_APFUNRETS (arg_info) = RET_NEXT (INFO_SISI_APFUNRETS (arg_info));
-    } else {
-        DBUG_ASSERT ((IDS_NEXT (arg_node) == NULL), "ret and ids do not fit together");
-    }
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    if (INFO_SISI_IDSLET (arg_info)) {
+        ret = INFO_SISI_APFUNRETS (arg_info);
+        if (RET_NEXT (INFO_SISI_APFUNRETS (arg_info)) != NULL) {
+            INFO_SISI_APFUNRETS (arg_info) = RET_NEXT (INFO_SISI_APFUNRETS (arg_info));
+        } else {
+            DBUG_ASSERT ((IDS_NEXT (arg_node) == NULL),
+                         "ret and ids do not fit together");
+        }
+        if (IDS_NEXT (arg_node) != NULL) {
+            IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
+        }
 
-    /*
-     * remove bottom-up ids
-     */
-
-    if (AVIS_NEEDCOUNT (IDS_AVIS (arg_node)) == 0) {
-
-        succ = IDS_NEXT (arg_node);
-        IDS_NEXT (arg_node) = NULL;
-        arg_node = FREEdoFreeNode (arg_node);
-        arg_node = succ;
-
-        sisi_expr++;
-    } else {
         /*
-         * non akv-node found, expression has to remain in AST
+         * remove bottom-up ids
          */
 
-        INFO_SISI_REMOVEASSIGN (arg_info) = FALSE;
-    }
+        if (AVIS_NEEDCOUNT (IDS_AVIS (arg_node)) == 0) {
 
+            succ = IDS_NEXT (arg_node);
+            IDS_NEXT (arg_node) = NULL;
+            arg_node = FREEdoFreeNode (arg_node);
+            arg_node = succ;
+
+            sisi_expr++;
+        } else {
+            /*
+             * non akv-node found, expression has to remain in AST
+             */
+
+            INFO_SISI_REMOVEASSIGN (arg_info) = FALSE;
+        }
+    }
     DBUG_RETURN (arg_node);
 }
 

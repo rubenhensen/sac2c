@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.25  2005/02/18 22:19:02  mwe
+ * bug fixed
+ *
  * Revision 1.24  2005/02/16 14:10:19  mwe
  * some renaming done
  *
@@ -424,19 +427,20 @@ AssignTypeToExpr (node *expr, ntype *type)
 
 /**<!--****************************************************************-->
  *
- * @fn bool *IsArgumentOfSpecialFunction(node *arg)
+ * @fn bool *IsArgumentOfSpecialFunction(node *arg, info *arg_info)
  *
  * @brief This function returns TRUE iff 'arg' is an argument of a
  *   special function (confun, dofun).
  *   While-funs are already changed to Do-funs.
  *
  * @param arg array-node or id-node
+ * @param arg_info
  *
  * @result True if arg is an argument of a special function
  *
  *********************************************************************/
 static bool
-IsArgumentOfSpecialFunction (node *arg)
+IsArgumentOfSpecialFunction (node *arg, info *arg_info)
 {
     bool result;
     DBUG_ENTER ("IsArgumentOfSpecialFunction");
@@ -457,11 +461,11 @@ IsArgumentOfSpecialFunction (node *arg)
              * arg is an argument of a function.
              * Now we have to verify wheter it is a special function or not.
              */
-            DBUG_ASSERT ((ARG_FUNDEF (AVIS_DECL (ID_AVIS (arg))) != NULL),
+            DBUG_ASSERT ((INFO_TUP_FUNDEF (arg_info) != NULL),
                          "No pointer to fundef found");
 
-            if ((FUNDEF_ISCONDFUN (ARG_FUNDEF (AVIS_DECL (ID_AVIS (arg)))))
-                || (FUNDEF_ISDOFUN (ARG_FUNDEF (AVIS_DECL (ID_AVIS (arg)))))) {
+            if ((FUNDEF_ISCONDFUN (INFO_TUP_FUNDEF (arg_info)))
+                || (FUNDEF_ISDOFUN (INFO_TUP_FUNDEF (arg_info)))) {
                 result = TRUE;
             } else {
                 result = FALSE;
@@ -1805,7 +1809,7 @@ TUPgenerator (node *arg_node, info *arg_info)
      * value is no argument of a special function (funcond, dofun)
      */
 
-    if ((IsArgumentOfSpecialFunction (GENERATOR_BOUND1 (arg_node)) == FALSE)
+    if ((IsArgumentOfSpecialFunction (GENERATOR_BOUND1 (arg_node), arg_info) == FALSE)
         && (global.optimize.dortup)) {
         if (TYisAKV (lb)) {
             GENERATOR_BOUND1 (arg_node)
@@ -1816,7 +1820,7 @@ TUPgenerator (node *arg_node, info *arg_info)
         }
     }
 
-    if ((IsArgumentOfSpecialFunction (GENERATOR_BOUND2 (arg_node)) == FALSE)
+    if ((IsArgumentOfSpecialFunction (GENERATOR_BOUND2 (arg_node), arg_info) == FALSE)
         && (global.optimize.dortup)) {
         if (TYisAKV (ub)) {
             GENERATOR_BOUND2 (arg_node)
@@ -1829,7 +1833,7 @@ TUPgenerator (node *arg_node, info *arg_info)
 
     if (NULL != GENERATOR_STEP (arg_node)) {
 
-        if ((IsArgumentOfSpecialFunction (GENERATOR_STEP (arg_node)) == FALSE)
+        if ((IsArgumentOfSpecialFunction (GENERATOR_STEP (arg_node), arg_info) == FALSE)
             && (global.optimize.dortup)) {
             if (TYisAKV (st)) {
                 GENERATOR_STEP (arg_node)
@@ -1843,7 +1847,7 @@ TUPgenerator (node *arg_node, info *arg_info)
     }
 
     if (NULL != GENERATOR_WIDTH (arg_node)) {
-        if ((IsArgumentOfSpecialFunction (GENERATOR_WIDTH (arg_node)) == FALSE)
+        if ((IsArgumentOfSpecialFunction (GENERATOR_WIDTH (arg_node), arg_info) == FALSE)
             && (global.optimize.dortup)) {
 
             if (TYisAKV (wi)) {
@@ -2239,7 +2243,11 @@ TUPgenarray (node *arg_node, info *arg_info)
     expr = INFO_TUP_WLEXPRS (arg_info);
     idx = TYcopyType (AVIS_TYPE (IDS_AVIS (INFO_TUP_WITHIDVEC (arg_info))));
     shp = NTCnewTypeCheck_Expr (GENARRAY_SHAPE (arg_node));
-    dexpr = NTCnewTypeCheck_Expr (GENARRAY_DEFAULT (arg_node));
+    if (GENARRAY_DEFAULT (arg_node) != NULL) {
+        dexpr = NTCnewTypeCheck_Expr (GENARRAY_DEFAULT (arg_node));
+    } else {
+        dexpr = TYcopyType (expr);
+    }
 
     prod = TYmakeProductType (4, idx, shp, expr, dexpr);
     info = TEmakeInfo (global.linenum, "with", "", "genarray", NULL, NULL, NULL, NULL);

@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.11  2005/02/18 22:19:02  mwe
+ * bug fixed
+ *
  * Revision 1.10  2005/02/16 14:11:09  mwe
  * some doxygen comments added
  *
@@ -117,27 +120,27 @@ FreeInfo (info *info)
 
 /**<!--****************************************************************-->
  *
- * @fn static node *CheckId(node *id, prf op)
+ * @fn static node *CheckExpr(node *expr, prf op)
  *
  * @brief checks if definiton of argument fullfils special conditions
  *        (is an assignment with  primitive of type esd_rec or esd_neg)
  *
- * @param id argument of primitive operation
+ * @param expr argument of primitive operation
  * @param op current prf
  *
  * @return
  *
  ************************************************************************/
 static node *
-CheckId (node *id, prf op)
+CheckExpr (node *expr, prf op)
 {
     node *result = NULL;
 
-    DBUG_ENTER ("CheckId");
+    DBUG_ENTER ("CheckExpr");
 
-    if (AVIS_SSAASSIGN (ID_AVIS (id)) != NULL) {
+    if ((N_id == NODE_TYPE (expr)) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)) {
 
-        node *assign = AVIS_SSAASSIGN (ID_AVIS (id));
+        node *assign = AVIS_SSAASSIGN (ID_AVIS (expr));
         prf prfop;
         bool correctop = FALSE;
 
@@ -391,8 +394,8 @@ UESDprf (node *arg_node, info *arg_info)
             /*
              * handel add and div seperatly
              */
-            id1 = CheckId (EXPRS_EXPR (PRF_ARGS (arg_node)), op);
-            id2 = CheckId (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), op);
+            id1 = CheckExpr (EXPRS_EXPR (PRF_ARGS (arg_node)), op);
+            id2 = CheckExpr (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), op);
 
             if ((id1 == NULL) && (id2 == NULL)) {
                 /*
