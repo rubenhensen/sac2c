@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1998/05/27 11:17:57  cg
+ * added global variable 'puresacfilename' which provides the file to be
+ * compiled without leading path information as contained in sacfilename.
+ *
  * Revision 1.17  1998/05/13 13:52:57  srs
  * added wlunrnum
  *
@@ -94,6 +98,9 @@ FILE *outfile;
 
 char sacfilename[MAX_FILE_NAME] = "";
 /* name of file to be compiled */
+
+char *puresacfilename;
+/* sacfilename without path specification */
 
 char outfilename[MAX_FILE_NAME] = "";
 /* name of executable    */

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.29  1998/05/27 11:17:57  cg
+ * added global variable 'puresacfilename' which provides the file to be
+ * compiled without leading path information as contained in sacfilename.
+ *
  * Revision 1.28  1998/05/13 13:52:09  srs
  * added wlunrnum
  *
@@ -127,6 +131,7 @@ extern char targetdir[];
 extern char commandline[];
 extern file_type filetype;
 extern char *tmp_dirname;
+extern char *puresacfilename;
 
 extern char target_name[];
 
