@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/27 03:09:47  khf
+ * adjusted name
+ *
  * Revision 1.2  2004/11/24 18:51:58  ktr
  * COMPILES!
  *
@@ -395,7 +398,7 @@ WLSBcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLSBgen(node *arg_node, info *arg_info)
+ * @fn node *WLSBgenerator(node *arg_node, info *arg_info)
  *
  * @brief
  *
@@ -406,7 +409,7 @@ WLSBcode (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-WLSBgen (node *arg_node, info *arg_info)
+WLSBgenerator (node *arg_node, info *arg_info)
 {
     int outerdim, innerdim;
     node *newlb, *newub, *newstep, *newwidth;
