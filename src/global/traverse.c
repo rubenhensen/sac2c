@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/04/11 15:57:47  asi
+ * Revision 1.21  1995/05/01 15:34:57  asi
+ * dup_tab inserted
+ *
+ * Revision 1.20  1995/04/11  15:57:47  asi
  * NIF macro enlarged
  *
  * Revision 1.19  1995/04/07  10:16:26  hw
@@ -70,7 +73,6 @@
 #include <stdlib.h>
 
 #include "tree.h"
-#include "free.h"
 #include "Error.h"
 #include "dbug.h"
 #include "my_debug.h"
@@ -79,6 +81,7 @@
 #include "print.h"
 #include "typecheck.h"
 #include "optimize.h"
+#include "free.h"
 #include "ConstantFolding.h"
 #include "DeadCodeRemoval.h"
 #include "WorkReduction.h"
@@ -86,6 +89,7 @@
 #include "import.h"
 #include "refcount.h"
 #include "compile.h"
+#include "DupTree.h"
 
 #include "traverse.h"
 
@@ -246,6 +250,18 @@ funptr lir_tab[] = {
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j) j
 
 funptr lir_mov_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 14) dup_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j) e
+
+funptr dup_tab[] = {
 #include "node_info.mac"
 };
 

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/04/11 15:57:47  asi
+ * Revision 1.15  1995/05/01 15:34:57  asi
+ * dup_tab inserted
+ *
+ * Revision 1.14  1995/04/11  15:57:47  asi
  * NIF macro enlarged
  *
  * Revision 1.13  1995/04/07  10:16:26  hw
@@ -86,5 +89,7 @@ extern funptr comp_tab[];
 extern funptr lir_tab[];
 
 extern funptr lir_mov_tab[];
+
+extern funptr dup_tab[];
 
 #endif /* _sac_traverse_h */
