@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.58  1995/07/14 12:05:37  hw
+ * Revision 1.59  1995/07/19 12:19:16  hw
+ * changed RenameFunName( the name of a userdefined "external" primitive
+ *  function will be set to the one specified in the module or
+ *  class declartion ( it is stored in node[5] of N_fundef))
+ *
+ * Revision 1.58  1995/07/14  12:05:37  hw
  * - changed macro CHECK_REUSE__ALLOC_ARRAY_ND( reuse only if ol and new array
  *   have equal basic-simpletypes)
  *
@@ -565,7 +570,10 @@ RenameFunName (node *fun_node)
             /* don't free tmp_fun_node->ID_MOD, because it is shared !! */
             tmp_fun_node->ID = new_name;
             tmp_fun_node->ID_MOD = NULL;
-        }
+        } else if ((NULL == tmp_fun_node->node[0]) && (NULL == tmp_fun_node->ID_MOD)
+                   && (NULL != tmp_fun_node->node[5]))
+            tmp_fun_node->ID = (char *)tmp_fun_node->node[5];
+
         tmp_fun_node = tmp_fun_node->node[1];
     } while (NULL != tmp_fun_node);
 
