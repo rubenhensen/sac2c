@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.145  2004/11/19 15:41:05  ktr
+ * F_reshape and F_alloc_or_reshape are now implemented differently.
+ *
  * Revision 3.144  2004/11/08 14:49:56  ktr
  * added COMPPrfNoop.
  *
@@ -1077,6 +1080,29 @@ MakeSetRcIcm (char *name, types *type, int rc, node *assigns)
                                       MakeId_Copy (GenericFun (1, type)), assigns);
         }
     }
+
+    DBUG_RETURN (assigns);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *MakeCopyRcIcm( char *to_name,   types *to_type,
+ *                           char *from_name, types *from_type)
+ *
+ * @brief  Builds a ND_SET__RC( to_name, ND_GET__RC( from_name)) icm if needed.
+ *
+ ******************************************************************************/
+
+static node *
+MakeCopyRcIcm (char *to_name, types *to_type, char *from_name, types *from_type,
+               node *assigns)
+{
+    DBUG_ENTER ("MakeCopyRcIcm");
+
+    assigns
+      = MakeAssignIcm2 ("ND_SET__RC", MakeId_Copy_NT (to_name, to_type),
+                        MakeIcm1 ("ND_GET__RC", MakeId_Copy_NT (from_name, from_type)),
+                        assigns);
 
     DBUG_RETURN (assigns);
 }
@@ -4314,6 +4340,35 @@ COMPPrfCopy (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node COMPPrfIsReused( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_isreused
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfIsReused (node *arg_node, info *arg_info)
+{
+    ids *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfIsReused");
+
+    let_ids = INFO_COMP_LASTIDS (arg_info);
+
+    ret_node = MakeAssignIcm3 ("ND_PRF_IS_REUSED", DupIds_Id_NT (let_ids),
+                               DupId_NT (PRF_ARG1 (arg_node)),
+                               DupId_NT (PRF_ARG2 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *COMPPrfDim( node *arg_node, info *arg_info,
  *                        node **check_reuse1, node **check_reuse2,
  *                        node **get_dim, node **set_shape_icm)
@@ -4410,8 +4465,7 @@ COMPPrfShape (node *arg_node, info *arg_info, node **check_reuse1, node **check_
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfReshape( node *arg_node, info *arg_info,
- *                            node *rc_icms)
+ * @fn  node *COMPPrfReshape( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_reshape.
  *   The return value is a N_assign chain of ICMs.
@@ -4423,12 +4477,11 @@ COMPPrfShape (node *arg_node, info *arg_info, node **check_reuse1, node **check_
  ******************************************************************************/
 
 static node *
-COMPPrfReshape (node *arg_node, info *arg_info, node *rc_icms)
+COMPPrfReshape (node *arg_node, info *arg_info)
 {
-    node *arg1, *arg2;
     ids *let_ids;
-    node *get_dim = NULL, *set_shape_icm = NULL, *alloc_icm;
-    int reuse;
+    node *set_shape_icm = NULL;
+    int rc;
     char *copyfun;
     int dim_new, dim_old;
     node *ret_node = NULL;
@@ -4436,8 +4489,6 @@ COMPPrfReshape (node *arg_node, info *arg_info, node *rc_icms)
     DBUG_ENTER ("COMPPrfReshape");
 
     let_ids = INFO_COMP_LASTIDS (arg_info);
-    arg1 = PRF_ARG1 (arg_node);
-    arg2 = PRF_ARG2 (arg_node);
 
     /*
      *   B = reshape( sv, A);
@@ -4458,122 +4509,94 @@ COMPPrfReshape (node *arg_node, info *arg_info, node *rc_icms)
      * Here, the backend can avoid the creation of the array containing the shape
      * [3,4].
      *
-     *   shp = fun( ...);
-     *   B = reshape( sv, [...]);
-     *
-     * Here, the backend can avoid the creation of a descriptor for the constant
-     * argument [...]. (Since the dimension of 'B' will most likely not equal the
-     * dimension of [...], the descriptor of [...] can not be reused by 'B'.)
      */
+    DBUG_ASSERT (NODE_TYPE (PRF_ARG4 (arg_node)) == N_id,
+                 "Fourth arg of reshape must be N_id");
 
-    if (!emm) {
-        get_dim = MakeSizeArg (arg1, FALSE);
+    rc = NUM_VAL (PRF_ARG1 (arg_node));
+    set_shape_icm = MakeSetShapeIcm (PRF_ARG3 (arg_node), let_ids);
 
-        if (NODE_TYPE (arg1) == N_id) {
-            set_shape_icm
-              = MakeIcm1 ("ND_PRF_RESHAPE__SHAPE_id",
-                          MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
-                                        TRUE, FALSE, MakeExprs (DupId_NT (arg1), NULL)));
-        } else {
-            DBUG_ASSERT ((NODE_TYPE (arg1) == N_array),
-                         "1st arg of F_reshape is neither N_id nor N_array!");
-
-            set_shape_icm
-              = MakeIcm1 ("ND_PRF_RESHAPE__SHAPE_arr",
-                          MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
-                                        TRUE, FALSE,
-                                        MakeExprs (MakeSizeArg (arg1, TRUE),
-                                                   DupExprs_NT (ARRAY_AELEMS (arg1)))));
-        }
-
-        alloc_icm = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                  RC_INIT (IDS_REFCNT (let_ids)), get_dim, set_shape_icm,
-                                  NULL, NULL);
-
-        ret_node = rc_icms;
-
-    } else {
-        alloc_icm = NULL;
-    }
 #if 1
     /* Is this correct? Or do we have to take the rhs instead? */
     copyfun = GenericFun (0, IDS_TYPE (let_ids));
 #endif
 
-    if (NODE_TYPE (arg2) == N_id) {
-        if (!emm) {
-            /* Reuse detection won't work this way in EMM */
-            reuse = CheckReuse (RC_INIT (IDS_REFCNT (let_ids)), arg2, NULL);
-        } else {
-            reuse = FALSE;
-        }
-        if (reuse) {
-            ret_node
-              = MakeAssignIcm1 ("IS_LASTREF__BLOCK_END", DupId_NT (arg2), ret_node);
-        }
+    ret_node
+      = MakeSetRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), rc,
+                      MakeAssign (set_shape_icm,
+                                  MakeAssignIcm3 ("ND_ASSIGN__DATA",
+                                                  DupIds_Id_NT (let_ids),
+                                                  DupId_NT (PRF_ARG4 (arg_node)),
+                                                  MakeId_Copy (copyfun), ret_node)));
 
-        ret_node = AppendAssign (alloc_icm,
-                                 MakeAssignIcm3 ("ND_COPY__DATA", DupIds_Id_NT (let_ids),
-                                                 DupId_NT (arg2), MakeId_Copy (copyfun),
-                                                 ret_node));
+    dim_new = GetDim (IDS_TYPE (let_ids));
+    dim_old = GetDim (ID_TYPE (PRF_ARG4 (arg_node)));
 
-        if (reuse) {
-            ret_node = MakeSetRcIcm (
-              IDS_NAME (let_ids), IDS_TYPE (let_ids), RC_INIT (IDS_REFCNT (let_ids)),
-              MakeAssign (DupTree (set_shape_icm),
-                          MakeAssignIcm3 (
-                            "ND_ASSIGN__DATA", DupIds_Id_NT (let_ids), DupId_NT (arg2),
-                            MakeId_Copy (copyfun),
-                            MakeIncRcIcm (ID_NAME (arg2), ID_TYPE (arg2),
-                                          ID_REFCNT (arg2), 1,
-                                          MakeAssignIcm1 ("IS_LASTREF__BLOCK_ELSE",
-                                                          DupId_NT (arg2), ret_node)))));
-
-            dim_new = GetDim (IDS_TYPE (let_ids));
-            dim_old = GetDim (ID_TYPE (arg2));
-            if ((dim_new >= 0) && (dim_old >= 0) && (dim_new <= dim_old)) {
-                /*
-                 * the old descriptor is large enough to be reused :-)
-                 */
-                ret_node = MakeAssignIcm2 ("ND_ASSIGN__DESC", DupIds_Id_NT (let_ids),
-                                           DupId_NT (arg2), ret_node);
-            } else {
-                ret_node
-                  = MakeAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                      IDS_REFCNT (let_ids), DupTree (get_dim),
-                                      MakeAssignIcm1 ("ND_FREE__DESC", DupId_NT (arg2),
-                                                      MakeAssignIcm2 ("ND_ASSIGN__DESC",
-                                                                      DupId_NT (arg2),
-                                                                      DupIds_Id_NT (
-                                                                        let_ids),
-                                                                      ret_node)));
-            }
-
-            ret_node
-              = MakeAssignIcm1 ("IS_LASTREF__BLOCK_BEGIN", DupId_NT (arg2), ret_node);
-        }
-    } else if (NODE_TYPE (arg2) == N_array) {
-        DBUG_ASSERT ((NODE_TYPE (arg2) == N_array),
-                     "2nd arg of F_reshape is neither N_id nor N_array!");
-
-        ret_node
-          = AppendAssign (alloc_icm,
-                          MakeAssignIcm2 ("ND_CREATE__ARRAY__DATA",
-                                          MakeTypeArgs (IDS_NAME (let_ids),
-                                                        IDS_TYPE (let_ids), FALSE, TRUE,
-                                                        FALSE,
-                                                        MakeExprs (MakeSizeArg (arg2,
-                                                                                TRUE),
-                                                                   DupExprs_NT (
-                                                                     ARRAY_AELEMS (
-                                                                       arg2)))),
-                                          MakeId_Copy (copyfun), ret_node));
+    if ((dim_new >= 0) && (dim_old >= 0) && (dim_new <= dim_old)) {
+        /*
+         * the old descriptor is large enough to be reused :-)
+         */
+        ret_node = MakeAssignIcm2 ("ND_ASSIGN__DESC", DupIds_Id_NT (let_ids),
+                                   DupId_NT (PRF_ARG4 (arg_node)), ret_node);
     } else {
-        /* 'arg2' is a scalar */
-        ret_node = AppendAssign (alloc_icm, MakeAssignIcm2 ("ND_CREATE__SCALAR__DATA",
-                                                            DupIds_Id_NT (let_ids),
-                                                            DupNode (arg2), ret_node));
+        ret_node
+          = MakeAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), rc,
+                              MakeGetDimIcm (PRF_ARG2 (arg_node)),
+                              MakeAssignIcm1 ("ND_FREE__DESC",
+                                              DupId_NT (PRF_ARG4 (arg_node)),
+                                              MakeAssignIcm2 ("ND_ASSIGN__DESC",
+                                                              DupId_NT (
+                                                                PRF_ARG4 (arg_node)),
+                                                              DupIds_Id_NT (let_ids),
+                                                              ret_node)));
     }
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPPrfAllocOrReshape( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_alloc_or_reshape.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfAllocOrReshape (node *arg_node, info *arg_info)
+{
+    ids *let_ids;
+    node *get_dim = NULL, *set_shape_icm = NULL;
+    int rc;
+    node *ret_node = NULL;
+
+    DBUG_ENTER ("COMPPrfAllocOrReshape");
+
+    let_ids = INFO_COMP_LASTIDS (arg_info);
+
+    rc = NUM_VAL (PRF_ARG1 (arg_node));
+    NUM_VAL (PRF_ARG1 (arg_node)) = 1;
+
+    get_dim = MakeGetDimIcm (PRF_ARG2 (arg_node));
+    set_shape_icm = MakeSetShapeIcm (PRF_ARG3 (arg_node), let_ids);
+
+    ret_node = MakeAssignIcm1 (
+      "IS_LASTREF__BLOCK_BEGIN", DupId_NT (PRF_ARG4 (arg_node)),
+      AppendAssign (COMPPrfReshape (arg_node, arg_info),
+                    MakeAssignIcm1 (
+                      "IS_LASTREF__BLOCK_ELSE", DupId_NT (PRF_ARG4 (arg_node)),
+                      MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, get_dim,
+                                    set_shape_icm, NULL,
+                                    MakeAssignIcm1 ("IS_LASTREF__BLOCK_END",
+                                                    DupId_NT (PRF_ARG4 (arg_node)),
+                                                    MakeIncRcIcm (IDS_NAME (let_ids),
+                                                                  IDS_TYPE (let_ids), rc,
+                                                                  rc, ret_node))))));
 
     DBUG_RETURN (ret_node);
 }
@@ -5562,9 +5585,8 @@ COMPPrf (node *arg_node, info *arg_info)
         ret_node = COMPIdToUnique (AP_ARG1 (arg_node), arg_info);
     } else if (PRF_PRF (arg_node) == F_from_unq) {
         ret_node = COMPIdFromUnique (AP_ARG1 (arg_node), arg_info);
-    } else if (PRF_PRF (arg_node) == F_reshape) {
-        ret_node = COMPPrfReshape (arg_node, arg_info, ret_node2);
     }
+
     /*
      * the remaining prfs can be compiled in a common way
      */
@@ -5591,6 +5613,18 @@ COMPPrf (node *arg_node, info *arg_info)
 
         case F_reuse:
             DBUG_ASSERT ((0), "F_reuse must be eliminated before code generation");
+            break;
+
+        case F_reshape:
+            ret_node = COMPPrfReshape (arg_node, arg_info);
+            break;
+
+        case F_alloc_or_reshape:
+            ret_node = COMPPrfAllocOrReshape (arg_node, arg_info);
+            break;
+
+        case F_isreused:
+            ret_node = COMPPrfIsReused (arg_node, arg_info);
             break;
 
         case F_suballoc:
