@@ -8,6 +8,7 @@
 
 #define TYPE_LENGTH 80      /* dimension of array of char */
 #define FUN_HEAD_LENGTH 120 /* dimension of array of char */
+#define INT_STRING_LENGTH 5 /* dimension of array of char */
 
 extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
 extern funptr print_tab[];
@@ -19,6 +20,7 @@ char *type_string[] = {"int", "float", "bool"};
 char *prf_string[] = {
 #include "prf_node_info.mac"
 };
+
 #undef PRF_IF
 
 /*
@@ -39,8 +41,21 @@ Type2String (types *type, int print_id)
         if (0 == type->dim)
             strcat (tmp_string, type_string[type->simpletype]);
         else {
+            int i;
+            static char int_string[INT_STRING_LENGTH];
+
             strcat (tmp_string, type_string[type->simpletype]);
-            strcat (tmp_string, "[..]");
+            strcat (tmp_string, "[ ");
+            for (i = 0; i < type->dim; i++)
+                if (i != (type->dim - 1)) {
+                    DBUG_PRINT ("PRINT", ("shp[%d]=%d", i, type->shpseg->shp[i]));
+                    sprintf (int_string, "%d, ", type->shpseg->shp[i]);
+                    strcat (tmp_string, int_string);
+                } else {
+                    DBUG_PRINT ("PRINT", ("shp[%d]=%d", i, type->shpseg->shp[i]));
+                    sprintf (int_string, "%d ] ", type->shpseg->shp[i]);
+                    strcat (tmp_string, int_string);
+                }
         }
         if ((NULL != type->id) && print_id) {
             strcat (tmp_string, " ");
@@ -56,28 +71,25 @@ Type2String (types *type, int print_id)
 }
 
 /*
- * convert ids-information to string
+ * prints ids-information to outfile
  *
  */
-char *
-Ids2String (ids *ids)
+void *
+PrintIds (ids *ids)
 {
-    char string[80];
+    DBUG_ENTER ("PrintIds");
 
-    DBUG_ENTER ("Ids2String");
-
-    string[0] = '\0';
     do {
         DBUG_PRINT ("PRINT", ("%s", ids->id));
 
-        strcat (string, ids->id);
+        if (NULL != ids->next)
+            fprintf (outfile, "%s, ", ids->id);
+        else
+            fprintf (outfile, "%s ", ids->id);
         ids = ids->next;
-        if (NULL != ids)
-            strcat (string, " ,");
     } while (NULL != ids);
-    DBUG_PRINT ("PRINT", ("resultstring: %s", string));
 
-    DBUG_RETURN (string);
+    DBUG_VOID_RETURN;
 }
 
 node *
@@ -122,8 +134,8 @@ PrintLet (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
-    fprintf (outfile, "%s = ", Ids2String (arg_node->info.ids));
-
+    PrintIds (arg_node->info.ids);
+    fprintf (outfile, " = ");
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, "; ");
 
