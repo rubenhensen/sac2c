@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/26 14:47:47  sbs
+ * *** empty log message ***
+ *
  * Revision 1.2  2004/11/26 14:38:55  sbs
  * compiles
  *
@@ -20,9 +23,9 @@
 #include "globals.h"
 
 void
-COSerializeConstant (FILE *file, constant *cnst)
+COserializeConstant (FILE *file, constant *cnst)
 {
-    DBUG_ENTER ("COSerializeConstant");
+    DBUG_ENTER ("COserializeConstant");
 
     DBUG_PRINT ("SET", ("Processing constant structure"));
 
