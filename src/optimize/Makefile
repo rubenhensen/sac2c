@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.22  1995/12/15 10:41:10  cg
+# Revision 1.23  1996/01/17 14:42:22  asi
+# added ../modules to INCS
+#
+# Revision 1.22  1995/12/15  10:41:10  cg
 # make deps done
 #
 # Revision 1.21  1995/10/08  11:29:52  sbs
@@ -71,7 +74,7 @@
 MAKE=make
 CC=gcc -ansi -g
 
-INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt
+INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules
 
 all: optimize.o ConstantFolding.o DeadCodeRemoval.o WorkReduction.o \
      LoopInvariantRemoval.o DupTree.o Inline.o Unroll.o Unswitch.o
