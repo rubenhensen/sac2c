@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/06/02 21:38:14  dkr
+ * support for TAGGED_ARRAYS added
+ *
  * Revision 3.2  2002/03/07 20:13:34  dkr
  * - Support for ICMs arguments of type N_icm (H-ICMs with str-, int-, var- or
  *   varint-arguments only) added (ICM_ICM).
@@ -105,7 +108,7 @@ GetNextId (char **ret, node *exprs)
     expr = EXPRS_EXPR (exprs);
 
     DBUG_ASSERT ((NODE_TYPE (expr) == N_id), "wrong icm-arg: N_id expected");
-    (*ret) = StringCopy (ID_NAME (expr));
+    (*ret) = StringCopy ((ID_NT_TAG (expr) != NULL) ? ID_NT_TAG (expr) : ID_NAME (expr));
 
     DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
 

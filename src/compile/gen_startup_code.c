@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/06/02 21:39:47  dkr
+ * support for TAGGED_ARRAYS added
+ *
  * Revision 3.13  2002/04/16 21:12:48  dkr
  * GSCPrintMain() added
  *
@@ -893,7 +896,12 @@ GSCPrintMain ()
     }
     fprintf (outfile, "  int __res;\n\n");
     GSCPrintMainBegin ();
+
+#ifdef TAGGED_ARRAYS
+    fprintf (outfile, "  SACf_main_( SAC_ND_ARG_out( (__res, (SCL, (NUQ,))))");
+#else
     fprintf (outfile, "  __res = SACf_main_(");
+#endif
     if (print_thread_id) {
         fprintf (outfile, " SAC_ND_ARG_in( SAC_MT_mythread)");
     }
