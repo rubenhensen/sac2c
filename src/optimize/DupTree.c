@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.60  1998/04/17 11:41:52  srs
+ * fixed bug in DupNwith() and added DupNcode()
+ *
  * Revision 1.59  1998/04/16 16:08:03  srs
  * renamed INL_TYPES to INFO_INL_TYPES
  *
@@ -206,6 +209,8 @@
 
 /******************************************************************************/
 
+/* LEVEL is only needed to distinguishe between th two occurences
+   of N_return: inside the old WL and at the end of functions. */
 #define LEVEL arg_info->lineno
 
 /*
@@ -419,10 +424,10 @@ DupId (node *arg_node, node *arg_info)
 
     new_node = MakeNode (arg_node->nodetype);
     new_node->info.ids
-      = (!arg_node->info.ids ? NULL : DupIds (arg_node->info.ids, arg_info));
+      = (arg_node->info.ids ? DupIds (arg_node->info.ids, arg_info) : NULL);
     DUP (arg_node, new_node);
     for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++) {
-        if (arg_node->node[i] != NULL) {
+        if (arg_node->node[i]) {
             new_node->node[i] = Trav (arg_node->node[i], arg_info);
         }
     }
@@ -518,13 +523,11 @@ DupChain (node *arg_node, node *arg_info)
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     new_node = MakeNode (arg_node->nodetype);
     DUP (arg_node, new_node);
-    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++) {
-        if (arg_node->node[i] != NULL) {
-            LEVEL++;
+    LEVEL++;
+    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
+        if (arg_node->node[i])
             new_node->node[i] = Trav (arg_node->node[i], arg_info);
-            LEVEL--;
-        }
-    }
+    LEVEL--;
 
     DBUG_RETURN (new_node);
 }
@@ -541,16 +544,14 @@ DupAssign (node *arg_node, node *arg_info)
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     switch (DUPTYPE) {
     case DUP_INLINE:
-        if ((0 == LEVEL) && (N_return == arg_node->node[0]->nodetype))
+        if (0 == LEVEL && N_return == NODE_TYPE (ASSIGN_INSTR (arg_node)))
             break;
     default:
         new_node = MakeNode (arg_node->nodetype);
         DUP (arg_node, new_node);
-        for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++) {
-            if (arg_node->node[i] != NULL) {
+        for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
+            if (arg_node->node[i])
                 new_node->node[i] = Trav (arg_node->node[i], arg_info);
-            }
-        }
         break;
     }
     DBUG_RETURN (new_node);
@@ -787,8 +788,10 @@ DupNwith (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupNwith");
 
     LEVEL++;
-    partn = Trav (NWITH_PART (arg_node), arg_info);
+    /* very important: copy codes before parts because NCODE_COPY has to
+       be set before the parts are traversed. */
     coden = Trav (NWITH_CODE (arg_node), arg_info);
+    partn = Trav (NWITH_PART (arg_node), arg_info);
     withopn = Trav (NWITH_WITHOP (arg_node), arg_info);
     LEVEL--;
 
@@ -853,9 +856,34 @@ DupNpart (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupNpart");
     DBUG_ASSERT (NPART_CODE (arg_node), ("N_Npart node has no valid NPART_CODE"));
 
-    new_node = MakeNPart (DUPTRAV (NPART_WITHID (arg_node)),
-                          DUPTRAV (NPART_GEN (arg_node)), NPART_CODE (arg_node));
+    new_node
+      = MakeNPart (DUPTRAV (NPART_WITHID (arg_node)), DUPTRAV (NPART_GEN (arg_node)),
+                   NCODE_COPY (NPART_CODE (arg_node)));
     NPART_NEXT (new_node) = DUPCONT (NPART_NEXT (arg_node));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupNcode (node *arg_node, node *arg_info)
+{
+    node *new_node;
+    int i;
+
+    DBUG_ENTER ("DupNcode");
+
+    new_node = MakeNode (arg_node->nodetype);
+    DUP (arg_node, new_node);
+    LEVEL++;
+    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
+        if (arg_node->node[i])
+            new_node->node[i] = Trav (arg_node->node[i], arg_info);
+    LEVEL--;
+
+    NCODE_USED (new_node) = NCODE_USED (arg_node);
+    NCODE_COPY (arg_node) = new_node;
 
     DBUG_RETURN (new_node);
 }
