@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2001/04/02 16:58:57  dkr
+ * DoPrintAST modified: NWITH2_MT added
+ *
  * Revision 3.39  2001/04/02 16:02:51  dkr
  * NodeOrInt_Print used
  *
@@ -4385,6 +4388,9 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, "(");
 
             fprintf (outfile, "offset_needed: %i", NWITH2_OFFSET_NEEDED (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "mt: %i", NWITH2_MT (arg_node));
 
             fprintf (outfile, ")");
             break;
