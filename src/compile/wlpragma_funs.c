@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2001/04/03 10:00:00  dkr
+ * WLCOMP_Bv() renamed to StoreBv()
+ *
  * Revision 3.20  2001/04/03 09:50:33  dkr
  * some warning/error messages modified
  *
@@ -415,7 +418,8 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
 /******************************************************************************
  *
  * Function:
- *   node *Array2Bv( node *array, int *bv, int dims, int line)
+ *   node *Array2Bv( node *array, int *bv, int dims,
+ *                   char *fun_name, int line)
  *
  * Description:
  *   converts an N_array node into a blocking vector (int *).
@@ -423,7 +427,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
  ******************************************************************************/
 
 static int *
-Array2Bv (node *array, int *bv, int dims, int line)
+Array2Bv (node *array, int *bv, int dims, char *fun_name, int line)
 {
     int d;
 
@@ -433,21 +437,104 @@ Array2Bv (node *array, int *bv, int dims, int line)
     for (d = 0; d < dims; d++) {
         if (array == NULL) {
             ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                          " Ubv/Bv...(): Blocking vector has wrong dimension"));
+                          " %s(): Blocking vector has wrong dimension",
+                          fun_name));
         }
         if (NODE_TYPE (EXPRS_EXPR (array)) != N_num) {
             ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                          " Ubv/Bv...(): Blocking vector is not an 'int'-array"));
+                          " %s(): Blocking vector is not an 'int'-array",
+                          fun_name));
         }
         bv[d] = NUM_VAL (EXPRS_EXPR (array));
         array = EXPRS_NEXT (array);
     }
     if (array != NULL) {
         ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                      " Ubv/Bv...(): Blocking vector has wrong dimension"));
+                      " %s(): Blocking vector has wrong dimension",
+                      fun_name));
     }
 
     DBUG_RETURN (bv);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *StoreBv( node *segs, node *parms, node *cubes, int dims,
+ *                  char *fun_name, int line)
+ *
+ * Description:
+ *   Changes the blocking-vector for one blocking level (ubv respectively).
+ *   The level number is given as first element in 'parms' (N_num);
+ *    the rest of 'parms' contains the blocking-vectors for different
+ *    segments (N_array).
+ *   If ('level' == 'WLSEGX_BLOCKS( seg)'), the ubv is changed.
+ *   If 'parms' contains less elements than 'segs', the last bv in
+ *    'parms' is mapped to all remaining 'segs'.
+ *   If 'parms' contains more elements than 'segs', the tail of 'parms'
+ *    is ignored.
+ *
+ ******************************************************************************/
+
+static node *
+StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, int line)
+{
+    node *seg = segs;
+    int level;
+
+    DBUG_ENTER ("StoreBv");
+
+    if (parms == NULL) {
+        ABORT (line, ("Illegal argument in wlcomp-pragma found;"
+                      " %s(): No parameters found",
+                      fun_name));
+    }
+
+    DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
+                 "illegal parameter of wlcomp-pragma found!");
+
+    if (NODE_TYPE (EXPRS_EXPR (parms)) != N_num) {
+        ABORT (line, ("Illegal argument in wlcomp-pragma found;"
+                      " %s(): First argument is not an 'int'",
+                      fun_name));
+    }
+
+    level = NUM_VAL (EXPRS_EXPR (parms));
+    parms = EXPRS_NEXT (parms);
+
+    if ((parms != NULL) && (seg != NULL)) {
+        while (seg != NULL) {
+            if (NODE_TYPE (seg) != N_WLseg) {
+                WARN (line, ("wlcomp-pragma function %s() ignored"
+                             " because generator is not constant",
+                             fun_name));
+            } else {
+                if (NODE_TYPE (EXPRS_EXPR (parms)) != N_array) {
+                    ABORT (line, ("Illegal argument in wlcomp-pragma found;"
+                                  " %s(): Blocking-vector is not an array",
+                                  fun_name));
+                }
+
+                if (level >= 0) {
+                    DBUG_ASSERT ((level < WLSEG_BLOCKS (seg)),
+                                 "illegal blocking level found!");
+                    WLSEG_BV (seg, level)
+                      = Array2Bv (EXPRS_EXPR (parms), WLSEG_BV (seg, level), dims,
+                                  fun_name, line);
+                } else {
+                    WLSEG_UBV (seg) = Array2Bv (EXPRS_EXPR (parms), WLSEG_UBV (seg), dims,
+                                                fun_name, line);
+                }
+            }
+
+            seg = WLSEG_NEXT (seg);
+            if (EXPRS_NEXT (parms) != NULL) {
+                parms = EXPRS_NEXT (parms);
+            }
+        }
+    }
+
+    DBUG_RETURN (segs);
 }
 
 /******************************************************************************
@@ -661,86 +748,11 @@ WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *WLCOMP_Bv( node *segs, node *parms, node *cubes, int dims,
- *                    int line)
- *
- * Description:
- *   Changes the blocking-vector for one blocking level (ubv respectively).
- *   The level number is given as first element in 'parms' (N_num);
- *    the rest of 'parms' contains the blocking-vectors for different
- *    segments (N_array).
- *   If ('level' == 'WLSEGX_BLOCKS( seg)'), the ubv is changed.
- *   If 'parms' contains less elements than 'segs', the last bv in
- *    'parms' is mapped to all remaining 'segs'.
- *   If 'parms' contains more elements than 'segs', the tail of 'parms'
- *    is ignored.
- *
- ******************************************************************************/
-
-node *
-WLCOMP_Bv (node *segs, node *parms, node *cubes, int dims, int line)
-{
-    node *seg = segs;
-    int level;
-
-    DBUG_ENTER ("WLCOMP_Bv");
-
-    if (parms == NULL) {
-        ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                      " Ubv/Bv...(): No parameters found"));
-    }
-
-    DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
-                 "illegal parameter of wlcomp-pragma found!");
-
-    if (NODE_TYPE (EXPRS_EXPR (parms)) != N_num) {
-        ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                      " Ubv/Bv...(): First argument is not an 'int'"));
-    }
-
-    level = NUM_VAL (EXPRS_EXPR (parms));
-    parms = EXPRS_NEXT (parms);
-
-    if ((parms != NULL) && (seg != NULL)) {
-        while (seg != NULL) {
-            if (NODE_TYPE (seg) != N_WLseg) {
-                WARN (line, ("wlcomp-pragma function Ubv/Bv...() ignored"
-                             " because generator is not constant"));
-            } else {
-                if (NODE_TYPE (EXPRS_EXPR (parms)) != N_array) {
-                    ABORT (line, ("Illegal argument in wlcomp-pragma found;"
-                                  " Ubv/Bv...(): Blocking-vector is not an array"));
-                }
-
-                if (level >= 0) {
-                    DBUG_ASSERT ((level < WLSEG_BLOCKS (seg)),
-                                 "illegal blocking level found!");
-                    WLSEG_BV (seg, level)
-                      = Array2Bv (EXPRS_EXPR (parms), WLSEG_BV (seg, level), dims, line);
-                } else {
-                    WLSEG_UBV (seg)
-                      = Array2Bv (EXPRS_EXPR (parms), WLSEG_UBV (seg), dims, line);
-                }
-            }
-
-            seg = WLSEG_NEXT (seg);
-            if (EXPRS_NEXT (parms) != NULL) {
-                parms = EXPRS_NEXT (parms);
-            }
-        }
-    }
-
-    DBUG_RETURN (segs);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *WLCOMP_BvL0( node *segs, node *parms, node *cubes, int dims,
  *                      int line)
  *
  * Description:
- *   uses 'WLCOMP_Bv' to change the blocking-vectors in level 0.
+ *   uses 'StoreBv()' to change the blocking-vectors in level 0.
  *
  ******************************************************************************/
 
@@ -750,7 +762,7 @@ WLCOMP_BvL0 (node *segs, node *parms, node *cubes, int dims, int line)
     DBUG_ENTER ("WLCOMP_BvL0");
 
     parms = MakeExprs (MakeNum (0), parms);
-    segs = WLCOMP_Bv (segs, parms, cubes, dims, line);
+    segs = StoreBv (segs, parms, cubes, dims, "BvL0", line);
     parms = FreeNode (parms);
 
     DBUG_RETURN (segs);
@@ -763,7 +775,7 @@ WLCOMP_BvL0 (node *segs, node *parms, node *cubes, int dims, int line)
  *                      int line)
  *
  * Description:
- *   uses 'Bv' to change the blocking-vectors in level 1.
+ *   uses 'StoreBv()' to change the blocking-vectors in level 1.
  *
  ******************************************************************************/
 
@@ -773,7 +785,7 @@ WLCOMP_BvL1 (node *segs, node *parms, node *cubes, int dims, int line)
     DBUG_ENTER ("WLCOMP_BvL1");
 
     parms = MakeExprs (MakeNum (1), parms);
-    segs = WLCOMP_Bv (segs, parms, cubes, dims, line);
+    segs = StoreBv (segs, parms, cubes, dims, "BvL1", line);
     parms = FreeNode (parms);
 
     DBUG_RETURN (segs);
@@ -786,7 +798,7 @@ WLCOMP_BvL1 (node *segs, node *parms, node *cubes, int dims, int line)
  *                      int line)
  *
  * Description:
- *   uses 'WLCOMP_Bv' to change the blocking-vectors in level 2.
+ *   uses 'StoreBv()' to change the blocking-vectors in level 2.
  *
  ******************************************************************************/
 
@@ -796,7 +808,7 @@ WLCOMP_BvL2 (node *segs, node *parms, node *cubes, int dims, int line)
     DBUG_ENTER ("WLCOMP_BvL2");
 
     parms = MakeExprs (MakeNum (2), parms);
-    segs = WLCOMP_Bv (segs, parms, cubes, dims, line);
+    segs = StoreBv (segs, parms, cubes, dims, "BvL2", line);
     parms = FreeNode (parms);
 
     DBUG_RETURN (segs);
@@ -809,7 +821,7 @@ WLCOMP_BvL2 (node *segs, node *parms, node *cubes, int dims, int line)
  *                     int line)
  *
  * Description:
- *   uses 'WLCOMP_Bv' to change the unrolling-blocking-vectors.
+ *   uses 'StoreBv()' to change the unrolling-blocking-vectors.
  *
  ******************************************************************************/
 
@@ -820,7 +832,7 @@ WLCOMP_Ubv (node *segs, node *parms, node *cubes, int dims, int line)
 
     if (segs != NULL) {
         parms = MakeExprs (MakeNum (-1), parms);
-        segs = WLCOMP_Bv (segs, parms, cubes, dims, line);
+        segs = StoreBv (segs, parms, cubes, dims, "Ubv", line);
         parms = FreeNode (parms);
     }
 
