@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/11/26 23:58:18  khf
+ * names adjusted
+ *
  * Revision 1.4  2004/11/22 18:55:29  cg
  * Moved all definitions/declarations of global variables to globals.mac
  *
@@ -50,12 +53,12 @@
  *
  ******************************************************************************/
 
-#define COCv2CvTEMPLATE(type, ext)                                                       \
-    void COCv2Cv##ext (void *src, int off, int len, void *res, int res_off)              \
+#define COcv2CvTEMPLATE(type, ext)                                                       \
+    void COcv2Cv##ext (void *src, int off, int len, void *res, int res_off)              \
     {                                                                                    \
         int i;                                                                           \
                                                                                          \
-        DBUG_ENTER ("COCv2Cv##ext");                                                     \
+        DBUG_ENTER ("COcv2Cv##ext");                                                     \
         for (i = 0; i < len; i++) {                                                      \
             ((type *)res)[i + res_off] = ((type *)src)[i + off];                         \
         }                                                                                \
@@ -66,16 +69,16 @@
  * The actual function definitions are defined by the following macro usages:
  */
 
-COCv2CvTEMPLATE (unsigned short, UShort) COCv2CvTEMPLATE (unsigned int, UInt)
-  COCv2CvTEMPLATE (unsigned long, ULong) COCv2CvTEMPLATE (short, Short)
-    COCv2CvTEMPLATE (int, Int) COCv2CvTEMPLATE (long, Long)
+COcv2CvTEMPLATE (unsigned short, UShort) COcv2CvTEMPLATE (unsigned int, UInt)
+  COcv2CvTEMPLATE (unsigned long, ULong) COcv2CvTEMPLATE (short, Short)
+    COcv2CvTEMPLATE (int, Int) COcv2CvTEMPLATE (long, Long)
 
-      COCv2CvTEMPLATE (float, Float) COCv2CvTEMPLATE (double, Double)
-        COCv2CvTEMPLATE (long double, LongDouble)
+      COcv2CvTEMPLATE (float, Float) COcv2CvTEMPLATE (double, Double)
+        COcv2CvTEMPLATE (long double, LongDouble)
 
-          COCv2CvTEMPLATE (char, Char)
+          COcv2CvTEMPLATE (char, Char)
 
-            COCv2CvTEMPLATE (void *, Hidden)
+            COcv2CvTEMPLATE (void *, Hidden)
 
   /*
    * Finally, we provide a dummy function which should never be called!
@@ -83,7 +86,7 @@ COCv2CvTEMPLATE (unsigned short, UShort) COCv2CvTEMPLATE (unsigned int, UInt)
    * type_info.mac!
    */
 
-  void COCv2CvDummy (void *src, int off, int len, void *res, int res_off)
+  void COcv2CvDummy (void *src, int off, int len, void *res, int res_off)
 {
     DBUG_ENTER ("COCv2CvDummy");
     DBUG_ASSERT ((1 == 0), "COCv2CvDummy called!");
