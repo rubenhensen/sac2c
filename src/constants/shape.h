@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2002/11/04 13:22:08  sbs
+ * SHDropFromShape added.
+ *
  * Revision 1.4  2002/06/21 14:03:48  dkr
  * SHShape2Array() added
  *
@@ -51,6 +54,7 @@ extern shape *SHSetExtent (shape *shp, int dim, int val);
 
 extern bool SHCompareShapes (shape *a, shape *b);
 extern shape *SHAppendShapes (shape *a, shape *b);
+extern shape *SHDropFromShape (int n, shape *a);
 extern char *SHShape2String (int dots, shape *shp);
 extern int *SHShape2IntVec (shape *shp);
 extern node *SHShape2Array (shape *shp);

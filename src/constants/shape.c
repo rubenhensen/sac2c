@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2002/11/04 13:22:08  sbs
+ * SHDropFromShape added.
+ *
  * Revision 1.8  2002/06/21 14:04:13  dkr
  * SHShape2Array() added
  *
@@ -346,6 +349,45 @@ SHAppendShapes (shape *a, shape *b)
     }
     for (j = 0; j < n; i++, j++) {
         SHAPE_EXT (res, i) = SHAPE_EXT (b, j);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    shape *SHDropFromShape( int n, shape *a)
+ *
+ * description:
+ *    creates a new shape from a by dropping n elements. If n < 0, the the last
+ *    n elements will be dropped!
+ *    Note here that 'a' is inspected only! The result shape is freshly created!
+ *
+ ******************************************************************************/
+
+shape *
+SHDropFromShape (int n, shape *a)
+{
+    int m, i;
+    shape *res;
+
+    DBUG_ENTER ("SHDropFromShape");
+    DBUG_ASSERT ((a != NULL), ("SHDropFromShape called with NULL arg!"));
+
+    m = SHAPE_DIM (a);
+    DBUG_ASSERT ((m - abs (n)) >= 0, "dropping more elems from shape than available!");
+
+    if (n < 0) {
+        res = SHMakeShape (m + n);
+        for (i = 0; i < m + n; i++) {
+            SHAPE_EXT (res, i) = SHAPE_EXT (a, i);
+        }
+    } else {
+        res = SHMakeShape (m - n);
+        for (i = 0; i < m - n; i++) {
+            SHAPE_EXT (res, i) = SHAPE_EXT (a, i + n);
+        }
     }
 
     DBUG_RETURN (res);
