@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/10/28 19:39:16  dkr
+ * DBUG-string MASK changed to PRINT_MASKS
+ *
  * Revision 2.9  1999/08/30 14:09:36  bs
  * The tile size inference is activated now.
  *
@@ -739,7 +742,7 @@ OPTfundef (node *arg_node, node *arg_info)
                          mem_uns_expr, mem_elim_arrays, mem_wlf_expr, mem_wlt_expr,
                          mem_cse_expr, NON_ZERO_ONLY);
 
-        DBUG_DO_NOT_EXECUTE ("MASK", arg_node = FreeMasks (arg_node););
+        DBUG_DO_NOT_EXECUTE ("PRINT_MASKS", arg_node = FreeMasks (arg_node););
     }
 
     if (FUNDEF_NEXT (arg_node))
