@@ -1,6 +1,8 @@
 Makefile
 concurrent.c
 concurrent.h
+concurrent_lib.c
+concurrent_lib.h
 schedule.c
 schedule.h
 scheduling.c
