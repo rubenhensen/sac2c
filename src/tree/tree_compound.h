@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.33  2000/10/09 16:33:50  dkr
+ * NWITH2_CEXPR, NWITH2_CBLOCK added
+ *
  * Revision 1.32  2000/10/02 09:02:05  sbs
  * ID_OR_CAST_TYPE added.
  *
@@ -1540,7 +1543,8 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 
 /*
  * CBLOCK, CEXPR of the *first* N_Ncode-node
- * (useful *before* with-loop-folding only!!!)
+ * (useful in case of single-generator with-loops only,
+ *  e.g. before with-loop-folding)
  */
 #define NWITH_CBLOCK(n) (NCODE_CBLOCK (NWITH_CODE (n)))
 #define NWITH_CEXPR(n) (NCODE_CEXPR (NWITH_CODE (n)))
@@ -1611,6 +1615,14 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 #define NWITH2_SHAPE(n) (NWITHOP_SHAPE (NWITH2_WITHOP (n)))
 #define NWITH2_ARRAY(n) (NWITHOP_ARRAY (NWITH2_WITHOP (n)))
 #define NWITH2_NEUTRAL(n) (NWITHOP_NEUTRAL (NWITH2_WITHOP (n)))
+
+/*
+ * CBLOCK, CEXPR of the *first* N_Ncode-node
+ * (useful in case of single-generator with-loops only,
+ *  e.g. before with-loop-folding)
+ */
+#define NWITH2_CBLOCK(n) (NCODE_CBLOCK (NWITH2_CODE (n)))
+#define NWITH2_CEXPR(n) (NCODE_CEXPR (NWITH2_CODE (n)))
 
 /*--------------------------------------------------------------------------*/
 
