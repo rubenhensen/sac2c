@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.143  1998/05/04 16:21:51  dkr
+ * fixed a bug: args for WL_BEGIN are now in correct order :)
+ *
  * Revision 1.142  1998/05/04 15:36:37  dkr
  * changed usage of WL_ASSIGN
  *
@@ -6063,7 +6066,9 @@ COMPSpmd (node *arg_node, node *arg_info)
     icm_args = MakeExprs (MakeId (StringCopy (SPMD_FUNNAME (arg_node)), NULL, ST_regular),
                           icm_args);
 
-    SPMD_ICM (arg_node) = MakeIcm ("MT_SPMD_BLOCK", icm_args, NULL);
+#if 0
+  SPMD_ICM( arg_node) = MakeIcm( "MT_SPMD_BLOCK", icm_args, NULL);
+#endif
 
     /*
      * build ICM for SPMD-region
@@ -6334,10 +6339,10 @@ COMPNwith2 (node *arg_node, node *arg_info)
     }
     icm_args = MakeExprs (MakeNum (num_args), icm_args);
 
+    icm_args = MakeExprs (MakeId2 (DupOneIds (NWITHID_VEC (wl_withid), NULL)), icm_args);
+
     icm_args = MakeExprs (MakeId (OffsetVar (NWITHID_VEC (wl_withid)), NULL, ST_regular),
                           icm_args);
-
-    icm_args = MakeExprs (MakeId2 (DupOneIds (NWITHID_VEC (wl_withid), NULL)), icm_args);
 
     icm_args = MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)), icm_args);
 
