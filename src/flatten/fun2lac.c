@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2002/04/05 14:37:36  dkr
+ * debug output modified
+ *
  * Revision 3.14  2002/04/05 14:31:07  dkr
  * DBUG_PRINT statement added
  *
@@ -762,22 +765,22 @@ FUN2LACap (node *arg_node, node *arg_info)
     if (FUNDEF_IS_LACFUN (fundef)) {
         switch (FUNDEF_STATUS (fundef)) {
         case ST_condfun:
-            DBUG_PRINT ("F2L", ("Naive inlining of conditional function %s.\n",
+            DBUG_PRINT ("F2L", ("Naive inlining of conditional function %s.",
                                 ItemName (fundef)));
 
             fundef = TransformIntoCond (fundef);
             break;
 
         case ST_whilefun:
-            DBUG_PRINT ("F2L", ("Naive inlining of while-loop function %s.\n",
-                                ItemName (fundef)));
+            DBUG_PRINT ("F2L",
+                        ("Naive inlining of while-loop function %s.", ItemName (fundef)));
 
             fundef = TransformIntoWhileLoop (fundef);
             break;
 
         case ST_dofun:
             DBUG_PRINT ("F2L",
-                        ("Naive inlining of do-loop function %s.\n", ItemName (fundef)));
+                        ("Naive inlining of do-loop function %s.", ItemName (fundef)));
 
             fundef = TransformIntoDoLoop (fundef);
             break;
