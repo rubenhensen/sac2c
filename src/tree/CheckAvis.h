@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2002/10/16 14:33:20  sbs
+ * CAVobjdef added.
+ *
  * Revision 1.4  2001/04/24 16:08:12  nmw
  * CheckAvisSingleFundef renamed to CheckAvisOneFunction
  * CheckAvisOneFundef added
@@ -40,6 +43,7 @@ extern node *CheckAvisOneFundef (node *fundef);
 
 extern node *CAVarg (node *arg_node, node *arg_info);
 extern node *CAVvardec (node *arg_node, node *arg_info);
+extern node *CAVobjdef (node *arg_node, node *arg_info);
 extern node *CAVid (node *arg_node, node *arg_info);
 extern node *CAVlet (node *arg_node, node *arg_info);
 extern node *CAVfundef (node *arg_node, node *arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2002/10/16 14:33:20  sbs
+ * CAVobjdef added.
+ *
  * Revision 1.10  2002/08/05 09:52:04  sbs
  * eliminated the requirement for Nwithid nodes to always have both,
  * an IDS and a VEC attribute. This change is motivated by the requirement
@@ -129,6 +132,39 @@ CAVvardec (node *arg_node, node *arg_info)
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CAVobjdef(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Checks objdef node for avis attribute. if missing create an initialize
+ *   new avis node. Also checks for correct back reference.
+ *
+ ******************************************************************************/
+node *
+CAVobjdef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("CAVobjdef");
+
+    if (OBJDEF_AVIS (arg_node) == NULL) {
+        /* missing avis node */
+        DBUG_PRINT ("CAV",
+                    ("missing avis node in objdef %s added.", OBJDEF_NAME (arg_node)));
+        OBJDEF_AVIS (arg_node) = MakeAvis (arg_node);
+    } else {
+        /* check for correct backref */
+        DBUG_ASSERT ((AVIS_VARDECORARG (OBJDEF_AVIS (arg_node)) == arg_node),
+                     "wrong backreference from avis to objdef node!");
+    }
+
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
