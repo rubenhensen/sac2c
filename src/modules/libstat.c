@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/10/26 09:33:09  sah
+ * uses deserialize.h now
+ *
  * Revision 1.4  2004/10/25 11:58:47  sah
  * major code cleanup
  *
@@ -55,56 +58,12 @@ PrintLibStatCodeAddBodies (module_t *module, node *modnode, node *fundef)
 }
 
 static void
-PrintLibStatCodeReadEntry (module_t *module, node *modnode, STentry_t *entry,
-                           STtable_t *table)
-{
-    serfun_p serfun;
-    node *tmp;
-
-    DBUG_ENTER ("PrintLibStatCodeReadEntry");
-
-    switch (STEntryType (entry)) {
-    case SET_funbody:
-        /* these are ignored right now, they will
-         * be added as soon as all others have been
-         * read in
-         */
-        break;
-    case SET_funhead:
-        serfun = GetDeSerializeFunction (STEntryName (entry), module);
-
-        tmp = serfun ();
-
-        MODUL_FUNS (modnode) = AppendFundef (MODUL_FUNS (modnode), tmp);
-
-        break;
-    case SET_typedef:
-    case SET_objdef:
-        break;
-    default:
-        DBUG_ASSERT (0, "unsupported symbol within a modules symboltable!");
-        break;
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-static void
 PrintLibStatCodeReadSymbols (module_t *module, node *modnode, const char *symbol,
                              STtable_t *table)
 {
-    STentryiterator_t *iterator;
-
     DBUG_ENTER ("PrintLibStatCodeReadSymbols");
 
-    iterator = STEntryIteratorGet (symbol, table);
-
-    while (STEntryIteratorHasMore (iterator)) {
-        PrintLibStatCodeReadEntry (module, modnode, STEntryIteratorNext (iterator),
-                                   table);
-    }
-
-    iterator = STEntryIteratorRelease (iterator);
+    AddSymbolToAst (symbol, module, modnode);
 
     DBUG_VOID_RETURN;
 }
@@ -128,10 +87,6 @@ PrintLibStatCode (module_t *module, STtable_t *table)
     }
 
     iterator = STSymbolIteratorRelease (iterator);
-
-    /* Add Old Types */
-
-    syntax_tree = NT2OTTransform (syntax_tree);
 
     PrintLibStatCodeAddBodies (module, syntax_tree, MODUL_FUNS (syntax_tree));
 
