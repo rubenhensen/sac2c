@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2005/03/13 15:39:15  ktr
+ * Marielyst N_fold bug fixed
+ *
  * Revision 1.31  2004/12/13 18:54:49  ktr
  * Withids contain N_id/N_exprs of N_id after explicit allocation now.
  *
@@ -1677,6 +1680,9 @@ EMALgenarray (node *arg_node, info *arg_info)
     DBUG_ASSERT (INFO_EMAL_ALLOCLIST (arg_info) != NULL,
                  "ALLOCLIST must contain an entry for each WITHOP!");
 
+    /*
+     * Pop first element from alloclist for traversal of next WITHOP
+     */
     als = INFO_EMAL_ALLOCLIST (arg_info);
     INFO_EMAL_ALLOCLIST (arg_info) = als->next;
     als->next = NULL;
@@ -1703,6 +1709,10 @@ EMALgenarray (node *arg_node, info *arg_info)
          */
         GENARRAY_MEM (arg_node) = TBmakeId (wlavis);
 
+        /*
+         * Restore first element of alloclist as it is needed in EMALcode
+         * to preserve correspondence between the result values and the withops
+         */
         als->next = INFO_EMAL_ALLOCLIST (arg_info);
         INFO_EMAL_ALLOCLIST (arg_info) = als;
     } else {
@@ -1764,6 +1774,9 @@ EMALmodarray (node *arg_node, info *arg_info)
     DBUG_ASSERT (INFO_EMAL_ALLOCLIST (arg_info) != NULL,
                  "ALLOCLIST must contain an entry for each WITHOP!");
 
+    /*
+     * Pop first element from alloclist for traversal of next WITHOP
+     */
     als = INFO_EMAL_ALLOCLIST (arg_info);
     INFO_EMAL_ALLOCLIST (arg_info) = als->next;
     als->next = NULL;
@@ -1790,6 +1803,10 @@ EMALmodarray (node *arg_node, info *arg_info)
          */
         MODARRAY_MEM (arg_node) = TBmakeId (wlavis);
 
+        /*
+         * Restore first element of alloclist as it is needed in EMALcode
+         * to preserve correspondence between the result values and the withops
+         */
         als->next = INFO_EMAL_ALLOCLIST (arg_info);
         INFO_EMAL_ALLOCLIST (arg_info) = als;
     } else {
@@ -1835,6 +1852,9 @@ EMALfold (node *arg_node, info *arg_info)
     DBUG_ASSERT (INFO_EMAL_ALLOCLIST (arg_info) != NULL,
                  "ALLOCLIST must contain an entry for each WITHOP!");
 
+    /*
+     * Pop first element from alloclist for traversal of next WITHOP
+     */
     als = INFO_EMAL_ALLOCLIST (arg_info);
     INFO_EMAL_ALLOCLIST (arg_info) = als->next;
     als->next = NULL;
@@ -1843,14 +1863,22 @@ EMALfold (node *arg_node, info *arg_info)
         FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
     }
 
-    DBUG_ASSERT (INFO_EMAL_WITHOPMODE (arg_info) == EA_shape,
-                 "Unknown Withop traversal mode");
-
-    /*
-     * fold-wl:
-     * fold wls allocate memory on their own
-     */
-    als = FreeALS (als);
+    if (INFO_EMAL_WITHOPMODE (arg_info) == EA_memname) {
+        /*
+         * Restore first element of alloclist as it is still needed in EMALcode
+         * to preserve correspondence between the result values and the withops
+         */
+        als->next = INFO_EMAL_ALLOCLIST (arg_info);
+        INFO_EMAL_ALLOCLIST (arg_info) = als;
+    } else {
+        DBUG_ASSERT (INFO_EMAL_WITHOPMODE (arg_info) == EA_shape,
+                     "Unknown Withop traversal mode");
+        /*
+         * Ultimately, fold-wls allocate memory on their own and thus don't need
+         * further storage
+         */
+        als = FreeALS (als);
+    }
 
     DBUG_RETURN (arg_node);
 }
