@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2002/10/08 13:28:15  sbs
+ * increments of ive_op moved under conditionals
+ * => now, the optimization reports are more likely to be
+ * correct 8-)))
+ *
  * Revision 3.30  2002/10/08 13:01:31  sbs
  * Now, index vectors of unknown shape are attributed VECT as well
  * and F_mul_AxS and friends only access the ivs shapes when the are in fact transformed
@@ -1908,102 +1913,102 @@ IdxPrf (node *arg_node, node *arg_info)
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_add_SxS;
+            ive_op++;
             DBUG_ASSERT ((GetShapeDim (ID_TYPE (PRF_ARG2 (arg_node))) >= 0),
                          "trying to transform F_add_SxA with arg2 of unknown shape");
             INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
         }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
-        ive_op++;
         break;
 
     case F_add_AxS:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_add_SxS;
+            ive_op++;
             DBUG_ASSERT ((GetShapeDim (ID_TYPE (PRF_ARG1 (arg_node))) >= 0),
                          "trying to transform F_add_AxS with arg1 of unknown shape");
             INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
         }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
-        ive_op++;
         break;
 
     case F_add_AxA:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_add_SxS;
+            ive_op++;
         }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
-        ive_op++;
         break;
 
     case F_sub_SxA:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_sub_SxS;
+            ive_op++;
             DBUG_ASSERT ((GetShapeDim (ID_TYPE (PRF_ARG2 (arg_node))) >= 0),
                          "trying to transform F_sub_SxA with arg2 of unknown shape");
             INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
         }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
-        ive_op++;
         break;
 
     case F_sub_AxS:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_sub_SxS;
+            ive_op++;
             DBUG_ASSERT ((GetShapeDim (ID_TYPE (PRF_ARG1 (arg_node))) >= 0),
                          "trying to transform F_sub_AxS with arg1 of unknown shape");
             INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
         }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
-        ive_op++;
         break;
 
     case F_sub_AxA:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_sub_SxS;
+            ive_op++;
         }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
-        ive_op++;
         break;
 
     case F_mul_SxA:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_mul_SxS;
+            ive_op++;
         }
         PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
-        ive_op++;
         break;
 
     case F_mul_AxS:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_mul_SxS;
+            ive_op++;
         }
         PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
-        ive_op++;
         break;
 
     case F_div_SxA:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_div_SxS;
+            ive_op++;
         }
         PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
-        ive_op++;
         break;
 
     case F_div_AxS:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_div_SxS;
+            ive_op++;
         }
         PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
-        ive_op++;
         break;
 
     default:
