@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.73  1995/11/06 14:15:38  cg
+ * Revision 1.74  1995/11/10 15:01:18  cg
+ * verbose_level implemented.
+ * modified layout of compile time output
+ *
+ * Revision 1.73  1995/11/06  14:15:38  cg
  * added compiler phase 'uniqueness check' and new break option -bq
  *
  * Revision 1.72  1995/11/01  16:23:05  cg
@@ -271,8 +275,8 @@ extern int malloc_debug (int level);
 
 FILE *outfile;
 
-char filename[MAX_FILE_NAME];
-/* used for error messages and others */
+char filename[MAX_FILE_NAME];         /* used for error messages and others */
+char sibfilename[MAX_FILE_NAME] = ""; /* used for error messages and others */
 
 int optimize = 1;
 int sac_optimize = 1;
@@ -310,12 +314,14 @@ MAIN
     char cfilename[MAX_FILE_NAME];
     char cccallstr[MAX_PATH_LEN];
     char ccflagsstr[MAX_FILE_NAME] = "";
+    char *pathname = NULL;
 
     malloc_debug (0);
     strcpy (prgname, argv[0]);
     strcpy (filename, prgname);
 
-    /* First, we scan the given options...
+    /*
+     *  First, we scan the given options...
      */
 
     OPT ARG 'I' : PARM
@@ -447,10 +453,27 @@ MAIN
     {
         strcat (ccflagsstr, "-g ");
     }
-    ARG 's':
+    ARG 'v' : PARM
     {
-        silent = 1;
+        switch (**argv) {
+        case '0':
+            verbose_level = 0;
+            break;
+        case '1':
+            verbose_level = 1;
+            break;
+        case '2':
+            verbose_level = 2;
+            break;
+        case '3':
+            verbose_level = 3;
+            break;
+        default:
+            SYSWARN (("Unknown verbose level '%s`", *argv));
+        }
     }
+    NEXTOPT
+
     ARG 'n' : PARM
     {
         if (!strncmp (*argv, "oDCR", 4))
@@ -580,6 +603,8 @@ MAIN
      * and modul implementations...
      */
 
+    NOTE_COMPILER_PHASE;
+
     if (AppendEnvVar (MODDEC_PATH, "SAC_DEC_PATH") == 0)
         SYSABORT (("MAX_PATH_LEN too low"));
     if (AppendEnvVar (MODIMP_PATH, "SAC_LIBRARY_PATH") == 0)
@@ -592,22 +617,24 @@ MAIN
 #ifdef NO_CPP
 
     if (argc == 1) {
-        yyin = fopen (FindFile (PATH, *argv), "r");
+        pathname = FindFile (PATH, *argv);
+        yyin = fopen (pathname, "r");
         strcpy (filename, *argv);
         if (yyin == NULL) {
-            SYSABORT (("Unable to open file '%s`", *argv));
+            SYSABORT (("Unable to open file \"%s\"", *argv));
         }
     }
 
 #else /* NO_CPP */
 
     if (argc == 1) {
-        sprintf (cccallstr, "gcc -E -P -C -x c %s", FindFile (PATH, *argv));
+        pathname = FindFile (PATH, *argv);
+        sprintf (cccallstr, "gcc -E -P -C -x c %s", pathname);
         strcpy (filename, *argv);
     } else {
         sprintf (cccallstr, "cpp -P -C ");
     }
-    /*  NOTE(("C call string '%s`", cccallstr)); */
+
     yyin = popen (cccallstr, "r");
 
 #endif /* NO_CPP */
@@ -616,7 +643,7 @@ MAIN
         if (set_outfile) {
             outfile = fopen (outfilename, "w");
             if (outfile == NULL) {
-                SYSABORT (("Unable to open outfile '%s`", outfilename));
+                SYSABORT (("Unable to open file \"%s\" for writing", outfilename));
             }
         } else
             outfile = stdout;
@@ -629,13 +656,15 @@ MAIN
         }
         outfile = fopen (cfilename, "w");
         if (outfile == NULL)
-            SYSABORT (("Unable to open outfile '%s`", cfilename));
+            SYSABORT (("Unable to open file \"%s\" for writing", cfilename));
     }
 
     ABORT_ON_ERROR;
-    compiler_phase++;
 
-    NOTE (("\nParsing file \"%s\" : ...", *argv));
+    if (pathname != NULL) {
+        NOTE (("Parsing file \"%s\" ...", pathname));
+    }
+
     start_token = PARSE_PRG;
     yyparse ();
     ABORT_ON_ERROR;
@@ -643,7 +672,7 @@ MAIN
 
     if (!breakparse) {
         if (MODUL_OBJS (syntax_tree) != NULL) {
-            NOTE (("\nResolving global object initializations: ..."));
+            NOTE_COMPILER_PHASE;
             syntax_tree = objinit (syntax_tree);
             ABORT_ON_ERROR;
         }
@@ -651,79 +680,67 @@ MAIN
 
         if (!breakobjinit) {
             if (MODUL_IMPORTS (syntax_tree) != NULL) {
-                NOTE (("\nResolving Imports: ..."));
+                NOTE_COMPILER_PHASE;
                 syntax_tree = Import (syntax_tree);
                 ABORT_ON_ERROR;
             }
             compiler_phase++;
 
             if (!breakimport) {
-                NOTE (("\nFlattening: ..."));
+                NOTE_COMPILER_PHASE;
                 syntax_tree = Flatten (syntax_tree);
                 ABORT_ON_ERROR;
                 compiler_phase++;
 
                 if (!breakflatten) {
-                    NOTE (("\nTypechecking: ..."));
+                    NOTE_COMPILER_PHASE;
                     syntax_tree = Typecheck (syntax_tree);
                     ABORT_ON_ERROR;
                     compiler_phase++;
 
                     if (!breaktype) {
-                        switch (MODUL_FILETYPE (syntax_tree)) {
-                        case F_modimp:
-                            NOTE (("\nChecking module declaration: ..."));
+                        if (MODUL_FILETYPE (syntax_tree) != F_prog) {
+                            NOTE_COMPILER_PHASE;
                             syntax_tree = CheckDec (syntax_tree);
                             ABORT_ON_ERROR;
-                            break;
-
-                        case F_classimp:
-                            NOTE (("\nChecking class declaration: ..."));
-                            syntax_tree = CheckDec (syntax_tree);
-                            ABORT_ON_ERROR;
-                            break;
-
-                        default:
-                            break;
                         }
                         compiler_phase++;
 
                         if (!breakcheckdec) {
-                            NOTE (("\nResolving implicit types: ..."));
+                            NOTE_COMPILER_PHASE;
                             syntax_tree = RetrieveImplicitTypeInfo (syntax_tree);
                             ABORT_ON_ERROR;
                             compiler_phase++;
 
                             if (!breakimpltype) {
-                                NOTE (("\nAnalysing functions: ..."));
+                                NOTE_COMPILER_PHASE;
                                 syntax_tree = Analysis (syntax_tree);
                                 ABORT_ON_ERROR;
                                 compiler_phase++;
 
                                 if (!breakanalysis) {
                                     if (MODUL_FILETYPE (syntax_tree) != F_prog) {
-                                        NOTE (("\nWriting SIB: ..."));
+                                        NOTE_COMPILER_PHASE;
                                         syntax_tree = WriteSib (syntax_tree);
                                         ABORT_ON_ERROR;
                                     }
                                     compiler_phase++;
 
                                     if (!breaksib) {
-                                        NOTE (("\nHandling objects: ..."));
+                                        NOTE_COMPILER_PHASE;
                                         syntax_tree = HandleObjects (syntax_tree);
                                         ABORT_ON_ERROR;
                                         compiler_phase++;
 
                                         if (!breakobjects) {
-                                            NOTE (("\nChecking objects (Uniqueness "
-                                                   "check): ..."));
+                                            NOTE_COMPILER_PHASE;
                                             syntax_tree = UniquenessCheck (syntax_tree);
                                             ABORT_ON_ERROR;
                                             compiler_phase++;
 
                                             if (!breakuniquecheck) {
                                                 if (sac_optimize) {
-                                                    NOTE (("\nSAC-Optimizing: ..."));
+                                                    NOTE_COMPILER_PHASE;
                                                     syntax_tree = Optimize (syntax_tree);
                                                     ABORT_ON_ERROR;
                                                 }
@@ -731,7 +748,7 @@ MAIN
 
                                                 if (!breakopt) {
                                                     if (psi_optimize) {
-                                                        NOTE (("\nPsi-Optimizing: ..."));
+                                                        NOTE_COMPILER_PHASE;
                                                         syntax_tree
                                                           = PsiOpt (syntax_tree);
                                                         ABORT_ON_ERROR;
@@ -739,18 +756,76 @@ MAIN
                                                     compiler_phase++;
 
                                                     if (!breakpsiopt) {
-                                                        NOTE (("\nRefcounting: ..."));
+                                                        NOTE_COMPILER_PHASE;
                                                         syntax_tree
                                                           = Refcount (syntax_tree);
                                                         ABORT_ON_ERROR;
                                                         compiler_phase++;
 
                                                         if (!breakref) {
-                                                            NOTE (("\nCompiling: ..."));
+                                                            NOTE_COMPILER_PHASE;
                                                             syntax_tree
                                                               = Compile (syntax_tree);
                                                             ABORT_ON_ERROR;
                                                             compiler_phase++;
+
+                                                            if (!Ccodeonly) {
+                                                                NOTE_COMPILER_PHASE;
+                                                                if (MODUL_FILETYPE (
+                                                                      syntax_tree)
+                                                                    == F_prog) {
+                                                                    sprintf (
+                                                                      cccallstr,
+                                                                      "gcc %s-Wall "
+                                                                      "-Wno-unused -I "
+                                                                      "$RCSROOT/src/"
+                                                                      "compile/"
+                                                                      " -o %s %s %s",
+                                                                      ccflagsstr,
+                                                                      outfilename,
+                                                                      cfilename,
+                                                                      GenLinkerList ());
+                                                                } else {
+                                                                    if (
+                                                                      (MODUL_FILETYPE (
+                                                                         syntax_tree)
+                                                                       == F_modimp)
+                                                                      || (MODUL_FILETYPE (
+                                                                            syntax_tree)
+                                                                          == F_classimp)) {
+                                                                        sprintf (
+                                                                          cccallstr,
+                                                                          "gcc %s-Wall "
+                                                                          "-Wno-unused "
+                                                                          "-I "
+                                                                          "$RCSROOT/src/"
+                                                                          "compile/"
+                                                                          " -o %s.o -c "
+                                                                          "%s",
+                                                                          ccflagsstr,
+                                                                          (NULL
+                                                                           != module_name)
+                                                                            ? module_name
+                                                                            : outfilename,
+                                                                          cfilename);
+                                                                    } else {
+                                                                        DBUG_ASSERT (0,
+                                                                                     "wro"
+                                                                                     "ng "
+                                                                                     "val"
+                                                                                     "ue "
+                                                                                     "of "
+                                                                                     "kin"
+                                                                                     "d_"
+                                                                                     "of_"
+                                                                                     "fil"
+                                                                                     "e"
+                                                                                     " ");
+                                                                    }
+                                                                }
+                                                                ABORT_ON_ERROR;
+                                                                compiler_phase = 0;
+                                                            }
                                                         }
                                                     }
                                                 }
@@ -766,43 +841,27 @@ MAIN
         }
     }
 
-    if (outfile == stdout) {
-        NOTE (("\n------------------------------------------------\n"));
-    }
-
     Print (syntax_tree);
+
+    if (outfile != stdout) {
+        fclose (outfile);
+    }
 
     /*  FreeTree(syntax_tree);  */
 
-    if (!Ccodeonly) {
-        fclose (outfile);
+    /*  NOTE2(("")); */
 
-        if (F_prog == kind_of_file) {
-            NOTE (("\nGenerating link list: ..."));
-
-            sprintf (cccallstr,
-                     "gcc %s-Wall -Wno-unused -I $RCSROOT/src/compile/"
-                     " -o %s %s %s",
-                     ccflagsstr, outfilename, cfilename, GenLinkerList ());
-        } else if (F_modimp == kind_of_file)
-            sprintf (cccallstr,
-                     "gcc %s-Wall -Wno-unused -I $RCSROOT/src/compile/"
-                     " -o %s.o -c %s",
-                     ccflagsstr, (NULL != module_name) ? module_name : outfilename,
-                     cfilename);
-        else
-            DBUG_ASSERT (0, "wrong value of kind_of_file ");
-    }
-
-    ABORT_ON_ERROR;
-
-    NOTE ((""));
-    NOTE (("*** Compilation successful *** Exit code 0"));
-    NOTE (("*** 0 error(s), %d warning(s)", warnings));
-    NOTE ((""));
+    NEWLINE (2);
+    NOTE2 (("*** Compilation successful ***"));
+    NOTE2 (("*** Exit code 0"));
+    NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
+    NEWLINE (2);
 
     if (!Ccodeonly) {
-        NOTE (("\n%s", cccallstr));
+        NOTE2 (("*** Invoking C-compiler:"));
+        NOTE2 (("%s", cccallstr));
+        NEWLINE (2);
+
         system (cccallstr);
     }
 
