@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2002/07/24 18:55:06  dkr
+ * TAGGED_ARRAYS: scalar args are flattened during precompile
+ * now (in PREC2ap())
+ *
  * Revision 3.53  2002/07/24 13:17:30  dkr
  * MUST_REFCOUNT renamed into TYPE_MUST_REFCOUNT
  *
@@ -104,6 +108,13 @@
  *   - A function with code for object initialization is created.
  *
  * Things done during second traversal:
+ *   - Constant arguments of function applications are abstracted out:
+ *       a = fun( 1);   =>   _tmp = 1; a = fun( _tmp);
+ *     This can be done *after* type-checking only, because this modification
+ *     should not be done for primitive functions (it is superfluous for prfs
+ *     and we should minimize the number of local variables used ...).
+ *     Unfortunately, only the type system can decide whether an application
+ *     uses a primitive or a user-defined function (overloading!).
  *   - Function signatures are transformed into the final form:
  *     At most a single return value, remapping because of a linksign pragma,
  *     parameter tags (in, out, inout, ...).
@@ -1869,11 +1880,50 @@ PREC2let (node *arg_node, node *arg_info)
 node *
 PREC2ap (node *arg_node, node *arg_info)
 {
+    node *args, *arg;
+
     DBUG_ENTER ("PREC2ap");
 
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
     }
+
+#ifdef TAGGED_ARRAYS
+    args = AP_ARGS (arg_node);
+    while (args != NULL) {
+        arg = EXPRS_EXPR (args);
+        if (NODE_TYPE (arg) != N_id) {
+            types *type;
+
+            switch (NODE_TYPE (arg)) {
+            case N_num:
+                type = MakeTypes1 (T_int);
+                break;
+            case N_float:
+                type = MakeTypes1 (T_float);
+                break;
+            case N_double:
+                type = MakeTypes1 (T_double);
+                break;
+            case N_bool:
+                type = MakeTypes1 (T_bool);
+                break;
+            case N_char:
+                type = MakeTypes1 (T_char);
+                break;
+            default:
+                DBUG_ASSERT ((0), "illegal node type found!");
+                type = NULL;
+                break;
+            }
+
+            EXPRS_EXPR (args) = LiftArg (arg, INFO_PREC_FUNDEF (arg_info), type, TRUE,
+                                         &(INFO_PREC2_PRE_ASSIGNS (arg_info)));
+        }
+
+        args = EXPRS_NEXT (args);
+    }
+#endif
 
     DBUG_RETURN (arg_node);
 }
