@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/06/26 10:03:52  sbs
+ * Revision 1.9  1995/06/27 09:40:09  hw
+ * bug fixed in DubIds( an ids-chain will be duplicated correctly now)
+ *
+ * Revision 1.8  1995/06/26  10:03:52  sbs
  * ids->use copie in DupIds
  *
  * Revision 1.7  1995/06/26  08:10:21  asi
@@ -122,7 +125,7 @@ DupIds (ids *old_ids, node *arg_info)
         break;
     }
     if (NULL != old_ids->next)
-        old_ids->next = DupIds (old_ids->next, arg_info);
+        new_ids->next = DupIds (old_ids->next, arg_info);
     DBUG_RETURN (new_ids);
 }
 
