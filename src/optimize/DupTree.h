@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/07/28 12:57:15  asi
+ * Revision 1.8  1995/08/16 09:23:01  asi
+ * renamed DupCast to DupTypes
+ *
+ * Revision 1.7  1995/07/28  12:57:15  asi
  * added macros INVARIANT, UNS_NO, and UNS_NODES
  * and added function DupInfo
  *
@@ -53,7 +56,7 @@ extern ids *DupIds (ids *ids, node *arg_info);
 extern node *DupIIds (node *arg_node, node *arg_info);
 extern node *DupChain (node *arg_node, node *arg_info);
 extern node *DupAssign (node *arg_node, node *arg_info);
-extern node *DupCast (node *arg_node, node *arg_info);
+extern node *DupTypes (node *arg_node, node *arg_info);
 extern node *DupPrf (node *arg_node, node *arg_info);
 extern node *DupFun (node *arg_node, node *arg_info);
 extern node *DupFundef (node *arg_node, node *arg_info);

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/07/28 12:58:22  asi
+ * Revision 1.14  1995/08/16 09:23:01  asi
+ * renamed DupCast to DupTypes
+ *
+ * Revision 1.13  1995/07/28  12:58:22  asi
  * added function DupInfo
  *
  * Revision 1.12  1995/07/24  09:08:05  asi
@@ -222,12 +225,12 @@ DupAssign (node *arg_node, node *arg_info)
 }
 
 node *
-DupCast (node *arg_node, node *arg_info)
+DupTypes (node *arg_node, node *arg_info)
 {
     node *new_node;
     int i;
 
-    DBUG_ENTER ("DupCast");
+    DBUG_ENTER ("DupTypes");
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     new_node = MakeNode (arg_node->nodetype);
     new_node->info.types = DuplicateTypes (arg_node->info.types, 1);
