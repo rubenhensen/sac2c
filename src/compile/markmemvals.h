@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/28 22:14:30  ktr
+ * added MMVblock
+ *
  * Revision 1.8  2004/11/25 11:38:37  ktr
  * COMPILES!
  *
@@ -43,6 +46,7 @@
  *****************************************************************************/
 extern node *MMVdoMarkMemVals (node *syntax_tree);
 
+extern node *MMVblock (node *arg_node, info *arg_info);
 extern node *MMVcode (node *arg_node, info *arg_info);
 extern node *MMVfold (node *arg_node, info *arg_info);
 extern node *MMVfundef (node *arg_node, info *arg_info);

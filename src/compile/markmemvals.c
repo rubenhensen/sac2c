@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2004/11/28 22:14:30  ktr
+ * added MMVblock
+ *
  * Revision 1.21  2004/11/27 00:16:00  ktr
  * New barebones precompile.
  *
@@ -239,6 +242,34 @@ UpdateDFM (dfmask_t *dfm, info *arg_info)
  *
  * @{
  ****************************************************************************/
+/** <!--******************************************************************-->
+ *
+ * @fn MMVblock
+ *
+ *  @brief Traverses a block's instructions and the vardec afterwards
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+node *
+MMVblock (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("MMVblock");
+
+    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+
+    /*
+     * Traverse into VARDECs in order to remove unneeded ones
+     */
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
 
 /** <!--******************************************************************-->
  *
