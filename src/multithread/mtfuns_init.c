@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/03/09 18:33:39  jhs
+ * Brushing
+ *
  * Revision 1.2  2000/03/02 14:13:58  jhs
  * Using mdb_statustype now.
  *
@@ -42,7 +45,7 @@
 #include "mtfuns_init.h"
 
 /* #### */
-
+/* #### ignore functions to be ignored within here!!!! */
 node *
 MtfunsInit (node *arg_node, node *arg_info)
 {
@@ -76,7 +79,24 @@ MtfunsInit (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* MTFINst and MTFINmt */
+/******************************************************************************
+ *
+ * function:
+ *   node *MTFINxt(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   This is the traversal function for N_st and N_mt!!!
+ *   One does not need explicit versions MTFINst or MTFINmt here.
+ *
+ *   This routine set the INFO_MTFIN_CURRENTATTRIB by the actual
+ *   kind of node we found.
+ *   - N_mt => ST_call_mt
+ *   - N_st => ST_call_st
+ *   - else => fail
+ *   Then it traverses the inner region, restores INFO_MTFIN_CURRENTASSIGN
+ *   afterwards.
+ *
+ ******************************************************************************/
 node *
 MTFINxt (node *arg_node, node *arg_info)
 {
@@ -97,10 +117,10 @@ MTFINxt (node *arg_node, node *arg_info)
         DBUG_ASSERT (0, ("not handled"));
     }
 
-    DBUG_PRINT ("MTFIN", ("traverse into region %s",
+    DBUG_PRINT ("MTFIN", ("traverse into region with %s",
                           mdb_statustype[INFO_MTFIN_CURRENTATTRIB (arg_info)]));
     MT_OR_ST_REGION (arg_node) = Trav (MT_OR_ST_REGION (arg_node), arg_info);
-    DBUG_PRINT ("MTFIN", ("traverse from region %s",
+    DBUG_PRINT ("MTFIN", ("traverse from region with %s",
                           mdb_statustype[INFO_MTFIN_CURRENTATTRIB (arg_info)]));
 
     INFO_MTFIN_CURRENTATTRIB (arg_info) = old_attrib;
@@ -108,6 +128,30 @@ MTFINxt (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *MTFINlet(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   The action of the function depends on the the righ-hand-side of the
+ *   let.
+ *   - If we find an N_ap (ap) calling a function f (= AP_FUNDEF(ap)),
+ *     we check the a = FUNDEF_ATTRIB( f) of the called function
+ *     and if necessary compare it to i = INFO_MTFIN_CURRENTATTRIB( arg_info).
+ *     - a = ST_call_any
+ *       There has been no duplication of this function. Set the attrib
+ *       of the function to i
+ *     - a == i
+ *       The call leads to the right function, nothing is done.
+ *     - a <> i
+ *       If there is no duplicate d of the function with the other kind of
+ *       attrib we create d.
+ *       In both cases we change the call to call d.
+ *   - If we find a with-loop we do nothing (see comment below)
+ *   - Anything else will be traversed.
+ *
+ ******************************************************************************/
 node *
 MTFINlet (node *arg_node, node *arg_info)
 {
@@ -121,6 +165,7 @@ MTFINlet (node *arg_node, node *arg_info)
         ap = LET_EXPR (arg_node);
 
         old_fundef = AP_FUNDEF (ap);
+        DBUG_ASSERT ((FUNDEF_ATTRIB (old_fundef) != ST_call_rep), ("hit call_rep"));
 
         if (FUNDEF_ATTRIB (old_fundef) == ST_call_any) {
             DBUG_PRINT ("MTFIN", ("call_any %s %s", FUNDEF_NAME (old_fundef),
@@ -141,6 +186,7 @@ MTFINlet (node *arg_node, node *arg_info)
                                   mdb_statustype[FUNDEF_ATTRIB (old_fundef)]));
             /* nothing happens */
         } else if (FUNDEF_ATTRIB (old_fundef) != INFO_MTFIN_CURRENTATTRIB (arg_info)) {
+
             DBUG_PRINT ("MTFIN", ("!= current %s %s", FUNDEF_NAME (old_fundef),
                                   mdb_statustype[FUNDEF_ATTRIB (old_fundef)]));
             new_fundef = FUNDEF_COMPANION (old_fundef);
@@ -185,13 +231,31 @@ MTFINlet (node *arg_node, node *arg_info)
             DBUG_ASSERT (0, ("this cannot be reached!!!"));
         }
     } else if (NODE_TYPE (LET_EXPR (arg_node)) != N_Nwith2) {
-        /* ignores repfuns #### */
+        /*
+         *  We traverse all the rst, but *not* with-loops.
+         *  Therefore we cannot reach repfuns.
+         *  Every function called within a with-loop is a repfun by now,
+         *  and these are not transformed in to st-funs or mt-funs, so this
+         *  is exactly what we want.
+         */
+        DBUG_PRINT ("MTFIN", ("trav into with-loop"));
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        DBUG_PRINT ("MTFIN", ("trav from with-loop"));
     }
 
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *MTFINfundef (node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Traverse the body only.
+ *   DO NOT TRAVERSE THE NEXT HERE!!!
+ *
+ ******************************************************************************/
 node *
 MTFINfundef (node *arg_node, node *arg_info)
 {

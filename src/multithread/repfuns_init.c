@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/03/09 18:33:54  jhs
+ * Brushing
+ *
  * Revision 1.5  2000/03/02 13:02:28  jhs
  * Build some abstraction (in multithreaded_lib), tested and repaired.
  *
@@ -26,7 +29,20 @@
  * prefix: RFIN
  *
  * description:
- *   ####
+ *   Creation of replicated-functions (repfuns).
+ *   Each function that is called within a scheduled with-loop is duplicated
+ *   and all calls to that function from within schedules with-loops
+ *   is changed to call the copy.
+ *   The duplicated functions are called "repfuns".
+ *   Within all repfuns all calls to functions (even if not in a with-loop)
+ *   will be changed to call new created repfuns,
+ *   also all schedulings of further with-loops will be eliminated.
+ *   Each function will copied only once.
+ *
+ *   The repfuns will be expanded with an extra argument, which will
+ *   transport the ThreadId into the functions called within
+ *   multi-threading. So the ThreadID will be available for the
+ *   HeapManager.
  *
  ******************************************************************************/
 
@@ -51,7 +67,19 @@
  *   node *RepfunsInit(node *arg_node, node *arg_info)
  *
  * description:
- *   ####
+ *   Initiate the repfuns-initialisation as described above.
+ *
+ *   Traverses *only* the function handed over via arg_node with rfin_tab,
+ *   will not traverse FUNDEF_NEXT( arg_node).
+ *
+ *   The flag INFO_RFIN_WITHINWITH( arg_info) will set to FALSE.
+ *
+ *   This routine ignores (returns without changes):
+ *   - functions f with no body (FUNDEF_BODY( f) == NULL)
+ *   - functions f with FUNDEF_STATUS( f) = ST_foldfun
+ *   - repfuns
+ *     functions f with FUNDEF_ATTRIB( f) = ST_call_rep
+ *     (this ignores especially the new created repfuns).
  *
  ******************************************************************************/
 node *
@@ -59,30 +87,25 @@ RepfunsInit (node *arg_node, node *arg_info)
 {
     funtab *old_tab;
     int old_withinwith;
-    node *old_lastfundef;
-    int old_search;
 
     DBUG_ENTER ("RepfunsInit");
 
-    old_tab = act_tab;
-    act_tab = rfin_tab;
+    if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)
+        && (FUNDEF_ATTRIB (arg_node) != ST_call_rep)) {
+        old_tab = act_tab;
+        act_tab = rfin_tab;
 
-    old_withinwith = INFO_RFIN_WITHINWITH (arg_info);
-    old_lastfundef = INFO_RFIN_LASTFUNDEF (arg_info);
-    old_search = INFO_RFIN_SEARCH (arg_info);
-    INFO_RFIN_WITHINWITH (arg_info) = FALSE;
-    INFO_RFIN_LASTFUNDEF (arg_info) = NULL;
-    INFO_RFIN_SEARCH (arg_info) = FALSE;
+        old_withinwith = INFO_RFIN_WITHINWITH (arg_info);
+        INFO_RFIN_WITHINWITH (arg_info) = FALSE;
 
-    DBUG_PRINT ("RFIN", ("trav into body"));
-    FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    DBUG_PRINT ("RFIN", ("trav from body"));
+        DBUG_PRINT ("RFIN", ("trav into body"));
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        DBUG_PRINT ("RFIN", ("trav from body"));
 
-    INFO_RFIN_WITHINWITH (arg_info) = old_withinwith;
-    INFO_RFIN_LASTFUNDEF (arg_info) = old_lastfundef;
-    INFO_RFIN_SEARCH (arg_info) = old_search;
+        INFO_RFIN_WITHINWITH (arg_info) = old_withinwith;
 
-    act_tab = old_tab;
+        act_tab = old_tab;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -152,7 +175,10 @@ ReplicateFundef (node *fundef, node *arg_info)
  *   node *RFINnwith2( node *arg_node, node *arg_info)
  *
  * description:
- *   ####
+ *   If the traversal hits a *scheduled with-loop* on the first level the
+ *   INFO_RFIN_WITHINWITH flag will be set to TRUE. This indicates, that
+ *   the traversal is within a scheduled with-loop.
+ *   Then the with-loop-body is traversed and the flag restore afterwards.
  *
  ******************************************************************************/
 node *
@@ -161,28 +187,18 @@ RFINnwith2 (node *arg_node, node *arg_info)
     int old_withinwith;
 
     DBUG_ENTER ("RFINnwith2");
+    DBUG_PRINT ("RFIN", ("begin"));
 
-    DBUG_PRINT ("RFIN", ("hit"));
+    DBUG_PRINT ("RFIN", ("withinwith before %i", INFO_RFIN_WITHINWITH (arg_info)));
 
     old_withinwith = INFO_RFIN_WITHINWITH (arg_info);
-
-    if (INFO_RFIN_WITHINWITH (arg_info)) {
-        DBUG_PRINT ("RFIN", ("before true"));
-    } else {
-        DBUG_PRINT ("RFIN", ("before false"));
-    }
-
     if (NWITH2_ISSCHEDULED (arg_node)) {
         INFO_RFIN_WITHINWITH (arg_info) = TRUE;
     } else {
         /* reuse value of arg_info (from wl above) */
     }
 
-    if (INFO_RFIN_WITHINWITH (arg_info)) {
-        DBUG_PRINT ("RFIN", ("while true"));
-    } else {
-        DBUG_PRINT ("RFIN", ("while false"));
-    }
+    DBUG_PRINT ("RFIN", ("withinwith while %i", INFO_RFIN_WITHINWITH (arg_info)));
 
     DBUG_PRINT ("RFIN", ("traverse into code"));
     NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
@@ -191,12 +207,9 @@ RFINnwith2 (node *arg_node, node *arg_info)
     INFO_RFIN_WITHINWITH (arg_info) = old_withinwith;
     ;
 
-    if (INFO_RFIN_WITHINWITH (arg_info)) {
-        DBUG_PRINT ("RFIN", ("after true"));
-    } else {
-        DBUG_PRINT ("RFIN", ("after false"));
-    }
+    DBUG_PRINT ("RFIN", ("withinwith after %i", INFO_RFIN_WITHINWITH (arg_info)));
 
+    DBUG_PRINT ("RFIN", ("end"));
     DBUG_RETURN (arg_node);
 }
 
@@ -206,7 +219,13 @@ RFINnwith2 (node *arg_node, node *arg_info)
  *   node *RFINlet( node* arg_node, node *arg_info)
  *
  * description:
- *   ####
+ *   Depending on the kind of LET_EXPR that is found this routine takes
+ *   special actions:
+ *   - N_api   : The call is changed, if necessary the function will be
+ *               copied (if already done this is skipped)
+ *   - N_prf   : No body is existent, so we can't copy ...
+ *   - N_Nwith2: Traversal into the body
+ *   - else    : Nothing is done.
  *
  ******************************************************************************/
 node *
@@ -220,7 +239,8 @@ RFINlet (node *arg_node, node *arg_info)
 
     /* if lhs application then lift */
     if (INFO_RFIN_WITHINWITH (arg_info)) {
-        if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
+        if ((NODE_TYPE (LET_EXPR (arg_node)) == N_ap)
+            && (FUNDEF_BODY (AP_FUNDEF (LET_EXPR (arg_node))) != NULL)) {
             DBUG_PRINT ("RFIN", ("ap-let: lift %s",
                                  FUNDEF_NAME (AP_FUNDEF (LET_EXPR (arg_node)))));
 
