@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2004/12/08 22:52:07  sbs
+ * FindWrapper call corrected in CRTWRPfold
+ *
  * Revision 1.27  2004/12/05 16:45:38  sah
  * added SPIds SPId SPAp in frontend
  *
@@ -673,7 +676,7 @@ CRTWRPfold (node *arg_node, info *arg_info)
         FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
         num_args = 2;
-        wrapper = FindWrapper (FOLD_FUN (arg_node), FOLD_MOD (arg_node), 2, 1,
+        wrapper = FindWrapper (FOLD_MOD (arg_node), FOLD_FUN (arg_node), 2, 1,
                                INFO_CRTWRP_WRAPPERFUNS (arg_info));
 
         if (wrapper == NULL) {
