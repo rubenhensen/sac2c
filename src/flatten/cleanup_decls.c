@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/03/21 14:55:23  dkr
+ * ASSERT added: CleanupDecls() can be used after type checking only
+ *
  * Revision 1.4  2000/03/19 17:11:55  dkr
  * fixed a bug in CUDids(): INFO_CUD_REF may be NULL
  *
@@ -65,6 +68,10 @@ CUDids (ids *id, node *arg_info)
         tmp = id;
         while (tmp != NULL) {
             decl = IDS_VARDEC (tmp);
+
+            DBUG_ASSERT ((decl != NULL),
+                         "Variable declaration missing! "
+                         "CleanupDecls() can be used after type checking only!");
 
             if ((NODE_TYPE (decl) != N_vardec) && (NODE_TYPE (decl) != N_arg)) {
                 DBUG_ASSERT ((NODE_TYPE (decl) == N_objdef), "declaration is neither a "
