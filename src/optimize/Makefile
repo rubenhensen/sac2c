@@ -1,71 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.36  2004/11/26 21:05:23  sah
+# *** empty log message ***
+#
 # Revision 3.35  2004/11/21 11:22:03  sah
 # removed some old ast infos
-#
-# Revision 3.34  2004/09/30 20:01:26  sah
-# added a switch to compile a subset of
-# the compiler only
-#
-# Revision 3.33  2004/09/28 14:08:21  ktr
-# removed old refcount and generatemasks
-#
-# Revision 3.32  2004/07/14 23:23:37  sah
-# removed all old ssa optimizations and the use_ssaform flag
-#
-# Revision 3.31  2004/03/02 16:39:40  mwe
-# ConstVarPropagation added
-#
-# Revision 3.30  2003/08/16 08:44:25  ktr
-# SelectionPropagation added. Must currently be activated with -dosp.
-#
-# Revision 3.29  2003/04/26 20:45:38  mwe
-# ElimSubDiv and UndoElimSubDiv added
-#
-# Revision 3.28  2003/02/08 16:00:01  mwe
-# DistributiveLaw.o added
-#
-# Revision 3.27  2002/10/08 22:10:47  dkr
-# SSAWLUnroll.o added
-#
-# Revision 3.26  2002/06/07 17:16:42  mwe
-# AssociativeLaw.o added
-#
-# Revision 3.25  2002/06/06 19:56:03  dkr
-# target clean modified
-#
-# Revision 3.24  2001/11/15 15:36:48  sacbase
-# CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
-#
-# Revision 3.23  2001/11/14 12:59:48  sbs
-# deps line replaced by inclusion of Makefile.Deps
-# ( .xxx.d mechanism)
-# global setup included via Makefile.Config
-#
-# Revision 3.22  2001/11/13 20:32:43  dkr
-# make deps done
-#
-# Revision 3.21  2001/07/18 13:08:17  cg
-# make deps done
-#
-# Revision 3.20  2001/05/30 14:00:40  nmw
-# SSAInferLI.o added
-#
-# Revision 3.19  2001/05/22 14:52:18  nmw
-# rmcasts.o added
-#
-# Revision 3.18  2001/05/08 13:29:33  dkr
-# make deps done
-#
-# Revision 3.17  2001/04/26 21:09:44  dkr
-# make deps done
-#
-# Revision 3.16  2001/04/20 11:17:07  nmw
-# SSALUR.o added
-#
-# Revision 3.15  2001/03/26 15:35:35  nmw
-# SSALIR added
 #
 # ... [eliminated]
 #
@@ -85,9 +25,6 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 # local settings:
 #
-
-INCS = -I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules \
-       -I../compile -I../concurrent -I../tree -I../flatten -I../constants
 
 OBJS := optimize.o Inline.o DeadFunctionRemoval.o \
         SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
