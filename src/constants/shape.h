@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/03/05 16:57:04  sbs
+ * SHCompareShapes added
+ *
  * Revision 1.1  2001/03/02 14:33:09  sbs
  * Initial revision
  *
@@ -40,6 +43,7 @@ extern int SHGetUnrLen (shape *shp);
 
 extern shape *SHSetExtent (shape *shp, int dim, int val);
 
+extern bool SHCompareShapes (shape *a, shape *b);
 extern shape *SHAppendShapes (shape *a, shape *b);
 extern char *SHShape2String (int dots, shape *shp);
 

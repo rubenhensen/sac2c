@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2001/03/05 16:57:04  sbs
+ * SHCompareShapes added
+ *
  * Revision 1.1  2001/03/02 14:33:07  sbs
  * Initial revision
  *
@@ -273,6 +276,35 @@ SHSetExtent (shape *shp, int dim, int val)
 /******************************************************************************
  *
  * function:
+ *    bool SHCompareShapes( shape *a, shape *b)
+ *
+ * description:
+ *    compares two given shapes a and b and returns true iff they are identical.
+ *
+ ******************************************************************************/
+
+bool
+SHCompareShapes (shape *a, shape *b)
+{
+    bool res;
+    int i;
+
+    DBUG_ENTER ("SHCompareShapes");
+
+    res = TRUE;
+    if (SHAPE_DIM (a) == SHAPE_DIM (b)) {
+        for (i = 0; i < SHAPE_DIM (a); i++)
+            if (SHAPE_EXT (a, i) != SHAPE_EXT (b, i))
+                res = FALSE;
+    } else {
+        res = FALSE;
+    }
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
  *    shape *SHAppendShapes( shape *a, shape *b)
  *
  * description:
@@ -504,5 +536,5 @@ SHCompareWithArguments (shape *shp, int dim, ...)
         flag = FALSE;
     }
 
-    return (flag);
+    DBUG_RETURN (flag);
 }
