@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/12/01 17:09:20  cg
+ * Revision 1.19  1995/12/01 20:26:14  cg
+ * removed macro OBJDEF_INITFUN
+ *
+ * Revision 1.18  1995/12/01  17:09:20  cg
  * added new node type N_pragma
  * removed macro FUNDEF_ALIAS
  *
@@ -560,7 +563,7 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  ***    char*       VARNAME      (typecheck -> obj-handling ->
  ***                             ( -> precompile -> compile -> )
  ***    node*       ARG       (O)  (obj-handling !!)
- ***    node*       INITFUN   (O)  (objinit -> writesib -> precompile -> )
+ ***    nodelist    NEEDOBJS  (O)  (import -> analysis -> writesib ->)
  ***    node*       INIT      (O)  (precompile !!)
  ***/
 
@@ -575,14 +578,7 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  *  parameter list for this global object. ARG changes while traversing
  *  the functions !!
  *
- *  INITFUN is a pointer to the init function. This is used to infer the
- *  objects which are implicitly needed by this object.
- *
  *  NEEDOBJS is a nodelist of objects needed by this object.
- *
- *  INITFUN and NEEDOBJS are mapped to the same real son node, because
- *  they are used for the same purpose, INITFUN for object definitions
- *  and NEEDOBJS for imported objects (object declarations).
  *
  *  INIT is a pointer to an N_let node containing an application of the
  *  init function (SAC objects only).
@@ -599,7 +595,6 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 #define OBJDEF_VARNAME(n) ((char *)(n->node[2]))
 #define OBJDEF_ARG(n) (n->node[3])
 #define OBJDEF_PRAGMA(n) (n->node[4])
-#define OBJDEF_INITFUN(n) (n->node[5])
 #define OBJDEF_NEEDOBJS(n) ((nodelist *)n->node[5])
 #define OBJDEF_INIT(n) (n->node[3])
 
