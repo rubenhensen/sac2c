@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/04/03 22:32:12  dkr
+ * modification of SAC_WL_MT_BLOCK_LOOP0_BEGIN (revision 3.12) undone
+ *
  * Revision 3.12  2001/03/16 15:16:46  dkr
  * fixed a bug in SAC_WL_MT_BLOCK_LOOP0_BEGIN
  *
@@ -132,11 +135,8 @@
              idx_sca < SAC_WL_VAR (block_stop, idx_sca);) {                              \
             int SAC_WL_VAR (first, idx_sca) = idx_sca;                                   \
             int SAC_WL_VAR (last, idx_sca)                                               \
-              = SAC_ND_MIN (SAC_WL_VAR (first, idx_sca) + step, bnd2);
-/*                                                      ^^^^
- * we do *not* use 'block_stop' here because it is crucial that each
- * thread computes an entire block!
- */
+              = SAC_ND_MIN (SAC_WL_VAR (first, idx_sca) + step,                          \
+                            SAC_WL_VAR (block_stop, idx_sca));
 
 /*
  * BEGIN: (BLOCK_LEVEL > 0)
