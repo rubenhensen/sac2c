@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/08/07 14:09:29  dkr
+ * ST_independent replaced by ST_shp_indep and ST_dim_indep
+ *
  * Revision 2.4  2000/02/23 20:24:53  cg
  * SIB format slightly changed in order to distinguish SIBs
  * of modules from SIBs of classes when being read in again.
@@ -122,11 +125,6 @@
  *  description   : writes SAC-Information-Blocks by starting the
  *                  traversal mechanism
  *  global vars   : act_tab, writesib_tab
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : ---
- *
- *  remarks       :
  *
  */
 
@@ -148,11 +146,6 @@ WriteSib (node *syntax_tree)
  *                  3) recursion level
  *  description   : prints the dependencies to the sibfile
  *  global vars   : dependencies
- *  internal funs : ---
- *  external funs : fprintf
- *  macros        :
- *
- *  remarks       :
  *
  */
 
@@ -219,12 +212,6 @@ SIBPrintDependencies (FILE *sibfile, deps *depends, int level)
  *  description   : inserts the given node at the end of the correct
  *                  nodelist (funlist, objlist, or typelist) of the
  *                  given N_info node if it's not already included.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : MakeNodelist
- *  macros        : DBUG, TREE
- *
- *  remarks       :
  *
  */
 
@@ -307,12 +294,6 @@ StoreExportNode (node *insert, node *info)
  *                  2) N_info node where inserts are to be done
  *  description   : inserts each node of the nodelist into the correct
  *                  nodelist of the N_info node
- *  global vars   : ---
- *  internal funs : StoreExportNode
- *  external funs : ---
- *  macros        : DBUG, TREE
- *
- *  remarks       :
  *
  */
 
@@ -335,10 +316,6 @@ StoreExportNodes (nodelist *inserts, node *info)
  *  arguments     : 1) N_float node
  *                  2) arg_info unused
  *  description   : prints float constant to outfile
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : fprintf
- *  macros        :
  *
  *  remarks       : Main difference to PrintFloat from print.c is that the
  *                  constant is always followed by an "F" to mark it as
@@ -364,10 +341,6 @@ WSIBfloat (node *arg_node, node *arg_info)
  *  arguments     : 1) N_dbl node
  *                  2) arg_info unused
  *  description   : prints double constant to outfile
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : fprintf
- *  macros        :
  *
  *  remarks       : Main difference to PrintDouble from print.c is that the
  *                  constant is always followed by a "D" to mark it as
@@ -387,20 +360,6 @@ WSIBdouble (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
- *
- *  functionname  : AddImplicitItems
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
 static node *
 AddImplicitItems (node *info, node *all_types)
 {
@@ -416,7 +375,8 @@ AddImplicitItems (node *info, node *all_types)
         StoreExportNodes (FUNDEF_NEEDOBJS (fundef), info);
 
         if ((FUNDEF_BODY (fundef) != NULL)
-            && (FUNDEF_INLINE (fundef) || (FUNDEF_ATTRIB (fundef) == ST_independent)
+            && ((FUNDEF_INLINE (fundef)) || (FUNDEF_ATTRIB (fundef) == ST_shp_indep)
+                || (FUNDEF_ATTRIB (fundef) == ST_dim_indep)
                 || (FUNDEF_STATUS (fundef) == ST_foldfun))) {
             StoreExportNodes (FUNDEF_NEEDTYPES (NODELIST_NODE (tmp)), info);
             StoreExportNodes (FUNDEF_NEEDFUNS (NODELIST_NODE (tmp)), info);
@@ -453,20 +413,6 @@ AddImplicitItems (node *info, node *all_types)
     DBUG_RETURN (info);
 }
 
-/*
- *
- *  functionname  : PrintNeededTypes
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
 static void
 PrintNeededTypes (FILE *sibfile, nodelist *types, node *arg_info)
 {
@@ -499,20 +445,6 @@ PrintNeededTypes (FILE *sibfile, nodelist *types, node *arg_info)
 
     DBUG_VOID_RETURN;
 }
-
-/*
- *
- *  functionname  : PrintNeededFunctions
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
 
 static void
 PrintNeededFunctions (FILE *sibfile, nodelist *funs, node *arg_info)
@@ -551,20 +483,6 @@ PrintNeededFunctions (FILE *sibfile, nodelist *funs, node *arg_info)
 
     DBUG_VOID_RETURN;
 }
-
-/*
- *
- *  functionname  : PrintNeededObjects
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
 
 static void
 PrintNeededObjects (FILE *sibfile, nodelist *objs, node *arg_info)
@@ -633,10 +551,6 @@ PrintNeededObjects (FILE *sibfile, nodelist *objs, node *arg_info)
  *                  2) node list of objdefs
  *  description   : writes an effect pragma with the given objects
  *                  to the sib file.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : fprintf
- *  macros        : PRINTMODNAME
  *
  *  remarks       : The only difference to PrintNeededObjects is that
  *                  this function always writes a pragma effect regardless
@@ -677,20 +591,6 @@ PrintNeededObjectsOfObject (FILE *sibfile, nodelist *objs, node *arg_info)
 
     DBUG_VOID_RETURN;
 }
-
-/*
- *
- *  functionname  : PrintSibTypes
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
 
 static void
 PrintSibTypes (FILE *sibfile, nodelist *tdeflist, char *modname, node *arg_info)
@@ -734,20 +634,6 @@ PrintSibTypes (FILE *sibfile, nodelist *tdeflist, char *modname, node *arg_info)
     DBUG_VOID_RETURN;
 }
 
-/*
- *
- *  functionname  : PrintSibObjs
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
 static void
 PrintSibObjs (FILE *sibfile, nodelist *objdeflist, char *modname, node *arg_info)
 {
@@ -782,12 +668,12 @@ PrintSibObjs (FILE *sibfile, nodelist *objdeflist, char *modname, node *arg_info
          * the above function calls actually writes a pragma to sibfile.
          */
 
-        /*
-            if (OBJDEF_LINKMOD(objdef)!=NULL)
-            {
-              fprintf(sibfile, "#pragma external %s\n", OBJDEF_LINKMOD(objdef));
-            }
-        */
+#if 0
+    if (OBJDEF_LINKMOD(objdef)!=NULL)
+    {
+      fprintf(sibfile, "#pragma external %s\n", OBJDEF_LINKMOD(objdef));
+    }
+#endif
         tmp = NODELIST_NEXT (tmp);
     }
 
@@ -797,20 +683,6 @@ PrintSibObjs (FILE *sibfile, nodelist *objdeflist, char *modname, node *arg_info
 
     DBUG_VOID_RETURN;
 }
-
-/*
- *
- *  functionname  : PrintSibFuns
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
 
 static void
 PrintSibFuns (FILE *sibfile, nodelist *fundeflist, char *modname, node *arg_info)
@@ -829,7 +701,8 @@ PrintSibFuns (FILE *sibfile, nodelist *fundeflist, char *modname, node *arg_info
 
         PrintFunctionHeader (fundef, arg_info);
 
-        if ((FUNDEF_INLINE (fundef)) || (FUNDEF_ATTRIB (fundef) == ST_independent)
+        if ((FUNDEF_INLINE (fundef)) || (FUNDEF_ATTRIB (fundef) == ST_shp_indep)
+            || (FUNDEF_ATTRIB (fundef) == ST_dim_indep)
             || (FUNDEF_STATUS (fundef) == ST_foldfun)) {
             fprintf (sibfile, "\n");
             Trav (FUNDEF_BODY (fundef), arg_info);
@@ -840,15 +713,16 @@ PrintSibFuns (FILE *sibfile, nodelist *fundeflist, char *modname, node *arg_info
         if (FUNDEF_PRAGMA (fundef) != NULL) {
             PrintPragma (FUNDEF_PRAGMA (fundef), arg_info);
         }
-        /*
-            if (FUNDEF_LINKMOD(fundef)!=NULL)
-            {
-              fprintf(sibfile, "#pragma external %s\n", FUNDEF_LINKMOD(fundef));
-            }
-        */
+#if 0
+    if (FUNDEF_LINKMOD(fundef)!=NULL) {
+      fprintf(sibfile, "#pragma external %s\n", FUNDEF_LINKMOD(fundef));
+    }
+#endif
         PrintNeededObjects (sibfile, FUNDEF_NEEDOBJS (fundef), arg_info);
 
-        if ((FUNDEF_INLINE (fundef)) || (FUNDEF_ATTRIB (fundef) == ST_independent)) {
+        if ((FUNDEF_INLINE (fundef)) || (FUNDEF_ATTRIB (fundef) == ST_shp_indep)
+            || (FUNDEF_ATTRIB (fundef) == ST_dim_indep)
+            || (FUNDEF_STATUS (fundef) == ST_foldfun)) {
             PrintNeededTypes (sibfile, FUNDEF_NEEDTYPES (fundef), arg_info);
             PrintNeededFunctions (sibfile, FUNDEF_NEEDFUNS (fundef), arg_info);
         }
@@ -861,20 +735,6 @@ PrintSibFuns (FILE *sibfile, nodelist *fundeflist, char *modname, node *arg_info
 
     DBUG_VOID_RETURN;
 }
-
-/*
- *
- *  functionname  : WSIBobjdef
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
 
 node *
 WSIBobjdef (node *arg_node, node *arg_info)
@@ -895,12 +755,6 @@ WSIBobjdef (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : WSIBfundef
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
  *
  *  remarks       : arg_info == NULL
  *                  specifies a second traversal of the fundef chain in order to
@@ -916,8 +770,9 @@ WSIBfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("WSIBfundef");
 
     if (arg_info != NULL) {
-        if (FUNDEF_INLINE (FUNDEC_DEF (arg_node))
-            || (FUNDEF_ATTRIB (FUNDEC_DEF (arg_node)) == ST_independent)
+        if ((FUNDEF_INLINE (FUNDEC_DEF (arg_node)))
+            || (FUNDEF_ATTRIB (FUNDEC_DEF (arg_node)) == ST_shp_indep)
+            || (FUNDEF_ATTRIB (FUNDEC_DEF (arg_node)) == ST_dim_indep)
             || (FUNDEF_NEEDOBJS (FUNDEC_DEF (arg_node)) != NULL)) {
             StoreExportNode (FUNDEC_DEF (arg_node), arg_info);
         }
@@ -939,7 +794,12 @@ WSIBfundef (node *arg_node, node *arg_info)
             FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
         }
 
-        if (FUNDEF_ATTRIB (arg_node) == ST_independent) {
+        if (FUNDEF_ATTRIB (arg_node) == ST_shp_indep) {
+            DBUG_PRINT ("WSIB",
+                        ("Removing shape independent function %s", ItemName (arg_node)));
+
+            ret = FreeNode (arg_node);
+        } else if (FUNDEF_ATTRIB (arg_node) == ST_dim_indep) {
             DBUG_PRINT ("WSIB", ("Removing dimension independent function %s",
                                  ItemName (arg_node)));
 
@@ -956,29 +816,12 @@ WSIBfundef (node *arg_node, node *arg_info)
 
                 FUNDEF_NEEDTYPES (arg_node) = FreeNodelist (FUNDEF_NEEDTYPES (arg_node));
             }
-
             ret = arg_node;
         }
     }
 
     DBUG_RETURN (ret);
 }
-
-/*
- *
- *  functionname  : WSIBtypedef
- *  arguments     : 1)
- *                  2)
- *  description   :
- *
- *  global vars   : sibfile
- *  internal funs : ---
- *  external funs : fprintf, Type2String, Trav
- *  macros        : TREE, DBUG
- *
- *  remarks       :
- *
- */
 
 node *
 WSIBtypedef (node *arg_node, node *arg_info)
@@ -993,20 +836,6 @@ WSIBtypedef (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_info);
 }
-
-/*
- *
- *  functionname  : WSIBexplist
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
 
 node *
 WSIBexplist (node *arg_node, node *arg_info)
@@ -1027,20 +856,6 @@ WSIBexplist (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_info);
 }
-
-/*
- *
- *  functionname  : WSIBmodul
- *  arguments     :
- *  description   :
- *  global vars   : outfile, dependencies
- *  internal funs : SIBPrintDependencies, MakeInfo, AddImplicitItems
- *  external funs : WriteOpen, fclose, Trav, fprintf, FreeNode, FreeNodeList
- *  macros        :
- *
- *  remarks       :
- *
- */
 
 node *
 WSIBmodul (node *arg_node, node *arg_info)
@@ -1110,7 +925,7 @@ WSIBmodul (node *arg_node, node *arg_info)
     /*
      *  Finally, the syntax tree can be tidied up:
      *  Lists of needed types and functions are removed as well as
-     *  dimension independent functions.
+     *  shape or dimension independent functions.
      */
 
     if (MODUL_FUNS (arg_node) != NULL) {

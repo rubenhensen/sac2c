@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.47  2000/08/07 14:09:09  dkr
+ * ST_independent replaced by ST_shp_indep and ST_dim_indep
+ *
  * Revision 2.46  2000/08/04 17:22:32  dkr
  * NEWTREE removed
  * comment about TT1, TT2, TT3 updated
@@ -2379,7 +2382,7 @@ CmpFunParams (node *arg1, node *arg2)
 /*
  *
  *  functionname  : CheckKnownTypes
- *  arguments     : 1) N_fundef  node
+ *  arguments     : 1) N_fundef node
  *  description   : - checks whether the function uses known types in
  *                    returnvalue and arguments
  *                  - if it is a userdefined type the module name where
@@ -2480,13 +2483,20 @@ CheckKnownTypes (node *arg_node)
                         ARG_NAME (arg_node)));
             }
         }
-        if (-1 == ARG_DIM (arg)) {
-            FUNDEF_ATTRIB (arg_node) = ST_independent;
+
+        if ((!KNOWN_SHAPE (ARG_DIM (arg))) && KNOWN_DIMENSION (ARG_DIM (arg))
+            && (FUNDEF_ATTRIB (arg_node) != ST_dim_indep)) {
+            FUNDEF_ATTRIB (arg_node) = ST_shp_indep;
             DBUG_PRINT ("FUN_TAG",
-                        ("Set ATTRIB-tag of function '%s' to %d"
-                         " (ST_independent)",
+                        ("Set ATTRIB-tag of function '%s' to %d",
                          ModName (FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node)),
-                         FUNDEF_ATTRIB (arg_node)));
+                         mdb_statustype[FUNDEF_ATTRIB (arg_node)]));
+        } else if (!KNOWN_DIMENSION (ARG_DIM (arg))) {
+            FUNDEF_ATTRIB (arg_node) = ST_dim_indep;
+            DBUG_PRINT ("FUN_TAG",
+                        ("Set ATTRIB-tag of function '%s' to %d",
+                         ModName (FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node)),
+                         mdb_statustype[FUNDEF_ATTRIB (arg_node)]));
         }
         arg = arg->node[0];
     }
