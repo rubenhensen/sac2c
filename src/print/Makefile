@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.14  2000/06/13 13:46:07  dkr
+# deps done
+#
 # Revision 2.13  2000/06/08 12:47:38  nmw
 # print_interface added
 #
@@ -147,13 +150,11 @@ print.o: print.h print_interface.h ../global/my_debug.h ../../inc/dbug.h
 print.o: ../tree/traverse.h convert.h ../tree/DataFlowMask.h
 print.o: ../optimize/optimize.h ../tree/free.h /usr/include/malloc.h
 print.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-print.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-print.o: /usr/include/sys/time.h /usr/include/sys/time.h
-print.o: ../optimize/generatemasks.h ../modules/filemgr.h
-print.o: ../compile/gen_startup_code.h ../psi-opt/WithloopFolding.h
-print.o: ../tree/scheduling.h ../psi-opt/wl_access_analyze.h
-print.o: ../psi-opt/tile_size_inference.h ../compile/icm.data
-print.o: ../tree/prf_node_info.mac
+print.o: /usr/include/sys/int_types.h ../optimize/generatemasks.h
+print.o: ../modules/filemgr.h ../compile/gen_startup_code.h
+print.o: ../psi-opt/WithloopFolding.h ../tree/scheduling.h
+print.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
+print.o: ../compile/icm.data ../tree/prf_node_info.mac
 print_interface.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 print_interface.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 print_interface.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -165,5 +166,4 @@ print_interface.o: print_interface.h print.h ../global/my_debug.h
 print_interface.o: ../../inc/dbug.h ../tree/traverse.h convert.h
 print_interface.o: ../modules/filemgr.h ../tree/free.h /usr/include/malloc.h
 print_interface.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-print_interface.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-print_interface.o: /usr/include/sys/time.h /usr/include/sys/time.h
+print_interface.o: /usr/include/sys/int_types.h

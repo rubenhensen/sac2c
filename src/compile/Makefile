@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.24  2000/06/13 13:46:50  dkr
+# deps done
+#
 # Revision 2.23  2000/06/13 13:21:02  dkr
 # module Old2NewWith.[ch] renamed into PatchWith.[ch]
 #
@@ -150,18 +153,18 @@ BEtest.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 BEtest.o: ../../inc/dbug.h ../global/globals.h ../global/types.h
 BEtest.o: icm2c_utils.h icm2c_std.h icm2c_wl.h icm2c_mt.h icm_vars.c icm.data
 BEtest.o: icm_betest.c
-Old2NewWith.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
-Old2NewWith.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
-Old2NewWith.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-Old2NewWith.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-Old2NewWith.o: /usr/include/stdio_impl.h /usr/include/string.h
-Old2NewWith.o: /usr/include/stdlib.h ../global/globals.h
-Old2NewWith.o: ../global/internal_lib.h ../tree/traverse.h
-Old2NewWith.o: ../typecheck/typecheck.h ../tree/free.h ../../inc/dbug.h
-Old2NewWith.o: ../global/my_debug.h /usr/include/malloc.h
-Old2NewWith.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-Old2NewWith.o: /usr/include/sys/int_types.h ../tree/DupTree.h
-Old2NewWith.o: ../tree/LookUpTable.h
+PatchWith.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
+PatchWith.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
+PatchWith.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+PatchWith.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+PatchWith.o: /usr/include/stdio_impl.h /usr/include/string.h
+PatchWith.o: /usr/include/stdlib.h ../global/globals.h
+PatchWith.o: ../global/internal_lib.h ../tree/traverse.h
+PatchWith.o: ../typecheck/typecheck.h ../tree/free.h ../../inc/dbug.h
+PatchWith.o: ../global/my_debug.h /usr/include/malloc.h
+PatchWith.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+PatchWith.o: /usr/include/sys/int_types.h ../tree/DupTree.h
+PatchWith.o: ../tree/LookUpTable.h
 ReuseWithArrays.o: ../../inc/dbug.h /usr/include/stdio.h
 ReuseWithArrays.o: /usr/include/sys/feature_tests.h
 ReuseWithArrays.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h

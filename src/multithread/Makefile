@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 1.17  2000/06/13 13:46:34  dkr
+# deps done
+#
 # Revision 1.16  2000/05/29 14:36:48  dkr
 # make deps done
 #
@@ -186,7 +189,8 @@ dataflow_analysis.o: ../tree/free.h ../global/my_debug.h
 dataflow_analysis.o: /usr/include/malloc.h /usr/include/sys/types.h
 dataflow_analysis.o: /usr/include/sys/machtypes.h
 dataflow_analysis.o: /usr/include/sys/int_types.h ../global/internal_lib.h
-dataflow_analysis.o: ../tree/DataFlowMask.h multithread_lib.h mtfuns_init.h
+dataflow_analysis.o: ../tree/DataFlowMask.h ../refcount/refcount.h
+dataflow_analysis.o: multithread_lib.h mtfuns_init.h
 mtfuns_init.o: ../../inc/dbug.h /usr/include/stdio.h
 mtfuns_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 mtfuns_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
