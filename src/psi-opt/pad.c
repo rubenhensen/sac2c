@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/27 02:51:24  mwe
+ * APTdoTransform deactivated
+ *
  * Revision 3.2  2004/11/26 20:36:07  jhb
  * compile
  *
@@ -204,8 +207,9 @@ ArrayPadding (node *arg_node)
         APinfer ();
 
         /* apply array padding */
-        APTdoTransform (arg_node);
-
+#if 0
+    APTdoTransform( arg_node);
+#endif
         /* close apdiag_file */
         if (global.apdiag) {
             fclose (apdiag_file);
