@@ -3,7 +3,15 @@
 /*
  *
  * $Log$
- * Revision 1.58  1995/05/23 07:49:23  hw
+ * Revision 1.59  1995/05/30 07:17:18  hw
+ * - N_foldfun has now two child nodes (node[0]: body of with-loop
+ *    node[1]: expr to compute neutral element of userdefined function
+ *             that is used in fold
+ * - name of userdefined function that is used in 'fold' is stored
+ *   in info.fun_name.id of N_foldfun node.
+ *   the modul name is stored in info.fun_name.id_mod , if any
+ *
+ * Revision 1.58  1995/05/23  07:49:23  hw
  * bug fixed in creation of "psi" (A[...] => psi(...,A) )
  *
  * Revision 1.57  1995/05/22  14:25:45  hw
@@ -259,7 +267,7 @@ static char *mod_name;
              moddec, expdesc, expdesc2, expdesc3, fundecs, fundec,
 	     exptypes, exptype, evimport
              imptypes, imptype, import, imports, impdesc, impdesc2, impdesc3,
-             array, exprORarray, exprsNOarray;
+             array, exprORarray, exprsNOarray, foldfun;
 
 %left OR
 %left AND
@@ -1377,7 +1385,7 @@ conexpr: GENARRAY {$$=MakeNode(N_genarray);} BRACKET_L exprORarray BRACKET_R
 	   retassignblock
 	   { $$=$<node>5;
 	     $$->info.prf=$3;
-             $$->node[0]=$6;          /* Rumpf */
+        $$->node[0]=$6;          /* Rumpf */
 	     $$->nnode=1;
 
              DBUG_PRINT("GENTREE",
@@ -1386,22 +1394,43 @@ conexpr: GENARRAY {$$=MakeNode(N_genarray);} BRACKET_L exprORarray BRACKET_R
                          mdb_prf[$$->info.prf], 
 			 mdb_nodetype[$$->node[0]->nodetype], $$->node[0] ));
            }
-	 | FOLD BRACKET_L ID BRACKET_R {$$=MakeNode(N_foldfun);}
+	 | FOLD BRACKET_L foldfun expr BRACKET_R 
 	   retassignblock
-	   { $$=$<node>5;
-	     $$->info.id=$3;
-             $$->node[0]=$6;          /* Rumpf */
-	     $$->nnode=1;
+	   { $$=$3;
+        $$->node[0]=$6;          /* body */
+        $$->node[1]=MakeNode(N_exprs);
+        $$->node[1]->node[0]=$4;
+        $$->node[1]->nnode=1;
+        DBUG_PRINT("GENTREE",("%s " P_FORMAT ": %s "P_FORMAT,
+                              mdb_nodetype[$$->node[1]->nodetype], $$->node[1],
+                              mdb_nodetype[$4->nodetype], $4));
+        $$->nnode=2;
 
-             DBUG_PRINT("GENTREE",
-                        ("%s " P_FORMAT ": %s , %s "P_FORMAT,
-                         mdb_nodetype[$$->nodetype], $$,
-                         mdb_prf[$$->info.prf], 
-			 mdb_nodetype[$$->node[0]->nodetype], $$->node[0] ));
+        DBUG_PRINT("GENTREE",
+                   ("%s " P_FORMAT ": %s , %s "P_FORMAT" %s "P_FORMAT,
+                    mdb_nodetype[$$->nodetype], $$,
+                    $$->node[0]->info.fun_name.id, 
+                    mdb_nodetype[$$->node[0]->nodetype], $$->node[0],
+                    mdb_nodetype[$$->node[1]->nodetype], $$->node[1]));
            }
 
          ;
 
+foldfun:  ID COMMA 
+     {
+        $$=MakeNode(N_foldfun);
+        $$->info.fun_name.id=$1;
+     }
+    | ID COLON ID COMMA
+     {
+        $$=MakeNode(N_foldfun);
+        $$->info.fun_name.id=$3;
+        $$->info.fun_name.id_mod=$1;
+     }
+    ;
+
+     
+ 
 foldop: PLUS {$$=F_add; }
 	| MINUS {$$=F_sub;}
 	| DIV {$$=F_div;}
