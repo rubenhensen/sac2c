@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/10/15 11:41:34  ktr
+ * Removed cutreuse functionality. This is now done by filterrc.c.
+ * Refcounting now works transparently over condfun boundaries.
+ *
  * Revision 1.18  2004/10/11 14:47:54  ktr
  * Moved RCopts to rcphase.
  *
@@ -144,7 +148,7 @@
  *  Enumeration of the different modes of EMRefcounting.
  *
  ***************************************************************************/
-typedef enum { rc_default, rc_else, rc_cutreuse } rc_mode;
+typedef enum { rc_default, rc_else } rc_mode;
 
 /** <!--******************************************************************-->
  *
@@ -201,7 +205,8 @@ struct INFO {
     node *condargs;
     node *retvals;
     node *retvals2;
-    node *retparam;
+    node *retenv;
+    node *argenv;
 };
 
 /**
@@ -219,7 +224,8 @@ struct INFO {
 #define INFO_EMRC_CONDARGS(n) (n->condargs)
 #define INFO_EMRC_RETVALS(n) (n->retvals)
 #define INFO_EMRC_RETVALS2(n) (n->retvals2)
-#define INFO_EMRC_RETPARAM(n) (n->retparam)
+#define INFO_EMRC_RETENV(n) (n->retenv)
+#define INFO_EMRC_ARGENV(n) (n->argenv)
 
 /**
  * INFO functions
@@ -244,7 +250,8 @@ MakeInfo (node *fundef)
     INFO_EMRC_CONDARGS (result) = NULL;
     INFO_EMRC_RETVALS (result) = NULL;
     INFO_EMRC_RETVALS2 (result) = NULL;
-    INFO_EMRC_RETPARAM (result) = NULL;
+    INFO_EMRC_RETENV (result) = NULL;
+    INFO_EMRC_ARGENV (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -276,15 +283,19 @@ EMRefCount (node *syntax_tree)
 {
     DBUG_ENTER ("EMRefCount");
 
-    DBUG_PRINT ("EMRC", ("Starting reference counting inference"));
+    DBUG_PRINT ("EMRC", ("Starting annotating C-functions..."));
 
     act_tab = emacf_tab;
     syntax_tree = Trav (syntax_tree, NULL);
 
+    DBUG_PRINT ("EMRC", ("Annotating C-functions done."));
+
+    DBUG_PRINT ("EMRC", ("Starting reference counting inference..."));
+
     act_tab = emrefcnt_tab;
     syntax_tree = Trav (syntax_tree, NULL);
 
-    DBUG_PRINT ("EMRC", ("Reference counting inference complete"));
+    DBUG_PRINT ("EMRC", ("Reference counting inference complete."));
 
     DBUG_RETURN (syntax_tree);
 }
@@ -467,36 +478,6 @@ UseListPopNext (rc_list_struct *uselist)
     DBUG_RETURN (res);
 }
 
-/** <!--******************************************************************-->
- *
- * @fn UseListCutReuseList
- *
- *  @brief filters the given reuselist
- *
- *  @param USElist
- *  @param reuselist;
- *  @param depth
- *
- *  @return N_exprs
- *
- ***************************************************************************/
-static node *
-UseListCutReuseList (rc_list_struct *uselist, node *reuselist, int depth)
-{
-    DBUG_ENTER ("UseListCutReuseList");
-
-    if (reuselist != NULL) {
-        EXPRS_NEXT (reuselist)
-          = UseListCutReuseList (uselist, EXPRS_NEXT (reuselist), depth);
-
-        if (!UseListContains (uselist, ID_AVIS (EXPRS_EXPR (reuselist)), depth)) {
-            reuselist = FreeNode (reuselist);
-        }
-    }
-
-    DBUG_RETURN (reuselist);
-}
-
 /*@}*/
 
 /** <!--*******************************************************************-->
@@ -536,24 +517,68 @@ MakeRCCounter (int depth, int count, rc_counter *next)
 
 /** <!--******************************************************************-->
  *
+ * @fn IncreaseEnvCounter
+ *
+ *  @brief internal function to increase the environment counter at a
+ *         certain codelevel
+ *
+ *  @param rcc a sublist of the environment list
+ *  @param codelevel
+ *  @param n
+ *
+ *  @return the modified environment list
+ *
+ ***************************************************************************/
+static rc_counter *
+IncreaseEnvCounter (rc_counter *rcc, int codelevel, int n)
+{
+    DBUG_ENTER ("IncreaseEnvCounter");
+
+    if ((rcc == NULL) || (rcc->depth < codelevel)) {
+        rcc = MakeRCCounter (codelevel, n, rcc);
+    } else {
+        if (rcc->depth == codelevel) {
+            rcc->count += n;
+        } else {
+            rcc->next = IncreaseEnvCounter (rcc->next, codelevel, n);
+        }
+    }
+
+    DBUG_RETURN (rcc);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn InitializeEnvironment
  *
  *  @brief Initilizes a variable's environment with DEFLEVEL l
  *
  *  @param avis contains the environment
  *  @param deflevel
+ *  @param start
  *
  *  @return the initialized avis node
  *
  ***************************************************************************/
 static node *
-InitializeEnvironment (node *avis, int deflevel)
+InitializeEnvironment (node *avis, int deflevel, int start)
 {
     DBUG_ENTER ("InitializeEnvironment");
 
     AVIS_EMRC_DEFLEVEL (avis) = deflevel;
     AVIS_EMRC_COUNTER2 (avis) = NULL;
     AVIS_EMRC_COUNTER (avis) = NULL;
+
+    /*
+     * In conditional functions, both environments must be initialized
+     * with start value start
+     */
+    if (start != 0) {
+        AVIS_EMRC_COUNTER (avis)
+          = IncreaseEnvCounter (AVIS_EMRC_COUNTER (avis), deflevel, start);
+        AVIS_EMRC_COUNTER2 (avis)
+          = IncreaseEnvCounter (AVIS_EMRC_COUNTER2 (avis), deflevel, start);
+    }
 
     DBUG_RETURN (avis);
 }
@@ -602,12 +627,11 @@ GetDefLevel (node *avis)
 
 /** <!--******************************************************************-->
  *
- * @fn RescueEnvironment
+ * @fn FlipEnvironment
  *
  *  @brief in order to handle conditionals, seperate environments for
  *         each branch must be maintained
- *         RescueEnvironment saves an already built up environment allowing
- *         the other branch to be recerence counted.
+ *         FlipEnvironment switches between both environments.
  *
  *  @param avis contains the environment
  *
@@ -615,39 +639,15 @@ GetDefLevel (node *avis)
  *
  ***************************************************************************/
 static node *
-RescueEnvironment (node *avis)
+FlipEnvironment (node *avis)
 {
-    DBUG_ENTER ("RescueEnvironment");
+    rc_counter *temp;
 
+    DBUG_ENTER ("FlipEnvironment");
+
+    temp = AVIS_EMRC_COUNTER2 (avis);
     AVIS_EMRC_COUNTER2 (avis) = AVIS_EMRC_COUNTER (avis);
-    AVIS_EMRC_COUNTER (avis) = NULL;
-
-    DBUG_RETURN (avis);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn RestoreEnvironment
- *
- *  @brief in order to handle conditionals, seperate environments for
- *         each branch must be maintained
- *         RestoreEnvironment moves a rescued environment back into the
- *         active position.
- *
- *  @param avis contains the environment
- *
- *  @return the modified avis node
- *
- ***************************************************************************/
-static node *
-RestoreEnvironment (node *avis)
-{
-    DBUG_ENTER ("RestoreEnvironment");
-
-    DBUG_ASSERT (AVIS_EMRC_COUNTER (avis) == NULL, "Environment != NULL!!!");
-
-    AVIS_EMRC_COUNTER (avis) = AVIS_EMRC_COUNTER2 (avis);
-    AVIS_EMRC_COUNTER2 (avis) = NULL;
+    AVIS_EMRC_COUNTER (avis) = temp;
 
     DBUG_RETURN (avis);
 }
@@ -714,38 +714,6 @@ PopEnvironment (node *avis, int codelevel)
     }
 
     DBUG_RETURN (avis);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn IncreaseEnvCounter
- *
- *  @brief internal function to increase the environment counter at a
- *         certain codelevel
- *
- *  @param rcc a sublist of the environment list
- *  @param codelevel
- *  @param n
- *
- *  @return the modified environment list
- *
- ***************************************************************************/
-static rc_counter *
-IncreaseEnvCounter (rc_counter *rcc, int codelevel, int n)
-{
-    DBUG_ENTER ("IncreaseEnvCounter");
-
-    if ((rcc == NULL) || (rcc->depth < codelevel)) {
-        rcc = MakeRCCounter (codelevel, n, rcc);
-    } else {
-        if (rcc->depth == codelevel) {
-            rcc->count += n;
-        } else {
-            rcc->next = IncreaseEnvCounter (rcc->next, codelevel, n);
-        }
-    }
-
-    DBUG_RETURN (rcc);
 }
 
 /** <!--******************************************************************-->
@@ -1203,7 +1171,7 @@ EMRCap (node *arg_node, info *arg_info)
      */
     if (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node))) {
         /*
-         * Pass the reference counters of the expected return values
+         * Pass the environments of the expected return values
          */
         node *avis;
         int rc;
@@ -1214,11 +1182,27 @@ EMRCap (node *arg_node, info *arg_info)
             rc = GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
             avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
 
-            INFO_EMRC_RETPARAM (arg_info) = AppendExprs (INFO_EMRC_RETPARAM (arg_info),
-                                                         MakeExprs (MakeNum (rc), NULL));
+            INFO_EMRC_RETENV (arg_info)
+              = AppendExprs (INFO_EMRC_RETENV (arg_info), MakeExprs (MakeNum (rc), NULL));
 
             _ids = IDS_NEXT (_ids);
         }
+
+        /*
+         * Pass the environments of the arguments
+         */
+        args = AP_ARGS (arg_node);
+        while (args != NULL) {
+            avis = ID_AVIS (EXPRS_EXPR (args));
+            rc = GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
+            avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
+
+            INFO_EMRC_ARGENV (arg_info)
+              = AppendExprs (INFO_EMRC_ARGENV (arg_info), MakeExprs (MakeNum (rc), NULL));
+
+            args = EXPRS_NEXT (args);
+        }
+
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
         INFO_EMRC_MUSTCOUNT (arg_info) = FALSE;
     }
@@ -1284,9 +1268,16 @@ EMRCap (node *arg_node, info *arg_info)
 node *
 EMRCarg (node *arg_node, info *arg_info)
 {
+    int env = 0;
+
     DBUG_ENTER ("EMRCarg");
 
-    ARG_AVIS (arg_node) = InitializeEnvironment (ARG_AVIS (arg_node), 0);
+    if (INFO_EMRC_ARGENV (arg_info) != NULL) {
+        env = NUM_VAL (EXPRS_EXPR (INFO_EMRC_ARGENV (arg_info)));
+        INFO_EMRC_ARGENV (arg_info) = FreeNode (INFO_EMRC_ARGENV (arg_info));
+    }
+
+    ARG_AVIS (arg_node) = InitializeEnvironment (ARG_AVIS (arg_node), 0, env);
 
     if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
@@ -1346,85 +1337,79 @@ EMRCassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("EMRCassign");
 
-    if (INFO_EMRC_MODE (arg_info) == rc_cutreuse) {
-        if (ASSIGN_INSTR (arg_node) != NULL) {
-            ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    /*
+     * Top down traversal:
+     * Annotate definition level at avis nodes
+     */
+    if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let) {
+        i = LET_IDS (ASSIGN_INSTR (arg_node));
+        while (i != NULL) {
+            IDS_AVIS (i) = SetDefLevel (IDS_AVIS (i), INFO_EMRC_DEPTH (arg_info));
+            i = IDS_NEXT (i);
         }
-    } else {
-        /*
-         * Top down traversal:
-         * Annotate definition level at avis nodes
-         */
-        if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let) {
-            i = LET_IDS (ASSIGN_INSTR (arg_node));
-            while (i != NULL) {
-                IDS_AVIS (i) = SetDefLevel (IDS_AVIS (i), INFO_EMRC_DEPTH (arg_info));
-                i = IDS_NEXT (i);
-            }
+    }
+
+    if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_icm) {
+        ID_AVIS (ICM_ARG1 (ASSIGN_INSTR (arg_node)))
+          = SetDefLevel (ID_AVIS (ICM_ARG1 (ASSIGN_INSTR (arg_node))),
+                         INFO_EMRC_DEPTH (arg_info));
+    }
+
+    /*
+     * Bottom up traversal:
+     * Annotate memory management instructions
+     */
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
+    /*
+     * If this node happens to be a conditional,
+     * traverse again!
+     */
+    if (INFO_EMRC_COND (arg_info)) {
+        INFO_EMRC_COND (arg_info) = FALSE;
+
+        INFO_EMRC_MODE (arg_info) = rc_else;
+
+        n = FUNDEF_ARGS (INFO_EMRC_FUNDEF (arg_info));
+        while (n != NULL) {
+            ARG_AVIS (n) = FlipEnvironment (ARG_AVIS (n));
+            n = ARG_NEXT (n);
         }
 
-        if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_icm) {
-            ID_AVIS (ICM_ARG1 (ASSIGN_INSTR (arg_node)))
-              = SetDefLevel (ID_AVIS (ICM_ARG1 (ASSIGN_INSTR (arg_node))),
-                             INFO_EMRC_DEPTH (arg_info));
+        n = BLOCK_VARDEC (FUNDEF_BODY (INFO_EMRC_FUNDEF (arg_info)));
+        while (n != NULL) {
+            VARDEC_AVIS (n) = FlipEnvironment (VARDEC_AVIS (n));
+            n = VARDEC_NEXT (n);
         }
 
-        /*
-         * Bottom up traversal:
-         * Annotate memory management instructions
-         */
+        INFO_EMRC_RETVALS (arg_info) = INFO_EMRC_RETVALS2 (arg_info);
+        INFO_EMRC_RETVALS2 (arg_info) = NULL;
+
         if (ASSIGN_NEXT (arg_node) != NULL) {
             ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
         }
 
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
-        /*
-         * If this node happens to be a conditional,
-         * traverse again!
-         */
-        if (INFO_EMRC_COND (arg_info)) {
-            INFO_EMRC_COND (arg_info) = FALSE;
-
-            INFO_EMRC_MODE (arg_info) = rc_else;
-
-            n = FUNDEF_ARGS (INFO_EMRC_FUNDEF (arg_info));
-            while (n != NULL) {
-                ARG_AVIS (n) = RescueEnvironment (ARG_AVIS (n));
-                n = ARG_NEXT (n);
-            }
-
-            n = BLOCK_VARDEC (FUNDEF_BODY (INFO_EMRC_FUNDEF (arg_info)));
-            while (n != NULL) {
-                VARDEC_AVIS (n) = RescueEnvironment (VARDEC_AVIS (n));
-                n = VARDEC_NEXT (n);
-            }
-
-            INFO_EMRC_RETVALS (arg_info) = INFO_EMRC_RETVALS2 (arg_info);
-            INFO_EMRC_RETVALS2 (arg_info) = NULL;
-
-            if (ASSIGN_NEXT (arg_node) != NULL) {
-                ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-            }
-
-            ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-
-            INFO_EMRC_COND (arg_info) = FALSE;
-            INFO_EMRC_MODE (arg_info) = rc_default;
-        }
-
-        /*
-         * Insert ADJUST_RC prfs from USELIST
-         */
-        ASSIGN_NEXT (arg_node) = MakeUseAssignments (arg_info, ASSIGN_NEXT (arg_node));
-
-        /*
-         * Insert ADJUST_RC prfs from DEFLIST
-         */
-        ASSIGN_NEXT (arg_node) = MakeDefAssignments (arg_info, ASSIGN_NEXT (arg_node));
-
-        INFO_EMRC_LHS (arg_info) = NULL;
+        INFO_EMRC_COND (arg_info) = FALSE;
+        INFO_EMRC_MODE (arg_info) = rc_default;
     }
+
+    /*
+     * Insert ADJUST_RC prfs from USELIST
+     */
+    ASSIGN_NEXT (arg_node) = MakeUseAssignments (arg_info, ASSIGN_NEXT (arg_node));
+
+    /*
+     * Insert ADJUST_RC prfs from DEFLIST
+     */
+    ASSIGN_NEXT (arg_node) = MakeDefAssignments (arg_info, ASSIGN_NEXT (arg_node));
+
+    INFO_EMRC_LHS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -1487,11 +1472,11 @@ AnnotateBranches (node *avis, node *cond, info *arg_info)
 
     e = GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
     avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
-    avis = RestoreEnvironment (avis);
+    avis = FlipEnvironment (avis);
 
     t = GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
     avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
-    avis = RestoreEnvironment (avis);
+    avis = FlipEnvironment (avis);
 
     if (e + t > 0) {
         if (e * t == 0) {
@@ -1616,7 +1601,7 @@ EMRCfuncond (node *arg_node, info *arg_info)
                             INFO_EMRC_DEPTH (arg_info));
 
         IDS_AVIS (INFO_EMRC_LHS (arg_info))
-          = RestoreEnvironment (IDS_AVIS (INFO_EMRC_LHS (arg_info)));
+          = FlipEnvironment (IDS_AVIS (INFO_EMRC_LHS (arg_info)));
         break;
 
     case rc_else:
@@ -1626,9 +1611,6 @@ EMRCfuncond (node *arg_node, info *arg_info)
           = PopEnvironment (IDS_AVIS (INFO_EMRC_LHS (arg_info)),
                             INFO_EMRC_DEPTH (arg_info));
         break;
-
-    case rc_cutreuse:
-        DBUG_ASSERT (FALSE, "Cannot happen");
     }
 
     DBUG_RETURN (arg_node);
@@ -1665,14 +1647,8 @@ EMRCfundef (node *fundef, info *arg_info)
 
         info *info = MakeInfo (fundef);
 
-        DBUG_PRINT ("EMRC", (" %s.", FUNDEF_NAME (fundef)));
-
-        /*
-         * Traverse args in order to initialize refcounting environment
-         */
-        if (FUNDEF_ARGS (fundef) != NULL) {
-            FUNDEF_ARGS (fundef) = Trav (FUNDEF_ARGS (fundef), info);
-        }
+        DBUG_PRINT ("EMRC", ("Inferencing reference counters in function %s...",
+                             FUNDEF_NAME (fundef)));
 
         /*
          * Traverse block
@@ -1681,10 +1657,13 @@ EMRCfundef (node *fundef, info *arg_info)
             if (FUNDEF_IS_CONDFUN (fundef)) {
                 /*
                  * CONDFUN:
-                 * Initial counters of return values are given as argument
+                 * Initial counters of arguments and return values are
+                 * given as argument
                  */
-                INFO_EMRC_RETVALS (info) = INFO_EMRC_RETPARAM (arg_info);
-                INFO_EMRC_RETPARAM (arg_info) = NULL;
+                INFO_EMRC_RETVALS (info) = INFO_EMRC_RETENV (arg_info);
+                INFO_EMRC_ARGENV (info) = INFO_EMRC_ARGENV (arg_info);
+                INFO_EMRC_RETENV (arg_info) = NULL;
+                INFO_EMRC_ARGENV (arg_info) = NULL;
             } else {
                 /*
                  * REGULAR FUNCTION:
@@ -1704,6 +1683,13 @@ EMRCfundef (node *fundef, info *arg_info)
              */
             if (FUNDEF_IS_LACFUN (fundef)) {
                 INFO_EMRC_RETVALS2 (info) = DupTree (INFO_EMRC_RETVALS (info));
+            }
+
+            /*
+             * Traverse args in order to initialize refcounting environment
+             */
+            if (FUNDEF_ARGS (fundef) != NULL) {
+                FUNDEF_ARGS (fundef) = Trav (FUNDEF_ARGS (fundef), info);
             }
 
             FUNDEF_BODY (fundef) = Trav (FUNDEF_BODY (fundef), info);
@@ -1749,6 +1735,9 @@ EMRCfundef (node *fundef, info *arg_info)
         }
 
         info = FreeInfo (info);
+
+        DBUG_PRINT ("EMRC", ("Reference counting inference in function %s complete.",
+                             FUNDEF_NAME (fundef)));
     }
 
     /*
@@ -1780,39 +1769,31 @@ EMRClet (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("EMRClet");
 
-    if (INFO_EMRC_MODE (arg_info) == rc_cutreuse) {
-        if (LET_EXPR (arg_node) != NULL) {
-            LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-        }
-    } else {
-        INFO_EMRC_COUNTMODE (arg_info) = rc_unknown;
-        INFO_EMRC_MUSTCOUNT (arg_info) = TRUE;
-        INFO_EMRC_LHS (arg_info) = LET_IDS (arg_node);
+    INFO_EMRC_COUNTMODE (arg_info) = rc_unknown;
+    INFO_EMRC_MUSTCOUNT (arg_info) = TRUE;
+    INFO_EMRC_LHS (arg_info) = LET_IDS (arg_node);
 
-        if (LET_EXPR (arg_node) != NULL) {
-            LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-        }
+    if (LET_EXPR (arg_node) != NULL) {
+        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    }
 
-        if (INFO_EMRC_MUSTCOUNT (arg_info)) {
+    if (INFO_EMRC_MUSTCOUNT (arg_info)) {
+        /*
+         * Add all lhs ids to deflist
+         */
+        ids = LET_IDS (arg_node);
+
+        while (ids != NULL) {
             /*
-             * Add all lhs ids to deflist
+             * Subtraction needed because ALLOC / FunAp initializes RC with 1
              */
-            ids = LET_IDS (arg_node);
+            INFO_EMRC_DEFLIST (arg_info)
+              = DefListInsert (INFO_EMRC_DEFLIST (arg_info), IDS_AVIS (ids),
+                               GetEnvironment (IDS_AVIS (ids), INFO_EMRC_DEPTH (arg_info))
+                                 - 1);
+            IDS_AVIS (ids) = PopEnvironment (IDS_AVIS (ids), INFO_EMRC_DEPTH (arg_info));
 
-            while (ids != NULL) {
-                /*
-                 * Subtraction needed because ALLOC / FunAp initializes RC with 1
-                 */
-                INFO_EMRC_DEFLIST (arg_info)
-                  = DefListInsert (INFO_EMRC_DEFLIST (arg_info), IDS_AVIS (ids),
-                                   GetEnvironment (IDS_AVIS (ids),
-                                                   INFO_EMRC_DEPTH (arg_info))
-                                     - 1);
-                IDS_AVIS (ids)
-                  = PopEnvironment (IDS_AVIS (ids), INFO_EMRC_DEPTH (arg_info));
-
-                ids = IDS_NEXT (ids);
-            }
+            ids = IDS_NEXT (ids);
         }
     }
 
@@ -1934,6 +1915,7 @@ EMRCNcode (node *arg_node, info *arg_info)
      * Insert ADJUST_RC prfs from DECLIST
      */
     epicode = MakeUseAssignments (arg_info, NULL);
+    DBUG_ASSERT (epicode == NULL, "Epicode should not contain antything!");
 
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
     BLOCK_INSTR (NCODE_CBLOCK (arg_node))
@@ -2132,15 +2114,6 @@ EMRCNwithop (node *arg_node, info *arg_info)
         }
         INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
         NWITHOP_MEM (arg_node) = Trav (NWITHOP_MEM (arg_node), arg_info);
-
-        /*
-         * Cut reuse list of alloc_or_reuse with current USELIST
-         */
-        old_rc_mode = INFO_EMRC_MODE (arg_info);
-        INFO_EMRC_MODE (arg_info) = rc_cutreuse;
-        AVIS_SSAASSIGN (ID_AVIS (NWITHOP_MEM (arg_node)))
-          = Trav (AVIS_SSAASSIGN (ID_AVIS (NWITHOP_MEM (arg_node))), arg_info);
-        INFO_EMRC_MODE (arg_info) = old_rc_mode;
         break;
 
     case WO_modarray:
@@ -2154,15 +2127,6 @@ EMRCNwithop (node *arg_node, info *arg_info)
         NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
         INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
         NWITHOP_MEM (arg_node) = Trav (NWITHOP_MEM (arg_node), arg_info);
-
-        /*
-         * Cut reuse list of alloc_or_reuse with current USELIST
-         */
-        old_rc_mode = INFO_EMRC_MODE (arg_info);
-        INFO_EMRC_MODE (arg_info) = rc_cutreuse;
-        AVIS_SSAASSIGN (ID_AVIS (NWITHOP_MEM (arg_node)))
-          = Trav (AVIS_SSAASSIGN (ID_AVIS (NWITHOP_MEM (arg_node))), arg_info);
-        INFO_EMRC_MODE (arg_info) = old_rc_mode;
         break;
 
     case WO_foldfun:
@@ -2219,15 +2183,6 @@ EMRCprf (node *arg_node, info *arg_info)
         PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
         INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
         PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
-
-        /*
-         * Cut reuse list of alloc_or_reuse with current USELIST
-         */
-        old_rc_mode = INFO_EMRC_MODE (arg_info);
-        INFO_EMRC_MODE (arg_info) = rc_cutreuse;
-        AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)))
-          = Trav (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node))), arg_info);
-        INFO_EMRC_MODE (arg_info) = old_rc_mode;
         break;
 
     case F_accu:
@@ -2241,28 +2196,12 @@ EMRCprf (node *arg_node, info *arg_info)
 
     case F_alloc:
     case F_alloc_or_reuse:
-        if (INFO_EMRC_MODE (arg_info) == rc_cutreuse) {
-            /*
-             * alloc_or_reuse(dim, shp, rc)
-             *
-             * - cut rc with current USELIST
-             */
-            EXPRS_EXPRS3 (PRF_ARGS (arg_node))
-              = UseListCutReuseList (INFO_EMRC_USELIST (arg_info),
-                                     EXPRS_EXPRS3 (PRF_ARGS (arg_node)),
-                                     INFO_EMRC_DEPTH (arg_info));
-
-            if (EXPRS_EXPRS3 (PRF_ARGS (arg_node)) == NULL) {
-                PRF_PRF (arg_node) = F_alloc;
-            }
-        } else {
-            /*
-             * alloc( dim, shp)
-             *
-             * - initialize rc with 1
-             */
-            PRF_ARGS (arg_node) = MakeExprs (MakeNum (1), PRF_ARGS (arg_node));
-        }
+        /*
+         * alloc( dim, shp)
+         *
+         * - initialize rc with 1
+         */
+        PRF_ARGS (arg_node) = MakeExprs (MakeNum (1), PRF_ARGS (arg_node));
         break;
 
     case F_suballoc:
@@ -2339,7 +2278,7 @@ EMRCvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMRCvardec");
 
-    VARDEC_AVIS (arg_node) = InitializeEnvironment (VARDEC_AVIS (arg_node), -1);
+    VARDEC_AVIS (arg_node) = InitializeEnvironment (VARDEC_AVIS (arg_node), -1, 0);
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
@@ -2384,7 +2323,7 @@ EMACFfundef (node *fundef, info *arg_info)
      */
     if (((sbs == 1) && (strcmp (FUNDEF_MOD (fundef), EXTERN_MOD_NAME) == 0))
         || ((sbs == 0) && (FUNDEF_MOD (fundef) == NULL))) {
-        DBUG_PRINT ("EMRC", ("%s marked as C_fun", FUNDEF_NAME (fundef)));
+        DBUG_PRINT ("EMRC", ("%s marked as ST_Cfun", FUNDEF_NAME (fundef)));
         FUNDEF_STATUS (fundef) = ST_Cfun;
     }
 
