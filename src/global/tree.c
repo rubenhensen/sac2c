@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  1997/11/13 12:57:30  srs
+ * initialized compound info2 of node-type in MakeNode()
+ *
  * Revision 1.28  1997/10/30 12:22:10  dkr
  * with defined NEWTREE, node->nnode is not used anymore
  *
@@ -232,6 +235,7 @@ MakeNode (nodetype nodetype)
     tmp->lineno = linenum;
     tmp->refcnt = 0;
     tmp->counter = 0;
+    tmp->info2 = NULL;
     for (i = 0; i < MAX_MASK; i++)
         tmp->mask[i] = NULL;
 
