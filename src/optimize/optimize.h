@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.29  1995/06/14 13:44:41  asi
+ * Revision 1.30  1995/06/20 15:55:08  asi
+ * added WARN macro
+ *
+ * Revision 1.29  1995/06/14  13:44:41  asi
  * added unrnum and unr_expr
  *
  * Revision 1.28  1995/06/07  14:30:06  asi
@@ -138,6 +141,12 @@ extern int optvar_counter;
 #define USE arg_node->mask[1]
 
 #define VAR_LENGTH 10
+
+#define WARNO(s)                                                                         \
+    if (!silent) {                                                                       \
+        DoPrint s;                                                                       \
+        fprintf (stderr, "\n");                                                          \
+    }
 
 #ifdef MALLOC_OPT
 extern int malloc_verify ();
