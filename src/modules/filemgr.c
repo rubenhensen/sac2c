@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2003/03/25 14:40:41  sah
+ * added CheckSystemLibrary
+ *
  * Revision 3.2  2001/05/17 13:08:53  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -143,6 +146,40 @@ FindFile (pathkind p, char *name)
     }
 
     DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int CheckSystemLibrary( char *name)
+ *
+ * description:
+ *
+ *   This function checks whether a given system library is found
+ *   by the systems linker (eg ld). It does so by just calling ld
+ *   with the given library and a dummy C program.
+ *
+ ******************************************************************************/
+
+int
+CheckSystemLibrary (char *name)
+{
+    int result;
+
+    /* remove trailing 'lib' */
+
+    name += 3;
+
+    /* create a dummy C program to compile and link against */
+    /* the library.                                         */
+
+    SystemCall ("echo \"int main(){return(0);}\" >%s/SAC_XX_syslibtest.c", tmp_dirname);
+    result = SystemCall2 ("gcc -l%s -o %s/SAC_XX_syslibtest %s/SAC_XX_syslibtest.c", name,
+                          tmp_dirname, tmp_dirname);
+
+    /* reverse result, because a result of 0 means true here. */
+
+    return (!result);
 }
 
 /******************************************************************************

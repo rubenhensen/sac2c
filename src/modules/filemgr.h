@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2003/03/25 14:40:41  sah
+ * added CheckSystemLibrary
+ *
  * Revision 3.1  2000/11/20 18:00:52  sacbase
  * new release made
  *
@@ -74,5 +77,6 @@ extern char *AbsolutePathname (char *path);
 extern FILE *WriteOpen (char *format, ...);
 extern int CheckExistFile (char *dir, char *name);
 extern locationtype FindLocationOfFile (char *file);
+extern int CheckSystemLibrary (char *name);
 
 #endif /* _filemgr_h */
