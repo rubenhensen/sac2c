@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/11/26 14:36:47  mwe
+ * SacDevCamp: compiles!
+ *
  * Revision 1.2  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -46,11 +49,11 @@ RCcast (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("RCcast");
 
-    expr = Trav (CAST_EXPR (arg_node), arg_info);
+    expr = TRAVdo (CAST_EXPR (arg_node), arg_info);
 
     CAST_EXPR (arg_node) = NULL;
 
-    arg_node = FreeTree (arg_node);
+    arg_node = FREEdoFreeTree (arg_node);
 
     DBUG_RETURN (expr);
 }
@@ -65,20 +68,16 @@ RCcast (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-RemoveCasts (node *syntax_tree)
+RCdoRemoveCasts (node *syntax_tree)
 {
-    funtab *old_tab;
 
     DBUG_ENTER ("RemoveCasts");
 
     DBUG_PRINT ("OPT", ("starting remove casts traversal"));
 
-    old_tab = act_tab;
-    act_tab = rmcasts_tab;
-
-    syntax_tree = Trav (syntax_tree, NULL);
-
-    act_tab = old_tab;
+    TRAVpush (TR_rc);
+    syntax_tree = TRAVdo (syntax_tree, NULL);
+    TRAVpop ();
 
     DBUG_RETURN (syntax_tree);
 }
