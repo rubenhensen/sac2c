@@ -106,7 +106,6 @@
           <node name="Linklist" />
           <node name="Nums" />
           <node name="CWrapper" />
-          <node name="Globobj" />
         </travsons>
       </traversal>
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
@@ -339,6 +338,10 @@
 	  <node name="SPAp" />
 	  <node name="Arg" />
 	  <node name="Vardec" />
+	  <node name="SPIds" />
+	  <node name="SPId" />
+	  <node name="Let" />
+	  <node name="With" />
 	  <node name="Module" />
 	</travuser>
       </traversal>

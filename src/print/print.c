@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.197  2004/12/05 21:03:24  sah
+ * enabled printing of global objects
+ *
  * Revision 3.196  2004/12/05 20:15:01  sah
  * beautified print
  *
@@ -2375,6 +2378,27 @@ PRTspid (node *arg_node, info *arg_info)
         fprintf (global.outfile, "%s:", SPID_MOD (arg_node));
     }
     fprintf (global.outfile, "%s", SPID_NAME (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *PRTglobobj( node *arg_node, info *arg_info)
+ *
+ *   @brief print N_globobj node
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+PRTglobobj (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTglobobj");
+
+    fprintf (global.outfile, "%s:%s", OBJDEF_MOD (GLOBOBJ_OBJDEF (arg_node)),
+             OBJDEF_NAME (GLOBOBJ_OBJDEF (arg_node)));
 
     DBUG_RETURN (arg_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2004/12/05 21:03:24  sah
+ * enabled printing of global objects
+ *
  * Revision 3.40  2004/12/05 16:45:38  sah
  * added SPIds SPId SPAp in frontend
  *
@@ -124,6 +127,7 @@ extern node *PRTcwrapper (node *arg_node, info *arg_info);
 extern node *PRTfuncond (node *arg_node, info *arg_info);
 extern node *PRTdataflowgraph (node *arg_node, info *arg_info);
 extern node *PRTdataflownode (node *arg_node, info *arg_info);
+extern node *PRTglobobj (node *arg_node, info *arg_info);
 
 /* with-loop (frontend) */
 extern node *PRTwith (node *arg_node, info *arg_info);
