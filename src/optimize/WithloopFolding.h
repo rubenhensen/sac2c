@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.11  1998/04/03 11:39:40  srs
+ * changed arguments for SearchWL
+ *
  * Revision 1.10  1998/04/01 07:45:57  srs
  * added new struct definitions, macros and export declarations
  *
@@ -96,7 +99,8 @@ typedef struct INTERN_GEN {
 extern node *WithloopFolding (node *, node *);
 extern int LocateIndexVar (node *idn, node *wln);
 extern node *CreateVardec (char *name, types *type, node **vardecs);
-extern node *SearchWL (int id_varno, node *start_search, int *valid);
+extern node *SearchWL (int, node *, int *, int, int);
+extern node *StartSearchWL (node *idn, node *assignn, int mode);
 
 /* index_info related functions */
 extern void DbugIndexInfo (index_info *iinfo);
