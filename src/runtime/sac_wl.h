@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/05/28 23:53:17  dkr
+ * fixed a bug in WL_STRIDE_LOOP0_BEGIN
+ *
  * Revision 1.10  1998/05/24 12:15:13  dkr
  * added optimized macros for non-MT (if SAC_DO_MULTITHREAD not defined)
  *
@@ -164,6 +167,7 @@
 #else /* SAC_DO_MULTITHREAD */
 #define SAC_WL_STRIDE_LOOP0_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)        \
     {                                                                                    \
+        int SAC_VAR (stop, idx_scalar) = bound2;                                         \
         for (idx_scalar = bound1; idx_scalar < bound2;) {
 #endif /* SAC_DO_MULTITHREAD */
 
