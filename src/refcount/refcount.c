@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/04/11 15:10:55  hw
+ * Revision 1.9  1995/04/28 17:27:34  hw
+ * - added RCgen
+ * - store information about used before defined variables
+ *   only arrays) of a with_loop in arg_node->node[2] od N_with
+ * - bug fixed in RCwith (set new refcount correctly )
+ *
+ * Revision 1.8  1995/04/11  15:10:55  hw
  * changed args of functio IsArray
  *
  * Revision 1.7  1995/04/04  16:21:04  hw
@@ -750,7 +756,8 @@ node *
 RCwith (node *arg_node, node *arg_info)
 {
     int *ref_dump, *with_dump, index_vec_varno, i;
-    node *var_dec;
+    node *var_dec, *new_info, *id_node;
+    long *used_mask;
 
     DBUG_ENTER ("RCwith");
 
@@ -759,9 +766,32 @@ RCwith (node *arg_node, node *arg_info)
 
     arg_node->node[1] = Trav (arg_node->node[1], arg_info);
     arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-    index_vec_varno = arg_node->node[0]->info.ids->refcnt;
+    index_vec_varno = arg_node->node[0]->VAR_DEC->varno;
 
     with_dump = Store ();
+
+    used_mask = arg_node->mask[1]; /* mask of used variables */
+    new_info = MakeNode (N_info);
+    /* store refcounts of variables that are used before they will be defined in
+     * a with_loop in new_info.
+     */
+    for (i = 0; i < varno; i++)
+        if (used_mask[i] > 0) {
+            var_dec = FindVarDec (i);
+            DBUG_ASSERT ((NULL != var_dec), "variable not found");
+            if (1 == IsArray (var_dec->TYPES))
+                if (0 < var_dec->refcnt) {
+                    /* store refcount of used variables in new_info->node[0]
+                     */
+
+                    VAR_DEC_2_ID_NODE (id_node, var_dec);
+                    id_node->node[0] = new_info->node[0];
+                    new_info->node[0] = id_node;
+                    DBUG_PRINT ("RC", ("store used variables %s:%d", id_node->ID,
+                                       id_node->ID_REF));
+                }
+        }
+    arg_node->node[2] = new_info;
 
     for (i = 0; i < varno; i++) {
         if ((with_dump[i] > 0) && (i != index_vec_varno)) {
@@ -798,6 +828,35 @@ RCcon (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("RCcon");
     arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+#if 0
+   arg_node->node[0]=Trav(arg_node->node[0], arg_info);
+#endif
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : RCgen
+ *  arguments     : 1) argument node
+ *                  2) info node
+ *  description   : traverses generator of with_loop
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
+node *
+RCgen (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCgen");
+    arg_node->node[1] = Trav (arg_node->node[1], arg_info);
     arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+    /* set refcount of index_vector */
+    arg_node->info.ids->refcnt = arg_node->VAR_DEC->refcnt;
+
     DBUG_RETURN (arg_node);
 }
