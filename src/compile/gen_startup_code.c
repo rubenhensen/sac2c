@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2003/09/30 22:35:57  dkrHH
+ * GSCPrintMain(): indentation corrected
+ *
  * Revision 3.33  2003/09/19 15:33:28  dkr
  * postfix _nt of varnames renamed into _NT
  *
@@ -138,6 +141,7 @@
 #include "NameTuplesUtils.h"
 #include "precompile.h"
 #include "icm2c_std.h"
+#include "print.h"
 #include "gen_startup_code.h"
 
 /******************************************************************************
@@ -813,16 +817,21 @@ GSCPrintMainBegin ()
     /* call init function for a c library - no command line available */
     if (generatelibrary & GENERATELIBRARY_C) {
         /* only call obj init function - runtimesystem already initialized */
-        fprintf (outfile, "  %s( 0 , NULL);\n\n", funname);
+        INDENT;
+        fprintf (outfile, "%s( 0 , NULL);\n\n", funname);
     } else {
-        fprintf (outfile,
-                 "  SAC_MT_SETUP_INITIAL();\n"
-                 "  SAC_PF_SETUP();\n"
-                 "  SAC_HM_SETUP();\n"
-                 "  SAC_MT_SETUP();\n"
-                 "  SAC_CS_SETUP();\n"
-                 "  %s( __argc, __argv);\n\n",
-                 funname);
+        INDENT;
+        fprintf (outfile, "SAC_MT_SETUP_INITIAL();\n");
+        INDENT;
+        fprintf (outfile, "SAC_PF_SETUP();\n");
+        INDENT;
+        fprintf (outfile, "SAC_HM_SETUP();\n");
+        INDENT;
+        fprintf (outfile, "SAC_MT_SETUP();\n");
+        INDENT;
+        fprintf (outfile, "SAC_CS_SETUP();\n");
+        INDENT;
+        fprintf (outfile, "%s( __argc, __argv);\n\n", funname);
     }
     funname = Free (funname);
 
@@ -847,9 +856,12 @@ GSCPrintMainEnd ()
     /*
      * outfile is already indented by 2
      */
-    fprintf (outfile, "  SAC_PF_PRINT();\n");
-    fprintf (outfile, "  SAC_CS_FINALIZE();\n");
-    fprintf (outfile, "  SAC_HM_PRINT();\n\n");
+    INDENT;
+    fprintf (outfile, "SAC_PF_PRINT();\n");
+    INDENT;
+    fprintf (outfile, "SAC_CS_FINALIZE();\n");
+    INDENT;
+    fprintf (outfile, "SAC_HM_PRINT();\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -875,10 +887,14 @@ GSCPrintMain ()
 
     DBUG_ENTER ("GSCPrintMain");
 
+    INDENT;
     fprintf (outfile, "int main( int __argc, char *__argv[])\n");
+    INDENT;
     fprintf (outfile, "{\n");
+    indent++;
     if (print_thread_id) {
-        fprintf (outfile, "  SAC_MT_DECL_MYTHREAD()\n");
+        INDENT;
+        fprintf (outfile, "SAC_MT_DECL_MYTHREAD()\n");
     }
 #ifdef TAGGED_ARRAYS
     tmp_type = MakeTypes1 (T_int);
@@ -887,31 +903,36 @@ GSCPrintMain ()
     tmp_type = FreeAllTypes (tmp_type);
     ICMCompileND_DECL (res_NT, "int", 0, NULL); /* create ND_DECL icm */
 #else
-    fprintf (outfile, "  int SAC_res;\n\n");
+    INDENT;
+    fprintf (outfile, "int SAC_res;\n\n");
 #endif
     GSCPrintMainBegin ();
 
+    INDENT;
 #ifdef TAGGED_ARRAYS
-    fprintf (outfile, "  SACf_main( ");
+    fprintf (outfile, "SACf_main( ");
     if (print_thread_id) {
         fprintf (outfile, "SAC_ND_ARG_in( %s), ", mythread_NT);
     }
     fprintf (outfile, "SAC_ND_ARG_out( %s)", res_NT);
 #else
-    fprintf (outfile, "  SAC_res = SACf_main(");
+    fprintf (outfile, "SAC_res = SACf_main(");
     if (print_thread_id) {
         fprintf (outfile, " SAC_ND_ARG_in( SAC_MT_mythread)");
     }
 #endif
     fprintf (outfile, ");\n\n");
     GSCPrintMainEnd ();
+    INDENT;
 #ifdef TAGGED_ARRAYS
-    fprintf (outfile, "  return( SAC_ND_READ( %s, 0));\n", res_NT);
+    fprintf (outfile, "return( SAC_ND_READ( %s, 0));\n", res_NT);
     res_NT = Free (res_NT);
     mythread_NT = Free (mythread_NT);
 #else
-    fprintf (outfile, "  return( SAC_res);\n");
+    fprintf (outfile, "return( SAC_res);\n");
 #endif
+    indent--;
+    INDENT;
     fprintf (outfile, "}\n");
 
     DBUG_VOID_RETURN;
