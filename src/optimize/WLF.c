@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.20  1999/01/20 09:08:39  srs
+ * in WLFAssign: WLs which are not referenced anymore are removed.
+ *
  * Revision 1.19  1999/01/18 15:01:34  srs
  * fixed typo
  *
@@ -1408,7 +1411,7 @@ WLFfundef (node *arg_node, node *arg_info)
 node *
 WLFassign (node *arg_node, node *arg_info)
 {
-    node *tmpn, *last_assign, *substn;
+    node *tmpn, *last_assign, *substn, *predn;
 
     DBUG_ENTER ("WLFassign");
 
@@ -1416,6 +1419,54 @@ WLFassign (node *arg_node, node *arg_info)
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
     switch (wlf_mode) {
+    case wlfm_search_WL:
+        if (ASSIGN_NEXT (arg_node))
+            /* We must not assign the returned node to ASSIGN_NEXT
+               because the chain has been modified in Trav(wlfm_rename).
+               This is not very nice and bypassed the traversal mechanism,
+               but it is necessary since cross pointers are used as references
+               to N_assign nodes and new code is inserted there. */
+            /*       ASSIGN_NEXT(arg_node)  = Trav(ASSIGN_NEXT(arg_node), arg_info); */
+            Trav (ASSIGN_NEXT (arg_node), arg_info);
+
+        /* now is the time when run the once traversed path through the
+           syntax tree back.
+           We apply a speed-optimization here by removing WL which - after
+           WLF - are not referenced anymore. DCR could do the same job,
+           but we hope that the mem requirement in GenerateMasks will go
+           down dramatically. */
+        if (opt_dcr) {
+            tmpn = ASSIGN_INSTR (arg_node);
+            if (N_let == NODE_TYPE (tmpn)) {
+                tmpn = LET_EXPR (tmpn);
+                if (N_Nwith == NODE_TYPE (tmpn)
+                    && NWITH_REFERENCED (tmpn) == NWITH_REFERENCES_FOLDED (tmpn)) {
+                    /* Now, how to remove the assign-node? It's not possible
+                       to return it because (as u can read above) we ignore
+                       the returned node.
+                       The ony way is to search the predecessor :( */
+                    tmpn = BLOCK_INSTR (FUNDEF_BODY (INFO_WLI_FUNDEF (arg_info)));
+                    /* is this the first assignment? */
+                    if (arg_node == tmpn) {
+                        tmpn = arg_node;
+                        arg_node = ASSIGN_NEXT (arg_node); /* in this special case we
+                                                              return the next node. */
+                        FreeTree (tmpn);
+                    } else {
+                        do {
+                            predn = tmpn;
+                            tmpn = ASSIGN_NEXT (tmpn);
+                        } while (tmpn != arg_node);
+                        ASSIGN_NEXT (predn) = ASSIGN_NEXT (arg_node);
+                        arg_node = predn;
+                        FreeNode (tmpn);
+                    }
+                }
+            }
+        }
+
+        break;
+
     case wlfm_replace:
         if (INFO_WLI_NEW_ID (arg_info)) {
             /* paste the new code (subst WL code) into the assign chain (target WL
@@ -1453,13 +1504,9 @@ WLFassign (node *arg_node, node *arg_info)
         break;
 
     default:
+        /* Do not assign ASSIGN_NEXT(arg_node) here.
+           Why? See comment in wlfm_search_wl branch of this function. */
         if (ASSIGN_NEXT (arg_node))
-            /* We must not assign the returned node to ASSIGN_NEXT
-               because the chain has been modified in Trav(wlfm_rename).
-               This is not very nice and bypassed the traversal mechanism,
-               but it is necessary since cross pointers are used as references
-               to N_assign nodes and new code is inserted there. */
-            /*       ASSIGN_NEXT(arg_node)  = Trav(ASSIGN_NEXT(arg_node), arg_info); */
             Trav (ASSIGN_NEXT (arg_node), arg_info);
     }
 
@@ -1719,6 +1766,8 @@ WLFlet (node *arg_node, node *arg_info)
                                 NODE_LINE (arg_node)));
             Fold (idn, transformation, targetwln, substwln);
             wlf_expr++;
+            /* the WL substwln is now referenced one times less. */
+            (NWITH_REFERENCES_FOLDED (substwln))++;
 
             /* unused here */
             INFO_WLI_ID (arg_info) = NULL;
