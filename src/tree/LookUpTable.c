@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/03/17 18:31:54  dkr
+ * traverse.h no longer included
+ *
  * Revision 1.3  2000/02/03 08:35:20  dkr
  * GenLUT renamed to GenerateLUT
  *
@@ -15,7 +18,6 @@
 #include <string.h>
 
 #include "tree.h"
-#include "traverse.h"
 #include "free.h"
 #include "dbug.h"
 
