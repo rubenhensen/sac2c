@@ -67,7 +67,7 @@
 
 #define PRINTBUF 1024 /* Print buffer size */
 #define INDENT 4      /* Indentation per trace level */
-#define MAXDEPTH 200  /* Maximum trace depth default */
+#define MAXDEPTH 5000 /* Maximum trace depth default */
 
 /*
  *     The following flags are used to determine which
@@ -564,6 +564,8 @@ int *_slevel_;
     func = _func_;
     file = BaseName (_file_);
     stack->level++;
+    if (stack->level == stack->maxdepth + 1)
+        fprintf (_db_fp_, "WARNING: dbug-maxdepth too low\n");
     *_slevel_ = stack->level;
     if (DoTrace ()) {
         DoPrefix (_line_);
