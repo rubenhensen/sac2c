@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  1997/11/10 23:19:12  dkr
+ * removed a bug with NEWTREE
+ *
  * Revision 1.25  1997/11/07 14:17:48  dkr
  * with defined NEWTREE node.nnode is not used anymore
  *
@@ -232,7 +235,7 @@ DupIIds (node *arg_node, node *arg_info)
 #ifndef NEWTREE
     for (i = 0; i < arg_node->nnode; i++)
 #else  /* NEWTREE */
-    for (i = 0; i < nnode[arg_node->nodetype]; i++)
+    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
         if (arg_node->node[i] != NULL)
 #endif /* NEWTREE */
     {
@@ -259,7 +262,7 @@ DupId (node *arg_node, node *arg_info)
 #ifndef NEWTREE
     for (i = 0; i < arg_node->nnode; i++)
 #else  /* NEWTREE */
-    for (i = 0; i < nnode[arg_node->nodetype]; i++)
+    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
         if (arg_node->node[i] != NULL)
 #endif /* NEWTREE */
     {
@@ -281,7 +284,7 @@ DupChain (node *arg_node, node *arg_info)
 #ifndef NEWTREE
     for (i = 0; i < arg_node->nnode; i++)
 #else  /* NEWTREE */
-    for (i = 0; i < nnode[arg_node->nodetype]; i++)
+    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
         if (arg_node->node[i] != NULL)
 #endif /* NEWTREE */
     {
@@ -310,7 +313,7 @@ DupAssign (node *arg_node, node *arg_info)
 #ifndef NEWTREE
         for (i = 0; i < arg_node->nnode; i++)
 #else  /* NEWTREE */
-        for (i = 0; i < nnode[arg_node->nodetype]; i++)
+        for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
             if (arg_node->node[i] != NULL)
 #endif /* NEWTREE */
         {
@@ -339,7 +342,7 @@ DupTypes (node *arg_node, node *arg_info)
 #ifndef NEWTREE
     for (i = 0; i < arg_node->nnode; i++)
 #else  /* NEWTREE */
-    for (i = 0; i < nnode[arg_node->nodetype]; i++)
+    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
         if (arg_node->node[i] != NULL)
 #endif /* NEWTREE */
     {
@@ -375,7 +378,7 @@ DupPrf (node *arg_node, node *arg_info)
 #ifndef NEWTREE
     for (i = 0; i < arg_node->nnode; i++)
 #else  /* NEWTREE */
-    for (i = 0; i < nnode[arg_node->nodetype]; i++)
+    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
         if (arg_node->node[i] != NULL)
 #endif /* NEWTREE */
     {
@@ -401,7 +404,7 @@ DupFun (node *arg_node, node *arg_info)
 #ifndef NEWTREE
     for (i = 0; i < arg_node->nnode; i++)
 #else  /* NEWTREE */
-    for (i = 0; i < nnode[arg_node->nodetype]; i++)
+    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
         if (arg_node->node[i] != NULL)
 #endif /* NEWTREE */
     {
