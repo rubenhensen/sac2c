@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/05/17 16:45:06  sbs
+ * NEVER CALL FreeTree on arg_info unless you really know what is happening!!!
+ *
  * Revision 3.10  2001/05/17 12:46:31  nmw
  * MALLOC/FREE changed to Malloc/Free, result of Free() used
  *
@@ -2599,7 +2602,7 @@ GenerateMasks (node *arg_node, node *arg_info)
         if (NULL == arg_info) {
             arg_info = MakeInfo ();
             arg_node = Trav (arg_node, arg_info);
-            arg_info = FreeTree (arg_info);
+            Free (arg_info);
         } else {
             /* arg_info is modified here so I guess it's better to avoid this branch. */
             arg_node = Trav (arg_node, arg_info);
