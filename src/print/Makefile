@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.22  2000/08/17 10:17:29  dkr
+# make deps done
+#
 # Revision 2.21  2000/07/28 09:16:20  mab
 # make deps done
 #
@@ -165,10 +168,8 @@ print.o: print.h ../c-interface/print_interface.h ../global/my_debug.h
 print.o: ../../inc/dbug.h ../tree/traverse.h convert.h ../tree/DataFlowMask.h
 print.o: ../optimize/optimize.h ../tree/free.h /usr/include/malloc.h
 print.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-print.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-print.o: /usr/include/sys/time.h /usr/include/sys/time.h
-print.o: ../optimize/generatemasks.h ../modules/filemgr.h
-print.o: ../compile/gen_startup_code.h ../psi-opt/WithloopFolding.h
-print.o: ../tree/scheduling.h ../psi-opt/wl_access_analyze.h
-print.o: ../psi-opt/tile_size_inference.h ../compile/icm.data
-print.o: ../tree/prf_node_info.mac
+print.o: /usr/include/sys/int_types.h ../optimize/generatemasks.h
+print.o: ../modules/filemgr.h ../compile/gen_startup_code.h
+print.o: ../psi-opt/WithloopFolding.h ../tree/scheduling.h
+print.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
+print.o: ../global/NameTuples.h ../compile/icm.data ../tree/prf_node_info.mac
