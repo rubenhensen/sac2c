@@ -37,3 +37,4 @@ wls.c
 wls.h
 wlsbuild.c
 wlscheck.c
+wlswithloopification.c
