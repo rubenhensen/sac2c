@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2002/08/05 20:50:12  dkr
+ * DBUG_ASSERT messages modified
+ *
  * Revision 3.31  2002/08/05 20:42:44  dkr
  * some bugs fixed
  *
@@ -2348,7 +2351,7 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_nt, int to_sdim, char *from_nt, int fro
     case C_akd:
         /* here is no break missing */
     case C_aks:
-        DBUG_ASSERT ((0), "not yet implemented");
+        DBUG_ASSERT ((0), "sel() with non-scalar result not yet implemented");
         break;
 
     case C_scl:
@@ -2419,7 +2422,7 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_nt, int to_sdim, char *from_nt, int fr
     case C_akd:
         /* here is no break missing */
     case C_aks:
-        DBUG_ASSERT ((0), "not yet implemented");
+        DBUG_ASSERT ((0), "sel() with non-scalar result not yet implemented");
         break;
 
     case C_scl:
@@ -2946,7 +2949,7 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_nt, int to_sdim, char *from_nt, int fr
     case C_akd:
         /* here is no break missing */
     case C_aks:
-        DBUG_ASSERT ((0), "not yet implemented");
+        DBUG_ASSERT ((0), "idx_sel() with non-scalar result not yet implemented");
         break;
 
     case C_scl:
