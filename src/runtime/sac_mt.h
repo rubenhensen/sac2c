@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/07/30 13:51:14  jhs
+ * Deleted unused macros.
+ *
  * Revision 2.8  1999/07/28 13:02:56  jhs
  * Barriers are static now.
  *
@@ -235,11 +238,6 @@ typedef union {
     type S_POST (name);                                                                  \
     int SAC_ND_A_RC (S_POST (name));
 
-/* #### out of order */
-#define SAC_MT_SPMD_ARG_inout_rcXXX(type, name)                                          \
-    type name;                                                                           \
-    int SAC_ND_A_RC (name);
-
 #define SAC_MT_SPMD_ARG_preset(type, name) type name;
 
 #define SAC_MT_SPMD_ARG_preset_rc(type, name)                                            \
@@ -376,13 +374,6 @@ typedef union {
 
 #define SAC_MT_SPMD_PARAM_out_rc(type, param)
 
-/* out of order #### */
-#define SAC_MT_SPMD_PARAM_inout_rcXXX(type, param)                                       \
-    type param = SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ().param;   \
-    int SAC_ND_A_RC (param)                                                              \
-      = SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ().SAC_ND_A_RCP (    \
-        param);
-
 #define SAC_MT_SPMD_SETARG_in(spmdname, arg)                                             \
     SAC_MT_SPMD_SPECIAL_FRAME (spmdname).I_POST (arg) = arg;
 
@@ -405,12 +396,6 @@ typedef union {
     SAC_MT_SPMD_SPECIAL_FRAME (spmdname).S_POST (arg) = arg;                             \
     SAC_MT_SPMD_SPECIAL_FRAME (spmdname).SAC_ND_A_RCP (S_POST (arg)) = SAC_ND_A_RCP (arg);
 
-/* ####  out of order */
-#define SAC_MT_SPMD_SETARG_inout_rcXXX(spmdname, arg)                                    \
-    SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.arg = arg;                          \
-    SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.SAC_ND_A_RCP (arg)                  \
-      = SAC_ND_A_RCP (arg);
-
 #define SAC_MT_SPMD_RET_out(param) *(SAC_MT_SPMD_CURRENT_FRAME.O_POST (param)) = param;
 
 #define SAC_MT_SPMD_RET_out_rc(param)                                                    \
@@ -428,9 +413,6 @@ typedef union {
 #define SAC_MT_SPMD_GET_shared_rc(param)                                                 \
     param = SAC_MT_SPMD_CURRENT_FRAME.S_POST (param);                                    \
     SAC_ND_A_RCP (param) = SAC_MT_SPMD_CURRENT_FRAME.SAC_ND_A_RCP (S_POST (param));
-
-/* out of order  #### */
-#define SAC_MT_SPMD_RET_inout_rcXXX(param)
 
 /*
  *  Macros for body of value exchange parts
