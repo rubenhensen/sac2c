@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2002/10/30 12:11:56  sbs
+ * cast modified; now casts between defined type and its base definition type are
+ * legal as well ;-)
+ *
  * Revision 1.7  2002/10/28 14:04:15  sbs
  * NTCPRF_cast added
  *
@@ -129,13 +133,17 @@ NTCPRF_cast (te_info *info, ntype *elems)
 
     DBUG_ENTER ("NTCPRF_cast");
 
-    cast_t = TYGetProductMember (elems, 0);
-    expr_t = TYGetProductMember (elems, 1);
+    cast_t = TYEliminateUser (TYGetProductMember (elems, 0));
+    expr_t = TYEliminateUser (TYGetProductMember (elems, 1));
 
     TEAssureSameScalarType ("cast-type", cast_t, "expr-type", expr_t);
     res = TEAssureSameShape ("cast-type", cast_t, "expr-type", expr_t);
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    cast_t = TYFreeType (cast_t);
+    expr_t = TYFreeType (expr_t);
+    res = TYFreeType (res);
+
+    DBUG_RETURN (TYMakeProductType (1, TYCopyType (TYGetProductMember (elems, 0))));
 }
 
 /******************************************************************************
