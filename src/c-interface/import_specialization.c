@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2000/07/28 14:45:56  nmw
+ * minor bugfixes
+ *
  * Revision 1.3  2000/07/24 14:59:25  nmw
  * analysing and generating of function specializations implemented
  *
@@ -115,7 +118,6 @@ MapSpecialized2Generic (node *spec_fundef, node *arg_info)
     gen_fundef = NULL;
     fundef = MODUL_FUNS (INFO_IMPSPEC_MODUL (arg_info));
     while (fundef) {
-        printf ("compare %s with %s\n", FUNDEF_NAME (spec_fundef), FUNDEF_NAME (fundef));
         if (isSpecialization (FUNDEF_NAME (spec_fundef), FUNDEF_ARGS (spec_fundef),
                               FUNDEF_TYPES (spec_fundef), FUNDEF_NAME (fundef),
                               FUNDEF_ARGS (fundef), FUNDEF_TYPES (fundef))) {
