@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.18  1999/10/04 09:24:53  sbs
+ * linenum moved from scanparse to globals!
+ *
  * Revision 2.17  1999/08/05 13:30:40  jhs
  * Added OPT_MTI (default now: off), to steer mto-part during spmdinit.
  *
@@ -15,6 +18,9 @@
  * Added global variable malloc_align_step.
  *
  * $Log$
+ * Revision 2.18  1999/10/04 09:24:53  sbs
+ * linenum moved from scanparse to globals!
+ *
  * Revision 2.17  1999/08/05 13:30:40  jhs
  * Added OPT_MTI (default now: off), to steer mto-part during spmdinit.
  *
@@ -292,6 +298,7 @@ extern int last_indent;
 extern int current_line_length;
 
 extern char error_message_buffer[];
+extern int linenum;
 extern char *filename;
 extern char *compiler_phase_name[];
 

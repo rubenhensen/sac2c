@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  1999/10/04 09:24:53  sbs
+ * linenum moved from scanparse to globals!
+ *
  * Revision 2.16  1999/08/09 15:54:32  dkr
  * #undef statement corrected
  *
@@ -467,6 +470,9 @@ int current_line_length; /* used for formatting compile time output */
 
 char error_message_buffer[MAX_ERROR_MESSAGE_LENGTH];
 /* buffer for generating formatted message */
+
+int linenum = 1;
+/* current line number */
 
 char *filename;
 /* current file name */
