@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/03/02 15:47:25  dkr
+ * bug in DupAssign fixed
+ *
  * Revision 3.16  2001/03/02 12:24:05  dkr
  * DupFundef, DupAssign modified: FUNDEF_EXT_ASSIGN, FUNDEF_INT_ASSIGN
  * set correctly now
@@ -80,143 +83,6 @@
  * DupNodelist():
  *   wrong DBUG_ASSERT in DupNodelist removed.
  *   NODELIST_ATTRIB is duplicated now, too.
- *
- * Revision 1.34  2000/09/20 18:19:10  dkr
- * ID_MAKEUNIQUE renamed into ID_CLSCONV
- *
- * Revision 1.33  2000/07/31 10:45:52  cg
- * Eventually, the son ICM_NEXT is removed from the N_icm node.
- * The creation function MakeIcm is adjusted accordingly.
- *
- * Revision 1.32  2000/07/24 14:57:55  nmw
- * bug in DupTypes fixed. TYPES_STATUS was missing
- *
- * Revision 1.31  2000/07/14 13:44:04  dkr
- * DupModul and DupImplist added
- * fixed a bug in DupFundef
- *
- * Revision 1.30  2000/07/14 10:10:49  dkr
- * CopyNodelist() moved from tree_compound.c to DupTree.c and renamed into
- *   DupNodelist().
- * DBUG_ASSERTs for DupIds, DupOneIds, DupNodelist added to assure that
- *   (arg_info == NULL) is hold if these functions are called top-level.
- *
- * Revision 1.29  2000/07/13 11:59:29  jhs
- * Splited ICM_INDENT into ICM_INDENT_BEFORE and ICM_INDENT_AFTER.
- *
- * Revision 1.28  2000/07/13 07:14:13  jhs
- * Added Comments for DupDFMmask, DupMt, DupSt, DupMTsignal, DupMTsync
- * and DupMTalloc.
- *
- * Revision 1.27  2000/07/12 15:22:07  dkr
- * code brushed:
- * DuplicateTypes removed (use DupTypes instead!)
- * INFO_DUP_BASEFUNDEF and INFO_DUP_DFMBASE removed
- * Duplication of DFM-bases and -masks completed and simplified
- *
- * Revision 1.26  2000/07/11 15:42:51  jhs
- * Changed usage of DFMDuplicateMask to DupDFMmask,
- * DFM_BASE will be provided by lut now, not via special
- * flag at arg_info.
- *
- * Revision 1.25  2000/07/11 10:25:26  dkr
- * macro GEN_NODE replaced by MALLOC
- *
- * Revision 1.24  2000/07/04 14:38:11  jhs
- * Added Dups for MTalloc, MTsignal, MTsync.
- *
- * Revision 1.23  2000/06/23 15:33:52  dkr
- * function DupTreeInfo added
- * signature of DupTree changed
- *
- * Revision 1.22  2000/06/23 14:04:01  dkr
- * NWITH_COMPLEX removed
- *
- * Revision 1.21  2000/06/14 12:04:02  jhs
- * Dups ST_IDENTIFIER and MT_IDENTIFIER now.
- *
- * Revision 1.20  2000/03/31 12:25:43  jhs
- * Added duplication of dfmmasks at lte, return, mt, st.
- *
- * Revision 1.19  2000/03/24 00:50:39  dkr
- * the LUT is now part of arg_info :)
- *
- * Revision 1.18  2000/03/23 17:34:39  dkr
- * ARG_OBJDEF and VARDEC_OBJDEF are duplicated now
- *
- * Revision 1.17  2000/03/21 13:14:04  jhs
- * Fixed bug.
- *
- * Revision 1.16  2000/03/17 18:30:53  dkr
- * type lut_t* replaced by LUT_t
- *
- * Revision 1.15  2000/03/15 12:59:16  dkr
- * macro DUPVECT added
- * WL..._INNERSTEP removed
- *
- * Revision 1.14  2000/03/09 18:36:12  jhs
- * Comments, comments, comments, ...
- * DFMbases are copied now ...
- * All traversals Dup(Tree|Node)[LUT] based on new function
- * DupTreeOrNodeLUT now.
- *
- * Revision 1.13  2000/03/02 13:06:30  jhs
- * Added DupSt and DupMt.
- *
- * Revision 1.12  2000/02/24 15:55:53  dkr
- * RETURN_INWITH removed
- * (needed for old with-loop only, therefore obsolete now)
- *
- * Revision 1.11  2000/02/22 12:00:04  jhs
- * Adapted NODE_TEXT.
- *
- * Revision 1.10  2000/02/17 16:18:37  cg
- * Function DuplicateTypes() moved from typecheck.c.
- * New function DupTypes() added.
- *
- * Revision 1.9  2000/02/09 14:13:57  dkr
- * WLSEGVAR_MAXHOMDIM removed
- *
- * Revision 1.8  2000/02/03 17:30:30  dkr
- * GenLUT renamed to GenerateLUT
- * DupTreeLUT and DupNodeLUT added
- *
- * Revision 1.7  2000/02/03 08:35:43  dkr
- * GenLUT renamed to GenerateLUT
- *
- * Revision 1.6  2000/01/31 14:00:30  dkr
- * redundant macro DUP removed
- *
- * Revision 1.5  2000/01/31 13:28:32  dkr
- * Code brushed
- * Some Functions renamed
- * Some Functions specialized (DupChain, ... removed)
- *
- * Revision 1.4  2000/01/28 12:39:47  dkr
- * DupNcode, DupNpart, DupWLgrid changed
- * use of LUT added
- *
- * Revision 1.3  2000/01/26 23:25:33  dkr
- * DupTreePre() and DupTreePost() added.
- * Some code brushing done.
- *
- * Revision 1.2  2000/01/26 17:27:50  dkr
- * type of traverse-function-table changed.
- *
- * Revision 1.1  2000/01/21 11:16:25  dkr
- * Initial revision
- *
- * Revision 2.16  2000/01/20 16:39:15  cg
- * Bug fixed in DupAssign: data flow masks are only copied
- * when a new node is actually created.
- *
- * [...]
- *
- * Revision 2.1  1999/02/23 12:41:17  sacbase
- * new release made
- *
- * Revision 1.107  1998/08/11 14:36:00  dkr
- * DupWLstriVar, DupWLgridVar changed
  *
  * [ ... ]
  *
@@ -1241,6 +1107,7 @@ DupEmpty (node *arg_node, node *arg_info)
 node *
 DupAssign (node *arg_node, node *arg_info)
 {
+    node *fundef;
     node *new_node = NULL;
 
     DBUG_ENTER ("DupAssign");
@@ -1253,9 +1120,11 @@ DupAssign (node *arg_node, node *arg_info)
         new_node = MakeAssign (DUPTRAV (ASSIGN_INSTR (arg_node)),
                                DUPCONT (ASSIGN_NEXT (arg_node)));
 
-        if ((FUNDEF_STATUS (INFO_DUP_FUNDEF (arg_info)) == ST_condfun)
-            || (FUNDEF_STATUS (INFO_DUP_FUNDEF (arg_info)) == ST_dofun)
-            || (FUNDEF_STATUS (INFO_DUP_FUNDEF (arg_info)) == ST_whilefun)) {
+        fundef = INFO_DUP_FUNDEF (arg_info);
+        if ((fundef != NULL)
+            && ((FUNDEF_STATUS (fundef) == ST_condfun)
+                || (FUNDEF_STATUS (fundef) == ST_dofun)
+                || (FUNDEF_STATUS (fundef) == ST_whilefun))) {
             INFO_DUP_LUT (arg_info)
               = InsertIntoLUT (INFO_DUP_LUT (arg_info), arg_node, new_node);
         }
@@ -1642,6 +1511,7 @@ DupNwithop (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupNwithop");
 
     new_node = MakeNWithOp (NWITHOP_TYPE (arg_node));
+
     switch (NWITHOP_TYPE (arg_node)) {
     case WO_genarray:
         NWITHOP_SHAPE (new_node) = DUPTRAV (NWITHOP_SHAPE (arg_node));
@@ -1652,12 +1522,14 @@ DupNwithop (node *arg_node, node *arg_info)
     case WO_foldfun:
         NWITHOP_NEUTRAL (new_node) = DUPTRAV (NWITHOP_NEUTRAL (arg_node));
         NWITHOP_MOD (new_node) = StringCopy (NWITHOP_MOD (arg_node));
-        NWITHOP_FUNDEF (new_node) = NWITHOP_FUNDEF (arg_node);
+        NWITHOP_FUNDEF (new_node)
+          = SearchInLUT (INFO_DUP_LUT (arg_info), NWITHOP_FUNDEF (arg_node));
         NWITHOP_FUN (new_node) = StringCopy (NWITHOP_FUN (arg_node));
         break;
     case WO_foldprf:
         NWITHOP_NEUTRAL (new_node) = DUPTRAV (NWITHOP_NEUTRAL (arg_node));
-        NWITHOP_FUNDEF (new_node) = NWITHOP_FUNDEF (arg_node);
+        NWITHOP_FUNDEF (new_node)
+          = SearchInLUT (INFO_DUP_LUT (arg_info), NWITHOP_FUNDEF (arg_node));
         NWITHOP_PRF (new_node) = NWITHOP_PRF (arg_node);
         break;
     default:
