@@ -1,3 +1,5 @@
+BEtest.c
+BEtest.inp
 Makefile
 Old2NewWith.c
 Old2NewWith.h
@@ -7,10 +9,13 @@ gen_startup_code.c
 gen_startup_code.h
 icm.data
 icm2c.c
-icm_args.c
+icm2c_std.c
+icm2c_std.h
+icm_betest.c
 icm_comment.c
-icm_decl.c
+icm_icm2c.c
 icm_trace.c
+icm_vars.c
 precompile.c
 precompile.h
 wlpragma_funs.c

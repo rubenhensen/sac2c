@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.50  1998/04/25 16:26:30  sbs
+# new icm2c / BEtest mechanism implemented!
+#
 # Revision 1.49  1998/04/20 02:43:46  dkr
 # make deps done
 #
@@ -159,18 +162,23 @@ CCFLAGS   := -ansi -Wall -g
 CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount -I../optimize
-MACS=icm.data icm_decl.c icm_args.c icm_comment.c icm_trace.c
+MACS=icm.data icm_comment.c icm_trace.c
 
-all: compile.o icm2c.o precompile.o Old2NewWith.o gen_startup_code.o wlpragma_funs.o
+all: compile.o icm2c.o icm2c_std.o precompile.o Old2NewWith.o gen_startup_code.o \
+     wlpragma_funs.o
 
-BEtest: icm2c.c $(MACS)
-	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest icm2c.c -DTEST_BACKEND $(INCS) ../../lib/dbug.o
+BEtest: BEtest.c icm_vars.c icm_betest.c icm.data icm2c_std.o gen_startup_code.o
+	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest BEtest.c $(INCS) \
+	../../lib/dbug.o icm2c_std.o gen_startup_code.o ../global/globals.o
 
 compile.o: compile.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o compile.o -c compile.c $(INCS)
 
-icm2c.o: icm2c.c
+icm2c.o: icm2c.c icm.data icm_vars.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o icm2c.o -c icm2c.c $(INCS)
+
+icm2c_std.o: icm2c_std.c $(MACS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o icm2c_std.o -c icm2c_std.c $(INCS)
 
 profile.o: profile.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o profile.o -c profile.c $(INCS)
@@ -198,6 +206,10 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
+BEtest.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+BEtest.o: /usr/include/sys/va_list.h /usr/include/malloc.h ../../inc/dbug.h
+BEtest.o: ../../inc/main.h ../global/globals.h ../global/types.h icm2c_std.h
+BEtest.o: icm_vars.c icm.data icm_betest.c
 Old2NewWith.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
 Old2NewWith.o: ../global/tree_compound.h ../global/Error.h
 Old2NewWith.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
@@ -219,18 +231,25 @@ compile.o: /usr/include/malloc.h
 gen_startup_code.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 gen_startup_code.o: /usr/include/sys/va_list.h ../../inc/dbug.h
 gen_startup_code.o: ../global/globals.h ../global/types.h
-icm2c.o: /usr/include/malloc.h /usr/include/stdio.h
+icm2c.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
+icm2c.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
 icm2c.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
-icm2c.o: ../print/print.h ../global/tree.h ../global/types.h
-icm2c.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
 icm2c.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
-icm2c.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
-icm2c.o: ../../inc/main.h ../print/convert.h gen_startup_code.h icm_decl.c
-icm2c.o: icm.data icm_args.c icm_comment.c icm_trace.c
-icm_args.o: icm.data
+icm2c.o: ../global/internal_lib.h ../../inc/dbug.h ../print/convert.h
+icm2c.o: icm2c_std.h ../global/my_debug.h icm_vars.c icm.data icm_icm2c.c
+icm2c_std.o: /usr/include/malloc.h /usr/include/stdio.h
+icm2c_std.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+icm2c_std.o: ../../inc/dbug.h ../global/my_debug.h ../../inc/main.h
+icm2c_std.o: ../print/convert.h ../global/tree.h ../global/types.h
+icm2c_std.o: ../global/tree_basic.h ../global/tree_compound.h
+icm2c_std.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
+icm2c_std.o: ../global/globals.h ../global/internal_lib.h ../print/print.h
+icm2c_std.o: gen_startup_code.h icm_comment.c icm.data icm_trace.c
+icm_betest.o: icm.data
 icm_comment.o: icm.data
-icm_decl.o: icm.data
+icm_icm2c.o: icm.data
 icm_trace.o: icm.data
+icm_vars.o: icm.data
 precompile.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
 precompile.o: ../global/tree_compound.h ../global/Error.h
 precompile.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
