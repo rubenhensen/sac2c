@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.45  1997/10/28 13:14:11  srs
+ * removed dead code
+ *
  * Revision 1.44  1997/04/25 12:13:00  sbs
  * MAlloc replaced by Malloc from internal.lib
  *
@@ -233,32 +236,6 @@ extern void PopMRDL2 ();
  *  Concerning memory allocation/deallocation see free and internal_lib
  *  Concerning warnings see Error.[ch]
  */
-
-#if 0
-
-#define WARNO(s)                                                                         \
-    if (!silent) {                                                                       \
-        DoPrint s;                                                                       \
-        fprintf (stderr, "\n");                                                          \
-    }
-
-#ifdef HAVE_MALLOC_O
-extern int malloc_verify();
-extern int malloc_debug(int level);
-#endif /*HAVE_MALLOC_O */
-
-#ifdef HAVE_MALLOC_O
-#define FREE(address)                                                                    \
-    DBUG_PRINT ("MEM", ("Give memory free at adress: %08x", address));                   \
-    free (address);                                                                      \
-    DBUG_EXECUTE ("MTOOL", malloc_verify (););
-#else
-#define FREE(address)                                                                    \
-    DBUG_PRINT ("MEM", ("Give memory free at adress: %08x", address));                   \
-    free (address)
-#endif /*HAVE_MALLOC_O */
-
-#endif /* 0 */
 
 extern node *Optimize (node *arg_node);
 
