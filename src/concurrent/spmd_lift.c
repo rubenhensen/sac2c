@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/12 12:11:51  dkr
+ * NWITH_INOUT removed
+ * interpretation of NWITH_IN changed:
+ * the LHS of a with-loop assignment is now longer included in
+ * NWITH_IN!!!
+ *
  * Revision 3.2  2000/12/07 12:56:56  dkr
  * nothing changed
  *
@@ -428,7 +434,7 @@ node *
 SPMDLnwith2 (node *arg_node, node *arg_info)
 {
     node *vardec;
-    DFMmask_t in, inout, out, local;
+    DFMmask_t in, out, local;
 
     DBUG_ENTER ("SPMDLnwith2");
 
@@ -457,35 +463,30 @@ SPMDLnwith2 (node *arg_node, node *arg_info)
      */
 
     in = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));
-    inout = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));
     out = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));
     local = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));
 
     FOREACH_VARDEC_AND_ARG (INFO_CONC_FUNDEF (arg_info), vardec, {
-        if (DFMTestMaskEntry (NWITH2_IN (arg_node), VARDEC_OR_ARG_NAME (vardec), NULL)) {
+        if (DFMTestMaskEntry (NWITH2_IN_MASK (arg_node), VARDEC_OR_ARG_NAME (vardec),
+                              NULL)) {
             DFMSetMaskEntrySet (in, VARDEC_OR_ARG_NAME (vardec), NULL);
         }
-        if (DFMTestMaskEntry (NWITH2_INOUT (arg_node), VARDEC_OR_ARG_NAME (vardec),
+        if (DFMTestMaskEntry (NWITH2_OUT_MASK (arg_node), VARDEC_OR_ARG_NAME (vardec),
                               NULL)) {
-            DFMSetMaskEntrySet (inout, VARDEC_OR_ARG_NAME (vardec), NULL);
-        }
-        if (DFMTestMaskEntry (NWITH2_OUT (arg_node), VARDEC_OR_ARG_NAME (vardec), NULL)) {
             DFMSetMaskEntrySet (out, VARDEC_OR_ARG_NAME (vardec), NULL);
         }
-        if (DFMTestMaskEntry (NWITH2_LOCAL (arg_node), VARDEC_OR_ARG_NAME (vardec),
+        if (DFMTestMaskEntry (NWITH2_LOCAL_MASK (arg_node), VARDEC_OR_ARG_NAME (vardec),
                               NULL)) {
             DFMSetMaskEntrySet (local, VARDEC_OR_ARG_NAME (vardec), NULL);
         }
     }) /* FOREACH_VARDEC_OR_ARG */
 
-    NWITH2_IN (arg_node) = DFMRemoveMask (NWITH2_IN (arg_node));
-    NWITH2_IN (arg_node) = in;
-    NWITH2_INOUT (arg_node) = DFMRemoveMask (NWITH2_INOUT (arg_node));
-    NWITH2_INOUT (arg_node) = inout;
-    NWITH2_OUT (arg_node) = DFMRemoveMask (NWITH2_OUT (arg_node));
-    NWITH2_OUT (arg_node) = out;
-    NWITH2_LOCAL (arg_node) = DFMRemoveMask (NWITH2_LOCAL (arg_node));
-    NWITH2_LOCAL (arg_node) = local;
+    NWITH2_IN_MASK (arg_node) = DFMRemoveMask (NWITH2_IN_MASK (arg_node));
+    NWITH2_IN_MASK (arg_node) = in;
+    NWITH2_OUT_MASK (arg_node) = DFMRemoveMask (NWITH2_OUT_MASK (arg_node));
+    NWITH2_OUT_MASK (arg_node) = out;
+    NWITH2_LOCAL_MASK (arg_node) = DFMRemoveMask (NWITH2_LOCAL_MASK (arg_node));
+    NWITH2_LOCAL_MASK (arg_node) = local;
 
     DBUG_RETURN (arg_node);
 }

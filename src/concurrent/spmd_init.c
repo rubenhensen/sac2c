@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2000/12/12 12:11:29  dkr
+ * NWITH_INOUT removed
+ * interpretation of NWITH_IN changed:
+ * the LHS of a with-loop assignment is now longer included in
+ * NWITH_IN!!!
+ *
  * Revision 3.4  2000/12/07 12:57:09  dkr
  * nothing changed
  *
@@ -251,11 +257,23 @@ InsertSPMD (node *assign, node *fundef)
              * get masks from the N_Nwith2 node.
              */
             with = LET_EXPR (instr);
-            SPMD_IN (spmd) = DFMGenMaskCopy (NWITH2_IN (with));
-            SPMD_OUT (spmd) = DFMGenMaskOr (NWITH2_OUT (with), NWITH2_INOUT (with));
-            SPMD_INOUT (spmd) = DFMGenMaskCopy (NWITH2_INOUT (with));
-            SPMD_LOCAL (spmd) = DFMGenMaskCopy (NWITH2_LOCAL (with));
+            SPMD_IN (spmd) = DFMGenMaskCopy (NWITH2_IN_MASK (with));
+            SPMD_OUT (spmd) = DFMGenMaskCopy (NWITH2_OUT_MASK (with));
+            SPMD_INOUT (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
+            SPMD_LOCAL (spmd) = DFMGenMaskCopy (NWITH2_LOCAL_MASK (with));
             SPMD_SHARED (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
+
+            DBUG_ASSERT ((IDS_NEXT (LET_IDS (instr)) == NULL),
+                         "more than one ids on LHS of with-loop found");
+
+            /*
+             * add vars from LHS of with-loop assignment
+             */
+            DFMSetMaskEntrySet (SPMD_OUT (spmd), NULL, LET_VARDEC (instr));
+            if ((NWITH2_TYPE (with) == WO_genarray)
+                || (NWITH2_TYPE (with) == WO_modarray)) {
+                DFMSetMaskEntrySet (SPMD_INOUT (spmd), NULL, LET_VARDEC (instr));
+            }
         } else {
             /* #### ins outs missing ... */
             SPMD_IN (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));

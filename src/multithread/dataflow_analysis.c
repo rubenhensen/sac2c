@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/12 12:12:09  dkr
+ * NWITH_INOUT removed
+ * interpretation of NWITH_IN changed:
+ * the LHS of a with-loop assignment is now longer included in
+ * NWITH_IN!!!
+ *
  * Revision 3.2  2000/12/07 12:56:42  dkr
  * nothings changed
  *
@@ -77,7 +83,7 @@
 #include "globals.h"
 #include "free.h"
 #include "DataFlowMask.h"
-#include "refcount.h"
+#include "infer_dfms.h"
 
 #include "internal_lib.h"
 #include "multithread_lib.h"
@@ -115,6 +121,8 @@ DataflowAnalysis (node *arg_node, node *arg_info)
 
     if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)
         && (FUNDEF_ATTRIB (arg_node) != ST_call_rep)) {
+        arg_node = InferDFMs (arg_node);
+
         old_tab = act_tab;
         act_tab = dfa_tab;
 
@@ -427,17 +435,10 @@ DFAlet_dn (node *arg_node, node *arg_info)
   node *arg;
 #endif
     node *vardec;
-    /*
-     *  *done_lhs* annotates whether the lhs as done (e.g. if we passed a
-     *  with-loop) or not and we have to check the rhs explicitly.
-     *  the variable is used as boolean!!
-     */
-    int done_lhs;
     ids *let_ids;
     DFMmask_t helper;
     DFMmask_t old_infer_let_usemask;
     DFMmask_t old_infer_let_defmask;
-    int /* bool */ old_infer_let_lhsdone;
 
     DBUG_ENTER ("DFAlet_dn");
     DBUG_PRINT ("DFA", ("begin %i", INFO_DFA_HEADING (arg_info)));
@@ -449,29 +450,23 @@ DFAlet_dn (node *arg_node, node *arg_info)
       = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)));
     LET_DEFMASK (arg_node)
       = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)));
-    done_lhs = FALSE;
 
     /* push info */
     old_infer_let_usemask = INFO_DFA_INFER_LET_USEMASK (arg_info);
     old_infer_let_defmask = INFO_DFA_INFER_LET_DEFMASK (arg_info);
-    old_infer_let_lhsdone = INFO_DFA_INFER_LET_LHSDONE (arg_info);
     INFO_DFA_INFER_LET_USEMASK (arg_info) = LET_USEMASK (arg_node);
     INFO_DFA_INFER_LET_DEFMASK (arg_info) = LET_DEFMASK (arg_node);
-    INFO_DFA_INFER_LET_LHSDONE (arg_info) = done_lhs;
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     /* pop info */
     LET_USEMASK (arg_node) = INFO_DFA_INFER_LET_USEMASK (arg_info);
     LET_DEFMASK (arg_node) = INFO_DFA_INFER_LET_DEFMASK (arg_info);
-    done_lhs = INFO_DFA_INFER_LET_LHSDONE (arg_info);
     INFO_DFA_INFER_LET_USEMASK (arg_info) = old_infer_let_usemask;
     INFO_DFA_INFER_LET_DEFMASK (arg_info) = old_infer_let_defmask;
-    INFO_DFA_INFER_LET_LHSDONE (arg_info) = old_infer_let_lhsdone;
 
 #if 0
   expr = LET_EXPR( arg_node);
-  done_lhs = FALSE;
   if ((NODE_TYPE( expr) == N_num) || (NODE_TYPE( expr) == N_array)) {
     DBUG_PRINT( "DFA", ("reached N_num or N_array"));
     /* see comment above */
@@ -510,59 +505,32 @@ DFAlet_dn (node *arg_node, node *arg_info)
      *  INFO_DFA_NEEDCHAIN and INFO_DFA_NEEDBLOCK!!!
      *
      *  the with-loop (N_Nwith2) already has DFMs attached:
-     *  NWITH2_IN, NWITH2_INOUT, NWITH2_OUT and NWITH2_LOCAL.
+     *  NWITH2_IN_MASK, NWITH2_OUT_MASK and NWITH2_LOCAL_MASK.
      *  Here we use the information to build the LET_USEMASK and LET_DEFMASK.
-     *  LET_USEMASK = NWITH2_IN
-     *  LET_DEFMASK = NWITH2_INOUT + NWITH2_OUT
+     *  LET_USEMASK = NWITH2_IN_MASK
      */
 
-    InferWithDFM( INFO_DFA_THISASSIGN( arg_info), INFO_MUTH_FUNDEF( arg_info));
-    DBUG_PRINT( "DFA", ("DFMs infer done"));
-
-    /* LET_USEMASK = LET_USEMASK + NWITH2_IN */
-    vardec = DFMGetMaskEntryDeclSet( NWITH2_IN( expr));
+    /* LET_USEMASK = LET_USEMASK + NWITH2_IN_MASK */
+    vardec = DFMGetMaskEntryDeclSet( NWITH2_IN_MASK( expr));
     while (vardec != NULL) {
       DBUG_PRINT( "DFA", ("from in add use %s", VARDEC_NAME( vardec)));
       DFMSetMaskEntrySet( LET_USEMASK( arg_node), NULL, vardec);
       vardec = DFMGetMaskEntryDeclSet( NULL);
     }
-
-    /* LET_DEFMASK = LET_DEFMASK + NWITH2_INOUT */
-    vardec = DFMGetMaskEntryDeclSet( NWITH2_INOUT( expr));
-    while (vardec != NULL) {
-      DBUG_PRINT( "DFA", ("from inout add def %s", VARDEC_NAME( vardec)));
-      DFMSetMaskEntrySet( LET_DEFMASK( arg_node), NULL, vardec);
-      vardec = DFMGetMaskEntryDeclSet( NULL);
-    }
-
-    /* LET_DEFMASK = LET_DEFMASK + NWITH2_OUT */
-    vardec = DFMGetMaskEntryDeclSet( NWITH2_OUT( expr));
-    while (vardec != NULL) {
-      DBUG_PRINT( "DFA", ("from out add def %s", VARDEC_NAME( vardec)));
-      DFMSetMaskEntrySet( LET_DEFMASK( arg_node), NULL, vardec);
-      vardec = DFMGetMaskEntryDeclSet( NULL);
-    }
-    /*
-     *  Here we have already done the lhs, we annotate this, so
-     *  the following code does not infer it again.
-     */
-    done_lhs = TRUE;
-  } else {
+  }
+  else {
     DBUG_ASSERT(0, "unhandled kind of let"); 
   }
 #endif
 
     /*
-     *  if the lhs has not been done already we infer it here.
-     *  we simply traverse" the ids of lhs.
+     *  we simply traverse the ids of lhs.
      */
-    if (!done_lhs) {
-        let_ids = LET_IDS (arg_node);
-        while (let_ids != NULL) {
-            vardec = IDS_VARDEC (let_ids);
-            DFMSetMaskEntrySet (LET_DEFMASK (arg_node), NULL, vardec);
-            let_ids = IDS_NEXT (let_ids);
-        }
+    let_ids = LET_IDS (arg_node);
+    while (let_ids != NULL) {
+        vardec = IDS_VARDEC (let_ids);
+        DFMSetMaskEntrySet (LET_DEFMASK (arg_node), NULL, vardec);
+        let_ids = IDS_NEXT (let_ids);
     }
 
     /* INFO_DFA_USEMASK += LET_USEMASK - INFO_DFA_DEFMASK */
@@ -971,33 +939,13 @@ DFAnwith2 (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DFAnwith2");
 
-    InferWithDFM (INFO_DFA_THISASSIGN (arg_info), INFO_MUTH_FUNDEF (arg_info));
-
-    /* LET_USEMASK = LET_USEMASK + NWITH2_IN */
-    vardec = DFMGetMaskEntryDeclSet (NWITH2_IN (arg_node));
+    /* LET_USEMASK = LET_USEMASK + NWITH2_IN_MASK */
+    vardec = DFMGetMaskEntryDeclSet (NWITH2_IN_MASK (arg_node));
     while (vardec != NULL) {
         DBUG_PRINT ("DFA", ("from in add use %s", VARDEC_NAME (vardec)));
         DFMSetMaskEntrySet (INFO_DFA_INFER_LET_USEMASK (arg_info), NULL, vardec);
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
-
-    /* LET_DEFMASK = LET_DEFMASK + NWITH2_INOUT */
-    vardec = DFMGetMaskEntryDeclSet (NWITH2_INOUT (arg_node));
-    while (vardec != NULL) {
-        DBUG_PRINT ("DFA", ("from inout add def %s", VARDEC_NAME (vardec)));
-        DFMSetMaskEntrySet (INFO_DFA_INFER_LET_DEFMASK (arg_info), NULL, vardec);
-        vardec = DFMGetMaskEntryDeclSet (NULL);
-    }
-
-    /* LET_DEFMASK = LET_DEFMASK + NWITH2_OUT */
-    vardec = DFMGetMaskEntryDeclSet (NWITH2_OUT (arg_node));
-    while (vardec != NULL) {
-        DBUG_PRINT ("DFA", ("from out add def %s", VARDEC_NAME (vardec)));
-        DFMSetMaskEntrySet (INFO_DFA_INFER_LET_DEFMASK (arg_info), NULL, vardec);
-        vardec = DFMGetMaskEntryDeclSet (NULL);
-    }
-
-    INFO_DFA_INFER_LET_LHSDONE (arg_info) = TRUE;
 
     DBUG_RETURN (arg_node);
 }

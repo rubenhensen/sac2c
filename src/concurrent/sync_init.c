@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/12 12:11:43  dkr
+ * NWITH_INOUT removed
+ * interpretation of NWITH_IN changed:
+ * the LHS of a with-loop assignment is now longer included in
+ * NWITH_IN!!!
+ *
  * Revision 3.1  2000/11/20 18:02:34  sacbase
  * new release made
  *
@@ -131,11 +137,23 @@ SYNCIassign (node *arg_node, node *arg_info)
         /*
          * get IN/INOUT/OUT/LOCAL from the N_Nwith2 node.
          */
-        SYNC_IN (sync) = DFMGenMaskCopy (NWITH2_IN (with));
-        SYNC_INOUT (sync) = DFMGenMaskCopy (NWITH2_INOUT (with));
-        SYNC_OUT (sync) = DFMGenMaskCopy (NWITH2_OUT (with));
+        SYNC_IN (sync) = DFMGenMaskCopy (NWITH2_IN_MASK (with));
+        SYNC_INOUT (sync) = DFMGenMaskClear (maskbase);
+        SYNC_OUT (sync) = DFMGenMaskCopy (NWITH2_OUT_MASK (with));
+        SYNC_LOCAL (sync) = DFMGenMaskCopy (NWITH2_LOCAL_MASK (with));
         SYNC_OUTREP (sync) = DFMGenMaskClear (maskbase);
-        SYNC_LOCAL (sync) = DFMGenMaskCopy (NWITH2_LOCAL (with));
+
+        DBUG_ASSERT ((IDS_NEXT (LET_IDS (sync_let)) == NULL),
+                     "more than one ids on LHS of with-loop found");
+
+        /*
+         * add vars from LHS of with-loop assignment
+         */
+        if ((NWITH2_TYPE (with) == WO_genarray) || (NWITH2_TYPE (with) == WO_modarray)) {
+            DFMSetMaskEntrySet (SYNC_INOUT (sync), NULL, LET_VARDEC (sync_let));
+        } else {
+            DFMSetMaskEntrySet (SYNC_OUT (sync), NULL, LET_VARDEC (sync_let));
+        }
 
         /*
          * unset flag: next N_sync node is not the first one in SPMD-region

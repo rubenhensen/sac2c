@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/12 12:12:45  dkr
+ * NWITH_INOUT removed
+ * interpretation of NWITH_IN changed:
+ * the LHS of a with-loop assignment is now longer included in
+ * NWITH_IN!!!
+ *
  * Revision 3.2  2000/12/07 12:57:02  dkr
  * nothing changed
  *
@@ -360,12 +366,22 @@ SPMDPMassign (node *arg_node, node *arg_info)
         DBUG_PRINT ("SPMDPM", ("with pm"));
         with = LET_EXPR (ASSIGN_INSTR (arg_node));
 
-        DFMSetMaskOr (INFO_SPMDPM_IN (arg_info), NWITH2_IN (with));
-        DFMSetMaskOr (INFO_SPMDPM_OUT (arg_info), NWITH2_OUT (with));
-        DFMSetMaskOr (INFO_SPMDPM_OUT (arg_info), NWITH2_INOUT (with));
-        DFMSetMaskOr (INFO_SPMDPM_INOUT (arg_info), NWITH2_INOUT (with));
-        DFMSetMaskOr (INFO_SPMDPM_LOCAL (arg_info), NWITH2_LOCAL (with));
+        DFMSetMaskOr (INFO_SPMDPM_IN (arg_info), NWITH2_IN_MASK (with));
+        DFMSetMaskOr (INFO_SPMDPM_OUT (arg_info), NWITH2_OUT_MASK (with));
+        DFMSetMaskOr (INFO_SPMDPM_LOCAL (arg_info), NWITH2_LOCAL_MASK (with));
 
+        DBUG_ASSERT ((IDS_NEXT (LET_IDS (ASSIGN_INSTR (arg_node))) == NULL),
+                     "more than one ids on LHS of with-loop found");
+
+        /*
+         * takings vars from LHS of with-loop assignment into account
+         */
+        DFMSetMaskEntryClear (INFO_SPMDPM_OUT (arg_info), NULL,
+                              LET_VARDEC (ASSIGN_INSTR (arg_node)));
+        if ((NWITH2_TYPE (with) == WO_genarray) || (NWITH2_TYPE (with) == WO_modarray)) {
+            DFMSetMaskEntryClear (INFO_SPMDPM_INOUT (arg_info), NULL,
+                                  LET_VARDEC (ASSIGN_INSTR (arg_node)));
+        }
     } else if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_while) {
         DBUG_PRINT ("SPMDPM", ("while pm"));
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
