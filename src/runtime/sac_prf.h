@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2003/09/20 14:16:38  dkr
+ * ND_PRF_CAT__DATA added
+ *
  * Revision 3.13  2003/09/19 15:41:07  dkr
  * some more PRFs added
  *
@@ -135,14 +138,16 @@
  * ND_PRF_MODARRAY__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
  *                            idx_size, ...idxs_ANY..., val_ANY, copyfun)
  *
- * ND_PRF_TAKE__SHAPE( to_NT, from_NT, cnt_ANY)
- * ND_PRF_TAKE__DATA( to_NT, from_NT, cnt_ANY)
+ * ND_PRF_TAKE__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
+ * ND_PRF_TAKE__DATA( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
  *
- * ND_PRF_DROP__SHAPE( to_NT, from_NT, cnt_ANY)
- * ND_PRF_DROP__DATA( to_NT, from_NT, cnt_ANY)
+ * ND_PRF_DROP__SHAPE( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
+ * ND_PRF_DROP__DATA( to_NT, to_sdim, from_NT, from_sdim, cnt_ANY)
  *
- * ND_PRF_CAT__SHAPE( to_NT, from1_NT, from2_NT)
- * ND_PRF_CAT__DATA( to_NT, from1_NT, from2_NT)
+ * ND_PRF_CAT__SHAPE( to_NT, to_sdim,
+ *                    from1_NT, from1_sdim, from2_NT, from2_sdim)
+ * ND_PRF_CAT__DATA( to_NT, to_sdim,
+ *                   from1_NT, from1_sdim, from2_NT, from2_sdim)
  *
  * ND_PRF_CONV_A__DATA( to_NT, from_NT)
  *
@@ -181,7 +186,18 @@
 /* ND_PRF_DROP__DATA( ...) is a C-ICM */
 
 /* ND_PRF_CAT__SHAPE( ...) is a C-ICM */
-/* ND_PRF_CAT__DATA( ...) is a C-ICM */
+
+#define SAC_ND_PRF_CAT__DATA(to_NT, to_sdim, from1_NT, from1_sdim, from2_NT, from2_sdim) \
+    {                                                                                    \
+        int SAC_i, SAC_off;                                                              \
+        SAC_off = SAC_ND_A_SIZE (from1_NT);                                              \
+        for (SAC_i = 0; SAC_i < SAC_off; SAC_i++) {                                      \
+            SAC_ND_WRITE (to_nt, SAC_i) = SAC_ND_READ (from1_NT, SAC_i);                 \
+        }                                                                                \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from2_NT); SAC_i++) {                     \
+            SAC_ND_WRITE (to_nt, SAC_off + SAC_i) = SAC_ND_READ (from2_NT, SAC_i);       \
+        }                                                                                \
+    }
 
 #define SAC_ND_PRF_CONV_A__DATA(to_NT, from_NT)                                          \
     SAC_TR_PRF_PRINT (("ND_PRF_CONV_A__DATA( %s, %s)\n", #to_NT, #from_NT));             \
