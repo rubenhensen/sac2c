@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.12  2002/04/17 12:29:23  sbs
+# ../constants used for .h files as well now
+#
 # Revision 3.11  2001/11/15 15:36:48  sacbase
 # CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
 #
@@ -84,7 +87,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 INCS = -I../global -I../tree -I../compile -I../modules -I../refcount \
        -I../concurrent -I../psi-opt -I../optimize -I../typecheck \
-       -I../c-interface -I../../inc
+       -I../c-interface -I../../inc -I../constants
 
 all: print.o convert.o
 
