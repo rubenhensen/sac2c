@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2001/04/02 15:06:37  dkr
+ * MakeFundef modified
+ *
  * Revision 3.28  2001/03/29 09:15:07  nmw
  * tabs2spaces done
  *
@@ -691,15 +694,11 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
 
     FUNDEF_TYPES (tmp) = types;
 #ifdef NAMES_IN_TYPES
-    if (FUNDEF_NAME (tmp) != NULL) {
-        FREE (FUNDEF_NAME (tmp));
-    }
+    FREE (FUNDEF_NAME (tmp));
 #endif
     FUNDEF_NAME (tmp) = name;
 #ifdef NAMES_IN_TYPES
-    if (FUNDEF_MOD (tmp) != NULL) {
-        FREE (FUNDEF_MOD (tmp));
-    }
+    FREE (FUNDEF_MOD (tmp));
 #endif
     FUNDEF_MOD (tmp) = mod;
     FUNDEF_LINKMOD (tmp) = NULL;
