@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2002/10/18 14:33:17  sbs
+ * some DBUG output added and some FLAG handling of freshly created N_id nodes
+ * added.
+ *
  * Revision 1.8  2002/09/05 14:45:55  dkr
  * CWCwithop() added
  *
@@ -125,15 +129,23 @@ SplitWrapper (node *fundef)
     bool finished;
     node *new_fundef;
     node *new_fundefs = NULL;
+#ifndef DBUG_OFF
+    char *tmp_str;
+#endif
 
     DBUG_ENTER ("SplitWrapper");
 
     old_type = FUNDEF_TYPE (fundef);
     tmp_type = TYCopyType (old_type);
     FUNDEF_TYPE (fundef) = NULL;
+    DBUG_PRINT ("CWC", ("splitting wrapper of %s", FUNDEF_NAME (fundef)));
     do {
         new_fundef = DupNode (fundef);
         new_type = TYSplitWrapperType (tmp_type, &finished);
+        DBUG_EXECUTE ("CWC", tmp_str = TYType2String (new_type, TRUE, 0););
+        DBUG_PRINT ("CWC", ("  new wrapper split off: %s", tmp_str));
+        DBUG_EXECUTE ("CWC", tmp_str = Free (tmp_str););
+
         FUNDEF_TYPE (new_fundef) = new_type;
         FUNDEF_RET_TYPE (new_fundef) = TYGetWrapperRetType (new_type);
         FUNDEF_ARGS (new_fundef)
@@ -182,6 +194,8 @@ InsertWrapperCode (node *fundef)
     while (vardec != NULL) {
         node *id_node = MakeId_Copy (VARDEC_NAME (vardec));
         ID_VARDEC (id_node) = vardec;
+        SET_FLAG (ID, id_node, IS_GLOBAL, FALSE); /* ok since GOs may not be returned */
+        SET_FLAG (ID, id_node, IS_REFERENCE, FALSE);
         ID_AVIS (id_node) = VARDEC_AVIS (vardec);
         ret = MakeExprs (id_node, ret);
         vardec = VARDEC_NEXT (vardec);
@@ -221,6 +235,9 @@ SignatureMatches (node *formal, node *actual)
 {
     ntype *formal_type, *actual_type, *tmp_type;
     bool match = TRUE;
+#ifndef DBUG_OFF
+    char *tmp_str, *tmp2_str;
+#endif
 
     DBUG_ENTER ("SignatureMatches");
 
@@ -233,11 +250,18 @@ SignatureMatches (node *formal, node *actual)
         tmp_type = NewTypeCheck_Expr (EXPRS_EXPR (actual));
         actual_type = TYFixAndEliminateAlpha (tmp_type);
         tmp_type = TYFreeType (tmp_type);
+        DBUG_EXECUTE ("CWC", tmp_str = TYType2String (formal_type, FALSE, 0););
+        DBUG_EXECUTE ("CWC", tmp2_str = TYType2String (actual_type, FALSE, 0););
+        DBUG_PRINT ("CWC",
+                    ("comparing formal type %s with actual type %s", tmp_str, tmp2_str));
+        DBUG_EXECUTE ("CWC", tmp_str = Free (tmp_str););
+        DBUG_EXECUTE ("CWC", tmp2_str = Free (tmp2_str););
 
         if (!TYLeTypes (actual_type, formal_type)) {
             match = FALSE;
             break;
         }
+        DBUG_PRINT ("CWC", ("result: %d", match));
 
         formal = ARG_NEXT (formal);
         actual = EXPRS_NEXT (actual);
@@ -263,6 +287,7 @@ CorrectFundef (node *fundef, char *funname, node *args)
 
     DBUG_ASSERT ((fundef != NULL), "fundef not found!");
     if (FUNDEF_STATUS (fundef) == ST_zombiefun) {
+        DBUG_PRINT ("CWC", ("correcting fundef for %s", funname));
         do {
             fundef = FUNDEF_NEXT (fundef);
             DBUG_ASSERT ((fundef != NULL), "no appropriate wrapper function found!");
