@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.75  1998/08/07 16:06:13  dkr
+ * PRECWLsegVar added
+ *
  * Revision 1.74  1998/07/03 10:14:49  cg
  * function PRECspmd removed because attribute INOUT_IDS is no longer needed.
  *
@@ -1604,6 +1607,38 @@ PRECWLseg (node *arg_node, node *arg_info)
 
     if (WLSEG_NEXT (arg_node) != NULL) {
         WLSEG_NEXT (arg_node) = Trav (WLSEG_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PRECWLsegVar(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *   Since the scheduling specification may contain the names of local
+ *   identifiers, these have to be renamed according to the general renaming
+ *   scheme implemented by this compiler phase.
+ *
+ ******************************************************************************/
+
+node *
+PRECWLsegVar (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PRECWLsegVar");
+
+    if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
+        WLSEGVAR_SCHEDULING (arg_node)
+          = SCHPrecompileScheduling (WLSEGVAR_SCHEDULING (arg_node));
+    }
+
+    WLSEGVAR_CONTENTS (arg_node) = Trav (WLSEGVAR_CONTENTS (arg_node), arg_info);
+
+    if (WLSEGVAR_NEXT (arg_node) != NULL) {
+        WLSEGVAR_NEXT (arg_node) = Trav (WLSEGVAR_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
