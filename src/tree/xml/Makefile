@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.10  2004/10/25 09:45:03  sah
+# added serialize_link.[ch}]
+#
 # Revision 1.9  2004/10/11 15:48:43  sah
 # added BST traversal xsl files
 #
@@ -53,7 +56,8 @@ TARGETS = ../attribs.h ../node_basic.h ../node_basic.c ../free_node.c \
           ../check_node.h ../check_node.c \
           ../serialize_node.h ../serialize_node.c \
           ../serialize_attribs.h ../serialize_helper.c \
-          ../serialize_buildstack.c ../serialize_buildstack.h
+          ../serialize_buildstack.c ../serialize_buildstack.h \
+          ../serialize_link.h ../serialize_link.c
 
 all: $(TARGETS)
 
@@ -106,6 +110,14 @@ all: $(TARGETS)
 
 ../serialize_node.c: ast.xml ast2serialize_node_c.xsl
 	$(XSLTENGINE) ast2serialize_node_c.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
+
+../serialize_link.h: ast.xml ast2serialize_link_h.xsl
+	$(XSLTENGINE) ast2serialize_link_h.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
+
+../serialize_link.c: ast.xml ast2serialize_link_c.xsl
+	$(XSLTENGINE) ast2serialize_link_c.xsl ast.xml \
 	| $(CODE_BEAUTIFIER) >$@
 
 ../serialize_attribs.h: ast.xml ast2serialize_attribs_h.xsl
