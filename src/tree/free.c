@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2002/08/12 14:58:52  sbs
+ * N_mop representation changed
+ *
  * Revision 3.38  2002/08/09 16:36:21  sbs
  * basic support for N_mop written.
  *
@@ -1397,13 +1400,10 @@ FreeMop (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("FREE", ("Removing contents of N_mop node %s ...", AP_NAME (arg_node)));
 
-    AP_ARGS (arg_node) = FREETRAV (AP_ARGS (arg_node));
-    AP_NAME (arg_node) = Free (AP_NAME (arg_node));
-#if FREE_MODNAMES
-    AP_MOD (arg_node) = Free (AP_MOD (arg_node));
-#endif
+    MOP_EXPRS (arg_node) = FREETRAV (MOP_EXPRS (arg_node));
+    MOP_OPS (arg_node) = FreeAllIds (MOP_OPS (arg_node));
 
-    DBUG_PRINT ("FREE", ("Removing N_ap node ..."));
+    DBUG_PRINT ("FREE", ("Removing N_mop node ..."));
 
     arg_node = Free (arg_node);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2002/08/12 14:58:52  sbs
+ * N_mop representation changed
+ *
  * Revision 3.62  2002/08/09 16:36:21  sbs
  * basic support for N_mop written.
  *
@@ -1027,7 +1030,7 @@ MakeAp (char *name, char *mod, node *args)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeMop (char *name, char *mod, node *arg1, node *arg2)
+MakeMop (node *exprs, ids *fun_ids, bool fix)
 {
     node *tmp;
 
@@ -1035,11 +1038,9 @@ MakeMop (char *name, char *mod, node *arg1, node *arg2)
 
     tmp = CreateCleanNode (N_mop);
 
-    MOP_NAME (tmp) = name;
-    MOP_MOD (tmp) = mod;
+    MOP_EXPRS (tmp) = exprs;
+    MOP_OPS (tmp) = fun_ids;
     MOP_FIX (tmp) = FALSE;
-    MOP_ARG1 (tmp) = arg1;
-    MOP_ARG2 (tmp) = arg2;
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));

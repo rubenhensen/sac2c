@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2002/08/12 14:58:52  sbs
+ * N_mop representation changed
+ *
  * Revision 3.67  2002/08/09 16:36:21  sbs
  * basic support for N_mop written.
  *
@@ -1490,11 +1493,10 @@ DupMop (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupMop");
 
-    DBUG_PRINT ("DUP", ("duplicating multi operation %s ...", MOP_NAME (arg_node)));
+    DBUG_PRINT ("DUP", ("duplicating multi operation ..."));
 
-    new_node = MakeMop (StringCopy (MOP_NAME (arg_node)), StringCopy (MOP_MOD (arg_node)),
-                        DUPTRAV (MOP_ARG1 (arg_node)), DUPTRAV (MOP_ARG2 (arg_node)));
-    MOP_FIX (new_node) = MOP_FIX (arg_node);
+    new_node = MakeMop (DUPTRAV (MOP_EXPRS (arg_node)), DupAllIds (MOP_OPS (arg_node)),
+                        MOP_FIX (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 

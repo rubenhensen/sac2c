@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.142  2002/08/12 14:58:52  sbs
+ * N_mop representation changed
+ *
  * Revision 3.141  2002/08/09 16:36:21  sbs
  * basic support for N_mop written.
  *
@@ -1628,26 +1631,22 @@ extern node *MakeAp (char *name, char *mod, node *args);
  ***
  ***  sons:
  ***
- ***    node*      ARG1    (O)  ("N_expr")
- ***    node*      ARG2    (O)  ("N_expr")
+ ***    node*      EXPRS    (O)  (N_exprs)
+ ***    ids*       OPS      (O)
  ***
  ***  permanent attributes:
  ***
- ***    char*      NAME
- ***    char*      MOD     (O)
  ***    bool       FIX
  ***
  ***  temporary attributes:
  ***
  ***/
 
-extern node *MakeMop (char *name, char *mod, node *arg1, node *arg2);
+extern node *MakeMop (node *exprs, ids *fun_ids, bool fix);
 
-#define MOP_NAME(n) (n->info.fun_name.id)
-#define MOP_MOD(n) (n->info.fun_name.id_mod)
+#define MOP_OPS(n) (n->info.ids)
 #define MOP_FIX(n) ((bool)(n->flag))
-#define MOP_ARG1(n) (n->node[0])
-#define MOP_ARG2(n) (n->node[1])
+#define MOP_EXPRS(n) (n->node[0])
 
 /*--------------------------------------------------------------------------*/
 
