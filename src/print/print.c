@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.246  1998/08/07 14:38:20  dkr
+ * PrintWLsegVar added
+ *
  * Revision 1.245  1998/08/06 15:30:40  dkr
  * fixed a minor bug in PrintNodeTree
  *
@@ -2996,6 +2999,47 @@ PrintWLgrid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *PrintWLsegVar(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_WLsegVar-nodes
+ *
+ ******************************************************************************/
+
+node *
+PrintWLsegVar (node *arg_node, node *arg_info)
+{
+    node *seg;
+    int i = 0;
+
+    DBUG_ENTER ("PrintWLsegVar");
+
+    seg = arg_node;
+    while (seg != NULL) {
+        if (WLSEGVAR_SCHEDULING (seg) == NULL) {
+            INDENT
+            fprintf (outfile, "/********** segment %d: **********/\n", i++);
+        } else {
+            INDENT
+            fprintf (outfile, "/********** segment %d: **********\n", i++);
+            INDENT
+            fprintf (outfile, " * scheduling: ");
+            SCHPrintScheduling (outfile, WLSEGVAR_SCHEDULING (seg));
+            fprintf (outfile, "\n");
+            INDENT
+            fprintf (outfile, " */\n");
+        }
+
+        WLSEGVAR_CONTENTS (seg) = Trav (WLSEGVAR_CONTENTS (seg), arg_info);
+        seg = WLSEG_NEXT (seg);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void PrintWLvar(node *arg_node, node *arg_info)
  *
  * description:
@@ -3385,6 +3429,9 @@ PrintNodeTree (node *node)
                 fprintf (outfile, "%li ", (WLSEG_UBV (node))[d]);
             }
             fprintf (outfile, "])\n");
+            break;
+        case N_WLsegVar:
+            fprintf (outfile, "\n");
             break;
         case N_WLblock:
             fprintf (outfile, "(%d->%d block%d[%d] %d)\n", WLBLOCK_BOUND1 (node),

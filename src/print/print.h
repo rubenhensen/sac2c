@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  1998/08/07 14:38:26  dkr
+ * PrintWLsegVar added
+ *
  * Revision 1.31  1998/04/26 21:50:18  dkr
  * PrintSPMD renamed to PrintSpmd
  *
@@ -171,6 +174,7 @@ extern node *PrintWLblock (node *arg_node, node *arg_info);
 extern node *PrintWLublock (node *arg_node, node *arg_info);
 extern node *PrintWLstride (node *arg_node, node *arg_info);
 extern node *PrintWLgrid (node *arg_node, node *arg_info);
+extern node *PrintWLsegVar (node *arg_node, node *arg_info);
 extern node *PrintWLstriVar (node *arg_node, node *arg_info);
 extern node *PrintWLgridVar (node *arg_node, node *arg_info);
 
