@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2002/10/18 14:35:16  sbs
+ * several additions made. Primarily, they concern user defined types
+ * hidden types objects and friends.
+ *
  * Revision 3.30  2002/09/25 11:37:19  sbs
  * some minor warnings eliminated
  *
@@ -472,6 +476,8 @@ TYGetConstr (ntype *type)
  *   ntype * TYMakeSymbType( char *name, char *mod)
  *   ntype * TYMakeUserType( usertype udt)
  *
+ *   ntype * TYSetSimpleType( ntype *simple, simpletype base)
+ *
  * description:
  *   Several functions for creating scalar types
  *   (type-constructors with arity 0).
@@ -520,10 +526,21 @@ TYMakeUserType (usertype udt)
     DBUG_RETURN (res);
 }
 
+ntype *
+TYSetSimpleType (ntype *simple, simpletype base)
+{
+    DBUG_ENTER ("TYSetSimpleType");
+
+    SIMPLE_TYPE (simple) = base;
+
+    DBUG_RETURN (simple);
+}
+
 /******************************************************************************
  *
  * function:
  *   simpletype TYGetSimpleType( ntype *simple)
+ *   usertype   TYGetUserType( ntype *user)
  *   char     * TYGetName( ntype *symb)
  *   char     * TYGetMod( ntype *symb)
  *
@@ -539,6 +556,15 @@ TYGetSimpleType (ntype *simple)
     DBUG_ASSERT ((NTYPE_CON (simple) == TC_simple),
                  "TYGetSimpleType applied to nonsimple-type!");
     DBUG_RETURN (SIMPLE_TYPE (simple));
+}
+
+usertype
+TYGetUserType (ntype *user)
+{
+    DBUG_ENTER ("TYGetUserType");
+    DBUG_ASSERT ((NTYPE_CON (user) == TC_user),
+                 "TYGetUserType applied to non-user-type!");
+    DBUG_RETURN (USER_TYPE (user));
 }
 
 char *
@@ -4036,9 +4062,9 @@ TYOldType2Type (types *old)
     case T_bool:
     case T_str:
     case T_char:
+    case T_hidden:
         res = TYMakeSimpleType (TYPES_BASETYPE (old));
         break;
-    case T_hidden:
     case T_void:
     case T_dots:
     case T_nothing:
@@ -4071,6 +4097,31 @@ TYOldType2Type (types *old)
 /******************************************************************************
  *
  * function:
+ *    ntype * TYOldTypes2ProdType( types *old)
+ *
+ * description:
+ *    converts a (linked list of) old TYPES node(s) into a product type of ntypes.
+ *
+ ******************************************************************************/
+
+ntype *
+TYOldTypes2ProdType (types *old)
+{
+    int i, num_types;
+    ntype *res;
+
+    num_types = CountTypes (old);
+    res = TYMakeEmptyProductType (num_types);
+    for (i = 0; i < num_types; i++) {
+        res = TYSetProductMember (res, i, TYOldType2Type (old));
+        old = TYPES_NEXT (old);
+    }
+    return (res);
+}
+
+/******************************************************************************
+ *
+ * function:
  *    types * TYType2OldType( ntype *new)
  *
  * description:
@@ -4096,10 +4147,14 @@ Type2OldType (ntype *new)
         res = Type2OldType (SSIGetMin (TYGetAlpha (new)));
         break;
     case TC_prod:
-        for (i = NTYPE_ARITY (new) - 1; i >= 0; i--) {
-            res = Type2OldType (PROD_MEMBER (new, i));
-            TYPES_NEXT (res) = tmp;
-            tmp = res;
+        if (NTYPE_ARITY (new) == 0) {
+            res = MakeTypes1 (T_void);
+        } else {
+            for (i = NTYPE_ARITY (new) - 1; i >= 0; i--) {
+                res = Type2OldType (PROD_MEMBER (new, i));
+                TYPES_NEXT (res) = tmp;
+                tmp = res;
+            }
         }
         break;
     case TC_aks:
@@ -4121,6 +4176,11 @@ Type2OldType (ntype *new)
         break;
     case TC_simple:
         res = MakeTypes (SIMPLE_TYPE (new), 0, NULL, NULL, NULL);
+        break;
+    case TC_user:
+        res = MakeTypes (T_user, 0, NULL, StringCopy (UTGetName (USER_TYPE (new))),
+                         StringCopy (UTGetMod (USER_TYPE (new))));
+        TYPES_TDEF (res) = UTGetTdef (USER_TYPE (new));
         break;
     default:
         DBUG_ASSERT ((0), "Type2OldType not yet entirely implemented!");
@@ -4169,21 +4229,20 @@ TYType2OldType (ntype *new)
  *
  ******************************************************************************/
 
-ntype *
-TYSplitWrapperType (ntype *type, bool *finished)
+static ntype *
+SplitWrapperType (ntype *type, bool *finished)
 {
     ntype *new_type;
     int n, i;
+    bool old_finished, once_finished;
 
-    DBUG_ENTER ("TYSplitWrapperType");
+    DBUG_ENTER ("SplitWrapperType");
 
     if (type == NULL) {
         new_type = NULL;
-        (*finished) = TRUE;
     } else {
         n = NTYPE_ARITY (type);
         new_type = CopyTypeConstructor (type, tv_id);
-        (*finished) = TRUE;
 
         if (TYIsFun (type)) {
             DBUG_ASSERT ((n >= 1), "TC_fun with (ARITY < 1) found!");
@@ -4195,7 +4254,7 @@ TYSplitWrapperType (ntype *type, bool *finished)
                          "TC_fun with (NTYPE_SON == NULL) found!");
 
             NTYPE_SON (new_type, 0)
-              = TYSplitWrapperType (NTYPE_SON (type, (n - 1)), finished);
+              = SplitWrapperType (NTYPE_SON (type, (n - 1)), finished);
 
             if (*finished) {
                 NTYPE_ARITY (type) = n - 1;
@@ -4207,14 +4266,27 @@ TYSplitWrapperType (ntype *type, bool *finished)
         } else {
             NTYPE_ARITY (new_type) = n;
             NTYPE_SONS (new_type) = (ntype **)Malloc (n * sizeof (ntype *));
+            old_finished = *finished;
+            once_finished = old_finished;
             for (i = 0; i < n; i++) {
+                *finished = old_finished;
                 NTYPE_SON (new_type, i)
-                  = TYSplitWrapperType (NTYPE_SON (type, i), finished);
+                  = SplitWrapperType (NTYPE_SON (type, i), finished);
+                once_finished = once_finished && (*finished);
             }
+            *finished = once_finished;
         }
     }
 
     DBUG_RETURN (new_type);
+}
+
+ntype *
+TYSplitWrapperType (ntype *type, bool *finished)
+{
+    DBUG_ENTER ("TYSplitWrapperType");
+    *finished = TRUE;
+    DBUG_RETURN (SplitWrapperType (type, finished));
 }
 
 /******************************************************************************
@@ -4271,8 +4343,14 @@ TYCorrectWrapperArgTypes (node *args, ntype *type)
         DBUG_ASSERT ((NTYPE_ARITY (type) == 1), "multiple FUN_IBASE found!");
 
         ARG_TYPE (args) = FreeAllTypes (ARG_TYPE (args));
-        AVIS_TYPE (ARG_AVIS (args))
-          = TYMakeAUD (TYCopyType (IBASE_BASE (FUN_IBASE (type, 0))));
+        if (ARG_ATTRIB (args) != ST_regular) {
+            AVIS_TYPE (ARG_AVIS (args))
+              = TYMakeAKS (TYCopyType (IBASE_BASE (FUN_IBASE (type, 0))),
+                           SHCreateShape (0));
+        } else {
+            AVIS_TYPE (ARG_AVIS (args))
+              = TYMakeAUD (TYCopyType (IBASE_BASE (FUN_IBASE (type, 0))));
+        }
 
         type = IRES_TYPE (IBASE_GEN (FUN_IBASE (type, 0)));
         ARG_NEXT (args) = TYCorrectWrapperArgTypes (ARG_NEXT (args), type);
@@ -4335,23 +4413,28 @@ Arg2Id (node *arg)
 
     id = MakeId_Copy (ARG_NAME (arg));
     ID_VARDEC (id) = arg;
+    SET_FLAG (ID, id, IS_GLOBAL, FALSE);
+    SET_FLAG (ID, id, IS_REFERENCE,
+              ((ARG_ATTRIB (arg) == ST_reference)
+               || (ARG_ATTRIB (arg) == ST_readonly_reference)));
+    SET_FLAG (ID, id, IS_READ_ONLY, (ARG_ATTRIB (arg) == ST_readonly_reference));
     ID_AVIS (id) = ARG_AVIS (arg);
 
     DBUG_RETURN (id);
 }
 
 static ids *
-Vardec2Ids (node *vardec)
+VardecOrArg2Ids (node *vardec)
 {
     ids *ret_ids;
 
-    DBUG_ENTER ("Vardec2Ids");
+    DBUG_ENTER ("VardecOrArg2Ids");
 
     DBUG_ASSERT ((vardec != NULL), "no vardec found!");
 
-    ret_ids = MakeIds_Copy (VARDEC_NAME (vardec));
+    ret_ids = MakeIds_Copy (VARDEC_OR_ARG_NAME (vardec));
     IDS_VARDEC (ret_ids) = vardec;
-    IDS_AVIS (ret_ids) = VARDEC_AVIS (vardec);
+    IDS_AVIS (ret_ids) = VARDEC_OR_ARG_AVIS (vardec);
 
     DBUG_RETURN (ret_ids);
 }
@@ -4367,7 +4450,7 @@ Vardecs2Ids (node *vardecs)
     while (vardecs != NULL) {
         DBUG_ASSERT ((NODE_TYPE (vardecs) == N_vardec), "no N_vardec found!");
 
-        tmp_ids = Vardec2Ids (vardecs);
+        tmp_ids = VardecOrArg2Ids (vardecs);
         IDS_NEXT (tmp_ids) = ret_ids;
         ret_ids = tmp_ids;
         vardecs = VARDEC_NEXT (vardecs);
@@ -4394,6 +4477,29 @@ Args2Exprs (node *args)
     DBUG_RETURN (exprs);
 }
 
+static ids *
+ReferenceArgs2Ids (node *args)
+{
+    ids *ret_ids;
+
+    DBUG_ENTER ("ReferenceArgs2Ids");
+
+    if (args != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_arg found!");
+
+        if (ARG_ATTRIB (args) == ST_reference) {
+            ret_ids = VardecOrArg2Ids (args);
+            IDS_NEXT (ret_ids) = ReferenceArgs2Ids (ARG_NEXT (args));
+        } else {
+            ret_ids = ReferenceArgs2Ids (ARG_NEXT (args));
+        }
+    } else {
+        ret_ids = NULL;
+    }
+
+    DBUG_RETURN (ret_ids);
+}
+
 static node *
 BuildTmpId (ntype *type, node **new_vardecs)
 {
@@ -4404,6 +4510,12 @@ BuildTmpId (ntype *type, node **new_vardecs)
 
     name = TmpVar ();
     id = MakeId (name, NULL, ST_regular);
+    /*
+     * All these tmp_id are used for flattening code that checks shapes / dims;
+     * Hence, we are sure that we are not dealing with unique objects here!!
+     */
+    SET_FLAG (ID, id, IS_GLOBAL, FALSE);
+    SET_FLAG (ID, id, IS_REFERENCE, FALSE);
     *new_vardecs = ID_VARDEC (id) = MakeVardec (StringCopy (name), NULL, *new_vardecs);
     ID_AVIS (id) = VARDEC_AVIS (ID_VARDEC (id));
     AVIS_TYPE (ID_AVIS (id)) = type;
@@ -4494,12 +4606,7 @@ BuildDimAssign (node *arg, node **new_vardecs)
 
     DBUG_ENTER ("BuildDimAssign");
 
-    /*
-     * for user defined types we should use the appropriate N_ap
-     * implementation here if it is available!!
-     */
-    assign = MakeAssign (MakeLet (MakePrf (F_dim, /* !!! */
-                                           MakeExprs (Arg2Id (arg), NULL)),
+    assign = MakeAssign (MakeLet (MakePrf (F_dim, MakeExprs (Arg2Id (arg), NULL)),
                                   BuildTmpIds (TYMakeAKS (TYMakeSimpleType (T_int),
                                                           SHCreateShape (0)),
                                                new_vardecs)),
@@ -4515,12 +4622,7 @@ BuildShapeAssign (node *arg, node **new_vardecs)
 
     DBUG_ENTER ("BuildShapeAssign");
 
-    /*
-     * for user defined types we should use the appropriate N_ap
-     * implementation here if it is available!!
-     */
-    assign = MakeAssign (MakeLet (MakePrf (F_shape, /* !!! */
-                                           MakeExprs (Arg2Id (arg), NULL)),
+    assign = MakeAssign (MakeLet (MakePrf (F_shape, MakeExprs (Arg2Id (arg), NULL)),
                                   BuildTmpIds (TYMakeAUDGZ (TYMakeSimpleType (T_int)),
                                                new_vardecs)),
                          NULL);
@@ -4535,6 +4637,7 @@ BuildCondAssign (node *prf_ass, node *expr, node *then_ass, node *else_ass,
     ids *prf_ids;
     prf prf;
     node *assigns;
+    node *id;
 
     DBUG_ENTER ("BuildCondAssign");
 
@@ -4556,15 +4659,20 @@ BuildCondAssign (node *prf_ass, node *expr, node *then_ass, node *else_ass,
 
             DBUG_ASSERT ((NODE_TYPE (expr) == N_num), "illegal expression found!");
 
-            prf2
-              = MakePrf (F_eq, MakeExprs (DupIds_Id (prf_ids), MakeExprs (expr, NULL)));
+            id = DupIds_Id (prf_ids);
+            SET_FLAG (ID, id, IS_GLOBAL, FALSE);
+            SET_FLAG (ID, id, IS_REFERENCE, FALSE);
+
+            prf2 = MakePrf (F_eq, MakeExprs (id, MakeExprs (expr, NULL)));
             prf_ids2
               = BuildTmpIds (TYMakeAKS (TYMakeSimpleType (T_bool), SHCreateShape (0)),
                              new_vardecs);
 
+            id = DupIds_Id (prf_ids2);
+            SET_FLAG (ID, id, IS_GLOBAL, FALSE);
+            SET_FLAG (ID, id, IS_REFERENCE, FALSE);
             assigns = MakeAssign (MakeLet (prf2, prf_ids2),
-                                  MakeAssign (MakeCond (DupIds_Id (prf_ids2),
-                                                        MakeBlock (then_ass, NULL),
+                                  MakeAssign (MakeCond (id, MakeBlock (then_ass, NULL),
                                                         MakeBlock (else_ass, NULL)),
                                               NULL));
         } break;
@@ -4582,9 +4690,12 @@ BuildCondAssign (node *prf_ass, node *expr, node *then_ass, node *else_ass,
             dim = 0;
             flt_prf4 = MakeBool (TRUE);
             while (aexprs != NULL) {
+                id = DupIds_Id (prf_ids);
+                SET_FLAG (ID, id, IS_GLOBAL, FALSE);
+                SET_FLAG (ID, id, IS_REFERENCE, FALSE);
                 prf2 = MakePrf (F_sel,
                                 MakeExprs (MakeArray (MakeExprs (MakeNum (dim), NULL)),
-                                           MakeExprs (DupIds_Id (prf_ids), NULL)));
+                                           MakeExprs (id, NULL)));
                 flt_prf2
                   = BuildTmpId (TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (0)),
                                 new_vardecs);
@@ -4655,7 +4766,7 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
         DBUG_ASSERT ((i < NTYPE_ARITY (ret_type)), "inconsistant application found");
 
         tmp_id = BuildTmpId (PROD_MEMBER (ret_type, i), new_vardecs);
-        assigns = MakeAssign (MakeLet (tmp_id, Vardec2Ids (vardecs)), assigns);
+        assigns = MakeAssign (MakeLet (tmp_id, VardecOrArg2Ids (vardecs)), assigns);
 
         tmp_ids = DupId_Ids (tmp_id);
         IDS_NEXT (tmp_ids) = lhs;
@@ -4708,24 +4819,34 @@ CreateWrapperCode (ntype *type, DFT_state *state, int lower, char *funname, node
         break;
 
     case TC_ibase:
-        if (IBASE_IARR (type) != NULL) {
-            assigns = CreateWrapperCode (IBASE_IARR (type), state, lower, funname, arg,
-                                         args, vardecs, new_vardecs);
-        } else {
-            DBUG_ASSERT ((IBASE_GEN (type) != NULL),
-                         "neither IBASE_IARR nor IBASE_GEN found!");
-            assigns = CreateWrapperCode (IBASE_GEN (type), state, 3, funname, arg, args,
+        if (ARG_ATTRIB (arg) != ST_regular) {
+            /*
+             * this should identify all legal unique argument types!
+             */
+            DBUG_ASSERT ((IBASE_SCAL (type) != NULL),
+                         "fun without instance for scalar unique argument found");
+            assigns = CreateWrapperCode (IBASE_SCAL (type), state, 0, funname, arg, args,
                                          vardecs, new_vardecs);
-        }
+        } else {
 
-        if (IBASE_SCAL (type) != NULL) {
-            tmp_ass = BuildDimAssign (arg, new_vardecs);
-            assigns
-              = BuildCondAssign (tmp_ass, MakeNum (0),
-                                 CreateWrapperCode (IBASE_SCAL (type), state, 0, funname,
-                                                    arg, args, vardecs, new_vardecs),
-                                 assigns, new_vardecs);
-            assigns = AppendAssign (tmp_ass, assigns);
+            if (IBASE_IARR (type) != NULL) {
+                assigns = CreateWrapperCode (IBASE_IARR (type), state, lower, funname,
+                                             arg, args, vardecs, new_vardecs);
+            } else {
+                DBUG_ASSERT ((IBASE_GEN (type) != NULL),
+                             "neither IBASE_IARR nor IBASE_GEN found!");
+                assigns = CreateWrapperCode (IBASE_GEN (type), state, 3, funname, arg,
+                                             args, vardecs, new_vardecs);
+            }
+            if (IBASE_SCAL (type) != NULL) {
+                tmp_ass = BuildDimAssign (arg, new_vardecs);
+                assigns = BuildCondAssign (tmp_ass, MakeNum (0),
+                                           CreateWrapperCode (IBASE_SCAL (type), state, 0,
+                                                              funname, arg, args, vardecs,
+                                                              new_vardecs),
+                                           assigns, new_vardecs);
+                assigns = AppendAssign (tmp_ass, assigns);
+            }
         }
         break;
 
