@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.174  2004/10/19 11:53:07  ktr
+ * Added support for FUNDEF_RETALIAS
+ *
  * Revision 3.173  2004/10/15 15:01:43  sah
  * added support for new module system nodes
  *
@@ -1637,7 +1640,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 {
     types *ret_types;
     char *type_str;
-    node *retexprs = NULL;
+    nodelist *retalias = NULL;
     bool print_sac = TRUE;
     bool print_c = FALSE;
     bool print_argtab = FALSE;
@@ -1684,15 +1687,15 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 
         ret_types = FUNDEF_TYPES (arg_node);
         if (compiler_phase == PH_alloc) {
-            if (FUNDEF_RETURN (arg_node) != NULL) {
-                retexprs = RETURN_EXPRS (FUNDEF_RETURN (arg_node));
+            if (FUNDEF_RETALIAS (arg_node) != NULL) {
+                retalias = FUNDEF_RETALIAS (arg_node);
             }
         }
         while (ret_types != NULL) {
-            if ((compiler_phase == PH_alloc) && (retexprs != NULL)
-                && (ID_AVIS (EXPRS_EXPR (retexprs)) != NULL)
-                && (AVIS_ALIAS (ID_AVIS (EXPRS_EXPR (retexprs))))) {
+            if ((compiler_phase == PH_alloc) && (retalias != NULL)
+                && (BOOL_VAL (NODELIST_NODE (retalias)))) {
                 fprintf (outfile, "alias ");
+                retalias = NODELIST_NEXT (retalias);
             }
             type_str = Type2String (ret_types, 0, FALSE);
             fprintf (outfile, "%s", type_str);
