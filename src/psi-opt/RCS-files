@@ -31,3 +31,4 @@ SSAWithloopFolding.c
 SSAWithloopFolding.h
 detectdependencies.c
 detectdependencies.h
+tagdependencies.c
