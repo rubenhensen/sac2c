@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.50  1995/02/14 12:42:42  sbs
+ * Revision 1.51  1995/02/20 09:35:47  hw
+ * inserted rule expr -> MINUS ID %prec UMINUS
+ *
+ * Revision 1.50  1995/02/14  12:42:42  sbs
  * New Prf's allowed in fold( prf)!
  *
  * Revision 1.49  1995/02/14  12:00:42  sbs
@@ -971,6 +974,37 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
 
            DBUG_PRINT("GENTREE",("%s " P_FORMAT ": %s ",
                                 mdb_nodetype[$$->nodetype], $$, $$->info.id));  
+         }
+      | MINUS ID %prec UMINUS
+        {   node *exprs1, *exprs2;
+            exprs2=MakeNode(N_exprs);
+            exprs2->node[0]=MakeNode(N_id);
+            exprs2->node[0]->info.id=$2;
+            exprs2->nnode=1;
+            exprs1=MakeNode(N_exprs);
+            exprs1->node[0]=MakeNode(N_num);
+            exprs1->node[0]->info.cint=-1;
+            exprs1->node[1]=exprs2;
+            exprs1->nnode=2;
+            $$=MakeNode(N_prf);
+            $$->info.prf=F_mul;
+            $$->node[0]=exprs1;
+            $$->nnode=1;
+            
+            DBUG_PRINT("GENTREE",("%s "P_FORMAT": %d",
+                                  mdb_nodetype[exprs1->node[0]->nodetype], 
+                                  exprs1->node[0], exprs1->node[0]->info.cint));
+            DBUG_PRINT("GENTREE",("%s " P_FORMAT ": %s ",
+                                  mdb_nodetype[exprs2->node[0]->nodetype],
+                                  exprs2->node[0], exprs2->node[0]->info.id));
+
+            DBUG_PRINT("GENTREE",
+                       ("%s " P_FORMAT ": %s " P_FORMAT ", %s" P_FORMAT,
+                        mdb_prf[$$->info.prf], $$,
+                        mdb_nodetype[exprs1->node[0]->nodetype], 
+                        exprs1->node[0],
+                        mdb_nodetype[exprs2->node[0]->nodetype], 
+                        exprs2->node[0]));
          }
       | BRACKET_L COLON type BRACKET_R expr %prec CAST
          {$$=MakeNode(N_cast);
