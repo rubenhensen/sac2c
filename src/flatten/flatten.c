@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.85  1999/02/15 12:09:17  cg
+ * Bug fixed: character constants are now flattened from return-statement.
+ *
  * Revision 1.84  1999/02/12 18:47:15  bs
  * fixed a bug in FltnExprs
  *
@@ -1257,9 +1260,10 @@ FltnExprs (node *arg_node, node *arg_info)
     case CT_return:
         abstract = ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
                     || (NODE_TYPE (expr) == N_double) || (NODE_TYPE (expr) == N_bool)
-                    || (NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array)
-                    || (NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
-                    || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_with));
+                    || (NODE_TYPE (expr) == N_char) || (NODE_TYPE (expr) == N_str)
+                    || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_ap)
+                    || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_Nwith)
+                    || (NODE_TYPE (expr) == N_with));
         break;
     case CT_ap:
         abstract = ((NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_prf)
