@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.40  1998/03/17 10:36:06  dkr
+ * changed MakeWLseg()
+ *
  * Revision 1.39  1998/03/13 16:21:33  dkr
  * new nodes added:
  *   N_WLblock, N_WLublock
@@ -1377,7 +1380,7 @@ MakeNWith2 (node *withid, node *seg, node *code, node *withop)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLseg (node *inner, node *next)
+MakeWLseg (int dim, node *inner, node *next)
 {
     node *new_node;
 
@@ -1385,6 +1388,7 @@ MakeWLseg (node *inner, node *next)
     INIT_NODE (new_node);
 
     NODE_TYPE (new_node) = N_WLseg;
+    WLSEG_DIM (new_node) = dim;
     WLSEG_INNER (new_node) = inner;
     WLSEG_NEXT (new_node) = next;
 
