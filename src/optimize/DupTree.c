@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.57  1998/04/13 19:02:15  dkr
+ * support for wlcomp-pragmas added in DupPragma
+ *
  * Revision 1.56  1998/04/11 15:19:28  srs
  * N_Nwith nodes are now processed by DupNwith() instead of DupChain()
  *
@@ -702,6 +705,10 @@ DupPragma (node *arg_node, node *arg_info)
         for (i = 0; i < PRAGMA_NUMPARAMS (new_node); i++) {
             PRAGMA_REFCOUNTING (new_node)[i] = PRAGMA_REFCOUNTING (arg_node)[i];
         }
+    }
+
+    if (PRAGMA_WLCOMP_APS (arg_node) != NULL) {
+        PRAGMA_WLCOMP_APS (arg_node) = DUPTRAV (PRAGMA_WLCOMP_APS (arg_node));
     }
 
     DBUG_RETURN (new_node);
