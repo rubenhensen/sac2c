@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2002/03/07 02:20:53  dkr
+ * RETURN_REFERENCE added in FreeReturn()
+ *
  * Revision 3.31  2002/03/01 02:38:16  dkr
  * fixed a bug in FreeTree(), FreeNode():
  *  'free_node' is returned instead of NULL
@@ -1201,6 +1204,7 @@ FreeReturn (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing contents of N_return node ..."));
 
     RETURN_EXPRS (arg_node) = FREETRAV (RETURN_EXPRS (arg_node));
+    RETURN_REFERENCE (arg_node) = FREETRAV (RETURN_REFERENCE (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_return node ..."));
 
