@@ -1,6 +1,9 @@
-/* 	$Id$
+/*    $Id$
  *
  * $Log$
+ * Revision 1.8  1998/03/18 08:33:15  srs
+ * first running version of WLI
+ *
  * Revision 1.7  1998/03/06 13:29:05  srs
  * added new WLI functions
  *
@@ -21,9 +24,14 @@
 #ifndef _WithloopFolding_h
 #define _WithloopFolding_h
 
+/* if not defined, indexes with more then one occurence of an
+   index scalar are allowed to be valid transformations, e.g. [i,i,j] */
+#define TRANSF_TRUE_PERMUTATIONS
+
 extern node *WLFWithloopFolding (node *, node *);
 
 extern node *WLIfundef (node *, node *);
+extern node *WLIid (node *, node *);
 extern node *WLIassign (node *, node *);
 extern node *WLIcond (node *, node *);
 extern node *WLIdo (node *, node *);
@@ -31,7 +39,6 @@ extern node *WLIwhile (node *, node *);
 extern node *WLIwith (node *, node *);
 extern node *WLINwith (node *, node *);
 extern node *WLIlet (node *, node *);
-extern node *WLIid (node *arg_node, node *arg_info);
 
 extern node *WLINpart (node *, node *);
 extern node *WLINcode (node *, node *);
