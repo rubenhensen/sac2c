@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.54  1998/04/08 09:29:51  dkr
+ * #ifdef changed to #if
+ *
  * Revision 1.53  1998/04/08 07:39:33  srs
  * removed wrong assertion in DupId
  *
@@ -637,16 +640,18 @@ DupInfo (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupInfo");
-#ifdef 0                          /* was ifndef NEWTREE */
-    if (UNS_NO == arg_node->flag) /* UNS_NO: arg_info->nnode */
-                                  /* this condition is set by InvarUnswitch only !? */
-    { /* copy arg_info->node[0] to new_node (new arg_node), free old arg_node */
-        new_node = DupTree (UNS_NODES, arg_info); /* UNS_NODES: arg_info->node[0] */
-        FreeTree (arg_node);
-    } else { /* make new node in new_node */
-        new_node = MakeNode (N_info);
-        new_node->flag = arg_node->flag;
-    }
+#if 0 /* was ifndef NEWTREE */
+  if (UNS_NO == arg_node->flag)  /* UNS_NO: arg_info->nnode */
+    /* this condition is set by InvarUnswitch only !? */
+  {  /* copy arg_info->node[0] to new_node (new arg_node), free old arg_node */
+    new_node = DupTree(UNS_NODES, arg_info);  /* UNS_NODES: arg_info->node[0] */
+    FreeTree(arg_node);
+  }
+  else
+  {  /* make new node in new_node */
+    new_node = MakeNode(N_info);
+    new_node->flag = arg_node->flag;
+  }
 #endif
 
     DBUG_ASSERT ((1 == 0), "DupInfo called!");
