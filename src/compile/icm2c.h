@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.40  1997/09/14 13:19:33  dkr
+ * eliminated an error in comments
+ *
  * Revision 1.39  1997/08/29 12:37:12  sbs
  * output of prf's if prf-trace is on for
  * BINOP, PSI and MODARRAY inserted;
@@ -281,7 +284,7 @@
  * ND_KS_ASSIGN_ARRAY(name, res)
  *   copies pointer to array field (including refcount)
  *
- * ND_KS_ASSIGN_ARRAY(name, res)
+ * ND_KS_NO_RC_ASSIGN_ARRAY(name, res)
  *   copies pointer to array field (without refcount)
  *
  * ND_KS_COPY_ARRAY(old, new, basetypesize)
