@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/07/07 14:29:45  jhs
+ * Removed SYNC_WITH_PTRS from routine SCHEDsync.
+ *
  * Revision 2.1  1999/02/23 12:44:07  sacbase
  * new release made
  *
@@ -296,14 +299,31 @@ SCHEDwlsegVar (node *arg_node, node *arg_info)
 node *
 SCHEDsync (node *arg_node, node *arg_info)
 {
-    node *tmp, *with;
+    node *block;
+    node *assign;
+    node *let;
+    node *with;
 
     DBUG_ENTER ("SCHEDsync");
 
-    tmp = SYNC_WITH_PTRS (arg_node);
+    block = SYNC_REGION (arg_node);
+    DBUG_ASSERT ((NODE_TYPE (block) == N_block),
+                 "N_block expected, but another kind of node found");
 
-    if (tmp != NULL) {
-        with = LET_EXPR (EXPRS_EXPR (tmp));
+    assign = BLOCK_INSTR (block);
+    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
+                 "N_assign expected, but another kind of node found");
+
+    /* traverse N_assigns */
+    if (assign != NULL) {
+        let = ASSIGN_INSTR (assign);
+        DBUG_ASSERT ((NODE_TYPE (assign) == N_let),
+                     "N_let expected, but another kind of node found");
+
+        with = LET_EXPR (let);
+        DBUG_ASSERT ((NODE_TYPE (assign) == N_Nwith2),
+                     "N_Nwith2 expected, but another kind of node found");
+
         if (NWITH2_SCHEDULING (with) != NULL) {
             if (SYNC_SCHEDULING (arg_node) == NULL) {
                 SYNC_SCHEDULING (arg_node) = NWITH2_SCHEDULING (with);
@@ -316,7 +336,7 @@ SCHEDsync (node *arg_node, node *arg_info)
             NWITH2_SCHEDULING (with) = NULL;
         }
 
-        tmp = EXPRS_NEXT (tmp);
+        assign = ASSIGN_NEXT (assign);
     }
 
     if (SYNC_SCHEDULING (arg_node) == NULL) {
