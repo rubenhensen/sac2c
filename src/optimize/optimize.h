@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.40  1996/01/17 16:49:21  asi
+ * Revision 1.41  1996/02/13 13:58:14  asi
+ * MRD_GETCSE changed
+ *
+ * Revision 1.40  1996/01/17  16:49:21  asi
  * added common subexpression elimination
  *
  * Revision 1.38  1996/01/17  14:48:39  asi
@@ -183,17 +186,19 @@ stack *mrdl_stack;
 #define TOS mrdl_stack->stack[mrdl_stack->tos]
 #define MRD_TOS mrdl_stack->stack[mrdl_stack->tos]
 #define MRD_TAB                                                                          \
-    ((cf_tab == act_tab) || (unroll_tab == act_tab) || (unswitch_tab == act_tab))
+    ((cf_tab == act_tab) || (unroll_tab == act_tab) || (unswitch_tab == act_tab)         \
+     || (cse_tab == act_tab))
 #define MRD_LIST (long *)MRD_TOS.varlist
 #define MRD(i) MRD_TOS.varlist[i]
 
 extern node *MrdGet (int i, int varno, int outside_block);
 extern node *GetExpr (node *arg_node);
+extern int CheckScope (long *act_mrdl, node *assign_node, int varno, int checkdef);
 
 #define MRD_GETSUBST(n, i, v) n = GetExpr (MrdGet (i, v, 0));
-#define MRD_GETCS(n, i, v) n = MrdGet (i, v, 1);
-#define MRD_GETLAST(n, i, v) n = GetExpr (MrdGet (i, v, 2));
-#define MRD_GETDATA(n, i, v) n = GetExpr (MrdGet (i, v, 3));
+#define MRD_GETLAST(n, i, v) n = GetExpr (MrdGet (i, v, 1));
+#define MRD_GETDATA(n, i, v) n = GetExpr (MrdGet (i, v, 2));
+#define MRD_GETCSE(n, i, v) n = GetExpr (MrdGet (i, v, 3));
 
 extern void PushMRDL (long NumVar);
 extern void PushDupMRDL ();
