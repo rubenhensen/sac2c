@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/04/18 14:09:33  sbs
+ * Revision 1.12  1995/04/18 14:44:57  sbs
+ * ND_ALLOC_ARRAY modified; initial rc parameter
+ *
+ * Revision 1.11  1995/04/18  14:09:33  sbs
  * args of BINOP_AxS_A exchanged
  *
  * Revision 1.10  1995/04/12  15:14:00  sbs
@@ -114,11 +117,11 @@
  *
  */
 
-#define ND_ALLOC_ARRAY(type, name)                                                       \
+#define ND_ALLOC_ARRAY(type, name, rc)                                                   \
     {                                                                                    \
         ND_A_FIELD (name) = (type *)malloc (sizeof (type) * ND_A_SIZE (name));           \
         ND_A_RCP (name) = (int *)malloc (sizeof (int));                                  \
-        ND_A_RC (name) = 0;                                                              \
+        ND_A_RC (name) = rc;                                                             \
     }
 
 #define ND_REUSE(old, new)                                                               \
