@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2001/02/09 10:51:21  dkr
+ * fixed a bug in InferFitted
+ *
  * Revision 3.29  2001/02/08 16:30:13  dkr
  * warning about uninitialized variable eliminated
  *
@@ -6009,7 +6012,7 @@ InferFitted (node *wlnode)
                                         WLGRIDX_GET_ADDR (grids, BOUND2));
 
                 if ((g_bnd2 == 1)
-                    || ((bnd1 >= 0) && (bnd2 >= 0)
+                    || ((bnd1 >= 0) && (bnd2 >= 0) && (g_bnd1 >= 0) && (g_bnd2 >= 0)
                         && ((remain == 0) || (g_bnd2 <= remain)))) {
                     WLGRIDX_FITTED (grids) = TRUE;
                 }
