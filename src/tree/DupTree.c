@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2001/04/26 11:55:56  nmw
+ * ICM_FUNDEF attribute added to DupIcm
+ *
  * Revision 3.44  2001/04/26 01:50:04  dkr
  * - reference counnting on fundefs works correctly now (FUNDEF_USED)
  * - DFMs are never duplicated now!!
@@ -1584,6 +1587,8 @@ DupIcm (node *arg_node, node *arg_info)
 
     ICM_INDENT_BEFORE (new_node) = ICM_INDENT_BEFORE (arg_node);
     ICM_INDENT_AFTER (new_node) = ICM_INDENT_AFTER (arg_node);
+    ICM_FUNDEF (new_node)
+      = SearchInLUT_P (INFO_DUP_LUT (arg_info), ICM_FUNDEF (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 
