@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.11  1999/07/08 12:45:46  cg
+# Added making of new source directories src/tools and src/libsac.
+#
 # Revision 2.10  1999/06/25 14:49:54  jhs
 # Added src/concurrent/spmd_trav.o to includes.
 #
@@ -140,7 +143,7 @@ gcc_PROD_FLAGS := -Wall -O3
 # cc specific flags:
 #
 cc_FLAGS  := -xsb -erroff=E_CAST_DOESNT_YIELD_LVALUE
-cc_PROD_FLAGS  := -erroff=E_CAST_DOESNT_YIELD_LVALUE
+cc_PROD_FLAGS  := -erroff=E_CAST_DOESNT_YIELD_LVALUE -xO4
 
 ################################################################################
 #
@@ -295,7 +298,16 @@ dummy:
 	(cd src/concurrent; $(MAKE_NORM) )
 	(cd src/compile; $(MAKE_NORM) )
 	(cd src/psi-opt; $(MAKE_NORM) )
+	(cd src/libsac; $(MAKE_PROD) )
+	(cd src/tools; $(MAKE_PROD) )
 	(cd src/runtime; $(MAKE_NORM) )
+#
+# $(MAKE_PROD) is used in the above lines by purpose in order to compile
+# the SAC runtime library and the additional tool with full optimizations
+# enabled even though sac2c itself is only compiled in the developper
+# version.
+#
+
 
 prod:
 	(cd lib/src; $(MAKE_PROD) )
@@ -311,6 +323,8 @@ prod:
 	(cd src/concurrent; $(MAKE_PROD) )
 	(cd src/compile; $(MAKE_PROD) )
 	(cd src/psi-opt; $(MAKE_PROD) )
+	(cd src/libsac; $(MAKE_PROD) )
+	(cd src/tools; $(MAKE_PROD) )
 	(cd src/runtime; $(MAKE_PROD) )
 
 sac2c: $(OBJ) $(LIB)
@@ -337,6 +351,8 @@ deps:
 	(cd src/compile; $(MAKE) deps)
 	(cd src/psi-opt; $(MAKE) deps)
 	(cd src/runtime; $(MAKE) deps)
+	(cd src/libsac; $(MAKE) deps)
+	(cd src/tools; $(MAKE) deps)
 
 clean:
 	(cd lib/src; $(MAKE) clean)
@@ -353,6 +369,8 @@ clean:
 	(cd src/compile; $(MAKE) clean )
 	(cd src/psi-opt; $(MAKE) clean)
 	(cd src/runtime; $(MAKE) clean)
+	(cd src/libsac; $(MAKE) clean)
+	(cd src/tools; $(MAKE) clean)
 	$(RM) sac2c
 	$(RM) sac2c.efence
 	$(RM) -r .sb
