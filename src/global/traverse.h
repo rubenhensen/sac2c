@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.34  1996/08/09 16:44:12  asi
+ * Revision 1.35  1997/03/19 13:37:55  cg
+ * The entire link_tab is removed
+ *
+ * Revision 1.34  1996/08/09  16:44:12  asi
  * dead function removal added
  *
  * Revision 1.33  1996/01/17  16:49:21  asi
@@ -186,8 +189,6 @@ extern funptr rmvoid_tab[];
 extern funptr precomp_tab[];
 
 extern funptr readsib_tab[];
-
-extern funptr link_tab[];
 
 extern funptr cse_tab[];
 

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.44  1996/08/09 16:44:12  asi
+ * Revision 1.45  1997/03/19 13:37:55  cg
+ * The entire link_tab is removed
+ *
+ * Revision 1.44  1996/08/09  16:44:12  asi
  * dead function removal added
  *
  * Revision 1.43  1996/01/22  08:15:23  asi
@@ -639,19 +642,18 @@ funptr readsib_tab[] = {
 #undef NIF
 
 /*
- * 33) link_tab
+ * 33) unused (was link_tab)
  */
+/*
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, \
+  q, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap) am
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
-    am
-
-funptr link_tab[] = {
+funptr link_tab[]={
 #include "node_info.mac"
-};
+                  };
 
 #undef NIF
-
+*/
 /*
  * 34) cse_tab
  */

@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.129  1996/09/11 14:13:08  asi
- * DFRmodul added
+ * Revision 1.130  1997/03/19 13:37:07  cg
+ * The entire link_tab is removed
  *
+;; Revision 1.129  1996/09/11  14:13:08  asi
+;; DFRmodul added
+;;
 ;; Revision 1.128  1996/09/11  06:14:24  cg
 ;; added function FltnPrf.
 ;;
@@ -422,7 +425,7 @@
  *                             writesib_tab  obj_tab       impltyp_tab   objinit_tab
  *                             analy_tab     checkdec_tab  writedec_tab  unique_tab
  *                             rmvoid_tab    precomp_tab   active_tab    readsib_tab
- *                             link_tab      cse_tab       dfr_tab       unused
+ *                             unused        cse_tab       dfr_tab       unused
  */
 
 NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons, TravSons,
@@ -478,14 +481,14 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, FreeObjdef, TravSons, TravSons, CompObjdef, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, WSIBobjdef,
        OBJobjdef, TravSons, OIobjdef, TravSons, CDECobjdef, WDECobjdef, TravSons,
-       TravSons, PRECobjdef, TravSons, RSIBobjdef, LINKobjdef, TravSons, TravSons,
+       TravSons, PRECobjdef, TravSons, RSIBobjdef, TravSons, TravSons, TravSons,
        TravSons),
 
   NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, TravSons, OPTmodul, OPTmodul,
        OPTmodul, FreeModul, OPTmodul, TravSons, TravSons, OPTmodul, OPTmodul, INLmodul,
        OPTmodul, TravSons, IdxModul, OPTmodul, TravSons, OPTmodul, WSIBmodul, OBJmodul,
        IMPLmodul, OImodul, ANAmodul, TravSons, WDECmodul, UNQmodul, RMVmodul, PRECmodul,
-       OPTmodul, RSIBmodul, LINKmodul, OPTmodul, DFRmodul, TravSons),
+       OPTmodul, RSIBmodul, TravSons, OPTmodul, DFRmodul, TravSons),
 
   NIF (N_moddec, "N_moddec", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, FreeModdec, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -515,7 +518,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        DCRfundef, WRfundef, FreeFundef, CFfundef, RCfundef, CompFundef, LIRfundef,
        DupFundef, INLfundef, UNRfundef, TravSons, IdxFundef, UNSfundef, TravSons,
        AEfundef, WSIBfundef, OBJfundef, TravSons, TravSons, ANAfundef, CDECfundef,
-       WDECfundef, UNQfundef, RMVfundef, PRECfundef, ACTfundef, RSIBfundef, LINKfundef,
+       WDECfundef, UNQfundef, RMVfundef, PRECfundef, ACTfundef, RSIBfundef, TravSons,
        CSEfundef, DFRfundef, TravSons),
 
   NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TravSons, OPTvardec,
