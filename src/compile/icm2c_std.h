@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/07/11 17:44:24  dkr
+ * F_modarray completed
+ *
  * Revision 3.13  2002/07/10 20:06:34  dkr
  * some bugs modified
  *
@@ -111,25 +114,29 @@ extern void ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt,
 extern void ICMCompileND_MAKE_UNIQUE (char *to_nt, int to_sdim, char *from_nt,
                                       int from_sdim, char *copyfun);
 
-extern void ICMCompileND_CREATE__VECT__SHAPE (char *name, int sdim, int len,
+extern void ICMCompileND_CREATE__VECT__SHAPE (char *name, int sdim, int val_size,
                                               char **vala_any);
 
-extern void ICMCompileND_CREATE__VECT__DATA (char *name, int sdim, int len,
+extern void ICMCompileND_CREATE__VECT__DATA (char *name, int sdim, int val_size,
                                              char **vala_any);
 
 extern void ICMCompileND_PRF_SHAPE__DATA (char *to_nt, int to_sdim, char *from_nt,
                                           int from_sdim);
 
 extern void ICMCompileND_PRF_MODARRAY__DATA_id (char *to_nt, int to_sdim, char *from_nt,
-                                                int from_sdim, char *idx_any,
+                                                int from_sdim, int idx_size, char *idx_nt,
                                                 char *val_any);
 
 extern void ICMCompileND_PRF_MODARRAY__DATA_arr (char *to_nt, int to_sdim, char *from_nt,
-                                                 int from_sdim, int len, char **idxa_any,
-                                                 char *val_any);
+                                                 int from_sdim, int idx_size,
+                                                 char **idxa_any, char *val_any);
 
 extern void ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_nt, int to_sdim, char *from_nt,
-                                                 int from_sdim, char *idx, char *val);
+                                                 int from_sdim, char *idx_any,
+                                                 char *val_any);
+
+extern void ICMCompileND_VECT2OFFSET (char *offset, int from_size, char *from_nt,
+                                      int shp_size, char **shp_any);
 
 #else /* TAGGED_ARRAYS */
 
