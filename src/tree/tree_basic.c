@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2002/07/10 19:25:22  dkr
+ * MakeStr_Copy() added
+ *
  * Revision 3.57  2002/07/08 17:47:24  dkr
  * MakeIcm(): IS_LASTREF__BLOCK_ELSE added
  *
@@ -1258,6 +1261,24 @@ MakeStr (char *str)
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeStr_Copy (char *str)
+{
+    node *result;
+
+    DBUG_ENTER ("MakeStr_Copy");
+
+    if (str == NULL) {
+        str = "";
+    }
+
+    result = MakeStr (StringCopy (str));
+
+    DBUG_RETURN (result);
 }
 
 /*--------------------------------------------------------------------------*/
