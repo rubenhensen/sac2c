@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.26  1998/03/02 13:57:21  cg
+ * added function OptCmp() to compare two strings regardless of lower
+ * or upper case letters (used for scanning optimization command line options.
+ *
  * Revision 1.25  1998/02/24 16:10:32  srs
  * new function TmpVarName()
  *
@@ -93,6 +97,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdarg.h>
+#include <ctype.h>
 
 #include "Error.h"
 #include "free.h"
@@ -525,6 +530,32 @@ TmpVarName (char *postfix)
     FREE (tmp);
 
     DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int OptCmp(char *first, char *second)
+ *
+ * description:
+ *   compares two strings and returns 1 (true) if the strings are equal.
+ *   All characters are converted to lower case before the comparison applies.
+ *
+ ******************************************************************************/
+
+int
+OptCmp (char *first, char *second)
+{
+    int i = 0;
+
+    while ((first[i] != '\0') && (second[i] != '\0')
+           && (tolower (first[i]) == tolower (second[i])))
+        i++;
+
+    if (first[i] == second[i])
+        return (1);
+    else
+        return (0);
 }
 
 #ifdef SHOW_MALLOC

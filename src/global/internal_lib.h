@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.13  1998/03/02 13:57:21  cg
+ * added function OptCmp() to compare two strings regardless of lower
+ * or upper case letters (used for scanning optimization command line options.
+ *
  * Revision 1.12  1998/02/24 16:10:43  srs
  * new function TmpVarName()
  *
@@ -54,6 +58,7 @@ extern int SystemCall2 (char *format, ...);
 extern int SystemTest (char *format, ...);
 extern char *TmpVar ();
 extern char *TmpVarName (char *postfix);
+extern int OptCmp (char *first, char *second);
 
 #ifdef SHOW_MALLOC
 extern void compute_malloc_align_step (void);
