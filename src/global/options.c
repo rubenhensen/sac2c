@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.20  1999/08/05 13:33:59  jhs
+ * Added OPT_MTI.
+ *
  * Revision 2.19  1999/07/21 16:28:19  jhs
  * needed_sync_fold introduced, max_sync_fold adjusted, command-line and usage
  * updated.
@@ -273,6 +276,9 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("mto", optimize |= OPT_MTO);
         ARG_CHOICE ("MTO", optimize |= OPT_MTO);
 
+        ARG_CHOICE ("mti", optimize |= OPT_MTI);
+        ARG_CHOICE ("MTI", optimize |= OPT_MTI);
+
         ARG_CHOICE ("sbe", optimize |= OPT_SBE);
         ARG_CHOICE ("SBE", optimize |= OPT_SBE);
 
@@ -429,6 +435,9 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("mto", optimize &= ~OPT_MTO);
         ARG_CHOICE ("MTO", optimize &= ~OPT_MTO);
+
+        ARG_CHOICE ("mti", optimize &= ~OPT_MTI);
+        ARG_CHOICE ("MTI", optimize &= ~OPT_MTI);
 
         ARG_CHOICE ("sbe", optimize &= ~OPT_SBE);
         ARG_CHOICE ("SBE", optimize &= ~OPT_SBE);
