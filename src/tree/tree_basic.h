@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2001/02/22 12:44:54  nmw
+ * VARDEC_UNDOAVIS added
+ *
  * Revision 3.31  2001/02/20 15:51:27  nmw
  * minor changes in INFO_SSA nodes
  *
@@ -1095,7 +1098,8 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***    statustype  ATTRIB                     (typecheck -> uniquecheck -> )
  ***    int         FLAG                       (ael -> dcr2 !!)
  ***    bool        PADDED                     (ap -> )
- ***    node*       ICM      (O)  (N_icm)      (compile -> )
+ ***    node*       ICM       (O) (N_icm)      (compile -> )
+ ***    node*       UNDOAVISA (O) (N_avis)     (undossa!!)
  ***/
 
 /*
@@ -1130,6 +1134,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
 #define VARDEC_OBJDEF(n) (n->node[4])
 #define VARDEC_ICM(n) (n->node[5])
 #define VARDEC_AVIS(n) ((node *)(n->dfmask[0]))
+#define VARDEC_UNDOAVIS(n) ((node *)(n->dfmask[1]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2277,15 +2282,18 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      SPECS             (chain of specialized fundefs)
  ***    node*      FUNDEF            (actual working fundef)
  ***
- ***  when used in SSATransformc.
+ ***  when used in SSATransform.c
  ***    node*      FUNDEF            (actual working fundef)
  ***    node*      BLOCK             (top-level block of function)
  ***    bool       RETINSTR          (working on return instruction)
- ***    node*      WITHVEC(n)        (avis of withid vec for multi-part with-loops)
- ***    node*      WITHIDS(n)        (avis of withid ids for multi-part with-loops)
- ***    node*      CONDSTMT(n)       (store cond-node for later access)
- ***    int        CONDSTATUS(n)     (store position in conditional traversal)
+ ***    node*      WITHVEC           (avis of withid vec for multi-part with-loops)
+ ***    node*      WITHIDS           (avis of withid ids for multi-part with-loops)
+ ***    node*      CONDSTMT          (store cond-node for later access)
+ ***    int        CONDSTATUS        (store position in conditional traversal)
  ***
+ ***  when used in UndoSSATransform.c
+ ***    node*      ARGS              (arg chain of fundef)
+ ***    node*      VARDECS           (vardec chain in block)
  ***
  *** remarks:
  ***    N_info is used in many other phases without access macros :((
@@ -2684,6 +2692,10 @@ extern node *MakeInfo ();
 #define INFO_SSA_WITHIDS(n) ((node *)(n->node[3]))
 #define INFO_SSA_CONDSTMT(n) (n->node[4])
 #define INFO_SSA_CONDSTATUS(n) (n->int_data)
+
+/* when used in UndoSSATransform.c */
+#define INFO_USSA_ARGS(n) (n->node[0])
+#define INFO_USSA_VARDECS(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
