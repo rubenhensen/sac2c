@@ -1,5 +1,9 @@
 #
+#
 # $Log$
+# Revision 2.52  2000/11/15 13:48:05  dkr
+# -g flag for production version added
+#
 # Revision 2.51  2000/08/17 10:10:23  dkr
 # NameTupels.o added
 #
@@ -51,7 +55,7 @@
 # Revision 1.81  1998/05/13 07:12:25  cg
 # added linking of file icm2c_mt.o
 #
-
+#
 
 
 
@@ -76,13 +80,13 @@ CCPROD       := gcc
 # gcc specific flags:
 #
 gcc_FLAGS      := -ansi -Wall -g
-gcc_PROD_FLAGS := -ansi -Wall -O3
+gcc_PROD_FLAGS := -ansi -Wall -g -O3
 
 #
 # cc specific flags:
 #
 cc_FLAGS      := -erroff=E_CAST_DOESNT_YIELD_LVALUE -g
-cc_PROD_FLAGS := -erroff=E_CAST_DOESNT_YIELD_LVALUE -xO4
+cc_PROD_FLAGS := -erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4
 
 ################################################################################
 #
@@ -132,9 +136,7 @@ CCFLAGS      := $($(CC)_FLAGS) $($(OS)_FLAGS)
 CCPROD_FLAGS := $($(CCPROD)_PROD_FLAGS) $($(OS)_FLAGS) 
 
 CFLAGS       := -DSHOW_MALLOC -DSAC_FOR_$(OS)
-#CFLAGS       := -DSHOW_MALLOC -DTAGGED_ARRAYS -DSAC_FOR_$(OS)
 CPROD_FLAGS  := -DDBUG_OFF -DPRODUCTION -DSAC_FOR_$(OS)
-#CPROD_FLAGS  := -DTAGGED_ARRAYS -DDBUG_OFF -DPRODUCTION -DSAC_FOR_$(OS)
 
 MAKE_NORM    := $(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)" OS="$(OS)"
 MAKE_PROD    := $(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)" OS="$(OS)"
