@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.95  2000/10/16 11:29:59  dkr
+ * INFO_PREC_LASTASSIGN added
+ *
  * Revision 1.94  2000/09/20 18:19:29  dkr
  * ID_MAKEUNIQUE renamed into ID_CLSCONV
  *
@@ -2528,6 +2531,7 @@ extern node *MakeInfo ();
 #define INFO_PREC_MODUL(n) (n->node[0])
 #define INFO_PREC_CNT_ARTIFICIAL(n) (n->lineno)
 #define INFO_PREC_OBJINITFUNDEF(n) (n->node[1])
+#define INFO_PREC_LASTASSIGN(n) (n->node[2])
 
 /* ArrayElemination */
 #define INFO_AE_TYPES(n) (n->node[1])
