@@ -1,7 +1,7 @@
 /*
  *
  * $Log$
- * Revision 3.185  2004/11/27 02:22:07  mwe
+ * Revision 3.186  2004/11/27 02:25:56  mwe
  * renaiming
  *
  * Revision 3.184  2004/11/27 02:17:09  mwe
@@ -1242,7 +1242,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 
         DBUG_EXECUTE ("PRINT_ARGTAB", fprintf (global.outfile, "/* \n"); INDENT;
                       fprintf (global.outfile, " *  ");
-                      PRTargtab (FUNDEF_ARGTAB (arg_node), TRUE);
+                      PRTprintArgtab (FUNDEF_ARGTAB (arg_node), TRUE);
                       fprintf (global.outfile, "  */\n"); INDENT; print_sac = TRUE;
                       print_argtab = TRUE;);
     }
@@ -2010,7 +2010,7 @@ PRTlet (node *arg_node, info *arg_info)
 
         DBUG_EXECUTE ("PRINT_ARGTAB", fprintf (global.outfile, "/* \n"); INDENT;
                       fprintf (global.outfile, " *  ");
-                      PRTargtab (AP_ARGTAB (expr), FALSE);
+                      PRTprintArgtab (AP_ARGTAB (expr), FALSE);
                       fprintf (global.outfile, "  */\n"); INDENT; print_sac = TRUE;
                       print_argtab = TRUE;);
     }
