@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.94  2004/10/21 16:20:39  ktr
+ * Added emsr_tab
+ *
  * Revision 3.93  2004/10/20 08:10:29  khf
  * added rdepend_tab
  *
@@ -418,6 +421,7 @@
 #include "export.h"
 #include "filterrc.h"
 #include "aliasanalysis.h"
+#include "staticreuse.h"
 
 #include "traverse.h"
 
@@ -1930,7 +1934,7 @@ static funtab exp_tab_rec = {{
 #define NIFexp(it_exp) it_exp
 #include "node_info.mac"
 #else
-#define NIFunused_15(it_unused_15) it_unused_15
+#define NIFunused_16(it_unused_16) it_unused_16
 #include "node_info.mac"
 #endif /* NEW_AST */
                              },
@@ -1950,15 +1954,15 @@ static funtab rdepend_tab_rec = {{
 funtab *rdepend_tab = &rdepend_tab_rec;
 
 /*
- *  (135) unused_tab15
+ *  (135) emsr_tab
  */
-static funtab unused_tab15_rec = {{
-#define NIFunused_15(it_unused_15) it_unused_15
+static funtab emsr_tab_rec = {{
+#define NIFemsr(it_emsr) it_emsr
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab15 = &unused_tab15_rec;
+                              },
+                              NULL,
+                              NULL};
+funtab *emsr_tab = &emsr_tab_rec;
 
 /*
  *  (136) unused_tab16

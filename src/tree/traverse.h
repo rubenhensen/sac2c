@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2004/10/21 16:20:39  ktr
+ * Added emsr_tab
+ *
  * Revision 3.71  2004/10/20 08:10:29  khf
  * added rdepend_tab
  *
@@ -461,7 +464,7 @@ extern funtab *emfrc_tab;
 extern funtab *emaa_tab;
 extern funtab *exp_tab;
 extern funtab *rdepend_tab;
-extern funtab *unused_tab15;
+extern funtab *emsr_tab;
 extern funtab *unused_tab16;
 extern funtab *unused_tab17;
 extern funtab *unused_tab18;
