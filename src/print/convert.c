@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  2000/10/30 19:24:44  dkr
+ * Type2String: in case of ST_inout a '&' is printed now
+ *
  * Revision 2.10  2000/10/27 13:24:04  cg
  * Added new functions Basetype2String() and Shpseg2String().
  *
@@ -328,11 +331,11 @@ Type2String (types *type, int flag)
         }
 
         if ((type->attrib == ST_reference) || (type->attrib == ST_readonly_reference)
-            || (1 == flag)) {
+            || (type->attrib == ST_inout) || (1 == flag)) {
             strcat (tmp_string, " ");
         }
 
-        if (type->attrib == ST_reference) {
+        if ((type->attrib == ST_reference) || (type->attrib == ST_inout)) {
             strcat (tmp_string, "&");
         } else {
             if (type->attrib == ST_readonly_reference) {
