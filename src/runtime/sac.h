@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/03/24 13:52:05  cg
+ * #include "sac_bool"  added
+ *
  * Revision 1.1  1998/03/19 16:36:57  cg
  * Initial revision
  *
@@ -24,12 +27,13 @@
 
 #define SAC_H
 
-#include "sac_message.h"
 #include "sac_boundcheck.h"
 #include "sac_trace.h"
 #include "sac_profile.h"
 #include "sac_malloc.h"
 #include "sac_misc.h"
+#include "sac_message.h"
+#include "sac_bool.h"
 
 #include "sac_icm_rc.h"
 #include "sac_icm_idx.h"
