@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.168  2004/11/26 12:29:25  skt
+ * TCmakeStrCopy re-added
+ *
  * Revision 3.167  2004/11/26 12:05:50  sbs
  * *** empty log message ***
  *
@@ -2383,6 +2386,8 @@ extern node *MakeWlSegX (int dims, node *contents, node *next);
 /***
  ***  N_str :
  ***/
+
+extern node *TCmakeStrCopy (const char *str);
 
 /*--------------------------------------------------------------------------*/
 
