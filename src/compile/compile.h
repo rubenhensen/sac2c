@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1997/11/25 10:33:19  dkr
+ * prototype CompNWith added
+ *
  * Revision 1.15  1997/11/02 13:58:03  dkr
  * with defined NEWTREE, node->nnode is not used anymorewith defined NEWTREE, node->nnode
  * is not used anymore
@@ -64,6 +67,7 @@ extern node *CompId (node *arg_node, node *arg_info);
 extern node *CompAp (node *arg_node, node *arg_info);
 extern node *CompReturn (node *arg_node, node *arg_info);
 extern node *CompWith (node *arg_node, node *arg_info);
+extern node *CompNWith (node *arg_node, node *arg_info);
 extern node *CompArg (node *arg_node, node *arg_info);
 extern node *CompFundef (node *arg_node, node *arg_info);
 extern node *CompLoop (node *arg_node, node *arg_info);
