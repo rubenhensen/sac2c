@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1994/12/19 16:51:48  hw
+ * Revision 1.4  1994/12/20 15:58:18  sbs
+ * "void *" as primitive type inserted
+ *
+ * Revision 1.3  1994/12/19  16:51:48  hw
  * changed TYPE_LENGTH & INT_STRING_LENGTH
  *
  * Revision 1.2  1994/12/14  16:35:39  sbs
@@ -24,7 +27,7 @@
 #define TYPE_LENGTH 256      /* dimension of array of char */
 #define INT_STRING_LENGTH 16 /* dimension of array of char */
 
-char *type_string[] = {"int", "float", "bool"}; /* strings for primitve types */
+char *type_string[] = {"int", "float", "bool", "void *"}; /* strings for primitve types */
 
 /*
  *
