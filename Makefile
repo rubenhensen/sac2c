@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.39  2001/11/14 13:06:31  sbs
+# deps line inserted.
+# (when called via script a warning is issued)
+#
 # Revision 3.38  2001/11/14 12:59:48  sbs
 # deps line replaced by inclusion of Makefile.Deps
 # ( .xxx.d mechanism)
@@ -291,6 +295,9 @@ sac2c.efence: $(OBJ) $(LIB)
 sac2c.prod:  $(OBJ) $(LIB)
 	$(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS)
 
+deps:
+	$(ECHO) "make deps is obsolete"
+
 clean:
 	(cd lib/src; $(MAKE) clean)
 	(cd src/scanparse; $(MAKE) clean)
@@ -357,6 +364,5 @@ linux: src.tar.gz
             'gunzip -f src.tar.gz;'        \
             'tar xvf src.tar;'             \
             'chmod 644 $(SOURCE_FILES);'   \
-            'make deps OS=LINUX_X86;'      \
             'make OS=LINUX_X86'
 
