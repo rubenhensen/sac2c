@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.44  2000/07/14 11:43:07  dkr
+ * FUNDEF_INLINE==1 replaced by FUNDEF_INLINE
+ *
  * Revision 2.43  2000/07/12 15:10:32  dkr
  * function DuplicateTypes renamed into DupTypes
  *
@@ -5930,7 +5933,7 @@ TI_ap (node *arg_node, node *arg_info)
 
                 funtypemask = 0;
 
-                if (FUNDEF_INLINE (fun_p->node) == 1)
+                if (FUNDEF_INLINE (fun_p->node))
                     funtypemask = funtypemask | INL_FUN;
                 if ((FUNDEF_STATUS (fun_p->node) == ST_imported_mod)
                     || (FUNDEF_STATUS (fun_p->node) == ST_imported_class))
