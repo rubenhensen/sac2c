@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/04/30 12:23:16  nmw
+ * integrate traversal of special fundefs in unroll traversal
+ *
  * Revision 3.5  2001/03/22 21:10:51  dkr
  * no changes done
  *
@@ -591,6 +594,44 @@ UNRlet (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
+ * function:
+ *   node *UNRap(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   traverse args
+ *   traverse in applicated fundef if special one.
+ *
+ ******************************************************************************/
+
+node *
+UNRap (node *arg_node, node *arg_info)
+{
+    node *new_arg_info;
+
+    DBUG_ENTER ("UNRap");
+
+    if (AP_ARGS (arg_node) != NULL) {
+        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+    }
+
+    /* non-recursive call of special fundef */
+    if ((AP_FUNDEF (arg_node) != NULL) && (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
+        && (INFO_UNR_FUNDEF (arg_info) != AP_FUNDEF (arg_node))) {
+
+        /* stack arg_info frame for new fundef */
+        new_arg_info = MakeInfo ();
+
+        /* start traversal of special fundef */
+        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+
+        FREE (new_arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
  * Function:
  *   node *UNRdo(node *arg_node, node *arg_info)
  *
@@ -875,7 +916,6 @@ UNRassign (node *arg_node, node *arg_info)
  *   Top-level function for loop-unrolling. Starts the traversal.
  *
  ******************************************************************************/
-
 node *
 Unroll (node *arg_node, node *arg_info)
 {
@@ -890,19 +930,26 @@ Unroll (node *arg_node, node *arg_info)
     DBUG_PRINT ("OPT", ("LOOP/WL UNROLLING"));
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
 
-    tmp_tab = act_tab;
-    act_tab = unroll_tab;
-    arg_info = MakeInfo ();
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
+                 "Unroll() called for non fundef node");
 
-    arg_node = Trav (arg_node, arg_info);
+    if (!(FUNDEF_IS_LACFUN (arg_node))) {
+        tmp_tab = act_tab;
+        act_tab = unroll_tab;
+        arg_info = MakeInfo ();
 
-    arg_info = FreeTree (arg_info);
-    act_tab = tmp_tab;
+        arg_node = Trav (arg_node, arg_info);
 
-    DBUG_PRINT ("OPT", ("                   LOOP result: %d", lunr_expr - mem_lunr_expr));
-    DBUG_PRINT ("OPT",
-                ("                     WL result: %d", wlunr_expr - mem_wlunr_expr));
-    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
+        arg_info = FreeTree (arg_info);
+        act_tab = tmp_tab;
+
+        DBUG_PRINT ("OPT",
+                    ("                   LOOP result: %d", lunr_expr - mem_lunr_expr));
+        DBUG_PRINT ("OPT",
+                    ("                     WL result: %d", wlunr_expr - mem_wlunr_expr));
+        DBUG_PRINT ("OPTMEM",
+                    ("mem currently allocated: %d bytes", current_allocated_mem));
+    }
 
     DBUG_RETURN (arg_node);
 }
