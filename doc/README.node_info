@@ -1,9 +1,12 @@
 /*
  * $Log$
- * Revision 1.11  1995/01/16 11:11:21  hw
- * added information about N_ap
- * changed information about struct types
+ * Revision 1.12  1995/02/14 12:47:18  sbs
+ * N_foldfun, N_foldprf inserted
  *
+# Revision 1.11  1995/01/16  11:11:21  hw
+# added information about N_ap
+# changed information about struct types
+#
 # Revision 1.10  1994/12/31  15:14:17  sbs
 # N_explist updated
 #
@@ -221,6 +224,16 @@ N_genarray, N_modarray:
 =======================
 node[0]     : array that will be manupulated
 node[1]     : body
+
+N_foldprf:
+==========
+info.prf    : fold-function( F_add, F_sub, F_mul, F_div, F_and, F_or, F_eq, F_neq)
+node[0]     : body
+
+N_foldfun:
+==========
+info.id     : user defined fold-function
+node[0]     : body
 
 N_exprs:
 ========
