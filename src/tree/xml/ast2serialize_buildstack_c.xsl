@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/10/26 09:37:01  sah
+  Node attributes are handeled properly now.
+
   Revision 1.2  2004/10/19 14:05:55  sah
   Node attributes are handeled correctly now
 
@@ -139,7 +142,7 @@ version="1.0">
   <!-- handle sons -->
   <xsl:apply-templates select="sons" />
   <!-- handle attributes -->
-  <xsl:apply-templates select="attributes/attribute[key(&quot;types&quot;, @name) = &quot;Node&quot;]" />
+  <xsl:apply-templates select="attributes/attribute" />
   <!-- DBUG_RETURN call -->
   <xsl:value-of select="'DBUG_RETURN( arg_node);'"/>
   <!-- end of body -->
@@ -175,7 +178,7 @@ version="1.0">
      dispatches the handling of sons depending on node type
 -->
 <xsl:template match="sons[../@name=&quot;Fundef&quot;]">
-  <xsl:apply-templates select="son[not( @name = &quot;Mext&quot;)]" />
+  <xsl:apply-templates select="son[not( @name = &quot;Next&quot;)][not( @name = &quot;Body&quot;)]" />
 </xsl:template>
 
 <xsl:template match="sons">
@@ -233,7 +236,7 @@ version="1.0">
 
      Traverses the sub tree behind the node attribute
 -->
-<xsl:template match="attribute[key(&quot;types&quot;, @name) = &quot;Node&quot;]" >
+<xsl:template match="attributes/attribute[type/@name = &quot;Node&quot;]" >
   <xsl:value-of select="'if ('" />
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
@@ -279,5 +282,4 @@ version="1.0">
      stops further traversal of attrubutes
 -->
 <xsl:template match="attribute" />
-
 </xsl:stylesheet>
