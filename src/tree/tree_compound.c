@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2002/02/08 10:02:31  dkr
+ * function IsArray() modified: returns TRUE for type[*] objects as well.
+ * function IsBoxed() modified: equals (IsArray || IsHidden) now.
+ *
  * Revision 3.50  2001/12/17 21:30:46  dkr
  * MakeAssignInstr() modified
  *
@@ -868,11 +872,11 @@ Type2Exprs (types *type)
 /******************************************************************************
  *
  * function:
- *   bool IsBoxed( types *type)
  *   bool IsArray( types *type)
- *   bool IsUnique( types *type)
  *   bool IsHidden( types *type)
+ *   bool IsUnique( types *type)
  *   bool IsNonUniqueHidden( types *type)
+ *   bool IsBoxed( types *type)
  *
  * description:
  *   These functions may be used to check for particular properties
@@ -880,32 +884,9 @@ Type2Exprs (types *type)
  *
  ******************************************************************************/
 
-bool
-IsBoxed (types *type)
-{
-    node *tdef;
-    bool ret = FALSE;
-
-    DBUG_ENTER ("IsBoxed");
-
-    if (IsHidden (type)) {
-        ret = TRUE;
-    } else if (TYPES_DIM (type) != SCALAR) {
-        ret = TRUE;
-    } else {
-        if (TYPES_BASETYPE (type) == T_user) {
-            tdef = TYPES_TDEF (type);
-            DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
-
-            if (TYPEDEF_DIM (tdef) != SCALAR) {
-                ret = TRUE;
-            }
-        }
-    }
-
-    DBUG_RETURN (ret);
-}
-
+/*
+ * IsArray := Is not a (static) scalar
+ */
 bool
 IsArray (types *type)
 {
@@ -914,36 +895,13 @@ IsArray (types *type)
 
     DBUG_ENTER ("IsArray");
 
-    if ((SCALAR != TYPES_DIM (type)) && (ARRAY_OR_SCALAR != TYPES_DIM (type))) {
+    if (TYPES_DIM (type) != SCALAR) {
         ret = TRUE;
-    } else {
-        if (T_user == TYPES_BASETYPE (type)) {
-            tdef = TYPES_TDEF (type);
-            DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
-
-            if ((SCALAR != TYPEDEF_DIM (tdef))
-                && (ARRAY_OR_SCALAR != TYPEDEF_DIM (tdef))) {
-                ret = TRUE;
-            }
-        }
-    }
-
-    DBUG_RETURN (ret);
-}
-
-bool
-IsUnique (types *type)
-{
-    node *tdef;
-    bool ret = FALSE;
-
-    DBUG_ENTER ("IsUnique");
-
-    if (TYPES_BASETYPE (type) == T_user) {
+    } else if (TYPES_BASETYPE (type) == T_user) {
         tdef = TYPES_TDEF (type);
         DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
 
-        if (TYPEDEF_ATTRIB (tdef) == ST_unique) {
+        if (TYPEDEF_DIM (tdef) != SCALAR) {
             ret = TRUE;
         }
     }
@@ -974,40 +932,45 @@ IsHidden (types *type)
 }
 
 bool
+IsUnique (types *type)
+{
+    node *tdef;
+    bool ret = FALSE;
+
+    DBUG_ENTER ("IsUnique");
+
+    if (TYPES_BASETYPE (type) == T_user) {
+        tdef = TYPES_TDEF (type);
+        DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
+
+        if (TYPEDEF_ATTRIB (tdef) == ST_unique) {
+            ret = TRUE;
+        }
+    }
+
+    DBUG_RETURN (ret);
+}
+
+bool
 IsNonUniqueHidden (types *type)
 {
-    bool ret = FALSE;
+    bool ret;
 
     DBUG_ENTER ("IsNonUniqueHidden");
 
-#if 0
-  if (TYPES_BASETYPE( type) == T_user) {
-    node *tdef;
-
-    tdef = TYPES_TDEF( type);
-    DBUG_ASSERT( (tdef != NULL), "Failed attempt to look up typedef");
-
-    if ((TYPEDEF_BASETYPE(tdef) == T_hidden) ||
-        (TYPEDEF_BASETYPE(tdef) == T_user)) {
-      if (TYPEDEF_TNAME(tdef) == NULL) {
-        if (TYPEDEF_ATTRIB(tdef) == ST_regular) {
-          ret = TRUE;
-        }
-      }
-      else {
-        tdef = TYPES_TDEF( TYPEDEF_TYPE( tdef));
-        DBUG_ASSERT( (tdef != NULL), "Failed attempt to look up typedef");
-
-        if (TYPEDEF_ATTRIB( tdef) == ST_regular) {
-          ret = TRUE;
-        }
-      }
-    }
-  }
-#else
-    /* dkr */
     ret = (IsHidden (type) && (!IsUnique (type)));
-#endif
+
+    DBUG_RETURN (ret);
+}
+
+bool
+IsBoxed (types *type)
+{
+    bool ret;
+
+    DBUG_ENTER ("IsBoxed");
+
+    ret = (IsHidden (type) || IsArray (type));
 
     DBUG_RETURN (ret);
 }
