@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.5  1999/05/11 09:57:41  sbs
+# maximum line for input set to -DYYLMAX=8192 .
+#
 # Revision 2.4  1999/05/10 13:28:23  sbs
 # adjusted for bison usage...
 #
@@ -109,7 +112,7 @@ y.tab.o: y.tab.c
 	$(CC) $(CCL_FLAGS) $(CFLAGS) -o y.tab.o -DYYDEBUG -c y.tab.c $(INCS)
 
 lex.yy.o: lex.yy.c y.tab.h
-	$(CC) $(CCL_FLAGS) $(CFLAGS) -o lex.yy.o -c lex.yy.c $(INCS)
+	$(CC) $(CCL_FLAGS) $(CFLAGS) -DYYLMAX=8192 -o lex.yy.o -c lex.yy.c $(INCS)
 
 lex.yy.c: sac.l
 	$(LEX) sac.l
