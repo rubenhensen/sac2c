@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/03/17 21:02:25  dkr
+ * added type declarations and functios for a DFM stack
+ *
  * Revision 1.3  2000/03/09 18:35:50  jhs
  * new copy routine
  *
@@ -13,10 +16,211 @@
  */
 
 #include "tree.h"
+#include "free.h"
 #include "dbug.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "typecheck.h"
+
+/************************************************
+ *
+ *  DFM Stack
+ */
+
+/*
+ * type definition for DFM stack
+ */
+
+typedef struct STACK_T {
+    DFMmask_t mask;
+    struct STACK_T *next;
+} stack_t;
+
+typedef int (*fun_t) (DFMmask_t mask, char *id, node *decl);
+
+/******************************************************************************
+ *
+ * Function:
+ *   dfmstack_t GenerateDFMstack( void)
+ *
+ * Description:
+ *   Generates a new DFMstack.
+ *
+ ******************************************************************************/
+
+stack_t *
+GenerateDFMstack (void)
+{
+    DBUG_ENTER ("GenerateDFMstack");
+
+    DBUG_RETURN ((stack_t *)NULL);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   extern int IsEmptyDFMstack( DFMstack_t stack)
+ *
+ * Description:
+ *   Checks, whether the given DFMstack is empty or not.
+ *
+ ******************************************************************************/
+
+extern int
+IsEmptyDFMstack (stack_t *stack)
+{
+    int res;
+
+    DBUG_ENTER ("IsEmptyDFMstack");
+
+    if (stack == NULL) {
+        res = TRUE;
+    } else {
+        res = FALSE;
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void PushDFMstack( stack_t **dfmstack, DFMmask_t mask)
+ *
+ * Description:
+ *   Pushs a DFMmask onto the given DFMstack.
+ *
+ ******************************************************************************/
+
+void
+PushDFMstack (stack_t **stack, DFMmask_t mask)
+{
+    stack_t *new_stack;
+
+    DBUG_ENTER ("PushDFMstack");
+
+    new_stack = (stack_t *)Malloc (sizeof (stack_t));
+    new_stack->mask = mask;
+    new_stack->next = *stack;
+    *stack = new_stack;
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   DFMmask_t PopDFMstack( stack_t **stack)
+ *
+ * Description:
+ *   Pops a DFMmask from the given DFMstack.
+ *
+ ******************************************************************************/
+
+DFMmask_t
+PopDFMstack (stack_t **stack)
+{
+    stack_t *old_stack;
+    DFMmask_t mask;
+
+    DBUG_ENTER ("PopDFMstack");
+
+    DBUG_ASSERT ((!IsEmptyDFMstack (*stack)), "POP failed: stack is empty!");
+
+    mask = (*stack)->mask;
+    old_stack = *stack;
+    (*stack) = (*stack)->next;
+    FREE (old_stack);
+
+    DBUG_RETURN (mask);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void ForeachDFMstack( stack_t *stack, fun_t fun, char *id, node *decl)
+ *
+ * Description:
+ *   Calls the function 'fun' for each DFMmask found in the given DFMstack.
+ *
+ ******************************************************************************/
+
+void
+ForeachDFMstack (stack_t *stack, fun_t fun, char *id, node *decl)
+{
+    stack_t *tmp;
+
+    DBUG_ENTER ("ForeachDFMstack");
+
+    tmp = stack;
+    while (tmp != NULL) {
+        fun (tmp->mask, id, decl);
+        tmp = tmp->next;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void WhileDFMstack( stack_t stack, fun_t fun, char *id, node *decl)
+ *
+ * Description:
+ *   Calls the function 'fun' for each DFMmask found in the given DFMstack
+ *   until the return value of the function is >0.
+ *
+ ******************************************************************************/
+
+void
+WhileDFMstack (stack_t *stack, fun_t fun, char *id, node *decl)
+{
+    stack_t *tmp;
+    int error = 0;
+
+    DBUG_ENTER ("WhileDFMstack");
+
+    tmp = stack;
+    while ((tmp != NULL) && (!error)) {
+        error |= fun (tmp->mask, id, decl);
+        tmp = tmp->next;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void RemoveDFMstack( stack_t **stack)
+ *
+ * Description:
+ *   Removes the given DFMstack.
+ *
+ ******************************************************************************/
+
+void
+RemoveDFMstack (stack_t **stack)
+{
+    DBUG_ENTER ("RemoveDFMstack");
+
+    while ((*stack) != NULL) {
+        DFMRemoveMask (PopDFMstack (stack));
+    }
+    (*stack) = NULL;
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *  DFM Stack
+ *
+ ************************************************/
+
+/************************************************
+ *
+ *  build of AST components based on a DFM
+ */
 
 /******************************************************************************
  *
@@ -62,7 +266,7 @@ DFM2Types (DFMmask_t mask)
 /******************************************************************************
  *
  * function:
- *   node *DFM2Vardecs( DFMmask_t mask, lut_t *lut)
+ *   node *DFM2Vardecs( DFMmask_t mask, LUT_t lut)
  *
  * description:
  *   Creates a vardec-node chain based on the given DFmask.
@@ -71,7 +275,7 @@ DFM2Types (DFMmask_t mask)
  ******************************************************************************/
 
 node *
-DFM2Vardecs (DFMmask_t mask, lut_t *lut)
+DFM2Vardecs (DFMmask_t mask, LUT_t lut)
 {
     node *decl, *tmp;
     node *vardecs = NULL;
@@ -101,7 +305,7 @@ DFM2Vardecs (DFMmask_t mask, lut_t *lut)
 /******************************************************************************
  *
  * function:
- *   node *DFM2Args( DFMmask_t mask, lut_t *lut)
+ *   node *DFM2Args( DFMmask_t mask, LUT_t lut)
  *
  * description:
  *   Creates a argument list (arg-node chain) based on the given DFmask.
@@ -110,7 +314,7 @@ DFM2Vardecs (DFMmask_t mask, lut_t *lut)
  ******************************************************************************/
 
 node *
-DFM2Args (DFMmask_t mask, lut_t *lut)
+DFM2Args (DFMmask_t mask, LUT_t lut)
 {
     node *decl, *tmp;
     node *args = NULL;
@@ -140,7 +344,7 @@ DFM2Args (DFMmask_t mask, lut_t *lut)
 /******************************************************************************
  *
  * function:
- *   node *DFM2Exprs( DFMmask_t mask, lut_t *lut)
+ *   node *DFM2Exprs( DFMmask_t mask, LUT_t lut)
  *
  * description:
  *   Creates a exprs-node chain based on the given DFmask.
@@ -150,7 +354,7 @@ DFM2Args (DFMmask_t mask, lut_t *lut)
  ******************************************************************************/
 
 node *
-DFM2Exprs (DFMmask_t mask, lut_t *lut)
+DFM2Exprs (DFMmask_t mask, LUT_t lut)
 {
     node *decl, *id;
     node *exprs = NULL;
@@ -171,7 +375,7 @@ DFM2Exprs (DFMmask_t mask, lut_t *lut)
 /******************************************************************************
  *
  * function:
- *   ids *DFM2Ids( DFMmask_t mask, lut_t *lut)
+ *   ids *DFM2Ids( DFMmask_t mask, LUT_t lut)
  *
  * description:
  *   Creates an ids chain based on the given DFmask.
@@ -181,7 +385,7 @@ DFM2Exprs (DFMmask_t mask, lut_t *lut)
  ******************************************************************************/
 
 ids *
-DFM2Ids (DFMmask_t mask, lut_t *lut)
+DFM2Ids (DFMmask_t mask, LUT_t lut)
 {
     node *decl;
     ids *tmp;
@@ -200,6 +404,11 @@ DFM2Ids (DFMmask_t mask, lut_t *lut)
 
     DBUG_RETURN (ids);
 }
+
+/*
+ *  build of AST components based on a DFM
+ *
+ ************************************************/
 
 /******************************************************************************
  *
@@ -220,6 +429,7 @@ DFM2Ids (DFMmask_t mask, lut_t *lut)
  *   order of values, so we can't copy directly.
  *
  ******************************************************************************/
+
 DFMmask_t
 DFMDuplicateMask (DFMmask_t mask, DFMmask_base_t base)
 {
