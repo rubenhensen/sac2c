@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/09/10 14:20:23  jhs
+ * Removed those ugly macros: MAKENODE_NUM, MAKENODE_ID, MAKENODE_BOOL,
+ * MAKENODE_FLOAT, MAKENODE_DOUBLE, MAKENODE_ID_REUSE_IDS.
+ *
  * Revision 2.1  1999/02/23 12:39:51  sacbase
  * new release made
  *
@@ -237,29 +241,6 @@
  */
 
 #define GEN_NODE(type) (type *)Malloc (sizeof (type))
-
-#define MAKENODE_NUM(no, nr)                                                             \
-    no = MakeNode (N_num);                                                               \
-    no->info.cint = nr
-
-#define MAKENODE_ID(no, str) no = MakeId (StringCopy (str), NULL, ST_regular)
-
-#define MAKENODE_BOOL(no, nr)                                                            \
-    no = MakeNode (N_bool);                                                              \
-    no->info.cint = nr
-
-#define MAKENODE_FLOAT(no, nr)                                                           \
-    no = MakeNode (N_float);                                                             \
-    no->info.cfloat = nr
-
-#define MAKENODE_DOUBLE(no, nr)                                                          \
-    no = MakeNode (N_double);                                                            \
-    no->info.cdbl = nr
-
-#define MAKENODE_ID_REUSE_IDS(no, Ids)                                                   \
-    no = MakeNode (N_id);                                                                \
-    no->info.ids = Ids;                                                                  \
-    no->refcnt = Ids->refcnt
 
 extern types *MakeTypes (simpletype simple);
 extern node *MakeNode (nodetype nodetype);
