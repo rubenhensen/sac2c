@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/11/26 23:41:58  jhb
+ * cchanged type from void to node of EXPdoExport
+ *
  * Revision 1.9  2004/11/26 23:29:39  jhb
  * DoExport changed to EXPdoExport
  *
@@ -378,7 +381,7 @@ StartExpTraversal (node *modul)
     DBUG_RETURN (modul);
 }
 
-void
+node *
 EXPdoExport (node *syntax_tree)
 {
     DBUG_ENTER ("EXPdoExport");
@@ -391,5 +394,5 @@ EXPdoExport (node *syntax_tree)
         SERdoSerialize (syntax_tree);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (syntax_tree);
 }
