@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2004/12/06 17:29:04  sbs
+ * removal of generic wrappers changed. Now there should be no zombie funs no more!
+ * TUreplaceRettypes is now non-destructive!
+ *
  * Revision 1.28  2004/11/27 02:11:57  jhb
  * fixed bug with header and c-file functions-declaration
  *
@@ -277,8 +281,7 @@ SplitWrapper (node *fundef)
 
         FUNDEF_WRAPPERTYPE (new_fundef) = new_type;
         FUNDEF_RETS (new_fundef)
-          = TUreplaceRetTypes (FUNDEF_RETS (new_fundef),
-                               TYcopyType (TYgetWrapperRetType (new_type)));
+          = TUreplaceRetTypes (FUNDEF_RETS (new_fundef), TYgetWrapperRetType (new_type));
         FUNDEF_ARGS (new_fundef)
           = TYcorrectWrapperArgTypes (FUNDEF_ARGS (new_fundef), new_type);
         FUNDEF_NEXT (new_fundef) = new_fundefs;
@@ -633,9 +636,8 @@ FundefBuildWrappers (node *arg_node, info *arg_info)
          * free original wrapper function (-> zombie function)
          */
         new_fundefs = TCappendFundef (new_fundefs, FUNDEF_NEXT (arg_node));
-        arg_node = FREEdoFreeNode (arg_node);
-        DBUG_ASSERT (((arg_node != NULL) && (FUNDEF_ISZOMBIE (arg_node))),
-                     "zombie fundef not found!");
+        DBUG_ASSERT ((FUNDEF_BODY (arg_node) == NULL),
+                     "body of generic wrapper function has not been kept empty");
         FUNDEF_NEXT (arg_node) = new_fundefs;
     }
     DBUG_RETURN (arg_node);
@@ -670,10 +672,15 @@ FundefRemoveGarbage (node *arg_node, info *arg_info)
         /*
          * remove zombie of generic wrapper function
          */
+        /* sbs: I think that we do not generate zombies anymore as we have
+           to leave the generic wrappers alive until here (used for adjusting
+           N_ap back-links!
+         */
+        DBUG_ASSERT ((1 == 0), "Zombie fungenerated!");
         arg_node = FREEfreeZombie (arg_node);
     } else if ((FUNDEF_ISWRAPPERFUN (arg_node)) && (FUNDEF_BODY (arg_node) == NULL)) {
         /*
-         * remove statically dispatchable wrapper function
+         * remove statically dispatchable wrapper function and all generic wrappers
          */
         arg_node = FREEfreeZombie (FREEdoFreeNode (arg_node));
     }
