@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.127  1998/05/13 14:06:14  srs
+ * added -maxwlunroll
+ *
  * Revision 1.126  1998/05/13 13:40:33  srs
  * renamed switch -noUNR to -noLUNR.
  * New switch -noWLUNR to deactivate WL unrolling.
@@ -891,6 +894,10 @@ MAIN
                     ++argv;
                     --argc;
                     unrnum = atoi (*argv);
+                } else if (!strncmp (*argv, "axwlunroll", 10)) {
+                    ++argv;
+                    --argc;
+                    wlunrnum = atoi (*argv);
                 } else {
                     if (!strncmp (*argv, "axoverload", 10)) {
                         ++argv;
