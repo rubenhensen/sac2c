@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.28  1995/03/13 17:00:06  asi
+ * Revision 1.29  1995/03/17 15:45:44  hw
+ * function Typecheck now returns the syntax_tree
+ *
+ * Revision 1.28  1995/03/13  17:00:06  asi
  * calls Optimize even if no optimization shall be done
  *
  * Revision 1.27  1995/03/10  11:08:29  hw
@@ -221,7 +224,7 @@ MAIN
             syntax_tree = Flatten (syntax_tree);
             if ((!breakflatten) && (0 == errors)) {
                 NOTE (("Typechecking: ..."));
-                Typecheck (syntax_tree);
+                syntax_tree = Typecheck (syntax_tree);
                 NOTE (("\n%d Warnings, %d Errors \n", warnings, errors));
                 if ((!breaktype) && (errors == 0)) {
                     syntax_tree = Optimize (syntax_tree);
