@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/05/18 13:16:09  dkr
+ * added prototype for WLAccessAnalyze()
+ *
  * Revision 2.2  1999/05/18 13:09:23  dkr
  * removed prototypes for WLAAprintAccesses (moved to print.h) and
  * WLAAprintFeatures (no longer defined)
@@ -34,6 +37,8 @@
 #ifndef _wl_access_analyze_h
 
 #define _wl_access_analyze_h
+
+extern node *WLAccessAnalyze (node *arg_node);
 
 extern node *WLAAfundef (node *arg_node, node *arg_info);
 extern node *WLAAblock (node *arg_node, node *arg_info);
