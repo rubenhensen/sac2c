@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/07/25 11:54:28  mab
+ * added ap_padded and ap_unsupported
+ *
  * Revision 2.2  1999/04/13 14:02:56  cg
  * function GetExpr() removed.
  *
@@ -130,6 +133,8 @@ extern int cse_expr;
 extern int wlf_expr;
 extern int wlt_expr;
 extern int old_wlf_expr, old_wlt_expr;
+extern int ap_padded;
+extern int ap_unsupported;
 
 extern node *Optimize (node *arg_node);
 extern node *OPTmodul (node *arg_node, node *arg_info);

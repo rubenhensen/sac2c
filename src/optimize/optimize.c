@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/07/25 11:54:28  mab
+ * added ap_padded and ap_unsupported
+ *
  * Revision 2.15  2000/07/11 15:52:29  dkr
  * IVE added
  *
@@ -173,8 +176,9 @@ int optvar_counter;
 int cse_expr;
 int wlf_expr;
 int wlt_expr;
-
 int old_wlf_expr, old_wlt_expr;
+int ap_padded;
+int ap_unsupported;
 
 /*
  *
@@ -220,7 +224,6 @@ ResetCounters ()
 {
     DBUG_ENTER ("ResetCounters");
 
-    inl_fun = 0;
     dead_expr = 0;
     dead_var = 0;
     dead_fun = 0;
@@ -234,6 +237,8 @@ ResetCounters ()
     wlf_expr = 0;
     wlt_expr = 0;
     cse_expr = 0;
+    ap_padded = 0;
+    ap_unsupported;
 
     DBUG_VOID_RETURN;
 }
@@ -245,7 +250,8 @@ ResetCounters ()
  *                       int off_dead_fun, int off_lir_expr, int off_cf_expr,
  *                       int off_lunr_expr, int off_wlunr_expr, int off_uns_expr,
  *                       int off_elim_arrays, int off_wlf_expr, int off_wlt_expr,
- *                       int off_cse_expr, int flag)
+ *                       int off_cse_expr, int off_ap_padded, int off_ap_unsupported,
+ *                       int flag)
  *
  * description:
  *   prints all counters - specified offset provided that the respective
@@ -260,7 +266,8 @@ void
 PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_dead_fun,
                  int off_lir_expr, int off_cf_expr, int off_lunr_expr, int off_wlunr_expr,
                  int off_uns_expr, int off_elim_arrays, int off_wlf_expr,
-                 int off_wlt_expr, int off_cse_expr, int flag)
+                 int off_wlt_expr, int off_cse_expr, int off_ap_padded,
+                 int off_ap_unsupported, int flag)
 {
     int diff;
     DBUG_ENTER ("PrintStatistics");
@@ -309,6 +316,14 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     diff = wlunr_expr - off_wlunr_expr;
     if ((optimize & OPT_WLUR) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d with-loop(s) unrolled", diff));
+
+    diff = ap_padded - off_ap_padded;
+    if ((optimize & OPT_AP) && ((ALL == flag) || (diff > 0)))
+        NOTE (("  %d array type(s) padded", diff));
+
+    diff = ap_unsupported - off_ap_unsupported;
+    if ((optimize & OPT_AP) && ((ALL == flag) || (diff > 0)))
+        NOTE (("  %d array type(s) unsupported for padding", diff));
 
     DBUG_VOID_RETURN;
 }
@@ -451,7 +466,7 @@ OPTmodul (node *arg_node, node *arg_info)
 
     NOTE ((""));
     NOTE (("overall optimization statistics:"));
-    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ALL);
+    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ALL);
 
     /*
      * index vector elimination
@@ -773,7 +788,7 @@ OPTfundef (node *arg_node, node *arg_info)
         PrintStatistics (mem_inl_fun, mem_dead_expr, mem_dead_var, mem_dead_fun,
                          mem_lir_expr, mem_cf_expr, mem_lunr_expr, mem_wlunr_expr,
                          mem_uns_expr, mem_elim_arrays, mem_wlf_expr, mem_wlt_expr,
-                         mem_cse_expr, NON_ZERO_ONLY);
+                         mem_cse_expr, 0, 0, NON_ZERO_ONLY);
 
         DBUG_DO_NOT_EXECUTE ("PRINT_MASKS", arg_node = FreeMasks (arg_node););
     }
