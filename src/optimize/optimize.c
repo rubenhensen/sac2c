@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.19  2000/08/01 11:57:30  dkr
+ * bug in break handling fixed
+ *
  * Revision 2.18  2000/07/28 13:21:47  dkr
  * a break in OPTfundef is reported to OPTmoduls now
  *
@@ -196,17 +199,9 @@ int ap_unsupported;
 bool do_break = FALSE;
 
 /*
- *
  *  functionname  : GenOptVar
  *  arguments     : 1) counter number
  *  description   : allocate string for variable needed for optimization
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : ---
- *
- *  remarks       :
- *
  */
 
 char *
@@ -501,7 +496,6 @@ OPTmodul (node *arg_node, node *arg_info)
     }
 
 DONE:
-
     DBUG_RETURN (arg_node);
 }
 
@@ -571,23 +565,22 @@ OPTfundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("OPTfundef");
 
-    /*
-     * The global variable 'do_break' is used to report a break to OPTmodul().
-     * If no break occurs this variable is unset later on.
-     */
-    do_break = TRUE;
-
     strcpy (argtype_buffer, "( ");
     buffer_space = 77;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
+        /*
+         * The global variable 'do_break' is used to report a break to OPTmodul().
+         * If no break occurs this variable is unset later on.
+         */
+        do_break = TRUE;
+
         /*
          * Any optimization technique may only be applied iff there's a function
          * body.
          */
         arg = FUNDEF_ARGS (arg_node);
         while ((arg != NULL) && (buffer_space > 5)) {
-
             tmp_str = Type2String (ARG_TYPE (arg), 1);
             tmp_str_size = strlen (tmp_str);
 
@@ -754,7 +747,6 @@ OPTfundef (node *arg_node, node *arg_info)
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
                 && (0 == strcmp (break_specifier, "lir")))
                 goto INFO;
-
         } while (((cse_expr != old_cse_expr) || (cf_expr != old_cf_expr)
                   || (wlt_expr != old_wlt_expr) || (wlf_expr != old_wlf_expr)
                   || (dead_fun + dead_var + dead_expr != old_dcr_expr)
@@ -815,10 +807,12 @@ OPTfundef (node *arg_node, node *arg_info)
         do_break = FALSE;
     INFO:
         if (loop1 + loop2 == max_optcycles
-            && ((lir_expr != old_lir_expr) || (lunr_expr != old_lunr_expr)
-                || (uns_expr != old_uns_expr) || (wlunr_expr != old_wlunr_expr)
-                || (wlf_expr != old_wlf_expr) || (cse_expr != old_cse_expr))) {
-            SYSWARN (("max_optcycles reached !!"));
+            && ((cse_expr != old_cse_expr) || (cf_expr != old_cf_expr)
+                || (wlt_expr != old_wlt_expr) || (wlf_expr != old_wlf_expr)
+                || (dead_fun + dead_var + dead_expr != old_dcr_expr)
+                || (lunr_expr != old_lunr_expr) || (wlunr_expr != old_wlunr_expr)
+                || (uns_expr != old_uns_expr) || (lir_expr != old_lir_expr))) {
+            SYSWARN (("max_optcycles reached"));
         }
         PrintStatistics (mem_inl_fun, mem_dead_expr, mem_dead_var, mem_dead_fun,
                          mem_lir_expr, mem_cf_expr, mem_lunr_expr, mem_wlunr_expr,
@@ -828,8 +822,9 @@ OPTfundef (node *arg_node, node *arg_info)
         DBUG_DO_NOT_EXECUTE ("PRINT_MASKS", arg_node = FreeMasks (arg_node););
     }
 
-    if (FUNDEF_NEXT (arg_node))
+    if (FUNDEF_NEXT (arg_node)) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
