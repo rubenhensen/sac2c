@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/08/03 11:44:38  jhs
+ * Some comments added.
+ *
  * Revision 2.8  1999/08/02 09:48:35  jhs
  * Moved MeltBlocks[OnCopies] from spmd_opt.[ch] to concurrent_lib.[ch].
  *
@@ -8,7 +11,7 @@
  * Removed old warnings, added comments.
  *
  * Revision 2.6  1999/07/28 13:08:17  jhs
- * Bug fixed: Allsync-blocks are melted (erarlier versions left the
+ * Bug fixed: Allsync-blocks are melted (erarlier versions left the
  * first synd-block out).
  *
  * Revision 2.5  1999/07/21 16:30:27  jhs
@@ -64,23 +67,31 @@
 
 #include "sync_opt.h"
 
-/* #### better name and comment -> move to DataFlowMask.[ch] */
-int
-Disjunctive (DFMmask_t mask1, DFMmask_t mask2)
+/******************************************************************************
+ *
+ * function:
+ *   int Disjoint (DFMmask_t mask1, DFMmask_t mask2)
+ *
+ * description:
+ *   Tests whether both masks are disjoint (return TRUE) or not (return FALSE).
+ *
+ ******************************************************************************
+int Disjoint (DFMmask_t mask1, DFMmask_t mask2)
 {
-    int result;
-    DFMmask_t andmask;
+  int result;
+  DFMmask_t andmask;
 
-    DBUG_ENTER ("Disjunctive");
+  DBUG_ENTER( "Disjoint");
 
-    andmask = DFMGenMaskAnd (mask1, mask2);
-    if (DFMTestMask (andmask)) {
-        result = FALSE;
-    } else {
-        result = TRUE;
-    }
+  andmask = DFMGenMaskAnd (mask1, mask2);
+  if (DFMTestMask (andmask) > 0) {
+    result = FALSE;
+  } else {
+    result = TRUE;
+  }
+  DFMRemoveMask (andmask);
 
-    DBUG_RETURN (result);
+  DBUG_RETURN( result);
 }
 
 /******************************************************************************
@@ -107,19 +118,19 @@ MeltableSYNCs (node *first_sync, node *second_sync)
     DBUG_ASSERT (NODE_TYPE (second_sync) == N_sync, ("second_sync not a N_sync"));
 
     result = 1;
-    result = result & Disjunctive (SYNC_IN (first_sync), SYNC_INOUT (second_sync));
-    result = result & Disjunctive (SYNC_IN (first_sync), SYNC_OUT (second_sync));
-    result = result & Disjunctive (SYNC_INOUT (first_sync), SYNC_IN (second_sync));
-    result = result & Disjunctive (SYNC_INOUT (first_sync), SYNC_INOUT (second_sync));
-    result = result & Disjunctive (SYNC_INOUT (first_sync), SYNC_OUT (second_sync));
-    result = result & Disjunctive (SYNC_OUT (first_sync), SYNC_IN (second_sync));
-    result = result & Disjunctive (SYNC_OUT (first_sync), SYNC_INOUT (second_sync));
-    result = result & Disjunctive (SYNC_OUT (first_sync), SYNC_OUT (second_sync));
+    result = result & Disjoint (SYNC_IN (first_sync), SYNC_INOUT (second_sync));
+    result = result & Disjoint (SYNC_IN (first_sync), SYNC_OUT (second_sync));
+    result = result & Disjoint (SYNC_INOUT (first_sync), SYNC_IN (second_sync));
+    result = result & Disjoint (SYNC_INOUT (first_sync), SYNC_INOUT (second_sync));
+    result = result & Disjoint (SYNC_INOUT (first_sync), SYNC_OUT (second_sync));
+    result = result & Disjoint (SYNC_OUT (first_sync), SYNC_IN (second_sync));
+    result = result & Disjoint (SYNC_OUT (first_sync), SYNC_INOUT (second_sync));
+    result = result & Disjoint (SYNC_OUT (first_sync), SYNC_OUT (second_sync));
 
     if (result) {
-        DBUG_PRINT ("SYNCO", ("disjunctive"));
+        DBUG_PRINT ("SYNCO", ("disjoint"));
     } else {
-        DBUG_PRINT ("SYNCO", ("non-disjunctive"));
+        DBUG_PRINT ("SYNCO", ("non-disjoint"));
     }
 
     if (result) {
