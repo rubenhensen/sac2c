@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/10/30 14:13:44  dkr
+ * signature of WLP macro modified
+ *
  * Revision 3.5  2001/03/20 16:04:51  ben
  * wlcomp-pragma functions SchedulingWL, SchedulingSegs added
  *
@@ -42,7 +45,7 @@ extern bool ExtractNaiveCompPragma (node *pragma, int line);
 
 extern node *ExtractAplPragma (node *pragma, int line);
 
-#define WLP(fun, str)                                                                    \
+#define WLP(fun, str, ieee)                                                              \
     extern node *fun (node *segs, node *parms, node *cubes, int dims, int line);
 #include "wlpragma_funs.mac"
 #undef WLP
