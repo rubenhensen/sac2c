@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/01/02 16:04:46  asi
+ * Revision 1.7  1995/01/05 15:30:02  asi
+ * Dead-Code-Removal implemented
+ *
+ * Revision 1.6  1995/01/02  16:04:46  asi
  * Renamed opt_tab in opt1_tab and all OPT.. in OPT1..
  * Added OPT1while, OPT1do, OPT1cond, OPT1cc
  * Added opt2_tab
@@ -29,18 +32,20 @@
 
 #define _optimize_h
 
+extern node *Optimize (node *);
+extern char *PrintMask (long *);
+
 extern node *OPT1fundef (node *, node *);
 extern node *OPT1arg (node *, node *);
 extern node *OPT1vardec (node *, node *);
-extern node *OPT1modul (node *, node *);
+extern node *OPTmodul (node *, node *);
 extern node *OPT1let (node *, node *);
 extern node *OPT1id (node *, node *);
 extern node *OPT1assign (node *, node *);
-extern node *OPT1cond (node *, node *);
-extern node *OPT1do (node *, node *);
-extern node *OPT1while (node *, node *);
 extern node *OPT1pp (node *, node *);
+extern node *OPTblock (node *, node *);
 
-extern node *Optimize (node *);
+extern node *OPT2fundef (node *, node *);
+extern node *OPT2assign (node *, node *);
 
 #endif /* _optimize_h */
