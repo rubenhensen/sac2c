@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.5  2001/11/15 15:36:48  sacbase
+# CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
+#
 # Revision 3.4  2001/11/14 12:59:48  sbs
 # deps line replaced by inclusion of Makefile.Deps
 # ( .xxx.d mechanism)
@@ -41,7 +44,8 @@
 # include general setup:
 #
 
-include ../../Makefile.Config
+PROJECT_ROOT := ../..
+include $(PROJECT_ROOT)/Makefile.Config
 
 
 #######################################################################################
@@ -66,12 +70,15 @@ all:  CacheSimAnalyser CacheSimTest
 
 CacheSimAnalyser: CacheSimAnalyser.o $(LIBDIR)/libsac.a
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(LIBS) -o $@ $< -lsac -lm
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 CacheSimTest: CacheSimTest.o $(LIBDIR)/libsac.a
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(LIBS) -o $@ $< -lsac -lm
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 %.o: %.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 
 clean:

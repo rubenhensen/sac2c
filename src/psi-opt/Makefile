@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.15  2001/11/15 15:36:48  sacbase
+# CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
+#
 # Revision 3.14  2001/11/14 12:59:48  sbs
 # deps line replaced by inclusion of Makefile.Deps
 # ( .xxx.d mechanism)
@@ -58,7 +61,8 @@
 # include general setup:
 #
 
-include ../../Makefile.Config
+PROJECT_ROOT := ../..
+include $(PROJECT_ROOT)/Makefile.Config
 
 
 #######################################################################################
@@ -81,16 +85,20 @@ all: index.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
 #
 pad_collect.c: ../tree/prf_node_info.mac
 	touch $@
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 pad_infer.c: ../tree/type_info.mac
 	touch $@
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 pad_transform.c: ../tree/prf_node_info.mac
 	touch $@
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 clean:
 	$(RM) *.o *.bak *~ .*.d

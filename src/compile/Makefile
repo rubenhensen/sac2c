@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.17  2001/11/15 15:36:48  sacbase
+# CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
+#
 # Revision 3.16  2001/11/14 12:59:48  sbs
 # deps line replaced by inclusion of Makefile.Deps
 # ( .xxx.d mechanism)
@@ -66,7 +69,8 @@
 # include general setup:
 #
 
-include ../../Makefile.Config
+PROJECT_ROOT := ../..
+include $(PROJECT_ROOT)/Makefile.Config
 
 
 #######################################################################################
@@ -100,25 +104,32 @@ wltransform.c: wlpragma_funs.mac
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 
 BEtest: BEtest.c icm_vars.c icm_betest.c icm.data $(BETEST_OBJS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest $(INCS) BEtest.c $(BETEST_OBJS)
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 icm2c_std.BEtest.o: icm2c_std.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_std.BEtest.o -c icm2c_std.c $(INCS)
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 icm2c_wl.BEtest.o: icm2c_wl.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_wl.BEtest.o -c icm2c_wl.c $(INCS)
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 icm2c_mt.BEtest.o: icm2c_mt.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_mt.BEtest.o -c icm2c_mt.c $(INCS)
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 icm2c_sched.BEtest.o: icm2c_sched.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_sched.BEtest.o -c icm2c_sched.c $(INCS)
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 icm2c_utils.BEtest.o: icm2c_utils.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_utils.BEtest.o -c icm2c_utils.c $(INCS)
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 
 clean:

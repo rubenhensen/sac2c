@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.8  2001/11/15 15:36:48  sacbase
+# CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
+#
 # Revision 3.7  2001/11/14 12:59:48  sbs
 # deps line replaced by inclusion of Makefile.Deps
 # ( .xxx.d mechanism)
@@ -37,7 +40,8 @@
 # include general setup:
 #
 
-include ../../Makefile.Config
+PROJECT_ROOT := ../..
+include $(PROJECT_ROOT)/Makefile.Config
 
 
 #######################################################################################
@@ -64,28 +68,33 @@ libsac_heap%.a :
 	    then ln -s ../heapmgr/$@;  \
                  echo ln -s ../heapmgr/$@;  \
 	  fi
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 lib%.a : 
 	@ if [ ! -f $@ ]; \
 	    then ln -s ../libsac/$@;  \
                  echo ln -s ../libsac/$@;  \
 	  fi
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 sac2crc: 
 	@ if [ ! -f $@ ]; \
 	    then ln -s $@.$(OS) $@; \
                  echo ln -s $@.$(OS) $@;  \
 	  fi
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 CacheSimAnalyser: 
 	@ if [ ! -f $@ ]; \
 	    then ln -s ../tools/$@; \
                  echo ln -s ../tools/$@; \
 	  fi
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 
 runtime.tar: *.h sac2crc.README
 	tar cvf $@ $^
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 clean:
 	$(RM) *.o *.a *.bak *.old *~ .*.d

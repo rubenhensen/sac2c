@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.9  2001/11/15 15:36:48  sacbase
+# CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
+#
 # Revision 3.8  2001/11/14 18:49:32  dkr
 # explicit depedency 'heapmgr.h' added
 #
@@ -34,7 +37,8 @@
 # include general setup:
 #
 
-include ../../Makefile.Config
+PROJECT_ROOT := ../..
+include $(PROJECT_ROOT)/Makefile.Config
 
 
 #######################################################################################
@@ -69,31 +73,39 @@ all: libsac_heapmgr.a libsac_heapmgr_diag.a   \
 libsac_heapmgr.a: $(OBJS_HEAPMGR)
 	ar rc $@ $^
 	ranlib $@
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 libsac_heapmgr_diag.a: $(OBJS_HEAPMGR_DIAG)
 	ar rc $@ $^
 	ranlib $@
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 libsac_heapmgr_mt.a: $(OBJS_HEAPMGR_MT)
 	ar rc $@ $^
 	ranlib $@
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 libsac_heapmgr_mt_diag.a: $(OBJS_HEAPMGR_MT_DIAG)
 	ar rc $@ $^
 	ranlib $@
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 
 %_mt_diag.o: %.c heapmgr.h
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -DMT -DDIAG -o $@ -c $<
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 %_mt.o: %.c heapmgr.h
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -DMT -o $@ -c $<
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 %_diag.o: %.c heapmgr.h
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -DDIAG -o $@ -c $<
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 %.o: %.c heapmgr.h
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 
 prod:

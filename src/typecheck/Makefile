@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.14  2001/11/15 15:36:48  sacbase
+# CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
+#
 # Revision 3.13  2001/11/14 12:59:48  sbs
 # deps line replaced by inclusion of Makefile.Deps
 # ( .xxx.d mechanism)
@@ -57,7 +60,8 @@
 # include general setup:
 #
 
-include ../../Makefile.Config
+PROJECT_ROOT := ../..
+include $(PROJECT_ROOT)/Makefile.Config
 
 
 #######################################################################################
@@ -82,22 +86,27 @@ typecheck.h: cmp_type.mac
 
 typecheck.c: prim_fun_tt.mac cmp_type.mac
 	touch $@
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 prim_fun.c: prim_fun_ft.mac
 	touch $@
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 new_types.c: type_constructor_info.mac
 	touch $@
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 
 ifeq ($(OS),OSF_ALPHA)
 
 prim_fun.o: prim_fun.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -O0 -o $@ -c $< $(INCS)
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 endif
 

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.12  2001/11/15 15:36:48  sacbase
+# CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
+#
 # Revision 3.11  2001/11/14 12:59:48  sbs
 # deps line replaced by inclusion of Makefile.Deps
 # ( .xxx.d mechanism)
@@ -48,7 +51,8 @@
 # include general setup:
 #
 
-include ../../Makefile.Config
+PROJECT_ROOT := ../..
+include $(PROJECT_ROOT)/Makefile.Config
 
 
 #######################################################################################
@@ -70,19 +74,24 @@ all: main.o Error.o usage.o my_debug.o internal_lib.o globals.o resource.o types
 types.h: ../tree/type_info.mac ../global/phase_info.mac ../global/status_info.mac \
          ../tree/node_info.mac ../tree/prf_node_info.mac
 	touch $@
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 NameTuples.h: ../global/nt_info.mac
 	touch $@
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 NameTuples.c: ../global/nt_info.mac
 	touch $@
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 globals.c: ../tree/type_info.mac ../global/phase_info.mac
 	touch $@
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 my_debug.c:  ../tree/node_info.mac ../tree/prf_node_info.mac ../tree/type_info.mac \
              ../global/status_info.mac
 	touch $@
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 
 build.c: 
@@ -91,13 +100,16 @@ build.c:
 	echo "char build_host[] = \"$(HOST)\";" >> build.c
 	echo "char build_os[]   = \"$(OS)\";"   >> build.c
 	cat build.c
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 build.o: build.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o build.o -c build.c $(INCS)
 	$(RM) build.c
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 clean:
 	$(RM) *.o *.bak *~ .*.d

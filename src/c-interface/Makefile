@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.11  2001/11/15 15:36:48  sacbase
+# CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
+#
 # Revision 3.10  2001/11/14 12:59:48  sbs
 # deps line replaced by inclusion of Makefile.Deps
 # ( .xxx.d mechanism)
@@ -50,7 +53,8 @@
 # include general setup:
 #
 
-include ../../Makefile.Config
+PROJECT_ROOT := ../..
+include $(PROJECT_ROOT)/Makefile.Config
 
 
 #######################################################################################
@@ -71,10 +75,12 @@ all: print_interface.o map_cwrapper.o import_specialization.o \
 #
 print_interface_wrapper.c: ../tree/type_info.mac
 	touch $@
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 clean:
 	$(RM) *.o *.bak .*.d
