@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  1998/04/20 01:11:54  dkr
+ * added DupOneIds
+ *
  * Revision 1.26  1998/04/17 17:26:38  dkr
  * 'concurrent regions' are now called 'SPMD regions'
  *
@@ -157,6 +160,7 @@ extern node *DupWLgrid (node *arg_node, node *arg_info);
 extern node *DupWLstriVar (node *arg_node, node *arg_info);
 extern node *DupWLgridVar (node *arg_node, node *arg_info);
 
+extern ids *DupOneIds (ids *ids, node *arg_info);
 extern ids *DupIds (ids *ids, node *arg_info);
 extern shpseg *DupShpSeg (shpseg *shp_seg);
 
