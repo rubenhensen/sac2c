@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2002/08/13 10:23:32  sbs
+ * hm_tab for handle_mops added.
+ *
  * Revision 3.89  2002/08/13 09:55:56  sah
  * added several traversalfunctions for
  * handle_dots traversal.
@@ -615,8 +618,8 @@
 #ifndef NIFcwc
 #define NIFcwc(it_cwc)
 #endif
-#ifndef NIFunused8
-#define NIFunused8(it_unused8)
+#ifndef NIFhm
+#define NIFhm(it_hm)
 #endif
 
 #ifndef NIFunused9
@@ -682,8 +685,8 @@
   it_ssalur, it_ssawlt, it_ssawli, it_ssawlf,                                             \
                                                                                           \
   it_ssaili, it_comp2, it_precomp2, it_insvd, it_crtwrp, it_wls, it_precomp4, it_al,      \
-  it_hd, it_nt2ot, it_cwc, it_unused8, it_unused9, it_unused10, it_unused11,              \
-  it_unused12, it_unused13, it_unused14, it_unused15, it_unused16,                        \
+  it_hd, it_nt2ot, it_cwc, it_hm, it_unused9, it_unused10, it_unused11, it_unused12,      \
+  it_unused13, it_unused14, it_unused15, it_unused16,                                     \
                                                                                           \
   nnode)                                                                                  \
                                                                                           \
@@ -742,26 +745,24 @@
                                                       it_crtwrp) NIFwls (it_wls)          \
                                                       NIFprecomp4 (it_precomp4) NIFal (   \
                                                         it_al) NIFhd (it_hd)              \
-                                                        NIFnt2ot (it_nt2ot)               \
-                                                          NIFcwc (it_cwc) NIFunused8 (    \
-                                                            it_unused8)                   \
-                                                            NIFunused9 (it_unused9)       \
-                                                              NIFunused10 (it_unused10)   \
-                                                                NIFunused11 (             \
-                                                                  it_unused11)            \
-                                                                  NIFunused12 (           \
-                                                                    it_unused12)          \
-                                                                    NIFunused13 (         \
-                                                                      it_unused13)        \
-                                                                      NIFunused14 (       \
-                                                                        it_unused14)      \
-                                                                        NIFunused15 (     \
-                                                                          it_unused15)    \
-                                                                          NIFunused16 (   \
-                                                                            it_unused16)  \
+                                                        NIFnt2ot (it_nt2ot) NIFcwc (      \
+                                                          it_cwc) NIFhm (it_hm)           \
+                                                          NIFunused9 (it_unused9)         \
+                                                            NIFunused10 (it_unused10)     \
+                                                              NIFunused11 (it_unused11)   \
+                                                                NIFunused12 (             \
+                                                                  it_unused12)            \
+                                                                  NIFunused13 (           \
+                                                                    it_unused13)          \
+                                                                    NIFunused14 (         \
+                                                                      it_unused14)        \
+                                                                      NIFunused15 (       \
+                                                                        it_unused15)      \
+                                                                        NIFunused16 (     \
+                                                                          it_unused16)    \
                                                                                           \
-                                                                            NIFnnode (    \
-                                                                              nnode)
+                                                                          NIFnnode (      \
+                                                                            nnode)
 
 /******************************************************************************
  *
@@ -1587,8 +1588,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSAWLIap, TravSons,
 
        SSAILIap, COMP2Ap, PREC2ap, TravSons, CRTWRPap, TravSons, TravSons, TravSons, HDap,
-       TravSons, CWCap, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, 1),
+       TravSons, CWCap, HMap, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, 1),
 
   NIF (N_cast, "N_cast", TravSons, TravSons, PrintCast, TravSons, TravSons, TravSons,
        TravSons, FreeCast, CFcast, TravSons, COMPCast, TravSons, DupCast, TravSons,
@@ -2416,7 +2417,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, HMmop, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   /* ATTENTION !!!! N_ok has to be the last node declared here;
@@ -2599,7 +2600,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFhd
 #undef NIFnt2ot
 #undef NIFcwc
-#undef NIFunused8
+#undef NIFhm
 
 #undef NIFunused9
 #undef NIFunused10

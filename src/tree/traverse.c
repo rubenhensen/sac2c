@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2002/08/13 10:23:32  sbs
+ * hm_tab for handle_mops added.
+ *
  * Revision 3.36  2002/08/09 13:16:22  dkr
  * cwc_tab added
  *
@@ -230,6 +233,7 @@
 #include "handle_dots.h"
 #include "new2old.h"
 #include "create_wrapper_code.h"
+#include "handle_mops.h"
 
 #include "traverse.h"
 
@@ -1459,6 +1463,17 @@ static funtab cwc_tab_rec = {{
                              NULL,
                              NULL};
 funtab *cwc_tab = &cwc_tab_rec;
+
+/*
+ *  (110) nt2ot_tab
+ */
+static funtab hm_tab_rec = {{
+#define NIFhm(it_hm) it_hm
+#include "node_info.mac"
+                            },
+                            NULL,
+                            NULL};
+funtab *hm_tab = &hm_tab_rec;
 
 /*
  *  nnode
