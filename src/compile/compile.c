@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/04/19 13:50:47  hw
+ * Revision 1.16  1995/04/19 14:13:18  hw
+ * changed compilation of primitive function 'rotate'
+ *  ( 3. argument of `rotate' will not be reused )
+ *
+ * Revision 1.15  1995/04/19  13:50:47  hw
  * changed arguments of N_icm ND_KD_PSI_CxA_S &  ND_KD_PSI_VxA_S
  *
  * Revision 1.14  1995/04/19  13:08:28  hw
@@ -1176,9 +1180,9 @@ CompPrf (node *arg_node, node *arg_info)
             MAKENODE_NUM (n_node, 1);
 
             if (N_id == arg3->nodetype) {
-                last_assign = arg_info->node[0]->node[1];
-                GET_DIM (dim, arg3->IDS_NODE->TYPES);
-                CHECK_REUSE__ALLOC_ARRAY_ND (arg3, res_ref);
+                BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
+                MAKE_NEXT_ICM_ARG (icm_arg, res_ref);
+                SET_VARS_FOR_MORE_ICMS;
             } else {
                 array_is_const = 1;
                 arg_info->node[1]->nodetype = N_block; /*  reuse previous N_let*/
@@ -1186,8 +1190,7 @@ CompPrf (node *arg_node, node *arg_info)
                 GET_DIM (dim, arg3->TYPES);
                 DECL_ARRAY (first_assign, arg3->node[0], "__TMP1", tmp_array1);
                 arg_node = first_assign;
-                MAKENODE_NUM (tmp_rc, 0);
-                CREATE_CONST_ARRAY (arg3, tmp_array1, type_id_node, tmp_rc);
+                CREATE_CONST_ARRAY (arg3, tmp_array1, type_id_node, res_ref);
                 arg3 = tmp_array1;
             }
             /* store dimension of arg3 */
@@ -1201,12 +1204,10 @@ CompPrf (node *arg_node, node *arg_info)
             }
             APPEND_ASSIGNS (first_assign, next_assign);
             if (0 == array_is_const) {
-                DEC_RC_ND (arg3, n_node);
-                INC_RC_ND (res, res_ref);
+                DEC_RC_FREE_ND (arg3, n_node);
                 INSERT_ASSIGN;
             } else {
                 DEC_RC_FREE_ND (arg3, n_node);
-                INC_RC_ND (res, res_ref);
                 FREE (old_arg_node);
             }
             break;
