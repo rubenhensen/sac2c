@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/08/09 15:38:10  dkr
+ * VARDEC_OR_ARG_REFCNT is no l-value
+ * Therefore this is replaced by new macro L_VARDEC_OR_ARG_REFCNT
+ *
  * Revision 2.4  1999/06/30 09:49:15  cg
  * Bug fixed in handling of naive refcounts
  *
@@ -19,9 +23,6 @@
  *
  * Revision 1.64  1999/02/06 14:46:20  dkr
  * RC can handle nested WLs now
- *
- * Revision 1.63  1999/01/07 13:58:55  sbs
- * *** empty log message ***
  *
  * Revision 1.62  1998/12/21 10:50:43  sbs
  * error in RCloop:
@@ -400,9 +401,9 @@ InitRC (int n)
 
     FOREACH_VARDEC_AND_ARG (fundef_node, vardec,
                             if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
-                                VARDEC_OR_ARG_REFCNT (vardec) = n;
+                                L_VARDEC_OR_ARG_REFCNT (vardec, n);
                             } if (VARDEC_OR_ARG_NAIVE_REFCNT (vardec) >= 0) {
-                                VARDEC_OR_ARG_NAIVE_REFCNT (vardec) = n;
+                                L_VARDEC_OR_ARG_NAIVE_REFCNT (vardec, n);
                             }) /* FOREACH_VARDEC_AND_ARG */
 
     DBUG_VOID_RETURN;
@@ -567,11 +568,12 @@ RestoreRC (int which, int *dump)
 
     FOREACH_VARDEC_AND_ARG (fundef_node, vardec,
                             if (which == RC_REAL) {
-                                VARDEC_OR_ARG_REFCNT (vardec)
-                                  = dump[VARDEC_OR_ARG_VARNO (vardec)];
+                                L_VARDEC_OR_ARG_REFCNT (vardec, dump[VARDEC_OR_ARG_VARNO (
+                                                                  vardec)]);
                             } else {
-                                VARDEC_OR_ARG_NAIVE_REFCNT (vardec)
-                                  = dump[VARDEC_OR_ARG_VARNO (vardec)];
+                                L_VARDEC_OR_ARG_NAIVE_REFCNT (vardec,
+                                                              dump[VARDEC_OR_ARG_VARNO (
+                                                                vardec)]);
                             }) /* FOREACH_VARDEC_AND_ARG */
 
     DBUG_VOID_RETURN;
@@ -1039,8 +1041,8 @@ RCloop (node *arg_node, node *arg_info)
             new_ids = usevars;
             /* init all variables that are member of usevars with refcount 1 */
             while (NULL != new_ids) {
-                VARDEC_OR_ARG_REFCNT (IDS_VARDEC (new_ids)) = 1;
-                VARDEC_OR_ARG_NAIVE_REFCNT (IDS_VARDEC (new_ids)) = 1;
+                L_VARDEC_OR_ARG_REFCNT (IDS_VARDEC (new_ids), 1);
+                L_VARDEC_OR_ARG_NAIVE_REFCNT (IDS_VARDEC (new_ids), 1);
                 new_ids = IDS_NEXT (new_ids);
             }
 
@@ -1416,8 +1418,8 @@ RCcond (node *arg_node, node *arg_info)
                                 ("changed %s :%d::%d in then-part", IDS_NAME (new_ids),
                                  IDS_REFCNT (new_ids), IDS_NAIVE_REFCNT (new_ids)));
                 }
-                VARDEC_OR_ARG_REFCNT (vardec) = else_dump[i];
-                VARDEC_OR_ARG_NAIVE_REFCNT (vardec) = else_dump[i];
+                L_VARDEC_OR_ARG_REFCNT (vardec, else_dump[i]);
+                L_VARDEC_OR_ARG_NAIVE_REFCNT (vardec, else_dump[i]);
 
             } else if (else_dump[i] < then_dump[i]) {
                 if (0 == use_old) {
@@ -1442,8 +1444,8 @@ RCcond (node *arg_node, node *arg_info)
                                 ("changed %s :%d::%d in else-part", IDS_NAME (new_ids),
                                  IDS_REFCNT (new_ids), IDS_NAIVE_REFCNT (new_ids)));
                 }
-                VARDEC_OR_ARG_REFCNT (vardec) = then_dump[i];
-                VARDEC_OR_ARG_NAIVE_REFCNT (vardec) = then_dump[i];
+                L_VARDEC_OR_ARG_REFCNT (vardec, then_dump[i]);
+                L_VARDEC_OR_ARG_NAIVE_REFCNT (vardec, then_dump[i]);
             }
             DBUG_PRINT ("RC", ("set refcount of %s to %d", IDS_NAME (new_ids),
                                VARDEC_OR_ARG_REFCNT (vardec)));
@@ -1693,16 +1695,16 @@ RCNwith (node *arg_node, node *arg_info)
     vardec = DFMGetMaskEntryDeclSet (NWITH_IN (arg_node));
     while (vardec != NULL) {
         if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
-            VARDEC_OR_ARG_REFCNT (vardec) = 1;
-            VARDEC_OR_ARG_NAIVE_REFCNT (vardec) = 1;
+            L_VARDEC_OR_ARG_REFCNT (vardec, 1);
+            L_VARDEC_OR_ARG_NAIVE_REFCNT (vardec, 1);
         }
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
 
     vardec = IDS_VARDEC (NWITH_VEC (arg_node));
     if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
-        VARDEC_OR_ARG_REFCNT (vardec) = 1;
-        VARDEC_OR_ARG_NAIVE_REFCNT (vardec) = 1;
+        L_VARDEC_OR_ARG_REFCNT (vardec, 1);
+        L_VARDEC_OR_ARG_NAIVE_REFCNT (vardec, 1);
     }
 
     /*
@@ -1796,7 +1798,7 @@ RCNwith (node *arg_node, node *arg_info)
                 /*
                  * increment RC of non-withop-params
                  */
-                VARDEC_OR_ARG_REFCNT (vardec)++;
+                L_VARDEC_OR_ARG_REFCNT (vardec, VARDEC_OR_ARG_REFCNT (vardec) + 1);
 
                 new_ids
                   = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL, ST_regular);
@@ -1813,7 +1815,8 @@ RCNwith (node *arg_node, node *arg_info)
             /*
              *  Naive refcounting is always done.
              */
-            VARDEC_OR_ARG_NAIVE_REFCNT (vardec)++;
+            L_VARDEC_OR_ARG_NAIVE_REFCNT (vardec,
+                                          VARDEC_OR_ARG_NAIVE_REFCNT (vardec) + 1);
         }
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
