@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.66  1998/12/10 17:28:27  sbs
+ * MRD_GETSUBST changed.
+ *
  * Revision 1.65  1998/08/06 15:06:39  dkr
  * OPTicm inserted
  *
@@ -271,10 +274,10 @@ extern node *MrdGet (int i, int varno, int outside_block);
 extern node *GetExpr (node *arg_node);
 extern int CheckScope (long *act_mrdl, node *assign_node, int varno, int checkdef);
 
-#define MRD_GETSUBST(n, i, v) n = GetExpr (MrdGet (i, v, 0)); /* only in CF */
-#define MRD_GETLAST(n, i, v) n = GetExpr (MrdGet (i, v, 1));  /* CF, Unroll, Unswitch */
-#define MRD_GETDATA(n, i, v) n = GetExpr (MrdGet (i, v, 2));  /* only in CF, WLI */
-#define MRD_GETCSE(n, i, v) n = GetExpr (MrdGet (i, v, 3));   /* only in CSE */
+#define MRD_GETSUBST(i, v) GetExpr (MrdGet (i, v, 0));       /* only in CF */
+#define MRD_GETLAST(n, i, v) n = GetExpr (MrdGet (i, v, 1)); /* CF, Unroll, Unswitch */
+#define MRD_GETDATA(n, i, v) n = GetExpr (MrdGet (i, v, 2)); /* only in CF, WLI */
+#define MRD_GETCSE(n, i, v) n = GetExpr (MrdGet (i, v, 3));  /* only in CSE */
 
 extern void PushMRDL (long NumVar);
 extern void PushDupMRDL ();
