@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.21  1997/09/23 12:59:42  dkr
+# make deps done
+#
 # Revision 1.20  1997/08/05 11:32:28  sbs
 # make deps done
 #
@@ -159,12 +162,6 @@ readsib.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 readsib.o: /usr/include/malloc.h ../global/internal_lib.h
 readsib.o: ../global/traverse.h import.h ../scanparse/scnprs.h
 readsib.o: ../scanparse/y.tab.h filemgr.h cccall.h
-sib.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-sib.o: /usr/include/malloc.h ../global/types.h ../global/tree_basic.h
-sib.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
-sib.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/globals.h
-sib.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
-sib.o: ../global/traverse.h ../print/convert.h filemgr.h sib.h
 writesib.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 writesib.o: /usr/include/malloc.h ../global/types.h ../global/tree_basic.h
 writesib.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h

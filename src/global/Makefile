@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.40  1997/09/23 12:59:31  dkr
+# make deps done
+#
 # Revision 1.39  1997/08/05 11:32:23  sbs
 # make deps done
 #
@@ -204,8 +207,6 @@ my_debug.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 my_debug.o: /usr/include/sys/va_list.h /usr/include/string.h
 my_debug.o: /usr/include/stdlib.h globals.h internal_lib.h ../print/convert.h
 my_debug.o: node_info.mac prf_node_info.mac type_info.mac
-print.o: ../compile/libsac.h ../compile/icm2c.h /usr/include/malloc.h
-print.o: /usr/include/memory.h
 traverse.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 traverse.o: /usr/include/sys/va_list.h /usr/include/stdlib.h tree.h types.h
 traverse.o: tree_basic.h tree_compound.h Error.h /usr/include/string.h
