@@ -1,12 +1,20 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/07/11 18:24:57  sah
+  modularizes the templates
+  added support for default values and init values
+  work-in-progress !
+
   Revision 1.1  2004/07/03 15:14:59  sah
   Initial revision
 
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">
+
+<xsl:import href="common-accessor-macros.xsl"/>
+<xsl:import href="common-make-head.xsl"/>
 
 <xsl:output method="text" indent="no"/>
 <xsl:strip-space elements="*"/>
@@ -31,10 +39,14 @@ version="1.0">
 #include "DataFlowMask.h"
 #include "globals.h"
 
+#define AST_NO_COMPAT
+#include "node_compat.h"
   </xsl:text>
   <xsl:apply-templates select="//syntaxtree/node"/>
   <xsl:text>
 
+#undef AST_NO_COMPAT
+#include "node_compat.h"
 #endif
   </xsl:text>
 </xsl:template>
@@ -47,103 +59,15 @@ version="1.0">
  *****************************************************************************/
 
   </xsl:text>
-  <xsl:apply-templates select="sons/son" mode="accessors"/>
-  <xsl:apply-templates select="attributes/attribute" mode="accessors"/>
-  <xsl:apply-templates select="." mode="make"/>
+  <xsl:apply-templates select="sons/son" mode="accessor-macros"/>
+  <xsl:apply-templates select="attributes/attribute" mode="accessor-macros"/>
+  <xsl:apply-templates select="." mode="make-head"/>
 </xsl:template>
 
-<!-- generate accessors for nodes -->
-<xsl:template match="son" mode="accessors">
-  <xsl:value-of select="'#define '"/>
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string"><xsl:value-of select="../../@name"/></xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="'_'"/>
-  <xsl:call-template name="uppercase">                                          
-    <xsl:with-param name="string"><xsl:value-of select="@name"/></xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="'(n) n->node['"/>
-  <xsl:value-of select="position() - 1"/>
-  <xsl:value-of select="']'"/>
-  <xsl:call-template name="newline"/>
+<xsl:template match="node" mode="make-head">
+  <xsl:value-of select="'extern '"/>
+  <xsl:apply-imports/>
+  <xsl:value-of select="';'"/>
 </xsl:template>
 
-<!-- generate accessors for attributes -->
-<xsl:template match="attribute" mode="accessors">
-  <xsl:value-of select="'#define '"/>
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string"><xsl:value-of select="../../@name"/></xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="'_'"/>
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string"><xsl:value-of select="@name"/></xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="'(n'" />
-  <!-- if the attribute is an array, we need to add the index to the macro -->
-  <xsl:if test="//attributetypes/type[@name = current()/type/@name]/@size" >
-    <xsl:value-of select="', x'" />
-  </xsl:if>
-  <xsl:value-of select="') n->attribs.N_'"/> 
-  <xsl:value-of select="../../@name"/>
-  <xsl:value-of select="'.'"/>
-  <xsl:value-of select="@name"/>
-  <!-- if the attribute is an array, we need to add the index to the macro -->
-  <xsl:if test="//attributetypes/type[@name = current()/type/@name]/@size" >
-    <xsl:value-of select="'[x]'" />
-  </xsl:if>
-  <xsl:call-template name="newline"/>
-</xsl:template>
-
-<!-- generate a make function -->
-<xsl:template match="node" mode="make">
-  <xsl:value-of select="'extern node *Make'"/>
-  <xsl:value-of select="@name"/>
-  <xsl:value-of select="'( '"/>
-  <!-- permanent attributes first -->
-  <xsl:apply-templates select="attributes/attribute[phases/all]" mode="make"/>
-  <!-- add a , if needed -->
-  <xsl:if test="attributes/attribute[phases/all]">
-    <xsl:if test="sons/son">
-      <xsl:value-of select="' ,'"/>
-    </xsl:if>
-  </xsl:if>
-  <!-- sons are last parameters -->
-  <xsl:apply-templates select="sons/son" mode="make"/>
-  <xsl:value-of select="');'"/>
-</xsl:template>
-
-<xsl:template match="son" mode="make">
-  <xsl:if test="position() != 1">
-    <xsl:value-of select="' ,'"/>
-  </xsl:if>
-  <xsl:value-of select="'node * '"/>
-  <xsl:value-of select="@name"/>
-</xsl:template>
-
-<xsl:template match="attribute" mode="make">
-  <xsl:if test="position() != 1">
-    <xsl:value-of select="' ,'"/>   
-  </xsl:if>
-  <xsl:value-of select="//attributetypes/type[@name = current()/type/@name]/@ctype"/>
-  <!-- if it is an array, we have to add an indirection -->
-  <xsl:if test="//attributetypes/type[@name = current()/type/@name]/@size">
-    <xsl:value-of select="'*'" />
-  </xsl:if>
-  <xsl:value-of select="' '"/>
-  <xsl:value-of select="@name"/>
-</xsl:template>
-
-<!-- basic function for uppercase -->
-<xsl:template name="uppercase">
-  <xsl:param name="string"/>
-  <xsl:value-of select="translate($string, 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')"/>
-</xsl:template>
-
-<!-- basic function for newlines -->
-<xsl:template name="newline">
-  <xsl:text>
-  </xsl:text>
-</xsl:template>
 </xsl:stylesheet>
-
-
