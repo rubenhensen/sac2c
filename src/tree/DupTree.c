@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2000/02/22 12:00:04  jhs
+ * Adapted NODE_TEXT.
+ * /
+ *
  * Revision 1.10  2000/02/17 16:18:37  cg
  * Function DuplicateTypes() moved from typecheck.c.
  * New function DupTypes() added.
@@ -318,7 +322,7 @@ DupTreePre (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("DupTreePre");
 
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[NODE_TYPE (arg_node)]));
+    DBUG_PRINT ("DUP", ("Duplicating - %s", NODE_TEXT (arg_node)));
 
     DBUG_RETURN (arg_node);
 }

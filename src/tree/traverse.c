@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/02/22 11:57:24  jhs
+ * Adapted NODE_TEXT.
+ * /
+ *
  * Revision 1.8  2000/02/21 17:55:39  jhs
  * Added blkex_tab.
  * Added LOST OF UNUSED TRAVERSALS, THEY ARE ALL MINE >:[
@@ -999,8 +1003,7 @@ Trav (node *arg_node, node *arg_info)
         DBUG_ASSERT (0, "Trav: illegal node type !");
     }
 
-    DBUG_PRINT ("TRAV", ("case %s: node adress: %06x", mdb_nodetype[NODE_TYPE (arg_node)],
-                         arg_node));
+    DBUG_PRINT ("TRAV", ("case %s: node adress: %06x", NODE_TEXT (arg_node), arg_node));
 #endif /* not DBUG_OFF */
 
     /*
