@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2004/11/26 12:30:04  mwe
+ * SacDevCamp: compiles!
+ *
  * Revision 3.38  2004/11/21 11:22:03  sah
  * removed some old ast infos
  *
@@ -170,21 +173,20 @@
  *
  */
 
-#define NEW_INFO
-
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "globals.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "node_basic.h"
 #include "Error.h"
 #include "dbug.h"
-#include "my_debug.h"
 #include "traverse.h"
 #include "free.h"
 #include "string.h"
 #include "internal_lib.h"
+#include "LookUpTable.h"
 
 #include "InferDFMs.h"
 #include "optimize.h"
@@ -196,13 +198,13 @@
  */
 struct INFO {
     int type;
-    LUT_t lut;
+    lut_t *lut;
     node *modul;
     node *vardecs;
     node *prolog;
     node *epilog;
     node *arg;
-    ids *ids;
+    node *ids;
     node *fundef;
 };
 
@@ -229,7 +231,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_INL_TYPE (result) = 0;
     INFO_INL_LUT (result) = NULL;
@@ -249,7 +251,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -281,10 +283,10 @@ ResetInlineNo (node *module)
 
     DBUG_ENTER ("ResetInlineNo");
 
-    fun_node = MODUL_FUNS (module);
+    fun_node = MODULE_FUNS (module);
     while (fun_node != NULL) {
-        if (FUNDEF_INLINE (fun_node)) {
-            FUNDEF_INLREC (fun_node) = inlnum;
+        if (FUNDEF_ISINLINE (fun_node)) {
+            FUNDEF_INLREC (fun_node) = global.inlnum;
         } else {
             FUNDEF_INLREC (fun_node) = 0;
         }
@@ -396,7 +398,7 @@ InlineArg (node *arg_node, info *arg_info)
     char *new_name;
     node *new_avis;
     node *tmp_id;
-    ids *tmp_ids;
+    node *tmp_ids;
 
     DBUG_ENTER ("InlineArg");
 
@@ -411,17 +413,17 @@ InlineArg (node *arg_node, info *arg_info)
     /*
      * build a new vardec based on 'arg_node' and rename it
      */
-    new_vardec = MakeVardecFromArg (arg_node);
-    new_name = TmpVarName (ARG_NAME (arg_node));
-    VARDEC_NAME (new_vardec) = Free (VARDEC_NAME (new_vardec));
+    new_vardec = TCmakeVardecFromArg (arg_node);
+    new_name = ILIBtmpVarName (ARG_NAME (arg_node));
+    VARDEC_NAME (new_vardec) = ILIBfree (VARDEC_NAME (new_vardec));
     VARDEC_NAME (new_vardec) = new_name;
 
-    new_avis = AdjustAvisData (new_vardec, INFO_INL_FUNDEF (arg_info));
+    new_avis = TCadjustAvisData (new_vardec, INFO_INL_FUNDEF (arg_info));
     /*
      * insert pointers ['old_avis', 'new_avis'] into INFO_INL_LUT
      */
     INFO_INL_LUT (arg_info)
-      = InsertIntoLUT_P (INFO_INL_LUT (arg_info), ARG_AVIS (arg_node), new_avis);
+      = LUTinsertIntoLutP (INFO_INL_LUT (arg_info), ARG_AVIS (arg_node), new_avis);
 
     /*
      * insert new vardec into INFO_INL_VARDECS chain
@@ -434,14 +436,13 @@ InlineArg (node *arg_node, info *arg_info)
      *   VARDEC_NAME( new_vardec) = arg;
      * into INFO_INL_PROLOG
      */
-    tmp_ids = MakeIds_Copy (new_name);
-    IDS_VARDEC (tmp_ids) = new_vardec;
-    IDS_AVIS (tmp_ids) = VARDEC_OR_ARG_AVIS (new_vardec);
+    tmp_ids = TCmakeIdsCopyString (new_name, NULL);
+    IDS_AVIS (tmp_ids) = DECL_AVIS (new_vardec);
 
-    new_ass = MakeAssign (MakeLet (DupNode (arg), tmp_ids), NULL);
+    new_ass = TBmakeAssign (TBmakeLet (tmp_ids, DUPdoDupNode (arg)), NULL);
 
     /* store definition assignment of this new vardec (only in ssaform) */
-    if (valid_ssaform && (VARDEC_AVIS (new_vardec) != NULL)) {
+    if (global.valid_ssaform && (VARDEC_AVIS (new_vardec) != NULL)) {
         AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = new_ass;
     }
     ASSIGN_NEXT (new_ass) = INFO_INL_PROLOG (arg_info);
@@ -453,18 +454,15 @@ InlineArg (node *arg_node, info *arg_info)
      *   arg = VARDEC_NAME( new_vardec);
      * into INFO_INL_EPILOG
      */
-    if (ARG_ATTRIB (arg_node) == ST_reference) {
+    if (ARG_ISREFERENCE (arg_node)) {
         DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "reference argument must be a N_id node");
-        tmp_id = DupIds_Id (tmp_ids);
-        SET_FLAG (ID, tmp_id, IS_GLOBAL, GET_FLAG (ID, arg, IS_GLOBAL));
-        SET_FLAG (ID, tmp_id, IS_REFERENCE, FALSE);
+        tmp_id = DUPdupIdsId (tmp_ids);
 
-        tmp_ids = MakeIds_Copy (ID_NAME (arg));
-        IDS_VARDEC (tmp_ids) = ID_VARDEC (arg);
+        tmp_ids = TCmakeIdsCopyString (ID_NAME (arg), NULL);
         IDS_AVIS (tmp_ids) = ID_AVIS (arg);
 
-        new_ass = MakeAssign (MakeLet (tmp_id, tmp_ids), NULL);
-        valid_ssaform = FALSE; /* no valid SSA form anymore ... */
+        new_ass = TBmakeAssign (TBmakeLet (tmp_ids, tmp_id), NULL);
+        global.valid_ssaform = FALSE; /* no valid SSA form anymore ... */
 
         ASSIGN_NEXT (new_ass) = INFO_INL_EPILOG (arg_info);
         INFO_INL_EPILOG (arg_info) = new_ass;
@@ -474,13 +472,13 @@ InlineArg (node *arg_node, info *arg_info)
      * insert pointers ['arg_node', 'new_vardec'] into INFO_INL_LUT
      */
     INFO_INL_LUT (arg_info)
-      = InsertIntoLUT_P (INFO_INL_LUT (arg_info), arg_node, new_vardec);
+      = LUTinsertIntoLutP (INFO_INL_LUT (arg_info), arg_node, new_vardec);
 
     /*
      * insert strings [ARG_NAME(arg_node), new_name] into INFO_INL_LUT
      */
     INFO_INL_LUT (arg_info)
-      = InsertIntoLUT_S (INFO_INL_LUT (arg_info), ARG_NAME (arg_node), new_name);
+      = LUTinsertIntoLutS (INFO_INL_LUT (arg_info), ARG_NAME (arg_node), new_name);
 
     if (ARG_NEXT (arg_node) != NULL) {
         INFO_INL_ARG (arg_info) = EXPRS_NEXT (INFO_INL_ARG (arg_info));
@@ -514,10 +512,10 @@ InlineVardec (node *arg_node, info *arg_info)
     /*
      * build a new vardec based on 'arg_node' and rename it
      */
-    new_vardec = DupNode (arg_node);
+    new_vardec = DUPdoDupNode (arg_node);
 
-    new_name = TmpVarName (VARDEC_NAME (arg_node));
-    VARDEC_NAME (new_vardec) = Free (VARDEC_NAME (new_vardec));
+    new_name = ILIBtmpVarName (VARDEC_NAME (arg_node));
+    VARDEC_NAME (new_vardec) = ILIBfree (VARDEC_NAME (new_vardec));
     VARDEC_NAME (new_vardec) = new_name;
 
     /*
@@ -526,25 +524,25 @@ InlineVardec (node *arg_node, info *arg_info)
     VARDEC_NEXT (new_vardec) = INFO_INL_VARDECS (arg_info);
     INFO_INL_VARDECS (arg_info) = new_vardec;
 
-    new_avis = AdjustAvisData (new_vardec, INFO_INL_FUNDEF (arg_info));
+    new_avis = TCadjustAvisData (new_vardec, INFO_INL_FUNDEF (arg_info));
 
     /*
      * insert pointers ['old_avis', 'new_avis'] into INFO_INL_LUT
      */
     INFO_INL_LUT (arg_info)
-      = InsertIntoLUT_P (INFO_INL_LUT (arg_info), VARDEC_AVIS (arg_node), new_avis);
+      = LUTinsertIntoLutP (INFO_INL_LUT (arg_info), VARDEC_AVIS (arg_node), new_avis);
 
     /*
      * insert pointers ['arg_node', 'new_vardec'] into INFO_INL_LUT
      */
     INFO_INL_LUT (arg_info)
-      = InsertIntoLUT_P (INFO_INL_LUT (arg_info), arg_node, new_vardec);
+      = LUTinsertIntoLutP (INFO_INL_LUT (arg_info), arg_node, new_vardec);
 
     /*
      * insert strings [VARDEC_NAME(arg_node), new_name] into INFO_INL_LUT
      */
     INFO_INL_LUT (arg_info)
-      = InsertIntoLUT_S (INFO_INL_LUT (arg_info), VARDEC_NAME (arg_node), new_name);
+      = LUTinsertIntoLutS (INFO_INL_LUT (arg_info), VARDEC_NAME (arg_node), new_name);
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = InlineVardec (VARDEC_NEXT (arg_node), arg_info);
@@ -574,7 +572,7 @@ InlineRetExprs (node *arg_node, info *arg_info)
     DBUG_ASSERT ((INFO_INL_IDS (arg_info) != NULL), "INFO_INL_IDS not found!");
 
     new_expr
-      = DupNodeLUT_Type (EXPRS_EXPR (arg_node), INFO_INL_LUT (arg_info), DUP_INLINE);
+      = DUPdoDupNodeLutType (EXPRS_EXPR (arg_node), INFO_INL_LUT (arg_info), DUP_INLINE);
 
     if ((NODE_TYPE (new_expr) != N_id)
         || (strcmp (ID_NAME (new_expr), IDS_NAME (INFO_INL_IDS (arg_info))))) {
@@ -584,14 +582,14 @@ InlineRetExprs (node *arg_node, info *arg_info)
          * into INFO_INL_EPILOG
          */
         INFO_INL_EPILOG (arg_info)
-          = MakeAssign (MakeLet (new_expr, DupOneIds (INFO_INL_IDS (arg_info))),
-                        INFO_INL_EPILOG (arg_info));
+          = TBmakeAssign (TBmakeLet (DUPdoDupNode (INFO_INL_IDS (arg_info)), new_expr),
+                          INFO_INL_EPILOG (arg_info));
 
         /* set the correct AVIS_SSAASSIGN() attribute for this new assignment */
         avis = IDS_AVIS (INFO_INL_IDS (arg_info));
         if (avis != NULL) {
-            DBUG_PRINT ("INLAVIS", ("set correct SSAASSIGN attribute for %s",
-                                    VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (avis))));
+            DBUG_PRINT ("INLAVIS",
+                        ("set correct SSAASSIGN attribute for %s", AVIS_NAME (avis)));
             AVIS_SSAASSIGN (avis) = INFO_INL_EPILOG (arg_info);
         }
     }
@@ -631,7 +629,7 @@ DoInline (node *let_node, info *arg_info)
 
     DBUG_PRINT ("INL", ("Inlining function %s", AP_NAME (ap_node)));
 
-    INFO_INL_LUT (arg_info) = GenerateLUT ();
+    INFO_INL_LUT (arg_info) = LUTgenerateLut ();
     INFO_INL_PROLOG (arg_info) = NULL;
     INFO_INL_EPILOG (arg_info) = NULL;
     if (INFO_INL_TYPE (arg_info) & INL_COUNT) {
@@ -670,28 +668,28 @@ DoInline (node *let_node, info *arg_info)
     /*
      * duplicate function body (with LUT to get the right back-references!)
      */
-    inl_nodes = DupTreeLUT_Type (BLOCK_INSTR (FUNDEF_BODY (inl_fundef)),
-                                 INFO_INL_LUT (arg_info), DUP_INLINE);
+    inl_nodes = DUPdoDupTreeLutType (BLOCK_INSTR (FUNDEF_BODY (inl_fundef)),
+                                     INFO_INL_LUT (arg_info), DUP_INLINE);
 
     /*
      * insert INFO_INL_PROLOG, INFO_INL_EPILOG
      */
-    inl_nodes = AppendAssign (INFO_INL_PROLOG (arg_info), inl_nodes);
-    inl_nodes = AppendAssign (inl_nodes, INFO_INL_EPILOG (arg_info));
+    inl_nodes = TCappendAssign (INFO_INL_PROLOG (arg_info), inl_nodes);
+    inl_nodes = TCappendAssign (inl_nodes, INFO_INL_EPILOG (arg_info));
 
 #if 0
-  if ((FUNDEF_STATUS( inl_fundef) == ST_dofun) ||
-      (FUNDEF_STATUS( inl_fundef) == ST_whilefun)) {
-    node *int_assign = SearchInLUT_PP( INFO_INL_LUT( arg_info),
-                                       FUNDEF_INT_ASSIGN( inl_fundef));
+  if (FUNDEF_ISDOFUN( inl_fundef) ) {
+
+    node *int_assign = LUTsearchInLutPp( INFO_INL_LUT( arg_info),
+					 FUNDEF_INT_ASSIGN( inl_fundef));
 
     DBUG_ASSERT( (int_assign != FUNDEF_INT_ASSIGN( inl_fundef)),
                  "duplicated FUNDEF_INT_ASSIGN not found in LUT!");
-    int_assign = AdjustIntAssign( int_assign, let_node);
+    int_assign = TCadjustIntAssign( int_assign, let_node);
   }
 #endif
 
-    INFO_INL_LUT (arg_info) = RemoveLUT (INFO_INL_LUT (arg_info));
+    INFO_INL_LUT (arg_info) = LUTremoveLut (INFO_INL_LUT (arg_info));
 
     DBUG_RETURN (inl_nodes);
 }
@@ -699,7 +697,7 @@ DoInline (node *let_node, info *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *INLmodul( node *arg_node, info *arg_info)
+ *   node *INLmodule( node *arg_node, info *arg_info)
  *
  * Description:
  *   Stores pointer to module in info-node and traverses function-chain.
@@ -707,13 +705,13 @@ DoInline (node *let_node, info *arg_info)
  ******************************************************************************/
 
 node *
-INLmodul (node *arg_node, info *arg_info)
+INLmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INLmodul");
+    DBUG_ENTER ("INLmodule");
 
-    if (MODUL_FUNS (arg_node)) {
+    if (MODULE_FUNS (arg_node)) {
         INFO_INL_MODUL (arg_info) = arg_node;
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -819,10 +817,9 @@ INLfundef (node *arg_node, info *arg_info)
      *   }                        }
      */
 
-    DBUG_ASSERT ((!FUNDEF_IS_LACFUN (arg_node)),
+    DBUG_ASSERT ((!FUNDEF_ISLACFUN (arg_node)),
                  "inlining on LaC functions does not work correctly yet!");
 
-#ifdef NEW_AST
     /*
      * We do not do inlining in used functions, as the bodies of those
      * functions will be thrown away anyways later on (they already
@@ -830,24 +827,22 @@ INLfundef (node *arg_node, info *arg_info)
      * would be of no use at all!
      */
     if ((FUNDEF_SYMBOLNAME (arg_node) == NULL) && (FUNDEF_BODY (arg_node) != NULL)
-        && (!FUNDEF_INLINE (arg_node))) {
-#else
-    if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_INLINE (arg_node))) {
-#endif
+        && (!FUNDEF_ISINLINE (arg_node))) {
+
         DBUG_PRINT ("INL", ("*** Trav function %s", FUNDEF_NAME (arg_node)));
 
         ResetInlineNo (INFO_INL_MODUL (arg_info));
         INFO_INL_VARDECS (arg_info) = NULL;
         INFO_INL_FUNDEF (arg_info) = arg_node;
 
-        FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
+        FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
 
         FUNDEF_VARDEC (arg_node)
-          = AppendVardec (FUNDEF_VARDEC (arg_node), INFO_INL_VARDECS (arg_info));
+          = TCappendVardec (FUNDEF_VARDEC (arg_node), INFO_INL_VARDECS (arg_info));
     }
 
     if (FUNDEF_NEXT (arg_node)) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -880,20 +875,19 @@ INLassign (node *arg_node, info *arg_info)
          */
         inl_fundef = AP_FUNDEF (LET_EXPR (instr));
 
-        DBUG_PRINT ("INL", ("Ap of fun %s in line %d."
-                            " Fundef status:"
-                            " wrapper %d inline %d max-rec-inl left %d",
-                            AP_NAME (LET_EXPR (instr)), NODE_LINE (arg_node),
-                            (FUNDEF_STATUS (inl_fundef) == ST_wrapperfun),
-                            FUNDEF_INLINE (inl_fundef), FUNDEF_INLREC (inl_fundef)));
+        DBUG_PRINT ("INL",
+                    ("Ap of fun %s in line %d."
+                     " Fundef status:"
+                     " wrapper %d inline %d max-rec-inl left %d",
+                     AP_NAME (LET_EXPR (instr)), NODE_LINE (arg_node),
+                     (FUNDEF_ISWRAPPERFUN (inl_fundef)), FUNDEF_ISINLINE (inl_fundef),
+                     FUNDEF_INLREC (inl_fundef) != 0));
 
-        if (FUNDEF_INLINE (inl_fundef)) {
+        if (FUNDEF_ISINLINE (inl_fundef)) {
 #if INLINE_WRAPPERS
-            if ((FUNDEF_INLREC (inl_fundef) > 0)
-                || (FUNDEF_STATUS (inl_fundef) == ST_wrapperfun)) {
+            if ((FUNDEF_INLREC (inl_fundef) > 0) || (FUNDEF_ISWRAPPERFUN (inl_fundef))) {
 #else
-            if ((FUNDEF_INLREC (inl_fundef) > 0)
-                && (FUNDEF_STATUS (inl_fundef) != ST_wrapperfun)) {
+            if ((FUNDEF_INLREC (inl_fundef) > 0) && (!FUNDEF_ISWRAPPERFUN (inl_fundef))) {
 #endif
                 inlined_nodes = DoInline (instr, arg_info);
             }
@@ -908,30 +902,30 @@ INLassign (node *arg_node, info *arg_info)
          */
 
         /* 'inl_fundef' definitly is set, since (inlined_nodes != NULL) */
-        if (FUNDEF_STATUS (inl_fundef) != ST_wrapperfun) {
+        if (!FUNDEF_ISWRAPPERFUN (inl_fundef)) {
             FUNDEF_INLREC (inl_fundef)--;
         }
-        inlined_nodes = Trav (inlined_nodes, arg_info);
-        if (FUNDEF_STATUS (inl_fundef) != ST_wrapperfun) {
+        inlined_nodes = TRAVdo (inlined_nodes, arg_info);
+        if (!FUNDEF_ISWRAPPERFUN (inl_fundef)) {
             FUNDEF_INLREC (inl_fundef)++;
         }
 
         if (ASSIGN_NEXT (arg_node)) {
-            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
         }
 
-        arg_node = AppendAssign (inlined_nodes, FreeNode (arg_node));
+        arg_node = TCappendAssign (inlined_nodes, FREEdoFreeNode (arg_node));
     } else {
         /*
          * no inlining done -> traverse sons
          */
 
         if (ASSIGN_INSTR (arg_node)) {
-            ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+            ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
         }
 
         if (ASSIGN_NEXT (arg_node)) {
-            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
         }
     }
 
@@ -941,7 +935,7 @@ INLassign (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *InlineSingleApplication( node *let, node *fundef)
+ *  node *INLinlineSingleApplication( node *let, node *fundef)
  *
  * description:
  *   This function allows a single function application to be inlined.
@@ -986,11 +980,10 @@ INLassign (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-InlineSingleApplication (node *let, node *fundef)
+INLinlineSingleApplication (node *let, node *fundef)
 {
     info *arg_info;
     node *assigns;
-    funtab *mem_tab;
 
     DBUG_ENTER ("InlineSingleApplication");
 
@@ -999,18 +992,17 @@ InlineSingleApplication (node *let, node *fundef)
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                  "InlineSingleApplication() needs a N_fundef node!");
 
-    mem_tab = act_tab;
-    act_tab = inline_tab;
     arg_info = MakeInfo ();
     INFO_INL_TYPE (arg_info) = 0;
     INFO_INL_VARDECS (arg_info) = FUNDEF_VARDEC (fundef);
     INFO_INL_FUNDEF (arg_info) = fundef;
 
+    TRAVpush (TR_inl);
     assigns = DoInline (let, arg_info);
+    TRAVpop ();
 
     FUNDEF_VARDEC (fundef) = INFO_INL_VARDECS (arg_info);
     FreeInfo (arg_info);
-    act_tab = mem_tab;
 
     DBUG_RETURN (assigns);
 }
@@ -1026,36 +1018,36 @@ InlineSingleApplication (node *let, node *fundef)
  ******************************************************************************/
 
 node *
-Inline (node *arg_node)
+INLdoInline (node *arg_node)
 {
     info *arg_info;
-    funtab *mem_tab;
 #ifndef DBUG_OFF
     int mem_inl_fun = inl_fun;
 #endif
 
     DBUG_ENTER ("Inline");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
                  "Inline() can be used for N_modul nodes only!");
 
     DBUG_PRINT ("OPT", ("FUNCTION INLINING"));
 
-    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
+    DBUG_PRINT ("OPTMEM",
+                ("mem currently allocated: %d bytes", global.current_allocated_mem));
 
-    mem_tab = act_tab;
-    act_tab = inline_tab;
     arg_info = MakeInfo ();
     INFO_INL_TYPE (arg_info) = INL_COUNT;
 
-    arg_node = Trav (arg_node, arg_info);
+    TRAVpush (TR_inl);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
 
     DBUG_PRINT ("OPT", ("                        result: %d", inl_fun - mem_inl_fun));
 
-    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
+    DBUG_PRINT ("OPTMEM",
+                ("mem currently allocated: %d bytes", global.current_allocated_mem));
 
     FreeInfo (arg_info);
-    act_tab = mem_tab;
 
     DBUG_RETURN (arg_node);
 }
