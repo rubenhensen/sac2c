@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2002/07/10 21:32:22  ktr
+ * *** empty log message ***
+ *
  * Revision 3.62  2002/06/27 16:57:00  dkr
  * signature of CreateSel() modified
  *
@@ -3838,6 +3841,7 @@ CreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr, node *fu
                     MakeTypes (T_int, 1, MakeShpseg (MakeNums (dim, NULL)), NULL, NULL),
                     vardecs);
     IDS_VARDEC (vec_ids) = vardecs;
+    IDS_AVIS (vec_ids) = VARDEC_AVIS (vardecs);
 
     for (i = 0; i < dim; i++) {
         tmp_ids = MakeIds (TmpVar (), NULL, ST_regular);
@@ -3846,11 +3850,13 @@ CreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr, node *fu
         IDS_NEXT (tmp_ids) = scl_ids;
         scl_ids = tmp_ids;
         IDS_VARDEC (scl_ids) = vardecs;
+        IDS_AVIS (scl_ids) = VARDEC_AVIS (vardecs);
     }
 
     id = MakeId (TmpVar (), NULL, ST_regular);
     vardecs = MakeVardec (StringCopy (ID_NAME (id)), MakeTypes1 (btype), vardecs);
     ID_VARDEC (id) = vardecs;
+    ID_AVIS (id) = VARDEC_AVIS (vardecs);
 
     wl = MakeNWith (MakeNPart (MakeNWithid (vec_ids, scl_ids),
                                MakeNGenerator (CreateZeroVector (dim, T_int),
