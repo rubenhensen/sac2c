@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.52  1998/10/29 20:37:29  dkr
+ * signature of ICM WL_FOLD_NOOP changed
+ *
  * Revision 1.51  1998/08/27 14:48:45  cg
  * ICM ADJUST_SCHEDULER now gets also upper bound of respective block.
  *
@@ -617,16 +620,12 @@ ICM_END( WL_ASSIGN_COPY, (source, dims_target, target, idx_vec, dims, idx_scalar
 
 #if defined(WL_FOLD_NOOP) || defined(ICM_ALL)
 ICM_DEF( WL_FOLD_NOOP, NO_TRACE)
-  ICM_INT(dim)
   ICM_INT(dims_target)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
-  ICM_INT(cnt_bounds)
-  ICM_VAR(cnt_bounds, bounds)
-ICM_END( WL_FOLD_NOOP, (dim, dims_target, target, idx_vec, dims, idx_scalars,
-                        cnt_bounds, bounds))
+ICM_END( WL_FOLD_NOOP, (dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
 #if defined(WL_ADJUST_OFFSET) || defined(ICM_ALL)

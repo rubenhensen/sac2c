@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/10/29 20:37:59  dkr
+ * signature of ICM WL_FOLD_NOOP changed
+ *
  * Revision 1.16  1998/08/07 16:05:48  dkr
  * some ICM changed
  *
@@ -71,9 +74,8 @@ extern void ICMCompileWL_ASSIGN_INIT (int dims_target, char *target, char *idx_v
 extern void ICMCompileWL_ASSIGN_COPY (char *source, int dims_target, char *target,
                                       char *idx_vec, int dims, char **idx_scalars);
 
-extern void ICMCompileWL_FOLD_NOOP (int dim, int dims_target, char *target, char *idx_vec,
-                                    int dims, char **idx_scalars, int cnt_bounds,
-                                    char **bounds);
+extern void ICMCompileWL_FOLD_NOOP (int dims_target, char *target, char *idx_vec,
+                                    int dims, char **idx_scalars);
 
 extern void ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec,
                                       int dims_wl);
