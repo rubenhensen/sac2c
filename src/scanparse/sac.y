@@ -4,10 +4,13 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2002/10/18 15:51:39  dkr
+ * EXTERN_MOD_NAME used
+ *
  * Revision 3.71  2002/10/18 13:31:09  sbs
  * iff the new type checker is used, all module names for external objects are
- * preset by _EXT. This is the first stage on the way to have FULL names for these
- * as well....
+ * preset by _EXT. This is the first stage on the way to have FULL names for
+ * these as well....
  *
  * Revision 3.70  2002/10/10 12:16:41  sbs
  * Now, MakePrf is only called if the number of arguments supplied matches
@@ -116,82 +119,7 @@
  * Revision 3.38  2002/04/16 18:42:56  dkr
  * support for empty return statements added
  *
- * Revision 3.37  2002/02/26 14:47:10  dkr
- * several NODE_LINE errors corrected
- *
- * Revision 3.36  2002/02/21 15:45:57  dkr
- * access macros used
- *
- * Revision 3.35  2002/02/20 14:34:02  dkr
- * function DupTypes() renamed into DupAllTypes()
- *
- * Revision 3.34  2001/07/18 12:57:45  cg
- * Applications of old tree construction function
- * AppendNodeChain eliminated.
- *
- * Revision 3.33  2001/07/16 08:23:11  cg
- * Old tree construction function MakeNode eliminated.
- *
- * Revision 3.32  2001/07/13 13:23:41  cg
- * DBUG tags renamed:
- * GENTREE -> PARSE and GENSIB -> PARSE_SIB
- *
- * Revision 3.31  2001/06/28 13:13:28  cg
- * Type syntax changed: type[] is now equivalent to type.
- *
- * Revision 3.30  2001/06/28 09:26:06  cg
- * Syntax of array types changed:
- * int[] -> int[+]  and  int[?] -> int[*]
- * int[] is still supported as input.
- *
- * Revision 3.29  2001/06/28 07:46:51  cg
- * Primitive function psi() renamed to sel().
- *
- * Revision 3.28  2001/06/22 12:18:53  dkr
- * fixed a bug in rule for 'expr_sign':
- * negation of float/double works correctly now
- *
- * Revision 3.27  2001/06/21 15:57:41  dkr
- * some superfluous tokens removed
- *
- * Revision 3.26  2001/06/21 15:51:33  dkr
- * problem with sign operators partially fixed. Open problems:
- *   - (: ... ) ...     still causes a syntax error,
- *   - ( ... ) [ ... ]  is parsed wrongly as  (- ( ... )) [ ... ]
- * (+ analogous)
- *
- * Revision 3.25  2001/06/20 13:27:30  sbs
- * changed priority of SIGN (unary minus) now less than sel!
- *
- * Revision 3.24  2001/05/23 07:39:53  sbs
- * moved eof 'out' of all!
- * The alpha-trick doesn't work within a standalone function!
- * It has to be within the rules section!
- *
- * Revision 3.23  2001/05/22 15:06:22  dkr
- * function CleanUpParser() added.
- * rule 'eof' replaced by rule 'all'.
- * space leak in function CheckWlcompConf() removed.
- *
- * Revision 3.22  2001/05/18 09:26:43  cg
- * MALLOC and FREE transformed into Malloc and Free.
- *
- * Revision 3.21  2001/04/26 12:21:16  dkr
- * GetExprsLength() renamed into CountExprs()
- *
- * Revision 3.20  2001/04/24 14:13:51  dkr
- * MakeNode( N_fundef) replaced by MakeFundef()
- *
- * Revision 3.19  2001/04/24 13:04:40  dkr
- * type 'id' replaced by 'char'
- *
- * Revision 3.18  2001/04/24 09:34:07  dkr
- * CHECK_NULL renamed into STR_OR_EMPTY
- *
- * Revision 3.17  2001/04/24 09:05:55  dkr
- * P_FORMAT replaced by F_PTR
- *
- *  ... [eliminated]
+ * [ eliminated ]
  *
  */
 
@@ -1867,7 +1795,7 @@ modheader: modclass evextern id COLON linkwith
              link_mod_name = $3;
 
              if ($2) {
-               mod_name = ((sbs==1)? "_EXT" : NULL);
+               mod_name = ( (sbs == 1) ? EXTERN_MOD_NAME : NULL );
              } else {
                mod_name = link_mod_name;
              }
@@ -2420,7 +2348,9 @@ sibfuns: sibfun sibfuns
 sibfun: sibevmarker varreturntypes fun_id BRACKET_L sibarglist
         BRACKET_R { $<cint>$ = linenum; } sibfunbody sibpragmas
         { $$ = MakeFundef( StringCopy( IDS_NAME( $3)),
-                           (((sbs==1) && (IDS_MOD( $3) == NULL)) ? "_EXT" : IDS_MOD( $3)),
+                           ( ((sbs == 1) && (IDS_MOD( $3) == NULL))
+                                ? EXTERN_MOD_NAME
+                                : IDS_MOD( $3) ),
                            $2, $5, $8, NULL);
           $3 = FreeOneIds( $3);
           NODE_LINE( $$) = $<cint>7;
@@ -2549,17 +2479,19 @@ sibfunlist: sibfunlistentry COMMA sibfunlist
 
 sibfunlistentry: fun_id BRACKET_L sibarglist BRACKET_R
                  { $$ = MakeFundef( StringCopy( IDS_NAME( $1)),
-                                      (((sbs==1) && (IDS_MOD( $1) == NULL)) ?
-                                        "_EXT" :
-                                        IDS_MOD( $1)),
-                                      MakeTypes1( T_unknown),
-                                      $3, NULL, NULL);
+                                    ( ((sbs == 1) && (IDS_MOD( $1) == NULL))
+                                         ? EXTERN_MOD_NAME
+                                         : IDS_MOD( $1) ),
+                                    MakeTypes1( T_unknown),
+                                    $3, NULL, NULL);
                    FUNDEF_STATUS( $$) = sib_imported_status;
 
-                   DBUG_PRINT("PARSE_SIB",("%s"F_PTR"SibNeedFun %s",
-                                       mdb_nodetype[ NODE_TYPE( $$)],
-                                       $$, ItemName( $$)));
-                }
+                   DBUG_PRINT( "PARSE_SIB",
+                               ("%s"F_PTR"SibNeedFun %s",
+                                mdb_nodetype[ NODE_TYPE( $$)],
+                                $$,
+                                ItemName( $$)));
+                 }
                ;
 
 

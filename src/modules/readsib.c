@@ -1,11 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/10/18 15:51:35  dkr
+ * EXTERN_MOD_NAME used
+ *
  * Revision 3.3  2002/10/18 13:40:27  sbs
  * interfacing between the external module name convention
  * of the old type checker, i.e., mod == NULL, and the new
- * convention for the new type checker, i.e., mod -> _EXT  made
- * . This presumes SIBs still to stick to the old convention!!
+ * convention for the new type checker, i.e., mod -> _EXT  made.
+ * This presumes SIBs still to stick to the old convention!!
  *
  * Revision 3.2  2001/04/26 00:10:10  dkr
  * EnsureExistFuns(): call of FreeZombie() added
@@ -54,84 +57,7 @@
  *      in this case, first X11.so is searched and if
  *      that search fails, X11.so is searched for.
  *
- * Revision 1.20  1998/05/27 11:19:44  cg
- * global variable 'filename' which contains the current file name in order
- * to provide better error messages is now handled correctly.
- *
- * Revision 1.19  1998/03/25 10:41:43  cg
- * library format of SAC libraries slightly modified:
- * archives are now called lib<modname>.a instead of <modname>.a
- * This allows for using the -l option of C compilers in conjunction
- * with -L<tmpdir>.
- *
- * Revision 1.18  1998/03/17 12:14:24  cg
- * added resource SYSTEM_LIBPATH.
- * This makes the gcc special feature '--print-file-name' obsolete.
- * A fourth search path is used instead for system libraries.
- * This additional path may only be set via the sac2crc file,
- * but not by environment variables or command line parameters.
- *
- * Revision 1.17  1998/03/04 16:23:27  cg
- *  C compiler invocations and file handling converted to new
- * to usage of new  configuration files.
- *
- * Revision 1.16  1998/02/27 16:32:58  cg
- * added correct setting of file names for diagnostic output
- * while parsing (global variable 'filename')
- *
- * Revision 1.15  1997/11/12 10:38:24  sbs
- * break in default of switch constructs added (as required by cc)
- *
- * Revision 1.14  1997/04/30 11:54:05  cg
- * Now, full library path names are stored in all external entries of
- * global dependency tree, including copies of identical ones.
- *
- * Revision 1.13  1997/04/24  10:04:25  cg
- * function PrintDependencies moved to import.[ch]
- *
- * Revision 1.12  1997/03/19  13:51:15  cg
- * Now, all required libraries are checked at this stage of the compilation.
- * Linkwith information is retrieved form SIBs.
- *
- * Revision 1.11  1996/09/11  06:25:57  cg
- * Converted to new lib-file format.
- *
- * Revision 1.10  1996/04/02  15:44:50  cg
- * bug fixed in function CheckExistFuns: now new symbols are inserted
- * into the global mod_tab for implicitly imported functions
- *
- * Revision 1.9  1996/02/21  15:08:35  cg
- * Now, pragmas of functions extracted from SIBs is retrieved correctly
- *
- * Revision 1.8  1996/02/12  17:48:34  cg
- * bug fixed in RSIBfundef, no more segmentation faults when reading
- * functions without inline information
- *
- * Revision 1.7  1996/01/22  18:35:31  cg
- * added new pragmas for global objects: effect, initfun
- *
- * Revision 1.6  1996/01/07  16:59:29  cg
- * pragmas copyfun, freefun, linkname, effect, touch and readonly
- * are now immediately resolved
- *
- * Revision 1.5  1996/01/05  12:39:26  cg
- * Now, SIB information is retrieved from SAC library files.
- * The existence of all necessary module/class implementations
- * is checked and archive files are extracted from library files.
- *
- * Revision 1.4  1996/01/02  17:48:07  cg
- * Typedefs in SIBs which are again based on user-defined types are now resolved.
- *
- * Revision 1.3  1996/01/02  16:09:21  cg
- * some bugs fixed
- *
- * Revision 1.2  1995/12/29  10:41:52  cg
- * first running revision for new SIBs
- *
- * Revision 1.1  1995/12/23  17:28:39  cg
- * Initial revision
- *
- *
+ * [...]
  *
  */
 
@@ -770,10 +696,6 @@ EnsureExistObjects (ids *object, node *modul, node *sib, statustype attrib)
  *                  the SIB and inserted into the syntax tree.
  *                  A node list of needed types for this particular
  *                  function is returned.
- *  global vars   : ---
- *  internal funs : ExtractTypeFromSib
- *  external funs : MakeNodelist, AddSymbol, SearchTypedef, FreeOneIds
- *  macros        : DBUG, TREE
  *
  */
 
@@ -845,12 +767,6 @@ EnsureExistTypes (ids *type, node *modul, node *sib)
  *                  traversed by RSIBfundef.
  *                  A node list of needed types for this particular
  *                  function is returned.
- *  global vars   : ---
- *  internal funs : AddFunToModul
- *  external funs : MakeNodelist, FreeNode, strcmp, SearchFundef
- *  macros        : DBUG, TREE
- *
- *  remarks       :
  *
  */
 
@@ -939,7 +855,7 @@ RSIBfundef (node *arg_node, node *arg_info)
     } else {
         if (((FUNDEF_STATUS (arg_node) == ST_imported_mod)
              || (FUNDEF_STATUS (arg_node) == ST_imported_class))
-            && (((sbs == 1) && (strcmp (FUNDEF_MOD (arg_node), "_EXT") != 0))
+            && (((sbs == 1) && (strcmp (FUNDEF_MOD (arg_node), EXTERN_MOD_NAME) != 0))
                 || ((sbs == 0) && (FUNDEF_MOD (arg_node) != NULL)))) {
             sib = FindSib (FUNDEF_MOD (arg_node));
         }
@@ -1074,7 +990,7 @@ RSIBobjdef (node *arg_node, node *arg_info)
     } else {
         if (((OBJDEF_STATUS (arg_node) == ST_imported_mod)
              || (OBJDEF_STATUS (arg_node) == ST_imported_class))
-            && (((sbs == 1) && (strcmp (OBJDEF_MOD (arg_node), "_EXT") != 0))
+            && (((sbs == 1) && (strcmp (OBJDEF_MOD (arg_node), EXTERN_MOD_NAME) != 0))
                 || ((sbs == 0) && (OBJDEF_MOD (arg_node) != NULL)))) {
             sib = FindSib (OBJDEF_MOD (arg_node));
         }
@@ -1121,7 +1037,7 @@ RSIBtypedef (node *arg_node, node *arg_info)
     DBUG_ENTER ("RSIBtypedef");
 
     if ((TYPEDEF_BASETYPE (arg_node) == T_hidden)
-        && (((sbs == 1) && (strcmp (TYPEDEF_MOD (arg_node), "_EXT") != 0))
+        && (((sbs == 1) && (strcmp (TYPEDEF_MOD (arg_node), EXTERN_MOD_NAME) != 0))
             || ((sbs == 0) && (TYPEDEF_MOD (arg_node) != NULL)))) {
         sib_entry = FindSibEntry (arg_node, FindSib (TYPEDEF_MOD (arg_node)));
 
@@ -1208,7 +1124,7 @@ RSIBmodul (node *arg_node, node *arg_info)
         MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
     }
 
-    FreeNode (arg_info);
+    arg_info = FreeNode (arg_info);
 
     DBUG_RETURN (arg_node);
 }

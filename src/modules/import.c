@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/10/18 15:51:30  dkr
+ * EXTERN_MOD_NAME used
+ *
  * Revision 3.13  2002/10/18 13:38:34  sbs
  * interfacing between the external module name convention
  * of the old type checker, i.e., mod == NULL, and the new
@@ -51,24 +54,6 @@
  * This is used for implementing -MM and -MMlib options!
  * => some extensions of PrintDependencies
  * => some adjustments of MakeDeps calls done.
- *
- * Revision 2.6  2000/11/15 14:32:44  sbs
- * {}'s added in order to please gcc.
- *
- * Revision 2.5  2000/10/24 11:48:02  dkr
- * MakeTypes renamed into MakeTypes1
- *
- * Revision 2.4  2000/08/04 17:19:32  dkr
- * NEWTREE removed
- *
- * Revision 2.3  2000/02/23 20:16:34  cg
- * Node status ST_imported replaced by ST_imported_mod and
- * ST_imported_class in order to allow distinction between enteties
- * that are imported from a module and those that are imported from a
- * class.
- *
- * Revision 2.2  1999/05/06 15:38:46  sbs
- * call of yyparse changed to My_yyparse.
  *
  * [...]
  *
@@ -227,12 +212,6 @@ FindModul (char *name)
  *  functionname  : FreeMods
  *  arguments     : 1) mods-list to be free'd
  *  description   : frees the mods-list given
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : free
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
@@ -334,7 +313,7 @@ InsertClassType (node *classdec)
 
     tmp = MakeTypedef (StringCopy (CLASSDEC_NAME (classdec)),
                        CLASSDEC_ISEXTERNAL (classdec)
-                         ? ((sbs == 1) ? "_EXT" : NULL)
+                         ? ((sbs == 1) ? EXTERN_MOD_NAME : NULL)
                          : StringCopy (CLASSDEC_NAME (classdec)),
                        MakeTypes1 (T_hidden), ST_unique, NULL);
     TYPEDEF_STATUS (tmp) = ST_imported_class;
@@ -641,7 +620,7 @@ IMtypedef (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRAGMA", ("Checking pragmas of type %s", ItemName (arg_node)));
 
     if (pragma != NULL) {
-        if (((sbs == 1) && (strcmp (TYPEDEF_MOD (arg_node), "_EXT") != 0))
+        if (((sbs == 1) && (strcmp (TYPEDEF_MOD (arg_node), EXTERN_MOD_NAME) != 0))
             || ((sbs == 0) && (TYPEDEF_MOD (arg_node) != NULL))) {
             /*
              *  typedef from SAC-module/class
@@ -709,7 +688,7 @@ IMtypedef (node *arg_node, node *arg_info)
     }
 
     if ((TYPEDEF_BASETYPE (arg_node) == T_hidden)
-        && (((sbs == 1) && (strcmp (TYPEDEF_MOD (arg_node), "_EXT") == 0))
+        && (((sbs == 1) && (strcmp (TYPEDEF_MOD (arg_node), EXTERN_MOD_NAME) == 0))
             || ((sbs == 0) && (TYPEDEF_MOD (arg_node) == NULL)))) {
         InitGenericFuns (arg_node, pragma);
     }
@@ -753,7 +732,7 @@ IMfundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRAGMA", ("Checking pragmas of function %s", ItemName (arg_node)));
 
     if (pragma != NULL) {
-        if (((sbs == 1) && (strcmp (FUNDEF_MOD (arg_node), "_EXT") != 0))
+        if (((sbs == 1) && (strcmp (FUNDEF_MOD (arg_node), EXTERN_MOD_NAME) != 0))
             || ((sbs == 0) && (FUNDEF_MOD (arg_node) != NULL))) {
             /*
              *  fundef from SAC-module/class
@@ -842,12 +821,6 @@ IMfundef (node *arg_node, node *arg_info)
  *                  2) arg_info points to N_modul node
  *  description   : checks pragmas of global objects.
  *                  Afterwards, the whole pragma node is removed.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : Trav, FreeAllNums, FreeAllIds, FreeTree, FreeNode
- *  macros        : DBUG, TREE, FREE, ERROR
- *
- *  remarks       :
  *
  */
 
@@ -861,7 +834,7 @@ IMobjdef (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRAGMA", ("Checking pragmas of object %s", ItemName (arg_node)));
 
     if (pragma != NULL) {
-        if (((sbs == 1) && (strcmp (OBJDEF_MOD (arg_node), "_EXT") != 0))
+        if (((sbs == 1) && (strcmp (OBJDEF_MOD (arg_node), EXTERN_MOD_NAME) != 0))
             || ((sbs == 0) && (OBJDEF_MOD (arg_node) != NULL))) {
             /*
              *  fundef from SAC-module/class
