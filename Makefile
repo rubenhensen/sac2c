@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 2.38  2000/05/02 15:58:33  dkr
+# definition of gcc_FLAGS and cc_FLAGS changed
+# (-g moved from the definition of the compiler call to these flags definitions)
+#
 # Revision 2.37  2000/04/12 17:26:38  jhs
 # OS will now be pushed into all sub-makes.
 #
@@ -117,14 +121,14 @@ CCPROD       := gcc
 #
 # gcc specific flags:
 #
-gcc_FLAGS := -ansi -Wall 
-gcc_PROD_FLAGS := -Wall -O3
+gcc_FLAGS      := -ansi -Wall -g
+gcc_PROD_FLAGS := -ansi -Wall -O3
 
 #
 # cc specific flags:
 #
-cc_FLAGS  := -erroff=E_CAST_DOESNT_YIELD_LVALUE
-cc_PROD_FLAGS  := -erroff=E_CAST_DOESNT_YIELD_LVALUE -xO4
+cc_FLAGS      := -erroff=E_CAST_DOESNT_YIELD_LVALUE -g
+cc_PROD_FLAGS := -erroff=E_CAST_DOESNT_YIELD_LVALUE -xO4
 
 ################################################################################
 #
@@ -165,7 +169,7 @@ OSF_ALPHA_LIBS     := -ll
 # general setup:
 #
 
-CCFLAGS      := $($(CC)_FLAGS) -g $($(OS)_FLAGS)
+CCFLAGS      := $($(CC)_FLAGS) $($(OS)_FLAGS)
 CCPROD_FLAGS := $($(CCPROD)_PROD_FLAGS) $($(OS)_FLAGS) 
 
 CFLAGS       := -DSHOW_MALLOC -DSAC_FOR_$(OS) 
