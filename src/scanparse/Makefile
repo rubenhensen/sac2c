@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.14  2002/08/13 17:11:28  sbs
+# flatten for includes added.
+#
 # Revision 3.13  2002/07/09 12:45:37  sbs
 # handle_dots.o added
 #
@@ -67,7 +70,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 LIBS      := -ly -ll
 
-INCS = -I../global -I../tree -I../../inc -I../modules -I../typecheck
+INCS = -I../global -I../tree -I../../inc -I../modules -I../typecheck -I../flatten
 
 
 all: y.tab.o lex.yy.o scnprs.o handle_dots.o
