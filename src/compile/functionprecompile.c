@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/29 14:43:20  sah
+ * bugfixes
+ *
  * Revision 1.3  2004/11/27 00:16:00  ktr
  * New barebones precompile.
  *
@@ -419,7 +422,7 @@ FPCfundef (node *arg_node, info *arg_info)
     INFO_FPC_FUNDEF (arg_info) = arg_node;
 
     if (!FUNDEF_ISZOMBIE (arg_node)) {
-        TBmakeArgtab (TCcountFunctionParams (arg_node) + 1);
+        INFO_FPC_ARGTAB (arg_info) = TBmakeArgtab (TCcountFunctionParams (arg_node) + 1);
 
         if (FUNDEF_RETS (arg_node) != NULL) {
             FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
@@ -428,6 +431,11 @@ FPCfundef (node *arg_node, info *arg_info)
             FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
         }
         ABORT_ON_ERROR;
+
+        /*
+         * assign the argtab to the function
+         */
+        FUNDEF_ARGTAB (arg_node) = INFO_FPC_ARGTAB (arg_info);
 
         FUNDEF_ARGTAB (arg_node) = CompressArgtab (FUNDEF_ARGTAB (arg_node));
 
