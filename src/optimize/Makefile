@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.47  1998/05/05 15:51:42  cg
+# added compilation of DataFlowMask.c
+# flag NEWTREE is now set locally as well.
+#
 # Revision 1.46  1998/04/20 12:08:47  dkr
 # make deps done
 #
@@ -141,14 +145,14 @@
 
 CC        := gcc
 CCFLAGS   := -ansi -Wall -g
-CFLAGS    := -D__EXTENSIONS__
+CFLAGS    := -D__EXTENSIONS__ -DNEWTREE
 
 
 INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules
 
 all: optimize.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o DupTree.o Inline.o Unroll.o Unswitch.o CSE.o \
-     WithloopFolding.o WLT.o WLI.o WLF.o
+     WithloopFolding.o WLT.o WLI.o WLF.o DataFlowMask.o
 
 optimize.o: optimize.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o optimize.o -c optimize.c $(INCS)
@@ -191,6 +195,9 @@ WLI.o: WLI.c WLI.h
 
 WLF.o: WLF.c WLF.h
 	$(CC) $(CCFLAGS) $(CFLAGS) -o WLF.o -c WLF.c $(INCS)
+
+DataFlowMask.o: DataFlowMask.c 
+	$(CC) $(CCFLAGS) $(CFLAGS) -o DataFlowMask.o -c DataFlowMask.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
