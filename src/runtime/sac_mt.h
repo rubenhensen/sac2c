@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2001/06/28 09:51:20  sbs
+ * prep concat eliminated in definition of SAC_MT_SPMD_SETARG_out_rc.
+ *
  * Revision 3.31  2001/06/27 14:36:09  ben
  * modified for cooperation with tasksel-pragma
  *
@@ -564,7 +567,7 @@ typedef union {
 #endif
 
 #define SAC_MT_SPMD_SPECIAL_FRAME(spmdname)                                              \
-    SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().##spmdname
+    SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname
 
 #define SAC_MT_SPMD_CURRENT_FRAME                                                        \
     SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ()
