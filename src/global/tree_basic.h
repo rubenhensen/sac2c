@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.46  1996/01/25 18:39:05  cg
+ * Revision 1.47  1996/01/26 15:29:02  cg
+ * added macro ID_MAKEUNIQUE(n)
+ *
+ * Revision 1.46  1996/01/25  18:39:05  cg
  * added macro MODUL_CLASSTYPE(n)
  *
  * Revision 1.45  1996/01/22  17:24:40  cg
@@ -1402,6 +1405,7 @@ extern node *MakeVinfo (useflag flag, shapes *shp, node *next);
  ***    node*  OBJDEF    (N_objdef)  (typecheck -> )
  ***                                 ( -> analysis -> )
  ***    int    REFCNT                (refcount -> compile -> )
+ ***    int    MAKEUNIQUE            (precompile -> compile -> )
  ***    node*  DEF                   (Unroll !, Unswitch !)
  ***/
 
@@ -1417,6 +1421,9 @@ extern node *MakeVinfo (useflag flag, shapes *shp, node *next);
  *                          is passed as a reference parameter or
  *                          additional argument in a return-statement
  *                          which belongs to a reference parameter
+ *
+ *  MAKEUNIQUE is a flag which is set in those N_id nodes which were
+ *  arguments to class conversion function.
  */
 
 extern node *MakeId (char *name, char *mod, statustype status);
@@ -1431,6 +1438,7 @@ extern node *MakeId2 (ids *ids_node);
 #define ID_ATTRIB(n) (n->info.ids->attrib)
 #define ID_STATUS(n) (n->info.ids->status)
 #define ID_OBJDEF(n) (n->info.ids->node)
+#define ID_MAKEUNIQUE(n) (n->flag)
 
 /*--------------------------------------------------------------------------*/
 
