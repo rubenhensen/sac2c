@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.54  1995/03/13 16:59:59  hw
+ * Revision 1.55  1995/04/06 13:56:09  hw
+ * typeinformation of sac_main is build with MakeTypes now
+ *
+ * Revision 1.54  1995/03/13  16:59:59  hw
  * -  the identifier of node N_id, N_pre and N_post is stored
  *    in 'info.ids->id' instead of 'info.id' now
  *
@@ -585,11 +588,7 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R {$$=MakeNode(N_fundef);} exprblock
         $$=$<node>5;     /* $$=$5 */
         $$->node[0]=$6;                 /* Funktionsrumpf */
 
-        $$->info.types=GEN_NODE(types);  /* Knoten fu"r Typinformation */ 
-        $$->info.types->simpletype=T_int;
-        $$->info.types->next=NULL;
-        $$->info.types->dim=0;           /* dim=0 => einfacher Typ  */
-        $$->info.types->shpseg=NULL;     /* kein Array  */
+        $$->info.types=MakeTypes(T_int);  /* Knoten fu"r Typinformation */ 
         $$->info.types->id=(char *)malloc(5); 
         strcpy($$->info.types->id,"main");   /* Funktionsnamen eintragen */
 
