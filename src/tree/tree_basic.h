@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2001/04/09 15:55:28  nmw
+ * macros INFO_SSALIR added, LET_LIRFLAG added
+ *
  * Revision 3.76  2001/04/05 16:10:31  nmw
  * AVIS_LIRMOVE macro for SSALIR traversal added
  *
@@ -1318,6 +1321,7 @@ extern node *MakeAssign (node *instr, node *next);
  ***
  ***    DFMmask_t USEMASK                    (multithread -> )
  ***    DFMmask_t DEFMASK                    (multithread -> )
+ ***    int       LIRFLAG                    (ssalir->lirmov!!)
  ***/
 
 extern node *MakeLet (node *expr, ids *ids);
@@ -1326,6 +1330,7 @@ extern node *MakeLet (node *expr, ids *ids);
 #define LET_IDS(n) (n->info.ids)
 #define LET_USEMASK(n) (n->dfmask[0])
 #define LET_DEFMASK(n) (n->dfmask[1])
+#define LET_LIRFLAG(n) (n->flag)
 
 /*--------------------------------------------------------------------------*/
 
@@ -2107,7 +2112,8 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***    the following attributes are used within SSADeadCodeRemoval/SSALIR:
  ***    bool        NEEDCOUNT                        (ssadcr!!, ssalir!!)
  ***
- ***    the following attributes are used within SSACSE/UndoSSATransform:
+ ***    the following attributes are used within SSACSE,
+ ***      SSALIR, UndoSSATransform:
  ***    node*       SUBST (O)       (N_avis)         (ssacse!!. undossa!!)
  ***
  ***    the following attributes are only used within UndoSSATransform:
@@ -2141,7 +2147,7 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_SSAELSE(n) ((node *)(n->dfmask[2]))
 /* used only in ssadcr an again in SSALIR */
 #define AVIS_NEEDCOUNT(n) (n->int_data)
-/* used only in ssacse and again in UndoSSAtransform */
+/* used in ssacse, SSALIR and UndoSSAtransform */
 #define AVIS_SUBST(n) ((node *)(n->dfmask[0]))
 /* used only in UndoSSAtransform */
 #define AVIS_SUBSTUSSA(n) ((node *)(n->dfmask[1]))
@@ -2484,7 +2490,14 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    int        NONLIRUSE         (counts non lir args on rightside of expr.)
  ***    int        CONDSTATUS        (flag for part of conditional)
  ***    int        WITHDEPTH         (counter for depth of with loops)
+ ***    bool       TOPBLOCK          (true when traversing the toplevel block)
  ***    int        FLAG              (controls behavior of some functions)
+ ***    node*      EXTPREASSIGN      (assignments to add before calling ap)
+ ***    node*      EXTPOSTASSIGN     (assignments to add behind calling ap)
+ ***    LUT_t      MOVELUT           (look up table to adjust vardec/avis/ids
+ ***                                  when moving assignments out of fundef)
+ ***    node*      APARGCHAIN        (argument chain of external application)
+ ***    node*      EXTFUNDEF         (fundef with ap node to this special fundef)
  ***
  ***  when used in free.c
  ***    node*      FLAG              (mode flag for FreeTrav/FreeNode)
@@ -2948,7 +2961,13 @@ extern node *MakeInfo ();
 #define INFO_SSALIR_NONLIRUSE(n) (n->int_data)
 #define INFO_SSALIR_CONDSTATUS(n) (n->info.cint)
 #define INFO_SSALIR_WITHDEPTH(n) (n->varno)
+#define INFO_SSALIR_TOPBLOCK(n) ((bool)(n->varno))
 #define INFO_SSALIR_FLAG(n) (n->flag)
+#define INFO_SSALIR_EXTPREASSIGN(n) ((node *)(n->dfmask[0]))
+#define INFO_SSALIR_EXTPOSTASSIGN(n) ((node *)(n->dfmask[1]))
+#define INFO_SSALIR_MOVELUT(n) ((LUT_t) (n->dfmask[2]))
+#define INFO_SSALIR_APARGCHAIN(n) ((node *)(n->dfmask[3]))
+#define INFO_SSALIR_EXTFUNDEF(n) ((node *)(n->dfmask[4]))
 
 /* when used in free.c */
 #define INFO_FREE_FLAG(n) (n->node[0])
