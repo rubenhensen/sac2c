@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.121  1998/04/11 15:09:45  srs
+ * addec comments
+ *
  * Revision 1.120  1998/04/10 02:25:01  dkr
  * changed macros for N_WLseg
  * changed macros for N_conc
@@ -2239,10 +2242,11 @@ extern node *MakeConc (node *region);
  ***
  ***    long*  MASK                    (optimize -> )
  ***    node*  PRAGMA    (N_pragma)    (scanparse -> precompile ! )
- ***    int    REFERENCED              (wli -> )
- ***    int    REFERENCED_FOLD         (wli -> )
- ***    int    COMPLEX                 (wli -> )
- ***    int    FOLDABLE                (wli -> )
+ ***    int    REFERENCED              (wli -> wlf !!
+ ***    int    REFERENCED_FOLD         (wli -> wlf !!)
+ ***    int    COMPLEX                 (wli -> wlf !!)
+ ***    int    FOLDABLE                (wli -> wlf !!)
+ ***    int    NO_CHANCE               (wli -> wlf !!)
  ***
  ***/
 
