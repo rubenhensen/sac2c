@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2003/06/17 16:56:23  dkr
+ * PREC3with() and PREC4with() added.
+ * Bug in PREC3withop() fixed.
+ *
  * Revision 3.70  2003/04/20 21:19:15  dkr
  * PREC2ap renamed into PREC2apORprf
  * some prf args are flattened as well now
@@ -2310,6 +2314,38 @@ PREC3let (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *PREC3with( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC3with (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC3with");
+
+    INFO_PREC3_CEXPR (arg_info) = NULL;
+
+    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+
+    /*
+     * CODE must be traversed before WITHOP!!
+     */
+
+    if (NWITH_CODE (arg_node) != NULL) {
+        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    }
+
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *PREC3with2( node *arg_node, node *arg_info)
  *
  * description:
@@ -2345,8 +2381,11 @@ PREC3with2 (node *arg_node, node *arg_info)
  * Function:
  *   node *PREC3withop( node *arg_node, node *arg_info)
  *
- * Description:
+ * description:
  *   New, unique and adjusted pseudo fold-funs are created.
+ *
+ * caution:
+ *   The N_Nwithop node may be part of a N_Nwith *or* a N_Nwith2 node!!
  *
  ******************************************************************************/
 
@@ -2383,7 +2422,8 @@ PREC3withop (node *arg_node, node *arg_info)
         old_name = FUNDEF_NAME (new_foldfun);
         FUNDEF_NAME (new_foldfun) = TmpVarName (FUNDEF_NAME (new_foldfun));
         old_name = Free (old_name);
-        DBUG_ASSERT ((NWITH2_CEXPR (let_expr) != NULL), "NWITH2_CEXPR not found!");
+        DBUG_ASSERT ((NWITH_OR_NWITH2_CEXPR (let_expr) != NULL),
+                     "NWITH_OR_NWITH2_CEXPR not found!");
 
         new_foldfun = AdjustFoldFundef (new_foldfun, let_ids,
                                         /*
@@ -2391,7 +2431,7 @@ PREC3withop (node *arg_node, node *arg_info)
                                          * code-node, because in a fold with-loop all
                                          * CEXPR-ids have the same name!
                                          */
-                                        NWITH2_CEXPR (let_expr));
+                                        NWITH_OR_NWITH2_CEXPR (let_expr));
 
         /*
          * insert new dummy function into fundef chain
@@ -2407,11 +2447,14 @@ PREC3withop (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * function:
  *   node *PREC3code( node *arg_node, node *arg_info)
  *
- * Description:
+ * description:
  *   Checks whether all NCODE_CEXPR nodes of fold-WLs have identical names.
+ *
+ * caution:
+ *   The N_Nwithop node may be part of a N_Nwith *or* a N_Nwith2 node!!
  *
  ******************************************************************************/
 
@@ -2523,14 +2566,14 @@ RenameId (node *idnode)
 
 /******************************************************************************
  *
- * Function:
+ * function:
  *   types *RenameTypes( types *type)
  *
- * Description:
+ * description:
  *   Renames the given type if it is a user-defined SAC-type.
  *   Chains of types structures are considered.
  *
- * Remarks:
+ * remarks:
  *   The complete new name is stored in NAME while MOD is set to NULL.
  *
  ******************************************************************************/
@@ -2587,10 +2630,10 @@ RenameTypes (types *type)
 
 /******************************************************************************
  *
- * Function:
+ * function:
  *   char *ReplaceSpecialCharacters( char *name)
  *
- * Description:
+ * description:
  *
  *
  ******************************************************************************/
@@ -2722,11 +2765,11 @@ ReplaceSpecialCharacters (char *name)
 
 /******************************************************************************
  *
- * Function:
+ * function:
  *   char *RenameFunName( char *mod, char *name,
  *                        statustype status, node *args)
  *
- * Description:
+ * description:
  *   Renames the given name of a SAC-function.
  *   A new name is created from the module name, the original name and the
  *   argument's types.
@@ -2785,10 +2828,10 @@ RenameFunName (char *mod, char *name, statustype status, node *args)
 
 /******************************************************************************
  *
- * Function:
+ * function:
  *   node *RenameFun( node *fun)
  *
- * Description:
+ * description:
  *   Renames the given function.
  *   For SAC-functions, a new name is created from the module name, the
  *   original name and the argument's types.
@@ -3385,7 +3428,38 @@ PREC4cond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC4with2(node *arg_node, node *arg_info)
+ *   node *PREC4with( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   The compiler phase refcount unfortunately produces chains of identifiers
+ *   for which refcounting operations must be inserted during code generation.
+ *   These must be renamed in addition to those identifiers that are "really"
+ *   part of the code.
+ *
+ ******************************************************************************/
+
+node *
+PREC4with (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC4with");
+
+    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+
+    if (NWITH_CODE (arg_node) != NULL) {
+        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    }
+
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+
+    NWITH_DEC_RC_IDS (arg_node) = RenameIds (NWITH_DEC_RC_IDS (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PREC4with2( node *arg_node, node *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -3423,6 +3497,9 @@ PREC4with2 (node *arg_node, node *arg_info)
  *   This function does the renaming of the index vector variable
  *   as well as its scalar counterparts for the new with-loop.
  *
+ * caution:
+ *   The N_Nwithop node may be part of a N_Nwith *or* a N_Nwith2 node!!
+ *
  ******************************************************************************/
 
 node *
@@ -3446,6 +3523,9 @@ PREC4withid (node *arg_node, node *arg_info)
  *   for which refcounting operations must be inserted during code generation.
  *   These must be renamed in addition to those identifiers that are "really"
  *   part of the code.
+ *
+ * caution:
+ *   The N_Nwithop node may be part of a N_Nwith *or* a N_Nwith2 node!!
  *
  ******************************************************************************/
 
