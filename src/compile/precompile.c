@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.106  2004/11/29 16:50:43  sah
+ * added another nt2ot traversal
+ *
  * Revision 3.105  2004/11/29 14:41:57  sah
  * added setlinksign traversal
  *
@@ -26,6 +29,7 @@
 #include "functionprecompile.h"
 #include "typeconv_precompile.h"
 #include "renameidentifiers.h"
+#include "new2old.h"
 #include "setlinksign.h"
 
 #include <string.h>
@@ -48,6 +52,12 @@ node *
 PRECdoPrecompile (node *syntax_tree)
 {
     DBUG_ENTER ("Precompile");
+
+    /*
+     * Fix Oldtypes in ast
+     */
+    DBUG_EXECUTE ("PREC", NOTE (("step -1: fix oldtypes\n")));
+    syntax_tree = NT2OTdoTransform (syntax_tree);
 
     /*
      * Set Linksign
@@ -124,6 +134,9 @@ DONE:
 /*
  *
  * $Log$
+ * Revision 3.106  2004/11/29 16:50:43  sah
+ * added another nt2ot traversal
+ *
  * Revision 3.105  2004/11/29 14:41:57  sah
  * added setlinksign traversal
  *
