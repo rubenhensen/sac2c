@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2003/04/15 17:57:10  dkr
+ * implementation of ALLOC/FREE-ICMs modified: test for SIZE==0 removed
+ *
  * Revision 3.35  2003/04/15 14:39:49  dkr
  * workaround for (dim < 0) in ND_ALLOC__DESC__AUD removed
  *
@@ -958,31 +961,22 @@ typedef int *SAC_array_descriptor_t;
  * AKS
  */
 
-/* the test (SAC_ND_A_SIZE( nt) != 0) is needed to prevent a malloc(0) */
 #define SAC_ND_ALLOC__DATA__AKS(nt)                                                      \
     {                                                                                    \
-        if (SAC_ND_A_SIZE (nt) != 0) {                                                   \
-            SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_FIELD (nt),                               \
-                                      SAC_ND_A_SIZE (nt)                                 \
-                                        * sizeof (*SAC_ND_A_FIELD (nt)))                 \
-        } else {                                                                         \
-            SAC_ND_A_FIELD (nt) = NULL;                                                  \
-        }                                                                                \
+        SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_FIELD (nt),                                   \
+                                  SAC_ND_A_SIZE (nt) * sizeof (*SAC_ND_A_FIELD (nt)))    \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DATA( %s) at addr: %p", #nt, SAC_ND_A_FIELD (nt))) \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (nt))                                     \
         SAC_TR_REF_PRINT_RC (nt)                                                         \
         SAC_CS_REGISTER_ARRAY (nt)                                                       \
     }
 
-/* the test (SAC_ND_A_SIZE( nt) != 0) is needed to prevent a malloc(0) */
 #define SAC_ND_FREE__DATA__AKS_NHD(nt, freefun)                                          \
     {                                                                                    \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_FREE__DATA( %s, %s) at addr: %p", #nt, #freefun, SAC_ND_A_FIELD (nt)))    \
-        if (SAC_ND_A_SIZE (nt) != 0) {                                                   \
-            SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (nt),                                 \
-                                    SAC_ND_A_SIZE (nt) * sizeof (*SAC_ND_A_FIELD (nt)))  \
-        }                                                                                \
+        SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (nt),                                     \
+                                SAC_ND_A_SIZE (nt) * sizeof (*SAC_ND_A_FIELD (nt)))      \
         SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (nt))                                     \
         SAC_CS_UNREGISTER_ARRAY (nt)                                                     \
     }
