@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/10/19 10:07:51  cg
+ * Revision 1.6  1995/10/20 09:27:31  cg
+ * bug fixes in 'InsertNode`
+ *
+ * Revision 1.5  1995/10/19  10:07:51  cg
  * functions InsertNode, InsertNodes and InsertUnresolvedNodes
  * modified in signature.
  *
@@ -256,24 +259,25 @@ InsertNode (node *insert, node *fundef)
 
     DBUG_ENTER ("InsertNode");
 
+    DBUG_PRINT ("ANA", ("Function '%s` needs '%s` (%s)", ItemName (fundef),
+                        ItemName (insert), mdb_nodetype[NODE_TYPE (insert)]));
+
+    NOTE (("Function '%s` needs '%s` (%s)", ItemName (fundef), ItemName (insert),
+           mdb_nodetype[NODE_TYPE (insert)]));
+
     switch (NODE_TYPE (insert)) {
     case N_fundef:
         list = FUNDEF_NEEDFUNS (fundef);
-        DBUG_PRINT ("FA", ("Function '%s` needs function '%s`", ItemName (fundef),
-                           ItemName (insert)));
         break;
 
     case N_objdef:
         list = FUNDEF_NEEDOBJS (fundef);
-        DBUG_PRINT ("FA", ("Function '%s` needs global object '%s`", ItemName (fundef),
-                           ItemName (insert)));
         break;
 
     case N_typedef:
         list = FUNDEF_NEEDTYPES (fundef);
-        DBUG_PRINT ("FA", ("Function '%s` needs type '%s`", ItemName (fundef),
-                           ItemName (insert)));
         break;
+
     default:
         DBUG_ASSERT (0, "Wrong insert node in call to function 'InsertNode`");
     }
