@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/08/02 16:14:47  ktr
+ * Memory allocation for with-loops is correct now.
+ *
  * Revision 1.15  2004/07/31 21:26:11  ktr
  * corrected WL-shape descriptor for scalar withloops.
  *
@@ -88,7 +91,7 @@
  * The following switch controls wheter AKS-Information should be used
  * when possible
  */
-/*#define USEAKS*/
+#define USEAKS
 
 /** <!--******************************************************************-->
  *
@@ -609,7 +612,7 @@ EMALcode (node *arg_node, info *arg_info)
     ids *lhs, *arg1, *arg2;
     alloclist_struct *als;
     node *withops, *indexvector, *cexprs, *assign;
-    node *memavis, *valavis, *cexavis, *wlavis;
+    node *memavis, *valavis, *cexavis;
 
     DBUG_ENTER ("EMALcode");
 
@@ -657,15 +660,6 @@ EMALcode (node *arg_node, info *arg_info)
          */
         if (NWITHOP_TYPE (withops) == WO_genarray) {
 
-            FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
-              = MakeVardec (TmpVarName (VARDEC_NAME (AVIS_VARDECORARG (als->avis))),
-                            DupOneTypes (VARDEC_TYPE (AVIS_VARDECORARG (als->avis))),
-                            FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
-
-            wlavis = VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
-            AVIS_TYPE (wlavis) = TYCopyType (AVIS_TYPE (als->avis));
-            als->avis = wlavis;
-
             if (als->dim == NULL) {
                 if (TYIsAKS (AVIS_TYPE (cexavis))) {
                     als->dim = MakePrf2 (F_add_SxS, MakeSizeArg (NWITHOP_SHAPE (withops)),
@@ -674,13 +668,9 @@ EMALcode (node *arg_node, info *arg_info)
             }
             if (als->shape == NULL) {
                 if (TYIsAKS (AVIS_TYPE (cexavis))) {
-                    if (TYGetDim (AVIS_TYPE (cexavis)) == 0) {
-                        als->shape = DupNode (NWITHOP_SHAPE (withops));
-                    } else {
-                        als->shape
-                          = MakePrf2 (F_cat_VxV, DupNode (NWITHOP_SHAPE (withops)),
-                                      SHShape2Array (TYGetShape (AVIS_TYPE (cexavis))));
-                    }
+                    als->shape
+                      = MakePrf2 (F_cat_VxV, DupNode (NWITHOP_SHAPE (withops)),
+                                  SHShape2Array (TYGetShape (AVIS_TYPE (cexavis))));
                 }
             }
         }
@@ -1401,6 +1391,7 @@ EMALwith2 (node *arg_node, info *arg_info)
 node *
 EMALwithop (node *arg_node, info *arg_info)
 {
+    node *wlavis;
     alloclist_struct *als;
 
     DBUG_ENTER ("EMALwithop");
@@ -1446,6 +1437,18 @@ EMALwithop (node *arg_node, info *arg_info)
         }
 
         /*
+         * Create new identifier for new memory
+         */
+        FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
+          = MakeVardec (TmpVarName (VARDEC_NAME (AVIS_VARDECORARG (als->avis))),
+                        DupOneTypes (VARDEC_TYPE (AVIS_VARDECORARG (als->avis))),
+                        FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+
+        wlavis = VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+        AVIS_TYPE (wlavis) = TYCopyType (AVIS_TYPE (als->avis));
+        als->avis = wlavis;
+
+        /*
          * Annotate which memory is to be used
          */
         NWITHOP_MEM (arg_node)
@@ -1469,6 +1472,18 @@ EMALwithop (node *arg_node, info *arg_info)
          */
         als->dim = MakePrf1 (F_dim, DupNode (NWITHOP_ARRAY (arg_node)));
         als->shape = MakePrf1 (F_shape, DupNode (NWITHOP_ARRAY (arg_node)));
+
+        /*
+         * Create new identifier for new memory
+         */
+        FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
+          = MakeVardec (TmpVarName (VARDEC_NAME (AVIS_VARDECORARG (als->avis))),
+                        DupOneTypes (VARDEC_TYPE (AVIS_VARDECORARG (als->avis))),
+                        FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+
+        wlavis = VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+        AVIS_TYPE (wlavis) = TYCopyType (AVIS_TYPE (als->avis));
+        als->avis = wlavis;
 
         /*
          * Annotate which memory is to be used
