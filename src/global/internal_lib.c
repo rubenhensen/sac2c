@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2003/08/16 08:38:03  ktr
+ * SelectionPropagation added. Must currently be activated with -dosp.
+ *
  * Revision 3.36  2003/05/18 13:36:43  ktr
  * removed printing of new variable name in TmpVarName.
  *
@@ -99,7 +102,7 @@
  *
  */
 
-#include <stdlib.h>
+/*#include <stdlib.h>*/
 #include <math.h>
 #include <string.h>
 #include <stdarg.h>
@@ -118,6 +121,12 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "convert.h"
+
+/* experimental support for garbage collection */
+#ifdef GC
+#include <gc.h>
+#define malloc(n) GC_malloc (n)
+#endif /* GC */
 
 #define MAX_SYSCALL 1000
 
@@ -961,6 +970,8 @@ PrefixForTmpVar (void)
         s = "esd";
     } else if (act_tab == dl_tab) {
         s = "dl";
+    } else if (act_tab == sp_tab) {
+        s = "sp";
     } else {
         s = "unknown";
         DBUG_ASSERT ((0), "PrefixForTmpVar(): unknown trav-tab found!");

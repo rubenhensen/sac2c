@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2003/08/16 08:38:03  ktr
+ * SelectionPropagation added. Must currently be activated with -dosp.
+ *
  * Revision 3.28  2003/08/05 11:36:19  ktr
  * Support for maxwls added.
  *
@@ -260,6 +263,7 @@ extern unsigned int optimize;
 #define OPT_WLS 0x08000000  /* with-loop scalarization                     */
 #define OPT_AL 0x10000000   /* associative law                             */
 #define OPT_BLIR 0x20000000 /* backend loop invariant removal              */
+#define OPT_SP 0x40000000   /* selection propagation                       */
 
 /* use ssa-form based optimizations instead of old opts */
 extern bool use_ssaform;

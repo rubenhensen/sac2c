@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2003/08/16 08:38:03  ktr
+ * SelectionPropagation added. Must currently be activated with -dosp.
+ *
  * Revision 3.48  2003/08/05 11:36:19  ktr
  * Support for maxwls added.
  *
@@ -323,6 +326,8 @@ Usage ()
                       "Stop in cycle <n> after common subexpression elimination.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:cf",
                       "Stop in cycle <n> after constant folding.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:sp",
+                      "Stop in cycle <n> after selection propagation.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wlt",
                       "Stop in cycle <n> after with-loop transformation.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wli",
@@ -434,6 +439,7 @@ Usage ()
       "    The following optimization techniques are currently supported:\n\n"
 
       "        CF      constant folding\n"
+      "        SP      selection propagation\n"
       "        INL     function inlining\n"
       "        LUR     loop unrolling\n"
       "        WLUR    with-loop unrolling\n"

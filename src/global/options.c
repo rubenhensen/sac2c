@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2003/08/16 08:38:03  ktr
+ * SelectionPropagation added. Must currently be activated with -dosp.
+ *
  * Revision 3.45  2003/08/05 11:36:19  ktr
  * Support for maxwls added.
  *
@@ -576,6 +579,9 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("blir", optimize |= OPT_BLIR);
         ARG_CHOICE ("BLIR", optimize |= OPT_BLIR);
 
+        ARG_CHOICE ("sp", optimize |= OPT_SP);
+        ARG_CHOICE ("SP", optimize |= OPT_SP);
+
         ARG_CHOICE ("pab", print_after_break = TRUE);
         ARG_CHOICE ("PAB", print_after_break = TRUE);
 
@@ -853,6 +859,9 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("blir", optimize &= ~OPT_BLIR);
         ARG_CHOICE ("BLIR", optimize &= ~OPT_BLIR);
+
+        ARG_CHOICE ("sp", optimize &= ~OPT_SP);
+        ARG_CHOICE ("SP", optimize &= ~OPT_SP);
 
         ARG_CHOICE ("pab", print_after_break = FALSE);
         ARG_CHOICE ("PAB", print_after_break = FALSE);

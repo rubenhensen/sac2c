@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2003/08/16 08:38:03  ktr
+ * SelectionPropagation added. Must currently be activated with -dosp.
+ *
  * Revision 3.35  2003/08/05 11:36:19  ktr
  * Support for maxwls added.
  *
@@ -426,10 +429,10 @@ bool patch_with = FALSE;
 
 #ifdef PRODUCTION
 unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI)
-                        & (~OPT_APL) & (~OPT_DL) & (~OPT_BLIR);
+                        & (~OPT_APL) & (~OPT_DL) & (~OPT_BLIR) & (~OPT_SP);
 #else /* PRODUCTION */
 unsigned int optimize
-  = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_BLIR);
+  = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_BLIR) & (~OPT_SP);
 
 #endif /* PRODUCTION */
 
