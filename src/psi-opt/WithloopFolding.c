@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.8  1999/07/15 20:38:11  sbs
+ * ARRAY_ISCONST set where MakeArray is called.
+ *
  * Revision 2.7  1999/07/14 14:36:32  bs
  * Bug fixed in ArrayST2ArrayInt.
  *
@@ -742,12 +745,16 @@ node *
 CreateArrayFromInternGen (int *source, int number, types *type)
 {
     node *arrayn, *tmpn;
+    int i;
+
     DBUG_ENTER ("CreateArrayFromInternGen");
 
     tmpn = NULL;
-    while (number)
-        tmpn = MakeExprs (MakeNum (source[--number]), tmpn);
+    for (i = number - 1; i >= 0; i--) {
+        tmpn = MakeExprs (MakeNum (source[i]), tmpn);
+    }
     arrayn = MakeArray (tmpn);
+    ARRAY_ISCONST (arrayn) = TRUE;
     ARRAY_VECTYPE (arrayn) = T_int;
     ((int *)ARRAY_CONSTVEC (arrayn)) = Array2IntVec (tmpn, NULL);
     ARRAY_VECLEN (arrayn) = number;
@@ -1267,6 +1274,7 @@ MakeNullVec (int dim, simpletype type)
             }
 
         resultn = MakeArray (tmpn);
+        ARRAY_ISCONST (resultn) = TRUE;
         ARRAY_VECTYPE (resultn) = type;
         ARRAY_VECLEN (resultn) = dim;
         switch (type) {

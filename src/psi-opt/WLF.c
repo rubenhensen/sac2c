@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.7  1999/07/15 20:38:11  sbs
+ * ARRAY_ISCONST set where MakeArray is called.
+ *
  * Revision 2.6  1999/05/12 14:35:16  cg
  * Optimizations are now triggered by bit field optimize instead
  * of single individual int variables.
@@ -1388,6 +1391,7 @@ Modarray2Genarray (node *wln, node *substwln)
         eltn = MakeExprs (MakeNum (TYPES_SHAPE (type, i)), eltn);
 
     shape = MakeArray (eltn);
+    ARRAY_ISCONST (shape) = TRUE;
     ARRAY_VECTYPE (shape) = T_int;
     ARRAY_VECLEN (shape) = dimensions;
     ((int *)ARRAY_CONSTVEC (shape)) = Array2IntVec (eltn, NULL);
@@ -1499,6 +1503,7 @@ WLFassign (node *arg_node, node *arg_info)
                         tmpn = MakeExprs (MakeNum (TYPES_SHAPE (idt, i - 1)),
                                           tmpn); /* Array elements */
                     tmpn = MakeArray (tmpn);     /* N_Array */
+                    ARRAY_ISCONST (tmpn) = TRUE;
                     ARRAY_VECTYPE (tmpn) = T_int;
                     ARRAY_VECLEN (tmpn) = TYPES_DIM (idt);
                     ((int *)ARRAY_CONSTVEC (tmpn))
@@ -1663,6 +1668,7 @@ WLFid (node *arg_node, node *arg_info)
                 if (!NCODE_MASK (coden, 1 /* USE mask */) /* mask does not exist */
                     || NCODE_MASK (coden, 1)[IDS_VARNO (subst_wl_ids)]) {
                     arrayn = MakeArray (MakeExprs (MakeNum (count), NULL));
+                    ARRAY_ISCONST (arrayn) = TRUE;
                     ARRAY_VECTYPE (arrayn) = T_int;
                     ARRAY_VECLEN (arrayn) = 1;
                     ((int *)ARRAY_CONSTVEC (arrayn))
