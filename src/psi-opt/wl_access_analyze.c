@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 19:22:16  cg
+ * Removed compiler warnings in production mode.
+ *
  * Revision 3.1  2000/11/20 18:01:57  sacbase
  * new release made
  *
@@ -712,8 +715,8 @@ WLAAncode (node *arg_node, node *arg_info)
 node *
 WLAAwhile (node *arg_node, node *arg_info)
 {
-    access_t *old_access;
-    feature_t old_feature;
+    access_t *old_access = NULL;
+    feature_t old_feature = NULL;
 
     DBUG_ENTER ("WLAAwhile");
 
@@ -767,8 +770,8 @@ WLAAwhile (node *arg_node, node *arg_info)
 node *
 WLAAdo (node *arg_node, node *arg_info)
 {
-    access_t *old_access;
-    feature_t old_feature;
+    access_t *old_access = NULL;
+    feature_t old_feature = NULL;
 
     DBUG_ENTER ("WLAAdo");
 

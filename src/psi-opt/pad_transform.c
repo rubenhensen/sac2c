@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2000/12/06 19:22:16  cg
+ * Removed compiler warnings in production mode.
+ *
  * Revision 3.1  2000/11/20 18:01:53  sacbase
  * new release made
  *
@@ -80,10 +83,13 @@
 
 #include "my_debug.h"
 
+#ifndef DBUG_OFF
 #define PRF_IF(n, s, x, y) x
 static char *prf_string[] = {
 #include "prf_node_info.mac"
 };
+#endif
+
 #undef PRF_IF
 
 /*****************************************************************************
@@ -407,6 +413,7 @@ AddDummyCode (node *with_node)
 
     default:
         DBUG_ASSERT (FALSE, " unsupported type in with-loop!");
+        expr_node = NULL; /* just to avoid compiler warnings */
         break;
     }
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2000/12/06 19:22:16  cg
+ * Removed compiler warnings in production mode.
+ *
  * Revision 3.1  2000/11/20 18:01:50  sacbase
  * new release made
  *
@@ -1169,7 +1172,7 @@ static shpseg *
 UpdatePaddingVectorForSpatialReuse (int rows, cache_util_t *cache_util, int dim,
                                     shpseg *shape, shpseg *pv)
 {
-    shpseg *res;
+    shpseg *res = NULL;
     int min_paddim, max_paddim, current_paddim;
 
     DBUG_ENTER ("UpdatePaddingVectorForSpatialReuse");
@@ -1230,7 +1233,7 @@ static shpseg *
 UpdatePaddingVectorForTemporalReuse (int rows, cache_util_t *cache_util, int dim,
                                      shpseg *shape, shpseg *pv)
 {
-    shpseg *res;
+    shpseg *res = NULL;
     int min_paddim, max_paddim, current_paddim;
 
     DBUG_ENTER ("UpdatePaddingVectorForTemporalReuse");
@@ -1363,7 +1366,7 @@ ComputePaddingForSpatialReuse (int dim, cache_t *cache, int rows,
                                cache_util_t *cache_util, shpseg *shape, shpseg *pv)
 {
     shpseg *actual_shape;
-    shpseg *pv_opt, *new_pv;
+    shpseg *pv_opt, *new_pv = NULL;
     int min_sr_conflicts;
     int num_sr_conflicts;
 
@@ -1494,7 +1497,7 @@ ComputePaddingForTemporalReuse (int dim, cache_t *cache, int rows,
 {
     shpseg *actual_shape;
     shpseg *pv_opt;
-    shpseg *new_pv;
+    shpseg *new_pv = NULL;
     int min_sr_conflicts;
     int min_tr_conflicts;
     int num_sr_conflicts;

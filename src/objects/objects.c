@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 19:22:16  cg
+ * Removed compiler warnings in production mode.
+ *
  * Revision 3.1  2000/11/20 18:01:59  sacbase
  * new release made
  *
@@ -696,7 +699,7 @@ node *
 OBJlet (node *arg_node, node *arg_info)
 {
     node *args, *params, *let_expr;
-    ids *new_ids = NULL, *last_ids, *old_ids;
+    ids *new_ids = NULL, *last_ids = NULL, *old_ids;
     char *new_ids_name;
 
     DBUG_ENTER ("OBJlet");

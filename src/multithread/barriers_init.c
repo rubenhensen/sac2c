@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 19:22:16  cg
+ * Removed compiler warnings in production mode.
+ *
  * Revision 3.1  2000/11/20 18:03:00  sacbase
  * new release made
  *
@@ -197,6 +200,7 @@ BARINassign (node *arg_node, node *arg_info)
                     assign = arg_node;
                 } else {
                     DBUG_PRINT ("BARIN", ("unknown kind of withloop"));
+                    assign = arg_node;
                 }
             } else {
                 /* nothing do be done */

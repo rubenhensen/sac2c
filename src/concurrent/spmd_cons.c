@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 19:22:16  cg
+ * Removed compiler warnings in production mode.
+ *
  * Revision 3.1  2000/11/20 18:02:28  sacbase
  * new release made
  *
@@ -74,7 +77,7 @@ node *
 SPMDCspmd (node *arg_node, node *arg_info)
 {
     int own_arg_info;
-    node *old_firstsync;
+    node *old_firstsync = NULL;
     node *first_sync;
     char *name;
     node *fundef;

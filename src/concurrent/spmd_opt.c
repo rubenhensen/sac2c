@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 19:22:16  cg
+ * Removed compiler warnings in production mode.
+ *
  * Revision 3.1  2000/11/20 18:02:32  sacbase
  * new release made
  *
@@ -414,8 +417,8 @@ node *
 SPMDOassign (node *arg_node, node *arg_info)
 {
     int own_arg_info;
-    node *old_thisassign;
-    node *old_nextassign;
+    node *old_thisassign = NULL;
+    node *old_nextassign = NULL;
 
     DBUG_ENTER ("SPMDOassign");
 
@@ -473,7 +476,7 @@ node *
 SPMDOfundef (node *arg_node, node *arg_info)
 {
     int own_arg_info;
-    node *old_fundef;
+    node *old_fundef = NULL;
 
     DBUG_ENTER ("SPMDOfundef");
 

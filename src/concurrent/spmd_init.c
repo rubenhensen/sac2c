@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 19:22:16  cg
+ * Removed compiler warnings in production mode.
+ *
  * Revision 3.1  2000/11/20 18:02:29  sacbase
  * new release made
  *
@@ -293,11 +296,11 @@ node *
 SPMDIassign (node *arg_node, node *arg_info)
 {
     node *spmd_let;
-    int old_lastspmd;
-    int old_nextspmd;
-    nodetype old_context;
-    int old_expandcontext;
-    int old_expandstep;
+    int old_lastspmd = NULL;
+    int old_nextspmd = NULL;
+    nodetype old_context = NULL;
+    int old_expandcontext = NULL;
+    int old_expandstep = NULL;
     int pullable;
     nodetype dummy;
     node *block1;
