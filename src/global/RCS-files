@@ -15,6 +15,11 @@ traverse.c
 traverse.h
 tree.c
 tree.h
+tree_basic.c
+tree_basic.h
+tree_compound.c
+tree_compound.h
 type_info.mac
+types.h
 usage.c
 usage.h
