@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.111  2004/10/05 14:11:52  sah
+# added oldast target
+#
 # Revision 3.110  2004/10/05 13:54:49  sah
 # changed subset of files used in NEW_AST mode
 #
@@ -405,7 +408,7 @@ endif
 #  Rules section
 #
 
-.PHONY: all efence product check_os dummy prod clean tar floppy distrib distrib_product linux newast
+.PHONY: all efence product check_os dummy prod clean tar floppy distrib distrib_product linux newast oldast
 
 all: check_os tools/bin/cse dummy sac2c
 
@@ -593,4 +596,7 @@ linux: src.tar.gz
 
 newast:
 	touch _NEW_AST
+
+oldast:
+	rm -rf _NEW_AST
 
