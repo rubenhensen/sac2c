@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/05/02 08:48:34  asi
+ * Revision 1.18  1995/05/03 16:25:48  asi
+ * CFap added
+ *
+ * Revision 1.17  1995/05/02  08:48:34  asi
  * DupConst and DupArray moved to DupTree.c
  *
  * Revision 1.16  1995/04/20  15:40:48  asi
@@ -332,6 +335,15 @@ CFid (node *arg_node, node *arg_info)
     }
     DBUG_RETURN (return_node);
 }
+
+node *
+CFap (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("CFap");
+    CONST = FALSE;
+    DBUG_RETURN (arg_node);
+}
+
 /*
  *
  *  functionname  : CFcast

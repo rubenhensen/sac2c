@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/03/07 10:17:09  asi
+ * Revision 1.6  1995/05/03 16:25:48  asi
+ * CFap added
+ *
+ * Revision 1.5  1995/03/07  10:17:09  asi
  * added CFcast
  *
  * Revision 1.4  1995/02/28  18:34:45  asi
@@ -37,5 +40,6 @@ extern node *CFvar (node *arg_node, node *arg_info);
 extern node *CFassign (node *arg_node, node *arg_info);
 extern node *CFwith (node *arg_node, node *arg_info);
 extern node *CFcast (node *arg_node, node *arg_info);
+extern node *CFap (node *arg_node, node *arg_info);
 
 #endif /* _ConstantFolding_h */
