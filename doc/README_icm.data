@@ -1,0 +1,56 @@
+icm.data:
+
+.....
+#ifdef ND_KD_PSI_CxA_S
+ICM_DEF( ND_KD_PSI_CxA_S )
+  ICM_STR( a)
+  ICM_STR( res)
+  ICM_INT( dim)
+  ICM_VAR( dim, vi)
+ICM_END
+#endif
+
+--------------------------------------------------------------------------------
+icm_decl.c:
+
+#define ICM_DEF(prf)
+#define ICM_STR(name) char *name;
+#define ICM_INT(name) int name;
+#define ICM_VAR(dim, name) char **name;
+#define ICM_END
+#include "icm.data"
+
+
+--------------------------------------------------------------------------------
+icm_args.c:
+
+....
+#define ICM_DEF(prf)
+#define ICM_STR(name) GetNextId( name, exprs);
+#define ICM_INT(name) GetNextInt( name, exprs);
+#define ICM_VAR(dim, name) GetShape(dim, name, exprs);
+#define ICM_END
+
+#include "icm.data"
+
+--------------------------------------------------------------------------------
+icm_comment.c:
+
+#define ICM_DEF(prf) fprintf(outfile, "/*\n * %s(", name);
+#define ICM_STR(name) fprintf(outfile, " %s,", name);
+#define ICM_INT(name) fprintf(outfile, " %d,", name);
+#define ICM_VAR(dim, name) { int i;                                     \
+                             for(i=0; i<dim; i++) {                     \
+                               fprintf( outfile, ", ");                 \
+                               AccessConst(s, i);}}
+#define ICM_END fprintf(outfile, "\b)\n */\n");
+
+#include "icm.data"
+
+--------------------------------------------------------------------------------
+icm2c.c:
+
+#define ND_KD_PSI_CxA_S
+#include "icm_args.c"
+#include "icm_comment.c"
+#undef ND_KD_PSI_CxA_S

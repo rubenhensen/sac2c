@@ -1,0 +1,80 @@
+/*
+ *
+ * $Log$
+ * Revision 1.1  1995/03/10 17:26:51  sbs
+ * Initial revision
+ *
+ *
+ */
+
+#ifdef ND_KS_DECL_ARRAY
+ICM_DEF( "ND_KS_DECL_ARRAY")
+  ICM_STR(type)
+  ICM_STR(name)
+  ICM_INT(dim)
+  ICM_VAR( dim, s)
+ICM_END
+#endif
+
+#ifdef ND_KD_SET_SHAPE
+ICM_DEF( "ND_KD_SET_SHAPE")
+  ICM_STR(name)
+  ICM_INT(dim)
+  ICM_VAR( dim, s)
+ICM_END
+#endif
+
+#ifdef ND_KD_PSI_CxA_S
+ICM_DEF( "ND_KD_PSI_CxA_S")
+  ICM_STR(a)
+  ICM_STR(res)
+  ICM_INT(dim)
+  ICM_VAR( dim, vi)
+ICM_END
+#endif
+
+#ifdef ND_KD_PSI_VxA_S
+ICM_DEF( "ND_KD_PSI_VxA_S")
+  ICM_STR(a)
+  ICM_STR(res)
+  ICM_INT(dim)
+  ICM_STR( v)
+ICM_END
+#endif
+
+#ifdef ND_KD_PSI_CxA_A
+ICM_DEF( "ND_KD_PSI_CxA_A")
+  ICM_STR(a)
+  ICM_STR(res)
+  ICM_INT(dim)
+  ICM_VAR( dim, vi)
+ICM_END
+#endif
+
+#ifdef ND_KD_PSI_VxA_A
+ICM_DEF( "ND_KD_PSI_VxA_A")
+  ICM_STR(a)
+  ICM_STR(res)
+  ICM_INT(dim)
+  ICM_STR( v)
+ICM_END
+#endif
+
+#ifdef ND_KD_TAKE_CxA_A
+ICM_DEF( "ND_KD_TAKE_CxA_A")
+  ICM_STR(a)
+  ICM_STR(res)
+  ICM_INT(dim)
+  ICM_VAR( dim, vi)
+ICM_END
+#endif
+
+#ifdef ND_KD_DROP_CxA_A
+ICM_DEF( "ND_KD_DROP_CxA_A")
+  ICM_STR(a)
+  ICM_STR(res)
+  ICM_INT(dim)
+  ICM_VAR( dim, vi)
+ICM_END
+#endif
+
