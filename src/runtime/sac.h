@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/04/06 13:43:12  cg
+ * added include of sac_cachesim.h
+ *
  * Revision 2.1  1999/02/23 12:43:43  sacbase
  * new release made
  *
@@ -51,5 +54,6 @@
 #include "sac_wl.h"
 #include "sac_trace.h"
 #include "sac_profile.h"
+#include "sac_cachesim.h"
 
 #endif /* SAC_H */
