@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2003/11/18 16:47:35  dkr
+ * code for MakeNWithOp() brushed
+ *
  * Revision 3.76  2003/10/15 12:15:29  dkrHH
  * MakeIcm(): icm indentation corrected
  *
@@ -1901,13 +1904,12 @@ MakeNWithOp (WithOpType WithOp, node *shape_array_neutral)
 
     tmp = CreateCleanNode (N_Nwithop);
 
-    /* allocate mem to store WithOpType in. */
-    tmp->info2 = Malloc (sizeof (WithOpType));
     NWITHOP_TYPE (tmp) = WithOp;
 
     switch (WithOp) {
     case WO_genarray:
         NWITHOP_SHAPE (tmp) = shape_array_neutral;
+        NWITHOP_DEFAULT (tmp) = NULL;
         break;
     case WO_modarray:
         NWITHOP_ARRAY (tmp) = shape_array_neutral;
@@ -1918,6 +1920,7 @@ MakeNWithOp (WithOpType WithOp, node *shape_array_neutral)
         NWITHOP_NEUTRAL (tmp) = shape_array_neutral;
         break;
     default:
+        DBUG_ASSERT (0, "Unknown N_Nwithop-type found");
         break;
     }
 
