@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.191  2004/07/01 12:29:21  skt
+ * FUNDEF_EXECMODE added
+ *
  * Revision 3.190  2004/06/08 14:27:15  ktr
  * INFO_REUSE_* moved to ReuseWithArrays.c
  *
@@ -1184,6 +1187,9 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    node*           LIFTEDFROM  (N_fundef)    (liftspmd -> compile -> )
  ***    node*           WORKER      ( ?? )
  ***    node*           COMPANION   (N_fundef)    (rfin, mtfin -> )
+ ***
+ *** temporary attribute for mtmode 3 (multithread) only
+ ***    int             EXECMODE    (propagate_assignments !!)
  ***/
 
 /*
@@ -1288,6 +1294,8 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_WORKER(n) ((node *)(n->dfmask[2]))
 #define FUNDEF_COMPANION(n) ((node *)(n->dfmask[3]))
 
+/* multithreading: */
+#define FUNDEF_EXDECMODE(n) (n->lineno)
 /* multithreading: ST_spmdfun */
 #define FUNDEF_IDENTIFIER(n) (n->lineno)
 #define FUNDEF_MT2USE(n) (n->dfmask[1])
