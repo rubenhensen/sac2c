@@ -115,4 +115,5 @@ CACHE2_MSCA      :=  0
 
 target powerbook_G4::mpc7450:
 
+target smeagol::powerbook_G4:
 
