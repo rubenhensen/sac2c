@@ -37,3 +37,4 @@ usesymbols.c
 usesymbols.h
 stringset.c
 stringset.h
+prepareinline.h
