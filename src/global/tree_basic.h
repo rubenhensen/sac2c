@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.62  1997/12/02 18:47:10  srs
+ * changed comments
+ *
  * Revision 1.61  1997/11/24 17:05:06  sbs
  * Nwithop modified :
  * FUN points to funname.id
@@ -309,9 +312,9 @@ file can be found in tree_basic.c
  *   --------------------
  */
 
-#define NODE_TYPE(n) (n->nodetype)
+#define NODE_TYPE(n) ((n)->nodetype)
 
-#define NODE_LINE(n) (n->lineno)
+#define NODE_LINE(n) ((n)->lineno)
 
 /*
  *   Non-node-structures
@@ -1932,6 +1935,11 @@ extern node *MakeInfo ();
  ***  temporary attributes:
  ***
  ***    ?
+ ***
+ ***  remarks:
+ ***    flatten: it's important that the Npart nodes are flattened before
+ ***    Ncode. So assure that with the current traversal mechanism the
+ ***    ->node index of Npart is lower than the index of Ncode.
  ***/
 
 extern node *MakeNWith (node *part, node *code, node *withop);
@@ -2032,7 +2040,7 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***    prf        PRF         (iff WithOpType == WO_foldprf)
  ***
  ***  temporary attributes:
- ***     node*  EXPR           (scanparse -> )
+ ***     node*  EXPR           (scanparse, stays != NULL afterwards)
  ***
  ***/
 
