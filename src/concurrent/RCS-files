@@ -5,6 +5,8 @@ schedule.c
 schedule.h
 scheduling.c
 scheduling.h
+spmd_cons.c
+spmd_cons.h
 spmd_init.c
 spmd_init.h
 spmd_lift.c
