@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2002/03/01 02:39:12  dkr
+ * GetArgtabIndexIn() and GetArgtabIndexOut() added
+ *
  * Revision 3.52  2002/02/20 14:38:09  dkr
  * function DupTypes() renamed into DupAllTypes()
  *
@@ -449,6 +452,7 @@ Shpseg2Array (shpseg *shape, int dim)
  *   append item to list of types
  *
  ******************************************************************************/
+
 types *
 AppendTypes (types *chain, types *item)
 {
@@ -479,7 +483,9 @@ CountTypes (types *type)
     DBUG_ENTER ("CountTypes");
 
     while (type != NULL) {
-        count++;
+        if (TYPES_BASETYPE (type) != T_void) {
+            count++;
+        }
         type = TYPES_NEXT (type);
     }
 
@@ -1507,6 +1513,67 @@ NodeListFind (nodelist *nl, node *node)
     }
 
     DBUG_RETURN (nl);
+}
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  ARGTAB :
+ ***/
+
+/******************************************************************************
+ *
+ * Function:
+ *   int GetArgtabIndexOut( types *type, argtab_t *argtab)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+int
+GetArgtabIndexOut (types *type, argtab_t *argtab)
+{
+    int idx;
+
+    DBUG_ENTER ("GetArgtabIndexOut");
+
+    idx = 0;
+    while ((argtab->ptr_out[idx] != type) && (idx < argtab->size)) {
+        idx++;
+    }
+    DBUG_ASSERT ((argtab->ptr_out[idx] == type), "no index for out-parameter found!");
+
+    DBUG_RETURN (idx);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   int GetArgtabIndexIn( types *type, argtab_t *argtab)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+int
+GetArgtabIndexIn (types *type, argtab_t *argtab)
+{
+    int idx;
+
+    DBUG_ENTER ("GetArgtabIndexIn");
+
+    idx = 0;
+    while (((argtab->ptr_in[idx] == NULL) || (ARG_TYPE (argtab->ptr_in[idx]) != type))
+           && (idx < argtab->size)) {
+        idx++;
+    }
+    DBUG_ASSERT (((argtab->ptr_in[idx] != NULL)
+                  && (ARG_TYPE (argtab->ptr_in[idx]) == type)),
+                 "no index for in-parameter found!");
+
+    DBUG_RETURN (idx);
 }
 
 /*--------------------------------------------------------------------------*/
