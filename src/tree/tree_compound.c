@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2000/07/11 14:59:14  dkr
+ * function IsHidden added
+ *
  * Revision 1.11  2000/07/10 15:49:32  dkr
  * minor changes done
  *
@@ -255,10 +258,11 @@ LookupIds (char *name, ids *ids_chain)
 /******************************************************************************
  *
  * function:
- *   int IsBoxed(types *type)
- *   int IsUnique(types *type)
- *   int IsArray(types *type)
- *   int IsNonUniqueHidden(types *type)
+ *   int IsBoxed( types *type)
+ *   int IsArray( types *type)
+ *   int IsUnique( types *type)
+ *   int IsHidden( types *type)
+ *   int IsNonUniqueHidden( types *type)
  *
  * description:
  *   These functions may be used to check for particular properties
@@ -274,36 +278,16 @@ IsBoxed (types *type)
 
     DBUG_ENTER ("IsBoxed");
 
-    if (TYPES_DIM (type) != 0) {
+    if (TYPES_DIM (type) != SCALAR) {
         ret = 1;
     } else {
         if (TYPES_BASETYPE (type) == T_user) {
             tdef = TYPES_TDEF (type);
-            DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
+            DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
 
-            if ((TYPEDEF_DIM (tdef) != 0) || (TYPEDEF_BASETYPE (tdef) == T_hidden)) {
+            if ((TYPEDEF_DIM (tdef) != SCALAR) || (TYPEDEF_BASETYPE (tdef) == T_hidden)) {
                 ret = 1;
             }
-        }
-    }
-
-    DBUG_RETURN (ret);
-}
-
-int
-IsUnique (types *type)
-{
-    int ret = 0;
-    node *tdef;
-
-    DBUG_ENTER ("IsUnique");
-
-    if (TYPES_BASETYPE (type) == T_user) {
-        tdef = TYPES_TDEF (type);
-        DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
-
-        if (TYPEDEF_ATTRIB (tdef) == ST_unique) {
-            ret = 1;
         }
     }
 
@@ -323,12 +307,54 @@ IsArray (types *type)
     } else {
         if (T_user == TYPES_BASETYPE (type)) {
             tdef = TYPES_TDEF (type);
-            DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
+            DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
 
             if ((SCALAR != TYPEDEF_DIM (tdef))
                 && (ARRAY_OR_SCALAR != TYPEDEF_DIM (tdef))) {
                 ret = 1;
             }
+        }
+    }
+
+    DBUG_RETURN (ret);
+}
+
+int
+IsUnique (types *type)
+{
+    int ret = 0;
+    node *tdef;
+
+    DBUG_ENTER ("IsUnique");
+
+    if (TYPES_BASETYPE (type) == T_user) {
+        tdef = TYPES_TDEF (type);
+        DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
+
+        if (TYPEDEF_ATTRIB (tdef) == ST_unique) {
+            ret = 1;
+        }
+    }
+
+    DBUG_RETURN (ret);
+}
+
+int
+IsHidden (types *type)
+{
+    int ret = 0;
+    node *tdef;
+
+    DBUG_ENTER ("IsHidden");
+
+    if (TYPES_BASETYPE (type) == T_hidden) {
+        ret = 1;
+    } else if (TYPES_BASETYPE (type) == T_user) {
+        tdef = TYPES_TDEF (type);
+        DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
+
+        if (TYPEDEF_BASETYPE (tdef) == T_hidden) {
+            ret = 1;
         }
     }
 
@@ -345,7 +371,7 @@ IsNonUniqueHidden (types *type)
 
     if (TYPES_BASETYPE (type) == T_user) {
         tdef = TYPES_TDEF (type);
-        DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
+        DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
 
         if ((TYPEDEF_BASETYPE (tdef) == T_hidden)
             || (TYPEDEF_BASETYPE (tdef) == T_user)) {
@@ -355,7 +381,7 @@ IsNonUniqueHidden (types *type)
                 }
             } else {
                 tdef = TYPES_TDEF (TYPEDEF_TYPE (tdef));
-                DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
+                DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
 
                 if (TYPEDEF_ATTRIB (tdef) == ST_regular) {
                     ret = 1;
