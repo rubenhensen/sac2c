@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/03/05 12:06:44  sbs
+ * NTCCond added.
+ *
  * Revision 1.1  2002/08/05 16:57:45  sbs
  * Initial revision
  *
@@ -14,6 +17,7 @@
 #include "new_types.h"
 #include "sig_deps.h"
 #include "ct_basic.h"
+#include "traverse.h"
 
 /*
  * OPEN PROBLEMS:
@@ -78,6 +82,70 @@ NTCCTComputeType (ct_funptr CtFun, te_info *info, ntype *args)
     DBUG_EXECUTE ("NTC", tmp_str = TYType2String (res, FALSE, 0););
     DBUG_PRINT ("NTC", ("yields %s", tmp_str));
     DBUG_EXECUTE ("NTC", Free (tmp_str););
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ ***
+ ***          Type computation for user defined functions:
+ ***          --------------------------------------------
+ ***
+ ******************************************************************************/
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCond( te_info info, ntype *args)
+ *
+ * description:
+ *    Here, we assume that the argument types (i.e. ONLY the predicate type!!)
+ *    are either array types or type variables with identical Min and Max!
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCond (te_info *info, ntype *args)
+{
+    ntype *pred, *res;
+    node *cond, *arg_info;
+
+    DBUG_ENTER ("NTCCond");
+    DBUG_ASSERT ((TYIsProdOfArray (args)), "NTCCond called with non-fixed predicate!");
+
+    pred = TYGetProductMember (args, 0);
+    TEAssureBoolS ("predicate", pred);
+
+    cond = TEGetWrapper (info);
+    arg_info = TEGetAssign (info);
+
+#if 0
+  /**
+   * I'm not sure whether the sequel will work. Most liekely, 
+   * we will have to make sure, that NO code is traversed more than once!!
+   */
+  if( TYIsAKV( pred) ) {
+    if( COIsTrue( TYGetValue( pred), TRUE) ) {
+      DBUG_PRINT( "NTC", ("traversing then branch only..."));
+      COND_THEN( cond) = Trav( COND_THEN( cond), arg_info);
+    } else {
+      DBUG_PRINT( "NTC", ("traversing else branch only..."));
+      COND_ELSE( cond) = Trav( COND_ELSE( cond), arg_info);
+    }
+  } else {
+    DBUG_PRINT( "NTC", ("traversing then branch..."));
+    COND_THEN( cond) = Trav( COND_THEN( cond), arg_info);
+    DBUG_PRINT( "NTC", ("traversing else branch..."));
+    COND_ELSE( cond) = Trav( COND_ELSE( cond), arg_info);
+  }
+#else
+    DBUG_PRINT ("NTC", ("traversing then branch..."));
+    COND_THEN (cond) = Trav (COND_THEN (cond), arg_info);
+    DBUG_PRINT ("NTC", ("traversing else branch..."));
+    COND_ELSE (cond) = Trav (COND_ELSE (cond), arg_info);
+#endif
+
+    res = TYMakeProductType (0);
 
     DBUG_RETURN (res);
 }
