@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.31  1995/11/10 15:01:59  cg
+ * Revision 1.32  1995/11/16 19:43:21  cg
+ * added new break parameter -bv to stop after removing void-functions
+ *
+ * Revision 1.31  1995/11/10  15:01:59  cg
  * new command line option -v<n> to set verbose level
  *
  * Revision 1.30  1995/11/06  14:16:14  cg
@@ -135,6 +138,7 @@ usage (char *prg_name)
     printf ("\t -bb \t\t\tstop after writing SIB-file\n");
     printf ("\t -be \t\t\tstop after handling objects\n");
     printf ("\t -bq \t\t\tstop after checking uniqueness\n");
+    printf ("\t -bv \t\t\tstop after generating purely functional code\n");
     printf ("\t -bo \t\t\tstop after sac-optimizations\n");
     printf ("\t -bs \t\t\tstop after psi-optimizations\n");
     printf ("\t -br \t\t\tstop after refcount inference\n");
