@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/07/04 11:39:58  hw
+ * Revision 1.12  1995/07/24 09:08:05  asi
+ * macro DUP moved from DupTree.c to DupTree.h, macro TYPES renamed to INL_TYPES
+ *
+ * Revision 1.11  1995/07/04  11:39:58  hw
  * DupDouble inserted
  *
  * Revision 1.10  1995/06/27  16:03:05  asi
@@ -53,13 +56,6 @@
 #include "Inline.h"
 
 #define LEVEL arg_info->lineno
-#define DUP(s, d)                                                                        \
-    d->refcnt = s->refcnt;                                                               \
-    d->flag = s->flag;                                                                   \
-    d->varno = s->varno;                                                                 \
-    d->nnode = s->nnode;                                                                 \
-    d->lineno = s->lineno;
-
 node *
 DupTree (node *arg_node, node *arg_info)
 {
@@ -143,7 +139,7 @@ DupIds (ids *old_ids, node *arg_info)
     switch (DUPTYPE) {
     case INLINE:
         new_ids = MakeIds (RenameInlinedVar (old_ids->id));
-        new_ids->node = SearchDecl (new_ids->id, TYPES);
+        new_ids->node = SearchDecl (new_ids->id, INL_TYPES);
         DBUG_ASSERT ((NULL != new_ids->node),
                      ("No decleration found for %s", new_ids->id));
         break;
