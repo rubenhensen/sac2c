@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/07/12 22:39:19  dkr
+ * GetNextPrf() added but deactivated
+ *
  * Revision 3.11  2002/07/10 20:07:03  dkr
  * GetNextVarId() added
  *
@@ -50,6 +53,8 @@
  */
 
 #include "icm2c_basic.h"
+
+#include "print.h"
 
 #define ICM_DEF(prf, trf)                                                                \
     void Print##prf (node *exprs, node *arg_info)                                        \
@@ -148,6 +153,55 @@ GetNextIcm (char **ret, node *exprs)
 
     DBUG_RETURN (exprs);
 }
+
+/*
+ * N_prf together with tagged arrays is not allowed because both strings
+ * have a '(' as first character!!
+ */
+#if 0
+static
+node *GetNextPrf( char **ret, node *exprs)
+{
+  node *expr;
+  int cnt, len;
+  char **v;
+
+  DBUG_ENTER( "GetNextPrf");
+
+  DBUG_ASSERT( (ret != NULL), "no return value found!");
+
+  DBUG_ASSERT( (NODE_TYPE( exprs) == N_exprs),
+               "wrong icm-arg: N_exprs expected");
+  expr = EXPRS_EXPR( exprs);
+
+  DBUG_ASSERT( (NODE_TYPE( expr) == N_prf), "wrong icm-arg: N_prf expected");
+
+  cnt = CountExprs( PRF_ARGS( expr));
+  DBUG_ASSERT( (cnt == 2), "icm-arg N_prf: only infix notation implemented!");
+
+  GetNextVarAny( &v, &len, cnt, PRF_ARGS( expr));
+  len += strlen( prf_string[ PRF_PRF( expr)]);
+  len += 5;
+
+  (*ret) = (char *) Malloc( len * sizeof( char));
+  (*ret)[0] = '\0';
+  strcat( (*ret), "(");
+  strcat( (*ret), v[0]);
+  strcat( (*ret), " ");
+  strcat( (*ret), prf_string[ PRF_PRF( expr)]);
+  strcat( (*ret), " ");
+  strcat( (*ret), v[1]);
+  strcat( (*ret), ")");
+
+  v = Free( v);
+
+  DBUG_PRINT( "PRINT", ("icm-arg found: %s", (*ret)));
+
+  exprs = EXPRS_NEXT( exprs);
+
+  DBUG_RETURN( exprs);
+}
+#endif
 
 static node *
 GetNextNt (char **ret, node *exprs)
@@ -350,6 +404,11 @@ GetNextAny (char **ret, node *exprs)
     case N_icm:
         exprs = GetNextIcm (ret, exprs);
         break;
+#if 0
+    case N_prf:
+      exprs = GetNextPrf( ret, exprs);
+      break;
+#endif
     case N_id:
         if (ID_NT_TAG (expr) != NULL) {
             exprs = GetNextNt (ret, exprs);
