@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.74  1998/05/21 09:59:47  dkr
+ * added missing 'break' in switch-statement (FltnNWithop)
+ *
  * Revision 1.73  1998/05/20 20:17:23  sbs
  * completely revised version of flatten.c!!
  * All functions have been adjusted to the new macros,
@@ -1678,6 +1681,7 @@ FltnNwithop (node *arg_node, node *arg_info)
         expr = NULL;
         break;
     case WO_foldfun:
+        /* here is no break missing! */
     case WO_foldprf:
         expr = NWITHOP_NEUTRAL (arg_node);
         if ((expr != NULL)
@@ -1686,6 +1690,7 @@ FltnNwithop (node *arg_node, node *arg_info)
                 || (NODE_TYPE (expr) == N_Nwith))) {
             NWITHOP_NEUTRAL (arg_node) = Abstract (expr, arg_info);
         }
+        break;
     default:
         DBUG_ASSERT (0, "wrong withop tag in N_Nwithop node!");
         break;
