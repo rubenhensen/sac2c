@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/10/14 14:17:31  sbs
+ * added alternative code in ReuseIdxSel when calling IdxChangeId from index.c
+ *
  * Revision 3.13  2004/10/14 13:47:20  sbs
  * adjusted the call to IdxChangeId to shape rather than types
  *
@@ -476,9 +479,18 @@ ReuseIdxSel (node *arg1, node *arg2, info *arg_info)
             == 0)) {
 
         type = IDS_TYPE (INFO_REUSE_WL_IDS (arg_info));
+#if 1
         shp = Type2Shape (type);
         idx_sel_name = IdxChangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)), shp);
         shp = SHFreeShape (shp);
+#else
+        /**
+         * In case naming goes wrong this is an option to preserve the old
+         * handling prior to eliminating types from VINFO in index.c.
+         * Eventually, this part should vanish!
+         */
+        idx_sel_name = IdxChangeIdOld (IDS_NAME (INFO_REUSE_IDX (arg_info)), type);
+#endif
 
         if (!strcmp (ID_NAME (arg1), idx_sel_name)) {
             /*
