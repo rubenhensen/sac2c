@@ -356,6 +356,7 @@
     <phase id="typecheck" name="Running type inference system">
       <traversal id="INSVD" name="Insert Vardecs" default="sons" include="insert_vardec.h" >
 	<travuser>
+          <node name="Module" />
           <node name="Fundef" />
           <node name="SPAp" />
           <node name="SPId" />
@@ -1575,11 +1576,11 @@
         <node name="Char" />
         <node name="Bool" />
         <node name="Id" />
-        <node name="Spid" />
+        <node name="SPId" />
         <node name="With" />
         <node name="Array" />
         <node name="Ap" />
-        <node name="Spap" />
+        <node name="SPAp" />
         <node name="Prf" />
         <node name="Funcond" />
 	<node name="Cast" />
@@ -3176,7 +3177,7 @@
         <son name="Vec" mandatory="yes">
           <target>
             <node name="Exprs" />
-	    <node name="Spid" />
+	    <node name="SPId" />
           </target>
         </son>
         <son name="Expr" mandatory="yes">
@@ -3528,7 +3529,7 @@
         <attribute name="WithId" default="NULL" mandatory="no">
           <type name="Link">
             <target>
-              <node name="Nwithid" />
+              <node name="Withid" />
             </target>
           </type>
           <phases>
@@ -4021,11 +4022,13 @@
         <son name="Vec" mandatory="yes">
 	  <target>
 	    <node name="Ids" />
+	    <node name="SPIds" />
 	  </target>
 	</son>
         <son name="Ids" mandatory="no">
 	  <target>
 	    <node name="Ids" />
+	    <node name="SPIds" />
 	  </target>
 	</son>
       </sons>
