@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/01/24 15:48:28  dkr
+ * bug in ND_FUN_RET fixed
+ *
  * Revision 3.1  2000/11/20 18:01:17  sacbase
  * new release made
  *
@@ -533,9 +536,9 @@ ICMCompileND_FUN_RET (char *retname, int narg, char **arg, node *arg_info)
     INDENT;
     ScanArglist (arg, 3 * narg, i += 2;
                  sep = 0,
-                 fprintf (outfile, "*SAC_NAMEP( %s) = %s;\n", arg[i], arg[i + 1]);
+                 fprintf (outfile, "*SAC_NAMEP( %s) = %s;\n", arg[i + 1], arg[i]);
                  i += 2; INDENT; sep = 1, fprintf (outfile, "*SAC_NAMEP( %s) = %s;\n",
-                                                   arg[i], arg[i + 1]);
+                                                   arg[i + 1], arg[i]);
                  i += 2; INDENT; sep = 1, i += 2; sep = 0, i += 2; sep = 0, i += 2;
                  sep = 0, fprintf (outfile, "SAC_ND_KS_RET_OUT_RC( %s, %s);\n", arg[i],
                                    arg[i + 1]);
