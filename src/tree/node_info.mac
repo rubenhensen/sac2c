@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.39  2000/06/05 12:34:18  dkr
+ * Functions AIwith, AIwith2, AIcode added
+ *
  * Revision 1.38  2000/05/31 16:14:34  mab
  * added apc, apt for array padding
  *
@@ -1532,7 +1535,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        WLAAnwith, TravSons, TravSons, TravSons, TravSons, TSInwith, TravSons, TravSons,
        TravSons, TravSons, TravSons, L2F_INFERwith,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, AIwith, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, APCNwith, APTNwith,
 
@@ -1622,7 +1625,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        WLAAncode, FMTravSons, TravSons, TravSons, TravSons, TSIncode, TravSons, TravSons,
        TravSons, TravSons, TravSons, L2F_INFERcode,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, AIcode, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
@@ -1644,9 +1647,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, L2F_INFERwith2,
 
-       TravSons, SCHINnwith2, TravSons, RFINnwith2, TravSons, TravSons, TravSons,
+       TravSons, SCHINnwith2, TravSons, RFINnwith2, TravSons, AIwith2, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
 
        4),
 
