@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/11/06 14:18:35  cg
+ * Revision 1.7  1995/11/06 18:45:22  cg
+ * bug fixed in writing readonly-reference parameters.
+ *
+ * Revision 1.6  1995/11/06  14:18:35  cg
  * bug fixed in generating correct references of identifiers
  * to their respective vardec or arg nodes
  *
@@ -691,13 +694,16 @@ WDECarg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WDECarg");
 
-    PrintDecTypes (ARG_TYPE (arg_node), (char *)arg_info);
+    if (ARG_ATTRIB (arg_node) == ST_readonly_reference) {
+        ARG_ATTRIB (arg_node) = ST_reference;
+        PrintDecTypes (ARG_TYPE (arg_node), (char *)arg_info);
+        ARG_ATTRIB (arg_node) = ST_readonly_reference;
+    } else {
+        PrintDecTypes (ARG_TYPE (arg_node), (char *)arg_info);
+    }
 
-    fprintf (decfile, " ");
-
-    if ((ARG_ATTRIB (arg_node) == ST_reference)
-        || (ARG_ATTRIB (arg_node) == ST_readonly_reference)) {
-        fprintf (decfile, "&");
+    if ((ARG_ATTRIB (arg_node) == ST_unique) || (ARG_ATTRIB (arg_node) == ST_regular)) {
+        fprintf (decfile, " ");
     }
 
     fprintf (decfile, "%s", ARG_NAME (arg_node));
