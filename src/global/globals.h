@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2003/12/10 17:33:16  khf
+ * OPT_WLFS added for with-loop fusion
+ *
  * Revision 3.34  2003/12/10 16:07:14  skt
  * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
  *
@@ -285,6 +288,7 @@ extern unsigned int optimize;
 #define OPT_AL 0x10000000   /* associative law                             */
 #define OPT_BLIR 0x20000000 /* backend loop invariant removal              */
 #define OPT_SP 0x40000000   /* selection propagation                       */
+#define OPT_WLFS 0x80000000 /* with-loop fusion                            */
 
 /* use ssa-form based optimizations instead of old opts */
 extern bool use_ssaform;

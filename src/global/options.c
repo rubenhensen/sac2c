@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2003/12/10 17:33:16  khf
+ * OPT_WLFS added for with-loop fusion
+ *
  * Revision 3.54  2003/12/10 16:07:14  skt
  * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
  *
@@ -547,6 +550,9 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("wls", optimize |= OPT_WLS);
         ARG_CHOICE ("WLS", optimize |= OPT_WLS);
 
+        ARG_CHOICE ("wlfs", optimize |= OPT_WLFS);
+        ARG_CHOICE ("WLFS", optimize |= OPT_WLFS);
+
         ARG_CHOICE ("al", optimize |= OPT_AL);
         ARG_CHOICE ("AL", optimize |= OPT_AL);
 
@@ -651,6 +657,9 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("wls", optimize |= OPT_WLS);
         ARG_CHOICE ("WLS", optimize |= OPT_WLS);
+
+        ARG_CHOICE ("wlfs", optimize |= OPT_WLFS);
+        ARG_CHOICE ("WLFS", optimize |= OPT_WLFS);
 
         ARG_CHOICE ("al", optimize |= OPT_AL);
         ARG_CHOICE ("AL", optimize |= OPT_AL);
@@ -943,6 +952,9 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("wls", optimize &= ~OPT_WLS);
         ARG_CHOICE ("WLS", optimize &= ~OPT_WLS);
 
+        ARG_CHOICE ("wlfs", optimize &= ~OPT_WLFS);
+        ARG_CHOICE ("WLFS", optimize &= ~OPT_WLFS);
+
         ARG_CHOICE ("al", optimize &= ~OPT_AL);
         ARG_CHOICE ("AL", optimize &= ~OPT_AL);
 
@@ -1047,6 +1059,9 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("wls", optimize &= ~OPT_WLS);
         ARG_CHOICE ("WLS", optimize &= ~OPT_WLS);
+
+        ARG_CHOICE ("wlfs", optimize &= ~OPT_WLFS);
+        ARG_CHOICE ("WLFS", optimize &= ~OPT_WLFS);
 
         ARG_CHOICE ("al", optimize &= ~OPT_AL);
         ARG_CHOICE ("AL", optimize &= ~OPT_AL);
