@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/04/13 14:02:27  cg
+ * added printing of #pragma cachesim.
+ *
  * Revision 2.8  1999/04/12 17:58:43  bs
  * PrintNpart and PrintNcode modified: now there is a possibility to print
  * TSI informations using the dbug flag 'TSI_INFO'
@@ -432,6 +435,11 @@ PrintBlock (node *arg_node, node *arg_info)
     fprintf (outfile, "{ \n");
     indent++;
 
+    if (BLOCK_CACHESIM (arg_node) != NULL) {
+        INDENT;
+        fprintf (outfile, "#pragma cachesim \"%s\"\n\n", BLOCK_CACHESIM (arg_node));
+    }
+
     if (BLOCK_VARDEC (arg_node) != NULL) {
         Trav (BLOCK_VARDEC (arg_node), arg_info);
         fprintf (outfile, "\n");
@@ -439,7 +447,7 @@ PrintBlock (node *arg_node, node *arg_info)
 
     if (arg_info && /* arg_info may be NULL if Print() is called */
                     /* from within a debugger (PrintFundef did */
-                    /* not craete an info node). */
+                    /* not create an info node). */
         not_yet_done_print_main_begin && (NODE_TYPE (arg_info) == N_info)
         && (INFO_PRINT_FUNDEF (arg_info) != NULL)
         && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)
