@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 19:19:55  cg
+ * Deactivated new version of mt due to resource conflict with precompile.
+ *
  * Revision 3.1  2000/11/20 17:59:33  sacbase
  * new release made
  *
@@ -555,10 +558,18 @@ main (int argc, char *argv[])
         NOTE_COMPILER_PHASE;
         NOTE (("using old version of mt"));
         syntax_tree = BuildSpmdRegions (syntax_tree); /* spmd..._tab, sync..._tab */
-    } else if (gen_mt_code == GEN_MT_NEW) {
-        NOTE_COMPILER_PHASE;
-        NOTE (("using new version of mt"));
-        syntax_tree = BuildMultiThread (syntax_tree);
+    } else {
+        if (gen_mt_code == GEN_MT_NEW) {
+            NOTE_COMPILER_PHASE;
+            NOTE (("using new version of mt"));
+            SYSABORT (("New version of multithreading de-activated !!"));
+            /*
+             * The core problem is that new-mt reuses the FUNDEF ATTRIB attribute
+             * and thereby destroys its old contents. Unfortunately, it has turned
+             * that this information is vital for precompile.
+             */
+            syntax_tree = BuildMultiThread (syntax_tree);
+        }
     }
     PHASE_EPILOG;
 
