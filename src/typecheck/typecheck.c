@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.50  2000/10/18 09:04:32  sbs
+ * ID_OR_CAST_TYPE's inserted.
+ *
  * Revision 2.49  2000/09/12 14:37:29  dkr
  * some errors in combination with (dynamic_shapes == 1) corrected
  *
@@ -5109,8 +5112,8 @@ TClet (node *arg_node, node *arg_info)
                      * to be used, the function application is now replaced by an
                      * equialent with-loop.
                      */
-                    type_arg1 = ID_TYPE (PRF_ARG1 (LET_EXPR (arg_node)));
-                    type_arg2 = ID_TYPE (PRF_ARG2 (LET_EXPR (arg_node)));
+                    type_arg1 = ID_OR_CAST_TYPE (PRF_ARG1 (LET_EXPR (arg_node)));
+                    type_arg2 = ID_OR_CAST_TYPE (PRF_ARG2 (LET_EXPR (arg_node)));
 
                     if (NULL != LookupFun (prf_name_str[F_psi], "Array", NULL)) {
                         if ((TYPES_DIM (type) > SCALAR)
@@ -5122,10 +5125,11 @@ TClet (node *arg_node, node *arg_info)
                              */
                             node *wl_impl;
                             types *new_type;
+                            node *arg1, *arg2;
 
-                            wl_impl
-                              = BuildPsiWithLoop (type, PRF_ARG1 (LET_EXPR (arg_node)),
-                                                  PRF_ARG2 (LET_EXPR (arg_node)));
+                            arg1 = PRF_ARG1 (LET_EXPR (arg_node));
+                            arg2 = PRF_ARG2 (LET_EXPR (arg_node));
+                            wl_impl = BuildPsiWithLoop (type, arg1, arg2);
                             new_type = TI (wl_impl, arg_info);
                             FreeAllTypes (new_type);
 
@@ -5145,8 +5149,11 @@ TClet (node *arg_node, node *arg_info)
                         ERROR (NODE_LINE (arg_node),
                                ("Function 'psi` undefined or applied to wrong arguments: "
                                 "'%s, %s`",
-                                Type2String (ID_TYPE (PRF_ARG1 (LET_EXPR (arg_node))), 0),
-                                Type2String (ID_TYPE (PRF_ARG2 (LET_EXPR (arg_node))),
+                                Type2String (ID_OR_CAST_TYPE (
+                                               PRF_ARG1 (LET_EXPR (arg_node))),
+                                             0),
+                                Type2String (ID_OR_CAST_TYPE (
+                                               PRF_ARG2 (LET_EXPR (arg_node))),
                                              0)));
                     }
                 }
@@ -6701,7 +6708,9 @@ TI_cast (node *arg_node, node *arg_info)
     while (NULL != tmp) {
         is_comp = CompatibleTypes (type, tmp, 0, NODE_LINE (arg_node));
         if (CMP_incompatible == is_comp) /* 0 */ {
-            ERROR (NODE_LINE (arg_node), ("%d. cast has incompatible type", i));
+            ERROR (NODE_LINE (arg_node),
+                   ("%d. cast has incompatible type: inferred type: %s", i,
+                    Type2String (tmp, 0)));
         } else if (CMP_one_unknown_shape == is_comp) /* 2 */ {
             /* change type for return  (infered type of N_cast) */
             UpdateType (type, tmp, NODE_LINE (arg_node));
