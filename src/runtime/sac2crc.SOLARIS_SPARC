@@ -43,6 +43,7 @@ RMDIR            :=  "rm -rf"
 CHDIR            :=  cd
 CAT              :=  cat
 MOVE             :=  mv
+RSH              :=  rsh
 DUMP_OUTPUT      :=  ">/dev/null 2>&1"
  
 STDLIB_DECPATH   :=  "$SACBASE/stdlib/modules/structures:"

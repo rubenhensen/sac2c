@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/06/10 09:47:56  cg
+ * added new resource entry RSH for the specification of how to
+ * invoke a remote shell.
+ *
  * Revision 2.4  1999/05/18 12:29:10  cg
  * added new resource entry TMPDIR to specify where sac2c puts
  * its temporary files.
@@ -180,6 +184,7 @@ static struct {
   {"CHDIR", str, &config.chdir},
   {"CAT", str, &config.cat},
   {"MOVE", str, &config.move},
+  {"RSH", str, &config.rsh},
   {"DUMP_OUTPUT", str, &config.dump_output},
 
   {"STDLIB_DECPATH", str, &config.stdlib_decpath},

@@ -115,6 +115,9 @@
  *                  
  *  MOVE            MOVE specifies how to move a file to a new location.
  *                  Usage: <MOVE> <file> <new location>
+ *
+ *  RSH             RSH specifies how to invoke a remote shell
+ *                  Usage: <RSH> <host> <command> [<argument>]*
  *                  
  *  DUMP_OUTPUT     DUMP_OUTPUT specifies how to redirect all output in order to 
  *                  dump it.
