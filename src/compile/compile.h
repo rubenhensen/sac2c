@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1998/03/02 22:25:57  dkr
+ * macros for new with-loop moved to tree_basic
+ *
  * Revision 1.21  1998/02/16 21:33:51  dkr
  * *** empty log message ***
  *
@@ -81,7 +84,7 @@ extern node *CompId (node *arg_node, node *arg_info);
 extern node *CompAp (node *arg_node, node *arg_info);
 extern node *CompReturn (node *arg_node, node *arg_info);
 extern node *CompWith (node *arg_node, node *arg_info);
-extern node *CompNWith (node *arg_node, node *arg_info);
+extern node *CompNwith2 (node *arg_node, node *arg_info);
 extern node *CompArg (node *arg_node, node *arg_info);
 extern node *CompFundef (node *arg_node, node *arg_info);
 extern node *CompLoop (node *arg_node, node *arg_info);
@@ -185,39 +188,3 @@ extern node *CompObjdef (node *arg_node, node *arg_info);
     }
 
 #endif /* _compile_h */
-
-/****************************************************
- * macros for the compilation of the new with-loop: *
- *
- */
-
-/*
- *  N_index :
- *
- *  sons:
- *
- *    node*    BOUND1   (0)     (N_num)
- *    node*    BOUND2   (0)     (N_num)
- *    node*    OFFSET   (0)     (N_num)
- *    node*    STEP     (0)     (N_num)
- *    node*    WIDTH    (0)     (N_num)
- *    node*    NEXT     (0)     (N_index)
- *
- *  temporary attributes:
- *
- *    int      ISECTED  (0)     (Compile ! )
- *
- */
-
-extern node *MakeIndex (node *bound1, node *bound2, node *offset, node *step, node *width,
-                        node *next);
-
-#define INDEX_BOUND1(n) (n->node[0])
-#define INDEX_BOUND2(n) (n->node[1])
-#define INDEX_OFFSET(n) (n->node[2])
-#define INDEX_STEP(n) (n->node[3])
-#define INDEX_WIDTH(n) (n->node[4])
-#define INDEX_NEXT(n) (n->node[5]) /* next raster with same outline */
-#define INDEX_MODIFIED(n) (n->flag)
-
-/****************************************************/
