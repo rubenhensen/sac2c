@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2002/10/07 23:45:18  dkr
+ * signature of COGetDataVec() corrected
+ *
  * Revision 1.15  2002/09/03 11:52:56  dkr
  * COAST2Constant() modified for new typechecker
  *
@@ -418,7 +421,7 @@ COMakeConstantFromArray (node *a)
  *    simpletype COGetType( constant *a)
  *    int COGetDim( constant *a)
  *    shape *COGetShape( constant *a)
- *    void **GetDataVec( constant *a)
+ *    void *GetDataVec( constant *a)
  *
  * description:
  *    several functions for extracting info from constants.
@@ -449,7 +452,7 @@ COGetShape (constant *a)
     DBUG_RETURN (CONSTANT_SHAPE (a));
 }
 
-void **
+void *
 COGetDataVec (constant *a)
 {
     DBUG_ENTER ("COGetDataVec");

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2002/10/07 23:45:03  dkr
+ * signature of COGetDataVec() corrected
+ *
  * Revision 1.11  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -16,9 +19,6 @@
  *
  * Revision 1.6  2001/04/30 12:28:43  nmw
  * GetDataVec added
- *
- * Revision 1.5  2001/04/25 13:36:50  nmw
- * *** empty log message ***
  *
  * Revision 1.4  2001/03/23 12:49:02  nmw
  * CODim/COShape implemented
@@ -103,7 +103,7 @@ extern constant *COMakeFalse (shape *shp);
 extern simpletype COGetType (constant *a);
 extern int COGetDim (constant *a);
 extern shape *COGetShape (constant *a);
-extern void **COGetDataVec (constant *a);
+extern void *COGetDataVec (constant *a);
 
 /*
  * Functions for handling / converting constants:
