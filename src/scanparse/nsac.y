@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.12  2004/11/17 19:45:53  sah
+* fixed external typedefs
+*
 * Revision 1.11  2004/11/17 17:05:29  sah
 * added external typedefs
 *
@@ -167,7 +170,7 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 
 %type <node> prg  defs  def2  def3  def4 def5
 
-%type <node> typedefs  typedef
+%type <node> typedef
 
 %type <node> objdefs  objdef
 
@@ -288,61 +291,61 @@ eof: { if (commlevel) {
 
 
 prg: defs
-{ $$ = $1;
-MODUL_NAME( $$) = mod_name;
-MODUL_FILETYPE( $$) = F_prog;
-}
-;
+     { $$ = $1;
+       MODUL_NAME( $$) = mod_name;
+       MODUL_FILETYPE( $$) = F_prog;
+     }
+   ;
 
 defs: interface def2
-{ $$ = $2;
-MODUL_IMPORTS( $$) = $1;
-}
-| def2
-{ $$ = $1; }
-;
+      { $$ = $2;
+        MODUL_IMPORTS( $$) = $1;
+      }
+    | def2
+      { $$ = $1; }
+    ;
 
-def2: typedefs def3
-{ $$ = $2;
-MODUL_TYPES( $$) = $1;
-}
-| def3
-{ $$ = $1; }
-;
+def2: typedef def2
+      { $$ = $2;
+        TYPEDEF_NEXT( $1) = MODUL_TYPES( $$);
+        MODUL_TYPES( $$) = $1;
+      }
+    | def3
+      { $$ = $1; }
+    ;
 
 def3: objdefs def4
-{ $$ = $2;
-MODUL_OBJS( $$) = $1;
-}
-| def4
-{ $$ = $1; }
-;
+      { $$ = $2;
+        MODUL_OBJS( $$) = $1;
+      }
+    | def4
+      { $$ = $1; }
+    ;
 
 def4: fundec def4
-{ $$ = $2;
-MODUL_FUNDECS( $$) = AppendFundef( MODUL_FUNDECS( $$), $1);
-}
-| wlcomp_pragma_global main def5
-{ $$ = $3;
-MODUL_FUNS( $$) = AppendFundef( MODUL_FUNS( $$), $2);
-} 
-| wlcomp_pragma_global fundef def4
-{ $$ = $3;
-MODUL_FUNS( $$) = AppendFundef( MODUL_FUNS( $$), $2);
-}
-| def5
-{ $$ = $1;
-}
-;
+      { $$ = $2;
+        MODUL_FUNDECS( $$) = AppendFundef( MODUL_FUNDECS( $$), $1);
+      }
+    | wlcomp_pragma_global main def5
+      { $$ = $3;
+        MODUL_FUNS( $$) = AppendFundef( MODUL_FUNS( $$), $2);
+      } 
+    | wlcomp_pragma_global fundef def4
+      { $$ = $3;
+        MODUL_FUNS( $$) = AppendFundef( MODUL_FUNS( $$), $2);
+      }
+    | def5
+      { $$ = $1; }
+    ;
 
 def5: { $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, NULL, NULL);
 
-DBUG_PRINT( "PARSE",
-	    ("%s:"F_PTR,
-	     mdb_nodetype[ NODE_TYPE( $$)],
-	     $$));
-}
-;
+        DBUG_PRINT( "PARSE",
+	            ("%s:"F_PTR,
+	             mdb_nodetype[ NODE_TYPE( $$)],
+	             $$));
+      }
+    ;
 
 
 /*
@@ -452,15 +455,6 @@ symbolid: id                { $$ = $1; }
 *********************************************************************
 */
 
-typedefs: typedef typedefs
-          { $$ = $1;
-            $1->node[0] = $2;
-          }
-        | typedef
-          { $$ = $1;
-          }
-        ;
-
 typedef: TYPEDEF ntype id SEMIC 
          { $$ = MakeTypedef( $3, mod_name, $2, ST_regular, NULL);
 
@@ -472,7 +466,7 @@ typedef: TYPEDEF ntype id SEMIC
                         TYPEDEF_NAME( $$)));
          }
        | EXTERN TYPEDEF id SEMIC
-         { $$ = MakeTypedef( $3, mod_name, TYMakeSimple( T_hidden), ST_regular, NULL);
+         { $$ = MakeTypedef( $3, mod_name, TYMakeSimpleType( T_hidden), ST_regular, NULL);
 
            DBUG_PRINT( "PARSE",
                        ("%s:"F_PTR","F_PTR", Id: %s",
