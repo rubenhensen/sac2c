@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2000/09/15 15:43:44  dkr
+ * IsNonUniqueHidden() revisited
+ *
  * Revision 1.16  2000/07/31 10:45:52  cg
  * Eventually, the son ICM_NEXT is removed from the N_icm node.
  * The creation function MakeIcm is adjusted accordingly.
@@ -341,30 +344,37 @@ int
 IsNonUniqueHidden (types *type)
 {
     int ret = 0;
-    node *tdef;
 
     DBUG_ENTER ("IsNonUniqueHidden");
 
-    if (TYPES_BASETYPE (type) == T_user) {
-        tdef = TYPES_TDEF (type);
-        DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
+#if 0
+  if (TYPES_BASETYPE( type) == T_user) {
+    node *tdef;
 
-        if ((TYPEDEF_BASETYPE (tdef) == T_hidden)
-            || (TYPEDEF_BASETYPE (tdef) == T_user)) {
-            if (TYPEDEF_TNAME (tdef) == NULL) {
-                if (TYPEDEF_ATTRIB (tdef) == ST_regular) {
-                    ret = 1;
-                }
-            } else {
-                tdef = TYPES_TDEF (TYPEDEF_TYPE (tdef));
-                DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
+    tdef = TYPES_TDEF( type);
+    DBUG_ASSERT( (tdef != NULL), "Failed attempt to look up typedef");
 
-                if (TYPEDEF_ATTRIB (tdef) == ST_regular) {
-                    ret = 1;
-                }
-            }
+    if ((TYPEDEF_BASETYPE(tdef) == T_hidden) ||
+        (TYPEDEF_BASETYPE(tdef) == T_user)) {
+      if (TYPEDEF_TNAME(tdef) == NULL) {
+        if (TYPEDEF_ATTRIB(tdef) == ST_regular) {
+          ret = 1;
         }
+      }
+      else {
+        tdef = TYPES_TDEF( TYPEDEF_TYPE( tdef));
+        DBUG_ASSERT( (tdef != NULL), "Failed attempt to look up typedef");
+
+        if (TYPEDEF_ATTRIB( tdef) == ST_regular) {
+          ret = 1;
+        }
+      }
     }
+  }
+#else
+    /* dkr */
+    ret = (IsHidden (type) && (!IsUnique (type)));
+#endif
 
     DBUG_RETURN (ret);
 }
