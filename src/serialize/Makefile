@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.2  2004/11/26 21:20:30  sah
+# *** empty log message ***
+#
 # Revision 1.1  2004/11/23 22:39:46  sah
 # Initial revision
 #
@@ -36,7 +39,6 @@ all: $(OBJS)
 clean:
 	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) -r .sb SunWS_cache
-	(cd xml; $(MAKE) clean)
 
 
 #######################################################################################
