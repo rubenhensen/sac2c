@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/06/26 08:10:21  asi
+ * Revision 1.8  1995/06/26 10:03:52  sbs
+ * ids->use copie in DupIds
+ *
+ * Revision 1.7  1995/06/26  08:10:21  asi
  * now linenumbers will be duplicated
  * unused vaiable i warning removed
  *
@@ -115,6 +118,7 @@ DupIds (ids *old_ids, node *arg_info)
     default:
         new_ids = MakeIds (StringCopy (old_ids->id));
         new_ids->node = old_ids->node;
+        new_ids->use = old_ids->use;
         break;
     }
     if (NULL != old_ids->next)
