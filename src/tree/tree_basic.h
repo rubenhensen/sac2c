@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.123  2002/06/05 16:32:59  dkr
+ * INFO_PREC3_FUNDEF renamed into INFO_PREC_FUNDEF
+ *
  * Revision 3.122  2002/06/05 12:19:42  sbs
  * N_tcfuninfo added .
  *
@@ -2757,10 +2760,10 @@ extern node *MakeInfo ();
 #define INFO_ADJCA_ATTRIB(n) ((statustype) (n->int_data))
 
 /* precompile */
-#define INFO_PREC1_OBJINITFUNDEF(n) (n->node[0])
-#define INFO_PREC2_PRE_ASSIGNS(n) (n->node[0])
-#define INFO_PREC2_POST_ASSIGNS(n) (n->node[1])
-#define INFO_PREC3_FUNDEF(n) (n->node[0])
+#define INFO_PREC_FUNDEF(n) (n->node[0])
+#define INFO_PREC1_OBJINITFUNDEF(n) (n->node[1])
+#define INFO_PREC2_PRE_ASSIGNS(n) (n->node[1])
+#define INFO_PREC2_POST_ASSIGNS(n) (n->node[2])
 #define INFO_PREC3_LET(n) (n->node[1])
 #define INFO_PREC3_LASTASSIGN(n) (n->node[2])
 #define INFO_PREC3_CEXPR(n) (n->node[3])
