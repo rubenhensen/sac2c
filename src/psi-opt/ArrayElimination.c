@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/27 13:06:49  sbs
+ * warning eliminated
+ *
  * Revision 3.1  2000/11/20 18:01:37  sacbase
  * new release made
  *
@@ -146,7 +149,9 @@ node *
 ArrayElimination (node *arg_node, node *info_node)
 {
     funtab *tmp_tab;
+#ifndef DBUG_OFF
     int mem_elim_arrays = elim_arrays;
+#endif
 
     DBUG_ENTER ("ArrayElimination");
     DBUG_PRINT ("OPT", ("ARRAY ELIMINATION"));
