@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/05/07 14:21:24  dkr
+ * all output lines contain <= 80 characters now
+ *
  * Revision 3.11  2001/04/26 17:10:55  dkr
  * PRINT_BREAK_SPEC added
  *
@@ -149,8 +152,8 @@ usage ()
             "\t\t\tutility. Dependencies from declaration files as well\n"
             "\t\t\tas library files are (recursively) considered.\n"
             "\n"
-            "\t -MMlib\t\tlike `-Mlib' but the output mentions only non standard lib\n"
-            "\t\t\tdependencies.\n"
+            "\t -MMlib\t\tlike `-Mlib' but the output mentions only non standard\n"
+            "\t\t\tlib dependencies.\n"
             "\n"
             "\tWhen called with one of these options, sac2c does not perform\n"
             "\tany compilation steps.\n");
@@ -373,8 +376,8 @@ usage ()
             "\t\t\t\t  name specified with option -o.\n\n");
 
     printf ("\t -apdiaglimit <n> \tlimits the amount of information written to\n"
-            "\t\t\t\t  the diagnostic output file created by the -apdiag\n"
-            "\t\t\t\t  option to approximately <n> lines.\n"
+            "\t\t\t\t  the diagnostic output file created by the\n"
+            "\t\t\t\t  -apdiag option to approximately <n> lines.\n"
             "\t\t\t\tdefault: -apdiaglimit %d\n\n",
             apdiag_limit);
 
@@ -382,10 +385,10 @@ usage ()
 
             "\t -mt \t\t\tcompile program for multi-threaded execution.\n"
             "\t\t\t\tThe number of threads to be used can either\n"
-            "\t\t\t\tbe specified statically using the option\n"
-            "\t\t\t\t\"-numthreads\" or dynamically upon application\n"
-            "\t\t\t\tstartup using the generic command line option\n"
-            "\t\t\t\t\"-mt <no>\".\n"
+            "\t\t\t\t  be specified statically using the option\n"
+            "\t\t\t\t  \"-numthreads\" or dynamically upon application\n"
+            "\t\t\t\t  startup using the generic command line option\n"
+            "\t\t\t\t  \"-mt <no>\".\n"
             "\n"
             "\t -mtn \t\t\tnew support for multi-threading\n"
             "\t\t\t\t  UNDER CONSTRUCTION!!!\n"
