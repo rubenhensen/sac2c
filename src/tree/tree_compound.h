@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2001/06/01 14:46:51  dkr
+ * macro NWITH_OR_NWITH2_DEC_RC_IDS added
+ *
  * Revision 3.43  2001/05/31 14:50:43  nmw
  * CompareTypesImplementation() added
  *
@@ -1821,6 +1824,9 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
     ((NODE_TYPE (n) == N_Nwith) ? NWITH_IDS (n) : NWITH2_IDS (n))
 #define NWITH_OR_NWITH2_VEC(n)                                                           \
     ((NODE_TYPE (n) == N_Nwith) ? NWITH_VEC (n) : NWITH2_VEC (n))
+
+#define NWITH_OR_NWITH2_DEC_RC_IDS(n)                                                    \
+    ((NODE_TYPE (n) == N_Nwith) ? NWITH_DEC_RC_IDS (n) : NWITH2_DEC_RC_IDS (n))
 
 #define NWITH_OR_NWITH2_IN_MASK(n)                                                       \
     ((NODE_TYPE (n) == N_Nwith) ? NWITH_IN_MASK (n) : NWITH2_IN_MASK (n))
