@@ -11,7 +11,6 @@ SSALIR.c
 SSALIR.h
 SSALUR.c
 SSALUR.h
-generatemasks.h
 optimize.c
 optimize.h
 rmcasts.c
