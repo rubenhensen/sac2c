@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/03/29 15:49:18  dkr
+ * call of Type2String: 3rd argument changed from NULL to FALSE
+ *
  * Revision 3.6  2001/03/20 22:26:04  dkr
  * superfluous include of scnprs.h removed
  *
@@ -209,45 +212,24 @@ CheckTypes (types *decl, types *impl)
  *  description   : The given types are printed to 'outfile`, but all
  *                  module names which are identical to the given one are
  *                  omitted.
- *  global vars   : outfile
- *  internal funs : ---
- *  external funs : Type2String
- *  macros        : DBUG, TREE
- *
- *  remarks       : The function Type@String from print/convert.c is used
- *                  to print the return types of a function declaration.
- *                  This function dynamically allocates memory to hold the
- *                  result string; this memory has to be freed after printing.
- *                  Omitting certain module names of types while
- *                  considering others is a capability beyond that of Type2String.
- *                  So, we have to check this for each return type separately.
- *                  However, Type2String usually converts entire sequences of types
- *                  where and when applicable. This forces us to cut the actual
- *                  sequence of return types into peaces and reconstruct the sequence
- *                  after conversion into strings.
  *
  */
 
 static void
 PrintDecTypes (types *type, char *modname)
 {
-    int mode_for_type2string;
-    char *type_string;
     types *next_type;
+    char *type_string;
 
     DBUG_ENTER ("PrintDecTypes");
 
     do {
-        if (strcmp (CHECK_NULL (TYPES_MOD (type)), modname) == 0) {
-            mode_for_type2string = 3;
-        } else {
-            mode_for_type2string = 0;
-        }
-
         next_type = TYPES_NEXT (type);
         TYPES_NEXT (type) = NULL;
 
-        type_string = Type2String (type, mode_for_type2string, NULL);
+        type_string
+          = Type2String (type, strcmp (CHECK_NULL (TYPES_MOD (type)), modname) ? 0 : 3,
+                         FALSE);
         fprintf (outfile, "%s", type_string);
         FREE (type_string);
 
@@ -828,7 +810,7 @@ WDECfundef (node *arg_node, node *arg_info)
         }
 
         if (!fun_name_printed) {
-            fprintf (outfile, " %s( ", FUNDEF_NAME (arg_node));
+            fprintf (outfile, " %s(", FUNDEF_NAME (arg_node));
         }
 
         if (FUNDEF_ARGS (arg_node) != NULL) {
@@ -869,10 +851,10 @@ WDECarg (node *arg_node, node *arg_info)
         fprintf (outfile, " ");
     }
 
-    fprintf (outfile, "%s", ARG_NAME (arg_node));
+    fprintf (outfile, " %s", ARG_NAME (arg_node));
 
     if (ARG_NEXT (arg_node) != NULL) {
-        fprintf (outfile, ", ");
+        fprintf (outfile, ",");
         Trav (ARG_NEXT (arg_node), arg_info);
     }
 
