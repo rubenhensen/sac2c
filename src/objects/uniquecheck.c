@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/11/10 15:05:38  cg
+ * Revision 1.7  1995/12/20 08:19:59  cg
+ * converted usage of macro WITH_BODY to WITH_OPERATOR
+ *
+ * Revision 1.6  1995/11/10  15:05:38  cg
  * converted to new error macros
  *
  * Revision 1.5  1995/11/06  19:00:29  cg
@@ -1080,7 +1083,7 @@ UNQwith (node *arg_node, node *arg_info)
     AddHistory (unqstate, H_with_enter);
     AddHistory (skipped_state, H_with_skipped);
 
-    Trav (WITH_BODY (arg_node), arg_node);
+    Trav (WITH_OPERATOR (arg_node), arg_node);
 
     DBUG_EXECUTE ("UNQ", fprintf (stderr, "\nUnq-state after with\n");
                   PrintUnqstate (unqstate););
