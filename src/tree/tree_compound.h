@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.179  2004/11/29 17:29:49  sah
+ * added ID_NAME_OR_SPNAME macro
+ *
  * Revision 3.178  2004/11/27 02:03:25  jhb
  * MakeWlSegX changed to TCmakeWlSegX
  *
@@ -1532,6 +1535,8 @@ extern node *TCmakeVinfoDollar (node *next);
 
 #define ID_OR_CAST_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : CAST_TYPE (n))
 #define ID_OR_ARRAY_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : ARRAY_TYPE (n))
+
+#define ID_NAME_OR_SPNAME(n) ((ID_AVIS (n) != NULL) ? ID_NAME (n) : ID_SPNAME (n))
 
 extern node *TCmakeIdCopyString (const char *str);
 extern node *TCmakeIdCopyStringNt (const char *str, types *type);
