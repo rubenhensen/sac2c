@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.9  2004/11/02 11:45:45  sah
+  added a long specifier
+
   Revision 1.8  2004/11/02 10:42:24  sah
   fixed typoe
 
@@ -315,7 +318,7 @@ version="1.0">
 </xsl:template>
 
 <xsl:template match="flags[flag]" mode="gen-values">
-  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, %d, %d&quot;, '" />
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, %ld, %ld&quot;, '" />
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">arg_node</xsl:with-param>
     <xsl:with-param name="nodetype">
