@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/25 22:28:51  sbs
+ * compiles
+ *
  * Revision 1.3  2004/11/07 18:03:59  sah
  * added external functions support
  *
@@ -66,12 +69,12 @@ int charpos = 0;
 #endif
 
 /* the next few lines allow for smuggling in a start_token! */
-   if (start_token) {
-     int mem = start_token;
+   if (global.start_token) {
+     int mem = global.start_token;
 #ifdef OLD_VERSION_OF_LEX  /* (previously needed on ALPHA) */
      yy_init = 1;  /* force new initialization of lex! */
 #endif
-     start_token = 0;
+     global.start_token = 0;
      return( mem);
    }
 %}
@@ -194,7 +197,6 @@ int charpos = 0;
 "all"                      { FILTER( ALL); }
 "except"                   { FILTER( EXCEPT); }
 "external"                 { FILTER( EXTERN); }
-"global"                   { FILTER( GLOBAL); }
 
 "#"                        { FILTER( HASH); }
 "pragma"                   { FILTER( PRAGMA); }
@@ -240,23 +242,23 @@ int charpos = 0;
 "continue"                 { FILTER( C_KEYWORD); }
 "break"                    { FILTER( C_KEYWORD); }
 
-"target"                   { if( compiler_phase==PH_setup) {
+"target"                   { if( global.compiler_phase==PH_setup) {
                                FILTER( TARGET);
                              } else {
-                               yylval.id = StringCopy(yytext);
+                               yylval.id = ILIBstringCopy(yytext);
                                FILTER( ID);
                              }
                            }
-"default"                  { if( compiler_phase==PH_setup) {
-                               yylval.id = StringCopy(yytext);
+"default"                  { if( global.compiler_phase==PH_setup) {
+                               yylval.id = ILIBstringCopy(yytext);
                                FILTER( ID);
                              } else {
                                FILTER( C_KEYWORD);
                              }
                            }
 
-[-/][_A-Za-z0-9]*          { if( compiler_phase == PH_setup) {
-                               yylval.id = StringCopy( yytext);
+[-/][_A-Za-z0-9]*          { if( global.compiler_phase == PH_setup) {
+                               yylval.id = ILIBstringCopy( yytext);
                                FILTER( OPTION);
                              } else {
                                switch (yytext[0]) {
@@ -266,36 +268,36 @@ int charpos = 0;
                                    break;
                                  case '/':
                                    yyless( 1);
-                                   yylval.id = StringCopy( yytext);
+                                   yylval.id = ILIBstringCopy( yytext);
                                    FILTER( ID);
                                    break;
                                  case '_':
-                                   yylval.id = StringCopy( yytext);
-                                   FILTER( PRIVATEID);
+                                   yylval.id = ILIBstringCopy( yytext);
+                                   FILTER( ID);
                                    break;
                                  default:
-                                   yylval.id = StringCopy( yytext);
+                                   yylval.id = ILIBstringCopy( yytext);
                                    FILTER( ID);
                                }
                              }
                            }
 
 
-\"([^"\n]|(\\\"))*\"       { yylval.id = StringCopy( yytext + sizeof( char));
+\"([^"\n]|(\\\"))*\"       { yylval.id = ILIBstringCopy( yytext + sizeof( char));
                              yylval.id[ strlen( yylval.id) - 1] = '\0';
                              FILTER( STR);
                            }
 
 [A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*_? {
-                             yylval.id = StringCopy( yytext);
+                             yylval.id = ILIBstringCopy( yytext);
                              FILTER( ID);
                            }
-[|&>!%=-]+                 { yylval.id = StringCopy(yytext);
+[|&>!%=-]+                 { yylval.id = ILIBstringCopy(yytext);
                              FILTER( ID);
                            }
 
-[_A-Za-z][_A-Za-z0-9]*     { yylval.id = StringCopy(yytext);
-                             FILTER( PRIVATEID);
+[_A-Za-z][_A-Za-z0-9]*     { yylval.id = ILIBstringCopy(yytext);
+                             FILTER( ID);
                            }
 
 '.'                        { yylval.cchar=yytext[1];
@@ -369,7 +371,7 @@ int charpos = 0;
 
 
 "/*"                       { if (commlevel == 1) {
-                               WARN( linenum, ("Nested comment eleminated"));
+                               WARN( global.linenum, ("Nested comment eleminated"));
                              }
                              commlevel++;
                              charpos += yyleng;
@@ -383,15 +385,15 @@ int charpos = 0;
                              }
                            }
 
-\n.*                       { linenum++;
+\n.*                       { global.linenum++;
                              charpos = 0;
                              if (yyleng <= LINEBUF_SIZE) {
                                strncpy( linebuf, yytext+1,yyleng);
                                linebuf_ptr = linebuf;
                              }
                              else {
-                               Free( tmp_buf);
-                               tmp_buf = Malloc( (yyleng) * sizeof(char));
+                               ILIBfree( tmp_buf);
+                               tmp_buf = ILIBmalloc( (yyleng) * sizeof(char));
                                strncpy( tmp_buf, yytext+1,yyleng);
                                linebuf_ptr = tmp_buf;
                              }
@@ -406,7 +408,7 @@ int charpos = 0;
                              if( commlevel == 0) {
                                int start, len;
 
-                               linenum=atoi(yytext+1)-1;
+                               global.linenum=atoi(yytext+1)-1;
                                start = strcspn( yytext, "\"")+1;
                                len   = strcspn( yytext + start, "\"");
                                if( ((yytext + start)[0] == '.')
@@ -415,10 +417,10 @@ int charpos = 0;
                                  start += 2;
                                  len -= 2;
                                }
-                               filename = (char *)Malloc( (len+1)*sizeof(char));
-                               strncpy( filename , yytext + start, len);
-                               filename[len] = '\0';
-                               DBUG_PRINT( "PARSE", ("# %i %s" , linenum, filename));
+                               global.filename = (char *)ILIBmalloc( (len+1)*sizeof(char));
+                               strncpy( global.filename , yytext + start, len);
+                               global.filename[len] = '\0';
+                               DBUG_PRINT( "PARSE", ("# %i %s" , global.linenum, global.filename));
                              }
                            }
 
@@ -426,7 +428,7 @@ int charpos = 0;
                              if( commlevel == 0) {
                                int start, len;
 
-                               linenum=atoi(yytext+1)-1;
+                               global.linenum=atoi(yytext+1)-1;
                                start = strcspn( yytext, "\"")+1;
                                len   = strcspn( yytext + start, "\"");
                                if( ((yytext + start)[0] == '.')
@@ -435,17 +437,17 @@ int charpos = 0;
                                  start += 2;
                                  len -= 2;
                                }
-                               filename = (char *)Malloc( (len+1)*sizeof(char));
-                               strncpy( filename , yytext + start, len);
-                               filename[len] = '\0';
-                               DBUG_PRINT( "PARSE", ("# %i %s" , linenum, filename));
+                               global.filename = (char *)ILIBmalloc( (len+1)*sizeof(char));
+                               strncpy( global.filename , yytext + start, len);
+                               global.filename[len] = '\0';
+                               DBUG_PRINT( "PARSE", ("# %i %s" , global.linenum, global.filename));
                              }
                            }
 
 #\ *[0-9]+                 { charpos += yyleng;
                              if( commlevel == 0) {
-                               linenum=atoi(yytext+1)-1;
-                               DBUG_PRINT( "PARSE", ("# %i" , linenum));
+                               global.linenum=atoi(yytext+1)-1;
+                               DBUG_PRINT( "PARSE", ("# %i" , global.linenum));
                              }
                            }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2004/11/25 22:28:51  sbs
+ * compiles
+ *
  * Revision 3.19  2004/11/25 22:14:17  cg
  * some ismop
  *
@@ -73,6 +76,11 @@
 #include <string.h>
 
 #include "scnprs.h"
+#include "dbug.h"
+#include "Error.h"
+#include "internal_lib.h"
+#include "filemgr.h"
+#include "handle_dots.h"
 
 /*
  *
@@ -110,11 +118,11 @@ SPdoScanParse ()
      */
 
     if (global.sacfilename == NULL) {
-        cppfile = ILIBstringConcat (global.tmp_dirname, "/", "stdin");
+        cppfile = ILIBstringConcat3 (global.tmp_dirname, "/", "stdin");
         ILIBcreateCppCallString (global.sacfilename, cccallstr, cppfile);
         NOTE (("Parsing from stdin ..."));
     } else {
-        cppfile = ILIBstringConcat (global.tmp_dirname, "/", global.filename);
+        cppfile = ILIBstringConcat3 (global.tmp_dirname, "/", global.filename);
         pathname = FMGRfindFile (PK_path, global.sacfilename);
 
         if (pathname == NULL) {
@@ -136,12 +144,12 @@ SPdoScanParse ()
     }
 
     if (global.show_syscall) {
-        NOTE (("yyin = fopen( \"%s\", \"r\")", cppfile));
+        NOTE (("global.yyin = fopen( \"%s\", \"r\")", cppfile));
     }
 
-    yyin = fopen (cppfile, "r");
+    global.yyin = fopen (cppfile, "r");
 
-    if ((yyin == NULL) || (ferror (yyin))) {
+    if ((global.yyin == NULL) || (ferror (global.yyin))) {
         SYSABORT (("Unable to start C preprocessor"));
     }
 
@@ -150,10 +158,10 @@ SPdoScanParse ()
     SPmyYyparse ();
 
     if (global.show_syscall) {
-        NOTE (("err = fclose( yyin)"));
+        NOTE (("err = fclose( global.yyin)"));
     }
 
-    err = fclose (yyin);
+    err = fclose (global.yyin);
     if (err) {
         SYSABORT (("C preprocessor error"));
     }
@@ -166,7 +174,7 @@ SPdoScanParse ()
     if (err) {
         SYSABORT (("Could not delete /tmp-file"));
     }
-    Free (cppfile);
+    ILIBfree (cppfile);
 
     FMGRsetFileNames (global.syntax_tree);
 

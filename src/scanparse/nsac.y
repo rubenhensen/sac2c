@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.22  2004/11/25 22:28:51  sbs
+* compiles
+*
 * Revision 1.21  2004/11/25 16:26:17  cg
 * parsing of resourcefiles done without ids structure
 *
@@ -81,13 +84,14 @@
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "dbug.h"
-#include "DupTree.h"        /* for use of DupTree() */
+#include "DupTree.h"        /* for use of DUPdoDupTree() */
 #include "my_debug.h"
 #include "Error.h"
 #include "free.h"
 #include "globals.h"
 #include "handle_mops.h"
 #include "new_types.h"
+#include "shape.h"
 
 #include "resource.h"
 
@@ -100,12 +104,9 @@ extern char *yytext;
 extern int yylex();
 
 
-extern node *syntax_tree;
-
 static char *mod_name = MAIN_MOD_NAME;
 static node *global_wlcomp_aps = NULL;
 static node *store_pragma = NULL;
-static int intnum_len = 0;
 static bool have_seen_dots = FALSE;
 
 /*
@@ -118,10 +119,11 @@ static int yyerror( char *errname);
 static int yyparse();
 
 static void CleanUpParser();
+static node *MakeIncDecLet( char *name, char *op);
+static node *MakeOpOnLet( char *name, node *name2, char *op);
 static node *String2Array( char *str);
-static types *Exprs2ShpInfo( types *, node *);
 static ntype *Exprs2NType( ntype *basetype, node *exprs);
-static node *ConstructMop( node *, ids *, node *);
+static node *ConstructMop( node *, node *, node *);
 static node *CheckWlcompConf( node *ap, node *exprs);
 
 static int prf_arity[] = {
@@ -132,20 +134,21 @@ static int prf_arity[] = {
 
 %}
 
-%union { nodetype        nodetype;
- char            *id;
- ntype           *ntype;
- node            *node;
- int             cint;
- char            cchar;
- float           cfloat;
- double          cdbl;
- deps            *deps;
- prf             prf;
- shape           *shape;
- strings         *strings;
- resource_list_t *resource_list_t;
- target_list_t   *target_list_t;
+%union {
+ nodetype           nodetype;
+ char               *id;
+ ntype              *ntype;
+ node               *node;
+ int                cint;
+ char               cchar;
+ float              cfloat;
+ double             cdbl;
+ deps               *deps;
+ prf                prf;
+ shape              *shape;
+ resource_list_t    *resource_list_t;
+ target_list_t      *target_list_t;
+ inheritence_list_t *inheritence_list_t;
 }
 
 %token PARSE_PRG  PARSE_RC
@@ -155,7 +158,7 @@ COMMA  AMPERS  DOT  QUESTION  ARROW
 INLINE  LET  TYPEDEF  OBJDEF  CLASSTYPE 
 INC  DEC  ADDON  SUBON  MULON  DIVON  MODON 
 K_MAIN  RETURN  IF  ELSE  DO  WHILE  FOR  NWITH  FOLD 
-MODULE  IMPORT  EXPORT  PROVIDE  USE  GLOBAL  CLASS  ALL  EXCEPT
+MODULE  IMPORT  EXPORT  PROVIDE  USE  CLASS  ALL  EXCEPT
 MODSPEC
 SC  TRUETOKEN  FALSETOKEN  EXTERN  C_KEYWORD 
 HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT  READONLY  REFCOUNTING 
@@ -243,7 +246,7 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 * sac2crc files
 */
 %type <target_list_t> targets
-%type <ids> inherits
+%type <inheritence_list_t> inherits
 %type <resource_list_t> resources
 
 
@@ -270,15 +273,15 @@ GENARRAY MODARRAY ALL AMPERS
 all: file eof { CleanUpParser(); }
 ;
 
-file: PARSE_PRG  prg       { syntax_tree = $2; }
-    | PARSE_PRG  module    { syntax_tree = $2; }
-    | PARSE_PRG  class     { syntax_tree = $2; }
-    | PARSE_RC   targets   { target_list = RSCAddTargetList( $2, target_list); }
+file: PARSE_PRG  prg       { global.syntax_tree = $2; }
+    | PARSE_PRG  module    { global.syntax_tree = $2; }
+    | PARSE_PRG  class     { global.syntax_tree = $2; }
+    | PARSE_RC   targets   { global.target_list = RSCaddTargetList( $2, global.target_list); }
 /*  | PARSE_SPEC modspec   { spec_tree = $2; } */
 ;
 
 eof: { if (commlevel) {
- ABORT( linenum, ("Unterminated comment found"));
+ ABORT( global.linenum, ("Unterminated comment found"));
 
 #ifdef MUST_REFERENCE_YYLABELS
 /*
@@ -402,24 +405,49 @@ interface: import interface
            }
          ;
 
-import: IMPORT ID COLON ALL SEMIC { $$ = TBmakeImport( $2, TRUE, NULL, NULL); }
-        | IMPORT ID COLON ALL EXCEPT symbolset SEMIC { $$ = TBmakeImport( $2, TRUE, NULL, $6); }
-        | IMPORT ID COLON symbolset SEMIC { $$ = TBmakeImport( $2, FALSE, NULL, $4); }
+import: IMPORT ID COLON ALL SEMIC
+        { $$ = TBmakeImport( $2, NULL, NULL);
+          IMPORT_ALL( $$) = TRUE; 
+        }
+        | IMPORT ID COLON ALL EXCEPT symbolset SEMIC
+          { $$ = TBmakeImport( $2, NULL, $6);
+            IMPORT_ALL( $$) = TRUE; 
+          }
+        | IMPORT ID COLON symbolset SEMIC 
+          { $$ = TBmakeImport( $2, NULL, $4); }
         ;
 
-use: USE ID COLON ALL SEMIC { $$ = TBmakeUse( $2, TRUE, NULL, NULL); }
-   | USE ID COLON ALL EXCEPT symbolset SEMIC { $$ = TBmakeUse( $2, TRUE, NULL, $6); }
-   | USE ID COLON symbolset SEMIC { $$ = TBmakeUse( $2, FALSE, NULL, $4); }
+use: USE ID COLON ALL SEMIC 
+     { $$ = TBmakeUse( $2, NULL, NULL);
+       USE_ALL( $$) = TRUE;
+     }
+   | USE ID COLON ALL EXCEPT symbolset SEMIC
+     { $$ = TBmakeUse( $2, NULL, $6);
+       USE_ALL( $$) = TRUE;
+     }
+   | USE ID COLON symbolset SEMIC { $$ = TBmakeUse( $2, NULL, $4); }
    ;
 
-export: EXPORT ALL SEMIC { $$ = TBmakeExport( TRUE, NULL, NULL); }
-      | EXPORT ALL EXCEPT symbolset SEMIC { $$ = TBmakeExport( TRUE, NULL, $4); }
-      | EXPORT symbolset SEMIC { $$ = TBmakeExport( FALSE, NULL, $2); }
+export: EXPORT ALL SEMIC 
+        { $$ = TBmakeExport( NULL, NULL); 
+          EXPORT_ALL( $$) = TRUE;
+        }
+      | EXPORT ALL EXCEPT symbolset SEMIC 
+        { $$ = TBmakeExport( NULL, $4); 
+          EXPORT_ALL( $$) = TRUE;
+        }
+      | EXPORT symbolset SEMIC { $$ = TBmakeExport( NULL, $2); }
       ;
 
-provide: PROVIDE ALL SEMIC { $$ = TBmakeProvide( TRUE, NULL, NULL); }
-       | PROVIDE ALL EXCEPT symbolset SEMIC { $$ = TBmakeProvide( TRUE, NULL, $4); }
-       | PROVIDE symbolset SEMIC { $$ = TBmakeProvide( FALSE, NULL, $2); }
+provide: PROVIDE ALL SEMIC 
+         { $$ = TBmakeProvide( NULL, NULL); 
+           PROVIDE_ALL( $$) = TRUE;
+         }
+       | PROVIDE ALL EXCEPT symbolset SEMIC 
+         { $$ = TBmakeProvide( NULL, $4); 
+           PROVIDE_ALL( $$) = TRUE;
+         }
+       | PROVIDE symbolset SEMIC { $$ = TBmakeProvide( NULL, $2); }
        ;
 
 symbolset: BRACE_L symbolsetentries BRACE_R { $$ = $2; } ;
@@ -480,13 +508,13 @@ objdefs: objdef objdefs
        ;
 
 objdef: OBJDEF ntype ID LET expr SEMIC 
-        { $$ = TBmakeObjdef( $3, NULL, $2, $5, NULL);
+        { $$ = TBmakeObjdef( $2, NULL, $3, $5, NULL);
 
           DBUG_PRINT( "PARSE",
                       ("%s:"F_PTR","F_PTR", Id: %s",
                        global.mdb_nodetype[ NODE_TYPE( $$)],
                        $$, 
-                       OBJDEF_NTYPE( $$),
+                       OBJDEF_TYPE( $$),
                        OBJDEF_NAME( $$)));
         }
       ;
@@ -607,7 +635,7 @@ varargs: arg COMMA args
 
 
 arg: ntype ID
-     { $$ = TBmakeArg( TBmakeAvis( $2, $1), null);
+     { $$ = TBmakeArg( TBmakeAvis( $2, $1), NULL);
 
        DBUG_PRINT( "PARSE",
                    ("%s: "F_PTR", Id: %s ",
@@ -617,8 +645,8 @@ arg: ntype ID
                     );
      }
    | ntype AMPERS ID
-     { $$ = TBmakeArg( TBmakeAvis( $3, $1), null);
-       ARG_ISREFERENCE( $$, TRUE);
+     { $$ = TBmakeArg( TBmakeAvis( $3, $1), NULL);
+       ARG_ISREFERENCE( $$) = TRUE;
 
        DBUG_PRINT( "PARSE",
                    ("%s: "F_PTR", Id: %s, Attrib: %d ",
@@ -629,9 +657,11 @@ arg: ntype ID
    ;
 
 
-main: TYPE_INT K_MAIN BRACKET_L mainargs BRACKET_R { $<cint>$ = linenum; } exprblock
+main: TYPE_INT K_MAIN BRACKET_L mainargs BRACKET_R { $<cint>$ = global.linenum; } exprblock
       { $$ = TBmakeFundef( NULL, NULL,
-                           TYmakeAKS( T_int, SHmakeShape(0)),
+                           TBmakeRet(
+                             TYmakeAKS( TYmakeSimpleType( T_int), SHmakeShape(0)),
+                             NULL),
                            $4, $7, NULL);
         NODE_LINE( $$) = $<cint>6;
 
@@ -672,7 +702,7 @@ fundec: EXTERN returndectypes ext_id BRACKET_L fundec2
         }
       ;
 
-fundec2: fundecargs BRACKET_R { $<cint>$ = linenum; } pragmas SEMIC
+fundec2: fundecargs BRACKET_R { $<cint>$ = global.linenum; } pragmas SEMIC
          { $$ = TBmakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
            NODE_LINE( $$) = $<cint>3;
            FUNDEF_PRAGMA( $$) = $4;
@@ -681,7 +711,7 @@ fundec2: fundecargs BRACKET_R { $<cint>$ = linenum; } pragmas SEMIC
              have_seen_dots = FALSE;
            }
          }
-       | BRACKET_R { $<cint>$ = linenum; } pragmas SEMIC
+       | BRACKET_R { $<cint>$ = global.linenum; } pragmas SEMIC
          { $$ = TBmakeFundef( NULL, NULL, NULL, NULL, NULL, NULL);
            NODE_LINE( $$) = $<cint>2;
            FUNDEF_PRAGMA( $$) = $3;
@@ -702,7 +732,7 @@ hash_pragma: HASH PRAGMA ;
 wlcomp_pragma_global: hash_pragma WLCOMP wlcomp_conf
                       { if (global_wlcomp_aps != NULL) {
                           /* remove old global pragma */
-                          global_wlcomp_aps = FreeTree( global_wlcomp_aps);
+                          global_wlcomp_aps = FREEdoFreeTree( global_wlcomp_aps);
                         }
                         $3 = CheckWlcompConf( $3, NULL);
                         if ($3 != NULL) {
@@ -726,14 +756,14 @@ wlcomp_pragma_local: hash_pragma WLCOMP wlcomp_conf
                    | /* empty */
                      { if (global_wlcomp_aps != NULL) {
                          $$ = TBmakePragma();
-                         PRAGMA_WLCOMP_APS( $$) = DupTree( global_wlcomp_aps);
+                         PRAGMA_WLCOMP_APS( $$) = DUPdoDupTree( global_wlcomp_aps);
                        } else {
                          $$ = NULL;
                        }
                      }
                    ;
 
-wlcomp_conf: ID        { $$ = TBmakeId( $1, NULL); }
+wlcomp_conf: ID        { $$ = TBmakeId( TBmakeAvis( $1, NULL)); }
            | expr_ap   { $$ = $1; }
            ;
 
@@ -767,7 +797,7 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_LINKNAME( store_pragma) != NULL) {
-            WARN( linenum, ("Conflicting definitions of pragma 'linkname`"));
+            WARN( global.linenum, ("Conflicting definitions of pragma 'linkname`"));
           }
           PRAGMA_LINKNAME( store_pragma) = $3;
         }
@@ -776,7 +806,7 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_LINKMOD( store_pragma) != NULL) {
-            WARN( linenum, ("Conflicting definitions of pragma 'linkmod`"));
+            WARN( global.linenum, ("Conflicting definitions of pragma 'linkmod`"));
           }
           PRAGMA_LINKMOD( store_pragma) = $3;
         }
@@ -785,7 +815,7 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_LINKOBJ( store_pragma) != NULL) {
-            WARN( linenum, ("Conflicting definitions of pragma 'linkmod`"));
+            WARN( global.linenum, ("Conflicting definitions of pragma 'linkmod`"));
           }
           PRAGMA_LINKOBJ( store_pragma) = $3;
         }
@@ -794,7 +824,7 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_LINKSIGN( store_pragma) != NULL) {
-            WARN(linenum, ("Conflicting definitions of pragma 'linksign`"));
+            WARN(global.linenum, ("Conflicting definitions of pragma 'linksign`"));
           }
           PRAGMA_LINKSIGN( store_pragma) = $4;
         }
@@ -803,7 +833,7 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_REFCOUNTING( store_pragma) != NULL) {
-            WARN(linenum, ("Conflicting definitions of pragma 'refcounting`"));
+            WARN(global.linenum, ("Conflicting definitions of pragma 'refcounting`"));
           }
           PRAGMA_REFCOUNTING( store_pragma) = $4;
         }
@@ -812,7 +842,7 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_READONLY( store_pragma) != NULL) {
-            WARN(linenum, ("Conflicting definitions of pragma 'readonly`"));
+            WARN(global.linenum, ("Conflicting definitions of pragma 'readonly`"));
           }
           PRAGMA_READONLY( store_pragma) = $4;
         }
@@ -821,7 +851,7 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_EFFECT( store_pragma) != NULL) {
-            WARN(linenum, ("Conflicting definitions of pragma 'effect`"));
+            WARN(global.linenum, ("Conflicting definitions of pragma 'effect`"));
           }
           PRAGMA_EFFECT( store_pragma) = $3;
         }
@@ -830,7 +860,7 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_TOUCH( store_pragma) != NULL) {
-            WARN(linenum, ("Conflicting definitions of pragma 'touch`"));
+            WARN(global.linenum, ("Conflicting definitions of pragma 'touch`"));
           }
           PRAGMA_TOUCH( store_pragma) = $3;
         }
@@ -839,7 +869,7 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_COPYFUN( store_pragma) != NULL) {
-            WARN(linenum, ("Conflicting definitions of pragma 'copyfun`"));
+            WARN(global.linenum, ("Conflicting definitions of pragma 'copyfun`"));
           }
           PRAGMA_COPYFUN( store_pragma) = $3;
         }
@@ -848,7 +878,7 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_FREEFUN( store_pragma) != NULL) {
-            WARN(linenum, ("Conflicting definitions of pragma 'freefun`"));
+            WARN(global.linenum, ("Conflicting definitions of pragma 'freefun`"));
           }
           PRAGMA_FREEFUN( store_pragma) = $3;
         }
@@ -857,7 +887,7 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_INITFUN( store_pragma) != NULL) {
-            WARN(linenum, ("Conflicting definitions of pragma 'initfun`"));
+            WARN(global.linenum, ("Conflicting definitions of pragma 'initfun`"));
           }
           PRAGMA_INITFUN( store_pragma) = $3;
         }
@@ -873,7 +903,7 @@ pragma: hash_pragma LINKNAME string
  *********************************************************************
  */
 
-exprblock: BRACE_L { $<cint>$ = linenum; } pragmacachesim exprblock2
+exprblock: BRACE_L { $<cint>$ = global.linenum; } pragmacachesim exprblock2
            { $$ = $4;
              BLOCK_CACHESIM( $$) = $3;
              NODE_LINE( $$) = $<cint>2;
@@ -903,7 +933,7 @@ exprblock2: ntype ids SEMIC exprblock2
                * types-structure from $1!
                */
               while (IDS_NEXT( $2) != NULL) {  /* at least 2 vardecs! */
-                vardec_ptr = TBmakeVardec( TBmakeAvis( ILIBstrinCopy( IDS_SPNAME( $2)),
+                vardec_ptr = TBmakeVardec( TBmakeAvis( ILIBstringCopy( IDS_SPNAME( $2)),
                                                        TYcopyType( $1)),
                                            vardec_ptr);
                 /*
@@ -911,7 +941,7 @@ exprblock2: ntype ids SEMIC exprblock2
                  * and we want to FREE the current IDS structure.
                  */
                 ids_ptr = IDS_NEXT( $2);
-                $2 = FREEfreeNode( $2);
+                $2 = FREEdoFreeNode( $2);
                 $2 = ids_ptr;
               }
               /*
@@ -920,7 +950,7 @@ exprblock2: ntype ids SEMIC exprblock2
                * duplicating it as done in the loop above!
                */
               $$ = $4;
-              BLOCK_VARDEC( $$) = TBmakeVardec( TBmakeAvis( ILIBstrinCopy( IDS_SPNAME( $2)), $1),
+              BLOCK_VARDEC( $$) = TBmakeVardec( TBmakeAvis( ILIBstringCopy( IDS_SPNAME( $2)), $1),
                                                 vardec_ptr);
               $2 = FREEdoFreeTree( $2);   /* Finally, we free the last IDS-node! */
             }
@@ -941,21 +971,21 @@ assignsOPTret: /*
                /* empty */
                { $$ = TBmakeAssign( TBmakeReturn( NULL), NULL);
                }
-             | RETURN BRACKET_L { $<cint>$ = linenum; } exprs BRACKET_R SEMIC
+             | RETURN BRACKET_L { $<cint>$ = global.linenum; } exprs BRACKET_R SEMIC
                { $$ = TBmakeAssign( TBmakeReturn( $4), NULL);
                  NODE_LINE( $$) = $<cint>3;
                }
-             | RETURN BRACKET_L { $<cint>$ = linenum; } BRACKET_R SEMIC
+             | RETURN BRACKET_L { $<cint>$ = global.linenum; } BRACKET_R SEMIC
                { $$ = TBmakeAssign( TBmakeReturn( NULL), NULL);
                  NODE_LINE( $$) = $<cint>3;
                }
-             | RETURN { $<cint>$ = linenum; } SEMIC
+             | RETURN { $<cint>$ = global.linenum; } SEMIC
                { $$ = TBmakeAssign( TBmakeReturn( NULL), NULL);
                  NODE_LINE( $$) = $<cint>3;
                }
-             | assign { $<cint>$ = linenum; } assignsOPTret
+             | assign { $<cint>$ = global.linenum; } assignsOPTret
                {
-                 $$ = AppendAssign( $1, $3);
+                 $$ = TCappendAssign( $1, $3);
                  NODE_LINE($$) = $<cint>2;
                  /*
                   * $1 may be a former for-loop in which case it may point
@@ -967,7 +997,7 @@ assignsOPTret: /*
 assigns: /* empty */
          { $$ = NULL;
          }
-       | assign { $<cint>$ = linenum; } assigns
+       | assign { $<cint>$ = global.linenum; } assigns
          { 
            $$ = TCappendAssign( $1, $3);
            NODE_LINE($$) = $<cint>2;
@@ -985,45 +1015,52 @@ assign: let SEMIC       { $$ = TBmakeAssign( $1, NULL); }
       | forloop         { $$ = $1; /* forloop already produces assign node. */}
       ;
 
-let:       ids LET { $<cint>$ = linenum; } expr
-           { $$ = TBmakeLet( $4, $1);
+let:       ids LET { $<cint>$ = global.linenum; } expr
+           { $$ = TBmakeLet( $1, $4);
              NODE_LINE( $$) = $<cint>3;
            }
-         | ID SQBR_L exprs SQBR_R LET { $<cint>$ = linenum; } expr
-           { node *lhs;
+         | ID SQBR_L exprs SQBR_R LET { $<cint>$ = global.linenum; } expr
+           { node *id, *ids, *ap;
 
-             if( CountExprs( $3) > 1) {
-               $3 = MakeFlatArray( $3);
+             if( TCcountExprs( $3) > 1) {
+               $3 = TCmakeFlatArray( $3);
              } else {
                node * tmp;
 
                tmp = $3;
                $3 = EXPRS_EXPR( $3);
                EXPRS_EXPR( tmp) = NULL;
-               tmp = FreeNode( tmp);
+               tmp = FREEdoFreeNode( tmp);
              }
-             $$ = TBmakeLet( TBmakeAp( StringCopy( "modarray"),
-                                   NULL,
-                                   TBmakeExprs( TBmakeId( $1, NULL, ST_regular),
-                                     TBmakeExprs( $3,
-                                       TBmakeExprs( $7,
-                                         NULL)))),
-                           TBmakeIds( StringCopy( $1), NULL, ST_regular));
+             id = TBmakeId( NULL);
+             ID_SPNAME( id) = ILIBstringCopy( $1);
+
+             ids = TBmakeIds( NULL, NULL);
+             IDS_SPNAME( ids) = $1;
+
+             ap = TBmakeAp( NULL,
+                            TBmakeExprs( TBmakeId( TBmakeAvis( $1, NULL)),
+                              TBmakeExprs( $3,
+                                TBmakeExprs( $7,
+                                  NULL))));
+             AP_SPNAME( ap) = ILIBstringCopy( "modarray");
+
+             $$ = TBmakeLet( ids, ap);
              NODE_LINE( $$) = $<cint>5;
            }
          | expr_ap { $$ = TBmakeLet( $1, NULL); }
-         | ID INC { $$ = MAKE_INCDEC_LET( $1, "+"); }
-         | INC ID { $$ = MAKE_INCDEC_LET( $2, "+"); }
-         | ID DEC { $$ = MAKE_INCDEC_LET( $1, "-"); }
-         | DEC ID { $$ = MAKE_INCDEC_LET( $2, "-"); }
-         | ID ADDON expr { $$ = MAKE_OPON_LET( $1, $3, "+"); }
-         | ID SUBON expr { $$ = MAKE_OPON_LET( $1, $3, "-"); }
-         | ID MULON expr { $$ = MAKE_OPON_LET( $1, $3, "*"); }
-         | ID DIVON expr { $$ = MAKE_OPON_LET( $1, $3, "/"); }
-         | ID MODON expr { $$ = MAKE_OPON_LET( $1, $3, "%"); }
+         | ID INC { $$ = MakeIncDecLet( $1, ILIBstringCopy( "+")); }
+         | INC ID { $$ = MakeIncDecLet( $2, ILIBstringCopy( "+")); }
+         | ID DEC { $$ = MakeIncDecLet( $1, ILIBstringCopy( "-")); }
+         | DEC ID { $$ = MakeIncDecLet( $2, ILIBstringCopy( "-")); }
+         | ID ADDON expr { $$ = MakeOpOnLet( $1, $3, ILIBstringCopy("+")); }
+         | ID SUBON expr { $$ = MakeOpOnLet( $1, $3, ILIBstringCopy("-")); }
+         | ID MULON expr { $$ = MakeOpOnLet( $1, $3, ILIBstringCopy("*")); }
+         | ID DIVON expr { $$ = MakeOpOnLet( $1, $3, ILIBstringCopy("/")); }
+         | ID MODON expr { $$ = MakeOpOnLet( $1, $3, ILIBstringCopy("%")); }
          ;
 
-cond: IF { $<cint>$ = linenum; } BRACKET_L expr BRACKET_R assignblock optelse
+cond: IF { $<cint>$ = global.linenum; } BRACKET_L expr BRACKET_R assignblock optelse
       {
         $$ = TBmakeCond( $4, $6, $7);
         NODE_LINE( $$) = $<cint>2;
@@ -1034,7 +1071,7 @@ optelse: ELSE assignblock           { $$ = $2;                 }
        | /* empty */   %prec ELSE   { $$ = MAKE_EMPTY_BLOCK(); }
        ;
 
-doloop: DO { $<cint>$ = linenum; } assignblock
+doloop: DO { $<cint>$ = global.linenum; } assignblock
         WHILE BRACKET_L expr BRACKET_R 
         {
           $$ = TBmakeDo( $6, $3);
@@ -1042,7 +1079,7 @@ doloop: DO { $<cint>$ = linenum; } assignblock
         }
       ;
 
-whileloop: WHILE { $<cint>$ = linenum; } BRACKET_L expr BRACKET_R
+whileloop: WHILE { $<cint>$ = global.linenum; } BRACKET_L expr BRACKET_R
            assignblock
            {
              $$ = TBmakeWhile( $4, $6);
@@ -1050,7 +1087,7 @@ whileloop: WHILE { $<cint>$ = linenum; } BRACKET_L expr BRACKET_R
            }
          ;
 
-forloop:   FOR { $<cint>$ = linenum; }
+forloop:   FOR { $<cint>$ = global.linenum; }
            BRACKET_L lets SEMIC expr SEMIC lets BRACKET_R assignblock
            { /*
               *    for (e1; e2; e3) {assigns}
@@ -1070,11 +1107,11 @@ forloop:   FOR { $<cint>$ = linenum; }
 
              node *while_assign;
              
-             BLOCK_INSTR( $10) = AppendAssign( BLOCK_INSTR( $10), $8);
+             BLOCK_INSTR( $10) = TCappendAssign( BLOCK_INSTR( $10), $8);
              while_assign = TBmakeAssign( TBmakeWhile( $6, $10), NULL);
              NODE_LINE( while_assign) = $<cint>2;
              NODE_LINE( ASSIGN_INSTR( while_assign)) = $<cint>2;
-             $$ = AppendAssign( $4, while_assign);
+             $$ = TCappendAssign( $4, while_assign);
            }
          ;
 
@@ -1096,7 +1133,7 @@ lets: let COMMA lets
 assignblock: SEMIC
              { $$ = MAKE_EMPTY_BLOCK();
              }
-           | BRACE_L { $<cint>$ = linenum; } pragmacachesim assigns BRACE_R
+           | BRACE_L { $<cint>$ = global.linenum; } pragmacachesim assigns BRACE_R
              { if ($4 == NULL) {
                  $$ = MAKE_EMPTY_BLOCK();
                }
@@ -1147,66 +1184,57 @@ expr: qual_ext_id                { $$ = $1;                   }
       }
     | PLUS expr %prec MM_OP
       {
-        $$ = MakeAp1( StringCopy( "+"),
-                      NULL,
-                      $2);
+        $$ = TCmakeAp1( NULL, $2);
+        AP_SPNAME( $$) = ILIBstringCopy( "+");
       }
     | MINUS expr %prec MM_OP
       {
-        $$ = MakeAp1( StringCopy( "-"),
-                      NULL,
-                      $2);
+        $$ = TCmakeAp1( NULL, $2);
+        AP_SPNAME( $$) = ILIBstringCopy( "-");
       }
     | TILDE expr %prec MM_OP
       {
-        $$ = MakeAp1( StringCopy( "~"),
-                      NULL,
-                      $2);
+        $$ = TCmakeAp1( NULL, $2);
+        AP_SPNAME( $$) = ILIBstringCopy( "~");
       }
     | EXCL expr %prec MM_OP
       {
-        $$ = MakeAp1( StringCopy( "!"),
-                      NULL,
-                      $2);
+        $$ = TCmakeAp1( NULL, $2);
+        AP_SPNAME( $$) = ILIBstringCopy( "!");
       }
     | PLUS BRACKET_L expr COMMA exprs BRACKET_R
       {
-        $$ = TBmakeAp( StringCopy( "+"),
-                     NULL,
-                     TBmakeExprs( $3, $5));
+        $$ = TBmakeAp( NULL, TBmakeExprs( $3, $5));
+        AP_SPNAME( $$) = ILIBstringCopy( "+");
       }
     | MINUS BRACKET_L expr COMMA exprs BRACKET_R
       {
-        $$ = TBmakeAp( StringCopy( "-"),
-                     NULL,
-                     TBmakeExprs( $3, $5));
+        $$ = TBmakeAp( NULL, TBmakeExprs( $3, $5));
+        AP_SPNAME( $$) = ILIBstringCopy( "-");
       }
     | TILDE BRACKET_L expr COMMA exprs BRACKET_R
       {
-        $$ = TBmakeAp( StringCopy( "~"),
-                     NULL,
-                     TBmakeExprs( $3, $5));
+        $$ = TBmakeAp( NULL, TBmakeExprs( $3, $5));
+        AP_SPNAME( $$) = ILIBstringCopy( "~");
       }
     | EXCL BRACKET_L expr COMMA exprs BRACKET_R
       {
-        $$ = TBmakeAp( StringCopy( "!"),
-                     NULL,
-                     TBmakeExprs( $3, $5));
+        $$ = TBmakeAp( NULL, TBmakeExprs( $3, $5));
+        AP_SPNAME( $$) = ILIBstringCopy( "!");
       }
     | expr_sel                    { $$ = $1; }   /* bracket notation      */
     | expr_ap                     { $$ = $1; }   /* prefix function calls */
     | expr_ar                     { $$ = $1; }   /* constant arrays       */
     | BRACKET_L COLON ntype BRACKET_R expr   %prec CAST
-      { $$ = TBmakeCast( $5, $3);
+      { $$ = TBmakeCast( $3, $5);
       }
     | BRACE_L ID ARROW expr BRACE_R
-      { $$ = TBmakeSetWL( TBmakeId( $2, NULL, ST_regular),
-                        $4);
+      { $$ = TBmakeSetwl( TCmakeIdCopyString( $2), $4);
       }
     | BRACE_L SQBR_L exprs SQBR_R ARROW expr BRACE_R
-      { $$ = TBmakeSetWL( $3, $6);
+      { $$ = TBmakeSetwl( $3, $6);
       }
-    | wlcomp_pragma_local NWITH { $<cint>$ = linenum; } with
+    | wlcomp_pragma_local NWITH { $<cint>$ = global.linenum; } with
       { $$ = $4;
         NODE_LINE( $$)= $<cint>3;
         WITH_PRAGMA( $$) = $1;
@@ -1216,12 +1244,13 @@ expr: qual_ext_id                { $$ = $1;                   }
 
 with: BRACKET_L generator BRACKET_R wlassignblock withop
       { 
+        node * cexpr;
 #if 0
         /*
          * For now, we do not yet ask for the new syntax, BUT later we will
          * activate the following two lines....
          */
-        WARN( linenum, ( "Old with-loop style depricated!"));
+        WARN( global.linenum, ( "Old with-loop style depricated!"));
         CONT_WARN( ("Please use the new syntax instead"));
 #endif
 
@@ -1233,9 +1262,17 @@ with: BRACKET_L generator BRACKET_R wlassignblock withop
          * from the non-terminal withop would lead to a shift/reduce
          * conflict in that rule!
          */
-        $$ = TBmakeWith( $2, TBmakeCode( $4, TBmakeExprs( NULL, // NWITHOP_EXPR( $5),
-                                                          NULL)), $5);
-        // NWITHOP_EXPR( $5) = NULL;
+        if( NODE_TYPE( $5) == N_genarray) {
+          cexpr = GENARRAY_SPEXPR($5);
+          GENARRAY_SPEXPR($5) = NULL;
+        } else if ( NODE_TYPE( $5) == N_modarray) {
+          cexpr = MODARRAY_SPEXPR($5);
+          MODARRAY_SPEXPR($5) = NULL;
+        } else {
+          cexpr = FOLD_SPEXPR($5);
+          FOLD_SPEXPR($5) = NULL;
+        }
+        $$ = TBmakeWith( $2, TBmakeCode( $4, TBmakeExprs( NULL, cexpr)), $5);
         CODE_USED( WITH_CODE( $$))++;
         /*
          * Finally, we generate the link between the (only) partition
@@ -1255,29 +1292,23 @@ with: BRACKET_L generator BRACKET_R wlassignblock withop
 
 
 expr_sel: expr SQBR_L exprs SQBR_R
-          { if( CountExprs($3) == 1) {
-              $$ = MakeAp2( StringCopy( "sel"),
-                            NULL,
-                            EXPRS_EXPR( $3),
-                            $1);
+          { if( TCcountExprs($3) == 1) {
+              $$ = TCmakeAp2( NULL, EXPRS_EXPR( $3), $1);
+              AP_SPNAME( $$) = ILIBstringCopy( "sel");
               EXPRS_EXPR( $3) = NULL;
-              $3 = FreeNode( $3);
+              $3 = FREEdoFreeNode( $3);
             } else {
-              $$ = MakeAp2( StringCopy( "sel"),
-                            NULL,
-                            MakeFlatArray( $3),
-                            $1);
+              $$ = TCmakeAp2( NULL, TCmakeFlatArray( $3), $1);
+              AP_SPNAME( $$) = ILIBstringCopy( "sel");
             }
           }
         | expr SQBR_L SQBR_R
-          { $$ = MakeAp2( StringCopy( "sel"),
-                          NULL,
-                          MakeFlatArray( NULL),
-                          $1);
+          { $$ = TCmakeAp2( NULL, TCmakeFlatArray( NULL), $1);
+            AP_SPNAME( $$) = ILIBstringCopy( "sel");
           }
         ;
 
-expr_ap: qual_ext_id BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
+expr_ap: qual_ext_id BRACKET_L { $<cint>$ = global.linenum; } opt_arguments BRACKET_R
          {
            $$ = TBmakeAp( NULL, $4);
            AP_NAME( $$) = ILIBstringCopy( ID_SPNAME( $1));
@@ -1285,11 +1316,11 @@ expr_ap: qual_ext_id BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
            NODE_LINE( $$) = $<cint>3;
            $1 = FREEdoFreeTree( $1);
          }
-       | prf BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
+       | prf BRACKET_L { $<cint>$ = global.linenum; } opt_arguments BRACKET_R
          { char tmp[64];
            int num_args;
 
-           num_args = CountExprs( $4);
+           num_args = TCcountExprs( $4);
            if( num_args != prf_arity[$1]) {
              sprintf( tmp, "%d argument(s) expected instead of %d", prf_arity[$1], num_args);
              yyerror( tmp);
@@ -1304,12 +1335,12 @@ opt_arguments: exprs         { $$ = $1;   }
              | /* empty */   { $$ = NULL; }
              ;
 
-expr_ar: SQBR_L { $<cint>$ = linenum; } exprs SQBR_R
-         { $$ = MakeFlatArray( $3);
+expr_ar: SQBR_L { $<cint>$ = global.linenum; } exprs SQBR_R
+         { $$ = TCmakeFlatArray( $3);
            NODE_LINE( $$) = $<cint>2;
          }
-       | SQBR_L { $<cint>$ = linenum; } SQBR_R
-         { $$ = MakeFlatArray( NULL);
+       | SQBR_L { $<cint>$ = global.linenum; } SQBR_R
+         { $$ = TCmakeFlatArray( NULL);
            NODE_LINE( $$) = $<cint>2;
          }
        ;
@@ -1323,12 +1354,12 @@ parts: part
          CODE_NEXT( WITH_CODE( $1)) = WITH_CODE( $2);
          WITH_PART( $2) = NULL;
          WITH_CODE( $2) = NULL;
-         FreeTree( $2);
+         FREEdoFreeTree( $2);
        }
      ;
 
 part: BRACKET_L generator BRACKET_R wlassignblock COLON expr SEMIC
-      { $$ = TBmakeNWith( $2, TBmakeNCode( $4, TBmakeExprs( $6, NULL)), NULL);
+      { $$ = TBmakeWith( $2, TBmakeCode( $4, TBmakeExprs( $6, NULL)), NULL);
         CODE_USED( WITH_CODE( $$))++;
         PART_CODE( $2) = WITH_CODE( $$);
       }
@@ -1337,24 +1368,24 @@ part: BRACKET_L generator BRACKET_R wlassignblock COLON expr SEMIC
 generator: expr LE genidx genop expr steps width
            {
              if( ($7 != NULL) && ($6 == NULL)) {
-               WARN( linenum,
+               WARN( global.linenum,
                      ("width vector ignored due to missing step vector"));
-               $7 = FreeTree( $7);
+               $7 = FREEdoFreeTree( $7);
              }
-             $$ = TBmakeNPart( $3,
-                             TBmakeGenerator( $1, $5, F_le, $4, $6, $7),
-                             NULL);
+             $$ = TBmakePart( NULL,
+                              $3,
+                              TBmakeGenerator( F_le, $4, $1, $5, $6, $7));
            }
          | expr LT genidx genop expr steps width
            {
              if( ($7 != NULL) && ($6 == NULL)) {
-               WARN( linenum,
+               WARN( global.linenum,
                      ("width vector ignored due to missing step vector"));
-               $7 = FreeTree( $7);
+               $7 = FREEdoFreeTree( $7);
              }
-             $$ = TBmakeNPart( $3,
-                             TBmakeGenerator( $1, $5, F_lt, $4, $6, $7),
-                             NULL);
+             $$ = TBmakePart( NULL,
+                              $3,
+                              TBmakeGenerator( F_lt, $4, $1, $5, $6, $7));
            }
          ;
 
@@ -1367,13 +1398,13 @@ width: /* empty */   { $$ = NULL; }
      ;
 
 genidx: ID LET SQBR_L ids SQBR_R
-        { $$ = TBmakeNWithid( MakeIds( $1, NULL, ST_regular), $4);
+        { $$ = TBmakeWithid( TCmakeIdsCopyString( $1, NULL), $4);
         }
       | ID
-        { $$ = TBmakeNWithid( MakeIds( $1, NULL, ST_regular), NULL);
+        { $$ = TBmakeWithid( TCmakeIdsCopyString( $1, NULL), NULL);
         }
       | SQBR_L ids SQBR_R
-        { $$ = TBmakeNWithid( NULL, $2);
+        { $$ = TBmakeWithid( NULL, $2);
         }
       ;
 
@@ -1383,7 +1414,7 @@ genop: LT   { $$ = F_lt; }
      ;
 
 
-wlassignblock: BRACE_L { $<cint>$ = linenum; } assigns BRACE_R
+wlassignblock: BRACE_L { $<cint>$ = global.linenum; } assigns BRACE_R
                { if ($3 == NULL) {
                    $$ = MAKE_EMPTY_BLOCK();
                  }
@@ -1416,27 +1447,27 @@ nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
 
 withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
         { $$ = TBmakeGenarray( $3, NULL);
-          // NWITHOP_EXPR( $$) = $5;
+          GENARRAY_SPEXPR( $$) = $5;
         }
       | GENARRAY BRACKET_L expr COMMA expr COMMA expr BRACKET_R
         { $$ = TBmakeGenarray( $3, $7);
-          // NWITHOP_EXPR( $$) = $5;
+          GENARRAY_SPEXPR( $$) = $5;
         }
       | MODARRAY BRACKET_L expr COMMA ID COMMA expr BRACKET_R
         { $$ = TBmakeModarray( $3);
-          // NWITHOP_EXPR( $$) = $7;
+          MODARRAY_SPEXPR( $$) = $7;
         }
       | FOLD BRACKET_L foldop COMMA expr COMMA expr BRACKET_R
         { $$ = TBmakeFold( $5);
           FOLD_PRF( $$) = $3;
-          // NWITHOP_EXPR( $$) = $7;
+          FOLD_SPEXPR( $$) = $7;
         }
       | FOLD BRACKET_L qual_ext_id COMMA expr COMMA expr BRACKET_R
         { $$ = TBmakeFold( $5);
           FOLD_FUN( $$) = ILIBstringCopy( ID_SPNAME( $3));
           FOLD_MOD( $$) = ILIBstringCopy( ID_SPMOD( $3));
           $3 = FREEdoFreeTree( $3);
-          // NWITHOP_EXPR( $$) = $7;
+          FOLD_SPEXPR( $$) = $7;
         }
       ;
 
@@ -1531,32 +1562,32 @@ ids: ID COMMA ids
        IDS_SPNAME( $$) = $1;
      }
    | ID
-     { $$ = ILIBmakeIds( NULL, NULL);
+     { $$ = TBmakeIds( NULL, NULL);
        IDS_SPNAME( $$) = $1;
      }
    ;
 
-reservedid: GENARRAY          { $$ = StringCopy("genarray"); }
-          | MODARRAY          { $$ = StringCopy("modarray"); }
-          | ALL               { $$ = StringCopy("all"); }
-          | AMPERS            { $$ = StringCopy("&"); }
-          | EXCL              { $$ = StringCopy("!"); }
-          | INC               { $$ = StringCopy("++"); }
-          | DEC               { $$ = StringCopy("--"); }
-          | PLUS              { $$ = StringCopy("+"); }
-          | MINUS             { $$ = StringCopy("-"); }
-          | STAR              { $$ = StringCopy("*"); }
-          | LE                { $$ = StringCopy("<="); }
-          | LT                { $$ = StringCopy("<"); }
-          | GT                { $$ = StringCopy(">"); }
+reservedid: GENARRAY          { $$ = ILIBstringCopy("genarray"); }
+          | MODARRAY          { $$ = ILIBstringCopy("modarray"); }
+          | ALL               { $$ = ILIBstringCopy("all"); }
+          | AMPERS            { $$ = ILIBstringCopy("&"); }
+          | EXCL              { $$ = ILIBstringCopy("!"); }
+          | INC               { $$ = ILIBstringCopy("++"); }
+          | DEC               { $$ = ILIBstringCopy("--"); }
+          | PLUS              { $$ = ILIBstringCopy("+"); }
+          | MINUS             { $$ = ILIBstringCopy("-"); }
+          | STAR              { $$ = ILIBstringCopy("*"); }
+          | LE                { $$ = ILIBstringCopy("<="); }
+          | LT                { $$ = ILIBstringCopy("<"); }
+          | GT                { $$ = ILIBstringCopy(">"); }
           ; 
 string: STR       
         { $$ = $1;
         }
       | STR string
-        { $$ = StringConcat( $1, $2);
-          $1 = Free( $1);
-          $2 = Free( $2);
+        { $$ = ILIBstringConcat( $1, $2);
+          $1 = ILIBfree( $1);
+          $2 = ILIBfree( $2);
         }
       ;
 
@@ -1598,10 +1629,10 @@ varntypes: ntype COMMA ntypes { $$ = TBmakeRet( $1, $3); }
          ;
 
 ntype: basentype
-       { $$ = TYMakeAKS( $1, SHMakeShape(0)); 
+       { $$ = TYmakeAKS( $1, SHmakeShape(0)); 
        }
      | basentype SQBR_L SQBR_R
-       { $$ = TYMakeAKS( $1, SHMakeShape(0)); 
+       { $$ = TYmakeAKS( $1, SHmakeShape(0)); 
        }
      | basentype SQBR_L exprs SQBR_R
        { $$ = Exprs2NType( $1, $3);
@@ -1616,18 +1647,18 @@ basentype: simplentype
            }
          ;
 
-simplentype: TYPE_INT    { $$ = TYMakeSimpleType( T_int);    }
-           | TYPE_FLOAT  { $$ = TYMakeSimpleType( T_float);  }
-           | TYPE_BOOL   { $$ = TYMakeSimpleType( T_bool);   }
-           | TYPE_CHAR   { $$ = TYMakeSimpleType( T_char);   }
-           | TYPE_DBL    { $$ = TYMakeSimpleType( T_double); }
+simplentype: TYPE_INT    { $$ = TYmakeSimpleType( T_int);    }
+           | TYPE_FLOAT  { $$ = TYmakeSimpleType( T_float);  }
+           | TYPE_BOOL   { $$ = TYmakeSimpleType( T_bool);   }
+           | TYPE_CHAR   { $$ = TYmakeSimpleType( T_char);   }
+           | TYPE_DBL    { $$ = TYmakeSimpleType( T_double); }
            ;
 
 userntype: ID
-           { $$ = TYMakeSymbType( $1, NULL);
+           { $$ = TYmakeSymbType( $1, NULL);
            }
          | ID COLON ID
-           { $$ = TYMakeSymbType( $3, $1);
+           { $$ = TYmakeSymbType( $3, $1);
            }
          ;
 
@@ -1706,7 +1737,7 @@ modspec: modheader OWN COLON expdesc
 
 
 targets: TARGET ID COLON inherits resources targets
-         { $$ = RSCMakeTargetListEntry( $2, $4, $5, $6);
+         { $$ = RSCmakeTargetListEntry( $2, $4, $5, $6);
          }
        | /* empty */
          { $$ = NULL;
@@ -1714,7 +1745,7 @@ targets: TARGET ID COLON inherits resources targets
        ;
 
 inherits: COLON ID COLON inherits
-           { $$ = RSCmakeInheritenceListEntry( $2, $4)
+           { $$ = RSCmakeInheritenceListEntry( $2, $4);
            }
         | /* empty */
           { $$ = NULL;
@@ -1722,28 +1753,28 @@ inherits: COLON ID COLON inherits
         ;
 
 resources: ID COLON LET string resources
-           { $$ = RSCMakeResourceListEntry( $1, $4, 0, 0, $5);
+           { $$ = RSCmakeResourceListEntry( $1, $4, 0, 0, $5);
            }
          | ID ADDON string resources
-           { $$ = RSCMakeResourceListEntry( $1, $3, 0, 1, $4);
+           { $$ = RSCmakeResourceListEntry( $1, $3, 0, 1, $4);
            }
          | ID COLON LET OPTION resources
-           { $$ = RSCMakeResourceListEntry( $1, $4, 0, 0, $5);
+           { $$ = RSCmakeResourceListEntry( $1, $4, 0, 0, $5);
            }
          | ID ADDON OPTION resources
-           { $$ = RSCMakeResourceListEntry( $1, $3, 0, 1, $4);
+           { $$ = RSCmakeResourceListEntry( $1, $3, 0, 1, $4);
            }
          | ID COLON LET ID resources
-           { $$ = RSCMakeResourceListEntry( $1, $4, 0, 0, $5);
+           { $$ = RSCmakeResourceListEntry( $1, $4, 0, 0, $5);
            }
          | ID ADDON ID resources
-           { $$ = RSCMakeResourceListEntry( $1, $3, 0, 1, $4);
+           { $$ = RSCmakeResourceListEntry( $1, $3, 0, 1, $4);
            }
          | ID COLON LET NUM resources
-           { $$ = RSCMakeResourceListEntry( $1, NULL, $4, 0, $5);
+           { $$ = RSCmakeResourceListEntry( $1, NULL, $4, 0, $5);
            }
          | ID ADDON NUM resources
-           { $$ = RSCMakeResourceListEntry( $1, NULL, $3, 1, $4);
+           { $$ = RSCmakeResourceListEntry( $1, NULL, $3, 1, $4);
            }
          | /* empty */
            { $$ = NULL;
@@ -1785,9 +1816,9 @@ int My_yyparse()
    * make a copy of the actual filename, which will be used for
    * all subsequent nodes...
    */
-  tmp = (char *) Malloc( (strlen(filename)+1) * sizeof( char));
-  strcpy( tmp, filename);
-  filename = tmp;
+  tmp = (char *) ILIBmalloc( (strlen(global.filename)+1) * sizeof( char));
+  strcpy( tmp, global.filename);
+  global.filename = tmp;
 
 #if YYDEBUG
   DBUG_EXECUTE( "YACC", yydebug=1;);
@@ -1817,11 +1848,11 @@ int yyerror( char *errname)
   DBUG_ENTER( "yyerror");
 
   charpos -= (strlen( yytext) - 1);
-  ERROR( linenum, ("%s at pos %d: '%s`", errname, charpos, yytext));
+  ERROR( global.linenum, ("%s at pos %d: '%s`", errname, charpos, yytext));
   size_of_output = MAX_LINE_LENGTH -
-                   (((verbose_level > 1) ? 2 : 0) +
-                    strlen( filename) +
-                    NumberOfDigits( linenum) + 9);
+                   (((global.verbose_level > 1) ? 2 : 0) +
+                    strlen( global.filename) +
+                    ILIBnumberOfDigits( global.linenum) + 9);
   if (strlen( linebuf_ptr) > (size_t) size_of_output) {
     if (charpos >= size_of_output - 15) {
       offset = charpos - size_of_output + 15;
@@ -1856,7 +1887,7 @@ void CleanUpParser()
   DBUG_ENTER( "CleanUpParser");
 
   if (global_wlcomp_aps != NULL) {
-    global_wlcomp_aps = FreeTree( global_wlcomp_aps);
+    global_wlcomp_aps = FREEdoFreeTree( global_wlcomp_aps);
   }
 
   DBUG_VOID_RETURN;
@@ -1937,90 +1968,79 @@ node *String2Array(char *str)
   }
 
   len_exprs = TBmakeExprs( TBmakeNum( cnt), NULL);
-  array = MakeFlatArray( new_exprs);
+  array = TCmakeFlatArray( new_exprs);
 
 #ifndef CHAR_ARRAY_NOT_AS_STRING
   ARRAY_STRING(array)=str;
 #endif  /* CHAR_ARRAY_AS_STRING */
 
-  res = TBmakeAp( StringCopy( "to_string"),
-                NULL,
-                TBmakeExprs( array, len_exprs));
+  res = TBmakeAp( NULL, TBmakeExprs( array, len_exprs));
+  AP_SPNAME( res) = ILIBstringCopy( "to_string");
 
   DBUG_RETURN( res); 
 }
 
 
-
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * Function:
- *   types *Exprs2ShpInfo( types *types, node *exprs)
+ * @fn node *MakeIncDecLet( char *id, char *op)
  *
- * Description:
- *   Checks whether all exprs are either N_num s or N_dot s or N_id containing
- *   "*" or "+". If so, the shape information of the types structure are set
- *   accordingly. Otherwise, yyerror is called.
+ *   @brief
+ *   @param
+ *   @return
  *
  ******************************************************************************/
 
 static
-types *Exprs2ShpInfo( types *types, node *exprs)
+node *MakeIncDecLet( char *name, char *op)
 {
-  int n;
-  int *destptr;
-  nodetype nt;
-  char *name, *mod;
+  node *let, *id, *ids, *ap;
 
-  DBUG_ENTER( "Exprs2ShpInfo");
+  DBUG_ENTER( "MakeIncDecLet");
+  ids = TBmakeIds( NULL, NULL);
+  IDS_SPNAME( ids) = ILIBstringCopy( name);
 
-  n = CountExprs( exprs);
-  if( exprs == NULL) {
-    TYPES_DIM( types) = 0;
-  } else {
-    nt = NODE_TYPE( EXPRS_EXPR1( exprs));
-    if( nt == N_id) {
-      name = ID_SPNAME( EXPRS_EXPR1( exprs));
-      mod = ID_SPMOD( EXPRS_EXPR1( exprs));
-      if( (strcmp( name, "*") == 0) && (( file_kind == F_sib) || (mod == NULL)) ) {
-        TYPES_DIM( types) = ARRAY_OR_SCALAR;
-      } else if( (strcmp( name, "+") == 0) && (( file_kind == F_sib) || (mod == NULL)) ) {
-        TYPES_DIM( types) = UNKNOWN_SHAPE;
-      } else {
-        yyerror("illegal shape specification");
-      } 
-    } else if( nt == N_dot) {
-      TYPES_DIM( types) = KNOWN_DIM_OFFSET - 1;
-      exprs = EXPRS_NEXT( exprs);
-      while( exprs != NULL) {
-        if( NODE_TYPE( EXPRS_EXPR1( exprs)) == N_dot) {
-          exprs = EXPRS_NEXT( exprs);
-          TYPES_DIM( types) = TYPES_DIM( types) -1;
-        } else {
-          yyerror("illegal shape specification");
-        }
-      }
-    } else {
-      TYPES_DIM( types) = 0;
-      TYPES_SHPSEG( types) = MakeShpseg(NULL);
-      destptr = TYPES_SHPSEG( types)->shp;
-      do {
-        if( NODE_TYPE( EXPRS_EXPR1( exprs)) == N_num) {
-          TYPES_DIM( types) = TYPES_DIM( types) + 1;
-          *destptr++ = NUM_VAL( EXPRS_EXPR1( exprs));
-          DBUG_PRINT("PARSE",("shape-element: %d", NUM_VAL( EXPRS_EXPR1( exprs))));
-        } else {
-          yyerror("illegal shape specification");
-        }
-        exprs = EXPRS_NEXT( exprs);
-      } while( exprs != NULL);
-    }
-  }
+  id = TBmakeId( NULL);
+  ID_SPNAME(  id) = name;
 
-  DBUG_RETURN( types);
+  ap = TCmakeAp2( NULL, id, TBmakeNum(1));
+  AP_SPNAME( ap) = op;
+
+  let = TBmakeLet( ids, ap);
+
+  DBUG_RETURN( let);
 }
 
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *MakeOpOnLet( char *id, node *expr, char *op)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+static
+node *MakeOpOnLet( char *name, node *expr, char *op)
+{
+  node *let, *id, *ids, *ap;
+
+  DBUG_ENTER( "MakeOpOnLet");
+  ids = TBmakeIds( NULL, NULL);
+  IDS_SPNAME( ids) = ILIBstringCopy( name);
+
+  id = TBmakeId( NULL);
+  ID_SPNAME(  id) = name;
+
+  ap = TCmakeAp2( NULL, id, expr);
+  AP_SPNAME( ap) = op;
+
+  let = TBmakeLet( ids, ap);
+
+  DBUG_RETURN( let);
+}
 
 /******************************************************************************
  *
@@ -2041,7 +2061,7 @@ node *Expr2Mop( node *expr)
   if( (NODE_TYPE( expr) == N_mop) && ! MOP_ISFIXED( expr) ) {
     res = expr;
   } else {
-    res = TBmakeMop( TBmakeExprs( expr, NULL), NULL, FALSE);
+    res = TBmakeMop( TBmakeExprs( expr, NULL), NULL);
   }
 
   DBUG_RETURN( res);
@@ -2052,29 +2072,31 @@ node *Expr2Mop( node *expr)
 /******************************************************************************
  *
  * Function:
- *   node *ConstructMop( node *, ids *, node *)
+ *   node *ConstructMop( node *, node *, node *)
  *
  * Description:
  *
  ******************************************************************************/
 
 static
-node *ConstructMop( node *expr1, node *fun_ids, node *expr2)
+node *ConstructMop( node *expr1, node *fun_id, node *expr2)
 {
-  node *res, *lmop, *rmop;
+  node *res, *lmop, *rmop, *fun_ids;
 
   DBUG_ENTER("ConstructMop");
 
   lmop = Expr2Mop( expr1);
   rmop = Expr2Mop( expr2);
 
+  fun_ids = DUPdupIdIds( fun_id);
+  fun_id = FREEdoFreeNode( fun_id);
+
   IDS_NEXT( fun_ids) = MOP_OPS( rmop);
 
   res = TBmakeMop( TCappendExprs( MOP_EXPRS( lmop),
                                   MOP_EXPRS( rmop)),
-                   TCAppendIds( MOP_OPS( lmop),
-                                fun_ids),
-                   FALSE);
+                   TCappendIds( MOP_OPS( lmop),
+                                fun_ids));
   lmop = FREEdoFreeNode( lmop);  /* only the top constructor N_mop is to be freed!!!! */
   rmop = FREEdoFreeNode( rmop);  /* only the top constructor N_mop is to be freed!!!! */
 
@@ -2221,15 +2243,15 @@ static shape *Exprs2Shape( node *exprs)
 
   DBUG_ENTER("Exprs2Shape");
   
-  n = CountExprs( exprs);
+  n = TCcountExprs( exprs);
 
-  result = SHMakeShape( n);
+  result = SHmakeShape( n);
 
   while ((exprs != NULL) && (result != NULL)) {
     if (NODE_TYPE( EXPRS_EXPR( exprs)) == N_num) {
-      result = SHSetExtent( result, cnt, NUM_VAL( EXPRS_EXPR( exprs)));
+      result = SHsetExtent( result, cnt, NUM_VAL( EXPRS_EXPR( exprs)));
     } else {
-      result = SHFreeShape( result);
+      result = SHfreeShape( result);
     }
     exprs = EXPRS_NEXT( exprs);
     cnt++;
@@ -2247,7 +2269,7 @@ static ntype *Exprs2NType( ntype *basetype, node *exprs)
 
   DBUG_ENTER("Exprs2NType");
 
-  n = CountExprs( exprs);
+  n = TCcountExprs( exprs);
 
   switch (NODE_TYPE( EXPRS_EXPR1( exprs))) {
     case N_id:
@@ -2274,13 +2296,13 @@ static ntype *Exprs2NType( ntype *basetype, node *exprs)
       if (dots != n) {
         yyerror("illegal shape specification");
       } else {
-        result = TYMakeAKD( basetype, dots, SHMakeShape(0));
+        result = TYmakeAKD( basetype, dots, SHmakeShape(0));
       }
       break;
     case N_num:
       shp = Exprs2Shape( exprs);
       if (shp != NULL) {
-        result = TYMakeAKS( basetype, shp);
+        result = TYmakeAKS( basetype, shp);
       } else {
         yyerror("illegal shape specification");
       }
@@ -2290,7 +2312,7 @@ static ntype *Exprs2NType( ntype *basetype, node *exprs)
       break;
   }
 
-  exprs = FreeTree( exprs);
+  exprs = FREEdoFreeTree( exprs);
 
   DBUG_RETURN( result);
 }
