@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 11:43:11  dkr
+ * PrintTravPre, PrintTravPost added
+ *
  * Revision 3.1  2000/11/20 17:59:47  sacbase
  * new release made
  *
@@ -226,6 +229,9 @@ extern node *PrintWLgridVar (node *arg_node, node *arg_info);
 extern node *PrintCWrapper (node *arg_node, node *arg_info);
 
 extern void PrintFunctionHeader (node *arg_node, node *arg_info);
+
+extern node *PrintTravPre (node *arg_node, node *arg_info);
+extern node *PrintTravPost (node *arg_node, node *arg_info);
 
 extern node *Print (node *syntax_tree);
 extern node *PrintNode (node *node);
