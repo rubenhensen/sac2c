@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.107  2004/10/14 13:38:34  sbs
+ * adjusted DupVinfo
+ *
  * Revision 3.106  2004/10/12 09:49:06  khf
  * WLGRID_CODE, WLGRIDVAR_CODE can be NULL!
  *
@@ -783,9 +786,8 @@ DupVinfo (node *arg_node, info *arg_info)
     if (VINFO_FLAG (arg_node) == DOLLAR) {
         new_node = MakeVinfoDollar (rest);
     } else {
-        new_node
-          = MakeVinfo (VINFO_FLAG (arg_node), DupTypes_ (VINFO_TYPE (arg_node), arg_info),
-                       rest, VINFO_DOLLAR (rest));
+        new_node = MakeVinfo (VINFO_FLAG (arg_node), SHCopyShape (VINFO_SHAPE (arg_node)),
+                              rest, VINFO_DOLLAR (rest));
     }
     VINFO_VARDEC (new_node) = VINFO_VARDEC (arg_node);
 
