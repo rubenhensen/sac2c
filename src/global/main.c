@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.140  1998/08/27 12:48:00  sbs
+ * -L args added to SYSTEMLIB_PATH as well so that readsib will
+ * accept linkwith-pragma args that are not in the standard path
+ * from the config!
+ *
  * Revision 1.139  1998/08/07 18:11:29  sbs
  * inserted gen_mt_code; it prevents spmd regions from being created per default
  * only if one of the following options is set:
@@ -582,6 +587,7 @@ MAIN
     ARG 'L' : PARM
     {
         AppendPath (MODIMP_PATH, AbsolutePathname (*argv));
+        AppendPath (SYSTEMLIB_PATH, AbsolutePathname (*argv));
     }
     NEXTOPT
     ARG 'O' : PARM
