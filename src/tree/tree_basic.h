@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2001/03/26 10:46:03  nmw
+ * INFO_SSACF_ macros added
+ *
  * Revision 3.58  2001/03/23 18:04:11  dkr
  * INFO_INL_NAIVE added
  * INFO_DUP_ALL removed
@@ -2437,6 +2440,10 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      FUNDEF            (current working fundef)
  ***    bool       INSCONST          (flag, if const value should be inserted
  ***                                  for a constant identifier)
+ ***    node*      POSTASSIGN        (assignments to add behind assignment)
+ ***    node*      TOPBLOCK          (vardec chain of actual function)
+ ***    node*      RESULTS           (exprs chain of return statement)
+ ***
  ***
  ***  remarks:
  ***
@@ -2862,6 +2869,9 @@ extern node *MakeInfo ();
 #define INFO_SSACF_REMASSIGN(n) ((bool)(n->flag))
 #define INFO_SSACF_FUNDEF(n) (n->node[0])
 #define INFO_SSACF_INSCONST(n) ((bool)(n->varno))
+#define INFO_SSACF_POSTASSIGN(n) (n->node[1])
+#define INFO_SSACF_TOPBLOCK(n) (n->node[2])
+#define INFO_SSACF_RESULTS(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
 
