@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.79  1998/10/27 09:53:01  sbs
+ * INFO_FLTN_CONTEXT reset from CT_wl to CT_normal in
+ * FltnBlock. This is required since otherwise renamings
+ * occur in the innermost block rather than the innermost
+ * WL-block!!!
+ *
  * Revision 1.78  1998/10/26 20:16:59  dkr
  * fixed a bug in FltnLet:
  *   no DBUG_PRINT on NULL-pointers!
@@ -780,6 +786,12 @@ FltnBlock (node *arg_node, node *arg_info)
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         if (INFO_FLTN_CONTEXT (arg_info) == CT_wl) {
+            /*
+             * First, we reset INFO_FLTN_CONTEXT( arg_info) to CT_normal!
+             * This is essential since otherwise non-WL-blocks within a
+             * WL would penetrate INFO_FLTN_LASTWLBLOCK( arg_info)!!
+             */
+            INFO_FLTN_CONTEXT (arg_info) = CT_normal;
             mem_last_wlblock = INFO_FLTN_LASTWLBLOCK (arg_info);
             INFO_FLTN_LASTWLBLOCK (arg_info) = arg_node;
             DBUG_PRINT ("RENAME", ("LASTWLBLOCK set to %08x", arg_node));
