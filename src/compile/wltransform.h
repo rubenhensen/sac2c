@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/29 01:34:52  dkr
+ * PRINT_VARIDX_VECT added
+ *
  * Revision 3.5  2001/03/28 12:40:11  dkr
  * macro PRINT_VARIDX_VECT added
  *
@@ -51,31 +54,10 @@
 #define IDX_SHAPE (-1) /* equals the shape */
 #define IDX_OTHER (-2) /* other */
 
-#define IDX_IS_NUM(idx) (idx >= 0)
+#define IDX_IS_NUM(idx) ((idx) >= 0)
 
 #define GET_SHAPE_IDX(shape, dim)                                                        \
-    ((shape != NULL) ? SHPSEG_SHAPE (shape, dim) : IDX_SHAPE)
-
-#define PRINT_VARIDX_VECT(handle, vect, dims)                                            \
-    {                                                                                    \
-        int d;                                                                           \
-        if ((vect) != NULL) {                                                            \
-            fprintf (handle, "[ ");                                                      \
-            for (d = 0; d < dims; d++) {                                                 \
-                if (NODE_TYPE (((vect)[d])) == N_num) {                                  \
-                    fprintf (handle, "%i ", NUM_VAL (((vect)[d])));                      \
-                } else {                                                                 \
-                    DBUG_ASSERT ((NODE_TYPE (((vect)[d])) == N_id),                      \
-                                 "entry of var. index vector is neither N_num or "       \
-                                 "N_id!");                                               \
-                    fprintf (handle, "%s ", ID_NAME (((vect)[d])));                      \
-                }                                                                        \
-            }                                                                            \
-            fprintf (handle, "]");                                                       \
-        } else {                                                                         \
-            fprintf (handle, "NULL");                                                    \
-        }                                                                                \
-    }
+    (((shape) != NULL) ? SHPSEG_SHAPE ((shape), (dim)) : IDX_SHAPE)
 
 extern node *WlTransform (node *syntax_tree);
 
