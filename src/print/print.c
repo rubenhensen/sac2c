@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.137  1997/11/24 16:44:33  sbs
+ * changed nodename->mdb_nodetype and
+ * adjusted WITHOP_FUN-macro
+ *
  * Revision 1.136  1997/11/24 16:04:41  srs
  * print routines for N_Nwith node and subnodes
  *
@@ -1870,7 +1874,11 @@ PrintNWith (node *arg_node, node *arg_info)
         Trav (NWITHOP_ARRAY (NWITH_WITHOP (arg_node)), arg_info);
         break;
     case WO_foldfun:
-        fprintf (outfile, "fold( %s,", NWITHOP_FUN (NWITH_WITHOP (arg_node)).id);
+        if (NWITHOP_MOD (NWITH_WITHOP (arg_node)) == NULL)
+            fprintf (outfile, "fold( %s,", NWITHOP_FUN (NWITH_WITHOP (arg_node)));
+        else
+            fprintf (outfile, "fold( %s:%s,", NWITHOP_MOD (NWITH_WITHOP (arg_node)),
+                     NWITHOP_FUN (NWITH_WITHOP (arg_node)));
         Trav (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node)), arg_info);
         break;
     case WO_foldprf:
@@ -2032,7 +2040,7 @@ PrintNodeTree (node *node)
 
     if (node) {
         INDENT;
-        fprintf (outfile, "%s\n", nodename[NODE_TYPE (node)]);
+        fprintf (outfile, "%s\n", mdb_nodetype[NODE_TYPE (node)]);
         indent++;
         for (i = 0; i < nnode[NODE_TYPE (node)]; i++)
             if (node->node[i])
