@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.148  1998/02/26 14:10:45  srs
+ * changed output of N_empty node (was "\t;\n").
+ *
  * Revision 1.147  1998/02/25 09:14:43  cg
  * switched to new compiler_phase representation using the enumeration type
  * compiler_phase_t
@@ -1420,7 +1423,7 @@ PrintEmpty (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintEmpty");
 
     INDENT;
-    fprintf (outfile, "\t;\n");
+    fprintf (outfile, "/* empty */\n");
 
     DBUG_RETURN (arg_node);
 }
