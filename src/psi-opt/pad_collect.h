@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.2  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.1  2000/11/20 18:01:49  sacbase
  * new release made
  *
@@ -49,14 +53,14 @@
 #define sac_pad_collect_h
 
 extern void APcollect ();
-extern node *APCarray (node *arg_node, node *arg_info);
-extern node *APCwith (node *arg_node, node *arg_info);
-extern node *APCap (node *arg_node, node *arg_info);
-extern node *APCid (node *arg_node, node *arg_info);
-extern node *APCprf (node *arg_node, node *arg_info);
-extern node *APCfundef (node *arg_node, node *arg_info);
-extern node *APClet (node *arg_node, node *arg_info);
-extern node *APCwithop (node *arg_node, node *arg_info);
-extern node *APCcode (node *arg_node, node *arg_info);
+extern node *APCarray (node *arg_node, info *arg_info);
+extern node *APCwith (node *arg_node, info *arg_info);
+extern node *APCap (node *arg_node, info *arg_info);
+extern node *APCid (node *arg_node, info *arg_info);
+extern node *APCprf (node *arg_node, info *arg_info);
+extern node *APCfundef (node *arg_node, info *arg_info);
+extern node *APClet (node *arg_node, info *arg_info);
+extern node *APCwithop (node *arg_node, info *arg_info);
+extern node *APCcode (node *arg_node, info *arg_info);
 
 #endif /* sac_pad_collect_h */

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.3  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.2  2004/03/26 13:02:12  khf
  * SSAWLINgenerator added
  *
@@ -13,18 +17,18 @@
 #ifndef _SSAWLI_h
 #define _SSAWLI_h
 
-extern node *SSAWLIfundef (node *, node *);
-extern node *SSAWLIid (node *, node *);
-extern node *SSAWLIassign (node *, node *);
-extern node *SSAWLIcond (node *, node *);
-extern node *SSAWLINwith (node *, node *);
-extern node *SSAWLIlet (node *, node *);
-extern node *SSAWLIap (node *, node *);
+extern node *SSAWLIfundef (node *, info *);
+extern node *SSAWLIid (node *, info *);
+extern node *SSAWLIassign (node *, info *);
+extern node *SSAWLIcond (node *, info *);
+extern node *SSAWLINwith (node *, info *);
+extern node *SSAWLIlet (node *, info *);
+extern node *SSAWLIap (node *, info *);
 
-extern node *SSAWLINwithop (node *, node *);
-extern node *SSAWLINpart (node *, node *);
-extern node *SSAWLINgenerator (node *, node *);
-extern node *SSAWLINcode (node *, node *);
+extern node *SSAWLINwithop (node *, info *);
+extern node *SSAWLINpart (node *, info *);
+extern node *SSAWLINgenerator (node *, info *);
+extern node *SSAWLINcode (node *, info *);
 
 extern int ssawli_phase;
 

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.1  2000/11/20 18:01:56  sacbase
  * new release made
  *
@@ -55,9 +59,9 @@
 #define DTYPE_INDEX 2
 
 extern node *TileSizeInference (node *arg_node);
-extern node *TSIfundef (node *arg_node, node *arg_info);
-extern node *TSIblock (node *arg_node, node *arg_info);
-extern node *TSInwith (node *arg_node, node *arg_info);
-extern node *TSIncode (node *arg_node, node *arg_info);
+extern node *TSIfundef (node *arg_node, info *arg_info);
+extern node *TSIblock (node *arg_node, info *arg_info);
+extern node *TSInwith (node *arg_node, info *arg_info);
+extern node *TSIncode (node *arg_node, info *arg_info);
 
 #endif /* _tile_size_inference_h  */

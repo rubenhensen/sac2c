@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.12  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.11  2003/11/18 17:49:13  dkr
  * no changes done
  *
@@ -92,6 +96,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "dbug.h"
 
 #include "types.h"
@@ -104,6 +110,51 @@
 
 #include "pad_info.h"
 #include "pad_collect.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    int unsupported;
+    int count_changes;
+    node *with;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_APC_UNSUPPORTED(n) (n->unsupported)
+#define INFO_APC_COUNT_CHANGES(n) (n->count_changes)
+#define INFO_APC_WITH(n) (n->with)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_APC_UNSUPPORTED (result) = 0;
+    INFO_APC_COUNT_CHANGES (result) = 0;
+    INFO_APC_WITH (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 typedef struct COLLECTION_T {
     node *array_vardec;
@@ -133,7 +184,7 @@ void
 APcollect (node *arg_node)
 {
 
-    node *arg_info;
+    info *arg_info;
     funtab *tmp_tab;
 
     DBUG_ENTER ("APcollect");
@@ -148,7 +199,7 @@ APcollect (node *arg_node)
 
     arg_node = Trav (arg_node, arg_info);
 
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeInfo (arg_info);
     act_tab = tmp_tab;
 
     DBUG_EXECUTE ("APC", PIprintAccessPatterns (); PIprintUnsupportedShapes (););
@@ -334,8 +385,8 @@ CollectAccessPatterns (node *arg_node)
  *
  *****************************************************************************/
 
-static node *
-AddUnsupported (node *arg_info, types *array_type)
+static void
+AddUnsupported (info *arg_info, types *array_type)
 {
 
     DBUG_ENTER ("AddUnsupported");
@@ -351,13 +402,13 @@ AddUnsupported (node *arg_info, types *array_type)
         }
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 /*****************************************************************************
  *
  * function:
- *   node *APCarray(node *arg_node, node *arg_info)
+ *   node *APCarray(node *arg_node, info *arg_info)
  *
  * description:
  *   constant arrays are not supported
@@ -365,13 +416,13 @@ AddUnsupported (node *arg_info, types *array_type)
  *****************************************************************************/
 
 node *
-APCarray (node *arg_node, node *arg_info)
+APCarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("APCarray");
 
     DBUG_PRINT ("APC", ("array-node detected"));
 
-    arg_info = AddUnsupported (arg_info, ARRAY_TYPE (arg_node));
+    AddUnsupported (arg_info, ARRAY_TYPE (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -379,7 +430,7 @@ APCarray (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APCwith(node *arg_node, node *arg_info)
+ *   node *APCwith(node *arg_node, info *arg_info)
  *
  * description:
  *   depending on INFO_APC_UNSUPPORTED (set by let-node, depending on lhs)
@@ -389,7 +440,7 @@ APCarray (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APCwith (node *arg_node, node *arg_info)
+APCwith (node *arg_node, info *arg_info)
 {
     node *save_ptr;
 
@@ -420,7 +471,7 @@ APCwith (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APCap(node *arg_node, node *arg_info)
+ *   node *APCap(node *arg_node, info *arg_info)
  *
  * description:
  *   check, if ap refers to fundef with or without body
@@ -428,7 +479,7 @@ APCwith (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APCap (node *arg_node, node *arg_info)
+APCap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("APCap");
 
@@ -448,7 +499,7 @@ APCap (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APCid(node *arg_node, node *arg_info)
+ *   node *APCid(node *arg_node, info *arg_info)
  *
  * description:
  *   add type to unsupported shapes, if UNSUPPORTED is set to TRUE by upper function
@@ -459,14 +510,14 @@ APCap (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APCid (node *arg_node, node *arg_info)
+APCid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("APCid");
 
     DBUG_PRINT ("APC", ("id-node detected"));
 
     if (INFO_APC_UNSUPPORTED (arg_info)) {
-        arg_info = AddUnsupported (arg_info, ID_TYPE (arg_node));
+        AddUnsupported (arg_info, ID_TYPE (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -475,7 +526,7 @@ APCid (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APCprf(node *arg_node, node *arg_info)
+ *   node *APCprf(node *arg_node, info *arg_info)
  *
  * description:
  *   only F_add_*, F_sub_* and F_mul_* may have a padded result
@@ -483,7 +534,7 @@ APCid (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APCprf (node *arg_node, node *arg_info)
+APCprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("APCprf");
 
@@ -578,7 +629,7 @@ APCprf (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APCfundef (node *arg_node, node *arg_info)
+APCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("APCfundef");
 
@@ -603,7 +654,7 @@ APCfundef (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APClet(node *arg_node, node *arg_info)
+ *   node *APClet(node *arg_node, info *arg_info)
  *
  * description:
  *   check and traverse rhs
@@ -612,7 +663,7 @@ APCfundef (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APClet (node *arg_node, node *arg_info)
+APClet (node *arg_node, info *arg_info)
 {
     ids *ids_ptr;
     bool save_state;
@@ -630,8 +681,7 @@ APClet (node *arg_node, node *arg_info)
     if (INFO_APC_UNSUPPORTED (arg_info)) {
         ids_ptr = LET_IDS (arg_node);
         while (ids_ptr != NULL) {
-            arg_info
-              = AddUnsupported (arg_info, VARDEC_OR_ARG_TYPE (IDS_VARDEC (ids_ptr)));
+            AddUnsupported (arg_info, VARDEC_OR_ARG_TYPE (IDS_VARDEC (ids_ptr)));
             ids_ptr = IDS_NEXT (ids_ptr);
         }
     }
@@ -643,7 +693,7 @@ APClet (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APCwithop( node *arg_node, node *arg_info)
+ *   node *APCwithop( node *arg_node, info *arg_info)
  *
  * description:
  *   marks array as unsupported, if modarray-withloop has non-scalar code-result
@@ -651,7 +701,7 @@ APClet (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APCwithop (node *arg_node, node *arg_info)
+APCwithop (node *arg_node, info *arg_info)
 {
     shpseg *shape;
     types *type;
@@ -671,7 +721,7 @@ APCwithop (node *arg_node, node *arg_info)
             dim = SHPSEG_SHAPE (TYPES_SHPSEG (ARRAY_TYPE (NWITHOP_SHAPE (arg_node))), 0);
             shape = Array2Shpseg (NWITHOP_SHAPE (arg_node), NULL);
             type = MakeTypes (basetype, dim, shape, NULL, NULL);
-            arg_info = AddUnsupported (arg_info, type);
+            AddUnsupported (arg_info, type);
             FreeOneTypes (type);
         }
         break;
@@ -679,7 +729,7 @@ APCwithop (node *arg_node, node *arg_info)
     case WO_modarray:
         DBUG_PRINT ("APC", (" modarray-loop"));
         if (INFO_APC_UNSUPPORTED (arg_info)) {
-            arg_info = AddUnsupported (arg_info, ID_TYPE (NWITHOP_ARRAY (arg_node)));
+            AddUnsupported (arg_info, ID_TYPE (NWITHOP_ARRAY (arg_node)));
         }
         break;
 
@@ -698,7 +748,7 @@ APCwithop (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APCcode(node *arg_node, node *arg_info)
+ *   node *APCcode(node *arg_node, info *arg_info)
  *
  * description:
  *   check scalar type of code result
@@ -706,7 +756,7 @@ APCwithop (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APCcode (node *arg_node, node *arg_info)
+APCcode (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("APCcode");
@@ -720,7 +770,7 @@ APCcode (node *arg_node, node *arg_info)
     /* check type of id-node */
     if (!(ID_DIM (NCODE_CEXPR (arg_node)) == 0)) {
         /* not a scalar type, so this with-loop is unsupported! */
-        arg_info = AddUnsupported (arg_info, ID_TYPE (NCODE_CEXPR (arg_node)));
+        AddUnsupported (arg_info, ID_TYPE (NCODE_CEXPR (arg_node)));
     }
 
     /* traverse code block */

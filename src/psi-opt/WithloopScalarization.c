@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.39  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.38  2004/05/05 13:49:47  ktr
  * Changed am application of DupTree into DupNode and enabled WLS in special functions.
  *
@@ -223,6 +227,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -270,10 +276,74 @@ typedef struct CODE_T {
     struct CODE_T *next;
 } code_t;
 
-/**
- * returns the current phase of WLS
+/*
+ * INFO structure
  */
-#define WLS_PHASE(n) ((wls_phase_type)INFO_WLS_PHASE (n))
+struct INFO {
+    int possible;
+    int phase;
+    node *fundef;
+    wls_phase_type parts;
+    node *withid;
+    node *withop;
+    int dims;
+    node *block;
+    node *newcodes;
+    node *newparts;
+    code_t *codetable;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_WLS_POSSIBLE(n) (n->possible)
+#define INFO_WLS_PHASE(n) (n->phase)
+#define INFO_WLS_FUNDEF(n) (n->fundef)
+#define INFO_WLS_PARTS(n) (n->parts)
+#define INFO_WLS_WITHID(n) (n->withid)
+#define INFO_WLS_WITHOP(n) (n->withop)
+#define INFO_WLS_DIMS(n) (n->dims)
+#define INFO_WLS_BLOCK(n) (n->block)
+#define INFO_WLS_NEWCODES(n) (n->newcodes)
+#define INFO_WLS_NEWPARTS(n) (n->newparts)
+#define INFO_WLS_CODETABLE(n) (n->codetable)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_WLS_POSSIBLE (result) = 0;
+    INFO_WLS_PHASE (result) = 0;
+    INFO_WLS_FUNDEF (result) = NULL;
+    INFO_WLS_PARTS (result) = 0;
+    INFO_WLS_WITHID (result) = NULL;
+    INFO_WLS_WITHOP (result) = NULL;
+    INFO_WLS_DIMS (result) = 0;
+    INFO_WLS_BLOCK (result) = NULL;
+    INFO_WLS_NEWCODES (result) = NULL;
+    INFO_WLS_NEWPARTS (result) = NULL;
+    INFO_WLS_CODETABLE (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /****************************************************************************
  *
@@ -680,7 +750,7 @@ compatWLTypes (node *outerWithOP, node *innerWithOP)
  * @return TRUE if and only if the part is able to be scalarized
  */
 node *
-probePart (node *arg_node, node *arg_info)
+probePart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("probePart");
 
@@ -782,7 +852,7 @@ probePart (node *arg_node, node *arg_info)
  *
  */
 node *
-CreateCopyWithloop (node *arg_node, node *arg_info)
+CreateCopyWithloop (node *arg_node, info *arg_info)
 {
     node *newwith;
     node *selid;
@@ -813,7 +883,7 @@ CreateCopyWithloop (node *arg_node, node *arg_info)
 }
 
 node *
-InsertCopyWithloop (node *arg_node, node *arg_info)
+InsertCopyWithloop (node *arg_node, info *arg_info)
 {
     node *assign;
     node *assid;
@@ -955,14 +1025,14 @@ CreateExprsPart (node *exprs, int *partcount, node *withid, shpseg *shppos,
 /******************************************************************************
  *
  * function:
- *   node *CreateArrayWithloop(node *array, node *arg_info)
+ *   node *CreateArrayWithloop(node *array, info *arg_info)
  *
  * description:
  *   creates a withloop with the same result as the given array.
  *
  * parameters:
  *   node *arg_node:   N_array
- *   node *arg_info:   N_INFO
+ *   info *arg_info:   N_INFO
  *
  ******************************************************************************/
 node *
@@ -1047,7 +1117,7 @@ CreateArrayWithloop (node *array, node *fundef)
 /******************************************************************************
  *
  * function:
- *   node *Array2Withloop(node *arg_node, node *arg_info)
+ *   node *Array2Withloop(node *arg_node, info *arg_info)
  *
  * description:
  *   creates an assignment for a withloop with the same result as the given
@@ -1055,11 +1125,11 @@ CreateArrayWithloop (node *array, node *fundef)
  *
  * parameters:
  *   node *arg_node:   N_node
- *   node *arg_info:   N_INFO
+ *   info *arg_info:   N_INFO
  *
  ******************************************************************************/
 node *
-Array2Withloop (node *arg_node, node *arg_info)
+Array2Withloop (node *arg_node, info *arg_info)
 {
     node *assign;
     node *assid;
@@ -1101,7 +1171,7 @@ Array2Withloop (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *insertIndexDefinition(node *arg_node, node *arg_info)
+ *   node *insertIndexDefinition(node *arg_node, info *arg_info)
  *
  * description:
  *   creates an assignment for the index vector's variables.
@@ -1110,11 +1180,11 @@ Array2Withloop (node *arg_node, node *arg_info)
  *
  * parameters:
  *   node *arg_node:   N_node
- *   node *arg_info:   N_INFO
+ *   info *arg_info:   N_INFO
  *
  ******************************************************************************/
 node *
-insertIndexDefinition (node *arg_node, node *arg_info)
+insertIndexDefinition (node *arg_node, info *arg_info)
 {
     node *assign;
     node *assid;
@@ -1134,7 +1204,7 @@ insertIndexDefinition (node *arg_node, node *arg_info)
     AddVardecs (INFO_WLS_FUNDEF (arg_info), vardec);
 
     array = MakeFlatArray (
-      MakeExprsIdChain (DupAllIds (NWITHID_IDS (INFO_WLS_WITHID (arg_node)))));
+      MakeExprsIdChain (DupAllIds (NWITHID_IDS (INFO_WLS_WITHID (arg_info)))));
 
     ARRAY_TYPE (array)
       = MakeTypes (T_int, 1,
@@ -1157,7 +1227,7 @@ insertIndexDefinition (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *withloopifyPart(node *arg_node, node *arg_info)
+ *   node *withloopifyPart(node *arg_node, info *arg_info)
  *
  * description:
  *   if a part's inner nonscalar expression is an array or reshape command
@@ -1166,11 +1236,11 @@ insertIndexDefinition (node *arg_node, node *arg_info)
  *
  * parameters:
  *   node *arg_node:   N_Npart
- *   node *arg_info:   N_INFO
+ *   info *arg_info:   N_INFO
  *
  ******************************************************************************/
 node *
-withloopifyPart (node *arg_node, node *arg_info)
+withloopifyPart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("withloopifyPart");
 
@@ -1221,7 +1291,7 @@ withloopifyPart (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *Nid2Narray(node *nid, node *arg_info)
+ *   node *Nid2Narray(node *nid, info *arg_info)
  *
  * description:
  *   converts a generator's N_id node into a N_array node and makes correct
@@ -1229,11 +1299,11 @@ withloopifyPart (node *arg_node, node *arg_info)
  *
  * parameters:
  *   node *arg_node:   N_id
- *   node *arg_info:   N_INFO
+ *   info *arg_info:   N_INFO
  *
  ******************************************************************************/
 node *
-Nid2Narray (node *nid, node *arg_info)
+Nid2Narray (node *nid, info *arg_info)
 {
     node *res;
     node *exprs = NULL;
@@ -1297,18 +1367,18 @@ Nid2Narray (node *nid, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *NormGenerator(node *gen, node *arg_info)
+ *   node *NormGenerator(node *gen, info *arg_info)
  *
  * description:
  *   ensures all of a generator's children are N_array nodes
  *
  * parameters:
  *   node *arg_node:   N_Ngenerator
- *   node *arg_info:   N_INFO
+ *   info *arg_info:   N_INFO
  *
  ******************************************************************************/
 node *
-NormGenerator (node *gen, node *arg_info)
+NormGenerator (node *gen, info *arg_info)
 {
     DBUG_ENTER ("NormGenerator");
 
@@ -1403,7 +1473,7 @@ joinGenerators (node *outerpart, node *innerpart)
 /******************************************************************************
  *
  * function:
- *   node *joinWithids(node *outerwithid, node *innerwithid, node *arg_info)
+ *   node *joinWithids(node *outerwithid, node *innerwithid, info *arg_info)
  *
  * description:
  *   Creates a new withid by concatenating the WITH_IDS-Vectors and
@@ -1415,7 +1485,7 @@ joinGenerators (node *outerpart, node *innerpart)
  *
  ******************************************************************************/
 node *
-joinWithids (node *outerwithid, node *innerwithid, node *arg_info)
+joinWithids (node *outerwithid, node *innerwithid, info *arg_info)
 {
     node *newwithid;
 
@@ -1467,7 +1537,7 @@ joinWithids (node *outerwithid, node *innerwithid, node *arg_info)
  * function:
  *   node *joinCodes(node *outercode,   node *innercode,
  *                   node *outerwithid, node *innerwithid,
- *                   node *arg_info)
+ *                   info *arg_info)
  *
  * description:
  *   Creates a new block which is nothing which consists of the concatenation
@@ -1479,12 +1549,12 @@ joinWithids (node *outerwithid, node *innerwithid, node *arg_info)
  *   node *innercode:   N_NCODE
  *   node *outerwithid: N_NWITHID
  *   node *innerwithid: N_NWITHID
- *   node *arg_info:    N_INFO
+ *   info *arg_info:    N_INFO
  *
  ******************************************************************************/
 node *
 joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithid,
-           node *newwithid, node *arg_info)
+           node *newwithid, info *arg_info)
 {
     node *newcode;
     node *tmp_node;
@@ -1588,7 +1658,7 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
 /******************************************************************************
  *
  * function:
- *   node *scalarizePart(node *outerpart, node *arg_info)
+ *   node *scalarizePart(node *outerpart, info *arg_info)
  *
  * description:
  *   The heart of the WithloopScalarization.
@@ -1598,11 +1668,11 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
  *
  * parameters:
  *   node *outerpart:   N_NPART
- *   node *arg_info:    N_INFO
+ *   info *arg_info:    N_INFO
  *
  ******************************************************************************/
 node *
-scalarizePart (node *outerpart, node *arg_info)
+scalarizePart (node *outerpart, info *arg_info)
 {
     node *newpart;
 
@@ -1678,7 +1748,7 @@ scalarizePart (node *outerpart, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLSfundef(node *arg_node, node *arg_info)
+ *   node *WLSfundef(node *arg_node, info *arg_info)
  *
  * description:
  *   This function's sole purpose is to annotate the fundes-node of the
@@ -1686,11 +1756,11 @@ scalarizePart (node *outerpart, node *arg_info)
  *
  * parameters:
  *   node *arg_node:   N_FUNDEF
- *   node *arg_info:   N_INFO
+ *   info *arg_info:   N_INFO
  *
  ******************************************************************************/
 node *
-WLSfundef (node *arg_node, node *arg_info)
+WLSfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSfundef");
 
@@ -1706,7 +1776,7 @@ WLSfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLSblock(node *arg_node, node *arg_info)
+ *   node *WLSblock(node *arg_node, info *arg_info)
  *
  * description:
  *   This function's sole purpose is to annotate N_block in which the WLS
@@ -1714,11 +1784,11 @@ WLSfundef (node *arg_node, node *arg_info)
  *
  * parameters:
  *   node *arg_node:   N_block
- *   node *arg_info:   N_INFO
+ *   info *arg_info:   N_INFO
  *
  ******************************************************************************/
 node *
-WLSblock (node *arg_node, node *arg_info)
+WLSblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSblock");
 
@@ -1734,7 +1804,7 @@ WLSblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLSNwith(node *arg_node, node *arg_info)
+ *   node *WLSNwith(node *arg_node, info *arg_info)
  *
  * description:
  *   manages the WithloopScalarization by stepping through the various phases,
@@ -1743,13 +1813,13 @@ WLSblock (node *arg_node, node *arg_info)
  *
  * parameters:
  *   node *arg_node:   N_Nwith
- *   node *arg_info:   N_INFO
+ *   info *arg_info:   N_INFO
  *
  ******************************************************************************/
 node *
-WLSNwith (node *arg_node, node *arg_info)
+WLSNwith (node *arg_node, info *arg_info)
 {
-    node *tmpnode;
+    info *tmpinfo;
     node *outerblock;
     node *withop;
     code_t *codetable;
@@ -1777,9 +1847,9 @@ WLSNwith (node *arg_node, node *arg_info)
      *
      ***************************************************************************/
 
-    tmpnode = arg_info;
+    tmpinfo = arg_info;
     arg_info = MakeInfo ();
-    INFO_WLS_FUNDEF (arg_info) = INFO_WLS_FUNDEF (tmpnode);
+    INFO_WLS_FUNDEF (arg_info) = INFO_WLS_FUNDEF (tmpinfo);
     INFO_WLS_BLOCK (arg_info) = outerblock;
 
     /* Check if WLS is possible vor all parts */
@@ -1789,7 +1859,7 @@ WLSNwith (node *arg_node, node *arg_info)
     INFO_WLS_POSSIBLE (arg_info) = (INFO_WLS_PARTS (arg_info) > 0);
 
     if (INFO_WLS_POSSIBLE (arg_info)) {
-        WLS_PHASE (arg_info) = wls_probe;
+        INFO_WLS_PHASE (arg_info) = wls_probe;
         INFO_WLS_WITHOP (arg_info) = NWITH_WITHOP (arg_node);
         INFO_WLS_DIMS (arg_info) = -1;
 
@@ -1810,7 +1880,7 @@ WLSNwith (node *arg_node, node *arg_info)
          *
          ***************************************************************************/
 
-        WLS_PHASE (arg_info) = wls_withloopification;
+        INFO_WLS_PHASE (arg_info) = wls_withloopification;
 
         if (NWITH_PART (arg_node) != NULL) {
             NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
@@ -1825,7 +1895,7 @@ WLSNwith (node *arg_node, node *arg_info)
          *
          ***************************************************************************/
 
-        WLS_PHASE (arg_info) = wls_normgen;
+        INFO_WLS_PHASE (arg_info) = wls_normgen;
 
         if (NWITH_PART (arg_node) != NULL) {
             NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
@@ -1840,7 +1910,7 @@ WLSNwith (node *arg_node, node *arg_info)
          *
          ***************************************************************************/
 
-        WLS_PHASE (arg_info) = wls_scalarize;
+        INFO_WLS_PHASE (arg_info) = wls_scalarize;
 
         INFO_WLS_WITHID (arg_info) = NULL;
 
@@ -1891,8 +1961,8 @@ WLSNwith (node *arg_node, node *arg_info)
         arg_node = correctWL (arg_node);
     }
 
-    arg_info = FreeNode (arg_info);
-    arg_info = tmpnode;
+    arg_info = FreeInfo (arg_info);
+    arg_info = tmpinfo;
 
     DBUG_RETURN (arg_node);
 }
@@ -1900,24 +1970,24 @@ WLSNwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLSNpart(node *arg_node, node *arg_info)
+ *   node *WLSNpart(node *arg_node, info *arg_info)
  *
  * description:
  *   performs the different actions that are needed to make in the four phases
  *
  * parameters:
  *   node *arg_node:   N_Npart
- *   node *arg_info:   N_INFO
+ *   info *arg_info:   N_INFO
  *
  ******************************************************************************/
 node *
-WLSNpart (node *arg_node, node *arg_info)
+WLSNpart (node *arg_node, info *arg_info)
 {
     node *innerpart;
 
     DBUG_ENTER ("WLSNpart");
 
-    switch (WLS_PHASE (arg_info)) {
+    switch (INFO_WLS_PHASE (arg_info)) {
     case wls_probe:
         arg_node = probePart (arg_node, arg_info);
 
@@ -1977,7 +2047,7 @@ WLSNpart (node *arg_node, node *arg_info)
 node *
 WithloopScalarization (node *fundef, node *modul)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("WithloopScalarization");
@@ -1998,7 +2068,7 @@ WithloopScalarization (node *fundef, node *modul)
 
     act_tab = old_tab;
 
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (fundef);
 }

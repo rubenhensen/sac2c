@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.20  2004/07/14 23:23:37  sah
  * removed all old ssa optimizations and the use_ssaform flag
  *
@@ -59,6 +63,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -79,6 +85,48 @@
 #include "generatemasks.h"
 #include "ArrayElimination.h"
 
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *types;
+    node *fundef;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_AE_TYPES(n) (n->types)
+#define INFO_AE_FUNDEF(n) (n->fundef)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_AE_TYPES (result) = NULL;
+    INFO_AE_FUNDEF (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
+
 #define AE_PREFIX "__ae_"
 #define AE_PREFIX_LENGTH 5
 
@@ -93,8 +141,9 @@
  *
  */
 node *
-ArrayElimination (node *arg_node, node *info_node)
+ArrayElimination (node *arg_node)
 {
+    info *info;
     funtab *tmp_tab;
 #ifndef DBUG_OFF
     int mem_elim_arrays = elim_arrays;
@@ -106,14 +155,17 @@ ArrayElimination (node *arg_node, node *info_node)
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
                  "ArrayElimination() called for non-fundef node");
 
+    DBUG_PRINT ("OPT",
+                ("starting array elimination on function %s", FUNDEF_NAME (arg_node)));
+
     if (!(FUNDEF_IS_LACFUN (arg_node))) {
         tmp_tab = act_tab;
         act_tab = ae_tab;
-        info_node = MakeInfo ();
+        info = MakeInfo ();
 
-        arg_node = Trav (arg_node, info_node);
+        arg_node = Trav (arg_node, info);
 
-        info_node = FreeTree (info_node);
+        info = FreeInfo (info);
         act_tab = tmp_tab;
         DBUG_PRINT ("OPT", ("                        result: %d",
                             elim_arrays - mem_elim_arrays));
@@ -228,7 +280,7 @@ GenIds (node *arg[2])
  *
  */
 node *
-GenSel (ids *ids_node, node *arg_info)
+GenSel (ids *ids_node, info *arg_info)
 {
     node *new_nodes = NULL, *new_let, *new_assign, *new_vardec;
     node *exprn;
@@ -297,7 +349,7 @@ GenSel (ids *ids_node, node *arg_info)
  *
  */
 node *
-AEprf (node *arg_node, node *arg_info)
+AEprf (node *arg_node, info *arg_info)
 {
     node *arg[2], *new_node, *tmpn;
 
@@ -342,14 +394,14 @@ AEprf (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AEfundef(node *arg_node, node *arg_info)
+ *   node *AEfundef(node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-AEfundef (node *arg_node, node *arg_info)
+AEfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AEfundef");
 
@@ -371,7 +423,7 @@ AEfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AEassign(node *arg_node, node *arg_info)
+ *   node *AEassign(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -379,7 +431,7 @@ AEfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-AEassign (node *arg_node, node *arg_info)
+AEassign (node *arg_node, info *arg_info)
 {
     node *new_nodes = NULL;
     ids *_ids;
@@ -413,7 +465,7 @@ AEassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AEcond(node *arg_node, node *arg_info)
+ *   node *AEcond(node *arg_node, info *arg_info)
  *
  * description:
  *   only needed to apply OPTTrav
@@ -422,7 +474,7 @@ AEassign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-AEcond (node *arg_node, node *arg_info)
+AEcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AEcond");
 
@@ -436,7 +488,7 @@ AEcond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AEdo(node *arg_node, node *arg_info)
+ *   node *AEdo(node *arg_node, info *arg_info)
  *
  * description:
  *   only needed to apply OPTTrav
@@ -445,7 +497,7 @@ AEcond (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-AEdo (node *arg_node, node *arg_info)
+AEdo (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AEdo");
 
@@ -458,14 +510,14 @@ AEdo (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AENwith(node *arg_node, node *arg_info)
+ *   node *AENwith(node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-AENwith (node *arg_node, node *arg_info)
+AENwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AENwith");
 
@@ -481,7 +533,7 @@ AENwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AEap(node *arg_node, node *arg_info)
+ *   node *AEap(node *arg_node, info *arg_info)
  *
  * description:
  *   starts traversal of implicit inlined special fundef
@@ -489,9 +541,9 @@ AENwith (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-AEap (node *arg_node, node *arg_info)
+AEap (node *arg_node, info *arg_info)
 {
-    node *new_arg_info;
+    info *new_arg_info;
 
     DBUG_ENTER ("AEap");
 
@@ -509,7 +561,7 @@ AEap (node *arg_node, node *arg_info)
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
 
-        new_arg_info = FreeTree (new_arg_info);
+        new_arg_info = FreeInfo (new_arg_info);
     }
     DBUG_RETURN (arg_node);
 }

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.3  2004/02/25 08:17:44  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -33,14 +37,14 @@
 
 #define _ArrayElimination_h
 
-extern node *ArrayElimination (node *arg_node, node *arg_info);
+extern node *ArrayElimination (node *arg_node);
 
-extern node *AEprf (node *arg_node, node *arg_info);
-extern node *AEfundef (node *arg_node, node *arg_info);
-extern node *AEassign (node *arg_node, node *arg_info);
-extern node *AEcond (node *arg_node, node *arg_info);
-extern node *AEdo (node *arg_node, node *arg_info);
-extern node *AENwith (node *arg_node, node *arg_info);
-extern node *AEap (node *arg_node, node *arg_info);
+extern node *AEprf (node *arg_node, info *arg_info);
+extern node *AEfundef (node *arg_node, info *arg_info);
+extern node *AEassign (node *arg_node, info *arg_info);
+extern node *AEcond (node *arg_node, info *arg_info);
+extern node *AEdo (node *arg_node, info *arg_info);
+extern node *AENwith (node *arg_node, info *arg_info);
+extern node *AEap (node *arg_node, info *arg_info);
 
 #endif /* _ArrayElimination_h */

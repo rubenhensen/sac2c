@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.6  2003/06/11 21:52:05  ktr
  * Added support for multidimensional arrays.
  *
@@ -116,6 +120,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
@@ -130,6 +136,80 @@
 #include "DupTree.h"
 #include "print.h"
 #include "tile_size_inference.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    access_t *access;
+    int accesscnt;
+    int minline;
+    int maxline;
+    int feature;
+    int wlcomp;
+    shpseg *tileshp;
+    node *indexvar;
+    node *wlarray;
+    int *cacheparam;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_TSI_ACCESS(n) (n->access)
+#define INFO_TSI_ACCESSCNT(n) (n->accesscnt)
+#define INFO_TSI_MINLINE(n) (n->minline)
+#define INFO_TSI_MAXLINE(n) (n->maxline)
+#define INFO_TSI_FEATURE(n) (n->feature)
+#define INFO_TSI_WLCOMP(n) (n->wlcomp)
+#define INFO_TSI_TILESHP(n) (n->tileshp)
+#define INFO_TSI_INDEXVAR(n) (n->indexvar)
+#define INFO_TSI_WLARRAY(n) (n->wlarray)
+#define INFO_TSI_CACHEPARAM(n) (n->cacheparam)
+
+/* compound macros */
+#define INFO_TSI_CACHESIZE(n) (INFO_TSI_CACHEPARAM (n)[0])
+#define INFO_TSI_LINESIZE(n) (INFO_TSI_CACHEPARAM (n)[1])
+#define INFO_TSI_DATATYPE(n) (INFO_TSI_CACHEPARAM (n)[2])
+#define INFO_TSI_ARRAYSHP(n) VARDEC_SHPSEG (INFO_TSI_WLARRAY (n))
+#define INFO_TSI_INDEXDIM(n) VARDEC_SHAPE (INFO_TSI_INDEXVAR (n), 0)
+#define INFO_TSI_ARRAYDIM(n) VARDEC_DIM (INFO_TSI_WLARRAY (n))
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_TSI_ACCESS (result) = NULL;
+    INFO_TSI_ACCESSCNT (result) = 0;
+    INFO_TSI_MINLINE (result) = 0;
+    INFO_TSI_MAXLINE (result) = 0;
+    INFO_TSI_FEATURE (result) = 0;
+    INFO_TSI_WLCOMP (result) = 0;
+    INFO_TSI_TILESHP (result) = NULL;
+    INFO_TSI_INDEXVAR (result) = NULL;
+    INFO_TSI_WLARRAY (result) = NULL;
+    INFO_TSI_CACHEPARAM (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 #define MINTILE 20
 
@@ -194,7 +274,7 @@ InsortByCLine (void *element, list_t *list)
  *****************************************************************************/
 
 static int
-MinDistance (list_t *acc_list, int mindist, node *arg_info)
+MinDistance (list_t *acc_list, int mindist, info *arg_info)
 {
     int cLine, cInst, NumLines, cSize, lSize, dType, NumElems, *cacheparam;
     list_t *a_list = acc_list;
@@ -244,7 +324,7 @@ MinDistance (list_t *acc_list, int mindist, node *arg_info)
  *****************************************************************************/
 
 static int
-ComputeVaddr (shpseg *access, node *arg_info)
+ComputeVaddr (shpseg *access, info *arg_info)
 {
     int vaddr, j, dim, dType, *cacheparam;
     shpseg *shape;
@@ -279,7 +359,7 @@ ComputeVaddr (shpseg *access, node *arg_info)
  *****************************************************************************/
 
 static enh_access_t *
-ComputeEnhAccess (int vaddr, node *arg_info)
+ComputeEnhAccess (int vaddr, info *arg_info)
 {
     int dim, cSize, lSize, dType, *cacheparam;
     int abscl, cline, cinst;
@@ -330,7 +410,7 @@ ComputeEnhAccess (int vaddr, node *arg_info)
  *****************************************************************************/
 
 static list_t *
-RecreateEnhAccesslist (list_t *acc_list, node *arg_info)
+RecreateEnhAccesslist (list_t *acc_list, info *arg_info)
 {
     int dim, cSize, lSize, dType, *cacheparam;
     int vaddr, aline;
@@ -392,7 +472,7 @@ RecreateEnhAccesslist (list_t *acc_list, node *arg_info)
  *****************************************************************************/
 
 static list_t *
-CreateEnhAccesslist (access_t *accesses, node *arg_info)
+CreateEnhAccesslist (access_t *accesses, info *arg_info)
 {
     int vaddr, aline, minline, maxline, dim;
     list_t *acc_list = NULL;
@@ -448,7 +528,7 @@ CreateEnhAccesslist (access_t *accesses, node *arg_info)
  *****************************************************************************/
 
 static int
-CalcTSInnerDim (list_t *acc_list, node *arg_info)
+CalcTSInnerDim (list_t *acc_list, info *arg_info)
 {
     int minline, maxline, i, dim, maxsize, tilesize;
     int *cacheparam, cSize, lSize, dType;
@@ -499,7 +579,7 @@ CalcTSInnerDim (list_t *acc_list, node *arg_info)
  *****************************************************************************/
 
 static int
-CalcTSOuterDims (list_t *acc_list, int index, node *arg_info)
+CalcTSOuterDims (list_t *acc_list, int index, info *arg_info)
 {
     int size, dim;
     shpseg *shape;
@@ -524,7 +604,7 @@ CalcTSOuterDims (list_t *acc_list, int index, node *arg_info)
  *****************************************************************************/
 
 static int
-CalcTilesize (access_t *accesses, node *arg_info)
+CalcTilesize (access_t *accesses, info *arg_info)
 {
     int tilesize, i, dim;
     list_t *acc_list;
@@ -580,7 +660,7 @@ CalcTilesize (access_t *accesses, node *arg_info)
  *****************************************************************************/
 
 static node *
-TSIMakePragmaWLComp (int tilesize, node *arg_info)
+TSIMakePragmaWLComp (int tilesize, info *arg_info)
 {
     node *pragma, *aelems;
     char *ap_name;
@@ -633,7 +713,7 @@ TSIMakePragmaWLComp (int tilesize, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *TileSizeInference(node *arg_node, node *arg_info)
+ *   node *TileSizeInference(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -647,7 +727,7 @@ TSIMakePragmaWLComp (int tilesize, node *arg_info)
 node *
 TileSizeInference (node *arg_node)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *tmp_tab;
 
     DBUG_ENTER ("TileSizeInference");
@@ -669,7 +749,7 @@ TileSizeInference (node *arg_node)
         DBUG_PRINT ("PRINT_TSI", ("No target specified. No TSI possible!"));
     }
 
-    arg_info = FreeInfo (arg_info, NULL);
+    arg_info = FreeInfo (arg_info);
     act_tab = tmp_tab;
 
     DBUG_RETURN (arg_node);
@@ -678,7 +758,7 @@ TileSizeInference (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node *TSIfundef(node *arg_node, node *arg_info)
+ *   node *TSIfundef(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -690,7 +770,7 @@ TileSizeInference (node *arg_node)
  ******************************************************************************/
 
 node *
-TSIfundef (node *arg_node, node *arg_info)
+TSIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TSIfundef");
 
@@ -714,7 +794,7 @@ TSIfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *TSIblock(node *arg_node, node *arg_info)
+ *   node *TSIblock(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -727,7 +807,7 @@ TSIfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-TSIblock (node *arg_node, node *arg_info)
+TSIblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TSIblock");
 
@@ -746,7 +826,7 @@ TSIblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *TSInwith(node *arg_node, node *arg_info)
+ *   node *TSInwith(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -756,7 +836,7 @@ TSIblock (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-TSInwith (node *arg_node, node *arg_info)
+TSInwith (node *arg_node, info *arg_info)
 {
     node *pragma;
     int *cacheparam;
@@ -813,7 +893,7 @@ TSInwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *TSIncode(node *arg_node, node *arg_info)
+ *   node *TSIncode(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -823,7 +903,7 @@ TSInwith (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-TSIncode (node *arg_node, node *arg_info)
+TSIncode (node *arg_node, info *arg_info)
 {
     int *cacheparam;
 

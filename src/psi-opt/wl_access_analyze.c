@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.11  2004/02/25 08:17:44  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -132,19 +136,19 @@
  *
  *   The following access macros are defined for the info-node:
  *
- *   INFO_WLAA_ACCESS(n)      ((access_t*)(n->info2))
- *   INFO_WLAA_COUNT(n)                   (n->counter)
- *   INFO_WLAA_FEATURE(n)     ((feature_t)(n->lineno))
- *   INFO_WLAA_WOTYPE(n)     ((WithOpType)(n->varno))
- *   INFO_WLAA_LASTLETIDS(n)              (n->info.ids)
- *   INFO_WLAA_BELOWAP(n)                 (n->flag)
- *   INFO_WLAA_WLLEVEL(n)                 (n->refcnt)
- *   INFO_WLAA_INDEXVAR(n)                (n->node[0])
- *   INFO_WLAA_ACCESSVEC(n)     ((shpseg*)(n->node[1]))     not in use
- *   INFO_WLAA_TMPACCESS(n)   ((access_t*)(n->node[2]))     not in use
- *   INFO_WLAA_WLARRAY(n)                 (n->node[3])
+ *   INFO_WLAA_ACCESS(n)
+ *   INFO_WLAA_COUNT(n)
+ *   INFO_WLAA_FEATURE(n)
+ *   INFO_WLAA_WOTYPE(n)
+ *   INFO_WLAA_LASTLETIDS(n)
+ *   INFO_WLAA_BELOWAP(n)
+ *   INFO_WLAA_WLLEVEL(n)
+ *   INFO_WLAA_INDEXVAR(n)
+ *   INFO_WLAA_WLARRAY(n)
  *
  *****************************************************************************/
+
+#define NEW_INFO
 
 #include <stdlib.h>
 #include "dbug.h"
@@ -156,6 +160,69 @@
 #include "globals.h"
 #include "Error.h"
 #include "wl_access_analyze.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    ids *lastletids;
+    access_t *access;
+    int count;
+    WithOpType wotype;
+    feature_t feature;
+    int belowap;
+    int wllevel;
+    node *indexvar;
+    node *wlarray;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_WLAA_LASTLETIDS(n) (n->lastletids)
+#define INFO_WLAA_ACCESS(n) (n->access)
+#define INFO_WLAA_COUNT(n) (n->count)
+#define INFO_WLAA_FEATURE(n) (n->feature)
+#define INFO_WLAA_WOTYPE(n) (n->wotype)
+#define INFO_WLAA_BELOWAP(n) (n->belowap)
+#define INFO_WLAA_WLLEVEL(n) (n->wllevel)
+#define INFO_WLAA_INDEXVAR(n) (n->indexvar)
+#define INFO_WLAA_WLARRAY(n) (n->wlarray)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_WLAA_LASTLETIDS (result) = NULL;
+    INFO_WLAA_ACCESS (result) = NULL;
+    INFO_WLAA_COUNT (result) = 0;
+    INFO_WLAA_FEATURE (result) = FEATURE_NONE;
+    INFO_WLAA_WOTYPE (result) = WO_unknown;
+    INFO_WLAA_BELOWAP (result) = 0;
+    INFO_WLAA_WLLEVEL (result) = 0;
+    INFO_WLAA_INDEXVAR (result) = NULL;
+    INFO_WLAA_WLARRAY (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /******************************************************************************
  *
@@ -174,7 +241,7 @@ node *
 WLAccessAnalyze (node *arg_node)
 {
     funtab *tmp_tab;
-    node *arg_info;
+    info *arg_info;
 
     DBUG_ENTER ("WLAccessAnalyze");
 
@@ -191,7 +258,7 @@ WLAccessAnalyze (node *arg_node)
 
     arg_node = Trav (arg_node, arg_info);
 
-    arg_info = FreeInfo (arg_info, NULL);
+    arg_info = FreeInfo (arg_info);
     act_tab = tmp_tab;
 
     DBUG_RETURN (arg_node);
@@ -483,7 +550,7 @@ CatAccesslists (access_t *a_list_1, access_t *a_list_2)
 /******************************************************************************
  *
  * function:
- *   access_t *SearchAccess(node *arg_info)
+ *   access_t *SearchAccess(info *arg_info)
  *
  * description:
  *   This function traverses all accesses stored in the given arg_info node.
@@ -494,7 +561,7 @@ CatAccesslists (access_t *a_list_1, access_t *a_list_2)
  ******************************************************************************/
 
 static access_t *
-SearchAccess (access_t *access, node *arg_info)
+SearchAccess (access_t *access, info *arg_info)
 {
     int found = 0;
 
@@ -515,7 +582,7 @@ SearchAccess (access_t *access, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLAAfundef(node *arg_node, node *arg_info)
+ *   node *WLAAfundef(node *arg_node, info *arg_info)
  *
  * description:
  *   Syntax tree traversal function for N_fundef node.
@@ -526,7 +593,7 @@ SearchAccess (access_t *access, node *arg_info)
  *****************************************************************************/
 
 node *
-WLAAfundef (node *arg_node, node *arg_info)
+WLAAfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLAAfundef");
 
@@ -550,7 +617,7 @@ WLAAfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLAAblock(node *arg_node, node *arg_info)
+ *   node *WLAAblock(node *arg_node, info *arg_info)
  *
  * description:
  *   Syntax tree traversal function for N_block node.
@@ -561,7 +628,7 @@ WLAAfundef (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-WLAAblock (node *arg_node, node *arg_info)
+WLAAblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLAAblock");
 
@@ -580,7 +647,7 @@ WLAAblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLAAassign(node *arg_node, node *arg_info)
+ *   node *WLAAassign(node *arg_node, info *arg_info)
  *
  * description:
  *   Syntax tree traversal function for N_assign node.
@@ -590,7 +657,7 @@ WLAAblock (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-WLAAassign (node *arg_node, node *arg_info)
+WLAAassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLAAassign");
 
@@ -610,7 +677,7 @@ WLAAassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLAAnwith(node *arg_node, node *arg_info)
+ *   node *WLAAnwith(node *arg_node, info *arg_info)
  *
  * description:
  *   Syntax tree traversal function for N_Nwith node.
@@ -626,7 +693,7 @@ WLAAassign (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-WLAAnwith (node *arg_node, node *arg_info)
+WLAAnwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLAAnwith");
 
@@ -647,7 +714,7 @@ WLAAnwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLAAncode(node *arg_node, node *arg_info)
+ *   node *WLAAncode(node *arg_node, info *arg_info)
  *
  * description:
  *   Syntax tree traversal function for N_Ncode node.
@@ -659,9 +726,9 @@ WLAAnwith (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-WLAAncode (node *arg_node, node *arg_info)
+WLAAncode (node *arg_node, info *arg_info)
 {
-    node *old_arg_info;
+    info *old_arg_info;
 
     DBUG_ENTER ("WLAAncode");
 
@@ -704,7 +771,7 @@ WLAAncode (node *arg_node, node *arg_info)
     NCODE_WLAA_ACCESS (arg_node) = INFO_WLAA_ACCESS (arg_info);
     NCODE_WLAA_FEATURE (arg_node) = INFO_WLAA_FEATURE (arg_info);
     NCODE_WLAA_ACCESSCNT (arg_node) = INFO_WLAA_COUNT (arg_info);
-    FreeInfo (arg_info, NULL);
+    arg_info = FreeInfo (arg_info);
     arg_info = old_arg_info;
 
     /*
@@ -722,7 +789,7 @@ WLAAncode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLAAdo(node *arg_node, node *arg_info)
+ *   node *WLAAdo(node *arg_node, info *arg_info)
  *
  * description:
  *   Syntax tree traversal function for N_do node.
@@ -735,7 +802,7 @@ WLAAncode (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-WLAAdo (node *arg_node, node *arg_info)
+WLAAdo (node *arg_node, info *arg_info)
 {
     access_t *old_access = NULL;
     feature_t old_feature = 0;
@@ -778,7 +845,7 @@ WLAAdo (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLAAcond(node *arg_node, node *arg_info)
+ *   node *WLAAcond(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -786,9 +853,9 @@ WLAAdo (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-WLAAcond (node *arg_node, node *arg_info)
+WLAAcond (node *arg_node, info *arg_info)
 {
-    node *then_arg_info, *else_arg_info;
+    info *then_arg_info, *else_arg_info;
     int equal_flag = TRUE;
     access_t *access;
 
@@ -854,8 +921,8 @@ WLAAcond (node *arg_node, node *arg_info)
                                        | INFO_WLAA_FEATURE (then_arg_info)
                                        | INFO_WLAA_FEATURE (else_arg_info);
 
-        else_arg_info = FreeTree (else_arg_info); /* Attention !!! */
-        then_arg_info = FreeTree (then_arg_info); /* Attention !!! */
+        else_arg_info = FreeInfo (else_arg_info); /* Attention !!! */
+        then_arg_info = FreeInfo (then_arg_info); /* Attention !!! */
     }
 
     else {
@@ -872,7 +939,7 @@ WLAAcond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLAAlet(node *arg_node, node *arg_info)
+ *   node *WLAAlet(node *arg_node, info *arg_info)
  *
  * description:
  *   Syntax tree traversal function for N_let node.
@@ -888,7 +955,7 @@ WLAAcond (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-WLAAlet (node *arg_node, node *arg_info)
+WLAAlet (node *arg_node, info *arg_info)
 {
     ids *var;
     access_t *access;
@@ -937,7 +1004,7 @@ WLAAlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLAAprf(node *arg_node, node *arg_info)
+ *   node *WLAAprf(node *arg_node, info *arg_info)
  *
  * description:
  *   Syntax tree traversal function for N_prf node.
@@ -948,7 +1015,7 @@ WLAAlet (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-WLAAprf (node *arg_node, node *arg_info)
+WLAAprf (node *arg_node, info *arg_info)
 {
     int i, argnum;
     /*
@@ -1489,7 +1556,7 @@ WLAAprf (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLAAap(node *arg_node, node *arg_info)
+ *   node *WLAAap(node *arg_node, info *arg_info)
  *
  * description:
  *   Syntax tree traversal function for N_ap node.
@@ -1504,7 +1571,7 @@ WLAAprf (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-WLAAap (node *arg_node, node *arg_info)
+WLAAap (node *arg_node, info *arg_info)
 {
     ids *ret_var;
 
@@ -1544,7 +1611,7 @@ WLAAap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLAAid(node *arg_node, node *arg_info)
+ *   node *WLAAid(node *arg_node, info *arg_info)
  *
  * description:
  *   Syntax tree traversal function for N_id node.
@@ -1556,7 +1623,7 @@ WLAAap (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-WLAAid (node *arg_node, node *arg_info)
+WLAAid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLAAid");
 

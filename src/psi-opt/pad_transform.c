@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.16  2003/11/18 17:51:20  dkr
  * NWITHOP_DEFAULT added
  *
@@ -109,6 +113,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include "dbug.h"
 
 #include "types.h"
@@ -124,6 +130,57 @@
 #include "pad_transform.h"
 
 #include "my_debug.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    bool flag;
+    int withop_type;
+    node *with;
+    node *fundef;
+    node *assignments;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_APT_EXPRESSION_PADDED(n) (n->flag)
+#define INFO_APT_WITHOP_TYPE(n) (n->withop_type)
+#define INFO_APT_WITH(n) (n->with)
+#define INFO_APT_FUNDEF(n) (n->fundef)
+#define INFO_APT_ASSIGNMENTS(n) (n->assignments)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_APT_EXPRESSION_PADDED (result) = FALSE;
+    INFO_APT_WITHOP_TYPE (result) = 0;
+    INFO_APT_WITH (result) = NULL;
+    INFO_APT_FUNDEF (result) = NULL;
+    INFO_APT_ASSIGNMENTS (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /*****************************************************************************
  *
@@ -152,7 +209,7 @@ void
 APtransform (node *arg_node)
 {
 
-    node *arg_info;
+    info *arg_info;
     funtab *tmp_tab;
 
     DBUG_ENTER ("APtransform");
@@ -166,7 +223,7 @@ APtransform (node *arg_node)
 
     arg_node = Trav (arg_node, arg_info);
 
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     act_tab = tmp_tab;
 
@@ -206,7 +263,7 @@ PadName (char *unpadded_name)
 /*****************************************************************************
  *
  * function:
- *   static node* PadIds(ids *arg, node* arg_info)
+ *   static node* PadIds(ids *arg, info *arg_info)
  *
  * description:
  *   try padding of lvalues if possible
@@ -215,8 +272,8 @@ PadName (char *unpadded_name)
  *
  *****************************************************************************/
 
-static node *
-PadIds (ids *arg, node *arg_info)
+static void
+PadIds (ids *arg, info *arg_info)
 {
 
     DBUG_ENTER ("PadIds");
@@ -239,7 +296,7 @@ PadIds (ids *arg, node *arg_info)
         /* nothing to be done for arg-nodes */
     }
 
-    DBUG_RETURN (arg_info);
+    DBUG_VOID_RETURN;
 }
 
 /*****************************************************************************
@@ -531,7 +588,7 @@ InsertWithLoopGenerator (types *oldtype, types *newtype, node *wl)
 /*****************************************************************************
  *
  * function:
- *   node *APTarg(node *arg_node, node *arg_info)
+ *   node *APTarg(node *arg_node, info *arg_info)
  *
  * description:
  *   modify arg-node to padded name and shape
@@ -539,7 +596,7 @@ InsertWithLoopGenerator (types *oldtype, types *newtype, node *wl)
  *****************************************************************************/
 
 node *
-APTarg (node *arg_node, node *arg_info)
+APTarg (node *arg_node, info *arg_info)
 {
 
     types *new_type;
@@ -573,7 +630,7 @@ APTarg (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APTvardec(node *arg_node, node *arg_info)
+ *   node *APTvardec(node *arg_node, info *arg_info)
  *
  * description:
  *   duplicate vardec to reserve unpadded shape
@@ -582,7 +639,7 @@ APTarg (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APTvardec (node *arg_node, node *arg_info)
+APTvardec (node *arg_node, info *arg_info)
 {
 
     types *new_type;
@@ -613,7 +670,7 @@ APTvardec (node *arg_node, node *arg_info)
         }
 
     } else {
-        FreeVardec (original_vardec, arg_info);
+        FreeNode (original_vardec);
         VARDEC_PADDED (arg_node) = FALSE;
 
         if (VARDEC_NEXT (arg_node) != NULL) {
@@ -627,7 +684,7 @@ APTvardec (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APTassign(node *arg_node, node *arg_info)
+ *   node *APTassign(node *arg_node, info *arg_info)
  *
  * description:
  *   insert new assignments before itself, if necessarry
@@ -636,7 +693,7 @@ APTvardec (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APTassign (node *arg_node, node *arg_info)
+APTassign (node *arg_node, info *arg_info)
 {
 
     node *tmp;
@@ -684,7 +741,7 @@ APTassign (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APTarray(node *arg_node, node *arg_info)
+ *   node *APTarray(node *arg_node, info *arg_info)
  *
  * description:
  *   constant arrays won't be padded
@@ -693,7 +750,7 @@ APTassign (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APTarray (node *arg_node, node *arg_info)
+APTarray (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("APTarray");
@@ -714,7 +771,7 @@ APTarray (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APTwith(node *arg_node, node *arg_info)
+ *   node *APTwith(node *arg_node, info *arg_info)
  *
  * description:
  *   check withop-node first, then traverse code-nodes
@@ -722,7 +779,7 @@ APTarray (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APTwith (node *arg_node, node *arg_info)
+APTwith (node *arg_node, info *arg_info)
 {
 
     node *save_ptr;
@@ -758,7 +815,7 @@ APTwith (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APTcode(node *arg_node, node *arg_info)
+ *   node *APTcode(node *arg_node, info *arg_info)
  *
  * description:
  *   apply padding to ids-attribute and traverse sons
@@ -766,7 +823,7 @@ APTwith (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APTcode (node *arg_node, node *arg_info)
+APTcode (node *arg_node, info *arg_info)
 {
 
     bool rhs_padded;
@@ -808,7 +865,7 @@ APTcode (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APTwithop(node *arg_node, node *arg_info)
+ *   node *APTwithop(node *arg_node, info *arg_info)
  *
  * description:
  *   only a dummy for now
@@ -816,7 +873,7 @@ APTcode (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APTwithop (node *arg_node, node *arg_info)
+APTwithop (node *arg_node, info *arg_info)
 {
 
     shpseg *shpseg;
@@ -921,7 +978,7 @@ APTwithop (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APTap(node *arg_node, node *arg_info)
+ *   node *APTap(node *arg_node, info *arg_info)
  *
  * description:
  *   check, if function can be padded (has body)
@@ -930,7 +987,7 @@ APTwithop (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APTap (node *arg_node, node *arg_info)
+APTap (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("APTap");
@@ -963,7 +1020,7 @@ APTap (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APTid(node *arg_node, node *arg_info)
+ *   node *APTid(node *arg_node, info *arg_info)
  *
  * description:
  *   rename node, if refering to padded vardec or arg
@@ -971,7 +1028,7 @@ APTap (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APTid (node *arg_node, node *arg_info)
+APTid (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("APTid");
@@ -1009,7 +1066,7 @@ APTid (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APTprf(node *arg_node, node *arg_info)
+ *   node *APTprf(node *arg_node, info *arg_info)
  *
  * description:
  *   only some functions supported yet
@@ -1017,7 +1074,7 @@ APTid (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APTprf (node *arg_node, node *arg_info)
+APTprf (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("APTprf");
@@ -1140,7 +1197,7 @@ APTprf (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APTfundef(node *arg_node, node *arg_info)
+ *   node *APTfundef(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse ARGS before BODY before NEXT
@@ -1148,7 +1205,7 @@ APTprf (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APTfundef (node *arg_node, node *arg_info)
+APTfundef (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("APTfundef");
@@ -1182,7 +1239,7 @@ APTfundef (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APTblock(node *arg_node, node *arg_info)
+ *   node *APTblock(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse VARDEC before INSTR
@@ -1190,7 +1247,7 @@ APTfundef (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APTblock (node *arg_node, node *arg_info)
+APTblock (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("APTblock");
@@ -1212,7 +1269,7 @@ APTblock (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APTlet(node *arg_node, node *arg_info)
+ *   node *APTlet(node *arg_node, info *arg_info)
  *
  * description:
  *   apply padding to rvalues and lvalues if necessary
@@ -1221,7 +1278,7 @@ APTblock (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APTlet (node *arg_node, node *arg_info)
+APTlet (node *arg_node, info *arg_info)
 {
 
     ids *ids_ptr;
@@ -1252,7 +1309,8 @@ APTlet (node *arg_node, node *arg_info)
     /* manually traverse ids */
     ids_ptr = LET_IDS (arg_node);
     while (ids_ptr != NULL) {
-        arg_info = PadIds (ids_ptr, arg_info);
+        /* call modifies arg_info */
+        PadIds (ids_ptr, arg_info);
         ids_ptr = IDS_NEXT (ids_ptr);
     }
 

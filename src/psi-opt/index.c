@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.56  2004/07/15 12:58:14  khf
  * IdxNcode(): new_assign initialized.
  * inserted access macros for 'arg_info' from tree_basic.h.
@@ -198,6 +202,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include <stdio.h>
 #include <string.h>
 
@@ -215,15 +221,60 @@
 #include "index.h"
 
 /*
- * access macros for 'arg_info'
+ * INFO structure
  */
-#define INFO_IVE_FUNDEF(n) (n->node[0])
-#define INFO_IVE_VARDECS(n) (n->node[1])
-#define INFO_IVE_CURRENTASSIGN(n) (n->node[2])
-#define INFO_IVE_PRE_ASSIGNS(n) (n->node[3])
-#define INFO_IVE_TRANSFORM_VINFO(n) (n->node[4])
-#define INFO_IVE_MODE(n) (n->flag)
-#define INFO_IVE_NON_SCAL_LEN(n) (n->counter)
+struct INFO {
+    node *fundef;
+    node *vardecs;
+    node *currentassign;
+    node *pre_assigns;
+    node *transform_vinfo;
+    int mode;
+    int non_scal_len;
+};
+/*
+ * INFO macros
+ */
+#define INFO_IVE_FUNDEF(n) (n->fundef)
+#define INFO_IVE_VARDECS(n) (n->vardecs)
+#define INFO_IVE_CURRENTASSIGN(n) (n->currentassign)
+#define INFO_IVE_PRE_ASSIGNS(n) (n->pre_assigns)
+#define INFO_IVE_TRANSFORM_VINFO(n) (n->transform_vinfo)
+#define INFO_IVE_MODE(n) (n->mode)
+#define INFO_IVE_NON_SCAL_LEN(n) (n->non_scal_len)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_IVE_FUNDEF (result) = NULL;
+    INFO_IVE_VARDECS (result) = NULL;
+    INFO_IVE_CURRENTASSIGN (result) = NULL;
+    INFO_IVE_PRE_ASSIGNS (result) = NULL;
+    INFO_IVE_TRANSFORM_VINFO (result) = NULL;
+    INFO_IVE_MODE (result) = 0;
+    INFO_IVE_NON_SCAL_LEN (result) = 0;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /*
  * OPEN PROBLEMS:
@@ -1406,12 +1457,12 @@ CreateVect2OffsetIcm (node *vardec, types *type)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IdxModul(node *arg_node, node *arg_info)
+ * @fn node *IdxModul(node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
 node *
-IdxModul (node *arg_node, node *arg_info)
+IdxModul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IdxModul");
 
@@ -1424,12 +1475,12 @@ IdxModul (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IdxFundef(node *arg_node, node *arg_info)
+ * @fn node *IdxFundef(node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
 node *
-IdxFundef (node *arg_node, node *arg_info)
+IdxFundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IdxFundef");
 
@@ -1477,7 +1528,7 @@ IdxFundef (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IdxArg( node *arg_node, node *arg_info)
+ * @fn node *IdxArg( node *arg_node, info *arg_info)
  *
  * @brief  Depending on the existance of arg_info, 2 different things happen:
  *   Iff (arg_info != NULL) , backrefs to the actual fundef are inserted and
@@ -1488,7 +1539,7 @@ IdxFundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-IdxArg (node *arg_node, node *arg_info)
+IdxArg (node *arg_node, info *arg_info)
 {
     node *newassign, *block, *vinfo;
     int dim;
@@ -1540,7 +1591,7 @@ IdxArg (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IdxBlock( node *arg_node, node *arg_info )
+ * @fn node *IdxBlock( node *arg_node, info *arg_info )
  *
  * @brief Make sure that the vardecs are traversed BEFORE the body!
  *   NB: this is done to initialize all int[x] / int[.] vars by DOLLAR!
@@ -1552,7 +1603,7 @@ IdxArg (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-IdxBlock (node *arg_node, node *arg_info)
+IdxBlock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IdxBlock");
 
@@ -1580,7 +1631,7 @@ IdxBlock (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IdxVardec( node *arg_node, node *arg_info )
+ * @fn node *IdxVardec( node *arg_node, info *arg_info )
  *
  * @brief
  *   if( arg_info != NULL)
@@ -1592,7 +1643,7 @@ IdxBlock (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-IdxVardec (node *arg_node, node *arg_info)
+IdxVardec (node *arg_node, info *arg_info)
 {
     int dim;
     node *next;
@@ -1648,12 +1699,12 @@ IdxVardec (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IdxAssign( node *arg_node, node *arg_info )
+ * @fn node *IdxAssign( node *arg_node, info *arg_info )
  *
  ******************************************************************************/
 
 node *
-IdxAssign (node *arg_node, node *arg_info)
+IdxAssign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IdxAssign");
 
@@ -1676,7 +1727,7 @@ IdxAssign (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IdxReturn(node *arg_node, node *arg_info)
+ * @fn node *IdxReturn(node *arg_node, info *arg_info)
  *
  * @brief initiates the uses-collection. In order to guarantee a "VECT" attribution
  *   for array-variables, INFO_IVE_TRANSFORM_VINFO( arg_info) has to be NULL,
@@ -1685,7 +1736,7 @@ IdxAssign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-IdxReturn (node *arg_node, node *arg_info)
+IdxReturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IdxReturn");
 
@@ -1699,7 +1750,7 @@ IdxReturn (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IdxLet(node *arg_node, node *arg_info)
+ * @fn node *IdxLet(node *arg_node, info *arg_info)
  *
  * @brief This is the central mechanism for steering the code transformation.
  *   It duplicates assignments - if required - and adds the transformation
@@ -1708,7 +1759,7 @@ IdxReturn (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-IdxLet (node *arg_node, node *arg_info)
+IdxLet (node *arg_node, info *arg_info)
 {
     ids *vars;
     node *vardec, *vinfo, *act_let, *newassign = NULL;
@@ -1951,7 +2002,7 @@ IdxLet (node *arg_node, node *arg_info)
  */
 
 node *
-IdxPrf (node *arg_node, node *arg_info)
+IdxPrf (node *arg_node, info *arg_info)
 {
     node *arg1, *arg2, *arg3, *vinfo;
     types *type1, *type2;
@@ -2165,7 +2216,7 @@ IdxPrf (node *arg_node, node *arg_info)
  */
 
 node *
-IdxId (node *arg_node, node *arg_info)
+IdxId (node *arg_node, info *arg_info)
 {
     types *type;
     node *vardec;
@@ -2249,7 +2300,7 @@ IdxId (node *arg_node, node *arg_info)
  */
 
 node *
-IdxArray (node *arg_node, node *arg_info)
+IdxArray (node *arg_node, info *arg_info)
 {
     shpseg *tmp_shpseg;
     types *type;
@@ -2311,7 +2362,7 @@ IdxArray (node *arg_node, node *arg_info)
  */
 
 node *
-IdxNum (node *arg_node, node *arg_info)
+IdxNum (node *arg_node, info *arg_info)
 {
     int val, i, len_iv, dim_array, sum;
     types *type;
@@ -2346,12 +2397,12 @@ IdxNum (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IdxNwith( node *arg_node, node *arg_info)
+ * @fn node *IdxNwith( node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
 node *
-IdxNwith (node *arg_node, node *arg_info)
+IdxNwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IdxNwith");
 
@@ -2369,7 +2420,7 @@ IdxNwith (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IdxNpart( node *arg_node, node *arg_info)
+ * @fn node *IdxNpart( node *arg_node, info *arg_info)
  *
  * @brief Here we make sure that all parts of the generator will be traversed
  *    correctly. Furthermore, we eliminate superfluous generator vars
@@ -2378,7 +2429,7 @@ IdxNwith (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-IdxNpart (node *arg_node, node *arg_info)
+IdxNpart (node *arg_node, info *arg_info)
 {
     node *decl, *mem_transform;
 
@@ -2432,14 +2483,14 @@ IdxNpart (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IdxNcode( node *arg_node, node *arg_info)
+ * @fn node *IdxNcode( node *arg_node, info *arg_info)
  *
  * @brief arg_info points to the previous N_let node!
  *
  ******************************************************************************/
 
 node *
-IdxNcode (node *arg_node, node *arg_info)
+IdxNcode (node *arg_node, info *arg_info)
 {
     node *with, *idx_decl, *vinfo, *col_vinfo, *new_assign, *let_node, *current_assign,
       *new_id, *array_id, *tmp_withop;
@@ -2608,12 +2659,12 @@ IdxNcode (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IdxCond( node *arg_node, node *arg_info)
+ * @fn node *IdxCond( node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
 node *
-IdxCond (node *arg_node, node *arg_info)
+IdxCond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IdxCond");
 
@@ -2637,12 +2688,12 @@ IdxCond (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IdxDo( node *arg_node, node *arg_info)
+ * @fn node *IdxDo( node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
 node *
-IdxDo (node *arg_node, node *arg_info)
+IdxDo (node *arg_node, info *arg_info)
 {
     int old_uses_mode;
 
@@ -2701,7 +2752,7 @@ node *
 IndexVectorElimination (node *syntax_tree)
 {
     funtab *tmp_tab;
-    node *info_node;
+    info *info;
 
     DBUG_ENTER ("IndexVectorElimination");
 
@@ -2713,10 +2764,10 @@ IndexVectorElimination (node *syntax_tree)
     tmp_tab = act_tab;
     act_tab = idx_tab;
 
-    info_node = MakeInfo ();
-    syntax_tree = Trav (syntax_tree, info_node);
+    info = MakeInfo ();
+    syntax_tree = Trav (syntax_tree, info);
 
-    info_node = FreeTree (info_node);
+    info = FreeInfo (info);
     act_tab = tmp_tab;
 
     NOTE (("  %d index-vector(s) eliminated", ive_expr));

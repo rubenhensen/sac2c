@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.7  2002/06/26 20:33:48  ktr
  * #define _WLS_ removed
  *
@@ -30,9 +34,9 @@
 
 extern node *WithloopScalarization (node *fundef, node *modul);
 
-extern node *WLSfundef (node *arg_node, node *arg_info);
-extern node *WLSNwith (node *arg_node, node *arg_info);
-extern node *WLSNpart (node *arg_node, node *arg_info);
-extern node *WLSblock (node *arg_node, node *arg_info);
+extern node *WLSfundef (node *arg_node, info *arg_info);
+extern node *WLSNwith (node *arg_node, info *arg_info);
+extern node *WLSNpart (node *arg_node, info *arg_info);
+extern node *WLSblock (node *arg_node, info *arg_info);
 
 #endif

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.3  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.2  2003/03/12 23:40:25  dkr
  * SSAWLTNwithop added
  *
@@ -12,16 +16,16 @@
 #ifndef _SSAWLT_h
 #define _SSAWLT_h
 
-extern node *SSAWLTfundef (node *, node *);
-extern node *SSAWLTassign (node *, node *);
-extern node *SSAWLTcond (node *, node *);
-extern node *SSAWLTlet (node *, node *);
-extern node *SSAWLTap (node *, node *);
+extern node *SSAWLTfundef (node *, info *);
+extern node *SSAWLTassign (node *, info *);
+extern node *SSAWLTcond (node *, info *);
+extern node *SSAWLTlet (node *, info *);
+extern node *SSAWLTap (node *, info *);
 
-extern node *SSAWLTNwith (node *, node *);
-extern node *SSAWLTNwithop (node *, node *);
-extern node *SSAWLTNpart (node *, node *);
-extern node *SSAWLTNgenerator (node *, node *);
-extern node *SSAWLTNcode (node *, node *);
+extern node *SSAWLTNwith (node *, info *);
+extern node *SSAWLTNwithop (node *, info *);
+extern node *SSAWLTNpart (node *, info *);
+extern node *SSAWLTNgenerator (node *, info *);
+extern node *SSAWLTNcode (node *, info *);
 
 #endif

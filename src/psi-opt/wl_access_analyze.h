@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.2  2004/02/25 08:17:44  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -50,16 +54,16 @@
 
 extern node *WLAccessAnalyze (node *arg_node);
 
-extern node *WLAAfundef (node *arg_node, node *arg_info);
-extern node *WLAAblock (node *arg_node, node *arg_info);
-extern node *WLAAnwith (node *arg_node, node *arg_info);
-extern node *WLAAncode (node *arg_node, node *arg_info);
-extern node *WLAAassign (node *arg_node, node *arg_info);
-extern node *WLAAlet (node *arg_node, node *arg_info);
-extern node *WLAAap (node *arg_node, node *arg_info);
-extern node *WLAAid (node *arg_node, node *arg_info);
-extern node *WLAAdo (node *arg_node, node *arg_info);
-extern node *WLAAcond (node *arg_node, node *arg_info);
-extern node *WLAAprf (node *arg_node, node *arg_info);
+extern node *WLAAfundef (node *arg_node, info *arg_info);
+extern node *WLAAblock (node *arg_node, info *arg_info);
+extern node *WLAAnwith (node *arg_node, info *arg_info);
+extern node *WLAAncode (node *arg_node, info *arg_info);
+extern node *WLAAassign (node *arg_node, info *arg_info);
+extern node *WLAAlet (node *arg_node, info *arg_info);
+extern node *WLAAap (node *arg_node, info *arg_info);
+extern node *WLAAid (node *arg_node, info *arg_info);
+extern node *WLAAdo (node *arg_node, info *arg_info);
+extern node *WLAAcond (node *arg_node, info *arg_info);
+extern node *WLAAprf (node *arg_node, info *arg_info);
 
 #endif /* _wl_access_analyze_h  */

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.2  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.1  2000/11/20 18:01:54  sacbase
  * new release made
  *
@@ -57,18 +61,18 @@
 
 extern void APtransform ();
 
-extern node *APTarg (node *arg_node, node *arg_info);
-extern node *APTvardec (node *arg_node, node *arg_info);
-extern node *APTassign (node *arg_node, node *arg_info);
-extern node *APTarray (node *arg_node, node *arg_info);
-extern node *APTwith (node *arg_node, node *arg_info);
-extern node *APTcode (node *arg_node, node *arg_info);
-extern node *APTwithop (node *arg_node, node *arg_info);
-extern node *APTap (node *arg_node, node *arg_info);
-extern node *APTid (node *arg_node, node *arg_info);
-extern node *APTprf (node *arg_node, node *arg_info);
-extern node *APTfundef (node *arg_node, node *arg_info);
-extern node *APTblock (node *arg_node, node *arg_info);
-extern node *APTlet (node *arg_node, node *arg_info);
+extern node *APTarg (node *arg_node, info *arg_info);
+extern node *APTvardec (node *arg_node, info *arg_info);
+extern node *APTassign (node *arg_node, info *arg_info);
+extern node *APTarray (node *arg_node, info *arg_info);
+extern node *APTwith (node *arg_node, info *arg_info);
+extern node *APTcode (node *arg_node, info *arg_info);
+extern node *APTwithop (node *arg_node, info *arg_info);
+extern node *APTap (node *arg_node, info *arg_info);
+extern node *APTid (node *arg_node, info *arg_info);
+extern node *APTprf (node *arg_node, info *arg_info);
+extern node *APTfundef (node *arg_node, info *arg_info);
+extern node *APTblock (node *arg_node, info *arg_info);
+extern node *APTlet (node *arg_node, info *arg_info);
 
 #endif /* sac_pad_transform_h */

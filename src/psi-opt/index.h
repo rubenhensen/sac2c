@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.2  2004/02/25 08:17:44  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -65,22 +69,22 @@ extern node *IndexVectorElimination (node *syntax_tree);
 
 extern char *IdxChangeId (char *varname, types *type);
 
-extern node *IdxModul (node *arg_node, node *arg_info);
-extern node *IdxFundef (node *arg_node, node *arg_info);
-extern node *IdxBlock (node *arg_node, node *arg_info);
-extern node *IdxVardec (node *arg_node, node *arg_info);
-extern node *IdxArg (node *arg_node, node *arg_info);
-extern node *IdxAssign (node *arg_node, node *arg_info);
-extern node *IdxReturn (node *arg_node, node *arg_info);
-extern node *IdxLet (node *arg_node, node *arg_info);
-extern node *IdxPrf (node *arg_node, node *arg_info);
-extern node *IdxId (node *arg_node, node *arg_info);
-extern node *IdxNum (node *arg_node, node *arg_info);
-extern node *IdxArray (node *arg_node, node *arg_info);
-extern node *IdxNwith (node *arg_node, node *arg_info);
-extern node *IdxNpart (node *arg_node, node *arg_info);
-extern node *IdxNcode (node *arg_node, node *arg_info);
-extern node *IdxCond (node *arg_node, node *arg_info);
-extern node *IdxDo (node *arg_node, node *arg_info);
+extern node *IdxModul (node *arg_node, info *arg_info);
+extern node *IdxFundef (node *arg_node, info *arg_info);
+extern node *IdxBlock (node *arg_node, info *arg_info);
+extern node *IdxVardec (node *arg_node, info *arg_info);
+extern node *IdxArg (node *arg_node, info *arg_info);
+extern node *IdxAssign (node *arg_node, info *arg_info);
+extern node *IdxReturn (node *arg_node, info *arg_info);
+extern node *IdxLet (node *arg_node, info *arg_info);
+extern node *IdxPrf (node *arg_node, info *arg_info);
+extern node *IdxId (node *arg_node, info *arg_info);
+extern node *IdxNum (node *arg_node, info *arg_info);
+extern node *IdxArray (node *arg_node, info *arg_info);
+extern node *IdxNwith (node *arg_node, info *arg_info);
+extern node *IdxNpart (node *arg_node, info *arg_info);
+extern node *IdxNcode (node *arg_node, info *arg_info);
+extern node *IdxCond (node *arg_node, info *arg_info);
+extern node *IdxDo (node *arg_node, info *arg_info);
 
 #endif /* sac_index_h */

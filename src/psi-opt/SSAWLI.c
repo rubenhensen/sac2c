@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.14  2004/03/26 13:02:12  khf
  * Attribute NWITH_FOLDABLE is set in SSAWLI now,
  * therefor SSAWLINgenerator added
@@ -81,7 +85,8 @@
  - node[3]: FUNDEF  : pointer to last fundef node. needed to access vardecs.
  - counter: FOLDABLE: indicates if current withloop is foldable or not
  ******************************************************************************/
-#define INFO_WLI_FOLDABLE(n) (n->counter)
+
+#define NEW_INFO
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -101,6 +106,59 @@
 #include "SSAConstantFolding.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLI.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    info *next;
+    node *wl;
+    node *assign;
+    node *fundef;
+    int foldable;
+};
+
+/*
+ * INFO macros
+ */
+
+#define INFO_SSAWLI_NEXT(n) (n->next)
+#define INFO_SSAWLI_WL(n) (n->wl)
+#define INFO_SSAWLI_ASSIGN(n) (n->assign)
+#define INFO_SSAWLI_FUNDEF(n) (n->fundef)
+#define INFO_SSAWLI_FOLDABLE(n) (n->foldable)
+
+/*
+ * INFO functions
+ */
+
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_SSAWLI_NEXT (result) = NULL;
+    INFO_SSAWLI_WL (result) = NULL;
+    INFO_SSAWLI_ASSIGN (result) = NULL;
+    INFO_SSAWLI_FUNDEF (result) = NULL;
+    INFO_SSAWLI_FOLDABLE (result) = 0;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /******************************************************************************
  *
@@ -156,7 +214,7 @@ SimplifyFun (prf prf)
 /******************************************************************************
  *
  * function:
- *   node *CheckArrayFoldable(node *indexn, node *idn, node *arg_info)
+ *   node *CheckArrayFoldable(node *indexn, node *idn, info *arg_info)
  *
  * description:
  *   This function checks whether the application of sel(indexn,idn) inside
@@ -169,7 +227,7 @@ SimplifyFun (prf prf)
  *
  ******************************************************************************/
 static node *
-CheckArrayFoldable (node *indexn, node *idn, node *arg_info)
+CheckArrayFoldable (node *indexn, node *idn, info *arg_info)
 {
     node *substn = NULL, *thisn;
 
@@ -177,14 +235,14 @@ CheckArrayFoldable (node *indexn, node *idn, node *arg_info)
     DBUG_ASSERT (N_id == NODE_TYPE (indexn), ("Wrong nodetype for indexn"));
     DBUG_ASSERT (N_id == NODE_TYPE (idn), ("Wrong nodetype for idn"));
 
-    thisn = INFO_WLI_WL (arg_info);
+    thisn = INFO_SSAWLI_WL (arg_info);
     if (NWITH_FOLDABLE (thisn)) {
         substn = ID_WL (idn);
 
 #if 0
     /* ID_WL has been set in SSAWLIid called by SSAWLIlet before */
     if (substn == NULL) {
-      substn = SSAStartSearchWL( idn, INFO_WLI_ASSIGN( arg_info), 1);
+      substn = SSAStartSearchWL( idn, INFO_SSAWLI_ASSIGN( arg_info), 1);
       ID_WL(idn) = substn;
     }
 #endif
@@ -296,7 +354,7 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
 /******************************************************************************
  *
  * function:
- *   int CreateIndexInfoId(node *idn, node *arg_info)
+ *   int CreateIndexInfoId(node *idn, info *arg_info)
  *
  * description:
  *   creates an index_info from an Id. This could be an index vector, an
@@ -306,7 +364,7 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
  *
  ******************************************************************************/
 static int
-CreateIndexInfoId (node *idn, node *arg_info)
+CreateIndexInfoId (node *idn, info *arg_info)
 {
     index_info *iinfo;
     node *assignn, *wln;
@@ -314,8 +372,8 @@ CreateIndexInfoId (node *idn, node *arg_info)
 
     DBUG_ENTER ("CreateIndexInfoId");
 
-    assignn = INFO_WLI_ASSIGN (arg_info);
-    wln = INFO_WLI_WL (arg_info);
+    assignn = INFO_SSAWLI_ASSIGN (arg_info);
+    wln = INFO_SSAWLI_WL (arg_info);
 
     DBUG_ASSERT (!SSAINDEX (assignn), ("index_info already assigned"));
 
@@ -351,7 +409,7 @@ CreateIndexInfoId (node *idn, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   void CreateIndexInfoSxS(node *prfn, node *arg_info)
+ *   void CreateIndexInfoSxS(node *prfn, info *arg_info)
  *
  * description:
  *   checks if application of the prfn is a valid transformation in
@@ -359,7 +417,7 @@ CreateIndexInfoId (node *idn, node *arg_info)
  *
  ******************************************************************************/
 static void
-CreateIndexInfoSxS (node *prfn, node *arg_info)
+CreateIndexInfoSxS (node *prfn, info *arg_info)
 {
     int id_no = 0, index_var = 0;
     index_info *iinfo;
@@ -367,8 +425,8 @@ CreateIndexInfoSxS (node *prfn, node *arg_info)
 
     DBUG_ENTER (" CreateIndexInfoSxS");
 
-    assignn = INFO_WLI_ASSIGN (arg_info);
-    wln = INFO_WLI_WL (arg_info);
+    assignn = INFO_SSAWLI_ASSIGN (arg_info);
+    wln = INFO_SSAWLI_WL (arg_info);
 
     /* CF has been done, so we just search for an Id and a constant.
        Since we do not want to practice constant folding here we ignore
@@ -418,7 +476,7 @@ CreateIndexInfoSxS (node *prfn, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   void CreateIndexInfoA(node *prfn, node *arg_info)
+ *   void CreateIndexInfoA(node *prfn, info *arg_info)
  *
  * description:
  *   checks if application of the prfn is a valid transformation in
@@ -438,7 +496,7 @@ CreateIndexInfoSxS (node *prfn, node *arg_info)
  *
  ******************************************************************************/
 static void
-CreateIndexInfoA (node *prfn, node *arg_info)
+CreateIndexInfoA (node *prfn, info *arg_info)
 {
     int elts, i, index;
     int val = 0;
@@ -451,8 +509,8 @@ CreateIndexInfoA (node *prfn, node *arg_info)
 
     DBUG_ENTER (" CreateIndexInfoA");
 
-    assignn = INFO_WLI_ASSIGN (arg_info);
-    wln = INFO_WLI_WL (arg_info);
+    assignn = INFO_SSAWLI_ASSIGN (arg_info);
+    wln = INFO_SSAWLI_WL (arg_info);
 
     const1 = COAST2Constant (PRF_ARG1 (prfn));
     const2 = COAST2Constant (PRF_ARG2 (prfn));
@@ -574,19 +632,19 @@ CreateIndexInfoA (node *prfn, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLIfundef( node *arg_node, node *arg_info)
+ *   node *SSAWLIfundef( node *arg_node, info *arg_info)
  *
  * description:
  *   start WLI traversal..
  *
  ******************************************************************************/
 node *
-SSAWLIfundef (node *arg_node, node *arg_info)
+SSAWLIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLIfundef");
 
-    INFO_WLI_WL (arg_info) = NULL;
-    INFO_WLI_FUNDEF (arg_info) = arg_node;
+    INFO_SSAWLI_WL (arg_info) = NULL;
+    INFO_SSAWLI_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
@@ -598,18 +656,18 @@ SSAWLIfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLIassign(node *arg_node, node *arg_info)
+ *   node *SSAWLIassign(node *arg_node, info *arg_info)
  *
  * description:
  *   set arg_info to remember this N_assign node and traverse instruction
  *
  ******************************************************************************/
 node *
-SSAWLIassign (node *arg_node, node *arg_info)
+SSAWLIassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLIassign");
 
-    INFO_WLI_ASSIGN (arg_info) = arg_node;
+    INFO_SSAWLI_ASSIGN (arg_info) = arg_node;
 
     if (SSAINDEX (arg_node) != NULL) {
         /* this is important. Only index transformations
@@ -631,14 +689,14 @@ SSAWLIassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLIcond(node *arg_node, node *arg_info)
+ *   node *SSAWLIcond(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse conditional parts in the given order.
  *
  ******************************************************************************/
 node *
-SSAWLIcond (node *arg_node, node *arg_info)
+SSAWLIcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLIcond");
 
@@ -652,7 +710,7 @@ SSAWLIcond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLIap(node *arg_node, node *arg_info)
+ *   node *SSAWLIap(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse args
@@ -660,9 +718,9 @@ SSAWLIcond (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSAWLIap (node *arg_node, node *arg_info)
+SSAWLIap (node *arg_node, info *arg_info)
 {
-    node *new_arg_info;
+    info *new_arg_info;
     funtab *tmp_tab;
 
     DBUG_ENTER ("SSAWLTap");
@@ -674,7 +732,7 @@ SSAWLIap (node *arg_node, node *arg_info)
     /* non-recursive call of special fundef
      */
     if ((AP_FUNDEF (arg_node) != NULL) && (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
-        && (INFO_WLI_FUNDEF (arg_info) != AP_FUNDEF (arg_node))) {
+        && (INFO_SSAWLI_FUNDEF (arg_info) != AP_FUNDEF (arg_node))) {
 
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
@@ -692,7 +750,7 @@ SSAWLIap (node *arg_node, node *arg_info)
 
         act_tab = tmp_tab;
 
-        new_arg_info = FreeTree (new_arg_info);
+        new_arg_info = FreeInfo (new_arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -701,7 +759,7 @@ SSAWLIap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLIid(node *arg_node, node *arg_info)
+ *   node *SSAWLIid(node *arg_node, info *arg_info)
  *
  * description:
  *   If this Id is a reference to a WL (N_Nwith) we want to increment
@@ -710,7 +768,7 @@ SSAWLIap (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSAWLIid (node *arg_node, node *arg_info)
+SSAWLIid (node *arg_node, info *arg_info)
 {
     node *assignn;
 
@@ -735,7 +793,7 @@ SSAWLIid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLIlet(node *arg_node, node *arg_info)
+ *   node *SSAWLIlet(node *arg_node, info *arg_info)
  *
  * description:
  *   We are interested in prf applications. This may be transformations of
@@ -746,7 +804,7 @@ SSAWLIid (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSAWLIlet (node *arg_node, node *arg_info)
+SSAWLIlet (node *arg_node, info *arg_info)
 {
     node *exprn, *tmpn, *old_assignn;
     prf prf;
@@ -754,12 +812,12 @@ SSAWLIlet (node *arg_node, node *arg_info)
     DBUG_ENTER ("SSAWLIlet");
 
     /* traverse sons first so that ID_WL of every Id is defined (or NULL). */
-    old_assignn = INFO_WLI_ASSIGN (arg_info);
+    old_assignn = INFO_SSAWLI_ASSIGN (arg_info);
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-    INFO_WLI_ASSIGN (arg_info) = old_assignn;
+    INFO_SSAWLI_ASSIGN (arg_info) = old_assignn;
 
     /* if we are inside a WL we have to search for valid index transformations. */
-    if (INFO_WLI_WL (arg_info)) {
+    if (INFO_SSAWLI_WL (arg_info)) {
         /* if this is a prf, we are interrested in transformations like +,*,-,/
            and in indexing (F_sel). */
         exprn = LET_EXPR (arg_node);
@@ -815,8 +873,8 @@ SSAWLIlet (node *arg_node, node *arg_info)
                     tmpn
                       = CheckArrayFoldable (PRF_ARG1 (exprn), PRF_ARG2 (exprn), arg_info);
                     if (!tmpn) {
-                        SSAINDEX (INFO_WLI_ASSIGN (arg_info))
-                          = FreeIndexInfo (SSAINDEX (INFO_WLI_ASSIGN (arg_info)));
+                        SSAINDEX (INFO_SSAWLI_ASSIGN (arg_info))
+                          = FreeIndexInfo (SSAINDEX (INFO_SSAWLI_ASSIGN (arg_info)));
                     }
                 }
                 break;
@@ -836,8 +894,8 @@ SSAWLIlet (node *arg_node, node *arg_info)
 
         /* The let expr still may be a construction of a vector (without a prf). */
         if (N_array == NODE_TYPE (exprn)) {
-            SSAINDEX (INFO_WLI_ASSIGN (arg_info))
-              = Scalar2ArrayIndex (exprn, INFO_WLI_WL (arg_info));
+            SSAINDEX (INFO_SSAWLI_ASSIGN (arg_info))
+              = Scalar2ArrayIndex (exprn, INFO_SSAWLI_WL (arg_info));
         }
 
     } /* is this a WL? */
@@ -848,7 +906,7 @@ SSAWLIlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLINwith(node *arg_node, node *arg_info)
+ *   node *SSAWLINwith(node *arg_node, info *arg_info)
  *
  * description:
  *   start gathering information for this WL.
@@ -857,22 +915,23 @@ SSAWLIlet (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSAWLINwith (node *arg_node, node *arg_info)
+SSAWLINwith (node *arg_node, info *arg_info)
 {
     node *tmpn;
+    info *tmpi;
 
     DBUG_ENTER ("SSAWLINwith");
 
     /* inside the body of this WL we may find another WL. So we better
        save the old arg_info information. */
-    tmpn = MakeInfo ();
-    INFO_WLI_FUNDEF (tmpn) = INFO_WLI_FUNDEF (arg_info);
-    INFO_WLI_ASSIGN (tmpn) = INFO_WLI_ASSIGN (arg_info);
-    INFO_WLI_NEXT (tmpn) = arg_info;
-    arg_info = tmpn;
+    tmpi = MakeInfo ();
+    INFO_SSAWLI_FUNDEF (tmpi) = INFO_SSAWLI_FUNDEF (arg_info);
+    INFO_SSAWLI_ASSIGN (tmpi) = INFO_SSAWLI_ASSIGN (arg_info);
+    INFO_SSAWLI_NEXT (tmpi) = arg_info;
+    arg_info = tmpi;
 
     /* initialize WL traversal */
-    INFO_WLI_WL (arg_info) = arg_node; /* store the current node for later */
+    INFO_SSAWLI_WL (arg_info) = arg_node; /* store the current node for later */
     tmpn = NWITH_CODE (arg_node);
     while (tmpn) { /* reset traversal flag for each code */
         NCODE_FLAG (tmpn) = FALSE;
@@ -884,7 +943,7 @@ SSAWLINwith (node *arg_node, node *arg_info)
     NWITH_REFERENCES_FOLDED (arg_node) = 0;
 
     /* initialize determination of FOLDABLE */
-    INFO_WLI_FOLDABLE (arg_info) = TRUE;
+    INFO_SSAWLI_FOLDABLE (arg_info) = TRUE;
 
     /* traverse all parts (and implicitely bodies) */
     DBUG_PRINT ("WLI", ("searching code of  WL in line %d", NODE_LINE (arg_node)));
@@ -893,7 +952,7 @@ SSAWLINwith (node *arg_node, node *arg_info)
     }
     DBUG_PRINT ("WLI", ("searching done"));
 
-    NWITH_FOLDABLE (arg_node) = INFO_WLI_FOLDABLE (arg_info);
+    NWITH_FOLDABLE (arg_node) = INFO_SSAWLI_FOLDABLE (arg_info);
 
     /* traverse N_Nwithop */
     if (NWITH_WITHOP (arg_node) != NULL) {
@@ -901,9 +960,9 @@ SSAWLINwith (node *arg_node, node *arg_info)
     }
 
     /* restore arg_info */
-    tmpn = arg_info;
-    arg_info = INFO_WLI_NEXT (arg_info);
-    tmpn = FreeTree (tmpn);
+    tmpi = arg_info;
+    arg_info = INFO_SSAWLI_NEXT (arg_info);
+    tmpi = FreeInfo (tmpi);
 
     DBUG_RETURN (arg_node);
 }
@@ -911,7 +970,7 @@ SSAWLINwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLINwithop(node *arg_node, node *arg_info)
+ *   node *SSAWLINwithop(node *arg_node, info *arg_info)
  *
  * description:
  *   if op is modarray we have to check whether the base array Id can be
@@ -919,7 +978,7 @@ SSAWLINwith (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSAWLINwithop (node *arg_node, node *arg_info)
+SSAWLINwithop (node *arg_node, info *arg_info)
 {
     node *substn;
 
@@ -928,7 +987,7 @@ SSAWLINwithop (node *arg_node, node *arg_info)
     arg_node = TravSons (arg_node, arg_info);
 
     if ((WO_modarray == NWITHOP_TYPE (arg_node))
-        && NWITH_FOLDABLE (INFO_WLI_WL (arg_info))) {
+        && NWITH_FOLDABLE (INFO_SSAWLI_WL (arg_info))) {
         substn = ID_WL (NWITHOP_ARRAY (arg_node));
         /*
          * we just traversed through the sons so SSAWLIid for NWITHOP_ARRAY
@@ -945,14 +1004,14 @@ SSAWLINwithop (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLINpart(node *arg_node, node *arg_info)
+ *   node *SSAWLINpart(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse appropriate body.
  *
  ******************************************************************************/
 node *
-SSAWLINpart (node *arg_node, node *arg_info)
+SSAWLINpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLINpart");
 
@@ -975,29 +1034,29 @@ SSAWLINpart (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLINgenerator( node *arg_node, node *arg_info)
+ *   node *SSAWLINgenerator( node *arg_node, info *arg_info)
  *
  * description:
  *   checks whether borders, step and width are constant. The result is stored
- *   in INFO_WLI_FOLDABLE( arg_info).
+ *   in INFO_SSAWLI_FOLDABLE( arg_info).
  *
  ******************************************************************************/
 node *
-SSAWLINgenerator (node *arg_node, node *arg_info)
+SSAWLINgenerator (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLINgenerator");
 
-    INFO_WLI_FOLDABLE (arg_info)
-      = INFO_WLI_FOLDABLE (arg_info) && COIsConstant (NGEN_BOUND1 (arg_node));
-    INFO_WLI_FOLDABLE (arg_info)
-      = INFO_WLI_FOLDABLE (arg_info) && COIsConstant (NGEN_BOUND2 (arg_node));
+    INFO_SSAWLI_FOLDABLE (arg_info)
+      = INFO_SSAWLI_FOLDABLE (arg_info) && COIsConstant (NGEN_BOUND1 (arg_node));
+    INFO_SSAWLI_FOLDABLE (arg_info)
+      = INFO_SSAWLI_FOLDABLE (arg_info) && COIsConstant (NGEN_BOUND2 (arg_node));
 
     if (NGEN_STEP (arg_node) != NULL) {
-        INFO_WLI_FOLDABLE (arg_info)
-          = INFO_WLI_FOLDABLE (arg_info) && COIsConstant (NGEN_STEP (arg_node));
+        INFO_SSAWLI_FOLDABLE (arg_info)
+          = INFO_SSAWLI_FOLDABLE (arg_info) && COIsConstant (NGEN_STEP (arg_node));
         if (NGEN_WIDTH (arg_node) != NULL) {
-            INFO_WLI_FOLDABLE (arg_info)
-              = INFO_WLI_FOLDABLE (arg_info) && COIsConstant (NGEN_WIDTH (arg_node));
+            INFO_SSAWLI_FOLDABLE (arg_info)
+              = INFO_SSAWLI_FOLDABLE (arg_info) && COIsConstant (NGEN_WIDTH (arg_node));
         }
     } else {
         DBUG_ASSERT ((NGEN_WIDTH (arg_node) == NULL), "width vector without step vector");
@@ -1009,14 +1068,14 @@ SSAWLINgenerator (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLINcode( node *arg_node, node *arg_info)
+ *   node *SSAWLINcode( node *arg_node, info *arg_info)
  *
  * description:
  *   marks this N_Ncode node as processed and enters the code block.
  *
  ******************************************************************************/
 node *
-SSAWLINcode (node *arg_node, node *arg_info)
+SSAWLINcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLINcode");
 

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2004/07/19 14:19:38  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.30  2004/05/11 14:27:44  ktr
  * bug fix of the bug fix :)
  *
@@ -127,17 +131,18 @@
  *******************************************************************************
 
  Usage of arg_info:
- - node[0]: NEXT   : store old information in nested WLs
- - node[1]: WL     : reference to base node of current WL (N_Nwith)
- - node[2]: ASSIGN : always the last N_assign node
- - node[3]: FUNDEF : pointer to last fundef node. needed to access vardecs.
- - node[4]: LET    : pointer to N_let node of current WL.
-                     LET_EXPR(ID) == INFO_WLI_WL.
- - node[5]: REPLACE: if != NULL, replace WL with this node.
+ - NEXT   : store old information in nested WLs
+ - WL     : reference to base node of current WL (N_Nwith)
+ - ASSIGN : always the last N_assign node
+ - FUNDEF : pointer to last fundef node. needed to access vardecs.
+ - LET    : pointer to N_let node of current WL.
+            LET_EXPR(ID) == INFO_SSAWLT_WL.
+ - REPLACE: if != NULL, replace WL with this node.
+ - GENPROP: ???
 
  ******************************************************************************/
 
-#define INFO_WLT_GENPROP(n) (n->counter)
+#define NEW_INFO
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -156,6 +161,63 @@
 #include "SSAConstantFolding.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLT.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    info *next;
+    node *wl;
+    node *assign;
+    node *fundef;
+    node *let;
+    node *replace;
+    int genprop;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_SSAWLT_GENPROP(n) (n->genprop)
+#define INFO_SSAWLT_NEXT(n) (n->next)
+#define INFO_SSAWLT_WL(n) (n->wl)
+#define INFO_SSAWLT_ASSIGN(n) (n->assign)
+#define INFO_SSAWLT_FUNDEF(n) (n->fundef)
+#define INFO_SSAWLT_LET(n) (n->let)
+#define INFO_SSAWLT_REPLACE(n) (n->replace)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_SSAWLT_GENPROP (result) = 0;
+    INFO_SSAWLT_NEXT (result) = NULL;
+    INFO_SSAWLT_WL (result) = NULL;
+    INFO_SSAWLT_ASSIGN (result) = NULL;
+    INFO_SSAWLT_FUNDEF (result) = NULL;
+    INFO_SSAWLT_LET (result) = NULL;
+    INFO_SSAWLT_REPLACE (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 typedef enum { GPT_empty, GPT_full, GPT_partial, GPT_unknown } gen_prop_t;
 
@@ -358,7 +420,7 @@ check_genarray_full_part (node *wln)
 /******************************************************************************
  *
  * function:
- *   node *CreateFullPartition( node *wln, node *arg_info)
+ *   node *CreateFullPartition( node *wln, info *arg_info)
  *
  * description:
  *   generates full partition if possible:
@@ -374,7 +436,7 @@ check_genarray_full_part (node *wln)
  ******************************************************************************/
 
 static node *
-CreateFullPartition (node *wln, node *arg_info)
+CreateFullPartition (node *wln, info *arg_info)
 {
     node *coden, *idn;
     ids *_ids;
@@ -496,12 +558,13 @@ CreateFullPartition (node *wln, node *arg_info)
             /* create a zero of the correct type */
             if (sbs == 1) {
                 if (NWITHOP_DEFAULT (NWITH_WITHOP (wln)) == NULL) {
-                    coden = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
+                    coden
+                      = CreateZeroFromType (type, FALSE, INFO_SSAWLT_FUNDEF (arg_info));
                 } else {
                     coden = DupTree (NWITHOP_DEFAULT (NWITH_WITHOP (wln)));
                 }
             } else {
-                coden = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
+                coden = CreateZeroFromType (type, FALSE, INFO_SSAWLT_FUNDEF (arg_info));
             }
         } else { /* modarray */
             /*
@@ -511,13 +574,13 @@ CreateFullPartition (node *wln, node *arg_info)
              *    sel( iv, A)   ->   idx_sel( ..., A)
              */
             coden = CreateSel (NWITH_VEC (wln), NWITH_IDS (wln), NWITH_ARRAY (wln), FALSE,
-                               INFO_WLI_FUNDEF (arg_info));
+                               INFO_SSAWLT_FUNDEF (arg_info));
         }
         varname = TmpVar ();
         _ids = MakeIds (varname, NULL, ST_regular);
         IDS_VARDEC (_ids)
           = SSACreateVardec (varname, type,
-                             &(FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info))));
+                             &(FUNDEF_VARDEC (INFO_SSAWLT_FUNDEF (arg_info))));
         /* varname is duplicated here (own mem) */
         idn = MakeId (StringCopy (varname), NULL, ST_regular);
         ID_VARDEC (idn) = IDS_VARDEC (_ids);
@@ -555,7 +618,7 @@ CreateFullPartition (node *wln, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CreateEmptyGenWLReplacement( node *wl, node *arg_info)
+ *   node *CreateEmptyGenWLReplacement( node *wl, info *arg_info)
  *
  * description:
  *   computes the replacement for the given WL under the assumption that
@@ -575,7 +638,7 @@ CreateFullPartition (node *wln, node *arg_info)
  ******************************************************************************/
 
 node *
-CreateEmptyGenWLReplacement (node *wl, node *arg_info)
+CreateEmptyGenWLReplacement (node *wl, info *arg_info)
 {
     ids *let_ids;
     int dim, i;
@@ -596,7 +659,7 @@ CreateEmptyGenWLReplacement (node *wl, node *arg_info)
         /*
          * First, we change the generator to full scope.
          */
-        let_ids = LET_IDS (INFO_WLI_LET (arg_info));
+        let_ids = LET_IDS (INFO_SSAWLT_LET (arg_info));
         dim = GetDim (IDS_TYPE (let_ids));
         lb = NWITH_BOUND1 (wl);
         ub = NWITH_BOUND2 (wl);
@@ -643,13 +706,13 @@ CreateEmptyGenWLReplacement (node *wl, node *arg_info)
                 varname = TmpVar ();
                 _ids = MakeIds (varname, NULL, ST_regular);
                 /* determine type of expr in the operator (result of body) */
-                type = ID_TYPE (NWITH_CEXPR (INFO_WLI_WL (arg_info)));
+                type = ID_TYPE (NWITH_CEXPR (INFO_SSAWLT_WL (arg_info)));
                 IDS_VARDEC (_ids)
                   = SSACreateVardec (varname, type,
-                                     &(FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info))));
+                                     &(FUNDEF_VARDEC (INFO_SSAWLT_FUNDEF (arg_info))));
                 IDS_AVIS (_ids) = VARDEC_AVIS (IDS_VARDEC (_ids));
 
-                tmpn = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
+                tmpn = CreateZeroFromType (type, FALSE, INFO_SSAWLT_FUNDEF (arg_info));
 
                 /* replace N_empty with new assignment "_ids = [0,..,0]" */
                 assignn = MakeAssign (MakeLet (tmpn, _ids), NULL);
@@ -662,7 +725,7 @@ CreateEmptyGenWLReplacement (node *wl, node *arg_info)
                 idn = MakeId (StringCopy (varname), NULL, ST_regular);
                 ID_VARDEC (idn) = IDS_VARDEC (_ids);
                 ID_AVIS (idn) = IDS_AVIS (_ids);
-                tmpn = NWITH_CODE (INFO_WLI_WL (arg_info));
+                tmpn = NWITH_CODE (INFO_SSAWLT_WL (arg_info));
                 NCODE_CEXPR (tmpn) = FreeTree (NCODE_CEXPR (tmpn));
                 NCODE_CEXPR (tmpn) = idn;
 
@@ -679,8 +742,8 @@ CreateEmptyGenWLReplacement (node *wl, node *arg_info)
                 _ids = LET_IDS (ASSIGN_INSTR (assignn));
                 type = IDS_TYPE (_ids);
 
-                tmpn = CreateZeroFromType (type, FALSE, INFO_WLI_FUNDEF (arg_info));
-                NCODE_FLAG (NWITH_CODE (INFO_WLI_WL (arg_info))) = TRUE;
+                tmpn = CreateZeroFromType (type, FALSE, INFO_SSAWLT_FUNDEF (arg_info));
+                NCODE_FLAG (NWITH_CODE (INFO_SSAWLT_WL (arg_info))) = TRUE;
 
                 LET_EXPR (ASSIGN_INSTR (assignn)) = tmpn;
             }
@@ -916,7 +979,7 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
 /******************************************************************************
  *
  * function:
- *   node *CheckOptimizeSel( node *sel, node *arg_info)
+ *   node *CheckOptimizeSel( node *sel, info *arg_info)
  *
  * description:
  *   checks if 'sel' is an application with index vector and constant. If
@@ -928,7 +991,7 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
  ******************************************************************************/
 
 static node *
-CheckOptimizeSel (node *sel, node *arg_info)
+CheckOptimizeSel (node *sel, info *arg_info)
 {
     int index;
     node *ivn, *indexn, *datan;
@@ -936,7 +999,7 @@ CheckOptimizeSel (node *sel, node *arg_info)
 
     DBUG_ENTER ("CheckOptimizeSel");
 
-    while ((arg_info != NULL) && (INFO_WLI_WL (arg_info) != NULL)) {
+    while ((arg_info != NULL) && (INFO_SSAWLT_WL (arg_info) != NULL)) {
         /* first check if the array is the index vector and the index is a
            constant in range. */
         ivn = PRF_ARG2 (sel);
@@ -956,11 +1019,11 @@ CheckOptimizeSel (node *sel, node *arg_info)
 
         if (datan && (N_array == NODE_TYPE (datan))
             && (N_num == NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (datan))))
-            && (-1 == SSALocateIndexVar (ivn, INFO_WLI_WL (arg_info)))) {
+            && (-1 == SSALocateIndexVar (ivn, INFO_SSAWLT_WL (arg_info)))) {
             index = NUM_VAL (EXPRS_EXPR (ARRAY_AELEMS (datan)));
 
             /* find index'th scalar index var */
-            _ids = NWITH_IDS (INFO_WLI_WL (arg_info));
+            _ids = NWITH_IDS (INFO_SSAWLT_WL (arg_info));
             while (index > 0 && IDS_NEXT (_ids)) {
                 index--;
                 _ids = IDS_NEXT (_ids);
@@ -976,7 +1039,7 @@ CheckOptimizeSel (node *sel, node *arg_info)
             }
         }
 
-        arg_info = INFO_WLI_NEXT (arg_info);
+        arg_info = INFO_SSAWLT_NEXT (arg_info);
     }
 
     DBUG_RETURN (sel);
@@ -985,7 +1048,7 @@ CheckOptimizeSel (node *sel, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CheckOptimizeArray( node *array, node *arg_info)
+ *   node *CheckOptimizeArray( node *array, info *arg_info)
  *
  * description:
  *   Checks if array is constructed from all scalar index variables
@@ -998,7 +1061,7 @@ CheckOptimizeSel (node *sel, node *arg_info)
  ******************************************************************************/
 
 static node *
-CheckOptimizeArray (node *array, node *arg_info)
+CheckOptimizeArray (node *array, info *arg_info)
 {
     int elts;
     ids *_ids;
@@ -1009,16 +1072,16 @@ CheckOptimizeArray (node *array, node *arg_info)
 
     DBUG_ASSERT ((N_array == NODE_TYPE (array)), "no N_array node");
 
-    while ((arg_info != NULL) && (INFO_WLI_WL (arg_info) != NULL)) {
+    while ((arg_info != NULL) && (INFO_SSAWLT_WL (arg_info) != NULL)) {
         /* shape of index vector */
-        _ids = NWITH_VEC (INFO_WLI_WL (arg_info));
+        _ids = NWITH_VEC (INFO_SSAWLT_WL (arg_info));
 
         if (GetShapeDim (IDS_TYPE (_ids)) >= 0) {
             tmpn = ARRAY_AELEMS (array);
             elts = 0;
             while (tmpn) {
                 if ((N_id == NODE_TYPE (EXPRS_EXPR (tmpn)))
-                    && (SSALocateIndexVar (EXPRS_EXPR (tmpn), INFO_WLI_WL (arg_info))
+                    && (SSALocateIndexVar (EXPRS_EXPR (tmpn), INFO_SSAWLT_WL (arg_info))
                         == elts + 1)) {
                     elts++;
                     tmpn = EXPRS_NEXT (tmpn);
@@ -1040,7 +1103,7 @@ CheckOptimizeArray (node *array, node *arg_info)
             }
         }
 
-        arg_info = INFO_WLI_NEXT (arg_info);
+        arg_info = INFO_SSAWLT_NEXT (arg_info);
     }
 
     DBUG_RETURN (array);
@@ -1049,7 +1112,7 @@ CheckOptimizeArray (node *array, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLTfundef(node *arg_node, node *arg_info)
+ *   node *SSAWLTfundef(node *arg_node, info *arg_info)
  *
  * description:
  *   starts the traversal of the given fundef
@@ -1057,12 +1120,12 @@ CheckOptimizeArray (node *array, node *arg_info)
  ******************************************************************************/
 
 node *
-SSAWLTfundef (node *arg_node, node *arg_info)
+SSAWLTfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLTfundef");
 
-    INFO_WLI_WL (arg_info) = NULL;
-    INFO_WLI_FUNDEF (arg_info) = arg_node;
+    INFO_SSAWLT_WL (arg_info) = NULL;
+    INFO_SSAWLT_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node)) {
         FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
@@ -1074,7 +1137,7 @@ SSAWLTfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLTassign(node *arg_node, node *arg_info)
+ *   node *SSAWLTassign(node *arg_node, info *arg_info)
  *
  * description:
  *   store actual assign node in arg_info and traverse instruction
@@ -1082,11 +1145,11 @@ SSAWLTfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SSAWLTassign (node *arg_node, node *arg_info)
+SSAWLTassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLTassign");
 
-    INFO_WLI_ASSIGN (arg_info) = arg_node;
+    INFO_SSAWLT_ASSIGN (arg_info) = arg_node;
 
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -1100,7 +1163,7 @@ SSAWLTassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLTcond(node *arg_node, node *arg_info)
+ *   node *SSAWLTcond(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse sons in the given order, can possibly replaced by TravSons
@@ -1108,7 +1171,7 @@ SSAWLTassign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SSAWLTcond (node *arg_node, node *arg_info)
+SSAWLTcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLTcond");
 
@@ -1122,7 +1185,7 @@ SSAWLTcond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLTap(node *arg_node, node *arg_info)
+ *   node *SSAWLTap(node *arg_node, info *arg_info)
  *
  * description:
  *   1. traverse args
@@ -1131,9 +1194,9 @@ SSAWLTcond (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SSAWLTap (node *arg_node, node *arg_info)
+SSAWLTap (node *arg_node, info *arg_info)
 {
-    node *new_arg_info;
+    info *new_arg_info;
 
     DBUG_ENTER ("SSAWLTap");
 
@@ -1143,7 +1206,7 @@ SSAWLTap (node *arg_node, node *arg_info)
 
     /* non-recursive call of special fundef */
     if ((AP_FUNDEF (arg_node) != NULL) && (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
-        && (INFO_WLI_FUNDEF (arg_info) != AP_FUNDEF (arg_node))) {
+        && (INFO_SSAWLT_FUNDEF (arg_info) != AP_FUNDEF (arg_node))) {
 
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
@@ -1151,7 +1214,7 @@ SSAWLTap (node *arg_node, node *arg_info)
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
 
-        new_arg_info = FreeTree (new_arg_info);
+        new_arg_info = FreeInfo (new_arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1160,7 +1223,7 @@ SSAWLTap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLTlet(node *arg_node, node *arg_info)
+ *   node *SSAWLTlet(node *arg_node, info *arg_info)
  *
  * description:
  *   the following occurences are searched and replaced (iv=[i,j,k]):
@@ -1174,13 +1237,13 @@ SSAWLTap (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SSAWLTlet (node *arg_node, node *arg_info)
+SSAWLTlet (node *arg_node, info *arg_info)
 {
     node *tmpn;
 
     DBUG_ENTER ("SSAWLTlet");
 
-    if (INFO_WLI_WL (arg_info)) {
+    if (INFO_SSAWLT_WL (arg_info)) {
         /*
          * if we are inside a WL we have to look for
          *   1:  ..= sel(a1,a2)  where a1 may be a const vec and a2 iv.
@@ -1225,7 +1288,7 @@ SSAWLTlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLTNwith(node *arg_node, node *arg_info)
+ *   node *SSAWLTNwith(node *arg_node, info *arg_info)
  *
  * description:
  *   start traversal of this WL and store information in new arg_info node.
@@ -1237,9 +1300,9 @@ SSAWLTlet (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SSAWLTNwith (node *arg_node, node *arg_info)
+SSAWLTNwith (node *arg_node, info *arg_info)
 {
-    node *tmpn;
+    info *tmpi;
     bool replace_wl = FALSE;
 
     DBUG_ENTER ("SSAWLTNwith");
@@ -1258,8 +1321,8 @@ SSAWLTNwith (node *arg_node, node *arg_info)
         /*
          * initialize WL traversal
          */
-        INFO_WLI_WL (arg_info) = arg_node; /* store the current node for later */
-        INFO_WLI_LET (arg_info) = ASSIGN_INSTR (INFO_WLI_ASSIGN (arg_info));
+        INFO_SSAWLT_WL (arg_info) = arg_node; /* store the current node for later */
+        INFO_SSAWLT_LET (arg_info) = ASSIGN_INSTR (INFO_SSAWLT_ASSIGN (arg_info));
 
         NWITH_FOLDABLE (arg_node) = TRUE;
 
@@ -1268,7 +1331,7 @@ SSAWLTNwith (node *arg_node, node *arg_info)
          * Besides minor changes in the generator, two values are computed
          * during this traversal:
          *
-         *  NWITH_FOLDABLE( arg_node)   and  INFO_WLT_GENPROP(arg_info) !!
+         *  NWITH_FOLDABLE( arg_node)   and  INFO_SSAWLT_GENPROP(arg_info) !!
          */
         if (NWITH_PART (arg_node) != NULL) {
             DBUG_ASSERT ((NPART_NEXT (NWITH_PART (arg_node)) == NULL),
@@ -1276,11 +1339,11 @@ SSAWLTNwith (node *arg_node, node *arg_info)
             NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
         }
 
-        if (INFO_WLT_GENPROP (arg_info) == GPT_empty) {
+        if (INFO_SSAWLT_GENPROP (arg_info) == GPT_empty) {
             arg_node = CreateEmptyGenWLReplacement (arg_node, arg_info);
             replace_wl = TRUE;
 
-        } else if (INFO_WLT_GENPROP (arg_info) == GPT_full) {
+        } else if (INFO_SSAWLT_GENPROP (arg_info) == GPT_full) {
             NWITH_PARTS (arg_node) = 1;
             if (NWITH_TYPE (arg_node) == WO_genarray) {
                 if (NWITH_DEFAULT (arg_node) != NULL) {
@@ -1288,7 +1351,7 @@ SSAWLTNwith (node *arg_node, node *arg_info)
                 }
             }
 
-        } else if ((INFO_WLT_GENPROP (arg_info) == GPT_partial)
+        } else if ((INFO_SSAWLT_GENPROP (arg_info) == GPT_partial)
                    && NWITH_FOLDABLE (arg_node)) {
             arg_node = CreateFullPartition (arg_node, arg_info);
         }
@@ -1305,11 +1368,11 @@ SSAWLTNwith (node *arg_node, node *arg_info)
          * As the index vector optimizations need to have access to ALL genvars,
          * we have to stack the arg_info before traversing the code chain!
          */
-        tmpn = MakeInfo ();
-        INFO_WLI_FUNDEF (tmpn) = INFO_WLI_FUNDEF (arg_info);
-        INFO_WLI_ASSIGN (tmpn) = INFO_WLI_ASSIGN (arg_info);
-        INFO_WLI_NEXT (tmpn) = arg_info;
-        arg_info = tmpn;
+        tmpi = MakeInfo ();
+        INFO_SSAWLT_FUNDEF (tmpi) = INFO_SSAWLT_FUNDEF (arg_info);
+        INFO_SSAWLT_ASSIGN (tmpi) = INFO_SSAWLT_ASSIGN (arg_info);
+        INFO_SSAWLT_NEXT (tmpi) = arg_info;
+        arg_info = tmpi;
 
         if (NWITH_CODE (arg_node) != NULL) {
             NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
@@ -1318,13 +1381,13 @@ SSAWLTNwith (node *arg_node, node *arg_info)
         /*
          * pop arg_info again!
          */
-        tmpn = arg_info;
-        arg_info = INFO_WLI_NEXT (arg_info);
-        tmpn = Free (tmpn);
+        tmpi = arg_info;
+        arg_info = INFO_SSAWLT_NEXT (arg_info);
+        tmpi = FreeInfo (tmpi);
     }
 
-    INFO_WLI_WL (arg_info) = NULL;
-    INFO_WLI_LET (arg_info) = NULL;
+    INFO_SSAWLT_WL (arg_info) = NULL;
+    INFO_SSAWLT_LET (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -1332,7 +1395,7 @@ SSAWLTNwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLTNwithop( node *arg_node, node *arg_info)
+ *   node *SSAWLTNwithop( node *arg_node, info *arg_info)
  *
  * description:
  *   Substitutes NWITHOP_SHAPE into the N_Nwithop node.
@@ -1340,7 +1403,7 @@ SSAWLTNwith (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SSAWLTNwithop (node *arg_node, node *arg_info)
+SSAWLTNwithop (node *arg_node, info *arg_info)
 {
     bool is_const;
 
@@ -1379,7 +1442,7 @@ SSAWLTNwithop (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLTNpart(node *arg_node, node *arg_info)
+ *   node *SSAWLTNpart(node *arg_node, info *arg_info)
  *
  * description:
  *   1. traverse generator to propagate arrays,
@@ -1388,7 +1451,7 @@ SSAWLTNwithop (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SSAWLTNpart (node *arg_node, node *arg_info)
+SSAWLTNpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLTNpart");
 
@@ -1404,7 +1467,7 @@ SSAWLTNpart (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLTNgenerator(node *arg_node, node *arg_info)
+ *   node *SSAWLTNgenerator(node *arg_node, info *arg_info)
  *
  * description:
  *   bounds, step and width vectors are substituted into the generator.
@@ -1412,7 +1475,7 @@ SSAWLTNpart (node *arg_node, node *arg_info)
  *   to FALSE.
  *   Generators that surmount the array bounds (like [-5,3] or [11,10] >
  *   [maxdim1,maxdim2] = [10,10]) are changed to fitting gens.
- *   Via INFO_WLT_GENPROP( arg_info) the status of the generator is
+ *   Via INFO_SSAWLT_GENPROP( arg_info) the status of the generator is
  *   returned. Possible values are (poss. ambiguities are resolved top
  *   to bottom):
  *     GPT_empty   : the generator is empty!
@@ -1424,7 +1487,7 @@ SSAWLTNpart (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SSAWLTNgenerator (node *arg_node, node *arg_info)
+SSAWLTNgenerator (node *arg_node, info *arg_info)
 {
     node *wln;
     ids *let_ids;
@@ -1434,7 +1497,7 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("SSAWLTNgenerator");
 
-    wln = INFO_WLI_WL (arg_info);
+    wln = INFO_SSAWLT_WL (arg_info);
     /*
      * First, we try to propagate (structural) constants into all sons:
      */
@@ -1457,7 +1520,7 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
     /**
      * find out the generator properties:
      */
-    let_ids = LET_IDS (INFO_WLI_LET (arg_info));
+    let_ids = LET_IDS (INFO_SSAWLT_LET (arg_info));
 
     if (GetShapeDim (IDS_TYPE (let_ids)) >= 0) {
         shp = SHOldTypes2Shape (IDS_TYPE (let_ids));
@@ -1471,7 +1534,7 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
         res = ComputeGeneratorProperties (wln, NULL);
     }
 
-    INFO_WLT_GENPROP (arg_info) = res;
+    INFO_SSAWLT_GENPROP (arg_info) = res;
 
     DBUG_RETURN (arg_node);
 }
@@ -1479,7 +1542,7 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLTNcode( node *arg_node, node *arg_info)
+ *   node *SSAWLTNcode( node *arg_node, info *arg_info)
  *
  * description:
  *   marks this N_Ncode node as processed and enters the code block.
@@ -1487,7 +1550,7 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SSAWLTNcode (node *arg_node, node *arg_info)
+SSAWLTNcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLTNcode");
 
