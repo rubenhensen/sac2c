@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.121  2002/10/07 04:48:07  dkr
+ * PrintAST(): NWITHOP_TYPE added
+ *
  * Revision 3.120  2002/09/13 23:22:50  dkr
  * PrintLet(): bug fixed
  *
@@ -3417,6 +3420,8 @@ PrintNgenerator (node *arg_node, node *arg_info)
         DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NWITH (arg_info)) == N_Nwith),
                      "INFO_PRINT_NWITH is no N_Nwith node");
 
+        DBUG_ASSERT ((NWITH_WITHID (INFO_PRINT_NWITH (arg_info)) != NULL),
+                     "NWITH_WITHID not found!");
         Trav (NWITH_WITHID (INFO_PRINT_NWITH (arg_info)), arg_info);
     } else {
         fprintf (outfile, "?");
@@ -5057,8 +5062,22 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_Nwithop:
             fprintf (outfile, "(");
 
-            if (NWITHOP_FUNDEF (arg_node) != NULL) {
-                fprintf (outfile, "%s", FUNDEF_NAME (NWITHOP_FUNDEF (arg_node)));
+            if (NWITHOP_TYPE (arg_node) == WO_foldprf) {
+                fprintf (outfile, "foldprf: %s", prf_string[NWITHOP_PRF (arg_node)]);
+            } else if (NWITHOP_TYPE (arg_node) == WO_foldfun) {
+                fprintf (outfile, "foldfun: ");
+                if (NWITHOP_FUNDEF (arg_node) != NULL) {
+                    fprintf (outfile, "%s", FUNDEF_NAME (NWITHOP_FUNDEF (arg_node)));
+                    PRINT_POINTER_BRACKETS (outfile, NWITHOP_FUNDEF (arg_node));
+                } else {
+                    fprintf (outfile, "?");
+                }
+            } else if (NWITHOP_TYPE (arg_node) == WO_genarray) {
+                fprintf (outfile, "genarray");
+            } else {
+                DBUG_ASSERT ((NWITHOP_TYPE (arg_node) == WO_modarray),
+                             "illegal NWITHOP_TYPE found!");
+                fprintf (outfile, "modarray");
             }
 
             fprintf (outfile, ")");
