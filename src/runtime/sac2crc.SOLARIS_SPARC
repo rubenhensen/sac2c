@@ -309,44 +309,43 @@ target picard::ultra2_entr4000:
 target idefix:: ultra2_entr450:
 
 
-
 /*******************************************************************************
  *
  * Specific machine targets using Sun cc
  *
  */
 
-target tummy_cc::suncc::sparc_5:
+target tummy_cc::suncc::tummy:
 
 CCFLAGS        +=  "-xtarget=ultra2i -xcache=16/32/1:2048/64/1"
 
 
-target cheops_cc::suncc::sparc_20_61:
+target cheops_cc::suncc::cheops:
 
 CCFLAGS        +=  "-xtarget=ultra2i -xcache=16/32/1:2048/64/1"
 
 
-target twice_cc::suncc::sparc_20_71:
+target twice_cc::suncc::twice:
 
 CCFLAGS        +=  "-xtarget=ss20/71"
 
 
-target dali_cc::suncc::ultra2:
+target dali_cc::suncc::dali:
 
 CCFLAGS        +=  "-xtarget=ultra2i"
 
 
-target blitz_cc::suncc::ultra_entr3000:
+target blitz_cc::suncc::blitz:
 
 CCFLAGS        +=  "-xtarget=ultra -xcache=16/32/1:512/64/1"
 
 
-target picard_cc::suncc::ultra2_entr4000:
+target picard_cc::suncc::picard:
 
 CCFLAGS        +=  "-xtarget=ultra2 -xcache=16/32/1:1024/64/1"
 
 
-target idefix_cc::suncc::ultra2_entr450:
+target idefix_cc::suncc::idefix:
 
 CCFLAGS        +=  "-xtarget=ultra2 -xcache=16/32/1:4096/64/1"
 
