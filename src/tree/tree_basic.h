@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.230  2004/10/20 08:04:09  khf
+ * removed NWITH_FUSIONABLE_WL, NWITH_REFERENCES_FUSIONABLE
+ * added NWITH_MTO_OFFSET_NEEDED, NCODE_RESOLVEABLE_DEPEND
+ *
  * Revision 3.229  2004/10/19 14:03:25  sah
  * added CreateIds
  *
@@ -3866,8 +3870,7 @@ extern node *MakeMTalloc ();
  ***    bool       FOLDABLE              (wlt -> wlf !!)
  ***    bool       NO_CHANCE             (wlt -> wlf !!)
  ***    bool       DEPENDENT             (wlfs !!)
- ***    node*      FUSIONABLE_WL         (wlfs !!)
- ***    nodelist*  REFERENCES_FUSIONABLE (wlfs !!)
+ ***    bool       MTO_OFFSET_NEEDED     (wlfs -> compile)
  ***    ids*       DEC_RC_IDS            (refcount -> wltransform !!)
  ***
  ***    DFMmask_t  IN_MASK            (infer_dfms -> lac2fun -> wltransform !!)
@@ -3890,8 +3893,7 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_FOLDABLE(n) (((wl_info *)((n)->info2))->foldable)
 #define NWITH_NO_CHANCE(n) (((wl_info *)((n)->info2))->no_chance)
 #define NWITH_DEPENDENT(n) (((wl_info *)((n)->info2))->dependent)
-#define NWITH_FUSIONABLE_WL(n) (((wl_info *)((n)->info2))->fusionable_wl)
-#define NWITH_REFERENCES_FUSIONABLE(n) (((wl_info *)((n)->info2))->references_fusionable)
+#define NWITH_MTO_OFFSET_NEEDED(n) (((wl_info *)((n)->info2))->mto_offset_needed)
 
 #define NWITH_IN_MASK(n) ((n)->dfmask[0])
 #define NWITH_OUT_MASK(n) ((n)->dfmask[1])
@@ -4069,6 +4071,7 @@ extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
  ***    node *     USE         (N_vinfo)   (IVE -> )
  ***    bool       FLAG                    (WLI -> WLF)
  ***    ids*       INC_RC_IDS              (refcount -> compile -> )
+ ***    bool       RESOLVEABLE_DEPEND      (wlfs !!)
  ***
  ***    node*      WLAA_INFO(n)            (wlaa -> )
  ***    access_t*  WLAA_ACCESS             (wlaa -> )
@@ -4080,6 +4083,7 @@ extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
  ***    shpseg*    TSI_TILESHP(n)          (tsi  -> )
  ***
  ***    bool       AP_DUMMY_CODE           (ap -> wltransform -> compile -> )
+ ***
  ***
  ***  remarks:
  ***
@@ -4121,6 +4125,7 @@ extern node *MakeNCode (node *block, node *exprs);
 #define NCODE_USED(n) ((n)->info.cint)
 #define NCODE_ID(n) ((n)->refcnt)
 #define NCODE_FLAG(n) ((bool)((n)->flag))
+#define NCODE_RESOLVEABLE_DEPEND(n) ((bool)((n)->varno))
 
 #define NCODE_WLAA_INFO(n) ((access_info_t *)((n)->info2))
 
