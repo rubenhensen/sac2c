@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2001/04/30 12:03:04  nmw
+ * PrintFundef does not print zombie fundefs in code generation at all
+ *
  * Revision 3.56  2001/04/27 14:21:31  nmw
  * PrintFundef does not longer print code of zombie fundefs to
  * header- or separate files of modules
@@ -1233,9 +1236,7 @@ PrintFundef (node *arg_node, node *arg_info)
     INFO_PRINT_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_STATUS (arg_node) == ST_zombiefun) {
-        if ((INFO_PRINT_SEPARATE (arg_info) == FALSE)
-            && (INFO_PRINT_PROTOTYPE (arg_info) == FALSE)) {
-            /* do not print zombie code in header files, do not generate separate files */
+        if (compiler_phase < PH_genccode) {
             fprintf (outfile, "/*\n");
             INDENT;
             fprintf (outfile, " * zombie function:\n");
@@ -1245,6 +1246,8 @@ PrintFundef (node *arg_node, node *arg_info)
             fprintf (outfile, "\n");
             INDENT;
             fprintf (outfile, " */\n\n");
+        } else {
+            /* do not print zombie code in header files, do not generate separate files */
         }
     } else {
 
