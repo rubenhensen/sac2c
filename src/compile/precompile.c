@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.103  2004/11/27 02:12:42  ktr
+ * string.h
+ *
  * Revision 3.102  2004/11/27 00:16:00  ktr
  * New barebones precompile.
  *
@@ -18,7 +21,7 @@
 #include "type_conversions.h"
 #include "renameidentifiers.h"
 
-#include <strcmp.h>
+#include <string.h>
 
 /******************************************************************************
  *
@@ -105,6 +108,9 @@ DONE:
 /*
  *
  * $Log$
+ * Revision 3.103  2004/11/27 02:12:42  ktr
+ * string.h
+ *
  * Revision 3.102  2004/11/27 00:16:00  ktr
  * New barebones precompile.
  *
