@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/04/13 14:01:48  cg
+ * added function DupBlock for duplication of N_block nodes.
+ *
  * Revision 2.2  1999/02/25 10:59:39  bs
  * N_Array: DupTypes changed to DupArray.
  *
@@ -291,7 +294,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_block, "N_block", TravSons, FltnBlock, PrintBlock, TCblock, GNMblock, TravSons,
-       TravSons, FreeBlock, TravSons, RCblock, COMPBlock, TravSons, DupChain, TravSons,
+       TravSons, FreeBlock, TravSons, RCblock, COMPBlock, TravSons, DupBlock, TravSons,
        TravSons, LIRMblock, TravSons, TravSons, TravSons, TravSons,
 
        PrintBlock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, UNQblock,

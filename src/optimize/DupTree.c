@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/04/13 14:01:48  cg
+ * added function DupBlock for duplication of N_block nodes.
+ *
  * Revision 2.5  1999/03/15 18:55:43  dkr
  * some modifications made (for CC)
  *
@@ -113,253 +116,6 @@
  * Revision 1.80  1998/05/06 12:24:17  dkr
  * insert access macros
  *
- * Revision 1.79  1998/04/30 12:38:34  dkr
- * changed DupNwith2: duplicates masks
- *
- * Revision 1.78  1998/04/30 12:22:16  srs
- * removed duplication of NWITHOP_EXPR in DupNwithop()
- *
- * Revision 1.77  1998/04/29 17:13:23  dkr
- * changed DupSpmd, DupSync
- *
- * Revision 1.76  1998/04/26 22:12:08  dkr
- * fixed a bug in DupSpmd
- *
- * Revision 1.75  1998/04/26 21:52:45  dkr
- * DupSPMD renamed to DupSpmd
- *
- * Revision 1.74  1998/04/25 13:19:44  dkr
- * added DupIcm
- *
- * Revision 1.73  1998/04/25 12:58:44  dkr
- * fixed a bug in DupWLgrid: WLGRID_CODE could be NULL!!
- *
- * Revision 1.72  1998/04/25 12:44:27  dkr
- * added DupNwith2
- * fixed a bug in DupNwith:
- *   NCODE_COPY is now reseted for every code node after duplication
- *
- * Revision 1.71  1998/04/24 17:16:12  dkr
- * changed usage of SPMD_IN/OUT/INOUT, SYNC_INOUT
- *
- * Revision 1.70  1998/04/24 12:12:23  dkr
- * changed DupSPMD
- *
- * Revision 1.69  1998/04/24 01:15:14  dkr
- * added DupSync
- *
- * Revision 1.68  1998/04/23 15:02:10  srs
- * fixed bug in DupNWithid
- *
- * Revision 1.67  1998/04/23 14:08:52  srs
- * changed setting of ID_WL in DupId()
- *
- * Revision 1.66  1998/04/22 16:35:57  srs
- * fixed bug in DupNcode()
- *
- * Revision 1.65  1998/04/20 00:45:19  dkr
- * added DupOneIds
- *
- * Revision 1.64  1998/04/20 00:05:36  dkr
- * changed DupIds:
- *    duplicates new REFCNT, too!
- *
- * Revision 1.63  1998/04/19 23:50:16  dkr
- * changed DupIds:
- *   arg_info now can be NULL
- *
- * Revision 1.62  1998/04/17 17:26:34  dkr
- * 'concurrent regions' are now called 'SPMD regions'
- *
- * Revision 1.61  1998/04/17 16:22:59  dkr
- * NCODE_USED is now adjusted in MakeWLgrid...
- *
- * Revision 1.60  1998/04/17 11:41:52  srs
- * fixed bug in DupNwith() and added DupNcode()
- *
- * Revision 1.59  1998/04/16 16:08:03  srs
- * renamed INL_TYPES to INFO_INL_TYPES
- *
- * Revision 1.58  1998/04/16 11:47:08  dkr
- * fixed a bug with DupNode:
- *   arg_info now contains an ordinary N_info node
- *   the work of DupNode is now controlled by INFO_DUPCONT(arg_info)
- *
- * Revision 1.57  1998/04/13 19:02:15  dkr
- * support for wlcomp-pragmas added in DupPragma
- *
- * Revision 1.56  1998/04/11 15:19:28  srs
- * N_Nwith nodes are now processed by DupNwith() instead of DupChain()
- *
- * Revision 1.55  1998/04/09 21:21:34  dkr
- * renamed macros:
- *   INLINE -> DUP_INLINE
- *   NORMAL -> DUP_NORMAL
- *   INVARIANT -> DUP_INVARIANT
- *
- * Revision 1.54  1998/04/08 09:29:51  dkr
- * #ifdef changed to #if
- *
- * Revision 1.53  1998/04/08 07:39:33  srs
- * removed wrong assertion in DupId
- *
- * Revision 1.52  1998/04/07 15:19:19  srs
- * renamed DupId to DupModarray and
- *         DupIIds to DupId.
- * Added Initialization of ID_WL to DupId.
- * Removed NEWTREE
- *
- * Revision 1.51  1998/04/02 17:41:00  dkr
- * added DupConc
- *
- * Revision 1.50  1998/04/01 23:55:51  dkr
- * added DupWLstriVar, DupWLgridVar
- *
- * Revision 1.49  1998/03/30 23:42:43  dkr
- * added attribute LEVEL for N_WLgrid
- *
- * Revision 1.48  1998/03/29 23:28:24  dkr
- * added temp. attribute WLGRID_MODIFIED
- *
- * Revision 1.47  1998/03/27 18:38:46  dkr
- * WLproj renamed in WLstride:
- *   WLPROJ... -> WLSTRIDE...
- *   DupWLproj -> DupWLstride
- *
- * Revision 1.46  1998/03/26 14:04:39  dkr
- * changed usage of MakeWLgrid
- *
- * Revision 1.45  1998/03/26 12:04:09  dkr
- * removed a spelling mistake in DupWLproj
- *
- * Revision 1.44  1998/03/26 11:11:33  dkr
- * changed DupWLproj
- *
- * Revision 1.43  1998/03/24 21:44:44  dkr
- * changed DupWLproj:
- *   copies WLPROJ_PART
- *
- * Revision 1.42  1998/03/24 10:17:54  srs
- * changed DupNPart
- *
- * Revision 1.41  1998/03/22 15:47:24  dkr
- * N_WLblock: BLOCKING -> STEP
- *
- * Revision 1.40  1998/03/22 15:33:16  dkr
- * N_WLproj: OFFSET, WIDTH -> BOUND1, BOUND2
- *
- * Revision 1.39  1998/03/21 21:45:31  dkr
- * added macro DUPTRAV:
- *   DupNode now skips only the NEXT node of the root
- *
- * Revision 1.38  1998/03/21 17:35:08  dkr
- * new function DupNode added
- *
- * Revision 1.37  1998/03/20 20:50:42  dkr
- * changed usage of MakeWLseg
- *
- * Revision 1.36  1998/03/20 17:25:16  dkr
- * in N_WL... nodes: INNER is now called CONTENTS
- *
- * Revision 1.35  1998/03/19 20:17:57  dkr
- * removed a bug in DupWLgrid
- *
- * Revision 1.34  1998/03/19 19:29:52  dkr
- * in DupWLgrid and DupNPart NCODE_USED is now correctly set
- *
- * Revision 1.33  1998/03/19 19:07:02  dkr
- * fixed bugs in DupWL...
- *
- * Revision 1.32  1998/03/17 10:34:01  dkr
- * changed usage of MakeWLseg
- *
- * Revision 1.31  1998/03/16 00:33:29  dkr
- * added DupWLseg, DupWLblock, DupWLublock, DupWLproj, DupWLgrid
- *
- * Revision 1.29  1998/03/03 17:32:19  dkr
- * removed unused var 'i' in DupCond(), DupLoop()
- *
- * Revision 1.28  1998/03/02 22:27:10  dkr
- * removed bugs in duplication of N_cond, N_do, N_while
- *
- * Revision 1.27  1998/02/12 16:56:49  dkr
- * added support for new with-loop
- *
- * Revision 1.26  1997/11/10 23:19:12  dkr
- * removed a bug with NEWTREE
- *
- * Revision 1.25  1997/11/07 14:17:48  dkr
- * with defined NEWTREE node.nnode is not used anymore
- *
- * Revision 1.24  1997/09/05 17:47:41  dkr
- * added the function DupShpSeg
- *
- * Revision 1.22  1997/04/25  09:20:34  sbs
- * DBUG_ASSERT in DupIds adjusted (no varargs)
- *
- * Revision 1.21  1997/04/23  12:52:36  cg
- * decleration changed to declaration
- *
- * Revision 1.20  1996/09/06  16:19:37  cg
- * bug fixed in DupIIds: empty ids lists no longer cause segmentation faults.
- *
- * Revision 1.19  1996/02/21  15:07:02  cg
- * function DupFundef reimplemented. Internal information will now be copied as well.
- * added new function DupPragma
- *
- * Revision 1.18  1996/01/05  14:36:35  cg
- * added DupId for copying sons and info.id
- *
- * Revision 1.17  1995/12/20  08:19:06  cg
- * added new function DupChar to duplicate N_char nodes.
- *
- * Revision 1.16  1995/12/04  13:51:03  cg
- * now, attrib and status are copied by function DupIds
- *
- * Revision 1.15  1995/10/06  16:35:40  cg
- * calls to MakeIds adjusted to new signature (3 parameters)
- *
- * Revision 1.14  1995/08/16  09:23:01  asi
- * renamed DupCast to DupTypes
- *
- * Revision 1.13  1995/07/28  12:58:22  asi
- * added function DupInfo
- *
- * Revision 1.12  1995/07/24  09:08:05  asi
- * macro DUP moved from DupTree.c to DupTree.h, macro TYPES renamed to INL_TYPES
- *
- * Revision 1.11  1995/07/04  11:39:58  hw
- * DupDouble inserted
- *
- * Revision 1.10  1995/06/27  16:03:05  asi
- * added DUP-macro : Duplicating simple structure elements
- * and DUP inserted in each DUP... function
- *
- * Revision 1.9  1995/06/27  09:40:09  hw
- * bug fixed in DubIds( an ids-chain will be duplicated correctly now)
- *
- * Revision 1.8  1995/06/26  10:03:52  sbs
- * ids->use copie in DupIds
- *
- * Revision 1.7  1995/06/26  08:10:21  asi
- * now linenumbers will be duplicated
- * unused vaiable i warning removed
- *
- * Revision 1.6  1995/06/23  13:09:20  hw
- * - functions "DupDec" & "DupFundef" inserted
- * -  added argument to call of 'DuplicateTypes'
- *
- * Revision 1.5  1995/06/15  15:32:37  asi
- * DupTree generates arg_info if not present
- *
- * Revision 1.4  1995/06/08  09:55:13  asi
- * if arg_info->flag is set to INLINE variables will be renamed
- *
- * Revision 1.3  1995/06/02  11:25:48  asi
- * Added functions for all nodes below fundef node
- *
- * Revision 1.2  1995/05/03  12:41:51  asi
- * added DupPrf, DupAp and DupIds
  *
  * Revision 1.1  1995/05/01  15:32:27  asi
  * Initial revision
@@ -477,6 +233,31 @@ DupNode (node *arg_node)
     }
 
     DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupBlock (node *arg_node, node *arg_info)
+{
+    node *tmp;
+
+    DBUG_ENTER ("DupBlock");
+
+    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
+
+    tmp = MakeBlock (Trav (BLOCK_INSTR (arg_node), arg_info),
+                     Trav (BLOCK_VARDEC (arg_node), arg_info));
+
+    BLOCK_VARNO (tmp) = BLOCK_VARNO (arg_node);
+
+    NODE_LINE (tmp) = NODE_LINE (arg_node);
+
+    if (BLOCK_CACHESIM (arg_node) != NULL) {
+        BLOCK_CACHESIM (tmp) = StringCopy (BLOCK_CACHESIM (arg_node));
+    }
+
+    DBUG_RETURN (tmp);
 }
 
 /******************************************************************************/
