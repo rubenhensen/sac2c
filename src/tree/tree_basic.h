@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.149  2002/09/09 19:25:19  dkr
+ * prf_name_str moved to print.h
+ *
  * Revision 3.148  2002/09/06 16:18:10  sbs
  * TYPES_POLY for type vars added.
  *
@@ -294,12 +297,6 @@ file can be found in tree_basic.c
 #define _sac_tree_basic_h
 
 #include "types.h"
-
-/*
- *   Decalarations of global variables exported by tree_basic.c
- */
-
-extern char *prf_name_str[];
 
 /*
  *   Global Access-Macros
