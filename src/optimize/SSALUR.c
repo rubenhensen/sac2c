@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2002/10/09 02:08:27  dkr
+ * SSAWLUnroll.c instead of WLUnroll.c used
+ *
  * Revision 1.13  2002/09/09 19:16:20  dkr
  * prf_string removed (mdb_prf used instead)
  *
@@ -40,7 +43,6 @@
  * Revision 1.1  2001/04/20 11:20:56  nmw
  * Initial revision
  *
- *
  */
 
 /*****************************************************************************
@@ -79,7 +81,7 @@
 #include "math.h"
 #include "SSATransform.h"
 #include "CheckAvis.h"
-#include "WLUnroll.h"
+#include "SSAWLUnroll.h"
 
 #define UNR_NONE -1
 
@@ -1234,13 +1236,13 @@ SSALURNwith (node *arg_node, node *arg_info)
         /* can this WL be unrolled? */
         switch (NWITH_TYPE (arg_node)) {
         case WO_modarray:
-            if (CheckUnrollModarray (arg_node)) {
+            if (SSACheckUnrollModarray (arg_node)) {
                 wlunr_expr++;
 
-                DBUG_PRINT ("SSALUR", ("starting DoUnrollModarry()"));
+                DBUG_PRINT ("SSALUR", ("starting SSADoUnrollModarry()"));
 
                 /* unroll withloop - returns list of assignments */
-                tmpn = DoUnrollModarray (arg_node, arg_info);
+                tmpn = SSADoUnrollModarray (arg_node, arg_info);
 
                 /* code will be inserted by SSALURassign */
                 INFO_SSALUR_PREASSIGN (arg_info) = tmpn;
@@ -1248,13 +1250,13 @@ SSALURNwith (node *arg_node, node *arg_info)
             break;
 
         case WO_genarray:
-            if (CheckUnrollGenarray (arg_node, arg_info)) {
+            if (SSACheckUnrollGenarray (arg_node, arg_info)) {
                 wlunr_expr++;
 
-                DBUG_PRINT ("SSALUR", ("starting DoUnrollMGenarry()"));
+                DBUG_PRINT ("SSALUR", ("starting SSADoUnrollMGenarry()"));
 
                 /* unroll withloop - returns list of assignments */
-                tmpn = DoUnrollGenarray (arg_node, arg_info);
+                tmpn = SSADoUnrollGenarray (arg_node, arg_info);
 
                 /* code will be inserted by SSALURassign */
                 INFO_SSALUR_PREASSIGN (arg_info) = tmpn;
@@ -1262,13 +1264,13 @@ SSALURNwith (node *arg_node, node *arg_info)
             break;
 
         default:
-            if (CheckUnrollFold (arg_node)) {
+            if (SSACheckUnrollFold (arg_node)) {
                 wlunr_expr++;
 
-                DBUG_PRINT ("SSALUR", ("starting DoUnrollFold()"));
+                DBUG_PRINT ("SSALUR", ("starting SSADoUnrollFold()"));
 
                 /* unroll withloop - returns list of assignments */
-                tmpn = DoUnrollFold (arg_node, arg_info);
+                tmpn = SSADoUnrollFold (arg_node, arg_info);
 
                 /* code will be inserted by SSALURassign */
                 INFO_SSALUR_PREASSIGN (arg_info) = tmpn;
