@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.147  2004/11/25 18:10:51  skt
+ * superflous _ removed of TCgetTypes_Line
+ *
  * Revision 3.146  2004/11/25 18:08:38  khf
  * inserted new(old) macros
  *
@@ -203,7 +206,7 @@ extern node *TCshpseg2Array (shpseg *shape, int dim);
 
 extern types *TCappendTypes (types *chain, types *item);
 extern int TCcountTypes (types *type);
-extern types *TCgetTypes_Line (types *type, int line);
+extern types *TCgetTypesLine (types *type, int line);
 extern types *TCgetTypes (types *type);
 extern int TCgetShapeDim (types *type);
 extern int TCgetDim (types *type);
