@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2004/05/07 10:01:19  khf
+ * Added functions DupTreeSSA, DupTreeLUTSSA, DupNodeSSA and
+ * DupNodeLUTSSA to obtain the ssa-form
+ *
  * Revision 3.28  2004/03/05 19:14:27  mwe
  * support for new node N_funcond added
  *
@@ -92,6 +96,7 @@
 #define DUP_NORMAL 0
 #define DUP_INLINE 1
 #define DUP_WLF 2
+#define DUP_SSA 3
 
 /* initializing */
 extern void InitDupTree ();
@@ -100,12 +105,16 @@ extern void InitDupTree ();
  * Functions for duplicating (parts of) the AST
  */
 extern node *DupTree (node *arg_node);
+extern node *DupTreeSSA (node *arg_node, node *fundef);
 extern node *DupTree_Type (node *arg_node, int type);
 extern node *DupTreeLUT (node *arg_node, LUT_t lut);
+extern node *DupTreeLUTSSA (node *arg_node, LUT_t lut, node *fundef);
 extern node *DupTreeLUT_Type (node *arg_node, LUT_t lut, int type);
 extern node *DupNode (node *arg_node);
+extern node *DupNodeSSA (node *arg_node, node *fundef);
 extern node *DupNode_Type (node *arg_node, int type);
 extern node *DupNodeLUT (node *arg_node, LUT_t lut);
+extern node *DupNodeLUTSSA (node *arg_node, LUT_t lut, node *fundef);
 extern node *DupNodeLUT_Type (node *arg_node, LUT_t lut, int type);
 
 /*

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.93  2004/05/07 09:58:43  khf
+ * Added functions DupTreeSSA, DupTreeLUTSSA, DupNodeSSA and
+ * DupNodeLUTSSA to obtain the ssa-form
+ *
  * Revision 3.92  2004/05/05 14:35:56  ktr
  * Added support for NCODE_EPILOGUE
  *
@@ -200,6 +204,14 @@
  *
  ******************************************************************************/
 
+#define INFO_DUP_TYPE(n) (n->flag)
+#define INFO_DUP_CONT(n) (n->node[0])
+#define INFO_DUP_FUNDEF(n) (n->node[1])
+#define INFO_DUP_LUT(n) ((LUT_t) (n->dfmask[0]))
+#define INFO_DUP_INSPECIAL(n) ((bool)(n->counter))
+#define INFO_DUP_ASSIGN(n) (n->node[2])
+#define INFO_DUP_FUNDEFSSA(n) (n->node[3])
+
 #include <string.h>
 
 #include "types.h"
@@ -274,7 +286,8 @@ InitDupTree ()
  *
  * function:
  *   static node *DupTreeOrNodeLUT_Type( int NodeOnly,
- *                                       node *arg_node, LUT_t lut, int type)
+ *                                       node *arg_node, LUT_t lut, int type,
+ *                                       node *fundef)
  *
  * description:
  *   This routine starts a duplication-traversal, it duplicates a whole sub
@@ -292,11 +305,15 @@ InitDupTree ()
  *       If you want to use your own LUT you can hand over it here.
  *   - type:
  *       value for INFO_DUP_TYPE.
+ *   - fundef:
+ *       optional: only necessary if type value == DUP_SSA. It is
+ *                 required for new vardecs.
+ *                 Else it points to NULL.
  *
  ******************************************************************************/
 
 static node *
-DupTreeOrNodeLUT_Type (int NodeOnly, node *arg_node, LUT_t lut, int type)
+DupTreeOrNodeLUT_Type (int NodeOnly, node *arg_node, LUT_t lut, int type, node *fundef)
 {
     funtab *old_tab;
     node *arg_info;
@@ -312,6 +329,7 @@ DupTreeOrNodeLUT_Type (int NodeOnly, node *arg_node, LUT_t lut, int type)
         INFO_DUP_TYPE (arg_info) = type;
         INFO_DUP_ASSIGN (arg_info) = NULL;
         INFO_DUP_FUNDEF (arg_info) = NULL;
+        INFO_DUP_FUNDEFSSA (arg_info) = fundef;
 
         /*
          * Via this (ugly) macro DUPCONT the decision to copy the whole tree
@@ -1388,11 +1406,42 @@ DupAssign (node *arg_node, node *arg_info)
 {
     node *new_node;
     node *stacked_assign;
+    node *vardec;
+    ids *oldids, *newids;
+    char *nvarname;
 
     DBUG_ENTER ("DupAssign");
 
     if ((INFO_DUP_TYPE (arg_info) != DUP_INLINE)
         || (NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return)) {
+
+        if (INFO_DUP_TYPE (arg_info) == DUP_SSA) {
+            /*
+             * to keep the ssa-form we have to create new ids
+             * and insert them into LUT
+             */
+
+            oldids = ASSIGN_LHS (arg_node);
+            while (oldids != NULL) {
+                nvarname = TmpVarName (IDS_NAME (oldids));
+                newids = MakeIds (nvarname, NULL, ST_regular);
+                vardec = MakeVardec (StringCopy (nvarname),
+                                     DupOneTypes (IDS_TYPE (oldids)), NULL);
+                IDS_VARDEC (newids) = vardec;
+                IDS_AVIS (newids) = VARDEC_AVIS (vardec);
+                INFO_DUP_FUNDEFSSA (arg_info)
+                  = AddVardecs (INFO_DUP_FUNDEFSSA (arg_info), vardec);
+
+                InsertIntoLUT_S (INFO_DUP_LUT (arg_info), IDS_NAME (oldids),
+                                 IDS_NAME (newids));
+                InsertIntoLUT_P (INFO_DUP_LUT (arg_info), IDS_VARDEC (oldids),
+                                 IDS_VARDEC (newids));
+                InsertIntoLUT_P (INFO_DUP_LUT (arg_info), IDS_AVIS (oldids),
+                                 IDS_AVIS (newids));
+                oldids = IDS_NEXT (oldids);
+            }
+        }
+
         new_node = MakeAssign (NULL, NULL);
 
         stacked_assign = INFO_DUP_ASSIGN (arg_info);
@@ -1827,9 +1876,53 @@ DupSync (node *arg_node, node *arg_info)
 node *
 DupNwith (node *arg_node, node *arg_info)
 {
-    node *new_node, *partn, *coden, *withopn;
+    node *new_node, *partn, *coden, *withopn, *vardec;
+    ids *oldvec, *newvec, *oldids, *newids;
+    char *nvarname;
 
     DBUG_ENTER ("DupNwith");
+
+    if (INFO_DUP_TYPE (arg_info) == DUP_SSA) {
+        /*
+         * to keep the ssa-form we have to create new ids
+         * for the elements of N_Nwithid and insert them into LUT
+         */
+
+        oldvec = NWITH_VEC (arg_node);
+        nvarname = TmpVarName (IDS_NAME (oldvec));
+        newvec = MakeIds (nvarname, NULL, ST_regular);
+        vardec
+          = MakeVardec (StringCopy (nvarname), DupOneTypes (IDS_TYPE (oldvec)), NULL);
+        IDS_VARDEC (newvec) = vardec;
+        IDS_AVIS (newvec) = VARDEC_AVIS (vardec);
+        INFO_DUP_FUNDEFSSA (arg_info)
+          = AddVardecs (INFO_DUP_FUNDEFSSA (arg_info), vardec);
+
+        InsertIntoLUT_S (INFO_DUP_LUT (arg_info), IDS_NAME (oldvec), IDS_NAME (newvec));
+        InsertIntoLUT_P (INFO_DUP_LUT (arg_info), IDS_VARDEC (oldvec),
+                         IDS_VARDEC (newvec));
+        InsertIntoLUT_P (INFO_DUP_LUT (arg_info), IDS_AVIS (oldvec), IDS_AVIS (newvec));
+
+        oldids = NWITH_IDS (arg_node);
+        while (oldids != NULL) {
+            nvarname = TmpVarName (IDS_NAME (oldids));
+            newids = MakeIds (nvarname, NULL, ST_regular);
+            vardec
+              = MakeVardec (StringCopy (nvarname), DupOneTypes (IDS_TYPE (oldids)), NULL);
+            IDS_VARDEC (newids) = vardec;
+            IDS_AVIS (newids) = VARDEC_AVIS (vardec);
+            INFO_DUP_FUNDEFSSA (arg_info)
+              = AddVardecs (INFO_DUP_FUNDEFSSA (arg_info), vardec);
+
+            InsertIntoLUT_S (INFO_DUP_LUT (arg_info), IDS_NAME (oldids),
+                             IDS_NAME (newids));
+            InsertIntoLUT_P (INFO_DUP_LUT (arg_info), IDS_VARDEC (oldids),
+                             IDS_VARDEC (newids));
+            InsertIntoLUT_P (INFO_DUP_LUT (arg_info), IDS_AVIS (oldids),
+                             IDS_AVIS (newids));
+            oldids = IDS_NEXT (oldids);
+        }
+    }
 
     /*
      * very important: duplicate codes before parts! Otherwise the code
@@ -1943,12 +2036,18 @@ DupNpart (node *arg_node, node *arg_info)
 node *
 DupNcode (node *arg_node, node *arg_info)
 {
-    node *new_node;
+    node *new_node, *new_block, *new_cexprs;
 
     DBUG_ENTER ("DupNcode");
 
-    new_node = MakeNCodeExprs (DUPTRAV (NCODE_CBLOCK (arg_node)),
-                               DUPTRAV (NCODE_CEXPRS (arg_node)));
+    /*
+     * very important: duplicate cblock before cexprs! Otherwise the code
+     * references of the cexprs can not set correctly!
+     */
+    new_block = DUPTRAV (NCODE_CBLOCK (arg_node));
+    new_cexprs = DUPTRAV (NCODE_CEXPRS (arg_node));
+
+    new_node = MakeNCodeExprs (new_block, new_cexprs);
 
     NCODE_EPILOGUE (new_node) = DUPTRAV (NCODE_EPILOGUE (arg_node));
 
@@ -2516,13 +2615,17 @@ DupSSAcnt (node *arg_node, node *arg_info)
  *
  * functions:
  *   node *DupTree( node *arg_node)
- *   node *DupTree_Type( node *arg_node, LUT_t lut, int type);
+ *   node *DupTreeSSA( node *arg_node, node *fundef)
+ *   node *DupTree_Type( node *arg_node, LUT_t lut, int type)
  *   node *DupTreeLUT( node *arg_node, LUT_t lut)
- *   node *DupTreeLUT_Type( node *arg_node, LUT_t lut, int type);
+ *   node *DupTreeLUTSSA( node *arg_node, LUT_t lut, node *fundef)
+ *   node *DupTreeLUT_Type( node *arg_node, LUT_t lut, int type)
  *   node *DupNode( node *arg_node)
- *   node *DupNode_Type( node *arg_node, LUT_t lut, int type);
+ *   node *DupNodeSSA( node *arg_node, node *fundef)
+ *   node *DupNode_Type( node *arg_node, LUT_t lut, int type)
  *   node *DupNodeLUT( node *arg_node, LUT_t lut)
- *   node *DupNodeLUT_Type( node *arg_node, LUT_t lut, int type);
+ *   node *DupNodeLUTSSA( node *arg_node, LUT_t lut, node *fundef)
+ *   node *DupNodeLUT_Type( node *arg_node, LUT_t lut, int type)
  *
  * description:
  *   Copying of trees and nodes ...
@@ -2538,6 +2641,11 @@ DupSSAcnt (node *arg_node, node *arg_info)
  *   - If you need some special behaviour triggered by INFO_DUP_TYPE use the
  *     specific DupXxx_Type() version.
  *     Legal values for the parameter 'type' are DUP_INLINE, DUP_WLF, ...
+ *   - If you want to have the copy in ssa-form use one of the DupXxxSSA()
+ *     functions. This functions may only be used to copy code which will be
+ *     used inside the passed N_fundef node fundef. This restriction is caused
+ *     by the fact that all new vardecs will be put at the fundef's vardec
+ *     chain
  *
  ******************************************************************************/
 
@@ -2548,7 +2656,20 @@ DupTree (node *arg_node)
 
     DBUG_ENTER ("DupTree");
 
-    new_node = DupTreeOrNodeLUT_Type (FALSE, arg_node, NULL, DUP_NORMAL);
+    new_node = DupTreeOrNodeLUT_Type (FALSE, arg_node, NULL, DUP_NORMAL, NULL);
+
+    DBUG_RETURN (new_node);
+}
+
+/* see comment above */
+node *
+DupTreeSSA (node *arg_node, node *fundef)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupTreeSSA");
+
+    new_node = DupTreeOrNodeLUT_Type (FALSE, arg_node, NULL, DUP_SSA, fundef);
 
     DBUG_RETURN (new_node);
 }
@@ -2561,7 +2682,7 @@ DupTree_Type (node *arg_node, int type)
 
     DBUG_ENTER ("DupTree_Type");
 
-    new_node = DupTreeOrNodeLUT_Type (FALSE, arg_node, NULL, type);
+    new_node = DupTreeOrNodeLUT_Type (FALSE, arg_node, NULL, type, NULL);
 
     DBUG_RETURN (new_node);
 }
@@ -2574,7 +2695,20 @@ DupTreeLUT (node *arg_node, LUT_t lut)
 
     DBUG_ENTER ("DupTreeLUT");
 
-    new_node = DupTreeOrNodeLUT_Type (FALSE, arg_node, lut, DUP_NORMAL);
+    new_node = DupTreeOrNodeLUT_Type (FALSE, arg_node, lut, DUP_NORMAL, NULL);
+
+    DBUG_RETURN (new_node);
+}
+
+/* see comment above */
+node *
+DupTreeLUTSSA (node *arg_node, LUT_t lut, node *fundef)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupTreeLUTSSA");
+
+    new_node = DupTreeOrNodeLUT_Type (FALSE, arg_node, lut, DUP_SSA, fundef);
 
     DBUG_RETURN (new_node);
 }
@@ -2587,7 +2721,7 @@ DupTreeLUT_Type (node *arg_node, LUT_t lut, int type)
 
     DBUG_ENTER ("DupTreeLUT_Type");
 
-    new_node = DupTreeOrNodeLUT_Type (FALSE, arg_node, lut, type);
+    new_node = DupTreeOrNodeLUT_Type (FALSE, arg_node, lut, type, NULL);
 
     DBUG_RETURN (new_node);
 }
@@ -2598,9 +2732,22 @@ DupNode (node *arg_node)
 {
     node *new_node;
 
-    DBUG_ENTER ("DupTree");
+    DBUG_ENTER ("DupNode");
 
-    new_node = DupTreeOrNodeLUT_Type (TRUE, arg_node, NULL, DUP_NORMAL);
+    new_node = DupTreeOrNodeLUT_Type (TRUE, arg_node, NULL, DUP_NORMAL, NULL);
+
+    DBUG_RETURN (new_node);
+}
+
+/* see comment above */
+node *
+DupNodeSSA (node *arg_node, node *fundef)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupNodeSSA");
+
+    new_node = DupTreeOrNodeLUT_Type (TRUE, arg_node, NULL, DUP_SSA, fundef);
 
     DBUG_RETURN (new_node);
 }
@@ -2613,7 +2760,7 @@ DupNode_Type (node *arg_node, int type)
 
     DBUG_ENTER ("DupNode_Type");
 
-    new_node = DupTreeOrNodeLUT_Type (TRUE, arg_node, NULL, type);
+    new_node = DupTreeOrNodeLUT_Type (TRUE, arg_node, NULL, type, NULL);
 
     DBUG_RETURN (new_node);
 }
@@ -2626,7 +2773,20 @@ DupNodeLUT (node *arg_node, LUT_t lut)
 
     DBUG_ENTER ("DupNodeLUT");
 
-    new_node = DupTreeOrNodeLUT_Type (TRUE, arg_node, lut, DUP_NORMAL);
+    new_node = DupTreeOrNodeLUT_Type (TRUE, arg_node, lut, DUP_NORMAL, NULL);
+
+    DBUG_RETURN (new_node);
+}
+
+/* see comment above */
+node *
+DupNodeLUTSSA (node *arg_node, LUT_t lut, node *fundef)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupNodeLUTSSA");
+
+    new_node = DupTreeOrNodeLUT_Type (TRUE, arg_node, lut, DUP_SSA, fundef);
 
     DBUG_RETURN (new_node);
 }
@@ -2639,7 +2799,7 @@ DupNodeLUT_Type (node *arg_node, LUT_t lut, int type)
 
     DBUG_ENTER ("DupNodeLUT_Type");
 
-    new_node = DupTreeOrNodeLUT_Type (TRUE, arg_node, lut, type);
+    new_node = DupTreeOrNodeLUT_Type (TRUE, arg_node, lut, type, NULL);
 
     DBUG_RETURN (new_node);
 }
