@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.142  1998/01/12 10:04:54  srs
+ * *** empty log message ***
+ *
  * Revision 1.141  1997/12/08 18:29:27  srs
  * *** empty log message ***
  *
@@ -811,10 +814,16 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
   /* ATTENTION !!!! N_ok has to be the last node declared here;
    *                otherwise a DBUG_ASSERT in traverse.c: Trav will
    *                cause nice :-> errors!
+   *
+   * srs: N_ok node is used in typecheck.c as nodetype of arg_info node.
+   *      Two sons exist there so I set the number to 2 now. Reason:
+   *      I guess this node is never used in the traversal mechanism but
+   *      debug output has to work for this node, too.
+   *
    */
 
   NIF (N_ok, "N_ok", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, 0)
+       TravSons, TravSons, TravSons, TravSons, TravSons, 2)
