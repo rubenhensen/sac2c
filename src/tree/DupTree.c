@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/02/06 01:45:32  dkr
+ * attribute NOOP for N_WL... nodes added
+ *
  * Revision 3.7  2001/01/29 18:32:34  dkr
  * some superfluous attributes of N_WLsegVar removed
  *
@@ -397,6 +400,27 @@ DupTreeTravPost (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
+ *   void CopyCommonNodeData( node *new_node, node *old_node)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static void
+CopyCommonNodeData (node *new_node, node *old_node)
+{
+    DBUG_ENTER ("CopyCommonNodeData");
+
+    NODE_LINE (new_node) = NODE_LINE (old_node);
+    NODE_FILE (new_node) = NODE_FILE (old_node);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   DFMmask_t DupDFMmask( DFMmask_t mask, node *arg_info)
  *
  * Description:
@@ -615,8 +639,7 @@ DupVinfo (node *arg_node, node *arg_info)
     }
     VINFO_VARDEC (new_node) = VINFO_VARDEC (arg_node);
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -632,8 +655,7 @@ DupNum (node *arg_node, node *arg_info)
 
     new_node = MakeNum (NUM_VAL (arg_node));
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -649,8 +671,7 @@ DupBool (node *arg_node, node *arg_info)
 
     new_node = MakeBool (BOOL_VAL (arg_node));
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -666,8 +687,7 @@ DupFloat (node *arg_node, node *arg_info)
 
     new_node = MakeFloat (FLOAT_VAL (arg_node));
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -683,8 +703,7 @@ DupDouble (node *arg_node, node *arg_info)
 
     new_node = MakeDouble (DOUBLE_VAL (arg_node));
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -700,8 +719,7 @@ DupChar (node *arg_node, node *arg_info)
 
     new_node = MakeChar (CHAR_VAL (arg_node));
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -717,8 +735,7 @@ DupStr (node *arg_node, node *arg_info)
 
     new_node = MakeStr (StringCopy (STR_STRING (arg_node)));
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -777,8 +794,7 @@ DupId (node *arg_node, node *arg_info)
         ID_CONSTVEC (new_node) = NULL;
     }
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -795,8 +811,7 @@ DupCast (node *arg_node, node *arg_info)
     new_node = MakeCast (DUPTRAV (CAST_EXPR (arg_node)),
                          DupTypes_ (CAST_TYPE (arg_node), arg_info));
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -812,15 +827,14 @@ DupReturn (node *arg_node, node *arg_info)
 
     new_node = MakeReturn (DUPTRAV (RETURN_EXPRS (arg_node)));
 
-    RETURN_REFERENCE (new_node) = DUPTRAV (RETURN_REFERENCE (arg_node));
-
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
-
     INFO_DUP_LUT (arg_info) = InsertIntoLUT (INFO_DUP_LUT (arg_info), arg_node, new_node);
+
+    RETURN_REFERENCE (new_node) = DUPTRAV (RETURN_REFERENCE (arg_node));
 
     RETURN_USEMASK (new_node) = DupDFMmask (RETURN_USEMASK (arg_node), arg_info);
     RETURN_DEFMASK (new_node) = DupDFMmask (RETURN_DEFMASK (arg_node), arg_info);
+
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -847,8 +861,7 @@ DupModul (node *arg_node, node *arg_info)
   MODUL_FOLDFUNS( new_node) = ???
 #endif
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -919,8 +932,7 @@ DupFundef (node *arg_node, node *arg_info)
   FUNDEC_DEF( new_node) = ???;
 #endif
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     INFO_DUP_FUNDEF (arg_info) = old_fundef;
 
@@ -973,8 +985,7 @@ DupBlock (node *arg_node, node *arg_info)
   BLOCK_SPMD_SETUP_ARGS( new_node) = ???;
 #endif
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1005,8 +1016,7 @@ DupTypedef (node *arg_node, node *arg_info)
   TYPEDEC_DEF( new_node) = ???;
 #endif
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1042,8 +1052,7 @@ DupObjdef (node *arg_node, node *arg_info)
   OBJDEC_DEF( new_node) = ???;
 #endif
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1064,8 +1073,7 @@ DupImplist (node *arg_node, node *arg_info)
                             DupIds_ (IMPLIST_FUNS (arg_node), arg_info),
                             DUPCONT (IMPLIST_NEXT (arg_node)));
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1082,23 +1090,23 @@ DupVardec (node *arg_node, node *arg_info)
     new_node = MakeVardec (StringCopy (VARDEC_NAME (arg_node)),
                            DupTypes_ (VARDEC_TYPE (arg_node), arg_info),
                            DUPCONT (VARDEC_NEXT (arg_node)));
-    VARDEC_STATUS (new_node) = VARDEC_STATUS (arg_node);
 
+    INFO_DUP_LUT (arg_info) = InsertIntoLUT (INFO_DUP_LUT (arg_info), arg_node, new_node);
+
+    VARDEC_STATUS (new_node) = VARDEC_STATUS (arg_node);
     VARDEC_ATTRIB (new_node) = VARDEC_ATTRIB (arg_node);
     VARDEC_VARNO (new_node) = VARDEC_VARNO (arg_node);
     VARDEC_REFCNT (new_node) = VARDEC_REFCNT (arg_node);
     VARDEC_NAIVE_REFCNT (new_node) = VARDEC_NAIVE_REFCNT (arg_node);
     VARDEC_FLAG (new_node) = VARDEC_FLAG (arg_node);
     VARDEC_OBJDEF (new_node) = VARDEC_OBJDEF (arg_node);
+
 #if 0
   VARDEC_ACTCHN( new_node) = ???;
   VARDEC_COLCHN( new_node) = ???;
 #endif
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
-
-    INFO_DUP_LUT (arg_info) = InsertIntoLUT (INFO_DUP_LUT (arg_info), arg_node, new_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1116,10 +1124,13 @@ DupArg (node *arg_node, node *arg_info)
                         DupTypes_ (ARG_TYPE (arg_node), arg_info), ARG_STATUS (arg_node),
                         ARG_ATTRIB (arg_node), DUPCONT (ARG_NEXT (arg_node)));
 
+    INFO_DUP_LUT (arg_info) = InsertIntoLUT (INFO_DUP_LUT (arg_info), arg_node, new_node);
+
     ARG_VARNO (new_node) = ARG_VARNO (arg_node);
     ARG_REFCNT (new_node) = ARG_REFCNT (arg_node);
     ARG_NAIVE_REFCNT (new_node) = ARG_NAIVE_REFCNT (arg_node);
     ARG_OBJDEF (new_node) = ARG_OBJDEF (arg_node);
+
 #if 0
   ARG_TYPESTRING( new_node) = ???;
   ARG_ACTCHN( new_node) = ???;
@@ -1127,10 +1138,7 @@ DupArg (node *arg_node, node *arg_info)
   ARG_FUNDEF( new_node) = ???;
 #endif
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
-
-    INFO_DUP_LUT (arg_info) = InsertIntoLUT (INFO_DUP_LUT (arg_info), arg_node, new_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1153,11 +1161,10 @@ DupLet (node *arg_node, node *arg_info)
 
     new_node = MakeLet (DUPTRAV (LET_EXPR (arg_node)), new_ids);
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
-
     LET_USEMASK (new_node) = DupDFMmask (LET_USEMASK (arg_node), arg_info);
     LET_DEFMASK (new_node) = DupDFMmask (LET_DEFMASK (arg_node), arg_info);
+
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1185,8 +1192,7 @@ DupArray (node *arg_node, node *arg_info)
                           ARRAY_CONSTVEC (arg_node));
     }
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1213,8 +1219,7 @@ DupCond (node *arg_node, node *arg_info)
   COND_MASK( new_node, ?) = ???;
 #endif
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1236,12 +1241,12 @@ DupDo (node *arg_node, node *arg_info)
     if (DO_DEFVARS (arg_node) != NULL) {
         DO_DEFVARS (new_node) = DupIds_ (DO_DEFVARS (arg_node), arg_info);
     }
+
 #if 0
   DO_MASK( new_node, ?) = ???;
 #endif
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1264,12 +1269,12 @@ DupWhile (node *arg_node, node *arg_info)
     if (WHILE_DEFVARS (arg_node) != NULL) {
         WHILE_DEFVARS (new_node) = DupIds_ (WHILE_DEFVARS (arg_node), arg_info);
     }
+
 #if 0
   WHILE_MASK( new_node, ?) = ???;
 #endif
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1286,8 +1291,7 @@ DupExprs (node *arg_node, node *arg_info)
     new_node
       = MakeExprs (DUPTRAV (EXPRS_EXPR (arg_node)), DUPCONT (EXPRS_NEXT (arg_node)));
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1310,13 +1314,14 @@ DupAssign (node *arg_node, node *arg_info)
                                DUPCONT (ASSIGN_NEXT (arg_node)));
 
         ASSIGN_STATUS (new_node) = ASSIGN_STATUS (arg_node);
+        ASSIGN_LEVEL (new_node) = ASSIGN_LEVEL (arg_node);
+
 #if 0
     ASSIGN_MASK( new_node, ?) = ???;
     ASSIGN_CSE( new_node) = ???;
     ASSIGN_CF( new_node) = ???;
     ASSIGN_INDEX( new_node) = ???;
 #endif
-        ASSIGN_LEVEL (new_node) = ASSIGN_LEVEL (arg_node);
 
         if (INFO_DUP_ALL (arg_info)) {
             if (ASSIGN_DEFMASK (arg_node) != NULL) {
@@ -1330,8 +1335,7 @@ DupAssign (node *arg_node, node *arg_info)
             }
         }
 
-        NODE_LINE (new_node) = NODE_LINE (arg_node);
-        NODE_FILE (new_node) = NODE_FILE (arg_node);
+        CopyCommonNodeData (new_node, arg_node);
         break;
     }
 
@@ -1349,8 +1353,7 @@ DupEmpty (node *arg_node, node *arg_info)
 
     new_node = MakeEmpty ();
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1366,8 +1369,7 @@ DupPrf (node *arg_node, node *arg_info)
 
     new_node = MakePrf (PRF_PRF (arg_node), DUPTRAV (PRF_ARGS (arg_node)));
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1387,8 +1389,7 @@ DupAp (node *arg_node, node *arg_info)
 
     AP_FUNDEF (new_node) = SearchInLUT (INFO_DUP_LUT (arg_info), AP_FUNDEF (arg_node));
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1433,6 +1434,7 @@ DupPragma (node *arg_node, node *arg_info)
     PRAGMA_FREEFUN (new_node) = StringCopy (PRAGMA_FREEFUN (arg_node));
     PRAGMA_LINKMOD (new_node) = StringCopy (PRAGMA_LINKMOD (arg_node));
     PRAGMA_NUMPARAMS (new_node) = PRAGMA_NUMPARAMS (arg_node);
+
 #if 0
   PRAGMA_READONLY( new_node) = ???;
   PRAGMA_NEEDTYPES( new_node) = ???;
@@ -1442,8 +1444,7 @@ DupPragma (node *arg_node, node *arg_info)
   PRAGMA_READONLYNUMS( new_node) = ???;
 #endif
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1467,6 +1468,8 @@ DupIcm (node *arg_node, node *arg_info)
     ICM_INDENT_BEFORE (new_node) = ICM_INDENT_BEFORE (arg_node);
     ICM_INDENT_AFTER (new_node) = ICM_INDENT_AFTER (arg_node);
 
+    CopyCommonNodeData (new_node, arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1486,6 +1489,8 @@ DupSpmd (node *arg_node, node *arg_info)
     SPMD_OUT (new_node) = DupDFMmask (SPMD_OUT (arg_node), arg_info);
     SPMD_LOCAL (new_node) = DupDFMmask (SPMD_LOCAL (arg_node), arg_info);
     SPMD_SHARED (new_node) = DupDFMmask (SPMD_SHARED (arg_node), arg_info);
+
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1509,6 +1514,8 @@ DupSync (node *arg_node, node *arg_info)
     SYNC_OUT (new_node) = DupDFMmask (SYNC_OUT (arg_node), arg_info);
     SYNC_OUTREP (new_node) = DupDFMmask (SYNC_OUTREP (arg_node), arg_info);
     SYNC_LOCAL (new_node) = DupDFMmask (SYNC_LOCAL (arg_node), arg_info);
+
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1540,6 +1547,7 @@ DupNwith (node *arg_node, node *arg_info)
     NWITH_REFERENCES_FOLDED (new_node) = NWITH_REFERENCES_FOLDED (arg_node);
     NWITH_FOLDABLE (new_node) = NWITH_FOLDABLE (arg_node);
     NWITH_NO_CHANCE (new_node) = NWITH_NO_CHANCE (arg_node);
+
 #if 0
   NWITH_TSI( new_node) = ???;
 #endif
@@ -1552,8 +1560,7 @@ DupNwith (node *arg_node, node *arg_info)
     NWITH_OUT_MASK (new_node) = DupDFMmask (NWITH_OUT_MASK (arg_node), arg_info);
     NWITH_LOCAL_MASK (new_node) = DupDFMmask (NWITH_LOCAL_MASK (arg_node), arg_info);
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1595,6 +1602,8 @@ DupNwithop (node *arg_node, node *arg_info)
   NWITHOP_MASK( new_node, ?) = ???;
 #endif
 
+    CopyCommonNodeData (new_node, arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1618,6 +1627,8 @@ DupNpart (node *arg_node, node *arg_info)
   NPART_MASK( new_node, ?) = ???;
 #endif
 
+    CopyCommonNodeData (new_node, arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1632,6 +1643,9 @@ DupNcode (node *arg_node, node *arg_info)
 
     new_node
       = MakeNCode (DUPTRAV (NCODE_CBLOCK (arg_node)), DUPTRAV (NCODE_CEXPR (arg_node)));
+
+    INFO_DUP_LUT (arg_info) = InsertIntoLUT (INFO_DUP_LUT (arg_info), arg_node, new_node);
+
     NCODE_NEXT (new_node) = DUPCONT (NCODE_NEXT (arg_node));
 
     /*
@@ -1645,11 +1659,12 @@ DupNcode (node *arg_node, node *arg_info)
     if (NCODE_INC_RC_IDS (arg_node) != NULL) {
         NCODE_INC_RC_IDS (new_node) = DupIds_ (NCODE_INC_RC_IDS (arg_node), arg_info);
     }
+
 #if 0
   NCODE_MASK( new_node, ?) = ???;
 #endif
 
-    INFO_DUP_LUT (arg_info) = InsertIntoLUT (INFO_DUP_LUT (arg_info), arg_node, new_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1671,6 +1686,8 @@ DupNwithid (node *arg_node, node *arg_info)
 
     new_node = MakeNWithid (_vec, _ids);
 
+    CopyCommonNodeData (new_node, arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1687,6 +1704,8 @@ DupNgen (node *arg_node, node *arg_info)
                                DUPTRAV (NGEN_BOUND2 (arg_node)), NGEN_OP1 (arg_node),
                                NGEN_OP2 (arg_node), DUPTRAV (NGEN_STEP (arg_node)),
                                DUPTRAV (NGEN_WIDTH (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1711,9 +1730,13 @@ DupNwith2 (node *arg_node, node *arg_info)
 
     new_node = MakeNWith2 (id, segs, code, withop, NWITH2_DIMS (arg_node));
 
+    NWITH2_OFFSET_NEEDED (new_node) = NWITH2_OFFSET_NEEDED (arg_node);
+
     if (NWITH2_DEC_RC_IDS (arg_node) != NULL) {
         NWITH2_DEC_RC_IDS (new_node) = DupIds_ (NWITH2_DEC_RC_IDS (arg_node), arg_info);
     }
+
+    NWITH2_REUSE (new_node) = DupDFMmask (NWITH2_REUSE (arg_node), arg_info);
 
     NWITH2_IN_MASK (new_node) = DupDFMmask (NWITH2_IN_MASK (arg_node), arg_info);
     NWITH2_OUT_MASK (new_node) = DupDFMmask (NWITH2_OUT_MASK (arg_node), arg_info);
@@ -1724,8 +1747,7 @@ DupNwith2 (node *arg_node, node *arg_info)
     }
     NWITH2_ISSCHEDULED (new_node) = NWITH2_ISSCHEDULED (arg_node);
 
-    NODE_LINE (new_node) = NODE_LINE (arg_node);
-    NODE_FILE (new_node) = NODE_FILE (arg_node);
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1764,6 +1786,8 @@ DupWLseg (node *arg_node, node *arg_info)
     WLSEG_MAXHOMDIM (new_node) = WLSEG_MAXHOMDIM (arg_node);
     DUPVECT (WLSEG_HOMSV (new_node), WLSEG_HOMSV (arg_node), WLSEG_DIMS (new_node), int);
 
+    CopyCommonNodeData (new_node, arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1790,6 +1814,8 @@ DupWLsegVar (node *arg_node, node *arg_info)
           = SCHCopyScheduling (WLSEGVAR_SCHEDULING (arg_node));
     }
 
+    CopyCommonNodeData (new_node, arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1807,6 +1833,10 @@ DupWLblock (node *arg_node, node *arg_info)
                             WLBLOCK_STEP (arg_node), DUPTRAV (WLBLOCK_NEXTDIM (arg_node)),
                             DUPTRAV (WLBLOCK_CONTENTS (arg_node)),
                             DUPCONT (WLBLOCK_NEXT (arg_node)));
+
+    WLBLOCK_NOOP (new_node) = WLBLOCK_NOOP (arg_node);
+
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1827,6 +1857,10 @@ DupWLublock (node *arg_node, node *arg_info)
                       DUPTRAV (WLUBLOCK_CONTENTS (arg_node)),
                       DUPCONT (WLUBLOCK_NEXT (arg_node)));
 
+    WLUBLOCK_NOOP (new_node) = WLUBLOCK_NOOP (arg_node);
+
+    CopyCommonNodeData (new_node, arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1846,7 +1880,14 @@ DupWLstride (node *arg_node, node *arg_info)
                              DUPCONT (WLSTRIDE_NEXT (arg_node)));
 
     WLSTRIDE_PART (new_node) = WLSTRIDE_PART (arg_node);
+    WLSTRIDE_NOOP (new_node) = WLSTRIDE_NOOP (arg_node);
+
+    /*
+     * duplicated strides are not modified yet ;)
+     */
     WLSTRIDE_MODIFIED (new_node) = NULL;
+
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1867,6 +1908,10 @@ DupWLstrideVar (node *arg_node, node *arg_info)
                                 DUPTRAV (WLSTRIDEVAR_CONTENTS (arg_node)),
                                 DUPCONT (WLSTRIDEVAR_NEXT (arg_node)));
 
+    WLSTRIDEVAR_NOOP (new_node) = WLSTRIDEVAR_NOOP (arg_node);
+
+    CopyCommonNodeData (new_node, arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1882,14 +1927,19 @@ DupWLgrid (node *arg_node, node *arg_info)
     new_node
       = MakeWLgrid (WLGRID_LEVEL (arg_node), WLGRID_DIM (arg_node),
                     WLGRID_BOUND1 (arg_node), WLGRID_BOUND2 (arg_node),
-                    WLGRID_UNROLLING (arg_node), WLGRID_FITTED (arg_node),
-                    DUPTRAV (WLGRID_NEXTDIM (arg_node)), DUPCONT (WLGRID_NEXT (arg_node)),
+                    WLGRID_UNROLLING (arg_node), DUPTRAV (WLGRID_NEXTDIM (arg_node)),
+                    DUPCONT (WLGRID_NEXT (arg_node)),
                     SearchInLUT (INFO_DUP_LUT (arg_info), WLGRID_CODE (arg_node)));
+
+    WLGRID_FITTED (new_node) = WLGRID_FITTED (arg_node);
+    WLGRID_NOOP (new_node) = WLGRID_NOOP (arg_node);
 
     /*
      * duplicated grids are not modified yet ;)
      */
     WLGRID_MODIFIED (new_node) = NULL;
+
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1906,10 +1956,15 @@ DupWLgridVar (node *arg_node, node *arg_info)
     new_node
       = MakeWLgridVar (WLGRIDVAR_LEVEL (arg_node), WLGRIDVAR_DIM (arg_node),
                        DUPTRAV (WLGRIDVAR_BOUND1 (arg_node)),
-                       DUPTRAV (WLGRIDVAR_BOUND2 (arg_node)), WLGRIDVAR_FITTED (arg_node),
+                       DUPTRAV (WLGRIDVAR_BOUND2 (arg_node)),
                        DUPTRAV (WLGRIDVAR_NEXTDIM (arg_node)),
                        DUPCONT (WLGRIDVAR_NEXT (arg_node)),
                        SearchInLUT (INFO_DUP_LUT (arg_info), WLGRIDVAR_CODE (arg_node)));
+
+    WLGRIDVAR_FITTED (new_node) = WLGRIDVAR_FITTED (arg_node);
+    WLGRIDVAR_NOOP (new_node) = WLGRIDVAR_NOOP (arg_node);
+
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1937,6 +1992,8 @@ DupMt (node *arg_node, node *arg_info)
     MT_USEMASK (new_node) = DupDFMmask (MT_USEMASK (arg_node), arg_info);
     MT_DEFMASK (new_node) = DupDFMmask (MT_DEFMASK (arg_node), arg_info);
     MT_NEEDLATER (new_node) = DupDFMmask (MT_NEEDLATER (arg_node), arg_info);
+
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1966,6 +2023,8 @@ DupSt (node *arg_node, node *arg_info)
     ST_NEEDLATER_ST (new_node) = DupDFMmask (ST_NEEDLATER_ST (arg_node), arg_info);
     ST_NEEDLATER_MT (new_node) = DupDFMmask (ST_NEEDLATER_MT (arg_node), arg_info);
 
+    CopyCommonNodeData (new_node, arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1989,6 +2048,8 @@ DupMTsignal (node *arg_node, node *arg_info)
     new_node = MakeMTsignal ();
 
     MTSIGNAL_IDSET (new_node) = DupDFMmask (MTSIGNAL_IDSET (arg_node), arg_info);
+
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2016,6 +2077,8 @@ DupMTsync (node *arg_node, node *arg_info)
     MTSYNC_FOLD (new_node) = CopyDFMfoldmask (MTSYNC_FOLD (arg_node));
     MTSYNC_ALLOC (new_node) = DupDFMmask (MTSYNC_WAIT (arg_node), arg_info);
 
+    CopyCommonNodeData (new_node, arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2039,6 +2102,8 @@ DupMTalloc (node *arg_node, node *arg_info)
     new_node = MakeMTalloc ();
 
     MTALLOC_IDSET (new_node) = DupDFMmask (MTALLOC_IDSET (arg_node), arg_info);
+
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2295,6 +2360,7 @@ DupId_Ids (node *old_id)
     IDS_NAIVE_REFCNT (new_ids) = ID_NAIVE_REFCNT (old_id);
     IDS_VARDEC (new_ids) = ID_VARDEC (old_id);
     IDS_ATTRIB (new_ids) = ID_ATTRIB (old_id);
+
 #if 0
   IDS_DEF( new_ids) = ???
   IDS_USE( new_ids) = ???

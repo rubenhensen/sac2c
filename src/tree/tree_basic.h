@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/02/06 01:45:24  dkr
+ * attribute NOOP for N_WL... nodes added
+ *
  * Revision 3.19  2001/02/02 10:46:53  dkr
  * some comments for WL nodes updated
  *
@@ -30,9 +33,6 @@
  * Revision 3.11  2001/01/09 17:26:37  dkr
  * N_WLstriVar renamed into N_WLstrideVar
  *
- * Revision 3.9  2001/01/08 16:11:13  dkr
- * NWITH2_NAIVE_COMP added
- *
  * Revision 3.8  2000/12/16 10:42:06  cg
  * Added new attribute ID_NUM for typecheck constant propagation.
  *
@@ -58,234 +58,6 @@
  *
  * Revision 3.1  2000/11/20 18:03:34  sacbase
  * new release made
- *
- * Revision 1.104  2000/11/17 16:19:03  sbs
- * DEPS-structure extended by location field; access macros as well as
- * Constructor Function adjusted accordingly.
- *
- * Revision 1.103  2000/11/03 16:17:03  dkr
- * some superfluous INFO_COMP_... macro removed
- *
- * Revision 1.102  2000/11/02 15:45:53  dkr
- * comments for N_icm modified
- *
- * Revision 1.101  2000/10/31 18:17:51  cg
- * Added new attributes for re-implementation of dead function removal:
- *  FUNDEF_EXPORT and INFO_DFR_SPINE.
- *
- * Revision 1.100  2000/10/27 00:05:10  dkr
- * INFO_COMP_VARDECS removed
- *
- * Revision 1.99  2000/10/24 14:30:05  dkr
- * MakeTypes1 added
- * MakeType renamed to MakeTypes
- *
- * Revision 1.98  2000/10/23 11:32:41  dkr
- * MakeId1 renamed to MakeId_Copy
- * MakeId2 removed
- *
- * Revision 1.97  2000/10/17 16:27:46  dkr
- * some comments corrected
- *
- * Revision 1.96  2000/10/16 13:56:00  dkr
- * INFO_PREC_LASTASSIGN added
- *
- * Revision 1.95  2000/10/16 11:29:59  dkr
- * INFO_PREC_LASTASSIGN added
- *
- * Revision 1.94  2000/09/20 18:19:29  dkr
- * ID_MAKEUNIQUE renamed into ID_CLSCONV
- *
- * Revision 1.93  2000/08/24 16:43:39  dkr
- * INFO_PRINT_ACCESS removed
- *
- * Revision 1.92  2000/08/24 12:26:37  dkr
- * INFO_PRINT_RET no longer needed and thus removed
- *
- * Revision 1.91  2000/08/07 13:41:23  dkr
- * ST_independent replaced by ST_shp_indep and ST_dim_indep
- *
- * Revision 1.90  2000/08/04 17:11:56  dkr
- * removed NEWTREE
- *
- * Revision 1.89  2000/08/03 10:22:36  nmw
- * N_fundef comment changed
- *
- * Revision 1.88  2000/07/31 10:49:31  cg
- * Eventually, the son ICM_NEXT is removed from the N_icm node.
- * The creation function MakeIcm is adjusted accordingly.
- *
- * Revision 1.87  2000/07/28 17:17:10  cg
- * Added temporary attribute VARDEC_ICM.
- *
- * Revision 1.86  2000/07/28 12:37:09  cg
- * Added temporary attribute TYPEDEF_ICM.
- *
- * Revision 1.85  2000/07/28 08:32:37  mab
- * added INFO_APC_WITH
- *
- * Revision 1.84  2000/07/25 08:11:55  mab
- * added INFO_APC_COUNT_CHANGES
- *
- * Revision 1.83  2000/07/21 15:14:45  mab
- * added INFO_APC_UNSUPPORTED
- *
- * Revision 1.82  2000/07/21 14:47:01  nmw
- * macros for INFO_IMPSPEC_ added
- *
- * Revision 1.81  2000/07/21 11:30:35  jhs
- * Added FUNDEF_MT2USE, FUNDEF_MT2DEF and FUNDEF_IDENTIFIER.
- *
- * Revision 1.80  2000/07/21 08:20:42  nmw
- * Modspec added
- *
- * Revision 1.79  2000/07/19 15:41:58  nmw
- * flag ICM_END_OF_STATEMENT added, forces printing of ;
- *
- * Revision 1.78  2000/07/14 13:17:14  nmw
- * macro for precompile added, comments updated
- *
- * Revision 1.77  2000/07/13 11:58:12  jhs
- * Splited ICM_INDENT into ICM_INDENT_BEFORE and ICM_INDENT_AFTER.
- *
- * Revision 1.76  2000/07/12 17:22:57  dkr
- * comments for N_typedef added
- *
- * Revision 1.75  2000/07/12 15:20:14  dkr
- * INFO_DUP_BASEFUNDEF and INFO_DUP_DFMBASE removed
- *
- * Revision 1.74  2000/07/12 09:23:23  nmw
- * macros changed PIH_ and MCW_
- *
- * Revision 1.73  2000/07/11 15:44:14  jhs
- * Added ST_ALLOC and ST_SYNC.
- * DFMfoldmask changed name to vardec.
- *
- * Revision 1.72  2000/07/10 14:22:57  cg
- * Added new field type_status in types struct as a dedicated status field
- * for the type itself.
- *
- * Revision 1.71  2000/07/07 15:48:30  bs
- * The following compound macros moved from tree_basic to tree_compound:
- * INFO_WLAA_ARRAYSHP, INFO_WLAA_INDEXDIM, INFO_WLAA_ARRAYDIM
- * INFO_TSI_ARRAYSHP, INFO_TSI_INDEXDIM, INFO_TSI_ARRAYDIM
- *
- * Revision 1.70  2000/07/07 08:57:01  nmw
- * MCW_CNT_ARTIFICIAL macro added
- *
- * Revision 1.68  2000/07/06 15:32:04  mab
- * added INFO_APT_ASSIGNMENTS
- *
- * Revision 1.67  2000/07/06 14:43:21  mab
- * added INFO_APT_FUNDEF
- *
- * Revision 1.66  2000/07/04 14:35:21  jhs
- * Added CopyDFMfoldmask.
- *
- * Revision 1.65  2000/06/30 14:27:46  mab
- * added NCODE_APT_DUMMY_CODE
- *
- * Revision 1.64  2000/06/30 14:10:29  mab
- * removed INFO_APT_WITH_PARTS, INFO_APT_WITH_CODE, INFO_APT_WITH_PART
- * added INFO_APT_WITH
- *
- * Revision 1.63  2000/06/30 11:00:54  mab
- * removed INFO_APT_CODE_ID
- * added INFO_APT_WITH_CODE and INFO_APT_WITH_PART
- *
- * Revision 1.62  2000/06/29 16:05:28  mab
- * added INFO_APT_CODE_ID
- *
- * Revision 1.61  2000/06/29 14:56:47  mab
- * added INFO_APT_WITHOP_TYPE and INFO_APT_WITH_PARTS
- *
- * Revision 1.60  2000/06/29 12:18:21  nmw
- * additional macros for INFO_PIW_ added
- *
- * Revision 1.59  2000/06/29 10:33:09  mab
- * added NPART_PADDED
- * changed type of *_PADDED from int to bool
- *
- * Revision 1.57  2000/06/28 15:12:46  nmw
- * added macros for INFO_PIW and INFO_PIH
- *
- * Revision 1.56  2000/06/23 16:41:04  nmw
- * macros for INFO_MCW added
- *
- * Revision 1.55  2000/06/23 15:31:35  nmw
- * N_cwrapper node added
- *
- * Revision 1.54  2000/06/23 14:17:14  dkr
- * macros for old with-loop removed
- * NWITH_COMPLEX removed
- *
- * Revision 1.53  2000/06/22 13:32:07  mab
- * INFO_APT_EXPRESSION_PADDED corrected
- *
- * Revision 1.52  2000/06/22 09:54:54  nmw
- * changes made in N_info access macros for usage in PIW
- *
- * Revision 1.51  2000/06/21 15:00:49  mab
- * added macros *_PADDED for ARG and VARDEC
- * added INFO_APT_EXPRESSION_PADDED
- *
- * Revision 1.50  2000/06/21 12:36:54  jhs
- * Added MT_ALLOC.
- *
- * Revision 1.49  2000/06/16 15:00:03  nmw
- * N_info for function->wrapper matching added
- *
- * Revision 1.48  2000/06/14 12:05:37  jhs
- * Added ST_IDENTIFIER and MT_IDENTIFIER.
- * Each new N_mt and N_st will be provided with an unique id.
- *
- * Revision 1.47  2000/06/13 13:41:20  dkr
- * Make...() functions for old with-loop removed
- *
- * Revision 1.46  2000/06/08 12:15:38  jhs
- * Added some INFO_DFA_XXX stuff
- *
- * Revision 1.45  2000/05/29 14:30:18  dkr
- * minor error in comment of N_Ncode corrected
- *
- * Revision 1.44  2000/05/26 11:11:12  jhs
- * Added INFO_COMP_ACTUALATTRIB
- *
- * Revision 1.43  2000/05/25 22:52:01  dkr
- * some comments changed for N_fundef
- *
- * Revision 1.42  2000/05/24 18:57:15  dkr
- * macros for old with-loop separated
- *
- * Revision 1.41  2000/04/20 11:38:33  jhs
- * Added comment at MT_FUNDEF.
- *
- * Revision 1.40  2000/04/13 09:00:48  jhs
- * Added INFO_MUTH_TOPDOWN.
- *
- * Revision 1.39  2000/04/12 17:27:26  jhs
- * Added INFO_MUTH_ALLOW_OOOC.
- *
- * Revision 1.38  2000/03/31 14:10:26  dkr
- * comment corrected
- *
- * Revision 1.37  2000/03/31 12:26:37  jhs
- * Added INFO_DUP_BASEFUNDEF
- *
- * Revision 1.36  2000/03/30 15:13:13  jhs
- * Added adjustcalls
- *
- * Revision 1.35  2000/03/29 16:10:49  jhs
- * MT_WORKERFUN and MT_MASTERFUN added.
- *
- * Revision 1.34  2000/03/24 00:50:24  dkr
- * INFO_DUP_LUT added
- *
- * Revision 1.33  2000/03/23 14:03:33  jhs
- * Added macros for DFMfoldmask_t (DFMFM) ann MakeDFMfoldmask.
- *
- * Revision 1.32  2000/03/22 17:37:28  jhs
- * Added N_MTsignal, N_MTalloc, N_MTsync macros.
  *
  * [...]
  *
@@ -397,6 +169,7 @@ extern char *prf_name_str[];
 #define NODE_TYPE(n) ((n)->nodetype)
 #define NODE_LINE(n) ((n)->lineno)
 #define NODE_FILE(n) ((n)->src_file)
+
 #define NODE_TEXT(n) (mdb_nodetype[NODE_TYPE (n)])
 
 /*
@@ -1472,10 +1245,10 @@ extern node *MakeCond (node *cond, node *thenpart, node *elsepart);
 #define COND_IN_MASK(n) (n->dfmask[0])
 #define COND_OUT_MASK(n) (n->dfmask[1])
 #define COND_LOCAL_MASK(n) (n->dfmask[2])
-#define COND_THENVARS(n) ((ids *)n->node[3])
-#define COND_ELSEVARS(n) ((ids *)n->node[4])
-#define COND_NAIVE_THENVARS(n) ((ids *)n->info2)
-#define COND_NAIVE_ELSEVARS(n) ((ids *)n->node[5])
+#define COND_THENVARS(n) ((ids *)(n->node[3]))
+#define COND_ELSEVARS(n) ((ids *)(n->node[4]))
+#define COND_NAIVE_THENVARS(n) ((ids *)(n->info2))
+#define COND_NAIVE_ELSEVARS(n) ((ids *)(n->node[5]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1516,10 +1289,10 @@ extern node *MakeDo (node *cond, node *body);
 #define DO_IN_MASK(n) (n->dfmask[0])
 #define DO_OUT_MASK(n) (n->dfmask[1])
 #define DO_LOCAL_MASK(n) (n->dfmask[2])
-#define DO_USEVARS(n) ((ids *)n->node[2])
-#define DO_DEFVARS(n) ((ids *)n->node[3])
-#define DO_NAIVE_USEVARS(n) ((ids *)n->node[4])
-#define DO_NAIVE_DEFVARS(n) ((ids *)n->node[5])
+#define DO_USEVARS(n) ((ids *)(n->node[2]))
+#define DO_DEFVARS(n) ((ids *)(n->node[3]))
+#define DO_NAIVE_USEVARS(n) ((ids *)(n->node[4]))
+#define DO_NAIVE_DEFVARS(n) ((ids *)(n->node[5]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1562,10 +1335,10 @@ extern node *While2Do (node *while_node);
 #define WHILE_IN_MASK(n) (n->dfmask[0])
 #define WHILE_OUT_MASK(n) (n->dfmask[1])
 #define WHILE_LOCAL_MASK(n) (n->dfmask[2])
-#define WHILE_USEVARS(n) ((ids *)n->node[2])
-#define WHILE_DEFVARS(n) ((ids *)n->node[3])
-#define WHILE_NAIVE_USEVARS(n) ((ids *)n->node[4])
-#define WHILE_NAIVE_DEFVARS(n) ((ids *)n->node[5])
+#define WHILE_USEVARS(n) ((ids *)(n->node[2]))
+#define WHILE_DEFVARS(n) ((ids *)(n->node[3]))
+#define WHILE_NAIVE_USEVARS(n) ((ids *)(n->node[4]))
+#define WHILE_NAIVE_DEFVARS(n) ((ids *)(n->node[5]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2486,11 +2259,11 @@ extern node *MakeInfo ();
 
 /* concurrent-spmdtrav-producemasks */
 /* DO NOT OVERRIDE ANY INFO_CONC_XXX here! */
-#define INFO_SPMDPM_IN(n) ((DFMmask_t) (n->dfmask[0]))
-#define INFO_SPMDPM_INOUT(n) ((DFMmask_t) (n->dfmask[1]))
-#define INFO_SPMDPM_OUT(n) ((DFMmask_t) (n->dfmask[2]))
-#define INFO_SPMDPM_LOCAL(n) ((DFMmask_t) (n->dfmask[3]))
-#define INFO_SPMDPM_SHARED(n) ((DFMmask_t) (n->dfmask[4]))
+#define INFO_SPMDPM_IN(n) (n->dfmask[0])
+#define INFO_SPMDPM_INOUT(n) (n->dfmask[1])
+#define INFO_SPMDPM_OUT(n) (n->dfmask[2])
+#define INFO_SPMDPM_LOCAL(n) (n->dfmask[3])
+#define INFO_SPMDPM_SHARED(n) (n->dfmask[4])
 
 /* multithread - all mini-phases */
 /* DO NOT OVERRIDE ANY INFO_YYYY_xxx HERE, were YYYY is any other miniphase! */
@@ -2568,8 +2341,8 @@ extern node *MakeInfo ();
 #define INFO_REUSE_FUNDEF(n) (n->node[0])
 #define INFO_REUSE_IDX(n) ((ids *)(n->node[1]))
 #define INFO_REUSE_DEC_RC_IDS(n) ((ids *)(n->node[2]))
-#define INFO_REUSE_MASK(n) ((DFMmask_t) (n->dfmask[0]))
-#define INFO_REUSE_NEGMASK(n) ((DFMmask_t) (n->dfmask[1]))
+#define INFO_REUSE_MASK(n) (n->dfmask[0])
+#define INFO_REUSE_NEGMASK(n) (n->dfmask[1])
 
 /* optimize */
 #define INFO_MASK(n, x) (n->mask[x])
@@ -2672,10 +2445,10 @@ extern node *MakeInfo ();
 
 /* inference of DF masks (infer_dfms.c) */
 #define INFO_INFDFMS_FUNDEF(n) (n->node[0])
-#define INFO_INFDFMS_IN(n) ((DFMmask_t) (n->dfmask[0]))
-#define INFO_INFDFMS_OUT(n) ((DFMmask_t) (n->dfmask[1]))
-#define INFO_INFDFMS_LOCAL(n) ((DFMmask_t) (n->dfmask[2]))
-#define INFO_INFDFMS_NEEDED(n) ((DFMmask_t) (n->dfmask[3]))
+#define INFO_INFDFMS_IN(n) (n->dfmask[0])
+#define INFO_INFDFMS_OUT(n) (n->dfmask[1])
+#define INFO_INFDFMS_LOCAL(n) (n->dfmask[2])
+#define INFO_INFDFMS_NEEDED(n) (n->dfmask[3])
 #define INFO_INFDFMS_ISFIX(n) (n->counter)
 #define INFO_INFDFMS_HIDELOC(n) (n->varno) /* hide locals */
 
@@ -2768,11 +2541,11 @@ extern node *MakeSpmd (node *region);
 
 #define SPMD_REGION(n) (n->node[0])
 
-#define SPMD_IN(n) ((DFMmask_t)n->dfmask[0])
-#define SPMD_INOUT(n) ((DFMmask_t)n->dfmask[1])
-#define SPMD_OUT(n) ((DFMmask_t)n->dfmask[2])
-#define SPMD_LOCAL(n) ((DFMmask_t)n->dfmask[3])
-#define SPMD_SHARED(n) ((DFMmask_t)n->dfmask[4])
+#define SPMD_IN(n) (n->dfmask[0])
+#define SPMD_INOUT(n) (n->dfmask[1])
+#define SPMD_OUT(n) (n->dfmask[2])
+#define SPMD_LOCAL(n) (n->dfmask[3])
+#define SPMD_SHARED(n) (n->dfmask[4])
 
 #define SPMD_FUNDEF(n) (n->node[1])
 #define SPMD_ICM_BEGIN(n) (n->node[2])
@@ -2818,11 +2591,11 @@ extern node *MakeSync (node *region);
 #define SYNC_REGION(n) (n->node[0])
 #define SYNC_SCHEDULING(n) ((SCHsched_t) (n->node[1]))
 
-#define SYNC_IN(n) ((DFMmask_t)n->dfmask[0])
-#define SYNC_INOUT(n) ((DFMmask_t)n->dfmask[1])
-#define SYNC_OUT(n) ((DFMmask_t)n->dfmask[2])
-#define SYNC_OUTREP(n) ((DFMmask_t)n->dfmask[3])
-#define SYNC_LOCAL(n) ((DFMmask_t)n->dfmask[4])
+#define SYNC_IN(n) (n->dfmask[0])
+#define SYNC_INOUT(n) (n->dfmask[1])
+#define SYNC_OUT(n) (n->dfmask[2])
+#define SYNC_OUTREP(n) (n->dfmask[3])
+#define SYNC_LOCAL(n) (n->dfmask[4])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2980,9 +2753,9 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_FOLDABLE(n) (((wl_info *)((n)->info2))->foldable)
 #define NWITH_NO_CHANCE(n) (((wl_info *)((n)->info2))->no_chance)
 
-#define NWITH_IN_MASK(n) ((DFMmask_t) (n)->dfmask[0])
-#define NWITH_OUT_MASK(n) ((DFMmask_t) (n)->dfmask[1])
-#define NWITH_LOCAL_MASK(n) ((DFMmask_t) (n)->dfmask[2])
+#define NWITH_IN_MASK(n) ((n)->dfmask[0])
+#define NWITH_OUT_MASK(n) ((n)->dfmask[1])
+#define NWITH_LOCAL_MASK(n) ((n)->dfmask[2])
 
 /*--------------------------------------------------------------------------*/
 
@@ -3144,7 +2917,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    node*      WLAA_WLARRAY(n)         (wlaa -> )
  ***    shpseg*    TSI_TILESHP(n)          (tsi  -> )
  ***
- ***    bool       AP_DUMMY_CODE           (ap -> compile )
+ ***    bool       AP_DUMMY_CODE           (ap -> wltransform -> compile )
  ***
  ***  remarks:
  ***
@@ -3193,7 +2966,7 @@ extern node *MakeNCode (node *block, node *expr);
 
 #define NCODE_TSI_TILESHP(n) ((shpseg *)(((node *)(n)->info2)->node[4]))
 
-#define NCODE_AP_DUMMY_CODE(n) ((n)->int_data)
+#define NCODE_AP_DUMMY_CODE(n) ((bool)((n)->int_data))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3224,8 +2997,6 @@ extern node *MakeNCode (node *block, node *expr);
  ***    ids*       DEC_RC_IDS               (wltransform -> compile )
  ***
  ***    bool       OFFSET_NEEDED            (wltransform -> compile )
- ***    bool       NAIVE_COMP               (wltransform -> compile )
- ***                            [do naive compilation or not?]
  ***
  ***    SCHsched_t SCHEDULING   (O)         (wltransform -> compile )
  ***    bool       ISSCHEDULED              (new_mt -> ...)
@@ -3242,16 +3013,15 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define NWITH2_WITHOP(n) ((n)->node[3])
 #define NWITH2_PRAGMA(n) ((n)->node[4])
 
-#define NWITH2_DEC_RC_IDS(n) ((ids *)(n)->node[5])
-#define NWITH2_OFFSET_NEEDED(n) ((bool)(n)->int_data)
-#define NWITH2_NAIVE_COMP(n) ((bool)(n)->varno)
-#define NWITH2_SCHEDULING(n) ((SCHsched_t) (n)->info2)
-#define NWITH2_ISSCHEDULED(n) ((n)->int_data)
+#define NWITH2_DEC_RC_IDS(n) ((ids *)((n)->node[5]))
+#define NWITH2_OFFSET_NEEDED(n) ((bool)((n)->int_data))
+#define NWITH2_SCHEDULING(n) ((SCHsched_t) ((n)->info2))
+#define NWITH2_ISSCHEDULED(n) ((n)->info.prf_dec.tag)
 
-#define NWITH2_IN_MASK(n) ((DFMmask_t) ((n)->dfmask[0]))
-#define NWITH2_OUT_MASK(n) ((DFMmask_t) ((n)->dfmask[1]))
-#define NWITH2_LOCAL_MASK(n) ((DFMmask_t) ((n)->dfmask[2]))
-#define NWITH2_REUSE(n) ((DFMmask_t) ((n)->dfmask[3]))
+#define NWITH2_IN_MASK(n) ((n)->dfmask[0])
+#define NWITH2_OUT_MASK(n) ((n)->dfmask[1])
+#define NWITH2_LOCAL_MASK(n) ((n)->dfmask[2])
+#define NWITH2_REUSE(n) ((n)->dfmask[3])
 
 /*--------------------------------------------------------------------------*/
 
@@ -3273,13 +3043,14 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  *          assignment.
  */
 
-#define WLNODE_LEVEL(n) ((n)->lineno)
+#define WLNODE_LEVEL(n) ((n)->int_data)
 #define WLNODE_DIM(n) ((n)->refcnt)
 #define WLNODE_BOUND1(n) ((n)->flag)
 #define WLNODE_BOUND2(n) ((n)->counter)
 #define WLNODE_STEP(n) ((n)->varno)
 #define WLNODE_NEXTDIM(n) ((n)->node[0])
 #define WLNODE_NEXT(n) ((n)->node[1])
+#define WLNODE_NOOP(n) ((bool)((n)->info.prf_dec.tag))
 
 /*
  * some macros for N_WLseg, N_WLsegVar nodes
@@ -3304,6 +3075,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLXBLOCK_NEXTDIM(n) (WLNODE_NEXTDIM (n))
 #define WLXBLOCK_CONTENTS(n) ((n)->node[2])
 #define WLXBLOCK_NEXT(n) (WLNODE_NEXT (n))
+#define WLXBLOCK_NOOP(n) (WLNODE_NOOP (n))
 
 /*
  * some macros for N_WLstride, N_WLstrideVar nodes
@@ -3313,6 +3085,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLSTRIDEX_DIM(n) (WLNODE_DIM (n))
 #define WLSTRIDEX_CONTENTS(n) ((n)->node[0])
 #define WLSTRIDEX_NEXT(n) (WLNODE_NEXT (n))
+#define WLSTRIDEX_NOOP(n) (WLNODE_NOOP (n))
 
 /*
  * some macros for N_WLgrid, N_WLgridVar nodes
@@ -3324,6 +3097,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLGRIDX_NEXTDIM(n) (WLNODE_NEXTDIM (n))
 #define WLGRIDX_NEXT(n) (WLNODE_NEXT (n))
 #define WLGRIDX_CODE(n) ((n)->node[4])
+#define WLGRIDX_NOOP(n) (WLNODE_NOOP (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3439,6 +3213,8 @@ extern node *MakeWLsegVar (int dims, node *contents, node *next);
  ***    int      BOUND2
  ***    int      STEP
  ***
+ ***    bool     NOOP
+ ***
  ***  temporary attributes:
  ***
  ***    ---
@@ -3446,6 +3222,7 @@ extern node *MakeWLsegVar (int dims, node *contents, node *next);
  ***  remarks:
  ***
  ***    - it makes no sense to use the nodes NEXTDIM and CONTENTS simultaneous!
+ ***    - (NOOP == TRUE)  ->  (NEXTDIM == CONTENTS == NULL)
  ***/
 
 extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
@@ -3459,6 +3236,7 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
 #define WLBLOCK_NEXTDIM(n) (WLXBLOCK_NEXTDIM (n))
 #define WLBLOCK_CONTENTS(n) (WLXBLOCK_CONTENTS (n))
 #define WLBLOCK_NEXT(n) (WLXBLOCK_NEXT (n))
+#define WLBLOCK_NOOP(n) (WLXBLOCK_NOOP (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3479,6 +3257,8 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
  ***    int      BOUND2
  ***    int      STEP
  ***
+ ***    bool     NOOP
+ ***
  ***  temporary attributes:
  ***
  ***    ---
@@ -3486,6 +3266,7 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
  ***  remarks:
  ***
  ***    - it makes no sense to use the nodes NEXTDIM and CONTENTS simultaneous!
+ ***    - (NOOP == TRUE)  ->  (NEXTDIM == CONTENTS == NULL)
  ***/
 
 extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
@@ -3499,6 +3280,7 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
 #define WLUBLOCK_NEXTDIM(n) (WLXBLOCK_NEXTDIM (n))
 #define WLUBLOCK_CONTENTS(n) (WLXBLOCK_CONTENTS (n))
 #define WLUBLOCK_NEXT(n) (WLXBLOCK_NEXT (n))
+#define WLUBLOCK_NOOP(n) (WLXBLOCK_NOOP (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3519,11 +3301,17 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
  ***    int      STEP
  ***    bool     UNROLLING    (unrolling wanted?)
  ***
+ ***    bool     NOOP
+ ***
  ***  temporary attributes:
  ***
  ***    node*    PART         (part this stride is generated from)
  ***                                                 (wltransform !!)
  ***    node*    MODIFIED                            (wltransform !!)
+ ***
+ ***  remarks:
+ ***
+ ***    - (NOOP == TRUE)  ->  (CONTENTS == NULL)
  ***/
 
 extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
@@ -3537,6 +3325,7 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
 #define WLSTRIDE_UNROLLING(n) ((bool)((n)->info.prf_dec.tc))
 #define WLSTRIDE_CONTENTS(n) (WLSTRIDEX_CONTENTS (n))
 #define WLSTRIDE_NEXT(n) (WLSTRIDEX_NEXT (n))
+#define WLSTRIDE_NOOP(n) (WLSTRIDEX_NOOP (n))
 
 #define WLSTRIDE_PART(n) ((n)->node[2])
 #define WLSTRIDE_MODIFIED(n) ((n)->node[3])
@@ -3559,6 +3348,8 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***    int      LEVEL
  ***    int      DIM
  ***
+ ***    bool     NOOP
+ ***
  ***  temporary attributes:
  ***
  ***    ---
@@ -3574,6 +3365,7 @@ extern node *MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, no
 #define WLSTRIDEVAR_STEP(n) ((n)->node[4])
 #define WLSTRIDEVAR_CONTENTS(n) (WLSTRIDEX_CONTENTS (n))
 #define WLSTRIDEVAR_NEXT(n) (WLSTRIDEX_NEXT (n))
+#define WLSTRIDEVAR_NOOP(n) (WLSTRIDEX_NOOP (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3595,30 +3387,36 @@ extern node *MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, no
  ***    bool    UNROLLING
  ***    bool    FITTED
  ***
+ ***    bool    NOOP
+ ***
  ***  temporary attributes:
  ***
  ***    node*   MODIFIED                                (wltransform !!)
  ***
  ***  remarks:
  ***
- ***    - it makes no sense to use the nodes NEXTDIM and CODE simultaneous!
+ ***    - It makes no sense to use the nodes NEXTDIM and CODE simultaneous!
  ***    - (NEXTDIM == NULL) *and* (CODE == NULL) means that this is a dummy grid,
  ***      representing a simple init- (genarray), copy- (modarray), noop- (fold)
  ***      operation.
+ ***      If also (NOOP == TRUE) is hold, this dummy grid represents a noop
+ ***      even in genarray/modarray with-loops (-> naive compilation,
+ ***      array padding, ...) !!!
  ***/
 
 extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling,
-                         bool fitted, node *nextdim, node *next, node *code);
+                         node *nextdim, node *next, node *code);
 
 #define WLGRID_LEVEL(n) (WLGRIDX_LEVEL (n))
 #define WLGRID_DIM(n) (WLGRIDX_DIM (n))
 #define WLGRID_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLGRID_BOUND2(n) (WLNODE_BOUND2 (n))
-#define WLGRID_UNROLLING(n) ((bool)((n)->info.prf_dec.tag))
+#define WLGRID_UNROLLING(n) ((bool)((n)->info.prf_dec.tc))
 #define WLGRID_FITTED(n) (WLGRIDX_FITTED (n))
 #define WLGRID_NEXTDIM(n) (WLGRIDX_NEXTDIM (n))
 #define WLGRID_NEXT(n) (WLGRIDX_NEXT (n))
 #define WLGRID_CODE(n) (WLGRIDX_CODE (n))
+#define WLGRID_NOOP(n) (WLGRIDX_NOOP (n))
 
 #define WLGRID_MODIFIED(n) ((n)->node[2])
 
@@ -3641,6 +3439,8 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, bool unroll
  ***    int      DIM
  ***    bool     FITTED
  ***
+ ***    bool     NOOP
+ ***
  ***  temporary attributes:
  ***
  ***    ---
@@ -3651,10 +3451,13 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, bool unroll
  ***    - (NEXTDIM == NULL) *and* (CODE == NULL) means that this is a dummy grid,
  ***      representing a simple init- (genarray), copy- (modarray), noop- (fold)
  ***      operation.
+ ***      If also (NOOP == TRUE) is hold, this dummy grid represents a noop
+ ***      even in genarray/modarray with-loops (-> naive compilation,
+ ***      array padding, ...) !!!
  ***/
 
-extern node *MakeWLgridVar (int level, int dim, node *bound1, node *bound2, bool fitted,
-                            node *nextdim, node *next, node *code);
+extern node *MakeWLgridVar (int level, int dim, node *bound1, node *bound2, node *nextdim,
+                            node *next, node *code);
 
 #define WLGRIDVAR_LEVEL(n) (WLGRIDX_LEVEL (n))
 #define WLGRIDVAR_DIM(n) (WLGRIDX_DIM (n))
@@ -3664,6 +3467,7 @@ extern node *MakeWLgridVar (int level, int dim, node *bound1, node *bound2, bool
 #define WLGRIDVAR_NEXT(n) (WLGRIDX_NEXT (n))
 #define WLGRIDVAR_CODE(n) (WLGRIDX_CODE (n))
 #define WLGRIDVAR_FITTED(n) (WLGRIDX_FITTED (n))
+#define WLGRIDVAR_NOOP(n) (WLGRIDX_NOOP (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3685,11 +3489,6 @@ extern node *MakeWLgridVar (int level, int dim, node *bound1, node *bound2, bool
  ***  temporary attributes:
  ***
  ***    ---
- ***
- ***  remarks: -
- ***
- ***
- ***
  ***/
 
 extern node *MakeCWrapper (node *next, char *name, char *mod, int argcount, int rescount);
