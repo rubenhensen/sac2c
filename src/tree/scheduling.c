@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/03/20 22:37:38  dkr
+ * comment for SCHMakeSchedulingByPragma() modified
+ *
  * Revision 3.11  2001/03/20 19:05:03  dkr
  * wlcomp-pragma functions SchedulingWL(), SchedulingSegs() replaced by
  * Scheduling()
@@ -341,14 +344,13 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
 /******************************************************************************
  *
  * function:
- *   sched_t *SCHMakeSchedulingByPragma(node *ap_node, int line)
+ *   sched_t *SCHMakeSchedulingByPragma( node *ap_node, int line)
  *
  * description:
- *   This function constructs a scheduling specification from a 'ScheduleWL'
- *   or 'ScheduleSeg' entry of the wlcomp pragma. The pragma information is
- *   compared with the scheduling specification table. The line number of
- *   the pragma in the original source code is required to produce sufficient
- *   error messages.
+ *   This function constructs a scheduling specification from a 'Scheduling'
+ *   entry of the wlcomp pragma. The pragma information is compared with the
+ *   scheduling specification table. The line number of the pragma in the
+ *   original source code is required to produce sufficient error messages.
  *
  ******************************************************************************/
 
