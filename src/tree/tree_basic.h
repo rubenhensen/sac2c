@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2001/03/16 11:56:39  nmw
+ * AVIS_SSAPHITRAGET type changed and AVIS macros changed. too
+ *
  * Revision 3.50  2001/03/15 15:32:23  dkr
  * comment for N_arg modified
  *
@@ -2049,8 +2052,9 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***    node*       VARDECORARG     (N_vardec/N_arg)
  ***    node*       SSACOUNT        (N_ssacnt)       (ssaform -> undossa !!)
  ***    node*       SSAASSIGN       (N_assign)       (ssaform -> undossa !!)
+ ***    node*       SSAASSIGN2      (N_assign)       (ssaform -> undossa !!)
  ***    constant*   SSACONST (O)                     (cf -> undossa !!)
- ***    bool        SSAPHITARGET (O)                 (ssaform -> undossa !!)
+ ***    ssaphit_t   SSAPHITARGET (O)                 (ssaform -> undossa !!)
  ***    bool        SSALPINV (O)                     (lir -> undossa !!)
  ***    node*       SSASTACK (O)    (N_ssastack)     (ssaform -> undossa !!)
  ***    bool        SSAUNDOFLAG (O)                  (ssaform -> undossa !!)
@@ -2063,11 +2067,11 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***    the following attributes are only used within SSADeadCodeRemoval:
  ***    bool        NEEDCOUNT                        (ssadcr!!)
  ***
- ***    the following attributes are only used within SSACSE
- ***    bool        SUBST (O)       (N_avis)         (ssacse!!)
+ ***    the following attributes are only used within SSACSE/UndoSSATransform
+ ***    node*       SUBST (O)       (N_avis)         (ssacse!!. undossa!!)
  ***
- ***    the following attributes are only used within UndoSSATransform:
- ***    node*       UNDOAVIS (O)    (N_avis)         (undossa !!)
+ ***    the following attributes are only used within UndoSSATransform
+ ***    node*       SUBSTUSSA (O)   (N_avis)          (undossa!!)
  ***/
 
 /*
@@ -2080,10 +2084,11 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_VARDECORARG(n) (n->node[0])
 #define AVIS_SSACOUNT(n) (n->node[1])
 #define AVIS_SSAASSIGN(n) (n->node[2])
+#define AVIS_SSAASSIGN2(n) (n->node[3])
 #define AVIS_SSACONST(n) ((constant *)(n->info2))
-#define AVIS_SSAPHITARGET(n) ((bool)(n->flag))
+#define AVIS_SSAPHITARGET(n) ((ssaphit_t) (n->flag))
 #define AVIS_SSALPINV(n) ((bool)(n->refcnt))
-#define AVIS_SSASTACK(n) (n->node[3])
+#define AVIS_SSASTACK(n) (n->node[4])
 #define AVIS_SSAUNDOFLAG(n) ((bool)(n->counter))
 /* used only in ssatransform */
 #define AVIS_SSADEFINED(n) ((bool)(n->int_data))
@@ -2091,10 +2096,10 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_SSAELSE(n) ((node *)(n->dfmask[2]))
 /* used only in ssadcr */
 #define AVIS_NEEDCOUNT(n) (n->int_data)
-/* used only in ssacse */
+/* used only in ssacse and again in UndoSSAtransform */
 #define AVIS_SUBST(n) ((node *)(n->dfmask[0]))
 /* used only in UndoSSAtransform */
-#define AVIS_UNDOAVIS(n) ((node *)(n->dfmask[0]))
+#define AVIS_SUBSTUSSA(n) ((node *)(n->dfmask[1]))
 
 /*--------------------------------------------------------------------------*/
 
