@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2004/10/22 10:29:32  khf
+ * fixed bug 73
+ *
  * Revision 1.21  2004/10/07 12:12:45  sah
  * added NCODE_INC_USED macro
  *
@@ -194,6 +197,8 @@ struct INFO {
 #define INFO_WLPG_GENPROP(n) (n->genprob)
 #define INFO_WLPG_GENSHP(n) (n->genshp)
 #define INFO_WLPG_SUBPHASE(n) (n->subphase)
+
+#define AtLeastAKD(type) ((TYIsAKV (type) || TYIsAKS (type) || TYIsAKD (type)))
 
 /**
  * INFO functions
@@ -2071,7 +2076,8 @@ WLPGNwith (node *arg_node, info *arg_info)
 
         } else if ((INFO_WLPG_GENPROP (arg_info) == GPT_partial)
                    && ((INFO_WLPG_GENSHP (arg_info) == GV_constant)
-                       || (INFO_WLPG_GENSHP (arg_info) == GV_struct_constant))) {
+                       || (INFO_WLPG_GENSHP (arg_info) == GV_struct_constant))
+                   && AtLeastAKD (ID_NTYPE (NWITH_CEXPR (arg_node)))) {
             arg_node = CreateFullPartition (arg_node, arg_info);
         }
 
