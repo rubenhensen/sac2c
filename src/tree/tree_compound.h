@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2000/03/23 21:39:26  dkr
+ * macros VARDEC_OR_ARG_ATTRIB and VARDEC_OR_ARG_STATUS added
+ *
  * Revision 1.11  2000/03/21 13:12:56  jhs
  * Added macros: [L_]MT_OR_ST_xxx
  *
@@ -919,13 +922,24 @@ extern node *FindVardec_Varno (int varno, node *fundef);
     ((NODE_TYPE (n) == N_arg) ? ARG_REFCNT (n) : VARDEC_REFCNT (n))
 #define VARDEC_OR_ARG_NAIVE_REFCNT(n)                                                    \
     ((NODE_TYPE (n) == N_arg) ? ARG_NAIVE_REFCNT (n) : VARDEC_NAIVE_REFCNT (n))
+#define VARDEC_OR_ARG_ATTRIB(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_ATTRIB (n) : VARDEC_ATTRIB (n))
+#define VARDEC_OR_ARG_STATUS(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_STATUS (n) : VARDEC_STATUS (n))
 #define VARDEC_OR_ARG_NEXT(n) ((NODE_TYPE (n) == N_arg) ? ARG_NEXT (n) : VARDEC_NEXT (n))
 
-#define L_VARDEC_OR_ARG_NEXT(n, rhs)                                                     \
+#define L_VARDEC_OR_ARG_ACTCHN(n, rhs)                                                   \
     if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_NEXT (n) = (rhs);                                                            \
+        ARG_ACTCHN (n) = (rhs);                                                          \
     } else {                                                                             \
-        VARDEC_NEXT (n) = (rhs);                                                         \
+        VARDEC_ACTCHN (n) = (rhs);                                                       \
+    }
+
+#define L_VARDEC_OR_ARG_COLCHN(n, rhs)                                                   \
+    if (NODE_TYPE (n) == N_arg) {                                                        \
+        ARG_COLCHN (n) = (rhs);                                                          \
+    } else {                                                                             \
+        VARDEC_COLCHN (n) = (rhs);                                                       \
     }
 
 #define L_VARDEC_OR_ARG_REFCNT(n, rhs)                                                   \
@@ -942,18 +956,11 @@ extern node *FindVardec_Varno (int varno, node *fundef);
         VARDEC_NAIVE_REFCNT (n) = (rhs);                                                 \
     }
 
-#define L_VARDEC_OR_ARG_COLCHN(n, rhs)                                                   \
+#define L_VARDEC_OR_ARG_NEXT(n, rhs)                                                     \
     if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_COLCHN (n) = (rhs);                                                          \
+        ARG_NEXT (n) = (rhs);                                                            \
     } else {                                                                             \
-        VARDEC_COLCHN (n) = (rhs);                                                       \
-    }
-
-#define L_VARDEC_OR_ARG_ACTCHN(n, rhs)                                                   \
-    if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_ACTCHN (n) = (rhs);                                                          \
-    } else {                                                                             \
-        VARDEC_ACTCHN (n) = (rhs);                                                       \
+        VARDEC_NEXT (n) = (rhs);                                                         \
     }
 
 /*
