@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/10/11 14:26:09  ktr
+ * removed emm.
+ *
  * Revision 1.2  2004/08/10 16:14:33  ktr
  * reuse inference in EMM can now be activated using -reuse.
  *
@@ -38,99 +41,97 @@ ExplicitAllocation (node *arg_node)
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
                  "ExplicitAllocation not started with modul node");
 
-    if (emm) {
-        /*
-         * Transformation into ssa form
-         *
-         * !!! IF THIS BECOMES UNNECESSARY ONE DAY: !!!
-         *     CVP and DCR can be removed as well
-         */
-        arg_node = DoSSA (arg_node);
-        if ((break_after == PH_alloc)
-            && ((0 == strcmp (break_specifier, "l2f"))
-                || (0 == strcmp (break_specifier, "cha"))
-                || (0 == strcmp (break_specifier, "ssa")))) {
-            goto DONE;
-        }
+    /*
+     * Transformation into ssa form
+     *
+     * !!! IF THIS BECOMES UNNECESSARY ONE DAY: !!!
+     *     CVP and DCR can be removed as well
+     */
+    arg_node = DoSSA (arg_node);
+    if ((break_after == PH_alloc)
+        && ((0 == strcmp (break_specifier, "l2f"))
+            || (0 == strcmp (break_specifier, "cha"))
+            || (0 == strcmp (break_specifier, "ssa")))) {
+        goto DONE;
+    }
 
-        /*
-         * Constant and variable propagation
-         *
-         * !!! Only needed as long we retransform in SSA form
-         */
-        if (optimize & OPT_CVP) {
-            fundef = MODUL_FUNS (arg_node);
-            while (fundef != NULL) {
-                if (!(FUNDEF_IS_LACFUN (fundef))) {
-                    fundef = ConstVarPropagation (fundef);
-                }
-
-                fundef = FUNDEF_NEXT (fundef);
+    /*
+     * Constant and variable propagation
+     *
+     * !!! Only needed as long we retransform in SSA form
+     */
+    if (optimize & OPT_CVP) {
+        fundef = MODUL_FUNS (arg_node);
+        while (fundef != NULL) {
+            if (!(FUNDEF_IS_LACFUN (fundef))) {
+                fundef = ConstVarPropagation (fundef);
             }
-        }
-        if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "cvp"))) {
-            goto DONE;
-        }
 
-        /*
-         * Dead code removal
-         *
-         * !!! Only needed as long we retransform in SSA form
-         */
-        if (optimize & OPT_DCR) {
-            fundef = MODUL_FUNS (arg_node);
-            while (fundef != NULL) {
-                fundef = SSADeadCodeRemoval (fundef, arg_node);
+            fundef = FUNDEF_NEXT (fundef);
+        }
+    }
+    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "cvp"))) {
+        goto DONE;
+    }
 
-                fundef = FUNDEF_NEXT (fundef);
-            }
-        }
-        if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "dcr"))) {
-            goto DONE;
-        }
+    /*
+     * Dead code removal
+     *
+     * !!! Only needed as long we retransform in SSA form
+     */
+    if (optimize & OPT_DCR) {
+        fundef = MODUL_FUNS (arg_node);
+        while (fundef != NULL) {
+            fundef = SSADeadCodeRemoval (fundef, arg_node);
 
-        /*
-         * Explicit allocation
-         */
-        arg_node = EMAllocateFill (arg_node);
-        if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "emal"))) {
-            goto DONE;
+            fundef = FUNDEF_NEXT (fundef);
         }
+    }
+    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "dcr"))) {
+        goto DONE;
+    }
 
-        /*
-         * In Place computation
-         */
-        /*
-         * ...to be implemented...
-         */
-        if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "ipc"))) {
-            goto DONE;
-        }
+    /*
+     * Explicit allocation
+     */
+    arg_node = EMAllocateFill (arg_node);
+    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "emal"))) {
+        goto DONE;
+    }
 
-        /*
-         * Dead code removal
-         */
-        if (optimize & OPT_DCR) {
-            fundef = MODUL_FUNS (arg_node);
-            while (fundef != NULL) {
-                fundef = SSADeadCodeRemoval (fundef, arg_node);
+    /*
+     * In Place computation
+     */
+    /*
+     * ...to be implemented...
+     */
+    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "ipc"))) {
+        goto DONE;
+    }
 
-                fundef = FUNDEF_NEXT (fundef);
-            }
-        }
-        if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "dcr2"))) {
-            goto DONE;
-        }
+    /*
+     * Dead code removal
+     */
+    if (optimize & OPT_DCR) {
+        fundef = MODUL_FUNS (arg_node);
+        while (fundef != NULL) {
+            fundef = SSADeadCodeRemoval (fundef, arg_node);
 
-        /*
-         * Reuse inference
-         */
-        if (reuse) {
-            arg_node = ReuseInference (arg_node);
+            fundef = FUNDEF_NEXT (fundef);
         }
-        if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "reuse"))) {
-            goto DONE;
-        }
+    }
+    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "dcr2"))) {
+        goto DONE;
+    }
+
+    /*
+     * Reuse inference
+     */
+    if (reuse) {
+        arg_node = ReuseInference (arg_node);
+    }
+    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "reuse"))) {
+        goto DONE;
     }
 
 DONE:
