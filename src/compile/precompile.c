@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2002/06/20 15:24:19  dkr
+ * signature of AddVardecs modified
+ * AddVardecs() moved to tree_compound.[ch]
+ *
  * Revision 3.43  2002/06/07 15:50:41  dkr
  * new ATG_... arrays used
  *
@@ -220,45 +224,6 @@
 /******************************************************************************
  *
  * Function:
- *   node *AddVardec( node *fundef, types *type, char *name)
- *
- * Description:
- *   Generates a new declaration, inserts it into the AST, updates the DFMbase
- *   and returns the new declaration.
- *
- ******************************************************************************/
-
-static node *
-AddVardec (node *fundef, types *type, char *name)
-{
-    node *new_vardec;
-
-    DBUG_ENTER ("AddVardec");
-
-    /*
-     * generate new vardec node
-     */
-    new_vardec = MakeVardec (StringCopy (name), DupAllTypes (type), NULL);
-
-    /*
-     * insert new vardec into AST
-     */
-    VARDEC_NEXT (new_vardec) = FUNDEF_VARDEC (fundef);
-    FUNDEF_VARDEC (fundef) = new_vardec;
-
-    /*
-     * we must update FUNDEF_DFM_BASE!!
-     */
-    FUNDEF_DFM_BASE (fundef)
-      = DFMUpdateMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
-                           FUNDEF_VARDEC (fundef));
-
-    DBUG_RETURN (new_vardec);
-}
-
-/******************************************************************************
- *
- * Function:
  *   void LiftIds( ids *ids_arg, node *fundef, types *new_type,
  *                 node **new_assigns)
  *
@@ -294,7 +259,8 @@ LiftIds (ids *ids_arg, node *fundef, types *new_type, node **new_assigns)
     if (new_type == NULL) {
         new_type = IDS_TYPE (ids_arg);
     }
-    new_vardec = AddVardec (fundef, new_type, new_name);
+    new_vardec = MakeVardec (StringCopy (new_name), DupAllTypes (new_type), NULL);
+    fundef = AddVardecs (fundef, new_vardec);
 
     /*
      * Abstract the found return value:
@@ -392,7 +358,8 @@ LiftArg (node *arg_id, node *fundef, types *new_type, node **new_assigns)
     if (new_type == NULL) {
         new_type = ID_TYPE (arg_id);
     }
-    new_vardec = AddVardec (fundef, new_type, new_name);
+    new_vardec = MakeVardec (StringCopy (new_name), DupAllTypes (new_type), NULL);
+    fundef = AddVardecs (fundef, new_vardec);
 
     /*
      * Abstract the given argument:
