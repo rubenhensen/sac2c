@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2004/10/05 13:52:33  sah
+ * disabled DistributiveLaw in NEW_AST mode
+ *
  * Revision 3.66  2004/09/28 14:08:21  ktr
  * removed old refcount and generatemasks
  *
@@ -1218,9 +1221,11 @@ OPTfundef (node *arg_node, info *arg_info)
                 goto INFO;
             }
 
+#ifndef NEW_AST
             if (optimize & OPT_DL) {
                 arg_node = DistributiveLaw (arg_node);
             }
+#endif /* NEW_AST */
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
                 && (0 == strcmp (break_specifier, "dl"))) {
