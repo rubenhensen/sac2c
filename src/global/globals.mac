@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/23 16:23:05  cg
+ * First working revision of new representation of global variables.
+ *
  * Revision 1.6  2004/11/23 15:11:36  cg
  * *** empty log message ***
  *
@@ -79,7 +82,7 @@ GLOBAL (FILE *, outfile, NULL)
  * stream to write result to
  */
 
-GLOBAL (char, sacfilename[MAX_FILE_NAME], {})
+GLOBAL (char *, sacfilename, (char *)ILIBmalloc (MAX_FILE_NAME))
 /*
  * name of file to be compiled
  */
@@ -89,27 +92,27 @@ GLOBAL (char *, puresacfilename, NULL)
  * sacfilename without path specification
  */
 
-GLOBAL (char, outfilename[MAX_FILE_NAME], {})
+GLOBAL (char *, outfilename, (char *)ILIBmalloc (MAX_FILE_NAME))
 /*
  * name of executable
  */
 
-GLOBAL (char, modulename[MAX_FILE_NAME], {})
+GLOBAL (char *, modulename, (char *)ILIBmalloc (MAX_FILE_NAME))
 /*
  * name of module/class which is compiled
  */
 
-GLOBAL (char, cfilename[MAX_FILE_NAME], {})
+GLOBAL (char *, cfilename, (char *)ILIBmalloc (MAX_FILE_NAME))
 /*
  * name of C source code file
  */
 
-GLOBAL (char, targetdir[MAX_FILE_NAME], {})
+GLOBAL (char *, targetdir, (char *)ILIBmalloc (MAX_FILE_NAME))
 /*
  * name of C source code file
  */
 
-GLOBAL (char, commandline[MAX_PATH_LEN], {})
+GLOBAL (char *, commandline, (char *)ILIBmalloc (MAX_PATH_LEN))
 /*
  * command line, used for diagnostic output (status report)
  */
@@ -217,13 +220,13 @@ GLOBAL (bool, executionmodes_available, FALSE)
  *  refer to -D, -cppI command line options:
  */
 
-GLOBAL (char *, cppvars[MAX_CPP_VARS], {})
+GLOBAL (char *, cppvars, (char *)ILIBmalloc (MAX_CPP_VARS))
 /* pointer to respective argv field */
 
 GLOBAL (int, num_cpp_vars, 0)
 /* number of preprocessor -D options */
 
-GLOBAL (char *, cppincs[MAX_CPP_INCS], {})
+GLOBAL (char *, cppincs, (char *)ILIBmalloc (MAX_CPP_INCS))
 /* pointer to respective argv field */
 
 GLOBAL (int, num_cpp_incs, 0)
@@ -344,9 +347,9 @@ GLOBAL (unsigned int, profileflag, PROFILE_NONE)
 GLOBAL (unsigned int, runtimecheck, RUNTIMECHECK_NONE)
 GLOBAL (unsigned int, intrinsics, INTRINSIC_NONE)
 GLOBAL (unsigned int, cachesim, CACHESIM_NO | CACHESIM_PIPE)
-GLOBAL (char, cachesim_host[MAX_FILE_NAME], "")
-GLOBAL (char, cachesim_file[MAX_FILE_NAME], "")
-GLOBAL (char, cachesim_dir[MAX_FILE_NAME], "")
+GLOBAL (char *, cachesim_host, (char *)ILIBmalloc (MAX_FILE_NAME))
+GLOBAL (char *, cachesim_file, (char *)ILIBmalloc (MAX_FILE_NAME))
+GLOBAL (char *, cachesim_dir, (char *)ILIBmalloc (MAX_FILE_NAME))
 /*
  * These options insert special code sections into the target C code
  * in order to do additional checks, profiling, etc., or to use intrinsic
@@ -356,12 +359,13 @@ GLOBAL (char, cachesim_dir[MAX_FILE_NAME], "")
 /*
  * Profiling information storage facilities
  */
-
-GLOBAL (int, PFfuncntr, 0)
-GLOBAL (char *, PFfunnme[PF_MAXFUN], {"main"})
-GLOBAL (int, PFfunapcntr[PF_MAXFUN], {})
-GLOBAL (int, PFfunapline[PF_MAXFUN][PF_MAXFUNAP], {})
-GLOBAL (int, PFfunapmax, 1)
+#if 0
+GLOBAL( int,  PFfuncntr, 0)
+GLOBAL( char *, PFfunnme[PF_MAXFUN] ,  { "main" })
+GLOBAL( int,  PFfunapcntr[PF_MAXFUN], "")
+GLOBAL( int,  PFfunapline[PF_MAXFUN][PF_MAXFUNAP], "")
+GLOBAL( int,  PFfunapmax, 1)
+#endif
 
 /*
  * Compile time options
@@ -410,7 +414,7 @@ GLOBAL (int, break_cycle_specifier, -1)
  * a particular (optimization) loop.
  */
 
-GLOBAL (char, break_specifier[MAX_BREAK_SPECIFIER], "")
+GLOBAL (char *, break_specifier, (char *)ILIBmalloc (MAX_BREAK_SPECIFIER))
 /*
  * Additional break specifier to allow breaking within a particular
  * compiler phase at any position.
@@ -456,7 +460,7 @@ GLOBAL (int, warnings_cnt, 0)
  * Counter for number of warnings
  */
 
-GLOBAL (te_info, *act_info_chn, NULL)
+GLOBAL (te_info *, act_info_chn, NULL)
 /*
  * Info chain for extended error messages during TC
  */
@@ -490,7 +494,7 @@ GLOBAL (int, current_line_length, 80)
  * used for formatting compile time output
  */
 
-GLOBAL (char, error_message_buffer[MAX_ERROR_MESSAGE_LENGTH], {})
+GLOBAL (char *, error_message_buffer, (char *)ILIBmalloc (MAX_ERROR_MESSAGE_LENGTH))
 /*
  * Buffer for generating formatted message
  */
@@ -505,7 +509,7 @@ GLOBAL (char *, filename, NULL)
  * Current file name
  */
 
-GLOBAL (char **, compiler_phase_name, compiler_phase_name_init)
+GLOBAL (const char **, compiler_phase_name, compiler_phase_name_init)
 /*
  * Names of compiler phases
  */
@@ -550,7 +554,7 @@ GLOBAL (bool *, ATG_has_desc, ATG_has_desc_init)
 GLOBAL (bool *, ATG_is_in, ATG_is_in_init)
 GLOBAL (bool *, ATG_is_out, ATG_is_out_init)
 GLOBAL (bool *, ATG_is_inout, ATG_is_inout_init)
-GLOBAL (char *, ATG_string, ATG_string_init)
+GLOBAL (const char **, ATG_string, ATG_string_init)
 
 /*
  * Special purpose global variables
@@ -693,13 +697,19 @@ GLOBAL (target_list_t *, target_list, NULL)
  * structure config, and the target_list is finally released.
  */
 
-GLOBAL (configuration_t, config, )
+GLOBAL (configuration_t, config, config_init)
 /*
  * This global variable permanently stores the desired configuration
  * which is read from the sac2crc file.
  */
 
+/*
+ * Syntax tree root
+ */
+
+GLOBAL (node *, syntax_tree, NULL)
+
 #undef GLOBALtype
-#undef GLOBALid
+#undef GLOBALname
 #undef GLOBALinit
 #undef GLOBAL

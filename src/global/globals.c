@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2004/11/23 16:23:05  cg
+ * First working revision of new representation of global variables.
+ *
  * Revision 3.74  2004/11/23 15:08:11  cg
  * more SacDevCamp.
  *
@@ -182,6 +185,9 @@
 
 #include "globals.h"
 
+#include "dbug.h"
+#include "internal_lib.h"
+
 #include "ct_prf.h"
 #include "constants.h"
 #include "basecv.h"
@@ -244,7 +250,7 @@ static bool ATG_is_inout_init[] = {
 #undef SELECTinout
 };
 
-static char *ATG_string_init[] = {
+static const char *ATG_string_init[] = {
 #define SELECTtext(it_text) it_text
 #include "argtag_info.mac"
 #undef SELECTtext
@@ -478,6 +484,12 @@ static const char *mdb_statustype_init[] = {
 #undef SELECTtext
 };
 
+static configuration_t config_init;
+/*
+ * This is only a dirty trick to fake an a-priori initialization
+ * of config.
+ */
+
 /*
  * Initialize optimization defaults from optimize.mac
  */
@@ -508,20 +520,18 @@ static optimize_t optimize_init = {
  * Initialize global variables from globals.mac
  */
 
-static global_t
-InitializeGlobal ()
+global_t global;
+
+void
+GLOBinitializeGlobal (global_t *global)
 {
-    global_t local;
+    DBUG_ENTER ("GLOBinitializeGlobal");
 
-    DBUG_ENTER ("InitializeGlobal");
-
-#define GLOBALname(name) local.name =
+#define GLOBALname(name) global->name =
 #define GLOBALinit(init) init;
 #include "globals.mac"
 #undef GLOBALinit
 #undef GLOBALname
 
-    DBUG_RETURN (local);
+    DBUG_VOID_RETURN;
 }
-
-global_t global = InitializeGlobal ();

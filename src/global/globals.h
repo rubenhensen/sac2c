@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2004/11/23 16:23:05  cg
+ * First working revision of new representation of global variables.
+ *
  * Revision 3.52  2004/11/23 12:52:04  cg
  * SacDevCamp update.
  *
@@ -121,6 +124,7 @@
 #define TRACE_MT 0x0040   /* trace multi-threading specific operations */
 #define TRACE_CENV 0x0080 /* trace c runtime enviroment init/exit */
 
+#if 0
 #define PROFILE_NONE 0x0000
 #define PROFILE_ALL 0xffff
 
@@ -128,6 +132,7 @@
 #define PROFILE_INL 0x0002
 #define PROFILE_LIB 0x0004
 #define PROFILE_WITH 0x0008
+#endif
 
 #define CACHESIM_NO 0x0000
 
@@ -172,5 +177,7 @@
 #define MIN_ARRAY_REP_AUD 0x0008
 
 extern global_t global;
+
+extern void GLOBinitializeGlobal (global_t *global);
 
 #endif /* _SAC_GLOBALS_H_ */
