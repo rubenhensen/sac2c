@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2001/03/27 09:50:04  dkr
+ * DBUG-ASSERT in DupBlock added
+ *
  * Revision 3.26  2001/03/23 15:37:22  dkr
  * INFO_DUP_ALL removed
  *
@@ -955,6 +958,15 @@ DupBlock (node *arg_node, node *arg_info)
     DFMmask_base_t old_base, new_base;
 
     DBUG_ENTER ("DupBlock");
+
+    /*
+     * DUP_INLINE
+     *  -> N_return nodes are not duplicated
+     *  -> would result in an illegal N_block node
+     *  -> stop here!
+     */
+    DBUG_ASSERT ((INFO_DUP_TYPE (arg_info) != DUP_INLINE),
+                 "N_block node can't be duplicated in DUP_INLINE mode!");
 
     new_vardecs = DUPTRAV (BLOCK_VARDEC (arg_node));
 
