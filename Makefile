@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.48  2002/03/05 15:35:08  sbs
+# create_wrappers.o added
+#
 # Revision 3.47  2002/02/21 15:14:34  sbs
 # src/flatten/insert_vardec.o added
 #
@@ -113,7 +116,7 @@ CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o \
            src/typecheck/new_typecheck.o src/typecheck/new_types.o \
-           src/typecheck/user_types.o
+           src/typecheck/user_types.o src/typecheck/create_wrappers.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/generatemasks.o src/optimize/DeadCodeRemoval.o \
           src/optimize/DeadFunctionRemoval.o src/optimize/freemasks.o \
