@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/09/27 13:18:12  sah
+ * implemented new serialization scheme
+ *
  * Revision 1.5  2004/09/24 20:21:53  sah
  * intermediate version
  *
@@ -185,6 +188,7 @@ GenerateSerFileHead (info *info)
 
     fprintf (INFO_SER_FILE (info), "#define PUSH( x) SerStackPush( x, stack)\n");
     fprintf (INFO_SER_FILE (info), "#define LOOKUP( x) SerStackLookup( x, stack)\n");
+    fprintf (INFO_SER_FILE (info), "#define DROP( x, y) y\n");
 
     DBUG_VOID_RETURN;
 }
@@ -255,6 +259,7 @@ GenerateSerFunHead (node *fundef, symbolentrytype_t type, info *info)
     fprintf (INFO_SER_FILE (info), "node *%s()", GenerateSerFunName (type, fundef));
     fprintf (INFO_SER_FILE (info), "{ serstack_t *stack = SerStackInit();\n");
     fprintf (INFO_SER_FILE (info), "node *result;\n");
+    fprintf (INFO_SER_FILE (info), "result = DROP( x");
 
     DBUG_VOID_RETURN;
 }
@@ -266,18 +271,7 @@ GenerateSerFunTail (node *fundef, symbolentrytype_t type, info *info)
 
     DBUG_ENTER ("GenerateSerFunBodyTail");
 
-    switch (type) {
-    case STE_funbody:
-        pos = SerStackFindPos (FUNDEF_BODY (fundef), INFO_SER_STACK (info));
-        break;
-    case STE_typedef:
-    case STE_objdef:
-    case STE_funhead:
-        pos = SerStackFindPos (fundef, INFO_SER_STACK (info));
-        break;
-    }
-
-    fprintf (INFO_SER_FILE (info), "result = LOOKUP( %d);\n", pos);
+    fprintf (INFO_SER_FILE (info), ");\n");
 
     fprintf (INFO_SER_FILE (info), "stack = SerStackDestroy( stack);\n");
     fprintf (INFO_SER_FILE (info), "return( result);\n}\n");
@@ -383,7 +377,7 @@ SERFundef (node *arg_node, info *arg_info)
     DBUG_PRINT ("SER", ("Serializing function %s", FUNDEF_NAME (arg_node)));
 
     SerializeFundefHead (arg_node, arg_info);
-    /* SerializeFundefBody( arg_node, arg_info); */
+    SerializeFundefBody (arg_node, arg_info);
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);

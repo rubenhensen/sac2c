@@ -2,6 +2,9 @@
 /**
  *
  * $Log$
+ * Revision 1.3  2004/09/27 13:18:12  sah
+ * implemented new serialization scheme
+ *
  * Revision 1.2  2004/09/21 16:34:27  sah
  * ongoing implementation of
  * serialize traversal
@@ -18,7 +21,7 @@
 
 #include "attribs.h"
 
-extern node *SHLPAllocateNode (nodetype ntype, int lineno, char *sfile);
-extern void SHLPFillNode (node *node, ...);
+extern node *SHLPMakeNode (nodetype ntype, int lineno, char *sfile, ...);
+extern node *SHLPLookupFunction (const char *name);
 
 #endif /* _SERIALIZE_HELPER_H */
