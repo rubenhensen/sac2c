@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.20  2000/05/25 18:31:49  dkr
+# -I../flatten added
+#
 # Revision 2.19  2000/03/31 09:33:44  jhs
 # make deps done
 #
@@ -81,7 +84,7 @@ CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
 CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../tree -I../../inc -I../print -I../typecheck -I../refcount \
-     -I../optimize -I../psi-opt -I../scanparse -I../concurrent
+     -I../optimize -I../psi-opt -I../scanparse -I../concurrent -I../flatten
 
 MACS=icm.data icm_comment.c icm_trace.c
 
