@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.134  1997/10/07 14:10:15  srs
+ * new prfs PRF_MIN, PRF_MAX
+ *
  * Revision 1.133  1997/10/03 17:57:17  dkr
  * added prf abs()
  *
@@ -525,7 +528,7 @@ static file_type file_kind = F_prog;
 %token <id> ID, STR, AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PRF_MOD, PLUS,
             F2I, F2D, I2F,I2D, D2I, D2F,
             TOI, TOF, TOD, 
-            MINUS, PRIVATEID, ABS,
+            MINUS, PRIVATEID, ABS, PRF_MIN, PRF_MAX
             RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE, CAT, PSI, GENARRAY, MODARRAY
 %token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_UNS, TYPE_SHORT,
                TYPE_LONG, TYPE_CHAR, TYPE_DBL, TYPE_VOID, TYPE_DOTS
@@ -1505,6 +1508,8 @@ prf_name : AND { $$=$1; }
          | F2D { $$=$1; }
          | D2I { $$=$1; }
          | D2F { $$=$1; }
+         | PRF_MIN { $$=$1; }
+         | PRF_MAX { $$=$1; }
         ;
 
 main: TYPE_INT K_MAIN BRACKET_L BRACKET_R {$$=MakeNode(N_fundef);} exprblock 
@@ -2654,7 +2659,7 @@ unaryop: INC
           }
            ;
 
-binop : PSI
+binop:  PSI
          { $$=MakeNode(N_prf);
            $$->info.prf=F_psi;
          }
@@ -2673,6 +2678,14 @@ binop : PSI
       | GENARRAY
          { $$=MakeNode(N_prf);
            $$->info.prf=F_genarray;
+         }
+      | PRF_MIN
+         { $$=MakeNode(N_prf);
+           $$->info.prf=F_min;
+         }
+      | PRF_MAX
+         { $$=MakeNode(N_prf);
+           $$->info.prf=F_max;
          }
       ;
 
