@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.26  1999/07/28 10:41:51  bs
+ * Function WLAAprintAccesses modified.
+ *
  * Revision 2.25  1999/07/08 16:00:52  bs
  * Bug fixed in WLAAprintAccesses.
  *
@@ -170,7 +173,7 @@
            : ((arg == ACL_offset) ? ("ACL_offset:")                                      \
                                   : ((arg == ACL_const) ? ("ACL_const :") : (""))))
 
-#define IV(a) ((a) == 0) ? ("") : ("iv + ")
+#define IV(a) ((a) == 0) ? ("") : ("%s + ", VARDEC_NAME ())
 
 #define PRINT_LINE_PRAGMA_IN_SIB(file_handle, node)                                      \
     if (compiler_phase == PH_writesib) {                                                 \
@@ -411,22 +414,19 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
                 access = ACCESS_NEXT (access);
                 break;
             case ACL_offset:
-                iv = 1;
-                /*
-                 * here's no break missing !
-                 */
-            case ACL_const:
-                do {
-                    if (offset == NULL)
-                        fprintf (outfile, "no offset\n");
-                    else {
-                        if (ACCESS_DIR (access) == ADIR_read)
-                            fprintf (outfile, "read ( %s[ %d", IV (iv),
+                if (offset == NULL)
+                    fprintf (outfile, "no offset\n");
+                else {
+                    do {
+                        if (ACCESS_DIR (access) == ADIR_read) {
+                            fprintf (outfile, "read ( %s + [ %d",
+                                     VARDEC_NAME (ACCESS_IV (access)),
                                      SHPSEG_SHAPE (offset, 0));
-                        else
-                            /* break; */
-                            fprintf (outfile, "write( %s[ %d", IV (iv),
+                        } else {
+                            fprintf (outfile, "write( %s + [ %d",
+                                     VARDEC_NAME (ACCESS_IV (access)),
                                      SHPSEG_SHAPE (offset, 0));
+                        }
                         for (i = 1; i < dim; i++)
                             fprintf (outfile, ",%d", SHPSEG_SHAPE (offset, i));
                         if (VARDEC_NAME (ACCESS_ARRAY (access)) != NULL)
@@ -435,9 +435,34 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
                         else
                             fprintf (outfile, " ], ?)\n");
                         offset = SHPSEG_NEXT (offset);
-                    }
-                } while (offset != NULL);
+                    } while (offset != NULL);
+                }
                 access = ACCESS_NEXT (access);
+                break;
+            case ACL_const:
+                if (offset == NULL)
+                    fprintf (outfile, "no offset\n");
+                else {
+                    do {
+                        if (ACCESS_DIR (access) == ADIR_read) {
+                            fprintf (outfile, "read ( [ %d", SHPSEG_SHAPE (offset, 0));
+                        } else {
+                            fprintf (outfile, "write( [ %d", SHPSEG_SHAPE (offset, 0));
+                        }
+                        for (i = 1; i < dim; i++) {
+                            fprintf (outfile, ",%d", SHPSEG_SHAPE (offset, i));
+                        }
+                        if (VARDEC_NAME (ACCESS_ARRAY (access)) != NULL) {
+                            fprintf (outfile, " ], %s)\n",
+                                     VARDEC_NAME (ACCESS_ARRAY (access)));
+                        } else {
+                            fprintf (outfile, " ], ?)\n");
+                        }
+                        offset = SHPSEG_NEXT (offset);
+                    } while (offset != NULL);
+                }
+                access = ACCESS_NEXT (access);
+                break;
                 break;
             default:
                 break;
