@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.18  2000/07/11 12:08:19  dkr
+ * uups .... syntax error without TAGGED_ARRAYS removed.
+ *
  * Revision 2.17  2000/07/11 09:56:00  dkr
  * minor changed for TAGGED_ARRAYS done
  *
@@ -302,18 +305,13 @@ PRECRenameLocalIdentifier (char *id
     }
 
 #ifdef TAGGED_ARRAYS
-    if (nt_class == C_scl) {
-#endif /* TAGGED_ARRAYS */
-        new_name
-          = (char *)MALLOC (sizeof (char) * (strlen (id) + strlen (name_prefix) + 1));
-        sprintf (new_name, "%s%s", name_prefix, id);
-#ifdef TAGGED_ARRAYS
-    } else {
-        new_name = (char *)MALLOC (
-          sizeof (char) * (strlen (id) + strlen (name_prefix) + 1 + NT_OVERHEAD));
-        sprintf (new_name, "(%s%s,(%s,(%s,)))", name_prefix, id, nt_class_str[nt_class],
-                 nt_uni_str[nt_uni]);
-    };
+    new_name = (char *)MALLOC (sizeof (char)
+                               * (strlen (id) + strlen (name_prefix) + 1 + NT_OVERHEAD));
+    sprintf (new_name, "(%s%s,(%s,(%s,)))", name_prefix, id, nt_class_str[nt_class],
+             nt_uni_str[nt_uni]);
+#else  /* TAGGED_ARRAYS */
+    new_name = (char *)MALLOC (sizeof (char) * (strlen (id) + strlen (name_prefix) + 1));
+    sprintf (new_name, "%s%s", name_prefix, id);
 #endif /* TAGGED_ARRAYS */
 
     FREE (id);
@@ -351,8 +349,9 @@ RenameId (node *idnode)
          */
     } else {
         ID_NAME (idnode)
-          = PRECRenameLocalIdentifier (ID_NAME (idnode),
+          = PRECRenameLocalIdentifier (ID_NAME (idnode)
 #ifdef TAGGED_ARRAYS
+                                         ,
                                        GetClassFromTypes (ID_TYPE (idnode)),
                                        GetUniFromTypes (ID_TYPE (idnode))
 #endif /* TAGGED_ARRAYS */
@@ -391,8 +390,9 @@ PrecompileIds (ids *id)
              * The global object's definition has already been renamed.
              */
         } else {
-            IDS_NAME (id) = PRECRenameLocalIdentifier (IDS_NAME (id),
+            IDS_NAME (id) = PRECRenameLocalIdentifier (IDS_NAME (id)
 #ifdef TAGGED_ARRAYS
+                                                         ,
                                                        GetClassFromTypes (IDS_TYPE (id)),
                                                        GetUniFromTypes (IDS_TYPE (id))
 #endif /* TAGGED_ARRAYS */
@@ -944,8 +944,9 @@ PREC2arg (node *arg_node, node *arg_info)
              * declarations.
              */
             ARG_NAME (arg_node)
-              = PRECRenameLocalIdentifier (ARG_NAME (arg_node),
+              = PRECRenameLocalIdentifier (ARG_NAME (arg_node)
 #ifdef TAGGED_ARRAYS
+                                             ,
                                            GetClassFromTypes (ARG_TYPE (arg_node)),
                                            GetUniFromTypes (ARG_TYPE (arg_node))
 #endif /* TAGGED_ARRAYS */
@@ -986,8 +987,9 @@ PREC2vardec (node *arg_node, node *arg_info)
         VARDEC_TYPE (arg_node) = RenameTypes (VARDEC_TYPE (arg_node));
 
         VARDEC_NAME (arg_node)
-          = PRECRenameLocalIdentifier (VARDEC_NAME (arg_node),
+          = PRECRenameLocalIdentifier (VARDEC_NAME (arg_node)
 #ifdef TAGGED_ARRAYS
+                                         ,
                                        GetClassFromTypes (ARG_TYPE (arg_node)),
                                        GetUniFromTypes (ARG_TYPE (arg_node))
 #endif /* TAGGED_ARRAYS */
