@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2002/09/16 13:29:39  dkr
+ * RenameFunName(): individual names for wrapper functions
+ *
  * Revision 3.58  2002/09/11 23:09:20  dkr
  * rf_node_info.mac modified.
  *
@@ -2683,6 +2686,10 @@ RenameFunName (char *mod, char *name, statustype status, node *args)
             length += (strlen (tmp_name) + 6);
             new_name = (char *)Malloc (length * sizeof (char));
             sprintf (new_name, "SACf_%s", tmp_name);
+        } else if (status == ST_wrapperfun) {
+            length += (strlen (mod) + strlen (tmp_name) + 9);
+            new_name = (char *)Malloc (length * sizeof (char));
+            sprintf (new_name, "SACwf_%s__%s", mod, tmp_name);
         } else {
             length += (strlen (mod) + strlen (tmp_name) + 8);
             new_name = (char *)Malloc (length * sizeof (char));
