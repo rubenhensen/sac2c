@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.198  2004/12/08 11:20:43  sah
+ * fixed printing of Id nodes
+ *
  * Revision 3.197  2004/12/05 21:03:24  sah
  * enabled printing of global objects
  *
@@ -1346,7 +1349,7 @@ PRTfundef (node *arg_node, info *arg_info)
          */
 
         if ((!FUNDEF_ISZOMBIE (arg_node)) && (!FUNDEF_ISWRAPPERFUN (arg_node))
-            && (FUNDEF_ISSPMDFUN (arg_node))) {
+            && (!FUNDEF_ISSPMDFUN (arg_node))) {
             if ((FUNDEF_BODY (arg_node) == NULL)
                 || ((FUNDEF_RETURN (arg_node) != NULL)
                     && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm))) {
@@ -2349,12 +2352,31 @@ PRTexprs (node *arg_node, info *arg_info)
 node *
 PRTid (node *arg_node, info *arg_info)
 {
+    char *text;
+
     DBUG_ENTER ("PRTid");
 
-    fprintf (global.outfile, "%s",
-             ((global.compiler_phase == PH_genccode) && (ID_NT_TAG (arg_node) != NULL))
-               ? ID_NT_TAG (arg_node)
-               : ID_NAME (arg_node));
+    if (global.compiler_phase == PH_genccode) {
+        if (ID_NT_TAG (arg_node) != NULL) {
+            text = ID_NT_TAG (arg_node);
+        } else if (ID_ICMTEXT (arg_node) != NULL) {
+            text = ID_ICMTEXT (arg_node);
+        } else {
+            text = "";
+            DBUG_ASSERT (FALSE, "Found an Id node with neither NTtag nor ICMText");
+        }
+    } else {
+        if (ID_AVIS (arg_node) != NULL) {
+            text = ID_NAME (arg_node);
+        } else if (ID_ICMTEXT (arg_node) != NULL) {
+            text = ID_ICMTEXT (arg_node);
+        } else {
+            text = "";
+            DBUG_ASSERT (FALSE, "Found an Id node with neither Avis nor ICMText");
+        }
+    }
+
+    fprintf (global.outfile, "%s", text);
 
     DBUG_RETURN (arg_node);
 }
