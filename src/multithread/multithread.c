@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2000/03/21 13:10:10  jhs
+ * Added another CleanCOMPANION.
+ * Comments.
+ *
  * Revision 1.12  2000/03/09 18:34:22  jhs
  * Additional mini-phases.
  *
@@ -364,6 +368,10 @@ MUTHmodul (node *arg_node, node *arg_info)
         goto cont;
     }
 
+    /*
+     *  FUNDEF_COMPANION only used within this traversal!!
+     *  It can be reused afterwards
+     */
     DBUG_PRINT ("MUTH", ("begin RepfunsInit"));
     MUTHdriver (MODUL_FUNS (arg_node), arg_info, ClearCOMPANION, MUTHignore_none);
     MUTHdriver (MODUL_FUNS (arg_node), arg_info, RepfunsInit, MUTHignore);
@@ -373,7 +381,12 @@ MUTHmodul (node *arg_node, node *arg_info)
         goto cont;
     }
 
+    /*
+     *  FUNDEF_COMPANION used to transport information from blkin to blkpp,
+     *  it can be reused after blkpp.
+     */
     DBUG_PRINT ("MUTH", ("begin BlocksInit"));
+    MUTHdriver (MODUL_FUNS (arg_node), arg_info, ClearCOMPANION, MUTHignore_none);
     MUTHdriver (MODUL_FUNS (arg_node), arg_info, BlocksInit, MUTHignore);
     DBUG_PRINT ("MUTH", ("end BlocksInit"));
 
@@ -382,15 +395,16 @@ MUTHmodul (node *arg_node, node *arg_info)
     }
 
     /*
-      DBUG_PRINT( "MUTH", ("begin BlocksPropagate"));
-      MUTHdriver (MODUL_FUNS( arg_node), arg_info, BlocksPropagate, MUTHignore);
-      DBUG_PRINT( "MUTH", ("end BlocksPropagate"));
+     *  FUNDEF_COMPANION used to get information from blkin, but can be
+     *  reused after blkpp.
+     */
+    DBUG_PRINT ("MUTH", ("begin BlocksPropagate"));
+    MUTHdriver (MODUL_FUNS (arg_node), arg_info, BlocksPropagate, MUTHignore);
+    DBUG_PRINT ("MUTH", ("end BlocksPropagate"));
 
-      if ((break_after == PH_spmdregions) &&
-          (strcmp("blkpp", break_specifier)==0)) {
+    if ((break_after == PH_spmdregions) && (strcmp ("blkpp", break_specifier) == 0)) {
         goto cont;
-      }
-    */
+    }
 
     DBUG_PRINT ("MUTH", ("begin BlocksExpand"));
     MUTHdriver (MODUL_FUNS (arg_node), arg_info, BlocksExpand, MUTHignore);
@@ -400,6 +414,10 @@ MUTHmodul (node *arg_node, node *arg_info)
         goto cont;
     }
 
+    /*
+     *  FUNDEF_COMPANION only used within this traversal!!
+     *  It can be reused afterwards
+     */
     DBUG_PRINT ("MUTH", ("begin MtfunsInit"));
     MUTHdriver (MODUL_FUNS (arg_node), arg_info, ClearCOMPANION, MUTHignore_none);
     MUTHdriver (MODUL_FUNS (arg_node), arg_info, MtfunsInit, MUTHignore);
