@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1995/12/01 20:26:14  cg
+ * Revision 1.20  1995/12/04 15:03:58  asi
+ * added temporary attribute FUNDEF_INLREC(n)
+ *
+ * Revision 1.19  1995/12/01  20:26:14  cg
  * removed macro OBJDEF_INITFUN
  *
  * Revision 1.18  1995/12/01  17:09:20  cg
@@ -675,6 +678,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_STATUS(n) (n->info.types->status)
 #define FUNDEF_ATTRIB(n) (n->info.types->attrib)
 #define FUNDEF_INLINE(n) (n->flag)
+#define FUNDEF_INLREC(n) (n->refcnt)
 #define FUNDEF_EXTERN(n) (n->node[3])
 
 #define FUNDEC_DEF(n) (n->node[3])
