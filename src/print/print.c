@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.92  2002/06/25 14:07:03  sbs
+ * PrintDot added .
+ *
  * Revision 3.91  2002/06/21 12:26:45  dkr
  * PrintAST: AVIS_SSACONST for N_id nodes added
  *
@@ -2420,6 +2423,27 @@ PrintStr (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintStr");
 
     fprintf (outfile, "\"%s\"", STR_STRING (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PrintDot (node *arg_node, node *arg_info)
+{
+    int i;
+
+    DBUG_ENTER ("PrintDot");
+
+    for (i = 0; i < DOT_NUM (arg_node); i++) {
+        fprintf (outfile, ".");
+    }
 
     DBUG_RETURN (arg_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/06/25 14:07:03  sbs
+ * PrintDot added .
+ *
  * Revision 3.15  2002/04/09 15:54:53  dkr
  * some comments added.
  * PrintArgtab() added.
@@ -110,6 +113,7 @@ extern node *PrintNum (node *arg_node, node *arg_info);
 extern node *PrintFloat (node *arg_node, node *arg_info);
 extern node *PrintDouble (node *arg_node, node *arg_info);
 extern node *PrintBool (node *arg_node, node *arg_info);
+extern node *PrintDot (node *arg_node, node *arg_info);
 extern node *PrintStr (node *arg_node, node *arg_info);
 extern node *PrintChar (node *arg_node, node *arg_info);
 extern node *PrintVectInfo (node *arg_node, node *arg_info);
