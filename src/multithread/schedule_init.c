@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/03/02 13:03:55  jhs
+ * Fixed some minor bugs.
+ *
  * Revision 1.7  2000/02/11 16:21:01  jhs
  * Expanded traversals ...
  *
@@ -78,7 +81,7 @@ ScheduleInit (node *arg_node, node *arg_info)
     old_scheduling = INFO_SCHIN_SCHEDULING (arg_info);
     old_innerwls = INFO_SCHIN_INNERWLS (arg_info);
     INFO_SCHIN_SCHEDULING (arg_info) = NULL;
-    INFO_SCHIN_INNERWLS (arg_info) = NULL;
+    INFO_SCHIN_INNERWLS (arg_info) = FALSE;
 
     DBUG_PRINT ("SCHIN", ("trav into fundef"));
     FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
@@ -366,14 +369,14 @@ SCHINnwith2 (node *arg_node, node *arg_info)
             }
             INFO_SCHIN_SCHEDULING (arg_info) = NULL;
         }
-    } else {
+    } else if (NWITH2_SCHEDULING (arg_node) != NULL) {
         if (!INFO_SCHIN_INNERWLS (arg_info)) {
             WARN (linenum, ("pragma-scheduling of *mt not allowed* wl ignored"));
         } else {
             WARN (linenum, ("pragma-scheduling of *mt not allowed* inner-wl ignored"));
         }
     }
-    if (INFO_SCHIN_ALLOWED (arg_info) != NULL) {
+    if (INFO_SCHIN_ALLOWED (arg_info)) {
         NWITH2_ISSCHEDULED (arg_node) = TRUE;
     }
 
