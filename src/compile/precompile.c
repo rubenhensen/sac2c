@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2002/02/21 12:04:02  dkr
+ * forced check-in :-(
+ *
  * Revision 3.28  2002/02/20 15:02:47  dkr
  * fundef DupTypes() renamed into DupAllTypes()
  *
@@ -2114,6 +2117,9 @@ PREC2WLsegx (node *arg_node, node *arg_info)
  *
  */
 
+#define TRAV3 0
+
+#if TRAV3
 typedef struct {
     void *node;
     argtag_t tag;
@@ -2155,8 +2161,8 @@ Argtab_Init (int size)
 /******************************************************************************
  *
  * Function:
- *   argtab_t Argtab_InsertEntry( argtab_t argtab, node *fundef, int param_id,
- *                                void *tabnode, argtag_t tabtag)
+ *   argtab_t Argtab_InsertOutNode( argtab_t argtab, node *fundef, int param_id,
+ *                                  types *rettypes, void *tabnode)
  *
  * Description:
  *
@@ -2164,26 +2170,48 @@ Argtab_Init (int size)
  ******************************************************************************/
 
 static argtab_t
-Argtab_InsertEntry (argtab_t argtab, node *fundef, int param_id, void *tabnode,
-                    argtag_t tabtag)
+Argtab_InsertOutNode (argtab_t argtab, node *fundef, int param_id, types *rettype,
+                      void *tabnode)
 {
+    argtag_t tabtag;
     int idx;
 
-    DBUG_ENTER ("Argtab_InsertEntry");
+    DBUG_ENTER ("Argtab_InsertOutNode");
 
-    idx = FUNDEF_GET_LINKSIGN (fundef, param_id) + 1;
+    if (TYPES_BASETYPE (rettype) != T_dots) {
+        idx = FUNDEF_GET_LINKSIGN (fundef, param_id) + 1;
+        tabtag = (MUST_REFCOUNT (rettype)) ? ATG_out_rc : ATG_out;
+    } else {
+        idx = 0;
+        tabtag = ATG_in;
+    }
 
     if (idx < argtab.size) {
-        argtab.tab[idx] = malloc (sizeof (argtabentry_t));
-        argtab.tab[idx]->node = tabnode;
-        argtab.tab[idx]->tag = tabtag;
+        if (argtab.tab[idx] == NULL) {
+            argtab.tab[idx] = malloc (sizeof (argtabentry_t));
+            argtab.tab[idx]->node = tabnode;
+            argtab.tab[idx]->tag = tabtag;
+        } else {
+            if (idx > 1) {
+                ERROR (NODE_LINE (fundef), ("illegal linksign pragma: "
+                                            "out-parameter at position %d found twice",
+                                            idx - 1));
+            } else if (idx == 1) {
+                ERROR (NODE_LINE (fundef), ("illegal linksign pragma: "
+                                            "return value (position 0) found twice"));
+            } else {
+                DBUG_ASSERT ((0), "more than one T_dots out-parameter found!");
+            }
+        }
     } else {
-        ERROR (NODE_LINE (fundef), ("illegal linksign pragma: entry [%d] == %d >= %d",
+        ERROR (NODE_LINE (fundef), ("illegal linksign pragma: "
+                                    "entry [%d] == %d >= %d",
                                     param_id, idx, argtab.size));
     }
 
     DBUG_RETURN (argtab);
 }
+#endif
 
 /******************************************************************************
  *
@@ -2198,16 +2226,17 @@ Argtab_InsertEntry (argtab_t argtab, node *fundef, int param_id, void *tabnode,
 node *
 PREC3fundef (node *arg_node, node *arg_info)
 {
+#if TRAV3
     types *rettypes;
     node *args;
     argtab_t argtab;
     node *tabnode;
-    argtag_t tabtag;
     int param_id;
-    int cnt_params;
+#endif
 
     DBUG_ENTER ("PREC3fundef");
 
+#if TRAV3
     if (FUNDEF_STATUS (arg_node) != ST_zombiefun) {
         rettypes = FUNDEF_TYPES (arg_node);
         args = FUNDEF_ARGS (arg_node);
@@ -2216,14 +2245,8 @@ PREC3fundef (node *arg_node, node *arg_info)
 
         while (rettypes != NULL) {
             tabnode
-              = MakeArg (NULL, DupAllTypes (rettypes), ST_regular, ST_regular, NULL);
-            if ((MUST_REFCOUNT (rettypes))
-                && (FUNDEF_DOES_REFCOUNT (arg_node, param_id))) {
-                tabtag = ATG_out_rc;
-            } else {
-                tabtag = ATG_out;
-            }
-            argtab = Argtab_InsertEntry (argtab, arg_node, param_id, tabnode, tabtag);
+              = MakeArg (NULL, DupOneTypesOnly (rettypes), ST_regular, ST_regular, NULL);
+            argtab = Argtab_InsertOutNode (argtab, arg_node, param_id, rettypes, tabnode);
 
             rettypes = TYPES_NEXT (rettypes);
             param_id++;
@@ -2256,6 +2279,7 @@ PREC3fundef (node *arg_node, node *arg_info)
             FUNDEF_PRAGMA (arg_node) = FreeNode (FUNDEF_PRAGMA (arg_node));
         }
     }
+#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -2349,8 +2373,10 @@ Precompile (node *syntax_tree)
     act_tab = precomp2_tab;
     syntax_tree = Trav (syntax_tree, info);
 
+#if TRAV3
     act_tab = precomp3_tab;
     syntax_tree = Trav (syntax_tree, info);
+#endif
 
     info = FreeTree (info);
 
