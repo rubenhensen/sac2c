@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.27  1998/02/09 15:41:40  sbs
+ * forced check in 8-(((
+ *  not yet cleaned up!
+ *
  * Revision 1.26  1997/12/10 14:24:37  sbs
  * a couple of NEWTREE's killed 8-)
  *
@@ -569,9 +573,6 @@ MakeBlock (node *instr, node *vardec)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_block;
-#ifndef NEWTREE
-    NODE_NNODE (tmp) = 2;
-#endif
 
     BLOCK_INSTR (tmp) = instr;
     BLOCK_VARDEC (tmp) = vardec;
@@ -592,9 +593,6 @@ MakeVardec (char *name, types *type, node *next)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_vardec;
-#ifndef NEWTREE
-    NODE_NNODE (tmp) = 1;
-#endif
 
     VARDEC_TYPE (tmp) = type;
     VARDEC_NAME (tmp) = name;
@@ -614,9 +612,6 @@ MakeAssign (node *instr, node *next)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_assign;
-#ifndef NEWTREE
-    NODE_NNODE (tmp) = 2;
-#endif
 
     ASSIGN_INSTR (tmp) = instr;
     ASSIGN_NEXT (tmp) = next;
@@ -637,9 +632,6 @@ MakeLet (node *expr, ids *ids)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_let;
-#ifndef NEWTREE
-    NODE_NNODE (tmp) = 1;
-#endif
 
     LET_EXPR (tmp) = expr;
     LET_IDS (tmp) = ids;
@@ -723,9 +715,6 @@ MakeDo (node *cond, node *body)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_do;
-#ifndef NEWTREE
-    NODE_NNODE (tmp) = 2;
-#endif
 
     DO_COND (tmp) = cond;
     DO_BODY (tmp) = body;
@@ -746,9 +735,6 @@ MakeWhile (node *cond, node *body)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_while;
-#ifndef NEWTREE
-    NODE_NNODE (tmp) = 2;
-#endif
 
     WHILE_COND (tmp) = cond;
     WHILE_BODY (tmp) = body;
@@ -1017,9 +1003,6 @@ MakeId (char *name, char *mod, statustype status)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_id;
-#ifndef NEWTREE
-    NODE_NNODE (tmp) = 0;
-#endif
 
     tmp->info.ids = MakeIds (name, mod, status);
 
@@ -1192,9 +1175,6 @@ MakeEmpty ()
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_empty;
-#ifndef NEWTREE
-    NODE_NNODE (tmp) = 0;
-#endif
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));

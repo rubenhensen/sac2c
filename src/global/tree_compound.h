@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.54  1998/02/09 15:41:40  sbs
+ * forced check in 8-(((
+ *  not yet cleaned up!
+ *
  * Revision 1.53  1997/12/10 14:24:02  sbs
  * MAKE_BIN_PRF macro inserted !
  *
@@ -1055,6 +1059,8 @@ extern void ObjList2ArgList (node *objdef);
 #define BLOCK_DEFMASK(n) (BLOCK_MASK (n, 0))
 #define BLOCK_USEMASK(n) (BLOCK_MASK (n, 1))
 
+#define MAKE_EMPTY_BLOCK() MakeBlock (MakeEmpty (), NULL)
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1073,20 +1079,11 @@ extern void ObjList2ArgList (node *objdef);
 #define VARDEC_TMOD(n) (TYPES_MOD (VARDEC_TYPE (n)))
 #define VARDEC_TDEF(n) (TYPES_TDEF (VARDEC_TYPE (n)))
 
-#ifndef NEWTREE
-#define APPEND_VARDECS(old, new)                                                         \
-    if (NULL != old) {                                                                   \
-        VARDEC_NEXT (old) = new;                                                         \
-        old->nnode = 1;                                                                  \
-    } else                                                                               \
-        old = new
-#else /* NEWTREE */
 #define APPEND_VARDECS(old, new)                                                         \
     if (NULL != old) {                                                                   \
         VARDEC_NEXT (old) = new;                                                         \
     } else                                                                               \
         old = new
-#endif
 
 /*--------------------------------------------------------------------------*/
 
@@ -1153,6 +1150,10 @@ extern node *GetCompoundNode (node *arg_node);
 #define LET_VARNO(n) (VARDEC_VARNO (LET_VARDEC (n)))
 #define LET_BASETYPE(n) (TYPES_BASETYPE (VARDEC_TYPE (LET_VARDEC (n))))
 #define LET_USE(n) (IDS_USE (LET_IDS (n)))
+
+#define MAKE_OPON_LET(id, expr, op)                                                      \
+    MakeLet (MAKE_BIN_PRF (op, MakeId (id, NULL, ST_regular), expr),                     \
+             MakeIds (StringCopy (id), NULL, ST_regular))
 
 /*--------------------------------------------------------------------------*/
 
