@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.89  2004/07/14 15:32:49  ktr
+# refcount/alloc.o added.
+#
 # Revision 3.88  2004/07/06 12:41:19  skt
 # propagate_executionmode added
 #
@@ -248,7 +251,7 @@ MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o \
          src/modules/implicittypes.o src/modules/analysis.o \
          src/modules/checkdec.o src/modules/readsib.o src/modules/cccall.o
 OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
-REFCOUNT= src/refcount/refcount.o src/refcount/SSARefCount.o
+REFCOUNT= src/refcount/refcount.o src/refcount/alloc.o
 CONCURRENT= src/concurrent/concurrent.o \
             src/concurrent/spmd_init.o src/concurrent/spmd_opt.o \
             src/concurrent/spmd_lift.o src/concurrent/sync_init.o \
@@ -360,7 +363,7 @@ prod:
 	(cd src/optimize; $(MAKE_PROD) )
 	(cd src/modules; $(MAKE_PROD) )
 	(cd src/objects; $(MAKE_PROD) )
-	(cd src/refcount; $(MAKE_PROD) )       
+	(cd src/refcount; $(MAKE_PROD) )  
 	(cd src/concurrent; $(MAKE_PROD) )
 	(cd src/multithread; $(MAKE_PROD) )
 	(cd src/compile; $(MAKE_PROD) )
