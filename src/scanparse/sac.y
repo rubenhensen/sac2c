@@ -456,14 +456,6 @@ expr:   ID BRACKET_L exprs BRACKET_R
       | BRACKET_L expr BRACKET_R 
          { $$=$2;
          }
-      | FLOAT
-         { $$=MakeNode(N_float);
-           $$->info.cfloat=atof(yytext);
-           
-           DBUG_PRINT("GENTREE",
-                      ("%s " P_FORMAT ": %f ", 
-                       mdb_nodetype[$$->nodetype], $$, $$->info.cfloat)); 
-         }
       | ID SQBR_L exprs SQBR_R 
          { $$=MakeNode(N_prf);
            $$->node[0]=$3;   /* Expression-Liste  */
@@ -574,6 +566,30 @@ expr:   ID BRACKET_L exprs BRACKET_R
           $$->info.cint=yylval.cint;
           DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %d",
                                 mdb_nodetype[$$->nodetype],$$,$$->info.cint));
+         }
+      | FLOAT
+         { $$=MakeNode(N_float);
+           $$->info.cfloat=$1;
+           
+           DBUG_PRINT("GENTREE",
+                      ("%s " P_FORMAT ": %f ", 
+                       mdb_nodetype[$$->nodetype], $$, $$->info.cfloat)); 
+         }
+      | MINUS FLOAT %prec UMINUS
+         { $$=MakeNode(N_float);
+           $$->info.cfloat=-$2;
+           
+           DBUG_PRINT("GENTREE",
+                      ("%s " P_FORMAT ": %f ", 
+                       mdb_nodetype[$$->nodetype], $$, $$->info.cfloat)); 
+         }
+      | PLUS FLOAT %prec UMINUS
+         { $$=MakeNode(N_float);
+           $$->info.cfloat=$2;
+           
+           DBUG_PRINT("GENTREE",
+                      ("%s " P_FORMAT ": %f ", 
+                       mdb_nodetype[$$->nodetype], $$, $$->info.cfloat)); 
          }
       ;
 
@@ -745,7 +761,7 @@ simpletype: TYPE_INT
 int yyerror( char *errname)
 {
   fprintf(stderr, "sac : %s in line %d at \"%s\"\n", errname, linenum, yytext);
-  return(1);
+  exit(1);
 }
 
 int warn( char *warnname)
