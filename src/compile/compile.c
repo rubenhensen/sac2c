@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.55  2000/05/24 19:02:46  dkr
+ * Inference for WL_ADJUST_OFFSET-icm lifted into a function
+ * macro NCODE_CBLOCK_INSTR used
+ * some DBUG_ASSERTs added
+ *   (BLOCK_INSTR and NCODE_CBLOCK_INSTR have to be != NULL)
+ *
  * Revision 2.54  2000/05/24 13:30:23  nmw
  * (jhs) Added workarounds for BLOCK_INSTR == NULL.
  *
@@ -445,12 +451,14 @@ MakeAdjustRcICM (ids *varname, int num)
     if (num > 0) {
         result = MakeAssignIcm2 ("ND_INC_RC", MakeId2 (DupOneIds (varname, NULL)),
                                  MakeNum (num));
-    } else if (num == 0) {
-        result = NULL;
     } else {
-        /* num < -1 */
-        result = MakeAssignIcm2 ("ND_DEC_RC_FREE_ARRAY",
-                                 MakeId2 (DupOneIds (varname, NULL)), MakeNum (-num));
+        if (num == 0) {
+            result = NULL;
+        } else {
+            /* num < -1 */
+            result = MakeAssignIcm2 ("ND_DEC_RC_FREE_ARRAY",
+                                     MakeId2 (DupOneIds (varname, NULL)), MakeNum (-num));
+        }
     }
 
     DBUG_RETURN (result);
@@ -832,13 +840,17 @@ MakeDecRcICMs (ids *mm_ids, node *next)
             if (IDS_REFCNT (mm_ids) > 1) {
                 assign = MakeAssignIcm2 ("ND_DEC_RC", MakeId2 (DupOneIds (mm_ids, NULL)),
                                          MakeNum (1));
-            } else if (IsNonUniqueHidden (IDS_TYPE (mm_ids))) {
-                assign = MakeAssignIcm3 ("ND_DEC_RC_FREE_HIDDEN",
-                                         MakeId2 (DupOneIds (mm_ids, NULL)), MakeNum (1),
-                                         MakeId1 (GenericFun (1, IDS_TYPE (mm_ids))));
             } else {
-                assign = MakeAssignIcm2 ("ND_DEC_RC_FREE_ARRAY",
-                                         MakeId2 (DupOneIds (mm_ids, NULL)), MakeNum (1));
+                if (IsNonUniqueHidden (IDS_TYPE (mm_ids))) {
+                    assign
+                      = MakeAssignIcm3 ("ND_DEC_RC_FREE_HIDDEN",
+                                        MakeId2 (DupOneIds (mm_ids, NULL)), MakeNum (1),
+                                        MakeId1 (GenericFun (1, IDS_TYPE (mm_ids))));
+                } else {
+                    assign
+                      = MakeAssignIcm2 ("ND_DEC_RC_FREE_ARRAY",
+                                        MakeId2 (DupOneIds (mm_ids, NULL)), MakeNum (1));
+                }
             }
 
             if (assigns == NULL) {
@@ -2253,6 +2265,8 @@ COMPBlock (node *arg_node, node *arg_info)
 
         FREE (BLOCK_CACHESIM (arg_node));
 
+        DBUG_ASSERT ((BLOCK_INSTR (arg_node) != NULL),
+                     "first instruction of block is NULL (should be a N_empty node)");
         assign = BLOCK_INSTR (arg_node);
 
         BLOCK_INSTR (arg_node)
@@ -2268,9 +2282,7 @@ COMPBlock (node *arg_node, node *arg_info)
     }
 
     INFO_COMP_LASTASSIGN (arg_info) = arg_node;
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
-    }
+    BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
 
     /* restoring old info! (nested blocks) */
     INFO_COMP_LASTASSIGN (arg_info) = old_info;
@@ -2828,10 +2840,11 @@ COMPIdxModarray (node *arg_node, node *arg_info)
         if ((N_id == NODE_TYPE (arg3)) && (1 == IsArray (ID_TYPE (arg3)))) {
             char *icm_name;
 
-            if (1 == arg1->refcnt)
+            if (1 == arg1->refcnt) {
                 icm_name = "ND_IDX_MODARRAY_AxVxA_CHECK_REUSE";
-            else
+            } else {
                 icm_name = "ND_IDX_MODARRAY_AxVxA";
+            }
 
             BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), icm_name, line, type_id_node);
             MAKE_NEXT_ICM_ARG (icm_arg, res);
@@ -4429,8 +4442,9 @@ COMPAp (node *arg_node, node *arg_info)
 
             save_icm_arg = icm_arg;
 
-            if (next == NULL)
+            if (next == NULL) {
                 InsertApDotsParam (icm_tab, icm_tab_entry);
+            }
         } else {
             icm_tab_entry = MakeExprs (MakeId1 (tag), NULL);
             EXPRS_NEXT (icm_tab_entry) = exprs;
@@ -6228,16 +6242,19 @@ COMPNcode (node *arg_node, node *arg_info)
          * insert these ICMs as first statement into the code-block
          */
 
-        if ((BLOCK_INSTR (NCODE_CBLOCK (arg_node)) != NULL)
-            && (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (arg_node))) == N_empty)) {
+        DBUG_ASSERT ((NCODE_CBLOCK (arg_node) != NULL),
+                     "no code block found in N_Ncode node");
+        DBUG_ASSERT ((NCODE_CBLOCK_INSTR (arg_node) != NULL),
+                     "first instruction of block is NULL (should be a N_empty node)");
+
+        if (NODE_TYPE (NCODE_CBLOCK_INSTR (arg_node)) == N_empty) {
             /*
              * remove a N_empty node
              */
-            BLOCK_INSTR (NCODE_CBLOCK (arg_node))
-              = FreeTree (BLOCK_INSTR (NCODE_CBLOCK (arg_node)));
+            NCODE_CBLOCK_INSTR (arg_node) = FreeTree (NCODE_CBLOCK_INSTR (arg_node));
         }
-        BLOCK_INSTR (NCODE_CBLOCK (arg_node))
-          = AppendAssign (icm_assigns, BLOCK_INSTR (NCODE_CBLOCK (arg_node)));
+        NCODE_CBLOCK_INSTR (arg_node)
+          = AppendAssign (icm_assigns, NCODE_CBLOCK_INSTR (arg_node));
     }
 
     if (NCODE_NEXT (arg_node) != NULL) {
@@ -6505,7 +6522,6 @@ COMPWLublock (node *arg_node, node *arg_info)
     /*
      * insert ICMs for current node
      */
-
     DBUG_ASSERT ((assigns != NULL), "contents and nextdim are empty");
 
     if (WLUBLOCK_LEVEL (arg_node) == 0) {
@@ -6690,6 +6706,86 @@ COMPWLstride (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
+ * Function:
+ *   int GetDim_WL_ADJUST_OFFSET( node *grid, node *wl, node *seg,
+ *                                int multi_segs)
+ *
+ * Description:
+ *   'wl' is a pointer to the current N_Nwith2-node,
+ *   'seg' is a pointer to the current N_Nseg-node.
+ *   'multi_segs' indicates whether there are multiple segments or not.
+ *
+ *   This function infers in which dimension the WL_ADJUST_OFFSET-icm is needed.
+ *   A return value -1 means that this ICM is not needed at all.
+ *
+ *   'multi_segs' == 0:
+ *     insert ICM, if blocking is activ and the next dim is the last one
+ *     (otherwise the ICM redundant) and we do not have a fold with-loop
+ *     (in this case we do not use any offset!).
+ *
+ *   'multi_segs' == 1:
+ *     insert ICM, if next dim is the last dim and we do not have a fold
+ *     with-loop.
+ *
+ ******************************************************************************/
+
+int
+GetDim_WL_ADJUST_OFFSET (node *grid, node *wl, node *seg, int multi_segs)
+{
+    int first_block_dim, d;
+    int icm_dim = -1;
+
+    DBUG_ENTER ("InsertIcm_WL_ADJUST_OFFSET");
+
+    if ((NWITH2_TYPE (wl) != WO_foldprf) && (NWITH2_TYPE (wl) != WO_foldfun)) {
+
+        /*
+         * infer first blocking dimension
+         */
+        d = 0;
+        while ((d < WLSEG_DIMS (seg)) && ((WLSEG_BV (seg, 0))[d] == 1)) {
+            d++;
+        }
+        if (d == WLSEG_DIMS (seg)) {
+            /*
+             * no blocking => inspect 'ubv'
+             */
+            d = 0;
+            while ((d < WLSEG_DIMS (seg)) && ((WLSEG_UBV (seg))[d] == 1)) {
+                d++;
+            }
+        }
+        first_block_dim = d;
+
+        /*
+         * check whether 'WL_ADJUST_OFFSET' is needed or not
+         */
+        if (multiple_segs == 0) {
+
+            /*
+             * is the next dim the last one and blocking activ?
+             */
+            if ((WLGRID_DIM (grid) + 2 == WLSEG_DIMS (seg))
+                && (first_block_dim < WLSEG_DIMS (seg))) {
+                icm_dim = first_block_dim;
+            }
+        } else {
+            /* 'multiple_segs' == 1 */
+
+            /*
+             * is the next dim the last one?
+             */
+            if (WLGRID_DIM (grid) + 2 == WLSEG_DIMS (seg)) {
+                icm_dim = first_block_dim;
+            }
+        }
+    }
+
+    DBUG_RETURN (icm_dim);
+}
+
+/******************************************************************************
+ *
  * function:
  *   node *COMPWLgrid( node *arg_node, node *arg_info)
  *
@@ -6712,8 +6808,7 @@ COMPWLgrid (node *arg_node, node *arg_info)
                                                                   *dec_rc_cexpr = NULL;
     ids *ids_vector, *ids_scalar, *withid_ids;
     char *icm_name, *icm_name_begin, *icm_name_end;
-    int num_args, cnt_unroll, first_block_dim, d, i;
-    int insert_icm = 0;
+    int num_args, cnt_unroll, adjust_dim, i;
 
     DBUG_ENTER ("COMPWLgrid");
 
@@ -6740,84 +6835,17 @@ COMPWLgrid (node *arg_node, node *arg_info)
 
     if (WLGRID_NEXTDIM (arg_node) != NULL) {
 
-        /**************************************************************************
-         * insert ICM 'WL_ADJUST_OFFSET'
-         *
-         * 'multiple_segs' == 0:
-         *    insert ICM, if blocking is activ and the next dim is the last one
-         *    (otherwise the ICM redundant) and we do not have a fold with-loop
-         *    (in this case we do not use any offset!).
-         *
-         * 'multiple_segs' == 1:
-         *    insert ICM, if next dim is the last dim and we do not have a fold
-         *    with-loop.
-         */
-
-        if ((NWITH2_TYPE (wl_node) != WO_foldprf)
-            && (NWITH2_TYPE (wl_node) != WO_foldfun)) {
-
-            /*
-             * infer first blocking dimension
-             */
-            d = 0;
-            while ((d < WLSEG_DIMS (wl_seg)) && ((WLSEG_BV (wl_seg, 0))[d] == 1)) {
-                d++;
-            }
-            if (d == WLSEG_DIMS (wl_seg)) {
-                /*
-                 * no blocking => inspect 'ubv'
-                 */
-                d = 0;
-                while ((d < WLSEG_DIMS (wl_seg)) && ((WLSEG_UBV (wl_seg))[d] == 1)) {
-                    d++;
-                }
-            }
-            first_block_dim = d;
-
-            /*
-             * check whether 'WL_ADJUST_OFFSET' is needed or not
-             */
-            if (multiple_segs == 0) {
-
-                /*
-                 * is blocking activ and the next dim the last one?
-                 */
-                if ((WLGRID_DIM (arg_node) + 2 == WLSEG_DIMS (wl_seg))
-                    && (first_block_dim < WLSEG_DIMS (wl_seg))) {
-                    insert_icm = 1;
-                }
-
-            } else {
-                /* 'multiple_segs' == 1 */
-
-                /*
-                 * is the next dim the last one?
-                 */
-                if (WLGRID_DIM (arg_node) + 2 == WLSEG_DIMS (wl_seg)) {
-                    insert_icm = 1;
-                }
-            }
-
-            if (insert_icm == 1) {
-                assigns
-                  = MakeAssignIcm3 ("WL_ADJUST_OFFSET", MakeNum (WLGRID_DIM (arg_node)),
-                                    MakeNum (first_block_dim), icm_args2);
-            } else {
-                icm_args2 = FreeTree (icm_args2);
-            }
-
+        adjust_dim = GetDim_WL_ADJUST_OFFSET (arg_node, wl_node, wl_seg, multiple_segs);
+        if (adjust_dim >= 0) {
+            assigns = MakeAssignIcm3 ("WL_ADJUST_OFFSET", MakeNum (WLGRID_DIM (arg_node)),
+                                      MakeNum (adjust_dim), icm_args2);
         } else {
             icm_args2 = FreeTree (icm_args2);
         }
 
         /*
-         * insert ICM 'WL_ADJUST_OFFSET'
-         **************************************************************************/
-
-        /*
          * compile nextdim
          */
-
         DBUG_ASSERT ((WLGRID_CODE (arg_node) == NULL),
                      "code and nextdim used simultaneous");
         assigns = AppendAssign (assigns, Trav (WLGRID_NEXTDIM (arg_node), arg_info));
@@ -6829,23 +6857,21 @@ COMPWLgrid (node *arg_node, node *arg_info)
             /*
              * insert compiled code.
              */
-
             cexpr = NCODE_CEXPR (WLGRID_CODE (arg_node));
             DBUG_ASSERT ((cexpr != NULL), "no code expr found");
 
             DBUG_ASSERT ((NCODE_CBLOCK (WLGRID_CODE (arg_node)) != NULL),
-                         "no code block found");
-            if ((BLOCK_INSTR (NCODE_CBLOCK (WLGRID_CODE (arg_node))) != NULL)
-                && (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (WLGRID_CODE (arg_node))))
-                    != N_empty)) {
-                assigns
-                  = DupTree (BLOCK_INSTR (NCODE_CBLOCK (WLGRID_CODE (arg_node))), NULL);
+                         "no code block found in N_Ncode node");
+            DBUG_ASSERT ((NCODE_CBLOCK_INSTR (WLGRID_CODE (arg_node)) != NULL),
+                         "first instruction of block is NULL (should be a N_empty node)");
+
+            if (NODE_TYPE (NCODE_CBLOCK_INSTR (WLGRID_CODE (arg_node))) != N_empty) {
+                assigns = DupTree (NCODE_CBLOCK_INSTR (WLGRID_CODE (arg_node)), NULL);
             }
 
             /*
              * choose right ICM
              */
-
             switch (NWITH2_TYPE (wl_node)) {
             case WO_genarray:
                 /* here is no break missing! */
@@ -6949,7 +6975,6 @@ COMPWLgrid (node *arg_node, node *arg_info)
             }
 
         } else {
-
             /*
              * no code found.
              *  => init/copy/noop
@@ -6960,7 +6985,6 @@ COMPWLgrid (node *arg_node, node *arg_info)
             /*
              * choose right ICM
              */
-
             switch (NWITH2_TYPE (wl_node)) {
             case WO_genarray:
                 icm_name = "WL_ASSIGN_INIT";
@@ -7287,18 +7311,17 @@ COMPWLgridVar (node *arg_node, node *arg_info)
             DBUG_ASSERT ((cexpr != NULL), "no code expr found");
 
             DBUG_ASSERT ((NCODE_CBLOCK (WLGRIDVAR_CODE (arg_node)) != NULL),
-                         "no code block found");
-            if ((BLOCK_INSTR (NCODE_CBLOCK (WLGRIDVAR_CODE (arg_node))) != NULL)
-                && (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (WLGRIDVAR_CODE (arg_node))))
-                    != N_empty)) {
-                assigns = DupTree (BLOCK_INSTR (NCODE_CBLOCK (WLGRIDVAR_CODE (arg_node))),
-                                   NULL);
+                         "no code block found in N_Ncode node");
+            DBUG_ASSERT ((NCODE_CBLOCK_INSTR (WLGRIDVAR_CODE (arg_node)) != NULL),
+                         "first instruction of block is NULL (should be a N_empty node)");
+
+            if (NODE_TYPE (NCODE_CBLOCK_INSTR (WLGRIDVAR_CODE (arg_node))) != N_empty) {
+                assigns = DupTree (NCODE_CBLOCK_INSTR (WLGRIDVAR_CODE (arg_node)), NULL);
             }
 
             /*
              * choose right ICM.
              */
-
             switch (NWITH2_TYPE (wl_node)) {
             case WO_genarray:
                 /* here is no break missing! */
@@ -7353,7 +7376,6 @@ COMPWLgridVar (node *arg_node, node *arg_info)
             /*
              * choose right ICM.
              */
-
             switch (NWITH2_TYPE (wl_node)) {
             case WO_genarray:
                 icm_name = "WL_ASSIGN_INIT";
