@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2004/08/26 15:02:08  khf
+ * extend wl_info for WithloopFusion
+ *
  * Revision 3.30  2004/08/18 11:50:08  skt
  * added enumeration-type mtexecmode_t
  *
@@ -454,13 +457,16 @@ typedef types shapes; /* this definition is primarily needed for
                        */
 
 typedef struct WL_INFO {
-    int referenced;        /* number of references in function */
-    int referenced_fold;   /* number of foldable references */
-    int references_folded; /* number of refs eliminated by WLF */
-    int parts;             /* number of N_part nodes */
-    int complex;           /* indicator of fold complexity */
-    bool foldable;         /* has constant generator */
-    bool no_chance;        /* 1 if WL is defined within loop/cond */
+    int referenced;                         /* number of references in function */
+    int referenced_fold;                    /* number of foldable references */
+    int references_folded;                  /* number of refs eliminated by WLF */
+    int parts;                              /* number of N_part nodes */
+    int complex;                            /* indicator of fold complexity */
+    bool foldable;                          /* has constant generator */
+    bool no_chance;                         /* 1 if WL is defined within loop/cond */
+    bool dependent;                         /* dependent on fusionable withloop */
+    struct NODE *fusionable_wl;             /* current fusionable withloop */
+    struct NODELIST *references_fusionable; /* references to fusionable withloop */
 } wl_info;
 
 typedef struct FUN_NAME {

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.101  2004/08/26 14:57:25  khf
+# extend wl_info for WithloopFusion
+#
 # Revision 3.100  2004/08/24 16:51:45  skt
 # create_withinwith added
 #
@@ -277,7 +280,8 @@ PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
         src/psi-opt/SSAWLI.o src/psi-opt/SSAWLF.o \
         src/psi-opt/pad.o src/psi-opt/pad_collect.o src/psi-opt/pad_infer.o \
         src/psi-opt/pad_transform.o src/psi-opt/pad_info.o \
-	src/psi-opt/WithloopFusion.o
+	src/psi-opt/WithloopFusion.o src/psi-opt/detectdependencies.o \
+	src/psi-opt/tagdependencies.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o \
          src/modules/implicittypes.o src/modules/analysis.o \
          src/modules/checkdec.o src/modules/readsib.o src/modules/cccall.o
