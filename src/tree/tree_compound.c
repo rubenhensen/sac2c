@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.106  2004/11/24 16:27:42  ktr
+ * Changed signature of MakeAssignLet
+ *
  * Revision 3.105  2004/11/24 12:33:33  ktr
  * TCappendRets added.
  *
@@ -2486,7 +2489,7 @@ SearchDecl (char *name, node *decl_node)
 /******************************************************************************
  *
  * Function:
- *   node *MakeAssignLet( char *var_name, node *vardec_node, node *let_expr)
+ *   node *TCmakeAssignLet( node *avis, node *let_expr)
  *
  * Description:
  *
@@ -2494,18 +2497,16 @@ SearchDecl (char *name, node *decl_node)
  ******************************************************************************/
 
 node *
-MakeAssignLet (char *var_name, node *vardec_node, node *let_expr)
+TCmakeAssignLet (node *avis, node *let_expr)
 {
-    ids *tmp_ids;
     node *tmp_node;
 
-    DBUG_ENTER ("MakeAssignLet");
+    DBUG_ENTER ("TCmakeAssignLet");
 
-    tmp_ids = MakeIds (var_name, NULL, ST_regular);
-    IDS_VARDEC (tmp_ids) = vardec_node;
-    IDS_AVIS (tmp_ids) = VARDEC_OR_ARG_AVIS (vardec_node);
-    tmp_node = MakeLet (let_expr, tmp_ids);
-    tmp_node = MakeAssign (tmp_node, NULL);
+    tmp_node = TBmakeIds (avis, NULL);
+    tmp_node = TBmakeLet (tmp_node, let_expr);
+    tmp_node = TBmakeAssign (tmp_node, NULL);
+
     DBUG_RETURN (tmp_node);
 }
 

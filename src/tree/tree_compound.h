@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.135  2004/11/24 16:27:42  ktr
+ * Changed signature of MakeAssignLet
+ *
  * Revision 3.134  2004/11/24 14:12:35  sah
  * added ID_DECL
  *
@@ -950,11 +953,10 @@ extern node *TCsearchDecl (char *name, node *decl_node);
 /******************************************************************************
  *
  * function:
- *   node *TCmakeAssignLet(char *var_name, node *vardec_node, node *let_expr);
+ *   node *TCmakeAssignLet( node *avis, node *let_expr);
  *
- * arguments: 1) name of the variable
- *            2) vardec-node
- *            3) let-expression
+ * arguments: 1) avis for the LHS variable
+ *            2) let-expression
  *            R) assign-node with complete let-subtree
  *
  * description:
@@ -965,7 +967,7 @@ extern node *TCsearchDecl (char *name, node *decl_node);
  *
  ******************************************************************************/
 
-extern node *TCmakeAssignLet (char *var_name, node *vardec_node, node *let_expr);
+extern node *TCmakeAssignLet (node *avis, node *let_expr);
 
 /******************************************************************************
  *
@@ -1684,7 +1686,7 @@ extern node *TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *a
  ***  N_with :
  ***/
 
-#define WITH_TYPE(n) (WITHOP_TYPE (WITH_WITHOP (n)))
+#define WITH_TYPE(n) (NODE_TYPE (WITH_WITHOP (n)))
 
 /*
  * We only need to inspect the withid of the first part,
@@ -1744,6 +1746,7 @@ extern node *TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no
  ***/
 
 #define CODE_CBLOCK_INSTR(n) (BLOCK_INSTR (CODE_CBLOCK (n)))
+#define CODE_CEXPR(n) (EXPRS_EXPR1 (CODE_CEXPRS (n)))
 
 #define CODE_WLAA_ACCESS(n) (CODE_WLAA_INFO (n)->access)
 #define CODE_WLAA_ACCESSCNT(n) (CODE_WLAA_INFO (n)->accesscnt)
