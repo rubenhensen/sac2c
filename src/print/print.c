@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.201  2004/12/19 13:31:49  sbs
+ * PRTfold brushed!
+ *
  * Revision 3.200  2004/12/13 18:43:22  ktr
  * PRTid corrected once more
  *
@@ -3414,25 +3417,41 @@ PRTmodarray (node *arg_node, info *arg_info)
 node *
 PRTfold (node *arg_node, info *arg_info)
 {
+    node *fundef;
+
     DBUG_ENTER ("PRTfold");
 
     INDENT;
 
-    if (FOLD_FUNDEF (arg_node) == NULL) {
+    if (FOLD_FUNDEF (arg_node) != NULL) {
+        /**
+         * udf-case after TC!
+         */
+        fundef = FOLD_FUNDEF (arg_node);
+        fprintf (global.outfile, "fold/*udf*/( %s:%s", FUNDEF_MOD (fundef),
+                 FUNDEF_NAME (fundef));
+        TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+    } else if (FOLD_FUN (arg_node) != NULL) {
+        /**
+         * udf-case prior to TC!
+         */
         if (FOLD_MOD (arg_node) == NULL) {
-            fprintf (global.outfile, "fold/*fun*/( %s, ", FOLD_FUN (arg_node));
+            fprintf (global.outfile, "fold/*udf*/( %s", FOLD_FUN (arg_node));
         } else {
-            fprintf (global.outfile, "fold/*fun*/( %s:%s, ", FOLD_MOD (arg_node),
+            fprintf (global.outfile, "fold/*udf*/( %s:%s", FOLD_MOD (arg_node),
                      FOLD_FUN (arg_node));
         }
         TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
     } else {
+        /**
+         * prf-case!
+         */
         fprintf (global.outfile, "fold/*prf*/( %s",
                  global.prf_string[FOLD_PRF (arg_node)]);
-        if (FOLD_NEUTRAL (arg_node)) {
-            fprintf (global.outfile, ", ");
-            TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
-        }
+    }
+    if (FOLD_NEUTRAL (arg_node)) {
+        fprintf (global.outfile, ", ");
+        TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
     }
 
     fprintf (global.outfile, ")");
