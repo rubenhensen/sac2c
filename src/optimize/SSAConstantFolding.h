@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2003/09/16 18:15:26  ktr
+ * Index vectors are now treated as structural constants.
+ *
  * Revision 1.6  2002/10/09 12:43:24  dkr
  * structural constants exported now
  *
@@ -45,6 +48,7 @@ typedef struct STRUCT_CONSTANT struct_constant;
  */
 struct_constant *SCOExpr2StructConstant (node *expr);
 struct_constant *SCOArray2StructConstant (node *expr);
+struct_constant *SCOWithidVec2StructConstant (node *expr);
 struct_constant *SCOScalar2StructConstant (node *expr);
 node *SCODupStructConstant2Expr (struct_constant *struc_co);
 struct_constant *SCOFreeStructConstant (struct_constant *struc_co);

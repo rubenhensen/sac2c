@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.47  2003/09/16 18:15:26  ktr
+ * Index vectors are now treated as structural constants.
+ *
  * Revision 1.46  2003/07/29 07:31:07  ktr
  * Added support for structural CF of cat_VxV and A[idx1][idx2] == A[idx1++idx2]
  *
@@ -283,17 +286,94 @@ SCOExpr2StructConstant (node *expr)
     if (NODE_TYPE (expr) == N_array) {
         /* expression is an array */
         struc_co = SCOArray2StructConstant (expr);
-    } else if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)) {
-        /* expression is an identifier */
-        dim = GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
-        if (dim == SCALAR) {
-            /* id is a defined scalar */
-            struc_co = SCOScalar2StructConstant (expr);
-        } else if (dim > SCALAR) {
-            /* id is a defined array */
-            struc_co = SCOArray2StructConstant (expr);
+    } else {
+        if (NODE_TYPE (expr) == N_id) {
+            if (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL) {
+                /* expression is an identifier */
+                dim
+                  = GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
+                if (dim == SCALAR) {
+                    /* id is a defined scalar */
+                    struc_co = SCOScalar2StructConstant (expr);
+                } else if (dim > SCALAR) {
+                    /* id is a defined array */
+                    struc_co = SCOArray2StructConstant (expr);
+                }
+            } else {
+                if (AVIS_WITHID (ID_AVIS (expr))) {
+                    /* expression is given by a withid */
+                    dim = GetShapeDim (
+                      VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
+                    if (dim == SCALAR) {
+                        /* id is a defined scalar */
+                        struc_co = SCOScalar2StructConstant (expr);
+                    } else if (dim > SCALAR) {
+                        /* id is a withid vector */
+                        struc_co = SCOWithidVec2StructConstant (expr);
+                    }
+                }
+            }
         }
     }
+
+    DBUG_RETURN (struc_co);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   struct_constant *SCOWithidVec2StructConstant(node *expr)
+ *
+ * description:
+ *   converts a vector defined in a NWithId-Node into a structural constant.
+ *
+ *****************************************************************************/
+struct_constant *
+SCOWithidVec2StructConstant (node *expr)
+{
+    struct_constant *struc_co;
+    node *withid;
+    ids *scalars;
+    node *exprs;
+    int elem_count;
+    node *tmp;
+    types *vtype;
+    node **node_vec;
+    shape *vshape;
+    int i;
+
+    DBUG_ENTER ("SCOWithidVec2StructConstant");
+
+    DBUG_ASSERT ((NODE_TYPE (expr) == N_id),
+                 "SCOWithidVec2StructConstant supports only N_id nodes");
+
+    withid = AVIS_WITHID (ID_AVIS (expr));
+    scalars = NWITHID_IDS (withid);
+    exprs = Ids2Exprs (scalars);
+    elem_count = CountIds (scalars);
+
+    /* create structural constant of vector */
+    vtype = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)));
+
+    /* alloc hidden vector */
+    vshape = SHCreateShape (1, elem_count);
+    node_vec = (node **)Malloc (elem_count * sizeof (node *));
+
+    /* copy element pointers from array to vector */
+    tmp = exprs;
+    for (i = 0; i < elem_count; i++) {
+        node_vec[i] = EXPRS_EXPR (tmp);
+        tmp = EXPRS_NEXT (tmp);
+    }
+
+    /* create struct_constant */
+    struc_co = (struct_constant *)Malloc (sizeof (struct_constant));
+    SCO_BASETYPE (struc_co) = T_int;
+    SCO_NAME (struc_co) = TYPES_NAME (vtype);
+    SCO_MOD (struc_co) = TYPES_MOD (vtype);
+    SCO_SHAPE (struc_co) = SHCopyShape (vshape);
+
+    SCO_HIDDENCO (struc_co) = COMakeConstant (T_hidden, vshape, node_vec);
 
     DBUG_RETURN (struc_co);
 }

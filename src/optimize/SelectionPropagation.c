@@ -1,3 +1,56 @@
+/*
+ *
+ * $Log$
+ * Revision 1.4  2003/09/16 18:15:26  ktr
+ * Index vectors are now treated as structural constants.
+ *
+ *
+ */
+
+/**
+ *
+ * @defgroup sp SP
+ * @ingroup opt
+ *
+ * @brief SelectionPropagation eliminates unnecessary creation of arrays by moving
+ *        selection operations performed on these arrays before their creation
+ * <pre>
+ * Example:
+ *
+ *   int f(int[+] A, int[+] B) {
+ *     C = A + B;
+ *     D = C*C[[0]];
+ *     return (D[[0]]);
+ *   }
+ *
+ * will be transformed to
+ *
+ *   int f(int[+] A, int[+] B) {
+ *     C = A[[0]] + B[[0]];
+ *     D = C*C;
+ *     return (D);
+ *   }
+ *
+ * </pre>
+ *
+ * @{
+ */
+
+/**
+ *
+ * @file SelectionPropagation.c
+ *
+ *   This implements the SelectionPropagation in ssa-form.
+ *
+ *   SelectionPropagation eliminates unnecessary creation of arrays by moving
+ *   selection operations performed on these arrays before their creation.
+ *
+ *   Currently this only works on arrays created by so-called primitive map
+ *   operations like add_AxA.
+ *
+ *   In the future this should be extended to with-loops.
+ */
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -11,10 +64,24 @@
 #include "optimize.h"
 #include "print.h"
 
+typedef struct WITHIDLIST {
+    struct NODE *withid;
+    struct WITHIDLIST *next;
+} withidlist;
+
+typedef struct REPLACELIST {
+    struct IDS *array;
+    struct NODE *withid;
+    int offset;
+    struct REPLACELIST *next;
+} replacelist;
+
 #define INFO_SP_DIRECTION(n) (n->flag)
 #define INFO_SP_POSSIBLE(n) ((bool)(n->counter))
 #define INFO_SP_FUNDEF(n) (n->node[0])
 #define INFO_SP_MODUL(n) (n->node[1])
+#define INFO_SP_WITHIDLIST(n) ((withidlist *)(n->node[2]))
+#define INFO_SP_REPLACELIST(n) ((replacelist *)(n->node[3]))
 
 #define SP_DIRDOWN TRUE
 #define SP_DIRUP FALSE
@@ -27,6 +94,186 @@ static ids *TravLeftIDS (ids *arg_ids, node *arg_info);
 static ids *SPleftids (ids *arg_ids, node *arg_info);
 static ids *TravRightIDS (ids *arg_ids, node *arg_info);
 static ids *SPrightids (ids *arg_ids, node *arg_info);
+
+void
+PushWithid (node *withid, node *arg_info)
+{
+    withidlist *widl;
+
+    widl = Malloc (sizeof (withidlist));
+    widl->withid = withid;
+    widl->next = INFO_SP_WITHIDLIST (arg_info);
+
+    INFO_SP_WITHIDLIST (arg_info) = widl;
+}
+
+void
+PopWithid (node *arg_info)
+{
+    withidlist *tmp;
+    replacelist *rtmp, *rtmp2;
+    node *withid;
+
+    if (INFO_SP_WITHIDLIST (arg_info) != NULL) {
+        withid = INFO_SP_WITHIDLIST (arg_info)->withid;
+
+        while ((INFO_SP_REPLACELIST (arg_info) != NULL)
+               && (INFO_SP_REPLACELIST (arg_info)->withid == withid)) {
+            rtmp = INFO_SP_REPLACELIST (arg_info)->next;
+            Free (INFO_SP_REPLACELIST (arg_info));
+            INFO_SP_REPLACELIST (arg_info) = rtmp;
+        }
+
+        rtmp = INFO_SP_REPLACELIST (arg_info);
+        if (rtmp)
+            while (rtmp->next != NULL) {
+                while ((rtmp->next != NULL) && (rtmp->next->withid == withid)) {
+                    rtmp2 = rtmp->next->next;
+                    Free (rtmp->next);
+                    rtmp->next = rtmp2;
+                }
+
+                if (rtmp->next != NULL)
+                    rtmp = rtmp->next;
+            }
+
+        tmp = INFO_SP_WITHIDLIST (arg_info)->next;
+        Free (INFO_SP_WITHIDLIST (arg_info));
+        INFO_SP_WITHIDLIST (arg_info) = tmp;
+    }
+}
+
+void
+CheckAddToReplaceList (node *assign, node *arg_info)
+{
+    node *array;
+    withidlist *widl;
+    replacelist *repl;
+    node *elems;
+    ids *scalars;
+
+    int offset;
+
+    array = ASSIGN_RHS (assign);
+
+    if (ARRAY_DIM (array) == 1) {
+        widl = INFO_SP_WITHIDLIST (arg_info);
+        while (widl) {
+            offset = 0;
+            elems = ARRAY_AELEMS (array);
+            scalars = NWITHID_IDS (widl->withid);
+
+            /* Determine offset */
+            while ((elems != NULL) && (NODE_TYPE (EXPRS_EXPR (elems)) == N_id)
+                   && (ID_AVIS (EXPRS_EXPR (elems)) != IDS_AVIS (scalars))) {
+                offset++;
+                elems = EXPRS_NEXT (elems);
+            }
+
+            if ((elems != NULL) && (NODE_TYPE (EXPRS_EXPR (elems)) == N_id)) {
+                /* First element is from an index vector! */
+                while ((elems != NULL) && (scalars != NULL)
+                       && (NODE_TYPE (EXPRS_EXPR (elems)) == N_id)
+                       && (ID_AVIS (EXPRS_EXPR (elems)) == IDS_AVIS (scalars))) {
+                    scalars = IDS_NEXT (scalars);
+                    elems = EXPRS_NEXT (elems);
+                }
+
+                if (elems == NULL) {
+                    /* Vector is subvector of the current withid */
+                    repl = Malloc (sizeof (replacelist));
+                    repl->withid = widl->withid;
+                    repl->offset = offset;
+                    repl->array = ASSIGN_LHS (assign);
+                    repl->next = INFO_SP_REPLACELIST (arg_info);
+                    INFO_SP_REPLACELIST (arg_info) = repl;
+                    return;
+                }
+            }
+            widl = widl->next;
+        }
+    }
+}
+
+node *
+TryReplaceSelection (node *assign, node *arg_info)
+{
+    node *sel;
+    node *tmpnode;
+    replacelist *repl;
+    node *vardec;
+
+    sel = PRF_ARG2 (ASSIGN_RHS (assign));
+    repl = INFO_SP_REPLACELIST (arg_info);
+
+    while ((repl != NULL) && (IDS_AVIS (repl->array) != ID_AVIS (sel)))
+        repl = repl->next;
+
+    if (repl != NULL) {
+        vardec
+          = MakeVardec (TmpVar (),
+                        MakeTypes (T_int, 1, MakeShpseg (MakeNums (1, NULL)), NULL, NULL),
+                        NULL);
+
+        tmpnode
+          = MakeAssignLet (StringCopy (VARDEC_NAME (vardec)), vardec,
+                           MakeFlatArray (MakeExprs (MakeNum (repl->offset), NULL)));
+
+        ARRAY_TYPE (ASSIGN_RHS (tmpnode))
+          = MakeTypes (T_int, 1, MakeShpseg (MakeNums (1, NULL)), NULL, NULL);
+
+        AddVardecs (INFO_SP_FUNDEF (arg_info), vardec);
+
+        AVIS_SSAASSIGN (IDS_AVIS (ASSIGN_LHS (tmpnode))) = tmpnode;
+
+        vardec
+          = MakeVardec (TmpVar (),
+                        MakeTypes (T_int, 1, MakeShpseg (MakeNums (1, NULL)), NULL, NULL),
+                        NULL);
+
+        ASSIGN_NEXT (tmpnode)
+          = MakeAssignLet (StringCopy (VARDEC_NAME (vardec)), vardec,
+                           MakePrf (F_add_AxA,
+                                    MakeExprs (PRF_ARG1 (ASSIGN_RHS (assign)),
+                                               MakeExprs (MakeIdFromIds (DupOneIds (
+                                                            ASSIGN_LHS (tmpnode))),
+                                                          NULL))));
+
+        AddVardecs (INFO_SP_FUNDEF (arg_info), vardec);
+
+        AVIS_SSAASSIGN (IDS_AVIS (ASSIGN_LHS (ASSIGN_NEXT (tmpnode))))
+          = ASSIGN_NEXT (tmpnode);
+
+        ASSIGN_NEXT (ASSIGN_NEXT (tmpnode)) = assign;
+
+        Free (PRF_ARG2 (ASSIGN_RHS (assign)));
+
+        PRF_ARG1 (ASSIGN_RHS (assign))
+          = MakeIdFromIds (DupOneIds (ASSIGN_LHS (ASSIGN_NEXT (tmpnode))));
+        PRF_ARG2 (ASSIGN_RHS (assign))
+          = MakeIdFromIds (DupOneIds (NWITHID_VEC (repl->withid)));
+
+        return tmpnode;
+    } else
+        return assign;
+}
+
+node *
+ReplaceSelection (node *arg_node, node *arg_info)
+{
+
+    if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let) {
+        if (NODE_TYPE (ASSIGN_RHS (arg_node)) == N_array)
+            CheckAddToReplaceList (arg_node, arg_info);
+
+        if ((NODE_TYPE (ASSIGN_RHS (arg_node)) == N_prf)
+            && (PRF_PRF (ASSIGN_RHS (arg_node)) == F_sel))
+            return TryReplaceSelection (arg_node, arg_info);
+        else
+            return arg_node;
+    }
+    return arg_node;
+}
 
 bool
 isMapOp (prf Prf)
@@ -176,6 +423,9 @@ SPwith (node *arg_node, node *arg_info)
 
     INFO_SP_POSSIBLE (arg_info) = FALSE;
 
+    /* Push withid to withid stack */
+    PushWithid (NWITH_WITHID (arg_node), arg_info);
+
     /* traverse withop */
     if (NWITH_WITHOP (arg_node) != NULL) {
         NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
@@ -190,6 +440,9 @@ SPwith (node *arg_node, node *arg_info)
     if (NWITH_CODE (arg_node) != NULL) {
         NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     }
+
+    /* Pop withid from withid stack */
+    PopWithid (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -454,6 +707,8 @@ SPassign (node *arg_node, node *arg_info)
 
     INFO_SP_DIRECTION (arg_info) = SP_DIRDOWN;
 
+    arg_node = ReplaceSelection (arg_node, arg_info);
+
     /* traverse instruction */
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -686,3 +941,4 @@ SelectionPropagation (node *fundef, node *modul)
     }
     DBUG_RETURN (fundef);
 }
+/*@}*/ /* defgroup sp */

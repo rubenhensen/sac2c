@@ -1,3 +1,12 @@
+/*
+ *
+ * $Log$
+ * Revision 1.3  2003/09/16 18:15:26  ktr
+ * Index vectors are now treated as structural constants.
+ *
+ *
+ */
+
 #ifndef _SAC_SELECTIONPROPAGATION_H
 
 #define _SAC_SELECTIONPROPAGATION_H
