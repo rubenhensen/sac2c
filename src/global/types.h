@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.24  2000/02/21 17:59:04  jhs
+ * Improved spelling.
+ *
  * Revision 2.23  2000/02/11 16:20:29  jhs
  * Added St_repfun
  * /
@@ -494,7 +497,7 @@ typedef struct TYPESS {
  *  Other values than <= or < are never allowed!
  *
  *  For empty arrays, a special treatment is necessary, so original
- *  Values before nomalization are stored also.
+ *  Values before normalization are stored also.
  *  The xxx_orig values will be set on creation and are not to be changed
  *  from that on.
  */
