@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2004/11/22 14:42:16  sbs
+ * moved from type_errors.h
+ *
  * Revision 3.45  2004/11/22 14:39:10  sbs
  * stuff from ssi.h
  *
@@ -923,5 +926,12 @@ typedef struct {
 
 typedef struct TVAR tvar;
 typedef bool (*tvar_ass_handle_fun) (sig_dep *handle);
+
+/*******************************************************************************
+ *
+ * moved from type_errors.h
+ */
+
+typedef struct TE_INFO te_info;
 
 #endif /* _SAC_TYPES_H_ */
