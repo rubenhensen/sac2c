@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 1.3  2000/05/31 13:21:02  dkr
+ * Function DFMPrintMaskDetailed() added
+ *
  * Revision 1.2  2000/01/25 13:43:43  dkr
  * DFMPrintMask changed:
  * if (handle==NULL) stderr is used
@@ -65,9 +67,6 @@
  *
  * Revision 1.1  1998/05/05 15:53:54  cg
  * Initial revision
- *
- *
- *
  */
 
 /*****************************************************************************
@@ -1044,10 +1043,52 @@ DFMPrintMask (FILE *handle, const char *format, mask_t *mask)
         }
 
         if (j == 8 * sizeof (unsigned int) - 1) {
-            i += 1;
+            i++;
             j = 0;
         } else {
-            j += 1;
+            j++;
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+void
+DFMPrintMaskDetailed (FILE *handle, mask_t *mask)
+{
+    int i, j, cnt;
+
+    DBUG_ENTER ("DFMPrintMaskDetailed");
+
+    DBUG_ASSERT ((mask != NULL), "DFMPrintMaskDetailed() called with mask NULL");
+
+    CHECK_MASK (mask);
+
+    if (handle == NULL) {
+        /*
+         * NULL -> stderr
+         * This is done for use in a debugging session.
+         */
+        handle = stderr;
+    }
+
+    i = 0;
+    j = 0;
+
+    for (cnt = 0; cnt < mask->mask_base->num_ids; cnt++) {
+        if (mask->mask_base->ids[cnt] != NULL) {
+            if (mask->bitfield[i] & access_mask_table[j]) {
+                fprintf (handle, "%s  ", mask->mask_base->ids[cnt]);
+            } else {
+                fprintf (handle, "[%s]  ", mask->mask_base->ids[cnt]);
+            }
+        }
+
+        if (j == 8 * sizeof (unsigned int) - 1) {
+            i++;
+            j = 0;
+        } else {
+            j++;
         }
     }
 
