@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.19  2004/10/04 16:19:11  skt
+  attribute Identifier deleted in EX, ST and MT Nodes
+
   Revision 1.18  2004/10/04 15:36:21  sah
   added some missing wlf fields
 
@@ -2750,13 +2753,6 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Identifier" default="GetNewMTIdentifier()"
-        mandatory="yes">
-          <type name="Integer" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
         <attribute name="UseMask" mandatory="yes">
           <type name="DFMMask" />
           <phases>
@@ -2803,13 +2799,6 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Identifier" default="GetNewEXIdentifier()" 
-	           mandatory="yes">
-          <type name="Integer" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
         <attribute name="UseMask" mandatory="yes">
           <type name="DFMMask" />
           <phases>
@@ -2840,13 +2829,6 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Identifier" default="GetNewSTIdentifier()"
-        mandatory="yes">
-          <type name="Integer" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
         <attribute name="UseMask" mandatory="yes">
           <type name="DFMMask" />
           <phases>
