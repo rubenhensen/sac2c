@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.87  2003/11/12 08:34:42  sbs
+ * new with-loop syntax added. old one extended for optional default values
+ *
  * Revision 3.86  2003/06/11 21:42:54  ktr
  * replaced calls of MakeArray with MakeFlatArray
  *
@@ -307,8 +310,9 @@ static int prf_arity[] = {
 %type <node> mainargs, fundefargs, args, arg 
 %type <node> exprblock, exprblock2, assignsOPTret, assigns, assign,
              letassign, selassign, optelse, forassign, assignblock
-%type <node> exprs, expr, expr_ap, opt_arguments, expr_ar, expr_sel,
-             generator, steps, width, withop, wlassignblock, genidx
+%type <node> exprs, expr, expr_ap, opt_arguments, expr_ar, expr_sel, with,
+             generator, steps, width, nwithop, withop, wlassignblock, genidx,
+             part, parts
 %type <prf> genop, foldop, prf
 
 %type <id> id, string
@@ -1314,28 +1318,43 @@ expr: fun_id                     { if( (file_kind == F_sib) && (sbs == 1)
     | BRACE_L SQBR_L exprs SQBR_R ARROW expr BRACE_R
       { $$ = MakeSetWL( $3, $6);
       }
-    | wlcomp_pragma_local
-      NWITH { $<cint>$ = linenum; } BRACKET_L generator BRACKET_R
-      wlassignblock withop
-      { /*
-         * the tricky part about this rule is that $8 (an N_Nwithop node)
+    | wlcomp_pragma_local NWITH { $<cint>$ = linenum; } with
+      { $$ = $4;
+        NODE_LINE( $$)= $<cint>3;
+        NWITH_PRAGMA( $$) = $1;
+      }
+    ;
+      
+
+with: BRACKET_L generator BRACKET_R wlassignblock withop
+      { 
+        WARN( linenum, ( "Old with-loop style depricated!"));
+        CONT_WARN( ("Please use the new syntax instead"));
+
+        /*
+         * the tricky part about this rule is that $5 (an N_Nwithop node)
          * carries the goal-expression of the With-Loop, i.e., the "N-expr"
          * node which belongs into the N_Ncode node!!!
          * The reason for this is that an exclusion of the goal expression
          * from the non-terminal withop would lead to a shift/reduce
          * conflict in that rule!
          */
-        $$ = MakeNWith( $5, MakeNCode( $7, NWITHOP_EXPR( $8)), $8);
-        NWITHOP_EXPR( $8) = NULL;
+        $$ = MakeNWith( $2, MakeNCode( $4, NWITHOP_EXPR( $5)), $5);
+        NWITHOP_EXPR( $5) = NULL;
         NCODE_USED( NWITH_CODE( $$))++;
-        NODE_LINE( $$)= $<cint>3;
-        NWITH_PRAGMA( $$) = $1;
-   
         /*
          * Finally, we generate the link between the (only) partition
          * and the (only) code!
          */
         NPART_CODE( NWITH_PART( $$)) = NWITH_CODE( $$);
+      }
+    | BRACKET_L id BRACKET_R parts nwithop
+      { $$ = $4;
+        NWITH_WITHOP( $$) = $5;
+        /*
+         * At the time being we ignore $2. However, it SHOULD be checked
+         * against all genidxs in $4 here....
+         */
       }
     ;
 
@@ -1400,6 +1419,26 @@ expr_ar: SQBR_L { $<cint>$ = linenum; } exprs SQBR_R
          }
        ;
 
+parts: part
+       { $$ = $1;
+       }
+     | part parts
+       { $$ = $1;
+         NPART_NEXT( NWITH_PART( $1)) = NWITH_PART( $2);
+         NCODE_NEXT( NWITH_CODE( $1)) = NWITH_CODE( $2);
+         NWITH_PART( $2) = NULL;
+         NWITH_CODE( $2) = NULL;
+         FreeTree( $2);
+       }
+     ;
+
+part: BRACKET_L generator BRACKET_R wlassignblock COLON expr SEMIC
+      { $$ = MakeNWith( $2, MakeNCode( $4, $6), NULL);
+        NCODE_USED( NWITH_CODE( $$))++;
+        NPART_CODE( $2) = NWITH_CODE( $$);
+      }
+    ;
+     
 generator: expr LE genidx genop expr steps width
            {
              if( ($7 != NULL) && ($6 == NULL)) {
@@ -1463,9 +1502,29 @@ wlassignblock: BRACE_L { $<cint>$ = linenum; } assigns BRACE_R
                }
              ;
 
+nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
+         { $$ = MakeNWithOp( WO_genarray, $3);
+           NWITHOP_DEFAULT( $$) = $5;
+         }
+       | MODARRAY BRACKET_L expr BRACKET_R
+         { $$ = MakeNWithOp( WO_modarray, $3);
+         }
+       | FOLD BRACKET_L fun_id COMMA expr BRACKET_R
+         { $$ = MakeNWithOp( WO_foldfun, $5);
+           NWITHOP_FUN( $$) = StringCopy( IDS_NAME( $3));
+           NWITHOP_MOD( $$) = IDS_MOD( $3);
+           $3 = FreeOneIds( $3);
+         }
+       ;
+
 withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
         { $$ = MakeNWithOp( WO_genarray, $3);
           NWITHOP_EXPR( $$) = $5;
+        }
+      | GENARRAY BRACKET_L expr COMMA expr COMMA expr BRACKET_R
+        { $$ = MakeNWithOp( WO_genarray, $3);
+          NWITHOP_EXPR( $$) = $5;
+          NWITHOP_DEFAULT( $$) = $7;
         }
       | MODARRAY BRACKET_L expr COMMA id COMMA expr BRACKET_R
         { $$ = MakeNWithOp( WO_modarray, $3);
