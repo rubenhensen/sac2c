@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/10/15 11:40:08  ktr
+ * Constant scalars and constant arrays are now propagated over special function
+ * boundaries.
+ *
  * Revision 1.8  2004/09/24 17:08:35  ktr
  * Bug #60: Constant arguments of PRFs are not propagted for all prfs any
  * longer.
@@ -220,21 +224,21 @@ IsConstant (node *arg_node)
 /****************************************************************************
  *
  * function:
- *   bool IsNumArray(node *arg_node)
+ *   bool IsConstantArray(node *arg_node)
  *
  * description:
  *   returns TRUE if arg_node is of type N_array and all elements are
- *   of type N_num
+ *   constants
  *   otherwise returns FALSE
  *
  *****************************************************************************/
 static bool
-IsNumArray (node *arg_node)
+IsConstantArray (node *arg_node)
 {
     bool ret;
     node *elems;
 
-    DBUG_ENTER ("IsNumArray");
+    DBUG_ENTER ("IsConstantArray");
 
     if (NODE_TYPE (arg_node) == N_array) {
         ret = TRUE;
@@ -244,7 +248,7 @@ IsNumArray (node *arg_node)
 
     elems = ARRAY_AELEMS (arg_node);
     while (ret && (elems != NULL)) {
-        if (NODE_TYPE (EXPRS_EXPR (elems)) != N_num) {
+        if (!IsConstant (EXPRS_EXPR (elems))) {
             ret = FALSE;
             break;
         }
@@ -332,7 +336,7 @@ AskPropagationOracle (node *let, info *arg_info)
 
     case CON_sel:
         /* TRUE iff behind let node is an id node or an array of constant N_num */
-        answer = ((IsVariable (LET_EXPR (let))) || (IsNumArray (LET_EXPR (let))));
+        answer = ((IsVariable (LET_EXPR (let))) || (IsConstantArray (LET_EXPR (let))));
         break;
 
     case CON_undef:
@@ -356,7 +360,79 @@ AskPropagationOracle (node *let, info *arg_info)
 /********************************************************************
  *
  * function:
- *   node* CVParray(node *arg_node, info *arg_info)
+ *   node *PropagateIntoCondArgs
+ *
+ * description:
+ *   propagates constants into arguments of COND-FUNS
+ *
+ ********************************************************************/
+static node *
+PropagateIntoCondArgs (node *arg_node)
+{
+    node *condargs;
+    node *apargs;
+
+    DBUG_ENTER ("PropagateIntoCondArgs");
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_ap, "arg_node must be N_ap");
+    DBUG_ASSERT (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node)),
+                 "AP_FUNDEF( arg_node) must be a CONDFUN");
+
+    condargs = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+    apargs = AP_ARGS (arg_node);
+
+    while (condargs != NULL) {
+        node *avis = ID_AVIS (EXPRS_EXPR (apargs));
+        if (AVIS_SSAASSIGN (avis) != NULL) {
+            node *rhs = ASSIGN_RHS (AVIS_SSAASSIGN (avis));
+
+            if ((IsConstant (rhs)) || (IsConstantArray (rhs))) {
+                AVIS_SSAASSIGN (ARG_AVIS (condargs)) = AVIS_SSAASSIGN (avis);
+            }
+        }
+
+        condargs = ARG_NEXT (condargs);
+        apargs = EXPRS_NEXT (apargs);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/********************************************************************
+ *
+ * function:
+ *   node *RemovePropagationFromCondArgs
+ *
+ * description:
+ *   removes propagated AVIS_SSAASSIGNs from arguments of COND-FUNS
+ *
+ ********************************************************************/
+static node *
+RemovePropagationFromCondArgs (node *arg_node)
+{
+    node *condargs;
+
+    DBUG_ENTER ("RemovePropagationFromCondArgs");
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_ap, "arg_node must be N_ap");
+    DBUG_ASSERT (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node)),
+                 "AP_FUNDEF( arg_node) must be a CONDFUN");
+
+    condargs = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+
+    while (condargs != NULL) {
+        AVIS_SSAASSIGN (ARG_AVIS (condargs)) = NULL;
+
+        condargs = ARG_NEXT (condargs);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/********************************************************************
+ *
+ * function:
+ *   node* CVParray( node *arg_node, info *arg_info)
  *
  * description:
  *   traverse in the elements of an array node
@@ -529,8 +605,6 @@ CVPprf (node *arg_node, info *arg_info)
     case F_type_error:
         /*
          * Only propagate variables here
-         *
-         * NOT IMPLEMENTED: Constant arrays are allowed as 1. argument of F_sel
          */
         INFO_CVP_CONTEXT (arg_info) = CON_ap;
         if (PRF_ARGS (arg_node) != NULL) {
@@ -630,8 +704,14 @@ CVPap (node *arg_node, info *arg_info)
         /*
          * special functions must be traversed when they are used
          */
+        if (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node))) {
+            arg_node = PropagateIntoCondArgs (arg_node);
+        }
         if (AP_FUNDEF (arg_node) != INFO_CVP_FUNDEF (arg_info)) {
             AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
+        }
+        if (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node))) {
+            arg_node = RemovePropagationFromCondArgs (arg_node);
         }
         INFO_CVP_CONTEXT (arg_info) = CON_specialfun;
     } else {
@@ -883,6 +963,8 @@ CVPfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CVPfundef");
 
+    DBUG_PRINT ("CVP", ("Traversion function %s", FUNDEF_NAME (arg_node)));
+
     oldfundef = INFO_CVP_FUNDEF (arg_info);
     INFO_CVP_FUNDEF (arg_info) = arg_node;
 
@@ -891,6 +973,8 @@ CVPfundef (node *arg_node, info *arg_info)
     }
 
     INFO_CVP_FUNDEF (arg_info) = oldfundef;
+
+    DBUG_PRINT ("CVP", ("Completed traversal of function %s", FUNDEF_NAME (arg_node)));
 
     DBUG_RETURN (arg_node);
 }
