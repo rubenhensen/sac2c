@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/12/01 15:01:03  sah
+ * modified handling of SPxxx attributes
+ *
  * Revision 1.12  2004/11/25 16:32:54  khf
  * added ABORT_ON_ERROR
  *
@@ -57,10 +60,12 @@
  *   For all other identifyers the backref is set to the according N_vardec,
  *   Narg, or N_objdef node !!!
  *
+ *   Afterwards, the SPxxx values are cleared.
+ *
  *   While doing so, all references to global objects are tagged as such, i.e.,
- *   the    IS_GLOBAL flag of N_id nodes   is set accordingly(!)  , and the name of
- *   N_id nodes that refer to global objects is extended by the module name of the
- *   object.
+ *   the    IS_GLOBAL flag of N_id nodes is set accordingly(!), and the name of
+ *   N_id nodes that refer to global objects is extended by the module name
+ *   of the object.
  *
  *
  *
@@ -280,8 +285,8 @@ INSVDids (node *arg_node, info *arg_info)
          * vardec yet! So we allocate one and prepand it to vardecs.
          */
 
-        avis
-          = TBmakeAvis (IDS_SPNAME (arg_node), TYmakeAUD (TYmakeSimpleType (T_unknown)));
+        avis = TBmakeAvis (ILIBstringCopy (IDS_SPNAME (arg_node)),
+                           TYmakeAUD (TYmakeSimpleType (T_unknown)));
 
         vardec = TBmakeVardec (avis, INFO_INSVD_VARDECS (arg_info));
 
@@ -289,12 +294,11 @@ INSVDids (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("IVD", ("inserting new vardec (" F_PTR ") for id %s.", vardec,
                             IDS_SPNAME (arg_node)));
-        IDS_SPNAME (arg_node) = NULL;
-    } else {
-        IDS_SPNAME (arg_node) = ILIBfree (IDS_SPNAME (arg_node));
     }
 
     IDS_AVIS (arg_node) = VARDEC_AVIS (vardec);
+
+    IDS_SPNAME (arg_node) = ILIBfree (IDS_SPNAME (arg_node));
 
     DBUG_RETURN (arg_node);
 }
