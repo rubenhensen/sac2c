@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/08/30 14:04:17  cg
+ * Revision 1.13  1995/09/01 08:44:29  cg
+ * function CmpDomain added
+ *
+ * Revision 1.12  1995/08/30  14:04:17  cg
  * GenExtmodList and InsertClassType added.
  *
  * Revision 1.11  1995/08/15  09:28:15  cg
@@ -89,5 +92,6 @@ extern node *Import (node *);
 extern char *GenLinkerList ();
 extern charlist *GenExtmodlistList ();
 extern void InsertClassType (node *);
+extern int CmpDomain (node *, node *);
 
 #endif /* _import_h */
