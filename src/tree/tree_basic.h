@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.210  2004/08/06 12:56:57  skt
+ * changed FUNDEF_DATAFLOWGRAPH into BLOCK_DATAFLOWGRAPH
+ *
  * Revision 3.209  2004/08/06 11:27:37  skt
  * deleted parameter executionmode of MakeDataflownode
  *
@@ -1393,7 +1396,6 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 
 /* multithreading: */
 #define FUNDEF_EXECMODE(n) (n->lineno)
-#define FUNDEF_DATAFLOWGRAPH(n) ((node *)(n->dfmask[3]))
 /* multithreading: ST_spmdfun */
 #define FUNDEF_IDENTIFIER(n) (n->lineno)
 #define FUNDEF_MT2USE(n) (n->dfmask[1])
@@ -1516,6 +1518,9 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
  ***    node*      SCHEDULER_INIT    (N_assign)  (compile !!)
  ***
  ***    node*      SSACOUNTER        (N_ssacnt)  (ssaform -> optimize !!)
+ ***
+ ***    node*      DATAFLOWGRAPH     (N_dataflowgraph)
+ ***                           (create_dataflowgraph -> delete_dataflowgraph!!)
  ***/
 
 /*
@@ -1538,6 +1543,7 @@ extern node *MakeBlock (node *instr, node *vardec);
 #define BLOCK_SCHEDULER_INIT(n) (n->info2)
 #define BLOCK_CACHESIM(n) (n->info.id)
 #define BLOCK_SSACOUNTER(n) (n->node[5])
+#define BLOCK_DATAFLOWGRAPH(n) ((node *)(n->dfmask[2]))
 
 /*--------------------------------------------------------------------------*/
 
