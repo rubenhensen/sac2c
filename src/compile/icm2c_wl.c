@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/06/19 10:26:12  dkr
+ * removed unused vars
+ *
  * Revision 1.16  1998/06/09 16:46:36  dkr
  * changed signature of WL_NONFOLD_BEGIN, WL_FOLD_BEGIN
  *
@@ -96,8 +99,6 @@
 void
 ICMCompileWL_NONFOLD_BEGIN (char *target, char *idx_vec)
 {
-    int i;
-
     DBUG_ENTER ("ICMCompileWL_NONFOLD_BEGIN");
 
 #define WL_NONFOLD_BEGIN
@@ -145,8 +146,6 @@ ICMCompileWL_NONFOLD_BEGIN (char *target, char *idx_vec)
 void
 ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec)
 {
-    int i;
-
     DBUG_ENTER ("ICMCompileWL_FOLD_BEGIN");
 
 #define WL_FOLD_BEGIN
