@@ -2763,41 +2763,22 @@ echo "${ECHO_T}$ac_cv_prog_gcc_traditional" >&6
 fi
 
 
-# Extract the first word of "indent", so it can be a program name with args.
-set dummy indent; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_CB+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$CB"; then
-  ac_cv_prog_CB="$CB" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_CB="indent"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-  test -z "$ac_cv_prog_CB" && ac_cv_prog_CB="\$(PROJECT_ROOT)/tools/bin/cb"
-fi
-fi
-CB=$ac_cv_prog_CB
-if test -n "$CB"; then
-  echo "$as_me:$LINENO: result: $CB" >&5
-echo "${ECHO_T}$CB" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
+echo "$as_me:$LINENO: checking whether GNU indent works" >&5
+echo $ECHO_N "checking whether GNU indent works... $ECHO_C" >&6
+GNUINDENT=$(indent --version)
+case "$GNUINDENT" in
+  *GNU*)
+    CB="indent"
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+    ;;
+  *)
+    CB="\$(PROJECT_ROOT)/tools/bin/cb"
+    echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
-fi
+    ;;
+esac
+CB=$CB
 
 
 for ac_prog in 'bison -y' byacc

@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.32  2004/08/09 12:03:16  sah
+dnl added better test for GNU indent
+dnl
 dnl Revision 1.31  2004/08/09 11:38:47  sah
 dnl indent parameters modified
 dnl
@@ -199,8 +202,20 @@ fi
 dnl check, whether we need -traditinal flag
 AC_PROG_GCC_TRADITIONAL
 
-dnl check for gnu indent 
-AC_CHECK_PROG( [CB], [indent], [indent], [[\$(PROJECT_ROOT)/tools/bin/cb]])
+dnl check whether its gnu indent
+AC_MSG_CHECKING([whether GNU indent works])
+GNUINDENT=$(indent --version)
+case "$GNUINDENT" in
+  *GNU*) 
+    CB="indent"
+    AC_MSG_RESULT(yes)
+    ;;
+  *) 
+    CB="\$(PROJECT_ROOT)/tools/bin/cb"
+    AC_MSG_RESULT(no)
+    ;;
+esac
+AC_SUBST(CB, $CB)
 
 dnl search for bison, byacc or yacc
 AC_PROG_YACC()
