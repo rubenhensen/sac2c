@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2004/12/06 12:55:30  sbs
+ * some debugging of NTCarg
+ *
  * Revision 3.66  2004/12/05 19:19:55  sbs
  * return type of LaC funs changed into alphas.
  *
@@ -168,6 +171,7 @@
 
 #include "user_types.h"
 #include "new_types.h"
+#include "type_utils.h"
 #include "sig_deps.h"
 #include "ssi.h"
 #include "new_typecheck.h"
@@ -972,32 +976,26 @@ NTCfundef (node *arg_node, info *arg_info)
 node *
 NTCarg (node *arg_node, info *arg_info)
 {
-    ntype *new_type, *scalar;
+    ntype *type;
 #ifndef DBUG_OFF
     char *tmp_str;
 #endif
 
     DBUG_ENTER ("NTCarg");
 
-    if (TYPES_BASETYPE (ARG_TYPE (arg_node)) != T_dots) {
-        new_type = TYoldType2Type (ARG_TYPE (arg_node));
-        AVIS_TYPE (ARG_AVIS (arg_node)) = new_type;
+    type = ARG_NTYPE (arg_node);
+    if (TUisArrayOfUser (type) && TUisUniqueUserType (type) && !ARG_ISREFERENCE (arg_node)
+        && !ARG_ISARTIFICIAL (arg_node)) {
 
-        scalar = TYgetScalar (new_type);
-        if (TYisUser (scalar) && TYPEDEF_ISUNIQUE (UTgetTdef (TYgetUserType (scalar)))
-            && !ARG_ISREFERENCE (arg_node) && !ARG_ISARTIFICIAL (arg_node)) {
+        DBUG_EXECUTE ("UNQ", tmp_str = TYtype2String (type, FALSE, 0););
+        DBUG_PRINT ("UNQ", ("argument \"%s\" of type \"%s\" marked as unique",
+                            ARG_NAME (arg_node), tmp_str));
+        DBUG_EXECUTE ("UNQ", tmp_str = ILIBfree (tmp_str););
 
-            DBUG_EXECUTE ("UNQ", tmp_str = TYtype2String (new_type, FALSE, 0););
-            DBUG_PRINT ("UNQ", ("argument \"%s\" of type \"%s\" marked as unique",
-                                ARG_NAME (arg_node), tmp_str));
-            DBUG_EXECUTE ("UNQ", tmp_str = ILIBfree (tmp_str););
-
-            AVIS_ISUNIQUE (ARG_AVIS (arg_node)) = TRUE;
-            if (!TYisAKS (new_type) || (TYisAKS (new_type) && TYgetDim (new_type) != 0)) {
-                ERROR (NODE_LINE (arg_node),
-                       ("unique type \"%s\" used in non-scalar form",
-                        TYtype2String (TYgetScalar (new_type), FALSE, 0)));
-            }
+        AVIS_ISUNIQUE (ARG_AVIS (arg_node)) = TRUE;
+        if (!TYisAKS (type) || (TYisAKS (type) && TYgetDim (type) != 0)) {
+            ERROR (NODE_LINE (arg_node), ("unique type \"%s\" used in non-scalar form",
+                                          TYtype2String (TYgetScalar (type), FALSE, 0)));
         }
     }
 
