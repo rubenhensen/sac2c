@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2000/05/30 14:31:44  dkr
+ * redundant macro APPEND_VARDECS removed
+ *
  * Revision 1.16  2000/05/30 14:06:18  dkr
  * some helper functions moved from compile.c to tree_compound.c
  *
@@ -883,11 +886,21 @@ extern node *FindVardec_Varno (int varno, node *fundef);
 #define VARDEC_TMOD(n) (TYPES_MOD (VARDEC_TYPE (n)))
 #define VARDEC_TDEF(n) (TYPES_TDEF (VARDEC_TYPE (n)))
 
-#define APPEND_VARDECS(old, new)                                                         \
-    if (NULL != old) {                                                                   \
-        VARDEC_NEXT (old) = new;                                                         \
-    } else                                                                               \
-        old = new
+/******************************************************************************
+ *
+ * function:
+ *   node *AppendVardecs( node *vardecs, node *append)
+ *
+ * description:
+ *   Appends 'append' to 'vardecs' and returns the new chain.
+ *
+ * remark:
+ *   In order to use this function in Compile() it can handle mixed chains
+ *   containing N_vardec- *and* N_assign-nodes!
+ *
+ ******************************************************************************/
+
+extern node *AppendVardecs (node *vardecs, node *append);
 
 /*--------------------------------------------------------------------------*/
 
@@ -988,22 +1001,6 @@ extern node *FindVardec_Varno (int varno, node *fundef);
     while (vardec != NULL) {                                                             \
         code vardec = VARDEC_NEXT (vardec);                                              \
     }
-
-/******************************************************************************
- *
- * function:
- *   node *AppendVardecs( node *vardecs, node *append)
- *
- * description:
- *   Appends 'append' to 'vardecs' and returns the new chain.
- *
- * remark:
- *   In order to use this function in Compile() it can handle mixed chains
- *   containing N_vardec- *and* N_assign-nodes!
- *
- ******************************************************************************/
-
-extern node *AppendVardecs (node *vardecs, node *append);
 
 /*--------------------------------------------------------------------------*/
 
