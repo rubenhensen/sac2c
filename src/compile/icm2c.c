@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/04/06 14:23:25  sbs
+ * Revision 1.8  1995/04/07 12:19:48  sbs
+ * psi, take & drop fixed for args of different dimensionality
+ *
+ * Revision 1.7  1995/04/06  14:23:25  sbs
  * some bugs fixed
  *
  * Revision 1.6  1995/04/03  13:58:57  sbs
@@ -35,7 +38,7 @@
 
 #define AccessConst(v, i) fprintf (outfile, "%s", v[i])
 
-#define VectToOffset(dim, v_i_str, a)                                                    \
+#define VectToOffset(dim, v_i_str, dima, a)                                              \
     {                                                                                    \
         int i;                                                                           \
         for (i = dim - 1; i > 0; i--)                                                    \
@@ -45,6 +48,10 @@
             fprintf (outfile, "+");                                                      \
             v_i_str;                                                                     \
             fprintf (outfile, ") ");                                                     \
+        }                                                                                \
+        while (i < dima) {                                                               \
+            fprintf (outfile, "*ND_KD_A_SHAPE(%s, %d) ", a, i);                          \
+            i++;                                                                         \
         }                                                                                \
     }
 
@@ -67,10 +74,10 @@
     dest;                                                                                \
     fprintf (outfile, ";\n\n")
 
-#define InitVecs(dim, vn, v_i_str)                                                       \
+#define InitVecs(from, to, vn, v_i_str)                                                  \
     {                                                                                    \
         int i;                                                                           \
-        for (i = 1; i < dim; i++) {                                                      \
+        for (i = from; i < to; i++) {                                                    \
             INDENT;                                                                      \
             fprintf (outfile, "int %s%d=", vn, i);                                       \
             v_i_str;                                                                     \
@@ -78,9 +85,9 @@
         }                                                                                \
     }
 
-#define InitIMaxs(dim, v_i_str) InitVecs (dim, "__imax", v_i_str)
+#define InitIMaxs(from, to, v_i_str) InitVecs (from, to, "__imax", v_i_str)
 
-#define InitSrcOffs(dim, v_i_str) InitVecs (dim, "__srcoff", v_i_str)
+#define InitSrcOffs(from, to, v_i_str) InitVecs (from, to, "__srcoff", v_i_str)
 
 #define FillRes(res, body)                                                               \
     INDENT;                                                                              \
@@ -128,19 +135,32 @@
                                 "ND_A_FIELD(%s)[__idest++]=ND_A_FIELD(%s)[__isrc++];\n", \
                                 res, a);))
 
-#define TakeSeg(a, dim, offset, off_i_str, sz_i_str, res)                                \
-    NewBlock (InitPtr (offset, fprintf (outfile, "0")); InitIMaxs (dim, sz_i_str);       \
+/*
+ * TakeSeg(a, dima, offset, dimi, sz_i_str, off_i_str, res)
+ *   a        : src-array
+ *   dima     : dimension of "a"
+ *   offset   : beginning of the segment in the unrolling of "a"
+ *   dimi     : length of "sz_i_str" and "off_i_str"
+ *   sz_i_str : number of elements to take from the i'th axis
+ *   off_i_str: number of elements to skip in the i'th axis
+ *   res      : resulting array
+ *
+ */
+
+#define TakeSeg(a, dima, offset, dimi, sz_i_str, off_i_str, res)                         \
+    NewBlock (InitPtr (offset, fprintf (outfile, "0")); InitIMaxs (0, dimi, sz_i_str);   \
+              InitIMaxs (dimi, dima, fprintf (outfile, "ND_KD_A_SHAPE(%s, %d)", a, i));  \
               InitSrcOffs (                                                              \
-                dim, off_i_str; {                                                        \
+                0, dimi, off_i_str; {                                                    \
                     int j;                                                               \
-                    for (j = i + 1; j < dim; j++)                                        \
+                    for (j = i + 1; j < dima; j++)                                       \
                         fprintf (outfile, "*ND_KD_A_SHAPE(%s, %d)", a, j);               \
-                }),                                                                      \
+                }) InitSrcOffs (dimi, dima, fprintf (outfile, "0")),                     \
               FillRes (res,                                                              \
-                       AccessSeg (dim, INDENT; fprintf (outfile,                         \
-                                                        "ND_A_FIELD(%s)[__idest++]=ND_"  \
-                                                        "A_FIELD(%s)[__isrc++];\n",      \
-                                                        res, a);)))
+                       AccessSeg (dima, INDENT; fprintf (outfile,                        \
+                                                         "ND_A_FIELD(%s)[__idest++]=ND_" \
+                                                         "A_FIELD(%s)[__isrc++];\n",     \
+                                                         res, a);)))
 
 #ifdef TEST_BACKEND
 
@@ -153,7 +173,7 @@ main ()
     FILE *outfile = stdout;
     char type[] = "double";
     char name[] = "array_name";
-    int dim = 3;
+    int dim = 3, dima = 4, dimv = 3;
     char *s[] = {"40", "50", "60"};
     char *vi[] = {"10", "20", "30"};
     char v[] = "vector";
@@ -305,7 +325,7 @@ DBUG_VOID_RETURN;
 
 INDENT;
 fprintf (outfile, "%s=ND_A_FIELD(%s)[", res, a);
-VectToOffset (dim, AccessConst (vi, i), a);
+VectToOffset (dim, AccessConst (vi, i), dim, a);
 fprintf (outfile, "];\n\n");
 
 #undef ND_KD_PSI_CxA_S
@@ -334,7 +354,7 @@ DBUG_VOID_RETURN;
 
 INDENT;
 fprintf (outfile, "%s=ND_A_FIELD(%s)[", res, a);
-VectToOffset (dim, AccessVect (v, i), a);
+VectToOffset (dim, AccessVect (v, i), dim, a);
 fprintf (outfile, "];\n\n");
 
 #undef ND_KD_PSI_VxA_S
@@ -345,10 +365,11 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 /*
- * ND_KD_PSI_CxA_A( a, res, dim, v0,..., vn): selects a sub-array
+ * ND_KD_PSI_CxA_A( dima, a, res, dimv, v0,..., vn): selects a sub-array
  *
+ * int dima;
  * char *a, *res;
- * int dim;
+ * int dimv;
  * char **vi;
  */
 
@@ -362,7 +383,7 @@ DBUG_VOID_RETURN;
 #include "icm_comment.c"
 
 INDENT;
-CopyBlock (a, VectToOffset (dim, AccessConst (vi, i), a), res);
+CopyBlock (a, VectToOffset (dimv, AccessConst (vi, i), dima, a), res);
 fprintf (outfile, "\n\n");
 
 #undef ND_KD_PSI_CxA_A
@@ -374,10 +395,11 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 /*
- * ND_KD_PSI_VxA_A( a, res, dim, v )       : selects a sub-array
+ * ND_KD_PSI_VxA_A( dima, a, res, dimv, v )       : selects a sub-array
  *
+ * int dima;
  * char *a, *res, *v;
- * int dim;
+ * int dimv;
  */
 
 #define ND_KD_PSI_VxA_A
@@ -390,7 +412,7 @@ DBUG_VOID_RETURN;
 #include "icm_comment.c"
 
 INDENT;
-CopyBlock (a, VectToOffset (dim, AccessVect (v, i), a), res);
+CopyBlock (a, VectToOffset (dimv, AccessVect (v, i), dima, a), res);
 fprintf (outfile, "\n\n");
 
 #undef ND_KD_PSI_VxA_A
@@ -401,7 +423,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 /*
- * ND_KD_TAKE_CxA_A( a, res, dim, v0,..., vn):
+ * ND_KD_TAKE_CxA_A( dima, a, res, dimv, v0,..., vn):
  */
 
 #define ND_KD_TAKE_CxA_A
@@ -414,10 +436,11 @@ DBUG_VOID_RETURN;
 #include "icm_comment.c"
 
 INDENT;
-TakeSeg (a, dim, fprintf (outfile, "0"), /* offset */
+TakeSeg (a, dima, fprintf (outfile, "0"), /* offset */
+         dimv,                            /* dim of sizes & offsets */
+         AccessConst (vi, i),             /* sizes */
          fprintf (outfile, "(ND_KD_A_SHAPE(%s, %d) - ", a, i);
          AccessConst (vi, i); fprintf (outfile, ")"), /* offsets */
-                              AccessConst (vi, i),    /* sizes */
                               res);
 
 fprintf (outfile, "\n\n");
@@ -430,7 +453,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 /*
- * ND_KD_DROP_CxA_A( a, res, dim, v0,..., vn):
+ * ND_KD_DROP_CxA_A( dima, a, res, dimv, v0,..., vn):
  */
 
 #define ND_KD_DROP_CxA_A
@@ -443,10 +466,11 @@ DBUG_VOID_RETURN;
 #include "icm_comment.c"
 
 INDENT;
-TakeSeg (a, dim, VectToOffset (dim, AccessConst (vi, i), a), /* offset */
-         AccessConst (vi, i),                                /* offsets */
+TakeSeg (a, dima, VectToOffset (dimv, AccessConst (vi, i), dima, a), /* offset */
+         dimv, /* dim of sizes & offsets */
          fprintf (outfile, "ND_KD_A_SHAPE(%s, %d) - ", a, i);
          AccessConst (vi, i), /* sizes */
+         AccessConst (vi, i), /* offsets */
          res);
 
 fprintf (outfile, "\n\n");
