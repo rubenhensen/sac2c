@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2003/04/15 14:16:05  dkr
+ * -DTAGGED_ARRAYS added for TAGGED_ARRAYS
+ *
  * Revision 3.39  2003/03/24 16:36:52  sbs
  * cppI added
  *
@@ -572,6 +575,9 @@ AnalyseCommandline (int argc, char *argv[])
     });
 
     ARGS_OPTION ("D", cppvars[num_cpp_vars++] = ARG);
+#ifdef TAGGED_ARRAYS
+    cppvars[num_cpp_vars++] = "TAGGED_ARRAYS";
+#endif
 
     ARGS_FLAG ("enforceIEEE", enforce_ieee = TRUE);
 
