@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.20  2000/08/14 13:20:35  dkr
+ * bug in WLTNgenerator fixed:
+ * When normalizing generator bounds not only the EXPRS-representation
+ * but also the CONSTVEC-representation must be modified.
+ *
  * Revision 2.19  2000/08/07 14:58:44  dkr
  * some asserts for GEN_BOUND1, GEN_BOUND2 accesses added
  * compound macros used now
@@ -326,8 +331,9 @@ check_genarray_full_part (node *wln)
     /* check lower bound */
     lowern = ARRAY_AELEMS (lowern);
     while (result && lowern) {
-        if (NUM_VAL (EXPRS_EXPR (lowern)) != 0)
+        if (NUM_VAL (EXPRS_EXPR (lowern)) != 0) {
             result = 0;
+        }
         lowern = EXPRS_NEXT (lowern);
     }
 
@@ -335,8 +341,9 @@ check_genarray_full_part (node *wln)
     uppern = ARRAY_AELEMS (uppern);
     shapen = ARRAY_AELEMS (shapen);
     while (result && uppern) {
-        if (NUM_VAL (EXPRS_EXPR (shapen)) != NUM_VAL (EXPRS_EXPR (uppern)))
+        if (NUM_VAL (EXPRS_EXPR (shapen)) != NUM_VAL (EXPRS_EXPR (uppern))) {
             result = 0;
+        }
         uppern = EXPRS_NEXT (uppern);
         shapen = EXPRS_NEXT (shapen);
     }
@@ -941,9 +948,9 @@ WLTNpart (node *arg_node, node *arg_info)
 node *
 WLTNgenerator (node *arg_node, node *arg_info)
 {
-    node *tmpn, **bound, *lbound, *ubound, *assignn, *blockn, *wln, *idn;
+    node *tmpn, **bound, *lb, *ub, *lbe, *ube, *assignn, *blockn, *wln, *idn;
     int i, check_bounds, empty, warning;
-    int lnum, unum, tnum, dim;
+    int lbnum, ubnum, tnum, dim;
     ids *_ids, *let_ids;
     char *varname;
     types *type;
@@ -1018,41 +1025,53 @@ WLTNgenerator (node *arg_node, node *arg_info)
          * check bound ranges
          */
         if (check_bounds) {
-            dim = 0;
             empty = 0;
             warning = 0;
-            lbound = ARRAY_AELEMS (NGEN_BOUND1 (arg_node));
-            ubound = ARRAY_AELEMS (NGEN_BOUND2 (arg_node));
+            lb = NGEN_BOUND1 (arg_node);
+            ub = NGEN_BOUND2 (arg_node);
+            lbe = ARRAY_AELEMS (lb);
+            ube = ARRAY_AELEMS (ub);
 
             let_ids = LET_IDS (INFO_WLI_LET (arg_info));
-            while (lbound) {
-                lnum = NUM_VAL (EXPRS_EXPR (lbound));
-                unum = NUM_VAL (EXPRS_EXPR (ubound));
+            dim = 0;
+            while (lbe) {
+                DBUG_ASSERT ((ube != NULL),
+                             "dimensionality differs in lower and upper bound!");
+                lbnum = NUM_VAL (EXPRS_EXPR (lbe));
+                ubnum = NUM_VAL (EXPRS_EXPR (ube));
 
                 if ((NWITH_TYPE (wln) == WO_modarray)
                     || (NWITH_TYPE (wln) == WO_genarray)) {
                     tnum = IDS_SHAPE (let_ids, dim);
-                    if (lnum < 0) {
+                    if (lbnum < 0) {
                         warning = 1;
-                        NUM_VAL (EXPRS_EXPR (lbound)) = 0;
-                        lnum = 0;
+                        lbnum = NUM_VAL (EXPRS_EXPR (lbe)) = 0;
+                        if (ARRAY_ISCONST (lb)) {
+                            DBUG_ASSERT ((dim < ARRAY_VECLEN (lb)),
+                                         "some entries are missing in ARRAY_CONSTVEC");
+                            ((int *)ARRAY_CONSTVEC (lb))[dim] = 0;
+                        }
                     }
-                    if (unum > tnum) {
+                    if (ubnum > tnum) {
                         warning = 1;
-                        NUM_VAL (EXPRS_EXPR (ubound)) = tnum;
-                        unum = tnum;
+                        ubnum = NUM_VAL (EXPRS_EXPR (ube)) = tnum;
+                        if (ARRAY_ISCONST (ub)) {
+                            DBUG_ASSERT ((dim < ARRAY_VECLEN (ub)),
+                                         "some entries are missing in ARRAY_CONSTVEC");
+                            ((int *)ARRAY_CONSTVEC (ub))[dim] = tnum;
+                        }
                     }
                 }
 
-                if (unum <= lnum) {
+                if (lbnum >= ubnum) {
                     /* empty set of indices */
                     empty = 1;
                     break;
                 }
 
                 dim++;
-                lbound = EXPRS_NEXT (lbound);
-                ubound = EXPRS_NEXT (ubound);
+                lbe = EXPRS_NEXT (lbe);
+                ube = EXPRS_NEXT (ube);
             }
 
             if (warning) {
@@ -1066,14 +1085,28 @@ WLTNgenerator (node *arg_node, node *arg_info)
                 if (WO_genarray == NWITH_TYPE (INFO_WLI_WL (arg_info))) {
                     /* change generator: full scope.  */
                     dim = TYPES_DIM (IDS_TYPE (let_ids));
-                    lbound = ARRAY_AELEMS (NGEN_BOUND1 (arg_node));
-                    ubound = ARRAY_AELEMS (NGEN_BOUND2 (arg_node));
+                    lb = NGEN_BOUND1 (arg_node);
+                    ub = NGEN_BOUND2 (arg_node);
+                    lbe = ARRAY_AELEMS (lb);
+                    ube = ARRAY_AELEMS (ub);
 
                     for (i = 0; i < dim; i++) {
-                        NUM_VAL (EXPRS_EXPR (lbound)) = 0;
-                        NUM_VAL (EXPRS_EXPR (ubound)) = IDS_SHAPE (let_ids, i);
-                        lbound = EXPRS_NEXT (lbound);
-                        ubound = EXPRS_NEXT (ubound);
+                        NUM_VAL (EXPRS_EXPR (lbe)) = 0;
+                        if (ARRAY_ISCONST (lb)) {
+                            DBUG_ASSERT ((i < ARRAY_VECLEN (lb)),
+                                         "some entries are missing in ARRAY_CONSTVEC");
+                            ((int *)ARRAY_CONSTVEC (lb))[i] = 0;
+                        }
+
+                        NUM_VAL (EXPRS_EXPR (ube)) = IDS_SHAPE (let_ids, i);
+                        if (ARRAY_ISCONST (ub)) {
+                            DBUG_ASSERT ((i < ARRAY_VECLEN (ub)),
+                                         "some entries are missing in ARRAY_CONSTVEC");
+                            ((int *)ARRAY_CONSTVEC (ub))[i] = IDS_SHAPE (let_ids, i);
+                        }
+
+                        lbe = EXPRS_NEXT (lbe);
+                        ube = EXPRS_NEXT (ube);
                     }
 
                     if (NGEN_STEP (arg_node)) {
