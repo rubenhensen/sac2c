@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.108  2004/11/01 21:50:28  sah
+ * ShpSegs are initialised in DBUG mode now
+ *
  * Revision 3.107  2004/10/28 17:23:11  sah
  * CreateIds no more consumes its arguments.
  *
@@ -335,10 +338,19 @@ MakeShpseg (nums *numsp)
 
     tmp = ALLOCATE (shpseg);
 
-#if 0
-  for (i = 0; i < SHP_SEG_SIZE; i++) {
-    SHPSEG_SHAPE( tmp, i) = -1;
-  }
+#ifndef DBUG_OFF
+    /*
+     * For debugging memory use with dbx, it is important
+     * that all memory has been initialised before reading
+     * from it. As the Shpseg is allocated in a fixed size
+     * which may not be entirely filled afterwards, we
+     * have to write an initial value! Otherwise dbx will
+     * complain that for example in DupTree uninitialised
+     * data is read.
+     */
+    for (i = 0; i < SHP_SEG_SIZE; i++) {
+        SHPSEG_SHAPE (tmp, i) = -1;
+    }
 #endif
 
     i = 0;
