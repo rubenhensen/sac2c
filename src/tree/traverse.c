@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2000/03/22 17:36:19  jhs
+ * Added N_MTsignal, N_MTalloc, N_MTsync and barin_tab.
+ *
  * Revision 1.14  2000/03/17 16:31:41  dkr
  * include of cleanup_decls.h added
  *
@@ -218,6 +221,7 @@
 #include "blocks_cons.h"
 #include "dataflow_analysis.h"
 #include "blocks_propagate.h"
+#include "barriers_init.h"
 
 #include "traverse.h"
 
@@ -1035,6 +1039,17 @@ static funtab cudecls_tab_rec = {{
 funtab *cudecls_tab = &cudecls_tab_rec;
 
 /*
+ *  (75) barin_tab
+ */
+static funtab barin_tab_rec = {{
+#define NIFbarin(it_barin) it_barin
+#include "node_info.mac"
+                               },
+                               NULL,
+                               NULL};
+funtab *barin_tab = &barin_tab_rec;
+
+/*
  *  nnode
  */
 #define NIFnnode(nnode) nnode
@@ -1079,6 +1094,8 @@ Trav (node *arg_node, node *arg_info)
     }
 
     if (NODE_TYPE (arg_node) >= N_ok) {
+        DBUG_PRINT ("TRAVjhs",
+                    ("N_ok is %i, this is %i", (int)(N_ok), (int)NODE_TYPE (arg_node)));
         DBUG_ASSERT (0, "Trav: illegal node type !");
     }
 

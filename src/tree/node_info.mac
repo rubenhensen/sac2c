@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2000/03/22 17:36:19  jhs
+ * Added N_MTsignal, N_MTalloc, N_MTsync and barin_tab.
+ *
  * Revision 1.25  2000/03/21 13:11:50  jhs
  * Added some functions of DFA and BLKPP.
  *
@@ -132,7 +135,7 @@
  *   muth_tab        schin_tab       blkin_tab       rfin_tab
  *   func2lac_tab    ai_tab          blkex_tab       mtfin_tab
  *   l2f_lift_tab    blkco_tab       dfa_tab         blkpp_tab
- *   cudecls_tab
+ *   cudecls_tab     barin_tab
  *
  *   nnode
  *
@@ -419,6 +422,9 @@
 #ifndef NIFcudecls
 #define NIFcudecls(it_cudecls)
 #endif
+#ifndef NIFbarin
+#define NIFbarin(it_barin)
+#endif
 
 #ifndef NIFnnode
 #define NIFnnode(nnode)
@@ -445,8 +451,8 @@
   it_spmdpm, it_spmdco, it_ntc, it_l2f_infer,                                            \
                                                                                          \
   it_muth, it_schin, it_blkin, it_rfin, it_fun2lac, it_ai, it_blkex, it_mtfin,           \
-  it_l2f_lift, it_blkco, it_dfa, it_blkpp, it_cudecls, it_unused6, it_unused7,           \
-  it_unused8, it_unused9, it_unusedA, it_unusedB, it_unusedC,                            \
+  it_l2f_lift, it_blkco, it_dfa, it_blkpp, it_cudecls, it_barin, it_unused7, it_unused8, \
+  it_unused9, it_unusedA, it_unusedB, it_unusedC,                                        \
                                                                                          \
   nnode)                                                                                 \
                                                                                          \
@@ -484,8 +490,9 @@
                                                     NIFblkco (it_blkco) NIFdfa (it_dfa)  \
                                                       NIFblkpp (it_blkpp)                \
                                                         NIFcudecls (it_cudecls)          \
+                                                          NIFbarin (it_barin)            \
                                                                                          \
-                                                          NIFnnode (nnode)
+                                                            NIFnnode (nnode)
 
 /******************************************************************************
  *
@@ -854,6 +861,60 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        1),
 
+  NIF (N_MTsignal, "N_MTsignal", TravSons, TravSons, PrintMTsignal, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       0),
+
+  NIF (N_MTsync, "N_MTsync", TravSons, TravSons, PrintMTsync, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       0),
+
+  NIF (N_MTalloc, "N_MTalloc", TravSons, TravSons, PrintMTalloc, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       0),
+
   NIF (N_assign, "N_assign", TravSons, FltnAssign, PrintAssign, TCassign, GNMassign,
        DCRassign, WLFassign, FreeAssign, CFassign, RCassign, COMPAssign, LIRassign,
        DupAssign, INLassign, UNRassign, LIRMassign, IdxAssign, UNSassign, WLIassign,
@@ -868,7 +929,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, SPMDPMassign, SPMDCOassign, TravSons, L2F_INFERassign,
 
        TravSons, SCHINassign, BLKINassign, TravSons, FUN2LACassign, AIassign, BLKEXassign,
-       TravSons, TravSons, BLKCOassign, DFAassign, BLKPPassign, TravSons, TravSons,
+       TravSons, TravSons, BLKCOassign, DFAassign, BLKPPassign, TravSons, BARINassign,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        2),
@@ -1831,6 +1892,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFblkpp
 
 #undef NIFcudecls
+#undef NIFbarin
 
 #undef NIFnnode
 
