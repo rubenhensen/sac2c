@@ -11,6 +11,8 @@ LoopInvariantRemoval.h
 Makefile
 Unroll.c
 Unroll.h
+Unswitch.c
+Unswitch.h
 WorkReduction.c
 WorkReduction.h
 optimize.c
