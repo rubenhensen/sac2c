@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2003/03/21 18:01:46  sbs
+ * generic preprocessor flags SAC_FOR_xxx eliminated again 8-)
+ *
  * Revision 3.11  2002/08/21 13:33:35  sah
  * dot elimination enabled again;)
  *
@@ -278,11 +281,6 @@ ScanParse ()
     if (sacfilename[0] == '\0') {
         strcpy (cccallstr, config.cpp_stdin);
 
-        strcat (cccallstr, " ");
-        strcat (cccallstr, config.opt_D);
-        strcat (cccallstr, "SAC_FOR_");
-        strcat (cccallstr, target_platform);
-
         for (i = 0; i < num_cpp_vars; i++) {
             strcat (cccallstr, " ");
             strcat (cccallstr, config.opt_D);
@@ -298,11 +296,6 @@ ScanParse ()
         }
 
         strcpy (cccallstr, config.cpp_file);
-
-        strcat (cccallstr, " ");
-        strcat (cccallstr, config.opt_D);
-        strcat (cccallstr, "SAC_FOR_");
-        strcat (cccallstr, target_platform);
 
         for (i = 0; i < num_cpp_vars; i++) {
             strcat (cccallstr, " ");
