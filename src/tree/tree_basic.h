@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2001/04/18 12:59:46  nmw
+ * SSAap, CAVap for single functions traversals added
+ *
  * Revision 3.79  2001/04/12 12:39:23  nmw
  * AVIS_EXPRESULT added
  *
@@ -2441,6 +2444,7 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      CONDSTMT          (store cond-node for later access)
  ***    int        CONDSTATUS        (store position in conditional traversal)
  ***    node*      ASSIGN            (current assignment node)
+ ***    bool       SINGLEFUNDEF      (traversal mode: all fundefs/single fundef)
  ***
  ***  when used in UndoSSATransform.c
  ***    node*      ARGS              (arg chain of fundef)
@@ -2515,6 +2519,10 @@ extern node *MakeAvis (node *vardecOrArg);
  ***
  ***  when used in optimize.c
  ***    node*      MODUL             (current working modul)
+ ***
+ ***  when used in CheckAvis.c
+ ***    node*      FUNDEF            (current working fundef)
+ ***    bool       SINGLEFUNDEF      (traversal mode: all fundefs/single fundef)
  ***
  ***  remarks:
  ***
@@ -2912,6 +2920,7 @@ extern node *MakeInfo ();
 #define INFO_SSA_CONDSTMT(n) (n->node[4])
 #define INFO_SSA_CONDSTATUS(n) (n->int_data)
 #define INFO_SSA_ASSIGN(n) (n->node[5])
+#define INFO_SSA_SINGLEFUNDEF(n) ((bool)(n->counter))
 
 /* when used in UndoSSATransform.c */
 #define INFO_USSA_ARGS(n) (n->node[0])
@@ -2987,6 +2996,10 @@ extern node *MakeInfo ();
 #define INFO_FREE_ASSIGN(n) (n->node[1])
 /* when used in optimize.c */
 #define INFO_OPT_MODUL(n) (n->node[0])
+
+/* when used in CheckAvis.c */
+#define INFO_CAV_FUNDEF(n) (n->node[0])
+#define INFO_CAV_SINGLEFUNDEF(n) ((bool)(n->counter))
 
 /*--------------------------------------------------------------------------*/
 

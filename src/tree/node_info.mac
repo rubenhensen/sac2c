@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2001/04/18 12:59:46  nmw
+ * SSAap, CAVap for single functions traversals added
+ *
  * Revision 3.42  2001/04/12 12:38:57  nmw
  * SSALIRexpr for traversing return statement added
  *
@@ -1513,9 +1516,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, DFAap, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, APCap, APTap,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       SSADCRap, SSACSEap, CMPTap, PFap, SSACFap, SSALIRap, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, 1),
+       TravSons, TravSons, TravSons, TravSons, TravSons, SSAap, CAVap, TravSons, SSADCRap,
+       SSACSEap, CMPTap, PFap, SSACFap, SSALIRap, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, 1),
 
   NIF (N_cast, "N_cast", TravSons, TravSons, PrintCast, TravSons, TravSons, TravSons,
        TravSons, FreeCast, TravSons, TravSons, TravSons, TravSons, DupCast, TravSons,
@@ -1554,7 +1557,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, SSAexprs, TravSons, TravSons,
-       TravSons, TravSons, CMPTTravSons, TravSons, TravSons, TravSons, SSALIRexprs,
+       TravSons, TravSons, CMPTTravSons, TravSons, TravSons, SSALIRexprs, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_array, "N_array", TravSons, FltnArray, PrintArray, TravSons, TravSons, TravSons,
