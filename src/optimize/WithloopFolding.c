@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 1.24  1999/02/06 13:35:15  srs
+ * fixed bug in SearchWL()
+ *
  * Revision 1.23  1999/02/01 11:59:46  cg
  * Bug fixed in MakeNullVec(): bool and char arrays are now handled
  * as well.
@@ -119,6 +122,14 @@
 #include "WLT.h"
 #include "WLI.h"
 #include "WLF.h"
+
+/******************************************************************************
+ *
+ *  global variables
+ *
+ ******************************************************************************/
+
+nodelist *search_wl_nodelist; /* usage: see comment in code of SearchWL() */
 
 /******************************************************************************
  *
@@ -961,8 +972,9 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
             /* now we have to distinguish where the 'pointer comes from'. Do we
                use the Id from within the loop or from behind it? */
             if (loop_level == original_level) {
-                /* the Id is behind the loop, same level. We definitely cannot
-                   use a WL for folding if Id describes one. */
+                /* the referencing Id is behind the loop, same level. It
+                   references an ID within the loop. If this ID is defined by
+                   a WL, we definitly cannot use this WL for folding. */
 
                 /* we have to find out if idn references a WL. Therefore
                    we traverse the body to its last assignment and call SearchWL
@@ -1033,10 +1045,34 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
         case N_let:
             if (N_id == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (startn)))) {
                 /* if the Id we search for is renamed, let's search for the new
-                   name to find a referenced WL. */
-                id_varno = ID_VARNO (LET_EXPR (ASSIGN_INSTR (startn)));
-                tmpn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
-                startn = SearchWL (id_varno, tmpn, valid, mode, original_level);
+                   name to find a referenced WL.
+
+                   consider the following example:
+                   w = ...
+                   do {
+                     ...1
+                     w = w;
+                     ...2
+                   }
+
+                   where ...1 and ...2 does not define w.
+                   This example can only exist if CF or DCR is disabled.
+
+                   Now, when we reach the assignment w = w in this context, we
+                   start to search for the right Id - for w. The MRD points to
+                   the do-node, so we know that w is not defined in ...1. That's
+                   why we start to search w in ...2. Again we reach the
+                   assignment w=w and would end in an infinite recursion. To
+                   avoid this, we remeber the assignment node of w=w and abort
+                   the recursion if hit twice.
+                   */
+                if (!NodeListFind (search_wl_nodelist, startn)) {
+                    search_wl_nodelist
+                      = NodeListAppend (search_wl_nodelist, startn, NULL);
+                    id_varno = ID_VARNO (LET_EXPR (ASSIGN_INSTR (startn)));
+                    tmpn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
+                    startn = SearchWL (id_varno, tmpn, valid, mode, original_level);
+                }
             } else if (N_Nwith == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (startn)))) {
                 /* now we found a WL */
                 if (0 == mode)
@@ -1077,13 +1113,13 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
  *   assignn is the assign node in which idn is situated.
  *   mode is used as follows:
  *
- * 0:
- *   If a WL is found which can not be used for folding, NWITH_NO_CHANCE is set.
- *   If a WL is found, it's NWITH_REFERENCED value is incremented.
- * 1:
- *   If a WL is found which can not be used for folding, NWITH_NO_CHANCE is set.
- * 2:
- *   No special behaviour, just returns found WL or NULL.
+ *   0: If a WL is found which can not be used for folding, NWITH_NO_CHANCE is
+ *      set. Additionally, for every found WL, NWITH_REFERENCED is incremented.
+ *
+ *   1: If a WL is found which can not be used for folding, NWITH_NO_CHANCE is
+ *      set.
+ *
+ *   2: No special behaviour, just returns found WL or NULL.
  *
  *   This functions can affect various WL. See SearchWL for more details.
  *
@@ -1101,7 +1137,9 @@ StartSearchWL (node *idn, node *assignn, int mode)
     valid = 1; /* 1 is important, which means 'foldable' */
     varno = ID_VARNO (idn);
     mrdn = (node *)ASSIGN_MRDMASK (assignn)[varno];
+    search_wl_nodelist = NULL;
     resultn = SearchWL (varno, mrdn, &valid, mode, ASSIGN_LEVEL (assignn));
+    search_wl_nodelist = NodeListFree (search_wl_nodelist, 0);
 
     DBUG_ASSERT (0 == valid || 1 == valid, ("invalid value for variable valid"));
 
