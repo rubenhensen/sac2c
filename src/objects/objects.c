@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/12/01 17:23:56  cg
+ * Revision 1.10  1995/12/28 10:28:10  cg
+ * bug fixed in OBJarg: names of artificial return types won't be shared
+ * in any situation now.
+ *
+ * Revision 1.9  1995/12/01  17:23:56  cg
  * now shape segments and strings are always copied when generated
  * from existing nodes.
  *
@@ -346,9 +350,10 @@ OBJarg (node *arg_node, node *arg_info)
             DBUG_PRINT ("OBJ", ("Converted return type void to %s:%s",
                                 FUNDEF_TMOD (arg_info), FUNDEF_TNAME (arg_info)));
         } else {
-            new_return_type = MakeType (ARG_BASETYPE (arg_node), ARG_DIM (arg_node),
-                                        ARG_SHPSEG (arg_node), ARG_TNAME (arg_node),
-                                        ARG_TMOD (arg_node));
+            new_return_type
+              = MakeType (ARG_BASETYPE (arg_node), ARG_DIM (arg_node),
+                          CopyShpseg (ARG_SHPSEG (arg_node)),
+                          StringCopy (ARG_TNAME (arg_node)), ARG_TMOD (arg_node));
             TYPES_NEXT (new_return_type) = FUNDEF_TYPES (arg_info);
             FUNDEF_TYPES (arg_info) = new_return_type;
 
