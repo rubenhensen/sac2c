@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2004/09/21 12:39:16  sah
+ * version identifier now contains newast
+ * if NEW_AST flag set.
+ *
  * Revision 3.62  2004/08/26 14:02:36  cg
  * Re-organized default enable/disable settings of optimizations
  * after non-ssa-based optimizations were removed.
@@ -367,8 +371,12 @@ bool khf = FALSE;
  *  Version control
  */
 
-char version_id[] = "v0.91ssa";
 /* version identifier of sac2c */
+#ifdef NEW_AST
+char version_id[] = "v0.91-ssa-newast";
+#else
+char version_id[] = "v0.91-ssa";
+#endif
 
 char target_platform[] = OS "_" ARCH;
 
