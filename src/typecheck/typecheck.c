@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.41  2000/06/23 15:25:44  dkr
+ * signature of DupTree changed
+ *
  * Revision 2.40  2000/06/07 15:53:33  dkr
  * pseudo-fold-fundefs are no longer inserted into the AST directly
  * during the traversal (*very* error prone!!).
@@ -1191,8 +1194,7 @@ BuildCatWithLoop1 (types *new_shape, node *array1)
                                 MakeNGenerator (NULL,
                                                 (ID_DIM (array1) > SCALAR)
                                                   ? Type2Vec (ID_TYPE (array1))
-                                                  : MakePrf1 (F_shape,
-                                                              DupTree (array1, NULL)),
+                                                  : MakePrf1 (F_shape, DupTree (array1)),
                                                 F_le, F_lt, NULL, NULL),
                                 NULL),
                      MakeNCode (MakeBlock (body, NULL),
@@ -1274,7 +1276,7 @@ BuildCatWithLoop2 (ids *lhs, node *arg1, node *arg2, node *arg3)
     ARRAY_VECLEN (start_vec) = ID_DIM (arg2);
     ARRAY_CONSTVEC (start_vec) = const_vec;
 
-    start_vec_copy = DupTree (start_vec, NULL);
+    start_vec_copy = DupTree (start_vec);
 
     body
       = MakeAssign (MakeLet (start_vec, MakeIds (wl_body_var_offset, NULL, ST_regular)),
@@ -3962,7 +3964,7 @@ DuplicateFun (fun_tab_elem *fun_p)
         fun_p->node->node[1] = NULL;     /* set NULL to duplicate only current
                                           * function
                                           */
-        new_fun_node = DupTree (fun_p->node, NULL);
+        new_fun_node = DupTree (fun_p->node);
         DBUG_ASSERT (N_fundef == new_fun_node->nodetype, "nodetype != N_fundef");
         DBUG_ASSERT (NULL == new_fun_node->node[1], "next function is also copied");
 
@@ -6922,7 +6924,7 @@ TI_Nwith (node *arg_node, node *arg_info)
         if (!KNOWN_SHAPE (TYPES_DIM (base_array_type))
             && (NWITH_BOUND2 (arg_node) == NULL)) {
             /* new_shp is needed for substituting "." as upper bound only!! */
-            new_shp = DupTree (NWITHOP_SHAPE (NWITH_WITHOP (arg_node)), NULL);
+            new_shp = DupTree (NWITHOP_SHAPE (NWITH_WITHOP (arg_node)));
         }
     } else if (WO_modarray == NWITHOP_TYPE (NWITH_WITHOP (arg_node))) {
         base_array_type = TI (NWITHOP_ARRAY (NWITH_WITHOP (arg_node)), arg_info);
@@ -6934,8 +6936,7 @@ TI_Nwith (node *arg_node, node *arg_info)
             /* new_shp is needed for substituting "." as upper bound only!! */
             new_shp
               = MakePrf (F_shape,
-                         MakeExprs (DupTree (NWITHOP_ARRAY (NWITH_WITHOP (arg_node)),
-                                             NULL),
+                         MakeExprs (DupTree (NWITHOP_ARRAY (NWITH_WITHOP (arg_node))),
                                     NULL));
         }
     } else if (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node))) /* only if exists */ {

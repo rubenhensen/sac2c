@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  2000/06/23 15:19:38  dkr
+ * signature of DupTree changed
+ *
  * Revision 2.8  2000/06/13 12:31:12  dkr
  * function for old with-loop removed
  *
@@ -569,7 +572,7 @@ DoUnroll (node *arg_node, node *arg_info, linfo *loop_info)
                 MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
 
                 for (i = 0; i < loop_info->loop_num; i++) {
-                    tmp = DupTree (arg_node->node[1]->node[0], NULL);
+                    tmp = DupTree (arg_node->node[1]->node[0]);
                     unroll = AppendNodeChain (1, unroll, tmp);
                 }
                 unroll = GenerateMasks (unroll, arg_info);

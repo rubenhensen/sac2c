@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/06/23 15:11:57  dkr
+ * signature of DupTree changed
+ *
  * Revision 2.4  2000/03/16 14:54:30  dkr
  * WLSEGX_BV and WLSEGX_UBV are now initialized correctly
  *
@@ -193,7 +196,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
                         new_grids
                           = MakeWLgrid (WLGRID_LEVEL (grids), WLGRID_DIM (grids),
                                         grid2_b1, grid2_b2, WLGRID_UNROLLING (grids),
-                                        DupTree (nextdim, NULL), new_grids, code);
+                                        DupTree (nextdim), new_grids, code);
                     }
                 }
 
@@ -296,9 +299,9 @@ All (node *segs, node *parms, node *cubes, int dims, int line)
     }
 
     if (NODE_TYPE (cubes) == N_WLstride) {
-        segs = MakeWLseg (dims, DupTree (cubes, NULL), NULL);
+        segs = MakeWLseg (dims, DupTree (cubes), NULL);
     } else {
-        segs = MakeWLsegVar (dims, DupTree (cubes, NULL), NULL);
+        segs = MakeWLsegVar (dims, DupTree (cubes), NULL);
     }
 
     segs = NoBlocking (segs, parms, cubes, dims, line);

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2000/06/23 15:10:24  dkr
+ * signature of DupTree changed
+ *
  * Revision 1.1  2000/06/13 13:49:48  dkr
  * Initial revision
  *
@@ -174,8 +177,8 @@ BuildNpart (FILE *infile, node *arg_node)
         type
           = (NODE_TYPE (tmp) == N_id) ? VARDEC_TYPE (ID_VARDEC (tmp)) : ARRAY_TYPE (tmp);
 
-        withid = DupTree (NPART_WITHID (arg_node), NULL);
-        gen = DupTree (NPART_GEN (arg_node), NULL);
+        withid = DupTree (NPART_WITHID (arg_node));
+        gen = DupTree (NPART_GEN (arg_node));
         code = NULL;
 
         /* replace now the generator-nodes */
@@ -291,7 +294,7 @@ PWwith (node *arg_node, node *arg_info)
     /* modify the genarray-shape */
     if (NWITHOP_TYPE (NWITH_WITHOP (arg_node)) == WO_genarray) {
         /* shape is the maximum of all bound2-values */
-        shape = DupTree (NGEN_BOUND2 (NPART_GEN (NWITH_PART (arg_node))), NULL);
+        shape = DupTree (NGEN_BOUND2 (NPART_GEN (NWITH_PART (arg_node))));
         ARRAY_TYPE (shape)
           = DuplicateTypes (ARRAY_TYPE (NGEN_BOUND2 (NPART_GEN (NWITH_PART (arg_node)))),
                             1);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.37  2000/06/23 15:14:44  dkr
+ * signature of DupTree changed
+ *
  * Revision 2.36  2000/06/23 13:54:38  dkr
  * nodewtype N_with removed
  *
@@ -853,7 +856,7 @@ CFid (node *arg_node, node *arg_info)
             }
 
             FreeTree (arg_node);
-            arg_node = DupTree (mrd, NULL);
+            arg_node = DupTree (mrd);
             INC_VAR (ASSIGN_USEMASK (INFO_CF_ASSIGN (arg_info)), ID_VARNO (arg_node));
             cf_expr++;
             break;
@@ -864,7 +867,7 @@ CFid (node *arg_node, node *arg_info)
         case N_str:
             DEC_VAR (INFO_USE, ID_VARNO (arg_node));
             FreeTree (arg_node);
-            arg_node = DupTree (mrd, NULL);
+            arg_node = DupTree (mrd);
             cf_expr++;
             break;
         case N_array:
@@ -1757,7 +1760,7 @@ FetchElem (int pos, node *array)
         for (i = 0; i < pos; i++) {
             elem = EXPRS_NEXT (elem);
         }
-        elem = DupTree (EXPRS_EXPR (elem), NULL);
+        elem = DupTree (EXPRS_EXPR (elem));
     } else {
         switch (ARRAY_VECTYPE (array)) {
         case T_int:
@@ -1925,7 +1928,7 @@ ArrayPrf (node *arg_node, node *arg_info)
             value = MRD_GETDATA (arg[0]->info.ids->node->varno, INFO_VARNO (arg_info));
             if (IsConst (value)) {
                 DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
-                arg[0] = DupTree (value, NULL);
+                arg[0] = DupTree (value);
                 used_sofar = arg_info->mask[1];
                 arg_info->mask[1] = GenMask (INFO_VARNO (arg_info));
                 arg[0] = Trav (arg[0], arg_info);
@@ -1944,7 +1947,7 @@ ArrayPrf (node *arg_node, node *arg_info)
             value = MRD_GETDATA (arg[1]->info.ids->node->varno, INFO_VARNO (arg_info));
             if (IsConst (value)) {
                 DEC_VAR (arg_info->mask[1], arg[1]->info.ids->node->varno);
-                arg[1] = DupTree (value, NULL);
+                arg[1] = DupTree (value);
                 used_sofar = arg_info->mask[1];
                 arg_info->mask[1] = GenMask (INFO_VARNO (arg_info));
                 arg[1] = Trav (arg[1], arg_info);
@@ -2352,7 +2355,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                                 if (mrdmask[ID_VARNO (val)]
                                     == ((node **)ASSIGN_MRDMASK (
                                          INFO_CF_ASSIGN (arg_info)))[ID_VARNO (val)]) {
-                                    res_array = DupTree (val, NULL);
+                                    res_array = DupTree (val);
                                 } else {
                                     /*
                                      * A variable with the same name has been defined
@@ -2428,7 +2431,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                                              * build masks for this assignment
                                              */
                                             new_assign
-                                              = MakeAssign (MakeLet (DupTree (val, NULL),
+                                              = MakeAssign (MakeLet (DupTree (val),
                                                                      new_ids),
                                                             NULL);
                                             ASSIGN_MRDMASK (new_assign)
@@ -2485,7 +2488,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                                     }
                                 }
                             } else {
-                                res_array = DupTree (val, NULL);
+                                res_array = DupTree (val);
                             }
                         } else {
                             /* valid modindex, but not equal index. */
@@ -2592,7 +2595,7 @@ ArrayPrf (node *arg_node, node *arg_info)
             offset = CalculateArrayOffset (base_array_type, vectorn);
 
             /* offset found, now change elements */
-            newn = DupTree (base_array, NULL);
+            newn = DupTree (base_array);
             tmpn = ARRAY_AELEMS (newn);
             while (offset--) {
                 tmpn = EXPRS_NEXT (tmpn);
@@ -2606,13 +2609,13 @@ ArrayPrf (node *arg_node, node *arg_info)
                 while (valn) {
                     DBUG_ASSERT (tmpn, ("array data vector has wrong length"));
                     FreeTree (EXPRS_EXPR (tmpn));
-                    EXPRS_EXPR (tmpn) = DupTree (EXPRS_EXPR (valn), NULL);
+                    EXPRS_EXPR (tmpn) = DupTree (EXPRS_EXPR (valn));
                     valn = EXPRS_NEXT (valn);
                     tmpn = EXPRS_NEXT (tmpn);
                 }
             } else {
                 FreeTree (EXPRS_EXPR (tmpn));
-                EXPRS_EXPR (tmpn) = DupTree (valn, NULL);
+                EXPRS_EXPR (tmpn) = DupTree (valn);
             }
 
             /* replace F_modarray with newn */

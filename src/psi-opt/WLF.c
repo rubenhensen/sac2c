@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.12  2000/06/23 15:23:55  dkr
+ * signature of DupTree changed
+ *
  * Revision 2.11  2000/05/25 14:59:48  dkr
  * WLFNcode(): NCODE_CEXPR is traversed now
  * (This allows for consistent renaming of variables now :-)
@@ -919,9 +922,9 @@ CreateCode (node *target, node *subst)
     dup_info = MakeInfo ();
     dup_info->flag = DUP_WLF; /* compare DUPTYPE in DupTree.h */
 
-    coden = DupTree (NCODE_CBLOCK (target), dup_info);
+    coden = DupTreeInfo (NCODE_CBLOCK (target), dup_info);
     coden = Trav (coden, new_arg_info);
-    coden = MakeNCode (coden, DupTree (NCODE_CEXPR (target), dup_info));
+    coden = MakeNCode (coden, DupTreeInfo (NCODE_CEXPR (target), dup_info));
 
     FreeNode (new_arg_info);
     FreeNode (dup_info);
@@ -1734,14 +1737,14 @@ WLFid (node *arg_node, node *arg_info)
                 ID_VARDEC (INFO_WLI_NEW_ID (arg_info)) = ren->vardec;
             } else {
                 /* keep original name */
-                INFO_WLI_NEW_ID (arg_info) = DupTree (NCODE_CEXPR (coden), NULL);
+                INFO_WLI_NEW_ID (arg_info) = DupTree (NCODE_CEXPR (coden));
             }
 
             /* Create substitution code. */
             if (N_empty == NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (coden)))) {
                 substn = NULL;
             } else {
-                substn = DupTree (BLOCK_INSTR (NCODE_CBLOCK (coden)), NULL);
+                substn = DupTree (BLOCK_INSTR (NCODE_CBLOCK (coden)));
             }
 
             /* create assignments to rename variables which index the array we want
@@ -1781,7 +1784,7 @@ WLFid (node *arg_node, node *arg_info)
                     shpseg = MakeShpseg (
                       MakeNums (1, NULL)); /* nums struct is freed inside MakeShpseg. */
                     ARRAY_TYPE (arrayn) = MakeType (T_int, 1, shpseg, NULL, NULL);
-                    argsn = MakeExprs (arrayn, MakeExprs (DupTree (vectorn, NULL), NULL));
+                    argsn = MakeExprs (arrayn, MakeExprs (DupTree (vectorn), NULL));
 
                     /* maybe the index scalar variable of the subst wl has to be renamed
                      */
@@ -1818,7 +1821,7 @@ WLFid (node *arg_node, node *arg_info)
                     /* keep original name */
                     _ids = DupOneIds (subst_wl_ids, NULL);
 
-                letn = MakeLet (DupTree (vectorn, NULL), _ids);
+                letn = MakeLet (DupTree (vectorn), _ids);
                 subst_header = MakeAssign (letn, subst_header);
             }
 

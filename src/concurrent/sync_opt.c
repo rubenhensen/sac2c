@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  2000/06/23 15:29:48  dkr
+ * signature of DupTree changed
+ *
  * Revision 2.11  1999/09/01 17:14:23  jhs
  * Remove SYNC_SCHEDULING.
  *
@@ -253,8 +256,8 @@ MeltSYNCsOnCopies (node *first_sync, node *second_sync)
 
     DBUG_ENTER ("MeltSYNCsOnCopies");
 
-    first_sync = DupTree (first_sync, NULL);
-    second_sync = DupTree (second_sync, NULL);
+    first_sync = DupTree (first_sync);
+    second_sync = DupTree (second_sync);
 
     result = MeltSYNCs (first_sync, second_sync);
 

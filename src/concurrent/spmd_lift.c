@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  2000/06/23 15:13:19  dkr
+ * signature of DupTree changed
+ *
  * Revision 2.6  2000/01/25 13:42:57  dkr
  * function GetVardec moved to tree_compound.h and renamed to
  * FindVardec_Name
@@ -133,7 +136,7 @@ SPMDLspmd (node *arg_node, node *arg_info)
     /*
      * generate body of SPMD-function
      */
-    body = DupTree (SPMD_REGION (arg_node), NULL);
+    body = DupTree (SPMD_REGION (arg_node));
 
     /*
      * insert vardecs of SPMD_OUT/LOCAL-vars into body

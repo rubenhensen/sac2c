@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.14  2000/06/23 15:11:19  dkr
+ * signature of DupTree changed
+ *
  * Revision 2.13  2000/05/29 14:32:13  dkr
  * precompile() renamed into Precompile()
  * precompile now performs *two* tree traversals
@@ -56,7 +59,7 @@
  * Revision 1.75  1998/08/07 16:06:13  dkr
  * PRECWLsegVar added
  *
- *  [...]
+ * [...]
  *
  * Revision 1.2  1995/12/01  17:23:26  cg
  * first working revision
@@ -122,7 +125,7 @@ AdjustFoldFundef (node *fundef, ids *acc, node *cexpr)
     DBUG_ASSERT ((ID_VARDEC (accvar) != NULL), "vardec is missing");
 
     funap = MakeAp (StringCopy (FUNDEF_NAME (fundef)), StringCopy (FUNDEF_MOD (fundef)),
-                    MakeExprs (accvar, MakeExprs (DupTree (cexpr, NULL), NULL)));
+                    MakeExprs (accvar, MakeExprs (DupTree (cexpr), NULL)));
     AP_FUNDEF (funap) = fundef;
 
     fold_let = MakeLet (funap, DupOneIds (acc, NULL));

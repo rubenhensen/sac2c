@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/06/23 15:13:10  dkr
+ * signature of DupTree changed
+ *
  * Revision 2.13  2000/02/22 11:36:00  jhs
  * Adapted NODE_TEXT.
  *
@@ -313,8 +316,8 @@ MeltSPMDsOnCopies (node *first_spmd, node *second_spmd)
 
     DBUG_ENTER ("MeltSPMDsOnCopies");
 
-    first_spmd = DupTree (first_spmd, NULL);
-    second_spmd = DupTree (second_spmd, NULL);
+    first_spmd = DupTree (first_spmd);
+    second_spmd = DupTree (second_spmd);
 
     result = MeltSPMDs (first_spmd, second_spmd, NULL);
 

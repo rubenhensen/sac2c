@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.62  2000/06/23 15:10:33  dkr
+ * signature of DupTree changed
+ *
  * Revision 2.61  2000/06/21 13:31:35  jhs
  * Parts of N_mt- compilation added.
  *
@@ -524,7 +527,7 @@ GetUnadjustedFoldCode (node *fundef)
     /*
      * get code of the pseudo fold-fun
      */
-    fold_code = DupTree (FUNDEF_INSTR (fundef), NULL);
+    fold_code = DupTree (FUNDEF_INSTR (fundef));
 
     /*
      * remove declaration-ICMs ('ND_KS_DECL_ARRAY_ARG') from code.
@@ -605,7 +608,7 @@ GetFoldVardecs (node *fundef)
     /*
      * get vardecs of the pseudo fold-fun
      */
-    fold_vardecs = DupTree (FUNDEF_VARDEC (fundef), NULL);
+    fold_vardecs = DupTree (FUNDEF_VARDEC (fundef));
 
     DBUG_RETURN (fold_vardecs);
 }
@@ -3487,7 +3490,7 @@ COMPPrf (node *arg_node, node *arg_info)
                 icms = MakeAssignIcm0 ("NOOP");
             } else {
                 res = MakeId3 (DupOneIds (INFO_COMP_LASTIDS (arg_info), NULL));
-                icms = MakeAssignIcm2 ("ND_KS_ASSIGN_ARRAY", DupTree (arg2, NULL), res);
+                icms = MakeAssignIcm2 ("ND_KS_ASSIGN_ARRAY", DupTree (arg2), res);
                 ASSIGN_NEXT (icms) = MakeAdjustRcICM (ID_IDS (res), ID_REFCNT (res) - 1);
             }
 
@@ -3933,7 +3936,7 @@ COMPArray (node *arg_node, node *arg_info)
 
     /* Now, we start constructing the CONST_ARRAY icm! */
     exprs = ARRAY_AELEMS (arg_node);
-    elems = DupTree (exprs, NULL);
+    elems = DupTree (exprs);
 
     while (NULL != exprs) {
         n_elems++;
@@ -5687,7 +5690,7 @@ COMPSync (node *arg_node, node *arg_info)
      *  N_sync. One needs to copy that here, because further compiling
      *  is destructive.
      */
-    backup = DupTree (BLOCK_INSTR (SYNC_REGION (arg_node)), NULL);
+    backup = DupTree (BLOCK_INSTR (SYNC_REGION (arg_node)));
     SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
 
     /*
@@ -5833,9 +5836,9 @@ COMPSync (node *arg_node, node *arg_info)
         assigns = AppendAssignIcm (assigns, "MT_WORKER_BEGIN", MakeExprsNum (barrier_id));
         assigns = AppendAssignIcm (assigns, "MT_WORKER_WAIT", NULL);
         assigns = AppendAssignIcm (assigns, "MT_MASTER_RECEIVE_FOLDRESULTS",
-                                   DupTree (fold_args, NULL));
-        assigns = AppendAssignIcm (assigns, "MT_MASTER_RECEIVE_SYNCARGS",
-                                   DupTree (sync_args, NULL));
+                                   DupTree (fold_args));
+        assigns
+          = AppendAssignIcm (assigns, "MT_MASTER_RECEIVE_SYNCARGS", DupTree (sync_args));
         assigns = AppendAssignIcm (assigns, "MT_WORKER_END", MakeExprsNum (barrier_id));
         assigns = AppendAssignIcm (assigns, "MT_RESTART", MakeExprsNum (barrier_id));
 
@@ -6132,8 +6135,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
          */
         dummy_assign = MakeAssign (NULL, MakeAssign (NULL, NULL));
         INFO_COMP_LASTASSIGN (info) = dummy_assign;
-        neutral
-          = Trav (MakeLet (DupTree (neutral, NULL), DupOneIds (wl_ids, NULL)), info);
+        neutral = Trav (MakeLet (DupTree (neutral), DupOneIds (wl_ids, NULL)), info);
         FREE (info);
         dummy_assign = FreeNode (FreeNode (dummy_assign));
         /*
@@ -6462,9 +6464,8 @@ COMPWLblock (node *arg_node, node *arg_info)
         icm_name = "WL_BLOCK_LOOP_END";
     }
 
-    assigns
-      = AppendAssign (assigns,
-                      MakeAssign (MakeIcm1 (icm_name, DupTree (icm_args, NULL)), NULL));
+    assigns = AppendAssign (assigns,
+                            MakeAssign (MakeIcm1 (icm_name, DupTree (icm_args)), NULL));
 
     /* compile successor */
     if (WLBLOCK_NEXT (arg_node) != NULL) {
@@ -6573,9 +6574,8 @@ COMPWLublock (node *arg_node, node *arg_info)
         icm_name = "WL_UBLOCK_LOOP_END";
     }
 
-    assigns
-      = AppendAssign (assigns,
-                      MakeAssign (MakeIcm1 (icm_name, DupTree (icm_args, NULL)), NULL));
+    assigns = AppendAssign (assigns,
+                            MakeAssign (MakeIcm1 (icm_name, DupTree (icm_args)), NULL));
 
     /* compile successor */
     if (WLUBLOCK_NEXT (arg_node) != NULL) {
@@ -6661,7 +6661,7 @@ COMPWLstride (node *arg_node, node *arg_info)
         cnt_unroll = (WLSTRIDE_BOUND2 (arg_node) - WLSTRIDE_BOUND1 (arg_node))
                      / WLSTRIDE_STEP (arg_node);
         for (i = 1; i < cnt_unroll; i++) {
-            new_assigns = AppendAssign (new_assigns, DupTree (assigns, NULL));
+            new_assigns = AppendAssign (new_assigns, DupTree (assigns));
         }
         assigns = AppendAssign (new_assigns, assigns);
 
@@ -6704,9 +6704,9 @@ COMPWLstride (node *arg_node, node *arg_info)
                         assigns);
     }
 
-    assigns = AppendAssign (assigns,
-                            MakeAssign (MakeIcm1 (icm_name_end, DupTree (icm_args, NULL)),
-                                        NULL));
+    assigns
+      = AppendAssign (assigns,
+                      MakeAssign (MakeIcm1 (icm_name_end, DupTree (icm_args)), NULL));
 
     /* compile successor */
     if (WLSTRIDE_NEXT (arg_node) != NULL) {
@@ -6877,7 +6877,7 @@ COMPWLgrid (node *arg_node, node *arg_info)
                          "first instruction of block is NULL (should be a N_empty node)");
 
             if (NODE_TYPE (NCODE_CBLOCK_INSTR (WLGRID_CODE (arg_node))) != N_empty) {
-                assigns = DupTree (NCODE_CBLOCK_INSTR (WLGRID_CODE (arg_node)), NULL);
+                assigns = DupTree (NCODE_CBLOCK_INSTR (WLGRID_CODE (arg_node)));
             }
 
             /*
@@ -7005,7 +7005,7 @@ COMPWLgrid (node *arg_node, node *arg_info)
         new_assigns = NULL;
         cnt_unroll = WLGRID_BOUND2 (arg_node) - WLGRID_BOUND1 (arg_node);
         for (i = 1; i < cnt_unroll; i++) {
-            new_assigns = AppendAssign (new_assigns, DupTree (assigns, NULL));
+            new_assigns = AppendAssign (new_assigns, DupTree (assigns));
         }
         assigns = AppendAssign (new_assigns, assigns);
 
@@ -7025,8 +7025,7 @@ COMPWLgrid (node *arg_node, node *arg_info)
 
     assigns = MakeAssign (MakeIcm1 (icm_name_begin, icm_args), assigns);
 
-    assigns
-      = AppendAssign (assigns, MakeAssignIcm1 (icm_name_end, DupTree (icm_args, NULL)));
+    assigns = AppendAssign (assigns, MakeAssignIcm1 (icm_name_end, DupTree (icm_args)));
 
     /* compile successor */
     if (WLGRID_NEXT (arg_node) != NULL) {
@@ -7172,9 +7171,9 @@ COMPWLstriVar (node *arg_node, node *arg_info)
 
     assigns = MakeAssign (MakeIcm1 (icm_name_begin, icm_args), assigns);
 
-    assigns = AppendAssign (assigns,
-                            MakeAssign (MakeIcm1 (icm_name_end, DupTree (icm_args, NULL)),
-                                        NULL));
+    assigns
+      = AppendAssign (assigns,
+                      MakeAssign (MakeIcm1 (icm_name_end, DupTree (icm_args)), NULL));
 
     /* compile successor */
     if (WLSTRIVAR_NEXT (arg_node) != NULL) {
@@ -7256,7 +7255,7 @@ COMPWLgridVar (node *arg_node, node *arg_info)
                          "first instruction of block is NULL (should be a N_empty node)");
 
             if (NODE_TYPE (NCODE_CBLOCK_INSTR (WLGRIDVAR_CODE (arg_node))) != N_empty) {
-                assigns = DupTree (NCODE_CBLOCK_INSTR (WLGRIDVAR_CODE (arg_node)), NULL);
+                assigns = DupTree (NCODE_CBLOCK_INSTR (WLGRIDVAR_CODE (arg_node)));
             }
 
             /*
@@ -7380,8 +7379,7 @@ COMPWLgridVar (node *arg_node, node *arg_info)
 
     assigns = MakeAssign (MakeIcm1 (icm_name_begin, icm_args), assigns);
 
-    assigns
-      = AppendAssign (assigns, MakeAssignIcm1 (icm_name_end, DupTree (icm_args, NULL)));
+    assigns = AppendAssign (assigns, MakeAssignIcm1 (icm_name_end, DupTree (icm_args)));
 
     /* compile successor */
     if (WLGRIDVAR_NEXT (arg_node) != NULL) {

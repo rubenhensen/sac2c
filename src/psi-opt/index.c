@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 2.14  2000/06/23 15:25:02  dkr
+ * signature of DupTree changed
+ *
  * Revision 2.13  2000/05/29 17:37:12  dkr
  * functions for old with-loop removed
  * ID_VARDEC of arguments of ND_KS_USE_GENVAR_OFFSET-icm is set
@@ -896,7 +899,7 @@ DuplicateTop (node *actchn)
 
     DBUG_ENTER ("DuplicateTop");
     restchn = CutVinfoChn (actchn);
-    copy = DupTree (actchn, NULL);
+    copy = DupTree (actchn);
     res = AppendVinfoChn (copy, AppendVinfoChn (actchn, restchn));
 
     DBUG_PRINT ("IVE", ("DuplicateTop yields:"));
@@ -1578,7 +1581,7 @@ IdxLet (node *arg_node, node *arg_info)
                     current_assign = INFO_IVE_CURRENTASSIGN (arg_info);
                     next_assign = ASSIGN_NEXT (current_assign);
                     ASSIGN_NEXT (current_assign) = NULL;
-                    newassign = DupTree (current_assign, NULL);
+                    newassign = DupTree (current_assign);
 
                     ASSIGN_NEXT (current_assign) = newassign;
                     ASSIGN_NEXT (newassign) = next_assign;

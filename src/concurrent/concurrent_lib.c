@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/06/23 15:12:32  dkr
+ * signature of DupTree changed
+ *
  * Revision 1.5  1999/09/01 17:14:23  jhs
  * Remove SYNC_SCHEDULING.
  *
@@ -182,12 +185,12 @@ MeltBlocksOnCopies (node *first_block, node *second_block)
     arg_info = MakeInfo ();
     INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
     INFO_DUP_ALL (arg_info) = TRUE;
-    first_block = DupTree (first_block, NULL);
+    first_block = DupTree (first_block);
     arg_info = FreeTree (arg_info);
     arg_info = MakeInfo ();
     INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
     INFO_DUP_ALL (arg_info) = TRUE;
-    second_block = DupTree (second_block, NULL);
+    second_block = DupTree (second_block);
     arg_info = FreeTree (arg_info);
 
     result = MeltBlocks (first_block, second_block);

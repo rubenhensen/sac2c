@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.17  2000/06/23 15:24:22  dkr
+ * signature of DupTree changed
+ *
  * Revision 2.16  2000/06/23 14:17:43  dkr
  * NWITH_COMPLEX removed
  *
@@ -422,7 +425,7 @@ CreateFullPartition (node *wln, node *arg_info)
             _ids = NPART_VEC (NWITH_PART (wln));
             psi_index = MakeId (StringCopy (IDS_NAME (_ids)), NULL, ST_regular);
             ID_VARDEC (psi_index) = IDS_VARDEC (_ids);
-            psi_array = DupTree (NWITHOP_ARRAY (NWITH_WITHOP (wln)), NULL);
+            psi_array = DupTree (NWITHOP_ARRAY (NWITH_WITHOP (wln)));
             coden = MakePrf (F_psi, MakeExprs (psi_index, MakeExprs (psi_array, NULL)));
         }
         varname = TmpVar ();
@@ -961,7 +964,7 @@ WLTNgenerator (node *arg_node, node *arg_info)
                     INFO_USE[ID_VARNO ((*bound))]--;
                     FreeTree (*bound);
                     /* copy const array to *bound */
-                    *bound = DupTree (tmpn, NULL);
+                    *bound = DupTree (tmpn);
 
                     DBUG_ASSERT (IsConstArray (*bound),
                                  "generator contains non constant vector!!");
@@ -1090,7 +1093,7 @@ WLTNgenerator (node *arg_node, node *arg_info)
                         while (ASSIGN_NEXT (tmpn)) {
                             tmpn = ASSIGN_NEXT (tmpn);
                         }
-                        assignn = DupTree (tmpn, NULL);
+                        assignn = DupTree (tmpn);
                         FreeTree (BLOCK_INSTR (blockn));
                         FreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
                         BLOCK_INSTR (blockn) = assignn;
@@ -1115,7 +1118,7 @@ WLTNgenerator (node *arg_node, node *arg_info)
                     }
                     /* the INFO_WLI_REPLACE-mechanism is used to insert the
                        new id or constant. */
-                    INFO_WLI_REPLACE (arg_info) = DupTree (tmpn, NULL);
+                    INFO_WLI_REPLACE (arg_info) = DupTree (tmpn);
                 }
             }
         } /* check_bounds */

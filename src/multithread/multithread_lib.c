@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/06/23 15:13:47  dkr
+ * signature of DupTree changed
+ *
  * Revision 1.6  2000/04/14 17:43:26  jhs
  * Comments ...
  *
@@ -169,12 +172,12 @@ MUTHMeltBlocksOnCopies (node *first_block, node *second_block)
     arg_info = MakeInfo ();
     INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
     INFO_DUP_ALL (arg_info) = TRUE;
-    first_block = DupTree (first_block, NULL);
+    first_block = DupTree (first_block);
     arg_info = FreeTree (arg_info);
     arg_info = MakeInfo ();
     INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
     INFO_DUP_ALL (arg_info) = TRUE;
-    second_block = DupTree (second_block, NULL);
+    second_block = DupTree (second_block);
     arg_info = FreeTree (arg_info);
 
     result = MUTHMeltBlocks (first_block, second_block);

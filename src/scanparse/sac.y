@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.20  2000/06/23 15:26:21  dkr
+ * signature of DupTree changed
+ *
  * Revision 2.19  2000/06/13 12:54:54  dkr
  * parsing of old with-loop removed
  *
@@ -1451,7 +1454,7 @@ wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_expr
                        { if (store_wlcomp_pragma_global != NULL) {
                            $$ = MakePragma();
                            PRAGMA_WLCOMP_APS($$)
-                             = DupTree(PRAGMA_WLCOMP_APS(store_wlcomp_pragma_global), NULL);
+                             = DupTree(PRAGMA_WLCOMP_APS(store_wlcomp_pragma_global));
                          } else {
                            $$ = NULL;
                          }

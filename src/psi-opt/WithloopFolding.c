@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.12  2000/06/23 15:24:45  dkr
+ * signature of DupTree changed
+ *
  * Revision 2.11  2000/06/23 14:03:41  dkr
  * nodetype N_with removed
  *
@@ -797,7 +800,7 @@ InternGen2Tree (node *wln, intern_gen *ig)
 
     DBUG_ENTER ("InternGen2Tree");
 
-    withidn = DupTree (NPART_WITHID (NWITH_PART (wln)), NULL);
+    withidn = DupTree (NPART_WITHID (NWITH_PART (wln)));
     FreeTree (NWITH_PART (wln));
     part = &(NWITH_PART (wln));
     no_parts = 0;
@@ -816,7 +819,7 @@ InternGen2Tree (node *wln, intern_gen *ig)
 
         /* create tree structures */
         genn = MakeNGenerator (b1n, b2n, F_le, F_lt, stepn, widthn);
-        *part = MakeNPart (DupTree (withidn, NULL), genn, ig->code);
+        *part = MakeNPart (DupTree (withidn), genn, ig->code);
 
         ig = ig->next;
         part = &(NPART_NEXT ((*part)));
