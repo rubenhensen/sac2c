@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.167  1998/03/27 18:36:42  dkr
+ * WLproj renamed in WLstride
+ *
  * Revision 1.166  1998/03/26 13:59:25  dkr
  * changed nnode for N_WLgrid:
  *    CODE must be a attribute, not a son!
@@ -893,11 +896,11 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
-  NIF (N_WLproj, "N_WLproj", TravSons, TravSons, PrintWLproj, TravSons, TravSons,
-       TravSons, TravSons, FreeWLproj, TravSons, TravSons, TravSons, TravSons, DupWLproj,
+  NIF (N_WLstride, "N_WLstride", TravSons, TravSons, PrintWLstride, TravSons, TravSons,
+       TravSons, TravSons, FreeWLstride, TravSons, TravSons, TravSons, TravSons,
+       DupWLstride, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 2),
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_WLgrid, "N_WLgrid", TravSons, TravSons, PrintWLgrid, TravSons, TravSons,
        TravSons, TravSons, FreeWLgrid, TravSons, TravSons, TravSons, TravSons, DupWLgrid,
