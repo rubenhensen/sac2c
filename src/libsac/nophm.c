@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/03/09 23:57:04  dkrHH
+ * sac_misc.h included
+ *
  * Revision 3.2  2000/12/29 14:26:48  cg
  * When compiling for multithreaded execution, any function gets one additional
  * parameter to hold the thread ID, which is needed for heap management.
@@ -57,6 +60,7 @@
 
 #include <stdlib.h>
 
+#include "sac_misc.h"
 #include "sac_message.h"
 
 #define SAC_DO_MULTITHREAD 0
