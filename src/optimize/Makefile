@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.56  1999/01/26 15:37:22  sbs
+# -DNEWTREE eliminated from CFLAGS
+#
 # Revision 1.55  1999/01/15 16:59:24  sbs
 # rule for freemasks.o added
 #
@@ -55,7 +58,7 @@
 
 CC        := gcc
 CCFLAGS   := -ansi -Wall -g
-CFLAGS    := -D__EXTENSIONS__ -DNEWTREE
+CFLAGS    := -D__EXTENSIONS__
 
 
 INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules \
