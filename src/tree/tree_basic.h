@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2001/03/21 17:49:33  dkr
+ * macros INFO_INL_... modified
+ *
  * Revision 3.55  2001/03/21 14:08:06  nmw
  * INFO_SSACF_ macros added
  *
@@ -2430,8 +2433,7 @@ extern node *MakeAvis (node *vardecOrArg);
  ***
  ***  remarks:
  ***
- ***    N_info is used in many other phases without a
-ccess macros :((
+ ***    N_info is used in many other phases without access macros :((
  ***/
 
 /*
@@ -2656,15 +2658,13 @@ extern node *MakeInfo ();
 #define INFO_VARNO(n) (n->varno)
 
 /* inline */
-#define INFO_INL_FIRST_FUNC(n) (n->node[0]) /* old */
-#define INFO_INL_TYPES(n) (n->node[2])      /* old */
-
 #define INFO_INL_MODUL(n) (n->node[0])
 #define INFO_INL_VARDECS(n) (n->node[1])
 #define INFO_INL_LUT(n) ((LUT_t) (n->node[2]))
 #define INFO_INL_PROLOG(n) (n->node[3])
 #define INFO_INL_EPILOG(n) (n->node[4])
-#define INFO_INL_ARGS(n) (n->node[5])
+#define INFO_INL_ARG(n) (n->node[5])
+#define INFO_INL_IDS(n) (n->info.ids)
 
 /* WLF, all phases of WLF use these macros, not only WLI. */
 #define INFO_WLI_NEXT(n) (n->node[0])
