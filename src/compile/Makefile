@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.11  1995/05/15 13:38:54  asi
+# Revision 1.12  1995/05/26 12:12:30  asi
+# make deps done
+#
+# Revision 1.11  1995/05/15  13:38:54  asi
 # make deps done
 #
 # Revision 1.10  1995/05/04  11:46:29  sbs
@@ -73,9 +76,9 @@ compile.o: ../global/free.h
 icm2c.o: /usr/include/malloc.h /usr/include/stdio.h ../print/print.h
 icm2c.o: ../global/tree.h ../global/type_info.mac ../global/node_info.mac
 icm2c.o: ../global/prf_node_info.mac ../../inc/dbug.h ../global/my_debug.h
-icm2c.o: ../../inc/main.h icm_decl.c icm.data trace.h icm_args.c
+icm2c.o: ../../inc/main.h trace.h icm_decl.c icm.data icm_args.c
 icm2c.o: icm_comment.c icm_trace.c
-icm_args.o: icm.data trace.h
-icm_comment.o: icm.data trace.h
-icm_decl.o: icm.data trace.h
-icm_trace.o: icm.data trace.h
+icm_args.o: icm.data
+icm_comment.o: icm.data
+icm_decl.o: icm.data
+icm_trace.o: icm.data
