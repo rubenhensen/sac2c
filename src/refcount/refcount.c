@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  1998/01/28 19:42:18  dkr
+ * added dummy-implementations of RC-funs for new with-loop
+ *
  * Revision 1.26  1997/08/29 09:07:44  sbs
  * RCprf modified!
  * if N_prf == F_reshape  do NOT set arg_info to N_prf!
@@ -544,6 +547,82 @@ Refcount (node *arg_node)
         DBUG_ASSERT ((N_fundef == NODE_TYPE (arg_node)), "wrong node ");
         arg_node = Trav (arg_node, NULL);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node * RCNwith(node * arg_node, node * arg_info)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+RCNwith (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCNwith");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node * RCNpart(node * arg_node, node * arg_info)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+RCNpart (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCNpart");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node * RCNgen(node * arg_node, node * arg_info)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+RCNgen (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCNgen");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node * RCNcode(node * arg_node, node * arg_info)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+RCNcode (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCNcode");
 
     DBUG_RETURN (arg_node);
 }
