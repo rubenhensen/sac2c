@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.5  2003/03/21 11:46:05  sah
+# added MT & PHM Makefile flags
+#
 # Revision 1.4  2003/03/21 10:24:37  sbs
 # YYDEBUG now set to 1 explicitly!
 #
@@ -59,6 +62,12 @@ OSF_FLAGS    := -D_OSF_SOURCE
 #
 OSX_FLAGS    := -traditional-cpp -Wno-long-double 
 
+#
+# MT & PHM Makefile flags
+#
+
+DISABLE_MT   := @DISABLE_MT@
+DISABLE_PHM  := @DISABLE_PHM@
 
 ################################################################################
 #
