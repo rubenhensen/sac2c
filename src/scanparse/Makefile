@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 2.20  2000/11/15 14:30:50  dkr
+# default CC flags used now
+#
 # Revision 2.19  2000/11/13 15:53:08  sbs
 # definition of YACC made dependent on OS-version.
 #
@@ -74,30 +77,27 @@ CC        := gcc
 CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
 CFLAGS    := -D__EXTENSIONS__
 
-gcc_FLAGS := -ansi
-cc_FLAGS  := -xsb -erroff=E_CAST_DOESNT_YIELD_LVALUE
-
-CCL_FLAGS := $($(CC)_FLAGS) -g
-
 ifeq ($(OS),OSF_ALPHA)
-  LEX       :=flex -n
-  YACC      :=yacc -dv
+  LEX     := flex -n
+  YACC    := yacc -dv
 else
-  LEX       :=flex -n
-  YACC      :=bison -y -dv
+  LEX     := flex -n
+  YACC    := bison -y -dv
 endif
 
-LIBS      :=-ly -ll
+LIBS      := -ly -ll
 
-INCS=-I../global -I../tree -I../../inc -I../modules -I../typecheck
+INCS = -I../global -I../tree -I../../inc -I../modules -I../typecheck
+
 
 all: y.tab.o lex.yy.o scnprs.o
 
+
 y.tab.o: y.tab.c
-	$(CC) $(CCL_FLAGS) $(CFLAGS) -o y.tab.o -DYYDEBUG -c y.tab.c $(INCS)
+	$(CC) $(CCL_FLAGS) $(CCFLAGS) $(CFLAGS) -o y.tab.o -DYYDEBUG -c y.tab.c $(INCS)
 
 lex.yy.o: lex.yy.c y.tab.h
-	$(CC) $(CCL_FLAGS) $(CFLAGS) -DYYLMAX=8192 -o lex.yy.o -c lex.yy.c $(INCS)
+	$(CC) $(CCL_FLAGS) $(CCFLAGS) $(CFLAGS) -DYYLMAX=8192 -o lex.yy.o -c lex.yy.c $(INCS)
 
 lex.yy.c: sac.l
 	$(LEX) sac.l
@@ -105,9 +105,8 @@ lex.yy.c: sac.l
 y.tab.c y.tab.h: sac.y 
 	$(YACC)  sac.y
 
-scnprs.o: scnprs.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o scnprs.o -c scnprs.c $(INCS)
-
+%.o: %.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 
 
 deps: y.tab.c lex.yy.c
