@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.12  2000/08/18 23:02:06  dkr
+ * signature of ND_FUN_RET changed
+ *
  * Revision 2.11  2000/07/28 11:43:37  cg
  * Added new ICM WL_ASSIGN_NOOP for efficient handling of dummy
  * iteration space segments introduced through array padding.
@@ -85,7 +88,7 @@ ICM_END( ND_FUN_AP, (name, retname, narg, arg))
 ICM_DEF( ND_FUN_RET, TRACE_FUN)
   ICM_STR(retname)
   ICM_INT(narg)
-  ICM_VAR((2*narg), arg)
+  ICM_VAR((3*narg), arg)
 ICM_END( ND_FUN_RET, (retname, narg, arg, arg_info))
 #endif
 
