@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 1.49  1997/10/28 10:35:10  dkr
+ *  a few <cr>s in lex-rules have been removed
+ *  because some (f)lex-implementations can not handle them.
+ *
  * Revision 1.48  1997/10/07 13:27:21  srs
  * new primitive functions min and max
  *
@@ -370,15 +374,14 @@ int start_token;
 "break"                         {FILTER( C_KEYWORD);}
 
 
-\"([^"\n]|(\\\"))*\"			{FILTER9( STR );}
+\"([^"\n]|(\\\"))*\"		{FILTER9( STR );}
 
-[A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*  \
-                                {FILTER2( ID );}
+[A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*             {FILTER2( ID );}
 
 [_A-Za-z][_A-Za-z0-9]*          {FILTER2( PRIVATEID );}
 
 '.'                             {FILTER8( CHAR );}
-'\\[0-9]*'                 {FILTER10( CHAR );}
+'\\[0-9]*'                      {FILTER10( CHAR );}
 '\\[nt]'                        {FILTER11( CHAR );}
 
 (0?|([1-9][0-9]*))              {FILTER3 ( NUM);}
