@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2004/02/06 14:19:33  mwe
+ * isPhiFun added, PHITARGET's removed
+ *
  * Revision 3.77  2003/06/13 09:27:27  ktr
  * AdjustVectorShape now checks whether it was called with a NULL argument
  *
@@ -2256,7 +2259,6 @@ MakeVardecFromArg (node *arg_node)
     /* delete wrong data in copied AVIS node */
     AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = NULL;
     AVIS_SSAASSIGN2 (VARDEC_AVIS (new_vardec)) = NULL;
-    AVIS_SSAPHITARGET (VARDEC_AVIS (new_vardec)) = PHIT_NONE;
     AVIS_SSALPINV (VARDEC_AVIS (new_vardec)) = FALSE;
     AVIS_SSASTACK_TOP (VARDEC_AVIS (new_vardec)) = NULL;
 
@@ -2311,7 +2313,6 @@ MakeArgFromVardec (node *vardec_node)
     /* delete wrong data in copied AVIS node */
     AVIS_SSAASSIGN (ARG_AVIS (new_arg)) = NULL;
     AVIS_SSAASSIGN2 (ARG_AVIS (new_arg)) = NULL;
-    AVIS_SSAPHITARGET (ARG_AVIS (new_arg)) = PHIT_NONE;
     AVIS_SSALPINV (ARG_AVIS (new_arg)) = FALSE;
     AVIS_SSASTACK_TOP (ARG_AVIS (new_arg)) = NULL;
 
@@ -2343,7 +2344,6 @@ MakeArgFromVardec (node *vardec_node)
  *   attributes have to be adjusted by this function:
  *     AVIS_SSACOUNT = (new fresh ssacnt node)
  *     AVIS_SSALPINV = FALSE
- *     AVIS_SSAPHITARGET = FALSE
  *     AVIS_SSADEFINED = FALSE
  *     AVIS_SSATHEN = FALSE
  *     AVIS_SSAELSE = FALSE
@@ -2413,7 +2413,6 @@ AdjustAvisData (node *new_vardec, node *fundef)
         AVIS_SSACOUNT (avis_node) = NULL;
     }
     AVIS_SSALPINV (avis_node) = FALSE;
-    AVIS_SSAPHITARGET (avis_node) = FALSE;
     AVIS_SSADEFINED (avis_node) = FALSE;
     AVIS_SSATHEN (avis_node) = FALSE;
     AVIS_SSAELSE (avis_node) = FALSE;
@@ -3726,6 +3725,37 @@ MakeVinfoDollar (node *next)
 /***
  ***  N_id :
  ***/
+
+/***************************************************************************
+ *
+ * function:
+ *   bool isPhiFun(node *id)
+ *
+ * description:
+ *   this function returns TRUE if the defining assignment of 'id'
+ *   uses the primitive phi function 'F_phi'. In all other cases id
+ *   returns FALSE.
+ *   This function replaces the PHITARGET macro used to identify phi functions.
+ *
+ ****************************************************************************/
+
+bool
+isPhiFun (node *id)
+{
+
+    bool result;
+
+    DBUG_ENTER ("isPhiFun");
+
+    if ((AVIS_SSAASSIGN (ID_AVIS (id)) != NULL)
+        && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (id)))) == N_prf)
+        && (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (id)))) == F_phi))
+        result = TRUE;
+    else
+        result = FALSE;
+
+    DBUG_RETURN (result);
+}
 
 /*--------------------------------------------------------------------------*/
 

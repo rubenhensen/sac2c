@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2004/02/06 14:19:33  mwe
+ * isPhiFun added, PHITARGET's removed
+ *
  * Revision 3.79  2003/12/23 10:52:56  khf
  * NCODE_CEXPR added because NCODE_CEXPR in tree_basic.h changed to NCODE_CEXPRS.
  *
@@ -1055,7 +1058,6 @@ extern node *MakeArgFromVardec (node *vardec_node);
  *   attributes have to be adjusted by this function:
  *     AVIS_SSACOUNT = (new fresh ssacnt node)
  *     AVIS_SSALPINV = FALSE
- *     AVIS_SSAPHITARGET = FALSE
  *     AVIS_SSADEFINED = FALSE
  *     AVIS_SSATHEN = FALSE
  *     AVIS_SSAELSE = FALSE
@@ -1802,6 +1804,21 @@ extern node *MakeVinfoDollar (node *next);
 
 #define ID_OR_CAST_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : CAST_TYPE (n))
 #define ID_OR_ARRAY_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : ARRAY_TYPE (n))
+
+/***************************************************************************
+ *
+ * function:
+ *   bool isPhiFun(node *id)
+ *
+ * description:
+ *   this function returns TRUE if the defining assignment of 'id'
+ *   uses the primitive phi function 'F_phi'. In all other cases id
+ *   returns FALSE.
+ *   This function replaces the PHITARGET macro used to identify phi functions.
+ *
+ ****************************************************************************/
+
+extern bool isPhiFun (node *id);
 
 /*--------------------------------------------------------------------------*/
 
