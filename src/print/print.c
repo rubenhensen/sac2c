@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.136  2003/05/23 14:51:34  ktr
+ * Moved variable declarations before the DBUG_ENTER Macro.
+ *
  * Revision 3.135  2003/05/22 01:10:32  ktr
  * printArray now prints multidimensional N_array nodes correctly :)
  *
@@ -2489,13 +2492,13 @@ PrintEmpty (node *arg_node, node *arg_info)
 node *
 PrintArray (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PrintArray");
-
     int i;
 
     int old_print_dim = INFO_PRINT_DIM (arg_info);
     shpseg *old_print_shape = INFO_PRINT_SHAPE (arg_info);
     shpseg *old_print_shape_counter = INFO_PRINT_SHAPE_COUNTER (arg_info);
+
+    DBUG_ENTER ("PrintArray");
 
     if (ARRAY_AELEMS (arg_node) != NULL) {
         INFO_PRINT_DIM (arg_info)
@@ -2541,10 +2544,10 @@ PrintArray (node *arg_node, node *arg_info)
 node *
 PrintExprs (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PrintExprs");
-
     int i;
     int j;
+
+    DBUG_ENTER ("PrintExprs");
 
     Trav (EXPRS_EXPR (arg_node), arg_info);
 
