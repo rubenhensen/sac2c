@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.25  1995/05/16 12:46:09  asi
+ * Revision 1.26  1995/05/26 12:46:20  asi
+ * new debug option MTOOL added
+ *
+ * Revision 1.25  1995/05/16  12:46:09  asi
  * MALLOC_TOOL renamed to MALLOC_OPT
  *
  * Revision 1.24  1995/05/15  09:14:51  asi
@@ -129,7 +132,7 @@ extern int malloc_debug (int level);
 #define FREE(address)                                                                    \
     DBUG_PRINT ("MEM", ("Give memory free at adress: %08x", address));                   \
     free (address);                                                                      \
-    malloc_verify ()
+    DBUG_EXECUTE ("MTOOL", malloc_verify (););
 #else
 #define FREE(address)                                                                    \
     DBUG_PRINT ("MEM", ("Give memory free at adress: %08x", address));                   \
