@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.5  1994/11/17 16:51:58  hw
+ * Revision 1.6  1994/11/18 13:13:10  hw
+ * changed FltnWhile
+ * now the flattened stop condition of the while loop is inserted infront of
+ * the while statement and also at the end of the loop body
+ *
+ * Revision 1.5  1994/11/17  16:51:58  hw
  * added FltnWhile & FltnWith
  *
  * Revision 1.4  1994/11/15  14:49:29  hw
@@ -227,7 +232,6 @@ FltnPrf (node *arg_node, node *arg_info)
 node *
 FltnExprs (node *arg_node, node *arg_info)
 {
-    int i;
     node *tmp_node1, *id_node, *let_node, *assign_node;
 
     DBUG_ENTER ("FltnExprs");
@@ -324,15 +328,64 @@ FltnCond (node *arg_node, node *arg_info)
 node *
 FltnWhile (node *arg_node, node *arg_info)
 {
-    node *info_node;
+    node *info_node, *tmp, *dest_node;
 
     DBUG_ENTER ("FltnWhile");
 
     info_node = MakeNode (N_info);
     info_node->nnode = 1;
     arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+
+    DBUG_PRINT ("FLATTEN", ("arg_info: %s" P_FORMAT ": %s" P_FORMAT,
+                            mdb_nodetype[arg_info->node[0]->nodetype], arg_info->node[0],
+                            mdb_nodetype[arg_info->node[0]->node[0]->nodetype],
+                            arg_info->node[0]->node[0]));
+
     arg_node->node[1] = Trav (arg_node->node[1], info_node);
-    free (info_node);
+
+    DBUG_PRINT ("FLATTEN",
+                ("info_node: %s" P_FORMAT ": %s" P_FORMAT,
+                 mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0],
+                 mdb_nodetype[info_node->node[0]->node[0]->nodetype],
+                 info_node->node[0]->node[0]));
+
+    /*
+     *  now we're looking for the last N_assign node in the pointer chain of info_node
+     *  to copy the flattend arg_node->node[0] to it.
+     *  This has to be done, because we must "update" (compute) the breaking condition
+     *  of the while loop at the end of the while-loop body
+     *
+     */
+
+    tmp = info_node; /* tmp ist used to free info_node  */
+
+    /*  looking for last N_assign node.
+     *  info _node stores the pointer to the last N_assign nodes, so we look at this
+     *  pointer chain insted of going through the chain behind  arg_node[1]
+     */
+    info_node = info_node->node[0];
+    while (1 != info_node->nnode) {
+        DBUG_ASSERT ((N_assign == info_node->nodetype), "wrong nodetype: != N_assign");
+        info_node = info_node->node[1];
+    }
+
+    dest_node = arg_info->node[0];
+
+    /*  now we create new N_assign nodes and copy (don't dublicate) the flattened
+     *  break condition of the while loop.
+     */
+    while (N_while != dest_node->node[0]->nodetype) {
+        DBUG_ASSERT ((N_assign == dest_node->nodetype), "wrong nodetype: not N_assign");
+
+        info_node->node[1] = MakeNode (N_assign);
+        info_node->nnode = 2;
+        info_node->node[1]->node[0] = dest_node->node[0];
+        info_node->node[1]->nnode = 1;
+        info_node = info_node->node[1];
+        dest_node = dest_node->node[1];
+    }
+
+    free (tmp);
 
     DBUG_RETURN (arg_node);
 }
