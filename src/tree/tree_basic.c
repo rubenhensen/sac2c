@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/02/06 01:45:05  dkr
+ * signature of MakeWLgrid() and MakeWLgridVar() modified.
+ * MakeIcm simplified.
+ *
  * Revision 3.10  2001/01/29 18:33:25  dkr
  * some superfluous attributes of N_WLsegVar removed
  *
@@ -29,65 +33,6 @@
  *
  * Revision 3.1  2000/11/20 18:03:32  sacbase
  * new release made
- *
- * Revision 1.30  2000/11/17 16:19:03  sbs
- * DEPS-structure extended by location field; access macros as well as
- * Constructor Function adjusted accordingly.
- *
- * Revision 1.29  2000/10/26 13:22:20  dkr
- * more access macros used
- *
- * Revision 1.28  2000/10/24 14:47:31  dkr
- * MakeTypes1 added
- * MakeType renamed into MakeTypes
- *
- * Revision 1.27  2000/10/23 10:40:23  dkr
- * MakeId2 removed
- * MakeId1 renamed into MakeId_Copy
- *
- * Revision 1.26  2000/07/31 10:49:31  cg
- * Eventually, the son ICM_NEXT is removed from the N_icm node.
- * The creation function MakeIcm is adjusted accordingly.
- *
- * Revision 1.25  2000/07/28 17:17:10  cg
- * Added correct setting of ICM_END_OF_STATEMENT for
- * ND_KS_DECL_ARRAY ICMs.
- *
- * Revision 1.24  2000/07/21 08:21:10  nmw
- * MakeModsepc added
- *
- * Revision 1.23  2000/07/19 15:42:42  nmw
- * flag ICM_END_OF_STATEMENT added, forces printing of ;
- *
- * Revision 1.22  2000/07/13 11:58:12  jhs
- * Splited ICM_INDENT into ICM_INDENT_BEFORE and ICM_INDENT_AFTER.
- *
- * Revision 1.21  2000/07/11 15:44:14  jhs
- * Added ST_ALLOC and ST_SYNC.
- * DFMfoldmask changed name to vardec.
- *
- * Revision 1.20  2000/07/11 10:24:11  dkr
- * definition of macro ALLOCATE changed
- *
- * Revision 1.19  2000/07/10 14:22:57  cg
- * Added new field type_status in types struct as a dedicated status field
- * for the type itself.
- *
- * Revision 1.18  2000/07/04 14:35:21  jhs
- * Added CopyDFMfoldmask.
- *
- * Revision 1.17  2000/06/23 15:31:54  nmw
- * N_cwrapper node added
- *
- * Revision 1.16  2000/06/23 14:10:01  dkr
- * nodes for old with-loop removed
- *
- * Revision 1.15  2000/06/14 12:05:37  jhs
- * Added ST_IDENTIFIER and MT_IDENTIFIER.
- * Each new N_mt and N_st will be provided with an unique id.
- *
- * Revision 1.14  2000/06/13 13:41:27  dkr
- * Make...() functions for old with-loop removed
  *
  * [...]
  *
@@ -1210,34 +1155,12 @@ MakeIcm (char *name, node *args)
 
     DBUG_ASSERT (name != NULL, "MakeIcm called with empty ICM name.");
 
-    if (strncmp (name, "WL_", 3) == 0) {
-        if (strcmp (name + strlen (name) - 6, "_BEGIN") == 0) {
-            ICM_INDENT_BEFORE (tmp) = 0;
-            ICM_INDENT_AFTER (tmp) = 1;
-        } else if (strcmp (name + strlen (name) - 4, "_END") == 0) {
-            ICM_INDENT_BEFORE (tmp) = -1;
-            ICM_INDENT_AFTER (tmp) = 0;
-        } else {
-            ICM_INDENT_BEFORE (tmp) = 0;
-            ICM_INDENT_AFTER (tmp) = 0;
-        }
-    } else if (strcmp (name, "MT_START_SYNCBLOCK") == 0) {
+    if (strcmp (name, "MT_START_SYNCBLOCK") == 0) {
         ICM_INDENT_BEFORE (tmp) = 0;
         ICM_INDENT_AFTER (tmp) = 1;
     } else if (strncmp (name, "MT_SYNC_", 8) == 0) {
         ICM_INDENT_BEFORE (tmp) = -1;
         ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strncmp (name, "MT_SCHEDULER_", 13) == 0) {
-        if (strcmp (name + strlen (name) - 6, "_BEGIN") == 0) {
-            ICM_INDENT_BEFORE (tmp) = 0;
-            ICM_INDENT_AFTER (tmp) = 1;
-        } else if (strcmp (name + strlen (name) - 4, "_END") == 0) {
-            ICM_INDENT_BEFORE (tmp) = -1;
-            ICM_INDENT_AFTER (tmp) = 0;
-        } else {
-            ICM_INDENT_BEFORE (tmp) = 0;
-            ICM_INDENT_AFTER (tmp) = 0;
-        }
     } else if (strcmp (name, "MT2_IF_I_AM_FIRST") == 0) {
         ICM_INDENT_BEFORE (tmp) = 0;
         ICM_INDENT_AFTER (tmp) = 1;
@@ -1245,6 +1168,12 @@ MakeIcm (char *name, node *args)
         ICM_INDENT_BEFORE (tmp) = -1;
         ICM_INDENT_AFTER (tmp) = 1;
     } else if (strcmp (name, "MT2_END_I_AM_FIRST") == 0) {
+        ICM_INDENT_BEFORE (tmp) = -1;
+        ICM_INDENT_AFTER (tmp) = 0;
+    } else if (strstr (name, "BEGIN")) {
+        ICM_INDENT_BEFORE (tmp) = 0;
+        ICM_INDENT_AFTER (tmp) = 1;
+    } else if (strstr (name, "END")) {
         ICM_INDENT_BEFORE (tmp) = -1;
         ICM_INDENT_AFTER (tmp) = 0;
     } else {
@@ -1673,6 +1602,8 @@ MakeWLblock (int level, int dim, int bound1, int bound2, int step, node *nextdim
     WLBLOCK_CONTENTS (new_node) = contents;
     WLBLOCK_NEXT (new_node) = next;
 
+    WLBLOCK_NOOP (new_node) = FALSE;
+
     DBUG_RETURN (new_node);
 }
 
@@ -1687,8 +1618,9 @@ MakeWLublock (int level, int dim, int bound1, int bound2, int step, node *nextdi
     DBUG_ENTER ("MakeWLublock");
 
     new_node = MakeWLblock (level, dim, bound1, bound2, step, nextdim, contents, next);
-
     NODE_TYPE (new_node) = N_WLublock;
+
+    WLUBLOCK_NOOP (new_node) = FALSE;
 
     DBUG_RETURN (new_node);
 }
@@ -1713,6 +1645,8 @@ MakeWLstride (int level, int dim, int bound1, int bound2, int step, bool unrolli
     WLSTRIDE_UNROLLING (new_node) = unrolling;
     WLSTRIDE_CONTENTS (new_node) = contents;
     WLSTRIDE_NEXT (new_node) = next;
+
+    WLSTRIDE_NOOP (new_node) = FALSE;
 
     WLSTRIDE_PART (new_node) = NULL;
     WLSTRIDE_MODIFIED (new_node) = NULL;
@@ -1740,14 +1674,16 @@ MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, node *step,
     WLSTRIDEVAR_CONTENTS (new_node) = contents;
     WLSTRIDEVAR_NEXT (new_node) = next;
 
+    WLSTRIDEVAR_NOOP (new_node) = FALSE;
+
     DBUG_RETURN (new_node);
 }
 
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling, bool fitted,
-            node *nextdim, node *next, node *code)
+MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling, node *nextdim,
+            node *next, node *code)
 {
     node *new_node;
 
@@ -1760,7 +1696,7 @@ MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling, bool fit
     WLGRID_BOUND1 (new_node) = bound1;
     WLGRID_BOUND2 (new_node) = bound2;
     WLGRID_UNROLLING (new_node) = unrolling;
-    WLGRID_FITTED (new_node) = fitted;
+    WLGRID_FITTED (new_node) = FALSE;
     WLGRID_NEXTDIM (new_node) = nextdim;
     WLGRID_NEXT (new_node) = next;
 
@@ -1768,6 +1704,8 @@ MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling, bool fit
         NCODE_USED (code)++; /* see remarks of N_Ncode in tree_basic.h */
     }
     WLGRID_CODE (new_node) = code;
+
+    WLGRID_NOOP (new_node) = FALSE;
 
     WLGRID_MODIFIED (new_node) = NULL;
 
@@ -1777,8 +1715,8 @@ MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling, bool fit
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLgridVar (int level, int dim, node *bound1, node *bound2, bool fitted, node *nextdim,
-               node *next, node *code)
+MakeWLgridVar (int level, int dim, node *bound1, node *bound2, node *nextdim, node *next,
+               node *code)
 {
     node *new_node;
 
@@ -1790,7 +1728,7 @@ MakeWLgridVar (int level, int dim, node *bound1, node *bound2, bool fitted, node
     WLGRIDVAR_DIM (new_node) = dim;
     WLGRIDVAR_BOUND1 (new_node) = bound1;
     WLGRIDVAR_BOUND2 (new_node) = bound2;
-    WLGRIDVAR_FITTED (new_node) = fitted;
+    WLGRIDVAR_FITTED (new_node) = FALSE;
     WLGRIDVAR_NEXTDIM (new_node) = nextdim;
     WLGRIDVAR_NEXT (new_node) = next;
 
@@ -1798,6 +1736,8 @@ MakeWLgridVar (int level, int dim, node *bound1, node *bound2, bool fitted, node
         NCODE_USED (code)++; /* see remarks of N_Ncode in tree_basic.h */
     }
     WLGRIDVAR_CODE (new_node) = code;
+
+    WLGRIDVAR_NOOP (new_node) = FALSE;
 
     DBUG_RETURN (new_node);
 }
