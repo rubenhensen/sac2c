@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.241  1998/07/03 10:17:22  cg
+ * printing of N_spmd node completely changed.
+ *
  * Revision 1.240  1998/06/25 08:02:45  cg
  * printing of spmd-functions modified
  *
@@ -2282,9 +2285,13 @@ PrintSpmd (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintSpmd");
 
     fprintf (outfile, "\n");
-    INDENT;
 
-    if (SPMD_ICM (arg_node) == NULL) {
+    if (SPMD_ICM_BEGIN (arg_node) == NULL) {
+        /*
+         * The SPMD-block has not yet been compiled.
+         */
+
+        INDENT;
         fprintf (outfile, "/*** begin of SPMD region ***\n");
 
         INDENT
@@ -2309,20 +2316,23 @@ PrintSpmd (node *arg_node, node *arg_info)
 
         INDENT
         fprintf (outfile, " */\n");
-    } else {
-        /*
-         * print ICM
-         */
-        fprintf (outfile, "\n");
-        SPMD_ICM (arg_node) = Trav (SPMD_ICM (arg_node), arg_info);
-        fprintf (outfile, "\n");
-    }
 
-    SPMD_REGION (arg_node) = Trav (SPMD_REGION (arg_node), arg_info);
+        Trav (SPMD_REGION (arg_node), arg_info);
 
-    if (SPMD_ICM (arg_node) == NULL) {
         INDENT
         fprintf (outfile, "/*** end of SPMD region ***/\n");
+    } else {
+        /*
+         * print ICMs
+         */
+        Trav (SPMD_ICM_BEGIN (arg_node), arg_info);
+        fprintf (outfile, "\n");
+        Trav (SPMD_ICM_PARALLEL (arg_node), arg_info);
+        Trav (SPMD_ICM_ALTSEQ (arg_node), arg_info);
+        fprintf (outfile, "\n");
+        Trav (SPMD_ICM_SEQUENTIAL (arg_node), arg_info);
+        Trav (SPMD_ICM_END (arg_node), arg_info);
+        fprintf (outfile, "\n");
     }
 
     DBUG_RETURN (arg_node);
