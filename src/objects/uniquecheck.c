@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1996/02/12 18:03:47  cg
+ * Revision 1.10  1997/03/18 14:43:08  cg
+ * bug fixed: now, readonly-reference parameters are checked correctly
+ *
+ * Revision 1.9  1996/02/12  18:03:47  cg
  * bug fixed in CopyUnqstate: Historylist is now copied and not shared
  *
  * Revision 1.8  1996/01/26  15:32:21  cg
@@ -78,6 +81,40 @@ typedef struct UNQSTATELIST {
     historylist *history;
     struct UNQSTATELIST *next;
 } unqstatelist;
+
+/*
+ * What's the basic idea of these data structures ?
+ *
+ * Before the body of a function is traversed for checking the uniqueness
+ * property where required, a 'uniqueness state' is initialized.
+ * This consists of an integer array with one entry for each variable
+ * or parameter with uniqueness attribute. This entry is set to 0 for
+ * all local variables which means that they are currently undefined.
+ * The entry is set to 1 for each parameter which means that parameters
+ * are initially defined.
+ *
+ * The basic idea of the uniqueness checker is that each applied usage
+ * of a variable must be followed by a defining usage of that variable
+ * and vice versa. So, each time a unique variable is encountered while
+ * traversing a function's body, its uniqueness state is switched upon
+ * appropriate usage or an error message is displayed.
+ * The only exception is made in the case of readonly-reference parameters
+ * which do not switch the uniqueness state.
+ *
+ * So far, we would only need one uniquness state but not a list of them.
+ * Unfortunately, a function's body may contain loops or conditionals.
+ * These may be executed in various ways depending on the function's
+ * parameters. So, all ways a function may be executed have to be checked
+ * for uniqueness. This is done by copying the current uniqueness state
+ * and using one for the consequence and the other for the alternative
+ * of a conditional to mention an example.
+ * To keep track on how a certain uniqueness check path is derived from
+ * the function, the complete history is kept uptodate. This feature
+ * allows for useful error messages in the case of uniqueness violations.
+ *
+ * To keep the number of uniqueness paths as small as possible, identical
+ * paths are merged to one whenenever possible.
+ */
 
 /************************************************************************
  *  basic access macros for local types
@@ -210,14 +247,14 @@ MakeHistory (historytype history, historylist *old)
 /*
  *
  *  functionname  : CopyHistoryList
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
+ *  arguments     : 1) history list
+ *  description   : copies an entire history list
+ *  global vars   : ---
+ *  internal funs : MakeHistory
+ *  external funs : ---
  *  macros        :
  *
- *  remarks       :
+ *  remarks       : used when branching the a uniqueness state
  *
  */
 
@@ -284,9 +321,9 @@ InitUnqstate ()
 /*
  *
  *  functionname  : FreeUnqstate
- *  arguments     :
- *  description   :
- *  global vars   :
+ *  arguments     : 1) unique state list
+ *  description   : frees the entire unique state list data structure
+ *  global vars   : ---
  *  internal funs :
  *  external funs :
  *  macros        :
@@ -357,14 +394,15 @@ PrintUnqstate (unqstatelist *unq)
 /*
  *
  *  functionname  : CopyUnqstate
- *  arguments     :
- *  description   :
+ *  arguments     : 1) unique state list
+ *  description   : copies the given unique state list
  *  global vars   :
  *  internal funs :
  *  external funs :
  *  macros        :
  *
- *  remarks       :
+ *  remarks       : used when branching the unique state in the case
+ *                  of conditionals or loops
  *
  */
 
@@ -397,15 +435,17 @@ CopyUnqstate (unqstatelist *unqstate)
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
+ *  functionname  : CmpUnqstate
+ *  arguments     : 1) unique state
+ *                  2) unique state
+ *  description   : compares two unique states
  *  global vars   :
  *  internal funs :
  *  external funs :
  *  macros        :
  *
- *  remarks       :
+ *  remarks       : used when trying to reduce the number of unique
+ *                  states after checking conditionals or loops.
  *
  */
 
@@ -513,14 +553,15 @@ AddHistory (unqstatelist *unq, historytype history)
 /*
  *
  *  functionname  : PrintHistory
- *  arguments     :
- *  description   :
+ *  arguments     : 1) history list
+ *  description   : prints history list to stderr
  *  global vars   :
  *  internal funs :
  *  external funs :
  *  macros        :
  *
- *  remarks       :
+ *  remarks       : used for all error messages produced by the
+ *                  uniqueness checker
  *
  */
 
@@ -614,11 +655,15 @@ PrintHistory (historylist *history)
 /*
  *
  *  functionname  : CheckDefined
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
+ *  arguments     : 1) ids structure of a defined variable in a N_let node
+ *                  2) line number of corresponding N_let node
+ *                     (used for error messages exclusively)
+ *  description   : checks whether the given variable may be defined in each
+ *                  current unique state. Either an error message is
+ *                  produced or the variable's unique state is switched.
+ *  global vars   : unqstate
+ *  internal funs : PrintHistory
+ *  external funs : ---
  *  macros        :
  *
  *  remarks       :
@@ -655,14 +700,17 @@ CheckDefined (ids *var, int line)
 /*
  *
  *  functionname  : CheckApplied
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
+ *  arguments     : 1) N_id node of the argument to a function application
+ *  description   : checks, whether the given variable may be applied in
+ *                  each current unique state. Either an error message is
+ *                  produced or the variable's unique state is switched.
+ *  global vars   : unqstate
+ *  internal funs : PrintHistory
  *  external funs :
  *  macros        :
  *
- *  remarks       :
+ *  remarks       : The unique state is not switched if the variable is
+ *                  used as an argument to a readonly-reference parameter.
  *
  */
 
@@ -671,31 +719,27 @@ CheckApplied (node *var)
 {
     unqstatelist *tmp = unqstate;
     int not_yet_errored = 1, number;
-    statustype attrib;
 
     DBUG_ENTER ("CheckApplied");
 
     number = (NODE_TYPE (ID_VARDEC (var)) == N_vardec) ? VARDEC_VARNO (ID_VARDEC (var))
                                                        : ARG_VARNO (ID_VARDEC (var));
 
-    attrib = (NODE_TYPE (ID_VARDEC (var)) == N_vardec) ? VARDEC_ATTRIB (ID_VARDEC (var))
-                                                       : ARG_ATTRIB (ID_VARDEC (var));
+    while (tmp != NULL) {
+        if ((UNQ_STATE (tmp)[number] == 0) && not_yet_errored) {
+            ERROR (NODE_LINE (var), ("Object '%s` already deleted", ID_NAME (var)));
+            CONT_ERROR ((" -> Uniqueness Violation <-"));
 
-    if (attrib != ST_readonly_reference) {
-        while (tmp != NULL) {
-            if ((UNQ_STATE (tmp)[number] == 0) && not_yet_errored) {
-                ERROR (NODE_LINE (var), ("Object '%s` already deleted", ID_NAME (var)));
-                CONT_ERROR ((" -> Uniqueness Violation <-"));
-
-                PrintHistory (UNQ_HISTORY (tmp));
-                message_indent = 0;
-                not_yet_errored = 0;
-            } else {
+            PrintHistory (UNQ_HISTORY (tmp));
+            message_indent = 0;
+            not_yet_errored = 0;
+        } else {
+            if (ID_ATTRIB (var) != ST_readonly_reference) {
                 UNQ_STATE (tmp)[number] = 0;
             }
-
-            tmp = UNQ_NEXT (tmp);
         }
+
+        tmp = UNQ_NEXT (tmp);
     }
 
     DBUG_VOID_RETURN;
@@ -708,11 +752,12 @@ CheckApplied (node *var)
 /*
  *
  *  functionname  : UNQmodul
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
+ *  arguments     : 1) syntax tree
+ *                  2) arg_info unused
+ *  description   : traverses all function definitions
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : Trav
  *  macros        :
  *
  *  remarks       :
@@ -734,11 +779,15 @@ UNQmodul (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : UNQfundef
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
+ *  arguments     : 1) N_fundef node
+ *                  2) arg_info unused
+ *  description   : First, an identifying index number is assigned to each
+ *                  unique variable or parameter.
+ *                  After that, the initial unique state is set and the
+ *                  function's body is traversed.
+ *  global vars   : unqstate, varno, argno
+ *  internal funs : ---
+ *  external funs : Trav
  *  macros        :
  *
  *  remarks       :
@@ -791,11 +840,14 @@ UNQfundef (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : UNQblock
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
+ *  arguments     : 1) N_block node
+ *                  2) arg_info unused
+ *  description   : traverses the function's body, but not the variable
+ *                  declarations. These are directly traversed by
+ *                  UNQfundef
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : Trav
  *  macros        :
  *
  *  remarks       :
@@ -817,11 +869,14 @@ UNQblock (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : UNQvardec
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
+ *  arguments     : 1) N_vardec node
+ *                  2) arg_info unused
+ *  description   : assigns an index to each local variable with uniqueness
+ *                  attribute. This index is always used to access the
+ *                  variable's unique state.
+ *  global vars   : varno
+ *  internal funs : ---
+ *  external funs : Trav
  *  macros        :
  *
  *  remarks       :
@@ -850,11 +905,14 @@ UNQvardec (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : UNQarg
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
+ *  arguments     : 1) N_arg node of syntax tree
+ *                  2) arg_info unused
+ *  description   : assigns an index to each parameter with uniqueness
+ *                  attribute. This index is always used to access the
+ *                  variable's unique state.
+ *  global vars   : argno
+ *  internal funs : ---
+ *  external funs : Trav
  *  macros        :
  *
  *  remarks       :
@@ -883,11 +941,14 @@ UNQarg (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : UNQlet
- *  arguments     :
- *  description   :
+ *  arguments     : 1) N_let node of syntax tree
+ *                  2) arg_info != NULL used as marker for being inside
+ *                  a with-loop
+ *  description   : Checks the defining accesses to unique variables
+ *                  for uniqueness violations.
  *  global vars   :
- *  internal funs :
- *  external funs :
+ *  internal funs : CheckDefined, PrintUnqstate
+ *  external funs : Trav, fprintf
  *  macros        :
  *
  *  remarks       :
@@ -928,11 +989,14 @@ UNQlet (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : UNQid
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
+ *  arguments     : 1) N_id node of syntax tree
+ *                  2) arg_info != NULL used as marker for being inside
+ *                  a with-loop
+ *  description   : Checks an applied access to a unique variable
+ *                  for uniqueness violations.
+ *  global vars   : ---
+ *  internal funs : CheckApplied
+ *  external funs : ---
  *  macros        :
  *
  *  remarks       :
@@ -954,11 +1018,15 @@ UNQid (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : UNQdo
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
+ *  arguments     : 1) N_do node of syntax tree
+ *                  2) arg_info != NULL used as marker for being inside
+ *                  a with-loop
+ *  description   : The body of the do-loop is traversed twice in sequential
+ *                  order. This should detect all uniqueness violations
+ *                  caused by a do-loop.
+ *  global vars   : unqstate
+ *  internal funs : AddHistory
+ *  external funs : Trav
  *  macros        :
  *
  *  remarks       :
@@ -990,11 +1058,19 @@ UNQdo (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : UNQwhile
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
+ *  arguments     : 1) N_while node of syntax tree
+ *                  2) arg_info != NULL used as marker for being inside
+ *                  a with-loop
+ *  description   : First the current unique state is copied.
+ *                  While the loop body is traversed twice in sequential order
+ *                  using the original unique state, the copy is left
+ *                  untouched. The statements following the loop are then
+ *                  checked with both unique states.
+ *                  This should detect all uniqueness violations
+ *                  caused by a while-loop.
+ *  global vars   : unqstate
+ *  internal funs : CopyUnqstate, AddHistory, MergeUnqstate
+ *  external funs : Trav
  *  macros        :
  *
  *  remarks       :
@@ -1040,11 +1116,19 @@ UNQwhile (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : UNQcond
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
+ *  arguments     : 1) N_cond node of syntax tree
+ *                  2) arg_info != NULL used as marker for being inside
+ *                  a with-loop
+ *  description   : First the current unique state is copied.
+ *                  The consequence of the conditional is then checked
+ *                  with one unique state and the alternative with the
+ *                  other. The statements following the conditional
+ *                  are then checked with both unique states.
+ *                  This should detect all uniqueness violations
+ *                  caused by a conditional.
+ *  global vars   : unqstate
+ *  internal funs : CopyUnqstate, AddHistory, MergeUnqstate
+ *  external funs : Trav
  *  macros        :
  *
  *  remarks       :
@@ -1096,15 +1180,42 @@ UNQcond (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : UNQwith
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
+ *  arguments     : 1) N_with node of syntax tree
+ *                  2) arg_info != NULL used as marker for being inside
+ *                  a with-loop
+ *  description   : The unique state is copied. The with-loop's body is
+ *                  traversed with one unique state while the other remains
+ *                  untouched. The following statements are checked with
+ *                  both unique states. When traversing the with loop's body
+ *                  arg_info is set to arg_node as a marker for being below
+ *                  a with loop.
+ *  global vars   : unqstate
+ *  internal funs : CopyUnqstate, AddHistory, MergeUnqstate
  *  external funs :
  *  macros        :
  *
- *  remarks       :
+ *  remarks       : Uniqueness types and with loops !
  *
+ *                  At least conceptually, the statements of a with loop
+ *                  body are executed concurrently for each array index
+ *                  specified by the generator.
+ *                  This means that each access to a unique variable within
+ *                  the body of a with loop automatically is a uniqueness
+ *                  violation. Readonly-reference parameters may be the
+ *                  only exception from this.
+ *
+ *                  Unfortunately, this is not always what a programmer
+ *                  wants to have. Imagine a program calculating a rich
+ *                  graphic concurrently. In this case, we would like to
+ *                  see the graphic appearing on the screen dot by dot
+ *                  instead of waiting all the calculation time before
+ *                  anything is displayed. This behaviour is not possible
+ *                  if the uniqueness property is checked strictly.
+ *
+ *                  Since so far there is no SAC compiler producing
+ *                  concurrently executable code, we decided to produce
+ *                  a simple warning in these cases of uniqueness violations.
+ *                  This may change with later versions of sac2c
  */
 
 node *
