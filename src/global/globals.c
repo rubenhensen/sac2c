@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/06/10 09:17:45  dkr
+ * some structures for argtags added
+ *
  * Revision 3.18  2002/06/07 17:12:56  mwe
  * AssociativeLaw deactivated in compiler by default
  *
@@ -594,6 +597,45 @@ int do_lac2fun[PH_final + 1] = {
 #define PH_SELfun2lac(it_fun2lac) it_fun2lac
 int do_fun2lac[PH_final + 1] = {
 #include "phase_info.mac"
+};
+
+/*
+ * for arg tags
+ */
+
+bool ATG_has_shp[] = {
+#define SELECTshp(it_shp) it_shp
+#include "argtag_info.mac"
+};
+
+bool ATG_has_rc[] = {
+#define SELECTrc(it_rc) it_rc
+#include "argtag_info.mac"
+};
+
+bool ATG_has_desc[] = {
+#define SELECTdesc(it_desc) it_desc
+#include "argtag_info.mac"
+};
+
+bool ATG_is_in[] = {
+#define SELECTin(it_in) it_in
+#include "argtag_info.mac"
+};
+
+bool ATG_is_out[] = {
+#define SELECTout(it_out) it_out
+#include "argtag_info.mac"
+};
+
+bool ATG_is_inout[] = {
+#define SELECTinout(it_inout) it_inout
+#include "argtag_info.mac"
+};
+
+char *ATG_string[] = {
+#define SELECTtext(it_text) it_text
+#include "argtag_info.mac"
 };
 
 /*
