@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.196  2004/12/05 20:15:01  sah
+ * beautified print
+ *
  * Revision 3.195  2004/12/05 20:12:44  sah
  * fixed printing of withids
  *
@@ -2369,7 +2372,7 @@ PRTspid (node *arg_node, info *arg_info)
     DBUG_ENTER ("PRTspid");
 
     if (SPID_MOD (arg_node) != NULL) {
-        fprintf (global.outfile, "%s", SPID_MOD (arg_node));
+        fprintf (global.outfile, "%s:", SPID_MOD (arg_node));
     }
     fprintf (global.outfile, "%s", SPID_NAME (arg_node));
 
