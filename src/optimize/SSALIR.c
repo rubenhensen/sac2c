@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  2004/11/27 03:02:01  mwe
+ * renaming
+ *
  * Revision 1.34  2004/11/26 21:58:36  mwe
  * SacDevCamp: Compiles!!!!
  *
@@ -1745,7 +1748,7 @@ LIRwithid (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSALIRexprs (node *arg_node, info *arg_info)
+LIRexprs (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSALIRexprs");
 
