@@ -29,3 +29,4 @@ tools/cache_analysis
 tools/cache_analysis/src
 src/constants
 src/profile
+tools/clock_screw_detection
