@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/11/23 11:10:38  khf
+ * codebrushing DevCamp
+ *
  * Revision 3.4  2004/11/23 10:05:24  sah
  * SaC DevCamp 04
  *
@@ -35,12 +38,12 @@ extern void DFMUwhileDfmStack (dfmstack_t *stack, fun_t fun, char *id, node *dec
 extern types *DFMUdfm2ReturnTypes (dfmask_t *mask);
 extern ntype *DFMUdfm2ProductType (dfmask_t *mask);
 extern ntype *DFMUdfm2FunctionType (dfmask_t *in, dfmask_t *out, node *fundef);
-extern node *DFMUdfm2Vardecs (dfmask_t *mask, LUT_t *lut);
-extern node *DFMUdfm2Args (dfmask_t *mask, LUT_t *lut);
-extern node *DFMUdfm2ReturnExprs (dfmask_t *mask, LUT_t *lut);
-extern node *DFMUdfm2ApArgs (dfmask_t *mask, LUT_t *lut);
-extern ids *DFMUdfm2LetIds (dfmask_t *mask, LUT_t *lut);
+extern node *DFMUdfm2Vardecs (dfmask_t *mask, lut_t *lut);
+extern node *DFMUdfm2Args (dfmask_t *mask, lut_t *lut);
+extern node *DFMUdfm2ReturnExprs (dfmask_t *mask, lut_t *lut);
+extern node *DFMUdfm2ApArgs (dfmask_t *mask, lut_t *lut);
+extern node *DFMUdfm2LetIds (dfmask_t *mask, lut_t *lut);
 
-extern dfmask_t *DFMUduplicateMask (dfmask_t *mask, DFMmask_base_t base);
+extern dfmask_t *DFMUduplicateMask (dfmask_t *mask, dfmask_base_t *base);
 
 #endif /* _SAC_DATAFLOWMASKUTILS_H_ */
