@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.111  1996/01/23 09:00:58  cg
+ * Revision 1.112  1996/01/25 18:39:56  cg
+ * beautified printing of blocks with and without return
+ * class type is printed in comments until typedef is created
+ *
+ * Revision 1.111  1996/01/23  09:00:58  cg
  * changed printing of objdefs and pragmas
  *
  * Revision 1.110  1996/01/22  17:29:58  cg
@@ -462,14 +466,15 @@ PrintAssign (node *arg_node, node *arg_info)
             Trav (arg_node->node[1], arg_info);
     } else {
         DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", arg_node->lineno););
-        INDENT;
-        Trav (arg_node->node[0], arg_info);
-        if (2 == arg_node->nnode) {
-            if (!((NODE_TYPE (ASSIGN_NEXT (arg_node)) == N_return)
-                  && (RETURN_EXPRS (ASSIGN_NEXT (arg_node)) == NULL))) {
-                fprintf (outfile, "\n");
-            }
 
+        if (!((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_return)
+              && (RETURN_EXPRS (ASSIGN_INSTR (arg_node)) == NULL))) {
+            INDENT;
+            Trav (arg_node->node[0], arg_info);
+            fprintf (outfile, "\n");
+        }
+
+        if (2 == arg_node->nnode) {
             Trav (arg_node->node[1], arg_info);
         }
     }
@@ -534,7 +539,12 @@ PrintModul (node *arg_node, node *arg_info)
         fprintf (outfile, "\n/*\n *  Module %s :\n */\n", arg_node->info.id);
         break;
     case F_classimp:
-        fprintf (outfile, "\n/*\n *  Class %s :\n */\n", arg_node->info.id);
+        fprintf (outfile, "\n/*\n *  Class %s :\n", arg_node->info.id);
+        if (MODUL_CLASSTYPE (arg_node) != NULL) {
+            fprintf (outfile, " *  classtype %s;\n",
+                     Type2String (MODUL_CLASSTYPE (arg_node), 0));
+        }
+        fprintf (outfile, " */\n");
         break;
     case F_prog:
         fprintf (outfile, "\n/*\n *  SAC-Program %s :\n */\n", filename);
