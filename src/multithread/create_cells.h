@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.3  2004/07/28 22:45:22  skt
+ * changed CRECEAddIv into CRECEHandleIv,
+ * implementation changed & tested
+ *
  * Revision 1.2  2004/07/28 17:46:14  skt
  * CRECEfundef added
  *
@@ -28,6 +32,6 @@ extern node *CRECEfundef (node *arg_node, node *arg_info);
 
 extern node *CRECEassign (node *arg_node, node *arg_info);
 
-node *CRECEAddIv (node *arg_node, node *arg_info);
+void CRECEHandleIv (node *withloop, node *arg_info);
 
 #endif /* CREATE_CELLS_H */

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.3  2004/07/28 22:45:22  skt
+ * changed CRECEAddIv into CRECEHandleIv,
+ * implementation changed & tested
+ *
  * Revision 1.2  2004/07/28 17:46:14  skt
  * CRECEfundef added
  *
@@ -148,10 +152,10 @@ CRECEassign (node *arg_node, node *arg_info)
         break;
     case MUTH_MULTI:
         DBUG_PRINT ("CRECE", ("Executionmode is MUTH_MULTI"));
-        arg_node = MUTHInsertMT (arg_node, arg_info);
-        if (NODE_TYPE (ASSIGN_INSTR (LET_EXPR (arg_node))) == N_Nwith2) {
-            arg_node = CRECEAddIv (arg_node, arg_info);
+        if (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith2) {
+            CRECEHandleIv (LET_EXPR (ASSIGN_INSTR (arg_node)), arg_info);
         }
+        arg_node = MUTHInsertMT (arg_node, arg_info);
         break;
     default:
         DBUG_ASSERT (0, "CRECEassign expects an assignment with valid executionmode");
@@ -169,24 +173,34 @@ CRECEassign (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CRECEAddIv(node *arg_node, node *arg_info)
+ * @fn void CRECEHandleIv(node *withloop, node *arg_info)
  *
- *   @brief adds the allocation of the indexvector for an MUTH_MULTI
- *          with-loop into the MT-Cell of the with-loop.
+ *   @brief creates a MT-cell for the allocation(s) of the indexvector(s) of
+ *          an parallel executed with-loop
  *
- *   @param arg_node a N_assign
+ *   @param withloop a N_Nwith2
  *   @param arg_info
- *   @return N_assign with probably added Cell
+ *   @return nothing
  *
  *****************************************************************************/
-node *
-CRECEAddIv (node *arg_node, node *arg_info)
+void
+CRECEHandleIv (node *withloop, node *arg_info)
 {
+    ids *iterator;
+    int executionmode;
     DBUG_ENTER ("CRECEAddIv");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign),
-                 "CRECEAddIv expects a N_assign as arg_node");
+    DBUG_ASSERT ((NODE_TYPE (withloop) == N_Nwith2),
+                 "CRECEAddIv expects a N_Nwith2 as argument withloop");
 
-    /* TODO*/
+    iterator = NWITHID_VEC (NWITH2_WITHID (withloop));
+    while (iterator != NULL) {
+        executionmode = ASSIGN_EXECMODE (AVIS_SSAASSIGN (IDS_AVIS (iterator)));
+        DBUG_ASSERT ((executionmode == MUTH_ANY) || (executionmode == MUTH_MULTI),
+                     "Executionmode of iv-alloc must be MUTH_ANY or MUTH_MULTI");
+        AVIS_SSAASSIGN (IDS_AVIS (iterator))
+          = MUTHInsertMT (AVIS_SSAASSIGN (IDS_AVIS (iterator)), arg_info);
+        iterator = IDS_NEXT (iterator);
+    }
 
-    DBUG_RETURN (arg_node);
+    DBUG_VOID_RETURN;
 }
