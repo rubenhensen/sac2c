@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.64  1998/05/15 15:46:14  srs
+ * added comment
+ *
  * Revision 1.63  1998/05/13 13:44:32  srs
  * renamed unr_expr to lunr_expr and inserted wlunr_expr
  *
@@ -267,7 +270,7 @@ extern int CheckScope (long *act_mrdl, node *assign_node, int varno, int checkde
 
 #define MRD_GETSUBST(n, i, v) n = GetExpr (MrdGet (i, v, 0)); /* only in CF */
 #define MRD_GETLAST(n, i, v) n = GetExpr (MrdGet (i, v, 1));  /* CF, Unroll, Unswitch */
-#define MRD_GETDATA(n, i, v) n = GetExpr (MrdGet (i, v, 2));  /* only in CF */
+#define MRD_GETDATA(n, i, v) n = GetExpr (MrdGet (i, v, 2));  /* only in CF, WLI */
 #define MRD_GETCSE(n, i, v) n = GetExpr (MrdGet (i, v, 3));   /* only in CSE */
 
 extern void PushMRDL (long NumVar);
