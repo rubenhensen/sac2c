@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2005/03/19 23:05:26  sbs
+ * AUD support requires PART_NEXT and CODE_NEXT to be traversed too.
+ *
  * Revision 1.21  2005/01/07 18:05:21  cg
  * Updated usage of ctinfo
  *
@@ -521,8 +524,9 @@ INSVDpart (node *arg_node, info *arg_info)
         PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
     }
 
-    /* at this early point there are no other N_part nodes */
-    DBUG_ASSERT ((PART_NEXT (arg_node) == NULL), "PART_NEXT should not yet exist");
+    if (PART_NEXT (arg_node) != NULL) {
+        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -551,8 +555,9 @@ INSVDcode (node *arg_node, info *arg_info)
         CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
     }
 
-    DBUG_ASSERT ((CODE_NEXT (arg_node) == NULL),
-                 "there should be only one code block during inse_vardec!");
+    if (CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
