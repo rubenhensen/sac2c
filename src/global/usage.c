@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/07/03 15:28:18  dkr
+ * -checkt added (for TAGGED_ARRAYS)
+ *
  * Revision 3.21  2002/06/24 14:35:34  dkr
  * -intrinsic flag removed for TAGGED_ARRAYS
  *
@@ -495,8 +498,15 @@ usage ()
 
     printf ("\n\nRUNTIME CHECK OPTIONS:\n\n"
 
+#ifdef TAGGED_ARRAYS
+            "\t -check [atbmeh]+ \tinclude runtime checks into executable program.\n"
+#else
             "\t -check [abmeh]+ \tinclude runtime checks into executable program.\n"
+#endif
             "\t\t\t\t  a: include all checks available.\n"
+#ifdef TAGGED_ARRAYS
+            "\t\t\t\t  t: check assignments for type violations.\n"
+#endif
             "\t\t\t\t  b: check array accesses for boundary\n"
             "\t\t\t\t     violations.\n"
             "\t\t\t\t  m: check success of memory allocations.\n"
