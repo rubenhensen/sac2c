@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2000/07/06 12:44:25  mab
+ * added PIgetOldTypes
+ *
  * Revision 1.4  2000/07/05 09:13:10  mab
  * fixed problem with global data structure pad_info
  *
@@ -46,6 +49,7 @@ typedef struct pad_i {
 extern void PIinit ();
 extern void PIadd (types *old_type, shpseg *new_shape);
 extern types *PIgetNewType (types *old_type);
+extern types *PIgetOldType (types *old_type);
 extern node *PIgetFundefPad (types *old_type);
 extern node *PIgetFundefUnpad (types *old_type);
 extern void PIfree ();

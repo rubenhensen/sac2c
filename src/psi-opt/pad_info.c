@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2000/07/06 12:44:25  mab
+ * added PIgetOldTypes
+ *
  * Revision 1.5  2000/07/05 09:13:10  mab
  * fixed problem with global data structure pad_info
  *
@@ -87,7 +90,7 @@ EqualShapes (int dim, shpseg *shape2, shpseg *shape1)
 /*****************************************************************************
  *
  * function:
- *   static pad_info_t *GetTableEntry(types *old_type)
+ *   static pad_info_t *GetNewTableEntry(types *old_type)
  *
  * description:
  *   returns pointer to table entry corrsponding to old_type or NULL
@@ -96,18 +99,53 @@ EqualShapes (int dim, shpseg *shape2, shpseg *shape1)
  *****************************************************************************/
 
 static pad_info_t *
-GetTableEntry (types *old_type)
+GetNewTableEntry (types *old_type)
 {
 
     pad_info_t *tmp = pad_info;
     pad_info_t *matching_entry = NULL;
 
-    DBUG_ENTER ("GetTableEntry");
+    DBUG_ENTER ("GetNewTableEntry");
 
     while (tmp != NULL) {
         if ((PI_TYPE (tmp) == TYPES_BASETYPE (old_type))
             && (PI_DIM (tmp) == TYPES_DIM (old_type))
             && EqualShapes (PI_DIM (tmp), PI_OLD_SHAPE (tmp), TYPES_SHPSEG (old_type))) {
+
+            matching_entry = tmp;
+            tmp = NULL;
+        } else {
+            tmp = PI_NEXT (tmp);
+        }
+    }
+
+    DBUG_RETURN (matching_entry);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   static pad_info_t *GetOldTableEntry(types *new_type)
+ *
+ * description:
+ *   returns pointer to table entry corrsponding to new_type or NULL
+ *   !internal function only!
+ *
+ *****************************************************************************/
+
+static pad_info_t *
+GetOldTableEntry (types *new_type)
+{
+
+    pad_info_t *tmp = pad_info;
+    pad_info_t *matching_entry = NULL;
+
+    DBUG_ENTER ("GetOldTableEntry");
+
+    while (tmp != NULL) {
+        if ((PI_TYPE (tmp) == TYPES_BASETYPE (new_type))
+            && (PI_DIM (tmp) == TYPES_DIM (new_type))
+            && EqualShapes (PI_DIM (tmp), PI_NEW_SHAPE (tmp), TYPES_SHPSEG (new_type))) {
 
             matching_entry = tmp;
             tmp = NULL;
@@ -195,7 +233,7 @@ PIgetNewType (types *old_type)
 
     DBUG_ENTER ("PIgetNewType");
 
-    table_entry = GetTableEntry (old_type);
+    table_entry = GetNewTableEntry (old_type);
 
     if (table_entry != NULL) {
         new_type = DupTypes (old_type);
@@ -205,6 +243,41 @@ PIgetNewType (types *old_type)
     }
 
     DBUG_RETURN (new_type);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   types* PIgetOldType(types* new_type)
+ *
+ * description:
+ *   returns type-structure with unpadded shape
+ *   or NULL, if new_type has no padded shape
+ *   renaming has to be done separately, because only N_arg and N_vardec
+ *   store their names in types-structure, N_id and ids-attribute do not!
+ *   !!! new_type is set free here !!!
+ *
+ *****************************************************************************/
+
+types *
+PIgetOldType (types *new_type)
+{
+
+    types *old_type = NULL;
+    pad_info_t *table_entry;
+
+    DBUG_ENTER ("PIgetOldType");
+
+    table_entry = GetOldTableEntry (new_type);
+
+    if (table_entry != NULL) {
+        old_type = DupTypes (new_type);
+        FreeShpseg (TYPES_SHPSEG (old_type));
+        TYPES_SHPSEG (old_type) = DupShpSeg (PI_OLD_SHAPE (table_entry));
+        FreeOneTypes (new_type);
+    }
+
+    DBUG_RETURN (old_type);
 }
 
 /*****************************************************************************
@@ -224,7 +297,7 @@ PIgetFundefPad (types *old_type)
 
     DBUG_ENTER ("PIgetFundefPad");
 
-    table_entry = GetTableEntry (old_type);
+    table_entry = GetNewTableEntry (old_type);
 
     DBUG_RETURN ((table_entry != NULL) ? PI_FUNDEF_PAD (table_entry) : NULL);
 }
@@ -247,7 +320,7 @@ PIgetFundefUnpad (types *old_type)
 
     DBUG_ENTER ("PIgetFundefUnpad");
 
-    table_entry = GetTableEntry (old_type);
+    table_entry = GetNewTableEntry (old_type);
 
     DBUG_RETURN ((table_entry != NULL) ? PI_FUNDEF_UNPAD (table_entry) : NULL);
 }
