@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/03/13 16:03:20  ktr
+ * OPT_WLS added for Withloop-Scalarization
+ *
  * Revision 3.19  2002/01/18 16:53:17  sacbase
  * PHM disabled for OSX_MAC
  *
@@ -424,6 +427,9 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("wlf", optimize |= OPT_WLF);
         ARG_CHOICE ("WLF", optimize |= OPT_WLF);
 
+        ARG_CHOICE ("wls", optimize |= OPT_WLS);
+        ARG_CHOICE ("WLS", optimize |= OPT_WLS);
+
         ARG_CHOICE ("ive", optimize |= OPT_IVE);
         ARG_CHOICE ("IVE", optimize |= OPT_IVE);
 
@@ -668,6 +674,9 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("wlf", optimize &= ~OPT_WLF);
         ARG_CHOICE ("WLF", optimize &= ~OPT_WLF);
+
+        ARG_CHOICE ("wls", optimize &= ~OPT_WLS);
+        ARG_CHOICE ("WLS", optimize &= ~OPT_WLS);
 
         ARG_CHOICE ("ive", optimize &= ~OPT_IVE);
         ARG_CHOICE ("IVE", optimize &= ~OPT_IVE);

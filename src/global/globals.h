@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/03/13 16:03:20  ktr
+ * OPT_WLS added for Withloop-Scalarization
+ *
  * Revision 3.12  2001/12/10 15:00:48  dkr
  * flag 'dkr' removed
  *
@@ -201,6 +204,7 @@ extern unsigned int optimize;
 #define OPT_MSCA 0x01000000 /* memory size cache adjustment (for PHM)      */
 #define OPT_AP 0x02000000   /* array padding                               */
 #define OPT_APL 0x04000000  /* array placement                             */
+#define OPT_WLS 0x08000000  /* with-loop scalarization                     */
 
 /* use ssa-form based optimizations instead of old opts */
 extern bool use_ssaform;
