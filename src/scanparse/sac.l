@@ -3,6 +3,12 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/06/28 13:06:17  sbs
+ * flex smuggles in a hash filename line at the beginning of each file!!
+ * Unfortunately, on some systems this is preceede by dot-slash.
+ * In order to achieve consistent output, dot-slash's at the
+ * beginning are filtered out now!
+ *
  * Revision 3.8  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -491,6 +497,12 @@ int charpos = 0;
                              { int start, len;
                                start = strcspn( yytext, "\"")+1;
                                len   = strcspn( yytext + start, "\"");
+                               if( ((yytext + start)[0] == '.')
+                                     && ((yytext + start)[1] == '/') ) {
+                                 /* elminate preceeding "./" */
+                                 start += 2;
+                                 len -= 2;
+                               }
                                filename = (char *)Malloc( (len+1)*sizeof(char));
                                strncpy( filename , yytext + start, len);
                                filename[len] = '\0';
