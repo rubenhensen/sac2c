@@ -1,5 +1,9 @@
 dnl
 dnl $Log$
+dnl Revision 1.5  2003/03/21 00:43:23  sah
+dnl fixed bug in stderr_is_constant
+dnl detection
+dnl
 dnl Revision 1.4  2003/03/21 00:34:39  sah
 dnl added support for linux
 dnl (tested on gentoo linux)
@@ -155,10 +159,8 @@ AC_MSG_CHECKING(whether stderr is a constant)
 AC_TRY_COMPILE([
 #include <stdio.h>
 #include <unistd.h>
-],
-[
 FILE *_db_fp_ = stderr;
-],stderr_is_constant=yes,stderr_is_constant=no)
+],[],stderr_is_constant=yes,stderr_is_constant=no)
 if [ test $stderr_is_constant = yes ]; then
   AC_MSG_RESULT(yes)
   AC_DEFINE(STDERR_IS_CONSTANT, 1, set to 1 if stderr is a constant)
