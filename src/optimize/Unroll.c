@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/07/20 12:23:38  asi
+ * Revision 1.8  1996/01/17 14:44:57  asi
+ * new dataflow-information 'most-recently-defined-Listen' MRD used,
+ * new trav-function OPTTrav used and some functions uses new access-macros for
+ * virtuell syntax-tree
+ *
+ * Revision 1.7  1995/07/20  12:23:38  asi
  * while loop, who's condition is false will be removed now
  *
  * Revision 1.6  1995/07/19  18:54:21  asi
@@ -29,6 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "globals.h"
 #include "tree.h"
 #include "free.h"
 #include "Error.h"
@@ -68,19 +74,14 @@ Unroll (node *arg_node, node *arg_info)
     tmp_tab = act_tab;
     act_tab = unroll_tab;
     arg_info = MakeNode (N_info);
-    def_stack = MAlloc (sizeof (stack));
-    def_stack->tos = -1;
-    def_stack->st_len = MIN_STACK_SIZE;
-    def_stack->stack = (stelm *)MAlloc (sizeof (stelm) * MIN_STACK_SIZE);
 
     arg_node = Trav (arg_node, arg_info);
 
     FREE (arg_info);
-    FREE (def_stack->stack);
-    FREE (def_stack);
     act_tab = tmp_tab;
     DBUG_RETURN (arg_node);
 }
+
 /*
  *
  *  functionname  : UNRfundef
@@ -90,15 +91,15 @@ Unroll (node *arg_node, node *arg_info)
  *  description   : - generates info_node
  *                  - varno of the info_node will be set to the number of local variables
  *                      and arguments in this functions
- *                  - new entry will be pushed on the def_stack
+ *                  - new entry will be pushed on the mrdl_stack
  *                  - generates two masks and links them to the info_node
  *                      [0] - variables additional defined in function and
  *                      [1] - variables additional used in function after optimization
  *                  - calls Trav to  unrolled loops in body of current function
- *                  - last entry will be poped from def_stack
+ *                  - last entry will be poped from mrdl_stack
  *                  - updates masks in fundef node.
- *  global vars   : syntax_tree, def_stack
- *  internal funs : PushVL, PopVL
+ *  global vars   : syntax_tree, mrdl_stack
+ *  internal funs :
  *  external funs : GenMask, OptTrav
  *  macros        : DBUG...
  *
@@ -111,21 +112,18 @@ UNRfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("UNRfundef");
 
     DBUG_PRINT ("UNR", ("Unroll in function: %s", arg_node->info.types->id));
-    VARNO = arg_node->varno;
-    PushVL (arg_info->varno);
     LEVEL = 1;
 
-    arg_node = OptTrav (arg_node, arg_info, 0); /* functionbody */
+    if (NULL != FUNDEF_BODY (arg_node))
+        FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
 
-    PopVL ();
-
-    arg_node = OptTrav (arg_node, arg_info, 1); /* next function */
+    FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
     DBUG_RETURN (arg_node);
 }
 
 /*
  *
- *  functionname  :
+ *  functionname  : UNRid
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -141,13 +139,13 @@ UNRid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNRid");
     arg_node->flag = LEVEL;
-    arg_node->IDS_DEF = VAR (arg_node->IDS_VARNO);
+    MRD_GETLAST (ID_DEF (arg_node), ID_VARNO (arg_node), INFO_VARNO);
     DBUG_RETURN (arg_node);
 }
 
 /*
  *
- *  functionname  :
+ *  functionname  : UNRlet
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -161,20 +159,12 @@ UNRid (node *arg_node, node *arg_info)
 node *
 UNRlet (node *arg_node, node *arg_info)
 {
-    ids *ids_node;
-
     DBUG_ENTER ("UNRlet");
-    /* genrate defined-pointer and maybe trav with-loop */
-    arg_node = OptTrav (arg_node, arg_info, 0);
+    /* maybe trav with-loop */
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     arg_node->node[0]->flag = LEVEL;
 
-    ids_node = arg_node->info.ids;
-    while (NULL != ids_node) /* determine defined variables */
-    {
-        VAR (ids_node->node->varno) = arg_node->node[0];
-        ids_node = ids_node->next;
-    }
     DBUG_RETURN (arg_node);
 }
 
@@ -323,40 +313,39 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
 
     DBUG_ENTER ("AnalyseLoop");
 
-    test = id_node->IDS_DEF;
+    test = ID_DEF (id_node);
 
-    if ((NULL != test) && (N_prf == test->nodetype)
-        && (F_le <= (test_prf = test->info.prf)) && (F_neq >= test_prf)
+    if ((NULL != test) && (N_prf == NODE_TYPE (test))
+        && (F_le <= (test_prf = PRF_PRF (test))) && (F_neq >= test_prf)
         && (test->flag == level)) {
-        arg[0] = test->ARG1;
-        arg[1] = test->ARG2;
         /* the constant value shall be on the right side of the expression */
         /* i.e. cond = Num op i will be changed to cond = i op Num         */
-        if (IsConst (test->ARG1)) {
+        if (IsConst (PRF_ARG1 (test))) {
             test_prf = ReversePrf (test_prf);
-            arg[0] = test->ARG2;
-            arg[1] = test->ARG1;
+            arg[0] = PRF_ARG2 (test);
+            arg[1] = PRF_ARG1 (test);
         } else {
-            arg[0] = test->ARG1;
-            arg[1] = test->ARG2;
+            arg[0] = PRF_ARG1 (test);
+            arg[1] = PRF_ARG2 (test);
         }
+
         /* adjust definition of conditional variable */
-        test->info.prf = test_prf;
-        test->ARG1 = arg[0];
-        test->ARG2 = arg[1];
+        PRF_PRF (test) = test_prf;
+        PRF_ARG1 (test) = arg[0];
+        PRF_ARG2 (test) = arg[1];
 
         /* store test function */
         loop_info->test_prf = test_prf;
 
         /* store index variable and test nummber */
-        if (N_id == arg[0]->nodetype) {
-            loop_info->decl_node = arg[0]->IDS_NODE;
+        if (N_id == NODE_TYPE (arg[0])) {
+            loop_info->decl_node = ID_VARDEC (arg[0]);
             index = arg[0];
         } else
             allright = FALSE;
 
-        if (N_num == arg[1]->nodetype)
-            loop_info->test_num = arg[1]->info.cint;
+        if (N_num == NODE_TYPE (arg[1]))
+            loop_info->test_num = NUM_VAL (arg[1]);
         else
             allright = FALSE;
     } else {
@@ -367,23 +356,23 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
     /*			           ^^^^^^^^^             |         */
     /*		        	      mod  <-------------|         */
     if (allright) {
-        mod = index->IDS_DEF;
-        if ((NULL != mod) && (N_prf == mod->nodetype)
-            && ((F_add == (loop_info->mod_prf = mod->info.prf))
+        mod = ID_DEF (index);
+        if ((NULL != mod) && (N_prf == NODE_TYPE (mod))
+            && ((F_add == (loop_info->mod_prf = PRF_PRF (mod)))
                 || (F_sub == loop_info->mod_prf) || (F_mul == loop_info->mod_prf))
             && (mod->flag == level)) {
             arg[0] = mod->ARG1;
             arg[1] = mod->ARG2;
-            if ((N_id == arg[0]->nodetype)
-                && (loop_info->decl_node->varno == arg[0]->IDS_VARNO)
-                && (N_num == arg[1]->nodetype) && (0 != arg[1]->info.cint)) {
-                loop_info->mod_num = arg[1]->info.cint;
+            if ((N_id == NODE_TYPE (arg[0]))
+                && (VARDEC_VARNO (loop_info->decl_node) == ID_VARNO (arg[0]))
+                && (N_num == NODE_TYPE (arg[1])) && (0 != NUM_VAL (arg[1]))) {
+                loop_info->mod_num = NUM_VAL (arg[1]);
                 index = arg[0];
-            } else if ((N_id == arg[1]->nodetype)
-                       && (loop_info->decl_node->varno == arg[1]->IDS_VARNO)
-                       && (N_num == arg[0]->nodetype) && (0 != arg[0]->info.cint)
+            } else if ((N_id == NODE_TYPE (arg[1]))
+                       && (loop_info->decl_node->varno == ID_VARNO (arg[1]))
+                       && (N_num == NODE_TYPE (arg[0])) && (0 != NUM_VAL (arg[0]))
                        && (F_sub != loop_info->mod_prf)) {
-                loop_info->mod_num = arg[0]->info.cint;
+                loop_info->mod_num = NUM_VAL (arg[0]);
                 index = arg[1];
             } else
                 allright = FALSE;
@@ -402,7 +391,7 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
 
     if (allright) {
         if ((F_mul == loop_info->mod_prf)
-            && ((0 >= loop_info->mod_num) || (0 >= loop_info->start_num)))
+            && ((0 == loop_info->mod_num) || (0 == loop_info->start_num)))
             allright = FALSE;
         else {
             if (0 == loop_info->mod_num) {
@@ -498,6 +487,7 @@ DoUnroll (node *arg_node, node *arg_info, linfo *loop_info)
         case 1:
             MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
             unroll = arg_node->node[1]->node[0];
+            arg_node->node[1]->node[0] = NULL;
             arg_node->node[1]->nnode = 0;
             FreeTree (arg_node);
             arg_node = unroll;
@@ -536,41 +526,37 @@ DoUnroll (node *arg_node, node *arg_info, linfo *loop_info)
 node *
 UNRdo (node *arg_node, node *arg_info)
 {
-    int i;
     linfo *loop_info = NULL;
-    node *id_node;
+    node *cond_node;
 
     DBUG_ENTER ("UNRdo");
 
-    PushDupVL (VARNO);
-
     LEVEL++;
 
-    for (i = 0; i < TOS.vl_len; i++) {
-        if (1 < ReadMask (arg_node->node[1]->mask[0], i)) {
-            VAR (i) = NULL;
-        }
-    }
+    DBUG_PRINT ("UNR", ("Trav do loop in line %d", NODE_LINE (arg_node)));
+    DO_INSTR (arg_node) = OPTTrav (DO_INSTR (arg_node), arg_info, arg_node);
 
-    DBUG_PRINT ("UNR", ("Trav do loop in line %d", arg_node->lineno));
-    arg_node = OptTrav (arg_node, arg_info, 1); /* Trav do-body */
-    arg_node = OptTrav (arg_node, arg_info, 0); /* Trav do-condition */
+    cond_node = DO_COND (arg_node);
 
-    id_node = arg_node->node[0];
+    if (N_id == NODE_TYPE (cond_node))
+        MRD_GETLAST (ID_DEF (cond_node), ID_VARNO (cond_node), INFO_VARNO);
 
     loop_info = (linfo *)MAlloc (sizeof (linfo));
     loop_info->loop_num = UNDEF;
     loop_info->ltype = N_do;
 
     /* Calculate numbers of iterations */
-    if (N_bool == arg_node->node[0]->nodetype) {
-        if (FALSE == id_node->info.cint) {
+    switch (NODE_TYPE (cond_node)) {
+    case N_bool:
+        if (FALSE == BOOL_VAL (cond_node)) {
             loop_info->loop_num = 1;
         }
-    } else {
-        if (N_id == id_node->nodetype) {
-            loop_info = AnalyseLoop (loop_info, id_node, LEVEL);
-        }
+        break;
+    case N_id:
+        loop_info = AnalyseLoop (loop_info, cond_node, LEVEL);
+        break;
+    default:
+        break;
     }
 
     if (UNDEF != loop_info->loop_num) {
@@ -579,7 +565,6 @@ UNRdo (node *arg_node, node *arg_info)
     }
 
     LEVEL--;
-    PopVL2 ();
     DBUG_RETURN (arg_node);
 }
 
@@ -599,53 +584,15 @@ UNRdo (node *arg_node, node *arg_info)
 node *
 UNRwhile (node *arg_node, node *arg_info)
 {
-    int i;
-    node *cond_node, *bool;
-
     DBUG_ENTER ("UNRwhile");
-    cond_node = arg_node->node[0];
-
-    if ((NULL != cond_node)
-        && (((N_id == cond_node->nodetype)
-             && (N_bool == (bool = VAR (cond_node->IDS_VARNO))->nodetype))
-            || ((N_bool == (bool = cond_node)->nodetype) && (!bool->info.cint)))) {
-        if (bool->info.cint) {
-            arg_node->nodetype = N_do;
-            arg_node = Trav (arg_node, arg_info);
-        } else {
-            MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
-            MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0], VARNO);
-            MinusMask (arg_info->mask[1], arg_node->node[1]->mask[1], VARNO);
-            FreeTree (arg_node);
-            arg_node = MakeNode (N_empty);
-        }
-    } else {
-        PushVL (VARNO);
-        LEVEL++;
-
-        for (i = 0; i < TOS.vl_len; i++) {
-            if (0 != ReadMask (arg_node->node[1]->mask[0], i)) {
-                VAR (i) = NULL;
-            }
-        }
-
-        DBUG_PRINT ("UNR", ("Trav while loop in line %d", arg_node->lineno));
-        arg_node = OptTrav (arg_node, arg_info, 1); /* Trav while-body */
-
-        LEVEL--;
-        PopVL ();
-        for (i = 0; i < TOS.vl_len; i++) {
-            if (ReadMask (arg_node->node[1]->mask[0], i) != 0) {
-                VAR (i) = NULL;
-            }
-        }
-    }
+    DBUG_PRINT ("UNR", ("Trav while loop in line %d", NODE_LINE (arg_node)));
+    WHILE_INSTR (arg_node) = OPTTrav (WHILE_INSTR (arg_node), arg_info, arg_node);
     DBUG_RETURN (arg_node);
 }
 
 /*
  *
- *  functionname  :
+ *  functionname  : UNRcond
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -659,37 +606,19 @@ UNRwhile (node *arg_node, node *arg_info)
 node *
 UNRcond (node *arg_node, node *arg_info)
 {
-    int i;
-
     DBUG_ENTER ("UNRcond");
-    PushDupVL ();
 
     LEVEL++;
-    /* Trav then */
-    arg_node = OptTrav (arg_node, arg_info, 1);
+    COND_THENINSTR (arg_node) = OPTTrav (COND_THENINSTR (arg_node), arg_info, arg_node);
+    COND_ELSEINSTR (arg_node) = OPTTrav (COND_ELSEINSTR (arg_node), arg_info, arg_node);
     LEVEL--;
 
-    PopVL ();
-    PushDupVL ();
-
-    LEVEL++;
-    /* Trav else */
-    arg_node = OptTrav (arg_node, arg_info, 2);
-    LEVEL--;
-
-    PopVL ();
-    for (i = 0; i < TOS.vl_len; i++) {
-        if ((ReadMask (arg_node->node[1]->mask[0], i) != 0)
-            || (ReadMask (arg_node->node[2]->mask[0], i) != 0)) {
-            VAR (i) = NULL;
-        }
-    }
     DBUG_RETURN (arg_node);
 }
 
 /*
  *
- *  functionname  :
+ *  functionname  : UNRwith
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -704,14 +633,35 @@ node *
 UNRwith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNRwith");
-    PushDupVL ();
 
     LEVEL++;
-    /* Trav with-body */
-    arg_node = OptTrav (arg_node, arg_info, 2);
+    switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
+    case N_genarray:
+        BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_modarray:
+        BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_foldprf:
+        BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_foldfun:
+        BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    default:
+        DBUG_ASSERT ((FALSE), "Operator not implemented for with_node");
+        break;
+    }
     LEVEL--;
 
-    PopVL ();
     DBUG_RETURN (arg_node);
 }
 
@@ -732,32 +682,43 @@ node *
 UNRassign (node *arg_node, node *arg_info)
 {
     node *tmp_node;
+    nodetype ntype;
 
     DBUG_ENTER ("UNRassign");
 
-    /* unroll subexpressions */
-    arg_node = OptTrav (arg_node, arg_info, 0);
+    ntype = NODE_TYPE (ASSIGN_INSTR (arg_node));
 
-    switch (arg_node->node[0]->nodetype) {
+    /* unroll subexpressions */
+    ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
+
+    switch (NODE_TYPE (ASSIGN_INSTR (arg_node))) {
     case N_empty:
         DBUG_PRINT ("UNR", ("empty assign node removed from tree"));
-        arg_node->nnode = 1;
-        tmp_node = arg_node->node[1];
-        FreeTree (arg_node);
-        arg_node = Trav (tmp_node, arg_info);
+        tmp_node = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
+        FreeNode (arg_node);
+        arg_node = tmp_node;
         break;
     case N_assign:
         DBUG_PRINT ("UNR", ("double assign node moved into tree"));
-        tmp_node = AppendNodeChain (1, arg_node->node[0], arg_node->node[1]);
-        arg_node->nnode = 0;
-        FreeTree (arg_node);
-        arg_node = Trav (tmp_node, arg_info);
+        if (N_do == ntype) {
+            ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
+            tmp_node
+              = AppendNodeChain (1, ASSIGN_INSTR (arg_node), ASSIGN_NEXT (arg_node));
+            ASSIGN_INSTR (arg_node) = NULL;
+            ASSIGN_NEXT (arg_node) = NULL;
+            FreeTree (arg_node);
+            arg_node = tmp_node;
+        } else {
+            tmp_node
+              = AppendNodeChain (1, ASSIGN_INSTR (arg_node), ASSIGN_NEXT (arg_node));
+            ASSIGN_INSTR (arg_node) = NULL;
+            ASSIGN_NEXT (arg_node) = NULL;
+            FreeTree (arg_node);
+            arg_node = UNRassign (tmp_node, arg_info);
+        }
         break;
     default:
-        /* next assign node */
-        if (1 < arg_node->nnode) {
-            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-        }
+        ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
         break;
     }
     DBUG_RETURN (arg_node);

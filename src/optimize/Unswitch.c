@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/10/06 16:35:40  cg
+ * Revision 1.7  1996/01/17 14:44:57  asi
+ * new dataflow-information 'most-recently-defined-Listen' MRD used,
+ * new trav-function OPTTrav used and some functions uses new access-macros for
+ * virtuell syntax-tree
+ *
+ * Revision 1.6  1995/10/06  16:35:40  cg
  * calls to MakeIds adjusted to new signature (3 parameters)
  *
  * Revision 1.5  1995/07/19  18:52:23  asi
@@ -23,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "globals.h"
 #include "tree.h"
 #include "free.h"
 #include "Error.h"
@@ -42,6 +48,7 @@
 #define TRUE 1
 #define COND arg_info->node[0]
 #define LOOP_INFO arg_info->node[1]
+#define ONCE_MORE arg_info->lineno
 
 typedef enum { nothing, first, last, between, split, oneloop } todo;
 
@@ -77,16 +84,10 @@ Unswitch (node *arg_node, node *arg_info)
     tmp_tab = act_tab;
     act_tab = unswitch_tab;
     arg_info = MakeNode (N_info);
-    def_stack = MAlloc (sizeof (stack));
-    def_stack->tos = -1;
-    def_stack->st_len = MIN_STACK_SIZE;
-    def_stack->stack = (stelm *)MAlloc (sizeof (stelm) * MIN_STACK_SIZE);
 
     arg_node = Trav (arg_node, arg_info);
 
     FREE (arg_info);
-    FREE (def_stack->stack);
-    FREE (def_stack);
     act_tab = tmp_tab;
     DBUG_RETURN (arg_node);
 }
@@ -99,15 +100,15 @@ Unswitch (node *arg_node, node *arg_info)
  *  description   : - generates info_node
  *                  - varno of the info_node will be set to the number of local variables
  *                      and arguments in this functions
- *                  - new entry will be pushed on the def_stack
+ *                  - new entry will be pushed on the mrdl_stack
  *                  - generates two masks and links them to the info_node
  *                      [0] - variables additional defined in function and
  *                      [1] - variables additional used in function after optimization
  *                  - calls Trav to  unswitch loops in body of current function
- *                  - last entry will be poped from def_stack
+ *                  - last entry will be poped from mrdl_stack
  *                  - updates masks in fundef node.
- *  global vars   : syntax_tree, def_stack
- *  internal funs : PushVL, PopVL
+ *  global vars   : syntax_tree, mrdl_stack
+ *  internal funs : PushMRDL, PopMRDL
  *  external funs : GenMask, MinusMask, OptTrav
  *  macros        : DBUG...
  *
@@ -120,15 +121,17 @@ UNSfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("UNSfundef");
 
     DBUG_PRINT ("UNS", ("Unswitch in function: %s", arg_node->info.types->id));
-    VARNO = arg_node->varno;
-    PushVL (arg_info->varno);
     LEVEL = 1;
 
-    arg_node = OptTrav (arg_node, arg_info, 0); /* functionbody */
+    if (NULL != FUNDEF_BODY (arg_node)) {
+        do {
+            ONCE_MORE = FALSE;
+            FUNDEF_INSTR (arg_node)
+              = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
+        } while (ONCE_MORE);
+    }
 
-    PopVL ();
-
-    arg_node = OptTrav (arg_node, arg_info, 1); /* next function */
+    FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
     DBUG_RETURN (arg_node);
 }
 
@@ -150,7 +153,7 @@ UNSid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNSid");
     arg_node->flag = LEVEL;
-    arg_node->IDS_DEF = VAR (arg_node->IDS_VARNO);
+    MRD_GETLAST (ID_DEF (arg_node), ID_VARNO (arg_node), INFO_VARNO);
     DBUG_RETURN (arg_node);
 }
 
@@ -170,22 +173,15 @@ UNSid (node *arg_node, node *arg_info)
 node *
 UNSlet (node *arg_node, node *arg_info)
 {
-    ids *ids_node;
-
     DBUG_ENTER ("UNSlet");
     /* genrate defined-pointer and maybe trav with-loop */
-    arg_node = OptTrav (arg_node, arg_info, 0);
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     arg_node->node[0]->flag = LEVEL;
 
-    ids_node = arg_node->info.ids;
-    while (NULL != ids_node) /* determine defined variables */
-    {
-        VAR (ids_node->node->varno) = arg_node->node[0];
-        ids_node = ids_node->next;
-    }
     DBUG_RETURN (arg_node);
 }
+
 /*
  *
  *  functionname  : InversePrf
@@ -783,10 +779,8 @@ UNSassign (node *arg_node, node *arg_info)
 
     tmp = COND;
 
-    PushDupVL (VARNO);
-
     /* unswitch subexpressions */
-    arg_node = OptTrav (arg_node, arg_info, 0);
+    ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
 
     if (N_do == arg_node->node[0]->nodetype) {
         if ((NULL != COND) && (NULL != LOOP_INFO)) {
@@ -804,16 +798,13 @@ UNSassign (node *arg_node, node *arg_info)
 
     COND = tmp;
 
-    if (once_more) {
-        PopVL ();
-        arg_node = Trav (arg_node, arg_info);
-    } else {
-        PopVL2 ();
-        /* next assign node */
-        if (1 < arg_node->nnode) {
-            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-        }
-    }
+    if (!once_more) {
+        do {
+            ONCE_MORE = FALSE;
+            ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
+        } while (ONCE_MORE);
+    } else
+        ONCE_MORE = TRUE;
     DBUG_RETURN (arg_node);
 }
 
@@ -833,36 +824,27 @@ UNSassign (node *arg_node, node *arg_info)
 node *
 UNSdo (node *arg_node, node *arg_info)
 {
-    int i;
     linfo *loop_info;
-    node *id_node;
+    node *cond_node;
 
     DBUG_ENTER ("UNSdo");
-    PushDupVL (VARNO);
-
     LEVEL++;
-
-    for (i = 0; i < TOS.vl_len; i++) {
-        if (1 < ReadMask (arg_node->node[1]->mask[0], i)) {
-            VAR (i) = NULL;
-        }
-    }
-
     COND = NULL;
 
-    DBUG_PRINT ("UNS", ("Trav do loop in line %d", arg_node->lineno));
-    arg_node = OptTrav (arg_node, arg_info, 1); /* Trav do-body */
-    arg_node = OptTrav (arg_node, arg_info, 0); /* Trav do-condition */
+    DBUG_PRINT ("UNS", ("Trav do loop in line %d", NODE_LINE (arg_node)));
+    DO_INSTR (arg_node) = OPTTrav (DO_INSTR (arg_node), arg_info, arg_node);
 
-    id_node = arg_node->node[0];
+    cond_node = DO_COND (arg_node);
+    if (N_id == NODE_TYPE (cond_node))
+        MRD_GETLAST (ID_DEF (cond_node), ID_VARNO (cond_node), INFO_VARNO);
 
     loop_info = (linfo *)MAlloc (sizeof (linfo));
     loop_info->loop_num = UNDEF;
     loop_info->ltype = N_do;
 
     /* Calculate numbers of iterations */
-    if (N_id == id_node->nodetype) {
-        loop_info = AnalyseLoop (loop_info, id_node, LEVEL);
+    if (N_id == cond_node->nodetype) {
+        loop_info = AnalyseLoop (loop_info, cond_node, LEVEL);
     }
 
     if (2 > loop_info->loop_num) {
@@ -872,7 +854,6 @@ UNSdo (node *arg_node, node *arg_info)
         LOOP_INFO = (node *)loop_info;
 
     LEVEL--;
-    PopVL2 ();
     DBUG_RETURN (arg_node);
 }
 
@@ -892,40 +873,9 @@ UNSdo (node *arg_node, node *arg_info)
 node *
 UNSwhile (node *arg_node, node *arg_info)
 {
-    int i;
-    node *id_node;
-
     DBUG_ENTER ("UNSwhile");
-    id_node = arg_node->node[0];
-
-    if ((NULL != id_node) && (N_id == id_node->nodetype)
-        && (N_bool == VAR (id_node->IDS_VARNO)->nodetype)
-        && (TRUE == VAR (id_node->IDS_VARNO)->info.cint)) {
-        arg_node->nodetype = N_do;
-        arg_node = Trav (arg_node, arg_info);
-    } else {
-        PushVL (VARNO);
-        LEVEL++;
-
-        for (i = 0; i < TOS.vl_len; i++) {
-            if (0 != ReadMask (arg_node->node[1]->mask[0], i)) {
-                VAR (i) = NULL;
-            }
-        }
-
-        DBUG_PRINT ("UNS", ("Trav while loop in line %d", arg_node->lineno));
-        arg_node = OptTrav (arg_node, arg_info, 1); /* Trav while-body */
-
-        LOOP_INFO = NULL;
-
-        LEVEL--;
-        PopVL ();
-        for (i = 0; i < TOS.vl_len; i++) {
-            if (ReadMask (arg_node->node[1]->mask[0], i) != 0) {
-                VAR (i) = NULL;
-            }
-        }
-    }
+    DBUG_PRINT ("UNS", ("Trav while loop in line %d", arg_node->lineno));
+    WHILE_INSTR (arg_node) = OPTTrav (WHILE_INSTR (arg_node), arg_info, arg_node);
     DBUG_RETURN (arg_node);
 }
 
@@ -945,33 +895,15 @@ UNSwhile (node *arg_node, node *arg_info)
 node *
 UNScond (node *arg_node, node *arg_info)
 {
-    int i;
-
     DBUG_ENTER ("UNScond");
-    PushDupVL ();
+    /* Trav condition */
+    COND_COND (arg_node) = OPTTrav (COND_COND (arg_node), arg_info, arg_node);
 
     LEVEL++;
-
-    /* Trav condition */
-    arg_node = OptTrav (arg_node, arg_info, 0);
-
-    /* Trav then */
-    arg_node = OptTrav (arg_node, arg_info, 1);
-
-    PopVL ();
-    PushDupVL ();
-
-    /* Trav else */
-    arg_node = OptTrav (arg_node, arg_info, 2);
+    COND_THENINSTR (arg_node) = OPTTrav (COND_THENINSTR (arg_node), arg_info, arg_node);
+    COND_ELSEINSTR (arg_node) = OPTTrav (COND_ELSEINSTR (arg_node), arg_info, arg_node);
     LEVEL--;
 
-    PopVL ();
-    for (i = 0; i < TOS.vl_len; i++) {
-        if ((ReadMask (arg_node->node[1]->mask[0], i) != 0)
-            || (ReadMask (arg_node->node[2]->mask[0], i) != 0)) {
-            VAR (i) = NULL;
-        }
-    }
     DBUG_RETURN (arg_node);
 }
 
@@ -992,13 +924,34 @@ node *
 UNSwith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNSwith");
-    PushDupVL ();
 
     LEVEL++;
-    /* Trav with-body */
-    arg_node = OptTrav (arg_node, arg_info, 2);
+    switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
+    case N_genarray:
+        BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_modarray:
+        BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_foldprf:
+        BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    case N_foldfun:
+        BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node)))
+          = OPTTrav (BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node))), arg_info,
+                     arg_node);
+        break;
+    default:
+        DBUG_ASSERT ((FALSE), "Operator not implemented for with_node");
+        break;
+    }
     LEVEL--;
 
-    PopVL ();
     DBUG_RETURN (arg_node);
 }
