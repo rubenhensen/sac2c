@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/23 20:52:11  skt
+ * big compiler brushing during SACDevCampDK 2k4
+ *
  * Revision 1.3  2004/11/23 14:38:13  skt
  * SACDevCampDK 2k4
  *
@@ -34,10 +37,10 @@
 
 #define NEW_INFO
 
-#include "dbug.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #include "consolidate_cells.h"
+#include "internal_lib.h"
 
 /*
  * INFO structure
@@ -94,23 +97,22 @@ FreeInfo (info *info)
 node *
 CONCELdoConsolidateCells (node *arg_node)
 {
-    funtab *old_tab;
     info *arg_info;
+    trav_t traversaltable;
     DBUG_ENTER ("CONCELdoConsoldateCells");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
                  "CONCELdoConsolidateCells expects a N_module as arg_node");
 
     arg_info = MakeInfo ();
-    /* push info ... */
-    old_tab = act_tab;
-    act_tab = concel_tab;
+
+    TRAVpush (TR_concel);
 
     DBUG_PRINT ("CONCEL", ("trav into module-funs"));
-    arg_node = Trav (MODULE_FUNS (arg_node), arg_info);
+    arg_node = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     DBUG_PRINT ("CONCEL", ("trav from module-funs"));
 
-    /* pop info ... */
-    act_tab = old_tab;
+    traversaltable = TRAVpop ();
+    DBUG_ASSERT ((traversaltable == TR_concel), "Popped incorrect traversal table");
 
     arg_info = FreeInfo (arg_info);
 
@@ -142,7 +144,7 @@ CONCELfundef (node *arg_node, info *arg_info)
                 /* traverse into the function to get the correct N_assign in
                  *  INFO_CONCEL_XTASSIGN */
                 DBUG_PRINT ("CONCEL", ("trav into fundef-body"));
-                myblock = Trav (myblock, arg_info);
+                myblock = TRAVdo (myblock, arg_info);
                 DBUG_PRINT ("CONCEL", ("trav from fundef-body"));
 
                 /*BLOCK_INSTR(myblock) = ILIBfree(BLOCK_INSTR(myblock));*/
@@ -153,7 +155,7 @@ CONCELfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("CONCEL", ("trav into fundef-next"));
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         DBUG_PRINT ("CONCEL", ("trav from fundef-next"));
     }
 

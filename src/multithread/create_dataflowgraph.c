@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.13  2004/11/23 20:52:11  skt
+ * big compiler brushing during SACDevCampDK 2k4
+ *
  * Revision 1.12  2004/11/23 14:38:13  skt
  * SACDevCampDK 2k4
  *
@@ -66,12 +69,13 @@
 
 #define NEW_INFO
 
-#include "dbug.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
 #include "create_dataflowgraph.h"
 #include "print.h"
+#include "internal_lib.h"
+#include <string.h>
 
 #define CDFG_DEBUG 0
 
@@ -178,24 +182,22 @@ static char *GetName (node *assign);
 node *
 CDFGdoCreateDataflowgraph (node *arg_node)
 {
-    funtab *old_tab;
     info *arg_info;
+    trav_t traversaltable;
     DBUG_ENTER ("CDFGdoCreateDataflowgraph");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
                  "CDFGdoCreateDataflowgraph expects a N_module as arg_node");
 
     arg_info = MakeInfo ();
 
-    /* push info ... */
-    old_tab = act_tab;
-    act_tab = cdfg_tab;
+    TRAVpush (TR_cdfg);
 
     DBUG_PRINT ("CDFG", ("trav into module-funs"));
-    MODULE_FUNS (arg_node) = Trav (MODULE_FUNS (arg_node), arg_info);
+    MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     DBUG_PRINT ("CDFG", ("trav from module-funs"));
 
-    /* pop info ... */
-    act_tab = old_tab;
+    traversaltable = TRAVpop ();
+    DBUG_ASSERT ((traversaltable == TR_cdfg), "Popped incorrect traversal table");
 
     arg_info = FreeInfo (arg_info);
 
@@ -252,7 +254,7 @@ CDFGblock (node *arg_node, info *arg_info)
 
     /* continue traversal */
     DBUG_PRINT ("CDFG", ("trav into instruction(s)"));
-    BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     DBUG_PRINT ("CDFG", ("trav from instruction(s)"));
 
     /* As a fact of beeing very complex, additional output will only take place
@@ -260,9 +262,9 @@ CDFGblock (node *arg_node, info *arg_info)
     if ((global.break_after == PH_multithread)
         && (strcmp ("cdfg", global.break_specifier) == 0)) {
         fprintf (stdout, "A N_block...\n");
-        PRTprintNode (arg_node);
+        PRTdoPrintNode (arg_node);
         fprintf (stdout, "...and its dataflowgraph:\n");
-        PRTprintNode (INFO_CDFG_CURRENTDFG (arg_info));
+        PRTdoPrintNode (INFO_CDFG_CURRENTDFG (arg_info));
     }
 
     /* pop info... */
@@ -317,12 +319,12 @@ CDFGassign (node *arg_node, info *arg_info)
 
     /* continue traversal */
     DBUG_PRINT ("CDFG", ("trav into instruction"));
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     DBUG_PRINT ("CDFG", ("trav from instruction"));
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("CDFG", ("trav into next"));
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
         DBUG_PRINT ("CDFG", ("trav from next"));
     }
 
@@ -392,7 +394,7 @@ CDFGwithid (node *arg_node, info *arg_info)
                           INFO_CDFG_CURRENTDFN (arg_info));
 
     /* handle the with-id vector elements */
-    iterator = NWITHID_IDS (arg_node);
+    iterator = WITHID_IDS (arg_node);
     while (iterator != NULL) {
         INFO_CDFG_OUTERMOSTDFG (arg_info)
           = UpdateDependency (AVIS_SSAASSIGN (IDS_AVIS (iterator)),
@@ -668,12 +670,12 @@ UpdateDataflowgraph (node *graph, node *node_one, node *node_two)
     /* update dependency only if both nodes are not identical and the dependency
      * does not exist yet */
     if ((to_node != from_node)
-        && (NodeListFind (DATAFLOWNODE_DEPENDENT (from_node), to_node) == NULL)) {
+        && (TCnodeListFind (DATAFLOWNODE_DEPENDENT (from_node), to_node) == NULL)) {
         DATAFLOWNODE_DEPENDENT (from_node)
-          = NodeListAppend (DATAFLOWNODE_DEPENDENT (from_node), to_node, NULL);
+          = TCnodeListAppend (DATAFLOWNODE_DEPENDENT (from_node), to_node, NULL);
         DATAFLOWNODE_REFCOUNT (to_node)++;
         DATAFLOWNODE_USEDNODES (to_node)
-          = NodeListAppend (DATAFLOWNODE_USEDNODES (to_node), from_node, NULL);
+          = TCnodeListAppend (DATAFLOWNODE_USEDNODES (to_node), from_node, NULL);
     }
 
     DBUG_VOID_RETURN;
@@ -762,10 +764,10 @@ GetName (node *assign)
         if (LET_IDS (ASSIGN_INSTR (assign)) != NULL) {
             return_value = IDS_NAME (LET_IDS (ASSIGN_INSTR (assign)));
         } else {
-            return_value = StringCopy ("DF__void");
+            return_value = ILIBstringCopy ("DF__void");
         }
     } else if (NODE_TYPE (instr) == N_cond) {
-        return_value = StringCopy ("DF__conditional");
+        return_value = ILIBstringCopy ("DF__conditional");
     } else {
         DBUG_ASSERT (0, "GetName was called with an invalid assignment");
     }

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2004/11/23 20:52:11  skt
+ * big compiler brushing during SACDevCampDK 2k4
+ *
  * Revision 1.13  2004/11/23 14:38:13  skt
  * SACDevCampDK 2k4
  *
@@ -70,20 +73,19 @@
 
 #define NEW_INFO
 
-#include "dbug.h"
-
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
 #include "tag_executionmode.h"
 #include "multithread_lib.h"
+#include "internal_lib.h"
 
 /*
  * INFO structure
  */
 struct INFO {
-    ids *lefthandside;
+    node *lefthandside;
     mtexecmode_t executionmode;
     int withdeep;
     int traversalmode;
@@ -102,6 +104,11 @@ struct INFO {
 #define INFO_TEM_EXECMODE(n) (n->executionmode)
 #define INFO_TEM_WITHDEEP(n) (n->withdeep)
 #define INFO_TEM_TRAVMODE(n) (n->traversalmode)
+
+#define TEM_TRAVMODE_DEFAULT 0
+#define TEM_TRAVMODE_MUSTEX 1
+#define TEM_TRAVMODE_MUSTST 2
+#define TEM_TRAVMODE_COULDMT 3
 
 /*
  * INFO functions
@@ -133,48 +140,43 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-#define TEM_TRAVMODE_DEFAULT 0
-#define TEM_TRAVMODE_MUSTEX 1
-#define TEM_TRAVMODE_MUSTST 2
-#define TEM_TRAVMODE_COULDMT 3
-
 /* some declarations */
-static int IsMTAllowed (node *withloop);
+static bool IsMTAllowed (node *withloop);
 
-static int IsGeneratorBigEnough (ids *test_variables);
+static bool IsGeneratorBigEnough (node *test_variables);
 
-static int IsMTClever (ids *test_variables);
+static bool IsMTClever (node *test_variables);
 
-static int IsSTClever (ids *test_variables);
+static bool IsSTClever (node *test_variables);
 
-static int MustExecuteExclusive (node *assign, info *arg_info);
+static bool MustExecuteExclusive (node *assign, info *arg_info);
 
-static int CouldExecuteMulti (node *assign, info *arg_info);
+static bool CouldExecuteMulti (node *assign, info *arg_info);
 
-static int MustExecuteSingle (node *assign, info *arg_info);
+static bool MustExecuteSingle (node *assign, info *arg_info);
 
-static int AnyUniqueTypeInThere (ids *letids);
+static bool AnyUniqueTypeInThere (node *letids);
 
 /** <!--********************************************************************-->
  *
- * @fn node *TagExecutionmode(node *arg_node, info)
+ * @fn node *TEMdoTagExecutionmode(node *arg_node, info)
  *
  *   @brief  Inits the traversal for this phase
  *
- *   @param arg_node a N_Modul
+ *   @param arg_node a N_Module
  *   @param arg_info
  *   @return
  *
  *****************************************************************************/
 node *
-TagExecutionmode (node *arg_node)
+TEMdoTagExecutionmode (node *arg_node)
 {
-    funtab *old_tab;
     info *arg_info;
+    trav_t traversaltable;
 
     DBUG_ENTER ("TagExecutionmode");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
-                 "TagExecutionmode expects a N_modul as arg_node");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+                 "TagExecutionmode expects a N_module as arg_node");
 
     arg_info = MakeInfo ();
 
@@ -183,16 +185,14 @@ TagExecutionmode (node *arg_node)
     INFO_TEM_EXECMODE (arg_info) = MUTH_ANY;
     INFO_TEM_WITHDEEP (arg_info) = 0;
 
-    /* push info ... */
-    old_tab = act_tab;
-    act_tab = tem_tab;
+    TRAVpush (TR_tem);
 
     DBUG_PRINT ("TEM", ("trav into modul-funs"));
-    MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     DBUG_PRINT ("TEM", ("trav from modul-funs"));
 
-    /* pop info ... */
-    act_tab = old_tab;
+    traversaltable = TRAVpop ();
+    DBUG_ASSERT ((traversaltable == TR_tem), "Popped incorrect traversal table");
 
     arg_info = FreeInfo (arg_info);
 
@@ -241,11 +241,11 @@ TEMassign (node *arg_node, info *arg_info)
                single-threaded */
             DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let),
                          "TEMassign expects a N_let here");
-            DBUG_ASSERT ((NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith2),
+            DBUG_ASSERT ((NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_with2),
                          "TEMassign expects a N_Nwith2 here");
             /* set the calcparallel-flag */
 
-            NWITH2_CALCPARALLEL (LET_EXPR (ASSIGN_INSTR (arg_node))) = TRUE;
+            WITH2_CALCPARALLEL (LET_EXPR (ASSIGN_INSTR (arg_node))) = TRUE;
 
             /* tag the allocations of the withloop */
             MUTHLIBtagAllocs (LET_EXPR (ASSIGN_INSTR (arg_node)), MUTH_MULTI);
@@ -254,13 +254,13 @@ TEMassign (node *arg_node, info *arg_info)
         }
     } else {
         DBUG_PRINT ("TEM", ("trav into instruction"));
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
         DBUG_PRINT ("TEM", ("trav from instruction"));
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("TEM", ("trav into next"));
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
         DBUG_PRINT ("TEM", ("trav from next"));
     }
 
@@ -286,7 +286,7 @@ node *
 TEMwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TEMwith2");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Nwith2),
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_with2),
                  "TEMwith2 expects a N_with2 as argument");
 
     if (INFO_TEM_TRAVMODE (arg_info) == TEM_TRAVMODE_COULDMT) {
@@ -309,14 +309,16 @@ TEMwith2 (node *arg_node, info *arg_info)
             /* this with-loop is not big enough to be parallellized - but perhaps
                someone a level deeper...*/
             else {
-                /* the generator of this with-loop must be big enough to be partitioned
-                   into max_threads */
+                /*
+                 * the generator of this with-loop must be big enough to be
+                 * partitioned into max_threads
+                 */
                 if (IsGeneratorBigEnough (INFO_TEM_LETLHS (arg_info))) {
                     /* the deepness rises... */
                     INFO_TEM_WITHDEEP (arg_info)++;
 
                     DBUG_PRINT ("TEM", ("trav into with-loop code"));
-                    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+                    WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
                     DBUG_PRINT ("TEM", ("trav from with-loop code"));
 
                     /* the deepness falls... */
@@ -330,7 +332,7 @@ TEMwith2 (node *arg_node, info *arg_info)
            => continue traversal only in MUSTEX-mode (it's impossible to
            mark an assignment as MUTH_ST inside a with-loop */
         DBUG_PRINT ("TEM", ("trav into with-loop code"));
-        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
         DBUG_PRINT ("TEM", ("trav from with-loop code"));
     }
 
@@ -361,7 +363,7 @@ TEMprf (node *arg_node, info *arg_info)
         INFO_TEM_EXECMODE (arg_info) = MUTH_SINGLE;
     } else {
         DBUG_PRINT ("TEM", ("trav into args"));
-        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         DBUG_PRINT ("TEM", ("trav from args"));
     }
 
@@ -400,7 +402,7 @@ TEMlet (node *arg_node, info *arg_info)
         INFO_TEM_EXECMODE (arg_info) = MUTH_SINGLE;
     } else {
         DBUG_PRINT ("TEM", ("trav into expr"));
-        EXPRS_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        EXPRS_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
         DBUG_PRINT ("TEM", ("trav from expr"));
     }
 
@@ -437,7 +439,7 @@ TEMap (node *arg_node, info *arg_info)
     } else { /* do nothing special -> continue traversal */
         if (AP_ARGS (arg_node) != NULL) {
             DBUG_PRINT ("TEM", ("trav into arguments"));
-            ASSIGN_INSTR (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+            ASSIGN_INSTR (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
             DBUG_PRINT ("TEM", ("trav from arguments"));
         }
     }
@@ -470,7 +472,7 @@ TEMarray (node *arg_node, info *arg_info)
     /* otherwise continue traversal */
     else if (ARRAY_AELEMS (arg_node) != NULL) {
         DBUG_PRINT ("TEM", ("trav into array-elements"));
-        ASSIGN_INSTR (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
         DBUG_PRINT ("TEM", ("trav from array-elements"));
     }
 
@@ -501,12 +503,12 @@ TEMcond (node *arg_node, info *arg_info)
     }
     if (COND_THEN (arg_node) != NULL) {
         DBUG_PRINT ("TEM", ("trav into then-branch"));
-        ASSIGN_NEXT (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
         DBUG_PRINT ("TEM", ("trav from then-branch"));
     }
     if (COND_ELSE (arg_node) != NULL) {
         DBUG_PRINT ("TEM", ("trav into else-branch"));
-        ASSIGN_NEXT (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
         DBUG_PRINT ("TEM", ("trav from else-branch"));
     }
 
@@ -515,7 +517,7 @@ TEMcond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn int *IsMTAllowed(node *withloop)
+ * @fn static bool *IsMTAllowed(node *withloop)
  *
  *   @brief This function decides whether a with-loop is actually allowed to be
  *   executed concurrently or not.
@@ -527,17 +529,17 @@ TEMcond (node *arg_node, info *arg_info)
  *   @return int interpretated as boolean - whether MT is allowed or not
  *
  *****************************************************************************/
-int
+static bool
 IsMTAllowed (node *withloop)
 {
-    int is_allowed;
+    bool is_allowed;
     DBUG_ENTER ("IsMTAllowed");
-    DBUG_ASSERT ((NODE_TYPE (withloop) == N_Nwith2),
+    DBUG_ASSERT ((NODE_TYPE (withloop) == N_with2),
                  "IsMTAllowed expects a N_with2 as argument");
 
     /* max_sync_fold is a global variable - for further info see globals.c
        if 0 -> no parallelization of fold-with-loops */
-    if (NWITHOP_IS_FOLD (NWITH2_WITHOP (withloop)) && (max_sync_fold == 0)) {
+    if ((NODE_TYPE (WITH2_WITHOP (withloop)) == N_fold) && (global.max_sync_fold == 0)) {
         is_allowed = FALSE;
     } else {
         is_allowed = TRUE;
@@ -548,7 +550,7 @@ IsMTAllowed (node *withloop)
 
 /** <!--********************************************************************-->
  *
- * @fn int *IsGeneratorBigEnough(ids *test_variables)
+ * @fn static bool *IsGeneratorBigEnough(node *test_variables)
  *
  *   @brief This function decides whether the generator of a with-loop big
  *          enough to be partitioned into max_threads segments
@@ -559,11 +561,11 @@ IsMTAllowed (node *withloop)
  *           enough or not
  *
  *****************************************************************************/
-int
-IsGeneratorBigEnough (ids *test_variables)
+static bool
+IsGeneratorBigEnough (node *test_variables)
 {
-    ids *iterator;
-    int is_bigenough;
+    node *iterator;
+    bool is_bigenough;
     int var_dim, var_size; /* dimension and size of an actual variable */
     int i;
     node *vardec;
@@ -574,6 +576,7 @@ IsGeneratorBigEnough (ids *test_variables)
     iterator = test_variables;
 
     /* TODO perhaps some adaptions for multigenerator-with-loop needed */
+    /* TODO handling of AUD and AKD arrays */
     while (iterator != NULL) {
 
         vardec = IDS_VARDEC (iterator);
@@ -583,7 +586,7 @@ IsGeneratorBigEnough (ids *test_variables)
             var_size *= VARDEC_SHAPE (vardec, i);
         }
 
-        if (var_size >= max_threads) {
+        if (var_size >= global.max_threads) {
             is_bigenough = TRUE;
             iterator = IDS_NEXT (iterator);
         }
@@ -601,7 +604,7 @@ IsGeneratorBigEnough (ids *test_variables)
 
 /** <!--********************************************************************-->
  *
- * @fn int *IsMTClever(ids *test_variables)
+ * @fn static bool *IsMTClever(node *test_variables)
  *
  *   @brief Tests the test_variables whether any of them is big enough to cal-
  *          culate it parallel
@@ -611,16 +614,14 @@ IsGeneratorBigEnough (ids *test_variables)
  *               parallelized or not
  *
  *****************************************************************************/
-int
-IsMTClever (ids *test_variables)
+static bool
+IsMTClever (node *test_variables)
 {
-    int is_clever;
-    int var_dim;     /* dimension and size of an actual variable */
+    bool is_clever;
+    int i, var_dim;  /* dimension and size of an actual variable */
     double var_size; /* size of an actual variable */
     double carry;
-    ids *iterator;
-    int i;
-    node *vardec;
+    node *iterator, *vardec;
     DBUG_ENTER ("IsMTClever");
 
     /* some initialization */
@@ -640,7 +641,7 @@ IsMTClever (ids *test_variables)
            former variables */
         carry += var_size;
 
-        if (carry >= (double)(min_parallel_size_per_thread * max_threads)) {
+        if (carry >= (double)(global.min_parallel_size_per_thread * global.max_threads)) {
             is_clever = TRUE;
             DBUG_PRINT ("TEM", ("Found a variable, big enough for parallel execution"));
         }
@@ -652,7 +653,7 @@ IsMTClever (ids *test_variables)
 
 /** <!--********************************************************************-->
  *
- * @fn int *IsSTClever(ids *test_variables)
+ * @fn bool static *IsSTClever(node *test_variables)
  *
  *   @brief Tests the test_variables whether any of them is an array with more
  *          elements than max_replication_size
@@ -661,16 +662,14 @@ IsMTClever (ids *test_variables)
  *   @return int interpretated as boolean
  *
  *****************************************************************************/
-int
-IsSTClever (ids *test_variables)
+static bool
+IsSTClever (node *test_variables)
 {
     /* implementation is like IsMTClever, except of the absence carry-variable */
-    int is_clever;
-    int var_dim;     /* dimension and size of an actual variable */
+    bool is_clever;
+    int i, var_dim;  /* dimension and size of an actual variable */
     double var_size; /* size of an actual variable */
-    ids *iterator;
-    int i;
-    node *vardec;
+    node *iterator, *vardec;
     DBUG_ENTER ("IsSTClever");
 
     /* some initialization */
@@ -685,7 +684,7 @@ IsSTClever (ids *test_variables)
         for (i = 0; i < var_dim; i++) {
             var_size *= (double)VARDEC_SHAPE (vardec, i);
         }
-        if (var_size >= (double)(max_replication_size)) {
+        if (var_size >= (double)(global.max_replication_size)) {
             is_clever = TRUE;
             DBUG_PRINT ("TEM", ("Found variable, #elements > max_replication_size"));
         }
@@ -697,7 +696,7 @@ IsSTClever (ids *test_variables)
 
 /** <!--********************************************************************-->
  *
- * @fn int MustExecuteExclusive(node * assign, info *arg_info)
+ * @fn static bool MustExecuteExclusive(node * assign, info *arg_info)
  *
  *   @brief decide, whether a assignment has to be executed exclusive or not
  *
@@ -709,10 +708,10 @@ IsSTClever (ids *test_variables)
  *           executed in exclusive mode or not
  *
  *****************************************************************************/
-int
+static bool
 MustExecuteExclusive (node *assign, info *arg_info)
 {
-    int exclusive;
+    bool exclusive;
     DBUG_ENTER (MustExecuteExclusive);
     DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
                  "MustExecuteExclusive expects a N_assign");
@@ -723,13 +722,13 @@ MustExecuteExclusive (node *assign, info *arg_info)
 
     /* traverse into the instruction to analyse it */
     DBUG_PRINT ("TEM", ("trav into instruction"));
-    ASSIGN_INSTR (assign) = Trav (ASSIGN_INSTR (assign), arg_info);
+    ASSIGN_INSTR (assign) = TRAVdo (ASSIGN_INSTR (assign), arg_info);
     DBUG_PRINT ("TEM", ("trav from instruction"));
 
     if (INFO_TEM_EXECMODE (arg_info) == MUTH_EXCLUSIVE) {
-        exclusive = 1;
+        exclusive = TRUE;
     } else {
-        exclusive = 0;
+        exclusive = FALSE;
     }
 
     INFO_TEM_TRAVMODE (arg_info) = TEM_TRAVMODE_DEFAULT;
@@ -738,7 +737,7 @@ MustExecuteExclusive (node *assign, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn int CouldExecuteMulti(node * assign, info* arg_info)
+ * @fn static bool CouldExecuteMulti(node * assign, info* arg_info)
  *
  *   @brief decide, whether a assignment could be executed multi-threaded
  *          or not
@@ -753,10 +752,10 @@ MustExecuteExclusive (node *assign, info *arg_info)
  *           executed in multi-threaded mode or not
  *
  *****************************************************************************/
-int
+static bool
 CouldExecuteMulti (node *assign, info *arg_info)
 {
-    int multi;
+    bool multi;
     DBUG_ENTER (CouldExecuteMulti);
     DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
                  "CouldExecuteMulti expects a N_assign");
@@ -767,13 +766,13 @@ CouldExecuteMulti (node *assign, info *arg_info)
 
     /* traverse into the instruction to analyse it */
     DBUG_PRINT ("TEM", ("trav into instruction"));
-    ASSIGN_INSTR (assign) = Trav (ASSIGN_INSTR (assign), arg_info);
+    ASSIGN_INSTR (assign) = TRAVdo (ASSIGN_INSTR (assign), arg_info);
     DBUG_PRINT ("TEM", ("trav from instruction"));
 
     if (INFO_TEM_EXECMODE (arg_info) == MUTH_MULTI) {
-        multi = 1;
+        multi = TRUE;
     } else {
-        multi = 0;
+        multi = FALSE;
     }
 
     INFO_TEM_TRAVMODE (arg_info) = TEM_TRAVMODE_DEFAULT;
@@ -782,7 +781,7 @@ CouldExecuteMulti (node *assign, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn int MustExecuteSingle(node * assign, info* arg_info)
+ * @fn static bool MustExecuteSingle(node * assign, info* arg_info)
  *
  *   @brief decide, whether a assignment has to be executed single-threaded
  *          or not
@@ -800,10 +799,10 @@ CouldExecuteMulti (node *assign, info *arg_info)
  *           executed in single-threaded mode or not
  *
  *****************************************************************************/
-int
+static bool
 MustExecuteSingle (node *assign, info *arg_info)
 {
-    int single;
+    bool single;
     DBUG_ENTER (MustExecuteSingle);
     DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
                  "MustExecuteSingle expects a N_assign");
@@ -814,13 +813,13 @@ MustExecuteSingle (node *assign, info *arg_info)
 
     /* traverse into the instruction to analyse it */
     DBUG_PRINT ("TEM", ("trav into instruction"));
-    ASSIGN_INSTR (assign) = Trav (ASSIGN_INSTR (assign), arg_info);
+    ASSIGN_INSTR (assign) = TRAVdo (ASSIGN_INSTR (assign), arg_info);
     DBUG_PRINT ("TEM", ("trav from instruction"));
 
     if (INFO_TEM_EXECMODE (arg_info) == MUTH_SINGLE) {
-        single = 1;
+        single = TRUE;
     } else {
-        single = 0;
+        single = FALSE;
     }
 
     INFO_TEM_TRAVMODE (arg_info) = TEM_TRAVMODE_DEFAULT;
@@ -829,7 +828,7 @@ MustExecuteSingle (node *assign, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn int AnyUniqueTypeInThere(ids *letids)
+ * @fn static bool AnyUniqueTypeInThere(node *letids)
  *
  *   @brief checks the ids-chain for an unique type
  *
@@ -838,21 +837,21 @@ MustExecuteSingle (node *assign, info *arg_info)
  *               unique type or not
  *
  *****************************************************************************/
-int
-AnyUniqueTypeInThere (ids *letids)
+static bool
+AnyUniqueTypeInThere (node *letids)
 {
-    int unique_found; /*boolean*/
-    ids *iterator;
+    bool unique_found;
+    node *iterator;
     types *type;
     DBUG_ENTER ("AnyUniqueTypeInThere");
 
     /* some initializations */
-    unique_found = 0;
+    unique_found = FALSE;
     iterator = letids;
 
-    while (iterator != NULL && unique_found == 0) {
+    while (iterator != NULL && !unique_found) {
         type = VARDEC_TYPE (IDS_VARDEC (letids));
-        unique_found |= IsUnique (type);
+        unique_found |= TCisUnique (type);
 
         iterator = IDS_NEXT (letids);
     }

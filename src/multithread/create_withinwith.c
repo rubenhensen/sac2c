@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/11/23 20:52:11  skt
+ * big compiler brushing during SACDevCampDK 2k4
+ *
  * Revision 1.5  2004/11/23 14:38:13  skt
  * SACDevCampDK 2k4
  *
@@ -40,12 +43,12 @@
 
 #define NEW_INFO
 
-#include "dbug.h"
 #include "tree_basic.h"
 #include "DupTree.h"
 #include "traverse.h"
 #include "create_withinwith.h"
 #include "multithread_lib.h"
+#include "internal_lib.h"
 
 /*
  * INFO structure
@@ -109,27 +112,26 @@ FreeInfo (info *info)
 node *
 CRWIWdoCreateWithinwith (node *arg_node)
 {
-    funtab *old_tab;
     info *arg_info;
+    trav_t traversaltable;
     DBUG_ENTER ("CRWIWdoCreateWithinwith");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
                  "CRWIWdoCreateWithinwith expects a N_module as arg_node");
 
     arg_info = MakeInfo ();
-    /* push info ... */
-    old_tab = act_tab;
-    act_tab = crwiw_tab;
+
+    TRAVpush (TR_crwiw);
 
     INFO_CRWIW_MODULE (arg_info) = arg_node;
 
     DBUG_PRINT ("CRWIW", ("trav into module-funs"));
-    Trav (MODULE_FUNS (arg_node), arg_info);
+    TRAVdo (MODULE_FUNS (arg_node), arg_info);
     DBUG_PRINT ("CRWIW", ("trav from module-funs"));
 
     arg_node = INFO_CRWIW_MODULE (arg_info);
 
-    /* pop info ... */
-    act_tab = old_tab;
+    traversaltable = TRAVpop ();
+    DBUG_ASSERT ((traversaltable == TR_crwiw), "Popped incorrect traversal table");
 
     arg_info = FreeInfo (arg_info);
 
@@ -142,12 +144,12 @@ CRWIWfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("CRWIWfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         /*FUNDEF_NEXT(arg_node) = */
-        Trav (FUNDEF_NEXT (arg_node), arg_info);
+        TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         /* (the FUNDEF_NEXT could change during the traversal - the pointer
          * is handled correct during CRWIWap)
          */
@@ -193,7 +195,7 @@ CRWIWassign (node *arg_node, info *arg_info)
     INFO_CRWIW_ACTASSIGN (arg_info) = arg_node;
 
     DBUG_PRINT ("CRWIW", ("trav into instruction"));
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     DBUG_PRINT ("CRWIW", ("trav from instruction"));
 
     if (ASSIGN_EXECMODE (arg_node) == MUTH_MULTI) {
@@ -205,7 +207,7 @@ CRWIWassign (node *arg_node, info *arg_info)
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("CRWIW", ("trav into next"));
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
         DBUG_PRINT ("CRWIW", ("trav from next"));
     }
 
@@ -244,13 +246,13 @@ CRWIWap (node *arg_node, info *arg_info)
         else {
             /* LaC-functions are handled seperatly */
             if (!FUNDEF_ISDOFUN (my_fundef) && !FUNDEF_ISCONDFUN (my_fundef)) {
-                tmp = DupNode (my_fundef);
+                tmp = DUPdoDupNode (my_fundef);
                 FUNDEF_NEXT (tmp) = FUNDEF_NEXT (my_fundef);
                 FUNDEF_NEXT (my_fundef) = tmp;
             } else {
                 INFO_CRWIW_MODULE (arg_info)
-                  = CheckAndDupSpecialFundef (INFO_CRWIW_MODULE (arg_info), my_fundef,
-                                              INFO_CRWIW_ACTASSIGN (arg_info));
+                  = DUPcheckAndDupSpecialFundef (INFO_CRWIW_MODULE (arg_info), my_fundef,
+                                                 INFO_CRWIW_ACTASSIGN (arg_info));
                 tmp
                   = AP_FUNDEF (LET_EXPR (ASSIGN_INSTR (INFO_CRWIW_ACTASSIGN (arg_info))));
             }
@@ -267,7 +269,7 @@ CRWIWap (node *arg_node, info *arg_info)
              * somebody within it */
             DBUG_PRINT ("CRWIW", ("Duplicate: trav into function-body"));
             FUNDEF_BODY (AP_FUNDEF (arg_node))
-              = Trav (FUNDEF_BODY (AP_FUNDEF (arg_node)), arg_info);
+              = TRAVdo (FUNDEF_BODY (AP_FUNDEF (arg_node)), arg_info);
             DBUG_PRINT ("CRWIW", ("Duplicate: trav from function-body"));
         }
     }

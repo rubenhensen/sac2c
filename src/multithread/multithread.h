@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2004/11/23 20:52:11  skt
+ * big compiler brushing during SACDevCampDK 2k4
+ *
  * Revision 3.14  2004/11/22 13:47:10  skt
  * code brushing in SACDevCampDK 2004
  *
@@ -65,8 +68,8 @@
  *
  *****************************************************************************/
 
-#ifndef _SAC_MULTITHREAD_H
-#define _SAC_MULTITHREAD_H
+#ifndef _SAC_MULTITHREAD_H_
+#define _SAC_MULTITHREAD_H_
 
 #include "types.h"
 
@@ -78,4 +81,4 @@ extern node *MUTHfundef (node *arg_node, info *arg_info);
 
 extern node *MUTHassign (node *arg_node, info *arg_info);
 
-#endif /* _SAC_MULTITHREAD_H */
+#endif /* _SAC_MULTITHREAD_H_ */

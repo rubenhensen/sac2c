@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2004/11/23 20:52:11  skt
+ * big compiler brushing during SACDevCampDK 2k4
+ *
  * Revision 1.8  2004/11/22 12:49:31  skt
  * code brushing in SACDevCampDK 2005
  *
@@ -36,9 +39,9 @@
  *
  *****************************************************************************/
 
-#ifndef _SAC_ASSIGNMENTS_REARRANGE_H
+#ifndef _SAC_ASSIGNMENTS_REARRANGE_H_
 
-#define _SAC_ASSIGNMENTS_REARRANGE_H
+#define _SAC_ASSIGNMENTS_REARRANGE_H_
 
 #include "types.h"
 
@@ -46,4 +49,4 @@ extern node *ASMRAdoAssignmentsRearrange (node *arg_node);
 
 extern node *ASMRAblock (node *arg_node, info *arg_info);
 
-#endif /* ASSIGNMENTS_REARRANGE_H */
+#endif /* ASSIGNMENTS_REARRANGE_H_ */

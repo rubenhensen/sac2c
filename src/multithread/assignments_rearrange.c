@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.16  2004/11/23 20:52:11  skt
+ * big compiler brushing during SACDevCampDK 2k4
+ *
  * Revision 1.15  2004/11/23 14:38:13  skt
  * SACDevCampDK 2k4
  *
@@ -71,14 +74,13 @@
 
 #define NEW_INFO
 
-#include "dbug.h"
 #include <limits.h> /* for INT_MAX */
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
 #include "assignments_rearrange.h"
-#include "print.h"
 #include "multithread_lib.h"
+#include "internal_lib.h"
 
 /*
  * some local structures
@@ -92,7 +94,8 @@ struct asmra_cluster_s {
 
 struct asmra_list_s {
     node *node;
-    struct_asmra_cluster_s *cluster struct asmra_list_s *next;
+    struct asmra_cluster_s *cluster;
+    struct asmra_list_s *next;
 };
 
 struct INFO {
@@ -202,8 +205,8 @@ static node *PrepareDataflowgraph (node *graph);
 node *
 ASMRAdoAssignmentsRearrange (node *arg_node)
 {
-    funtab *old_tab;
     info *arg_info;
+    trav_t traversaltable;
     DBUG_ENTER ("ASMRAdoAssignmentsRearrange");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
@@ -211,16 +214,14 @@ ASMRAdoAssignmentsRearrange (node *arg_node)
 
     arg_info = MakeInfo ();
 
-    /* push info ... */
-    old_tab = act_tab;
-    act_tab = asmra_tab;
+    TRAVpush (TR_asmra);
 
     DBUG_PRINT ("ASMRA", ("trav into module-funs"));
-    MODULE_FUNS (arg_node) = Trav (MODULE_FUNS (arg_node), arg_info);
+    MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     DBUG_PRINT ("ASMRA", ("trav from module-funs"));
 
-    /* pop info ... */
-    act_tab = old_tab;
+    traversaltable = TRAVpop ();
+    DBUG_ASSERT ((traversaltable == TR_asmra), "Popped incorrect traversal table");
 
     arg_info = FreeInfo (arg_info);
 
@@ -254,7 +255,7 @@ ASMRAblock (node *arg_node, info *arg_info)
 
     /* continue traversal */
     DBUG_PRINT ("ASMRA", ("trav into instruction(s)"));
-    BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     DBUG_PRINT ("ASMRA", ("trav from instruction(s)"));
 
     DBUG_RETURN (arg_node);
@@ -562,8 +563,8 @@ CalculateDistances (struct asmra_cluster_s *cluster, struct asmra_list_s *list)
             /* as long as you do not find a dependend node in the actual cluster,
              * test the next one and increment the distance */
             while (list_iterator != NULL) {
-                found_dep
-                  = FoundDependent (dependent_nodes, ASMRA_LIST_NODEELEM (list_iterator));
+                found_dep = FoundDependent (dependent_nodes,
+                                            ASMRA_LIST_CLUSTERELEM (list_iterator));
                 if (found_dep == FALSE) {
                     ASMRA_CLUSTER_DISTANCE (act_member)++;
                     list_iterator = ASMRA_LIST_NEXT (list_iterator);
@@ -728,7 +729,7 @@ GetMinDistanceToFather (node *dfn, struct asmra_list_s *list)
         list_dfn = ASMRA_LIST_NODEELEM (list);
 
         /* search in the dependent nodes of the actual list_dfn for dfn */
-        if (NodeListFind (DATAFLOWNODE_DEPENDENT (list_dfn), dfn) != NULL) {
+        if (TCnodeListFind (DATAFLOWNODE_DEPENDENT (list_dfn), dfn) != NULL) {
             /* if you found some, list_dfn must be a father of dfn, so you've got
              * to reset the distance counter */
             distance = 0;
@@ -1006,7 +1007,6 @@ static struct asmra_list_s *
 ListAppend (struct asmra_list_s *list, node *node, struct asmra_cluster_s *cluster)
 {
     struct asmra_list_s *iter;
-    struct asmra_list_s *result;
     DBUG_ENTER ("ListAppend");
 
     iter = list;

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/11/23 20:52:11  skt
+ * big compiler brushing during SACDevCampDK 2k4
+ *
  * Revision 1.2  2004/11/22 17:59:48  skt
  * code brushing in SACDevCampDK 2004
  *
@@ -17,8 +20,8 @@
  *
  *****************************************************************************/
 
-#ifndef _SAC_REPLICATE_FUNCTIONS_H
-#define _SAC_REPLICATE_FUNCTIONS_H
+#ifndef _SAC_REPLICATE_FUNCTIONS_H_
+#define _SAC_REPLICATE_FUNCTIONS_H_
 
 #include "types.h"
 
@@ -35,4 +38,4 @@ extern node *REPFUNex (node *arg_node, info *arg_info);
 extern node *REPFUNst (node *arg_node, info *arg_info);
 
 extern node *REPFUNmt (node *arg_node, info *arg_info);
-#endif /* _SAC_REPLICATE_FUNCTIONS_H */
+#endif /* _SAC_REPLICATE_FUNCTIONS_H_ */

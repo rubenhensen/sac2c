@@ -1,68 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/11/23 20:52:11  skt
+ * big compiler brushing during SACDevCampDK 2k4
+ *
  * Revision 3.13  2004/11/23 14:38:13  skt
  * SACDevCampDK 2k4
  *
- * Revision 3.12  2004/11/21 14:22:39  skt
- * uncomment some old stuff to make it run this newast
- *
- * Revision 3.11  2004/09/28 13:22:48  ktr
- * Removed generatemasks.
- *
- * Revision 3.10  2004/08/26 17:01:36  skt
- * moved MUTHDecodeExecmode from multithread to multithread_lib
- *
- * Revision 3.9  2004/08/18 13:24:31  skt
- * switch to mtexecmode_t done
- *
- * Revision 3.8  2004/08/05 17:42:19  skt
- * TagAllocs added
- *
- * Revision 3.7  2004/08/05 13:50:18  skt
- * welcome to the new INFO structure
- *
- * Revision 3.6  2004/07/28 17:47:40  skt
- * added N_ex into assertion
- *
- * Revision 3.5  2004/07/26 16:53:07  skt
- * added support for exclusive cells
- *
- * Revision 3.4  2004/06/08 14:40:22  skt
- * MUTHGetLastExpression added
- *
- * Revision 3.3  2001/05/17 11:46:31  dkr
- * FREE eliminated
- *
- * Revision 3.2  2001/03/21 18:05:11  dkr
- * INFO_DUP_... no longer used here
- *
- * Revision 3.1  2000/11/20 18:03:12  sacbase
- * new release made
- *
- * Revision 1.8  2000/07/13 08:24:24  jhs
- * Moved DupMask_ InsertBlock, InsertMT and InsertST from blocks_init.[ch]
- * Renamed InsertXX to MUTHInsertXX.
- *
- * Revision 1.7  2000/06/23 15:13:47  dkr
- * signature of DupTree changed
- *
- * Revision 1.6  2000/04/14 17:43:26  jhs
- * Comments ...
- *
- * Revision 1.5  2000/04/10 15:45:08  jhs
- * Added Reduce
- *
- * Revision 1.4  2000/03/09 18:34:40  jhs
- * Additional features.
- *
- * Revision 1.3  2000/03/02 12:59:35  jhs
- * Added MUTHExchangeApplication,
- * added MUTHExpandFundefName,
- * added DBUG_PRINTS and DBUG_ASSERTS.
- *
- * Revision 1.2  2000/02/22 15:48:50  jhs
- * Adapted NODE_TEXT.
+ * [...]
  *
  * Revision 1.1  2000/02/21 17:48:22  jhs
  * Initial revision
@@ -80,15 +25,10 @@
  *
  *****************************************************************************/
 
-#include "dbug.h"
-
 #include <string.h>
 
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "free.h"
-#include "DupTree.h"
-#include "DataFlowMask.h"
 #include "multithread_lib.h"
 #include "internal_lib.h"
 
@@ -196,8 +136,7 @@ MUTHLIBtagAllocs (node *withloop, mtexecmode_t executionmode)
     /* work on the withop */
     wlops = WITH2_WITHOP (withloop);
     while (wlops != NULL) {
-        if ((WITHOP_TYPE (wlops) == WO_genarray)
-            || (WITHOP_TYPE (wlops) == WO_modarray)) {
+        if ((NODE_TYPE (wlops) == N_genarray) || (NODE_TYPE (wlops) == N_modarray)) {
             assign = AVIS_SSAASSIGN (ID_AVIS (WITHOP_MEM (wlops)));
 
             DBUG_ASSERT ((ASSIGN_EXECMODE (assign) != MUTH_MULTI),

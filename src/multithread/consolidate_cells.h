@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/11/23 20:52:11  skt
+ * big compiler brushing during SACDevCampDK 2k4
+ *
  * Revision 1.2  2004/11/22 14:37:39  skt
  * code brushing in SACDevCampDK 2004
  *
@@ -17,8 +20,8 @@
  *
  *****************************************************************************/
 
-#ifndef _SAC_CONSOLIDATE_CELLS_H
-#define _SAC_CONSOLIDATE_CELLS_H
+#ifndef _SAC_CONSOLIDATE_CELLS_H_
+#define _SAC_CONSOLIDATE_CELLS_H_
 
 #include "types.h"
 
@@ -32,4 +35,4 @@ extern node *CONCELst (node *arg_node, info *arg_info);
 
 extern node *CONCELmt (node *arg_node, info *arg_info);
 
-#endif /* _SAC_CONSOLIDATE_CELLS_H */
+#endif /* _SAC_CONSOLIDATE_CELLS_H_ */

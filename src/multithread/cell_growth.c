@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/11/23 20:52:11  skt
+ * big compiler brushing during SACDevCampDK 2k4
+ *
  * Revision 1.4  2004/11/23 14:38:13  skt
  * SACDevCampDK 2k4
  *
@@ -35,11 +38,10 @@
 
 #define NEW_INFO
 
-#include "dbug.h"
 #include "tree_basic.h"
-#include "tree_compound.h"
 #include "traverse.h"
 #include "cell_growth.h"
+#include "internal_lib.h"
 
 /*
  * INFO structure
@@ -98,23 +100,22 @@ FreeInfo (info *info)
 node *
 CEGROdoCellGrowth (node *arg_node)
 {
-    funtab *old_tab;
     info *arg_info;
+    trav_t traversaltable;
     DBUG_ENTER ("CEGROdoCellGrowth");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
                  "CEGROdoCellGrowth expects a N_module as arg_node");
 
     arg_info = MakeInfo ();
-    /* push info ... */
-    old_tab = act_tab;
-    act_tab = cegro_tab;
+
+    TRAVpush (TR_cegro);
 
     DBUG_PRINT ("CEGRO", ("trav into module-funs"));
-    MODULE_FUNS (arg_node) = Trav (MODULE_FUNS (arg_node), arg_info);
+    MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     DBUG_PRINT ("CEGRO", ("trav from module-funs"));
 
-    /* pop info ... */
-    act_tab = old_tab;
+    traversaltable = TRAVpop ();
+    DBUG_ASSERT ((traversaltable == TR_cegro), "Popped incorrect traversal table");
 
     arg_info = FreeInfo (arg_info);
 
@@ -171,7 +172,7 @@ CEGROblock (node *arg_node, info *arg_info)
     /* continue traversal */
     if (BLOCK_INSTR (arg_node) != NULL) {
         DBUG_PRINT ("CEGRO", ("trav into instruction(s)"));
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
         DBUG_PRINT ("CEGRO", ("trav from instruction(s)"));
 
         /* add the first assignments to the belonging cell, if their
@@ -258,12 +259,12 @@ CEGROassign (node *arg_node, info *arg_info)
     /* traverse into the instruction - it could be a conditional */
     if (ASSIGN_INSTR (arg_node) != NULL) {
         DBUG_PRINT ("CEGRO", ("trav into instruction"));
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
         DBUG_PRINT ("CEGRO", ("trav from instruction"));
     }
     if (ASSIGN_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("CEGRO", ("trav into next"));
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
         DBUG_PRINT ("CEGRO", ("trav from next"));
     }
     /* bottom-up traversal */

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2004/11/23 20:52:11  skt
+ * big compiler brushing during SACDevCampDK 2k4
+ *
  * Revision 1.13  2004/11/23 14:38:13  skt
  * SACDevCampDK 2k4
  *
@@ -65,14 +68,11 @@
 
 #define NEW_INFO
 
-#include "dbug.h"
-
 #include "tree_basic.h"
-#include "tree_compound.h"
 #include "traverse.h"
-#include "print.h"
 #include "propagate_executionmode.h"
 #include "multithread_lib.h"
+#include "internal_lib.h"
 
 /*
  * INFO structure
@@ -163,8 +163,8 @@ static void UpdateWithExecmode (node *withloop_assign, mtexecmode_t execmode);
 node *
 PEMdoPropagateExecutionmode (node *arg_node)
 {
-    funtab *old_tab;
     info *arg_info;
+    trav_t traversaltable;
 #if PEM_DEBUG
     int counter;
     counter = 1;
@@ -175,9 +175,7 @@ PEMdoPropagateExecutionmode (node *arg_node)
 
     arg_info = MakeInfo ();
 
-    /* push info ... */
-    old_tab = act_tab;
-    act_tab = pem_tab;
+    TRAVpush (TR_pem);
 
     do {
 #if PEM_DEBUG
@@ -188,7 +186,7 @@ PEMdoPropagateExecutionmode (node *arg_node)
         INFO_PEM_ANYCHANGE (arg_info) = FALSE;
 
         DBUG_PRINT ("PEM", ("trav into module-funs"));
-        MODULE_FUNS (arg_node) = Trav (MODULE_FUNS (arg_node), arg_info);
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from module-funs"));
 
         /* even more initialisation */
@@ -199,8 +197,9 @@ PEMdoPropagateExecutionmode (node *arg_node)
 #endif
     } while (INFO_PEM_ANYCHANGE (arg_info));
 
-    /* pop info ... */
-    act_tab = old_tab;
+    traversaltable = TRAVpop ();
+    DBUG_ASSERT ((traversaltable == TR_pem), "Popped incorrect traversal table");
+
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
@@ -233,7 +232,7 @@ PEMfundef (node *arg_node, info *arg_info)
 #endif
     if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into function-body"));
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from function-body"));
     }
 
@@ -251,7 +250,7 @@ PEMfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into function-next"));
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from function-next"));
     }
 
@@ -285,7 +284,7 @@ PEMassign (node *arg_node, info *arg_info)
     my_old_execmode = ASSIGN_EXECMODE (arg_node);
 
     DBUG_PRINT ("PEM", ("trav into instruction"));
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     DBUG_PRINT ("PEM", ("trav from instruction"));
 
     /* if the executionmode of the assignment had changed or we are on our first
@@ -302,7 +301,7 @@ PEMassign (node *arg_node, info *arg_info)
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into next"));
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from next"));
     } else {
         if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_return) {
@@ -368,12 +367,12 @@ PEMcond (node *arg_node, info *arg_info)
 
     if (COND_THEN (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into then-branch"));
-        COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from then-branch"));
     }
     if (COND_ELSE (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into else-branch"));
-        COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from else-branch"));
     }
 
@@ -408,17 +407,17 @@ PEMwith2 (node *arg_node, info *arg_info)
 
     if (WITH2_SEGS (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into segments"));
-        WITH2_SEGS (arg_node) = Trav (WITH2_SEGS (arg_node), arg_info);
+        WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from segments"));
     }
     if (WITH2_CODE (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into with-loop-code"));
-        WITH2_CODE (arg_node) = Trav (WITH2_CODE (arg_node), arg_info);
+        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from with-loop-code"));
     }
     if (WITH2_WITHOP (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into withops"));
-        WITH2_WITHOP (arg_node) = Trav (WITH2_WITHOP (arg_node), arg_info);
+        WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from withops"));
     }
 

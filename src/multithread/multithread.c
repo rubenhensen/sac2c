@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2004/11/23 20:52:11  skt
+ * big compiler brushing during SACDevCampDK 2k4
+ *
  * Revision 3.21  2004/11/23 14:38:13  skt
  * SACDevCampDK 2k4
  *
@@ -146,13 +149,10 @@
 
 #define NEW_INFO
 
-#include "dbug.h"
-
 #include "tree_basic.h"
 #include "traverse.h"
-#include "globals.h"
-#include "free.h"
-#include "Error.h"
+#include <string.h>
+#include "internal_lib.h"
 
 #include "multithread.h"
 #include "tag_executionmode.h"
@@ -170,14 +170,14 @@
  * INFO structure
  */
 struct INFO {
-    node *modul;
+    node *module;
 };
 
 /*
  * INFO macros
- *    node*    MUTH_MODUL                  (just a placeholder)
+ *    node*    MUTH_MODULE                  (just a placeholder)
  */
-#define INFO_MUTH_MODUL(n) (n->modul)
+#define INFO_MUTH_MODULE(n) (n->module)
 
 /*
  * INFO functions
@@ -191,7 +191,7 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_MUTH_MODUL (result) = NULL;
+    INFO_MUTH_MODULE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -222,7 +222,7 @@ FreeInfo (info *info)
 node *
 MUTHdoBuildMultiThread (node *syntax_tree)
 {
-    funtab *old_tab;
+    trav_t traversaltable;
 
     info *arg_info;
 
@@ -230,12 +230,12 @@ MUTHdoBuildMultiThread (node *syntax_tree)
 
     arg_info = MakeInfo ();
 
-    old_tab = act_tab;
-    act_tab = muth_tab;
+    TRAVpush (TR_muth);
 
-    syntax_tree = Trav (syntax_tree, arg_info);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
 
-    act_tab = old_tab;
+    traversaltable = TRAVpop ();
+    DBUG_ASSERT ((traversaltable == TR_muth), "Popped incorrect traversal table");
 
     arg_info = FreeInfo (arg_info);
 
@@ -267,13 +267,13 @@ MUTHfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_PRINT ("MUTH", ("trav into function-body"));
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         DBUG_PRINT ("MUTH", ("trav from function-body"));
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("MUTH", ("trav into function-next"));
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         DBUG_PRINT ("MUTH", ("trav from function-next"));
     }
 
@@ -301,12 +301,12 @@ MUTHassign (node *arg_node, info *arg_info)
     ASSIGN_EXECMODE (arg_node) = MUTH_ANY;
     if (ASSIGN_INSTR (arg_node) != NULL) {
         DBUG_PRINT ("MUTH", ("trav into assignment-instruction"));
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
         DBUG_PRINT ("MUTH", ("trav from assignment-instruction"));
     }
     if (ASSIGN_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("MUTH", ("trav into assignment-next"));
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
         DBUG_PRINT ("MUTH", ("trav from assignment-next"));
     }
 
@@ -328,8 +328,8 @@ node *
 MUTHmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MUTHmodule");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
-                 "MUTHmodule expects a N_modul as 1st argument");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+                 "MUTHmodule expects a N_module as 1st argument");
 
     /*
      *  --- initializing (init) ---
@@ -337,22 +337,22 @@ MUTHmodule (node *arg_node, info *arg_info)
     DBUG_PRINT ("MUTH", ("begin initializing"));
     if (MODULE_IMPORTS (arg_node) != NULL) {
         DBUG_PRINT ("MUTH", ("trav into module-imports"));
-        MODULE_IMPORTS (arg_node) = Trav (MODULE_IMPORTS (arg_node), arg_info);
+        MODULE_IMPORTS (arg_node) = TRAVdo (MODULE_IMPORTS (arg_node), arg_info);
         DBUG_PRINT ("MUTH", ("trav from module-imports"));
     }
     if (MODULE_OBJS (arg_node) != NULL) {
         DBUG_PRINT ("MUTH", ("trav into module-objs"));
-        MODULE_OBJS (arg_node) = Trav (MODULE_OBJS (arg_node), arg_info);
+        MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
         DBUG_PRINT ("MUTH", ("trav from module-objs"));
     }
     if (MODULE_TYPES (arg_node) != NULL) {
         DBUG_PRINT ("MUTH", ("trav into module-types"));
-        MODULE_TYPES (arg_node) = Trav (MODULE_TYPES (arg_node), arg_info);
+        MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
         DBUG_PRINT ("MUTH", ("trav from module-types"));
     }
     if (MODULE_FUNS (arg_node) != NULL) {
         DBUG_PRINT ("MUTH", ("trav into module-funs"));
-        MODULE_FUNS (arg_node) = Trav (MODULE_FUNS (arg_node), arg_info);
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
         DBUG_PRINT ("MUTH", ("trav from module-funs"));
     }
     global.executionmodes_available = TRUE;
@@ -467,7 +467,7 @@ MUTHmodule (node *arg_node, info *arg_info)
     arg_node = REPFUNdoReplicateFunctions (arg_node);
 
     /* extra-call of DFR to remove superflous functions */
-    arg_node = DeadFunctionRemoval (arg_node);
+    arg_node = DFRdoDeadFunctionRemoval (arg_node);
 
     DBUG_PRINT ("MUTH", ("end REPFUNdoReplicateFunctions"));
     if ((global.break_after == PH_multithread)

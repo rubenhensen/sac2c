@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.18  2004/11/23 20:52:11  skt
+ * big compiler brushing during SACDevCampDK 2k4
+ *
  * Revision 1.17  2004/11/23 14:38:13  skt
  * SACDevCampDK 2k4
  *
@@ -78,12 +81,11 @@
 
 #define NEW_INFO
 
-#include "dbug.h"
-
 #include "tree_basic.h"
-#include "tree_compound.h"
 #include "traverse.h"
 #include "create_cells.h"
+#include "internal_lib.h"
+#include "multithread_lib.h"
 
 /*
  * INFO structure
@@ -146,23 +148,22 @@ static node *InsertCell (node *act_assign);
 node *
 CRECEdoCreateCells (node *arg_node)
 {
-    funtab *old_tab;
     info *arg_info;
+    trav_t traversaltable;
     DBUG_ENTER ("CRECEdoCreateCells");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
                  "CRECEdoCreateCells expects a N_module as arg_node");
 
     arg_info = MakeInfo ();
-    /* push info ... */
-    old_tab = act_tab;
-    act_tab = crece_tab;
+
+    TRAVpush (TR_crece);
 
     DBUG_PRINT ("CRECE", ("trav into module-funs"));
-    MODULE_FUNS (arg_node) = Trav (MODULE_FUNS (arg_node), arg_info);
+    MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     DBUG_PRINT ("CRECE", ("trav from module-funs"));
 
-    /* pop info ... */
-    act_tab = old_tab;
+    traversaltable = TRAVpop ();
+    DBUG_ASSERT ((traversaltable == TR_crece), "Popped incorrect traversal table");
 
     arg_info = FreeInfo (arg_info);
 
@@ -187,7 +188,7 @@ CRECEblock (node *arg_node, info *arg_info)
     /* continue traversal */
     if (BLOCK_INSTR (arg_node) != NULL) {
         DBUG_PRINT ("CRECE", ("trav into instruction(s)"));
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
         DBUG_PRINT ("CRECE", ("trav from instruction(s)"));
     }
 
@@ -207,7 +208,7 @@ CRECEassign (node *arg_node, info *arg_info)
     /* traverse into the instruction - it could be a conditional */
     if (ASSIGN_INSTR (arg_node) != NULL) {
         DBUG_PRINT ("CRECE", ("trav into instruction"));
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
         DBUG_PRINT ("CRECE", ("trav from instruction"));
     }
 
@@ -229,7 +230,7 @@ CRECEassign (node *arg_node, info *arg_info)
     }
     if (ASSIGN_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("CRECE", ("trav into next"));
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
         DBUG_PRINT ("CRECE", ("trav from next"));
     }
 
@@ -247,13 +248,13 @@ InsertCell (node *act_assign)
 
     switch (ASSIGN_EXECMODE (act_assign)) {
     case MUTH_EXCLUSIVE:
-        new_assign = MakeAssign (MakeEX (MakeBlock (act_assign, NULL)), NULL);
+        new_assign = TBmakeAssign (TBmakeEx (TBmakeBlock (act_assign, NULL)), NULL);
         break;
     case MUTH_SINGLE:
-        new_assign = MakeAssign (MakeST (MakeBlock (act_assign, NULL)), NULL);
+        new_assign = TBmakeAssign (TBmakeSt (TBmakeBlock (act_assign, NULL)), NULL);
         break;
     case MUTH_MULTI:
-        new_assign = MakeAssign (MakeMT (MakeBlock (act_assign, NULL)), NULL);
+        new_assign = TBmakeAssign (TBmakeMt (TBmakeBlock (act_assign, NULL)), NULL);
         break;
     case MUTH_MULTI_SPECIALIZED:
         DBUG_ASSERT ((FALSE), "MUTH_MULTI_SPECIALIZED is impossible here");
