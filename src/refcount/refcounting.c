@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/08/05 11:38:53  ktr
+ * Support for NWITHID_VECNEEDED added.
+ *
  * Revision 1.10  2004/07/31 21:27:06  ktr
  * corrected artificial argument inference
  *
@@ -215,10 +218,6 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
-
-#define AVIS_EMRC_DEFLEVEL(n) (n->int_data)
-#define AVIS_EMRC_COUNTER(n) ((rc_counter *)(n->dfmask[0]))
-#define AVIS_EMRC_COUNTER2(n) ((rc_counter *)(n->dfmask[1]))
 
 /**
  *
@@ -1778,6 +1777,13 @@ EMRCNwith (node *arg_node, info *arg_info)
 
     NWITH_WITHID (arg_node) = Trav (NWITH_WITHID (arg_node), arg_info);
 
+    /*
+     * index vector needs an extra traversal because it is
+     * definitely needed in AUD with-loops
+     */
+    INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
+    NWITH_VEC (arg_node) = TravRightIds (NWITH_VEC (arg_node), arg_info);
+
     if (NWITH_CODE (arg_node) != NULL) {
         NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     }
@@ -1819,6 +1825,16 @@ EMRCNwith2 (node *arg_node, info *arg_info)
         NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
     }
 
+    NWITHID_VECNEEDED (NWITH2_WITHID (arg_node))
+      = GetEnvironment (IDS_AVIS (NWITHID_VEC (NWITH2_WITHID (arg_node))),
+                        GetDefLevel (IDS_AVIS (NWITHID_VEC (NWITH2_WITHID (arg_node)))))
+        > 0;
+
+    if (!NWITHID_VECNEEDED (NWITH2_WITHID (arg_node))) {
+        DBUG_PRINT ("EMRC", ("Index vector %s will not be built!\n",
+                             IDS_NAME (NWITHID_VEC (NWITH2_WITHID (arg_node)))));
+    }
+
     INFO_EMRC_DEPTH (arg_info) -= 1;
 
     INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
@@ -1849,10 +1865,6 @@ EMRCNwithid (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMRCNwithid");
 
     INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
-
-    if (NWITHID_VEC (arg_node) != NULL) {
-        NWITHID_VEC (arg_node) = TravRightIds (NWITHID_VEC (arg_node), arg_info);
-    }
 
     if (NWITHID_IDS (arg_node) != NULL) {
         NWITHID_IDS (arg_node) = TravRightIds (NWITHID_IDS (arg_node), arg_info);
