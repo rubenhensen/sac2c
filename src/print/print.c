@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.56  2000/03/09 18:31:53  jhs
+ * Added print of [LET|RETURN][USE|DEF]MASK.
+ *
  * Revision 2.55  2000/03/02 15:56:00  jhs
- * Added printing of FUNDEF_ATTRIB at N_fundef.:w
+ * Added printing of FUNDEF_ATTRIB at N_fundef.
  *
  * Revision 2.54  2000/03/02 13:08:48  jhs
  * Added some \n.
@@ -647,6 +650,19 @@ PrintLet (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
+    if (LET_USEMASK (arg_node) != NULL) {
+        fprintf (outfile, "/* use:");
+        DFMPrintMask (outfile, " %s", LET_USEMASK (arg_node));
+        fprintf (outfile, " */\n");
+    }
+    if (LET_DEFMASK (arg_node) != NULL) {
+        INDENT
+        fprintf (outfile, "/* def:");
+        DFMPrintMask (outfile, " %s", LET_DEFMASK (arg_node));
+        fprintf (outfile, " */\n");
+    }
+
+    INDENT
     if (LET_IDS (arg_node)) {
         PrintIds (LET_IDS (arg_node), arg_info);
         fprintf (outfile, " = ");
@@ -1308,6 +1324,19 @@ PrintReturn (node *arg_node, node *arg_info)
             INDENT;
         }
 
+        if (RETURN_USEMASK (arg_node) != NULL) {
+            fprintf (outfile, "/* use:");
+            DFMPrintMask (outfile, " %s", RETURN_USEMASK (arg_node));
+            fprintf (outfile, " */\n");
+        }
+        if (RETURN_DEFMASK (arg_node) != NULL) {
+            INDENT
+            fprintf (outfile, "/* def:");
+            DFMPrintMask (outfile, " %s", RETURN_DEFMASK (arg_node));
+            fprintf (outfile, " */\n");
+        }
+
+        INDENT
         fprintf (outfile, "return (");
         Trav (RETURN_EXPRS (arg_node), arg_info);
         fprintf (outfile, ");");
