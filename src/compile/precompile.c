@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.7  2000/03/02 13:07:44  jhs
+ * Commented out usage of FUNDEF_ATTRIB (search it to find the place)
+ * because these flag is cleared and reused bei multithreaded.
+ *
  * Revision 2.6  2000/02/23 20:16:34  cg
  * Node status ST_imported replaced by ST_imported_mod and
  * ST_imported_class in order to allow distinction between enteties
@@ -658,12 +662,16 @@ PRECfundef (node *arg_node, node *arg_info)
     /*
      *  The body of an imported inline function is removed.
      */
-    if (((FUNDEF_STATUS (arg_node) == ST_imported_mod)
-         || (FUNDEF_STATUS (arg_node) == ST_imported_class))
-        && (FUNDEF_ATTRIB (arg_node) != ST_generic) && (FUNDEF_BODY (arg_node) != NULL)) {
-        FUNDEF_BODY (arg_node) = FreeTree (FUNDEF_BODY (arg_node));
-        FUNDEF_RETURN (arg_node) = NULL;
-    }
+    /*  FUNDEF_ATTRIB is reused by multithread ... this here seems to be superfluous (?)
+        if problems occur we need another way to store ST_call_[rep|any|mt|st] (jhs)
+      if (((FUNDEF_STATUS(arg_node) == ST_imported_mod)
+           || (FUNDEF_STATUS(arg_node) == ST_imported_class))&&
+          (FUNDEF_ATTRIB(arg_node) != ST_generic) &&
+          (FUNDEF_BODY(arg_node) != NULL)) {
+        FUNDEF_BODY(arg_node) = FreeTree(FUNDEF_BODY(arg_node));
+        FUNDEF_RETURN(arg_node) = NULL;
+      }
+    */
 
     /*
      *  The inline flag is set to 0
