@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2004/04/30 13:21:03  ktr
+ * Nothing really changed.
+ *
  * Revision 3.47  2004/03/26 14:36:23  khf
  * OPT_WLPG added
  *
@@ -479,7 +482,7 @@ unsigned int optimize = OPT_ALL & (~OPT_MTO) /*& (~OPT_SBE)*/ & (~OPT_MTI) & (~O
 #endif /* PRODUCTION */
 
 /*
- * per default do not use ssa-form based optimizations (yet)
+ * per default do use ssa-form based optimizations
  */
 bool use_ssaform = FALSE;
 bool valid_ssaform = FALSE;

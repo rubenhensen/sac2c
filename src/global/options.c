@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2004/04/30 13:21:03  ktr
+ * Nothing really changed.
+ *
  * Revision 3.60  2004/03/26 14:36:23  khf
  * support for wlpg added
  *
@@ -899,6 +902,10 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("pab", print_after_break = FALSE);
         ARG_CHOICE ("PAB", print_after_break = FALSE);
+        /* ktr
+        ARG_CHOICE( "ssa", use_ssaform = FALSE);
+        ARG_CHOICE( "SSA", use_ssaform = FALSE);
+        */
 
         ARG_CHOICE_END ();
     });
