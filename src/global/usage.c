@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.70  1998/06/19 16:53:51  dkr
+ * added -noUIP
+ *
  * Revision 1.69  1998/06/09 09:46:14  cg
  * added command line options -mt-static, -mt-dynamic, and -maxsyncfold.
  *
@@ -323,6 +326,7 @@ usage ()
             "\t -noIVE\t\tno index vector elimination \n"
             "\t -noAE \t\tno array elimination \n"
             "\t -noRCO\t\tno refcount optimization \n"
+            "\t -noUIP\t\tno update-in-place \n"
             "\n\tLower case letters may be used instead!\n");
 
     printf ("\n\t -maxoptcycles <no>\trepeat optimization phase <no> times\n"
