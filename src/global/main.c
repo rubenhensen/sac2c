@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2004/06/07 14:00:30  skt
+ * Position of SYSABORT for mtmode 3 moved BEHIND the break
+ *
  * Revision 3.40  2004/05/12 13:03:05  ktr
  * If break_after == PH_multithread, now UndoSSA is done first.
  *
@@ -600,6 +603,14 @@ main (int argc, char *argv[])
     }
     PHASE_EPILOG;
 
+    if (((ktr) || (mtmode == MT_mtstblock)) && (use_ssaform)) {
+        syntax_tree = UndoSSA (syntax_tree);
+    }
+
+    if (break_after == PH_multithread)
+        goto BREAK;
+    compiler_phase++;
+
     if (mtmode == MT_mtstblock) {
         SYSABORT (("Mt/st-block version of multithreading de-activated !!"));
         /* following comment concerning for mt/st-block version:
@@ -608,14 +619,6 @@ main (int argc, char *argv[])
          * that this information is vital for precompile.
          */
     }
-
-    if (((ktr) || (mtmode == MT_mtstblock)) && (use_ssaform)) {
-        syntax_tree = UndoSSA (syntax_tree);
-    }
-
-    if (break_after == PH_multithread)
-        goto BREAK;
-    compiler_phase++;
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
