@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/03/16 15:16:28  dkr
+ * fixed a bug in SAC_MT_ADJUST_SCHEDULER__OFFSET,
+ * SAC_MT_ADJUST_SCHEDULER
+ *
  * Revision 3.8  2001/03/15 10:23:04  dkr
  * SAC_MT_ADJUST_SCHEDULER_OFFSET renamed into
  * SAC_MT_ADJUST_SCHEDULER__OFFSET
@@ -662,12 +666,24 @@ typedef union {
     {                                                                                    \
         if ((SAC_WL_MT_SCHEDULE_START (dim) > lower)                                     \
             && (SAC_WL_MT_SCHEDULE_START (dim) < upper)) {                               \
-            int tmp = (SAC_WL_MT_SCHEDULE_START (dim) - lower) % unrolling;              \
+            int tmp = (SAC_WL_MT_SCHEDULE_START (dim) - (lower)) % (unrolling);          \
                                                                                          \
             if (tmp) {                                                                   \
-                tmp = unrolling - tmp;                                                   \
-                SAC_WL_MT_SCHEDULE_START (dim) += tmp;                                   \
+                tmp = (unrolling)-tmp;                                                   \
+            }                                                                            \
+                                                                                         \
+            if (tmp) {                                                                   \
+                if (SAC_WL_MT_SCHEDULE_START (dim) + tmp >= upper) {                     \
+                    tmp = (upper)-SAC_WL_MT_SCHEDULE_START (dim);                        \
+                    SAC_WL_MT_SCHEDULE_START (dim) = upper;                              \
+                } else {                                                                 \
+                    SAC_WL_MT_SCHEDULE_START (dim) += tmp;                               \
+                }                                                                        \
                 SAC_WL_OFFSET (array) += tmp * (offset);                                 \
+                                                                                         \
+                SAC_TR_MT_PRINT (("Scheduler Adjustment: dim %d: %d -> %d", dim,         \
+                                  SAC_WL_MT_SCHEDULE_START (dim),                        \
+                                  SAC_WL_MT_SCHEDULE_STOP (dim)));                       \
             }                                                                            \
         }                                                                                \
     }
@@ -676,11 +692,22 @@ typedef union {
     {                                                                                    \
         if ((SAC_WL_MT_SCHEDULE_START (dim) > lower)                                     \
             && (SAC_WL_MT_SCHEDULE_START (dim) < upper)) {                               \
-            int tmp = (SAC_WL_MT_SCHEDULE_START (dim) - lower) % unrolling;              \
+            int tmp = (SAC_WL_MT_SCHEDULE_START (dim) - (lower)) % (unrolling);          \
                                                                                          \
             if (tmp) {                                                                   \
-                tmp = unrolling - tmp;                                                   \
-                SAC_WL_MT_SCHEDULE_START (dim) += tmp;                                   \
+                tmp = (unrolling)-tmp;                                                   \
+            }                                                                            \
+                                                                                         \
+            if (tmp) {                                                                   \
+                if (SAC_WL_MT_SCHEDULE_START (dim) + tmp >= upper) {                     \
+                    SAC_WL_MT_SCHEDULE_START (dim) = upper;                              \
+                } else {                                                                 \
+                    SAC_WL_MT_SCHEDULE_START (dim) += tmp;                               \
+                }                                                                        \
+                                                                                         \
+                SAC_TR_MT_PRINT (("Scheduler Adjustment: dim %d: %d -> %d", dim,         \
+                                  SAC_WL_MT_SCHEDULE_START (dim),                        \
+                                  SAC_WL_MT_SCHEDULE_STOP (dim)));                       \
             }                                                                            \
         }                                                                                \
     }
