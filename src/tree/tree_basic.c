@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/01/09 16:40:12  dkr
+ * tree_compound.h included
+ *
  * Revision 3.4  2001/01/08 17:13:47  dkr
  * MakeIcm simplified
  *
@@ -120,7 +123,7 @@
 
 #include "types.h"
 #include "tree_basic.h"
-
+#include "tree_compound.h"
 #include "Error.h"
 #include "dbug.h"
 #include "my_debug.h"
