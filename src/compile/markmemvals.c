@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/11/24 20:38:06  jhb
+ * SacDevcamp 04
+ *
  * Revision 1.18  2004/11/08 14:51:30  ktr
  * NWITHOP_MEM is now traversed, too.
  *
@@ -128,6 +131,8 @@
 
 #define NEW_INFO
 
+#include "markmemvals.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -138,14 +143,15 @@
 #include "free.h"
 #include "scheduling.h"
 #include "DataFlowMask.h"
+#include <string.h>
 
 /**
  * INFO structure
  */
 struct INFO {
-    LUT_t lut;
-    ids *lhs;
-    ids *lhs_wl;
+    lut_t *lut;
+    node *lhs;
+    node *lhs_wl;
     node *withop;
     node *fundef;
 };
@@ -166,9 +172,9 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
-    INFO_MMV_LUT (result) = GenerateLUT ();
+    INFO_MMV_LUT (result) = LUTgenerateLut ();
     INFO_MMV_LHS (result) = NULL;
     INFO_MMV_LHS_WL (result) = NULL;
     INFO_MMV_WITHOP (result) = NULL;
@@ -182,8 +188,8 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    INFO_MMV_LUT (info) = RemoveLUT (INFO_MMV_LUT (info));
-    info = Free (info);
+    INFO_MMV_LUT (info) = LUTremoveLut (INFO_MMV_LUT (info));
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -200,8 +206,8 @@ FreeInfo (info *info)
  *  @return modified DFM
  *
  ***************************************************************************/
-static DFMmask_t
-UpdateDFM (DFMmask_t dfm, info *arg_info)
+static dfmask_t *
+UpdateDFM (dfmask_t *dfm, info *arg_info)
 {
     node *vardec;
 
@@ -211,10 +217,10 @@ UpdateDFM (DFMmask_t dfm, info *arg_info)
 
     while (vardec != NULL) {
 
-        if (DFMTestMaskEntry (dfm, NULL, vardec)) {
-            DFMSetMaskEntryClear (dfm, NULL, vardec);
-            DFMSetMaskEntrySet (dfm, NULL,
-                                SearchInLUT_PP (INFO_MMV_LUT (arg_info), vardec));
+        if (DFMtestMaskEntry (dfm, NULL, vardec)) {
+            DFMsetMaskEntryClear (dfm, NULL, vardec);
+            DFMsetMaskEntrySet (dfm, NULL,
+                                LUTsearchInLutPp (INFO_MMV_LUT (arg_info), vardec));
         }
 
         vardec = VARDEC_NEXT (vardec);
@@ -248,15 +254,15 @@ MMVdo (node *arg_node, info *arg_info)
     DBUG_ENTER ("MMVdo");
 
     if (DO_BODY (arg_node) != NULL) {
-        DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
+        DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
     }
 
     if (DO_COND (arg_node) != NULL) {
-        DO_COND (arg_node) = Trav (DO_COND (arg_node), arg_info);
+        DO_COND (arg_node) = TRAVdo (DO_COND (arg_node), arg_info);
     }
 
     if (DO_SKIP (arg_node) != NULL) {
-        DO_SKIP (arg_node) = Trav (DO_SKIP (arg_node), arg_info);
+        DO_SKIP (arg_node) = TRAVdo (DO_SKIP (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -295,13 +301,13 @@ MMVfundef (node *arg_node, info *arg_info)
             arg = FUNDEF_ARGS (arg_node);
             while (arg != NULL) {
                 if (ARG_NAME (arg) != NULL) {
-                    newname = SearchInLUT_SS (INFO_MMV_LUT (arg_info), ARG_NAME (arg));
+                    newname = LUTsearchInLutSs (INFO_MMV_LUT (arg_info), ARG_NAME (arg));
                     if (newname != ARG_NAME (arg)) {
-                        InsertIntoLUT_S (INFO_MMV_LUT (info), ARG_NAME (arg),
-                                         StringCopy (newname));
+                        LUTinsertIntoLutS (INFO_MMV_LUT (info), ARG_NAME (arg),
+                                           ILIBstringCopy (newname));
 
-                        ARG_NAME (arg) = Free (ARG_NAME (arg));
-                        ARG_NAME (arg) = StringCopy (newname);
+                        ARG_NAME (arg) = ILIBfree (ARG_NAME (arg));
+                        ARG_NAME (arg) = ILIBstringCopy (newname);
                     }
                 }
                 arg = ARG_NEXT (arg);
@@ -311,7 +317,7 @@ MMVfundef (node *arg_node, info *arg_info)
              * After renaming, DFM mask base must be updated
              */
             FUNDEF_DFM_BASE (arg_node)
-              = DFMUpdateMaskBaseAfterRenaming (FUNDEF_DFM_BASE (arg_node),
+              = DFMupdateMaskBaseAfterRenaming (FUNDEF_DFM_BASE (arg_node),
                                                 FUNDEF_ARGS (arg_node),
                                                 FUNDEF_VARDEC (arg_node));
 
@@ -319,14 +325,14 @@ MMVfundef (node *arg_node, info *arg_info)
              * Traverse function body
              */
             if (FUNDEF_BODY (arg_node) != NULL) {
-                FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), info);
+                FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
             }
 
-            INFO_MMV_LUT (info) = RemoveContentLUT (INFO_MMV_LUT (info));
+            INFO_MMV_LUT (info) = LUTremoveContentLut (INFO_MMV_LUT (info));
             info = FreeInfo (info);
         } else {
             if (FUNDEF_NEXT (arg_node) != NULL) {
-                FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+                FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
             }
         }
     } else {
@@ -337,14 +343,14 @@ MMVfundef (node *arg_node, info *arg_info)
         INFO_MMV_FUNDEF (info) = arg_node;
 
         if (FUNDEF_BODY (arg_node) != NULL) {
-            FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), info);
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
         }
 
-        INFO_MMV_LUT (info) = RemoveContentLUT (INFO_MMV_LUT (info));
+        INFO_MMV_LUT (info) = LUTremoveContentLut (INFO_MMV_LUT (info));
         info = FreeInfo (info);
 
         if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         }
     }
 
@@ -371,13 +377,13 @@ MMVid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("MMVid");
 
-    newname = SearchInLUT_SS (INFO_MMV_LUT (arg_info), ID_NAME (arg_node));
+    newname = LUTsearchInLutSs (INFO_MMV_LUT (arg_info), ID_NAME (arg_node));
 
     if (newname != ID_NAME (arg_node)) {
-        ID_NAME (arg_node) = Free (ID_NAME (arg_node));
-        ID_NAME (arg_node) = StringCopy (newname);
-        ID_VARDEC (arg_node)
-          = SearchInLUT_PP (INFO_MMV_LUT (arg_info), ID_VARDEC (arg_node));
+        ID_NAME (arg_node) = ILIBfree (ID_NAME (arg_node));
+        ID_NAME (arg_node) = ILIBstringCopy (newname);
+        ID_AVIS (arg_node)
+          = LUTsearchInLutPp (INFO_MMV_LUT (arg_info), ID_AVIS (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -400,7 +406,7 @@ MMVid (node *arg_node, info *arg_info)
 node *
 MMVlet (node *arg_node, info *arg_info)
 {
-    ids *i;
+    node *i;
     char *newname;
 
     DBUG_ENTER ("MMVlet");
@@ -408,24 +414,24 @@ MMVlet (node *arg_node, info *arg_info)
     INFO_MMV_LHS (arg_info) = LET_IDS (arg_node);
 
     if (LET_EXPR (arg_node) != NULL) {
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
 
     i = LET_IDS (arg_node);
 
     while (i != NULL) {
-        newname = SearchInLUT_SS (INFO_MMV_LUT (arg_info), IDS_NAME (i));
+        newname = LUTsearchInLutSs (INFO_MMV_LUT (arg_info), IDS_NAME (i));
 
         if (newname != IDS_NAME (i)) {
             /*
              * Mark the old lhs vardec ST_artificial such that it
              * will be removed by precompile
              */
-            VARDEC_STATUS (IDS_VARDEC (i)) = ST_artificial;
+            VARDEC_STATUS (IDS_VARDEC (i)) = ST_artificial; /* TODO */
 
-            IDS_NAME (i) = Free (IDS_NAME (i));
-            IDS_NAME (i) = StringCopy (newname);
-            IDS_VARDEC (i) = SearchInLUT_PP (INFO_MMV_LUT (arg_info), IDS_VARDEC (i));
+            IDS_NAME (i) = ILIBfree (IDS_NAME (i));
+            IDS_NAME (i) = ILIBstringCopy (newname);
+            IDS_AVIS (i) = LUTsearchInLutPp (INFO_MMV_LUT (arg_info), IDS_AVIS (i));
         }
 
         i = IDS_NEXT (i);
@@ -458,18 +464,18 @@ MMVprfFill (node *arg_node, info *arg_info)
      *
      * rename: b' -> b
      */
-    PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
+    PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
 
     /*
      * a = fill( ..., b)
      *
      * rename: a -> b
      */
-    InsertIntoLUT_S (INFO_MMV_LUT (arg_info), IDS_NAME (INFO_MMV_LHS (arg_info)),
-                     VARDEC_NAME (ID_VARDEC (PRF_ARG2 (arg_node))));
+    LUTinsertIntoLutS (INFO_MMV_LUT (arg_info), IDS_NAME (INFO_MMV_LHS (arg_info)),
+                       VARDEC_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
 
-    InsertIntoLUT_P (INFO_MMV_LUT (arg_info), IDS_VARDEC (INFO_MMV_LHS (arg_info)),
-                     ID_VARDEC (PRF_ARG2 (arg_node)));
+    LUTinsertIntoLutP (INFO_MMV_LUT (arg_info), IDS_VARDEC (INFO_MMV_LHS (arg_info)),
+                       ID_AVIS (PRF_ARG2 (arg_node)));
 
     /*
      * eliminate the fill operation
@@ -478,14 +484,14 @@ MMVprfFill (node *arg_node, info *arg_info)
      */
     temp = PRF_ARG1 (arg_node);
     PRF_ARG1 (arg_node) = NULL;
-    arg_node = FreeTree (arg_node);
+    arg_node = FREEdoFreeTree (arg_node);
     arg_node = temp;
 
     /*
      * Traverse the new rhs
      */
     if (arg_node != NULL) {
-        arg_node = Trav (arg_node, arg_info);
+        arg_node = TRAVdo (arg_node, arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -507,7 +513,7 @@ static node *
 MMVprfAccu (node *arg_node, info *arg_info)
 {
     node *withop;
-    ids *ids_assign, *ids_wl;
+    node *ids_assign, *ids_wl;
 
     DBUG_ENTER ("MMVprfAccu");
 
@@ -530,20 +536,20 @@ MMVprfAccu (node *arg_node, info *arg_info)
     DBUG_ASSERT ((withop != NULL), "F_accu without withloop");
 
     while (withop != NULL) {
-        if (NWITHOP_IS_FOLD (withop)) {
+        if (WITHOP_ISWITHOP (withop)) {
             DBUG_ASSERT ((ids_wl != NULL), "ids of wl is missing");
             DBUG_ASSERT ((ids_assign != NULL), "ids of assign is missing");
 
-            InsertIntoLUT_S (INFO_MMV_LUT (arg_info), IDS_NAME (ids_assign),
-                             IDS_NAME (ids_wl));
+            LUTinsertIntoLutS (INFO_MMV_LUT (arg_info), IDS_NAME (ids_assign),
+                               IDS_NAME (ids_wl));
 
-            InsertIntoLUT_P (INFO_MMV_LUT (arg_info), IDS_VARDEC (ids_assign),
-                             IDS_VARDEC (ids_wl));
+            LUTinsertIntoLutP (INFO_MMV_LUT (arg_info), IDS_VARDEC (ids_assign),
+                               IDS_VARDEC (ids_wl));
 
             ids_assign = IDS_NEXT (ids_assign);
         }
         ids_wl = IDS_NEXT (ids_wl);
-        withop = NWITHOP_NEXT (withop);
+        withop = WITHOP_NEXT (withop);
     }
 
     DBUG_RETURN (arg_node);
@@ -575,17 +581,17 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
      * 1. remove iv
      * => a = suballoc( A);
      */
-    PRF_EXPRS2 (arg_node) = FreeTree (PRF_EXPRS2 (arg_node));
+    PRF_EXPRS2 (arg_node) = FREEdoFreeTree (PRF_EXPRS2 (arg_node));
 
     /*
      * rename RHS
      */
-    PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+    PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
     /*
      * look for Vardec of A_sub
      */
-    subname = StringConcat (ID_NAME (PRF_ARG1 (arg_node)), "_sub");
+    subname = ILIBstringConcat (ID_NAME (PRF_ARG1 (arg_node)), "_sub");
 
     vardec = FUNDEF_VARDEC (INFO_MMV_FUNDEF (arg_info));
     while ((vardec != NULL) && (strcmp (VARDEC_NAME (vardec), subname))) {
@@ -595,8 +601,9 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
      * if no vardec was found we need to create one
      */
     if (vardec == NULL) {
-        vardec = MakeVardec (subname, DupOneTypes (IDS_TYPE (INFO_MMV_LHS (arg_info))),
-                             FUNDEF_VARDEC (INFO_MMV_FUNDEF (arg_info)));
+        vardec = TBmakeVardec (subname, /* TODO */
+                               DupOneTypes (IDS_TYPE (INFO_MMV_LHS (arg_info))),
+                               FUNDEF_VARDEC (INFO_MMV_FUNDEF (arg_info)));
         FUNDEF_VARDEC (INFO_MMV_FUNDEF (arg_info)) = vardec;
 
         /*
@@ -604,22 +611,22 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
          */
         if (FUNDEF_DFM_BASE (INFO_MMV_FUNDEF (arg_info)) != NULL) {
             FUNDEF_DFM_BASE (INFO_MMV_FUNDEF (arg_info))
-              = DFMUpdateMaskBase (FUNDEF_DFM_BASE (INFO_MMV_FUNDEF (arg_info)),
+              = DFMupdateMaskBase (FUNDEF_DFM_BASE (INFO_MMV_FUNDEF (arg_info)),
                                    FUNDEF_ARGS (INFO_MMV_FUNDEF (arg_info)),
                                    FUNDEF_VARDEC (INFO_MMV_FUNDEF (arg_info)));
         }
     } else {
-        Free (subname);
+        ILIBfree (subname);
     }
 
     /*
      * Insert pair (a, A_sub) into LUT
      */
-    InsertIntoLUT_S (INFO_MMV_LUT (arg_info), IDS_NAME (INFO_MMV_LHS (arg_info)),
-                     VARDEC_NAME (vardec));
+    LUTinsertIntoLutS (INFO_MMV_LUT (arg_info), IDS_NAME (INFO_MMV_LHS (arg_info)),
+                       VARDEC_NAME (vardec));
 
-    InsertIntoLUT_P (INFO_MMV_LUT (arg_info), IDS_VARDEC (INFO_MMV_LHS (arg_info)),
-                     vardec);
+    LUTinsertIntoLutP (INFO_MMV_LUT (arg_info), IDS_VARDEC (INFO_MMV_LHS (arg_info)),
+                       vardec);
 
     DBUG_RETURN (arg_node);
 }
@@ -647,16 +654,16 @@ MMVprfWLAssign (node *arg_node, info *arg_info)
      * 1. rename RHS
      * => a' = wl_assign( a, A)
      */
-    PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+    PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
     /*
      * 2. insert pair ( a', a) into LUT
      */
-    InsertIntoLUT_S (INFO_MMV_LUT (arg_info), IDS_NAME (INFO_MMV_LHS (arg_info)),
-                     ID_NAME (PRF_ARG1 (arg_node))),
+    LUTinsertIntoLutS (INFO_MMV_LUT (arg_info), IDS_NAME (INFO_MMV_LHS (arg_info)),
+                       ID_NAME (PRF_ARG1 (arg_node))),
 
-      InsertIntoLUT_P (INFO_MMV_LUT (arg_info), IDS_VARDEC (INFO_MMV_LHS (arg_info)),
-                       ID_VARDEC (PRF_ARG1 (arg_node)));
+      LUTinsertIntoLutP (INFO_MMV_LUT (arg_info), IDS_VARDEC (INFO_MMV_LHS (arg_info)),
+                         ID_AVIS (PRF_ARG1 (arg_node)));
 
     DBUG_RETURN (arg_node);
 }
@@ -700,7 +707,7 @@ MMVprf (node *arg_node, info *arg_info)
 
     default:
         if (PRF_ARGS (arg_node) != NULL) {
-            PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         }
     }
 
@@ -724,9 +731,9 @@ MMVspmd (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MMVspmd");
 
-    SPMD_REGION (arg_node) = Trav (SPMD_REGION (arg_node), arg_info);
+    SPMD_REGION (arg_node) = TRAVdo (SPMD_REGION (arg_node), arg_info);
 
-    DBUG_EXECUTE ("MMV", PrintNode (INFO_MMV_FUNDEF (arg_info)););
+    DBUG_EXECUTE ("MMV", PRTdoPrintNode (INFO_MMV_FUNDEF (arg_info)););
 
     SPMD_IN (arg_node) = UpdateDFM (SPMD_IN (arg_node), arg_info);
     SPMD_OUT (arg_node) = UpdateDFM (SPMD_OUT (arg_node), arg_info);
@@ -734,7 +741,7 @@ MMVspmd (node *arg_node, info *arg_info)
     SPMD_LOCAL (arg_node) = UpdateDFM (SPMD_LOCAL (arg_node), arg_info);
     SPMD_SHARED (arg_node) = UpdateDFM (SPMD_SHARED (arg_node), arg_info);
 
-    SPMD_FUNDEF (arg_node) = Trav (SPMD_FUNDEF (arg_node), arg_info);
+    SPMD_FUNDEF (arg_node) = TRAVdo (SPMD_FUNDEF (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -755,7 +762,7 @@ node *
 MMVwith (node *arg_node, info *arg_info)
 {
     node *withop;
-    ids *lhs;
+    node *lhs;
 
     DBUG_ENTER ("MMVwith");
 
@@ -765,16 +772,16 @@ MMVwith (node *arg_node, info *arg_info)
 
     INFO_MMV_LHS_WL (arg_info) = INFO_MMV_LHS (arg_info);
 
-    if (NWITH_WITHOP (arg_node) != NULL) {
-        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    if (WITH_WITHOP (arg_node) != NULL) {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     }
 
-    if (NWITH_PART (arg_node) != NULL) {
-        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    if (WITH_PART (arg_node) != NULL) {
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     }
 
-    if (NWITH_CODE (arg_node) != NULL) {
-        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    if (WITH_CODE (arg_node) != NULL) {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     }
 
     INFO_MMV_WITHOP (arg_info) = withop;
@@ -799,7 +806,7 @@ node *
 MMVwith2 (node *arg_node, info *arg_info)
 {
     node *withop;
-    ids *lhs;
+    node *lhs;
 
     DBUG_ENTER ("MMVwith2");
 
@@ -810,16 +817,16 @@ MMVwith2 (node *arg_node, info *arg_info)
     INFO_MMV_LHS_WL (arg_info) = INFO_MMV_LHS (arg_info);
     INFO_MMV_WITHOP (arg_info) = NULL;
 
-    if (NWITH2_WITHOP (arg_node) != NULL) {
-        NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+    if (WITH2_WITHOP (arg_node) != NULL) {
+        WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
     }
 
-    if (NWITH2_SEGS (arg_node) != NULL) {
-        NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+    if (WITH2_SEGS (arg_node) != NULL) {
+        WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
     }
 
-    if (NWITH2_CODE (arg_node) != NULL) {
-        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    if (WITH2_CODE (arg_node) != NULL) {
+        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
     }
 
     INFO_MMV_WITHOP (arg_info) = withop;
@@ -861,16 +868,16 @@ MMVwlsegx (node *arg_node, info *arg_info)
                      "WLSEGVAR_IDX_MAX not found!");
         for (d = 0; d < WLSEGVAR_DIMS (arg_node); d++) {
             (WLSEGVAR_IDX_MIN (arg_node))[d]
-              = Trav ((WLSEGVAR_IDX_MIN (arg_node))[d], arg_info);
+              = TRAVdo ((WLSEGVAR_IDX_MIN (arg_node))[d], arg_info);
             (WLSEGVAR_IDX_MAX (arg_node))[d]
-              = Trav ((WLSEGVAR_IDX_MAX (arg_node))[d], arg_info);
+              = TRAVdo ((WLSEGVAR_IDX_MAX (arg_node))[d], arg_info);
         }
     }
 
-    WLSEGX_CONTENTS (arg_node) = Trav (WLSEGX_CONTENTS (arg_node), arg_info);
+    WLSEGX_CONTENTS (arg_node) = TRAVdo (WLSEGX_CONTENTS (arg_node), arg_info);
 
     if (WLSEGX_NEXT (arg_node) != NULL) {
-        WLSEGX_NEXT (arg_node) = Trav (WLSEGX_NEXT (arg_node), arg_info);
+        WLSEGX_NEXT (arg_node) = TRAVdo (WLSEGX_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -878,7 +885,7 @@ MMVwlsegx (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn MMVwithop
+ * @fn MMVgenarray
  *
  *  @brief Adds the current LHS and the MEM-variable into LUT if this
  *         withop is either WO_genarray or WO_modarray.
@@ -890,65 +897,108 @@ MMVwlsegx (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-MMVwithop (node *arg_node, info *arg_info)
+MMVgenaray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MMVwithop");
+    DBUG_ENTER ("MMVgenarray");
+
+    if (INFO_MMV_WITHOP (arg_info) == NULL) {
+        INFO_MMV_WITHOP (arg_info) = arg_node;
+    }
+    if (GENARRAY_SHAPE (arg_node) != NULL) {
+        GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
+    }
+    if (GENARRAY_DEFAULT (arg_node) != NULL) {
+        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
+    }
+    if (GENARRAY_MEM (arg_node) != NULL) {
+        GENARRAY_MEM (arg_node) = TRAVdo (GENARRAY_MEM (arg_node), arg_info);
+
+        LUTinsertIntoLutS (INFO_MMV_LUT (arg_info), IDS_NAME (INFO_MMV_LHS (arg_info)),
+                           ID_NAME (GENARRAY_MEM (arg_node)));
+
+        LUTinsertIntoLutP (INFO_MMV_LUT (arg_info), IDS_VARDEC (INFO_MMV_LHS (arg_info)),
+                           ID_VARDEC (GENARRAY_MEM (arg_node)));
+    }
+
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        INFO_MMV_LHS (arg_info) = IDS_NEXT (INFO_MMV_LHS (arg_info));
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn MMVmodarray
+ *
+ *  @brief Adds the current LHS and the MEM-variable into LUT if this
+ *         withop is either WO_genarray or WO_modarray.
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+node *
+MMVmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("MMVmodarray");
 
     if (INFO_MMV_WITHOP (arg_info) == NULL) {
         INFO_MMV_WITHOP (arg_info) = arg_node;
     }
 
-    switch (NWITHOP_TYPE (arg_node)) {
-    case WO_genarray:
-        if (NWITHOP_SHAPE (arg_node) != NULL) {
-            NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
-        }
-        if (NWITHOP_DEFAULT (arg_node) != NULL) {
-            NWITHOP_DEFAULT (arg_node) = Trav (NWITHOP_DEFAULT (arg_node), arg_info);
-        }
-        if (NWITHOP_MEM (arg_node) != NULL) {
-            NWITHOP_MEM (arg_node) = Trav (NWITHOP_MEM (arg_node), arg_info);
+    if (MODARRAY_ARRAY (arg_node) != NULL) {
+        MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
+    }
+    if (MODARRAY_MEM (arg_node) != NULL) {
+        MODARRAY_MEM (arg_node) = TRAVdo (MODARRAY_MEM (arg_node), arg_info);
 
-            InsertIntoLUT_S (INFO_MMV_LUT (arg_info), IDS_NAME (INFO_MMV_LHS (arg_info)),
-                             ID_NAME (NWITHOP_MEM (arg_node)));
+        LUTinsertIntoLutS (INFO_MMV_LUT (arg_info), IDS_NAME (INFO_MMV_LHS (arg_info)),
+                           ID_NAME (MODARRAY_MEM (arg_node)));
 
-            InsertIntoLUT_P (INFO_MMV_LUT (arg_info),
-                             IDS_VARDEC (INFO_MMV_LHS (arg_info)),
-                             ID_VARDEC (NWITHOP_MEM (arg_node)));
-        }
-
-        break;
-
-    case WO_modarray:
-        if (NWITHOP_ARRAY (arg_node) != NULL) {
-            NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
-        }
-        if (NWITHOP_MEM (arg_node) != NULL) {
-            NWITHOP_MEM (arg_node) = Trav (NWITHOP_MEM (arg_node), arg_info);
-
-            InsertIntoLUT_S (INFO_MMV_LUT (arg_info), IDS_NAME (INFO_MMV_LHS (arg_info)),
-                             ID_NAME (NWITHOP_MEM (arg_node)));
-
-            InsertIntoLUT_P (INFO_MMV_LUT (arg_info),
-                             IDS_VARDEC (INFO_MMV_LHS (arg_info)),
-                             ID_VARDEC (NWITHOP_MEM (arg_node)));
-        }
-        break;
-
-    case WO_foldprf:
-    case WO_foldfun:
-        if (NWITHOP_NEUTRAL (arg_node) != NULL) {
-            NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
-        }
-        break;
-
-    case WO_unknown:
-        DBUG_ASSERT ((0), "Unknown withop type found!");
+        LUTinsertIntoLutP (INFO_MMV_LUT (arg_info), IDS_VARDEC (INFO_MMV_LHS (arg_info)),
+                           ID_VARDEC (MODARRAY_MEM (arg_node)));
+    }
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        INFO_MMV_LHS (arg_info) = IDS_NEXT (INFO_MMV_LHS (arg_info));
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
     }
 
-    if (NWITHOP_NEXT (arg_node) != NULL) {
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn MMVfold
+ *
+ *  @brief Adds the current LHS and the MEM-variable into LUT if this
+ *         withop is either WO_genarray or WO_modarray.
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+node *
+MMVfold (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("MMVfold");
+
+    if (INFO_MMV_WITHOP (arg_info) == NULL) {
+        INFO_MMV_WITHOP (arg_info) = arg_node;
+    }
+
+    if (FOLD_NEUTRAL (arg_node) != NULL) {
+        FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+    }
+
+    if (FOLD_NEXT (arg_node) != NULL) {
         INFO_MMV_LHS (arg_info) = IDS_NEXT (INFO_MMV_LHS (arg_info));
-        NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
+        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -974,16 +1024,16 @@ MMVcode (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("AACCcode");
 
-    if (NCODE_CBLOCK (arg_node) != NULL) {
-        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    if (CODE_CBLOCK (arg_node) != NULL) {
+        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     }
 
-    if (NCODE_CEXPRS (arg_node) != NULL) {
-        NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
+    if (CODE_CEXPRS (arg_node) != NULL) {
+        CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
     }
 
-    if (NCODE_NEXT (arg_node) != NULL) {
-        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    if (CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1005,13 +1055,15 @@ MMVcode (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-MarkMemVals (node *syntax_tree)
+MMVdoMarkMemVals (node *syntax_tree)
 {
-    DBUG_ENTER ("MarkMemVals");
+    DBUG_ENTER ("MMVdoMarkMemVals");
 
-    act_tab = mmv_tab;
+    TRAVpush (TR_mmv);
 
-    syntax_tree = Trav (syntax_tree, NULL);
+    syntax_tree = TRAVdo (syntax_tree, NULL);
+
+    TRAVpop ();
 
     DBUG_RETURN (syntax_tree);
 }
