@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2000/11/29 16:19:50  nmw
+ * trace output of init/cleanup runtime enviroment added
+ *
  * Revision 3.1  2000/11/20 18:02:43  sacbase
  * new release made
  *
@@ -96,9 +99,6 @@ SAC_InitCInterface ()
     if (!SAC_CI_runtime_system_active) {
         /* init directory of used SAC_args */
         SAC_CI_InitSACArgDirectory ();
-
-        printf ("SAC-Runtime-System ready...\n");
-
         SAC_CI_runtime_system_active = true;
     }
 }
@@ -119,7 +119,6 @@ SAC_ExitCInterface ()
     if (SAC_CI_runtime_system_active) {
         /* free all used SAC_args */
         SAC_CI_FreeSACArgDirectory ();
-        printf ("SAC-Runtime-System cleaned up!\n");
     }
 }
 
