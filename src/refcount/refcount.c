@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/02/22 13:40:02  dkr
+ * for cc: L_... access macros used on left-hand-sides
+ *
  * Revision 3.15  2001/06/01 14:55:01  dkr
  * RCNwith() and RCNwith2() merged.
  * Bug in RCNwith() merged: neutral element of fold-with-loops is
@@ -1895,8 +1898,9 @@ RCNwith (node *arg_node, node *arg_info)
 
     if (!INFO_RC_ONLYNAIVE (arg_info)) {
         if (NWITH_OR_NWITH2_DEC_RC_IDS (arg_node) != NULL) {
-            NWITH_OR_NWITH2_DEC_RC_IDS (arg_node)
-              = FreeAllIds (NWITH_OR_NWITH2_DEC_RC_IDS (arg_node));
+            L_NWITH_OR_NWITH2_DEC_RC_IDS (arg_node,
+                                          FreeAllIds (
+                                            NWITH_OR_NWITH2_DEC_RC_IDS (arg_node)));
         }
     }
     vardec = DFMGetMaskEntryDeclSet (NWITH_OR_NWITH2_IN_MASK (arg_node));
@@ -1920,7 +1924,7 @@ RCNwith (node *arg_node, node *arg_info)
                     IDS_NAIVE_REFCNT (new_ids) = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
 
                     if (NWITH_OR_NWITH2_DEC_RC_IDS (arg_node) == NULL) {
-                        NWITH_OR_NWITH2_DEC_RC_IDS (arg_node) = new_ids;
+                        L_NWITH_OR_NWITH2_DEC_RC_IDS (arg_node, new_ids);
                     } else {
                         IDS_NEXT (last_ids) = new_ids;
                     }
