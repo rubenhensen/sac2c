@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 3.211  2004/08/06 17:25:30  skt
+ * Revision 3.212  2004/08/09 03:47:34  skt
+ * again some adaptions for the dataflowgraph
+ *
+ * Revision 3.211  2004/08/06 17:215:30  skt
  * creating the dataflowgraph still continues
  *
  * Revision 3.210  2004/08/06 12:56:57  skt
@@ -4569,20 +4572,29 @@ extern node *MakeModspec (char *name, node *exports);
  ***                             the corresponding dataflowgraph)
  ***    node*      ASSIGN       (the corresponding assignment)
  ***    int        EXECMODE     (the executionmode of the corresponding assign)
+ ***    node*      GRAPH        (the graph that includes this dataflownode)
+ ***    node*      DFGTHEN      (some dataflownodes (conditionals) include
+ ***                             other dataflowgraps
+ ***                             this enables not only the rearrangement on
+ ***                             toplevel but also within conditionals)
+ ***    node*      DFGELSE      (see above)
  ***
  ***  temporary attributes:
  ***
- ***    int        REFLEFT      #refcounts left, initialized with REFCOUNT
+ ***    int        REFLEFT      (#refcounts left, initialized with REFCOUNT)
  ***                            (CreateDataflowgraph -> AssignmentsRearrange!!)
  ***/
 
-extern node *MakeDataflownode (node *assignment, char *name);
+extern node *MakeDataflownode (node *graph, node *assignment, char *name);
 
 #define DATAFLOWNODE_DEPENDENT(n) ((nodelist *)(n->dfmask[0]))
 #define DATAFLOWNODE_NAME(n) ((char *)(n->dfmask[1]))
 #define DATAFLOWNODE_REFCOUNT(n) (n->refcnt)
 #define DATAFLOWNODE_ASSIGN(n) (n->node[0])
 #define DATAFLOWNODE_EXECMODE(n) (n->flag)
+#define DATAFLOWNODE_GRAPH(n) (n->node[1])
+#define DATAFLOWNODE_DFGTHEN(n) (n->node[2])
+#define DATAFLOWNODE_DFGELSE(n) (n->node[3])
 #define DATAFLOWNODE_REFLEFT(n) (n->counter)
 
 /*--------------------------------------------------------------------------*/
@@ -4595,6 +4607,10 @@ extern node *MakeDataflownode (node *assignment, char *name);
  ***  permanent attributes:
  ***
  ***    nodelist*  MEMBERS      (all nodes of the dataflowgraph)
+ ***    node*      MYHOMEDFN    (the dataflownode who holds this dataflowgraph;
+ ***                             usually it is NULL, exception if this data-
+ ***                             flowgraph corresponds to a then- or else-block
+ ***                             (see DATAFLOWNODE_DFGTHEN for detail))
  ***    node*      SOURCE       (the source of the dataflowgraph)
  ***    node*      SINK         (the sink of the dataflowgraph)
  ***                            (CreateDataflowgraph -> AssignmentsRearrange!!)
@@ -4605,6 +4621,7 @@ extern node *MakeDataflowgraph ();
 #define DATAFLOWGRAPH_MEMBERS(n) ((nodelist *)(n->dfmask[0]))
 #define DATAFLOWGRAPH_SOURCE(n) (n->node[0])
 #define DATAFLOWGRAPH_SINK(n) (n->node[1])
+#define DATAFLOWGRAPH_MYHOMEDFN(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 

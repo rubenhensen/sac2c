@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.96  2004/08/09 03:47:34  skt
+ * again some adaptions for the dataflowgraph
+ *
  * Revision 3.95  2004/08/06 17:25:30  skt
  * creating the dataflowgraph still continues
  *
@@ -2276,7 +2279,7 @@ MakeModspec (char *name, node *exports)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeDataflownode (node *assignment, char *name)
+MakeDataflownode (node *graph, node *assignment, char *name)
 {
     node *tmp;
 
@@ -2284,11 +2287,31 @@ MakeDataflownode (node *assignment, char *name)
 
     tmp = CreateCleanNode (N_dataflownode);
 
+    DATAFLOWNODE_GRAPH (tmp) = graph;
     DATAFLOWNODE_ASSIGN (tmp) = assignment;
     if (assignment != NULL) {
         DATAFLOWNODE_EXECMODE (tmp) = ASSIGN_EXECMODE (assignment);
     }
     DATAFLOWNODE_NAME (tmp) = name;
+
+    /* add node to the graph members*/
+    DATAFLOWGRAPH_MEMBERS (graph)
+      = NodeListAppend (DATAFLOWGRAPH_MEMBERS (graph), tmp, NULL);
+
+    /* node added to the graph -> made dependent from the spring, if exists */
+    if (DATAFLOWGRAPH_SOURCE (graph) != NULL) {
+        DATAFLOWNODE_DEPENDENT (DATAFLOWGRAPH_SOURCE (graph))
+          = NodeListAppend (DATAFLOWNODE_DEPENDENT (DATAFLOWGRAPH_SOURCE (graph)), tmp,
+                            NULL);
+        DATAFLOWNODE_REFCOUNT (tmp) = 1;
+    }
+
+    /* well, the return-node, if exists, must depend on the new-member */
+    if (DATAFLOWGRAPH_SINK (graph) != NULL) {
+        DATAFLOWNODE_DEPENDENT (tmp) = NodeListAppend (DATAFLOWNODE_DEPENDENT (tmp),
+                                                       DATAFLOWGRAPH_SINK (graph), NULL);
+        DATAFLOWNODE_REFCOUNT (DATAFLOWGRAPH_SINK (graph))++;
+    }
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
@@ -2307,20 +2330,10 @@ MakeDataflowgraph ()
     tmp = CreateCleanNode (N_dataflowgraph);
 
     /* create the source of the graph */
-    DATAFLOWGRAPH_SOURCE (tmp) = MakeDataflownode (NULL, StringCopy ("DF__source"));
-    DATAFLOWGRAPH_MEMBERS (tmp)
-      = NodeListAppend (DATAFLOWGRAPH_MEMBERS (tmp), DATAFLOWGRAPH_SOURCE (tmp), NULL);
+    DATAFLOWGRAPH_SOURCE (tmp) = MakeDataflownode (tmp, NULL, StringCopy ("DF__source"));
 
     /* create the sink of the graph */
-    DATAFLOWGRAPH_SINK (tmp) = MakeDataflownode (NULL, StringCopy ("DF__sink"));
-    DATAFLOWGRAPH_MEMBERS (tmp)
-      = NodeListAppend (DATAFLOWGRAPH_MEMBERS (tmp), DATAFLOWGRAPH_SINK (tmp), NULL);
-
-    /* make the sink depending on the source */
-    DATAFLOWNODE_DEPENDENT (DATAFLOWGRAPH_SOURCE (tmp))
-      = NodeListAppend (DATAFLOWNODE_DEPENDENT (DATAFLOWGRAPH_SOURCE (tmp)),
-                        DATAFLOWGRAPH_SINK (tmp), NULL);
-    DATAFLOWNODE_REFCOUNT (DATAFLOWGRAPH_SINK (tmp)) = 1;
+    DATAFLOWGRAPH_SINK (tmp) = MakeDataflownode (tmp, NULL, StringCopy ("DF__sink"));
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
