@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2002/07/24 15:06:49  dkr
+ * COMPIcm() corrected
+ *
  * Revision 1.31  2002/07/24 13:22:02  dkr
  * GenericFun: DBUG_ASSERT added
  *
@@ -4290,48 +4293,66 @@ node *
 COMP2Icm (node *arg_node, node *arg_info)
 {
     node *args, *arg;
-    node *icm_node, *last_node, *new_assign;
     char *name;
+    node *new_assigns = NULL;
 
     DBUG_ENTER ("COMPIcm");
 
     name = ICM_NAME (arg_node);
     if (strstr (name, "VECT2OFFSET") != NULL) {
         /*
-         * VECT2OFFSET( var, iv, ...) needs RC on all but the first argument.
-         * It is expanded to    var = ... iv ...    , where 'var' is a scalar
-         * variable (no reference-counted object).
-         *  -> decrement the RCs of all but the first argument, if needed.
+         * VECT2OFFSET( off_nt, ., from_nt, ...)
+         * needs RC on all but the first argument. It is expanded to
+         *      off_nt = ... from_nt ...    ,
+         * where 'off_nt' is a scalar variable.
+         *   -> alloc memory for the first argument, if needed.
+         *   -> decrement the RCs of all but the first argument, if needed.
          */
-        new_assign = MakeAssign (arg_node, NULL);
-        last_node = new_assign;
 
         args = ICM_EXPRS2 (arg_node);
         while (args != NULL) {
             arg = EXPRS_EXPR (args);
             if (NODE_TYPE (arg) == N_id) {
-                icm_node
-                  = MakeDecRcIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg), 1, NULL);
-                if (icm_node != NULL) {
-                    last_node = ASSIGN_NEXT (last_node) = icm_node;
-                }
+                new_assigns = MakeDecRcIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg),
+                                            1, new_assigns);
             }
             args = EXPRS_NEXT (args);
         }
 
-        if (ASSIGN_NEXT (new_assign) != NULL) {
-            arg_node = new_assign;
-        } else {
-            ASSIGN_INSTR (new_assign) = NULL;
-            new_assign = FreeTree (new_assign);
-        }
+        arg = ICM_ARG1 (arg_node);
+        DBUG_ASSERT ((NODE_TYPE (arg) == N_id),
+                     "1st arg of VECT2OFFSET-icm is no N_id node!");
+        DBUG_ASSERT ((RC_IS_INACTIVE (ID_REFCNT (arg)) || RC_IS_VITAL (ID_REFCNT (arg))),
+                     "1st arg of VECT2OFFSET-icm has illegal RC!");
+
+        arg_node = MakeAllocIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg),
+                                 MakeIcm1 ("ND_SET__SHAPE",
+                                           MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
+                                                         FALSE, TRUE, FALSE,
+                                                         MakeExprs (MakeNum (0), NULL))),
+                                 NULL, MakeAssign (arg_node, new_assigns));
     } else if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
         /*
-         * USE_GENVAR_OFFSET( var, arr) does *not* consume its arguments!
-         * It is expanded to    var = arr__off    , where 'var' is a scalar
-         * and 'arr_off' an internal variable (no reference-counted objects)!
-         *   -> do nothing
+         * USE_GENVAR_OFFSET( off_nt, wl_nt)
+         * does *not* consume its arguments! It is expanded to
+         *      off_nt = wl_nt__off    ,
+         * where 'off_nt' is a scalar and 'wl_nt__off' an internal variable!
+         *   -> alloc memory for the first argument, if needed.
+         *   -> ignore second argument.
          */
+
+        arg = ICM_ARG1 (arg_node);
+        DBUG_ASSERT ((NODE_TYPE (arg) == N_id),
+                     "1st arg of VECT2OFFSET-icm is no N_id node!");
+        DBUG_ASSERT ((RC_IS_INACTIVE (ID_REFCNT (arg)) || RC_IS_VITAL (ID_REFCNT (arg))),
+                     "1st arg of VECT2OFFSET-icm has illegal RC!");
+
+        arg_node = MakeAllocIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg),
+                                 MakeIcm1 ("ND_SET__SHAPE",
+                                           MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
+                                                         FALSE, TRUE, FALSE,
+                                                         MakeExprs (MakeNum (0), NULL))),
+                                 NULL, MakeAssign (arg_node, NULL));
     } else {
         DBUG_PRINT ("COMP", ("ICM not traversed: %s", ICM_NAME (arg_node)));
     }
