@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.39  2002/08/07 13:49:58  dkr
+ * COMP2With() added
+ *
  * Revision 1.38  2002/08/06 20:02:21  dkr
  * some variables initialized to please the cc (prod version)
  *
@@ -4842,6 +4845,26 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
 /******************************************************************************
  *
  * Function:
+ *   node *COMP2With( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+COMP2With (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("COMP2With");
+
+    DBUG_ASSERT ((0), "with-loops with unknown dimension not implemented yet!");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *COMPWith2( node *arg_node, node *arg_info)
  *
  * Description:
@@ -4883,10 +4906,8 @@ COMP2With2 (node *arg_node, node *arg_info)
     old_wlnode = wlnode; /* stack 'wlnode' */
     wlnode = arg_node;
 
-#if 1
     DBUG_ASSERT ((GetDim (IDS_TYPE (wlids)) >= 0),
-                 "with-loops with unknown dimension are not implemented yet!");
-#endif
+                 "N_Nwith2 with unknown dimension found!");
 
     /*
      * fold with-loop:
