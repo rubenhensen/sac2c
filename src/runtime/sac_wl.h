@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/02/06 01:47:46  dkr
+ * ..._EMPTY_... replaced by ..._NOOP_...
+ *
  * Revision 3.10  2001/01/30 12:23:21  dkr
  * WL_..._GRID_FIT_EMPTY_... ICMs added
  *
@@ -13,20 +16,8 @@
  * Revision 3.7  2001/01/19 11:54:19  dkr
  * some with-loop ICMs renamed
  *
- * Revision 3.6  2001/01/17 17:41:52  dkr
- * some minor changes done
- *
  * Revision 3.5  2001/01/10 18:34:37  dkr
  * icm WL_GRID_SET_IDX renamed into WL_GRID_SET_IDXVEC
- *
- * Revision 3.4  2001/01/09 20:00:45  dkr
- * ICMs for naive compilation added
- *
- * Revision 3.3  2001/01/08 21:59:32  dkr
- * support for naive compilation of with-loops added (not finished yet)
- *
- * Revision 3.2  2001/01/08 16:35:33  dkr
- * comments modifed
  *
  * Revision 3.1  2000/11/20 18:02:23  sacbase
  * new release made
@@ -103,7 +94,7 @@
 /*****************************************************************************/
 
 /***
- *** blocking-loop
+ *** blocking-loop (! noop)
  ***/
 
 /*
@@ -172,7 +163,38 @@
 /*****************************************************************************/
 
 /***
- *** unrolling-blocking-loop
+ *** blocking-loop (noop)
+ ***/
+
+/*
+ * SAC_WL_VAR( diff, idx_sca) contain the width of the noop region and
+ * is needed by the SAC_WL_ADJUST_OFFSET macro.
+ */
+
+/*
+ * BEGIN
+ */
+
+#define SAC_WL_BLOCK_NOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)                 \
+    {                                                                                    \
+        int SAC_WL_VAR (diff, idx_sca) = (bnd2 - bnd1);
+
+#define SAC_WL_MT_BLOCK_NOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)              \
+    SAC_WL_BLOCK_NOOP_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2, step)
+
+/*
+ * END
+ */
+
+#define SAC_WL_BLOCK_NOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2, step) }
+
+#define SAC_WL_MT_BLOCK_NOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2, step)                \
+    SAC_WL_BLOCK_NOOP_END (dim, idx_vec, idx_sca, bnd1, bnd2, step)
+
+/*****************************************************************************/
+
+/***
+ *** unrolling-blocking-loop (! noop)
  ***/
 
 /*
@@ -232,7 +254,38 @@
 /*****************************************************************************/
 
 /***
- *** stride-loop
+ *** unrolling-blocking-loop (noop)
+ ***/
+
+/*
+ * SAC_WL_VAR( diff, idx_sca) contain the width of the noop region and
+ * is needed by the SAC_WL_ADJUST_OFFSET macro.
+ */
+
+/*
+ * BEGIN
+ */
+
+#define SAC_WL_UBLOCK_NOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)                \
+    {                                                                                    \
+        int SAC_WL_VAR (diff, idx_sca) = (bnd2 - bnd1);
+
+#define SAC_WL_MT_UBLOCK_NOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)             \
+    SAC_WL_UBLOCK_NOOP_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2, step)
+
+/*
+ * END
+ */
+
+#define SAC_WL_UBLOCK_NOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2, step) }
+
+#define SAC_WL_MT_UBLOCK_NOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2, step)               \
+    SAC_WL_UBLOCK_NOOP_END (dim, idx_vec, idx_sca, bnd1, bnd2, step)
+
+/*****************************************************************************/
+
+/***
+ *** stride-loop (! noop)
  ***/
 
 /*
@@ -317,6 +370,37 @@
 
 /*****************************************************************************/
 
+/***
+ *** stride-loop (noop)
+ ***/
+
+/*
+ * SAC_WL_VAR( diff, idx_sca) contain the width of the noop region and
+ * is needed by the SAC_WL_ADJUST_OFFSET macro.
+ */
+
+/*
+ * BEGIN
+ */
+
+#define SAC_WL_STRIDE_NOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)                \
+    {                                                                                    \
+        int SAC_WL_VAR (diff, idx_sca) = (bnd2 - bnd1);
+
+#define SAC_WL_MT_STRIDE_NOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)             \
+    SAC_WL_STRIDE_NOOP_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2, step)
+
+/*
+ * END
+ */
+
+#define SAC_WL_STRIDE_NOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2, step) }
+
+#define SAC_WL_MT_STRIDE_NOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2, step)               \
+    SAC_WL_STRIDE_NOOP_END (dim, idx_vec, idx_sca, bnd1, bnd2, step)
+
+/*****************************************************************************/
+
 /*
  * CAUTION: The SAC_WL_GRID_... macros execute unconditionly the whole grid.
  *          Therefore we must take care that the parent stride meets the
@@ -363,7 +447,7 @@
 /*****************************************************************************/
 
 /***
- *** grid-loop (fitted already)
+ *** grid-loop (! noop)
  ***/
 
 /*
@@ -372,7 +456,7 @@
  */
 
 /*
- * BEGIN: (GRID_UNROLLING == FALSE) && (non-empty body)
+ * BEGIN: (GRID_UNROLLING == FALSE) && (fitted already)
  */
 
 #define SAC_WL_GRID_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                        \
@@ -384,7 +468,7 @@
     SAC_WL_GRID_LOOP_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
 
 /*
- * BEGIN: (GRID_UNROLLING == TRUE) && (non-empty body)
+ * BEGIN: (GRID_UNROLLING == TRUE) && (fitted already)
  */
 
 #define SAC_WL_GRID_UNROLL_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2) /* empty */
@@ -393,58 +477,7 @@
     SAC_WL_GRID_UNROLL_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
 
 /*
- * BEGIN: (empty body)
- */
-
-#define SAC_WL_GRID_EMPTY_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                       \
-    SAC_WL_GRID_LOOP_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
-
-#define SAC_WL_MT_GRID_EMPTY_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                    \
-    SAC_WL_GRID_EMPTY_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
-
-/*
- * END: (GRID_UNROLLING == FALSE) && (non-empty body)
- */
-
-#define SAC_WL_GRID_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2)                          \
-    }                                                                                    \
-    }
-
-#define SAC_WL_MT_GRID_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2)                       \
-    SAC_WL_GRID_LOOP_END (dim, idx_vec, idx_sca, bnd1, bnd2)
-
-/*
- * END: (GRID_UNROLLING == TRUE) && (non-empty body)
- */
-
-#define SAC_WL_GRID_UNROLL_END(dim, idx_vec, idx_sca, bnd1, bnd2) idx_sca++;
-
-#define SAC_WL_MT_GRID_UNROLL_END(dim, idx_vec, idx_sca, bnd1, bnd2)                     \
-    SAC_WL_GRID_UNROLL_END (dim, idx_vec, idx_sca, bnd1, bnd2)
-
-/*
- * END: (empty body)
- */
-
-#define SAC_WL_GRID_EMPTY_END(dim, idx_vec, idx_sca, bnd1, bnd2)                         \
-    SAC_WL_GRID_LOOP_END (dim, idx_vec, idx_sca, bnd1, bnd2)
-
-#define SAC_WL_MT_GRID_EMPTY_END(dim, idx_vec, idx_sca, bnd1, bnd2)                      \
-    SAC_WL_GRID_EMPTY_END (dim, idx_vec, idx_sca, bnd1, bnd2)
-
-/*****************************************************************************/
-
-/***
- *** grid-loop (not fitted yet)
- ***/
-
-/*
- * remark:
- *   SAC_WL_VAR( grid_stop, idx_sca) is used locally in this macro only!
- */
-
-/*
- * BEGIN: (non-empty body)
+ * BEGIN: (not fitted yet)
  */
 
 #define SAC_WL_GRID_FIT_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                    \
@@ -457,17 +490,27 @@
     SAC_WL_GRID_FIT_LOOP_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
 
 /*
- * BEGIN: (empty body)
+ * END: (GRID_UNROLLING == FALSE) && (fitted already)
  */
 
-#define SAC_WL_GRID_FIT_EMPTY_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                   \
-    SAC_WL_GRID_FIT_LOOP_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
+#define SAC_WL_GRID_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2)                          \
+    }                                                                                    \
+    }
 
-#define SAC_WL_MT_GRID_FIT_EMPTY_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                \
-    SAC_WL_GRID_FIT_EMPTY_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
+#define SAC_WL_MT_GRID_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2)                       \
+    SAC_WL_GRID_LOOP_END (dim, idx_vec, idx_sca, bnd1, bnd2)
 
 /*
- * END: (non-empty body)
+ * END: (GRID_UNROLLING == TRUE) && (fitted already)
+ */
+
+#define SAC_WL_GRID_UNROLL_END(dim, idx_vec, idx_sca, bnd1, bnd2) idx_sca++;
+
+#define SAC_WL_MT_GRID_UNROLL_END(dim, idx_vec, idx_sca, bnd1, bnd2)                     \
+    SAC_WL_GRID_UNROLL_END (dim, idx_vec, idx_sca, bnd1, bnd2)
+
+/*
+ * END: (not fitted yet)
  */
 
 #define SAC_WL_GRID_FIT_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2)                      \
@@ -477,15 +520,59 @@
 #define SAC_WL_MT_GRID_FIT_LOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2)                   \
     SAC_WL_GRID_FIT_LOOP_END (dim, idx_vec, idx_sca, bnd1, bnd2)
 
+/*****************************************************************************/
+
+/***
+ *** grid-loop (noop)
+ ***/
+
 /*
- * END: (empty body)
+ * SAC_WL_VAR( diff, idx_sca) contain the width of the noop region and
+ * is needed by the SAC_WL_ADJUST_OFFSET macro.
  */
 
-#define SAC_WL_GRID_FIT_EMPTY_END(dim, idx_vec, idx_sca, bnd1, bnd2)                     \
-    SAC_WL_GRID_FIT_LOOP_END (dim, idx_vec, idx_sca, bnd1, bnd2)
+/*
+ * BEGIN: (fitted already)
+ */
 
-#define SAC_WL_MT_GRID_FIT_EMPTY_END(dim, idx_vec, idx_sca, bnd1, bnd2)                  \
-    SAC_WL_GRID_FIT_EMPTY_END (dim, idx_vec, idx_sca, bnd1, bnd2)
+#define SAC_WL_GRID_NOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                        \
+    {                                                                                    \
+        int SAC_WL_VAR (diff, idx_sca) = (bnd2 - bnd1);                                  \
+        idx_sca += SAC_WL_VAR (diff, idx_sca);
+
+#define SAC_WL_MT_GRID_NOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                     \
+    SAC_WL_GRID_NOOP_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
+
+/*
+ * BEGIN: (not fitted yet)
+ */
+
+#define SAC_WL_GRID_FIT_NOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                    \
+    {                                                                                    \
+        int SAC_WL_VAR (diff, idx_sca)                                                   \
+          = SAC_ND_MIN ((bnd2 - bnd1), SAC_WL_VAR (stop, idx_sca) - idx_sca);            \
+        idx_sca += SAC_WL_VAR (diff, idx_sca);
+
+#define SAC_WL_MT_GRID_FIT_NOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                 \
+    SAC_WL_GRID_FIT_NOOP_BEGIN (dim, idx_vec, idx_sca, bnd1, bnd2)
+
+/*
+ * END: (fitted already)
+ */
+
+#define SAC_WL_GRID_NOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2) }
+
+#define SAC_WL_MT_GRID_NOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2)                       \
+    SAC_WL_GRID_NOOP_END (dim, idx_vec, idx_sca, bnd1, bnd2)
+
+/*
+ * END: (not fitted yet)
+ */
+
+#define SAC_WL_GRID_FIT_NOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2) }
+
+#define SAC_WL_MT_GRID_FIT_NOOP_END(dim, idx_vec, idx_sca, bnd1, bnd2)                   \
+    SAC_WL_GRID_FIT_NOOP_END (dim, idx_vec, idx_sca, bnd1, bnd2)
 
 /*****************************************************************************/
 
