@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2004/12/03 18:10:29  sbs
+ * funcond rep eliminated EXPRS
+ *
  * Revision 3.64  2004/12/01 18:43:28  sah
  * renamed a function
  *
@@ -1148,8 +1151,8 @@ NTCfuncond (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NTCfuncond");
 
-    rhs1 = EXPRS_EXPR (FUNCOND_THEN (arg_node));
-    rhs2 = EXPRS_EXPR (FUNCOND_ELSE (arg_node));
+    rhs1 = FUNCOND_THEN (arg_node);
+    rhs2 = FUNCOND_ELSE (arg_node);
 
     /**
      * collect the first phi-type => rhs1_type!
