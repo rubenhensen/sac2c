@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.22  2000/10/23 11:35:48  dkr
+# make deps done
+#
 # Revision 1.21  2000/08/17 10:17:41  dkr
 # make deps done
 #
@@ -238,3 +241,4 @@ tree_compound.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
 tree_compound.o: ../global/my_debug.h free.h /usr/include/malloc.h
 tree_compound.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 tree_compound.o: /usr/include/sys/int_types.h ../global/internal_lib.h
+tree_compound.o: ../typecheck/typecheck.h

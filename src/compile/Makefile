@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.35  2000/10/23 11:35:36  dkr
+# make deps done
+#
 # Revision 2.34  2000/10/12 17:11:55  dkr
 # make deps done
 #
@@ -287,20 +290,20 @@ icm_comment.o: icm.data
 icm_icm2c.o: icm.data
 icm_trace.o: icm.data
 icm_vars.o: icm.data
-precompile.o: ../../inc/dbug.h /usr/include/stdio.h
-precompile.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-precompile.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-precompile.o: /usr/include/stdio_impl.h ../global/types.h ../tree/tree.h
-precompile.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-precompile.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
-precompile.o: ../global/internal_lib.h ../tree/DupTree.h
+precompile.o: /usr/include/string.h /usr/include/sys/feature_tests.h
+precompile.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
+precompile.o: /usr/include/stdio.h /usr/include/sys/va_list.h
+precompile.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+precompile.o: ../global/types.h ../tree/tree.h ../tree/tree_basic.h
+precompile.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdlib.h
+precompile.o: ../global/globals.h ../global/internal_lib.h ../tree/DupTree.h
 precompile.o: ../tree/LookUpTable.h ../tree/free.h ../global/my_debug.h
 precompile.o: /usr/include/malloc.h /usr/include/sys/types.h
 precompile.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-precompile.o: ../tree/traverse.h ../print/convert.h ../tree/DataFlowMask.h
-precompile.o: ../typecheck/typecheck.h ../tree/scheduling.h
-precompile.o: ../flatten/adjust_ids.h precompile.h
-precompile.o: ../c-interface/map_cwrapper.h
+precompile.o: ../tree/prf.h ../tree/traverse.h ../print/convert.h
+precompile.o: ../tree/DataFlowMask.h ../typecheck/typecheck.h
+precompile.o: ../tree/scheduling.h ../flatten/adjust_ids.h precompile.h
+precompile.o: ../c-interface/map_cwrapper.h compile.h
 wlpragma_funs.o: ../../inc/dbug.h /usr/include/stdio.h
 wlpragma_funs.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 wlpragma_funs.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
