@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.75  1998/04/25 16:27:55  sbs
+# icm2c_std.o added in link-list
+#
 # Revision 1.74  1998/04/17 17:24:14  dkr
 # concregions.[ch] renamed to spmdregions.[ch]
 #
@@ -289,7 +292,7 @@ REFCOUNT= src/refcount/refcount.o
 CONCURRENT= src/concurrent/spmdregions.o
 COMPILE= src/compile/compile.o src/compile/icm2c.o src/compile/precompile.o \
          src/compile/gen_startup_code.o src/compile/wlpragma_funs.o \
-         src/compile/Old2NewWith.o
+         src/compile/Old2NewWith.o src/compile/icm2c_std.o
 
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
     $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT)
