@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/08/06 10:45:41  skt
+ * MUTHDecodeExecmode added
+ *
  * Revision 3.6  2004/08/05 13:50:18  skt
  * welcome to the new INFO structure
  *
@@ -82,5 +85,7 @@ extern node *MUTHmodul (node *arg_node, info *arg_info);
 extern node *MUTHfundef (node *arg_node, info *arg_info);
 
 extern node *MUTHassign (node *arg_node, info *arg_info);
+
+extern char *MUTHDecodeExecmode (int execmode);
 
 #endif /* MULTITHREAD_H */

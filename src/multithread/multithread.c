@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/08/06 10:45:41  skt
+ * MUTHDecodeExecmode added
+ *
  * Revision 3.10  2004/08/05 13:50:18  skt
  * welcome to the new INFO structure
  *
@@ -364,6 +367,7 @@ MUTHmodul (node *arg_node, info *arg_info)
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
         DBUG_PRINT ("MUTH", ("trav from modul-funs"));
     }
+    executionmodes_available = TRUE;
     DBUG_PRINT ("MUTH", ("end initializing"));
 
     if ((break_after == PH_multithread) && (strcmp ("init", break_specifier) == 0)) {
@@ -397,19 +401,6 @@ MUTHmodul (node *arg_node, info *arg_info)
     }
 
     /*
-     *  --- CreateCells (crece) ---
-     */
-    DBUG_PRINT ("MUTH", ("begin CreateCells"));
-
-    arg_node = CreateCells (arg_node);
-
-    DBUG_PRINT ("MUTH", ("end CreateCells"));
-
-    if ((break_after == PH_multithread) && (strcmp ("crece", break_specifier) == 0)) {
-        goto cont;
-    }
-
-    /*
      *  --- CreateDataflowgraph (cdfg) ---
      */
     DBUG_PRINT ("MUTH", ("begin CreateDataflowgraph"));
@@ -419,6 +410,23 @@ MUTHmodul (node *arg_node, info *arg_info)
     DBUG_PRINT ("MUTH", ("end CreateDataflowgraph"));
 
     if ((break_after == PH_multithread) && (strcmp ("cdfg", break_specifier) == 0)) {
+        goto cont;
+    }
+
+    /*
+     *  --- AssignmentsRearange (asmra) ---
+     */
+
+    /*
+     *  --- CreateCells (crece) ---
+     */
+    DBUG_PRINT ("MUTH", ("begin CreateCells"));
+
+    arg_node = CreateCells (arg_node);
+
+    DBUG_PRINT ("MUTH", ("end CreateCells"));
+    executionmodes_available = FALSE;
+    if ((break_after == PH_multithread) && (strcmp ("crece", break_specifier) == 0)) {
         goto cont;
     }
 
@@ -569,6 +577,42 @@ MUTHmodul (node *arg_node, info *arg_info)
 cont:
 
     DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn char *MUTHDecodeExecmode(int execmode)
+ *
+ *   @brief A small helper function to make debug-output more readable
+ *          !It must be adapted if the names of the modes change!
+ *
+ *   @param execmode the executionmode to decode
+ *   @return the name of the executionmode as a string
+ *
+ *****************************************************************************/
+char *
+MUTHDecodeExecmode (int execmode)
+{
+    char *result;
+    DBUG_ENTER ("MUTHDecodeExecmode");
+    DBUG_ASSERT (((execmode == MUTH_ANY) || (execmode == MUTH_EXCLUSIVE)
+                  || (execmode == MUTH_SINGLE) || (execmode == MUTH_MULTI)),
+                 "DecodeExecmode expects a valid executionmode");
+    switch (execmode) {
+    case MUTH_ANY:
+        result = "AT";
+        break;
+    case MUTH_EXCLUSIVE:
+        result = "EX";
+        break;
+    case MUTH_SINGLE:
+        result = "ST";
+        break;
+    case MUTH_MULTI:
+        result = "MT";
+        break;
+    }
+    DBUG_RETURN (result);
 }
 
 /**
