@@ -1,6 +1,10 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 1.23  1999/02/01 11:59:46  cg
+ * Bug fixed in MakeNullVec(): bool and char arrays are now handled
+ * as well.
+ *
  * Revision 1.22  1999/01/18 15:46:02  sbs
  * DBUG_PRINT( "OPTMEM",...) inserted for mem-info during optimization
  *
@@ -1138,6 +1142,12 @@ MakeNullVec (int dim, simpletype type)
                 break;
             case T_double:
                 tmpn = MakeExprs (MakeDouble (0), tmpn);
+                break;
+            case T_bool:
+                tmpn = MakeExprs (MakeBool (0), tmpn);
+                break;
+            case T_char:
+                tmpn = MakeExprs (MakeChar ('\0'), tmpn);
                 break;
             default:
                 DBUG_ASSERT (0, ("unkown type"));
