@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2004/11/27 00:41:57  khf
+ * adjusted startfunctions
+ *
  * Revision 1.26  2004/11/26 20:57:34  khf
  * corrected function names fron CF
  *
@@ -2299,16 +2302,16 @@ WLPGgenerator (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-WLPGdoPartitionGeneration (node *arg_node)
+WLPGdoWlPartitionGeneration (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("WLPGdoPartitionGeneration");
+    DBUG_ENTER ("WLPGdoWlPartitionGeneration");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
-                 "WLPGdoPartitionGeneration not started with module node");
+                 "WLPGdoWlPartitionGeneration not started with module node");
 
-    DBUG_PRINT ("WLPG", ("starting WLPGdoPartitionGeneration"));
+    DBUG_PRINT ("WLPG", ("starting WLPGdoWlPartitionGeneration"));
 
     arg_info = MakeInfo ();
     INFO_WLPG_SUBPHASE (arg_info) = SP_cf;
@@ -2334,16 +2337,16 @@ WLPGdoPartitionGeneration (node *arg_node)
  ******************************************************************************/
 
 node *
-WLPGdoPartitionGenerationOpt (node *arg_node)
+WLPGdoWlPartitionGenerationOpt (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("WLPGdoPartitionGenerationOpt");
+    DBUG_ENTER ("WLPGdoWlPartitionGenerationOpt");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "WLPGdoPartitionGenerationOpt not started with fundef node");
+                 "WLPGdoWlPartitionGenerationOpt not started with fundef node");
 
-    DBUG_PRINT ("WLPG", ("starting WLPGdoPartitionGenerationOpt"));
+    DBUG_PRINT ("WLPG", ("starting WLPGdoWlPartitionGenerationOpt"));
 
     arg_info = MakeInfo ();
     INFO_WLPG_SUBPHASE (arg_info) = SP_func;
