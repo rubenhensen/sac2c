@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2004/12/07 14:54:24  sah
+ * Spap nodes are flattened now
+ *
  * Revision 3.40  2004/12/05 16:45:38  sah
  * added SPIds SPId SPAp in frontend
  *
@@ -1210,7 +1213,7 @@ FLATexprs (node *arg_node, info *arg_info)
         abstract = ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
                     || (NODE_TYPE (expr) == N_double) || (NODE_TYPE (expr) == N_bool)
                     || (NODE_TYPE (expr) == N_char) || (NODE_TYPE (expr) == N_str)
-                    || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_ap)
+                    || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_spap)
                     || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_with)
                     || (NODE_TYPE (expr) == N_cast));
         break;
@@ -1218,17 +1221,17 @@ FLATexprs (node *arg_node, info *arg_info)
         abstract = ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
                     || (NODE_TYPE (expr) == N_double) || (NODE_TYPE (expr) == N_bool)
                     || (NODE_TYPE (expr) == N_char) || (NODE_TYPE (expr) == N_str)
-                    || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_ap)
+                    || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_spap)
                     || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_with)
                     || (NODE_TYPE (expr) == N_cast));
         break;
     case CT_normal:
-        abstract = ((NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
+        abstract = ((NODE_TYPE (expr) == N_spap) || (NODE_TYPE (expr) == N_prf)
                     || (NODE_TYPE (expr) == N_with) || (NODE_TYPE (expr) == N_cast));
         break;
     case CT_array:
         abstract = ((NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array)
-                    || (NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
+                    || (NODE_TYPE (expr) == N_spap) || (NODE_TYPE (expr) == N_prf)
                     || (NODE_TYPE (expr) == N_with) || (NODE_TYPE (expr) == N_cast));
         INFO_FLAT_VECTYPE (arg_info)
           = FltnPreTypecheck (NODE_TYPE (expr), INFO_FLAT_VECTYPE (arg_info));
@@ -1372,7 +1375,7 @@ FLATcond (node *arg_node, info *arg_info)
     DBUG_ENTER ("FltnCond");
 
     pred = COND_COND (arg_node);
-    if ((NODE_TYPE (pred) == N_ap) || (NODE_TYPE (pred) == N_prf)
+    if ((NODE_TYPE (pred) == N_spap) || (NODE_TYPE (pred) == N_prf)
         || (NODE_TYPE (pred) == N_cast)) {
         COND_COND (arg_node) = Abstract (pred, arg_info);
     }
@@ -1517,7 +1520,7 @@ FLATdo (node *arg_node, info *arg_info)
     final_assign = INFO_FLAT_FINALASSIGN (arg_info);
 
     pred = DO_COND (arg_node);
-    if ((NODE_TYPE (pred) == N_ap) || (NODE_TYPE (pred) == N_prf)
+    if ((NODE_TYPE (pred) == N_spap) || (NODE_TYPE (pred) == N_prf)
         || (NODE_TYPE (pred) == N_cast)) {
         /*
          * abstract the condition out and insert it at the end of the do-loop:
@@ -1651,7 +1654,7 @@ FLATmodarray (node *arg_node, info *arg_info)
     DBUG_ENTER ("FLATmodarray");
 
     expr = MODARRAY_ARRAY (arg_node);
-    if ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap)
+    if ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_spap)
         || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_with)
         || (NODE_TYPE (expr) == N_cast)) {
         MODARRAY_ARRAY (arg_node) = Abstract (expr, arg_info);
