@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.2  2001/03/22 18:55:08  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.1  2000/11/20 18:03:45  sacbase
  * new release made
  *
@@ -11,7 +15,10 @@
 #ifndef _sac_print_interface_wrapper_h
 #define _sac_print_interface_wrapper_h
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "globals.h"
 
 extern node *PIWmodul (node *arg_node, node *arg_info);

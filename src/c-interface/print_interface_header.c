@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/22 18:55:22  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.4  2001/03/15 19:56:59  dkr
  * PIHarg: '&' for reference objects is no longer printed in Type2String
  *
@@ -22,7 +25,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "print_interface_header.h"
 #include "print.h"
 #include "my_debug.h"

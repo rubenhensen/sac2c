@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.5  2001/03/22 18:54:50  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.4  2001/03/15 11:59:28  dkr
  * ST_inout replaced by ST_reference
  *
@@ -25,7 +29,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "print_interface_header.h"
 #include "print_interface_wrapper.h"
 #include "print.h"

@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.4  2001/03/22 18:54:06  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.3  2000/12/05 14:33:27  nmw
  * trace output redirected to stderr
  *
@@ -74,7 +78,9 @@
  * Revision 1.1  2000/07/05 11:39:33  nmw
  * Initial revision
  *
- *
+ */
+
+/*
  * The c-interface allows you to generate a c-library from your SAC-module.
  * at this time, only functions with a fixed shape exported.
  * When you compile your SAC-module with sac2c and the option '-genlib c'
@@ -97,7 +103,7 @@
  * print_interface.[ch]: starts traversal for interface headerfile and wrapper code
  *                    it also generates code for initializing the sac-runtime
  *                    system (heapmangement, ...)
-
+ *
  * print_interface_header.[ch]: generating the c-code for the module headerfile
  *
  * print_interface_wrapper.[ch]: generating c-code for the module
@@ -123,14 +129,16 @@
  *   - no multithreading in an c-library (yet)
  *   - you have to take care of one set of switches for all modules used in one
  *     c executable, concerning private heap management, checks and profiling
- *
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "print_interface.h"
 #include "print.h"
 #include "my_debug.h"
