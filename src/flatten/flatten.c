@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.52  1997/12/10 18:37:24  srs
+ * - fixed bug in foldprf of old WLs
+ * - changed flattening of new WLs
+ *
  * Revision 1.51  1997/12/05 16:26:44  srs
  * bugfix with flattening of WLs
  *
@@ -1428,9 +1432,9 @@ FltnCon (node *arg_node, node *arg_info)
 
     switch (NODE_TYPE (arg_node)) {
     case N_modarray: {
-        if ((N_prf == arg_node->node[0]->nodetype)
-            || (N_ap == arg_node->node[0]->nodetype)
-            || (N_array == arg_node->node[0]->nodetype)) {
+        if ((N_prf == NODE_TYPE (MODARRAY_ARRAY (arg_node)))
+            || (N_ap == NODE_TYPE (MODARRAY_ARRAY (arg_node)))
+            || (N_array == NODE_TYPE (MODARRAY_ARRAY (arg_node)))) {
             int old_tag = arg_info->info.cint;
             node *exprs = MakeExprs (MODARRAY_ARRAY (arg_node), NULL);
             arg_info->info.cint = MODARRAY;
@@ -1464,6 +1468,21 @@ FltnCon (node *arg_node, node *arg_info)
         break;
     }
     case N_foldprf: {
+        /* srs: flattening of neutral element was forgotten. We flatten the
+           neutral element now but the variable in this position causes other
+           errors. => ASSERT here */
+        int old_tag = arg_info->info.cint;
+        node *exprs = MakeNode (N_exprs);
+        arg_info->info.cint = NORMAL;
+        exprs->node[0] = arg_node->node[1]; /* exprs is only used temporary to
+                                             * call FltnExprs
+                                             */
+        exprs = Trav (exprs, arg_info);     /* call FltnExprs */
+        arg_node->node[1] = exprs->node[0];
+        FREE (exprs);
+        DBUG_ASSERT (N_id != NODE_TYPE (arg_node->node[1]),
+                     "FoldPrf only for constant neutral elements implemented yet.");
+        arg_info->info.cint = old_tag;
         FOLDPRF_BODY (arg_node) = Trav (FOLDPRF_BODY (arg_node), info_node);
         break;
     }
@@ -1539,7 +1558,7 @@ FltnNpart (node *arg_node, node *arg_info)
     DBUG_ENTER ("FltnNpart");
 
     /* flatten the generator */
-    NPART_GEN (arg_node) = FltnNgenerator (NPART_GEN (arg_node), arg_info);
+    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
 
     /* rename index-vector or index scalars if necessary */
     _ids = NWITHID_IDS (NPART_IDX (arg_node));
@@ -1630,9 +1649,50 @@ FltnNgenerator (node *arg_node, node *arg_info)
 }
 /* ========================================================================== */
 
+/* -------------------------------------------------------------------------- *
+ * task: falltens N_Nwithop
+ *
+ * remarks: - genarray: at the moment shape is limited to a constant array
+ * - modarray: the array has to be an id or is flattened otherwise.
+ * - fold: the neutral element has to be an id or a constant scalar
+ *         or is flattened otherwise.
+ * -------------------------------------------------------------------------- */
 node *
 FltnNwithop (node *arg_node, node *arg_info)
 {
+    node *exprs;
+    int old_tag;
+
+    switch (NWITHOP_TYPE (arg_node)) {
+    case WO_genarray:
+        break;
+    case WO_modarray: {
+        if ((N_prf == NODE_TYPE (NWITHOP_ARRAY (arg_node)))
+            || (N_ap == NODE_TYPE (NWITHOP_ARRAY (arg_node)))
+            || (N_array == NODE_TYPE (NWITHOP_ARRAY (arg_node)))) {
+            old_tag = arg_info->info.cint;
+            /* exprs is only used temporary to call FltnExprs */
+            exprs = MakeExprs (NWITHOP_ARRAY (arg_node), NULL);
+            arg_info->info.cint = MODARRAY;
+            exprs = Trav (exprs, arg_info);
+            arg_info->info.cint = old_tag;
+            NWITHOP_ARRAY (arg_node) = EXPRS_EXPR (exprs);
+            FREE (exprs);
+        }
+        break;
+    }
+    default: {
+        old_tag = arg_info->info.cint;
+        /* exprs is only used temporary to call FltnExprs */
+        exprs = MakeExprs (NWITHOP_NEUTRAL (arg_node), NULL);
+        arg_info->info.cint = NORMAL;
+        exprs = Trav (exprs, arg_info); /* call FltnExprs */
+        arg_info->info.cint = old_tag;
+        NWITHOP_NEUTRAL (arg_node) = EXPRS_EXPR (exprs);
+        FREE (exprs);
+    }
+    }
+
     return (arg_node);
 }
 /* ========================================================================== */
@@ -1651,24 +1711,35 @@ FltnNcode (node *arg_node, node *arg_info)
 
     /* if CEXPR is not an Id we have to flatten the expression in the context
        of the body */
-    if (N_id != NODE_TYPE (NCODE_CEXPR (arg_node))) {
+    if (N_id != NODE_TYPE (NCODE_CEXPR (arg_node))
+        && N_num != NODE_TYPE (NCODE_CEXPR (arg_node))) {
         name = GenTmpVar (var_counter++);
         let_node = MakeLet (NCODE_CEXPR (arg_node), MakeIds (name, NULL, ST_regular));
         assign_node = MakeAssign (let_node, NULL);
         NCODE_CEXPR (arg_node) = MakeId (name, NULL, ST_regular);
         /* name will be pushed on the local_stack later while processing the body. */
 
-        /* insert assign_node at the end of the body */
-        tmp = BLOCK_INSTR (NCODE_CBLOCK (arg_node));
-        while (tmp && ASSIGN_NEXT (tmp))
-            tmp = ASSIGN_NEXT (tmp);
-        if (tmp)
-            ASSIGN_NEXT (tmp) = assign_node;
+        if (NCODE_CBLOCK (arg_node)) {
+            /* insert assign_node at the end of the body */
+            tmp = BLOCK_INSTR (NCODE_CBLOCK (arg_node));
+            if (N_empty == NODE_TYPE (tmp)) {
+                FreeTree (tmp);
+                BLOCK_INSTR (NCODE_CBLOCK (arg_node)) = assign_node;
+            } else {
+                while (ASSIGN_NEXT (tmp))
+                    tmp = ASSIGN_NEXT (tmp);
+                ASSIGN_NEXT (tmp) = assign_node;
+            }
+        } else
+            /* create body */
+            NCODE_CBLOCK (arg_node) = MakeBlock (assign_node, NULL);
     }
 
-    /* traverse the body, use info_node to save arg_info  */
+    /* traverse the body, use info_node to save arg_info */
     info_node = MakeInfo ();
-    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), info_node);
+    info_node->info.cint = NORMAL;
+    if (NCODE_CBLOCK (arg_node))
+        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), info_node);
 
     /* Every variable which is assigned a new value to in the body is local and
        so has to be renamed if used outside the body. The renaming has been done
