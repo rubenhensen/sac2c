@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/04/24 11:08:19  dkr
+ * ProcessErrorMessage():
+ * DBUG_ASSERT about TABs removed (Note, that TABs may occur in the
+ * source code and therefore also in scan/parse error messages!)
+ * TABs are printed as SPACEs now
+ *
  * Revision 3.1  2000/11/20 17:59:24  sacbase
  * new release made
  *
@@ -98,23 +104,20 @@
  * Revision 1.2  1994/11/10  15:44:34  sbs
  * RCS-header inserted
  *
- *
  */
 
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "Error.h"
+#include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"
-
-#include "dbug.h"
 #include "internal_lib.h"
 #include "globals.h"
-
 #include "filemgr.h"
 #include "resource.h"
+#include "Error.h"
 
 /*
  *
@@ -122,11 +125,6 @@
  *  arguments     : 1) format string like the one of printf
  *                  2) ... arguments of format string
  *  description   : prints an error message on stderr
- *
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : fprintf
- *  macros        : DBUG..., PUTC_STDERR, va_list, va_start, va_end
  *
  *  remarks       : following format information are considered:
  *                  %s %d \n \t
@@ -154,12 +152,6 @@ DoPrint (char *format, ...)
  *                  2) variable number of arguments similar to printf
  *  description   : evaluates the format string with the given arguments
  *                  and splits it into single lines using @ as delimiter.
- *  global vars   : error_message_buffer, current_line_length
- *  internal funs : ---
- *  external funs : vsprintf, va_start, va_end
- *  macros        : DBUG, MAX_ERROR_MESSAGE_LENGTH
- *
- *  remarks       :
  *
  */
 
@@ -180,8 +172,9 @@ ProcessErrorMessage (char *format, ...)
     line = 0;
 
     while ((index < MAX_ERROR_MESSAGE_LENGTH) && (error_message_buffer[index] != '\0')) {
-        DBUG_ASSERT (error_message_buffer[index] != '\t',
-                     "TABs not allowed in error messages, use SPACEs !");
+        if (error_message_buffer[index] == '\t') {
+            error_message_buffer[index] = ' ';
+        }
 
         if (error_message_buffer[index] == ' ') {
             last_space = index;
@@ -215,12 +208,6 @@ ProcessErrorMessage (char *format, ...)
  *  functionname  : NumberOfDigits
  *  arguments     : 1) integer
  *  description   : returns the number of digits, e.g 4 for 1000
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : DBUG
- *
- *  remarks       :
  *
  */
 
@@ -247,15 +234,10 @@ NumberOfDigits (int number)
  *  description   : constructs a new string combining module and item name
  *                  with a colon.
  *                  ModName is designed to simplify error messages.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : Malloc, strcpy, strcat, strlen
- *  macros        :
  *
  *  remarks       : Since an internal buffer is used for the generation of
  *                  a combined name, this function should exclusively be
  *                  employed for immediately subsequent print operations.
- *
  *
  */
 
@@ -285,12 +267,6 @@ ModName (char *mod, char *name)
  *  arguments     : 1) pointer to fundef, objdef or typedef node
  *  description   : generates the full combined name of the item,
  *                  including the module name when present.
- *  global vars   : ---
- *  internal funs : ModName
- *  external funs : ---
- *  macros        : ---
- *
- *  remarks       :
  *
  */
 
@@ -327,12 +303,6 @@ ItemName (node *item)
  *                  except the actual result file. Used to clean up the
  *                  file system in regular as well as irregular program
  *                  termination.
- *  global vars   : tmp_dirname, cleanup
- *  internal funs : ---
- *  external funs : SystemCall
- *  macros        :
- *
- *  remarks       :
  *
  */
 
