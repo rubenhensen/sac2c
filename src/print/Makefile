@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.16  2000/06/23 16:38:42  nmw
+# map_cwrapper inserted
+#
 # Revision 2.15  2000/06/21 12:12:24  nmw
 # make deps, includes modified
 #
@@ -116,7 +119,7 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../global -I../tree -I../../inc -I../compile -I../modules -I../concurrent \
      -I../psi-opt -I../optimize -I../typecheck
 
-all: print.o convert.o print_interface.o
+all: print.o convert.o print_interface.o map_cwrapper.o
 
 print.o: print.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o print.o -c print.c $(INCS)
@@ -127,11 +130,14 @@ convert.o: convert.c
 print_interface.o: print_interface.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o print_interface.o -c print_interface.c $(INCS)
 
+map_cwrapper.o: map_cwrapper.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o map_cwrapper.o -c map_cwrapper.c $(INCS)
+
 deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) print.o convert.o print_interface.o *.bak
+	$(RM) print.o convert.o print_interface.o map_cwrapper.o *.bak
 	$(RM) -r .sb SunWS_cache
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
@@ -143,6 +149,19 @@ convert.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/sys/va_list.h
 convert.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 convert.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
 convert.o: ../global/globals.h ../tree/type_info.mac
+map_cwrapper.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+map_cwrapper.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+map_cwrapper.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+map_cwrapper.o: /usr/include/stdlib.h /usr/include/string.h ../tree/tree.h
+map_cwrapper.o: ../global/types.h ../tree/tree_basic.h
+map_cwrapper.o: ../tree/tree_compound.h ../global/Error.h ../global/globals.h
+map_cwrapper.o: ../global/internal_lib.h map_cwrapper.h ../global/my_debug.h
+map_cwrapper.o: ../../inc/dbug.h ../tree/traverse.h convert.h
+map_cwrapper.o: ../modules/filemgr.h ../tree/free.h /usr/include/malloc.h
+map_cwrapper.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+map_cwrapper.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+map_cwrapper.o: /usr/include/sys/time.h /usr/include/sys/time.h
+map_cwrapper.o: ../global/resource.h ../typecheck/shape.h
 print.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 print.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 print.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -173,5 +192,4 @@ print_interface.o: ../modules/filemgr.h ../tree/free.h /usr/include/malloc.h
 print_interface.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 print_interface.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
 print_interface.o: /usr/include/sys/time.h /usr/include/sys/time.h
-print_interface.o: ../global/resource.h ../typecheck/constants.h
-print_interface.o: ../typecheck/shape.h ../tree/type_info.mac
+print_interface.o: ../global/resource.h ../typecheck/shape.h
