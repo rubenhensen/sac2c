@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.42  2002/08/09 12:45:47  dkr
+ * INFO_COMP_... macros moved from tree_basic.h to compile.tagged.c
+ * and renamed into INFO_COMP2_...
+ *
  * Revision 1.41  2002/08/08 12:35:21  dkr
  * DBUG_ASSERT added
  *
@@ -188,6 +192,18 @@ static ids *wlids = NULL;
 static node *wlnode = NULL;
 static node *wlseg = NULL;
 static node *wlstride = NULL;
+
+/*
+ * access macros for 'arg_info'
+ */
+#define INFO_COMP2_MODUL(n) (n->node[0])
+#define INFO_COMP2_FUNDEF(n) (n->node[1])
+#define INFO_COMP2_LASTSYNC(n) (n->node[3])
+#define INFO_COMP2_LASTIDS(n) (n->info.ids)
+#define INFO_COMP2_FOLDFUNS(n) ((bool)(n->varno))
+#define INFO_COMP2_ASSIGN(n) (n->node[5])
+#define INFO_COMP2_SCHEDULERID(n) (n->counter)
+#define INFO_COMP2_SCHEDULERINIT(n) (n->info2)
 
 /* postfix for goto labels */
 #define LABEL_POSTFIX "SAC_label"
@@ -1808,7 +1824,7 @@ COMP2Modul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("COMPModul");
 
-    INFO_COMP_MODUL (arg_info) = arg_node;
+    INFO_COMP2_MODUL (arg_info) = arg_node;
 
     if (MODUL_OBJS (arg_node) != NULL) {
         MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
@@ -1818,13 +1834,13 @@ COMP2Modul (node *arg_node, node *arg_info)
         /*
          * compile all special fold-funs only
          */
-        INFO_COMP_FOLDFUNS (arg_info) = TRUE;
+        INFO_COMP2_FOLDFUNS (arg_info) = TRUE;
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
 
         /*
          * compile all other functions
          */
-        INFO_COMP_FOLDFUNS (arg_info) = FALSE;
+        INFO_COMP2_FOLDFUNS (arg_info) = FALSE;
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
 
@@ -1953,7 +1969,6 @@ COMPFundefArgs (node *fundef, node *arg_info)
                 /*
                  * put ICMs for RC-adjustment at beginning of function block
                  *   BUT BEHIND THE DECLARATION ICMs!!!
-                 *   -> put them at the tail of INFO_COMP_FIRSTASSIGN
                  */
                 if (FUNDEF_STATUS (fundef) != ST_spmdfun) {
                     assigns
@@ -1970,7 +1985,6 @@ COMPFundefArgs (node *fundef, node *arg_info)
                     /*
                      * put "ND_DECL__MIRROR_PARAM" ICMs at beginning of function block
                      *   AND IN FRONT OF THE DECLARATION ICMs!!!
-                     *   -> put ICM at the head of INFO_COMP_FIRSTASSIGN
                      */
                     assigns
                       = MakeAssignIcm1 ("ND_DECL__MIRROR_PARAM",
@@ -1981,7 +1995,6 @@ COMPFundefArgs (node *fundef, node *arg_info)
                     /*
                      * put "ND_DECL_PARAM_inout" ICM at beginning of function block
                      *   AND IN FRONT OF THE DECLARATION ICMs!!!
-                     *   -> put ICM at the head of INFO_COMP_FIRSTASSIGN
                      */
                     if (argtab->tag[i] == ATG_inout) {
                         assigns
@@ -2019,19 +2032,19 @@ COMP2Fundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("COMP", ("compiling %s", FUNDEF_NAME (arg_node)));
 
     /*
-     * traverse special fold-funs only if INFO_COMP_FOLDFUNS is true,
-     * traverse other functions only if INFO_COMP_FOLDFUNS is false.
+     * traverse special fold-funs only if INFO_COMP2_FOLDFUNS is true,
+     * traverse other functions only if INFO_COMP2_FOLDFUNS is false.
      */
     if ((FUNDEF_STATUS (arg_node) != ST_zombiefun)
-        && (((INFO_COMP_FOLDFUNS (arg_info)) && (FUNDEF_STATUS (arg_node) == ST_foldfun))
-            || ((!INFO_COMP_FOLDFUNS (arg_info))
+        && (((INFO_COMP2_FOLDFUNS (arg_info)) && (FUNDEF_STATUS (arg_node) == ST_foldfun))
+            || ((!INFO_COMP2_FOLDFUNS (arg_info))
                 && (FUNDEF_STATUS (arg_node) != ST_foldfun)))) {
 
         /*
          * push 'arg_info'
          */
-        old_fundef = INFO_COMP_FUNDEF (arg_info);
-        INFO_COMP_FUNDEF (arg_info) = arg_node;
+        old_fundef = INFO_COMP2_FUNDEF (arg_info);
+        INFO_COMP2_FUNDEF (arg_info) = arg_node;
 
         /*
          * building icms for mt2
@@ -2044,19 +2057,19 @@ COMP2Fundef (node *arg_node, node *arg_info)
 
         /*
          * During compilation of a N_sync, the prior N_sync (if exists) is needed.
-         * INFO_COMP_LASTSYNC provides these information, it is initialized here
+         * INFO_COMP2_LASTSYNC provides these information, it is initialized here
          * with NULL and will be updated by each compilation of a N_sync (one needs
          * to compile them ordered!), this includes the destruction of such a
          * N_sync-tree.
          * After compilation of the function the last known sync is destroyed then.
          */
-        INFO_COMP_LASTSYNC (arg_info) = NULL;
+        INFO_COMP2_LASTSYNC (arg_info) = NULL;
 
         /*
          * Each scheduler within a single SPMD function must be associated with a
          * unique segment ID. This is realized by means of the following counter.
          */
-        INFO_COMP_SCHEDULERID (arg_info) = 0;
+        INFO_COMP2_SCHEDULERID (arg_info) = 0;
 
         /*
          * For each scheduler a specific initialization ICM is created during the
@@ -2064,7 +2077,7 @@ COMP2Fundef (node *arg_node, node *arg_info)
          * nodes and will later be inserted into the code which sets up the
          * environment for multithreaded execution.
          */
-        INFO_COMP_SCHEDULERINIT (arg_info) = NULL;
+        INFO_COMP2_SCHEDULERINIT (arg_info) = NULL;
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             /*
@@ -2076,10 +2089,10 @@ COMP2Fundef (node *arg_node, node *arg_info)
              * Store collected scheduler information.
              */
             BLOCK_SCHEDULER_INIT (FUNDEF_BODY (arg_node))
-              = INFO_COMP_SCHEDULERINIT (arg_info);
+              = INFO_COMP2_SCHEDULERINIT (arg_info);
 
-            if (INFO_COMP_SCHEDULERID (arg_info) > max_schedulers) {
-                max_schedulers = INFO_COMP_SCHEDULERID (arg_info);
+            if (INFO_COMP2_SCHEDULERID (arg_info) > max_schedulers) {
+                max_schedulers = INFO_COMP2_SCHEDULERID (arg_info);
             }
         }
 
@@ -2087,8 +2100,8 @@ COMP2Fundef (node *arg_node, node *arg_info)
          * Destruction of last known N_sync is done here, all others have been
          * killed while traversing.
          */
-        if (INFO_COMP_LASTSYNC (arg_info) != NULL) {
-            INFO_COMP_LASTSYNC (arg_info) = FreeTree (INFO_COMP_LASTSYNC (arg_info));
+        if (INFO_COMP2_LASTSYNC (arg_info) != NULL) {
+            INFO_COMP2_LASTSYNC (arg_info) = FreeTree (INFO_COMP2_LASTSYNC (arg_info));
         }
 
         /********** end: traverse body **********/
@@ -2124,15 +2137,15 @@ COMP2Fundef (node *arg_node, node *arg_info)
             node *tmp;
 
             tmp = FUNDEF_NEXT (arg_node);
-            FUNDEF_NEXT (arg_node) = MODUL_FOLDFUNS (INFO_COMP_MODUL (arg_info));
-            MODUL_FOLDFUNS (INFO_COMP_MODUL (arg_info)) = arg_node;
+            FUNDEF_NEXT (arg_node) = MODUL_FOLDFUNS (INFO_COMP2_MODUL (arg_info));
+            MODUL_FOLDFUNS (INFO_COMP2_MODUL (arg_info)) = arg_node;
             arg_node = tmp;
         }
 
         /*
          * pop 'arg_info'
          */
-        INFO_COMP_FUNDEF (arg_info) = old_fundef;
+        INFO_COMP2_FUNDEF (arg_info) = old_fundef;
     } else {
         if (FUNDEF_NEXT (arg_node) != NULL) {
             FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
@@ -2190,7 +2203,7 @@ COMP2Block (node *arg_node, node *arg_info)
     DBUG_ENTER ("COMPBlock");
 
     if (BLOCK_CACHESIM (arg_node) != NULL) {
-        fun_name = FUNDEF_NAME (INFO_COMP_FUNDEF (arg_info));
+        fun_name = FUNDEF_NAME (INFO_COMP2_FUNDEF (arg_info));
         cs_tag
           = (char *)Malloc (strlen (BLOCK_CACHESIM (arg_node)) + strlen (fun_name) + 14);
         if (BLOCK_CACHESIM (arg_node)[0] == '\0') {
@@ -2248,7 +2261,7 @@ COMP2Assign (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPAssign");
 
-    INFO_COMP_ASSIGN (arg_info) = arg_node;
+    INFO_COMP2_ASSIGN (arg_info) = arg_node;
     instr = Trav (ASSIGN_INSTR (arg_node), arg_info);
     next = ASSIGN_NEXT (arg_node);
 
@@ -2311,7 +2324,7 @@ COMPNormalFunReturn (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPNormalFunReturn");
 
-    fundef = INFO_COMP_FUNDEF (arg_info);
+    fundef = INFO_COMP2_FUNDEF (arg_info);
     DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
                  "no fundef node found!");
 
@@ -2426,7 +2439,7 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPSpmdFunReturn");
 
-    fundef = INFO_COMP_FUNDEF (arg_info);
+    fundef = INFO_COMP2_FUNDEF (arg_info);
     DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
                  "no fundef node found!");
 
@@ -2507,7 +2520,7 @@ COMP2Return (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPReturn");
 
-    fundef = INFO_COMP_FUNDEF (arg_info);
+    fundef = INFO_COMP2_FUNDEF (arg_info);
 
     if (gen_mt_code == GEN_MT_NEW) {
         switch (FUNDEF_ATTRIB (fundef)) {
@@ -2558,7 +2571,7 @@ COMP2Let (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPLet");
 
-    INFO_COMP_LASTIDS (arg_info) = LET_IDS (arg_node);
+    INFO_COMP2_LASTIDS (arg_info) = LET_IDS (arg_node);
 
     expr = Trav (LET_EXPR (arg_node), arg_info);
 
@@ -2582,7 +2595,7 @@ COMP2Let (node *arg_node, node *arg_info)
         ret_node = arg_node;
     }
 
-    INFO_COMP_LASTIDS (arg_info) = NULL;
+    INFO_COMP2_LASTIDS (arg_info) = NULL;
 
     DBUG_RETURN (ret_node);
 }
@@ -2730,7 +2743,7 @@ COMPApArgs (node *ap, node *arg_info)
  *   The flattening phase assures that no one of the arguments occurs on the LHS
  *   of the application (a = fun(a) is impossible).
  *
- *   INFO_COMP_LASTIDS contains pointer to previous let-ids.
+ *   INFO_COMP2_LASTIDS contains pointer to previous let-ids.
  *
  ******************************************************************************/
 
@@ -2744,7 +2757,7 @@ COMP2Ap (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPAp");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
     fundef = AP_FUNDEF (arg_node);
 
     DBUG_ASSERT ((CheckAp (arg_node, arg_info)),
@@ -2772,7 +2785,7 @@ COMP2Ap (node *arg_node, node *arg_info)
      */
     if (FUNDEF_USED (fundef) != USED_INACTIVE) {
         if (((FUNDEF_IS_LOOPFUN (fundef))
-             && (INFO_COMP_ASSIGN (arg_info) != FUNDEF_INT_ASSIGN (fundef)))
+             && (INFO_COMP2_ASSIGN (arg_info) != FUNDEF_INT_ASSIGN (fundef)))
             || (FUNDEF_IS_CONDFUN (fundef))) {
             (FUNDEF_USED (fundef))++;
             DBUG_PRINT ("COMP", ("incrementing FUNDEF_USED: new value = %d",
@@ -2803,7 +2816,7 @@ COMPIdLet (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPIdLet");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
 
     /*
      * 'arg_node' and 'let_ids' are both non-unique or both unique
@@ -2856,7 +2869,7 @@ COMPIdFromUnique (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPIdFromUnique");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
 
     /*
      * 'arg_node' is unique and 'let_ids' is non-unique
@@ -2940,7 +2953,7 @@ COMPIdToUnique (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPIdToUnique");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
     DBUG_ASSERT (strcmp (IDS_NAME (let_ids), ID_NAME (arg_node)),
                  ".=to_unq(.) on identical objects is not allowed!");
 
@@ -3082,7 +3095,7 @@ COMP2Scalar (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPScalar");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
 
     ret_node
       = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
@@ -3120,7 +3133,7 @@ COMP2Array (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPArray");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
 
     /*
      * count number of array elements and insert DEC_RC_FREE icms
@@ -3191,7 +3204,7 @@ COMP2Array (node *arg_node, node *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_COMP2_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3205,7 +3218,7 @@ COMPPrfDim (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
 
     DBUG_ENTER ("COMPPrfDim");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
     DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_dim is no N_id!");
@@ -3239,7 +3252,7 @@ COMPPrfDim (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_COMP2_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3253,7 +3266,7 @@ COMPPrfShape (node *arg_node, node *arg_info, node **check_reuse1, node **check_
 
     DBUG_ENTER ("COMPPrfShape");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
     DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_shape is no N_id!");
@@ -3288,7 +3301,7 @@ COMPPrfShape (node *arg_node, node *arg_info, node **check_reuse1, node **check_
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_COMP2_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3302,7 +3315,7 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **check_reuse1, node **chec
 
     DBUG_ENTER ("COMPPrfReshape");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
@@ -3369,7 +3382,7 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **check_reuse1, node **chec
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_COMP2_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3384,7 +3397,7 @@ COMPPrfSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
 
     DBUG_ENTER ("COMPPrfSel");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
@@ -3452,7 +3465,7 @@ COMPPrfSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_COMP2_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3466,7 +3479,7 @@ COMPPrfModarray (node *arg_node, node *arg_info, node **check_reuse1, node **che
 
     DBUG_ENTER ("COMPPrfModarray");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
     arg3 = PRF_ARG3 (arg_node);
@@ -3528,7 +3541,7 @@ COMPPrfModarray (node *arg_node, node *arg_info, node **check_reuse1, node **che
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_COMP2_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3544,7 +3557,7 @@ COMPPrfIdxSel (node *arg_node, node *arg_info, node **check_reuse1, node **check
 
     DBUG_ENTER ("COMPPrfIdxSel");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
@@ -3592,7 +3605,7 @@ COMPPrfIdxSel (node *arg_node, node *arg_info, node **check_reuse1, node **check
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_COMP2_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3606,7 +3619,7 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info, node **check_reuse1,
 
     DBUG_ENTER ("COMPPrfIdxModarray");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
     arg3 = PRF_ARG3 (arg_node);
@@ -3670,7 +3683,7 @@ COMPPrfConvertScalar (node *arg_node, node *arg_info, node **check_reuse1,
 
     DBUG_ENTER ("COMPPrfConvertScalar");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
     (*check_reuse1) = (*check_reuse2) = NULL;
@@ -3712,7 +3725,7 @@ COMPPrfConvertArray (node *arg_node, node *arg_info, node **check_reuse1,
 
     DBUG_ENTER ("COMPPrfConvertArray");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
     DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_to?_A is no N_id!");
@@ -3750,7 +3763,7 @@ COMPPrfConvertArray (node *arg_node, node *arg_info, node **check_reuse1,
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_COMP2_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3763,7 +3776,7 @@ COMPPrfScalar (int args_cnt, node *arg_node, node *arg_info, node **check_reuse1
 
     DBUG_ENTER ("COMPPrfScalar");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
 
     DBUG_ASSERT (((args_cnt == 1) || (args_cnt == 2)), "illegal number of args found!");
 
@@ -3799,7 +3812,7 @@ COMPPrfScalar (int args_cnt, node *arg_node, node *arg_info, node **check_reuse1
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_COMP2_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3813,7 +3826,7 @@ COMPPrfScalarIcm (char *icm_name, int args_cnt, node *arg_node, node *arg_info,
 
     DBUG_ENTER ("COMPPrfScalarIcm");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
 
     DBUG_ASSERT (((args_cnt == 1) || (args_cnt == 2)), "illegal number of args found!");
 
@@ -3849,7 +3862,7 @@ COMPPrfScalarIcm (char *icm_name, int args_cnt, node *arg_node, node *arg_info,
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_COMP2_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3865,7 +3878,7 @@ COMPPrfArray (int args_cnt, node *arg_node, node *arg_info, node **check_reuse1,
 
     DBUG_ENTER ("COMPPrfArray");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
 
     DBUG_ASSERT ((args_cnt == 2), "illegal number of args found!");
 
@@ -3946,7 +3959,7 @@ COMP2Prf (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPPrf");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
     DBUG_ASSERT ((IDS_NEXT (let_ids) == NULL), "multiple return values found!");
 
     DBUG_ASSERT ((CheckPrf (let_ids, arg_node, arg_info)),
@@ -4908,10 +4921,10 @@ COMP2With2 (node *arg_node, node *arg_info)
 
     /*
      * we must store the with-loop ids *before* compiling the codes
-     *  because INFO_COMP_LASTIDS is possibly updated afterwards !!!
+     *  because INFO_COMP2_LASTIDS is possibly updated afterwards !!!
      */
     old_wlids = wlids; /* stack 'wlids' */
-    wlids = INFO_COMP_LASTIDS (arg_info);
+    wlids = INFO_COMP2_LASTIDS (arg_info);
     old_wlnode = wlnode; /* stack 'wlnode' */
     wlnode = arg_node;
 
@@ -4927,7 +4940,7 @@ COMP2With2 (node *arg_node, node *arg_info)
      */
     if ((NWITH2_TYPE (arg_node) == WO_foldprf)
         || (NWITH2_TYPE (arg_node) == WO_foldfun)) {
-        node *fundef = INFO_COMP_FUNDEF (arg_info);
+        node *fundef = INFO_COMP2_FUNDEF (arg_info);
         node *fold_vardecs = GetFoldVardecs (NWITH2_FUNDEF (arg_node));
 
         if (fold_vardecs != NULL) {
@@ -4963,7 +4976,7 @@ COMP2With2 (node *arg_node, node *arg_info)
             /*
              * find all arrays, that possibly can be reused.
              */
-            arg_node = GetReuseArrays (arg_node, INFO_COMP_FUNDEF (arg_info), wlids);
+            arg_node = GetReuseArrays (arg_node, INFO_COMP2_FUNDEF (arg_info), wlids);
         } else {
             DBUG_ASSERT ((NWITH2_REUSE (arg_node) == NULL),
                          "illegal value for NWITH2_REUSE found!");
@@ -5187,20 +5200,20 @@ COMP2WLsegx (node *arg_node, node *arg_info)
      * used during sequential execution.
      */
     if (WLSEGX_SCHEDULING (arg_node) != NULL) {
-        INFO_COMP_SCHEDULERINIT (arg_info)
-          = MakeAssign (SCHCompileSchedulingWithTaskselInit (INFO_COMP_SCHEDULERID (
+        INFO_COMP2_SCHEDULERINIT (arg_info)
+          = MakeAssign (SCHCompileSchedulingWithTaskselInit (INFO_COMP2_SCHEDULERID (
                                                                arg_info),
                                                              wlids,
                                                              WLSEGX_SCHEDULING (arg_node),
                                                              WLSEGX_TASKSEL (arg_node),
                                                              arg_node),
-                        INFO_COMP_SCHEDULERINIT (arg_info));
+                        INFO_COMP2_SCHEDULERINIT (arg_info));
 
-        (INFO_COMP_SCHEDULERID (arg_info))++;
+        (INFO_COMP2_SCHEDULERID (arg_info))++;
     }
 
     ret_node
-      = MakeAssigns4 (SCHCompileSchedulingWithTaskselBegin (INFO_COMP_SCHEDULERID (
+      = MakeAssigns4 (SCHCompileSchedulingWithTaskselBegin (INFO_COMP2_SCHEDULERID (
                                                               arg_info),
                                                             wlids,
                                                             WLSEGX_SCHEDULING (arg_node),
@@ -5208,7 +5221,7 @@ COMP2WLsegx (node *arg_node, node *arg_info)
                                                             arg_node),
                       MakeIcm_WL_INIT_OFFSET (arg_node, Trav (WLSEGX_CONTENTS (arg_node),
                                                               arg_info)),
-                      SCHCompileSchedulingWithTaskselEnd (INFO_COMP_SCHEDULERID (
+                      SCHCompileSchedulingWithTaskselEnd (INFO_COMP2_SCHEDULERID (
                                                             arg_info),
                                                           wlids,
                                                           WLSEGX_SCHEDULING (arg_node),
@@ -5912,7 +5925,7 @@ COMP2Spmd (node *arg_node, node *arg_info)
     /*
      * Now, build up the ICMs of the parallel block.
      */
-    fundef = INFO_COMP_FUNDEF (arg_info);
+    fundef = INFO_COMP2_FUNDEF (arg_info);
     assigns = NULL;
     assigns
       = MakeAssignIcm1 ("MT_SPMD_EXECUTE",
@@ -6087,7 +6100,7 @@ COMP2Sync (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("COMP_MT", ("Enter fold-args"));
 
-    last_sync = INFO_COMP_LASTSYNC (arg_info);
+    last_sync = INFO_COMP2_LASTSYNC (arg_info);
     fold_args = NULL;
     num_fold_args = 0;
     if (last_sync != NULL) {
@@ -6383,8 +6396,8 @@ COMP2Sync (node *arg_node, node *arg_info)
 
         DBUG_PRINT ("COMP_MT", ("num_args %i", num_args));
 
-        BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (INFO_COMP_FUNDEF (arg_info))) = prolog_icms;
-        BLOCK_SPMD_SETUP_ARGS (FUNDEF_BODY (INFO_COMP_FUNDEF (arg_info))) = setup_args;
+        BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (INFO_COMP2_FUNDEF (arg_info))) = prolog_icms;
+        BLOCK_SPMD_SETUP_ARGS (FUNDEF_BODY (INFO_COMP2_FUNDEF (arg_info))) = setup_args;
     }
     barrier_id++;
 
@@ -6488,10 +6501,10 @@ COMP2Sync (node *arg_node, node *arg_info)
      *  Will be needed for next N_sync, if no next N_sync exists,
      *  COMPFundef() will take care of this tree.
      */
-    if (INFO_COMP_LASTSYNC (arg_info) != NULL) {
-        INFO_COMP_LASTSYNC (arg_info) = FreeTree (INFO_COMP_LASTSYNC (arg_info));
+    if (INFO_COMP2_LASTSYNC (arg_info) != NULL) {
+        INFO_COMP2_LASTSYNC (arg_info) = FreeTree (INFO_COMP2_LASTSYNC (arg_info));
     }
-    INFO_COMP_LASTSYNC (arg_info) = arg_node;
+    INFO_COMP2_LASTSYNC (arg_info) = arg_node;
 
     DBUG_RETURN (assigns);
 }
@@ -6632,7 +6645,7 @@ COMP2St (node *arg_node, node *arg_info)
     bset = DFMGenMaskOr (ST_ALLOC (arg_node), dfm_flat);
     dfm_flat = DFMRemoveMask (dfm_flat);
 
-    fundef = INFO_COMP_FUNDEF (arg_info);
+    fundef = INFO_COMP2_FUNDEF (arg_info);
 
     if (FUNDEF_ATTRIB (fundef) == ST_call_mt_master) {
         barrier = MakeIcm1 ("MT2_MASTER_BARRIER", MakeNum (ST_IDENTIFIER (arg_node)));
@@ -6734,7 +6747,7 @@ COMP2MTalloc (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPMTalloc");
 
-    fundef = INFO_COMP_FUNDEF (arg_info);
+    fundef = INFO_COMP2_FUNDEF (arg_info);
     if ((FUNDEF_ATTRIB (fundef) == ST_call_mt_master)
         || (FUNDEF_ATTRIB (fundef) == ST_call_st)) {
         broadcast_icm = "MT2_MASTER_BROADCAST";
@@ -6802,7 +6815,7 @@ COMP2MTsync (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPMTsync");
 
-    fundef = INFO_COMP_FUNDEF (arg_info);
+    fundef = INFO_COMP2_FUNDEF (arg_info);
     if ((FUNDEF_ATTRIB (fundef) == ST_call_mt_master)
         || (FUNDEF_ATTRIB (fundef) == ST_call_st)) {
         broadcast_icm = "MT2_MASTER_BROADCAST";
