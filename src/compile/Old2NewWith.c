@@ -17,11 +17,11 @@ static int codetab_lastidx;
  *  functionname  : SeperateBlockReturn
  *  arguments     : 1) an expr-block
  *  description   : seperates the return-expr of a block from the rest.
- *                  (returns the return-expr [return value] and the rest of the block
- * [block])
+ *                  (returns the return-expr [return value]
+ *                   and the rest of the block [block])
  *
- *  remarks       : as a matter of course, the return-expr should be the last expr of the
- * block
+ *  remarks       : as a matter of course, the return-expr should be
+ *                   the last expr of the block
  *
  */
 
@@ -56,8 +56,10 @@ SeperateBlockReturn (node **block_node)
     ASSIGN_NEXT (last_assign) = NULL;              /* remove return-expr from block */
     EXPRS_EXPR (RETURN_EXPRS (tmp)) = NULL;        /* do not free return-expr */
 
-    FreeAssign (free_node,
-                free_node); /* free the nodes between return-expr and rest of block */
+    /*
+     * free the nodes between return-expr and rest of block
+     */
+    FreeAssign (free_node, free_node);
 
     DBUG_RETURN (return_node);
 }
@@ -296,8 +298,10 @@ O2Nnpart (node *arg_node, node *arg_info)
 
     infile = stdin; /* use standard input */
     if (infile != NULL) {
-        arg_node = BuildNpart (infile,
-                               arg_node); /* generate a more complex N_Npart syntaxtree */
+        /*
+         * generate a more complex N_Npart syntaxtree
+         */
+        arg_node = BuildNpart (infile, arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -358,13 +362,13 @@ O2Nnwith (node *arg_node, node *arg_info)
 }
 
 node *
-Old2NewWith (node *arg_node)
+Old2NewWith (node *syntaxtree)
 {
     DBUG_ENTER ("Old2NewWith");
 
     act_tab = o2nWith_tab; /* set new function-table for traverse */
 
-    arg_node = Trav (arg_node, NULL); /* convert old with-loop into new syntax */
+    syntaxtree = Trav (syntaxtree, NULL); /* convert old with-loop into new syntax */
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (syntaxtree);
 }
