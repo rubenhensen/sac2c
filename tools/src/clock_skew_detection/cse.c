@@ -48,7 +48,7 @@ fool (char *file, int delay)
 int
 main (int argc, char *argv[])
 {
-    int delay;
+    int delay = 0;
 
     ARGS_BEGIN (argc, argv);
     ARGS_FLAG ("h", Usage (); exit (0));
