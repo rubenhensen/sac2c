@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/23 21:50:47  khf
+ * SacDefCamp04: Compiles
+ *
  * Revision 1.4  2004/11/11 19:01:51  khf
  * fixed bug 83
  *
@@ -47,14 +50,12 @@
  *
  */
 
-#define NEW_INFO
-
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "types.h"
 #include "new_types.h"
 #include "tree_basic.h"
+#include "node_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "free.h"
@@ -72,7 +73,7 @@
 struct INFO {
     node *fundef;
     node *wl;
-    ids *ids;
+    node *ids;
 };
 
 #define INFO_EA_FUNDEF(n) (n->fundef)
@@ -89,7 +90,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_EA_FUNDEF (result) = NULL;
     INFO_EA_WL (result) = NULL;
@@ -103,45 +104,42 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *MakeAccuAssign( node *fundef, ids *lhs_ids, ids *idx_vec)
+ * @fn node *MakeAccuAssign( node *fundef, node *lhs_ids, node *idx_vec)
  *
  *   @brief creates new assignment containing prf F_accu
  *
  *   @param  node *fundef  :  N_fundef of current function
- *           ids  *lhs_ids :  LHS ids of current withloop
- *           ids  *idx_vex :  index vector of current withloop
+ *           node *lhs_ids :  LHS N_ids of current withloop
+ *           node *idx_vex :  index vector of current withloop
  *   @return node *        :  new N_assign node
  ******************************************************************************/
 static node *
-MakeAccuAssign (node *fundef, ids *lhs_ids, ids *idx_vec)
+MakeAccuAssign (node *fundef, node *lhs_ids, node *idx_vec)
 {
-    node *vardec, *tmp, *nassign;
-    ids *_ids;
+    node *vardec, *tmp, *nassign, *_ids;
     char *nvarname;
 
     DBUG_ENTER ("MakeAccuAssign");
 
-    nvarname = TmpVarName (IDS_NAME (lhs_ids));
-    _ids = MakeIds (nvarname, NULL, ST_regular);
-    vardec = MakeVardec (StringCopy (nvarname), DupOneTypes (IDS_TYPE (lhs_ids)), NULL);
-    AVIS_TYPE (VARDEC_AVIS (vardec)) = TYCopyType (AVIS_TYPE (IDS_AVIS (lhs_ids)));
+    nvarname = ILIBtmpVarName (IDS_NAME (lhs_ids));
+    _ids = TBmakeIds (TBmakeAvis (nvarname, TYcopyType (AVIS_TYPE (IDS_AVIS (lhs_ids)))),
+                      NULL);
 
-    IDS_VARDEC (_ids) = vardec;
-    IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
+    vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
 
-    fundef = AddVardecs (fundef, vardec);
+    fundef = TCaddVardecs (fundef, vardec);
 
     /* F_accu( <idx-varname>) */
-    tmp = MakePrf1 (F_accu, DupIds_Id (idx_vec));
+    tmp = TCmakePrf1 (F_accu, DUPdupIdsId (idx_vec));
 
-    nassign = MakeAssign (MakeLet (tmp, _ids), NULL);
+    nassign = TBmakeAssign (TBmakeLet (tmp, _ids), NULL);
 
     /* set correct backref to defining assignment */
     AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
@@ -151,22 +149,21 @@ MakeAccuAssign (node *fundef, ids *lhs_ids, ids *idx_vec)
 
 /** <!--********************************************************************-->
  *
- * @fn node *MakeFoldFunAssign( node *fundef, node *withop, ids *accu_ids,
+ * @fn node *MakeFoldFunAssign( node *fundef, node *withop, node *accu_ids,
  *                              node *cexpr);
  *
  *   @brief  creates new assignment containing fold function of withloop
  *
  *   @param  node *fundef  :  N_fundef of current function
  *           node *withop  :  N_withop of current withloop
- *           ids  *accu_ids:  lhs of accu assign
+ *           node *accu_ids:  lhs of accu assign
  *           node *cexpr   :  cexpr of current ncode
  *   @return node *        :  new N_assign node
  ******************************************************************************/
 static node *
-MakeFoldFunAssign (node *fundef, node *withop, ids *accu_ids, node *cexpr)
+MakeFoldFunAssign (node *fundef, node *withop, node *accu_ids, node *cexpr)
 {
-    node *vardec, *funap, *nassign;
-    ids *_ids;
+    node *vardec, *funap, *nassign, *_ids;
     char *nvarname;
 
     DBUG_ENTER ("MakeFoldFunAssign");
@@ -182,23 +179,22 @@ MakeFoldFunAssign (node *fundef, node *withop, ids *accu_ids, node *cexpr)
      */
 
     DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "CEXPR must be a N_id node!");
+    DBUG_ASSERT ((NODE_TYPE (withop) == N_fold), "withop must be a N_fold node!");
 
-    nvarname = TmpVarName (ID_NAME (cexpr));
-    _ids = MakeIds (nvarname, NULL, ST_regular);
-    vardec = MakeVardec (StringCopy (nvarname), DupOneTypes (IDS_TYPE (accu_ids)), NULL);
-    AVIS_TYPE (VARDEC_AVIS (vardec)) = TYCopyType (AVIS_TYPE (IDS_AVIS (accu_ids)));
+    nvarname = ILIBtmpVarName (ID_NAME (cexpr));
+    _ids = TBmakeIds (TBmakeAvis (nvarname, TYcopyType (AVIS_TYPE (IDS_AVIS (accu_ids)))),
+                      NULL);
 
-    IDS_VARDEC (_ids) = vardec;
-    IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
+    vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
 
-    fundef = AddVardecs (fundef, vardec);
+    fundef = TCaddVardecs (fundef, vardec);
 
-    funap = MakeAp2 (StringCopy (NWITHOP_FUN (withop)), NWITHOP_MOD (withop),
-                     DupIds_Id (accu_ids), DupNode (cexpr));
+    funap = TCmakeAp2 (ILIBstringCopy (FOLD_FUN (withop)), FOLD_MOD (withop),
+                       DUPdupIdsId (accu_ids), DUPdoDupNode (cexpr));
 
-    AP_FUNDEF (funap) = NWITHOP_FUNDEF (withop);
+    AP_FUNDEF (funap) = FOLD_FUNDEF (withop);
 
-    nassign = MakeAssign (MakeLet (funap, _ids), NULL);
+    nassign = TBmakeAssign (TBmakeLet (funap, _ids), NULL);
 
     /* set correct backref to defining assignment */
     AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
@@ -224,27 +220,27 @@ InsertAccuPrf (node *ncode, info *arg_info)
     DBUG_ENTER ("InsertAccuPrf");
 
     wl = INFO_EA_WL (arg_info);
-    nblock = NCODE_CBLOCK (ncode);
+    nblock = CODE_CBLOCK (ncode);
 
     /* <acc> = F_accu( <idx-varname>); */
     accuassign = MakeAccuAssign (INFO_EA_FUNDEF (arg_info), INFO_EA_LHS_IDS (arg_info),
-                                 NWITH_VEC (wl));
+                                 WITH_VEC (wl));
 
     /*   <res> = <fun>( <acc>, <cexpr>); */
-    ffassign = MakeFoldFunAssign (INFO_EA_FUNDEF (arg_info), NWITH_WITHOP (wl),
-                                  ASSIGN_LHS (accuassign), NWITH_CEXPR (wl));
+    ffassign = MakeFoldFunAssign (INFO_EA_FUNDEF (arg_info), WITH_WITHOP (wl),
+                                  ASSIGN_LHS (accuassign), WITH_CEXPR (wl));
 
-    nassign = AppendAssign (BLOCK_INSTR (nblock), ffassign);
+    nassign = TCappendAssign (BLOCK_INSTR (nblock), ffassign);
 
     ASSIGN_NEXT (accuassign) = nassign;
 
     BLOCK_INSTR (nblock) = accuassign;
 
     /* replace CEXPR */
-    nid = DupIds_Id (ASSIGN_LHS (ffassign));
+    nid = DUPdupIdsId (ASSIGN_LHS (ffassign));
 
-    NWITH_CEXPR (wl) = FreeNode (NWITH_CEXPR (wl));
-    NWITH_CEXPR (wl) = nid;
+    WITH_CEXPR (wl) = FREEdoFreeNode (WITH_CEXPR (wl));
+    WITH_CEXPR (wl) = nid;
 
     DBUG_RETURN (ncode);
 }
@@ -258,22 +254,22 @@ InsertAccuPrf (node *ncode, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EAmodul(node *arg_node, info *arg_info)
+ * @fn node *EAmodule(node *arg_node, info *arg_info)
  *
  *   @brief traverses function definitions only!
  *
- *   @param  node *arg_node:  N_modul
+ *   @param  node *arg_node:  N_module
  *           info *arg_info:  info
- *   @return node *        :  N_modul
+ *   @return node *        :  N_module
  ******************************************************************************/
 
 node *
-EAmodul (node *arg_node, info *arg_info)
+EAmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EAmodul");
+    DBUG_ENTER ("EAmodule");
 
-    if (MODUL_FUNS (arg_node) != NULL) {
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -298,11 +294,11 @@ EAfundef (node *arg_node, info *arg_info)
     INFO_EA_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node)) {
-        FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
+        FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -322,14 +318,14 @@ EAfundef (node *arg_node, info *arg_info)
 node *
 EAlet (node *arg_node, info *arg_info)
 {
-    ids *tmp;
+    node *tmp;
 
     DBUG_ENTER ("EAlet");
 
     tmp = INFO_EA_LHS_IDS (arg_info);
     INFO_EA_LHS_IDS (arg_info) = LET_IDS (arg_node);
 
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     INFO_EA_LHS_IDS (arg_info) = tmp;
 
@@ -338,21 +334,21 @@ EAlet (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EANwith(node *arg_node, info *arg_info)
+ * @fn node *EAwith(node *arg_node, info *arg_info)
  *
  *   @brief  if current WL is a fold WL modify code.
  *
- *   @param  node *arg_node:  N_Nwith
+ *   @param  node *arg_node:  N_with
  *           info *arg_info:  N_info
- *   @return node *        :  N_Nwith
+ *   @return node *        :  N_with
  ******************************************************************************/
 
 node *
-EANwith (node *arg_node, info *arg_info)
+EAwith (node *arg_node, info *arg_info)
 {
     info *tmp;
 
-    DBUG_ENTER ("EANwith");
+    DBUG_ENTER ("EAwith");
 
     /* stack arg_info */
     tmp = arg_info;
@@ -360,21 +356,21 @@ EANwith (node *arg_node, info *arg_info)
     INFO_EA_FUNDEF (arg_info) = INFO_EA_FUNDEF (tmp);
 
     /* modify bottom up */
-    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     /* pop arg_info */
     arg_info = FreeInfo (arg_info);
     arg_info = tmp;
 
-    if (NWITH_IS_FOLD (arg_node)) {
+    if (NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold) {
 
         DBUG_PRINT ("EA", ("Fold WL found, inserting F_Accu..."));
 
         INFO_EA_WL (arg_info) = arg_node; /* store the current node for later */
 
-        DBUG_ASSERT ((NCODE_NEXT (NWITH_CODE (arg_node)) == NULL),
+        DBUG_ASSERT ((CODE_NEXT (WITH_CODE (arg_node)) == NULL),
                      "Withloop has more than one N_code!");
-        NWITH_CODE (arg_node) = InsertAccuPrf (NWITH_CODE (arg_node), arg_info);
+        WITH_CODE (arg_node) = InsertAccuPrf (WITH_CODE (arg_node), arg_info);
 
         DBUG_PRINT ("EA", (" inserting complete"));
 
@@ -385,21 +381,21 @@ EANwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EANcode(node *arg_node, info *arg_info)
+ * @fn node *EAcode(node *arg_node, info *arg_info)
  *
  *   @brief
  *
- *   @param  node *arg_node:  N_Ncode
+ *   @param  node *arg_node:  N_code
  *           info *arg_info:  N_info
- *   @return node *        :  N_Ncode
+ *   @return node *        :  N_code
  ******************************************************************************/
 
 node *
-EANcode (node *arg_node, info *arg_info)
+EAcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EANcode");
+    DBUG_ENTER ("EAcode");
 
-    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -419,27 +415,24 @@ EANcode (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-ExplicitAccumulate (node *arg_node)
+EAdoExplicitAccumulate (node *arg_node)
 {
-    funtab *tmp_tab;
     info *arg_info;
 
-    DBUG_ENTER ("ExplicitAccumulate");
+    DBUG_ENTER ("EAdoExplicitAccumulate");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
-                 "ExplicitAccumulate not started with modul node");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+                 "ExplicitAccumulate not started with module node");
 
     DBUG_PRINT ("EA", ("starting ExplicitAccumulation"));
 
     arg_info = MakeInfo ();
 
-    tmp_tab = act_tab;
-    act_tab = ea_tab;
-
-    arg_node = Trav (arg_node, arg_info);
+    TRAVpush (TR_ea);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
-    act_tab = tmp_tab;
 
     DBUG_RETURN (arg_node);
 }
