@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2004/11/27 00:53:53  jhb
+ * fixed bug in LiftArg
+ *
  * Revision 3.65  2004/11/27 00:49:54  jhb
  * included LiftArg from tree_compound.c
  *
@@ -2186,13 +2189,12 @@ IVEprf (node *arg_node, info *arg_info)
 #ifdef MWE_NTYPE_READY
                 PRF_ARG1 (arg_node)
                   = LiftArg (PRF_ARG1 (arg_node), INFO_IVE_FUNDEF (arg_info), NULL,
-                             TYmakeSimpleType (T_int), FALSE,
+                             TYmakeSimpleType (T_int),
                              &(INFO_IVE_PRE_ASSIGNS (arg_info)));
 #else
                 PRF_ARG1 (arg_node)
                   = LiftArg (PRF_ARG1 (arg_node), INFO_IVE_FUNDEF (arg_info),
-                             TBmakeTypes1 (T_int), FALSE,
-                             &(INFO_IVE_PRE_ASSIGNS (arg_info)));
+                             TBmakeTypes1 (T_int), &(INFO_IVE_PRE_ASSIGNS (arg_info)));
 #endif
             }
         } else {
@@ -2240,13 +2242,12 @@ IVEprf (node *arg_node, info *arg_info)
 #ifdef MWE_NTYPE_READY
                 PRF_ARG2 (arg_node)
                   = LiftArg (PRF_ARG2 (arg_node), INFO_IVE_FUNDEF (arg_info), NULL,
-                             TBmakeSimpleType (T_int), FALSE,
+                             TBmakeSimpleType (T_int),
                              &(INFO_IVE_PRE_ASSIGNS (arg_info)));
 #else
                 PRF_ARG2 (arg_node)
                   = LiftArg (PRF_ARG2 (arg_node), INFO_IVE_FUNDEF (arg_info),
-                             TBmakeTypes1 (T_int), FALSE,
-                             &(INFO_IVE_PRE_ASSIGNS (arg_info)));
+                             TBmakeTypes1 (T_int), &(INFO_IVE_PRE_ASSIGNS (arg_info)));
 #endif
             }
         } else {
