@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2001/04/05 12:29:51  nmw
+ * debug messages added, big error with wrong macro corrected in AdjustAvisData
+ *
  * Revision 3.29  2001/04/04 09:58:30  nmw
  * AdjustAvisData added
  *
@@ -1651,13 +1654,6 @@ MakeVardecFromArg (node *arg_node)
 
     VARDEC_STATUS (new_vardec) = ARG_STATUS (arg_node);
 
-    /* reference parameter will be changed to unique vardecs */
-    if (ARG_ATTRIB (arg_node) != ST_regular) {
-        VARDEC_ATTRIB (new_vardec) = ST_unique;
-    } else {
-        VARDEC_ATTRIB (new_vardec) = ARG_ATTRIB (arg_node);
-    }
-
     VARDEC_TDEF (new_vardec) = ARG_TDEF (arg_node);
     VARDEC_OBJDEF (new_vardec) = ARG_OBJDEF (arg_node);
 
@@ -1672,6 +1668,18 @@ MakeVardecFromArg (node *arg_node)
     AVIS_SSAPHITARGET (VARDEC_AVIS (new_vardec)) = PHIT_NONE;
     AVIS_SSALPINV (VARDEC_AVIS (new_vardec)) = FALSE;
     AVIS_SSASTACK_TOP (VARDEC_AVIS (new_vardec)) = NULL;
+
+    /*
+     * reference parameter will be changed to unique vardecs that
+     * will be re-renamed in UndoSSATransform
+     */
+    if (ARG_ATTRIB (arg_node) != ST_regular) {
+        VARDEC_ATTRIB (new_vardec) = ST_unique;
+        /* set the corresponding undo flag for UndoSSATransform */
+        AVIS_SSAUNDOFLAG (VARDEC_AVIS (new_vardec)) = TRUE;
+    } else {
+        VARDEC_ATTRIB (new_vardec) = ARG_ATTRIB (arg_node);
+    }
 
     DBUG_RETURN (new_vardec);
 }
@@ -1718,12 +1726,15 @@ AdjustAvisData (node *new_vardec, node *fundef)
     DBUG_ASSERT ((FUNDEF_BODY (fundef) != NULL), "missing body in fundef");
 
     avis_node = VARDEC_AVIS (new_vardec);
-
     /* if there is an existing base_id - use it, else take the vardec name */
-    if (AVIS_SSACOUNT (new_vardec) != NULL) {
-        base_id = SSACNT_BASEID (AVIS_SSACOUNT (new_vardec));
+    if (AVIS_SSACOUNT (VARDEC_AVIS (new_vardec)) != NULL) {
+        base_id = SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (new_vardec)));
+        DBUG_PRINT ("AAD", ("reuse base_id %s for vardec %s", base_id,
+                            VARDEC_NAME (new_vardec)));
     } else {
         base_id = VARDEC_NAME (new_vardec);
+        DBUG_PRINT ("AAD", ("create new base_id %s for vardec %s", base_id,
+                            VARDEC_NAME (new_vardec)));
     }
 
     BLOCK_SSACOUNTER (FUNDEF_BODY (fundef))
