@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/03/09 11:12:12  sbs
+ * some typos corrected
+ *
  * Revision 1.1  2001/03/09 11:08:07  sbs
  * Initial revision
  *
@@ -62,6 +65,7 @@
  ***  -  SearchMain           for finding the N_fundef of "main"
  ***  -  Fundef2ProfileString for creating a signature string for the profile
  ***                          output
+ ***  -  Fundef2FunTypeMask   for creating a fun type flag for N_annotate
  ***/
 
 /********************************************************************************
@@ -135,7 +139,7 @@ Fundef2ProfileString (node *fundef)
     DBUG_RETURN (str_buff);
 }
 
-********************************************************************************
+/********************************************************************************
  *
  * function:
  *    int Fundef2FunTypeMask( node *fundef)
@@ -149,7 +153,8 @@ Fundef2ProfileString (node *fundef)
  *
  ********************************************************************************/
 
-int Fundef2FunTypeMask( node *fundef)
+int
+Fundef2FunTypeMask (node *fundef)
 {
     int funtypemask = 0;
 
@@ -158,15 +163,13 @@ int Fundef2FunTypeMask( node *fundef)
     if (FUNDEF_INLINE (fundef)) {
         funtypemask = funtypemask | INL_FUN;
     }
-    if ((FUNDEF_STATUS (fundef)) == ST_imported_mod) ||
-      (FUNDEF_STATUS( fundef)) == ST_imported_class))
-        {
-            funtypemask = funtypemask | LIB_FUN;
-        }
-    if (FUNDEF_ATTRIB (fundef)) == ST_generic)
-        {
-            funtypemask = funtypemask | OVRLD_FUN;
-        }
+    if ((FUNDEF_STATUS (fundef) == ST_imported_mod)
+        || (FUNDEF_STATUS (fundef) == ST_imported_class)) {
+        funtypemask = funtypemask | LIB_FUN;
+    }
+    if (FUNDEF_ATTRIB (fundef) == ST_generic) {
+        funtypemask = funtypemask | OVRLD_FUN;
+    }
 
     DBUG_RETURN (funtypemask);
 }
