@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1997/11/26 14:21:31  srs
+ * removed use of old macros from acssass_macros.h
+ *
  * Revision 1.9  1997/11/07 14:27:14  dkr
  * with defined NEWTREE node.nnode is not used anymore
  *
@@ -450,7 +453,7 @@ AnalyseCond (linfo *loop_info, node *cond, int level)
 
     if (NULL != loop_info) {
         if (N_id == cond_var->nodetype) {
-            test = cond_var->IDS_DEF;
+            test = cond_var->info.ids->def;
             if ((NULL != test) && (N_prf == test->nodetype)
                 && (F_le <= (test_prf = test->info.prf)) && (F_neq >= test_prf)
                 && (test->flag == level)) {
@@ -474,7 +477,7 @@ AnalyseCond (linfo *loop_info, node *cond, int level)
                 /* do i have the same variable and is the calculations  */
                 /* of the condition in  the loop ? 			*/
                 if ((N_id == arg[0]->nodetype)
-                    && (loop_info->decl_node->varno == arg[0]->IDS_VARNO)
+                    && (loop_info->decl_node->varno == VARDEC_VARNO (ID_VARDEC (arg[0])))
                     && (N_num == arg[1]->nodetype)) {
                     cond_info->test_prf = test_prf;
                     cond_info->test_num = arg[1]->info.cint;
@@ -691,8 +694,8 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
 
         /* modify first loop */
         cond_info->insert_node->node[0] = cond_info->chain1;
-        arg_node->node[0]->node[0]->IDS_DEF->info.prf = cond_info->test_prf;
-        arg_node->node[0]->node[0]->IDS_DEF->ARG2->info.cint = cond_info->test_num;
+        arg_node->node[0]->node[0]->info.ids->def->info.prf = cond_info->test_prf;
+        arg_node->node[0]->node[0]->info.ids->def->ARG2->info.cint = cond_info->test_num;
 
         /* Generate masks */
         arg_node = GenerateMasks (arg_node, arg_info);
@@ -763,8 +766,8 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
 
         /* modify first loop */
         cond_info->insert_node->node[0] = cond_info->chain1;
-        arg_node->node[0]->node[0]->IDS_DEF->info.prf = cond_info->test_prf;
-        arg_node->node[0]->node[0]->IDS_DEF->ARG2->info.cint = cond_info->test_num;
+        arg_node->node[0]->node[0]->info.ids->def->info.prf = cond_info->test_prf;
+        arg_node->node[0]->node[0]->info.ids->def->ARG2->info.cint = cond_info->test_num;
 
         /* Generate masks */
         arg_node = GenerateMasks (arg_node, arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1997/11/26 14:22:01  srs
+ * removed use of old macros from acssass_macros.h
+ *
  * Revision 1.10  1997/11/05 10:16:49  dkr
  * with defined NEWTREE node.nnode is not used anymore
  *
@@ -387,7 +390,7 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
     }
 
     if (allright) {
-        init = index->IDS_DEF;
+        init = index->info.ids->def;
         /* index variable must be initialize with a constant value */
         if ((NULL != init) && (init->flag < level) && (N_num == init->nodetype)) {
             loop_info->start_num = init->info.cint;
