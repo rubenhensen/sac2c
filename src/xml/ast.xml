@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.91  2004/11/26 11:39:31  khf
+  incomplete CPMT traversal added
+
   Revision 1.90  2004/11/26 11:05:12  sbs
   IDS_USE added.
 
@@ -292,6 +295,25 @@
           <node name="Icm" />
           <node name="Withid" />
           <node name="Cond" />
+	</travuser>
+      </traversal>
+      <traversal id="CMPT" name="Compare Tree Traversal" default="unknown" include="compare_tree.h" >
+	<travuser>
+          <node name="Num" />
+          <node name="Char" />
+          <node name="Bool" />
+          <node name="Str" />
+          <node name="Float" />
+          <node name="Double" />
+	  <node name="Array" />
+	  <node name="Let" />
+          <node name="Ap" />
+          <node name="Prf" />
+          <node name="Id" />
+          <node name="Generator" />
+	  <node name="Code" />
+          <node name="Withid" />
+          <node name="Fold" />
 	</travuser>
       </traversal>
     </general>
