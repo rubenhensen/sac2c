@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/05/11 15:13:43  cg
+ * Added new variable max_schedulers to keep track of the maximum
+ * number of schedulers within a single SPMD function.
+ *
  * Revision 3.10  2001/05/08 13:11:56  nmw
  * flag valid_ssaform added
  *
@@ -313,6 +317,13 @@ int max_replication_size = 250;
 /*
  *  maximum size of array for replication, otherwise the calculation will be
  *  executed single-threaded.
+ */
+
+int max_schedulers = 0;
+/*
+ *  This variable is used to collect the maximum number of schedulers in a
+ *  single SPMD block/function in order to generate an appropriate number
+ *  of local data structure sets for the scheduler implementations.
  */
 
 /*

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/05/11 15:13:43  cg
+ * Added new variable max_schedulers to keep track of the maximum
+ * number of schedulers within a single SPMD function.
+ *
  * Revision 3.7  2001/05/08 13:11:56  nmw
  * flag valid_ssaform added
  *
@@ -140,6 +144,7 @@ extern int needed_sync_fold;
 extern int max_threads;
 extern int min_parallel_size;
 extern int max_replication_size;
+extern int max_schedulers;
 
 #define MAX_CPP_VARS 32
 
