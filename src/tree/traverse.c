@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2002/08/25 14:17:58  mwe
+ * al_tab added.
+ *
  * Revision 3.37  2002/08/13 10:23:32  sbs
  * hm_tab for handle_mops added.
  *
@@ -175,6 +178,7 @@
 #include "WLI.h"
 #include "WLF.h"
 #include "WithloopScalarization.h"
+#include "AssociativeLaw.h"
 #include "gen_startup_code.h"
 #include "scheduling.h"
 #include "concurrent.h"
