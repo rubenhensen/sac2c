@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2004/07/11 17:41:39  sah
+ * added WO_unknown WithOp to model the unset state of
+ * NWithOp node
+ *
  * Revision 3.25  2004/07/03 15:09:35  sah
  * added the new node representation into the source code.
  * the new ast can be enabled by make newast int the
@@ -216,7 +220,8 @@ typedef enum {
     WO_genarray,
     WO_modarray,
     WO_foldfun,
-    WO_foldprf
+    WO_foldprf,
+    WO_unknown
 } WithOpType;
 
 typedef enum {
