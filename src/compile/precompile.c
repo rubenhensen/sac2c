@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.28  2000/10/18 09:44:53  dkr
+ * PREC1let modified: 2nd argument of F_reshape is never flattened now
+ *
  * Revision 2.27  2000/10/17 17:51:09  dkr
  * flattening of applications from from flatten.c to precompile.c
  *
@@ -466,8 +469,11 @@ PREC1let (node *arg_node, node *arg_info)
             while (arg != NULL) {
                 arg_id = EXPRS_EXPR (arg);
                 if ((NODE_TYPE (arg_id) == N_id) && IS_REFCOUNTED (ID, arg_id)
-                    && (ID_ATTRIB (arg_id) == ST_regular)
-                    && (is_prf || (!FUN_DOES_REFCOUNT (AP_FUNDEF (expr), arg_idx)))) {
+                    && (ID_ATTRIB (arg_id) == ST_regular) &&
+                    /* 2nd argument of F_reshape need not to be flattened! */
+                    ((is_prf && ((prf != F_reshape) || (arg_idx != 1)))
+                     || ((!is_prf)
+                         && (!FUN_DOES_REFCOUNT (AP_FUNDEF (expr), arg_idx))))) {
                     /*
                      * dkr:
                      * Here, the interpretation of the refcouting-pragma is not correct
