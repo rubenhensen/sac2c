@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/07/20 07:53:42  cg
+ * Definition (!) of global variable malloc_align_step removed;
+ * malloc_align_step is now defined in globals.c.
+ *
  * Revision 2.6  1999/05/14 09:25:13  jhs
  * Dbugged constvec annotations and their housekeeping in various compilation stages.
  *
@@ -100,7 +104,7 @@ extern int OptCmp (char *first, char *second);
 
 #ifdef SHOW_MALLOC
 extern void ComputeMallocAlignStep (void);
-int malloc_align_step;
+extern int malloc_align_step;
 #endif
 
 #define SWAP(ptr1, ptr2)                                                                 \
