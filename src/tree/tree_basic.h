@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2001/04/04 13:10:51  nmw
+ * INFO_SSALIR_marcos added
+ *
  * Revision 3.70  2001/04/04 09:57:59  nmw
  * INFO_INL macros added
  *
@@ -2125,14 +2128,18 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***    node*       SSATHEN (O)     (N_avis)         (ssaform!!)
  ***    node*       SSAELSE (O)     (N_avis)         (ssaform!!)
  ***
- ***    the following attributes are only used within SSADeadCodeRemoval:
- ***    bool        NEEDCOUNT                        (ssadcr!!)
+ ***    the following attributes are used within SSADeadCodeRemoval/SSALIR:
+ ***    bool        NEEDCOUNT                        (ssadcr!!, ssalir!!)
  ***
- ***    the following attributes are only used within SSACSE/UndoSSATransform
+ ***    the following attributes are used within SSACSE/UndoSSATransform:
  ***    node*       SUBST (O)       (N_avis)         (ssacse!!. undossa!!)
  ***
- ***    the following attributes are only used within UndoSSATransform
+ ***    the following attributes are only used within UndoSSATransform:
  ***    node*       SUBSTUSSA (O)   (N_avis)          (undossa!!)
+ ***
+ ***    the following attributes are only used within SSALIR:
+ ***    int         DEFDEPTH (O)    (WITHDEPTH)       (ssalir!!)
+ ***
  ***/
 
 /*
@@ -2155,12 +2162,14 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_SSADEFINED(n) ((bool)(n->int_data))
 #define AVIS_SSATHEN(n) ((node *)(n->dfmask[1]))
 #define AVIS_SSAELSE(n) ((node *)(n->dfmask[2]))
-/* used only in ssadcr */
+/* used only in ssadcr an again in SSALIR */
 #define AVIS_NEEDCOUNT(n) (n->int_data)
 /* used only in ssacse and again in UndoSSAtransform */
 #define AVIS_SUBST(n) ((node *)(n->dfmask[0]))
 /* used only in UndoSSAtransform */
 #define AVIS_SUBSTUSSA(n) ((node *)(n->dfmask[1]))
+/* used only in SSALIR */
+#define AVIS_DEFDEPTH(n) (n->varno)
 
 /*--------------------------------------------------------------------------*/
 
@@ -2494,6 +2503,9 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      ARGCHAIN          (argument chain of recursive call)
  ***    node*      MODUL             (current working modul)
  ***    node*      ASSIGN            (current working assignment)
+ ***    int        NONLIRUSE         (counts non lir args on rightside of expr.)
+ ***    int        CONDSTATUS        (flag for part of conditional)
+ ***    int        WITHDEPTH         (counter for depth of with loops)
  ***
  ***  when used in free.c
  ***    node*      FLAG              (mode flag for FreeTrav/FreeNode)
@@ -2951,6 +2963,9 @@ extern node *MakeInfo ();
 #define INFO_SSALIR_ARGCHAIN(n) (n->node[3])
 #define INFO_SSALIR_MODUL(n) (n->node[4])
 #define INFO_SSALIR_ASSIGN(n) (n->node[5])
+#define INFO_SSALIR_NONLIRUSE(n) (n->int_data)
+#define INFO_SSALIR_CONDSTATUS(n) (n->flag)
+#define INFO_SSALIR_WITHDEPTH(n) (n->varno)
 
 /* when used in free.c */
 #define INFO_FREE_FLAG(n) (n->node[0])
