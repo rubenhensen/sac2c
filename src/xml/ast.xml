@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.52  2004/11/24 17:24:09  sah
+  fixed some .h files
+
   Revision 1.51  2004/11/24 17:11:03  mwe
   ToOldTypes added
 
@@ -280,7 +283,7 @@
       </traversal>
     </general>
     <phase id="scanparse" name="Parsing input file">
-      <traversal id="HD" name="Handle Dots" default="sons" include="handledots.h">
+      <traversal id="HD" name="Handle Dots" default="sons" include="handle_dots.h">
         <user>
 	  <node name="Id" />
 	  <node name="With" />
@@ -297,7 +300,7 @@
 	  <node name="Id" />
 	</user>
       </traversal>
-      <traversal id="RSP" name="Resolve pragmas" default="sons" include="resolve_pragma.h">
+      <traversal id="RSP" name="Resolve pragmas" default="sons" include="resolvepragma.h">
         <user>
 	  <node name="Fundef" />
 	  <node name="Arg" />
