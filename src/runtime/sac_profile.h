@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/08/02 10:13:38  nmw
+ * profiling for c library added
+ *
  * Revision 2.1  1999/02/23 12:43:58  sacbase
  * new release made
  *
@@ -98,6 +101,23 @@ extern struct rusage SAC_PF_stop_timer;
  *  Macro definitions
  */
 
+#if SAC_DO_COMPILE_MODULE
+#define SAC_PF_DEFINE()                                                                  \
+    extern SAC_PF_TIMER SAC_PF_fw_fun_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];           \
+    extern SAC_PF_TIMER SAC_PF_fw_with_genarray_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP]; \
+    extern SAC_PF_TIMER SAC_PF_fw_with_modarray_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP]; \
+    extern SAC_PF_TIMER SAC_PF_fw_with_fold_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];     \
+    extern SAC_PF_TIMER SAC_PF_fun_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];              \
+    extern SAC_PF_TIMER SAC_PF_with_genarray_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];    \
+    extern SAC_PF_TIMER SAC_PF_with_modarray_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];    \
+    extern SAC_PF_TIMER SAC_PF_with_fold_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];        \
+                                                                                         \
+    extern SAC_PF_TIMER *SAC_PF_act_timer;                                               \
+                                                                                         \
+    extern char *SAC_PF_fun_name[SAC_SET_MAXFUN];                                        \
+    extern int SAC_PF_maxfunap[SAC_SET_MAXFUN];                                          \
+    extern int SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];
+#else
 #define SAC_PF_DEFINE()                                                                  \
     SAC_PF_TIMER SAC_PF_fw_fun_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                  \
     SAC_PF_TIMER SAC_PF_fw_with_genarray_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];        \
@@ -113,6 +133,7 @@ extern struct rusage SAC_PF_stop_timer;
     char *SAC_PF_fun_name[SAC_SET_MAXFUN] = SAC_SET_FUN_NAMES;                           \
     int SAC_PF_maxfunap[SAC_SET_MAXFUN] = SAC_SET_FUN_APPS;                              \
     int SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_AP_LINES;
+#endif
 
 #define SAC_PF_SETUP()                                                                   \
     {                                                                                    \

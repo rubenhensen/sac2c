@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/08/02 10:14:40  nmw
+ * profiling for c library added
+ *
  * Revision 2.3  1999/10/07 13:39:17  sbs
  * when run with -dsysccall, now a NOTE is issued for the preprocessor call
  *
@@ -130,7 +133,7 @@ SetFileNames (node *modul)
             strcat (cfilename, ".c");
         }
     } else {
-        if (profileflag != 0) {
+        if ((profileflag != 0) && (generatelibrary & GENERATELIBRARY_SAC)) {
             SYSWARN (("-p option turned off for module/class compilation"));
             profileflag = 0;
         }
