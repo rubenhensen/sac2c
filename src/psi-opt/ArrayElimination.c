@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2004/11/25 18:16:56  jhb
+ * on the way to compile
+ *
  * Revision 3.24  2004/11/15 15:20:34  mwe
  * code for type upgrade added
  * use ntype-structure instead of types-structure
@@ -88,12 +91,11 @@
 #include "globals.h"
 #include "Error.h"
 #include "dbug.h"
-#include "my_debug.h"
 #include "traverse.h"
 #include "free.h"
 #include "DupTree.h"
-
 #include "optimize.h"
+
 #include "ArrayElimination.h"
 
 /*
@@ -120,7 +122,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_AE_TYPES (result) = NULL;
     INFO_AE_FUNDEF (result) = NULL;
@@ -133,7 +135,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -143,7 +145,7 @@ FreeInfo (info *info)
 
 /*
  *
- *  functionname  : ArrayElimination
+ *  functionname  : AEdoArrayElimination
  *  arguments     : 1) ptr to root of the syntaxtree or a N_fundef - node.
  *		    2) NULL
  *                  R) ptr optimized 1)
@@ -152,32 +154,31 @@ FreeInfo (info *info)
  *
  */
 node *
-ArrayElimination (node *arg_node)
+AEdoArrayElimination (node *arg_node)
 {
     info *info;
-    funtab *tmp_tab;
 #ifndef DBUG_OFF
     int mem_elim_arrays = elim_arrays;
 #endif
 
-    DBUG_ENTER ("ArrayElimination");
+    DBUG_ENTER ("AEdoArrayElimination");
     DBUG_PRINT ("OPT", ("ARRAY ELIMINATION"));
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "ArrayElimination() called for non-fundef node");
+                 "AEdoArrayElimination() called for non-fundef node");
 
     DBUG_PRINT ("OPT",
                 ("starting array elimination on function %s", FUNDEF_NAME (arg_node)));
 
-    if (!(FUNDEF_IS_LACFUN (arg_node))) {
-        tmp_tab = act_tab;
-        act_tab = ae_tab;
+    if (!(FUNDEF_ISLACFUN (arg_node))) {
+        /*tmp_tab = act_tab;
+          act_tab=ae_tab;*/
         info = MakeInfo ();
-
-        arg_node = Trav (arg_node, info);
-
+        TRAVpush (TR_ae);
+        arg_node = TRAVdo (arg_node, info);
+        TRAVpop ();
         info = FreeInfo (info);
-        act_tab = tmp_tab;
+        /*act_tab=tmp_tab;*/
         DBUG_PRINT ("OPT", ("                        result: %d",
                             elim_arrays - mem_elim_arrays));
     }
@@ -193,7 +194,7 @@ ArrayElimination (node *arg_node)
  *
  */
 int
-CorrectArraySize (ids *ids_node)
+CorrectArraySize (node *ids_node)
 {
     int answer = FALSE;
     int length, dim;
@@ -207,15 +208,15 @@ CorrectArraySize (ids *ids_node)
 
 #ifdef MWE_NTYPE_READY
     type = AVIS_TYPE (IDS_AVIS (ids_node));
-    length = SHGetUnrLen (TYGetShape (type));
-    dim = TYGetDim (type);
+    length = SHgetUnrLen (TYgetShape (type));
+    dim = TYgetDim (type);
 #else
     type = IDS_TYPE (ids_node);
-    length = GetTypesLength (type);
-    dim = GetShapeDim (type);
+    length = TCgetTypesLength (type);
+    dim = TCgetShapeDim (type);
 #endif
 
-    if ((length <= minarray) && (0 != length) && (1 == dim)) {
+    if ((length <= global.minarray) && (0 != length) && (1 == dim)) {
         DBUG_PRINT ("AE", ("array %s with length %d to eliminated found",
                            VARDEC_NAME (IDS_VARDEC (ids_node)), length));
         answer = TRUE;
@@ -243,11 +244,11 @@ GetNumber (node *vector)
     node *expr_node;
 
     DBUG_ENTER ("GetNumber");
-    number = (char *)Malloc (sizeof (char) * ((minarray / 10) + 2));
+    number = (char *)ILIBmalloc (sizeof (char) * ((global.minarray / 10) + 2));
     number[0] = atoi ("\0");
     expr_node = vector->node[0];
     do {
-        tmp = itoa (NUM_VAL (EXPRS_EXPR (expr_node)));
+        tmp = ILIBitoa (NUM_VAL (EXPRS_EXPR (expr_node)));
         strcat (number, tmp);
         expr_node = EXPRS_NEXT (expr_node);
 
@@ -273,7 +274,7 @@ GetNumber (node *vector)
  *  remarks       :
  *
  */
-ids *
+node *
 GenIds (node *arg[2])
 {
     char *number, *new_name, *old_name;
@@ -281,10 +282,10 @@ GenIds (node *arg[2])
     DBUG_ENTER ("GenIds");
     number = GetNumber (arg[0]);
     old_name = ID_NAME (arg[1]);
-    new_name = (char *)Malloc (
+    new_name = (char *)ILIBmalloc (
       sizeof (char) * (strlen (old_name) + strlen (number) + AE_PREFIX_LENGTH + 1));
     sprintf (new_name, AE_PREFIX "%s%s", number, old_name);
-    DBUG_RETURN (MakeIds (new_name, NULL, ST_regular));
+    DBUG_RETURN (TBmakeIds (new_name, NULL, ST_regular));
 }
 
 /*
@@ -301,7 +302,7 @@ GenIds (node *arg[2])
  *
  */
 node *
-GenSel (ids *ids_node, info *arg_info)
+GenSel (node *ids_node, info *arg_info)
 {
     node *new_nodes = NULL, *new_let, *new_assign, *new_vardec;
     node *exprn;
@@ -316,63 +317,63 @@ GenSel (ids *ids_node, info *arg_info)
     DBUG_ENTER ("GenSel");
 #ifdef MWE_NTYPE_READY
     type = AVIS_TYPE (IDS_AVIS (ids_node));
-    length = SHGetUnrLen (TYGetShape (type));
+    length = SHgetUnrLen (TYgetShape (type));
 #else
     type = IDS_TYPE (ids_node);
     ;
-    length = GetTypesLength (type);
+    length = TCgetTypesLength (type);
 #endif
     for (i = 0; i < length; i++) {
-        exprn = MakeExprs (MakeNum (i), NULL);
-        arg[0] = MakeFlatArray (exprn);
-        ((int *)ARRAY_CONSTVEC (arg[0])) = Array2IntVec (exprn, NULL);
+        exprn = TBmakeExprs (TBmakeNum (i), NULL);
+        arg[0] = TCmakeFlatArray (exprn);
+        ((int *)ARRAY_CONSTVEC (arg[0])) = TCarray2IntVec (exprn, NULL);
         /* srs: AE only works on arrays which have 1 dimension.
            type attribut was missing here. */
         ARRAY_ISCONST (arg[0]) = TRUE;
         ARRAY_VECTYPE (arg[0]) = T_int;
         ARRAY_VECLEN (arg[0]) = 1;
 #ifdef MWE_NTYPE_READY
-        ARRAY_NTYPE (arg[0]) = TYMakeAKV (TYMakeSimpleType (T_int),
-                                          COMakeConstant (T_int, SHMakeShape (1, dim),
-                                                          Array2IntVec (exprn, NULL)));
+        ARRAY_NTYPE (arg[0]) = TYmakeAKV (TYmakeSimpleType (T_int),
+                                          COmakeConstant (T_int, SHmakeShape (1, dim),
+                                                          TCarray2IntVec (exprn, NULL)));
 #else
         ARRAY_TYPE (arg[0])
-          = MakeTypes (T_int, 1, MakeShpseg (MakeNums (1, NULL)), NULL, NULL);
+          = TBmakeTypes (T_int, 1, TBmakeShpseg (TBmakeNums (1, NULL)), NULL, NULL);
 #endif
 #if 0    
     arg[1] = MakeNode(N_id);
-    arg[1]->info.ids = DupAllIds( ids_node);
+    arg[1]->info.ids = DUPdupAllIds( ids_node);
 #else
-        arg[1] = MakeId (StringCopy (IDS_NAME (ids_node)), NULL, ST_regular);
+        arg[1] = TBmakeId (ILIBstringCopy (IDS_NAME (ids_node)), NULL, ST_regular);
         ID_VARDEC (arg[1]) = IDS_VARDEC (ids_node);
         ID_AVIS (arg[1]) = VARDEC_OR_ARG_AVIS (ID_VARDEC (arg[1]));
 #endif
-        new_let = MakeLet (NULL, GenIds (arg));
+        new_let = TBmakeLet (GenIds (arg), NULL);
 
         DBUG_PRINT ("AE", ("Generating new value for %s", IDS_NAME (LET_IDS (new_let))));
         IDS_VARDEC (LET_IDS (new_let))
-          = SearchDecl (IDS_NAME (LET_IDS (new_let)), INFO_AE_TYPES (arg_info));
+          = TCsearchDecl (IDS_NAME (LET_IDS (new_let)), INFO_AE_TYPES (arg_info));
 
         if (IDS_VARDEC (LET_IDS (new_let)) == NULL) {
             DBUG_PRINT ("AE",
                         ("Generating new vardec for %s", IDS_NAME (LET_IDS (new_let))));
 #ifdef MWE_NTYPE_READY
-            new_vardec = MakeVardec (StringCopy (IDS_NAME (LET_IDS (new_let))), NULL,
-                                     TYMakeSimpleType (TYGetBasetype (type)), NULL);
+            new_vardec = TBakeVardec (ILIBstringCopy (IDS_NAME (LET_IDS (new_let))), NULL,
+                                      TYmakeSimpleType (TYgetBasetype (type)), NULL);
 
 #else
-            new_vardec = MakeVardec (StringCopy (IDS_NAME (LET_IDS (new_let))),
-                                     DupAllTypes (GetTypes (type)), NULL);
+            new_vardec = TBmakeVardec (ILIBstringCopy (IDS_NAME (LET_IDS (new_let))),
+                                       DUPdupAllTypes (TCgetTypes (type)), NULL);
             VARDEC_DIM (new_vardec) = 0;
 #endif
             INFO_AE_TYPES (arg_info)
-              = AppendVardec (new_vardec, INFO_AE_TYPES (arg_info));
+              = TCappendVardec (new_vardec, INFO_AE_TYPES (arg_info));
             IDS_VARDEC (LET_IDS (new_let)) = new_vardec;
         }
         LET_EXPR (new_let)
-          = MakePrf (F_sel, MakeExprs (arg[0], MakeExprs (arg[1], NULL)));
-        new_assign = MakeAssign (new_let, NULL);
-        new_nodes = AppendAssign (new_nodes, new_assign);
+          = TBmakePrf (F_sel, TBmakeExprs (arg[0], TBmakeExprs (arg[1], NULL)));
+        new_assign = TBmakeAssign (new_let, NULL);
+        new_nodes = TCappendAssign (new_nodes, new_assign);
     }
 
     DBUG_RETURN (new_nodes);
@@ -399,7 +400,7 @@ AEprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("AEprf");
 
     if (F_sel == PRF_PRF (arg_node)) {
-        tmpn = NodeBehindCast (PRF_ARG1 (arg_node));
+        tmpn = TCnodeBehindCast (PRF_ARG1 (arg_node));
         if (N_id == NODE_TYPE (tmpn)) {
             /* look up via ssa assign attribute */
             if (AVIS_SSAASSIGN (ID_AVIS (tmpn)) != NULL) {
@@ -411,23 +412,23 @@ AEprf (node *arg_node, info *arg_info)
         }
 
         arg[0] = tmpn;
-        arg[1] = NodeBehindCast (PRF_ARG2 (arg_node));
+        arg[1] = TCnodeBehindCast (PRF_ARG2 (arg_node));
 
         /* srs: added IsConstArray() so that sel([i],arr) is not replaced.
                 This led to wrong programs. */
         if (N_id == NODE_TYPE (arg[1]) && tmpn && N_array == NODE_TYPE (tmpn)
-            && IsConstArray (tmpn) && CorrectArraySize (ID_IDS (arg[1]))) {
+            && TCisConstArray (tmpn) && CorrectArraySize (ID_IDS (arg[1]))) {
             DBUG_PRINT ("AE", ("sel function with array %s to eliminated found",
                                IDS_NAME (ID_IDS (arg[0]))));
-            new_node = MakeId (NULL, NULL, ST_regular);
+            new_node = TBmakeId (NULL, NULL, ST_regular);
             ID_IDS (new_node) = GenIds (arg);
             ID_VARDEC (new_node)
-              = SearchDecl (ID_NAME (new_node), INFO_AE_TYPES (arg_info));
+              = TCsearchDecl (ID_NAME (new_node), INFO_AE_TYPES (arg_info));
             if (ID_VARDEC (new_node)) {
-                FreeTree (arg_node);
+                FREEdoFreeTree (arg_node);
                 arg_node = new_node;
             } else {
-                FreeTree (new_node);
+                FREEdoFreeTree (new_node);
             }
         }
     }
@@ -454,9 +455,9 @@ AEfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("AE", ("*** Trav function %s", FUNDEF_NAME (arg_node)));
 
         INFO_AE_TYPES (arg_info) = NULL;
-        FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
+        FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
         FUNDEF_VARDEC (arg_node)
-          = AppendVardec (INFO_AE_TYPES (arg_info), FUNDEF_VARDEC (arg_node));
+          = TCappendVardec (INFO_AE_TYPES (arg_info), FUNDEF_VARDEC (arg_node));
         INFO_AE_TYPES (arg_info) = NULL;
     }
 
@@ -477,7 +478,7 @@ node *
 AEassign (node *arg_node, info *arg_info)
 {
     node *new_nodes = NULL;
-    ids *_ids;
+    node *_ids;
 
     DBUG_ENTER ("AEassign");
 
@@ -495,12 +496,12 @@ AEassign (node *arg_node, info *arg_info)
 
     /* traverse into compound nodes. */
     if (ASSIGN_INSTR (arg_node))
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     if (ASSIGN_NEXT (arg_node))
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
 
     if (new_nodes)
-        ASSIGN_NEXT (arg_node) = AppendAssign (new_nodes, ASSIGN_NEXT (arg_node));
+        ASSIGN_NEXT (arg_node) = TCappendAssign (new_nodes, ASSIGN_NEXT (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -521,9 +522,9 @@ AEcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AEcond");
 
-    COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
-    COND_THENINSTR (arg_node) = Trav (COND_THENINSTR (arg_node), arg_info);
-    COND_ELSEINSTR (arg_node) = Trav (COND_ELSEINSTR (arg_node), arg_info);
+    COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
+    COND_THENINSTR (arg_node) = TRAVdo (COND_THENINSTR (arg_node), arg_info);
+    COND_ELSEINSTR (arg_node) = TRAVdo (COND_ELSEINSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -544,8 +545,8 @@ AEdo (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AEdo");
 
-    DO_INSTR (arg_node) = Trav (DO_INSTR (arg_node), arg_info);
-    DO_COND (arg_node) = Trav (DO_COND (arg_node), arg_info);
+    DO_INSTR (arg_node) = TRAVdo (DO_INSTR (arg_node), arg_info);
+    DO_COND (arg_node) = TRAVdo (DO_COND (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -560,15 +561,15 @@ AEdo (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-AENwith (node *arg_node, info *arg_info)
+AEwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AENwith");
+    DBUG_ENTER ("AEwith");
 
     /* The Phase AE is not in the optimization loop and though
        WLT has not been done. Only one N_Npart and one N_Ncode exist. */
-    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
-    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -591,18 +592,18 @@ AEap (node *arg_node, info *arg_info)
     DBUG_ENTER ("AEap");
 
     if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
     /* non-recursive call of special fundef */
-    if ((AP_FUNDEF (arg_node) != NULL) && (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
+    if ((AP_FUNDEF (arg_node) != NULL) && (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
         && (INFO_AE_FUNDEF (arg_info) != AP_FUNDEF (arg_node))) {
 
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
 
         /* start traversal of special fundef */
-        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
 
         new_arg_info = FreeInfo (new_arg_info);
     }
