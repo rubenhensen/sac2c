@@ -1,9 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.108  1995/12/07 14:15:54  cg
- * renamed DummyFun to TravSons
+ * Revision 1.109  1995/12/18 16:15:15  cg
+ * added entry for N_objdef: CompObjdef
+ * removed entry for N_exprs: PRECexprs -> now TravSons
  *
+;; Revision 1.108  1995/12/07  14:15:54  cg
+;; renamed DummyFun to TravSons
+;;
 ;; Revision 1.107  1995/12/04  16:58:54  cg
 ;; added function PRECcast for N_cast
 ;;
@@ -400,7 +404,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, PRECtypedef, TravSons, TravSons),
 
   NIF (N_objdef, "N_objdef", TravSons, TravSons, PrintObjdef, TCobjdef, TravSons,
-       TravSons, TravSons, FreeObjdef, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeObjdef, TravSons, TravSons, CompObjdef, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        OBJobjdef, TravSons, OIobjdef, TravSons, CDECobjdef, WDECobjdef, TravSons,
        TravSons, PRECobjdef, TravSons, TravSons),
@@ -572,7 +576,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
   NIF (N_exprs, "N_exprs", TravSons, FltnExprs, PrintExprs, TravSons, TravSons, TravSons,
        TravSons, FreeExprs, TravSons, TravSons, TravSons, TravSons, DupChain, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrintExprs, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PRECexprs,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons),
 
   NIF (N_array, "N_array", TravSons, TravSons, PrintArray, TravSons, TravSons, TravSons,
