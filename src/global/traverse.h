@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/07/24 11:47:35  asi
+ * Revision 1.21  1995/08/03 14:55:20  cg
+ * sib_tab and obj_tab added.
+ *
+ * Revision 1.20  1995/07/24  11:47:35  asi
  * added ae_tab for array elimination
  *
  * Revision 1.19  1995/07/07  14:58:38  asi
@@ -120,5 +123,9 @@ extern funptr idx_tab[];
 extern funptr fusion_tab[];
 
 extern funptr ae_tab[];
+
+extern funptr sib_tab[];
+
+extern funptr obj_tab[];
 
 #endif /* _sac_traverse_h */
