@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2004/07/21 16:53:43  ktr
+ * added markmemval traversal
+ *
  * Revision 3.77  2004/07/17 17:07:16  sah
  * switch to new INFO structure
  * PHASE I
@@ -3417,6 +3420,8 @@ Precompile (node *syntax_tree)
     DBUG_ENTER ("Precompile");
 
     syntax_tree = MapCWrapper (syntax_tree);
+
+    syntax_tree = MarkMemVals (syntax_tree);
 
     DBUG_EXECUTE ("PREC", NOTE (("step 1: remove artificial args\n")));
     act_tab = precomp1_tab;
