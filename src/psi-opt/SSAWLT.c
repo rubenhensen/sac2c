@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.34  2004/10/05 13:50:58  sah
+ * lifted start of WLI/WLT traversal to the
+ * defining source files to allow for local
+ * info structures
+ *
  * Revision 1.33  2004/08/25 16:04:57  khf
  * In ComputeGeneratorProperties only check for emptiness for
  * generator with non empty bounds
@@ -1567,6 +1572,47 @@ SSAWLTNcode (node *arg_node, info *arg_info)
     DBUG_ENTER ("SSAWLTNcode");
 
     arg_node = TravSons (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn DoSSAWLT( node *arg_node)
+ *
+ * @brief starts SSAWLT traversal
+ *
+ * @param arg_node node to process
+ * @return processed node
+ *****************************************************************************/
+
+node *
+DoSSAWLT (node *arg_node)
+{
+    funtab *tmp_tab;
+    info *info;
+    int expr;
+
+    DBUG_ENTER ("DoSSAWLT");
+
+    info = MakeInfo ();
+
+    tmp_tab = act_tab;
+    act_tab = ssawlf_tab;
+
+    DBUG_PRINT ("OPT", ("SSAWLF"));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
+
+    arg_node = Trav (arg_node, info);
+
+    act_tab = tmp_tab;
+
+    expr = (wlt_expr - old_wlt_expr);
+
+    DBUG_PRINT ("OPT", ("                        result: %d", expr));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
+
+    info = FreeInfo (info);
 
     DBUG_RETURN (arg_node);
 }

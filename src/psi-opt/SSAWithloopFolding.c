@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.16  2004/10/05 13:50:58  sah
+ * lifted start of WLI/WLT traversal to the
+ * defining source files to allow for local
+ * info structures
+ *
  * Revision 1.15  2004/07/14 14:17:36  sah
  * added SSADbugIndexInfo as a replacement for DebugIndexInfo
  * from old WithloopFolding, as that will be gone soon
@@ -821,46 +826,23 @@ SSACreateVardec (char *name, types *type, node **vardecs)
 node *
 SSAWithloopFolding (node *arg_node, int loop)
 {
-    funtab *tmp_tab;
-    node *arg_info;
-    int expr;
-
     DBUG_ENTER ("SSAWithloopFolding");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
                  "SSAWithloopFolding called for non fundef node");
 
     if (!(FUNDEF_IS_LACFUN (arg_node))) {
-        arg_info = MakeInfo ();
-
-        DBUG_PRINT ("OPT", ("SSAWLI"));
-        DBUG_PRINT ("OPTMEM",
-                    ("mem currently allocated: %d bytes", current_allocated_mem));
-        tmp_tab = act_tab;
 
         /* SSAWLI traversal */
-        act_tab = ssawli_tab;
-        arg_node = Trav (arg_node, arg_info);
+        DoSSAWLI (arg_node);
 
         /* break after WLI? */
         if ((break_after != PH_sacopt) || (break_cycle_specifier != loop)
             || strcmp (break_specifier, "wli")) {
 
             /* SSAWLF traversal: fold WLs */
-            DBUG_PRINT ("OPT", ("SSAWLF"));
-            DBUG_PRINT ("OPTMEM",
-                        ("mem currently allocated: %d bytes", current_allocated_mem));
-            act_tab = ssawlf_tab;
-            arg_node = Trav (arg_node, arg_info);
-
-            expr = (wlf_expr - old_wlf_expr);
-            DBUG_PRINT ("OPT", ("                        result: %d", expr));
+            DoSSAWLT (arg_node);
         }
-        DBUG_PRINT ("OPTMEM",
-                    ("mem currently allocated: %d bytes", current_allocated_mem));
-
-        act_tab = tmp_tab;
-        arg_info = FreeTree (arg_info);
 
         /* restore ssa form */
         arg_node = RestoreSSAOneFunction (arg_node);
@@ -883,10 +865,6 @@ SSAWithloopFolding (node *arg_node, int loop)
 node *
 SSAWithloopFoldingWLT (node *arg_node)
 {
-    funtab *tmp_tab;
-    node *arg_info;
-    int expr;
-
     DBUG_ENTER ("SSAWithloopFoldingWLT");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
@@ -894,22 +872,9 @@ SSAWithloopFoldingWLT (node *arg_node)
 
     if (!(FUNDEF_IS_LACFUN (arg_node))) {
         /* start ssawlt traversal only in non-special fundefs */
-        arg_info = MakeInfo ();
 
         /* SSAWLT traversal: transform WLs */
-        DBUG_PRINT ("OPT", ("SSAWLT"));
-        DBUG_PRINT ("OPTMEM",
-                    ("mem currently allocated: %d bytes", current_allocated_mem));
-        tmp_tab = act_tab;
-        act_tab = ssawlt_tab;
-        arg_node = Trav (arg_node, arg_info);
-        expr = (wlt_expr - old_wlt_expr);
-        DBUG_PRINT ("OPT", ("                        result: %d", expr));
-        DBUG_PRINT ("OPTMEM",
-                    ("mem currently allocated: %d bytes", current_allocated_mem));
-
-        arg_info = FreeTree (arg_info);
-        act_tab = tmp_tab;
+        DoSSAWLT (arg_node);
 
         /* restore ssa form */
         arg_node = RestoreSSAOneFunction (arg_node);

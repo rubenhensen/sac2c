@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.4  2004/10/05 13:50:58  sah
+ * lifted start of WLI/WLT traversal to the
+ * defining source files to allow for local
+ * info structures
+ *
  * Revision 1.3  2004/07/19 14:19:38  sah
  * switch to new INFO structure
  * PHASE I
@@ -31,5 +36,6 @@ extern node *SSAWLINgenerator (node *, info *);
 extern node *SSAWLINcode (node *, info *);
 
 extern int ssawli_phase;
+extern node *DoSSAWLI (node *arg_node);
 
 #endif

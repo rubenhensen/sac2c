@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/10/05 13:50:58  sah
+ * lifted start of WLI/WLT traversal to the
+ * defining source files to allow for local
+ * info structures
+ *
  * Revision 1.17  2004/08/06 15:16:59  khf
  * corrected setting of NWITH_FOLDABLE
  *
@@ -1111,6 +1116,40 @@ SSAWLINcode (node *arg_node, info *arg_info)
     }
 
     NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn DoSSAWLI( node* arg_node)
+ *
+ * @brief starts SSAWLI traversal
+ *
+ * @param arg_node node to process
+ *
+ *****************************************************************************/
+node *
+DoSSAWLI (node *arg_node)
+{
+    funtab *tmp_tab;
+    info *info;
+
+    DBUG_ENTER ("DoSSAWLI");
+
+    info = MakeInfo ();
+
+    tmp_tab = act_tab;
+    act_tab = ssawli_tab;
+
+    DBUG_PRINT ("OPT", ("SSAWLI"));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
+
+    arg_node = Trav (arg_node, info);
+
+    act_tab = tmp_tab;
+
+    info = FreeInfo (info);
 
     DBUG_RETURN (arg_node);
 }
