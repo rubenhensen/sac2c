@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/06/11 18:18:09  asi
+ * Revision 1.9  1995/06/20 16:41:02  asi
+ * bug fixed : now creating special mask for used variables, when
+ * a while loop is modified to if ... then { ... ) do ... else { } within a loop
+ *
+ * Revision 1.8  1995/06/11  18:18:09  asi
  * now calculating used variables in with-statement correctly
  *
  * Revision 1.7  1995/06/08  15:07:31  asi
@@ -1174,12 +1178,18 @@ LIRsubexpr (node *arg_node, node *arg_info)
             arg_node = AppendNodeChain (1, UP, arg_node);
             UP = NULL;
             break;
-        case N_while:
+        case N_while: {
+            long *used_mask;
+
+            used_mask = DupMask (arg_node->node[0]->node[1]->mask[1], VARNO);
+
             arg_node->node[0] = Trav (arg_node->node[0], arg_info);
             act_tab = lir_mov_tab;
             arg_info->bblock = arg_node->bblock;
 
             arg_node = OptTrav (arg_node, arg_info, 0);
+
+            act_tab = lir_tab;
 
             /* Calculate variables, which are relative in loop */
             for (i = 0; i < VARNO; i++) {
@@ -1192,8 +1202,6 @@ LIRsubexpr (node *arg_node, node *arg_info)
                 if ((0 == DEF[i]) && (0 < arg_node->node[0]->node[1]->mask[1][i]))
                     arg_node->node[0]->mask[2][i] = TRUE;
             }
-
-            act_tab = lir_tab;
 
             if ((NULL != UP) || (NULL != DOWN)) {
                 /* add if-then-else-clause to syntax-tree */
@@ -1214,6 +1222,7 @@ LIRsubexpr (node *arg_node, node *arg_info)
                 new_node->node[0]->mask[1] = DupMask (arg_node->node[0]->mask[1], VARNO);
                 PlusMask (new_node->mask[1], arg_node->node[0]->mask[1], VARNO);
                 PlusMask (arg_info->mask[1], arg_node->node[0]->mask[1], VARNO);
+                new_node->node[0]->mask[2] = used_mask;
 
                 /* convert while-statement to do-statement */
                 arg_node->node[0]->nodetype = N_do;
@@ -1259,8 +1268,10 @@ LIRsubexpr (node *arg_node, node *arg_info)
                 FREE (oldmask[1]);
 
                 arg_node = new_node;
-            }
-            break;
+
+            } else
+                FREE (used_mask);
+        } break;
         case N_let: {
             node *node_behind;
 
