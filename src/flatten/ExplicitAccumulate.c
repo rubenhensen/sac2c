@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/12/09 16:51:45  sbs
+ * error in calling TBmakeLet fixed
+ *
  * Revision 1.7  2004/11/25 22:49:49  khf
  * corrected application of TCmakeAp2
  *
@@ -145,7 +148,7 @@ MakeAccuAssign (node *fundef, node *lhs_ids, node *idx_vec)
     /* F_accu( <idx-varname>) */
     tmp = TCmakePrf1 (F_accu, DUPdupIdsId (idx_vec));
 
-    nassign = TBmakeAssign (TBmakeLet (tmp, _ids), NULL);
+    nassign = TBmakeAssign (TBmakeLet (_ids, tmp), NULL);
 
     /* set correct backref to defining assignment */
     AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
@@ -200,7 +203,7 @@ MakeFoldFunAssign (node *fundef, node *withop, node *accu_ids, node *cexpr)
 
     AP_FUNDEF (funap) = FOLD_FUNDEF (withop);
 
-    nassign = TBmakeAssign (TBmakeLet (funap, _ids), NULL);
+    nassign = TBmakeAssign (TBmakeLet (_ids, funap), NULL);
 
     /* set correct backref to defining assignment */
     AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
