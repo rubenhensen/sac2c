@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/03/03 14:43:46  sbs
+ * Revision 1.2  1995/03/07 18:19:10  sbs
+ * PSI-macros done.
+ *
+ * Revision 1.1  1995/03/03  14:43:46  sbs
  * Initial revision
  *
  *
@@ -20,7 +23,7 @@
 
 #define ND_DECL_ARRAY(type, name)                                                        \
     type *name;                                                                          \
-    nt __##name##_rc;                                                                    \
+    int __##name##_rc;                                                                   \
     int __##name##_sz;                                                                   \
     int __##name##_d;                                                                    \
     int *__##name##_s
@@ -121,7 +124,7 @@
 #define ND_BINOP_CHECK_RIGHT(op, type, a1, a2, res)                                      \
     {                                                                                    \
         int __i;                                                                         \
-        if (ND_A_RC (a1) == 1)                                                           \
+        if (ND_A_RC (a2) == 1)                                                           \
             BINOP_FOR (a2, a1, a2);                                                      \
         else {                                                                           \
             ND_ALLOC_ARRAY (type, res);                                                  \
@@ -140,5 +143,57 @@
         int __i;                                                                         \
         BINOP_FOR (a2, a1, a2);                                                          \
     }
+
+/*
+ * Macros for PSI-primitves:
+ * =========================
+ *
+ * ND_PSI_VxA_S    :
+ * ND_PSI_VxA_A    :
+ * ND_TAKE_VxA_A_1 :
+ *
+ */
+
+#define ND_PSI_VxA_S(name, offset) name[offset]
+
+#define ND_PSI_VxA_A(type, a1, res, offset)                                              \
+    ND_ALLOC_ARRAY (type, res);                                                          \
+    {                                                                                    \
+        type *__src, *__dest;                                                            \
+                                                                                         \
+        __src = a1 + offset;                                                             \
+        __dest = res;                                                                    \
+        for (__i = 0; __i < ND_CHECK_SIZE (res); __i++)                                  \
+            *__dest++ = *__src++;                                                        \
+    }
+
+#define ND_TAKE_VxA_A_1(type, a1, res, v0) ND_ALLOC_ARRAY (type, res);
+{
+    type *__src, *__dest;
+
+    __src = a1;
+    __dest = res;
+    for (__i0 = 0; __i0 < v0; __i0++) {
+        __dest++ = *__src++;
+    };
+}
+
+#define ND_TAKE_VxA_A_2(type, a1, res, v0, v1)                                           \
+    ND_ALLOC_ARRAY (type, res);                                                          \
+    {                                                                                    \
+        type *__src, *__dest;                                                            \
+        int __i0, __i1;                                                                  \
+                                                                                         \
+        __src = a1;                                                                      \
+        __dest = res;                                                                    \
+        for (__i0 = 0; __i0 < v0; __i0++) {                                              \
+            for (__i1 = 0; __i1 < v1; __i1++) {                                          \
+                __dest++ = *__src++;                                                     \
+            };                                                                           \
+            __src += __##name##_s1 - v1;                                                 \
+        };                                                                               \
+    }
+
+#endif /* _sac_icm2c_h */
 
 #endif /* _sac_icm2c_h */
