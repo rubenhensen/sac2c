@@ -3,6 +3,8 @@ Error.h
 Makefile
 NameTuples.c
 NameTuples.h
+NameTuplesUtils.c
+NameTuplesUtils.h
 argtag_info.mac
 build.h
 globals.c
@@ -24,5 +26,3 @@ status_info.mac
 types.h
 usage.c
 usage.h
-NameTuplesUtils.c
-NameTuplesUtils.h
