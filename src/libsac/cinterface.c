@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.3  2000/12/05 14:29:35  nmw
+ * warning when setting refcounter of not refcounted variable
+ * added. handling of T_hidden fixed
+ *
  * Revision 3.2  2000/11/29 16:19:50  nmw
  * trace output of init/cleanup runtime enviroment added
  *
@@ -66,6 +70,8 @@
  * This way of calling is necessary do avoid a circle in linking
  * dependencies
  */
+
+#define CHAR_BUFFER_SIZE 256
 
 /* Typenames used internally */
 typedef enum {
@@ -208,14 +214,21 @@ SAC_GetRefcounter (SAC_arg sa)
 int
 SAC_SetRefcounter (SAC_arg sa, int newrc)
 {
+    char charbuffer[CHAR_BUFFER_SIZE];
+
     CHECK_FOR_ACTIVE_RUNTIMESYSTEM ();
-    if (SAC_ARG_DIM (sa) > 0) {
+    if ((SAC_ARG_DIM (sa) > 0) || (SAC_ARG_TYPE (sa) == T_hidden)) {
         if (newrc < 0)
             SAC_RuntimeError ("Illegal refcounter value specified!\n");
         if (SAC_ARG_LRC (sa) > 0) {
             *(SAC_ARG_RC (sa)) = newrc;
             SAC_ARG_LRC (sa) = newrc;
         }
+    } else {
+        SAC_CI_SACArg2string (sa, charbuffer);
+        SAC_Print ("*** warning: SAC_SetRefcounter() called on variable not refcounted"
+                   " (type: %s)\n\n",
+                   charbuffer);
     }
     return (SAC_ARG_LRC (sa));
 }
