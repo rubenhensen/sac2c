@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/06/03 14:56:04  cg
+ * some bugs removed
+ *
  * Revision 1.4  1998/05/15 15:43:56  cg
  * first bugs removed
  *
@@ -226,7 +229,7 @@ typedef union {
     }
 
 #define SAC_MT_SPMD_FUN_REAL_PARAM_LIST()                                                \
-    unsigned int SAC_MT_mythread, unsigned int SAC_MT_myworkerclass,                     \
+    const unsigned int SAC_MT_mythread, const unsigned int SAC_MT_myworkerclass,         \
       unsigned int SAC_MT_worker_flag
 
 #define SAC_MT_SPMD_FUN_REAL_RETURN() return (SAC_MT_worker_flag);
@@ -237,40 +240,42 @@ typedef union {
 
 #define SAC_MT_MYWORKERCLASS() SAC_MT_myworkerclass
 
-#define SAC_MT_SPMD_PARAM_in(spmdname, type, param)                                      \
-    type param = SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.param;
+#define SAC_MT_SPMD_PARAM_in(type, param)                                                \
+    type param = SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ().param;
 
-#define SAC_MT_SPMD_PARAM_in_rc(spmdname, type, param)                                   \
-    type param = SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.param;                 \
+#define SAC_MT_SPMD_PARAM_in_rc(type, param)                                             \
+    type param = SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ().param;   \
     int SAC_ND_A_RC (param)                                                              \
-      = SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.SAC_ND_A_RCP (param);
+      = SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ().SAC_ND_A_RCP (    \
+        param);
 
-#define SAC_MT_SPMD_PARAM_out(spmdname, type, param)
+#define SAC_MT_SPMD_PARAM_out(type, param)
 
-#define SAC_MT_SPMD_PARAM_out_rc(spmdname, type, param)
+#define SAC_MT_SPMD_PARAM_out_rc(type, param)
 
-#define SAC_MT_SPMD_PARAM_inout_rc(spmdname, type, param)                                \
-    type param = SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.param;                 \
+#define SAC_MT_SPMD_PARAM_inout_rc(type, param)                                          \
+    type param = SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ().param;   \
     int SAC_ND_A_RC (param)                                                              \
-      = SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.SAC_ND_A_RCP (param);
+      = SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().SAC_MT_CURRENT_SPMD ().SAC_ND_A_RCP (    \
+        param);
 
-#define SAC_MT_SPMD_ARG_in(spmdname, arg)                                                \
+#define SAC_MT_SPMD_SETARG_in(spmdname, arg)                                             \
     SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.arg = arg;
 
-#define SAC_MT_SPMD_ARG_in_rc(spmdname, arg)                                             \
+#define SAC_MT_SPMD_SETARG_in_rc(spmdname, arg)                                          \
     SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.arg = arg;                          \
     SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.SAC_ND_A_RCP (arg)                  \
       = SAC_ND_A_RCP (arg);
 
-#define SAC_MT_SPMD_ARG_out(spmdname, arg)                                               \
+#define SAC_MT_SPMD_SETARG_out(spmdname, arg)                                            \
     SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.arg = &arg;
 
-#define SAC_MT_SPMD_ARG_out_rc(spmdname, arg)                                            \
+#define SAC_MT_SPMD_SETARG_out_rc(spmdname, arg)                                         \
     SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.arg = &arg;                         \
     SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.SAC_ND_A_RCP (arg)                  \
       = &SAC_ND_A_RCP (arg);
 
-#define SAC_MT_SPMD_ARG_inout_rc(spmdname, arg)                                          \
+#define SAC_MT_SPMD_SETARG_inout_rc(spmdname, arg)                                       \
     SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.arg = arg;                          \
     SAC_MT_spmd_frame.SAC_MT_CURRENT_FUN ().spmdname.SAC_ND_A_RCP (arg)                  \
       = SAC_ND_A_RCP (arg);
@@ -326,7 +331,7 @@ typedef union {
                                                                                          \
                     if (SAC_MT_CHECK_BARRIER (SAC_MT_son_id)) {                          \
                         SAC_MT_CLEAR_BARRIER (SAC_MT_son_id);                            \
-                        tmp_var = SAC_MT_GET_BARRIER_RESULT (SAC_MT_son_id, 1, id);
+                        tmp_var = SAC_MT_GET_BARRIER_RESULT (SAC_MT_son_id, 1, type);
 
 #define SAC_MT_SYNC_ONEFOLD_2(type, accu_var, tmp_var, id)                               \
     if (!SAC_MT_ready_count) {                                                           \
@@ -351,7 +356,7 @@ typedef union {
             do {                                                                         \
                 if (SAC_MT_CHECK_BARRIER (SAC_MT_son_id)) {                              \
                     SAC_MT_CLEAR_BARRIER (SAC_MT_son_id);                                \
-                    tmp_var = SAC_MT_GET_BARRIER_RESULT (SAC_MT_son_id, 1, id);
+                    tmp_var = SAC_MT_GET_BARRIER_RESULT (SAC_MT_son_id, 1, type);
 
 #define SAC_MT_SYNC_ONEFOLD_3(type, accu_var, tmp_var, id)                               \
     if (!SAC_MT_ready_count) {                                                           \
