@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2004/08/10 13:28:43  sah
+ * -sbs flag enabled in NEW_AST mode by default, as
+ * the new typechecker is as well.
+ *
  * Revision 3.58  2004/08/09 13:15:14  khf
  * OPT_WLPG enabled
  *
@@ -340,7 +344,11 @@
 /*
  * special hidden options!
  */
+#ifdef NEW_AST
+bool sbs = TRUE;
+#else
 bool sbs = FALSE;
+#endif
 
 bool khf = FALSE;
 
