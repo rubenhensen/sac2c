@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.188  2004/08/12 12:39:28  skt
+ * added PrintDataflowgraph, PrintDataflownode & CDFGwithid
+ *
  * Revision 3.187  2004/08/11 08:38:09  skt
  * ASMRA-functions update
  *
@@ -2360,7 +2363,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_nwithid, "N_nwithid", TravSons, FltnNwithid, PrintNwithid, TravSons, TravSons,
-       TravSons, TravSons, FreeNWithid, TravSons, RCNwithid, EMRCNwithid, TravSons,
+       TravSons, CDFGwithid, FreeNWithid, TravSons, RCNwithid, EMRCNwithid, TravSons,
        DupNwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        PrintNwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -3040,10 +3043,10 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
-  NIF (N_dataflownode, "N_dataflownode", TravError, TravError, TravError, TravError,
+  NIF (N_dataflownode, "N_dataflownode", TravError, TravError, PrintDataflownode,
        TravError, TravError, TravError, TravError, TravError, TravError, TravError,
        TravError, TravError, TravError, TravError, TravError, TravError, TravError,
-       TravError, TravError,
+       TravError, TravError, TravError,
 
        TravError, TravError, TravError, TravError, TravError, TravError, TravError,
        TravError, TravError, TravError, TravError, TravError, TravError, TravError,
@@ -3069,10 +3072,10 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravError, TravError, TravError, TravError, TravError, TravError, TravError,
        TravError, TravError, TravError, TravError, TravError, TravError, 0),
 
-  NIF (N_dataflowgraph, "N_dataflowgraph", TravError, TravError, TravError, TravError,
+  NIF (N_dataflowgraph, "N_dataflowgraph", TravError, TravError, PrintDataflowgraph,
        TravError, TravError, TravError, TravError, TravError, TravError, TravError,
        TravError, TravError, TravError, TravError, TravError, TravError, TravError,
-       TravError, TravError,
+       TravError, TravError, TravError,
 
        TravError, TravError, TravError, TravError, TravError, TravError, TravError,
        TravError, TravError, TravError, TravError, TravError, TravError, TravError,
