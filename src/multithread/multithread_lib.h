@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/03/02 13:01:02  jhs
+ * Added MUTHExchangeApplication,
+ * added MUTHExpandFundefName,
+ * added DBUG_PRINTS and DBUG_ASSERTS.
+ *
  * Revision 1.1  2000/02/21 17:48:22  jhs
  * Initial revision
  *
@@ -14,5 +19,7 @@
 extern node *MUTHBlocksLastInstruction (node *block);
 extern node *MUTHMeltBlocks (node *first_block, node *second_block);
 extern node *MUTHMeltBlocksOnCopies (node *first_block, node *second_block);
+extern node *MUTHExchangeApplication (node *arg_node, node *new_fundef);
+extern node *MUTHExpandFundefName (node *fundef, char *suffix);
 
 #endif /* CONCURRENT_LIB_H */

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/03/02 12:59:35  jhs
+ * Added MUTHExchangeApplication,
+ * added MUTHExpandFundefName,
+ * added DBUG_PRINTS and DBUG_ASSERTS.
+ *
  * Revision 1.2  2000/02/22 15:48:50  jhs
  * Adapted NODE_TEXT.
  *
@@ -27,6 +32,8 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 
+#include "internal_lib.h"
+
 /******************************************************************************
  *
  * function:
@@ -48,6 +55,7 @@ MUTHAssertSimpleBlock (node *block)
     DBUG_ASSERT (NODE_TYPE (block) == N_block,
                  "Wrong NODE_TYPE, not a N_block (watch MUTH)");
 
+    /* what is this for??? copied from the old spmd version ??? */
     DBUG_ASSERT (BLOCK_VARDEC (block) == NULL, "BLOCK_VARDEC not NULL");
     DBUG_ASSERT (BLOCK_NEEDFUNS (block) == NULL, "BLOCK_NEEDFUNS not NULL");
     DBUG_ASSERT (BLOCK_NEEDTYPES (block) == NULL, "BLOCK_NEEDTYPES not NULL");
@@ -64,7 +72,7 @@ MUTHAssertSimpleBlock (node *block)
  *   node *MUTHBlocksLastInstruction(node *block)
  *
  * description:
- *   Find last instruction of a block
+ *   Find the last instruction (N_assign) of a block.
  *
  * attention:
  *   One can only step over N_assign until now, N_empty is not handled yet.
@@ -76,10 +84,14 @@ MUTHBlocksLastInstruction (node *block)
     node *result;
 
     DBUG_ENTER ("MUTHBlocksLastInstruction");
+    DBUG_PRINT ("MUTH", ("begin"));
 
-    DBUG_ASSERT (NODE_TYPE (block) == N_block, "Wrong NODE_TYPE of argument");
+    DBUG_ASSERT ((block != NULL), ("block == NULL"));
+    DBUG_ASSERT (NODE_TYPE (block) == N_block, ("Wrong NODE_TYPE of argument"));
 
     result = BLOCK_INSTR (block);
+
+    DBUG_ASSERT ((result != NULL), ("result == NULL"));
     DBUG_ASSERT (NODE_TYPE (result) == N_assign, "Wrong node for instruction");
 
     while (ASSIGN_NEXT (result) != NULL) {
@@ -88,6 +100,7 @@ MUTHBlocksLastInstruction (node *block)
                      "Wrong node for further instruction");
     }
 
+    DBUG_PRINT ("MUTH", ("end"));
     DBUG_RETURN (result);
 }
 
@@ -156,4 +169,65 @@ MUTHMeltBlocksOnCopies (node *first_block, node *second_block)
     result = MUTHMeltBlocks (first_block, second_block);
 
     DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* MUTHExchangeApplication (node *arg_node, node *new_fundef)
+ *
+ * description:
+ *   The fundef belonging to a N_ap cannot be changed directly, because
+ *   some other features have to bechanged as well.
+ *   This function realizes all what has to be done.
+ *
+ ******************************************************************************/
+node *
+MUTHExchangeApplication (node *arg_node, node *new_fundef)
+{
+    DBUG_ENTER ("ExchangeApplication");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_ap), "wrong type of node");
+
+    DBUG_PRINT ("MUTH", ("begin"));
+
+    AP_FUNDEF (arg_node) = new_fundef;
+
+    if (AP_NAME (arg_node) != NULL) {
+        FREE (AP_NAME (arg_node));
+    }
+    AP_NAME (arg_node) = StringCopy (FUNDEF_NAME (new_fundef));
+    DBUG_ASSERT ((AP_MOD (arg_node) != NULL), ("jhs"));
+    if (AP_MOD (arg_node) != NULL) {
+        /*    FREE( AP_MOD( arg_node)); */
+    }
+
+    DBUG_ASSERT ((FUNDEF_MOD (new_fundef) != NULL), ("jhs2"));
+    if (FUNDEF_MOD (new_fundef) != NULL) {
+        AP_MOD (arg_node) = StringCopy (FUNDEF_MOD (new_fundef));
+    } else {
+        AP_MOD (arg_node) = NULL;
+    }
+    DBUG_PRINT ("MUTH", ("end"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/* #### */
+node *
+MUTHExpandFundefName (node *fundef, char *suffix)
+{
+    char *old_name;
+    char *new_name;
+
+    DBUG_ENTER ("MUTHExpandFundefName");
+
+    old_name = FUNDEF_NAME (fundef);
+    new_name = Malloc (strlen (old_name) + strlen (suffix) + 1);
+    strcpy (new_name, suffix);
+    strcat (new_name, old_name);
+    FUNDEF_NAME (fundef) = new_name;
+    FREE (old_name);
+
+    DBUG_RETURN (fundef);
 }
