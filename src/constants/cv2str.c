@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2001/05/17 10:04:56  nmw
+ * missing include of internal_lib.h added
+ *
  * Revision 1.3  2001/05/16 13:43:58  nmw
  * MALLOC/FREE changed to Malloc/Free
  *
@@ -32,6 +35,7 @@
 #include <strings.h>
 #include <stdlib.h>
 #include "dbug.h"
+#include "internal_lib.h"
 
 #include "cv2str.h"
 
