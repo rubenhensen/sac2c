@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/03/17 21:31:55  sbs
+ * fixed a problem when profiling functions with many arguments
+ * (strncat does not work properly with negative n's !)
+ *
  * Revision 2.5  1999/03/17 16:09:05  bs
  * Braces in if-clauses added!
  *
@@ -175,186 +179,7 @@
  * Revision 1.151  1998/05/12 22:34:17  dkr
  * removed unused var
  *
- * Revision 1.150  1998/05/12 13:19:59  cg
- * bug fixed: original vardecs are now traversed in advance and
- * module names are given to user-defined types where necessary.
- *
- * Revision 1.149  1998/05/06 15:05:06  srs
- * renames INFO_ macros to INFO_TC_
- *
- * Revision 1.148  1998/04/29 14:19:52  srs
- * fixed bug in TI_Nfoldprf()
- *
- * Revision 1.147  1998/04/29 12:46:15  srs
- * added weak TC of new WLs
- *
- * Revision 1.146  1998/03/24 15:30:29  cg
- * #include "profile.h" removed since file no longer exists.
- *
- * Revision 1.145  1998/03/24 13:43:42  cg
- * The maximum number of applications of a single function is now determined.
- * This information is later used for generating profiling code.
- *
- * Revision 1.144  1998/03/03 14:02:09  cg
- * Last occurrence of function Error() replaced by macro SYSABORT
- *
- * Revision 1.143  1998/02/19 11:22:59  srs
- * fixed two bugs:
- * - uninferable array in modarray() does not lead to a segfault anymore.
- * - variable definitions in withloops (generator, body) are local now.
- *
- * Revision 1.142  1998/02/15 21:27:38  srs
- * fixed bug in typechecking the neutral elements of WL-fold
- *
- * Revision 1.141  1998/02/11 17:15:37  srs
- * changed NPART_IDX to NPART_WITHID
- *
- * Revision 1.140  1998/02/11 16:34:14  dkr
- * typedef cmp_types moved to typecheck.h (compile.c needs to import this type)
- *
- * Revision 1.139  1998/02/10 10:19:45  srs
- * fixed bug in TI_Ncode
- *
- * Revision 1.138  1998/02/10 09:59:40  srs
- * added VARDEC information to NCODE_CEXPR var in function TCNcode.
- *
- * Revision 1.137  1998/02/09 15:55:53  srs
- * added typechecking for new WLs
- *
- * Revision 1.136  1997/11/26 14:06:38  srs
- * removed use of old macros from acssass_macros.h
- *
- * Revision 1.135  1997/11/10 23:37:24  dkr
- * removed a bug with NEWTREE
- *
- * Revision 1.134  1997/11/07 11:24:08  srs
- * NEWTREE: nnode is ignored
- *
- * Revision 1.133  1997/10/29 14:28:54  srs
- * removed HAVE_MALLOC_O
- *
- * Revision 1.132  1997/10/28 18:26:50  srs
- * dead code removed
- *
- * Revision 1.131  1997/08/26 15:51:39  sbs
- * StringCopy inserted in TI_prf where N_prf is changed to N_ap
- * since we deal with an overloaded version of the primitive function!
- *
- * Revision 1.130  1997/05/28 12:35:58  sbs
- * Profiling integrated
- *
- * Revision 1.129  1997/05/16  09:55:11  sbs
- * ANALSE-TOOL extended to function-application specific timing
- *
- * Revision 1.128  1997/05/14  08:13:50  sbs
- * N_annotate's inserted around function apps
- *
- * Revision 1.127  1997/04/25  09:16:41  sbs
- * changed NULL -> 0 where appropriate
- *
- * Revision 1.126  1997/04/24  15:04:56  sbs
- * HAVE_MALLOC_O inserted.
- *
- * Revision 1.125  1997/03/19  15:31:08  cg
- * Now, module/class implementations without any functions are supported
- *
- * Revision 1.124  1997/03/11  16:30:38  cg
- * function LookupObject rewritten. Now, it should be possible to specify
- * a module name even for external modules when using a global object.
- *
- * Revision 1.123  1996/09/11  06:20:33  cg
- * Warnings because of unused functions are omitted with respect to
- * imported modules.
- *
- * Revision 1.122  1996/09/06  18:53:29  cg
- * more bugs fixed in CmpFunParams, should work now.
- *
- * Revision 1.121  1996/09/06  17:05:04  cg
- * bug fixed in function CmpFunParams.
- *
- * Revision 1.120  1996/05/23  11:25:05  sbs
- * error for imported functions that contain unknown array-shapes
- * changed to WARN ing :
- *
- *  WARN(0,("Imported function '%s` contains"
- *                      " %d types with unknown shape",
- *                      ModName(fun_node->ID_MOD, fun_node->ID),
- *                      wrong_shape));
- *
- * Revision 1.119  1996/04/04  16:34:09  hw
- * bug fixed in InitFunTable (functions will be inserted in correct order now)
- *
- * Revision 1.118  1996/04/02  19:38:18  cg
- * bug fixed in function CheckIfGOonlyCBR
- * runs now with functions with variable argument lists.
- *
- * Revision 1.117  1996/04/02  16:06:28  hw
- * - now FUNDEF_LINKMOD will be inserted in internal fun_tab,
- *   if FUNDEF_MOD is NULL (external function)
- *
- * Revision 1.116  1996/03/21  18:02:18  cg
- * bug fixed in function CheckFunctionParameters:
- * if(T_dots == ARG_BASETYPE(arg)) switched to if(T_dots != ARG_BASETYPE(arg))
- *
- * Revision 1.115  1996/03/05  15:30:15  cg
- * implemented typecheck of functions with a variable number of return
- * values (imported external declarations only)
- *
- * Revision 1.114  1996/02/27  19:04:23  hw
- * now the TC looks behind hidden types in imported functions only
- *
- * Revision 1.113  1996/02/13  18:06:12  hw
- * bug fixed in TCLet ( Comparison of types with dim ARRAY_OR_SCALAR
- *  and types with dim > SKALAR changed)
- *
- * Revision 1.112  1996/02/13  15:38:19  hw
- * DBUG_PRINT in TI_array deleted
- *
- * Revision 1.111  1996/02/12  18:11:30  hw
- * bug fixed in TI_genarray (added typeinformation to N_array node)
- *
- * Revision 1.110  1996/02/12  16:33:47  cg
- * bugs fixed in access to pragma linkname of functions
- * programs without main-function no longer cause segmentation faults.
- *
- * Revision 1.109  1996/02/12  13:31:54  asi
- * added a DBUG_ASSERT in function DuplicateTypes
- *
- * Revision 1.108  1996/02/08  18:12:15  hw
- * - changed functions CmpTypes & CompatibleTypes for use with types
- *    of known dimension, but unknown shape
- * - changed UpdateTypes to update types with known dimension, but unknown shape
- *
- * Revision 1.107  1996/02/08  08:08:11  hw
- * added error-message (if 'psi' has an argument with unknown shape
- *   and the result-type is not declared)
- *
- * Revision 1.106  1996/02/06  16:19:00  hw
- * added typecheck for chars
- *
- * Revision 1.105  1996/02/06  14:55:45  hw
- * - changed overloading of functions
- * - changed comparison of external-function-names
- *
- * Revision 1.104  1996/02/06  14:02:09  cg
- * Now, the entry id_cmod of the types structure is copied as well
- * in function DuplicateTypes (no copy of entire string)
- *
- * Revision 1.103  1996/01/25  16:25:54  hw
- * changed return-value of functions CmpTypes & CompatibleTypes
- * ( the type is a 'enum' cmp_type' which will be created from
- *   cmp_type.mac)
- * - changed all checks of values of these two functions
- * - added typechecking of functions in modules whose arguments
- *   have unknown shape
- * - and  ... (a lot) :-)
- *
- * Revision 1.102  1995/12/05  16:47:55  hw
- * bug fixed in TI_genarray (pointers of types-structure will not be
- *  shared anymore)
- *
- * Revision 1.101  1995/12/05  12:14:49  hw
- * changed UpdateTypes
+ * ... [eliminated] ...
  *
  * Revision 1.100  1995/12/05  11:05:33  hw
  * changed AddIdToStack ( when generating a  new vardec the name of the variable
@@ -5625,22 +5450,27 @@ TI_ap (node *arg_node, node *arg_info)
             str_buff[0] = '\0';
             str_buff = strncpy (str_buff, FUNDEF_NAME (fun_p->node), str_spc);
             str_spc -= strlen (FUNDEF_NAME (fun_p->node));
+            str_spc = MAX (str_spc, 0);
             str_buff = strncat (str_buff, "( ", str_spc);
             str_spc -= 2;
+            str_spc = MAX (str_spc, 0);
             arg = FUNDEF_ARGS (fun_p->node);
             while (arg != NULL) {
                 tmp_str = Type2String (ARG_TYPE (arg), 1);
                 str_buff = strncat (str_buff, tmp_str, str_spc);
                 str_spc -= strlen (tmp_str);
+                str_spc = MAX (str_spc, 0);
                 FREE (tmp_str);
                 arg = ARG_NEXT (arg);
                 if (arg != NULL) {
                     str_buff = strncat (str_buff, ", ", str_spc);
                     str_spc -= 2;
+                    str_spc = MAX (str_spc, 0);
                 }
             }
             str_buff = strncat (str_buff, " )", str_spc);
             str_spc -= 2;
+            str_spc = MAX (str_spc, 0);
 
             /*
              * Enumerate the actual funtion iff necessary and possible!
