@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/11/23 22:10:57  ktr
+ * renaming.
+ *
  * Revision 3.3  2004/11/21 23:01:01  ktr
  * ISMOP 2004!!!!!!!
  *
@@ -31,7 +34,7 @@
  * prefix: CONC
  *
  *****************************************************************************/
-extern node *CONCdoBuildSpmdRegions (node *syntax_tree);
+extern node *CONCdoConcurrent (node *syntax_tree);
 
 extern node *CONCmodule (node *arg_node, info *arg_info);
 extern node *CONCfundef (node *arg_node, info *arg_info);
