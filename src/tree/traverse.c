@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2000/05/29 14:29:57  dkr
+ * a second traversal-table for precompile added
+ *
  * Revision 1.17  2000/03/30 15:13:13  jhs
  * Added adjustcalls
  *
@@ -559,15 +562,15 @@ static funtab rmvoid_tab_rec = {{
 funtab *rmvoid_tab = &rmvoid_tab_rec;
 
 /*
- *  (30) precomp_tab
+ *  (30) precomp2_tab
  */
-static funtab precomp_tab_rec = {{
-#define NIFprecomp(it_precomp) it_precomp
+static funtab precomp2_tab_rec = {{
+#define NIFprecomp2(it_precomp2) it_precomp2
 #include "node_info.mac"
-                                 },
-                                 NULL,
-                                 NULL};
-funtab *precomp_tab = &precomp_tab_rec;
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *precomp2_tab = &precomp2_tab_rec;
 
 /*
  *  (31) active_tab
@@ -1089,6 +1092,17 @@ static funtab adjca2_tab_rec = {{
                                 NULL,
                                 NULL};
 funtab *adjca2_tab = &adjca2_tab_rec;
+
+/*
+ *  (79) precomp1_tab
+ */
+static funtab precomp1_tab_rec = {{
+#define NIFprecomp1(it_precomp1) it_precomp1
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *precomp1_tab = &precomp1_tab_rec;
 
 /*
  *  nnode

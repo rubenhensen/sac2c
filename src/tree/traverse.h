@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2000/05/29 14:29:50  dkr
+ * a second traversal-table for precompile added
+ *
  * Revision 1.14  2000/03/30 15:13:13  jhs
  * Added adjustcalls
  *
@@ -115,7 +118,8 @@ extern funtab *checkdec_tab;
 extern funtab *writedec_tab;
 extern funtab *unique_tab;
 extern funtab *rmvoid_tab;
-extern funtab *precomp_tab;
+extern funtab *precomp1_tab;
+extern funtab *precomp2_tab;
 extern funtab *readsib_tab;
 extern funtab *wlt_tab;
 extern funtab *cse_tab;
