@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/03/21 14:03:41  nmw
+ * when used in ssa-form return renamings are moved out of
+ * do/while loops in the calling context
+ * THIS HAS NOT BEEN TESTED !!!
+ *
  * Revision 3.1  2000/11/20 17:59:21  sacbase
  * new release made
  *
@@ -156,7 +161,7 @@ MoveVardecs (node *source, node *dest)
  *       <post-renamings>;
  *     }
  *     else {
- *       <anything>;
+ *       <empty>
  *     }
  *     <return-renamings>;
  *     return(...);
@@ -183,6 +188,7 @@ static node *
 ReplaceAssignmentByWhileLoopFun (node *assign, node *fundef)
 {
     node *tmp, *cond, *loop_body, *loop_suffix, *loop_pred, *new_assign;
+    node *cond_assign, *tmp2;
 
     DBUG_ENTER ("ReplaceAssignmentByWhileLoopFun");
 
@@ -190,6 +196,9 @@ ReplaceAssignmentByWhileLoopFun (node *assign, node *fundef)
 
     DBUG_ASSERT ((NODE_TYPE (cond) == N_cond),
                  "Illegal structure of while-loop function.");
+    DBUG_ASSERT ((NODE_TYPE (BLOCK_INSTR (COND_ELSE (cond))) == N_empty),
+                 "else part of conditional in while-loop must be empty");
+    cond_assign = BLOCK_INSTR (FUNDEF_BODY (fundef));
 
     loop_pred = COND_COND (cond);
     COND_COND (cond) = MakeBool (0);
@@ -208,12 +217,44 @@ ReplaceAssignmentByWhileLoopFun (node *assign, node *fundef)
         tmp = BLOCK_INSTR (COND_THEN (cond));
     }
 
+    /* search return-renamings */
+    DBUG_ASSERT ((ASSIGN_NEXT (cond_assign) != NULL),
+                 "no more assignments after conditional");
+    tmp2 = cond_assign;
+    while (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp2))) != N_return) {
+        tmp2 = ASSIGN_NEXT (tmp2);
+    }
+    ASSIGN_NEXT (tmp2) = FreeTree (ASSIGN_NEXT (tmp2));
+
     /*
      * Here tmp points to the recursive function application.
      */
 
-    loop_suffix = AppendAssign (ASSIGN_NEXT (tmp), ASSIGN_NEXT (assign));
-    ASSIGN_NEXT (tmp) = NULL;
+    /* build loop suffix assignment chain */
+    if (use_ssaform) {
+        /*
+         * when converting back from ssaform in undossatransform
+         * the recusive return identifer have been adjusted correctly
+         * so there is no need for additional copy assignments
+         * in post-renamings..
+         */
+        if (tmp2 != ASSIGN_NEXT (cond_assign)) {
+            /* loop_suffix starts with return renamings */
+            loop_suffix = ASSIGN_NEXT (cond_assign);
+            /* preserve assignments from being freed */
+            ASSIGN_NEXT (cond_assign) = NULL;
+        } else {
+            /* no renturn renamings available */
+            loop_suffix = NULL;
+        }
+    } else {
+        /* without ssaform use the post-renamings */
+        loop_suffix = ASSIGN_NEXT (tmp);
+        /* preserve assignments from being freed */
+        ASSIGN_NEXT (tmp) = NULL;
+    }
+
+    loop_suffix = AppendAssign (loop_suffix, ASSIGN_NEXT (assign));
     ASSIGN_NEXT (assign) = NULL;
 
     FreeTree (assign);
@@ -246,7 +287,7 @@ ReplaceAssignmentByWhileLoopFun (node *assign, node *fundef)
  *       <post-renamings>;
  *     }
  *     else {
- *       <anything>;
+ *       <empty>
  *     }
  *     <return-renamings>;
  *     return(...);
@@ -265,6 +306,7 @@ ReplaceAssignmentByWhileLoopFun (node *assign, node *fundef)
  *     <pre-renamings>;
  *   } while (<pred>);
  *   <post-renamings>;
+ *   <return-renamings>;
  *   ...;
  *
  ******************************************************************************/
@@ -273,6 +315,7 @@ static node *
 ReplaceAssignmentByDoLoopFun (node *assign, node *fundef)
 {
     node *tmp, *cond, *loop_body, *loop_suffix, *loop_pred, *new_assign;
+    node *tmp2, *cond_assign;
 
     DBUG_ENTER ("ReplaceAssignmentByDoLoopFun");
 
@@ -293,11 +336,13 @@ ReplaceAssignmentByDoLoopFun (node *assign, node *fundef)
     /*
      * Variable tmp now points to the conditional.
      */
-
+    cond_assign = tmp;
     cond = ASSIGN_INSTR (tmp);
 
     DBUG_ASSERT ((NODE_TYPE (cond) == N_cond),
                  "Illegal node type in conditional position.");
+    DBUG_ASSERT ((NODE_TYPE (BLOCK_INSTR (COND_ELSE (cond))) == N_empty),
+                 "else part of conditional in do-loop must be empty");
 
     loop_pred = COND_COND (cond);
     COND_COND (cond) = MakeBool (0);
@@ -315,12 +360,45 @@ ReplaceAssignmentByDoLoopFun (node *assign, node *fundef)
         tmp = BLOCK_INSTR (COND_THEN (cond));
     }
 
+    /* search return-renamings */
+    DBUG_ASSERT ((ASSIGN_NEXT (cond_assign) != NULL),
+                 "no more assignments after conditional");
+    tmp2 = cond_assign;
+    while (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp2))) != N_return) {
+        tmp2 = ASSIGN_NEXT (tmp2);
+    }
+    ASSIGN_NEXT (tmp2) = FreeTree (ASSIGN_NEXT (tmp2));
+
     /*
      * Here tmp points to the recursive function application.
      */
 
-    loop_suffix = AppendAssign (ASSIGN_NEXT (tmp), ASSIGN_NEXT (assign));
-    ASSIGN_NEXT (tmp) = NULL;
+    /* build loop suffix assignment chain */
+    if (use_ssaform) {
+        /*
+         * when converting back from ssaform in undossatransform
+         * the recusive return identifer have been adjusted correctly
+         * so there is no need for additional copy assignments
+         * in post-renamings..
+         */
+        if (tmp2 != ASSIGN_NEXT (cond_assign)) {
+            /* loop_suffix starts with return renamings */
+            loop_suffix = ASSIGN_NEXT (cond_assign);
+            /* preserve assignments from being freed */
+            ASSIGN_NEXT (cond_assign) = NULL;
+
+        } else {
+            /* no renturn renamings available */
+            loop_suffix = NULL;
+        }
+    } else {
+        /* without ssaform use the post-renamings */
+        loop_suffix = ASSIGN_NEXT (tmp);
+        /* preserve assignments from being freed */
+        ASSIGN_NEXT (tmp) = NULL;
+    }
+
+    loop_suffix = AppendAssign (loop_suffix, ASSIGN_NEXT (assign));
     ASSIGN_NEXT (assign) = NULL;
 
     FreeTree (assign);
