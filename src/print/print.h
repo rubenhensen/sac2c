@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/07/04 08:38:17  hw
+ * Revision 1.14  1995/07/11 09:02:10  cg
+ * declaration of PrintConstdef deleted.
+ *
+ * Revision 1.13  1995/07/04  08:38:17  hw
  * PrintDouble inserted
  *
  * Revision 1.12  1995/06/06  14:04:15  cg
@@ -61,7 +64,7 @@ extern node *PrintBlock (node *, node *);
 extern node *PrintLet (node *, node *);
 extern node *PrintFundef (node *, node *);
 extern node *PrintTypedef (node *, node *);
-extern node *PrintConstdef (node *, node *);
+/* extern node *PrintConstdef(node * , node *); */
 extern node *PrintObjdef (node *, node *);
 extern node *PrintModul (node *, node *);
 extern node *PrintImplist (node *, node *);
