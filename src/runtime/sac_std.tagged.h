@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2003/09/17 14:18:16  dkr
+ * definition of SAC_ND_A_RC__SCL_NUQ corrected
+ *
  * Revision 3.39  2003/09/16 15:57:57  dkr
  * some comments modified
  *
@@ -271,7 +274,9 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_A_FIELD__SCL(nt) NT_NAME (nt)
 
-#define SAC_ND_A_RC__SCL_NUQ(nt) SAC_ND_A_RC__AKS_NUQ (nt)
+#define SAC_ND_A_RC__SCL_NUQ(nt) CAT8 (SAC_ND_A_RC__SCL_, CAT8 (NT_HID (nt), _NUQ (nt)))
+#define SAC_ND_A_RC__SCL_NHD_NUQ(nt) SAC_ICM_UNDEF ()
+#define SAC_ND_A_RC__SCL_HID_NUQ(nt) SAC_ND_A_RC__AKS_NUQ (nt)
 
 #define SAC_ND_A_DIM__SCL(nt) SAC_ND_A_MIRROR_DIM (nt)
 
