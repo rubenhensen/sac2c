@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.39  2000/04/12 17:27:26  jhs
+ * Added INFO_MUTH_ALLOW_OOOC.
+ *
  * Revision 1.38  2000/03/31 14:10:26  dkr
  * comment corrected
  *
@@ -2266,6 +2269,7 @@ extern node *MakePragma ();
  ***
  ***  in all:
  ***    node*      INFO_MUTH_FUNDEF   (N_fundef)
+ ***    int(bool)  INFO_MUTH_ALLOW_OOOC
  ***    funptr     INFO_MUTH_DRIVER
  ***    ignorefun  INFO_MUTH_IGNORE
  ***
@@ -2499,6 +2503,7 @@ extern node *MakeInfo ();
 /* multithread - all mini-phases */
 /* DO NOT OVERRIDE ANY INFO_YYYY_xxx HERE, were YYYY is any other miniphase!!! */
 #define INFO_MUTH_FUNDEF(n) (n->node[0])
+#define INFO_MUTH_ALLOW_OOOC(n) (n->counter)
 #define INFO_MUTH_DRIVER(n) ((funptr) (n->node[1]))
 #define INFO_MUTH_IGNORE(n) ((ignorefun) (n->node[2]))
 
