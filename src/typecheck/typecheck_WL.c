@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/07/14 23:25:53  sah
+ * inlined some code from ConstantFolding.c as the old
+ * constant folding has been removed. this is far from
+ * beeing perfect, but hopefully the old typechecker will
+ * be removed soon.
+ *
  * Revision 3.7  2001/11/19 20:35:07  dkr
  * TI() renamed into TypeInference() in order to avoid linker warning
  *
@@ -73,9 +79,9 @@
 #include "Error.h"
 #include "free.h"
 #include "globals.h"
-#include "ConstantFolding.h"
 #include "constants.h"
 #include "typecheck.h"
+#include "DupTree.h"
 
 /*
  * This files exports a function ReduceGenarrayShape() which tries to
@@ -169,18 +175,66 @@ TCWLprf (node *arg_node, node *arg_info)
 
     if (F_shape == PRF_PRF (arg_node)) {
         if (N_id == NODE_TYPE (PRF_ARG1 (arg_node))) {
-            /* constantfold prf shape() now. We can be sure that no other
-               CF-functions are called (else there would be more problems
-               with masks) and therefor do not have to chance act_tab. */
-            arg_node = CFprf (arg_node, arg_info);
-            if (N_prf == NODE_TYPE (arg_node)) /* not successful */
+            /* constantfold prf shape() now. This code has been inlined
+               from the old non-ssa constant folder. */
+            DBUG_PRINT ("TYPE",
+                        ("primitive function %s folded", mdb_prf[arg_node->info.prf]));
+            node *tmp
+              = Types2Array (ID_TYPE (PRF_ARG1 (arg_node)), INFO_CF_TYPE (arg_info));
+            if (tmp != NULL) {
+                /* Types2Array was successful */
+                ARRAY_VECTYPE (tmp) = T_int;
+                FreeTree (arg_node);
+                arg_node = tmp;
+            } else {
+                /* not successful */
                 expr_ok = 0;
+            }
         } else {
             PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
-            if (PRF_ARG1 (arg_node)
-                && (N_array == NODE_TYPE (PRF_ARG1 (arg_node))
-                    || N_num == NODE_TYPE (PRF_ARG1 (arg_node)))) {
-                arg_node = CFprf (arg_node, arg_info);
+
+            if (PRF_ARG1 (arg_node)) {
+                if (N_array == NODE_TYPE (PRF_ARG1 (arg_node))) {
+                    /* this code has been inline from the old non-ssa constant folder
+                       as it has been removed */
+                    DBUG_PRINT ("TYPE", ("primitive function %s folded",
+                                         mdb_prf[arg_node->info.prf]));
+
+                    node *array = PRF_ARG1 (arg_node);
+
+                    /* count number of elements */
+                    int noofelems = CountExprs (ARRAY_AELEMS (array));
+
+                    /* store result in this array (it is reused as shape) */
+                    NUM_VAL (EXPRS_EXPR (ARRAY_AELEMS (array))) = noofelems;
+                    NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (array))) = N_num;
+
+                    /* free rest of array and prf node */
+                    if (EXPRS_NEXT (ARRAY_AELEMS (array)) != NULL) {
+                        EXPRS_NEXT (ARRAY_AELEMS (array))
+                          = FreeTree (EXPRS_NEXT (ARRAY_AELEMS (array)));
+                    }
+
+                    /* give new array correct type */
+                    ARRAY_TYPE (array) = FreeAllTypes (ARRAY_TYPE (array));
+                    ARRAY_TYPE (array) = DupAllTypes (INFO_CF_TYPE (arg_info));
+                    ARRAY_VECLEN (array) = 1;
+                    ((int *)ARRAY_CONSTVEC (array))
+                      = Array2IntVec (ARRAY_AELEMS (array), NULL);
+                    ARRAY_VECTYPE (array) = T_int;
+
+                    /* store result */
+                    FreeNode (arg_node);
+                    arg_node = array;
+                } else if (N_num == NODE_TYPE (PRF_ARG1 (arg_node))) {
+                    /* this code has been inlined from the old non-ssa
+                       constant folder as it has been removed */
+
+                    /* sah: I have not found any code dealing with
+                       shape applied to a num, there has to be a reason
+                       for this (isn't it always []?) */
+                }
+
                 if (N_prf == NODE_TYPE (arg_node)) /* not successful */
                     expr_ok = 0;
             }
@@ -225,7 +279,13 @@ TCWLprf (node *arg_node, node *arg_info)
                     res = COFreeConstant (res);
                 }
             } else {
-                arg_node = CFprf (arg_node, arg_info);
+                /* This is a direct call to CFprf. This may start a complete
+                   traversal in constant folding mode, without setting the
+                   appropriate cf_tab. I have no idea why this shall work?!?
+                   Thus, i cannot inline the code here */
+                /*
+                   arg_node = CFprf(arg_node, arg_info);
+                */
                 if (N_prf == NODE_TYPE (arg_node)) /* not successful */
                     expr_ok = 0;
             }
