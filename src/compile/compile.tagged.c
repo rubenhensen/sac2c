@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.52  2002/10/10 23:53:02  dkr
+ * signature of TYPE_ERROR modified
+ *
  * Revision 1.51  2002/10/08 16:50:30  dkr
  * MakeIcmArgs_WL_OP2(): DBUG_ASSERT modified
  *
@@ -3959,8 +3962,6 @@ COMPPrfArray (int args_cnt, node *arg_node, node *arg_info, node **check_reuse1,
  *
  * Function:
  *   node *COMPPrfTypeError( node *arg_node, node *arg_info)
- *                           node **check_reuse1, node **check_reuse2,
- &                           node **get_dim, node **set_shape_icm)
  *
  * Description:
  *
@@ -3968,20 +3969,24 @@ COMPPrfArray (int args_cnt, node *arg_node, node *arg_info, node **check_reuse1,
  ******************************************************************************/
 
 static node *
-COMPPrfTypeError (node *arg_node, node *arg_info, node **check_reuse1,
-                  node **check_reuse2, node **get_dim, node **set_shape_icm)
+COMPPrfTypeError (node *arg_node, node *arg_info)
 {
+    ids *let_ids;
+    node *head, *tail;
     node *ret_node;
 
     DBUG_ENTER ("COMPPrfTypeError");
 
-    (*check_reuse1) = (*check_reuse2) = NULL;
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
 
-    (*get_dim) = MakeIcm0 ("NOOP");
-    (*set_shape_icm) = MakeIcm0 ("NOOP");
+    DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL),
+                 "1st argument of F_type_error not found!");
+    head = EXPRS_EXPR (PRF_ARGS (arg_node));
+    tail = EXPRS_NEXT (PRF_ARGS (arg_node));
 
-    ret_node = MakeAssignIcm2 ("TYPE_ERROR", MakeNum (CountExprs (PRF_ARGS (arg_node))),
-                               DupTree (PRF_ARGS (arg_node)), NULL);
+    ret_node = MakeAssignIcm5 ("TYPE_ERROR", MakeNum (CountIds (let_ids)),
+                               Ids2Exprs (let_ids), DupNode (head),
+                               MakeNum (CountExprs (tail)), DupTree (tail), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4011,180 +4016,184 @@ COMP2Prf (node *arg_node, node *arg_info)
     DBUG_ENTER ("COMPPrf");
 
     let_ids = INFO_COMP2_LASTIDS (arg_info);
-    DBUG_ASSERT ((IDS_NEXT (let_ids) == NULL), "multiple return values found!");
+    if (PRF_PRF (arg_node) == F_type_error) {
+        /* F_type_error has multiple return values! */
+        ret_node = COMPPrfTypeError (arg_node, arg_info);
+    } else {
+        DBUG_ASSERT ((IDS_NEXT (let_ids) == NULL), "multiple return values found!");
 
-    DBUG_ASSERT ((CheckPrf (let_ids, arg_node, arg_info)),
-                 "application of a primitive function:"
-                 " refcounted argument occurs also on LHS!");
+        DBUG_ASSERT ((CheckPrf (let_ids, arg_node, arg_info)),
+                     "application of a primitive function:"
+                     " refcounted argument occurs also on LHS!");
 
-    switch (PRF_PRF (arg_node)) {
-    case F_type_error:
-        ret_node = COMPPrfTypeError (arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                     &get_dim, &set_shape_icm);
-        break;
+        switch (PRF_PRF (arg_node)) {
+            /*
+             *  scalar args
+             */
 
-        /*
-         *  scalar args
-         */
+        case F_toi_S:
+        case F_tof_S:
+        case F_tod_S:
+            ret_node = COMPPrfConvertScalar (arg_node, arg_info, &check_reuse1,
+                                             &check_reuse2, &get_dim, &set_shape_icm);
+            break;
 
-    case F_toi_S:
-    case F_tof_S:
-    case F_tod_S:
-        ret_node = COMPPrfConvertScalar (arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                         &get_dim, &set_shape_icm);
-        break;
+        case F_abs:
+            ret_node = COMPPrfScalarIcm ("ND_ABS", 1, arg_node, arg_info, &check_reuse1,
+                                         &check_reuse2, &get_dim, &set_shape_icm);
+            break;
 
-    case F_abs:
-        ret_node = COMPPrfScalarIcm ("ND_ABS", 1, arg_node, arg_info, &check_reuse1,
-                                     &check_reuse2, &get_dim, &set_shape_icm);
-        break;
+        case F_not:
+            ret_node = COMPPrfScalar (1, arg_node, arg_info, &check_reuse1, &check_reuse2,
+                                      &get_dim, &set_shape_icm);
+            break;
 
-    case F_not:
-        ret_node = COMPPrfScalar (1, arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                  &get_dim, &set_shape_icm);
-        break;
+        case F_min:
+            ret_node = COMPPrfScalarIcm ("ND_MIN", 2, arg_node, arg_info, &check_reuse1,
+                                         &check_reuse2, &get_dim, &set_shape_icm);
+            break;
 
-    case F_min:
-        ret_node = COMPPrfScalarIcm ("ND_MIN", 2, arg_node, arg_info, &check_reuse1,
-                                     &check_reuse2, &get_dim, &set_shape_icm);
-        break;
+        case F_max:
+            ret_node = COMPPrfScalarIcm ("ND_MAX", 2, arg_node, arg_info, &check_reuse1,
+                                         &check_reuse2, &get_dim, &set_shape_icm);
+            break;
 
-    case F_max:
-        ret_node = COMPPrfScalarIcm ("ND_MAX", 2, arg_node, arg_info, &check_reuse1,
-                                     &check_reuse2, &get_dim, &set_shape_icm);
-        break;
+        case F_add_SxS:
+        case F_sub_SxS:
+        case F_mul_SxS:
+        case F_div_SxS:
+            /* here is no break missing */
+        case F_mod:
+            /* here is no break missing */
+        case F_and:
+        case F_or:
+            /* here is no break missing */
+        case F_le:
+        case F_lt:
+        case F_eq:
+        case F_neq:
+        case F_ge:
+        case F_gt:
+            ret_node = COMPPrfScalar (2, arg_node, arg_info, &check_reuse1, &check_reuse2,
+                                      &get_dim, &set_shape_icm);
+            break;
 
-    case F_add_SxS:
-    case F_sub_SxS:
-    case F_mul_SxS:
-    case F_div_SxS:
-        /* here is no break missing */
-    case F_mod:
-        /* here is no break missing */
-    case F_and:
-    case F_or:
-        /* here is no break missing */
-    case F_le:
-    case F_lt:
-    case F_eq:
-    case F_neq:
-    case F_ge:
-    case F_gt:
-        ret_node = COMPPrfScalar (2, arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                  &get_dim, &set_shape_icm);
-        break;
+            /*
+             *  array args (intrinsics)
+             */
 
-        /*
-         *  array args (intrinsics)
-         */
-
-    case F_dim:
-        ret_node = COMPPrfDim (arg_node, arg_info, &check_reuse1, &check_reuse2, &get_dim,
-                               &set_shape_icm);
-        break;
-
-    case F_shape:
-        ret_node = COMPPrfShape (arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                 &get_dim, &set_shape_icm);
-        break;
-
-    case F_reshape:
-        ret_node = COMPPrfReshape (arg_node, arg_info, &check_reuse1, &check_reuse2,
+        case F_dim:
+            ret_node = COMPPrfDim (arg_node, arg_info, &check_reuse1, &check_reuse2,
                                    &get_dim, &set_shape_icm);
-        break;
+            break;
 
-    case F_idx_sel:
-        ret_node = COMPPrfIdxSel (arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                  &get_dim, &set_shape_icm);
-        break;
+        case F_shape:
+            ret_node = COMPPrfShape (arg_node, arg_info, &check_reuse1, &check_reuse2,
+                                     &get_dim, &set_shape_icm);
+            break;
 
-    case F_idx_modarray:
-        ret_node = COMPPrfIdxModarray (arg_node, arg_info, &check_reuse1, &check_reuse2,
+        case F_reshape:
+            ret_node = COMPPrfReshape (arg_node, arg_info, &check_reuse1, &check_reuse2,
                                        &get_dim, &set_shape_icm);
-        break;
+            break;
 
-    case F_sel:
-        ret_node = COMPPrfSel (arg_node, arg_info, &check_reuse1, &check_reuse2, &get_dim,
-                               &set_shape_icm);
-        break;
+        case F_idx_sel:
+            ret_node = COMPPrfIdxSel (arg_node, arg_info, &check_reuse1, &check_reuse2,
+                                      &get_dim, &set_shape_icm);
+            break;
 
-    case F_modarray:
-        ret_node = COMPPrfModarray (arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                    &get_dim, &set_shape_icm);
-        break;
+        case F_idx_modarray:
+            ret_node = COMPPrfIdxModarray (arg_node, arg_info, &check_reuse1,
+                                           &check_reuse2, &get_dim, &set_shape_icm);
+            break;
 
-    case F_add_SxA:
-    case F_add_AxS:
-    case F_add_AxA:
-    case F_sub_SxA:
-    case F_sub_AxS:
-    case F_sub_AxA:
-    case F_mul_SxA:
-    case F_mul_AxS:
-    case F_mul_AxA:
-    case F_div_SxA:
-    case F_div_AxS:
-    case F_div_AxA:
-        ret_node = COMPPrfArray (2, arg_node, arg_info, &check_reuse1, &check_reuse2,
-                                 &get_dim, &set_shape_icm);
-        break;
+        case F_sel:
+            ret_node = COMPPrfSel (arg_node, arg_info, &check_reuse1, &check_reuse2,
+                                   &get_dim, &set_shape_icm);
+            break;
 
-        /*
-         *  array args (non-intrinsics)
-         */
-
-    case F_toi_A:
-    case F_tof_A:
-    case F_tod_A:
-        ret_node = COMPPrfConvertArray (arg_node, arg_info, &check_reuse1, &check_reuse2,
+        case F_modarray:
+            ret_node = COMPPrfModarray (arg_node, arg_info, &check_reuse1, &check_reuse2,
                                         &get_dim, &set_shape_icm);
-        break;
+            break;
 
-    case F_take:
-    case F_drop:
-    case F_cat:
-    case F_rotate:
-        DBUG_ASSERT ((0), "Non-instrinsic primitive functions not implemented!"
-                          " Use array.lib instead!");
-        ret_node = NULL;
-        break;
+        case F_add_SxA:
+        case F_add_AxS:
+        case F_add_AxA:
+        case F_sub_SxA:
+        case F_sub_AxS:
+        case F_sub_AxA:
+        case F_mul_SxA:
+        case F_mul_AxS:
+        case F_mul_AxA:
+        case F_div_SxA:
+        case F_div_AxS:
+        case F_div_AxA:
+            ret_node = COMPPrfArray (2, arg_node, arg_info, &check_reuse1, &check_reuse2,
+                                     &get_dim, &set_shape_icm);
+            break;
+
+            /*
+             *  array args (non-intrinsics)
+             */
+
+        case F_toi_A:
+        case F_tof_A:
+        case F_tod_A:
+            ret_node = COMPPrfConvertArray (arg_node, arg_info, &check_reuse1,
+                                            &check_reuse2, &get_dim, &set_shape_icm);
+            break;
+
+        case F_take:
+        case F_drop:
+        case F_cat:
+        case F_rotate:
+            DBUG_ASSERT ((0), "Non-instrinsic primitive functions not implemented!"
+                              " Use array.lib instead!");
+            ret_node = NULL;
+            break;
+
+            /*
+             *  otherwise
+             */
+
+        default:
+            DBUG_ASSERT ((0), "unknown prf found!");
+            ret_node = NULL;
+            break;
+        }
+
+        DBUG_ASSERT (((ret_node != NULL) && (NODE_TYPE (ret_node) == N_assign)),
+                     "no assignment chain found!");
+        DBUG_ASSERT ((get_dim != NULL), "no GET_DIM icm found!");
+        DBUG_ASSERT ((set_shape_icm != NULL), "no SET_SHAPE icm found!");
 
         /*
-         *  otherwise
+         * build reference counting ICM
          */
+        ret_node2 = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                     IDS_REFCNT (let_ids), NULL);
 
-    default:
-        DBUG_ASSERT ((0), "unknown prf found!");
-        ret_node = NULL;
-        break;
-    }
-
-    DBUG_ASSERT (((ret_node != NULL) && (NODE_TYPE (ret_node) == N_assign)),
-                 "no assignment chain found!");
-    DBUG_ASSERT ((get_dim != NULL), "no GET_DIM icm found!");
-    DBUG_ASSERT ((set_shape_icm != NULL), "no SET_SHAPE icm found!");
-
-    ret_node2 = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                 IDS_REFCNT (let_ids), NULL);
-
-    /*
-     * build a DEC_RC for each arg
-     */
-    args = PRF_ARGS (arg_node);
-    while (args != NULL) {
-        arg = EXPRS_EXPR (args);
-        if (NODE_TYPE (arg) == N_id) {
-            ret_node2 = MakeDecRcIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg), 1,
-                                      ret_node2);
+        /*
+         * build a DEC_RC for each arg
+         */
+        args = PRF_ARGS (arg_node);
+        while (args != NULL) {
+            arg = EXPRS_EXPR (args);
+            if (NODE_TYPE (arg) == N_id) {
+                ret_node2 = MakeDecRcIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg),
+                                          1, ret_node2);
+            }
+            args = EXPRS_NEXT (args);
         }
-        args = EXPRS_NEXT (args);
-    }
 
-    ret_node = MakeAllocIcm_CheckReuse (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                        RC_INIT (IDS_REFCNT (let_ids)), get_dim,
-                                        set_shape_icm, NULL, check_reuse1, check_reuse2,
-                                        /* concat 'ret_node' and 'ret_node2' */
-                                        AppendAssign (ret_node, ret_node2));
+        ret_node
+          = MakeAllocIcm_CheckReuse (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                     RC_INIT (IDS_REFCNT (let_ids)), get_dim,
+                                     set_shape_icm, NULL, check_reuse1, check_reuse2,
+                                     /* concat 'ret_node' and 'ret_node2' */
+                                     AppendAssign (ret_node, ret_node2));
+    }
 
     DBUG_RETURN (ret_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2002/10/10 23:52:23  dkr
+ * signature of TYPE_ERROR modified
+ *
  * Revision 1.2  2002/09/09 14:24:53  dkr
  * signature of ICMCompileTYPE_ERROR modified
  *
@@ -22,17 +25,20 @@
 /******************************************************************************
  *
  * function:
- *   void ICMCompileTYPE_ERROR( int cnt, char **args_any)
+ *   void ICMCompileTYPE_ERROR( int cnt_to,   char **to_any,
+ *                              int cnt_from, char **from_any)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   TYPE_ERROR( cnt, args_any_0 ... args_any_n)
+ *   TYPE_ERROR( cnt_to,   [ to_sdim,   to_nt   ]* , funname,
+ *               cnt_from, [ from_sdim, from_nt ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileTYPE_ERROR (int cnt, char **args_any)
+ICMCompileTYPE_ERROR (int cnt_to, char **to_any, char *funname, int cnt_from,
+                      char **from_any)
 {
     DBUG_ENTER ("ICMCompileTYPE_ERROR");
 
@@ -41,22 +47,20 @@ ICMCompileTYPE_ERROR (int cnt, char **args_any)
 #include "icm_trace.c"
 #undef TYPE_ERROR
 
-    DBUG_ASSERT ((cnt >= 1), "illegal number of arguments for TYPE_ERROR found!");
-
     INDENT;
 #if 0
   fprintf( outfile, "SAC_RuntimeError_Mult( ");
-  fprintf( outfile, "%i", cnt + 1);
+  fprintf( outfile, "%i", cnt_from + 1);
   fprintf( outfile, ", ");
   fprintf( outfile, "\"No appropriate instance of function \\\"\" %s"
-                    " \"\\\" found!\"", args_any[0]);
+                    " \"\\\" found!\"", funname);
   fprintf( outfile, ", ");
   fprintf( outfile, "\"Types of arguments:\"");
   fprintf( outfile, ", ");
-  for (i = 1; i < cnt; i++) {
+  for (i = 0; i < cnt_from; i++) {
     fprintf( outfile, "\"  %%s\", SAC_PrintShape( SAC_ND_A_DESC( %s))",
-                      args_any[i]);
-    if (i < cnt - 1) {
+                      from_any[i]);
+    if (i < cnt_from - 1) {
       fprintf( outfile, ", ");
     }
   }
@@ -64,10 +68,22 @@ ICMCompileTYPE_ERROR (int cnt, char **args_any)
 #else
     fprintf (outfile,
              "SAC_RuntimeError( "
-             "\"No appropriate instance of function \\\"\" %s"
-             " \"\\\" found!\");\n",
-             args_any[0]);
+             "\"No appropriate instance of function"
+             " \\\"\" %s \"\\\" found!\");\n",
+             funname);
 #endif
+
+    /*
+     * It would be nice to initialize the return values correctly in order
+     * to prevent the cc to generate "... might be used uninitialized" warnings.
+     * But unfortunately, this is not that easy.....
+     *
+     * It seems, that a dummy 'break' instruction prevents such warnings, too.
+     * But I am not quite sure whether this is bad or good news. What if this
+     * instruction simply prevents some optimizations of the c compiler???
+     */
+    INDENT;
+    fprintf (outfile, "break; /* dummy; is this really a good idea??? */\n");
 
     DBUG_VOID_RETURN;
 }

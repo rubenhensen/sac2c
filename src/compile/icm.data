@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2002/10/10 23:52:44  dkr
+ * signature of TYPE_ERROR modified
+ *
  * Revision 3.52  2002/09/09 14:24:37  dkr
  * TYPE_ERROR added
  *
@@ -1240,7 +1243,10 @@ ICM_END( MT_SCHEDULER_Affinity_INIT, (sched_id, ts_name, ts_dims,
 
 #if defined(TYPE_ERROR) || defined(ICM_ALL)
 ICM_DEF( TYPE_ERROR, TRACE_NONE)
-  ICM_INT( cnt)
-  ICM_VARANY( cnt, args_any)
-ICM_END( TYPE_ERROR, (cnt, args_any))
+  ICM_INT( cnt_to)
+  ICM_VARANY( (cnt_to), to_any)
+  ICM_STR( funname)
+  ICM_INT( cnt_from)
+  ICM_VARANY( (cnt_from), from_any)
+ICM_END( TYPE_ERROR, (cnt_to, to_any, funname, cnt_from, from_any))
 #endif
