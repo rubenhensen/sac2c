@@ -1,8 +1,11 @@
 
 /* $Log$
- * Revision 1.3  1995/02/09 11:10:11  hw
- * changed and added TTx`s
+ * Revision 1.4  1995/02/13 17:55:29  hw
+ * added TT1 for type_class B_B
  *
+;; Revision 1.3  1995/02/09  11:10:11  hw
+;; changed and added TTx`s
+;;
 ;; Revision 1.2  1995/02/03  16:04:56  hw
 ;; extended /changed macro
 ;;
@@ -103,3 +106,4 @@ TT1 (202, V_As, BOOL_A, Shp (arg_type[0]))
 TT1 (203, A_S, INT_A, MakeTypes (T_int))
 TT1 (204, A_S, FLOAT_A, MakeTypes (T_int))
 TT1 (205, A_S, BOOL_A, MakeTypes (T_int))
+TT1 (206, B_B, BOOL, MakeTypes (T_bool))
