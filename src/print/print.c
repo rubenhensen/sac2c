@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.102  2000/09/22 13:54:30  dkr
+ * DoPrintAST extended
+ *
  * Revision 2.101  2000/08/24 16:57:40  dkr
  * INFO_PRINT_ACCESS no longer needed
  *
@@ -508,11 +511,8 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
                         }
                         for (i = 1; i < dim; i++)
                             fprintf (outfile, ",%d", SHPSEG_SHAPE (offset, i));
-                        if (VARDEC_NAME (ACCESS_ARRAY (access)) != NULL)
-                            fprintf (outfile, " ], %s)\n",
-                                     VARDEC_NAME (ACCESS_ARRAY (access)));
-                        else
-                            fprintf (outfile, " ], ?)\n");
+                        fprintf (outfile, " ], %s)\n",
+                                 STR_OR_NULL (VARDEC_NAME (ACCESS_ARRAY (access)), "?"));
                         offset = SHPSEG_NEXT (offset);
                     } while (offset != NULL);
                 }
@@ -532,12 +532,8 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
                         for (i = 1; i < dim; i++) {
                             fprintf (outfile, ",%d", SHPSEG_SHAPE (offset, i));
                         }
-                        if (VARDEC_NAME (ACCESS_ARRAY (access)) != NULL) {
-                            fprintf (outfile, " ], %s)\n",
-                                     VARDEC_NAME (ACCESS_ARRAY (access)));
-                        } else {
-                            fprintf (outfile, " ], ?)\n");
-                        }
+                        fprintf (outfile, " ], %s)\n",
+                                 STR_OR_NULL (VARDEC_NAME (ACCESS_ARRAY (access)), "?"));
                         offset = SHPSEG_NEXT (offset);
                     } while (offset != NULL);
                 }
@@ -3867,7 +3863,7 @@ DoPrintTypesAST (types *type)
     DBUG_ENTER ("DoPrintTypesAST");
 
     if (type != NULL) {
-        fprintf (outfile, "%s", mdb_type[TYPES_BASETYPE (type)]);
+        fprintf (outfile, "%s", type_string[TYPES_BASETYPE (type)]);
         if (TYPES_BASETYPE (type) == T_user) {
             if (TYPES_TDEF (type) != NULL) {
                 fprintf (outfile, "[%p]", TYPES_TDEF (type));
@@ -3942,12 +3938,18 @@ DoPrintAST (node *arg_node, int skip_next)
         /* print additional information to nodes */
         switch (NODE_TYPE (arg_node)) {
         case N_typedef:
-            fprintf (outfile, "\n");
+            fprintf (outfile, "(");
+            DoPrintTypesAST (TYPEDEF_TYPE (arg_node));
+            fprintf (outfile, " %s", STR_OR_NULL (TYPEDEF_NAME (arg_node), "?"));
+            fprintf (outfile, ")\n");
             skip = TYPEDEF_NEXT (arg_node);
             break;
 
         case N_objdef:
-            fprintf (outfile, "\n");
+            fprintf (outfile, "(");
+            DoPrintTypesAST (OBJDEF_TYPE (arg_node));
+            fprintf (outfile, " %s", STR_OR_NULL (OBJDEF_NAME (arg_node), "?"));
+            fprintf (outfile, ")\n");
             skip = OBJDEF_NEXT (arg_node);
             break;
 
@@ -4009,8 +4011,7 @@ DoPrintAST (node *arg_node, int skip_next)
         case N_arg:
             fprintf (outfile, "(");
             DoPrintTypesAST (ARG_TYPE (arg_node));
-            fprintf (outfile, " %s",
-                     (ARG_NAME (arg_node) != NULL) ? ARG_NAME (arg_node) : "?");
+            fprintf (outfile, " %s", STR_OR_NULL (ARG_NAME (arg_node), "?"));
             PrintRC (ARG_REFCNT (arg_node), ARG_NAIVE_REFCNT (arg_node), 1);
             fprintf (outfile, ")\n");
 
@@ -4020,8 +4021,7 @@ DoPrintAST (node *arg_node, int skip_next)
         case N_vardec:
             fprintf (outfile, "(");
             DoPrintTypesAST (ARG_TYPE (arg_node));
-            fprintf (outfile, " %s",
-                     (VARDEC_NAME (arg_node) != NULL) ? VARDEC_NAME (arg_node) : "?");
+            fprintf (outfile, " %s", STR_OR_NULL (VARDEC_NAME (arg_node), "?"));
             PrintRC (VARDEC_REFCNT (arg_node), VARDEC_NAIVE_REFCNT (arg_node), 1);
             fprintf (outfile, ")\n");
 
