@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2004/11/22 14:12:51  sbs
+ * renamed DFT_res into dft_res (thanks Kai!)
+ *
  * Revision 3.39  2004/11/22 14:09:22  sbs
  * some further stuff from new_types.h
  *
@@ -777,6 +780,6 @@ typedef struct dft {
     node **partials;
     int num_deriveable_partials;
     node **deriveable_partials;
-} DFT_res;
+} dft_res;
 
 #endif /* _SAC_TYPES_H_ */
