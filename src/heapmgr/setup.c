@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2003/04/14 14:43:50  sbs
+ * casts from int into unsigned int added for comparison of num_threads.
+ *
  * Revision 3.2  2003/03/20 14:00:18  sbs
  * config.h included; HAVE_MALLOC_H used.
  *
@@ -239,7 +242,7 @@ SAC_HM_SetupWorkers (unsigned int num_threads)
      * Initialize worker thread entries in global array of arenas.
      */
 
-    for (t = 1; t < num_threads; t++) {
+    for (t = 1; (unsigned int)t < num_threads; t++) {
         for (i = 0; i < SAC_HM_NUM_SMALLCHUNK_ARENAS; i++) {
             SAC_HM_arenas[t][i].num = i;
             SAC_HM_arenas[t][i].freelist[0].data1.size = 0;
@@ -282,7 +285,7 @@ SAC_HM_SetupWorkers (unsigned int num_threads)
         mem = (char *)SAC_HM_MallocLargeChunk (units_total,
                                                &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]));
 
-        for (t = 1; t < num_threads; t++) {
+        for (t = 1; (unsigned int)t < num_threads; t++) {
             freep = (SAC_HM_header_t *)mem;
 
             SAC_HM_SMALLCHUNK_SIZE (freep) = units_per_thread;
@@ -300,7 +303,7 @@ SAC_HM_SetupWorkers (unsigned int num_threads)
             mem += SAC_HM_initial_worker_arena_of_arenas_size;
         }
     } else {
-        for (t = 1; t < num_threads; t++) {
+        for (t = 1; (unsigned int)t < num_threads; t++) {
             DIAG_SET (SAC_HM_arenas[t][SAC_HM_ARENA_OF_ARENAS].size, 0);
             DIAG_SET (SAC_HM_arenas[t][SAC_HM_ARENA_OF_ARENAS].cnt_bins, 0);
         }
