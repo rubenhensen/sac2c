@@ -3,10 +3,9 @@
 /*
  *
  * $Log$
- * Revision 3.10  2001/11/13 21:57:23  dkr
+ * Revision 3.11  2001/11/13 23:47:23  dkr
  * rule for # lines modified:
- * some preprocessors do NOT insert a space between # and the line
- * number!!!
+ * some preprocessors do NOT insert a space between # and the line number!!!
  *
  * Revision 3.9  2001/06/28 13:06:17  sbs
  * flex smuggles in a hash filename line at the beginning of each file!!
@@ -498,7 +497,7 @@ int charpos = 0;
 
 "\f"                       { charpos += yyleng; }
 
-#.*\n                      { linenum=atoi(yytext+1)-1;
+#\ *[0-9]+.*\n             { linenum=atoi(yytext+1)-1;
                              { int start, len;
                                start = strcspn( yytext, "\"")+1;
                                len   = strcspn( yytext + start, "\"");
@@ -511,6 +510,7 @@ int charpos = 0;
                                filename = (char *)Malloc( (len+1)*sizeof(char));
                                strncpy( filename , yytext + start, len);
                                filename[len] = '\0';
+                               DBUG_PRINT( "PARSE", ("# %i %s" , linenum, filename));
                              }
                              yyless(yyleng-1);
                            }
