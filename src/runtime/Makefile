@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.13  1998/12/21 15:46:21  cg
+# File sac2crc no longer added to runtime.tar because system dependent
+# variants do exist now. File sac2c.README added instead.
+#
 # Revision 1.12  1998/12/17 15:49:43  cg
 # added rm runtime.tar for phony target clean
 #
@@ -66,7 +70,7 @@ libsac_trace_mt.o: libsac_mt.c
 %.o: %.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 
-runtime.tar: *.h sac2crc
+runtime.tar: *.h sac2crc.README
 	tar cvf $@ $^
 
 deps:
