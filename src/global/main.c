@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2003/04/25 15:10:16  sbs
+ * missing cast inserted 8-)
+ * sah: GRGRGRRRRRRR
+ *
  * Revision 3.23  2003/03/26 14:22:11  sah
  * added missing / in tmp_dirname.
  *
@@ -220,7 +224,7 @@ main (int argc, char *argv[])
     /* malloc is used here as tempnam uses it */
     /* internally as well.                    */
 
-    tmp_dirname = malloc (strlen (config.mkdir) + 12);
+    tmp_dirname = (char *)malloc (strlen (config.mkdir) + 12);
     tmp_dirname = strcpy (tmp_dirname, config.tmpdir);
     tmp_dirname = strcat (tmp_dirname, "/SAC_XXXXXX");
 
