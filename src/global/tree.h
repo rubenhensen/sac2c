@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.50  1995/07/10 07:31:59  asi
+ * Revision 1.51  1995/07/13 15:23:25  hw
+ * macros MAKENODE_BOOL & MAKENODE_FLOAT added
+ *
+ * Revision 1.50  1995/07/10  07:31:59  asi
  * removed bblock from structure node and added def to structure ids
  *
  * Revision 1.49  1995/07/07  16:21:19  hw
@@ -306,6 +309,14 @@ typedef struct NODE {
 #define MAKENODE_ID(no, str)                                                             \
     no = MakeNode (N_id);                                                                \
     no->IDS = MakeIds (str)
+
+#define MAKENODE_BOOL(no, nr)                                                            \
+    no = MakeNode (N_bool);                                                              \
+    no->info.cint = nr
+
+#define MAKENODE_FLOAT(no, nr)                                                           \
+    no = MakeNode (N_float);                                                             \
+    no->info.cfloat = nr
 
 #define MAKENODE_ID_REUSE_IDS(no, Ids)                                                   \
     no = MakeNode (N_id);                                                                \
