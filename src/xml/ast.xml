@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.111  2004/11/26 20:11:26  sbs
+  OBJ phase addded.
+
   Revision 1.110  2004/11/26 20:06:10  mwe
   SSALUR added
 
@@ -590,6 +593,22 @@
 	</travsons>
       </traversal>
       <traversal id="SER" name="Serialize Module" default="sons" include="serialize_node.h" />
+    </phase>
+    <phase id="objects" name="Object Handling">
+      <traversal id="OBJINI" name="Object Initialisation" default="sons" include="objinit.h">
+        <travsons>
+          <node name="Module" />
+          <node name="Objdef" />
+        </travsons>
+      </traversal>
+      <traversal id="OAN" name="Object Analysis" default="sons" include="objanalysis.h">
+        <travsons>
+          <node name="Module" />
+          <node name="Globobj" />
+          <node name="Fundef" />
+          <node name="Ap" />
+        </travsons>
+      </traversal>
     </phase>
     <phase id="wlenhance" name="Enhancement of With-Loops">
       <traversal id="WLE" name="With-Loop Enhancement" default="sons" include="WLEnhancement.h" >
