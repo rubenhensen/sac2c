@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/05/20 14:12:49  cg
+ * Now, reasonable default values are set for unspecified cache parameters.
+ *
  * Revision 2.4  1999/05/12 14:39:40  cg
  * added new flags to be defined for extended capabilities of
  * cache simulator.
@@ -237,20 +240,19 @@ PrintGlobalSwitches ()
     fprintf (outfile, "#define SAC_DO_CACHESIM        %d\n", cachesim ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_CACHESIM_ADV    %d\n",
              (cachesim & CACHESIM_ADVANCED) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_CACHESIM_PRAGMA %d\n",
-             (cachesim & CACHESIM_PRAGMA) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_CACHESIM_GLOBAL %d\n",
+             (cachesim & CACHESIM_BLOCK) ? 0 : 1);
     fprintf (outfile, "#define SAC_DO_CACHESIM_FILE   %d\n",
              (cachesim & CACHESIM_FILE) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_CACHESIM_PIPE   %d\n",
              (cachesim & CACHESIM_PIPE) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_CACHESIM_IMDT   %d\n",
+             (cachesim & CACHESIM_IMMEDIATE) ? 1 : 0);
+    fprintf (outfile, "\n");
 
-    fprintf (outfile, "\n#ifndef SAC_DO_MULTITHREAD\n");
     fprintf (outfile, "#define SAC_DO_MULTITHREAD     %d\n", (num_threads == 1) ? 0 : 1);
-    fprintf (outfile, "#endif\n");
-
-    fprintf (outfile, "\n#ifndef SAC_DO_THREADS_STATIC\n");
     fprintf (outfile, "#define SAC_DO_THREADS_STATIC  %d\n", (num_threads == 0) ? 0 : 1);
-    fprintf (outfile, "#endif\n");
+    fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -398,20 +400,26 @@ PrintGlobalSettings (node *syntax_tree)
     fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD     %d\n\n", max_sync_fold);
 
     fprintf (outfile, "#define SAC_SET_CACHE_1_SIZE      %d\n", config.cache1_size);
-    fprintf (outfile, "#define SAC_SET_CACHE_1_LINE      %d\n", config.cache1_line);
-    fprintf (outfile, "#define SAC_SET_CACHE_1_ASSOC     %d\n", config.cache1_assoc);
+    fprintf (outfile, "#define SAC_SET_CACHE_1_LINE      %d\n",
+             config.cache1_line == 0 ? 4 : config.cache1_line);
+    fprintf (outfile, "#define SAC_SET_CACHE_1_ASSOC     %d\n",
+             config.cache1_assoc == 0 ? 1 : config.cache1_assoc);
     fprintf (outfile, "#define SAC_SET_CACHE_1_WRITEPOL  SAC_CS_%s\n\n",
              config.cache1_writepol);
 
     fprintf (outfile, "#define SAC_SET_CACHE_2_SIZE      %d\n", config.cache2_size);
-    fprintf (outfile, "#define SAC_SET_CACHE_2_LINE      %d\n", config.cache2_line);
-    fprintf (outfile, "#define SAC_SET_CACHE_2_ASSOC     %d\n", config.cache2_assoc);
+    fprintf (outfile, "#define SAC_SET_CACHE_2_LINE      %d\n",
+             config.cache2_line == 0 ? 4 : config.cache2_line);
+    fprintf (outfile, "#define SAC_SET_CACHE_2_ASSOC     %d\n",
+             config.cache2_assoc == 0 ? 1 : config.cache2_assoc);
     fprintf (outfile, "#define SAC_SET_CACHE_2_WRITEPOL  SAC_CS_%s\n\n",
              config.cache2_writepol);
 
     fprintf (outfile, "#define SAC_SET_CACHE_3_SIZE      %d\n", config.cache3_size);
-    fprintf (outfile, "#define SAC_SET_CACHE_3_LINE      %d\n", config.cache3_line);
-    fprintf (outfile, "#define SAC_SET_CACHE_3_ASSOC     %d\n", config.cache3_assoc);
+    fprintf (outfile, "#define SAC_SET_CACHE_3_LINE      %d\n",
+             config.cache3_line == 0 ? 4 : config.cache3_line);
+    fprintf (outfile, "#define SAC_SET_CACHE_3_ASSOC     %d\n",
+             config.cache3_assoc == 0 ? 1 : config.cache3_assoc);
     fprintf (outfile, "#define SAC_SET_CACHE_3_WRITEPOL  SAC_CS_%s\n\n",
              config.cache3_writepol);
 
