@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.215  1998/05/07 20:46:43  dkr
+ * added output for RCs in PrintNodeTree
+ *
  * Revision 1.214  1998/05/07 10:02:10  dkr
  * changed PrintSpmd, PrintSync
  *
@@ -2981,6 +2984,8 @@ PrintNodeTree (node *node)
     int i, j;
     ids *_ids;
 
+    DBUG_ENTER ("PrintNodeTree");
+
     outfile = stdout;
 
     if (node) {
@@ -2991,15 +2996,15 @@ PrintNodeTree (node *node)
         switch (NODE_TYPE (node)) {
         case N_let:
             _ids = LET_IDS (node);
-            fprintf (outfile, "(");
+            fprintf (outfile, "( ");
             while (_ids) {
-                fprintf (outfile, "%s", IDS_NAME (_ids));
+                fprintf (outfile, "%s:%d ", IDS_NAME (_ids), IDS_REFCNT (_ids));
                 _ids = IDS_NEXT (_ids);
             }
             fprintf (outfile, ")\n");
             break;
         case N_id:
-            fprintf (outfile, "(%s)\n", ID_NAME (node));
+            fprintf (outfile, "(%s:%d)\n", ID_NAME (node), ID_REFCNT (node));
             break;
         case N_num:
             fprintf (outfile, "(%i)\n", NUM_VAL (node));
@@ -3007,9 +3012,14 @@ PrintNodeTree (node *node)
         case N_prf:
             fprintf (outfile, "(%s)\n", mdb_prf[PRF_PRF (node)]);
             break;
+        case N_arg:
+            fprintf (outfile, "(%s %s:%d)\n", mdb_type[TYPES_BASETYPE (ARG_TYPE (node))],
+                     ARG_NAME (node), ARG_REFCNT (node));
+            break;
         case N_vardec:
-            fprintf (outfile, "(%s %s)\n", mdb_type[TYPES_BASETYPE (VARDEC_TYPE (node))],
-                     VARDEC_NAME (node));
+            fprintf (outfile, "(%s %s:%d)\n",
+                     mdb_type[TYPES_BASETYPE (VARDEC_TYPE (node))], VARDEC_NAME (node),
+                     VARDEC_REFCNT (node));
             break;
         case N_fundef:
             fprintf (outfile, "(%s)\n", FUNDEF_NAME (node));
@@ -3083,4 +3093,6 @@ PrintNodeTree (node *node)
         indent--;
     } else
         fprintf (outfile, "NULL\n");
+
+    DBUG_VOID_RETURN;
 }
