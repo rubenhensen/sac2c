@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.39  1995/10/06 16:34:22  cg
+ * Revision 1.40  1995/10/12 14:15:47  cg
+ * module implementations without any functions will now pass flatten
+ *
+ * Revision 1.39  1995/10/06  16:34:22  cg
  * calls to MakeIds adjusted to new signature (3 parameters)
  *
  * Revision 1.38  1995/09/05  09:50:15  hw
@@ -932,10 +935,12 @@ node *
 FltnModul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("FltnModul");
-    DBUG_ASSERT ((NULL != arg_node->node[2]), "blabla");
-    DBUG_ASSERT ((N_fundef == arg_node->node[2]->nodetype), "blaaa");
 
-    arg_node->node[2] = Trav (arg_node->node[2], arg_info);
+    if (arg_node->node[2] != NULL) {
+        DBUG_ASSERT ((N_fundef == arg_node->node[2]->nodetype), "blaaa");
+
+        arg_node->node[2] = Trav (arg_node->node[2], arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
