@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.32  1995/04/07 05:56:42  sbs
+ * Revision 1.33  1995/04/11 11:34:45  asi
+ * added 'flag' to struct 'node'
+ *
+ * Revision 1.32  1995/04/07  05:56:42  sbs
  * SHP_SEG_SIZE turned from 5 to 16 !
  *
  * Revision 1.31  1995/04/06  11:38:26  asi
@@ -214,6 +217,8 @@ typedef struct NODE {
     } info;               /* fu"r spezielle Informationen */
     int refcnt;           /* is used as referenze count information */
     int bblock;           /* number of basic block assign node belongs to */
+    int flag;             /* the flag is used for node-status */
+                          /* (loop invariant/not loop invariant , ...) */
     int varno;            /* number of variables - 1 */
     long *mask[MAX_MASK]; /* special informations about variables */
     int nnode;            /* Anzahl der benutzten Knoten */

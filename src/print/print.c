@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.54  1995/04/05 07:39:43  hw
+ * Revision 1.55  1995/04/11 11:34:45  asi
+ * added 'flag' to struct 'node'
+ *
+ * Revision 1.54  1995/04/05  07:39:43  hw
  * extended PrintIcm
  *
  * Revision 1.53  1995/04/04  11:33:49  sbs
@@ -242,6 +245,8 @@ PrintAssign (node *arg_node, node *arg_info)
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - assign : %s\n",
                                    mdb_nodetype[arg_node->node[0]->nodetype]);
                   PrintMasks (arg_node, arg_info););
+
+    DBUG_PRINT ("FLAG", ("flag = %d\n", arg_node->flag));
 
     if (N_icm == arg_node->node[0]->nodetype) {
         PrintIcm (arg_node->node[0], arg_info);

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/03/15 16:59:01  asi
+ * Revision 1.14  1995/04/11 11:34:45  asi
+ * added 'flag' to struct 'node'
+ *
+ * Revision 1.13  1995/03/15  16:59:01  asi
  * Bug fixed : initialization of mask in MakeNode
  *
  * Revision 1.12  1995/03/14  14:11:24  asi
@@ -117,6 +120,7 @@ MakeNode (nodetype nodetype)
     tmp->nnode = 0;
     tmp->info.id = NULL;
     tmp->bblock = 0;
+    tmp->flag = 0;
     tmp->varno = 0;
     tmp->lineno = linenum;
     tmp->refcnt = 0;
