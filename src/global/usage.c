@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.34  2000/06/14 10:56:57  jhs
+ * Added information about "out-of-order" phase 17 while doing -mtn
+ *
  * Revision 2.33  2000/06/08 09:18:52  nmw
  * default setting using the genlib switch added
  *
@@ -228,6 +231,14 @@ usage ()
     for (ph = 1; ph <= 21; ph++) {
         printf ("\t -b%i\tstop after: %s\n", ph, compiler_phase_name[ph]);
     }
+
+    printf ("\n\tATTENTION while using new multithread (-mtn)!\n"
+            "\t  When using -mtn the phase 17 will be done after phase 19!\n"
+            "\t  Therefore with -mtn the sequence of phases will be:\n"
+            "\t\t ... 16 18 19 17 20 ...\n"
+            "\t  The phases are still identified by the same numbers.\n"
+            "\t  -b17 will stop after phases 18, 19 and 17 are done.\n"
+            "\t  -b18 (-b19) stops after phase 18 (and 19) without phase 17 done.\n");
 
     printf ("\n\nBREAK SPECIFIERS:\n\n"
 
