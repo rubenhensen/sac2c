@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/23 22:41:11  sbs
+ * SacDevCamp 04 done
+ *
  * Revision 1.3  2003/04/01 16:40:25  sbs
  * some doxygen stuff added.
  *
@@ -15,10 +18,16 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "dbug.h"
-
 #include "sig_deps.h"
+#include "dbug.h"
+#include "internal_lib.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+
+#include "ssi.h"
+#include "new_types.h"
 #include "new_typecheck.h"
+#include "type_errors.h"
 
 /**
  *
@@ -87,7 +96,7 @@ MakeSig (ct_funptr ct_fun, te_info *info, ntype *args, ntype *results, int rc)
 
     DBUG_ENTER ("MakeSig");
 
-    res = (sig_dep *)Malloc (sizeof (sig_dep));
+    res = (sig_dep *)ILIBmalloc (sizeof (sig_dep));
     SD_FUN (res) = ct_fun;
     SD_INFO (res) = info;
     SD_ARGS (res) = args;
@@ -107,7 +116,7 @@ MakeSig (ct_funptr ct_fun, te_info *info, ntype *args, ntype *results, int rc)
 /******************************************************************************
  *
  * function:
- *    ntype *SDCreateSignatureDependency( ct_funptr CtFun, te_info *info, ntype *args)
+ *    ntype *SDcreateSignatureDependency( ct_funptr CtFun, te_info *info, ntype *args)
  *
  * description:
  *    from a given argument type (product type of the argument types) and a
@@ -122,7 +131,7 @@ MakeSig (ct_funptr ct_fun, te_info *info, ntype *args, ntype *results, int rc)
  ******************************************************************************/
 
 ntype *
-SDCreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args)
+SDcreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args)
 {
     sig_dep *sig;
     node *wrapper;
@@ -133,64 +142,64 @@ SDCreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("SDCreateSignatureDependency");
+    DBUG_ENTER ("SDcreateSignatureDependency");
 
     /*
      * First, we create the return type as it is part of the sig_dep structure:
      */
-    if (TEGetWrapper (info) != NULL) {
-        wrapper = TEGetWrapper (info);
-        num_res = CountTypes (FUNDEF_TYPES (wrapper));
+    if (TEgetWrapper (info) != NULL) {
+        wrapper = TEgetWrapper (info);
+        num_res = TCcountRets (FUNDEF_RETS (wrapper));
     } else {
         num_res = 1;
     }
-    res_t = TYMakeEmptyProductType (num_res);
+    res_t = TYmakeEmptyProductType (num_res);
     for (i = 0; i < num_res; i++) {
-        res_t = TYSetProductMember (res_t, i, TYMakeAlphaType (NULL));
+        res_t = TYsetProductMember (res_t, i, TYmakeAlphaType (NULL));
     }
 
     /*
      * Now, we create the structure itself:
      */
-    sig = MakeSig (CtFun, info, TYCopyType (args), res_t, TYCountNonFixedAlpha (args));
+    sig = MakeSig (CtFun, info, TYcopyType (args), res_t, TYcountNonFixedAlpha (args));
 
     /*
      * Inserting the dependency into the non fixed vars:
      */
-    num_args = TYGetProductSize (args);
+    num_args = TYgetProductSize (args);
     for (i = 0; i < num_args; i++) {
-        arg_t = TYGetProductMember (args, i);
-        if (TYIsNonFixedAlpha (arg_t)) {
-            ok = ok && SSIAssumeLow (TYGetAlpha (arg_t), sig);
+        arg_t = TYgetProductMember (args, i);
+        if (TYisNonFixedAlpha (arg_t)) {
+            ok = ok && SSIassumeLow (TYgetAlpha (arg_t), sig);
         }
     }
     DBUG_ASSERT (ok, "Something went wrong creating a signature dependency");
 
-    DBUG_EXECUTE ("SSI", tmp_str = SDSigDep2DebugString (sig););
+    DBUG_EXECUTE ("SSI", tmp_str = SDsigDep2DebugString (sig););
     DBUG_PRINT ("SSI", ("sig dep created: handle %p : %s", sig, tmp_str));
-    DBUG_EXECUTE ("SSI", tmp_str = Free (tmp_str););
+    DBUG_EXECUTE ("SSI", tmp_str = ILIBfree (tmp_str););
 
     /*
      * Finally, we try to create a first result type approximation
      */
-    ok = SDHandleContradiction (sig);
+    ok = SDhandleContradiction (sig);
 
     DBUG_ASSERT (ok, "Something went wrong creating a fundef signature dependency");
 
-    DBUG_RETURN (TYCopyType (SD_RES (sig)));
+    DBUG_RETURN (TYcopyType (SD_RES (sig)));
 }
 
 /******************************************************************************
  *
  * function:
- *    bool SDHandleContradiction( node *fun_sig)
+ *    bool SDhandleContradiction( node *fun_sig)
  *
  * description:
  *
  ******************************************************************************/
 
 bool
-SDHandleContradiction (sig_dep *fun_sig)
+SDhandleContradiction (sig_dep *fun_sig)
 {
     ntype *res_vars, *res_t, *res, *args;
     bool ok;
@@ -200,43 +209,43 @@ SDHandleContradiction (sig_dep *fun_sig)
     char *tmp_str, *tmp2_str;
 #endif
 
-    DBUG_ENTER ("SDHandleContradiction");
+    DBUG_ENTER ("SDhandleContradiction");
 
     /*
      * First, we check whether there is enough information available for
      * making a (new) result type approximation.
      */
-    if (TYCountNoMinAlpha (SD_ARGS (fun_sig)) > 0) {
+    if (TYcountNoMinAlpha (SD_ARGS (fun_sig)) > 0) {
         ok = TRUE;
     } else {
         info = SD_INFO (fun_sig);
         /*
          * Now, we compute a new approximation:
          */
-        args = TYFixAndEliminateAlpha (SD_ARGS (fun_sig));
+        args = TYfixAndEliminateAlpha (SD_ARGS (fun_sig));
         res_t = SD_FUN (fun_sig) (info, args);
-        res_t = TYEliminateAlpha (res_t);
+        res_t = TYeliminateAlpha (res_t);
 
-        DBUG_EXECUTE ("SSI", tmp_str = TYType2String (args, FALSE, 0););
-        DBUG_EXECUTE ("SSI", tmp2_str = TYType2String (res_t, FALSE, 0););
+        DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (args, FALSE, 0););
+        DBUG_EXECUTE ("SSI", tmp2_str = TYtype2String (res_t, FALSE, 0););
         DBUG_PRINT ("SSI", ("approximating %s \"%s\" for %s yields %s",
-                            TEGetKindStr (info), TEGetNameStr (info), tmp_str, tmp2_str));
-        DBUG_EXECUTE ("SSI", tmp_str = Free (tmp_str););
-        DBUG_EXECUTE ("SSI", tmp2_str = Free (tmp_str););
+                            TEgetKindStr (info), TEgetNameStr (info), tmp_str, tmp2_str));
+        DBUG_EXECUTE ("SSI", tmp_str = ILIBfree (tmp_str););
+        DBUG_EXECUTE ("SSI", tmp2_str = ILIBfree (tmp_str););
 
         /*
          * and insert the findings into the return types:
          */
         res_vars = SD_RES (fun_sig);
         ok = TRUE;
-        for (i = 0; i < TYGetProductSize (res_vars); i++) {
-            res = TYGetProductMember (res_t, i);
-            if (TYIsAlpha (res)) {
+        for (i = 0; i < TYgetProductSize (res_vars); i++) {
+            res = TYgetProductMember (res_t, i);
+            if (TYisAlpha (res)) {
                 ok = ok
-                     && SSINewRel (TYGetAlpha (res),
-                                   TYGetAlpha (TYGetProductMember (res_vars, i)));
+                     && SSInewRel (TYgetAlpha (res),
+                                   TYgetAlpha (TYgetProductMember (res_vars, i)));
             } else {
-                ok = ok && SSINewMin (TYGetAlpha (TYGetProductMember (res_vars, i)), res);
+                ok = ok && SSInewMin (TYgetAlpha (TYgetProductMember (res_vars, i)), res);
             }
         }
     }
@@ -247,50 +256,50 @@ SDHandleContradiction (sig_dep *fun_sig)
 /******************************************************************************
  *
  * function:
- *    bool SDHandleElimination( sig_dep *fun_sig)
+ *    bool SDhandleElimination( sig_dep *fun_sig)
  *
  * description:
  *
  ******************************************************************************/
 
 bool
-SDHandleElimination (sig_dep *fun_sig)
+SDhandleElimination (sig_dep *fun_sig)
 {
-    DBUG_ENTER ("SDHandleElimination");
+    DBUG_ENTER ("SDhandleElimination");
     DBUG_RETURN (TRUE);
 }
 
 /******************************************************************************
  *
  * function:
- *    char *SDSigDep2DebugString( sig_dep *fun_sig)
+ *    char *SDsigDep2DebugString( sig_dep *fun_sig)
  *
  * description:
  *
  ******************************************************************************/
 
 char *
-SDSigDep2DebugString (sig_dep *fun_sig)
+SDsigDep2DebugString (sig_dep *fun_sig)
 {
     static char buf[256];
     char *tmp = &buf[0];
     char *tmp_str;
     te_info *info;
 
-    DBUG_ENTER ("SDSigDep2DebugString");
+    DBUG_ENTER ("SDsigDep2DebugString");
 
     info = SD_INFO (fun_sig);
-    tmp += sprintf (tmp, "%s \"%s\"", TEGetKindStr (info), TEGetNameStr (info));
+    tmp += sprintf (tmp, "%s \"%s\"", TEgetKindStr (info), TEgetNameStr (info));
 
-    tmp_str = TYType2String (SD_ARGS (fun_sig), FALSE, 0);
+    tmp_str = TYtype2String (SD_ARGS (fun_sig), FALSE, 0);
     tmp += sprintf (tmp, "%s -> ", tmp_str);
-    tmp_str = Free (tmp_str);
+    tmp_str = ILIBfree (tmp_str);
 
-    tmp_str = TYType2String (SD_RES (fun_sig), FALSE, 0);
+    tmp_str = TYtype2String (SD_RES (fun_sig), FALSE, 0);
     tmp += sprintf (tmp, "%s rc:%d", tmp_str, SD_RC (fun_sig));
-    tmp_str = Free (tmp_str);
+    tmp_str = ILIBfree (tmp_str);
 
-    DBUG_RETURN (StringCopy (buf));
+    DBUG_RETURN (ILIBstringCopy (buf));
 }
 
 /* @} */ /* addtogroup ntc */
