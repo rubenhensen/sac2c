@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.73  1998/06/25 08:06:10  cg
+ * renaming of spmd-functions simplified
+ *
  * Revision 1.72  1998/06/23 12:53:19  cg
  * added traversal function PRECspmd in order to correctly rename
  * the identifiers stored in SPMD_INOUT_IDS.
@@ -554,41 +557,38 @@ RenameFun (node *fun)
          *  These are SAC-functions which may be overloaded.
          */
 
-        args = FUNDEF_ARGS (fun);
-
-        while (args != NULL) {
-            length += strlen (ARG_TYPESTRING (args)) + 2;
-            args = ARG_NEXT (args);
-        }
-
-        if (0 == strcmp (FUNDEF_MOD (fun), "_MAIN")) {
-            length += (strlen (FUNDEF_NAME (fun)) + 6);
-
-            new_name = (char *)Malloc (sizeof (char) * length);
-
+        if (FUNDEF_STATUS (fun) == ST_spmdfun) {
+            new_name = (char *)Malloc (sizeof (char) * (strlen (FUNDEF_NAME (fun)) + 6));
             sprintf (new_name, "SACf_%s", FUNDEF_NAME (fun));
         } else {
-            if (0 == strcmp (FUNDEF_MOD (fun), "_SPMD")) {
-                length += (strlen (FUNDEF_NAME (fun)) + 10);
+            args = FUNDEF_ARGS (fun);
 
-                new_name = (char *)Malloc (sizeof (char) * length);
-
-                sprintf (new_name, "SACf_spmd%s", FUNDEF_NAME (fun));
-            } else {
-                length += (strlen (FUNDEF_NAME (fun)) + strlen (FUNDEF_MOD (fun)) + 8);
-
-                new_name = (char *)Malloc (sizeof (char) * length);
-
-                sprintf (new_name, "SACf_%s__%s", FUNDEF_MOD (fun), FUNDEF_NAME (fun));
+            while (args != NULL) {
+                length += strlen (ARG_TYPESTRING (args)) + 1;
+                args = ARG_NEXT (args);
             }
-        }
 
-        args = FUNDEF_ARGS (fun);
+            if (0 == strcmp (FUNDEF_MOD (fun), "_MAIN")) {
+                length += (strlen (FUNDEF_NAME (fun)) + 7);
 
-        while (args != NULL) {
-            strcat (new_name, "__");
-            strcat (new_name, ARG_TYPESTRING (args));
-            args = ARG_NEXT (args);
+                new_name = (char *)Malloc (sizeof (char) * length);
+
+                sprintf (new_name, "SACf_%s_", FUNDEF_NAME (fun));
+            } else {
+                length += (strlen (FUNDEF_NAME (fun)) + strlen (FUNDEF_MOD (fun)) + 9);
+
+                new_name = (char *)Malloc (sizeof (char) * length);
+
+                sprintf (new_name, "SACf_%s__%s_", FUNDEF_MOD (fun), FUNDEF_NAME (fun));
+            }
+
+            args = FUNDEF_ARGS (fun);
+
+            while (args != NULL) {
+                strcat (new_name, "_");
+                strcat (new_name, ARG_TYPESTRING (args));
+                args = ARG_NEXT (args);
+            }
         }
 
         DBUG_PRINT ("PREC", ("renaming function %s:%s to %s", FUNDEF_MOD (fun),
