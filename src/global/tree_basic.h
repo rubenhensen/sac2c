@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.24  1999/06/03 08:42:20  cg
+ * WLCOMP_APS in the pragma node is moved to a private (non shared)
+ * location in the underlying data structure in order to simplify
+ * the printing of these pragmas.
+ *
  * Revision 2.23  1999/05/21 14:13:55  jhs
  * Added Macros to SPMDO-info-node, used in spmd_opt.c.
  *
@@ -2040,6 +2045,11 @@ extern node *MakeIcm (char *name, node *args, node *next);
  *  pragmas. Immediately after parsing, the pragmas are checked and
  *  converted into the array representation. So, all usage of these
  *  pragmas must rely on the respective permanent attributes.
+ *
+ *  Although certain attributes are known to occur only in particular
+ *  situations, these should NOT be mapped on the same location within
+ *  the "real" data structure because the attributes are used to determine
+ *  the kind of pragma, e.g. for printing.
  */
 
 extern node *MakePragma ();
@@ -2050,7 +2060,7 @@ extern node *MakePragma ();
 #define PRAGMA_LINKMOD(n) ((char *)(n->node[2]))
 #define PRAGMA_NEEDTYPES(n) ((ids *)(n->node[1]))
 #define PRAGMA_NEEDFUNS(n) (n->node[0])
-#define PRAGMA_WLCOMP_APS(n) (n->node[0])
+#define PRAGMA_WLCOMP_APS(n) (n->node[4])
 
 #define PRAGMA_LINKSIGN(n) ((int *)(n->mask[0]))
 #define PRAGMA_LINKSIGNNUMS(n) ((nums *)(n->mask[0]))
@@ -2172,6 +2182,16 @@ extern node *MakePragma ();
  ***    node*      LASTASSIGN
  ***    node*      THISASSIGN
  ***    node*      NEXTASSIGN
+ ***
+ ***  when used in print.c :
+ ***
+ ***    node*      FUNDEF             (N_fundef)
+ ***    node*      INT_SYN
+ ***    node*      WITH_RET
+ ***    node*      NWITH2
+ ***    node*      ACCESS
+ ***    int        PRAGMA_WLCOMP
+ ***
  ***
  *** remarks:
  ***    N_info is used in many other phases without access macros :((
@@ -2323,6 +2343,7 @@ extern node *MakeInfo ();
 #define INFO_PRINT_WITH_RET(n) (n->node[3])
 #define INFO_PRINT_NWITH2(n) (n->node[4])
 #define INFO_PRINT_ACCESS(n) (n->node[5])
+#define INFO_PRINT_PRAGMA_WLCOMP(n) (n->varno)
 
 /* WL access analyze */
 #define INFO_WLAA_LASTLETIDS(n) (n->info.ids)
