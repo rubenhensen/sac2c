@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/07/10 09:21:00  ben
+ * SAC_MT_maxloadthread, SAC_MT_mintask are now local variables
+ *
  * Revision 3.18  2001/07/06 10:16:19  ben
  * code beautified
  *
@@ -831,13 +834,13 @@ ICMCompileMT_SCHEDULER_Affinity_BEGIN (int sched_id, char *ts_name, int ts_dims,
     DBUG_ASSERT ((ts_args != NULL), " Please use Affinity only with Taskselector Even");
 
     INDENT;
-    fprintf (outfile, "int SAC_MT_taskid, SAC_MT_maxloadthread, SAC_MT_mintask, "
+    fprintf (outfile, "int SAC_MT_taskid, "
                       "SAC_MT_worktodo,SAC_MT_affinitydummy;\n");
     InitializeBoundaries (dim, vararg);
     INDENT;
     fprintf (outfile,
              "SAC_MT_SCHEDULER_Affinity_FIRST_TASK(%d,%d, SAC_MT_taskid, "
-             "SAC_MT_worktodo, SAC_MT_maxloadthread, SAC_MT_mintask);\n",
+             "SAC_MT_worktodo);\n",
              sched_id, atoi (ts_args[0]));
     INDENT;
     fprintf (outfile, " while (SAC_MT_worktodo){\n");
@@ -862,7 +865,7 @@ ICMCompileMT_SCHEDULER_Affinity_END (int sched_id, char *ts_name, int ts_dims,
     INDENT;
     fprintf (outfile,
              "SAC_MT_SCHEDULER_Affinity_NEXT_TASK(%d ,%d, SAC_MT_taskid, "
-             "SAC_MT_worktodo, SAC_MT_maxloadthread, SAC_MT_mintask);\n",
+             "SAC_MT_worktodo);\n",
              sched_id, atoi (ts_args[0]));
     INDENT;
     fprintf (outfile, "}\n");
