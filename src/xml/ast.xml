@@ -102,6 +102,12 @@
           <node name="Vinfo" />
           <node name="Prf" />
           <node name="Ssastack" />
+          <node name="Wlblock" />
+          <node name="Wlublock" />
+          <node name="Linklist" />
+          <node name="Ids" />
+          <node name="Nums" />
+          <node name="Globobj" />
         </travsons>
       </traversal>
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
