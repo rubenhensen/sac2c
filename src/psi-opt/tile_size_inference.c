@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/11/27 01:12:25  jhb
+ * fixed bug in TravFunction aÂsyncronize header daand compile
+ *
  * Revision 3.8  2004/11/26 20:36:07  jhb
  * compile
  *
@@ -730,15 +733,15 @@ TSIMakePragmaWLComp (int tilesize, info *arg_info)
 #endif /* TSI_DEACTIVATED*/
 
 node *
-TileSizeInference (node *arg_node)
+TSIdoTileSizeInference (node *arg_node)
 {
-    DBUG_ENTER ("TileSizeInference");
+    DBUG_ENTER ("TSIdoTileSizeInference");
 
 #ifndef TSI_DEACTIVATED
 
     info *arg_info;
 
-    DBUG_PRINT ("TSI", ("TileSizeInference"));
+    DBUG_PRINT ("TSI", ("TSIdoTileSizeInference"));
 
     arg_info = MakeInfo ();
 
