@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2003/11/10 18:56:42  dkrHH
+ * missing cpp flags for sac2c added
+ *
  * Revision 1.9  2003/10/20 14:35:40  dkr
  * missing ICMs added
  *
@@ -51,7 +54,46 @@
 #endif
 
 #define TAGGED_ARRAYS
+
+#define SAC_DO_CHECK 1
+#define SAC_DO_CHECK_TYPE 1
+#define SAC_DO_CHECK_BOUNDARY 1
+#define SAC_DO_CHECK_MALLOC 1
+#define SAC_DO_CHECK_ERRNO 1
+#define SAC_DO_CHECK_HEAP 1
+
+#define SAC_DO_PHM 1
+#define SAC_DO_APS 1
+#define SAC_DO_DAO 1
+#define SAC_DO_MSCA 1
+
+#define SAC_DO_PROFILE 1
+#define SAC_DO_PROFILE_WITH 1
+#define SAC_DO_PROFILE_FUN 1
+#define SAC_DO_PROFILE_INL 1
+#define SAC_DO_PROFILE_LIB 1
+
+#define SAC_DO_TRACE 1
+#define SAC_DO_TRACE_REF 1
+#define SAC_DO_TRACE_MEM 1
+#define SAC_DO_TRACE_PRF 1
+#define SAC_DO_TRACE_FUN 1
+#define SAC_DO_TRACE_WL 1
+#define SAC_DO_TRACE_AA 1
+#define SAC_DO_TRACE_MT 1
+
+#define SAC_DO_CACHESIM 0
+#define SAC_DO_CACHESIM_ADV 0
+#define SAC_DO_CACHESIM_GLOBAL 1
+#define SAC_DO_CACHESIM_FILE 0
+#define SAC_DO_CACHESIM_PIPE 1
+#define SAC_DO_CACHESIM_IMDT 0
+
 #define SAC_DO_MULTITHREAD 1
+#define SAC_DO_THREADS_STATIC 1
+
+#define SAC_DO_COMPILE_MODULE 0
+
 #include "sac.h"
 
 #define CHECK(x) < ---#x--->x
