@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/07/19 14:44:31  jhs
+ * Changed signature of MakeSync.
+ *
  * Revision 2.7  1999/07/07 06:00:19  sbs
  * added VINFO_DOLLAR and adjusted MakeVinfo
  *
@@ -1442,7 +1445,7 @@ MakeSpmd (node *region)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeSync (node *region, int first)
+MakeSync (node *region)
 {
     node *tmp;
 
@@ -1451,7 +1454,8 @@ MakeSync (node *region, int first)
     tmp = CreateCleanNode (N_sync);
 
     SYNC_REGION (tmp) = region;
-    SYNC_FIRST (tmp) = first;
+    SYNC_FIRST (tmp) = FALSE;
+    SYNC_LAST (tmp) = TRUE;
 
     DBUG_RETURN (tmp);
 }

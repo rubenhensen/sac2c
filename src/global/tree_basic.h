@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.38  1999/07/19 14:44:51  jhs
+ * Changed signature of MakeSync.
+ *
  * Revision 2.37  1999/07/14 18:21:49  bs
  * Access macros added: INFO_WLAA_COUNT, NCODE_ACCESSNO
  *
@@ -2580,7 +2583,7 @@ extern node *MakeSpmd (node *region);
  ***
  ***/
 
-extern node *MakeSync (node *region, int first);
+extern node *MakeSync (node *region);
 
 #define SYNC_FIRST(n) (n->flag)
 #define SYNC_LAST(n) (n->int_data)

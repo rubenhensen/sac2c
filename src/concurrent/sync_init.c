@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/07/19 14:45:13  jhs
+ * Changed signature of MakeSync.
+ *
  * Revision 2.3  1999/07/07 15:52:59  jhs
  * Removed SYNC_WITH_PTRS.
  *
@@ -76,8 +79,8 @@ SYNCIassign (node *arg_node, node *arg_info)
          *  -> create a SYNC-region containing the current assignment only
          *      and insert it into the syntaxtree.
          */
-        sync = MakeSync (MakeBlock (MakeAssign (sync_let, NULL), NULL),
-                         INFO_SPMD_FIRST (arg_info));
+        sync = MakeSync (MakeBlock (MakeAssign (sync_let, NULL), NULL));
+        SYNC_FIRST (sync) = INFO_SPMD_FIRST (arg_info);
         ASSIGN_INSTR (arg_node) = sync;
 
         /*
