@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2004/11/26 15:16:11  mwe
+ * changed to coding guidelines
+ *
  * Revision 3.3  2004/11/25 19:33:17  jhb
  * guards changed _SAC_PAD_H_
  *
@@ -47,8 +50,10 @@
 
 #define _SAC_PAD_H_
 
+#include "types.h"
+
 extern void APprintDiag (char *format, ...);
 
-extern node *ArrayPadding (node *arg_node);
+extern node *APdoArrayPadding (node *arg_node);
 
 #endif /* _SAC_PAD_H_  */
