@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1998/05/16 00:09:24  dkr
+ * changed some macros
+ * added PRINT_INDEX_CODE, PRINT_INDEX macros, to log the values of the
+ * index-vector
+ *
  * Revision 1.9  1998/05/14 21:37:55  dkr
  * changed some ICMs
  *
@@ -45,6 +50,24 @@
 #include "print.h"
 #include "gen_startup_code.h"
 
+#include <limits.h> /* MAX_INT */
+
+#define PRINT_INDEX 0
+
+#define PRINT_INDEX_CODE                                                                 \
+    {                                                                                    \
+        int i;                                                                           \
+        fprintf (outfile, "fprintf( SACstderr, \"");                                     \
+        for (i = 0; i < dims; i++) {                                                     \
+            fprintf (outfile, "idx%d=%%d ", i);                                          \
+        }                                                                                \
+        fprintf (outfile, "\\n\"");                                                      \
+        for (i = 0; i < dims; i++) {                                                     \
+            fprintf (outfile, ", %s", idx_scalars[i]);                                   \
+        }                                                                                \
+        fprintf (outfile, ");\n");                                                       \
+    }
+
 /******************************************************************************
  *
  * function:
@@ -80,11 +103,11 @@ ICMCompileWL_NONFOLD_BEGIN (char *target, char *idx_vec, int dims, char **args)
 
     for (i = 0; i < dims; i++) {
         INDENT;
-        fprintf (outfile, "int __stop_%s = %s;\n", args[3 * i], args[3 * i + 2]);
+        fprintf (outfile, "int __start_%s = %s;\n", args[3 * i], args[3 * i + 1]);
     }
     for (i = 0; i < dims; i++) {
         INDENT;
-        fprintf (outfile, "%s = %s;\n", args[3 * i], args[3 * i + 1]);
+        fprintf (outfile, "int __stop_%s = %s;\n", args[3 * i], args[3 * i + 2]);
     }
 
     DBUG_VOID_RETURN;
@@ -121,11 +144,52 @@ ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec, int dims, char **args)
 
     for (i = 0; i < dims; i++) {
         INDENT;
-        fprintf (outfile, "int __stop_%s = %s;\n", args[3 * i], args[3 * i + 2]);
+        fprintf (outfile, "int __start_%s = %s;\n", args[3 * i], args[3 * i + 1]);
     }
     for (i = 0; i < dims; i++) {
         INDENT;
-        fprintf (outfile, "%s = %s;\n", args[3 * i], args[3 * i + 1]);
+        fprintf (outfile, "int __stop_%s = %s;\n", args[3 * i], args[3 * i + 2]);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL_FOLDVAR_BEGIN( char *target, char *idx_vec,
+ *                                    int dims, char **args)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   WL_FOLDVAR_BEGIN( target, idx_vec, dims, [ idx_scalars ]* )
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_FOLDVAR_BEGIN (char *target, char *idx_vec, int dims, char **args)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileWL_FOLDVAR_BEGIN");
+
+#define WL_FOLDVAR_BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_FOLDVAR_BEGIN
+
+    INDENT;
+    fprintf (outfile, "{\n");
+    indent++;
+
+    for (i = 0; i < dims; i++) {
+        INDENT;
+        fprintf (outfile, "int __start_%s = 0;\n", args[i]);
+    }
+    for (i = 0; i < dims; i++) {
+        INDENT;
+        fprintf (outfile, "int __stop_%s = %d;\n", args[i], INT_MAX);
     }
 
     DBUG_VOID_RETURN;
@@ -186,20 +250,8 @@ ICMCompileWL_ASSIGN (char *target, char *idx_vec, int dims, char **idx_scalars,
 #include "icm_trace.c"
 #undef WL_ASSIGN
 
-#if 0
-  {
-    int i;
-
-    fprintf( outfile, "fprintf( stderr, \"");
-    for (i = 0; i < dims; i++) {
-      fprintf( outfile, "idx%d = %%d ", i);
-    }
-    fprintf( outfile, "\\n\"");
-    for (i = 0; i < dims; i++) {
-      fprintf( outfile, ", %s", idx_scalars[ i]);
-    }
-    fprintf( outfile, ");\n");
-  }
+#if PRINT_INDEX
+    PRINT_INDEX_CODE
 #endif
 
     if (dim_expr > 0) {
@@ -232,11 +284,8 @@ ICMCompileWL_ASSIGN (char *target, char *idx_vec, int dims, char **idx_scalars,
     } else {
 
         INDENT;
-        fprintf (outfile, "SAC_ND_A_FIELD( %s)[ %s__destptr] = %s;\n", target, target,
+        fprintf (outfile, "SAC_ND_A_FIELD( %s)[ %s__destptr++] = %s;\n", target, target,
                  expr);
-
-        INDENT;
-        fprintf (outfile, "%s__destptr++;\n", target);
     }
 
     DBUG_VOID_RETURN;
@@ -245,48 +294,58 @@ ICMCompileWL_ASSIGN (char *target, char *idx_vec, int dims, char **idx_scalars,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_ASSIGN_GEN( char *target, char *idx_vec,
- *                                 int dims, char **idx_scalars, char *templ)
+ *   void ICMCompileWL_ASSIGN_INIT( char *target, char *idx_vec,
+ *                                  int dims, char **idx_scalars, char *templ)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_ASSIGN_GEN( target, idx_vec, dims, [ idx_scalars ]*, templ)
+ *   WL_ASSIGN_INIT( target, idx_vec, dims, [ idx_scalars ]*, templ)
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_ASSIGN_GEN (char *target, char *idx_vec, int dims, char **idx_scalars,
-                         char *templ)
+ICMCompileWL_ASSIGN_INIT (char *target, char *idx_vec, int dims, char **idx_scalars,
+                          int dim_templ, char *templ)
 {
-    DBUG_ENTER ("ICMCompileWL_ASSIGN_GEN");
+    DBUG_ENTER ("ICMCompileWL_ASSIGN_INIT");
 
-#define WL_ASSIGN_GEN
+#define WL_ASSIGN_INIT
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef WL_ASSIGN_GEN
+#undef WL_ASSIGN_INIT
 
-    INDENT;
-    fprintf (outfile, "{\n");
-    indent++;
+#if PRINT_INDEX
+    PRINT_INDEX_CODE
+#endif
 
-    INDENT;
-    fprintf (outfile, "int __i;\n");
+    if (dim_templ > 0) {
 
-    INDENT;
-    fprintf (outfile, "for (__i = 0; __i < SAC_ND_A_SIZE( %s); __i++) {\n", templ);
-    indent++;
+        INDENT;
+        fprintf (outfile, "{\n");
+        indent++;
+
+        INDENT;
+        fprintf (outfile, "int __i;\n");
+
+        INDENT;
+        fprintf (outfile, "for (__i = 0; __i < SAC_ND_A_SIZE( %s); __i++) {\n", templ);
+        indent++;
+    }
 
     INDENT;
     fprintf (outfile, "SAC_ND_A_FIELD( %s)[ %s__destptr++] = 0;\n", target, target);
 
-    indent--;
-    INDENT;
-    fprintf (outfile, "}\n");
+    if (dim_templ > 0) {
 
-    indent--;
-    INDENT;
-    fprintf (outfile, "}\n");
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
+
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -294,54 +353,64 @@ ICMCompileWL_ASSIGN_GEN (char *target, char *idx_vec, int dims, char **idx_scala
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_ASSIGN_MOD( char *source, char *target, char *idx_vec,
- *                                 int dims, char **idx_scalars, char *templ)
+ *   void ICMCompileWL_ASSIGN_COPY( char *source, char *target, char *idx_vec,
+ *                                  int dims, char **idx_scalars, char *templ)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_ASSIGN_MOD( source, target, idx_vec, dims, [ idx_scalars ]*, templ)
+ *   WL_ASSIGN_COPY( source, target, idx_vec, dims, [ idx_scalars ]*, templ)
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_ASSIGN_MOD (char *source, char *target, char *idx_vec, int dims,
-                         char **idx_scalars, char *templ)
+ICMCompileWL_ASSIGN_COPY (char *source, char *target, char *idx_vec, int dims,
+                          char **idx_scalars, int dim_templ, char *templ)
 {
-    DBUG_ENTER ("ICMCompileWL_ASSIGN_MOD");
+    DBUG_ENTER ("ICMCompileWL_ASSIGN_COPY");
 
-#define WL_ASSIGN_MOD
+#define WL_ASSIGN_COPY
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef WL_ASSIGN_MOD
+#undef WL_ASSIGN_COPY
 
-    INDENT;
-    fprintf (outfile, "{\n");
-    indent++;
+#if PRINT_INDEX
+    PRINT_INDEX_CODE
+#endif
 
-    INDENT;
-    fprintf (outfile, "int __i;\n");
+    if (dim_templ > 0) {
 
-    INDENT;
-    fprintf (outfile, "for (__i = 0; __i < SAC_ND_A_SIZE( %s); __i++) {\n", templ);
-    indent++;
+        INDENT;
+        fprintf (outfile, "{\n");
+        indent++;
+
+        INDENT;
+        fprintf (outfile, "int __i;\n");
+
+        INDENT;
+        fprintf (outfile, "for (__i = 0; __i < SAC_ND_A_SIZE( %s); __i++) {\n", templ);
+        indent++;
+    }
 
     INDENT;
     fprintf (outfile,
              "SAC_ND_A_FIELD(%s)[ %s__destptr] = "
              "SAC_ND_A_FIELD( %s)[ %s__destptr];\n",
-             target, target, source, source);
+             target, target, source, target);
 
     INDENT;
     fprintf (outfile, "%s__destptr++;\n", target);
 
-    indent--;
-    INDENT;
-    fprintf (outfile, "}\n");
+    if (dim_templ > 0) {
 
-    indent--;
-    INDENT;
-    fprintf (outfile, "}\n");
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
+
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -370,6 +439,10 @@ ICMCompileWL_FOLD (char *target, char *idx_vec, int dims, char **idx_scalars,
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef WL_FOLD
+
+#if PRINT_INDEX
+    PRINT_INDEX_CODE
+#endif
 
     INDENT;
     fprintf (outfile, "%s = %s + %s;\n", target, target, expr);
