@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2004/02/06 14:19:33  mwe
+ * replace usage of PHITARGET with primitive phi function
+ *
  * Revision 3.78  2003/12/23 10:43:58  khf
  * NWITHOP_NEXT for more operations for withloop-fusion added. Other NWITHOP attributes
  * shifted. NCODE_CEXPR changed to NCODE_CEXPRS. Macro adjusted. Second MakeNCode
@@ -1625,7 +1628,7 @@ MakeAvis (node *vardecOrArg)
 
     tmp = CreateCleanNode (N_avis);
     AVIS_VARDECORARG (tmp) = vardecOrArg;
-    AVIS_SSAPHITARGET (tmp) = PHIT_NONE;
+    /*AVIS_SSAPHITARGET( tmp) = PHIT_NONE;*/
     AVIS_SSALPINV (tmp) = FALSE;
     AVIS_SSADEFINED (tmp) = FALSE;
     AVIS_SSAUNDOFLAG (tmp) = FALSE;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.178  2004/02/06 14:19:33  mwe
+ * replace usage of PHITARGET with primitive phi function
+ *
  * Revision 3.177  2003/12/30 15:25:12  dkrHH
  * INFO_PRINT_INT_SYN removed (no longer needed)
  *
@@ -2416,7 +2419,6 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***    node*       SSAASSIGN       (N_assign)       (ssaform -> undossa !!)
  ***    node*       SSAASSIGN2      (N_assign)       (ssaform -> undossa !!)
  ***    constant*   SSACONST (O)                     (cf -> undossa !!)
- ***    ssaphit_t   SSAPHITARGET (O)                 (ssaform -> undossa !!)
  ***    bool        SSALPINV (O)                     (lir -> undossa !!)
  ***    node*       SSASTACK (O)    (N_ssastack)     (ssaform -> undossa !!)
  ***    bool        SSAUNDOFLAG (O)                  (ssaform -> undossa !!)
@@ -2435,6 +2437,7 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***
  ***    the following attributes are only used within UndoSSATransform:
  ***    node*       SUBSTUSSA (O)   (N_avis)          (undossa!!)
+ ***    ssaphit_t   SSAPHITARGET (O)                  (undossa!!)
  ***
  ***    the following attributes are only used within SSALIR:
  ***    int         DEFDEPTH (O)    (WITHDEPTH)       (ssalir!!)
@@ -2460,7 +2463,6 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_SSAASSIGN(n) (n->node[2])
 #define AVIS_SSAASSIGN2(n) (n->node[3])
 #define AVIS_SSACONST(n) ((constant *)(n->info2))
-#define AVIS_SSAPHITARGET(n) ((ssaphit_t) (n->flag))
 #define AVIS_SSALPINV(n) ((bool)(n->refcnt))
 #define AVIS_SSASTACK(n) (n->node[4])
 #define AVIS_SSAUNDOFLAG(n) ((bool)(n->counter))
@@ -2475,6 +2477,7 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_SUBST(n) ((node *)(n->dfmask[0]))
 /* used only in UndoSSAtransform */
 #define AVIS_SUBSTUSSA(n) ((node *)(n->dfmask[1]))
+#define AVIS_SSAPHITARGET(n) ((ssaphit_t) (n->flag))
 /* used only in SSALIR */
 #define AVIS_DEFDEPTH(n) (n->varno)
 #define AVIS_LIRMOVE(n) (n->lineno)
@@ -3253,6 +3256,8 @@ extern node *MakeInfo ();
 #define INFO_SSA_ASSIGN(n) (n->node[5])
 #define INFO_SSA_SINGLEFUNDEF(n) ((bool)(n->counter))
 #define INFO_SSA_WITHID(n) ((node *)(n->dfmask[0]))
+#define INFO_SSA_PHIASSIGN(n) ((node *)(n->dfmask[1]))
+#define INFO_SSA_LASTPHIASSIGN(n) ((node *)(n->dfmask[2]))
 
 /* when used in UndoSSATransform.c */
 #define INFO_USSA_ARGS(n) (n->node[0])
@@ -3261,6 +3266,8 @@ extern node *MakeInfo ();
 #define INFO_USSA_CONSTASSIGNS(n) (n->node[3])
 #define INFO_USSA_OPASSIGN(n) (n->int_data)
 #define INFO_USSA_MODUL(n) (n->node[4])
+#define INFO_USSA_PHIFUN(n) (n->node[5])
+#define INFO_USSA_FUNDEF(n) ((node *)(n->dfmask[0]))
 
 /* when used in SSADeadCodeRemoval.c */
 #define INFO_SSADCR_DEPTH(n) (n->int_data)

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/02/06 14:19:33  mwe
+ * replace usage of PHITARGET with primitive phi function
+ *
  * Revision 1.1  2004/01/28 16:53:48  skt
  * Initial revision
  *
@@ -380,104 +383,76 @@ SSANewVardec (node *old_vardec_or_arg)
  *
  * description:
  *   creates a new renamed vardec as target for the ssa phi-function.
- *   inserts the necessary copy assignments for ssa in the conditional.
+ *   inserts the necessary copy assignments for ssa behind the conditional.
  *
  * remarks:
- *   the inserted target identifier (left_ids) has two definitions!
- *   (this is not really in ssa-form, but it simulates the ssa phi-function
- *   to merge different flows in execution).
- *   these two assignments are stored in AVIS_SSAASSIGN and AVIS_SSAASSIGN2.
- *   the AVIS node is marked as SSAPHITRAGET.
+ *   the inserted target identifier (left_ids) is a phi function with
+ *   two arguments!
  *
  * if(p) {
  *   ...
- *   newvar = x__SSA_1;
+ *   x__SSA_1 = ...;
+ *   ...
  * } else {
  *   ...
- *   newvar = x__SSA_2;
+ *   x__SSA_2 = ...;
+ *   ...
  * }
+ * newvar = phi(x__SSA_1, x__SSA_2);
  *
  ******************************************************************************/
 static void
 SSAInsertCopyAssignments (node *condassign, node *avis, node *arg_info)
 {
     node *assign_let;
-    node *right_id;
+    node *right_id1, *right_id2;
     ids *left_ids;
 
     DBUG_ENTER ("SSAInsertCopyAssignments");
 
     /* THEN part */
     /* create right side (id) of copy assignment for then part */
-    right_id
+    right_id1
       = MakeId (StringCopy (VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (AVIS_SSATHEN (avis)))),
                 NULL, VARDEC_OR_ARG_STATUS (AVIS_VARDECORARG (AVIS_SSATHEN (avis))));
-    ID_VARDEC (right_id) = AVIS_VARDECORARG (AVIS_SSATHEN (avis));
-    SET_FLAG (ID, right_id, IS_GLOBAL, (NODE_TYPE (ID_VARDEC (right_id)) == N_objdef));
-    SET_FLAG (ID, right_id, IS_REFERENCE, FALSE);
-    ID_AVIS (right_id) = AVIS_SSATHEN (avis);
+    ID_VARDEC (right_id1) = AVIS_VARDECORARG (AVIS_SSATHEN (avis));
+    SET_FLAG (ID, right_id1, IS_GLOBAL, (NODE_TYPE (ID_VARDEC (right_id1)) == N_objdef));
+    SET_FLAG (ID, right_id1, IS_REFERENCE, FALSE);
+    ID_AVIS (right_id1) = AVIS_SSATHEN (avis);
 
-    /* create one let assign for then part */
+    /* ELSE part */
+    /* create right side (id) of copy assignment for else part */
+    right_id2
+      = MakeId (StringCopy (VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (AVIS_SSAELSE (avis)))),
+                NULL, VARDEC_OR_ARG_STATUS (AVIS_VARDECORARG (AVIS_SSAELSE (avis))));
+    ID_VARDEC (right_id2) = AVIS_VARDECORARG (AVIS_SSAELSE (avis));
+    SET_FLAG (ID, right_id2, IS_GLOBAL, (NODE_TYPE (ID_VARDEC (right_id2)) == N_objdef));
+    SET_FLAG (ID, right_id2, IS_REFERENCE, FALSE);
+    ID_AVIS (right_id2) = AVIS_SSAELSE (avis);
+
+    /* create let assign with prf_phi for then and else part */
     assign_let = MakeAssignLet (StringCopy (VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (avis))),
-                                AVIS_VARDECORARG (avis), right_id);
+                                AVIS_VARDECORARG (avis),
+                                MakePrf (F_phi, MakeExprs (right_id1,
+                                                           MakeExprs (right_id2, NULL))));
 
     /* redefinition requieres new target variable (standard ssa mechanism) */
     LET_IDS (ASSIGN_INSTR (assign_let))
       = TravLeftIDS (LET_IDS (ASSIGN_INSTR (assign_let)), arg_info);
     left_ids = LET_IDS (ASSIGN_INSTR (assign_let));
 
-    /* append new copy assignment to then-part block */
-    BLOCK_INSTR (COND_THEN (condassign))
-      = AppendAssign (BLOCK_INSTR (COND_THEN (condassign)), assign_let);
-    /* store 1. definition assignment */
+    /*store assignment */
     AVIS_SSAASSIGN (IDS_AVIS (left_ids)) = assign_let;
-    DBUG_PRINT ("SSA", ("insert phi copy assignment in then part: %s = %s",
-                        VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (left_ids))),
-                        VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (right_id)))));
-    right_id = NULL;
-    assign_let = NULL;
 
-    /* ELSE part */
-    /* create right side (id) of copy assignment for else part */
-    right_id
-      = MakeId (StringCopy (VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (AVIS_SSAELSE (avis)))),
-                NULL, VARDEC_OR_ARG_STATUS (AVIS_VARDECORARG (AVIS_SSAELSE (avis))));
-    ID_VARDEC (right_id) = AVIS_VARDECORARG (AVIS_SSAELSE (avis));
-    SET_FLAG (ID, right_id, IS_GLOBAL, (NODE_TYPE (ID_VARDEC (right_id)) == N_objdef));
-    SET_FLAG (ID, right_id, IS_REFERENCE, FALSE);
-    ID_AVIS (right_id) = AVIS_SSAELSE (avis);
-
-    /* create let assign for else part with same left side as then part */
-    assign_let = MakeAssignLet (StringCopy (VARDEC_OR_ARG_NAME (
-                                  AVIS_VARDECORARG (IDS_AVIS (left_ids)))),
-                                AVIS_VARDECORARG (IDS_AVIS (left_ids)), right_id);
-
-    /* append new copy assignment to else-part block */
-    BLOCK_INSTR (COND_ELSE (condassign))
-      = AppendAssign (BLOCK_INSTR (COND_ELSE (condassign)), assign_let);
-    /* store 2. definition assignment */
-    AVIS_SSAASSIGN2 (IDS_AVIS (left_ids)) = assign_let;
-    DBUG_PRINT ("SSA", ("insert phi copy assignment in else part: %s = %s",
-                        VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (left_ids))),
-                        VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (right_id)))));
-
-    /* mark vardec as special ssa phi target */
-    switch (FUNDEF_STATUS (INFO_SSA_FUNDEF (arg_info))) {
-    case ST_condfun:
-        AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_COND;
-        break;
-
-    case ST_whilefun:
-        AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_DO;
-        break;
-
-    case ST_dofun:
-        AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_WHILE;
-        break;
-
-    default:
-        DBUG_ASSERT ((FALSE),
-                     "conditional in reglular function! (no cond, do or while function)");
+    /* insert new phi assignment to arg_info for insertion
+       into assignment chain later */
+    if (INFO_SSA_PHIASSIGN (arg_info) == NULL) {
+        INFO_SSA_PHIASSIGN (arg_info) = assign_let;
+        INFO_SSA_LASTPHIASSIGN (arg_info) = assign_let;
+    } else {
+        ASSIGN_NEXT (INFO_SSA_LASTPHIASSIGN (arg_info)) = assign_let;
+        INFO_SSA_LASTPHIASSIGN (arg_info)
+          = ASSIGN_NEXT (INFO_SSA_LASTPHIASSIGN (arg_info));
     }
 
     DBUG_VOID_RETURN;
@@ -547,6 +522,7 @@ SSAfundef (node *arg_node, node *arg_info)
     /*
      * process only fundefs with body
      */
+
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* stores access points for later insertions in this fundef */
         INFO_SSA_FUNDEF (arg_info) = arg_node;
@@ -641,7 +617,7 @@ SSAexprs (node *arg_node, node *arg_info)
 node *
 SSAassign (node *arg_node, node *arg_info)
 {
-    node *old_assign;
+    node *old_assign, *return_assign;
 
     DBUG_ENTER ("SSAassign");
 
@@ -657,7 +633,24 @@ SSAassign (node *arg_node, node *arg_info)
 
     /* traverse next exprs */
     if (ASSIGN_NEXT (arg_node) != NULL) {
+
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+
+        /* if next node is return node then insert all created
+         * phi-assignments in assignment chain
+         */
+        if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_cond) {
+
+            if (INFO_SSA_PHIASSIGN (arg_info) != NULL) {
+
+                return_assign = ASSIGN_NEXT (arg_node);
+                ASSIGN_NEXT (arg_node) = INFO_SSA_PHIASSIGN (arg_info);
+                ASSIGN_NEXT (INFO_SSA_LASTPHIASSIGN (arg_info)) = return_assign;
+
+                INFO_SSA_PHIASSIGN (arg_info) = NULL;
+                INFO_SSA_LASTPHIASSIGN (arg_info) = NULL;
+            }
+        }
     }
 
     /* restore old assignment link */
@@ -1233,19 +1226,7 @@ SSAleftids (ids *arg_ids, node *arg_info)
 
     DBUG_ENTER ("SSAleftids");
 
-    if (AVIS_SSAPHITARGET (IDS_AVIS (arg_ids)) != PHIT_NONE) {
-        /* special ssa phi target - no renaming needed */
-        AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = IDS_AVIS (arg_ids);
-        DBUG_PRINT ("SSA", ("phi target, no renaming: %s (" F_PTR ")",
-                            VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
-                            IDS_AVIS (arg_ids)));
-        /* set the correct AVIS_SSAASSIGN/2 attributes */
-        if (INFO_SSA_CONDSTATUS (arg_info) == CONDSTATUS_ELSEPART) {
-            AVIS_SSAASSIGN2 (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
-        } else {
-            AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
-        }
-    } else if (!AVIS_SSADEFINED (IDS_AVIS (arg_ids))) {
+    if (!AVIS_SSADEFINED (IDS_AVIS (arg_ids))) {
         /* first definition of variable (no renaming) */
         AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = IDS_AVIS (arg_ids);
         /* SSACNT_COUNT(AVIS_SSACOUNT(IDS_AVIS(arg_ids))) = 0; */
@@ -1334,18 +1315,30 @@ SSArightids (ids *arg_ids, node *arg_info)
         }
     }
 
-    /*
-     * existing phi copy target must not be renamed
-     */
-    if (AVIS_SSAPHITARGET (IDS_AVIS (arg_ids)) == PHIT_NONE) {
-        /* do renaming to new ssa vardec */
-        if (!AVIS_SSADEFINED (IDS_AVIS (arg_ids))) {
-            if (INFO_SSA_ALLOW_GOS (arg_info) == FALSE) {
-                ERROR (linenum, ("var %s used without definition", IDS_NAME (arg_ids)));
-            }
-        } else {
-            IDS_AVIS (arg_ids) = AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids));
+    /* do renaming to new ssa vardec */
+    if (!AVIS_SSADEFINED (IDS_AVIS (arg_ids))) {
+        if (INFO_SSA_ALLOW_GOS (arg_info) == FALSE) {
+            ERROR (linenum, ("var %s used without definition", IDS_NAME (arg_ids)));
         }
+    } else {
+
+        /*
+         * mwe:
+         *   After changing the implementation of the ssa-conditionals
+         *   from PHITARGET to a real primitive function 'phi'
+         *   it is possible to get empty conditional branches.
+         *   Before the change this was unpossible.
+         *
+         *   Maybe that's the reason for the following problem:
+         *   After changing to phi functions it happend that the
+         *   SSASTACK was empty for the arguments of the phi function,
+         *   when something was expected to be in the stack.
+         *
+         *   Because an empty stack at this point was not possible before,
+         *   I thought it's no mistake to add the following conditional.
+         */
+        if (AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) != NULL)
+            IDS_AVIS (arg_ids) = AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids));
     }
 
     /* restore all depended attributes with correct values */
