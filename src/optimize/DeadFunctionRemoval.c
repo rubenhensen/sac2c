@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/03/22 21:11:25  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.2  2000/11/23 16:16:50  sbs
  * mem_dead_fun in DeadFunctionRemoval enclosed in ifndef DBUG_OFF
  * for avoiding a warning when compiling product version.
@@ -37,16 +40,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tree.h"
+#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "internal_lib.h"
 #include "free.h"
 #include "Error.h"
 #include "dbug.h"
 #include "globals.h"
 #include "my_debug.h"
 #include "traverse.h"
-#include "internal_lib.h"
 
 #include "optimize.h"
 

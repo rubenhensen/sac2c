@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/03/22 21:06:47  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.10  2001/03/22 14:30:47  nmw
  * SSAConstantFolding added
  *
@@ -188,7 +191,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
 #include "internal_lib.h"
 #include "free.h"
 #include "globals.h"

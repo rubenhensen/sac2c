@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 1.7  2001/03/22 21:13:23  dkr
+ * include of tree.h eliminated
+ *
  * Revision 1.6  2001/03/16 11:57:51  nmw
  * AVIS_SSAPHITRAGET type changed
  *
@@ -18,8 +22,6 @@
  * Revision 1.1  2001/03/05 16:02:25  nmw
  * Initial revision
  *
- *
- *
  */
 
 /*****************************************************************************
@@ -36,8 +38,11 @@
  *
  *****************************************************************************/
 
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "dbug.h"
-#include "tree.h"
 #include "traverse.h"
 #include "free.h"
 #include "SSACSE.h"

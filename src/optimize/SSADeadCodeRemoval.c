@@ -1,13 +1,14 @@
 /*
+ *
  * $Log$
+ * Revision 1.8  2001/03/22 21:13:33  dkr
+ * include of tree.h eliminated
+ *
  * Revision 1.7  2001/03/16 11:58:19  nmw
  * add missing static for local functions
  *
  * Revision 1.6  2001/03/12 09:16:05  nmw
  * Debug Messages added, no DCR for recursive function call
- *
- * Revision 1.5  2001/03/06 13:19:35  nmw
- * *** empty log message ***
  *
  * Revision 1.4  2001/03/02 15:51:49  nmw
  * CSRemoveArg/CSRemoveResult moved to separate file change_signature
@@ -21,7 +22,6 @@
  * Revision 1.1  2001/02/23 13:37:50  nmw
  * Initial revision
  *
-
  */
 
 /*****************************************************************************
@@ -38,9 +38,12 @@
  *
  *****************************************************************************/
 
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "dbug.h"
 #include "globals.h"
-#include "tree.h"
 #include "traverse.h"
 #include "free.h"
 #include "DupTree.h"
