@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.14  2004/11/23 16:10:47  jhb
+  all traversals of reference counting included
+
   Revision 1.13  2004/11/23 15:55:40  jhb
   several traversals of refcounting included
 
@@ -278,6 +281,98 @@
         <node name="Genarray" />
         <node name="Let" />
         <node name="Modarray" />
+        <node name="Prf" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="EMRC" name="Reference Counting Analysis" default="sons" include="refcounting.h" >
+      <travuser>
+        <node name="Ap" />
+        <node name="Arg" />
+        <node name="Array" />
+        <node name="Assign" />
+        <node name="Block" />
+        <node name="Code" />
+        <node name="Cond" />
+        <node name="Fold" />
+        <node name="Funcond" />
+        <node name="Fundef" />
+        <node name="Genarray" />
+        <node name="Icm" />
+        <node name="Id" />
+        <node name="Let" />
+        <node name="Modarray" />
+        <node name="Prf" />
+        <node name="Return" />
+        <node name="Vardec" />
+        <node name="with" />
+        <node name="With2" />
+        <node name="Withid" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="EMRB" name="Reuse branching" default="sons" include="reusebranching.h" >
+      <travuser>
+        <node name="Assign" />
+        <node name="Fundef" />
+        <node name="Prf" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="EMRE" name="Reuse elimination" default="sons" include="reuseelimination.h" >
+      <travuser>
+        <node name="Assign" />
+        <node name="Cond" />
+        <node name="Fundef" />
+        <node name="Genarray" />
+        <node name="Let" />
+        <node name="Modarray" />
+        <node name="Prf" />
+        <node name="Vardec" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="EMRI" name="Reuse inference" default="sons" include="reuse.h" >
+      <travuser>
+        <node name="Arg" />
+        <node name="Assign" />
+        <node name="Code" />
+        <node name="Cond" />
+        <node name="Fundef" />
+        <node name="Icm" />
+        <node name="Let" />
+        <node name="Prf" />
+        <node name="With2" />
+      </travuser>
+      <travsons>
+      </travsons>
+      <travnone>
+      </travnone>
+      <traverror>
+      </traverror>
+    </traversal>
+    <traversal id="EMSR" name="Static Reuse" default="sons" include="staticreuse.h" >
+      <travuser>
         <node name="Prf" />
       </travuser>
       <travsons>
