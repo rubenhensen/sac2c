@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.23  2003/09/17 12:34:25  sbs
+# type_statistics.o added
+#
 # Revision 3.22  2003/09/09 12:58:38  sbs
 # -I. added
 #
@@ -71,7 +74,7 @@ INCS=-I../global -I../tree -I../../inc -I../print -I../modules -I../optimize \
 all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o \
      new_typecheck.o new_types.o user_types.o create_wrappers.o \
      ssi.o sig_deps.o ct_basic.o ct_fun.o ct_prf.o ct_with.o type_errors.o \
-     specialize.o new2old.o create_wrapper_code.o
+     specialize.o new2old.o create_wrapper_code.o type_statistics.o
 
 
 #

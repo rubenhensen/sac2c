@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.73  2003/09/17 12:34:55  sbs
+# type_statistics.o added
+#
 # Revision 3.72  2003/08/18 11:28:48  sbs
 # src/optimize/SelectionPropagation.o is indeed linked now as well 8-((
 #
@@ -160,7 +163,7 @@ TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/ct_basic.o src/typecheck/ct_fun.o \
            src/typecheck/ct_with.o src/typecheck/type_errors.o \
            src/typecheck/specialize.o src/typecheck/new2old.o \
-           src/typecheck/create_wrapper_code.o
+           src/typecheck/create_wrapper_code.o src/typecheck/type_statistics.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/generatemasks.o src/optimize/DeadCodeRemoval.o \
           src/optimize/DeadFunctionRemoval.o src/optimize/freemasks.o \
