@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.104  1998/03/27 18:37:16  dkr
+ * WLproj renamed in WLstride
+ * WLPROJ... renamed in WLSTRIDE
+ *
  * Revision 1.103  1998/03/26 18:05:43  srs
  * added NWITH_NO_CHANCE
  *
@@ -2336,7 +2340,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
  ***
  ***  sons:
  ***
- ***    node*    CONTENTS  (0)     (N_WLblock, N_WLublock, N_WLproj)
+ ***    node*    CONTENTS  (0)     (N_WLblock, N_WLublock, N_WLstride)
  ***    node*    NEXT      (0)     (N_WLseg)
  ***
  ***  permanent attributes:
@@ -2380,7 +2384,7 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***  sons:
  ***
  ***    node*    NEXTDIM   (0)    (N_WLblock)
- ***    node*    CONTENTS  (0)    (N_WLublock, N_WLproj)
+ ***    node*    CONTENTS  (0)    (N_WLublock, N_WLstride)
  ***    node*    NEXT      (0)    (N_WLblock)
  ***
  ***  permanent attributes:
@@ -2421,7 +2425,7 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
  ***  sons:
  ***
  ***    node*    NEXTDIM   (0)    (N_WLublock)
- ***    node*    CONTENTS  (0)    (N_WLproj)
+ ***    node*    CONTENTS  (0)    (N_WLstride)
  ***    node*    NEXT      (0)    (N_WLublock)
  ***
  ***  permanent attributes:
@@ -2457,12 +2461,12 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
 /*--------------------------------------------------------------------------*/
 
 /***
- *** N_WLproj :
+ *** N_WLstride :
  ***
  ***  sons:
  ***
  ***    node*    CONTENTS  (0)    (N_WLgrid)
- ***    node*    NEXT      (0)    (N_WLproj)
+ ***    node*    NEXT      (0)    (N_WLstride)
  ***
  ***  permanent attributes:
  ***
@@ -2480,20 +2484,20 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
  ***
  ***/
 
-extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
-                         int unrolling, node *contents, node *next);
+extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
+                           int unrolling, node *contents, node *next);
 
-#define WLPROJ_LEVEL(n) (n->lineno)
-#define WLPROJ_DIM(n) (WLNODE_DIM (n))
-#define WLPROJ_BOUND1(n) (WLNODE_BOUND1 (n))
-#define WLPROJ_BOUND2(n) (WLNODE_BOUND2 (n))
-#define WLPROJ_STEP(n) (WLNODE_STEP (n))
-#define WLPROJ_UNROLLING(n) (n->info.prf_dec.tag)
-#define WLPROJ_CONTENTS(n) (n->node[0])
-#define WLPROJ_NEXT(n) (WLNODE_NEXT (n))
+#define WLSTRIDE_LEVEL(n) (n->lineno)
+#define WLSTRIDE_DIM(n) (WLNODE_DIM (n))
+#define WLSTRIDE_BOUND1(n) (WLNODE_BOUND1 (n))
+#define WLSTRIDE_BOUND2(n) (WLNODE_BOUND2 (n))
+#define WLSTRIDE_STEP(n) (WLNODE_STEP (n))
+#define WLSTRIDE_UNROLLING(n) (n->info.prf_dec.tag)
+#define WLSTRIDE_CONTENTS(n) (n->node[0])
+#define WLSTRIDE_NEXT(n) (WLNODE_NEXT (n))
 
-#define WLPROJ_PART(n) (n->node[5])
-#define WLPROJ_MODIFIED(n) (n->info.prf_dec.tc)
+#define WLSTRIDE_PART(n) (n->node[5])
+#define WLSTRIDE_MODIFIED(n) (n->info.prf_dec.tc)
 
 /*--------------------------------------------------------------------------*/
 
@@ -2502,7 +2506,7 @@ extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  sons:
  ***
- ***    node*    NEXTDIM   (0)    (N_WLblock, N_WLublock, N_WLproj)
+ ***    node*    NEXTDIM   (0)    (N_WLblock, N_WLublock, N_WLstride)
  ***    node*    NEXT      (0)    (N_WLgrid)
  ***
  ***  permanent attributes:
