@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.81  1995/08/15 11:58:55  cg
+ * Revision 1.82  1995/08/15 13:53:10  hw
+ * primitive function genarray and modarray inserted
+ *
+ * Revision 1.81  1995/08/15  11:58:55  cg
  * sib-grammar extended for specification of implicit definitions of
  * implicit and/or unique types.
  *
@@ -2009,6 +2012,14 @@ triop : ROTATE
       | CAT
          { $$=MakeNode(N_prf);
            $$->info.prf=F_cat;
+         }
+      | MODARRAY
+         { $$=MakeNode(N_prf);
+           $$->info.prf=F_modarray;
+         }
+      | GENARRAY
+         { $$=MakeNode(N_prf);
+           $$->info.prf=F_genarray;
          }
        ;
 
