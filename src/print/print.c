@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.126  2002/10/21 17:43:13  sah
+ * fixed missing { [ when printing index vector in PrintSetWL
+ *
  * Revision 3.125  2002/10/18 13:32:50  sbs
  * accesses to ID_ATTRIB replaced by FLAGS.
  * Function PrintFlag added
@@ -2682,7 +2685,7 @@ PrintSetWL (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintSetWL");
 
-    if (NODE_TYPE (arg_node) == N_exprs) {
+    if (NODE_TYPE (SETWL_IDS (arg_node)) == N_exprs) {
         fprintf (outfile, "{ [");
         Trav (SETWL_IDS (arg_node), arg_info);
         fprintf (outfile, "] -> ");
