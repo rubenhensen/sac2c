@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.207  1998/05/12 13:19:19  cg
+ * added function TCvardec for type_tab
+ *
  * Revision 1.206  1998/05/12 11:26:08  dkr
  * added SPMDLiftLet, SPMDLiftNwithid
  *
@@ -751,7 +754,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        CSEfundef, DFRfundef, TravSons, TravSons, TravSons, SPMDLiftFundef, TravSons,
        TravSons, WLTRAFundef, GSCfundef, TravSons, TravSons, 3),
 
-  NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TravSons, OPTvardec,
+  NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TCvardec, OPTvardec,
        DCRvardec, TravSons, FreeVardec, TravSons, RCvardec, COMPVardec, TravSons, DupDec,
        INLvardec, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrintVardec,
        TravSons, TravSons, TravSons, ANAvardec, TravSons, TravSons, UNQvardec, TravSons,
