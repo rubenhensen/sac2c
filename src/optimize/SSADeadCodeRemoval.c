@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2004/10/15 12:43:43  ktr
+ * COND nodes with two empty branches are no longer removed as they are still
+ * needed in order to annotate reference counting instructions for a
+ * remaining funcond.
+ * NOTE: This is not problematic as the representation of conditionals in
+ * FUN form always consists of a COND and a FUNCOND.
+ *
  * Revision 1.23  2004/08/08 13:48:41  ktr
  * Fixed bug #43: accu() can never be removed by DCR.
  *
@@ -191,7 +198,6 @@ static ids *SSADCRrightids (ids *arg_ids, info *arg_info);
 
 /* helper functions for local use */
 static void SSADCRInitAvisFlags (node *fundef);
-static bool SSADCRCondIsEmpty (node *cond);
 
 /******************************************************************************
  *
@@ -226,46 +232,6 @@ SSADCRInitAvisFlags (node *fundef)
     }
 
     DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   bool SSADCRCondIsEmpty(node *cond)
- *
- * description:
- *   checks if conditional "cond" is empty, that means then and else blocks
- *   contain no assignments or are missing.
- *
- *****************************************************************************/
-static bool
-SSADCRCondIsEmpty (node *cond)
-{
-    bool result;
-
-    DBUG_ENTER ("SSADCRCondIsEmpty");
-
-    result = TRUE;
-
-    /* then part */
-    if (COND_THEN (cond) != NULL) {
-        if (BLOCK_INSTR (COND_THEN (cond)) != NULL) {
-            if (NODE_TYPE (BLOCK_INSTR (COND_THEN (cond))) != N_empty) {
-                result = FALSE;
-            }
-        }
-    }
-
-    /* else part */
-    if (COND_ELSE (cond) != NULL) {
-        if (BLOCK_INSTR (COND_ELSE (cond)) != NULL) {
-            if (NODE_TYPE (BLOCK_INSTR (COND_ELSE (cond))) != N_empty) {
-                result = FALSE;
-            }
-        }
-    }
-
-    DBUG_RETURN (result);
 }
 
 /* traversal fundefs for SSADeadCodeRemoval */
@@ -605,9 +571,7 @@ SSADCRid (node *arg_node, info *arg_info)
  *   node *SSADCRcond(node *arg_node , info *arg_info)
  *
  * description:
- *  traverses both conditional blocks. removes whole conditional if both
- *  parts are empty else traverse condition.
- *
+ *  traverses both conditional blocks.
  *
  *****************************************************************************/
 node *
@@ -627,19 +591,13 @@ SSADCRcond (node *arg_node, info *arg_info)
         COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
     }
 
-    if ((SSADCRCondIsEmpty (arg_node)) /*&& (COND_COND(arg_node) == NULL)*/) {
-        /* remove whole conditional */
+    /* traverse condition */
+    DBUG_ASSERT ((COND_COND (arg_node) != NULL), "conditional without condition");
 
-        arg_node = FreeNode (arg_node);
-        INFO_SSADCR_REMASSIGN (arg_info) = TRUE;
-    } else {
-        /* traverse condition */
-        DBUG_ASSERT ((COND_COND (arg_node) != NULL), "conditional without condition");
+    COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
 
-        COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
+    INFO_SSADCR_REMASSIGN (arg_info) = FALSE;
 
-        INFO_SSADCR_REMASSIGN (arg_info) = FALSE;
-    }
     DBUG_RETURN (arg_node);
 }
 
