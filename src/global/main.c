@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.38  1995/04/05 17:36:39  sbs
+ * Revision 1.39  1995/04/10 11:19:36  sbs
+ * options I,L,O & g included
+ *
+ * Revision 1.38  1995/04/05  17:36:39  sbs
  * adapted to new FindFile
  *
  * Revision 1.37  1995/04/05  16:18:41  sbs
@@ -162,12 +165,40 @@ MAIN
     char outfilename[MAX_FILE_NAME];
     char cfilename[MAX_FILE_NAME];
     char cccallstr[MAX_PATH_LEN];
+    char ccflagsstr[MAX_FILE_NAME] = "";
 
     malloc_debug (0);
     strcpy (prgname, argv[0]);
     strcpy (filename, "stdin"); /*default value */
 
-    OPT ARG 'h':
+    /* First, we scan the given options...
+     */
+
+    OPT ARG 'I' : PARM
+    {
+        AppendPath (MODDEC_PATH, *argv);
+    }
+    NEXTOPT
+    ARG 'L' : PARM
+    {
+        AppendPath (MODIMP_PATH, *argv);
+    }
+    NEXTOPT
+    ARG 'O' : PARM
+    {
+        switch (**argv) {
+        case '1':
+            strcat (ccflagsstr, "-O1 ");
+            break;
+        case '2':
+            strcat (ccflagsstr, "-O2 ");
+            break;
+        default:
+            ERROR1 (("unknown optimize parameter \"%s\"\n", *argv));
+        }
+    }
+    NEXTOPT
+    ARG 'h':
     {
         usage (prgname);
         exit (0);
@@ -207,6 +238,10 @@ MAIN
     {
         Ccodeonly = 1;
     }
+    ARG 'g':
+    {
+        strcat (ccflagsstr, "-g ");
+    }
     ARG 's':
     {
         silent = 1;
@@ -239,7 +274,7 @@ MAIN
     }
     ENDOPT
 
-    /* First, we set our search paths for the source program, modul declarations,
+    /* Now, we set our search paths for the source program, modul declarations,
      * and modul implementations...
      */
 
@@ -308,8 +343,8 @@ MAIN
 
     if (!Ccodeonly) {
         fclose (outfile);
-        sprintf (cccallstr, "gcc -g -Wall -I $RCSROOT/src/compile/ -o %s %s %s",
-                 outfilename, cfilename, GenLinkerList ());
+        sprintf (cccallstr, "gcc %s-Wall -I $RCSROOT/src/compile/ -o %s %s %s",
+                 ccflagsstr, outfilename, cfilename, GenLinkerList ());
         NOTE (("%s\n", cccallstr));
         system (cccallstr);
     }

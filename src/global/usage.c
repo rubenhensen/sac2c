@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/04/05 15:52:05  sbs
+ * Revision 1.10  1995/04/10 11:19:36  sbs
+ * options I,L,O & g included
+ *
+ * Revision 1.9  1995/04/05  15:52:05  sbs
  * bug fixed
  *
  * Revision 1.8  1995/04/05  15:50:24  sbs
@@ -59,6 +62,10 @@ usage (char *prg_name)
     printf ("\t -noOPT \t\tno optimizations\n");
     printf ("\t -noCF  \t\tno constant folding\n");
     printf ("\t -noDCR \t\tno dead code removal\n");
+
+    printf ("\noptions handed to the C-compiler:\n");
+    printf ("\t -g \t\t\tinclude debug information\n");
+    printf ("\t -O[12] \t\tC-compiler level of optimization\n");
 
     printf ("\nenvironment variables:\n");
     printf ("\t SAC_PATH\t\tsearch paths for program source\n");
