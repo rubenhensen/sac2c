@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.149  2004/12/13 18:45:45  ktr
+ * works with WITHID containing of N_id and N_exprs of N_id now.
+ *
  * Revision 3.148  2004/12/11 14:47:26  ktr
  * some bugfixes
  *
@@ -938,32 +941,6 @@ COMPgetFoldCode (node *fundef)
     ASSIGN_NEXT (tmp) = FREEdoFreeNode (ASSIGN_NEXT (tmp));
 
     DBUG_RETURN (fold_code);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn  node *GetIndexIds( node *index_ids, int dim)
- *
- * @brief  Returns the index-ids for dimension 'dim' found in 'index_ids'.
- *
- * @param  index_ids  A vector of index-ids (e.g. NWITHID_IDS(...)) containing
- *                    at least 'dim' elements.
- *
- ******************************************************************************/
-
-static node *
-GetIndexIds (node *index_ids, int dim)
-{
-    int i;
-
-    DBUG_ENTER ("GetIndexIds");
-
-    for (i = 0; i < dim; i++) {
-        DBUG_ASSERT ((index_ids != NULL), "not enough ids found");
-        index_ids = IDS_NEXT (index_ids);
-    }
-
-    DBUG_RETURN (index_ids);
 }
 
 static /* forward declaration */
@@ -5129,9 +5106,9 @@ MakeIcmArgs_WL_LOOP1 (node *arg_node)
     args = TBmakeExprs (
       TBmakeNum (dim),
       TBmakeExprs (
-        DUPdupIdsIdNt (WITH2_VEC (wlnode)),
+        DUPdupIdNt (WITH2_VEC (wlnode)),
         TBmakeExprs (
-          DUPdupIdsIdNt (GetIndexIds (WITH2_IDS (wlnode), dim)),
+          DUPdupIdNt (TCgetNthExpr (dim, WITH2_IDS (wlnode))),
           TBmakeExprs (WLBnodeOrIntMakeIndex (NODE_TYPE (arg_node),
                                               WLNODE_GET_ADDR (arg_node, BOUND1), dim,
                                               wlids),
@@ -5186,7 +5163,7 @@ MakeIcmArgs_WL_OP1 (node *arg_node, node *_ids)
 
     args
       = MakeTypeArgs (IDS_NAME (_ids), IDS_TYPE (_ids), FALSE, TRUE, FALSE,
-                      TBmakeExprs (DUPdupIdsIdNt (WITH2_VEC (wlnode)),
+                      TBmakeExprs (DUPdupIdNt (WITH2_VEC (wlnode)),
                                    TBmakeExprs (TBmakeNum (WITH2_DIMS (wlnode)), NULL)));
 
     DBUG_RETURN (args);
@@ -5222,9 +5199,10 @@ MakeIcmArgs_WL_OP2 (node *arg_node, node *_ids)
 
     withid_ids = WITH2_IDS (wlnode);
     while (withid_ids != NULL) {
-        last_arg = EXPRS_NEXT (last_arg) = TBmakeExprs (DUPdupIdsIdNt (withid_ids), NULL);
+        last_arg = EXPRS_NEXT (last_arg)
+          = TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (withid_ids)), NULL);
         num_args--;
-        withid_ids = IDS_NEXT (withid_ids);
+        withid_ids = EXPRS_NEXT (withid_ids);
     }
     DBUG_ASSERT ((num_args == 0), "wrong number of ids in WITHID_IDS found!");
 
@@ -5617,7 +5595,7 @@ COMPwith2 (node *arg_node, info *arg_info)
               = TCmakeAssignIcm1 ("WL_OFFSET",
                                   MakeTypeArgs (IDS_NAME (tmp_ids), IDS_TYPE (tmp_ids),
                                                 FALSE, TRUE, FALSE,
-                                                TBmakeExprs (DUPdupIdsIdNt (
+                                                TBmakeExprs (DUPdupIdNt (
                                                                WITH2_VEC (wlnode)),
                                                              TBmakeExprs (TBmakeNum (
                                                                             WITH2_DIMS (
@@ -5629,7 +5607,7 @@ COMPwith2 (node *arg_node, info *arg_info)
               = TCmakeAssignIcm1 ("WL_OFFSET_SHAPE_FACTOR",
                                   MakeTypeArgs (IDS_NAME (tmp_ids), IDS_TYPE (tmp_ids),
                                                 FALSE, TRUE, FALSE,
-                                                TBmakeExprs (DUPdupIdsIdNt (
+                                                TBmakeExprs (DUPdupIdNt (
                                                                WITH2_VEC (wlnode)),
                                                              TBmakeExprs (TBmakeNum (
                                                                             WITH2_DIMS (
@@ -6554,7 +6532,7 @@ COMPwlgridx (node *arg_node, info *arg_info)
 
     if ((WITHID_VECNEEDED (WITH2_WITHID (wlnode))) && (!WLGRIDX_ISNOOP (arg_node))
         && ((WLGRIDX_CODE (arg_node) != NULL) || (WLGRIDX_NEXTDIM (arg_node) != NULL))) {
-        DBUG_PRINT ("COMP", ("IV %s is built! :(", IDS_NAME (WITH2_VEC (wlnode))));
+        DBUG_PRINT ("COMP", ("IV %s is built! :(", ID_NAME (WITH2_VEC (wlnode))));
         node_icms = TCmakeAssignIcm1 ("WL_SET_IDXVEC", MakeIcmArgs_WL_LOOP1 (arg_node),
                                       node_icms);
     }
