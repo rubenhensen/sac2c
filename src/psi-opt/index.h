@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 2.5  2000/07/11 15:50:01  dkr
+ * function IndexVectorElimination added
+ *
  * Revision 2.4  2000/05/29 17:29:58  dkr
  * functions for old with-loop removed
  *
@@ -41,11 +45,13 @@
  *
  * Revision 1.1  1995/06/02  10:06:56  sbs
  * Initial revision
+ *
  */
 
 #ifndef sac_index_h
-
 #define sac_index_h
+
+extern node *IndexVectorElimination (node *syntax_tree);
 
 extern char *IdxChangeId (char *varname, types *type);
 
