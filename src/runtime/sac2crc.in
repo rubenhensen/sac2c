@@ -20,12 +20,11 @@ target default:
  
 CC               :=  "@CC@"
 CCFLAGS          :=  "@RCCCFLAGS@"
-                   /*  "-D__EXTENSIONS__ -D__STDC__=0" */
 CCDIR            :=  "-I$SACBASE/runtime/ "
                      "-L$SACBASE/runtime/"
 LDFLAGS          :=  "@RCLDFLAGS@"
 CCLINK           :=  ""    
-CCMTLINK         :=  -lpthread
+CCMTLINK         :=  "@CCMTLINK@"
  
 OPT_O0           :=  "@OPT_O0@"
 OPT_O1           :=  "@OPT_O1@"

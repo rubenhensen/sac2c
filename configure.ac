@@ -1,5 +1,10 @@
 dnl
 dnl $Log$
+dnl Revision 1.24  2003/04/25 18:28:04  sah
+dnl added flag CCMTLINK and removed NEED_REENTRANT
+dnl as now everything should be handeled right by
+dnl gcc -pthread flag and dec cc -pthread flag
+dnl
 dnl Revision 1.23  2003/04/25 14:39:12  sbs
 dnl -Dlint added on linux. Required for the yacc template to avoid nasty
 dnl warnings.
@@ -123,7 +128,7 @@ AC_MSG_RESULT(no)
 SUNC=no
 )
 
-dnl check whether its comapcs (or dec) cc
+dnl check whether its compaqs (or dec) cc
 AC_MSG_CHECKING(whether cc is a Compaq/DEC C compiler)
 AC_TRY_COMPILE(,
 [#ifndef __DECC
@@ -255,24 +260,6 @@ case "$target_os" in
               AC_SUBST(DISABLE_PHM, yes)
 esac
 
-dnl check if we need to define _REENTRANT
-dnl or if its defined in pthreads.d
-AC_MSG_CHECKING(for need of _REENTRANT)
-AC_EGREP_CPP(yes, 
-[#include <pthread.h>
-#ifdef _REENTRANT
-no
-#else
-yes
-#endif
-], need_reentrant_definition=yes, need_reentrant_definition=no)
-if [ test $need_reentrant_definition = yes ]; then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(NEED_REENTRANT, 1, set to 1 if pthread.h does not define _REENTRANT)
-else
-  AC_MSG_RESULT(no)
-fi
-
 dnl check if printf generates leading 0x for pointers
 AC_MSG_CHECKING(for 0x prefix when printing pointers)
 AC_EGREP_CPP(0x0*,
@@ -346,6 +333,7 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(PDCCFLAGS, ["-ansi -Wall -g -O3"])
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
+  AC_SUBST(CCMTLINK, ["-pthread"])
   AC_MSG_RESULT([gcc settings])
 elif [ test "$SUNC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -359,6 +347,7 @@ elif [ test "$SUNC" = yes ]; then
   AC_SUBST(PDCCFLAGS, ["-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4"])
   AC_SUBST(DEPSFLAG, ["-xM"])
   AC_SUBST(CPPFILE, ["cc -E -C -x c"])
+  AC_SUBST(CCMTLINK, ["-lpthread"])
   AC_MSG_RESULT([Sun cc settings])
 elif [ test "$DECC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -366,12 +355,13 @@ elif [ test "$DECC" = yes ]; then
   AC_SUBST(OPT_O2, [-O2])
   AC_SUBST(OPT_O3, [-O3])
   AC_SUBST(OPT_g, [-g])
-  AC_SUBST(RCLDFLAGS, ["-pthread"])
+  AC_SUBST(RCLDFLAGS, [""])
   AC_SUBST(RCCCFLAGS, [""])
   AC_SUBST(MKCCFLAGS, ["-g"])
   AC_SUBST(PDCCFLAGS, ["-g3"])
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["cc -E -C -x c"])
+  AC_SUBST(CCMTLINK, ["-pthread"])
   AC_MSG_RESULT([Compaq/DEC cc settings])
 elif [ test "$MACC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -385,6 +375,7 @@ elif [ test "$MACC" = yes ]; then
   AC_SUBST(PDCCFLAGS, ["-g3"])
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["cpp -C"])
+  AC_SUBST(CCMTLINK, [""])
   AC_MSG_RESULT([Apple cc settings])
 else
   AC_SUBST(OPT_O0, [""])
@@ -398,6 +389,7 @@ else
   AC_SUBST(PDCCFLAGS, [""])
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["cpp -C"])
+  AC_SUBST(CCMTLINK, [""])
   AC_MSG_RESULT([none found])
 fi   
 

@@ -60,9 +60,6 @@
 /* set to 1 if printf does not print a leading 0x in front of pointers */
 #undef NEED_PTR_PREFIX
 
-/* set to 1 if pthread.h does not define _REENTRANT */
-#undef NEED_REENTRANT
-
 /* set to the os type */
 #undef OS
 
