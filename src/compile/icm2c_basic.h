@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2003/09/30 19:29:41  dkr
+ * Set_Shape() added
+ *
  * Revision 3.16  2003/09/25 10:58:18  dkr
  * no changes done
  *
@@ -62,15 +65,15 @@
 
 extern int print_comment; /* bool */
 
-#define ASSURE_TYPE_ASS(cond_ass, msg_ass)                                               \
+#define ASSURE_TYPE_ASS(cond_expr, msg_expr)                                             \
     INDENT;                                                                              \
-    ASSURE_TYPE_EXPR (cond_ass, msg_ass);                                                \
+    ASSURE_TYPE_EXPR (cond_expr, msg_expr);                                              \
     fprintf (outfile, ";\n")
 
-#define ASSURE_TYPE_EXPR(cond_ass, msg_ass)                                              \
+#define ASSURE_TYPE_EXPR(cond_expr, msg_expr)                                            \
     fprintf (outfile, "SAC_ASSURE_TYPE( (");                                             \
-    cond_ass fprintf (outfile, "), (\"");                                                \
-    msg_ass fprintf (outfile, "\"))")
+    cond_expr fprintf (outfile, "), (\"");                                               \
+    msg_expr fprintf (outfile, "\"))")
 
 #define BLOCK(ass)                                                                       \
     INDENT;                                                                              \
@@ -101,15 +104,13 @@ extern int print_comment; /* bool */
 #define FOR_LOOP_VARDECS(vardecs, init, cond, post, ass)                                 \
     BLOCK_VARDECS (vardecs, FOR_LOOP (init, cond, post, ass);)
 
-#define FOR_LOOP_INC(idx, start, stop, ass)                                              \
-    FOR_LOOP (idx fprintf (outfile, " = "); start, idx fprintf (outfile, " < ");         \
-              stop, idx fprintf (outfile, "++");, ass)
+#define FOR_LOOP_INC(idx_var, start, stop, ass)                                          \
+    FOR_LOOP (idx_var fprintf (outfile, " = "); start, idx_var fprintf (outfile, " < "); \
+              stop, idx_var fprintf (outfile, "++");, ass)
 
-#define FOR_LOOP_INC_VARDEC(idx, start, stop, ass)                                       \
-    FOR_LOOP_VARDECS (fprintf (outfile, "int "); idx fprintf (outfile, ";");             \
-                      , idx fprintf (outfile, " = ");                                    \
-                      start, idx fprintf (outfile, " < ");                               \
-                      stop, idx fprintf (outfile, "++");, ass)
+#define FOR_LOOP_INC_VARDEC(idx_var, start, stop, ass)                                   \
+    BLOCK_VARDECS (fprintf (outfile, "int "); idx_var fprintf (outfile, ";");            \
+                   , FOR_LOOP_INC (idx_var, start, stop, ass);)
 
 #define COND1(cond, ass)                                                                 \
     INDENT;                                                                              \
@@ -132,10 +133,10 @@ extern int print_comment; /* bool */
              to_NT);                                                                     \
     set_ass fprintf (outfile, ";\n")
 
-#define SET_SHAPE_AUD(to_NT, idx_ass, set_ass)                                           \
+#define SET_SHAPE_AUD(to_NT, idx_expr, set_ass)                                          \
     INDENT;                                                                              \
     fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, ", to_NT);                               \
-    idx_ass fprintf (outfile, ") = ");                                                   \
+    idx_expr fprintf (outfile, ") = ");                                                  \
     set_ass fprintf (outfile, ";\n")
 
 #define SET_SHAPE_AUD__NUM(to_NT, idx_num, set_ass)                                      \
@@ -150,35 +151,47 @@ extern int print_comment; /* bool */
     fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_NT, idx_num);                \
     set_ass fprintf (outfile, ";\n")
 
-#define SET_SHAPES_AUD(to_NT, idx_ass, idx_start_ass, idx_stop_ass, prolog_ass, set_ass) \
-    FOR_LOOP_INC_VARDEC (idx_ass, idx_start_ass, idx_stop_ass,                           \
-                         prolog_ass SET_SHAPE_AUD (to_NT, idx_ass, set_ass);)
+#define SET_SHAPES_AUD(to_NT, idx_var, idx_start_expr, idx_stop_expr, prolog_ass,        \
+                       set_ass)                                                          \
+    FOR_LOOP_INC (idx_var, idx_start_expr, idx_stop_expr,                                \
+                  prolog_ass SET_SHAPE_AUD (to_NT, idx_var, set_ass);)
 
-#define SET_SHAPES_AUD__NUM(to_NT, idx, idx_start, idx_stop, prolog_ass, set_ass)        \
+#define SET_SHAPES_AUD__NUM(to_NT, idx_var, idx_start, idx_stop, prolog_ass, set_ass)    \
     DBUG_ASSERT ((idx_start >= 0), "illegal dimension found!");                          \
     DBUG_ASSERT ((idx_stop >= 0), "illegal dimension found!");                           \
-    for (idx = idx_start; idx < idx_stop; i++) {                                         \
-        prolog_ass SET_SHAPE_AUD__NUM (to_NT, idx, set_ass);                             \
+    for (idx_var = idx_start; idx_var < idx_stop; i++) {                                 \
+        prolog_ass SET_SHAPE_AUD__NUM (to_NT, idx_var, set_ass);                         \
     }
 
-#define SET_SHAPES_AUD__XXX(to_NT, idx, idx_ass2, idx_start, idx_start_ass2, idx_stop,   \
-                            idx_stop_ass2, prolog_ass, set_ass, set_ass2)                \
+#define SET_SHAPES_AUD__XXX(to_NT, idx_var, idx_var2, idx_start, idx_start_expr2,        \
+                            idx_stop, idx_stop_expr2, prolog_ass, set_ass, set_ass2)     \
     if ((idx_start >= 0) && (idx_stop >= 0)) {                                           \
-        for (idx = idx_start; idx < idx_stop; i++) {                                     \
-            prolog_ass SET_SHAPE_AUD__NUM (to_NT, idx, set_ass);                         \
-        }                                                                                \
+        SET_SHAPES_AUD__NUM (to_NT, idx_var, idx_start, idx_stop, prolog_ass, set_ass);  \
     } else {                                                                             \
-        FOR_LOOP_INC_VARDEC (idx_ass2, idx_start_ass2, idx_stop_ass2,                    \
-                             prolog_ass SET_SHAPE_AUD (to_NT, idx_ass2, set_ass2););     \
+        SET_SHAPES_AUD (to_NT, idx_var2, idx_start_expr2, idx_stop_expr2, prolog_ass,    \
+                        set_ass2);                                                       \
     }
 
-#define SET_SHAPES_AKD(to_NT, idx, idx_start, idx_stop, prolog_ass, set_ass)             \
+#define SET_SHAPES_AKD(to_NT, idx_var, idx_start, idx_stop, prolog_ass, set_ass)         \
     DBUG_ASSERT ((idx_stop >= 0), "illegal dimension found!");                           \
-    for (idx = idx_start; idx < idx_stop; i++) {                                         \
-        prolog_ass SET_SHAPE_AKD (to_NT, idx, set_ass);                                  \
+    for (idx_var = idx_start; idx_var < idx_stop; i++) {                                 \
+        prolog_ass SET_SHAPE_AKD (to_NT, idx_var, set_ass);                              \
     }
 
 #ifdef TAGGED_ARRAYS
+
+extern void Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,
+                          void (*shp1_size_fun) (void *),
+                          void (*shp1_read_fun) (void *, char *, int), void *shp2,
+                          int shp2_size, void (*shp2_size_fun) (void *),
+                          void (*shp2_read_fun) (void *, char *, int));
+
+extern void Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
+                       void (*shp1_size_fun) (void *), void (*shp1_prod_fun) (void *),
+                       void (*shp1_read_fun) (void *, char *, int), void *shp2,
+                       int shp2_size, void (*shp2_size_fun) (void *),
+                       void (*shp2_prod_fun) (void *),
+                       void (*shp2_read_fun) (void *, char *, int));
 
 extern void ReadId (void *var_NT, char *idx_str, int idx);
 
@@ -186,7 +199,9 @@ extern void ReadScalar (void *scl, char *idx_str, int idx);
 
 extern void ReadScalar_Check (void *scl, char *idx_str, int idx);
 
-extern void ReadConstArray (void *v, char *idx_str, int idx);
+extern void ReadConstArray_Str (void *v, char *idx_str, int idx);
+
+extern void ReadConstArray_Num (void *v, char *idx_str, int idx);
 
 extern void DimId (void *var_NT);
 
