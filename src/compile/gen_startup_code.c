@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2004/11/27 02:15:40  sah
+ * fixed it.
+ *
  * Revision 3.42  2004/11/26 12:01:16  cg
  * Brushed function symbols.
  *
@@ -98,11 +101,11 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "NameTuplesUtils.h"
-#include "precompile.h"
 #include "icm2c_std.h"
 #include "print.h"
 #include "gen_startup_code.h"
 #include "internal_lib.h"
+#include "renameidentifiers.h"
 
 /******************************************************************************
  *
@@ -770,7 +773,8 @@ GSCprintMainBegin ()
 
     DBUG_ENTER ("GSCprintMainBegin");
 
-    funname = PRECobjInitFunctionName (FALSE);
+    funname = RIDobjInitFunctionName (FALSE);
+    /* TODO: move the entire creation of objinitfun to gen startupcode ... */
 
     /* call init function for a c library - no command line available */
     if (global.genlib.c) {
