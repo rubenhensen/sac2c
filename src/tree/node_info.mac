@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.122  2003/08/19 17:22:13  ktr
+ * Added SPwithid and SPfundef for SelectionPropagation
+ *
  * Revision 3.121  2003/08/16 08:45:54  ktr
  * SelectionPropagation added. Must currently be activated with -dosp.
  *
@@ -1222,7 +1225,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        SSAILIfundef, COMP2Fundef, PREC2fundef, INSVDfundef, CRTWRPfundef, WLSfundef,
        PREC4fundef, TravSons, TravSons, NT2OTfundef, CWCfundef, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
+       TravSons, TravSons, TravSons, SPfundef, TravSons, TravSons, TravSons, 3),
 
   NIF (N_arg, "N_arg", TravSons, FltnArgs, PrintArg, TravSons, GNMarg, TravSons, TravSons,
        FreeArg, TravSons, RCarg, TravSons, TravSons, DupArg, TravSons, TravSons, TravSons,
@@ -1996,7 +1999,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, INSVDwithid, TravSons, TravSons, PREC4withid,
        TravSons, TravSons, NT2OTwithid, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, 0),
+       TravSons, SPwithid, TravSons, TravSons, TravSons, 0),
 
   NIF (N_Ngenerator, "N_Ngenerator", TravSons, FltnNgenerator, PrintNgenerator, TravSons,
        TravSons, TravSons, TravSons, FreeNGenerator, TravSons, RCNgen, TravSons, TravSons,
