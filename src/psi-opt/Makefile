@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.14  1997/11/05 11:35:21  dkr
+# *** empty log message ***
+#
 # Revision 1.13  1997/08/05 11:32:31  sbs
 # make deps done
 #
@@ -38,7 +41,6 @@
 #
 # Revision 1.1  1995/06/02  10:09:27  sbs
 # Initial revision
-#
 #
 #
 
