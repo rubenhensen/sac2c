@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.119  2004/08/02 16:19:50  ktr
+ * adjusted MakeSetShapeIcm to modified with-loop allocation in alloc.c
+ *
  * Revision 3.118  2004/07/31 21:31:43  ktr
  * fixed some master run warnings
  * scalar genarray/modarray withloops should work with emm now.
@@ -1753,19 +1756,45 @@ MakeSetShapeIcm (node *arg_node, ids *let_ids)
                 case F_genarray:
                     arg1 = PRF_ARG1 (arg_node);
                     arg2 = PRF_ARG2 (arg_node);
-                    /*
-                     * shape( genarray( a, b))
-                     * => ND_WL_GENARRAY__SHAPE_id
-                     */
-                    set_shape
-                      = MakeIcm1 ("ND_WL_GENARRAY__SHAPE_id",
-                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                FALSE, TRUE, FALSE,
-                                                MakeExprs (DupId_NT (arg1),
-                                                           MakeTypeArgs (ID_NAME (arg2),
-                                                                         ID_TYPE (arg2),
-                                                                         FALSE, TRUE,
-                                                                         FALSE, NULL))));
+                    switch (NODE_TYPE (arg1)) {
+                    case N_id:
+                        /*
+                         * shape( genarray( a, b))
+                         * => ND_WL_GENARRAY__SHAPE_id_id
+                         */
+                        set_shape
+                          = MakeIcm1 ("ND_WL_GENARRAY__SHAPE_id_id",
+                                      MakeTypeArgs (IDS_NAME (let_ids),
+                                                    IDS_TYPE (let_ids), FALSE, TRUE,
+                                                    FALSE,
+                                                    MakeExprs (DupId_NT (arg1),
+                                                               MakeTypeArgs (ID_NAME (
+                                                                               arg2),
+                                                                             ID_TYPE (
+                                                                               arg2),
+                                                                             FALSE, TRUE,
+                                                                             FALSE,
+                                                                             NULL))));
+                        break;
+                    case N_array:
+                        /*
+                         * shape( genarray( [...], b))
+                         * => ND_WL_GENARRAY__SHAPE_arr_id
+                         */
+                        set_shape
+                          = MakeIcm4 ("ND_WL_GENARRAY__SHAPE_arr_id",
+                                      MakeTypeArgs (IDS_NAME (let_ids),
+                                                    IDS_TYPE (let_ids), FALSE, TRUE,
+                                                    FALSE, NULL),
+                                      MakeSizeArg (arg1, TRUE),
+                                      DupExprs_NT (ARRAY_AELEMS (arg1)),
+                                      MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE,
+                                                    TRUE, FALSE, NULL));
+                        break;
+                    default:
+                        DBUG_ASSERT ((0), "Unrecognized shape descriptor!");
+                        break;
+                    }
 
                     break;
                 case F_shape:
@@ -1791,20 +1820,43 @@ MakeSetShapeIcm (node *arg_node, ids *let_ids)
 
         case F_cat_VxV:
             /*
-             * cat( [ a, ...], shape( b))
-             * => ND_WL_GENARRAY_SHAPE_arr
+             * cat( a, [...])
              */
             arg1 = PRF_ARG1 (arg_node);
             arg2 = PRF_ARG2 (arg_node);
 
-            set_shape
-              = MakeIcm4 ("ND_WL_GENARRAY__SHAPE_arr",
-                          MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
-                                        TRUE, FALSE, NULL),
-                          MakeSizeArg (arg1, TRUE), DupExprs_NT (ARRAY_AELEMS (arg1)),
-                          MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
-                                        FALSE, NULL));
+            DBUG_ASSERT (NODE_TYPE (arg2) == N_array, "Illegal node type!");
 
+            switch (NODE_TYPE (arg1)) {
+            case N_id:
+                /*
+                 * cat( a, [...])
+                 */
+                set_shape
+                  = MakeIcm4 ("ND_WL_GENARRAY__SHAPE_id_arr",
+                              MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
+                                            TRUE, FALSE, NULL),
+                              DupId_NT (arg1), MakeSizeArg (arg2, TRUE),
+                              DupExprs_NT (ARRAY_AELEMS (arg2)));
+                DBUG_ASSERT ((0), "Untested code!");
+                break;
+
+            case N_array:
+                /*
+                 * cat( [...], [...]
+                 */
+                set_shape
+                  = MakeIcm2 ("ND_SET__SHAPE_arr", DupIds_Id_NT (let_ids),
+                              MakeExprs (MakeNum (CountExprs (ARRAY_AELEMS (arg1))
+                                                  + CountExprs (ARRAY_AELEMS (arg2))),
+                                         AppendExprs (DupTree (ARRAY_AELEMS (arg1)),
+                                                      DupTree (ARRAY_AELEMS (arg2)))));
+                break;
+
+            default:
+                DBUG_ASSERT ((0), "Unrecognized shape descriptor");
+                break;
+            }
             break;
 
         default:
@@ -4058,19 +4110,21 @@ COMPPrfSuballoc (node *arg_node, info *arg_info)
 {
     ids *let_ids;
     node *ret_node;
+    shape_class_t sc;
 
     DBUG_ENTER ("COMPPrfSuballoc");
 
     let_ids = INFO_COMP_LASTIDS (arg_info);
+    sc = GetShapeClassFromTypes (IDS_TYPE (let_ids));
 
-    if (GetShapeDim (IDS_TYPE (let_ids)) == 0) {
+    if (sc == C_scl) {
         ret_node = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, MakeNum (0),
                                  MakeIcm2 ("ND_SET__SHAPE_arr", DupIds_Id_NT (let_ids),
                                            MakeNum (0)),
                                  NULL, NULL);
     } else {
-        DBUG_ASSERT ((0), "not yet implemented!");
-        ret_node = NULL;
+        ret_node = MakeAssignIcm2 ("WL_SUBALLOC", DupIds_Id_NT (let_ids),
+                                   DupId_NT (PRF_ARG1 (arg_node)), NULL);
     }
 
     DBUG_RETURN (ret_node);
@@ -6428,7 +6482,7 @@ COMPWith2 (node *arg_node, info *arg_info)
 
                     if (NODE_TYPE (shp) == N_id) {
                         set_shape_icm
-                          = MakeIcm1 ("ND_WL_GENARRAY__SHAPE_id",
+                          = MakeIcm1 ("ND_WL_GENARRAY__SHAPE_id_id",
                                       MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids),
                                                     FALSE, TRUE, FALSE,
                                                     MakeExprs (DupId_NT (shp),
@@ -6444,7 +6498,7 @@ COMPWith2 (node *arg_node, info *arg_info)
                                      "shape of genarray-WL is neither N_id nor N_array!");
 
                         set_shape_icm
-                          = MakeIcm4 ("ND_WL_GENARRAY__SHAPE_arr",
+                          = MakeIcm4 ("ND_WL_GENARRAY__SHAPE_arr_id",
                                       MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids),
                                                     FALSE, TRUE, FALSE, NULL),
                                       MakeSizeArg (shp, TRUE),
@@ -6465,7 +6519,7 @@ COMPWith2 (node *arg_node, info *arg_info)
 
                     if (NODE_TYPE (shp) == N_id) {
                         set_shape_icm
-                          = MakeIcm1 ("ND_WL_GENARRAY__SHAPE_id",
+                          = MakeIcm1 ("ND_WL_GENARRAY__SHAPE_id_id",
                                       MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids),
                                                     FALSE, TRUE, FALSE,
                                                     MakeExprs (DupId_NT (shp),
@@ -6481,7 +6535,7 @@ COMPWith2 (node *arg_node, info *arg_info)
                                      "shape of genarray-WL is neither N_id nor N_array!");
 
                         set_shape_icm
-                          = MakeIcm4 ("ND_WL_GENARRAY__SHAPE_arr",
+                          = MakeIcm4 ("ND_WL_GENARRAY__SHAPE_arr_id",
                                       MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids),
                                                     FALSE, TRUE, FALSE, NULL),
                                       MakeSizeArg (shp, TRUE),
@@ -7208,27 +7262,19 @@ COMPWLgridx (node *arg_node, info *arg_info)
                         code_rc_icms = MakeDecRcIcm (ID_NAME (cexpr), ID_TYPE (cexpr),
                                                      ID_REFCNT (cexpr), 1, NULL);
                     } else {
-                        if (GetShapeDim (ID_TYPE (cexpr)) == 0) {
-                            icm_name = "WL_ASSIGN";
-                            icm_args
-                              = AppendExprs (MakeTypeArgs (ID_NAME (cexpr),
-                                                           ID_TYPE (cexpr), FALSE, TRUE,
-                                                           FALSE,
-                                                           MakeIcmArgs_WL_OP2 (arg_node)),
-                                             MakeExprs (MakeId_Copy (
-                                                          GenericFun (0,
-                                                                      ID_TYPE (cexpr))),
-                                                        NULL));
-                            /*
-                             * we must decrement the RC of 'cexpr' (consumed argument)
-                             */
-                            code_rc_icms = MakeDecRcIcm (ID_NAME (cexpr), ID_TYPE (cexpr),
-                                                         1, 1, NULL);
-                        } else {
-                            icm_name = NULL;
-                            icm_args = NULL;
-                            code_rc_icms = NULL;
-                        }
+                        icm_name = "WL_EMM_ASSIGN";
+                        icm_args
+                          = AppendExprs (MakeTypeArgs (ID_NAME (cexpr), ID_TYPE (cexpr),
+                                                       FALSE, TRUE, FALSE,
+                                                       MakeIcmArgs_WL_OP2 (arg_node)),
+                                         MakeExprs (MakeId_Copy (
+                                                      GenericFun (0, ID_TYPE (cexpr))),
+                                                    MakeExprs (MakeId_Copy (
+                                                                 GenericFun (1,
+                                                                             ID_TYPE (
+                                                                               cexpr))),
+                                                               NULL)));
+                        code_rc_icms = NULL;
                     }
                     break;
 
