@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/04/08 12:50:48  bs
+ * The TSI is analysing withloops now.
+ *
  * Revision 2.2  1999/03/15 15:58:23  bs
  * access macros changed, declaration of TileSizeInference modified.
  *
@@ -30,6 +33,13 @@
 #ifndef _tile_size_inference_h
 
 #define _tile_size_inference_h
+
+#ifndef TRUE
+
+#define TRUE 1
+#define FALSE 0
+
+#endif
 
 extern node *TileSizeInference (node *arg_node);
 
