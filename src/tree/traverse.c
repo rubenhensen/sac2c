@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2004/10/05 13:52:10  sah
+ * added some more NEW_AST defines
+ *
  * Revision 3.84  2004/10/04 17:17:19  sah
  * redefined the subset of phases used in NEW_AST mode
  *
@@ -473,6 +476,9 @@ funtab *cdfg_tab = &cdfg_tab_rec;
 /*
  *  (8) free_tab
  */
+#ifdef NEW_AST
+#define FreeInfo TravError
+#endif /* NEW_AST */
 static funtab free_tab_rec = {{
 #define NIFfree(it_free) it_free
 #include "node_info.mac"
@@ -480,6 +486,9 @@ static funtab free_tab_rec = {{
                               NULL,
                               NULL};
 funtab *free_tab = &free_tab_rec;
+#ifdef NEW_AST
+#undef FreeInfo
+#endif /* NEW_AST */
 #ifndef NEW_AST
 /*
  *  (9) spmdemm_tab
@@ -1501,7 +1510,6 @@ static funtab ssawli_tab_rec = {{
                                 NULL};
 funtab *ssawli_tab = &ssawli_tab_rec;
 
-#ifndef NEW_AST
 /*
  *  (100) ssawlf_tab
  */
@@ -1512,7 +1520,7 @@ static funtab ssawlf_tab_rec = {{
                                 NULL,
                                 NULL};
 funtab *ssawlf_tab = &ssawlf_tab_rec;
-#endif /* NEW_AST */
+
 /*
  *  (101) ssaili_tab
  */
