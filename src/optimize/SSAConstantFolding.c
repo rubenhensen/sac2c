@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.45  2003/06/15 22:04:59  ktr
+ * result is now initialized
+ *
  * Revision 1.44  2003/06/13 09:26:15  ktr
  * Fixed bugs about missing calls of SHCopyShape
  *
@@ -766,6 +769,9 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
     shape *tmpshp, *idxshp, *tmpshp2;
 
     DBUG_ENTER ("SSACFStructOpWrapper");
+
+    /* initialize result */
+    result = NULL;
 
     /* tries to convert expr(especially arrays) into a structual constant */
     struc_co = SCOExpr2StructConstant (expr);
