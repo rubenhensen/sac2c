@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/07/03 15:32:41  dkr
+ * comments beautyfied
+ *
  * Revision 3.5  2002/07/02 14:04:34  dkr
  * SAC_BLOCK_BEGIN, SAC_BLOCK_END added
  *
@@ -45,31 +48,48 @@
  *
  *****************************************************************************/
 
-#ifndef _SAC_MISC_H
-#define _SAC_MISC_H
+#ifndef _SAC_MISC_H_
+#define _SAC_MISC_H_
 
 extern void SAC_String2Array (char *array, const char *string);
 
-/* handling of undefined ICMs */
+/******************************************************************************
+ *
+ * Miscellaneous ICMs
+ * ==================
+ *
+ * ICM_UNDEF()   : handling of undefined ICMs
+ *
+ * NOOP()        : noop ICM
+ * NOTHING()     : empty ICM
+ *
+ * BLOCK_BEGIN() : begin of new block
+ * BLOCK_END()   : end of new block
+ *
+ ******************************************************************************/
+
 #define SAC_ICM_UNDEF()                                                                  \
     _ICM_IS_UNDEFINED_ /* CC will report undefined symbol _ICM_IS_UNDEFINED_ */
 
-/* noop ICM */
 #define SAC_NOOP() /* noop */;
 
-/* empty ICM */
 #define SAC_NOTHING()
 
-/* block ICMs */
 #define SAC_BLOCK_BEGIN() {
 #define SAC_BLOCK_END() }
 
-/*
- * Macros used for compilation of do-loop
- */
+/******************************************************************************
+ *
+ * ICMs for do-loop
+ * ================
+ *
+ * ND_LABEL( label)
+ * ND_GOTO( label)
+ *
+ ******************************************************************************/
 
-#define SAC_ND_GOTO(label) goto label;
 #define SAC_ND_LABEL(label)                                                              \
     label:
+#define SAC_ND_GOTO(label) goto label;
 
-#endif /* _SAC_MISC_H */
+#endif /* _SAC_MISC_H_ */
