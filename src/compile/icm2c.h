@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/04/06 14:23:25  sbs
+ * Revision 1.8  1995/04/07 09:29:39  sbs
+ * ND_KS_ASSIGN_ARRAY( name, res) inserted
+ *
+ * Revision 1.7  1995/04/06  14:23:25  sbs
  * some bugs fixed
  *
  * Revision 1.6  1995/04/05  15:35:39  sbs
@@ -114,6 +117,10 @@
 #define ND_SET_DIM(name, num) ND_A_DIM (name) = num;
 
 #define ND_SET_SHAPE(name, dim, s) ND_A_SHAPE (name, dim) = s;
+
+#define ND_KS_ASSIGN_ARRAY(name, res)                                                    \
+    ND_A_RCP (res) = ND_A_RCP (name);                                                    \
+    ND_A_FIELD (res) = ND_A_FIELD (name);
 
 /*
  * Macros for primitve arithmetic operations:
