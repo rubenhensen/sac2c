@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2004/05/11 12:46:57  ktr
+ * Bug 35: COZip called with args of different shape!
+ * resolved. In ComputeGeneratorProperties only the prefix of
+ * shpc having the length of ubc is compared to ubc.
+ *
  * Revision 1.28  2004/04/14 10:33:06  sbs
  * bug 35 - errorneous wlgenerator property resolved
  *
@@ -821,7 +826,8 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
     node *lbe, *ube, *steps, *width;
     gen_prop_t res = GPT_unknown;
     bool const_bounds;
-    constant *lbc, *ubc, *shpc, *tmpc;
+    constant *lbc, *ubc, *shpc, *tmpc, *tmp;
+    shape *sh;
 
     DBUG_ENTER ("ComputeGeneratorProperties");
 
@@ -863,6 +869,21 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
              * we can do any better than GPT_unknown!
              */
             if (const_bounds && (shpc != NULL)) {
+                /**
+                 * In order to obtain be a full partition,
+                 * ubc must be a prefix of shpc,
+                 * all elements of lbc must be zero
+                 * and there must be not step vector
+                 */
+                sh = COGetShape (ubc);
+                tmp = COMakeConstantFromShape (sh);
+                tmpc = COTake (tmp, shpc);
+
+                tmp = COFreeConstant (tmp);
+                shpc = COFreeConstant (shpc);
+
+                shpc = tmpc;
+
                 tmpc = COEq (ubc, shpc);
                 if (COIsZero (lbc, TRUE) && COIsTrue (tmpc, TRUE)) {
                     if (steps == NULL) {
@@ -877,6 +898,14 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
             }
         }
     }
+
+    /* Clean up constants */
+    if (shpc != NULL)
+        shpc = COFreeConstant (shpc);
+
+    ubc = COFreeConstant (ubc);
+    lbc = COFreeConstant (lbc);
+
     DBUG_PRINT ("SSAWLT", ("generator property of with loop in line %d : %s", linenum,
                            gen_prop_str[res]));
 
