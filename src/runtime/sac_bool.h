@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2002/04/30 08:28:43  dkr
+ * no changes done
+ *
  * Revision 3.1  2000/11/20 18:02:10  sacbase
  * new release made
  *
@@ -12,7 +15,6 @@
  *
  * Revision 1.1  1998/03/19 16:37:28  cg
  * Initial revision
- *
  *
  */
 
@@ -29,9 +31,8 @@
  *
  *****************************************************************************/
 
-#ifndef SAC_BOOL_H
-
-#define SAC_BOOL_H
+#ifndef _SAC_BOOL_H
+#define _SAC_BOOL_H
 
 #ifndef _sac_types_h
 typedef int bool;
@@ -40,4 +41,4 @@ typedef int bool;
 #define true 1
 #define false 0
 
-#endif /* SAC_BOOL_H */
+#endif /* _SAC_BOOL_H */

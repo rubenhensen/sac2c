@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.3  2002/04/30 08:28:14  dkr
+ * no changes done
+ *
  * Revision 3.2  2000/11/29 16:18:22  nmw
  * function SAC_CI_SACArg2string() added
  *
@@ -26,7 +30,6 @@
  */
 
 #ifndef _sac_arg_h
-
 #define _sac_arg_h
 
 /* abstract datatype for SAC <-> c arguments and return types */
