@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/01/09 18:14:25  dkr
+ * INFO_WL_SHPSEG replaced by INFO_WL_TYPES
+ *
  * Revision 3.11  2001/01/09 17:26:37  dkr
  * N_WLstriVar renamed into N_WLstrideVar
  *
@@ -2428,7 +2431,7 @@ extern node *MakeInfo ();
 #define INFO_RC_ONLYNAIVE(n) (n->flag)
 
 /* wltransform */
-#define INFO_WL_SHPSEG(n) ((shpseg *)(n->node[0]))
+#define INFO_WL_TYPES(n) (n->info.types)
 
 /* concurrent */
 #define INFO_CONC_FUNDEF(n) (n->node[0])
