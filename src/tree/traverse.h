@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/02/22 12:42:12  nmw
+ * UndoSSATransform traversal added
+ *
  * Revision 3.4  2001/02/12 17:04:36  nmw
  * chkavis_tab added
  *
@@ -207,6 +210,7 @@ extern funtab *impspec_tab;
 extern funtab *tccp_tab;
 extern funtab *ssafrm_tab;
 extern funtab *chkavis_tab;
+extern funtab *undossa_tab;
 
 extern int nnode[];
 

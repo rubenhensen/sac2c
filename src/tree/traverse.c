@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/02/22 12:42:12  nmw
+ * UndoSSATransform traversal added
+ *
  * Revision 3.7  2001/02/13 15:19:00  nmw
  * ssafrm_tab travseral added
  *
@@ -295,6 +298,7 @@
 #include "import_specialization.h"
 #include "CheckAvis.h"
 #include "SSATransform.h"
+#include "UndoSSATransform.h"
 
 #include "traverse.h"
 
@@ -1260,6 +1264,17 @@ static funtab chkavis_tab_rec = {{
                                  NULL,
                                  NULL};
 funtab *chkavis_tab = &chkavis_tab_rec;
+
+/*
+ *  (88) undossa_tab
+ */
+static funtab undossa_tab_rec = {{
+#define NIFundossa(it_undossa) it_undossa
+#include "node_info.mac"
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *undossa_tab = &undossa_tab_rec;
 
 /*
  *  nnode
