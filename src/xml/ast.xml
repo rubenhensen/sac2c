@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.35  2004/11/24 10:47:09  ktr
+  ARG_ISREFCOUNTED, RET_ISREFCOUNTED added.
+
   Revision 1.34  2004/11/24 00:34:54  sah
   added ds traversal
 
@@ -1402,6 +1405,7 @@
         <flag name="IsPadded" />
         <flag name="IsAliasing" default="TRUE" />
         <flag name="IsArtificial" />
+        <flag name="IsRefcounted" default="TRUE" />
       </flags>
     </node>
     <node name="Block">
@@ -4132,6 +4136,8 @@
       </attributes>
       <flags>
         <flag name="IsAliasing" default="TRUE" />
+        <flag name="IsArtificial" />
+        <flag name="IsRefcounted" default="TRUE" />
       </flags>
     </node>
     <node name="Ids">
