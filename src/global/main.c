@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.148  1999/01/26 14:26:44  cg
+ * -noopt now includes -noUIP
+ *
  * Revision 1.147  1999/01/25 16:26:26  sbs
  * interrupt handler setup inserted.
  *
@@ -300,6 +303,9 @@ MAIN
                         break;
                     case 'r':
                         intrinsics |= INTRINSIC_ROT;
+                        break;
+                    case 'p':
+                        intrinsics |= INTRINSIC_PSI;
                         break;
                     default:
                         SYSWARN (("Unknown intrinsic flag '%c`", **argv));
@@ -612,6 +618,7 @@ MAIN
             opt_ive = 0;
             opt_rco = 0;
             opt_tile = 0;
+            opt_uip = 0;
         }
 
         else if (OptCmp (*argv, "oDCR"))
