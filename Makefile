@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.21  2001/03/09 11:14:44  sbs
+# PROFILE and annotate_fun_calls.o added.
+#
 # Revision 3.20  2001/03/06 13:19:47  nmw
 # compare_tree added
 #
@@ -211,6 +214,7 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/Unroll.o src/optimize/WLUnroll.o src/optimize/Unswitch.o \
           src/optimize/CSE.o \
           src/optimize/SSADeadCodeRemoval.o src/optimize/SSACSE.o
+PROFILE= src/profile/annotate_fun_calls.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
 	src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
 	src/psi-opt/WithloopFolding.o src/psi-opt/WLT.o src/psi-opt/WLI.o \
@@ -252,7 +256,7 @@ CINTERFACE= src/c-interface/map_cwrapper.o src/c-interface/print_interface.o \
 
 OBJ=$(GLOBAL) $(TREE) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
     $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT) \
-    $(MULTITHREAD) $(CINTERFACE) $(CONSTANTS)
+    $(MULTITHREAD) $(CINTERFACE) $(CONSTANTS) $(PROFILE)
 
 
 #
@@ -300,6 +304,7 @@ dummy:
 	(cd src/concurrent; $(MAKE_NORM) )
 	(cd src/multithread; $(MAKE_NORM) )
 	(cd src/compile; $(MAKE_NORM) )
+	(cd src/profile; $(MAKE_NORM) )
 	(cd src/psi-opt; $(MAKE_NORM) )
 	(cd src/libsac; $(MAKE_PROD) )
 	(cd src/heapmgr; $(MAKE_PROD) )
@@ -331,6 +336,7 @@ prod:
 	(cd src/concurrent; $(MAKE_PROD) )
 	(cd src/multithread; $(MAKE_PROD) )
 	(cd src/compile; $(MAKE_PROD) )
+	(cd src/profile; $(MAKE_PROD) )
 	(cd src/psi-opt; $(MAKE_PROD) )
 	(cd src/libsac; $(MAKE_PROD) )
 	(cd src/heapmgr; $(MAKE_PROD) )
@@ -363,6 +369,7 @@ deps:
 	(cd src/concurrent; $(MAKE) deps)
 	(cd src/multithread; $(MAKE) deps)
 	(cd src/compile; $(MAKE) deps)
+	(cd src/profile; $(MAKE) deps)
 	(cd src/psi-opt; $(MAKE) deps)
 	(cd src/libsac; $(MAKE) deps)
 	(cd src/heapmgr; $(MAKE) deps)
@@ -386,6 +393,7 @@ clean:
 	(cd src/concurrent; $(MAKE) clean)
 	(cd src/multithread; $(MAKE) clean)
 	(cd src/compile; $(MAKE) clean )
+	(cd src/profile; $(MAKE) clean )
 	(cd src/psi-opt; $(MAKE) clean)
 	(cd src/libsac; $(MAKE) clean)
 	(cd src/heapmgr; $(MAKE) clean)
