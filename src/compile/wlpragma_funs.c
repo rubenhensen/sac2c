@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1998/04/24 18:29:33  dkr
+ * added comment
+ *
  * Revision 1.8  1998/04/20 02:38:38  dkr
  * includes now tree.h
  *
@@ -34,11 +37,31 @@
 
 #include "dbug.h"
 
+/*
+ * Here the funs for wlcomp-pragmas are defined.
+ *
+ * Each wlcomp-pragma-fun has the signature
+ *    node *WlcompFun( node *segs, node *parms, node *cubes, int dims)
+ * and returns a WL_seg-chain with annotated temporary attributes (BV, UBV, ...).
+ *
+ * The meaning of the parameters:
+ *   - In 'segs' the current segmentation is given. This segmentation is the
+ *     basis for the return value. It can be freed and build up again (like in
+ *     'Cubes') or can be modified (see 'Bv').
+ *   - 'parms' contains an N_exprs-chain with additional parameters for the
+ *     function. (E.g. concrete blocking-vectors, ...).
+ *   - 'cubes' contains the set of cubes of the current with-loop. This can be
+ *     used to build up a new segmentation.
+ *     (CAUTION: Do not forget to use DupTree/DupNode. Parts of 'cubes' must
+ *     not be shared!!)
+ *   - 'dims' gives the number of dimensions of the current with-loop.
+ */
+
 /******************************************************************************
  *
  * function:
- *   node *IntersectStridesArray(node *strides,
- *                               node *aelems1, node *aelems2)
+ *   node *IntersectStridesArray( node *strides,
+ *                                node *aelems1, node *aelems2)
  *
  * description:
  *   returns the intersection of the N_WLstride-chain 'strides' with
@@ -167,7 +190,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2)
 /******************************************************************************
  *
  * function:
- *   node *Array2Bv(node *array, long *bv, int dims)
+ *   node *Array2Bv( node *array, long *bv, int dims)
  *
  * description:
  *   converts an N_array node into a blocking vector (long *).
@@ -197,7 +220,7 @@ Array2Bv (node *array, long *bv, int dims)
 /******************************************************************************
  *
  * function:
- *   long *CalcSV(node *stride, long *sv)
+ *   long *CalcSV( node *stride, long *sv)
  *
  * description:
  *   calculates the lcm of all grid-steps in N_WLstride-N_WLgrid-chain
@@ -241,7 +264,7 @@ CalcSV (node *stride, long *sv)
 /******************************************************************************
  *
  * function:
- *   node *All(node *segs, node *parms, node *cubes, int dims)
+ *   node *All( node *segs, node *parms, node *cubes, int dims)
  *
  * description:
  *   choose the hole array as the only segment;
@@ -271,7 +294,7 @@ All (node *segs, node *parms, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *Cubes(node *segs, node *parms, node *cubes, int dims)
+ *   node *Cubes( node *segs, node *parms, node *cubes, int dims)
  *
  * description:
  *   choose every cube as a segment;
@@ -319,7 +342,7 @@ Cubes (node *segs, node *parms, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *ConstSegs(node *segs, node *parms, node *cubes, int dims)
+ *   node *ConstSegs( node *segs, node *parms, node *cubes, int dims)
  *
  * description:
  *   Defines a new set of segments in reliance on the given extra parameters
@@ -371,7 +394,7 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *NoBlocking(node *segs, node *parms, node *cubes, int dims)
+ *   node *NoBlocking( node *segs, node *parms, node *cubes, int dims)
  *
  * description:
  *   sets all blocking vectors and the unrolling-blocking vector to
@@ -416,14 +439,14 @@ NoBlocking (node *segs, node *parms, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *Bv(node *segs, node *parms, node *cubes, int dims)
+ *   node *Bv( node *segs, node *parms, node *cubes, int dims)
  *
  * description:
  *   Changes the blocking-vector for one blocking level (ubv respectively).
  *   The level number is given as first element in 'parms' (N_num);
  *    the rest of 'parms' contains the blocking-vectors for different
  *    segments (N_array).
- *   If ('level' == 'WLSEG_BLOCKS(seg)'), the ubv is changed.
+ *   If ('level' == 'WLSEG_BLOCKS( seg)'), the ubv is changed.
  *   If 'parms' contains less elements than 'segs', the last bv in
  *    'parms' is mapped to all remaining 'segs'.
  *   If 'parms' contains more elements than 'segs', the tail of 'parms'
@@ -482,7 +505,7 @@ Bv (node *segs, node *parms, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *BvL0(node *segs, node *parms, node *cubes, int dims)
+ *   node *BvL0( node *segs, node *parms, node *cubes, int dims)
  *
  * description:
  *   uses 'Bv' to change the blocking-vectors in level 0.
@@ -504,7 +527,7 @@ BvL0 (node *segs, node *parms, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *BvL1(node *segs, node *parms, node *cubes, int dims)
+ *   node *BvL1( node *segs, node *parms, node *cubes, int dims)
  *
  * description:
  *   uses 'Bv' to change the blocking-vectors in level 1.
@@ -526,7 +549,7 @@ BvL1 (node *segs, node *parms, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *BvL2(node *segs, node *parms, node *cubes, int dims)
+ *   node *BvL2( node *segs, node *parms, node *cubes, int dims)
  *
  * description:
  *   uses 'Bv' to change the blocking-vectors in level 2.
@@ -548,7 +571,7 @@ BvL2 (node *segs, node *parms, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *Ubv(node *segs, node *parms, node *cubes, int dims)
+ *   node *Ubv( node *segs, node *parms, node *cubes, int dims)
  *
  * description:
  *   uses 'Bv' to change the unrolling-blocking-vectors.
