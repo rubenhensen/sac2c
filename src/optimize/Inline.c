@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/05/08 13:12:29  nmw
+ * set AVIS_SSAASSIGN online in ssa form
+ *
  * Revision 3.18  2001/05/03 16:47:25  nmw
  * set correct AVIS_SSAASSIGN attribute for return copy assignments
  *
@@ -326,8 +329,9 @@ InlineArg (node *arg_node, node *arg_info)
      * into INFO_INL_PROLOG
      */
     new_ass = MakeAssignLet (StringCopy (new_name), new_vardec, DupNode (arg));
-    /* store definition assignment of this new vardec */
-    if (VARDEC_AVIS (new_vardec) != NULL) {
+
+    /* store definition assignment of this new vardec (only in ssaform) */
+    if (valid_ssaform && (VARDEC_AVIS (new_vardec) != NULL)) {
         AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = new_ass;
     }
     ASSIGN_NEXT (new_ass) = INFO_INL_PROLOG (arg_info);
