@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.12  1997/03/19 13:53:22  cg
+ * Revision 1.13  1997/04/28 12:00:25  cg
+ * SIB syntax slightly changed:
+ * key word classtype used instead of Class.
+ *
+ * Revision 1.12  1997/03/19  13:53:22  cg
  * The global dependency tree is written as special pragma linkwith to the SIB
  *
  * Revision 1.11  1996/09/11  06:26:47  cg
@@ -704,7 +708,7 @@ PrintSibTypes (FILE *sibfile, nodelist *tdeflist, char *modname)
         tdef = NODELIST_NODE (tmp);
 
         if (TYPEDEF_ATTRIB (tdef) == ST_unique) {
-            fprintf (sibfile, "class ");
+            fprintf (sibfile, "classtype ");
         }
 
         if ((TYPEDEF_BASETYPE (tdef) == T_hidden) && (TYPEDEF_TNAME (tdef) == NULL)) {
@@ -820,7 +824,7 @@ PrintSibFuns (FILE *sibfile, nodelist *fundeflist, char *modname)
         fundef = NODELIST_NODE (fundeflist);
 
         if (FUNDEF_STATUS (fundef) == ST_classfun) {
-            fprintf (outfile, "class ");
+            fprintf (outfile, "classtype ");
         }
 
         PrintFunctionHeader (fundef, fundef);

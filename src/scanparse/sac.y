@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.125  1997/04/25 13:22:19  sbs
+ * Revision 1.126  1997/04/28 12:00:25  cg
+ * SIB syntax slightly changed:
+ * key word classtype used instead of Class.
+ *
+ * Revision 1.125  1997/04/25  13:22:19  sbs
  * sibarg: CHECK_NULL inserted
  *
  * Revision 1.124  1997/04/25  12:13:52  sbs
@@ -520,12 +524,12 @@ static file_type file_kind = F_prog;
 
 %type <prf> foldop
 %type <nodetype> modclass
-%type <cint> evextern, sibheader, evmarker, dots
+%type <cint> evextern, sibheader, sibevmarker, dots
 %type <ids> ids, modnames, modname
 %type <deps> linkwith, linklist, siblinkwith, siblinklist, sibsublinklist
 %type <id> fun_name, prf_name, sibparam, id
 %type <nums> nums
-%type <statustype> sibreference, evclass, siblinkliststatus
+%type <statustype> sibreference, sibevclass, siblinkliststatus
 %type <types> localtype, type, types, simpletype, complextype, returntypes,
               varreturntypes, vartypes;
 %type <node> arg, args, fundefs, fundef, main, prg, modimp, module, class, 
@@ -2902,7 +2906,7 @@ sibtypes: sibtype sibtypes
             } 
           ;
 
-sibtype: evclass TYPEDEF type id SEMIC sibpragmas
+sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
            {
              $$=MakeTypedef($4, NULL, $3, $1, NULL);
              TYPEDEF_STATUS($$)=ST_imported;
@@ -2913,7 +2917,7 @@ sibtype: evclass TYPEDEF type id SEMIC sibpragmas
                         mdb_nodetype[ $$->nodetype ], $$, 
                         TYPEDEF_TYPE($$), ItemName($$)));
            }
-       | evclass TYPEDEF type id COLON id SEMIC sibpragmas
+       | sibevclass TYPEDEF type id COLON id SEMIC sibpragmas
            {
              $$=MakeTypedef($6, $4, $3, $1, NULL);
              TYPEDEF_STATUS($$)=ST_imported;
@@ -2924,7 +2928,7 @@ sibtype: evclass TYPEDEF type id SEMIC sibpragmas
                         mdb_nodetype[ $$->nodetype ], $$, 
                         TYPEDEF_TYPE($$), ItemName($$)));
            }
-       | evclass TYPEDEF IMPLICIT id SEMIC sibpragmas
+       | sibevclass TYPEDEF IMPLICIT id SEMIC sibpragmas
            {
              $$=MakeTypedef($4, NULL,
                             MakeType(T_hidden, 0, NULL, NULL, NULL),
@@ -2937,7 +2941,7 @@ sibtype: evclass TYPEDEF type id SEMIC sibpragmas
                         mdb_nodetype[ $$->nodetype ], $$, 
                         TYPEDEF_TYPE($$), ItemName($$)));
            }
-       | evclass TYPEDEF IMPLICIT id COLON id SEMIC sibpragmas
+       | sibevclass TYPEDEF IMPLICIT id COLON id SEMIC sibpragmas
            {
              $$=MakeTypedef($6, $4,
                             MakeType(T_hidden, 0, NULL, NULL, NULL),
@@ -2952,8 +2956,8 @@ sibtype: evclass TYPEDEF type id SEMIC sibpragmas
            }
         ;
 
-evclass: CLASSIMP {$$=ST_unique;}
-       |          {$$=ST_regular;}
+sibevclass: CLASSTYPE {$$=ST_unique;}
+          |           {$$=ST_regular;}
 
 sibobjs: sibobj sibobjs
             {
@@ -3001,7 +3005,7 @@ sibfuns: sibfun sibfuns
             }
        ;
 
-sibfun: evmarker varreturntypes fun_name 
+sibfun: sibevmarker varreturntypes fun_name 
         BRACKET_L sibarglist BRACKET_R sibfunbody sibpragmas
           {
             $$=MakeFundef($3, NULL, $2, $5, $7, NULL);
@@ -3026,7 +3030,7 @@ sibfun: evmarker varreturntypes fun_name
                                mdb_nodetype[$$->nodetype],$$,
                                ItemName($$)));
           }
-      | evmarker varreturntypes id COLON fun_name 
+      | sibevmarker varreturntypes id COLON fun_name 
         BRACKET_L sibarglist BRACKET_R sibfunbody sibpragmas
           {
             $$=MakeFundef($5, $3, $2, $7, $9, NULL);
@@ -3054,9 +3058,9 @@ sibfun: evmarker varreturntypes fun_name
           }
         ;
 
-evmarker: INLINE   {$$=1;} 
-        | CLASSIMP {$$=2;}
-        |          {$$=0;}
+sibevmarker: INLINE    {$$=1;} 
+        | CLASSTYPE {$$=2;}
+        |           {$$=0;}
         ;
 
 sibarglist: sibargs {$$=$1;}
