@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.45  1999/02/06 12:50:45  srs
+ * expanded type NODELIST
+ *
  * Revision 1.44  1999/02/02 18:47:14  dkr
  * definition of type 'feature_t' changed, to fool cc
  *
@@ -348,6 +351,7 @@ typedef struct NODELIST {
     struct NODE *node;
     statustype attrib;
     statustype status;
+    void *attrib2;
     struct NODELIST *next;
 } nodelist;
 
