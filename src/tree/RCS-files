@@ -42,3 +42,4 @@ serialize.c
 serialize.h
 serialize_stack.c
 serialize_stack.h
+serialize_attribs.c
