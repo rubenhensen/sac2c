@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.63  1997/12/10 18:45:33  srs
+ * *** empty log message ***
+ *
  * Revision 1.62  1997/12/02 18:47:10  srs
  * changed comments
  *
@@ -2042,11 +2045,13 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***  temporary attributes:
  ***     node*  EXPR           (scanparse, stays != NULL afterwards)
  ***
+ ***  remarks: WithOpType is WO_genarray, WO_modarray, WO_foldfun, WO_foldprf
+ ***
  ***/
 
 extern node *MakeNWithOp (WithOpType WithOp);
 
-#define NWITHOP_TYPE(n) (*(WithOpType *)n->info2)
+#define NWITHOP_TYPE(n) (*(WithOpType *)(n)->info2)
 #define NWITHOP_SHAPE(n) (n->node[0])
 #define NWITHOP_ARRAY(n) (n->node[0])
 #define NWITHOP_NEUTRAL(n) (n->node[0])
