@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.2  2000/12/06 17:39:57  cg
+# Added new gcc option "-w" in order to disable nasty compiler warnings
+# with respect to missing braces in the static initialization of mutex
+# locks.
+#
 # Revision 3.1  2000/11/20 17:59:10  sacbase
 # new release made
 #
@@ -85,8 +90,8 @@ CCPROD       := gcc
 #
 # gcc specific flags:
 #
-gcc_FLAGS      := -ansi -Wall -g
-gcc_PROD_FLAGS := -ansi -Wall -g -O3
+gcc_FLAGS      := -ansi -Wall -w -g
+gcc_PROD_FLAGS := -ansi -Wall -w -O3
 
 #
 # cc specific flags:

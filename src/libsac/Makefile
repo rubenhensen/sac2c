@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.2  2000/12/06 17:39:01  cg
+# Added new gcc option "-w" in order to disable nasty compiler warnings
+# with respect to missing braces in the static initialization of mutex
+# locks.
+#
 # Revision 3.1  2000/11/20 18:02:39  sacbase
 # new release made
 #
@@ -58,7 +63,7 @@ OS        := SOLARIS_SPARC
 
 
 CC        := gcc
-CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g -DSAC_FOR_$(OS)
+CCFLAGS   := -ansi -Wall -w -D__EXTENSIONS__ -g -DSAC_FOR_$(OS)
 
 MTFLAGS   := -DMT -D_REENTRANT -D_POSIX_C_SOURCE=199506L
 
