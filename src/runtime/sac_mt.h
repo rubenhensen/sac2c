@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/08/24 11:17:34  dkr
+ * macros CONCAT, CATCAT replaced by CAT? (see sac_icm.h)
+ *
  * Revision 2.14  2000/07/06 16:37:50  dkr
  * macro SAC_WL_DEST used to generate var##__dest
  *
@@ -211,17 +214,14 @@ typedef union {
  *  Basic access macros for synchronisation barrier.
  */
 
-#define CONCAT(a, b) a##b
-#define CATCAT(a, b) CONCAT (a, b)
-
 #define SAC_MT_BARRIER_READY(barrier, n) (barrier[n].b[0].result_int)
 
 #define SAC_MT_BARRIER_RESULT(barrier, n, m, type) (barrier[n].b[m].result_##type)
 
 #define SAC_MT_BARRIER_RC_RESULT_PTR(barrier, n, m, type)                                \
-    (CATCAT (CATCAT (barrier[n].b[m].result_, type), .ptr))
+    (CAT1 (CAT1 (barrier[n].b[m].result_, type), .ptr))
 #define SAC_MT_BARRIER_RC_RESULT_RC(barrier, n, m, type)                                 \
-    (CATCAT (CATCAT (barrier[n].b[m].result_, type), .rc))
+    (CAT1 (CAT1 (barrier[n].b[m].result_, type), .rc))
 
 /*
  *  Advanced access macros for synchronisation barrier.
@@ -242,7 +242,7 @@ typedef union {
 #define SAC_MT_SET_BARRIER_RC_RESULT(n, m, type, res)                                    \
     {                                                                                    \
         SAC_MT_BARRIER_RC_RESULT_PTR (SAC_MT_barrier, n, m, type) = res;                 \
-        SAC_MT_BARRIER_RC_RESULT_RC (SAC_MT_barrier, n, m, type) = CONCAT (res, __rc);   \
+        SAC_MT_BARRIER_RC_RESULT_RC (SAC_MT_barrier, n, m, type) = CAT1 (res, __rc);     \
         SAC_MT_BARRIER_READY (SAC_MT_barrier, n) = m;                                    \
     }
 
@@ -278,8 +278,8 @@ typedef union {
 #define SAC_MT_BLOCK_FRAME_DUMMY() int dummy;
 
 #define I_POST(arg) arg
-#define O_POST(arg) CAT (arg, _out)
-#define S_POST(arg) CAT (arg, _shared)
+#define O_POST(arg) CAT0 (arg, _out)
+#define S_POST(arg) CAT0 (arg, _shared)
 
 #define SAC_MT_SPMD_ARG_in(type, name) type I_POST (name);
 
