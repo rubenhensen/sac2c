@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 2.20  2000/01/21 12:01:55  dkr
+# directory tree added
+# lac2fun.o added
+#
 # Revision 2.19  2000/01/17 18:35:55  cg
 # Handling of target platform unified: One of the following
 # is always defined:
@@ -9,7 +13,7 @@
 # Added recursive make call for new subdirectory src/heapmgr.
 #
 # Revision 2.17  1999/12/13 11:26:07  dkr
-# *** empty log message ***
+# target 'clean': '$(RM) -r SunWS_cache' for new version of Sun Workshop added.
 #
 # Revision 2.16  1999/10/19 17:11:34  sbs
 # new files in typecheck included and UNIX_ALPHA changed to OSF_ALPHA
@@ -151,10 +155,11 @@ GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/free.o src/global/internal_lib.o \
         src/global/globals.o src/global/resource.o src/global/build.o \
 	src/global/interrupt.o src/global/options.o
+TREE= src/tree/DupTree.o src/tree/DataFlowMask.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o
-FLATTEN= src/flatten/flatten.o
+FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o \
            src/typecheck/new_typecheck.o src/typecheck/new_types.o \
@@ -164,9 +169,9 @@ TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/generatemasks.o src/optimize/DeadCodeRemoval.o \
           src/optimize/DeadFunctionRemoval.o src/optimize/freemasks.o \
-	  src/optimize/LoopInvariantRemoval.o src/optimize/DupTree.o \
-	  src/optimize/Inline.o src/optimize/Unroll.o src/optimize/WLUnroll.o \
-          src/optimize/Unswitch.o src/optimize/CSE.o src/optimize/DataFlowMask.o
+	  src/optimize/LoopInvariantRemoval.o src/optimize/Inline.o \
+          src/optimize/Unroll.o src/optimize/WLUnroll.o src/optimize/Unswitch.o \
+          src/optimize/CSE.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o src/psi-opt/ArrayElimination.o \
 	src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
 	src/psi-opt/WithloopFolding.o src/psi-opt/WLT.o src/psi-opt/WLI.o \
@@ -191,7 +196,7 @@ COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/icm2c_wl.o src/compile/ReuseWithArrays.o \
           src/compile/Old2NewWith.o
 
-OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
+OBJ=$(GLOBAL) $(TREE) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
     $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT)
 
 
@@ -227,6 +232,7 @@ dummy:
 	(cd lib/src; $(MAKE_NORM) )
 	(cd src/scanparse; $(MAKE_NORM) )
 	(cd src/global; $(MAKE_NORM) )
+	(cd src/tree; $(MAKE_NORM) )
 	(cd src/print; $(MAKE_NORM) )
 	(cd src/flatten; $(MAKE_NORM) )
 	(cd src/typecheck; $(MAKE_NORM) )
@@ -254,6 +260,7 @@ prod:
 	(cd lib/src; $(MAKE_PROD) )
 	(cd src/scanparse; $(MAKE_PROD) )
 	(cd src/global; $(MAKE_PROD) )
+	(cd src/tree; $(MAKE_PROD) )
 	(cd src/print; $(MAKE_PROD) )
 	(cd src/flatten; $(MAKE_PROD) )
 	(cd src/typecheck; $(MAKE_PROD) )
@@ -282,6 +289,7 @@ deps:
 	(cd lib/src; $(MAKE) deps)
 	(cd src/scanparse; $(MAKE) deps)
 	(cd src/global; $(MAKE) deps)
+	(cd src/tree; $(MAKE) deps)
 	(cd src/print; $(MAKE) deps)
 	(cd src/flatten; $(MAKE) deps)
 	(cd src/typecheck; $(MAKE) deps)
@@ -301,6 +309,7 @@ clean:
 	(cd lib/src; $(MAKE) clean)
 	(cd src/scanparse; $(MAKE) clean)
 	(cd src/global; $(MAKE) clean)
+	(cd src/tree; $(MAKE) clean)
 	(cd src/print; $(MAKE) clean)
 	(cd src/flatten; $(MAKE) clean)
 	(cd src/typecheck; $(MAKE) clean)
