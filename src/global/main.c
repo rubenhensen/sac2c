@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2004/12/01 16:33:04  ktr
+ * Call to SSAundoSsa corrected.
+ *
  * Revision 3.89  2004/11/30 16:11:40  sah
  * enabled phase pro/epilogue for object phase
  *
@@ -67,7 +70,6 @@
 #include "WLEnhancement.h"
 #include "export.h"
 #include "traverse.h"
-#include "UndoSSATransform.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -436,18 +438,18 @@ main (int argc, char *argv[])
 
     switch (global.mtmode) {
     case MT_none:
-        syntax_tree = USSATdoUndoSsaTransform (syntax_tree);
+        syntax_tree = SSAundoSsa (syntax_tree);
         break;
     case MT_createjoin:
         NOTE (("Using create-join version of multithreading (MT1)"));
         /* spmd..._tab, sync..._tab */
-        syntax_tree = USSATdoUndoSsaTransform (syntax_tree);
+        syntax_tree = SSAundoSsa (syntax_tree);
         syntax_tree = CONCdoConcurrent (syntax_tree);
         break;
     case MT_startstop:
         NOTE (("Using start-stop version of multithreading (MT2)"));
         /* spmd..._tab, sync..._tab */
-        syntax_tree = USSATdoUndoSsaTransform (syntax_tree);
+        syntax_tree = SSAundoSsa (syntax_tree);
         syntax_tree = CONCdoConcurrent (syntax_tree);
         break;
     case MT_mtstblock:
@@ -460,7 +462,7 @@ main (int argc, char *argv[])
 
         /* something's missing... */
 
-        syntax_tree = USSATdoUndoSsaTransform (syntax_tree);
+        syntax_tree = SSAundoSsa (syntax_tree);
         break;
     }
 
