@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.86  2004/11/25 21:41:34  khf
+  added WLTRA
+
   Revision 1.85  2004/11/25 21:31:40  sbs
   APC APT AE added.
 
@@ -687,6 +690,16 @@
           <node name="Withid" />
           <node name="Genarray" />
           <node name="Modarray" />
+        </travuser>
+      </traversal>
+    </phase>
+    <phase id="wltrans" name="Transforming with-loop representation">
+    <traversal id="WLTRA" name="With-Loop Transformation traversal" default="sons" include="wltransform.h">
+        <travuser>
+          <node name="Assign" />
+          <node name="Code" />
+          <node name="Let" />
+          <node name="With" />
         </travuser>
       </traversal>
     </phase>
