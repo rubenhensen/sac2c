@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/05/17 13:29:29  cg
+ * Moved ugly function FreePrf2() from free.c since it is exclusively
+ * used here and should disappear with this file.
+ *
  * Revision 3.9  2001/04/26 21:11:44  dkr
  * fixed a bug in CFid: type information is copied correctly now
  *
@@ -373,6 +377,43 @@ static inside_wl *inside_wl_root;
                  ? DOUBLE_VAL (n)                                                        \
                  : ((NODE_TYPE (n) == N_char) ? CHAR_VAL (n) : BOOL_VAL (n)))))
 
+/*
+ *
+ *  functionname  : FreePrf2
+ *  arguments     : 1) prf-node
+ *                  2) argument not to be freed
+ *  description   : frees whole primitive, without argument arg_no
+ *  global vars   : FreeTree
+ *  internal funs : --
+ *  external funs : --
+ *  macros        : DBUG..., NULL, FREE
+ *
+ *  remarks       : needed only by ConstantFolding.c
+ *
+ */
+
+static void
+FreePrf2 (node *arg_node, int arg_no)
+{
+    node *tmp1, *tmp2;
+    int i;
+
+    DBUG_ENTER ("FreePrf2");
+    tmp1 = arg_node->node[0];
+    i = 0;
+    while (NULL != tmp1) {
+        if (i != arg_no) {
+            tmp1->node[0] = FreeTree (tmp1->node[0]);
+        }
+        tmp2 = tmp1;
+        tmp1 = tmp1->node[1];
+        Free (tmp2);
+        i++;
+    }
+    Free (arg_node);
+    DBUG_VOID_RETURN;
+}
+
 /******************************************************************************
  *
  * function:
@@ -602,7 +643,7 @@ ConstantFolding (node *arg_node, node *info_node)
 
     arg_node = Trav (arg_node, info_node);
 
-    FREE (info_node);
+    Free (info_node);
     act_tab = tmp_tab;
 
     DBUG_PRINT ("OPT", ("                        result: %d", cf_expr - mem_cf_expr));
@@ -1216,7 +1257,7 @@ CFNwith (node *arg_node, node *arg_info)
 
     iw = inside_wl_root;
     inside_wl_root = iw->next;
-    FREE (iw);
+    Free (iw);
 
     DBUG_RETURN (arg_node);
 }
@@ -1414,19 +1455,19 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
 
         switch (ARRAY_VECTYPE (array)) {
         case T_int:
-            FREE (ARRAY_CONSTVEC (new_node));
+            Free (ARRAY_CONSTVEC (new_node));
             tmp_ivec = Array2IntVec (ARRAY_AELEMS (new_node), NULL);
             ((int *)ARRAY_CONSTVEC (new_node)) = tmp_ivec;
             ARRAY_VECLEN (new_node) = length;
             break;
         case T_float:
-            FREE (ARRAY_CONSTVEC (new_node));
+            Free (ARRAY_CONSTVEC (new_node));
             tmp_fvec = Array2FloatVec (ARRAY_AELEMS (new_node), NULL);
             ((float *)ARRAY_CONSTVEC (new_node)) = tmp_fvec;
             ARRAY_VECLEN (new_node) = length;
             break;
         case T_double:
-            FREE (ARRAY_CONSTVEC (new_node));
+            Free (ARRAY_CONSTVEC (new_node));
             tmp_dvec = Array2DblVec (ARRAY_AELEMS (new_node), NULL);
             ((double *)ARRAY_CONSTVEC (new_node)) = tmp_dvec;
             ARRAY_VECLEN (new_node) = length;
@@ -1970,7 +2011,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                 used_sofar = arg_info->mask[1];
                 arg_info->mask[1] = GenMask (INFO_VARNO (arg_info));
                 arg[0] = Trav (arg[0], arg_info);
-                FREE (arg_info->mask[1]);
+                Free (arg_info->mask[1]);
                 arg_info->mask[1] = used_sofar;
             } else {
                 break;
@@ -1989,7 +2030,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                 used_sofar = arg_info->mask[1];
                 arg_info->mask[1] = GenMask (INFO_VARNO (arg_info));
                 arg[1] = Trav (arg[1], arg_info);
-                FREE (arg_info->mask[1]);
+                Free (arg_info->mask[1]);
                 arg_info->mask[1] = used_sofar;
             } else {
                 if (N_id == NODE_TYPE (old_arg[0])) {
@@ -2140,7 +2181,7 @@ ArrayPrf (node *arg_node, node *arg_info)
             /*
              * Store result
              */
-            FREE (arg_node);
+            Free (arg_node);
             arg_node = arg[0];
             cf_expr++;
             break;
@@ -2496,7 +2537,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                                             ASSIGN_CF (assign) = new_assign;
                                             ExpandMRDL (INFO_VARNO (arg_info));
                                             MRD (IDS_VARNO (new_ids)) = new_assign;
-                                            FREE (
+                                            Free (
                                               ASSIGN_MRDMASK (INFO_CF_ASSIGN (arg_info)));
                                             ASSIGN_MRDMASK (INFO_CF_ASSIGN (arg_info))
                                               = DupMask (MRD_LIST, INFO_VARNO (arg_info));
@@ -2678,35 +2719,35 @@ ArrayPrf (node *arg_node, node *arg_info)
     if (NODE_TYPE (arg_node) == N_array) {
         switch (ARRAY_VECTYPE (arg_node)) {
         case T_int:
-            FREE (ARRAY_CONSTVEC (arg_node));
+            Free (ARRAY_CONSTVEC (arg_node));
             ((int *)ARRAY_CONSTVEC (arg_node))
               = Array2IntVec (ARRAY_AELEMS (arg_node), &tmp_len);
             ARRAY_VECLEN (arg_node) = tmp_len;
             ARRAY_ISCONST (arg_node) = TRUE;
             break;
         case T_bool:
-            FREE (ARRAY_CONSTVEC (arg_node));
+            Free (ARRAY_CONSTVEC (arg_node));
             ((int *)ARRAY_CONSTVEC (arg_node))
               = Array2BoolVec (ARRAY_AELEMS (arg_node), &tmp_len);
             ARRAY_VECLEN (arg_node) = tmp_len;
             ARRAY_ISCONST (arg_node) = TRUE;
             break;
         case T_char:
-            FREE (ARRAY_CONSTVEC (arg_node));
+            Free (ARRAY_CONSTVEC (arg_node));
             ((char *)ARRAY_CONSTVEC (arg_node))
               = Array2CharVec (ARRAY_AELEMS (arg_node), &tmp_len);
             ARRAY_VECLEN (arg_node) = tmp_len;
             ARRAY_ISCONST (arg_node) = TRUE;
             break;
         case T_float:
-            FREE (ARRAY_CONSTVEC (arg_node));
+            Free (ARRAY_CONSTVEC (arg_node));
             ((float *)ARRAY_CONSTVEC (arg_node))
               = Array2FloatVec (ARRAY_AELEMS (arg_node), &tmp_len);
             ARRAY_VECLEN (arg_node) = tmp_len;
             ARRAY_ISCONST (arg_node) = TRUE;
             break;
         case T_double:
-            FREE (ARRAY_CONSTVEC (arg_node));
+            Free (ARRAY_CONSTVEC (arg_node));
             ((double *)ARRAY_CONSTVEC (arg_node))
               = Array2DblVec (ARRAY_AELEMS (arg_node), &tmp_len);
             ARRAY_VECLEN (arg_node) = tmp_len;
