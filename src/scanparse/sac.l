@@ -3,6 +3,11 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/05/06 15:36:55  sbs
+ * the global var filename now is copied whenever yyparse is called
+ * or a line-pragma is found. This allows to attach the filename
+ * to EACH node!!
+ *
  * Revision 2.4  1999/05/05 13:52:56  sbs
  * streamlined the entire file....
  * no more FILTERxxx macros anymore...
@@ -388,7 +393,15 @@ int start_token;
                               }
 [ \t]	                      { charpos += yyleng;}
 "\f"                          { charpos += yyleng;}
-#\ .*\n                       { linenum=atoi(yytext+2);}
+#\ .*\n                       { linenum=atoi(yytext+2);
+                                { int start, len;
+                                  start = strcspn( yytext, "\"")+1;
+                                  len   = strcspn( yytext+start, "\"");
+                                  filename = (char *)Malloc( (len+1)*sizeof(char)); 
+                                  strncpy( filename , yytext + start, len);
+                                  filename[len] = '\0';
+                                }
+                              }
 .	                      { charpos += yyleng;
                                 FILTER( SC );
                               }

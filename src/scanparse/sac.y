@@ -3,6 +3,11 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/05/06 15:36:55  sbs
+ * the global var filename now is copied whenever yyparse is called
+ * or a line-pragma is found. This allows to attach the filename
+ * to EACH node!!
+ *
  * Revision 2.9  1999/05/06 12:07:36  sbs
  * line-numbers of let-nodes improved in "letassign:"-rule.
  *
@@ -422,6 +427,9 @@ static file_type file_kind = F_prog;
 
 %start file
 
+%{
+  /* SBSBSBSBS */
+%}
 %%
 
 file:   PARSE_PRG prg {syntax_tree=$2;}
@@ -2726,6 +2734,20 @@ resources: ID COLON LET string resources
  *********************************************************************
  */
 
+int My_yyparse()
+{
+  char *tmp;
+
+  /* 
+   * make a copy of the actual filename, which will be used for
+   * all subsequent nodes...
+   */
+  tmp = (char *)Malloc( (strlen(filename)+1) * sizeof( char));
+  strcpy( tmp, filename);
+  filename = tmp;
+
+  return(yyparse());
+}
 
 int yyerror(char *errname)
 {
