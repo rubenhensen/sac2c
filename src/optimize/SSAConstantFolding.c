@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2002/09/03 11:54:29  dkr
+ * no changes done
+ *
  * Revision 1.29  2002/07/29 12:12:53  sbs
  * PRF_IF macro extended by z.
  *
@@ -31,56 +34,7 @@
  * Revision 1.19  2001/06/01 10:00:34  nmw
  * insert N_empty node in empty blocks
  *
- * Revision 1.18  2001/05/23 15:48:11  nmw
- * comments added, code beautified
- *
- * Revision 1.17  2001/05/17 12:05:53  nmw
- * MALLOC/FREE changed to Malloc/Free (using Free() result)
- *
- * Revision 1.16  2001/05/15 15:52:05  nmw
- * access to PrfFolding for external modules implemented SSACFFoldPrfExpr
- *
- * Revision 1.15  2001/05/15 07:59:07  nmw
- * warning eliminated
- *
- * Revision 1.14  2001/05/09 15:51:07  nmw
- * psi-modarray-chain optimization implemented
- *
- * Revision 1.13  2001/05/09 12:28:25  nmw
- * build only structural constants from arrays with scalar elements
- *
- * Revision 1.12  2001/05/08 13:19:02  nmw
- * signature of IsZero.. changed, support for division by zero added
- *
- * Revision 1.11  2001/05/07 09:02:07  nmw
- * psi-modarray optimization implemented
- *
- * Revision 1.10  2001/05/03 16:49:19  nmw
- * modarray for constants integrated
- *
- * Revision 1.9  2001/05/02 08:02:11  nmw
- * arithmetical constant folding implemented
- *
- * Revision 1.8  2001/04/30 12:04:57  nmw
- * structual operations implemented
- *
- * Revision 1.7  2001/04/26 13:30:44  nmw
- * inline flag INFO_SSACF_INLFUNDEF used instead of ST_inlinefun
- *
- * Revision 1.6  2001/04/18 12:55:42  nmw
- * debug output for OPT traversal added
- *
- * Revision 1.5  2001/04/18 10:06:17  dkr
- * signature of InlineSingleApplication() modified
- *
- * Revision 1.4  2001/04/02 11:08:20  nmw
- * handling for multiple used special functions added
- *
- * Revision 1.3  2001/03/29 16:31:21  nmw
- * Constant Folding for Loops and Conditionals implemented
- *
- * Revision 1.2  2001/03/22 14:30:18  nmw
- * constant folding for primitive ari ops implemented
+ * [...]
  *
  * Revision 1.1  2001/03/20 16:16:54  nmw
  * Initial revision
@@ -279,6 +233,7 @@ static node *
 SSACFPropagateConstants2Args (node *arg_chain, node *param_chain)
 {
     node *arg;
+
     DBUG_ENTER ("SSACFPropagateConstants2Args");
 
     arg = arg_chain;
