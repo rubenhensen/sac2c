@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.1  2000/11/20 18:01:18  sacbase
  * new release made
  *
@@ -66,13 +69,13 @@ extern void ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s);
 
 extern void ICMCompileND_KD_SET_SHAPE (char *name, int dim, char **s);
 
-extern void ICMCompileND_KD_PSI_CxA_S (char *a, char *res, int dim, char **vi);
+extern void ICMCompileND_KD_SEL_CxA_S (char *a, char *res, int dim, char **vi);
 
-extern void ICMCompileND_KD_PSI_CxA_A (int dima, char *a, char *res, int dimv, char **vi);
+extern void ICMCompileND_KD_SEL_CxA_A (int dima, char *a, char *res, int dimv, char **vi);
 
-extern void ICMCompileND_KD_PSI_VxA_S (char *a, char *res, int dim, char *v);
+extern void ICMCompileND_KD_SEL_VxA_S (char *a, char *res, int dim, char *v);
 
-extern void ICMCompileND_KD_PSI_VxA_A (int dima, char *a, char *res, int dimv, char *v);
+extern void ICMCompileND_KD_SEL_VxA_A (int dima, char *a, char *res, int dimv, char *v);
 
 extern void ICMCompileND_KD_TAKE_CxA_A (int dima, char *a, char *res, int dimv,
                                         char **vi);

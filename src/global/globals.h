@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.8  2001/05/11 15:13:43  cg
  * Added new variable max_schedulers to keep track of the maximum
  * number of schedulers within a single SPMD function.
@@ -279,7 +282,7 @@ extern unsigned int intrinsics;
 #define INTRINSIC_DROP 0x0040
 #define INTRINSIC_ROT 0x0080
 #define INTRINSIC_CAT 0x0100
-#define INTRINSIC_PSI 0x0200
+#define INTRINSIC_SEL 0x0200
 #define INTRINSIC_MODA 0x0400
 
 extern unsigned int generatelibrary;

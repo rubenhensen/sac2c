@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.24  2001/06/14 12:39:51  dkr
  * PREC2WLseg(): call of SCHPrecompileTasksel() added
  *
@@ -457,7 +460,7 @@ PREC1assign (node *arg_node, node *arg_info)
  *     were   fun   is a user-defined function,
  *       and   a   is a regular argument representing a refcounted data object,
  *       and the refcounting is *not* done by the function itself,
- *     or   fun   is a primitive function (on arrays) except F_dim or F_ids_psi,
+ *     or   fun   is a primitive function (on arrays) except F_dim or F_ids_sel,
  *       and   a   is a regular argument representing a refcounted data object,
  *     then we rename each RHS   a   into a temp-var   __tmp<n>   and insert
  *     an assignment   __tmp<n> = a;   in front of the function application.
@@ -491,7 +494,7 @@ PREC1let (node *arg_node, node *arg_info)
 
         if (((NODE_TYPE (let_expr) == N_prf)
              && (ARRAY_ARGS (PRF_PRF (let_expr)) && (PRF_PRF (let_expr) != F_dim)
-                 && (PRF_PRF (let_expr) != F_idx_psi)))
+                 && (PRF_PRF (let_expr) != F_idx_sel)))
             || (NODE_TYPE (let_expr) == N_ap)) {
             /*
              * does 'ids_name' occur as an argument of the function application??

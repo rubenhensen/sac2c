@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.5  2001/05/17 11:34:07  sbs
  * return value of Free now used ...
  *
@@ -680,7 +683,7 @@ node *NTCLet(node *arg_node, node *arg_info)
  *  functionname  : NTCPrf
  *  arguments     :
  *  description   : case prf of:
- *                    psi   : SetIdx
+ *                    sel   : SetIdx
  *                    binop : SetVect
  *                    others: SetVect
  *  global vars   : ive_op
@@ -704,18 +707,18 @@ node *NTCPrf( node *arg_node, node *arg_info)
    * index calculation (N_vinfo-node).
    */
   switch( PRF_PRF( arg_node)) {
-    case F_psi: 
+    case F_sel: 
       arg1 = PRF_ARG1( arg_node);
       arg2 = PRF_ARG2( arg_node);
       DBUG_ASSERT(((arg2->nodetype == N_id) || (arg2->nodetype == N_array)),
-                    "wrong arg in F_psi application");
+                    "wrong arg in F_sel application");
       if( NODE_TYPE( arg2) == N_id)
         type = ID_TYPE( arg2);
       else
         type = ARRAY_TYPE( arg2);
       /*
        * if the shape of the array is unknown, do not(!) replace
-       * psi by idx_psi but mark the selecting vector as VECT !
+       * sel by idx_sel but mark the selecting vector as VECT !
        * this is done by traversal with NULL instead of vinfo!
        */
       if (TYPES_SHPSEG( type) != NULL) { 
@@ -724,7 +727,7 @@ node *NTCPrf( node *arg_node, node *arg_info)
         PRF_ARG1( arg_node) = Trav(arg1, arg_info);
         FreeNode( vinfo);
         if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
-          PRF_PRF( arg_node)  = F_idx_psi;
+          PRF_PRF( arg_node)  = F_idx_sel;
         }
       } else {
         INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 1.8  2001/05/23 15:55:18  nmw
  * buggy call to SSACFFoldPrfExpr() fixed
  *
@@ -140,7 +143,7 @@ SimplifyFun (prf prf)
  *   node *CheckArrayFoldable(node *indexn, node *idn, node *arg_info)
  *
  * description:
- *   This function checks whether the application of psi(indexn,idn) inside
+ *   This function checks whether the application of sel(indexn,idn) inside
  *   a WL can be folded or not. If yes, the WL described by idn is returned,
  *   else NULL.
  *
@@ -754,7 +757,7 @@ SSAWLIid (node *arg_node, node *arg_info)
  * description:
  *   We are interested in prf applications. This may be transformations of
  *   later used index vectors for arrays to fold.
- *   If we find an F_psi, we check, based on the above made transformation
+ *   If we find an F_sel, we check, based on the above made transformation
  *   checks, if the index vector is valid (i.e. the array reference is
  *   foldable).
  *
@@ -775,7 +778,7 @@ SSAWLIlet (node *arg_node, node *arg_info)
     /* if we are inside a WL we have to search for valid index transformations. */
     if (INFO_WLI_WL (arg_info)) {
         /* if this is a prf, we are interrested in transformations like +,*,-,/
-           and in indexing (F_psi). */
+           and in indexing (F_sel). */
         exprn = LET_EXPR (arg_node);
         if (N_prf == NODE_TYPE (exprn)) {
             prf = PRF_PRF (exprn);
@@ -806,7 +809,7 @@ SSAWLIlet (node *arg_node, node *arg_info)
                 CreateIndexInfoA (exprn, arg_info);
                 break;
 
-            case F_psi:
+            case F_sel:
                 /* check if index (1st argument) is valid. If yes, the array
                    could be folded.
                    We have 3 possibilities here:
@@ -823,7 +826,7 @@ SSAWLIlet (node *arg_node, node *arg_info)
                        array which is based on a WL, we have to determine if
                        we finally CAN fold the array.
                        If we can, the index_info is kept, else removed. So in the
-                       WLF phase we know for sure that a psi-prf with a
+                       WLF phase we know for sure that a sel-prf with a
                        valid index_info can be folded. But that still doesn't
                        mean that we want to fold. */
                     tmpn

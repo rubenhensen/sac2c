@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.11  2001/05/25 20:32:02  dkr
  * all global vars are static now
  *
@@ -197,7 +200,7 @@
  wlfm_replace    :
  wlfm_rename     :
  - node[0]: SUBST  : Pointer to subst N_Ncode/ pointer to copy of subst N_Ncode
- - node[1]: NEW_ID : pointer to N_id which shall replace the prf psi()
+ - node[1]: NEW_ID : pointer to N_id which shall replace the prf sel()
                      in the target Code.
  - node[4]: ID     : pointer to original N_id node in target WL to replace
                      by subst WL.
@@ -331,7 +334,7 @@ static intern_gen *intersect_grids_tig, *intersect_grids_sig, *intersect_grids_b
 static intern_gen *intersect_intern_gen; /* resulting igs of IntersectInternGen.
                                             Global var to speed up function call. */
 
-static long *target_mask; /* here we store the mrd of the psi function
+static long *target_mask; /* here we store the mrd of the sel function
                              which shall be replaced */
 
 static long *subst_mask; /* mrd mask of subst WL. */
@@ -1310,7 +1313,7 @@ RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
  *   TransformationRangeCheck( )
  *
  * description:
- *    if the psi-operation we process right now indexes the subst WL in a way
+ *    if the sel-operation we process right now indexes the subst WL in a way
  *    so that invalid elements are chosen, the resulting partition will not
  *    specify a full partition.
  *
@@ -1741,7 +1744,7 @@ WLFassign (node *arg_node, node *arg_info)
                 tmpn = arg_node;
             }
 
-            /* transform psi(.,array) into Id. */
+            /* transform sel(.,array) into Id. */
             tmpn = ASSIGN_INSTR (tmpn);
             LET_EXPR (tmpn) = FreeTree (LET_EXPR (tmpn));
             LET_EXPR (tmpn) = INFO_WLI_NEW_ID (arg_info);
@@ -1771,7 +1774,7 @@ WLFassign (node *arg_node, node *arg_info)
  *
  * description:
  *  In wlfm_replace phase insert variable definitions of index vector
- *  and index scalars. Remove psi operation and replace it with the
+ *  and index scalars. Remove sel operation and replace it with the
  *  body of the subst WL.
  *  In wlfm_rename phase detect name clashes and solve them.
  *
@@ -1842,11 +1845,11 @@ WLFid (node *arg_node, node *arg_info)
 
             /* create assignments to rename variables which index the array we want
                to replace.
-               Example: We want to replace psi(sel,A) and A is a WL with a
+               Example: We want to replace sel(sel,A) and A is a WL with a
                generator iv=[i,j,k]. Then we add:
-                 i = psi([0],sel);
-                 j = psi([1],sel);
-                 k = psi([2],sel);
+                 i = sel([0],sel);
+                 j = sel([1],sel);
+                 k = sel([2],sel);
                  iv = sel;
                Remember that iv,i,j,k all are temporary variables, inserted
                in flatten. No name clashes can happen. */
@@ -1892,7 +1895,7 @@ WLFid (node *arg_node, node *arg_info)
                         _ids = DupOneIds (subst_wl_ids);
                     }
 
-                    letn = MakeLet (MakePrf (F_psi, argsn), _ids);
+                    letn = MakeLet (MakePrf (F_sel, argsn), _ids);
                     subst_header = MakeAssign (letn, subst_header);
                 }
 
@@ -2002,11 +2005,11 @@ WLFlet (node *arg_node, node *arg_info)
         break;
 
     case wlfm_search_ref:
-        /* is this a prf psi() which can be folded? */
+        /* is this a prf sel() which can be folded? */
         /* All occurences of ID_WL are used in case (1) here (see header of file) */
         prfn = LET_EXPR (arg_node);
-        if (N_prf == NODE_TYPE (prfn) && F_psi == PRF_PRF (prfn)
-            && ID_WL (PRF_ARG2 (prfn))) { /* second arg of psi() references a WL. */
+        if (N_prf == NODE_TYPE (prfn) && F_sel == PRF_PRF (prfn)
+            && ID_WL (PRF_ARG2 (prfn))) { /* second arg of sel() references a WL. */
 
             idn = PRF_ARG2 (prfn);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.13  2001/05/17 13:40:26  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -108,7 +111,7 @@
  *
  *            a = reshape([4,4], [1,2,...,16]);
  *            __i_4_4 = 11;
- *            z = idx_psi(a, __i_4_4);
+ *            z = idx_sel(a, __i_4_4);
  *
  * For doing so, an attribute "Uses" has to be infered. It is attached to each
  * left hand side of an array assignment, and to each variable/argument declaration
@@ -181,7 +184,7 @@
  *
  * The mechanism described so far does not properly support programs that contain
  * program parts that may or may not be "executed", i.e., conditionals or loops.
- * Since we want to replace all psi ops by idx_psi ops, we have to infer all
+ * Since we want to replace all sel ops by idx_sel ops, we have to infer all
  * potential uses rather than only those taken by a particular branch. To achieve
  * this, different actual chains for the alternative branches have to be created
  * and merged, e.g.,
@@ -445,9 +448,9 @@
  * of the variables <var> of the LHS and for each IDX(<shp>) usage, an assignment of the
  * form __<varname>__<shp> = ComputeIdxFromShape( <varname>, <shp>) is inserted.
  * This is achieved by generating an ND_KS_VECT2OFFSET icm.
- * Complementary to this code modification, all F_psi and all F_modarray operations
- * are replaced by their idx counterparts, e.g., an application psi( iv, a) is
- * replaced by idxpsi( __iv__<shp>, a).
+ * Complementary to this code modification, all F_sel and all F_modarray operations
+ * are replaced by their idx counterparts, e.g., an application sel( iv, a) is
+ * replaced by idxsel( __iv__<shp>, a).
  * To avoid superfluous computations of this form, so-called "pure address computations"
  * are identified. These are assignments of the form
  *
@@ -1645,7 +1648,7 @@ IdxLet (node *arg_node, node *arg_info)
  *  functionname  : IdxPrf
  *  arguments     :
  *  description   : case prf of:
- *                    psi   : SetIdx
+ *                    sel   : SetIdx
  *                    binop : SetVect
  *                    others: SetVect
  *  global vars   : ive_op
@@ -1669,11 +1672,11 @@ IdxPrf (node *arg_node, node *arg_info)
      * index calculation (N_vinfo-node) which requires IDX(...) to be set.
      */
     switch (PRF_PRF (arg_node)) {
-    case F_psi:
+    case F_sel:
         arg1 = PRF_ARG1 (arg_node);
         arg2 = PRF_ARG2 (arg_node);
         DBUG_ASSERT (((arg2->nodetype == N_id) || (arg2->nodetype == N_array)),
-                     "wrong arg in F_psi application");
+                     "wrong arg in F_sel application");
         if (NODE_TYPE (arg2) == N_id) {
             type = ID_TYPE (arg2);
         } else {
@@ -1681,7 +1684,7 @@ IdxPrf (node *arg_node, node *arg_info)
         }
         /*
          * if the shape of the array is unknown, do not(!) replace
-         * psi by idx_psi but mark the selecting vector as VECT !
+         * sel by idx_sel but mark the selecting vector as VECT !
          * this is done by traversal with NULL instead of vinfo!
          */
         if (TYPES_SHPSEG (type) != NULL) {
@@ -1690,7 +1693,7 @@ IdxPrf (node *arg_node, node *arg_info)
             PRF_ARG1 (arg_node) = Trav (arg1, arg_info);
             FreeNode (vinfo);
             if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
-                PRF_PRF (arg_node) = F_idx_psi;
+                PRF_PRF (arg_node) = F_idx_sel;
             }
         } else {
             INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;

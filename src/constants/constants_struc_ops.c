@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 1.5  2001/05/17 14:16:21  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -229,7 +232,7 @@ TileFromArray (constant *idx, shape *res_shp, constant *a)
  ***   AT the time being, we have implemented the following operations:
  ***
  ***   - reshape: changing an arrays shape provided the new shp matches
- ***   - psi: element/subarray selection
+ ***   - sel: element/subarray selection
  ***   - take: picking elements from the upper left corner!
  ***   - drop: picking elements from the lower right corner!
  ***
@@ -290,7 +293,7 @@ COReshape (constant *new_shp, constant *a)
 /******************************************************************************
  *
  * function:
- *    constant *COPsi( constant *idx, constant *a)
+ *    constant *COSel( constant *idx, constant *a)
  *
  * description:
  *    selects single elements or entire sub-arrays from a.
@@ -298,18 +301,18 @@ COReshape (constant *new_shp, constant *a)
  ******************************************************************************/
 
 constant *
-COPsi (constant *idx, constant *a)
+COSel (constant *idx, constant *a)
 {
     void *elems;
     int res_dim, res_vlen, curr_ext_a, i;
     shape *res_shp;
     constant *res;
 
-    DBUG_ENTER ("COPsi");
-    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COPsi not int!");
-    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to COPsi not vector!");
+    DBUG_ENTER ("COSel");
+    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COSel not int!");
+    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to COSel not vector!");
     DBUG_ASSERT ((CONSTANT_DIM (a)) >= CONSTANT_VLEN (idx),
-                 "idx-vector exceeds dim of array in COPsi!");
+                 "idx-vector exceeds dim of array in COSel!");
 
     /*
      * First, we create the shape of the result:
@@ -566,8 +569,8 @@ COModarray (constant *a, constant *idx, constant *elem)
     constant *res;
 
     DBUG_ENTER ("COModarray");
-    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COPsi not int!");
-    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to COPsi not vector!");
+    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COSel not int!");
+    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to COSel not vector!");
     DBUG_ASSERT ((CONSTANT_TYPE (a) == CONSTANT_TYPE (elem)),
                  "mixed types for array and inserted elements");
     DBUG_ASSERT (((CONSTANT_DIM (a)) == (CONSTANT_VLEN (idx) + CONSTANT_DIM (elem))),

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.2  2001/01/19 11:57:07  dkr
  * SAC_WL_DEST renamed into SAC_WL_OFFSET
  *
@@ -62,16 +65,16 @@
 #define SAC_IDX_H
 
 /*
- * Macros used for primitive function idx_psi:
+ * Macros used for primitive function idx_sel:
  * ===========================================
  */
 
-#define SAC_ND_IDX_PSI_S(s, a, res)                                                      \
-    SAC_TR_PRF_PRINT (("ND_IDX_PSI_S( %s, %s, %s)\n", #s, #a, #res));                    \
+#define SAC_ND_IDX_SEL_S(s, a, res)                                                      \
+    SAC_TR_PRF_PRINT (("ND_IDX_SEL_S( %s, %s, %s)\n", #s, #a, #res));                    \
     res = SAC_ND_READ_ARRAY (a, s);
 
-#define SAC_ND_IDX_PSI_A(s, a, res)                                                      \
-    SAC_TR_PRF_PRINT (("ND_IDX_PSI_A( %s, %s, %s)\n", #s, #a, #res));                    \
+#define SAC_ND_IDX_SEL_A(s, a, res)                                                      \
+    SAC_TR_PRF_PRINT (("ND_IDX_SEL_A( %s, %s, %s)\n", #s, #a, #res));                    \
     {                                                                                    \
         int __i, __s;                                                                    \
         for (__i = 0, __s = s; __i < SAC_ND_A_SIZE (res); __i++, __s++)                  \

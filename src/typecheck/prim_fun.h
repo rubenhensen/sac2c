@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.3  2001/04/24 13:10:15  dkr
  * type 'id' replaced by 'char'
  *
@@ -67,7 +70,7 @@ extern types *Reshp (node *vec, types *array, types *shp_vec);
 extern types *Shp (types *array);
 extern types *TakeV (node *vec, types *vec_type, types *array);
 extern types *DropV (node *vec, types *vec_type, types *array);
-extern types *Psi (types *vec, types *array);
+extern types *Sel (types *vec, types *array);
 extern types *TakeDropS (node *vec, types *array, int tag);
 extern types *Cat (node *s_node, types *array1, types *array2);
 extern types *Rot (node *s_node, types *array);

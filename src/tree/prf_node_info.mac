@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.1  2000/11/20 18:03:27  sacbase
  * new release made
  *
@@ -153,9 +156,9 @@ PRF_IF (F_toi, "F_foi", "toi", "toi"), PRF_IF (F_tof, "F_fof", "tof", "tof"),
   PRF_IF (F_div_SxA, "F_div_SxA", "/", "_div"),
   PRF_IF (F_div_AxS, "F_div_AxS", "/", "_div"),
   PRF_IF (F_div_AxA, "F_div_AxA", "/", "_div"),
-  PRF_IF (F_idx_psi, "F_idx_psi", "idx_psi", "idx_psi"),
+  PRF_IF (F_idx_sel, "F_idx_sel", "idx_sel", "idx_sel"),
   PRF_IF (F_idx_modarray, "F_idx_modarray", "idx_modarray", "idx_modarray"),
-  PRF_IF (F_psi, "F_psi", "psi", "psi"),
+  PRF_IF (F_sel, "F_sel", "sel", "sel"),
   PRF_IF (F_modarray, "F_modarray", "modarray", "modarray"),
 
   PRF_IF (F_toi_A, "F_toi_A", "toi", "toi"), PRF_IF (F_tof_A, "F_tof_A", "tof", "tof"),

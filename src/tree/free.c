@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.27  2001/06/27 12:39:06  ben
  * SCHRemoveTasksel inserted
  *
@@ -489,7 +492,7 @@ FreeOneAccess (access_t *fr)
                   (NODE_TYPE( ACCESS_ARRAY( fr)) == N_arg)),
                  "ACCESS_ARRAY is neither a N_vardec- nor a N_arg-node!");
 
-    DBUG_PRINT( "FREE", ("Removing Access: psi(%s, %s)", 
+    DBUG_PRINT( "FREE", ("Removing Access: sel(%s, %s)", 
                          VARDEC_OR_ARG_NAME( ACCESS_IV( fr)),
                          VARDEC_OR_ARG_NAME( ACCESS_ARRAY( fr))));
 

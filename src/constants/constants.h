@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 1.10  2001/05/09 15:53:03  nmw
  * COCompareConstants() added
  *
@@ -126,7 +129,7 @@ extern bool COIsFalse (constant *a, bool all);
  ***/
 
 extern constant *COReshape (constant *idx, constant *a);
-extern constant *COPsi (constant *idx, constant *a);
+extern constant *COSel (constant *idx, constant *a);
 extern constant *COTake (constant *idx, constant *a);
 extern constant *CODrop (constant *idx, constant *a);
 extern constant *CODim (constant *a);

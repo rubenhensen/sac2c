@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.4  2001/03/22 20:41:10  dkr
  * no changes done
  *
@@ -192,15 +195,15 @@ TCWLprf (node *arg_node, node *arg_info)
             && (N_array == NODE_TYPE (PRF_ARG2 (arg_node))
                 || N_num == NODE_TYPE (PRF_ARG2 (arg_node)))) {
             /* CF prf now. */
-            if ((PRF_PRF (arg_node) == F_psi) || (PRF_PRF (arg_node) == F_reshape)
+            if ((PRF_PRF (arg_node) == F_sel) || (PRF_PRF (arg_node) == F_reshape)
                 || (PRF_PRF (arg_node) == F_take) || (PRF_PRF (arg_node) == F_drop)
                 || (PRF_PRF (arg_node) == F_add_AxA)) {
                 if (IsConstArray (PRF_ARG1 (arg_node))
                     && IsConstArray (PRF_ARG2 (arg_node))) {
                     arg1 = COMakeConstantFromArray (PRF_ARG1 (arg_node));
                     arg2 = COMakeConstantFromArray (PRF_ARG2 (arg_node));
-                    if (PRF_PRF (arg_node) == F_psi) {
-                        res = COPsi (arg1, arg2);
+                    if (PRF_PRF (arg_node) == F_sel) {
+                        res = COSel (arg1, arg2);
                     } else if (PRF_PRF (arg_node) == F_reshape) {
                         res = COReshape (arg1, arg2);
                     } else if (PRF_PRF (arg_node) == F_take) {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.2  2001/05/17 12:08:40  dkr
  * FREE, MALLOC eliminated
  *
@@ -68,7 +71,7 @@
  *      [Because such arrays do not exist outside the with-loop]
  *
  *   +) If "C" occurs on a right side, it looks like
- *          "psi( idx, C)"  or  "idx_psi( idx_flat, C)"
+ *          "sel( idx, C)"  or  "idx_sel( idx_flat, C)"
  *      where "idx_flat" is the flat offset of "idx" (IVE).
  *      [Otherwise reuse might miss data dependencies.]
  *
@@ -301,7 +304,7 @@ ReuseNwithop (node *arg_node, node *arg_info)
  * description:
  *   Removes all left hand side ids from the reuse-mask (and stores them into
  *     the no-reuse-mask).
- *   If on the right hand side a "psi( idx, A)" or "idx_psi( idx_flat, A)"
+ *   If on the right hand side a "sel( idx, A)" or "idx_sel( idx_flat, A)"
  *     where ...
  *       ... "idx" is the index-vector of the current with-loop;
  *       ... "idx_flat" is the flat offset of this index-vector (IVE);
@@ -317,7 +320,7 @@ ReuseLet (node *arg_node, node *arg_info)
 {
     node *arg1, *arg2;
     ids *tmp;
-    char *idx_psi_name;
+    char *idx_sel_name;
     int traverse;
 
     DBUG_ENTER ("ReuseLet");
@@ -337,7 +340,7 @@ ReuseLet (node *arg_node, node *arg_info)
     DBUG_ASSERT ((INFO_REUSE_IDX (arg_info) != NULL), "no idx found");
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf) {
         switch (PRF_PRF (LET_EXPR (arg_node))) {
-        case F_psi:
+        case F_sel:
             arg1 = EXPRS_EXPR (PRF_ARGS (LET_EXPR (arg_node)));
             arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (arg_node))));
             if ((NODE_TYPE (arg1) == N_id)
@@ -349,7 +352,7 @@ ReuseLet (node *arg_node, node *arg_info)
                 && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
                     == 0)) {
                 /*
-                 * 'arg2' is used in a normal WL-psi()
+                 * 'arg2' is used in a normal WL-sel()
                  *  -> we can possibly reuse this array
                  */
                 DFMSetMaskEntrySet (INFO_REUSE_MASK (arg_info), ID_NAME (arg2), NULL);
@@ -360,12 +363,12 @@ ReuseLet (node *arg_node, node *arg_info)
             }
             break;
 
-        case F_idx_psi:
+        case F_idx_sel:
             arg1 = EXPRS_EXPR (PRF_ARGS (LET_EXPR (arg_node)));
             arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (arg_node))));
-            idx_psi_name = IdxChangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)),
+            idx_sel_name = IdxChangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)),
                                         IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)));
-            if ((NODE_TYPE (arg1) == N_id) && (strcmp (ID_NAME (arg1), idx_psi_name) == 0)
+            if ((NODE_TYPE (arg1) == N_id) && (strcmp (ID_NAME (arg1), idx_sel_name) == 0)
                 && (NODE_TYPE (arg2) == N_id)
                 && (CompareTypes (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)))
                     == 0)
@@ -373,7 +376,7 @@ ReuseLet (node *arg_node, node *arg_info)
                 && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
                     == 0)) {
                 /*
-                 * 'arg2' is used in a (flattened) normal WL-psi()
+                 * 'arg2' is used in a (flattened) normal WL-sel()
                  *  -> we can possibly reuse this array
                  */
                 DFMSetMaskEntrySet (INFO_REUSE_MASK (arg_info), ID_NAME (arg2), NULL);
@@ -382,7 +385,7 @@ ReuseLet (node *arg_node, node *arg_info)
                  */
                 traverse = 0;
             }
-            idx_psi_name = Free (idx_psi_name);
+            idx_sel_name = Free (idx_sel_name);
             break;
 
         default:

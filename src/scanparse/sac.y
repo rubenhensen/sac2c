@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.28  2001/06/22 12:18:53  dkr
  * fixed a bug in rule for 'expr_sign':
  * negation of float/double works correctly now
@@ -204,7 +207,7 @@ static node *CheckWlcompConf( node *ap, node *exprs);
        STEP, WIDTH, TARGET,
        AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PRF_MOD, PLUS,
        TOI, TOF, TOD, ABS, PRF_MIN, PRF_MAX, ALL,
-       RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE, CAT, PSI, GENARRAY, MODARRAY
+       RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE, CAT, SEL, GENARRAY, MODARRAY
 
 %token <id> ID, STR, MINUS, PRIVATEID, OPTION
 
@@ -1257,7 +1260,7 @@ prf_name : AND        { $$ = StringCopy( prf_name_str[F_and]); }
          | DIM        { $$ = StringCopy( prf_name_str[F_dim]); }
          | ROTATE     { $$ = StringCopy( prf_name_str[F_rotate]); }
          | CAT        { $$ = StringCopy( prf_name_str[F_cat]); }
-         | PSI        { $$ = StringCopy( prf_name_str[F_psi]); }
+         | SEL        { $$ = StringCopy( prf_name_str[F_sel]); }
          | GENARRAY   { $$ = StringCopy( prf_name_str[F_genarray]); }
          | MODARRAY   { $$ = StringCopy( prf_name_str[F_modarray]); }
          | TOI        { $$ = StringCopy( prf_name_str[F_toi]); }
@@ -1641,11 +1644,11 @@ exprNObr: expr_main     { $$ = $1; }
 
 /* see 'expr_sel' */
 expr_selNObr: exprNObr SQBR_L expr SQBR_R
-              { $$ = MAKE_BIN_PRF( F_psi, $3, $1);
+              { $$ = MAKE_BIN_PRF( F_sel, $3, $1);
                 NODE_LINE( $$) = NODE_LINE( $1);
               }
             | exprNObr SQBR_L expr COMMA exprs SQBR_R
-              { $$ = MAKE_BIN_PRF( F_psi,
+              { $$ = MAKE_BIN_PRF( F_sel,
                                    MakeArray( MakeExprs( $3, $5)),
                                    $1);
                 NODE_LINE( $$) = NODE_LINE( $1);
@@ -1708,11 +1711,11 @@ expr_br: BRACKET_L expr BRACKET_R
 
 /* see 'expr_selNObr' */
 expr_sel: expr SQBR_L expr SQBR_R
-          { $$ = MAKE_BIN_PRF( F_psi, $3, $1);
+          { $$ = MAKE_BIN_PRF( F_sel, $3, $1);
             NODE_LINE( $$) = NODE_LINE( $1);
           }
         | expr SQBR_L expr COMMA exprs SQBR_R
-          { $$ = MAKE_BIN_PRF( F_psi,
+          { $$ = MAKE_BIN_PRF( F_sel,
                                MakeArray( MakeExprs( $3, $5)),
                                $1);
             NODE_LINE( $$) = NODE_LINE( $1);
@@ -1940,7 +1943,7 @@ monop: ABS   { $$ = F_abs;   }
      | TOD   { $$ = F_tod;   }
      ;
 
-binop: PSI      { $$ = F_psi;      }
+binop: SEL      { $$ = F_sel;      }
      | TAKE     { $$ = F_take;     }
      | DROP     { $$ = F_drop;     }
      | RESHAPE  { $$ = F_reshape;  }

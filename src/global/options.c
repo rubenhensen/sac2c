@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.14  2001/05/28 09:01:00  nmw
  * SSACSE requieres SSADCR - additional check and warning implemented
  *
@@ -501,7 +504,7 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('d', intrinsics |= INTRINSIC_DROP);
         ARG_FLAGMASK ('c', intrinsics |= INTRINSIC_CAT);
         ARG_FLAGMASK ('r', intrinsics |= INTRINSIC_ROT);
-        ARG_FLAGMASK ('p', intrinsics |= INTRINSIC_PSI);
+        ARG_FLAGMASK ('s', intrinsics |= INTRINSIC_SEL);
         ARG_FLAGMASK ('o', intrinsics |= INTRINSIC_TO);
         ARG_FLAGMASK_END ();
     });

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 1.5  2001/05/17 13:40:26  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -270,7 +273,7 @@ static node *
 CreateFullPartition (node *wln, node *arg_info)
 {
     int gen_shape, do_create, *array_null, *array_shape;
-    node *coden, *psi_index, *psi_array, *idn;
+    node *coden, *sel_index, *sel_array, *idn;
     ids *_ids;
     intern_gen *ig;
     char *varname;
@@ -336,10 +339,10 @@ CreateFullPartition (node *wln, node *arg_info)
             coden = CreateZeroScalar (TYPES_BASETYPE (type));
         } else { /* modarray */
             _ids = NWITH_VEC (wln);
-            psi_index = MakeId (StringCopy (IDS_NAME (_ids)), NULL, ST_regular);
-            ID_VARDEC (psi_index) = IDS_VARDEC (_ids);
-            psi_array = DupTree (NWITH_ARRAY (wln));
-            coden = MakePrf (F_psi, MakeExprs (psi_index, MakeExprs (psi_array, NULL)));
+            sel_index = MakeId (StringCopy (IDS_NAME (_ids)), NULL, ST_regular);
+            ID_VARDEC (sel_index) = IDS_VARDEC (_ids);
+            sel_array = DupTree (NWITH_ARRAY (wln));
+            coden = MakePrf (F_sel, MakeExprs (sel_index, MakeExprs (sel_array, NULL)));
         }
         varname = TmpVar ();
         _ids = MakeIds (varname, NULL, ST_regular); /* use memory from GetTmp() */
@@ -383,29 +386,29 @@ CreateFullPartition (node *wln, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CheckOptimizePsi( node *psi, node *arg_info)
+ *   node *CheckOptimizeSel( node *sel, node *arg_info)
  *
  * description:
- *   checks if 'psi' is an application with index vector and constant. If
- *   possible, the prf psi is replaced by A scalar index vector.
+ *   checks if 'sel' is an application with index vector and constant. If
+ *   possible, the prf sel is replaced by A scalar index vector.
  *
  * example:
  *   tmp = iv[[1]];       =>        tmp = j;
  *
  ******************************************************************************/
 static node *
-CheckOptimizePsi (node *psi, node *arg_info)
+CheckOptimizeSel (node *sel, node *arg_info)
 {
     int index;
     node *ivn, *indexn, *datan;
     ids *_ids;
 
-    DBUG_ENTER ("CheckOptimizePsi");
+    DBUG_ENTER ("CheckOptimizeSel");
 
     /* first check if the array is the index vector and the index is a
        constant in range. */
-    ivn = PRF_ARG2 (psi);
-    indexn = PRF_ARG1 (psi);
+    ivn = PRF_ARG2 (sel);
+    indexn = PRF_ARG1 (sel);
 
     if (N_id == NODE_TYPE (indexn)) {
         /* resolve id by accessing SSAASSIGN attribute */
@@ -432,15 +435,15 @@ CheckOptimizePsi (node *psi, node *arg_info)
         }
 
         if (!index) { /* found scalar index var. */
-            psi = FreeTree (psi);
-            psi = MakeId (StringCopy (IDS_NAME (_ids)), NULL, ST_regular);
-            ID_VARDEC (psi) = IDS_VARDEC (_ids);
-            ID_AVIS (psi) = IDS_AVIS (_ids);
+            sel = FreeTree (sel);
+            sel = MakeId (StringCopy (IDS_NAME (_ids)), NULL, ST_regular);
+            ID_VARDEC (sel) = IDS_VARDEC (_ids);
+            ID_AVIS (sel) = IDS_AVIS (_ids);
             wlt_expr++;
         }
     }
 
-    DBUG_RETURN (psi);
+    DBUG_RETURN (sel);
 }
 
 /******************************************************************************
@@ -630,17 +633,17 @@ SSAWLTlet (node *arg_node, node *arg_info)
     if (INFO_WLI_WL (arg_info)) {
         /*
          * if we are inside a WL we have to look for
-         *   1:  ..= psi(a1,a2)  where a1 may be a const vec and a2 iv.
+         *   1:  ..= sel(a1,a2)  where a1 may be a const vec and a2 iv.
          *   2:  ..= prf(a1,a2)  where a1 and a2 may be [i,j,k]
          *   3:  ..= expr        where expr may be [i,j,k]
          */
 
         if ((N_prf == NODE_TYPE (LET_EXPR (arg_node)))
-            && (F_psi == PRF_PRF (LET_EXPR (arg_node)))) {
+            && (F_sel == PRF_PRF (LET_EXPR (arg_node)))) {
             /*
              * 1:
              */
-            LET_EXPR (arg_node) = CheckOptimizePsi (LET_EXPR (arg_node), arg_info);
+            LET_EXPR (arg_node) = CheckOptimizeSel (LET_EXPR (arg_node), arg_info);
         }
 
         if (N_prf == NODE_TYPE (LET_EXPR (arg_node))) {
@@ -828,7 +831,7 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
      * If only one of these points was not successful, another call of WLT
      * will try it again (NWITH_PARTS == -1).
      *
-     * (OptimizePsi() and OptimizeArray() have to be called multiple
+     * (OptimizeSel() and OptimizeArray() have to be called multiple
      * times!)
      */
 

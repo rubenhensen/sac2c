@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.61  2001/06/27 14:31:38  ben
  * now uses SCHCompileSchedulingWithTasksel
  *
@@ -4003,10 +4006,10 @@ COMPPrfArith_AxA (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *COMPPrfIdxPsi( node *arg_node, node *arg_info)
+ *   node *COMPPrfIdxSel( node *arg_node, node *arg_info)
  *
  * Description:
- *   Compiles N_prf node of type F_idx_psi.
+ *   Compiles N_prf node of type F_idx_sel.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -4016,13 +4019,13 @@ COMPPrfArith_AxA (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfIdxPsi (node *arg_node, node *arg_info)
+COMPPrfIdxSel (node *arg_node, node *arg_info)
 {
     node *ret_node, *icm_node, *last_node;
     node *arg1, *arg2;
     ids *let_ids;
 
-    DBUG_ENTER ("COMPPrfIdxPsi");
+    DBUG_ENTER ("COMPPrfIdxSel");
 
     let_ids = INFO_COMP_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
@@ -4031,30 +4034,30 @@ COMPPrfIdxPsi (node *arg_node, node *arg_info)
     if ((NODE_TYPE (arg1) != N_prf) || (NODE_TYPE (PRF_ARG1 (arg1)) != N_num)) {
         /*
          * CAUTION: AE, IVE generate unflattened code!
-         * The 1st argument of idx_psi() may be a N_prf node with N_num arguments
+         * The 1st argument of idx_sel() may be a N_prf node with N_num arguments
          */
         DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_num)),
-                     "N_id or N_num as 1st arg of F_idx_psi expected!");
+                     "N_id or N_num as 1st arg of F_idx_sel expected!");
     }
-    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "N_id as 2nd arg of F_idx_psi expected!");
+    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "N_id as 2nd arg of F_idx_sel expected!");
 
     if (IsArray (IDS_TYPE (let_ids))) {
         /*
-         * This is possible only in case of an instrinsic array-psi:
-         *   psi( iv, A): int[] -> type[] -> type[]
-         * But this is a non-purely intrinsic. Normally an array-psi
-         * is transformed into a with-loop containing scalar-psi's only.
+         * This is possible only in case of an instrinsic array-sel:
+         *   sel( iv, A): int[] -> type[] -> type[]
+         * But this is a non-purely intrinsic. Normally an array-sel
+         * is transformed into a with-loop containing scalar-sel's only.
          */
         ret_node
           = MakeAssignIcm3 ("ND_ALLOC_ARRAY", MakeBasetypeNode (IDS_TYPE (let_ids)),
                             DupIds_Id (let_ids), MakeNum (IDS_REFCNT (let_ids)));
         last_node = ret_node;
 
-        icm_node = MakeAssignIcm3 ("ND_IDX_PSI_A", DupNode (arg1), DupNode (arg2),
+        icm_node = MakeAssignIcm3 ("ND_IDX_SEL_A", DupNode (arg1), DupNode (arg2),
                                    DupIds_Id (let_ids));
         last_node = ASSIGN_NEXT (last_node) = icm_node;
     } else {
-        ret_node = MakeAssignIcm3 ("ND_IDX_PSI_S", DupNode (arg1), DupNode (arg2),
+        ret_node = MakeAssignIcm3 ("ND_IDX_SEL_S", DupNode (arg1), DupNode (arg2),
                                    DupIds_Id (let_ids));
         last_node = ret_node;
     }
@@ -4143,10 +4146,10 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *COMPPrfPsi( node *arg_node, node *arg_info)
+ *   node *COMPPrfSel( node *arg_node, node *arg_info)
  *
  * Description:
- *   Compiles N_prf node of type F_psi.
+ *   Compiles N_prf node of type F_sel.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -4156,41 +4159,41 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfPsi (node *arg_node, node *arg_info)
+COMPPrfSel (node *arg_node, node *arg_info)
 {
     node *ret_node, *icm_node, *last_node;
     node *arg1, *arg2;
     ids *let_ids;
 
-    DBUG_ENTER ("COMPPrfPsi");
+    DBUG_ENTER ("COMPPrfSel");
 
     let_ids = INFO_COMP_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
     DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_array)),
-                 "N_id or N_array as 1st arg of F_psi expected!");
-    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "N_id as 2nd arg of F_psi expected!");
+                 "N_id or N_array as 1st arg of F_sel expected!");
+    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "N_id as 2nd arg of F_sel expected!");
 
     DBUG_ASSERT (((NODE_TYPE (arg1) != N_id)
                   || strcmp (IDS_NAME (let_ids), ID_NAME (arg1))),
-                 "a = psi( a, .) not allowed!");
+                 "a = sel( a, .) not allowed!");
     DBUG_ASSERT ((strcmp (IDS_NAME (let_ids), ID_NAME (arg2))),
-                 "a = psi( ., a) not allowed!");
+                 "a = sel( ., a) not allowed!");
 
     if (!IsArray (IDS_TYPE (let_ids))) {
         /* 'let_ids' is a scalar */
 
         if (NODE_TYPE (arg1) == N_id) {
             ret_node
-              = MakeAssignIcm4 ("ND_KD_PSI_VxA_S", DupNode (arg2), DupIds_Id (let_ids),
+              = MakeAssignIcm4 ("ND_KD_SEL_VxA_S", DupNode (arg2), DupIds_Id (let_ids),
                                 MakeNum (GetTypesLength (ID_TYPE (arg1))),
                                 DupNode (arg1));
             last_node = ret_node;
         } else {
             /* 'arg1' is a N_array node */
             ret_node
-              = MakeAssignIcm4 ("ND_KD_PSI_CxA_S", DupNode (arg2), DupIds_Id (let_ids),
+              = MakeAssignIcm4 ("ND_KD_SEL_CxA_S", DupNode (arg2), DupIds_Id (let_ids),
                                 MakeNum (CountExprs (ARRAY_AELEMS (arg1))),
                                 DupTree (ARRAY_AELEMS (arg1)));
             last_node = ret_node;
@@ -4205,7 +4208,7 @@ COMPPrfPsi (node *arg_node, node *arg_info)
 
         if (NODE_TYPE (arg1) == N_id) {
             icm_node
-              = MakeAssignIcm5 ("ND_KD_PSI_VxA_A", MakeNum (GetDim (ID_TYPE (arg2))),
+              = MakeAssignIcm5 ("ND_KD_SEL_VxA_A", MakeNum (GetDim (ID_TYPE (arg2))),
                                 DupNode (arg2), DupIds_Id (let_ids),
                                 MakeNum (GetTypesLength (ID_TYPE (arg1))),
                                 DupNode (arg1));
@@ -4213,7 +4216,7 @@ COMPPrfPsi (node *arg_node, node *arg_info)
         } else {
             /* 'arg1' is a N_array node */
             icm_node
-              = MakeAssignIcm5 ("ND_KD_PSI_CxA_A", MakeNum (GetDim (ID_TYPE (arg2))),
+              = MakeAssignIcm5 ("ND_KD_SEL_CxA_A", MakeNum (GetDim (ID_TYPE (arg2))),
                                 DupNode (arg2), DupIds_Id (let_ids),
                                 MakeNum (CountExprs (ARRAY_AELEMS (arg1))),
                                 DupTree (ARRAY_AELEMS (arg1)));
@@ -4764,16 +4767,16 @@ COMPPrf (node *arg_node, node *arg_info)
             arg_node = COMPPrfArith_AxA (arg_node, arg_info);
             break;
 
-        case F_idx_psi:
-            arg_node = COMPPrfIdxPsi (arg_node, arg_info);
+        case F_idx_sel:
+            arg_node = COMPPrfIdxSel (arg_node, arg_info);
             break;
 
         case F_idx_modarray:
             arg_node = COMPPrfIdxModarray (arg_node, arg_info);
             break;
 
-        case F_psi:
-            arg_node = COMPPrfPsi (arg_node, arg_info);
+        case F_sel:
+            arg_node = COMPPrfSel (arg_node, arg_info);
             break;
 
         case F_modarray:

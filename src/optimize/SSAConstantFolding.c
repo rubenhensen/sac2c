@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 1.20  2001/06/01 11:35:01  nmw
  * handling for infinite loops improoved
  *
@@ -88,10 +91,10 @@
  *   at this time the following primitive operations are implemented:
  *     for full constants (scalar value, arrays with known values):
  *       toi, tof, tod, abs, not, dim, shape, min, max, add, sub, mul, div,
- *       mod, and, le, lt, eq, ge, neq, reshape, psi, take, drop, modarray
+ *       mod, and, le, lt, eq, ge, neq, reshape, sel, take, drop, modarray
  *
  *     structural constant, with full constant iv (array with ids as values):
- *       reshape, psi, take, drop, modarray
+ *       reshape, sel, take, drop, modarray
  *
  *     shape constant (array with known shape, scalar id):
  *       shape, sub
@@ -107,8 +110,8 @@
  *    and (x&&1->x, 1&&x->x, x&&0->0, 0&&x->0),
  *    or  (x||1->1, 1||x->1, x||0->x, 0||x->x)
  *
- *  special psi-modarray optimization:
- *    looking up in a modarray chain for setting the psi referenced value
+ *  special sel-modarray optimization:
+ *    looking up in a modarray chain for setting the sel referenced value
  *
  *  not yet implemented: cat, rotate
  *
@@ -221,7 +224,7 @@ static node *RemovePhiCopyTargetAttributes (node *vardecs, bool thenpart);
 static constant *SSACFDim (node *expr);
 static constant *SSACFShape (node *expr);
 
-/* implements: psi, reshape, take, drop */
+/* implements: sel, reshape, take, drop */
 static node *SSACFStructOpWrapper (prf op, constant *idx, node *expr);
 
 /* implements: arithmetical opt. for add, sub, mul, div, and, or */
@@ -234,7 +237,7 @@ static node *SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr);
 static node *SSACFEq (node *expr1, node *expr2);
 static node *SSACFSub (node *expr1, node *expr2);
 static node *SSACFModarray (node *a, constant *idx, node *elem);
-static node *SSACFPsi (node *idx_expr, node *array_expr);
+static node *SSACFSel (node *idx_expr, node *array_expr);
 
 /* functions for internal use only */
 /******************************************************************************
@@ -475,8 +478,8 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
 
         /* perform struc-op on hidden constant */
         switch (op) {
-        case F_psi:
-            SCO_HIDDENCO (struc_co) = COPsi (idx, SCO_HIDDENCO (struc_co));
+        case F_sel:
+            SCO_HIDDENCO (struc_co) = COSel (idx, SCO_HIDDENCO (struc_co));
             break;
 
         case F_reshape:
@@ -1086,26 +1089,26 @@ SSACFModarray (node *a, constant *idx, node *elem)
 /******************************************************************************
  *
  * function:
- *   static node *SSACFPsi(node *idx_expr, node *array_expr)
+ *   static node *SSACFSel(node *idx_expr, node *array_expr)
  *
  * description:
- *   tries a special psi-modarray optimization for the following cases:
+ *   tries a special sel-modarray optimization for the following cases:
  *
  *   1. iv is an unknown expression:
  *      b = modarray(a, iv, value)
- *      x = psi(iv, b)    ->   x = value;
+ *      x = sel(iv, b)    ->   x = value;
  *
  *   2. iv is an expression with known constant value:
  *      b = modarray(a, [5], val5);
  *      c = modarray(b, [3], val3);
  *      d = modarray(c, [2], val2);
- *      x = psi([5], d)   ->  x = val5;
+ *      x = sel([5], d)   ->  x = val5;
  *
  *   maybe this allows to eliminate some arrays at all.
  *
  *****************************************************************************/
 static node *
-SSACFPsi (node *idx_expr, node *array_expr)
+SSACFSel (node *idx_expr, node *array_expr)
 {
     node *result;
     node *prf_mod;
@@ -1115,7 +1118,7 @@ SSACFPsi (node *idx_expr, node *array_expr)
     constant *idx_co;
     constant *mod_idx_co;
 
-    DBUG_ENTER ("SSACFPsi");
+    DBUG_ENTER ("SSACFSel");
 
     result = NULL;
 
@@ -1150,12 +1153,12 @@ SSACFPsi (node *idx_expr, node *array_expr)
             || ((idx_co != NULL) && (mod_idx_co != NULL)
                 && (COCompareConstants (idx_co, mod_idx_co)))) {
             /*
-             * idx vectors in psi and modarray are equal
-             * - replace psi() with element
+             * idx vectors in sel and modarray are equal
+             * - replace sel() with element
              */
             result = DupTree (mod_elem_expr);
 
-            DBUG_PRINT ("SSACF", ("psi-modarray optimization done"));
+            DBUG_PRINT ("SSACF", ("sel-modarray optimization done"));
 
         } else {
             /* index vector does not match, but if both are constant, we can try
@@ -1164,7 +1167,7 @@ SSACFPsi (node *idx_expr, node *array_expr)
              * expressions.
              */
             if ((idx_co != NULL) && (mod_idx_co != NULL)) {
-                result = SSACFPsi (idx_expr, mod_arr_expr);
+                result = SSACFSel (idx_expr, mod_arr_expr);
             } else {
                 /* no further analysis possible, because of non constant idx expr */
                 result = NULL;
@@ -2263,23 +2266,23 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         }
         break;
 
-    case F_psi:
+    case F_sel:
         if
             TWO_CONST_ARG (arg_co)
             {
                 /* for pure constant args */
-                new_co = COPsi (arg_co[0], arg_co[1]);
+                new_co = COSel (arg_co[0], arg_co[1]);
             }
         else if
             FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 /* for some non constant expression and constant index vector */
-                new_node = SSACFStructOpWrapper (F_psi, arg_co[0], arg_expr[1]);
+                new_node = SSACFStructOpWrapper (F_sel, arg_co[0], arg_expr[1]);
             }
 
         if ((new_co == NULL) && (new_node == NULL) && (TWO_ARG (arg_expr))) {
-            /* for some expressions concerning psi-modarray combinations */
-            new_node = SSACFPsi (arg_expr[0], arg_expr[1]);
+            /* for some expressions concerning sel-modarray combinations */
+            new_node = SSACFSel (arg_expr[0], arg_expr[1]);
         }
         break;
 

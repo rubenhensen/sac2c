@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.11  2001/05/17 13:50:34  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -1876,10 +1879,10 @@ FetchElem (int pos, node *array)
 
 /*
  *
- *  functionname  : CalcPsi
- *  arguments     : 1) shape vector function psi is applied to
- *		    2) array the function psi is applied to
- *		    3) type of array the function psi is applied to
+ *  functionname  : CalcSel
+ *  arguments     : 1) shape vector function sel is applied to
+ *		    2) array the function sel is applied to
+ *		    3) type of array the function sel is applied to
  *		    4) arg_info containing f.e. type of result
  *		    R) calculated result
  *  description   :
@@ -1892,7 +1895,7 @@ FetchElem (int pos, node *array)
  *
  */
 node *
-CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
+CalcSel (node *shape, node *array, types *array_type, node *arg_info)
 {
     int length, start, mult, i, j, array_length;
     int vec_dim, array_dim, result_dim;
@@ -1900,7 +1903,7 @@ CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
     shpseg *array_shape;
     node *res_node = NULL;
 
-    DBUG_ENTER ("CalcPsi");
+    DBUG_ENTER ("CalcSel");
     GET_BASIC_TYPE (INFO_CF_TYPE (arg_info), INFO_CF_TYPE (arg_info), 47);
     GET_BASIC_TYPE (array_type, array_type, 47);
 
@@ -1933,7 +1936,7 @@ CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
         else
             res_node = DupPartialArray (start, length, array, arg_info);
     } else {
-        WARN (linenum, ("Illegal vector for primitive function psi"));
+        WARN (linenum, ("Illegal vector for primitive function sel"));
     }
     DBUG_RETURN (res_node);
 }
@@ -2326,9 +2329,9 @@ ArrayPrf (node *arg_node, node *arg_info)
         break; /* dim */
 
         /***********************/
-        /* Fold psi-function   */
+        /* Fold sel-function   */
         /***********************/
-    case F_psi: {
+    case F_sel: {
         int dim, ok;
         node *shape, *array, *res_array, *first_elem, *new_assign;
         node *tmpn, *modindex, *assign;
@@ -2372,10 +2375,10 @@ ArrayPrf (node *arg_node, node *arg_info)
 
         if (!IsConst (shape))
             break;
-        DBUG_ASSERT (N_array == NODE_TYPE (shape), "Shape-vector for psi not an array");
+        DBUG_ASSERT (N_array == NODE_TYPE (shape), "Shape-vector for sel not an array");
 
         /*
-         * Here, we know that the first arg of F_psi indeed is a
+         * Here, we know that the first arg of F_sel indeed is a
          * constant array and we know that shape points to that
          * N_array-node.
          */
@@ -2441,16 +2444,16 @@ ArrayPrf (node *arg_node, node *arg_info)
                                 } else {
                                     /*
                                      * A variable with the same name has been defined
-                                     * between the calls to modarray() and psi(), i.e. we
+                                     * between the calls to modarray() and sel(), i.e. we
                                      * have to deal with the following situation:
                                      *
                                      * A = modarray( A, [0], val);
                                      * ....
                                      * val = .... ;
                                      *
-                                     * ... = psi( [0], A);
+                                     * ... = sel( [0], A);
                                      *
-                                     * As a consequence, the call to psi obviously cannot
+                                     * As a consequence, the call to sel obviously cannot
                                      * be replaced by the variable 'val'. However, we can
                                      * use the following trick when inserting a new, fresh
                                      * identifier:
@@ -2460,9 +2463,9 @@ ArrayPrf (node *arg_node, node *arg_info)
                                      * ....
                                      * val = .... ;
                                      *
-                                     * ... = psi( [0], A);
+                                     * ... = sel( [0], A);
                                      *
-                                     * Now, the call to psi() may safely be replaced by
+                                     * Now, the call to sel() may safely be replaced by
                                      * the variable 'fresh_var'.
                                      *
                                      * The following lines of code implement exactly this
@@ -2554,7 +2557,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                                              * field. As a consequence, this variable must
                                              * still be a fresh one and may therefore be
                                              * reused for further applications of prf
-                                             * psi() referring to this application of prf
+                                             * sel() referring to this application of prf
                                              * modarray().
                                              */
                                             ids *still_fresh_var = LET_IDS (
@@ -2602,7 +2605,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                 /* make array flat here !!! */
             }
 
-            res_array = CalcPsi (shape, array, array_type, arg_info);
+            res_array = CalcSel (shape, array, array_type, arg_info);
         }
 
         if (res_array) {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.64  2001/06/27 12:37:34  ben
  * SCHPrintTasksel inserted
  *
@@ -475,9 +478,9 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
         INDENT;
         fprintf (outfile, " *   function aplication\n");
     }
-    if ((feature & FEATURE_APSI) == FEATURE_APSI) {
+    if ((feature & FEATURE_ASEL) == FEATURE_ASEL) {
         INDENT;
-        fprintf (outfile, " *   primitive function psi with array return value\n");
+        fprintf (outfile, " *   primitive function sel with array return value\n");
     }
     if ((feature & FEATURE_MODA) == FEATURE_MODA) {
         INDENT;
@@ -502,7 +505,7 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
     }
     if ((feature & FEATURE_UNKNOWN) == FEATURE_UNKNOWN) {
         INDENT;
-        fprintf (outfile, " *   primitive function psi with unknown indexvector\n");
+        fprintf (outfile, " *   primitive function sel with unknown indexvector\n");
     }
 
     dim = SHP_SEG_SIZE;
@@ -524,7 +527,7 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
             case ACL_irregular:
             /* here's no break missing ! */
             case ACL_unknown:
-                fprintf (outfile, "psi( %s ", VARDEC_NAME (ACCESS_IV (access)));
+                fprintf (outfile, "sel( %s ", VARDEC_NAME (ACCESS_IV (access)));
                 fprintf (outfile, ", %s)", VARDEC_NAME (ACCESS_ARRAY (access)));
                 fprintf (outfile, "\n");
                 access = ACCESS_NEXT (access);
@@ -1677,7 +1680,7 @@ PrintAssign (node *arg_node, node *arg_info)
                                         INFO_PRINT_VARNO (arg_info)););
 
     DBUG_EXECUTE ("WLI", if ((N_let == NODE_TYPE (ASSIGN_INSTR (arg_node)))
-                             && (F_psi == PRF_PRF (LET_EXPR (ASSIGN_INSTR (arg_node))))) {
+                             && (F_sel == PRF_PRF (LET_EXPR (ASSIGN_INSTR (arg_node))))) {
         DbugIndexInfo (ASSIGN_INDEX (arg_node));
     });
 
@@ -1930,7 +1933,7 @@ PrintPrf (node *arg_node, node *arg_info)
                           mdb_prf[PRF_PRF (arg_node)], arg_node));
 
     switch (PRF_PRF (arg_node)) {
-    case F_psi:
+    case F_sel:
     case F_take:
     case F_drop:
     case F_shape:
@@ -1945,7 +1948,7 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_tof_A:
     case F_tod:
     case F_tod_A:
-    case F_idx_psi:
+    case F_idx_sel:
     case F_modarray:
     case F_genarray:
     case F_idx_modarray:

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.10  2001/05/17 13:40:26  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -303,7 +306,7 @@ GenIds (node *arg[2])
 
 /*
  *
- *  functionname  : GenPsi
+ *  functionname  : GenSel
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -315,7 +318,7 @@ GenIds (node *arg[2])
  *
  */
 node *
-GenPsi (ids *ids_node, node *arg_info)
+GenSel (ids *ids_node, node *arg_info)
 {
     node *new_nodes = NULL, *new_let, *new_assign, *new_vardec;
     node *exprn;
@@ -323,7 +326,7 @@ GenPsi (ids *ids_node, node *arg_info)
     types *type;
     node *arg[2];
 
-    DBUG_ENTER ("GenPsi");
+    DBUG_ENTER ("GenSel");
     type = IDS_TYPE (ids_node);
     ;
     length = GetTypesLength (type);
@@ -364,7 +367,7 @@ GenPsi (ids *ids_node, node *arg_info)
             new_let->info.ids->node = new_vardec;
         }
         LET_EXPR (new_let)
-          = MakePrf (F_psi, MakeExprs (arg[0], MakeExprs (arg[1], NULL)));
+          = MakePrf (F_sel, MakeExprs (arg[0], MakeExprs (arg[1], NULL)));
         new_assign = MakeAssign (new_let, NULL);
         new_nodes = AppendNodeChain (1, new_nodes, new_assign);
     }
@@ -391,7 +394,7 @@ AEprf (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("AEprf");
 
-    if (F_psi == PRF_PRF (arg_node)) {
+    if (F_sel == PRF_PRF (arg_node)) {
         tmpn = NodeBehindCast (PRF_ARG1 (arg_node));
         if (N_id == NODE_TYPE (tmpn)) {
             if (use_ssaform) {
@@ -411,11 +414,11 @@ AEprf (node *arg_node, node *arg_info)
         arg[0] = tmpn;
         arg[1] = NodeBehindCast (PRF_ARG2 (arg_node));
 
-        /* srs: added IsConstArray() so that psi([i],arr) is not replaced.
+        /* srs: added IsConstArray() so that sel([i],arr) is not replaced.
                 This led to wrong programs. */
         if (N_id == NODE_TYPE (arg[1]) && tmpn && N_array == NODE_TYPE (tmpn)
             && IsConstArray (tmpn) && CorrectArraySize (ID_IDS (arg[1]))) {
-            DBUG_PRINT ("AE", ("psi function with array %s to eliminated found",
+            DBUG_PRINT ("AE", ("sel function with array %s to eliminated found",
                                arg[1]->info.ids->id));
             new_node = MakeNode (N_id);
             ID_IDS (new_node) = GenIds (arg);
@@ -485,7 +488,7 @@ AEassign (node *arg_node, node *arg_info)
         if ((_ids != NULL) && (IDS_NEXT (_ids) == NULL)) {
             if (CorrectArraySize (_ids)) {
                 VARDEC_FLAG (IDS_VARDEC (_ids)) = TRUE;
-                new_nodes = GenPsi (_ids, arg_info);
+                new_nodes = GenSel (_ids, arg_info);
             } else
                 VARDEC_FLAG (IDS_VARDEC (_ids)) = FALSE;
         }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.24  2001/06/27 14:32:38  ben
  * modified for cooperation with tasksel-pragma
  *
@@ -243,42 +246,42 @@ ICM_DEF( ND_KD_SET_SHAPE, TRACE_NONE)
 ICM_END( ND_KD_SET_SHAPE, (name, dim, s))
 #endif
 
-#if defined(ND_KD_PSI_CxA_S) || defined(ICM_ALL)
-ICM_DEF( ND_KD_PSI_CxA_S, TRACE_PRF)
+#if defined(ND_KD_SEL_CxA_S) || defined(ICM_ALL)
+ICM_DEF( ND_KD_SEL_CxA_S, TRACE_PRF)
   ICM_STR(a)
   ICM_STR(res)
   ICM_INT(dim)
   ICM_VAR( dim, vi)
-ICM_END( ND_KD_PSI_CxA_S, (a, res, dim, vi))
+ICM_END( ND_KD_SEL_CxA_S, (a, res, dim, vi))
 #endif
 
-#if defined(ND_KD_PSI_VxA_S) || defined(ICM_ALL)
-ICM_DEF( ND_KD_PSI_VxA_S, TRACE_PRF)
+#if defined(ND_KD_SEL_VxA_S) || defined(ICM_ALL)
+ICM_DEF( ND_KD_SEL_VxA_S, TRACE_PRF)
   ICM_STR(a)
   ICM_STR(res)
   ICM_INT(dim)
   ICM_STR( v)
-ICM_END( ND_KD_PSI_VxA_S, (a, res, dim, v))
+ICM_END( ND_KD_SEL_VxA_S, (a, res, dim, v))
 #endif
 
-#if defined(ND_KD_PSI_CxA_A) || defined(ICM_ALL)
-ICM_DEF( ND_KD_PSI_CxA_A, TRACE_PRF)
+#if defined(ND_KD_SEL_CxA_A) || defined(ICM_ALL)
+ICM_DEF( ND_KD_SEL_CxA_A, TRACE_PRF)
   ICM_INT(dima)
   ICM_STR(a)
   ICM_STR(res)
   ICM_INT(dimv)
   ICM_VAR( dimv, vi)
-ICM_END( ND_KD_PSI_CxA_A, (dima, a, res, dimv, vi))
+ICM_END( ND_KD_SEL_CxA_A, (dima, a, res, dimv, vi))
 #endif
 
-#if defined(ND_KD_PSI_VxA_A) || defined(ICM_ALL)
-ICM_DEF( ND_KD_PSI_VxA_A, TRACE_PRF)
+#if defined(ND_KD_SEL_VxA_A) || defined(ICM_ALL)
+ICM_DEF( ND_KD_SEL_VxA_A, TRACE_PRF)
   ICM_INT(dima)
   ICM_STR(a)
   ICM_STR(res)
   ICM_INT(dimv)
   ICM_STR( v)
-ICM_END( ND_KD_PSI_VxA_A, (dima, a, res, dimv, v))
+ICM_END( ND_KD_SEL_VxA_A, (dima, a, res, dimv, v))
 #endif
 
 #if defined(ND_KD_TAKE_CxA_A) || defined(ICM_ALL)

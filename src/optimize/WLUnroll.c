@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.9  2001/05/17 12:46:31  nmw
  * MALLOC/FREE changed to Malloc/Free, result of Free() used
  *
@@ -612,7 +615,7 @@ CheckUnrollModarray (node *wln)
 
              B = new_with
                ([ 0 ] <= __flat_1_iv=[__flat_0_i] < [ 3 ]) {
-                  __wlt_4 = psi( __flat_1_iv, A );
+                  __wlt_4 = sel( __flat_1_iv, A );
                } : __wlt_4,
                ...more parts...
              modarray( A);
@@ -629,7 +632,7 @@ CheckUnrollModarray (node *wln)
             NPART_COPY (partn)
               = (N_let == NODE_TYPE (tmpn)
                  && !strcmp (ID_NAME (NCODE_CEXPR (coden)), IDS_NAME (LET_IDS (tmpn)))
-                 && N_prf == NODE_TYPE (exprn) && F_psi == PRF_PRF (exprn)
+                 && N_prf == NODE_TYPE (exprn) && F_sel == PRF_PRF (exprn)
                  && N_id == NODE_TYPE (PRF_ARG1 (exprn))
                  && !strcmp (IDS_NAME (NPART_VEC (partn)), ID_NAME (PRF_ARG1 (exprn)))
                  && N_id == NODE_TYPE (PRF_ARG2 (exprn))

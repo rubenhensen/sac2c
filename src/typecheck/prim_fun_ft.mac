@@ -1,6 +1,9 @@
 /*
  *
  *  $Log$
+ *  Revision 3.3  2001/06/28 07:46:51  cg
+ *  Primitive function psi() renamed to sel().
+ *
  *  Revision 3.2  2001/03/22 14:02:27  sbs
  *  S_S added for F_abs
  *
@@ -157,7 +160,7 @@ FT (F_drop, VxA_Ad, F_drop)
 FT (F_drop, SxA_Ad, F_drop)
 FT (F_take, VxA_At, F_take)
 FT (F_take, SxA_At, F_take)
-FT (F_psi, VxA_Ap, F_psi)
+FT (F_sel, VxA_Ap, F_sel)
 FT (F_shape, V_As, F_shape)
 FT (F_dim, A_S, F_dim)
 FT (F_reshape, VxA_Ar, F_reshape)

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.3  2001/05/17 13:40:26  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -488,7 +491,7 @@ APCprf (node *arg_node, node *arg_info)
         break;
 
         /* result will be unpadded, but padded arguments are supported */
-    case F_psi:
+    case F_sel:
     case F_dim:
     case F_shape:
         INFO_APC_UNSUPPORTED (arg_info) = TRUE;
@@ -522,7 +525,7 @@ APCprf (node *arg_node, node *arg_info)
         /* unsupported non-scalar functions */
     case F_take:
     case F_drop:
-    case F_idx_psi: /* @@@ ???? idx_psi==psi ??? */
+    case F_idx_sel:
     case F_reshape:
     case F_cat:
     case F_rotate:

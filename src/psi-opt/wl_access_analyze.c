@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.5  2001/05/17 13:41:26  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -925,7 +928,7 @@ WLAAcond (node *arg_node, node *arg_info)
  *   This function mainly sets the LASTLETIDS entry of the arg_info node
  *   correctly and traverses the left hand side of the let.
  *   Afterwards, it is checked whether any of the variables set by this let,
- *   has been used as an index vector in a psi operation and the respective
+ *   has been used as an index vector in a sel operation and the respective
  *   access is still classified ACL_unknown. In this case, the access is
  *   re-classified as ACL_irregular. Any "regular" access would have already
  *   been handled during the traversal of the left hand side.
@@ -1026,25 +1029,25 @@ WLAAprf (node *arg_node, node *arg_info)
             arg_node_arg2 = PRF_ARG2 (arg_node);
 
             switch (PRF_PRF (arg_node)) {
-            case F_psi:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_psi"));
+            case F_sel:
+                DBUG_PRINT ("WLAA_INFO", ("primitive function F_sel"));
 
                 if (INFO_WLAA_INDEXDIM (arg_info) != INFO_WLAA_ARRAYDIM (arg_info)) {
                     /*
-                     *  Result of psi must not be a skalar !
+                     *  Result of sel must not be a skalar !
                      */
                     DBUG_PRINT ("WLAA_INFO",
-                                ("primitive function psi with array return value"));
+                                ("primitive function sel with array return value"));
                     INFO_WLAA_FEATURE (arg_info)
-                      = INFO_WLAA_FEATURE (arg_info) | FEATURE_APSI;
+                      = INFO_WLAA_FEATURE (arg_info) | FEATURE_ASEL;
                 }
                 if (IDS_DIM (INFO_WLAA_LASTLETIDS (arg_info)) == SCALAR) {
 
                     DBUG_ASSERT (((NODE_TYPE (arg_node_arg1) == N_id)
                                   || (NODE_TYPE (arg_node_arg1) == N_array)),
-                                 "1st arg of psi is neither an array nor a variable");
+                                 "1st arg of sel is neither an array nor a variable");
                     DBUG_ASSERT ((NODE_TYPE (arg_node_arg2) == N_id),
-                                 "2nd arg of psi is not variable");
+                                 "2nd arg of sel is not variable");
 
                     if (NODE_TYPE (arg_node_arg1) == N_id) {
                         INFO_WLAA_ACCESS (arg_info)
@@ -1060,7 +1063,7 @@ WLAAprf (node *arg_node, node *arg_info)
                             ACCESS_CLASS (INFO_WLAA_ACCESS (arg_info)) = ACL_offset;
 
                             DBUG_ASSERT ((ID_DIM (arg_node_arg2) > 0),
-                                         "Unknown dimension for 2nd arg of psi");
+                                         "Unknown dimension for 2nd arg of sel");
 
                             ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
                               = IntVec2Shpseg (1, 0, NULL,
@@ -1079,7 +1082,7 @@ WLAAprf (node *arg_node, node *arg_info)
                                                  INFO_WLAA_ACCESS (arg_info)));
                         } else {
                             /*
-                             * The first arg of psi is a variable. The offset of the
+                             * The first arg of sel is a variable. The offset of the
                              * access have to be infered later.
                              */
                         }
@@ -1096,9 +1099,9 @@ WLAAprf (node *arg_node, node *arg_info)
 
                 } else {
                     DBUG_PRINT ("WLAA_INFO",
-                                ("primitive function psi with array return value"));
+                                ("primitive function sel with array return value"));
                     INFO_WLAA_FEATURE (arg_info)
-                      = INFO_WLAA_FEATURE (arg_info) | FEATURE_APSI;
+                      = INFO_WLAA_FEATURE (arg_info) | FEATURE_ASEL;
                 }
                 break;
 
@@ -1493,7 +1496,7 @@ WLAAprf (node *arg_node, node *arg_info)
                 }
                 break;
 
-            case F_idx_psi:
+            case F_idx_sel:
             case F_idx_modarray:
                 /*
                  * These functions are only introduced by index vector elimination,
@@ -1501,8 +1504,8 @@ WLAAprf (node *arg_node, node *arg_info)
                  * vector elimination.
                  */
                 DBUG_PRINT ("WLAA_INFO",
-                            ("primitive function F_idx_psi | F_idx_modarray"));
-                DBUG_ASSERT (1, "primitive function idx_psi or idx_modarray found "
+                            ("primitive function F_idx_sel | F_idx_modarray"));
+                DBUG_ASSERT (1, "primitive function idx_sel or idx_modarray found "
                                 "during tile size selection");
                 break;
 

@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.7  2001/05/22 14:08:39  dkr
  * minor changes done
  *
@@ -268,7 +271,7 @@ int charpos = 0;
                                FILTER( CAT );
                              }
                            }
-"psi"                      { FILTER( PSI ); }
+"sel"                      { FILTER( SEL ); }
 "toi"                      { FILTER( TOI ); }
 "tof"                      { FILTER( TOF ); }
 "tod"                      { FILTER( TOD ); }

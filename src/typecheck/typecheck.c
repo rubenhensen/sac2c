@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.28  2001/06/07 11:26:54  cg
  * Bug fixed in TC constant propagation: specialized functions
  * now get the module name of the currently compiled module name
@@ -770,29 +773,29 @@ TypeToCount (types *type)
 /******************************************************************************
  *
  * function:
- *   node *BuildPsiWithLoop(types *restype, node *idx, node *array)
+ *   node *BuildSelWithLoop(types *restype, node *idx, node *array)
  *
  * description:
  *   This function creates one large with-loop that replaces a single function
- *   application of a primitive psi() with an array as value.
+ *   application of a primitive sel() with an array as value.
  *
  *   Example:
  *
  *     idx = [M,M];
  *     A   = reshape( [N, N, N, N], [ ... ]));
- *     a   = psi( idx, A);
+ *     a   = sel( idx, A);
  *
  *   is transformed into
  *
  *     a = with ( . <= [ _tmp_4, _tmp_3 ] <= . )
  *         {
  *           _tmp_8 = [0];
- *           _tmp_6 = psi( _tmp_8, idx);
+ *           _tmp_6 = sel( _tmp_8, idx);
  *           _tmp_7 = [1];
- *           _tmp_5 = psi( _tmp_7, idx);
+ *           _tmp_5 = sel( _tmp_7, idx);
  *
  *           _tmp_2 = [ _tmp_6, _tmp_5, _tmp_4, _tmp_3 ];
- *           _tmp_1 = psi( _tmp_2, A);
+ *           _tmp_1 = sel( _tmp_2, A);
  *         }
  *         genarray( [M,M], _tmp_1);
  *
@@ -804,17 +807,17 @@ TypeToCount (types *type)
  ******************************************************************************/
 
 static node *
-BuildPsiWithLoop (types *restype, node *idx, node *array)
+BuildSelWithLoop (types *restype, node *idx, node *array)
 {
     int i, num_fresh_vars, var_offset;
     char **tmp_vars;
     node *aelems, *res, *assign;
     ids *iv_scalars = NULL, *last_iv_scalars;
 
-    DBUG_ENTER ("BuildPsiWithLoop");
+    DBUG_ENTER ("BuildSelWithLoop");
 
-    DBUG_ASSERT ((NODE_TYPE (idx) == N_id), "first arg to psi() must be N_id");
-    DBUG_ASSERT ((NODE_TYPE (array) == N_id), "second arg to psi() must be N_id");
+    DBUG_ASSERT ((NODE_TYPE (idx) == N_id), "first arg to sel() must be N_id");
+    DBUG_ASSERT ((NODE_TYPE (array) == N_id), "second arg to sel() must be N_id");
 
     num_fresh_vars = 2 * ID_DIM (array) - TYPES_DIM (restype) + 2;
 
@@ -824,7 +827,7 @@ BuildPsiWithLoop (types *restype, node *idx, node *array)
         tmp_vars[i] = TmpVar ();
     }
 
-    assign = MakeAssign (MakeLet (MakePrf2 (F_psi,
+    assign = MakeAssign (MakeLet (MakePrf2 (F_sel,
                                             MakeId (StringCopy (tmp_vars[1]), NULL,
                                                     ST_regular),
                                             array),
@@ -845,7 +848,7 @@ BuildPsiWithLoop (types *restype, node *idx, node *array)
 
     for (i = 2 + TYPES_DIM (restype); i < 2 + ID_DIM (array); i++) {
         assign
-          = MakeAssign (MakeLet (MakePrf2 (F_psi,
+          = MakeAssign (MakeLet (MakePrf2 (F_sel,
                                            MakeId (StringCopy (tmp_vars[i + var_offset]),
                                                    NULL, ST_regular),
                                            MakeId (StringCopy (ID_NAME (idx)), NULL,
@@ -982,7 +985,7 @@ BuildTakeWithLoop (node *take_shp, node *array)
     wl_body_var = TmpVar ();
     iv = TmpVar ();
 
-    body = MakeAssign (MakeLet (MakePrf (F_psi, MakeExprs (MakeId (StringCopy (iv), NULL,
+    body = MakeAssign (MakeLet (MakePrf (F_sel, MakeExprs (MakeId (StringCopy (iv), NULL,
                                                                    ST_regular),
                                                            MakeExprs (array, NULL))),
                                 MakeIds (wl_body_var, NULL, ST_regular)),
@@ -1129,7 +1132,7 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
         }
     }
 
-    body = MakeAssign (MakeLet (MakePrf (F_psi,
+    body = MakeAssign (MakeLet (MakePrf (F_sel,
                                          MakeExprs (MakeId (StringCopy (wl_body_var_vec),
                                                             NULL, ST_regular),
                                                     MakeExprs (array, NULL))),
@@ -1186,7 +1189,7 @@ BuildCatWithLoop1 (types *new_shape, node *array1)
     wl_body_var = TmpVar ();
     iv = TmpVar ();
 
-    body = MakeAssign (MakeLet (MakePrf (F_psi, MakeExprs (MakeId (StringCopy (iv), NULL,
+    body = MakeAssign (MakeLet (MakePrf (F_sel, MakeExprs (MakeId (StringCopy (iv), NULL,
                                                                    ST_regular),
                                                            MakeExprs (array1, NULL))),
                                 MakeIds (wl_body_var, NULL, ST_regular)),
@@ -1289,7 +1292,7 @@ BuildCatWithLoop2 (ids *lhs, node *arg1, node *arg2, node *arg3)
                                                              wl_body_var_offset),
                                                            NULL, ST_regular)),
                                          MakeIds (wl_body_var_vec, NULL, ST_regular)),
-                                MakeAssign (MakeLet (MakePrf2 (F_psi,
+                                MakeAssign (MakeLet (MakePrf2 (F_sel,
                                                                MakeId (StringCopy (
                                                                          wl_body_var_vec),
                                                                        NULL, ST_regular),
@@ -3789,7 +3792,7 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
         }
         /*
          * The 3 following cases represent a quick hack in order to allow
-         * int[?] as return type of psi in the module Array from the SAC
+         * int[?] as return type of sel in the module Array from the SAC
          * standard library.
          */
         else if ((ARRAY_OR_SCALAR == type_1->dim) && (ARRAY_OR_SCALAR == type_2->dim)
@@ -5058,10 +5061,10 @@ TClet (node *arg_node, node *arg_info)
 
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf) {
         switch (PRF_PRF (LET_EXPR (arg_node))) {
-        case F_psi:
+        case F_sel:
             if (TYPES_DIM (type) == ARRAY_OR_SCALAR) {
                 /*
-                 * LET-expression is a call of function psi,
+                 * LET-expression is a call of function sel,
                  * and the infered type is SCALAR_OR_ARRAY .
                  * There has to be a declaration
                  * of the belonging variable
@@ -5107,7 +5110,7 @@ TClet (node *arg_node, node *arg_info)
                 } else {
                     if (kind_of_file != SAC_MOD) {
                         ABORT (NODE_LINE (arg_node),
-                               ("Function 'psi' is called with argument of type '%s'"
+                               ("Function 'sel' is called with argument of type '%s'"
                                 ", so the type of the result has to be declared",
                                 Type2String (type, 0, TRUE), ids->id));
                     }
@@ -5136,18 +5139,18 @@ TClet (node *arg_node, node *arg_info)
 
             if (TYPES_DIM (type) != SCALAR) {
                 /*
-                 * Here, we have a psi returning an array.
+                 * Here, we have a sel returning an array.
                  */
-                if (!(intrinsics & INTRINSIC_PSI)) {
+                if (!(intrinsics & INTRINSIC_SEL)) {
                     /*
-                     * If not the intrinsic implementation of primitive function psi() is
+                     * If not the intrinsic implementation of primitive function sel() is
                      * to be used, the function application is now replaced by an
                      * equialent with-loop.
                      */
                     type_arg1 = ID_OR_CAST_TYPE (PRF_ARG1 (LET_EXPR (arg_node)));
                     type_arg2 = ID_OR_CAST_TYPE (PRF_ARG2 (LET_EXPR (arg_node)));
 
-                    if (NULL != LookupFun (prf_name_str[F_psi], "Array", NULL)) {
+                    if (NULL != LookupFun (prf_name_str[F_sel], "Array", NULL)) {
                         if ((TYPES_DIM (type) > SCALAR)
                             && (TYPES_DIM (type_arg1) > SCALAR)
                             && (TYPES_DIM (type_arg2) > SCALAR)) {
@@ -5161,7 +5164,7 @@ TClet (node *arg_node, node *arg_info)
 
                             arg1 = PRF_ARG1 (LET_EXPR (arg_node));
                             arg2 = PRF_ARG2 (LET_EXPR (arg_node));
-                            wl_impl = BuildPsiWithLoop (type, arg1, arg2);
+                            wl_impl = BuildSelWithLoop (type, arg1, arg2);
                             new_type = TI (wl_impl, arg_info);
                             FreeAllTypes (new_type);
 
@@ -5169,7 +5172,7 @@ TClet (node *arg_node, node *arg_info)
                              * PRF_ARG1(LET_EXPR(arg_node)) = NULL;
                              *
                              * The index argument node has not been reused by
-                             * BuildPsiWithLoop(), so, it has to be freed now.
+                             * BuildSelWithLoop(), so, it has to be freed now.
                              */
 
                             PRF_ARG2 (LET_EXPR (arg_node)) = NULL;
@@ -5179,7 +5182,7 @@ TClet (node *arg_node, node *arg_info)
                         }
                     } else {
                         ERROR (NODE_LINE (arg_node),
-                               ("Function 'psi` undefined or applied to wrong arguments: "
+                               ("Function 'sel` undefined or applied to wrong arguments: "
                                 "'%s, %s`",
                                 Type2String (ID_OR_CAST_TYPE (
                                                PRF_ARG1 (LET_EXPR (arg_node))),

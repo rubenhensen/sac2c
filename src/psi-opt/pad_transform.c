@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.6  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.5  2001/05/17 13:41:26  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -992,8 +995,8 @@ APTprf (node *arg_node, node *arg_info)
 
     switch (PRF_PRF (arg_node)) {
 
-    case F_psi:
-        DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL), " psi() has empty argument list!");
+    case F_sel:
+        DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL), " sel() has empty argument list!");
         /* traverse arguments to apply padding */
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
 
@@ -1082,7 +1085,7 @@ APTprf (node *arg_node, node *arg_info)
         /* results of unsupported functions have unpadded shape
          *
          * currently unsupported are:
-         * F_take, F_drop, F_idx_psi, F_reshape, F_cat, F_rotate,
+         * F_take, F_drop, F_idx_sel, F_reshape, F_cat, F_rotate,
          * F_toi_A, F_tof_A, F_tod_A, F_div_SxA, F_div_AxS, F_div_AxA,
          * F_modarray, F_idx_modarray, F_genarray
          */

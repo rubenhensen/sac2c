@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.3  2001/03/22 14:02:27  sbs
  * S_S added for F_abs
  *
@@ -203,11 +206,11 @@ TT2 (202, VxA_Ad, INT_A, BOOL_A, DropV (PRF_ARG1 (arg_node), arg_type[0], arg_ty
 TT2 (203, VxA_Ad, INT_A, DOUBLE_A, DropV (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
 TT2 (204, VxA_Ad, INT_A, CHAR_A, DropV (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
 
-TT2 (210, VxA_Ap, INT_A, INT_A, Psi (arg_type[0], arg_type[1]))
-TT2 (211, VxA_Ap, INT_A, FLOAT_A, Psi (arg_type[0], arg_type[1]))
-TT2 (212, VxA_Ap, INT_A, BOOL_A, Psi (arg_type[0], arg_type[1]))
-TT2 (213, VxA_Ap, INT_A, DOUBLE_A, Psi (arg_type[0], arg_type[1]))
-TT2 (214, VxA_Ap, INT_A, CHAR_A, Psi (arg_type[0], arg_type[1]))
+TT2 (210, VxA_Ap, INT_A, INT_A, Sel (arg_type[0], arg_type[1]))
+TT2 (211, VxA_Ap, INT_A, FLOAT_A, Sel (arg_type[0], arg_type[1]))
+TT2 (212, VxA_Ap, INT_A, BOOL_A, Sel (arg_type[0], arg_type[1]))
+TT2 (213, VxA_Ap, INT_A, DOUBLE_A, Sel (arg_type[0], arg_type[1]))
+TT2 (214, VxA_Ap, INT_A, CHAR_A, Sel (arg_type[0], arg_type[1]))
 
 TT2 (220, SxA_At, INT, INT_A, TakeDropS (PRF_ARG1 (arg_node), arg_type[1], 0))
 TT2 (221, SxA_At, INT, FLOAT_A, TakeDropS (PRF_ARG1 (arg_node), arg_type[1], 0))

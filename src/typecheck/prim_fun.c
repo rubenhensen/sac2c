@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.10  2001/05/17 11:34:07  sbs
  * return value of Free now used ...
  *
@@ -1386,23 +1389,23 @@ DropV (node *vec, types *vec_type, types *array)
 
 /*
  *
- *  functionname  : Psi
+ *  functionname  : Sel
  *  arguments     : 1) type of index vector
  *                  2) type of an array
- *  description   : computes the resulttype of a 'psi' operation
+ *  description   : computes the resulttype of a 'sel' operation
  *
  *  remarks       : is part of macro TT2 and is used in typecheck.c
  *
  */
 
 types *
-Psi (types *vec, types *array)
+Sel (types *vec, types *array)
 {
     int dim, i, to_drop;
     types *ret_type, *array_btype;
     shpseg *new_shpseg;
 
-    DBUG_ENTER ("Psi");
+    DBUG_ENTER ("Sel");
 
     GET_BASIC_TYPE (array_btype, array, -64); /* -64 is a dummy argument */
 

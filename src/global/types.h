@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.8  2001/04/24 13:27:28  dkr
  * - macro FUNDEF_UNUSED renamed into USED_INACTIVE
  * - macros FALSE, TRUE moved from internal_lib.h to types.h
@@ -128,7 +131,7 @@ typedef /* unsigned */ int feature_t;
 #define FEATURE_TAKE 4  /* primitive function take */
 #define FEATURE_DROP 8  /* primitive function drop */
 #define FEATURE_AP 16   /* function application */
-#define FEATURE_APSI 32 /* primitive function psi with array return value */
+#define FEATURE_ASEL 32 /* primitive function psi with array return value */
 #define FEATURE_MODA 64 /* primitive function modarray */
 #define FEATURE_CAT 128 /* primitive function cat */
 #define FEATURE_ROT 256 /* primitive function rotate */
@@ -425,7 +428,7 @@ typedef struct NODE {
  ******************************************************************************/
 
 /* The following struct is only annotated to N_assign nodes which are
-   inside a WL body and which have ASSIGN_INSTRs N_let and N_prf(F_psi). */
+   inside a WL body and which have ASSIGN_INSTRs N_let and N_prf(F_sel). */
 typedef struct INDEX_INFO {
     int vector;               /* this is an index vector (>0) or a scalar (0)
                                  in case of a vector this number is the
@@ -457,7 +460,7 @@ typedef struct INDEX_INFO {
                        argument of prf. arg_no may be 0 which
                        means that no prf is given. Can only be in:
                         tmp = [i,j,c];
-                        val = psi(...,tmp);
+                        val = sel(...,tmp);
                        Well, can also happen when CF is deacivated.
                        If arg_no is 0, prf is undefined */
 } index_info;

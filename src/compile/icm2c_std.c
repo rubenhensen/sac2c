@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.5  2001/05/18 09:58:03  cg
  * #include <malloc.h> removed.
  *
@@ -957,25 +960,25 @@ ICMCompileND_KD_SET_SHAPE (char *name, int dim, char **s)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_KD_PSI_CxA_S( char *a, char *res, int dim, char **vi)
+ *   void ICMCompileND_KD_SEL_CxA_S( char *a, char *res, int dim, char **vi)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KD_PSI_CxA_S( a, res, dim, v0,..., vn)
+ *   ND_KD_SEL_CxA_S( a, res, dim, v0,..., vn)
  *   selects a single element of the array
  *
  ******************************************************************************/
 
 void
-ICMCompileND_KD_PSI_CxA_S (char *a, char *res, int dim, char **vi)
+ICMCompileND_KD_SEL_CxA_S (char *a, char *res, int dim, char **vi)
 {
-    DBUG_ENTER ("ICMCompileND_KD_PSI_CxA_S");
+    DBUG_ENTER ("ICMCompileND_KD_SEL_CxA_S");
 
-#define ND_KD_PSI_CxA_S
+#define ND_KD_SEL_CxA_S
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_KD_PSI_CxA_S
+#undef ND_KD_SEL_CxA_S
 
     INDENT;
     fprintf (outfile, "%s = SAC_ND_READ_ARRAY(%s, ", res, a);
@@ -988,25 +991,25 @@ ICMCompileND_KD_PSI_CxA_S (char *a, char *res, int dim, char **vi)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_KD_PSI_VxA_S( char *a, char *res, int dim, char *v)
+ *   void ICMCompileND_KD_SEL_VxA_S( char *a, char *res, int dim, char *v)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KD_PSI_VxA_S( a, res, dim, v )
+ *   ND_KD_SEL_VxA_S( a, res, dim, v )
  *   selects a single element of the array
  *
  ******************************************************************************/
 
 void
-ICMCompileND_KD_PSI_VxA_S (char *a, char *res, int dim, char *v)
+ICMCompileND_KD_SEL_VxA_S (char *a, char *res, int dim, char *v)
 {
-    DBUG_ENTER ("ICMCompileND_KD_PSI_VxA_S");
+    DBUG_ENTER ("ICMCompileND_KD_SEL_VxA_S");
 
-#define ND_KD_PSI_VxA_S
+#define ND_KD_SEL_VxA_S
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_KD_PSI_VxA_S
+#undef ND_KD_SEL_VxA_S
 
     INDENT;
     fprintf (outfile, "%s = SAC_ND_READ_ARRAY(%s, ", res, a);
@@ -1019,26 +1022,26 @@ ICMCompileND_KD_PSI_VxA_S (char *a, char *res, int dim, char *v)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_KD_PSI_CxA_A( int dima, char *a,
+ *   void ICMCompileND_KD_SEL_CxA_A( int dima, char *a,
  *                                   char *res, int dimv, char **vi)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KD_PSI_CxA_A( dima, a, res, dimv, v0,..., vn)
+ *   ND_KD_SEL_CxA_A( dima, a, res, dimv, v0,..., vn)
  *   selects a sub-array
  *
  ******************************************************************************/
 
 void
-ICMCompileND_KD_PSI_CxA_A (int dima, char *a, char *res, int dimv, char **vi)
+ICMCompileND_KD_SEL_CxA_A (int dima, char *a, char *res, int dimv, char **vi)
 {
-    DBUG_ENTER ("ICMCompileND_KD_PSI_CxA_A");
+    DBUG_ENTER ("ICMCompileND_KD_SEL_CxA_A");
 
-#define ND_KD_PSI_CxA_A
+#define ND_KD_SEL_CxA_A
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_KD_PSI_CxA_A
+#undef ND_KD_SEL_CxA_A
 
     INDENT;
     CopyBlock (a, VectToOffset (dimv, AccessConst (vi, i), dima, a), res);
@@ -1050,26 +1053,26 @@ ICMCompileND_KD_PSI_CxA_A (int dima, char *a, char *res, int dimv, char **vi)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_KD_PSI_VxA_A( int dima, char *a,
+ *   void ICMCompileND_KD_SEL_VxA_A( int dima, char *a,
  *                                   char *res, int dimv, char *v)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KD_PSI_VxA_A( dima, a, res, dimv, v )
+ *   ND_KD_SEL_VxA_A( dima, a, res, dimv, v )
  *   selects a sub-array
  *
  ******************************************************************************/
 
 void
-ICMCompileND_KD_PSI_VxA_A (int dima, char *a, char *res, int dimv, char *v)
+ICMCompileND_KD_SEL_VxA_A (int dima, char *a, char *res, int dimv, char *v)
 {
-    DBUG_ENTER ("ICMCompileND_KD_PSI_VxA_A");
+    DBUG_ENTER ("ICMCompileND_KD_SEL_VxA_A");
 
-#define ND_KD_PSI_VxA_A
+#define ND_KD_SEL_VxA_A
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_KD_PSI_VxA_A
+#undef ND_KD_SEL_VxA_A
 
     INDENT;
     CopyBlock (a, VectToOffset (dimv, AccessVect (v, i), dima, a), res);

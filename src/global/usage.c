@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/06/28 07:46:51  cg
+ * Primitive function psi() renamed to sel().
+ *
  * Revision 3.15  2001/05/30 15:50:25  nmw
  * break specifier for cf3 added
  *
@@ -611,7 +614,7 @@ usage ()
             "\t\t\t\t\t  d: use intrinsic drop.\n"
             "\t\t\t\t\t  c: use intrinsic cat.\n"
             "\t\t\t\t\t  r: use intrinsic rotate.\n"
-            "\t\t\t\t\t  p: use intrinsic psi.\n"
+            "\t\t\t\t\t  s: use intrinsic sel.\n"
             "\t\t\t\t\t  o: use intrinsic type conversion.\n");
 
     printf ("\n\nLIBRARY OPTIONS:\n\n"
