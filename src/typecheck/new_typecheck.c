@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2004/11/14 15:20:16  sah
+ * added support for import of udts
+ *
  * Revision 3.51  2004/11/11 15:20:30  sah
  * in new ast mode a typedef now has a ntype after parsing
  * changed NTCtypedef accordingly
@@ -847,6 +850,7 @@ NTCtypedef (node *arg_node, info *arg_info)
         nt = TYSetScalar (nt, TYMakeSimpleType (T_classtype));
     }
 
+#ifndef NEW_AST
     udt = UTFindUserType (name, mod);
     if (udt != UT_NOT_DEFINED) {
         ERROR (linenum, ("type %s:%s multiply defined;"
@@ -858,11 +862,41 @@ NTCtypedef (node *arg_node, info *arg_info)
     DBUG_EXECUTE ("UDT", tmp_str = TYType2String (nt, FALSE, 0););
     DBUG_PRINT ("UDT", ("adding user type %s:%s defined as %s", mod, name, tmp_str));
     DBUG_EXECUTE ("UDT", tmp_str = Free (tmp_str););
+#else
+    if (GET_FLAG (TYPEDEF, arg_node, IS_LOCAL)) {
+        udt = UTFindUserType (name, mod);
+        if (udt != UT_NOT_DEFINED) {
+            ERROR (linenum, ("type %s:%s multiply defined;"
+                             " previous definition in line %d",
+                             mod, name, UTGetLine (udt)));
+        }
+
+        DBUG_EXECUTE ("UDT", tmp_str = TYType2String (nt, FALSE, 0););
+        DBUG_PRINT ("UDT", ("adding user type %s:%s defined as %s", mod, name, tmp_str));
+        DBUG_EXECUTE ("UDT", tmp_str = Free (tmp_str););
+
+        udt = UTAddUserType (name, mod, nt, NULL, linenum, arg_node);
+    } else {
+        DBUG_EXECUTE ("UDT", tmp_str = TYType2String (nt, FALSE, 0););
+        DBUG_PRINT ("UDT", ("passing user type %s:%s defined as %s", mod, name, tmp_str));
+        DBUG_EXECUTE ("UDT", tmp_str = Free (tmp_str););
+
+        udt = UTFindUserType (name, mod);
+    }
+#endif
 
     if (TYPEDEF_NEXT (arg_node) != NULL)
         TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
 
+#ifdef NEW_AST
+    if (GET_FLAG (TYPEDEF, arg_node, IS_LOCAL)) {
+        base = CheckUdtAndSetBaseType (udt, NULL);
+    } else {
+        base = UTGetBaseType (udt);
+    }
+#else
     base = CheckUdtAndSetBaseType (udt, NULL);
+#endif
 
 #ifndef NEW_AST
     /*

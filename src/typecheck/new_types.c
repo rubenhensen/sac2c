@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2004/11/14 15:21:19  sah
+ * added support for import of udts
+ *
  * Revision 3.66  2004/11/09 16:06:18  sah
  * TYDeserializeType is now portable as it no more
  * depends on the platform specific evaluation order
@@ -279,6 +282,7 @@
 #include "ssi.h"
 
 #include "serialize.h"
+#include "deserialize.h"
 
 /*
  * Since all type constructors may have different attributes,
@@ -752,6 +756,30 @@ TYGetMod (ntype *symb)
     DBUG_ENTER ("TYGetMod");
     DBUG_ASSERT ((NTYPE_CON (symb) == TC_symbol), "TYGetMod applied to nonsymbol-type!");
     DBUG_RETURN (SYMBOL_MOD (symb));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   ntype     * TYSetMod( ntype *symb, char *mod)
+ *
+ * description:
+ *   Several functions for changing the attributes from scalar types.
+ *
+ ******************************************************************************/
+ntype *
+TYSetMod (ntype *symb, char *mod)
+{
+    DBUG_ENTER ("TYSetMod");
+    DBUG_ASSERT ((NTYPE_CON (symb) == TC_symbol), "TYSetMod applied to nonsymbol-type!");
+
+    if (SYMBOL_MOD (symb) != NULL) {
+        SYMBOL_MOD (symb) = Free (SYMBOL_MOD (symb));
+    }
+
+    SYMBOL_MOD (symb) = mod;
+
+    DBUG_RETURN (symb);
 }
 
 /******************************************************************************
@@ -6209,17 +6237,27 @@ TYDeserializeType (typeconstr con, ...)
         name = va_arg (args, char *);
         mod = va_arg (args, char *);
 
-        result = TYMakeSymbType (name, mod);
+        result = DeserializeLookupSymbolType (name, mod);
 
         va_end (args);
     } break;
     case TC_user: {
+        char *name;
+        char *mod;
+        usertype type;
+
         va_start (args, con);
 
-        /* TODO: lookup usertype, if found, set value, otherwise
-                 load type and set value then */
+        name = va_arg (args, char *);
+        mod = va_arg (args, char *);
 
-        result = TYMakeUserType (0);
+        type = UTFindUserType (name, mod);
+
+        if (type != UT_NOT_DEFINED) {
+            result = TYMakeUserType (type);
+        } else {
+            result = DeserializeLoadUserType (name, mod);
+        }
 
         va_end (args);
     } break;
