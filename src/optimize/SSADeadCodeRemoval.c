@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2001/04/17 15:49:43  nmw
+ * removal of phi-copy-targets improved (removes both assignments in one traversal)
+ *
  * Revision 1.11  2001/04/03 14:21:52  nmw
  * SSADCRlet frees expression to early
  *
@@ -820,8 +823,19 @@ SSADCRleftids (ids *arg_ids, node *arg_info)
                         ("check left side %s  - not needed",
                          VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
 
-            /* variable is not needed, but mark variable as needed to preserve vardec */
-            AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) = AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) + 1;
+            /*
+             * variable is not needed, but mark variable as needed to preserve vardec to
+             * avoid problems with mutiple results in a function application that is not
+             * removed but where are some unused results. in this case the vardecs od the
+             * unused identifiers must not removed, because the hole application will stay
+             * in the programm.
+             * only if this identifier is a phi copy target, we can remove the vardec,
+             * because phi-copy-assignments contains only ONE assigned identifier.
+             */
+            if (AVIS_SSAPHITARGET (IDS_AVIS (arg_ids)) == PHIT_NONE) {
+                AVIS_NEEDCOUNT (IDS_AVIS (arg_ids))
+                  = AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) + 1;
+            }
 
             /* traverse next ids as usual */
             if (IDS_NEXT (arg_ids) != NULL) {
