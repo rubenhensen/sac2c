@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.41  2004/11/24 12:31:00  ktr
+  FUNDEF_TYPE -> FUNDEF_TYPES
+
   Revision 1.40  2004/11/24 11:50:48  mwe
   ConstVarPropagation added
   N_let modified (rotate arguments)
@@ -935,6 +938,11 @@
     </nodeset>
   </nodesets>
   <syntaxtree version="1.0">
+<!--
+
+  N_module :
+
+-->
     <node name="Module">
       <description>node for a module declaration</description>
       <sons>
@@ -1017,6 +1025,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_typedef:
+
+-->
     <node name="Typedef">
       <description>definition of a user defined type</description>
       <sons>
@@ -1090,6 +1103,11 @@
 	<flag name="IsLocal" default="TRUE"/>
       </flags>
     </node>
+<!--
+
+  N_objdef :
+
+-->
     <node name="Objdef">
       <sons>
         <son name="Expr" mandatory="yes">
@@ -1164,6 +1182,11 @@
 	<flag name="IsLocal" default="TRUE"/>
       </flags>
     </node>
+<!--
+
+  N_fundef :
+
+-->
     <node name="Fundef">
       <sons>
         <son name="Rets" mandatory="no">
@@ -1233,7 +1256,7 @@
             <all />
           </phases>
         </attribute>
-	<attribute name="Type" mandatory="no" >
+	<attribute name="Types" mandatory="no" >
 	  <type name="OldType" />
 	  <phases>
 	    <range from="typecheck" to="final" />
@@ -1396,6 +1419,11 @@
 	<flag name="IsWrapperfun" />
       </flags>
     </node>
+<!--
+
+  N_arg :
+
+-->
     <node name="Arg">
       <sons>
         <son name="Avis" mandatory="yes">
@@ -1478,6 +1506,11 @@
         <flag name="IsRefcounted" default="TRUE" />
       </flags>
     </node>
+<!--
+
+  N_block :
+
+-->
     <node name="Block">
       <sons>
         <son name="Instr" mandatory="yes">
@@ -1558,6 +1591,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_vardec :
+
+-->
     <node name="Vardec">
       <sons>
         <son name="Avis" mandatory="yes">
@@ -1630,6 +1668,11 @@
         <flag name="HasBeenEliminated" />
       </flags>
     </node>
+<!--
+
+  N_assign :
+
+-->
     <node name="Assign">
       <sons>
         <son name="Instr" mandatory="yes">
@@ -1691,6 +1734,11 @@
         <flag name="IsUnused" />
       </flags>
     </node>
+<!--
+
+  N_let :
+
+-->
     <node name="Let">
       <sons>
         <son name="Ids" mandatory="yes">
@@ -1726,6 +1774,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_cast :
+
+-->
     <node name="Cast">
       <sons>
         <son name="Expr" mandatory="yes">
@@ -1744,6 +1797,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_return :
+
+-->
     <node name="Return">
       <sons>
         <son name="Exprs" mandatory="yes">
@@ -1790,6 +1848,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_cond :
+
+-->
     <node name="Cond">
       <sons>
         <son name="Cond" mandatory="yes">
@@ -1836,6 +1899,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_do :
+
+-->
     <node name="Do">
       <sons>
         <son name="Cond" mandatory="yes">
@@ -1887,6 +1955,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_while :
+
+-->
     <node name="While">
       <sons>
         <son name="Cond" mandatory="yes">
@@ -1922,6 +1995,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_annotate :
+
+-->
     <node name="Annotate">
       <sons></sons>
       <attributes>
@@ -1956,6 +2034,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_ap :
+
+-->
     <node name="Ap">
       <sons>
         <son name="Args" mandatory="no">
@@ -1996,6 +2079,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_mop :
+
+-->
     <node name="Mop">
       <sons>
         <son name="Ops" mandatory="yes" >
@@ -2014,6 +2102,11 @@
         <flag name="IsFixed" />
       </flags>
     </node>
+<!--
+
+  N_exprs :
+
+-->
     <node name="Exprs">
       <sons>
         <son name="Expr" mandatory="yes">
@@ -2030,6 +2123,11 @@
       <attributes></attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_funcond :
+
+-->
     <node name="Funcond">
       <sons>
         <son name="If" mandatory="yes">
@@ -2051,6 +2149,11 @@
       <attributes></attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_array :
+
+-->
     <node name="Array">
       <sons>
         <son name="AElems" mandatory="yes">
@@ -2110,6 +2213,11 @@
         <flag name="IsConst" />
       </flags>
     </node>
+<!--
+
+  N_vinfo :
+
+-->
     <node name="Vinfo">
       <sons>
         <son name="Next" mandatory="no">
@@ -2154,6 +2262,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_id :
+
+-->
     <node name="Id">
       <sons></sons>
       <attributes>
@@ -2221,6 +2334,11 @@
 	<flag name="IsConst" />
       </flags>
     </node>
+<!--
+
+  N_num :
+
+-->
     <node name="Num">
       <sons></sons>
       <attributes>
@@ -2233,6 +2351,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_char :
+
+-->
     <node name="Char">
       <sons></sons>
       <attributes>
@@ -2245,6 +2368,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_float :
+
+-->
     <node name="Float">
       <sons></sons>
       <attributes>
@@ -2257,6 +2385,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_double :
+
+-->
     <node name="Double">
       <sons></sons>
       <attributes>
@@ -2269,6 +2402,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_bool :
+
+-->
     <node name="Bool">
       <sons></sons>
       <attributes>
@@ -2281,6 +2419,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_str :
+
+-->
     <node name="Str">
       <sons></sons>
       <attributes>
@@ -2293,6 +2436,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_prf :
+
+-->
     <node name="Prf">
       <sons>
         <son name="Args" mandatory="yes">
@@ -2311,6 +2459,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_dot :
+
+-->
     <node name="Dot">
       <sons></sons>
       <attributes>
@@ -2323,6 +2476,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_setwl :
+
+-->
     <node name="SetWL">
       <sons>
         <son name="Ids" mandatory="yes">
@@ -2340,11 +2498,21 @@
       <attributes></attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_empty :
+
+-->
     <node name="Empty">
       <sons></sons>
       <attributes></attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_icm :
+
+-->
     <node name="Icm">
       <sons>
         <son name="Args" mandatory="no">
@@ -2392,6 +2560,11 @@
         <flag name="IsEndOfStatement" />
       </flags>
     </node>
+<!--
+
+  N_pragma :
+
+-->
     <node name="Pragma">
       <sons>
         <son name="ReadOnly" mandatory="no">
@@ -2486,6 +2659,11 @@
        </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_cseinfo :
+
+-->
     <node name="CSEinfo">
       <description>This node is not located in the AST, it is only
       used internally by CSE.</description>
@@ -2520,6 +2698,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_ssacnt :
+
+-->
     <node name="SSAcnt">
       <sons>
         <son name="Next" mandatory="no">
@@ -2544,6 +2727,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_ssastack :
+
+-->
     <node name="SSAstack">
       <sons>
         <son name="Next" mandatory="no">
@@ -2568,6 +2756,11 @@
         <flag name="InUse" />
       </flags>
     </node>
+<!--
+
+  N_avis :
+
+-->
     <node name="Avis">
       <sons></sons>
       <attributes>
@@ -2763,6 +2956,11 @@
 	<flag name="IsUnique" />
       </flags>
     </node>
+<!--
+
+  N_spmd :
+
+-->
     <node name="Spmd">
       <sons>
         <son name="Region" mandatory="yes">
@@ -2865,6 +3063,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_sync :
+
+-->
     <node name="Sync">
       <sons>
         <son name="Region" mandatory="yes">
@@ -2933,6 +3136,11 @@
         </flag>
       </flags>
     </node>
+<!--
+
+  N_mt :
+
+-->
     <node name="MT">
       <sons>
         <son name="Region" mandatory="yes">
@@ -2955,6 +3163,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_ex :
+
+-->
     <node name="EX">
       <sons>
         <son name="Region" mandatory="yes">
@@ -2967,6 +3180,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_st :
+
+-->
     <node name="ST">
       <sons>
         <son name="Region" mandatory="yes">
@@ -2979,6 +3197,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_with :
+
+-->
     <node name="With">
       <sons>
         <son name="Part" mandatory="yes">
@@ -3056,6 +3279,11 @@
 	<flag name="IsDependent" />
       </flags>
     </node>
+<!--
+
+  N_part :
+
+-->
     <node name="Part">
       <sons>
         <son name="WithId" mandatory="yes">
@@ -3092,6 +3320,11 @@
         <flag name="IsCopy" />
       </flags>
     </node>
+<!--
+
+  N_withid :
+
+-->
     <node name="Withid">
       <sons>
         <son name="Vec" mandatory="yes">
@@ -3111,6 +3344,11 @@
         <flag name="VecNeeded" />
       </flags>
     </node>
+<!--
+
+  N_generator :
+
+-->
     <node name="Generator">
       <sons>
         <son name="Bound1" mandatory="no">
@@ -3164,6 +3402,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_code :
+
+-->
     <node name="Code">
       <sons>
         <son name="CBlock" mandatory="no">
@@ -3229,6 +3472,11 @@
 	<flag name="IsDummyCode" />
       </flags>
     </node>
+<!--
+
+  N_with2 :
+
+-->
     <node name="With2">
       <sons>
         <son name="WithId" mandatory="yes">
@@ -3301,6 +3549,11 @@
 	<flag name="CalcParallel" />
       </flags>
     </node>
+<!--
+
+  N_genarray :
+
+-->
     <node name="Genarray">
       <description>withloop operation</description>
       <sons>
@@ -3328,6 +3581,11 @@
       <attributes></attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_modarray :
+
+-->
     <node name="Modarray">
       <description>withloop operation</description>
       <sons>
@@ -3350,6 +3608,11 @@
       <attributes></attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_fold :
+
+-->
     <node name="Fold">
       <description>withloop operation</description>
       <sons>
@@ -3398,6 +3661,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_wlseg :
+
+-->
     <node name="WLseg">
       <sons>
         <son name="Contents" mandatory="yes">
@@ -3478,6 +3746,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_wlsegvar :
+
+-->
     <node name="WLsegVar">
       <sons>
         <son name="Contents" mandatory="yes">
@@ -3537,6 +3810,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_wlblock :
+
+-->
     <node name="WLblock">
       <sons>
         <son name="NextDim" mandatory="no">
@@ -3590,6 +3868,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_wlublock :
+
+-->
     <node name="WLublock">
       <sons>
         <son name="NextDim" mandatory="no">
@@ -3642,6 +3925,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_wlstride :
+
+-->
     <node name="WLstride">
       <sons>
         <son name="Contents" mandatory="yes">
@@ -3717,6 +4005,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_wlstridevar :
+
+-->
     <node name="WLstrideVar">
       <sons>
         <son name="Bound1" mandatory="yes">
@@ -3766,6 +4059,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_wlgrid :
+
+-->
     <node name="WLgrid">
       <sons>
         <son name="NextDim" mandatory="no">
@@ -3835,6 +4133,11 @@
         <flag name="IsNoOp" />
       </flags>
     </node>
+<!--
+
+  N_wlgridvar :
+
+-->
     <node name="WLgridVar">
       <sons>
         <son name="Bound1" mandatory="yes">
@@ -3892,6 +4195,11 @@
         <flag name="IsNoOp" />
       </flags>
     </node>
+<!--
+
+  N_cwrapper :
+
+-->
     <node name="CWrapper">
       <sons>
         <son name="Next" mandatory="no">
@@ -3934,6 +4242,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_dataflownode :
+
+-->
     <node name="Dataflownode">
       <sons></sons>
       <attributes>
@@ -4018,6 +4331,11 @@
         <flag name="IsUsed" />
       </flags>
     </node>
+<!--
+
+  N_dataflowgraph :
+
+-->
     <node name="Dataflowgraph">
       <sons></sons>
       <attributes>
@@ -4060,6 +4378,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_import :
+
+-->
     <node name="Import">
       <sons>
         <son name="Next" mandatory="no">
@@ -4085,6 +4408,11 @@
         <flag name="All" />
       </flags>
     </node>
+<!--
+
+  N_export :
+
+-->
     <node name="Export">
       <sons>
         <son name="Next" mandatory="no">
@@ -4104,6 +4432,11 @@
         <flag name="All" />
       </flags>
     </node>
+<!--
+
+  N_use :
+
+-->
     <node name="Use">
       <sons>
         <son name="Next" mandatory="no">
@@ -4129,6 +4462,11 @@
         <flag name="All" />
       </flags>
     </node>
+<!--
+
+  N_provide :
+
+-->
     <node name="Provide">
       <sons>
         <son name="Next" mandatory="no">
@@ -4148,6 +4486,11 @@
         <flag name="All" />
       </flags>
     </node>
+<!--
+
+  N_symbol :
+
+-->
     <node name="Symbol">
       <sons>
         <son name="Next" mandatory="no">
@@ -4166,6 +4509,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_linklist :
+
+-->
     <node name="Linklist">
       <sons>
         <son name="Next" mandatory="no">
@@ -4188,6 +4536,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_ret :
+
+-->
     <node name="Ret">
       <sons>
         <son name="Next" mandatory="no">
@@ -4210,6 +4563,11 @@
         <flag name="IsRefcounted" default="TRUE" />
       </flags>
     </node>
+<!--
+
+  N_ids :
+
+-->
     <node name="Ids">
       <sons>
         <son name="Next" mandatory="no">
@@ -4244,6 +4602,11 @@
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_nums :
+
+-->
     <node name="Nums">
       <sons>
         <son name="Next" mandatory="no">
