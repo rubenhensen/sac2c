@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.18  2000/06/25 01:54:32  dkr
+ * WLTRAfundef removed
+ *
  * Revision 2.17  2000/06/23 15:30:39  dkr
  * local functions are static now
  * WLTRANcode redesigned
@@ -5821,7 +5824,7 @@ InferSchedulingParams (node *seg)
 /******************************************************************************
  *
  * Function:
- *   node *WLTRANwith( node *arg_node, node *arg_info)
+ *   node *WLTRAwith( node *arg_node, node *arg_info)
  *
  * Description:
  *   transforms with-loop (N_Nwith-node) into new representation (N_Nwith2).
@@ -5832,7 +5835,7 @@ InferSchedulingParams (node *seg)
  ******************************************************************************/
 
 node *
-WLTRANwith (node *arg_node, node *arg_info)
+WLTRAwith (node *arg_node, node *arg_info)
 {
     node *new_node, *strides, *cubes, *segs, *seg;
     int dims, b;
@@ -5849,7 +5852,7 @@ WLTRANwith (node *arg_node, node *arg_info)
         WL_PH_norm
     } WL_break_after;
 
-    DBUG_ENTER ("WLTRANwith");
+    DBUG_ENTER ("WLTRAwith");
 
     /*
      * store the lineno of the current with-loop
@@ -6098,7 +6101,7 @@ WLTRANwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *WLTRANcode( node *arg_node, node *arg_info)
+ *   node *WLTRAcode( node *arg_node, node *arg_info)
  *
  * Description:
  *   CODE_NO is set.
@@ -6106,11 +6109,11 @@ WLTRANwith (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-WLTRANcode (node *arg_node, node *arg_info)
+WLTRAcode (node *arg_node, node *arg_info)
 {
     static int no = 0;
 
-    DBUG_ENTER ("WLTRANcode");
+    DBUG_ENTER ("WLTRAcode");
 
     NCODE_NO (arg_node) = no++;
 
@@ -6129,48 +6132,20 @@ WLTRANcode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *WLTRAFundef(node *arg_node, node *arg_info)
- *
- * Description:
- *   traverses sons.
- *
- ******************************************************************************/
-
-node *
-WLTRAFundef (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("WLTRAFundef");
-
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
-    }
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    }
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *WLTRALet( node *arg_node, node *arg_info)
+ *   node *WLTRAlet( node *arg_node, node *arg_info)
  *
  * Description:
  *   'INFO_WL_SHPSEG( arg_info)' points to the shape-segs of 'LET_IDS'
- *   (needed for 'WLTRANwith').
+ *   (needed for 'WLTRAwith').
  *
  ******************************************************************************/
 
 node *
-WLTRALet (node *arg_node, node *arg_info)
+WLTRAlet (node *arg_node, node *arg_info)
 {
     shpseg *tmp;
 
-    DBUG_ENTER ("WLTRALet");
+    DBUG_ENTER ("WLTRAlet");
 
     DBUG_ASSERT ((LET_VARDEC (arg_node) != NULL), "vardec of let-variable not found!");
 

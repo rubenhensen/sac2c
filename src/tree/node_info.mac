@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.51  2000/06/25 01:54:03  dkr
+ * WLTRAfundef removed
+ *
  * Revision 1.50  2000/06/23 16:39:52  nmw
  * pih and piw changed to mapcw and printi
  *
@@ -832,7 +835,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        UNQfundef, RMVfundef, PREC2fundef, ACTfundef, RSIBfundef, WLTfundef, CSEfundef,
        DFRfundef, TravSons, TravSons, SPMDOfundef, TravSons, TravSons,
 
-       TravSons, WLTRAFundef, GSCfundef, ReuseFundef, TravSons, TravSons, CONCfundef,
+       TravSons, TravSons, GSCfundef, ReuseFundef, TravSons, TravSons, CONCfundef,
        OPTfundef, WLAAfundef, FMTravSons, TravSons, TravSons, TravSons, TSIfundef,
        TravSons, TravSons, TravSons, TravSons, TravSons, L2F_INFERfundef,
 
@@ -1104,7 +1107,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, PREC2let, TravSons, TravSons, WLTlet, TravSons, TravSons, TravSons,
        TravSons, TravSons, SPMDLlet, TravSons,
 
-       TravSons, WLTRALet, TravSons, ReuseLet, TravSons, TravSons, TravSons, TravSons,
+       TravSons, WLTRAlet, TravSons, ReuseLet, TravSons, TravSons, TravSons, TravSons,
        WLAAlet, TravSons, SPMDRMlet, SPMDROlet, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, L2F_INFERlet,
 
@@ -1464,7 +1467,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, ACTNwith, TravSons, WLTNwith, CSENwith, TravSons, TCWLnull,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, WLTRANwith, TravSons, TravSons, PWwith, TravSons, TravSons, TravSons,
+       TravSons, WLTRAwith, TravSons, TravSons, PWwith, TravSons, TravSons, TravSons,
        WLAAnwith, TravSons, TravSons, TravSons, TravSons, TSInwith, TravSons, TravSons,
        TravSons, TravSons, TravSons, L2F_INFERwith,
 
@@ -1554,7 +1557,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, PREC2Ncode, ACTNcode, TravSons, WLTNcode, CSENcode, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, WLTRANcode, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, WLTRAcode, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        WLAAncode, FMTravSons, TravSons, TravSons, TravSons, TSIncode, TravSons, TravSons,
        TravSons, TravSons, TravSons, L2F_INFERcode,
 

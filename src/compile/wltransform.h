@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.3  2000/06/25 01:54:26  dkr
+ * WLTRAfundef removed
+ *
  * Revision 2.2  2000/06/23 15:30:58  dkr
  * minor changes done
  *
@@ -28,10 +31,9 @@
 
 extern node *WlTransform (node *syntax_tree);
 
-extern node *WLTRANwith (node *arg_node, node *arg_info);
-extern node *WLTRANcode (node *arg_node, node *arg_info);
-extern node *WLTRAFundef (node *arg_node, node *arg_info);
-extern node *WLTRALet (node *arg_node, node *arg_info);
+extern node *WLTRAwith (node *arg_node, node *arg_info);
+extern node *WLTRAcode (node *arg_node, node *arg_info);
+extern node *WLTRAlet (node *arg_node, node *arg_info);
 
 extern int GridOffset (int new_bound1, int bound1, int step, int grid_b2);
 extern node *InsertWLnodes (node *nodes, node *insert_nodes);
