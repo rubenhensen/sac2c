@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/08/09 13:01:18  dkr
+ * TYType2WrapperCode() added
+ *
  * Revision 3.10  2002/08/06 08:41:48  sbs
  * just to please gcc...
  *
@@ -3529,4 +3532,26 @@ TYType2OldType (ntype *new)
     DBUG_EXECUTE ("NTY", tmp_str2 = Free (tmp_str2););
 
     DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *TYType2WrapperCode( ntype *type)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+TYType2WrapperCode (ntype *type)
+{
+    node *cond;
+
+    DBUG_ENTER ("TYType2WrapperCode");
+
+    cond = NULL;
+
+    DBUG_RETURN (cond);
 }

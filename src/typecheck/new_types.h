@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.5  2002/08/09 13:01:06  dkr
+ * TYType2WrapperCode() added
+ *
  * Revision 3.4  2002/08/05 17:00:38  sbs
  * first alpha version of the new type checker !!
  *
@@ -18,7 +22,6 @@
  *
  * Revision 1.1  1999/10/20 12:52:13  sbs
  * Initial revision
- *
  *
  */
 
@@ -39,23 +42,23 @@
  *
  *    IMPORTANT NOTICE:
  *      Although all "scalar types" are technically treated in the same way
- *      as all other types are, they (for themselves) do NOT constitute legal types in
- *      SAC! They are used as attributes of array types only!!!
+ *      as all other types are, they (for themselves) do NOT constitute legal
+ *      types in SAC! They are used as attributes of array types only!!!
  *
  *    At the time being, the following types are legal scalar types:
  *      a) simple types      (these are the built-in types known from C proper)
  *      b) user types        (new types defined by means of  typedef's)
  *      c) symbolic types    (types of unknown structure; basically (void *))
  *
- *    Among array types with identical scalar type, there exists a type hierarchy.
- *    It reflects different levels of shape restrictions:
+ *    Among array types with identical scalar type, there exists a type
+ *    hierarchy. It reflects different levels of shape restrictions:
  *      a) AUD array types   (arrays of unknown dimensionality)
  *      b) AUDGZ array types (arrays of unknown dimensionality greater than zero)
  *      c) AKD array types   (arrays of a fixed (known) dimensionality)
  *      d) AKS array types   (arrays of a fixed (known) shape)
- *    This hierarchy is formalized by a subtype relation which in fact is reflected
- *    by the type comparison function TYCmpTypes (see down below). Wrt. array types,
- *    it returns one of the following values:
+ *    This hierarchy is formalized by a subtype relation which in fact is
+ *    reflected by the type comparison function TYCmpTypes (see down below).
+      Wrt. array types, it returns one of the following values:
  *    - TY_eq   iff the types are identical
  *    - TY_lt   iff the first arg is a non-identical subtype
  *    - TY_gt   iff the first arg is a non-identical supertype
@@ -85,11 +88,12 @@
  *    functions for handling function types such as TYMakeOverloadedFunType
  *    (see below) or TYDispatchFunType (see below).
  *    Another consequence of this design decision is the need to keep some
- *    function information attached to the individual elements of the intersection types
- *    Therefore,
- *      -  TYMakeFunType            obtains a    node* fun_info         argument, and
- *      -  TYMakeOverloadedFunType  obtains a function pointer argument that merges two
- *                                  such fun_info nodes into a single one.
+ *    function information attached to the individual elements of the
+ *    intersection types. Therefore,
+ *      -  TYMakeFunType            obtains a    node* fun_info    argument, and
+ *      -  TYMakeOverloadedFunType  obtains a function pointer argument that
+ *                                  merges two such fun_info nodes into a single
+ *                                  one.
  *
  *
  * 3) Product types
@@ -100,10 +104,10 @@
  *    for handling multiple return values of functions correctly.
  *    To ease the overall implementation, per convention, ALL functions
  *    do return product types, (even void ones!). Nevertheless, the wrapping
- *    and unwrapping of product types does not exist in any stage of the compilation
- *    process. For example, a function
+ *    and unwrapping of product types does not exist in any stage of the
+ *    compilation process. For example, a function
  *
- *    int[*], int[*] foo( int[*] x)     with    foo::{ int[*] -> (int[*], int[*]) }
+ *    int[*], int[*] foo( int[*] x)    with   foo::{ int[*] -> (int[*], int[*]) }
  *
  *    can be used within an assignment
  *
@@ -315,5 +319,10 @@ typedef enum { TY_symb, TY_user } type_conversion_flag;
 
 extern ntype *TYOldType2Type (types *old);
 extern types *TYType2OldType (ntype *new);
+
+/*
+ * Function for converting types into SAC code for wrapper functions
+ */
+extern node *TYType2WrapperCode (ntype *type);
 
 #endif /* _new_types_h */
