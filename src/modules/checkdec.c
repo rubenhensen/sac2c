@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/09/09 19:41:45  dkr
+ * prf_name_str renamed into prf_name_string
+ *
  * Revision 3.10  2001/05/17 13:08:53  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -161,6 +164,7 @@
 #include "traverse.h"
 #include "free.h"
 #include "globals.h"
+#include "print.h"
 
 #include "import.h"
 #include "convert.h"
@@ -811,7 +815,7 @@ WDECfundef (node *arg_node, node *arg_info)
          * by '+'.
          */
         for (tmp_prf = FIRST_LEGAL_PRF; tmp_prf <= LAST_LEGAL_PRF; tmp_prf++) {
-            if (0 == strcmp (FUNDEF_NAME (arg_node), prf_name_str[tmp_prf])) {
+            if (0 == strcmp (FUNDEF_NAME (arg_node), prf_name_string[tmp_prf])) {
                 fprintf (outfile, " %s(", prf_string[tmp_prf]);
                 fun_name_printed = 1;
                 break;

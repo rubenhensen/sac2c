@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/09/09 19:39:15  dkr
+ * prf_name_str renamed into prf_name_string
+ *
  * Revision 3.19  2002/09/06 15:16:40  sbs
  * FUNDEF_RETURN now set properly?!
  *
@@ -83,6 +86,7 @@
 #include "traverse.h"
 #include "DupTree.h"
 #include "globals.h"
+#include "print.h"
 #include "lac2fun.h"
 #include "CheckAvis.h"
 #include "SSATransform.h"
@@ -963,7 +967,7 @@ NTCprf (node *arg_node, node *arg_info)
     INFO_NTC_TYPE (arg_info) = NULL;
 
     prf = PRF_PRF (arg_node);
-    info = TEMakeInfo (linenum, "prf", prf_name_str[prf], NULL, NULL);
+    info = TEMakeInfo (linenum, "prf", prf_name_string[prf], NULL, NULL);
     res = NTCCTComputeType (NTCPRF_funtab[prf], info, args);
 
     TYFreeType (args);
