@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.25  2000/10/09 19:19:21  dkr
+ * a = prf( a) is flattened now, too
+ *
  * Revision 2.24  2000/09/27 16:47:52  dkr
  * a = fun( a) is flattened now
  *
@@ -323,14 +326,16 @@ InsertRenaming (node *block_or_assign, char *new_name, char *old_name)
      * we otherwise would have to use differen Access-Macros for creating and
      * inserting the new assignment!
      */
-    if (NODE_TYPE (block_or_assign) == N_block)
+    if (NODE_TYPE (block_or_assign) == N_block) {
         insert_at = &BLOCK_INSTR (block_or_assign);
-    else
+    } else {
         insert_at = &ASSIGN_NEXT (block_or_assign);
+    }
 
     *insert_at = MakeAssign (MakeLet (MakeId (StringCopy (old_name), NULL, ST_regular),
                                       MakeIds (StringCopy (new_name), NULL, ST_regular)),
                              *insert_at);
+
     DBUG_PRINT ("RENAME", ("inserted %0x between %0x and %0x", *insert_at,
                            block_or_assign, ASSIGN_NEXT ((*insert_at))));
 
@@ -356,8 +361,9 @@ FindId (char *name)
     DBUG_ENTER ("FindId");
 
     tmp = tos - 1;
-    while ((tmp >= stack) && (strcmp (tmp->id_old, name) != 0))
+    while ((tmp >= stack) && (strcmp (tmp->id_old, name) != 0)) {
         tmp--;
+    }
 
     if (tmp < stack) {
         tmp = NULL;
@@ -390,8 +396,9 @@ FindIdInSeg (char *name, int seg_sz, local_stack *seg)
     DBUG_ENTER ("FindIdInSeg");
 
     tmp = &seg[seg_sz - 1];
-    while ((tmp >= seg) && (strcmp (tmp->id_old, name) != 0))
+    while ((tmp >= seg) && (strcmp (tmp->id_old, name) != 0)) {
         tmp--;
+    }
 
     if (tmp < seg) {
         tmp = NULL;
@@ -622,8 +629,9 @@ FltnFundef (node *arg_node, node *arg_info)
     /*
      * Proceed with the next function...
      */
-    if (FUNDEF_NEXT (arg_node))
+    if (FUNDEF_NEXT (arg_node)) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -645,8 +653,9 @@ FltnArgs (node *arg_node, node *arg_info)
 
     PUSH (ARG_NAME (arg_node), ARG_NAME (arg_node), with_level);
 
-    if (ARG_NEXT (arg_node) != NULL)
+    if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -684,9 +693,9 @@ FltnBlock (node *arg_node, node *arg_info)
             INFO_FLTN_LASTWLBLOCK (arg_info) = arg_node;
             DBUG_PRINT ("RENAME", ("LASTWLBLOCK set to %08x", arg_node));
             assigns = Trav (BLOCK_INSTR (arg_node), arg_info);
-            if (NODE_TYPE (INFO_FLTN_LASTWLBLOCK (arg_info)) == N_block)
+            if (NODE_TYPE (INFO_FLTN_LASTWLBLOCK (arg_info)) == N_block) {
                 BLOCK_INSTR (INFO_FLTN_LASTWLBLOCK (arg_info)) = assigns;
-            else {
+            } else {
                 DBUG_ASSERT ((NODE_TYPE (INFO_FLTN_LASTWLBLOCK (arg_info)) == N_assign),
                              ("LASTWLBLOCK in flatten does neither point to"
                               " an N_block nor to an N_assign node !"));
@@ -760,7 +769,7 @@ FltnAssign (node *arg_node, node *arg_info)
  *   BEFORE the traversal of the RHS (since the vars on the RHS should still
  *   have the original names)
  *   for each id from the LHS we do:
- *     - if we have   a ... a = fun( ... a ... )
+ *     - if we have   a ... a = fun/prf( ... a ... )
  *       then we rename each LHS   a   into a temp-var   __flat<n>   and insert
  *       an assignment of the form   a = __flat<n>;   after the function
  *       application.
@@ -826,11 +835,32 @@ FltnLet (node *arg_node, node *arg_info)
     while (ids != NULL) {
         var_name = IDS_NAME (ids);
 
-        if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
+        /*
+         * Note here, that it is strongly recommended to flat BOTH primitive and
+         * user-defined functions!
+         * Flattening one class of functions only, e.g. flattening user-defined
+         * functions but not-flattening prfs, will probably lead to nice errors
+         * after type-checking  =:-<
+         *
+         * Example:
+         *   mytype[] modarray( mytype[] a, int[] iv, mytype val) { ... }
+         *   ...
+         *   mytype[] a;
+         *   ...
+         *   a = modarray( a, iv, val)
+         * Here the modarray is parsed as a prf but in fact it is a user-defined
+         * function!!! That means, the application is a N_prf node after scan/parse
+         * and will therefore be left untouched during the flattening phase.
+         * The type-checker infers that this application has to be a N_ap node
+         * and transform it accordingly.
+         * Now, we have a N_ap node that NOT has been flattened correctly ....
+         */
+        if ((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
+            || (NODE_TYPE (LET_EXPR (arg_node)) == N_ap)) {
             /*
              * does 'var_name' occur as an argument of the function application??
              */
-            arg = AP_ARGS (LET_EXPR (arg_node));
+            arg = AP_OR_PRF_ARGS (LET_EXPR (arg_node));
             while (arg != NULL) {
                 id = EXPRS_EXPR (arg);
                 if (NODE_TYPE (id) == N_id) {
@@ -979,7 +1009,6 @@ FltnArray (node *arg_node, node *arg_info)
         ARRAY_VECLEN (arg_node) = 0;
         ARRAY_CONSTVEC (arg_node) = NULL;
     } else {
-
         /*
          *  The array is not empty; so we have to traverse it and - while
          *  doing so - collect infos whether the array is constant in the info_node.
@@ -1629,9 +1658,11 @@ FltnNwithop (node *arg_node, node *arg_info)
         DBUG_ASSERT ((expr == expr2),
                      "return-node differs from arg_node while flattening an expr!");
         break;
+
     case WO_genarray:
         expr = NULL;
         break;
+
     case WO_foldfun:
         /* here is no break missing! */
     case WO_foldprf:
@@ -1647,6 +1678,7 @@ FltnNwithop (node *arg_node, node *arg_info)
                          "return-node differs from arg_node while flattening an expr!");
         }
         break;
+
     default:
         DBUG_ASSERT (0, "wrong withop tag in N_Nwithop node!");
         /*
