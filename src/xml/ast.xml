@@ -5525,7 +5525,13 @@
 
 -->
     <node name="Error">
-      <sons></sons>
+      <sons>
+		<son name="Next" mandatory="no" >
+          <target>
+            <node name="Error" />
+          </target>
+		</son>
+      </sons>
       <attributes>
         <attribute name="message" mandatory="yes">
           <type name="String" />
