@@ -1,13 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/21 13:10:12  jhs
+ * Added infrastructure for new mt support
+ *
  * Revision 1.1  2000/01/21 11:11:38  jhs
  * Initial revision
  *
  *
  */
-
-/* ... new mt support ... */
 
 /******************************************************************************
  *
@@ -22,7 +23,14 @@
  *
  ******************************************************************************/
 
-/* includes ...*/
+#include "dbug.h"
+
+#include "types.h"
+#include "tree_basic.h"
+#include "traverse.h"
+#include "globals.h"
+#include "free.h"
+#include "Error.h"
 
 /******************************************************************************
  *
@@ -44,9 +52,10 @@ BuildMultiThread (node *syntax_tree)
 
     arg_info = MakeInfo ();
 
-    act_tab = muth_tab;
+    /* act_tab = muth_tab; */
 
-    syntax_tree = Trav (syntax_tree, arg_info);
+    /* syntax_tree = Trav(syntax_tree, arg_info); */
+    NOTE (("*** nothing implemented yet ***"));
 
     FREE (arg_info);
 
