@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/04/05 15:23:20  sbs
+ * Revision 1.8  1995/07/07 14:52:08  cg
+ * struct MOD changed: pointer to global object symbols added.
+ *
+ * Revision 1.7  1995/04/05  15:23:20  sbs
  * GenLinkerList added
  *
  * Revision 1.6  1995/01/06  17:50:43  sbs
@@ -49,9 +52,10 @@ typedef struct MOD {
     int flag;      /* flag for recursion protection */
     int allflag;   /* flag for recursion protection */
     node *moddec;  /* pointer to the respective N_moddec node */
-    syms *syms[3]; /* pointer to implicit type symbols */
-                   /* explicit type symbols */
+    syms *syms[4]; /* pointer to implicit type symbols */
+                   /* pointer to explicit type symbols */
                    /* pointer to function symbols */
+                   /* pointer to global object symbols */
     struct MOD *next;
 } mod;
 
