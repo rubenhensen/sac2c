@@ -1,11 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.44  2001/12/06 16:17:08  dkr
+# no changes done
+#
 # Revision 3.43  2001/11/20 12:24:54  sbs
 # cse moved 8-)
-#
-# Revision 3.42  2001/11/15 15:37:34  sacbase
-# *** empty log message ***
 #
 # Revision 3.41  2001/11/15 14:43:16  sbs
 # PROJECT_ROOT added
@@ -19,7 +19,7 @@
 #
 # Revision 3.38  2001/11/14 12:59:48  sbs
 # deps line replaced by inclusion of Makefile.Deps
-# ( .xxx.d mechanism)
+# (.xxx.d mechanism)
 # global setup included via Makefile.Config
 #
 # Revision 3.37  2001/11/13 21:31:39  dkr
@@ -52,59 +52,6 @@
 # Revision 3.28  2001/05/02 07:57:34  nmw
 # basecv.o added
 #
-# Revision 3.27  2001/04/26 17:07:37  dkr
-# rmvoidfun.o removed
-#
-# Revision 3.26  2001/04/20 11:18:21  nmw
-# SSALUR.o added to project
-#
-# Revision 3.25  2001/04/18 15:37:02  nmw
-# while2do added
-#
-# Revision 3.24  2001/04/02 11:45:46  dkr
-# wl_bounds.o added
-#
-# Revision 3.23  2001/03/26 15:41:19  nmw
-# SSALIR.o added
-#
-# Revision 3.22  2001/03/20 16:17:16  nmw
-# SSAConstantFolding.o added
-#
-# Revision 3.21  2001/03/09 11:14:44  sbs
-# PROFILE and annotate_fun_calls.o added.
-#
-# Revision 3.20  2001/03/06 13:19:47  nmw
-# compare_tree added
-#
-# Revision 3.19  2001/03/05 17:01:33  sbs
-# zipcv.o and SSACSE.o added.
-#
-# Revision 3.18  2001/03/02 15:52:56  nmw
-# change_signature added
-#
-# Revision 3.17  2001/03/02 14:55:55  sbs
-# integrated constants!
-#
-# Revision 3.16  2001/03/02 14:42:34  sbs
-# integrated constants?
-#
-# Revision 3.15  2001/02/23 13:40:15  nmw
-# SSADeadCodeRemoval added
-#
-# Revision 3.14  2001/02/22 14:46:10  sbs
-# cv2str.o added.
-#
-# Revision 3.13  2001/02/22 12:52:22  nmw
-# UndoSSATransform added
-#
-# Revision 3.12  2001/02/13 15:19:45  nmw
-# SSATransform added
-#
-# Revision 3.11  2001/02/12 17:08:33  nmw
-# CheckAvis in /src/tree added to sac2c
-#
-#
-#
 # ... [eliminated] 
 #
 # Revision 1.81  1998/05/13 07:12:25  cg
@@ -121,7 +68,7 @@ PROJECT_ROOT := ./
 include $(PROJECT_ROOT)/Makefile.Config
 
 
-LIB          :=lib/dbug.o lib/main_args.o
+LIB          := lib/dbug.o lib/main_args.o
 
 #
 # Collection of source files
@@ -196,12 +143,12 @@ MULTITHREAD= src/multithread/multithread.o src/multithread/schedule_init.o \
              src/multithread/dataflow_analysis.o \
              src/multithread/barriers_init.o src/multithread/blocks_lift.o \
              src/multithread/adjust_calls.o
-COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
-          src/compile/precompile.o \
-          src/compile/compile.o src/compile/gen_startup_code.o \
-          src/compile/icm2c.o src/compile/icm2c_std.o src/compile/icm2c_mt.o \
-          src/compile/icm2c_sched.o src/compile/icm2c_wl.o  \
-          src/compile/ReuseWithArrays.o src/compile/PatchWith.o
+COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
+         src/compile/precompile.o \
+         src/compile/compile.o src/compile/gen_startup_code.o \
+         src/compile/icm2c.o src/compile/icm2c_std.o src/compile/icm2c_mt.o \
+         src/compile/icm2c_sched.o src/compile/icm2c_wl.o  \
+         src/compile/ReuseWithArrays.o src/compile/PatchWith.o
 
 CINTERFACE= src/c-interface/map_cwrapper.o src/c-interface/print_interface.o \
             src/c-interface/import_specialization.o \
@@ -380,4 +327,3 @@ linux: src.tar.gz
             'tar xvf src.tar;'             \
             'chmod 644 $(SOURCE_FILES);'   \
             'make OS=LINUX_X86'
-
