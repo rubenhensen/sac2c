@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.131  2002/10/30 16:25:36  dkr
+ * no changes done
+ *
  * Revision 3.130  2002/10/30 16:10:02  dkr
  * PrintAp(): wrapper annotation added
  *
@@ -1415,8 +1418,8 @@ PrintFunctionHeader (node *arg_node, node *arg_info, bool in_comment)
 {
     types *ret_types;
     char *type_str;
-    bool print_old = TRUE;
-    bool print_new = FALSE;
+    bool print_sac = TRUE;
+    bool print_c = FALSE;
     bool print_argtab = FALSE;
 
     DBUG_ENTER ("PrintFunctionHeader");
@@ -1424,13 +1427,13 @@ PrintFunctionHeader (node *arg_node, node *arg_info, bool in_comment)
     PRINT_LINE_PRAGMA_IN_SIB (outfile, arg_node);
 
     if (FUNDEF_ARGTAB (arg_node) != NULL) {
-        print_old = FALSE;
-        print_new = TRUE;
+        print_sac = FALSE;
+        print_c = TRUE;
 
         DBUG_EXECUTE ("PRINT_ARGTAB", fprintf (outfile, "/* \n"); INDENT;
                       fprintf (outfile, " *  ");
                       PrintArgtab (FUNDEF_ARGTAB (arg_node), TRUE);
-                      fprintf (outfile, "  */\n"); INDENT; print_old = TRUE;
+                      fprintf (outfile, "  */\n"); INDENT; print_sac = TRUE;
                       print_argtab = TRUE;);
     }
 
@@ -1438,7 +1441,7 @@ PrintFunctionHeader (node *arg_node, node *arg_info, bool in_comment)
         fprintf (outfile, "inline ");
     }
 
-    if (print_new) {
+    if (print_c) {
         node *tmp = Argtab2Fundef (arg_node);
 
         PrintFunctionHeader (tmp, arg_info, in_comment);
@@ -1450,8 +1453,8 @@ PrintFunctionHeader (node *arg_node, node *arg_info, bool in_comment)
         }
     }
 
-    if (print_old) {
-        if (print_new) {
+    if (print_sac) {
+        if (print_c) {
             fprintf (outfile, "\n");
             INDENT;
             fprintf (outfile, "/*  ");
@@ -1492,7 +1495,7 @@ PrintFunctionHeader (node *arg_node, node *arg_info, bool in_comment)
 
         fprintf (outfile, ")");
 
-        if (print_new) {
+        if (print_c) {
             fprintf (outfile, "\n");
             INDENT;
             fprintf (outfile, " */ ");
@@ -2192,8 +2195,8 @@ node *
 PrintLet (node *arg_node, node *arg_info)
 {
     node *expr;
-    bool print_old = TRUE;
-    bool print_new = FALSE;
+    bool print_sac = TRUE;
+    bool print_c = FALSE;
     bool print_argtab = FALSE;
 
     DBUG_ENTER ("PrintLet");
@@ -2215,16 +2218,16 @@ PrintLet (node *arg_node, node *arg_info)
 
     expr = LET_EXPR (arg_node);
     if ((NODE_TYPE (expr) == N_ap) && (AP_ARGTAB (expr) != NULL)) {
-        print_old = FALSE;
-        print_new = TRUE;
+        print_sac = FALSE;
+        print_c = TRUE;
 
         DBUG_EXECUTE ("PRINT_ARGTAB", fprintf (outfile, "/* \n"); INDENT;
                       fprintf (outfile, " *  "); PrintArgtab (AP_ARGTAB (expr), FALSE);
-                      fprintf (outfile, "  */\n"); INDENT; print_old = TRUE;
+                      fprintf (outfile, "  */\n"); INDENT; print_sac = TRUE;
                       print_argtab = TRUE;);
     }
 
-    if (print_new) {
+    if (print_c) {
         node *tmp = Argtab2Let (expr);
 
         Trav (tmp, arg_info);
@@ -2240,8 +2243,8 @@ PrintLet (node *arg_node, node *arg_info)
         }
     }
 
-    if (print_old) {
-        if (print_new) {
+    if (print_sac) {
+        if (print_c) {
             fprintf (outfile, "\n");
             INDENT;
             fprintf (outfile, "/*  ");
@@ -2255,7 +2258,7 @@ PrintLet (node *arg_node, node *arg_info)
 
         fprintf (outfile, "; ");
 
-        if (print_new) {
+        if (print_c) {
             fprintf (outfile, "\n");
             INDENT;
             fprintf (outfile, " */ ");
