@@ -4,6 +4,10 @@
 /*
  *
  * $Log$
+ * Revision 3.89  2003/11/24 16:07:10  sbs
+ * eliminated all commata in the first part to be better yacc compliant 8-)
+ * i.e., bison v1.75 on bunasera now should be happy 8-))
+ *
  * Revision 3.88  2003/11/24 10:17:56  sbs
  * WL syntax warning temporarily deactivated.
  *
@@ -261,38 +265,38 @@ static int prf_arity[] = {
          target_list_t   *target_list_t;
        }
 
-%token PARSE_PRG, PARSE_DEC, PARSE_SIB, PARSE_RC, PARSE_SPEC
+%token PARSE_PRG  PARSE_DEC  PARSE_SIB  PARSE_RC  PARSE_SPEC
 
-%token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC,
-       COMMA, AMPERS, DOT, QUESTION, ARROW,
-       INLINE, LET, TYPEDEF, OBJDEF, CLASSTYPE,
-       INC, DEC, ADDON, SUBON, MULON, DIVON, MODON,
-       K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, NWITH, FOLD,
-       MODDEC, MODSPEC, MODIMP, CLASSDEC, IMPORT, IMPLICIT, EXPLICIT, TYPES,
-       FUNS, OWN, GLOBAL, OBJECTS, CLASSIMP, ALL,
-       SC, TRUETOKEN, FALSETOKEN, EXTERN, C_KEYWORD,
-       HASH, PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
-       TOUCH, COPYFUN, FREEFUN, INITFUN, LINKWITH,
-       WLCOMP, CACHESIM, SPECIALIZE,
-       TARGET, STEP, WIDTH, GENARRAY, MODARRAY,
-       LE, LT, GT,
-       STAR, PLUS, MINUS, TILDE, EXCL,
+%token BRACE_L  BRACE_R  BRACKET_L  BRACKET_R  SQBR_L  SQBR_R  COLON  SEMIC 
+       COMMA  AMPERS  DOT  QUESTION  ARROW 
+       INLINE  LET  TYPEDEF  OBJDEF  CLASSTYPE 
+       INC  DEC  ADDON  SUBON  MULON  DIVON  MODON 
+       K_MAIN  RETURN  IF  ELSE  DO  WHILE  FOR  NWITH  FOLD 
+       MODDEC  MODSPEC  MODIMP  CLASSDEC  IMPORT  IMPLICIT  EXPLICIT  TYPES 
+       FUNS  OWN  GLOBAL  OBJECTS  CLASSIMP  ALL 
+       SC  TRUETOKEN  FALSETOKEN  EXTERN  C_KEYWORD 
+       HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT  READONLY  REFCOUNTING 
+       TOUCH  COPYFUN  FREEFUN  INITFUN  LINKWITH 
+       WLCOMP  CACHESIM  SPECIALIZE 
+       TARGET  STEP  WIDTH  GENARRAY  MODARRAY 
+       LE  LT  GT 
+       STAR  PLUS  MINUS  TILDE  EXCL 
 
-       PRF_DIM, PRF_SHAPE, PRF_RESHAPE, PRF_SEL, PRF_GENARRAY, PRF_MODARRAY,
-       PRF_ADD_SxS, PRF_ADD_SxA, PRF_ADD_AxS, PRF_ADD_AxA,
-       PRF_SUB_SxS, PRF_SUB_SxA, PRF_SUB_AxS, PRF_SUB_AxA,
-       PRF_MUL_SxS, PRF_MUL_SxA, PRF_MUL_AxS, PRF_MUL_AxA,
-       PRF_DIV_SxS, PRF_DIV_SxA, PRF_DIV_AxS, PRF_DIV_AxA,
-       PRF_MOD, PRF_MIN, PRF_MAX, PRF_ABS, PRF_NEG,
-       PRF_EQ, PRF_NEQ, PRF_LE, PRF_LT, PRF_GE, PRF_GT,
-       PRF_AND, PRF_OR, PRF_NOT,
-       PRF_TOI_S, PRF_TOI_A, PRF_TOF_S, PRF_TOF_A, PRF_TOD_S, PRF_TOD_A,
-       PRF_CAT_VxV, PRF_TAKE_SxV, PRF_DROP_SxV
+       PRF_DIM  PRF_SHAPE  PRF_RESHAPE  PRF_SEL  PRF_GENARRAY  PRF_MODARRAY 
+       PRF_ADD_SxS  PRF_ADD_SxA  PRF_ADD_AxS  PRF_ADD_AxA 
+       PRF_SUB_SxS  PRF_SUB_SxA  PRF_SUB_AxS  PRF_SUB_AxA 
+       PRF_MUL_SxS  PRF_MUL_SxA  PRF_MUL_AxS  PRF_MUL_AxA 
+       PRF_DIV_SxS  PRF_DIV_SxA  PRF_DIV_AxS  PRF_DIV_AxA 
+       PRF_MOD  PRF_MIN  PRF_MAX  PRF_ABS  PRF_NEG 
+       PRF_EQ  PRF_NEQ  PRF_LE  PRF_LT  PRF_GE  PRF_GT 
+       PRF_AND  PRF_OR  PRF_NOT 
+       PRF_TOI_S  PRF_TOI_A  PRF_TOF_S  PRF_TOF_A  PRF_TOD_S  PRF_TOD_A 
+       PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 
-%token <id> ID, STR, PRIVATEID, OPTION
+%token <id> ID  STR  PRIVATEID  OPTION
 
-%token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_UNS, TYPE_SHORT,
-               TYPE_LONG, TYPE_CHAR, TYPE_DBL, TYPE_VOID
+%token <types> TYPE_INT  TYPE_FLOAT  TYPE_BOOL  TYPE_UNS  TYPE_SHORT 
+               TYPE_LONG  TYPE_CHAR  TYPE_DBL  TYPE_VOID
 %token <cint> NUM
 %token <cfloat> FLOAT
 %token <cdbl> DOUBLE
@@ -301,34 +305,34 @@ static int prf_arity[] = {
 /*******************************************************************************
  * SAC programs
  */
-%type <node> prg, defs, def2, def3, def4
+%type <node> prg  defs  def2  def3  def4
 
-%type <node> imports, import, impdesc, impdesc2, impdesc3, impdesc4
+%type <node> imports  import  impdesc  impdesc2  impdesc3  impdesc4
 
-%type <node> typedefs, typedef
+%type <node> typedefs  typedef
 
-%type <node> objdefs, objdef
+%type <node> objdefs  objdef
 
-%type <node> fundefs, fundef, fundef1, fundef2, main
-%type <node> mainargs, fundefargs, args, arg 
-%type <node> exprblock, exprblock2, assignsOPTret, assigns, assign,
-             letassign, selassign, optelse, forassign, assignblock
-%type <node> exprs, expr, expr_ap, opt_arguments, expr_ar, expr_sel, with,
-             generator, steps, width, nwithop, withop, wlassignblock, genidx,
-             part, parts
-%type <prf> genop, foldop, prf
+%type <node> fundefs  fundef  fundef1  fundef2  main
+%type <node> mainargs  fundefargs  args  arg 
+%type <node> exprblock  exprblock2  assignsOPTret  assigns  assign 
+             letassign  selassign  optelse  forassign  assignblock
+%type <node> exprs  expr  expr_ap  opt_arguments  expr_ar  expr_sel  with 
+             generator  steps  width  nwithop  withop  wlassignblock  genidx 
+             part  parts
+%type <prf> genop  foldop  prf
 
-%type <id> id, string
-%type <ids> ids, local_fun_id, fun_id, fun_ids
+%type <id> id  string
+%type <ids> ids  local_fun_id  fun_id  fun_ids
 
-%type <types> returntypes, types, type, localtype, simpletype
-%type <types> varreturntypes, vartypes
-%type <node> varargtypes, argtype
+%type <types> returntypes  types  type  localtype  simpletype
+%type <types> varreturntypes  vartypes
+%type <node> varargtypes  argtype
 
 
 /* pragmas */
 %type <id> pragmacachesim
-%type <node> wlcomp_pragma_global, wlcomp_pragma_local, pragmas, wlcomp_conf
+%type <node> wlcomp_pragma_global  wlcomp_pragma_local  pragmas  wlcomp_conf
 
 /* general helpers */
 %type <nums> nums
@@ -339,22 +343,22 @@ static int prf_arity[] = {
 /*******************************************************************************
 * module implementations
 */
-%type <node> modimp, module, class
+%type <node> modimp  module  class
 
 
 
 /*******************************************************************************
 * module declarations
 */
-%type <node> moddec, modheader, evimport, expdesc, evimport
+%type <node> moddec  modheader  evimport
 %type <cint> evextern
-%type <deps> linkwith, linklist
+%type <deps> linkwith  linklist
 %type <nodetype> modclass
-%type <node> expdesc, expdesc2, expdesc3, expdesc4
-%type <node> imptypes, imptype
-%type <node> exptypes, exptype
-%type <node> objdecs, objdec
-%type <node> fundecs, fundec, fundec2, fundecargs, varargs
+%type <node> expdesc  expdesc2  expdesc3  expdesc4
+%type <node> imptypes  imptype
+%type <node> exptypes  exptype
+%type <node> objdecs  objdec
+%type <node> fundecs  fundec  fundec2  fundecargs  varargs
 
 
 /*******************************************************************************
@@ -367,13 +371,13 @@ static int prf_arity[] = {
 /*******************************************************************************
 * SIB files
 */
-%type <cint> sibheader, sibevmarker
-%type <deps> siblinkwith, siblinklist, sibsublinklist
+%type <cint> sibheader  sibevmarker
+%type <deps> siblinkwith  siblinklist  sibsublinklist
 %type <id> sibparam
-%type <statustype> sibreference, sibevclass, siblinkliststatus
-%type <node> sib, sibtypes, sibtype, sibfuns, sibfun, sibfunbody,
-             sibobjs, sibobj, sibpragmas, sibarglist,
-             sibargs, sibarg, sibfunlist, sibfunlistentry
+%type <statustype> sibreference  sibevclass  siblinkliststatus
+%type <node> sib  sibtypes  sibtype  sibfuns  sibfun  sibfunbody 
+             sibobjs  sibobj  sibpragmas  sibarglist 
+             sibargs  sibarg  sibfunlist  sibfunlistentry
 
 
 /*******************************************************************************
@@ -385,11 +389,11 @@ static int prf_arity[] = {
 
 
 
-%right INC,DEC,STAR,PLUS,MINUS,TILDE,EXCL,LE,LT,GT,ID,PRIVATEID,
-       GENARRAY,MODARRAY,ALL,AMPERS
+%right INC DEC STAR PLUS MINUS TILDE EXCL LE LT GT ID PRIVATEID 
+       GENARRAY MODARRAY ALL AMPERS
 %right BM_OP
-%right MM_OP,CAST
-%right SQBR_L,BRACKET_L
+%right MM_OP CAST
+%right SQBR_L BRACKET_L
 %right ELSE
 
 %start all
