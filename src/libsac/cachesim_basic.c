@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.17  1999/07/20 08:36:09  bs
+ * Result presentation beautified.
+ *
  * Revision 2.16  1999/07/08 12:28:01  cg
  * File moved to new directory src/libsac.
  *
@@ -1136,8 +1139,8 @@ PrintCounters (char *cachelevel_str, int digits, ULINT hit, ULINT miss, ULINT co
 
     fprintf (stderr,
              "# %s:  accesses:  %*lu\n"
-             "#            hits:      %*lu  (%5.1f%%)\n"
-             "#            misses:    %*lu  (%5.1f%%)\n",
+             "#            hits:      %*lu  ( %5.1f %%)\n"
+             "#            misses:    %*lu  ( %5.1f %%)\n",
              cachelevel_str, digits, accesses, digits, hit, hit_ratio, digits, miss,
              100.0 - hit_ratio);
 
