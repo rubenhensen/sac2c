@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/05/13 14:48:03  cg
+ * added ICM MT_SYNC_ONEFOLD
+ *
  * Revision 1.1  1998/05/13 07:22:57  cg
  * Initial revision
  *
@@ -68,7 +71,7 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg)
 
     fprintf (outfile, "\n");
 
-    fprintf (outfile, "unsigned int %s SAC_MT_SPMD_FUN_REALARGS()\n", name);
+    fprintf (outfile, "unsigned int %s SAC_MT_SPMD_FUN_REAL_PARAM_LIST()\n", name);
     fprintf (outfile, "{\n");
 
     for (i = 0; i < narg; i += 3) {
@@ -155,7 +158,7 @@ ICMCompileMT_START_SYNCBLOCK (int narg, char **vararg)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SYNC_FOLD( narg [, type, accu_var, tmp_var, foldop]*)
+ *   MT_SYNC_FOLD( narg [, foldtype, accu_var, tmp_var, foldop]*)
  *
  *   This ICM implements barrier synchronisation for synchronisation blocks
  *   that contain several fold with-loops but no genarray/modarray
@@ -187,12 +190,46 @@ ICMCompileMT_SYNC_FOLD (int narg, char **vararg)
 /******************************************************************************
  *
  * function:
+ *   void ICMCompileMT_SYNC_ONEFOLD(int narg, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   MT_SYNC_ONEFOLD( foldtype, accu_var, tmp_var, foldop)
+ *
+ *   This ICM implements barrier synchronisation for synchronisation blocks
+ *   that contain exactly one fold with-loop.
+ *
+ *   The fold with-loop is described by 4 ICM arguments,
+ *   specifying the type of the fold result, the name of the accumulator
+ *   variable, the name of the accumulated variable, and the fold operation
+ *   itself. The type may be either one of the scalar data types provided
+ *   by SAC or one of the specifiers 'array' or 'hidden'.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_SYNC_ONEFOLD (char *foldtype, char *accu_var, char *tmp_var, char *foldop)
+{
+    DBUG_ENTER ("ICMCompileMT_SYNC_ONEFOLD");
+
+#define MT_SYNC_ONEFOLD
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SYNC_ONEFOLD
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void ICMCompileMT_SYNC_FOLD_NONFOLD(int narg, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SYNC_FOLD_NONFOLD( narg [, type, accu_var, tmp_var, foldop]*)
+ *   MT_SYNC_FOLD_NONFOLD( narg [, foldtype, accu_var, tmp_var, foldop]*)
  *
  *   This ICM implements barrier synchronisation for synchronisation blocks
  *   that contain several fold with-loops as well as additional genarray/modarray
@@ -229,7 +266,7 @@ ICMCompileMT_SYNC_FOLD_NONFOLD (int narg, char **vararg)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_CONTINUE( narg [, type, accu_var]*)
+ *   MT_CONTINUE( narg [, foldtype, accu_var]*)
  *
  *   This ICM implements the continuation after a barrier synchronisation.
  *   It restarts the synchronized worker threads and updates their current
