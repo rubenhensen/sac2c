@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.64  2004/09/22 10:06:58  ktr
+ * Shape structures obtained via COGetShape are not freed any longer.
+ *
  * Revision 1.63  2004/09/21 17:32:20  ktr
  * sel( iv, shape(A)) is now compiled into shape_sel(iv, A);
  * However, shape_sel itself is not yet treated by the CF.
@@ -973,6 +976,7 @@ SSACFStructOpSel (constant *idx, node *expr)
 
     int idxlen;
     int structdim;
+
     shape *tmp_shape;
 
     constant *take_vec;
@@ -991,9 +995,7 @@ SSACFStructOpSel (constant *idx, node *expr)
         /* save internal hidden input constant */
         old_hidden_co = SCO_HIDDENCO (struc_co);
 
-        tmp_shape = COGetShape (idx);
-        idxlen = SHGetUnrLen (tmp_shape);
-        tmp_shape = SHFreeShape (tmp_shape);
+        idxlen = SHGetUnrLen (COGetShape (idx));
 
         structdim = COGetDim (SCO_HIDDENCO (struc_co));
 
@@ -1216,9 +1218,7 @@ SSACFStructOpTake (constant *idx, node *expr)
     int idxlen;
     int structdim;
 
-    shape *tmp_shape;
     shape *sco_shape;
-    shape *hidden_shape;
     shape *dropped_shape;
 
     DBUG_ENTER ("SSACFStructOpTake");
@@ -1235,10 +1235,7 @@ SSACFStructOpTake (constant *idx, node *expr)
      */
     if (struc_co != NULL) {
 
-        tmp_shape = COGetShape (idx);
-        idxlen = SHGetUnrLen (tmp_shape);
-        tmp_shape = SHFreeShape (tmp_shape);
-
+        idxlen = SHGetUnrLen (COGetShape (idx));
         structdim = COGetDim (SCO_HIDDENCO (struc_co));
 
         if (idxlen <= structdim) {
@@ -1250,11 +1247,10 @@ SSACFStructOpTake (constant *idx, node *expr)
             SCO_HIDDENCO (struc_co) = COTake (idx, SCO_HIDDENCO (struc_co));
 
             sco_shape = SCO_SHAPE (struc_co);
-            hidden_shape = COGetShape (SCO_HIDDENCO (struc_co));
             dropped_shape = SHDropFromShape (structdim, sco_shape);
             sco_shape = SHFreeShape (sco_shape);
-            SCO_SHAPE (struc_co) = SHAppendShapes (hidden_shape, dropped_shape);
-            hidden_shape = SHFreeShape (hidden_shape);
+            SCO_SHAPE (struc_co)
+              = SHAppendShapes (COGetShape (SCO_HIDDENCO (struc_co)), dropped_shape);
             dropped_shape = SHFreeShape (dropped_shape);
 
             /*
@@ -1298,9 +1294,7 @@ SSACFStructOpDrop (constant *idx, node *expr)
     int idxlen;
     int structdim;
 
-    shape *tmp_shape;
     shape *sco_shape;
-    shape *hidden_shape;
     shape *dropped_shape;
 
     DBUG_ENTER ("SSACFStructOpDrop");
@@ -1317,10 +1311,7 @@ SSACFStructOpDrop (constant *idx, node *expr)
      */
     if (struc_co != NULL) {
 
-        tmp_shape = COGetShape (idx);
-        idxlen = SHGetUnrLen (tmp_shape);
-        tmp_shape = SHFreeShape (tmp_shape);
-
+        idxlen = SHGetUnrLen (COGetShape (idx));
         structdim = COGetDim (SCO_HIDDENCO (struc_co));
 
         if (idxlen <= structdim) {
@@ -1332,11 +1323,10 @@ SSACFStructOpDrop (constant *idx, node *expr)
             SCO_HIDDENCO (struc_co) = CODrop (idx, SCO_HIDDENCO (struc_co));
 
             sco_shape = SCO_SHAPE (struc_co);
-            hidden_shape = COGetShape (SCO_HIDDENCO (struc_co));
             dropped_shape = SHDropFromShape (structdim, sco_shape);
             sco_shape = SHFreeShape (sco_shape);
-            SCO_SHAPE (struc_co) = SHAppendShapes (hidden_shape, dropped_shape);
-            hidden_shape = SHFreeShape (hidden_shape);
+            SCO_SHAPE (struc_co)
+              = SHAppendShapes (COGetShape (SCO_HIDDENCO (struc_co)), dropped_shape);
             dropped_shape = SHFreeShape (dropped_shape);
 
             /*
