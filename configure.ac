@@ -1,5 +1,9 @@
 dnl
 dnl $Log$
+dnl Revision 1.15  2003/03/25 21:02:43  sah
+dnl replaced 0 by O for optimization
+dnl flags;)
+dnl
 dnl Revision 1.14  2003/03/24 23:16:16  sah
 dnl fixed ranlib bug
 dnl
@@ -296,7 +300,7 @@ elif [ test "$SUNC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
   AC_SUBST(OPT_O1, [-xO2])
   AC_SUBST(OPT_O2, [-xO4])
-  AC_SUBST(OPT_O3, [-x05])
+  AC_SUBST(OPT_O3, [-xO5])
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, [""])
   AC_SUBST(RCCCFLAGS, ["-dalign -fsimple -xsafe=mem"])
@@ -308,7 +312,7 @@ elif [ test "$DECC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
   AC_SUBST(OPT_O1, [-O1])
   AC_SUBST(OPT_O2, [-O2])
-  AC_SUBST(OPT_O3, [-03])
+  AC_SUBST(OPT_O3, [-O3])
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, [""])
   AC_SUBST(RCCCFLAGS, [""])
