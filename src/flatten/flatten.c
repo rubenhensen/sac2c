@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.27  2000/10/10 14:57:23  dkr
+ * some comments in FltnLet added
+ *
  * Revision 2.26  2000/10/10 14:36:35  dkr
  * flattening of applications modified: the temp-assignment is placed in
  * front of the application now (not behind it)
@@ -912,6 +915,10 @@ FltnLet (node *arg_node, node *arg_info)
          *
          * But fortunately the flattening of prf-applications is made undone by
          * the optimizations :-))
+         * Note here, that this would not happen, if the temp-assignment is placed
+         * BEHIND the application:
+         *   a=fun(a)  =>  tmp=a; a=fun(tmp);  =>  CF can undo this
+         *   a=fun(a)  =>  tmp=fun(a); a=tmp;  =>  CF can NOT undo this (for now)
          */
         if ((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
             || (NODE_TYPE (LET_EXPR (arg_node)) == N_ap)) {
@@ -935,18 +942,13 @@ FltnLet (node *arg_node, node *arg_info)
                              * Now, we abstract the found argument
                              */
                             tmp_id = Abstract (id, arg_info);
-                            /*
-                            EXPRS_EXPR( arg) = FreeTree( EXPRS_EXPR( arg));
-                            */
                             EXPRS_EXPR (arg) = tmp_id;
                         } else {
                             /*
                              * temporary var already generated
                              * -> just replace the current arg by 'tmp_id'
                              */
-                            /*
-                            EXPRS_EXPR( arg) = FreeTree( EXPRS_EXPR( arg));
-                            */
+                            FreeTree (EXPRS_EXPR (arg));
                             EXPRS_EXPR (arg) = DupNode (tmp_id);
                         }
                     }
