@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2005/01/11 11:03:23  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.7  2004/12/07 20:35:21  ktr
  * eliminated CONSTVEC which is superseded by ntypes.
  *
@@ -83,9 +86,9 @@
 #include "free.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
-#include "Error.h"
 #include "sync_opt.h"
 #include "internal_lib.h"
+#include "ctinfo.h"
 
 /*
  * INFO structure
@@ -217,9 +220,10 @@ MeltableSYNCs (node *first_sync, node *second_sync)
                 result = FALSE;
                 DBUG_PRINT ("SYNCO", ("too much folds (global.max_sync_fold %i reached)",
                                       global.max_sync_fold));
-                WARN (NODE_LINE (second_sync),
-                      ("Maximum number of fold-with-loops per sync-block (%i) reached",
-                       global.max_sync_fold));
+                CTIwarnLine (NODE_LINE (second_sync),
+                             "Maximum number of fold-with-loops per sync-block (%i) "
+                             "reached",
+                             global.max_sync_fold);
             }
         }
     }

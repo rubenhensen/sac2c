@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2005/01/11 11:03:23  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.14  2004/11/25 14:25:09  khf
  * SacDevCamp04
  *
@@ -127,7 +130,7 @@
 #include "dbug.h"
 #include "tree_basic.h"
 #include "traverse.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "InferDFMs.h"
 #include "spmd_emm.h"
 #include "concurrent_info.h"
@@ -216,6 +219,7 @@ CONCdoConcurrent (node *syntax_tree)
  *   during the process of exploiting concurrency.
  *
  *****************************************************************************/
+
 node *
 CONCmodule (node *arg_node, info *arg_info)
 {
@@ -226,10 +230,10 @@ CONCmodule (node *arg_node, info *arg_info)
     }
 
     if (global.max_sync_fold == -1) {
-        NOTE (("  (Inferred) maximum folds per sync-block is set to %i",
-               global.needed_sync_fold));
+        CTInote ("(Inferred) maximum folds per sync-block is set to %i",
+                 global.needed_sync_fold);
     } else {
-        NOTE (("  Maximum folds per sync-block is set to %i", global.max_sync_fold));
+        CTInote ("Maximum folds per sync-block is set to %i", global.max_sync_fold);
     }
     DBUG_RETURN (arg_node);
 }
