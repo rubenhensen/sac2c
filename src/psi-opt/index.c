@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/04/06 12:50:11  sbs
+ * INFO_IVE_CURRENTASSIGN( arg_info) left unchanged in IdxLet
+ *
  * Revision 3.5  2001/03/22 19:40:46  dkr
  * include of tree.h eliminated
  *
@@ -1681,7 +1684,17 @@ IdxLet (node *arg_node, node *arg_info)
                             ASSIGN_NEXT (newassign) = ASSIGN_NEXT (current_assign);
                             ASSIGN_NEXT (current_assign) = newassign;
 
-                            INFO_IVE_CURRENTASSIGN (arg_info) = newassign;
+                            /*
+                             * It is important here, to leave INFO_IVE_CURRENTASSIGN(
+                             * arg_info) on current_assign; otherwise, a withloop-created
+                             * index vector will find a corrupted INFO_IVE_CURRENTASSIGN(
+                             * arg_info) which points to an INDEX2VECT-ICM rather than a
+                             * let!!
+                             *
+                             * Hence, I hope that the following line is not essential:
+                             *
+                             *  INFO_IVE_CURRENTASSIGN( arg_info) = newassign;
+                             */
                         }
                         vinfo = VINFO_NEXT (vinfo);
                     }
