@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/19 10:17:57  sah
+ * added object handling
+ *
  * Revision 1.6  2004/11/17 19:48:18  sah
  * added visibility checking
  *
@@ -246,6 +249,18 @@ EXPFundef (node *arg_node, info *arg_info)
                 SET_FLAG (FUNDEF, arg_node, IS_PROVIDED, TRUE);
             }
         }
+    } else if (FUNDEF_STATUS (arg_node) == ST_objinitfun) {
+        /* init functions of objects are always local, as there is
+         * no need for them to be used outside the module
+         */
+        SET_FLAG (FUNDEF, arg_node, IS_EXPORTED, FALSE);
+        SET_FLAG (FUNDEF, arg_node, IS_PROVIDED, FALSE);
+    } else if (FUNDEF_STATUS (arg_node) == ST_classfun) {
+        /* classfuns are not exported as well, as that would
+         * break the encapsulation
+         */
+        SET_FLAG (FUNDEF, arg_node, IS_EXPORTED, FALSE);
+        SET_FLAG (FUNDEF, arg_node, IS_PROVIDED, FALSE);
     } else {
         SET_FLAG (FUNDEF, arg_node, IS_EXPORTED, FALSE);
         SET_FLAG (FUNDEF, arg_node, IS_PROVIDED, FALSE);
