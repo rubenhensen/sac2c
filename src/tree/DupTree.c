@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2001/06/27 12:38:37  ben
+ * SCHCopyTasksel inserted
+ *
  * Revision 3.51  2001/05/18 11:40:31  dkr
  * DBUG_ASSERT containing IsEmptyLUT() added
  *
@@ -1930,6 +1933,10 @@ DupWLseg (node *arg_node, node *arg_info)
         WLSEG_SCHEDULING (new_node) = SCHCopyScheduling (WLSEG_SCHEDULING (arg_node));
     }
 
+    if (WLSEGX_TASKSEL (arg_node) != NULL) {
+        WLSEGX_TASKSEL (new_node) = SCHCopyTasksel (WLSEGX_TASKSEL (arg_node));
+    }
+
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
@@ -1959,6 +1966,10 @@ DupWLsegVar (node *arg_node, node *arg_info)
     if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
         WLSEGVAR_SCHEDULING (new_node)
           = SCHCopyScheduling (WLSEGVAR_SCHEDULING (arg_node));
+    }
+
+    if (WLSEGX_TASKSEL (arg_node) != NULL) {
+        WLSEGX_TASKSEL (new_node) = SCHCopyTasksel (WLSEGX_TASKSEL (arg_node));
     }
 
     CopyCommonNodeData (new_node, arg_node);
