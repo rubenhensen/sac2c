@@ -9,7 +9,6 @@ blocks_lift.c
 blocks_lift.h
 dataflow_analysis.c
 dataflow_analysis.h
-mtfuns_init.c
 mtfuns_init.h
 multithread.c
 multithread.h
