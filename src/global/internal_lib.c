@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/05/17 08:36:25  sbs
+ * DbugMemoryLeakCheck added.
+ *
  * Revision 3.8  2001/05/15 15:53:08  nmw
  * new ssawlX phases added to TmpVar
  *
@@ -93,8 +96,10 @@
 #include <ctype.h>
 
 #include "Error.h"
+#include "DupTree.h"
 #include "free.h"
 #include "dbug.h"
+#include "scnprs.h"
 #include "my_debug.h"
 #include "internal_lib.h"
 #include "globals.h"
@@ -188,7 +193,7 @@ StringCopy (char *source)
     if (source) {
         DBUG_PRINT ("STRINGCOPY", ("copying string \"%s\"", source));
 
-        ret = (char *)MALLOC (sizeof (char) * (strlen (source) + 1));
+        ret = (char *)Malloc (sizeof (char) * (strlen (source) + 1));
         strcpy (ret, source);
     } else {
         ret = NULL;
@@ -216,7 +221,7 @@ StringConcat (char *first, char *second)
 
     DBUG_ENTER ("StringConcat");
 
-    result = (char *)MALLOC (strlen (first) + strlen (second) + 1);
+    result = (char *)Malloc (strlen (first) + strlen (second) + 1);
 
     strcpy (result, first);
     strcat (result, second);
@@ -248,7 +253,7 @@ itoa (long number)
         tmp /= 10;
         length++;
     }
-    str = (char *)MALLOC (sizeof (char) * length + 1);
+    str = (char *)Malloc (sizeof (char) * length + 1);
     str[length] = atoi ("\0");
     for (i = 0; (i < length); i++) {
         str[i] = ((int)'0') + (number / pow (10, (length - 1)));
@@ -430,7 +435,7 @@ TmpVar ()
 
     DBUG_ENTER ("TmpVar");
 
-    result = (char *)MALLOC (sizeof (char) * 16);
+    result = (char *)Malloc (sizeof (char) * 16);
 
     if (act_tab == imp_tab) {
         s = "imp";
@@ -565,9 +570,9 @@ TmpVarName (char *postfix)
     DBUG_ENTER ("TmpVarName");
 
     tmp = TmpVar ();
-    result = (char *)MALLOC ((strlen (tmp) + strlen (postfix) + 2) * sizeof (char));
+    result = (char *)Malloc ((strlen (tmp) + strlen (postfix) + 2) * sizeof (char));
     sprintf (result, "%s_%s", tmp, postfix);
-    FREE (tmp);
+    Free (tmp);
 
     DBUG_RETURN (result);
 }
@@ -591,3 +596,39 @@ ComputeMallocAlignStep (void)
     DBUG_VOID_RETURN;
 }
 #endif
+
+#ifndef DBUG_OFF
+/******************************************************************************
+ *
+ * function:
+ *   void DbugMemoryLeakCheck()
+ *
+ * description:
+ *   computes and prints memory usage w/o memory used for the actual
+ *   syntax tree.
+ *
+ ******************************************************************************/
+
+void
+DbugMemoryLeakCheck ()
+{
+    node *ast_dup;
+    int mem_before;
+
+    DBUG_ENTER ("DbugMemoryLeakCheck");
+
+    mem_before = current_allocated_mem;
+    NOTE2 (("*** Currently allocated memory (bytes):   %s",
+            IntBytes2String (current_allocated_mem)));
+    ast_dup = DupTree (syntax_tree);
+    NOTE2 (("*** Size of the syntax tree (bytes):      %s",
+            IntBytes2String (current_allocated_mem - mem_before)));
+    NOTE2 (("*** Other memory allocated/ Leak (bytes): %s",
+            IntBytes2String (2 * mem_before - current_allocated_mem)));
+    FreeTree (ast_dup);
+    NOTE2 (("*** FreeTree / DupTree leak (bytes):      %s",
+            IntBytes2String (current_allocated_mem - mem_before)));
+
+    DBUG_VOID_RETURN;
+}
+#endif /* DBUG_OFF */
