@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/07/28 09:08:19  khf
+ * support for ExplicitAccumulate added
+ *
  * Revision 1.2  2004/07/22 14:13:50  ktr
  * a = fill( b, c) is now converted into c = b
  * which appears to be easier to compile.
@@ -15,24 +18,66 @@
  *
  * @file markmemvals.c
  *
- * In this traversal all fill operations and unnecessary MemVal-variables
- * are removed by means of a substitution traversal.
+ * 1. In this traversal all fill operations and unnecessary MemVal-variables
+ *    are removed by means of a substitution traversal.
  *
- * Ex.:
- *   c = alloc();
- *   a = fill( ..., c)
+ *    Ex.:
+ *      c = alloc();
+ *      a = fill( ..., c)
  *
- * is transformed into
- *   c = alloc();
- *   c = ...;
+ *    is transformed into
+ *      c = alloc();
+ *      c = ...;
  *
- * All subsequent references to a are renamed into references to c.
+ *    All subsequent references to a are renamed into references to c.
  *
- * As genarray-withloops are nothing but fancy fill-operations after
- * the explicit alloc-operations are inserted, their result is treated
- * exactly like the fill operation's result.
+ *    As genarray-withloops are nothing but fancy fill-operations after
+ *    the explicit alloc-operations are inserted, their result is treated
+ *    exactly like the fill operation's result.
+ *
+ * 2. If ExplicitAccumulate was applied:
+ *    All subsequent references to left hand side of accu operations
+ *    in Withloops are renamed into references to the corresponding
+ *    return values of the fold operators.
+ *    The corresponding cexpr is also be renamed.
+ *    The accu operation is no longer needed because it's only pseudo syntax
+ *    and can be removed.
+ *
+ *
+ *    Ex.:
+ *      A,B,C = with(iv)
+ *               gen:{ a,b   = accu( iv);
+ *                     val1  = ...;
+ *                     val2  = ...;
+ *                     val3  = ...;
+ *                     emal1 = alloc(...);
+ *                     emal1 = op1( a, val1);
+ *                     emal2 = alloc(...);
+ *                     emal2 = op2( b, val2);
+ *                   }: emal1, emal2, val3
+ *              fold( op1, n1)
+ *              fold( op2, n2)
+ *              genarray( shp);
+ *
+ *    is transformed into
+ *      A,B,C = with(iv)
+ *               gen:{ val1  = ...;
+ *                     val2  = ...;
+ *                     val3  = ...;
+ *                     emal1 = alloc(...);
+ *                     emal1 = op1( A, val1);
+ *                     emal2 = alloc(...);
+ *                     emal2 = op2( B, val2);
+ *                     A     = emal1;
+ *                     B     = emal2;
+ *                   }: A, B, val3
+ *              fold( op1, n1)
+ *              fold( op2, n2)
+ *              genarray( shp);
+ *
  *
  */
+
 #define NEW_INFO
 
 #include "tree_basic.h"
@@ -41,6 +86,7 @@
 #include "internal_lib.h"
 #include "LookUpTable.h"
 #include "print.h"
+#include "DupTree.h"
 
 /**
  * INFO structure
@@ -48,10 +94,16 @@
 struct INFO {
     LUT_t lut;
     ids *lhs;
+    ids *lhs_wl;
+    node *withop;
+    bool is_accu;
 };
 
 #define INFO_MMV_LUT(n) (n->lut)
 #define INFO_MMV_LHS(n) (n->lhs)
+#define INFO_MMV_LHS_WL(n) (n->lhs_wl)
+#define INFO_MMV_WITHOP(n) (n->withop)
+#define INFO_MMV_IS_ACCU(n) (n->is_accu)
 
 /**
  * INFO functions
@@ -67,6 +119,9 @@ MakeInfo ()
 
     INFO_MMV_LUT (result) = GenerateLUT ();
     INFO_MMV_LHS (result) = NULL;
+    INFO_MMV_LHS_WL (result) = NULL;
+    INFO_MMV_WITHOP (result) = NULL;
+    INFO_MMV_IS_ACCU (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -149,6 +204,47 @@ MMVfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn MMVassign
+ *
+ *  @brief Traverses ASSIGN's instruction and remove current node
+ *         afterwards iff rhs contain prf F_accu
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+node *
+MMVassign (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("MMVassign");
+
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
+    if (INFO_MMV_IS_ACCU (arg_info)) {
+        /*
+         * We have an assignment with F_accu on RHS.
+         * This assignment can be removed
+         */
+        arg_node = FreeNode (arg_node);
+        INFO_MMV_IS_ACCU (arg_info) = FALSE;
+
+        if (arg_node != NULL) {
+            arg_node = Trav (arg_node, arg_info);
+        }
+    } else {
+        if (ASSIGN_NEXT (arg_node) != NULL) {
+            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -243,6 +339,8 @@ MMVlet (node *arg_node, info *arg_info)
  *
  *  @brief Adds the current LHS and the MEM-variable into LUT if this
  *         prf is a F_fill.
+ *         Adds the LHS and the corresponding LHS of current WL into LUT
+ *         if this prf is a F_accu.
  *
  *  @param arg_node
  *  @param arg_info
@@ -253,7 +351,8 @@ MMVlet (node *arg_node, info *arg_info)
 node *
 MMVprf (node *arg_node, info *arg_info)
 {
-    node *temp;
+    node *temp, *withop;
+    ids *ids_assign, *ids_wl;
 
     DBUG_ENTER ("MMVprf");
 
@@ -285,6 +384,43 @@ MMVprf (node *arg_node, info *arg_info)
         if (arg_node != NULL) {
             arg_node = Trav (arg_node, arg_info);
         }
+    } else if (PRF_PRF (arg_node) == F_accu) {
+
+        /* A,B = with(iv)
+         *        gen:{
+         *             a = accu( iv);
+         *             ...
+         *             }...
+         *            fold( op1, n1)
+         *            ...
+         *
+         *     rename: a -> A
+         */
+
+        INFO_MMV_IS_ACCU (arg_info) = TRUE;
+        ids_assign = INFO_MMV_LHS (arg_info);
+        ids_wl = INFO_MMV_LHS_WL (arg_info);
+        withop = INFO_MMV_WITHOP (arg_info);
+
+        DBUG_ASSERT ((withop != NULL), "F_accu without withloop");
+
+        while (withop != NULL) {
+            if (NWITHOP_IS_FOLD (withop)) {
+                DBUG_ASSERT ((ids_wl != NULL), "ids of wl is missing");
+                DBUG_ASSERT ((ids_assign != NULL), "ids of assign is missing");
+
+                InsertIntoLUT_S (INFO_MMV_LUT (arg_info), IDS_NAME (ids_assign),
+                                 IDS_NAME (ids_wl));
+
+                InsertIntoLUT_P (INFO_MMV_LUT (arg_info), IDS_VARDEC (ids_assign),
+                                 IDS_VARDEC (ids_wl));
+
+                ids_assign = IDS_NEXT (ids_assign);
+            }
+            ids_wl = IDS_NEXT (ids_wl);
+            withop = NWITHOP_NEXT (withop);
+        }
+
     } else {
         if (PRF_ARGS (arg_node) != NULL) {
             PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
@@ -309,7 +445,16 @@ MMVprf (node *arg_node, info *arg_info)
 node *
 MMVwith (node *arg_node, info *arg_info)
 {
+    node *withop;
+    ids *lhs;
+
     DBUG_ENTER ("MMVwith");
+
+    /* stack lhs and withop of surrounding WL */
+    lhs = INFO_MMV_LHS_WL (arg_info);
+    withop = INFO_MMV_WITHOP (arg_info);
+
+    INFO_MMV_LHS_WL (arg_info) = INFO_MMV_LHS (arg_info);
 
     if (NWITH_WITHOP (arg_node) != NULL) {
         NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
@@ -322,6 +467,9 @@ MMVwith (node *arg_node, info *arg_info)
     if (NWITH_CODE (arg_node) != NULL) {
         NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     }
+
+    INFO_MMV_WITHOP (arg_info) = withop;
+    INFO_MMV_LHS_WL (arg_info) = lhs;
 
     DBUG_RETURN (arg_node);
 }
@@ -341,7 +489,17 @@ MMVwith (node *arg_node, info *arg_info)
 node *
 MMVwith2 (node *arg_node, info *arg_info)
 {
+    node *withop;
+    ids *lhs;
+
     DBUG_ENTER ("MMVwith2");
+
+    /* stack lhs and withop of surrounding WL */
+    lhs = INFO_MMV_LHS_WL (arg_info);
+    withop = INFO_MMV_WITHOP (arg_info);
+
+    INFO_MMV_LHS_WL (arg_info) = INFO_MMV_LHS (arg_info);
+    INFO_MMV_WITHOP (arg_info) = NULL;
 
     if (NWITH2_WITHOP (arg_node) != NULL) {
         NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
@@ -354,6 +512,9 @@ MMVwith2 (node *arg_node, info *arg_info)
     if (NWITH2_CODE (arg_node) != NULL) {
         NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
     }
+
+    INFO_MMV_WITHOP (arg_info) = withop;
+    INFO_MMV_LHS_WL (arg_info) = lhs;
 
     DBUG_RETURN (arg_node);
 }
@@ -375,6 +536,10 @@ node *
 MMVwithop (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MMVwithop");
+
+    if (INFO_MMV_WITHOP (arg_info) == NULL) {
+        INFO_MMV_WITHOP (arg_info) = arg_node;
+    }
 
     switch (NWITHOP_TYPE (arg_node)) {
     case WO_genarray:
@@ -422,6 +587,86 @@ MMVwithop (node *arg_node, info *arg_info)
     if (NWITHOP_NEXT (arg_node) != NULL) {
         INFO_MMV_LHS (arg_info) = IDS_NEXT (INFO_MMV_LHS (arg_info));
         NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn MMVcode
+ *
+ *  @brief Substitutes a CEXPR reference with the corresponding reference
+ *         on LHS of current withloop if the corresponding WL operation
+ *         is fold.
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+node *
+MMVcode (node *arg_node, info *arg_info)
+{
+    node *cexprs, *withop, *cexpr, *nassign;
+    ids *_ids;
+
+    DBUG_ENTER ("AACCcode");
+
+    if (NCODE_CBLOCK (arg_node) != NULL) {
+        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    }
+
+    if (NCODE_CEXPRS (arg_node) != NULL) {
+        NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
+    }
+
+    if (eacc) {
+
+        /* A,B = with(iv)
+         *        gen:{res1 = ...;
+         *             res2 = ...;
+         *            }:res1,res2
+         *       fold( op1, n1)
+         *            ...
+         *
+         *     rename cexpr: res1 -> A
+         *     add assign  : A = res1
+         *
+         */
+
+        _ids = INFO_MMV_LHS_WL (arg_info);
+        cexprs = NCODE_CEXPRS (arg_node);
+        withop = INFO_MMV_WITHOP (arg_info);
+        nassign = NULL;
+
+        while (withop != NULL) {
+            if (NWITHOP_IS_FOLD (withop)) {
+                DBUG_ASSERT ((_ids != NULL), "ids is missing");
+                cexpr = EXPRS_EXPR (cexprs);
+                DBUG_ASSERT ((cexpr != NULL), "CEXPR is missing");
+                DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "CEXPR is not a N_id");
+
+                if (IDS_VARDEC (_ids) != ID_VARDEC (cexpr)) {
+                    nassign
+                      = MakeAssign (MakeLet (DupNode (cexpr), DupOneIds (_ids)), nassign);
+                    BLOCK_INSTR (NCODE_CBLOCK (arg_node))
+                      = AppendAssign (BLOCK_INSTR (NCODE_CBLOCK (arg_node)), nassign);
+
+                    EXPRS_EXPR (cexprs) = FreeNode (EXPRS_EXPR (cexprs));
+                    EXPRS_EXPR (cexprs) = DupIds_Id (_ids);
+                }
+            }
+
+            _ids = IDS_NEXT (_ids);
+            cexprs = EXPRS_NEXT (cexprs);
+            withop = NWITHOP_NEXT (withop);
+        }
+    }
+
+    if (NCODE_NEXT (arg_node) != NULL) {
+        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
