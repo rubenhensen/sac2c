@@ -1,11 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1998/03/17 10:41:05  dkr
+ * *** empty log message ***
+ *
  * Revision 1.20  1998/03/15 23:22:39  dkr
  * changed PRECnwith()
- *
- * Revision 1.19  1998/03/03 23:54:39  dkr
- * *** empty log message ***
  *
  * Revision 1.18  1998/03/03 23:00:11  dkr
  * added PRECncode()
@@ -2143,10 +2143,11 @@ node *NormalizeProj (node *proj_chain, int shape_int) /* dkr: need a chain??? */
 /******************************************************************************
  *
  * function:
- *   node* Parts2Proj(node *parts, node *shape_vec)
+ *   node* Parts2Proj(node *parts, node *shape)
  *
  * description:
- *
+ *   converts a N_Npart-chain (parts) into a N_WLproj-chain (return value).
+ *   'shape_vec' is a N_array node containing the shape.
  *
  ******************************************************************************/
 
@@ -2154,14 +2155,17 @@ node *
 Parts2Proj (node *parts, node *shape_vec)
 {
     node *parts_proj = NULL;
-    node *proj, *new_proj, *last_grid, *shape, *gen, *bound1, *bound2, *step, *width;
-    int dim;
+    node *proj, *new_proj, *last_grid, *shape_elems, *gen, *bound1, *bound2, *step,
+      *width;
+    int dim, d;
 
     DBUG_ENTER ("Parts2Proj");
 
+    dim = TYPES_DIM (ARRAY_TYPE (shape_vec));
+
     while (parts != NULL) {
         proj = NULL;
-        shape = shape_vec;
+        shape_elems = ARRAY_AELEMS (shape_vec);
 
         gen = NPART_GEN (parts);
         DBUG_ASSERT ((NGEN_OP1 (gen) == F_le), "op1 in generator is not <=");
@@ -2173,9 +2177,8 @@ Parts2Proj (node *parts, node *shape_vec)
         step = ARRAY_AELEMS (NGEN_STEP (gen));
         width = ARRAY_AELEMS (NGEN_WIDTH (gen));
 
-        dim = 0;
-        do {
-            DBUG_ASSERT ((shape != NULL), "shape not complete");
+        for (d = 0; d < dim; d++) {
+            DBUG_ASSERT ((shape_elems != NULL), "shape not complete");
             DBUG_ASSERT ((bound1 != NULL), "bound1 of generator not complete");
             DBUG_ASSERT ((bound2 != NULL), "bound2 of generator not complete");
             DBUG_ASSERT ((step != NULL), "step of generator not complete");
@@ -2183,12 +2186,12 @@ Parts2Proj (node *parts, node *shape_vec)
 
             /* build N_WLproj-node of current dimension */
             new_proj
-              = MakeWLproj (0, dim, NUM_VAL (EXPRS_EXPR (bound1)),
+              = MakeWLproj (0, d, NUM_VAL (EXPRS_EXPR (bound1)),
                             NUM_VAL (EXPRS_EXPR (bound2)), NUM_VAL (EXPRS_EXPR (step)), 0,
-                            MakeWLgrid (dim, 0, NUM_VAL (EXPRS_EXPR (width)), 0, NULL,
-                                        NULL, NULL),
+                            MakeWLgrid (d, 0, NUM_VAL (EXPRS_EXPR (width)), 0, NULL, NULL,
+                                        NULL),
                             NULL);
-            new_proj = NormalizeProj (new_proj, NUM_VAL (EXPRS_EXPR (shape)));
+            new_proj = NormalizeProj (new_proj, NUM_VAL (EXPRS_EXPR (shape_elems)));
 
             /* append 'new_proj' to 'proj'-chain */
             if (proj == NULL) {
@@ -2199,13 +2202,13 @@ Parts2Proj (node *parts, node *shape_vec)
             last_grid = WLPROJ_INNER (new_proj);
 
             /* go to next dimension */
-            shape = EXPRS_NEXT (shape);
+            shape_elems = EXPRS_NEXT (shape_elems);
             bound1 = EXPRS_NEXT (bound1);
             bound2 = EXPRS_NEXT (bound2);
             step = EXPRS_NEXT (step);
             width = EXPRS_NEXT (width);
-            dim++;
-        } while (shape != NULL);
+        }
+        DBUG_ASSERT ((shape_elems == NULL), "shape contains more elements");
 
         WLGRID_CODE (last_grid) = NPART_CODE (parts);
         parts_proj = InsertProj (proj, parts_proj);
@@ -2219,7 +2222,7 @@ Parts2Proj (node *parts, node *shape_vec)
 /******************************************************************************
  *
  * function:
- *   node *ComputeRects(node *parts, node *shape_vec)
+ *   node *ComputeRects(node *proj)
  *
  * description:
  *
@@ -2227,53 +2230,93 @@ Parts2Proj (node *parts, node *shape_vec)
  ******************************************************************************/
 
 node *
-ComputeRects (node *parts, node *shape_vec)
+ComputeRects (node *proj)
 {
-    node *rects;
-
     DBUG_ENTER ("ComputeRects");
 
-    rects = Parts2Proj (parts, shape_vec);
-
-    DBUG_RETURN (rects);
+    DBUG_RETURN (proj);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *SetSegs(node *rects)
+ *   node *SetSegAttribs(node *seg, int dim)
  *
  * description:
- *
+ *   sets the attributes BV, UBV for segment 'seg' (N_WLseg node):
+ *   - calulates the lcm of all grid-steps in segment (sv)
+ *   - based on this, BV and UBV are set
  *
  ******************************************************************************/
 
 node *
-SetSegs (node *rects)
+SetSegAttribs (node *seg)
 {
-    node *segs;
+    long *sv;
+    int dim = WLSEG_DIM (seg);
+
+    DBUG_ENTER ("SetSegAttribs");
+
+    sv = (long *)MALLOC (sizeof (long) * dim);
+
+    DBUG_RETURN (seg);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SetSegs(node *rects, int dim)
+ *
+ * description:
+ *   returns chain of segments (based on the calculated rectangles 'rects')
+ *
+ ******************************************************************************/
+
+node *
+SetSegs (node *rects, int dim)
+{
+    node *segs, *new_seg, *last_seg, *rect;
 
     DBUG_ENTER ("SetSegs");
 
-    segs = MakeWLseg (rects, NULL);
+#if 0
+  /*
+   * choose the hole array as the only segment
+   *
+   */
 
-    DBUG_RETURN (segs);
-}
+  segs = MakeWLseg(dim, rects, NULL);
+  segs = SetSegAttribs(segs);
+#else
+    /*
+     * choose every rectangle as a segment
+     *
+     */
 
-/******************************************************************************
- *
- * function:
- *   node *FitToSegs(node *segs, node *rects)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-FitToSegs (node *segs, node *rects)
-{
-    DBUG_ENTER ("FitToSegs");
+    segs = NULL;
+    while (rects != NULL) {
+        /*
+         * extract next rectangle
+         */
+        rect = rects;
+        rects = WLPROJ_NEXT (rects);
+        WLPROJ_NEXT (rect) = NULL;
+        /*
+         * build new segment
+         */
+        new_seg = MakeWLseg (dim, rect, NULL);
+        new_seg = SetSegAttribs (new_seg);
+        /*
+         * append 'new_seg' at 'segs'
+         */
+        if (segs == NULL) {
+            segs = new_seg;
+        } else {
+            WLSEG_NEXT (last_seg) = new_seg;
+        }
+        last_seg = new_seg;
+    }
+#endif
 
     DBUG_RETURN (segs);
 }
@@ -2399,7 +2442,8 @@ FitWL (node *proj)
 node *
 PRECnwith (node *arg_node, node *arg_info)
 {
-    node *new_node, *rects, *segs, *seg;
+    node *new_node, *rects, *segs, *seg, *shape;
+    int dim;
 
     DBUG_ENTER ("PRECnwith");
 
@@ -2411,18 +2455,21 @@ PRECnwith (node *arg_node, node *arg_info)
     new_node = MakeNWith2 (NPART_WITHID (NWITH_PART (arg_node)), NULL,
                            NWITH_CODE (arg_node), NWITH_WITHOP (arg_node));
 
-#if 0
-  NPART_WITHID(NWITH_PART(arg_node)) = NULL;
-  NWITH_CODE(arg_node) = NULL;
-  NWITH_WITHOP(arg_node) = NULL;
-#endif
+    /*
+     * withid, code and withop are overtaken to the nwith2-tree without a change.
+     * because of that, these parts are cut off from the old nwith-tree, before freeing
+     * it.
+     *
+     */
+    NPART_WITHID (NWITH_PART (arg_node)) = NULL;
+    NWITH_CODE (arg_node) = NULL;
+    NWITH_WITHOP (arg_node) = NULL;
 
-    DBUG_ASSERT ((NODE_TYPE (NWITHOP_SHAPE (NWITH2_WITHOP (new_node))) == N_array),
-                 "shape of with-genarray is unknown");
-    rects = ComputeRects (NWITH_PART (arg_node),
-                          ARRAY_AELEMS (NWITHOP_SHAPE (NWITH2_WITHOP (new_node))));
-    segs = SetSegs (rects);
-    segs = FitToSegs (segs, rects);
+    shape = NWITHOP_SHAPE (NWITH2_WITHOP (new_node));
+    dim = TYPES_DIM (ARRAY_TYPE (shape));
+    DBUG_ASSERT ((NODE_TYPE (shape) == N_array), "shape of with-genarray is unknown");
+    rects = ComputeRects (Parts2Proj (NWITH_PART (arg_node), shape));
+    segs = SetSegs (rects, dim);
 
     seg = segs;
     while (seg != NULL) {
@@ -2437,15 +2484,9 @@ PRECnwith (node *arg_node, node *arg_info)
 
     NWITH2_SEG (new_node) = segs;
 
-#if 0
-  FreeTree(arg_node);
-#endif
+    FreeTree (arg_node);
 
-#if 1
     DBUG_RETURN (new_node);
-#else
-    DBUG_RETURN (arg_node);
-#endif
 }
 
 /******************************************************************************
