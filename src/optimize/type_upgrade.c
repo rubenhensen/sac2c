@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.2  2004/12/08 13:59:24  mwe
+ * work continued ...
+ *
  * Revision 1.1  2004/12/08 12:17:59  mwe
  * Initial revision
  *
@@ -124,11 +127,8 @@ AssignTypeToExpr (node *expr, ntype *type)
     } else if (NODE_TYPE (expr) == N_array) {
 
         /*
-         * store type in ARRAY_NTYPE
+         * noting to do for array node
          */
-
-        ARRAY_NTYPE (expr) = TYfreeType (ARRAY_NTYPE (expr));
-        ARRAY_NTYPE (expr) = TYcopyType (type);
 
     } else {
 
@@ -318,15 +318,46 @@ node *
 TUPreturn (node *arg_node, info *arg_info)
 {
 
-    node *fundef;
+    node *ret, *exprs;
     DBUG_ENTER ("TUPreturn");
 
     if (NULL != RETURN_EXPRS (arg_node)) {
 
-        /* convert ntypes of return values to return type of function ; add them to
+        /* convert ntypes of return values to return type of function: add them to
          * ret-node*/
 
-        fundef = INFO_TUP_FUNDEF (arg_info);
+        ret = FUNDEF_RETS (INFO_TUP_FUNDEF (arg_info));
+        exprs = RETURN_EXPRS (arg_node);
+
+        while (ret != NULL) {
+
+            switch (
+              TYcmpTypes (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (exprs))), RET_TYPE (ret))) {
+
+            case TY_eq: /* same types, nothing changed */
+                break;
+
+            case TY_gt: /* lost type information, should not happen */
+                DBUG_ASSERT ((FALSE), "lost type information");
+                break;
+
+            case TY_hcs:
+            case TY_dis: /* both types are unrelated, should not be possible */
+                DBUG_ASSERT ((FALSE), "former type is unrelated to new type! ");
+                break;
+
+            case TY_lt: /* new type is more special: update */
+                RET_TYPE (ret) = TYfreeType (RET_TYPE (ret));
+                RET_TYPE (ret) = TYcopyType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (exprs))));
+                break;
+
+            default: /* no other cases exist */
+                DBUG_ASSERT ((FALSE), "New element in enumeration added?");
+            }
+
+            ret = RET_NEXT (ret);
+            exprs = EXPRS_NEXT (exprs);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -347,6 +378,7 @@ TUPlet (node *arg_node, info *arg_info)
 {
 
     ntype *type;
+    node *ret, *ids;
 
     DBUG_ENTER ("TUPlet");
 
@@ -366,9 +398,41 @@ TUPlet (node *arg_node, info *arg_info)
           = TryStaticDispatch (AP_FUNDEF (LET_EXPR (arg_node)), arg_info);
 
         /*
-         * TODO: update left side
-         *       here is the only possibility for multiple ids on left side
+         * update left side
+         * here is the only possibility for multiple ids on left side
          */
+
+        ret = FUNDEF_RETS (AP_FUNDEF (LET_EXPR (arg_node)));
+        ids = LET_IDS (arg_node);
+
+        while (ret != NULL) {
+
+            switch (TYcmpTypes (RET_TYPE (ret), AVIS_TYPE (IDS_AVIS (ids)))) {
+
+            case TY_eq: /* same types, nothing changed */
+                break;
+
+            case TY_gt: /* lost type information, should not happen */
+                DBUG_ASSERT ((FALSE), "lost type information");
+                break;
+
+            case TY_hcs:
+            case TY_dis: /* both types are unrelated, should not be possible */
+                DBUG_ASSERT ((FALSE), "former type is unrelated to new type! ");
+                break;
+
+            case TY_lt: /* return type is more special: update */
+                AVIS_TYPE (IDS_AVIS (ids)) = TYfreeType (AVIS_TYPE (IDS_AVIS (ids)));
+                AVIS_TYPE (IDS_AVIS (ids)) = TYcopyType (RET_TYPE (ret));
+                break;
+
+            default: /* no other cases exist */
+                DBUG_ASSERT ((FALSE), "New element in enumeration added?");
+            }
+
+            ret = RET_NEXT (ret);
+            ids = IDS_NEXT (ids);
+        }
     } else if (N_with == NODE_TYPE (LET_EXPR (arg_node))) {
 
         /*
@@ -386,17 +450,39 @@ TUPlet (node *arg_node, info *arg_info)
     }
 
     if (N_ap != NODE_TYPE (LET_EXPR (arg_node))) {
+
+        /*
+         * upgrade for N_ap nodes already done
+         */
+
         DBUG_ASSERT ((IDS_AVIS (LET_IDS (arg_node)) != NULL),
                      "AVIS is NULL in IDS node!");
 
         type = NTCnewTypeCheck_Expr (arg_node);
 
-        DBUG_ASSERT (TYleTypes (type, AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)))),
-                     "Lost type information!");
+        switch (TYcmpTypes (type, AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))))) {
 
-        AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)))
-          = TYfreeType (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))));
-        AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))) = type;
+        case TY_eq: /* types are equal, nothing to do */
+            break;
+
+        case TY_gt: /* old type is more specific, lost type information */
+            DBUG_ASSERT ((FALSE), "Lost type information!");
+            break;
+
+        case TY_hcs:
+        case TY_dis: /* both types are unrelated, should not be possible */
+            DBUG_ASSERT ((FALSE), "former type is unrelated to new type! ");
+            break;
+
+        case TY_lt: /* new type is more specific, do upgrade */
+            AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)))
+              = TYfreeType (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))));
+            AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))) = type;
+            break;
+
+        default: /* all cases are listed above, so default should never be entered*/
+            DBUG_ASSERT ((FALSE), "New element in enumeration added?");
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -421,11 +507,13 @@ TUPwith (node *arg_node, info *arg_info)
      * traverse in substructures
      */
 
-    if (NULL != WITH_PART (arg_node))
+    if (NULL != WITH_PART (arg_node)) {
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    }
 
-    if (NULL != WITH_CODE (arg_node))
+    if (NULL != WITH_CODE (arg_node)) {
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -450,11 +538,15 @@ TUPpart (node *arg_node, info *arg_info)
      * traverse in next partition
      */
 
-    if (PART_GENERATOR (arg_node) != NULL)
-        PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
+    INFO_TUP_WITHID (arg_info) = PART_WITHID (arg_node);
 
-    if (PART_NEXT (arg_node) != NULL)
+    if (PART_GENERATOR (arg_node) != NULL) {
+        PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
+    }
+
+    if (PART_NEXT (arg_node) != NULL) {
         PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -476,6 +568,7 @@ TUPgenerator (node *arg_node, info *arg_info)
 {
 
     ntype *current, *tmp;
+    node *withid;
 
     DBUG_ENTER ("TUPgenerator");
 
@@ -498,13 +591,15 @@ TUPgenerator (node *arg_node, info *arg_info)
      * value is no argument of a special function (funcond, dofun)
      */
 
-    if (IsArgumentOfSpecialFunction (GENERATOR_BOUND1 (arg_node)) == FALSE)
+    if (IsArgumentOfSpecialFunction (GENERATOR_BOUND1 (arg_node)) == FALSE) {
         GENERATOR_BOUND1 (arg_node)
           = AssignTypeToExpr (GENERATOR_BOUND1 (arg_node), current);
+    }
 
-    if (IsArgumentOfSpecialFunction (GENERATOR_BOUND2 (arg_node)) == FALSE)
+    if (IsArgumentOfSpecialFunction (GENERATOR_BOUND2 (arg_node)) == FALSE) {
         GENERATOR_BOUND2 (arg_node)
           = AssignTypeToExpr (GENERATOR_BOUND2 (arg_node), current);
+    }
 
     if (NULL != GENERATOR_STEP (arg_node)) {
 
@@ -518,8 +613,17 @@ TUPgenerator (node *arg_node, info *arg_info)
     }
 
     /*
-     * TODO: update withid with same type
+     * update withid with same type
      */
+
+    withid = INFO_TUP_WITHID (arg_info);
+
+    DBUG_ASSERT (TYleTypes (current, AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))),
+                 "Lost type information!");
+
+    AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))
+      = TYfreeType (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid))));
+    AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid))) = TYcopyType (current);
 
     current = TYfreeType (current);
 
@@ -546,11 +650,13 @@ TUPcode (node *arg_node, info *arg_info)
      * CEXPRS has to be an id-node, so no typeupgrade has to be done
      */
 
-    if (CODE_CBLOCK (arg_node) != NULL)
+    if (CODE_CBLOCK (arg_node) != NULL) {
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+    }
 
-    if (CODE_NEXT (arg_node) != NULL)
+    if (CODE_NEXT (arg_node) != NULL) {
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
