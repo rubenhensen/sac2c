@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.3  1994/12/31 14:31:32  sbs
+ * Revision 1.4  1995/01/02 19:24:34  sbs
+ * first release with new N_explist nodes!
+ * does not (yet?) automaticly introduce the modul names for applied
+ * user defined types!
+ *
+ * Revision 1.3  1994/12/31  14:31:32  sbs
  * preliminary (working) version
  *
  * Revision 1.2  1994/12/21  12:21:48  sbs
@@ -34,27 +39,10 @@
 #include "filemgr.h"
 #include "import.h"
 
-#define IMPORTED 1
-#define NOT_IMPORTED 0
+extern void DoImport (node *modul, node *implist, char *mastermod);
 
-typedef struct SYMS {
-    char *id; /* symbol */
-    int flag; /* IMPORTED / NOT_IMPORTED */
-    struct SYMS *next;
-} syms;
-
-typedef struct SYMB {
-    char *name;    /* modul name */
-    int flag;      /* flag for recursion protection */
-    int allflag;   /* flag for recursion protection */
-    node *moddec;  /* pointer to the respective N_moddec node */
-    syms *syms[3]; /* pointer to implicit type symbols */
-                   /* explicit type symbols */
-                   /* pointer to function symbols */
-    struct SYMB *next;
-} symb;
-
-extern void DoImport (symb *symbtab, node *modul, node *implist, char *mastermod);
+static mod *mod_tab = NULL;
+static int cnt = 1;
 
 /*
  *
@@ -83,31 +71,62 @@ Import (node *arg_node)
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  functionname  : FindModul
+ *  arguments     : 1) name of modul to be looked for
+ *  description   : finds the entry of given modul in the global mod_tab
+ *  global vars   : mod_tab
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : DBUG...
  *
  *  remarks       :
  *
  */
 
-symb *
-GenSymb (char *name)
+mod *
+FindModul (char *name)
+{
+    mod *tmp;
+
+    DBUG_ENTER ("FindModul");
+
+    DBUG_PRINT ("MODUL", ("searching for modul: %s", name));
+    tmp = mod_tab;
+    while ((tmp != NULL) && (strcmp (tmp->name, name) != 0)) {
+        tmp = tmp->next;
+    }
+
+    DBUG_RETURN (tmp);
+}
+
+/*
+ *
+ *  functionname  : GenMod
+ *  arguments     : 1) name of modul to be read
+ *  description   : Scans and parses the respective declaration
+ *                  file and generates/initilizes a new mod-node
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : malloc
+ *  macros        : NOTE, ERROR, DBUG...
+ *
+ *  remarks       :
+ *
+ */
+
+mod *
+GenMod (char *name)
 
 {
     int i;
-    symb *symbtab;
+    mod *tmp;
     static char buffer[MAX_FILE_NAME];
 
-    DBUG_ENTER ("GenSymb");
+    DBUG_ENTER ("GenMod");
 
-    symbtab = (symb *)malloc (sizeof (symb));
-    symbtab->name = name;
-    symbtab->flag = 0;
+    tmp = (mod *)malloc (sizeof (mod));
+    tmp->name = name;
+    tmp->flag = 0;
 
     strcpy (buffer, name);
     strcat (buffer, ".dec");
@@ -120,177 +139,106 @@ GenSymb (char *name)
     start_token = PARSE_DEC;
     yyparse ();
 
-    symbtab->moddec = decl_tree;
-    symbtab->next = NULL;
+    tmp->moddec = decl_tree;
+    tmp->next = NULL;
     for (i = 0; i < 3; i++)
-        symbtab->syms[i] = NULL;
+        tmp->syms[i] = NULL;
 
-    DBUG_RETURN (symbtab);
+    DBUG_RETURN (tmp);
 }
-
-#if 0
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
+ *  functionname  : FindOrAppend
+ *  arguments     : 1) importlist
+ *  description   : searches for all modules from the given importlist
+ *                  in the global mod_tab. For all modules, which can
+ *                  not be found, a new mod_tab entry is generated
+ *                  and appended to mod_tab.
+ *  global vars   : mod_tab
+ *  internal funs : GenMod
  *  external funs :
- *  macros        :
+ *  macros        : DBUG...
  *
  *  remarks       :
  *
  */
 
-symb *FindOrInsert(symb *symbtab, node *implist)
+void
+FindOrAppend (node *implist)
 
 {
-  symb *start, *last;
-  int tmp;
-
-  DBUG_ENTER("FindOrInsert");
-  DBUG_ASSERT((implist),"FindOrInsert called with NULL-import-list!");
-    
-  if( symbtab == NULL ) {
-    symbtab=GenSymb(implist->info.id);
-    implist=implist->node[0];
-  }
-  start=symbtab;
-  DBUG_ASSERT((start),"Empty symbtab!");
-
-  while(implist != NULL) {
-    tmp=strcmp(symbtab->name, implist->info.id);
-    if(tmp >0) {
-      start=GenSymb(implist->info.id);
-      implist=implist->node[0];
-    }
-    else {
-      if(tmp < 0) {
-        last=symbtab;
-        symbtab=symbtab->next;
-        while(( symbtab != NULL) && (tmp=strcmp(symbtab->name, implist->info.id)<0)) {
-            last=symbtab;
-            symbtab=symbtab->next;
-        }
-        if(tmp != 0) {
-          symbtab=GenSymb(implist->info.id);
-          symbtab->next=last->next;
-          last->next=symbtab;
-        }
-        symbtab=start;
-      }
-      implist=implist->node[0];
-    }
-  }
-  DBUG_RETURN(start);
-}
-
-#endif
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-symb *
-FindOrAppend (symb *symbtab, node *implist)
-
-{
-    symb *start, *last;
+    mod *current, *last;
     int tmp;
 
     DBUG_ENTER ("FindOrAppend");
     DBUG_ASSERT ((implist), "FindOrAppend called with NULL-import-list!");
 
-    if (symbtab == NULL) {
-        symbtab = GenSymb (implist->info.id);
+    if (mod_tab == NULL) { /* the first modul has to be inserted anyway! */
+        mod_tab = GenMod (implist->info.id);
         implist = implist->node[0];
     }
-    start = symbtab;
-    DBUG_ASSERT ((symbtab), "Empty symbtab!");
+
+    /* mod_tab contains at least one entry! */
+    DBUG_ASSERT ((mod_tab), "Empty mod_tab!");
 
     while (implist != NULL) {
+        current = mod_tab;
         do {
-            tmp = strcmp (symbtab->name, implist->info.id);
-            last = symbtab;
-            symbtab = symbtab->next;
-        } while ((symbtab != NULL) && (tmp != 0));
+            tmp = strcmp (current->name, implist->info.id);
+            last = current;
+            current = current->next;
+        } while ((current != NULL) && (tmp != 0));
         if (tmp != 0) {
-            symbtab = GenSymb (implist->info.id);
-            last->next = symbtab;
+            current = GenMod (implist->info.id);
+            last->next = current;
         }
         implist = implist->node[0];
-        symbtab = start;
     }
-    DBUG_RETURN (start);
+    DBUG_VOID_RETURN;
 }
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  functionname  : GenSyms
+ *  arguments     : 1) mod-node
+ *  description   : generates the symbol tables for the given mod-node.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : malloc
+ *  macros        : DBUG...
  *
  *  remarks       :
  *
  */
 
 void
-GenSyms (symb *symbtab)
+GenSyms (mod *mod)
 
 {
-    node *explist, *expty, *funs;
-    ids *impty;
+    node *explist, *ptr;
     syms *new;
+    int i;
 
     DBUG_ENTER ("GenSyms");
 
-    explist = symbtab->moddec->node[0];
+    explist = mod->moddec->node[0];
     if (explist != NULL) {
-        expty = explist->node[0];
-        funs = explist->node[1];
-        impty = explist->info.ids;
-        while (impty != NULL) {
-            DBUG_PRINT ("MODUL", ("inserting implicit type %s", impty->id));
-            new = (syms *)malloc (sizeof (syms));
-            new->id = impty->id;
-            new->flag = NOT_IMPORTED;
-            new->next = symbtab->syms[0];
-            symbtab->syms[0] = new;
-            impty = impty->next; /* next implicit type declaration! */
-        }
-        while (expty != NULL) {
-            DBUG_PRINT ("MODUL", ("inserting explicit type %s", expty->info.types->id));
-            new = (syms *)malloc (sizeof (syms));
-            new->id = expty->info.types->id;
-            new->flag = NOT_IMPORTED;
-            new->next = symbtab->syms[1];
-            symbtab->syms[1] = new;
-            expty = expty->node[0]; /* next explicit type declaration! */
-        }
-        while (funs != NULL) {
-            DBUG_PRINT ("MODUL", ("inserting fundec %s", funs->info.types->id));
-            new = (syms *)malloc (sizeof (syms));
-            new->id = funs->info.types->id;
-            new->flag = NOT_IMPORTED;
-            new->next = symbtab->syms[2];
-            symbtab->syms[2] = new;
-            funs = funs->node[1]; /* next function declaration! */
+        for (i = 0; i < 3; i++) {
+            ptr = explist->node[i];
+            while (ptr != NULL) {
+                DBUG_PRINT ("MODUL", ("inserting symbol %s", ptr->info.types->id));
+                new = (syms *)malloc (sizeof (syms));
+                new->id = (char *)malloc (strlen (ptr->info.types->id));
+                strcpy (new->id, ptr->info.types->id);
+                new->flag = NOT_IMPORTED;
+                new->next = mod->syms[1];
+                mod->syms[1] = new;
+                if (i < 2)              /*typedefs ! */
+                    ptr = ptr->node[0]; /* next type declaration! */
+                else
+                    ptr = ptr->node[1]; /* next function declaration! */
+            }
         }
     }
 
@@ -299,107 +247,57 @@ GenSyms (symb *symbtab)
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-node *
-GenTypedefFromId (char *name)
-
-{
-    node *type_def;
-    types *tmp;
-
-    DBUG_ENTER ("GenTypedefFromId");
-
-    type_def = MakeNode (N_typedef);
-    type_def->info.types = tmp = GEN_NODE (types);
-    tmp->simpletype = T_hidden;
-    tmp->dim = 0;
-    tmp->name = NULL;
-    tmp->id = name;
-    tmp->next = NULL;
-
-    DBUG_RETURN (type_def);
-}
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  functionname  : ImportAll
+ *  arguments     : 1) modtab of modul to be inserted
+ *                  2) N_modul node where the imports have to be inserted
+ *  description   : inserts all symbols from a given mod * into a given modul.
+ *  global vars   : ---
+ *  internal funs : DoImport
+ *  external funs : AppendNodeChain
+ *  macros        : DBUG...
  *
  *  remarks       :
  *
  */
 
 void
-ImportAll (symb *symbtab, symb *symb, node *modul)
+ImportAll (mod *mod, node *modul)
 
 {
     syms *symptr;
-    node *explist, *tmp, *tmp2;
-    ids *tmpids;
-    int i;
+    node *explist;
+    int i, next;
 
     DBUG_ENTER ("ImportAll");
 
-    DBUG_PRINT ("MODUL", ("importing all from %s", symb->name));
-    if (symb->allflag != 1) {
-        explist = symb->moddec->node[0];
+    DBUG_PRINT ("MODUL", ("importing all from %s", mod->name));
+    if (mod->allflag != 1) {
+        explist = mod->moddec->node[0];
 
-        /* First, typedefs are generated for each implicit type */
-        tmpids = explist->info.ids;
-        tmp = NULL;
-        while (tmpids != NULL) {
-            tmp2 = GenTypedefFromId (tmpids->id);
-            tmp2->node[0] = tmp;
-            if (tmp != NULL)
-                tmp2->nnode = 1;
-            tmp = tmp2;
-            tmpids = tmpids->next;
+        for (i = 0; i < 3; i++) {
+            if (i < 2)
+                next = 0;
+            else
+                next = 1;
+            modul->node[next + 1]
+              = AppendNodeChain (next, explist->node[i], modul->node[next + 1]);
         }
-
-        /* Now, we insert all typedefs and fundecl's in the N_modul and free the ids
-         * from the N_moddec !
-         */
-        tmp = AppendNodeChain (0, tmp, explist->node[0]);
-        modul->node[1] = AppendNodeChain (0, tmp, modul->node[1]);
-        if (explist->info.ids != NULL) {
-            FreeIdsOnly (explist->info.ids);
-            explist->info.ids = NULL;
-        }
-        explist->node[0] = NULL;
-        modul->node[2] = AppendNodeChain (1, explist->node[1], modul->node[2]);
-        explist->node[1] = NULL;
 
         /* We mark all syms entries as imported! */
         for (i = 0; i < 3; i++) {
-            symptr = symb->syms[i];
+            symptr = mod->syms[i];
             while (symptr != NULL) {
                 symptr->flag = IMPORTED;
                 symptr = symptr->next;
             }
         }
-        symb->allflag = 1; /* mark symb as beeing imported completely */
+        mod->allflag = 1; /* mark mod as beeing imported completely */
 
         /* Last, but not least, we recursively import the imported modules imports! */
-        if (symb->moddec->node[1] != NULL)
-            DoImport (symbtab, modul, symb->moddec->node[1], symb->name);
+        if (mod->moddec->node[1] != NULL)
+            DoImport (modul, mod->moddec->node[1], mod->name);
     } else {
-        DBUG_PRINT ("MODUL", ("import of %s skipped", symb->name));
+        DBUG_PRINT ("MODUL", ("import of %s skipped", mod->name));
     }
 
     DBUG_VOID_RETURN;
@@ -407,300 +305,184 @@ ImportAll (symb *symbtab, symb *symb, node *modul)
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  functionname  : FindSymbolInModul
+ *  arguments     : 1) name of modul
+ *                  2) name of the symbol
+ *                  3) symbol-kind: 0 : implicit type
+ *                                  1 : explicit type
+ *                                  2 : fun-declaration
+ *                  4) mods found previously; initially a NULL is given here.
+ *  description   : searches for a symbol of given kind in a prespecified
+ *                  modul; returns a pointer linked list of modul-entries
+ *                  for all those modules which own a definition of the
+ *                  given symbol and are imported into the given modul.
+ *  global vars   : ---
+ *  internal funs : FindModul
+ *  external funs : malloc
+ *  macros        : DBUG...
  *
  *  remarks       :
  *
  */
 
-symb *
-FindModul (symb *symbtab, char *name)
-{
-
-    DBUG_ENTER ("FindModul");
-
-    DBUG_PRINT ("MODUL", ("searching for modul: %s", name));
-    while (strcmp (symbtab->name, name)) {
-        symbtab = symbtab->next;
-        DBUG_ASSERT ((symbtab), "modname not found in symbtab!");
-    }
-
-    DBUG_RETURN (symbtab);
-}
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *                  - kind: 0 : implicit type
- *                          1 : explicit type
- *                          2 : fun-declaration
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-symb *
-FindSymbol (char *modname, char *name, symb *symbtab, node *modul, int cnt, int kind)
+mods *
+FindSymbolInModul (char *modname, char *name, int symbkind, mods *found)
 
 {
-    node *tmp;
-    symb *tmpsymb;
+    node *imports;
+    mods *new;
+    mod *tmpmod;
     syms *syms;
     ids *tmpids;
     int done = 0;
 
-    DBUG_ENTER ("FindSymbol");
+    DBUG_ENTER ("FindSymbolInModul");
 
     DBUG_PRINT ("MODUL", ("searching for symbol %s in modul %s...", name, modname));
-    tmpsymb = FindModul (symbtab, modname);
-    if (tmpsymb->flag != cnt) {
-        tmpsymb->flag = cnt;
+    tmpmod = FindModul (modname);
+    if (tmpmod != NULL) {
+        if (tmpmod->flag != cnt) {
+            tmpmod->flag = cnt;
 
-        /* Find syms entry name */
-        syms = tmpsymb->syms[kind];
-        while ((syms != NULL) && (strcmp (syms->id, name) != 0))
-            syms = syms->next;
+            /* Find syms entry name */
+            syms = tmpmod->syms[symbkind];
+            while ((syms != NULL) && (strcmp (syms->id, name) != 0))
+                syms = syms->next;
 
-        if (syms == NULL) {
-            /* name not declared in this modul. Hence, we have to investigate
-             * imported moduls recursively !
-             */
-            tmp = tmpsymb->moddec->node[1]; /* pointer to imports ! */
+            if (syms != NULL) { /* name is declared in this modul; insert it in result! */
+                DBUG_PRINT ("MODUL", ("symbol %s found in modul %s...", name, modname));
 
-            while ((tmp != NULL) && (done != 1)) {
-                if ((tmp->node[1] == NULL) && (tmp->node[2] == NULL)
-                    && (tmp->node[3] == NULL)) {
+                new = (mods *)malloc (sizeof (mods));
+                new->mod = tmpmod;
+                new->flag = syms->flag;
+                syms->flag = IMPORTED; /* mark symbol as imported */
+                new->next = found;
+                found = new;
+            }
+
+            /* Now, we recursively investigate all imports! */
+            imports = tmpmod->moddec->node[1]; /* pointer to imports ! */
+
+            while ((imports != NULL) && (done != 1)) {
+                if ((imports->node[1] == NULL) && (imports->node[2] == NULL)
+                    && (imports->node[3] == NULL)) {
                     /* import all ! */
-                    tmpsymb = FindSymbol (tmp->info.id, name, symbtab, modul, cnt, kind);
-                } else if (tmp->node[kind] != NULL) {
-
+                    found = FindSymbolInModul (imports->info.id, name, symbkind, found);
+                } else {
+                    /* selective import! */
                     /* Find name in ids */
-                    tmpids = (ids *)tmp->node[1];
+                    tmpids = (ids *)imports->node[symbkind + 1];
                     while ((tmpids != NULL) && (strcmp (tmpids->id, name) != 0))
                         tmpids = tmpids->next;
 
                     if (tmpids != NULL) { /* Symbol found! */
-                        tmpsymb
-                          = FindSymbol (tmp->info.id, name, symbtab, modul, cnt, kind);
-                        done = 1; /* no more recursive tries ! */
-                    } else {      /* Symbol not found in the import-item */
-                        tmpsymb = NULL;
+                        found
+                          = FindSymbolInModul (imports->info.id, name, symbkind, found);
                     }
-                } else { /* no imports of this kind! */
-                    tmpsymb = NULL;
-                };
-                tmp = tmp->node[0];
+                }
+                imports = imports->node[0];
             }
-        } else {
-            DBUG_PRINT ("MODUL", ("symbol %s found in modul %s...", name, modname));
-
-            /* dirty trick for encoding the flag in the address */
-            tmpsymb = (symb *)((int)tmpsymb | syms->flag);
-
-            syms->flag = IMPORTED; /* mark symbol as imported */
         }
-    } else
-        tmpsymb = NULL;
+    }
 
-    DBUG_RETURN (tmpsymb);
+    DBUG_RETURN (found);
 }
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  functionname  : ImportSymbol
+ *  arguments     : 1) symbtype indicates the kind of symbol to be imported
+ *                     0 - implicit type / 1 - explicit type / 2 - function
+ *                  2) name of the symbol to be imported
+ *                  3) pointer to the mod_tab entry where the import is from
+ *                  4) pointer to the modul node where the import is
+ *                     to be inserted
+ *  description   : moves a particular symbol from the parsed modul declaration
+ *                  into the syntax tree for the whole program.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : DBUG...
  *
  *  remarks       :
  *
  */
 
 void
-ImportImplicit (symb *symb, char *name, node *modul)
-
-{
-    node *explist, *tmp;
-    ids *tmpids, *tmp2ids;
-
-    DBUG_ENTER ("ImportImplicit");
-    DBUG_PRINT ("MODUL", ("importing implicit type %s from modul %s", name, symb->name));
-
-    explist = symb->moddec->node[0];
-    tmp = GenTypedefFromId (name);
-    tmp->node[0] = modul->node[1];
-    if (modul->node[1] != NULL) {
-        tmp->node[0] = modul->node[1];
-        tmp->nnode++;
-    }
-    modul->node[1] = tmp;
-
-    tmpids = explist->info.ids;
-    if (strcmp (explist->info.ids->id, name) == 0) {
-        explist->info.ids = explist->info.ids->next;
-        free (tmpids);
-    } else {
-        while (tmpids->next->id != name) {
-            DBUG_ASSERT ((strcmp (tmpids->next->id, name) != 0),
-                         "non shared equal symbols");
-            tmpids = tmpids->next;
-        }
-        tmp2ids = tmpids->next;
-        tmpids->next = tmpids->next->next;
-        free (tmp2ids);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-void
-ImportExplicit (symb *symb, char *name, node *modul)
+ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
 
 {
     node *explist;
     node *tmpdef, *tmp2def;
+    int next;
 
-    DBUG_ENTER ("ImportExplicit");
-    DBUG_PRINT ("MODUL", ("importing explicit type %s from modul %s", name, symb->name));
+    DBUG_ENTER ("ImportSymbol");
+    DBUG_PRINT ("MODUL",
+                ("importing symbol %s of kind %d (0=imp/1=exp/2=fun) from modul %s", name,
+                 symbtype, mod->name));
 
-    explist = symb->moddec->node[0];
+    explist = mod->moddec->node[0];
+    if (symbtype < 2)
+        next = 0; /* next pointer in N_typedef nodes */
+    else
+        next = 1; /* next pointer in N_fundef nodes */
 
-    tmpdef = explist->node[0];
-    if (strcmp (tmpdef->info.types->id, name) == 0) {
-        explist->node[0] = tmpdef->node[0];
+    tmpdef = explist->node[symbtype];
+    if (strcmp (tmpdef->info.types->id, name)
+        == 0) { /* The first entry has to be moved ! */
+        explist->node[symbtype]
+          = tmpdef->node[next]; /* eliminating tmpdef from the chain */
     } else {
-        while (tmpdef->node[0]->info.types->id != name) {
-            DBUG_ASSERT ((strcmp (tmpdef->node[0]->info.types->id, name) != 0),
-                         "non shared equal symbols");
-            tmpdef = tmpdef->node[0];
+        tmp2def = tmpdef;
+        while (strcmp (tmp2def->node[next]->info.types->id, name) != 0) {
+            tmp2def = tmp2def->node[next];
         }
-        tmp2def = tmpdef->node[0];
-        tmpdef->node[0] = tmpdef->node[0]->node[0];
-        if (tmpdef->node[0] == NULL)
-            tmpdef->nnode = 0;
-        tmpdef = tmp2def;
+        tmpdef = tmp2def->node[0];
+        tmp2def->node[next] = tmpdef->node[next];
+        if (tmp2def->node[next] == NULL)
+            tmp2def->nnode--;
     }
 
     /* tmpdef points on the def which is to be inserted */
-    if (modul->node[1] != NULL) {
-        tmpdef->node[0] = modul->node[1];
-        tmpdef->nnode = 1;
-    } else
-        tmpdef->nnode = 0;
-    modul->node[1] = tmpdef;
+    if (tmpdef->node[next] == NULL)
+        tmpdef->nnode++;
+
+    /* Now, we do know, that nnode in tmpdef is set for having a successor! */
+    tmpdef->node[next] = modul->node[next + 1];
+    modul->node[next + 1] = tmpdef;
+    if (tmpdef->node[next] == NULL) {
+        tmpdef->nnode--;
+    }
 
     DBUG_VOID_RETURN;
 }
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ *  functionname  : DoImport
+ *  arguments     : 1) N_modul where the imports have to be done
+ *                  2) implist, containing the imports to be resolved
+ *                  3) name of the modul, that initially tried to
+ *                     import a specific symbol
+ *  description   : imports all symbols from the given implist into the
+ *                  given modul. If a specified symbol can not be found
+ *                  an Error message is made.
+ *  global vars   : ---
+ *  internal funs : FindModul, FindSymbolInModul
+ *  external funs : ---
+ *  macros        : DBUG...
  *
  *  remarks       :
  *
  */
 
 void
-ImportFun (symb *symb, char *name, node *modul)
+DoImport (node *modul, node *implist, char *mastermod)
 
 {
-    node *explist;
-    node *tmpdef, *tmp2def;
-
-    DBUG_ENTER ("ImportFun");
-    DBUG_PRINT ("MODUL", ("importing function %s from modul %s", name, symb->name));
-
-    explist = symb->moddec->node[0];
-
-    tmpdef = explist->node[1];
-    if (strcmp (tmpdef->info.types->id, name) == 0) {
-        explist->node[1] = tmpdef->node[1];
-    } else {
-        while (strcmp (tmpdef->node[1]->info.types->id, name) != 0) {
-            DBUG_ASSERT ((strcmp (tmpdef->node[1]->info.types->id, name) != 0),
-                         "non shared equal symbols");
-            tmpdef = tmpdef->node[1];
-        }
-        tmp2def = tmpdef->node[1];
-        tmpdef->node[1] = tmpdef->node[1]->node[1];
-        if (tmpdef->node[1] == NULL)
-            tmpdef->nnode--;
-        tmpdef = tmp2def;
-    }
-
-    /* tmpdef points on the def which is to be inserted */
-    if (modul->node[2] != NULL) {
-        tmpdef->node[1] = modul->node[2];
-        if (modul->node[2] != NULL)
-            tmpdef->nnode = 2;
-        else
-            tmpdef->nnode = 1;
-    } else {
-        if (modul->node[2] != NULL)
-            tmpdef->nnode = 1;
-        else
-            tmpdef->nnode = 0;
-    }
-    modul->node[2] = tmpdef;
-
-    DBUG_VOID_RETURN;
-}
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-void
-DoImport (symb *symbtab, node *modul, node *implist, char *mastermod)
-
-{
-    int cnt = 1, i;
-    symb *symb;
+    int i;
+    mods *mods, *tmpmods;
+    mod *mod;
     ids *tmp;
 
     DBUG_ENTER ("DoImport");
@@ -709,14 +491,14 @@ DoImport (symb *symbtab, node *modul, node *implist, char *mastermod)
         if ((implist->node[1] == NULL) && (implist->node[2] == NULL)
             && (implist->node[3] == NULL)) {
             /* this is an import all!! */
-            symb = FindModul (symbtab, implist->info.id);
-            ImportAll (symbtab, symb, modul);
-        } else {
+            mod = FindModul (implist->info.id);
+            ImportAll (mod, modul);
+        } else { /* selective import! */
             for (i = 0; i < 3; i++) {
                 tmp = (ids *)implist->node[i + 1];
                 while (tmp != NULL) { /* importing some symbol! */
-                    symb = FindSymbol (implist->info.id, tmp->id, symbtab, modul, cnt, i);
-                    if (symb == NULL)
+                    mods = FindSymbolInModul (implist->info.id, tmp->id, i, NULL);
+                    if (mods == NULL)
                         switch (i) {
                         case 0:
                             ERROR1 (
@@ -735,21 +517,13 @@ DoImport (symb *symbtab, node *modul, node *implist, char *mastermod)
                             break;
                         }
                     else {
-                        if (((int)symb & 0x1) == NOT_IMPORTED)
-                            /* we don't have to eliminate the NOT_IMPORTED flag here,
-                             * since NOT_IMPORTED equals 0 !!!!!!!!
-                             */
-                            switch (i) {
-                            case 0:
-                                ImportImplicit (symb, tmp->id, modul);
-                                break;
-                            case 1:
-                                ImportExplicit (symb, tmp->id, modul);
-                                break;
-                            case 2:
-                                ImportFun (symb, tmp->id, modul);
-                                break;
-                            };
+                        do {
+                            tmpmods = mods;
+                            if (mods->flag == NOT_IMPORTED)
+                                ImportSymbol (i, tmp->id, mods->mod, modul);
+                            mods = mods->next;
+                            free (tmpmods);
+                        } while (mods != NULL);
                     }
 
                     tmp = tmp->next;
@@ -780,21 +554,22 @@ DoImport (symb *symbtab, node *modul, node *implist, char *mastermod)
 node *
 IMmodul (node *arg_node, node *arg_info)
 {
-    symb *symbtab, *tmp_symbtab;
+    mod *modptr;
 
     DBUG_ENTER ("IMmodul");
     if (arg_node->node[0] != NULL) { /* there are any imports! */
-        symbtab = tmp_symbtab = FindOrAppend (NULL, arg_node->node[0]);
-        while (tmp_symbtab != NULL) {
-            DBUG_PRINT ("MODUL", ("analyzing modul %s", tmp_symbtab->moddec->info.id));
-            if (tmp_symbtab->moddec->node[1] != NULL) {
-                FindOrAppend (symbtab, tmp_symbtab->moddec->node[1]);
+        FindOrAppend (arg_node->node[0]);
+        modptr = mod_tab;
+        while (modptr != NULL) {
+            DBUG_PRINT ("MODUL", ("analyzing modul %s", modptr->moddec->info.id));
+            if (modptr->moddec->node[1] != NULL) {
+                FindOrAppend (modptr->moddec->node[1]);
             }
-            GenSyms (tmp_symbtab);
-            tmp_symbtab = tmp_symbtab->next;
+            GenSyms (modptr);
+            modptr = modptr->next;
         }
 
-        DoImport (symbtab, arg_node, arg_node->node[0], arg_node->info.id);
+        DoImport (arg_node, arg_node->node[0], arg_node->info.id);
         FreeImplist (arg_node->node[0]);
         arg_node->node[0] = NULL;
 
