@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2002/10/29 19:06:49  dkr
+ * message of DBUG_PRINT modified
+ *
  * Revision 3.66  2002/10/11 16:27:41  dkr
  * bug in Parts2Strides fixed
  *
@@ -7039,7 +7042,7 @@ WLTRAwith (node *arg_node, node *arg_info)
          *   -> we have to create totally different C code
          *   -> we leave the N_Nwith node untouched
          */
-        DBUG_PRINT ("WLtrans", ("AUD with-loop found (line %d)\n", line));
+        DBUG_PRINT ("WLtrans", ("with-loop with non-AKS withid found (line %d)\n", line));
         new_node = arg_node;
     } else {
         node *strides;
