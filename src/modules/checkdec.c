@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.11  1996/01/02 17:49:40  cg
+ * Revision 1.12  1996/01/22 18:32:35  cg
+ * Now, a reference to the N_objdef node of the module implementation
+ * is stored for each N_objdef node in a module declaration
+ *
+ * Revision 1.11  1996/01/02  17:49:40  cg
  * bug fixed in generating dec-file
  *
  * Revision 1.10  1996/01/02  16:02:04  cg
@@ -423,6 +427,8 @@ CDECobjdef (node *arg_node, node *arg_info)
                        ("Different types in declaration and implementation "
                         "of global object '%s`",
                         ItemName (arg_node)));
+            } else {
+                OBJDEC_DEF (arg_node) = odef;
             }
         }
     }
