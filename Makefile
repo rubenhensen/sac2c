@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.91  1998/09/02 09:26:24  sbs
+# inserted floppy, %.gz, and src.tar - rules!
+#
 # Revision 1.90  1998/08/26 12:57:01  sbs
 # -pedantic for product-line eliminated!
 # reason: illegal cast in lvalue!
@@ -303,6 +306,7 @@ MAKE         :=$(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)"
 MAKEPROD     :=$(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)"
 MAKEFLAGS    += --no-print-directory
 
+TAR          :=tar
 LEX          :=lex
 YACC         :=yacc -dv
 LIBS         :=-ly -ll -lm
@@ -430,6 +434,22 @@ clean:
 	$(RM) sac2c
 	$(RM) sac2c.efence
 	$(RM) -r .sb
+
+floppy: 
+	@ if [ ! -f src.tar.gz ] ; \
+	  then $(MAKE) src.tar.gz; \
+	  else echo "re-using existing file \"src.tar.gz\"!"; \
+	  fi; \
+	  tar -cvf /dev/rfd0c src.tar.gz
+
+%.gz: %
+	gzip  $<
+
+src.tar:
+	$(TAR) -cvf src.tar    inc/*.h lib/src/*.c lib/src/Makefile \
+	                       src/*/*.[ch] src/*/*.mac src/*/Makefile \
+	                       src/*/*.inp src/*/*.data \
+	                       src/*/*.y src/*/*.l
 
 tags: 
 	ctags src/*/*.[ch] >/dev/null
