@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.120  1998/04/10 02:25:01  dkr
+ * changed macros for N_WLseg
+ * changed macros for N_conc
+ *
  * Revision 1.119  1998/04/09 13:58:43  dkr
  * new INFO_CONC_..., CONC_... macros added
  *
@@ -2012,6 +2016,8 @@ extern node *MakeIcm (char *name, node *args, node *next);
  ***    int[]  REFCOUNTING      (O)
  ***    char*  INITFUN          (O)
  ***
+ ***    node*  WLCOMP_APS       (0)      (N_exprs)
+ ***
  ***  temporary attributes:
  ***
  ***    int[]  READONLY         (O)   (import -> readsib !!)
@@ -2033,9 +2039,10 @@ extern node *MakeIcm (char *name, node *args, node *next);
 /*
  *  Not all pragmas may occur at the same time:
  *  A typedef pragma may contain COPYFUN and FREEFUN.
- *  An objdef pragma may contain LINKNAME only.
+ *  A objdef pragma may contain LINKNAME only.
  *  And a fundef pragma may contain all pragmas except COPYFUN and FREEFUN,
  *  but LINKMOD, TYPES and FUNS are only for internal use in SIBS.
+ *  A wlcomp pragma contains WLCOMP only.
  *
  *  NUMPARAMS is not a pragma but gives the number of parameters of the
  *  function (return values + arguments). This is the size of the arrays
@@ -2065,6 +2072,8 @@ extern node *MakePragma ();
 #define PRAGMA_NEEDTYPES(n) ((ids *)(n->node[1]))
 #define PRAGMA_NEEDFUNS(n) (n->node[0])
 #define PRAGMA_NUMPARAMS(n) (n->flag)
+
+#define PRAGMA_WLCOMP_APS(n) (n->node[0])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2229,6 +2238,7 @@ extern node *MakeConc (node *region);
  ***  temporary attributes:
  ***
  ***    long*  MASK                    (optimize -> )
+ ***    node*  PRAGMA    (N_pragma)    (scanparse -> precompile ! )
  ***    int    REFERENCED              (wli -> )
  ***    int    REFERENCED_FOLD         (wli -> )
  ***    int    COMPLEX                 (wli -> )
@@ -2242,6 +2252,7 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_CODE(n) (n->node[1])
 #define NWITH_WITHOP(n) (n->node[2])
 #define NWITH_MASK(n, x) (n->mask[x])
+#define NWITH_PRAGMA(n) (n->node[3])
 
 #define NWITH_PARTS(n) (((wl_info *)(n->info2))->parts)
 #define NWITH_REFERENCED(n) (((wl_info *)(n->info2))->referenced)
@@ -2466,8 +2477,9 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
  ***
  ***    int      BLOCKS    (number of blocking levels
  ***                         --- without unrolling-blocking)
- ***    long*    BV                     (Precompile ! )
- ***    long*    UBV                    (Precompile ! )
+ ***    long*    SV        (step vector)           (Precompile ! )
+ ***    long*    BV        (blocking vector)       (Precompile ! )
+ ***    long*    UBV       (unrolling-b. vector)   (Precompile ! )
  ***
  ***/
 
@@ -2475,8 +2487,9 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 
 #define WLSEG_DIMS(n) (n->refcnt)
 #define WLSEG_BLOCKS(n) (n->flag)
-#define WLSEG_BV(n, level) (n->mask[level + 1])
-#define WLSEG_UBV(n) (n->mask[0])
+#define WLSEG_SV(n) (n->mask[0])
+#define WLSEG_BV(n, level) (n->mask[level + 2])
+#define WLSEG_UBV(n) (n->mask[1])
 #define WLSEG_CONTENTS(n) (n->node[0])
 #define WLSEG_NEXT(n) (n->node[1])
 
