@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2004/05/12 12:59:40  ktr
+ * TransformIntoDoLoop modified. The adjust_rc operations in the branches
+ * of the conditional are now moved into DO_SKIP and after the new do-loop.
+ *
  * Revision 3.20  2004/02/25 08:17:44  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -112,6 +116,7 @@
 #include "print.h"
 #include "UndoSSATransform.h"
 #include "Inline.h"
+#include "globals.h"
 
 /******************************************************************************
  *
@@ -484,6 +489,44 @@ ReturnVarsAreIdentical (node *ext_rets, ids *int_rets)
  *   of three for a parameter at position 'i' (see comment in the header of
  *   BuildRenamingAssignsForDo())
  *
+ *
+ *   Important: The following will only happen AFTER SSARefcounting!
+ *              SSAReferenceCounting inserts adjust_rc-operations
+ *              in both, THEN- and ELSE-Branch of the conditional
+ *              These operations are extracted from the conditional
+ *              before transformation starts. Later, they are reintroduced
+ *              Into the do-loop in the following way:
+ *
+ *     ... DoLoopFun( args)
+ *     {
+ *       <ass>
+ *       if (<pred>) {
+ *         B\A = adjust_rc( B\A, -1);
+ *         res_1 = DoLoopFun( A );
+ *       }
+ *       else {
+ *         A\B = adjust_rc( A\B, -1);
+ *       }
+ *       return( B);
+ *     }
+ *
+ *     will be transformed into:
+ *
+ *     goto LABEL:
+ *     do
+ *     {
+ *       adjust_rc(B\A, -1);
+ *     LABEL:
+ *       <ass>;
+ *     }
+ *     while(<pred>);
+ *     adjust_rc(A/B, -1);
+ *
+ *     The string LABEL is stored in DO_LABEL, while the block containing
+ *     adjust(B/A) is stores in DO_SKIP
+ *
+ *     !!!!! There is no lac2fun transformation for this (yet) !!!!!
+ *
  ******************************************************************************/
 
 static node *
@@ -497,6 +540,8 @@ TransformIntoDoLoop (node *fundef)
     node *ass1 = NULL;
     node *ass2 = NULL;
     node *ass3 = NULL;
+    node *skip = NULL;
+    node *epilogue = NULL;
 
     DBUG_ENTER ("TransformIntoDoLoop");
 
@@ -532,6 +577,39 @@ TransformIntoDoLoop (node *fundef)
          */
 
         if (NODE_TYPE (cond) != N_return) {
+            if (compiler_phase >= PH_refcnt) {
+                /* Adjust_RC Operations in the THEN-Tree must be moved
+                   in to the Do-Loops SKIP-Block */
+                while (
+                  (BLOCK_INSTR (COND_THEN (cond)) != NULL)
+                  && (NODE_TYPE (BLOCK_INSTR (COND_THEN (cond))) == N_assign)
+                  && (NODE_TYPE (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond)))) == N_prf)
+                  && (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond))))
+                      == F_adjust_rc)) {
+                    tmp = ASSIGN_NEXT (BLOCK_INSTR (COND_THEN (cond)));
+                    ASSIGN_NEXT (BLOCK_INSTR (COND_THEN (cond))) = NULL;
+                    skip = AppendAssign (skip, BLOCK_INSTR (COND_THEN (cond)));
+                    BLOCK_INSTR (COND_THEN (cond)) = tmp;
+                }
+
+                /* Adjust_RC Operations in the ELSE-Tree must be moved
+                   after the do-loop, they are put into epilogue */
+                while (
+                  (BLOCK_INSTR (COND_ELSE (cond)) != NULL)
+                  && (NODE_TYPE (BLOCK_INSTR (COND_ELSE (cond))) == N_assign)
+                  && (NODE_TYPE (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond)))) == N_prf)
+                  && (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond))))
+                      == F_adjust_rc)) {
+                    tmp = ASSIGN_NEXT (BLOCK_INSTR (COND_ELSE (cond)));
+                    ASSIGN_NEXT (BLOCK_INSTR (COND_ELSE (cond))) = NULL;
+                    epilogue = AppendAssign (epilogue, BLOCK_INSTR (COND_ELSE (cond)));
+                    BLOCK_INSTR (COND_ELSE (cond)) = tmp;
+                }
+
+                if (BLOCK_INSTR (COND_ELSE (cond)) == NULL)
+                    BLOCK_INSTR (COND_ELSE (cond)) = MakeEmpty ();
+            }
+
             ret = ASSIGN_INSTR (ASSIGN_NEXT (cond_assign));
 
             DBUG_ASSERT ((NODE_TYPE (cond) == N_cond),
@@ -597,6 +675,16 @@ TransformIntoDoLoop (node *fundef)
             /* replace cond by do-loop */
             ASSIGN_INSTR (cond_assign) = FreeTree (ASSIGN_INSTR (cond_assign));
             ASSIGN_INSTR (cond_assign) = MakeDo (loop_pred, loop_body);
+
+            /* Insert skip */
+            if (skip != NULL) {
+                DO_SKIP (ASSIGN_INSTR (cond_assign)) = MakeBlock (skip, NULL);
+                DO_LABEL (ASSIGN_INSTR (cond_assign)) = TmpVar ();
+            }
+
+            /* Insert epilogue */
+            epilogue = AppendAssign (epilogue, ASSIGN_NEXT (cond_assign));
+            ASSIGN_NEXT (cond_assign) = epilogue;
 
             FUNDEF_INSTR (fundef) = AppendAssign (ass1, cond_assign);
         }
