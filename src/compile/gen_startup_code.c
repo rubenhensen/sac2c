@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/05/11 09:51:22  cg
+ * added definition of SPMD frame
+ *
  * Revision 1.3  1998/05/08 09:04:34  cg
  * The syntax tree is now given as an argument to function GSCPrintFileHeader()
  *
@@ -31,12 +34,16 @@
  *****************************************************************************/
 
 #include <stdio.h>
+#include <string.h>
 
 #include "dbug.h"
 #include "globals.h"
 #include "resource.h"
 #include "types.h"
 #include "tree_basic.h"
+#include "traverse.h"
+
+static int spmd_block_counter;
 
 /******************************************************************************
  *
@@ -126,34 +133,46 @@ PrintGlobalSwitches ()
  ******************************************************************************/
 
 static void
-PrintGlobalSettings ()
+PrintSpmdData (node *syntax_tree)
+{
+    funptr *old_tab;
+
+    DBUG_ENTER ("PrintSpmdData");
+
+    old_tab = act_tab;
+    act_tab = gsc_tab;
+
+    fprintf (outfile, "#define SAC_SET_SPMD_FRAME    \\\n");
+    fprintf (outfile, "  {    \\\n");
+
+    Trav (MODUL_FUNS (syntax_tree), NULL);
+
+    fprintf (outfile, "  }\n\n");
+
+    act_tab = old_tab;
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *
+ *
+ * description:
+ *
+ *
+ *
+ *
+ *
+ ******************************************************************************/
+
+static void
+PrintProfileData ()
 {
     int i, j;
 
-    DBUG_ENTER ("PrintGlobalSettings");
-
-    fprintf (outfile, "\n\n/*\n *  Global Settings\n */\n\n");
-
-    fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD     %d\n", max_sync_fold);
-    fprintf (outfile, "#define SAC_SET_THREADS_MAX       %d\n", max_threads);
-    fprintf (outfile, "#define SAC_SET_THREADS           %d\n", num_threads);
-    fprintf (outfile, "#define SAC_SET_MASTERCLASS       %d\n",
-             CalcMasterclass (num_threads));
-
-    fprintf (outfile, "#define SAC_SET_CACHE_1_SIZE      %d\n", config.cache1_size);
-    fprintf (outfile, "#define SAC_SET_CACHE_1_LINE      %d\n", config.cache1_line);
-    fprintf (outfile, "#define SAC_SET_CACHE_1_ASSOC     %d\n", config.cache1_assoc);
-    fprintf (outfile, "#define SAC_SET_CACHE_2_SIZE      %d\n", config.cache2_size);
-    fprintf (outfile, "#define SAC_SET_CACHE_2_LINE      %d\n", config.cache2_line);
-    fprintf (outfile, "#define SAC_SET_CACHE_2_ASSOC     %d\n", config.cache2_assoc);
-    fprintf (outfile, "#define SAC_SET_CACHE_3_SIZE      %d\n", config.cache3_size);
-    fprintf (outfile, "#define SAC_SET_CACHE_3_LINE      %d\n", config.cache3_line);
-    fprintf (outfile, "#define SAC_SET_CACHE_3_ASSOC     %d\n", config.cache3_assoc);
-
-    fprintf (outfile, "#define SAC_SET_MAXFUN            %d\n", PFfuncntr);
-    fprintf (outfile, "#define SAC_SET_MAXFUNAP          %d\n", PFfunapmax);
-
-    fprintf (outfile, "\n");
+    DBUG_ENTER ("PrintProfileData");
 
     fprintf (outfile, "#define SAC_SET_FUN_NAMES    \\\n");
     fprintf (outfile, "  {    \\\n");
@@ -194,6 +213,54 @@ PrintGlobalSettings ()
     fprintf (outfile, "   \\\n  }");
 
     fprintf (outfile, "\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *
+ *
+ * description:
+ *
+ *
+ *
+ *
+ *
+ ******************************************************************************/
+
+static void
+PrintGlobalSettings (node *syntax_tree)
+{
+    DBUG_ENTER ("PrintGlobalSettings");
+
+    fprintf (outfile, "\n\n/*\n *  Global Settings\n */\n\n");
+
+    fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD     %d\n", max_sync_fold);
+    fprintf (outfile, "#define SAC_SET_THREADS_MAX       %d\n", max_threads);
+    fprintf (outfile, "#define SAC_SET_THREADS           %d\n", num_threads);
+    fprintf (outfile, "#define SAC_SET_MASTERCLASS       %d\n",
+             CalcMasterclass (num_threads));
+
+    fprintf (outfile, "#define SAC_SET_CACHE_1_SIZE      %d\n", config.cache1_size);
+    fprintf (outfile, "#define SAC_SET_CACHE_1_LINE      %d\n", config.cache1_line);
+    fprintf (outfile, "#define SAC_SET_CACHE_1_ASSOC     %d\n", config.cache1_assoc);
+    fprintf (outfile, "#define SAC_SET_CACHE_2_SIZE      %d\n", config.cache2_size);
+    fprintf (outfile, "#define SAC_SET_CACHE_2_LINE      %d\n", config.cache2_line);
+    fprintf (outfile, "#define SAC_SET_CACHE_2_ASSOC     %d\n", config.cache2_assoc);
+    fprintf (outfile, "#define SAC_SET_CACHE_3_SIZE      %d\n", config.cache3_size);
+    fprintf (outfile, "#define SAC_SET_CACHE_3_LINE      %d\n", config.cache3_line);
+    fprintf (outfile, "#define SAC_SET_CACHE_3_ASSOC     %d\n", config.cache3_assoc);
+
+    fprintf (outfile, "#define SAC_SET_MAXFUN            %d\n", PFfuncntr);
+    fprintf (outfile, "#define SAC_SET_MAXFUNAP          %d\n", PFfunapmax);
+
+    fprintf (outfile, "\n");
+
+    PrintProfileData ();
+
+    PrintSpmdData (syntax_tree);
 
     DBUG_VOID_RETURN;
 }
@@ -262,13 +329,152 @@ PrintDefines ()
  *
  ******************************************************************************/
 
+node *
+GSCicm (node *arg_node, node *arg_info)
+{
+    node *icm_arg;
+    char *tag, *type, *name;
+
+    DBUG_ENTER ("GSCicm");
+
+    DBUG_ASSERT ((0 == strcmp (ICM_NAME (arg_node), "MT_SPMD_BLOCK")),
+                 "wrong icm, must be MT_SPMD_BLOCK");
+
+    DBUG_ASSERT ((ICM_ARGS (arg_node) != NULL),
+                 "ICM MT_SPMD_BLOCK has wrong format (args missing)");
+    DBUG_ASSERT ((EXPRS_NEXT (ICM_ARGS (arg_node)) != NULL),
+                 "ICM MT_SPMD_BLOCK has wrong format (name missing)");
+    DBUG_ASSERT ((EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (arg_node))) != NULL),
+                 "ICM MT_SPMD_BLOCK has wrong format (numargs missing)");
+
+    icm_arg = EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (arg_node)));
+
+    while (icm_arg != NULL) {
+
+        DBUG_ASSERT ((EXPRS_EXPR (icm_arg) != NULL),
+                     "ICM MT_SPMD_BLOCK has wrong format (tag missing)");
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (icm_arg)) == N_id),
+                     "ICM MT_SPMD_BLOCK has wrong format (tag missing)");
+
+        tag = ID_NAME (EXPRS_EXPR (icm_arg));
+
+        if (0 == strncmp (tag, "inout", 5)) {
+            tag = "inout";
+        }
+
+        DBUG_ASSERT ((EXPRS_NEXT (icm_arg) != NULL),
+                     "ICM MT_SPMD_BLOCK has wrong format (type missing)");
+        DBUG_ASSERT ((EXPRS_EXPR (EXPRS_NEXT (icm_arg)) != NULL),
+                     "ICM MT_SPMD_BLOCK has wrong format (type missing)");
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (icm_arg))) == N_id),
+                     "ICM MT_SPMD_BLOCK has wrong format (type missing)");
+
+        type = ID_NAME (EXPRS_EXPR (EXPRS_NEXT (icm_arg)));
+
+        DBUG_ASSERT ((EXPRS_NEXT (EXPRS_NEXT (icm_arg)) != NULL),
+                     "ICM MT_SPMD_BLOCK has wrong format (parameter missing)");
+        DBUG_ASSERT ((EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (icm_arg))) != NULL),
+                     "ICM MT_SPMD_BLOCK has wrong format (parameter missing)");
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (icm_arg)))) == N_id),
+                     "ICM MT_SPMD_BLOCK has wrong format (parameter missing)");
+
+        name = ID_NAME (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (icm_arg))));
+
+        fprintf (outfile, "        SAC_MT_SPMD_ARG_%s( %s, %s)    \\\n", tag, type, name);
+
+        icm_arg = EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (icm_arg)));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *
+ *
+ * description:
+ *
+ *
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+GSCspmd (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("GSCspmd");
+
+    spmd_block_counter++;
+
+    fprintf (outfile, "      SAC_MT_BLOCK_FRAME( %s,  {  \\\n", SPMD_FUNNAME (arg_node));
+
+    Trav (SPMD_ICM (arg_node), arg_info);
+
+    fprintf (outfile, "      })     \\\n");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *
+ *
+ * description:
+ *
+ *
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+GSCfundef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("GSCfundef");
+
+    if (FUNDEF_STATUS (arg_node) == ST_regular) {
+        fprintf (outfile, "    SAC_MT_FUN_FRAME( %s, {   \\\n", FUNDEF_NAME (arg_node));
+        spmd_block_counter = 0;
+
+        Trav (FUNDEF_BODY (arg_node), arg_info);
+
+        if (spmd_block_counter == 0) {
+            fprintf (outfile, "      SAC_MT_BLOCK_FRAME_DUMMY()    \\\n");
+        }
+
+        fprintf (outfile, "    })    \\\n");
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *
+ *
+ * description:
+ *
+ *
+ *
+ *
+ *
+ ******************************************************************************/
+
 void
 GSCPrintFileHeader (node *syntax_tree)
 {
     DBUG_ENTER ("GSCPrintFileHeader");
 
     PrintGlobalSwitches ();
-    PrintGlobalSettings ();
+    PrintGlobalSettings (syntax_tree);
     PrintIncludes ();
     PrintDefines ();
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/05/11 09:51:22  cg
+ * added definition of SPMD frame
+ *
  * Revision 1.2  1998/05/08 09:04:34  cg
  * The syntax tree is now given as an argument to function GSCPrintFileHeader()
  *
@@ -30,9 +33,11 @@
 #include "types.h"
 
 extern void GSCPrintFileHeader (node *);
-
 extern void GSCPrintMainBegin ();
-
 extern void GSCPrintMainEnd ();
+
+extern node *GSCfundef (node *arg_node, node *arg_info);
+extern node *GSCspmd (node *arg_node, node *arg_info);
+extern node *GSCicm (node *arg_node, node *arg_info);
 
 #endif /* GEN_STARTUP_CODE_H */
