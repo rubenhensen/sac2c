@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.16  2003/06/17 19:02:50  dkr
+# target icm_test extended
+#
 # Revision 3.15  2003/06/17 18:49:20  dkr
 # target test_icm modified
 #
@@ -132,28 +135,32 @@ runtime.tar: *.h sac2crc.README
 # call the CC preprocessor on 'icm_test.C' to test the expansion of H-ICMs
 #
 icm_test: icm_test.C
-	$(CC) -D_SHP_=SCL -D_HID_=NHD -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^
-	$(CC) -D_SHP_=SCL -D_HID_=NHD -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^
-	$(CC) -D_SHP_=SCL -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^
-	$(CC) -D_SHP_=SCL -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^
-	$(CC) -D_SHP_=AKS -D_HID_=NHD -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^
-	$(CC) -D_SHP_=AKS -D_HID_=NHD -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^
-	$(CC) -D_SHP_=AKS -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^
-	$(CC) -D_SHP_=AKS -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^
-	$(CC) -D_SHP_=AKD -D_HID_=NHD -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^
-	$(CC) -D_SHP_=AKD -D_HID_=NHD -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^
-	$(CC) -D_SHP_=AKD -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^
-	$(CC) -D_SHP_=AKD -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^
-	$(CC) -D_SHP_=AUD -D_HID_=NHD -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^
-	$(CC) -D_SHP_=AUD -D_HID_=NHD -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^
-	$(CC) -D_SHP_=AUD -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^
-	$(CC) -D_SHP_=AUD -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^
+	$(CC) -D_SHP_=SCL -D_HID_=NHD -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ >  icm_test.log
+	$(CC) -D_SHP_=SCL -D_HID_=NHD -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ >> icm_test.log
+	$(CC) -D_SHP_=SCL -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ >> icm_test.log
+	$(CC) -D_SHP_=SCL -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ >> icm_test.log
+	$(CC) -D_SHP_=AKS -D_HID_=NHD -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ >> icm_test.log
+	$(CC) -D_SHP_=AKS -D_HID_=NHD -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ >> icm_test.log
+	$(CC) -D_SHP_=AKS -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ >> icm_test.log
+	$(CC) -D_SHP_=AKS -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ >> icm_test.log
+	$(CC) -D_SHP_=AKD -D_HID_=NHD -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ >> icm_test.log
+	$(CC) -D_SHP_=AKD -D_HID_=NHD -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ >> icm_test.log
+	$(CC) -D_SHP_=AKD -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ >> icm_test.log
+	$(CC) -D_SHP_=AKD -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ >> icm_test.log
+	$(CC) -D_SHP_=AUD -D_HID_=NHD -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ >> icm_test.log
+	$(CC) -D_SHP_=AUD -D_HID_=NHD -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ >> icm_test.log
+	$(CC) -D_SHP_=AUD -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ >> icm_test.log
+	$(CC) -D_SHP_=AUD -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ >> icm_test.log
+	-grep CAT icm_test.log
+	-grep NT icm_test.log
+	@echo '!!! CPP output can be found in file >>icm_test.log<< !!!'
 
 clean:
 	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) -r .sb  SunWS_cache
 	$(RM) runtime.tar
 	$(RM) sac2crc CacheSimAnalyser
+	$(RM) icm_test.log
 
 
 #######################################################################################
