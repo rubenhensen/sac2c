@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2002/06/25 23:52:06  ktr
+ * CreateZero now always creates a Withloop for non-scalar values, because WLS can't
+ * handle ZeroVectors.
+ *
  * Revision 3.57  2002/06/20 15:35:36  dkr
  * - AddVardecs() added
  * - MakeZero(), MakeZeroFromTypes() added
@@ -3110,9 +3114,15 @@ CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll, node *fundef)
 
     if (dim == 0) {
         zero = CreateZeroScalar (btype);
-    } else if (dim == 1) {
-        zero = CreateZeroVector (length, btype);
-    } else {
+    }
+
+    /* Commented out because it's bad for WLS */
+    /*
+      else if (dim == 1) {
+        zero = CreateZeroVector( length, btype);
+      }
+    */
+    else {
         if (unroll) {
             zero
               = MakePrf (F_reshape,
@@ -3162,6 +3172,7 @@ CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll, node *fundef)
                            MakeNWithOp (WO_genarray, Shpseg2Array (shape, dim)));
             NCODE_USED (NWITH_CODE (zero))++;
             NPART_CODE (NWITH_PART (zero)) = NWITH_CODE (zero);
+            NWITH_PARTS (zero) = 1;
 
             fundef = AddVardecs (fundef, vardecs);
         }
