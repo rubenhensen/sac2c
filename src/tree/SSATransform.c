@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2001/04/18 12:58:47  nmw
+ * additional traversal setup function for single fundef traversal added
+ *
  * Revision 1.13  2001/03/29 09:10:20  nmw
  * tabs2spaces done
  * y
@@ -478,7 +481,7 @@ SSAfundef (node *arg_node, node *arg_info)
     }
 
     /* traverse next fundef */
-    if (FUNDEF_NEXT (arg_node) != NULL) {
+    if ((INFO_SSA_SINGLEFUNDEF (arg_info) == FALSE) && (FUNDEF_NEXT (arg_node) != NULL)) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
@@ -710,6 +713,56 @@ SSAid (node *arg_node, node *arg_info)
     DBUG_ASSERT ((ID_IDS (arg_node) != NULL), "missing IDS in N_id!");
 
     ID_IDS (arg_node) = TravRightIDS (ID_IDS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *SSAap(node *arg_node, node *arg_info)
+ *
+ * description:
+ *  traverses args and does a recursive call in case of special function
+ *  applications.
+ *
+ ******************************************************************************/
+node *
+SSAap (node *arg_node, node *arg_info)
+{
+    node *new_arg_info;
+
+    DBUG_ENTER ("SSAap");
+
+    DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
+
+    if (AP_ARGS (arg_node) != NULL) {
+        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+    }
+
+    /* traverse special fundef without recursion (only in single fundef mode) */
+    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
+        && (INFO_SSA_SINGLEFUNDEF (arg_info) == TRUE)
+        && (AP_FUNDEF (arg_node) != INFO_SSA_FUNDEF (arg_info))) {
+        DBUG_PRINT ("SSA", ("traverse in special fundef %s",
+                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
+
+        /* stack arg_info frame for new fundef */
+        new_arg_info = MakeInfo ();
+
+        INFO_SSA_SINGLEFUNDEF (new_arg_info) = INFO_SSA_SINGLEFUNDEF (arg_info);
+
+        /* start traversal of special fundef */
+        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+
+        DBUG_PRINT ("SSA", ("traversal of special fundef %s finished\n",
+                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        FREE (new_arg_info);
+
+    } else {
+        DBUG_PRINT ("SSA", ("do not traverse in normal fundef %s",
+                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1178,7 +1231,13 @@ SSATransform (node *syntax_tree)
 
     DBUG_ENTER ("SSATransform");
 
+    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_modul),
+                 "SSATransform is used for module nodes only");
+
+    DBUG_PRINT ("OPT", ("starting ssa transformation for ast"));
+
     arg_info = MakeInfo ();
+    INFO_SSA_SINGLEFUNDEF (arg_info) = FALSE;
 
     old_tab = act_tab;
     act_tab = ssafrm_tab;
@@ -1190,4 +1249,46 @@ SSATransform (node *syntax_tree)
     FREE (arg_info);
 
     DBUG_RETURN (syntax_tree);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SSATransformSingleFundef(node *fundef)
+ *
+ * description:
+ *   same as SSATransform, but traverses only the given single fundef. this
+ *   improves performance, when updating ssaform in the optimization cycle.
+ *   it does NOT traverse special fundefs (they will be traverses in order
+ *   of their usage)
+ *
+ ******************************************************************************/
+node *
+SSATransformSingleFundef (node *fundef)
+{
+    node *arg_info;
+    funtab *old_tab;
+
+    DBUG_ENTER ("SSATransformSingleFundef");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "SSATransformSingleFundef is used for fundef nodes only");
+
+    if (!(FUNDEF_IS_LACFUN (fundef))) {
+        DBUG_PRINT ("OPT", ("starting ssa transformation for %s", FUNDEF_NAME (fundef)));
+
+        arg_info = MakeInfo ();
+        INFO_SSA_SINGLEFUNDEF (arg_info) = TRUE;
+
+        old_tab = act_tab;
+        act_tab = ssafrm_tab;
+
+        fundef = Trav (fundef, arg_info);
+
+        act_tab = old_tab;
+
+        FREE (arg_info);
+    }
+
+    DBUG_RETURN (fundef);
 }

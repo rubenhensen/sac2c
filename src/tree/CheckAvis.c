@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2001/04/18 12:58:47  nmw
+ * additional traversal setup function for single fundef traversal added
+ *
  * Revision 1.6  2001/03/29 09:12:38  nmw
  * tabs2spaces done
  *
@@ -199,6 +202,8 @@ CAVfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("CAVfundef");
 
+    INFO_CAV_FUNDEF (arg_info) = arg_node;
+
     if (FUNDEF_ARGS (arg_node) != NULL) {
         /* there are some args */
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
@@ -209,7 +214,7 @@ CAVfundef (node *arg_node, node *arg_info)
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
+    if ((INFO_CAV_SINGLEFUNDEF (arg_info) == FALSE) && (FUNDEF_NEXT (arg_node) != NULL)) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
@@ -238,6 +243,56 @@ CAVblock (node *arg_node, node *arg_info)
     if (BLOCK_INSTR (arg_node) != NULL) {
         /* there is a block */
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *CAVap(node *arg_node, node *arg_info)
+ *
+ * description:
+ *  traverses args and does a recursive call in case of special function
+ *  applications.
+ *
+ ******************************************************************************/
+node *
+CAVap (node *arg_node, node *arg_info)
+{
+    node *new_arg_info;
+
+    DBUG_ENTER ("CAVap");
+
+    DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
+
+    if (AP_ARGS (arg_node) != NULL) {
+        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+    }
+
+    /* traverse special fundef without recursion (only in single fundef mode) */
+    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
+        && (INFO_CAV_SINGLEFUNDEF (arg_info) == TRUE)
+        && (AP_FUNDEF (arg_node) != INFO_CAV_FUNDEF (arg_info))) {
+        DBUG_PRINT ("CAV", ("traverse in special fundef %s",
+                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
+
+        /* stack arg_info frame for new fundef */
+        new_arg_info = MakeInfo ();
+
+        INFO_CAV_SINGLEFUNDEF (new_arg_info) = INFO_CAV_SINGLEFUNDEF (arg_info);
+
+        /* start traversal of special fundef */
+        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+
+        DBUG_PRINT ("CAV", ("traversal of special fundef %s finished\n",
+                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        FREE (new_arg_info);
+
+    } else {
+        DBUG_PRINT ("CAV", ("do not traverse in normal fundef %s",
+                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
     }
 
     DBUG_RETURN (arg_node);
@@ -320,7 +375,10 @@ CheckAvis (node *syntax_tree)
 
     DBUG_ENTER ("CheckAvis");
 
+    DBUG_PRINT ("OPT", ("start checking avis information"));
+
     arg_info = MakeInfo ();
+    INFO_CAV_SINGLEFUNDEF (arg_info) = FALSE;
 
     old_tab = act_tab;
     act_tab = chkavis_tab;
@@ -332,4 +390,46 @@ CheckAvis (node *syntax_tree)
     FREE (arg_info);
 
     DBUG_RETURN (syntax_tree);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CheckAvisSingleFundef(node *fundef)
+ *
+ * description:
+ *   same as CechkAvis, but traverses only the given single fundef. this
+ *   improves performance, when updating ssaform in the optimization cycle.
+ *   it does NOT traverse special fundefs (they will be traverses in order
+ *   of their usage)
+ *
+ ******************************************************************************/
+node *
+CheckAvisSingleFundef (node *fundef)
+{
+    node *arg_info;
+    funtab *old_tab;
+
+    DBUG_ENTER ("CheckAvisSingleFundef");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "CheckAvisSingleFundef is used for fundef nodes only");
+
+    if (!(FUNDEF_IS_LACFUN (fundef))) {
+        DBUG_PRINT ("OPT", ("starting avis check for %s", FUNDEF_NAME (fundef)));
+
+        arg_info = MakeInfo ();
+        INFO_CAV_SINGLEFUNDEF (arg_info) = TRUE;
+
+        old_tab = act_tab;
+        act_tab = chkavis_tab;
+
+        fundef = Trav (fundef, arg_info);
+
+        act_tab = old_tab;
+
+        FREE (arg_info);
+    }
+
+    DBUG_RETURN (fundef);
 }

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2001/04/18 12:58:47  nmw
+ * additional traversal setup function for single fundef traversal added
+ *
  * Revision 1.4  2001/03/26 13:26:14  nmw
  * SSANewVardec for general usage added
  *
@@ -34,10 +37,12 @@ extern node *SSANpart (node *arg_node, node *arg_info);
 extern node *SSANwithid (node *arg_node, node *arg_info);
 extern node *SSAcond (node *arg_node, node *arg_info);
 extern node *SSAreturn (node *arg_node, node *arg_info);
+extern node *SSAap (node *arg_node, node *arg_info);
 
 extern node *SSADummy (node *arg_node, node *arg_info);
 
-extern node *SSATransform (node *arg_node);
+extern node *SSATransform (node *ast);
+extern node *SSATransformSingleFundef (node *fundef);
 
 extern node *SSANewVardec (node *old_vardec_or_arg);
 #endif /* _SSAtransform_h */
