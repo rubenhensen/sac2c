@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.16  2004/04/21 16:41:45  ktr
+# Added SSARefCount.[ch]
+#
 # Revision 3.15  2003/06/11 21:50:17  ktr
 # included ../constants
 #
@@ -71,10 +74,10 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 INCS = -I../global -I../tree -I../../inc -I../flatten -I../typecheck \
-       -I../optimize -I../compile -I../constants
+       -I../optimize -I../compile -I../constants -I../print
 
 
-all: refcount.o
+all: refcount.o SSARefCount.o
 
 
 %.o: %.c
