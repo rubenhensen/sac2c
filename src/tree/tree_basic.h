@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2001/04/12 12:39:23  nmw
+ * AVIS_EXPRESULT added
+ *
  * Revision 3.78  2001/04/10 15:19:20  nmw
  * INFO_SSALIR_TOPBLOCK and INFO_SSALIR_FLAG separated
  *
@@ -2125,6 +2128,7 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***    the following attributes are only used within SSALIR:
  ***    int         DEFDEPTH (O)    (WITHDEPTH)       (ssalir!!)
  ***    int         LIRMOVE (O)     (bitfield)        (ssalir!!)
+ ***    bool        EXPRESULT (O)                     (ssalir!!)
  ***
  ***/
 
@@ -2157,6 +2161,7 @@ extern node *MakeAvis (node *vardecOrArg);
 /* used only in SSALIR */
 #define AVIS_DEFDEPTH(n) (n->varno)
 #define AVIS_LIRMOVE(n) (n->lineno)
+#define AVIS_EXPRESULT(n) ((bool)(n->info.cint))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2500,7 +2505,9 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    LUT_t      MOVELUT           (look up table to adjust vardec/avis/ids
  ***                                  when moving assignments out of fundef)
  ***    node*      APARGCHAIN        (argument chain of external application)
+ ***    ids*       APRESCHAIN        (result chain of external application)
  ***    node*      EXTFUNDEF         (fundef with ap node to this special fundef)
+ ***    node*      RESULTMAP         (nodelist with local avis/external avis map)
  ***
  ***  when used in free.c
  ***    node*      FLAG              (mode flag for FreeTrav/FreeNode)
@@ -2969,8 +2976,11 @@ extern node *MakeInfo ();
 #define INFO_SSALIR_EXTPREASSIGN(n) ((node *)(n->dfmask[0]))
 #define INFO_SSALIR_EXTPOSTASSIGN(n) ((node *)(n->dfmask[1]))
 #define INFO_SSALIR_MOVELUT(n) ((LUT_t) (n->dfmask[2]))
+/* INFO_SSALIR_APARGCHAIN and INFO_SSALIR_APRESCHAIN can be mapped to one var */
 #define INFO_SSALIR_APARGCHAIN(n) ((node *)(n->dfmask[3]))
+#define INFO_SSALIR_APRESCHAIN(n) ((ids *)(n->dfmask[3]))
 #define INFO_SSALIR_EXTFUNDEF(n) ((node *)(n->dfmask[4]))
+#define INFO_SSALIR_RESULTMAP(n) ((nodelist *)(n->dfmask[5]))
 
 /* when used in free.c */
 #define INFO_FREE_FLAG(n) (n->node[0])
