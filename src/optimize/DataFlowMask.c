@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/07/20 16:50:42  jhs
+ * Changed behaviour of DFMTest[|2|3]Mask[s].
+ * They do not only test, but count hits.
+ *
  * Revision 2.1  1999/02/23 12:41:08  sacbase
  * new release made
  *
@@ -181,7 +185,7 @@ DFMGenMaskBase (node *arguments, node *vardecs)
          * The first time this function is called, the so-called access mask table is
          * initialized. For each bit in a bit mask implemented as unsigned int, a
          * particular mask of type unsigned int is generated that allows to extract
-         * exactly one bit froma data flow mask.
+         * exactly one bit from a data flow mask.
          */
 
         access_mask_table
@@ -857,7 +861,7 @@ DFMSetMaskMinus (mask_t *mask, mask_t *mask2)
 int
 DFMTestMask (mask_t *mask)
 {
-    int i, res;
+    int i, j, res;
 
     DBUG_ENTER ("DFMTestMask");
 
@@ -867,10 +871,25 @@ DFMTestMask (mask_t *mask)
 
     res = 0;
 
+    DBUG_PRINT ("DFM", ("num_bitfields = %i", mask->num_bitfields));
+
+#if 0
+  this old version only tests whether any bit is set,
+  the new version really counts
+
+  for (i=0; i<mask->num_bitfields; i++) {
+    if (mask->bitfield[i] != 0) {
+      res++;
+      break;
+    }
+  }
+#endif
+
     for (i = 0; i < mask->num_bitfields; i++) {
-        if (mask->bitfield[i] != 0) {
-            res++;
-            break;
+        for (j = 0; j < (8 * sizeof (unsigned int)); j++) {
+            if ((mask->bitfield[i] & access_mask_table[j]) > 0) {
+                res++;
+            }
         }
     }
 
@@ -880,7 +899,7 @@ DFMTestMask (mask_t *mask)
 int
 DFMTest2Masks (mask_t *mask1, mask_t *mask2)
 {
-    int i, res;
+    int i, j, res;
 
     DBUG_ENTER ("DFMTest2Masks");
 
@@ -894,10 +913,24 @@ DFMTest2Masks (mask_t *mask1, mask_t *mask2)
 
     res = 0;
 
+#if 0  
+  this old version only tests whether any bit is set,
+  the new version really counts
+
+  for (i=0; i<mask1->num_bitfields; i++) {
+    if ((mask1->bitfield[i] & mask2->bitfield[i]) != 0) {
+      res++;
+      break;
+    }
+  }
+#endif
+
     for (i = 0; i < mask1->num_bitfields; i++) {
-        if ((mask1->bitfield[i] & mask2->bitfield[i]) != 0) {
-            res++;
-            break;
+        for (j = 0; j < (8 * sizeof (unsigned int)); j++) {
+            if (((mask1->bitfield[i] & access_mask_table[j]) > 0)
+                && ((mask2->bitfield[i] & access_mask_table[j]) > 0)) {
+                res++;
+            }
         }
     }
 
@@ -907,7 +940,7 @@ DFMTest2Masks (mask_t *mask1, mask_t *mask2)
 int
 DFMTest3Masks (mask_t *mask1, mask_t *mask2, mask_t *mask3)
 {
-    int i, res;
+    int i, j, res;
 
     DBUG_ENTER ("DFMTest3Masks");
 
@@ -924,10 +957,25 @@ DFMTest3Masks (mask_t *mask1, mask_t *mask2, mask_t *mask3)
 
     res = 0;
 
+#if 0
+  this old version only tests whether any bit is set,
+  the new version really counts
+
+  for (i=0; i<mask1->num_bitfields; i++) {
+    if ((mask1->bitfield[i] & mask2->bitfield[i] & mask3->bitfield[i]) != 0) {
+      res++;
+      break;
+    }
+  }
+#endif
+
     for (i = 0; i < mask1->num_bitfields; i++) {
-        if ((mask1->bitfield[i] & mask2->bitfield[i] & mask3->bitfield[i]) != 0) {
-            res++;
-            break;
+        for (j = 0; j < (8 * sizeof (unsigned int)); j++) {
+            if (((mask1->bitfield[i] & access_mask_table[j]) > 0)
+                && ((mask2->bitfield[i] & access_mask_table[j]) > 0)
+                && ((mask3->bitfield[i] & access_mask_table[j]) > 0)) {
+                res++;
+            }
         }
     }
 

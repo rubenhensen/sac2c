@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/07/20 16:50:42  jhs
+ * Changed behaviour of DFMTest[|2|3]Mask[s].
+ * They do not only test, but count hits.
+ *
  * Revision 2.1  1999/02/23 12:41:09  sacbase
  * new release made
  *
@@ -84,9 +88,9 @@
  *   functions modifies the first or only given mask rather than generating
  *   a new mask.
  *
- *   The function DFMTestMask() checks whether any bit in the given mask is set.
- *   The functions DFMTest2Masks() and DFMTest3Masks() check whether any bit is set
- *   in each given mask.
+ *   The function DFMTestMask() counts how mny bits in the given mask ist set.
+ *   The functions DFMTest2Masks() and DFMTest3Masks() count how many bits
+ *   are set at the same positions in every mask (and-combination).
  *
  *   The function DFMRemoveMask() de-allocates storage for a single data flow
  *   mask. It always returns the NULL pointer.
