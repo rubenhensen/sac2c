@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.34  1996/01/05 14:33:22  cg
+ * Revision 1.35  1996/01/07 16:54:49  cg
+ * modified some pragma-related macros
+ *
+ * Revision 1.34  1996/01/05  14:33:22  cg
  * removed macros MODARRAY_RETURN, GENARRAY_RETURN,
  * FOLDFUN_RETURN, FOLDPRF_RETURN
  *
@@ -590,14 +593,14 @@ extern node *MakeExplist (node *itypes, node *etypes, node *objs, node *funs);
  ***    types*      TYPE
  ***    statustype  ATTRIB
  ***    statustype  STATUS
- ***    node*       PRAGMA  (O)
  ***
  ***  temporary attributes:
  ***
  ***    types*      IMPL         (O)        (import -> )
  ***                                        ( -> writesib !!)
- ***    char*       COPY         (O)
- ***    char*       FREE         (O)
+ ***    node*       PRAGMA       (O)        (import -> readsib !!)
+ ***    char*       COPYFUN      (O)        (readsib -> compile -> )
+ ***    char*       FREEFUN      (O)        (readsib -> compile -> )
  ***    node*       TYPEDEC_DEF  (O)        (checkdec -> writesib !!)
  ***/
 
@@ -610,7 +613,7 @@ extern node *MakeExplist (node *itypes, node *etypes, node *objs, node *funs);
  *  typedef node which contains the respective definition.
  *
  *  For each Non-SAC hidden type the name of a copy and a free function
- *  is stored in COPY and FREE, respectively. These must be provided
+ *  is stored in COPYFUN and FREEFUN, respectively. These must be provided
  *  with the external module/class. The names may be generic or user-defined
  *  using pragmas.
  */
@@ -626,8 +629,8 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
 #define TYPEDEF_IMPL(n) (n->info.types->next)
 #define TYPEDEF_NEXT(n) (n->node[0])
 #define TYPEDEF_PRAGMA(n) (n->node[2])
-#define TYPEDEF_COPY(n) ((char *)n->node[3])
-#define TYPEDEF_FREE(n) ((char *)n->node[4])
+#define TYPEDEF_COPYFUN(n) ((char *)n->node[3])
+#define TYPEDEF_FREEFUN(n) ((char *)n->node[4])
 
 #define TYPEDEC_DEF(n) (n->node[1])
 
@@ -648,14 +651,14 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  ***    char*       LINKMOD (O)
  ***    types*      TYPE
  ***    statustype  STATUS
- ***    node*       PRAGMA  (O)  (N_pragma)
  ***
  ***  temporary attributes:
  ***
  ***    char*       VARNAME      (typecheck -> obj-handling ->
  ***                             ( -> precompile -> compile -> )
+ ***    node*       PRAGMA    (O)  (N_pragma)  (import -> readsib !!)
+ ***    char*       LINKNAME  (O)  (readsib -> precompile -> )
  ***    node*       ARG       (O)  (obj-handling !!)
- ***    nodelist    NEEDOBJS  (O)  (import -> analysis -> writesib ->)
  ***    node*       INIT      (O)  (precompile !!)
  ***    node*       ICM       (O)  (compile ->)
  ***/
@@ -670,8 +673,6 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  *  ARG is a pointer to the additional argument which is added to a function's
  *  parameter list for this global object. ARG changes while traversing
  *  the functions !!
- *
- *  NEEDOBJS is a nodelist of objects needed by this object.
  *
  *  INIT is a pointer to an N_let node containing an application of the
  *  init function (SAC objects only).
@@ -699,7 +700,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 #define OBJDEF_VARNAME(n) ((char *)(n->node[2]))
 #define OBJDEF_ARG(n) (n->node[3])
 #define OBJDEF_PRAGMA(n) (n->node[4])
-#define OBJDEF_NEEDOBJS(n) ((nodelist *)n->node[5])
+#define OBJDEF_LINKNAME(n) ((char *)n->node[4])
 #define OBJDEF_INIT(n) (n->node[3])
 #define OBJDEF_ICM(n) (n->node[3])
 
@@ -719,7 +720,6 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    char*       NAME
  ***    char*       MOD      (O)
  ***    char*       LINKMOD  (O)
- ***    node*       PRAGMA   (O)  (N_info)
  ***    types*      TYPES
  ***    statustype  STATUS
  ***    statustype  ATTRIB
@@ -1565,20 +1565,21 @@ extern node *MakeIcm (char *name, node *args, node *next);
  ***
  ***  permanent attributes:
  ***
- ***    char*  LINKNAME     (O)
- ***    int[]  LINKSIGN     (O)
- ***    int[]  REFCOUNTING  (O)
- ***    int[]  READONLY     (O)
- ***    ids*   EFFECT       (O)
- ***    ids*   TOUCH        (O)
- ***    char*  COPYFUN      (O)
- ***    char*  FREEFUN      (O)
- ***    ids*   NEEDTYPES    (O)
- ***    node*  NEEDFUNS     (O)
- ***    char*  LINKMOD      (O)
- ***    int    NUMPARAMS    (O)
+ ***    char*  LINKNAME         (O)
+ ***    int[]  LINKSIGN         (O)
+ ***    int[]  REFCOUNTING      (O)
  ***
  ***  temporary attributes:
+ ***
+ ***    int[]  READONLY         (O)   (import -> readsib !!)
+ ***    ids*   EFFECT           (O)   (import -> readsib !!)
+ ***    ids*   TOUCH            (O)   (import -> readsib !!)
+ ***    char*  COPYFUN          (O)   (import -> readsib !!)
+ ***    char*  FREEFUN          (O)   (import -> readsib !!)
+ ***    ids*   NEEDTYPES        (O)   (import -> readsib !!)
+ ***    node*  NEEDFUNS         (O)   (import -> readsib !!)
+ ***    char*  LINKMOD          (O)   (import -> readsib !!)
+ ***    int    NUMPARAMS        (O)   (import -> readsib !!)
  ***
  ***    nums*  LINKSIGNNUMS     (O)   (scanparse -> import !!)
  ***    nums*  REFCOUNTINGNUMS  (O)   (scanparse -> import !!)
