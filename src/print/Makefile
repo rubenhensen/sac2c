@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.16  1996/02/16 09:46:46  sbs
+# Revision 1.17  1996/07/18 12:22:08  sbs
+# convert.o included in clean-line
+#
+# Revision 1.16  1996/02/16  09:46:46  sbs
 # make deps done
 #
 # Revision 1.15  1996/01/05  12:31:29  cg
@@ -57,7 +60,7 @@ deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) print.o *.bak
+	$(RM) print.o convert.o *.bak
 
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
