@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2001/04/03 13:49:37  dkr
+ * MAX( WLSEG_SV, WLSEG_UBV) replaced by WLSEG_SV:
+ * WLSEG_UBV is already allowed for calculation of WLSEG_SV.
+ *
  * Revision 3.20  2001/04/02 11:41:45  dkr
  * include of wltransform.h replaced by wl_bounds.h
  *
@@ -805,7 +809,7 @@ SCHAdjustmentRequired (int dim, node *wlseg)
     if ((dim <= scheduler_table[i].max_sched_dim)
         && ((NODE_TYPE (wlseg) == N_WLsegVar)
             || (((!scheduler_table[i].adjust_flag) || (dim > WLSEG_MAXHOMDIM (wlseg)))
-                && (MAX (WLSEG_SV (wlseg)[dim], WLSEG_UBV (wlseg)[dim]) > 1)))) {
+                && (WLSEG_SV (wlseg)[dim] > 1)))) {
         adjust = TRUE;
     } else {
         adjust = FALSE;
@@ -895,9 +899,7 @@ CompileConstSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
             if (SCHAdjustmentRequired (d, wlseg)) {
                 args = MakeExprs (MakeNum (1), args);
             } else {
-                args
-                  = MakeExprs (MakeNum (MAX (WLSEG_UBV (wlseg)[d], WLSEG_SV (wlseg)[d])),
-                               args);
+                args = MakeExprs (MakeNum (WLSEG_SV (wlseg)[d]), args);
             }
         }
 
