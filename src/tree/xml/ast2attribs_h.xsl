@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.6  2004/10/12 13:20:13  sah
+  added any entry to attribs union
+
   Revision 1.5  2004/08/29 18:10:05  sah
   general improvements
 
@@ -118,7 +121,7 @@
     <xsl:apply-templates select="node" mode="generate-attrib-union">
       <xsl:sort select="@name"/>
     </xsl:apply-templates>
-    <xsl:value-of select="' } ; '"/>
+    <xsl:value-of select="' void *any; } ; '"/>
   </xsl:template>
  
   <!-- generate an entry for each node within the union -->
