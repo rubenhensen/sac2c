@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/02/18 14:03:55  cg
+ * Minor bugs fixed.
+ *
  * Revision 1.1  2000/02/17 16:15:25  cg
  * Initial revision
  *
@@ -44,6 +47,7 @@
 #include "free.h"
 #include "internal_lib.h"
 #include "DupTree.h"
+#include "../print/print.h"
 
 /******************************************************************************
  *
@@ -74,7 +78,7 @@
 /******************************************************************************
  *
  * function:
- *
+ *   node *FindOrMakeVardec(char *var_name, node *fundef, node *vardec_or_arg)
  *
  * description:
  *
@@ -555,9 +559,13 @@ AIfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("AIfundef");
 
+    INFO_AI_ARGS (arg_info) = INFO_AI_ARGS_CHAIN (arg_info);
+
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
     }
+
+    INFO_AI_ARGS (arg_info) = NULL;
 
     INFO_AI_FUNDEF (arg_info) = arg_node;
 
@@ -607,6 +615,10 @@ AdjustIdentifiers (node *fundef, node *let)
     INFO_AI_ARGS_CHAIN (info_node) = AP_ARGS (LET_EXPR (let));
 
     fundef = Trav (fundef, info_node);
+
+#if 1
+    PrintNode (fundef);
+#endif
 
     FreeNode (info_node);
 
