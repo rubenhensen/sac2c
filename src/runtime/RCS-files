@@ -19,6 +19,7 @@ sac2crc.SOLARIS_SPARC
 sac_bool.h
 sac_boundcheck.h
 sac_cachesim.h
+sac_icm.h
 sac_idx.h
 sac_malloc.h
 sac_message.h
