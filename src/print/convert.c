@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  2000/08/17 10:08:19  dkr
+ * comments for Type2String modified
+ *
  * Revision 2.8  2000/06/14 12:59:32  nmw
  * Added flag=4 to print only first type in return list
  *
@@ -230,13 +233,6 @@ Double2String (double val)
  *                  flag ==3: the module name is not included into string
  *                  flag & 4: force Type2String only print 1st type in list
  *
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : strcat, Malloc, sprintf
- *  macros        : DBUG...
- *
- *  remarks       :
- *
  */
 
 char *
@@ -347,8 +343,9 @@ Type2String (types *type, int flag)
 
         type = type->next;
 
-        if (flag & 4) /* break after first type in list*/
+        if (flag & 4) { /* break after first type in list*/
             type = NULL;
+        }
 
         if (NULL != type) {
             strcat (tmp_string, ", ");
