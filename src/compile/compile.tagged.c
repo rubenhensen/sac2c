@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.48  2002/09/11 23:09:33  dkr
+ * rf_node_info.mac modified.
+ *
  * Revision 1.47  2002/09/09 17:38:13  dkr
  * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
  *
@@ -3421,7 +3424,7 @@ COMPPrfSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
     (*check_reuse1) = (*check_reuse2) = NULL;
 
     if (NODE_TYPE (arg1) == N_id) {
-        (*get_dim) = MakeIcm3 ("ND_BINOP", MakeId_Copy (prf_string[F_sub]),
+        (*get_dim) = MakeIcm3 ("ND_BINOP", MakeId_Copy (prf_symbol[F_sub_SxS]),
                                MakeIcm1 ("ND_A_DIM", DupId_NT (arg2)),
                                MakeIcm1 ("ND_A_SIZE", DupId_NT (arg1)));
 
@@ -3446,7 +3449,7 @@ COMPPrfSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
         cnt_aelems = CountExprs (ARRAY_AELEMS (arg1));
 
         (*get_dim)
-          = MakeIcm3 ("ND_BINOP", MakeId_Copy (prf_string[F_sub]),
+          = MakeIcm3 ("ND_BINOP", MakeId_Copy (prf_symbol[F_sub_SxS]),
                       MakeIcm1 ("ND_A_DIM", DupId_NT (arg2)), MakeNum (cnt_aelems));
 
         icm_args
@@ -3683,7 +3686,7 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info, node **check_reuse1,
  *                               node **get_dim, node **set_shape_icm)
  *
  * Description:
- *   Compiles N_prf node of type F_toi, F_tod, F_tof:
+ *   Compiles N_prf node of type F_toi_S, F_tod_S, F_tof_S:
  *   We can simply remove the conversion function :-)
  *
  ******************************************************************************/
@@ -3945,7 +3948,7 @@ COMPPrfArray (int args_cnt, node *arg_node, node *arg_info, node **check_reuse1,
 
     ret_node
       = MakeAssignIcm4 (icm_name, DupIds_Id_NT (let_ids),
-                        MakeId_Copy (prf_string[PRF_PRF (arg_node)]), arg1, arg2, NULL);
+                        MakeId_Copy (prf_symbol[PRF_PRF (arg_node)]), arg1, arg2, NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4013,9 +4016,9 @@ COMP2Prf (node *arg_node, node *arg_info)
          *  scalar args
          */
 
-    case F_toi:
-    case F_tof:
-    case F_tod:
+    case F_toi_S:
+    case F_tof_S:
+    case F_tod_S:
         ret_node = COMPPrfConvertScalar (arg_node, arg_info, &check_reuse1, &check_reuse2,
                                          &get_dim, &set_shape_icm);
         break;
@@ -4138,13 +4141,6 @@ COMP2Prf (node *arg_node, node *arg_info)
         /*
          *  otherwise
          */
-
-    case F_add:
-    case F_sub:
-    case F_mul:
-    case F_div:
-        DBUG_ASSERT ((0), "generic prf without _?x? found!");
-        break;
 
     default:
         DBUG_ASSERT ((0), "unknown prf found!");

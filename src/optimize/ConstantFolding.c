@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2002/09/11 23:07:52  dkr
+ * rf_node_info.mac modified.
+ *
  * Revision 3.22  2002/09/09 17:47:11  dkr
  * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
  *
@@ -371,7 +374,6 @@
 #include "internal_lib.h"
 #include "free.h"
 #include "prf.h"
-#include "print.h"
 #include "Error.h"
 #include "dbug.h"
 #include "globals.h"
@@ -1700,13 +1702,12 @@ FoldPrfScalars (prf prf_name, node **arg, types *res_type, bool swap)
         break;
 
     default:
-        DBUG_PRINT ("CF",
-                    ("CF not yet implemented for prf \"%s\"!", prf_string[prf_name]));
+        DBUG_PRINT ("CF", ("CF not yet implemented for prf \"%s\"!", mdb_prf[prf_name]));
         res = NULL;
         break;
     }
     cf_expr++;
-    DBUG_PRINT ("CF", ("primitive function %s folded", prf_string[prf_name]));
+    DBUG_PRINT ("CF", ("primitive function %s folded", mdb_prf[prf_name]));
 
     if (swap) { /* we do not want to make any side-effects 8-(( */
         tmp = arg[0];
@@ -1755,7 +1756,7 @@ FoldExpr (node *arg_node, int test_arg, int res_arg, int test_pattern, node *arg
             DEC_VAR (INFO_USE, VARDEC_VARNO (ID_VARDEC (arg[!res_arg])));
         }
         cf_expr++;
-        DBUG_PRINT ("CF", ("primitive function %s folded", prf_string[PRF_PRF (tmp)]));
+        DBUG_PRINT ("CF", ("primitive function %s folded", mdb_prf[PRF_PRF (tmp)]));
         FreePrf2 (tmp, res_arg);
         arg_node = arg[res_arg];
     }
@@ -1770,7 +1771,7 @@ FoldExpr (node *arg_node, int test_arg, int res_arg, int test_pattern, node *arg
  *                  2) arg_info includes used mask to be updated and varno
  *                  R) result-node
  *  description   : Calculates some  prim-functions with one non constant argument
- *  global vars   : N_float, ... , N_not, ..., prf_string
+ *  global vars   : N_float, ... , N_not, ..., mdb_prf
  *  internal funs : FreePrf2
  *  external funs : --
  *  macros        : DBUG..., NULL, FREE
@@ -1982,7 +1983,7 @@ CalcSel (node *shape, node *array, types *array_type, node *arg_info)
  *                  2) arg_info
  *                  R) result-node
  *  description   : Calculates array prim-functions
- *  global vars   : N_float, ... , N_not, ..., prf_string
+ *  global vars   : N_float, ... , N_not, ..., mdb_prf
  *  internal funs : --
  *  external funs : --
  *  macros        : DBUG..., NULL, FREE
@@ -2038,7 +2039,7 @@ ArrayPrf (node *arg_node, node *arg_info)
     case F_mul_SxA: {
         node *old_arg[2], *value;
 
-        DBUG_PRINT ("CF", ("Begin folding of %s", prf_string[arg_node->info.prf]));
+        DBUG_PRINT ("CF", ("Begin folding of %s", mdb_prf[arg_node->info.prf]));
 
         old_arg[0] = arg[0];
         old_arg[1] = arg[1];
@@ -2151,7 +2152,7 @@ ArrayPrf (node *arg_node, node *arg_info)
             }
         }
 
-        DBUG_PRINT ("CF", ("End folding of %s", prf_string[arg_node->info.prf]));
+        DBUG_PRINT ("CF", ("End folding of %s", mdb_prf[arg_node->info.prf]));
 
         /*
          * free useless nodes and store result
@@ -2186,7 +2187,7 @@ ArrayPrf (node *arg_node, node *arg_info)
         switch (NODE_TYPE (arg[0])) {
         case (N_array):
             DBUG_PRINT ("CF",
-                        ("primitive function %s folded", prf_string[arg_node->info.prf]));
+                        ("primitive function %s folded", mdb_prf[arg_node->info.prf]));
             /*
              * Count array length
              */
@@ -2227,7 +2228,7 @@ ArrayPrf (node *arg_node, node *arg_info)
 
         case N_id:
             DBUG_PRINT ("CF",
-                        ("primitive function %s folded", prf_string[arg_node->info.prf]));
+                        ("primitive function %s folded", mdb_prf[arg_node->info.prf]));
             tmp = Types2Array (ID_TYPE (arg[0]), INFO_CF_TYPE (arg_info));
 
             if (tmp != NULL) {
@@ -2326,7 +2327,7 @@ ArrayPrf (node *arg_node, node *arg_info)
         switch (NODE_TYPE (arg[0])) {
         case N_array:
             DBUG_PRINT ("CF",
-                        ("primitive function %s folded", prf_string[arg_node->info.prf]));
+                        ("primitive function %s folded", mdb_prf[arg_node->info.prf]));
             /*
              * result is always 1
              */
@@ -2341,7 +2342,7 @@ ArrayPrf (node *arg_node, node *arg_info)
             break;
         case N_id:
             DBUG_PRINT ("CF",
-                        ("primitive function %s folded", prf_string[arg_node->info.prf]));
+                        ("primitive function %s folded", mdb_prf[arg_node->info.prf]));
             /*
              * get result
              */
@@ -2642,7 +2643,7 @@ ArrayPrf (node *arg_node, node *arg_info)
 
         if (res_array) {
             DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
-                               prf_string[arg_node->info.prf], NODE_LINE (arg_info)));
+                               mdb_prf[arg_node->info.prf], NODE_LINE (arg_info)));
             MinusMask (INFO_USE, ASSIGN_USEMASK (INFO_CF_ASSIGN (arg_info)),
                        INFO_VARNO (arg_info));
             FreeTree (arg_node);
@@ -2844,9 +2845,9 @@ CFprf (node *arg_node, node *arg_info)
     }
 
     switch (PRF_PRF (arg_node)) {
-    case F_toi:
-    case F_tof:
-    case F_tod:
+    case F_toi_S:
+    case F_tof_S:
+    case F_tod_S:
     case F_abs:
     case F_min:
     case F_max:

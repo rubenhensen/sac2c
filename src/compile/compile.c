@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.94  2002/09/11 23:09:37  dkr
+ * rf_node_info.mac modified.
+ *
  * Revision 3.93  2002/09/09 17:37:59  dkr
  * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
  *
@@ -2777,12 +2780,12 @@ COMPPrfArith_SxA (node *arg_node, node *arg_info)
     arg2 = PRF_ARG2 (arg_node);
 
     DBUG_ASSERT ((NODE_TYPE (arg1) != N_array),
-                 "No N_array as 1st arg of F_add/sub/mult/div_SxA expected!");
+                 "No N_array as 1st arg of F_{add,sub,mult,div}_SxA expected!");
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id),
-                 "N_id as 2nd arg of F_add/sub/mult/div_SxA expected!");
+                 "N_id as 2nd arg of F_{add,sub,mult,div}_SxA expected!");
 
     ret_node
-      = MakeAssignIcm4 ("ND_BINOP_SxA_A", MakeId_Copy (prf_string[PRF_PRF (arg_node)]),
+      = MakeAssignIcm4 ("ND_BINOP_SxA_A", MakeId_Copy (prf_symbol[PRF_PRF (arg_node)]),
                         DupNode (arg1), DupNode (arg2), DupIds_Id (let_ids), NULL);
 
     DBUG_RETURN (ret_node);
@@ -2817,12 +2820,12 @@ COMPPrfArith_AxS (node *arg_node, node *arg_info)
     arg2 = PRF_ARG2 (arg_node);
 
     DBUG_ASSERT ((NODE_TYPE (arg1) == N_id),
-                 "N_id as 1st arg of F_add/sub/mult/div_AxS expected!");
+                 "N_id as 1st arg of F_{add,sub,mult,div}_AxS expected!");
     DBUG_ASSERT ((NODE_TYPE (arg2) != N_array),
-                 "No N_array as 2nd arg of F_add/sub/mult/div_AxS expected!");
+                 "No N_array as 2nd arg of F_{add,sub,mult,div}_AxS expected!");
 
     ret_node
-      = MakeAssignIcm4 ("ND_BINOP_AxS_A", MakeId_Copy (prf_string[PRF_PRF (arg_node)]),
+      = MakeAssignIcm4 ("ND_BINOP_AxS_A", MakeId_Copy (prf_symbol[PRF_PRF (arg_node)]),
                         DupNode (arg1), DupNode (arg2), DupIds_Id (let_ids), NULL);
 
     DBUG_RETURN (ret_node);
@@ -2857,12 +2860,12 @@ COMPPrfArith_AxA (node *arg_node, node *arg_info)
     arg2 = PRF_ARG2 (arg_node);
 
     DBUG_ASSERT ((NODE_TYPE (arg1) == N_id),
-                 "N_id as 1st arg of F_add/sub/mult/div_AxA expected.");
+                 "N_id as 1st arg of F_{add,sub,mult,div}_AxA expected.");
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id),
-                 "N_id as 2st arg of F_add/sub/mult/div_AxA expected.");
+                 "N_id as 2st arg of F_{add,sub,mult,div}_AxA expected.");
 
     ret_node
-      = MakeAssignIcm4 ("ND_BINOP_AxA_A", MakeId_Copy (prf_string[PRF_PRF (arg_node)]),
+      = MakeAssignIcm4 ("ND_BINOP_AxA_A", MakeId_Copy (prf_symbol[PRF_PRF (arg_node)]),
                         DupNode (arg1), DupNode (arg2), DupIds_Id (let_ids), NULL);
 
     DBUG_RETURN (ret_node);
@@ -3156,7 +3159,7 @@ COMPPrfIcm2 (char *icm_name, node *arg_node, node *arg_info)
  *   node *COMPPrfConvertScalar( node *arg_node, node *arg_info)
  *
  * Description:
- *   Compiles N_prf node of type F_toi, F_tod, F_tof:
+ *   Compiles N_prf node of type F_toi_S, F_tod_S, F_tof_S:
  *   We can simply remove the conversion function :-)
  *   Therefore the return value is the first argument of the given N_prf node.
  *
@@ -3205,7 +3208,7 @@ COMPPrfConvertArr (node *arg_node, node *arg_info)
     let_ids = INFO_COMP_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "N_id as arg of F_toi/tof/tod_A aspected");
+    DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "N_id as arg of F_to{ifd}_A aspected");
 
     switch (PRF_PRF (arg_node)) {
     case F_toi_A:
@@ -3438,9 +3441,9 @@ COMPPrf (node *arg_node, node *arg_info)
          *  scalar args
          */
 
-    case F_toi:
-    case F_tof:
-    case F_tod:
+    case F_toi_S:
+    case F_tof_S:
+    case F_tod_S:
         ret_node2 = COMPPrfConvertScalar (arg_node, arg_info);
         break;
 
@@ -3562,13 +3565,6 @@ COMPPrf (node *arg_node, node *arg_info)
         /*
          *  otherwise
          */
-
-    case F_add:
-    case F_sub:
-    case F_mul:
-    case F_div:
-        DBUG_ASSERT ((0), "generic prf without _?x? found!");
-        break;
 
     default:
         DBUG_ASSERT ((0), "illegal prf found!");

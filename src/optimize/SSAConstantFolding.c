@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  2002/09/11 23:07:59  dkr
+ * rf_node_info.mac modified.
+ *
  * Revision 1.34  2002/09/09 19:16:09  dkr
  * prf_string removed (mdb_prf used instead)
  *
@@ -2016,7 +2019,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
     /* do constant folding for selected primitive function */
     switch (op) {
         /* one-argument functions */
-    case F_toi:
+    case F_toi_S:
     case F_toi_A:
         if
             ONE_CONST_ARG (arg_co)
@@ -2025,7 +2028,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             }
         break;
 
-    case F_tof:
+    case F_tof_S:
     case F_tof_A:
         if
             ONE_CONST_ARG (arg_co)
@@ -2034,7 +2037,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             }
         break;
 
-    case F_tod:
+    case F_tod_S:
     case F_tod_A:
         if
             ONE_CONST_ARG (arg_co)

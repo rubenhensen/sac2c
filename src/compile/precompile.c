@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2002/09/11 23:09:20  dkr
+ * rf_node_info.mac modified.
+ *
  * Revision 3.57  2002/09/09 17:50:05  dkr
  * PREC3code(), PREC3withop(): support for N_Nwith added
  *
@@ -2513,6 +2516,136 @@ RenameTypes (types *type)
 /******************************************************************************
  *
  * Function:
+ *   char *ReplaceSpecialCharacters( char *name)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static char *
+ReplaceSpecialCharacters (char *name)
+{
+    char *new_name;
+    char *tmp;
+    int i, j;
+
+    DBUG_ENTER ("ReplaceSpecialCharacters");
+
+    new_name = Malloc ((3 * strlen (name)) * sizeof (char));
+    new_name[0] = '\0';
+
+    for (i = 0, j = 0; i < strlen (name); i++, j++) {
+        switch (name[i]) {
+        case '+':
+            tmp = "_PL";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '-':
+            tmp = "_MI";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '*':
+            tmp = "_ST";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '/':
+            tmp = "_DI";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '%':
+            tmp = "_PR";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '<':
+            tmp = "_LT";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '>':
+            tmp = "_GT";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '=':
+            tmp = "_EQ";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '&':
+            tmp = "_AM";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '|':
+            tmp = "_VE";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '!':
+            tmp = "_EX";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '[':
+            tmp = "_BL";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case ']':
+            tmp = "_BR";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '~':
+            tmp = "_TI";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '@':
+            tmp = "_AT";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '#':
+            tmp = "_HA";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '$':
+            tmp = "_DO";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '^':
+            tmp = "_PO";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '\\':
+            tmp = "_BS";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        default:
+            new_name[j] = name[i];
+            break;
+        }
+    }
+
+    new_name[j] = '\0';
+
+    DBUG_RETURN (new_name);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   char *RenameFunName( char *mod, char *name,
  *                        statustype status, node *args)
  *
@@ -2526,41 +2659,46 @@ RenameTypes (types *type)
 static char *
 RenameFunName (char *mod, char *name, statustype status, node *args)
 {
-    char *new_name = NULL;
+    char *tmp_name;
+    char *new_name;
 
     DBUG_ENTER ("RenameFunName");
 
+    tmp_name = ReplaceSpecialCharacters (name);
+
     if (status == ST_spmdfun) {
-        new_name = (char *)Malloc (sizeof (char) * (strlen (name) + 6));
-        sprintf (new_name, "SACf_%s", name);
+        new_name = (char *)Malloc ((strlen (tmp_name) + 6) * sizeof (char));
+        sprintf (new_name, "SACf_%s", tmp_name);
     } else {
         node *arg;
         int length = 0;
 
         arg = args;
         while (arg != NULL) {
-            length += strlen (ARG_TYPESTRING (arg)) + 1;
+            length += strlen (ARG_TYPESTRING (arg)) + 2;
             arg = ARG_NEXT (arg);
         }
 
         if (!strcmp (mod, MAIN_MOD_NAME)) {
-            length += (strlen (name) + 7);
-            new_name = (char *)Malloc (sizeof (char) * length);
-            sprintf (new_name, "SACf_%s_", name);
+            length += (strlen (tmp_name) + 6);
+            new_name = (char *)Malloc (length * sizeof (char));
+            sprintf (new_name, "SACf_%s", tmp_name);
         } else {
-            length += (strlen (mod) + strlen (name) + 9);
-            new_name = (char *)Malloc (sizeof (char) * length);
-            sprintf (new_name, "SACf_%s__%s_", mod, name);
+            length += (strlen (mod) + strlen (tmp_name) + 8);
+            new_name = (char *)Malloc (length * sizeof (char));
+            sprintf (new_name, "SACf_%s__%s", mod, tmp_name);
         }
 
         arg = args;
         while (arg != NULL) {
-            strcat (new_name, "_");
+            strcat (new_name, "__");
             strcat (new_name, ARG_TYPESTRING (arg));
             ARG_TYPESTRING (arg) = Free (ARG_TYPESTRING (arg));
             arg = ARG_NEXT (arg);
         }
     }
+
+    tmp_name = Free (tmp_name);
 
     DBUG_RETURN (new_name);
 }
@@ -2585,22 +2723,7 @@ RenameFun (node *fun)
 
     DBUG_ENTER ("RenameFun");
 
-    if (FUNDEF_MOD (fun) != NULL) {
-        /*
-         * These are SAC-functions which may be overloaded.
-         */
-
-        new_name = RenameFunName (FUNDEF_MOD (fun), FUNDEF_NAME (fun),
-                                  FUNDEF_STATUS (fun), FUNDEF_ARGS (fun));
-
-        DBUG_PRINT ("PREC", ("renaming function %s:%s to %s", FUNDEF_MOD (fun),
-                             FUNDEF_NAME (fun), new_name));
-
-        FUNDEF_NAME (fun) = Free (FUNDEF_NAME (fun));
-        FUNDEF_NAME (fun) = new_name;
-        /* don't free FUNDEF_MOD(fun) because it is shared !! */
-        FUNDEF_MOD (fun) = NULL;
-    } else {
+    if (FUNDEF_STATUS (fun) == ST_Cfun) {
         if ((FUNDEF_PRAGMA (fun) != NULL) && (FUNDEF_LINKNAME (fun) != NULL)) {
             /*
              * These are C-functions with additional pragma 'linkname'.
@@ -2611,6 +2734,22 @@ RenameFun (node *fun)
 
             FUNDEF_NAME (fun) = Free (FUNDEF_NAME (fun));
             FUNDEF_NAME (fun) = StringCopy (FUNDEF_LINKNAME (fun));
+        }
+    } else {
+        /*
+         * These are SAC-functions which may be overloaded.
+         */
+        if (FUNDEF_MOD (fun) != NULL) {
+            new_name = RenameFunName (FUNDEF_MOD (fun), FUNDEF_NAME (fun),
+                                      FUNDEF_STATUS (fun), FUNDEF_ARGS (fun));
+
+            DBUG_PRINT ("PREC", ("renaming function %s:%s to %s", FUNDEF_MOD (fun),
+                                 FUNDEF_NAME (fun), new_name));
+
+            FUNDEF_NAME (fun) = Free (FUNDEF_NAME (fun));
+            FUNDEF_NAME (fun) = new_name;
+            /* don't free FUNDEF_MOD because it is shared !! */
+            FUNDEF_MOD (fun) = NULL;
         }
     }
 
@@ -2969,6 +3108,28 @@ PREC4return (node *arg_node, node *arg_info)
 
     if (RETURN_EXPRS (arg_node) != NULL) {
         RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC4ap( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC4ap (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC4ap");
+
+    if (AP_ARGS (arg_node) != NULL) {
+        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
