@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/03/02 22:27:40  dkr
+ * removed bugs in duplication of N_cond, N_do, N_while
+ *
  * Revision 1.14  1998/02/12 16:57:02  dkr
  * added support for new with-loop
  *
@@ -87,6 +90,8 @@ extern node *DupStr (node *arg_node, node *arg_info);
 extern ids *DupIds (ids *ids, node *arg_info);
 extern node *DupId (node *arg_node, node *arg_info);
 extern node *DupIIds (node *arg_node, node *arg_info);
+extern node *DupCond (node *arg_node, node *arg_info);
+extern node *DupLoop (node *arg_node, node *arg_info);
 extern node *DupChain (node *arg_node, node *arg_info);
 extern node *DupAssign (node *arg_node, node *arg_info);
 extern node *DupTypes (node *arg_node, node *arg_info);

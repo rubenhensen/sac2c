@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  1998/03/02 22:27:10  dkr
+ * removed bugs in duplication of N_cond, N_do, N_while
+ *
  * Revision 1.27  1998/02/12 16:56:49  dkr
  * added support for new with-loop
  *
@@ -271,6 +274,64 @@ DupId (node *arg_node, node *arg_info)
     {
         new_node->node[i] = Trav (arg_node->node[i], arg_info);
     }
+    DBUG_RETURN (new_node);
+}
+
+node *
+DupCond (node *arg_node, node *arg_info)
+{
+    node *new_node;
+    int i;
+
+    DBUG_ENTER ("DupCond");
+
+    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
+
+    LEVEL++;
+    new_node = MakeCond (Trav (COND_COND (arg_node), arg_info),
+                         Trav (COND_THEN (arg_node), arg_info),
+                         Trav (COND_ELSE (arg_node), arg_info));
+    LEVEL--;
+
+    DUP (arg_node, new_node);
+
+    COND_VARINFO (new_node) = MakeInfo ();
+    if (COND_THENVARS (arg_node) != NULL) {
+        COND_THENVARS (new_node) = Trav (COND_THENVARS (arg_node), arg_info);
+    }
+    if (COND_ELSEVARS (arg_node) != NULL) {
+        COND_ELSEVARS (new_node) = Trav (COND_ELSEVARS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (new_node);
+}
+
+node *
+DupLoop (node *arg_node, node *arg_info)
+{
+    node *new_node;
+    int i;
+
+    DBUG_ENTER ("DupLoop");
+
+    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
+
+    LEVEL++;
+    new_node
+      = MakeDo (Trav (DO_COND (arg_node), arg_info), Trav (DO_BODY (arg_node), arg_info));
+    LEVEL--;
+    NODE_TYPE (new_node) = NODE_TYPE (arg_node);
+
+    DUP (arg_node, new_node);
+
+    DO_VARINFO (new_node) = MakeInfo ();
+    if (DO_USEVARS (arg_node) != NULL) {
+        DO_USEVARS (new_node) = Trav (DO_USEVARS (arg_node), arg_info);
+    }
+    if (DO_DEFVARS (arg_node) != NULL) {
+        DO_DEFVARS (new_node) = Trav (DO_DEFVARS (arg_node), arg_info);
+    }
+
     DBUG_RETURN (new_node);
 }
 
