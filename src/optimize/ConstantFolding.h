@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/06/26 16:23:39  asi
+ * Revision 1.10  1995/07/04 16:32:58  asi
+ * IsConst defined global
+ *
+ * Revision 1.9  1995/06/26  16:23:39  asi
  * some macros moved from .c file to .h file
  *
  * Revision 1.8  1995/06/26  11:49:48  asi
@@ -58,6 +61,7 @@ extern void PushVL (long NumVar);
 extern void PushDupVL ();
 extern void PopVL ();
 extern void PopVL2 ();
+extern int IsConst (node *arg_node);
 
 extern node *ConstantFolding (node *arg_node, node *arg_info);
 
