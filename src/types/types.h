@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/23 20:44:44  cg
+ * Added genlib_t and  min_array_rep_t.
+ *
  * Revision 1.8  2004/11/23 20:29:42  cg
  * Added profile flags.
  *
@@ -316,6 +319,21 @@ typedef enum {
 #include "prf_node_info.mac"
 #undef PRF_IF
 } prf;
+
+/*
+ * target library format
+ */
+typedef enum { GL_none, GL_sac, GL_c } genlib_t;
+
+/*
+ * minimum array representation class
+ */
+typedef enum {
+    MAR_scl_aks = 0,
+    MAR_scl_akd = 1,
+    MAR_scl_aud = 2,
+    MAR_aud = 3
+} min_array_rep_t;
 
 /*
  * structs
