@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.63  1998/04/19 23:50:16  dkr
+ * changed DupIds:
+ *   arg_info now can be NULL
+ *
  * Revision 1.62  1998/04/17 17:26:34  dkr
  * 'concurrent regions' are now called 'SPMD regions'
  *
@@ -393,24 +397,21 @@ DupIds (ids *old_ids, node *arg_info)
 
     DBUG_ENTER ("DupIds");
 
-    switch (DUPTYPE) {
-    case DUP_INLINE:
-        new_ids = MakeIds (RenameInlinedVar (old_ids->id), NULL, ST_regular);
-        new_ids->node = SearchDecl (new_ids->id, INFO_INL_TYPES (arg_info));
-        DBUG_ASSERT ((NULL != new_ids->node), "No declaration found for ids-node");
-        break;
-    default:
-        new_ids = MakeIds (StringCopy (old_ids->id), NULL, ST_regular);
-        new_ids->node = old_ids->node;
-        new_ids->use = old_ids->use;
-        break;
+    if ((arg_info != NULL) && (DUPTYPE == DUP_INLINE)) {
+        new_ids = MakeIds (RenameInlinedVar (IDS_NAME (old_ids)), NULL, ST_regular);
+        IDS_VARDEC (new_ids) = SearchDecl (IDS_NAME (new_ids), INFO_INL_TYPES (arg_info));
+        DBUG_ASSERT ((NULL != IDS_VARDEC (new_ids)), "No declaration found for ids-node");
+    } else {
+        new_ids = MakeIds (StringCopy (IDS_NAME (old_ids)), NULL, ST_regular);
+        IDS_VARDEC (new_ids) = IDS_VARDEC (old_ids);
+        IDS_USE (new_ids) = IDS_USE (old_ids);
     }
 
     IDS_STATUS (new_ids) = IDS_STATUS (old_ids);
     IDS_ATTRIB (new_ids) = IDS_ATTRIB (old_ids);
 
-    if (NULL != old_ids->next) {
-        new_ids->next = DupIds (old_ids->next, arg_info);
+    if (NULL != IDS_NEXT (old_ids)) {
+        IDS_NEXT (new_ids) = DupIds (IDS_NEXT (old_ids), arg_info);
     }
 
     DBUG_RETURN (new_ids);
