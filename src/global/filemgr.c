@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/01/11 11:28:11  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.5  2005/01/07 16:49:00  cg
  * Added function FMGRcleanUp.
  *
@@ -116,7 +119,7 @@
 
 #include "dbug.h"
 #include "internal_lib.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "free.h"
 #include "types.h"
 #include "filemgr.h"
@@ -311,7 +314,7 @@ FMGRappendPath (pathkind_t p, char *path)
 
     len = strlen (path) + 1;
     if (len + bufsize[p] >= MAX_PATH_LEN) {
-        SYSABORT (("MAX_PATH_LEN too low"));
+        CTIabort ("MAX_PATH_LEN too low");
     } else {
         strcat (path_bufs[p], ":");
         strcat (path_bufs[p], path);
@@ -348,7 +351,7 @@ AppendEnvVar (pathkind_t p, char *var)
     if (buffer != NULL) {
         len = (strlen (buffer) + 1);
         if (len + bufsize[p] >= MAX_PATH_LEN) {
-            SYSABORT (("MAX_PATH_LEN too low"));
+            CTIabort ("MAX_PATH_LEN too low");
         } else {
             strcat (path_bufs[p], ":");
             strcat (path_bufs[p], buffer);
@@ -547,7 +550,7 @@ FMGRwriteOpen (char *format, ...)
     file = fopen (buffer, "w");
 
     if (file == NULL) {
-        SYSABORT (("Unable to write file \"%s\"", buffer));
+        CTIabort ("Unable to write file \"%s\"", buffer);
     }
 
     DBUG_RETURN (file);
@@ -623,7 +626,7 @@ FMGRsetFileNames (node *module)
         }
     } else {
         if (global.doprofile && global.genlib.sac) {
-            SYSWARN (("-p option turned off for module/class compilation"));
+            CTIwarn ("Option -p turned off for module/class compilation");
             global.doprofile = FALSE;
         }
 
@@ -631,9 +634,9 @@ FMGRsetFileNames (node *module)
             buffer = ILIBstringConcat (MODULE_NAME (module), ".sac");
 
             if (!ILIBstringCompare (buffer, global.puresacfilename)) {
-                SYSWARN (("Module/class '%s` should be in a file named \"%s\" "
-                          "instead of \"%s\"",
-                          MODULE_NAME (module), buffer, global.sacfilename));
+                CTIwarn ("Module/class '%s` should be in a file named \"%s\" "
+                         "instead of \"%s\"",
+                         MODULE_NAME (module), buffer, global.sacfilename);
             }
             ILIBfree (buffer);
         }

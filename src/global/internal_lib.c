@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2005/01/11 11:28:11  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.76  2004/12/11 17:38:25  ktr
  * added memmory initialization iff CLEANMEM is set.
  *
@@ -232,7 +235,7 @@
 
 #include "dbug.h"
 
-#include "Error.h"
+#include "ctinfo.h"
 #include "DupTree.h"
 #include "free.h"
 #include "globals.h"
@@ -303,8 +306,8 @@ ILIBmalloc (int size)
          * we do complain for ((NULL == tmp) && (size > 0)) only!!
          */
         if (tmp == NULL) {
-            SYSABORT (("Out of memory: %u Bytes already allocated!",
-                       global.current_allocated_mem));
+            CTIabort ("Out of memory: %u Bytes already allocated",
+                      global.current_allocated_mem);
         }
 
         *(int *)tmp = size;
@@ -412,7 +415,7 @@ ILIBmalloc (int size)
          * we do complain for ((NULL == tmp) && (size > 0)) only!!
          */
         if (tmp == NULL) {
-            SYSABORT (("Out of memory"));
+            CTIabort ("Out of memory");
         }
     } else {
         tmp = NULL;
@@ -1102,9 +1105,9 @@ ILIBsystemCall (char *format, ...)
     exit_code = system (syscall);
 
     if (exit_code > 0) {
-        SYSABORT (("System failed to execute shell command\n%s\n"
-                   "with exit code %d",
-                   syscall, exit_code / 256));
+        CTIabort ("System failed to execute shell command\n%s\n"
+                  "with exit code %d",
+                  syscall, exit_code / 256);
     }
 
     DBUG_VOID_RETURN;
@@ -1138,7 +1141,7 @@ ILIBsystemCall2 (char *format, ...)
      * This allows for easy C-code patches.
      */
     if (global.show_syscall) {
-        NOTE (("%s", syscall));
+        CTInote ("System call:\n%s", syscall);
     }
 
     DBUG_RETURN (system (syscall));
@@ -1482,16 +1485,16 @@ ILIBdbugMemoryLeakCheck (void)
     DBUG_ENTER ("ILIBdbugMemoryLeakCheck");
 
     mem_before = global.current_allocated_mem;
-    NOTE2 (("*** Currently allocated memory (Bytes):   %s",
-            CVintBytes2String (global.current_allocated_mem)));
+    CTInote ("*** Currently allocated memory (Bytes):   %s",
+             CVintBytes2String (global.current_allocated_mem));
     ast_dup = DUPdoDupTree (global.syntax_tree);
-    NOTE2 (("*** Size of the syntax tree (Bytes):      %s",
-            CVintBytes2String (global.current_allocated_mem - mem_before)));
-    NOTE2 (("*** Other memory allocated/ Leak (Bytes): %s",
-            CVintBytes2String (2 * mem_before - global.current_allocated_mem)));
+    CTInote ("*** Size of the syntax tree (Bytes):      %s",
+             CVintBytes2String (global.current_allocated_mem - mem_before));
+    CTInote ("*** Other memory allocated/ Leak (Bytes): %s",
+             CVintBytes2String (2 * mem_before - global.current_allocated_mem));
     FREEdoFreeTree (ast_dup);
-    NOTE2 (("*** FreeTree / DupTree leak (Bytes):      %s",
-            CVintBytes2String (global.current_allocated_mem - mem_before)));
+    CTInote ("*** FreeTree / DupTree leak (Bytes):      %s",
+             CVintBytes2String (global.current_allocated_mem - mem_before));
 
     DBUG_VOID_RETURN;
 }

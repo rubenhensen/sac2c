@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2005/01/11 11:28:11  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.14  2005/01/07 19:54:13  cg
  * Converted compile time output from Error.h to ctinfo.c
  *
@@ -149,7 +152,8 @@
 #include "resource.h"
 #include "scnprs.h"
 #include "globals.h"
-#include "Error.h"
+#include "ctinfo.h"
+#include "internal_lib.h"
 
 /******************************************************************************
  *
@@ -484,7 +488,7 @@ RSCparseResourceFile (char *buffer)
         ok = FALSE;
     } else {
 
-        NOTE (("  Parsing configuration file \"%s\" ...", buffer));
+        CTInote ("Parsing configuration file \"%s\" ...", buffer);
 
         global.linenum = 1;
         global.filename = buffer; /* set for better error messages only */
