@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2001/05/17 12:57:46  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 1.11  2001/05/09 15:53:03  nmw
  * COCompareConstants() added
  *
@@ -128,7 +131,7 @@ MakeConstant (simpletype type, shape *shp, void *elems, int vlen)
 
     DBUG_ENTER ("MakeConstant");
 
-    res = (constant *)MALLOC (sizeof (constant));
+    res = (constant *)Malloc (sizeof (constant));
     CONSTANT_TYPE (res) = type;
     CONSTANT_SHAPE (res) = shp;
     CONSTANT_ELEMS (res) = elems;
@@ -153,7 +156,7 @@ AllocCV (simpletype type, int length)
     void *res;
 
     DBUG_ENTER ("AllocCV");
-    res = (void *)MALLOC (basetype_size[type] * length);
+    res = (void *)Malloc (basetype_size[type] * length);
     DBUG_RETURN (res);
 }
 
@@ -294,7 +297,7 @@ MakeScalarConstantFromCV (simpletype type, void *cv)
 
     DBUG_ENTER ("MakeScalarConstantFromCV");
 
-    res = (constant *)MALLOC (sizeof (constant));
+    res = (constant *)Malloc (sizeof (constant));
     CONSTANT_TYPE (res) = type;
     CONSTANT_SHAPE (res) = SHMakeShape (0);
     CONSTANT_ELEMS (res) = cv;
@@ -330,7 +333,7 @@ COMakeConstant (simpletype type, shape *shp, void *elems)
 
     DBUG_ENTER ("COMakeConstant");
 
-    res = (constant *)MALLOC (sizeof (constant));
+    res = (constant *)Malloc (sizeof (constant));
     CONSTANT_TYPE (res) = type;
     CONSTANT_SHAPE (res) = shp;
     CONSTANT_ELEMS (res) = elems;
@@ -357,10 +360,10 @@ COMakeConstantFromInt (int val)
 
     DBUG_ENTER ("COMakeConstantFromInt");
 
-    res = (constant *)MALLOC (sizeof (constant));
+    res = (constant *)Malloc (sizeof (constant));
     CONSTANT_TYPE (res) = T_int;
     CONSTANT_SHAPE (res) = SHMakeShape (0);
-    intelems = (int *)MALLOC (sizeof (int));
+    intelems = (int *)Malloc (sizeof (int));
     intelems[0] = val;
     CONSTANT_ELEMS (res) = intelems;
     CONSTANT_VLEN (res) = 1;
@@ -509,9 +512,8 @@ COFreeConstant (constant *a)
     DBUG_ENTER ("COFreeConstant");
 
     CONSTANT_SHAPE (a) = SHFreeShape (CONSTANT_SHAPE (a));
-    FREE (CONSTANT_ELEMS (a));
-    FREE (a);
-    a = NULL;
+    CONSTANT_ELEMS (a) = Free (CONSTANT_ELEMS (a));
+    a = Free (a);
 
     DBUG_RETURN (a);
 }
@@ -599,25 +601,25 @@ COAST2Constant (node *n)
 
         switch (NODE_TYPE (n)) {
         case N_num:
-            element = (int *)MALLOC (sizeof (int));
+            element = (int *)Malloc (sizeof (int));
             *((int *)element) = NUM_VAL (n);
             new_co = COMakeConstant (T_int, SHMakeShape (0), element);
             break;
 
         case N_double:
-            element = (double *)MALLOC (sizeof (double));
+            element = (double *)Malloc (sizeof (double));
             *((double *)element) = DOUBLE_VAL (n);
             new_co = COMakeConstant (T_double, SHMakeShape (0), element);
             break;
 
         case N_float:
-            element = (float *)MALLOC (sizeof (float));
+            element = (float *)Malloc (sizeof (float));
             *((float *)element) = FLOAT_VAL (n);
             new_co = COMakeConstant (T_float, SHMakeShape (0), element);
             break;
 
         case N_bool:
-            element = (bool *)MALLOC (sizeof (bool));
+            element = (bool *)Malloc (sizeof (bool));
             *((bool *)element) = BOOL_VAL (n);
             new_co = COMakeConstant (T_bool, SHMakeShape (0), element);
             break;

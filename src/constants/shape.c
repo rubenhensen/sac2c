@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2001/05/17 12:57:46  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 1.4  2001/05/03 16:55:13  nmw
  * COTypes2OldShapes can handle scalars correctly now
  *
@@ -80,9 +83,9 @@ SHMakeShape (int dim)
     DBUG_ENTER ("SHMakeShape");
     DBUG_ASSERT (dim >= 0, ("SHMakeShape called with negative dimensionality!"));
 
-    res = (shape *)MALLOC (sizeof (shape));
+    res = (shape *)Malloc (sizeof (shape));
     if (dim > 0) {
-        SHAPE_ELEMS (res) = (int *)MALLOC (dim * sizeof (int));
+        SHAPE_ELEMS (res) = (int *)Malloc (dim * sizeof (int));
     } else {
         SHAPE_ELEMS (res) = NULL;
     }
@@ -200,10 +203,9 @@ SHFreeShape (shape *shp)
     DBUG_ASSERT ((shp != NULL), ("SHFreeShape called with NULL shape!"));
 
     if (SHAPE_DIM (shp) > 0) {
-        FREE (SHAPE_ELEMS (shp));
+        SHAPE_ELEMS (shp) = Free (SHAPE_ELEMS (shp));
     }
-    FREE (shp);
-    shp = NULL;
+    shp = Free (shp);
 
     DBUG_RETURN (shp);
 }
@@ -567,7 +569,7 @@ SHShape2IntVec (shape *a)
 
     n = SHAPE_DIM (a);
     if (n > 0) {
-        int_vec = (int *)MALLOC (n * sizeof (int));
+        int_vec = (int *)Malloc (n * sizeof (int));
         for (i = 0; i < n; i++) {
             int_vec[i] = SHAPE_EXT (a, i);
         }
