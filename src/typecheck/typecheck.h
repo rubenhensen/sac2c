@@ -1,5 +1,8 @@
 /*
- * $Log : $
+ * $Log$
+ * Revision 1.3  1994/12/06 09:58:19  hw
+ * changed log-header
+ *
  *
  */
 
