@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/25 12:19:31  skt
+ * big compiler switch during SACDevCampDK 2k4
+ *
  * Revision 1.4  2004/11/22 20:51:06  ktr
  * SacDevCamp 04
  *
@@ -37,8 +40,7 @@ extern node *CUDdoCleanupDecls (node *syntaxtree);
 extern node *CUDfundef (node *arg_node, info *arg_info);
 extern node *CUDblock (node *arg_node, info *arg_info);
 extern node *CUDvardec (node *arg_node, info *arg_info);
-extern node *CUDlet (node *arg_node, info *arg_info);
+extern node *CUDids (node *arg_node, info *arg_info);
 extern node *CUDid (node *arg_node, info *arg_info);
-extern node *CUDwithid (node *arg_node, info *arg_info);
 
 #endif /* _SAC_CLEANUP_DECLS_H_ */
