@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.126  1998/04/16 15:42:21  dkr
+ * new macro INFO_COMP_CONCFUNS
+ *
  * Revision 1.125  1998/04/16 11:46:29  dkr
  * changed macro INFO_DUPCONT
  *
@@ -2199,7 +2202,7 @@ extern node *MakeInfo ();
 #define INFO_COMP_ICMTAB(n) ((node **)(n->node[2]))
 #define INFO_COMP_TYPETAB(n) ((types **)(n->info.types))
 
-#define INFO_COMP_MODUL(n) (n->node[4])
+#define INFO_COMP_CONCFUNS(n) (n->node[4])
 
 /* optimize */
 #define INFO_MASK(n, x) (n->mask[x])
