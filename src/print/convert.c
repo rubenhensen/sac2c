@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1996/02/06 16:10:20  sbs
+ * Revision 1.16  1996/02/08 18:04:05  hw
+ * changed Type2String ( [.,.] will be printed now ;-)
+ *
+ * Revision 1.15  1996/02/06  16:10:20  sbs
  * Double2String and Float2String inserted.
  *
  * Revision 1.14  1996/01/16  16:57:00  cg
@@ -183,27 +186,48 @@ Type2String (types *type, int flag)
         if (0 != type->dim)
             if (-1 == type->dim)
                 strcat (tmp_string, "[]");
+            else if (ARRAY_OR_SCALAR == TYPES_DIM (type))
+                strcat (tmp_string, "[?]");
             else {
-                int i;
+                int i, dim;
                 static char int_string[INT_STRING_LENGTH];
+                int known_shape = 1;
                 if (2 == flag)
                     strcat (tmp_string, "_");
                 else
                     strcat (tmp_string, "[");
-                for (i = 0; i < type->dim; i++)
-                    if (i != (type->dim - 1)) {
+                if (KNOWN_DIM_OFFSET > TYPES_DIM (type)) {
+                    dim = 0 - TYPES_DIM (type) + KNOWN_DIM_OFFSET;
+                    known_shape = 0;
+                } else
+                    dim = TYPES_DIM (type);
+
+                for (i = 0; i < dim; i++)
+                    if (i != (dim - 1)) {
                         DBUG_PRINT ("PRINT", ("shp[%d]=%d", i, type->shpseg->shp[i]));
                         if (2 == flag)
-                            sprintf (int_string, "%d_", type->shpseg->shp[i]);
-                        else
+                            if (1 == known_shape)
+                                sprintf (int_string, "%d_", type->shpseg->shp[i]);
+                            else
+                                sprintf (int_string, "._");
+                        else if (1 == known_shape)
                             sprintf (int_string, "%d, ", type->shpseg->shp[i]);
+                        else
+                            sprintf (int_string, "., ");
+
                         strcat (tmp_string, int_string);
                     } else {
                         DBUG_PRINT ("PRINT", ("shp[%d]=%d", i, type->shpseg->shp[i]));
                         if (2 == flag)
-                            sprintf (int_string, "%d_", type->shpseg->shp[i]);
-                        else
+                            if (1 == known_shape)
+                                sprintf (int_string, "%d_", type->shpseg->shp[i]);
+                            else
+                                sprintf (int_string, "._");
+                        else if (1 == known_shape)
                             sprintf (int_string, "%d]", type->shpseg->shp[i]);
+                        else
+                            sprintf (int_string, ".]");
+
                         strcat (tmp_string, int_string);
                     }
             }
