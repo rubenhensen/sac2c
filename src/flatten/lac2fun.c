@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2000/02/24 15:06:07  dkr
+ * some comments and dbug-output added
+ *
  * Revision 1.11  2000/02/24 01:27:55  dkr
  * lac2fun completed now 8-))
  *
@@ -52,17 +55,50 @@
 #define MAIN_HAS_NO_MODNAME
 
 /*
+ * usage of arg_info (INFO_LAC2FUN_...)
+ * ------------------------------------
+ *
+ * during INFER-phase:
+ *
+ *   ...FUNDEF   pointer to the current fundef
+ *
+ *   ...NEEDED   DFmask: vars needed in outer blocks
+ *   ...IN       DFmask: vars used before eventually defined (in the current block)
+ *   ...OUT      DFmask: vars defined an needed in outer blocks
+ *   ...LOCAL    DFmask: vars defined before eventually used
+ *   (Note: Each var occuring in a block is either IN-var or (exclusive!) LOCAL-var)
+ *
+ *   ...ISFIX    flag: fixpoint reached?
+ *
+ * during LIFT-phase:
+ *
+ *   ...FUNDEF   pointer to the current fundef
+ *
+ *   ...ISTRANS  flag: has the current assignment been modified?
+ *   ...FUNS     chain of newly generated dummy functions
+ */
+
+/*
  *
  * functions for the first traversal(s) [fixpoint interation]
  *
  */
 
+/*
+ * The current value of the DFmask 'old' is freed and subsequently the
+ * value of 'new' is assigned to 'old'.
+ */
 #define UPDATE(old, new)                                                                 \
     if (old != NULL) {                                                                   \
         old = DFMRemoveMask (old);                                                       \
     }                                                                                    \
     old = new;
 
+/*
+ * Before UPDATE() is called, the two DFmasks 'old' and 'new' are compared.
+ * If they differ the flag INFO_LAC2FUN_ISFIX is unset to indicate that
+ * another iteration is needed (fixpoint not yet reached).
+ */
 #define COMPARE_AND_UPDATE(old, new)                                                     \
     if (old != NULL) {                                                                   \
         if (DFMTestMask (old) != DFMTest2Masks (old, new)) {                             \
@@ -74,6 +110,9 @@
     }                                                                                    \
     UPDATE (old, new);
 
+/*
+ * compound macro
+ */
 #define INFO_DFMBASE(arg_info) FUNDEF_DFM_BASE (INFO_LAC2FUN_FUNDEF (arg_info))
 
 /******************************************************************************
@@ -328,7 +367,7 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
         break;
 
     default:
-        DBUG_ASSERT ((0), "Only conditionals or loops can be lifted!");
+        DBUG_ASSERT ((0), "Only conditionals or loops are transformed into functions!");
         break;
     }
 
@@ -391,7 +430,8 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
         WHILE_COND (arg_node) = Trav (WHILE_COND (arg_node), arg_info);
         break;
 
-    case N_do:;
+    case N_do:
+        /* there is no need to adjust the in-, out-, local-masks ... */
 
         /*
          * traverse condition
@@ -400,32 +440,48 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
         break;
 
     default:
-        DBUG_ASSERT ((0), "Only conditionals or loops can be lifted!");
+        DBUG_ASSERT ((0), "Only conditionals or loops are transformed into functions!");
         break;
     }
 
     /*
-     * store the infered in-, out-, local-masks
-     * detect whether fixpoint-property is hold or not
+     * store the infered in-, out-, local-masks and
+     * detect whether the fixpoint-property is hold or not
      */
     if (type == N_cond) {
-        /* condition */
+        /*
+         * conditional: no fixpoint iteration needed!
+         */
         UPDATE ((*in), (INFO_LAC2FUN_IN (arg_info)));
         UPDATE ((*out), (INFO_LAC2FUN_OUT (arg_info)));
         UPDATE ((*local), (INFO_LAC2FUN_LOCAL (arg_info)));
     } else {
-        /* loop */
+        /*
+         * loop
+         */
         COMPARE_AND_UPDATE ((*in), (INFO_LAC2FUN_IN (arg_info)));
         COMPARE_AND_UPDATE ((*out), (INFO_LAC2FUN_OUT (arg_info)));
         COMPARE_AND_UPDATE ((*local), (INFO_LAC2FUN_LOCAL (arg_info)));
     }
 
+    DBUG_PRINT ("LAC2FUN", ("signature of %s: ", NODE_TEXT (arg_node)));
+    DBUG_EXECUTE ("LAC2FUN", fprintf (stderr, "    in-vars: ");
+                  DFMPrintMask (stderr, "%s ", *in); fprintf (stderr, "\n    out-vars: ");
+                  DFMPrintMask (outfile, "%s ", *out);
+                  fprintf (stderr, "\n    local-vars: ");
+                  DFMPrintMask (outfile, "%s ", *local); fprintf (stderr, "\n\n"););
+
     /*
-     * restore and update old in-, out-, local-masks
+     * restore old in-, out-, local-masks
      */
     INFO_LAC2FUN_IN (arg_info) = old_in;
     INFO_LAC2FUN_OUT (arg_info) = old_out;
     INFO_LAC2FUN_LOCAL (arg_info) = old_local;
+    /*
+     * The whole conditional/loop is replaced later on by a single function call
+     *     ...out-vars... dummy-fun( ...in-vars... );
+     * Therefore we must adjust the current in-, out-mask accordingly.
+     */
     DefinedMask (*out, arg_info);
     UsedMask (*in, arg_info);
 
@@ -461,6 +517,10 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
 node *
 L2F_INFERfundef (node *arg_node, node *arg_info)
 {
+#ifndef DBUG_OFF
+    int cnt = 0;
+#endif
+
     DBUG_ENTER ("L2F_INFERfundef");
 
     INFO_LAC2FUN_FUNDEF (arg_info) = arg_node;
@@ -476,7 +536,12 @@ L2F_INFERfundef (node *arg_node, node *arg_info)
         INFO_LAC2FUN_LOCAL (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
         INFO_LAC2FUN_NEEDED (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
 
+        DBUG_PRINT ("LAC2FUN", ("Infering signatures of conditionals/loops in %s():\n",
+                                FUNDEF_NAME (arg_node)));
+
         do {
+            DBUG_EXECUTE ("LAC2FUN", cnt++;);
+            DBUG_PRINT ("LAC2FUN", ("fixpoint iteration --- loop %i", cnt));
             INFO_LAC2FUN_ISFIX (arg_info) = 1;
 
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
@@ -486,6 +551,9 @@ L2F_INFERfundef (node *arg_node, node *arg_info)
             DFMSetMaskClear (INFO_LAC2FUN_LOCAL (arg_info));
             DFMSetMaskClear (INFO_LAC2FUN_NEEDED (arg_info));
         } while (INFO_LAC2FUN_ISFIX (arg_info) != 1);
+
+        DBUG_PRINT ("LAC2FUN",
+                    ("%s() finished after %i iterations\n", FUNDEF_NAME (arg_node), cnt));
 
         INFO_LAC2FUN_IN (arg_info) = DFMRemoveMask (INFO_LAC2FUN_IN (arg_info));
         INFO_LAC2FUN_OUT (arg_info) = DFMRemoveMask (INFO_LAC2FUN_OUT (arg_info));
