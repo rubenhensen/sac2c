@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.57  1995/07/24 11:41:35  asi
+ * Revision 1.58  1995/08/16 10:57:55  asi
+ * added -ba to break compilation after array elimination
+ *
+ * Revision 1.57  1995/07/24  11:41:35  asi
  * added ArrayElimination and new parameters
  * -noarray_elimination, -noAE and -minarray <nr> for it
  *
@@ -230,6 +233,7 @@ int show_icm = 0;
 int traceflag = 0;
 
 int check_boundary = 0;
+int breakae = 0;
 
 MAIN
 {
@@ -299,6 +303,10 @@ MAIN
             breaktype = 1;
             break;
         case 'o':
+            breakopt = 1;
+            break;
+        case 'a':
+            breakae = 1;
             breakopt = 1;
             break;
         case 's':
