@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.118  2002/04/09 08:05:58  ktr
+ * Support for WithloopScalarization added
+ *
  * Revision 3.117  2002/03/07 20:27:11  dkr
  * ICM_END_OF_STATEMENT removed
  *
@@ -2513,6 +2516,12 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      VARDECS           (current vardecs)
  ***    node*      ARGS              (current args)
  ***
+ ***
+ ***  when used in WithloopScalarization.c
+ ***    bool       POSSIBLE          (true, if WLS is possible
+ ***    int        PHASEINT          (phase of WLS, casted do wls_phase)
+ ***    node*      FUNDEF            (current fundef)
+ ***
  ***  remarks:
  ***
  ***    N_info is used in many other phases without access macros :((
@@ -3011,6 +3020,12 @@ extern node *MakeInfo ();
 /* when used in insert_vardec.c */
 #define INFO_INSVD_VARDECS(n) (n->node[0])
 #define INFO_INSVD_ARGS(n) (n->node[1])
+
+/* when used in WithloopScalarization.c */
+#define INFO_WLS_POSSIBLE(n) (n->flag)
+#define INFO_WLS_PHASE(n) (n->lineno)
+#define INFO_WLS_FUNDEF(n) (n->node[0])
+#define INFO_WLS_PARTS(n) (n->counter)
 
 /*--------------------------------------------------------------------------*/
 
