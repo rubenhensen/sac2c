@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.15  2005/02/14 10:46:43  mwe
- * CVParg added
+ * Revision 1.16  2005/02/14 15:51:48  mwe
+ * CVPids added (moved from CFids), propagate constant return values
  *
  * Revision 1.14  2004/12/09 18:15:09  ktr
  * IsConstantArray fixed.
@@ -168,6 +168,9 @@ struct INFO {
     context_t context;
     bool attrib;
     node *fundef;
+    node *assign;
+    node *postassign;
+    bool specfun;
 };
 
 /*
@@ -176,7 +179,9 @@ struct INFO {
 #define INFO_CVP_CONTEXT(n) (n->context)
 #define INFO_CVP_ATTRIB(n) (n->attrib)
 #define INFO_CVP_FUNDEF(n) (n->fundef)
-
+#define INFO_CVP_ASSIGN(n) (n->assign)
+#define INFO_CVP_POSTASSIGN(n) (n->postassign)
+#define INFO_CVP_SPECFUN(n) (n->specfun)
 /*
  * INFO functions
  */
@@ -192,6 +197,9 @@ MakeInfo ()
     INFO_CVP_FUNDEF (result) = NULL;
     INFO_CVP_CONTEXT (result) = CON_undef;
     INFO_CVP_ATTRIB (result) = FALSE;
+    INFO_CVP_ASSIGN (result) = NULL;
+    INFO_CVP_POSTASSIGN (result) = NULL;
+    INFO_CVP_SPECFUN (result) = TRUE;
 
     DBUG_RETURN (result);
 }
@@ -706,6 +714,12 @@ CVPap (node *arg_node, info *arg_info)
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
+    if ((!FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
+        && (!FUNDEF_ISPROVIDED (AP_FUNDEF (arg_node)))
+        && (!FUNDEF_ISEXPORTED (AP_FUNDEF (arg_node)))) {
+        INFO_CVP_SPECFUN (arg_info) = FALSE;
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -893,10 +907,16 @@ CVPlet (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CVPlet");
 
+    INFO_CVP_SPECFUN (arg_info) = TRUE;
+
     if (LET_EXPR (arg_node) != NULL) {
 
         INFO_CVP_CONTEXT (arg_info) = CON_let;
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    }
+
+    if ((LET_IDS (arg_node) != NULL) && (!INFO_CVP_SPECFUN (arg_info))) {
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -916,13 +936,26 @@ node *
 CVPassign (node *arg_node, info *arg_info)
 {
 
+    node *oldassign;
+
     DBUG_ENTER ("CVPassign");
 
     INFO_CVP_CONTEXT (arg_info) = CON_undef;
 
+    INFO_CVP_POSTASSIGN (arg_info) = NULL;
+    oldassign = INFO_CVP_ASSIGN (arg_info);
+    INFO_CVP_ASSIGN (arg_info) = arg_node;
+
     if (ASSIGN_INSTR (arg_node) != NULL) {
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
+
+    INFO_CVP_ASSIGN (arg_info) = oldassign;
+
+    /* integrate post assignments after current assignment */
+    ASSIGN_NEXT (arg_node)
+      = TCappendAssign (INFO_CVP_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
+    INFO_CVP_POSTASSIGN (arg_info) = NULL;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -1041,6 +1074,75 @@ CVParg (node *arg_node, info *arg_info)
     }
 
     DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CVPids(info *arg_ids, node *arg_info)
+ *
+ * description:
+ *   traverse ids chain and return exprs chain (stored in INFO_CF_RESULT)
+ *   and look for constant results.
+ *   each constant identifier will be set in an separate assignment (added to
+ *   INFO_CVP_POSTASSIGN) and substituted in the function application with
+ *   a new dummy identifier that can be removed by constant folding later.
+ *
+ *****************************************************************************/
+
+node *
+CVPids (node *arg_ids, info *arg_info)
+{
+    constant *new_co;
+    node *assign_let;
+    node *new_vardec;
+
+    DBUG_ENTER ("CVPids");
+
+    if (IDS_NEXT (arg_ids) != NULL) {
+        if (TYisAKV (AVIS_TYPE (IDS_AVIS (arg_ids)))) {
+            new_co = TYgetValue (AVIS_TYPE (IDS_AVIS (arg_ids)));
+
+            DBUG_PRINT ("CVP", ("identifier %s marked as constant",
+                                VARDEC_OR_ARG_NAME (AVIS_DECL (IDS_AVIS (arg_ids)))));
+
+            /* create one let assign for constant definition, reuse old avis/vardec */
+            assign_let = TCmakeAssignLet (IDS_AVIS (arg_ids), COconstant2AST (new_co));
+
+            /* append new copy assignment to then-part block */
+            INFO_CVP_POSTASSIGN (arg_info)
+              = TCappendAssign (INFO_CVP_POSTASSIGN (arg_info), assign_let);
+
+            DBUG_PRINT ("CVP",
+                        ("create constant assignment for %s", (IDS_NAME (arg_ids))));
+
+            /* create new dummy identifier */
+            new_vardec = SSATnewVardec (AVIS_DECL (IDS_AVIS (arg_ids)));
+            BLOCK_VARDEC (FUNDEF_BODY (INFO_CVP_FUNDEF (arg_info)))
+              = TCappendVardec (BLOCK_VARDEC (FUNDEF_BODY (INFO_CVP_FUNDEF (arg_info))),
+                                new_vardec);
+
+            /*
+             * set new dummy values
+             */
+            AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = INFO_CVP_ASSIGN (arg_info);
+            IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
+            AVIS_TYPE (IDS_AVIS (arg_ids))
+              = TYcopyType (AVIS_TYPE (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign_let)))));
+        }
+
+        IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
+    } else {
+
+        if (TYisAKV (AVIS_TYPE (IDS_AVIS (arg_ids)))) {
+            new_co = TYgetValue (AVIS_TYPE (IDS_AVIS (arg_ids)));
+
+            LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (IDS_AVIS (arg_ids))))
+              = COconstant2AST (new_co);
+        }
+    }
+
+    DBUG_RETURN (arg_ids);
 }
 
 /********************************************************************
