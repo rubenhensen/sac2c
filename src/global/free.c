@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/08/04 14:27:32  bs
+ * Function FreeNCodeWLAA added.
+ *
  * Revision 2.8  1999/07/07 15:03:05  sbs
  * FreeVinfo now does not free VINFO_TYPE anymore since that is used in sharing!
  *
@@ -210,6 +213,20 @@ Free (void *addr)
  *
  */
 
+node *
+FreeNCodeWLAA (node *arg_node)
+{
+    DBUG_ENTER ("FreeNcodeWLAA");
+
+    if (NCODE_WLAA_INFO (arg_node) != NULL) {
+        NCODE_WLAA_ACCESS (arg_node) = FreeAllAccess (NCODE_WLAA_ACCESS (arg_node));
+        Free (NCODE_WLAA_INFO (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*--------------------------------------------------------------------------*/
 shpseg *
 FreeShpseg (shpseg *fr)
 {
@@ -1823,7 +1840,7 @@ FreeNCode (node *arg_node, node *arg_info)
     FREETRAV (NCODE_CEXPR (arg_node));
 
     NCODE_INC_RC_IDS (arg_node) = FreeAllIds (NCODE_INC_RC_IDS (arg_node));
-    NCODE_ACCESS (arg_node) = FreeAllAccess (NCODE_ACCESS (arg_node));
+    arg_node = FreeNCodeWLAA (arg_node);
 
     FREE (arg_node);
 
