@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.78  1998/04/30 12:22:16  srs
+ * removed duplication of NWITHOP_EXPR in DupNwithop()
+ *
  * Revision 1.77  1998/04/29 17:13:23  dkr
  * changed DupSpmd, DupSync
  *
@@ -958,7 +961,6 @@ DupNwithop (node *arg_node, node *arg_info)
     default:
         DBUG_ASSERT (0, "Unknown N_Nwithop-type found");
     }
-    NWITHOP_EXPR (new_node) = DUPTRAV (NWITHOP_EXPR (arg_node));
 
     DBUG_RETURN (new_node);
 }
