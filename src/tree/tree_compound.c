@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2003/06/13 09:27:27  ktr
+ * AdjustVectorShape now checks whether it was called with a NULL argument
+ *
  * Revision 3.76  2003/06/11 22:03:09  ktr
  * ARRAY_SHAPE added.
  *
@@ -3239,6 +3242,8 @@ node *
 AdjustVectorShape (node *array)
 {
     DBUG_ENTER ("AdjustVectorShape");
+
+    DBUG_ASSERT (array != NULL, "AdjustVectorShape called with NULL argument!");
 
     if (ARRAY_SHAPE (array) != NULL)
         SHFreeShape (ARRAY_SHAPE (array));
