@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2003/11/18 17:45:42  dkr
+ * CWCwithop(): all node sons are traversed now
+ *
  * Revision 1.16  2003/05/30 16:58:05  dkr
  * WrapperCodeIsNeeded() and WrapperCodeIsPossible() added
  *
@@ -631,7 +634,21 @@ CWCwithop (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CWCwithop");
 
-    if (NWITHOP_TYPE (arg_node) == WO_foldfun) {
+    switch (NWITHOP_TYPE (arg_node)) {
+    case WO_genarray:
+        NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
+        if (NWITHOP_DEFAULT (arg_node) != NULL) {
+            NWITHOP_DEFAULT (arg_node) = Trav (NWITHOP_DEFAULT (arg_node), arg_info);
+        }
+        break;
+
+    case WO_modarray:
+        NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
+        break;
+
+    case WO_foldfun:
+        NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
+
         args = MakeExprs (DupNode (NWITHOP_NEUTRAL (arg_node)), NULL);
         EXPRS_NEXT (args) = DupNode (args);
 
@@ -639,6 +656,17 @@ CWCwithop (node *arg_node, node *arg_info)
                                                           NWITHOP_FUN (arg_node), args);
 
         args = FreeTree (args);
+        break;
+
+    case WO_foldprf:
+        if (NWITHOP_NEUTRAL (arg_node) != NULL) {
+            NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
+        }
+        break;
+
+    default:
+        DBUG_ASSERT (FALSE, "corrupted WL tag found");
+        break;
     }
 
     DBUG_RETURN (arg_node);
