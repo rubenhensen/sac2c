@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.19  2001/03/05 17:01:33  sbs
+# zipcv.o and SSACSE.o added.
+#
 # Revision 3.18  2001/03/02 15:52:56  nmw
 # change_signature added
 #
@@ -192,7 +195,8 @@ PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/fun2lac.o
 CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/constants_struc_ops.o src/constants/constants_ari_ops.o \
-           src/constants/cv2cv.o src/constants/cv2scalar.o src/constants/cv2str.o
+           src/constants/cv2cv.o src/constants/cv2scalar.o src/constants/cv2str.o \
+           src/constants/zipcv.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o \
            src/typecheck/new_typecheck.o src/typecheck/new_types.o \
@@ -203,7 +207,7 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/Inline.o \
           src/optimize/Unroll.o src/optimize/WLUnroll.o src/optimize/Unswitch.o \
           src/optimize/CSE.o \
-          src/optimize/SSADeadCodeRemoval.o
+          src/optimize/SSADeadCodeRemoval.o src/optimize/SSACSE.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
 	src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
 	src/psi-opt/WithloopFolding.o src/psi-opt/WLT.o src/psi-opt/WLI.o \
