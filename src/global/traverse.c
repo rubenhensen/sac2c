@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/02/07 10:59:23  asi
+ * Revision 1.13  1995/02/13 17:22:28  asi
+ * added include files ConstantFolding.h and DeadCodeRemoval.h
+ *
+ * Revision 1.12  1995/02/07  10:59:23  asi
  * renamed opt1_tab -> opt_tab, opt2_tab -> dead_tab, opt3_tab -> lir.tab and
  * added functionlist cf_tab for constant folding
  *
@@ -55,6 +58,8 @@
 #include "print.h"
 #include "typecheck.h"
 #include "optimize.h"
+#include "ConstantFolding.h"
+#include "DeadCodeRemoval.h"
 #include "import.h"
 
 #include "traverse.h"
