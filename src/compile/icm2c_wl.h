@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/08/07 12:37:37  dkr
+ * signature of WL_ADJUST_OFFSET changed
+ *
  * Revision 1.14  1998/06/29 08:55:51  cg
  * added new multi-threaded versions of new with-loop begin/end ICMs
  * added compilation of ICM WL_MT_SCHEDULER_SET_OFFSET
@@ -72,7 +75,8 @@ extern void ICMCompileWL_FOLD_NOOP (int dim, int dims_target, char *target, char
                                     int dims, char **idx_scalars, int cnt_bounds,
                                     char **bounds);
 
-extern void ICMCompileWL_ADJUST_OFFSET (int dim, int dims_target, char *target,
-                                        char *idx_vec, int dims, char **idx_scalars);
+extern void ICMCompileWL_ADJUST_OFFSET (int dim, int first_block_dim, int dims_target,
+                                        char *target, char *idx_vec, int dims,
+                                        char **idx_scalars);
 
 #endif /* _icm2c_wl_h */
