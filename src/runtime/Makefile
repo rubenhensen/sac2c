@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.9  1999/05/20 14:53:53  dkr
+# path to main_args.o ist now correct
+#
 # Revision 2.8  1999/05/20 14:13:44  cg
 # Compilation of CacheSimAnalyser streamlined:
 # it is now linked with the SAC runtime library.
@@ -86,7 +89,7 @@ INCS := -I../global -I../../inc
 LIBS := -L.
 
 OBJS := $(patsubst %.c,%.o,$(wildcard libsac_*.c)) libsac_trace_mt.o\
-        libsac_cachesim_access_advanced.o ../../lib/main_args.o
+        libsac_cachesim_access_advanced.o ../../lib/src/main_args.o
 
 
 .PHONY: all tar
