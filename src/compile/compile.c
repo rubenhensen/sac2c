@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2001/03/14 15:55:04  dkr
+ * ups, typo in InsertIcm_MT_ADJUST_SCHEDULER corrected ...
+ *
  * Revision 3.24  2001/03/14 15:38:08  ben
  * actual parameters for MT_ADJUST_SCHEDULER icm corrected
  *
@@ -5088,9 +5091,9 @@ InsertIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
     DBUG_ENTER ("InsertIcm_MT_ADJUST_SCHEDULER");
 
     DBUG_ASSERT (((NODE_TYPE (arg_node) == N_WLblock)
-                    || (NODE_TYPE (arg_node) == N_WLublock)
-                    || (NODE_TYPE (arg_node) == N_WLstride) ||,
-                  (NODE_TYPE (arg_node) == N_WLstrideVar)),
+                  || (NODE_TYPE (arg_node) == N_WLublock)
+                  || (NODE_TYPE (arg_node) == N_WLstride)
+                  || (NODE_TYPE (arg_node) == N_WLstrideVar)),
                  "illegal WL-node found!");
 
     dim = WLNODE_DIM (arg_node);
