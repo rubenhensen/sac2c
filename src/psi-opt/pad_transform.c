@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2000/07/05 15:33:43  mab
+ * with-loop completed (with-op, with-code and supporting functions)
+ *
  * Revision 1.8  2000/06/30 15:22:58  mab
  * started implementing APTwithop
  * implemented dummy code generation for with loop
@@ -167,6 +170,131 @@ PadIds (ids *arg, node *arg_info)
 /*****************************************************************************
  *
  * function:
+ *   static shpseg* LBound(shpseg* old_shape, int dims, int current_dim)
+ *
+ * description:
+ *   calculate lower bound for generator-node in current_dim
+ *   be carefull: (lower_bound <= idx < upper_bound) required!
+ *
+ *****************************************************************************/
+
+static shpseg *
+LBound (shpseg *old_shape, int dims, int current_dim)
+{
+
+    int j;
+    shpseg *lbound_shape;
+
+    DBUG_ENTER ("LBound");
+
+    lbound_shape = MakeShpseg (NULL);
+    for (j = 0; j < dims; j++) {
+        if (j == current_dim) {
+            SHPSEG_SHAPE (lbound_shape, j) = SHPSEG_SHAPE (old_shape, j) - 1;
+        } else {
+            SHPSEG_SHAPE (lbound_shape, j) = 0;
+        }
+    }
+
+    DBUG_RETURN (lbound_shape);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   static shpseg* UBound(shpseg* old_shape, shpseg* new_shape, int dims,
+ *                         int current_dim)
+ *
+ * description:
+ *   calculate (upper bound +1) for generator-node in current_dim
+ *   be carefull: (lower_bound <= idx < upper_bound) required!
+ *
+ *****************************************************************************/
+
+static shpseg *
+UBound (shpseg *old_shape, shpseg *new_shape, int dims, int current_dim)
+{
+
+    int j;
+    shpseg *ubound_shape;
+
+    DBUG_ENTER ("UBound");
+
+    ubound_shape = MakeShpseg (NULL);
+    for (j = 0; j < dims; j++) {
+        if (j <= current_dim) {
+            SHPSEG_SHAPE (ubound_shape, j) = SHPSEG_SHAPE (new_shape, j);
+        } else {
+            SHPSEG_SHAPE (ubound_shape, j) = SHPSEG_SHAPE (old_shape, j);
+        }
+    }
+
+    DBUG_RETURN (ubound_shape);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   static node* AddDummyPart(node* with_node, shpseg* old_shape,
+ *                             shpseg* new_shape, int dims)
+ *
+ * description:
+ *   add dummy part-nodes to with-node depending on shape-difference
+ *   This ensures the padded space in the array to be filled up with 0-values.
+ *
+ *****************************************************************************/
+
+static node *
+AddDummyPart (node *with_node, shpseg *old_shape, shpseg *new_shape, int dims)
+{
+
+    int i;
+    shpseg *lbound_shape;
+    shpseg *ubound_shape;
+    node *lbound_array_node;
+    node *ubound_array_node;
+    node *withid_node;
+    node *part_node;
+    node *generator_node;
+    node *code_node;
+
+    DBUG_ENTER ("AddDummyPart");
+
+    /* dummy code put at the beginning of code-chain by AddDummyCode */
+    code_node = NWITH_CODE (with_node);
+
+    for (i = 0; i < dims; i++) {
+
+        /* padding required in this dimension? */
+
+        if (SHPSEG_SHAPE (old_shape, i) != SHPSEG_SHAPE (new_shape, i)) {
+            lbound_shape = LBound (old_shape, dims, i);
+            ubound_shape = UBound (old_shape, new_shape, dims, i);
+            lbound_array_node = Shpseg2Array (lbound_shape, dims);
+            ubound_array_node = Shpseg2Array (ubound_shape, dims);
+            FreeShpseg (lbound_shape);
+            FreeShpseg (ubound_shape);
+
+            /* generate (lower_bound <= idx < upper_bound) */
+            generator_node = MakeNGenerator (lbound_array_node, ubound_array_node, F_le,
+                                             F_lt, NULL, NULL);
+            /* copy reference to idx-variable from existing withid-node
+             * (remember that there is only ONE idx-variable for all part-nodes
+             *  of a with-loop!)
+             */
+            withid_node = DupNode (NPART_WITHID (NWITH_PART (with_node)));
+            part_node = MakeNPart (withid_node, generator_node, code_node);
+            NPART_NEXT (part_node) = NWITH_PART (with_node);
+            NWITH_PART (with_node) = part_node;
+        }
+    }
+
+    DBUG_RETURN (with_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
  *   static node* AddDummyCode(node* with_node)
  *
  * description:
@@ -217,6 +345,13 @@ AddDummyCode (node *with_node)
     ID_VARDEC (id_node) = vardec_node;
     code_node = MakeNCode (block_node, id_node);
 
+    /* tag dummy code to identify it in further optimizations */
+    NCODE_APT_DUMMY_CODE (code_node) = TRUE;
+
+    /* put dummy code at beginning of code-chain (required by AddDummyPart !!!) */
+    NCODE_NEXT (code_node) = NWITH_CODE (with_node);
+    NWITH_CODE (with_node) = code_node;
+
     DBUG_RETURN (vardec_node);
 }
 
@@ -256,9 +391,11 @@ InsertWithLoopGenerator (types *oldtype, types *newtype, node *with_node)
         /* add code block */
         assignment_vardec = AddDummyCode (with_node);
 
-        /* add nodes to part */
+        /* @@@ WHERE TO LINK assignment_vardec ??? */
 
-        /* @@@ CONTINUE (insert new PART-nodes) */
+        /* add nodes to part */
+        with_node = AddDummyPart (with_node, TYPES_SHPSEG (oldtype),
+                                  TYPES_SHPSEG (newtype), TYPES_DIM (oldtype));
     }
 
     DBUG_VOID_RETURN;
@@ -493,7 +630,7 @@ APTgenerator (node *arg_node, node *arg_info)
  *   node *APTcode(node *arg_node, node *arg_info)
  *
  * description:
- *   only a dummy for now
+ *   apply padding to ids-attribute and traverse sons
  *
  *****************************************************************************/
 
@@ -501,9 +638,29 @@ node *
 APTcode (node *arg_node, node *arg_info)
 {
 
+    bool rhs_padded;
+
     DBUG_ENTER ("APTcode");
 
     DBUG_PRINT ("APT", ("code-node detected"));
+
+    /* traverse code block */
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    rhs_padded = INFO_APT_EXPRESSION_PADDED (arg_info);
+
+    /* pad ids-attribute, if necessarry */
+    arg_info = PadIds (NCODE_CEXPR (arg_node), arg_info);
+
+    /*
+     * enable for consistency checking
+     * requires shape information from pad_infer!
+     * @@@
+     * DBUG_ASSERT((!rhs_padded&&INFO_APT_EXPRESSION_PADDED(arg_info))," padded lvalue
+     * does not match unpadded rvalue!");
+     */
+
+    /* traverse following code blocks */
+    NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -553,31 +710,33 @@ APTwithop (node *arg_node, node *arg_info)
            Attention: only elements with scalar types are supported yet !!!
         */
         oldtype = MakeType (simpletype, dim, shape, NULL, NULL);
-        newtype = PIgetNewType (oldtype);
+        newtype = PIgetNewType (DupTypes (oldtype));
 
         if (newtype != NULL) {
             /* apply padding (genarray-specific)*/
             INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
 
-            /* @@@ CONTINUE (free newtype? !oldshape is used later!)*/
-            /* pad shape of new array specified in NWITHOP_SHAPE */
-        } else {
-            /* do not apply padding */
-            FreeOneTypes (oldtype);
+            /* pad shape of new array specified in NWITHOP_SHAPE (pointing to array-node)
+             */
+
+            FreeNode (NWITHOP_SHAPE (arg_node));
+            NWITHOP_SHAPE (arg_node)
+              = Shpseg2Array (TYPES_SHPSEG (newtype), TYPES_DIM (newtype));
         }
+
         break;
 
     case WO_modarray:
 
-        oldtype = ID_TYPE (NWITHOP_ARRAY (arg_node));
-        newtype = PIgetNewType (oldtype);
+        oldtype = DupTypes (ID_TYPE (NWITHOP_ARRAY (arg_node)));
+        newtype = PIgetNewType (DupTypes (oldtype));
 
         if (newtype != NULL) {
             /* apply padding (modarray-specific)*/
             INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
 
-            /* @@@ CONTINUE (free newtype? !oldshape is used later!)*/
-            /* pad array referenced by NWITHOP_ARRAY */
+            /* pad array referenced by NWITHOP_ARRAY (pointing to id-node)*/
+            NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
         }
 
         break;
@@ -594,6 +753,10 @@ APTwithop (node *arg_node, node *arg_info)
             InsertWithLoopGenerator (oldtype, newtype, INFO_APT_WITH (arg_info));
         }
     }
+
+    /* free data structures */
+    FreeOneTypes (oldtype);
+    FreeOneTypes (newtype);
 
     DBUG_RETURN (arg_node);
 }
@@ -857,7 +1020,7 @@ APTlet (node *arg_node, node *arg_info)
     /*
      * enable for consistency checking
      * requires shape information from pad_infer!
-     *
+     * @@@
      * DBUG_ASSERT((!rhs_padded&&INFO_APT_EXPRESSION_PADDED(arg_info))," padded lvalue
      * does not match unpadded rvalue!");
      */
