@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.29  2001/05/11 14:42:36  cg
+# Added linking of new file icm2c_sched.o
+#
 # Revision 3.28  2001/05/02 07:57:34  nmw
 # basecv.o added
 #
@@ -269,8 +272,8 @@ COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/precompile.o \
           src/compile/compile.o src/compile/gen_startup_code.o \
           src/compile/icm2c.o src/compile/icm2c_std.o src/compile/icm2c_mt.o \
-          src/compile/icm2c_wl.o src/compile/ReuseWithArrays.o \
-          src/compile/PatchWith.o
+          src/compile/icm2c_sched.o src/compile/icm2c_wl.o  \
+          src/compile/ReuseWithArrays.o src/compile/PatchWith.o
 
 CINTERFACE= src/c-interface/map_cwrapper.o src/c-interface/print_interface.o \
             src/c-interface/import_specialization.o \
