@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2004/11/26 13:12:18  khf
+ * SacDevCamp04: COMPILES!!
+ *
  * Revision 1.14  2004/11/21 11:22:03  sah
  * removed some old ast infos
  *
@@ -56,14 +59,17 @@
  *   this module implements a literal tree compare for two given parts of
  *   the ast. it compares for equal structre, identifiers and values.
  *   this modules is used by SSACSE to find common subexpressions.
+ *   WARNING: THIS MODULE USES NEW TYPES ONLY!!
  *
  *****************************************************************************/
 
-#define NEW_INFO
+#include <string.h>
 
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "traverse_helper.h"
+#include "new_types.h"
 #include "internal_lib.h"
 #include "dbug.h"
 #include "traverse.h"
@@ -76,7 +82,7 @@
 struct INFO {
     cmptree_t eqflag;
     node *tree;
-    LUT_t lut;
+    lut_t *lut;
     int writelut;
 };
 
@@ -98,7 +104,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_CMPT_EQFLAG (result) = CMPT_UKNWN;
     INFO_CMPT_TREE (result) = NULL;
@@ -113,13 +119,10 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
-
-static ids *TravIDS (ids *arg_ids, info *arg_info);
-static ids *CMPTids (ids *arg_ids, info *arg_info);
 
 /*
  * flag = CMP_TEST( flag, testcond ):
@@ -128,6 +131,53 @@ static ids *CMPTids (ids *arg_ids, info *arg_info);
  */
 #define CMPT_TEST(flag, testcond)                                                        \
     ((((flag) == CMPT_EQ) && (!(testcond))) ? CMPT_NEQ : (flag))
+
+/******************************************************************************
+ *
+ * function:
+ *   node *TravLocal(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   traverses all sons of the given node and sets the corresponding
+ *   son in the second tree stored in INFO_CMPT_TREE. If the second tree
+ *   attribute.
+ *   if only one attribute of the both trees is NULL,
+ *   set INFO_CMPT_EQFLAG to CMPT_NEQ.
+ *   if this flag is set to CMPT_NEQ the traversal is stopped.
+ *
+ ******************************************************************************/
+static node *
+TravLocal (node *arg_node, info *arg_info)
+{
+    node *arg_node2;
+    int i;
+
+    DBUG_ENTER ("TravLocal");
+
+    arg_node2 = INFO_CMPT_TREE (arg_info);
+
+    for (i = 0; i < TRAVnumSons (arg_node); i++) {
+        /* process every son of node */
+        if (INFO_CMPT_EQFLAG (arg_info) == CMPT_EQ) {
+            if (TRAVgetSon (i, arg_node) != NULL) {
+                /* start traversal of son */
+                INFO_CMPT_TREE (arg_info) = TRAVgetSon (i, arg_node2);
+                TRAVdo (TRAVgetSon (i, arg_node), arg_info);
+            } else {
+                /* check, if second tree is also NULL */
+                if (TRAVgetSon (i, arg_node2) != NULL) {
+                    INFO_CMPT_EQFLAG (arg_info) = CMPT_NEQ;
+                }
+            }
+        } else {
+            /* stop further traversals */
+            i = TRAVnumSons (arg_node) + 1;
+        }
+    }
+
+    INFO_CMPT_TREE (arg_info) = arg_node2;
+    DBUG_RETURN (arg_node);
+}
 
 /******************************************************************************
  *
@@ -228,21 +278,74 @@ CMPTid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTid");
 
-    if (INFO_CMPT_LUT (arg_info) == NULL)
+    if (INFO_CMPT_LUT (arg_info) == NULL) {
         INFO_CMPT_EQFLAG (arg_info)
           = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
                        ID_AVIS (arg_node) == ID_AVIS (INFO_CMPT_TREE (arg_info)));
-    else if (INFO_CMPT_WRITELUT (arg_info) == FALSE)
-        INFO_CMPT_EQFLAG (arg_info)
-          = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
-                       ID_AVIS (arg_node)
-                         == SearchInLUT_PP (INFO_CMPT_LUT (arg_info),
-                                            ID_AVIS (INFO_CMPT_TREE (arg_info))));
-    else
-        InsertIntoLUT_P (INFO_CMPT_LUT (arg_info), ID_AVIS (INFO_CMPT_TREE (arg_info)),
-                         ID_AVIS (arg_node));
+    } else {
+        if (INFO_CMPT_WRITELUT (arg_info) == FALSE) {
+            INFO_CMPT_EQFLAG (arg_info)
+              = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
+                           ID_AVIS (arg_node)
+                             == LUTsearchInLutPp (INFO_CMPT_LUT (arg_info),
+                                                  ID_AVIS (INFO_CMPT_TREE (arg_info))));
+        } else {
+            LUTinsertIntoLutP (INFO_CMPT_LUT (arg_info),
+                               ID_AVIS (INFO_CMPT_TREE (arg_info)), ID_AVIS (arg_node));
+        }
+    }
 
     DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CMPTids(node *arg_ids, info *arg_info)
+ *
+ * description:
+ *   there are some ugly casts between node* and ids* to handle ids chain
+ *   with usual INFO_CMPT_TREE atribute.
+ *
+ ******************************************************************************/
+node *
+CMPTids (node *arg_ids, info *arg_info)
+{
+    DBUG_ENTER ("CMPTids");
+
+    /* only one of the sons is NULL, so tree1 and tree2 cannot be equal */
+    if (((arg_ids == NULL) || (INFO_CMPT_TREE (arg_info) == NULL))
+        && (arg_ids != (INFO_CMPT_TREE (arg_info)))) {
+        INFO_CMPT_EQFLAG (arg_info) = CMPT_NEQ;
+    }
+
+    if ((arg_ids != NULL) && (INFO_CMPT_TREE (arg_info) != NULL)
+        && (INFO_CMPT_EQFLAG (arg_info) == CMPT_EQ)) {
+
+        if (INFO_CMPT_LUT (arg_info) == NULL) {
+            INFO_CMPT_EQFLAG (arg_info)
+              = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
+                           IDS_AVIS (arg_ids) == IDS_AVIS ((INFO_CMPT_TREE (arg_info))));
+        } else {
+            if (INFO_CMPT_WRITELUT (arg_info) == FALSE) {
+                INFO_CMPT_EQFLAG (arg_info)
+                  = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
+                               IDS_AVIS (arg_ids)
+                                 == LUTsearchInLutPp (INFO_CMPT_LUT (arg_info),
+                                                      IDS_AVIS (
+                                                        (INFO_CMPT_TREE (arg_info)))));
+            } else {
+                LUTinsertIntoLutP (INFO_CMPT_LUT (arg_info),
+                                   IDS_AVIS ((INFO_CMPT_TREE (arg_info))),
+                                   IDS_AVIS (arg_ids));
+            }
+        }
+        if (IDS_NEXT (arg_ids) != NULL) {
+            INFO_CMPT_TREE (arg_info) = (IDS_NEXT ((INFO_CMPT_TREE (arg_info))));
+            IDS_NEXT (arg_ids) = TravLocal (IDS_NEXT (arg_ids), arg_info);
+        }
+    }
+    DBUG_RETURN (arg_ids);
 }
 
 /******************************************************************************
@@ -303,12 +406,12 @@ CMPTarray (node *arg_node, info *arg_info)
 
     INFO_CMPT_EQFLAG (arg_info)
       = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
-                   CmpTypes (ARRAY_TYPE (arg_node),
-                             ARRAY_TYPE (INFO_CMPT_TREE (arg_info)))
+                   TYcmpTypes (ARRAY_NTYPE (arg_node),
+                               ARRAY_NTYPE (INFO_CMPT_TREE (arg_info)))
                      == 1);
 
     /* traverse ArrayElements (the real son) */
-    arg_node = CMPTTravSons (arg_node, arg_info);
+    arg_node = TravLocal (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -336,8 +439,8 @@ CMPTlet (node *arg_node, info *arg_info)
     INFO_CMPT_WRITELUT (arg_info) = TRUE;
     /* traverse ids-chain */
     if ((INFO_CMPT_EQFLAG (arg_info) == CMPT_EQ) && (LET_IDS (arg_node) != NULL)) {
-        INFO_CMPT_TREE (arg_info) = (node *)(LET_IDS (INFO_CMPT_TREE (arg_info)));
-        LET_IDS (arg_node) = TravIDS (LET_IDS (arg_node), arg_info);
+        INFO_CMPT_TREE (arg_info) = (LET_IDS (INFO_CMPT_TREE (arg_info)));
+        LET_IDS (arg_node) = TravLocal (LET_IDS (arg_node), arg_info);
     }
 
     INFO_CMPT_WRITELUT (arg_info) = FALSE;
@@ -346,7 +449,7 @@ CMPTlet (node *arg_node, info *arg_info)
     INFO_CMPT_TREE (arg_info) = let_node2;
 
     /* traverse expr (the real son) */
-    arg_node = CMPTTravSons (arg_node, arg_info);
+    arg_node = TravLocal (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -370,7 +473,7 @@ CMPTprf (node *arg_node, info *arg_info)
                    PRF_PRF (arg_node) == PRF_PRF (INFO_CMPT_TREE (arg_info)));
 
     /* traverse args (the real son) */
-    arg_node = CMPTTravSons (arg_node, arg_info);
+    arg_node = TravLocal (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -394,7 +497,7 @@ CMPTap (node *arg_node, info *arg_info)
                    AP_FUNDEF (arg_node) == AP_FUNDEF (INFO_CMPT_TREE (arg_info)));
 
     /* traverse args (the real son) */
-    arg_node = CMPTTravSons (arg_node, arg_info);
+    arg_node = TravLocal (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -402,35 +505,35 @@ CMPTap (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTNwithid(node *arg_node, info *arg_info)
+ *   node* CMPTwithid(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse ids chains (VEC and IDS)
  *
  ******************************************************************************/
 node *
-CMPTNwithid (node *arg_node, info *arg_info)
+CMPTwithid (node *arg_node, info *arg_info)
 {
     node *withid_node2;
 
-    DBUG_ENTER ("CMPTNwithid");
+    DBUG_ENTER ("CMPTwithid");
 
     /* save current compare node */
     withid_node2 = INFO_CMPT_TREE (arg_info);
 
     /* traverse IDS-chain */
-    if ((INFO_CMPT_EQFLAG (arg_info) == CMPT_EQ) && (NWITHID_IDS (arg_node) != NULL)) {
-        INFO_CMPT_TREE (arg_info) = (node *)(NWITHID_IDS (INFO_CMPT_TREE (arg_info)));
-        NWITHID_IDS (arg_node) = TravIDS (NWITHID_IDS (arg_node), arg_info);
+    if ((INFO_CMPT_EQFLAG (arg_info) == CMPT_EQ) && (WITHID_IDS (arg_node) != NULL)) {
+        INFO_CMPT_TREE (arg_info) = WITHID_IDS (INFO_CMPT_TREE (arg_info));
+        WITHID_IDS (arg_node) = TravLocal (WITHID_IDS (arg_node), arg_info);
     }
 
     /* restore current compare node */
     INFO_CMPT_TREE (arg_info) = withid_node2;
 
     /* traverse VEC-chain */
-    if ((INFO_CMPT_EQFLAG (arg_info) == CMPT_EQ) && (NWITHID_VEC (arg_node) != NULL)) {
-        INFO_CMPT_TREE (arg_info) = (node *)(NWITHID_VEC (INFO_CMPT_TREE (arg_info)));
-        NWITHID_VEC (arg_node) = TravIDS (NWITHID_VEC (arg_node), arg_info);
+    if ((INFO_CMPT_EQFLAG (arg_info) == CMPT_EQ) && (WITHID_VEC (arg_node) != NULL)) {
+        INFO_CMPT_TREE (arg_info) = WITHID_VEC (INFO_CMPT_TREE (arg_info));
+        WITHID_VEC (arg_node) = TravLocal (WITHID_VEC (arg_node), arg_info);
     }
 
     /* restore current compare node */
@@ -442,35 +545,37 @@ CMPTNwithid (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTNgenerator(node *arg_node, info *arg_info)
+ *   node* CMPTgenerator(node *arg_node, info *arg_info)
  *
  * description:
  *   checks all attributes and traverses sons
  *
  ******************************************************************************/
 node *
-CMPTNgenerator (node *arg_node, info *arg_info)
+CMPTgenerator (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTNgenerator");
+    DBUG_ENTER ("CMPTgenerator");
 
     INFO_CMPT_EQFLAG (arg_info)
       = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
-                   NGEN_OP1 (arg_node) == NGEN_OP1 (INFO_CMPT_TREE (arg_info)));
+                   GENERATOR_OP1 (arg_node) == GENERATOR_OP1 (INFO_CMPT_TREE (arg_info)));
 
     INFO_CMPT_EQFLAG (arg_info)
       = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
-                   NGEN_OP2 (arg_node) == NGEN_OP2 (INFO_CMPT_TREE (arg_info)));
+                   GENERATOR_OP2 (arg_node) == GENERATOR_OP2 (INFO_CMPT_TREE (arg_info)));
 
     INFO_CMPT_EQFLAG (arg_info)
       = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
-                   NGEN_OP1_ORIG (arg_node) == NGEN_OP1_ORIG (INFO_CMPT_TREE (arg_info)));
+                   GENERATOR_OP1_ORIG (arg_node)
+                     == GENERATOR_OP1_ORIG (INFO_CMPT_TREE (arg_info)));
 
     INFO_CMPT_EQFLAG (arg_info)
       = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
-                   NGEN_OP2_ORIG (arg_node) == NGEN_OP2_ORIG (INFO_CMPT_TREE (arg_info)));
+                   GENERATOR_OP2_ORIG (arg_node)
+                     == GENERATOR_OP2_ORIG (INFO_CMPT_TREE (arg_info)));
 
     /* traverse all sons */
-    arg_node = CMPTTravSons (arg_node, arg_info);
+    arg_node = TravLocal (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -478,35 +583,24 @@ CMPTNgenerator (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTNwithop(node *arg_node, info *arg_info)
+ *   node* CMPTgenarray(node *arg_node, info *arg_info)
  *
  * description:
  *
  *
  ******************************************************************************/
 node *
-CMPTNwithop (node *arg_node, info *arg_info)
+CMPTgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTNwithop");
+    DBUG_ENTER ("CMPTgenarray");
 
     /* compare attributes */
     INFO_CMPT_EQFLAG (arg_info)
       = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
-                   NWITHOP_TYPE (arg_node) == NWITHOP_TYPE (INFO_CMPT_TREE (arg_info)));
-
-    if (NWITHOP_TYPE (arg_node) == WO_foldprf) {
-        INFO_CMPT_EQFLAG (arg_info)
-          = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
-                       NWITHOP_PRF (arg_node) == NWITHOP_PRF (INFO_CMPT_TREE (arg_info)));
-    } else if (NWITHOP_TYPE (arg_node) == WO_foldfun) {
-        INFO_CMPT_EQFLAG (arg_info)
-          = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
-                       NWITHOP_FUNDEF (arg_node)
-                         == NWITHOP_FUNDEF (INFO_CMPT_TREE (arg_info)));
-    }
+                   NODE_TYPE (arg_node) == NODE_TYPE (INFO_CMPT_TREE (arg_info)));
 
     /* traverse all sons */
-    arg_node = CMPTTravSons (arg_node, arg_info);
+    arg_node = TravLocal (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -514,14 +608,72 @@ CMPTNwithop (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CMPTNcode(node *arg_node, info *arg_info)
+ *   node* CMPTmodarray(node *arg_node, info *arg_info)
  *
  * description:
  *
  *
  ******************************************************************************/
 node *
-CMPTNcode (node *arg_node, info *arg_info)
+CMPTmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTmodarray");
+
+    /* compare attributes */
+    INFO_CMPT_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
+                   NODE_TYPE (arg_node) == NODE_TYPE (INFO_CMPT_TREE (arg_info)));
+
+    /* traverse all sons */
+    arg_node = TravLocal (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTfold(node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+node *
+CMPTfold (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTfold");
+
+    /* compare attributes */
+    INFO_CMPT_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
+                   NODE_TYPE (arg_node) == NODE_TYPE (INFO_CMPT_TREE (arg_info)));
+
+    INFO_CMPT_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
+                   FOLD_PRF (arg_node) == FOLD_PRF (INFO_CMPT_TREE (arg_info)));
+
+    INFO_CMPT_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
+                   FOLD_FUNDEF (arg_node) == FOLD_FUNDEF (INFO_CMPT_TREE (arg_info)));
+
+    /* traverse all sons */
+    arg_node = TravLocal (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTcode(node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+node *
+CMPTcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTNcode");
 
@@ -529,10 +681,34 @@ CMPTNcode (node *arg_node, info *arg_info)
     if (INFO_CMPT_LUT (arg_info) == NULL)
         INFO_CMPT_EQFLAG (arg_info)
           = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
-                       NCODE_USED (arg_node) == NCODE_USED (INFO_CMPT_TREE (arg_info)));
+                       CODE_USED (arg_node) == CODE_USED (INFO_CMPT_TREE (arg_info)));
 
     /* traverse all sons */
-    arg_node = CMPTTravSons (arg_node, arg_info);
+    arg_node = TravLocal (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTglobobj(node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+extern node *
+CMPTglobobj (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("CMPTgloboj");
+
+    INFO_CMPT_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
+                   GLOBOBJ_OBJDEF (arg_node)
+                     == GLOBOBJ_OBJDEF (INFO_CMPT_TREE (arg_info)));
 
     DBUG_RETURN (arg_node);
 }
@@ -560,118 +736,180 @@ CMPTunknown (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   static ids *CMPTids(ids *arg_ids, info *arg_info)
+ *   node* CMPTblock(node *arg_node, info *arg_info)
  *
- * description:
- *   there are some ugly casts between node* and ids* to handle ids chain
- *   with usual INFO_CMPT_TREE atribute.
+ * description: call of local traverse mechanism
+ *
  *
  ******************************************************************************/
-static ids *
-CMPTids (ids *arg_ids, info *arg_info)
+
+extern node *
+CMPTblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTids");
+    DBUG_ENTER ("CMPTblock");
 
-    /* only one of the sons is NULL, so tree1 and tree2 cannot be equal */
-    if (((arg_ids == NULL) || (INFO_CMPT_TREE (arg_info) == NULL))
-        && (arg_ids != (ids *)(INFO_CMPT_TREE (arg_info)))) {
-        INFO_CMPT_EQFLAG (arg_info) = CMPT_NEQ;
-    }
+    arg_node = TravLocal (arg_node, arg_info);
 
-    if ((arg_ids != NULL) && (INFO_CMPT_TREE (arg_info) != NULL)
-        && (INFO_CMPT_EQFLAG (arg_info) == CMPT_EQ)) {
-
-        if (INFO_CMPT_LUT (arg_info) == NULL)
-            INFO_CMPT_EQFLAG (arg_info)
-              = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
-                           IDS_AVIS (arg_ids)
-                             == IDS_AVIS (((ids *)INFO_CMPT_TREE (arg_info))));
-        else if (INFO_CMPT_WRITELUT (arg_info) == FALSE)
-            INFO_CMPT_EQFLAG (arg_info)
-              = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
-                           IDS_AVIS (arg_ids)
-                             == SearchInLUT_PP (INFO_CMPT_LUT (arg_info),
-                                                IDS_AVIS (
-                                                  ((ids *)INFO_CMPT_TREE (arg_info)))));
-        else
-            InsertIntoLUT_P (INFO_CMPT_LUT (arg_info),
-                             IDS_AVIS (((ids *)INFO_CMPT_TREE (arg_info))),
-                             IDS_AVIS (arg_ids));
-
-        if (IDS_NEXT (arg_ids) != NULL) {
-            INFO_CMPT_TREE (arg_info)
-              = (node *)(IDS_NEXT (((ids *)INFO_CMPT_TREE (arg_info))));
-            IDS_NEXT (arg_ids) = TravIDS (IDS_NEXT (arg_ids), arg_info);
-        }
-    }
-    DBUG_RETURN (arg_ids);
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
  *
  * function:
- *   ids *TravIDS(ids *arg_ids, info *arg_info)
+ *   node* CMPTassign(node *arg_node, info *arg_info)
  *
- * description:
- *   similar implementation of trav mechanism as used for nodes
- *   here used for ids.
+ * description: call of local traverse mechanism
+ *
  *
  ******************************************************************************/
-static ids *
-TravIDS (ids *arg_ids, info *arg_info)
+
+extern node *
+CMPTassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TravIDS");
+    DBUG_ENTER ("CMPTassign");
 
-    DBUG_ASSERT (arg_ids != NULL, "traversal in NULL ids");
-    arg_ids = CMPTids (arg_ids, arg_info);
+    arg_node = TravLocal (arg_node, arg_info);
 
-    DBUG_RETURN (arg_ids);
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *CMPTTravSons(node *arg_node, info *arg_info)
+ *   node* CMPTreturn(node *arg_node, info *arg_info)
  *
- * description:
- *   traverses all sons of the given node and sets the corresponding
- *   son in the second tree stored in INFO_CMPT_TREE. If the second tree
- *   attribute.
- *   if only one attribute of the both trees is NULL,
- *   set INFO_CMPT_EQFLAG to CMPT_NEQ.
- *   if this flag is set to CMPT_NEQ the traversal is stopped.
+ * description: call of local traverse mechanism
+ *
  *
  ******************************************************************************/
-node *
-CMPTTravSons (node *arg_node, info *arg_info)
+
+extern node *
+CMPTreturn (node *arg_node, info *arg_info)
 {
-    node *arg_node2;
-    int i;
+    DBUG_ENTER ("CMPTreturn");
 
-    DBUG_ENTER ("CMPTTravSons");
+    arg_node = TravLocal (arg_node, arg_info);
 
-    arg_node2 = INFO_CMPT_TREE (arg_info);
+    DBUG_RETURN (arg_node);
+}
 
-    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++) {
-        /* process every son of node */
-        if (INFO_CMPT_EQFLAG (arg_info) == CMPT_EQ) {
-            if (arg_node->node[i] != NULL) {
-                /* start traversal of son */
-                INFO_CMPT_TREE (arg_info) = arg_node2->node[i];
-                arg_node->node[i] = Trav (arg_node->node[i], arg_info);
-            } else {
-                /* check, if second tree is also NULL */
-                if (arg_node2->node[i] != NULL) {
-                    INFO_CMPT_EQFLAG (arg_info) = CMPT_NEQ;
-                }
-            }
-        } else {
-            /* stop further traversals */
-            i = nnode[NODE_TYPE (arg_node)] + 1;
-        }
-    }
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTcond(node *arg_node, info *arg_info)
+ *
+ * description: call of local traverse mechanism
+ *
+ *
+ ******************************************************************************/
 
-    INFO_CMPT_TREE (arg_info) = arg_node2;
+extern node *
+CMPTcond (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTcond");
+
+    arg_node = TravLocal (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPwith(node *arg_node, info *arg_info)
+ *
+ * description: call of local traverse mechanism
+ *
+ *
+ ******************************************************************************/
+
+extern node *
+CMPTwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTwith");
+
+    arg_node = TravLocal (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTpart(node *arg_node, info *arg_info)
+ *
+ * description: call of local traverse mechanism
+ *
+ *
+ ******************************************************************************/
+
+extern node *
+CMPTpart (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTpart");
+
+    arg_node = TravLocal (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTdo(node *arg_node, info *arg_info)
+ *
+ * description: call of local traverse mechanism
+ *
+ *
+ ******************************************************************************/
+
+extern node *
+CMPTdo (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTdo");
+
+    arg_node = TravLocal (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTexprs(node *arg_node, info *arg_info)
+ *
+ * description: call of local traverse mechanism
+ *
+ *
+ ******************************************************************************/
+
+extern node *
+CMPTexprs (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTexprs");
+
+    arg_node = TravLocal (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTempty(node *arg_node, info *arg_info)
+ *
+ * description: call of local traverse mechanism
+ *
+ *
+ ******************************************************************************/
+
+extern node *
+CMPTempty (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMPTempty");
+
+    arg_node = TravLocal (arg_node, arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
@@ -711,7 +949,7 @@ CMPTnodeType (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   cmptree_t CompareTree(node* tree1, node *tree2)
+ *   cmptree_t CMPTdoCompareTree(node* tree1, node *tree2)
  *
  * description:
  *   starts traversal of tree1 to compare it with tree2.
@@ -721,13 +959,12 @@ CMPTnodeType (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 cmptree_t
-CompareTree (node *tree1, node *tree2)
+CMPTdoCompareTree (node *tree1, node *tree2)
 {
     cmptree_t result;
     info *arg_info;
-    funtab *old_tab;
 
-    DBUG_ENTER ("CompareTree");
+    DBUG_ENTER ("CMPTdoCompareTree");
 
     if ((tree1 == NULL) || (tree2 == NULL)) {
         /* NULL pointer handling */
@@ -753,15 +990,13 @@ CompareTree (node *tree1, node *tree2)
         INFO_CMPT_WRITELUT (arg_info) = FALSE;
         /***************/
 
-        old_tab = act_tab;
-        act_tab = cmptree_tab;
-
-        tree1 = Trav (tree1, arg_info);
+        TRAVpush (TR_cmpt);
+        tree1 = TRAVdo (tree1, arg_info);
+        TRAVpop ();
 
         /* save result */
         result = INFO_CMPT_EQFLAG (arg_info);
 
-        act_tab = old_tab;
         arg_info = FreeInfo (arg_info);
     }
 
@@ -789,13 +1024,12 @@ CompareTree (node *tree1, node *tree2)
  ******************************************************************************
  */
 cmptree_t
-CompareTreeLUT (node *tree1, node *tree2, LUT_t lut)
+CMPTdoCompareTreeLUT (node *tree1, node *tree2, lut_t *lut)
 {
     cmptree_t result;
     info *arg_info;
-    funtab *old_tab;
 
-    DBUG_ENTER ("CompareTree");
+    DBUG_ENTER ("CMPTdoCompareTreeLUT");
 
     DBUG_ASSERT (lut != NULL, "lut == NULL!");
 
@@ -821,15 +1055,13 @@ CompareTreeLUT (node *tree1, node *tree2, LUT_t lut)
         INFO_CMPT_LUT (arg_info) = lut;
         INFO_CMPT_WRITELUT (arg_info) = FALSE;
 
-        old_tab = act_tab;
-        act_tab = cmptree_tab;
-
-        tree1 = Trav (tree1, arg_info);
+        TRAVpush (TR_cmpt);
+        tree1 = TRAVdo (tree1, arg_info);
+        TRAVpop ();
 
         /* save result */
         result = INFO_CMPT_EQFLAG (arg_info);
 
-        act_tab = old_tab;
         arg_info = FreeInfo (arg_info);
     }
 

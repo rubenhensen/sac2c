@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2004/11/26 13:12:18  khf
+ * SacDevCamp04: COMPILES!!
+ *
  * Revision 1.8  2004/11/22 21:29:55  ktr
  * Big Switch Header! SacDevCamp 04
  *
@@ -61,6 +64,7 @@ extern node *CMPTchar (node *arg_node, info *arg_info);
 extern node *CMPTbool (node *arg_node, info *arg_info);
 extern node *CMPTstr (node *arg_node, info *arg_info);
 extern node *CMPTid (node *arg_node, info *arg_info);
+extern node *CMPTids (node *arg_node, info *arg_info);
 extern node *CMPTfloat (node *arg_node, info *arg_info);
 extern node *CMPTdouble (node *arg_node, info *arg_info);
 extern node *CMPTarray (node *arg_node, info *arg_info);
@@ -71,8 +75,22 @@ extern node *CMPTwithid (node *arg_node, info *arg_info);
 extern node *CMPTgenerator (node *arg_node, info *arg_info);
 extern node *CMPTfold (node *arg_node, info *arg_info);
 extern node *CMPTcode (node *arg_node, info *arg_info);
+extern node *CMPTglobobj (node *arg_node, info *arg_info);
+
 extern node *CMPTunknown (node *arg_node, info *arg_info);
-extern node *CMPTtravSons (node *arg_node, info *arg_info);
+
+/* call of own traversal mechanism:*/
+extern node *CMPTblock (node *arg_node, info *arg_info);
+extern node *CMPTassign (node *arg_node, info *arg_info);
+extern node *CMPTreturn (node *arg_node, info *arg_info);
+extern node *CMPTcond (node *arg_node, info *arg_info);
+extern node *CMPTwith (node *arg_node, info *arg_info);
+extern node *CMPTpart (node *arg_node, info *arg_info);
+extern node *CMPTdo (node *arg_node, info *arg_info);
+extern node *CMPTexprs (node *arg_node, info *arg_info);
+extern node *CMPTempty (node *arg_node, info *arg_info);
+
+/* pre-travesal function */
 extern node *CMPTnodeType (node *arg_node, info *arg_info);
 
 #endif /* SAC_CHECKAVIS_H */
