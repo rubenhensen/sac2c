@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/03/05 18:30:00  dkr
+ * PREC1code: DBUG_ASSERT added
+ *
  * Revision 3.9  2001/03/05 15:39:56  dkr
  * PREC1code added
  *
@@ -700,8 +703,7 @@ PREC1withop (node *arg_node, node *arg_info)
     let_expr = LET_EXPR (INFO_PREC1_LET (arg_info));
 
     DBUG_ASSERT ((NODE_TYPE (let_expr) == N_Nwith2), "no N_Nwith2 node found!");
-    if ((NWITH2_TYPE (let_expr) == WO_foldfun)
-        || (NWITH2_TYPE (let_expr) == WO_foldprf)) {
+    if (NWITH2_IS_FOLD (let_expr)) {
         /*
          * We have to make the formal parameters of each pseudo fold-fun identical
          * to the corresponding application in order to allow for simple code
@@ -752,6 +754,8 @@ PREC1withop (node *arg_node, node *arg_info)
 node *
 PREC1code (node *arg_node, node *arg_info)
 {
+    node *let_expr;
+
     DBUG_ENTER ("PREC1code");
 
     if (NCODE_CBLOCK (arg_node) != NULL) {
@@ -762,20 +766,27 @@ PREC1code (node *arg_node, node *arg_info)
         NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
     }
 
-    if (INFO_PREC1_CEXPR (arg_info) != NULL) {
-        DBUG_ASSERT (((NODE_TYPE (INFO_PREC1_CEXPR (arg_info)) == N_id)
-                      && (NODE_TYPE (NCODE_CEXPR (arg_node)) == N_id)),
-                     "NCODE_CEXPR must be a N_id node!");
+    let_expr = LET_EXPR (INFO_PREC1_LET (arg_info));
 
-#if 0
-    DBUG_ASSERT( (! strcmp( ID_NAME( INFO_PREC1_CEXPR( arg_info)),
-                            ID_NAME( NCODE_CEXPR( arg_node)))),
-                 "Not all NCODE_CEXPR nodes of the with-loop contain"
-                 " the same names!\n"
-                 "This is probably due to an error during un-SSA.");
-#endif
-    } else {
-        INFO_PREC1_CEXPR (arg_info) = NCODE_CEXPR (arg_node);
+    DBUG_ASSERT ((NODE_TYPE (let_expr) == N_Nwith2), "no N_Nwith2 node found!");
+    if (NWITH2_IS_FOLD (let_expr)) {
+        /*
+         * fold with-loop:
+         * check whether all NCODE_CEXPR nodes have identical names
+         */
+        if (INFO_PREC1_CEXPR (arg_info) != NULL) {
+            DBUG_ASSERT (((NODE_TYPE (INFO_PREC1_CEXPR (arg_info)) == N_id)
+                          && (NODE_TYPE (NCODE_CEXPR (arg_node)) == N_id)),
+                         "NCODE_CEXPR must be a N_id node!");
+
+            DBUG_ASSERT ((!strcmp (ID_NAME (INFO_PREC1_CEXPR (arg_info)),
+                                   ID_NAME (NCODE_CEXPR (arg_node)))),
+                         "Not all NCODE_CEXPR nodes of the fold with-loop have"
+                         " identical names!"
+                         "This is probably due to an error during undo-SSA.");
+        } else {
+            INFO_PREC1_CEXPR (arg_info) = NCODE_CEXPR (arg_node);
+        }
     }
 
     if (NCODE_NEXT (arg_node) != NULL) {
