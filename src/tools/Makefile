@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.2  1999/07/08 15:39:55  cg
+# Dependency from libsac now uses libsac/libsac.a instead of
+# runtime/libsac.a
+#
 # Revision 1.1  1999/07/08 12:02:34  cg
 # Initial revision
 #
@@ -9,7 +13,9 @@
 CC        := gcc
 CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g -O3
 
-LIBDIR    := ../runtime
+LIBDIR    := ../libsac
+  # Here, we cannot use the links in ../runtime because after a gmake clean
+  # they are not yet existing.
 
 INCS      := -I../runtime -I../libsac -I../../inc
 LIBS      := -L$(LIBDIR)
