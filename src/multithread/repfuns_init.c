@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/03/02 13:02:28  jhs
+ * Build some abstraction (in multithreaded_lib), tested and repaired.
+ *
  * Revision 1.4  2000/02/21 17:54:20  jhs
  * Testing ...
  *
@@ -18,7 +21,7 @@
 
 /******************************************************************************
  *
- * file:   blocks_init.c
+ * file:   repfuns_init.c
  *
  * prefix: RFIN
  *
@@ -40,6 +43,7 @@
 #include "free.h"
 
 #include "internal_lib.h"
+#include "multithread_lib.h"
 
 /******************************************************************************
  *
@@ -55,7 +59,6 @@ RepfunsInit (node *arg_node, node *arg_info)
 {
     funtab *old_tab;
     int old_withinwith;
-    node *old_firstfundef;
     node *old_lastfundef;
     int old_search;
 
@@ -65,11 +68,9 @@ RepfunsInit (node *arg_node, node *arg_info)
     act_tab = rfin_tab;
 
     old_withinwith = INFO_RFIN_WITHINWITH (arg_info);
-    old_firstfundef = INFO_RFIN_FIRSTFUNDEF (arg_info);
     old_lastfundef = INFO_RFIN_LASTFUNDEF (arg_info);
     old_search = INFO_RFIN_SEARCH (arg_info);
     INFO_RFIN_WITHINWITH (arg_info) = FALSE;
-    INFO_RFIN_FIRSTFUNDEF (arg_info) = NULL;
     INFO_RFIN_LASTFUNDEF (arg_info) = NULL;
     INFO_RFIN_SEARCH (arg_info) = FALSE;
 
@@ -77,23 +78,7 @@ RepfunsInit (node *arg_node, node *arg_info)
     FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     DBUG_PRINT ("RFIN", ("trav from body"));
 
-    /*
-      if (FUNDEF_NEXT( arg_node) != NULL) {
-        INFO_RFIN_SEARCH( arg_info) = TRUE;
-
-        DBUG_PRINT( "RFIN", ("indirect hang in"));
-        DBUG_PRINT( "RFIN", ("trav into next"));
-        FUNDEF_NEXT( arg_node) = Trav( FUNDEF_NEXT( arg_node), arg_info);
-        DBUG_PRINT( "RFIN", ("trav from next"));
-
-      } else {
-        DBUG_PRINT( "RFIN", ("direct hang in"));
-        FUNDEF_NEXT( arg_node) = INFO_RFIN_FIRSTFUNDEF( arg_info);
-      }
-    */
-
     INFO_RFIN_WITHINWITH (arg_info) = old_withinwith;
-    INFO_RFIN_FIRSTFUNDEF (arg_info) = old_firstfundef;
     INFO_RFIN_LASTFUNDEF (arg_info) = old_lastfundef;
     INFO_RFIN_SEARCH (arg_info) = old_search;
 
@@ -116,34 +101,26 @@ node *
 ReplicateFundef (node *fundef, node *arg_info)
 {
     node *result;
-    char *old_name;
-    char *new_name;
-    char *suffix;
 
     DBUG_ENTER ("ReplicateFundef");
 
-    if (FUNDEF_REPFUN (fundef) == NULL) {
+    if (FUNDEF_COMPANION (fundef) == NULL) {
+        DBUG_PRINT ("RFIN", ("replicate: new copy"));
         /*
          *  This function is not replicated yet, this is done now.
          */
         result = DupNode (fundef);
-        FUNDEF_STATUS (result) = ST_repfun;
+        FUNDEF_ATTRIB (result) = ST_call_rep;
 
         /*
          *  note reference to replicated version, needed for further reuse.
          */
-        FUNDEF_REPFUN (fundef) = result;
+        FUNDEF_COMPANION (fundef) = result;
 
         /*
          *  Change name.
          */
-        old_name = FUNDEF_NAME (result);
-        suffix = "__REPLICATED__";
-        new_name = Malloc (strlen (old_name) + strlen (suffix) + 1);
-        strcpy (new_name, suffix);
-        strcat (new_name, old_name);
-        FUNDEF_NAME (result) = new_name;
-        FREE (old_name);
+        result = MUTHExpandFundefName (result, "__CALL_REP__");
 
         /*
          *  Add new replicated function to table of new replicated functions.
@@ -151,22 +128,19 @@ ReplicateFundef (node *fundef, node *arg_info)
         FUNDEF_NEXT (result) = FUNDEF_NEXT (fundef);
         FUNDEF_NEXT (fundef) = result;
 
-        result = Trav (result, arg_info);
-
         /*
-            if (INFO_RFIN_FIRSTFUNDEF( arg_info) == NULL) {
-              INFO_RFIN_FIRSTFUNDEF( arg_info) = result;
-              INFO_RFIN_LASTFUNDEF( arg_info) = result;
-            } else {
-              FUNDEF_NEXT( INFO_RFIN_LASTFUNDEF( arg_info)) = result;
-              INFO_RFIN_LASTFUNDEF( arg_info) = result;
-            }
-        */
+         *  We want to traverse the function only,
+         *  hopefully RFINfundef prevents us to traverse endless and recursive.
+         */
+        DBUG_PRINT ("RFIN", ("traverse into body"));
+        result = Trav (result, arg_info);
+        DBUG_PRINT ("RFIN", ("traverse from body"));
     } else {
+        DBUG_PRINT ("RFIN", ("replicate: reuse copy"));
         /*
          *  This function is alredy replicated, reuse it.
          */
-        result = FUNDEF_REPFUN (fundef);
+        result = FUNDEF_COMPANION (fundef);
     }
 
     DBUG_RETURN (result);
@@ -188,9 +162,15 @@ RFINnwith2 (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("RFINnwith2");
 
-    NOTE (("hitrfinnwith2"));
+    DBUG_PRINT ("RFIN", ("hit"));
 
     old_withinwith = INFO_RFIN_WITHINWITH (arg_info);
+
+    if (INFO_RFIN_WITHINWITH (arg_info)) {
+        DBUG_PRINT ("RFIN", ("before true"));
+    } else {
+        DBUG_PRINT ("RFIN", ("before false"));
+    }
 
     if (NWITH2_ISSCHEDULED (arg_node)) {
         INFO_RFIN_WITHINWITH (arg_info) = TRUE;
@@ -198,10 +178,24 @@ RFINnwith2 (node *arg_node, node *arg_info)
         /* reuse value of arg_info (from wl above) */
     }
 
+    if (INFO_RFIN_WITHINWITH (arg_info)) {
+        DBUG_PRINT ("RFIN", ("while true"));
+    } else {
+        DBUG_PRINT ("RFIN", ("while false"));
+    }
+
+    DBUG_PRINT ("RFIN", ("traverse into code"));
     NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    DBUG_PRINT ("RFIN", ("traverse from code"));
 
     INFO_RFIN_WITHINWITH (arg_info) = old_withinwith;
     ;
+
+    if (INFO_RFIN_WITHINWITH (arg_info)) {
+        DBUG_PRINT ("RFIN", ("after true"));
+    } else {
+        DBUG_PRINT ("RFIN", ("after false"));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -224,12 +218,11 @@ RFINlet (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("RFINlet");
 
-    NOTE (("hitrfinlet"));
     /* if lhs application then lift */
-
     if (INFO_RFIN_WITHINWITH (arg_info)) {
         if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
-            NOTE (("hit lift %s", FUNDEF_NAME (AP_FUNDEF (LET_EXPR (arg_node)))));
+            DBUG_PRINT ("RFIN", ("ap-let: lift %s",
+                                 FUNDEF_NAME (AP_FUNDEF (LET_EXPR (arg_node)))));
 
             ap = LET_EXPR (arg_node);
 
@@ -237,34 +230,36 @@ RFINlet (node *arg_node, node *arg_info)
 
             new_fundef = ReplicateFundef (old_fundef, arg_info);
 
-            AP_FUNDEF (ap) = new_fundef;
-
-            FREE (AP_NAME (ap));
-            AP_NAME (ap) = StringCopy (FUNDEF_NAME (new_fundef));
-            FREE (AP_MOD (ap));
-            AP_MOD (ap) = StringCopy (FUNDEF_MOD (new_fundef));
+            ap = MUTHExchangeApplication (ap, new_fundef);
         }
+    } else if (NODE_TYPE (LET_EXPR (arg_node)) == N_Nwith2) {
+        DBUG_PRINT ("RFIN", ("with-let: traverse into"));
+        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        DBUG_PRINT ("RFIN", ("with-let: traverse from"));
     } else {
-        if (NODE_TYPE (LET_EXPR (arg_node)) == N_Nwith2) {
-            LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-        }
+        DBUG_PRINT ("RFIN", ("any-let: ignore"));
     }
 
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node* RFINfundef (node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prevents traversals into FUNDEF_NEXT to avoid endless recursion
+ *
+ ******************************************************************************/
 node *
 RFINfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("RFINfundef");
 
-    if (FUNDEF_NEXT (arg_node) == NULL) {
-        /*    if (INFO_RFIN_SEARCH( arg_info)) {
-              FUNDEF_NEXT( arg_node) = INFO_RFIN_FIRSTFUNDEF( arg_info);
-            } */
-    } else {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    }
+    FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+
+    /* DO NOT TRAVERSE INTO NEXT!!! */
 
     DBUG_RETURN (arg_node);
 }
