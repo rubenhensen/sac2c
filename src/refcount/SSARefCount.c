@@ -290,7 +290,7 @@ SSARCfundef (node *fundef, node *arg_info)
     }
 
     /* Restore SSA form */
-    fundef = RestoreSSAOneFundef (fundef);
+    /*   fundef = RestoreSSAOneFundef(fundef);  */
 
     /* Traverse other fundefs */
     if (FUNDEF_NEXT (fundef) != NULL)
@@ -406,17 +406,17 @@ SSARCcond (node *arg_node, node *arg_info)
 
     if (INFO_SSARC_MODE (arg_info) == rc_default) {
         COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
-        /*     if (IncreaseEnvOnZero(ID_AVIS(COND_COND(arg_node)), arg_info)) */
-        /*       BLOCK_INSTR(COND_THEN(arg_node)) =  */
-        /*         MakeAdjustRC(ID_AVIS(COND_COND(arg_node)),-1, */
-        /* 		     BLOCK_INSTR(COND_THEN(arg_node))); */
+        if (IncreaseEnvOnZero (ID_AVIS (COND_COND (arg_node)), arg_info))
+            BLOCK_INSTR (COND_THEN (arg_node))
+              = MakeAdjustRC (ID_AVIS (COND_COND (arg_node)), -1,
+                              BLOCK_INSTR (COND_THEN (arg_node)));
 
     } else {
         COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
-        /*     if (IncreaseEnvOnZero(ID_AVIS(COND_COND(arg_node)), arg_info)) */
-        /*       BLOCK_INSTR(COND_ELSE(arg_node)) =  */
-        /*         MakeAdjustRC(ID_AVIS(COND_COND(arg_node)),-1, */
-        /* 		     BLOCK_INSTR(COND_ELSE(arg_node))); */
+        if (IncreaseEnvOnZero (ID_AVIS (COND_COND (arg_node)), arg_info))
+            BLOCK_INSTR (COND_ELSE (arg_node))
+              = MakeAdjustRC (ID_AVIS (COND_COND (arg_node)), -1,
+                              BLOCK_INSTR (COND_ELSE (arg_node)));
 
         /* After both environments have been created,
            annote missing ADJUST_RCs at the beginning of blocks and
@@ -427,14 +427,16 @@ SSARCcond (node *arg_node, node *arg_info)
             KillSecondEnv (ARG_AVIS (n));
             t = PopEnv (ARG_AVIS (n), arg_info);
             KillSecondEnv (ARG_AVIS (n));
-            m = e < t ? e : t;
-            AddEnv (ARG_AVIS (n), arg_info, m + 1);
-            BLOCK_INSTR (COND_THEN (arg_node))
-              = MakeAdjustRC (ARG_AVIS (n), t - m - 1,
-                              BLOCK_INSTR (COND_THEN (arg_node)));
-            BLOCK_INSTR (COND_ELSE (arg_node))
-              = MakeAdjustRC (ARG_AVIS (n), e - m - 1,
-                              BLOCK_INSTR (COND_ELSE (arg_node)));
+            m = e > t ? e : t;
+            if (m > 0) {
+                AddEnv (ARG_AVIS (n), arg_info, m);
+                BLOCK_INSTR (COND_THEN (arg_node))
+                  = MakeAdjustRC (ARG_AVIS (n), t - m,
+                                  BLOCK_INSTR (COND_THEN (arg_node)));
+                BLOCK_INSTR (COND_ELSE (arg_node))
+                  = MakeAdjustRC (ARG_AVIS (n), e - m,
+                                  BLOCK_INSTR (COND_ELSE (arg_node)));
+            }
             n = ARG_NEXT (n);
         }
 
@@ -445,14 +447,16 @@ SSARCcond (node *arg_node, node *arg_info)
                 KillSecondEnv (VARDEC_AVIS (n));
                 t = PopEnv (VARDEC_AVIS (n), arg_info);
                 KillSecondEnv (VARDEC_AVIS (n));
-                m = e < t ? e : t;
-                AddEnv (VARDEC_AVIS (n), arg_info, m + 1);
-                BLOCK_INSTR (COND_THEN (arg_node))
-                  = MakeAdjustRC (VARDEC_AVIS (n), t - m - 1,
-                                  BLOCK_INSTR (COND_THEN (arg_node)));
-                BLOCK_INSTR (COND_ELSE (arg_node))
-                  = MakeAdjustRC (VARDEC_AVIS (n), e - m - 1,
-                                  BLOCK_INSTR (COND_ELSE (arg_node)));
+                m = e > t ? e : t;
+                if (m > 0) {
+                    AddEnv (VARDEC_AVIS (n), arg_info, m);
+                    BLOCK_INSTR (COND_THEN (arg_node))
+                      = MakeAdjustRC (VARDEC_AVIS (n), t - m,
+                                      BLOCK_INSTR (COND_THEN (arg_node)));
+                    BLOCK_INSTR (COND_ELSE (arg_node))
+                      = MakeAdjustRC (VARDEC_AVIS (n), e - m,
+                                      BLOCK_INSTR (COND_ELSE (arg_node)));
+                }
             }
             n = VARDEC_NEXT (n);
         }
