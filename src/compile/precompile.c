@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.33  1998/03/25 19:45:12  dkr
+ * PRECnwith:
+ *   added break specifiers
+ *   new phase order: split - block - merge !!
+ *
  * Revision 1.32  1998/03/24 21:45:41  dkr
  * changed IntersectOutline
  *
@@ -1614,7 +1619,7 @@ GridOffset (int new_bound1, int bound1, int step, int grid_b2)
 void
 IntersectOutline (node *proj1, node *proj2, node **isect1, node **isect2)
 {
-    node *grid1, *grid2, *last_isect1, *last_isect2, *new_isect1, *new_isect2;
+    node *grid1, *grid2, *new_isect1, *new_isect2;
     int bound11, bound21, step1, grid1_b1, grid1_b2, bound12, bound22, step2, grid2_b1,
       grid2_b2, head1, rear1, head2, rear2, i_bound1, i_bound2, i_offset1, i_offset2;
     int flag = 0;
@@ -1660,14 +1665,16 @@ IntersectOutline (node *proj1, node *proj2, node **isect1, node **isect2)
         i_offset1 = GridOffset (i_bound1, bound11, step1, grid1_b2);
         i_offset2 = GridOffset (i_bound1, bound12, step2, grid2_b2);
 
-        if ((head1 < rear2) && (head2 < rear1)
-            && /* are the outlines of 'proj1' and 'proj2' not disjunkt? */
-            (i_offset1 <= grid1_b1)
-            && (i_offset2 <= grid2_b1)) { /* are the grids compatible? */
+        if ((head1 < rear2) && (head2 < rear1) &&
+            /* are the outlines of 'proj1' and 'proj2' not disjunkt? */
+            (i_offset1 <= grid1_b1) && (i_offset2 <= grid2_b1)) {
+            /* are the grids compatible? */
 
-            if ((WLPROJ_PART (proj1) == WLPROJ_PART (proj2))
-                &&         /* are 'proj1' and 'proj2' descended from the same Npart? */
-                (!flag)) { /* we should deal with this exception only once !! */
+            if ((WLPROJ_PART (proj1) == WLPROJ_PART (proj2)) &&
+                /* are 'proj1' and 'proj2' descended from the same Npart? */
+                (!flag)) {
+                /* we should deal with this exception only once !! */
+
                 /*
                  * example: 0->6  step 3, 0->1: op1
                  *          0->16 step 3, 1->3: op2
@@ -1681,10 +1688,10 @@ IntersectOutline (node *proj1, node *proj2, node **isect1, node **isect2)
                  * Npart !!
                  */
 
+                flag = 1; /* skip this exception handling in later dimensions! */
+
                 /* modify the bounds of the first proj, so that the new outlines are
                  * disjunkt */
-                flag = 1;
-
                 if (WLPROJ_BOUND2 (proj1) < WLPROJ_BOUND2 (proj2)) {
                     WLPROJ_BOUND2 (new_isect1) = i_bound1;
                     new_isect1 = NormalizeProj_1 (new_isect1);
@@ -1692,13 +1699,17 @@ IntersectOutline (node *proj1, node *proj2, node **isect1, node **isect2)
                     WLPROJ_BOUND2 (new_isect2) = i_bound1;
                     new_isect2 = NormalizeProj_1 (new_isect2);
                 }
+
             } else {
+
+                /* intersect 'proj1' with the outline of 'proj2' */
                 WLPROJ_BOUND1 (new_isect1) = i_bound1;
                 WLPROJ_BOUND2 (new_isect1) = i_bound2;
                 WLGRID_BOUND1 (WLPROJ_CONTENTS (new_isect1)) = grid1_b1 - i_offset1;
                 WLGRID_BOUND2 (WLPROJ_CONTENTS (new_isect1)) = grid1_b2 - i_offset1;
                 new_isect1 = NormalizeProj_1 (new_isect1);
 
+                /* intersect 'proj2' with the outline of 'proj1' */
                 WLPROJ_BOUND1 (new_isect2) = i_bound1;
                 WLPROJ_BOUND2 (new_isect2) = i_bound2;
                 WLGRID_BOUND1 (WLPROJ_CONTENTS (new_isect2)) = grid2_b1 - i_offset2;
@@ -1707,16 +1718,19 @@ IntersectOutline (node *proj1, node *proj2, node **isect1, node **isect2)
             }
 
         } else {
-            /* free the useless data in 'isect1', 'isect2' */
+            /* intersection is empty -> free the useless data in 'isect1', 'isect2' */
             if (*isect1 != NULL) {
                 *isect1 = FreeTree (*isect1);
             }
             if (*isect2 != NULL) {
                 *isect2 = FreeTree (*isect2);
             }
+
+            /* we can give up here */
             break;
         }
 
+        /* next dim */
         proj1 = WLGRID_NEXTDIM (grid1);
         proj2 = WLGRID_NEXTDIM (grid2);
         new_isect1 = WLGRID_NEXTDIM (WLPROJ_CONTENTS (new_isect1));
@@ -2112,20 +2126,20 @@ SetSegAttribs (node *seg)
         }
     }
 
-#if 1
-    WLSEG_BLOCKS (seg) = 0;
+#if 0
+  WLSEG_BLOCKS(seg) = 0;
 
-    (WLSEG_BV (seg, 0))[0] = 200;
-    (WLSEG_BV (seg, 0))[1] = 100;
-    (WLSEG_BV (seg, 0))[2] = 50;
+  (WLSEG_BV(seg, 0))[0] = 200;
+  (WLSEG_BV(seg, 0))[1] = 100;
+  (WLSEG_BV(seg, 0))[2] = 50;
 
-    (WLSEG_BV (seg, 1))[0] = 300;
-    (WLSEG_BV (seg, 1))[1] = 150;
-    (WLSEG_BV (seg, 1))[2] = 75;
+  (WLSEG_BV(seg, 1))[0] = 300;
+  (WLSEG_BV(seg, 1))[1] = 150;
+  (WLSEG_BV(seg, 1))[2] = 75;
 
-    (WLSEG_UBV (seg))[0] = 1;
-    (WLSEG_UBV (seg))[1] = 1;
-    (WLSEG_UBV (seg))[2] = 1;
+  (WLSEG_UBV(seg))[0] = 1;
+  (WLSEG_UBV(seg))[1] = 1;
+  (WLSEG_UBV(seg))[2] = 1;
 #else
     WLSEG_BLOCKS (seg) = 1;
 
@@ -2200,6 +2214,159 @@ SetSegs (node *cubes, int dims)
 #endif
 
     DBUG_RETURN (segs);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SplitWLnode(node *proj1, node *proj2)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+SplitWLnode (node *node1, node *node2)
+{
+    node *new_node, *new_nodes;
+    int bound11, bound21, bound12, bound22, i_bound1, i_bound2;
+
+    DBUG_ENTER ("SplitWLnode");
+
+    new_nodes = NULL;
+
+    bound11 = WLNODE_BOUND1 (node1);
+    bound21 = WLNODE_BOUND2 (node1);
+    bound12 = WLNODE_BOUND1 (node2);
+    bound22 = WLNODE_BOUND2 (node2);
+
+    if (((bound11 != bound12) || (bound21 != bound22))
+        && /* outline(node1), outline(node2) not equal */
+        ((bound12 < bound21)
+         && (bound11 < bound22))) { /* outline(node1), outline(node2) not disjunkt */
+
+        /*
+         * 'node1' respectively 'node2' must be devided in at most three parts
+         */
+        i_bound1 = MAX (bound11, bound12); /* compute bounds of intersection */
+        i_bound2 = MIN (bound21, bound22);
+
+        /* new parts of 'node1' */
+        if (bound11 < i_bound1) {
+            new_node = DupNode (node1);
+            WLNODE_BOUND1 (new_node) = bound11;
+            WLNODE_BOUND2 (new_node) = i_bound1;
+            WLNODE_NEXT (new_node) = new_nodes;
+            new_nodes = new_node;
+        }
+
+        new_node = DupNode (node1);
+        WLNODE_BOUND1 (new_node) = i_bound1;
+        WLNODE_BOUND2 (new_node) = i_bound2;
+        WLNODE_NEXT (new_node) = new_nodes;
+        new_nodes = new_node;
+
+        if (i_bound2 < bound21) {
+            new_node = DupNode (node1);
+            WLNODE_BOUND1 (new_node) = i_bound2;
+            WLNODE_BOUND2 (new_node) = bound21;
+            WLNODE_NEXT (new_node) = new_nodes;
+            new_nodes = new_node;
+        }
+
+        /* new parts of 'node2' */
+        if (bound12 < i_bound1) {
+            new_node = DupNode (node2);
+            WLNODE_BOUND1 (new_node) = bound12;
+            WLNODE_BOUND2 (new_node) = i_bound1;
+            WLNODE_NEXT (new_node) = new_nodes;
+            new_nodes = new_node;
+        }
+
+        new_node = DupNode (node2);
+        WLNODE_BOUND1 (new_node) = i_bound1;
+        WLNODE_BOUND2 (new_node) = i_bound2;
+        WLNODE_NEXT (new_node) = new_nodes;
+        new_nodes = new_node;
+
+        if (i_bound2 < bound22) {
+            new_node = DupNode (node2);
+            WLNODE_BOUND1 (new_node) = i_bound2;
+            WLNODE_BOUND2 (new_node) = bound22;
+            WLNODE_NEXT (new_node) = new_nodes;
+            new_nodes = new_node;
+        }
+    }
+
+    DBUG_RETURN (new_nodes);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SplitWL(node *projs)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+SplitWL (node *projs)
+{
+    node *proj1, *proj2, *new_projs, *split_projs, *tmp;
+    int fixpoint;
+
+    DBUG_ENTER ("SplitWL");
+
+    /*
+     * step 1: splitting
+     */
+    do {
+        fixpoint = 1;
+        new_projs = NULL;
+
+        /* initialize WLPROJ_MODIFIED */
+        proj1 = projs;
+        while (proj1 != NULL) {
+            WLPROJ_MODIFIED (proj1) = 0;
+            proj1 = WLPROJ_NEXT (proj1);
+        }
+
+        proj1 = projs;
+        while (proj1 != NULL) {
+
+            proj2 = WLPROJ_NEXT (proj1);
+            while (proj2 != NULL) {
+
+                split_projs = SplitWLnode (proj1, proj2);
+                if (split_projs != NULL) {
+                    fixpoint = 0;
+                    WLPROJ_MODIFIED (proj1) = WLPROJ_MODIFIED (proj2) = 1;
+                    new_projs = InsertWLnodes (new_projs, split_projs);
+                }
+
+                proj2 = WLPROJ_NEXT (proj2);
+            }
+
+            /* have 'proj1' only empty intersections with the others? */
+            if (WLPROJ_MODIFIED (proj1) == 0) {
+                /* insert 'proj1' in 'new_projs' */
+                tmp = proj1;
+                proj1 = WLPROJ_NEXT (proj1);
+                WLPROJ_NEXT (tmp) = NULL;
+                new_projs = InsertWLnodes (new_projs, tmp);
+            } else {
+                proj1 = FreeNode (proj1); /* 'proj1' is no longer needed */
+                                          /* 'proj1' points now to his successor!! */
+            }
+        }
+
+        projs = new_projs;
+    } while (!fixpoint);
+
+    DBUG_RETURN (projs);
 }
 
 /******************************************************************************
@@ -2391,7 +2558,7 @@ BlockWL (node *proj, int dims, long *bv, int unroll)
 /******************************************************************************
  *
  * function:
- *   node *SplitWLnode(node *proj1, node *proj2)
+ *   node *MergeWL(node *nodes)
  *
  * description:
  *
@@ -2399,88 +2566,9 @@ BlockWL (node *proj, int dims, long *bv, int unroll)
  ******************************************************************************/
 
 node *
-SplitWLnode (node *node1, node *node2)
+MergeWL (node *nodes)
 {
-    node *new_node, *new_nodes;
-    int bound11, bound21, bound12, bound22, i_bound1, i_bound2;
-
-    DBUG_ENTER ("SplitWLnode");
-
-    new_nodes = NULL;
-
-    bound11 = WLNODE_BOUND1 (node1);
-    bound21 = WLNODE_BOUND2 (node1);
-    bound12 = WLNODE_BOUND1 (node2);
-    bound22 = WLNODE_BOUND2 (node2);
-
-    if (((bound11 != bound12) || (bound21 != bound22))
-        && /* outline(node1), outline(node2) not equal */
-        ((bound12 < bound21)
-         && (bound11 < bound22))) { /* outline(node1), outline(node2) not disjunkt */
-
-        /*
-         * 'node1' respectively 'node2' must be devided in at most three parts
-         */
-        i_bound1 = MAX (bound11, bound12); /* compute bounds of intersection */
-        i_bound2 = MIN (bound21, bound22);
-
-        /* new parts of 'node1' */
-        if (bound11 < i_bound1) {
-            new_node = DupNode (node1);
-            WLNODE_BOUND1 (new_node) = bound11;
-            WLNODE_BOUND2 (new_node) = i_bound1;
-            WLNODE_NEXT (new_node) = new_nodes;
-            new_nodes = new_node;
-        }
-
-        new_node = DupNode (node1);
-        WLNODE_BOUND1 (new_node) = i_bound1;
-        WLNODE_BOUND2 (new_node) = i_bound2;
-        WLNODE_NEXT (new_node) = new_nodes;
-        new_nodes = new_node;
-
-        if (i_bound2 < bound21) {
-            new_node = DupNode (node1);
-            WLNODE_BOUND1 (new_node) = i_bound2;
-            WLNODE_BOUND2 (new_node) = bound21;
-            WLNODE_NEXT (new_node) = new_nodes;
-            new_nodes = new_node;
-        }
-
-        /* new parts of 'node2' */
-        if (bound12 < i_bound1) {
-            new_node = DupNode (node2);
-            WLNODE_BOUND1 (new_node) = bound12;
-            WLNODE_BOUND2 (new_node) = i_bound1;
-            WLNODE_NEXT (new_node) = new_nodes;
-            new_nodes = new_node;
-        }
-
-        new_node = DupNode (node2);
-        WLNODE_BOUND1 (new_node) = i_bound1;
-        WLNODE_BOUND2 (new_node) = i_bound2;
-        WLNODE_NEXT (new_node) = new_nodes;
-        new_nodes = new_node;
-
-        if (i_bound2 < bound22) {
-            new_node = DupNode (node2);
-            WLNODE_BOUND1 (new_node) = i_bound2;
-            WLNODE_BOUND2 (new_node) = bound22;
-            WLNODE_NEXT (new_node) = new_nodes;
-            new_nodes = new_node;
-        }
-    }
-
-    DBUG_RETURN (new_nodes);
-}
-
-node *
-MergeWLnode (node *node1, int step)
-{
-    node *grid1, *grid2, *new_grid, *tmp;
-    int bound11, bound12;
-
-    DBUG_ENTER ("MergeWLnode");
+    DBUG_ENTER ("MergeWL");
 
 #if 0
   if (node1 != NULL) {
@@ -2551,13 +2639,13 @@ MergeWLnode (node *node1, int step)
   }
 #endif
 
-    DBUG_RETURN (node1);
+    DBUG_RETURN (nodes);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *SplitMergeWL(node *projs)
+ *   node *OptimizeWL(node *nodes)
  *
  * description:
  *
@@ -2565,109 +2653,9 @@ MergeWLnode (node *node1, int step)
  ******************************************************************************/
 
 node *
-SplitMergeWL (node *nodes)
+OptimizeWL (node *nodes)
 {
-    node *node1, *node2, *new_node, *new_nodes, *split_nodes, *last_node1, *last_new_node,
-      *tmp;
-    int fixpoint, new_step;
-
-    DBUG_ENTER ("SplitMergeWL");
-
-    /*
-     * step 1: splitting
-     */
-    do {
-        fixpoint = 1;
-        new_nodes = NULL;
-
-        /* initialize WLNODE_MODIFIED */
-        node1 = nodes;
-        while (node1 != NULL) {
-            WLNODE_MODIFIED (node1) = 0;
-            node1 = WLNODE_NEXT (node1);
-        }
-
-        node1 = nodes;
-        while (node1 != NULL) {
-
-            node2 = WLNODE_NEXT (node1);
-            while (node2 != NULL) {
-
-                split_nodes = SplitWLnode (node1, node2);
-                if (split_nodes != NULL) {
-                    fixpoint = 0;
-                    WLNODE_MODIFIED (node1) = WLNODE_MODIFIED (node2) = 1;
-                    new_nodes = InsertWLnodes (new_nodes, split_nodes);
-                }
-
-                node2 = WLNODE_NEXT (node2);
-            }
-
-            /* have 'node1' only empty intersections with the others? */
-            if (WLNODE_MODIFIED (node1) == 0) {
-                /* insert 'node1' in 'new_nodes' */
-                tmp = node1;
-                node1 = WLNODE_NEXT (node1);
-                WLNODE_NEXT (tmp) = NULL;
-                new_nodes = InsertWLnodes (new_nodes, tmp);
-            } else {
-                node1 = FreeNode (node1); /* 'node1' is no longer needed */
-                                          /* 'node1' points now to his successor!! */
-            }
-        }
-
-        nodes = new_nodes;
-    } while (!fixpoint);
-
-    /*
-     * step 2: merging
-     */
-    node1 = nodes;
-    nodes = NULL;
-    while (node1 != NULL) {
-
-        last_node1 = node1;
-
-        new_step = WLNODE_STEP (last_node1);
-
-        while ((WLNODE_NEXT (last_node1) != NULL)
-               && (WLNODE_BOUND1 (node1) == WLNODE_BOUND1 (WLNODE_NEXT (last_node1)))) {
-            DBUG_ASSERT ((NODE_TYPE (node1) == NODE_TYPE (WLNODE_NEXT (last_node1))),
-                         "wrong node type found");
-            DBUG_ASSERT ((WLNODE_BOUND2 (node1)
-                          == WLNODE_BOUND2 (WLNODE_NEXT (last_node1))),
-                         "wrong bounds found");
-
-            if (NODE_TYPE (node1) == N_WLproj) {
-                new_step = lcm (new_step, WLNODE_STEP (WLNODE_NEXT (last_node1)));
-            } else {
-                DBUG_ASSERT ((new_step == WLNODE_STEP (WLNODE_NEXT (last_node1))),
-                             "different steps found");
-            }
-
-            last_node1 = WLNODE_NEXT (last_node1);
-        }
-        if (WLNODE_NEXT (last_node1) != NULL) {
-            DBUG_ASSERT ((WLNODE_BOUND2 (node1)
-                          == WLNODE_BOUND1 (WLNODE_NEXT (last_node1))),
-                         "wrong bounds found");
-        }
-
-        tmp = node1;
-        node1 = WLNODE_NEXT (last_node1);
-        WLNODE_NEXT (last_node1) = NULL;
-
-        new_node = MergeWLnode (tmp, new_step);
-
-        tmp = FreeTree (tmp);
-
-        if (nodes == NULL) {
-            nodes = new_node;
-        } else {
-            WLNODE_NEXT (last_new_node) = new_node;
-        }
-        last_new_node = new_node;
-    }
+    DBUG_ENTER ("OptimizeWL");
 
     DBUG_RETURN (nodes);
 }
@@ -2675,7 +2663,7 @@ SplitMergeWL (node *nodes)
 /******************************************************************************
  *
  * function:
- *   node *OptimizeWL(node *proj)
+ *   node *NormalizeWL(node *nodes)
  *
  * description:
  *
@@ -2683,35 +2671,17 @@ SplitMergeWL (node *nodes)
  ******************************************************************************/
 
 node *
-OptimizeWL (node *proj)
-{
-    DBUG_ENTER ("OptimizeWL");
-
-    DBUG_RETURN (proj);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *NormalizeWL(node *proj)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-NormalizeWL (node *proj)
+NormalizeWL (node *nodes)
 {
     DBUG_ENTER ("NormalizeWL");
 
-    DBUG_RETURN (proj);
+    DBUG_RETURN (nodes);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *FitWL(node *proj)
+ *   node *FitWL(node *nodes)
  *
  * description:
  *
@@ -2719,11 +2689,11 @@ NormalizeWL (node *proj)
  ******************************************************************************/
 
 node *
-FitWL (node *proj)
+FitWL (node *nodes)
 {
     DBUG_ENTER ("FitWL");
 
-    DBUG_RETURN (proj);
+    DBUG_RETURN (nodes);
 }
 
 /******************************************************************************
@@ -2741,8 +2711,59 @@ PRECnwith (node *arg_node, node *arg_info)
 {
     node *new_node, *cubes, *segs, *seg, *shape;
     int dims, b;
+    enum {
+        PREC_PH_cube,
+        PREC_PH_seg,
+        PREC_PH_split,
+        PREC_PH_block,
+        PREC_PH_ublock,
+        PREC_PH_merge,
+        PREC_PH_opt,
+        PREC_PH_norm,
+        PREC_PH_fit
+    } PREC_break_after;
 
     DBUG_ENTER ("PRECnwith");
+
+    /* analyse 'break_specifier' */
+    PREC_break_after = PREC_PH_fit;
+    if (break_after == PH_precompile) {
+        if (strcmp (break_specifier, "cube") == 0) {
+            PREC_break_after = PREC_PH_cube;
+        } else {
+            if (strcmp (break_specifier, "seg") == 0) {
+                PREC_break_after = PREC_PH_seg;
+            } else {
+                if (strcmp (break_specifier, "split") == 0) {
+                    PREC_break_after = PREC_PH_split;
+                } else {
+                    if (strcmp (break_specifier, "block") == 0) {
+                        PREC_break_after = PREC_PH_block;
+                    } else {
+                        if (strcmp (break_specifier, "ublock") == 0) {
+                            PREC_break_after = PREC_PH_ublock;
+                        } else {
+                            if (strcmp (break_specifier, "merge") == 0) {
+                                PREC_break_after = PREC_PH_merge;
+                            } else {
+                                if (strcmp (break_specifier, "opt") == 0) {
+                                    PREC_break_after = PREC_PH_opt;
+                                } else {
+                                    if (strcmp (break_specifier, "norm") == 0) {
+                                        PREC_break_after = PREC_PH_norm;
+                                    } else {
+                                        if (strcmp (break_specifier, "fit") == 0) {
+                                            PREC_break_after = PREC_PH_fit;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     DBUG_ASSERT ((NWITHOP_TYPE (NWITH_WITHOP (arg_node)) == WO_genarray),
                  "type of with-loop is not WO_genarray");
@@ -2764,71 +2785,78 @@ PRECnwith (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((NWITHOP_TYPE (NWITH2_WITHOP (new_node)) == WO_genarray),
                  "type of with-loop is not genarray");
+
     /* get shape of genarray: */
     shape = NWITHOP_SHAPE (NWITH2_WITHOP (new_node));
+    DBUG_ASSERT ((NODE_TYPE (shape) == N_array), "shape of with-genarray is unknown");
+
     /* get number of dims of genarray: */
     dims = SHPSEG_SHAPE (TYPES_SHPSEG (ARRAY_TYPE (shape)), 0);
-    DBUG_ASSERT ((NODE_TYPE (shape) == N_array), "shape of with-genarray is unknown");
-    cubes = ComputeCubes (Parts2Projs (NWITH_PART (arg_node)));
 
-#if 1
     NOTE (("step 1: cube-building\n"))
-    Print (cubes);
-#endif
+    cubes = ComputeCubes (Parts2Projs (NWITH_PART (arg_node)));
+    if (PREC_break_after == PREC_PH_cube) {
+        /* build one segment containing all the cubes */
+        segs = MakeWLseg (dims, cubes, NULL);
+    }
 
-    segs = SetSegs (cubes, dims);
+    if (PREC_break_after >= PREC_PH_seg) {
+        NOTE (("step 2: choice of segments\n"))
+        segs = SetSegs (cubes, dims);
 
-#if 1
-    NOTE (("step 2: choice of segments\n"))
-    Print (segs);
-#endif
+        seg = segs;
+        while (seg != NULL) {
+            /* splitting */
+            if (PREC_break_after >= PREC_PH_split) {
+                NOTE (("step 3: splitting\n"))
+                WLSEG_CONTENTS (seg) = SplitWL (WLSEG_CONTENTS (seg));
+            }
 
-    seg = segs;
-    while (seg != NULL) {
-        /* hierarchical blocking */
-        for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
-            WLSEG_CONTENTS (seg)
-              = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_BV (seg, b), 0);
-            FREE (WLSEG_BV (seg, b));
-#if 1
-            NOTE (("step 3.%d: hierarchical blocking (level %d)\n", b, b))
-            Print (segs);
-#endif
+            /* hierarchical blocking */
+            if (PREC_break_after >= PREC_PH_block) {
+                NOTE (("step 4: hierarchical blocking\n"))
+                for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
+                    NOTE (("step 4.%d: hierarchical blocking (level %d)\n", b + 1, b))
+                    WLSEG_CONTENTS (seg)
+                      = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_BV (seg, b), 0);
+                    FREE (WLSEG_BV (seg, b));
+                }
+            }
+
+            /* unrolling-blocking */
+            if (PREC_break_after >= PREC_PH_ublock) {
+                NOTE (("step 5: unrolling-blocking\n"))
+                WLSEG_CONTENTS (seg)
+                  = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_UBV (seg), 1);
+                FREE (WLSEG_UBV (seg));
+            }
+
+            /* splitting - merging */
+            if (PREC_break_after >= PREC_PH_merge) {
+                NOTE (("step 6: splitting-merging\n"))
+                WLSEG_CONTENTS (seg) = MergeWL (WLSEG_CONTENTS (seg));
+            }
+
+            /* optimization */
+            if (PREC_break_after >= PREC_PH_opt) {
+                NOTE (("step 7: optimization\n"))
+                WLSEG_CONTENTS (seg) = OptimizeWL (WLSEG_CONTENTS (seg));
+            }
+
+            /* normalization */
+            if (PREC_break_after >= PREC_PH_norm) {
+                NOTE (("step 8: normalization\n"))
+                WLSEG_CONTENTS (seg) = NormalizeWL (WLSEG_CONTENTS (seg));
+            }
+
+            /* fitting */
+            if (PREC_break_after >= PREC_PH_fit) {
+                NOTE (("step 9: fitting\n"))
+                WLSEG_CONTENTS (seg) = FitWL (WLSEG_CONTENTS (seg));
+            }
+
+            seg = WLSEG_NEXT (seg);
         }
-
-        /* unrolling-blocking */
-        WLSEG_CONTENTS (seg) = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_UBV (seg), 1);
-        FREE (WLSEG_UBV (seg));
-#if 1
-        NOTE (("step 4: unrolling-blocking\n"))
-        Print (segs);
-#endif
-
-        WLSEG_CONTENTS (seg) = SplitMergeWL (WLSEG_CONTENTS (seg));
-#if 1
-        NOTE (("step 5: splitting-merging\n"))
-        Print (segs);
-#endif
-
-        WLSEG_CONTENTS (seg) = OptimizeWL (WLSEG_CONTENTS (seg));
-#if 1
-        NOTE (("step 6: optimization\n"))
-        Print (segs);
-#endif
-
-        WLSEG_CONTENTS (seg) = NormalizeWL (WLSEG_CONTENTS (seg));
-#if 1
-        NOTE (("step 7: normalization\n"))
-        Print (segs);
-#endif
-
-        WLSEG_CONTENTS (seg) = FitWL (WLSEG_CONTENTS (seg));
-#if 1
-        NOTE (("step 8: fitting\n"))
-        Print (segs);
-#endif
-
-        seg = WLSEG_NEXT (seg);
     }
 
     NWITH2_SEG (new_node) = segs;
