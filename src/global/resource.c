@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2005/03/10 09:41:09  cg
+ * Adjusted RSCevaluateConfiguration() to compiler phase driver function
+ * calling conventions.
+ * Paths are now reset immediately.
+ *
  * Revision 3.15  2005/01/11 11:28:11  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -154,6 +159,7 @@
 #include "globals.h"
 #include "ctinfo.h"
 #include "internal_lib.h"
+#include "filemgr.h"
 
 /******************************************************************************
  *
@@ -746,10 +752,12 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
  *  This function triggers the whole process of evaluating the configuration
  *  files.
  *
+ *   The non-obvious signature is to obey the compiler subphase standard.
+ *
  ******************************************************************************/
 
-void
-RSCevaluateConfiguration (char *target)
+node *
+RSCevaluateConfiguration (node *syntax_tree)
 {
     DBUG_ENTER ("RSCevaluateConfiguration");
 
@@ -757,11 +765,13 @@ RSCevaluateConfiguration (char *target)
 
     EvaluateDefaultTarget (global.target_list);
 
-    if (!ILIBstringCompare (target, "default")) {
-        EvaluateCustomTarget (target, global.target_list);
+    if (!ILIBstringCompare (global.target_name, "default")) {
+        EvaluateCustomTarget (global.target_name, global.target_list);
     }
 
     global.target_list = FreeTargetList (global.target_list);
 
-    DBUG_VOID_RETURN;
+    FMGRsetupPaths ();
+
+    DBUG_RETURN (syntax_tree);
 }
