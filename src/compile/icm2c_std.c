@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2002/09/11 23:18:03  dkr
+ * name of GlobalObjInit() function modified
+ *
  * Revision 3.34  2002/09/06 09:57:12  dkr
  * ND_IDXS2OFFSET added
  *
@@ -272,8 +275,7 @@ ICMCompileND_FUN_DEC (char *name, char *rettype_nt, int narg, char **arg_any)
 #endif
     if (strcmp (name, "create_TheCommandLine") == 0) {
         fprintf (outfile, "%s( int __argc, char *__argv[])", name);
-    } else if (strncmp (name, "SACf_GlobalObjInit_", strlen ("SACf_GlobalObjInit_"))
-               == 0) {
+    } else if (strcmp (name, "SACf_GlobalObjInit") == 0) {
         fprintf (outfile, "%s( int __argc, char *__argv[])", name);
     } else {
         fprintf (outfile, "%s(", name);
