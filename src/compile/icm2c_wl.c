@@ -1,9 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.13  1998/05/24 00:43:40  dkr
- * changed some WL-ICMs
- * fixed minor bugs
+ * Revision 1.14  1998/05/24 12:17:14  dkr
+ * optimized macros for non-MT (if SAC_DO_MULTITHREAD not defined)
  *
  * Revision 1.12  1998/05/19 15:42:18  dkr
  * ICM for fold changed
@@ -109,6 +108,7 @@ ICMCompileWL_NONFOLD_BEGIN (char *target, char *idx_vec, int dims, char **args)
     INDENT;
     fprintf (outfile, "int %s__destptr = 0;\n", target);
 
+    fprintf (outfile, "#if SAC_DO_MULTITHREAD\n");
     for (i = 0; i < dims; i++) {
         INDENT;
         fprintf (outfile, "int SAC_VAR( start0, %s) = %s;\n", args[3 * i],
@@ -119,6 +119,7 @@ ICMCompileWL_NONFOLD_BEGIN (char *target, char *idx_vec, int dims, char **args)
         fprintf (outfile, "int SAC_VAR( stop0, %s) = %s;\n", args[3 * i],
                  args[3 * i + 2]);
     }
+    fprintf (outfile, "#endif  /* SAC_DO_MULTITHREAD */\n");
 
     DBUG_VOID_RETURN;
 }
@@ -153,6 +154,7 @@ ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec, int dims, char **args)
     fprintf (outfile, "{\n");
     indent++;
 
+    fprintf (outfile, "#if SAC_DO_MULTITHREAD\n");
     for (i = 0; i < dims; i++) {
         INDENT;
         fprintf (outfile, "int SAC_VAR( start0, %s) = %s;\n", args[3 * i],
@@ -163,6 +165,7 @@ ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec, int dims, char **args)
         fprintf (outfile, "int SAC_VAR( stop0, %s) = %s;\n", args[3 * i],
                  args[3 * i + 2]);
     }
+    fprintf (outfile, "#endif  /* SAC_DO_MULTITHREAD */\n");
 
     DBUG_VOID_RETURN;
 }
