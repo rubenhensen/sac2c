@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2003/01/16 12:03:09  cg
+ * '#' and 'pragma' scanned separately to please gcc 3.0 and SUN cc.
+ *
  * Revision 3.18  2002/09/11 23:10:11  dkr
  * prf_node_info.mac modified.
  *
@@ -250,7 +253,8 @@ int charpos = 0;
 "global"                   { FILTER( GLOBAL); }
 "objects"                  { FILTER( OBJECTS); }
 
-"#pragma"                  { FILTER( PRAGMA); }
+"#"                        { FILTER( HASH); }
+"pragma"                   { FILTER( PRAGMA); }
 "linkname"                 { FILTER( LINKNAME); }
 "linksign"                 { FILTER( LINKSIGN); }
 "effect"                   { FILTER( EFFECT); }

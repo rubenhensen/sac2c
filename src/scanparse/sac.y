@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2003/01/16 12:03:09  cg
+ * '#' and 'pragma' scanned separately to please gcc 3.0 and SUN cc.
+ *
  * Revision 3.74  2002/10/28 10:32:28  sbs
  * secret insertion of EXTERN_MOD_NAME in case of readsib improved.
  *
@@ -227,7 +230,7 @@ static int prf_arity[] = {
        MODDEC, MODSPEC, MODIMP, CLASSDEC, IMPORT, IMPLICIT, EXPLICIT, TYPES,
        FUNS, OWN, GLOBAL, OBJECTS, CLASSIMP, ALL,
        SC, TRUETOKEN, FALSETOKEN, EXTERN, C_KEYWORD,
-       PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
+       HASH, PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
        TOUCH, COPYFUN, FREEFUN, INITFUN, LINKWITH,
        WLCOMP, CACHESIM, SPECIALIZE,
        TARGET, STEP, WIDTH, GENARRAY, MODARRAY,
@@ -775,7 +778,10 @@ mainargs: TYPE_VOID     { $$ = NULL; }
 *********************************************************************
 */
 
-wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_conf
+hash_pragma: HASH PRAGMA ;
+
+
+wlcomp_pragma_global: hash_pragma WLCOMP wlcomp_conf
                       { if (global_wlcomp_aps != NULL) {
                           /* remove old global pragma */
                           global_wlcomp_aps = FreeTree( global_wlcomp_aps);
@@ -790,7 +796,7 @@ wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_conf
                       }
                     ;
 
-wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_conf
+wlcomp_pragma_local: hash_pragma WLCOMP wlcomp_conf
                      { $3 = CheckWlcompConf( $3, NULL);
                        if ($3 != NULL) {
                          $$ = MakePragma();
@@ -814,8 +820,8 @@ wlcomp_conf: id        { $$ = MakeId( $1, NULL, ST_regular); }
            ;
 
 
-pragmacachesim: PRAGMA CACHESIM string   { $$ = $3;              }
-              | PRAGMA CACHESIM          { $$ = StringCopy( ""); }
+pragmacachesim: hash_pragma CACHESIM string   { $$ = $3;              }
+              | hash_pragma CACHESIM          { $$ = StringCopy( ""); }
               | /* empty */              { $$ = NULL;            }
               ;
 
@@ -839,7 +845,7 @@ pragmalist: pragmalist pragma
           | pragma
           ;
 
-pragma: PRAGMA LINKNAME string
+pragma: hash_pragma LINKNAME string
         { if (store_pragma == NULL) {
             store_pragma = MakePragma();
           }
@@ -848,7 +854,7 @@ pragma: PRAGMA LINKNAME string
           }
           PRAGMA_LINKNAME( store_pragma) = $3;
         }
-      | PRAGMA LINKSIGN SQBR_L nums SQBR_R
+      | hash_pragma LINKSIGN SQBR_L nums SQBR_R
         { if (store_pragma == NULL) {
             store_pragma = MakePragma();
           }
@@ -857,7 +863,7 @@ pragma: PRAGMA LINKNAME string
           }
           PRAGMA_LINKSIGNNUMS( store_pragma) = $4;
         }
-      | PRAGMA REFCOUNTING SQBR_L nums SQBR_R
+      | hash_pragma REFCOUNTING SQBR_L nums SQBR_R
         { if (store_pragma == NULL) {
             store_pragma = MakePragma();
           }
@@ -866,7 +872,7 @@ pragma: PRAGMA LINKNAME string
           }
           PRAGMA_REFCOUNTINGNUMS( store_pragma) = $4;
         }
-      | PRAGMA READONLY SQBR_L nums SQBR_R
+      | hash_pragma READONLY SQBR_L nums SQBR_R
         { if (store_pragma == NULL) {
             store_pragma = MakePragma();
           }
@@ -875,7 +881,7 @@ pragma: PRAGMA LINKNAME string
           }
           PRAGMA_READONLYNUMS( store_pragma) = $4;
         }
-      | PRAGMA EFFECT fun_ids
+      | hash_pragma EFFECT fun_ids
         { if (store_pragma == NULL) {
             store_pragma = MakePragma();
           }
@@ -884,7 +890,7 @@ pragma: PRAGMA LINKNAME string
           }
           PRAGMA_EFFECT( store_pragma) = $3;
         }
-      | PRAGMA TOUCH fun_ids
+      | hash_pragma TOUCH fun_ids
         { if (store_pragma == NULL) {
             store_pragma = MakePragma();
           }
@@ -893,7 +899,7 @@ pragma: PRAGMA LINKNAME string
           }
           PRAGMA_TOUCH( store_pragma) = $3;
         }
-      | PRAGMA COPYFUN string
+      | hash_pragma COPYFUN string
         { if (store_pragma == NULL) {
             store_pragma = MakePragma();
           }
@@ -902,7 +908,7 @@ pragma: PRAGMA LINKNAME string
           }
           PRAGMA_COPYFUN( store_pragma) = $3;
         }
-      | PRAGMA FREEFUN string
+      | hash_pragma FREEFUN string
         { if (store_pragma == NULL) {
             store_pragma = MakePragma();
           }
@@ -911,7 +917,7 @@ pragma: PRAGMA LINKNAME string
           }
           PRAGMA_FREEFUN( store_pragma) = $3;
         }
-      | PRAGMA INITFUN string
+      | hash_pragma INITFUN string
         { if (store_pragma == NULL) {
             store_pragma = MakePragma();
           }
@@ -1841,7 +1847,7 @@ evextern: EXTERN
           }
         ;
 
-linkwith: PRAGMA LINKWITH linklist   { $$ = $3;   }
+linkwith: hash_pragma LINKWITH linklist   { $$ = $3;   }
         | /* empty */                { $$ = NULL; }
         ;
 
@@ -2473,19 +2479,19 @@ sibpragmalist: sibpragmalist sibpragma
              ;
 
 sibpragma: pragma
-         | PRAGMA TYPES fun_ids
+         | hash_pragma TYPES fun_ids
            { if (store_pragma == NULL) {
                store_pragma = MakePragma();
              }
              PRAGMA_NEEDTYPES( store_pragma) = $3;
            }
-         | PRAGMA FUNS sibfunlist
+         | hash_pragma FUNS sibfunlist
            { if (store_pragma == NULL) {
                store_pragma = MakePragma();
              }
              PRAGMA_NEEDFUNS( store_pragma) = $3;
            }
-         | PRAGMA EXTERN id
+         | hash_pragma EXTERN id
            { if (store_pragma == NULL) {
                store_pragma = MakePragma();
              }
