@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2002/09/05 20:51:23  dkr
+ * SSACFGetShapeOfExpr(): DBUG_ASSERTs about unknown shapes removed
+ *
  * Revision 1.31  2002/09/03 18:47:43  dkr
  * - TAGGED_ARRAYS: constants propagation for N_ap activated again
  * - SSACFid(): support for dynamic types added
@@ -905,21 +908,21 @@ static shape *
 SSACFGetShapeOfExpr (node *expr)
 {
     shape *shp;
+
     DBUG_ENTER ("SSACFGetShapeOfExpr");
+
     DBUG_ASSERT ((expr != NULL), "SSACFGetShapeOfExpr called with NULL pointer");
 
     switch (NODE_TYPE (expr)) {
     case N_id:
         /* get shape from type info */
         shp = SHOldTypes2Shape (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
-        DBUG_ASSERT ((shp != NULL), "identifier with unknown shape");
         break;
 
     case N_array:
         /* get shape from array type attribute */
         DBUG_ASSERT ((ARRAY_TYPE (expr) != NULL), "array type attribute is missing");
         shp = SHOldTypes2Shape (ARRAY_TYPE (expr));
-        DBUG_ASSERT ((shp != NULL), "array with unknown shape");
         break;
 
     default:
