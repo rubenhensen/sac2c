@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.157  2004/07/28 17:27:02  skt
+ * PrintEX added
+ *
  * Revision 3.156  2004/07/21 16:56:44  ktr
  * NWITHOP_MEM is now printed, too.
  *
@@ -3407,7 +3410,7 @@ PrintMT (node *arg_node, info *arg_info)
 
     /* PrintAssign already indents */
     fprintf (outfile, "MT(%i) {", MT_IDENTIFIER (arg_node));
-    fprintf (outfile, " /*** begin of mt region ***/\n");
+    fprintf (outfile, " /*** begin of mt cell ***/\n");
 
     if (MT_USEMASK (arg_node) != NULL) {
         INDENT;
@@ -3439,7 +3442,55 @@ PrintMT (node *arg_node, info *arg_info)
 
     fprintf (outfile, "\n");
     INDENT;
-    fprintf (outfile, "} /*** end of mt region ***/\n");
+    fprintf (outfile, "} /*** end of mt cell ***/\n");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PrintEX(node *arg_node, info *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PrintEX (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PrintEX");
+
+    /* PrintAssign already indents */
+    fprintf (outfile, "EX(%i) {", EX_IDENTIFIER (arg_node));
+    fprintf (outfile, " /*** begin of exclusive cell ***/\n");
+
+    if (EX_USEMASK (arg_node) != NULL) {
+        INDENT;
+        fprintf (outfile, "/* use:");
+        DFMPrintMask (outfile, " %s", EX_USEMASK (arg_node));
+        fprintf (outfile, " */\n");
+    }
+    if (EX_DEFMASK (arg_node) != NULL) {
+        INDENT;
+        fprintf (outfile, "/* def:");
+        DFMPrintMask (outfile, " %s", EX_DEFMASK (arg_node));
+        fprintf (outfile, " */\n");
+    }
+
+    indent++;
+    if (EX_REGION (arg_node) != NULL) {
+        Trav (EX_REGION (arg_node), arg_info);
+    } else {
+        INDENT;
+        fprintf (outfile, "/* ... Empty ... */");
+    }
+    indent--;
+
+    fprintf (outfile, "\n");
+    INDENT;
+    fprintf (outfile, "} /*** end of exclusive cell ***/\n");
 
     DBUG_RETURN (arg_node);
 }
@@ -3461,7 +3512,7 @@ PrintST (node *arg_node, info *arg_info)
 
     /* PrintAssign already indents */
     fprintf (outfile, "ST(%i) {", ST_IDENTIFIER (arg_node));
-    fprintf (outfile, " /*** begin of st region ***/\n");
+    fprintf (outfile, " /*** begin of st cell ***/\n");
 
     if (ST_USEMASK (arg_node) != NULL) {
         INDENT;
@@ -3499,7 +3550,7 @@ PrintST (node *arg_node, info *arg_info)
 
     fprintf (outfile, "\n");
     INDENT;
-    fprintf (outfile, "} /*** end of st region ***/\n");
+    fprintf (outfile, "} /*** end of st cell ***/\n");
 
     DBUG_RETURN (arg_node);
 }

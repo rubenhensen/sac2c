@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2004/07/28 17:27:02  skt
+ * PrintEX added
+ *
  * Revision 3.24  2004/07/16 14:41:34  sah
  * switch to new INFO structure
  * PHASE I
@@ -150,6 +153,7 @@ extern node *PrintIcm (node *arg_node, info *arg_info);
 extern node *PrintPragma (node *arg_node, info *arg_info);
 extern node *PrintSpmd (node *arg_node, info *arg_info);
 extern node *PrintSync (node *arg_node, info *arg_info);
+extern node *PrintEX (node *arg_node, info *arg_info);
 extern node *PrintMT (node *arg_node, info *arg_info);
 extern node *PrintST (node *arg_node, info *arg_info);
 extern node *PrintMTsignal (node *arg_node, info *arg_info);
