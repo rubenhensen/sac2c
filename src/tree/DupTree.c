@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2001/05/18 11:40:31  dkr
+ * DBUG_ASSERT containing IsEmptyLUT() added
+ *
  * Revision 3.50  2001/05/17 11:37:24  dkr
  * InitDupTree() added
  * FREE/MALLOC eliminated
@@ -359,6 +362,7 @@ DupTreeOrNodeLUT_Type (int NodeOnly, node *arg_node, LUT_t lut, int type)
              * Therefore, we just generate it *once* via InitDupTree() !!
              */
             DBUG_ASSERT ((dup_lut != NULL), "InitDupTree() has not been called!");
+            DBUG_ASSERT ((IsEmptyLUT (dup_lut)), "LUT for DupTree is not empty!");
             INFO_DUP_LUT (arg_info) = dup_lut;
         } else {
             INFO_DUP_LUT (arg_info) = lut;
