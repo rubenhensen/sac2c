@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2000/03/21 14:53:31  dkr
+ * ASSERT added: For the time being Lac2fun() can be used after type
+ * checking only
+ *
  * Revision 1.17  2000/03/17 18:30:36  dkr
  * type lut_t* replaced by LUT_t
  *
@@ -151,6 +155,10 @@ DefinedVar (node *decl, DFMmask_t needed, DFMmask_t in, DFMmask_t out, DFMmask_t
 {
     DBUG_ENTER ("DefinedVar");
 
+    DBUG_ASSERT ((decl != NULL),
+                 "Variable declaration missing!"
+                 "For the time being Lac2fun() can be used after type checking only!");
+
     if ((NODE_TYPE (decl) != N_vardec) && (NODE_TYPE (decl) != N_arg)) {
         DBUG_ASSERT ((NODE_TYPE (decl) == N_objdef),
                      "declaration is neither a N_arg/N_vardec-node nor a N_objdef-node");
@@ -235,6 +243,10 @@ static void
 UsedVar (node *decl, DFMmask_t in, DFMmask_t local)
 {
     DBUG_ENTER ("UsedVar");
+
+    DBUG_ASSERT ((decl != NULL),
+                 "Variable declaration missing! "
+                 "For the time being Lac2fun() can be used after type checking only!");
 
     if ((NODE_TYPE (decl) != N_vardec) && (NODE_TYPE (decl) != N_arg)) {
         DBUG_ASSERT ((NODE_TYPE (decl) == N_objdef),
