@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2003/03/25 16:18:07  sbs
+ * d.....
+ *
  * Revision 3.40  2003/03/25 16:04:41  sbs
  * do...
  *
@@ -641,7 +644,7 @@ int ive_expr, ive_op;
  */
 /*@{*/
 
-/**<!--*********************************************************************-->
+/** <!--********************************************************************-->
  *
  * @fn node *FindVect( node *chain)
  *
@@ -664,7 +667,7 @@ FindVect (node *chain)
     DBUG_RETURN (chain);
 }
 
-/*!<!--*********************************************************************-->
+/** <!--********************************************************************-->
  *
  * @fn  bool EqTypes( types *type1, types *type2)
  *
@@ -758,19 +761,17 @@ SetVect (node *chain)
     DBUG_RETURN (chain);
 }
 
-/*
+/** <!--*********************************************************************-->
  *
- *  functionname  : SetIdx
- *  arguments     : 1) node * chain
- *                  2) types * shape to be inserted
- *  description   : inserts an IDX(shape) node in the given node-chain
- *                  if there exists none
- *  global vars   : ---
- *  internal funs : FindIdx, GenIdx, InsertInChain
- *  external funs : ---
- *  macros        : DBUG...
+ * @fn  node *SetIdx( node *chain, types *vartype)
  *
- */
+ *   @param  chain
+ *   @param  vartype shape to be inserted
+ *   @return potentially extended chain
+ *   @brief  inserts an IDX(shape) node in the given node-chain if there exists
+ *           none yet.
+ *
+ ******************************************************************************/
 
 node *
 SetIdx (node *chain, types *vartype)
