@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.194  1998/04/17 19:15:29  dkr
+ * removed trigraph
+ *
  * Revision 1.193  1998/04/17 19:04:23  dkr
  * changed output of PrintWLseg, PrintNwith2
  *
@@ -627,13 +630,13 @@
 
 /*
  * use of arg_info in this file:
- * - node[0] is used for storing the current fundef node.
- * - node[1]: profile macros  (????)
- * - node[2] determines which syntax of the new WLs is printed. If it's
+ * - node[0]: is used for storing the current fundef node.
+ * - node[1]: profile macros  (?)
+ * - node[2]: determines which syntax of the new WLs is printed. If it's
  *   NULL then the intermal syntax is uses which allows to state more than
  *   one Npart. Else the last (and hopefully only) Npart returns the
  *   last expr in node[2].
- * - node[3] is used while printing the old WLs to return the main
+ * - node[3]: is used while printing the old WLs to return the main
  *   expr from the block.
  */
 
