@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.97  2004/10/12 10:26:32  ktr
+ * Corrected IDS_NTYPE.
+ *
  * Revision 3.96  2004/10/11 16:48:33  sah
  * fixed problem with NCODE_DEC_USED
  *
@@ -547,7 +550,7 @@ extern bool IsNonUniqueHidden (types *type);
 
 #define IDS_VARNO(n) VARDEC_OR_ARG_VARNO (IDS_VARDEC (n))
 #define IDS_TYPE(n) VARDEC_OR_ARG_TYPE (IDS_VARDEC (n))
-#define IDS_NTYPE(n) AVIS_NTYPE (IDS_AVIS (n))
+#define IDS_NTYPE(n) AVIS_TYPE (IDS_AVIS (n))
 #define IDS_DIM(n) VARDEC_OR_ARG_DIM (IDS_VARDEC (n))
 #define IDS_SHPSEG(n) TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (IDS_VARDEC (n)))
 #define IDS_SHAPE(n, x) SHPSEG_SHAPE (IDS_SHPSEG (n), x)
