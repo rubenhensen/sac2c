@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/06/30 11:58:25  hw
+ * Revision 1.8  1996/02/06 16:10:20  sbs
+ * Double2String and Float2String inserted.
+ *
+ * Revision 1.7  1995/06/30  11:58:25  hw
  * mmoved macro MOD to tree.h
  *
  * Revision 1.6  1995/06/23  12:32:27  hw
@@ -40,5 +43,7 @@ extern char *type_string[];
 extern char *rename_type[];
 
 extern char *Type2String (types *, int);
+extern char *Double2String (double);
+extern char *Float2String (float);
 
 #endif /* _convert_h */

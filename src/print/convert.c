@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1996/01/16 16:57:00  cg
+ * Revision 1.15  1996/02/06 16:10:20  sbs
+ * Double2String and Float2String inserted.
+ *
+ * Revision 1.14  1996/01/16  16:57:00  cg
  * extended macro TYP_IF to 5 entries
  *
  * Revision 1.13  1995/11/06  18:44:45  cg
@@ -77,6 +80,66 @@ char *rename_type[] = {
 #include "type_info.mac"
 };
 #undef TYP_IF
+
+/*
+ *
+ *  functionname  : Float2String
+ *  arguments     :  1) float-val
+ *  description   : prints a float into a string so that the string
+ *                  1) does not loose any digits
+ *                  2) will be recognized as float from any C-Compiler!
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : malloc, sprintf
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
+char *
+Float2String (float val)
+{
+    char *tmp_string;
+
+    DBUG_ENTER ("Float2String");
+
+    tmp_string = (char *)malloc (sizeof (char) * 256);
+    if (val == (int)val)
+        sprintf (tmp_string, "%.256g.0f", val);
+    else
+        sprintf (tmp_string, "%.256gf", val);
+    DBUG_RETURN (tmp_string);
+}
+
+/*
+ *
+ *  functionname  : Double2String
+ *  arguments     :  1) double-val
+ *  description   : prints a double into a string so that the string
+ *                  1) does not loose any digits
+ *                  2) will be recognized as double from any C-Compiler!
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : malloc, sprintf
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
+char *
+Double2String (double val)
+{
+    char *tmp_string;
+
+    DBUG_ENTER ("Double2String");
+
+    tmp_string = (char *)malloc (sizeof (char) * 256);
+    if (val == (int)val)
+        sprintf (tmp_string, "%.256g.0", val);
+    else
+        sprintf (tmp_string, "%.256g", val);
+    DBUG_RETURN (tmp_string);
+}
 
 /*
  *
