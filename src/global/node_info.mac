@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.25  1994/12/20 13:48:29  hw
- * inserted TCunaryOp at N_pre & N_post
+ * Revision 1.26  1995/01/02 10:50:49  asi
+ * added OPTassign
  *
+;; Revision 1.25  1994/12/20  13:48:29  hw
+;; inserted TCunaryOp at N_pre & N_post
+;;
 ;; Revision 1.24  1994/12/19  15:27:07  asi
 ;; Added - OPTid
 ;;
@@ -111,7 +114,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
   NIF (N_arg, "N_arg", DummyFun, DummyFun, PrintArg, DummyFun, OPTarg, DummyFun, DummyFun,
        DummyFun),
-  NIF (N_assign, "N_assign", DummyFun, FltnAssign, PrintAssign, TCassign, DummyFun,
+  NIF (N_assign, "N_assign", DummyFun, FltnAssign, PrintAssign, TCassign, OPTassign,
        DummyFun, DummyFun, DummyFun),
   NIF (N_return, "N_return", DummyFun, DummyFun, PrintReturn, TCreturn, DummyFun,
        DummyFun, DummyFun, DummyFun),

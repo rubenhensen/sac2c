@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1994/12/19 15:26:07  asi
+ * Revision 1.5  1995/01/02 10:50:49  asi
+ * added OPTassign
+ *
+ * Revision 1.4  1994/12/19  15:26:07  asi
  * Added - OPTid
  *
  * Revision 1.3  1994/12/19  14:43:17  asi
@@ -28,6 +31,7 @@ extern node *OPTmodul (node *, node *);
 extern node *OPTlet (node *, node *);
 extern node *OPTblock (node *, node *);
 extern node *OPTid (node *, node *);
+extern node *OPTassign (node *, node *);
 
 extern node *Optimize (node *);
 
