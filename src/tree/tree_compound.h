@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2001/03/19 18:23:11  dkr
+ * no changes done
+ *
  * Revision 3.23  2001/03/15 21:15:17  dkr
  * signature of NameOr..._MakeIndex modified
  *
@@ -784,7 +787,7 @@ extern node *AppendVardec (node *vardec_chain, node *vardec);
 /******************************************************************************
  *
  * function:
- *   extern node *MakeVardecFromArg( node *arg)
+ *   node *MakeVardecFromArg( node *arg)
  *
  * description:
  *   copies all attributes from an arg node to a new allocated vardec node.
