@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/12/10 15:32:44  dkr
+ * call of Compile_Tagged() added
+ *
  * Revision 3.16  2001/11/19 20:21:16  dkr
  * global vars 'errors' and 'warnings' renamed into
  * 'errors_cnt' and 'warnings_cnt' respectively in order
@@ -98,6 +101,7 @@
 #include "concurrent.h"
 #include "precompile.h"
 #include "compile.h"
+#include "compile.tagged.h"
 #include "annotate_fun_calls.h"
 #include "cccall.h"
 #include "PatchWith.h"
@@ -387,7 +391,7 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if ((!dkr) && ((gen_mt_code != GEN_MT_NEW))) {
+    if (gen_mt_code != GEN_MT_NEW) {
         compiler_phase += 2;
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
@@ -437,7 +441,7 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (dkr || (gen_mt_code == GEN_MT_NEW)) {
+    if (gen_mt_code == GEN_MT_NEW) {
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
         syntax_tree = Refcount (syntax_tree); /* refcnt_tab */
@@ -470,7 +474,11 @@ main (int argc, char *argv[])
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
+#if TAGGED_ARRAYS
+    syntax_tree = Compile_Tagged (syntax_tree); /* comp2_tab */
+#else
     syntax_tree = Compile (syntax_tree); /* comp_tab */
+#endif
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
