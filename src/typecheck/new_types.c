@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/09/04 12:20:37  dkr
+ * some comments added...
+ *
  * Revision 3.19  2002/09/04 12:16:38  dkr
  * data type DFT_state invented
  *
@@ -4268,6 +4271,10 @@ BuildCondAssign (prf prf, node *arg, node *expr, node *then_ass, node *else_ass,
 
         DBUG_ASSERT ((NODE_TYPE (expr) == N_num), "illegal expression found!");
 
+        /*
+         * for user defined types we should use the appropriate N_ap
+         * implementation here if it is available!!
+         */
         prf1 = MakePrf (prf, MakeExprs (Arg2Id (arg), NULL)); /* !!! */
         flt_prf1 = BuildTmpId (TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (0)),
                                new_vardecs);
@@ -4293,6 +4300,10 @@ BuildCondAssign (prf prf, node *arg, node *expr, node *then_ass, node *else_ass,
 
         DBUG_ASSERT ((NODE_TYPE (expr) == N_array), "illegal expression found!");
 
+        /*
+         * for user defined types we should use the appropriate N_ap
+         * implementation here if it is available!!
+         */
         prf1 = MakePrf (prf, MakeExprs (Arg2Id (arg), NULL)); /* !!! */
         flt_prf1 = BuildTmpId (TYMakeAUDGZ (TYMakeSimpleType (T_int)), new_vardecs);
 
