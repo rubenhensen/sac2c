@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.33  2000/06/08 09:18:52  nmw
+ * default setting using the genlib switch added
+ *
  * Revision 2.32  2000/06/07 12:10:47  nmw
  * description for genlib switch added
  *
@@ -597,7 +600,9 @@ usage ()
     printf ("\n\nLIBRARY OPTIONS:\n\n"
             "\t -genlib <lang>\tlanguage interface to generate from module.\n"
             "\t\t\tsac: generate SAC library.\n"
-            "\t\t\t  c: generate C library and headerfile.\n"
+            "\t\t\t  c: generate C library and headerfile. By default PHM,\n"
+            "\t\t\t     APS, RCAO, MSCA and mt are disabled. They can be\n"
+            "\t\t\t     reenabled on the commandline after the genlib switch.\n"
             "\t\t\tdefault: -genlib sac\n"
 
             "\n\t -l <n>\t\tlink level for generating SAC library.\n"
