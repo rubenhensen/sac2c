@@ -1,6 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2005/03/04 21:21:42  cg
+ * fun2lac radically simplified:
+ * loop and conditional functions are transformed into loops
+ * and conditionals, but not inlined. This allows us to change
+ * the traversal order to simply follow the fundef chain without
+ * any inter-functional transformations. Inlining is postponed
+ * to a regular call to the function inlining optimization.
+ *
  * Revision 3.33  2005/01/11 13:05:10  cg
  * Removed applications of ERRitemName.
  *
@@ -140,6 +148,10 @@
  *   found in lac2fun.c into an explicit representation suitable for code
  *   generation.
  *
+ *   After a large-scale re-organization of this phase, loop and cond
+ *   functions are merely transformed into loops and conditionals while
+ *   inlining is postponed to a separate application of function inlining.
+ *
  *****************************************************************************/
 
 #include "dbug.h"
@@ -160,17 +172,12 @@
  * INFO structure
  */
 struct INFO {
-    node *fundef;
-    node *inlined;
-    node *let;
+    int dummy;
 };
 
 /*
  * INFO macros
  */
-#define INFO_F2L_FUNDEF(n) (n->fundef)
-#define INFO_F2L_INLINED(n) (n->inlined)
-#define INFO_F2L_LET(n) (n->let)
 
 /*
  * INFO functions
@@ -182,11 +189,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
-
-    INFO_F2L_FUNDEF (result) = NULL;
-    INFO_F2L_INLINED (result) = NULL;
-    INFO_F2L_LET (result) = NULL;
+    result = NULL;
 
     DBUG_RETURN (result);
 }
@@ -195,8 +198,6 @@ static info *
 FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
-
-    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -619,157 +620,150 @@ TransformIntoDoLoop (node *fundef)
 
     DBUG_ENTER ("TransformIntoDoLoop");
 
-    /*
-     * CAUTION:
-     * In case of (FUNDEF_USED > 1) the 'fundef' may have been transformed into
-     * a do-loop already!
-     */
-    if (NODE_TYPE (ASSIGN_INSTR (FUNDEF_INSTR (fundef))) != N_do) {
-        assigns = FUNDEF_INSTR (fundef);
+    assigns = FUNDEF_INSTR (fundef);
 
-        if (NODE_TYPE (ASSIGN_INSTR (assigns)) == N_cond) {
-            cond_assign = assigns;
-            loop_body = NULL;
-        } else {
-            tmp = assigns;
-            while ((NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp))) != N_cond)
-                   && (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp))) != N_return)) {
-                tmp = ASSIGN_NEXT (tmp);
-                DBUG_ASSERT ((tmp != NULL),
-                             "recursive call of do-loop function not found");
-            }
-            cond_assign = ASSIGN_NEXT (tmp);
-            ASSIGN_NEXT (tmp) = NULL;
-            loop_body = assigns;
+    if (NODE_TYPE (ASSIGN_INSTR (assigns)) == N_cond) {
+        cond_assign = assigns;
+        loop_body = NULL;
+    } else {
+        tmp = assigns;
+        while ((NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp))) != N_cond)
+               && (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp))) != N_return)) {
+            tmp = ASSIGN_NEXT (tmp);
+            DBUG_ASSERT ((tmp != NULL), "recursive call of do-loop function not found");
         }
-        cond = ASSIGN_INSTR (cond_assign);
+        cond_assign = ASSIGN_NEXT (tmp);
+        ASSIGN_NEXT (tmp) = NULL;
+        loop_body = assigns;
+    }
+    cond = ASSIGN_INSTR (cond_assign);
+
+    /*
+     * cond_assign: if (<pred>) { ... }  return(...);
+     * cond:        if (<pred>) { ... }
+     * loop_body:   <ass>
+     */
+
+    if (NODE_TYPE (cond) != N_return) {
+        if (global.compiler_phase >= PH_refcnt) {
+            /*
+             * Adjust_RC Operations in the THEN-Tree must be moved
+             * in to the Do-Loops SKIP-Block
+             */
+            while (
+              (BLOCK_INSTR (COND_THEN (cond)) != NULL)
+              && (NODE_TYPE (BLOCK_INSTR (COND_THEN (cond))) == N_assign)
+              && (NODE_TYPE (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond)))) == N_prf)
+              && ((PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond)))) == F_inc_rc)
+                  || (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond)))) == F_dec_rc)
+                  || (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond)))) == F_free))) {
+                tmp = ASSIGN_NEXT (BLOCK_INSTR (COND_THEN (cond)));
+                ASSIGN_NEXT (BLOCK_INSTR (COND_THEN (cond))) = NULL;
+                skip = TCappendAssign (skip, BLOCK_INSTR (COND_THEN (cond)));
+                BLOCK_INSTR (COND_THEN (cond)) = tmp;
+            }
+
+            /*
+             * Adjust_RC Operations in the ELSE-Tree must be moved
+             * after the do-loop, they are put into epilogue
+             */
+            while (
+              (BLOCK_INSTR (COND_ELSE (cond)) != NULL)
+              && (NODE_TYPE (BLOCK_INSTR (COND_ELSE (cond))) == N_assign)
+              && (NODE_TYPE (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond)))) == N_prf)
+              && ((PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond)))) == F_inc_rc)
+                  || (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond)))) == F_dec_rc)
+                  || (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond)))) == F_free))) {
+                tmp = ASSIGN_NEXT (BLOCK_INSTR (COND_ELSE (cond)));
+                ASSIGN_NEXT (BLOCK_INSTR (COND_ELSE (cond))) = NULL;
+                epilogue = TCappendAssign (epilogue, BLOCK_INSTR (COND_ELSE (cond)));
+                BLOCK_INSTR (COND_ELSE (cond)) = tmp;
+            }
+
+            if (BLOCK_INSTR (COND_ELSE (cond)) == NULL)
+                BLOCK_INSTR (COND_ELSE (cond)) = TBmakeEmpty ();
+        }
+
+        ret = ASSIGN_INSTR (ASSIGN_NEXT (cond_assign));
+
+        DBUG_ASSERT ((NODE_TYPE (cond) == N_cond),
+                     "Illegal node type in conditional position.");
+        DBUG_ASSERT ((NODE_TYPE (BLOCK_INSTR (COND_ELSE (cond))) == N_empty),
+                     "else part of conditional in do-loop must be empty");
+        DBUG_ASSERT ((NODE_TYPE (ret) == N_return),
+                     "after conditional in do-loop funtion no assignments are"
+                     " allowed");
+
+        loop_pred = COND_COND (cond);
+        COND_COND (cond) = TBmakeBool (FALSE);
 
         /*
-         * cond_assign: if (<pred>) { ... }  return(...);
-         * cond:        if (<pred>) { ... }
+         * cond_assign: if (false) { ... = DoLoopFun(...); }  return(...);
+         * cond:        if (false) { ... = DoLoopFun(...); }
+         * ret:         return(...);
+         * loop_pred:   <pred>
          * loop_body:   <ass>
          */
 
-        if (NODE_TYPE (cond) != N_return) {
-            if (global.compiler_phase >= PH_refcnt) {
-                /* Adjust_RC Operations in the THEN-Tree must be moved
-                   in to the Do-Loops SKIP-Block */
-                while (
-                  (BLOCK_INSTR (COND_THEN (cond)) != NULL)
-                  && (NODE_TYPE (BLOCK_INSTR (COND_THEN (cond))) == N_assign)
-                  && (NODE_TYPE (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond)))) == N_prf)
-                  && ((PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond)))) == F_inc_rc)
-                      || (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond))))
-                          == F_dec_rc)
-                      || (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond))))
-                          == F_free))) {
-                    tmp = ASSIGN_NEXT (BLOCK_INSTR (COND_THEN (cond)));
-                    ASSIGN_NEXT (BLOCK_INSTR (COND_THEN (cond))) = NULL;
-                    skip = TCappendAssign (skip, BLOCK_INSTR (COND_THEN (cond)));
-                    BLOCK_INSTR (COND_THEN (cond)) = tmp;
-                }
+        int_call = BLOCK_INSTR (COND_THEN (cond));
+        DBUG_ASSERT ((IsRecursiveCall (int_call, fundef)
+                      && (ASSIGN_NEXT (int_call) == NULL)),
+                     "recursive call of do-loop function must be the only"
+                     " assignment in the conditional");
 
-                /* Adjust_RC Operations in the ELSE-Tree must be moved
-                   after the do-loop, they are put into epilogue */
-                while (
-                  (BLOCK_INSTR (COND_ELSE (cond)) != NULL)
-                  && (NODE_TYPE (BLOCK_INSTR (COND_ELSE (cond))) == N_assign)
-                  && (NODE_TYPE (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond)))) == N_prf)
-                  && ((PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond)))) == F_inc_rc)
-                      || (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond))))
-                          == F_dec_rc)
-                      || (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond))))
-                          == F_free))) {
-                    tmp = ASSIGN_NEXT (BLOCK_INSTR (COND_ELSE (cond)));
-                    ASSIGN_NEXT (BLOCK_INSTR (COND_ELSE (cond))) = NULL;
-                    epilogue = TCappendAssign (epilogue, BLOCK_INSTR (COND_ELSE (cond)));
-                    BLOCK_INSTR (COND_ELSE (cond)) = tmp;
-                }
+        DBUG_ASSERT ((ReturnVarsAreIdentical (RETURN_EXPRS (ret), ASSIGN_LHS (int_call))),
+                     "vars on LHS of recursive call and in return statement"
+                     " are not identical!");
 
-                if (BLOCK_INSTR (COND_ELSE (cond)) == NULL)
-                    BLOCK_INSTR (COND_ELSE (cond)) = TBmakeEmpty ();
-            }
+        /*
+         * cond_assign: if (false) { ... = DoLoopFun(...); }  return(...);
+         * cond:        if (false) { ... = DoLoopFun(...); }
+         * ret:         return(...);
+         * loop_pred:   <pred>
+         * loop_body:   <ass>
+         * int_call:    ... = DoLoopFun(...);
+         */
 
-            ret = ASSIGN_INSTR (ASSIGN_NEXT (cond_assign));
+        BuildRenamingAssignsForDo (&(FUNDEF_VARDEC (fundef)), &ass1, &ass2, &ass3,
+                                   FUNDEF_ARGS (fundef), AP_ARGS (ASSIGN_RHS (int_call)),
+                                   RETURN_EXPRS (ret));
 
-            DBUG_ASSERT ((NODE_TYPE (cond) == N_cond),
-                         "Illegal node type in conditional position.");
-            DBUG_ASSERT ((NODE_TYPE (BLOCK_INSTR (COND_ELSE (cond))) == N_empty),
-                         "else part of conditional in do-loop must be empty");
-            DBUG_ASSERT ((NODE_TYPE (ret) == N_return),
-                         "after conditional in do-loop funtion no assignments are"
-                         " allowed");
+        loop_body = TCappendAssign (ass2, TCappendAssign (loop_body, ass3));
 
-            loop_pred = COND_COND (cond);
-            COND_COND (cond) = TBmakeBool (FALSE);
-
-            /*
-             * cond_assign: if (false) { ... = DoLoopFun(...); }  return(...);
-             * cond:        if (false) { ... = DoLoopFun(...); }
-             * ret:         return(...);
-             * loop_pred:   <pred>
-             * loop_body:   <ass>
-             */
-
-            int_call = BLOCK_INSTR (COND_THEN (cond));
-            DBUG_ASSERT ((IsRecursiveCall (int_call, fundef)
-                          && (ASSIGN_NEXT (int_call) == NULL)),
-                         "recursive call of do-loop function must be the only"
-                         " assignment in the conditional");
-
-            DBUG_ASSERT ((ReturnVarsAreIdentical (RETURN_EXPRS (ret),
-                                                  ASSIGN_LHS (int_call))),
-                         "vars on LHS of recursive call and in return statement"
-                         " are not identical!");
-
-            /*
-             * cond_assign: if (false) { ... = DoLoopFun(...); }  return(...);
-             * cond:        if (false) { ... = DoLoopFun(...); }
-             * ret:         return(...);
-             * loop_pred:   <pred>
-             * loop_body:   <ass>
-             * int_call:    ... = DoLoopFun(...);
-             */
-
-            BuildRenamingAssignsForDo (&(FUNDEF_VARDEC (fundef)), &ass1, &ass2, &ass3,
-                                       FUNDEF_ARGS (fundef),
-                                       AP_ARGS (ASSIGN_RHS (int_call)),
-                                       RETURN_EXPRS (ret));
-
-            loop_body = TCappendAssign (ass2, TCappendAssign (loop_body, ass3));
-
-            if (loop_body == NULL) {
-                loop_body = TBmakeEmpty ();
-            }
-            loop_body = TBmakeBlock (loop_body, NULL);
-
-            /*
-             * cond_assign: if (false) { ... = DoLoopFun(...); }  return(...);
-             * cond:        if (false) { ... = DoLoopFun(...); }
-             * ret:         return(...);
-             * loop_pred:   <pred>
-             * loop_body:   { a_i = tmp_a_i; <ass> tmp_a_i = A_i; }
-             * int_call:    ... = DoLoopFun(...);
-             */
-
-            /* replace cond by do-loop */
-            ASSIGN_INSTR (cond_assign) = FREEdoFreeTree (ASSIGN_INSTR (cond_assign));
-            ASSIGN_INSTR (cond_assign) = TBmakeDo (loop_pred, loop_body);
-
-            if (skip == NULL) {
-                skip = TBmakeEmpty ();
-            }
-            DO_SKIP (ASSIGN_INSTR (cond_assign)) = TBmakeBlock (skip, NULL);
-            DO_LABEL (ASSIGN_INSTR (cond_assign)) = ILIBtmpVar ();
+        if (loop_body == NULL) {
+            loop_body = TBmakeEmpty ();
         }
+        loop_body = TBmakeBlock (loop_body, NULL);
 
-        /* Insert epilogue */
-        epilogue = TCappendAssign (epilogue, ASSIGN_NEXT (cond_assign));
-        ASSIGN_NEXT (cond_assign) = epilogue;
+        /*
+         * cond_assign: if (false) { ... = DoLoopFun(...); }  return(...);
+         * cond:        if (false) { ... = DoLoopFun(...); }
+         * ret:         return(...);
+         * loop_pred:   <pred>
+         * loop_body:   { a_i = tmp_a_i; <ass> tmp_a_i = A_i; }
+         * int_call:    ... = DoLoopFun(...);
+         */
 
-        FUNDEF_INSTR (fundef) = TCappendAssign (ass1, cond_assign);
-        FUNDEF_INT_ASSIGN (fundef) = NULL;
+        /* replace cond by do-loop */
+        ASSIGN_INSTR (cond_assign) = FREEdoFreeTree (ASSIGN_INSTR (cond_assign));
+        ASSIGN_INSTR (cond_assign) = TBmakeDo (loop_pred, loop_body);
+
+        if (skip == NULL) {
+            skip = TBmakeEmpty ();
+        }
+        DO_SKIP (ASSIGN_INSTR (cond_assign)) = TBmakeBlock (skip, NULL);
+        DO_LABEL (ASSIGN_INSTR (cond_assign)) = ILIBtmpVar ();
     }
+
+    /* Insert epilogue */
+    epilogue = TCappendAssign (epilogue, ASSIGN_NEXT (cond_assign));
+    ASSIGN_NEXT (cond_assign) = epilogue;
+
+    FUNDEF_INSTR (fundef) = TCappendAssign (ass1, cond_assign);
+    FUNDEF_INT_ASSIGN (fundef) = NULL;
+
+    FUNDEF_ISDOFUN (fundef) = FALSE;
+    FUNDEF_ISINLINE (fundef) = TRUE;
 
     DBUG_RETURN (fundef);
 }
@@ -789,143 +783,10 @@ TransformIntoCond (node *fundef)
 {
     DBUG_ENTER ("TransformIntoCond");
 
+    FUNDEF_ISCONDFUN (fundef) = FALSE;
+    FUNDEF_ISINLINE (fundef) = TRUE;
+
     DBUG_RETURN (fundef);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *FUN2LACap( node *arg_node, info *arg_info)
- *
- * description:
- *   If the function applied is a cond or loop function, then the function
- *   body is re-transformed into a cond or loop and inlined afterwards.
- *
- ******************************************************************************/
-
-node *
-F2Lap (node *arg_node, info *arg_info)
-{
-    node *fundef;
-    node *inl_code;
-
-    DBUG_ENTER ("FUN2LACap");
-
-    fundef = AP_FUNDEF (arg_node);
-
-    if (FUNDEF_ISLACFUN (fundef)) {
-        if (FUNDEF_ISCONDFUN (fundef)) {
-
-            DBUG_PRINT ("F2L", ("Naive inlining of conditional function %s.",
-                                FUNDEF_NAME (fundef)));
-
-            fundef = TransformIntoCond (fundef);
-        } else if (FUNDEF_ISDOFUN (fundef)) {
-
-            DBUG_PRINT ("F2L",
-                        ("Naive inlining of do-loop function %s.", FUNDEF_NAME (fundef)));
-
-            fundef = TransformIntoDoLoop (fundef);
-        } else {
-            DBUG_ASSERT (0, "Illegal status of abstracted cond or loop fun");
-        }
-
-        DBUG_EXECUTE ("F2L", PRTdoPrintNode (fundef););
-
-        inl_code = INLinlineSingleApplication (INFO_F2L_LET (arg_info),
-                                               INFO_F2L_FUNDEF (arg_info));
-
-        DBUG_EXECUTE ("F2L", PRTdoPrint (inl_code););
-
-        INFO_F2L_INLINED (arg_info) = inl_code;
-    } else {
-        DBUG_PRINT ("F2L", ("function %s:%s is no LaC-function.", FUNDEF_MOD (fundef),
-                            FUNDEF_NAME (fundef)));
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *FUN2LAClet( node *arg_node, info *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-F2Llet (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("F2Llet");
-
-    INFO_F2L_LET (arg_info) = arg_node;
-
-    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *FUN2LACassign( node *arg_node, info *arg_info)
- *
- * description:
- *   The instruction behind the assignment is traversed. Iff it represents the
- *   application of a cond or loop function, this application is replaced by
- *   the inlined code of the cond or loop function, respectively.
- *
- ******************************************************************************/
-
-node *
-F2Lassign (node *arg_node, info *arg_info)
-{
-    node *inl_code;
-
-    DBUG_ENTER ("F2Lassign");
-
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-
-    inl_code = INFO_F2L_INLINED (arg_info);
-    if (inl_code != NULL) {
-        INFO_F2L_INLINED (arg_info) = NULL;
-
-        arg_node = TCappendAssign (inl_code, FREEdoFreeNode (arg_node));
-
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    }
-
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *FUN2LACblock( node *arg_node, info *arg_info)
- *
- * description:
- *   This function initiates the traversal of the instruction chain
- *   of an assignment block. The vardecs are not traversed.
- *
- ******************************************************************************/
-
-node *
-F2Lblock (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("F2Lblock");
-
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -944,10 +805,10 @@ F2Lfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("F2Lfundef");
 
-    INFO_F2L_FUNDEF (arg_info) = arg_node;
-
-    if ((!FUNDEF_ISLACFUN (arg_node)) && (FUNDEF_BODY (arg_node) != NULL)) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    if (FUNDEF_ISDOFUN (arg_node)) {
+        arg_node = TransformIntoDoLoop (arg_node);
+    } else if (FUNDEF_ISCONDFUN (arg_node)) {
+        arg_node = TransformIntoCond (arg_node);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -975,13 +836,6 @@ F2Lmodule (node *arg_node, info *arg_info)
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-
-        /*
-         * After inlining the special LaC functions and removing the external
-         * reference (N_ap node) of it, all LaC functions should be zombies
-         * with (FUNDEF_USED == 0), now.
-         */
-        arg_node = FREEremoveAllZombies (arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -1006,14 +860,8 @@ F2LdoFun2Lac (node *syntax_tree)
 
     DBUG_ENTER ("F2LdoFun2Lac");
 
-    /*
-     * Fun2Lac() does not work on SSA form!!
-     */
-    if (global.valid_ssaform) {
-        syntax_tree = USSATdoUndoSsaTransform (syntax_tree);
-    }
-
     info = MakeInfo ();
+
     TRAVpush (TR_f2l);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
