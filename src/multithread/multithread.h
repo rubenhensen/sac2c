@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/08/16 18:15:26  skt
+ * *** empty log message ***
+ *
  * Revision 3.10  2004/08/16 16:53:09  skt
  * SPLITPHASE flag added
  *
@@ -63,7 +66,7 @@
 #define MUTH_SINGLE 2
 #define MUTH_MULTI 3
 
-#define MUTH_SPLITPHASE_ENABLED = 1;
+#define MUTH_SPLITPHASE_ENABLED TRUE
 
 extern node *BuildMultiThread (node *syntax_tree);
 
