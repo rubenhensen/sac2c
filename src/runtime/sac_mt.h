@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2003/09/15 14:35:49  dkr
+ * SAC_MT_GET_BARRIER_RESULT defined only once now
+ *
  * Revision 3.48  2003/09/15 13:00:34  dkr
  * SAC_MT_MIN, SAC_MT_MAX replaced by SAC_MIN, SAC_MAX
  *
@@ -265,9 +268,6 @@ typedef union {
         SAC_MT_BARRIER_RC_RESULT_RC (SAC_MT_barrier, n, m, type) = CAT1 (res, __rc);     \
         SAC_MT_BARRIER_READY (SAC_MT_barrier, n) = m;                                    \
     }
-
-#define SAC_MT_GET_BARRIER_RESULT(n, m, type)                                            \
-    (SAC_MT_BARRIER_RESULT (SAC_MT_barrier, n, m, type))
 
 #define SAC_MT_GET_BARRIER_RESULT(n, m, type)                                            \
     (SAC_MT_BARRIER_RESULT (SAC_MT_barrier, n, m, type))
