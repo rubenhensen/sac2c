@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.94  1997/10/12 19:29:37  dkr
+ * In RenameReturn(): changed the 3rd-argument of MakeId, MakeIds from NULL to 0;
+ * in general NULL is NOT compatible with enum-type
+ * (e.g. '#define NULL (void *)0').
+ *
  * Revision 1.93  1997/10/09 13:58:56  srs
  * modified CompPrf() to compile F_min and F_max
  *
@@ -2220,8 +2225,8 @@ RenameReturn (node *return_node, node *arg_info)
             if (0 == strcmp (tmp_exprs->node[0]->IDS_ID, old_id)) {
                 /* generates new nodes */
                 new_id = RenameVar (old_id, i);
-                let = MakeLet (MakeId (ID_NAME (EXPRS_EXPR (tmp_exprs)), NULL, NULL),
-                               MakeIds (new_id, NULL, NULL));
+                let = MakeLet (MakeId (ID_NAME (EXPRS_EXPR (tmp_exprs)), NULL, 0),
+                               MakeIds (new_id, NULL, 0));
                 assign = MakeAssign (let, next_assign);
                 next_assign = assign;
                 vardec = AddVardec (vardec, ID_TYPE (EXPRS_EXPR (tmp_exprs)), new_id);
