@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2003/03/09 19:15:50  dkr
+ * TRACE_AA added
+ *
  * Revision 3.23  2003/03/09 17:13:54  ktr
  * added basic support for BLIR.
  *
@@ -281,9 +284,10 @@ extern unsigned int traceflag;
 
 #define TRACE_FUN 0x0001  /* trace user-defined fun apps */
 #define TRACE_PRF 0x0002  /* trace prim fun apps */
-#define TRACE_REF 0x0008  /* trace reference counting operations */
-#define TRACE_MEM 0x0010  /* trace malloc/free operations */
-#define TRACE_WL 0x0020   /* trace new with-loop execution */
+#define TRACE_REF 0x0004  /* trace reference counting operations */
+#define TRACE_MEM 0x0008  /* trace malloc/free operations */
+#define TRACE_WL 0x0010   /* trace with-loop execution */
+#define TRACE_AA 0x0020   /* trace array accesses */
 #define TRACE_MT 0x0040   /* trace multi-threading specific operations */
 #define TRACE_CENV 0x0080 /* trace c runtime enviroment init/exit */
 

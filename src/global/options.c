@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2003/03/09 19:15:43  dkr
+ * TRACE_AA added
+ *
  * Revision 3.33  2003/03/09 17:13:54  ktr
  * added basic support for BLIR.
  *
@@ -851,6 +854,7 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('f', traceflag |= TRACE_FUN);
         ARG_FLAGMASK ('p', traceflag |= TRACE_PRF);
         ARG_FLAGMASK ('w', traceflag |= TRACE_WL);
+        ARG_FLAGMASK ('s', traceflag |= TRACE_AA);
         ARG_FLAGMASK ('t', traceflag |= TRACE_MT);
         ARG_FLAGMASK ('c', traceflag |= TRACE_CENV);
         ARG_FLAGMASK_END ();

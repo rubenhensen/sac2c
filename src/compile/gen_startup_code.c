@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2003/03/09 19:15:59  dkr
+ * TRACE_AA added
+ *
  * Revision 3.22  2002/11/08 13:29:45  cg
  * Removed TRACE_OWL macro since old with-loops left sac2c several
  * years ago.  :-))))
@@ -242,6 +245,8 @@ PrintGlobalSwitches ()
              (traceflag & TRACE_FUN) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_TRACE_WL        %d\n",
              (traceflag & TRACE_WL) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_TRACE_AA        %d\n",
+             (traceflag & TRACE_AA) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_TRACE_MT        %d\n",
              (traceflag & TRACE_MT) ? 1 : 0);
     fprintf (outfile, "\n");

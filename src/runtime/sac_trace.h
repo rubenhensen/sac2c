@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2003/03/09 19:16:30  dkr
+ * TRACE_AA added
+ *
  * Revision 3.5  2002/11/08 13:29:45  cg
  * Removed TRACE_OWL macro since old with-loops left sac2c several
  * years ago.  :-))))
@@ -131,6 +134,17 @@ extern void SAC_TR_DecHiddenMemcnt (int size);
 #define SAC_TR_WL_PRINT(msg)
 
 #endif /* SAC_DO_TRACE_WL */
+
+#if SAC_DO_TRACE_AA
+
+#define SAC_TR_AA_PRINT(str, array, pos)                                                 \
+    SAC_TR_PRINT (("%s access %s[%d]", str, #array, pos))
+
+#else /* SAC_DO_TRACE_AA */
+
+#define SAC_TR_AA_PRINT(class, array, idx)
+
+#endif /* SAC_DO_TRACE_AA */
 
 #if SAC_DO_TRACE_MT
 
