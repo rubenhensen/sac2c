@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.9  1994/12/13 15:15:04  hw
+# Revision 1.10  1994/12/16 13:19:47  sbs
+# make deps...
+#
+# Revision 1.9  1994/12/13  15:15:04  hw
 # moved -I/usr/local/lib/gcc-include from Error.o to INCS
 # `make deps` done
 #
@@ -63,8 +66,9 @@ Error.o: ../../inc/dbug.h
 main.o: ../../inc/main.h ../../inc/dbug.h /usr/include/stdio.h tree.h
 main.o: node_info.mac prf_node_info.mac Error.h usage.h ../flatten/flatten.h
 main.o: ../print/print.h ../typecheck/typecheck.h ../optimize/optimize.h
-main.o: ../modules/filemgr.h ../scanparse/scnprs.h /usr/include/stdlib.h
-main.o: /usr/include/sys/stdtypes.h /usr/include/string.h
+main.o: ../modules/filemgr.h ../scanparse/scnprs.h ../scanparse/y.tab.h
+main.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
+main.o: /usr/include/string.h
 my_debug.o: tree.h node_info.mac prf_node_info.mac ../print/convert.h
 traverse.o: /usr/include/stdio.h /usr/include/stdlib.h
 traverse.o: /usr/include/sys/stdtypes.h tree.h node_info.mac
