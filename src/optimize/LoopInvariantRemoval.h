@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/07/14 14:20:18  sah
+ * moved NodeBehindCast to tree_compound
+ *
  * Revision 3.1  2000/11/20 18:00:33  sacbase
  * new release made
  *
@@ -34,7 +37,5 @@ extern node *LIRassign (node *arg_node, node *arg_info);
 extern node *LIRMassign (node *arg_node, node *arg_info);
 extern node *LIRMblock (node *arg_node, node *arg_info);
 extern node *LIRMloop (node *arg_node, node *arg_info);
-
-extern node *NodeBehindCast (node *arg_node);
 
 #endif /* _LoopInvariantRemoval_h */

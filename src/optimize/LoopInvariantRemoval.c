@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2004/07/14 14:20:18  sah
+ * moved NodeBehindCast to tree_compound
+ *
  * Revision 3.15  2002/02/21 15:18:53  dkr
  * access macros used
  *
@@ -467,29 +470,6 @@ DupDecleration (node *var_node, char *var_name, node *arg_info)
     new_node->varno = INFO_VARNO (arg_info)++;
 
     DBUG_RETURN (new_node);
-}
-
-/*
- *
- *  functionname  : NodeBehindCast
- *  arguments     : 1) expression-node of a let-node
- *                  R) node behind various cast's
- *  description   : determine what node is hidden behind the cast-nodes
- *  global vars   : --
- *  internal funs : --
- *  external funs : --
- *  macros        : DBUG..
- *
- *  remarks       :
- *
- */
-node *
-NodeBehindCast (node *arg_node)
-{
-    DBUG_ENTER ("NodeBehindCast");
-    while (N_cast == arg_node->nodetype)
-        arg_node = arg_node->node[0];
-    DBUG_RETURN (arg_node);
 }
 
 /*
