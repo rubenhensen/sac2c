@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 2.17  2000/07/24 15:06:53  dkr
+ * redundant parameter 'line' removed from ICMs for array-prfs
+ *
  * Revision 2.16  2000/07/06 17:02:01  dkr
  * SAC_ND_KD_A_SHAPE renamed into SAC_ND_A_SHAPE
  *
@@ -53,6 +57,7 @@
  *
  * Revision 1.1  1998/04/25 16:19:58  sbs
  * Initial revision
+ *
  */
 
 #include <malloc.h>
@@ -219,7 +224,7 @@ FindArg (char *str)
         fprintf (outfile, "}\n");                                                        \
     }
 
-#define CopyBlock(a, offset, res, line)                                                  \
+#define CopyBlock(a, offset, res)                                                        \
     NewBlock (InitPtr (offset, fprintf (outfile, "0")),                                  \
               FillRes (res, INDENT; fprintf (outfile,                                    \
                                              "SAC_ND_WRITE_ARRAY( %s, SAC_idest)"        \
@@ -883,6 +888,9 @@ ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s)
  *   ND_KD_SET_SHAPE( name, dim, s0,..., sn)
  *   sets all shape components of an array
  *
+ * remark:
+ *   This ICM is *not* used for the time being!!!
+ *
  ******************************************************************************/
 
 void
@@ -909,19 +917,18 @@ ICMCompileND_KD_SET_SHAPE (char *name, int dim, char **s)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_KD_PSI_CxA_S( int line, char *a, char *res, int dim,
- *                                   char **vi)
+ *   void ICMCompileND_KD_PSI_CxA_S( char *a, char *res, int dim, char **vi)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KD_PSI_CxA_S( line, a, res, dim, v0,..., vn)
+ *   ND_KD_PSI_CxA_S( a, res, dim, v0,..., vn)
  *   selects a single element of the array
  *
  ******************************************************************************/
 
 void
-ICMCompileND_KD_PSI_CxA_S (int line, char *a, char *res, int dim, char **vi)
+ICMCompileND_KD_PSI_CxA_S (char *a, char *res, int dim, char **vi)
 {
     DBUG_ENTER ("ICMCompileND_KD_PSI_CxA_S");
 
@@ -941,19 +948,18 @@ ICMCompileND_KD_PSI_CxA_S (int line, char *a, char *res, int dim, char **vi)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_KD_PSI_VxA_S( int line, char *a,
- *                                   char *res, int dim, char *v)
+ *   void ICMCompileND_KD_PSI_VxA_S( char *a, char *res, int dim, char *v)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KD_PSI_VxA_S(line, a, res, dim, v )
+ *   ND_KD_PSI_VxA_S( a, res, dim, v )
  *   selects a single element of the array
  *
  ******************************************************************************/
 
 void
-ICMCompileND_KD_PSI_VxA_S (int line, char *a, char *res, int dim, char *v)
+ICMCompileND_KD_PSI_VxA_S (char *a, char *res, int dim, char *v)
 {
     DBUG_ENTER ("ICMCompileND_KD_PSI_VxA_S");
 
@@ -973,19 +979,19 @@ ICMCompileND_KD_PSI_VxA_S (int line, char *a, char *res, int dim, char *v)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_KD_PSI_CxA_A( int line, int dima, char *a,
+ *   void ICMCompileND_KD_PSI_CxA_A( int dima, char *a,
  *                                   char *res, int dimv, char **vi)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KD_PSI_CxA_A(line, dima, a, res, dimv, v0,..., vn)
+ *   ND_KD_PSI_CxA_A( dima, a, res, dimv, v0,..., vn)
  *   selects a sub-array
  *
  ******************************************************************************/
 
 void
-ICMCompileND_KD_PSI_CxA_A (int line, int dima, char *a, char *res, int dimv, char **vi)
+ICMCompileND_KD_PSI_CxA_A (int dima, char *a, char *res, int dimv, char **vi)
 {
     DBUG_ENTER ("ICMCompileND_KD_PSI_CxA_A");
 
@@ -995,7 +1001,7 @@ ICMCompileND_KD_PSI_CxA_A (int line, int dima, char *a, char *res, int dimv, cha
 #undef ND_KD_PSI_CxA_A
 
     INDENT;
-    CopyBlock (a, VectToOffset (dimv, AccessConst (vi, i), dima, a), res, line);
+    CopyBlock (a, VectToOffset (dimv, AccessConst (vi, i), dima, a), res);
     fprintf (outfile, "\n\n");
 
     DBUG_VOID_RETURN;
@@ -1004,19 +1010,19 @@ ICMCompileND_KD_PSI_CxA_A (int line, int dima, char *a, char *res, int dimv, cha
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_KD_PSI_VxA_A( int line, int dima, char *a,
+ *   void ICMCompileND_KD_PSI_VxA_A( int dima, char *a,
  *                                   char *res, int dimv, char *v)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KD_PSI_VxA_A(line, dima, a, res, dimv, v )
+ *   ND_KD_PSI_VxA_A( dima, a, res, dimv, v )
  *   selects a sub-array
  *
  ******************************************************************************/
 
 void
-ICMCompileND_KD_PSI_VxA_A (int line, int dima, char *a, char *res, int dimv, char *v)
+ICMCompileND_KD_PSI_VxA_A (int dima, char *a, char *res, int dimv, char *v)
 {
     DBUG_ENTER ("ICMCompileND_KD_PSI_VxA_A");
 
@@ -1026,7 +1032,7 @@ ICMCompileND_KD_PSI_VxA_A (int line, int dima, char *a, char *res, int dimv, cha
 #undef ND_KD_PSI_VxA_A
 
     INDENT;
-    CopyBlock (a, VectToOffset (dimv, AccessVect (v, i), dima, a), res, line);
+    CopyBlock (a, VectToOffset (dimv, AccessVect (v, i), dima, a), res);
     fprintf (outfile, "\n\n");
 
     DBUG_VOID_RETURN;
@@ -1234,7 +1240,7 @@ ICMCompileND_KD_ROT_CxSxA_A (int rotdim, char **numstr, int dima, char *a, char 
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY_AxCxS_CHECK_REUSE( int line, char *res_type,
+ *   void ICMCompileND_PRF_MODARRAY_AxCxS_CHECK_REUSE( char *res_type,
  *                                                     int dimres, char *res,
  *                                                     char *old, char **value,
  *                                                     int dimv, char **vi)
@@ -1242,15 +1248,14 @@ ICMCompileND_KD_ROT_CxSxA_A (int rotdim, char **numstr, int dima, char *a, char 
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY_AxCxS_CHECK_REUSE( line, res_type, dimres, res, old, value,
+ *   ND_PRF_MODARRAY_AxCxS_CHECK_REUSE( res_type, dimres, res, old, value,
  *                                      dimv, v0,..., vn)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_MODARRAY_AxCxS_CHECK_REUSE (int line, char *res_type, int dimres,
-                                             char *res, char *old, char **value, int dimv,
-                                             char **vi)
+ICMCompileND_PRF_MODARRAY_AxCxS_CHECK_REUSE (char *res_type, int dimres, char *res,
+                                             char *old, char **value, int dimv, char **vi)
 {
     DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxCxS_CHECK_REUSE");
 
@@ -1285,21 +1290,21 @@ ICMCompileND_PRF_MODARRAY_AxCxS_CHECK_REUSE (int line, char *res_type, int dimre
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY_AxCxS( int line, char *res_type, int dimres,
+ *   void ICMCompileND_PRF_MODARRAY_AxCxS( char *res_type, int dimres,
  *                                         char *res, char *old, char **value,
  *                                         int dimv, char **vi)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY_AxCxS( line, res_type, dimres, res, old, value,
- *                                      dimv, v0,..., vn)
+ *   ND_PRF_MODARRAY_AxCxS( res_type, dimres, res, old, value,
+ *                          dimv, v0,..., vn)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_MODARRAY_AxCxS (int line, char *res_type, int dimres, char *res,
-                                 char *old, char **value, int dimv, char **vi)
+ICMCompileND_PRF_MODARRAY_AxCxS (char *res_type, int dimres, char *res, char *old,
+                                 char **value, int dimv, char **vi)
 {
     DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxCxS");
 
@@ -1332,7 +1337,7 @@ ICMCompileND_PRF_MODARRAY_AxCxS (int line, char *res_type, int dimres, char *res
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY_AxVxS_CHECK_REUSE( int line, char *res_type,
+ *   void ICMCompileND_PRF_MODARRAY_AxVxS_CHECK_REUSE( char *res_type,
  *                                                     int dimres, char *res,
  *                                                     char *old, char **value,
  *                                                     int dim, char *v)
@@ -1340,15 +1345,14 @@ ICMCompileND_PRF_MODARRAY_AxCxS (int line, char *res_type, int dimres, char *res
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY_AxVxS_CHECK_REUSE( line, res_type, dimres, res, old, value,
+ *   ND_PRF_MODARRAY_AxVxS_CHECK_REUSE( res_type, dimres, res, old, value,
  *                                      dimv, v)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_MODARRAY_AxVxS_CHECK_REUSE (int line, char *res_type, int dimres,
-                                             char *res, char *old, char **value, int dim,
-                                             char *v)
+ICMCompileND_PRF_MODARRAY_AxVxS_CHECK_REUSE (char *res_type, int dimres, char *res,
+                                             char *old, char **value, int dim, char *v)
 {
     DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxVxS_CHECK_REUSE");
 
@@ -1383,20 +1387,20 @@ ICMCompileND_PRF_MODARRAY_AxVxS_CHECK_REUSE (int line, char *res_type, int dimre
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY_AxVxS( int line, char *res_type, int dimres,
+ *   void ICMCompileND_PRF_MODARRAY_AxVxS( char *res_type, int dimres,
  *                                         char *res, char *old, char **value,
  *                                         int dim, char *v)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY_AxVxS( line, res_type, dimres, res, old, value, dim, v)
+ *   ND_PRF_MODARRAY_AxVxS( res_type, dimres, res, old, value, dim, v)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_MODARRAY_AxVxS (int line, char *res_type, int dimres, char *res,
-                                 char *old, char **value, int dim, char *v)
+ICMCompileND_PRF_MODARRAY_AxVxS (char *res_type, int dimres, char *res, char *old,
+                                 char **value, int dim, char *v)
 {
     DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxVxS");
 
@@ -1429,21 +1433,20 @@ ICMCompileND_PRF_MODARRAY_AxVxS (int line, char *res_type, int dimres, char *res
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY_AxCxA( int line, char *res_type, int dimres,
+ *   void ICMCompileND_PRF_MODARRAY_AxCxA( char *res_type, int dimres,
  *                                         char *res, char *old, char *val,
  *                                         int dimv, char **vi)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY_AxCxA( line, res_type, dimres, res, old, val,
- *                                      dimv, v0,..., vn)
+ *   ND_PRF_MODARRAY_AxCxA( res_type, dimres, res, old, val, dimv, v0,..., vn)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_MODARRAY_AxCxA (int line, char *res_type, int dimres, char *res,
-                                 char *old, char *val, int dimv, char **vi)
+ICMCompileND_PRF_MODARRAY_AxCxA (char *res_type, int dimres, char *res, char *old,
+                                 char *val, int dimv, char **vi)
 {
     DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxCxA");
 
@@ -1492,7 +1495,7 @@ ICMCompileND_PRF_MODARRAY_AxCxA (int line, char *res_type, int dimres, char *res
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE( int line, char *res_type,
+ *   void ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE( char *res_type,
  *                                                     int dimres, char *res,
  *                                                     char *old, char *val,
  *                                                     int dimv, char **vi)
@@ -1500,15 +1503,14 @@ ICMCompileND_PRF_MODARRAY_AxCxA (int line, char *res_type, int dimres, char *res
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY_AxCxA_CHECK_REUSE( line, res_type, dimres, res, old, val,
+ *   ND_PRF_MODARRAY_AxCxA_CHECK_REUSE( res_type, dimres, res, old, val,
  *                                      dimv, v0,..., vn)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE (int line, char *res_type, int dimres,
-                                             char *res, char *old, char *val, int dimv,
-                                             char **vi)
+ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE (char *res_type, int dimres, char *res,
+                                             char *old, char *val, int dimv, char **vi)
 {
     DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE");
 
@@ -1589,20 +1591,20 @@ ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE (int line, char *res_type, int dimre
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY_AxVxA( int line, char *res_type, int dimres,
+ *   void ICMCompileND_PRF_MODARRAY_AxVxA( char *res_type, int dimres,
  *                                         char *res, char *old, char *val,
  *                                         int dim, char *v)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY_AxVxA( line, res_type, dimres, res, old, val, dim, v)
+ *   ND_PRF_MODARRAY_AxVxA( res_type, dimres, res, old, val, dim, v)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_MODARRAY_AxVxA (int line, char *res_type, int dimres, char *res,
-                                 char *old, char *val, int dim, char *v)
+ICMCompileND_PRF_MODARRAY_AxVxA (char *res_type, int dimres, char *res, char *old,
+                                 char *val, int dim, char *v)
 {
     DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxVxA");
 
@@ -1653,7 +1655,7 @@ ICMCompileND_PRF_MODARRAY_AxVxA (int line, char *res_type, int dimres, char *res
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY_AxVxA_CHECK_REUSE( int line, char *res_type,
+ *   void ICMCompileND_PRF_MODARRAY_AxVxA_CHECK_REUSE( char *res_type,
  *                                                     int dimres, char *res,
  *                                                     char *old, char *val,
  *                                                     int dim, char *v)
@@ -1661,15 +1663,14 @@ ICMCompileND_PRF_MODARRAY_AxVxA (int line, char *res_type, int dimres, char *res
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY_AxVxA_CHECK_REUSE( line, res_type, dimres, res, old, val,
+ *   ND_PRF_MODARRAY_AxVxA_CHECK_REUSE( res_type, dimres, res, old, val,
  *                                      dim, v)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_MODARRAY_AxVxA_CHECK_REUSE (int line, char *res_type, int dimres,
-                                             char *res, char *old, char *val, int dim,
-                                             char *v)
+ICMCompileND_PRF_MODARRAY_AxVxA_CHECK_REUSE (char *res_type, int dimres, char *res,
+                                             char *old, char *val, int dim, char *v)
 {
     DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxVxA_CHECK_REUSE");
 
