@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2003/04/01 16:40:25  sbs
+ * some doxygen stuff added.
+ *
  * Revision 1.2  2002/08/06 08:26:49  sbs
  * some vars initialized to please gcc for the product version.
  *
@@ -16,6 +19,20 @@
 
 #include "sig_deps.h"
 #include "new_typecheck.h"
+
+/**
+ *
+ * @addtogroup ntc
+ *
+ * @{
+ */
+
+/**
+ *
+ * @file sig_deps.c
+ *
+ * This file provides encapsulates the signature dependencies.
+ */
 
 /*
  * OPEN PROBLEMS:
@@ -275,3 +292,5 @@ SDSigDep2DebugString (sig_dep *fun_sig)
 
     DBUG_RETURN (StringCopy (buf));
 }
+
+/* @} */ /* addtogroup ntc */
