@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2001/03/07 15:56:45  nmw
+ * compare tree implemented (for simple expressions used by SSACSE)
+ *
  * Revision 1.2  2001/03/07 10:03:40  nmw
  * first implementation
  *
@@ -350,9 +353,10 @@ CMPTNwithop (node *arg_node, node *arg_info)
           = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
                        NWITHOP_PRF (arg_node) == NWITHOP_PRF (INFO_CMPT_TREE (arg_info)));
     } else if (NWITHOP_TYPE (arg_node) == WO_foldfun) {
-        CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
-                   NWITHOP_FUNDEF (arg_node)
-                     == NWITHOP_FUNDEF (INFO_CMPT_TREE (arg_info)));
+        INFO_CMPT_EQFLAG (arg_info)
+          = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
+                       NWITHOP_FUNDEF (arg_node)
+                         == NWITHOP_FUNDEF (INFO_CMPT_TREE (arg_info)));
     }
 
     /* traverse all sons */
@@ -531,6 +535,9 @@ CMPTnodeType (node *arg_node, node *arg_info)
     /* check for equal node type (if tree1 and tree2 != NULL)*/
     if ((arg_node != NULL) && (INFO_CMPT_TREE (arg_info) != NULL)
         && (NODE_TYPE (arg_node) != NODE_TYPE (INFO_CMPT_TREE (arg_info)))) {
+        DBUG_PRINT ("CMPT", ("comparing nodetype %s and %s", NODE_TEXT (arg_node),
+                             NODE_TEXT (INFO_CMPT_TREE (arg_info))));
+
         INFO_CMPT_EQFLAG (arg_info) = CMPT_NEQ;
     }
 
@@ -558,25 +565,37 @@ CompareTree (node *tree1, node *tree2)
     funtab *old_tab;
 
     DBUG_ENTER ("CompareTree");
-    DBUG_ASSERT ((tree1 != NULL), "CompareTree called with empty tree1");
-    DBUG_ASSERT ((tree2 != NULL), "CompareTree called with empty tree2");
 
-    arg_info = MakeInfo ();
+    if ((tree1 == NULL) || (tree2 == NULL)) {
+        /* NULL pointer handling */
+        if (tree1 == tree2) {
+            /* NULL == NULL is EQ */
+            result = CMPT_EQ;
+        } else {
+            result = CMPT_NEQ;
+        }
+    } else {
 
-    /* start traversal with EQUAL */
-    INFO_CMPT_EQFLAG (arg_info) = CMPT_EQ;
-    INFO_CMPT_TREE (arg_info) = tree2;
+        arg_info = MakeInfo ();
 
-    old_tab = act_tab;
-    act_tab = cmptree_tab;
+        DBUG_PRINT ("CMPT", ("starting tree compare (%s, %s)", NODE_TEXT (tree1),
+                             NODE_TEXT (tree2)));
 
-    tree1 = Trav (tree1, arg_info);
+        /* start traversal with CMPT_EQ as result */
+        INFO_CMPT_EQFLAG (arg_info) = CMPT_EQ;
+        INFO_CMPT_TREE (arg_info) = tree2;
 
-    /* save result */
-    result = INFO_CMPT_EQFLAG (arg_info);
+        old_tab = act_tab;
+        act_tab = cmptree_tab;
 
-    act_tab = old_tab;
-    FREE (arg_info);
+        tree1 = Trav (tree1, arg_info);
+
+        /* save result */
+        result = INFO_CMPT_EQFLAG (arg_info);
+
+        act_tab = old_tab;
+        FREE (arg_info);
+    }
 
     DBUG_RETURN (result);
 }
