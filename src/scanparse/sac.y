@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.84  1995/09/27 15:21:51  cg
+ * Revision 1.85  1995/10/01 17:00:26  cg
+ * Function MakeLet renamed to MakeLetNode to avoid name clash with tree_basic.c
+ * Minor changes in parsing SIBs.
+ *
+ * Revision 1.84  1995/09/27  15:21:51  cg
  * type charlist renamed to strings
  * new representation of file type in the syntax tree added.
  *
@@ -2250,7 +2254,7 @@ sibtype: typedef
                         mdb_nodetype[ $$->nodetype ], $$, 
                         $$->info.types, $$->info.types->id));
            }
-         ;
+        ;
 
 sibfuns: sibfun sibfuns
             {
