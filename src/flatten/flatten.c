@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/03/05 17:20:36  bs
+ * Bug fixed in DbugPrintArray.
+ *
  * Revision 2.3  1999/02/26 10:53:04  bs
  * FltnPrf() modified: the primitive functions take, drop, reshape and genarray
  * will be flattened like the other primitive functions.
@@ -413,7 +416,7 @@ DbugPrintArray (int len, int *intptr)
     else {
         printf ("/* [%d", intptr[0]);
         for (i = 1; i < ((len < 10) ? (len) : (10)); i++)
-            printf (",%d", intptr[i]);
+            fprintf (stderr, ",%d", intptr[i]);
         if (len > 10)
             printf (",..] */\n");
         else
