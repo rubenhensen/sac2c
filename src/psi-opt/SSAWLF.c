@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/11/26 18:14:29  skt
+ * inclusion of my_debug.h removed
+ *
  * Revision 1.18  2004/07/31 13:44:44  sah
  * removed function MakeNCodeExprs. Instead, MakeNCode now expects
  * an exprs node as its second argument!
@@ -133,7 +136,6 @@
 #include "globals.h"
 #include "Error.h"
 #include "dbug.h"
-#include "my_debug.h"
 #include "traverse.h"
 #include "optimize.h"
 #include "SSAWithloopFolding.h"

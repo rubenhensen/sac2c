@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2004/11/26 18:14:29  skt
+ * inclusion of my_debug.h removed
+ *
  * Revision 1.19  2004/10/13 14:03:36  sbs
  * bixed bug 68 by allowing two constants in CreateIndexInfoA
  * added some more comments
@@ -125,7 +128,6 @@
 #include "globals.h"
 #include "Error.h"
 #include "dbug.h"
-#include "my_debug.h"
 #include "constants.h"
 #include "traverse.h"
 #include "optimize.h"
