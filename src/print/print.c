@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2001/03/05 13:32:50  dkr
+ * NGEN_OP?_GEN removed
+ *
  * Revision 3.23  2001/03/05 12:52:17  dkr
  * some debug output for PRINT_RC added
  *
@@ -2781,10 +2784,8 @@ PrintNgenerator (node *arg_node, node *arg_info)
     } else {
         fprintf (outfile, ".");
     }
-    /* print first operator and eventually original first operator */
+    /* print first operator */
     fprintf (outfile, " %s ", prf_string[NGEN_OP1 (arg_node)]);
-    DBUG_EXECUTE ("ORIG_GENS",
-                  fprintf (outfile, "::%s", prf_string[NGEN_OP1_ORIG (arg_node)]););
 
     /* print indices */
     if (INFO_PRINT_NWITH (arg_info) != NULL) {
@@ -2795,10 +2796,8 @@ PrintNgenerator (node *arg_node, node *arg_info)
         fprintf (outfile, "?");
     }
 
-    /* print second operator and eventually original operator */
+    /* print second operator */
     fprintf (outfile, " %s ", prf_string[NGEN_OP2 (arg_node)]);
-    DBUG_EXECUTE ("ORIG_GENS",
-                  fprintf (outfile, "::%s", prf_string[NGEN_OP2_ORIG (arg_node)]););
     /* print lower bound */
     if (NGEN_BOUND2 (arg_node)) {
         Trav (NGEN_BOUND2 (arg_node), arg_info);
