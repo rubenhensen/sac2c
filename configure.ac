@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.14  2003/03/24 23:16:16  sah
+dnl fixed ranlib bug
+dnl
 dnl Revision 1.13  2003/03/21 17:25:29  sah
 dnl fixed O flags bug on alpha
 dnl
@@ -115,7 +118,9 @@ AC_PROG_CPP()
 dnl check for ranlib
 AC_PROG_RANLIB()
 if test "$RANLIB"; then
-  RANLIB="$RANLIB -c"
+  case "$target_os" in
+    *macos*) RANLIB="$RANLIB -c"
+  esac
 fi
 
 dnl check, whether we need -traditinal flag
