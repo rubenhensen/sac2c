@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.11  2000/05/26 19:26:53  dkr
+ * signature of AdjustFoldFundef modified
+ *
  * Revision 2.10  2000/05/25 23:04:44  dkr
  * PREClet(): call of AdjustFoldFundef() added
  *
@@ -514,20 +517,19 @@ RenameFun (node *fun)
  *
  * function:
  *   node *AdjustFoldFundef( node *fundef,
- *                           ids *acc, char *funname, node *cexpr)
+ *                           ids *acc, node *cexpr)
  *
  * description:
  *   Returns the given fold-fun definition 'fundef' with adjusted var-names.
  *
  * parameters:
  *   'acc' is the accumulator variable.
- *   'funname' is the name of the artificially introduced fold-fun.
  *   'cexpr' is the expression in the operation part.
  *
  ******************************************************************************/
 
 node *
-AdjustFoldFundef (node *fundef, ids *acc, char *funname, node *cexpr)
+AdjustFoldFundef (node *fundef, ids *acc, node *cexpr)
 {
     node *accvar, *funap, *fold_let;
 
@@ -541,11 +543,11 @@ AdjustFoldFundef (node *fundef, ids *acc, char *funname, node *cexpr)
      *    <acc> = <funname>( <acc>, <cexpr>);
      */
 
-    accvar = MakeId (StringCopy (IDS_NAME (acc)), NULL, ST_regular);
+    accvar = MakeId (StringCopy (IDS_NAME (acc)), StringCopy (IDS_MOD (acc)), ST_regular);
     ID_VARDEC (accvar) = IDS_VARDEC (acc);
     DBUG_ASSERT ((ID_VARDEC (accvar) != NULL), "vardec is missing");
 
-    funap = MakeAp (StringCopy (funname), NULL,
+    funap = MakeAp (StringCopy (FUNDEF_NAME (fundef)), StringCopy (FUNDEF_MOD (fundef)),
                     MakeExprs (accvar, MakeExprs (DupTree (cexpr, NULL), NULL)));
     AP_FUNDEF (funap) = fundef;
 
@@ -1039,7 +1041,7 @@ PREClet (node *arg_node, node *arg_info)
              *       in a fold with-loop all CEXPR-ids have the same name!
              */
             NWITH2_FUNDEF (wl_node)
-              = AdjustFoldFundef (NWITH2_FUNDEF (wl_node), wl_ids, NWITH2_FUN (wl_node),
+              = AdjustFoldFundef (NWITH2_FUNDEF (wl_node), wl_ids,
                                   NCODE_CEXPR (NWITH2_CODE (wl_node)));
         }
     }
