@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.26  1995/12/19 13:38:46  cg
+ * Revision 1.27  1995/12/20 08:15:10  cg
+ * renamed macro WITH_BODY to WITH_OPERTATOR
+ * new macros for new N_char node
+ * changed macros for N_pragma node with respect to using arrays for pragmas linksign,
+ * refcounting, and readonly.
+ *
+ * Revision 1.26  1995/12/19  13:38:46  cg
  * renamed macro WITH_BODY to WITH_OPERATOR
  * added macros for new N_char node
  *
@@ -1492,9 +1498,9 @@ extern node *MakeIcm (char *name, node *args, node *next);
 extern node *MakePragma (int numparams);
 
 #define PRAGMA_LINKNAME(n) (n->info.id)
-#define PRAGMA_LINKSIGN(n, i) (((int[])n->mask[0])[i])
-#define PRAGMA_REFCOUNTING(n, i) (((int[])n->mask[1])[i])
-#define PRAGMA_READONLY(n, i) (((int[])n->mask[2])[i])
+#define PRAGMA_LINKSIGN(n) ((int *)n->mask[0])
+#define PRAGMA_REFCOUNTING(n) ((int *)n->mask[1])
+#define PRAGMA_READONLY(n) ((int *)n->mask[2])
 #define PRAGMA_EFFECT(n) ((ids *)n->mask[3])
 #define PRAGMA_TOUCH(n) ((ids *)n->mask[4])
 #define PRAGMA_COPYFUN(n) ((char *)n->mask[5])
