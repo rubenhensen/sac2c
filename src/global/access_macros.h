@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/07/04 16:36:24  asi
+ * Revision 1.6  1995/07/10 16:20:23  asi
+ * added IDS_DEF
+ *
+ * Revision 1.5  1995/07/04  16:36:24  asi
  * added macros - IDS_VARNO, ARG1 ...
  *
  * Revision 1.4  1995/04/11  15:10:24  hw
@@ -41,6 +44,7 @@
 #define IDS info.ids
 #define IDS_ID IDS->id
 #define IDS_NODE IDS->node
+#define IDS_DEF IDS->def
 #define IDS_VARNO IDS->node->varno
 #define IDS_REFCNT IDS->refcnt
 #define IDS_NEXT IDS->next
