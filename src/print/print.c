@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.172  2004/10/15 12:05:32  sah
+ * disabled printing of Impllist in new ast mode
+ * (non existent in new ast)
+ *
  * Revision 3.171  2004/10/15 11:38:20  ktr
  * Added printing for AVIS_ALIAS and ARG_ALIAS
  *
@@ -1440,6 +1444,7 @@ PrintModul (node *arg_node, info *arg_info)
 node *
 PrintImplist (node *arg_node, info *arg_info)
 {
+#ifndef NEW_AST
     DBUG_ENTER ("PrintImplist");
 
     DBUG_PRINT ("PRINT", ("%s " F_PTR, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
@@ -1480,6 +1485,9 @@ PrintImplist (node *arg_node, info *arg_info)
     }
 
     DBUG_RETURN (arg_node);
+#else
+    return (arg_node);
+#endif /* NEW_AST */
 }
 
 /******************************************************************************
