@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.23  1995/05/09 13:45:41  hw
+ * Revision 1.24  1995/05/11 16:18:48  hw
+ * -bug fixed in FltnDo & FltnWhile ( empty loop-bodies will be treated
+ *                                    correctly now )
+ *
+ * Revision 1.23  1995/05/09  13:45:41  hw
  * changed DuplicateNode ( node information (node.info) will be copied )
  *
  * Revision 1.22  1995/04/28  11:37:40  hw
@@ -588,7 +592,7 @@ FltnCond (node *arg_node, node *arg_info)
 node *
 FltnWhile (node *arg_node, node *arg_info)
 {
-    node *info_node, *tmp, *dest_node, *tmp_exprs;
+    node *info_node, *tmp, *dest_node, *tmp_exprs, *last_assign;
     int old_tag;
 
     DBUG_ENTER ("FltnWhile");
@@ -641,32 +645,49 @@ FltnWhile (node *arg_node, node *arg_info)
      */
 
     tmp = info_node; /* tmp ist used to free info_node  */
+    if (NULL != info_node->node[0]) {
+        /*  looking for last N_assign node.
+         *  info_node stores the pointer to the last N_assign nodes,
+         *  so we look at this pointer chain instead of going through
+         *  the chain behind  arg_node->node[1]
+         */
+        info_node = info_node->node[0];
+        while (1 != info_node->nnode) {
+            DBUG_ASSERT ((N_assign == info_node->nodetype),
+                         "wrong nodetype: != N_assign");
+            info_node = info_node->node[1];
+        }
+        last_assign = info_node;
+    } else
+        last_assign = NULL;
 
-    /*  looking for last N_assign node.
-     *  info _node stores the pointer to the last N_assign nodes,
-     *  so we look at this pointer chain instead of going through
-     *  the chain behind  arg_node->node[1]
-     */
-    info_node = info_node->node[0];
-    while (1 != info_node->nnode) {
-        DBUG_ASSERT ((N_assign == info_node->nodetype), "wrong nodetype: != N_assign");
-        info_node = info_node->node[1];
-    }
+    if (NULL != arg_info->node[0]) {
+        dest_node = arg_info->node[0];
 
-    dest_node = arg_info->node[0];
+        /*  now we create new N_assign nodes and  dublicate the flattened
+         *  break condition of the while loop.
+         */
+        if ((NULL == last_assign) && (N_while != dest_node->node[0]->nodetype)) {
+            /* the body of the while-loop is empty, so insert flattened termination
+             * condition
+             */
+            last_assign = MakeNode (N_assign);
+            last_assign->node[0] = DuplicateNode (dest_node->node[0]);
+            dest_node = dest_node->node[1];
+            arg_node->node[1]->node[0] = last_assign;
+        }
 
-    /*  now we create new N_assign nodes and  dublicate the flattened
-     *  break condition of the while loop.
-     */
-    while (N_while != dest_node->node[0]->nodetype) {
-        DBUG_ASSERT ((N_assign == dest_node->nodetype), "wrong nodetype: not N_assign");
+        while (N_while != dest_node->node[0]->nodetype) {
+            DBUG_ASSERT ((N_assign == dest_node->nodetype),
+                         "wrong nodetype: not N_assign");
 
-        info_node->node[1] = MakeNode (N_assign);
-        info_node->nnode = 2;
-        info_node->node[1]->node[0] = DuplicateNode (dest_node->node[0]);
-        info_node->node[1]->nnode = 1;
-        info_node = info_node->node[1];
-        dest_node = dest_node->node[1];
+            info_node->node[1] = MakeNode (N_assign);
+            info_node->nnode = 2;
+            info_node->node[1]->node[0] = DuplicateNode (dest_node->node[0]);
+            info_node->node[1]->nnode = 1;
+            info_node = info_node->node[1];
+            dest_node = dest_node->node[1];
+        }
     }
 
     FREE (tmp);
@@ -777,25 +798,31 @@ FltnDo (node *arg_node, node *arg_info)
     /* store info_node */
     tmp = info_node;
 
-    /* looking for last N_assign node in the body of the do-loop */
     info_node = info_node->node[0];
-    while (1 != info_node->nnode) {
-        DBUG_ASSERT ((N_assign == info_node->nodetype), "wrong nodetype:"
-                                                        "!= N_assign");
-        info_node = info_node->node[1];
+    if (NULL != info_node) {
+        /* looking for last N_assign node in the body of the do-loop */
+        while (1 != info_node->nnode) {
+            DBUG_ASSERT ((N_assign == info_node->nodetype), "wrong nodetype:"
+                                                            "!= N_assign");
+            info_node = info_node->node[1];
+        }
+
+        DBUG_PRINT ("FLATTEN",
+                    ("info_node: %s" P_FORMAT ": %s" P_FORMAT,
+                     mdb_nodetype[info_node->nodetype], info_node,
+                     mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0]));
+
+        /* store last N_assign node of the body */
+        last_assign = info_node;
+
+        /* clear info_node */
+        info_node = tmp;
+        info_node->node[0] = NULL;
+    } else {
+        /* there are no assigns in the body */
+        last_assign = NULL;
+        info_node = tmp;
     }
-
-    DBUG_PRINT ("FLATTEN",
-                ("info_node: %s" P_FORMAT ": %s" P_FORMAT,
-                 mdb_nodetype[info_node->nodetype], info_node,
-                 mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0]));
-
-    /* store last N_assign node of the body */
-    last_assign = info_node;
-
-    /* clear info_node */
-    info_node = tmp;
-    info_node->node[0] = NULL;
 
     /* create a temporary N_exprs node to flatten the termination condition
      * in FltnExprs
@@ -817,18 +844,22 @@ FltnDo (node *arg_node, node *arg_info)
                                              */
     FREE (tmp_exprs);
 
-    /* append flattened termination condition to last assignment
-     * in the loop's body
-     */
-    last_assign->node[1] = info_node->node[0];
-    if (NULL != last_assign->node[1]) {
-        DBUG_PRINT ("FLATTEN",
-                    ("info_node: %s" P_FORMAT ": %s" P_FORMAT,
-                     mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0],
-                     mdb_nodetype[info_node->node[0]->node[0]->nodetype],
-                     info_node->node[0]->node[0]));
-        last_assign->nnode = 2;
-    }
+    if (NULL != info_node->node[0])
+        if (NULL != last_assign) {
+            /* append flattened termination condition to last assignment
+             * in the loop's body
+             */
+            last_assign->node[1] = info_node->node[0];
+
+            DBUG_PRINT ("FLATTEN",
+                        ("info_node: %s" P_FORMAT ": %s" P_FORMAT,
+                         mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0],
+                         mdb_nodetype[info_node->node[0]->node[0]->nodetype],
+                         info_node->node[0]->node[0]));
+            last_assign->nnode = 2;
+        } else
+            arg_node->node[1]->node[0] = info_node->node[0];
+
     FREE (tmp);
 
     DBUG_RETURN (arg_node);
