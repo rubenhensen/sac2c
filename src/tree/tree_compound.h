@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2002/06/25 23:52:06  ktr
+ * NPART_CEXPR and NPART_CBLOCK added.
+ *
  * Revision 3.58  2002/06/20 15:24:56  dkr
  * CreateZeroFromType(), CreateZero() added
  * AddVardecs() added
@@ -1683,6 +1686,8 @@ extern node *MakeVinfoDollar (node *next);
 #define ID_VARDEC_NEXT(n) VARDEC_OR_ARG_NEXT (ID_VARDEC (n))
 #define ID_PADDED(n) VARDEC_OR_ARG_PADDED (ID_VARDEC (n))
 
+#define ID_SSAASSIGN(n) (AVIS_SSAASSIGN (ID_AVIS (n)))
+
 #define ID_OR_CAST_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : CAST_TYPE (n))
 
 /*--------------------------------------------------------------------------*/
@@ -1915,6 +1920,9 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 
 #define NPART_DEFMASK(n) (NPART_MASK (n, 0))
 #define NPART_USEMASK(n) (NPART_MASK (n, 1))
+
+#define NPART_CEXPR(n) (NCODE_CEXPR (NPART_CODE (n)))
+#define NPART_CBLOCK(n) (NCODE_CBLOCK (NPART_CODE (n)))
 
 /*--------------------------------------------------------------------------*/
 
