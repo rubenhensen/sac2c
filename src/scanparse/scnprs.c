@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2004/11/23 21:24:34  sbs
+ * some stuff done
+ *
  * Revision 3.17  2004/11/21 20:25:08  sbs
  * SACDevCamp2004
  *
@@ -108,7 +111,7 @@ SetFileNames (node *modul)
             strcat (global.cfilename, ".c");
         }
     } else {
-        if ((global.profileflag != 0) && (global.generatelibrary & GENERATELIBRARY_SAC)) {
+        if ((global.profileflag != 0) && global.genlib.sac) {
             SYSWARN (("-p option turned off for module/class compilation"));
             global.profileflag = 0;
         }
