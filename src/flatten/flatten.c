@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.29  2000/10/31 23:30:43  dkr
+ * nothing changed
+ *
  * Revision 2.28  2000/10/17 17:06:35  dkr
  * flattening of applications moved to precompile.c
  *
@@ -1236,7 +1239,6 @@ FltnExprs (node *arg_node, node *arg_info)
         EXPRS_EXPR (arg_node) = Abstract (casts_expr, arg_info);
         expr2 = Trav (expr, arg_info);
         AnnotateIdWithConstVec (expr, EXPRS_EXPR (arg_node));
-
     } else {
         expr2 = Trav (expr, arg_info);
     }
@@ -1827,16 +1829,15 @@ FltnNgenerator (node *arg_node, node *arg_info)
 
         act_son_expr = *act_son;
 
+        if (act_son_expr != NULL) {
 #if 0
-    /* flatten evreything but Ids and constant arrays */
-    if( act_son_expr != NULL) {
+    /* flatten everything but Ids and constant arrays */
       if( (N_id != NODE_TYPE(act_son_expr)) && 
-          !IsConstantArray(act_son_expr,N_num) ) {
+          !IsConstArray( act_son_expr) ) {
         *act_son = Abstract( act_son_expr, arg_info);
       }
       act_son_expr2 = Trav( act_son_expr, arg_info);
 #else
-        if (act_son_expr != NULL) {
             if (N_id != NODE_TYPE (act_son_expr)) {
                 *act_son = Abstract (act_son_expr, arg_info);
                 act_son_expr2 = Trav (act_son_expr, arg_info);
@@ -1846,12 +1847,12 @@ FltnNgenerator (node *arg_node, node *arg_info)
             }
 #endif
 
-        DBUG_ASSERT ((act_son_expr == act_son_expr2),
-                     "return-node differs from arg_node while flattening an expr!");
+            DBUG_ASSERT ((act_son_expr == act_son_expr2),
+                         "return-node differs from arg_node while flattening an expr!");
+        }
     }
-}
 
-DBUG_RETURN (arg_node);
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
