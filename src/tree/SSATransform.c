@@ -1,5 +1,9 @@
+/* ##nmw## */
 /*
  * $Log$
+ * Revision 1.3  2001/02/15 17:00:20  nmw
+ * SSA form for flat assignments implemented
+ *
  * Revision 1.2  2001/02/14 14:40:36  nmw
  * function bodies and traversal order implemented
  *
@@ -25,12 +29,63 @@
 #include "tree.h"
 #include "traverse.h"
 #include "free.h"
+#include "DupTree.h"
 #include "SSATransform.h"
 
+#define TMP_STRING_LEN 16
+#define UNDEF_VARDEC -1
+
+static node *SSANewVardec (node *old_vardec_or_arg);
 static ids *TravLeftIDS (ids *arg_ids, node *arg_info);
 static ids *SSAleftids (ids *arg_ids, node *arg_info);
 static ids *TravRightIDS (ids *arg_ids, node *arg_info);
 static ids *SSArightids (ids *arg_ids, node *arg_info);
+
+/******************************************************************************
+ *
+ * function:
+ *  static node *SSANewVardec(node *old_vardec_or_arg)
+ *
+ * description:
+ *   creates a new (renamed) vardec of the given original vardec. the global
+ *   ssa rename counter of the baseid is incremented. the ssacnt node is shared
+ *   between all renamed instances of the original vardec.
+ *
+ ******************************************************************************/
+static node *
+SSANewVardec (node *old_vardec_or_arg)
+{
+    char tmpstring[TMP_STRING_LEN];
+    node *ssacnt;
+    node *new_vardec;
+
+    DBUG_ENTER ("SSANewVardec");
+
+    ssacnt = AVIS_SSACOUNT (VARDEC_OR_ARG_AVIS (old_vardec_or_arg));
+
+    if (NODE_TYPE (old_vardec_or_arg) == N_arg) {
+        new_vardec = MakeVardecFromArg (old_vardec_or_arg);
+    } else {
+        new_vardec = DupNode (old_vardec_or_arg);
+    }
+
+    /* increment ssa renaming counter */
+    SSACNT_COUNT (ssacnt) = SSACNT_COUNT (ssacnt) + 1;
+
+    /* create new unique name */
+    sprintf (tmpstring, "__SSA_%d", SSACNT_COUNT (ssacnt));
+
+    FREE (VARDEC_NAME (new_vardec));
+    VARDEC_NAME (new_vardec) = StringConcat (SSACNT_BASEID (ssacnt), tmpstring);
+
+    /* set no SSA-counter for this new vardec:
+     * For the current traversal the new renamed vardec cannot be reanamed
+     * again, because there cannot be any redefinitions of it
+     */
+    AVIS_SSACOUNT (VARDEC_AVIS (new_vardec)) = NULL;
+
+    DBUG_RETURN (new_vardec);
+}
 
 /******************************************************************************
  *
@@ -45,6 +100,10 @@ node *
 SSAfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSAfundef");
+
+    /* stores access points for later insertions in this fundef */
+    INFO_SSA_FUNDEF (arg_info) = arg_node;
+    INFO_SSA_BLOCK (arg_info) = FUNDEF_BODY (arg_node);
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
         /* there are some args */
@@ -182,7 +241,18 @@ SSAarg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSAarg");
 
-    /* do something */
+    if (AVIS_SSACOUNT (ARG_AVIS (arg_node)) == NULL) {
+        /* insert new missing ssa-counter */
+        AVIS_SSACOUNT (ARG_AVIS (arg_node))
+          = MakeSSAcnt (BLOCK_SSACOUNTER (INFO_SSA_BLOCK (arg_info)), 0,
+                        StringCopy (ARG_NAME (arg_node)));
+    }
+
+    /* actual rename-to target on stack*/
+    AVIS_SSASTACK_TOP (ARG_AVIS (arg_node)) = ARG_AVIS (arg_node);
+
+    /* no direct assignment available (yet) */
+    AVIS_SSAASSIGN (ARG_AVIS (arg_node)) = NULL;
 
     /* traverse next arg */
     if (ARG_NEXT (arg_node) != NULL) {
@@ -207,7 +277,18 @@ SSAvardec (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSAvardec");
 
-    /* do something */
+    if (AVIS_SSACOUNT (VARDEC_AVIS (arg_node)) == NULL) {
+        /* insert new missing ssa-counter */
+        AVIS_SSACOUNT (VARDEC_AVIS (arg_node))
+          = MakeSSAcnt (BLOCK_SSACOUNTER (INFO_SSA_BLOCK (arg_info)), UNDEF_VARDEC,
+                        StringCopy (VARDEC_NAME (arg_node)));
+    }
+
+    /* jet undefined on stack */
+    AVIS_SSASTACK_TOP (ARG_AVIS (arg_node)) = NULL;
+
+    /* no direct assignment available (yet) */
+    AVIS_SSAASSIGN (ARG_AVIS (arg_node)) = NULL;
 
     /* traverse next vardec */
     if (VARDEC_NEXT (arg_node) != NULL) {
@@ -467,7 +548,39 @@ SSAwhile (node *arg_node, node *arg_info)
 static ids *
 SSAleftids (ids *arg_ids, node *arg_info)
 {
+    node *new_vardec;
+
     DBUG_ENTER ("SSAleftids");
+
+    if (SSACNT_COUNT (AVIS_SSACOUNT (IDS_AVIS (arg_ids))) == UNDEF_VARDEC) {
+        /* first definition of variable, no renaming needed */
+        SSACNT_COUNT (AVIS_SSACOUNT (IDS_AVIS (arg_ids))) = 0;
+        AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = IDS_AVIS (arg_ids);
+
+    } else {
+        /* redefinition - create new unique variable/vardec */
+        new_vardec = SSANewVardec (AVIS_VARDECORARG (IDS_AVIS (arg_ids)));
+        BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info))
+          = AppendVardec (BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)), new_vardec);
+
+        /* new rename-to target for old vardec */
+        AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = VARDEC_AVIS (new_vardec);
+
+        /* rename this ids */
+        IDS_VARDEC (arg_ids) = new_vardec;
+        IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
+
+#ifndef NO_ID_NAME
+        /* for compatiblity only
+         * there is no real need for name string in ids structure because
+         * you can get it from vardec without redundancy.
+         */
+        FREE (IDS_NAME (arg_ids));
+        IDS_NAME (arg_ids) = StringCopy (VARDEC_NAME (new_vardec));
+#endif
+    }
+
+    /* AVIS_SSAASSIGN(IDS_AVIS(arg_ids)) = ##nmw## */
 
     DBUG_RETURN (arg_ids);
 }
@@ -486,10 +599,23 @@ SSArightids (ids *arg_ids, node *arg_info)
 {
     DBUG_ENTER ("SSArightids");
 
+    /* do renaming to new ssa vardec */
+    IDS_AVIS (arg_ids) = AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids));
+
+    /* restore all depended atributes with correct values */
+    IDS_VARDEC (arg_ids) = AVIS_VARDECORARG (IDS_AVIS (arg_ids));
+
+#ifndef NO_ID_NAME
+    /* for compatiblity only
+     * there is no real need for name string in ids structure because
+     * you can get it from vardec without redundancy.
+     */
+    FREE (IDS_NAME (arg_ids));
+    IDS_NAME (arg_ids) = StringCopy (VARDEC_OR_ARG_NAME (IDS_VARDEC (arg_ids)));
+#endif
+
     DBUG_RETURN (arg_ids);
 }
-
-/*  creates new (renamed) instance of defined variable. */
 
 /******************************************************************************
  *
@@ -522,6 +648,7 @@ TravRightIDS (ids *arg_ids, node *arg_info)
 
     DBUG_RETURN (arg_ids);
 }
+
 /******************************************************************************
  *
  * function:
