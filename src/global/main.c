@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.80  1996/01/02 15:46:31  cg
+ * Revision 1.81  1996/01/05 12:27:29  cg
+ * C-compiler call is now an ordinary compilation phase.
+ * Module/class implementations are compiled to SAC libraries.
+ * The filename handling (-o option) is moved to scnprs.c
+ *
+ * Revision 1.80  1996/01/02  15:46:31  cg
  * The whole file handling is moved to print.c scnprs.c and cccall.c
  * main.c exclusively evaluates command line options and triggers
  * the compilation process.
@@ -314,10 +319,13 @@ char sacfilename[MAX_FILE_NAME] = "";
 char prgname[MAX_FILE_NAME];
 /* name of the compiler, e.g. sac2c */
 
-char outfilename[MAX_FILE_NAME] = "a.out";
+char outfilename[MAX_FILE_NAME] = "";
 /* name of executable or archive    */
 
-char cfilename[MAX_FILE_NAME] = "a.out.c";
+char cfilename[MAX_FILE_NAME];
+/* name of C source code file       */
+
+char targetdir[MAX_FILE_NAME];
 /* name of C source code file       */
 
 char ccflagsstr[MAX_FILE_NAME] = "";
@@ -349,6 +357,7 @@ int traceflag = 0;
 int breakae = 0;
 
 int check_boundary = 0;
+int cleanup = 1;
 
 /*
  *  And now, the main function which triggers the whole compilation.
@@ -537,60 +546,60 @@ MAIN
     {
         if (!strncmp (*argv, "oDCR", 4))
             opt_dcr = 0;
-        if (!strncmp (*argv, "odead_code_removal", 18))
+        else if (!strncmp (*argv, "odead_code_removal", 18))
             opt_dcr = 0;
-        if (!strncmp (*argv, "oCF", 3))
+        else if (!strncmp (*argv, "oCF", 3))
             opt_cf = 0;
-        if (!strncmp (*argv, "oconstant_folding", 17))
+        else if (!strncmp (*argv, "oconstant_folding", 17))
             opt_cf = 0;
-        if (!strncmp (*argv, "oPDCR", 5))
+        else if (!strncmp (*argv, "oPDCR", 5))
             opt_wr = 0;
-        if (!strncmp (*argv, "opartial_dead_code_removal", 26))
+        else if (!strncmp (*argv, "opartial_dead_code_removal", 26))
             opt_wr = 0;
-        if (!strncmp (*argv, "oSACOPT", 7))
+        else if (!strncmp (*argv, "oSACOPT", 7))
             sac_optimize = 0;
-        if (!strncmp (*argv, "osacopt", 7))
+        else if (!strncmp (*argv, "osacopt", 7))
             sac_optimize = 0;
-        if (!strncmp (*argv, "oOPT", 4)) {
+        else if (!strncmp (*argv, "oOPT", 4)) {
             optimize = 0;
             sac_optimize = 0;
             psi_optimize = 0;
-        }
-
-        if (!strncmp (*argv, "oopt", 4)) {
+        } else if (!strncmp (*argv, "oopt", 4)) {
             optimize = 0;
             sac_optimize = 0;
             psi_optimize = 0;
-        }
-
-        if (!strncmp (*argv, "oLIR", 4))
+        } else if (!strncmp (*argv, "oLIR", 4))
             opt_lir = 0;
-        if (!strncmp (*argv, "oloop_invariant_removal", 23))
+        else if (!strncmp (*argv, "oloop_invariant_removal", 23))
             opt_lir = 0;
-        if (!strncmp (*argv, "oINL", 4))
+        else if (!strncmp (*argv, "oINL", 4))
             opt_inl = 0;
-        if (!strncmp (*argv, "oinline_functions", 17))
+        else if (!strncmp (*argv, "oinline_functions", 17))
             opt_inl = 0;
-        if (!strncmp (*argv, "oUNR", 4))
+        else if (!strncmp (*argv, "oUNR", 4))
             opt_unr = 0;
-        if (!strncmp (*argv, "ounroll_loops", 13))
+        else if (!strncmp (*argv, "ounroll_loops", 13))
             opt_unr = 0;
-        if (!strncmp (*argv, "oUNS", 4))
+        else if (!strncmp (*argv, "oUNS", 4))
             opt_uns = 0;
-        if (!strncmp (*argv, "ounswitch_loops", 15))
+        else if (!strncmp (*argv, "ounswitch_loops", 15))
             opt_uns = 0;
-        if (!strncmp (*argv, "oPSIOPT", 7))
+        else if (!strncmp (*argv, "oPSIOPT", 7))
             psi_optimize = 0;
-        if (!strncmp (*argv, "opsiopt", 7))
+        else if (!strncmp (*argv, "opsiopt", 7))
             psi_optimize = 0;
-        if (!strncmp (*argv, "oindex_vect_elimination", 23))
+        else if (!strncmp (*argv, "oindex_vect_elimination", 23))
             psi_opt_ive = 0;
-        if (!strncmp (*argv, "oIVE", 3))
+        else if (!strncmp (*argv, "oIVE", 3))
             psi_opt_ive = 0;
-        if (!strncmp (*argv, "oarray_elimination", 19))
+        else if (!strncmp (*argv, "oarray_elimination", 19))
             opt_ae = 0;
-        if (!strncmp (*argv, "oAE", 3))
+        else if (!strncmp (*argv, "oAE", 3))
             opt_ae = 0;
+        else if (!strncmp (*argv, "ocleanup", 8))
+            cleanup = 0;
+        else
+            SYSWARN (("Unknown compiler option '%s`", *argv));
     }
     NEXTOPT
     ARG 'm' : PARM
@@ -635,8 +644,14 @@ MAIN
     ARG 'o' : PARM
     {
         strcpy (outfilename, *argv);
-        strcpy (cfilename, *argv);
-        strcat (cfilename, ".c");
+        /*
+         * The option is only stored in outfilename,
+         * the correct settings of the global variables
+         * outfilename, cfilename, and targetdir will be done
+         * in SetFileNames() in scnprs.c. This cannot be done
+         * because you have to know the kind of file (program
+         * or module/class implementation).
+         */
     }
     NEXTOPT
     ARG 'f' : PARM
@@ -670,6 +685,13 @@ MAIN
 
     if (AppendEnvVar (PATH, "SAC_PATH") == 0)
         SYSABORT (("MAX_PATH_LEN too low"));
+
+    /*
+     * Now, we create tmp directories for files generated during the
+     * compilation process.
+     */
+
+    CreateTmpDirectories ();
 
     ABORT_ON_ERROR;
     compiler_phase++;
@@ -848,7 +870,42 @@ MAIN
         }
     }
 
-    Print (syntax_tree);
+    if (!break_compilation) {
+        NOTE_COMPILER_PHASE;
+        Print (syntax_tree);
+        ABORT_ON_ERROR;
+        compiler_phase++;
+    } else {
+        Print (syntax_tree);
+    }
+
+    if (!Ccodeonly) {
+        NOTE_COMPILER_PHASE;
+        InvokeCC (syntax_tree);
+        ABORT_ON_ERROR;
+        compiler_phase++;
+    }
+
+    if ((!Ccodeonly)
+        && ((MODUL_FILETYPE (syntax_tree) == F_modimp)
+            || (MODUL_FILETYPE (syntax_tree) == F_classimp))) {
+        NOTE_COMPILER_PHASE;
+        CreateLibrary (syntax_tree);
+        ABORT_ON_ERROR;
+        compiler_phase++;
+    }
+
+    /*
+     *  Finally, we do some clean up.
+     */
+
+    CleanUp ();
+
+    FreeTree (syntax_tree);
+
+    /*
+     *  After all, a success message is displayed.
+     */
 
     NEWLINE (2);
     NOTE2 (("*** Compilation successful ***"));
@@ -860,12 +917,6 @@ MAIN
     NOTE2 (("*** Exit code 0"));
     NOTE2 (("*** 0 error(s), %d warning(s)", warnings));
     NEWLINE (2);
-
-    if (!Ccodeonly) {
-        InvokeCC (syntax_tree);
-    }
-
-    FreeTree (syntax_tree);
 
     return (0);
 }
