@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.151  1998/05/12 22:39:08  dkr
+ * changed COMPSync:
+ *   ICMs for memory management are moved into the barrier
+ * changed COMPNwith2:
+ *   support for fold added (incomplete!)
+ *
  * Revision 1.150  1998/05/12 15:41:49  dkr
  * changed COMPSpmd, COMPSync
  *
@@ -2344,10 +2350,6 @@ ShapeToArray (node *vardec_node)
  * description:
  *   starts compilation.
  *
- * remarks:
- *   - 'INFO_COMP_MT( arg_info)' indicates weather we currently traverse a
- *     N_sync-region or not (needed for 'COMPNwith2')
- *
  ******************************************************************************/
 
 node *
@@ -2360,7 +2362,6 @@ Compile (node *arg_node)
     act_tab = comp_tab;
     info = MakeInfo ();
 
-    INFO_COMP_MT (arg_node) = 0;
     arg_node = Trav (arg_node, info);
 
     FREE (info);
@@ -6069,8 +6070,8 @@ COMPSpmd (node *arg_node, node *arg_info)
     icm_args = MakeExprs (MakeId (StringCopy (SPMD_FUNNAME (arg_node)), NULL, ST_regular),
                           icm_args);
 
-#if 0
-  SPMD_ICM( arg_node) = MakeIcm( "MT_SPMD_BLOCK", icm_args, NULL);
+#if 00
+    SPMD_ICM (arg_node) = MakeIcm ("MT_SPMD_BLOCK", icm_args, NULL);
 #endif
 
     /*
@@ -6088,20 +6089,16 @@ COMPSpmd (node *arg_node, node *arg_info)
  * description:
  *   compiles a N_sync node.
  *
- * remarks:
- *   - 'INFO_COMP_MT( arg_info)' indicates weather we currently traverse a
- *     N_sync-region or not.
- *     (needed to suppress memory managment in 'COMPNwith2' if necessary.)
- *
  ******************************************************************************/
 
 node *
 COMPSync (node *arg_node, node *arg_info)
 {
-    node *assigns, *icm_args, *icm_args1, *icm_args2, *vardec;
+    node *icm_args, *icm_args1, *icm_args2, *vardec, *instr, *assign, *last_assign,
+      *prolog_icms, *epilog_icms, *new_icm, *assigns = NULL;
     simpletype s_type;
-    char *icm_name;
-    int num_folds;
+    char *icm_name, *var_name;
+    int num_folds, prolog;
 
     DBUG_ENTER ("COMPSync");
 
@@ -6135,12 +6132,70 @@ COMPSync (node *arg_node, node *arg_info)
       }) /* FOREACH_VARDEC_AND_ARG */
 
     /*
-     * is this sync-region *not* the first one of the current SPMD-region?
-     *  -> insert the memory-managment (malloc).
+     * compile the sync-region
+     */
+    SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
+
+    /*
+     * now we extract all ICM for memory-management concerning the
+     *  IN/INOUT/OUT-vars of the current sync-region.
+     * (they must be moved into the sync-barrier!)
+     */
+
+    prolog_icms = epilog_icms = NULL;
+
+    assign = BLOCK_INSTR (SYNC_REGION (arg_node));
+    last_assign = NULL;
+    while (assign != NULL) {
+
+        DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "no assign found");
+        instr = ASSIGN_INSTR (assign);
+
+        if (NODE_TYPE (instr) == N_icm) {
+            prolog = -1;
+            if (strcmp (ICM_NAME (instr), "ND_ALLOC_ARRAY") == 0) {
+                var_name = ID_NAME (EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (instr))));
+                prolog = 1;
+            } else {
+                if ((strcmp (ICM_NAME (instr), "ND_DEC_RC") == 0)
+                    || (strcmp (ICM_NAME (instr), "ND_DEC_RC_FREE") == 0)) {
+                    var_name = ID_NAME (EXPRS_EXPR (ICM_ARGS (instr)));
+                    prolog = 0;
+                }
+            }
+
+            if (prolog != -1) {
+                if (DFMTestMaskEntry (SYNC_IN (arg_node), var_name)
+                    || DFMTestMaskEntry (SYNC_INOUT (arg_node), var_name)
+                    || DFMTestMaskEntry (SYNC_OUT (arg_node), var_name)) {
+                    new_icm = DupNode (assign);
+
+                    if (last_assign == NULL) {
+                        BLOCK_INSTR (SYNC_REGION (arg_node)) = FreeNode (assign);
+                    } else {
+                        ASSIGN_NEXT (last_assign) = FreeNode (assign);
+                    }
+
+                    if (prolog == 1) {
+                        prolog_icms = AppendAssign (prolog_icms, new_icm);
+                    } else {
+                        epilog_icms = AppendAssign (epilog_icms, new_icm);
+                    }
+                }
+            }
+        }
+
+        last_assign = assign;
+        assign = ASSIGN_NEXT (assign);
+    }
+
+    /*
+     * if this sync-region is *not* the first one of the current SPMD-region
+     *  -> insert extracted prolog-ICMs.
      *  -> insert ICM (MT_CONTINUE),
      */
     if (!SYNC_FIRST (arg_node)) {
-        assigns = MakeAllocArrayICMs (SYNC_INOUT_IDS (arg_node));
+        assigns = AppendAssign (assigns, prolog_icms);
         assigns
           = AppendAssign (assigns,
                           MakeAssign (MakeIcm ("MT_CONTINUE",
@@ -6148,26 +6203,27 @@ COMPSync (node *arg_node, node *arg_info)
                                                NULL),
                                       NULL));
     } else {
+        /*
+         * this sync-region is the first one of the current SPMD-region.
+         *  -> remove prolog-ICMs because they have already been inserted by the
+         *     'MT_SPMD_BLOCK'-ICM.
+         */
         if (icm_args1 != NULL) {
             icm_args1 = FreeTree (icm_args1);
+        }
+        if (prolog_icms != NULL) {
+            prolog_icms = FreeTree (prolog_icms);
         }
     }
 
     /*
-     * compile the sync-region
-     */
-    INFO_COMP_MT (arg_info) = 1;
-    SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
-    INFO_COMP_MT (arg_info) = 0;
-
-    /*
-     * insert contents of sync-region-block
+     * insert contents of modified sync-region-block
      */
     assigns = AppendAssign (assigns, BLOCK_INSTR (SYNC_REGION (arg_node)));
     BLOCK_INSTR (SYNC_REGION (arg_node)) = NULL;
 
     /*
-     * insert ICM (MT_SYNC_...)
+     * insert ICM 'MT_SYNC_...'
      */
 
     if (DFMTestMask (SYNC_INOUT (arg_node)) > 0) {
@@ -6199,9 +6255,9 @@ COMPSync (node *arg_node, node *arg_info)
                                   NULL));
 
     /*
-     * insert ICMs for memory management (ND_DEC_RC_FREE).
+     * insert extracted epilog-ICMs.
      */
-    assigns = AppendAssign (assigns, MakeDecRcFreeICMs (SYNC_DEC_RC_IDS (arg_node)));
+    assigns = AppendAssign (assigns, epilog_icms);
 
     /*
      * remove remain of N_sync node
@@ -6211,8 +6267,8 @@ COMPSync (node *arg_node, node *arg_info)
     DBUG_RETURN (assigns);
 }
 
-node *wl_icm_args = NULL;
-node *wl_withid = NULL;
+ids *wl_ids = NULL;
+node *wl_node = NULL;
 
 /******************************************************************************
  *
@@ -6223,21 +6279,18 @@ node *wl_withid = NULL;
  *   compilation of a N_with2 node.
  *
  * remarks:
- *   - 'wl_withid' points always to the N_withid-node.
- *   - 'wl_icm_args' points to the args-list of the ICMs WL_BEGIN, WL_END.
- *     This is needed to reuse this args for WL_ASSIGN.
- *   - INFO_COMP_MT indicates weather the memory managment for with-loops is
- *     done already in a parent N_sync-region or not.
+ *   - 'wl_ids' points always to LET_IDS of the current with-loop.
+ *   - 'wl_node' points always to the N_Nwith2-node.
  *
  ******************************************************************************/
 
 node *
 COMPNwith2 (node *arg_node, node *arg_info)
 {
-    node *icm_args;
-    ids *wl_ids, *withid_ids;
+    node *icm_args, *assigns = NULL;
+    ids *withid_ids;
+    char *icm_name;
     int num_args;
-    node *assigns = NULL;
 
     DBUG_ENTER ("COMPNwith2");
 
@@ -6246,15 +6299,12 @@ COMPNwith2 (node *arg_node, node *arg_info)
      *  because INFO_COMP_LASTIDS is possibly updated afterwards !!!
      */
     wl_ids = INFO_COMP_LASTIDS (arg_info);
-    wl_withid = NWITH2_WITHID (arg_node);
+    wl_node = arg_node;
 
     /*
-     * if with-loop is compiled to sequential code,
-     *  insert ICMs for memory management (ND_ALLOC_ARRAY)
+     * insert ICMs for memory management (ND_ALLOC_ARRAY)
      */
-    if (INFO_COMP_MT (arg_info) == 0) {
-        assigns = MakeAllocArrayICMs (wl_ids);
-    }
+    assigns = MakeAllocArrayICMs (wl_ids);
 
     /*
      * insert ICMs to allocate memory for index-vector
@@ -6268,28 +6318,54 @@ COMPNwith2 (node *arg_node, node *arg_info)
     NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
 
     /*
-     * insert ICM 'WL_BEGIN'
+     * insert 'WL_???_BEGIN'-ICM
      */
 
-    num_args = 0;
     icm_args = NULL;
-    withid_ids = NWITHID_IDS (wl_withid);
-    while (withid_ids != NULL) {
-        icm_args = AppendExpr (icm_args,
-                               MakeExprs (MakeId2 (DupOneIds (withid_ids, NULL)), NULL));
-        num_args++;
-        withid_ids = IDS_NEXT (withid_ids);
+    if (NWITH2_IDX_MIN (arg_node) != NULL) {
+        num_args = 0;
+        withid_ids = NWITHID_IDS (NWITH2_WITHID (wl_node));
+        while (withid_ids != NULL) {
+            icm_args
+              = AppendExpr (icm_args,
+                            MakeExprs (MakeId2 (DupOneIds (withid_ids, NULL)),
+                                       MakeExprs (MakeNum ((
+                                                    NWITH2_IDX_MIN (arg_node))[num_args]),
+                                                  MakeExprs (MakeNum ((NWITH2_IDX_MAX (
+                                                               arg_node))[num_args]),
+                                                             NULL))));
+            num_args++;
+            withid_ids = IDS_NEXT (withid_ids);
+        }
+        icm_args = MakeExprs (MakeNum (num_args), icm_args);
+        icm_args
+          = MakeExprs (MakeId2 (DupOneIds (NWITHID_VEC (NWITH2_WITHID (wl_node)), NULL)),
+                       icm_args);
+        icm_args = MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)), icm_args);
+
+        switch (NWITHOP_TYPE (NWITH2_WITHOP (arg_node))) {
+        case WO_genarray:
+            /* here is no break missing! */
+        case WO_modarray:
+            icm_name = "WL_NONFOLD_BEGIN";
+            break;
+
+        case WO_foldfun:
+            /* here is no break missing! */
+        case WO_foldprf:
+            icm_name = "WL_FOLD_BEGIN";
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "wrong withop type found");
+        }
+    } else {
+        icm_name = "WL_VAR_BEGIN";
+        /* var. generator */
     }
-    icm_args = MakeExprs (MakeNum (num_args), icm_args);
-
-    icm_args = MakeExprs (MakeId2 (DupOneIds (NWITHID_VEC (wl_withid), NULL)), icm_args);
-
-    icm_args = MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)), icm_args);
-
-    wl_icm_args = icm_args; /* store the ICM args for later use (WL_ASSIGN) */
 
     assigns
-      = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_BEGIN", icm_args, NULL), NULL));
+      = AppendAssign (assigns, MakeAssign (MakeIcm (icm_name, icm_args, NULL), NULL));
 
     /*
      * compile the with-segments
@@ -6298,22 +6374,18 @@ COMPNwith2 (node *arg_node, node *arg_info)
     assigns = AppendAssign (assigns, Trav (NWITH2_SEGS (arg_node), arg_info));
 
     /*
-     * insert ICM 'WL_END'
+     * insert 'WL_END'-ICM
      */
     assigns
       = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_END", icm_args, NULL), NULL));
 
     /*
-     * if with-loop is compiled to sequential code,
-     *  insert ICMs for memory management (ND_DEC_RC_FREE).
+     * insert ICMs for memory management ('DEC_RC_FREE').
      */
-    if (INFO_COMP_MT (arg_info) == 0) {
-        assigns
-          = AppendAssign (assigns, MakeDecRcFreeICMs (NWITH2_DEC_RC_IDS (arg_node)));
-    }
+    assigns = AppendAssign (assigns, MakeDecRcFreeICMs (NWITH2_DEC_RC_IDS (arg_node)));
 
     /*
-     * insert ICM 'DEC_RC_FREE' for index-vector.
+     * insert 'DEC_RC_FREE'-ICM for index-vector.
      */
     assigns = AppendAssign (assigns,
                             MakeDecRcFreeICMs (NWITHID_VEC (NWITH2_WITHID (arg_node))));
@@ -6373,9 +6445,6 @@ COMPNcode (node *arg_node, node *arg_info)
  *     returns an N_assign-chain with ICMs and leaves 'arg_node' untouched!!
  *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
  *
- * remarks:
- *   - 'wl_withid' points always to the N_withid-node.
- *
  ******************************************************************************/
 
 node *
@@ -6412,7 +6481,7 @@ COMPWLseg (node *arg_node, node *arg_info)
  *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
  *
  * remarks:
- *   - 'wl_withid' points always to the N_withid-node.
+ *   - 'wl_node' points always to the N_Nwith2-node.
  *
  ******************************************************************************/
 
@@ -6427,8 +6496,9 @@ COMPWLblock (node *arg_node, node *arg_info)
     DBUG_ENTER ("COMPWLblock");
 
     /* build argument list for ICMs */
-    ids_vector = NWITHID_VEC (wl_withid);
-    ids_scalar = GetIndexIds (NWITHID_IDS (wl_withid), WLBLOCK_DIM (arg_node));
+    ids_vector = NWITHID_VEC (NWITH2_WITHID (wl_node));
+    ids_scalar
+      = GetIndexIds (NWITHID_IDS (NWITH2_WITHID (wl_node)), WLBLOCK_DIM (arg_node));
     icm_args = MakeExprs (
       MakeNum (WLBLOCK_LEVEL (arg_node)),
       MakeExprs (
@@ -6489,7 +6559,7 @@ COMPWLblock (node *arg_node, node *arg_info)
  *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
  *
  * remarks:
- *   - 'wl_withid' points always to the N_withid-node.
+ *   - 'wl_node' points always to the N_Nwith2-node.
  *
  ******************************************************************************/
 
@@ -6504,8 +6574,9 @@ COMPWLublock (node *arg_node, node *arg_info)
     DBUG_ENTER ("COMPWLublock");
 
     /* build argument list for ICMs */
-    ids_vector = NWITHID_VEC (wl_withid);
-    ids_scalar = GetIndexIds (NWITHID_IDS (wl_withid), WLUBLOCK_DIM (arg_node));
+    ids_vector = NWITHID_VEC (NWITH2_WITHID (wl_node));
+    ids_scalar
+      = GetIndexIds (NWITHID_IDS (NWITH2_WITHID (wl_node)), WLUBLOCK_DIM (arg_node));
     icm_args = MakeExprs (
       MakeNum (WLUBLOCK_LEVEL (arg_node)),
       MakeExprs (
@@ -6566,7 +6637,7 @@ COMPWLublock (node *arg_node, node *arg_info)
  *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
  *
  * remarks:
- *   - 'wl_withid' points always to the N_withid-node.
+ *   - 'wl_node' points always to the N_Nwith2-node.
  *
  ******************************************************************************/
 
@@ -6581,8 +6652,9 @@ COMPWLstride (node *arg_node, node *arg_info)
     DBUG_ENTER ("COMPWLstride");
 
     /* build argument list for ICMs */
-    ids_vector = NWITHID_VEC (wl_withid);
-    ids_scalar = GetIndexIds (NWITHID_IDS (wl_withid), WLSTRIDE_DIM (arg_node));
+    ids_vector = NWITHID_VEC (NWITH2_WITHID (wl_node));
+    ids_scalar
+      = GetIndexIds (NWITHID_IDS (NWITH2_WITHID (wl_node)), WLSTRIDE_DIM (arg_node));
     icm_args = MakeExprs (
       MakeNum (WLSTRIDE_LEVEL (arg_node)),
       MakeExprs (
@@ -6631,23 +6703,26 @@ COMPWLstride (node *arg_node, node *arg_info)
  *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
  *
  * remarks:
- *   - 'wl_withid' points always to the N_withid-node.
+ *   - 'wl_ids' points always to LET_IDS of the current with-loop.
+ *   - 'wl_node' points always to the N_with-node.
  *
  ******************************************************************************/
 
 node *
 COMPWLgrid (node *arg_node, node *arg_info)
 {
-    node *icm_args, *icm_args2;
-    ids *ids_vector, *ids_scalar;
-    node *assigns = NULL;
+    node *icm_args1, *icm_args2, *assigns = NULL;
+    ids *ids_vector, *ids_scalar, *withid_ids;
+    char *icm_name;
+    int num_args;
 
     DBUG_ENTER ("COMPWLgrid");
 
     /* build argument list for ICMs */
-    ids_vector = NWITHID_VEC (wl_withid);
-    ids_scalar = GetIndexIds (NWITHID_IDS (wl_withid), WLGRID_DIM (arg_node));
-    icm_args = MakeExprs (
+    ids_vector = NWITHID_VEC (NWITH2_WITHID (wl_node));
+    ids_scalar
+      = GetIndexIds (NWITHID_IDS (NWITH2_WITHID (wl_node)), WLGRID_DIM (arg_node));
+    icm_args1 = MakeExprs (
       MakeNum (WLGRID_LEVEL (arg_node)),
       MakeExprs (MakeNum (WLGRID_LEVEL (arg_node) + 1),
                  MakeExprs (MakeNum (WLGRID_DIM (arg_node)),
@@ -6675,14 +6750,53 @@ COMPWLgrid (node *arg_node, node *arg_info)
                   = DupTree (BLOCK_INSTR (NCODE_CBLOCK (WLGRID_CODE (arg_node))), NULL);
             }
 
+            /*
+             * build argument list for 'WL_ASSIGN'/'WL_FOLD'-ICM
+             */
+            num_args = 0;
+            icm_args2 = NULL;
+            withid_ids = NWITHID_IDS (NWITH2_WITHID (wl_node));
+            while (withid_ids != NULL) {
+                icm_args2
+                  = AppendExpr (icm_args2,
+                                MakeExprs (MakeId2 (DupOneIds (withid_ids, NULL)), NULL));
+                num_args++;
+                withid_ids = IDS_NEXT (withid_ids);
+            }
+            icm_args2 = MakeExprs (MakeNum (num_args), icm_args2);
+            icm_args2
+              = MakeExprs (MakeId2 (
+                             DupOneIds (NWITHID_VEC (NWITH2_WITHID (wl_node)), NULL)),
+                           icm_args2);
+            icm_args2 = MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)), icm_args2);
             DBUG_ASSERT ((NCODE_CEXPR (WLGRID_CODE (arg_node)) != NULL),
                          "no code expr found");
             icm_args2 = MakeExprs (DupTree (NCODE_CEXPR (WLGRID_CODE (arg_node)), NULL),
-                                   DupTree (wl_icm_args, NULL));
+                                   icm_args2);
+
+            /*
+             * choose right ICM ('WL_ASSIGN' for non-fold, 'WL_FOLD' for fold)
+             */
+            switch (NWITH2_TYPE (wl_node)) {
+            case WO_genarray:
+                /* here is no break missing! */
+            case WO_modarray:
+                icm_name = "WL_ASSIGN";
+                break;
+
+            case WO_foldfun:
+                /* here is no break missing! */
+            case WO_foldprf:
+                icm_name = "WL_FOLD";
+                break;
+
+            default:
+                DBUG_ASSERT ((0), "wrong withop type found");
+            }
 
             assigns
               = AppendAssign (assigns,
-                              MakeAssign (MakeIcm ("WL_ASSIGN", icm_args2, NULL), NULL));
+                              MakeAssign (MakeIcm (icm_name, icm_args2, NULL), NULL));
         } else {
             assigns = MakeAssign (MakeIcm ("WL_NOOP", NULL, NULL), NULL);
         }
@@ -6690,17 +6804,18 @@ COMPWLgrid (node *arg_node, node *arg_info)
 
     /* insert ICMs for current node */
     DBUG_ASSERT ((assigns != NULL), "code and nextdim are empty");
-    if (IDS_REFCNT (NWITHID_VEC (wl_withid)) >= 0) {
+    if (IDS_REFCNT (NWITHID_VEC (NWITH2_WITHID (wl_node))) >= 0) {
         /*
          * if the index-vector is needed somewhere in the code-blocks,
          *  we must add the ICM 'WL_GRID_SET_IDX'.
          */
-        assigns = MakeAssign (MakeIcm ("WL_GRID_SET_IDX", icm_args, NULL), assigns);
+        assigns = MakeAssign (MakeIcm ("WL_GRID_SET_IDX", icm_args1, NULL), assigns);
     }
-    assigns = MakeAssign (MakeIcm ("WL_GRID_LOOP_BEGIN", icm_args, NULL), assigns);
-    assigns = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_GRID_LOOP_END",
-                                                          DupTree (icm_args, NULL), NULL),
-                                                 NULL));
+    assigns = MakeAssign (MakeIcm ("WL_GRID_LOOP_BEGIN", icm_args1, NULL), assigns);
+    assigns
+      = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_GRID_LOOP_END",
+                                                    DupTree (icm_args1, NULL), NULL),
+                                           NULL));
 
     /* compile successor */
     if (WLGRID_NEXT (arg_node) != NULL) {
@@ -6719,8 +6834,6 @@ COMPWLgrid (node *arg_node, node *arg_info)
  *   compilation of an N_WLstriVar-node:
  *     returns an N_assign-chain with ICMs and leaves 'arg_node' untouched!!
  *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
- *   remarks:
- *     'wl_withid' points always to the N_withid-node.
  *
  ******************************************************************************/
 
@@ -6745,8 +6858,6 @@ COMPWLstriVar (node *arg_node, node *arg_info)
  *   compilation of an N_WLgridVar-node:
  *     returns an N_assign-chain with ICMs and leaves 'arg_node' untouched!!
  *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
- *   remarks:
- *     'wl_withid' points always to the N_withid-node.
  *
  ******************************************************************************/
 
