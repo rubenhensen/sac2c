@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2004/11/22 21:05:30  ktr
+ * ISMOP
+ *
  * Revision 3.57  2004/11/22 19:09:54  ktr
  * SACDECCAMP 04
  *
@@ -1106,5 +1109,25 @@ typedef struct STACK_T dfmstack_t;
  */
 
 typedef struct LUT_T lut_t;
+
+/*******************************************************************************
+ * moved from scheduling.h
+ */
+
+typedef struct SCHED_T sched_t;
+
+typedef struct TASKSEL_T tasksel_t;
+
+/*******************************************************************************
+ * moved from traverse.h
+ */
+
+typedef node *(*funptr) (node *, info *);
+
+typedef struct FUNREC {
+    funptr travtab[N_ok + 1];
+    funptr prefun;
+    funptr postfun;
+} funtab;
 
 #endif /* _SAC_TYPES_H_ */
