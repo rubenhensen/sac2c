@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.104  2004/11/26 20:19:30  khf
+ * compiles!
+ *
  * Revision 3.103  2004/11/25 22:18:51  khf
  * use PRTprintHomsv
  *
@@ -2300,7 +2303,7 @@ GenerateNodeForGap (node *wlnode, nodetype nt1, void *pnode1, nodetype nt2, void
                                             WLBnodeOrIntMakeNode (nt2, pnode2), NULL,
                                             NULL, NULL);
             }
-            WLGRIDX_NOOP (gap_node) = is_noop;
+            WLGRIDX_ISNOOP (gap_node) = is_noop;
             break;
 
         default:
@@ -2428,7 +2431,7 @@ CheckWithids (node *part)
             /*
              * compares VEC
              */
-            if (IDS_VARDEC (PART_VEC (part)) != IDS_VARDEC (PART_VEC (tmp))) {
+            if (IDS_DECL (PART_VEC (part)) != IDS_DECL (PART_VEC (tmp))) {
                 res = FALSE;
             } else {
                 /*
@@ -2437,7 +2440,7 @@ CheckWithids (node *part)
                 _ids_part = PART_IDS (part);
                 _ids_tmp = PART_IDS (tmp);
                 while (res && (_ids_part != NULL) && (_ids_tmp != NULL)) {
-                    if (IDS_VARDEC (_ids_part) != IDS_VARDEC (_ids_tmp)) {
+                    if (IDS_DECL (_ids_part) != IDS_DECL (_ids_tmp)) {
                         res = FALSE;
                     }
                     _ids_part = IDS_NEXT (_ids_part);
@@ -2947,7 +2950,7 @@ Parts2Strides (node *parts, int iter_dims, shpseg *iter_shp)
             DBUG_ASSERT ((new_grid != NULL), "no produced grid found!");
             WLGRIDX_CODE (new_grid) = code;
             CODE_USED (code)++;
-            WLGRIDX_NOOP (new_grid) = CODE_ISDUMMYCODE (code);
+            WLGRIDX_ISNOOP (new_grid) = CODE_ISDUMMYCODE (code);
             parts_stride = WLTRAinsertWlNodes (parts_stride, stride);
         }
 
@@ -6856,11 +6859,11 @@ InsertNoopNodes (node *wlnode)
                 is_noop = InsertNoopNodes (WLGRIDX_NEXTDIM (wlnode));
                 if (is_noop) {
                     WLGRIDX_NEXTDIM (wlnode) = FREEdoFreeTree (WLGRIDX_NEXTDIM (wlnode));
-                    WLGRIDX_NOOP (wlnode) = TRUE;
+                    WLGRIDX_ISNOOP (wlnode) = TRUE;
                 }
             }
 
-            is_noop = WLGRIDX_NOOP (wlnode);
+            is_noop = WLGRIDX_ISNOOP (wlnode);
             is_noop &= InsertNoopNodes (WLGRIDX_NEXT (wlnode));
 
             /*
@@ -7970,10 +7973,10 @@ WLTRAlet (node *arg_node, info *arg_info)
 
     tmp_ids = LET_IDS (arg_node);
     while (tmp_ids != NULL) {
-        DBUG_ASSERT ((IDS_VARDEC (tmp_ids) != NULL), "vardec of let-variable not found!");
+        DBUG_ASSERT ((IDS_DECL (tmp_ids) != NULL), "vardec of let-variable not found!");
 
-        DBUG_ASSERT (((NODE_TYPE (IDS_VARDEC (tmp_ids)) == N_vardec)
-                      || (NODE_TYPE (IDS_VARDEC (tmp_ids)) == N_arg)),
+        DBUG_ASSERT (((NODE_TYPE (IDS_DECL (tmp_ids)) == N_vardec)
+                      || (NODE_TYPE (IDS_DECL (tmp_ids)) == N_arg)),
                      "vardec-node of let-variable has wrong type!");
 
         ltype = TCappendTypes (ltype, DUPdupOneTypes (IDS_TYPE (tmp_ids)));
