@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.40  1998/05/24 00:43:08  dkr
+ * changed signature of some WL-ICMs
+ *
  * Revision 1.39  1998/05/19 15:43:08  dkr
  * ICMs for fold changed
  *
@@ -520,47 +523,60 @@ ICM_END( WL_FOLD_BEGIN, (target, idx_vec, dims, args))
 
 #if defined(WL_ASSIGN) || defined(ICM_ALL)
 ICM_DEF( WL_ASSIGN, TRACE_UDF)
+  ICM_INT(dims_expr)
+  ICM_STR(expr)
+  ICM_INT(dims_target)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
-  ICM_INT(dims_expr)
-  ICM_STR(expr)
-ICM_END( WL_ASSIGN, (target, idx_vec, dims, idx_scalars, dims_expr, expr))
+ICM_END( WL_ASSIGN, (dims_expr, expr, dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
 #if defined(WL_ASSIGN_INIT) || defined(ICM_ALL)
 ICM_DEF( WL_ASSIGN_INIT, TRACE_UDF)
+  ICM_INT(dims_target)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
-  ICM_INT(dims_templ)
-  ICM_STR(templ)
-ICM_END( WL_ASSIGN_INIT, (target, idx_vec, dims, idx_scalars, dims_templ, templ))
+ICM_END( WL_ASSIGN_INIT, (dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
 #if defined(WL_ASSIGN_COPY) || defined(ICM_ALL)
 ICM_DEF( WL_ASSIGN_COPY, TRACE_UDF)
   ICM_STR(source)
+  ICM_INT(dims_target)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
-  ICM_INT(dims_templ)
-  ICM_STR(templ)
-ICM_END( WL_ASSIGN_COPY, (source, target, idx_vec, dims, idx_scalars, dims_templ, templ))
+ICM_END( WL_ASSIGN_COPY, (source, dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
 #if defined(WL_FOLD_NOOP) || defined(ICM_ALL)
 ICM_DEF( WL_FOLD_NOOP, TRACE_UDF)
   ICM_INT(dim)
+  ICM_INT(dims_target)
+  ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
   ICM_INT(cnt_bounds)
   ICM_VAR(cnt_bounds, bounds)
-ICM_END( WL_FOLD_NOOP, (dim, idx_vec, dims, idx_scalars, cnt_bounds, bounds))
+ICM_END( WL_FOLD_NOOP, (dim, dims_target, target, idx_vec, dims, idx_scalars,
+                        cnt_bounds, bounds))
+#endif
+
+#if defined(WL_ADJUST_OFFSET) || defined(ICM_ALL)
+ICM_DEF( WL_ADJUST_OFFSET, TRACE_UDF)
+  ICM_INT(dim)
+  ICM_INT(dims_target)
+  ICM_STR(target)
+  ICM_STR(idx_vec)
+  ICM_INT(dims)
+  ICM_VAR(dims, idx_scalars)
+ICM_END( WL_ADJUST_OFFSET, (dim, dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
 
