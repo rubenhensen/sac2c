@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2001/05/16 19:52:47  nmw
+ * reverted Free() to FREE() due to segfaults when used with linux :-(
+ *
  * Revision 3.3  2001/01/17 17:37:49  dkr
  * comment added
  *
@@ -1020,7 +1023,7 @@ APTprf (node *arg_node, node *arg_info)
             old_type
               = PIgetOldType (DupTypes (VARDEC_TYPE (ID_VARDEC (PRF_ARG1 (arg_node)))));
             arg_node = Shpseg2Array (TYPES_SHPSEG (old_type), TYPES_DIM (old_type));
-            Free (old_type);
+            FREE (old_type);
         }
         /* even if PRF_ARG1 is padded, the result of PRF will have an
          * unpadded shape => return FALSE */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2001/05/16 19:52:47  nmw
+ * reverted Free() to FREE() due to segfaults when used with linux :-(
+ *
  * Revision 1.3  2001/05/16 13:42:25  nmw
  * unused old code removed, comments corrected
  * MALLOC/FREE changed to Malloc/Free
@@ -227,9 +230,9 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
     }
 
     if (!ok) {
-        Free (iinfo);
+        FREE (iinfo);
     }
-    Free (valid_permutation);
+    FREE (valid_permutation);
 
     DBUG_RETURN (iinfo);
 }
@@ -485,9 +488,9 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                     DBUG_ASSERT ((NODE_TYPE (cf_node) == N_num),
                                  "non integer result from constant folding");
                     iinfo->const_arg[i] = NUM_VAL (cf_node);
-                    Free (args[0]);
-                    Free (args[1]);
-                    Free (cf_node);
+                    FREE (args[0]);
+                    FREE (args[1]);
+                    FREE (cf_node);
                 }
             }
         } /* this Id is valid. */
@@ -528,9 +531,9 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                     DBUG_ASSERT ((NODE_TYPE (cf_node) == N_num),
                                  "non integer result from constant folding");
                     iinfo->const_arg[i] = NUM_VAL (cf_node);
-                    Free (args[0]);
-                    Free (args[1]);
-                    Free (cf_node);
+                    FREE (args[0]);
+                    FREE (args[1]);
+                    FREE (cf_node);
                 } else {
                     iinfo->const_arg[i] = val;
                 }
@@ -662,7 +665,7 @@ SSAWLIap (node *arg_node, node *arg_info)
 
         act_tab = tmp_tab;
 
-        Free (new_arg_info);
+        FREE (new_arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -867,7 +870,7 @@ SSAWLINwith (node *arg_node, node *arg_info)
     /* restore arg_info */
     tmpn = arg_info;
     arg_info = INFO_WLI_NEXT (arg_info);
-    Free (tmpn);
+    FREE (tmpn);
 
     DBUG_RETURN (arg_node);
 }

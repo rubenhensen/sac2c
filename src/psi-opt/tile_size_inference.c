@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/05/16 19:52:47  nmw
+ * reverted Free() to FREE() due to segfaults when used with linux :-(
+ *
  * Revision 3.2  2001/05/16 13:43:34  nmw
  * MALLOC/FREE changed to Malloc/Free
  *
@@ -158,7 +161,7 @@ InsortByCLine (void *element, list_t *list)
         next = (enh_access_t *)list->element;
         if (elem->cline <= next->cline) {
             if (elem->vaddr == next->vaddr) {
-                Free (elem);
+                FREE (elem);
             } else {
                 result = (list_t *)Malloc (sizeof (list_t));
                 result->element = element;
@@ -792,7 +795,7 @@ TSInwith (node *arg_node, node *arg_info)
             }
         }
     }
-    Free (cacheparam);
+    FREE (cacheparam);
 
     DBUG_RETURN (arg_node);
 }

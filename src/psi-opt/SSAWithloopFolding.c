@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2001/05/16 19:52:47  nmw
+ * reverted Free() to FREE() due to segfaults when used with linux :-(
+ *
  * Revision 1.3  2001/05/16 13:43:08  nmw
  * unused old code removed, comments corrected
  * MALLOC/FREE changed to Malloc/Free
@@ -373,8 +376,8 @@ SSANormalizeInternGen (intern_gen *ig)
 
         /* if both vectors are 1 this is equivalent to no grid. */
         if (!error && is_1) {
-            Free (ig->step);
-            Free (ig->width);
+            FREE (ig->step);
+            FREE (ig->width);
         }
     }
 

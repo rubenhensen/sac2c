@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2001/05/16 19:52:47  nmw
+ * reverted Free() to FREE() due to segfaults when used with linux :-(
+ *
  * Revision 1.3  2001/05/16 13:42:45  nmw
  * MALLOC/FREE changed to Malloc/Free
  *
@@ -236,7 +239,7 @@ FreeRen (void)
     while (renaming) {
         ren = renaming;
         renaming = renaming->next;
-        Free (ren);
+        FREE (ren);
     }
 
     DBUG_RETURN (renaming);
@@ -366,7 +369,7 @@ FreeCC (code_constr_type *cc)
     while (cc) {
         tmpcc = cc;
         cc = cc->next;
-        Free (tmpcc);
+        FREE (tmpcc);
     }
 
     DBUG_VOID_RETURN;
@@ -765,7 +768,7 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
         tmpig = tmpig->next;
     }
 
-    Free (help);
+    FREE (help);
     SSAFreeInternGenChain (substig);
 
     DBUG_RETURN (rootig);
@@ -1121,7 +1124,7 @@ RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
             }
         }
 
-    Free (found);
+    FREE (found);
 
     DBUG_RETURN (subst_ig);
 }
@@ -1645,7 +1648,7 @@ SSAWLFid (node *arg_node, node *arg_info)
 #if 0
       if (target_mask[varno]) { /* target_mask was initialized before Fold() */
 
-        /* always build new variable */
+        /* build new variable */
         new_name = TmpVarName( ID_NAME( NCODE_CEXPR( coden)));
         ren = AddRen( ID_VARDEC( NCODE_CEXPR( coden)), new_name,
                       ID_TYPE( NCODE_CEXPR( coden)), arg_info, 1);
@@ -1793,8 +1796,8 @@ SSAWLFid (node *arg_node, node *arg_info)
 #if 0
     varno = ID_VARNO(arg_node);
     ren = SearchRen(ID_NAME(arg_node));
-    if (ren /* ||
-               (varno != -1 && target_mask[varno] != subst_mask[varno]) */) {
+    if (ren ||
+        (varno != -1 && target_mask[varno] != subst_mask[varno])) {
       /* we have to solve a name clash. */
       if (ren) {
         new_name = StringCopy(ren->new);
@@ -1806,7 +1809,7 @@ SSAWLFid (node *arg_node, node *arg_info)
                      ID_TYPE(arg_node), arg_info, 1);
       }
       /* replace old name now. */
-      Free(ID_NAME(arg_node));
+      FREE(ID_NAME(arg_node));
       ID_NAME(arg_node) = new_name;
       ID_VARDEC(arg_node) = ren->vardec;
     }
@@ -1982,8 +1985,8 @@ SSAWLFNwith (node *arg_node, node *arg_info)
                                 NODE_LINE (arg_node)));
             NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
-            Free (intersect_grids_ot);
-            Free (intersect_grids_os);
+            FREE (intersect_grids_ot);
+            FREE (intersect_grids_os);
 
             /* all codes have been traversed. Now append new_codes to WL and
                exchange old generators with all_new_ig. */
@@ -2023,7 +2026,7 @@ SSAWLFNwith (node *arg_node, node *arg_info)
         /* restore arg_info */
         tmpn = arg_info;
         arg_info = INFO_WLI_NEXT (arg_info);
-        Free (tmpn);
+        FREE (tmpn);
         break;
 
     case wlfm_replace:
