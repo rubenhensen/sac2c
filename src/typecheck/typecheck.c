@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.20  1999/05/31 16:55:48  sbs
+ * constant-folding for wls extended
+ * Now, with(...) genarray( [2+2,3],...);
+ * works as well.
+ *
  * Revision 2.19  1999/05/18 07:51:42  sbs
  * some bugs concerning user-defined types eliminated.
  *
@@ -574,18 +579,24 @@ ArrayOfZeros (int count)
     DBUG_RETURN (res);
 }
 
-static node *
-TypeToZeros (types *type)
+#if 0
+/*
+ * What is this function needed for???
+ * Where are the comments????
+ * SBS.
+ */
+static node *TypeToZeros (types *type)
 {
-    node *res;
+  node *res;
 
-    DBUG_ENTER ("TypeToZeros");
-    DBUG_ASSERT ((TYPES_DIM (type) > 0), "TypeToZeros() called with type dim <= 0");
+  DBUG_ENTER("TypeToZeros");
+  DBUG_ASSERT((TYPES_DIM(type) > 0), "TypeToZeros() called with type dim <= 0");
 
-    res = ArrayOfZeros (TYPES_DIM (type));
+  res = ArrayOfZeros (TYPES_DIM(type));
 
-    DBUG_RETURN (res);
+  DBUG_RETURN(res);
 }
+#endif
 
 static int
 TypeToCount (types *type)
@@ -7724,48 +7735,51 @@ types *
 TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
 {
     types *ret_type, *expr_type;
-    int *tmpi, i, dim = 0;
+    int dim = 0;
     node *tmpn;
 
     DBUG_ENTER ("TI_Ngenarray");
 
-    expr_type = TI (arg_node, arg_info); /* SBS: this was called with arg_info NULL which
-                                          * subsequently caused SEGFAULTS in TI_fun
-                                          * if a funap was placed in the generator!
-                                          * I HOPE that using arg_info will not cause
-                                          * problems with the CF hack !!!
-                                          */
+    expr_type = TI (arg_node, arg_info);
+
     if (expr_type == NULL) {
         ABORT (NODE_LINE (arg_node),
                ("type of shape in genarray with loop cannot be infered!"));
+    } else if (((TYPES_DIM (expr_type) != (KNOWN_DIM_OFFSET - 1))
+                && (TYPES_DIM (expr_type) != 1))
+               || (TYPES_BASETYPE (expr_type) != T_int)) {
+        ABORT (NODE_LINE (arg_node),
+               ("type of shape in genarray with loop is %s which does not match int[.]!",
+                Type2String (expr_type, 3)));
     }
-    if (((NODE_TYPE (arg_node) != N_id) && (NODE_TYPE (arg_node) != N_array))
-        || ((NODE_TYPE (arg_node) == N_id) && (ID_VECLEN (arg_node) == SCALAR))) {
-        /* weak TC */
-        /* 1 dimension wanted */
-        if (((TYPES_DIM (expr_type) < SCALAR)
-             && (TYPES_DIM (expr_type) < KNOWN_DIM_OFFSET)
-             && (TYPES_DIM (expr_type) != (KNOWN_DIM_OFFSET - 1)))
-            || ((TYPES_DIM (expr_type) >= SCALAR) && (TYPES_DIM (expr_type) != 1)))
-            ABORT (NODE_LINE (arg_node), ("genarray shape has to have one dimension"));
+    /*
+     * Now, we know the type of the shape-argument from the genarray WL,
+     * but it is not yet obvious whether the exact value is statically
+     * available!
+     */
 
+    /*
+     * First we can through away any pre-ceeding casts, since we have made
+     * sure that we are dealing with int[.] or int[x].
+     */
+    while (NODE_TYPE (arg_node) == N_cast) {
+        arg_node = CAST_EXPR (arg_node);
+        *replace = arg_node;
+    }
+
+    /*
+     * Then, we try to apply constant-folding to reduce it to a const array.
+     * This is only possible if we have a prf shape(). Else the integration
+     * or CF would be too complex (masks, mrd, name clashed when including
+     * optimize.h to patch masks and mrd).
+     */
+    tmpn = ReduceGenarrayShape (arg_node, expr_type);
+    if (tmpn) {
+        arg_node = tmpn;
         /*
-         * if the dimension of the genarray-vector is unkown or has one dimension,
-         * we try to constantfold the expression to reduce it to a const array.
-         * This is only possible if we have a prf shape(). Else the integration
-         * or CF would be too complex (masks, mrd, name clashed when including
-         * optimize.h to patch masks and mrd).
+         * replace old expr in WL-syntax tree
          */
-        if (N_prf == NODE_TYPE (arg_node)) {
-            tmpn = ReduceGenarrayShape (arg_node, expr_type);
-            if (tmpn) {
-                arg_node = tmpn;
-                /*
-                 * replace old expr in WL-syntax tree
-                 */
-                *replace = arg_node;
-            }
-        }
+        *replace = arg_node;
     }
 
     if (NODE_TYPE (arg_node) == N_array) {
@@ -7787,9 +7801,16 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
                     tmpn = EXPRS_NEXT (tmpn);
                     dim++;
                 } else {
-                    ABORT (NODE_LINE (arg_node),
-                           ("%d. element of shape vector not a constant integer",
-                            dim + 1));
+                    /*
+                     * the shape is not constant! The dim+1 th element of the array
+                     * is not a constant!
+                     * Therefore, we have to set the return-type to int[].
+                     * To get this done, we force an exit of the loop (tmpn = NULL)
+                     * and set dim to UNKNOWN_SHAPE!
+                     */
+                    FREE (TYPES_SHPSEG (ret_type));
+                    dim = UNKNOWN_SHAPE;
+                    tmpn = NULL;
                 }
             else {
                 ABORT (NODE_LINE (arg_node), ("Shape vector has too many elements"));
@@ -7797,49 +7818,13 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
 
         TYPES_DIM (ret_type) = dim;
         /*
-         * don't free exprs_next because it is assignd to arg_node.
+         * don't free exprs_type because it is assignd to arg_node.
          */
     } else {
-        if ((NODE_TYPE (arg_node) == N_id) && (ID_ISCONST (arg_node))
-            && (VARDEC_BASETYPE (ID_VARDEC (arg_node)) == T_int)) {
-
-            /*
-             * compute return_type
-             */
-            ret_type = MakeType (T_int, 0, MakeShpseg (NULL), NULL, NULL);
-
-            tmpi = ((int *)ID_CONSTVEC (arg_node));
-            dim = ID_VECLEN (arg_node);
-            if (dim < SHP_SEG_SIZE)
-                for (i = 0; i < dim; i++)
-                    TYPES_SHAPE (ret_type, dim) = tmpi[i];
-            else
-                ABORT (NODE_LINE (arg_node), ("Shape vector has too many elements"));
-            TYPES_DIM (ret_type) = dim;
-        } else if ((NODE_TYPE (arg_node) == N_cast)
-                   && (TYPES_BASETYPE (CAST_TYPE (arg_node)) == T_int)
-                   && (TYPES_DIM (CAST_TYPE (arg_node)) > SCALAR)) {
-
-            ret_type = MakeType (T_int, 0, MakeShpseg (NULL), NULL, NULL);
-
-            tmpi = ((int *)ID_CONSTVEC (arg_node));
-            dim = ID_VECLEN (arg_node);
-            if (dim < SHP_SEG_SIZE)
-                for (i = 0; i < dim; i++)
-                    TYPES_SHAPE (ret_type, dim) = tmpi[i];
-            else
-                ABORT (NODE_LINE (arg_node), ("Shape vector has too many elements"));
-            TYPES_DIM (ret_type) = dim;
-
-            /* ABORT (NODE_LINE(arg_node), ("hit new section")); */
-
-        } else {
-            /* weak TC */
-            /* return int[] or float[] ... */
-            ret_type
-              = MakeType (TYPES_BASETYPE (expr_type), UNKNOWN_SHAPE, NULL, NULL, NULL);
-            FreeOneTypes (expr_type);
-        }
+        /* weak TC */
+        /* return int[] or float[] ... */
+        ret_type = MakeType (TYPES_BASETYPE (expr_type), UNKNOWN_SHAPE, NULL, NULL, NULL);
+        FreeOneTypes (expr_type);
     }
 
     if ((kind_of_file == SAC_PRG) && (TYPES_DIM (ret_type) < SCALAR))

@@ -1,6 +1,11 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.2  1999/05/31 16:56:45  sbs
+ * constant-folding for wls extended
+ * Now, with(...) genarray( [2+2,3],...);
+ * works as well.
+ *
  * Revision 2.1  1999/02/23 12:41:00  sacbase
  * new release made
  *
@@ -87,6 +92,7 @@ TCWLarray (node *arg_node, node *arg_info)
 
     tmpn = ARRAY_AELEMS (arg_node);
     while (tmpn) {
+        EXPRS_EXPR (tmpn) = Trav (EXPRS_EXPR (tmpn), arg_info);
         if (N_num != NODE_TYPE (EXPRS_EXPR (tmpn)))
             expr_ok = 0;
         tmpn = EXPRS_NEXT (tmpn);
@@ -119,8 +125,16 @@ TCWLprf (node *arg_node, node *arg_info)
             arg_node = CFprf (arg_node, arg_info);
             if (N_prf == NODE_TYPE (arg_node)) /* not successful */
                 expr_ok = 0;
-        } else
-            expr_ok = 0;
+        } else {
+            PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+            if (PRF_ARG1 (arg_node)
+                && (N_array == NODE_TYPE (PRF_ARG1 (arg_node))
+                    || N_num == NODE_TYPE (PRF_ARG1 (arg_node)))) {
+                arg_node = CFprf (arg_node, arg_info);
+                if (N_prf == NODE_TYPE (arg_node)) /* not successful */
+                    expr_ok = 0;
+            }
+        }
     } else {
         PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
         PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
