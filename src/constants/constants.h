@@ -1,7 +1,9 @@
 /*
  * $Log$
+ * Revision 1.9  2001/05/08 13:15:09  nmw
+ * signature for IsZero... changed
+ *
  * Revision 1.8  2001/05/03 16:52:55  nmw
- * *** empty log message ***
  *
  * Revision 1.7  2001/05/02 08:00:46  nmw
  * COIsZero, COIsOne, ... and COMakeZero, COMakeOne, ... added
@@ -107,11 +109,11 @@ extern node *COConstant2AST (constant *a);
 extern constant *COAST2Constant (node *a);
 extern bool COIsConstant (node *a);
 
-/* basic value compares */
-extern bool COIsZero (constant *a);
-extern bool COIsOne (constant *a);
-extern bool COIsTrue (constant *a);
-extern bool COIsFalse (constant *a);
+/* basic value compares, if all==true the condition must hold for all elements */
+extern bool COIsZero (constant *a, bool all);
+extern bool COIsOne (constant *a, bool all);
+extern bool COIsTrue (constant *a, bool all);
+extern bool COIsFalse (constant *a, bool all);
 
 /***
  ***

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2001/05/08 13:15:34  nmw
+ * signature for IsZero... changed
+ *
  * Revision 1.9  2001/05/07 09:07:35  nmw
  * AST2Constant uses type information when called for an id node
  *
@@ -741,18 +744,19 @@ COMakeFalse (shape *shp)
 /******************************************************************************
  *
  * function:
- *   bool COIsZero( constant *a)
- *   bool COIsOne( constant *a)
- *   bool COIsTrue( constant *a)
- *   bool COIsFalse( constant *a)
+ *   bool COIsZero( constant *a, bool all)
+ *   bool COIsOne( constant *a, bool all)
+ *   bool COIsTrue( constant *a, bool all)
+ *   bool COIsFalse( constant *a, bool all)
  *
  * description:
- *   checks if the given constant consists only of 0 or 1 elements.
- *   (FALSE/TRUE for boolean)
+ *   checks if the given constant consists of 0 or 1 elements (TRUE/FALSE).
+ *   if "all" is set to true, the condition must hold for all elements,
+ *   if "all" is set to false, the condition must hold for at least one element.
  *
  ******************************************************************************/
 bool
-COIsZero (constant *a)
+COIsZero (constant *a, bool all)
 {
     bool result;
     constant *zero;
@@ -767,11 +771,20 @@ COIsZero (constant *a)
 
     /* check for correct constant */
     if (zero != NULL) {
-        /* compare constants (all elements must be equal) */
+        /* compare constants (elements must be equal) */
         eq = COEq (a, zero);
-        result = TRUE;
-        for (i = 0; i < CONSTANT_VLEN (eq); i++) {
-            result = result && ((bool *)(CONSTANT_ELEMS (eq)))[i];
+
+        /* compute result dependend of flag "all" */
+        if (all) {
+            result = TRUE;
+            for (i = 0; i < CONSTANT_VLEN (eq); i++) {
+                result = result && ((bool *)(CONSTANT_ELEMS (eq)))[i];
+            }
+        } else {
+            result = FALSE;
+            for (i = 0; i < CONSTANT_VLEN (eq); i++) {
+                result = result || ((bool *)(CONSTANT_ELEMS (eq)))[i];
+            }
         }
         eq = COFreeConstant (eq);
     } else {
@@ -782,7 +795,7 @@ COIsZero (constant *a)
 }
 
 bool
-COIsOne (constant *a)
+COIsOne (constant *a, bool all)
 {
     bool result;
     constant *one;
@@ -799,9 +812,18 @@ COIsOne (constant *a)
     if (one != NULL) {
         /* compare constants */
         eq = COEq (a, one);
-        result = TRUE;
-        for (i = 0; i < CONSTANT_VLEN (eq); i++) {
-            result = result && ((bool *)(CONSTANT_ELEMS (eq)))[i];
+
+        /* compute result dependend of flag "all" */
+        if (all) {
+            result = TRUE;
+            for (i = 0; i < CONSTANT_VLEN (eq); i++) {
+                result = result && ((bool *)(CONSTANT_ELEMS (eq)))[i];
+            }
+        } else {
+            result = FALSE;
+            for (i = 0; i < CONSTANT_VLEN (eq); i++) {
+                result = result || ((bool *)(CONSTANT_ELEMS (eq)))[i];
+            }
         }
         eq = COFreeConstant (eq);
     } else {
@@ -812,15 +834,15 @@ COIsOne (constant *a)
 }
 
 bool
-COIsTrue (constant *a)
+COIsTrue (constant *a, bool all)
 {
     DBUG_ENTER ("COIsTrue");
-    DBUG_RETURN (COIsOne (a));
+    DBUG_RETURN (COIsOne (a, all));
 }
 
 bool
-COIsFalse (constant *a)
+COIsFalse (constant *a, bool all)
 {
     DBUG_ENTER ("COIsFalse");
-    DBUG_RETURN (COIsZero (a));
+    DBUG_RETURN (COIsZero (a, all));
 }
