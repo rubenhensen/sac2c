@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.68  1998/05/12 22:43:55  dkr
+ * changed MakeNwith2:
+ *   added NWITH2_DIM, NWITH2_IDX_MIN, NWITH2_IDX_MAX
+ *
  * Revision 1.67  1998/05/12 15:51:18  dkr
  * removed ???_VARINFO
  *
@@ -1583,7 +1587,7 @@ MakeNCode (node *block, node *expr)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeNWith2 (node *withid, node *seg, node *code, node *withop)
+MakeNWith2 (node *withid, node *seg, node *code, node *withop, int dims)
 {
     node *tmp;
 
@@ -1595,6 +1599,10 @@ MakeNWith2 (node *withid, node *seg, node *code, node *withop)
     NWITH2_SEGS (tmp) = seg;
     NWITH2_CODE (tmp) = code;
     NWITH2_WITHOP (tmp) = withop;
+    NWITH2_DIMS (tmp) = dims;
+
+    NWITH2_IDX_MIN (tmp) = (int *)MALLOC (dims * sizeof (int));
+    NWITH2_IDX_MAX (tmp) = (int *)MALLOC (dims * sizeof (int));
 
     DBUG_RETURN (tmp);
 }
