@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.123  1998/05/05 12:35:02  srs
+ * inserted new switch -noWLT. This deactivates
+ * - CF of constant bounds into generator
+ * - creation of full partitions
+ * - transformation of index vectors (iv <=> [i,j,k])
+ *
  * Revision 1.122  1998/05/05 11:52:14  dkr
  * message of compiler phase Old2NewWith is now only displayed
  *   if this phase is activated.
@@ -815,6 +821,7 @@ MAIN
             opt_unr = 0;
             opt_uns = 0;
             opt_cse = 0;
+            opt_wlt = 0;
             opt_wlf = 0;
             opt_ae = 0;
             opt_ive = 0;
@@ -841,6 +848,11 @@ MAIN
             opt_ae = 0;
         else if (OptCmp (*argv, "oCSE"))
             opt_cse = 0;
+        else if (OptCmp (*argv, "oWLT")) {
+            opt_wlt = 0;
+            opt_wlf = 0;
+        }
+
         else if (OptCmp (*argv, "oWLF"))
             opt_wlf = 0;
         else if (OptCmp (*argv, "oRCO"))
