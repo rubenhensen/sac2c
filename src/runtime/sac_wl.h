@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/05/07 16:21:03  dkr
+ * new name conventions
+ *
  * Revision 1.1  1998/05/07 08:38:05  cg
  * Initial revision
  *
@@ -46,7 +49,7 @@
 
 #define VAR(type, level, idx_scalar) __##type##level##_##idx_scalar
 
-#define MIN(x, y) ND_MIN (x, y)
+#define MIN(x, y) SAC_ND_MIN (x, y)
 
 #define SAC_WL_BLOCK_LOOP0_BEGIN(level, next_level, dim, idx_vec, idx_scalar, bound1,    \
                                  bound2, step)                                           \
