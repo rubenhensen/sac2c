@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.112  2004/11/24 19:41:24  sah
+ * COMPILES!
+ *
  * Revision 3.111  2004/11/23 10:30:03  sah
  * SaC DevCamp DK
  *
@@ -16,6 +19,8 @@
 
 #include "tree_basic.h"
 #include "internal_lib.h"
+#include "Error.h"
+#include "free.h"
 
 /*--------------------------------------------------------------------------*/
 /* local macros for heap allocation                                         */
@@ -34,12 +39,12 @@
 /*
  * attention: the given parameter chain of nums structs is set free here!!!
  */
-static shpseg *
+shpseg *
 TBmakeShpseg (node *numsp)
 {
     shpseg *tmp;
     int i;
-    nums *oldnumsp;
+    node *oldnumsp;
 
     DBUG_ENTER ("TBmakeShpseg");
 
@@ -68,12 +73,12 @@ TBmakeShpseg (node *numsp)
 
         DBUG_ASSERT ((NODE_TYPE (numsp) == N_nums), "found a non numsp node as argument");
 
-        SHPSEG_SHAPE (tmp, i) = NUMS_NUM (numsp);
+        SHPSEG_SHAPE (tmp, i) = NUMS_VAL (numsp);
 
         i++;
         oldnumsp = numsp;
         numsp = NUMS_NEXT (numsp);
-        oldnumsp = ILIBfree (oldnumsp);
+        oldnumsp = FREEdoFreeNode (oldnumsp);
     }
 
     SHPSEG_NEXT (tmp) = NULL;
@@ -118,64 +123,6 @@ TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name, char *mod)
     TYPES_NEXT (tmp) = NULL;
 
     DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-nums *
-TBmakeNums (int num, nums *next)
-{
-    nums *tmp;
-
-    DBUG_ENTER ("TBmakeNums");
-
-    tmp = ALLOCATE (nums);
-    NUMS_NUM (tmp) = num;
-    NUMS_NEXT (tmp) = next;
-
-    DBUG_RETURN (tmp);
-}
-
-nums *
-TBcreateNums (int size, ...)
-{
-    nums *result = NULL;
-    int cnt;
-    va_list args;
-
-    DBUG_ENTER ("TBcreateNums");
-
-    va_start (args, size);
-
-    for (cnt = 0; cnt < size; cnt++) {
-        result = TBmakeNums (va_arg (args, int), result);
-    }
-
-    va_end (args);
-
-    DBUG_RETURN (result);
-}
-
-int *
-TBcreateIntegerArray (int size, ...)
-{
-    int *result = NULL;
-    int cnt;
-    va_list args;
-
-    DBUG_ENTER ("TBcreateIntegerArray");
-
-    if (size > 0) {
-        result = ILIBmalloc (sizeof (int) * size);
-
-        va_start (args, size);
-        for (cnt = 0; cnt < size; cnt++) {
-            result[cnt] = va_arg (args, int);
-        }
-        va_end (args);
-    }
-
-    DBUG_RETURN (result);
 }
 
 /*--------------------------------------------------------------------------*/
