@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/02/02 09:53:20  dkr
+ * comment added
+ *
  * Revision 3.1  2000/11/20 18:03:23  sacbase
  * new release made
  *
@@ -43,12 +46,19 @@
  * Revision 1.1  1995/03/28  12:01:50  hw
  * Initial revision
  *
- *
  */
 
 #ifndef _access_macros_h
-
 #define _access_macros_h
+
+/*********
+ *
+ * This header file is redundant now!!!
+ *
+ * PLEASE DO NOT USE THESE MACROS IN NEW CODE!!!
+ * USE tree_basic.h, tree_compound.h INSTEAD!
+ *
+ *********/
 
 #undef ID_MOD
 
