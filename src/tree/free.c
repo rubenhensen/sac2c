@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2004/05/12 12:58:27  ktr
+ * DO_LABEL and DO_SKIP inserted.
+ *
  * Revision 3.55  2004/05/05 14:35:56  ktr
  * Added support for NCODE_EPILOGUE
  *
@@ -1326,6 +1329,10 @@ FreeDo (node *arg_node, node *arg_info)
 
     DO_USEVARS (arg_node) = FreeAllIds (DO_USEVARS (arg_node));
     DO_DEFVARS (arg_node) = FreeAllIds (DO_DEFVARS (arg_node));
+
+    DO_SKIP (arg_node) = FREETRAV (DO_SKIP (arg_node));
+    DO_LABEL (arg_node)
+      = (DO_LABEL (arg_node) != NULL ? Free (DO_LABEL (arg_node)) : NULL);
 
     FREEMASKS (DO_MASK);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.94  2004/05/12 12:58:27  ktr
+ * DO_LABEL and DO_SKIP inserted.
+ *
  * Revision 3.93  2004/05/07 09:58:43  khf
  * Added functions DupTreeSSA, DupTreeLUTSSA, DupNodeSSA and
  * DupNodeLUTSSA to obtain the ssa-form
@@ -1516,6 +1519,10 @@ DupDo (node *arg_node, node *arg_info)
 #if 0
   DO_MASK( new_node, ?) = ???;
 #endif
+
+    DO_SKIP (new_node) = DUPTRAV (DO_SKIP (arg_node));
+    DO_LABEL (new_node)
+      = (DO_LABEL (arg_node) != NULL ? TmpVarName (DO_LABEL (arg_node)) : NULL);
 
     CopyCommonNodeData (new_node, arg_node);
 
