@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2004/07/29 12:06:23  ktr
+ * DO_SKIP is always built in EMM now, even if it only contains N_empty
+ *
  * Revision 3.24  2004/07/21 12:52:15  ktr
  * updated some comments.
  *
@@ -735,8 +738,11 @@ TransformIntoDoLoop (node *fundef)
             ASSIGN_INSTR (cond_assign) = FreeTree (ASSIGN_INSTR (cond_assign));
             ASSIGN_INSTR (cond_assign) = MakeDo (loop_pred, loop_body);
 
-            /* Insert skip */
-            if (skip != NULL) {
+            if (emm) {
+                /* Insert skip */
+                if (skip == NULL) {
+                    skip = MakeEmpty ();
+                }
                 DO_SKIP (ASSIGN_INSTR (cond_assign)) = MakeBlock (skip, NULL);
                 DO_LABEL (ASSIGN_INSTR (cond_assign)) = TmpVar ();
             }
