@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.65  1998/04/20 00:45:19  dkr
+ * added DupOneIds
+ *
  * Revision 1.64  1998/04/20 00:05:36  dkr
  * changed DupIds:
  *    duplicates new REFCNT, too!
@@ -395,11 +398,11 @@ DupStr (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 ids *
-DupIds (ids *old_ids, node *arg_info)
+DupOneIds (ids *old_ids, node *arg_info)
 {
     ids *new_ids;
 
-    DBUG_ENTER ("DupIds");
+    DBUG_ENTER ("DupOneIds");
 
     if ((arg_info != NULL) && (DUPTYPE == DUP_INLINE)) {
         new_ids = MakeIds (RenameInlinedVar (IDS_NAME (old_ids)),
@@ -415,6 +418,20 @@ DupIds (ids *old_ids, node *arg_info)
 
     IDS_ATTRIB (new_ids) = IDS_ATTRIB (old_ids);
     IDS_REFCNT (new_ids) = IDS_REFCNT (old_ids);
+
+    DBUG_RETURN (new_ids);
+}
+
+/******************************************************************************/
+
+ids *
+DupIds (ids *old_ids, node *arg_info)
+{
+    ids *new_ids;
+
+    DBUG_ENTER ("DupIds");
+
+    new_ids = DupOneIds (old_ids, arg_info);
 
     if (NULL != IDS_NEXT (old_ids)) {
         IDS_NEXT (new_ids) = DupIds (IDS_NEXT (old_ids), arg_info);
