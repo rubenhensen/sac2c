@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.104  2004/10/15 09:09:14  ktr
+ * added AVIS_ALIAS ARG_ALIAS
+ *
  * Revision 3.103  2004/10/14 13:37:09  sbs
  * changed VINFO_TYPE into VINFO_SHAPE
  *
@@ -902,6 +905,8 @@ MakeArg (char *name, types *type, statustype status, statustype attrib, node *ne
     ARG_ACTCHN (tmp) = NULL;
     ARG_COLCHN (tmp) = NULL;
 
+    ARG_ALIAS (tmp) = TRUE;
+
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
@@ -1667,6 +1672,8 @@ MakeAvis (node *vardecOrArg)
     AVIS_SSALPINV (tmp) = FALSE;
     AVIS_SSADEFINED (tmp) = FALSE;
     AVIS_SSAUNDOFLAG (tmp) = FALSE;
+
+    AVIS_ALIAS (tmp) = TRUE;
 
     /* create empty stack */
     AVIS_SSASTACK (tmp) = MakeSSAstack (NULL, NULL);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.226  2004/10/15 09:09:14  ktr
+ * added AVIS_ALIAS ARG_ALIAS
+ *
  * Revision 3.225  2004/10/14 13:36:28  sbs
  * VINFO_TYPE changed into VINFO_SHAPE
  * signature of MakeVinfo adjusted accordingly.
@@ -1495,6 +1498,7 @@ extern node *MakeTcfuninfo (node *def, node *up, node *down);
  ***    node*       ACTCHN       (N_vinfo)    (psi-optimize -> )
  ***    node*       COLCHN       (N_vinfo)    (psi-optimize -> )
  ***    node*       FUNDEF       (N_fundef)   (psi-optimize -> )
+ ***    bool        ALIAS                     (emaa -> )
  ***/
 
 /*
@@ -1536,6 +1540,7 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
 #define ARG_ACTCHN(n) (n->node[3])
 #define ARG_COLCHN(n) (n->node[4])
 #define ARG_FUNDEF(n) (n->node[5])
+#define ARG_ALIAS(n) ((bool)(n->counter))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2638,6 +2643,9 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***    bool        SSALPINV (O)                     (lir -> undossa !!)
  ***    node*       SSASTACK (O)    (N_ssastack)     (ssaform -> undossa !!)
  ***    bool        SSAUNDOFLAG (O)                  (ssaform -> undossa !!)
+ ***    bool        ALIAS      (0)                   (emaa -> )
+ ***
+ ***
  ***
  ***    the following attributes are only used within ssaform traversal:
  ***    bool        SSADEFINED (O)                   (ssaform!!)
@@ -2688,6 +2696,7 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_SSASTACK(n) (n->node[4])
 #define AVIS_SSAUNDOFLAG(n) ((bool)(n->counter))
 #define AVIS_WITHID(n) (n->node[5])
+#define AVIS_ALIAS(n) ((bool)(n->varno))
 /* used only in ssatransform */
 #define AVIS_SSADEFINED(n) ((bool)(n->int_data))
 #define AVIS_SSATHEN(n) ((node *)(n->dfmask[1]))

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.109  2004/10/15 09:09:14  ktr
+ * added AVIS_ALIAS ARG_ALIAS
+ *
  * Revision 3.108  2004/10/14 22:49:13  sbs
  * SHCopyShape in DupVinfo now conditional
  *
@@ -1279,6 +1282,8 @@ DupArg (node *arg_node, info *arg_info)
     ARG_REFCNT (new_node) = ARG_REFCNT (arg_node);
     ARG_NAIVE_REFCNT (new_node) = ARG_NAIVE_REFCNT (arg_node);
     ARG_OBJDEF (new_node) = ARG_OBJDEF (arg_node);
+
+    ARG_ALIAS (new_node) = ARG_ALIAS (arg_node);
 
 #if 0
   ARG_TYPESTRING( new_node) = ???;
@@ -2624,6 +2629,8 @@ DupAvis (node *arg_node, info *arg_info)
     AVIS_NEEDCOUNT (new_node) = AVIS_NEEDCOUNT (arg_node);
     AVIS_SUBST (new_node) = AVIS_SUBST (arg_node);
     AVIS_SUBSTUSSA (new_node) = AVIS_SUBSTUSSA (arg_node);
+
+    AVIS_ALIAS (new_node) = AVIS_ALIAS (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
