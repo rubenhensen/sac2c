@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/03/27 11:50:36  ben
+ * Afs added to scheduler_table
+ *
  * Revision 3.15  2001/03/22 17:12:55  ben
  * Self added to scheduler_table
  *
@@ -238,15 +241,11 @@ static struct {
     char *arg_spec;
 } scheduler_table[] = {
   /* Name            Class          Adjust Dim  Args  ArgTypes */
-  {"Block", SC_const_seg, 1, 0, 0, ""},
-  {"BlockVar", SC_var_seg, 1, 0, 0, ""},
-  {"Even", SC_var_seg, 1, 0, 0, ""},
-  {"Cyclic", SC_var_seg, 1, 0, 0, ""},
-  {"Self", SC_var_seg, 1, 0, 0, ""},
-  {"AllByOne", SC_var_seg, 0, 0, 1, "i"},
-  {"BlockBySome", SC_const_seg, 0, 0, 2, "i,i"},
-  {"Static", SC_withloop, 0, 0, 0, ""},
-  {"", SC_const_seg, 0, 0, 0, ""}};
+  {"Block", SC_const_seg, 1, 0, 0, ""},   {"BlockVar", SC_var_seg, 1, 0, 0, ""},
+  {"Even", SC_var_seg, 1, 0, 0, ""},      {"Cyclic", SC_var_seg, 1, 0, 0, ""},
+  {"Self", SC_var_seg, 1, 0, 0, ""},      {"Afs", SC_var_seg, 1, 0, 0, ""},
+  {"AllByOne", SC_var_seg, 0, 0, 1, "i"}, {"BlockBySome", SC_const_seg, 0, 0, 2, "i,i"},
+  {"Static", SC_withloop, 0, 0, 0, ""},   {"", SC_const_seg, 0, 0, 0, ""}};
 
 /******************************************************************************
  *
