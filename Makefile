@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.59  2002/09/09 14:19:26  dkr
+# icm2c_error.o added
+#
 # Revision 3.58  2002/08/13 10:24:23  sbs
 # handle_mops.o added.
 #
@@ -158,8 +161,8 @@ COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
          src/compile/icm2c.o src/compile/icm2c_basic.o \
          src/compile/icm2c_utils.o src/compile/icm2c_std.o \
          src/compile/icm2c_mt.o src/compile/icm2c_sched.o \
-         src/compile/icm2c_wl.o src/compile/ReuseWithArrays.o \
-         src/compile/PatchWith.o
+         src/compile/icm2c_wl.o src/compile/icm2c_error.o \
+         src/compile/ReuseWithArrays.o src/compile/PatchWith.o
 
 CINTERFACE= src/c-interface/map_cwrapper.o src/c-interface/print_interface.o \
             src/c-interface/import_specialization.o \
