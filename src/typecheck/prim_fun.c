@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.31  1998/03/10 17:11:28  srs
+ * improved orthography
+ *
  * Revision 1.30  1998/03/03 14:02:09  cg
  * Last occurrence of function Error() replaced by macro SYSABORT
  *
@@ -1166,7 +1169,7 @@ Psi (types *vec, types *array)
                 ret_type
                   = MakeType (TYPES_BASETYPE (array_btype), SCALAR, NULL, NULL, NULL);
         } else if (UNKNOWN_SHAPE == TYPES_DIM (array_btype))
-            /* The result-type is an array or an skalar
+            /* The result-type is an array or an scalar
              */
             ret_type = MakeType (TYPES_BASETYPE (array_btype), ARRAY_OR_SCALAR, NULL,
                                  NULL, NULL);
@@ -1200,14 +1203,14 @@ Psi (types *vec, types *array)
         }
     } else if ((KNOWN_DIM_OFFSET - 1) == TYPES_DIM (vec)) {
         /* the dimension of vec is 1, but the shape is unknown
-         * The result-type is an array or an skalar
+         * The result-type is an array or an scalar
          */
         ret_type
           = MakeType (TYPES_BASETYPE (array_btype), ARRAY_OR_SCALAR, NULL, NULL, NULL);
 
     } else if (UNKNOWN_SHAPE == TYPES_DIM (vec)) {
         /* The dimension iand the shape of vec are unknown.
-         * The result-type is an array or an skalar.
+         * The result-type is an array or an scalar.
          */
         ret_type
           = MakeType (TYPES_BASETYPE (array_btype), ARRAY_OR_SCALAR, NULL, NULL, NULL);
