@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2000/06/14 10:43:19  mab
+ * dummies for APC ap, exprs, id, prf, fundef added
+ *
  * Revision 1.3  2000/06/08 11:13:37  mab
  * added functions for nodes arg, vardec, array
  *
@@ -11,6 +14,20 @@
  *
  *
  */
+
+/*****************************************************************************
+ *
+ * file:   pad_collect.c
+ *
+ * prefix: APC
+ *
+ * description:
+ *
+ *   This compiler module collects information needed to infer new array
+ *   shapes for the inference-phase.
+ *
+ *
+ *****************************************************************************/
 
 #include "dbug.h"
 
@@ -24,6 +41,15 @@
 #include "pad_info.h"
 #include "pad_collect.h"
 
+/*****************************************************************************
+ *
+ * function:
+ *   void APcollect (node *arg_node)
+ *
+ * description:
+ *   main function for collection-phase of array padding
+ *
+ *****************************************************************************/
 /* main function */
 void
 APcollect (node *arg_node)
@@ -49,6 +75,16 @@ APcollect (node *arg_node)
     DBUG_VOID_RETURN;
 }
 
+/*****************************************************************************
+ *
+ * function:
+ *   node *APCarg(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+
 node *
 APCarg (node *arg_node, node *arg_info)
 {
@@ -58,6 +94,16 @@ APCarg (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APCvardec(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
 
 node *
 APCvardec (node *arg_node, node *arg_info)
@@ -69,6 +115,16 @@ APCvardec (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/*****************************************************************************
+ *
+ * function:
+ *   node *APCarray(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+
 node *
 APCarray (node *arg_node, node *arg_info)
 {
@@ -79,12 +135,122 @@ APCarray (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/*****************************************************************************
+ *
+ * function:
+ *   node *APCNwith(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+
 node *
 APCNwith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APCNwith");
 
     DBUG_PRINT ("AP", ("Nwith-node detected\n"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APCap(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+
+node *
+APCap (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("APCap");
+
+    DBUG_PRINT ("AP", ("ap-node detected"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APCexprs(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+
+node *
+APCexprs (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("APCexprs");
+
+    DBUG_PRINT ("AP", ("exprs-node detected"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APCid(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+
+node *
+APCid (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("APCid");
+
+    DBUG_PRINT ("AP", ("id-node detected"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APCprf(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+
+node *
+APCprf (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("APCprf");
+
+    DBUG_PRINT ("AP", ("prf-node detected"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APCfundef(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+
+node *
+APCfundef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("APCfundef");
+
+    DBUG_PRINT ("AP", ("fundef-node detected"));
 
     DBUG_RETURN (arg_node);
 }
