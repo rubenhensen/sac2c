@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.11  1999/11/11 20:05:05  dkr
+ * signature and name of function IsConstantArray changed
+ *
  * Revision 2.10  1999/07/14 12:16:31  bs
  * The function CheckGeneratorBounds won't be used any longer:
  * 'CheckGeneratorBounds' removed.
@@ -979,7 +982,7 @@ WLTNgenerator (node *arg_node, node *arg_info)
 
             if (*bound && (NODE_TYPE ((*bound)) == N_id)) {
                 tmpn = MRD_GETDATA (ID_VARNO ((*bound)), INFO_VARNO);
-                if (IsConstantArray (tmpn, N_num)) {
+                if (IsConstArray (tmpn)) {
                     /* this bound references a constant array, which may be substituted.
                      */
                     INFO_USE[ID_VARNO ((*bound))]--;
@@ -987,7 +990,7 @@ WLTNgenerator (node *arg_node, node *arg_info)
                     /* copy const array to *bound */
                     *bound = DupTree (tmpn, NULL);
 
-                    DBUG_ASSERT ((IsConstantArray ((*bound), N_num)),
+                    DBUG_ASSERT (IsConstArray (*bound),
                                  "generator contains non constant vector!!");
 
                 } else { /* not all sons are constant */

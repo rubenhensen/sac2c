@@ -1,6 +1,9 @@
 /*         $Id$
  *
  * $Log$
+ * Revision 2.7  1999/11/11 20:05:48  dkr
+ * signature and name of function IsConstantArray changed
+ *
  * Revision 2.6  1999/07/15 20:37:30  sbs
  * DBUG_ASSERTs in CountElements inserted.
  *
@@ -534,10 +537,9 @@ CheckUnrollModarray (node *wln)
     /* everything constant? If the first part is constant, all others are
        constant, too. */
     genn = NPART_GEN (partn);
-    ok = (IsConstantArray (NGEN_BOUND1 (genn), N_num)
-          && IsConstantArray (NGEN_BOUND2 (genn), N_num)
-          && (!NGEN_STEP (genn) || IsConstantArray (NGEN_STEP (genn), N_num))
-          && (!NGEN_WIDTH (genn) || IsConstantArray (NGEN_WIDTH (genn), N_num)));
+    ok = (IsConstArray (NGEN_BOUND1 (genn)) && IsConstArray (NGEN_BOUND2 (genn))
+          && (!NGEN_STEP (genn) || IsConstArray (NGEN_STEP (genn)))
+          && (!NGEN_WIDTH (genn) || IsConstArray (NGEN_WIDTH (genn))));
 
     while (partn && ok) {
         genn = NPART_GEN (partn);
@@ -648,10 +650,9 @@ CheckUnrollGenarray (node *wln, node *arg_info)
     /* everything constant? If the first part is constant, all others are
        constant, too. */
     genn = NPART_GEN (NWITH_PART (wln));
-    ok = (IsConstantArray (NGEN_BOUND1 (genn), N_num)
-          && IsConstantArray (NGEN_BOUND2 (genn), N_num)
-          && (!NGEN_STEP (genn) || IsConstantArray (NGEN_STEP (genn), N_num))
-          && (!NGEN_WIDTH (genn) || IsConstantArray (NGEN_WIDTH (genn), N_num)));
+    ok = (IsConstArray (NGEN_BOUND1 (genn)) && IsConstArray (NGEN_BOUND2 (genn))
+          && (!NGEN_STEP (genn) || IsConstArray (NGEN_STEP (genn)))
+          && (!NGEN_WIDTH (genn) || IsConstArray (NGEN_WIDTH (genn))));
 
     type = IDS_TYPE (LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info))));
     GET_LENGTH (length, type);
@@ -759,10 +760,9 @@ CheckUnrollFold (node *wln)
     /* everything constant? If the first part is constant, all others are
        constant, too. */
     genn = NPART_GEN (partn);
-    ok = (IsConstantArray (NGEN_BOUND1 (genn), N_num)
-          && IsConstantArray (NGEN_BOUND2 (genn), N_num)
-          && (!NGEN_STEP (genn) || IsConstantArray (NGEN_STEP (genn), N_num))
-          && (!NGEN_WIDTH (genn) || IsConstantArray (NGEN_WIDTH (genn), N_num)));
+    ok = (IsConstArray (NGEN_BOUND1 (genn)) && IsConstArray (NGEN_BOUND2 (genn))
+          && (!NGEN_STEP (genn) || IsConstArray (NGEN_STEP (genn)))
+          && (!NGEN_WIDTH (genn) || IsConstArray (NGEN_WIDTH (genn))));
 
     while (partn && ok) {
         ok = (elts += CountElements (NPART_GEN (partn))) <= wlunrnum;

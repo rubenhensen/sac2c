@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.6  1999/11/11 20:05:32  dkr
+ * signature and name of function IsConstantArray changed
+ *
  * Revision 2.5  1999/10/22 14:14:40  sbs
  * now uses take, drop and friends from constants.c
  *
@@ -165,8 +168,8 @@ TCWLprf (node *arg_node, node *arg_info)
             /* CF prf now. */
             if ((PRF_PRF (arg_node) == F_psi) || (PRF_PRF (arg_node) == F_reshape)
                 || (PRF_PRF (arg_node) == F_take) || (PRF_PRF (arg_node) == F_drop)) {
-                if (IsConstantArray (PRF_ARG1 (arg_node), N_num)
-                    && IsConstantArray (PRF_ARG2 (arg_node), 0)) {
+                if (IsConstArray (PRF_ARG1 (arg_node))
+                    && IsConstArray (PRF_ARG2 (arg_node))) {
                     arg1 = COMakeConstantFromArray (PRF_ARG1 (arg_node));
                     arg2 = COMakeConstantFromArray (PRF_ARG2 (arg_node));
                     if (PRF_PRF (arg_node) == F_psi) {

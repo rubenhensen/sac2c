@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.8  1999/11/11 20:04:33  dkr
+ * signature and name of function IsConstantArray changed
+ *
  * Revision 2.7  1999/05/12 11:39:24  jhs
  * Adjusted macros to new access on constant vectors.
  *
@@ -46,12 +49,6 @@
  *
  * Revision 1.4  1998/04/07 08:19:24  srs
  * inserted wli_phase
- *
- * Revision 1.3  1998/04/03 12:20:07  srs
- * *** empty log message ***
- *
- * Revision 1.2  1998/04/01 07:43:15  srs
- * *** empty log message ***
  *
  * Revision 1.1  1998/03/22 18:21:43  srs
  * Initial revision
@@ -441,23 +438,21 @@ CreateIndexInfoA (node *prfn, node *arg_info)
         data2 = MRD_GETDATA (ID_VARNO (PRF_ARG2 (prfn)), INFO_VARNO);
 
     /* Which argument is the constant (so which will be the Id)? */
-    if (N_num == NODE_TYPE (PRF_ARG1 (prfn))
-        || IsConstantArray (PRF_ARG1 (prfn), N_num)) {
+    if (N_num == NODE_TYPE (PRF_ARG1 (prfn)) || IsConstArray (PRF_ARG1 (prfn))) {
         id_no = 2;
         idn = PRF_ARG2 (prfn);
         constn = PRF_ARG1 (prfn);
-    } else if (data1 && IsConstantArray (data1, N_num)) {
+    } else if (data1 && IsConstArray (data1)) {
         id_no = 2;
         idn = PRF_ARG2 (prfn);
         constn = data1;
     }
 
-    if (N_num == NODE_TYPE (PRF_ARG2 (prfn))
-        || IsConstantArray (PRF_ARG2 (prfn), N_num)) {
+    if (N_num == NODE_TYPE (PRF_ARG2 (prfn)) || IsConstArray (PRF_ARG2 (prfn))) {
         id_no = 1;
         idn = PRF_ARG1 (prfn);
         constn = PRF_ARG2 (prfn);
-    } else if (data2 && IsConstantArray (data2, N_num)) {
+    } else if (data2 && IsConstArray (data2)) {
         id_no = 1;
         idn = PRF_ARG1 (prfn);
         constn = data2;
@@ -494,7 +489,7 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                     tmpn = EXPRS_NEXT (tmpn);
                     break;
                 case N_id:
-                    if (!IsConstantArray (constn, N_num))
+                    if (!IsConstArray (constn))
                         break;
                     val = ((int *)ID_CONSTVEC (constn))[i];
                     break;

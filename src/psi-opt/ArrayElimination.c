@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/11/11 20:05:11  dkr
+ * signature and name of function IsConstantArray changed
+ *
  * Revision 2.5  1999/05/12 11:39:24  jhs
  * Adjusted macros to new access on constant vectors.
  *
@@ -323,10 +326,10 @@ AEprf (node *arg_node, node *arg_info)
         arg[0] = tmpn;
         arg[1] = NodeBehindCast (PRF_ARG2 (arg_node));
 
-        /* srs: added IsConstantArray() so that psi([i],arr) is not replaced.
+        /* srs: added IsConstArray() so that psi([i],arr) is not replaced.
                 This led to wrong programs. */
         if (N_id == NODE_TYPE (arg[1]) && tmpn && N_array == NODE_TYPE (tmpn)
-            && IsConstantArray (tmpn, N_num) && CorrectArraySize (ID_IDS (arg[1]))) {
+            && IsConstArray (tmpn) && CorrectArraySize (ID_IDS (arg[1]))) {
             DBUG_PRINT ("AE", ("psi function with array %s to eliminated found",
                                arg[1]->info.ids->id));
             new_node = MakeNode (N_id);
