@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 2.53  2000/11/16 10:32:15  dkr
+# target src.tar.gz modified: RCS* files are excluded now
+#
 # Revision 2.52  2000/11/15 13:48:05  dkr
 # -g flag for production version added
 #
@@ -160,7 +163,7 @@ LIB          :=lib/dbug.o lib/main_args.o
 #
 
 SOURCE_DIRS  := . $(shell cat RCS-directories)
-SOURCE_FILES := $(foreach dir,$(SOURCE_DIRS),$(addprefix $(dir)/,RCS-files $(shell (cd $(dir); cat RCS-files))))
+SOURCE_FILES := $(foreach dir,$(SOURCE_DIRS),$(addprefix $(dir)/,$(filter-out RCS-directories,$(shell (cd $(dir); cat RCS-files)))))
 
 
 #
@@ -241,7 +244,7 @@ OBJ=$(GLOBAL) $(TREE) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
 #  Rules section
 #
 
-.PHONY: all efence product check_os dummy prod clean tar floppy distrib distrib_product fafnir
+.PHONY: all efence product check_os dummy prod clean tar floppy distrib distrib_product linux
 
 all: check_os dummy sac2c
 
@@ -395,22 +398,23 @@ tags:
 	ctags src/*/*.[ch] >/dev/null
 
 
-FAFNIR_USER  = sac
-FAFNIR_DIR   = sac2c
+LINUX_HOST = bunasera
+LINUX_USER = sac
+LINUX_DIR  = sac2c
 
-fafnir: src.tar.gz
+linux: src.tar.gz
 	@ ping $@ >/dev/null; \
           if [ $${?} -ne 0 ]; then \
             echo "Host $@ is down !"; \
             exit 1; \
           fi
-	rsh -l $(FAFNIR_USER) $@ mkdir -p $(FAFNIR_DIR)
-	rcp src.tar.gz sac@$@:$(FAFNIR_DIR)
-	rsh -l $(FAFNIR_USER) $@  \
-            'cd $(FAFNIR_DIR);' \
-            'rm -f $(SOURCE_FILES);' \
-            'gunzip -f src.tar.gz;' \
-            'tar xvf src.tar;' \
-            'chmod 644 $(SOURCE_FILES);' \
-            'make deps OS=LINUX_X86;' \
+	rsh -l $(LINUX_USER) $(LINUX_HOST) 'mkdir -p $(LINUX_DIR)'
+	rcp src.tar.gz $(LINUX_USER)@$(LINUX_HOST):$(LINUX_DIR)
+	rsh -l $(LINUX_USER) $(LINUX_HOST) \
+            'cd $(LINUX_DIR);'             \
+            'rm -rf src;'                  \
+            'gunzip -f src.tar.gz;'        \
+            'tar xvf src.tar;'             \
+            'chmod 644 $(SOURCE_FILES);'   \
+            'make deps OS=LINUX_X86;'      \
             'make OS=LINUX_X86'
