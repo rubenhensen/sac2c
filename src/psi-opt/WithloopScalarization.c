@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2002/10/31 17:58:31  ktr
+ * fixed a nasty bug about handling inner WLs with more than 2 parts.
+ *
  * Revision 1.21  2002/10/30 11:47:04  ktr
  * Fixed a bug that made the new wl have a wrong shape when the inner wl
  * was a modarray-wl.
@@ -127,12 +130,6 @@
  *       consisting of the same variables as before.
  *     - The new withids have a new withvec and concatenate the old ids
  *     Finally the new WLs shape is the concatenation of both old shapes.
- *
- *
- *   - Phase 4: Codecorrection
- *
- *     Finally we have to make sure that the NCODE_NEXT and NPART_NEXT
- *     pointers still point correctly.
  *
  *
  ****************************************************************************
@@ -295,6 +292,37 @@ ConcatVecs (node *vec1, node *vec2)
     ((int *)ARRAY_CONSTVEC (res)) = Array2IntVec (ARRAY_AELEMS (res), NULL);
 
     DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *correctWL(node *arg_node)
+ *
+ * description:
+ *   corrects the pointer structures of a withloop's parts and codes which
+ *   be corrupted in several ways.
+ *
+ ******************************************************************************/
+node *
+correctWL (node *arg_node)
+{
+    node *temp;
+
+    DBUG_ENTER ("correctWL");
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_Nwith,
+                 "correctWL called for non N_Nwith node");
+
+    temp = NWITH_PART (arg_node);
+    while ((temp != NULL) && (NPART_NEXT (temp) != NULL)) {
+        NCODE_NEXT (NPART_CODE (temp)) = NPART_CODE (NPART_NEXT (temp));
+        temp = NPART_NEXT (temp);
+    }
+    NCODE_NEXT (NPART_CODE (temp)) = NULL;
+    NWITH_CODE (arg_node) = NPART_CODE (NWITH_PART (arg_node));
+
+    DBUG_RETURN (arg_node);
 }
 
 /****************************************************************************
@@ -1128,9 +1156,9 @@ distributePart (node *arg_node, node *arg_info)
                 ids = LET_IDS (ASSIGN_INSTR (temp));
                 while (ids != NULL) {
                     AVIS_SSAASSIGN (VARDEC_AVIS (vardec)) = temp;
+                    vardec = VARDEC_NEXT (vardec);
                     ids = IDS_NEXT (ids);
                 }
-                vardec = VARDEC_NEXT (vardec);
             }
             temp = ASSIGN_NEXT (temp);
         }
@@ -1147,7 +1175,7 @@ distributePart (node *arg_node, node *arg_info)
         DBUG_ASSERT (innerwith != NPART_LETEXPR (tmpnode), "innerwith == NPART_LETEXPR");
 
         /* Drop the first part from the inner withloop of the next part */
-        innerwith = NPART_LETEXPR (tmpnode);
+        innerwith = correctWL (NPART_LETEXPR (tmpnode));
         NWITH_PARTS (innerwith) -= 1;
         NWITH_PART (innerwith) = NPART_NEXT (NWITH_PART (innerwith));
         NWITH_CODE (innerwith) = NPART_CODE (NWITH_PART (innerwith));
@@ -1322,36 +1350,13 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
     node *tmp_node2;
     node *array;
 
-    ids *idp1, *idp2;
+    LUT_t lut;
+    ids *oldids, *newids;
 
     DBUG_ENTER ("joinCodes");
 
-    /* The new code is the old INNER part's code ... */
-    newcode = DupTree (innercode);
-    tmp_node = BLOCK_INSTR (NCODE_CBLOCK (newcode));
-
-    /* In aggressive mode, we might prepend the old outer code. */
-    BLOCK_INSTR (NCODE_CBLOCK (newcode))
-      = DupTree (BLOCK_INSTR (NCODE_CBLOCK (outercode)));
-
-    tmp_node2 = BLOCK_INSTR (NCODE_CBLOCK (newcode));
-
-    if (ASSIGN_NEXT (tmp_node2) == NULL)
-        BLOCK_INSTR (NCODE_CBLOCK (newcode)) = tmp_node;
-    else {
-        while (ASSIGN_NEXT (ASSIGN_NEXT (tmp_node2)) != NULL) {
-            tmp_node2 = ASSIGN_NEXT (tmp_node2);
-        }
-        if (NODE_TYPE (tmp_node) != N_empty) {
-            FreeTree (ASSIGN_NEXT (tmp_node2));
-            ASSIGN_NEXT (tmp_node2) = tmp_node;
-        } else {
-            FreeTree (ASSIGN_NEXT (tmp_node2));
-            ASSIGN_NEXT (tmp_node2) = NULL;
-        }
-    }
-
-    /* Here we prepend definitions of the two old WITHVECs */
+    /* the new code consinst of... */
+    /* the definitions of the two old withvecs */
     array = MakeArray (MakeExprsIdChain (DupAllIds (NWITHID_IDS (outerwithid))));
 
     ARRAY_TYPE (array)
@@ -1359,36 +1364,77 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
                    MakeShpseg (MakeNums (CountExprs (ARRAY_AELEMS (array)), NULL)), NULL,
                    NULL);
 
-    tmp_node = MakeAssignLet (IDS_NAME (NWITHID_VEC (outerwithid)),
-                              IDS_VARDEC (NWITHID_VEC (outerwithid)), array);
+    newcode = MakeAssignLet (IDS_NAME (NWITHID_VEC (outerwithid)),
+                             IDS_VARDEC (NWITHID_VEC (outerwithid)), array);
 
-    idp1 = NWITHID_IDS (newwithid);
-    idp2 = NWITHID_IDS (outerwithid);
-    while (idp2 != NULL) {
-        idp1 = IDS_NEXT (idp1);
-        idp2 = IDS_NEXT (idp2);
+    newids = NWITHID_IDS (newwithid);
+    oldids = NWITHID_IDS (outerwithid);
+    while (oldids != NULL) {
+        newids = IDS_NEXT (newids);
+        oldids = IDS_NEXT (oldids);
     }
 
-    array = MakeArray (MakeExprsIdChain (DupAllIds (idp1)));
+    array = MakeArray (MakeExprsIdChain (DupAllIds (newids)));
 
     ARRAY_TYPE (array)
       = MakeTypes (T_int, 1,
                    MakeShpseg (MakeNums (CountExprs (ARRAY_AELEMS (array)), NULL)), NULL,
                    NULL);
 
-    ASSIGN_NEXT (tmp_node)
-      = MakeAssignLet (IDS_NAME (NWITHID_VEC (innerwithid)),
-                       IDS_VARDEC (NWITHID_VEC (innerwithid)), array);
+    ASSIGN_NEXT (newcode) = MakeAssignLet (IDS_NAME (NWITHID_VEC (innerwithid)),
+                                           IDS_VARDEC (NWITHID_VEC (innerwithid)), array);
 
-    /* Bring everything in the right order */
-    if (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (newcode))) != N_empty)
-        ASSIGN_NEXT (ASSIGN_NEXT (tmp_node)) = BLOCK_INSTR (NCODE_CBLOCK (newcode));
+    tmp_node = ASSIGN_NEXT (newcode);
 
-    /* Set all the necessary pointers */
-    BLOCK_INSTR (NCODE_CBLOCK (newcode)) = tmp_node;
-    NCODE_NEXT (newcode) = NCODE_NEXT (outercode);
+    /* the old OUTER part's code (if any) */
+    ASSIGN_NEXT (tmp_node) = DupTree (BLOCK_INSTR (NCODE_CBLOCK (outercode)));
+
+    /* be sure to erase the last N_assign node from the copied block */
+    tmp_node2 = newcode;
+    while (ASSIGN_NEXT (ASSIGN_NEXT (tmp_node2)) != NULL)
+        tmp_node2 = ASSIGN_NEXT (tmp_node2);
+    FreeTree (ASSIGN_NEXT (tmp_node2));
+    ASSIGN_NEXT (tmp_node2) = NULL;
+
+    tmp_node = ASSIGN_NEXT (tmp_node);
+
+    /* the old INNER part's code */
+    /* Create a new LUT */
+    lut = GenerateLUT ();
+
+    /* Rename all occurences of old ids */
+    oldids = NWITHID_IDS (outerwithid);
+    newids = NWITHID_IDS (newwithid);
+
+    while (oldids != NULL) {
+        newids = IDS_NEXT (newids);
+        oldids = IDS_NEXT (oldids);
+    }
+    oldids = NWITHID_IDS (innerwithid);
+
+    while (oldids != NULL) {
+        InsertIntoLUT_S (lut, IDS_NAME (oldids), IDS_NAME (newids));
+        InsertIntoLUT_P (lut, IDS_VARDEC (oldids), IDS_VARDEC (newids));
+        InsertIntoLUT_P (lut, IDS_AVIS (oldids), IDS_AVIS (newids));
+
+        oldids = IDS_NEXT (oldids);
+        newids = IDS_NEXT (newids);
+    }
+
+    tmp_node = newcode;
+
+    newcode = DupTreeLUT (innercode, lut);
+    if (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (newcode))) == N_empty)
+        BLOCK_INSTR (NCODE_CBLOCK (newcode)) = tmp_node;
+    else
+        BLOCK_INSTR (NCODE_CBLOCK (newcode))
+          = AppendAssign (tmp_node, BLOCK_INSTR (NCODE_CBLOCK (newcode)));
+
+    RemoveLUT (lut);
 
     /* Return the new Codeblock */
+    NCODE_NEXT (newcode) = NCODE_NEXT (outercode);
+
     DBUG_RETURN (newcode);
 }
 
@@ -1419,11 +1465,6 @@ scalarizePart (node *outerpart, node *arg_info)
     node *withid;
     node *code;
 
-    LUT_t lut;
-    ids *oldids;
-    ids *newids;
-    int diff;
-
     DBUG_ENTER ("scalarizePart");
 
     innerpart = NWITH_PART (NPART_LETEXPR (outerpart));
@@ -1439,29 +1480,8 @@ scalarizePart (node *outerpart, node *arg_info)
       = joinCodes (NPART_CODE (outerpart), NPART_CODE (innerpart),
                    NPART_WITHID (outerpart), NPART_WITHID (innerpart), withid, arg_info);
 
-    /* Create a new LUT */
-    lut = GenerateLUT ();
-
-    /* Rename all occurences of old ids */
-    oldids = NWITHID_IDS (NPART_WITHID (innerpart));
-    newids = NWITHID_IDS (withid);
-
-    diff = CountIds (newids) - CountIds (oldids);
-    while (diff-- > 0)
-        newids = IDS_NEXT (newids);
-
-    while (oldids != NULL) {
-        InsertIntoLUT_S (lut, IDS_NAME (oldids), IDS_NAME (newids));
-        InsertIntoLUT_P (lut, IDS_VARDEC (oldids), IDS_VARDEC (newids));
-        InsertIntoLUT_P (lut, IDS_AVIS (oldids), IDS_AVIS (newids));
-
-        oldids = IDS_NEXT (oldids);
-        newids = IDS_NEXT (newids);
-    }
     /* Now we can build a new part */
-    newpart = MakeNPart (withid, generator, DupTreeLUT (code, lut));
-
-    RemoveLUT (lut);
+    newpart = MakeNPart (withid, generator, code);
 
     /* Rebuild the chain */
     NPART_NEXT (newpart) = NPART_NEXT (outerpart);
@@ -1655,19 +1675,6 @@ WLSNwith (node *arg_node, node *arg_info)
 
         /***************************************************************************
          *
-         *  CODECORRECTION I
-         *
-         ***************************************************************************/
-
-        WLS_PHASE (arg_info) = wls_codecorrect;
-
-        NWITH_CODE (arg_node) = NPART_CODE (NWITH_PART (arg_node));
-        if (NWITH_PART (arg_node) != NULL) {
-            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
-        }
-
-        /***************************************************************************
-         *
          *  SCALARIZATION
          *
          *  All the outer part are melted with the contained single-generator
@@ -1699,18 +1706,7 @@ WLSNwith (node *arg_node, node *arg_info)
             NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
         }
 
-        /***************************************************************************
-         *
-         *  CODECORRECTION II
-         *
-         ***************************************************************************/
-
-        WLS_PHASE (arg_info) = wls_codecorrect;
-
-        NWITH_CODE (arg_node) = NPART_CODE (NWITH_PART (arg_node));
-        if (NWITH_PART (arg_node) != NULL) {
-            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
-        }
+        arg_node = correctWL (arg_node);
     }
 
     arg_info = FreeTree (arg_info);
