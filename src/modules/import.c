@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2002/10/31 13:46:36  sbs
+ * some comments added; some macro usages added;
+ * module prefix in GenMod adapted to sbs==1
+ *
  * Revision 3.14  2002/10/18 15:51:30  dkr
  * EXTERN_MOD_NAME used
  *
@@ -181,6 +185,12 @@ Import (node *arg_node)
     DBUG_RETURN (Trav (arg_node, NULL));
 }
 
+/*******************************************************************************
+ *
+ *  Helper functions for handling mod structures:
+ *
+ */
+
 /*
  *
  *  functionname  : FindModul
@@ -296,6 +306,158 @@ AddSymbol (char *name, char *module, int symbkind)
 
 /*
  *
+ *  functionname  : GenMod
+ *  arguments     : 1) name of modul to be read
+ *                  2) flag whether the module is initially generated(0)
+ *                     or for checking the declaration of a module/class
+ *                     implementation(1).
+ *  description   : Scans and parses the respective declaration
+ *                  file and generates/initilizes a new mod-node
+ *
+ */
+
+mod *
+GenMod (char *name, int checkdec)
+{
+    int i;
+    mod *tmp;
+    static char buffer[MAX_FILE_NAME];
+    char *pathname, *abspathname;
+    char cccallstr[MAX_PATH_LEN];
+
+    DBUG_ENTER ("GenMod");
+
+    tmp = (mod *)Malloc (sizeof (mod));
+
+    tmp->flag = 0;
+    tmp->allflag = 0;
+
+    strcpy (buffer, name);
+    strcat (buffer, ".dec");
+
+    if (checkdec) {
+        NOTE (("Verifying module/class '%s` !", name));
+    } else {
+        NOTE (("Loading module/class '%s` !", name));
+    }
+
+    pathname = FindFile (MODDEC_PATH, buffer);
+
+    if (pathname == NULL) {
+        SYSABORT (("Unable to open file \"%s\"", buffer));
+    }
+
+    strcpy (cccallstr, config.cpp_file);
+
+    strcat (cccallstr, " ");
+    strcat (cccallstr, config.opt_D);
+    strcat (cccallstr, "SAC_FOR_");
+    strcat (cccallstr, target_platform);
+
+    for (i = 0; i < num_cpp_vars; i++) {
+        strcat (cccallstr, " ");
+        strcat (cccallstr, config.opt_D);
+        strcat (cccallstr, cppvars[i]);
+    }
+
+    strcat (cccallstr, " ");
+    strcat (cccallstr, pathname);
+
+    if (show_syscall)
+        NOTE (("yyin = popen( %s)", cccallstr));
+
+    yyin = popen (cccallstr, "r");
+
+    if (yyin == NULL) {
+        SYSABORT (("Unable to start C preprocessor", buffer));
+    } else {
+        abspathname = AbsolutePathname (pathname);
+
+        NOTE (("  Parsing file \"%s\" ...", abspathname));
+
+        filename = buffer;
+
+        linenum = 1;
+        start_token = PARSE_DEC;
+        My_yyparse ();
+
+        tmp->moddec = decl_tree;
+
+        if (strcmp (decl_tree->info.fun_name.id, name) != 0) {
+            SYSERROR (("File \"%s\" does not provide module/class '%s`, "
+                       "but module/class '%s`",
+                       buffer, name, decl_tree->info.fun_name.id));
+        }
+
+        if ((MODDEC_LINKWITH (decl_tree) != NULL) && (!MODDEC_ISEXTERNAL (decl_tree))) {
+            WARN (NODE_LINE (decl_tree),
+                  ("Pragma 'linkwith` has no effect on SAC module/class"));
+            MODDEC_LINKWITH (decl_tree) = FreeAllDeps (MODDEC_LINKWITH (decl_tree));
+        }
+
+        tmp->prefix = (MODDEC_ISEXTERNAL (decl_tree) ? (sbs == 1 ? EXTERN_MOD_NAME : NULL)
+                                                     : MODDEC_NAME (decl_tree));
+        tmp->name = MODDEC_NAME (decl_tree);
+        tmp->next = NULL;
+        if (!checkdec) {
+            if (MODDEC_LINKWITH (decl_tree) == NULL) {
+                if ((EXPLIST_ITYPES (MODDEC_OWN (decl_tree)) != NULL)
+                    || (EXPLIST_ETYPES (MODDEC_OWN (decl_tree)) != NULL)
+                    || (EXPLIST_FUNS (MODDEC_OWN (decl_tree)) != NULL)
+                    || (EXPLIST_OBJS (MODDEC_OWN (decl_tree)) != NULL)) {
+                    dependencies
+                      = MakeDeps (StringCopy (name), StringCopy (abspathname), NULL,
+                                  MODDEC_ISEXTERNAL (decl_tree) ? ST_external : ST_sac,
+                                  FindLocationOfFile (abspathname), NULL, dependencies);
+                }
+            } else {
+                dependencies
+                  = MakeDeps (StringCopy (name), StringCopy (abspathname), NULL,
+                              ST_external, FindLocationOfFile (abspathname),
+                              MODDEC_LINKWITH (decl_tree), dependencies);
+                MODDEC_LINKWITH (decl_tree) = NULL;
+            }
+
+            /*
+             * If checkdec is set, GenMod() is called from checkdec.c in order
+             * to compare defined and declared items. Here, declarations are read
+             * which are imported by the module's own declaration. These are
+             * not necessarily required for linking.
+             *
+             * All imported modules/classes are put to the dependencies list
+             * which is stored in the global variable dependencies.
+             *
+             * For external modules and classes the contents of the optional pragma
+             * linkwith is added to the list of dependencies as a sub tree of the
+             * respective module or class.
+             *
+             * The list of dependencies is used in readsib for searching for
+             * required libraries, updated and then again used in cccall for
+             * generating a link list.
+             */
+        }
+
+        for (i = 0; i < 4; i++) {
+            tmp->syms[i] = NULL;
+        }
+
+        if (tmp->moddec->nodetype == N_classdec) {
+            InsertClassType (tmp->moddec);
+        }
+    }
+
+    DBUG_RETURN (tmp);
+}
+
+/*******************************************************************************
+ *
+ *  Helper functions for tree manipulations concerning objects and pragmas.
+ *
+ *  SBS: do these belonng here??? or should they be put into tree-compound?
+ */
+
+/*
+ *
  *  functionname  : InsertClassType
  *  arguments     : 1) pointer to respective classdec-node
  *  description   : Inserts a new implicit type with uniqueness attribute
@@ -311,22 +473,17 @@ InsertClassType (node *classdec)
 
     DBUG_ENTER ("InsertClassType");
 
+    explist = CLASSDEC_OWN (classdec);
+
     tmp = MakeTypedef (StringCopy (CLASSDEC_NAME (classdec)),
                        CLASSDEC_ISEXTERNAL (classdec)
                          ? ((sbs == 1) ? EXTERN_MOD_NAME : NULL)
                          : StringCopy (CLASSDEC_NAME (classdec)),
-                       MakeTypes1 (T_hidden), ST_unique, NULL);
+                       MakeTypes1 (T_hidden), ST_unique, EXPLIST_ITYPES (explist));
     TYPEDEF_STATUS (tmp) = ST_imported_class;
     NODE_LINE (tmp) = 0;
 
-    explist = classdec->node[0];
-
-    if (explist->node[0] == NULL) { /* There are no other implicit types */
-        explist->node[0] = tmp;
-    } else {
-        tmp->node[0] = explist->node[0];
-        explist->node[0] = tmp;
-    }
+    EXPLIST_ITYPES (explist) = tmp;
 
     DBUG_VOID_RETURN;
 }
@@ -598,6 +755,12 @@ ResolvePragmaReadonly (node *arg_node, node *pragma, int count_params)
 
     DBUG_RETURN (arg_node);
 }
+
+/*******************************************************************************
+ *
+ * Now, the import-tab functions:
+ *
+ *
 
 /*
  *
@@ -911,207 +1074,6 @@ IMobjdef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-#if 0
-
-/*
- *
- *  functionname  : CheckPragmas
- *  arguments     : 1) N_moddec node
- *                  2) prefix of respective module
- *  description   : checks pragmas of the given module
- *
- *  remarks       : 2) is used to distinguish between external and SAC
- *                     modules and classes.
- *
- */
-
-node *CheckPragmas(node *moddec, char *prefix)
-{
-  DBUG_ENTER("CheckPragmas");
-  
-  if (MODDEC_OWN(moddec)!=NULL) {
-    if (MODDEC_ITYPES(moddec)!=NULL) {
-      MODDEC_ITYPES(moddec)
-        =CheckPragmaTypedef(MODDEC_ITYPES(moddec), (node*)prefix);
-    }
-    
-    if (MODDEC_ETYPES(moddec)!=NULL) {
-      MODDEC_ETYPES(moddec)
-        =CheckPragmaTypedef(MODDEC_ETYPES(moddec), (node*)prefix);
-    }
-    
-    if (MODDEC_OBJS(moddec)!=NULL) {
-      MODDEC_OBJS(moddec)
-        =CheckPragmaObjdef(MODDEC_OBJS(moddec), (node*)prefix);
-    }
-    
-    if (MODDEC_FUNS(moddec)!=NULL) {
-      MODDEC_FUNS(moddec)
-        =CheckPragmaFundef(MODDEC_FUNS(moddec), (node*)prefix);
-    }
-  }
-  
-  DBUG_RETURN(moddec);
-}
-
-#endif
-
-/*
- *
- *  functionname  : GenMod
- *  arguments     : 1) name of modul to be read
- *                  2) flag whether the module is initially generated(0)
- *                     or for checking the declaration of a module/class
- *                     implementation(1).
- *  description   : Scans and parses the respective declaration
- *                  file and generates/initilizes a new mod-node
- *
- */
-
-mod *
-GenMod (char *name, int checkdec)
-{
-    int i;
-    mod *tmp;
-    static char buffer[MAX_FILE_NAME];
-    char *pathname, *abspathname;
-    char cccallstr[MAX_PATH_LEN];
-
-    DBUG_ENTER ("GenMod");
-
-    tmp = (mod *)Malloc (sizeof (mod));
-
-    tmp->flag = 0;
-    tmp->allflag = 0;
-
-    strcpy (buffer, name);
-    strcat (buffer, ".dec");
-
-    if (checkdec) {
-        NOTE (("Verifying module/class '%s` !", name));
-    } else {
-        NOTE (("Loading module/class '%s` !", name));
-    }
-
-    pathname = FindFile (MODDEC_PATH, buffer);
-
-    if (pathname == NULL) {
-        SYSABORT (("Unable to open file \"%s\"", buffer));
-    }
-
-    strcpy (cccallstr, config.cpp_file);
-
-    strcat (cccallstr, " ");
-    strcat (cccallstr, config.opt_D);
-    strcat (cccallstr, "SAC_FOR_");
-    strcat (cccallstr, target_platform);
-
-    for (i = 0; i < num_cpp_vars; i++) {
-        strcat (cccallstr, " ");
-        strcat (cccallstr, config.opt_D);
-        strcat (cccallstr, cppvars[i]);
-    }
-
-    strcat (cccallstr, " ");
-    strcat (cccallstr, pathname);
-
-    if (show_syscall)
-        NOTE (("yyin = popen( %s)", cccallstr));
-
-    yyin = popen (cccallstr, "r");
-
-    if (yyin == NULL) {
-        SYSABORT (("Unable to start C preprocessor", buffer));
-    } else {
-        abspathname = AbsolutePathname (pathname);
-
-        NOTE (("  Parsing file \"%s\" ...", abspathname));
-
-        filename = buffer;
-
-        linenum = 1;
-        start_token = PARSE_DEC;
-        My_yyparse ();
-
-        tmp->moddec = decl_tree;
-
-        if (strcmp (decl_tree->info.fun_name.id, name) != 0) {
-            SYSERROR (("File \"%s\" does not provide module/class '%s`, "
-                       "but module/class '%s`",
-                       buffer, name, decl_tree->info.fun_name.id));
-        }
-
-        if ((MODDEC_LINKWITH (decl_tree) != NULL) && (!MODDEC_ISEXTERNAL (decl_tree))) {
-            WARN (NODE_LINE (decl_tree),
-                  ("Pragma 'linkwith` has no effect on SAC module/class"));
-            MODDEC_LINKWITH (decl_tree) = FreeAllDeps (MODDEC_LINKWITH (decl_tree));
-        }
-
-        /*
-        Restriction no longer needed due to new library format using tar
-        instead of ar.
-
-        if (strlen(name)>13)
-        {
-          SYSERROR(("Module/class name '%s` too long (maximum: 13 characters)",
-                    name));
-        }
-        */
-
-        tmp->prefix = MODDEC_ISEXTERNAL (decl_tree) ? NULL : decl_tree->info.fun_name.id;
-        tmp->name = decl_tree->info.fun_name.id;
-        tmp->next = NULL;
-
-        if (!checkdec) {
-            if (MODDEC_LINKWITH (decl_tree) == NULL) {
-                if ((EXPLIST_ITYPES (MODDEC_OWN (decl_tree)) != NULL)
-                    || (EXPLIST_ETYPES (MODDEC_OWN (decl_tree)) != NULL)
-                    || (EXPLIST_FUNS (MODDEC_OWN (decl_tree)) != NULL)
-                    || (EXPLIST_OBJS (MODDEC_OWN (decl_tree)) != NULL)) {
-                    dependencies
-                      = MakeDeps (StringCopy (name), StringCopy (abspathname), NULL,
-                                  MODDEC_ISEXTERNAL (decl_tree) ? ST_external : ST_sac,
-                                  FindLocationOfFile (abspathname), NULL, dependencies);
-                }
-            } else {
-                dependencies
-                  = MakeDeps (StringCopy (name), StringCopy (abspathname), NULL,
-                              ST_external, FindLocationOfFile (abspathname),
-                              MODDEC_LINKWITH (decl_tree), dependencies);
-                MODDEC_LINKWITH (decl_tree) = NULL;
-            }
-
-            /*
-             * If checkdec is set, GenMod() is called from checkdec.c in order
-             * to compare defined and declared items. Here, declarations are read
-             * which are imported by the module's own declaration. These are
-             * not necessarily required for linking.
-             *
-             * All imported modules/classes are put to the dependencies list
-             * which is stored in the global variable dependencies.
-             *
-             * For external modules and classes the contents of the optional pragma
-             * linkwith is added to the list of dependencies as a sub tree of the
-             * respective module or class.
-             *
-             * The list of dependencies is used in readsib for searching for
-             * required libraries, updated and then again used in cccall for
-             * generating a link list.
-             */
-        }
-
-        for (i = 0; i < 4; i++) {
-            tmp->syms[i] = NULL;
-        }
-
-        if (tmp->moddec->nodetype == N_classdec) {
-            InsertClassType (tmp->moddec);
-        }
-    }
-
-    DBUG_RETURN (tmp);
-}
-
 /*
  *
  *  functionname  : FindOrAppend
@@ -1138,8 +1100,8 @@ FindOrAppend (node *implist, int checkdec)
     DBUG_ASSERT ((implist), "FindOrAppend called with NULL-import-list!");
 
     if (mod_tab == NULL) { /* the first modul has to be inserted anyway! */
-        mod_tab = GenMod (implist->info.id, checkdec);
-        implist = implist->node[0];
+        mod_tab = GenMod (IMPLIST_NAME (implist), checkdec);
+        implist = IMPLIST_NEXT (implist);
     }
 
     /* mod_tab contains at least one entry! */
@@ -1148,7 +1110,7 @@ FindOrAppend (node *implist, int checkdec)
     while (implist != NULL) {
         current = mod_tab;
         do {
-            tmp = strcmp (current->name, implist->info.id);
+            tmp = strcmp (current->name, IMPLIST_NAME (implist));
             last = current;
             current = current->next;
         } while ((current != NULL) && (tmp != 0));
@@ -1157,7 +1119,7 @@ FindOrAppend (node *implist, int checkdec)
             current = GenMod (implist->info.id, checkdec);
             last->next = current;
         }
-        implist = implist->node[0];
+        implist = IMPLIST_NEXT (implist);
     }
 
     filename = sacfilename;
@@ -1346,8 +1308,8 @@ AppendModnameToSymbol (node *symbol, char *modname)
             done = 0;
             if (TYPES_MOD (types) != NULL) {
                 modname = TYPES_MOD (types);
-                mods = FindSymbolInModul (modname, TYPES_NAME (types), 0, NULL, 0);
-                mods2 = FindSymbolInModul (modname, TYPES_NAME (types), 1, NULL, 0);
+                mods = FindSymbolInModul (modname, TYPES_NAME (types), SYM_ITY, NULL, 0);
+                mods2 = FindSymbolInModul (modname, TYPES_NAME (types), SYM_ETY, NULL, 0);
 
                 if ((mods == NULL) && (mods2 != NULL)) {
                     TYPES_MOD (types) = mods2->mod->prefix;
@@ -1364,8 +1326,8 @@ AppendModnameToSymbol (node *symbol, char *modname)
             };
 
             if (done != 1) {
-                mods = FindSymbolInModul (modname, TYPES_NAME (types), 0, NULL, 1);
-                mods2 = FindSymbolInModul (modname, TYPES_NAME (types), 1, NULL, 1);
+                mods = FindSymbolInModul (modname, TYPES_NAME (types), SYM_ITY, NULL, 1);
+                mods2 = FindSymbolInModul (modname, TYPES_NAME (types), SYM_ETY, NULL, 1);
 
                 if (mods != NULL) {
                     if (mods2 != NULL) {
@@ -1763,8 +1725,8 @@ IMmodul (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("IMmodul");
 
-    if (arg_node->node[0] != NULL) { /* there are any imports! */
-        FindOrAppend (arg_node->node[0], 0);
+    if (MODUL_IMPORTS (arg_node) != NULL) { /* there are some imports! */
+        FindOrAppend (MODUL_IMPORTS (arg_node), 0);
         modptr = mod_tab;
 
         while (modptr != NULL) {
@@ -1779,7 +1741,7 @@ IMmodul (node *arg_node, node *arg_info)
 
         ABORT_ON_ERROR;
 
-        DoImport (arg_node, arg_node->node[0], arg_node->info.id);
+        DoImport (arg_node, MODUL_IMPORTS (arg_node), MODUL_NAME (arg_node));
 
         /*
          *  The imports are reused in checkdec.c for writing automatic
