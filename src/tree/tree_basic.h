@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/01/10 14:27:09  dkr
+ * new atttribute FULL_RANGE for N_WLseg- and N_WLsegVar-nodes added
+ *
  * Revision 3.13  2001/01/10 11:26:21  dkr
  * WLXBLOCK_... macros added
  *
@@ -3193,7 +3196,6 @@ extern node *MakeNCode (node *block, node *expr);
  ***  permanent attributes:
  ***
  ***    int        DIMS
- ***
  ***    bool       MT
  ***    node*      PRAGMA        (N_pragma)
  ***
@@ -3270,13 +3272,14 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLSEGX_DIMS(n) ((n)->refcnt)
 #define WLSEGX_CONTENTS(n) ((n)->node[0])
 #define WLSEGX_NEXT(n) (WLNODE_NEXT (n))
+#define WLSEGX_FULL_RANGE(n) ((bool)((n)->counter))
 #define WLSEGX_IDX_MIN(n) (*((int **)(&((n)->node[2]))))
 #define WLSEGX_IDX_MAX(n) (*((int **)(&((n)->node[3]))))
 #define WLSEGX_BLOCKS(n) ((n)->flag)
-#define WLSEGX_SV(n) ((int *)(n)->mask[0])
-#define WLSEGX_BV(n, level) ((int *)(n)->mask[level + 2])
-#define WLSEGX_UBV(n) ((int *)(n)->mask[1])
-#define WLSEGX_SCHEDULING(n) ((SCHsched_t *)(n)->info2)
+#define WLSEGX_SV(n) ((int *)((n)->mask[0]))
+#define WLSEGX_BV(n, level) ((int *)((n)->mask[level + 2]))
+#define WLSEGX_UBV(n) ((int *)((n)->mask[1]))
+#define WLSEGX_SCHEDULING(n) ((SCHsched_t *)((n)->info2))
 
 /*
  * some macros for N_WLblock, N_WLublock nodes
@@ -3322,22 +3325,23 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***
  ***  permanent attributes:
  ***
- ***    int        DIMS      (number of dims)
+ ***    int        DIMS        [number of dims]
+ ***    bool       FULL_RANGE  [domain of segment of full range?]
  ***
  ***  temporary attributes:
  ***
- ***    int*       IDX_MIN                           (wltransform -> compile )
- ***    int*       IDX_MAX                           (wltransform -> compile )
+ ***    int*       IDX_MIN                              (wltransform -> compile )
+ ***    int*       IDX_MAX                              (wltransform -> compile )
  ***
- ***    int        BLOCKS    (number of blocking levels (0..3)
- ***                           --- without unrolling-blocking)
- ***    int*       SV        (step vector)           (wltransform -> )
- ***    int*       BV[]      (blocking vectors)      (wltransform -> compile )
- ***    int*       UBV       (unrolling-bl. vector)  (wltransform -> compile )
+ ***    int        BLOCKS      [number of blocking levels (0..3)
+ ***                             --- without unrolling-blocking]
+ ***    int*       SV          [step vector]            (wltransform -> )
+ ***    int*       BV[]        [blocking vectors]       (wltransform -> compile )
+ ***    int*       UBV         [unrolling-bl. vector]   (wltransform -> compile )
  ***
- ***    SCHsched_t SCHEDULING  (O)                   (wltransform -> compile )
- ***    int        MAXHOMDIM (last homog. dimension) (wltransform -> compile )
- ***    int*       HOMSV     (homog. step vector)    (wltransform -> compile )
+ ***    SCHsched_t SCHEDULING                           (wltransform -> compile )
+ ***    int        MAXHOMDIM   [last homog. dimension]  (wltransform -> compile )
+ ***    int*       HOMSV       [homog. step vector]     (wltransform -> compile )
  ***
  ***  remarks:
  ***
@@ -3350,9 +3354,10 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***      (HOMSV[i] > 0)   <->  (i <= MAXHOMDIM).
  ***/
 
-extern node *MakeWLseg (int dims, node *contents, node *next);
+extern node *MakeWLseg (int dims, bool full_range, node *contents, node *next);
 
 #define WLSEG_DIMS(n) (WLSEGX_DIMS (n))
+#define WLSEG_FULL_RANGE(n) (WLSEGX_FULL_RANGE (n))
 #define WLSEG_CONTENTS(n) (WLSEGX_CONTENTS (n))
 #define WLSEG_NEXT(n) (WLSEGX_NEXT (n))
 
@@ -3367,6 +3372,58 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 #define WLSEG_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
 #define WLSEG_MAXHOMDIM(n) ((n)->varno)
 #define WLSEG_HOMSV(n) ((int *)((n)->mask[6]))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ *** N_WLsegVar :
+ ***
+ ***  sons:
+ ***
+ ***    node*      CONTENTS       (N_WLstride, N_WLstrideVar)
+ ***    node*      NEXT           (N_WLsegVar)
+ ***
+ ***  permanent attributes:
+ ***
+ ***    int        DIMS        [number of dims]
+ ***    bool       FULL_RANGE  [domain of segment of full range?]
+ ***
+ ***  temporary attributes:
+ ***
+ ***    int*       IDX_MIN                             (wltransform -> compile )
+ ***    int*       IDX_MAX                             (wltransform -> compile )
+ ***
+ ***    int        BLOCKS      [number of blocking levels
+ ***                             --- without unrolling-blocking]
+ ***    int*       SV          [step vector]           (wltransform -> )
+ ***    int*       BV[]        [blocking vectors]      (wltransform -> compile )
+ ***    int*       UBV         [unrolling-b. vector]   (wltransform -> compile )
+ ***
+ ***    SCHsched_t SCHEDULING                          (wltransform -> compile )
+ ***
+ ***  remarks:
+ ***
+ ***    - BV[ 0 .. (BLOCKS-1) ]
+ ***    - IDX_MIN, IDX_MAX, SV, BV[0], BV[1], ..., UBV, HOMSV are vectors of
+ ***      size DIMS.
+ ***/
+
+extern node *MakeWLsegVar (int dims, bool full_range, node *contents, node *next);
+
+#define WLSEGVAR_DIMS(n) (WLSEGX_DIMS (n))
+#define WLSEGVAR_FULL_RANGE(n) (WLSEGX_FULL_RANGE (n))
+#define WLSEGVAR_CONTENTS(n) (WLSEGX_CONTENTS (n))
+#define WLSEGVAR_NEXT(n) (WLSEGX_NEXT (n))
+
+#define WLSEGVAR_IDX_MIN(n) (WLSEGX_IDX_MIN (n))
+#define WLSEGVAR_IDX_MAX(n) (WLSEGX_IDX_MAX (n))
+
+#define WLSEGVAR_BLOCKS(n) (WLSEGX_BLOCKS (n))
+#define WLSEGVAR_SV(n) (WLSEGX_SV (n))
+#define WLSEGVAR_BV(n, level) (WLSEGX_BV (n, level))
+#define WLSEGVAR_UBV(n) (WLSEGX_UBV (n))
+
+#define WLSEGVAR_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3492,6 +3549,40 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
 /*--------------------------------------------------------------------------*/
 
 /***
+ *** N_WLstrideVar :
+ ***
+ ***  sons:
+ ***
+ ***    node*    CONTENTS      (N_WLgridVar, N_WLgrid)
+ ***    node*    NEXT          (N_WLstrideVar)
+ ***    node*    BOUND1        (N_num, N_id)
+ ***    node*    BOUND2        (N_num, N_id)
+ ***    node*    STEP          (N_num, N_id)
+ ***
+ ***  permanent attributes:
+ ***
+ ***    int      LEVEL
+ ***    int      DIM
+ ***
+ ***  temporary attributes:
+ ***
+ ***    ---
+ ***/
+
+extern node *MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, node *step,
+                              node *contents, node *next);
+
+#define WLSTRIDEVAR_LEVEL(n) (WLSTRIDEX_LEVEL (n))
+#define WLSTRIDEVAR_DIM(n) (WLSTRIDEX_DIM (n))
+#define WLSTRIDEVAR_BOUND1(n) ((n)->node[2])
+#define WLSTRIDEVAR_BOUND2(n) ((n)->node[3])
+#define WLSTRIDEVAR_STEP(n) ((n)->node[4])
+#define WLSTRIDEVAR_CONTENTS(n) (WLSTRIDEX_CONTENTS (n))
+#define WLSTRIDEVAR_NEXT(n) (WLSTRIDEX_NEXT (n))
+
+/*--------------------------------------------------------------------------*/
+
+/***
  *** N_WLgrid :
  ***
  ***  sons:
@@ -3533,90 +3624,6 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, bool unroll
 #define WLGRID_CODE(n) (WLGRIDX_CODE (n))
 
 #define WLGRID_MODIFIED(n) ((n)->node[2])
-
-/*--------------------------------------------------------------------------*/
-
-/***
- *** N_WLsegVar :
- ***
- ***  sons:
- ***
- ***    node*      CONTENTS       (N_WLstride, N_WLstrideVar)
- ***    node*      NEXT           (N_WLsegVar)
- ***
- ***  permanent attributes:
- ***
- ***    int        DIMS      (number of dims)
- ***
- ***  temporary attributes:
- ***
- ***    int*       IDX_MIN                           (wltransform -> compile )
- ***    int*       IDX_MAX                           (wltransform -> compile )
- ***
- ***    int        BLOCKS    (number of blocking levels
- ***                           --- without unrolling-blocking)
- ***    int*       SV        (step vector)           (wltransform -> )
- ***    int*       BV[]      (blocking vectors)      (wltransform -> compile )
- ***    int*       UBV       (unrolling-b. vector)   (wltransform -> compile )
- ***
- ***    SCHsched_t SCHEDULING  (O)                   (wltransform -> compile )
- ***
- ***  remarks:
- ***
- ***    - BV[ 0 .. (BLOCKS-1) ]
- ***    - IDX_MIN, IDX_MAX, SV, BV[0], BV[1], ..., UBV, HOMSV are vectors of
- ***      size DIMS.
- ***/
-
-extern node *MakeWLsegVar (int dims, node *contents, node *next);
-
-#define WLSEGVAR_DIMS(n) (WLSEGX_DIMS (n))
-#define WLSEGVAR_CONTENTS(n) (WLSEGX_CONTENTS (n))
-#define WLSEGVAR_NEXT(n) (WLSEGX_NEXT (n))
-
-#define WLSEGVAR_IDX_MIN(n) (WLSEGX_IDX_MIN (n))
-#define WLSEGVAR_IDX_MAX(n) (WLSEGX_IDX_MAX (n))
-
-#define WLSEGVAR_BLOCKS(n) (WLSEGX_BLOCKS (n))
-#define WLSEGVAR_SV(n) (WLSEGX_SV (n))
-#define WLSEGVAR_BV(n, level) (WLSEGX_BV (n, level))
-#define WLSEGVAR_UBV(n) (WLSEGX_UBV (n))
-
-#define WLSEGVAR_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
-
-/*--------------------------------------------------------------------------*/
-
-/***
- *** N_WLstrideVar :
- ***
- ***  sons:
- ***
- ***    node*    CONTENTS      (N_WLgridVar, N_WLgrid)
- ***    node*    NEXT          (N_WLstrideVar)
- ***    node*    BOUND1        (N_num, N_id)
- ***    node*    BOUND2        (N_num, N_id)
- ***    node*    STEP          (N_num, N_id)
- ***
- ***  permanent attributes:
- ***
- ***    int      LEVEL
- ***    int      DIM
- ***
- ***  temporary attributes:
- ***
- ***    ---
- ***/
-
-extern node *MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, node *step,
-                              node *contents, node *next);
-
-#define WLSTRIDEVAR_LEVEL(n) (WLSTRIDEX_LEVEL (n))
-#define WLSTRIDEVAR_DIM(n) (WLSTRIDEX_DIM (n))
-#define WLSTRIDEVAR_BOUND1(n) ((n)->node[2])
-#define WLSTRIDEVAR_BOUND2(n) ((n)->node[3])
-#define WLSTRIDEVAR_STEP(n) ((n)->node[4])
-#define WLSTRIDEVAR_CONTENTS(n) (WLSTRIDEX_CONTENTS (n))
-#define WLSTRIDEVAR_NEXT(n) (WLSTRIDEX_NEXT (n))
 
 /*--------------------------------------------------------------------------*/
 
