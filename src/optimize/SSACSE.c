@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2001/05/23 15:47:55  nmw
+ * comments added
+ *
  * Revision 1.16  2001/05/18 13:30:42  nmw
  * identifer bypassing for special fundefs implemented
  *
@@ -73,8 +76,12 @@
  *   the implementation is a stack of lists with available expressions in the
  *   current context (needed for conditionals and with-loops). for each
  *   expression we do an tree-compare with the available CSE we stored before.
+ *   in addition to the tree-compare we have to check the types of the
+ *   assigned LHS to be equal to avoid wrong substitutions of constant
+ *   RHS arrays (e.g. [1,2,3,4] used as [[1,2],[3,4]]).
  *   if we find a matching one, we substitute the LHS otherwise we add this
- *   new expression to the list of available expressions.
+ *   new expression to the list of available expressions. ##nmw##
+ *
  *
  *   It also does a copy propagation for assignments like
  *       a = f(x);                   a = f(x)l
@@ -246,7 +253,7 @@ RemoveTopCSElayer (node *cseinfo)
  *   a compare tree betwenn the given let and each stored expression.
  *
  * remark:
- *   the additional type compare is necessary to avoid wrong array replacements,
+ *   the type compare is necessary to avoid wrong array replacements,
  *   e.g. [1,2,3,4] that is used as [[1,2],[3,4]] or [1,2,3,4]. These
  *   expressions uses the same RHS but are assigned to different shaped LHS.
  *   So if we do a simple replacement we get type mismatches.
@@ -355,10 +362,11 @@ SetSubstAttributes (ids *subst, ids *with)
  *   bool ForbiddenSubstitution(ids *chain)
  *
  * description:
- *   Checks if there is any ids in chain with vardec marked as SA_unique
+ *   Checks if there is any ids in chain with vardec marked as ST_unique so
+ *   we should better not substitute it, to avoid problems with global
+ *   objects.
  *
- *
- ******************************************************************************/
+ *****************************************************************************/
 static bool
 ForbiddenSubstitution (ids *chain)
 {
@@ -390,26 +398,26 @@ ForbiddenSubstitution (ids *chain)
  *   of loop-funs.
  *
  * example:
- *   a = expr;                   int f_cond(int a, int b)
+ *   a = expr;                   int f_cond(int x, int y)
  *   b = a;                      {
- *   x = f_cond(a, b);              ...
- *   ...                            return (a + b);
+ *   c = f_cond(a, b);              ...
+ *   ...                            return (x + y);
  *                               }
  *
  * will be transformed to
- *   a = expr;                   int f_cond(int a, int b)
+ *   a = expr;                   int f_cond(int x, int y)
  *   b = a;                      {
- *   x = f_cond(a, a);              ...
- *   ...                            return (a + a);
+ *   c = f_cond(a, a);              ...
+ *   ...                            return (x + x);
  *                               }
  *
  *   unused code will be removed later by DeadCodeRemoval!
  *
  * implementation:
- *    set the AVIS_SUBST attribute for the args in the called fundef to matching
- *    identical arg in signature or NULL otherwise.
+ *    set the AVIS_SUBST attribute for the args in the called fundef to
+ *    matching identical arg in signature or NULL otherwise.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static node *
 SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
 {
@@ -497,7 +505,27 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
  *   if we have a cond-fun, we can only propagte back args in calling context
  *   if then and else part return the same args as result.
  *
- ******************************************************************************/
+ *   the built nodelist will be passed to the calling let node where the
+ *   infered substitutions will be set in the corresponsing avis nodes.
+ *
+ *   ...
+ *   x,y = f_do(a, b, c);         -->        x,y = f_do(a, b, c)
+ *   z = x + y;                              z = a + b;
+ *   ...                                     ...
+ *
+ *
+ *   int, int f_do(int a, int b, int c)
+ *   ...
+ *   if (cond) {
+ *      ... f_do(a, b, c_SSA_1)
+ *   } else {
+ *      ...
+ *      a_SSA_3 = a;
+ *      b_SSA_3 = b;
+ *   }
+ *   return(a_SSA_3, b_SSA_3, c_SSA_3);
+ *
+ *****************************************************************************/
 static nodelist *
 SSACSEBuildSubstNodelist (node *return_exprs, node *fundef)
 {
@@ -529,7 +557,9 @@ SSACSEBuildSubstNodelist (node *return_exprs, node *fundef)
         }
 
         /*
-         * add one nodelist node per result
+         * add one nodelist node per result in bottom up traversal to get an
+         * nodelist we can use in the bottom down travsersal of the corresponding
+         * ids chain in the calling let node.
          */
         nl = MakeNodelistNode (ext_avis,
                                SSACSEBuildSubstNodelist (EXPRS_NEXT (return_exprs),
@@ -551,9 +581,9 @@ SSACSEBuildSubstNodelist (node *return_exprs, node *fundef)
  *   get the avis of a function argument, that is a result via a phi-copy
  *   assignment. condpart selects the phi definition in then or else part.
  *
- *   if id is no phi copy target or no arg, a NULL is returned.
+ *   if id is no phi copy target or points to no arg, a NULL is returned.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static node *
 GetResultArgAvis (node *id, condpart cp)
 {
@@ -594,7 +624,7 @@ GetResultArgAvis (node *id, condpart cp)
  *   search for the matching external ap_arg avis to the given fundef arg avis.
  *   we do a parallel traversal of ap exprs chain and the fundef arg chain.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static node *
 GetApAvisOfArgAvis (node *arg_avis, node *fundef)
 {
@@ -611,10 +641,12 @@ GetApAvisOfArgAvis (node *arg_avis, node *fundef)
     arg_chain = FUNDEF_ARGS (fundef);
 
     DBUG_ASSERT ((NODELIST_NEXT (FUNDEF_EXT_ASSIGNS (fundef)) == NULL),
-                 "GetApAvisOfArgAvis cannot handle multiple usages of special fundefs");
+                 "GetApAvisOfArgAvis cannot handle multiple usages "
+                 "of special fundefs");
 
     exprs_chain = AP_ARGS (ASSIGN_RHS (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (fundef))));
 
+    ap_avis = NULL;
     cont = TRUE;
     while ((arg_chain != NULL) && cont) {
         DBUG_ASSERT ((exprs_chain != NULL), "mismatch between ap args and fun args");
@@ -648,7 +680,7 @@ GetApAvisOfArgAvis (node *arg_avis, node *fundef)
  *   does NOT traverse to next fundef (this must by done by the optimization
  *   loop.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACSEfundef (node *arg_node, node *arg_info)
 {
@@ -661,8 +693,9 @@ SSACSEfundef (node *arg_node, node *arg_info)
         /*
          * traverse args of fundef to init the AVIS_SUBST attribute. this is done
          * here only for normal fundefs. in special fundefs that are traversed via
-         * SSACSEap() and we do a substitution information propagation (see
-         * SSACSEPropagateSubst2Args() ) that sets the correct AVIS_SUBST attribute.
+         * SSACSEap() we do a substitution information propagation (see
+         * SSACSEPropagateSubst2Args() ) that sets the correct AVIS_SUBST
+         * attributes for all args.
          */
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
     }
@@ -683,7 +716,7 @@ SSACSEfundef (node *arg_node, node *arg_info)
  * description:
  *   traverses chain of args to init SUBST attribute with NULL.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACSEarg (node *arg_node, node *arg_info)
 {
@@ -709,7 +742,7 @@ SSACSEarg (node *arg_node, node *arg_info)
  *   remove top cse frame (and so all available expressions defined in this
  *   block)
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACSEblock (node *arg_node, node *arg_info)
 {
@@ -740,10 +773,10 @@ SSACSEblock (node *arg_node, node *arg_info)
  *   node *SSACSEvardec(node *arg_node, node *arg_info)
  *
  * description:
+ *   traverse chain of vardecs to init avis subst attribute.
  *
  *
- *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACSEvardec (node *arg_node, node *arg_info)
 {
@@ -766,10 +799,11 @@ SSACSEvardec (node *arg_node, node *arg_info)
  * description:
  *   traverses assignment chain top-down and removes unused assignment.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACSEassign (node *arg_node, node *arg_info)
 {
+    node *old_assign;
     bool remassign;
     node *tmp;
 
@@ -777,18 +811,19 @@ SSACSEassign (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "assign node without instruction");
 
+    old_assign = INFO_SSACSE_ASSIGN (arg_info);
     INFO_SSACSE_ASSIGN (arg_info) = arg_node;
     INFO_SSACSE_REMASSIGN (arg_info) = FALSE;
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     remassign = INFO_SSACSE_REMASSIGN (arg_info);
-    INFO_SSACSE_ASSIGN (arg_info) = NULL;
+    INFO_SSACSE_ASSIGN (arg_info) = old_assign;
 
     /* traverse to next assignment in chain */
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    /* free this assignment if unused anymore */
+    /* in bottom-up traversal free this assignment if it was marked as unused */
     if (remassign) {
         tmp = arg_node;
         arg_node = ASSIGN_NEXT (arg_node);
@@ -808,7 +843,7 @@ SSACSEassign (node *arg_node, node *arg_info)
  *   conditional is done by SSACSEblock.
  *   traverses condition, then- and else-part (in this order).
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACSEcond (node *arg_node, node *arg_info)
 {
@@ -836,9 +871,10 @@ SSACSEcond (node *arg_node, node *arg_info)
  *   node *SSACSEreturn(node *arg_node, node *arg_info)
  *
  * description:
- *  traverses the result expressions
+ *  traverses the result expressions and starts analysis of return values
+ *  in case of special fundefs.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACSEreturn (node *arg_node, node *arg_info)
 {
@@ -873,16 +909,18 @@ SSACSEreturn (node *arg_node, node *arg_info)
  * description:
  *   first do a variable substitution on the right side expression (but
  *   only for simple expressions) or do SSACSE for a right-side with-loop
+ *   by traversing the RHS.
  *
- *   next compare the right side with all available common subexpressions
+ *   next compare the right side with all available common subexpressions that
+ *   are stored in the current cse list stack.
  *
  *   in a matching case set the necessary SUBST links to the existing variables
  *   and remove this let.
  *
  *   if right side is a simple identifier (so the let is a copy assignment) the
- *   left side identifier is subsituted be the right side identifier.
+ *   left side identifier is substiuted be the right side identifier.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACSElet (node *arg_node, node *arg_info)
 {
@@ -895,7 +933,10 @@ SSACSElet (node *arg_node, node *arg_info)
     DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "let without expression");
     DBUG_ASSERT ((LET_IDS (arg_node) != NULL), "let without ids");
 
-    /* traverse right side expression to to variable substitutions */
+    /*
+     * traverse right side expression to do variable substitutions
+     * or CSE in with-loops/special fundefs
+     */
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     match = FindCSE (INFO_SSACSE_CSE (arg_info), arg_node);
@@ -962,7 +1003,7 @@ SSACSElet (node *arg_node, node *arg_info)
  *   traverses parameter to do correct variable substitution.
  *   if special function application, start traversal of this fundef
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACSEap (node *arg_node, node *arg_info)
 {
@@ -974,7 +1015,7 @@ SSACSEap (node *arg_node, node *arg_info)
     /*
      * when traversing the recursive ap of a special loop fundef,
      * we set RECFUNAP flag to TRUE, to avoid renamings of loop
-     * independend args.
+     * independend args that could be replaced otherwise.
      */
     if ((FUNDEF_IS_LOOPFUN (INFO_SSACSE_FUNDEF (arg_info)))
         && (AP_FUNDEF (arg_node) == INFO_SSACSE_FUNDEF (arg_info))) {
@@ -1006,10 +1047,11 @@ SSACSEap (node *arg_node, node *arg_info)
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
 
+        /* start with empty cse stack */
         INFO_SSACSE_CSE (new_arg_info) = NULL;
         INFO_SSACSE_MODUL (new_arg_info) = INFO_SSACSE_MODUL (arg_info);
 
-        /* propagate id substitutions into called */
+        /* propagate id substitutions into called fundef */
         FUNDEF_ARGS (AP_FUNDEF (arg_node))
           = SSACSEPropagateSubst2Args (FUNDEF_ARGS (AP_FUNDEF (arg_node)),
                                        AP_ARGS (arg_node), AP_FUNDEF (arg_node));
@@ -1039,9 +1081,9 @@ SSACSEap (node *arg_node, node *arg_info)
  *   node *SSACSEid(node *arg_node, node *arg_info)
  *
  * description:
- *   traverse to ids data to do substitution.
+ *   traverse ids data to do substitution.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACSEid (node *arg_node, node *arg_info)
 {
@@ -1061,18 +1103,18 @@ SSACSEid (node *arg_node, node *arg_info)
  *   traverse NPart, Nwithop and NCode in this order
  *
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACSENwith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSACSENwith");
 
-    /* traverse and do variable substutution in partitions */
+    /* traverse and do variable substitution in partitions */
     if (NWITH_PART (arg_node) != NULL) {
         NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
     }
 
-    /* traverse and do variable substutution in withops */
+    /* traverse and do variable substitution in withops */
     if (NWITH_WITHOP (arg_node) != NULL) {
         NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
     }
@@ -1094,7 +1136,7 @@ SSACSENwith (node *arg_node, node *arg_info)
  *   traverse codeblock and expression for each Ncode node
  *
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACSENcode (node *arg_node, node *arg_info)
 {
@@ -1126,12 +1168,14 @@ SSACSENcode (node *arg_node, node *arg_info)
  * description:
  *   traverses chain of ids to do variable substitution as
  *   annotated in AVIS_SUBST attribute.
- *   but do not substitute loop invariant args in a recursive funap
+ *   but do not substitute loop invariant args in a recursive funap (when
+ *   INFO_SSACSE_RECFUNAP() == TRUE),
  *
  *   if we have some nodelist stored in INFO_SSACSE_RESULTARG annotate the
- *   stored subst avis information after processing.
+ *   stored subst avis information after processing, so futher uses will be
+ *   renamed according to this information.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static ids *
 SSACSEids (ids *arg_ids, node *arg_info)
 {
@@ -1167,7 +1211,8 @@ SSACSEids (ids *arg_ids, node *arg_info)
     /* process stored INFO_SSACSE_RESULTARG information */
     if (INFO_SSACSE_RESULTARG (arg_info) != NULL) {
         DBUG_ASSERT ((AVIS_SUBST (IDS_AVIS (arg_ids)) == NULL),
-                     "there must not exist any subst setting for a fresh defined vardec");
+                     "there must not exist any subst setting for "
+                     "a fresh defined vardec");
 
         /* set AVIS_SUBST corresponding avis infered by */
         AVIS_SUBST (IDS_AVIS (arg_ids))
@@ -1203,7 +1248,7 @@ SSACSEids (ids *arg_ids, node *arg_info)
  *   implements a simple TravIDS function like Trav for nodes to have
  *   an similar implementation.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static ids *
 TravIDS (ids *arg_ids, node *arg_info)
 {
@@ -1223,11 +1268,11 @@ TravIDS (ids *arg_ids, node *arg_info)
  * description:
  *   Starts the traversal for a given fundef.
  *   Starting fundef must not be a special fundef (do, while, cond) created by
- *   lac2fun transformation. These "inline" functions will be traversed in their
- *   order of usage.
+ *   lac2fun transformation. These "inline" functions will be traversed in
+ *   their order of usage.
  *
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 SSACSE (node *fundef, node *modul)
 {
