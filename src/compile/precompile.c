@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/04/06 18:50:35  dkr
+ * fixed a bug in PREC1let
+ *
  * Revision 3.19  2001/04/04 17:10:01  dkr
  * include of refcount.h removed
  *
@@ -474,9 +477,7 @@ PREC1let (node *arg_node, node *arg_info)
     ids *let_ids, *tmp_ids;
     char *ids_name, *tmp_name;
     int arg_idx;
-    bool flatten, is_prf;
     node *tmp_vardec = NULL;
-    prf prf = 0;
 
     DBUG_ENTER ("PREC1let");
 
@@ -492,47 +493,27 @@ PREC1let (node *arg_node, node *arg_info)
     while (let_ids != NULL) {
         ids_name = IDS_NAME (let_ids);
 
-        flatten = FALSE;
-        is_prf = FALSE;
-        if (NODE_TYPE (let_expr) == N_prf) {
-            prf = PRF_PRF (let_expr);
-            if (ARRAY_ARGS (prf) && (prf != F_dim) && (prf != F_idx_psi)) {
-                flatten = TRUE;
-            }
-            is_prf = TRUE;
-        } else if (NODE_TYPE (let_expr) == N_ap) {
-            flatten = TRUE;
-
-            DBUG_ASSERT ((AP_FUNDEF (let_expr) != NULL),
-                         "no definition of user-defined function found!");
-        }
-
-        if (flatten) {
+        if (((NODE_TYPE (let_expr) == N_prf)
+             && (ARRAY_ARGS (PRF_PRF (let_expr)) && (PRF_PRF (let_expr) != F_dim)
+                 && (PRF_PRF (let_expr) != F_idx_psi)))
+            || (NODE_TYPE (let_expr) == N_ap)) {
             /*
              * does 'ids_name' occur as an argument of the function application??
              */
             arg = AP_OR_PRF_ARGS (let_expr);
-#if 1
-            arg_idx = 0; /*
-                          * dkr:
-                          * not correct yet!!!!!
-                          * should be the number of LHS vars???
-                          */
-#endif
+            arg_idx = (NODE_TYPE (let_expr) == N_prf)
+                        ? 0
+                        : CountTypes (FUNDEF_TYPES (AP_FUNDEF (let_expr)));
             tmp_name = NULL;
             while (arg != NULL) {
                 arg_id = EXPRS_EXPR (arg);
                 if ((NODE_TYPE (arg_id) == N_id) && IS_REFCOUNTED (ID, arg_id)
                     && (ID_ATTRIB (arg_id) == ST_regular) &&
                     /* 2nd argument of F_reshape need not to be flattened! */
-                    ((is_prf && ((prf != F_reshape) || (arg_idx != 1)))
-                     || ((!is_prf)
+                    (((NODE_TYPE (let_expr) == N_prf)
+                      && ((PRF_PRF (let_expr) != F_reshape) || (arg_idx != 1)))
+                     || ((NODE_TYPE (let_expr) != N_prf)
                          && (!FUNDEF_DOES_REFCOUNT (AP_FUNDEF (let_expr), arg_idx))))) {
-                    /*
-                     * dkr:
-                     * Here, the interpretation of the refcouting-pragma is not correct
-                     * yet!!!!!
-                     */
                     if (!strcmp (ID_NAME (arg_id), ids_name)) {
                         if (tmp_name == NULL) {
                             /*
