@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.20  1999/10/22 14:16:41  sbs
+ * made simpletype_size global, since it is needed in compile, tile_size_inference AND
+ * constants already!
+ *
  * Revision 2.19  1999/10/04 11:58:34  sbs
  * secret option "sbs" added!
  *
@@ -21,6 +25,10 @@
  * Added global variable malloc_align_step.
  *
  * $Log$
+ * Revision 2.20  1999/10/22 14:16:41  sbs
+ * made simpletype_size global, since it is needed in compile, tile_size_inference AND
+ * constants already!
+ *
  * Revision 2.19  1999/10/04 11:58:34  sbs
  * secret option "sbs" added!
  *
@@ -328,6 +336,8 @@ extern int function_counter;
 extern deps *dependencies;
 
 extern int indent;
+
+extern int simpletype_size[];
 
 extern char *nt_class_str[];
 extern char *nt_uni_str[];

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.19  1999/10/22 14:16:41  sbs
+ * made simpletype_size global, since it is needed in compile, tile_size_inference AND
+ * constants already!
+ *
  * Revision 2.18  1999/10/04 11:58:34  sbs
  * secret option "sbs" added!
  *
@@ -58,115 +62,7 @@
  * Revision 2.2  1999/03/31 11:30:27  cg
  * added global variable cachesim.
  *
- * Revision 2.1  1999/02/23 12:39:20  sacbase
- * new release made
- *
- * Revision 1.30  1999/02/19 18:08:04  dkr
- * added use_efence
- *
- * Revision 1.29  1999/02/15 13:34:09  sbs
- * added -noDLAW opt_dlaw;
- *
- * Revision 1.28  1999/01/14 14:25:54  cg
- * added variable opt_tile to enable/disable tiling,
- * set current sac2c version to v0.8.
- *
- * Revision 1.27  1999/01/07 14:01:01  sbs
- * more sophisticated breaking facilities inserted;
- * Now, a break in a specific cycle can be triggered!
- *
- * Revision 1.26  1998/12/10 12:38:02  cg
- * Loop invariant removal is disabled by default for production
- * versions of sac2c.
- *
- * Revision 1.25  1998/12/07 17:29:55  cg
- * added variables version_id and target_platform to keep track
- * of this information used in usage.c and gen_startup_code.c
- *
- * Revision 1.24  1998/10/26 12:34:14  cg
- * new compiler option:
- * use intrinsic array operations instead of with-loop based implementations
- * in the stdlib. The corresponding information is stored by the new
- * global variable intrinsics.
- *
- * Revision 1.23  1998/10/23 14:29:46  cg
- * added the new command line option -inparsize <no> which allows to
- * specify a minimum generator size for with-loops to be executed in
- * parallel if such execution is enabled.
- * The information stored by the global variable min_parallel_size.
- *
- * Revision 1.22  1998/08/07 18:11:29  sbs
- * inserted gen_mt_code; it prevents spmd regions from being created per default
- * only if one of the following options is set:
- * -mtstatic <no> / -mtdynamic <no> / -mtall <no>
- * spmd regions will be introduced!
- *
- * Revision 1.21  1998/07/07 13:40:08  cg
- * added global variable all_threads implementing the command line option -mt-all
- *
- * Revision 1.20  1998/06/23 15:04:05  cg
- * added global variables show_syscall and gen_cccall
- *
- * Revision 1.19  1998/06/19 16:34:11  dkr
- * added opt_uip
- *
- * Revision 1.18  1998/05/27 11:17:57  cg
- * added global variable 'puresacfilename' which provides the file to be
- * compiled without leading path information as contained in sacfilename.
- *
- * Revision 1.17  1998/05/13 13:52:57  srs
- * added wlunrnum
- *
- * Revision 1.16  1998/05/13 13:38:57  srs
- * added opt_wlunr and renamed opt_unr to opt_lunr
- *
- * Revision 1.15  1998/05/11 08:31:05  srs
- * activated LIR again
- *
- * Revision 1.14  1998/05/06 11:40:45  cg
- * added globals max_sync_fold and max_threads
- *
- * Revision 1.13  1998/05/05 12:33:03  srs
- * inserted opt_wlt
- *
- * Revision 1.12  1998/04/29 17:11:22  dkr
- * added new compiler phases
- *
- * Revision 1.11  1998/04/25 11:53:06  sbs
- * indent inserted.
- *
- * Revision 1.10  1998/04/17 17:28:18  dkr
- * 'concurrent regions' are now called 'SPMD regions'
- *
- * Revision 1.9  1998/04/02 16:09:41  dkr
- * added new compiler phase name:
- *   generating concurrent regions
- *
- * Revision 1.8  1998/03/24 11:48:31  cg
- * added global variables used to gather compile time information
- * later used for profiling.
- *
- * Revision 1.7  1998/03/13 13:35:00  dkr
- * fixed corrupted header ?!?
- *
- * Revision 1.6  1998/03/13 13:15:02  dkr
- * removed a bug with flag _DBUG:
- *   new var 'my?dbug'
- *   vars 'dbug_...' renamed in 'my_dbug...'
- *
- * Revision 1.5  1998/03/04 16:20:08  cg
- * added  cc_debug,  cc_optimize, tmp_dirname.
- * removed ccflagsstr, useranlib.
- *
- * Revision 1.4  1998/03/02 13:56:02  cg
- * global variables psi_optimize and backend_optimize removed.
- * Loop Invariant Removal disabled by default.
- *
- * Revision 1.3  1998/02/27 13:37:25  srs
- * activated opt_wlf again
- *
- * Revision 1.2  1998/02/26 15:22:58  cg
- * target_name now initialized as 'default'
+ * ... [eliminated]
  *
  * Revision 1.1  1998/02/25 09:10:20  cg
  * Initial revision
@@ -569,6 +465,15 @@ int indent = 0;
  *  It has to be made global since printing is not only done in the printing-
  *  directory but from within icm2c_xxx.c as well!
  */
+
+/*
+ * The following array of integers keeps the lengths of all simpletypes.
+ * It at least is used in compile.c, tile_size_inference.c, and constants.c!
+ */
+#define TYP_IFsize(sz) sz
+int simpletype_size[] = {
+#include "type_info.mac"
+};
 
 /*
  * These character arrays are the macro-name-parts used to select
