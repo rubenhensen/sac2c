@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  2000/01/24 19:35:43  dkr
+ * disjointness check added
+ *
  * Revision 2.8  1999/12/01 15:20:29  dkr
  * oops, the DBUG_ASSERT in WLTRALet was too restrictiv ...
  *
@@ -157,8 +160,8 @@ Transformation N_Nwith -> N_Nwith2:
 ===================================
 
 
-Beispiel:
----------
+Example:
+--------
 
   [  0,  0] -> [ 50,150] step [1,1] width [1,1]: e1
   [  0,150] -> [300,400] step [9,1] width [2,1]: e2
@@ -169,12 +172,12 @@ Beispiel:
   [300,101] -> [400,400] step [1,3] width [1,2]: e4
 
 
-1.) Quader-Building (Berechnung der Quadermenge)
--------------------
+1.) Cube Calculation (Calculates the set of cubes)
+--------------------
 
-    -> Quader-Menge
+    -> set of cubes
 
-  Im Beispiel:
+  In the example:
 
       0-> 50, step[0] 1
                    0->1:   0->150, step[1] 1
@@ -196,66 +199,61 @@ Beispiel:
                                         1->3: e4
 
 
-2a.) Wahl der Segmente mit bv0, bv1, ... (blocking-Vektoren),
-     -----------------     ubv (unrolling-blocking-Vektor)
+2a.) Selection of segments and bv0, bv1, ... (blocking vektors),
+     ---------------------     ubv (unrolling-blocking vector)
 
-     sv sei der globale step-Vektor eines Segmentes S --- d.h. sv ist das kgV
-     aller steps der Quader, die sich mit S nicht-leer schneiden.
-     Dann m"ussen in jeder Dimension (d) ubv_d, bv0_d, bv1_d, ...
-     Vielfache von sv_d sein.
-     Abweichend davon, ist f"ur die ersten Komponenten von bv0, bv1, ... und
-     ubv auch der Wert 1 erlaubt: es wird dann in diesen Dimensionen kein
-     Blocking durchgef"uhrt.
+     Let sv be the global step vector of a segment S --- i.e. sv is the lcm of
+     all steps from cubes for which the intersection with S is non-empty. Then
+     for each dimension (d) bv0_d, bv1_d, ... and ubv_d must be multiples of
+     sv_d.
+     However, for the first components of bv0, bv1, ... and ubv is also the
+     value 1 allowed: in this case no blocking is performed for these
+     dimensions.
 
-     Falls bv = (1, ..., 1, ?, gt, ..., gt) gilt --- gt bedeute, da"s bv_d
-     hier mindestens so gro"s wie die Segmentbreite ist ---, ist dies
-     gleichbedeutend mit bv = (1, ..., 1), soweit ubv dies zul"a"st.
-     Diese Vereinfachung wird jedoch *nicht* vorgenommen!
+     If bv = (1, ..., 1, ?, gt, ..., gt) is hold --- gt means that bv_d is
+     greater or equal the segment width ---, this is equivalent to
+     bv = (1, ..., 1), provided that this is compatible to the value of ubv.
+     Nevertheless, this simplification is *not* carried out by the compiler yet!
 
-     -> Menge von Segmenten (Segment := ein Quader ohne Raster)
+     -> set of segments (segment := a cube without a grid)
 
-  Im Beispiel: Wir w"ahlen als Segment den gesamten shape
-               und bv0 = (180,156), ubv = (1,6) --- beachte: sv = (9,3)
-
-
-2b.) Anpassen der Quader auf die Segmente
-     ------------------------------------
-
-     -> jedes Segment zerf"allt in eine Menge von Quadern
-
-  Im Beispiel: Wir erhalten f"ur das gew"ahlte Segment genau die
-               Quadermenge aus 1.)
+  In the example: We choose the complete shape as a segment and
+                  bv0 = (180,156), ubv = (1,6) --- note that sv = (9,3).
 
 
-F"ur jedes Segment sind nun folgende Schritte durchzuf"uhren:
+2b.) Adjust the cubes to the segments
+     --------------------------------
+
+     -> every segment is decomposed into a set of cubes.
+
+  In the example: For the chosen segment we get exactly the same cube set as
+                  found in section 1.)
 
 
-3.) Quader-Splitting (Schneiden der Projektionen)
-    ----------------
+For every segment the following steps must be performed:
 
-    Zuerst wird das splitting auf allen Quadern in der 0-ten Dimension
-    durchgef"uhrt:
-    Die Quader werden in der 0-ten Dimension so lange zerteilt, bis die
-    Projektionen ihrer Grenzen in der 0-ten Dimension paarweise disjunkt
-    oder identisch sind.
-    Die Quader lassen anschlie"send zu Gruppen mit jeweils identischen
-    0-Projektionen zusammenfassen.
-    Auf jeder dieser Gruppen wird dann das splitting in der 1-ten
-    Dimension durchgef"uhrt ... usw.
 
-    Das splitting ist Vorbereitung f"ur das merging (siehe 6.Schritt). Es
-    erscheint auf den ersten Blick sinnvoll, splitting und merging
-    dimensionsweise verschr"ankt durchzuf"uhren: Die nach dem splitting in
-    einer Dimension gebildeten Gruppen stellen ja genau die Projektionen dar,
-    welche sp"ater beim merging vereinigt werden.
-    Allerdings ist es einfacher und "ubersichtlicher, die beiden Phasen strikt
-    zu trennen: Das merging kann auf jeden Fall erst nach dem blocking
-    durchgef"uhrt werden (Begr"undung: siehe dort), das splitting findet jedoch
-    am besten vor dem blocking statt, da sich durch das splitting i. a. die
-    Raster verschieben (siehe Beispiel) --- sich also der Inhalt eines Blockes
-    noch "andern w"urde!
+3.) Cube Splitting (Cuts the projections)
+    --------------
 
-  Im Beispiel:
+    First the spitting is performed with all cubes in the 0th dimension: The
+    cubes are splitted in the 0th dimension till the projections of its bounds
+    in the 0th dimension are pairwise disjoint or identical.
+    Afterwards the cubes are arranged in groups with identical 0-projections.
+    With each of this groups the splitting is performed in the 1st dimension ...
+    and so on.
+
+    The splitting is a preparation for the merging (see step 6). At first glance
+    it seems to be a good idea to perform splitting and merging alternating on
+    each dimension: Each group formed after splitting a single dimension contains
+    exactly the projections that must be joined in the merging step.
+    Nevertheless it is easier and clearer to separate these two steps from each
+    other: On the one hand the merging can be performed *after* the blocking step
+    only (for the reasons see step 4.), on the other hand the splitting is
+    carried out best just *before* the blocking, because while doing so, some
+    grids might move (see example) --- i.e. the contents of a block would change!
+
+  In the example:
 
       0-> 50, step[0] 1
                    0->1:   0->150, step[1] 1
@@ -284,33 +282,32 @@ F"ur jedes Segment sind nun folgende Schritte durchzuf"uhren:
                                         1->3: e4
 
 
-4.) Blocking (ohne sp"ateres Fitting) entsprechend den Werten aus bv
+4.) Blocking (without fitting) according to the values in bv
     --------
 
-  Das blocking wird so fr"uh durchgef"uhrt, da sich durch das blocking die
-  Ausf"uhrungsreihenfolge innerhalb des Arrays ver"andert und deshalb alle
-  "ubrigen Stufen --- insbesondere merging und optimize --- nur mit genauer
-  Kenntnis des blockings arbeiten k"onnen.
-  Zum Beispiel: Ohne blocking bekommt beim merging der e1-Quader vom
-                e2/e3-Quader in der 0-ten Dimension einen step von 9
-                aufgezwungen, und anschlie"send k"onnen in der Optimierung
-                die (0->2)-Zweige beider Teile zusammengef"ugt werden.
-                Mit blocking wird beides nicht durchgef"uhrt, da diese Teile
-                dann in verschiedenen Bl"ocken liegen!
-                Vergleiche auch mit den Beispielen weiter unten...
+  The blocking is performed that early because the blocking changes the iteration
+  order on the array. That means, all the following steps --- in perticulary
+  merging and optimize --- must know the concrete blocking.
+  For example: Without blocking the e1-cube is given a step of 9 while merging
+               with the e2/e3-cube in the 0th dimension. Afterwards in the
+               optimization phase the (0->2)-branches of the two parts can be
+               joined.
+               With blocking both things do not happen because the two parts
+               lie in different blocks! Compare this with the example further
+               down.
 
-  Das blocking wird im Baum a"hnlich wie die Quader dargestellt --- es wird
-  eine analog aufgebaute Blockhierarchie vorgeschaltet.
+  The blocking is represented in the tree analogeous to cubes --- we must simply
+  put a analogeous structured block hierarchie in front.
 
-  Im Beispiel (Grenzen x10 f"ur realistische Verh"altnisse):
+  In the example (bounds x10 for more realistic results):
 
-    An den Quadergrenzen m"ussen immer neue Bl"ocke begonnen werden, also
-    brauchen wir f"ur jeden Quader eigene blocking-Schleifen:
+    At the beginning of a new cube we need always a new block. Therefore for
+    each cube a separate blocking-stride is needed:
 
-    0000->0500, block[0] 180:      // dies ist das Koordinatensystem f"ur ...
-        0000->1500, block[1] 156:  // ... die Bl"ocke im ersten Quader.
-               op1               // hier mu"s noch definiert werden, was ...
-                                 // ... innerhalb eines Blockes passieren soll
+    0000->0500, block[0] 180:      // This is the system of coordinates for ...
+        0000->1500, block[1] 156:  // ... the blocks of the first cube.
+               op1                 // Here we must define what has to happen ...
+                                   // ... inside the block.
     0000->0500, block[0] 180:
         1500->4000, block[1] 156:
                op2
@@ -331,8 +328,7 @@ F"ur jedes Segment sind nun folgende Schritte durchzuf"uhren:
         1000->4000, block[1] 156:
                op6
 
-    An den Bl"attern dieses blocking-Baumes k"onnen wir jetzt die Beschreibungen
-    f"ur die Blockinhalte einf"ugen:
+    At the leafs of this blocking-tree we now add the contents of the blocks:
 
     0000->0500, block[0] 180:
         0000->1500, block[1] 156:
@@ -377,19 +373,17 @@ F"ur jedes Segment sind nun folgende Schritte durchzuf"uhren:
                                                0->1: e3
                                                1->3: e4
 
-  In dieses Schema lassen sich analog beliebig viele Stufen f"ur hierarchisches
-  blocking einziehen.
+  This scheme can be expanded analogeous for hierarchical blocking with any
+  number of levels.
 
-  Soll in allen oder einigen Dimensionen keine blocking stattfinden, l"a"st
-  sich dies --- zumindest im Falle (sv_d > 1) --- wegen der eventuell
-  vorhandenen Raster nicht wie oben und einem blocking-step von 1 erreichen.
-  Dann w"urde in den entsprechenden Zweigen des Baumes ein komplettes Raster
-  n"amlich keinen Platz mehr finden.
-  Ein blocking von 1 erreicht man vielmehr dadurch, da"s f"ur die entsprechende
-  Dimension kein 'block[d]'-Zweig gebildet wird, sondern sofort der 'step[d]'-
-  Zweig im Baum erscheint. Dem kann sich dann die blocking-Hierarchie f"ur die
-  nachfolgenden Dimensionen anschlie"sen.
-  Also etwa im Beispiel mit bv = (1,156):
+  To suppress blocking in all or just some dimensions it is not adequate, at
+  least in case of (sv_d > 1), to insert a blocking-stride with blocking-step 1.
+  If doing so, possibly existing grids would not fit in the relevant branch.
+  It is rather necessary to omit the block[d]-node and just insert the relevant
+  step[d]-branch directly. The blocking hierarchie for dimension (d+1) follows
+  as usual.
+
+  In the example with bv = (1,156):
 
     0000->0500, step[0] 1
                      0->1:    0->1500, block[1] 156:
@@ -426,22 +420,17 @@ F"ur jedes Segment sind nun folgende Schritte durchzuf"uhren:
                                                           0->1: e3
                                                           1->3: e4
 
-  Nach dieser Systematik l"a"st sich blocking (bv_d > 1) und non-blocking
-  (bv_d = 1) bei Bedarf f"ur alle Dimensionen und Level (hierarchisches
-  blocking) mischen.
-  Auf Grund der gew"ahlten Baumdarstellung lassen sich die nachfolgenden
-  Transformationen (Schritt 6 bis 9) in jedem Fall auf "ubersichtliche und
-  einfach zu definierende Art und Weise durchf"uhren:
-  Es m"ussen nur Indexgrenzen von Knoten und deren Unterb"aume verglichen
-  werden; u. U. werden Unterb"aume kopiert, gel"oscht oder verschoben --- aber
-  all dies geschieht lokal, unabh"angig von der genauen Position im Baum,
-  und funktioniert f"ur jeden Knotentyp (step, block, ...).
-  Auch f"ur die Code-Erzeugung im letzten Schritt braucht nur der Typ eines
-  Knotens mit dem Wert seiner Attribute bekannt zu sein, nicht seine Position
-  im Baum.
+  Using this method blocking (bv_d > 1) and non-blocking (bv_d = 1) can
+  be used alternately for all dimensions and levels (hierarchical blocking).
+  With the chosen tree representation the following transformation steps
+  6.) to 9.) can be described and performed in an (quite) easy and clear way:
+  It is only necessary to compare nodes and there subtrees; possibly some
+  subtrees have to be copied, erased oder moved, but these operations have
+  to be done on local scope only, irrespective of the concrete position in the
+  tree (-> context free). This is hold even for the final code generation phase.
 
-  Mit den Originalzahlen (f"ur etwas pathologische Verh"altnisse) ergibt sich
-  f"ur das Beispiel nach dem blocking mit bv = (180,156):
+  Using the original values (to get somewhat pathological results) we get
+  for the example with bv = (180,156):
 
     000->050, block[0] 180:
         000->150, block[1] 156:
@@ -481,15 +470,15 @@ F"ur jedes Segment sind nun folgende Schritte durchzuf"uhren:
                                               0->1: e3
                                               1->3: e4
 
-  Anm.: statt sofort
+  Note: instead of transforming to
           0->50, block[0] 50: ...
-        zu schreiben, bleiben erst einmal die Originalwerte f"ur das blocking
-        stehen, da diese f"ur die Baum-Optimierung noch gebraucht werden.
-        Die angepa"sten blocking-Gr"o"sen werden auch erst f"ur das fitting
-        ben"otigt (siehe 9.Schritt)!
+        at first the original values are preserved because these are needed
+        for the tree optimization (see step 7.) !!
+        However, the corrected blocking sizes are needed not until the
+        fitting (see step 9.).
 
-  Mit bv = (1,156) --- wegen ubv = (1,6) darf dies nicht in (1,1) konvertiert
-  werden --- w"urde sich ergeben:
+  With bv = (1,156) --- because of ubv = (1,6) this is *not* equivalent to (1,1)
+  --- we would get:
 
       0-> 50, step[0] 1
                    0->1:   0->150, block[1] 156:
@@ -527,16 +516,15 @@ F"ur jedes Segment sind nun folgende Schritte durchzuf"uhren:
                                                       1->3: e4
 
 
-5.) Unrolling-Blocking (mit sp"aterem Fitting) entsprechend den Werten aus ubv
+5.) Unrolling-Blocking (without fitting) according to the values in ubv
     ------------------
 
-    Es wird auf jedem Block f"ur jede Dimension mit (ubv_d > 1) ein weiteres
-    Blocking durchgef"uhrt.
-    Dieses unterscheidet sich jedoch von einem konventionellen hierarchischen
-    Blocking darin, da"s u. U. noch ein Fitting durchgef"uhrt wird --- siehe
-    8. Schritt)
+    On each block an additional blocking for each dimension with (ubv_d > 1)
+    is performed.
+    This blocking differs from the conventional hierarchical blocking in
+    the sense, that possibly a fitting is carried out (see step 8.)
 
-  Im Beispiel mit bv = (180,156):
+  In the example with bv = (180,156):
 
     000->050, block[0] 180:
         000->150, block[1] 156:
@@ -585,7 +573,7 @@ F"ur jedes Segment sind nun folgende Schritte durchzuf"uhren:
                                                            0->1: e3
                                                            1->3: e4
 
-  Im Beispiel mit bv = (1,156):
+  In the example with bv = (1,156):
 
       0-> 50, step[0] 1
                    0->1:   0->150, block[1] 156:
@@ -632,13 +620,13 @@ F"ur jedes Segment sind nun folgende Schritte durchzuf"uhren:
                                                                    1->3: e4
 
 
-6.) Quader-Merging (Quader mit identischen Unterb"aumen kompatibel machen
-    --------------  und zusammenfassen)
+6.) Cube Merging (Makes cubes with identical subtrees compatible and joins them)
+    ------------
 
-    -> Der Baum bildet in jeder Dimension eine Partition der betreffenden
-       Indexmengen-Projektion
+    -> The tree forms in each dimension a partition of the relevant index-vector-set
+       projection.
 
-  Im Beispiel mit bv = (180,156):
+  In the example with bv = (180,156):
 
     000->050, block[0] 180:
         000->150, block[1] 156:
@@ -684,7 +672,7 @@ F"ur jedes Segment sind nun folgende Schritte durchzuf"uhren:
                                                            0->1: e3
                                                            1->3: e4
 
-  Im Beispiel mit bv = (1,156):
+  In the example with bv = (1,156):
 
       0-> 50, step[0] 9
                    0->2:   0->150, block[1] 156:
@@ -740,29 +728,29 @@ F"ur jedes Segment sind nun folgende Schritte durchzuf"uhren:
                                                                    1->3: e4
 
 
-7.) Baum-Optimierung (identische Unterb"aume werden zusammengefa"st)
-    ----------------
+7.) Tree Optimization (Joins identical subtrees)
+    -----------------
 
-    Projektionen mit aufeinanderfolgenden Indexranges und identischen
-    Operationen (Unterb"aumen) werden zusammengefa"st.
+    Projections with consecutive index ranges and identical operations (subtrees)
+    are joined.
 
-  Im Beispiel mit bv = (1,156):
+  In the example with bv = (1,156):
 
       0-> 50, step[0] 9
                ...
                    2->9:   0->150, block[1] 156: ... tree_1 ...
 
                          150->400, block[1] 156: ... tree_1 ...
-                        zum Gl"uck stehen da ^ noch gleiche Werte!
+                        Fortunately we still ^ have the same values overhere!
 
-    wird zu
+    is transformed to
 
       0-> 50, step[0] 9
                ...
                    2->9:   0->400, block[1] 156: ... tree_1 ...
-                          jetzt macht dieser ^ Wert wieder Sinn!
+                        Now this value makes ^ sense again!
 
-  Insgesamt:
+  Altogether:
 
       0-> 50, step[0] 9
                    0->2:   0->150, block[1] 156:
@@ -810,14 +798,14 @@ F"ur jedes Segment sind nun folgende Schritte durchzuf"uhren:
                                                                    1->3: e4
 
 
-8.) Projektions-Fitting (nicht-komplette Perioden am Ende abtrennen)
-    -------------------
-    (^ nach der Optimierung liegen i. a. keine Quader mehr vor ...)
+8.) Projection Fitting (Removes incomplete periods at the tail)
+    ------------------
+    (^ after the optimization we have in general no cubes anymore ...)
 
-    Die Grenzen des "au"sersten Knotens jeder Dimension werden auf die Anzahl
-    der abzurollenden Elemente --- also max(ubv_d, step) --- angepa"st.
+    The boundaries of the most outer node in each dimension is adjusted to
+    the number of unrolled elements (= max( ubv_d, step)).
 
-  Im Beispiel mit bv = (180,156):
+  In the example with bv = (180,156):
 
     000->045, block[0] 180:
         000->150, block[1] 156:
@@ -937,7 +925,7 @@ F"ur jedes Segment sind nun folgende Schritte durchzuf"uhren:
                                                            0->1: e3
                                                            1->3: e4
 
-  Im Beispiel mit bv = (1,156):
+  In the example with bv = (1,156):
 
       0-> 45, step[0] 9
                    0->2:   0->150, block[1] 156:
@@ -1063,10 +1051,10 @@ F"ur jedes Segment sind nun folgende Schritte durchzuf"uhren:
                                                                    1->3: e4
 
 
-9.) Blockgr"o"sen an Projektionsgrenzen anpassen
-    --------------------------------------------
+9.) Adjust block sizes to real projection sizes
+    -------------------------------------------
 
-  Im Beispiel mit bv = (180,156):
+  In the example bv = (180,156):
 
     000->045, block[0]  45:
         000->150, block[1] 150:
@@ -1186,7 +1174,7 @@ F"ur jedes Segment sind nun folgende Schritte durchzuf"uhren:
                                                            0->1: e3
                                                            1->3: e4
 
-  Im Beispiel mit bv = (1,156):
+  In the example with bv = (1,156):
 
       0-> 45, step[0] 9
                    0->2:   0->150, block[1] 150:
@@ -1313,16 +1301,16 @@ F"ur jedes Segment sind nun folgende Schritte durchzuf"uhren:
 
 
 
-interne Darstellung im Syntaxbaum:
-==================================
+Internal representation in the abstract syntax tree:
+====================================================
 
 
-  Die mei"sten Knoten verf"ugen "uber ein Attribut 'level', welches angibt,
-  wieviele Vorfahren im Baum ebenfalls die Dimension 'dim' betreffen.
+  Most of the nodes have an attribute 'level'. This attribute indicates how
+  many ancestors in the tree concern the dimension 'dim', too.
 
 
-  Knotentyp:   Attribut  (Typ des Attributes)
-  -------------------------------------------
+  node type:   attribute (type of the attribute)
+  ----------------------------------------------
 
     WLseg:     contents  (WLblock, WLublock, WLstride)
                next      (WLseg)
@@ -2091,6 +2079,192 @@ Parts2Strides (node *parts, int dims)
 }
 
 /******************************************************************************
+ ******************************************************************************
+ **
+ ** functions for CheckDisjointness()
+ **
+ **/
+
+/******************************************************************************
+ *
+ * function:
+ *   int StridesNotDisjoint_OneDim( int lb1, int ub1, int step1, int width1,
+ *                                  int lb2, int ub2, int step2, int width2)
+ *
+ * description:
+ *   checks whether the given strides are disjoint.
+ *
+ *   stride1: lb1 <= iv1 < ub1 STEP step1 WIDTH width1
+ *   stride2: lb2 <= iv1 < ub2 STEP step2 WIDTH width2
+ *
+ *   return value: 0 - disjoint
+ *                 1 - not disjoint
+ *
+ ******************************************************************************/
+
+int
+StridesNotDisjoint_OneDim (int lb1, int ub1, int step1, int width1, int lb2, int ub2,
+                           int step2, int width2)
+{
+    int ub, lb, step;
+#ifdef DO_NOT_USE_MOD
+    int inc1, inc2, iv1, iv2;
+#else
+    int iv;
+#endif
+    int not_disjoint = 0;
+
+    DBUG_ENTER ("StridesNotDisjoint_OneDim");
+
+    lb = MAX (lb1, lb2);
+    ub = MIN (ub1, ub2);
+    step = lcm (step1, step2);
+    ub = MIN (ub, lb + step);
+
+#ifdef DO_NOT_USE_MOD
+    inc1 = (lb - lb1) % step1;
+    if (inc1 < width1) {
+        iv1 = lb;
+    } else {
+        iv1 = lb + step1 - inc1;
+        inc1 = 0;
+    }
+
+    inc2 = (lb - lb2) % step2;
+    if (inc2 < width2) {
+        iv2 = lb;
+    } else {
+        iv2 = lb + step2 - inc2;
+        inc2 = 0;
+    }
+
+    while ((iv1 < ub) && (iv2 < ub)) {
+        if (iv1 == iv2) {
+            not_disjoint = 1;
+            break;
+        }
+        if (iv1 < iv2) {
+            if (inc1 + 1 < width1) {
+                iv1++;
+                inc1++;
+            } else {
+                iv1 += step1;
+                inc1 = 0;
+            }
+        } else {
+            if (inc2 + 1 < width2) {
+                iv2++;
+                inc2++;
+            } else {
+                iv2 += step2;
+                inc2 = 0;
+            }
+        }
+    }
+#else
+    for (iv = lb; iv < ub; iv++) {
+        if (((iv - lb1) % step1 < width1) && ((iv - lb2) % step2 < width2)) {
+            not_disjoint = 1;
+            break;
+        }
+    }
+#endif
+
+    DBUG_RETURN (not_disjoint);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int StridesNotDisjoint_AllDims( node *stride1, node *stride2)
+ *
+ * description:
+ *   checks whether the given strides are disjoint (in at least one dimension).
+ *
+ *   return value: 0 - disjoint
+ *                 1 - not disjoint
+ *
+ ******************************************************************************/
+
+int
+StridesNotDisjoint_AllDims (node *stride1, node *stride2)
+{
+    int not_disjoint = 1;
+    node *grid1, *grid2;
+
+    DBUG_ENTER ("StridesNotDisjoint_AllDims");
+
+    while (stride1 != NULL) {
+        DBUG_ASSERT ((stride2 != NULL), "stride1 contains more dimensions than stride2");
+        grid1 = WLSTRIDE_CONTENTS (stride1);
+        grid2 = WLSTRIDE_CONTENTS (stride2);
+        DBUG_ASSERT (((grid1 != NULL) && (grid2 != NULL)),
+                     "stride with missing grid found");
+
+        if (!StridesNotDisjoint_OneDim (WLSTRIDE_BOUND1 (stride1) + WLGRID_BOUND1 (grid1),
+                                        WLSTRIDE_BOUND2 (stride1),
+                                        WLSTRIDE_STEP (stride1),
+                                        WLGRID_BOUND2 (grid1) - WLGRID_BOUND1 (grid1),
+                                        WLSTRIDE_BOUND1 (stride2) + WLGRID_BOUND1 (grid2),
+                                        WLSTRIDE_BOUND2 (stride2),
+                                        WLSTRIDE_STEP (stride2),
+                                        WLGRID_BOUND2 (grid2) - WLGRID_BOUND1 (grid2))) {
+            not_disjoint = 0;
+            break;
+        }
+
+        stride1 = WLGRID_NEXTDIM (grid1);
+        stride2 = WLGRID_NEXTDIM (grid2);
+    }
+
+    DBUG_RETURN (not_disjoint);
+}
+
+/**
+ **
+ ** functions for CheckDisjointness()
+ **
+ ******************************************************************************
+ ******************************************************************************/
+
+/******************************************************************************
+ *
+ * function:
+ *   int CheckDisjointness( node *strides)
+ *
+ * description:
+ *   checks whether all strides are pairwise disjoint.
+ *
+ *   return value: 0 - disjoint
+ *                 1 - not disjoint
+ *
+ ******************************************************************************/
+
+int
+CheckDisjointness (node *strides)
+{
+    node *stride2;
+    int not_disjoint = 0;
+
+    DBUG_ENTER ("CheckDisjointness");
+
+    while (strides != NULL) {
+        stride2 = WLSTRIDE_NEXT (strides);
+        while (stride2 != NULL) {
+            if (StridesNotDisjoint_AllDims (strides, stride2)) {
+                not_disjoint = 1;
+                goto ret;
+            }
+            stride2 = WLSTRIDE_NEXT (stride2);
+        }
+        strides = WLSTRIDE_NEXT (strides);
+    }
+
+ret:
+    DBUG_RETURN (not_disjoint);
+}
+
+/******************************************************************************
  *
  * function:
  *   node *SetSegs( node *pragma, node *cubes, int dims)
@@ -2173,21 +2347,24 @@ CheckParams (node *seg)
     for (d = 0; d < WLSEGX_DIMS (seg); d++) {
         j = WLSEGX_BLOCKS (seg) - 1;
         if ((WLSEGX_BV (seg, j))[d] < 1) {
-            ABORT (line, ("Blocking step is smaller than 1."
-                          " Please check parameters of functions in wlcomp-pragma"));
+            ABORT (line, ("Blocking step (%i) is smaller than 1."
+                          " Please check parameters of functions in wlcomp-pragma",
+                          (WLSEGX_BV (seg, j))[d]));
         }
         last = (WLSEGX_BV (seg, j))[d];
         for (; j >= 0; j--) {
             if ((WLSEGX_BV (seg, j))[d] < last) {
-                ABORT (line, ("Inner Blocking step is smaller than outer one."
-                              " Please check parameters of functions in wlcomp-pragma"));
+                ABORT (line, ("Inner Blocking step (%i) is smaller than outer one (%i)."
+                              " Please check parameters of functions in wlcomp-pragma",
+                              (WLSEGX_BV (seg, j))[d], last));
             }
             last = (WLSEGX_BV (seg, j))[d];
         }
 
         if ((WLSEGX_UBV (seg))[d] < 1) {
-            ABORT (line, ("Unrolling-blocking step is smaller than 1."
-                          " Please check parameters of functions in wlcomp-pragma"));
+            ABORT (line, ("Unrolling-blocking step (%i) is smaller than 1."
+                          " Please check parameters of functions in wlcomp-pragma",
+                          (WLSEGX_UBV (seg))[d]));
         }
     }
 
@@ -2212,9 +2389,11 @@ CheckParams (node *seg)
         for (; d < WLSEGX_DIMS (seg); d++) {
             if ((WLSEGX_BV (seg, j))[d]
                 < MAX ((WLSEGX_SV (seg))[d], (WLSEGX_UBV (seg)[d]))) {
-                ABORT (line, ("Blocking step is smaller than stride step,"
-                              " unrolling-blocking step respectively. "
-                              "Please check parameters of functions in wlcomp-pragma"));
+                ABORT (line, ("Blocking step (%i) is smaller than stride step (%i),"
+                              " unrolling-blocking step (%i) respectively. "
+                              "Please check parameters of functions in wlcomp-pragma",
+                              (WLSEGX_BV (seg, j))[d], (WLSEGX_SV (seg))[d],
+                              (WLSEGX_UBV (seg))[d]));
             }
         }
     }
@@ -2230,22 +2409,25 @@ CheckParams (node *seg)
      *     but this is allowed: bv = (1,1),  ubv = (2,2), sv = (2,2))
      */
 
-    /* goto first dim with (bv_d > 1) */
+    /* goto first dim with (ubv_d > 1) */
     d = 0;
     while ((d < WLSEGX_DIMS (seg)) && ((WLSEGX_UBV (seg))[d] == 1)) {
         d++;
     }
 
-    if (d < first_block) {
-        ABORT (line, ("Unrolling-blocking step is greater than"
-                      " most inner blocking step. "
-                      "Please check parameters of functions in wlcomp-pragma"));
+    if (first_block > d) {
+        ABORT (line, ("Unrolling-blocking step (%i) is greater than"
+                      " most inner blocking step (%i). "
+                      "Please check parameters of functions in wlcomp-pragma",
+                      (WLSEGX_UBV (seg))[d], (WLSEGX_BV (seg, j))[first_block]));
     }
 
     for (; d < WLSEGX_DIMS (seg); d++) {
         if ((WLSEGX_UBV (seg))[d] % (WLSEGX_SV (seg))[d] != 0) {
-            ABORT (line, ("Stride step is not a divisor of unrolling-blocking step."
-                          " Please check parameters of functions in wlcomp-pragma"));
+            ABORT (line,
+                   ("Stride step (%i) is not a divisor of unrolling-blocking step (%i). "
+                    "Please check parameters of functions in wlcomp-pragma",
+                    (WLSEGX_SV (seg))[d], (WLSEGX_UBV (seg))[d]));
         }
     }
 
@@ -4291,14 +4473,14 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
         i_offset1 = GridOffset (i_bound1, bound11, WLSTRIDE_STEP (stride1), grid1_b2);
         i_offset2 = GridOffset (i_bound1, bound12, WLSTRIDE_STEP (stride2), grid2_b2);
 
-        if (/* are the outlines of 'stride1' and 'stride2' not disjunct? */
+        if (/* are the outlines of 'stride1' and 'stride2' not disjoint? */
             (head1 < rear2) && (head2 < rear1) &&
 
             /* are 'stride1' and 'stride2' descended from different Npart-nodes? */
             (WLSTRIDE_PART (stride1) != WLSTRIDE_PART (stride2)) &&
             /*
              * Note: if stride1 and stride are descended from the same Npart-node
-             *        they must have disjunct outlines!!!
+             *        they must have disjoint outlines!!!
              */
 
             /* are the grids compatible? */
@@ -4306,14 +4488,14 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
             /*
              * Note: (i_offset_1 > grid1_b1) means, that the stride1 must be split
              *        in two parts to fit the new upper bound in the current dim.
-             *       Then the *projections* of stride1, stride2 can not be disjunct,
-             *        therefore stride1, stride2 must have disjunct outlines!!!
+             *       Then the *projections* of stride1, stride2 can not be disjoint,
+             *        therefore stride1, stride2 must have disjoint outlines!!!
              */
         ) {
 
             /*
              * Now we assume, that the outlines of 'stride1' and 'stride2' are not
-             * disjunct!
+             * disjoint!
              * (Nevertheless in following dimensions we may infer, that this
              * property is *not* hold  ->  we will dump the collected data then.)
              */
@@ -4363,7 +4545,7 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
 
         } else {
             /*
-             * the outlines are disjunct
+             * the outlines are disjoint
              *  -> free the useless data in 'divided_stride?'
              */
             divided_stride1a = FreeTree (divided_stride1a);
@@ -4467,14 +4649,14 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
         i_offset1 = GridOffset (i_bound1, bound11, WLSTRIDE_STEP (stride1), grid1_b2);
         i_offset2 = GridOffset (i_bound1, bound12, WLSTRIDE_STEP (stride2), grid2_b2);
 
-        if (/* are the projection outlines of 'stride1' and 'stride2' not disjunct? */
+        if (/* are the projection outlines of 'stride1' and 'stride2' not disjoint? */
             (head1 < rear2) && (head2 < rear1) &&
 
             /* are 'stride1' and 'stride2' descended from different Npart-nodes? */
             (WLSTRIDE_PART (stride1) != WLSTRIDE_PART (stride2)) &&
             /*
              * Note: if stride1 and stride are descended from the same Npart-node
-             *       we can deduce that they have disjunct outlines!
+             *       we can deduce that they have disjoint outlines!
              */
 
             /* are the grids compatible? */
@@ -4482,14 +4664,14 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
             /*
              * Note: (i_offset_1 > grid1_b1) means, that the stride1 must be split
              *        in two parts to fit the new upper bound in the current dim.
-             *       Then the *projections* of stride1, stride2 can not be disjunct,
-             *        therefore stride1, stride2 must have disjunct outlines!!!
+             *       Then the *projections* of stride1, stride2 can not be disjoint,
+             *        therefore stride1, stride2 must have disjoint outlines!!!
              */
         ) {
 
             /*
              * Now we assume, that the outlines of 'stride1' and 'stride2' are not
-             * disjunct!
+             * disjoint!
              * (Nevertheless in following dimensions we may infer, that this
              * property is *not* hold  ->  we will dump the collected data then.)
              */
@@ -4548,7 +4730,7 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
 
         } else {
             /*
-             * the outlines are disjunct
+             * the outlines are disjoint
              *  -> free the useless data in 'i_stride1', 'i_stride2'
              */
             if (i_stride1 != NULL) {
@@ -4661,7 +4843,7 @@ IsSubsetStride (node *stride1, node *stride2)
  *
  * description:
  *   adjusts the bounds of one of two strides (stride1, stride2) taken from the
- *   same WL-part to get disjunct strides.
+ *   same WL-part to get disjoint strides.
  *   returns 0 if stride1 and stride2 are left unchanged, 1 if stride1 has
  *   been adjusted, 2 if stride2 has been adjusted.
  *
@@ -4704,7 +4886,7 @@ AdjustBounds (node **stride1, node **stride2)
             bound22 = WLSTRIDE_BOUND2 (new_stride2);
 
             if (bound21 < bound22) {
-                DBUG_ASSERT ((bound11 < bound12), "the two strides are not disjunct");
+                DBUG_ASSERT ((bound11 < bound12), "the two strides are not disjoint");
                 if (IndexRearStride (new_stride1) > bound12) { /* bound21 > bound12 */
                     res = 1;
                     WLSTRIDE_BOUND2 (new_stride1) = bound12;
@@ -4713,7 +4895,7 @@ AdjustBounds (node **stride1, node **stride2)
                 break;
             } else {
                 if (bound21 > bound22) {
-                    DBUG_ASSERT ((bound12 < bound11), "the two strides are not disjunct");
+                    DBUG_ASSERT ((bound12 < bound11), "the two strides are not disjoint");
                     if (IndexRearStride (new_stride2) > bound11) { /* bound22 > bound11 */
                         res = 2;
                         WLSTRIDE_BOUND2 (new_stride2) = bound11;
@@ -4738,7 +4920,7 @@ AdjustBounds (node **stride1, node **stride2)
  *
  * description:
  *   When ComputeCubes() splits the strides by using IntersectStrideWithOutline()
- *   this may create non-disjunct index vector sets A and B ...
+ *   this may create non-disjoint index vector sets A and B ...
  *
  *   a) ... where A is a subset of B. Example:
  *
@@ -4765,11 +4947,11 @@ AdjustBounds (node **stride1, node **stride2)
  *     0->7  step 3, 1->3: op2  <- intersection of 'op2' and outline('op1')
  *     3->16 step 3, 1->3: op2  <- intersection of 'op2' and outline('op3')
  *
- *     These two strides are **not** disjunct!!!
+ *     These two strides are **not** disjoint!!!
  *     But they are part of the same Npart!!
  *
  *   Therefore first whole strides are removed (a) and then bounds are adjusted
- *   to get disjunct index vector sets (b).
+ *   to get disjoint index vector sets (b).
  *
  ******************************************************************************/
 
@@ -4828,7 +5010,7 @@ EleminateDuplicatesAndAdjustBounds (node *strides)
     }
 
     /*
-     * second step: adjust bounds of non-disjunct strides
+     * second step: adjust bounds of non-disjoint strides
      */
     stride1 = strides;
     while (stride1 != NULL) {
@@ -4870,7 +5052,7 @@ ComputeCubes (node *strides)
      *
      * divide strides
      *  -> for every two strides (stride1, stride2) the following property is hold:
-     *     if outline(stride1) and outline(stride2) are not disjunct,
+     *     if outline(stride1) and outline(stride2) are not disjoint,
      *     then the intersection of stride1 with outline(stride2) is non-empty!
      *  (this property is exploited in the second step)
      *
@@ -4880,7 +5062,7 @@ ComputeCubes (node *strides)
      *   stride1: 0->5 step 2          stride2: 2->3 step 1
      *                   1->2: ...                     0->1: ...
      *
-     * The outlines of these two strides are not disjunct.
+     * The outlines of these two strides are not disjoint.
      * Nevertheless the intersection of stride1 with outline(stride2) is empty:
      *
      *            2->3 step 2
@@ -4985,7 +5167,7 @@ ComputeCubes (node *strides)
      * second step:
      * ------------
      *
-     * create disjunct outlines
+     * create disjoint outlines
      *  -> every stride lies in one and only one cube
      */
     do {
@@ -5472,8 +5654,20 @@ WLTRANwith (node *arg_node, node *arg_info)
     /*
      * convert parts of with-loop into new format
      */
-    DBUG_EXECUTE ("WLprec", NOTE (("step 0: converting parts to strides\n")));
+    DBUG_EXECUTE ("WLprec", NOTE (("step 0.1: converting parts to strides\n")));
     strides = Parts2Strides (NWITH_PART (arg_node), dims);
+
+    /*
+     * consistence check: ensures that the strides are pairwise disjoint
+     */
+    DBUG_EXECUTE ("WLprec", NOTE (("step 0.2: checking disjointness of strides\n")));
+#ifndef DBUG_OFF
+    if (CheckDisjointness (strides) != 0) {
+        DBUG_ASSERT ((0),
+                     "Consistence check failed: Not all strides are pairwise disjoint!\n"
+                     "This is probably due to an error during with-loop-folding.");
+    }
+#endif
 
     if (WL_break_after >= WL_PH_cubes) {
         /*
