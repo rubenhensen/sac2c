@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.2  1998/04/03 11:52:52  srs
+# made deps
+#
 # Revision 1.1  1998/04/03 11:47:26  dkr
 # Initial revision
 #
@@ -28,3 +31,12 @@ clean:
 	$(RM) -r .sb
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
+
+concregions.o: concregions.h ../global/types.h ../global/tree_basic.h
+concregions.o: ../global/tree_compound.h ../global/Error.h
+concregions.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+concregions.o: /usr/include/sys/va_list.h /usr/include/string.h
+concregions.o: /usr/include/stdlib.h ../global/globals.h ../global/free.h
+concregions.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
+concregions.o: ../global/internal_lib.h ../global/traverse.h
+concregions.o: ../optimize/DupTree.h
