@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.147  2005/02/01 15:25:37  mwe
+ * bug fixed (corrected pointer for AVIS_SSAASSIGN and AVIS_WITHID)
+ *
  * Revision 3.146  2005/01/27 16:48:51  mwe
  * corrected duplication of fungroup in N_fundef
  *
@@ -397,6 +400,7 @@ struct INFO {
     bool inspecial;
     node *assign;
     node *fundefssa;
+    node *withid;
 };
 
 /*
@@ -409,6 +413,7 @@ struct INFO {
 #define INFO_DUP_INSPECIAL(n) (n->inspecial)
 #define INFO_DUP_ASSIGN(n) (n->assign)
 #define INFO_DUP_FUNDEFSSA(n) (n->fundefssa)
+#define INFO_DUP_WITHID(n) (n->withid)
 
 /*
  * INFO functions
@@ -429,6 +434,7 @@ MakeInfo ()
     INFO_DUP_INSPECIAL (result) = FALSE;
     INFO_DUP_ASSIGN (result) = NULL;
     INFO_DUP_FUNDEFSSA (result) = NULL;
+    INFO_DUP_WITHID (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -1679,6 +1685,12 @@ DUPids (node *arg_node, info *arg_info)
 
     avis = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), IDS_AVIS (arg_node));
 
+    if ((INFO_DUP_WITHID (arg_info) != NULL) && (AVIS_WITHID (avis) != NULL)) {
+        AVIS_WITHID (avis) = INFO_DUP_WITHID (arg_info);
+    } else if ((INFO_DUP_ASSIGN (arg_info) != NULL) && (AVIS_SSAASSIGN (avis) != NULL)) {
+        AVIS_SSAASSIGN (avis) = INFO_DUP_ASSIGN (arg_info);
+    }
+
     new_node = TBmakeIds (avis, DUPCONT (IDS_NEXT (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
@@ -2433,8 +2445,12 @@ DUPwithid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPwithid");
 
+    INFO_DUP_WITHID (arg_info) = arg_node;
+
     new_node
       = TBmakeWithid (DUPTRAV (WITHID_VEC (arg_node)), DUPTRAV (WITHID_IDS (arg_node)));
+
+    INFO_DUP_WITHID (arg_info) = NULL;
 
     WITHID_FLAGSTRUCTURE (new_node) = WITHID_FLAGSTRUCTURE (arg_node);
 
