@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/05/15 08:49:25  asi
+ * Revision 1.3  1995/06/02 12:11:50  asi
+ * Added NodeBehindCast
+ *
+ * Revision 1.2  1995/05/15  08:49:25  asi
  * LIRfundef, LIRMblock, LIRassign, LIRMassign, LIRloop, LIRMloop, LIRcond added.
  * First version of loop invariant removal implemented.
  *
@@ -25,5 +28,7 @@ extern node *LIRassign (node *arg_node, node *arg_info);
 extern node *LIRMassign (node *arg_node, node *arg_info);
 extern node *LIRMblock (node *arg_node, node *arg_info);
 extern node *LIRMloop (node *arg_node, node *arg_info);
+
+extern node *NodeBehindCast (node *arg_node);
 
 #endif /* _LoopInvariantRemoval_h */
