@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2004/11/23 15:08:11  cg
+ * more SacDevCamp.
+ *
  * Revision 3.73  2004/11/23 12:52:04  cg
  * SacDevCamp update.
  *
@@ -186,15 +189,6 @@
 #include "cv2cv.h"
 #include "cv2scalar.h"
 #include "cv2str.h"
-
-#if 0
-#include "config.h"
-#include "filemgr.h"
-#include "types.h"
-#include "Error.h"
-#include "internal_lib.h"
-#include "type_errors.h"
-#endif
 
 static const char *compiler_phase_name_init[PH_final + 1] = {
 #define PH_SELtext(it_text) it_text
@@ -460,13 +454,11 @@ static const cv2strfunptr cv2str_init[] = {
 #undef TYP_IFcv2str
 };
 
-#if 0
 static const char *mdb_nodetype_init[] = {
-#define NIFmdb_nodetype(mdb_nodetype) mdb_nodetype
+#define NIFname(name) name
 #include "node_info.mac"
-#undef NIFmdb_nodetype
+#undef NIFname
 };
-#endif
 
 static const char *mdb_prf_init[] = {
 #define PRF_IF(a, b, c, d, e, f, g, h) b
@@ -516,10 +508,20 @@ static optimize_t optimize_init = {
  * Initialize global variables from globals.mac
  */
 
-global_t global = {
-#define GLOBALinit(it_init) it_init
-#define GLOBALdelim ,
+static global_t
+InitializeGlobal ()
+{
+    global_t local;
+
+    DBUG_ENTER ("InitializeGlobal");
+
+#define GLOBALname(name) local.name =
+#define GLOBALinit(init) init;
 #include "globals.mac"
-#undef GLOBALdelim
 #undef GLOBALinit
-};
+#undef GLOBALname
+
+    DBUG_RETURN (local);
+}
+
+global_t global = InitializeGlobal ();

@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/23 15:08:11  cg
+ * more SacDevCamp.
+ *
  * Revision 1.4  2004/11/23 11:36:42  cg
  * Switched mac-file based declaration of global variables.
  *
@@ -35,8 +38,8 @@
 #define GLOBALtype(type)
 #endif
 
-#ifndef GLOBALid
-#define GLOBALid(id)
+#ifndef GLOBALname
+#define GLOBALname(name)
 #endif
 
 #ifndef GLOBALinit
@@ -78,7 +81,7 @@ GLOBAL (char, sacfilename[MAX_FILE_NAME], {})
  * name of file to be compiled
  */
 
-GLOBAL (char, puresacfilename, NULL)
+GLOBAL (char *, puresacfilename, NULL)
 /*
  * sacfilename without path specification
  */
@@ -444,6 +447,7 @@ GLOBAL (int, errors_cnt, 0)
 /*
  * Counter for number of errors
  */
+
 GLOBAL (int, warnings_cnt, 0)
 /*
  * Counter for number of warnings
@@ -611,8 +615,8 @@ GLOBAL (char **, nt_unique_string, nt_unique_string_init)
  * Unknown, new typecheck
  */
 
-GLOBAL (const ct_funptr *, NTCPRF_funtab, NTCPRF_funtab_info)
-GLOBAL (const void **, NTCPRF_cffuntab, NTCPRF_cffuntab_info)
+GLOBAL (const ct_funptr *, NTCPRF_funtab, NTCPRF_funtab_init)
+GLOBAL (const void **, NTCPRF_cffuntab, NTCPRF_cffuntab_init)
 
 /*
  * Primitive zip function tables, previously defined in zipcv.c
@@ -621,13 +625,13 @@ GLOBAL (const void **, NTCPRF_cffuntab, NTCPRF_cffuntab_info)
 GLOBAL (const zipcvfunptr *, zipcv_plus, zipcv_plus_init)
 GLOBAL (const zipcvfunptr *, zipcv_minus, zipcv_minus_init)
 GLOBAL (const zipcvfunptr *, zipcv_mul, zipcv_mul_init)
-GLOBAL (const zipcvfunptr *, zipcv_div, zipcv_divinit)
+GLOBAL (const zipcvfunptr *, zipcv_div, zipcv_div_init)
 GLOBAL (const zipcvfunptr *, zipcv_mod, zipcv_mod_init)
 GLOBAL (const zipcvfunptr *, zipcv_min, zipcv_min_init)
 GLOBAL (const zipcvfunptr *, zipcv_max, zipcv_max_init)
 GLOBAL (const zipcvfunptr *, zipcv_and, zipcv_and_init)
 GLOBAL (const zipcvfunptr *, zipcv_or, zipcv_or_init)
-GLOBAL (const zipcvfunptr *, zipcv_eq, zipcv_eqinit)
+GLOBAL (const zipcvfunptr *, zipcv_eq, zipcv_eq_init)
 GLOBAL (const zipcvfunptr *, zipcv_neq, zipcv_neq_init)
 GLOBAL (const zipcvfunptr *, zipcv_le, zipcv_le_init)
 GLOBAL (const zipcvfunptr *, zipcv_lt, zipcv_lt_init)
@@ -651,7 +655,7 @@ GLOBAL (const basecvfunptr *, basecv_one, basecv_one_init)
  * Constant vector copying function table, previously defined in cv2cv.c
  */
 
-GLOBAL (const cv2cvfunptr *, cv2cv, cv2cvinit)
+GLOBAL (const cv2cvfunptr *, cv2cv, cv2cv_init)
 
 /*
  * Constant vector to scalar conversion function table, previously defined in cv2scalar.c
