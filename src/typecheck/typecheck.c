@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/05/03 18:48:48  sbs
+ * fixed an error in TCN_genarray where TI was called without passing
+ * arg_info. This caused a SEGFAULT whenever a udf-fun-ap was used
+ * for the shape-expression of the genarray-wl.
+ * see typesys_0007.sac in errors for example...
+ *
  * Revision 2.10  1999/05/03 09:36:54  jhs
  * Changed some loops to cope with empty arrays.
  *
@@ -1785,8 +1791,8 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
 
     DBUG_ENTER ("TI_fun");
 
-    if (fun_p->node == arg_info->node[0]->node[1])
-        if (BODY == arg_info->node[0]->info.cint) {
+    if (fun_p->node == INFO_TC_FUNDEF (arg_info))
+        if (BODY == INFO_TC_STATUS (arg_info)) {
             ABORT (NODE_LINE (arg_node),
                    ("Nonterminated recursion in function '%s`", arg_node->info.id));
         } else {
@@ -1831,7 +1837,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
             }
         }
         if ((FAST_CHECK == fun_p->tag)
-            || ((BODY != arg_info->node[0]->info.cint)
+            || ((BODY != INFO_TC_STATUS (arg_info))
                 && ((NOT_CHECKED == fun_p->tag) || (PLEASE_CHECK == fun_p->tag)))) {
             /* if the applied function is still be checked and one checks
              * a conditional then the type can't be infered and one must
@@ -4141,7 +4147,7 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
     DBUG_ASSERT (-1 != type->dim, "type of unknown shape ");
 #endif
 
-    vardec_p = arg_info->node[0]->node[0]; /* pointer to var declaration */
+    vardec_p = INFO_TC_VARDEC (arg_info); /* pointer to var declaration */
     if (vardec_p) {
         /* looking, if ids->id is defined in variable declaration */
         while ((VARDEC_NEXT (vardec_p)) && !is_defined)
@@ -4216,7 +4222,7 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
         node *vardec;
         types *id_type;
 
-        vardec_p = arg_info->node[0]->node[0]; /* pointer to var declaration */
+        vardec_p = INFO_TC_VARDEC (arg_info); /* pointer to var declaration */
         id_type = DuplicateTypes (type, 1);
         vardec = MakeNode (N_vardec);
         VARDEC_TYPE (vardec) = id_type;
@@ -4226,7 +4232,7 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
         if (vardec_p)
             VARDEC_NEXT (vardec) = vardec_p; /* append old variable declaration */
         /* store pointer variable declaration part */
-        arg_info->node[0]->node[0] = vardec;
+        INFO_TC_VARDEC (arg_info) = vardec;
         DBUG_PRINT ("TYPE", ("add %s to variable declaration ", ids->id));
 
         /* insert reference to variable declaration */
@@ -4320,11 +4326,11 @@ TCfundef (node *arg_node, node *arg_info)
 
     info_node = MakeNode (N_info);
     info_node->node[0] = MakeNode (N_ok); /* status 0 = beginning of function */
-    info_node->node[0]->info.cint = 0;
+    INFO_TC_STATUS (info_node) = 0;
 
     /* pointer to variable declaration */
-    info_node->node[0]->node[0] = BLOCK_VARDEC (FUNDEF_BODY (arg_node));
-    info_node->node[0]->node[1] = arg_node; /* function declaration */
+    INFO_TC_VARDEC (info_node) = BLOCK_VARDEC (FUNDEF_BODY (arg_node));
+    INFO_TC_FUNDEF (info_node) = arg_node; /* function declaration */
     info_node->info.id = arg_node->info.types->id;
 
     INFO_TC_NEXTASSIGN (info_node) = NULL;
@@ -4667,7 +4673,7 @@ TClet (node *arg_node, node *arg_info)
 
     ids = LET_IDS (arg_node); /* left side of let-assign */
     if (ids)
-        CheckIds (ids, arg_info->node[0]->node[0], NODE_LINE (arg_node));
+        CheckIds (ids, INFO_TC_VARDEC (arg_info), NODE_LINE (arg_node));
     /*
      * look for double identifiers and name clashes with global objects
      */
@@ -4705,7 +4711,7 @@ TClet (node *arg_node, node *arg_info)
                 DBUG_ASSERT (NULL != arg_info->node[0]->node[0], "poiter to vardec is"
                                                                  "mising in arg_info");
 
-                vardec_node = LookupVardec (ids->id, arg_info->node[0]->node[0]);
+                vardec_node = LookupVardec (ids->id, INFO_TC_VARDEC (arg_info));
 
                 if (vardec_node) {
                     cmp_types cmp;
@@ -5090,10 +5096,10 @@ TClet (node *arg_node, node *arg_info)
                     types *declared_type;
 
                     declaration
-                      = LookupVardec (IDS_NAME (ids), arg_info->node[0]->node[0]);
+                      = LookupVardec (IDS_NAME (ids), INFO_TC_VARDEC (arg_info));
                     if (declaration == NULL) {
                         declaration = LookupArg (IDS_NAME (ids),
-                                                 arg_info->node[0]->node[1]->node[2]);
+                                                 INFO_TC_FUNDEF (arg_info)->node[2]);
                         if (declaration == NULL)
                             ABORT (NODE_LINE (arg_node),
                                    ("Unable to infer type of variable %s",
@@ -5345,12 +5351,12 @@ TCreturn (node *arg_node, node *arg_info)
         return_tmp->next = NULL;
 
         /* now we look for function where return belongs to */
-        fun_p = LookupFun (NULL, NULL, arg_info->node[0]->node[1]);
+        fun_p = LookupFun (NULL, NULL, INFO_TC_FUNDEF (arg_info));
         if (NULL == fun_p) {
             ABORT (NODE_LINE (arg_node),
                    ("Function '%s` undefined",
-                    ModName (arg_info->node[0]->node[1]->info.types->id_mod,
-                             arg_info->node[0]->node[1]->info.types->id)));
+                    ModName (INFO_TC_FUNDEF (arg_info)->info.types->id_mod,
+                             INFO_TC_FUNDEF (arg_info)->info.types->id)));
         } else
             fun_type = fun_p->node->TYPES;
 
@@ -5883,13 +5889,13 @@ TCcond (node *arg_node, node *arg_info)
     /* now free the infered type-information */
     FREE_TYPES (expr_type);
 
-    fun_p = LookupFun (NULL, NULL, arg_info->node[0]->node[1]);
+    fun_p = LookupFun (NULL, NULL, INFO_TC_FUNDEF (arg_info));
     DBUG_ASSERT ((NULL != fun_p), "fun_p is NULL");
     if ((CHECKING == fun_p->tag) || (IS_CHECKED == fun_p->tag)) {
         for (i = 1; i < nnode[NODE_TYPE (arg_node)]; i++) {
             tos = old_tos;
             DBUG_PRINT ("STACK", ("tos is set to " P_FORMAT, tos));
-            arg_info->node[0]->info.cint += 1;
+            INFO_TC_STATUS (arg_info) += 1;
 #ifndef DBUG_OFF
             if (1 == i)
                 DBUG_PRINT ("TYPE", ("checking THEN part"));
@@ -5897,7 +5903,7 @@ TCcond (node *arg_node, node *arg_info)
                 DBUG_PRINT ("TYPE", ("checking ELSE part"));
 #endif
             Trav (arg_node->node[i], arg_info);
-            arg_info->node[0]->info.cint -= 1;
+            INFO_TC_STATUS (arg_info) -= 1;
             if (N_stop == arg_info->node[0]->nodetype) {
                 check_again += i;
                 arg_info->node[0]->nodetype = old_status;
@@ -5910,7 +5916,7 @@ TCcond (node *arg_node, node *arg_info)
             tos = old_tos;
             DBUG_PRINT ("STACK", ("tos is set to " P_FORMAT, tos));
             arg_info->node[0]->nodetype = old_status;
-            arg_info->node[0]->info.cint += 1;
+            INFO_TC_STATUS (arg_info) += 1;
 #ifndef DBUG_OFF
             if (1 == check_again)
                 DBUG_PRINT ("TYPE", ("checking THEN part again"));
@@ -5918,7 +5924,7 @@ TCcond (node *arg_node, node *arg_info)
                 DBUG_PRINT ("TYPE", ("checking ELSE part again"));
 #endif
             Trav (arg_node->node[check_again], arg_info);
-            arg_info->node[0]->info.cint -= 1;
+            INFO_TC_STATUS (arg_info) -= 1;
             if (N_stop == arg_info->node[0]->nodetype) {
                 ABORT (NODE_LINE (arg_node),
                        ("Uninferable functions in then or else part"));
@@ -5930,7 +5936,7 @@ TCcond (node *arg_node, node *arg_info)
         for (i = 1; i < nnode[NODE_TYPE (arg_node)]; i++) {
             tos = old_tos;
             DBUG_PRINT ("STACK", ("tos is set to " P_FORMAT, tos));
-            arg_info->node[0]->info.cint += 1;
+            INFO_TC_STATUS (arg_info) += 1;
 
             if (1 == i)
                 DBUG_PRINT ("TYPE", ("checking THEN part"));
@@ -5938,7 +5944,7 @@ TCcond (node *arg_node, node *arg_info)
                 DBUG_PRINT ("TYPE", ("checking ELSE part"));
 
             Trav (arg_node->node[i], arg_info);
-            arg_info->node[0]->info.cint -= 1;
+            INFO_TC_STATUS (arg_info) -= 1;
             if (N_stop == arg_info->node[0]->nodetype) {
                 check_again += i;
                 arg_info->node[0]->nodetype = old_status;
@@ -7418,7 +7424,12 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
 
     DBUG_ENTER ("TI_Ngenarray");
 
-    expr_type = TI (arg_node, NULL);
+    expr_type = TI (arg_node, arg_info); /* SBS: this was called with arg_info NULL which
+                                          * subsequently caused SEGFAULTS in TI_fun
+                                          * if a funap was placed in the generator!
+                                          * I HOPE that using arg_info will not cause
+                                          * problems with the CF hack !!!
+                                          */
     if (expr_type == NULL) {
         ABORT (NODE_LINE (arg_node),
                ("type of shape in genarray with loop cannot be infered!"));
