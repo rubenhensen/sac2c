@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.61  1995/08/15 14:34:52  hw
+ * Revision 1.62  1995/09/05 15:21:34  hw
+ * bug fixed in compilation of "idx_psi"
+ * (changed condition of DBUG_ASSERT)
+ *
+ * Revision 1.61  1995/08/15  14:34:52  hw
  * - enlarged DBUG_ASSERT in compilation of idx_psi
  * - added compilation of modarray, but only following cases:
  *   modarry(id, vec, id)
@@ -1635,7 +1639,7 @@ CompPrf (node *arg_node, node *arg_info)
         case F_idx_psi: {
             arg1 = arg_node->node[0]->node[0];
             arg2 = arg_node->node[0]->node[1]->node[0];
-            DBUG_ASSERT ((N_id == arg1->nodetype && N_num == arg1->nodetype),
+            DBUG_ASSERT ((N_id == arg1->nodetype || N_num == arg1->nodetype),
                          "wrong first arg of idx_psi");
             DBUG_ASSERT (N_id == arg2->nodetype, "wrong second arg of idx_psi");
 
