@@ -1,6 +1,9 @@
 /* 	$Id$
  *
  * $Log$
+ * Revision 1.5  1998/02/27 13:38:10  srs
+ * checkin with deactivated traversal
+ *
  * Revision 1.4  1998/02/24 14:19:20  srs
  * *** empty log message ***
  *
@@ -259,7 +262,7 @@ WLFWithloopFolding (node *arg_node, node *arg_info)
 
     DBUG_ASSERT (!arg_info, ("at the beginning of WLF: arg_info != NULL"));
     arg_info = MakeInfo ();
-    Trav (arg_node, arg_info);
+    /*   Trav(arg_node,arg_info); */
     FREE (arg_info);
 
     DBUG_RETURN (arg_node);
