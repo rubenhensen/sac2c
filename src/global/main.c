@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2004/10/11 16:48:10  sah
+ * added serialize phase (aka writesib)
+ *
  * Revision 3.61  2004/10/11 14:46:39  ktr
  * Replaced EMRefcount with rcphase.
  *
@@ -547,21 +550,26 @@ main (int argc, char *argv[])
     if (break_after == PH_analysis)
         goto BREAK;
     compiler_phase++;
+#else
+    compiler_phase += 3;
+#endif /* NEW_AST */
 
     PHASE_PROLOG;
+#ifndef NEW_AST
     if (MODUL_FILETYPE (syntax_tree) != F_prog) {
         NOTE_COMPILER_PHASE;
         syntax_tree = WriteSib (syntax_tree); /* writesib_tab */
         PHASE_DONE_EPILOG;
     }
+#else  /* NEW_AST */
+    SerializeModule (syntax_tree);
+    PHASE_DONE_EPILOG;
+#endif /* NEW_AST */
     PHASE_EPILOG;
 
     if (break_after == PH_writesib)
         goto BREAK;
     compiler_phase++;
-#else
-    compiler_phase += 4;
-#endif /* NEW_AST */
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
