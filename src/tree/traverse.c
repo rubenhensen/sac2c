@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2002/02/22 12:30:00  sbs
+ * insvd_tab added.
+ *
  * Revision 3.28  2002/02/21 15:46:40  dkr
  * new traversal-tab for precompile added
  *
@@ -108,6 +111,7 @@
 #include "my_debug.h"
 
 #include "flatten.h"
+#include "insert_vardec.h"
 #include "print.h"
 #include "typecheck.h"
 #include "typecheck_WL.h"
@@ -1342,6 +1346,17 @@ static funtab precomp3_tab_rec = {{
                                   NULL,
                                   NULL};
 funtab *precomp3_tab = &precomp3_tab_rec;
+
+/*
+ *  (104) insvd_tab
+ */
+static funtab insvd_tab_rec = {{
+#define NIFinsvd(it_insvd) it_insvd
+#include "node_info.mac"
+                               },
+                               NULL,
+                               NULL};
+funtab *insvd_tab = &insvd_tab_rec;
 
 /*
  *  nnode

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/02/22 12:30:00  sbs
+ * insvd_tab added.
+ *
  * Revision 3.21  2002/02/21 15:47:04  dkr
  * new traversal-tab for precompile added
  *
@@ -274,6 +277,7 @@ extern funtab *ssawlf_tab;
 extern funtab *rmcasts_tab;
 extern funtab *ssaili_tab;
 extern funtab *comp2_tab;
+extern funtab *insvd_tab;
 
 extern int nnode[];
 
