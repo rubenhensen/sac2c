@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.121  1997/03/19 13:42:42  cg
+ * Revision 1.122  1997/05/05 11:53:18  cg
+ * Now a dummy symbol is generated in the globals.c file. This prevents the linker
+ * from warning in the case of non-existing symbol tables due to "empty" object files.
+ *
+ * Revision 1.121  1997/03/19  13:42:42  cg
  * converted to single tmp directory tmp_dirname instaed of build_dirname
  * and store_dirname
  *
@@ -621,7 +625,21 @@ PrintModul (node *arg_node, node *arg_info)
         fclose (outfile);
 
         outfile = WriteOpen ("%s/globals.c", tmp_dirname);
-        fprintf (outfile, "#include \"header.h\"\n");
+        fprintf (outfile, "#include \"header.h\"\n\n");
+        fprintf (outfile, "int __dummy_value_which_is_completely_useless=0;\n\n");
+
+        /*
+         *  Maybe there's nothing to compile in this module because all functions
+         *  deal with shape-independent arrays which are removed after writing
+         *  the SIB.
+         *
+         *  Unfortunately, things are not as easy as they should be.
+         *  If there is no symbol declared in this file then gcc creates an
+         *  object file which does not contain any objects. This causes ranlib
+         *  not (!!) to produce an empty symbol table, but to produce no symbol
+         *  table at all. Finding no symbol table lets the linker give some
+         *  nasty warnings. These are suppressed by the above dummy symbol.
+         */
 
         if (NULL != arg_node->node[3]) {
             fprintf (outfile, "\n\n");
