@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/02/06 01:44:47  dkr
+ * signature of MakeWLgrid() and MakeWLgridVar() modified
+ *
  * Revision 3.11  2001/01/29 18:33:45  dkr
  * some superfluous attributes of N_WLsegVar removed
  *
@@ -37,67 +40,7 @@
  * Revision 3.1  2000/11/20 18:01:28  sacbase
  * new release made
  *
- * Revision 2.6  2000/11/14 13:28:54  dkr
- * some '... might be used uninitialized' warnings removed
- *
- * Revision 2.5  2000/06/23 15:11:57  dkr
- * signature of DupTree changed
- *
- * Revision 2.4  2000/03/16 14:54:30  dkr
- * WLSEGX_BV and WLSEGX_UBV are now initialized correctly
- *
- * Revision 2.3  2000/03/15 15:05:17  dkr
- * CalcSV and ComputeMinMaxIndex moved to wltransform.c
- *
- * Revision 2.2  2000/03/09 12:55:58  dkr
- * some comments added and changed respectively
- *
- * Revision 2.1  1999/02/23 12:42:55  sacbase
- * new release made
- *
- * Revision 1.16  1998/08/11 14:45:27  dkr
- * support for N_WLsegVar added (not yet completed)
- *
- * Revision 1.15  1998/08/11 00:26:21  dkr
- * support for N_WLsegVar added
- *
- * Revision 1.14  1998/08/10 14:49:49  dkr
- * fixed a bug in ComputeIndexMinMax
- *
- * Revision 1.13  1998/06/09 16:47:06  dkr
- * IDX_MIN, IDX_MAX now segment-specific
- *
- * Revision 1.12  1998/05/25 13:14:14  dkr
- * ASSERTs about wrong arguments in wlcomp-pragmas are now ABORT-messages
- *
- * Revision 1.11  1998/05/24 00:42:26  dkr
- * changed some assert-messages
- *
- * Revision 1.10  1998/04/29 17:14:03  dkr
- * includes now wltransform.h instead of precompile.h
- *
- * Revision 1.9  1998/04/24 18:29:33  dkr
- * added comment
- *
- * Revision 1.8  1998/04/20 02:38:38  dkr
- * includes now tree.h
- *
- * Revision 1.7  1998/04/17 17:32:32  dkr
- * removed unused vars
- *
- * Revision 1.6  1998/04/17 15:44:19  dkr
- * fixed a few bugs:
- *   IntersectStridesArray() now uses InsertWLnodes to sort the strides/grids
- *   ConstArrays() now ignores empty segments
- *
- * Revision 1.5  1998/04/17 02:15:15  dkr
- * ConstSegs() is now implemented
- *
- * Revision 1.4  1998/04/13 19:58:40  dkr
- * added ConstSegs (dummy)
- *
- * Revision 1.3  1998/04/13 18:10:59  dkr
- * rcs-header added
+ * [ eliminated ]
  *
  */
 
@@ -399,7 +342,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
                         new_grids
                           = MakeWLgrid (WLGRID_LEVEL (grids), WLGRID_DIM (grids),
                                         grid1_b1, grid1_b2, WLGRID_UNROLLING (grids),
-                                        FALSE, nextdim, new_grids, code);
+                                        nextdim, new_grids, code);
                     }
                 }
                 if (grid2_b1 < width) {
@@ -410,7 +353,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
                         new_grids
                           = MakeWLgrid (WLGRID_LEVEL (grids), WLGRID_DIM (grids),
                                         grid2_b1, grid2_b2, WLGRID_UNROLLING (grids),
-                                        FALSE, DupTree (nextdim), new_grids, code);
+                                        DupTree (nextdim), new_grids, code);
                     }
                 }
 
