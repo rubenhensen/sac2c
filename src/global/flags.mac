@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/23 17:54:05  cg
+ * Added default values.
+ *
  * Revision 1.1  2004/11/23 17:34:23  cg
  * Initial revision
  *
@@ -15,18 +18,23 @@
 #define TRACEflag(flag)
 #endif
 
-#define TRACE(flag) TRACEflag (flag)
+#ifndef TRACEdefault
+#define TRACEdefault(default)
+#endif
 
-TRACE (fun)
-TRACE (prf)
-TRACE (ref)
-TRACE (mem)
-TRACE (wl)
-TRACE (aa)
-TRACE (mt)
-TRACE (cenv)
+#define TRACE(flag) TRACEflag (flag) TRACEdefault (default)
+
+TRACE (fun, FALSE)
+TRACE (prf, FALSE)
+TRACE (ref, FALSE)
+TRACE (mem, FALSE)
+TRACE (wl, FALSE)
+TRACE (aa, FALSE)
+TRACE (mt, FALSE)
+TRACE (cenv, FALSE)
 
 #undef TRACEflag
+#undef TRACEdefault
 #undef TRACE
 
 /*************************************************************/
@@ -35,21 +43,26 @@ TRACE (cenv)
  * Cache simulation flags
  */
 
-#ifndef CACHESIMflag
-#define CACHESIMflag(flag)
+#ifndef CSflag
+#define CSflag(flag)
 #endif
 
-#define CACHESIM(flag) CACHESIMflag (flag)
+#ifndef CSdefault
+#define CSdefault(default)
+#endif
 
-CACHESIM (simple) /* was YES */
-CACHESIM (advanced)
-CACHESIM (file)
-CACHESIM (pipe)
-CACHESIM (immediate)
-CACHESIM (block)
+#define CS(flag, default) CSflag (flag) CSdefault (default)
 
-#undef CACHESIMflag
-#undef CACHESIM
+CS (simple, FALSE) /* was YES */
+CS (advanced, FALSE)
+CS (file, FALSE)
+CS (pipe, FALSE)
+CS (immediate, FALSE)
+CS (block, FALSE)
+
+#undef CSflag
+#undef CSdefault
+#undef CS
 
 /*************************************************************/
 
@@ -57,20 +70,25 @@ CACHESIM (block)
  * Runtime check flags
  */
 
-#ifndef RUNTIMECHECKflag
-#define RUNTIMECHECKflag(flag)
+#ifndef RTCflag
+#define RTCflag(flag)
 #endif
 
-#define RUNTIMECHECK(flag) RUNTIMECHECKflag (flag)
+#ifndef RTCdefault
+#define RTCdefault(default)
+#endif
 
-RUNTIMECHECK (boundary)
-RUNTIMECHECK (type)
-RUNTIMECHECK (malloc)
-RUNTIMECHECK (errno)
-RUNTIMECHECK (heap)
+#define RTC(flag, default) RTCflag (flag) RTCdefault (default)
 
-#undef RUNTIMECHECKflag
-#undef RUNTIMECHECK
+RTC (boundary, FALSE)
+RTC (type, FALSE)
+RTC (malloc, FALSE)
+RTC (errno, FALSE)
+RTC (heap, FALSE)
+
+#undef RTCflag
+#undef RTCdefault
+#undef RTC
 
 /*************************************************************/
 
@@ -78,23 +96,28 @@ RUNTIMECHECK (heap)
  * Intrinsic array operations flags
  */
 
-#ifndef INTRINSICflag
-#define INTRINSICflag(flag)
+#ifndef INTRflag
+#define INTRflag(flag)
 #endif
 
-#define INTRINSIC(flag) INTRINSICflag (flag)
+#ifndef INTRdefault
+#define INTRdefault(default)
+#endif
 
-INTRINSIC (add)
-INTRINSIC (sub)
-INTRINSIC (mul)
-INTRINSIC (div)
-INTRINSIC (to)
-INTRINSIC (take)
-INTRINSIC (drop)
-INTRINSIC (rotate) /* was ROT */
-INTRINSIC (cat)
-INTRINSIC (sel)
-INTRINSIC (modarray) /* was MODA */
+#define INTR(flag, default) INTRflag (flag) INTRdefault (default)
 
-#undef INTRINSICflag
-#undef INTRINSIC
+INTR (add, FALSE)
+INTR (sub, FALSE)
+INTR (mul, FALSE)
+INTR (div, FALSE)
+INTR (to, FALSE)
+INTR (take, FALSE)
+INTR (drop, FALSE)
+INTR (rotate, FALSE) /* was ROT */
+INTR (cat, FALSE)
+INTR (sel, FALSE)
+INTR (modarray, FALSE) /* was MODA */
+
+#undef INTRflag
+#undef INTRdefault
+#undef INTR
