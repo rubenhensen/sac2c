@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.77  2000/07/24 16:41:18  dkr
+ * superfluous 'line' parameter of ICMs for array-prfs removed
+ *
  * Revision 2.76  2000/07/21 11:26:03  jhs
  * Added CreateIcmMT2_FUN_DEC.
  * Building RECEIVE/BARRIER combination around functions lifted
@@ -2893,8 +2896,8 @@ COMPVardec (node *arg_node, node *arg_info)
 node *
 COMPPrfModarray (node *arg_node, node *arg_info)
 {
-    node *res, *length, *res_ref, *type_id_node, *dim_res, *line, *first_assign,
-      *next_assign, *icm_arg, *old_arg_node, *last_assign;
+    node *res, *length, *res_ref, *type_id_node, *dim_res, *first_assign, *next_assign,
+      *icm_arg, *old_arg_node, *last_assign;
     node *arg1 = PRF_ARG1 (arg_node);
     node *arg2 = PRF_ARG2 (arg_node);
     node *arg3 = PRF_ARG3 (arg_node);
@@ -2918,9 +2921,6 @@ COMPPrfModarray (node *arg_node, node *arg_info)
     /* store refcount of res as N_num */
     res_ref = MakeNum (IDS_REFCNT (INFO_COMP_LASTIDS (arg_info)));
 
-    /* store line of prf function */
-    line = MakeNum (NODE_LINE (arg_node));
-
     if (NODE_TYPE (arg2) == N_array) {
         /* index is constant! */
         if (NODE_TYPE (arg3) == N_array) {
@@ -2938,9 +2938,8 @@ COMPPrfModarray (node *arg_node, node *arg_info)
                     icm_name = "ND_PRF_MODARRAY_AxCxA";
                 }
 
-                BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), icm_name, line,
-                               type_id_node);
-                MAKE_NEXT_ICM_ARG (icm_arg, dim_res);
+                BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), icm_name, type_id_node,
+                               dim_res);
                 MAKE_NEXT_ICM_ARG (icm_arg, res);
                 MAKE_NEXT_ICM_ARG (icm_arg, arg1);
                 MAKE_NEXT_ICM_ARG (icm_arg, arg3);
@@ -2955,9 +2954,8 @@ COMPPrfModarray (node *arg_node, node *arg_info)
                     icm_name = "ND_PRF_MODARRAY_AxCxS";
                 }
 
-                BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), icm_name, line,
-                               type_id_node);
-                MAKE_NEXT_ICM_ARG (icm_arg, dim_res);
+                BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), icm_name, type_id_node,
+                               dim_res);
                 MAKE_NEXT_ICM_ARG (icm_arg, res);
                 MAKE_NEXT_ICM_ARG (icm_arg, arg1);
                 MAKE_NEXT_ICM_ARG (icm_arg, arg3);
@@ -2990,9 +2988,8 @@ COMPPrfModarray (node *arg_node, node *arg_info)
                     icm_name = "ND_PRF_MODARRAY_AxVxA";
                 }
 
-                BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), icm_name, line,
-                               type_id_node);
-                MAKE_NEXT_ICM_ARG (icm_arg, dim_res);
+                BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), icm_name, type_id_node,
+                               dim_res);
                 MAKE_NEXT_ICM_ARG (icm_arg, res);
                 MAKE_NEXT_ICM_ARG (icm_arg, arg1);
                 MAKE_NEXT_ICM_ARG (icm_arg, arg3);
@@ -3007,9 +3004,8 @@ COMPPrfModarray (node *arg_node, node *arg_info)
                     icm_name = "ND_PRF_MODARRAY_AxVxS";
                 }
 
-                BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), icm_name, line,
-                               type_id_node);
-                MAKE_NEXT_ICM_ARG (icm_arg, dim_res);
+                BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), icm_name, type_id_node,
+                               dim_res);
                 MAKE_NEXT_ICM_ARG (icm_arg, res);
                 MAKE_NEXT_ICM_ARG (icm_arg, arg1);
                 MAKE_NEXT_ICM_ARG (icm_arg, arg3);
@@ -3048,7 +3044,7 @@ COMPPrfModarray (node *arg_node, node *arg_info)
 node *
 COMPIdxModarray (node *arg_node, node *arg_info)
 {
-    node *res, *res_ref, *type_id_node, *line, *first_assign, *next_assign, *icm_arg,
+    node *res, *res_ref, *type_id_node, *first_assign, *next_assign, *icm_arg,
       *old_arg_node, *last_assign;
     simpletype s_type;
     node *arg1 = PRF_ARG1 (arg_node);
@@ -3067,9 +3063,6 @@ COMPIdxModarray (node *arg_node, node *arg_info)
     /* store refcount of res as N_num */
     res_ref = MakeNum (IDS_REFCNT (INFO_COMP_LASTIDS (arg_info)));
 
-    /* store line of prf function */
-    line = MakeNum (NODE_LINE (arg_node));
-
     if (NODE_TYPE (arg3) == N_array) { /* value is constant! */
         DBUG_ASSERT (0, "sorry compilation of ND_IDX_MODARRAY_AxVxC not yet done");
     } else {
@@ -3083,8 +3076,7 @@ COMPIdxModarray (node *arg_node, node *arg_info)
                 icm_name = "ND_IDX_MODARRAY_AxVxA";
             }
 
-            BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), icm_name, line, type_id_node);
-            MAKE_NEXT_ICM_ARG (icm_arg, res);
+            BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), icm_name, type_id_node, res);
             MAKE_NEXT_ICM_ARG (icm_arg, arg1);
             MAKE_NEXT_ICM_ARG (icm_arg, arg2);
             MAKE_NEXT_ICM_ARG (icm_arg, arg3);
@@ -3098,8 +3090,7 @@ COMPIdxModarray (node *arg_node, node *arg_info)
             else
                 icm_name = "ND_IDX_MODARRAY_AxVxS";
 
-            BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), icm_name, line, type_id_node);
-            MAKE_NEXT_ICM_ARG (icm_arg, res);
+            BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), icm_name, type_id_node, res);
             MAKE_NEXT_ICM_ARG (icm_arg, arg1);
             MAKE_NEXT_ICM_ARG (icm_arg, arg2);
             MAKE_NEXT_ICM_ARG (icm_arg, arg3);
@@ -3715,12 +3706,11 @@ COMPPrf (node *arg_node, node *arg_info)
              * store arguments and result (res contains refcount and pointer to
              * vardec ( don't free INFO_COMP_LASTIDS(arg_info) !!! )
              */
-            node *line, *arg1_length;
+            node *arg1_length;
 
             arg1 = arg_node->node[0]->node[0];
             arg2 = arg_node->node[0]->node[1]->node[0];
             res = MakeId3 (INFO_COMP_LASTIDS (arg_info));
-            line = MakeNum (NODE_LINE (arg_node));
 
             last_assign = NEXT_ASSIGN (arg_info);
 
@@ -3747,14 +3737,12 @@ COMPPrf (node *arg_node, node *arg_info)
                 if (N_id == NODE_TYPE (arg2)) {
                     if (N_id == NODE_TYPE (arg1)) {
                         BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), "ND_KD_PSI_VxA_S",
-                                       line, arg2);
-                        MAKE_NEXT_ICM_ARG (icm_arg, res);
+                                       arg2, res);
                         MAKE_NEXT_ICM_ARG (icm_arg, arg1_length);
                         MAKE_NEXT_ICM_ARG (icm_arg, arg1);
                     } else {
                         BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), "ND_KD_PSI_CxA_S",
-                                       line, arg2);
-                        MAKE_NEXT_ICM_ARG (icm_arg, res);
+                                       arg2, res);
                         MAKE_NEXT_ICM_ARG (icm_arg, arg1_length);
                         icm_arg->node[1] = arg1->node[0];
                         /*
@@ -3781,10 +3769,10 @@ COMPPrf (node *arg_node, node *arg_info)
                     tmp_rc = MakeNum (0);
                     CREATE_TMP_CONST_ARRAY (arg2, tmp_rc);
                     if (N_id == NODE_TYPE (arg1)) {
-                        CREATE_5_ARY_ICM (next_assign, "ND_KD_PSI_VxA_S", line, arg2, res,
+                        CREATE_4_ARY_ICM (next_assign, "ND_KD_PSI_VxA_S", arg2, res,
                                           arg1_length, arg1);
                     } else {
-                        CREATE_4_ARY_ICM (next_assign, "ND_KD_PSI_CxA_S", line, arg2, res,
+                        CREATE_3_ARY_ICM (next_assign, "ND_KD_PSI_CxA_S", arg2, res,
                                           arg1_length);
                         icm_arg->node[1] = arg1->node[0];
                         FREE (arg1);
@@ -3807,11 +3795,11 @@ COMPPrf (node *arg_node, node *arg_info)
                 SET_VARS_FOR_MORE_ICMS;
 
                 if (N_id == NODE_TYPE (arg1)) {
-                    CREATE_6_ARY_ICM (next_assign, "ND_KD_PSI_VxA_A", line, dim_node,
-                                      arg2, res, arg1_length, arg1);
+                    CREATE_5_ARY_ICM (next_assign, "ND_KD_PSI_VxA_A", dim_node, arg2, res,
+                                      arg1_length, arg1);
                 } else {
-                    CREATE_5_ARY_ICM (next_assign, "ND_KD_PSI_CxA_A", line, dim_node,
-                                      arg2, res, arg1_length);
+                    CREATE_4_ARY_ICM (next_assign, "ND_KD_PSI_CxA_A", dim_node, arg2, res,
+                                      arg1_length);
                     icm_arg->node[1] = arg1->node[0];
                     FREE (arg1);
                 }
