@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.46  1995/02/09 09:01:56  hw
+ * Revision 1.47  1995/02/13 16:41:21  sbs
+ * bug in DBUG-PRINT of N_prf psi fixed.
+ *
+ * Revision 1.46  1995/02/09  09:01:56  hw
  * bug fixed in creation of cat, rotate & psi
  *
  * Revision 1.45  1995/02/02  14:57:46  hw
@@ -988,8 +991,7 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
            $$->lineno=$1->lineno;
            
            DBUG_PRINT("GENTREE",
-                      ("%s (%s)"P_FORMAT": %s"P_FORMAT", %s"P_FORMAT
-                       ", %s " P_FORMAT,
+                      ("%s (%s)"P_FORMAT": %s"P_FORMAT", %s"P_FORMAT,
                        mdb_nodetype[ $$->nodetype], mdb_prf[$$->info.prf],$$, 
                        mdb_nodetype[$$->node[0]->node[0]->nodetype], 
                        $$->node[0]->node[0],
