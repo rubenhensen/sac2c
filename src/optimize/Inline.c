@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/06/23 13:48:10  asi
+ * Revision 1.6  1995/06/26 09:26:22  asi
+ * inlineing in functions with inline tag disabled
+ *
+ * Revision 1.5  1995/06/23  13:48:10  asi
  * parameter added to functioncall DuplicateTypes in INLvar
  *
  * Revision 1.4  1995/06/08  10:03:44  asi
@@ -40,7 +43,6 @@
 #include "optimize.h"
 
 #define FIRST_FUNC arg_info->node[0]
-#define CURNT_FUNC arg_info->node[1]
 
 #define INLINE_PREFIX "__inl"
 #define INLINE_PREFIX_LENGTH 5
@@ -99,7 +101,7 @@ INLmodul (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  : RestoreInlineNo
+ *  functionname  : InlineNo
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -111,23 +113,28 @@ INLmodul (node *arg_node, node *arg_info)
  *
  */
 void
-RestoreInlineNo (node *first_func, node *curnt_func)
+InlineNo (node *first)
 {
     node *fun_node;
-    int no;
 
-    DBUG_ENTER ("RestoreInlineNo");
+    DBUG_ENTER ("InlineNo");
 
-    no = 1;
-    fun_node = first_func;
+    fun_node = first;
     while (NULL != fun_node) {
-        if (fun_node == curnt_func)
-            no = inlnum;
         if (fun_node->flag)
-            fun_node->refcnt = no;
+            fun_node->refcnt = inlnum;
         fun_node = fun_node->node[1];
     }
     DBUG_VOID_RETURN;
+}
+
+node *
+FindReturn (node *arg_node)
+{
+    DBUG_ENTER ("FindReturn");
+    while (NULL != arg_node->node[1])
+        arg_node = arg_node->node[1];
+    DBUG_RETURN (arg_node->node[0]);
 }
 
 /*
@@ -147,19 +154,67 @@ node *
 INLfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INLfundef");
-    if (NULL != arg_node->node[0]) {
-        DBUG_PRINT ("INL", ("Trav function %s\n", arg_node->info.types->id));
-        CURNT_FUNC = arg_node;
-        RestoreInlineNo (FIRST_FUNC, CURNT_FUNC);
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+
+#if 0 /* inline in functions with inline tag */
+
+  if (NULL!=arg_node->node[0])
+    {
+    DBUG_PRINT("INL",("*** Trav function %s", arg_node->info.types->id));
+    InlineNo(FIRST_FUNC);
+    
+    if (0!=arg_node->flag)
+      {
+      DUPTYPE = NORMAL;
+      arg_node->node[0]->node[2] = DupTree(arg_node->node[0]->node[0], arg_info);
+      DUPTYPE = INLINE;
+      arg_node->node[0]->node[2] = Trav(arg_node->node[0]->node[2], arg_info);
+      }
+    else
+      {
+      arg_node->node[0]->node[0] = Trav(arg_node->node[0]->node[0], arg_info);
+      }
+    
+    arg_node->node[0]->node[1] = AppendNodeChain(0, TYPES, arg_node->node[0]->node[1]);
+    TYPES = NULL;
+    
+    if (NULL!=arg_node->node[1])
+      arg_node->node[1] = Trav(arg_node->node[1], arg_info);
+    
+    arg_node->refcnt=0;
+    
+    if (0!=arg_node->flag)
+      {
+      FreeTree(arg_node->node[0]->node[0]);
+      arg_node->node[0]->node[0] = arg_node->node[0]->node[2];
+      arg_node->node[0]->node[2] = NULL;
+      arg_node->node[3] = FindReturn(arg_node->node[0]->node[0]);
+      }
+
+#else /* do not inline in functions with inline tag */
+
+    if ((NULL != arg_node->node[0]) && (0 == arg_node->flag)) {
+        DBUG_PRINT ("INL", ("*** Trav function %s", arg_node->info.types->id));
+        InlineNo (FIRST_FUNC);
+
+        arg_node->node[0]->node[0] = Trav (arg_node->node[0]->node[0], arg_info);
+
         arg_node->node[0]->node[1]
           = AppendNodeChain (0, TYPES, arg_node->node[0]->node[1]);
         TYPES = NULL;
-    }
+
+        if (NULL != arg_node->node[1])
+            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+
+        arg_node->refcnt = 0;
+
+#endif
+}
+else
+{
     if (NULL != arg_node->node[1])
         arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-    arg_node->refcnt = 0;
-    DBUG_RETURN (arg_node);
+}
+DBUG_RETURN (arg_node);
 }
 
 /*
@@ -235,11 +290,9 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
     char *new_name;
 
     DBUG_ENTER ("DoInline");
-    DBUG_PRINT ("INL", ("Inlineing function %s\n", ap_node->node[1]->info.types->id));
+    DBUG_PRINT ("INL", ("Inlineing function %s", ap_node->node[1]->info.types->id));
 
     inl_fun++;
-    ap_node->node[1]->refcnt--;
-
     /*
      * Generate new variables
      */
@@ -326,20 +379,23 @@ INLassign (node *arg_node, node *arg_info)
                         ("Function call %s found in line %d with inline %d and to do %d",
                          node_behind->info.fun_name.id, arg_node->lineno,
                          node_behind->node[1]->flag, node_behind->node[1]->refcnt));
-            if (0 < node_behind->node[1]->refcnt) {
+            if (0 < node_behind->node[1]->refcnt)
                 inlined_nodes = DoInline (arg_node->node[0], node_behind, arg_info);
-            }
         }
     }
 
     if (NULL == inlined_nodes) {
+        /* Trav if-then-else and loops */
         if (1 <= arg_node->nnode)
             arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+        /* Trav next assign */
         if (2 <= arg_node->nnode)
             arg_node->node[1] = Trav (arg_node->node[1], arg_info);
     } else {
+        node_behind->node[1]->refcnt--;
         inlined_nodes = Trav (inlined_nodes, arg_info);
-        RestoreInlineNo (FIRST_FUNC, CURNT_FUNC);
+        node_behind->node[1]->refcnt++;
+
         if (2 <= arg_node->nnode)
             arg_node->node[1] = Trav (arg_node->node[1], arg_info);
         inlined_nodes = AppendNodeChain (1, inlined_nodes, arg_node->node[1]);
@@ -395,7 +451,6 @@ SearchDecl (char *name, node *decl_node)
     node *found = NULL;
 
     DBUG_ENTER ("SearchDecl");
-    DBUG_PRINT ("INL", ("Searching decleration for %s", name));
     while (NULL != decl_node) {
         if (!strcmp (name, decl_node->info.types->id)) {
             found = decl_node;
@@ -427,7 +482,6 @@ INLvar (node *arg_node, node *arg_info)
     char *new_name;
 
     DBUG_ENTER ("INLvar");
-    DBUG_PRINT ("INL", ("Old decleration for %s", arg_node->info.types->id));
 
     new_name = RenameInlinedVar (arg_node->info.types->id);
     if (NULL == SearchDecl (new_name, TYPES)) {
@@ -436,9 +490,7 @@ INLvar (node *arg_node, node *arg_info)
         FREE (new_vardec->info.types->id);
         new_vardec->info.types->id = new_name;
         TYPES = AppendNodeChain (0, new_vardec, TYPES);
-        DBUG_PRINT ("INL", ("New decleration for %s generated", new_name));
     } else {
-        DBUG_PRINT ("INL", ("New decleration for %s already exists", new_name));
         FREE (new_name);
     }
     if (NULL != arg_node->node[0])
