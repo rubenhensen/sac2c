@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.120  1996/09/11 06:16:49  cg
+ * Revision 1.121  1997/03/19 13:42:42  cg
+ * converted to single tmp directory tmp_dirname instaed of build_dirname
+ * and store_dirname
+ *
+ * Revision 1.120  1996/09/11  06:16:49  cg
  * Different link styles for modules added.
  * Now, the default is to generate one file for each function and to create
  * an archive using ar afterwards.
@@ -594,7 +598,7 @@ PrintModul (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
     if (print_separate) {
-        outfile = WriteOpen ("%sheader.h", store_dirname);
+        outfile = WriteOpen ("%s/header.h", tmp_dirname);
         PrintFileHeader ();
 
         if (NULL != arg_node->node[1]) {
@@ -616,7 +620,7 @@ PrintModul (node *arg_node, node *arg_info)
 
         fclose (outfile);
 
-        outfile = WriteOpen ("%sglobals.c", store_dirname);
+        outfile = WriteOpen ("%s/globals.c", tmp_dirname);
         fprintf (outfile, "#include \"header.h\"\n");
 
         if (NULL != arg_node->node[3]) {
@@ -857,7 +861,7 @@ PrintFundef (node *arg_node, node *arg_info)
 
         if (arg_node->node[0] != NULL) {
             if (print_separate) {
-                outfile = WriteOpen ("%sfun%d.c", store_dirname, function_counter);
+                outfile = WriteOpen ("%s/fun%d.c", tmp_dirname, function_counter);
 
                 fprintf (outfile, "#include \"header.h\"\n");
             }
@@ -1701,7 +1705,7 @@ Print (node *arg_node)
          * If a full compilation is performed, the object of the compilation
          * is a module/class implementation and the link style is 1 or 2,
          * then all functions are printed into separate files into the
-         * tmp directory store_dir.
+         * tmp directory tmp_dirname.
          * In this case no C-file is generated in the current directory.
          */
     } else {
