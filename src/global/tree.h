@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.55  1995/08/15 16:52:11  hw
+ * Revision 1.56  1995/08/21 13:09:30  cg
+ * new type charlist added.
+ * new entries ST_prototype, ST_duplicate, ST_inline_import added to statustype.
+ *
+ * Revision 1.55  1995/08/15  16:52:11  hw
  * new status ST_duplicted_fun & ST_artificial_fun inserted (they are used to
  * tag functions while typechecking)
  *
@@ -214,8 +218,13 @@ typedef enum {
     ST_duplicted_fun,      /* function is duplicated while typecheking */
     ST_artificial_fun,     /* function is only generated for temporary */
                            /* typechecking                           */
-    ST_artificial          /* unique type inserted during            */
+    ST_artificial,         /* unique type inserted during            */
                            /* signature expansion                    */
+    ST_prototype,          /* function on array that is not type-    */
+                           /* checked so far.                        */
+    ST_duplicate,          /* duplicate derived from prototype       */
+    ST_inline_import       /* inline function imported from other    */
+                           /* module                                 */
 } statustype;
 typedef enum { VECT, IDX } useflag;
 
@@ -228,6 +237,11 @@ typedef enum {
     F_classdec,
     F_extclassdec
 } file_type;
+
+typedef struct CHARLIST {
+    char *name;
+    struct CHARLIST *next;
+} charlist;
 
 typedef char id;
 
