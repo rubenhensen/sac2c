@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/02/08 22:29:21  mwe
+ * doxygen comments added
+ *
  * Revision 1.3  2005/02/03 18:28:22  mwe
  * counter added
  * simplification-rules improved
@@ -79,6 +82,17 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/**<!--***********************************************************************-->
+ *
+ * @fn node *SISIdoSignatureSimplification(node *module)
+ *
+ * @brief starting point of traversal
+ *
+ * @param module module to be traversed
+ *
+ * @result
+ *
+ ******************************************************************************/
 node *
 SISIdoSignatureSimplification (node *module)
 {
@@ -96,6 +110,18 @@ SISIdoSignatureSimplification (node *module)
     DBUG_RETURN (module);
 }
 
+/**<!--***********************************************************************-->
+ *
+ * @fn node *SISImodule(node *arg_node, info *arg_info)
+ *
+ * @brief traverses in funs
+ *
+ * @param arg_node node to be traversed
+ * @param arg_info
+ *
+ * @result
+ *
+ ******************************************************************************/
 node *
 SISImodule (node *arg_node, info *arg_info)
 {
@@ -108,6 +134,18 @@ SISImodule (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**<!--***********************************************************************-->
+ *
+ * @fn node *SISIfundef(node *arg_node, info *arg_info)
+ *
+ * @brief top-down: traverse body, bottom-up: traverse rets and args
+ *
+ * @param arg_node fundef to be traversed
+ * @param arg_info
+ *
+ * @result
+ *
+ ******************************************************************************/
 node *
 SISIfundef (node *arg_node, info *arg_info)
 {
@@ -127,23 +165,36 @@ SISIfundef (node *arg_node, info *arg_info)
 
     if ((FUNDEF_RETS (arg_node) != NULL) && (!FUNDEF_ISLACFUN (arg_node))
         && (!ILIBstringCompare ("main", FUNDEF_NAME (arg_node)))
-        && (!ILIBstringCompare (MAIN_MOD_NAME, FUNDEF_MOD (arg_node)))) {
+        && (!ILIBstringCompare (MAIN_MOD_NAME, FUNDEF_MOD (arg_node)))
+        && (!FUNDEF_ISEXPORTED (arg_node)) && (FUNDEF_ISPROVIDED (arg_node))) {
         FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
     }
 
     if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_ARGS (arg_node) != NULL)
-        && (!FUNDEF_ISLACFUN (arg_node))) {
+        && (!FUNDEF_ISLACFUN (arg_node)) && (!FUNDEF_ISEXPORTED (arg_node))
+        && (!FUNDEF_ISPROVIDED (arg_node))) {
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
 }
 
-/*
- * remove scalar akv from args-chain, insert them in assignment chain
- * change array akv to array aks
- * we are not in a lac function
- */
+/**<!--***********************************************************************-->
+ *
+ * @fn node *SISIarg(node *arg_node, info *arg_info)
+ *
+ * @brief Move scalar akv-arguments from args-chain to vardec-chain
+ *    and create new assignment. Change non-scalar akv-args to aks-args.
+ *
+ *    Do not change signatures of exported or provided functions. Leave also
+ *    LAC-functions as they are.
+ *
+ * @param arg_node args-chain to be traversed
+ * @param arg_info
+ *
+ * @result
+ *
+ ******************************************************************************/
 node *
 SISIarg (node *arg_node, info *arg_info)
 {
@@ -203,13 +254,22 @@ SISIarg (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
- * set reference from arg_info to arg_node (used in args-chain)
- */
+/**<!--***********************************************************************-->
+ *
+ * @fn node *SISIblock(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node node to be traversed
+ * @param arg_info
+ *
+ * @result
+ *
+ ******************************************************************************/
 node *
 SISIblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SISIarg");
+    DBUG_ENTER ("SISIblock");
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
@@ -218,9 +278,19 @@ SISIblock (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
- * top-down: evaluate INSTR
- */
+/**<!--***********************************************************************-->
+ *
+ * @fn node *SISIassign(node *arg_node, info *arg_info)
+ *
+ * @brief top-down: traverse in assignments,
+ *        bottom-up: insert new assignments, remove marked assignments
+ *
+ * @param arg_node node to be traversed
+ * @param arg_info
+ *
+ * @result
+ *
+ ******************************************************************************/
 node *
 SISIassign (node *arg_node, info *arg_info)
 {
@@ -258,6 +328,18 @@ SISIassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**<!--***********************************************************************-->
+ *
+ * @fn node *SISIlet(node *arg_node, info *arg_info)
+ *
+ * @brief traverse first in rhs, then in lhs
+ *
+ * @param arg_node node to be traversed
+ * @param arg_info
+ *
+ * @result
+ *
+ ******************************************************************************/
 node *
 SISIlet (node *arg_node, info *arg_info)
 {
@@ -277,6 +359,19 @@ SISIlet (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**<!--***********************************************************************-->
+ *
+ * @fn node *SISIap(node *arg_node, info *arg_info)
+ *
+ * @brief check fundef-args for scalar akv-args,
+ *      remove corresponding exprs from args-chain
+ *
+ * @param arg_node node to be traversed
+ * @param arg_info
+ *
+ * @result
+ *
+ ******************************************************************************/
 node *
 SISIap (node *arg_node, info *arg_info)
 {
@@ -285,7 +380,8 @@ SISIap (node *arg_node, info *arg_info)
 
     fundef = AP_FUNDEF (arg_node);
 
-    if ((!FUNDEF_ISLACFUN (fundef))) {
+    if ((!FUNDEF_ISLACFUN (fundef)) && (!FUNDEF_ISPROVIDED (fundef))
+        && (!FUNDEF_ISEXPORTED (fundef))) {
 
         INFO_SISI_APFUNRETS (arg_info) = FUNDEF_RETS (AP_FUNDEF (arg_node));
         fun_args = FUNDEF_ARGS (fundef);
@@ -327,9 +423,18 @@ SISIap (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
- * remove ids with akv-types from chain
- */
+/**<!--***********************************************************************-->
+ *
+ * @fn node *SISIids(node *arg_node, info *arg_info)
+ *
+ * @brief removes ids-nodes with scalar akv-types from ids-chain
+ *
+ * @param arg_node node to be traversed
+ * @param arg_info
+ *
+ * @result
+ *
+ ******************************************************************************/
 node *
 SISIids (node *arg_node, info *arg_info)
 {
@@ -352,9 +457,10 @@ SISIids (node *arg_node, info *arg_info)
      * remove bottom-up ids
      */
 
-    if (TYisAKV (RET_TYPE (ret))) {
+    if ((TYisAKV (RET_TYPE (ret))) && (0 == TYgetDim (RET_TYPE (ret)))) {
         new_co = TYgetValue (RET_TYPE (ret));
-    } else if (TYisAKV (AVIS_TYPE (IDS_AVIS (arg_node)))) {
+    } else if ((TYisAKV (AVIS_TYPE (IDS_AVIS (arg_node))))
+               && (0 == TYgetDim (AVIS_TYPE (IDS_AVIS (arg_node))))) {
         new_co = TYgetValue (AVIS_TYPE (IDS_AVIS (arg_node)));
     } else {
         /*
@@ -391,9 +497,18 @@ SISIids (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
- * remove exprs with akv-types from chain
- */
+/**<!--***********************************************************************-->
+ *
+ * @fn node *SISIreturn(node *arg_node, info *arg_info)
+ *
+ * @brief traverses in exprs-chain
+ *
+ * @param arg_node node to be traversed
+ * @param arg_info
+ *
+ * @result
+ *
+ ******************************************************************************/
 node *
 SISIreturn (node *arg_node, info *arg_info)
 {
@@ -401,8 +516,9 @@ SISIreturn (node *arg_node, info *arg_info)
 
     if ((!FUNDEF_ISLACFUN (INFO_SISI_FUNDEF (arg_info)))
         && (!ILIBstringCompare ("main", FUNDEF_NAME (INFO_SISI_FUNDEF (arg_info))))
-        && (!ILIBstringCompare (MAIN_MOD_NAME,
-                                FUNDEF_MOD (INFO_SISI_FUNDEF (arg_info))))) {
+        && (!ILIBstringCompare (MAIN_MOD_NAME, FUNDEF_MOD (INFO_SISI_FUNDEF (arg_info))))
+        && (!FUNDEF_ISEXPORTED (INFO_SISI_FUNDEF (arg_info)))
+        && (!FUNDEF_ISPROVIDED (INFO_SISI_FUNDEF (arg_info)))) {
 
         INFO_SISI_RETURNEXPRS (arg_info) = TRUE;
 
@@ -410,17 +526,23 @@ SISIreturn (node *arg_node, info *arg_info)
             RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
         }
         INFO_SISI_RETURNEXPRS (arg_info) = FALSE;
-
-        if (RETURN_EXPRS (arg_node) == NULL) {
-            /*
-             * TODO: create void node?
-             */
-        }
     }
 
     DBUG_RETURN (arg_node);
 }
 
+/**<!--***********************************************************************-->
+ *
+ * @fn node *SISIret(node *arg_node, info *arg_info)
+ *
+ * @brief remove scalar akv-rets
+ *
+ * @param arg_node node to be traversed
+ * @param arg_info
+ *
+ * @result
+ *
+ ******************************************************************************/
 node *
 SISIret (node *arg_node, info *arg_info)
 {
@@ -433,7 +555,7 @@ SISIret (node *arg_node, info *arg_info)
      * remove bottom-up rets
      */
 
-    if (TYisAKV (RET_TYPE (arg_node))) {
+    if ((TYisAKV (RET_TYPE (arg_node))) && (0 == TYgetDim (RET_TYPE (arg_node)))) {
         node *tmp;
         tmp = RET_NEXT (arg_node);
         RET_NEXT (arg_node) = NULL;
@@ -444,6 +566,19 @@ SISIret (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**<!--***********************************************************************-->
+ *
+ * @fn node *SISIexprs(node *arg_node, info *arg_info)
+ *
+ * @brief top-down: mark exprs to be removed,
+ *        bottom-up: remove marked exprs
+ *
+ * @param arg_node node to be traversed
+ * @param arg_info
+ *
+ * @result
+ *
+ ******************************************************************************/
 node *
 SISIexprs (node *arg_node, info *arg_info)
 {
@@ -475,12 +610,25 @@ SISIexprs (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**<!--***********************************************************************-->
+ *
+ * @fn node *SISIid(node *arg_node, info *arg_info)
+ *
+ * @brief sets flag if id is scalar akv-type
+ *
+ * @param arg_node node to be traversed
+ * @param arg_info
+ *
+ * @result
+ *
+ ******************************************************************************/
 node *
 SISIid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SISIid");
 
-    if (TYisAKV (AVIS_TYPE (ID_AVIS (arg_node)))) {
+    if ((TYisAKV (AVIS_TYPE (ID_AVIS (arg_node))))
+        && (0 == TYgetDim (AVIS_TYPE (ID_AVIS (arg_node))))) {
         INFO_SISI_REMOVEEXPRS (arg_info) = TRUE;
     }
 
