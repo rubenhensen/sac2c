@@ -754,6 +754,8 @@
       <traversal id="TUP" name="Type Upgrade" default="sons" include="type_upgrade.h" >
 	<travuser>
 	  <node name="Assign" />
+          <node name="Fundef" />
+          <node name="Funcond" />
 	  <node name="Block" />
 	  <node name="With" />
 	  <node name="Let" />
