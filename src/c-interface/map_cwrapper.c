@@ -1,3 +1,7 @@
+/*
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,7 +40,7 @@ MCWmodul (node *arg_node, node *arg_info)
 
     if (MODUL_FUNS (arg_node) != NULL) {
         /* if there are some fundefs, traverse them */
-        NOTE (("build up mapper...\n"));
+        NOTE (("analyse overloading of sac-functions...\n"));
         INFO_MCW_MODUL (arg_info) = arg_node;
 
         /* the modul node is needed to hang the wrapperchain in N_module */
