@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.144  1998/04/24 17:19:27  dkr
+ * changed attributes/macros for N_spmd, N_sync
+ *
  * Revision 1.143  1998/04/24 01:14:53  dkr
  * added N_sync
  *
@@ -2245,15 +2248,12 @@ extern node *MakeInfo ();
 #define INFO_EXPORTFUNS(n) ((nodelist *)(n->node[2]))
 
 /* spmdregions */
-#define INFO_SPMD_FUNDEF(n) (n->node[1])
-#define INFO_SPMD_LOCALUSED(n) (n->mask[1])
-#define INFO_SPMD_LOCALDEF(n) (n->mask[0])
+#define INFO_SPMD_FUNDEF(n) (n->node[0])
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
 #define INFO_PREC_FUNDEF(n) (n->node[1])
 #define INFO_PREC_CNT_ARTIFICIAL(n) (n->lineno)
-#define INFO_PREC_LETIDS(n) (n->info.ids)
 
 /* compile */
 #define INFO_COMP_LASTASSIGN(n) (n->node[0])
@@ -2312,17 +2312,16 @@ extern node *MakeInfo ();
  ***
  ***  permanent attributes:
  ***
- ***    node*      IN          (0)  (N_args)
- ***    node*      OUT         (0)  (N_args)
- ***    node*      INOUT       (0)  (N_args)
+ ***    ids*       IN          (0)
+ ***    ids*       OUT         (0)
+ ***    ids*       INOUT       (0)
+ ***    ids*       LOCAL       (0)
  ***
  ***  temporary attributes:
  ***
  ***    long*      MASK[x]                        (spmdregions -> )
  ***
  ***    node*      FUNDEC      (0)  (N_fundef)    (precompile -> compile ! )
- ***    node*      VARDEC      (0)  (N_vardec)    (precompile -> compile ! )
- ***    node*      AP_LET      (0)  (N_let)       (precompile -> compile ! )
  ***
  ***/
 
@@ -2330,17 +2329,16 @@ extern node *MakeSPMD (node *region);
 
 #define SPMD_REGION(n) (n->node[0])
 
-#define SPMD_IN(n) (n->node[1])
-#define SPMD_OUT(n) (n->node[2])
-#define SPMD_INOUT(n) (n->node[3])
+#define SPMD_IN(n) ((ids *)n->node[1])
+#define SPMD_OUT(n) ((ids *)n->node[2])
+#define SPMD_INOUT(n) ((ids *)n->node[3])
+#define SPMD_LOCAL(n) ((ids *)n->node[4])
 
 #define SPMD_MASK(n, x) (n->mask[x])
 #define SPMD_USEDVARS(n) (SPMD_MASK (n, 1))
 #define SPMD_DEFVARS(n) (SPMD_MASK (n, 0))
 
-#define SPMD_FUNDEC(n) (n->node[4])
-#define SPMD_VARDEC(n) (n->node[5])
-#define SPMD_AP_LET(n) (n->node[5])
+#define SPMD_FUNDEC(n) (n->node[5])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2353,7 +2351,7 @@ extern node *MakeSPMD (node *region);
  ***
  ***  permanent attributes:
  ***
- ***    node*      INOUT       (0)  (N_args)
+ ***    ids*       INOUT       (0)
  ***
  ***  temporary attributes:
  ***
@@ -2365,7 +2363,7 @@ extern node *MakeSync (node *region);
 
 #define SYNC_REGION(n) (n->node[0])
 
-#define SYNC_INOUT(n) (n->node[1])
+#define SYNC_INOUT(n) ((ids *)n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2386,7 +2384,6 @@ extern node *MakeSync (node *region);
  ***
  ***  temporary attributes:
  ***
- ***    long*  MASK                    (optimize -> )
  ***    node*  PRAGMA    (N_pragma)    (scanparse -> precompile ! )
  ***    int    REFERENCED              (wli -> wlf !!
  ***    int    REFERENCED_FOLD         (wli -> wlf !!)
@@ -2401,7 +2398,6 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_PART(n) (n->node[0])
 #define NWITH_CODE(n) (n->node[1])
 #define NWITH_WITHOP(n) (n->node[2])
-#define NWITH_MASK(n, x) (n->mask[x])
 #define NWITH_PRAGMA(n) (n->node[3])
 
 #define NWITH_PARTS(n) (((wl_info *)(n->info2))->parts)
