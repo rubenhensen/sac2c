@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/01/25 13:47:06  dkr
+ * INFO_LAC2FUN_FUNS added
+ *
  * Revision 1.2  2000/01/24 18:21:51  jhs
  * Added some INFO macros for schedule_init.[ch].
  *
@@ -2612,6 +2615,7 @@ extern node *MakeInfo ();
 #define INFO_LAC2FUN_LOCAL(n) ((DFMmask_t) (n->dfmask[3]))
 #define INFO_LAC2FUN_NEEDED(n) ((DFMmask_t) (n->dfmask[4]))
 #define INFO_LAC2FUN_ISTRANS(n) (n->flag)
+#define INFO_LAC2FUN_FUNS(n) (n->node[0])
 
 /*--------------------------------------------------------------------------*/
 
