@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2001/04/26 17:10:08  dkr
+ * COMPCast reactivated
+ *
  * Revision 3.46  2001/04/26 12:28:25  dkr
  * GetExprsLength() renamed into CountExprs()
  *
@@ -5369,6 +5372,31 @@ COMPIcm (node *arg_node, node *arg_info)
     } else {
         DBUG_PRINT ("COMP", ("ICM not traversed: %s", ICM_NAME (arg_node)));
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *COMPCast( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Compiles a N_cast node: The cast is simply removed.
+ *
+ ******************************************************************************/
+
+node *
+COMPCast (node *arg_node, node *arg_info)
+{
+    node *tmp;
+
+    DBUG_ENTER ("COMPCast");
+
+    tmp = arg_node;
+    arg_node = Trav (CAST_EXPR (arg_node), arg_info);
+    CAST_EXPR (tmp) = NULL;
+    tmp = FreeTree (tmp);
 
     DBUG_RETURN (arg_node);
 }
