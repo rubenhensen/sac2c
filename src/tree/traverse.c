@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2000/12/15 18:25:15  dkr
+ * infer_dfms.h renamed into InferDFMs.h
+ *
  * Revision 3.4  2000/12/06 20:12:18  dkr
  * l2f_infer... renamed into infdfms_...
  * l2f_lift... renamed into l2f...
@@ -262,7 +265,7 @@
 #include "globals.h" /* needed for linenum only!!! */
 #include "new_typecheck.h"
 #include "multithread.h"
-#include "infer_dfms.h"
+#include "InferDFMs.h"
 #include "lac2fun.h"
 #include "cleanup_decls.h"
 #include "fun2lac.h"

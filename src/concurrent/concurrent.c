@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2000/12/15 18:24:54  dkr
+ * infer_dfms.h renamed into InferDFMs.h
+ *
  * Revision 3.3  2000/12/15 10:43:06  dkr
  * signature of InferDFMs() modified
  *
@@ -96,7 +99,7 @@
 #include "globals.h"
 #include "free.h"
 #include "Error.h"
-#include "infer_dfms.h"
+#include "InferDFMs.h"
 
 /******************************************************************************
  *

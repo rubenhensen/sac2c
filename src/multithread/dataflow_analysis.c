@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2000/12/15 18:24:44  dkr
+ * infer_dfms.h renamed into InferDFMs.h
+ *
  * Revision 3.4  2000/12/15 10:42:46  dkr
  * signature of InferDFMs() modified
  *
@@ -86,7 +89,7 @@
 #include "globals.h"
 #include "free.h"
 #include "DataFlowMask.h"
-#include "infer_dfms.h"
+#include "InferDFMs.h"
 
 #include "internal_lib.h"
 #include "multithread_lib.h"

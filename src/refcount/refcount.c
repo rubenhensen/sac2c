@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.7  2000/12/15 18:24:59  dkr
+ * infer_dfms.h renamed into InferDFMs.h
+ *
  * Revision 3.6  2000/12/15 10:43:12  dkr
  * signature of InferDFMs() modified
  *
@@ -174,7 +177,7 @@
 #include "generatemasks.h"
 #include "internal_lib.h"
 #include "free.h"
-#include "infer_dfms.h"
+#include "InferDFMs.h"
 #include "compile.h"
 #include "refcount.h"
 

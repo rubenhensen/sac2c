@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2000/12/15 18:24:35  dkr
+ * infer_dfms.h renamed into InferDFMs.h
+ *
  * Revision 3.7  2000/12/15 10:43:34  dkr
  * signature of InferDFMs() modified
  *
@@ -134,7 +137,7 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
-#include "infer_dfms.h"
+#include "InferDFMs.h"
 #include "cleanup_decls.h"
 #include "lac2fun.h"
 
