@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/09/30 19:52:43  sah
+ * added RCCounter support
+ *
  * Revision 1.5  2004/09/27 13:18:12  sah
  * implemented new serialization scheme
  *
@@ -1132,6 +1135,29 @@ SerializeMTExecModeAttrib (char *vname, info *info, mtexecmode_t attr, node *par
     DBUG_ENTER ("SerializeMTExecModeAttrib");
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn SerializeRCCounterAttrib
+ *
+ * @brief generates code to de-serialize the given attribute
+ *
+ * @param vname  name of the variable holding the result in the generated code
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SerializeRCCounterAttrib (char *vname, info *info, mtexecmode_t attr, node *parent)
+{
+    DBUG_ENTER ("SerializeMTExecModeAttrib");
+
+    fprintf (INFO_SER_FILE (info), "NULL");
 
     DBUG_VOID_RETURN;
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/09/30 19:52:43  sah
+ * added RCCounter support
+ *
  * Revision 1.3  2004/09/24 20:22:44  sah
  * Dataflowmasks are no more freed
  *
@@ -786,6 +789,27 @@ FreeConstantAttrib (constant *attr)
     if (attr != NULL) {
         attr = COFreeConstant (attr);
     }
+
+    DBUG_RETURN (attr);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn FreeRCCounterAttrib
+ *
+ * @brief Frees RCCounter attribute
+ *
+ * @param attr RCCounter node to process
+ *
+ * @return result of Free call, usually NULL
+ *
+ ***************************************************************************/
+constant *
+FreeConstantAttrib (constant *attr)
+{
+    DBUG_ENTER ("FreeConstantAttrib");
+
+    DBUG_ASSERT ((attr == NULL), "Found an RCCounter outside of emm!!!");
 
     DBUG_RETURN (attr);
 }
