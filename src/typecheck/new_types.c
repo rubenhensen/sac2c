@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2002/08/15 21:10:57  dkr
+ * some errors corrected
+ *
  * Revision 3.14  2002/08/13 15:59:30  dkr
  * signature of TYCreateWrapper...() functions modified
  *
@@ -3591,13 +3594,20 @@ TYType2OldType (ntype *new)
     DBUG_RETURN (res);
 }
 
+/**
+ **  functions for creating wrapper function code
+ **/
+
 /******************************************************************************
  *
  * Function:
  *   ntype *TYSplitWrapperType( ntype *type, bool *finished)
  *
  * Description:
- *
+ *   Extracts a single FUN_IBASE path from the given type 'type'.
+ *   (The found path is removed from 'type'!!!!!)
+ *   Iff 'type' contains a single FUN_IBASE path only, '*finished' is set to
+ *   TRUE.
  *
  ******************************************************************************/
 
@@ -3738,7 +3748,6 @@ TYCreateWrapperVardecs (node *fundef)
         DBUG_ASSERT ((TYIsProd (ret_type)), "no TC_prod found");
 
         for (i = 0; i < NTYPE_ARITY (ret_type); i++) {
-            /* !!! wrong order !!! */
             vardecs = MakeVardec (TmpVar (), NULL, vardecs);
             AVIS_TYPE (VARDEC_AVIS (vardecs)) = TYCopyType (PROD_MEMBER (ret_type, i));
         }
@@ -3750,7 +3759,7 @@ TYCreateWrapperVardecs (node *fundef)
 /******************************************************************************
  *
  * Function:
- *   node *Arg2Id( node *arg)
+ *   node *TYCreateWrapperCode( node *fundef, node *vardecs)
  *
  * Description:
  *
@@ -3768,49 +3777,32 @@ Arg2Id (node *arg)
 
     id = MakeId_Copy (ARG_NAME (arg));
     ID_VARDEC (id) = arg;
+    ID_AVIS (id) = ARG_AVIS (arg);
 
     DBUG_RETURN (id);
 }
 
-/******************************************************************************
- *
- * Function:
- *   node *Vardecs2Ids( node *vardecs)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
 static ids *
 Vardecs2Ids (node *vardecs)
 {
-    ids *ret_ids;
+    ids *tmp_ids;
+    ids *ret_ids = NULL;
 
     DBUG_ENTER ("Vardecs2Ids");
 
-    if (vardecs != NULL) {
+    while (vardecs != NULL) {
         DBUG_ASSERT ((NODE_TYPE (vardecs) == N_vardec), "no N_vardec found!");
 
-        ret_ids = MakeIds_Copy (VARDEC_NAME (vardecs));
-        IDS_VARDEC (ret_ids) = vardecs;
-        IDS_NEXT (ret_ids) = Vardecs2Ids (VARDEC_NEXT (vardecs));
-    } else {
-        ret_ids = NULL;
+        tmp_ids = MakeIds_Copy (VARDEC_NAME (vardecs));
+        IDS_VARDEC (tmp_ids) = vardecs;
+        IDS_AVIS (tmp_ids) = VARDEC_AVIS (vardecs);
+        IDS_NEXT (tmp_ids) = ret_ids;
+        ret_ids = tmp_ids;
+        vardecs = VARDEC_NEXT (vardecs);
     }
 
     DBUG_RETURN (ret_ids);
 }
-
-/******************************************************************************
- *
- * Function:
- *   node *Args2Exprs( node *args)
- *
- * Description:
- *
- *
- ******************************************************************************/
 
 static node *
 Args2Exprs (node *args)
@@ -3830,21 +3822,29 @@ Args2Exprs (node *args)
     DBUG_RETURN (exprs);
 }
 
-/******************************************************************************
- *
- * Function:
- *   node *BuildApAssign( node *fundef, node *args, node *vardecs)
- *
- * Description:
- *
- *
- ******************************************************************************/
+static node *
+BuildCondAssign (prf prf, node *arg, node *expr, node *then_ass, node *else_ass)
+{
+    node *assign;
+
+    DBUG_ENTER ("BuildCondAssign");
+
+    assign
+      = MakeAssign (MakeCond (MakePrf (F_eq, MakeExprs (MakePrf (prf, /* !!! */
+                                                                 MakeExprs (Arg2Id (arg),
+                                                                            NULL)),
+                                                        MakeExprs (expr, NULL))),
+                              MakeBlock (then_ass, NULL), MakeBlock (else_ass, NULL)),
+                    NULL);
+
+    DBUG_RETURN (assign);
+}
 
 static node *
 BuildApAssign (node *fundef, node *args, node *vardecs)
 {
     node *ap;
-    node *assigns;
+    node *assign;
 
     DBUG_ENTER ("BuildApAssign");
 
@@ -3853,23 +3853,13 @@ BuildApAssign (node *fundef, node *args, node *vardecs)
 
         ap = MakeAp (StringCopy (FUNDEF_NAME (fundef)), NULL, Args2Exprs (args));
         AP_FUNDEF (ap) = fundef;
-        assigns = MakeAssign (MakeLet (ap, Vardecs2Ids (vardecs)), NULL);
+        assign = MakeAssign (MakeLet (ap, Vardecs2Ids (vardecs)), NULL);
     } else {
-        assigns = NULL; /* !!! */
+        assign = NULL; /* !!! */
     }
 
-    DBUG_RETURN (assigns);
+    DBUG_RETURN (assign);
 }
-
-/******************************************************************************
- *
- * Function:
- *   node *PickFundef( ntype *type)
- *
- * Description:
- *
- *
- ******************************************************************************/
 
 static node *
 PickFundef (ntype *type)
@@ -3885,24 +3875,13 @@ PickFundef (ntype *type)
     DBUG_RETURN (fundef);
 }
 
-/******************************************************************************
- *
- * Function:
- *   node *TYCreateWrapperCode( ntype *type,
- *                              node *arg, node *args, node *vardecs)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
 static node *
 CreateWrapperCode (ntype *type, node *arg, node *args, node *vardecs)
 {
     node *assigns;
     int i;
 
-    DBUG_ENTER ("TYCreateWrapperCode");
+    DBUG_ENTER ("CreateWrapperCode");
 
     DBUG_ASSERT ((type != NULL), "no type found!");
 
@@ -3922,18 +3901,10 @@ CreateWrapperCode (ntype *type, node *arg, node *args, node *vardecs)
         }
 
         if (IBASE_SCAL (type) != NULL) {
-            assigns
-              = MakeAssign (MakeCond (MakePrf (F_eq,
-                                               MakeExprs (MakePrf (F_dim,
-                                                                   MakeExprs (Arg2Id (
-                                                                                arg),
-                                                                              NULL)),
-                                                          MakeExprs (MakeNum (0), NULL))),
-                                      MakeBlock (CreateWrapperCode (IBASE_SCAL (type),
-                                                                    arg, args, vardecs),
-                                                 NULL),
-                                      MakeBlock (assigns, NULL)),
-                            NULL);
+            assigns = BuildCondAssign (F_dim, arg, MakeNum (0),
+                                       CreateWrapperCode (IBASE_SCAL (type), arg, args,
+                                                          vardecs),
+                                       assigns);
         }
         break;
 
@@ -3943,18 +3914,11 @@ CreateWrapperCode (ntype *type, node *arg, node *args, node *vardecs)
 
         for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
             if (IARR_IDIM (type, i) != NULL) {
-                assigns = MakeAssign (
-                  MakeCond (MakePrf (F_eq,
-                                     MakeExprs (MakePrf (F_dim,
-                                                         MakeExprs (Arg2Id (arg), NULL)),
-                                                MakeExprs (MakeNum (IDIM_DIM (
-                                                             IARR_IDIM (type, i))),
-                                                           NULL))),
-                            MakeBlock (CreateWrapperCode (IARR_IDIM (type, i), arg, args,
-                                                          vardecs),
-                                       NULL),
-                            MakeBlock (assigns, NULL)),
-                  NULL);
+                assigns
+                  = BuildCondAssign (F_dim, arg, MakeNum (IDIM_DIM (IARR_IDIM (type, i))),
+                                     CreateWrapperCode (IARR_IDIM (type, i), arg, args,
+                                                        vardecs),
+                                     assigns);
             }
         }
         break;
@@ -3965,18 +3929,12 @@ CreateWrapperCode (ntype *type, node *arg, node *args, node *vardecs)
 
         for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
             if (IDIM_ISHAPE (type, i) != NULL) {
-                assigns = MakeAssign (
-                  MakeCond (MakePrf (F_eq,
-                                     MakeExprs (MakePrf (F_shape,
-                                                         MakeExprs (Arg2Id (arg), NULL)),
-                                                MakeExprs (SHShape2Array (ISHAPE_SHAPE (
-                                                             IDIM_ISHAPE (type, i))),
-                                                           NULL))),
-                            MakeBlock (CreateWrapperCode (IDIM_ISHAPE (type, i), arg,
-                                                          args, vardecs),
-                                       NULL),
-                            MakeBlock (assigns, NULL)),
-                  NULL);
+                assigns
+                  = BuildCondAssign (F_shape, arg,
+                                     SHShape2Array (ISHAPE_SHAPE (IDIM_ISHAPE (type, i))),
+                                     CreateWrapperCode (IDIM_ISHAPE (type, i), arg, args,
+                                                        vardecs),
+                                     assigns);
             }
         }
         break;
@@ -4003,16 +3961,6 @@ CreateWrapperCode (ntype *type, node *arg, node *args, node *vardecs)
     DBUG_RETURN (assigns);
 }
 
-/******************************************************************************
- *
- * Function:
- *   node *TYCreateWrapperCode( node *fundef, node *vardecs)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
 node *
 TYCreateWrapperCode (node *fundef, node *vardecs)
 {
@@ -4026,7 +3974,7 @@ TYCreateWrapperCode (node *fundef, node *vardecs)
     } else {
         if (TYGetConstr (type) == TC_prod) {
             /*
-             * pure TC_prod type (function with no arguments)!!!
+             * pure TC_prod type (function with no arguments)!!
              *   -> fundef can be found in FUNDEF_RETURN (dirty hack!)
              */
             assigns
