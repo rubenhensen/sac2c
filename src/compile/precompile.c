@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.15  2000/06/28 09:12:23  nmw
+ * added traversal for mapping of fundctios to c wrappers to Precompile
+ *
  * Revision 2.14  2000/06/23 15:11:19  dkr
  * signature of DupTree changed
  *
@@ -81,6 +84,7 @@
 #include "scheduling.h"
 #include "adjust_ids.h"
 #include "precompile.h"
+#include "map_cwrapper.h"
 
 #include <string.h>
 
@@ -1564,6 +1568,11 @@ PREC2WLsegVar (node *arg_node, node *arg_info)
  * description:
  *   Prepares syntax tree for code generation.
  *
+ *   optional traversal of AST when generating c-library:
+ *     - look for overloaded functions and build up a list of wrappers
+ *     remark: this has to be done before the following steps, because
+ *             of the renaming
+ *
  *   First traversal of the AST:
  *     - renaming of the local identifiers of each dummy fold-function
  *       definition in order to prepare them for naive inlining during
@@ -1585,6 +1594,8 @@ Precompile (node *syntax_tree)
     node *info;
 
     DBUG_ENTER ("Precompile");
+
+    syntax_tree = MapCWrapper (syntax_tree);
 
     info = MakeInfo ();
 
