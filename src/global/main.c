@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2004/11/23 19:41:21  cg
+ * changed signature of GLOBinitializeGlobal().
+ *
  * Revision 3.78  2004/11/23 16:22:15  cg
  * Added call to GLOBinitializeGlobals().
  *
@@ -342,7 +345,7 @@ main (int argc, char *argv[])
      * Initializations
      */
 
-    GLOBinitializeGlobals (global);
+    GLOBinitializeGlobals ();
     InitPaths ();
     SetupInterruptHandlers ();
     InitDupTree ();
