@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.9  2004/09/20 10:29:02  sah
+  fixed typo
+
   Revision 1.8  2004/09/01 14:13:07  sah
   ongoing work
 
@@ -746,7 +749,7 @@
           ST_whilefun</description>
           <type name="NodeList">
             <target>
-              <node name="Assigns" />
+              <node name="Assign" />
             </target>
           </type>
           <phases>
