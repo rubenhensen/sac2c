@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/01/22 13:47:06  dkr
+ * DBUG string WLprec renamed into WLtrans
+ *
  * Revision 3.15  2001/01/19 11:57:40  dkr
  * usage of NodeOrInt_GetNameOrVal() modified
  *
@@ -842,6 +845,8 @@ For every segment the following steps must be performed:
     In each subtree and each dimension the boundaries of the most outer node
     as well as each blocking factor are adjusted to the number of unrolled
     elements (= max( ubv_d, step)).
+    The adjustment of the blocking factor is crucial to preserve the periodicity
+    of the block content!!!
 
   In the example with bv = (180,158):
 
@@ -1766,7 +1771,7 @@ NormalizeStride_1 (node *stride)
     DBUG_ASSERT ((grid != NULL), "given stride contains no grid!");
     /*
      * For the time being support for multiple grids is not needed
-     * and therefore not yet implemented ...
+     * and therefore not implemented yet ...
      */
     DBUG_ASSERT ((WLGRID_NEXT (grid) == NULL),
                  "given stride contains more than one grid!");
@@ -2100,7 +2105,7 @@ IsEmptyStride_1 (node *stride)
     DBUG_ASSERT ((grid != NULL), "given stride contains no grid!");
     /*
      * For the time being support for multiple grids is not needed
-     * and therefore not yet implemented ...
+     * and therefore not implemented yet ...
      */
     DBUG_ASSERT ((WLGRID_NEXT (grid) == NULL),
                  "given stride contains more than one grid!");
@@ -2592,7 +2597,7 @@ StridesDisjoint_AllDims (node *stride1, node *stride2)
     if ((NODE_TYPE (stride1) == N_WLstrideVar)
         || (NODE_TYPE (stride2) == N_WLstrideVar)) {
         /*
-         * disjointness check for var. strides not yet implemented.
+         * disjointness check for var. strides not implemented yet
          */
         disjoint = TRUE;
     } else {
@@ -3378,7 +3383,7 @@ BlockWL (node *stride, int dims, int *bv, bool unroll)
 
         case N_WLstrideVar:
             /*
-             * on variable segments blocking is not performed yet
+             * on variable segments no blocking can be done!
              */
             for (d = 0; d < dims; d++) {
                 bv[d] = 1; /* no blocking -> reset blocking vector */
@@ -4654,9 +4659,6 @@ GenerateCompleteDomain (node *strides, int dims, types *type)
  *                                     0 -> 1: init/copy/noop
  *
  *   This function is called by 'ComputeOneCube'.
- *
- *
- *  #### code not brushed yet ####
  *
  ******************************************************************************/
 
@@ -6068,7 +6070,7 @@ InferSegsParams (node *segs)
         ComputeIndexMinMax (WLSEGX_IDX_MIN (segs), WLSEGX_IDX_MAX (segs),
                             WLSEGX_DIMS (segs), WLSEGX_CONTENTS (segs));
 
-        DBUG_EXECUTE ("WLprec", fprintf (stderr, "InferSegsParams: ");
+        DBUG_EXECUTE ("WLtrans", fprintf (stderr, "InferSegsParams: ");
                       fprintf (stderr, "WLSEGX_SV = ");
                       PRINT_VECT (stderr, WLSEGX_SV (segs), WLSEGX_DIMS (segs), "%i");
                       fprintf (stderr, ", WLSEGX_IDX_MIN = ");
@@ -6204,7 +6206,7 @@ InferSchedulingParams (node *seg)
             (WLSEG_HOMSV (seg))[d] = 0;
         }
 
-        DBUG_EXECUTE ("WLprec", fprintf (stderr, "InferSchedulingParams: ");
+        DBUG_EXECUTE ("WLtrans", fprintf (stderr, "InferSchedulingParams: ");
                       fprintf (stderr, "WLSEG_HOMSV = ");
                       PRINT_VECT (stderr, WLSEG_HOMSV (seg), WLSEG_DIMS (seg), "%i");
                       fprintf (stderr, ", WLSEG_MAXHOMDIM = %i\n",
@@ -6319,7 +6321,7 @@ WLTRAwith (node *arg_node, node *arg_info)
     /*
      * convert parts of with-loop into new format
      */
-    DBUG_EXECUTE ("WLprec", NOTE (("step 0.1: converting parts into strides\n")));
+    DBUG_EXECUTE ("WLtrans", NOTE (("step 0.1: converting parts into strides\n")));
     strides = Parts2Strides (NWITH_PART (arg_node), wl_dims, wl_type, is_fold);
 
     if (strides == NULL) {
@@ -6333,7 +6335,7 @@ WLTRAwith (node *arg_node, node *arg_info)
     /*
      * consistence check: ensures that the strides are pairwise disjoint
      */
-    DBUG_EXECUTE ("WLprec", NOTE (("step 0.2: checking disjointness of strides\n")));
+    DBUG_EXECUTE ("WLtrans", NOTE (("step 0.2: checking disjointness of strides\n")));
     DBUG_ASSERT ((CheckDisjointness (strides)),
                  "Consistence check failed:"
                  " Not all strides are pairwise disjoint!\n"
@@ -6404,7 +6406,7 @@ WLTRAwith (node *arg_node, node *arg_info)
             /*
              * build the cubes
              */
-            DBUG_EXECUTE ("WLprec", NOTE (("step 1: cube building\n")));
+            DBUG_EXECUTE ("WLtrans", NOTE (("step 1: cube building\n")));
 
             if (WLSTRIDEX_NEXT (strides) == NULL) {
                 /*
@@ -6461,7 +6463,7 @@ WLTRAwith (node *arg_node, node *arg_info)
                 /* compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV */
                 segs = InferSegsParams (segs);
             } else {
-                DBUG_EXECUTE ("WLprec", NOTE (("step 2: choice of segments\n")));
+                DBUG_EXECUTE ("WLtrans", NOTE (("step 2: choice of segments\n")));
 
                 if (NWITH2_NAIVE_COMP (new_node)) {
                     /*
@@ -6486,17 +6488,17 @@ WLTRAwith (node *arg_node, node *arg_info)
 
                         /* splitting */
                         if (WL_break_after >= WL_PH_split) {
-                            DBUG_EXECUTE ("WLprec", NOTE (("step 3: splitting\n")));
+                            DBUG_EXECUTE ("WLtrans", NOTE (("step 3: splitting\n")));
                             WLSEGX_CONTENTS (seg) = SplitWL (WLSEGX_CONTENTS (seg));
                         }
 
                         /* hierarchical blocking */
                         if (WL_break_after >= WL_PH_block) {
-                            DBUG_EXECUTE ("WLprec",
+                            DBUG_EXECUTE ("WLtrans",
                                           NOTE (("step 4: hierarchical blocking\n")));
                             for (b = 0; b < WLSEGX_BLOCKS (seg); b++) {
                                 DBUG_EXECUTE (
-                                  "WLprec",
+                                  "WLtrans",
                                   NOTE (("step 4.%d: hierarchical blocking (level %d)\n",
                                          b + 1, b)));
                                 WLSEGX_CONTENTS (seg)
@@ -6507,7 +6509,7 @@ WLTRAwith (node *arg_node, node *arg_info)
 
                         /* unrolling-blocking */
                         if (WL_break_after >= WL_PH_ublock) {
-                            DBUG_EXECUTE ("WLprec",
+                            DBUG_EXECUTE ("WLtrans",
                                           NOTE (("step 5: unrolling-blocking\n")));
                             WLSEGX_CONTENTS (seg)
                               = BlockWL (WLSEGX_CONTENTS (seg), wl_dims, WLSEGX_UBV (seg),
@@ -6516,25 +6518,25 @@ WLTRAwith (node *arg_node, node *arg_info)
 
                         /* merging */
                         if (WL_break_after >= WL_PH_merge) {
-                            DBUG_EXECUTE ("WLprec", NOTE (("step 6: merging\n")));
+                            DBUG_EXECUTE ("WLtrans", NOTE (("step 6: merging\n")));
                             WLSEGX_CONTENTS (seg) = MergeWL (WLSEGX_CONTENTS (seg));
                         }
 
                         /* optimization */
                         if (WL_break_after >= WL_PH_opt) {
-                            DBUG_EXECUTE ("WLprec", NOTE (("step 7: optimization\n")));
+                            DBUG_EXECUTE ("WLtrans", NOTE (("step 7: optimization\n")));
                             WLSEGX_CONTENTS (seg) = OptWL (WLSEGX_CONTENTS (seg));
                         }
 
                         /* fitting */
                         if (WL_break_after >= WL_PH_fit) {
-                            DBUG_EXECUTE ("WLprec", NOTE (("step 8: fitting\n")));
+                            DBUG_EXECUTE ("WLtrans", NOTE (("step 8: fitting\n")));
                             WLSEGX_CONTENTS (seg) = FitWL (WLSEGX_CONTENTS (seg));
                         }
 
                         /* normalization */
                         if (WL_break_after >= WL_PH_norm) {
-                            DBUG_EXECUTE ("WLprec", NOTE (("step 9: normalization\n")));
+                            DBUG_EXECUTE ("WLtrans", NOTE (("step 9: normalization\n")));
                             WLSEGX_CONTENTS (seg)
                               = NormWL (WLSEGX_CONTENTS (seg), WLSEGX_IDX_MAX (seg));
                         }
