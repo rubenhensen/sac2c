@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/26 23:56:06  jhb
+ * fixed DBUG_Enter Statement of EMRdoRefcounting
+ *
  * Revision 1.7  2004/11/26 23:49:23  jhb
  * same function name header and c-file
  *
@@ -66,7 +69,7 @@
 node *
 EMRdoRefcounting (node *syntax_tree)
 {
-    DBUG_ENTER ("RCphase");
+    DBUG_ENTER ("EMRdoRefcounting");
 
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  "RCphase not started with N_module node");
