@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.4  1998/04/07 08:19:24  srs
+ * inserted wli_phase
+ *
  * Revision 1.3  1998/04/03 12:20:07  srs
  * *** empty log message ***
  *
@@ -48,6 +51,8 @@
 #include "ConstantFolding.h"
 #include "WithloopFolding.h"
 #include "WLI.h"
+
+int wli_phase;
 
 /******************************************************************************
  *
@@ -688,15 +693,17 @@ WLIid (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WLIid");
 
-    ID_WL (arg_node) = NULL;
-
-    /* if arg_node describes a WL the NWITH_REFERENCED has to be
-       incremented. But this must not be done if we have an assignment
-       of the form A = B. */
-    assignn = INFO_WLI_ASSIGN (arg_info);
-    if (N_let != ASSIGN_INSTRTYPE (assignn)
-        || N_id != NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assignn)))) {
-        ID_WL (arg_node) = StartSearchWL (arg_node, assignn, 0);
+    if (1 == wli_phase)
+        ID_WL (arg_node) = NULL;
+    else {
+        /* if arg_node describes a WL the NWITH_REFERENCED has to be
+           incremented. But this must not be done if we have an assignment
+           of the form A = B. */
+        assignn = INFO_WLI_ASSIGN (arg_info);
+        if (N_let != ASSIGN_INSTRTYPE (assignn)
+            || N_id != NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assignn)))) {
+            ID_WL (arg_node) = StartSearchWL (arg_node, assignn, 0);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -730,7 +737,7 @@ WLIlet (node *arg_node, node *arg_info)
     INFO_WLI_ASSIGN (arg_info) = old_assignn;
 
     /* if we are inside a WL we have to search for valid index transformations. */
-    if (INFO_WLI_WL (arg_info)) {
+    if (INFO_WLI_WL (arg_info) && (2 == wli_phase)) {
         /* if this is a prf, we are interrested in transformations like +,*,-,/
            and in indexing (F_psi). */
         exprn = LET_EXPR (arg_node);
@@ -901,17 +908,11 @@ WLINwithop (node *arg_node, node *arg_info)
 
     arg_node = TravSons (arg_node, arg_info);
 
-    if (WO_modarray == NWITHOP_TYPE (arg_node)
+    if (2 == wli_phase && WO_modarray == NWITHOP_TYPE (arg_node)
         && NWITH_FOLDABLE (INFO_WLI_WL (arg_info))) {
         substn = ID_WL (NWITHOP_ARRAY (arg_node));
-
         /* we just traversed through the sons so SearchWL for NWITHOP_ARRAY
          has been called and its result is stored in ID_WL(). */
-        /*     if (!substn) { */
-        /*       substn = StartSearchWL(NWITHOP_ARRAY(arg_node),
-         * INFO_WLI_ASSIGN(arg_info), 1); */
-        /*       ID_WL(NWITHOP_ARRAY(arg_node)) = substn; */
-        /*     } */
         if (substn)
             NWITH_REFERENCED_FOLD (LET_EXPR (ASSIGN_INSTR (substn)))++;
     }

@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.3  1998/04/07 08:19:36  srs
+ * inserted wli_phase
+ *
  * Revision 1.2  1998/04/01 07:41:03  srs
  * added WLINwithop
  *
@@ -29,5 +32,7 @@ extern node *WLIlet (node *, node *);
 extern node *WLINwithop (node *, node *);
 extern node *WLINpart (node *, node *);
 extern node *WLINcode (node *, node *);
+
+extern int wli_phase;
 
 #endif
