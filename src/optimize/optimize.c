@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2005/02/14 11:18:34  cg
+ * Old inlining replaced by complete re-implementation.
+ *
  * Revision 3.78  2005/02/11 12:13:11  mwe
  * position of sisi changed
  *
@@ -365,7 +368,7 @@
 
 #include "optimize.h"
 #include "DeadFunctionRemoval.h"
-#include "Inline.h"
+#include "inlining.h"
 #include "ArrayElimination.h"
 #include "wls.h"
 #include "AssociativeLaw.h"
@@ -844,7 +847,7 @@ OPTmodule (node *arg_node, info *arg_info)
      * apply INL (inlining)
      */
     if (global.optimize.doinl) {
-        arg_node = INLdoInline (arg_node);
+        arg_node = INLdoInlining (arg_node);
     }
 
     if ((global.break_after == PH_sacopt) && (global.break_cycle_specifier == 0)
