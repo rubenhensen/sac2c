@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.5  1999/05/20 14:11:14  cg
+# *** empty log message ***
+#
 # Revision 2.4  1999/05/12 15:13:26  cg
 # make deps done
 #
@@ -269,10 +272,10 @@ Old2NewWith.o: Old2NewWith.c
 
 
 BEtest: BEtest.c icm_vars.c icm_betest.c icm.data icm2c_std.BEtest.o \
-        icm2c_wl.BEtest.o icm2c_mt.BEtest.o
+        icm2c_wl.BEtest.o icm2c_mt.BEtest.o ../global/globals.o 
 	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest BEtest.c $(INCS) \
         ../../lib/dbug.o icm2c_std.BEtest.o icm2c_wl.BEtest.o \
-        icm2c_mt.BEtest.o ../global/globals.o
+        icm2c_mt.BEtest.o ../global/globals.o 
 
 icm2c_std.BEtest.o: icm2c_std.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_std.BEtest.o -c icm2c_std.c $(INCS)
