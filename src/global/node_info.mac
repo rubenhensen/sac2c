@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.177  1998/04/09 13:54:29  dkr
+ * added ConcNpart, ConcNcode, ...
+ *
  * Revision 1.176  1998/04/08 17:32:08  srs
  * added WLFlet and WLFNcode
  *
@@ -644,7 +647,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        DupFundef, INLfundef, UNRfundef, TravSons, IdxFundef, UNSfundef, WLIfundef,
        AEfundef, WSIBfundef, OBJfundef, TravSons, TravSons, ANAfundef, CDECfundef,
        WDECfundef, UNQfundef, RMVfundef, PRECfundef, ACTfundef, RSIBfundef, WLTfundef,
-       CSEfundef, DFRfundef, TravSons, TravSons, 3),
+       CSEfundef, DFRfundef, ConcFundef, TravSons, 3),
 
   NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TravSons, OPTvardec,
        DCRvardec, TravSons, FreeVardec, TravSons, TravSons, CompVardec, TravSons, DupDec,
@@ -877,7 +880,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, FreeNPart, CFNpart, RCNpart, TravSons, TravSons, DupNpart, TravSons,
        TravSons, TravSons, TravSons, TravSons, WLINpart, TravSons, PrintNpart, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       ACTNpart, TravSons, WLTNpart, TravSons, TravSons, TravSons, O2Nnpart, 3),
+       ACTNpart, TravSons, WLTNpart, TravSons, TravSons, ConcNpart, O2Nnpart, 3),
 
   NIF (N_Nwithid, "N_Nwithid", TravSons, NoTrav, PrintNwithid, TravSons, TravSons,
        TravSons, TravSons, FreeNWithID, TravSons, RCNwithid, TravSons, TravSons,
@@ -904,7 +907,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        WLFNcode, FreeNCode, CFNcode, RCNcode, CompNcode, TravSons, DupChain, TravSons,
        TravSons, TravSons, TravSons, TravSons, WLINcode, TravSons, PrintNcode, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PRECncode,
-       ACTNcode, TravSons, WLTNcode, CSENcode, TravSons, TravSons, TravSons, 3),
+       ACTNcode, TravSons, WLTNcode, CSENcode, TravSons, ConcNcode, TravSons, 3),
 
   /*
    * here is the node information for the transformed (precompile) new with-loop
