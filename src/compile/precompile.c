@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2002/03/01 17:20:37  dkr
+ * fixed a bug in InsertOut():
+ * the C return type is marked correctly now (ST_crettype)
+ *
  * Revision 3.30  2002/03/01 03:17:55  dkr
  * third traversal added:
  * reorganisation of fundefs and aps (argument remapping, mapping to
@@ -2208,6 +2212,11 @@ InsertOut (argtab_t *argtab, node *fundef, int param_id, types *rettype, bool *d
 
         idx = argtab->size - 1;
         argtag = FUNDEF_DOES_REFCOUNT (fundef, param_id) ? ATG_out_rc : ATG_out;
+    }
+
+    if (idx == 0) {
+        /* mark the C return value */
+        TYPES_STATUS (rettype) = ST_crettype;
     }
 
     if ((idx >= 0) && (idx < argtab->size)) {
