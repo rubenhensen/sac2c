@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.152  2005/01/14 09:57:50  cg
+ * Converted compile time output from Error.h to ctinfo.c
+ *
  * Revision 3.151  2004/12/18 15:29:48  sbs
  * initial AUD wl support added.
  *
@@ -180,7 +183,7 @@
 
 #include "globals.h"
 #include "dbug.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
 #include "DupTree.h"
@@ -2715,8 +2718,8 @@ COMPApIds (node *ap, info *arg_info)
                       IDS_TYPE (((node *)argtab->ptr_out[i])));
                     DBUG_ASSERT ((sc != C_unknowns), "illegal data class found!");
                     if ((sc == C_akd) || (sc == C_aud)) {
-                        ERROR (global.linenum,
-                               ("Return value with undefined shape/dimension found"));
+                        CTIerrorLine (global.linenum, "Return value with undefined "
+                                                      "shape/dimension found");
                     }
                 }
 
