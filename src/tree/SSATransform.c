@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2003/03/12 21:18:30  dkr
+ * SSAicm() added
+ *
  * Revision 1.27  2003/03/08 17:45:39  dkr
  * SSAInsertCopyAssignments(): IS_REFERENCE is set correctly now
  *
@@ -639,7 +642,7 @@ SSAassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *SSAlet(node *arg_node, node *arg_info)
+ *  node *SSAlet( node *arg_node, node *arg_info)
  *
  * description:
  *   travereses in expression and assigned ids.
@@ -664,10 +667,78 @@ SSAlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *  node *SSAicm( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   travereses in expression and assigned ids.
+ *
+ ******************************************************************************/
+node *
+SSAicm (node *arg_node, node *arg_info)
+{
+    node *id;
+    char *name;
+
+    DBUG_ENTER ("SSAicm");
+
+    name = ICM_NAME (arg_node);
+
+    if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
+        /*
+         * USE_GENVAR_OFFSET( off, wl)
+         * is expanded to
+         *      off = wl__off    ,
+         * where 'off' is a scalar and 'wl__off' an internal variable!
+         *   -> traverse 'off' as a LHS
+         */
+        id = ICM_ARG1 (arg_node);
+        DBUG_ASSERT ((NODE_TYPE (id) == N_id),
+                     "1st argument of USE_GENVAR_OFFSET icm is no N_id node");
+        ID_IDS (id) = TravLeftIDS (ID_IDS (id), arg_info);
+    } else if (strstr (name, "VECT2OFFSET") != NULL) {
+        /*
+         * VECT2OFFSET( off, ., from, ., ., ...)
+         * is expanded to
+         *     off = ... from ...    ,
+         * where 'off' is a scalar variable.
+         *  -> traverse all but the first argument as RHS
+         *  -> traverse first argument as LHS
+         */
+        ICM_EXPRS2 (arg_node) = Trav (ICM_EXPRS2 (arg_node), arg_info);
+
+        id = ICM_ARG1 (arg_node);
+        DBUG_ASSERT ((NODE_TYPE (id) == N_id),
+                     "1st argument of VECT2OFFSET icm is no N_id node");
+        ID_IDS (id) = TravLeftIDS (ID_IDS (id), arg_info);
+    } else if (strstr (name, "IDXS2OFFSET") != NULL) {
+        /*
+         * IDXS2OFFSET( off_nt, ., idx_1_nt ... idx_n_nt, ., ...)
+         * is expanded to
+         *     off_nt = ... idx_1_nt[i] ... idx_n_nt[i] ...   ,
+         * where 'off' is a scalar variable.
+         *  -> traverse all but the first argument as RHS
+         *  -> traverse first argument as LHS
+         */
+        ICM_EXPRS2 (arg_node) = Trav (ICM_EXPRS2 (arg_node), arg_info);
+
+        id = ICM_ARG1 (arg_node);
+        DBUG_ASSERT ((NODE_TYPE (id) == N_id),
+                     "1st argument of IDXS2OFFSET icm is no N_id node");
+        ID_IDS (id) = TravLeftIDS (ID_IDS (id), arg_info);
+    } else {
+        DBUG_ASSERT ((0), "unknown ICM found during RC");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *SSAarg(node *arg_node, node *arg_info)
  *
  * description:
- *   check for missing SSACOUT attribute in AVIS node. installs and inits
+ *   check for missing SSACOUNT attribute in AVIS node. installs and inits
  *   new ssa-counter if necessary (init with 0, means unrenamed argument)
  *
  ******************************************************************************/
