@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.78  1996/02/12 16:37:44  cg
+ * Revision 1.79  1996/02/27 15:22:04  hw
+ * bug fixed in adding new vardecs
+ *
+ * Revision 1.78  1996/02/12  16:37:44  cg
  * bug fixed in usage of pragma refcounting in CompArg,
  * macro DEC_OR_FREE_RC_ND now used with correct refcount information
  * in primitive functions shape and dim,
@@ -682,7 +685,7 @@ static int label_nr = 0;
 
 /*
  *
- *  functionname  :
+ *  functionname  : AddVardec
  *  arguments     :
  *  description   :
  *  global vars   :
@@ -693,6 +696,39 @@ static int label_nr = 0;
  *  remarks       :
  *
  */
+node *
+AddVardec (node *vardec, types *type, char *name)
+{
+    node *tmp = vardec;
+    int insert = 1;
+
+    DBUG_ENTER ("AddVardec");
+
+    /* look if there is matching vardec */
+    if (NULL != tmp) {
+        while ((NULL != VARDEC_NEXT (tmp)) && (1 == insert)) {
+            if (!strcmp (VARDEC_NAME (tmp), name))
+                insert = 0;
+            tmp = VARDEC_NEXT (tmp);
+        }
+    }
+
+    /* now insert new vardec node */
+    if ((1 == insert) ? ((NULL != tmp) ? strcmp (VARDEC_NAME (tmp), name) : 1) : 0) {
+        types *new_type = DuplicateTypes (type, 0);
+        node *new_vardec = MakeVardec (StringCopy (name), new_type, NULL);
+
+        DBUG_ASSERT ((NULL != tmp) ? (NULL == VARDEC_NEXT (tmp)) : 1,
+                     "VARDEC_NEXT(tmp) != NULL");
+
+        if (NULL != tmp)
+            VARDEC_NEXT (tmp) = new_vardec;
+        else
+            vardec = new_vardec;
+    }
+
+    DBUG_RETURN (vardec);
+}
 
 /*
  *
@@ -2086,7 +2122,7 @@ RenameVar (char *string, int i)
 node *
 RenameReturn (node *return_node, node *arg_info)
 {
-    node *exprs, *tmp_exprs, *assign, *let, *next_assign, *new_vardec, *vardec, *tmp;
+    node *exprs, *tmp_exprs, *assign, *let, *next_assign, *vardec, *tmp;
     int i;
     char *old_id, *new_id;
 
@@ -2108,41 +2144,17 @@ RenameReturn (node *return_node, node *arg_info)
             ELIMINATE_CAST (tmp_exprs);
             if (0 == strcmp (tmp_exprs->node[0]->IDS_ID, old_id)) {
                 /* generates new nodes */
-                assign = MakeNode (N_assign);
-                let = MakeNode (N_let);
-                assign->node[0] = let;
-                assign->node[1] = next_assign;
-                assign->nnode = 2;
+                new_id = RenameVar (old_id, i);
+                let = MakeLet (MakeId (ID_NAME (EXPRS_EXPR (tmp_exprs)), NULL, NULL),
+                               MakeIds (new_id, NULL, NULL));
+                assign = MakeAssign (let, next_assign);
                 next_assign = assign;
-                let->IDS = MakeIds (exprs->node[0]->IDS_ID, NULL, ST_regular);
-                let->IDS_NODE = exprs->node[0]->IDS_NODE;
-                MAKENODE_ID (let->node[0], RenameVar (old_id, i));
-                let->nnode = 1;
-                new_id = let->node[0]->IDS_ID;
-                new_vardec = MakeNode (N_vardec);
-                new_vardec->TYPES
-                  = DuplicateTypes (tmp_exprs->node[0]->IDS_NODE->TYPES, 0);
-                new_vardec->ID = StringCopy (new_id); /* set new variable name */
-                let->node[0]->IDS_NODE = new_vardec;  /* set pointer to vardec */
+                vardec = AddVardec (vardec, ID_TYPE (EXPRS_EXPR (tmp_exprs)), new_id);
 
-                /* rename current ret_value */
-                FREE (tmp_exprs->node[0]->IDS_ID);
-                tmp_exprs->node[0]->IDS_ID = StringCopy (new_id);
-                /* insert vardec */
-                if (NULL == vardec)
-                    vardec = new_vardec;
-                else {
-                    if (1 == vardec->nnode) {
-                        new_vardec->node[0] = vardec->node[0];
-                        new_vardec->nnode = 1;
-                        vardec = new_vardec;
-                    } else {
-                        vardec->node[0] = new_vardec;
-                        vardec->nnode = 1;
-                    }
-                }
+                /* rename variable in return-statement */
+                ID_NAME (EXPRS_EXPR (tmp_exprs)) = StringCopy (new_id);
             }
-            tmp_exprs = tmp_exprs->node[1];
+            tmp_exprs = EXPRS_NEXT (tmp_exprs);
             i += 1;
         }
         exprs = exprs->node[1];
@@ -2153,7 +2165,6 @@ RenameReturn (node *return_node, node *arg_info)
         last_assign->node[0] = assign->node[0];
         last_assign->node[1] = assign->node[1];
         last_assign->nnode = 2;
-        FREE (assign);
         arg_info->node[3] = vardec;
 
         return_node = assign->node[0];
@@ -2739,11 +2750,11 @@ CompPrf (node *arg_node, node *arg_info)
      */
     if (arg_node->info.prf > F_neq) {
         ids *let_ids = arg_info->IDS;
-        node *new_name, *vardec_p, *new_assign, *new_vardec, *old_name;
-        int insert_vardec = 0, insert_assign = 0;
+        node *new_name, *new_assign, *old_name;
+        int insert_assign = 0;
 
         exprs = arg_node->node[0];
-        /* test whether a identifier occures on the right and left side of a
+        /* test whether an identifier occures on the right and left side of a
          * let. In this case rename the one on the rigth side ,assign old and new
          * variable and add vardec for the new vaibale.
          * (e.g: A=A+1 => __A=A; A=__A+1; )
@@ -2766,21 +2777,9 @@ CompPrf (node *arg_node, node *arg_info)
                         insert_assign = 1;
 
                         /* now insert vardec if necessary */
-                        vardec_p = let_ids->node;
-                        if (NULL != vardec_p->node[0])
-                            if (0 != strcmp (new_name->IDS_ID, vardec_p->node[0]->ID))
-                                insert_vardec = 1;
-                            else
-                                insert_vardec = 0;
-                        else
-                            insert_vardec = 1;
-                        if (1 == insert_vardec) {
-                            new_vardec = MakeNode (N_vardec);
-                            new_vardec->TYPES = DuplicateTypes (vardec_p->TYPES, 1);
-                            new_vardec->ID = RenameVar (let_ids->id, 0);
-                            new_vardec->node[0] = vardec_p->node[0];
-                            vardec_p->node[0] = new_vardec;
-                        }
+                        arg_info->node[3]
+                          = AddVardec (arg_info->node[3], IDS_VARDEC_TYPE (let_ids),
+                                       ID_NAME (new_name));
                     }
 
                     /* now rename N_id */
@@ -5109,7 +5108,11 @@ CompFundef (node *arg_node, node *arg_info)
 
         if (NULL != arg_info->node[3]) {
             /* compile vardecs */
-            arg_node->node[0]->node[1] = Trav (arg_node->node[0]->node[1], arg_info);
+#if 0
+         arg_node->node[0]->node[1]
+           =Trav(arg_node->node[0]->node[1], arg_info);
+#endif /* 0 */
+            FUNDEF_VARDEC (arg_node) = Trav (arg_info->node[3], arg_info);
             arg_node->node[0]->nnode = 2;
         }
     }
