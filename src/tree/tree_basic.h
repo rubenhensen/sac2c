@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.211  2004/08/06 17:25:30  skt
+ * creating the dataflowgraph still continues
+ *
  * Revision 3.210  2004/08/06 12:56:57  skt
  * changed FUNDEF_DATAFLOWGRAPH into BLOCK_DATAFLOWGRAPH
  *
@@ -1519,6 +1522,7 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
  ***
  ***    node*      SSACOUNTER        (N_ssacnt)  (ssaform -> optimize !!)
  ***
+ ***    node*      EXECMODE          (propagate_executionmode ->)
  ***    node*      DATAFLOWGRAPH     (N_dataflowgraph)
  ***                           (create_dataflowgraph -> delete_dataflowgraph!!)
  ***/
@@ -1544,6 +1548,7 @@ extern node *MakeBlock (node *instr, node *vardec);
 #define BLOCK_CACHESIM(n) (n->info.id)
 #define BLOCK_SSACOUNTER(n) (n->node[5])
 #define BLOCK_DATAFLOWGRAPH(n) ((node *)(n->dfmask[2]))
+#define BLOCK_EXECMODE(n) (n->refcount)
 
 /*--------------------------------------------------------------------------*/
 
@@ -4558,6 +4563,8 @@ extern node *MakeModspec (char *name, node *exports);
  ***  permanent attributes:
  ***
  ***    nodelist*  DEPENDENT    (all dataflownodes that depend on this node)
+ ***    char*      NAME         (the name of the node - very helpful for
+ ***                             debugging)
  ***    int        REFCOUNT     (number of references of this node within
  ***                             the corresponding dataflowgraph)
  ***    node*      ASSIGN       (the corresponding assignment)
@@ -4569,12 +4576,13 @@ extern node *MakeModspec (char *name, node *exports);
  ***                            (CreateDataflowgraph -> AssignmentsRearrange!!)
  ***/
 
-extern node *MakeDataflownode (node *assignment);
+extern node *MakeDataflownode (node *assignment, char *name);
 
 #define DATAFLOWNODE_DEPENDENT(n) ((nodelist *)(n->dfmask[0]))
+#define DATAFLOWNODE_NAME(n) ((char *)(n->dfmask[1]))
 #define DATAFLOWNODE_REFCOUNT(n) (n->refcnt)
 #define DATAFLOWNODE_ASSIGN(n) (n->node[0])
-#define DATAFLOWNODE_EXECMODE(n) (ASSIGN_EXECMODE (DATAFLOWNODE_ASSIGN (n)))
+#define DATAFLOWNODE_EXECMODE(n) (n->flag)
 #define DATAFLOWNODE_REFLEFT(n) (n->counter)
 
 /*--------------------------------------------------------------------------*/

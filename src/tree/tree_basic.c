@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.95  2004/08/06 17:25:30  skt
+ * creating the dataflowgraph still continues
+ *
  * Revision 3.94  2004/08/06 12:11:03  skt
  * expanded MakeDataflowgraph again
  *
@@ -2273,7 +2276,7 @@ MakeModspec (char *name, node *exports)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeDataflownode (node *assignment)
+MakeDataflownode (node *assignment, char *name)
 {
     node *tmp;
 
@@ -2282,6 +2285,10 @@ MakeDataflownode (node *assignment)
     tmp = CreateCleanNode (N_dataflownode);
 
     DATAFLOWNODE_ASSIGN (tmp) = assignment;
+    if (assignment != NULL) {
+        DATAFLOWNODE_EXECMODE (tmp) = ASSIGN_EXECMODE (assignment);
+    }
+    DATAFLOWNODE_NAME (tmp) = name;
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
@@ -2300,13 +2307,15 @@ MakeDataflowgraph ()
     tmp = CreateCleanNode (N_dataflowgraph);
 
     /* create the source of the graph */
-    DATAFLOWGRAPH_SOURCE (tmp) = MakeDataflownode (NULL);
+    DATAFLOWGRAPH_SOURCE (tmp) = MakeDataflownode (NULL, StringCopy ("DF__source"));
     DATAFLOWGRAPH_MEMBERS (tmp)
       = NodeListAppend (DATAFLOWGRAPH_MEMBERS (tmp), DATAFLOWGRAPH_SOURCE (tmp), NULL);
+
     /* create the sink of the graph */
-    DATAFLOWGRAPH_SINK (tmp) = MakeDataflownode (NULL);
+    DATAFLOWGRAPH_SINK (tmp) = MakeDataflownode (NULL, StringCopy ("DF__sink"));
     DATAFLOWGRAPH_MEMBERS (tmp)
       = NodeListAppend (DATAFLOWGRAPH_MEMBERS (tmp), DATAFLOWGRAPH_SINK (tmp), NULL);
+
     /* make the sink depending on the source */
     DATAFLOWNODE_DEPENDENT (DATAFLOWGRAPH_SOURCE (tmp))
       = NodeListAppend (DATAFLOWNODE_DEPENDENT (DATAFLOWGRAPH_SOURCE (tmp)),
@@ -2315,7 +2324,6 @@ MakeDataflowgraph ()
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
-#define DATAFLOWGRAPH_MEMBERS(n) ((nodelist *)(n->dfmask[0]))
     DBUG_RETURN (tmp);
 }
 
