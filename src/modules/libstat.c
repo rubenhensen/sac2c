@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/11/26 23:19:54  jhb
+ * PrintLibStat changed to LIBSprintStat
+ *
  * Revision 1.11  2004/11/25 20:22:11  sah
  * COMPILES
  *
@@ -128,12 +131,12 @@ PrintLibStatCode (module_t *module, sttable_t *table)
 }
 
 void
-PrintLibStat (char *libname)
+LIBSprintLibStat (char *libname)
 {
     module_t *module;
     sttable_t *table;
 
-    DBUG_ENTER ("PrintLibStat");
+    DBUG_ENTER ("LIBSprintLibStat");
 
     DBUG_PRINT ("LIBSTAT", ("Loading module `%s'", libname));
 
