@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2004/06/03 09:13:42  khf
+ * Added support for multioperator WLs (makros adjusted
+ * and traversal into NWITHOP_NEXT added)
+ *
  * Revision 3.29  2004/02/20 08:27:38  mwe
  * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
  * changed tree traversal according to that
@@ -2085,7 +2089,7 @@ RCNcode (node *arg_node, node *arg_info)
     /*
      * count the references in the code
      */
-    NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+    NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
     /*
@@ -2270,6 +2274,10 @@ RCNwithop (node *arg_node, node *arg_info)
 
     default:
         DBUG_ASSERT ((0), "wrong withop type found");
+    }
+
+    if (NWITHOP_NEXT (arg_node) != NULL) {
+        NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
