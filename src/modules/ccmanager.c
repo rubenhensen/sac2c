@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/02/16 22:29:13  sah
+ * fixed dependency machanism (for objfiles)
+ *
  * Revision 1.8  2005/01/11 12:32:52  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -218,6 +221,10 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
     case STRS_extlib:
         result = ILIBmalloc (sizeof (char) * (strlen (lib) + 3));
         sprintf (result, "-l%s", lib);
+        break;
+    case STRS_objfile:
+        result = ILIBmalloc (sizeof (char) * (strlen (lib) + 3));
+        sprintf (result, "%s", lib);
         break;
     default:
         result = ILIBstringCopy ("");
