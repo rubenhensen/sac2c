@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.140  2002/08/09 12:46:47  dkr
+ * INFO_RC_... macros moved to refcount.c
+ * INFO_COMP_... macros moved to compile.c
+ * INFO_WL_... macros moved to wltransform.c
+ *
  * Revision 3.139  2002/08/09 12:21:05  sbs
  * MakeIdFromIds added .
  *
@@ -2702,18 +2707,6 @@ extern node *MakeInfo ();
 #define INFO_WSIB_EXPORTFUNS(n) ((nodelist *)(n->node[2]))
 /* see also print access macros used in this phase! */
 
-/* refcount */
-#define INFO_RC_FUNDEF(n) (n->node[0])
-#define INFO_RC_PRF(n) (n->node[1])
-#define INFO_RC_WITH(n) (n->node[2])
-#define INFO_RC_RCDUMP(n) ((int *)(n->node[3]))
-#define INFO_RC_NAIVE_RCDUMP(n) ((int *)(n->node[4]))
-#define INFO_RC_VARNO(n) (n->varno)
-#define INFO_RC_ONLYNAIVE(n) (n->flag)
-
-/* wltransform */
-#define INFO_WL_TYPES(n) (n->info.types)
-
 /* concurrent */
 #define INFO_CONC_FUNDEF(n) (n->node[0])
 
@@ -2843,16 +2836,6 @@ extern node *MakeInfo ();
 /* ArrayElemination */
 #define INFO_AE_TYPES(n) (n->node[1])
 #define INFO_AE_FUNDEF(n) (n->node[2])
-
-/* compile */
-#define INFO_COMP_MODUL(n) (n->node[0])
-#define INFO_COMP_FUNDEF(n) (n->node[1])
-#define INFO_COMP_LASTSYNC(n) (n->node[3])
-#define INFO_COMP_LASTIDS(n) (n->info.ids)
-#define INFO_COMP_FOLDFUNS(n) ((bool)(n->varno))
-#define INFO_COMP_ASSIGN(n) (n->node[5])
-#define INFO_COMP_SCHEDULERID(n) (n->counter)
-#define INFO_COMP_SCHEDULERINIT(n) (n->info2)
 
 /* reuse */
 #define INFO_REUSE_WL_IDS(n) (n->info.ids)
