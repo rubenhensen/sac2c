@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2002/08/07 09:49:58  sbs
+ * modulo added
+ *
  * Revision 1.1  2002/08/05 16:57:50  sbs
  * Initial revision
  *
@@ -226,9 +229,45 @@ NTCPRF_modarrayS (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
+ *    ntype *NTCPRF_ari_op_SxS( te_info *info, ntype *args)
+ *
+ * description:
+ *    simple []  x  simple []  ->  simple []
+ *
+ ******************************************************************************/
+
+ntype *
+NTCPRF_ari_op_SxS (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *array1, *array2;
+
+    DBUG_ENTER ("NTCPRF_ari_op_SxA");
+    DBUG_ASSERT (TYGetProductSize (args) == 2,
+                 "ari_op_SxA called with incorrect number of arguments");
+
+    array1 = TYGetProductMember (args, 0);
+    array2 = TYGetProductMember (args, 1);
+
+    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
+    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
+    TEAssureSameSimpleType (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
+                            array2);
+    TEAssureScalar (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
+    TEAssureScalar (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
+
+    res = TYMakeAKS (TYCopyType (TYGetScalar (array1)), SHMakeShape (0));
+
+    DBUG_RETURN (TYMakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
  *    ntype *NTCPRF_ari_op_SxA( te_info *info, ntype *args)
  *
  * description:
+ *    simple []  x  simple [shp]  ->  simple [shp]
  *
  ******************************************************************************/
 
@@ -262,6 +301,7 @@ NTCPRF_ari_op_SxA (te_info *info, ntype *args)
  *    ntype *NTCPRF_ari_op_AxS( te_info *info, ntype *args)
  *
  * description:
+ *    simple [shp]  x  simple []  ->  simple [shp]
  *
  ******************************************************************************/
 
@@ -295,6 +335,7 @@ NTCPRF_ari_op_AxS (te_info *info, ntype *args)
  *    ntype *NTCPRF_ari_op_AxA( te_info *info, ntype *args)
  *
  * description:
+ *    simple [shp]  x  simple [shp]  ->  simple [shp]
  *
  ******************************************************************************/
 
@@ -327,6 +368,7 @@ NTCPRF_ari_op_AxA (te_info *info, ntype *args)
  *    ntype *NTCPRF_rel_op_AxA( te_info *info, ntype *args)
  *
  * description:
+ *     simple [shp]  x  simple [shp]  ->  bool [shp]
  *
  ******************************************************************************/
 
@@ -361,6 +403,7 @@ NTCPRF_rel_op_AxA (te_info *info, ntype *args)
  *    ntype *NTCPRF_log_op_AxA( te_info *info, ntype *args)
  *
  * description:
+ *    bool [shp]  x  bool [shp]  ->  bool [shp]
  *
  ******************************************************************************/
 
@@ -381,6 +424,37 @@ NTCPRF_log_op_AxA (te_info *info, ntype *args)
     TEAssureBoolA (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
     res = TEAssureSameShape (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
                              array2);
+
+    DBUG_RETURN (TYMakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCPRF_int_op_SxS( te_info *info, ntype *args)
+ *
+ * description:
+ *    int []  x  int []  ->  int []
+ *
+ ******************************************************************************/
+
+ntype *
+NTCPRF_int_op_SxS (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *array1, *array2;
+
+    DBUG_ENTER ("NTCPRF_int_op_SxS");
+    DBUG_ASSERT (TYGetProductSize (args) == 2,
+                 "int_op_SxS called with incorrect number of arguments");
+
+    array1 = TYGetProductMember (args, 0);
+    array2 = TYGetProductMember (args, 1);
+
+    TEAssureIntS (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
+    TEAssureIntS (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
+
+    res = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (0));
 
     DBUG_RETURN (TYMakeProductType (1, res));
 }
