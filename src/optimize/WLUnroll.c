@@ -1,6 +1,9 @@
 /*         $Id$
  *
  * $Log$
+ * Revision 2.5  1999/07/14 16:11:37  bs
+ * Bug fixed in CountElements.
+ *
  * Revision 2.4  1999/05/12 09:56:54  jhs
  * Adjusted macros to access constant vectors.
  *
@@ -391,50 +394,73 @@ ForEachElement (node *partn, node *assignn)
 int
 CountElements (node *genn)
 {
-    int elts, tmp, d, m;
-    node *l, *u, *s, *w;
+    int elts, tmp, d, m, dim, i;
+    int *l, *u, *s, *w;
+    node *tmpn;
 
     DBUG_ENTER ("CountElements");
-    l = ARRAY_AELEMS (NGEN_BOUND1 (genn));
-    u = ARRAY_AELEMS (NGEN_BOUND2 (genn));
-    s = NGEN_STEP (genn);
-    if (s)
-        s = ARRAY_AELEMS (s);
-    w = NGEN_WIDTH (genn);
-    if (w)
-        w = ARRAY_AELEMS (w);
+
+    tmpn = NGEN_BOUND1 (genn);
+    DBUG_ASSERT ((NODE_TYPE (tmpn) == N_id || NODE_TYPE (tmpn) == N_array),
+                 ("generator bounds corrupted!"));
+    if (NODE_TYPE (tmpn) == N_id) {
+        dim = ID_VECLEN (tmpn);
+        l = (int *)ID_CONSTVEC (tmpn);
+    } else /* NODE_TYPE(tmpn) == N_array */ {
+        dim = ARRAY_VECLEN (tmpn);
+        l = (int *)ARRAY_CONSTVEC (tmpn);
+    }
+
+    tmpn = NGEN_BOUND2 (genn);
+    DBUG_ASSERT ((NODE_TYPE (tmpn) == N_id || NODE_TYPE (tmpn) == N_array),
+                 ("generator bounds corrupted!"));
+    if (NODE_TYPE (tmpn) == N_id)
+        u = (int *)ID_CONSTVEC (tmpn);
+    else /* NODE_TYPE(tmpn) == N_array */
+        u = (int *)ARRAY_CONSTVEC (tmpn);
+
+    tmpn = NGEN_STEP (genn);
+    if ((tmpn != NULL) && (NODE_TYPE (tmpn) == N_id))
+        s = (int *)ID_CONSTVEC (tmpn);
+    else if ((tmpn != NULL) && (NODE_TYPE (tmpn) == N_array))
+        s = (int *)ARRAY_CONSTVEC (tmpn);
+    else
+        s = NULL;
+
+    tmpn = NGEN_WIDTH (genn);
+    if ((tmpn != NULL) && (NODE_TYPE (tmpn) == N_id))
+        w = (int *)ID_CONSTVEC (tmpn);
+    else if ((tmpn != NULL) && (NODE_TYPE (tmpn) == N_array))
+        w = (int *)ARRAY_CONSTVEC (tmpn);
+    else
+        w = NULL;
+
     elts = 1;
 
-    while (l) {
+    for (i = 0; i < dim; i++) {
         tmp = 0;
 
         /* check step/width */
-        if ((w && !s) || (w && ELT (w) < 1) || (s && w && ELT (s) < ELT (w))) {
+        if ((w && !s) || (w && w[i] < 1) || (s && w && s[i] < w[i])) {
             /* illegal */
             elts = wlunrnum + 1;
             break;
         }
 
         /* counts elements in this dimension */
-        tmp = ELT (u) - ELT (l);
-        if (s) {
-            d = tmp / ELT (s);
-            m = tmp % ELT (s);
-            tmp = w ? (d * ELT (w)) : d;
+        tmp = u[i] - l[i];
+        if (s != NULL) {
+            d = tmp / s[i];
+            m = tmp % s[i];
+            tmp = (w != NULL) ? (d * w[i]) : d;
             if (m)
-                tmp += w ? (m > ELT (w) ? ELT (w) : m) : 1;
+                tmp = tmp + (w ? (MIN (m, w[i])) : 1);
         }
 
         /* summarise elements over all dimensions. */
-        elts *= tmp;
+        elts = elts * tmp;
 
         /* next dimension */
-        l = EXPRS_NEXT (l);
-        u = EXPRS_NEXT (u);
-        if (s)
-            s = EXPRS_NEXT (s);
-        if (w)
-            w = EXPRS_NEXT (w);
     }
 
     DBUG_RETURN (elts);
