@@ -2,6 +2,9 @@
 
 <!--
   $Log$
+  Revision 1.6  2005/02/07 16:09:09  jhb
+  little things changed
+
   Revision 1.5  2005/02/03 16:08:33  jhb
   change Name  of function
 
@@ -59,14 +62,21 @@ version="1.0">
  */
 
 #define NEW_INFO
+
+#include "check.h"
 #include "globals.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #include "dbug.h"
 #include "print.h"
 #include "check_lib.h"
-#include "check.h"
 #include "types.h"
+
+#include "tree_compound.h"
+#include "DupTree.h"
+#include "free.h"
+#include "internal_lib.h"
+
 
 
 struct INFO
@@ -79,7 +89,7 @@ static info *MakeInfo()
 
   DBUG_ENTER("MakeInfo");
 
-  result = ILIDmalloc(sizeof(info));
+  result = ILIBmalloc(sizeof(info));
 
   DBUG_RETURN(result);
 } 
@@ -200,8 +210,9 @@ static info *FreeInfo(info *info)
 
   <xsl:if test="string-length(@mandatory) &gt; 2">
    <xsl:value-of select="$newline"/>
-   <xsl:value-of select="'  // this son is mandatory = '"/>
+   <xsl:value-of select="' /* this son is mandatory = '"/>
    <xsl:value-of select="@mandatory"/>
+   <xsl:value-of select="' */ '"/>
    <xsl:value-of select="$newline"/>
    <xsl:value-of select="'  CHKexistSon( '"/>
    <xsl:apply-templates select="../../@name" mode="uppercase"/>
@@ -260,19 +271,31 @@ static info *FreeInfo(info *info)
 
 
 <xsl:template match="attribute">
-
+  
   <xsl:if test="string-length(@mandatory) &gt; 2">
-   <xsl:value-of select="$newline"/>
-   <xsl:value-of select="'  // this attribute is mandatory = '"/>
-   <xsl:value-of select="@mandatory"/>
-   <xsl:value-of select="$newline"/>
-   <xsl:value-of select="'  CHKexistAttribute( '"/>
-   <xsl:apply-templates select="../../@name" mode="uppercase"/>
-   <xsl:value-of select="'_'"/>
-   <xsl:apply-templates select="@name" mode="uppercase"/>
-   <xsl:value-of select="'( '"/>
-   <xsl:value-of select="'arg_node'"/>
-   <xsl:value-of select="')'"/>
+    <xsl:value-of select="$newline"/>
+    <xsl:value-of select="'  /* this attribute is mandatory = '"/>
+    <xsl:value-of select="@mandatory"/>
+    <xsl:value-of select="' */'"/>
+    <xsl:value-of select="$newline"/>
+    <xsl:value-of select="'  CHKexistAttribute( '"/>
+    <xsl:apply-templates select="../../@name" mode="uppercase"/>
+    <xsl:value-of select="'_'"/>
+    <xsl:apply-templates select="@name" mode="uppercase"/>
+    <xsl:value-of select="'( '"/>
+    <xsl:value-of select="'arg_node'"/>
+
+    <xsl:choose> 
+     <xsl:when test="@name = 'BV'">
+       <xsl:value-of select="','"/>
+       <xsl:value-of select="' NULL'"/>
+       <xsl:value-of select="')'"/>     
+     </xsl:when>
+     <xsl:otherwise>      
+       <xsl:value-of select="')'"/>
+     </xsl:otherwise>
+    </xsl:choose>
+
    <xsl:value-of select="', '"/>
    <xsl:value-of select="'arg_node'"/>
    <xsl:value-of select="', '"/>
@@ -296,7 +319,18 @@ static info *FreeInfo(info *info)
   <xsl:apply-templates select="@name" mode="uppercase"/>
   <xsl:value-of select="'( '"/>
   <xsl:value-of select="'arg_node'"/>
-  <xsl:value-of select="')'"/>
+
+    <xsl:choose> 
+     <xsl:when test="@name = 'BV'">
+       <xsl:value-of select="','"/>
+       <xsl:value-of select="' NULL'"/>
+       <xsl:value-of select="')'"/>     
+     </xsl:when>
+     <xsl:otherwise>      
+       <xsl:value-of select="')'"/>
+     </xsl:otherwise>
+    </xsl:choose>
+
   <xsl:value-of select="', '"/>
   <xsl:value-of select="'arg_node'"/>
   <xsl:value-of select="', '"/>
