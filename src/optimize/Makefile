@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.36  1998/02/06 18:09:51  dkr
+# make deps done
+#
 # Revision 1.35  1998/02/06 13:22:55  srs
 # added WithloopFolding.o
 #
@@ -229,11 +232,11 @@ Unswitch.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 Unswitch.o: /usr/include/malloc.h ../global/traverse.h
 Unswitch.o: ../global/access_macros.h optimize.h ConstantFolding.h DupTree.h
 Unswitch.o: Unroll.h Unswitch.h
+WithloopFolding.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+WithloopFolding.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 WithloopFolding.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
 WithloopFolding.o: ../global/tree_compound.h ../global/Error.h
-WithloopFolding.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-WithloopFolding.o: /usr/include/sys/va_list.h /usr/include/string.h
-WithloopFolding.o: /usr/include/stdlib.h ../global/globals.h
+WithloopFolding.o: /usr/include/string.h ../global/globals.h
 WithloopFolding.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 WithloopFolding.o: ../global/my_debug.h /usr/include/malloc.h
 WithloopFolding.o: ../global/traverse.h WithloopFolding.h
@@ -252,6 +255,6 @@ optimize.o: ../global/tree_compound.h ../global/Error.h /usr/include/string.h
 optimize.o: ../global/globals.h ../global/internal_lib.h ../global/free.h
 optimize.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 optimize.o: ../global/traverse.h ../print/print.h optimize.h
-optimize.o: ConstantFolding.h DeadCodeRemoval.h LoopInvariantRemoval.h
-optimize.o: Inline.h Unroll.h Unswitch.h ../psi-opt/ArrayElimination.h CSE.h
-optimize.o: WithloopFolding.h
+optimize.o: ConstantFolding.h DeadCodeRemoval.h WorkReduction.h
+optimize.o: LoopInvariantRemoval.h Inline.h Unroll.h Unswitch.h
+optimize.o: ../psi-opt/ArrayElimination.h CSE.h

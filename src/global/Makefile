@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.50  1998/02/06 18:09:47  dkr
+# make deps done
+#
 # Revision 1.49  1998/02/05 17:08:36  dkr
 # make deps done
 #
@@ -254,17 +257,17 @@ traverse.o: globals.h internal_lib.h ../../inc/dbug.h my_debug.h
 traverse.o: ../flatten/flatten.h ../print/print.h ../typecheck/typecheck.h
 traverse.o: ../optimize/optimize.h free.h /usr/include/malloc.h
 traverse.o: ../optimize/ConstantFolding.h ../optimize/DeadCodeRemoval.h
-traverse.o: ../optimize/WorkReduction.h ../optimize/LoopInvariantRemoval.h
-traverse.o: ../optimize/CSE.h ../modules/import.h ../refcount/refcount.h
-traverse.o: ../compile/compile.h ../optimize/DupTree.h ../optimize/Inline.h
-traverse.o: ../optimize/Unroll.h ../optimize/Unswitch.h
-traverse.o: ../psi-opt/ArrayElimination.h ../psi-opt/index.h
-traverse.o: ../modules/writesib.h ../modules/readsib.h
+traverse.o: ../optimize/LoopInvariantRemoval.h ../optimize/CSE.h
+traverse.o: ../modules/import.h ../refcount/refcount.h ../compile/compile.h
+traverse.o: ../optimize/DupTree.h ../optimize/Inline.h ../optimize/Unroll.h
+traverse.o: ../optimize/Unswitch.h ../psi-opt/ArrayElimination.h
+traverse.o: ../psi-opt/index.h ../modules/writesib.h ../modules/readsib.h
 traverse.o: ../modules/implicittypes.h ../objects/objinit.h
 traverse.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
 traverse.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
 traverse.o: ../compile/precompile.h ../modules/cccall.h
-traverse.o: ../compile/Old2NewWith.h traverse.h node_info.mac
+traverse.o: ../compile/Old2NewWith.h ../optimize/WithloopFolding.h traverse.h
+traverse.o: node_info.mac
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h tree.h types.h
 tree.o: tree_basic.h tree_compound.h Error.h /usr/include/stdio.h
 tree.o: /usr/include/sys/va_list.h /usr/include/string.h globals.h
