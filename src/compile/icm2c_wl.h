@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/01/10 18:33:20  dkr
+ * icm WL_ADJUST_OFFSET renamed into WL_SET_OFFSET
+ *
  * Revision 3.1  2000/11/20 18:01:21  sacbase
  * new release made
  *
@@ -63,8 +66,6 @@
  * Revision 1.1  1998/05/03 14:06:11  dkr
  * Initial revision
  *
- *
- *
  */
 
 #ifndef _icm2c_wl_h
@@ -93,8 +94,8 @@ extern void ICMCompileWL_FOLD_NOOP (int dims_target, char *target, char *idx_vec
 extern void ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec,
                                       int dims_wl);
 
-extern void ICMCompileWL_ADJUST_OFFSET (int dim, int first_block_dim, int dims_target,
-                                        char *target, char *idx_vec, int dims,
-                                        char **idx_scalars);
+extern void ICMCompileWL_SET_OFFSET (int dim, int first_block_dim, int dims_target,
+                                     char *target, char *idx_vec, int dims,
+                                     char **idx_scalars);
 
 #endif /* _icm2c_wl_h */

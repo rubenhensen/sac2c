@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/01/10 18:33:30  dkr
+ * icm WL_ADJUST_OFFSET renamed into WL_SET_OFFSET
+ *
  * Revision 3.2  2001/01/09 20:01:25  dkr
  * comment modified
  *
@@ -655,23 +658,23 @@ ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec, int dims
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_ADJUST_OFFSET( int dim, int first_block_dim,
- *                                    int dims_target, char *target,
- *                                    char *idx_vec,
- *                                    int dims, char **idx_scalars)
+ *   void ICMCompileWL_SET_OFFSET( int dim, int first_block_dim,
+ *                                 int dims_target, char *target,
+ *                                 char *idx_vec,
+ *                                 int dims, char **idx_scalars)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_ADJUST_OFFSET( dim, first_block_dim, dims_target, target, idx_vec,
- *                     dims, [ idx_scalars ]* )
+ *   WL_SET_OFFSET( dim, first_block_dim, dims_target, target, idx_vec,
+ *                  dims, [ idx_scalars ]* )
  *
  * remark:
- *   This ICM is needed (and usefull) in combination with the ICMs
- *   WL_(U)BLOCK_LOOP_BEGIN only!!
+ *   This ICM is needed (and usefull) in combination with multiple segments,
+ *   (unrolling-)blocking or naive compilation only!!
  *   If the C compiler reports an undeclared 'SAC__start...' then there is
  *   an error in compile.c:
- *   Either a WL_(U)BLOCK_LOOP_BEGIN ICM is missing, or the WL_ADJUST_OFFSET
+ *   Either a WL_(U)BLOCK_LOOP_BEGIN ICM is missing, or the WL_SET_OFFSET
  *   ICM is obsolete (probably a bug in the inference function COMPWLgrid...).
  *
  *   The names of the variables WL_MT_SCHEDULE_START, WL_MT_SCHEDULE_STOP
@@ -683,17 +686,17 @@ ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec, int dims
  ******************************************************************************/
 
 void
-ICMCompileWL_ADJUST_OFFSET (int dim, int first_block_dim, int dims_target, char *target,
-                            char *idx_vec, int dims, char **idx_scalars)
+ICMCompileWL_SET_OFFSET (int dim, int first_block_dim, int dims_target, char *target,
+                         char *idx_vec, int dims, char **idx_scalars)
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileWL_ADJUST_OFFSET");
+    DBUG_ENTER ("ICMCompileWL_SET_OFFSET");
 
-#define WL_ADJUST_OFFSET
+#define WL_SET_OFFSET
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef WL_ADJUST_OFFSET
+#undef WL_SET_OFFSET
 
     INDENT;
     fprintf (outfile, "SAC_WL_DEST(%s) = ", target);
@@ -707,8 +710,16 @@ ICMCompileWL_ADJUST_OFFSET (int dim, int first_block_dim, int dims_target, char 
             fprintf (outfile, " + %s )", idx_scalars[i]);
         } else {
             if (i <= first_block_dim) {
+                /*
+                 * no blocking in this dimension
+                 *  -> we use the start index of the current MT region
+                 */
                 fprintf (outfile, " + SAC_WL_MT_SCHEDULE_START( %d) )", i);
             } else {
+                /*
+                 * blocking in this dimension
+                 *  -> we use the start index of the current block
+                 */
                 fprintf (outfile, " + SAC_WL_VAR( start, %s) )", idx_scalars[i]);
             }
         }
