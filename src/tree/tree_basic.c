@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2000/03/15 15:03:31  dkr
+ * MakeWLseg, MakeWLsegVar changed
+ * WLSEG_HOMSV added
+ * WL..._INNERSTEP removed
+ *
  * Revision 1.9  2000/03/01 19:02:15  dkr
  * WLSTRIVAR_INNERSTEP removed
  *
@@ -1692,7 +1697,7 @@ node *
 MakeWLseg (int dims, node *contents, node *next)
 {
     node *new_node;
-    int b, d;
+    int b;
 
     DBUG_ENTER ("MakeWLseg");
 
@@ -1703,26 +1708,23 @@ MakeWLseg (int dims, node *contents, node *next)
     WLSEG_CONTENTS (new_node) = contents;
     WLSEG_NEXT (new_node) = next;
 
-    WLSEG_IDX_MIN (new_node) = (int *)MALLOC (dims * sizeof (int));
-    WLSEG_IDX_MAX (new_node) = (int *)MALLOC (dims * sizeof (int));
+    WLSEG_IDX_MIN (new_node) = NULL;
+    WLSEG_IDX_MAX (new_node) = NULL;
 
-    WLSEG_BLOCKS (new_node) = 3; /* three blocking levels */
+    WLSEG_BLOCKS (new_node) = 0;
     for (b = 0; b < WLSEG_BLOCKS (new_node); b++) {
-        WLSEG_BV (new_node, b) = (long *)MALLOC (sizeof (long) * dims);
+        WLSEG_BV (new_node, b) = NULL;
     }
-    WLSEG_UBV (new_node) = (long *)MALLOC (sizeof (long) * dims);
+    WLSEG_UBV (new_node) = NULL;
 
-    WLSEG_SV (new_node) = (long *)MALLOC (sizeof (long) * dims);
-    /* init SV */
-    for (d = 0; d < dims; d++) {
-        (WLSEG_SV (new_node))[d] = 1;
-    }
+    WLSEG_SV (new_node) = NULL;
 
-    WLSEG_MAXHOMDIM (new_node) = -1;
     /*
      * By default, no dimension is homogenious. Since dimensions are counted
-     * starting by 0, we must set  MAXHOMDIM to -1 here.
+     * starting by 0, we must set MAXHOMDIM to -1 here.
      */
+    WLSEG_MAXHOMDIM (new_node) = -1;
+    WLSEG_HOMSV (new_node) = NULL;
 
     DBUG_RETURN (new_node);
 }
@@ -1747,8 +1749,6 @@ MakeWLblock (int level, int dim, int bound1, int bound2, int step, node *nextdim
     WLBLOCK_NEXTDIM (new_node) = nextdim;
     WLBLOCK_CONTENTS (new_node) = contents;
     WLBLOCK_NEXT (new_node) = next;
-
-    WLBLOCK_INNERSTEP (new_node) = -1;
 
     DBUG_RETURN (new_node);
 }
@@ -1794,8 +1794,6 @@ MakeWLstride (int level, int dim, int bound1, int bound2, int step, int unrollin
     WLSTRIDE_PART (new_node) = NULL;
     WLSTRIDE_MODIFIED (new_node) = NULL;
 
-    WLSTRIDE_INNERSTEP (new_node) = -1;
-
     DBUG_RETURN (new_node);
 }
 
@@ -1835,7 +1833,7 @@ node *
 MakeWLsegVar (int dims, node *contents, node *next)
 {
     node *new_node;
-    int b, d;
+    int b;
 
     DBUG_ENTER ("MakeWLsegVar");
 
@@ -1846,20 +1844,16 @@ MakeWLsegVar (int dims, node *contents, node *next)
     WLSEGVAR_CONTENTS (new_node) = contents;
     WLSEGVAR_NEXT (new_node) = next;
 
-    WLSEGVAR_IDX_MIN (new_node) = (int *)MALLOC (dims * sizeof (int));
-    WLSEGVAR_IDX_MAX (new_node) = (int *)MALLOC (dims * sizeof (int));
+    WLSEGVAR_IDX_MIN (new_node) = NULL;
+    WLSEGVAR_IDX_MAX (new_node) = NULL;
 
-    WLSEGVAR_BLOCKS (new_node) = 3; /* three blocking levels */
+    WLSEGVAR_BLOCKS (new_node) = 0;
     for (b = 0; b < WLSEGVAR_BLOCKS (new_node); b++) {
-        WLSEGVAR_BV (new_node, b) = (long *)MALLOC (sizeof (long) * dims);
+        WLSEGVAR_BV (new_node, b) = NULL;
     }
-    WLSEGVAR_UBV (new_node) = (long *)MALLOC (sizeof (long) * dims);
+    WLSEGVAR_UBV (new_node) = NULL;
 
-    WLSEGVAR_SV (new_node) = (long *)MALLOC (sizeof (long) * dims);
-    /* init SV */
-    for (d = 0; d < dims; d++) {
-        (WLSEGVAR_SV (new_node))[d] = 1;
-    }
+    WLSEGVAR_SV (new_node) = NULL;
 
     DBUG_RETURN (new_node);
 }
