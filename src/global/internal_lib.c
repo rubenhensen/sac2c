@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2003/03/20 20:48:18  sah
+ * DbugMemoryLeakCheck only works
+ * if SHOW_MALLOC is set, as it
+ * depends on current_allocated_mem.
+ *
  * Revision 3.31  2003/02/08 15:58:00  mwe
  * (TmpVar) dl_tab added
  *
@@ -987,6 +992,7 @@ ComputeMallocAlignStep (void)
 #endif /* SHOW_MALLOC */
 
 #ifndef DBUG_OFF
+#ifdef SHOW_MALLOC
 
 /******************************************************************************
  *
@@ -1022,4 +1028,5 @@ DbugMemoryLeakCheck (void)
     DBUG_VOID_RETURN;
 }
 
+#endif /* SHOW_MALLOC */
 #endif /* DBUG_OFF */
