@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.57  1998/04/09 12:01:40  dkr
+ * ReGenMask() is now external
+ *
  * Revision 1.56  1998/04/03 21:07:14  dkr
  * added OPTconc
  *
@@ -271,6 +274,7 @@ extern char *PrintMask (long *mask, int varno);
 extern void PrintMasks (node *arg_node, node *arg_info);
 extern void SetMask (long *mask, long value, int varno);
 extern long *GenMask (int varno);
+extern long *ReGenMask (long *mask, int varno);
 extern void MinusMask (long *mask1, long *mask2, int varno);
 extern long *DupMask (long *oldmask, int varno);
 extern void OrMask (long *mask1, long *mask2, int varno);
