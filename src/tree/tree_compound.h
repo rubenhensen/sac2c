@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.45  2000/10/26 13:57:45  dkr
+ * CopyShpseg replaced by DupShpseg (DupTree.[ch])
+ *
  * Revision 1.44  2000/10/24 14:29:23  dkr
  * some append functions added
  *
@@ -183,15 +186,6 @@ specific implementation of a function should remain with the source code.
 /***
  ***  Shpseg :
  ***/
-
-/*
- *  functionname  : CopyShpseg
- *  arguments     : 1) pointer to old shpseg
- *  description   : returns a copy of the given shpseg
- *  remarks       : returns NULL if old shpseg is NULL
- */
-
-extern shpseg *CopyShpseg (shpseg *old);
 
 /*
  *  functionname  : MergeShpseg

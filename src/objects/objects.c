@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/10/26 13:58:13  dkr
+ * CopyShpseg replaced by DupShpseg (DupTree.[ch])
+ *
  * Revision 2.5  2000/10/24 12:55:06  dkr
  * AppendIdsChain renamed into AppendIds
  *
@@ -541,7 +544,7 @@ OBJarg (node *arg_node, node *arg_info)
         if (FUNDEF_BASETYPE (arg_info) == T_void) {
             FUNDEF_BASETYPE (arg_info) = ARG_BASETYPE (arg_node);
             FUNDEF_DIM (arg_info) = ARG_DIM (arg_node);
-            FUNDEF_SHPSEG (arg_info) = CopyShpseg (ARG_SHPSEG (arg_node));
+            FUNDEF_SHPSEG (arg_info) = DupShpseg (ARG_SHPSEG (arg_node));
             FUNDEF_TNAME (arg_info) = StringCopy (ARG_TNAME (arg_node));
             FUNDEF_TMOD (arg_info) = ARG_TMOD (arg_node);
 

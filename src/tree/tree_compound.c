@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2000/10/26 13:57:37  dkr
+ * CopyShpseg replaced by DupShpseg (DupTree.[ch])
+ *
  * Revision 1.24  2000/10/24 14:47:46  dkr
  * some append functions added
  *
@@ -228,25 +231,6 @@
 /***
  ***  Shpseg :
  ***/
-
-shpseg *
-CopyShpseg (shpseg *old)
-{
-    shpseg *new = NULL;
-    int i;
-
-    DBUG_ENTER ("CopyShpseg");
-
-    if (old != NULL) {
-        new = MakeShpseg (NULL);
-
-        for (i = 0; i < SHP_SEG_SIZE; i++) {
-            SHPSEG_SHAPE (new, i) = SHPSEG_SHAPE (old, i);
-        }
-    }
-
-    DBUG_RETURN (new);
-}
 
 shpseg *
 MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/10/26 13:58:25  dkr
+ * CopyShpseg replaced by DupShpseg (DupTree.[ch])
+ *
  * Revision 2.4  2000/10/24 11:50:07  dkr
  * MakeTypes renamed into MakeTypes1
  *
@@ -138,7 +141,7 @@ SearchImplementation (types *type, node *alltypes)
                      */
 
                     TYPES_DIM (type) = TYPEDEF_DIM (tdef);
-                    TYPES_SHPSEG (type) = CopyShpseg (TYPEDEF_SHPSEG (tdef));
+                    TYPES_SHPSEG (type) = DupShpseg (TYPEDEF_SHPSEG (tdef));
                 } else {
 
                     /*
@@ -177,7 +180,7 @@ SearchImplementation (types *type, node *alltypes)
         if (TYPEDEF_DIM (tdef) != 0) {
             if (TYPES_DIM (type) == 0) {
                 TYPES_DIM (type) = TYPEDEF_DIM (tdef);
-                TYPES_SHPSEG (type) = CopyShpseg (TYPEDEF_SHPSEG (tdef));
+                TYPES_SHPSEG (type) = DupShpseg (TYPEDEF_SHPSEG (tdef));
             } else {
                 tobefreed = TYPES_SHPSEG (type);
                 TYPES_SHPSEG (type)
