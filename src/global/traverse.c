@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.54  1997/12/02 18:42:56  srs
+ * removed NEWTREE
+ *
  * Revision 1.53  1997/11/24 17:03:34  srs
  * *** empty log message ***
  *
@@ -755,13 +758,8 @@ Trav (node *arg_node, node *arg_info)
     DBUG_ENTER ("Trav");
     DBUG_ASSERT ((NULL != arg_node), "wrong argument: NULL pointer");
     DBUG_ASSERT ((arg_node->nodetype <= N_ok), "wrong argument: Type-tag out of range!");
-#ifndef NEWTREE
-    DBUG_PRINT ("TRAV", ("case %s: node adress: %06x number of nodes: %d",
-                         mdb_nodetype[arg_node->nodetype], arg_node, arg_node->nnode));
-#else
     DBUG_PRINT ("TRAV", ("case %s: node adress: %06x", mdb_nodetype[arg_node->nodetype],
                          arg_node));
-#endif
     DBUG_RETURN ((*act_tab[arg_node->nodetype]) (arg_node, arg_info));
 }
 
@@ -788,16 +786,9 @@ TravSons (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("TravSons");
 
-#ifndef NEWTREE
-    for (i = 0; i < arg_node->nnode; i++)
-#else
     for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
-#endif
-    {
-        if (arg_node->node[i] != NULL) {
+        if (arg_node->node[i] != NULL)
             arg_node->node[i] = Trav (arg_node->node[i], arg_info);
-        }
-    }
 
     DBUG_RETURN (arg_node);
 }
