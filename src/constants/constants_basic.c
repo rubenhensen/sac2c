@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2002/09/03 11:52:56  dkr
+ * COAST2Constant() modified for new typechecker
+ *
  * Revision 1.14  2002/06/21 14:05:25  dkr
  * COConstant2AST() modified:
  * arrays with (dim > 1) are embedded into F_reshape now
@@ -161,7 +164,9 @@ AllocCV (simpletype type, int length)
     void *res;
 
     DBUG_ENTER ("AllocCV");
+
     res = (void *)Malloc (basetype_size[type] * length);
+
     DBUG_RETURN (res);
 }
 
@@ -424,6 +429,7 @@ simpletype
 COGetType (constant *a)
 {
     DBUG_ENTER ("COGetType");
+
     DBUG_RETURN (CONSTANT_TYPE (a));
 }
 
@@ -431,6 +437,7 @@ int
 COGetDim (constant *a)
 {
     DBUG_ENTER ("COGetDim");
+
     DBUG_RETURN (SHGetDim (CONSTANT_SHAPE (a)));
 }
 
@@ -438,6 +445,7 @@ shape *
 COGetShape (constant *a)
 {
     DBUG_ENTER ("COGetShape");
+
     DBUG_RETURN (CONSTANT_SHAPE (a));
 }
 
@@ -445,6 +453,7 @@ void **
 COGetDataVec (constant *a)
 {
     DBUG_ENTER ("COGetDataVec");
+
     DBUG_RETURN (CONSTANT_ELEMS (a));
 }
 
@@ -655,9 +664,21 @@ COAST2Constant (node *n)
                             VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (n))))
                           == CONSTANT_TYPE (new_co)),
                          "different basetype in id and assigned array");
-            CONSTANT_SHAPE (new_co) = SHFreeShape (CONSTANT_SHAPE (new_co));
-            CONSTANT_SHAPE (new_co)
-              = SHOldTypes2Shape (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (n))));
+
+            if (!sbs) {
+                /*
+                 * dkr:
+                 * The shape should survive an assignment       a:int[*] = b:int[2]
+                 * The shape should even survive an assignment  a:int[2] = b:int[*]
+                 * although type(b) is not a subtype of type(a). If 'a' is used as
+                 * an int[*]-object somewhere (i.e. for a function application)
+                 * the backend will take care of it and generate a runtime check if
+                 * necessary!!!!
+                 */
+                CONSTANT_SHAPE (new_co) = SHFreeShape (CONSTANT_SHAPE (new_co));
+                CONSTANT_SHAPE (new_co) = SHOldTypes2Shape (
+                  VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (n))));
+            }
             break;
 
         default:
@@ -668,6 +689,7 @@ COAST2Constant (node *n)
         /* node is not a constant */
         new_co = NULL;
     }
+
     DBUG_RETURN (new_co);
 }
 
@@ -718,6 +740,7 @@ COIsConstant (node *n)
         /* NULL is not a constant */
         res = FALSE;
     }
+
     DBUG_RETURN (res);
 }
 
@@ -739,6 +762,7 @@ constant *
 COMakeZero (simpletype type, shape *shp)
 {
     DBUG_ENTER ("COMakeZero");
+
     DBUG_RETURN (basecv_zero[type](shp));
 }
 
@@ -746,6 +770,7 @@ constant *
 COMakeOne (simpletype type, shape *shp)
 {
     DBUG_ENTER ("COMakeOne");
+
     DBUG_RETURN (basecv_one[type](shp));
 }
 
@@ -753,6 +778,7 @@ constant *
 COMakeTrue (shape *shp)
 {
     DBUG_ENTER ("COMakeTrue");
+
     DBUG_RETURN (basecv_one[T_bool](shp));
 }
 
@@ -760,6 +786,7 @@ constant *
 COMakeFalse (shape *shp)
 {
     DBUG_ENTER ("COMakeFalse");
+
     DBUG_RETURN (basecv_zero[T_bool](shp));
 }
 
@@ -787,6 +814,7 @@ COIsZero (constant *a, bool all)
     int i;
 
     DBUG_ENTER ("COIsZero");
+
     DBUG_ASSERT ((a != NULL), "COIsZero called with NULL pointer");
 
     /* create a zero constant with one element */
@@ -827,6 +855,7 @@ COIsOne (constant *a, bool all)
     int i;
 
     DBUG_ENTER ("COIsOne");
+
     DBUG_ASSERT ((a != NULL), "COIsOne called with NULL pointer");
 
     /* create a "one" constant with one element */
@@ -862,6 +891,7 @@ bool
 COIsTrue (constant *a, bool all)
 {
     DBUG_ENTER ("COIsTrue");
+
     DBUG_RETURN (COIsOne (a, all));
 }
 
@@ -869,6 +899,7 @@ bool
 COIsFalse (constant *a, bool all)
 {
     DBUG_ENTER ("COIsFalse");
+
     DBUG_RETURN (COIsZero (a, all));
 }
 
