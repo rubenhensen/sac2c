@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.8  2002/01/24 18:11:29  sacbase
+# ranlib on MAC OSX called on libsac libs.
+#
 # Revision 3.7  2002/01/24 17:59:00  sacbase
 # MAC target added
 #
@@ -392,6 +395,7 @@ sac2c.for.OSX_MAC tools.tar.for.OSX_MAC:
 	$(RCP) $(MAC_USER)@$(MAC_HOST):$(MAC_DIR)/tools/bin/tools.tar.for.OSX_MAC .
 	$(RSH) -l $(MAC_USER) $(MAC_HOST) \
 	    'cd $(MAC_DIR)/src/runtime;' \
+	    'ranlib libsac*.a; ' \
 	    'tar cvfh libsac.tar libsac*.a'
 	$(RCP) $(MAC_USER)@$(MAC_HOST):$(MAC_DIR)/src/runtime/libsac.tar \
 	    libsac.tar.for.OSX_MAC
