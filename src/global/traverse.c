@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/05/10 10:54:13  bs
+ * tsi_tab renamed to wlaa_tab
+ *
  * Revision 2.3  1999/05/06 15:35:42  sbs
  * filename- mechanism added for creating better error-messages
  * when multiple files are involved!
@@ -115,7 +118,7 @@
 #include "sync_init.h"
 #include "sync_opt.h"
 #include "schedule.h"
-#include "tile_size_inference.h"
+#include "wl_access_analyze.h"
 #include "scnprs.h" /* needed for linenum only!!! */
 
 #include "traverse.h"
@@ -847,7 +850,7 @@ funptr opt_tab[] = {
 #undef NIF
 
 /*
- * 49) tsi_tab
+ * 49) wlaa_tab
  */
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
@@ -856,7 +859,7 @@ funptr opt_tab[] = {
             t47, t48, t49, t50, t51, t52, nn)                                            \
     t49
 
-funptr tsi_tab[] = {
+funptr wlaa_tab[] = {
 #include "node_info.mac"
 };
 #undef NIF
