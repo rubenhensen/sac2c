@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/11/25 17:27:28  cg
+ * Added inherit_list_t functions.
+ *
  * Revision 3.7  2004/11/22 19:24:35  cg
  * Moved all definitions/declarations of global variables to globals.mac
  *
@@ -97,11 +100,15 @@
 
 extern bool RSCparseResourceFile (char *file);
 
+extern inheritence_list_t *RSCmakeInheritenceListEntry (char *name,
+                                                        inheritence_list_t *next);
+
 extern resource_list_t *RSCmakeResourceListEntry (char *resource, char *value_str,
                                                   int value_num, int add_flag,
                                                   resource_list_t *next);
 
-extern target_list_t *RSCmakeTargetListEntry (char *target, node *super_targets,
+extern target_list_t *RSCmakeTargetListEntry (char *target,
+                                              inheritence_list_t *super_targets,
                                               resource_list_t *resource_list,
                                               target_list_t *next);
 
