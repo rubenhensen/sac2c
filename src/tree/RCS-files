@@ -39,3 +39,4 @@ traverse_helper.h
 check_lib.c
 check_lib.h
 
+prepare_inlining.c
