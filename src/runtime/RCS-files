@@ -27,3 +27,4 @@ sac_wl.h
 sac_wl.tagged.h
 sac2crc.in
 sac2crc.X86
+sac2crc.SUN
