@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.45  1998/05/03 14:02:03  dkr
+ * fixed a bug in RCNcode: traverses NEXT-node now
+ *
  * Revision 1.44  1998/05/02 17:45:30  dkr
  * changed RCNwithid:
  *   RCs of NWITHID_IDS are now set correctly
@@ -1231,14 +1234,13 @@ RCcond (node *arg_node, node *arg_info)
  * description:
  *   sets the rc of a N_pre/N_post-identificator to -1 (=> no refcounting)
  *
- *
  ******************************************************************************/
 
 node *
 RCprepost (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("RCprepost");
-    PRE_REFCNT (arg_node) = -1; /* is not a refcount-object !! */
+    PRE_REFCNT (arg_node) = -1; /* is not a refcount-object!! */
     DBUG_RETURN (arg_node);
 }
 
@@ -1481,7 +1483,7 @@ RCNpart (node *arg_node, node *arg_info)
  *   node *RCNcode( node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   performs reference counting for N_Ncode nodes.
  *
  ******************************************************************************/
 
@@ -1492,6 +1494,10 @@ RCNcode (node *arg_node, node *arg_info)
 
     NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+
+    if (NCODE_NEXT (arg_node) != NULL) {
+        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
