@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.18  2000/01/04 11:48:52  cg
+# Added recursive make call for new subdirectory src/heapmgr.
+#
 # Revision 2.17  1999/12/13 11:26:07  dkr
 # *** empty log message ***
 #
@@ -230,11 +233,13 @@ dummy:
 	(cd src/compile; $(MAKE_NORM) )
 	(cd src/psi-opt; $(MAKE_NORM) )
 	(cd src/libsac; $(MAKE_PROD) )
+	(cd src/heapmgr; $(MAKE_PROD) )
 	(cd src/runtime; $(MAKE_NORM) )
 	(cd src/tools; $(MAKE_PROD) )
 #
 # $(MAKE_PROD) is used in the above lines by purpose in order to compile
-# the SAC runtime library and the additional tool with full optimizations
+# the SAC runtime library, the privat heap manager, and the additional 
+# tools, e.g. the cache simulator, with full optimizations
 # enabled even though sac2c itself is only compiled in the developper
 # version.
 #
@@ -255,6 +260,7 @@ prod:
 	(cd src/compile; $(MAKE_PROD) )
 	(cd src/psi-opt; $(MAKE_PROD) )
 	(cd src/libsac; $(MAKE_PROD) )
+	(cd src/heapmgr; $(MAKE_PROD) )
 	(cd src/runtime; $(MAKE_PROD) )
 	(cd src/tools; $(MAKE_PROD) )
 
@@ -282,6 +288,7 @@ deps:
 	(cd src/compile; $(MAKE) deps)
 	(cd src/psi-opt; $(MAKE) deps)
 	(cd src/libsac; $(MAKE) deps)
+	(cd src/heapmgr; $(MAKE) deps)
 	(cd src/tools; $(MAKE) deps)
 	(cd src/runtime; $(MAKE) deps)
 
@@ -300,6 +307,7 @@ clean:
 	(cd src/compile; $(MAKE) clean )
 	(cd src/psi-opt; $(MAKE) clean)
 	(cd src/libsac; $(MAKE) clean)
+	(cd src/heapmgr; $(MAKE) clean)
 	(cd src/tools; $(MAKE) clean)
 	(cd src/runtime; $(MAKE) clean)
 	$(RM) sac2c
