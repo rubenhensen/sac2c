@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.36  2000/03/24 15:20:39  dkr
+ * CheckOptionConsistency() extended
+ *
  * Revision 2.35  2000/03/23 21:38:51  dkr
  * consistency check for -lac2fun, -fun2lac added
  *
@@ -419,7 +422,7 @@ AnalyseCommandline (int argc, char *argv[])
                                                                                          \
             phase = strtol (old_s, &new_s, 10);                                          \
                                                                                          \
-            if (phase > PH_final) {                                                      \
+            if (phase >= PH_final) {                                                     \
                 ARGS_ERROR ("illegal phase number found");                               \
                 break;                                                                   \
             } else {                                                                     \
@@ -697,7 +700,7 @@ AnalyseCommandline (int argc, char *argv[])
 void
 CheckOptionConsistency ()
 {
-    int write_dummyfuns_into_sib, l2f_between_analysis_and_resolve;
+    int write_dummyfuns_into_sib;
     int ph_l2f, i;
 
     DBUG_ENTER ("CheckOptionConsistency");
@@ -759,16 +762,24 @@ CheckOptionConsistency ()
      * Between PH_analysis and PH_objects no transformations are allowed!
      */
 
-    l2f_between_analysis_and_resolve = FALSE;
     for (i = PH_analysis; i < PH_objects; i++) {
         if ((do_lac2fun[i + 1]) || (do_fun2lac[i])) {
-            l2f_between_analysis_and_resolve = TRUE;
+            SYSERROR (("No transformation of loops and conditionals into functions"
+                       " or vice versa is allowed between phases %i and %i",
+                       PH_analysis, PH_objects));
         }
     }
-    if (l2f_between_analysis_and_resolve) {
-        SYSERROR (("No transformation of loops and conditionals into functions"
-                   " or vice versa is allowed between phases %i and %i",
-                   PH_analysis, PH_objects));
+
+    /*
+     * After PH_refcnt no lac2fun transformation is allowed!
+     */
+
+    for (i = PH_refcnt + 1; i < PH_final; i++) {
+        if (do_lac2fun[i]) {
+            SYSERROR (("No transformation of loops and conditionals into functions"
+                       " is allowed after phase %i",
+                       PH_refcnt));
+        }
     }
 
     DBUG_VOID_RETURN;
