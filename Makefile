@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.72  2003/08/18 11:28:48  sbs
+# src/optimize/SelectionPropagation.o is indeed linked now as well 8-((
+#
 # Revision 3.71  2003/04/26 20:49:26  mwe
 # ElimSubDiv and UndoElimSubDiv added
 #
@@ -170,7 +173,7 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/SSALUR.o src/optimize/SSAInferLI.o \
           src/optimize/SSAWLUnroll.o src/optimize/rmcasts.o \
           src/optimize/DistributiveLaw.o src/optimize/ElimSubDiv.o \
-          src/optimize/UndoElimSubDiv.o
+          src/optimize/UndoElimSubDiv.o src/optimize/SelectionPropagation.o
 
 PROFILE= src/profile/annotate_fun_calls.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
