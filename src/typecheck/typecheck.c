@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.27  1999/07/15 20:57:26  sbs
+ * some bugs concerning missing CONSTVEC decls eliminated.
+ * In particular BuildCatWIthLoop1/2 had to be improved!
+ *
  * Revision 2.26  1999/07/08 14:21:40  sbs
  * Now in modules . in NGeneratoras are kept!
  *
@@ -573,15 +577,24 @@ Type2Vec (types *type)
 {
     node *res;
     int i;
+    void *const_vec;
+    node *tmp_num;
 
     DBUG_ENTER ("Type2Vec");
     DBUG_ASSERT ((TYPES_DIM (type) > 0), "Type2Vec() called with type with dim <= 0");
 
     res = NULL;
+    const_vec = AllocConstVec (T_int, TYPES_DIM (type));
     for (i = TYPES_DIM (type) - 1; i >= 0; i--) {
-        res = MakeExprs (MakeNum (TYPES_SHAPE (type, i)), res);
+        tmp_num = MakeNum (TYPES_SHAPE (type, i));
+        res = MakeExprs (tmp_num, res);
+        const_vec = ModConstVec (T_int, const_vec, i, tmp_num);
     }
     res = MakeArray (res);
+    ARRAY_ISCONST (res) = TRUE;
+    ARRAY_VECTYPE (res) = T_int;
+    ARRAY_VECLEN (res) = TYPES_DIM (type);
+    ARRAY_CONSTVEC (res) = const_vec;
 
     DBUG_RETURN (res);
 }
@@ -1100,11 +1113,12 @@ BuildCatWithLoop1 (types *new_shape, node *array1)
 static node *
 BuildCatWithLoop2 (ids *lhs, node *arg1, node *arg2, node *arg3)
 {
-    node *res, *body, *start_vec, *start_vec_copy;
+    node *res, *body, *tmp_num, *start_vec, *start_vec_copy;
     char *wl_body_var_vec;
     char *wl_body_var_elem;
     char *wl_body_var_offset;
     char *iv;
+    void *const_vec;
     int i;
 
     DBUG_ENTER ("BuildCatWithLoop2");
@@ -1124,24 +1138,31 @@ BuildCatWithLoop2 (ids *lhs, node *arg1, node *arg2, node *arg3)
                  "Type of 2nd argument to primitive function cat(): dim <= 0");
 
     start_vec = NULL;
-    start_vec_copy = NULL;
+    const_vec = AllocConstVec (T_int, ID_DIM (arg2));
 
     for (i = ID_DIM (arg2) - 1; i > NUM_VAL (arg1); i--) {
-        start_vec = MakeExprs (MakeNum (0), start_vec);
-        start_vec_copy = MakeExprs (MakeNum (0), start_vec_copy);
+        tmp_num = MakeNum (0);
+        start_vec = MakeExprs (tmp_num, start_vec);
+        const_vec = ModConstVec (T_int, const_vec, i, tmp_num);
     }
 
-    start_vec = MakeExprs (MakeNum (ID_SHAPE (arg2, NUM_VAL (arg1))), start_vec);
-    start_vec_copy
-      = MakeExprs (MakeNum (ID_SHAPE (arg2, NUM_VAL (arg1))), start_vec_copy);
+    tmp_num = MakeNum (ID_SHAPE (arg2, NUM_VAL (arg1)));
+    start_vec = MakeExprs (tmp_num, start_vec);
+    const_vec = ModConstVec (T_int, const_vec, i, tmp_num);
 
     for (i = NUM_VAL (arg1) - 1; i >= 0; i--) {
-        start_vec = MakeExprs (MakeNum (0), start_vec);
-        start_vec_copy = MakeExprs (MakeNum (0), start_vec_copy);
+        tmp_num = MakeNum (0);
+        start_vec = MakeExprs (tmp_num, start_vec);
+        const_vec = ModConstVec (T_int, const_vec, i, tmp_num);
     }
 
     start_vec = MakeArray (start_vec);
-    start_vec_copy = MakeArray (start_vec_copy);
+    ARRAY_ISCONST (start_vec) = TRUE;
+    ARRAY_VECTYPE (start_vec) = T_int;
+    ARRAY_VECLEN (start_vec) = ID_DIM (arg2);
+    ARRAY_CONSTVEC (start_vec) = const_vec;
+
+    start_vec_copy = DupTree (start_vec, NULL);
 
     body
       = MakeAssign (MakeLet (start_vec, MakeIds (wl_body_var_offset, NULL, ST_regular)),
@@ -6303,9 +6324,11 @@ TCdo (node *arg_node, node *arg_info)
     expr_type = TI (DO_COND (arg_node), arg_info);
     if (NULL == expr_type) {
         ABORT (NODE_LINE (arg_node), ("Type not inferable"));
-    } else if (T_bool != TYPES_BASETYPE (expr_type))
+    } else if ((T_bool != TYPES_BASETYPE (expr_type))
+               || (TYPES_DIM (expr_type) != SCALAR))
         ERROR (NODE_LINE (DO_COND (arg_node)),
-               ("Type is '%s` but must be 'bool`", Type2String (expr_type, 0)));
+               ("Type of loop condition is '%s` but must be 'bool`",
+                Type2String (expr_type, 0)));
 
     /* now free infered type_information */
     FREE_TYPES (expr_type);
@@ -6345,12 +6368,13 @@ TCwhile (node *arg_node, node *arg_info)
     if (!expr_type)
         ABORT (NODE_LINE (arg_node), ("Type not inferable"));
 
-    if (T_bool == TYPES_BASETYPE (expr_type))
+    if ((T_bool == TYPES_BASETYPE (expr_type)) && (TYPES_DIM (expr_type) == SCALAR))
         /* traverse body of while_loop */
         Trav (WHILE_BODY (arg_node), arg_info);
     else
         ERROR (NODE_LINE (WHILE_COND (arg_node)),
-               ("Type is '%s` but must be 'bool`", Type2String (expr_type, 0)));
+               ("Type of loop condition is '%s` but must be 'bool`",
+                Type2String (expr_type, 0)));
 
     /* restore scope stack by setting 'tos' pointer */
     tos = old_tos;
@@ -7609,9 +7633,10 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
 {
     types *left_type, *right_type, *step_type, *width_type, *gen_type;
     types *tmpt, **concrete_type;
-    node *gen, *withid, *tmpn;
+    node *gen, *withid, *tmpn, *tmp_num;
     int i, add, dim;
     ids *_ids;
+    void *const_vec;
 
     DBUG_ENTER ("TI_Npart");
     gen = NPART_GEN (arg_node);
@@ -7635,18 +7660,26 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
             else
                 dim = KNOWN_DIM_OFFSET - TYPES_DIM (default_bound_type);
             tmpn = NULL;
+            const_vec = AllocConstVec (T_int, dim);
             add = F_lt == NGEN_OP1 (gen);
             if (add)
                 NGEN_OP1 (gen) = F_le;
-            for (i = dim - 1; i >= 0; i--)
-                tmpn = MakeExprs (MakeNum (add), tmpn);
+            for (i = dim - 1; i >= 0; i--) {
+                tmp_num = MakeNum (add);
+                tmpn = MakeExprs (tmp_num, tmpn);
+                const_vec = ModConstVec (T_int, const_vec, i, tmp_num);
+            }
+            tmpn = MakeArray (tmpn);
+            ARRAY_ISCONST (tmpn) = TRUE;
+            ARRAY_VECTYPE (tmpn) = T_int;
+            ARRAY_VECLEN (tmpn) = dim;
+            ARRAY_CONSTVEC (tmpn) = const_vec;
             if (TYPES_DIM (default_bound_type) == SCALAR) {
                 NGEN_BOUND1 (gen)
-                  = MakeCast (MakeArray (tmpn),
-                              MakeType (T_int, 1, MakeShpseg (MakeNums (0, NULL)), NULL,
-                                        NULL));
+                  = MakeCast (tmpn, MakeType (T_int, 1, MakeShpseg (MakeNums (0, NULL)),
+                                              NULL, NULL));
             } else {
-                NGEN_BOUND1 (gen) = MakeArray (tmpn);
+                NGEN_BOUND1 (gen) = tmpn;
             }
         }
     }
@@ -7659,19 +7692,26 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
             ABORT (NODE_LINE (arg_node), ("bound . not allowed with function fold"));
         if (SCALAR <= TYPES_DIM (default_bound_type)) {
             tmpn = NULL;
+            const_vec = AllocConstVec (T_int, TYPES_DIM (default_bound_type));
             add = F_le == NGEN_OP2 (gen);
             if (add)
                 NGEN_OP2 (gen) = F_lt;
-            for (i = TYPES_DIM (default_bound_type) - 1; i >= 0; i--)
-                tmpn = MakeExprs (MakeNum (TYPES_SHAPE (default_bound_type, i) + add - 1),
-                                  tmpn);
+            for (i = TYPES_DIM (default_bound_type) - 1; i >= 0; i--) {
+                tmp_num = MakeNum (TYPES_SHAPE (default_bound_type, i) + add - 1);
+                tmpn = MakeExprs (tmp_num, tmpn);
+                const_vec = ModConstVec (T_int, const_vec, i, tmp_num);
+            }
+            tmpn = MakeArray (tmpn);
+            ARRAY_ISCONST (tmpn) = TRUE;
+            ARRAY_VECTYPE (tmpn) = T_int;
+            ARRAY_VECLEN (tmpn) = TYPES_DIM (default_bound_type);
+            ARRAY_CONSTVEC (tmpn) = const_vec;
             if (TYPES_DIM (default_bound_type) == SCALAR) {
                 NGEN_BOUND2 (gen)
-                  = MakeCast (MakeArray (tmpn),
-                              MakeType (T_int, 1, MakeShpseg (MakeNums (0, NULL)), NULL,
-                                        NULL));
+                  = MakeCast (tmpn, MakeType (T_int, 1, MakeShpseg (MakeNums (0, NULL)),
+                                              NULL, NULL));
             } else {
-                NGEN_BOUND2 (gen) = MakeArray (tmpn);
+                NGEN_BOUND2 (gen) = tmpn;
             }
         } else {
             /*
