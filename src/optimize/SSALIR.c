@@ -2,6 +2,10 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2001/05/09 12:24:34  nmw
+ * withloop indendend code moving is done in top-down traversal now
+ * to get the correct assignment order
+ *
  * Revision 1.15  2001/05/04 11:54:39  nmw
  * added support for AVIS_ASSIGN checks
  *
@@ -485,8 +489,8 @@ InsListAppendAssigns (nodelist *il, node *assign, int depth)
     DBUG_ENTER ("InsListAppendAssigns");
 
     tmp = InsListGetFrame (il, depth);
-
-    NODELIST_NODE (tmp) = AppendAssign (assign, NODELIST_NODE (tmp));
+    /* ##nmw## */
+    NODELIST_NODE (tmp) = AppendAssign (NODELIST_NODE (tmp), assign);
 
     DBUG_RETURN (il);
 }
@@ -877,17 +881,6 @@ SSALIRassign (node *arg_node, node *arg_info)
     /* start traversl in instruction */
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
-    /*
-     * check for with loop independend expressions:
-     * if all used identifiers are defined on a outer level, we can move
-     * up the whole assignment to this level.
-     */
-    if (INFO_SSALIR_MAXDEPTH (arg_info) < INFO_SSALIR_WITHDEPTH (arg_info)) {
-        wlir_move_up = INFO_SSALIR_MAXDEPTH (arg_info);
-    } else {
-        wlir_move_up = -1;
-    }
-
     /* analyse and store results of instruction traversal */
     INFO_SSALIR_ASSIGN (arg_info) = old_assign;
     remove_assign = INFO_SSALIR_REMASSIGN (arg_info);
@@ -895,6 +888,35 @@ SSALIRassign (node *arg_node, node *arg_info)
 
     pre_assign = INFO_SSALIR_PREASSIGN (arg_info);
     INFO_SSALIR_PREASSIGN (arg_info) = NULL;
+
+    /*
+     * check for with loop independend expressions:
+     * if all used identifiers are defined on a outer level, we can move
+     * up the whole assignment to this level.
+     */
+    if (INFO_SSALIR_MAXDEPTH (arg_info) < INFO_SSALIR_WITHDEPTH (arg_info)) {
+        wlir_move_up = INFO_SSALIR_MAXDEPTH (arg_info);
+
+        /*
+         * now we add this assignment to the respective insert level chain
+         * and add a new assignment node in this chain that will be removed
+         * later on bottom up traversal (this gives us a correct chain).
+         */
+        tmp = arg_node;
+        arg_node = MakeAssign (NULL, ASSIGN_NEXT (arg_node));
+
+        DBUG_ASSERT ((remove_assign == FALSE), "wlur expression must not be removed");
+
+        remove_assign = TRUE;
+        ASSIGN_NEXT (tmp) = NULL;
+
+        /* append to InsertList on movement target level */
+        INFO_SSALIR_INSLIST (arg_info)
+          = InsListAppendAssigns (INFO_SSALIR_INSLIST (arg_info), tmp, wlir_move_up);
+
+        /* increment statistic counter */
+        wlir_expr++;
+    }
 
     /* insert post-assign code */
     if (INFO_SSALIR_POSTASSIGN (arg_info) != NULL) {
@@ -921,20 +943,6 @@ SSALIRassign (node *arg_node, node *arg_info)
         tmp = arg_node;
         arg_node = ASSIGN_NEXT (arg_node);
         FreeNode (tmp);
-    }
-
-    /* move up assignment in case of WLIR */
-    if (wlir_move_up >= 0) {
-        tmp = arg_node;
-        arg_node = ASSIGN_NEXT (arg_node);
-        ASSIGN_NEXT (tmp) = NULL;
-
-        /* append to InsertList on movement target level */
-        INFO_SSALIR_INSLIST (arg_info)
-          = InsListAppendAssigns (INFO_SSALIR_INSLIST (arg_info), tmp, wlir_move_up);
-
-        /* increment statistic counter */
-        wlir_expr++;
     }
 
     /*
