@@ -6,3 +6,4 @@ objinit.h
 uniquecheck.c
 uniquecheck.h
 objanalysis.c
+objanalysis.h
