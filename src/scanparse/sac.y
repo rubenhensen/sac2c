@@ -3,6 +3,12 @@
 /*
  *
  * $Log$
+ * Revision 1.163  1998/10/30 09:53:12  cg
+ * key word 'all' is now allowed as function name,
+ * required by array library.
+ * Syntactic position of fold operator limited to those internal
+ * functions/operators which are "really" commutative and associative.
+ *
  * Revision 1.162  1998/07/20 17:49:07  sbs
  * if (store_wlcomp_pragma_global != NULL) {
  * included in wlcomp_pragma_local rule 8-))))
@@ -628,7 +634,7 @@ static file_type file_kind = F_prog;
        INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF, CLASSTYPE,
        INC, DEC, ADDON, SUBON, MULON, DIVON, MODON
        K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, NWITH, FOLD,
-       MODDEC, MODIMP, CLASSDEC, IMPORT, ALL, IMPLICIT, EXPLICIT, TYPES, FUNS,
+       MODDEC, MODIMP, CLASSDEC, IMPORT, IMPLICIT, EXPLICIT, TYPES, FUNS,
        OWN, CONSTANTS, GLOBAL, OBJECTS, CLASSIMP,
        ARRAY,SC, TRUE, FALSE, EXTERN, C_KEYWORD,
        PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
@@ -636,7 +642,7 @@ static file_type file_kind = F_prog;
        WLCOMP, DEFAULT
        STEP, WIDTH, TARGET, EQUALS
 %token <id> ID, STR, AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PRF_MOD, PLUS,
-            F2I, F2D, I2F,I2D, D2I, D2F,
+            F2I, F2D, I2F,I2D, D2I, D2F, ALL,
             TOI, TOF, TOD, 
             MINUS, PRIVATEID, OPTION, ABS, PRF_MIN, PRF_MAX
             RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE, CAT, PSI, GENARRAY, MODARRAY
@@ -1603,6 +1609,8 @@ prf_name : AND { $$=$1; }
          | D2F { $$=$1; }
          | PRF_MIN { $$=$1; }
          | PRF_MAX { $$=$1; }
+         | ALL { $$=$1; /* necessary because all function from array library conflicts
+                           with key word. */}
         ;
 
 main: TYPE_INT K_MAIN BRACKET_L BRACKET_R {$$=MakeNode(N_fundef);} exprblock 
@@ -2320,16 +2328,11 @@ foldfun:  id COMMA
 /* NOT BRUSHED END  */
  
 foldop: PLUS    {$$=F_add;}
-      | MINUS   {$$=F_sub;}
-      | DIV     {$$=F_div;}
       | MUL     {$$=F_mul;}
-      | PRF_MOD {$$=F_mod;}
       | PRF_MIN {$$=F_min;}
       | PRF_MAX {$$=F_max;}
       | AND     {$$=F_and;}
       | OR      {$$=F_or; }
-      | EQ      {$$=F_eq; }
-      | NEQ     {$$=F_neq;}
       ;
 
 monop: ABS   { $$=F_abs;   }
