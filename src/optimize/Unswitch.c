@@ -1,6 +1,11 @@
 /*
- *
  * $Log$
+ * Revision 2.6  2000/06/13 12:14:07  dkr
+ * obsolete NEW_TREE code removed
+ * bug in GenLetNode() fixed: IDS_NAME is no longer shared but duplicated
+ * now :-)
+ * code brushed (compound macros!)
+ *
  * Revision 2.5  2000/01/26 17:27:22  dkr
  * type of traverse-function-table changed.
  *
@@ -59,8 +64,6 @@
  *
  * Revision 1.1  1995/07/07  13:40:15  asi
  * Initial revision
- *
- *
  */
 
 #include <stdio.h>
@@ -90,28 +93,25 @@
 typedef enum { nothing, first, last, between, split, oneloop } todo;
 
 typedef struct CINFO {
-    prf test_prf;      /* test function					 */
-    long test_num;     /* test nummber						 */
-    long last_test;    /* last number which will be tested			 */
-    todo todo;         /* what shall be done					 */
+    prf test_prf;      /* test function                                         */
+    long test_num;     /* test nummber                                          */
+    long last_test;    /* last number which will be tested                      */
+    todo todo;         /* what shall be done                                    */
     node *insert_node; /* ptr to assign-node the conditional has been linked to */
-    node *chain1;      /* assign-chain						 */
-    node *chain2;      /* assign-chain						 */
+    node *chain1;      /* assign-chain                                          */
+    node *chain2;      /* assign-chain                                          */
 } cinfo;
 
-/*
+/******************************************************************************
  *
- *  functionname  : Unswitch
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *Unswitch(node *arg_node,node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 node *
 Unswitch (node *arg_node, node *arg_info)
 {
@@ -119,6 +119,7 @@ Unswitch (node *arg_node, node *arg_info)
     funtab *tmp_tab;
 
     DBUG_ENTER ("Unswitch");
+
     DBUG_PRINT ("OPT", ("LOOP UNSWITCHING"));
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
 
@@ -133,8 +134,10 @@ Unswitch (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("OPT", ("                        result: %d", uns_expr - mem_uns_expr));
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
+
     DBUG_RETURN (arg_node);
 }
+
 /*
  *
  *  functionname  : UNSfundef
@@ -159,6 +162,7 @@ Unswitch (node *arg_node, node *arg_info)
  *  remarks       : --
  *
  */
+
 node *
 UNSfundef (node *arg_node, node *arg_info)
 {
@@ -178,45 +182,42 @@ UNSfundef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : UNSid
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *UNSid(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 node *
 UNSid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNSid");
+
     arg_node->flag = LEVEL;
     ID_DEF (arg_node) = MRD_GETLAST (ID_VARNO (arg_node), INFO_VARNO (arg_info));
+
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : UNSlet
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *UNSlet(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 node *
 UNSlet (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNSlet");
+
     /* genrate defined-pointer and maybe trav with-loop */
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
@@ -225,23 +226,21 @@ UNSlet (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : InversePrf
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   prf InversePrf(prf fun)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 prf
 InversePrf (prf fun)
 {
     DBUG_ENTER ("InversePrf");
+
     switch (fun) {
     case F_eq:
         fun = F_neq;
@@ -264,22 +263,20 @@ InversePrf (prf fun)
     default:
         break;
     }
+
     DBUG_RETURN (fun);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : DoesItHappen1
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   int DoesItHappen1(cinfo *cond_info, linfo *loop_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 int
 DoesItHappen1 (cinfo *cond_info, linfo *loop_info)
 {
@@ -287,7 +284,9 @@ DoesItHappen1 (cinfo *cond_info, linfo *loop_info)
     int answer = TRUE;
 
     DBUG_ENTER ("DoesItHappen1");
+
     switch (loop_info->test_prf) {
+
     case F_le:
         switch (loop_info->mod_prf) {
         case F_add:
@@ -311,8 +310,8 @@ DoesItHappen1 (cinfo *cond_info, linfo *loop_info)
             answer = FALSE;
         }
         break;
-    case F_ge:
 
+    case F_ge:
         cond_info->last_test = loop_info->end_num + loop_info->mod_num;
         rest = (cond_info->test_num + loop_info->start_num) % loop_info->mod_num;
 
@@ -325,25 +324,24 @@ DoesItHappen1 (cinfo *cond_info, linfo *loop_info)
             answer = FALSE;
         }
         break;
+
     default:
         break;
     }
+
     DBUG_RETURN (answer);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : DoesItHappen2
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   int DoesItHappen2(cinfo *cond_info, linfo *loop_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 int
 DoesItHappen2 (cinfo *cond_info, linfo *loop_info)
 {
@@ -351,7 +349,9 @@ DoesItHappen2 (cinfo *cond_info, linfo *loop_info)
     int answer = TRUE;
 
     DBUG_ENTER ("DoesItHappen2");
+
     switch (loop_info->test_prf) {
+
     case F_le:
         switch (loop_info->mod_prf) {
         case F_add:
@@ -373,6 +373,7 @@ DoesItHappen2 (cinfo *cond_info, linfo *loop_info)
             answer = FALSE;
         }
         break;
+
     case F_ge:
         cond_info->last_test = loop_info->end_num + loop_info->mod_num;
 
@@ -392,25 +393,23 @@ DoesItHappen2 (cinfo *cond_info, linfo *loop_info)
     DBUG_RETURN (answer);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : HowUnswitch
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   cinfo *HowUnswitch(cinfo *cond_info, linfo *loop_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 cinfo *
 HowUnswitch (cinfo *cond_info, linfo *loop_info)
 {
     DBUG_ENTER ("HowUnswitch");
 
     switch (cond_info->test_prf) {
+
     case F_neq:
         if (DoesItHappen1 (cond_info, loop_info)) {
             switch (loop_info->test_prf) {
@@ -427,32 +426,34 @@ HowUnswitch (cinfo *cond_info, linfo *loop_info)
             }
         } else {
             cond_info->todo = oneloop;
-            FreeTree (cond_info->chain2);
-            cond_info->chain2 = NULL;
+            cond_info->chain2 = FreeTree (cond_info->chain2);
         }
         break;
+
     case F_le:
         if (DoesItHappen2 (cond_info, loop_info)) {
             cond_info->todo = split;
         } else {
-            if (loop_info->start_num > cond_info->test_num)
+            if (loop_info->start_num > cond_info->test_num) {
                 SWAP (cond_info->chain1, cond_info->chain2);
+            }
             cond_info->todo = oneloop;
-            FreeTree (cond_info->chain2);
-            cond_info->chain2 = NULL;
+            cond_info->chain2 = FreeTree (cond_info->chain2);
         }
         break;
+
     case F_ge:
         if (DoesItHappen2 (cond_info, loop_info)) {
             cond_info->todo = split;
         } else {
-            if (loop_info->start_num < cond_info->test_num)
+            if (loop_info->start_num < cond_info->test_num) {
                 SWAP (cond_info->chain1, cond_info->chain2);
+            }
             cond_info->todo = oneloop;
-            FreeTree (cond_info->chain2);
-            cond_info->chain2 = NULL;
+            cond_info->chain2 = FreeTree (cond_info->chain2);
         }
         break;
+
     default:
         break;
     }
@@ -460,19 +461,16 @@ HowUnswitch (cinfo *cond_info, linfo *loop_info)
     DBUG_RETURN (cond_info);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : AnalyseCond
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   cinfo *AnalyseCond(linfo *loop_info, node *cond, int level)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 cinfo *
 AnalyseCond (linfo *loop_info, node *cond, int level)
 {
@@ -481,6 +479,7 @@ AnalyseCond (linfo *loop_info, node *cond, int level)
     cinfo *cond_info;
 
     DBUG_ENTER ("AnalyseCond");
+
     cond_info = (cinfo *)Malloc (sizeof (cinfo));
     cond_info->todo = nothing;
     cond_var = cond->node[0]->node[0];
@@ -509,7 +508,7 @@ AnalyseCond (linfo *loop_info, node *cond, int level)
                 test->ARG2 = arg[1];
 
                 /* do i have the same variable and is the calculations  */
-                /* of the condition in  the loop ? 			*/
+                /* of the condition in  the loop ?                      */
                 if ((N_id == arg[0]->nodetype)
                     && (loop_info->decl_node->varno == VARDEC_VARNO (ID_VARDEC (arg[0])))
                     && (N_num == arg[1]->nodetype)) {
@@ -520,6 +519,7 @@ AnalyseCond (linfo *loop_info, node *cond, int level)
 
                     /* adjust the test prim.-function of conditional to the of the loop */
                     switch (loop_info->test_prf) {
+
                     case F_le:
                         if ((F_ge == cond_info->test_prf)
                             || (F_gt == cond_info->test_prf)) {
@@ -527,6 +527,7 @@ AnalyseCond (linfo *loop_info, node *cond, int level)
                             SWAP (cond_info->chain1, cond_info->chain2);
                         }
                         break;
+
                     case F_ge:
                         if ((F_le == cond_info->test_prf)
                             || (F_lt == cond_info->test_prf)) {
@@ -534,24 +535,29 @@ AnalyseCond (linfo *loop_info, node *cond, int level)
                             SWAP (cond_info->chain1, cond_info->chain2);
                         }
                         break;
+
                     default:
                         break;
                     }
 
                     /* reduce numbers of different conditions */
                     switch (cond_info->test_prf) {
+
                     case F_eq:
                         cond_info->test_prf = InversePrf (cond_info->test_prf);
                         SWAP (cond_info->chain1, cond_info->chain2);
                         break;
+
                     case F_lt:
                         cond_info->test_prf = F_le;
                         cond_info->test_num--;
                         break;
+
                     case F_gt:
                         cond_info->test_prf = F_ge;
                         cond_info->test_num++;
                         break;
+
                     default:
                         break;
                     }
@@ -562,72 +568,58 @@ AnalyseCond (linfo *loop_info, node *cond, int level)
             }
         }
     }
+
     DBUG_RETURN (cond_info);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : GenLetNode
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *GenLetNode(linfo *loop_info, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 node *
 GenLetNode (linfo *loop_info, node *arg_info)
 {
     node *assign_node;
+    ids *let_ids;
 
     DBUG_ENTER ("GenLetNode");
-    assign_node = MakeNode (N_assign);
-    assign_node->mask[0] = GenMask (INFO_VARNO (arg_info));
-    assign_node->mask[1] = GenMask (INFO_VARNO (arg_info));
-    INC_VAR (assign_node->mask[0], loop_info->decl_node->varno);
+
+    let_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (loop_info->decl_node)), NULL,
+                       ST_regular);
+    IDS_VARDEC (let_ids) = loop_info->decl_node;
+
+    assign_node = MakeAssign (MakeLet (MakeNum (loop_info->start_num), let_ids), NULL);
+
+    ASSIGN_MASK (assign_node, 0) = GenMask (INFO_VARNO (arg_info));
+    ASSIGN_MASK (assign_node, 1) = GenMask (INFO_VARNO (arg_info));
+
+    INC_VAR (ASSIGN_MASK (assign_node, 0), loop_info->decl_node->varno);
     INC_VAR (arg_info->mask[0], loop_info->decl_node->varno);
-
-#ifndef NEWTREE
-    assign_node->nnode = 1;
-#endif
-    assign_node->node[0] = MakeNode (N_let);
-    assign_node->node[0]->info.ids
-      = MakeIds (loop_info->decl_node->info.types->id, NULL, ST_regular);
-    assign_node->node[0]->info.ids->node = loop_info->decl_node;
-
-#ifndef NEWTREE
-    assign_node->node[0]->nnode = 1;
-#endif
-    assign_node->node[0]->node[0] = MakeNode (N_num);
-    assign_node->node[0]->node[0]->info.cint = loop_info->start_num;
 
     DBUG_RETURN (assign_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : DoUnswitch
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *DoUnswitch( node *arg_node, node *arg_info,
+ *                     cinfo *cond_info, linfo *loop_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 node *
 DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
 {
-#ifndef NEWTREE
-    int old_nnode;
-#else
     node *arg_node1;
-#endif
     long old_test_num;
     node *second_loop = NULL;
     node *unrolled_loop = NULL;
@@ -635,25 +627,28 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
     node *let_index;
 
     DBUG_ENTER ("DoUnswitch");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign),
+                 "DoUnswitch(): arg_node must be a N_assign node!");
+    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_do),
+                 "DoUnswitch(): arg_node must contain a do-loop!");
+    DBUG_ASSERT ((NODE_TYPE (DO_COND (ASSIGN_INSTR (arg_node))) == N_id),
+                 "Conditional of do-loop is not a N_id node!");
+
     switch (cond_info->todo) {
 
     case oneloop:
-
-        DBUG_PRINT ("UNS", ("conditional removed in loop at line %d", arg_node->lineno));
+        DBUG_PRINT ("UNS",
+                    ("conditional removed in loop at line %d", NODE_LINE (arg_node)));
 
         uns_expr++;
         /* subtract all variables used and defined in loop from modification masks */
-        MinusMask (arg_info->mask[0], arg_node->mask[0], INFO_VARNO (arg_info));
-        MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
+        MinusMask (arg_info->mask[0], ASSIGN_MASK (arg_node, 0), INFO_VARNO (arg_info));
+        MinusMask (arg_info->mask[1], ASSIGN_MASK (arg_node, 1), INFO_VARNO (arg_info));
 
-        /* isulate loop */
-#ifndef NEWTREE
-        old_nnode = arg_node->nnode;
-        arg_node->nnode = 1;
-#else
-        arg_node1 = arg_node->node[1];
-        arg_node->node[1] = NULL;
-#endif
+        /* isolate loop */
+        arg_node1 = ASSIGN_NEXT (arg_node);
+        ASSIGN_NEXT (arg_node) = NULL;
 
         /* modify first loop */
         cond_info->insert_node->node[0] = cond_info->chain1;
@@ -662,29 +657,20 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
         arg_node = GenerateMasks (arg_node, arg_info);
 
         /* append assign-chain below loop-assign */
-#ifndef NEWTREE
-        arg_node->nnode = old_nnode;
-#else
-        arg_node->node[1] = arg_node1;
-#endif
+        ASSIGN_NEXT (arg_node) = arg_node1;
         break;
 
     case between:
-
-        DBUG_PRINT ("UNS", ("Move between loops at line %d", arg_node->lineno));
+        DBUG_PRINT ("UNS", ("Move between loops at line %d", NODE_LINE (arg_node)));
 
         uns_expr++;
         /* subtract all variables used and defined in loop from modification masks */
-        MinusMask (arg_info->mask[0], arg_node->mask[0], INFO_VARNO (arg_info));
-        MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
+        MinusMask (arg_info->mask[0], ASSIGN_MASK (arg_node, 0), INFO_VARNO (arg_info));
+        MinusMask (arg_info->mask[1], ASSIGN_MASK (arg_node, 1), INFO_VARNO (arg_info));
 
-        /* isulate loop */
-#ifndef NEWTREE
-        arg_node->nnode = 1;
-#else
-        arg_node1 = arg_node->node[1]; /* not used anymore ??? */
-        arg_node->node[1] = NULL;
-#endif
+        /* isolate loop */
+        arg_node1 = ASSIGN_NEXT (arg_node); /* not used anymore ??? */
+        ASSIGN_NEXT (arg_node) = NULL;
 
         if (cond_info->last_test != cond_info->test_num) {
             /* creat second loop */
@@ -714,52 +700,46 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
                     second_loop = AppendNodeChain (1, let_index, second_loop);
                 }
             } else {
-                FreeTree (second_loop);
-                second_loop = NULL;
+                second_loop = FreeTree (second_loop);
             }
         }
 
         /* create unrolled loop */
         cond_info->insert_node->node[0] = cond_info->chain2;
-        unrolled_loop = DupTree (arg_node->node[0]->node[1]->node[0], NULL);
+        unrolled_loop = DupTree (DO_INSTR (ASSIGN_INSTR (arg_node)), NULL);
 
         /* Generate masks */
         unrolled_loop = GenerateMasks (unrolled_loop, arg_info);
 
         /* modify first loop */
         cond_info->insert_node->node[0] = cond_info->chain1;
-        arg_node->node[0]->node[0]->info.ids->def->info.prf = cond_info->test_prf;
-        arg_node->node[0]->node[0]->info.ids->def->ARG2->info.cint = cond_info->test_num;
+        ID_DEF (DO_COND (ASSIGN_INSTR (arg_node)))->info.prf = cond_info->test_prf;
+        ID_DEF (DO_COND (ASSIGN_INSTR (arg_node)))->ARG2->info.cint = cond_info->test_num;
 
         /* Generate masks */
         arg_node = GenerateMasks (arg_node, arg_info);
 
-        /* append later assign nodes to second loop */
-        second_loop = AppendNodeChain (1, second_loop, arg_node->node[1]);
+        /* append later assign nodes to second loop, ... */
+        second_loop = AppendNodeChain (1, second_loop, ASSIGN_NEXT (arg_node));
 
-        /* , unrolled loop to second loop */
+        /* ... unrolled loop to second loop ... */
         unrolled_loop = AppendNodeChain (1, unrolled_loop, second_loop);
 
-        /* and second loop to first loop */
-        arg_node->node[1] = unrolled_loop;
-#ifndef NEWTREE
-        arg_node->nnode = 2;
-#endif
-
+        /* ... and second loop to first loop */
+        ASSIGN_NEXT (arg_node) = unrolled_loop;
         break;
 
     case split:
-
-        DBUG_PRINT ("UNS", ("Splitting loop at line %d", arg_node->lineno));
+        DBUG_PRINT ("UNS", ("Splitting loop at line %d", NODE_LINE (arg_node)));
 
         uns_expr++;
         /* subtract all variables used and defined in loop from modification masks */
-        MinusMask (arg_info->mask[0], arg_node->mask[0], INFO_VARNO (arg_info));
-        MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
+        MinusMask (arg_info->mask[0], ASSIGN_MASK (arg_node, 0), INFO_VARNO (arg_info));
+        MinusMask (arg_info->mask[1], ASSIGN_MASK (arg_node, 1), INFO_VARNO (arg_info));
 
         /* isolate loop */
-        arg_node1 = arg_node->node[1];
-        arg_node->node[1] = NULL;
+        arg_node1 = ASSIGN_NEXT (arg_node);
+        ASSIGN_NEXT (arg_node) = NULL;
 
         if (cond_info->test_num != cond_info->last_test) {
             /* create second loop */
@@ -800,16 +780,15 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
                     second_loop = AppendNodeChain (1, let_index, second_loop);
                 }
             } else {
-                FreeTree (second_loop);
-                second_loop = NULL;
+                second_loop = FreeTree (second_loop);
             }
         }
 
         /* modify first loop */
         /* Again, the UGLY TRICK is used here!! (see above) */
         cond_info->insert_node->node[0] = cond_info->chain1;
-        arg_node->node[0]->node[0]->info.ids->def->info.prf = cond_info->test_prf;
-        arg_node->node[0]->node[0]->info.ids->def->ARG2->info.cint = cond_info->test_num;
+        ID_DEF (DO_COND (ASSIGN_INSTR (arg_node)))->info.prf = cond_info->test_prf;
+        ID_DEF (DO_COND (ASSIGN_INSTR (arg_node)))->ARG2->info.cint = cond_info->test_num;
 
         /* Generate masks */
         arg_node = GenerateMasks (arg_node, arg_info);
@@ -818,31 +797,28 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
         second_loop = AppendNodeChain (1, second_loop, arg_node1);
 
         /* and second loop to first loop */
-        arg_node->node[1] = second_loop;
-
+        ASSIGN_NEXT (arg_node) = second_loop;
         break;
 
     case nothing:
+        /* here is no break missing */
     default:
-
         break;
     }
+
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : UNSassign
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *UNSassign(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 node *
 UNSassign (node *arg_node, node *arg_info)
 {
@@ -852,15 +828,16 @@ UNSassign (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("UNSassign");
 
-    if (N_cond == arg_node->node[0]->nodetype)
+    if (N_cond == arg_node->node[0]->nodetype) {
         COND = arg_node;
+    }
 
     tmp = COND;
 
     /* unswitch subexpressions */
     ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
 
-    if (N_do == arg_node->node[0]->nodetype) {
+    if (N_do == NODE_TYPE (ASSIGN_INSTR (arg_node))) {
         if ((NULL != COND) && (NULL != LOOP_INFO)) {
             cond_info = AnalyseCond ((linfo *)LOOP_INFO, COND, LEVEL + 1);
             if (nothing != cond_info->todo) {
@@ -868,6 +845,7 @@ UNSassign (node *arg_node, node *arg_info)
                 once_more = TRUE;
             }
         }
+
         if (NULL != LOOP_INFO) {
             FREE (LOOP_INFO);
             LOOP_INFO = NULL;
@@ -881,24 +859,23 @@ UNSassign (node *arg_node, node *arg_info)
             ONCE_MORE = FALSE;
             ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
         } while (ONCE_MORE);
-    } else
+    } else {
         ONCE_MORE = TRUE;
+    }
+
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : UNSdo
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *UNSdo(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 node *
 UNSdo (node *arg_node, node *arg_info)
 {
@@ -906,6 +883,7 @@ UNSdo (node *arg_node, node *arg_info)
     node *cond_node;
 
     DBUG_ENTER ("UNSdo");
+
     LEVEL++;
     COND = NULL;
 
@@ -913,8 +891,9 @@ UNSdo (node *arg_node, node *arg_info)
     DO_INSTR (arg_node) = OPTTrav (DO_INSTR (arg_node), arg_info, arg_node);
 
     cond_node = DO_COND (arg_node);
-    if (N_id == NODE_TYPE (cond_node))
+    if (N_id == NODE_TYPE (cond_node)) {
         ID_DEF (cond_node) = MRD_GETLAST (ID_VARNO (cond_node), INFO_VARNO (arg_info));
+    }
 
     loop_info = (linfo *)Malloc (sizeof (linfo));
     loop_info->loop_num = UNDEF;
@@ -928,52 +907,51 @@ UNSdo (node *arg_node, node *arg_info)
     if (2 > loop_info->loop_num) {
         LOOP_INFO = NULL;
         FREE (loop_info);
-    } else
+    } else {
         LOOP_INFO = (node *)loop_info;
+    }
 
     LEVEL--;
+
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : UNSwhile
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *UNSwhile(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 node *
 UNSwhile (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNSwhile");
+
     DBUG_PRINT ("UNS", ("Trav while loop in line %d", arg_node->lineno));
     WHILE_INSTR (arg_node) = OPTTrav (WHILE_INSTR (arg_node), arg_info, arg_node);
+
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : UNScond
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *UNScond(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 node *
 UNScond (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNScond");
+
     /* Trav condition */
     COND_COND (arg_node) = OPTTrav (COND_COND (arg_node), arg_info, arg_node);
 
@@ -985,19 +963,16 @@ UNScond (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : UNSwith
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *UNSwith(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 node *
 UNSwith (node *arg_node, node *arg_info)
 {
