@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.38  2004/11/27 00:51:53  khf
+ * call of WLTdoWLT possible
+ *
  * Revision 1.37  2004/11/26 17:38:36  khf
  * shutdown WLT
  *
@@ -1650,9 +1653,11 @@ node *SSAWLTNcode( node *arg_node, info *arg_info)
   DBUG_RETURN( arg_node);
 }
 
+#endif
+
 /** <!-- ****************************************************************** -->
- * 
- * @fn DoSSAWLT( node *arg_node)
+ *
+ * @fn WLTdoWLT( node *arg_node)
  *
  * @brief starts SSAWLT traversal
  *
@@ -1660,12 +1665,15 @@ node *SSAWLTNcode( node *arg_node, info *arg_info)
  * @return processed node
  *****************************************************************************/
 
-node *WLTdoWLT( node *arg_node)
+node *
+WLTdoWLT (node *arg_node)
 {
+
+#if 0
   info *info;
   int expr;
 
-  DBUG_ENTER("DoSSAWLT");
+  DBUG_ENTER("WLTdoWLT");
 
   info = MakeInfo();
 
@@ -1687,6 +1695,6 @@ node *WLTdoWLT( node *arg_node)
   info = FreeInfo( info);
 
   DBUG_RETURN( arg_node);
-}
 
 #endif
+}
