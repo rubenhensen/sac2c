@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1997/05/16 09:52:19  sbs
+ * Revision 1.11  1997/05/28 12:35:25  sbs
+ * Profiling integrated
+ *
+ * Revision 1.10  1997/05/16  09:52:19  sbs
  * ANALSE-TOOL extended to function-application specific timing
  *
  * Revision 1.9  1997/05/14  08:11:24  sbs
@@ -136,147 +139,193 @@ extern void *__SAC__Runtime_malloc (int size);
 
 #endif /* CHECK_MALLOC  */
 
-#ifdef ANALYSE_TIME
+/*
+ * PROFILING-MACROS:
+ */
 
-#define ANALYSE_BEGIN_WITH(str)                                                          \
-    double *__AT_mem_act;                                                                \
-    __AT_clock_stop = __AT_CLOCK ();                                                     \
-    __AT_mem_act = __AT_act_timer;                                                       \
-    *__AT_act_timer += (__AT_clock_stop - __AT_clock_start);                             \
-    __AT_act_timer                                                                       \
-      = (__AT_with_level == 0                                                            \
-           ? &__AT_with_##str##_timer[__AT_act_funno][__AT_act_funapno]                  \
-           : &__AT_fw_with_##str##_timer[__AT_act_funno][__AT_act_funapno]);             \
-    __AT_with_level++;                                                                   \
-    __AT_clock_start = __AT_CLOCK ()
+/***********************************************************************/
 
-#define ANALYSE_END_WITH(str)                                                            \
-    __AT_clock_stop = __AT_CLOCK ();                                                     \
-    __AT_with_level--;                                                                   \
-    *__AT_act_timer += (__AT_clock_stop - __AT_clock_start);                             \
-    __AT_act_timer = __AT_mem_act;                                                       \
-    __AT_clock_start = __AT_CLOCK ()
+#ifdef PROFILE_WITH
 
-#define ANALYSE_BEGIN_UDF(funno, funapno)                                                \
+#define PROFILE_BEGIN_WITH(str)                                                          \
+    __PF_TIMER *__PF_mem_act;                                                            \
+    __PF_STOP_CLOCK ();                                                                  \
+    __PF_mem_act = __PF_act_timer;                                                       \
+    __PF_ADD_TO_TIMER (*__PF_act_timer);                                                 \
+    __PF_act_timer                                                                       \
+      = (__PF_with_level == 0                                                            \
+           ? &__PF_with_##str##_timer[__PF_act_funno][__PF_act_funapno]                  \
+           : &__PF_fw_with_##str##_timer[__PF_act_funno][__PF_act_funapno]);             \
+    __PF_with_level++;                                                                   \
+    __PF_START_CLOCK ()
+
+#define PROFILE_END_WITH(str)                                                            \
+    __PF_STOP_CLOCK ();                                                                  \
+    __PF_with_level--;                                                                   \
+    __PF_ADD_TO_TIMER (*__PF_act_timer);                                                 \
+    __PF_act_timer = __PF_mem_act;                                                       \
+    __PF_START_CLOCK ()
+
+#define DISPLAY_WITH 1
+
+#else /* PROFILE_WITH */
+
+#define PROFILE_BEGIN_WITH(str)
+#define PROFILE_END_WITH(str)
+#define DISPLAY_WITH 0
+
+#endif /* PROFILE_WITH */
+
+/***********************************************************************/
+
+#ifdef PROFILE_FUN
+
+#define PROFILE_BEGIN_UDF(funno, funapno)                                                \
     {                                                                                    \
-        double *__AT_mem_act;                                                            \
-        int __AT_mem_funno;                                                              \
-        int __AT_mem_funapno;                                                            \
-        __AT_clock_stop = __AT_CLOCK ();                                                 \
-        __AT_mem_act = __AT_act_timer;                                                   \
-        __AT_mem_funno = __AT_act_funno;                                                 \
-        __AT_mem_funapno = __AT_act_funapno;                                             \
-        *__AT_act_timer += (__AT_clock_stop - __AT_clock_start);                         \
-        __AT_act_funno = funno;                                                          \
-        __AT_act_funapno = funapno;                                                      \
-        __AT_act_timer = (__AT_with_level == 0 ? &__AT_fun_timer[funno][funapno]         \
-                                               : &__AT_fw_fun_timer[funno][funapno]);    \
-        __AT_clock_start = __AT_CLOCK ()
+        __PF_TIMER *__PF_mem_act;                                                        \
+        int __PF_mem_funno;                                                              \
+        int __PF_mem_funapno;                                                            \
+        __PF_STOP_CLOCK ();                                                              \
+        __PF_mem_act = __PF_act_timer;                                                   \
+        __PF_mem_funno = __PF_act_funno;                                                 \
+        __PF_mem_funapno = __PF_act_funapno;                                             \
+        __PF_ADD_TO_TIMER (*__PF_act_timer);                                             \
+        __PF_act_funno = funno;                                                          \
+        __PF_act_funapno = funapno;                                                      \
+        __PF_act_timer = (__PF_with_level == 0 ? &__PF_fun_timer[funno][funapno]         \
+                                               : &__PF_fw_fun_timer[funno][funapno]);    \
+        __PF_START_CLOCK ()
 
-#define ANALYSE_END_UDF(funno, funapno)                                                  \
-    __AT_clock_stop = __AT_CLOCK ();                                                     \
-    *__AT_act_timer += (__AT_clock_stop - __AT_clock_start);                             \
-    __AT_act_timer = __AT_mem_act;                                                       \
-    __AT_act_funno = __AT_mem_funno;                                                     \
-    __AT_act_funapno = __AT_mem_funapno;                                                 \
-    __AT_clock_start = __AT_CLOCK ();                                                    \
+#define PROFILE_END_UDF(funno, funapno)                                                  \
+    __PF_STOP_CLOCK ();                                                                  \
+    __PF_ADD_TO_TIMER (*__PF_act_timer);                                                 \
+    __PF_act_timer = __PF_mem_act;                                                       \
+    __PF_act_funno = __PF_mem_funno;                                                     \
+    __PF_act_funapno = __PF_mem_funapno;                                                 \
+    __PF_START_CLOCK ();                                                                 \
     }
 
-#else /* ANALYSE_TIME */
+#define DISPLAY_FUN 1
 
-#define ANALYSE_BEGIN_WITH(str)
-#define ANALYSE_END_WITH(str)
-#define ANALYSE_BEGIN_UDF(funno, funapno)
-#define ANALYSE_END_UDF(funno, funapno)
+#else /* PROFILE_FUN */
 
-#endif /* ANALYSE_TIME */
+#define PROFILE_BEGIN_UDF(funno, funapno)
+#define PROFILE_END_UDF(funno, funapno)
+#define DISPLAY_FUN 0
 
-#ifdef ANALYSE_TIME
+#endif /* PROFILE_FUN */
 
-#define __AT_CLOCK_FACTOR 1000000
-#define __AT_CLOCK()                                                                     \
-    (getrusage (RUSAGE_SELF, &__AT_rusage),                                              \
-     __AT_rusage.ru_utime.tv_sec * __AT_CLOCK_FACTOR + __AT_rusage.ru_utime.tv_usec)
+/***********************************************************************/
 
-#define ANALYSE_SETUP(maxfun)                                                            \
-    __AT_act_timer = &__AT_fun_timer[0][0];                                              \
-    __AT_act_funno = 0;                                                                  \
-    __AT_act_funapno = 0;                                                                \
-    __AT_maxfun = maxfun;                                                                \
-    __AT_clock_start = __AT_CLOCK ()
+#ifdef PROFILE_INL
 
-#define AT_PRINT_HEADER(str, fun, funap)                                                 \
-    __SAC__Runtime_Print ("****************************************"                     \
-                          "****************************************\n");                 \
-    __SAC__Runtime_Print ("*** %-16s %-55s ***\n", str ":", fun);                        \
-    __SAC__Runtime_Print ("*** called from line # %-5d %-48s***\n", funap, "");          \
-    __SAC__Runtime_Print ("****************************************"                     \
-                          "****************************************\n")
+#define PROFILE_INLINE(x) x
 
-#define AT_PRINT_TIME(text, var) __SAC__Runtime_Print ("%-20s: %10.3f sec\n", text, var)
+#else /* PROFILE_INL */
 
-#define AT_PRINT_PERCENTAGE(text, var)                                                   \
-    __SAC__Runtime_Print ("%-20s:    %7.3f %%\n", text, var)
+#define PROFILE_INLINE(x)
 
-#define AT_PRINT_SEPERATOR                                                               \
-    __SAC__Runtime_Print ("----------------------------------------\n")
+#endif /* PROFILE_INL */
 
-#define ANALYSE_PRINT()                                                                  \
+/***********************************************************************/
+
+#ifdef PROFILE_LIB
+
+#define PROFILE_LIBRARY(x) x
+
+#else /* PROFILE_LIB */
+
+#define PROFILE_LIBRARY(x)
+
+#endif /* PROFILE_LIB */
+
+/***********************************************************************/
+
+#ifdef PROFILE
+
+#define __PF_INIT_CLOCK()
+#define __PF_INIT_TIMER(timer) timer##.tv_sec = timer##.tv_usec = 0
+#define __PF_START_CLOCK() getrusage (RUSAGE_SELF, &start_timer)
+#define __PF_STOP_CLOCK() getrusage (RUSAGE_SELF, &stop_timer)
+#define __PF_ADD_TO_TIMER(timer)                                                         \
+    if (((timer).tv_usec += stop_timer.ru_utime.tv_usec - start_timer.ru_utime.tv_usec)  \
+        < 0) {                                                                           \
+        (timer).tv_usec += 1000000;                                                      \
+        (timer).tv_sec += stop_timer.ru_utime.tv_sec - start_timer.ru_utime.tv_sec - 1;  \
+    } else {                                                                             \
+        (timer).tv_sec += stop_timer.ru_utime.tv_sec - start_timer.ru_utime.tv_sec;      \
+    }
+
+typedef struct timeval __PF_TIMER;
+
+struct rusage start_timer;
+struct rusage stop_timer;
+
+extern __PF_TIMER *__SAC__Runtime_PrintProfileOverall (
+  int display_with, int __PF_maxfun, int *__PF_maxfunap, void *__PF_fun_timer,
+  void *__PF_with_modarray_timer, void *__PF_with_genarray_timer,
+  void *__PF_with_fold_timer, void *__PF_fw_fun_timer, void *__PF_fw_with_modarray_timer,
+  void *__PF_fw_with_genarray_timer, void *__PF_fw_with_fold_timer);
+
+extern void __SAC__Runtime_PrintProfileFuns (
+  __PF_TIMER *total_time, int display_fun, int display_with, int __PF_maxfun,
+  int *__PF_maxfunap, void *__PF_fun_timer, void *__PF_with_modarray_timer,
+  void *__PF_with_genarray_timer, void *__PF_with_fold_timer, void *__PF_fw_fun_timer,
+  void *__PF_fw_with_modarray_timer, void *__PF_fw_with_genarray_timer,
+  void *__PF_fw_with_fold_timer, void *__PF_fun_name);
+
+#define PROFILE_SETUP(maxfun)                                                            \
+    __PF_act_timer = &__PF_fun_timer[0][0];                                              \
+    __PF_act_funno = 0;                                                                  \
+    __PF_act_funapno = 0;                                                                \
+    __PF_maxfun = maxfun;                                                                \
+    __PF_INIT_CLOCK ();                                                                  \
     {                                                                                    \
         int i, j;                                                                        \
-        double with_total, fun_total;                                                    \
-        for (i = 0; i < __AT_maxfun; i++) {                                              \
-            for (j = 0; j < __AT_maxfunap[i]; j++) {                                     \
-                __AT_fun_timer[i][j] /= __AT_CLOCK_FACTOR;                               \
-                __AT_with_genarray_timer[i][j] /= __AT_CLOCK_FACTOR;                     \
-                __AT_with_modarray_timer[i][j] /= __AT_CLOCK_FACTOR;                     \
-                __AT_with_fold_timer[i][j] /= __AT_CLOCK_FACTOR;                         \
-                with_total = __AT_with_genarray_timer[i][j]                              \
-                             + __AT_with_modarray_timer[i][j]                            \
-                             + __AT_with_fold_timer[i][j];                               \
-                fun_total = with_total + __AT_fun_timer[i][j];                           \
-                AT_PRINT_HEADER ("time analysis", __AT_fun_name[i],                      \
-                                 __AT_funapline[i][j]);                                  \
-                AT_PRINT_TIME ("with-loop-genarray", __AT_with_genarray_timer[i][j]);    \
-                AT_PRINT_TIME ("with-loop-modarray", __AT_with_modarray_timer[i][j]);    \
-                AT_PRINT_TIME ("with-loop-fold", __AT_with_fold_timer[i][j]);            \
-                AT_PRINT_SEPERATOR;                                                      \
-                AT_PRINT_TIME ("with-loop-total", with_total);                           \
-                AT_PRINT_TIME ("non-with-loop", __AT_fun_timer[i][j]);                   \
-                AT_PRINT_SEPERATOR;                                                      \
-                AT_PRINT_TIME ("runtime-total", fun_total);                              \
-                AT_PRINT_PERCENTAGE ("percentage non-with",                              \
-                                     (__AT_fun_timer[i][j] / fun_total) * 100);          \
-                AT_PRINT_SEPERATOR;                                                      \
-                __SAC__Runtime_Print ("within with-loop:\n");                            \
-                __AT_fw_fun_timer[i][j] /= __AT_CLOCK_FACTOR;                            \
-                __AT_fw_with_genarray_timer[i][j] /= __AT_CLOCK_FACTOR;                  \
-                __AT_fw_with_modarray_timer[i][j] /= __AT_CLOCK_FACTOR;                  \
-                __AT_fw_with_fold_timer[i][j] /= __AT_CLOCK_FACTOR;                      \
-                with_total = __AT_fw_with_genarray_timer[i][j]                           \
-                             + __AT_fw_with_modarray_timer[i][j]                         \
-                             + __AT_fw_with_fold_timer[i][j];                            \
-                fun_total = with_total + __AT_fw_fun_timer[i][j];                        \
-                AT_PRINT_SEPERATOR;                                                      \
-                AT_PRINT_TIME ("with-loop-genarray", __AT_fw_with_genarray_timer[i][j]); \
-                AT_PRINT_TIME ("with-loop-modarray", __AT_fw_with_modarray_timer[i][j]); \
-                AT_PRINT_TIME ("with-loop-fold", __AT_fw_with_fold_timer[i][j]);         \
-                AT_PRINT_SEPERATOR;                                                      \
-                AT_PRINT_TIME ("with-loop-total", with_total);                           \
-                AT_PRINT_TIME ("non-with-loop", __AT_fw_fun_timer[i][j]);                \
-                AT_PRINT_SEPERATOR;                                                      \
-                AT_PRINT_TIME ("runtime-total", fun_total);                              \
-                AT_PRINT_PERCENTAGE ("percentage non-with",                              \
-                                     (__AT_fw_fun_timer[i][j] / fun_total) * 100);       \
+        for (i = 0; i < maxfun; i++) {                                                   \
+            for (j = 0; j < __PF_maxfunap[i]; j++) {                                     \
+                __PF_INIT_TIMER (__PF_fun_timer[i][j]);                                  \
+                __PF_INIT_TIMER (__PF_with_modarray_timer[i][j]);                        \
+                __PF_INIT_TIMER (__PF_with_genarray_timer[i][j]);                        \
+                __PF_INIT_TIMER (__PF_with_fold_timer[i][j]);                            \
+                __PF_INIT_TIMER (__PF_fw_fun_timer[i][j]);                               \
+                __PF_INIT_TIMER (__PF_fw_with_modarray_timer[i][j]);                     \
+                __PF_INIT_TIMER (__PF_fw_with_genarray_timer[i][j]);                     \
+                __PF_INIT_TIMER (__PF_fw_with_fold_timer[i][j]);                         \
             }                                                                            \
         }                                                                                \
+    }                                                                                    \
+    __PF_START_CLOCK ()
+
+#define PROFILE_PRINT()                                                                  \
+    __PF_STOP_CLOCK ();                                                                  \
+    __PF_ADD_TO_TIMER (*__PF_act_timer);                                                 \
+    {                                                                                    \
+        __PF_TIMER *tmp;                                                                 \
+                                                                                         \
+        tmp                                                                              \
+          = __SAC__Runtime_PrintProfileOverall (DISPLAY_WITH, __PF_maxfun,               \
+                                                __PF_maxfunap, __PF_fun_timer,           \
+                                                __PF_with_modarray_timer,                \
+                                                __PF_with_genarray_timer,                \
+                                                __PF_with_fold_timer, __PF_fw_fun_timer, \
+                                                __PF_fw_with_modarray_timer,             \
+                                                __PF_fw_with_genarray_timer,             \
+                                                __PF_fw_with_fold_timer);                \
+        __SAC__Runtime_PrintProfileFuns (tmp, DISPLAY_FUN, DISPLAY_WITH, __PF_maxfun,    \
+                                         __PF_maxfunap, __PF_fun_timer,                  \
+                                         __PF_with_modarray_timer,                       \
+                                         __PF_with_genarray_timer, __PF_with_fold_timer, \
+                                         __PF_fw_fun_timer, __PF_fw_with_modarray_timer, \
+                                         __PF_fw_with_genarray_timer,                    \
+                                         __PF_fw_with_fold_timer, __PF_fun_name);        \
     }
 
-#else /* ANALYSE_TIME */
+#else /* PROFILE */
 
-#define ANALYSE_SETUP(maxfun)
-#define ANALYSE_PRINT()
+#define PROFILE_SETUP(maxfun)
+#define PROFILE_PRINT()
 
-#endif /* ANALYSE_TIME */
+#endif /* PROFILE */
 
 #endif /* _sac_libsac_h */

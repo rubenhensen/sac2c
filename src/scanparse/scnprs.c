@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1997/05/16 09:54:45  sbs
+ * Revision 1.11  1997/05/28 12:36:27  sbs
+ * Profiling integrated
+ *
+ * Revision 1.10  1997/05/16  09:54:45  sbs
  * ANALSE-TOOL extended to function-application specific timing
  *
  * Revision 1.9  1997/03/19  13:43:59  cg
@@ -111,8 +114,8 @@ SetFileNames (node *modul)
             strcat (cfilename, ".c");
         }
     } else {
-        SYSWARN (("-a option turned off for module/class compilation"));
-        analyseflag = 0;
+        SYSWARN (("-p option turned off for module/class compilation"));
+        profileflag = 0;
 
         if (sacfilename[0] != '\0') {
             strcpy (buffer, MODUL_NAME (modul));

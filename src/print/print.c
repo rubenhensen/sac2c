@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.124  1997/05/16 09:54:29  sbs
+ * Revision 1.125  1997/05/28 12:37:20  sbs
+ * Profiling integrated
+ *
+ * Revision 1.124  1997/05/16  09:54:29  sbs
  * ANALSE-TOOL extended to function-application specific timing
  *
  * Revision 1.123  1997/05/14  08:14:41  sbs
@@ -414,7 +417,7 @@
 #include "convert.h"
 #include "optimize.h"
 #include "trace.h"
-#include "analyse.h"
+#include "profile.h"
 #include "filemgr.h"
 #include "globals.h"
 
@@ -464,9 +467,22 @@ PrintFileHeader ()
                 fprintf (outfile, "#define TRACE_REF\n");
             }
         }
-        if (analyseflag != 0) {
-            if (analyseflag & ANALYSE_TIME) {
-                fprintf (outfile, "#define ANALYSE_TIME\n");
+        if (profileflag != 0) {
+            fprintf (outfile, "#define PROFILE\n");
+            if (profileflag & PROFILE_FUN) {
+                fprintf (outfile, "#define PROFILE_FUN\n");
+            }
+
+            if (profileflag & PROFILE_LIB) {
+                fprintf (outfile, "#define PROFILE_LIB\n");
+            }
+
+            if (profileflag & PROFILE_INL) {
+                fprintf (outfile, "#define PROFILE_INL\n");
+            }
+
+            if (profileflag & PROFILE_WITH) {
+                fprintf (outfile, "#define PROFILE_WITH\n");
             }
         }
 
@@ -474,7 +490,7 @@ PrintFileHeader ()
             fprintf (outfile, "#define CHECK_MALLOC\n");
         }
 
-        if (analyseflag != 0) {
+        if (profileflag != 0) {
             fprintf (outfile, "#include <sys/time.h>\n");
             fprintf (outfile, "#include <sys/resource.h>\n");
             fprintf (outfile, "extern int getrusage(int who, struct rusage *rusage);\n");
@@ -570,7 +586,7 @@ PrintAssign (node *arg_node, node *arg_info)
 node *
 PrintBlock (node *arg_node, node *arg_info)
 {
-    static analyse_setup_flag = 0;
+    static profile_setup_flag = 0;
 
     DBUG_ENTER ("PrintBlock");
 
@@ -586,10 +602,10 @@ PrintBlock (node *arg_node, node *arg_info)
     }
 
     if ((strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)
-        && (analyse_setup_flag == 0)) {
-        analyse_setup_flag = 1;
+        && (profile_setup_flag == 0)) {
+        profile_setup_flag = 1;
         INDENT;
-        fprintf (outfile, "ANALYSE_SETUP( %d );\n", ATfuncntr);
+        fprintf (outfile, "PROFILE_SETUP( %d );\n", PFfuncntr);
     }
 
     if (BLOCK_INSTR (arg_node) != NULL) {
@@ -623,22 +639,36 @@ PrintLet (node *arg_node, node *arg_info)
 node *
 PrintAnnotate (node *arg_node, node *arg_info)
 {
+    static char strbuffer1[256];
+    static char strbuffer2[256];
+
     DBUG_ENTER ("PrintAnnotate");
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
-    if (ANNOTATE_TAG (arg_node) == CALL_FUN) {
-        fprintf (outfile, "ANALYSE_BEGIN_UDF( %d ,%d );", ANNOTATE_FUNNUMBER (arg_node),
+    if (ANNOTATE_TAG (arg_node) & CALL_FUN) {
+        sprintf (strbuffer1, "PROFILE_BEGIN_UDF( %d ,%d )", ANNOTATE_FUNNUMBER (arg_node),
                  ANNOTATE_FUNAPNUMBER (arg_node));
     } else {
-        if (ANNOTATE_TAG (arg_node) == RETURN_FROM_FUN) {
-            fprintf (outfile, "ANALYSE_END_UDF( %d ,%d );", ANNOTATE_FUNNUMBER (arg_node),
-                     ANNOTATE_FUNAPNUMBER (arg_node));
-
+        if (ANNOTATE_TAG (arg_node) & RETURN_FROM_FUN) {
+            sprintf (strbuffer1, "PROFILE_END_UDF( %d ,%d )",
+                     ANNOTATE_FUNNUMBER (arg_node), ANNOTATE_FUNAPNUMBER (arg_node));
         } else {
             DBUG_ASSERT ((1 == 0), "wrong tag at N_annotate");
         }
     }
+
+    if (ANNOTATE_TAG (arg_node) & INL_FUN)
+        sprintf (strbuffer2, "PROFILE_INLINE( %s )", strbuffer1);
+    else
+        strcpy (strbuffer2, strbuffer1);
+
+    if (ANNOTATE_TAG (arg_node) & LIB_FUN)
+        sprintf (strbuffer1, "PROFILE_LIBRARY( %s )", strbuffer2);
+    else
+        strcpy (strbuffer1, strbuffer2);
+
+    fprintf (outfile, "%s;", strbuffer1);
 
     DBUG_RETURN (arg_node);
 }
@@ -919,7 +949,7 @@ PrintFundef (node *arg_node, node *arg_info)
     new_info = MakeNode (N_info);
     new_info->varno = arg_node->varno;
     INFO_FUNDEF (new_info) = arg_node; /* needed for the introduction
-                                        * of ANALYSE_... MACROS in the
+                                        * of PROFILE_... MACROS in the
                                         * function body
                                         */
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - function\n");
@@ -1159,7 +1189,7 @@ PrintReturn (node *arg_node, node *arg_info)
     if ((arg_node->node[0] != NULL) && (!RETURN_INWITH (arg_node))) {
         if ((strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
             INDENT;
-            fprintf (outfile, "ANALYSE_PRINT();\n");
+            fprintf (outfile, "PROFILE_PRINT();\n");
         }
         fprintf (outfile, "return( ");
         Trav (arg_node->node[0], arg_info);
@@ -1657,7 +1687,7 @@ PrintIcm (node *arg_node, node *arg_info)
         if ((strcmp (ICM_NAME (arg_node), "ND_FUN_RET") == 0)
             && (strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
             INDENT;
-            fprintf (outfile, "ANALYSE_PRINT();\n");
+            fprintf (outfile, "PROFILE_PRINT();\n");
         }
 
         INDENT;
@@ -1801,7 +1831,7 @@ Print (node *arg_node)
         }
 
         PrintFileHeader ();
-        ATprintInitGlobals ();
+        PFprintInitGlobals ();
 
         arg_node = Trav (arg_node, NULL);
 

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.46  1997/05/16 11:47:59  cg
+ * Revision 1.47  1997/05/28 12:35:25  sbs
+ * Profiling integrated
+ *
+ * Revision 1.46  1997/05/16  11:47:59  cg
  * Bug fixed in BeginWith/EndWith. New Offset-Loops always stay within array bounds.
  * The code for offset loops is further improved.
  *
@@ -219,7 +222,7 @@
         }                                                                                \
         fprintf (outfile, "\n");                                                         \
         INDENT;                                                                          \
-        fprintf (outfile, "ANALYSE_BEGIN_WITH( " withkind " );\n");                      \
+        fprintf (outfile, "PROFILE_BEGIN_WITH( " withkind " );\n");                      \
         {                                                                                \
             int i;                                                                       \
             for (i = 0; i < idxlen; i++) {                                               \
@@ -283,7 +286,7 @@
 #else
 #define BeginFoldWith(res, sizeres, form, to, idx, idixlen, n_neutral, neutral)          \
     INDENT;                                                                              \
-    fprintf (outfile, "{ ANALYSE_BEGIN_WITH( fold );\n");                                \
+    fprintf (outfile, "{ PROFILE_BEGIN_WITH( fold );\n");                                \
     indent++;                                                                            \
     INDENT;                                                                              \
     if (0 < sizeres) {                                                                   \
@@ -345,7 +348,7 @@
         }                                                                                \
     }                                                                                    \
     INDENT;                                                                              \
-    fprintf (outfile, "ANALYSE_END_WITH( " withkind " );\n");                            \
+    fprintf (outfile, "PROFILE_END_WITH( " withkind " );\n");                            \
     indent--;                                                                            \
     INDENT;                                                                              \
     fprintf (outfile, "}\n\n")
@@ -371,7 +374,7 @@
         }                                                                                \
     }                                                                                    \
     INDENT;                                                                              \
-    fprintf (outfile, "ANALYSE_END_WITH( fold );\n");                                    \
+    fprintf (outfile, "PROFILE_END_WITH( fold );\n");                                    \
     indent--;                                                                            \
     INDENT;                                                                              \
     fprintf (outfile, "}\n\n")
@@ -823,7 +826,7 @@ ScanArglist (arg, 2 * narg, i++;
              sep = 1, fprintf (outfile, "ND_KS_RET_INOUT_RC(%s);\n", arg[i++]); INDENT;
              sep = 1, "");
 if ((strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
-    fprintf (outfile, "ANALYSE_PRINT();\n");
+    fprintf (outfile, "PROFILE_PRINT();\n");
     INDENT;
 }
 if (0 != strcmp (retname, ""))

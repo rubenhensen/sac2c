@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.94  1997/05/14 08:17:34  sbs
+ * Revision 1.95  1997/05/28 12:36:51  sbs
+ * Profiling integrated
+ *
+ * Revision 1.94  1997/05/14  08:17:34  sbs
  * analyseflag activated
  *
  * Revision 1.93  1997/04/24  14:05:37  sbs
@@ -330,7 +333,7 @@
 #include "refcount.h"
 #include "scnprs.h"
 #include "trace.h"
-#include "analyse.h"
+#include "profile.h"
 #include "compile.h"
 #include "psi-opt.h"
 #include "writesib.h"
@@ -405,7 +408,7 @@ int show_refcnt = 0;
 int show_idx = 0;
 int show_icm = 0;
 int traceflag = 0;
-int analyseflag = 0;
+int profileflag = 0;
 int check_malloc = 0;
 int breakae = 0;
 int check_boundary = 0;
@@ -669,18 +672,27 @@ MAIN
         }
     }
     NEXTOPT
-    ARG 'a' : PARM
+    ARG 'p' : PARM
     {
         while (**argv) {
             switch (**argv) {
             case 'a':
-                analyseflag = ANALYSE_ALL;
+                profileflag = PROFILE_ALL;
                 break;
-            case 'm':
-                analyseflag = analyseflag | ANALYSE_TIME;
+            case 'f':
+                profileflag = profileflag | PROFILE_FUN;
+                break;
+            case 'i':
+                profileflag = profileflag | PROFILE_INL;
+                break;
+            case 'l':
+                profileflag = profileflag | PROFILE_LIB;
+                break;
+            case 'w':
+                profileflag = profileflag | PROFILE_WITH;
                 break;
             default:
-                SYSWARN (("Unknown analyse flag '%c`", **argv));
+                SYSWARN (("Unknown profile flag '%c`", **argv));
             }
             ++*argv;
         }

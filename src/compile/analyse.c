@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1997/05/16 09:52:19  sbs
+ * Revision 1.3  1997/05/28 12:35:25  sbs
+ * Profiling integrated
+ *
+ * Revision 1.2  1997/05/16  09:52:19  sbs
  * ANALSE-TOOL extended to function-application specific timing
  *
  * Revision 1.1  1997/05/14  08:26:39  sbs
@@ -47,27 +50,26 @@ ATprintInitGlobals ()
 
     fprintf (outfile, "\n#ifdef ANALYSE_TIME\n\n");
     fprintf (outfile, "int            __AT_maxfun;\n");
-    fprintf (outfile, "double         __AT_clock_start;\n");
-    fprintf (outfile, "double         __AT_clock_stop;\n");
-    fprintf (outfile, "double        *__AT_act_timer;\n");
+    fprintf (outfile, "struct timeval *__AT_act_timer;\n");
     fprintf (outfile, "int            __AT_act_funno;\n");
     fprintf (outfile, "int            __AT_act_funapno;\n");
     fprintf (outfile, "int            __AT_with_level=0;\n");
-    fprintf (outfile, "struct rusage  __AT_rusage;\n");
-    fprintf (outfile, "double         __AT_fw_fun_timer[%d][%d];\n", ATfuncntr,
+    fprintf (outfile, "struct rusage  __AT_rusage_start;\n");
+    fprintf (outfile, "struct rusage  __AT_rusage_stop;\n");
+    fprintf (outfile, "struct timeval __AT_fw_fun_timer[%d][%d];\n", ATfuncntr,
              AT_MAXFUNAP);
-    fprintf (outfile, "double         __AT_fw_with_genarray_timer[%d][%d];\n", ATfuncntr,
+    fprintf (outfile, "struct timeval __AT_fw_with_genarray_timer[%d][%d];\n", ATfuncntr,
              AT_MAXFUNAP);
-    fprintf (outfile, "double         __AT_fw_with_modarray_timer[%d][%d];\n", ATfuncntr,
+    fprintf (outfile, "struct timeval __AT_fw_with_modarray_timer[%d][%d];\n", ATfuncntr,
              AT_MAXFUNAP);
-    fprintf (outfile, "double         __AT_fw_with_fold_timer[%d][%d];\n\n", ATfuncntr,
+    fprintf (outfile, "struct timeval __AT_fw_with_fold_timer[%d][%d];\n\n", ATfuncntr,
              AT_MAXFUNAP);
-    fprintf (outfile, "double         __AT_fun_timer[%d][%d];\n", ATfuncntr, AT_MAXFUNAP);
-    fprintf (outfile, "double         __AT_with_genarray_timer[%d][%d];\n", ATfuncntr,
+    fprintf (outfile, "struct timeval __AT_fun_timer[%d][%d];\n", ATfuncntr, AT_MAXFUNAP);
+    fprintf (outfile, "struct timeval __AT_with_genarray_timer[%d][%d];\n", ATfuncntr,
              AT_MAXFUNAP);
-    fprintf (outfile, "double         __AT_with_modarray_timer[%d][%d];\n", ATfuncntr,
+    fprintf (outfile, "struct timeval __AT_with_modarray_timer[%d][%d];\n", ATfuncntr,
              AT_MAXFUNAP);
-    fprintf (outfile, "double         __AT_with_fold_timer[%d][%d];\n\n", ATfuncntr,
+    fprintf (outfile, "struct timeval __AT_with_fold_timer[%d][%d];\n\n", ATfuncntr,
              AT_MAXFUNAP);
 
     fprintf (outfile, "char       *__AT_fun_name[]={ \"%s\"", ATfunnme[0]);

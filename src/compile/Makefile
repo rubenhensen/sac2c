@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.23  1997/05/14 08:54:07  sbs
+# Revision 1.24  1997/05/28 12:35:25  sbs
+# Profiling integrated
+#
+# Revision 1.23  1997/05/14  08:54:07  sbs
 # deps made
 #
 # Revision 1.22  1997/05/14  06:44:41  sbs
@@ -79,7 +82,7 @@ CC=gcc -ansi -g
 INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount
 MACS=icm.data icm_decl.c icm_args.c icm_comment.c icm_trace.c
 
-all: compile.o icm2c.o precompile.o libsac.a analyse.o
+all: compile.o icm2c.o precompile.o libsac.a profile.o
 
 BEtest: icm2c.c $(MACS)
 	$(CC) -o BEtest icm2c.c -DTEST_BACKEND $(INCS) ../../lib/dbug.o
@@ -90,8 +93,8 @@ compile.o: compile.c
 icm2c.o: icm2c.c
 	$(CC) -o icm2c.o -c icm2c.c $(INCS)
 
-analyse.o: analyse.c
-	$(CC) -o analyse.o -c analyse.c $(INCS)
+profile.o: profile.c
+	$(CC) -o profile.o -c profile.c $(INCS)
 
 precompile.o: precompile.c
 	$(CC) -o precompile.o -c precompile.c $(INCS)
@@ -115,7 +118,7 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-analyse.o: analyse.h
+profile.o: profile.h
 compile.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
 compile.o: /usr/include/string.h ../global/types.h ../global/tree_basic.h
 compile.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h

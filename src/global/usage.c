@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.47  1997/05/27 08:53:59  sbs
+ * Revision 1.48  1997/05/28 12:36:51  sbs
+ * Profiling integrated
+ *
+ * Revision 1.47  1997/05/27  08:53:59  sbs
  * *** empty log message ***
  *
  * Revision 1.46  1997/05/06  13:54:18  sbs
@@ -263,11 +266,12 @@ usage (char *prg_name)
 
     printf ("\n\nPROFILING OPTIONS:\n\n");
 
-    printf ("\t -p [afiw] \t\tinclude runtime analysis\n");
-    printf ("\t\t\t\ta: analyse all (same as iw)\n");
-    printf ("\t\t\t\tw: analyse time spent in with-loops\n");
+    printf ("\t -p [afilw] \t\tinclude runtime analysis\n");
+    printf ("\t\t\t\ta: analyse all (same as filw)\n");
     printf ("\t\t\t\tf: analyse time spend in non-inline functions\n");
-    printf ("\t\t\t\ti: analyse time spend in any function\n");
+    printf ("\t\t\t\ti: analyse time spend in inline functions\n");
+    printf ("\t\t\t\tl: analyse time spend in library functions\n");
+    printf ("\t\t\t\tw: analyse time spent in with-loops\n");
 
     printf ("\n\nLINK OPTIONS:\n\n");
 
