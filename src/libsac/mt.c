@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/04/12 10:15:03  sbs
+ * volatile declarations have to be added to external decls as well!!!!!!
+ * otherwise new gcc version on bunasera fails 8-(((((
+ *
  * Revision 3.4  2001/03/23 13:34:06  ben
  * in  SAC_MT_Setup SAC_MT_TASKLOCK initialization modified
  *
@@ -115,11 +119,11 @@
  * compiled SAC program.
  */
 
-extern SAC_MT_barrier_t SAC_MT_barrier_space[];
+extern volatile SAC_MT_barrier_t SAC_MT_barrier_space[];
 
 extern pthread_mutex_t SAC_MT_Tasklock[];
 
-extern int SAC_MT_Task[];
+extern volatile int SAC_MT_Task[];
 
 /*
  *  Definition of global variables.
