@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/07/02 14:18:58  rob
+ * Start to introduce TAGGED_ARRAYS support. Incomplete.
+ *
  * Revision 2.7  1999/06/25 14:52:25  rob
  * Introduce definitions and utility infrastructure for tagged array support.
  *
@@ -428,6 +431,11 @@
 void
 ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **tyarg)
 {
+#ifdef TAGGED_ARRAYS
+    char *macvalues[] = {"%s SAC_ND_A_FIELD(%s)", "%s"};
+    char *mymac;
+#endif /* TAGGED_ARRAYS */
+
     DBUG_ENTER ("ICMCompileND_FUN_DEC");
 
 #define ND_FUN_DEC
@@ -443,6 +451,69 @@ ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **tyarg)
         fprintf (outfile, "%s( int __argc, char **__argv)", name);
     } else {
         fprintf (outfile, "%s( ", name);
+#ifdef TAGGED_ARRAYS
+        /*
+         * Arguments to ScanArglist are: arg, n, bin, bout, binout, bupd, bupdbox,
+         *                               binrc, boutrc, binoutrc, sepstr
+         */
+        ScanArglist (tyarg, 3 * narg,
+
+                     if (0 == strlen (tyarg[i + 1])) /* bin */
+                     mymac
+                     = macvalues[1];
+                     else mymac = macvalues[0];
+                     fprintf (outfile, mymac, tyarg[i], tyarg[i + 1]); i += 2;
+                     sep = 1,
+
+                     if (0 != (tyarg[i + 1])[0]) /* bout */
+                     {
+                         fprintf (outfile, " %s *%s__p", tyarg[i], tyarg[i + 1]);
+                         i += 2;
+                         sep = 1;
+                     } else {
+                         fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
+                         i += 2;
+                         sep = 1;
+                     },
+
+                     if (0 != (tyarg[i + 1])[0]) /* binout */
+                     {
+                         fprintf (outfile, " %s *%s__p", tyarg[i], tyarg[i + 1]);
+                         i += 2;
+                         sep = 1;
+                     } else {
+                         fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
+                         i += 2;
+                         sep = 1;
+                     },
+                     /* bupd */
+                     fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
+                     i += 2;
+                     sep = 1,
+                     /* bupdbox */
+                     fprintf (outfile, " %s SAC_ND_A_FIELD(%s)", tyarg[i], tyarg[i + 1]);
+                     i += 2; sep = 1,
+
+                             if (0 != (tyarg[i + 1])[0]) /* binrc */
+                             fprintf (outfile, " SAC_ND_DEC_IN_RC(%s, %s)", tyarg[i],
+                                      tyarg[i + 1]);
+                     else fprintf (outfile, "SAC_ND_DEC_IMPORT_IN_RC(%s)", tyarg[i]);
+                     i += 2; sep = 1,
+
+                             if (0 != (tyarg[i + 1])[0]) /* boutrc */
+                             fprintf (outfile, " SAC_ND_DEC_OUT_RC(%s, %s)", tyarg[i],
+                                      tyarg[i + 1]);
+                     else fprintf (outfile, "SAC_ND_DEC_IMPORT_OUT_RC(%s)", tyarg[i]);
+                     i += 2; sep = 1,
+
+                             if (0 != (tyarg[i + 1])[0]) /* binoutrc */
+                             fprintf (outfile, " SAC_ND_DEC_INOUT_RC(%s, %s)", tyarg[i],
+                                      tyarg[i + 1]);
+                     else fprintf (outfile, "SAC_ND_DEC_IMPORT_INOUT_RC(%s)", tyarg[i]);
+                     i += 2; sep = 1,
+
+                             ","); /* sepstr */
+#else                              /* TAGGED_ARRAYS */
         ScanArglist (tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i], tyarg[i + 1]);
                      i += 2; sep = 1,
 
@@ -492,6 +563,7 @@ ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **tyarg)
                      i += 2; sep = 1,
 
                              ",");
+#endif                             /* TAGGED_ARRAYS */
         fprintf (outfile, ")");
     }
 
@@ -529,6 +601,22 @@ ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg)
         fprintf (outfile, "%s( __argc, __argv);", name);
     } else {
         fprintf (outfile, "%s( ", name);
+#ifdef TAGGED_ARRAYS
+        /*
+         * Arguments to ScanArglist are: arg, n, bin, bout, binout, bupd, bupdbox,
+         *                               binrc, boutrc, binoutrc, sepstr
+         */
+
+        ScanArglist (arg, 2 * narg, fprintf (outfile, " SAC_ND_A_FIELD(%s)", arg[i]); i++;
+                     sep = 1, fprintf (outfile, " &%s", arg[i]); i++;
+                     sep = 1, fprintf (outfile, " &%s", arg[i]); i++;
+                     sep = 1, fprintf (outfile, " &%s", arg[i]); i++;
+                     sep = 1, fprintf (outfile, " %s", arg[i]); i++;
+                     sep = 1, fprintf (outfile, " SAC_ND_AP_IN_RC(%s)", arg[i]); i++;
+                     sep = 1, fprintf (outfile, " SAC_ND_AP_OUT_RC(%s)", arg[i]); i++;
+                     sep = 1, fprintf (outfile, " SAC_ND_AP_INOUT_RC(%s)", arg[i]); i++;
+                     sep = 1, ",");
+#else  /* TAGGED_ARRAYS */
         ScanArglist (arg, 2 * narg, fprintf (outfile, " %s", arg[i]); i++;
                      sep = 1, fprintf (outfile, " &%s", arg[i]); i++;
                      sep = 1, fprintf (outfile, " &%s", arg[i]); i++;
@@ -538,6 +626,7 @@ ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg)
                      sep = 1, fprintf (outfile, " SAC_ND_KS_AP_OUT_RC(%s)", arg[i]); i++;
                      sep = 1, fprintf (outfile, " SAC_ND_KS_AP_INOUT_RC(%s)", arg[i]);
                      i++; sep = 1, ",");
+#endif /* TAGGED_ARRAYS */
         fprintf (outfile, ");");
     }
 
@@ -942,7 +1031,11 @@ ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s)
         fprintf (outfile, "int SAC_ND_A_DIM(%s)=%d;\n", name, dim);
         for (i = 0; i < dim; i++) {
             INDENT;
+#ifdef TAGGED_ARRAYS
+            fprintf (outfile, "int SAC_ND_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
+#else  /* TAGGED_ARRAYS */
             fprintf (outfile, "int SAC_ND_KD_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
+#endif /* TAGGED_ARRAYS */
         }
     }
     fprintf (outfile, "\n");
@@ -977,7 +1070,11 @@ ICMCompileND_KD_SET_SHAPE (char *name, int dim, char **s)
         int i;
         for (i = 0; i < dim; i++) {
             INDENT;
+#ifdef TAGGED_ARRAYS
+            fprintf (outfile, "SAC_ND_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
+#else  /* TAGGED_ARRAYS */
             fprintf (outfile, "SAC_ND_KD_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
+#endif /* TAGGED_ARRAYS */
         }
     }
     fprintf (outfile, "\n");
