@@ -15,3 +15,5 @@ precompile.h
 profile.c
 profile.h
 trace.h
+Old2NewWith.c
+Old2NewWith.h
