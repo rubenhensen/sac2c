@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2000/03/21 13:11:50  jhs
+ * Added some functions of DFA and BLKPP.
+ *
  * Revision 1.24  2000/03/17 20:42:40  dkr
  * CUDfundef added
  *
@@ -756,8 +759,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, L2F_INFERfundef,
 
        MUTHfundef, TravSons, TravSons, RFINfundef, FUN2LACfundef, AIfundef, TravSons,
-       MTFINfundef, L2F_LIFTfundef, BLKCOfundef, DFAfundef, TravSons, CUDfundef, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       MTFINfundef, L2F_LIFTfundef, BLKCOfundef, DFAfundef, BLKPPfundef, CUDfundef,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        3),
 
@@ -828,7 +831,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, MTFINxt,
-       TravSons, BLKCOxt, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, BLKCOxt, DFAxt, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        1),
@@ -846,7 +849,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, MTFINxt,
-       TravSons, BLKCOxt, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, BLKCOxt, DFAxt, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        1),
@@ -865,8 +868,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, SPMDPMassign, SPMDCOassign, TravSons, L2F_INFERassign,
 
        TravSons, SCHINassign, BLKINassign, TravSons, FUN2LACassign, AIassign, BLKEXassign,
-       TravSons, TravSons, BLKCOassign, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, BLKCOassign, DFAassign, BLKPPassign, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        2),
 
@@ -955,7 +958,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, L2F_INFERcond,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       L2F_LIFTcond, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       L2F_LIFTcond, TravSons, DFAcond, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        3),
