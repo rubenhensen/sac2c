@@ -36,3 +36,5 @@ free_attribs.c
 free_info.h
 deserialize_info.h
 traverse_helper.h
+check_lib.c
+check_lib.h
