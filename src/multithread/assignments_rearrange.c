@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/04/30 14:10:05  skt
+ * some debugging
+ *
  * Revision 1.1  2004/04/27 09:59:04  skt
  * Initial revision
  *
@@ -33,13 +36,7 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "assignments_rearrange.h"
-/*#include "DupTree.h"
-#include "generatemasks.h"
-#include "globals.h"
-#include "my_debug.h"
-#include "multithread_lib.h"
-
-#include "internal_lib.h"*/
+#include "print.h"
 
 /******************************************************************************
  *
@@ -57,16 +54,16 @@ AssignmentsRearrange (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("AssignmentsRearrange");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "AssignmentsRearrange expects a N_fundef as arg_node");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
+                 "AssignmentsRearrange expects a N_modul as arg_node");
 
     /* push info ... */
     old_tab = act_tab;
     act_tab = asmra_tab;
 
-    FUNDEF_COMPANION (arg_node) = NULL;
-
-    FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    DBUG_PRINT ("ASMRA", ("trav into modul-funs"));
+    MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    DBUG_PRINT ("ASMRA", ("trav from modul-funs"));
 
     /* pop info ... */
     act_tab = old_tab;
@@ -86,53 +83,51 @@ ASMRAfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("ASMRAfundef");
 
+    DBUG_PRINT ("ASMRA", ("Welcome to ASMRAfundef"));
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef), "node is not a N_fundef");
 
     INFO_ASMRA_WITHDEEP (arg_info) = 0;
 
+    PrintNode (arg_node);
+
     /* Initialisation of the Dataflowgraph for this N_fundef */
     INFO_ASMRA_EXECUTIONMODE (arg_info) = ASMRA_ANY;
     INFO_ASMRA_DATAFLOWGRAPH (arg_info)
-      = CreateDataflowgraph (FUNDEF_ARGS (arg_node), INFO_ASMRA_EXECUTIONMODE (arg_info));
+      = CreateDataflowgraph (FUNDEF_NAME (arg_node), arg_info);
 
     /* continue traversal */
-    arg_node = Trav (arg_node, arg_info);
+    DBUG_PRINT ("ASMRA", ("trav into body"));
+    FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    DBUG_PRINT ("ASMRA", ("trav from body"));
 
     /* now the dataflowgraph is ready to be used for rearranging the assignment*/
 
     /* TODO */
+    PrintDataflowgraph (INFO_ASMRA_DATAFLOWGRAPH (arg_info), FUNDEF_NAME (arg_node));
 
     DeleteDataflowgraph (INFO_ASMRA_DATAFLOWGRAPH (arg_info));
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        DBUG_PRINT ("ASMRA", ("trav into fundef-next"));
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        DBUG_PRINT ("ASMRA", ("trav from fundef-next"));
+    }
 
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *CreateDataflowgraph(node *args, int mode)
- *
- *   @brief creates a new dataflowgraph
- *
- *   @param args arguments of a function, used to build the first node
- *   @param mode the execution mode of the function
- *   @return returns a new dataflowgraph with one initial node
- *
- *****************************************************************************/
 node *
-CreateDataflowgraph (node *args, int mode)
+CreateDataflowgraph (char *name, node *arg_info)
 {
     node *graph;
-
     DBUG_ENTER ("CreateDataflowgraph");
 
-    DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "node is not a N_arg");
-
     /* build initial datanode */
-    graph = MakeInfo ();
-    DATA_ASMRA_INNERASSIGN (graph) = NULL;
-    DATA_ASMRA_OUTERASSIGN (graph) = NULL;
-    DATA_ASMRA_EXECUTIONMODE (graph) = mode;
-    DATA_ASMRA_DEPENDENT (graph) = NULL;
+    graph = MakeNode (name, NULL, arg_info);
+
+    /* add the sink to the dataflowgraph */
+    DATA_ASMRA_DEPENDENT (graph) = NodeListAppend (DATA_ASMRA_DEPENDENT (graph),
+                                                   MakeNode (NULL, NULL, arg_info), NULL);
 
     /* return datanode as new graph */
     DBUG_RETURN (graph);
@@ -146,6 +141,64 @@ DeleteDataflowgraph (node *graph)
     DBUG_ENTER ("DeleteDataflowgraph");
     /* iterate over all nodes and deletes their nodelists, then delete the "main"
        nodelist */
+    /* TODO */
+
+    status = 0;
+
+    DBUG_RETURN (status);
+}
+
+int
+PrintDataflowgraph (node *dataflowgraph, char *name)
+{
+    int status;
+    nodelist *list_iterator;
+    DBUG_ENTER ("PrintDataflowgraph");
+
+    fprintf (stdout, "The Dataflowgraph for %s:\n", name);
+
+    list_iterator = DATA_ASMRA_DEPENDENT (dataflowgraph);
+    while (list_iterator != NULL) {
+        PrintDataflownode (NODELIST_NODE (list_iterator));
+        list_iterator = NODELIST_NEXT (list_iterator);
+    }
+    fprintf (stdout, "\n");
+    DBUG_RETURN (status);
+}
+
+int
+PrintDataflownode (node *datanode)
+{
+    int status;
+    nodelist *list_iterator;
+    DBUG_ENTER ("PrintDataflownode");
+
+    if (DATA_ASMRA_NAME (datanode) != NULL) {
+        fprintf (stdout, "- Name: %s, mode: %i\n", DATA_ASMRA_NAME (datanode),
+                 DATA_ASMRA_EXECUTIONMODE (datanode));
+    } else {
+        fprintf (stdout, "- Return, mode: %i\n", DATA_ASMRA_EXECUTIONMODE (datanode));
+    }
+
+    list_iterator = DATA_ASMRA_DEPENDENT (datanode);
+
+    if (list_iterator != NULL) {
+        fprintf (stdout, "  ->");
+
+        while (list_iterator != NULL) {
+            if (NODE_TYPE (
+                  ASSIGN_INSTR (DATA_ASMRA_INNERASSIGN (NODELIST_NODE (list_iterator))))
+                != N_return) {
+                fprintf (stdout, " %s,", DATA_ASMRA_NAME (NODELIST_NODE (list_iterator)));
+            } else {
+                fprintf (stdout, " Return");
+            }
+            list_iterator = NODELIST_NEXT (list_iterator);
+        }
+        fprintf (stdout, "\n");
+    } else {
+        fprintf (stdout, "  -> No dependent nodes\n");
+    }
 
     status = 0;
 
@@ -179,16 +232,58 @@ ASMRAassign (node *arg_node, node *arg_info)
         INFO_ASMRA_OUTERASSIGN (arg_info) = arg_node;
     }
 
-    /* if it's the return-instruction, one has to create the dataflownode BEFORE
-       continuing the traversal! */
-    if (NODE_TYPE (ASSIGN_INSTR (arg_info)) == N_return) {
-        INFO_ASMRA_ACTNODE (arg_info) = MakeReturnnode (arg_node, arg_info);
+    /* if it's the return-instruction, one need not to traverse into the
+       instruction, because the dataflownode for return already exists
+    */
+    if (NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return) {
+        /* continue traversal */
+        DBUG_PRINT ("ASMRA", ("trav into instruction"));
+        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        DBUG_PRINT ("ASMRA", ("trav from instruction"));
+
+        DBUG_PRINT ("ASMRA", ("trav into next"));
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        DBUG_PRINT ("ASMRA", ("trav from next"));
+    } else {
+        /* but you have to update the returnassignment in the dataflowgraph*/
+        INFO_ASMRA_DATAFLOWGRAPH (arg_info)
+          = UpdateReturn (INFO_ASMRA_DATAFLOWGRAPH (arg_info), arg_node);
     }
 
-    /* continue traversal */
-    arg_node = Trav (arg_node, arg_info);
-
     DBUG_RETURN (arg_node);
+}
+
+node *
+GetReturnNode (node *graph)
+{
+    nodelist *list_iterator;
+
+    DBUG_ENTER ("GetReturnNode");
+
+    list_iterator = DATA_ASMRA_DEPENDENT (graph);
+
+    while ((list_iterator != NULL)
+           && (DATA_ASMRA_INNERASSIGN (NODELIST_NODE (list_iterator)) != NULL)) {
+        list_iterator = NODELIST_NEXT (list_iterator);
+    }
+    DBUG_ASSERT (list_iterator != NULL, "the dataflowgraph has no returnnode!");
+
+    DBUG_RETURN (NODELIST_NODE (list_iterator));
+}
+
+node *
+UpdateReturn (node *graph, node *arg_node)
+{
+    node *returnnode;
+
+    DBUG_ENTER ("UpdateReturn");
+
+    returnnode = GetReturnNode (graph);
+
+    DATA_ASMRA_INNERASSIGN (returnnode) = arg_node;
+    DATA_ASMRA_OUTERASSIGN (returnnode) = arg_node;
+
+    DBUG_RETURN (graph);
 }
 
 node *
@@ -200,50 +295,45 @@ ASMRAlet (node *arg_node, node *arg_info)
 
     if (INFO_ASMRA_WITHDEEP (arg_node) == 0) {
         /* create dataflownode out of the let-ids */
-        INFO_ASMRA_ACTNODE (arg_info) = MakeNode (LET_IDS (arg_node), arg_info);
+        DBUG_PRINT ("ASMRA", ("before MakeNode"));
+        INFO_ASMRA_ACTNODE (arg_info)
+          = MakeNode (IDS_NAME (LET_IDS (arg_node)),
+                      AVIS_SSAASSIGN (IDS_AVIS (LET_IDS (arg_node))), arg_info);
+        DBUG_PRINT ("ASMRA", ("after MakeNode"));
 
         /* insert the node into the dataflowgraph */
         INFO_ASMRA_DATAFLOWGRAPH (arg_info)
           = AddNode (INFO_ASMRA_DATAFLOWGRAPH (arg_info), INFO_ASMRA_ACTNODE (arg_info));
     }
     /* continue traversal */
-    arg_node = Trav (arg_node, arg_info);
+    DBUG_PRINT ("ASMRA", ("trav into expr"));
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    DBUG_PRINT ("ASMRA", ("trav from expr"));
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-MakeNode (ids *identifier, node *arg_info)
+MakeNode (char *name, node *inner_assign, node *arg_info)
 {
     node *tmp;
 
     DBUG_ENTER ("MakeNode");
 
     tmp = MakeInfo ();
+
+    DATA_ASMRA_NAME (tmp) = name;
     /* the inner assignment means, that its instruction is the N_let of the
        identifier */
-    DATA_ASMRA_INNERASSIGN (tmp) = AVIS_SSAASSIGN (IDS_AVIS (identifier));
-    /* the outer assignment equals the inner one, if mode = ASMRA_ANY, otherwise
-       it is different - see ASMRAassign for more details */
-    DATA_ASMRA_OUTERASSIGN (tmp) = INFO_ASMRA_OUTERASSIGN (arg_info);
-    DATA_ASMRA_EXECUTIONMODE (tmp) = INFO_ASMRA_EXECUTIONMODE (arg_info);
-    DATA_ASMRA_DEPENDENT (tmp) = NULL;
+    DATA_ASMRA_INNERASSIGN (tmp) = inner_assign;
 
-    DBUG_RETURN (tmp);
-}
+    /* it is impossible to have a outer assign without an inner assign */
+    if (inner_assign == NULL) {
+        DATA_ASMRA_OUTERASSIGN (tmp) = NULL;
+    } else {
+        DATA_ASMRA_OUTERASSIGN (tmp) = INFO_ASMRA_OUTERASSIGN (arg_info);
+    }
 
-node *
-MakeReturnnode (node *assign_node, node *arg_info)
-{
-    node *tmp;
-
-    DBUG_ENTER ("MakeReturnnode");
-
-    tmp = MakeInfo ();
-    DATA_ASMRA_INNERASSIGN (tmp) = assign_node;
-    /* the outer assignment equals the inner one, if mode = ASMRA_ANY, otherwise
-       it is different - see ASMRAassign for more details */
-    DATA_ASMRA_OUTERASSIGN (tmp) = INFO_ASMRA_OUTERASSIGN (arg_info);
     DATA_ASMRA_EXECUTIONMODE (tmp) = INFO_ASMRA_EXECUTIONMODE (arg_info);
     DATA_ASMRA_DEPENDENT (tmp) = NULL;
 
@@ -253,12 +343,14 @@ MakeReturnnode (node *assign_node, node *arg_info)
 node *
 AddNode (node *graph, node *newnode)
 {
-
     DBUG_ENTER ("AddNode");
 
+    /* node added to the graph -> made dependent from the spring */
     DATA_ASMRA_DEPENDENT (graph)
       = NodeListAppend (DATA_ASMRA_DEPENDENT (graph), newnode, NULL);
 
+    DATA_ASMRA_DEPENDENT (newnode)
+      = NodeListAppend (DATA_ASMRA_DEPENDENT (newnode), GetReturnNode (graph), NULL);
     DBUG_RETURN (graph);
 }
 
@@ -268,6 +360,8 @@ ASMRAid (node *arg_node, node *arg_info)
     DBUG_ENTER ("ASMRAid");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_id), "node is not a N_id");
+
+    fprintf (stdout, "act. id = %s\n", ID_NAME (arg_node));
 
     INFO_ASMRA_DATAFLOWGRAPH (arg_info)
       = UpdateDependencies (INFO_ASMRA_DATAFLOWGRAPH (arg_info), ID_AVIS (arg_node),
@@ -285,28 +379,33 @@ UpdateDependencies (node *graph, node *avisnode, node *actnode)
 
     DBUG_ASSERT ((NODE_TYPE (avisnode) == N_avis), "node is not a N_avis");
 
+    fprintf (stdout, "UpdateDependencies for %s\n", DATA_ASMRA_NAME (actnode));
+
     /* is it a with_id?*/
-    if (AVIS_WITHID (avisnode) != NULL) {
+    if (AVIS_WITHID (avisnode) == NULL) {
         /* no - let us have a closer look on it */
 
-        /* Does the varible depend on an assignment ? */
-        if (AVIS_SSAASSIGN (avisnode) == NULL) {
-            /* time to search for the corresponding node */
+        /* Does the variable depend on an assignment ? */
+        if (AVIS_SSAASSIGN (avisnode) != NULL) {
             list_iterator = DATA_ASMRA_DEPENDENT (graph);
-            DBUG_ASSERT ((list_iterator != NULL), "unexpected empty list");
 
+            /* time to search for the corresponding node */
             while (DATA_ASMRA_INNERASSIGN (NODELIST_NODE (list_iterator))
                    != AVIS_SSAASSIGN (avisnode)) {
                 list_iterator = NODELIST_NEXT (list_iterator);
-                DBUG_ASSERT ((list_iterator != NULL), "unexpected end of list");
+                DBUG_ASSERT ((list_iterator != NULL),
+                             "Variable without any correspondent lefthandside");
             }
 
             /* tmp points on the dataflownode, that has to be a father of actnode */
             tmp = NODELIST_NODE (list_iterator);
 
+            fprintf (stdout, "%s ist the father of %s\n", DATA_ASMRA_NAME (tmp),
+                     DATA_ASMRA_NAME (actnode));
+
             /* let us insert actnode into tmp's dependent_nodes, if this has not be
                done yet */
-            if (NodeListFind (DATA_ASMRA_DEPENDENT (tmp), actnode) != NULL) {
+            if (NodeListFind (DATA_ASMRA_DEPENDENT (tmp), actnode) == NULL) {
                 DATA_ASMRA_DEPENDENT (tmp)
                   = NodeListAppend (DATA_ASMRA_DEPENDENT (tmp), actnode, NULL);
             }
@@ -320,17 +419,6 @@ UpdateDependencies (node *graph, node *avisnode, node *actnode)
     DBUG_RETURN (graph);
 }
 
-/*node *ASMRAreturn(node *arg_node, node *arg_info)
-{
-  DBUG_ENTER("ASMRAreturn");
-
-  DBUG_ASSERT((NODE_TYPE(arg_node) == N_return), "node is not a N_return");
-
-
-
-  DBUG_RETURN(arg_node);
-  }*/
-
 node *
 ASMRAst (node *arg_node, node *arg_info)
 {
@@ -340,7 +428,9 @@ ASMRAst (node *arg_node, node *arg_info)
 
     INFO_ASMRA_EXECUTIONMODE (arg_info) = ASMRA_ST;
 
+    DBUG_PRINT ("ASMRA", ("trav into st-region"));
     ST_REGION (arg_node) = Trav (ST_REGION (arg_node), arg_info);
+    DBUG_PRINT ("ASMRA", ("trav from st-region"));
 
     INFO_ASMRA_EXECUTIONMODE (arg_info) = ASMRA_ANY;
 
@@ -356,7 +446,9 @@ ASMRAmt (node *arg_node, node *arg_info)
 
     INFO_ASMRA_EXECUTIONMODE (arg_info) = ASMRA_MT;
 
+    DBUG_PRINT ("ASMRA", ("trav into mt-region"));
     MT_REGION (arg_node) = Trav (MT_REGION (arg_node), arg_info);
+    DBUG_PRINT ("ASMRA", ("trav from mt-region"));
 
     INFO_ASMRA_EXECUTIONMODE (arg_info) = ASMRA_ANY;
 
@@ -364,16 +456,22 @@ ASMRAmt (node *arg_node, node *arg_info)
 }
 
 node *
-ASMRANwith2 (node *arg_node, node *arg_info)
+ASMRAwith2 (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("ASMRANwith2");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Nwith2), "node is not a N_Nwith2");
 
+    fprintf (stdout, "Hello again!\n");
+
     /* increase the "deepness of the withloop"-counter */
     INFO_ASMRA_WITHDEEP (arg_info)++;
 
     MT_REGION (arg_node) = Trav (MT_REGION (arg_node), arg_info);
+    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
+    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
 
     /* restore actual deepness */
     INFO_ASMRA_WITHDEEP (arg_info)--;
