@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.10  2000/05/11 15:54:40  dkr
+ * reverse computation of bounds is now correct :-))
+ *
  * Revision 2.9  2000/05/11 09:58:00  sbs
  * modified the reverse computation of bounds......
  * unfortunately still not ok 8-((((
@@ -508,14 +511,13 @@ MergeGenerators (intern_gen *ig)
 /******************************************************************************
  *
  * function:
- *   intern_gen *LinearTransformationsHelp(intern_gen *ig, int dim, prf prf, int arg_no,
- *int const)
+ *   intern_gen *LinearTransformationsHelp(intern_gen *ig, int dim, prf prf,
+ *                                         int arg_no, int constval)
  *
  * description:
  *   Executes transformation (prf const) on the given ig in dimension dim.
  *   More complex transformations require to split up generators in two new
  *   generators (original ig and newig). If a newig is created, it is returned.
- *
  *
  ******************************************************************************/
 
@@ -526,7 +528,7 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
     intern_gen *newig = NULL;
 
     DBUG_ENTER ("LinearTransformationsHelp");
-    DBUG_ASSERT (1 == arg_no || 2 == arg_no, ("wrong parameters"));
+    DBUG_ASSERT (((1 == arg_no) || (2 == arg_no)), "wrong parameters");
 
     switch (prf) {
     case F_add:
@@ -540,17 +542,19 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
             /* index - scalar, grids are not affected */
             ig->l[dim] += constval;
             ig->u[dim] += constval;
-        } else {
+        } else { /* arg_no == 1 */
             /* scalar - index */
             lbuf = constval - ig->u[dim] + 1; /* +1 to transform < in <= */
             ubuf = constval - ig->l[dim] + 1; /* +1 to transform <= in < */
 
             if (ig->step) {
-                /* reverse the grid.
-                   Example:
-                   "xxx  xxx  xx" => "xx  xxx  xxx"
-                   done with 2 gens: "xx   xx   xx" &&
-                   "x    x  " */
+                /*
+                 * reverse the grid.
+                 * Example:
+                 * "xxx  xxx  xx" => "xx  xxx  xxx"
+                 * done with 2 gens: "xx   xx   xx" &&
+                 *                       "x    x  "
+                 */
                 cut = (ig->u[dim] - ig->l[dim]) % ig->step[dim];
                 if (cut == 0)
                     lbuf += ig->step[dim] - ig->width[dim];
@@ -580,21 +584,103 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
         break;
 
     case F_mul:
-        ig->l[dim] = (ig->l[dim] + constval - 1) / constval;
-        ig->u[dim] = (ig->u[dim] + constval - 1) / constval;
+        /*
+         * first try  (srs):  ig->l[dim] = (ig->l[dim] + constval - 1) / constval;
+         *                    ig->u[dim] = (ig->u[dim] - 1) / constval +1;
+         *
+         * second try (sbs):  ig->l[dim] = (ig->l[dim] + constval - 1) / constval;
+         *                    ig->u[dim] = (ig->u[dim] + constval - 1) / constval;
+         *
+         * But this is still incorrect in some cases, e.g. if (constval < 0) ...
+         *
+         * These conditions must hold for l_neu and u_neu:
+         *
+         *   constval > 0:      l  >  constval * ( l_neu - 1 )
+         *                  &&  l  <= constval * l_neu
+         *                  &&  u  >  constval * ( u_neu - 1 )
+         *                  &&  u  <= constval * u_neu
+         *
+         *             ==>      l / constvec  <=  l_neu  <  l / constvec + 1
+         *                  &&  u / constvec  <=  u_neu  <  u / constvec + 1
+         *
+         *   constval < 0:      u  >  constval * l_neu           // bounds reflected, ...
+         *                  &&  u  <= constval * ( l_neu - 1 )   // ... <= and < reversed
+         *                  &&  l  >  constval * u_neu
+         *                  &&  l  <= constval * ( u_neu - 1 )
+         *
+         *             ==>      u / constvec  <  l_neu  <=  u / constval + 1
+         *                  &&  l / constvec  <  u_neu  <=  l / constval + 1
+         *
+         * Therefore the following code should work correctly:
+         */
+        if (constval > 0) {
+            ig->l[dim] = ((ig->l[dim] % constval == 0) || (ig->l[dim] < 0))
+                           ? (ig->l[dim] / constval)
+                           : (ig->l[dim] / constval + 1);
+            ig->u[dim] = ((ig->u[dim] % constval == 0) || (ig->u[dim] < 0))
+                           ? (ig->u[dim] / constval)
+                           : (ig->u[dim] / constval + 1);
+        }
+        if (constval < 0) {
+            ig->l[dim] = ((ig->u[dim] % constval == 0) || (ig->u[dim] < 0))
+                           ? (ig->u[dim] / constval + 1)
+                           : (ig->u[dim] / constval);
+            ig->u[dim] = ((ig->l[dim] % constval == 0) || (ig->l[dim] < 0))
+                           ? (ig->l[dim] / constval + 1)
+                           : (ig->l[dim] / constval);
+        }
+
         if (ig->step) {
             DBUG_ASSERT (0, ("WL folding with transformed index variables "
                              "by multiplication and grids not supported right now."));
         }
         break;
+
     case F_div:
-        ig->l[dim] = ig->l[dim] * constval;
-        ig->u[dim] = (ig->u[dim] - 1) * constval + constval - 1 + 1;
+        DBUG_ASSERT ((arg_no == 2),
+                     "WLF transformation (scalar / index) not yet implemented!");
+
+        /*
+         * first try  (srs):  ig->l[dim] = ig->l[dim] * constval;
+         *                    ig->u[dim] = ig->u[dim] * constval;
+         *
+         * But this is incorrect in some cases, e.g. if (constval < 0) ...
+         *
+         * These conditions must hold for l_neu and u_neu:
+         *
+         *   constval > 0:      l  >  ( l_neu - 1 ) / constval
+         *                  &&  l  <= l_neu / constval
+         *                  &&  u  >  ( u_neu - 1 ) / constval
+         *                  &&  u  <= u_neu / constval
+         *
+         *             ==>      l * constvec  <=  l_neu  <  l * constvec + 1
+         *                  &&  u * constvec  <=  u_neu  <  u * constvec + 1
+         *
+         *   constval < 0:      u  >  l_neu / constval           // bounds reflected, ...
+         *                  &&  u  <= ( l_neu - 1 ) / constval   // ... <= and < reversed
+         *                  &&  l  >  u_neu / constval
+         *                  &&  l  <= ( u_neu - 1 ) / constval
+         *
+         *             ==>      u * constvec  <  l_neu  <=  u * constval + 1
+         *                  &&  l * constvec  <  u_neu  <=  l * constval + 1
+         *
+         * Therefore the following code should work correctly:
+         */
+        if (constval > 0) {
+            ig->l[dim] = ig->l[dim] * constval;
+            ig->u[dim] = ig->u[dim] * constval;
+        }
+        if (constval < 0) {
+            ig->l[dim] = ig->u[dim] * constval + 1;
+            ig->u[dim] = ig->l[dim] * constval + 1;
+        }
+
         if (ig->step) {
             DBUG_ASSERT (0, ("WL folding with transformed index variables "
-                             "by division  and grids not supported right now."));
+                             "by division and grids not supported right now."));
         }
         break;
+
     default:
         DBUG_ASSERT (0, ("Wrong transformation function"));
     }
@@ -639,8 +725,9 @@ LinearTransformationsScalar (intern_gen *ig, index_info *transformations, int di
             actig = actig->next;
         }
 
-    if (transformations->last[0])
+    if (transformations->last[0]) {
         ig = LinearTransformationsScalar (ig, transformations->last[0], dim);
+    }
 
     DBUG_RETURN (ig);
 }
@@ -1135,7 +1222,6 @@ RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
  *   TransformationRangeCheck( )
  *
  * description:
- *
  *    if the psi-operation we process right now indexes the subst WL in a way
  *    so that invalid elements are chosen, the resulting partition will not
  *    specify a full partition.
@@ -1518,8 +1604,9 @@ WLFassign (node *arg_node, node *arg_info)
                     tmpn
                       = MakePrf (F_genarray, /* prf N_genarray */
                                  MakeExprs (tmpn,
-                                            MakeExprs (MakeNullVec (0,
-                                                                    TYPES_BASETYPE (idt)),
+                                            MakeExprs (CreateZeroVector (0,
+                                                                         TYPES_BASETYPE (
+                                                                           idt)),
                                                        NULL)));
                     LET_EXPR (ASSIGN_INSTR (arg_node)) = tmpn;
                 }
