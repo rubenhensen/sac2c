@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/06/23 13:11:54  hw
+ * Revision 1.5  1995/07/04 11:39:58  hw
+ * DupDouble inserted
+ *
+ * Revision 1.4  1995/06/23  13:11:54  hw
  * functions "DupDec" & "DupFundef" inserted
  *
  * Revision 1.3  1995/06/02  11:25:48  asi
@@ -27,6 +30,7 @@ extern node *DupTree (node *arg_node, node *arg_info);
 
 extern node *DupInt (node *arg_node, node *arg_info);
 extern node *DupFloat (node *arg_node, node *arg_info);
+extern node *DupDouble (node *arg_node, node *arg_info);
 extern node *DupStr (node *arg_node, node *arg_info);
 extern ids *DupIds (ids *ids, node *arg_info);
 extern node *DupIIds (node *arg_node, node *arg_info);

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/06/27 16:03:05  asi
+ * Revision 1.11  1995/07/04 11:39:58  hw
+ * DupDouble inserted
+ *
+ * Revision 1.10  1995/06/27  16:03:05  asi
  * added DUP-macro : Duplicating simple structure elements
  * and DUP inserted in each DUP... function
  *
@@ -101,6 +104,19 @@ DupFloat (node *arg_node, node *arg_info)
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     new_node = MakeNode (arg_node->nodetype);
     new_node->info.cfloat = arg_node->info.cfloat;
+    DUP (arg_node, new_node);
+    DBUG_RETURN (new_node);
+}
+
+node *
+DupDouble (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupDouble");
+    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
+    new_node = MakeNode (arg_node->nodetype);
+    new_node->info.cdbl = arg_node->info.cdbl;
     DUP (arg_node, new_node);
     DBUG_RETURN (new_node);
 }
