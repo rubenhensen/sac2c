@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2001/04/03 15:39:42  dkr
+ * uuups, typo corrected
+ *
  * Revision 3.68  2001/04/03 15:28:03  dkr
  * comment for N_WLseg modified
  *
@@ -3586,8 +3589,8 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***
  ***    - BV[ 0 .. (BLOCKS-1) ]
  ***    - UBV, BV[.], SV, IDX_MIN, IDX_MAX are vectors of size DIMS.
- ***    - SV is the least common multiple of all stride- and ublock-steps found
- ***      in the segment.
+ ***    - SV is the least common multiple of all stride-, ublock- and block-
+ ***      steps found in the segment.
  ***    - MAXHOMDIM is element of the set {-1, 0, 1, ..., DIMS-1}.
  ***      -1 is the default value (= no homogeneous dimensions).
  ***/
