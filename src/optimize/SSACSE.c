@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2001/03/12 09:17:05  nmw
+ * do not substitute SSAPHITARGET
+ *
  * Revision 1.3  2001/03/07 15:58:35  nmw
  * SSA Common Subexpression Elimination implemented
  *
@@ -444,13 +447,14 @@ SSACSElet (node *arg_node, node *arg_info)
     DBUG_PRINT ("SSACSE", ("inspecting expression for cse"));
 
     DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "let without expression");
+    DBUG_ASSERT ((LET_IDS (arg_node) != NULL), "let without ids");
 
     /* traverse right side expression to to variable substitutions */
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     match = FindCSE (INFO_SSACSE_CSE (arg_info), arg_node);
-    if (match != NULL) {
-        /* found matching common subexpression */
+    if ((match != NULL) && (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == FALSE)) {
+        /* found matching common subexpression, and let is no phicopytarget */
         /* set subst attributes for results */
         LET_IDS (arg_node) = SetSubstAttributes (LET_IDS (arg_node), LET_IDS (match));
 
