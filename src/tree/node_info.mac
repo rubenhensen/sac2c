@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/02/14 14:41:09  nmw
+ * ssafrm_tab completed
+ *
  * Revision 3.17  2001/02/13 15:17:00  nmw
  * chkavis_tab and ssafrm_tab initialized
  *
@@ -1182,7 +1185,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, BLKCOassign, DFAassign, BLKPPassign, TravSons, BARINassign,
        TravSons, TravSons, TravSons, PREC1assign, TravSons, APTassign,
 
-       TravSons, TravSons, TravSons, TravSons, TCCPassign, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TCCPassign, SSAassign, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_return, "N_return", TravSons, FltnReturn, PrintReturn, TCreturn, TravSons,
@@ -1585,7 +1588,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, APCwith, APTwith,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, SSANwith, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_Npart, "N_Npart", TravSons, FltnNpart, PrintNpart, TravSons, TravSons, TravSons,
@@ -1604,7 +1607,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, NoTrav,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, SSANpart, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_Nwithid, "N_Nwithid", TravSons, NoTrav, PrintNwithid, TravSons, TravSons,
@@ -1680,7 +1683,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, APCcode, APTcode,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, SSANcode, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
   /*
