@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.47  2000/06/13 13:41:20  dkr
+ * Make...() functions for old with-loop removed
+ *
  * Revision 1.46  2000/06/08 12:15:38  jhs
  * Added some INFO_DFA_XXX stuff
  * /
@@ -3534,8 +3537,6 @@ extern node *MakeWLgridVar (int level, int dim, node *bound1, node *bound2, node
  * of a with-loop.
  */
 
-extern node *MakeWith (node *gen, node *body);
-
 #define WITH_GEN(n) (n->node[0])
 #define WITH_OPERATOR(n) (n->node[1])
 #define WITH_USEVARS(n) ((ids *)n->node[2])
@@ -3565,8 +3566,6 @@ extern node *MakeWith (node *gen, node *body);
  ***  remark: IDS->id == ID
  ***/
 
-extern node *MakeGenerator (node *left, node *right, char *id);
-
 #define GEN_LEFT(n) (n->node[0])
 #define GEN_RIGHT(n) (n->node[1])
 #define GEN_ID(n) (n->info.ids->id)
@@ -3590,8 +3589,6 @@ extern node *MakeGenerator (node *left, node *right, char *id);
  ***
  ***    long*  MASK[x]                 (optimize -> )
  ***/
-
-extern node *MakeGenarray (node *array, node *body);
 
 #define GENARRAY_ARRAY(n) (n->node[0])
 #define GENARRAY_BODY(n) (n->node[1])
@@ -3618,8 +3615,6 @@ extern node *MakeGenarray (node *array, node *body);
  ***    long*  MASK[x]                 (optimize -> )  (see N_genarray)
  ***/
 
-extern node *MakeModarray (node *array, node *body);
-
 #define MODARRAY_ARRAY(n) (n->node[0])
 #define MODARRAY_BODY(n) (n->node[1])
 #define MODARRAY_ID(n) (n->info.id)
@@ -3642,8 +3637,6 @@ extern node *MakeModarray (node *array, node *body);
  ***
  ***    long*  MASK[x]                 (optimize -> )  (see N_genarray)
  ***/
-
-extern node *MakeFoldprf (prf prf, node *body, node *neutral);
 
 #define FOLDPRF_PRF(n) (n->info.prf)
 #define FOLDPRF_BODY(n) (n->node[0])
@@ -3669,8 +3662,6 @@ extern node *MakeFoldprf (prf prf, node *body, node *neutral);
  ***    node*  FUNDEF        (N_fundef)  (typecheck -> )
  ***    long*  MASK[x]                   (optimize -> )  (see N_genarray)
  ***/
-
-extern node *MakeFoldfun (char *name, char *mod, node *body, node *neutral);
 
 #define FOLDFUN_NAME(n) (n->info.fun_name.id)
 #define FOLDFUN_MOD(n) (n->info.fun_name.id_mod)

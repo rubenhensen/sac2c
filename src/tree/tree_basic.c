@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2000/06/13 13:41:27  dkr
+ * Make...() functions for old with-loop removed
+ *
  * Revision 1.13  2000/03/23 14:03:33  jhs
  * Added macros for DFMmfoldmask_t (DFMFM) ann MakeDFMfoldmask.
  *
@@ -880,132 +883,6 @@ MakeAp (char *name, char *mod, node *args)
     AP_MOD (tmp) = mod;
     AP_ARGS (tmp) = args;
     AP_ATFLAG (tmp) = 0;
-
-    DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-MakeWith (node *gen, node *operator)
-{
-    node *tmp;
-
-    DBUG_ENTER ("MakeWith");
-
-    tmp = CreateCleanNode (N_with);
-
-    WITH_GEN (tmp) = gen;
-    WITH_OPERATOR (tmp) = operator;
-
-    DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-MakeGenerator (node *left, node *right, char *id)
-{
-    node *tmp;
-
-    DBUG_ENTER ("MakeGenerator");
-
-    tmp = CreateCleanNode (N_generator);
-
-    GEN_LEFT (tmp) = left;
-    GEN_RIGHT (tmp) = right;
-    GEN_ID (tmp) = id;
-
-    DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-MakeGenarray (node *array, node *body)
-{
-    node *tmp;
-
-    DBUG_ENTER ("MakeGenarray");
-
-    tmp = CreateCleanNode (N_genarray);
-
-    GENARRAY_ARRAY (tmp) = array;
-    GENARRAY_BODY (tmp) = body;
-
-    DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-MakeModarray (node *array, node *body)
-{
-    node *tmp;
-
-    DBUG_ENTER ("MakeModarray");
-
-    tmp = CreateCleanNode (N_modarray);
-
-    MODARRAY_ARRAY (tmp) = array;
-    MODARRAY_BODY (tmp) = body;
-
-    DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-MakeFoldprf (prf prf, node *body, node *neutral)
-{
-    node *tmp;
-
-    DBUG_ENTER ("MakeFoldprf");
-
-    tmp = CreateCleanNode (N_foldprf);
-
-    FOLDPRF_PRF (tmp) = prf;
-    FOLDPRF_BODY (tmp) = body;
-    FOLDPRF_NEUTRAL (tmp) = neutral;
-
-    DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT " body: " P_FORMAT " neutral: " P_FORMAT,
-                 NODE_LINE (tmp), NODE_TEXT (tmp), tmp, FOLDPRF_BODY (tmp),
-                 FOLDPRF_NEUTRAL (tmp)));
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-MakeFoldfun (char *name, char *mod, node *body, node *neutral)
-{
-    node *tmp;
-
-    DBUG_ENTER ("MakeFoldfun");
-
-    tmp = CreateCleanNode (N_foldfun);
-
-    FOLDFUN_NAME (tmp) = name;
-    FOLDFUN_MOD (tmp) = mod;
-    FOLDFUN_BODY (tmp) = body;
-    FOLDFUN_NEUTRAL (tmp) = neutral;
 
     DBUG_PRINT ("MAKENODE",
                 ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
