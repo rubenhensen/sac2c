@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.26  2000/04/10 15:46:22  jhs
+ * Added some mtn-infos..
+ *
  * Revision 2.25  2000/03/23 14:02:37  jhs
  * Added build_os.
  *
@@ -254,7 +257,10 @@ usage ()
       "\t-b19:blkex     \tstop after blocks expanded\n"
       "\t-b19:mtfin     \tstop after multithread functions builded\n"
       "\t-b19:blkco     \t...\n"
-      "\t-b19dfa        \t...\n"
+      "\t-b19:dfa       \t...\n"
+      "\t-b19:barin     \t...\n"
+      "\t-b19:blkli     \t...\n"
+      "\t-b19:adjca     \t...\n"
       "\t ... to be continued ...");
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
