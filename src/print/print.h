@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2004/11/24 17:22:59  jhb
+ * changed outfile and indent to global.
+ *
  * Revision 3.30  2004/11/24 17:18:31  sbs
  * SacDevCamp04
  *
@@ -96,11 +99,11 @@
     {                                                                                    \
         int j;                                                                           \
         for (j = 0; j < cnt; j++) {                                                      \
-            fprintf (outfile, INDENT_STR);                                               \
+            fprintf (global.outfile, INDENT_STR);                                        \
         }                                                                                \
     }
 
-#define INDENT DO_INDENT (indent)
+#define INDENT DO_INDENT (global.indent)
 
 /*
  * Functions for printing (parts of) the AST
