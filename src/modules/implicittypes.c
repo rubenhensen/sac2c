@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/10/05 16:12:45  cg
+ * Revision 1.2  1995/11/10 15:04:37  cg
+ * converted to new error macros
+ *
+ * Revision 1.1  1995/10/05  16:12:45  cg
  * Initial revision
  *
  *
@@ -66,7 +69,7 @@ RetrieveImplicitTypeInfo (node *arg_node)
  *  global vars   : ---
  *  internal funs :
  *  external funs : SearchTypedef
- *  macros        : ERROR2, FREE
+ *  macros        : ERROR, FREE
  *
  *  remarks       :
  *
@@ -86,7 +89,8 @@ SearchImplementation (types *type, node *alltypes)
     tdef = SearchTypedef (TYPES_NAME (type), TYPES_MOD (type), alltypes);
 
     if (tdef == NULL) {
-        ERROR2 (1, ("No definition of type %s:%s", TYPES_MOD (type), TYPES_NAME (type)));
+        SYSABORT (("Definition of implicit type '%s:%s` missing", TYPES_MOD (type),
+                   TYPES_NAME (type)));
     }
 
     /*

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/11/01 09:34:26  cg
+ * Revision 1.9  1995/11/10 15:05:04  cg
+ * converted to new error macros
+ *
+ * Revision 1.8  1995/11/01  09:34:26  cg
  * Bug fixed in SibPrintFunctions.
  * PrintArg now called with NULL as second argument instead of N_info
  * node as usual when used for printing the syntax tree.
@@ -103,17 +106,16 @@ WriteSib (node *arg_node)
 FILE *
 OpenSibFile (char *name)
 {
-    char buffer[MAX_FILE_NAME];
     FILE *tmp;
 
     DBUG_ENTER ("OpenSibFile");
 
-    strcpy (buffer, name);
-    strcat (buffer, ".sib");
-    tmp = fopen (buffer, "w");
+    strcpy (sibfilename, name);
+    strcat (sibfilename, ".sib");
+    tmp = fopen (sibfilename, "w");
 
     if (tmp == NULL) {
-        SYSABORT (("Unable to open file \"%s\" for writing!\n", buffer));
+        SYSABORT (("Unable to open file \"%s\" for writing", sibfilename));
     }
 
     DBUG_RETURN (tmp);

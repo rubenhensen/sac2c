@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/11/06 18:45:22  cg
+ * Revision 1.8  1995/11/10 15:04:14  cg
+ * converted to new error macros
+ *
+ * Revision 1.7  1995/11/06  18:45:22  cg
  * bug fixed in writing readonly-reference parameters.
  *
  * Revision 1.6  1995/11/06  14:18:35  cg
@@ -175,14 +178,17 @@ CheckDec (node *syntax_tree)
         SYSWARN (("Unable to open file \"%s\"", filename));
 
         if (MODUL_FILETYPE (syntax_tree) == F_modimp) {
-            SYSWARN (("Declaration of module '%s` missing", MODUL_NAME (syntax_tree)));
+            CONT_WARN (
+              ("Declaration of module '%s` missing !", MODUL_NAME (syntax_tree)));
         } else {
-            SYSWARN (("Declaration of class '%s` missing", MODUL_NAME (syntax_tree)));
+            CONT_WARN (("Declaration of class '%s` missing !", MODUL_NAME (syntax_tree)));
         }
 
-        NOTE (("\n  Generating default declaration file \"%s\" ...", filename));
-        SYSWARN (("File \"%s\" should be edited", filename));
-        NOTE ((""));
+        NEWLINE (1);
+
+        SYSWARN (("Generating default declaration file ..."));
+        CONT_WARN (("File \"%s\" should be edited !", filename));
+        NEWLINE (1);
 
         act_tab = writedec_tab;
 
@@ -345,14 +351,15 @@ CDECtypedef (node *arg_node, node *arg_info)
                 }
 
                 if (type_impl == NULL) {
-                    ERROR (NODE_LINE (arg_node), ("Declaration of explicit type '%s`\n\t"
-                                                  "different from implementation",
-                                                  ItemName (arg_node)));
+                    ERROR (NODE_LINE (arg_node),
+                           ("Different types in declaration and implementation "
+                            "of explicit type '%s`",
+                            ItemName (arg_node)));
                 } else {
                     if (CheckTypes (type_impl, TYPEDEF_TYPE (tdef)) == 0) {
                         ERROR (NODE_LINE (arg_node),
-                               ("Declaration of explicit type '%s`\n\t"
-                                "different from implementation",
+                               ("Different types in declaration and implementation "
+                                "of explicit type '%s`",
                                 ItemName (arg_node)));
                     }
                     if (TYPEDEF_ATTRIB (tdef) == ST_unique) {
@@ -406,7 +413,8 @@ CDECobjdef (node *arg_node, node *arg_info)
         } else {
             if (!CheckTypes (OBJDEF_TYPE (arg_node), OBJDEF_TYPE (odef))) {
                 ERROR (NODE_LINE (arg_node),
-                       ("Type mismatch in declaration of\n\tglobal object '%s`",
+                       ("Different types in declaration and implementation "
+                        "of global object '%s`",
                         ItemName (arg_node)));
             }
         }
@@ -446,12 +454,12 @@ CDECfundef (node *arg_node, node *arg_info)
     fundef = SearchFundef (arg_node, arg_info);
 
     if (fundef == NULL) {
-        ERROR (NODE_LINE (arg_node), ("Implementation of function '%s` missing\n\t"
+        ERROR (NODE_LINE (arg_node), ("Implementation of function '%s` missing "
                                       "or type mismatch in arguments",
                                       ItemName (arg_node)));
     } else {
         if (FUNDEF_STATUS (fundef) == ST_imported) {
-            ERROR (NODE_LINE (arg_node), ("Implementation of function '%s` missing\n\t"
+            ERROR (NODE_LINE (arg_node), ("Implementation of function '%s` missing "
                                           "or type mismatch in arguments",
                                           ItemName (arg_node)));
         } else {
@@ -462,7 +470,7 @@ CDECfundef (node *arg_node, node *arg_info)
             while ((tmpdef != NULL) && (tmpdec != NULL)) {
                 if (!CheckTypes (tmpdef, tmpdec)) {
                     ERROR (NODE_LINE (arg_node),
-                           ("Type mismatch in %d. return value in declaration\n\t"
+                           ("Type mismatch in %d. return value in declaration "
                             "of function '%s`",
                             counter, ItemName (arg_node)));
                 }
@@ -474,7 +482,7 @@ CDECfundef (node *arg_node, node *arg_info)
 
             if (tmpdef != tmpdec) {
                 ERROR (NODE_LINE (arg_node),
-                       ("Wrong number of return values in declaration\n\t"
+                       ("Wrong number of return values in declaration "
                         "of function '%s`",
                         ItemName (arg_node)));
             }

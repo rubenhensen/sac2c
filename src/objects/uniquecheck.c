@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/11/06 19:00:29  cg
+ * Revision 1.6  1995/11/10 15:05:38  cg
+ * converted to new error macros
+ *
+ * Revision 1.5  1995/11/06  19:00:29  cg
  * debug facilities added
  * bug in functions CheckDefined and CheckApplied fixed
  * running properly !!
@@ -482,82 +485,80 @@ AddHistory (unqstatelist *unq, historytype history)
 void
 PrintHistory (historylist *history)
 {
-    static int indent;
-
     DBUG_ENTER ("PrintHistory");
 
     if (history == NULL) {
-        NOTE (("uniqueness check path:"));
-        NOTE (("-> function body"));
-        indent = 1;
+        CONT_ERROR (("Uniqueness check path:"));
+        CONT_ERROR (("-> function body"));
+        message_indent = 2;
     } else {
         PrintHistory (HL_NEXT (history));
 
         switch (HL_HISTORY (history)) {
         case H_then_enter:
-            NOTE_INDENT (indent, ("-> then-branch"));
-            indent++;
+            CONT_ERROR (("-> then-branch"));
+            message_indent += 2;
             break;
 
         case H_then_leave:
-            indent--;
-            NOTE_INDENT (indent, ("<- then-branch"));
+            message_indent -= 2;
+            CONT_ERROR (("<- then-branch"));
             break;
 
         case H_else_enter:
-            NOTE_INDENT (indent, ("-> else-branch"));
-            indent++;
+            CONT_ERROR (("-> else-branch"));
+            message_indent += 2;
             break;
 
         case H_else_leave:
-            indent--;
-            NOTE_INDENT (indent, ("<- else-branch"));
+            message_indent -= 2;
+            CONT_ERROR (("<- else-branch"));
             break;
 
         case H_while_enter:
-            NOTE_INDENT (indent, ("-> while/for-loop"));
-            indent++;
+            CONT_ERROR (("-> while/for-loop"));
+            message_indent += 2;
             break;
 
         case H_while_leave:
-            indent--;
-            NOTE_INDENT (indent, ("<- while/for-loop"));
+            message_indent -= 2;
+            CONT_ERROR (("<- while/for-loop"));
             break;
 
         case H_while_skipped:
-            NOTE_INDENT (indent, ("-- skipping while/for-loop"));
+            CONT_ERROR (("-- skipping while/for-loop"));
             break;
 
         case H_while_repeat:
-            NOTE_INDENT (indent, ("-- repeating while/for-loop"));
+            CONT_ERROR (("-- repeating while/for-loop"));
             break;
 
         case H_do_enter:
-            NOTE_INDENT (indent, ("-> do-loop"));
-            indent++;
+            CONT_ERROR (("-> do-loop"));
+            message_indent += 2;
             break;
 
         case H_do_leave:
-            indent--;
-            NOTE_INDENT (indent, ("<- do-loop"));
+            message_indent -= 2;
+            CONT_ERROR (("<- do-loop"));
             break;
 
         case H_do_repeat:
-            NOTE_INDENT (indent, ("-- repeating do-loop"));
+            CONT_ERROR (("-- repeating do-loop"));
             break;
 
         case H_with_enter:
-            NOTE_INDENT (indent, ("-> with-loop"));
-            indent++;
+            CONT_ERROR (("-> with-loop"));
+            message_indent += 2;
             break;
 
         case H_with_leave:
-            indent--;
-            NOTE_INDENT (indent, ("<- with-loop"));
+            message_indent -= 2;
+            CONT_ERROR (("<- with-loop"));
             break;
 
         case H_with_skipped:
-            NOTE_INDENT (indent, ("-- skipping with-loop"));
+            CONT_ERROR (("-- skipping with-loop"));
         }
     }
 
@@ -597,6 +598,7 @@ CheckDefined (ids *var, int line)
         if ((UNQ_STATE (tmp)[number] == 1) && not_yet_warned) {
             ERROR (line, ("Object '%s` already existing", IDS_NAME (var)));
             PrintHistory (UNQ_HISTORY (tmp));
+            message_indent = 0;
             not_yet_warned = 0;
         } else {
             UNQ_STATE (tmp)[number] = 1;
@@ -640,11 +642,11 @@ CheckApplied (node *var)
     if (attrib != ST_readonly_reference) {
         while (tmp != NULL) {
             if ((UNQ_STATE (tmp)[number] == 0) && not_yet_errored) {
-                ERROR (NODE_LINE (var),
-                       ("Object '%s` already deleted (Uniqueness Violation)",
-                        ID_NAME (var)));
+                ERROR (NODE_LINE (var), ("Object '%s` already deleted", ID_NAME (var)));
+                CONT_ERROR ((" -> Uniqueness Violation <-"));
 
                 PrintHistory (UNQ_HISTORY (tmp));
+                message_indent = 0;
                 not_yet_errored = 0;
             } else {
                 UNQ_STATE (tmp)[number] = 0;
@@ -866,7 +868,7 @@ UNQlet (node *arg_node, node *arg_info)
             CheckDefined (tmp, NODE_LINE (arg_node));
             if (arg_info != NULL) {
                 WARN (NODE_LINE (arg_node),
-                      ("Modification of object '%s` in body of with-loop\n\t"
+                      ("Modification of object '%s` in body of with-loop "
                        "may cause non-deterministic results",
                        IDS_NAME (tmp)));
             }
