@@ -1,5 +1,9 @@
 dnl
 dnl $Log$
+dnl Revision 1.23  2003/04/25 14:39:12  sbs
+dnl -Dlint added on linux. Required for the yacc template to avoid nasty
+dnl warnings.
+dnl
 dnl Revision 1.22  2003/04/25 14:00:35  sbs
 dnl MUST_REFERENCE_YYLABELS disabled for all platforms now.
 dnl However, left the flag as it may re-appear some day somewhere....
@@ -412,7 +416,7 @@ dnl generate specific flags for known os
 OSFLAGS=""
 case "$target_os" in
   solaris*)     OSFLAGS=["-D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY"];;
-  *linux*)      OSFLAGS=["-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE"];;
+  *linux*)      OSFLAGS=["-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"];;
   *osf*)	OSFLAGS=["-D_OSF_SOURCE"];;
   *darwin*)      OSFLAGS=["-traditional-cpp -Wno-long-double"];;
 esac
