@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.48  2003/09/26 10:25:16  sbs
+ * new optimization for F_modarray added: if the index vector is an
+ * empty vector, simply the element value constituts the result!
+ *
  * Revision 1.47  2003/09/16 18:15:26  ktr
  * Index vectors are now treated as structural constants.
  *
@@ -1228,51 +1232,64 @@ SSACFModarray (node *a, constant *idx, node *elem)
 
     DBUG_ENTER ("SSACFModarray");
 
-    struc_a = SCOExpr2StructConstant (a);
-    struc_elem = SCOExpr2StructConstant (elem);
+    /**
+     * if the index is an empty vector, we simply replace the entire
+     * expression by the elem value!
+     */
+    if (COIsEmptyVect (idx)) {
+        result = DupTree (elem);
+    } else {
+        /**
+         * as we are not dealing with the degenerate case (idx == []),
+         * we need a and elem to be structural constants in order to be
+         * able to do anything!
+         */
+        struc_a = SCOExpr2StructConstant (a);
+        struc_elem = SCOExpr2StructConstant (elem);
 
-    /* given expressession could be converted to struct_constant */
-    if ((struc_a != NULL) && (struc_elem != NULL)) {
+        /* given expressession could be converted to struct_constant */
+        if ((struc_a != NULL) && (struc_elem != NULL)) {
 
-        if (SCO_ELEMDIM (struc_a) != SCO_ELEMDIM (struc_elem)) {
-            newarray = MakeFlatArray (MakeExprs (elem, NULL));
-            ARRAY_TYPE (newarray)
-              = MakeTypes (COGetType (SCO_HIDDENCO (struc_elem)),
-                           SHGetDim (SCO_SHAPE (struc_elem)),
-                           SHShape2OldShpseg (SCO_SHAPE (struc_elem)),
-                           SCO_NAME (struc_elem), SCO_MOD (struc_elem));
-            struc_elem = SCOFreeStructConstant (struc_elem);
-            struc_elem = SCOArray2StructConstant (newarray);
+            if (SCO_ELEMDIM (struc_a) != SCO_ELEMDIM (struc_elem)) {
+                newarray = MakeFlatArray (MakeExprs (elem, NULL));
+                ARRAY_TYPE (newarray)
+                  = MakeTypes (COGetType (SCO_HIDDENCO (struc_elem)),
+                               SHGetDim (SCO_SHAPE (struc_elem)),
+                               SHShape2OldShpseg (SCO_SHAPE (struc_elem)),
+                               SCO_NAME (struc_elem), SCO_MOD (struc_elem));
+                struc_elem = SCOFreeStructConstant (struc_elem);
+                struc_elem = SCOArray2StructConstant (newarray);
+            }
+
+            if (SCO_ELEMDIM (struc_a) == SCO_ELEMDIM (struc_elem)) {
+                /* save internal hidden constant */
+                old_hidden_co = SCO_HIDDENCO (struc_a);
+
+                /* perform modarray operation on structural constant */
+                SCO_HIDDENCO (struc_a)
+                  = COModarray (SCO_HIDDENCO (struc_a), idx, SCO_HIDDENCO (struc_elem));
+
+                /* return modified array */
+                result = SCODupStructConstant2Expr (struc_a);
+
+                DBUG_PRINT ("SSACF", ("op computed on structural constant"));
+
+                /* free internal constant */
+                old_hidden_co = COFreeConstant (old_hidden_co);
+            } else
+                result = NULL;
+        } else {
+            result = NULL;
         }
 
-        if (SCO_ELEMDIM (struc_a) == SCO_ELEMDIM (struc_elem)) {
-            /* save internal hidden constant */
-            old_hidden_co = SCO_HIDDENCO (struc_a);
+        /* free struct constants */
+        if (struc_a != NULL) {
+            struc_a = SCOFreeStructConstant (struc_a);
+        }
 
-            /* perform modarray operation on structural constant */
-            SCO_HIDDENCO (struc_a)
-              = COModarray (SCO_HIDDENCO (struc_a), idx, SCO_HIDDENCO (struc_elem));
-
-            /* return modified array */
-            result = SCODupStructConstant2Expr (struc_a);
-
-            DBUG_PRINT ("SSACF", ("op computed on structural constant"));
-
-            /* free internal constant */
-            old_hidden_co = COFreeConstant (old_hidden_co);
-        } else
-            result = NULL;
-    } else {
-        result = NULL;
-    }
-
-    /* free struct constants */
-    if (struc_a != NULL) {
-        struc_a = SCOFreeStructConstant (struc_a);
-    }
-
-    if (struc_elem != NULL) {
-        struc_elem = SCOFreeStructConstant (struc_elem);
+        if (struc_elem != NULL) {
+            struc_elem = SCOFreeStructConstant (struc_elem);
+        }
     }
 
     DBUG_RETURN (result);
