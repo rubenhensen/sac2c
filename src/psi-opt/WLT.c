@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/04/02 17:10:42  dkr
+ * comment in WLTNgenerator() added
+ *
  * Revision 3.5  2001/03/22 19:40:57  dkr
  * include of tre.h eliminated
  *
@@ -1011,19 +1014,25 @@ WLTNgenerator (node *arg_node, node *arg_info)
                 break;
             }
 
-            if (*bound != NULL) {
+            if ((*bound) != NULL) {
                 if (NODE_TYPE ((*bound)) == N_id) {
                     tmpn = MRD_GETDATA (ID_VARNO ((*bound)), INFO_VARNO (arg_info));
+#if 1
                     if (IsConstArray (tmpn)) {
+#else
+                    /*
+                     * wltransform.[ch] (compiler phase 16) can handle with-loop bounds
+                     * of the form '[1,2,3]', '[a,b,c]' and 'A'.
+                     *                        ^^^^^^^^^ :-))
+                     */
+                    if (NODE_TYPE (tmpn) == N_array) {
+#endif
                         /* this bound references a constant array, which may be
                          * substituted. */
-                        INFO_USE[ID_VARNO ((*bound))]--;
-                        *bound = FreeTree (*bound);
+                        INFO_USE[ID_VARNO (((*bound)))]--;
+                        (*bound) = FreeTree (*bound);
                         /* copy const array to *bound */
-                        *bound = DupTree (tmpn);
-
-                        DBUG_ASSERT (IsConstArray (*bound),
-                                     "generator contains non-constant vector!!");
+                        (*bound) = DupTree (tmpn);
                     } else {
                         /* non-constant son found */
                         if (i <= 2) {
