@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.150  2002/10/08 16:53:19  dkr
+ * comments for N_Nwithid added
+ *
  * Revision 3.149  2002/09/09 19:25:19  dkr
  * prf_name_str moved to print.h
  *
@@ -3501,9 +3504,12 @@ extern node *MakeNPart (node *withid, node *generator, node *code);
  ***
  ***  remarks:
  ***
+ ***    If VEC is missing, it is generated during the flattening phase.
+ ***    If IDS is missing, it is generated during the type inference phase.
+ ***
  ***    Even for N_Nwith-nodes with multiple parts all with-ids must have
- ***    identical names before phase 16 (with-loop transformation) can
- ***    be applied!!!
+ ***    identical names before the transformation N_Nwith -> N_Nwith2
+ ***    (wltransform.[ch]) can be applied!!!
  ***/
 
 extern node *MakeNWithid (ids *vec, ids *scalars);
