@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/01/06 16:45:15  hw
+ * Revision 1.9  1995/03/07 11:00:03  hw
+ * added function FltnGen (flatten N_generator)
+ *
+ * Revision 1.8  1995/01/06  16:45:15  hw
  * added FltnFundef
  *
  * Revision 1.7  1994/12/15  11:47:06  hw
@@ -39,5 +42,6 @@ extern node *FltnWith (node *arg_node, node *arg_info);
 extern node *FltnDo (node *arg_node, node *arg_info);
 extern node *FltnModul (node *arg_node, node *arg_info);
 extern node *FltnFundef (node *arg_node, node *arg_info);
+extern node *FltnGen (node *arg_node, node *arg_info);
 
 #endif /* _flatten_h  */

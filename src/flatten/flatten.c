@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/01/12 14:04:53  hw
+ * Revision 1.13  1995/03/07 11:00:03  hw
+ * added function FltnGen (flatten N_generator)
+ *
+ * Revision 1.12  1995/01/12  14:04:53  hw
  * initialized node of structure 'ids' with NULL
  *
  * Revision 1.11  1995/01/06  16:45:15  hw
@@ -15,7 +18,8 @@
  *
  * Revision 1.8  1994/11/22  17:27:48  hw
  * added function DuplicateNode
- * call DuplicateNode in function FltnWhile to have only one referenze to each node
+ * call DuplicateNode in function FltnWhile to have only one referenze to
+ * each node
  *
  * Revision 1.7  1994/11/22  16:40:08  hw
  * added FltnDo
@@ -207,22 +211,6 @@ FltnAssign (node *arg_node, node *arg_info)
  *  remarks       :
  *
  */
-
-/*
- *
- *  functionname  : FltnPrf
- *  arguments     : 1) argument node
- *                  2) last assignment in arg_info->node[0]
- *  description   : Flatten each argument of the given node if neccessary
- *  global vars   : var_counter
- *  internal funs : GenTmpVar
- *  external funs : MakeNode
- *  macros        : GEN_NODE
- *
- *  remarks       :
- *
- */
-
 node *
 FltnPrf (node *arg_node, node *arg_info)
 {
@@ -285,7 +273,6 @@ FltnPrf (node *arg_node, node *arg_info)
  *  remarks       :
  *
  */
-
 node *
 FltnExprs (node *arg_node, node *arg_info)
 {
@@ -608,6 +595,66 @@ FltnFundef (node *arg_node, node *arg_info)
             arg_node->node[1] = Trav (arg_node->node[1], arg_info);
     } else
         for (i = 0; i < arg_node->nnode; i++)
+            arg_node->node[i] = Trav (arg_node->node[i], arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : FltnGen
+ *  arguments     : 1) argument node
+ *                  2) last assignment in arg_info->node[0]
+ *  description   : Flatten each argument of the given node if neccessary
+ *  global vars   : var_counter
+ *  internal funs : GenTmpVar
+ *  external funs : MakeNode
+ *  macros        : GEN_NODE
+ *
+ *  remarks       :
+ *
+ */
+node *
+FltnGen (node *arg_node, node *arg_info)
+{
+    node *tmp_node1, *id_node, *let_node, *assign_node;
+    int i;
+
+    DBUG_ENTER ("FltnGen");
+    for (i = 0; i < arg_node->nnode; i++)
+        if ((arg_node->node[i]->nodetype == N_ap)
+            || (arg_node->node[i]->nodetype == N_prf)) {
+
+            /* This argument is a function application and thus has to be abstracted
+             ** out. Therefore a new N_assign, a new N_let, and a new temporary
+             ** variable are generated and inserted.
+             */
+            tmp_node1 = arg_node->node[i];
+
+            id_node = MakeNode (N_id);
+            id_node->info.id = GenTmpVar (var_counter);
+            arg_node->node[i] = id_node;
+
+            let_node = MakeNode (N_let);
+            let_node->info.ids = GEN_NODE (ids);
+            let_node->info.ids->id = GenTmpVar (var_counter++);
+            let_node->info.ids->next = NULL;
+            let_node->info.ids->node = NULL;
+
+            assign_node = MakeNode (N_assign);
+            assign_node->node[0] = let_node;
+            assign_node->node[1] = arg_info->node[0]; /* a new node is put in front! */
+            if (NULL == assign_node->node[1])
+                assign_node->nnode = 1;
+            else
+                assign_node->nnode = 2;
+
+            arg_info->node[0] = assign_node;
+
+            /* Now, we have to flatten the child "tmp_node1" recursively! */
+            let_node->nnode = 1;
+            let_node->node[0] = Trav (tmp_node1, arg_info);
+        } else
             arg_node->node[i] = Trav (arg_node->node[i], arg_info);
 
     DBUG_RETURN (arg_node);

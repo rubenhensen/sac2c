@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.46  1995/03/07 10:22:03  asi
- * added CFwith,DEADwith,OPTwith and CFcast
+ * Revision 1.47  1995/03/07 11:00:03  hw
+ * added function FltnGen (flatten N_generator)
  *
+;; Revision 1.46  1995/03/07  10:22:03  asi
+;; added CFwith,DEADwith,OPTwith and CFcast
+;;
 ;; Revision 1.45  1995/02/28  18:24:01  asi
 ;; CFwith added
 ;;
@@ -205,7 +208,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeInfoIds, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_with, "N_with", DummyFun, FltnWith, PrintWith, DummyFun, OPTwith, DEADwith,
        DummyFun, FreeNoInfo, CFwith, DummyFun, DummyFun, DummyFun),
-  NIF (N_generator, "N_generator", DummyFun, DummyFun, PrintGenator, DummyFun, DummyFun,
+  NIF (N_generator, "N_generator", DummyFun, FltnGen, PrintGenator, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeInfoId, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_genarray, "N_genarray", DummyFun, DummyFun, PrintConexpr, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
