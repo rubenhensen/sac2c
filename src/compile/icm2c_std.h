@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/12/21 13:33:02  dkr
+ * ICMs ..._CHECK_REUSE removed
+ *
  * Revision 3.2  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -92,31 +95,14 @@ extern void ICMCompileND_PRF_MODARRAY_AxCxS (char *res_type, int dimres, char *r
                                              char *old, char **value, int dimv,
                                              char **vi);
 
-extern void ICMCompileND_PRF_MODARRAY_AxCxS_CHECK_REUSE (char *res_type, int dimres,
-                                                         char *res, char *old,
-                                                         char **value, int dimv,
-                                                         char **vi);
-
 extern void ICMCompileND_PRF_MODARRAY_AxVxS (char *res_type, int dimres, char *res,
                                              char *old, char **value, int dim, char *v);
-
-extern void ICMCompileND_PRF_MODARRAY_AxVxS_CHECK_REUSE (char *res_type, int dimres,
-                                                         char *res, char *old,
-                                                         char **value, int dim, char *v);
 
 extern void ICMCompileND_PRF_MODARRAY_AxCxA (char *res_type, int dimres, char *res,
                                              char *old, char *val, int dimv, char **vi);
 
-extern void ICMCompileND_PRF_MODARRAY_AxCxA_CHECK_REUSE (char *res_type, int dimres,
-                                                         char *res, char *old, char *val,
-                                                         int dimv, char **vi);
-
 extern void ICMCompileND_PRF_MODARRAY_AxVxA (char *res_type, int dimres, char *res,
                                              char *old, char *val, int dim, char *v);
-
-extern void ICMCompileND_PRF_MODARRAY_AxVxA_CHECK_REUSE (char *res_type, int dimres,
-                                                         char *res, char *old, char *val,
-                                                         int dim, char *v);
 
 extern void ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim,
                                          int dims, char **s);

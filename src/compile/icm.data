@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2001/12/21 13:31:39  dkr
+ * ICMs ..._CHECK_REUSE removed
+ *
  * Revision 3.25  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -323,18 +326,6 @@ ICM_DEF( ND_KD_ROT_CxSxA_A, TRACE_PRF)
 ICM_END( ND_KD_ROT_CxSxA_A, (rotdim, numstr, dima, a, res))
 #endif
 
-#if defined(ND_PRF_MODARRAY_AxCxS_CHECK_REUSE) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_MODARRAY_AxCxS_CHECK_REUSE, TRACE_PRF)
-  ICM_STR(res_type)
-  ICM_INT(dimres)
-  ICM_STR(res)
-  ICM_STR(old)
-  ICM_VAR( 1, value)
-  ICM_INT(dimv)
-  ICM_VAR( dimv, vi)
-ICM_END( ND_PRF_MODARRAY_AxCxS_CHECK_REUSE, (res_type, dimres, res, old, value, dimv, vi))
-#endif
-
 #if defined(ND_PRF_MODARRAY_AxCxS) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_MODARRAY_AxCxS, TRACE_PRF)
   ICM_STR(res_type)
@@ -345,18 +336,6 @@ ICM_DEF( ND_PRF_MODARRAY_AxCxS, TRACE_PRF)
   ICM_INT(dimv)
   ICM_VAR( dimv, vi)
 ICM_END( ND_PRF_MODARRAY_AxCxS, (res_type, dimres, res, old, value, dimv, vi))
-#endif
-
-#if defined(ND_PRF_MODARRAY_AxVxS_CHECK_REUSE) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_MODARRAY_AxVxS_CHECK_REUSE, TRACE_PRF)
-  ICM_STR(res_type)
-  ICM_INT(dimres)
-  ICM_STR(res)
-  ICM_STR(old)
-  ICM_VAR( 1, value)
-  ICM_INT(dim)
-  ICM_STR(v)
-ICM_END( ND_PRF_MODARRAY_AxVxS_CHECK_REUSE, (res_type,dimres,res,old,value,dim,v))
 #endif
 
 #if defined(ND_PRF_MODARRAY_AxVxS) || defined(ICM_ALL)
@@ -371,18 +350,6 @@ ICM_DEF( ND_PRF_MODARRAY_AxVxS, TRACE_PRF)
 ICM_END( ND_PRF_MODARRAY_AxVxS, (res_type,dimres,res,old,value,dim,v))
 #endif
 
-#if defined(ND_PRF_MODARRAY_AxCxA_CHECK_REUSE) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_MODARRAY_AxCxA_CHECK_REUSE, TRACE_PRF)
-  ICM_STR(res_type)
-  ICM_INT(dimres)
-  ICM_STR(res)
-  ICM_STR(old)
-  ICM_STR( val)
-  ICM_INT(dimv)
-  ICM_VAR( dimv, vi)
-ICM_END( ND_PRF_MODARRAY_AxCxA_CHECK_REUSE, (res_type,dimres,res,old,val,dimv,vi))
-#endif
-
 #if defined(ND_PRF_MODARRAY_AxCxA) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_MODARRAY_AxCxA, TRACE_PRF)
   ICM_STR(res_type)
@@ -395,18 +362,6 @@ ICM_DEF( ND_PRF_MODARRAY_AxCxA, TRACE_PRF)
 ICM_END( ND_PRF_MODARRAY_AxCxA, (res_type,dimres,res,old,val,dimv,vi))
 #endif
 
-#if defined(ND_PRF_MODARRAY_AxVxA_CHECK_REUSE) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_MODARRAY_AxVxA_CHECK_REUSE, TRACE_PRF)
-  ICM_STR(res_type)
-  ICM_INT(dimres)
-  ICM_STR(res)
-  ICM_STR(old)
-  ICM_STR( val)
-  ICM_INT(dim)
-  ICM_STR( v)
-ICM_END( ND_PRF_MODARRAY_AxVxA_CHECK_REUSE, (res_type,dimres,res,old,val,dim,v))
-#endif
- 
 #if defined(ND_PRF_MODARRAY_AxVxA) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_MODARRAY_AxVxA, TRACE_PRF)
   ICM_STR(res_type)
