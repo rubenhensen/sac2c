@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/03/17 17:41:48  asi
+ * Revision 1.16  1995/03/29 12:00:31  hw
+ * comp_tab inserted
+ *
+ * Revision 1.15  1995/03/17  17:41:48  asi
  * added work reduction
  *
  * Revision 1.14  1995/03/10  10:45:25  hw
@@ -68,6 +71,7 @@
 #include "DeadCodeRemoval.h"
 #include "import.h"
 #include "refcount.h"
+#include "compile.h"
 
 #include "traverse.h"
 
@@ -192,6 +196,18 @@ funptr cf_tab[] = {
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) b
 
 funptr refcnt_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 11) comp_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) c
+
+funptr comp_tab[] = {
 #include "node_info.mac"
 };
 

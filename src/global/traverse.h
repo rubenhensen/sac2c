@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/03/17 17:41:48  asi
+ * Revision 1.11  1995/03/29 12:00:31  hw
+ * comp_tab inserted
+ *
+ * Revision 1.10  1995/03/17  17:41:48  asi
  * added work reduction
  *
  * Revision 1.9  1995/03/10  10:45:25  hw
@@ -66,5 +69,7 @@ extern funptr wr_tab[];
 extern funptr free_tab[];
 
 extern funptr refcnt_tab[];
+
+extern funptr comp_tab[];
 
 #endif /* _sac_traverse_h */
