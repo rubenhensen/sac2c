@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/25 13:43:43  dkr
+ * DFMPrintMask changed:
+ * if (handle==NULL) stderr is used
+ * (this is usefull for use in a debugging session)
+ *
  * Revision 1.1  2000/01/21 11:16:18  dkr
  * Initial revision
  *
@@ -1020,6 +1025,14 @@ DFMPrintMask (FILE *handle, const char *format, mask_t *mask)
     DBUG_ASSERT ((mask != NULL), "DFMPrintMask() called with mask NULL");
 
     CHECK_MASK (mask);
+
+    if (handle == NULL) {
+        /*
+         * NULL -> stderr
+         * This is done for use in a debugging session.
+         */
+        handle = stderr;
+    }
 
     i = 0;
     j = 0;
