@@ -21,3 +21,4 @@ distrib/srcpacks
 distrib/binpacks
 
 src/libsac
+src/tools
