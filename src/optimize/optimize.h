@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.23  1995/05/15 08:45:25  asi
+ * Revision 1.24  1995/05/15 09:14:51  asi
+ * functions malloc_debug & malloc_verify will onlu be called
+ * if macro MALLOC_TOOL is defined.
+ *
+ * Revision 1.23  1995/05/15  08:45:25  asi
  * added variables : optvar, optvar_counter.
  * added functions : SetMask, OrMask, AndMask.
  *
@@ -113,9 +117,16 @@ extern int optvar_counter;
 
 #define VAR_LENGTH 10
 
+#ifdef MALLOC_TOOL
+#define FREE(address)                                                                    \
+    DBUG_PRINT ("MEM", ("Give memory free at adress: %08x", address));                   \
+    free (address);                                                                      \
+    malloc_verify ()
+#else
 #define FREE(address)                                                                    \
     DBUG_PRINT ("MEM", ("Give memory free at adress: %08x", address));                   \
     free (address)
+#endif /*MALLOC_TOOL */
 
 extern node *Optimize (node *arg_node);
 
