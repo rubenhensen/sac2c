@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2004/02/25 13:02:15  khf
+ * added option -khf
+ *
  * Revision 3.56  2004/02/05 10:37:14  cg
  * Re-factorized handling of different modes in multithreaded code
  * generation:
@@ -798,6 +801,10 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_OPTION ("I", AppendPath (MODDEC_PATH, AbsolutePathname (ARG)));
 
+    ARGS_FLAG ("khf", khf = TRUE);
+
+    ARGS_FLAG ("ktr", ktr = TRUE);
+
     ARGS_FLAG ("libstat", libstat = TRUE);
 
 #define LAC_FUN(array)                                                                   \
@@ -1158,8 +1165,6 @@ AnalyseCommandline (int argc, char *argv[])
     });
 
     ARGS_FLAG ("sbs", sbs = TRUE);
-
-    ARGS_FLAG ("ktr", ktr = TRUE);
 
     ARGS_OPTION ("specmode", {
         ARG_CHOICE_BEGIN ();

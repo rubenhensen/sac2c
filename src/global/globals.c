@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2004/02/25 13:02:15  khf
+ * added option -khf
+ *
  * Revision 3.43  2004/02/05 10:37:14  cg
  * Re-factorized handling of different modes in multithreaded code
  * generation:
@@ -293,6 +296,8 @@
 bool sbs = FALSE;
 
 bool ktr = FALSE;
+
+bool khf = FALSE;
 
 /*
  *  Version control

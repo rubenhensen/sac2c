@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2004/02/25 13:02:15  khf
+ * added option -khf
+ *
  * Revision 3.36  2004/02/05 10:37:14  cg
  * Re-factorized handling of different modes in multithreaded code
  * generation:
@@ -205,6 +208,7 @@
 
 extern bool sbs;
 extern bool ktr;
+extern bool khf;
 
 extern char version_id[];
 extern char target_platform[];
