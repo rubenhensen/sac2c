@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/04/30 08:45:57  dkr
+ * no changes done
+ *
  * Revision 3.4  2001/12/21 13:33:37  dkr
  * ALLOC_ARRAY, CHECK_REUSE ICMs seperated
  * (they no longer occur in other ICMs)
@@ -64,9 +67,8 @@
  *
  *****************************************************************************/
 
-#ifndef SAC_IDX_H
-
-#define SAC_IDX_H
+#ifndef _SAC_IDX_H
+#define _SAC_IDX_H
 
 /*
  * Macros used for primitive function idx_sel:
@@ -130,4 +132,4 @@
 
 #define SAC_ND_KS_USE_GENVAR_OFFSET(offsetvar, res) offsetvar = SAC_WL_OFFSET (res);
 
-#endif /* SAC_IDX_H */
+#endif /* _SAC_IDX_H */

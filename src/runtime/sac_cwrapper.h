@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.3  2002/04/30 08:38:09  dkr
+ * no changes done
+ *
  * Revision 3.2  2000/12/05 14:31:28  nmw
  * refcounter handling for T_hidden added to SAC_IW_CHECKDEC_RC
  * and SAC_IW_INC_RC.
@@ -39,8 +43,8 @@
  *
  */
 
-#ifndef _sac_interface_makrodefs_h
-#define _sac_interface_makrodefs_h
+#ifndef _sac_cwrapper_h
+#define _sac_cwrapper_h
 
 /* this is a workaround to avoid errors after renaming the internal type */
 #define _hidden_ void *
@@ -116,4 +120,4 @@
         initfun ();                                                                      \
     }
 
-#endif
+#endif /* _sac_cwrapper_h */

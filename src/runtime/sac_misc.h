@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2002/04/30 08:39:34  dkr
+ * no changes done
+ *
  * Revision 3.1  2000/11/20 18:02:16  sacbase
  * new release made
  *
@@ -15,7 +18,6 @@
  *
  * Revision 1.1  1998/03/19 16:54:34  cg
  * Initial revision
- *
  *
  */
 
@@ -32,18 +34,17 @@
  *
  *****************************************************************************/
 
-#ifndef SAC_MISC_H
-
-#define SAC_MISC_H
+#ifndef _SAC_MISC_H
+#define _SAC_MISC_H
 
 extern void SAC_String2Array (char *array, const char *string);
 
 /*
- * Macros used for compilation of do-loop:
+ * Macros used for compilation of do-loop
  */
 
 #define SAC_ND_GOTO(label) goto label;
 #define SAC_ND_LABEL(label)                                                              \
     label:
 
-#endif /* SAC_MISC_H */
+#endif /* _SAC_MISC_H */

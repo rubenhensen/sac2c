@@ -1,14 +1,15 @@
 /*
+ *
  * $Log$
+ * Revision 3.2  2002/04/30 08:41:58  dkr
+ * no changes done
+ *
  * Revision 3.1  2000/11/20 18:02:18  sacbase
  * new release made
  *
  * Revision 1.1  2000/07/21 14:27:48  jhs
  * Initial revision
  *
- *
- *
- * constructed by jhs@dArtagnan at home
  */
 
 /******************************************************************************
@@ -25,13 +26,10 @@
  *
  ******************************************************************************/
 
-#ifndef SAC_MT_H
-
-#define SAC_MT_H
+#ifndef _SAC_MT_H
+#define _SAC_MT_H
 
 #if SAC_DO_MULTITHREAD_2
-
-/******************************************************************************/
 
 /***
  ***   Definitions and declarations for the second generation of
@@ -50,19 +48,13 @@
 
 #define CALL_MTREP TID
 
-/******************************************************************************/
-
 #else /* SAC_DO_MULTITHRED_2 */
-
-/******************************************************************************/
 
 /***
  ***  Definitions and declarations for sequential execution,
  ***  mostly dummies for second generation macros.
  ***/
 
-/******************************************************************************/
-
 #endif /* SAC_DO_MULTITHRED_2 */
 
-#endif /* SAC_MT_H */
+#endif /* _SAC_MT_H */

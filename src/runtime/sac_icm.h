@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2002/04/30 08:46:28  dkr
+ * no changes done
+ *
  * Revision 3.1  2000/11/20 18:02:15  sacbase
  * new release made
  *
@@ -47,9 +50,8 @@
  *
  *****************************************************************************/
 
-#ifndef SAC_ICM_H
-
-#define SAC_ICM_H
+#ifndef _SAC_ICM_H
+#define _SAC_ICM_H
 
 /*
  * README: The ICM parameter access macros
@@ -172,4 +174,4 @@
 
 #define VIEW(a) #a expands to AddParens(a)
 
-#endif /* SAC_ICM_H */
+#endif /* _SAC_ICM_H */

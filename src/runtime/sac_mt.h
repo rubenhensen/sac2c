@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2002/04/30 08:43:01  dkr
+ * no changes done
+ *
  * Revision 3.43  2002/03/07 20:28:15  dkr
  * ';' added for SAC_MT_DECL_MYTHREAD
  *
@@ -136,123 +139,6 @@
  * Revision 3.4  2001/01/19 11:56:51  dkr
  * SAC_WL_DEST renamed into SAC_WL_OFFSET
  *
- * Revision 3.3  2000/12/29 14:24:41  cg
- * When compiling for multithreaded execution, any function gets one additional
- * parameter to hold the thread ID, which is needed for heap management.
- * Thread-specific data is only used by malloc().
- *
- * Revision 3.2  2000/12/14 10:25:49  sbs
- * _REENTRANT not preset on alpha anymore!
- *
- * Revision 3.1  2000/11/20 18:02:17  sacbase
- * new release made
- *
- * Revision 2.15  2000/08/24 11:17:34  dkr
- * macros CONCAT, CATCAT replaced by CAT? (see sac_icm.h)
- *
- * Revision 2.14  2000/07/06 16:37:50  dkr
- * macro SAC_WL_DEST used to generate var##__dest
- *
- * Revision 2.13  2000/02/07 09:51:59  cg
- * Changed setting of semicolons in definitions and declarations of
- * mutex locks in order to avoid nasty warnings from cc.
- *
- * Revision 2.12  2000/01/17 16:25:58  cg
- * Reorganized initialization of the runtime system for
- * multithreaded program execution.
- *
- * Revision 2.11  1999/11/18 10:13:29  jhs
- * Added a very special volatile ...
- *
- * Revision 2.10  1999/09/01 17:13:38  jhs
- * Added rc's in barriers.
- *
- * Revision 2.9  1999/07/30 13:51:14  jhs
- * Deleted unused macros.
- *
- * Revision 2.8  1999/07/28 13:02:56  jhs
- * Barriers are static now.
- *
- * Revision 2.7  1999/07/20 16:57:01  jhs
- * Added SAC_MT_SYNC_MULTIFOLD_[1|2|3][A|B].
- *
- * Revision 2.6  1999/07/01 13:05:00  jhs
- * Added macros SAC_MT_[MASTER|WORKER]_[BEGIN|END] and SAC_MT_RESTART being
- * part of the new values exchange ICMseries between SYNC-BLOCKS.
- * Done the beautification on the fly.
- *
- * Revision 2.5  1999/06/25 15:40:55  jhs
- * Just to provide compilabilty.
- *
- * Revision 2.4  1999/06/03 13:31:27  jhs
- * Deleted extra frame, all that can be done with the existing frame.
- *
- * Revision 2.3  1999/06/03 13:20:14  jhs
- * Added extra spmd-frame to exchange data between master & workers.
- *
- * Revision 2.2  1999/04/06 13:43:33  cg
- * SAC_MT_THREADS() is now set to 1 in case of single threaded execution.
- *
- * Revision 2.1  1999/02/23 12:43:55  sacbase
- * new release made
- *
- * Revision 1.17  1999/02/19 09:31:22  cg
- * Support for MIT-threads discarded.
- *
- * Revision 1.16  1999/01/18 08:15:18  sbs
- * changed SAC_MT_SETUP_PTHREAD:
- * Errorchecking plus non-NULL first arg for pthread_create
- *
- * Revision 1.15  1998/12/10 12:39:05  cg
- * Bug fixed in definition of _MIT_POSIX_THREADS.
- *
- * Revision 1.14  1998/12/07 10:00:11  cg
- * added #define _MIT_POSIX_THREADS to please Linux
- *
- * Revision 1.13  1998/08/27 14:47:40  cg
- * bugs fixed in implementations of ICMs ADJUST_SCHEDULER and
- * SCHEDULER_Block_DIM0.
- *
- * Revision 1.12  1998/08/03 10:50:52  cg
- * added implementation of new ICM MT_ADJUST_SCHEDULER
- *
- * Revision 1.11  1998/07/29 08:44:16  cg
- * bug fixed in one-fold-barrier: now programs produce correct
- * results even if started with -mt 1
- *
- * Revision 1.10  1998/07/03 10:21:33  cg
- * ICM MT_START_SPMD replaced by MT_SPMD_EXECUTE
- *
- * Revision 1.9  1998/07/02 09:27:39  cg
- * fixed several bugs
- * dynamic multi-threading option renamed to -mt <num>
- *
- * Revision 1.8  1998/06/29 08:57:13  cg
- * added tracing facilities
- *
- * Revision 1.7  1998/06/25 08:07:56  cg
- * various small syntactic bugs fixed
- *
- * Revision 1.6  1998/06/23 12:54:42  cg
- * various bug fixes but state of development is still preliminary.
- *
- * Revision 1.5  1998/06/03 14:56:04  cg
- * some bugs removed
- *
- * Revision 1.4  1998/05/15 15:43:56  cg
- * first bugs removed
- *
- * Revision 1.3  1998/05/15 09:22:57  cg
- * first complete version
- *
- * Revision 1.2  1998/05/07 11:15:41  cg
- * minor errors removed
- *
- * Revision 1.1  1998/05/07 08:38:05  cg
- * Initial revision
- *
- *
- *
  */
 
 /*****************************************************************************
@@ -262,13 +148,10 @@
  * prefix: SAC_MT_
  *
  * description:
- *
  *   This file is part of the SAC standard header file sac.h
  *
  *   It is the major header file of the implementation of the multi-threading
  *   facilities.
- *
- *
  *
  *****************************************************************************/
 

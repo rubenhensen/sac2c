@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.2  2002/04/30 08:35:24  dkr
+ * no changes done
+ *
  * Revision 3.1  2000/11/20 18:02:12  sacbase
  * new release made
  *
@@ -76,8 +80,8 @@
  *
  *****************************************************************************/
 
-#ifndef SAC_CACHESIM_H
-#define SAC_CACHESIM_H
+#ifndef _SAC_CACHESIM_H
+#define _SAC_CACHESIM_H
 
 #define SAC_CS_NONE 0
 #define SAC_CS_FILE 1
@@ -112,6 +116,7 @@ typedef enum eProfilingLevel {
  *   the application was compiled.
  *
  ******************************************************************************/
+
 extern void SAC_CS_CheckArguments (int argc, char *argv[],
                                    tProfilingLevel *profilinglevel, int *cs_global,
                                    char **cshost, char **csfile, char **csdir,
@@ -125,10 +130,9 @@ extern void SAC_CS_CheckArguments (int argc, char *argv[],
 /******************************************************************************
  *
  * function:
- *   void SAC_CS_Initialize(...)
+ *   void SAC_CS_Initialize( ...)
  *
  * description:
- *
  *   Initiates all neccesary structures according to the specified cache-
  *   parameters.
  *   About specifying the cacheparameters:
@@ -141,6 +145,7 @@ extern void SAC_CS_CheckArguments (int argc, char *argv[],
  *     writepolicy specifies on of the three writemisspolicies
  *
  *****************************************************************************/
+
 extern void SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel,
                                int cs_global, char *cshost, char *csfile, char *csdir,
                                unsigned long int cachesize1, int cachelinesize1,
@@ -153,18 +158,19 @@ extern void SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel,
 /******************************************************************************
  *
  * function:
- *   void SAC_CS_Finalize(void)
+ *   void SAC_CS_Finalize( void)
  *
  * description:
  *   Frees all the memory which has been allocated during the run.
  *
  *****************************************************************************/
+
 extern void (*SAC_CS_Finalize) (void);
 
 /******************************************************************************
  *
  * function:
- *   void SAC_CS_RegisterArray(void* baseaddress, int size)
+ *   void SAC_CS_RegisterArray( void* baseaddress, int size)
  *
  * description:
  *   Prepares an 1-dimensional array for a detailed profilinglevel analysis.
@@ -172,24 +178,26 @@ extern void (*SAC_CS_Finalize) (void);
  *   byte.
  *
  *****************************************************************************/
+
 extern void (*SAC_CS_RegisterArray) (void * /*baseaddress*/, int /*size*/);
 
 /******************************************************************************
  *
  * function:
- *   void SAC_CS_UnregisterArray(void* baseaddress)
+ *   void SAC_CS_UnregisterArray( void* baseaddress)
  *
  * description:
  *   Opposite to SAC_CS_RegisterArray. Frees all memory which was used for the
  *   detailed profilinglevel analysis.
  *
  *****************************************************************************/
+
 extern void (*SAC_CS_UnregisterArray) (void * /*baseaddress*/);
 
 /******************************************************************************
  *
  * function:
- *   void SAC_CS_ReadAccess(void* baseaddress, void* elemaddress)
+ *   void SAC_CS_ReadAccess( void* baseaddress, void* elemaddress)
  *
  * description:
  *   To simulate the cache every readaccess to an arrayelement has to execute
@@ -198,12 +206,13 @@ extern void (*SAC_CS_UnregisterArray) (void * /*baseaddress*/);
  *   (not only the offset to the baseaddress).
  *
  *****************************************************************************/
+
 extern void (*SAC_CS_ReadAccess) (void * /*baseaddress*/, void * /*elemaddress*/);
 
 /******************************************************************************
  *
  * function:
- *   void SAC_CS_WriteAccess(void* baseaddress, void* elemaddress)
+ *   void SAC_CS_WriteAccess( void* baseaddress, void* elemaddress)
  *
  * description:
  *   To simulate the cache every writeaccess to an arrayelement has to execute
@@ -212,24 +221,26 @@ extern void (*SAC_CS_ReadAccess) (void * /*baseaddress*/, void * /*elemaddress*/
  *   (not only the offset to the baseaddress).
  *
  *****************************************************************************/
+
 extern void (*SAC_CS_WriteAccess) (void * /*baseaddress*/, void * /*elemaddress*/);
 
 /******************************************************************************
  *
  * function:
- *   void SAC_CS_Start(char* tag)
+ *   void SAC_CS_Start( char* tag)
  *
  * description:
  *   Starts the analysis and offers the possibility to mark it by a
  *   userdefined tag.
  *
  *****************************************************************************/
+
 extern void (*SAC_CS_Start) (char * /*tag*/);
 
 /******************************************************************************
  *
  * function:
- *   void SAC_CS_Stop(void)
+ *   void SAC_CS_Stop( void)
  *
  * description:
  *   Stops the analysis and prints its tag (defined in SAC_CS_Start) and
@@ -240,6 +251,7 @@ extern void (*SAC_CS_Start) (char * /*tag*/);
  *     classification of misses as coldstart, self- or crossinterference
  *
  *****************************************************************************/
+
 extern void (*SAC_CS_Stop) (void);
 
 /*****************************************************************************
@@ -320,33 +332,33 @@ extern void (*SAC_CS_Stop) (void);
         SAC_CS_Finalize ();                                                              \
     }
 
-#define SAC_CS_READ_ARRAY(name, pos)                                                     \
-    SAC_CS_ReadAccess (SAC_ND_A_FIELD (name), SAC_ND_A_FIELD (name) + (pos)),
+#define SAC_CS_READ_ARRAY(nt, pos)                                                       \
+    SAC_CS_ReadAccess (SAC_ND_A_FIELD (nt), SAC_ND_A_FIELD (nt) + (pos)),
 
-#define SAC_CS_WRITE_ARRAY(name, pos)                                                    \
-    SAC_CS_WriteAccess (SAC_ND_A_FIELD (name), SAC_ND_A_FIELD (name) + (pos)),
+#define SAC_CS_WRITE_ARRAY(nt, pos)                                                      \
+    SAC_CS_WriteAccess (SAC_ND_A_FIELD (nt), SAC_ND_A_FIELD (nt) + (pos)),
 
-#define SAC_CS_REGISTER_ARRAY(name)                                                      \
-    SAC_CS_RegisterArray (SAC_ND_A_FIELD (name),                                         \
-                          SAC_ND_A_SIZE (name) * sizeof (*(SAC_ND_A_FIELD (name))));
+#define SAC_CS_REGISTER_ARRAY(nt)                                                        \
+  SAC_CS_RegisterArray( SAC_ND_A_FIELD( nt),
+                        SAC_ND_A_SIZE( nt) * sizeof( *(SAC_ND_A_FIELD( nt))));
 
-#define SAC_CS_UNREGISTER_ARRAY(name) SAC_CS_UnregisterArray (SAC_ND_A_FIELD (name));
+#define SAC_CS_UNREGISTER_ARRAY(nt) SAC_CS_UnregisterArray (SAC_ND_A_FIELD (nt));
 
 #define SAC_CS_START(tag) SAC_CS_Start (tag);
 #define SAC_CS_STOP(tag) SAC_CS_Stop ();
 
-#else
+#else /* SAC_DO_CACHESIM */
 
 #define SAC_CS_LEVEL SAC_CS_none
 #define SAC_CS_SETUP()
 #define SAC_CS_FINALIZE()
-#define SAC_CS_READ_ARRAY(name, pos)
-#define SAC_CS_WRITE_ARRAY(name, pos)
-#define SAC_CS_REGISTER_ARRAY(name)
-#define SAC_CS_UNREGISTER_ARRAY(name)
+#define SAC_CS_READ_ARRAY(nt, pos)
+#define SAC_CS_WRITE_ARRAY(nt, pos)
+#define SAC_CS_REGISTER_ARRAY(nt)
+#define SAC_CS_UNREGISTER_ARRAY(nt)
 #define SAC_CS_START(tag)
 #define SAC_CS_STOP(tag)
 
-#endif
+#endif /* SAC_DO_CACHESIM */
 
-#endif /* SAC_CACHESIM_H */
+#endif /* _SAC_CACHESIM_H */

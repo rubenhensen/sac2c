@@ -1,5 +1,36 @@
-/* using the SAC<->C interface
- * -------------------------------
+/*
+ *
+ * $Log$
+ * Revision 3.2  2002/04/30 08:37:00  dkr
+ * no changes done
+ *
+ * Revision 3.1  2000/11/20 18:02:12  sacbase
+ * new release made
+ *
+ * Revision 1.6  2000/08/04 09:51:23  nmw
+ * added documentation of the c interface.
+ *
+ * Revision 1.5  2000/07/13 09:45:25  nmw
+ * convert functions for double, int, float, char added
+ *
+ * Revision 1.4  2000/07/12 10:14:10  nmw
+ * RCS-header added
+ *
+ * Revision 1.3  2000/07/07 15:32:34  nmw
+ * utility functions added
+ *
+ * Revision 1.2  2000/07/06 15:53:36  nmw
+ * convert functions changed to var_args parameters
+ *
+ * Revision 1.1  2000/07/05 12:51:30  nmw
+ * Initial revision
+ *
+ */
+
+/*
+ * Using the SAC<->C interface
+ * ---------------------------
+ *
  * The c interface of SAC allows you to use your SAC-coded module in
  * your c program. When you create your SAC-module you might use all
  * advantages of this powerful language (e.g. arrays, special
@@ -148,38 +179,14 @@
  *   of your SAC-functions.
  *
  * See also: the provided demos using this interface
- *
- */
-
-/*
- * $Log$
- * Revision 3.1  2000/11/20 18:02:12  sacbase
- * new release made
- *
- * Revision 1.6  2000/08/04 09:51:23  nmw
- * added documentation of the c interface.
- *
- * Revision 1.5  2000/07/13 09:45:25  nmw
- * convert functions for double, int, float, char added
- *
- * Revision 1.4  2000/07/12 10:14:10  nmw
- * RCS-header added
- *
- * Revision 1.3  2000/07/07 15:32:34  nmw
- * utility functions added
- *
- * Revision 1.2  2000/07/06 15:53:36  nmw
- * convert functions changed to var_args parameters
- *
- * Revision 1.1  2000/07/05 12:51:30  nmw
- * Initial revision
- *
  */
 
 #ifndef _sac_interface_h
 #define _sac_interface_h
 
-/* functions and datatype for c <-> SAC interface */
+/*
+ * functions and datatype for c <-> SAC interface
+ */
 
 /* constants for mode */
 typedef enum { SAC_CONSUME_ARG, SAC_COPY_ARG } SAC_reusetype;
@@ -240,4 +247,4 @@ extern SAC_arg SAC_Char2Sac (char value);
 extern char *SAC_Sac2CharArray (SAC_reusetype reuseflag, SAC_arg sa);
 extern char SAC_Sac2Char (SAC_arg sa);
 
-#endif
+#endif /* _sac_interface_h */

@@ -1,13 +1,15 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/04/30 08:47:35  dkr
+ * no changes done
+ *
  * Revision 3.6  2001/11/13 21:00:06  dkr
  * flag SAC_FOR_OSX_MAC added
  *
  * Revision 3.5  2001/05/22 12:31:20  nmw
  * ; after SAC_HM_DEFINE_INITIAL_THREAD_STATUS( ) eliminated since it either
  * extends to nothing or to a declaration ended by ; !
- * .
  *
  * Revision 3.4  2001/01/25 11:45:58  cg
  * Used long int instead of int for converting pointers into numerical
@@ -70,10 +72,8 @@
  * Revision 1.2  1999/07/09 07:34:40  cg
  * Some bugs fixed.
  *
- *
  * Revision 1.1  1998/07/08 16:54:34  cg
  * Initial revision
- *
  *
  */
 
@@ -86,14 +86,10 @@
  * description:
  *
  *
- *
- *
- *
- *
  *****************************************************************************/
 
-#ifndef SAC_HEAPMGR_H
-#define SAC_HEAPMGR_H
+#ifndef _SAC_HEAPMGR_H
+#define _SAC_HEAPMGR_H
 
 /*
  * Basic type definitions.
@@ -906,4 +902,4 @@ extern void *SAC_HM_MallocCheck (unsigned int);
 
 #endif /* SAC_DO_PHM */
 
-#endif /* SAC_HEAPMGR_H */
+#endif /* _SAC_HEAPMGR_H */

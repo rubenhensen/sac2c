@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/04/30 08:43:37  dkr
+ * no changes done
+ *
  * Revision 3.2  2001/06/28 09:53:27  sbs
  * superfluous prep concats eliminated.
  *
@@ -31,7 +34,6 @@
  * Revision 1.1  1998/03/19 16:54:53  cg
  * Initial revision
  *
- *
  */
 
 /*****************************************************************************
@@ -39,7 +41,6 @@
  * file:   sac_profile.h
  *
  * description:
- *
  *   This file is part of the SAC standard header file sac.h
  *
  *   Profiling operations may be selectively activated by the global switches
@@ -52,9 +53,8 @@
  *
  *****************************************************************************/
 
-#ifndef SAC_PROFILE_H
-
-#define SAC_PROFILE_H
+#ifndef _SAC_PROFILE_H
+#define _SAC_PROFILE_H
 
 /*
  *  General profiling macros and declarations
@@ -420,4 +420,4 @@ extern struct rusage SAC_PF_stop_timer;
 
 #endif /* SAC_DO_PROFILE_LIB */
 
-#endif /* SAC_PROFILE_H */
+#endif /* _SAC_PROFILE_H */
