@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.22  1995/04/28 11:37:40  hw
+ * Revision 1.23  1995/05/09 13:45:41  hw
+ * changed DuplicateNode ( node information (node.info) will be copied )
+ *
+ * Revision 1.22  1995/04/28  11:37:40  hw
  * - added FltnMod
  * - bug fixed in renameing of variables belonging the assignment of
  *   a with_loop
@@ -166,7 +169,27 @@ DuplicateNode (node *source_node)
         dest_node->node[i] = DuplicateNode (source_node->node[i]);
 
     dest_node->nnode = i;
-    dest_node->info = source_node->info;
+    if (N_id == source_node->nodetype) {
+        dest_node->info.ids = (ids *)Malloc (sizeof (ids));
+        dest_node->info.ids = (ids *)memcpy ((void *)dest_node->info.ids,
+                                             (void *)source_node->info.ids, sizeof (ids));
+    } else if (N_let == source_node->nodetype) {
+        ids *dest_ids, *source_ids;
+
+        dest_node->info.ids = (ids *)Malloc (sizeof (ids));
+        dest_node->info.ids = (ids *)memcpy ((void *)dest_node->info.ids,
+                                             (void *)source_node->info.ids, sizeof (ids));
+        source_ids = source_node->info.ids;
+        dest_ids = dest_node->info.ids;
+        while (NULL != source_ids->next) {
+            dest_ids = (ids *)Malloc (sizeof (ids));
+            dest_ids->next = (ids *)memcpy ((void *)dest_ids->next,
+                                            (void *)source_ids->next, sizeof (ids));
+            dest_ids = dest_ids->next;
+            source_ids = source_ids->next;
+        }
+    } else
+        dest_node->info = source_node->info;
     dest_node->lineno = source_node->lineno;
     DBUG_PRINT ("DUPLICATE",
                 ("return :%s" P_FORMAT, mdb_nodetype[dest_node->nodetype], dest_node));
@@ -1042,6 +1065,9 @@ FltnId (node *arg_node, node *arg_info)
     if (0 < with_level) {
         tmp = FindId (arg_node->IDS_ID);
         if (NULL != tmp) {
+            DBUG_PRINT ("RENAME",
+                        ("arg_node:" P_FORMAT " ids:" P_FORMAT, arg_node, arg_node->IDS));
+
             DBUG_PRINT ("RENAME",
                         ("found:" P_FORMAT "old: %s, new: %s, id_level: %d ,"
                          " with_level: %d",
