@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2002/10/31 19:46:26  dkr
+ * CorrectFundef() renamed into SearchWrapper()
+ *
  * Revision 1.11  2002/10/30 16:11:35  dkr
  * trivial wrappers are no longer built but dispatched statically
  *
@@ -262,12 +265,11 @@ SignatureMatches (node *formal, node *actual)
         tmp_type = NewTypeCheck_Expr (EXPRS_EXPR (actual));
         actual_type = TYFixAndEliminateAlpha (tmp_type);
         tmp_type = TYFreeType (tmp_type);
-        DBUG_EXECUTE ("CWC", tmp_str = TYType2String (formal_type, FALSE, 0););
-        DBUG_EXECUTE ("CWC", tmp2_str = TYType2String (actual_type, FALSE, 0););
+        DBUG_EXECUTE ("CWC", tmp_str = TYType2String (formal_type, FALSE, 0);
+                      tmp2_str = TYType2String (actual_type, FALSE, 0););
         DBUG_PRINT ("CWC",
                     ("comparing formal type %s with actual type %s", tmp_str, tmp2_str));
-        DBUG_EXECUTE ("CWC", tmp_str = Free (tmp_str););
-        DBUG_EXECUTE ("CWC", tmp2_str = Free (tmp2_str););
+        DBUG_EXECUTE ("CWC", tmp_str = Free (tmp_str); tmp2_str = Free (tmp2_str););
 
         if (!TYLeTypes (actual_type, formal_type)) {
             match = FALSE;
@@ -285,7 +287,7 @@ SignatureMatches (node *formal, node *actual)
 /******************************************************************************
  *
  * Function:
- *   node *CorrectFundef( node *old_fundef, char *funname, node *args)
+ *   node *SearchWrapper( node *old_fundef, char *funname, node *args)
  *
  * Description:
  *
@@ -293,9 +295,9 @@ SignatureMatches (node *formal, node *actual)
  ******************************************************************************/
 
 node *
-CorrectFundef (node *fundef, char *funname, node *args)
+SearchWrapper (node *fundef, char *funname, node *args)
 {
-    DBUG_ENTER ("CorrectFundef");
+    DBUG_ENTER ("SearchWrapper");
 
     DBUG_ASSERT ((fundef != NULL), "fundef not found!");
     if (FUNDEF_STATUS (fundef) == ST_zombiefun) {
@@ -429,7 +431,7 @@ CWCap (node *arg_node, node *arg_info)
     }
 
     AP_FUNDEF (arg_node)
-      = CorrectFundef (AP_FUNDEF (arg_node), AP_NAME (arg_node), AP_ARGS (arg_node));
+      = SearchWrapper (AP_FUNDEF (arg_node), AP_NAME (arg_node), AP_ARGS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -456,7 +458,7 @@ CWCwithop (node *arg_node, node *arg_info)
         EXPRS_NEXT (args) = DupNode (args);
 
         NWITHOP_FUNDEF (arg_node)
-          = CorrectFundef (NWITHOP_FUNDEF (arg_node), NWITHOP_FUN (arg_node), args);
+          = SearchWrapper (NWITHOP_FUNDEF (arg_node), NWITHOP_FUN (arg_node), args);
 
         args = FreeTree (args);
     }
