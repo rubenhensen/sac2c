@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2004/10/28 22:08:39  sah
+ * stringbuffers are now initialised properly!
+ *
  * Revision 3.57  2004/10/07 12:38:37  ktr
  * Replaced the old With-Loop Scalarization with a new implementation.
  *
@@ -569,6 +572,7 @@ StrBufCreate (int size)
 
     res = (str_buf *)Malloc (sizeof (str_buf));
     res->buf = (char *)Malloc (size * sizeof (char));
+    res->buf[0] = '\0';
     res->pos = 0;
     res->size = size;
 
