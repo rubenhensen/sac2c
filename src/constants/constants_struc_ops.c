@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/11/26 14:35:31  sbs
+ * compiles
+ *
  * Revision 1.12  2004/07/29 15:36:41  khf
  * IdxSel: free on shape removed (caused pointer sharing)
  *
@@ -24,7 +27,7 @@
  * Primitive function psi() renamed to sel().
  *
  * Revision 1.5  2001/05/17 14:16:21  nmw
- * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ * MALLOC/FREE replaced by ILIBmalloc/Free, using result of ILIBfree()
  *
  * Revision 1.4  2001/05/07 07:40:00  nmw
  * dbug output corrected
@@ -80,27 +83,27 @@ Idx2Offset (constant *idx, constant *a)
     DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "Idx2Offset called with non-vector index");
 
     cvidx = (int *)CONSTANT_ELEMS (idx);
-    lenidx = SHGetExtent (CONSTANT_SHAPE (idx), 0);
+    lenidx = SHgetExtent (CONSTANT_SHAPE (idx), 0);
 
     shp = CONSTANT_SHAPE (a);
-    lenshp = SHGetDim (shp);
+    lenshp = SHgetDim (shp);
 
     DBUG_ASSERT ((lenshp >= lenidx), "Idx2Offset called with longer idx than array dim");
 
     if (lenidx > 0) {
-        DBUG_ASSERT (cvidx[0] < SHGetExtent (shp, 0),
+        DBUG_ASSERT (cvidx[0] < SHgetExtent (shp, 0),
                      "Idx2Offset called with idx out of range");
         offset = cvidx[0];
     } else {
         offset = 0;
     }
     for (i = 1; i < lenidx; i++) {
-        DBUG_ASSERT (cvidx[i] < SHGetExtent (shp, i),
+        DBUG_ASSERT (cvidx[i] < SHgetExtent (shp, i),
                      "Idx2Offset called with idx out of range");
-        offset = offset * SHGetExtent (shp, i) + cvidx[i];
+        offset = offset * SHgetExtent (shp, i) + cvidx[i];
     }
     for (; i < lenshp; i++) {
-        offset *= SHGetExtent (shp, i);
+        offset *= SHgetExtent (shp, i);
     }
 
     DBUG_RETURN (offset);
@@ -142,7 +145,7 @@ IncrementIndex (constant *min, constant *idx, constant *max)
             dim--;
         }
         if (((int *)CONSTANT_ELEMS (idx))[dim] == ((int *)CONSTANT_ELEMS (max))[dim]) {
-            idx = COFreeConstant (idx);
+            idx = COfreeConstant (idx);
         } else {
             (((int *)CONSTANT_ELEMS (idx))[dim])++;
         }
@@ -150,7 +153,7 @@ IncrementIndex (constant *min, constant *idx, constant *max)
         /*
          * 'idx' is empty
          */
-        idx = COFreeConstant (idx);
+        idx = COfreeConstant (idx);
     }
 
     DBUG_RETURN (idx);
@@ -188,16 +191,16 @@ TileFromArray (constant *idx, shape *res_shp, constant *a)
     /*
      * First, we allocate the CV for the result:
      */
-    res_vlen = SHGetUnrLen (res_shp);
+    res_vlen = SHgetUnrLen (res_shp);
     res_elems = AllocCV (CONSTANT_TYPE (a), res_vlen);
 
     /*
      * Now, we create an offset-vector 'off' = drop( -1, idx)
      * (This usually guarantees pretty big chunks to be copied at once)
      */
-    off_shp = SHMakeShape (1);
+    off_shp = SHmakeShape (1);
     off_len = CONSTANT_VLEN (idx) - 1;
-    SHSetExtent (off_shp, 0, off_len);
+    SHsetExtent (off_shp, 0, off_len);
     off_elems = AllocCV (T_int, off_len);
     for (i = 0; i < off_len; i++) {
         ((int *)off_elems)[i] = ((int *)CONSTANT_ELEMS (idx))[i];
@@ -207,10 +210,10 @@ TileFromArray (constant *idx, shape *res_shp, constant *a)
     /*
      * Now, we compute the minimum and maximum index
      */
-    min = COCopyConstant (off);
-    max = COCopyConstant (off);
+    min = COcopyConstant (off);
+    max = COcopyConstant (off);
     for (i = 0; i < CONSTANT_VLEN (min); i++) {
-        ((int *)CONSTANT_ELEMS (max))[i] += SHGetExtent (res_shp, i) - 1;
+        ((int *)CONSTANT_ELEMS (max))[i] += SHgetExtent (res_shp, i) - 1;
     }
 
     /*
@@ -220,10 +223,10 @@ TileFromArray (constant *idx, shape *res_shp, constant *a)
      */
     chunk_size = 1;
     for (i = CONSTANT_VLEN (off) + 1; i < CONSTANT_DIM (a); i++) {
-        chunk_size *= SHGetExtent (res_shp, i);
+        chunk_size *= SHgetExtent (res_shp, i);
     }
     off_size = chunk_size * (((int *)CONSTANT_ELEMS (idx))[CONSTANT_VLEN (idx) - 1]);
-    chunk_size *= SHGetExtent (res_shp, CONSTANT_VLEN (off));
+    chunk_size *= SHgetExtent (res_shp, CONSTANT_VLEN (off));
 
     /*
      * Now, we copy the desired values from 'a' to the new CV:
@@ -237,8 +240,8 @@ TileFromArray (constant *idx, shape *res_shp, constant *a)
         off
           = IncrementIndex (min, off, max); /* This function eventually frees 'off' !!! */
     } while (off != NULL);
-    min = COFreeConstant (min);
-    max = COFreeConstant (max);
+    min = COfreeConstant (min);
+    max = COfreeConstant (max);
 
     /*
      * Finally, the resulting constant node is created:
@@ -291,13 +294,13 @@ COReshape (constant *new_shp, constant *a)
      *
      * res_shp = new_shp!
      */
-    res_shp = SHMakeShape (CONSTANT_VLEN (new_shp));
+    res_shp = SHmakeShape (CONSTANT_VLEN (new_shp));
     for (i = 0; i < CONSTANT_VLEN (new_shp); i++) {
         curr_ext_res = ((int *)CONSTANT_ELEMS (new_shp))[i];
-        res_shp = SHSetExtent (res_shp, i, curr_ext_res);
+        res_shp = SHsetExtent (res_shp, i, curr_ext_res);
     }
 
-    res_vlen = SHGetUnrLen (res_shp);
+    res_vlen = SHgetUnrLen (res_shp);
 
     DBUG_ASSERT ((CONSTANT_VLEN (a)) == res_vlen,
                  "new_shp does not match length of the unrolling of a in COReshape!");
@@ -346,16 +349,16 @@ COSel (constant *idx, constant *a)
      *   res_shp = drop( len(idx), shape(a)!
      */
     res_dim = CONSTANT_DIM (a) - CONSTANT_VLEN (idx); /* correct since dim(idx)==1! */
-    res_shp = SHMakeShape (res_dim);
+    res_shp = SHmakeShape (res_dim);
     for (i = 0; i < res_dim; i++) {
-        curr_ext_a = SHGetExtent (CONSTANT_SHAPE (a), i + CONSTANT_VLEN (idx));
-        res_shp = SHSetExtent (res_shp, i, curr_ext_a);
+        curr_ext_a = SHgetExtent (CONSTANT_SHAPE (a), i + CONSTANT_VLEN (idx));
+        res_shp = SHsetExtent (res_shp, i, curr_ext_a);
     }
 
     /*
      * Now we pick the desired elems from a:
      */
-    res_vlen = SHGetUnrLen (res_shp);
+    res_vlen = SHgetUnrLen (res_shp);
     elems = PickNElemsFromCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a), Idx2Offset (idx, a),
                               res_vlen);
     /*
@@ -387,9 +390,9 @@ COIdxSel (constant *idx, constant *a)
     DBUG_ENTER ("COIdxSel");
     DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COIdxSel not int!");
     DBUG_ASSERT ((CONSTANT_DIM (idx) == 0), "idx to COIdxSel not scalar!");
-    res_shp = COGetShape (a);
-    index = ((int *)COGetDataVec (idx))[0];
-    DBUG_ASSERT ((SHGetUnrLen (res_shp)) > index,
+    res_shp = COgetShape (a);
+    index = ((int *)COgetDataVec (idx))[0];
+    DBUG_ASSERT ((SHgetUnrLen (res_shp)) > index,
                  "idx-scalar exceeds number of elements of array in COIdxSel!");
 
     /*
@@ -400,7 +403,7 @@ COIdxSel (constant *idx, constant *a)
     /*
      * Finally, the result node is created:
      */
-    res = MakeConstant (CONSTANT_TYPE (a), SHMakeShape (0), elem, 1);
+    res = MakeConstant (CONSTANT_TYPE (a), SHmakeShape (0), elem, 1);
 
     DBUG_RETURN (res);
 }
@@ -432,7 +435,7 @@ COTake (constant *idx, constant *a)
     DBUG_ENTER ("COTake");
 
     if (CONSTANT_DIM (idx) == 0) {
-        new_idx = COCopyScalar2OneElementVector (idx);
+        new_idx = COcopyScalar2OneElementVector (idx);
         idx = new_idx;
     }
     DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to COTake not vector!");
@@ -449,10 +452,10 @@ COTake (constant *idx, constant *a)
          *
          * res_shp = |idx| ++ drop( len(idx), shape(a))!
          */
-        res_shp = SHCopyShape (CONSTANT_SHAPE (a));
+        res_shp = SHcopyShape (CONSTANT_SHAPE (a));
         for (i = 0; i < CONSTANT_VLEN (idx); i++) {
             curr_val_idx = abs (((int *)CONSTANT_ELEMS (idx))[i]);
-            res_shp = SHSetExtent (res_shp, i, curr_val_idx);
+            res_shp = SHsetExtent (res_shp, i, curr_val_idx);
         }
 
         /*
@@ -460,9 +463,9 @@ COTake (constant *idx, constant *a)
          *
          * offset_i = ( idx_i >= 0 ? 0 : shape(a)_i + idx_i )
          */
-        offset = COCopyConstant (idx);
+        offset = COcopyConstant (idx);
         for (i = 0; i < CONSTANT_VLEN (offset); i++) {
-            shp_i = SHGetExtent (CONSTANT_SHAPE (a), i);
+            shp_i = SHgetExtent (CONSTANT_SHAPE (a), i);
             idx_i = ((int *)CONSTANT_ELEMS (offset))[i];
             ((int *)CONSTANT_ELEMS (offset))[i] = (idx_i >= 0 ? 0 : shp_i + idx_i);
         }
@@ -473,7 +476,7 @@ COTake (constant *idx, constant *a)
          */
         res = TileFromArray (offset, res_shp, a);
 
-        offset = COFreeConstant (offset);
+        offset = COfreeConstant (offset);
     } else {
         /* 'idx' is an empty array  ->  res = a */
 
@@ -485,12 +488,12 @@ COTake (constant *idx, constant *a)
     DBUG_ASSERT( (CONSTANT_TYPE( idx) == T_int), "idx to CODrop not int!");
 #endif
 
-        res = COCopyConstant (a);
+        res = COcopyConstant (a);
     }
     DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COTake", idx, a, res););
 
     if (new_idx != NULL) {
-        new_idx = COFreeConstant (new_idx);
+        new_idx = COfreeConstant (new_idx);
     }
 
     DBUG_RETURN (res);
@@ -524,7 +527,7 @@ CODrop (constant *idx, constant *a)
     DBUG_ENTER ("CODrop");
 
     if (CONSTANT_DIM (idx) == 0) {
-        new_idx = COCopyScalar2OneElementVector (idx);
+        new_idx = COcopyScalar2OneElementVector (idx);
         idx = new_idx;
     }
     DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to CODrop not vector!");
@@ -541,11 +544,11 @@ CODrop (constant *idx, constant *a)
          *
          * res_shp = (take( len(idx), shape(a)) - |idx| ) ++ drop( len(idx), shape(a))!
          */
-        res_shp = SHCopyShape (CONSTANT_SHAPE (a));
+        res_shp = SHcopyShape (CONSTANT_SHAPE (a));
         for (i = 0; i < CONSTANT_VLEN (idx); i++) {
             curr_val_idx
-              = SHGetExtent (res_shp, i) - abs (((int *)CONSTANT_ELEMS (idx))[i]);
-            res_shp = SHSetExtent (res_shp, i, curr_val_idx);
+              = SHgetExtent (res_shp, i) - abs (((int *)CONSTANT_ELEMS (idx))[i]);
+            res_shp = SHsetExtent (res_shp, i, curr_val_idx);
         }
 
         /*
@@ -553,7 +556,7 @@ CODrop (constant *idx, constant *a)
          *
          * offset_i = ( idx_i < 0 ? 0 : idx_i )
          */
-        offset = COCopyConstant (idx);
+        offset = COcopyConstant (idx);
         for (i = 0; i < CONSTANT_VLEN (offset); i++) {
             idx_i = ((int *)CONSTANT_ELEMS (offset))[i];
             ((int *)CONSTANT_ELEMS (offset))[i] = (idx_i < 0 ? 0 : idx_i);
@@ -574,13 +577,13 @@ CODrop (constant *idx, constant *a)
     DBUG_ASSERT( (CONSTANT_TYPE( idx) == T_int), "idx to CODrop not int!");
 #endif
 
-        res = COCopyConstant (a);
+        res = COcopyConstant (a);
     }
 
     DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("CODrop", idx, a, res););
 
     if (new_idx != NULL) {
-        new_idx = COFreeConstant (new_idx);
+        new_idx = COfreeConstant (new_idx);
     }
 
     DBUG_RETURN (res);
@@ -612,11 +615,11 @@ COCat (constant *a, constant *b)
     DBUG_ENTER ("COCat");
 
     if (CONSTANT_DIM (a) == 0) {
-        new_a = COCopyScalar2OneElementVector (a);
+        new_a = COcopyScalar2OneElementVector (a);
         a = new_a;
     }
     if (CONSTANT_DIM (b) == 0) {
-        new_b = COCopyScalar2OneElementVector (b);
+        new_b = COcopyScalar2OneElementVector (b);
         b = new_b;
     }
 
@@ -629,20 +632,20 @@ COCat (constant *a, constant *b)
     type = CONSTANT_TYPE (a);
 
     /**
-     * First, we compute the resulting shape. Instead of using SHCopyShape,
+     * First, we compute the resulting shape. Instead of using SHcopyShape,
      * we copy the shape manually in order to allow for consistency checking
      * in the DBUG version.
      */
-    shp = SHMakeShape (dim);
-    SHSetExtent (shp, 0,
-                 SHGetExtent (CONSTANT_SHAPE (a), 0)
-                   + SHGetExtent (CONSTANT_SHAPE (b), 0));
+    shp = SHmakeShape (dim);
+    SHsetExtent (shp, 0,
+                 SHgetExtent (CONSTANT_SHAPE (a), 0)
+                   + SHgetExtent (CONSTANT_SHAPE (b), 0));
     for (i = 1; i < dim; i++) {
-        DBUG_ASSERT ((SHGetExtent (CONSTANT_SHAPE (a), i)
-                      == SHGetExtent (CONSTANT_SHAPE (b), i)),
+        DBUG_ASSERT ((SHgetExtent (CONSTANT_SHAPE (a), i)
+                      == SHgetExtent (CONSTANT_SHAPE (b), i)),
                      "COCat applied to arrays with non identical extents in the trailing "
                      "axes!");
-        SHSetExtent (shp, i, SHGetExtent (CONSTANT_SHAPE (a), i));
+        SHsetExtent (shp, i, SHgetExtent (CONSTANT_SHAPE (a), i));
     }
 
     /**
@@ -663,10 +666,10 @@ COCat (constant *a, constant *b)
     DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COCat", a, b, res););
 
     if (new_a != NULL) {
-        new_a = COFreeConstant (new_a);
+        new_a = COfreeConstant (new_a);
     }
     if (new_b != NULL) {
-        new_b = COFreeConstant (new_b);
+        new_b = COfreeConstant (new_b);
     }
 
     DBUG_RETURN (res);
@@ -688,7 +691,7 @@ CODim (constant *a)
 
     DBUG_ENTER ("CODim");
 
-    res = COMakeConstantFromInt (CONSTANT_DIM (a));
+    res = COmakeConstantFromInt (CONSTANT_DIM (a));
 
     DBUG_RETURN (res);
 }
@@ -713,10 +716,10 @@ COShape (constant *a)
     DBUG_ENTER ("COShape");
 
     if (CONSTANT_DIM (a) > 0) {
-        shape_vec = (int *)Malloc (CONSTANT_DIM (a) * sizeof (int));
+        shape_vec = (int *)ILIBmalloc (CONSTANT_DIM (a) * sizeof (int));
         for (i = 0; i < CONSTANT_DIM (a); i++)
-            shape_vec[i] = SHGetExtent (CONSTANT_SHAPE (a), i);
-        res = COMakeConstant (T_int, SHCreateShape (1, CONSTANT_DIM (a)), shape_vec);
+            shape_vec[i] = SHgetExtent (CONSTANT_SHAPE (a), i);
+        res = COmakeConstant (T_int, SHcreateShape (1, CONSTANT_DIM (a)), shape_vec);
     } else {
         res = NULL;
     }
@@ -747,13 +750,13 @@ COModarray (constant *a, constant *idx, constant *elem)
                  "idx-vector exceeds dim of array in COModarray!");
 
     /* first we create the modified target constant as copy of a */
-    res = COCopyConstant (a);
+    res = COcopyConstant (a);
 
     /* now we copy the modified elements into the target constant vector */
     CopyElemsFromCVToCV (CONSTANT_TYPE (res),                 /* basetype */
                          CONSTANT_ELEMS (elem),               /* from */
                          0,                                   /* offset */
-                         SHGetUnrLen (CONSTANT_SHAPE (elem)), /* len */
+                         SHgetUnrLen (CONSTANT_SHAPE (elem)), /* len */
                          CONSTANT_ELEMS (res),                /* to */
                          Idx2Offset (idx, res));              /* offset */
 

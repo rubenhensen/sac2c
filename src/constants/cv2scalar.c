@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/11/26 14:45:22  sbs
+ * compiles
+ *
  * Revision 1.4  2004/11/22 18:55:29  cg
  * Moved all definitions/declarations of global variables to globals.mac
  *
@@ -32,47 +35,47 @@
  */
 
 node *
-COCv2Num (void *elems, int offset)
+COcv2Num (void *elems, int offset)
 {
     DBUG_ENTER ("COCv2Num");
 
-    DBUG_RETURN (MakeNum (((int *)elems)[offset]));
+    DBUG_RETURN (TBmakeNum (((int *)elems)[offset]));
 }
 
 node *
-COCv2Double (void *elems, int offset)
+COcv2Double (void *elems, int offset)
 {
     DBUG_ENTER ("COCv2Num");
 
-    DBUG_RETURN (MakeDouble (((double *)elems)[offset]));
+    DBUG_RETURN (TBmakeDouble (((double *)elems)[offset]));
 }
 
 node *
-COCv2Bool (void *elems, int offset)
+COcv2Bool (void *elems, int offset)
 {
     DBUG_ENTER ("COCv2Bool");
 
-    DBUG_RETURN (MakeBool (((bool *)elems)[offset]));
+    DBUG_RETURN (TBmakeBool (((bool *)elems)[offset]));
 }
 
 node *
-COCv2Float (void *elems, int offset)
+COcv2Float (void *elems, int offset)
 {
     DBUG_ENTER ("COCv2Float");
 
-    DBUG_RETURN (MakeFloat (((float *)elems)[offset]));
+    DBUG_RETURN (TBmakeFloat (((float *)elems)[offset]));
 }
 
 node *
-COCv2Char (void *elems, int offset)
+COcv2Char (void *elems, int offset)
 {
     DBUG_ENTER ("COCv2Char");
 
-    DBUG_RETURN (MakeChar (((char *)elems)[offset]));
+    DBUG_RETURN (TBmakeChar (((char *)elems)[offset]));
 }
 
 node *
-COCv2ScalarDummy (void *elems, int offset)
+COcv2ScalarDummy (void *elems, int offset)
 {
     DBUG_ASSERT ((1 == 0), "COCv2SCalarDummy called!");
     return (NULL);

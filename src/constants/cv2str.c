@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/26 14:41:17  sbs
+ * compiles
+ *
  * Revision 1.6  2004/11/22 18:55:29  cg
  * Moved all definitions/declarations of global variables to globals.mac
  *
@@ -68,7 +71,7 @@
                                                                                          \
         DBUG_ENTER ("COCv2Str##ext");                                                    \
         sprintf (format, ",%s", form);                                                   \
-        buffer = (char *)Malloc ((100 + max_char) * sizeof (char));                      \
+        buffer = (char *)ILIBmalloc ((100 + max_char) * sizeof (char));                  \
         buffer_act = buffer;                                                             \
                                                                                          \
         if (len > 0) {                                                                   \
