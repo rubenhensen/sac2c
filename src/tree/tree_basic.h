@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.174  2003/11/18 16:48:31  dkr
+ * definition of ID_FLAGS modified to please sun-CC
+ *
  * Revision 3.173  2003/11/18 16:33:57  dkr
  * NWITHOP_TYPE redefined
  *
@@ -1998,8 +2001,8 @@ extern node *MakeId_Num (int val);
 #define ID_ISCONST(n) (n->varno)
 #define ID_NUM(n) (n->refcnt)
 
-#define ID_FLAGS(n) (long)(n->mask[0])
-#define ID_DBUG_FLAGS(n) (long)(n->mask[1])
+#define ID_FLAGS(n) (*((long *)(&(n->mask[0]))))      /* needed for cc */
+#define ID_DBUG_FLAGS(n) (*((long *)(&(n->mask[1])))) /* needed for cc */
 
 #define IS_GLOBAL 1
 #define IS_REFERENCE 2
@@ -3752,7 +3755,7 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
 
 extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
 
-#define NWITHOP_TYPE(n) ((WithOpTyp) ((n)->dfmask[0]))
+#define NWITHOP_TYPE(n) ((WithOpType) ((n)->dfmask[0]))
 #define NWITHOP_FUN(n) ((n)->info.fun_name.id)
 #define NWITHOP_MOD(n) ((n)->info.fun_name.id_mod)
 #define NWITHOP_PRF(n) ((n)->info.prf)
