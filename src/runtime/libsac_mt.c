@@ -31,7 +31,8 @@ unsigned int SAC_MT_masterclass;
 
 unsigned int SAC_MT_threads;
 
-volatile unsigned int(SAC_MT_spmd_function) (unsigned int, unsigned int, unsigned int);
+volatile unsigned int (*SAC_MT_spmd_function) (const unsigned int, const unsigned int,
+                                               unsigned int);
 
 /*
  * Definition of thread control functions.
@@ -60,7 +61,8 @@ ThreadControl (void *arg)
             ;
         worker_flag = SAC_MT_master_flag;
 
-        worker_flag = SAC_MT_spmd_function (my_thread_id, my_worker_class, worker_flag);
+        worker_flag
+          = (*SAC_MT_spmd_function) (my_thread_id, my_worker_class, worker_flag);
     }
 }
 
@@ -81,6 +83,6 @@ SAC_MT_ThreadControl (void *arg)
             ;
         worker_flag = SAC_MT_master_flag;
 
-        worker_flag = SAC_MT_spmd_function (1, 0, worker_flag);
+        worker_flag = (*SAC_MT_spmd_function) (1, 0, worker_flag);
     }
 }
