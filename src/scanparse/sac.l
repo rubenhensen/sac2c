@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1994/12/16 14:34:28  sbs
+ * Revision 1.9  1995/01/05 12:46:51  sbs
+ * string inserted
+ *
+ * Revision 1.8  1994/12/16  14:34:28  sbs
  * moddec  and start_token inserted
  *
  * Revision 1.7  1994/12/14  10:08:40  sbs
@@ -134,10 +137,12 @@ int start_token;
 "int"				{FILTER( TYPE_INT );}
 "float"				{FILTER( TYPE_FLOAT );}
 "bool"				{FILTER( TYPE_BOOL );}
+"string"			{FILTER( TYPE_STR );}
 
 "true"                          {FILTER( TRUE );}
 "false"                         {FILTER( FALSE );}
 
+\"[^"\n]*\"			{FILTER2( STR );}
 [_A-Za-z][_A-Za-z0-9]*		{FILTER2( ID );}
 (0?|([1-9][0-9]*))	{FILTER3 ( NUM);}
 (0?|([1-9][0-9]*))[.][0-9]*(e([+]?|[-]?)[1-9][0-9]*)? \

@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.39  1995/01/03 17:57:00  hw
+ * Revision 1.40  1995/01/05 12:46:51  sbs
+ * string inserted
+ *
+ * Revision 1.39  1995/01/03  17:57:00  hw
  * changed constructing of assigns to handle converted for-loops correctly
  * inserted DBUG_PRINT's in function Append.
  * bug fixed in DBUG_PRINT of rule 'forassign' part FOR ...
@@ -172,8 +175,8 @@ static char *mod_name;
        K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, GENARRAY, MODARRAY,
        MODDEC, MODIMP, CLASSDEC, IMPORT, ALL, IMPLICIT, EXPLICIT, TYPES, FUNS, OWN,
        ARRAY,SC, TRUE, FALSE
-%token <id> ID
-%token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL
+%token <id> ID, STR
+%token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_STR
 %token <cint> NUM
 %token <cfloat> FLOAT
 
@@ -1114,6 +1117,14 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
                                  mdb_nodetype[$$->nodetype],$$,
                                  $$->info.cint ? "true" : "false"));
          }
+      | STR
+	{ $$=MakeNode(N_str);
+	  $$->info.id=$1;
+
+	DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %s",
+                                 mdb_nodetype[$$->nodetype],$$,
+                                 $$->info.id ));
+       }
       ;
 
 generator: expr  LE ID LE expr
@@ -1276,6 +1287,11 @@ simpletype: TYPE_INT
                }
             | TYPE_BOOL 
                { $$=MakeTypes(T_bool);
+                 DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s",
+                                     $$, mdb_type[$$->simpletype]));
+               }
+	    | TYPE_STR
+               { $$=MakeTypes(T_str);
                  DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s",
                                      $$, mdb_type[$$->simpletype]));
                }
