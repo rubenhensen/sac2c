@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/01/29 16:08:19  dkr
+ * WL_GET_ADDRESS replaced by WLNODE_GET_ADDR, WLSTRIDEX_GET_ADDR,
+ * WLGRIDX_GET_ADDR
+ *
  * Revision 3.11  2001/01/24 23:34:24  dkr
  * NameOrVal_MakeIndex, NodeOrInt_MakeIndex added
  *
@@ -1761,13 +1765,48 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_WLstride :  *and*  N_WLstrideVar :  *and*
+ ***  N_WLstride :  *and*  N_WLstrideVar :
+ ***/
+
+#define WLSTRIDEX_GET_ADDR(node, field)                                                  \
+    (NODE_TYPE (node) == N_WLstride)                                                     \
+      ? (void *)&(WLSTRIDE_##field (node))                                               \
+      : ((NODE_TYPE (node) == N_WLstrideVar) ? (void *)&(WLSTRIDEVAR_##field (node))     \
+                                             : NULL)
+
+/*--------------------------------------------------------------------------*/
+
+/***
  ***  N_WLgrid :    *and*  N_WLgridVar :
  ***/
 
-#define WL_GET_ADDRESS(node, nodetype, macro, field)                                     \
-    (NODE_TYPE (node) == nodetype) ? (void *)&(macro##_##field (node))                   \
-                                   : (void *)&(macro##VAR##_##field (node))
+#define WLGRIDX_GET_ADDR(node, field)                                                    \
+    (NODE_TYPE (node) == N_WLgrid)                                                       \
+      ? (void *)&(WLGRID_##field (node))                                                 \
+      : ((NODE_TYPE (node) == N_WLgridVar) ? (void *)&(WLGRIDVAR_##field (node)) : NULL)
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_WLstride :  *and*  N_WLstrideVar :  *and*
+ ***  N_WLgrid :    *and*  N_WLgridVar :    *and*
+ ***  N_WLblock :   *and*  N_WLublock :
+ ***/
+
+#define WLNODE_GET_ADDR(node, field)                                                     \
+    (NODE_TYPE (node) == N_WLstride)                                                     \
+      ? (void *)&(WLSTRIDE_##field (node))                                               \
+      : ((NODE_TYPE (node) == N_WLstrideVar)                                             \
+           ? (void *)&(WLSTRIDEVAR_##field (node))                                       \
+           : ((NODE_TYPE (node) == N_WLgrid)                                             \
+                ? (void *)&(WLGRID_##field (node))                                       \
+                : ((NODE_TYPE (node) == N_WLgridVar)                                     \
+                     ? (void *)&(WLGRIDVAR_##field (node))                               \
+                     : ((NODE_TYPE (node) == N_WLblock)                                  \
+                          ? (void *)&(WLBLOCK_##field (node))                            \
+                          : ((NODE_TYPE (node) == N_WLublock)                            \
+                               ? (void *)&(WLUBLOCK_##field (node))                      \
+                               : NULL)))))
 
 extern void NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt,
                                     void *node_or_int);
@@ -1783,9 +1822,12 @@ extern node *NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, char 
 extern bool NameOrVal_Eq (char *name1, int val1, char *name2, int val2);
 extern bool NodeOrInt_Eq (nodetype nt1, void *node_or_int1, nodetype nt2,
                           void *node_or_int2);
-
 extern bool NodeOrInt_IntEq (nodetype nt1, void *node_or_int1, int val2);
 extern bool NodeOrInt_StrEq (nodetype nt1, void *node_or_int1, char *name2);
+
+extern bool NameOrVal_Le (char *name1, int val1, char *name2, int val2);
+extern bool NodeOrInt_Le (nodetype nt1, void *node_or_int1, nodetype nt2,
+                          void *node_or_int2);
 
 /*--------------------------------------------------------------------------*/
 
