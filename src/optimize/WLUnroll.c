@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.18  2000/10/26 17:39:42  dkr
+ * CreateZeroVector moved to tree_compound.[ch]
+ *
  * Revision 2.17  2000/10/26 12:44:35  dkr
  * signature of DupOneIds changed
  *
@@ -81,6 +84,7 @@
  *
  * Revision 1.1  1998/05/13 13:47:44  srs
  * Initial revision
+ *
  */
 
 /*******************************************************************************
@@ -112,28 +116,28 @@
 #include "WithloopFolding.h"
 
 /* opfun is a higher oder function called from within ForEachElementHelp()
-   to create explicit code for one single array element. opfun have the
-   following values:
-     - CreateModGenarray()
-     - CreateFodl()
-
-   The args of opfun are stored in opfunarg. Both variables are global to
-   reduce function arguments.
-
-
-   Structure of functions in this file:
-   ------------------------------------
-
-   CheckUnrollFold               CheckUnrollGenarray               CheckUnrollModarray
-         |                                 |                                |
-   DoUnrollFold                  DoUnrollGenarray                  DoUnrollModarray
-                  \                        |                      /
-                   \----------------ForEachElement---------------/ | |
-   | ForEachElementHelp                                       \|/ /                \
-   ` CreateFold     CreateModGenarray      (higher order functions) \                /
-                                   CreateBottomCode
-
-*/
+ * to create explicit code for one single array element. opfun have the
+ * following values:
+ *   - CreateModGenarray()
+ *   - CreateFodl()
+ *
+ * The args of opfun are stored in opfunarg. Both variables are global to
+ * reduce function arguments.
+ *
+ *
+ * Structure of functions in this file:
+ * ------------------------------------
+ *
+ * CheckUnrollFold               CheckUnrollGenarray               CheckUnrollModarray
+ *       |                                 |                                |
+ * DoUnrollFold                  DoUnrollGenarray                  DoUnrollModarray
+ *                \                        |                      /
+ *                 \----------------ForEachElement---------------/ | |
+ * | ForEachElementHelp                                       \|/ /                \
+ * ` CreateFold     CreateModGenarray      (higher order functions) \                /
+ *                                 CreateBottomCode
+ *
+ */
 
 typedef node *(*funp) (node *, node *);
 

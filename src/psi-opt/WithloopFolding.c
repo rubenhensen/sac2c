@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  2000/10/26 17:39:13  dkr
+ * CreateZeroVector moved to tree_compound.[ch]
+ *
  * Revision 2.16  2000/10/24 13:24:26  dkr
  * MakeType renamed into MakeTypes
  *
@@ -657,8 +660,9 @@ NormalizeInternGen (intern_gen *ig)
  *
  * description:
  *   copies 'shape' numbers of given constant array node (1 dimension) to
- *   *iarray. If *iarray = NULL, memory is allocated. If arrayn is NULL, iarray
- *   is filles with 0.
+ *   *iarray.
+ *   If *iarray = NULL, memory is allocated.
+ *   If arrayn is NULL, iarray is filles with 0.
  *
  ******************************************************************************/
 
@@ -669,20 +673,24 @@ ArrayST2ArrayInt (node *arrayn, int **iarray, int shape)
 
     DBUG_ENTER ("ArrayST2ArrayInt");
 
-    if (!*iarray)
+    if (!*iarray) {
         *iarray = Malloc (shape * sizeof (int));
+    }
 
     if (arrayn == NULL) {
-        for (i = 0; i < shape; i++)
+        for (i = 0; i < shape; i++) {
             (*iarray)[i] = 0;
+        }
     } else if (NODE_TYPE (arrayn) == N_array) {
-        for (i = 0; i < shape; i++)
+        for (i = 0; i < shape; i++) {
             (*iarray)[i] = ((int *)ARRAY_CONSTVEC (arrayn))[i];
+        }
     } else /* (NODE_TYPE(arrayn) == N_id) */ {
         DBUG_ASSERT ((NODE_TYPE (arrayn) == N_id), ("Wrong arrayn"));
 
-        for (i = 0; i < shape; i++)
+        for (i = 0; i < shape; i++) {
             (*iarray)[i] = ((int *)ID_CONSTVEC (arrayn))[i];
+        }
     }
 
     DBUG_VOID_RETURN;
@@ -1222,101 +1230,7 @@ StartSearchWL (node *idn, node *assignn, int mode)
     resultn = SearchWL (varno, mrdn, &valid, mode, ASSIGN_LEVEL (assignn));
     search_wl_nodelist = NodeListFree (search_wl_nodelist, 0);
 
-    DBUG_ASSERT (0 == valid || 1 == valid, ("invalid value for variable valid"));
-
-    DBUG_RETURN (resultn);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *CreateZeroVector( int dim, simpletype type)
- *
- * description:
- *   returns an N_array node with 'dim' components, each 0. If dim == 0,
- *   a scalar 0 is returned.
- *
- ******************************************************************************/
-
-node *
-CreateZeroVector (int dim, simpletype type)
-{
-    node *resultn, *tmpn;
-    int i;
-    shpseg *shpseg;
-
-    DBUG_ENTER ("CreateZeroVector");
-
-    if (dim == 0) {
-        switch (type) {
-        case T_int:
-            resultn = MakeNum (0);
-            break;
-        case T_float:
-            resultn = MakeFloat (0);
-            break;
-        case T_double:
-            resultn = MakeDouble (0);
-            break;
-        case T_bool:
-            resultn = MakeBool (0);
-            break;
-        case T_char:
-            resultn = MakeChar ('\0');
-            break;
-        default:
-            DBUG_ASSERT (0, ("unkown type"));
-        }
-    } else {
-        tmpn = NULL;
-        for (i = 0; i < dim; i++)
-            switch (type) {
-            case T_int:
-                tmpn = MakeExprs (MakeNum (0), tmpn);
-                break;
-            case T_float:
-                tmpn = MakeExprs (MakeFloat (0), tmpn);
-                break;
-            case T_double:
-                tmpn = MakeExprs (MakeDouble (0), tmpn);
-                break;
-            case T_bool:
-                tmpn = MakeExprs (MakeBool (0), tmpn);
-                break;
-            case T_char:
-                tmpn = MakeExprs (MakeChar ('\0'), tmpn);
-                break;
-            default:
-                DBUG_ASSERT (0, ("unkown type"));
-            }
-
-        resultn = MakeArray (tmpn);
-        ARRAY_ISCONST (resultn) = TRUE;
-        ARRAY_VECTYPE (resultn) = type;
-        ARRAY_VECLEN (resultn) = dim;
-        switch (type) {
-        case T_int:
-            ((int *)ARRAY_CONSTVEC (resultn)) = Array2IntVec (tmpn, NULL);
-            break;
-        case T_float:
-            ((float *)ARRAY_CONSTVEC (resultn)) = Array2FloatVec (tmpn, NULL);
-            break;
-        case T_double:
-            ((double *)ARRAY_CONSTVEC (resultn)) = Array2DblVec (tmpn, NULL);
-            break;
-        case T_bool:
-            ((int *)ARRAY_CONSTVEC (resultn)) = Array2BoolVec (tmpn, NULL);
-            break;
-        case T_char:
-            ((char *)ARRAY_CONSTVEC (resultn)) = Array2CharVec (tmpn, NULL);
-            break;
-        default:
-            DBUG_ASSERT (0, ("unkown type"));
-        }
-        shpseg = MakeShpseg (
-          MakeNums (dim, NULL)); /* nums struct is freed inside MakeShpseg. */
-        ARRAY_TYPE (resultn) = MakeTypes (type, 1, shpseg, NULL, NULL);
-    }
+    DBUG_ASSERT (((0 == valid) || (1 == valid)), "invalid value for variable valid");
 
     DBUG_RETURN (resultn);
 }
