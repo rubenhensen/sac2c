@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1996/02/21 15:10:33  cg
+ * Revision 1.7  1996/04/02 13:52:47  cg
+ * typedef of string removed
+ *
+ * Revision 1.6  1996/02/21  15:10:33  cg
  * typedefs and defines taken from icm2c.h
  * new typedef char* string
  *
@@ -33,7 +36,6 @@
 #define false 0
 
 typedef int bool;
-typedef char *string;
 
 extern int __SAC__Runtime_hidden_memcnt;
 extern int __SAC__Runtime_array_memcnt;
