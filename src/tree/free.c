@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/03/19 16:44:39  dkr
+ * WLSEG_HOMSV removed (WLSEG_SV used instead)
+ *
  * Revision 3.10  2001/03/07 15:56:18  nmw
  * wrong traversal in FreeCSEinfo fixed
  *
@@ -1775,7 +1778,6 @@ FreeWLseg (node *arg_node, node *arg_info)
     if (WLSEG_SCHEDULING (arg_node) != NULL) {
         WLSEG_SCHEDULING (arg_node) = SCHRemoveScheduling (WLSEG_SCHEDULING (arg_node));
     }
-    FREE (WLSEG_HOMSV (arg_node));
 
     FREE (arg_node);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2001/03/19 16:43:46  dkr
+ * WLSEG_HOMSV removed (WLSEG_SV used instead)
+ *
  * Revision 3.52  2001/03/19 14:24:27  nmw
  * AVIS_ASSIGN2, INFO_USSA_ macros added
  *
@@ -2050,9 +2053,10 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***
  ***  permanent attributes:
  ***
+ ***    node*       VARDECORARG     (N_vardec/N_arg)
+ ***
  ***  temporary attributes:
  ***
- ***    node*       VARDECORARG     (N_vardec/N_arg)
  ***    node*       SSACOUNT        (N_ssacnt)       (ssaform -> undossa !!)
  ***    node*       SSAASSIGN       (N_assign)       (ssaform -> undossa !!)
  ***    node*       SSAASSIGN2      (N_assign)       (ssaform -> undossa !!)
@@ -3471,25 +3475,22 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***    int*       IDX_MIN                              (wltransform -> compile )
  ***    int*       IDX_MAX                              (wltransform -> compile )
  ***
- ***    int        BLOCKS      [number of blocking levels (0..3)
- ***                             --- without unrolling-blocking]
  ***    int*       SV          [step vector]            (wltransform -> )
- ***    int*       BV[]        [blocking vectors]       (wltransform -> compile )
  ***    int*       UBV         [unrolling-bl. vector]   (wltransform -> compile )
  ***
- ***    SCHsched_t SCHEDULING                           (wltransform -> compile )
+ ***    int        BLOCKS      [number of blocking levels (0..3)
+ ***                             --- without unrolling-blocking]
+ ***    int*       BV[]        [blocking vectors]       (wltransform -> compile )
+ ***
  ***    int        MAXHOMDIM   [last homog. dimension]  (wltransform -> compile )
- ***    int*       HOMSV       [homog. step vector]     (wltransform -> compile )
+ ***    SCHsched_t SCHEDULING                           (wltransform -> compile )
  ***
  ***  remarks:
  ***
+ ***    - IDX_MIN, IDX_MAX, SV, BV[0], BV[1], ..., UBV are vectors of size DIMS.
  ***    - BV[ 0 .. (BLOCKS-1) ]
- ***    - IDX_MIN, IDX_MAX, SV, BV[0], BV[1], ..., UBV, HOMSV are vectors of
- ***      size DIMS.
  ***    - MAXHOMDIM is element of the set {-1, 0, 1, ..., DIMS-1}.
  ***      -1 is the default value (= no homogeneous dimensions).
- ***    - (HOMSV[i] == 0)  <->  (i > MAXHOMDIM),
- ***      (HOMSV[i] > 0)   <->  (i <= MAXHOMDIM).
  ***/
 
 extern node *MakeWLseg (int dims, node *contents, node *next);
@@ -3501,14 +3502,14 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 #define WLSEG_IDX_MIN(n) (WLSEGX_IDX_MIN (n))
 #define WLSEG_IDX_MAX(n) (WLSEGX_IDX_MAX (n))
 
-#define WLSEG_BLOCKS(n) ((n)->flag)
 #define WLSEG_SV(n) ((int *)((n)->mask[0]))
-#define WLSEG_BV(n, level) ((int *)((n)->mask[level + 2]))
 #define WLSEG_UBV(n) ((int *)((n)->mask[1]))
 
-#define WLSEG_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
+#define WLSEG_BLOCKS(n) ((n)->flag)
+#define WLSEG_BV(n, level) ((int *)((n)->mask[level + 2]))
+
 #define WLSEG_MAXHOMDIM(n) ((n)->varno)
-#define WLSEG_HOMSV(n) ((int *)((n)->mask[6]))
+#define WLSEG_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
 
 /*--------------------------------------------------------------------------*/
 

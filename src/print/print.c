@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2001/03/19 16:43:58  dkr
+ * WLSEG_HOMSV removed (WLSEG_SV used instead)
+ *
  * Revision 3.30  2001/03/15 20:35:16  dkr
  * PrintAssign: DBUG-string PRINT_PROFILE is handled correctly now
  *
@@ -4482,9 +4485,6 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, "ubv: ");
             PRINT_VECT (outfile, WLSEG_UBV (arg_node), WLSEG_DIMS (arg_node), "%i");
 
-            fprintf (outfile, ", ");
-            fprintf (outfile, "homsv: ");
-            PRINT_VECT (outfile, WLSEG_HOMSV (arg_node), WLSEG_DIMS (arg_node), "%i");
             fprintf (outfile, ", ");
             fprintf (outfile, "maxhomdim: %i", WLSEG_MAXHOMDIM (arg_node));
 

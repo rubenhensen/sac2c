@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2001/03/19 16:45:05  dkr
+ * WLSEG_HOMSV removed (WLSEG_SV used instead)
+ *
  * Revision 3.20  2001/03/19 14:22:45  nmw
  * AVIS_ASSIGN2 added
  *
@@ -1731,7 +1734,6 @@ DupWLseg (node *arg_node, node *arg_info)
         WLSEG_SCHEDULING (new_node) = SCHCopyScheduling (WLSEG_SCHEDULING (arg_node));
     }
     WLSEG_MAXHOMDIM (new_node) = WLSEG_MAXHOMDIM (arg_node);
-    DUPVECT (WLSEG_HOMSV (new_node), WLSEG_HOMSV (arg_node), WLSEG_DIMS (new_node), int);
 
     CopyCommonNodeData (new_node, arg_node);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/03/19 16:44:07  dkr
+ * WLSEG_HOMSV removed (WLSEG_SV used instead)
+ *
  * Revision 3.21  2001/03/16 11:56:29  nmw
  * AVIS_SSAPHITRAGET type changed
  *
@@ -1745,7 +1748,6 @@ MakeWLseg (int dims, node *contents, node *next)
      * starting by 0, we must set MAXHOMDIM to -1 here.
      */
     WLSEG_MAXHOMDIM (new_node) = -1;
-    WLSEG_HOMSV (new_node) = NULL;
 
     DBUG_RETURN (new_node);
 }
