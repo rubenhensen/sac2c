@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1998/02/25 09:21:08  cg
+ * Unnecessary global variable removed.
+ *
  * Revision 1.15  1998/02/06 13:33:19  srs
  * extern int opt_wlf;
  *
@@ -51,21 +54,27 @@
  *
  */
 
+/*
+ * File : globals.c
+ *
+ * Declaration of global variables
+ * which are all defined and initialized in globals.c
+ *
+ */
+
 #ifndef _sac_globals_h
 
 #define _sac_globals_h
 
-/*
- *  This header file contains external declarations for all global
- *  variables which are defined and initialized in main.c
- */
-
 #include "types.h"
+
+#include <stdio.h>
+
+#define MAX_BREAK_SPECIFIER 32
 
 extern FILE *outfile;
 
 extern char sacfilename[];
-extern char prgname[];
 extern char outfilename[];
 extern char modulename[];
 extern char cfilename[];
@@ -77,57 +86,74 @@ extern file_type filetype;
 extern char *cppvars[];
 extern int num_cpp_vars;
 
-extern int Ccodeonly;
-extern int break_compilation;
-
-extern int optimize;
 extern int sac_optimize;
+extern int psi_optimize;
+extern int backend_optimize;
+
 extern int opt_dcr;
 extern int opt_dfr;
 extern int opt_cf;
-extern int opt_wr;
 extern int opt_lir;
 extern int opt_inl;
 extern int opt_unr;
 extern int opt_uns;
-extern int opt_ae;
 extern int opt_cse;
 extern int opt_wlf;
+
+extern int opt_ae;
+extern int opt_ive;
+
+extern int opt_rco;
 
 extern int optvar;
 extern int inlnum;
 extern int unrnum;
 extern int minarray;
-
 extern int max_overload;
 extern int max_optcycles;
-extern int psi_optimize;
-extern int psi_opt_ive;
 
-extern int opt_rco;
 extern int show_refcnt;
 extern int show_idx;
 extern int show_icm;
+
 extern int traceflag;
 extern int profileflag;
-
-extern int breakae;
-
 extern int check_boundary;
-extern int cleanup;
 extern int check_malloc;
 
 extern int useranlib;
 extern int libstat;
 extern int linkstyle;
+extern int cleanup;
+extern int makedeps;
+extern compiler_phase_t break_after;
+extern char break_specifier[];
 
 extern int print_objdef_for_header_file;
 extern int function_counter;
-
 extern deps *dependencies;
 
 extern unsigned int total_allocated_mem;
 extern unsigned int current_allocated_mem;
 extern unsigned int max_allocated_mem;
+
+extern int errors;
+extern int warnings;
+extern int last_indent;
+extern int current_line_length;
+extern int message_indent;
+extern int verbose_level;
+extern compiler_phase_t compiler_phase;
+
+extern char *filename;
+extern char *compiler_phase_name[];
+extern char error_message_buffer[];
+
+extern compiler_phase_t dbug_from;
+extern compiler_phase_t dbug_to;
+extern int dbug_active;
+extern char *dbug_str;
+
+extern int Make_Old2NewWith;
 
 #endif /* _sac_globals_h */
