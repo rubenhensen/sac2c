@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/09 20:03:06  sah
+ * fixed q bug
+ *
  * Revision 1.7  2004/11/09 18:16:05  sah
  * noew fundefs and fundecs can be mixed
  *
@@ -308,11 +311,11 @@ def4: fundec def4
       }
     | wlcomp_pragma_global main def5
       { $$ = $3;
-        MODUL_FUNS( $$) = AppendFundef( MODUL_FUNDECS( $$), $2);
+        MODUL_FUNS( $$) = AppendFundef( MODUL_FUNS( $$), $2);
       } 
     | wlcomp_pragma_global fundef def4
-      { $$ = $2;
-        MODUL_FUNS( $$) = AppendFundef( MODUL_FUNDECS( $$), $1);
+      { $$ = $3;
+        MODUL_FUNS( $$) = AppendFundef( MODUL_FUNS( $$), $2);
       }
     | def5
       { $$ = $1;
