@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.112  2004/11/26 02:17:26  sah
+ * fixed a comment
+ *
  * Revision 3.111  2004/11/26 00:04:56  skt
  * some changes during SACDevCampDK 2k4 - go on at HERE
  *
@@ -421,15 +424,19 @@ TCcountTypes (types *type)
     DBUG_RETURN (count);
 }
 
-//******************************************************************************
-**Function : *type *
-             TCgetTypesLine (types *type, int line)
-    * *Description : *line
-  > 0 : generate an error message if error occurs.*otherwise
-    : DBUG assert
-        .******************************************************************************* /
+/******************************************************************************
+ *
+ * Function:
+ *   type *TCgetTypesLine( types* type, int line)
+ *
+ * Description:
+ *   line > 0:  generate an error message if error occurs.
+ *   otherwise: DBUG assert.
+ *
+ ******************************************************************************/
 
-      types *TCgetTypesLine (types *type, int line)
+types *
+TCgetTypesLine (types *type, int line)
 {
     node *tdef;
     types *res_type = NULL;
