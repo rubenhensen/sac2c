@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/21 17:50:17  dkr
+ * Inlining recoded
+ *
  * Revision 3.3  2001/02/13 17:16:19  dkr
  * MakeNode() eliminated
  *
@@ -59,54 +62,7 @@
  *   NORMAL -> DUP_NORMAL
  *   INVARIANT -> DUP_INVARIANT
  *
- * Revision 1.15  1998/02/06 11:21:11  srs
- * optimize.h was included twice
- *
- * Revision 1.14  1997/04/30 11:50:55  cg
- * links to global object definitions now stored in artificial variable
- * declarations when functions using global objects are inlined.
- *
- * Revision 1.13  1997/04/25  12:26:28  sbs
- * changed MAlloc to Malloc
- *
- * Revision 1.12  1996/01/17  14:40:57  asi
- * added globals.h
- *
- * Revision 1.11  1995/12/21  15:26:46  asi
- * INLblock removed
- *
- * Revision 1.10  1995/12/13  17:33:40  asi
- * added #ifndef NEWTREE for new virtuell syntaxtree
- *
- * Revision 1.9  1995/12/07  16:17:40  asi
- * changed to new access macros and new Make-functions
- * bug fixed: functions without arguments or without local variables
- *            will be inlined correctly now
- *
- * Revision 1.8  1995/10/06  16:35:40  cg
- * calls to MakeIds adjusted to new signature (3 parameters)
- *
- * Revision 1.7  1995/07/24  09:09:34  asi
- * macro TYPES renamed to INL_TYPES
- *
- * Revision 1.6  1995/06/26  09:26:22  asi
- * inlineing in functions with inline tag disabled
- *
- * Revision 1.5  1995/06/23  13:48:10  asi
- * parameter added to functioncall DuplicateTypes in INLvar
- *
- * Revision 1.4  1995/06/08  10:03:44  asi
- * added multi inlineing and some bugs fixed
- *
- * Revision 1.3  1995/06/02  15:55:56  asi
- * Bug fixed in INLfundef
- *
- * Revision 1.2  1995/06/02  11:28:18  asi
- * Added Inline, INLfundef, INLblock, INLMakeLet, DoInline, INLassign,
- *       RenameInlinedVar, SetDeclPtr and INLvar.
- *
- * Revision 1.1  1995/05/26  14:22:18  asi
- * Initial revision
+ * [...]
  *
  */
 
@@ -136,86 +92,25 @@
 
 static int inline_nr = 0;
 
-/*
+/******************************************************************************
  *
- *  functionname  : Inline
- *  arguments     : 1) ptr to root of the syntaxtree
- *                  R) ptr to root of the optimized syntaxtree
- *  description   : Starts Function Inlining
+ * Function:
+ *   void ResetInlineNo( node *module)
  *
- */
-
-node *
-Inline (node *arg_node, node *arg_info)
-{
-    funtab *tmp_tab;
-#ifndef DBUG_OFF
-    int mem_inl_fun = inl_fun;
-#endif
-
-    DBUG_ENTER ("Inline");
-    DBUG_PRINT ("OPT", ("FUNCTION INLINING"));
-    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
-    tmp_tab = act_tab;
-    act_tab = inline_tab;
-    arg_info = MakeInfo ();
-
-    arg_node = Trav (arg_node, arg_info);
-
-    DBUG_PRINT ("OPT", ("                        result: %d", inl_fun - mem_inl_fun));
-    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
-    FREE (arg_info);
-    act_tab = tmp_tab;
-    DBUG_RETURN (arg_node);
-}
-
-/*
+ * Description:
  *
- *  functionname  : INLmodul
- *  arguments     : 1) N_modul - node
- *                  2) N_info - node
- *                  R) N_modul - node
- *  description   : stores pointer to first function in info-node
- *                  and traverses function-chain
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : Trav     (traverse.h)
- *  macros        : MODUL_FUNS, FIRST_FUNC
  *
- *  remarks       : ---
- *
- */
+ ******************************************************************************/
 
-node *
-INLmodul (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("INLmodul");
-    if (MODUL_FUNS (arg_node)) {
-        INFO_INL_FIRST_FUNC (arg_info) = MODUL_FUNS (arg_node);
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
-    }
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : InlineNo
- *  arguments     : 1) fist function of modul
- *  description   : temporary attribute FUNDEF_INLREC set to maximun
- *                  of allowed recursive substitutions
- *  global vars   : inlnum
- *
- */
-
-void
-InlineNo (node *first)
+static void
+ResetInlineNo (node *module)
 {
     node *fun_node;
 
-    DBUG_ENTER ("InlineNo");
+    DBUG_ENTER ("ResetInlineNo");
 
-    fun_node = first;
-    while (fun_node) {
+    fun_node = MODUL_FUNS (module);
+    while (fun_node != NULL) {
         if (FUNDEF_INLINE (fun_node)) {
             FUNDEF_INLREC (fun_node) = inlnum;
         }
@@ -225,32 +120,282 @@ InlineNo (node *first)
     DBUG_VOID_RETURN;
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : INLfundef
- *  arguments     : 1) N_fundef - node
- *                  2) N_info - node
- *                  R) N_fundef - node
- *  description   : Traverses instructons if function not inlined marked
+ * Function:
+ *   node *InlineArg( node *arg_node, node *arg_info)
  *
- */
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+InlineArg (node *arg_node, node *arg_info)
+{
+    node *new_vardec;
+    node *new_ass;
+    char *new_name;
+
+    DBUG_ENTER ("InlineArg");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_arg), "no N_arg node found!");
+
+    DBUG_ASSERT ((INFO_INL_ARG (arg_info) != NULL), "INFO_INL_ARG not found!");
+    DBUG_ASSERT ((NODE_TYPE (INFO_INL_ARG (arg_info)) == N_exprs),
+                 "illegal INFO_INL_ARG found!");
+
+    /*
+     * build a new vardec based on 'arg_node' and rename it
+     */
+    new_vardec = MakeVardecFromArg (arg_node);
+    new_name = CreateInlineName (ARG_NAME (arg_node));
+    FREE (VARDEC_NAME (new_vardec));
+    VARDEC_NAME (new_vardec) = new_name;
+
+    /*
+     * insert new vardec into INFO_INL_VARDECS chain
+     */
+    VARDEC_NEXT (new_vardec) = INFO_INL_VARDECS (arg_info);
+    INFO_INL_VARDECS (arg_info) = new_vardec;
+
+    /*
+     * insert ['arg_node', 'new_vardec'] into INFO_INL_LUT
+     */
+    INFO_INL_LUT (arg_info)
+      = InsertIntoLUT (INFO_INL_LUT (arg_info), arg_node, new_vardec);
+
+    /*
+     * insert assignment
+     *   VARDEC_NAME( new_vardec) = EXPRS_EXPR( INFO_INL_ARG( arg_info));
+     * into INFO_INL_PROLOG
+     */
+    new_ass = MakeAssignLet (StringCopy (new_name), new_vardec,
+                             DupTree (EXPRS_EXPR (INFO_INL_ARG (arg_info))));
+    ASSIGN_NEXT (new_ass) = INFO_INL_PROLOG (arg_info);
+    INFO_INL_PROLOG (arg_info) = new_ass;
+
+    if (ARG_NEXT (arg_node)) {
+        INFO_INL_ARG (arg_info) = EXPRS_NEXT (INFO_INL_ARG (arg_info));
+        ARG_NEXT (arg_node) = InlineArg (ARG_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *InlineVardec( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+InlineVardec (node *arg_node, node *arg_info)
+{
+    node *new_vardec;
+    char *new_name;
+
+    DBUG_ENTER ("InlineVardec");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_vardec), "no N_vardec node found!");
+
+    /*
+     * build a new vardec based on 'arg_node' and rename it
+     */
+    new_vardec = DupTree (arg_node);
+    new_name = CreateInlineName (VARDEC_NAME (arg_node));
+    FREE (VARDEC_NAME (new_vardec));
+    VARDEC_NAME (new_vardec) = new_name;
+
+    /*
+     * insert new vardec into INFO_INL_VARDECS chain
+     */
+    VARDEC_NEXT (new_vardec) = INFO_INL_VARDECS (arg_info);
+    INFO_INL_VARDECS (arg_info) = new_vardec;
+
+    /*
+     * insert ['arg_node', 'new_vardec'] into INFO_INL_LUT
+     */
+    INFO_INL_LUT (arg_info)
+      = InsertIntoLUT (INFO_INL_LUT (arg_info), arg_node, new_vardec);
+
+    if (VARDEC_NEXT (arg_node)) {
+        VARDEC_NEXT (arg_node) = InlineVardec (VARDEC_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *InlineReturn( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+InlineReturn (node *arg_node, node *arg_info)
+{
+    node *exprs;
+
+    DBUG_ENTER ("InlineReturn");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_return), "no N_return node found!");
+
+    exprs = RETURN_EXPRS (arg_node);
+    while (exprs != NULL) {
+        DBUG_ASSERT ((INFO_INL_IDS (arg_info) != NULL), "INFO_INL_IDS not found!");
+
+        /*
+         * insert assignment
+         *   INFO_INL_IDS( arg_info) = DupTree( EXPRS_EXPR( exprs), INFO_INL_LUT);
+         * into INFO_INL_EPILOG
+         */
+        INFO_INL_EPILOG (arg_info)
+          = MakeAssign (MakeLet (DupTreeLUT_Type (EXPRS_EXPR (exprs),
+                                                  INFO_INL_LUT (arg_info), DUP_INLINE),
+                                 DupOneIds (INFO_INL_IDS (arg_info))),
+                        INFO_INL_EPILOG (arg_info));
+
+        INFO_INL_IDS (arg_info) = IDS_NEXT (INFO_INL_IDS (arg_info));
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *DoInline( node *let_node, node *arg_info)
+ *
+ * Description:
+ *   Do function inlining. Returns a N_assign chain.
+ *
+ ******************************************************************************/
+
+static node *
+DoInline (node *let_node, node *arg_info)
+{
+    node *ap_node;
+    node *inl_fundef;
+    node *inl_nodes;
+
+    DBUG_ENTER ("DoInline");
+
+    DBUG_ASSERT ((arg_info != NULL), "DoInline called with (arg_info == NULL)!");
+    DBUG_ASSERT ((NODE_TYPE (let_node) == N_let), "DoInline called with no N_let node!");
+
+    ap_node = LET_EXPR (let_node);
+    inl_fundef = AP_FUNDEF (ap_node);
+
+    DBUG_PRINT ("INL", ("Inlining function %s", AP_NAME (ap_node)));
+
+    INFO_INL_LUT (arg_info) = GenerateLUT ();
+    INFO_INL_PROLOG (arg_info) = NULL;
+    INFO_INL_EPILOG (arg_info) = NULL;
+    inl_fun++;
+
+    /*
+     * generate new vardecs and fill INFO_INL_LUT
+     */
+    if (FUNDEF_VARDEC (inl_fundef) != NULL) {
+        FUNDEF_VARDEC (inl_fundef) = InlineVardec (FUNDEF_VARDEC (inl_fundef), arg_info);
+    }
+
+    /*
+     * generate new vardecs, fill INFO_INL_LUT and generate prolog assignments
+     */
+    if (FUNDEF_ARGS (inl_fundef) != NULL) {
+        INFO_INL_ARG (arg_info) = AP_ARGS (ap_node);
+        FUNDEF_ARGS (inl_fundef) = InlineArg (FUNDEF_ARGS (inl_fundef), arg_info);
+    }
+
+    /*
+     * generate epilog assignments
+     *
+     * *** CAUTION ***
+     * FUNDEF_RETURN must be traversed after FUNDEF_VARDEC and FUNDEF_ARGS !!
+     */
+    if (FUNDEF_RETURN (inl_fundef) != NULL) {
+        INFO_INL_IDS (arg_info) = LET_IDS (let_node);
+        FUNDEF_RETURN (inl_fundef) = InlineReturn (FUNDEF_RETURN (inl_fundef), arg_info);
+    }
+
+    /*
+     * duplicate function body (with LUT to get the right back-references!)
+     */
+    INFO_DUP_TYPE (arg_info) = DUP_INLINE;
+    inl_nodes = DupTreeLUT_Type (BLOCK_INSTR (FUNDEF_BODY (inl_fundef)),
+                                 INFO_INL_LUT (arg_info), DUP_INLINE);
+
+    /*
+     * insert INFO_INL_PROLOG, INFO_INL_EPILOG
+     */
+    inl_nodes = AppendAssign (INFO_INL_PROLOG (arg_info), inl_nodes);
+    inl_nodes = AppendAssign (inl_nodes, INFO_INL_EPILOG (arg_info));
+
+    inline_nr++;
+    INFO_INL_LUT (arg_info) = RemoveLUT (INFO_INL_LUT (arg_info));
+
+    DBUG_RETURN (inl_nodes);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *INLmodul( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Stores pointer to module in info-node and traverses function-chain.
+ *
+ ******************************************************************************/
+
+node *
+INLmodul (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("INLmodul");
+
+    if (MODUL_FUNS (arg_node)) {
+        INFO_INL_MODUL (arg_info) = arg_node;
+        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *INLfundef( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Traverses instructons if function not inlined marked
+ *
+ ******************************************************************************/
 
 node *
 INLfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INLfundef");
 
-    if (FUNDEF_BODY (arg_node) && (!FUNDEF_INLINE (arg_node))) {
+    if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_INLINE (arg_node))) {
         DBUG_PRINT ("INL", ("*** Trav function %s", FUNDEF_NAME (arg_node)));
 
-        InlineNo (INFO_INL_FIRST_FUNC (arg_info));
-
-        INFO_INL_TYPES (arg_info) = NULL;
+        ResetInlineNo (INFO_INL_MODUL (arg_info));
+        INFO_INL_VARDECS (arg_info) = NULL;
 
         FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
 
         FUNDEF_VARDEC (arg_node)
-          = AppendNodeChain (0, INFO_INL_TYPES (arg_info), FUNDEF_VARDEC (arg_node));
+          = AppendVardec (FUNDEF_VARDEC (arg_node), INFO_INL_VARDECS (arg_info));
     }
 
     if (FUNDEF_NEXT (arg_node)) {
@@ -260,99 +405,102 @@ INLfundef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : DoInline
- *  arguments     : 1) N_let - node
- *                  2) N_ap - node
- *                  3) N_info - node
- *                  R) N_assign - chain
- *  description   : Do funcion inlining
- *  global vars   : inline_nr
- *  internal funs : RenameInlinedVar, SearchDecl
- *  external funs : Trav            (traverse.h)
- *                  DupTree         (DupTree.h)
- *                  MakeAssignLet   (tree_compound.h)
- *                  AppendNodeChain (tree.h)
- *  macros        : AP_NAME, BLOCK_VARDEC, FUNDEF_BODY, AP_FUNDEF, FUNDEF_ARGS,
- *                  DUPTYPE, DUP_NORMAL, ARG_NAME, INL_TYPES, ASSIGN_INSTR, VARDEC_NEXT,
- *                  EXPRS_NEXT, NEWTREE, IDS_NEXT, DUP_INLINE,
+ * Function:
+ *   node *INLassign( node *arg_node, node *arg_info)
  *
- */
+ * Description:
+ *   Initiates function inlining if substitution-counter not 0
+ *
+ ******************************************************************************/
 
 node *
-DoInline (node *let_node, node *ap_node, node *arg_info)
+INLassign (node *arg_node, node *arg_info)
 {
-    node *inl_nodes, *header_nodes = NULL, *bottom_nodes = NULL, *var_node, *expr_node,
-                     *new_expr, *vardec_node;
-    ids *ids_node;
+    node *instr;
+    node *inl_fundef = NULL;
+    node *inlined_nodes = NULL;
+
+    DBUG_ENTER ("INLassign");
+
+    instr = ASSIGN_INSTR (arg_node);
+    if ((NODE_TYPE (instr) == N_let) && (NODE_TYPE (LET_EXPR (instr)) == N_ap)) {
+        /*
+         * application -> try to inline
+         */
+        inl_fundef = AP_FUNDEF (LET_EXPR (instr));
+
+        DBUG_PRINT ("INL", ("Function call %s found in line %d with"
+                            " inline %d and to do %d",
+                            AP_NAME (LET_EXPR (instr)), NODE_LINE (arg_node),
+                            FUNDEF_INLINE (inl_fundef), FUNDEF_INLREC (inl_fundef)));
+
+        if (FUNDEF_INLREC (inl_fundef) > 0) {
+            inlined_nodes = DoInline (instr, arg_info);
+        }
+    }
+
+    if (inlined_nodes != NULL) {
+        /*
+         * inlining done
+         *  -> traverse inline code
+         *  -> insert inline code into assignment chain
+         */
+
+        /* 'inl_fundef' definitly is set, since (inlined_nodes != NULL) */
+        FUNDEF_INLREC (inl_fundef)--;
+        inlined_nodes = Trav (inlined_nodes, arg_info);
+        FUNDEF_INLREC (inl_fundef)++;
+
+        if (ASSIGN_NEXT (arg_node)) {
+            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        }
+
+        arg_node = AppendAssign (inlined_nodes, FreeNode (arg_node));
+    } else {
+        /*
+         * no inlining done -> traverse sons
+         */
+
+        if (ASSIGN_INSTR (arg_node)) {
+            ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        }
+
+        if (ASSIGN_NEXT (arg_node)) {
+            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   char *CreateInlineName( char *old_name)
+ *
+ * Description:
+ *   Renames the given variable.
+ *   Example:
+ *     a  ->  _inl100_a     if (inline_nr == 100) and (INLINE_PREFIX == "_inl")
+ *
+ ******************************************************************************/
+
+char *
+CreateInlineName (char *old_name)
+{
     char *new_name;
 
-    DBUG_ENTER ("DoInline");
-    DBUG_PRINT ("INL", ("Inlineing function %s", AP_NAME (ap_node)));
+    DBUG_ENTER ("CreateInlineName");
 
-    DBUG_ASSERT ((arg_info != NULL), ("DoInline called with NULL arg_info!"));
+    new_name = (char *)MALLOC (sizeof (char)
+                               * (strlen (old_name) + INLINE_PREFIX_LENGTH + 1 + /* _ */
+                                  NumberOfDigits (inline_nr) + 1)); /* '\0' */
 
-    inl_fun++;
-    /*
-     * Generate new variables
-     */
-    if (BLOCK_VARDEC (FUNDEF_BODY (AP_FUNDEF (ap_node))))
-        BLOCK_VARDEC (FUNDEF_BODY (AP_FUNDEF (ap_node)))
-          = Trav (BLOCK_VARDEC (FUNDEF_BODY (AP_FUNDEF (ap_node))), arg_info);
-    if (FUNDEF_ARGS (AP_FUNDEF (ap_node)))
-        FUNDEF_ARGS (AP_FUNDEF (ap_node))
-          = Trav (FUNDEF_ARGS (AP_FUNDEF (ap_node)), arg_info);
+    sprintf (new_name, INLINE_PREFIX "%d_%s", inline_nr, old_name);
 
-    /*
-     * Make header for inlined function
-     */
-    var_node = FUNDEF_ARGS (AP_FUNDEF (ap_node));
-    expr_node = AP_ARGS (ap_node);
-
-    INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
-
-    while (var_node && expr_node) {
-        new_name = RenameInlinedVar (ARG_NAME (var_node));
-        vardec_node = SearchDecl (new_name, INFO_INL_TYPES (arg_info));
-        new_expr = DupTreeInfo (EXPRS_EXPR (expr_node), arg_info);
-        inl_nodes = MakeAssignLet (new_name, vardec_node, new_expr);
-        header_nodes = AppendNodeChain (1, inl_nodes, header_nodes);
-        var_node = VARDEC_NEXT (var_node);
-        expr_node = EXPRS_NEXT (expr_node);
-    }
-
-    /*
-     * Make bottom for inlined function
-     */
-    ids_node = LET_IDS (let_node);
-    expr_node = RETURN_EXPRS (FUNDEF_RETURN (AP_FUNDEF (ap_node)));
-
-    INFO_DUP_TYPE (arg_info) = DUP_INLINE;
-
-    while (ids_node && expr_node) {
-        new_name = StringCopy (IDS_NAME (ids_node));
-        new_expr = DupTreeInfo (EXPRS_EXPR (expr_node), arg_info);
-        inl_nodes = MakeAssignLet (new_name, IDS_VARDEC (ids_node), new_expr);
-        bottom_nodes = AppendNodeChain (1, inl_nodes, bottom_nodes);
-        ids_node = IDS_NEXT (ids_node);
-        expr_node = EXPRS_NEXT (expr_node);
-    }
-
-    /*
-     * Duplicate function (with variable renameing)
-     */
-    INFO_DUP_TYPE (arg_info) = DUP_INLINE;
-    inl_nodes = DupTreeInfo (BLOCK_INSTR (FUNDEF_BODY (AP_FUNDEF (ap_node))), arg_info);
-
-    /*
-     * Link it together
-     */
-    inl_nodes = AppendNodeChain (1, inl_nodes, bottom_nodes);
-    inl_nodes = AppendNodeChain (1, header_nodes, inl_nodes);
-
-    inline_nr++;
-    DBUG_RETURN (inl_nodes);
+    DBUG_RETURN (new_name);
 }
 
 /******************************************************************************
@@ -374,199 +522,61 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
 node *
 InlineSingleApplication (node *let_node, node *fundef_node)
 {
-    node *arg_info, *assigns;
+    node *arg_info;
+    node *assigns;
     funtab *mem_tab;
 
     DBUG_ENTER ("InlineSingleApplication");
 
     mem_tab = act_tab;
     act_tab = inline_tab;
-
     arg_info = MakeInfo ();
-    INFO_INL_TYPES (arg_info) = FUNDEF_VARDEC (fundef_node);
+    INFO_INL_VARDECS (arg_info) = FUNDEF_VARDEC (fundef_node);
 
-    assigns = DoInline (let_node, LET_EXPR (let_node), arg_info);
+    assigns = DoInline (let_node, arg_info);
 
-    FUNDEF_VARDEC (fundef_node) = INFO_INL_TYPES (arg_info);
-    FREE (arg_info);
-
+    FUNDEF_VARDEC (fundef_node) = INFO_INL_VARDECS (arg_info);
+    FreeTree (arg_info);
     act_tab = mem_tab;
 
     DBUG_RETURN (assigns);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : INLassign
- *  arguments     : 1) N_assign - chain
- *                  2) N_info - node
- *                  R) N_assign - chain
- *  description   : Initiate function inlining if substitution-counter not 0
+ * Function:
+ *   node *Inline( node *arg_node, node *arg_info)
  *
- */
+ * Description:
+ *   Starts function inlining.
+ *
+ ******************************************************************************/
 
 node *
-INLassign (node *arg_node, node *arg_info)
+Inline (node *arg_node, node *arg_info)
 {
-    node *node_behind = NULL;
-    node *inlined_nodes = NULL;
+    funtab *mem_tab;
+#ifndef DBUG_OFF
+    int mem_inl_fun = inl_fun;
+#endif
 
-    DBUG_ENTER ("INLassign");
+    DBUG_ENTER ("Inline");
 
-    if (N_let == NODE_TYPE (ASSIGN_INSTR (arg_node))) {
-        node_behind = NodeBehindCast (LET_EXPR ((ASSIGN_INSTR (arg_node))));
-        if (N_ap == NODE_TYPE (node_behind)) {
-            DBUG_PRINT ("INL",
-                        ("Function call %s found in line %d with inline %d and to do %d",
-                         AP_NAME (node_behind), NODE_LINE (arg_node),
-                         FUNDEF_INLINE (AP_FUNDEF (node_behind)),
-                         FUNDEF_INLREC (AP_FUNDEF (node_behind))));
-            if (0 < FUNDEF_INLREC (AP_FUNDEF (node_behind))) {
-                inlined_nodes = DoInline (ASSIGN_INSTR (arg_node), node_behind, arg_info);
-            }
-        }
-    }
+    DBUG_PRINT ("OPT", ("FUNCTION INLINING"));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
 
-    if (!inlined_nodes) {
-        /* Trav if-then-else and loops */
-        if (ASSIGN_INSTR (arg_node))
-            ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-        /* Trav next assign */
-        if (ASSIGN_NEXT (arg_node))
-            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-    } else {
-        FUNDEF_INLREC (AP_FUNDEF (node_behind))--;
-        /* node_behind definitly is set, since inlined_nodes != NULL!! */
-        inlined_nodes = Trav (inlined_nodes, arg_info);
-        FUNDEF_INLREC (AP_FUNDEF (node_behind))++;
+    mem_tab = act_tab;
+    act_tab = inline_tab;
+    arg_info = MakeInfo ();
 
-        if (ASSIGN_NEXT (arg_node))
-            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-        arg_node = AppendNodeChain (1, inlined_nodes, FreeNode (arg_node));
-    }
+    arg_node = Trav (arg_node, arg_info);
 
-    DBUG_RETURN (arg_node);
-}
+    DBUG_PRINT ("OPT", ("                        result: %d", inl_fun - mem_inl_fun));
 
-/*
- *
- *  functionname  : RenameInlinedVar
- *  arguments     : 1) character string
- *                  R) character string
- *  description   : rename variable, for example a -> _inl100_a, if inline_nr == 100
- *                  and INLINE_PREFIX == _inl
- *  global vars   : inline_nr
- *  internal funs : ---
- *  external funs : sizeof, strlen, sprintf
- *                  Malloc                  (optimize.h)
- *  macros        : INLINE_PREFIX, INLINE_PREFIX_LENGTH
- *
- *  remarks       : ---
- *
- */
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
 
-char *
-RenameInlinedVar (char *old_name)
-{
-    char *new_name;
-
-    DBUG_ENTER ("RenameInlinedVar");
-
-    new_name = (char *)Malloc (sizeof (char)
-                               * (strlen (old_name) + INLINE_PREFIX_LENGTH + 1 + /* _ */
-                                  5 +  /* max length of inline_nr */
-                                  1)); /* #0 at eol */
-    sprintf (new_name, INLINE_PREFIX "%d_%s", inline_nr, old_name);
-
-    DBUG_RETURN (new_name);
-}
-
-/*
- *
- *  functionname  : INLvar
- *  arguments     : 1) N_vardec - or N_arg - chain
- *                  2) N_info - node
- *                  R) N_vardec - or N_arg - chain
- *  description   : Duplicates and renames 1) for function inlining
- *  global vars   : ---
- *  internal funs : RenameInlinedVar, SearchDecl
- *
- *  remarks       : ---
- *
- */
-
-node *
-INLarg (node *arg_node, node *arg_info)
-{
-    char *new_name;
-    types *new_type;
-    node *new_vardec;
-
-    DBUG_ENTER ("INLarg");
-
-    DBUG_ASSERT ((N_arg == NODE_TYPE (arg_node)), "wrong node type");
-
-    new_name = RenameInlinedVar (ARG_NAME (arg_node));
-    if (!SearchDecl (new_name, INFO_INL_TYPES (arg_info))) {
-        new_type = DupTypes (ARG_TYPE (arg_node));
-
-        new_vardec = MakeVardec (new_name, new_type, INFO_INL_TYPES (arg_info));
-        VARDEC_STATUS (new_vardec) = ARG_STATUS (arg_node);
-        VARDEC_ATTRIB (new_vardec) = ARG_ATTRIB (arg_node);
-        INFO_INL_TYPES (arg_info) = new_vardec;
-
-        VARDEC_OBJDEF (INFO_INL_TYPES (arg_info)) = ARG_OBJDEF (arg_node);
-        /*
-         * Here, a possible link to the original global object definition
-         * stored within
-         * an artificial function argument is copied to the respective
-         * artificial variable declaration.
-         */
-
-    } else {
-        FREE (new_name);
-    }
-
-    if (ARG_NEXT (arg_node)) {
-        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-INLvardec (node *arg_node, node *arg_info)
-{
-    char *new_name;
-    types *new_type;
-    node *new_vardec;
-
-    DBUG_ENTER ("INLvardec");
-    DBUG_ASSERT (N_vardec == NODE_TYPE (arg_node), ("wrong node type"));
-
-    new_name = RenameInlinedVar (VARDEC_NAME (arg_node));
-    if (!SearchDecl (new_name, INFO_INL_TYPES (arg_info))) {
-        new_type = DupTypes (VARDEC_TYPE (arg_node));
-
-        new_vardec = MakeVardec (new_name, new_type, INFO_INL_TYPES (arg_info));
-        VARDEC_STATUS (new_vardec) = ARG_STATUS (arg_node);
-        VARDEC_ATTRIB (new_vardec) = ARG_ATTRIB (arg_node);
-        INFO_INL_TYPES (arg_info) = new_vardec;
-
-        VARDEC_OBJDEF (INFO_INL_TYPES (arg_info)) = VARDEC_OBJDEF (arg_node);
-        /*
-         * Here, a possible link to the original global object definition
-         * stored within
-         * an artificial function argument is copied to the respective
-         * artificial variable declaration.
-         */
-    } else {
-        FREE (new_name);
-    }
-
-    if (VARDEC_NEXT (arg_node)) {
-        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
-    }
+    FreeTree (arg_info);
+    act_tab = mem_tab;
 
     DBUG_RETURN (arg_node);
 }
