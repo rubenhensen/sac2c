@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/01/30 12:22:22  dkr
+ * signature of ICMs WL_NOOP, WL_NOOP__OFFSET modified
+ *
  * Revision 3.6  2001/01/24 23:38:28  dkr
  * type of arguments of ICMs MT_SCHEDULER_..._BEGIN, MT_SCHEDULER_..._END
  * changed from int* to char**
@@ -477,22 +480,24 @@ ICM_END( WL_FOLD, (dims_target, target, idx_vec, dims, idx_scalars))
 
 #if defined(WL_NOOP__OFFSET) || defined(ICM_ALL)
 ICM_DEF( WL_NOOP__OFFSET, TRACE_NONE)
+  ICM_INT(dim)
   ICM_INT(dims_target)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
-ICM_END( WL_NOOP__OFFSET, (dims_target, target, idx_vec, dims, idx_scalars))
+ICM_END( WL_NOOP__OFFSET, (dim, dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
 #if defined(WL_NOOP) || defined(ICM_ALL)
 ICM_DEF( WL_NOOP, TRACE_NONE)
+  ICM_INT(dim)
   ICM_INT(dims_target)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
-ICM_END( WL_NOOP, (dims_target, target, idx_vec, dims, idx_scalars))
+ICM_END( WL_NOOP, (dim, dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
 #if defined(WL_SET_OFFSET) || defined(ICM_ALL)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/01/30 12:22:40  dkr
+ * signature of ICMs WL_NOOP, WL_NOOP__OFFSET modified
+ *
  * Revision 3.4  2001/01/19 11:54:01  dkr
  * some with-loop ICMs renamed
  *
@@ -94,11 +97,11 @@ extern void ICMCompileWL_FOLD__OFFSET (int dims_target, char *target, char *idx_
 extern void ICMCompileWL_FOLD (int dims_target, char *target, char *idx_vec, int dims,
                                char **idx_scalars);
 
-extern void ICMCompileWL_NOOP__OFFSET (int dims_target, char *target, char *idx_vec,
-                                       int dims, char **idx_scalars);
+extern void ICMCompileWL_NOOP__OFFSET (int dim, int dims_target, char *target,
+                                       char *idx_vec, int dims, char **idx_scalars);
 
-extern void ICMCompileWL_NOOP (int dims_target, char *target, char *idx_vec, int dims,
-                               char **idx_scalars);
+extern void ICMCompileWL_NOOP (int dim, int dims_target, char *target, char *idx_vec,
+                               int dims, char **idx_scalars);
 
 extern void ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec,
                                       int dims_wl);

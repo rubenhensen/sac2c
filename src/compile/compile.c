@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/01/30 12:22:28  dkr
+ * signature of ICMs WL_NOOP, WL_NOOP__OFFSET modified
+ *
  * Revision 3.15  2001/01/29 18:34:58  dkr
  * some superfluous attributes of N_WLsegVar removed
  *
@@ -1879,7 +1882,7 @@ GetDim_WL_SET_OFFSET (int dim, node *wl, node *seg)
         /*
          * check whether 'WL_SET_OFFSET' is needed or not
          */
-        if ((first_block_dim < dims) || (NWITH2_NAIVE_COMP (wl_node))) {
+        if (first_block_dim < dims) {
             /*
              * blocking is active
              *  -> insert ICM at the most inner position
@@ -6073,6 +6076,10 @@ COMPWLgridx (node *arg_node, node *arg_info)
             }
         }
 
+        if (!strncmp (icm_name, "WL_NOOP", 7)) {
+            icm_args2 = MakeExprs (MakeNum (WLGRIDX_DIM (arg_node)), icm_args2);
+        }
+
         assigns = AppendAssign (assigns, MakeAssign (MakeIcm1 (icm_name, icm_args2),
                                                      dec_rc_cexpr));
     }
@@ -6119,18 +6126,28 @@ COMPWLgridx (node *arg_node, node *arg_info)
          * (this is a noop-gap in a fold-wl or with activated naive compilation)
          */
         if (NWITH2_MT (wl_node)) {
-            icm_name_begin = "WL_MT_GRID_EMPTY_BEGIN";
-            icm_name_end = "WL_MT_GRID_EMPTY_END";
+            if (WLGRIDX_FITTED (arg_node)) {
+                icm_name_begin = "WL_MT_GRID_EMPTY_BEGIN";
+                icm_name_end = "WL_MT_GRID_EMPTY_END";
+            } else {
+                icm_name_begin = "WL_MT_GRID_FIT_EMPTY_BEGIN";
+                icm_name_end = "WL_MT_GRID_FIT_EMPTY_END";
+            }
         } else {
-            icm_name_begin = "WL_GRID_EMPTY_BEGIN";
-            icm_name_end = "WL_GRID_EMPTY_END";
+            if (WLGRIDX_FITTED (arg_node)) {
+                icm_name_begin = "WL_GRID_EMPTY_BEGIN";
+                icm_name_end = "WL_GRID_EMPTY_END";
+            } else {
+                icm_name_begin = "WL_GRID_FIT_EMPTY_BEGIN";
+                icm_name_end = "WL_GRID_FIT_EMPTY_END";
+            }
         }
     } else if ((NODE_TYPE (arg_node) == N_WLgrid)
                && ((WLGRID_UNROLLING (arg_node))
                    || ((WLGRID_BOUND2 (arg_node) - WLGRID_BOUND1 (arg_node) == 1)
                        && (WLGRID_FITTED (arg_node))))) {
         /*
-         * unrolling  or  (width == 1) and fitted already  or  0->1-grid
+         * unrolling  or  (width == 1) and fitted already
          */
         if (NWITH2_MT (wl_node)) {
             icm_name_begin = "WL_MT_GRID_UNROLL_BEGIN";
