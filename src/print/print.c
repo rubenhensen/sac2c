@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.204  2005/02/16 22:29:13  sah
+ * pragmas are not printed when generating c code
+ *
  * Revision 3.203  2005/02/10 14:27:23  jhb
  * added PRTerror
  *
@@ -1380,8 +1383,10 @@ PRTfundef (node *arg_node, info *arg_info)
 
                 fprintf (global.outfile, ";\n");
 
-                if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                    TRAVdo (FUNDEF_PRAGMA (arg_node), arg_info);
+                if (global.compiler_phase < PH_genccode) {
+                    if (FUNDEF_PRAGMA (arg_node) != NULL) {
+                        TRAVdo (FUNDEF_PRAGMA (arg_node), arg_info);
+                    }
                 }
 
                 fprintf (global.outfile, "\n");
@@ -1454,8 +1459,10 @@ PRTfundef (node *arg_node, info *arg_info)
                 /* traverse function body */
                 TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-                if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                    TRAVdo (FUNDEF_PRAGMA (arg_node), arg_info);
+                if (global.compiler_phase < PH_genccode) {
+                    if (FUNDEF_PRAGMA (arg_node) != NULL) {
+                        TRAVdo (FUNDEF_PRAGMA (arg_node), arg_info);
+                    }
                 }
 
                 if ((FUNDEF_ISSPMDFUN (arg_node))
