@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.8  1995/04/03 14:02:12  sbs
+# Revision 1.9  1995/04/04 09:30:39  sbs
+# make deps done
+#
+# Revision 1.8  1995/04/03  14:02:12  sbs
 # ../compile inserted for icm.data-access
 #
 # Revision 1.7  1995/02/28  18:27:34  asi
@@ -43,8 +46,8 @@ convert.o: /usr/include/stdlib.h ../global/tree.h ../global/type_info.mac
 convert.o: ../global/node_info.mac ../global/prf_node_info.mac
 convert.o: ../../inc/dbug.h /usr/include/stdio.h convert.h
 print.o: /usr/include/stdio.h /usr/include/stdlib.h
-print.o: /usr/include/sys/stdtypes.h /usr/include/string.h ../global/tree.h
-print.o: ../global/type_info.mac ../global/node_info.mac
+print.o: /usr/include/sys/stdtypes.h /usr/include/string.h print.h
+print.o: ../global/tree.h ../global/type_info.mac ../global/node_info.mac
 print.o: ../global/prf_node_info.mac ../global/my_debug.h ../../inc/dbug.h
-print.o: ../global/traverse.h print.h ../global/Error.h convert.h
-print.o: ../optimize/optimize.h
+print.o: ../global/traverse.h ../global/Error.h convert.h
+print.o: ../optimize/optimize.h ../compile/icm.data
