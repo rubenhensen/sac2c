@@ -17,8 +17,6 @@ src/runtime
 src/concurrent
 distrib
 distrib/src
-distrib/srcpacks
-distrib/binpacks
 src/libsac
 src/tools
 src/heapmgr
