@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/02/17 16:28:18  cg
+ * Added test facility for Fun2Lac().
+ *
  * Revision 2.13  2000/02/03 17:03:10  dkr
  * CHECK_DBUG_START/STOP for call of LaC2Fun added
  *
@@ -158,6 +161,7 @@
 #include "Error.h"
 #include "usage.h"
 #include "lac2fun.h"
+#include "fun2lac.h"
 #include "flatten.h"
 #include "print.h"
 #include "typecheck.h"
@@ -409,6 +413,13 @@ main (int argc, char *argv[])
     if (break_after == PH_checkdec)
         goto BREAK;
     compiler_phase++;
+
+#if 0
+  CHECK_DBUG_START;
+  syntax_tree = Fun2Lac( syntax_tree);
+  CHECK_DBUG_STOP;
+  ABORT_ON_ERROR;
+#endif
 
     NOTE_COMPILER_PHASE;
     CHECK_DBUG_START;
