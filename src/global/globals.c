@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2004/08/26 14:02:36  cg
+ * Re-organized default enable/disable settings of optimizations
+ * after non-ssa-based optimizations were removed.
+ * Enable emm (new refcounting) by default.
+ *
  * Revision 3.61  2004/08/12 12:01:31  ktr
  * EMM reuse is now activated by default.
  *
@@ -527,23 +532,43 @@ bool patch_with = FALSE;
  * Command line options for triggering optimizations
  */
 
-#ifdef PRODUCTION
-unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI)
-                        & (~OPT_APL) & (~OPT_DL) & (~OPT_SP) & (~OPT_TSI) & (~OPT_WLFS)
-                        & (~OPT_CVP) & (~OPT_WLPG) & (~OPT_WLS);
-#else /* PRODUCTION */
 /**
  * as long as OPT_SBE is shared with OPT_CVP and OPT_MTO is shared
  * with OPT_WLPG OPT_SBE and OPT_MTO should be not used here
  * to allow to work with OPT_CVP and OPT_WLPG
+ *
+ * We need to convert this mechanism to a mac-file based one with
+ * enumeration type or bit-field as soon as possible!!
  */
-unsigned int optimize = OPT_ALL /*& (~OPT_MTO) & (~OPT_SBE)*/ & (~OPT_MTI) & (~OPT_APL)
-                        & (~OPT_WLFS) & (~OPT_TSI) & (~OPT_WLS);
+#ifdef PRODUCTION
+unsigned int optimize
+  = OPT_ALL
+    /* & (~OPT_MTO) */ /* MT2-based optimization, does not work. */
+                       /* See comment above !! */
+    /* & (~OPT_SBE) */ /* MT2-based optimization, does not work. */
+                       /* See comment above !! */
+    & (~OPT_MTI)       /* MT2-based optimization, does not work. */
+    & (~OPT_APL)       /* Only rudimentary implementation exists. */
+    & (~OPT_TSI)       /* Bugs to be fixed. */
+    & (~OPT_WLFS)      /* Not yet full operational */
+    & (~OPT_WLS);      /* Temporarily switched off until bug #41 is fixed. */
+#else                  /* PRODUCTION */
+unsigned int optimize
+  = OPT_ALL
+    /* & (~OPT_MTO) */ /* MT2-based optimization, does not work. */
+                       /* See comment above !! */
+    /* & (~OPT_SBE) */ /* MT2-based optimization, does not work. */
+                       /* See comment above !! */
+    & (~OPT_MTI)       /* MT2-based optimization, does not work. */
+    & (~OPT_APL)       /* Only rudimentary implementation exists. */
+    & (~OPT_TSI)       /* Bugs to be fixed. */
+    & (~OPT_WLFS)      /* Not yet full operational */
+    & (~OPT_WLS);      /* Temporarily switched off until bug #41 is fixed. */
 
 #endif /* PRODUCTION */
 
 /*
- * flag indicating whether ast has in valid ssa form
+ * flag indicating whether ast is in valid ssa form
  */
 bool valid_ssaform = FALSE;
 
@@ -556,7 +581,7 @@ int ssaform_phase = 0;
 /*
  * do not use explicit memory management by default
  */
-bool emm = FALSE;
+bool emm = TRUE;
 
 /*
  * Do not apply reuse inference in emm by dafault
