@@ -1,5 +1,9 @@
 /* *
  * $Log$
+ * Revision 1.16  2005/01/28 22:34:23  mwe
+ * correct duplication of lac-funs
+ * support for CODE_CEXPRS chain added
+ *
  * Revision 1.15  2005/01/28 16:39:18  mwe
  * debugging
  *
@@ -50,7 +54,9 @@
  * (DONE) DupTree: check if all necessary attributes of FUNDEF are copied (DONE) ast.xml:
  * add missing arguments to FUNDEF (DONE) implement funcond traversal (DONE) implement
  * support for type_error (DONE) implement creation of fungroups (DONE, but maybe find
- * better place for code) comment everything insert DBUG_PRINT's
+ * better place for code) comment everything in doxygen style insert DBUG_PRINT's
+ *   CODE_CEXPRS could contain multiple return values (DONE)
+ *   use FUNDEF_COUNT in a correct way (DONE)
  */
 
 /**************************************************************************
@@ -94,7 +100,7 @@ struct INFO {
     bool chklf;
     int counter;
     ntype *type;
-    ntype *wlexpr;
+    ntype *wlexprs;
     node *bestfit;
     bool then_terr;
     bool else_terr;
@@ -108,7 +114,7 @@ struct INFO {
 #define INFO_TUP_CHECKLOOPFUN(n) (n->chklf)
 #define INFO_TUP_TYPE(n) (n->type)
 #define INFO_TUP_TYPECOUNTER(n) (n->counter)
-#define INFO_TUP_WLEXPR(n) (n->wlexpr)
+#define INFO_TUP_WLEXPRS(n) (n->wlexprs)
 #define INFO_TUP_BESTFITTINGFUN(n) (n->bestfit)
 #define INFO_TUP_THENTYPEERROR(n) (n->then_terr)
 #define INFO_TUP_ELSETYPEERROR(n) (n->else_terr)
@@ -129,7 +135,7 @@ MakeInfo ()
     INFO_TUP_CHECKLOOPFUN (result) = FALSE;
     INFO_TUP_TYPE (result) = NULL;
     INFO_TUP_TYPECOUNTER (result) = 0;
-    INFO_TUP_WLEXPR (result) = NULL;
+    INFO_TUP_WLEXPRS (result) = NULL;
     INFO_TUP_BESTFITTINGFUN (result) = NULL;
     INFO_TUP_THENTYPEERROR (result) = FALSE;
     INFO_TUP_ELSETYPEERROR (result) = FALSE;
@@ -548,9 +554,9 @@ ArgumentIsSpecializeable (ntype *type)
         }
 
     case SS_aks:
-        if ((TYisAKV (type)) || (TYisAKS (type))) {
-            result = FALSE;
-        }
+        /* if ((TYisAKV(type)) || (TYisAKS( type))) {
+           result = FALSE;
+         }*/
         break;
     default:
         DBUG_ASSERT ((FALSE),
@@ -770,10 +776,10 @@ SpecializationOracle (node *fundef, node *args)
  *
  ***************************************************************************/
 static node *
-TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
+TryToSpecializeFunction (node *fundef, node *ap_node, info *arg_info)
 {
 
-    node *fun_args, *given_args;
+    node *fun_args, *given_args, *args;
     bool leave = FALSE;
     bool is_more_special = FALSE;
 
@@ -783,6 +789,7 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
      * check if args are more special than signature of function
      */
 
+    args = AP_ARGS (ap_node);
     given_args = args;
     fun_args = FUNDEF_ARGS (fundef);
 
@@ -824,46 +831,52 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
          * more special types in 'args' found
          */
 
-        if (FUNDEF_ISCONDFUN (fundef)) {
+        if (FUNDEF_ISLACFUN (fundef)) {
+            node *fun;
 
-            /*
-             * function is a conditional function
-             */
+            if (FUNDEF_USED (fundef) > 1) {
+                node *module;
 
-            FUNDEF_ARGS (fundef) = AdjustSignatureToArgs (FUNDEF_ARGS (fundef), args);
-            tup_fdp_expr++;
+                module = TBmakeModule ("dummy", F_prog, NULL, NULL, NULL, NULL, NULL);
+                module = DUPcheckAndDupSpecialFundef (module, fundef, ap_node);
+                fun = MODULE_FUNS (module);
+                MODULE_FUNS (module) = NULL;
+                module = FREEdoFreeNode (module);
 
-        } else if (FUNDEF_ISDOFUN (fundef)) {
+                FUNDEF_ARGS (fun) = AdjustSignatureToArgs (FUNDEF_ARGS (fun), args);
 
-            /*
-             * function is a loop function
-             */
-            node *tmp;
+                if (FUNDEF_ISDOFUN (fundef)) {
+                    node *tmp;
+                    /*
+                     * function is a loop function
+                     */
 
-            tmp = DUPdoDupNode (fundef);
-            FUNDEF_ARGS (tmp) = AdjustSignatureToArgs (FUNDEF_ARGS (tmp), args);
+                    /*
+                     * die selbe Funktionalität wie TUPdoTypeUpgrade, aber:
+                     * prüft bei N_ap auf rekursiven Aufruf und prüft auf passende Typen
+                     * Typen passen: Ergebnis ist 'upgegradete' Funktion
+                     * Typen passen nicht: Ergebnis ist NULL
+                     */
 
-            /*
-             * die selbe Funktionalität wie TUPdoTypeUpgrade, aber:
-             * prüft bei N_ap auf rekursiven Aufruf und prüft auf passende Typen
-             * Typen passen: Ergebnis ist 'upgegradete' Funktion
-             * Typen passen nicht: Ergebnis ist NULL
-             */
-            tmp = TryToDoTypeUpgrade (tmp);
+                    tmp = TryToDoTypeUpgrade (fun);
 
-            if (tmp != NULL) {
-                /*
-                 * it is possible to specialiaze loop function
-                 */
+                    if (tmp != NULL) {
+                        /*
+                         * it is possible to specialiaze loop function
+                         */
 
-                AppendFundef (fundef, tmp);
-                fundef = tmp;
-                tup_fdp_expr++;
-            } else {
-                /*
-                 * it is not possible to specialize loop function
-                 */
-                FREEdoFreeTree (tmp);
+                        AppendFundef (fundef, tmp);
+                        fundef = tmp;
+                        tup_fdp_expr++;
+                    } else {
+                        fun = FREEdoFreeTree (fun);
+                    }
+                }
+                if (FUNDEF_ISCONDFUN (fundef)) {
+
+                    AppendFundef (fundef, fun);
+                    tup_fdp_expr++;
+                }
             }
         } else {
 
@@ -1201,10 +1214,6 @@ TUPfundef (node *arg_node, info *arg_info)
     if (NULL != FUNDEF_BODY (arg_node)) {
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
-
-    if (FUNDEF_USED (arg_node) <= -1) {
-        FUNDEF_USED (arg_node) = -99;
     }
 
     DBUG_RETURN (arg_node);
@@ -1608,11 +1617,8 @@ TUPcode (node *arg_node, info *arg_info)
      */
     tmp = NTCnewTypeCheck_Expr (CODE_CEXPRS (arg_node));
 
-    /*
-     * TODO: change to support multiple result types (not only one product member)
-     */
-    INFO_TUP_WLEXPR (arg_info) = TYcopyType (TYgetProductMember (tmp, 0));
-    tmp = TYfreeType (tmp);
+    INFO_TUP_WLEXPRS (arg_info) = tmp;
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1684,8 +1690,7 @@ TUPap (node *arg_node, info *arg_info)
              * no better fitting specialized functions found
              * try to specialize current function
              */
-            result = TryToSpecializeFunction (AP_FUNDEF (arg_node), AP_ARGS (arg_node),
-                                              arg_info);
+            result = TryToSpecializeFunction (AP_FUNDEF (arg_node), arg_node, arg_info);
         }
 
         if (result != AP_FUNDEF (arg_node)) {
@@ -1791,25 +1796,42 @@ TUPids (node *arg_node, info *arg_info)
 node *
 TUPmodarray (node *arg_node, info *arg_info)
 {
-    ntype *idx, *array, *expr, *prod;
+    ntype *idx, *array, *expr, *prod, *wlexprs, *result, *tmp;
     te_info *info;
+    int count, i;
     DBUG_ENTER ("TUPmodarray");
 
-    idx = TYcopyType (INFO_TUP_WITHINDEX (arg_info));
-    array = NTCnewTypeCheck_Expr (MODARRAY_ARRAY (arg_node));
-    expr = TYcopyType (INFO_TUP_WLEXPR (arg_info));
+    wlexprs = INFO_TUP_WLEXPRS (arg_info);
+    count = TYgetProductSize (wlexprs);
 
-    if (!TYisArray (expr)) {
+    DBUG_ASSERT ((count > 0), "empty product type found");
 
-        DBUG_ASSERT ((TYisArray (expr)), "array type expected");
+    result = TYmakeEmptyProductType (count);
+
+    for (i = 0; i < count; i++) {
+
+        idx = TYcopyType (INFO_TUP_WITHINDEX (arg_info));
+        array = NTCnewTypeCheck_Expr (MODARRAY_ARRAY (arg_node));
+        expr = TYcopyType (TYgetProductMember (wlexprs, i));
+
+        if (!TYisArray (expr)) {
+
+            DBUG_ASSERT ((TYisArray (expr)), "array type expected");
+        }
+
+        info
+          = TEmakeInfo (global.linenum, "with", "", "modarray", NULL, NULL, NULL, NULL);
+        prod = TYmakeProductType (3, idx, array, expr);
+
+        tmp = NTCCTwl_mod (info, prod);
+        result = TYsetProductMember (result, i, TYcopyType (TYgetProductMember (tmp, 0)));
+
+        prod = TYfreeType (prod);
     }
 
-    info = TEmakeInfo (global.linenum, "with", "", "modarray", NULL, NULL, NULL, NULL);
-    prod = TYmakeProductType (3, idx, array, expr);
+    INFO_TUP_TYPE (arg_info) = result;
+    INFO_TUP_WLEXPRS (arg_info) = NULL;
 
-    INFO_TUP_TYPE (arg_info) = NTCCTwl_mod (info, prod);
-
-    INFO_TUP_WLEXPR (arg_info) = NULL;
     DBUG_RETURN (arg_node);
 }
 
@@ -1824,19 +1846,37 @@ TUPmodarray (node *arg_node, info *arg_info)
 node *
 TUPgenarray (node *arg_node, info *arg_info)
 {
-    ntype *idx, *shp, *expr, *dexpr, *prod;
+    ntype *idx, *shp, *expr, *dexpr, *prod, *wlexprs, *result, *tmp;
     te_info *info;
+    int count, i;
     DBUG_ENTER ("TUPgenarray");
 
-    idx = TYcopyType ((INFO_TUP_WITHINDEX (arg_info)));
-    shp = NTCnewTypeCheck_Expr (GENARRAY_SHAPE (arg_node));
-    expr = INFO_TUP_WLEXPR (arg_info);
-    dexpr = NTCnewTypeCheck_Expr (GENARRAY_DEFAULT (arg_node));
+    wlexprs = INFO_TUP_WLEXPRS (arg_info);
+    count = TYgetProductSize (wlexprs);
 
-    prod = TYmakeProductType (4, idx, shp, expr, dexpr);
-    info = TEmakeInfo (global.linenum, "with", "", "genarray", NULL, NULL, NULL, NULL);
+    DBUG_ASSERT ((count > 0), "empty product type found");
 
-    INFO_TUP_TYPE (arg_info) = NTCCTwl_gen (info, prod);
+    result = TYmakeEmptyProductType (count);
+
+    for (i = 0; i < count; i++) {
+
+        idx = TYcopyType ((INFO_TUP_WITHINDEX (arg_info)));
+        shp = NTCnewTypeCheck_Expr (GENARRAY_SHAPE (arg_node));
+        expr = TYcopyType (TYgetProductMember (wlexprs, i));
+        dexpr = NTCnewTypeCheck_Expr (GENARRAY_DEFAULT (arg_node));
+
+        prod = TYmakeProductType (4, idx, shp, expr, dexpr);
+        info
+          = TEmakeInfo (global.linenum, "with", "", "genarray", NULL, NULL, NULL, NULL);
+
+        tmp = NTCCTwl_gen (info, prod);
+        result = TYsetProductMember (result, i, TYcopyType (TYgetProductMember (tmp, 0)));
+
+        prod = TYfreeType (prod);
+    }
+
+    INFO_TUP_TYPE (arg_info) = result;
+    INFO_TUP_WLEXPRS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -1852,20 +1892,37 @@ TUPgenarray (node *arg_node, info *arg_info)
 node *
 TUPfold (node *arg_node, info *arg_info)
 {
-    ntype *neutr, *expr, *prod;
+    ntype *neutr, *expr, *prod, *wlexprs, *result, *tmp;
     te_info *info;
+    int count, i;
     DBUG_ENTER ("TUPfold");
 
-    neutr = NTCnewTypeCheck_Expr (FOLD_NEUTRAL (arg_node));
-    expr = INFO_TUP_WLEXPR (arg_info);
+    wlexprs = INFO_TUP_WLEXPRS (arg_info);
+    count = TYgetProductSize (wlexprs);
 
-    DBUG_ASSERT ((TYisArray (neutr)), "non array node!");
-    DBUG_ASSERT ((TYisArray (expr)), "non array node!");
+    DBUG_ASSERT ((count > 0), "empty product type found");
 
-    prod = TYmakeProductType (2, neutr, expr);
-    info = TEmakeInfo (global.linenum, "with", "", "fold", NULL, NULL, NULL, NULL);
+    result = TYmakeEmptyProductType (count);
 
-    INFO_TUP_TYPE (arg_info) = NTCCTwl_fold (info, prod);
+    for (i = 0; i < count; i++) {
+
+        neutr = NTCnewTypeCheck_Expr (FOLD_NEUTRAL (arg_node));
+        expr = TYcopyType (TYgetProductMember (wlexprs, i));
+
+        DBUG_ASSERT ((TYisArray (neutr)), "non array node!");
+        DBUG_ASSERT ((TYisArray (expr)), "non array node!");
+
+        prod = TYmakeProductType (2, neutr, expr);
+        info = TEmakeInfo (global.linenum, "with", "", "fold", NULL, NULL, NULL, NULL);
+
+        tmp = NTCCTwl_fold (info, prod);
+        result = TYsetProductMember (result, i, TYcopyType (TYgetProductMember (tmp, 0)));
+
+        prod = TYfreeType (prod);
+    }
+
+    INFO_TUP_TYPE (arg_info) = result;
+    INFO_TUP_WLEXPRS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
