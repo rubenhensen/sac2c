@@ -74,7 +74,7 @@ fastlog2 (int value)
     default:
         return (-1);
     }
-} // fastlog2
+} /* fastlog2 */
 
 void
 SAC_CPF_Initialize (int nr_of_cpu, ULINT cachesize1, int cachelinesize1,
@@ -86,11 +86,11 @@ SAC_CPF_Initialize (int nr_of_cpu, ULINT cachesize1, int cachelinesize1,
     int integretyError;
 
     if (cachesize1 > 0) {
-        // init main-structure
+        /* init main-structure */
         cl1->cachesize = cachesize1 * 1024;
         cl1->cachelinesize = cachelinesize1;
         cl1->associativity = associativity1;
-        // integrety checks && evaluate some vars
+        /* integrety checks && evaluate some vars */
         integretyError = 0;
         integretyError = integretyError || (cl1->cachesize % associativity1 != 0);
         cl1->setsize = cl1->cachesize / associativity1;
@@ -103,15 +103,15 @@ SAC_CPF_Initialize (int nr_of_cpu, ULINT cachesize1, int cachelinesize1,
         cl1->max_cachelineindex = cl1->setsize / cl1->cachelinesize;
         if (integretyError) {
             /* cl1=NULL; */
-        } // if
+        }
     } else
         cl1 = NULL;
-} // SAC_CPF_Initialize
+} /* SAC_CPF_Initialize */
 
 void
 SAC_CPF_ReadAccess (void *baseaddress, void *elemaddress)
 {
-    unsigned int cacheline; // unsigned because of right-shift-operation ´>>´
+    unsigned int cacheline; /* unsigned because of right-shift-operation ´>>´ */
     tCacheLevel *act_cl;
     int level = 1, set;
 
@@ -132,4 +132,4 @@ SAC_CPF_ReadAccess (void *baseaddress, void *elemaddress)
         }
         level++;
     }
-} // SAC_CPF_ReadAccess
+} /* SAC_CPF_ReadAccess */
