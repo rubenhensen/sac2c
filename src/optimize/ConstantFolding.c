@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/03/13 15:52:58  asi
+ * Revision 1.9  1995/03/13 16:59:05  asi
+ * changed CFid
+ *
+ * Revision 1.8  1995/03/13  15:52:58  asi
  * changed DupConst
  *
  * Revision 1.7  1995/03/13  13:23:53  asi
@@ -337,7 +340,7 @@ CFid (node *arg_node, node *arg_info)
     node *value;
 
     DBUG_ENTER ("CFid");
-    value = TOS.varlist[arg_node->node[0]->varno];
+    value = TOS.varlist[arg_node->info.ids->node->varno];
     if (value != NULL) {
         switch (value->nodetype) {
         case N_num:
