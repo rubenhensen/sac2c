@@ -154,7 +154,7 @@ add_search_path $bin
 
 
 ######################################################################
-# runtime.tar + stdlib.tar
+# runtime.tar + stdlib.tar + tools.tar
 ######################################################################
 
 ask_for_dir 'Intended location for $SACBASE, i.e., runtime / lib-files?' $base
@@ -188,6 +188,17 @@ if [ -f $SACBASE/stdlib/stdlib.tar ] ; then
   mess "stdlib.tar UNPACKED !!"
 else
   warn "stdlib.tar NOT UNPACKED !!"
+fi
+
+insert_component d tools.tar $base/stdlib/Tools r
+if [ -f $SACBASE/stdlib/Tools/tools.tar ] ; then
+  (cd $SACBASE/stdlib/Tools; tar xvf tools.tar; rm -f tools.tar )
+  chmod -R u+w $SACBASE/stdlib/tools
+  cd $bin
+  ln -s $SACBASE/stdlib/Tools/ctest .
+  mess "tools.tar UNPACKED !!"
+else
+  warn "stools.tar NOT UNPACKED !!"
 fi
 
 if [ -f $SACBASE/stdlib/Makefile ] ; then
