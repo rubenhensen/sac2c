@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.15  2004/11/24 19:40:47  skt
+ * SACDevCampDK 2k4
+ *
  * Revision 1.14  2004/11/23 20:52:11  skt
  * big compiler brushing during SACDevCampDK 2k4
  *
@@ -70,8 +73,6 @@
  *             subphase of the compiler)
  *
  *****************************************************************************/
-
-#define NEW_INFO
 
 #include "types.h"
 #include "tree_basic.h"

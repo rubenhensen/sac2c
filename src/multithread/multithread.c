@@ -1,127 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2004/11/24 19:40:47  skt
+ * SACDevCampDK 2k4
+ *
  * Revision 3.22  2004/11/23 20:52:11  skt
  * big compiler brushing during SACDevCampDK 2k4
  *
- * Revision 3.21  2004/11/23 14:38:13  skt
- * SACDevCampDK 2k4
- *
- * Revision 3.20  2004/11/22 13:47:10  skt
- * code brushing in SACDevCampDK 2004
- *
- * Revision 3.19  2004/09/02 16:01:35  skt
- * support for consolidate_cells added
- *
- * Revision 3.18  2004/08/31 16:58:17  skt
- * new phase (ReplicateFunctions) added
- *
- * Revision 3.17  2004/08/26 17:01:36  skt
- * moved MUTHDecodeExecmode from multithread to multithread_lib
- *
- * Revision 3.16  2004/08/24 16:50:24  skt
- * creation of specialized functions within parallel withloops enabled
- *
- * Revision 3.15  2004/08/19 10:16:04  skt
- * pushed the position of resetting executionmodes_available downwards
- *
- * Revision 3.14  2004/08/17 15:47:39  skt
- * cell_groth enabled
- *
- * Revision 3.13  2004/08/11 09:38:03  skt
- * assignments rearrange enabled
- *
- * Revision 3.12  2004/08/09 03:47:34  skt
- * master run warning fixed
- *
- * Revision 3.11  2004/08/06 10:45:41  skt
- * MUTHDecodeExecmode added
- *
- * Revision 3.10  2004/08/05 13:50:18  skt
- * welcome to the new INFO structure
- *
- * Revision 3.9  2004/08/05 12:04:55  skt
- * MUTHassugn added & removed some trash
- *
- * Revision 3.8  2004/07/29 00:40:54  skt
- * added support for creation of dataflowgraph (mtmode 3)
- *
- * Revision 3.7  2004/07/28 17:47:40  skt
- * superfluous FreeTree removed
- *
- * Revision 3.6  2004/07/26 17:04:37  skt
- * create_cells added
- *
- * Revision 3.5  2004/07/06 12:50:54  skt
- * support for propagate_executionmode added
- *
- * Revision 3.4  2004/06/08 14:51:39  skt
- * tag_executionmode added
- *
- * Revision 3.3  2001/05/17 11:47:00  dkr
- * FREE eliminated
- *
- * Revision 3.2  2001/01/25 10:17:57  dkr
- * PH_spmdregions renamed into PH_multithread
- *
- * Revision 3.1  2000/11/20 18:03:10  sacbase
- * new release made
- *
- * Revision 1.19  2000/04/14 17:43:26  jhs
- * Comments ...
- *
- * Revision 1.18  2000/04/10 15:44:42  jhs
- * Fixed dbprint
- *
- * Revision 1.17  2000/03/30 15:11:47  jhs
- * added AdjustCalls
- *
- * Revision 1.16  2000/03/29 16:09:33  jhs
- * BlocksLift added.
- *
- * Revision 1.15  2000/03/22 17:31:16  jhs
- * Added BarriersInit.
- *
- * Revision 1.14  2000/03/21 16:11:19  jhs
- * Comments.
- *
- * Revision 1.13  2000/03/21 13:10:10  jhs
- * Added another CleanCOMPANION.
- * Comments.
- *
- * Revision 1.12  2000/03/09 18:34:22  jhs
- * Additional mini-phases.
- *
- * Revision 1.11  2000/03/02 12:58:36  jhs
- * Rearranged the traversal, each miniphase is apllied to all functions
- * before the next one is executed.
- *
- * Revision 1.10  2000/02/21 17:54:43  jhs
- * New mini-phase BLKEX.
- *
- * Revision 1.9  2000/02/11 16:21:01  jhs
- * Expanded traversals ...
- *
- * Revision 1.8  2000/02/04 14:44:24  jhs
- * Added repfuns-traversel.
- *
- * Revision 1.7  2000/02/02 12:28:18  jhs
- *  Added INFO_MUTH_FUNDEF, improved BLKIN.
- *
- * Revision 1.6  2000/01/28 13:50:16  jhs
- * blocks_init added.
- *
- * Revision 1.5  2000/01/26 17:25:24  dkr
- * type of traverse-function-table changed.
- *
- * Revision 1.4  2000/01/24 18:24:21  jhs
- * Added some infrastructure ...
- *
- * Revision 1.3  2000/01/21 14:28:09  jhs
- * Added MUTHmodul and MUTHfundef.
- *
- * Revision 1.2  2000/01/21 13:10:12  jhs
- * Added infrastructure for new mt support
+ * [...]
  *
  * Revision 1.1  2000/01/21 11:11:38  jhs
  * Initial revision
@@ -146,8 +32,6 @@
  * prefix:      MUTH
  *
  */
-
-#define NEW_INFO
 
 #include "tree_basic.h"
 #include "traverse.h"

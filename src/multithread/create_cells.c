@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.19  2004/11/24 19:40:47  skt
+ * SACDevCampDK 2k4
+ *
  * Revision 1.18  2004/11/23 20:52:11  skt
  * big compiler brushing during SACDevCampDK 2k4
  *
@@ -78,8 +81,6 @@
  *   is MUTH_EXCLUSIVE, MUTH_SINGLE or MUTH_MULTI tagged
  *
  *****************************************************************************/
-
-#define NEW_INFO
 
 #include "tree_basic.h"
 #include "traverse.h"

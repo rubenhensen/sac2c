@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.15  2004/11/24 19:40:47  skt
+ * SACDevCampDK 2k4
+ *
  * Revision 1.14  2004/11/23 20:52:11  skt
  * big compiler brushing during SACDevCampDK 2k4
  *
@@ -66,13 +69,12 @@
  *
  *****************************************************************************/
 
-#define NEW_INFO
-
 #include "tree_basic.h"
 #include "traverse.h"
 #include "propagate_executionmode.h"
 #include "multithread_lib.h"
 #include "internal_lib.h"
+#include "print.h"
 
 /*
  * INFO structure
@@ -226,7 +228,7 @@ PEMfundef (node *arg_node, info *arg_info)
     INFO_PEM_ACTFUNDEF (arg_info) = arg_node;
 #if PEM_DEBUG
     fprintf (stdout, "current function:\n");
-    PRTPrintNode (arg_node);
+    PRTdoPrintNode (arg_node);
     fprintf (stdout, "Executionmode was %s.\n",
              MUTHLIBdecodeExecmode (FUNDEF_EXECMODE (arg_node)));
 #endif

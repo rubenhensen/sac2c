@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.17  2004/11/24 19:40:47  skt
+ * SACDevCampDK 2k4
+ *
  * Revision 1.16  2004/11/23 20:52:11  skt
  * big compiler brushing during SACDevCampDK 2k4
  *
@@ -71,8 +74,6 @@
  *   synchronisations
  *
  *****************************************************************************/
-
-#define NEW_INFO
 
 #include <limits.h> /* for INT_MAX */
 #include "tree_basic.h"
