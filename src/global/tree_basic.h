@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.109  1998/04/01 17:22:56  srs
+ * added macro ASSIGN_LEVEL
+ *
  * Revision 1.108  1998/04/01 12:55:06  dkr
  * added some comments for N_WL... nodes
  *
@@ -1223,9 +1226,10 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***    int    STATUS                     (dcr1 -> dcr2 !!)
  ***    node*  CSE                        (CSE (GenerateMasks()) -> ??? )
  ***    void*  INDEX    (O)               (wli -> wlf ->)
+ ***    int    LEVEL                      (wli !!)
  ***
  ***  remarks:
- ***   there is no easy way to remove the INDEX information after wfl (another
+ ***   there is no easy way to remove the INDEX information after wlf (another
  ***   tree traversal would be necessary), so it stays afterwards.
  ***   Nevertheless only wlf will use it. The type of INDEX is index_info*,
  ***   defined in WithloopFolding.c (not in types.h).
@@ -1239,6 +1243,7 @@ extern node *MakeAssign (node *instr, node *next);
 #define ASSIGN_MASK(n, x) (n->mask[x])
 #define ASSIGN_STATUS(n) (n->flag)
 #define ASSIGN_INDEX(n) (n->info2)
+#define ASSIGN_LEVEL(n) (n->info.cint)
 
 /*--------------------------------------------------------------------------*/
 
@@ -2105,7 +2110,7 @@ extern node *MakeInfo ();
 #define INFO_ICMTAB(n) ((node **)n->node[2])
 #define INFO_TYPETAB(n) ((types **)n->info.types)
 
-/* WLF */
+/* WLF, all phases, not only WLI. */
 #define INFO_WLI_NEXT(n) (n->node[0])
 #define INFO_WLI_WL(n) (n->node[1])
 #define INFO_WLI_ASSIGN(n) (n->node[2])
