@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.23  2000/07/14 11:48:14  dkr
+ * FUNDEF_INLINE is bool!
+ *
  * Revision 2.22  2000/07/12 15:10:41  dkr
  * function DuplicateTypes renamed into DupTypes
  *
@@ -2475,15 +2478,15 @@ sibfun: sibevmarker varreturntypes fun_name
             {
             case 0:
               FUNDEF_STATUS($$)=sib_imported_status;
-              FUNDEF_INLINE($$)=0;
+              FUNDEF_INLINE($$)=FALSE;
               break;
             case 1:
               FUNDEF_STATUS($$)=sib_imported_status;
-              FUNDEF_INLINE($$)=1;
+              FUNDEF_INLINE($$)=TRUE;
               break;
             case 2:
               FUNDEF_STATUS($$)=ST_classfun;
-              FUNDEF_INLINE($$)=0;
+              FUNDEF_INLINE($$)=FALSE;
               break;
             }
             FUNDEF_PRAGMA($$)=$8;
@@ -2500,15 +2503,15 @@ sibfun: sibevmarker varreturntypes fun_name
             {
             case 0:
               FUNDEF_STATUS($$)=sib_imported_status;
-              FUNDEF_INLINE($$)=0;
+              FUNDEF_INLINE($$)=FALSE;
               break;
             case 1:
               FUNDEF_STATUS($$)=sib_imported_status;
-              FUNDEF_INLINE($$)=1;
+              FUNDEF_INLINE($$)=TRUE;
               break;
             case 2:
               FUNDEF_STATUS($$)=ST_classfun;
-              FUNDEF_INLINE($$)=0;
+              FUNDEF_INLINE($$)=FALSE;
               break;
             }
             FUNDEF_PRAGMA($$)=$10;
