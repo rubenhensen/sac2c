@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2004/11/24 20:41:15  sah
+ * added TRAVgetName
+ *
  * Revision 3.89  2004/11/24 14:01:18  sah
  * added TRAVcont
  *
@@ -22,5 +25,6 @@ extern node *TRAVdo (node *arg_node, info *arg_info);
 extern node *TRAVcont (node *arg_node, info *arg_info);
 extern void TRAVpush (trav_t traversal);
 extern trav_t TRAVpop ();
+extern const char *TRAVgetName ();
 
 #endif /* _SAC_TRAVERSE_H_ */
