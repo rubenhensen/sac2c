@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2003/06/17 16:07:51  dkr
+ * NWITH_OR_NWITH2_CEXPR added
+ *
  * Revision 3.76  2003/06/11 22:03:09  ktr
  * ARRAY_SHAPE added.
  *
@@ -2147,6 +2150,9 @@ extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
     ((NODE_TYPE (n) == N_Nwith) ? NWITH_IDS (n) : NWITH2_IDS (n))
 #define NWITH_OR_NWITH2_VEC(n)                                                           \
     ((NODE_TYPE (n) == N_Nwith) ? NWITH_VEC (n) : NWITH2_VEC (n))
+
+#define NWITH_OR_NWITH2_CEXPR(n)                                                         \
+    ((NODE_TYPE (n) == N_Nwith) ? NWITH_CEXPR (n) : NWITH2_CEXPR (n))
 
 #define NWITH_OR_NWITH2_DEC_RC_IDS(n)                                                    \
     ((NODE_TYPE (n) == N_Nwith) ? NWITH_DEC_RC_IDS (n) : NWITH2_DEC_RC_IDS (n))
