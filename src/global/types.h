@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1996/01/02 15:52:26  cg
+ * Revision 1.13  1996/01/16 16:45:45  cg
+ * extended macro TYP_IF to 5 positions
+ *
+ * Revision 1.12  1996/01/02  15:52:26  cg
  * macro NIF extended
  *
  * Revision 1.11  1995/12/29  10:28:16  cg
@@ -58,7 +61,7 @@
 
 typedef char id; /* kept for compatibility reasons with old version only */
 
-#define TYP_IF(n, s, p, f) n
+#define TYP_IF(n, s, p, f, sz) n
 
 typedef enum {
 #include "type_info.mac"

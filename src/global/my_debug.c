@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1996/01/02 15:48:32  cg
+ * Revision 1.19  1996/01/16 16:45:45  cg
+ * extended macro TYP_IF to 5 positions
+ *
+ * Revision 1.18  1996/01/02  15:48:32  cg
  * macro NIF extended.
  *
  * Revision 1.17  1995/11/16  19:37:21  cg
@@ -84,7 +87,7 @@ char *mdb_prf[] = {
 
 #undef PRF_IF
 
-#define TYP_IF(n, s, p, f) s
+#define TYP_IF(n, s, p, f, sz) s
 
 char *mdb_type[] = {
 #include "type_info.mac"
