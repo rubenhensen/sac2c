@@ -1,9 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/02/03 17:29:40  dkr
+ * conditions are lifted now correctly :)
+ *
  * Revision 1.1  2000/01/21 12:49:01  dkr
  * Initial revision
- *
  *
  */
 

@@ -1,9 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/02/03 17:29:23  dkr
+ * conditions are lifted now correctly :)
+ *
  * Revision 1.1  2000/01/21 12:48:59  dkr
  * Initial revision
- *
  *
  */
 
@@ -13,6 +15,8 @@
 #include "dbug.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
+#include "DataFlowMaskUtils.h"
+#include "AdjustTree.h"
 
 /******************************************************************************
  *
@@ -25,7 +29,7 @@
  *
  ******************************************************************************/
 
-char *
+static char *
 MakeDummyFunName (char *suffix)
 {
     static int number = 0;
@@ -42,127 +46,81 @@ MakeDummyFunName (char *suffix)
 /******************************************************************************
  *
  * function:
- *   node *MakeDummyFunArgs( DFMmask_t in)
+ *   node *MakeDummyFundef( char *funname, status status,
+ *                          node *instr,
+ *                          DFMmask_t in, DFMmask_t out, DFMmask_t local)
  *
  * description:
- *   Creates the argument list (N_arg node chain) for a dummy function.
+ *   Creates the fundef-node of a dummy function.
  *
  ******************************************************************************/
 
-node *
-MakeDummyFunArgs (DFMmask_t in)
+static node *
+MakeDummyFundef (char *funname, statustype status, node *instr, DFMmask_t in,
+                 DFMmask_t out, DFMmask_t local)
 {
-    node *decl, *tmp;
-    node *args = NULL;
+    lut_t *lut;
+    DFMmask_t tmp_mask;
+    node *ret, *args, *vardecs, *fundef;
+    node *assigns = NULL;
 
-    DBUG_ENTER ("MakeDummyFunArgs");
+    DBUG_ENTER ("MakeDummyFundef");
 
-    decl = DFMGetMaskEntryDeclSet (in);
-    while (decl != NULL) {
-        if (NODE_TYPE (decl) == N_arg) {
-            tmp = args;
-            args = DupNode (decl);
-            ARG_NEXT (args) = tmp;
-        } else {
-            DBUG_ASSERT ((NODE_TYPE (decl) == N_vardec),
-                         "mask entry is neither an arg nor a vardec.");
-            args = MakeArg (StringCopy (VARDEC_NAME (decl)), VARDEC_TYPE (decl),
-                            VARDEC_STATUS (decl), VARDEC_ATTRIB (decl), args);
-        }
-        decl = DFMGetMaskEntryDeclSet (NULL);
+    /*
+     * Create a new LUT and store the old/new args and vardecs in it.
+     * This is done to generate the right references in the function body.
+     */
+    lut = GenerateLUT ();
+    args = DFM2Args (in, lut);
+    tmp_mask = DFMGenMaskMinus (out, in);
+    DFMSetMaskOr (tmp_mask, local);
+    vardecs = DFM2Vardecs (tmp_mask, lut);
+    tmp_mask = DFMRemoveMask (tmp_mask);
+
+    ret = MakeAssign (MakeReturn (DFM2Exprs (out, lut)), NULL);
+
+    switch (status) {
+    case ST_condfun:
+        assigns = MakeAssign (DupTreeLUT (instr, NULL, lut), ret);
+        break;
+    case ST_dofun:
+        break;
+    case ST_whilefun:
+        break;
+    default:
+        break;
     }
+    DBUG_ASSERT ((assigns != NULL), "wrong status -> no assigns created");
 
-    DBUG_RETURN (args);
+    fundef = MakeFundef (funname, NULL, DFM2Types (out), args,
+                         MakeBlock (assigns, vardecs), NULL);
+    FUNDEF_STATUS (fundef) = status;
+    FUNDEF_RETURN (fundef) = ASSIGN_INSTR (ret);
+
+    DBUG_RETURN (fundef);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *MakeDummyFunVardecs( DFMmask_t local)
- *
- * description:
- *   Creates the vardec chain (local vars) for a dummy function.
- *
- ******************************************************************************/
-
-node *
-MakeDummyFunVardecs (DFMmask_t local)
-{
-    node *decl, *tmp;
-    node *vardecs = NULL;
-
-    DBUG_ENTER ("MakeDummyFunVardecs");
-
-    decl = DFMGetMaskEntryDeclSet (local);
-    while (decl != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (decl) != N_arg), "an arg can not be a local var.");
-        DBUG_ASSERT ((NODE_TYPE (decl) == N_vardec), "vardec of local var not found.");
-        tmp = DupNode (decl);
-        VARDEC_NEXT (tmp) = vardecs;
-        vardecs = tmp;
-        decl = DFMGetMaskEntryDeclSet (NULL);
-    }
-
-    DBUG_RETURN (vardecs);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *MakeDummyFunReturn( DFMmask_t out)
- *
- * description:
- *   Creates the return node for a dummy function.
- *
- ******************************************************************************/
-
-node *
-MakeDummyFunReturn (DFMmask_t out)
-{
-    node *decl;
-    node *ret = NULL;
-
-    DBUG_ENTER ("MakeDummyFunReturn");
-
-    decl = DFMGetMaskEntryDeclSet (out);
-    while (decl != NULL) {
-        ret = MakeExprs (MakeId1 (VARDEC_OR_ARG_NAME (decl)), ret);
-        decl = DFMGetMaskEntryDeclSet (NULL);
-    }
-    ret = MakeReturn (ret);
-
-    DBUG_RETURN (ret);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *MakeDummyFunLet( char *funname, DFMmask_t in, DFMmask_t out)
+ *   node *MakeDummyFunLet( char *funname, node *fundef,
+ *                          DFMmask_t in, DFMmask_t out)
  *
  * description:
  *   Creates the let node containing the call of a dummy function.
  *
  ******************************************************************************/
 
-node *
-MakeDummyFunLet (char *funname, DFMmask_t in, DFMmask_t out)
+static node *
+MakeDummyFunLet (char *funname, node *fundef, DFMmask_t in, DFMmask_t out)
 {
-    node *decl, *let;
-    ids *ids, *tmp;
+    node *let;
 
     DBUG_ENTER ("MakeDummyFunLet");
 
-    decl = DFMGetMaskEntryDeclSet (out);
-    while (decl != NULL) {
-        tmp = MakeIds1 (VARDEC_OR_ARG_NAME (decl));
-        IDS_NEXT (tmp) = ids;
-        ids = tmp;
-        decl = DFMGetMaskEntryDeclSet (NULL);
-    }
-#if 0
-  let = MakeLet( MakeAp( StringCopy( funname), NULL, ),
-                 ids);
-#endif
+    let = MakeLet (MakeAp (StringCopy (funname), NULL, DFM2Exprs (in, NULL)),
+                   DFM2Ids (out, NULL));
+    AP_FUNDEF (LET_EXPR (let)) = fundef;
 
     DBUG_RETURN (let);
 }
@@ -181,7 +139,7 @@ MakeDummyFunLet (char *funname, DFMmask_t in, DFMmask_t out)
  *
  ******************************************************************************/
 
-void
+static void
 DefinedVar (char *id, node *decl, DFMmask_t needed, DFMmask_t *in, DFMmask_t *out,
             DFMmask_t *local)
 {
@@ -211,7 +169,7 @@ DefinedVar (char *id, node *decl, DFMmask_t needed, DFMmask_t *in, DFMmask_t *ou
  *
  ******************************************************************************/
 
-void
+static void
 UsedVar (char *id, node *decl, DFMmask_t *in, DFMmask_t *local)
 {
     DBUG_ENTER ("UsedVar");
@@ -236,7 +194,7 @@ UsedVar (char *id, node *decl, DFMmask_t *in, DFMmask_t *local)
  *
  ******************************************************************************/
 
-void
+static void
 AdjustNeeded (DFMmask_t *needed, DFMmask_t in, DFMmask_t out)
 {
     DBUG_ENTER ("AdjustNeeded");
@@ -261,7 +219,11 @@ AdjustNeeded (DFMmask_t *needed, DFMmask_t in, DFMmask_t out)
 node *
 LAC2FUNfundef (node *arg_node, node *arg_info)
 {
+    node *ret, *tmp;
+
     DBUG_ENTER ("LAC2FUNfundef");
+
+    INFO_LAC2FUN_FUNS (arg_info) = NULL;
 
     INFO_LAC2FUN_DFMBASE (arg_info)
       = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
@@ -281,11 +243,26 @@ LAC2FUNfundef (node *arg_node, node *arg_info)
 
     INFO_LAC2FUN_DFMBASE (arg_info) = DFMRemoveMaskBase (INFO_LAC2FUN_DFMBASE (arg_info));
 
+    /*
+     * insert dummy fundefs into the AST
+     */
+    tmp = INFO_LAC2FUN_FUNS (arg_info);
+    if (tmp != NULL) {
+        while (FUNDEF_NEXT (tmp) != NULL) {
+            tmp = FUNDEF_NEXT (tmp);
+        }
+        FUNDEF_NEXT (tmp) = arg_node;
+        ret = INFO_LAC2FUN_FUNS (arg_info);
+        INFO_LAC2FUN_FUNS (arg_info) = NULL;
+    } else {
+        ret = arg_node;
+    }
+
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (ret);
 }
 
 /******************************************************************************
@@ -389,22 +366,33 @@ LAC2FUNid (node *arg_node, node *arg_info)
 node *
 LAC2FUNcond (node *arg_node, node *arg_info)
 {
-    DFMmask_t needed, tmp;
-    DFMmask_t old_in, old_out, old_local;
+    DFMmask_t old_needed, old_in, old_out, old_local;
     DFMmask_t in_then, out_then, local_then;
     DFMmask_t in_else, out_else, local_else;
+    DFMmask_t tmp;
     char *funname;
     node *fundef;
 
     DBUG_ENTER ("LAC2FUNcond");
 
-    needed = DFMGenMaskCopy (INFO_LAC2FUN_NEEDED (arg_info));
-    AdjustNeeded (needed, INFO_LAC2FUN_IN (arg_info), INFO_LAC2FUN_OUT (arg_info));
-
+    /*
+     * save old masks
+     */
+    old_needed = INFO_LAC2FUN_NEEDED (arg_info);
     old_in = INFO_LAC2FUN_IN (arg_info);
     old_out = INFO_LAC2FUN_OUT (arg_info);
     old_local = INFO_LAC2FUN_LOCAL (arg_info);
 
+    /*
+     * setup needed-masks for then- and else-block
+     */
+    INFO_LAC2FUN_NEEDED (arg_info) = DFMGenMaskCopy (INFO_LAC2FUN_NEEDED (arg_info));
+    AdjustNeeded (INFO_LAC2FUN_NEEDED (arg_info), INFO_LAC2FUN_IN (arg_info),
+                  INFO_LAC2FUN_OUT (arg_info));
+
+    /*
+     * setup in-, out-, local-masks for then-block
+     */
     INFO_LAC2FUN_IN (arg_info) = in_then
       = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
     INFO_LAC2FUN_OUT (arg_info) = out_then
@@ -414,6 +402,9 @@ LAC2FUNcond (node *arg_node, node *arg_info)
 
     COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
 
+    /*
+     * setup in-, out-, local-masks for else-block
+     */
     INFO_LAC2FUN_IN (arg_info) = in_else
       = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
     INFO_LAC2FUN_OUT (arg_info) = out_else
@@ -423,41 +414,56 @@ LAC2FUNcond (node *arg_node, node *arg_info)
 
     COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
 
+    /*
+     * restore old needed-mask
+     */
+    INFO_LAC2FUN_NEEDED (arg_info) = DFMRemoveMask (INFO_LAC2FUN_NEEDED (arg_info));
+    INFO_LAC2FUN_NEEDED (arg_info) = old_needed;
+
+    /*
+     * calculate new in-, out-, local-masks
+     */
     /* in = in_then u in_else u (out_then \ out_else) u (out_else \ out_then) */
     INFO_LAC2FUN_IN (arg_info) = DFMGenMaskMinus (out_then, out_else);
     tmp = DFMGenMaskMinus (out_else, out_then);
     DFMSetMaskOr (INFO_LAC2FUN_IN (arg_info), tmp);
     DFMSetMaskOr (INFO_LAC2FUN_IN (arg_info), in_then);
     DFMSetMaskOr (INFO_LAC2FUN_IN (arg_info), in_else);
-
     /* out = out_then u out_else */
     INFO_LAC2FUN_OUT (arg_info) = DFMGenMaskOr (out_then, out_else);
-
     /* local = local_then n local_else */
     INFO_LAC2FUN_LOCAL (arg_info) = DFMGenMaskAnd (local_then, local_else);
 
     COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
 
+    /*
+     * build new dummy function
+     */
     funname = MakeDummyFunName ("Cond");
-#if 0
-  fundef = MakeFundef(
-             funname, NULL,
-             types,
-             MakeDummyFunArgs( INFO_LAC2FUN_IN( arg_info)),
-             MakeBlock(
-               MakeAssign( arg_node,
-                           MakeDummyFunReturn( INFO_LAC2FUN_OUT( arg_info))),
-               MakeDummyFunVardecs( INFO_LAC2FUN_LOCAL( arg_info))),
-             NULL);
-#endif
-    FUNDEF_STATUS (fundef) = ST_condfun;
-    arg_node = MakeDummyFunLet (funname, INFO_LAC2FUN_IN (arg_info),
+    fundef = MakeDummyFundef (funname, ST_condfun, arg_node, INFO_LAC2FUN_IN (arg_info),
+                              INFO_LAC2FUN_OUT (arg_info), INFO_LAC2FUN_LOCAL (arg_info));
+    /*
+     * insert new dummy function into INFO_LAC2FUN_FUNS
+     */
+    FUNDEF_NEXT (fundef) = INFO_LAC2FUN_FUNS (arg_info);
+    INFO_LAC2FUN_FUNS (arg_info) = fundef;
+
+    /*
+     * replace the conditional by a call of the new dummy function
+     */
+    arg_node = FreeTree (arg_node);
+    arg_node = MakeDummyFunLet (funname, fundef, INFO_LAC2FUN_IN (arg_info),
                                 INFO_LAC2FUN_OUT (arg_info));
     INFO_LAC2FUN_ISTRANS (arg_info) = 1;
 
+    /*
+     * traverse new let-assignment
+     */
     arg_node = Trav (arg_node, arg_info);
 
-    needed = DFMRemoveMask (needed);
+    /*
+     * remove all the temporarily needed masks
+     */
     tmp = DFMRemoveMask (tmp);
     in_then = DFMRemoveMask (in_then);
     out_then = DFMRemoveMask (out_then);
@@ -508,7 +514,7 @@ LAC2FUNwhile (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *lac2fun( node *syntax_tree)
+ *   node *LaC2Fun( node *syntax_tree)
  *
  * description:
  *   converts all loops and conditions into (annotated) functions.
@@ -524,7 +530,6 @@ LaC2Fun (node *syntax_tree)
 
     act_tab = lac2fun_tab;
     info_node = MakeInfo ();
-
     syntax_tree = Trav (syntax_tree, info_node);
 
     DBUG_RETURN (syntax_tree);
