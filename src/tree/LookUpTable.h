@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/08/15 18:46:39  dkr
+ * functions SearchInLUT_Next?() added
+ *
  * Revision 3.9  2002/08/15 11:45:58  dkr
  * - functions ApplyToEach_?() renamed into MapLUT_?()
  * - functions FoldLUT_?() added
@@ -60,8 +63,10 @@
  *  To insert a pair [old, new] into the LUT where 'old' represents a pointer
  *  or a string, use the function  InsertIntoLUT_P( lut, old, new)  or
  *  InsertIntoLUT_S( lut, old, new)  respectively.
- *  Note here, that  InsertIntoLUT_?()  should only be used if the compare-data
- *  'old' is not present in the LUT yet!!!
+ *  Note here, that it is possible to put doubles (pairs with identical
+ *  compare-data) into the LUT, e.g. pairs (a,b), (a,c).
+ *  If doubles are not welcome, it may be better to use the function
+ *  UpdateLUT_P() instead.
  *
  *  The function  UpdateLUT_?( lut, old, new, &act_new)  checks whether there
  *  is already a pair [old, act_new] in the LUT. If so, 'act_new' is replaced
@@ -71,6 +76,12 @@
  *  The function  SearchInLUT_?( lut, old)  searches the LUT for an entry
  *  [old, new]. If the LUT contains such an entry, a pointer to the associated
  *  data 'new' is returned. Otherwise the return value equals NULL.
+ *  Note here, that always the *first* matching entry is returned. If the LUT
+ *  contains multiple matching entries, use  SearchInLUT_Next?()  to get
+ *  the next match.
+ *  For example, let the LUT contain pairs (a,b) and (a,c). When looking-up 'a'
+ *  now, the return value is 'b' for the first, 'c' for the second, and NULL
+ *  for all subsequent look-ups.
  *  SearchInLUT_P()  searches for a pointer (pointer compare),
  *  SearchInLUT_S()  searches for a string (string compare).
  *
@@ -100,15 +111,12 @@
  *    it into the LUT. But the associated data is never copied!!
  *    If the associated data is also a string, you may want to duplicate it
  *    with  StringCopy()  first.
- *  - InsertIntoLUT_?()  does *not* check for consistency! Thus, it is possible
- *    to put pairs [a,b] and [a,c] into the LUT. When looking-up 'a' now, the
- *    return value might be 'b' or 'c' --- depending on the concrete
- *    implementation of this library :-((
- *    Therefore, it may be better to use the function  UpdateLUT_?()  instead!!!
  *  - RemoveLUT()  removes all the stored compare-strings from heap memory.
  *  - SearchInLUT_?()  returns a *pointer* to the found associated data. Thus,
- *    the returned pointer will be undefined if RemoveLUT() has been called.
+ *    the returned pointer will be undefined if  RemoveLUT()  has been called.
  *    Therefore you should not forget to duplicate the data first ... :-/
+ *  - The support for multiple entries with identical compare-data is
+ *    implemented rather inefficiently :-(
  *
  */
 
@@ -128,6 +136,9 @@ extern void PrintLUT (FILE *handle, LUT_t lut);
 
 extern void **SearchInLUT_P (LUT_t lut, void *old_item);
 extern void **SearchInLUT_S (LUT_t lut, char *old_item);
+
+extern void **SearchInLUT_NextP (void);
+extern void **SearchInLUT_NextS (void);
 
 extern void *SearchInLUT_PP (LUT_t lut, void *old_item);
 extern char *SearchInLUT_SS (LUT_t lut, char *old_item);
