@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.70  2000/07/07 08:57:01  nmw
+ * MCW_CNT_ARTIFICIAL macro added
+ *
  * Revision 1.69  2000/07/06 16:01:11  mab
  * *** empty log message ***
  *
@@ -2210,7 +2213,7 @@ extern node *MakePragma ();
  ***    node*      MODUL             (access to module node)
  ***    node*      FUNDEF            (fundef parameter)
  ***    int        FLAG
- ***
+ ***    int        CNT_ARTIFICIAL    (counter for artificial args)
  ***
  ***  when used in pad_transform.c
  ***
@@ -2585,6 +2588,7 @@ extern node *MakeInfo ();
 #define INFO_MCW_MODUL(n) (n->node[0])
 #define INFO_MCW_FUNDEF(n) (n->node[1])
 #define INFO_MCW_FLAG(n) (n->flag)
+#define INFO_MCW_CNT_ARTIFICIAL(n) (n->counter)
 
 /* when used in print_interface.c */
 #define INFO_PIH_FLAG(n) (n->flag)
