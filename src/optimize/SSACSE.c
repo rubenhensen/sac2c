@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2001/05/25 08:43:13  nmw
+ * *** empty log message ***
+ *
  * Revision 1.17  2001/05/23 15:47:55  nmw
  * comments added
  *
@@ -80,7 +83,7 @@
  *   assigned LHS to be equal to avoid wrong substitutions of constant
  *   RHS arrays (e.g. [1,2,3,4] used as [[1,2],[3,4]]).
  *   if we find a matching one, we substitute the LHS otherwise we add this
- *   new expression to the list of available expressions. ##nmw##
+ *   new expression to the list of available expressions.
  *
  *
  *   It also does a copy propagation for assignments like
