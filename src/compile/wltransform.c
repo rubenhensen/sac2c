@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2002/10/30 14:12:58  dkr
+ * -enforceIEEE for WLs implemented
+ *
  * Revision 3.67  2002/10/29 19:06:49  dkr
  * message of DBUG_PRINT modified
  *
@@ -4454,7 +4457,7 @@ BuildCubes (node *strides, node *wl2, int dims, int *wl_shp, bool *do_naive_comp
 /******************************************************************************
  *
  * Function:
- *   node *SetSegs( node *pragma, node *cubes, int dims)
+ *   node *SetSegs( node *pragma, node *cubes, int dims, bool fold_float)
  *
  * Description:
  *   returns chain of segments (based on the calculated cubes 'cubes')
@@ -4462,7 +4465,7 @@ BuildCubes (node *strides, node *wl2, int dims, int *wl_shp, bool *do_naive_comp
  ******************************************************************************/
 
 static node *
-SetSegs (node *pragma, node *cubes, int dims)
+SetSegs (node *pragma, node *cubes, int dims, bool fold_float)
 {
     node *aps;
     node *segs;
@@ -4484,15 +4487,21 @@ SetSegs (node *pragma, node *cubes, int dims)
         aps = PRAGMA_WLCOMP_APS (pragma);
         while (aps != NULL) {
 
-#define WLP(fun, str)                                                                    \
+#define WLP(fun, str, ieee)                                                              \
     if (strcmp (AP_NAME (EXPRS_EXPR (aps)), str) == 0) {                                 \
-        segs = fun (segs, AP_ARGS (EXPRS_EXPR (aps)), cubes, dims, line);                \
+        if ((!fold_float) || (!enforce_ieee) || ieee) {                                  \
+            segs = fun (segs, AP_ARGS (EXPRS_EXPR (aps)), cubes, dims, line);            \
+        } else {                                                                         \
+            WARN (line, ("Function %s of wlcomp-pragma ignored in order"                 \
+                         " to meet the IEEE-754 standard",                               \
+                         AP_NAME (EXPRS_EXPR (aps))));                                   \
+        }                                                                                \
     } else
 #include "wlpragma_funs.mac"
 #undef WLP
             {
                 fun_names =
-#define WLP(fun, str) str
+#define WLP(fun, str, ieee) str
 #include "wlpragma_funs.mac"
 #undef WLP
                   ;
@@ -7118,7 +7127,10 @@ WLTRAwith (node *arg_node, node *arg_info)
                 /* naive compilation  ->  put each stride in a separate segment */
                 segs = WLCOMP_Cubes (NULL, NULL, cubes, idx_size, line);
             } else {
-                segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, idx_size);
+                simpletype wl_btype = GetBasetype (INFO_WL_TYPES (arg_info));
+                bool fold_float = (NWITH2_IS_FOLD (new_node)
+                                   && ((wl_btype == T_float) || (wl_btype == T_double)));
+                segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, idx_size, fold_float);
             }
 
             /*
