@@ -51,3 +51,4 @@ UndoElimSubDiv.c
 UndoElimSubDiv.h
 SelectionPropagation.c
 SelectionPropagation.h
+ConstVarPropagation.c
