@@ -1,9 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2002/08/13 12:19:04  dkr
+ * NT2OTarg added
+ * NT2OTfundef modified: wrapper funs are handled like normal functions
+ * now
+ *
  * Revision 1.1  2002/08/05 16:58:31  sbs
  * Initial revision
- *
  *
  */
 
@@ -50,9 +54,7 @@ NT2OTTransform (node *arg_node)
     act_tab = nt2ot_tab;
 
     info_node = MakeInfo ();
-
     arg_node = Trav (arg_node, info_node);
-
     info_node = FreeNode (info_node);
 
     act_tab = tmp_tab;
@@ -76,16 +78,18 @@ NT2OTfundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("NT2OTfundef");
 
-    if (FUNDEF_STATUS (arg_node) != ST_wrapperfun) {
-        type = TYFixAndEliminateAlpha (FUNDEF_RET_TYPE (arg_node));
+    type = TYFixAndEliminateAlpha (FUNDEF_RET_TYPE (arg_node));
 
-        if (TYIsProdOfArray (type)) {
-            FUNDEF_TYPES (arg_node) = FreeAllTypes (FUNDEF_TYPES (arg_node));
-            FUNDEF_TYPES (arg_node) = TYType2OldType (type);
-        } else {
-            ABORT (linenum,
-                   ("could not infer proper type for fun %s", FUNDEF_NAME (arg_node)));
-        }
+    if (TYIsProdOfArray (type)) {
+        FUNDEF_TYPES (arg_node) = FreeAllTypes (FUNDEF_TYPES (arg_node));
+        FUNDEF_TYPES (arg_node) = TYType2OldType (type);
+    } else {
+        ABORT (linenum,
+               ("could not infer proper type for fun %s", FUNDEF_NAME (arg_node)));
+    }
+
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
     }
 
     if (FUNDEF_BODY (arg_node) != NULL) {
@@ -94,6 +98,42 @@ NT2OTfundef (node *arg_node, node *arg_info)
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NT2OTarg( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+NT2OTarg (node *arg_node, node *arg_info)
+{
+    ntype *type;
+
+    DBUG_ENTER ("NT2OTarg");
+
+    type = AVIS_TYPE (ARG_AVIS (arg_node));
+
+    if (type != NULL) {
+        type = TYFixAndEliminateAlpha (type);
+    } else {
+        ABORT (linenum, ("could not infer proper type for arg %s", ARG_NAME (arg_node)));
+    }
+    if (TYIsArray (type)) {
+        ARG_TYPE (arg_node) = FreeAllTypes (ARG_TYPE (arg_node));
+        ARG_TYPE (arg_node) = TYType2OldType (type);
+    } else {
+        ABORT (linenum, ("could not infer proper type for arg %s", ARG_NAME (arg_node)));
+    }
+    if (ARG_NEXT (arg_node) != NULL) {
+        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
