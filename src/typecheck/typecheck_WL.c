@@ -1,6 +1,10 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.3  1999/07/15 20:40:44  sbs
+ * in ReduceShape we now make sure that an appropriate CONSTVEC info will be
+ * created.
+ *
  * Revision 2.2  1999/05/31 16:56:45  sbs
  * constant-folding for wls extended
  * Now, with(...) genarray( [2+2,3],...);
@@ -185,6 +189,17 @@ ReduceGenarrayShape (node *arg_node, types *expr_type)
     arg_node = Trav (arg_node, infon);
     if (!expr_ok)
         arg_node = NULL;
+    else {
+        /*
+         * The arg_node is a constant integer vector, so we have to attribute
+         * the CONSTVEC form!!
+         */
+
+        ARRAY_ISCONST (arg_node) = TRUE;
+        ARRAY_VECTYPE (arg_node) = T_int;
+        ARRAY_CONSTVEC (arg_node)
+          = Array2IntVec (ARRAY_AELEMS (arg_node), &ARRAY_VECLEN (arg_node));
+    }
 
     act_tab = old_tab;
 
