@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.38  2000/10/27 00:04:37  dkr
+ * Ups ... changes of revision 1.35 are missing in the current revision.
+ * This is fixed now.
+ *
  * Revision 1.37  2000/10/26 14:32:01  dkr
  * DupShpseg modified
  * All top-level functions no longer have an arg_info as argument :-))
@@ -548,10 +552,8 @@ DupNodelist_ (nodelist *nl, node *arg_info)
     } else {
         new_nl = MakeNodelist (SearchInLUT (INFO_DUP_LUT (arg_info), NODELIST_NODE (nl)),
                                NODELIST_STATUS (nl),
-                               DupNodelist_ (NODELIST_NEXT (nl), arg_info));
-
-        DBUG_ASSERT ((NODELIST_ATTRIB (new_nl) == NODELIST_ATTRIB (nl)),
-                     "Inconsistent ATTRIBs in Nodelist found!");
+                               DupNodelist (NODELIST_NEXT (nl), arg_info));
+        NODELIST_ATTRIB (new_nl) = NODELIST_ATTRIB (nl);
     }
 
     DBUG_RETURN (new_nl);
