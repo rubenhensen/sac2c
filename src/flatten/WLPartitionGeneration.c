@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/07/22 17:26:23  khf
+ * Special functions are now traversed when they are used
+ *
  * Revision 1.8  2004/07/21 16:05:00  khf
  * no traverse in FUNDEF_NEXT in phase sacopt assured
  *
@@ -1551,6 +1554,44 @@ WLPGlet (node *arg_node, info *arg_info)
     }
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLPGap(node *arg_node, info *arg_info)
+ *
+ *   @brief traverse in the fundef of the ap node if special function
+ *          and current compiler phase is sacopt
+ *
+ *   @param  node *arg_node:  N_ap
+ *           info *arg_info:  info
+ *   @return node *        :  N_ap
+ ******************************************************************************/
+node *
+WLPGap (node *arg_node, info *arg_info)
+{
+    info *tmp;
+
+    DBUG_ENTER ("WLPGap");
+
+    if ((compiler_phase == PH_sacopt) && (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))) {
+        /*
+         * special functions must be traversed when they are used
+         */
+        if (AP_FUNDEF (arg_node) != INFO_WLPG_FUNDEF (arg_info)) {
+
+            /* stack arg_info */
+            tmp = arg_info;
+            arg_info = MakeInfo ();
+
+            AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
+
+            arg_info = FreeInfo (arg_info);
+            arg_info = tmp;
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }

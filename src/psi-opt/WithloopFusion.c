@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/07/22 17:28:37  khf
+ * Special functions are now traversed when they are used
+ *
  * Revision 1.5  2004/07/21 12:47:35  khf
  * switch to new INFO structure
  *
@@ -756,6 +759,47 @@ WLFSassign (node *arg_node, info *arg_info)
             DBUG_RETURN (arg_node);
 
     } while (TRUE);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLFSap(node *arg_node, info *arg_info)
+ *
+ *   @brief traverse in the fundef of the ap node if special function
+ *
+ *   @param  node *arg_node:  N_ap
+ *           info *arg_info:  info
+ *   @return node *        :  N_ap
+ ******************************************************************************/
+node *
+WLFSap (node *arg_node, info *arg_info)
+{
+    info *tmp;
+
+    DBUG_ENTER ("WLFSap");
+
+    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))) {
+        /*
+         * special functions must be traversed when they are used
+         */
+        if (AP_FUNDEF (arg_node) != INFO_WLFS_FUNDEF (arg_info)) {
+
+            /* stack arg_info */
+            tmp = arg_info;
+            arg_info = MakeInfo ();
+
+            AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
+
+            arg_info = FreeInfo (arg_info);
+            arg_info = tmp;
+        }
+    }
+
+    if (AP_ARGS (arg_node) != NULL) {
+        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
