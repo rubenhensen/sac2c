@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1999/02/05 16:45:13  dkr
+ * Added FreeTree(MODUL_DECL) in WSIBmodul().
+ * This node will later be used by MODUL_FOLDFUN !!
+ *
  * Revision 1.18  1999/01/07 10:50:49  cg
  * Fold functions are always written to the SIB including there bodies.
  *
@@ -1100,6 +1104,11 @@ WSIBmodul (node *arg_node, node *arg_info)
         FreeNodelist (INFO_EXPORTOBJS (export));
         FreeNodelist (INFO_EXPORTFUNS (export));
         FreeNode (export);
+
+        /*
+         * MODUL_DECL is no longer needed.
+         */
+        MODUL_DECL (arg_node) = FreeTree (MODUL_DECL (arg_node));
     }
 
     fclose (sibfile);
