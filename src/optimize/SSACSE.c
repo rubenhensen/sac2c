@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2001/04/20 11:18:02  nmw
+ * unused code removed
+ *
  * Revision 1.12  2001/04/19 08:03:33  dkr
  * macro F_PTR used as format string for pointers
  *
@@ -64,8 +67,6 @@
 #include "SSACSE.h"
 #include "compare_tree.h"
 #include "optimize.h"
-
-#define SSACSE_TOPLEVEL 0
 
 static ids *TravIDS (ids *arg_ids, node *arg_info);
 static ids *SSACSEids (ids *arg_ids, node *arg_info);
@@ -584,9 +585,7 @@ SSACSEap (node *arg_node, node *arg_info)
     }
 
     /* traverse special fundef without recursion */
-    if (((FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_condfun)
-         || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_dofun)
-         || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_whilefun))
+    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) != INFO_SSACSE_FUNDEF (arg_info))) {
         DBUG_PRINT ("SSACSE", ("traverse in special fundef %s",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -601,7 +600,6 @@ SSACSEap (node *arg_node, node *arg_info)
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
 
-        INFO_SSACSE_DEPTH (new_arg_info) = INFO_SSACSE_DEPTH (arg_info) + 1;
         INFO_SSACSE_CSE (new_arg_info) = NULL;
         INFO_SSACSE_MODUL (new_arg_info) = INFO_SSACSE_MODUL (arg_info);
 
@@ -783,8 +781,7 @@ TravIDS (ids *arg_ids, node *arg_info)
  *   Starts the traversal for a given fundef.
  *   Starting fundef must not be a special fundef (do, while, cond) created by
  *   lac2fun transformation. These "inline" functions will be traversed in their
- *   order of usage. The traversal mode (on toplevel, in special function) is
- *   annotated in the stacked INFO_SSACSE_DEPTH attribute.
+ *   order of usage.
  *
  *
  ******************************************************************************/
@@ -802,11 +799,9 @@ SSACSE (node *fundef, node *modul)
                         FUNDEF_NAME (fundef)));
 
     /* do not start traversal in special functions */
-    if ((FUNDEF_STATUS (fundef) != ST_condfun) && (FUNDEF_STATUS (fundef) != ST_dofun)
-        && (FUNDEF_STATUS (fundef) != ST_whilefun)) {
+    if (!(FUNDEF_IS_LACFUN (fundef))) {
         arg_info = MakeInfo ();
 
-        INFO_SSACSE_DEPTH (arg_info) = SSACSE_TOPLEVEL; /* start on toplevel */
         INFO_SSACSE_CSE (arg_info) = NULL;
         INFO_SSACSE_MODUL (arg_info) = modul;
 
