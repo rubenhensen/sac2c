@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.32  1995/07/19 18:44:48  asi
+ * Revision 1.33  1995/07/20 15:00:37  asi
+ * substitutes y for x if x = y occures in program before
+ *
+ * Revision 1.32  1995/07/19  18:44:48  asi
  * changed CFprf
  * function call NoConstSkalarPrf moved to the end
  *
@@ -424,6 +427,14 @@ CFid (node *arg_node, node *arg_info)
     value = VAR (arg_node->info.ids->node->varno);
     if (NULL != value) {
         switch (value->nodetype) {
+        case N_id:
+            if (NULL != arg_info)
+                DEC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
+            FreeTree (arg_node);
+            arg_node = DupTree (value, NULL);
+            if (NULL != arg_info)
+                INC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
+            break;
         case N_num:
         case N_float:
         case N_bool:
