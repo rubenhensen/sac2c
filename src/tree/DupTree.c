@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.128  2004/12/01 18:53:15  sah
+ * added some more SPxxx support
+ *
  * Revision 3.127  2004/12/01 15:30:00  ktr
  * Old types are no longer mandatory
  *
@@ -995,6 +998,12 @@ DUPid (node *arg_node, info *arg_info)
         ID_NT_TAG (new_node) = ILIBstringCopy (ID_NT_TAG (arg_node));
     }
 
+    /*
+     * furthermore, we have to copy the SPNAME attribute
+     * if it still exists
+     */
+    ID_SPNAME (new_node) = ILIBstringCopy (ID_SPNAME (arg_node));
+
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
@@ -1585,6 +1594,8 @@ DUPap (node *arg_node, info *arg_info)
     new_node = TBmakeAp (new_fundef, DUPTRAV (AP_ARGS (arg_node)));
 
     AP_ARGTAB (new_node) = DupArgtab (AP_ARGTAB (arg_node), arg_info);
+    AP_SPNAME (new_node) = ILIBstringCopy (AP_SPNAME (arg_node));
+    AP_MOD (new_node) = ILIBstringCopy (AP_SPMOD (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 
