@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.34  1998/03/26 15:38:58  dkr
+ * improved sort order in CompareWLnode.
+ * fixed a few bugs in PRECnwith ...
+ * new usage of MakeWLgrid.
+ *
  * Revision 1.33  1998/03/25 19:45:12  dkr
  * PRECnwith:
  *   added break specifiers
@@ -127,12 +132,12 @@
 
 #include <string.h>
 
-#define COMP_BEGIN(a, b, result)                                                         \
+#define COMP_BEGIN(a, b, result, inc)                                                    \
     if (a > b) {                                                                         \
-        result = 1;                                                                      \
+        result = inc;                                                                    \
     } else {                                                                             \
         if (a < b) {                                                                     \
-            result = -1;                                                                 \
+            result = -inc;                                                               \
         } else {
 
 #define COMP_END                                                                         \
@@ -1244,9 +1249,11 @@ node *ProjPartition3(node *projs)
  *   if (outline > 0) ALL GRID DATA IS IGNORED!!!
  *   eventually present next nodes in 'node1' or 'node2' are ignored.
  *
- *   return: -1 => 'node1' < 'node2'
+ *   return: -2 => outline('node1') < outline('node2')
+ *           -1 => outline('node1') = outline('node2'), 'node1' < 'node2'
  *            0 => 'node1' = 'node2'
- *            1 => 'node1' > 'node2'
+ *            1 => outline('node1') = outline('node2'), 'node1' > 'node2'
+ *            2 => outline('node1') > outline('node2')
  *
  ******************************************************************************/
 
@@ -1254,7 +1261,7 @@ int
 CompareWLnode (node *node1, node *node2, int outline)
 {
     node *grid1, *grid2;
-    int result;
+    int result, grid_result;
 
     DBUG_ENTER ("CompareWLnode");
 
@@ -1263,8 +1270,8 @@ CompareWLnode (node *node1, node *node2, int outline)
         DBUG_ASSERT ((NODE_TYPE (node1) == NODE_TYPE (node2)),
                      "can not compare object of different type");
 
-        COMP_BEGIN (WLNODE_BOUND1 (node1), WLNODE_BOUND1 (node2), result)
-        COMP_BEGIN (WLNODE_BOUND2 (node1), WLNODE_BOUND2 (node2), result)
+        COMP_BEGIN (WLNODE_BOUND1 (node1), WLNODE_BOUND1 (node2), result, 2)
+        COMP_BEGIN (WLNODE_BOUND2 (node1), WLNODE_BOUND2 (node2), result, 2)
 
         switch (NODE_TYPE (node1)) {
 
@@ -1288,18 +1295,26 @@ CompareWLnode (node *node1, node *node2, int outline)
             DBUG_ASSERT ((grid1 != NULL), "no grid found");
             DBUG_ASSERT ((grid2 != NULL), "no grid found");
 
-            if (outline > 0) {
-                /* skip grid */
-                result = CompareWLnode (WLGRID_NEXTDIM (grid1), WLGRID_NEXTDIM (grid2),
-                                        outline);
-            } else {
+            if (outline == 0) {
                 /* compare grid */
-                COMP_BEGIN (WLGRID_BOUND1 (grid1), WLGRID_BOUND1 (grid2), result)
-                COMP_BEGIN (WLGRID_BOUND2 (grid1), WLGRID_BOUND2 (grid2), result)
+                COMP_BEGIN (WLGRID_BOUND1 (grid1), WLGRID_BOUND1 (grid2), grid_result, 1)
+                COMP_BEGIN (WLGRID_BOUND2 (grid1), WLGRID_BOUND2 (grid2), grid_result, 1)
+                grid_result = 0;
+                COMP_END
+                COMP_END
+
+                /* compare later dimensions */
                 result = CompareWLnode (WLGRID_NEXTDIM (grid1), WLGRID_NEXTDIM (grid2),
                                         outline);
-                COMP_END
-                COMP_END
+
+                /* are outlines equal? */
+                if (abs (result) != 2) {
+                    result = grid_result;
+                }
+            } else {
+                /* skip grid -> compare only later dimensions */
+                result = CompareWLnode (WLGRID_NEXTDIM (grid1), WLGRID_NEXTDIM (grid2),
+                                        outline);
             }
 
             break;
@@ -2147,7 +2162,7 @@ SetSegAttribs (node *seg)
     (WLSEG_BV (seg, 0))[1] = 156; /* 156 */
 
     (WLSEG_UBV (seg))[0] = 1; /* 1 */
-    (WLSEG_UBV (seg))[1] = 1; /* 6 */
+    (WLSEG_UBV (seg))[1] = 6; /* 6 */
 #endif
 
     FREE (sv);
@@ -2168,7 +2183,10 @@ SetSegAttribs (node *seg)
 node *
 SetSegs (node *cubes, int dims)
 {
-    node *rect, *last_seg, *new_seg, *segs;
+    node *segs;
+#if 0
+  node *rect, *last_seg, *new_seg;
+#endif
 
     DBUG_ENTER ("SetSegs");
 
@@ -2219,7 +2237,7 @@ SetSegs (node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *SplitWLnode(node *proj1, node *proj2)
+ *   node *SplitProj(node *proj1, node *proj2)
  *
  * description:
  *
@@ -2227,79 +2245,79 @@ SetSegs (node *cubes, int dims)
  ******************************************************************************/
 
 node *
-SplitWLnode (node *node1, node *node2)
+SplitProj (node *proj1, node *proj2)
 {
-    node *new_node, *new_nodes;
+    node *new_proj, *new_projs;
     int bound11, bound21, bound12, bound22, i_bound1, i_bound2;
 
-    DBUG_ENTER ("SplitWLnode");
+    DBUG_ENTER ("SplitProj");
 
-    new_nodes = NULL;
+    new_projs = NULL;
 
-    bound11 = WLNODE_BOUND1 (node1);
-    bound21 = WLNODE_BOUND2 (node1);
-    bound12 = WLNODE_BOUND1 (node2);
-    bound22 = WLNODE_BOUND2 (node2);
+    bound11 = WLPROJ_BOUND1 (proj1);
+    bound21 = WLPROJ_BOUND2 (proj1);
+    bound12 = WLPROJ_BOUND1 (proj2);
+    bound22 = WLPROJ_BOUND2 (proj2);
 
-    if (((bound11 != bound12) || (bound21 != bound22))
-        && /* outline(node1), outline(node2) not equal */
-        ((bound12 < bound21)
-         && (bound11 < bound22))) { /* outline(node1), outline(node2) not disjunkt */
+    if (((bound11 != bound12) || (bound21 != bound22)) &&
+        /* outline(proj1), outline(proj2) not equal? */
+        ((bound12 < bound21) && (bound11 < bound22))) {
+        /* outline(proj1), outline(proj2) not disjunkt? */
 
         /*
-         * 'node1' respectively 'node2' must be devided in at most three parts
+         * 'proj1' respectively 'proj2' must be devided in at most three parts
          */
         i_bound1 = MAX (bound11, bound12); /* compute bounds of intersection */
         i_bound2 = MIN (bound21, bound22);
 
-        /* new parts of 'node1' */
+        /* new parts of 'proj1' */
         if (bound11 < i_bound1) {
-            new_node = DupNode (node1);
-            WLNODE_BOUND1 (new_node) = bound11;
-            WLNODE_BOUND2 (new_node) = i_bound1;
-            WLNODE_NEXT (new_node) = new_nodes;
-            new_nodes = new_node;
+            new_proj = DupNode (proj1);
+            WLPROJ_BOUND1 (new_proj) = bound11;
+            WLPROJ_BOUND2 (new_proj) = i_bound1;
+            WLPROJ_NEXT (new_proj) = new_projs;
+            new_projs = new_proj;
         }
 
-        new_node = DupNode (node1);
-        WLNODE_BOUND1 (new_node) = i_bound1;
-        WLNODE_BOUND2 (new_node) = i_bound2;
-        WLNODE_NEXT (new_node) = new_nodes;
-        new_nodes = new_node;
+        new_proj = DupNode (proj1);
+        WLPROJ_BOUND1 (new_proj) = i_bound1;
+        WLPROJ_BOUND2 (new_proj) = i_bound2;
+        WLPROJ_NEXT (new_proj) = new_projs;
+        new_projs = new_proj;
 
         if (i_bound2 < bound21) {
-            new_node = DupNode (node1);
-            WLNODE_BOUND1 (new_node) = i_bound2;
-            WLNODE_BOUND2 (new_node) = bound21;
-            WLNODE_NEXT (new_node) = new_nodes;
-            new_nodes = new_node;
+            new_proj = DupNode (proj1);
+            WLPROJ_BOUND1 (new_proj) = i_bound2;
+            WLPROJ_BOUND2 (new_proj) = bound21;
+            WLPROJ_NEXT (new_proj) = new_projs;
+            new_projs = new_proj;
         }
 
-        /* new parts of 'node2' */
+        /* new parts of 'proj2' */
         if (bound12 < i_bound1) {
-            new_node = DupNode (node2);
-            WLNODE_BOUND1 (new_node) = bound12;
-            WLNODE_BOUND2 (new_node) = i_bound1;
-            WLNODE_NEXT (new_node) = new_nodes;
-            new_nodes = new_node;
+            new_proj = DupNode (proj2);
+            WLPROJ_BOUND1 (new_proj) = bound12;
+            WLPROJ_BOUND2 (new_proj) = i_bound1;
+            WLPROJ_NEXT (new_proj) = new_projs;
+            new_projs = new_proj;
         }
 
-        new_node = DupNode (node2);
-        WLNODE_BOUND1 (new_node) = i_bound1;
-        WLNODE_BOUND2 (new_node) = i_bound2;
-        WLNODE_NEXT (new_node) = new_nodes;
-        new_nodes = new_node;
+        new_proj = DupNode (proj2);
+        WLPROJ_BOUND1 (new_proj) = i_bound1;
+        WLPROJ_BOUND2 (new_proj) = i_bound2;
+        WLPROJ_NEXT (new_proj) = new_projs;
+        new_projs = new_proj;
 
         if (i_bound2 < bound22) {
-            new_node = DupNode (node2);
-            WLNODE_BOUND1 (new_node) = i_bound2;
-            WLNODE_BOUND2 (new_node) = bound22;
-            WLNODE_NEXT (new_node) = new_nodes;
-            new_nodes = new_node;
+            new_proj = DupNode (proj2);
+            WLPROJ_BOUND1 (new_proj) = i_bound2;
+            WLPROJ_BOUND2 (new_proj) = bound22;
+            WLPROJ_NEXT (new_proj) = new_projs;
+            new_projs = new_proj;
         }
     }
 
-    DBUG_RETURN (new_nodes);
+    DBUG_RETURN (new_projs);
 }
 
 /******************************************************************************
@@ -2340,7 +2358,7 @@ SplitWL (node *projs)
             proj2 = WLPROJ_NEXT (proj1);
             while (proj2 != NULL) {
 
-                split_projs = SplitWLnode (proj1, proj2);
+                split_projs = SplitProj (proj1, proj2);
                 if (split_projs != NULL) {
                     fixpoint = 0;
                     WLPROJ_MODIFIED (proj1) = WLPROJ_MODIFIED (proj2) = 1;
@@ -2365,6 +2383,30 @@ SplitWL (node *projs)
 
         projs = new_projs;
     } while (!fixpoint);
+
+#if 0
+  /*
+   * collect all projs with the same bounds
+   */
+  proj1 = projs;
+  while (proj1 != NULL) {
+ 
+    proj2 = proj1;
+    while ((WLPROJ_NEXT(proj2) != NULL) && 
+           (WLPROJ_BOUND1(proj1) == WLPROJ_BOUND1(WLPROJ_NEXT(proj2)))) {
+      DBUG_ASSERT((WLPROJ_BOUND2(proj1) == WLPROJ_BOUND2(WLPROJ_NEXT(proj2))),
+                  "wrong bounds found");
+      proj2 = WLPROJ_NEXT(proj2);
+    }
+
+    tmp = proj1;
+    proj1 = WLPROJ_NEXT(proj2);
+    WLPROJ_NEXT(proj2) = NULL;
+
+
+  }
+
+#endif
 
     DBUG_RETURN (projs);
 }
