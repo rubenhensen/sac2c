@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/07/01 13:01:02  jhs
+ * Inserted handling of INFO_SPMD_LAST.
+ *
  * Revision 2.2  1999/05/26 14:32:23  jhs
  * Added options MTO and SBE for multi-thread optimsation and
  * synchronisation barrier elimination, both options are by
@@ -222,6 +225,7 @@ CONCfundef (node *arg_node, node *arg_info)
              */
             act_tab = syncinit_tab;
             INFO_SPMD_FIRST (arg_info) = 1;
+            INFO_SPMD_LAST (arg_info) = 1;
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 
             if ((break_after == PH_spmdregions)
