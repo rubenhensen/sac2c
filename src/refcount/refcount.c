@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.39  1998/04/04 21:06:38  dkr
+ * fixed a bug in FindVarDec
+ *
  * Revision 1.38  1998/03/25 18:10:05  srs
  * renamed IDS_VARDEC_TYPE to IDS_TYPE
  *
@@ -367,18 +370,21 @@ FindVarDec (int var_no)
 
     DBUG_ENTER ("FindVarDec");
 
-    if (var_no < args_no)
-        tmp = fundef_node->node[2]; /* set tmp to arguments of function */
-    else
-        tmp = fundef_node->node[0]->node[1]; /* set tmp to variable declaration */
-    while (NULL != tmp)
+    if (var_no < args_no) {
+        tmp = FUNDEF_ARGS (fundef_node);
+    } else {
+        tmp = BLOCK_VARDEC (FUNDEF_BODY (fundef_node));
+    }
+    while (NULL != tmp) {
         if (tmp->varno == var_no) {
             ret_node = tmp;
             break;
-        } else
-            tmp = tmp->node[0];
+        } else {
+            tmp = (NODE_TYPE (tmp) == N_vardec) ? VARDEC_NEXT (tmp) : ARG_NEXT (tmp);
+        }
+    }
 
-    DBUG_RETURN (tmp);
+    DBUG_RETURN (ret_node);
 }
 
 /*
@@ -759,9 +765,8 @@ RCloop (node *arg_node, node *arg_info)
                     if (0 == use_old) {
                         VAR_DEC_2_ID_NODE (id_node, var_dec);
                         ID_REFCNT (id_node) = ref_dump[i];
-                        MakeExprs (id_node,
-                                   defvars); /* insert 'id_node' at the begining of
-                                                'defvars' */
+                        /* insert 'id_node' at the begining of 'defvars' */
+                        MakeExprs (id_node, defvars);
                         DBUG_PRINT ("RC", ("store defined var (v2) %s:%d",
                                            ID_NAME (id_node), ID_REFCNT (id_node)));
                     } else {
@@ -777,9 +782,8 @@ RCloop (node *arg_node, node *arg_info)
                      */
                     if (0 == use_old) {
                         VAR_DEC_2_ID_NODE (id_node, var_dec);
-                        MakeExprs (id_node,
-                                   usevars); /* insert 'id_node' at the begining of
-                                                'usevars' */
+                        /* insert 'id_node' at the begining of 'usevars' */
+                        MakeExprs (id_node, usevars);
                         DBUG_PRINT ("RC", ("store used var (v1) %s:%d", ID_NAME (id_node),
                                            ID_REFCNT (id_node)));
                     } else {
@@ -1063,8 +1067,8 @@ RCcond (node *arg_node, node *arg_info)
             if (0 == use_old) {
                 VAR_DEC_2_ID_NODE (id_node, var_dec);
                 ID_REFCNT (id_node) = else_dump[i] - then_dump[i];
-                thenvars = MakeExprs (id_node, thenvars); /* insert 'id_node' at the
-                                                             begining of 'thenvars' */
+                /* insert 'id_node' at the begining of 'thenvars' */
+                thenvars = MakeExprs (id_node, thenvars);
                 DBUG_PRINT ("RC", ("append %s :%d to then-part", ID_NAME (id_node),
                                    ID_REFCNT (id_node)));
             } else {
@@ -1083,8 +1087,8 @@ RCcond (node *arg_node, node *arg_info)
             if (0 == use_old) {
                 VAR_DEC_2_ID_NODE (id_node, var_dec);
                 ID_REFCNT (id_node) = then_dump[i] - else_dump[i];
-                elsevars = MakeExprs (id_node, elsevars); /* insert 'id_node' at the
-                                                             begining of 'elsevars' */
+                /* insert 'id_node' at the begining of 'elsevars' */
+                elsevars = MakeExprs (id_node, elsevars);
                 DBUG_PRINT ("RC", ("append %s :%d to else-part", ID_NAME (id_node),
                                    ID_REFCNT (id_node)));
             } else {
@@ -1345,8 +1349,8 @@ RCNpart (node *arg_node, node *arg_info)
 #endif
 
     /*
-     * increase refcount of variables that are used in with-loop before they will be
-     * defined
+     * increase refcount of variables that are used in with-loop
+     *   before they will be defined
      */
     for (i = 0; i < varno; i++) {
         if (with_dump[i] > 0) {
