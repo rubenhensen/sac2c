@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.166  2003/06/11 22:03:09  ktr
+ * ARRAY_SHAPE added.
+ *
  * Revision 3.165  2003/05/22 01:21:08  ktr
  * INFO_PRINT_DIM set to n->info.cint
  *
@@ -304,6 +307,7 @@ file can be found in tree_basic.c
 #define _sac_tree_basic_h
 
 #include "types.h"
+#include "shape.h"
 
 /*
  *   Global Access-Macros
@@ -1779,6 +1783,7 @@ extern node *MakeExprs (node *expr, node *next);
  ***  sons:
  ***
  ***    node*      AELEMS   (N_exprs)
+ ***    shape*     SHAPE    (shape)
  ***
  ***  permanent attributes:
  ***
@@ -1799,6 +1804,13 @@ extern node *MakeExprs (node *expr, node *next);
  * optional permanent attribute STRING holds the original definition.
  * This may be retrieved for C code generation.
  *
+ * The new field SHAPE provides support for multidimensional arrays.
+ * For this purpose the array constructor has been modified to take
+ * shape type. Flat arrays (a.k.a. Vectors) can be constructed using
+ * the MakeFlatArray constructor.
+ * Information about the shape structure can be found in
+ * src/constants/shape.c.
+ *
  * In the case of constant arrays, ISCONST is set to true, VECTYPE
  * indicates the element-type, VECLEN the number of elements, and
  * CONSTVEC holds a compact C-representation of the values.
@@ -1806,11 +1818,13 @@ extern node *MakeExprs (node *expr, node *next);
  * for TSI (tile size inference).
  */
 
-extern node *MakeArray (node *aelems);
+extern node *MakeArray (node *aelems, shape *shp);
+extern node *MakeFlatArray (node *aelems);
 
 #define ARRAY_TYPE(n) (n->info.types)
 #define ARRAY_AELEMS(n) (n->node[0])
 #define ARRAY_STRING(n) ((char *)(n->node[1]))
+#define ARRAY_SHAPE(n) ((shape *)(n->node[2]))
 
 #define ARRAY_ISCONST(n) (n->refcnt)
 #define ARRAY_VECTYPE(n) ((simpletype) (n->varno))

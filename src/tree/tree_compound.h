@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2003/06/11 22:03:09  ktr
+ * ARRAY_SHAPE added.
+ *
  * Revision 3.75  2003/04/20 20:25:11  dkr
  * L_AP_OR_PRF_ARG added
  *
@@ -1653,8 +1656,7 @@ extern int CountExprs (node *exprs);
 
 #define ARRAY_NODETYPE(n) (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (n))))
 #define ARRAY_BASETYPE(n) (TYPES_BASETYPE (ARRAY_TYPE (n)))
-#define ARRAY_DIM(n) (TYPES_DIM (ARRAY_TYPE (n)))
-#define ARRAY_SHAPE(n, x) (TYPES_SHAPE (ARRAY_TYPE (n), x))
+#define ARRAY_DIM(n) (SHGetDim (ARRAY_SHAPE (n)))
 #define ARRAY_SHPSEG(n) (TYPES_SHPSEG (ARRAY_TYPE (n)))
 #define ARRAY_TNAME(n) (TYPES_NAME (ARRAY_TYPE (n)))
 #define ARRAY_TMOD(n) (TYPES_MOD (ARRAY_TYPE (n)))
@@ -1698,6 +1700,31 @@ extern node *Ids2Array (ids *ids_arg);
  ******************************************************************************/
 
 extern node *IntVec2Array (int length, int *intvec);
+
+/*****************************************************************************
+ *
+ * Function:
+ *   node *AdjustVectorShape( node *array)
+ *
+ * Description:
+ *   adjusts ARRAY_SHAPE according to the number of elements.
+ *   Note that the array will always be one-dimensional
+ *
+ *****************************************************************************/
+
+extern node *AdjustVectorShape (node *array);
+
+/*****************************************************************************
+ *
+ * Function:
+ *   node *ConcatVecs( node* vec1, node *vec2 )
+ *
+ * Description:
+ *   concatenates two vectors.
+ *
+ *****************************************************************************/
+
+extern node *ConcatVecs (node *vec1, node *vec2);
 
 /******************************************************************************
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2003/06/11 22:03:09  ktr
+ * ARRAY_SHAPE added.
+ *
  * Revision 3.70  2003/04/14 15:14:37  dkr
  * MakeIcm(): settings for ICM_INDENT_... updated
  *
@@ -1085,11 +1088,13 @@ MakeExprs (node *expr, node *next)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeArray (node *aelems)
+MakeArray (node *aelems, shape *shp)
 {
     node *tmp;
 
     DBUG_ENTER ("MakeArray");
+
+    DBUG_ASSERT (shp != NULL, "Top level shape is NULL");
 
     tmp = CreateCleanNode (N_array);
 
@@ -1097,10 +1102,22 @@ MakeArray (node *aelems)
 
     ARRAY_TYPE (tmp) = NULL;
 
+    ARRAY_SHAPE (tmp) = shp;
+
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeFlatArray (node *aelems)
+{
+    DBUG_ENTER ("MakeFlatArray");
+
+    DBUG_RETURN (MakeArray (aelems, SHCreateShape (1, CountExprs (aelems))));
 }
 
 /*--------------------------------------------------------------------------*/

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2003/06/11 22:03:09  ktr
+ * ARRAY_SHAPE added.
+ *
  * Revision 3.75  2002/10/30 16:31:07  dkr
  * HasDotTypes(), HasDotArgs() modified
  *
@@ -497,7 +500,7 @@ Shpseg2Array (shpseg *shape, int dim)
         next = MakeExprs (MakeNum (SHPSEG_SHAPE (shape, i)), next);
     }
 
-    array_node = MakeArray (next);
+    array_node = MakeFlatArray (next);
 
     ARRAY_ISCONST (array_node) = TRUE;
     ARRAY_VECTYPE (array_node) = T_int;
@@ -3221,6 +3224,30 @@ CreateZeroScalar (simpletype btype)
     DBUG_RETURN (ret_node);
 }
 
+/*****************************************************************************
+ *
+ * Function:
+ *   node *AdjustVectorShape( node *array)
+ *
+ * Description:
+ *   adjusts ARRAY_SHAPE according to the number of elements.
+ *   Note that the array will always be one-dimensional
+ *
+ *****************************************************************************/
+
+node *
+AdjustVectorShape (node *array)
+{
+    DBUG_ENTER ("AdjustVectorShape");
+
+    if (ARRAY_SHAPE (array) != NULL)
+        SHFreeShape (ARRAY_SHAPE (array));
+
+    ARRAY_SHAPE (array) = SHCreateShape (1, CountExprs (ARRAY_AELEMS (array)));
+
+    DBUG_RETURN (array);
+}
+
 /******************************************************************************
  *
  * function:
@@ -3248,7 +3275,7 @@ CreateZeroVector (int length, simpletype btype)
         exprs_node = MakeExprs (CreateZeroScalar (btype), exprs_node);
     }
 
-    ret_node = MakeArray (exprs_node);
+    ret_node = MakeFlatArray (exprs_node);
     ARRAY_ISCONST (ret_node) = TRUE;
     ARRAY_VECTYPE (ret_node) = btype;
     ARRAY_VECLEN (ret_node) = length;
@@ -3278,6 +3305,45 @@ CreateZeroVector (int length, simpletype btype)
     ARRAY_TYPE (ret_node) = MakeTypes (btype, 1, shpseg, NULL, NULL);
 
     DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ConcatVecs( node* vec1, node *vec2 )
+ *
+ * @brief concatenates two vectors.
+ *
+ * @param vec1 A N_array node containing the first vector
+ * @param vec2 A N_array node containing the second vector
+ *
+ * @return The concatenation vec1++vec2 as an N_array node
+ *
+ *****************************************************************************/
+node *
+ConcatVecs (node *vec1, node *vec2)
+{
+    shpseg *shpseg;
+    node *res;
+
+    DBUG_ENTER ("CONCAT_VECS");
+
+    DBUG_ASSERT (((NODE_TYPE (vec1) == N_array) && (NODE_TYPE (vec2) == N_array)
+                  && (SHGetDim (ARRAY_SHAPE (vec1)) == 1)
+                  && (SHGetDim (ARRAY_SHAPE (vec2)) == 1)
+                  && (ARRAY_BASETYPE (vec1) == ARRAY_BASETYPE (vec2))),
+                 "ConcatVecs called with not N_array nodes in vector form");
+
+    res = MakeFlatArray (
+      CombineExprs (DupTree (ARRAY_AELEMS (vec1)), DupTree (ARRAY_AELEMS (vec2))));
+
+    shpseg = SHShape2OldShpseg (ARRAY_SHAPE (res));
+
+    ARRAY_TYPE (res) = MakeTypes (ARRAY_BASETYPE (vec1), 1, shpseg, NULL, NULL);
+
+    ((int *)ARRAY_CONSTVEC (res))
+      = Array2Vec (ARRAY_BASETYPE (vec1), ARRAY_AELEMS (res), NULL);
+
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -3392,10 +3458,10 @@ Ids2Array (ids *ids_arg)
 
     if (ids_arg != NULL) {
         len = CountIds (ids_arg);
-        array = MakeArray (Ids2Exprs (ids_arg));
+        array = MakeFlatArray (Ids2Exprs (ids_arg));
     } else {
         len = 0;
-        array = MakeArray (NULL);
+        array = MakeFlatArray (NULL);
     }
 
     ARRAY_ISCONST (array) = FALSE;
