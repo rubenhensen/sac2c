@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2002/10/24 16:00:14  dkr
+ * minor changes done
+ *
  * Revision 1.12  2002/10/08 01:49:52  dkr
  * bug in VectToOffset2() fixed
  *
@@ -396,7 +399,7 @@ VectToOffset2 (char *off_any, void *v_any, int v_size, void (*v_size_fun) (void 
                     a_shape_fun (a_any, NULL, i);
                     fprintf (outfile, " * ");
                 }
-                v_read_fun (v_any, NULL, i);
+                v_read_fun (v_any, NULL, 0);
                 for (i = 1; i < v_size; i++) {
                     fprintf (outfile, " + ");
                     v_read_fun (v_any, NULL, i);
@@ -421,7 +424,7 @@ VectToOffset2 (char *off_any, void *v_any, int v_size, void (*v_size_fun) (void 
                 a_shape_fun (a_any, NULL, i);
                 fprintf (outfile, " * ");
             }
-            v_read_fun (v_any, NULL, i);
+            v_read_fun (v_any, NULL, 0);
             for (i = 1; i < v_size; i++) {
                 fprintf (outfile, " + ");
                 v_read_fun (v_any, NULL, i);
