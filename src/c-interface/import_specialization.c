@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2000/11/23 16:19:14  nmw
+ * function RemoveGenericTemplates() removed
+ *
  * Revision 3.2  2000/11/22 16:25:14  nmw
  * when specializing generic functions the generic function
  * itself will no longer be removed
@@ -65,7 +68,6 @@ static node *AddSpecializedFundef (node *fundefs, node *spec_fundef, node *gen_f
 static bool isSpecialization (char *spec_name, node *spec_args, types *spec_types,
                               char *gen_name, node *gen_args, types *gen_types);
 static spectype isSpecializationType (types *spec_type, types *gen_type);
-static node *RemoveGenericTemplates (node *module_node);
 
 /******************************************************************************
  *
@@ -181,23 +183,26 @@ static bool
 isSpecialization (char *spec_name, node *spec_args, types *spec_types, char *gen_name,
                   node *gen_args, types *gen_types)
 {
-    bool error_flag;
+    bool result_flag;
+    spectype spec_result;
+    spectype check_args;
     node *s_arg;
     node *g_arg;
     types *s_type;
     types *g_type;
 
     DBUG_ENTER ("IsSpecialization");
-    error_flag = TRUE;
+    result_flag = TRUE;
 
     /* check name */
     if (strcmp (spec_name, gen_name) != 0)
-        error_flag = FALSE;
+        result_flag = FALSE;
 
     /* check args */
-    if (error_flag) {
+    if (result_flag) {
         s_arg = spec_args;
         g_arg = gen_args;
+        check_args = SPECTYPE_EQUAL;
 
         while ((s_arg != NULL) && (g_arg != NULL)) {
             /* compare types */
@@ -205,27 +210,35 @@ isSpecialization (char *spec_name, node *spec_args, types *spec_types, char *gen
             g_type = ARG_TYPE (g_arg);
             DBUG_ASSERT (s_type != NULL, "arg without type");
             DBUG_ASSERT (g_type != NULL, "arg without type");
-            error_flag = error_flag && isSpecializationType (s_type, g_type);
+
+            spec_result = isSpecializationType (s_type, g_type);
+            if (spec_result == SPECTYPE_NO) {
+                check_args = SPECTYPE_NO; /* this arg does not match */
+            } else if ((spec_result == SPECTYPE_YES) && (check_args != SPECTYPE_NO)) {
+                check_args = SPECTYPE_YES;
+            }
 
             s_arg = ARG_NEXT (s_arg);
             g_arg = ARG_NEXT (g_arg);
         }
+        result_flag = result_flag && (check_args == SPECTYPE_YES);
 
         /* after the while loop both pointer have to be NULL */
         if ((s_arg != NULL) || (g_arg != NULL)) {
             /* number of args are different */
-            error_flag = FALSE;
+            result_flag = FALSE;
         }
     }
 
     /* check result types */
-    if (error_flag) {
+    if (result_flag) {
         s_type = spec_types;
         g_type = gen_types;
 
         while ((s_type != NULL) && (g_type != NULL)) {
             /* compare types */
-            error_flag = error_flag && isSpecializationType (s_type, g_type);
+            result_flag
+              = result_flag && (isSpecializationType (s_type, g_type) != SPECTYPE_NO);
 
             s_type = TYPES_NEXT (s_type);
             g_type = TYPES_NEXT (g_type);
@@ -234,11 +247,11 @@ isSpecialization (char *spec_name, node *spec_args, types *spec_types, char *gen
         /* after the while loop both pointer have to be NULL */
         if ((s_type != NULL) || (g_type != NULL)) {
             /* number of result are different */
-            error_flag = FALSE;
+            result_flag = FALSE;
         }
     }
 
-    DBUG_RETURN (error_flag);
+    DBUG_RETURN (result_flag);
 }
 
 /******************************************************************************
@@ -260,37 +273,36 @@ static spectype
 isSpecializationType (types *s_type, types *g_type)
 {
     int i;
-    spectype error_flag;
+    spectype spec_flag;
 
     DBUG_ENTER ("isSpecializationType");
 
-    error_flag = SPECTYPE_YES;
+    spec_flag = SPECTYPE_YES;
 
     /* check basetypes */
     if (TYPES_BASETYPE (s_type) != TYPES_BASETYPE (g_type)) {
-        error_flag = SPECTYPE_NO;
+        spec_flag = SPECTYPE_NO;
     }
 
     /* check dimensions */
     else if ((TYPES_DIM (g_type) >= 0) && (TYPES_DIM (g_type) != TYPES_DIM (s_type))) {
         /* different known dimensions */
-        error_flag = SPECTYPE_NO;
-    } else if ((TYPES_DIM (g_type) > 0) && (TYPES_DIM (g_type) == TYPES_DIM (s_type))) {
+        spec_flag = SPECTYPE_NO;
+    } else if ((TYPES_DIM (g_type) >= 0) && (TYPES_DIM (g_type) == TYPES_DIM (s_type))) {
         /* same known dimensions, check shape */
-        error_flag = SPECTYPE_EQUAL;
+        spec_flag = SPECTYPE_EQUAL;
         for (i = 0; i < TYPES_DIM (g_type); i++) {
             if (TYPES_SHAPE (g_type, i) != TYPES_SHAPE (s_type, i)) {
                 /* difference in shape */
-                error_flag = SPECTYPE_NO;
+                spec_flag = SPECTYPE_NO;
             }
         }
     } else if ((TYPES_DIM (g_type) <= KNOWN_DIM_OFFSET)
                && ((0 - TYPES_DIM (g_type) + KNOWN_DIM_OFFSET) != TYPES_DIM (s_type))) {
         /* known dimension does not match specialized dim */
-        error_flag = SPECTYPE_NO;
+        spec_flag = SPECTYPE_NO;
     }
-
-    DBUG_RETURN (error_flag);
+    DBUG_RETURN (spec_flag);
 }
 
 /******************************************************************************
@@ -440,45 +452,6 @@ ScanParseSpecializationFile (char *modname)
 /******************************************************************************
  *
  * function:
- *   node *RemoveGenericTemplates(node *module_node)
- *
- * description:
- *   checks all fundefs for tag ST_gen_remove. these functions have been
- *   specialized and are no longer needed in their generic version (they
- *   might produce confilcts in the typechecker). All tagged fundefs are
- *   removed from the fundef list
- *
- ******************************************************************************/
-
-static node *
-RemoveGenericTemplates (node *module_node)
-{
-    node *funs;
-    node *fnext;
-
-    DBUG_ENTER ("RemoveGenericTemplates");
-
-    funs = MODUL_FUNS (module_node);
-    DBUG_ASSERT ((FUNDEF_ATTRIB (funs) != ST_gen_remove),
-                 "RemoveGenerocTemplates: illegal fundef order!");
-    /* first fundef in list cannot be a ST_gen_remove tagged one */
-
-    while (funs != NULL) {
-        fnext = FUNDEF_NEXT (funs);
-        /* check for removal */
-        if ((fnext != NULL) && (FUNDEF_ATTRIB (fnext) == ST_gen_remove)) {
-            FUNDEF_NEXT (funs) = FUNDEF_NEXT (fnext);
-            FreeNode (fnext);
-        } else {
-            funs = FUNDEF_NEXT (funs);
-        }
-    }
-    DBUG_RETURN (module_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *ImportSpecialization( node *syntax_tree )
  *
  * description:
@@ -520,8 +493,6 @@ ImportSpecialization (node *modul_node)
         FREE (arg_info);
 
         FreeNode (modspec);
-
-        modul_node = RemoveGenericTemplates (modul_node);
     }
 
     DBUG_RETURN (modul_node);
