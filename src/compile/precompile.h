@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/02/27 14:48:54  dkr
+ * PREC3assign() added
+ *
  * Revision 3.8  2002/02/27 11:56:37  dkr
  * PREC3modul() added
  *
@@ -97,6 +100,7 @@ extern node *PREC2sync (node *arg_node, node *arg_info);
 extern node *PREC3modul (node *arg_node, node *arg_info);
 extern node *PREC3fundef (node *arg_node, node *arg_info);
 extern node *PREC3return (node *arg_node, node *arg_info);
+extern node *PREC3assign (node *arg_node, node *arg_info);
 extern node *PREC3let (node *arg_node, node *arg_info);
 
 extern char *ObjInitFunctionName ();
