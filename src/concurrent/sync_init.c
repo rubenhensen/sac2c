@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/07/20 16:59:11  jhs
+ * Added counting of FOLDCOUNT.
+ *
  * Revision 2.4  1999/07/19 14:45:13  jhs
  * Changed signature of MakeSync.
  *
@@ -61,6 +64,7 @@ node *
 SYNCIassign (node *arg_node, node *arg_info)
 {
     node *with, *sync_let, *sync;
+    node *withop;
     ids *with_ids;
 
     DBUG_ENTER ("SYNCIassign");
@@ -82,6 +86,13 @@ SYNCIassign (node *arg_node, node *arg_info)
         sync = MakeSync (MakeBlock (MakeAssign (sync_let, NULL), NULL));
         SYNC_FIRST (sync) = INFO_SPMD_FIRST (arg_info);
         ASSIGN_INSTR (arg_node) = sync;
+
+        withop = NWITH2_WITHOP (with);
+        if (NWITHOP_TYPE (withop) == WO_foldfun) {
+            SYNC_FOLDCOUNT (sync) = 1;
+        } else {
+            SYNC_FOLDCOUNT (sync) = 0;
+        }
 
         /*
          * get IN/INOUT/OUT/LOCAL from the N_Nwith2 node.
