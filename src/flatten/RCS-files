@@ -18,3 +18,4 @@ UndoSSATransform.h
 CheckAvis.h
 CheckAvis.c
 ssa.c
+ssa.h
