@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/05/11 13:25:21  khf
+ * NCODE_CEXPR in SSANcode() replaced by NCODE_CEXPRS
+ *
  * Revision 1.4  2004/03/05 19:14:27  mwe
  * representation of conditional changed
  * using N_funcond node instead of phi
@@ -1069,9 +1072,9 @@ SSANcode (node *arg_node, node *arg_info)
         NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
     }
 
-    /* traverse expression */
-    DBUG_ASSERT ((NCODE_CEXPR (arg_node) != NULL), "Ncode without Ncexpr node!");
-    NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+    /* traverse expressions */
+    DBUG_ASSERT ((NCODE_CEXPRS (arg_node) != NULL), "Ncode without Ncexprs node!");
+    NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
 
     /* restore old rename stack !!! */
     FOR_ALL_VARDEC_AND_ARGS (PopSSAstack, STACKFLAG_DUMMY,
