@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/03/17 14:02:26  sah
+ * corrected handling of mops
+ *
  * Revision 1.11  2005/01/07 19:40:45  cg
  * Converted compile time output from Error.h to ctinfo.c
  *
@@ -58,12 +61,14 @@
  */
 struct INFO {
     node *module;
+    bool insidemop;
 };
 
 /*
  * INFO macros
  */
-#define INFO_USS_MODULE(info) (info->module)
+#define INFO_USS_MODULE(info) ((info)->module)
+#define INFO_USS_INSIDEMOP(info) ((info)->insidemop)
 
 /*
  * INFO functions
@@ -78,6 +83,7 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_USS_MODULE (result) = NULL;
+    INFO_USS_INSIDEMOP (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -213,6 +219,43 @@ USSspap (node *arg_node, info *arg_info)
                          arg_info);
 
     arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+USSspmop (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("USSspmop");
+
+    DBUG_ASSERT ((INFO_USS_INSIDEMOP (arg_info) == FALSE),
+                 "illegal stacking of spmop found");
+
+    if (SPMOP_OPS (arg_node) != NULL) {
+        INFO_USS_INSIDEMOP (arg_info) = TRUE;
+
+        SPMOP_OPS (arg_node) = TRAVdo (SPMOP_OPS (arg_node), arg_info);
+
+        INFO_USS_INSIDEMOP (arg_info) = FALSE;
+    }
+
+    if (SPMOP_EXPRS (arg_node) != NULL) {
+        SPMOP_EXPRS (arg_node) = TRAVdo (SPMOP_EXPRS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+USSspid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("USSspid");
+
+    if (INFO_USS_INSIDEMOP (arg_info) == TRUE) {
+
+        MakeSymbolAvailable (SPID_MOD (arg_node), SPID_NAME (arg_node), SET_wrapperhead,
+                             arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

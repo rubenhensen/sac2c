@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/03/17 14:02:26  sah
+ * corrected handling of mops
+ *
  * Revision 1.6  2004/12/05 16:45:38  sah
  * added SPIds SPId SPAp in frontend
  *
@@ -42,6 +45,8 @@ extern node *USSfold (node *arg_node, info *arg_info);
 extern node *USSarg (node *arg_node, info *arg_info);
 extern node *USSvardec (node *arg_node, info *arg_info);
 extern node *USSspap (node *arg_node, info *arg_info);
+extern node *USSspmop (node *arg_node, info *arg_info);
+extern node *USSspid (node *arg_node, info *arg_info);
 extern node *USSmodule (node *arg_node, info *arg_info);
 
 #endif /* _SAC_USESYMBOLS_H_ */

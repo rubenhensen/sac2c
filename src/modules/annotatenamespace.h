@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/03/17 14:02:26  sah
+ * corrected handling of mops
+ *
  * Revision 1.7  2004/12/07 17:01:24  sah
  * fixed withloop handling
  *
@@ -52,6 +55,7 @@ extern node *ANSspap (node *arg_node, info *arg_info);
 extern node *ANSarg (node *arg_node, info *arg_info);
 extern node *ANSspids (node *arg_node, info *arg_info);
 extern node *ANSspid (node *arg_node, info *arg_info);
+extern node *ANSspmop (node *arg_node, info *arg_info);
 extern node *ANSlet (node *arg_node, info *arg_info);
 extern node *ANSwith (node *arg_node, info *arg_info);
 extern node *ANSfold (node *arg_node, info *arg_info);

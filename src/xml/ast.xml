@@ -353,6 +353,7 @@
 	  <node name="Typedef" />
 	  <node name="Objdef" />
 	  <node name="SPAp" />
+	  <node name="SPMop" />
 	  <node name="Arg" />
 	  <node name="Vardec" />
 	  <node name="SPIds" />
@@ -370,6 +371,8 @@
 	  <node name="Arg" />
 	  <node name="Vardec" />
 	  <node name="SPAp" />
+	  <node name="SPId" />
+	  <node name="SPMop" />
 	  <node name="Module" />
 	</travuser>
       </traversal>

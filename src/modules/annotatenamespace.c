@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2005/03/17 14:02:26  sah
+ * corrected handling of mops
+ *
  * Revision 1.20  2005/01/07 19:40:45  cg
  * Converted compile time output from Error.h to ctinfo.c
  *
@@ -49,6 +52,7 @@ struct INFO {
     const char *current;
     node *module;
     stringset_t *ids;
+    bool insidemop;
 };
 
 /*
@@ -58,6 +62,7 @@ struct INFO {
 #define INFO_ANS_CURRENT(info) ((info)->current)
 #define INFO_ANS_MODULE(info) ((info)->module)
 #define INFO_ANS_IDS(info) ((info)->ids)
+#define INFO_ANS_INSIDEMOP(info) ((info)->insidemop)
 
 /*
  * INFO functions
@@ -74,6 +79,8 @@ MakeInfo ()
     INFO_ANS_SYMBOLS (result) = STinit ();
     INFO_ANS_CURRENT (result) = NULL;
     INFO_ANS_MODULE (result) = NULL;
+    INFO_ANS_IDS (result) = NULL;
+    INFO_ANS_INSIDEMOP (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -328,6 +335,8 @@ ANSfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSfundef");
 
+    DBUG_ASSERT ((INFO_ANS_IDS (arg_info) == NULL), "found leftover ids in ans info");
+
     CheckLocalNameClash (FUNDEF_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info),
                          NODE_LINE (arg_node));
 
@@ -338,8 +347,6 @@ ANSfundef (node *arg_node, info *arg_info)
     if (FUNDEF_TYPES (arg_node) != NULL) {
         FUNDEF_TYPES (arg_node) = ANStypes (FUNDEF_TYPES (arg_node), arg_info);
     }
-
-    INFO_ANS_IDS (arg_info) = NULL;
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
@@ -471,21 +478,54 @@ ANSspids (node *arg_node, info *arg_info)
 }
 
 node *
+ANSspmop (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ANSspmop");
+
+    DBUG_ASSERT ((INFO_ANS_INSIDEMOP (arg_info) == FALSE), "found illegal mop stacking!");
+    /*
+     * process ops in special mop-mode
+     */
+    if (SPMOP_OPS (arg_node) != NULL) {
+        INFO_ANS_INSIDEMOP (arg_info) = TRUE;
+
+        SPMOP_OPS (arg_node) = TRAVdo (SPMOP_OPS (arg_node), arg_info);
+
+        INFO_ANS_INSIDEMOP (arg_info) = FALSE;
+    }
+
+    if (SPMOP_EXPRS (arg_node) != NULL) {
+        SPMOP_EXPRS (arg_node) = TRAVdo (SPMOP_EXPRS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 ANSspid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSspid");
 
-    if (SPID_MOD (arg_node) == NULL) {
+    if (INFO_ANS_INSIDEMOP (arg_info)) {
         /*
-         * check whether this id is local
+         * in special mop-mode, all SPID represent function calls,
+         * so no need for a locality check
          */
-        if (!STRScontains (SPID_NAME (arg_node), INFO_ANS_IDS (arg_info))) {
-            /*
-             * look up the correct namespace
-             */
 
-            SPID_MOD (arg_node)
-              = LookupNamespaceForSymbol (SPID_NAME (arg_node), arg_info);
+        SPID_MOD (arg_node) = LookupNamespaceForSymbol (SPID_NAME (arg_node), arg_info);
+    } else {
+        if (SPID_MOD (arg_node) == NULL) {
+            /*
+             * check whether this id is local
+             */
+            if (!STRScontains (SPID_NAME (arg_node), INFO_ANS_IDS (arg_info))) {
+                /*
+                 * look up the correct namespace
+                 */
+
+                SPID_MOD (arg_node)
+                  = LookupNamespaceForSymbol (SPID_NAME (arg_node), arg_info);
+            }
         }
     }
 
