@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2003/03/12 18:20:58  dkr
+ * SSAicm added
+ *
  * Revision 1.7  2002/10/18 13:49:54  sbs
  * SSATransformAllowGOs added.
  *
@@ -34,6 +37,7 @@ extern node *SSAblock (node *arg_node, node *arg_info);
 extern node *SSAexprs (node *arg_node, node *arg_info);
 extern node *SSAassign (node *arg_node, node *arg_info);
 extern node *SSAlet (node *arg_node, node *arg_info);
+extern node *SSAicm (node *arg_node, node *arg_info);
 extern node *SSAarg (node *arg_node, node *arg_info);
 extern node *SSAvardec (node *arg_node, node *arg_info);
 extern node *SSAid (node *arg_node, node *arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.115  2003/03/12 18:20:51  dkr
+ * SSAicm added
+ *
  * Revision 3.114  2003/03/09 17:15:00  ktr
  * added basic support for BLIR
  *
@@ -1896,7 +1899,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       PrintIcm, PrintIcm, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       PrintIcm, PrintIcm, TravSons, TravSons, TravSons, SSAicm, TravSons, TravSons,
        TravSons, TravSons, CMPTunknown, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
