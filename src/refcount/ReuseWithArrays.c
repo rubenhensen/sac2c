@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/27 05:04:47  ktr
+ * IDX
+ *
  * Revision 1.2  2004/11/26 21:25:44  jhb
  * IDXchangeId to IVEchangeId
  *
@@ -522,7 +525,7 @@ ReuseIdxSel (node *arg1, node *arg2, info *arg_info)
 
 #ifdef MWE_TYPE_READY
         shp = TYtype2Shape (IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)));
-        idx_sel_name = IDXchangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)), shp);
+        idx_sel_name = IVEchangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)), shp);
         shp = SHfreeShape (shp);
 #else
         type = IDS_TYPE (INFO_REUSE_WL_IDS (arg_info));
@@ -536,7 +539,7 @@ ReuseIdxSel (node *arg1, node *arg2, info *arg_info)
          * handling prior to eliminating types from VINFO in index.c.
          * Eventually, this part should vanish!
          */
-        idx_sel_name = IDXchangeIdOld (IDS_NAME (INFO_REUSE_IDX (arg_info)), type);
+        idx_sel_name = IVEchangeIdOld (IDS_NAME (INFO_REUSE_IDX (arg_info)), type);
 #endif
 #endif
 
