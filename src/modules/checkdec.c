@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/10/26 16:15:26  cg
+ * Revision 1.6  1995/11/06 14:18:35  cg
+ * bug fixed in generating correct references of identifiers
+ * to their respective vardec or arg nodes
+ *
+ * Revision 1.5  1995/10/26  16:15:26  cg
  * Loading of declaration file moved to function ImportOwnDeclaration
  * from import.c
  * Many minor bugs fixed.
@@ -691,7 +695,8 @@ WDECarg (node *arg_node, node *arg_info)
 
     fprintf (decfile, " ");
 
-    if (ARG_ATTRIB (arg_node) != ST_regular) {
+    if ((ARG_ATTRIB (arg_node) == ST_reference)
+        || (ARG_ATTRIB (arg_node) == ST_readonly_reference)) {
         fprintf (decfile, "&");
     }
 

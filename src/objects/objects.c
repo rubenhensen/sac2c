@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/11/02 13:14:40  cg
+ * Revision 1.7  1995/11/06 14:20:20  cg
+ * bug fixed in generating correct references of identifiers
+ * to their respective vardec or arg nodes
+ *
+ * Revision 1.6  1995/11/02  13:14:40  cg
  * Now, the necessary references to variable declarations or
  * function parameters respectively are generated for all
  * additional identifiers.
@@ -142,6 +146,8 @@ OBJfundef (node *arg_node, node *arg_info)
         new_arg = MakeArg (OBJDEF_VARNAME (obj), new_type, ST_artificial, ST_reference,
                            FUNDEF_ARGS (arg_node));
 
+        NODE_LINE (new_arg) = NODE_LINE (arg_node);
+
         /*-------------------------------------------------------------*/
         if (FUNDEF_ARGS (arg_node) == NULL) {
             arg_node->nnode += 1;
@@ -178,14 +184,14 @@ OBJfundef (node *arg_node, node *arg_info)
     FUNDEF_STATUS (arg_node) = keep_status;
     /*-------------------------------------------------------------*/
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
     DBUG_PRINT ("OBJ", ("Traversing body of function %s", ItemName (arg_node)));
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -271,10 +277,12 @@ OBJarg (node *arg_node, node *arg_info)
         if (ret != NULL) {
             new_return_expr = MakeId (ARG_NAME (arg_node), NULL, ST_artificial);
             ID_VARDEC (new_return_expr) = arg_node;
+            NODE_LINE (new_return_expr) = NODE_LINE (ret);
 
             DBUG_PRINT ("OBJ", ("New return value: %s", ARG_NAME (arg_node)));
 
             new_return_expr = MakeExprs (new_return_expr, RETURN_EXPRS (ret));
+            NODE_LINE (new_return_expr) = NODE_LINE (ret);
 
             /*-------------------------------------------------------------*/
             if (RETURN_EXPRS (ret) == NULL) {
@@ -350,6 +358,7 @@ OBJap (node *arg_node, node *arg_info)
 
         new_arg = MakeId (OBJDEF_VARNAME (obj), NULL, ST_artificial);
         ID_VARDEC (new_arg) = OBJDEF_ARG (obj);
+        NODE_LINE (new_arg) = NODE_LINE (arg_node);
 
         DBUG_PRINT ("OBJ", ("Adding new argument: %s", OBJDEF_VARNAME (obj)));
 
@@ -426,7 +435,7 @@ node *
 OBJlet (node *arg_node, node *arg_info)
 {
     node *args, *params;
-    ids *new_ids = NULL, *last_ids;
+    ids *new_ids = NULL, *last_ids, *old_ids;
 
     DBUG_ENTER ("OBJlet");
 
@@ -447,6 +456,17 @@ OBJlet (node *arg_node, node *arg_info)
                     IDS_NEXT (last_ids)
                       = MakeIds (ID_NAME (EXPRS_EXPR (args)), NULL, ST_artificial);
                     last_ids = IDS_NEXT (last_ids);
+                }
+
+                old_ids = LET_IDS (arg_node);
+
+                while (old_ids != NULL) {
+                    if (strcmp (IDS_NAME (old_ids), IDS_NAME (last_ids)) == 0) {
+                        ERROR (NODE_LINE (arg_node),
+                               ("Object '%s` already existing", IDS_NAME (old_ids)));
+                    }
+
+                    old_ids = IDS_NEXT (old_ids);
                 }
 
                 IDS_VARDEC (last_ids) = ID_VARDEC (EXPRS_EXPR (args));
