@@ -1,12 +1,10 @@
 ArrayElimination.c
 ArrayElimination.h
 Makefile
-SSAWLF.h
 SSAWLT.c
 SSAWLT.h
 SSAWithloopFolding.c
 SSAWithloopFolding.h
-WLF.h
 WLT.c
 WLT.h
 WithloopFolding.c
