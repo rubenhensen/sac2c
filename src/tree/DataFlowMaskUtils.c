@@ -1,109 +1,18 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2004/11/23 10:05:24  sah
+ * SaC DevCamp 04
+ *
  * Revision 3.15  2004/11/21 11:22:03  sah
  * removed some old ast infos
- *
- * Revision 3.14  2004/11/17 19:00:36  sah
- * fixed ktr changes, should work now as intended by ktr
- *
- * Revision 3.13  2004/11/17 09:03:35  ktr
- * added support for AVIS nodes.
- *
- * Revision 3.12  2004/09/29 16:55:48  sah
- * added lots of DBUG_PRINT statements and switched DFM2ProductType to
- * a recursive implementation avoiding copying types
- *
- * Revision 3.11  2004/09/27 12:29:02  sah
- * DFM2FunctionType and DFM2ProductType
- * handle empty types (prior to ti)
- * correct now
- *
- * Revision 3.10  2004/09/27 10:40:26  sah
- * Added DFM2ProductType and DFM2FunctionType
- * both are needed by lac2fun to generate the
- * ntype function signature for fresh generated
- * LaC-funs
- *
- * Revision 3.9  2002/10/18 13:48:58  sbs
- * several flag settings for freshly made N_id nodes inserted.
- *
- * Revision 3.8  2002/08/13 13:46:40  dkr
- * SearchInLUT_PP used instead of SearchInLUT_P
- *
- * Revision 3.7  2002/02/22 14:30:57  dkr
- * DFM2ReturnTypes: workaround for FUNDEF_NAME as a part of TYPES no
- * longer needed
- *
- * Revision 3.6  2002/02/20 14:37:23  dkr
- * function DupTypes() renamed into DupAllTypes()
- *
- * Revision 3.5  2001/05/17 11:39:08  dkr
- * MALLOC FREE aliminated
- *
- * Revision 3.4  2001/03/22 20:03:14  dkr
- * include of tree.h eliminated
- *
- * Revision 3.3  2001/03/22 13:29:53  dkr
- * InsertIntoLUT renamed into InsertIntoLUT_P
- * SearchInLUT renamed into SearchInLUT_P
- *
- * Revision 3.2  2001/02/14 14:37:56  dkr
- * DFM2...(): STATUS and ATTRIB are set correctly now
- *
- * Revision 3.1  2000/11/20 18:03:17  sacbase
- * new release made
- *
- * Revision 1.15  2000/10/24 11:56:11  dkr
- * MakeTypes renamed into MakeTypes1
- *
- * Revision 1.14  2000/10/23 11:33:48  dkr
- * MakeIds1 renamed into MakeIds_Copy
- *
- * Revision 1.13  2000/10/23 10:27:19  dkr
- * MakeId1 replaced by MakeId_Copy
- *
- * Revision 1.12  2000/07/12 15:15:49  dkr
- * function DuplicateTypes renamed into DupTypes
- *
- * Revision 1.11  2000/07/12 13:35:24  dkr
- * DFMDuplicateMask: NOTE replaced by DBUG_PRINT
- *
- * Revision 1.8  2000/07/04 14:36:43  jhs
- * Added DFMGetMaskBase and used it in DFMDuplicateMask
- *
- * Revision 1.7  2000/03/24 00:51:29  dkr
- * some DBUG_PRINT statements added
- *
- * Revision 1.6  2000/03/23 16:16:22  dkr
- * DFM2ReturnTypes() modified: reference flag in rettypes->attrib is
- * unset
- *
- * Revision 1.5  2000/03/23 12:33:55  dkr
- * DFM2Vardecs modified: VARDEC_ATTRIB is now set correctly
- *
- * Revision 1.4  2000/03/17 21:02:25  dkr
- * added type declarations and functios for a DFM stack
- *
- * Revision 1.3  2000/03/09 18:35:50  jhs
- * new copy routine
- *
- * Revision 1.2  2000/02/03 17:29:56  dkr
- * LUTs added
  *
  * Revision 1.1  2000/01/21 16:52:08  dkr
  * Initial revision
  *
  */
 
-#include "types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "internal_lib.h"
-#include "free.h"
-#include "dbug.h"
-#include "DupTree.h"
-#include "DataFlowMask.h"
+#include "DataFlowMaskUtils.h"
 
 /************************************************
  *
@@ -114,10 +23,10 @@
  * type definition for DFM stack
  */
 
-typedef struct STACK_T {
+struct STACK_T {
     DFMmask_t mask;
     struct STACK_T *next;
-} stack_t;
+};
 
 typedef int (*fun_t) (DFMmask_t mask, char *id, node *decl);
 

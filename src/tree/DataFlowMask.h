@@ -1,61 +1,12 @@
 /*
  * $Log$
+ * Revision 3.4  2004/11/23 10:05:24  sah
+ * SaC DevCamp 04
+ *
  * Revision 3.3  2004/08/02 14:07:58  sah
  * added lots of ugly defines to remove
  * compiler warning when using the old
  * ast;)
- *
- * Revision 3.2  2004/07/31 12:46:07  sah
- * modified abstract datatype from void* pointers
- * to abstract structures
- *
- * Revision 3.1  2000/11/20 18:03:16  sacbase
- * new release made
- *
- * Revision 1.4  2000/07/04 14:36:43  jhs
- * Added DFMGetMaskBase and used it in DFMDuplicateMask
- *
- * Revision 1.3  2000/06/21 13:32:46  jhs
- * fixed comment
- *
- * Revision 1.2  2000/05/31 13:21:22  dkr
- * function DFMPrintMaskDetailed() added
- *
- * Revision 1.1  2000/01/21 11:16:21  dkr
- * Initial revision
- *
- * Revision 2.3  2000/01/19 15:40:15  dkr
- * typo in comment corrected
- *
- * Revision 2.2  1999/07/20 16:50:42  jhs
- * Changed behaviour of DFMTest[|2|3]Mask[s].
- * They do not only test, but count hits.
- *
- * Revision 2.1  1999/02/23 12:41:09  sacbase
- * new release made
- *
- * Revision 1.8  1998/06/05 16:15:41  cg
- * This module is now able to deal with compiled variable declarations (ICMs)
- *
- * Revision 1.7  1998/06/03 14:35:05  cg
- * added function DFMUpdateMaskBaseAfterRenaming for special update
- * during precompiling .
- *
- * Revision 1.6  1998/05/19 08:53:26  cg
- * added strtok() like functions for retrieving variables from masks
- *
- * Revision 1.5  1998/05/07 15:36:04  cg
- * mechanism added that allows general updates of data flow masks,
- * i.e. with newly introduced identifiers as well as old ones removed.
- *
- * Revision 1.4  1998/05/06 21:19:03  dkr
- * corrected signature of DFMSetMaskCopy
- *
- * Revision 1.3  1998/05/06 17:19:34  dkr
- * added DFMGenMaskMinus(), DFMSetMaskMinus()
- *
- * Revision 1.2  1998/05/05 15:54:00  cg
- * first running revision
  *
  * Revision 1.1  1998/05/04 15:53:12  cg
  * Initial revision
@@ -150,74 +101,60 @@
  *
  *****************************************************************************/
 
-#ifndef DATAFLOWMASK_H
+#ifndef _SAC_DATAFLOWMASK_H_
+#define _SAC_DATAFLOWMASK_H_
 
-#define DATAFLOWMASK_H
-
-#include <stdio.h>
 #include "types.h"
-
-/*
- * abstract data types
- */
-
-#ifdef NEW_AST
-typedef struct MASK_BASE_T *DFMmask_base_t;
-typedef struct MASK_T *DFMmask_t;
-#else
-typedef void *DFMmask_base_t;
-typedef void *DFMmask_t;
-#endif
 
 /*
  * function declarations
  */
 
-extern DFMmask_base_t DFMGenMaskBase (node *arguments, node *vardecs);
-extern DFMmask_base_t DFMUpdateMaskBase (DFMmask_base_t mask_base, node *arguments,
+extern dfmask_base_t *DFMgenMaskBase (node *arguments, node *vardecs);
+extern dfmask_base_t *DFMupdateMaskBase (dfmask_base_t *mask_base, node *arguments,
                                          node *vardecs);
-extern DFMmask_base_t DFMUpdateMaskBaseAfterRenaming (DFMmask_base_t mask_base,
+extern dfmask_base_t *DFMupdateMaskBaseAfterRenaming (dfmask_base_t *mask_base,
                                                       node *arguments, node *vardecs);
-extern DFMmask_base_t DFMUpdateMaskBaseAfterCompiling (DFMmask_base_t mask_base,
+extern dfmask_base_t *DFMupdateMaskBaseAfterCompiling (dfmask_base_t *mask_base,
                                                        node *arguments, node *vardecs);
-extern DFMmask_base_t DFMRemoveMaskBase (DFMmask_base_t mask_base);
+extern dfmask_base_t *DFMremoveMaskBase (dfmask_base_t *mask_base);
 
-extern DFMmask_base_t DFMGetMaskBase (DFMmask_t mask);
+extern dfmask_base_t *DFMgetMaskBase (dfmask_t *mask);
 
-extern DFMmask_t DFMGenMaskClear (DFMmask_base_t mask_base);
-extern DFMmask_t DFMGenMaskSet (DFMmask_base_t mask_base);
-extern DFMmask_t DFMGenMaskCopy (DFMmask_t mask);
-extern DFMmask_t DFMGenMaskAnd (DFMmask_t mask1, DFMmask_t mask2);
-extern DFMmask_t DFMGenMaskOr (DFMmask_t mask1, DFMmask_t mask2);
-extern DFMmask_t DFMGenMaskMinus (DFMmask_t mask1, DFMmask_t mask2);
-extern DFMmask_t DFMGenMaskInv (DFMmask_t mask);
+extern dfmask_t *DFMgenMaskClear (dfmask_base_t *mask_base);
+extern dfmask_t *DFMgenMaskSet (dfmask_base_t *mask_base);
+extern dfmask_t *DFMgenMaskCopy (dfmask_t *mask);
+extern dfmask_t *DFMgenMaskAnd (dfmask_t *mask1, dfmask_t *mask2);
+extern dfmask_t *DFMgenMaskOr (dfmask_t *mask1, dfmask_t *mask2);
+extern dfmask_t *DFMgenMaskMinus (dfmask_t *mask1, dfmask_t *mask2);
+extern dfmask_t *DFMgenMaskInv (dfmask_t *mask);
 
-extern void DFMSetMaskClear (DFMmask_t mask);
-extern void DFMSetMaskSet (DFMmask_t mask);
-extern void DFMSetMaskCopy (DFMmask_t mask, DFMmask_t mask2);
-extern void DFMSetMaskAnd (DFMmask_t mask, DFMmask_t mask2);
-extern void DFMSetMaskOr (DFMmask_t mask, DFMmask_t mask2);
-extern void DFMSetMaskMinus (DFMmask_t mask, DFMmask_t mask2);
-extern void DFMSetMaskInv (DFMmask_t mask);
+extern void DFMsetMaskClear (dfmask_t *mask);
+extern void DFMsetMaskSet (dfmask_t *mask);
+extern void DFMsetMaskCopy (dfmask_t *mask, dfmask_t *mask2);
+extern void DFMsetMaskAnd (dfmask_t *mask, dfmask_t *mask2);
+extern void DFMsetMaskOr (dfmask_t *mask, dfmask_t *mask2);
+extern void DFMsetMaskMinus (dfmask_t *mask, dfmask_t *mask2);
+extern void DFMsetMaskInv (dfmask_t *mask);
 
-extern int DFMTestMask (DFMmask_t mask);
-extern int DFMTest2Masks (DFMmask_t mask1, DFMmask_t mask2);
-extern int DFMTest3Masks (DFMmask_t mask1, DFMmask_t mask2, DFMmask_t mask3);
+extern int DFMtestMask (dfmask_t *mask);
+extern int DFMtest2Masks (dfmask_t *mask1, dfmask_t *mask2);
+extern int DFMtest3Masks (dfmask_t *mask1, dfmask_t *mask2, dfmask_t *mask3);
 
-extern DFMmask_t DFMRemoveMask (DFMmask_t mask);
+extern dfmask_t *DFMremoveMask (dfmask_t *mask);
 
-extern void DFMPrintMask (FILE *handle, const char *format, DFMmask_t mask);
-extern void DFMPrintMaskDetailed (FILE *handle, DFMmask_t mask);
+extern void DFMprintMask (FILE *handle, const char *format, dfmask_t *mask);
+extern void DFMprintMaskDetailed (FILE *handle, dfmask_t *mask);
 
-extern void DFMSetMaskEntryClear (DFMmask_t mask, char *id, node *decl);
-extern void DFMSetMaskEntrySet (DFMmask_t mask, char *id, node *decl);
-extern int DFMTestMaskEntry (DFMmask_t mask, char *id, node *decl);
+extern void DFMsetMaskEntryClear (dfmask_t *mask, char *id, node *avis);
+extern void DFMsetMaskEntrySet (dfmask_t *mask, char *id, node *avis);
+extern int DFMtestMaskEntry (dfmask_t *mask, char *id, node *avis);
 
-extern char *DFMGetMaskEntryNameSet (DFMmask_t mask);
-extern char *DFMGetMaskEntryNameClear (DFMmask_t mask);
-extern node *DFMGetMaskEntryDeclSet (DFMmask_t mask);
-extern node *DFMGetMaskEntryDeclClear (DFMmask_t mask);
+extern char *DFMgetMaskEntryNameSet (dfmask_t *mask);
+extern char *DFMgetMaskEntryNameClear (dfmask_t *mask);
+extern node *DFMgetMaskEntryDeclSet (dfmask_t *mask);
+extern node *DFMgetMaskEntryDeclClear (dfmask_t *mask);
 
-extern node *DFMVar2Decl (DFMmask_t mask, char *var);
+extern node *DFMvar2Decl (dfmask_t *mask, char *var);
 
-#endif /* DATAFLOWMASK_H */
+#endif /* _SAC_DATAFLOWMASK_H_ */

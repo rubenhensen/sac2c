@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.53  2004/11/23 10:09:43  sah
+  SaC DevCamp 04
+
   Revision 1.52  2004/11/23 10:07:32  sah
   Sac DevCamp 04
 
@@ -2391,19 +2394,19 @@
           </phases>
         </attribute>
         <attribute name="In_Mask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="infer_dfms" to="wltransform" />
           </phases>
         </attribute>
         <attribute name="Out_Mask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="infer_dfms" to="wltransform" />
           </phases>
         </attribute>
         <attribute name="Local_Mask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="infer_dfms" to="wltransform" />
           </phases>

@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.8  2004/11/23 10:09:43  sah
+  SaC DevCamp 04
+
   Revision 1.7  2004/11/22 17:16:56  sah
   changes.
   DK 04
@@ -115,10 +118,13 @@
   </xsl:template>
 
   <!-- generate the fields required for a flag -->
-  <xsl:template match="flags" mode="generate-attrib-structs">
+  <xsl:template match="flags[flag]" mode="generate-attrib-structs">
     <xsl:value-of select="'struct { '" />
     <xsl:apply-templates select="flag" mode="generate-attrib-structs" />
     <xsl:value-of select="'} flags;'" />
+  </xsl:template>
+
+  <xsl:template match="flags" mode="generate-attrib-structs">
   </xsl:template>
 
   <xsl:template match="flag" mode="generate-attrib-structs">

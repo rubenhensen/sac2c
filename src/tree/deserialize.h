@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/23 10:05:24  sah
+ * SaC DevCamp 04
+ *
  * Revision 1.6  2004/11/17 19:50:04  sah
  * interface changes
  *
@@ -28,26 +31,25 @@
 #define _DESERIALIZE_H
 
 #include "types.h"
-#include "new_types.h"
-#include "modulemanager.h"
 
-extern void InitDeserialize (node *module);
-extern void FinishDeserialize (node *module);
+extern void DSinitDeserialize (node *module);
+extern void DSfinishDeserialize (node *module);
 
-extern node *AddSymbolByName (const char *symbol, STentrytype_t type, const char *module);
-extern node *AddSymbolById (const char *symbid, const char *module);
+extern node *DSaddSymbolByName (const char *symbol, STentrytype_t type,
+                                const char *module);
+extern node *DSaddSymbolById (const char *symbid, const char *module);
 
 /*
  * hooks for deserialization
  */
-extern ntype *DeserializeLoadUserType (const char *mod, const char *name);
-extern ntype *DeserializeLoadSymbolType (const char *mod, const char *name);
-extern node *DeserializeLookupFunction (const char *module, const char *symbol);
+extern ntype *DSloadUserType (const char *mod, const char *name);
+extern ntype *DSloadSymbolType (const char *mod, const char *name);
+extern node *DSlookupFunction (const char *module, const char *symbol);
 
 /*
  * DS traversal
  */
-extern node *AddFunctionBodyToHead (node *fundef);
+extern node *DSdoDeserialize (node *fundef);
 
 extern node *DSFundef (node *arg_node, info *arg_info);
 extern node *DSReturn (node *arg_node, info *arg_info);

@@ -1,38 +1,19 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/23 10:05:24  sah
+ * SaC DevCamp 04
+ *
  * Revision 1.4  2004/11/17 09:01:31  ktr
  * added InferInDFMAssignChain
- *
- * Revision 1.3  2004/08/01 15:43:46  sah
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 1.2  2001/04/19 09:51:43  dkr
- * INFDFMSwith, INFDFMSwith2 replaced by INFDFMSwithx
- *
- * Revision 1.1  2000/12/15 18:29:36  dkr
- * Initial revision
- *
- * Revision 1.6  2000/12/15 10:43:49  dkr
- * signature of InferDFMs() modified
- *
- * Revision 1.5  2000/12/08 11:58:32  dkr
- * INFDFMSicm added
- *
- * Revision 1.4  2000/12/06 20:05:53  dkr
- * ups, syntax error eliminated
- *
- * Revision 1.3  2000/12/06 20:03:23  dkr
- * InferDFMs added
  *
  * Revision 1.1  2000/12/06 19:57:54  dkr
  * Initial revision
  *
  */
 
-#ifndef _sac_InferDFMs_h_
-#define _sac_InferDFMs_h_
+#ifndef _SAC_INFERDFMS_H_
+#define _SAC_INFERDFMS_H_
 
 #include "DataFlowMask.h"
 
@@ -81,7 +62,7 @@ extern node *INFDFMSwhile (node *arg_node, info *arg_info);
 extern node *INFDFMSdo (node *arg_node, info *arg_info);
 extern node *INFDFMSicm (node *arg_node, info *arg_info);
 
-extern node *InferDFMs (node *syntax_tree, int hide_locals);
-extern DFMmask_t InferInDFMAssignChain (node *assign, node *fundef);
+extern node *INFDFMSdoInferDFMs (node *syntax_tree, int hide_locals);
+extern dfmask_t *INFDFMSdoInferInDFMAssignChain (node *assign, node *fundef);
 
-#endif /* _sac_InferDFMs_h_ */
+#endif /* _SAC_INFERDFMS_H_ */

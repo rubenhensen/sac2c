@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.236  2004/11/23 10:05:24  sah
+ * SaC DevCamp 04
+ *
  * Revision 3.235  2004/11/21 20:31:16  sah
  * SaCDevCamp 04 ISMOP II
  *
@@ -123,7 +126,7 @@ extern types *TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name
 
 /*--------------------------------------------------------------------------*/
 
-#if 0 /* TODO: SBS remove this as soon as parser is fixed */
+#if 1 /* TODO: SBS remove this as soon as parser is fixed */
 
 /***
  ***  NUMS :
@@ -134,9 +137,9 @@ extern types *TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name
  ***    nums*  NEXT  (O)
  ***/
 
-extern nums *TBmakeNums(int num, nums *next);
-extern nums *TBcreateNums( int size, ...);
-extern int *TBcreateIntegerArray( int size, ...);
+extern nums *TBmakeNums (int num, nums *next);
+extern nums *TBcreateNums (int size, ...);
+extern int *TBcreateIntegerArray (int size, ...);
 
 #define NUMS_NUM(n) (n->num)
 #define NUMS_NEXT(n) (n->next)
@@ -242,12 +245,14 @@ extern access_t *TBmakeAccess (node *array, node *iv, accessclass_t class, shpse
  ***
  ***/
 
-extern dffoldmask_t *TBmakeDFMfoldmask (node *vardec, node *foldop, dffoldmask_t *next);
-extern dffoldmask_t *TBcopyDFMfoldmask (dffoldmask_t *mask);
+extern dffoldmask_t *TBmakeDfFoldMask (node *vardec, node *foldop, dffoldmask_t *next);
 
-#define DFMFM_VARDEC(n) (n->vardec)
-#define DFMFM_FOLDOP(n) (n->foldop)
-#define DFMFM_NEXT(n) (n->next)
+/* TODO: move to DupTree.c */
+extern dffoldmask_t *TBcopyDfFoldMask (dffoldmask_t *mask);
+
+#define DFFM_VARDEC(n) (n->vardec)
+#define DFFM_FOLDOP(n) (n->foldop)
+#define DFFM_NEXT(n) (n->next)
 
 /*
  * this defines the new node type
