@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.103  2004/10/04 15:36:04  skt
+ * xT_IDENTIFIER erased
+ *
  * Revision 3.102  2004/09/28 14:11:18  ktr
  * removed old refcount and generatemasks
  *
@@ -2429,7 +2432,6 @@ DupMt (node *arg_node, info *arg_info)
     DBUG_ENTER ("DupMt");
 
     new_node = MakeMT (DUPTRAV (MT_REGION (arg_node)));
-    MT_IDENTIFIER (new_node) = MT_IDENTIFIER (arg_node);
 
     MT_USEMASK (new_node) = DupDFMask_ (MT_USEMASK (arg_node), arg_info);
     MT_DEFMASK (new_node) = DupDFMask_ (MT_DEFMASK (arg_node), arg_info);
@@ -2458,7 +2460,6 @@ DupSt (node *arg_node, info *arg_info)
     DBUG_ENTER ("DupSt");
 
     new_node = MakeST (DUPTRAV (ST_REGION (arg_node)));
-    ST_IDENTIFIER (new_node) = ST_IDENTIFIER (arg_node);
 
     ST_USEMASK (new_node) = DupDFMask_ (ST_USEMASK (arg_node), arg_info);
     ST_DEFMASK (new_node) = DupDFMask_ (ST_DEFMASK (arg_node), arg_info);
