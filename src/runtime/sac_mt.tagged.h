@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2003/10/14 08:51:01  cg
+ * comment corrected
+ *
  * Revision 1.5  2003/09/19 12:26:45  dkr
  * postfixes _nt, _any of varnames renamed into _NT, _ANY
  *
@@ -238,6 +241,7 @@ typedef union {
         SAC_ND_A_DESC (res_NT)                                                           \
           = (SAC_MT_BARRIER_DESC_RESULT_DESC (SAC_MT_barrier, n, m, basetype));          \
     }
+
 /*
  * AKD
  */
