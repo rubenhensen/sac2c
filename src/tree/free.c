@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/02/12 17:03:26  nmw
+ * N_avis node added
+ *
  * Revision 3.7  2001/02/12 10:53:00  nmw
  * N_ssacnt and N_cseinfo added
  *
@@ -860,6 +863,7 @@ FreeArg (node *arg_node, node *arg_info)
     tmp = FREECONT (ARG_NEXT (arg_node));
 
     FREE (ARG_NAME (arg_node));
+    FREETRAV (ARG_AVIS (arg_node));
     FreeOneTypes (ARG_TYPE (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_arg node ..."));
@@ -910,6 +914,7 @@ FreeVardec (node *arg_node, node *arg_info)
     tmp = FREECONT (VARDEC_NEXT (arg_node));
 
     FREE (VARDEC_NAME (arg_node));
+    FREETRAV (VARDEC_AVIS (arg_node));
     FreeOneTypes (VARDEC_TYPE (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_vardec node ..."));
@@ -2008,6 +2013,23 @@ FreeSSAcnt (node *arg_node, node *arg_info)
     FREE (SSACNT_BASEID (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_ssacnt node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeAvis (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeAvis");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_avis node ..."));
+
+    DBUG_PRINT ("FREE", ("Removing N_avis node ..."));
 
     FREE (arg_node);
 

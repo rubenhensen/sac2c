@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/02/12 17:03:03  nmw
+ * N_avis node added
+ *
  * Revision 3.10  2001/02/12 10:56:41  nmw
  * handling for SSA arguments in N_arg and N_vardec added
  *
@@ -1108,11 +1111,15 @@ DupVardec (node *arg_node, node *arg_info)
     VARDEC_NAIVE_REFCNT (new_node) = VARDEC_NAIVE_REFCNT (arg_node);
     VARDEC_FLAG (new_node) = VARDEC_FLAG (arg_node);
     VARDEC_OBJDEF (new_node) = VARDEC_OBJDEF (arg_node);
-    VARDEC_SSACOUNT (new_node) = VARDEC_SSACOUNT (arg_node);
-    VARDEC_SSAASSIGN (new_node) = VARDEC_SSAASSIGN (arg_node);
-    VARDEC_SSACONST (new_node) = VARDEC_SSACONST (arg_node);
-    VARDEC_SSAPHITARGET (new_node) = VARDEC_SSAPHITARGET (arg_node);
-    VARDEC_SSALPINV (new_node) = VARDEC_SSALPINV (arg_node);
+    if (VARDEC_AVIS (arg_node) != NULL) {
+        /* we have to duplicate the containing avis node */
+        FreeAvis (VARDEC_AVIS (new_node), arg_info);
+        VARDEC_AVIS (new_node) = DupAvis (VARDEC_AVIS (arg_node), arg_info);
+        /* correct backreferece */
+        AVIS_VARDECORARG (VARDEC_AVIS (new_node)) = new_node;
+    } else {
+        /* nop, the created empty avis node is ok */
+    }
 
 #if 0
   VARDEC_ACTCHN( new_node) = ???;
@@ -1143,11 +1150,15 @@ DupArg (node *arg_node, node *arg_info)
     ARG_REFCNT (new_node) = ARG_REFCNT (arg_node);
     ARG_NAIVE_REFCNT (new_node) = ARG_NAIVE_REFCNT (arg_node);
     ARG_OBJDEF (new_node) = ARG_OBJDEF (arg_node);
-    ARG_SSACOUNT (new_node) = ARG_SSACOUNT (arg_node);
-    ARG_SSAASSIGN (new_node) = ARG_SSAASSIGN (arg_node);
-    ARG_SSACONST (new_node) = ARG_SSACONST (arg_node);
-    ARG_SSAPHITARGET (new_node) = ARG_SSAPHITARGET (arg_node);
-    ARG_SSALPINV (new_node) = ARG_SSALPINV (arg_node);
+    if (ARG_AVIS (arg_node) != NULL) {
+        /* we have to duplicate the containing avis node */
+        FreeAvis (ARG_AVIS (new_node), arg_info);
+        ARG_AVIS (new_node) = DupAvis (ARG_AVIS (arg_node), arg_info);
+        /* correct backreferece */
+        AVIS_VARDECORARG (ARG_AVIS (new_node)) = new_node;
+    } else {
+        /* nop, the created empty avis node is ok */
+    }
 
 #if 0
   ARG_TYPESTRING( new_node) = ???;
@@ -2113,6 +2124,40 @@ DupMTalloc (node *arg_node, node *arg_info)
     new_node = MakeMTalloc ();
 
     MTALLOC_IDSET (new_node) = DupDFMmask (MTALLOC_IDSET (arg_node), arg_info);
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DupAvis( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Duplicates a N_avis node. Does not set the correct backrefence!!!
+ *
+ ******************************************************************************/
+
+node *
+DupAvis (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupAvis");
+
+    new_node = MakeAvis (NULL);
+
+    AVIS_SSACOUNT (new_node) = AVIS_SSACOUNT (arg_node);
+    AVIS_SSAASSIGN (new_node) = AVIS_SSAASSIGN (arg_node);
+    AVIS_SSACONST (new_node) = AVIS_SSACONST (arg_node);
+    AVIS_SSAPHITARGET (new_node) = AVIS_SSAPHITARGET (arg_node);
+    AVIS_SSALPINV (new_node) = AVIS_SSALPINV (arg_node);
+    AVIS_SSASUBST (new_node) = AVIS_SSASUBST (arg_node);
+    AVIS_SSACOND (new_node) = AVIS_SSACOND (arg_node);
+    AVIS_SSATHEN (new_node) = AVIS_SSATHEN (arg_node);
+    AVIS_SSAELSE (new_node) = AVIS_SSAELSE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
