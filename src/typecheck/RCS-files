@@ -12,6 +12,8 @@ prim_fun.c
 prim_fun.h
 prim_fun_ft.mac
 prim_fun_tt.mac
+ssi.c
+ssi.h
 type_constructor_info.mac
 typecheck.c
 typecheck.h
