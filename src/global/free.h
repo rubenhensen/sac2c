@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  1997/11/13 16:11:31  srs
+ * free functions for the new WL-syntaxtree
+ *
  * Revision 1.12  1997/10/29 14:55:44  srs
  * changed FREE and removed HAVE_MALLOC_O
  *
@@ -145,26 +148,15 @@ extern node *FreeInc (node *arg_node, node *arg_info);
 extern node *FreePragma (node *arg_node, node *arg_info);
 extern node *FreeInfo (node *arg_node, node *arg_info);
 
-extern void FreePrf2 (node *arg_node, int arg_no);
+/* new withloops */
+extern node *FreeNWith (node *arg_node, node *arg_info);
+extern node *FreeNPart (node *arg_node, node *arg_info);
+extern node *FreeNWithID (node *arg_node, node *arg_info);
+extern node *FreeNGenerator (node *arg_node, node *arg_info);
+extern node *FreeNWithOp (node *arg_node, node *arg_info);
+extern node *FreeNCode (node *arg_node, node *arg_info);
 
-/*******************************************************************/
-
-#if 0 /* Old Stuff from first version of free.c */
-
-extern void FreeIds(ids *ids);
-extern void FreeIdsOnly(ids *ids);
-extern void FreeImplist(node *implist);
-
-extern void FreeTree(node *arg_node);
-
-extern node *FreeNoInfo   (node *arg_node ,node *arg_info);
-extern node *FreeInfoId   (node *arg_node ,node *arg_info);
-extern node *FreeInfoIds  (node *arg_node ,node *arg_info);
-extern node *FreeInfoType (node *arg_node ,node *arg_info);
-extern node *FreeModul    (node *arg_node ,node *arg_info);
-
-extern void FreePrf2(node *arg_node, int arg_no);
-
-#endif /* 0 */
+/* special functions */
+extern void FreePrf2 (node *arg_node, int arg_no); /* CF */
 
 #endif /* _sac_free_h */
