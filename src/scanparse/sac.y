@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2002/08/14 07:30:55  sbs
+ * bloddy error in HMAdjustFundef calls eliminated
+ *
  * Revision 3.52  2002/08/13 17:15:04  sbs
  * calls to HMAdjustFundef inserted at each MakeFundef call
  *
@@ -638,6 +641,7 @@ fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
            FUNDEF_ATTRIB( $$) = ST_regular;
            FUNDEF_STATUS( $$) = ST_regular;
            FUNDEF_INFIX( $$) = TRUE;
+           $$ = HMAdjustFundef( $$);
               
            DBUG_PRINT("PARSE",
 		       ("%s: %s:%s "F_PTR,
@@ -656,6 +660,7 @@ fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
            FUNDEF_ATTRIB( $$) = ST_regular;
            FUNDEF_STATUS( $$) = ST_regular;
            FUNDEF_INFIX( $$) = FALSE;
+           $$ = HMAdjustFundef( $$);
 
            DBUG_PRINT("PARSE",
 		       ("%s: %s:%s "F_PTR,
@@ -667,7 +672,7 @@ fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
          }
        ;
 
-fundef2: args BRACKET_R { $$ = HMAdjustFundef( MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL)); }
+fundef2: args BRACKET_R { $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
          exprblock
          { 
            $$ = $<node>3;
@@ -684,7 +689,7 @@ fundef2: args BRACKET_R { $$ = HMAdjustFundef( MakeFundef( NULL, NULL, NULL, NUL
 		       FUNDEF_ARGS( $$)));
          }
 
-      | BRACKET_R { $$ = HMAdjustFundef( MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL)); }
+      | BRACKET_R { $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
        exprblock
          { 
            $$ = $<node>2;
@@ -729,9 +734,9 @@ arg: type id
 
 main: TYPE_INT K_MAIN BRACKET_L BRACKET_R { $<cint>$ = linenum; } exprblock
       {
-        $$ = HMAdjustFundef( MakeFundef( NULL, NULL,
+        $$ = MakeFundef( NULL, NULL,
 		         MakeTypes1( T_int),
-		         NULL, $6, NULL));
+		         NULL, $6, NULL);
         NODE_LINE( $$) = $<cint>5;
 
         FUNDEF_NAME( $$) = StringCopy( "main");
@@ -1832,6 +1837,7 @@ fundec: varreturntypes fun_id BRACKET_L fundec2
             FUNDEF_ATTRIB( $$) = ST_regular;
             FUNDEF_STATUS( $$) = (file_kind == F_moddec)
                                    ? ST_imported_mod : ST_imported_class;
+            $$ = HMAdjustFundef( $$);
 
             DBUG_PRINT("PARSE",
                        ("%s:"F_PTR" Id: %s , NULL body,  %s" F_PTR,
@@ -1847,13 +1853,13 @@ fundec: varreturntypes fun_id BRACKET_L fundec2
 
 fundec2: varargtypes BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
            {
-             $$ = HMAdjustFundef( MakeFundef( NULL, NULL, NULL, $1, NULL, NULL));
+             $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
              NODE_LINE( $$) = $<cint>3;
              FUNDEF_PRAGMA( $$) = $5;
            }
        | varargs BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
            {
-             $$ = HMAdjustFundef( MakeFundef( NULL, NULL, NULL, $1, NULL, NULL));
+             $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
              NODE_LINE( $$) = $<cint>3;
              FUNDEF_PRAGMA( $$) = $5;
            }
@@ -1864,19 +1870,19 @@ fundec2: varargtypes BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
                yyerror( "syntax error");
              }
              else {
-               $$ = HMAdjustFundef( MakeFundef( NULL, NULL, NULL,
+               $$ = MakeFundef( NULL, NULL, NULL,
                                 MakeArg( NULL,
                                          MakeTypes1( T_dots),
                                          ST_regular, ST_regular,
                                          NULL),
-                                NULL, NULL));
+                                NULL, NULL);
                NODE_LINE( $$) = $<cint>5;
                FUNDEF_PRAGMA( $$) = $7;
              }
            }
        | BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
            {
-             $$ = HMAdjustFundef( MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL));
+             $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL);
              NODE_LINE( $$) = $<cint>2;
              FUNDEF_PRAGMA( $$) = $4;
            }
@@ -2212,7 +2218,9 @@ sibfuns: sibfun sibfuns
 sibfun: sibevmarker varreturntypes fun_id BRACKET_L sibarglist
         BRACKET_R { $<cint>$ = linenum; } sibfunbody sibpragmas
           {
-            $$ = HMAdjustFundef( MakeFundef( StringCopy( IDS_NAME( $3)), IDS_MOD( $3), $2, $5, $8, NULL));
+            $$ = HMAdjustFundef(
+                   MakeFundef( StringCopy( IDS_NAME( $3)),
+                               IDS_MOD( $3), $2, $5, $8, NULL));
             $3 = FreeOneIds( $3);
             NODE_LINE( $$) = $<cint>7;
             switch ($1) {
@@ -2364,10 +2372,11 @@ sibfunlist: sibfunlistentry COMMA sibfunlist
 
 sibfunlistentry: fun_id BRACKET_L sibarglist BRACKET_R
                  {
-                   $$ = HMAdjustFundef( MakeFundef( StringCopy( IDS_NAME( $1)),
-                                    IDS_MOD( $1),
-                                    MakeTypes1( T_unknown),
-                                    $3, NULL, NULL));
+                   $$ = HMAdjustFundef(
+                          MakeFundef( StringCopy( IDS_NAME( $1)),
+                                      IDS_MOD( $1),
+                                      MakeTypes1( T_unknown),
+                                      $3, NULL, NULL));
                    FUNDEF_STATUS( $$) = sib_imported_status;
 
                    DBUG_PRINT("PARSE_SIB",("%s"F_PTR"SibNeedFun %s",
