@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2004/11/25 17:28:30  cg
+ * Added inherit_list_t for parsing resource files.
+ *
  * Revision 1.14  2004/11/24 17:30:28  cg
  * *** empty log message ***
  *
@@ -782,6 +785,7 @@ typedef struct SIG_DEP sig_dep;
  *
  * type: resource_list_t
  * type: target_list_t
+ * type: inheritence_list_t
  *
  * description:
  *
@@ -798,9 +802,14 @@ typedef struct RESOURCE_LIST_T {
     struct RESOURCE_LIST_T *next;
 } resource_list_t;
 
+typedef struct INHERITENCE_LIST_T {
+    char *name;
+    struct INHERITENCE_LIST_T *next;
+} inheritence_list_t;
+
 typedef struct TARGET_LIST_T {
     char *name;
-    node *super_targets;
+    inheritence_list_t *super_targets;
     resource_list_t *resource_list;
     struct TARGET_LIST_T *next;
 } target_list_t;
@@ -1027,12 +1036,8 @@ typedef struct GENLIB_FLAGS_T {
 
 typedef struct GLOBAL_T {
 #define GLOBALtype(it_type) it_type
-#define GLOBALname(it_name) it_name
-#define GLOBALdelim ;
+#define GLOBALname(it_name) it_name;
 #include "globals.mac"
-#undef GLOBALdelim
-#undef GLOBALname
-#undef GLOBALtype
 } global_t;
 
 /*******************************************************************************
