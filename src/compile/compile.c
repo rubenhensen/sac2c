@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2001/03/22 19:15:58  dkr
+ * include of tree.h elimiated
+ *
  * Revision 3.28  2001/03/15 21:25:35  dkr
  * signature of NodeOr..._MakeIndex() modified
  *
@@ -98,15 +101,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tree.h"
+#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "internal_lib.h"
 #include "prf.h"
 
 #include "print.h"
 #include "dbug.h"
 #include "my_debug.h"
-#include "internal_lib.h"
 #include "Error.h"
 #include "traverse.h"
 #include "DataFlowMask.h"
