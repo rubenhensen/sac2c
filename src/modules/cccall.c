@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/08/02 11:53:09  nmw
+ * phase comments changed, collecting library moved to create library
+ *
  * Revision 2.15  2000/08/01 13:28:38  nmw
  * compiling of PHM init function for c-libraries added
  *
@@ -570,16 +573,16 @@ CreateLibrary ()
      * used as is by the c interface
      */
 
-    SystemCall ("%s %s/lib%s.a %s/*.o", config.ar_create, tmp_dirname, modulename,
-                tmp_dirname);
-
-    if (config.ranlib[0] != '\0') {
-        SystemCall ("%s %s/%s.a", config.ranlib, tmp_dirname, modulename);
-    }
-
     /* generating sac library file*/
     if (generatelibrary & GENERATELIBRARY_SAC) {
         NOTE (("Creating SAC library \"%s%s.lib\"", targetdir, modulename));
+
+        SystemCall ("%s %s/lib%s.a %s/*.o", config.ar_create, tmp_dirname, modulename,
+                    tmp_dirname);
+
+        if (config.ranlib[0] != '\0') {
+            SystemCall ("%s %s/%s.a", config.ranlib, tmp_dirname, modulename);
+        }
 
         GenLibStat ();
 
@@ -587,23 +590,39 @@ CreateLibrary ()
                     config.tar_create, modulename, modulename, modulename, modulename);
 
         SystemCall ("%s %s/%s.lib %s", config.move, tmp_dirname, modulename, targetdir);
-    }
-
-    /*
-     * generating c library files
-     * here: only moving generated files to target dir
-     *
-     */
-    if (generatelibrary & GENERATELIBRARY_C) {
-        NOTE (("Creating c library \"lib%s.a\" and interface \"%s.h\"", modulename,
-               modulename));
+    } else if (generatelibrary & GENERATELIBRARY_C) {
+        /*
+         * generating c library files
+         */
+        NOTE (("Creating c library \"%slib%s.a\"", targetdir, modulename));
 
         /*add object files to preproduced archive of included object files */
         SystemCall ("%s %s/SAC_full.archive %s/*.o", config.ar_create, tmp_dirname,
                     tmp_dirname);
 
-        SystemCall ("%s %s/%s.h %s", config.move, tmp_dirname, modulename, targetdir);
+        /* build up library file of all object files included in the several
+         * xxx.lib files.
+         * these files are extracted and archived again into SAC_full.archive
+         *
+         */
+        NOTE (("adding used sac-libraries...\n"))
+        SystemCall ("%s %s ;"
+                    "%s *.o ;"                         /* cleanup tempdir */
+                    "filelist=`ls *.a 2>/dev/null` ; " /* check for any archives */
+                    "if [ -n \"$filelist\" ]; then"
+                    "  for archive in *.a ;"
+                    "    do ar -x $archive ;" /* extract file from archive */
+                    "    for file in *.o ;"   /* rename all files of this archive */
+                    "      do %s $file \"$archive.$file\" ;"
+                    "    done ;"
+                    "    %s SAC_full.archive *.o ;" /* add to new archive */
+                    "    %s *.o ;"
+                    "  done;"
+                    "fi",
+                    config.chdir, tmp_dirname, config.rmdir, config.move,
+                    config.ar_create, config.rmdir);
 
+        /* move generated library to output */
         SystemCall ("%s %s/SAC_full.archive %s/lib%s.a", config.move, tmp_dirname,
                     targetdir, modulename);
     }
@@ -725,29 +744,6 @@ InvokeCC ()
         /* compiling for a library */
 
         if (generatelibrary & GENERATELIBRARY_C) {
-            /* build up library file of all object files included in the several
-             * xxx.lib files.
-             * these files are extracted and archived again into SAC_full.archive
-             * this shell script has to be done before compiling to object files
-             * because it removes all extracted objectfiles from the archives
-             * in the tempdir!
-             */
-            NOTE (("collecting used sac-libraries...\n"))
-            SystemCall ("%s %s ;"
-                        "filelist=`ls *.a 2>/dev/null` ; " /* check for any archives */
-                        "if [ -n \"$filelist\" ]; then"
-                        "  for archive in *.a ;"
-                        "    do ar -x $archive ;" /* extract file from archive */
-                        "    for file in *.o ;"   /* rename all files of this archive */
-                        "      do %s $file \"$archive.$file\" ;"
-                        "    done ;"
-                        "    %s SAC_full.archive *.o ;" /* add to new archive */
-                        "    %s *.o ;"
-                        "  done;"
-                        "fi",
-                        config.chdir, tmp_dirname, config.move, config.ar_create,
-                        config.rmdir);
-
             /* compile wrapper-file */
             SystemCall ("%s %s %s %s -o %s/cwrapper.o -c %s/cwrapper.c", config.cc,
                         config.ccflags, config.ccdir, opt_buffer, tmp_dirname,
