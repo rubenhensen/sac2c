@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.46  1995/07/04 08:34:59  hw
+ * Revision 1.47  1995/07/06 17:29:12  cg
+ * statustype modified.
+ *
+ * Revision 1.46  1995/07/04  08:34:59  hw
  * cdbl in union node.info inserted
  *
  * Revision 1.45  1995/06/30  11:54:52  hw
@@ -177,13 +180,13 @@ typedef enum { L_for, L_do, L_while } looptype;
 typedef enum { ARG_int, ARG_float, ARG_id } argtype;
 typedef enum { C_gen, C_mod } contype;
 typedef enum {
-    ST_regular,      /* normal types */
-    ST_hidden,       /* implicit type imported from module     */
-    ST_known_hidden, /* implicit type in module implementation */
-    ST_unique,       /* implicit type imported from class      */
-    ST_known_unique, /* implicit type in class implementation  */
-    ST_artificial    /* unique type inserted during            */
-                     /* signature expansion                    */
+    ST_regular,   /* normal types */
+    ST_unique,    /* unique types */
+    ST_reference, /* reference parameter (unique)           */
+    ST_ref,       /* Id must be referenced                  */
+    ST_deref,     /* Id must be dereferenced                */
+    ST_artificial /* unique type inserted during            */
+                  /* signature expansion                    */
 } statustype;
 typedef enum { VECT, IDX } useflag;
 
@@ -204,6 +207,9 @@ typedef struct IDS {
     struct NCHAIN *nchain; /* ptr. to definition(s) resp. usage(s) */
     struct NODE *use;      /* ptr. to usage chain (used only if the var */
                            /* is a one dimensional array! */
+    statustype attrib;     /* ref/deref attribute */
+    statustype status;     /* regular or artificial */
+
     struct IDS *next;
 } ids;
 
@@ -221,9 +227,8 @@ typedef struct TYPES {
     struct TYPES *next; /* only needed for fun-results */
     id *id;             /* Bezeichner  */
     char *id_mod;       /* name of modul belonging to 'id' */
-    statustype status;  /* status of this type, used to identify */
-                        /* hidden, unique or artificially        */
-                        /* inserted types                        */
+    statustype attrib;  /* uniqueness attribute */
+    statustype status;  /* regular or artificial */
 } types;
 
 typedef struct FUN_NAME {
