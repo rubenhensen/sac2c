@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.57  1995/05/22 14:25:45  hw
+ * Revision 1.58  1995/05/23 07:49:23  hw
+ * bug fixed in creation of "psi" (A[...] => psi(...,A) )
+ *
+ * Revision 1.57  1995/05/22  14:25:45  hw
  * - bug fixed in creation of "psi" (A[7] will be transformed to psi([7],A),
  *    NOTE: A[b] will be transformed to psi(b,A) !!!!!! )
  * - set arg_node->flag to 1 if function should be inlined
@@ -1128,7 +1131,9 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
            exprs2=MakeNode(N_exprs);
            exprs2->node[0]=$1;      /* array */
            exprs2->nnode=1;
-           if((1 == $3->nnode) && (N_id == $3->node[0]->nodetype))
+           if((1 == $3->nnode) && ( (N_id == $3->node[0]->nodetype) ||
+                                    (N_prf == $3->node[0]->nodetype) ||
+                                    (N_ap == $3->node[0]->nodetype) ) )
               exprs1=$3;         /*  expression (shape)  */
            else
            {
