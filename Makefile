@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.3  2000/12/06 19:51:22  dkr
+# src/flatten/infer_dfms.o added
+#
 # Revision 3.2  2000/12/06 17:39:57  cg
 # Added new gcc option "-w" in order to disable nasty compiler warnings
 # with respect to missing braces in the static initialization of mutex
@@ -190,7 +193,9 @@ SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o
 
-FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/cleanup_decls.o \
+FLATTEN= src/flatten/flatten.o \
+         src/flatten/lac2fun.o \
+         src/flatten/infer_dfms.o src/flatten/cleanup_decls.o \
          src/flatten/fun2lac.o src/flatten/adjust_ids.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o \
