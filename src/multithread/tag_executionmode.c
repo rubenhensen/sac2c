@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.16  2004/11/26 12:25:11  jhb
+ * IDS_VARDEC changed to IDS_DECL
+ *
  * Revision 1.15  2004/11/24 19:40:47  skt
  * SACDevCampDK 2k4
  *
@@ -580,7 +583,7 @@ IsGeneratorBigEnough (node *test_variables)
     /* TODO handling of AUD and AKD arrays */
     while (iterator != NULL) {
 
-        vardec = IDS_VARDEC (iterator);
+        vardec = IDS_DECL (iterator);
         var_dim = VARDEC_DIM (vardec);
         var_size = 1;
         for (i = 0; i < var_dim; i++) {
@@ -632,7 +635,7 @@ IsMTClever (node *test_variables)
 
     while ((is_clever == FALSE) && (iterator != NULL)) {
 
-        vardec = IDS_VARDEC (iterator);
+        vardec = IDS_DECL (iterator);
         var_dim = VARDEC_DIM (vardec);
         var_size = 1.0;
         for (i = 0; i < var_dim; i++) {
@@ -679,7 +682,7 @@ IsSTClever (node *test_variables)
 
     while ((is_clever == FALSE) && (iterator != NULL)) {
 
-        vardec = IDS_VARDEC (iterator);
+        vardec = IDS_DECL (iterator);
         var_dim = VARDEC_DIM (vardec);
         var_size = 1.0;
         for (i = 0; i < var_dim; i++) {
@@ -851,7 +854,7 @@ AnyUniqueTypeInThere (node *letids)
     iterator = letids;
 
     while (iterator != NULL && !unique_found) {
-        type = VARDEC_TYPE (IDS_VARDEC (letids));
+        type = VARDEC_TYPE (IDS_DECL (letids));
         unique_found |= TCisUnique (type);
 
         iterator = IDS_NEXT (letids);
