@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.47  1999/08/09 15:44:13  dkr
+ * changed definition of macro INFO_COMP_LAST_SYNC (for usage with cc)
+ *
  * Revision 2.46  1999/08/09 11:29:54  jhs
  * Cleaned up info-macros for concurrent phase.
  *
@@ -2513,7 +2516,7 @@ extern node *MakeInfo ();
 #define INFO_COMP_VARDECS(n) (n->node[3])
 #define INFO_COMP_WITHBEGIN(n) (n->node[4])
 #define INFO_COMP_MODUL(n) (n->node[5])
-#define INFO_COMP_LAST_SYNC(n) ((node *)(n->int_data))
+#define INFO_COMP_LAST_SYNC(n) (*((node **)(&(n->int_data))))
 
 /* reuse */
 #define INFO_REUSE_WL_IDS(n) (n->info.ids)
