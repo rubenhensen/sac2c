@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/12/13 13:54:05  ktr
+ * should be more robust against missing old types.
+ *
  * Revision 1.10  2004/11/25 16:55:42  skt
  * big compiler switch during SACDevCampDK sk4
  *
@@ -562,12 +565,24 @@ WLBnodeOrIntPrint (FILE *handle, nodetype nt, void *node_or_int, int dim)
             fprintf (handle, "%i", val);
         }
     } else {
-        DBUG_ASSERT ((ID_DECL ((*((node **)node_or_int))) != NULL), "no vardec found!");
+        node *n = *((node **)node_or_int);
 
-        if (ID_DIM ((*((node **)node_or_int))) == SCALAR) {
-            fprintf (handle, "%s", name);
+        if (AVIS_TYPE (ID_AVIS (n)) != NULL) {
+            if ((TYisAKD (AVIS_TYPE (ID_AVIS (n))) || TYisAKS (AVIS_TYPE (ID_AVIS (n)))
+                 || TYisAKV (AVIS_TYPE (ID_AVIS (n))))
+                && (TYgetDim (AVIS_TYPE (ID_AVIS (n))) == 0)) {
+                fprintf (handle, "%s", name);
+            } else {
+                fprintf (handle, "%s[%i]", name, dim);
+            }
         } else {
-            fprintf (handle, "%s[%i]", name, dim);
+            DBUG_ASSERT ((ID_DECL (n) != NULL), "no vardec found!");
+
+            if (ID_DIM (n) == SCALAR) {
+                fprintf (handle, "%s", name);
+            } else {
+                fprintf (handle, "%s[%i]", name, dim);
+            }
         }
     }
 
