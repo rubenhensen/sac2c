@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.39  2005/02/02 18:08:14  mwe
+# signature_simplification added
+#
 # Revision 3.38  2004/12/08 12:16:14  mwe
 # type_upgrade added
 #
@@ -36,7 +39,8 @@ OBJS := optimize.o Inline.o DeadFunctionRemoval.o \
         SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
         SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o \
         UndoElimSubDiv.o ElimSubDiv.o \
-        ConstVarPropagation.o DistributiveLaw.o type_upgrade.o 
+        ConstVarPropagation.o DistributiveLaw.o type_upgrade.o \
+        signature_simplification.o
 
 all: $(OBJS)
 

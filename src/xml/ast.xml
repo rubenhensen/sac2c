@@ -744,6 +744,22 @@
           <node name="Cast" />
         </travuser>
       </traversal>
+      <traversal id="SISI" name="Signature Simplification" default="sons" include="signature_simplification.h" >
+	<travuser>
+	  <node name="Assign" />
+          <node name="Fundef" />
+	  <node name="Block" />
+	  <node name="Let" />
+	  <node name="Return" />
+	  <node name="Ret" />
+          <node name="Ap" />
+          <node name="Ids" />
+          <node name="Id" />
+          <node name="Exprs" />
+	  <node name="Arg" />
+	  <node name="Module" />
+   	</travuser>
+      </traversal>
       <traversal id="TDEPEND" name="Tag Dependencies" default="sons" include="tagdependencies.h" >
 	<travuser>
 	  <node name="Assign" />

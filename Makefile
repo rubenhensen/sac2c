@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.158  2005/02/02 18:09:03  mwe
+# signature_simplification added
+#
 # Revision 3.157  2005/01/07 16:47:26  cg
 # added linking of ctinfo.o
 #
@@ -153,7 +156,8 @@ OPTIMIZE= src/optimize/optimize.o \
           src/optimize/SSAWLUnroll.o src/optimize/rmcasts.o \
           src/optimize/ElimSubDiv.o \
           src/optimize/UndoElimSubDiv.o src/optimize/type_upgrade.o \
-          src/optimize/ConstVarPropagation.o src/optimize/DistributiveLaw.o
+          src/optimize/ConstVarPropagation.o src/optimize/DistributiveLaw.o \
+          src/optimize/signature_simplification.o
 
 PROFILE= src/profile/annotate_fun_calls.o
 
