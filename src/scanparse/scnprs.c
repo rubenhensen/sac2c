@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1996/01/07 16:56:38  cg
+ * Revision 1.6  1996/01/23 09:03:10  cg
+ * Now, we check if a module/class implementation is in the correct file
+ *
+ * Revision 1.5  1996/01/07  16:56:38  cg
  * bug fixed in initializing sacfilename
  *
  * Revision 1.4  1996/01/05  12:32:56  cg
@@ -77,6 +80,8 @@
 void
 SetFileNames (node *modul)
 {
+    char buffer[MAX_FILE_NAME];
+
     DBUG_ENTER ("SetFileNames");
 
     if (MODUL_FILETYPE (modul) == F_prog) {
@@ -88,6 +93,17 @@ SetFileNames (node *modul)
             strcat (cfilename, ".c");
         }
     } else {
+        if (sacfilename[0] != '\0') {
+            strcpy (buffer, MODUL_NAME (modul));
+            strcat (buffer, ".sac");
+
+            if (0 != strcmp (buffer, sacfilename)) {
+                SYSWARN (("Module/class '%s` should be in a file named \"%s\" "
+                          "instead of \"%s\"",
+                          MODUL_NAME (modul), buffer, sacfilename));
+            }
+        }
+
         if (outfilename[0] == '\0') {
             strcpy (targetdir, "./");
         } else {
