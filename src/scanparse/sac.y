@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.32  1994/12/20 11:24:29  sbs
+ * Revision 1.33  1994/12/20 13:10:47  sbs
+ * typedef bug fixed (types->id => types->name)
+ *
+ * Revision 1.32  1994/12/20  11:24:29  sbs
  * decl_tree inserted
  *
  * Revision 1.31  1994/12/16  14:34:28  sbs
@@ -319,11 +322,11 @@ exptypes: exptype exptypes {$$=$1;
 exptype: ID LET type SEMIC
            { $$=MakeNode(N_typedef);
             $$->info.types=$3;
-            $$->info.types->id=$1;
+            $$->info.types->name=$1;
 
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT" Id: %s",
-                        mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id));
+                        mdb_nodetype[ $$->nodetype ], $$, $$->info.types->name));
           }
          ;
 
@@ -400,11 +403,11 @@ typedefs: typedef typedefs {$$=$1;
 typedef: TYPEDEF type ID SEMIC 
           { $$=MakeNode(N_typedef);
             $$->info.types=$2;
-            $$->info.types->id=$3;
+            $$->info.types->name=$3;
 
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT" Id: %s",
-                        mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id));
+                        mdb_nodetype[ $$->nodetype ], $$, $$->info.types->name));
           }
 
 fundefs: fundef fundefs { $1->node[1]=$2;
