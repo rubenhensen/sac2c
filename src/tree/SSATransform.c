@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2001/05/15 15:50:41  nmw
+ * little macro bug fixed
+ *
  * Revision 1.19  2001/05/09 12:30:43  nmw
  * when creating ssaform set global valid_ssaform flag
  *
@@ -592,8 +595,8 @@ SSAassign (node *arg_node, node *arg_info)
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
     /* traverse next exprs */
-    if (EXPRS_NEXT (arg_node) != NULL) {
-        EXPRS_NEXT (arg_node) = Trav (EXPRS_NEXT (arg_node), arg_info);
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     /* restore old assignment link */
