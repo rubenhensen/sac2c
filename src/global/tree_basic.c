@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.82  1998/08/11 14:35:33  dkr
+ * MakeWLsegVar, MakeWLstriVar, MakeWLgridVar changed
+ *
  * Revision 1.81  1998/08/11 00:04:41  dkr
  * MakeWLsegVar changed
  *
@@ -1797,6 +1800,8 @@ MakeWLblock (int level, int dim, int bound1, int bound2, int step, node *nextdim
     WLBLOCK_CONTENTS (new_node) = contents;
     WLBLOCK_NEXT (new_node) = next;
 
+    WLBLOCK_INNERSTEP (new_node) = -1;
+
     DBUG_RETURN (new_node);
 }
 
@@ -1840,7 +1845,9 @@ MakeWLstride (int level, int dim, int bound1, int bound2, int step, int unrollin
     WLSTRIDE_NEXT (new_node) = next;
 
     WLSTRIDE_PART (new_node) = NULL;
-    WLSTRIDE_MODIFIED (new_node) = 0;
+    WLSTRIDE_MODIFIED (new_node) = NULL;
+
+    WLSTRIDE_INNERSTEP (new_node) = -1;
 
     DBUG_RETURN (new_node);
 }
@@ -1871,7 +1878,7 @@ MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolling, node *nex
     }
     WLGRID_CODE (new_node) = code;
 
-    WLGRID_MODIFIED (new_node) = 0;
+    WLGRID_MODIFIED (new_node) = NULL;
 
     DBUG_RETURN (new_node);
 }
@@ -1882,7 +1889,7 @@ node *
 MakeWLsegVar (int dims, node *contents, node *next)
 {
     node *new_node;
-    int b;
+    int b, d;
 
     DBUG_ENTER ("MakeWLsegVar");
     INIT_NODE (new_node);
@@ -1902,6 +1909,12 @@ MakeWLsegVar (int dims, node *contents, node *next)
     }
     WLSEGVAR_UBV (new_node) = (long *)MALLOC (sizeof (long) * dims);
 
+    WLSEGVAR_SV (new_node) = (long *)MALLOC (sizeof (long) * dims);
+    /* init SV */
+    for (d = 0; d < dims; d++) {
+        (WLSEGVAR_SV (new_node))[d] = 1;
+    }
+
     WLSEGVAR_MAXHOMDIM (new_node) = -1;
     /*
      * By default, no dimension is homogenious. Since dimensions are counted
@@ -1914,7 +1927,7 @@ MakeWLsegVar (int dims, node *contents, node *next)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLstriVar (int dim, node *bound1, node *bound2, node *step, node *contents,
+MakeWLstriVar (int level, int dim, node *bound1, node *bound2, node *step, node *contents,
                node *next)
 {
     node *new_node;
@@ -1924,6 +1937,7 @@ MakeWLstriVar (int dim, node *bound1, node *bound2, node *step, node *contents,
 
     NODE_TYPE (new_node) = N_WLstriVar;
 
+    WLSTRIVAR_LEVEL (new_node) = level;
     WLSTRIVAR_DIM (new_node) = dim;
     WLSTRIVAR_BOUND1 (new_node) = bound1;
     WLSTRIVAR_BOUND2 (new_node) = bound2;
@@ -1931,13 +1945,16 @@ MakeWLstriVar (int dim, node *bound1, node *bound2, node *step, node *contents,
     WLSTRIVAR_CONTENTS (new_node) = contents;
     WLSTRIVAR_NEXT (new_node) = next;
 
+    WLSTRIVAR_INNERSTEP (new_node) = -1;
+
     DBUG_RETURN (new_node);
 }
 
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLgridVar (int dim, node *bound1, node *bound2, node *nextdim, node *next, node *code)
+MakeWLgridVar (int level, int dim, node *bound1, node *bound2, node *nextdim, node *next,
+               node *code)
 {
     node *new_node;
 
@@ -1946,6 +1963,7 @@ MakeWLgridVar (int dim, node *bound1, node *bound2, node *nextdim, node *next, n
 
     NODE_TYPE (new_node) = N_WLgridVar;
 
+    WLGRIDVAR_LEVEL (new_node) = level;
     WLGRIDVAR_DIM (new_node) = dim;
     WLGRIDVAR_BOUND1 (new_node) = bound1;
     WLGRIDVAR_BOUND2 (new_node) = bound2;
