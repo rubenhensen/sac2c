@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2004/07/26 16:54:05  skt
+ * added support for exclusive cells (mt-mode 3)
+ *
  * Revision 3.85  2004/07/16 14:41:34  sah
  * switch to new INFO structure
  * PHASE I
@@ -1736,6 +1739,39 @@ MakeSync (node *region)
     SYNC_FIRST (tmp) = FALSE;
     SYNC_LAST (tmp) = TRUE;
     SYNC_FOLDCOUNT (tmp) = 0;
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+int global_EX_counter = 1;
+
+#define EX_STEP 1
+
+static int
+GetNewEXIdentifier ()
+{
+    int result;
+
+    DBUG_ENTER ("GetNewEXIdentifier");
+
+    result = global_EX_counter;
+    global_EX_counter = global_EX_counter + EX_STEP;
+
+    DBUG_RETURN (result);
+}
+
+node *
+MakeEX (node *region)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeEX");
+
+    tmp = CreateCleanNode (N_ex);
+    EX_REGION (tmp) = region;
+    EX_IDENTIFIER (tmp) = GetNewEXIdentifier ();
 
     DBUG_RETURN (tmp);
 }

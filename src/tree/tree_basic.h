@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.197  2004/07/26 16:54:05  skt
+ * added support for exclusive cells (mt-mode 3)
+ *
  * Revision 3.196  2004/07/21 17:27:02  ktr
  * Added NWITHOP_MEM
  *
@@ -3568,7 +3571,7 @@ extern node *MakeSync (node *region);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_mt :
+ ***  N_ex :
  ***
  ***  sons:
  ***
@@ -3576,7 +3579,7 @@ extern node *MakeSync (node *region);
  ***
  ***  permanent attributes:
  ***
- ***    int        IDENTIFIER             Will be created by MakeMT, an copied
+ ***    int        IDENTIFIER             Will be created by MakeEX, an copied
  ***                                      within DupTree, to identfy
  ***                                      corresponding blocks
  ***
@@ -3600,6 +3603,36 @@ extern node *MakeMT (node *region);
 #define MT_NEEDLATER(n) (n->dfmask[2])
 #define MT_ALLOC(n) (n->dfmask[3])
 #define MT_FUNDEF(n) (n->node[1])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_mt :
+ ***
+ ***  sons:
+ ***
+ ***    node*      REGION     (N_block)
+ ***
+ ***  permanent attributes:
+ ***
+ ***    int        IDENTIFIER             Will be created by MakeMT, an copied
+ ***                                      within DupTree, to identfy
+ ***                                      corresponding blocks
+ ***
+ ***  temporary attributes:
+ ***
+ ***    DFMmask_t  USEMASK                (multithread.dfa -> )
+ ***    DFMmask_t  DEFMASK                (multithread.dfa -> )
+ ***    DFMmask_t  NEEDLATER              (multithread.dfa -> )
+ ***/
+
+extern node *MakeEX (node *region);
+
+#define EX_IDENTIFIER(n) (n->int_data)
+#define EX_REGION(n) (n->node[0])
+#define EX_USEMASK(n) (n->dfmask[0])
+#define EX_DEFMASK(n) (n->dfmask[1])
+#define EX_NEEDLATER(n) (n->dfmask[2])
 
 /*--------------------------------------------------------------------------*/
 
