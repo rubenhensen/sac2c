@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.74  1998/10/29 16:58:27  cg
+ * Bug fixed when constant folding is used during typechecking:
+ * works now even if no concrete shapes can be determined.
+ *
  * Revision 1.73  1998/08/31 16:04:38  sbs
  * expanded comment in Fold reshape-function
  *
@@ -1996,18 +2000,31 @@ ArrayPrf (node *arg_node, node *arg_info)
             arg_node = arg[0];
             cf_expr++;
             break;
+
         case N_id:
             DBUG_PRINT ("CF",
                         ("primitive function %s folded", prf_string[arg_node->info.prf]));
             SHAPE_2_ARRAY (tmp, arg[0]->info.ids->node->info.types,
                            INFO_CF_TYPE (arg_info));
-            /* TC uses folding of shape() and has no masks present. */
-            if (arg_info->mask[1])
-                DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
-            FreeTree (arg_node);
-            arg_node = tmp;
-            cf_expr++;
+
+            if (tmp != NULL) {
+                /*
+                 * The macro SHAPE_2_ARRAY "returns" NULL if no complete array shape can
+                 * be inferred. This happens in particular when constant folding is done
+                 * during typechecking. Especially, in module implementations the concrete
+                 * shape of formal function parameters can often not be determined.
+                 */
+                FreeTree (arg_node);
+                arg_node = tmp;
+                cf_expr++;
+                /*
+                 * TC uses folding of shape() and has no masks present.
+                 */
+                if (arg_info->mask[1])
+                    DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
+            }
             break;
+
         default:
             break;
         }
