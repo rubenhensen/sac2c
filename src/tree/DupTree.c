@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/02/12 10:56:41  nmw
+ * handling for SSA arguments in N_arg and N_vardec added
+ *
  * Revision 3.9  2001/02/07 20:16:49  dkr
  * N_WL?block, N_WLstride?: NOOP not an attribute but a macro now
  *
@@ -226,6 +229,7 @@
 #include "typecheck.h"
 #include "scheduling.h"
 #include "generatemasks.h"
+#include "constants.h"
 
 /*
  *  always traverses son 'node'
@@ -986,6 +990,7 @@ DupBlock (node *arg_node, node *arg_info)
   BLOCK_MASK( new_node, ?) = ???;
   BLOCK_SPMD_PROLOG_ICMS( new_node) = ???;
   BLOCK_SPMD_SETUP_ARGS( new_node) = ???;
+  BLOCK_SSACOUNTER( new_node) = ???;
 #endif
 
     CopyCommonNodeData (new_node, arg_node);
@@ -1103,6 +1108,11 @@ DupVardec (node *arg_node, node *arg_info)
     VARDEC_NAIVE_REFCNT (new_node) = VARDEC_NAIVE_REFCNT (arg_node);
     VARDEC_FLAG (new_node) = VARDEC_FLAG (arg_node);
     VARDEC_OBJDEF (new_node) = VARDEC_OBJDEF (arg_node);
+    VARDEC_SSACOUNT (new_node) = VARDEC_SSACOUNT (arg_node);
+    VARDEC_SSAASSIGN (new_node) = VARDEC_SSAASSIGN (arg_node);
+    VARDEC_SSACONST (new_node) = VARDEC_SSACONST (arg_node);
+    VARDEC_SSAPHITARGET (new_node) = VARDEC_SSAPHITARGET (arg_node);
+    VARDEC_SSALPINV (new_node) = VARDEC_SSALPINV (arg_node);
 
 #if 0
   VARDEC_ACTCHN( new_node) = ???;
@@ -1133,6 +1143,11 @@ DupArg (node *arg_node, node *arg_info)
     ARG_REFCNT (new_node) = ARG_REFCNT (arg_node);
     ARG_NAIVE_REFCNT (new_node) = ARG_NAIVE_REFCNT (arg_node);
     ARG_OBJDEF (new_node) = ARG_OBJDEF (arg_node);
+    ARG_SSACOUNT (new_node) = ARG_SSACOUNT (arg_node);
+    ARG_SSAASSIGN (new_node) = ARG_SSAASSIGN (arg_node);
+    ARG_SSACONST (new_node) = ARG_SSACONST (arg_node);
+    ARG_SSAPHITARGET (new_node) = ARG_SSAPHITARGET (arg_node);
+    ARG_SSALPINV (new_node) = ARG_SSALPINV (arg_node);
 
 #if 0
   ARG_TYPESTRING( new_node) = ???;
