@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.54  1995/07/07 14:58:38  asi
+ * Revision 1.55  1995/07/19 18:43:49  asi
+ * added new parameter -maxoptcycles and variable max_optcycles
+ *
+ * Revision 1.54  1995/07/07  14:58:38  asi
  * added loop unswitching - basic version
  *
  * Revision 1.53  1995/06/23  13:57:56  hw
@@ -207,6 +210,7 @@ int optvar = 50;
 int inlnum = 1;
 int unrnum = 2;
 int max_overload = 10;
+int max_optcycles = 4;
 int psi_optimize = 1;
 int psi_opt_ive = 1;
 
@@ -413,6 +417,12 @@ MAIN
                         ++argv;
                         --argc;
                         max_overload = atoi (*argv);
+                    } else {
+                        if (!strncmp (*argv, "axoptcycles", 10)) {
+                            ++argv;
+                            --argc;
+                            max_optcycles = atoi (*argv);
+                        }
                     }
                 }
             }
