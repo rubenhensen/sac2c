@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/04/10 15:45:35  jhs
+ * Added BARINmt and BARINassign to traversal.
+ *
  * Revision 1.2  2000/03/23 14:04:08  jhs
  * Added handling of fold-wl's, barriers only in mt-blocks and -functions.
  *
@@ -165,8 +168,10 @@ BARINfundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("BARINfundef");
 
+    DBUG_PRINT ("BARIN", ("BARINfundef"));
+
     old_withinmt = INFO_BARIN_WITHINMT (arg_info);
-    if (FUNDEF_ATTRIB (arg_node) == ST_call_st) {
+    if (FUNDEF_ATTRIB (arg_node) == ST_call_mt_master) {
         INFO_BARIN_WITHINMT (arg_info) = TRUE;
     }
 
@@ -184,6 +189,8 @@ BARINmt (node *arg_node, node *arg_info)
     int old_withinmt; /* bool */
 
     DBUG_ENTER ("BARINmt");
+
+    DBUG_PRINT ("BARIN", ("BARINmt"));
 
     old_withinmt = INFO_BARIN_WITHINMT (arg_info);
     INFO_BARIN_WITHINMT (arg_info) = TRUE;

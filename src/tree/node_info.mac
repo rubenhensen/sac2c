@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2000/04/10 15:46:05  jhs
+ * Added BARINmt and BARINassign to traversal.
+ *
  * Revision 1.30  2000/03/31 14:03:05  dkr
  * RCNwith2 added
  *
@@ -790,7 +793,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        MUTHfundef, TravSons, TravSons, RFINfundef, FUN2LACfundef, AIfundef, TravSons,
        MTFINfundef, L2F_LIFTfundef, BLKCOfundef, DFAfundef, BLKPPfundef, CUDfundef,
-       TravSons, BLKLIfundef, ADJCA1fundef, ADJCA2fundef, TravSons, TravSons, TravSons,
+       BARINfundef, BLKLIfundef, ADJCA1fundef, ADJCA2fundef, TravSons, TravSons, TravSons,
 
        3),
 
@@ -861,8 +864,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, MTFINxt,
-       TravSons, BLKCOxt, DFAxt, TravSons, TravSons, TravSons, BLKLImt, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, BLKCOxt, DFAxt, TravSons, TravSons, BARINmt, BLKLImt, TravSons, TravSons,
+       TravSons, TravSons, TravSons,
 
        1),
 
