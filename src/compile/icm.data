@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2002/07/16 11:59:35  dkr
+ * MT_ADJUST_SCHEDULER__OFFSET modified
+ *
  * Revision 3.41  2002/07/15 15:25:53  dkr
  * some bugs fixed
  *
@@ -917,13 +920,13 @@ ICM_END( MT_SPMD_PRESET, (name, narg, vararg))
 
 #if defined(MT_ADJUST_SCHEDULER__OFFSET) || defined(ICM_ALL)
 ICM_DEF( MT_ADJUST_SCHEDULER__OFFSET, TRACE_NONE)
-  ICM_ID( array)
-  ICM_INT( array_dim)
+  ICM_NT( to_nt)
+  ICM_INT( to_dim)
   ICM_INT( current_dim)
   ICM_ANY( lower)
   ICM_ANY( upper)
   ICM_ANY( unrolling)
-ICM_END( MT_ADJUST_SCHEDULER__OFFSET, (array, array_dim, current_dim, lower, upper, unrolling))
+ICM_END( MT_ADJUST_SCHEDULER__OFFSET, (to_nt, to_dim, current_dim, lower, upper, unrolling))
 #endif
 
 
