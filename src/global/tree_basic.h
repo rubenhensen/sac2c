@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.207  1999/01/15 15:18:55  cg
+ * added access macros for new data structure access_t used in tile size
+ * selection.
+ *
  * Revision 1.206  1999/01/07 14:02:33  sbs
  * new tab opt_tab inserted and old "opt_tab" renamed to genmask_tab!
  *
@@ -411,6 +415,29 @@ extern nodelist *MakeNodelist (node *node, statustype status, nodelist *next);
 #define NODELIST_ATTRIB(n) (n->attrib)
 #define NODELIST_STATUS(n) (n->status)
 #define NODELIST_NEXT(n) (n->next)
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  ACCESS_T :
+ ***
+ ***  permanent attributes:
+ ***
+ ***    node*         ARRAY         (N_vardec/N_arg)
+ ***    node*         IV            (N_vardec/N_arg)
+ ***    accessclass_t CLASS
+ ***    shpseg*       OFFSET  (O)
+ ***    access_t*     NEXT    (O)
+ ***/
+
+extern access_t *MakeAccess (node *array, node *iv, accessclass_t class, shpseg *offset,
+                             access_t *next);
+
+#define ACCESS_ARRAY(a) (a->array_vardec)
+#define ACCESS_IV(a) (a->iv_vardec)
+#define ACCESS_CLASS(a) (a->accessclass)
+#define ACCESS_OFFSET(a) (a->offset)
+#define ACCESS_NEXT(a) (a->next)
 
 /*==========================================================================*/
 
@@ -1534,6 +1561,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    int    MAKEUNIQUE                  (precompile -> compile -> )
  ***    node*  DEF                         (Unroll !, Unswitch !)
  ***    node*  WL        (O)               (wli -> wlf !!)
+ ***    node*  VAL       (O)  (N_array)    (cf -> )
  ***
  ***  remark:
  ***    ID_WL is only used in wli, wlf. But every call of DupTree() initializes
@@ -1549,6 +1577,14 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    distinguished in many places of the code. So for example
  ***    VARDEC_NAME and ARG_NAME should both be substitutions for
  ***    node->info.types->id
+ ***
+ ***  remark:
+ ***    VAL is used for constant propagation in connection with arrays.
+ ***    Usually, there is no constant propagation for arrays since this
+ ***    normally slows down the code due to memory allocation/de-allocation
+ ***    costs. However for some other optimizations, namely tile size inference,
+ ***    a constant value is an advantage.
+ ***
  ***/
 
 /*
@@ -1585,6 +1621,7 @@ extern node *MakeId2 (ids *ids_node);
 #define ID_REFCNT(n) (n->refcnt)
 #define ID_MAKEUNIQUE(n) (n->flag)
 #define ID_WL(n) (n->node[0])
+#define ID_VAL(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1903,7 +1940,7 @@ extern node *MakePragma ();
  ***  when used in typecheck.c :
  ***
  ***    node *     NEXTASSIGN    (O)  (N_assign)
- ***    node *     LASSIGN       (0)  (N_assign)
+ ***    node *     LASSIGN       (O)  (N_assign)
  ***    ids*       LHSVARS       (O)
  ***
  ***  when used in writesib.c :
@@ -1966,6 +2003,15 @@ extern node *MakePragma ();
  ***    int        INFO_SPMD_FIRST
  ***    int        INFO_SPMD_MT
  ***
+ ***  when used in tile_size_inference.c :
+ ***
+ ***    access_t*  ACCESS
+ ***    node*      INDEXVAR           (N_vardec/N_arg)
+ ***    feature_t  FEATURE
+ ***    WithOpType WOTYPE
+ ***    ids*       LASTLETIDS
+ ***    int        BELOWAP
+ ***
  *** remarks:
  ***    N_info is used in many other phases without access macros :((
  ***/
@@ -1998,6 +2044,8 @@ extern node *MakeInfo ();
 
 /* typecheck */
 #define INFO_TC_NEXTASSIGN(n) (n->node[1])
+/* WARN: node[2] already used */
+#define INFO_TC_CURRENTASSIGN(n) (n->node[4])
 #define INFO_TC_LASSIGN(n) (n->node[3])
 #define INFO_TC_LHSVARS(n) (n->info.ids)
 
@@ -2092,6 +2140,14 @@ extern node *MakeInfo ();
 #define INFO_PRINT_INT_SYN(n) (n->node[2])
 #define INFO_PRINT_WITH_RET(n) (n->node[3])
 #define INFO_PRINT_NWITH2(n) (n->node[4])
+
+/* Tile Size Inference */
+#define INFO_TSI_ACCESS(n) ((access_t *)n->info2)
+#define INFO_TSI_INDEXVAR(n) (n->node[0])
+#define INFO_TSI_FEATURE(n) ((feature_t)n->lineno)
+#define INFO_TSI_WOTYPE(n) ((WithOpType)n->varno)
+#define INFO_TSI_LASTLETIDS(n) (n->info.ids)
+#define INFO_TSI_BELOWAP(n) (n->flag)
 
 /*--------------------------------------------------------------------------*/
 
@@ -2379,22 +2435,24 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***
  ***  sons:
  ***
- ***    node*  CBLOCK    (O) (N_block)
- ***    node*  CEXPR         ("N_expr")
- ***    node*  NEXT      (O) (N_exprs)
+ ***    node*     CBLOCK    (O) (N_block)
+ ***    node*     CEXPR         ("N_expr")
+ ***    node*     NEXT      (O) (N_exprs)
  ***
  ***  permanent attributes:
  ***
- ***    int    USED       (number of times this code is used)
+ ***    int       USED       (number of times this code is used)
  ***
  ***  temporary attributes:
  ***
- ***    int    NO         (unambiguous number for PrintNwith2())
- ***                                   (precompile -> )
- ***    long*  MASK                    (optimize -> )
- ***    int    FLAG                    (WLI -> WLF)
- ***    node*  COPY                    ( -> DupTree )
- ***    ids*   INC_RC_IDS              (refcount -> compile )
+ ***    int       NO         (unambiguous number for PrintNwith2())
+ ***                                      (precompile -> )
+ ***    long*     MASK                    (optimize -> )
+ ***    int       FLAG                    (WLI -> WLF)
+ ***    node*     COPY                    ( -> DupTree )
+ ***    ids*      INC_RC_IDS              (refcount -> compile )
+ ***    feature_t FEATURE                 (tsi -> )
+ ***    access_t* ACCESS                  (tsi -> )
  ***
  ***  remarks:
  ***
@@ -2408,6 +2466,11 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    MakeNPart increments it if the code parameter is != NULL,
  ***    FreeNPart decrements it if NPART_CODE is != NULL.
  ***    DupNpart  increments it (implicitly in MakeNPart, see condition above).
+ ***
+ ***    FEATURE is a bit mask which characterizes the code of CBLOCK
+ ***    (see types.h for details).
+ ***    ACCESS is a list of array accesses.
+ ***    Both FEATURE and ACCESS are used for the tile size inference scheme.
  ***/
 
 extern node *MakeNCode (node *block, node *expr);
@@ -2421,6 +2484,8 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_NO(n) (n->refcnt)
 #define NCODE_FLAG(n) (n->flag)
 #define NCODE_INC_RC_IDS(n) ((ids *)(n->node[3]))
+#define NCODE_FEATURE(n) ((feature_t)n->varno)
+#define NCODE_ACCESS(n) ((access_t *)n->info2)
 
 #define NCODE_COPY(n) (n->node[4])
 
