@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.40  1995/10/12 14:15:47  cg
+ * Revision 1.41  1995/12/12 15:48:19  hw
+ * changed DuplicateNode
+ *
+ * Revision 1.40  1995/10/12  14:15:47  cg
  * module implementations without any functions will now pass flatten
  *
  * Revision 1.39  1995/10/06  16:34:22  cg
@@ -161,13 +164,19 @@
 #include "traverse.h"
 #include "internal_lib.h"
 #include "access_macros.h"
+#include "free.h"
+
+/* temporary local macro */
+#undef ID_MOD
+#undef IDS_NEXT
+#define ID_MOD(n) (n->info.ids->mod) /* identical to tree_basic.h */
+#define IDS_NEXT(i) (i->next)        /* identical to tree_basic.h */
 
 #define VAR "__tmp"       /* name of new variable */
 #define VAR_LENGTH 10     /* dimension for array of char */
 #define P_FORMAT "(%06x)" /* formatstring for pointer address */
 #define WITH_PREFIX "__w" /* name of new variable in with-statement */
 #define WITH_PREFIX_LENGTH 3
-#define FREE(a) free (a)
 
 /* macros are used as tag in  arg_info->info.cint for flatten of N_exprs
  */
@@ -225,33 +234,33 @@ DuplicateNode (node *source_node)
                 ("%s" P_FORMAT " number of nodes: %d",
                  mdb_nodetype[source_node->nodetype], source_node, source_node->nnode));
 
-    dest_node = MakeNode (source_node->nodetype);
-    for (i = 0; i < source_node->nnode; i++)
-        dest_node->node[i] = DuplicateNode (source_node->node[i]);
-
-    dest_node->nnode = i;
     if (N_id == source_node->nodetype) {
-        dest_node->info.ids = (ids *)Malloc (sizeof (ids));
-        dest_node->info.ids = (ids *)memcpy ((void *)dest_node->info.ids,
-                                             (void *)source_node->info.ids, sizeof (ids));
+        dest_node = MakeId (StringCopy (ID_NAME (source_node)), ID_MOD (source_node),
+                            ID_STATUS (source_node));
+        ID_ATTRIB (dest_node) = ID_ATTRIB (dest_node);
     } else if (N_let == source_node->nodetype) {
-        ids *dest_ids, *source_ids;
+        ids *dest_ids = MakeIds (StringCopy (LET_NAME (source_node)),
+                                 LET_MOD (source_node), LET_STATUS (source_node));
+        ids *source_ids = LET_IDS (source_node);
+        node *exprs = DuplicateNode (LET_EXPR (source_node));
 
-        dest_node->info.ids = (ids *)Malloc (sizeof (ids));
-        dest_node->info.ids = (ids *)memcpy ((void *)dest_node->info.ids,
-                                             (void *)source_node->info.ids, sizeof (ids));
-        source_ids = source_node->info.ids;
-        dest_ids = dest_node->info.ids;
-        while (NULL != source_ids->next) {
-            dest_ids = (ids *)Malloc (sizeof (ids));
-            dest_ids->next = (ids *)memcpy ((void *)dest_ids->next,
-                                            (void *)source_ids->next, sizeof (ids));
-            dest_ids = dest_ids->next;
-            source_ids = source_ids->next;
+        dest_node = MakeLet (exprs, dest_ids);
+        while (NULL != IDS_NEXT (source_ids)) {
+            source_ids = IDS_NEXT (source_ids);
+            IDS_NEXT (dest_ids) = MakeIds (StringCopy (IDS_NAME (source_ids)),
+                                           IDS_MOD (source_ids), IDS_STATUS (source_ids));
+            dest_ids = IDS_NEXT (dest_ids);
+            IDS_ATTRIB (dest_ids) = IDS_ATTRIB (source_ids);
         }
-    } else
+    } else {
+        dest_node = MakeNode (source_node->nodetype);
+        for (i = 0; i < source_node->nnode; i++)
+            dest_node->node[i] = DuplicateNode (source_node->node[i]);
+        dest_node->nnode = i;
         dest_node->info = source_node->info;
-    dest_node->lineno = source_node->lineno;
+    }
+    NODE_LINE (dest_node) = NODE_LINE (source_node);
+
     DBUG_PRINT ("DUPLICATE",
                 ("return :%s" P_FORMAT, mdb_nodetype[dest_node->nodetype], dest_node));
 
