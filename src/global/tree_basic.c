@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/09/29 17:50:51  cg
+ * Revision 1.3  1995/10/06 17:16:50  cg
+ * basic access facilities for new type nodelist added
+ * IDS structure modified to store global objects.
+ * MakeIds extended to 3 parameters
+ * basic facilities for compiler steps obj-analysis and fun-analysis added.
+ *
+ * Revision 1.2  1995/09/29  17:50:51  cg
  * new access structures for strings, nums, shpseg.
  * shape handling modified.
  *
@@ -106,7 +112,6 @@ types *
 MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name, char *mod)
 {
     types *tmp;
-    int *shp;
 
     DBUG_ENTER ("MakeType");
 
@@ -129,28 +134,22 @@ MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name, char *mod)
     DBUG_RETURN (tmp);
 }
 
-/*
- *  This version of MakeType does not support several shape segments.
- *  Arrays with more than SHP_SEG_SIZE (16) dimensions will cause
- *  segmentation faults.
- */
-
 ids *
-MakeIds (char *name)
+MakeIds (char *name, char *mod, statustype status)
 {
     ids *tmp;
     DBUG_ENTER ("MakeIds");
 
     ALLOCATE (tmp, ids);
     IDS_NAME (tmp) = name;
+    IDS_MOD (tmp) = mod;
     IDS_REFCNT (tmp) = 0;
     IDS_NEXT (tmp) = NULL;
     IDS_DECL (tmp) = NULL;
     IDS_DEF (tmp) = NULL;
     IDS_USE (tmp) = NULL;
-    IDS_STATUS (tmp) = ST_regular;
-
-    tmp->attrib = ST_regular;
+    IDS_STATUS (tmp) = status;
+    IDS_ATTRIB (tmp) = (mod == NULL) ? ST_local : ST_global;
 
     DBUG_RETURN (tmp);
 }
@@ -177,6 +176,21 @@ MakeStrings (char *string, strings *next)
     ALLOCATE (tmp, strings);
     STRINGS_STRING (tmp) = string;
     STRINGS_NEXT (tmp) = next;
+
+    DBUG_RETURN (tmp);
+}
+
+nodelist *
+MakeNodelist (node *node, statustype status, nodelist *next)
+{
+    nodelist *tmp;
+    DBUG_ENTER ("MakeNodelist");
+
+    ALLOCATE (tmp, nodelist);
+    NODELIST_NODE (tmp) = node;
+    NODELIST_ATTRIB (tmp) = ST_unresolved;
+    NODELIST_STATUS (tmp) = status;
+    NODELIST_NEXT (tmp) = next;
 
     DBUG_RETURN (tmp);
 }
@@ -781,7 +795,7 @@ MakeVinfo (useflag flag, shapes *shp, node *next)
 }
 
 node *
-MakeId (char *name)
+MakeId (char *name, char *mod, statustype status)
 {
     node *tmp;
     DBUG_ENTER ("MakeId");
@@ -790,7 +804,7 @@ MakeId (char *name)
     NODE_TYPE (tmp) = N_id;
     NODE_NNODE (tmp) = 0;
 
-    tmp->info.ids = MakeIds (name);
+    tmp->info.ids = MakeIds (name, mod, status);
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));

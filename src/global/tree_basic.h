@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/09/29 17:50:51  cg
+ * Revision 1.3  1995/10/06 17:16:50  cg
+ * basic access facilities for new type nodelist added
+ * IDS structure modified to store global objects.
+ * MakeIds extended to 3 parameters
+ * basic facilities for compiler steps obj-analysis and fun-analysis added.
+ *
+ * Revision 1.2  1995/09/29  17:50:51  cg
  * new access structures for strings, nums, shpseg.
  * shape handling modified.
  *
@@ -66,6 +72,22 @@ compilation but it stays unchanged.
 
 means that the attribute is derived by the typechecker and is used
 during compilation but is not available any further.
+
+The following compilation steps are used:
+
+ - scanparse
+ - import
+ - flatten
+ - typecheck
+ - impl_types
+ - fun-analysis
+ - obj-analysis
+ - write-SIB
+ - obj-handling
+ - optimize
+ - psi-optimize
+ - refcount
+ - compile
 
 In general, the implementation section consists of the declaration of
 a create function for the respective structure and one basic access
@@ -153,6 +175,8 @@ extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name
  ***  permanent attributes:
  ***
  ***    char*       NAME
+ ***    char*       MOD     (O)
+ ***    statustype  ATTRIB
  ***    ids*        NEXT    (O)
  ***
  ***  temporary attributes:
@@ -161,18 +185,24 @@ extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name
  ***    node*       DECL         (typecheck -> )
  ***    node*       DEF          (typecheck -> )
  ***    node*       USE          (typecheck -> )
- ***    statustype  STATUS       (NN -> )
+ ***    statustype  STATUS       (obj-handling -> compile !!)
  ***/
 
-extern ids *MakeIds (char *name);
+/*
+ *  Possible values for ATTRIB: ST_local | ST_global
+ */
+
+extern ids *MakeIds (char *name, char *mod, statustype status);
 
 #define IDS_NAME(i) (i->id)
+#define IDS_MOD(i) (i->mod)
 #define IDS_REFCNT(i) (i->refcnt)
 #define IDS_NEXT(i) (i->next)
 #define IDS_DECL(i) (i->node)
 #define IDS_DEF(i) (i->def)
 #define IDS_USE(i) (i->use)
 #define IDS_STATUS(i) (i->status)
+#define IDS_ATTRIB(i) (i->attrib)
 
 /*--------------------------------------------------------------------------*/
 
@@ -205,6 +235,31 @@ extern strings *MakeStrings (char *string, strings *next);
 
 #define STRINGS_STRING(s) (s->name)
 #define STRINGS_NEXT(s) (s->next)
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  NODELIST :
+ ***
+ ***  permanent attributes:
+ ***
+ ***    node*       NODE
+ ***    statustype  ATTRIB
+ ***    statustype  STATUS
+ ***    nodelist*   NEXT    (O)
+ ***/
+
+/*
+ *  Possible values for ATTRIB : ST_resolved | ST_unresolved
+ *  Possible values for STATUS : ST_regular | ST_artificial
+ */
+
+extern nodelist *MakeNodelist (node *node, statustype status, nodelist *next);
+
+#define NODELIST_NODE(n) (n->node)
+#define NODELIST_ATTRIB(n) (n->attrib)
+#define NODELIST_STATUS(n) (n->status)
+#define NODELIST_NEXT(n) (n->next)
 
 /*==========================================================================*/
 
@@ -425,26 +480,29 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***
  ***  sons:
  ***
- ***    node*  BODY     (O)  (N_block)
- ***    node*  ARGS     (O)  (N_arg)
- ***    node*  NEXT     (O)  (N_fundef)
+ ***    node*      BODY     (O)  (N_block)
+ ***    node*      ARGS     (O)  (N_arg)
+ ***    node*      NEXT     (O)  (N_fundef)
  ***
  ***  permanent attributes:
  ***
- ***    char*  NAME
- ***    char*  MOD      (O)
- ***    char*  ALIAS    (O)
- ***    types* TYPES
+ ***    char*      NAME
+ ***    char*      MOD      (O)
+ ***    char*      ALIAS    (O)
+ ***    types*     TYPES
  ***
  ***  temporary attributes:
  ***
- ***    node*  RETURN        (N_return)  (typecheck -> compile !!)
- ***    node*  OBJS     (O)  (N_objdef)  (import -> )
- ***                                     (NN -> )
- ***    node*  ICM           (N_icm)     (compile -> )
- ***    int    VARNO                     (optimize -> )
- ***    long*  DEFMASK                   (optimize -> )
- ***    long*  USEMASK                   (optimize -> )
+ ***    node*      RETURN        (N_return)  (typecheck -> compile !!)
+ ***    nodelist*  NEEDOBJS (O)              (import -> )
+ ***                                         (fun-analysis -> )
+ ***                                         ( -> obj-analysis -> )
+ ***                                         ( -> write-SIB -> )
+ ***                                         ( -> obj-handling -> )
+ ***    node*      ICM           (N_icm)     (compile -> )
+ ***    int        VARNO                     (optimize -> )
+ ***    long*      DEFMASK                   (optimize -> )
+ ***    long*      USEMASK                   (optimize -> )
  ***/
 
 extern node *MakeFundef (char *name, char *mod, char *alias, types *types, node *args,
@@ -458,7 +516,7 @@ extern node *MakeFundef (char *name, char *mod, char *alias, types *types, node 
 #define FUNDEF_ARGS(n) (n->node[2])
 #define FUNDEF_NEXT(n) (n->node[1])
 #define FUNDEF_RETURN(n) (n->node[3])
-#define FUNDEF_OBJS(n) (n->node[4])
+#define FUNDEF_NEEDOBJS(n) ((nodelist *)(n->node[4]))
 #define FUNDEF_ICM(n) (n->node[3])
 #define FUNDEF_VARNO(n) (n->varno)
 #define FUNDEF_DEFMASK(n) (n->mask[0])
@@ -502,13 +560,18 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
  ***
  ***  sons:
  ***
- ***    node*  INSTR        (N_assign, N_empty)
- ***    node*  VARDEC  (O)  (N_vardec)
+ ***    node*      INSTR           (N_assign, N_empty)
+ ***    node*      VARDEC     (O)  (N_vardec)
  ***
  ***  temporary attributes:
  ***
- ***    long*  DEFMASK                           (optimize -> )
- ***    long*  USEMASK                           (optimize -> )
+ ***    nodelist*  NEEDFUNS   (O)         (fun-analysis -> )
+ ***                                      ( -> obj-analysis -> )
+ ***                                      ( -> write-SIB -> )
+ ***    nodelist*  NEEDTYPES  (O)         (fun-analysis -> )
+ ***                                      ( -> write-SIB -> )
+ ***    long*      DEFMASK                (optimize -> )
+ ***    long*      USEMASK                (optimize -> )
  ***/
 
 extern node *MakeBlock (node *instr, node *vardec);
@@ -517,6 +580,8 @@ extern node *MakeBlock (node *instr, node *vardec);
 #define BLOCK_VARDEC(n) (n->node[1])
 #define DEFMASK(n) (n->mask[0])
 #define USEMASK(n) (n->mask[1])
+#define BLOCK_NEEDFUNS ((nodelist *)(n->node[2]))
+#define BLOCK_NEEDTYPES ((nodelist *)(n->node[3]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -929,19 +994,28 @@ extern node *MakeVinfo (useflag flag, shapes *shp, node *next);
  ***
  ***  permanent attributes:
  ***
- ***    char*  NAME
+ ***    char*       NAME
+ ***    char*       MOD     (O)
+ ***    statustype  ATTRIB
+ ***    statustype  STATUS
  ***
  ***  temporary attributes:
  ***
- ***    node*  DECL    (N_vardec)  (typecheck -> )
- ***    int    REFCNT              (refcount -> compile -> )
+ ***    node*  VARDEC    (N_vardec)  (typecheck -> )
+ ***    node*  OBJDEF    (N_objdef)  (typecheck -> )
+ ***                                 ( -> fun-analysis -> )
+ ***    int    REFCNT                (refcount -> compile -> )
  ***/
 
-extern node *MakeId (char *name);
+extern node *MakeId (char *name, char *mod, statustype status);
 
 #define ID_NAME(n) (n->info.ids->id)
-#define ID_DECL(n) (n->info.ids->node)
+#define ID_VARDEC(n) (n->info.ids->node)
 #define ID_REFCNT(n) (n->info.ids->refcnt)
+#define ID_MOD(n) (n->info.ids->mod)
+#define ID_ATTRIB(n) (n->info.ids->attrib)
+#define ID_STATUS(n) (n->info.ids->status)
+#define ID_OBJDEF(n) (n->info.ids->node)
 
 /*--------------------------------------------------------------------------*/
 
