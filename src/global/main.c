@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.21  1995/01/12 13:11:01  asi
+ * Revision 1.22  1995/01/16 09:32:06  asi
+ * moved output for optimizations from main.c to optimize.c
+ *
+ * Revision 1.21  1995/01/12  13:11:01  asi
  * output for dead code removal added
  *
  * Revision 1.20  1995/01/09  13:58:04  hw
@@ -178,7 +181,6 @@ MAIN
                 if ((!breaktype) && (errors == 0)) {
                     NOTE (("Optimizing: ...\n"));
                     syntax_tree = Optimize (syntax_tree);
-                    NOTE (("%d dead codes removed\n", deadcode));
                     /*  GenCCode(); */
                 }
             } else
