@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.40  1998/03/22 18:07:09  srs
+ * added wlt_tab
+ *
  * Revision 1.39  1998/03/06 13:21:08  srs
- * added wli_ab
+ * added wli_tab
  *
  * Revision 1.38  1998/02/05 17:08:52  srs
  * removed wr_tab and changed fusion_tab into wlf_tab
@@ -143,9 +146,9 @@ extern funptr type_tab[];
 extern funptr opt_tab[];
 extern funptr active_tab[];
 extern funptr dcr_tab[];
-extern funptr cf_tab[];
 extern funptr wlf_tab[];
 extern funptr free_tab[];
+extern funptr cf_tab[];
 extern funptr refcnt_tab[];
 extern funptr comp_tab[];
 extern funptr lir_tab[];
@@ -168,6 +171,7 @@ extern funptr unique_tab[];
 extern funptr rmvoid_tab[];
 extern funptr precomp_tab[];
 extern funptr readsib_tab[];
+extern funptr wlt_tab[];
 extern funptr cse_tab[];
 extern funptr dfr_tab[];
 extern funptr o2nWith_tab[];
