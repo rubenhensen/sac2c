@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/09/13 15:05:09  dkr
+ * C_last? renamed into C_unknown?
+ *
  * Revision 1.4  2000/08/17 10:19:10  dkr
  * all the NT stuff is now in a separate modul (NameTuples.[ch])
  *
@@ -85,13 +88,13 @@ ICUNameClass (char *nt)
 
     nc = 1 + FindParen (nt, 1 + NT_CLASS_INDEX);
     i = 0;
-    z = C_lastc;
-    while ((i != C_lastc) && (z == C_lastc)) {
+    z = C_unknownc;
+    while ((i != C_unknownc) && (z == C_unknownc)) {
         if (0 == strncmp (nt + nc, nt_class_string[i], 3))
             z = i;
         i++;
     }
-    DBUG_ASSERT ((z != C_lastc), "ICUNameClass did not find valid Name Class");
+    DBUG_ASSERT ((z != C_unknownc), "ICUNameClass did not find valid Name Class");
 
     DBUG_RETURN (z);
 }
@@ -116,13 +119,13 @@ ICUUnqClass (char *nt)
 
     nc = 1 + FindParen (nt, 1 + NT_UNQ_INDEX);
     i = 0;
-    z = C_lastu;
-    while ((i != C_lastu) && (z == C_lastu)) {
+    z = C_unknownu;
+    while ((i != C_unknownu) && (z == C_unknownu)) {
         if (0 == strncmp (nt + nc, nt_unq_string[i], 3))
             z = i;
         i++;
     }
-    DBUG_ASSERT ((z != C_lastu), "ICUUnqClass did not find valid Uniqueness Class");
+    DBUG_ASSERT ((z != C_unknownu), "ICUUnqClass did not find valid Uniqueness Class");
 
     DBUG_RETURN (z);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/09/13 15:06:15  dkr
+ * C_last? renamed into C_unknown?
+ *
  * Revision 1.4  2000/08/17 10:09:00  dkr
  * some minor changes done
  *
@@ -16,7 +19,7 @@
  * info:
  *   Names are presumed to be 3 characters long.
  *   This affects NT_OVERHEAD in types.h
- *   Note that C_lastc and C_lastu must be the last entries in the lists.
+ *   Note that C_unknownc and C_unknownu must be the last entries in the lists.
  *
  * USAGE:
  *   Before you include this file you have to define macros for ATTRIB
@@ -41,11 +44,12 @@ YOU HAVE TO DEFINE ATTRIB !!!Do this before you include this file.
 
   NTIF (C_aks, "AKS"),
   NTIF (C_akd, "AKD"), NTIF (C_aud, "AUD"), NTIF (C_hid, "HID"), NTIF (C_scl, "SCL"),
-  NTIF (C_lastc, "")
+  NTIF (C_unknownc, "???") /* should be the last entry! */
 
 #elif (ATTRIB == 2)
 
-NTIF (C_unq, "UNQ"), NTIF (C_nuq, "NUQ"), NTIF (C_lastu, "")
+NTIF (C_unq, "UNQ"), NTIF (C_nuq, "NUQ"),
+  NTIF (C_unknownu, "???") /* should be the last entry! */
 
 #endif
 

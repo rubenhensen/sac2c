@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/09/13 15:05:27  dkr
+ * C_last? renamed into C_unknown?
+ *
  * Revision 1.2  2000/08/17 11:11:46  dkr
  * signature of PrintNT changed
  *
@@ -85,7 +88,12 @@ GetClassFromTypes (types *type)
         type = TYPEDEF_TYPE (TYPES_TDEF (type));
     }
 
-    if (IsHidden (type)) {
+    if ((TYPES_BASETYPE (type) == T_user) && (TYPES_TDEF (type) == NULL)) {
+        /*
+         * the TC has probably not been called yet :-(
+         */
+        z = C_unknownc;
+    } else if (IsHidden (type)) {
         z = C_hid;
     } else if (TYPES_DIM (type) == SCALAR) {
         z = C_scl;
@@ -120,7 +128,12 @@ GetUnqFromTypes (types *type)
 
     DBUG_ASSERT ((type != NULL), "No type found!");
 
-    if (IsUnique (type)) {
+    if ((TYPES_BASETYPE (type) == T_user) && (TYPES_TDEF (type) == NULL)) {
+        /*
+         * the TC has probably not been called yet :-(
+         */
+        z = C_unknownu;
+    } else if (IsUnique (type)) {
         z = C_unq;
     } else {
         z = C_nuq;
