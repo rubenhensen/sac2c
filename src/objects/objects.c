@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.12  1996/01/22 18:40:07  cg
+ * Revision 1.13  1996/04/02 19:39:25  cg
+ * bug fixed in function OBJlet:
+ * runs now with functions with variable argument lists.
+ *
+ * Revision 1.12  1996/01/22  18:40:07  cg
  * All object definitions are rearranged in a sequence that allows their
  * sequential initialization. If this is not possible, then an error
  * message occurrs.
@@ -678,7 +682,7 @@ OBJlet (node *arg_node, node *arg_info)
             args = AP_ARGS (LET_EXPR (arg_node));
             params = FUNDEF_ARGS (AP_FUNDEF (LET_EXPR (arg_node)));
 
-            while (params != NULL) {
+            while ((params != NULL) && (ARG_BASETYPE (params) != T_dots)) {
                 if (ARG_ATTRIB (params) == ST_was_reference) {
                     new_ids_name = StringCopy (ID_NAME (EXPRS_EXPR (args)));
 
