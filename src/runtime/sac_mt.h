@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/05/23 09:44:24  ben
+ * some minor bugs in .._NEXT_TASK fixed
+ *
  * Revision 3.22  2001/05/21 12:49:24  ben
  * SAC_MT_TASK and SAC_MT_TASK_LOCK modified for using
  * SAC_MT_SET_NUM_SCHEDULERS
@@ -442,11 +445,11 @@ typedef union {
 #if SAC_DO_TRACE_MT
 #define SAC_MT_SETUP()                                                                   \
     SAC_MT_TR_Setup (SAC_MT_CACHE_LINE_MAX (), SAC_MT_BARRIER_OFFSET (),                 \
-                     SAC_MT_NUM_SCHEDULERS);
+                     SAC_SET_NUM_SCHEDULERS);
 #else
 #define SAC_MT_SETUP()                                                                   \
     SAC_MT_Setup (SAC_MT_CACHE_LINE_MAX (), SAC_MT_BARRIER_OFFSET (),                    \
-                  SAC_MT_NUM_SCHEDULERS);
+                  SAC_SET_NUM_SCHEDULERS);
 #endif
 
 /*
@@ -866,7 +869,7 @@ typedef union {
         int i;                                                                           \
                                                                                          \
         for (i = 0; i < SAC_MT_THREADS (); i++)                                          \
-            SAC_MT_TASK (sched_id, i, SAC_MT_SET_NUM_SCHEDULERS) = 0;                    \
+            SAC_MT_TASK (sched_id, i, SAC_SET_NUM_SCHEDULERS) = 0;                       \
         SAC_TR_MT_PRINT (("SAC_MT_TASK set for sched_id %d", sched_id));                 \
     }
 
@@ -897,12 +900,12 @@ typedef union {
 
 #define SAC_MT_SCHEDULER_Self_NEXT_TASK(sched_id, tasks_per_thread, taskid, worktodo)    \
     {                                                                                    \
-        SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (sched_id, 0, , SAC_MT_SET_NUM_SCHEDULER)); \
+        SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (sched_id, 0, SAC_SET_NUM_SCHEDULERS));     \
                                                                                          \
-        taskid = SAC_MT_TASK (sched_id, 0, SAC_MT_SET_NUM_SCHEDULERS);                   \
-        (SAC_MT_TASK (sched_id, 0, SAC_MT_SET_NUM_SCHEDULERS))++;                        \
+        taskid = SAC_MT_TASK (sched_id, 0, SAC_SET_NUM_SCHEDULERS);                      \
+        (SAC_MT_TASK (sched_id, 0, SAC_SET_NUM_SCHEDULERS))++;                           \
                                                                                          \
-        SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, 0, SAC_MT_SET_NUM_SCHEDULERS));  \
+        SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, 0, SAC_SET_NUM_SCHEDULERS));     \
         worktodo = (taskid < SAC_MT_THREADS () * tasks_per_thread);                      \
     }
 
@@ -922,45 +925,43 @@ typedef union {
                                                                                          \
         /* first look if MYTHREAD has work to do */                                      \
         SAC_MT_ACQUIRE_LOCK (                                                            \
-          SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD (), SAC_MT_SET_NUM_SCHEDULERS));    \
-        if (SAC_MT_TASK (sched_id, SAC_MT_MYTHREAD (), SAC_MT_SET_NUM_SCHEDULERS)        \
+          SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD (), SAC_SET_NUM_SCHEDULERS));       \
+        if (SAC_MT_TASK (sched_id, SAC_MT_MYTHREAD (), SAC_SET_NUM_SCHEDULERS)           \
             < tasks_per_thread) {                                                        \
             taskid                                                                       \
               = (tasks_per_thread * SAC_MT_MYTHREAD ())                                  \
-                + SAC_MT_TASK (sched_id, SAC_MT_MYTHREAD (), SAC_MT_SET_NUM_SCHEDULERS); \
-            (SAC_MT_TASK (sched_id, SAC_MT_MYTHREAD (), SAC_MT_SET_NUM_SCHEDULERS))++;   \
-            SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD (),          \
-                                                  SAC_MT_SET_NUM_SCHEDULERS));           \
+                + SAC_MT_TASK (sched_id, SAC_MT_MYTHREAD (), SAC_SET_NUM_SCHEDULERS);    \
+            (SAC_MT_TASK (sched_id, SAC_MT_MYTHREAD (), SAC_SET_NUM_SCHEDULERS))++;      \
+            SAC_MT_RELEASE_LOCK (                                                        \
+              SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD (), SAC_SET_NUM_SCHEDULERS));   \
             worktodo = 1;                                                                \
         } else {                                                                         \
             /* if there was no work to do, find the task, which has done,                \
                the smallest work till now*/                                              \
-            SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD ()),         \
-                                 SAC_MT_SET_NUM_SCHEDULERS);                             \
+            SAC_MT_RELEASE_LOCK (                                                        \
+              SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD (), SAC_SET_NUM_SCHEDULERS));   \
             maxloadthread = 0;                                                           \
-            mintask = SAC_MT_TASK (sched_id, 0, SAC_MT_SET_NUM_SCHEDULERS);              \
+            mintask = SAC_MT_TASK (sched_id, 0, SAC_SET_NUM_SCHEDULERS);                 \
             for (queueid = 1; queueid < SAC_MT_THREADS (); queueid++)                    \
-                if (SAC_MT_TASK (sched_id, queueid, SAC_MT_SET_NUM_SCHEDULERS)           \
-                    < mintask) {                                                         \
-                    mintask                                                              \
-                      = SAC_MT_TASK (sched_id, queueid, SAC_MT_SET_NUM_SCHEDULERS);      \
+                if (SAC_MT_TASK (sched_id, queueid, SAC_SET_NUM_SCHEDULERS) < mintask) { \
+                    mintask = SAC_MT_TASK (sched_id, queueid, SAC_SET_NUM_SCHEDULERS);   \
                     maxloadthread = queueid;                                             \
                 }                                                                        \
                                                                                          \
             /* if there was a thread with work to do,get his next task */                \
             if (mintask < tasks_per_thread) {                                            \
                 SAC_MT_ACQUIRE_LOCK (                                                    \
-                  SAC_MT_TASKLOCK (sched_id, maxloadthread, SAC_MT_SET_NUM_SCHEDULERS)); \
-                if (SAC_MT_TASK (sched_id, maxloadthread, SAC_MT_SET_NUM_SCHEDULERS)     \
+                  SAC_MT_TASKLOCK (sched_id, maxloadthread, SAC_SET_NUM_SCHEDULERS));    \
+                if (SAC_MT_TASK (sched_id, maxloadthread, SAC_SET_NUM_SCHEDULERS)        \
                     < tasks_per_thread) {                                                \
-                    taskid = tasks_per_thread * maxloadthread                            \
-                             + SAC_MT_TASK (sched_id, maxloadthread,                     \
-                                            SAC_MT_SET_NUM_SCHEDULERS);                  \
-                    (SAC_MT_TASK (sched_id, maxloadthread, SAC_MT_SET_NUM_SCHEDULER))++; \
+                    taskid                                                               \
+                      = tasks_per_thread * maxloadthread                                 \
+                        + SAC_MT_TASK (sched_id, maxloadthread, SAC_SET_NUM_SCHEDULERS); \
+                    (SAC_MT_TASK (sched_id, maxloadthread, SAC_SET_NUM_SCHEDULERS))++;   \
                     worktodo = 1;                                                        \
                 }                                                                        \
                 SAC_MT_RELEASE_LOCK (                                                    \
-                  SAC_MT_TASKLOCK (sched_id, maxloadthread, SAC_MT_SET_NUM_SCHEDULERS)); \
+                  SAC_MT_TASKLOCK (sched_id, maxloadthread, SAC_SET_NUM_SCHEDULERS));    \
             }                                                                            \
         }                                                                                \
     }
