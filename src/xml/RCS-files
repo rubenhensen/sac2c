@@ -20,3 +20,4 @@ common-accessor-macros.xsl
 common-c-code.xsl
 common-key-tables.xsl
 common-make-assertion.xsl
+common-make-body.xsl
