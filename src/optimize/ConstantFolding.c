@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.60  1998/03/17 12:21:29  cg
+ * Bug fixed in DupPartialArray. Now, the type information is
+ * copied as well.
+ *
  * Revision 1.59  1998/03/10 17:30:55  srs
  * improved orthography
  *
@@ -1548,8 +1552,8 @@ CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
         if (vec_dim == array_dim) {
             res_node = FetchNum (start, array);
         } else {
-            res_node = MakeNode (N_array);
-            res_node->node[0] = DupPartialArray (start, length, array, arg_info);
+            res_node = MakeArray (DupPartialArray (start, length, array, arg_info));
+            ARRAY_TYPE (res_node) = DuplicateTypes (ARRAY_TYPE (array), 1);
         }
     } else {
         WARN (NODE_LINE (INFO_ASSIGN (arg_info)),
@@ -1888,7 +1892,7 @@ ArrayPrf (node *arg_node, node *arg_info)
             array = arg[1];
         }
 
-        /* Arrays like [a,...] with a = [...] cannot be foldet til now */
+        /* Arrays like [a,...] with a = [...] cannot be folded til now */
         first_elem = EXPRS_EXPR (ARRAY_AELEMS (array));
         if (N_id == NODE_TYPE (first_elem)) {
             GET_DIM (dim, VARDEC_TYPE (ID_VARDEC (first_elem)));
