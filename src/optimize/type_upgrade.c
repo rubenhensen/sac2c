@@ -1,7 +1,7 @@
 /* *
  * $Log$
- * Revision 1.10  2005/01/19 16:44:44  mwe
- * some new lines of code
+ * Revision 1.11  2005/01/21 13:20:17  mwe
+ * more implementation done
  *
  * Revision 1.9  2005/01/18 16:30:24  mwe
  * ongoing implementation...
@@ -67,6 +67,8 @@
 #include "constants.h"
 #include "shape.h"
 #include "ct_basic.h"
+
+#include "Error.h"
 
 #include "type_upgrade.h"
 
@@ -149,18 +151,19 @@ TryToDoTypeUpgrade (node *fundef)
     info *arg_info;
 
     DBUG_ENTER ("TryToDoTypeUpgrade");
-    INFO_TUP_CORRECTFUNCTION (arg_info) = TRUE;
-    INFO_TUP_CHECKLOOPFUN (arg_info) = TRUE;
 
     if (fundef != NULL) {
 
         arg_info = MakeInfo ();
+        INFO_TUP_CORRECTFUNCTION (arg_info) = TRUE;
+        INFO_TUP_CHECKLOOPFUN (arg_info) = TRUE;
 
         INFO_TUP_FUNDEF (arg_info) = fundef;
 
         TRAVpush (TR_tup);
-        fundef = TRAVdo (fundef, arg_info);
+        FUNDEF_BODY (fundef) = TRAVdo (FUNDEF_BODY (fundef), arg_info);
         TRAVpop ();
+        arg_info = FreeInfo (arg_info);
     }
 
     if (!(INFO_TUP_CORRECTFUNCTION (arg_info))) {
@@ -169,11 +172,9 @@ TryToDoTypeUpgrade (node *fundef)
          * Wrong types for recursive call
          */
 
-        fundef = FREEdoFreeTree (fundef);
+        /*fundef = FREEdoFreeTree( fundef);*/
         fundef = NULL;
     }
-
-    arg_info = FreeInfo (arg_info);
     DBUG_RETURN (fundef);
 }
 
@@ -228,8 +229,6 @@ GetLowestType (ntype *a, ntype *b)
  *   Type information for id nodes is appended at the corresponding
  *   avis-node. Type information for arrays is appended directly at
  *   the array-node.
- *
- *   TODO: check if correct, why not update types only in ids?
  *
  ***********************************************************************/
 static node *
@@ -379,7 +378,7 @@ TryStaticDispatch (node *fundef, node *args, info *arg_info)
     char *funname;
     DBUG_ENTER ("TryStaticDispatch");
 
-    if (FUNDEF_ISWRAPPERFUN (fundef)) {
+    if ((FUNDEF_ISWRAPPERFUN (fundef)) && (NULL != args)) {
 
         /*
          * current fundef belongs to wrapper function
@@ -558,6 +557,8 @@ SpecializationOracle (node *fundef, node *args)
          */
         result = DUPdoDupNode (fundef);
 
+        FUNDEF_FUNGROUP (result) = FUNDEF_FUNGROUP (fundef);
+        /*FUNDEF_USED( result) = FUNDEF_USED( fundef);*/
         /*
          * increse reference and specialization counter in fungroup
          */
@@ -598,7 +599,7 @@ SpecializationOracle (node *fundef, node *args)
          * TODO: check if following call is necessarry, new function is directly
          *       behind current one in AST, so will already be next to check
          */
-        result = TUPdoTypeUpgrade (result);
+        /*result = TUPdoTypeUpgrade(result);*/
     }
 
     DBUG_RETURN (result);
@@ -670,7 +671,7 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
         }
 
         given_args = EXPRS_NEXT (given_args);
-        fun_args = EXPRS_NEXT (fun_args);
+        fun_args = ARG_NEXT (fun_args);
     }
 
     if (is_more_special) {
@@ -690,7 +691,7 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
             /*
              * TODO: check if this has correct behaviour (termination after that fun)
              */
-            fundef = TUPdoTypeUpgrade (fundef);
+            /*fundef = TUPdoTypeUpgrade( fundef);*/
 
         } else if (FUNDEF_ISDOFUN (fundef)) {
 
@@ -703,6 +704,8 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
             tmp = DUPdoDupNode (fundef);
             FUNDEF_ARGS (tmp) = AdjustSignatureToArgs (FUNDEF_ARGS (tmp), args);
 
+            FUNDEF_ISDOFUN (tmp) = FUNDEF_ISDOFUN (fundef);
+            FUNDEF_USED (tmp) = FUNDEF_USED (fundef);
             /*
              * die selbe Funktionalität wie TUPdoTypeUpgrade, aber:
              * prüft bei N_ap auf rekursiven Aufruf und prüft auf passende Typen
@@ -716,15 +719,15 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
                  * it is possible to specialiaze loop function
                  */
 
-                FUNDEF_RETS (fundef) = FREEdoFreeTree (FUNDEF_RETS (fundef));
+                /*FUNDEF_RETS( fundef) = FREEdoFreeTree( FUNDEF_RETS( fundef));*/
                 FUNDEF_RETS (fundef) = FUNDEF_RETS (tmp);
                 FUNDEF_RETS (tmp) = NULL;
 
-                FUNDEF_ARGS (fundef) = FREEdoFreeTree (FUNDEF_ARGS (fundef));
+                /*FUNDEF_ARGS( fundef) = FREEdoFreeTree( FUNDEF_ARGS( fundef));*/
                 FUNDEF_ARGS (fundef) = FUNDEF_ARGS (tmp);
                 FUNDEF_ARGS (tmp) = NULL;
 
-                FUNDEF_BODY (fundef) = FREEdoFreeTree (FUNDEF_BODY (fundef));
+                /*FUNDEF_BODY( fundef) = FREEdoFreeTree( FUNDEF_BODY( fundef));*/
                 FUNDEF_BODY (fundef) = FUNDEF_BODY (tmp);
                 FUNDEF_BODY (tmp) = NULL;
 
@@ -732,12 +735,12 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
                  * TODO: add counter
                  */
 
-                FREEdoFreeTree (tmp);
+                /*FREEdoFreeTree( tmp);*/
             } else {
                 /*
                  * it is not possible to specialize loop function
                  */
-                FREEdoFreeTree (tmp);
+                /*FREEdoFreeTree( tmp);*/
             }
         } else {
 
@@ -1072,6 +1075,7 @@ TUPdoTypeUpgrade (node *arg_node)
         TRAVpop ();
     }
 
+    NOTE (("finished"));
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
@@ -1089,13 +1093,27 @@ TUPdoTypeUpgrade (node *arg_node)
 node *
 TUPfundef (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("TUPfundef");
 
     INFO_TUP_FUNDEF (arg_info) = arg_node;
+    /*
+    str = ILIBstringConcat("TUPfundef: function name: ", FUNDEF_NAME(arg_node));
+    */
+    if (FUNDEF_ISWRAPPERFUN (arg_node)) {
 
+        NOTE (("Wrapper-FUN:"));
+    } else {
+        NOTE (("Non-Wrapper-Fun:"));
+    }
+    NOTE (FUNDEF_NAME (arg_node));
     if (NULL != FUNDEF_BODY (arg_node)) {
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (FUNDEF_USED (arg_node) <= -1) {
+        FUNDEF_USED (arg_node) = -99;
     }
 
     DBUG_RETURN (arg_node);
@@ -1471,7 +1489,7 @@ TUPap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TUPap");
 
-    if (!IsTypeErrorFun (arg_node)) {
+    if (!IsTypeErrorFun (AP_FUNDEF (arg_node))) {
 
         if (INFO_TUP_CHECKLOOPFUN (arg_info)) {
 
@@ -1537,6 +1555,9 @@ TUPap (node *arg_node, info *arg_info)
                  * use more special function
                  */
                 AP_FUNDEF (arg_node) = result;
+                if ((!FUNDEF_ISDOFUN (result)) && (!FUNDEF_ISCONDFUN (result))) {
+                    (FUNDEF_USED (result))++;
+                }
                 /*
                  * TODO: add counter
                  */
@@ -1596,7 +1617,7 @@ TUPids (node *arg_node, info *arg_info)
     default: /* all cases are listed above, so default should never be entered*/
         DBUG_ASSERT ((FALSE), "New element in enumeration added?");
     }
-    type = TYfreeType (type);
+    /*type = TYfreeType( type);*/
 
     INFO_TUP_TYPECOUNTER (arg_info) = INFO_TUP_TYPECOUNTER (arg_info) + 1;
 
@@ -1870,7 +1891,7 @@ TUPfuncond (node *arg_node, info *arg_info)
 
     tmp = GetLowestType (then_type, else_type);
     INFO_TUP_TYPE (arg_info) = TYmakeProductType (1, tmp);
-    tmp = TYfreeType (tmp);
+    /*tmp = TYfreeType( tmp);*/
 
     DBUG_RETURN (arg_node);
 }
