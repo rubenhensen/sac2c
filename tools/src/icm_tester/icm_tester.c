@@ -134,26 +134,26 @@ PrintFile (FILE *file, char *shp, char *hid, char *unq)
 void
 CreateCFile (char *prefix, int *use_shp, int *use_hid, int *use_unq)
 {
-    char header[] = "
-#ifndef _SHP_
-#define _SHP_ SCL /* SCL, AKS, AKD, AUD */
-#endif
+    char header[] = "\n"
+                    "#ifndef _SHP_\n"
+                    "#define _SHP_ SCL  /* SCL, AKS, AKD, AUD */\n"
+                    "#endif\n"
+                    "\n"
+                    "#ifndef _HID_\n"
+                    "#define _HID_ HID  /* NHD, HID */\n"
+                    "#endif\n"
+                    "\n"
+                    "#ifndef _UNQ_\n"
+                    "#define _UNQ_ NUQ  /* NUQ, UNQ */\n"
+                    "#endif\n"
+                    "\n"
+                    "\n"
+                    "#define TAGGED_ARRAYS\n"
+                    "#define SAC_DO_MULTITHREAD 1\n"
+                    "#include \"sac.h\"\n"
+                    "\n";
 
-#ifndef _HID_
-#define _HID_ HID /* NHD, HID */
-#endif
-
-#ifndef _UNQ_
-#define _UNQ_ NUQ /* NUQ, UNQ */
-#endif
-
-#define TAGGED_ARRAYS
-#define SAC_DO_MULTITHREAD 1
-#include \"sac.h\"
-                    ";
-
-                    FILE
-                    * file;
+    FILE *file;
     char input[BUFLEN];
 
     file = OpenFile (prefix, ".c", "w");
