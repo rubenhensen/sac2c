@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2000/03/21 13:14:04  jhs
+ * Fixed bug.
+ *
  * Revision 1.16  2000/03/17 18:30:53  dkr
  * type lut_t* replaced by LUT_t
  *
@@ -10,7 +13,9 @@
  *
  * Revision 1.14  2000/03/09 18:36:12  jhs
  * Comments, comments, comments, ...
- * DFMbases copied now ...
+ * DFMbases are copied now ...
+ * All traversals Dup(Tree|Node)[LUT] based on new function
+ * DupTreeOrNodeLUT now.
  *
  * Revision 1.13  2000/03/02 13:06:30  jhs
  * Added DupSt and DupMt.
@@ -257,6 +262,7 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
     funtab *old_tab;
     DFMmask_base_t old_base;
     node *new_node;
+    node *old_fundef;
     int own_arg_info; /* bool */
 
     DBUG_ENTER ("DupTreeOrNodeLUT");
@@ -280,8 +286,8 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
 
         /*
          *  Via this (ugly) macro DUPCONT the decision to copy the whole tree
-         *  starting from arg_node, or only the node itself (meaning not to
-         *  traverse and copy xxx_NEXT is done.
+         *  starting from arg_node or only the node itself (meaning not to
+         *  traverse and copy xxx_NEXT) is done.
          *  DUPCONT compares the actual arg_node of a traversal function with the
          *  value in INFO_DUP_CONT. If they are the same the xxx_NEXT will be
          *  ignored, otherwise it will be traversed. If the start-node is stored as
@@ -302,7 +308,9 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
          *  INFO_DUP_DFMBASE is explained at DupFundef.
          */
         old_base = INFO_DUP_DFMBASE (arg_info);
+        old_fundef = INFO_DUP_FUNDEF (arg_info);
         INFO_DUP_DFMBASE (arg_info) = NULL;
+        INFO_DUP_FUNDEF (arg_info) = NULL;
 
         if (lut == NULL) {
             dup_lut = GenerateLUT ();
@@ -316,6 +324,7 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
             lut = dup_lut = RemoveLUT (dup_lut);
         }
 
+        INFO_DUP_FUNDEF (arg_info) = old_fundef;
         INFO_DUP_DFMBASE (arg_info) = old_base;
 
         if (own_arg_info) {
@@ -856,8 +865,7 @@ DupBlock (node *arg_node, node *arg_info)
     if (INFO_DUP_FUNDEF (arg_info) != NULL) {
         INFO_DUP_DFMBASE (arg_info)
           = DFMGenMaskBase (FUNDEF_ARGS (INFO_DUP_FUNDEF (arg_info)), new_vardec);
-    } else {
-        INFO_DUP_DFMBASE (arg_info) = NULL;
+        INFO_DUP_FUNDEF (arg_info) = NULL;
     }
 
     new_node = MakeBlock (DUPTRAV (BLOCK_INSTR (arg_node)), new_vardec);
