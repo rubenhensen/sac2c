@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.44  1996/01/22 14:44:44  asi
+ * Revision 1.45  1996/01/22 17:24:40  cg
+ * added macro OBJDEC_DEF(n)
+ *
+ * Revision 1.44  1996/01/22  14:44:44  asi
  * added ASSIGN_CSE
  *
  * Revision 1.43  1996/01/22  14:37:45  cg
@@ -690,6 +693,8 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  ***    node*       ICM       (O)  (compile ->)
  ***    node*       SIB       (O)  (readsib !!)
  ***    nodelist*   NEEDOBJS  (O)  (import -> analysis -> objects -> )
+ ***
+ ***    node*       OBJDEC_DEF (O)  (checkdec -> writesib -> )
  ***/
 
 /*
@@ -716,6 +721,10 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  *  in order to make the code of this function available. If LINKMOD is
  *  NULL, then link with the module given by MOD.
  *
+ *  The OBJDEC_DEF slot is only used when an objdef node is used as a
+ *  representation of an object declaration. It then points to the
+ *  objdef node which contains the respective definition.
+ *
  */
 
 extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *next);
@@ -734,6 +743,8 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 #define OBJDEF_ICM(n) (n->node[3])
 #define OBJDEF_NEEDOBJS(n) ((nodelist *)n->node[5])
 #define OBJDEF_SIB(n) (n->node[3])
+
+#define OBJDEC_DEF(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
