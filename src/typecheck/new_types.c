@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/08/13 13:45:32  dkr
+ * - SearchInLUT_PP used instead of SearchInLUT_P
+ * - functions for creation of wrapper function code added
+ *
  * Revision 3.12  2002/08/09 14:52:04  dkr
  * signature of TYType2WrapperCode modified
  *
@@ -68,8 +72,8 @@
  *   TYOldType2Type, and TYType2OldType.
  *
  *
- * The central idea of the ntype is that all types are represented by recursively
- * nested type-constructors with varying arity.
+ * The central idea of the ntype is that all types are represented by
+ * recursively nested type-constructors with varying arity.
  * All "scalar types", e.g., pre-defined types or user-defined types, are
  * represented by typeconstructors of arity 0, e.g. TC_simple or TC_user.
  * Further information concerning type constructors can be found in
@@ -261,7 +265,7 @@ static int variable_arity[] = {
 /******************************************************************************
  *
  * function:
- *    ntype * MakeNtype( typeconstr con, int arity)
+ *    ntype *MakeNtype( typeconstr con, int arity)
  *
  * description:
  *    internal function for allocating an ntype-node. According to arity,
@@ -295,11 +299,11 @@ MakeNtype (typeconstr con, int arity)
 /******************************************************************************
  *
  * function:
- *    ntype * MakeNewSon( ntype *father, ntype *son)
+ *   ntype *MakeNewSon( ntype *father, ntype *son)
  *
  * description:
- *    internal function for increasing an ntype's arity.
- *    Like all Makexxx functions it consumes (reuses) both its arguments!!
+ *   Internal function for increasing an ntype's arity.
+ *   Like all Makexxx functions it consumes (reuses) both its arguments!!
  *
  ******************************************************************************/
 
@@ -318,7 +322,7 @@ MakeNewSon (ntype *father, ntype *son)
         new_sons[i] = NTYPE_SON (father, i);
     }
     new_sons[i] = son;
-    Free (NTYPE_SONS (father));
+    NTYPE_SONS (father) = Free (NTYPE_SONS (father));
     NTYPE_SONS (father) = new_sons;
 
     DBUG_RETURN (father);
@@ -327,12 +331,13 @@ MakeNewSon (ntype *father, ntype *son)
 /******************************************************************************
  *
  * function:
- *    ntype * MakeNewFundefsPoss( ntype *ires, int num, node **fundefs, int *poss)
+ *   ntype *MakeNewFundefsPoss( ntype *ires, int num,
+ *                               node **fundefs, int *poss)
  *
  * description:
- *    internal function for adding <num> fundefs and <num> poss to an ires's
- *    fundefs and poss list.
- *    Like all Makexxx functions it consumes (reuses) both its arguments!!
+ *   Internal function for adding <num> fundefs and <num> poss to an ires's
+ *   fundefs and poss list.
+ *   Like all Makexxx functions it consumes (reuses) both its arguments!!
  *
  ******************************************************************************/
 
@@ -357,10 +362,10 @@ MakeNewFundefsPoss (ntype *ires, int num, node **fundefs, int *poss)
         new_fundefs[i] = fundefs[i - arity];
         new_poss[i] = poss[i - arity];
     }
-    Free (IRES_FUNDEFS (ires));
-    Free (IRES_POSS (ires));
-    Free (fundefs);
-    Free (poss);
+    IRES_FUNDEFS (ires) = Free (IRES_FUNDEFS (ires));
+    IRES_POSS (ires) = Free (IRES_POSS (ires));
+    fundefs = Free (fundefs);
+    poss = Free (poss);
     IRES_FUNDEFS (ires) = new_fundefs;
     IRES_POSS (ires) = new_poss;
 
@@ -393,12 +398,13 @@ TYGetConstr (ntype *type)
 /******************************************************************************
  *
  * function:
- *    ntype * TYMakeSimpleType( simpletype base)
- *    ntype * TYMakeSymbType( char *name, char *mod)
- *    ntype * TYMakeUserType( usertype udt)
+ *   ntype * TYMakeSimpleType( simpletype base)
+ *   ntype * TYMakeSymbType( char *name, char *mod)
+ *   ntype * TYMakeUserType( usertype udt)
  *
  * description:
- *  several functions for creating scalar types (type-constructors with arity 0).
+ *   Several functions for creating scalar types
+ *   (type-constructors with arity 0).
  *
  ******************************************************************************/
 
@@ -447,12 +453,12 @@ TYMakeUserType (usertype udt)
 /******************************************************************************
  *
  * function:
- *    simpletype   TYGetSimpleType( ntype *simple)
- *    char       * TYGetName( ntype *symb)
- *    char       * TYGetMod( ntype *symb)
+ *   simpletype TYGetSimpleType( ntype *simple)
+ *   char     * TYGetName( ntype *symb)
+ *   char     * TYGetMod( ntype *symb)
  *
  * description:
- *  several functions for extracting the attributes from scalar types.
+ *   Several functions for extracting the attributes from scalar types.
  *
  ******************************************************************************/
 
@@ -484,15 +490,15 @@ TYGetMod (ntype *symb)
 /******************************************************************************
  *
  * function:
- *    ntype * TYMakeAKS( ntype *scalar, shape *shp)
- *    ntype * TYMakeAKD( ntype *scalar, int dots, shape *shp)
- *    ntype * TYMakeAUD( ntype *scalar)
- *    ntype * TYMakeAUDGZ( ntype *scalar)
+ *   ntype * TYMakeAKS( ntype *scalar, shape *shp)
+ *   ntype * TYMakeAKD( ntype *scalar, int dots, shape *shp)
+ *   ntype * TYMakeAUD( ntype *scalar)
+ *   ntype * TYMakeAUDGZ( ntype *scalar)
  *
- *    ntype * TYSetScalar( ntype *array, ntype *scalar)
+ *   ntype * TYSetScalar( ntype *array, ntype *scalar)
  *
  * description:
- *  several functions for creating array-types.
+ *   Several functions for creating array-types.
  *
  ******************************************************************************/
 
@@ -556,7 +562,7 @@ TYSetScalar (ntype *array, ntype *scalar)
 {
     DBUG_ENTER ("TYSetScalar");
 
-    TYFreeType (NTYPE_SON (array, 0));
+    NTYPE_SON (array, 0) = TYFreeType (NTYPE_SON (array, 0));
     NTYPE_SON (array, 0) = scalar;
 
     DBUG_RETURN (array);
@@ -565,12 +571,12 @@ TYSetScalar (ntype *array, ntype *scalar)
 /******************************************************************************
  *
  * function:
- *    int     TYGetDim( ntype *array)
- *    shape * TYGetShape( ntype *array)
- *    ntype * TYGetScalar( ntype *array)
+ *   int     TYGetDim( ntype *array)
+ *   shape * TYGetShape( ntype *array)
+ *   ntype * TYGetScalar( ntype *array)
  *
  * description:
- *  several functions for extracting the attributes / sons of array types.
+ *   Several functions for extracting the attributes / sons of array types.
  *
  ******************************************************************************/
 
@@ -627,14 +633,14 @@ TYGetScalar (ntype *array)
 /******************************************************************************
  *
  * function:
- *    ntype * TYMakeUnionType( ntype *t1, ntype *t2)
+ *   ntype * TYMakeUnionType( ntype *t1, ntype *t2)
  *
  * description:
- *  functions for creating union-types. Note here, that this function, like
- *  all MakeXYZ and GetXYZ functions consumes its arguments!!
- *  Since the representation of the union type constructor does not allow the
- *  two argument constructors to be re-used iff the are already union-constructors,
- *  those constructors are freed!!
+ *   functions for creating union-types. Note here, that this function, like
+ *   all MakeXYZ and GetXYZ functions consumes its arguments!!
+ *   Since the representation of the union type constructor does not allow the
+ *   two argument constructors to be re-used iff the are already
+ *   union-constructors, those constructors are freed!!
  *
  ******************************************************************************/
 
@@ -659,7 +665,7 @@ TYMakeUnionType (ntype *t1, ntype *t2)
         for (i = 0; i < NTYPE_ARITY (t1); i++) {
             UNION_MEMBER (res, pos++) = UNION_MEMBER (t1, i);
         }
-        TYFreeTypeConstructor (t1);
+        t1 = TYFreeTypeConstructor (t1);
     } else {
         UNION_MEMBER (res, pos++) = t1;
     }
@@ -667,7 +673,7 @@ TYMakeUnionType (ntype *t1, ntype *t2)
         for (i = 0; i < NTYPE_ARITY (t2); i++) {
             UNION_MEMBER (res, pos++) = UNION_MEMBER (t2, i);
         }
-        TYFreeTypeConstructor (t2);
+        t2 = TYFreeTypeConstructor (t2);
     } else {
         UNION_MEMBER (res, pos++) = t2;
     }
@@ -678,18 +684,19 @@ TYMakeUnionType (ntype *t1, ntype *t2)
 /******************************************************************************
  *
  * function:
- *    ntype * TYMakeProductType( int size, ...)
+ *   ntype * TYMakeProductType( int size, ...)
  *
- *    ntype * TYMakeEmptyProductType( int size)
- *    ntype * TYSetProductMember( ntype *prod, int pos, ntype *member)
+ *   ntype * TYMakeEmptyProductType( int size)
+ *   ntype * TYSetProductMember( ntype *prod, int pos, ntype *member)
  *
  * description:
- *  functions for creating product types. Note here, that this function, like
- *  all MakeXYZ and GetXYZ functions consumes its arguments!!
- *  At the time being, only array types or type variables may be given as arguments.
- *  The first version is useful in all situations where the number of components
- *  is statically known. However, in many situations this is not the case.
- *  In these situations, the latter two functions are to be used.
+ *   Functions for creating product types. Note here, that this function, like
+ *   all MakeXYZ and GetXYZ functions consumes its arguments!!
+ *   At the time being, only array types or type variables may be given as
+ *   arguments.
+ *   The first version is useful in all situations where the number of
+ *   components is statically known. However, in many situations this is not
+ *   the case. In these situations, the latter two functions are to be used.
  *
  ******************************************************************************/
 
@@ -709,8 +716,8 @@ TYMakeProductType (int size, ...)
         for (i = 0; i < size; i++) {
             arg = va_arg (Argp, ntype *);
             DBUG_ASSERT ((TYIsArray (arg) || TYIsAlpha (arg)),
-                         "non array type / type var components of product types are not "
-                         "yet supported!");
+                         "non array type / type var components of product types"
+                         " are not yet supported!");
             PROD_MEMBER (res, i) = arg;
         }
     }
@@ -738,21 +745,24 @@ TYSetProductMember (ntype *prod, int pos, ntype *member)
     DBUG_ASSERT ((NTYPE_CON (prod) == TC_prod),
                  "TYSetProductMember applied to non-product type");
     DBUG_ASSERT ((pos < NTYPE_ARITY (prod)),
-                 "TYSetProductMember applied to product type with too few elements");
+                 "TYSetProductMember applied to product type with"
+                 " too few elements");
 
     NTYPE_SON (prod, pos) = member;
+
     DBUG_RETURN (prod);
 }
 
 /******************************************************************************
  *
  * function:
- *    int       TYGetProductSize( ntype *prod)
- *    ntype  *  TYGetProductMember( ntype *prod, int pos)
+ *   int       TYGetProductSize( ntype *prod)
+ *   ntype  *  TYGetProductMember( ntype *prod, int pos)
  *
  * description:
- *  functions inspecting or extracting components of product types!
- *  Note here, that TYGetProductMember does not copy the member to be extracted!!
+ *   functions inspecting or extracting components of product types!
+ *   Note here, that TYGetProductMember does not copy the member to be
+ *   extracted!!
  *
  ******************************************************************************/
 
@@ -760,8 +770,10 @@ int
 TYGetProductSize (ntype *prod)
 {
     DBUG_ENTER ("TYGetProductSize");
+
     DBUG_ASSERT ((NTYPE_CON (prod) == TC_prod),
                  "TYGetProductSize applied to non-product type");
+
     DBUG_RETURN (NTYPE_ARITY (prod));
 }
 
@@ -769,17 +781,19 @@ ntype *
 TYGetProductMember (ntype *prod, int pos)
 {
     DBUG_ENTER ("TYGetProductMember");
+
     DBUG_ASSERT ((NTYPE_CON (prod) == TC_prod),
                  "TYGetProductMember applied to non-product type");
     DBUG_ASSERT ((NTYPE_ARITY (prod) > pos),
                  "TYGetProductMember applied with illegal index");
+
     DBUG_RETURN (PROD_MEMBER (prod, pos));
 }
 
 /******************************************************************************
  *
  * function:
- *   ntype *  TYMakeFunType( ntype *arg, ntype *res, node *fun_info)
+ *   ntype * TYMakeFunType( ntype *arg, ntype *res, node *fun_info)
  *
  * description:
  *  function for creating function types. It implicitly creates the intersection
@@ -804,18 +818,18 @@ TYGetProductMember (ntype *prod, int pos)
  *                                    /[.,.]  \
  *                                             TC_ishape -- shape (e.g. [3,4])
  *                                             /
- *                                            / [3,4]
+ *                                            /[3,4]
  *
- *  All "open ends" of this structure point to TC_ires nodes which hold the return
- *  types of the given function. The dots right of some edges indicate that there may
- *  be multiple of the lower nodes attached, i.e., ther may be several TC_ibase
- *  nodes under a single TC_fun node, and there may also be several TC_idim and
- *  several TC_ishape nodes.
- *  However, since this function only creates the type for a single non-overloaded
- *  function, it does only create single ones. In case the parameter type of the
- *  function is a generic one, e.g. int[.,.], only that part of the tree is
- *  constructed that is necessary to accomodate it. In case of int[.,.], simply
- *  the lowest TC_ishape node would be missing.
+ *  All "open ends" of this structure point to TC_ires nodes which hold the
+ *  return types of the given function. The dots right of some edges indicate
+ *  that there may be multiple of the lower nodes attached, i.e., ther may be
+ *  several TC_ibase nodes under a single TC_fun node, and there may also be
+ *  several TC_idim and several TC_ishape nodes.
+ *  However, since this function only creates the type for a single
+ *  non-overloaded function, it does only create single ones. In case the
+ *  parameter type of the function is a generic one, e.g. int[.,.], only that
+ *  part of the tree is constructed that is necessary to accomodate it. In
+ *  case of int[.,.], simply the lowest TC_ishape node would be missing.
  *
  ******************************************************************************/
 
@@ -915,7 +929,7 @@ TYMakeFunType (ntype *arg, ntype *res_type, node *fundef)
     /*
      * the only son of the arg type has been reused, now we free its constructor!
      */
-    TYFreeTypeConstructor (arg);
+    arg = TYFreeTypeConstructor (arg);
 
     DBUG_EXECUTE ("NTY", (tmp = TYType2DebugString (fun, TRUE, 0)););
     DBUG_PRINT ("NTY", ("fun type built: %s\n", tmp));
@@ -926,7 +940,7 @@ TYMakeFunType (ntype *arg, ntype *res_type, node *fundef)
 /******************************************************************************
  *
  * function:
- *   ntype *  TYMakeOverloadedFunType( ntype *fun1, ntype *fun2)
+ *   ntype * TYMakeOverloadedFunType( ntype *fun1, ntype *fun2)
  *
  * description:
  *  function for merging two function types. It inserts fun1 into fun2.
@@ -972,8 +986,7 @@ FilterFundefs (ntype *fun, int num_kills, node **kill_list)
         case TC_ishape:
             NTYPE_SON (fun, 0) = FilterFundefs (NTYPE_SON (fun, 0), num_kills, kill_list);
             if (NTYPE_SON (fun, 0) == NULL) {
-                TYFreeType (fun);
-                fun = NULL;
+                fun = TYFreeType (fun);
             } else {
                 for (i = 1; i < NTYPE_ARITY (fun); i++) {
                     NTYPE_SON (fun, i)
@@ -1001,8 +1014,7 @@ FilterFundefs (ntype *fun, int num_kills, node **kill_list)
              *  b) all fundefs to be killed are NULLed
              */
             if (new_numfuns == 0) {
-                TYFreeType (fun);
-                fun = NULL;
+                fun = TYFreeType (fun);
             } else {
                 new_fundefs = (node **)Malloc (sizeof (node *) * new_numfuns);
                 new_poss = (int *)Malloc (sizeof (int) * new_numfuns);
@@ -1037,14 +1049,14 @@ FilterFundefs (ntype *fun, int num_kills, node **kill_list)
 /******************************************************************************
  *
  * function:
- *    ntype *ProjDown( ntype *ires, ntype *template)
+ *   ntype *ProjDown( ntype *ires, ntype *template)
  *
  * description:
- *    copies ires and inspects the positioning of the associated fundefs.
- *    Those that are upward projections are NOT projected down!
- *    (If all fundefs turn out to be upward projections, NULL is returned!)
- *    If the template ntype-node is not an ires node, a copy of it is put
- *    in front of the freshly generated ires node and returned.
+ *   Copies ires and inspects the positioning of the associated fundefs.
+ *   Those that are upward projections are NOT projected down!
+ *   (If all fundefs turn out to be upward projections, NULL is returned!)
+ *   If the template ntype-node is not an ires node, a copy of it is put
+ *   in front of the freshly generated ires node and returned.
  *
  ******************************************************************************/
 
@@ -1057,6 +1069,8 @@ ProjDown (ntype *ires, ntype *template)
     ntype *res = NULL;
     ntype *tmp = NULL;
     node **kill_list;
+
+    DBUG_ENTER ("ProjDown");
 
     kill_list = (node **)Malloc (sizeof (node *) * IRES_NUMFUNS (ires));
 
@@ -1091,7 +1105,7 @@ ProjDown (ntype *ires, ntype *template)
 
     kill_list = Free (kill_list);
 
-    return (res);
+    DBUG_RETURN (res);
 }
 
 typedef bool (*cmp_ntype_fun_t) (ntype *, ntype *);
@@ -1100,7 +1114,8 @@ static bool
 CmpIbase (ntype *ibase1, ntype *ibase2)
 {
     DBUG_ASSERT (((NTYPE_CON (ibase1) == TC_ibase) && (NTYPE_CON (ibase1) == TC_ibase)),
-                 ("CmpIbase called with non TC_ibase arg!"));
+                 "CmpIbase called with non TC_ibase arg!");
+
     return (TYEqTypes (IBASE_BASE (ibase1), IBASE_BASE (ibase2)));
 }
 
@@ -1108,7 +1123,8 @@ static bool
 CmpIdim (ntype *idim1, ntype *idim2)
 {
     DBUG_ASSERT (((NTYPE_CON (idim1) == TC_idim) && (NTYPE_CON (idim1) == TC_idim)),
-                 ("CmpIdim called with non TC_idim arg!"));
+                 "CmpIdim called with non TC_idim arg!");
+
     return (IDIM_DIM (idim1) == IDIM_DIM (idim2));
 }
 
@@ -1117,7 +1133,8 @@ CmpIshape (ntype *ishape1, ntype *ishape2)
 {
     DBUG_ASSERT (((NTYPE_CON (ishape1) == TC_ishape)
                   && (NTYPE_CON (ishape1) == TC_ishape)),
-                 ("CmpIshape called with non TC_ishape arg!"));
+                 "CmpIshape called with non TC_ishape arg!");
+
     return (SHCompareShapes (ISHAPE_SHAPE (ishape1), ISHAPE_SHAPE (ishape2)));
 }
 
@@ -1204,11 +1221,14 @@ MergeSons (ntype *fun1, ntype *fun2, int start, int stop)
 {
     int i;
 
+    DBUG_ENTER ("MergeSons");
+
     for (i = start; i < (stop); i++) {
         NTYPE_SON (fun2, i)
           = MakeOverloadedFunType (NTYPE_SON (fun1, i), NTYPE_SON (fun2, i));
     }
-    return (fun2);
+
+    DBUG_RETURN (fun2);
 }
 
 /******************************************************************************
@@ -1228,6 +1248,8 @@ AdjustSons (ntype **fun1_p, ntype **fun2_p, int start, int stop)
     ntype *fun1, *fun2;
     int i;
 
+    DBUG_ENTER ("AdjustSons");
+
     fun1 = *fun1_p;
     fun2 = *fun2_p;
 
@@ -1245,6 +1267,8 @@ AdjustSons (ntype **fun1_p, ntype **fun2_p, int start, int stop)
 
     *fun1_p = fun1;
     *fun2_p = fun2;
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
@@ -1306,6 +1330,7 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
     bool ok;
 
     DBUG_ENTER ("MakeOverloadedFunType");
+
     if (fun1 == NULL) {
         res = fun2;
     } else if (fun2 == NULL) {
@@ -1350,8 +1375,8 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
             break;
         case TC_prod:
             DBUG_ASSERT ((NTYPE_ARITY (fun1) == NTYPE_ARITY (fun2)),
-                         "trying to overload function types with different number of "
-                         "return types");
+                         "trying to overload function types with different number"
+                         " of return types");
             fun2 = MergeSons (fun1, fun2, 0, NTYPE_ARITY (fun1));
             break;
         case TC_alpha:
@@ -1363,16 +1388,16 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
                 overload_fun1_alpha = ALPHA_SSI (fun1);
             } else {
                 DBUG_ASSERT ((overload_fun1_alpha == ALPHA_SSI (fun1)),
-                             ("TYMakeOverloadedFunType called with overloaded fun1!"));
+                             "TYMakeOverloadedFunType called with overloaded fun1!");
             }
 #endif
             if (SSIIsLe (ALPHA_SSI (fun1), ALPHA_SSI (fun2))) {
                 res = fun2;
             } else if (SSIIsLe (ALPHA_SSI (fun2), ALPHA_SSI (fun1))) {
                 res = TYCopyType (fun1);
-                TYFreeTypeConstructor (fun2);
+                fun2 = TYFreeTypeConstructor (fun2);
             } else {
-                old_alpha = SearchInLUT_P (overload_lut, ALPHA_SSI (fun2));
+                old_alpha = SearchInLUT_PP (overload_lut, ALPHA_SSI (fun2));
                 if (old_alpha != ALPHA_SSI (fun2)) { /* found! */
                     res = MakeNtype (TC_alpha, 0);
                     ALPHA_SSI (res) = old_alpha;
@@ -1391,7 +1416,7 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
         default:
             DBUG_ASSERT ((0), "TYMakeOverloadFunType called with illegal funtype!");
         }
-        TYFreeTypeConstructor (fun1);
+        fun1 = TYFreeTypeConstructor (fun1);
     }
 
     DBUG_RETURN (res);
@@ -1400,7 +1425,7 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
 /******************************************************************************
  *
  * function:
- *   ntype *  TYDispatchFunType( ntype *fun, ntype *args )
+ *   ntype * TYDispatchFunType( ntype *fun, ntype *args )
  *
  * description:
  *
@@ -1413,6 +1438,7 @@ FindIbase (ntype *fun, ntype *scalar)
     int i = 0;
 
     DBUG_ENTER ("FindIbase");
+
     while ((i < NTYPE_ARITY (fun))
            && !TYEqTypes (IBASE_BASE (FUN_IBASE (fun, i)), scalar)) {
         i++;
@@ -1420,6 +1446,7 @@ FindIbase (ntype *fun, ntype *scalar)
     if (i < NTYPE_ARITY (fun)) {
         res = FUN_IBASE (fun, i);
     }
+
     DBUG_RETURN (res);
 }
 
@@ -1430,12 +1457,14 @@ FindIdim (ntype *iarr, int dim)
     int i = 0;
 
     DBUG_ENTER ("FindIdim");
+
     while ((i < (NTYPE_ARITY (iarr) - 1)) && (IDIM_DIM (IARR_IDIM (iarr, i)) != dim)) {
         i++;
     }
     if (i < (NTYPE_ARITY (iarr) - 1)) {
         res = IARR_IDIM (iarr, i);
     }
+
     DBUG_RETURN (res);
 }
 
@@ -1446,6 +1475,7 @@ FindIshape (ntype *idim, shape *shp)
     int i = 0;
 
     DBUG_ENTER ("FindIshape");
+
     while ((i < (NTYPE_ARITY (idim) - 1))
            && !SHCompareShapes (ISHAPE_SHAPE (IDIM_ISHAPE (idim, i)), shp)) {
         i++;
@@ -1453,6 +1483,7 @@ FindIshape (ntype *idim, shape *shp)
     if (i < (NTYPE_ARITY (idim) - 1)) {
         res = IDIM_ISHAPE (idim, i);
     }
+
     DBUG_RETURN (res);
 }
 
@@ -1481,9 +1512,9 @@ DispatchOneArg (int *lower_p, ntype *fun, ntype *arg)
             if (NTYPE_CON (arg) != TC_aud) {
                 fun = IBASE_IARR (fun);
                 if (fun == NULL) {
-                    lower
-                      = (NTYPE_CON (arg) == TC_aks ? 3
-                                                   : (NTYPE_CON (arg) == TC_akd ? 2 : 1));
+                    lower = ((NTYPE_CON (arg) == TC_aks)
+                               ? 3
+                               : ((NTYPE_CON (arg) == TC_akd) ? 2 : 1));
                 } else {
 
                     /*   new default:   <base>[+]   */
@@ -1549,7 +1580,8 @@ DebugPrintUpsAndDowns (int max_funs, node **fundefs, int *ups, int *downs)
 
     DBUG_VOID_RETURN;
 }
-#endif
+
+#endif /* DBUG_OFF */
 
 /******************************************************************************
  *
@@ -1583,16 +1615,18 @@ TYMakeDFT_res (ntype *type, int max_funs)
 /******************************************************************************
  *
  * function:
- *   void TYFreeDFT_res( DFT_res *res)
+ *   DFT_res * TYFreeDFT_res( DFT_res *res)
  *
  * description:
  *
  ******************************************************************************/
 
-void
+DFT_res *
 TYFreeDFT_res (DFT_res *res)
 {
     DBUG_ENTER ("TYFreeDFT_res");
+
+    DBUG_ASSERT ((res != NULL), "argument is NULL");
 
     if (res->partials != NULL) {
         res->partials = Free (res->partials);
@@ -1603,7 +1637,7 @@ TYFreeDFT_res (DFT_res *res)
 
     res = Free (res);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (res);
 }
 
 DFT_res *
@@ -1642,8 +1676,9 @@ TYDispatchFunType (ntype *fun, ntype *args)
             if (ires == NULL) {
                 fundef = IRES_FUNDEF (IBASE_GEN (FUN_IBASE (fun, 0)), 0);
                 ABORT (linenum,
-                       ("no definition found for a function \"%s\" that accepts"
-                        " an argument of type \"%s\" as parameter no %d",
+                       ("no definition found for a function \"%s\" that"
+                        " accepts an argument of type \"%s\" as parameter"
+                        " no %d",
                         FUNDEF_NAME (fundef), TYType2String (arg, FALSE, 0), i + 1));
             }
 
@@ -1811,7 +1846,7 @@ TYDFT_res2DebugString (DFT_res *dft)
 /******************************************************************************
  *
  * function:
- *   ntype *  TYMakeAlphaType( ntype *maxtype )
+ *   ntype * TYMakeAlphaType( ntype *maxtype )
  *
  * description:
  *  function for creating a not yet determined subtype of maxtype.
@@ -1825,19 +1860,21 @@ TYMakeAlphaType (ntype *maxtype)
     tvar *alpha;
 
     DBUG_ENTER ("TYMakeAlphaType");
+
     res = MakeNtype (TC_alpha, 0);
     alpha = SSIMakeVariable ();
     if (maxtype != NULL) {
         SSINewMax (alpha, maxtype);
     }
     ALPHA_SSI (res) = alpha;
+
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *   tvar *  TYGetAlpha( ntype *type )
+ *   tvar * TYGetAlpha( ntype *type)
  *
  * description:
  *  function for extracting the ssa variable from a type variable.
@@ -1848,8 +1885,9 @@ tvar *
 TYGetAlpha (ntype *type)
 {
     DBUG_ENTER ("TYGetAlpha");
+
     DBUG_ASSERT ((NTYPE_CON (type) == TC_alpha),
-                 ("TYGetAlpha applied to non type variable!"));
+                 "TYGetAlpha applied to non type variable!");
 
     DBUG_RETURN (ALPHA_SSI (type));
 }
@@ -1861,23 +1899,23 @@ TYGetAlpha (ntype *type)
 /******************************************************************************
  *
  * function:
- *    bool TYIsSimple( ntype * type)
- *    bool TYIsUser( ntype * type)
- *    bool TYIsSymb( ntype * type)
- *    bool TYIsScalar( ntype * type)
- *    bool TYIsAlpha( ntype * type)
- *    bool TYIsFixedAlpha( ntype * type)
- *    bool TYIsNonFixedAlpha( ntype * type)
- *    bool TYIsAKS( ntype * type)
- *    bool TYIsAKD( ntype * type)
- *    bool TYIsAUDGZ( ntype * type)
- *    bool TYIsAUD( ntype * type)
- *    bool TYIsArray( ntype * type)
- *    bool TYIsArrayOrAlpha( ntype * type)
- *    bool TYIsArrayOrFixedAlpha( ntype * type)
- *    bool TYIsUnion( ntype * type)
- *    bool TYIsProd( ntype * type)
- *    bool TYIsFun( ntype * type)
+ *    bool TYIsSimple( ntype *type)
+ *    bool TYIsUser( ntype *type)
+ *    bool TYIsSymb( ntype *type)
+ *    bool TYIsScalar( ntype *type)
+ *    bool TYIsAlpha( ntype *type)
+ *    bool TYIsFixedAlpha( ntype *type)
+ *    bool TYIsNonFixedAlpha( ntype *type)
+ *    bool TYIsAKS( ntype *type)
+ *    bool TYIsAKD( ntype *type)
+ *    bool TYIsAUDGZ( ntype *type)
+ *    bool TYIsAUD( ntype *type)
+ *    bool TYIsArray( ntype *type)
+ *    bool TYIsArrayOrAlpha( ntype *type)
+ *    bool TYIsArrayOrFixedAlpha( ntype *type)
+ *    bool TYIsUnion( ntype *type)
+ *    bool TYIsProd( ntype *type)
+ *    bool TYIsFun( ntype *type)
  *
  * description:
  *  several predicate functions for inspecting the top level ntype!
@@ -2008,9 +2046,9 @@ TYIsFun (ntype *type)
 /******************************************************************************
  *
  * function:
- *    bool TYIsAKSSymb( ntype * type)
- *    bool TYIsProdOfArrayOrFixedAlpha( ntype * type)
- *    bool TYIsProdOfArray( ntype * type)
+ *    bool TYIsAKSSymb( ntype *type)
+ *    bool TYIsProdOfArrayOrFixedAlpha( ntype *type)
+ *    bool TYIsProdOfArray( ntype *type)
  *
  * description:
  *   several predicate functions for checking particular nestings of
@@ -2022,8 +2060,8 @@ bool
 TYIsAKSSymb (ntype *type)
 {
     DBUG_ENTER ("TYIsAKSSymb");
-    DBUG_RETURN ((NTYPE_CON (type) == TC_aks)
-                 && (NTYPE_CON (AKS_BASE (type)) == TC_symbol));
+    DBUG_RETURN (
+      ((NTYPE_CON (type) == TC_aks) && (NTYPE_CON (AKS_BASE (type)) == TC_symbol)));
 }
 
 bool
@@ -2034,6 +2072,7 @@ TYIsProdOfArrayOrFixedAlpha (ntype *args)
     int i;
 
     DBUG_ENTER ("TYIsProdOfArrayOrFixedAlpha");
+
     if (TYIsProd (args)) {
         for (i = 0; i < TYGetProductSize (args); i++) {
             arg = TYGetProductMember (args, i);
@@ -2042,6 +2081,7 @@ TYIsProdOfArrayOrFixedAlpha (ntype *args)
     } else {
         res = FALSE;
     }
+
     DBUG_RETURN (res);
 }
 
@@ -2053,6 +2093,7 @@ TYIsProdOfArray (ntype *args)
     int i;
 
     DBUG_ENTER ("TYIsProdOfArray");
+
     if (TYIsProd (args)) {
         for (i = 0; i < TYGetProductSize (args); i++) {
             arg = TYGetProductMember (args, i);
@@ -2061,6 +2102,7 @@ TYIsProdOfArray (ntype *args)
     } else {
         res = FALSE;
     }
+
     DBUG_RETURN (res);
 }
 
@@ -2131,9 +2173,9 @@ TYCountNoMinAlpha (ntype *type)
 /******************************************************************************
  *
  * function:
- *    CT_res TYCmpTypes( ntype * t1, ntype * t2)
- *    bool     TYLeTypes( ntype * t1, ntype * t2)
- *    bool     TYEqTypes( ntype * t1, ntype * t2)
+ *    CT_res TYCmpTypes( ntype *t1, ntype *t2)
+ *    bool   TYLeTypes( ntype *t1, ntype *t2)
+ *    bool   TYEqTypes( ntype *t1, ntype *t2)
  *
  * description:
  *
@@ -2330,7 +2372,7 @@ TYLeTypes (ntype *t1, ntype *t2)
 /******************************************************************************
  *
  * function:
- *    ntype * TYLubOfTypes( ntype * t1, ntype * t2)
+ *    ntype * TYLubOfTypes( ntype *t1, ntype *t2)
  *
  * description:
  *    computes the least upper bound of types t1 and t2. In case it does not
@@ -2365,17 +2407,17 @@ TYLubOfTypes (ntype *t1, ntype *t2)
                                     SHCreateShape (0));
             }
             res = TYLubOfTypes (new_t1, t2);
-            TYFreeType (new_t1);
+            new_t1 = TYFreeType (new_t1);
             break;
         case TC_akd:
             new_t1 = TYMakeAUDGZ (AKD_BASE (t1));
             res = TYLubOfTypes (new_t1, t2);
-            TYFreeTypeConstructor (new_t1);
+            new_t1 = TYFreeTypeConstructor (new_t1);
             break;
         case TC_audgz:
             new_t1 = TYMakeAUD (AUDGZ_BASE (t1));
             res = TYLubOfTypes (new_t1, t2);
-            TYFreeTypeConstructor (new_t1);
+            new_t1 = TYFreeTypeConstructor (new_t1);
             break;
         case TC_aud:
             DBUG_ASSERT ((0), "Cannot compute LUB!");
@@ -2393,13 +2435,14 @@ TYLubOfTypes (ntype *t1, ntype *t2)
     default:
         res = NULL;
     }
+
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *    ntype * TYEliminateAlpha( ntype * t1)
+ *    ntype * TYEliminateAlpha( ntype *t1)
  *
  * description:
  *    if t1 is a type variable with identical upper and lower bound the
@@ -2427,13 +2470,14 @@ TYEliminateAlpha (ntype *t1)
             res = TYCopyType (t1);
         }
     }
+
     DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *    ntype * TYFixAndEliminateAlpha( ntype * t1)
+ *    ntype * TYFixAndEliminateAlpha( ntype *t1)
  *
  * description:
  *    if t1 is a type variable with a lower bound the lower bound
@@ -2461,6 +2505,7 @@ TYFixAndEliminateAlpha (ntype *t1)
             res = TYCopyType (t1);
         }
     }
+
     DBUG_RETURN (res);
 }
 
@@ -2471,8 +2516,8 @@ TYFixAndEliminateAlpha (ntype *t1)
 /******************************************************************************
  *
  * function:
- *    void TYFreeTypeConstructor( ntype *type)
- *    void TYFreeType( ntype *type)
+ *    ntype * TYFreeTypeConstructor( ntype *type)
+ *    ntype * TYFreeType( ntype *type)
  *
  * description:
  *   functions for freeing types. While TYFreeTypeConstructor only frees the
@@ -2481,10 +2526,12 @@ TYFixAndEliminateAlpha (ntype *t1)
  *
  ******************************************************************************/
 
-void
+ntype *
 TYFreeTypeConstructor (ntype *type)
 {
     DBUG_ENTER ("TYFreeTypeConstructor");
+
+    DBUG_ASSERT ((type != NULL), "argument is NULL");
 
     switch (NTYPE_CON (type)) {
     case TC_symbol:
@@ -2492,16 +2539,16 @@ TYFreeTypeConstructor (ntype *type)
         SYMBOL_NAME (type) = Free (SYMBOL_NAME (type));
         break;
     case TC_aks:
-        SHFreeShape (AKS_SHP (type));
+        AKS_SHP (type) = SHFreeShape (AKS_SHP (type));
         break;
     case TC_akd:
-        SHFreeShape (AKD_SHP (type));
+        AKD_SHP (type) = SHFreeShape (AKD_SHP (type));
         break;
     case TC_ibase:
-        TYFreeType (IBASE_BASE (type));
+        IBASE_BASE (type) = TYFreeType (IBASE_BASE (type));
         break;
     case TC_ishape:
-        SHFreeShape (ISHAPE_SHAPE (type));
+        ISHAPE_SHAPE (type) = SHFreeShape (ISHAPE_SHAPE (type));
         break;
     case TC_alpha:
         /* type variables are never freed since they are used in sharing! */
@@ -2517,26 +2564,30 @@ TYFreeTypeConstructor (ntype *type)
     case TC_user:
         break;
     default:
-        DBUG_ASSERT ((0 == 1), "trying to free illegal type constructor!");
+        DBUG_ASSERT ((0), "trying to free illegal type constructor!");
     }
     type = Free (type);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (type);
 }
 
-void
+ntype *
 TYFreeType (ntype *type)
 {
     int i;
 
     DBUG_ENTER ("TYFreeType");
 
-    for (i = 0; i < NTYPE_ARITY (type); i++) {
-        TYFreeType (NTYPE_SON (type, i));
-    }
-    TYFreeTypeConstructor (type);
+    DBUG_ASSERT ((type != NULL), "argument is NULL");
 
-    DBUG_VOID_RETURN;
+    for (i = 0; i < NTYPE_ARITY (type); i++) {
+        if (NTYPE_SON (type, i) != NULL) {
+            NTYPE_SON (type, i) = TYFreeType (NTYPE_SON (type, i));
+        }
+    }
+    type = TYFreeTypeConstructor (type);
+
+    DBUG_RETURN (type);
 }
 
 /******************************************************************************
@@ -2558,13 +2609,13 @@ TYFreeType (ntype *type)
  *      bound!
  *    Therefore, all these functions are just wrappers for a static function
  *
- *          ntype * CopyType( ntype * type, TV_treatment new_tvars)
+ *          ntype * CopyType( ntype *type, TV_treatment new_tvars)
  *
  ******************************************************************************/
 
 typedef enum {
-    tv_id,  /* make a 1:1 copy  */
-    tv_sub, /* create a subtype   */
+    tv_id,  /* make a 1:1 copy */
+    tv_sub, /* create a subtype */
     tv_none /* do not copy at all */
 } TV_treatment;
 
@@ -2576,7 +2627,7 @@ CopyTypeConstructor (ntype *type, TV_treatment new_tvars)
     int i;
     bool ok;
 
-    DBUG_ENTER ("CopyType");
+    DBUG_ENTER ("CopyTypeConstructor");
 
     if (type == NULL) {
         res = NULL;
@@ -3379,7 +3430,7 @@ TYNestTypes (ntype *outer, ntype *inner)
 /******************************************************************************
  *
  * function:
- *    ntype * TYOldType2Type( types * old)
+ *    ntype * TYOldType2Type( types *old)
  *
  * description:
  *    converts an old TYPES node into an ntype node (or - if neccessary -
@@ -3456,7 +3507,7 @@ TYOldType2Type (types *old)
 /******************************************************************************
  *
  * function:
- *    types * TYType2OldType( ntype * new)
+ *    types * TYType2OldType( ntype *new)
  *
  * description:
  *
@@ -3540,7 +3591,98 @@ TYType2OldType (ntype *new)
 /******************************************************************************
  *
  * Function:
- *   node *TYType2WrapperCode( ntype *type, node **vardecs)
+ *   ntype *TYSplitWrapperType( ntype *type, bool *finished)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+ntype *
+TYSplitWrapperType (ntype *type, bool *finished)
+{
+    ntype *new_type;
+    int n, i;
+
+    DBUG_ENTER ("TYSplitWrapperType");
+
+    if (type == NULL) {
+        new_type = NULL;
+        (*finished) = TRUE;
+    } else {
+        n = NTYPE_ARITY (type);
+        new_type = CopyTypeConstructor (type, tv_id);
+        (*finished) = TRUE;
+
+        if (TYIsFun (type)) {
+            DBUG_ASSERT ((n >= 1), "TC_fun with (ARITY < 1) found!");
+
+            NTYPE_ARITY (new_type) = 1;
+            NTYPE_SONS (new_type) = (ntype **)Malloc (sizeof (ntype *));
+
+            DBUG_ASSERT ((NTYPE_SON (type, (n - 1)) != NULL),
+                         "TC_fun with (NTYPE_SON == NULL) found!");
+
+            NTYPE_SON (new_type, 0)
+              = TYSplitWrapperType (NTYPE_SON (type, (n - 1)), finished);
+
+            if (*finished) {
+                NTYPE_ARITY (type) = n - 1;
+                NTYPE_SON (type, (n - 1)) = TYFreeType (NTYPE_SON (type, (n - 1)));
+                if (n > 1) {
+                    (*finished) = FALSE;
+                }
+            }
+        } else {
+            NTYPE_ARITY (new_type) = n;
+            NTYPE_SONS (new_type) = (ntype **)Malloc (n * sizeof (ntype *));
+            for (i = 0; i < n; i++) {
+                NTYPE_SON (new_type, i)
+                  = TYSplitWrapperType (NTYPE_SON (type, i), finished);
+            }
+        }
+    }
+
+    DBUG_RETURN (new_type);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   ntype *TYGetWrapperRetType( ntype *type)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+ntype *
+TYGetWrapperRetType (ntype *type)
+{
+    ntype *ret_type;
+
+    DBUG_ENTER ("TYGetWrapperRetType");
+
+    DBUG_ASSERT ((type != NULL), "no type found!");
+
+    if (TYIsFun (type)) {
+        DBUG_ASSERT ((NTYPE_ARITY (type) == 1), "multiple FUN_IBASE found!");
+
+        type = IRES_TYPE (IBASE_GEN (FUN_IBASE (type, 0)));
+        DBUG_ASSERT ((type != NULL), "IBASE_GEN not found!");
+        ret_type = TYGetWrapperRetType (type);
+    } else {
+        DBUG_ASSERT ((TYIsProd (type)), "neither TC_fun nor TC_prod found!");
+        ret_type = type;
+    }
+
+    DBUG_RETURN (ret_type);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *TYCorrectWrapperArgTypes( node *args, ntype *type)
  *
  * Description:
  *
@@ -3548,15 +3690,277 @@ TYType2OldType (ntype *new)
  ******************************************************************************/
 
 node *
-TYType2WrapperCode (ntype *type, node **vardecs)
+TYCorrectWrapperArgTypes (node *args, ntype *type)
+{
+    DBUG_ENTER ("TYCorrectWrapperArgTypes");
+
+    if (args != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_exprs node found!");
+        DBUG_ASSERT ((TYIsFun (type)), "no TC_fun found!");
+        DBUG_ASSERT ((NTYPE_ARITY (type) == 1), "multiple FUN_IBASE found!");
+
+        ARG_TYPE (args) = FreeAllTypes (ARG_TYPE (args));
+        AVIS_TYPE (ARG_AVIS (args))
+          = TYMakeAUD (TYCopyType (IBASE_BASE (FUN_IBASE (type, 0))));
+
+        type = IRES_TYPE (IBASE_GEN (FUN_IBASE (type, 0)));
+        ARG_NEXT (args) = TYCorrectWrapperArgTypes (ARG_NEXT (args), type);
+    }
+
+    DBUG_RETURN (args);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *TYCreateWrapperVardecs( ntype *ret_type)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+TYCreateWrapperVardecs (ntype *ret_type)
+{
+    int i;
+    node *vardecs = NULL;
+
+    DBUG_ENTER ("TYCreateWrapperVardecs");
+
+    if (ret_type != NULL) {
+        DBUG_ASSERT ((TYIsProd (ret_type)), "no TC_prod found");
+
+        for (i = 0; i < NTYPE_ARITY (ret_type); i++) {
+            /* !!! wrong order !!! */
+            vardecs = MakeVardec (TmpVar (), NULL, vardecs);
+            AVIS_TYPE (VARDEC_AVIS (vardecs)) = TYCopyType (PROD_MEMBER (ret_type, i));
+        }
+    }
+
+    DBUG_RETURN (vardecs);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *Arg2Id( node *arg)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+Arg2Id (node *arg)
+{
+    node *id;
+
+    DBUG_ENTER ("Arg2Id");
+
+    DBUG_ASSERT (((arg != NULL) && (NODE_TYPE (arg) == N_arg)), "no N_arg found!");
+
+    id = MakeId_Copy (ARG_NAME (arg));
+    ID_VARDEC (id) = arg;
+
+    DBUG_RETURN (id);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *Vardecs2Ids( node *vardecs)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static ids *
+Vardecs2Ids (node *vardecs)
+{
+    ids *ret_ids;
+
+    DBUG_ENTER ("Vardecs2Ids");
+
+    if (vardecs != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (vardecs) == N_vardec), "no N_vardec found!");
+
+        ret_ids = MakeIds_Copy (VARDEC_NAME (vardecs));
+        IDS_VARDEC (ret_ids) = vardecs;
+        IDS_NEXT (ret_ids) = Vardecs2Ids (VARDEC_NEXT (vardecs));
+    } else {
+        ret_ids = NULL;
+    }
+
+    DBUG_RETURN (ret_ids);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *Args2Exprs( node *args)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+Args2Exprs (node *args)
+{
+    node *exprs;
+
+    DBUG_ENTER ("Args2Exprs");
+
+    if (args != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_arg found!");
+
+        exprs = MakeExprs (Arg2Id (args), Args2Exprs (ARG_NEXT (args)));
+    } else {
+        exprs = NULL;
+    }
+
+    DBUG_RETURN (exprs);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *TYCreateWrapperCode( ntype *type,
+ *                              node *arg, node *args, node *vardecs)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+TYCreateWrapperCode (ntype *type, node *arg, node *args, node *vardecs)
 {
     node *assigns;
+    int i;
 
-    DBUG_ENTER ("TYType2WrapperCode");
+    DBUG_ENTER ("TYCreateWrapperCode");
 
-    DBUG_ASSERT ((vardecs != NULL), "no pointer to vardecs found!");
+    if (type == NULL) {
+        assigns = NULL;
+    } else {
+        switch (TYGetConstr (type)) {
+        case TC_fun:
+            DBUG_ASSERT ((NTYPE_ARITY (type) == 1), "multipe FUN_IBASE found!");
+            assigns = TYCreateWrapperCode (FUN_IBASE (type, 0), arg, args, vardecs);
+            break;
 
-    assigns = NULL;
+        case TC_ibase:
+            if (IBASE_IARR (type) != NULL) {
+                assigns = TYCreateWrapperCode (IBASE_IARR (type), arg, args, vardecs);
+            } else {
+                DBUG_ASSERT ((IBASE_GEN (type) != NULL),
+                             "neither IBASE_IARR nor IBASE_GEN found!");
+                assigns = TYCreateWrapperCode (IBASE_GEN (type), arg, args, vardecs);
+            }
+
+            if (IBASE_SCAL (type) != NULL) {
+                assigns
+                  = MakeAssign (MakeCond (MakePrf (F_eq,
+                                                   MakeExprs (MakePrf (F_dim,
+                                                                       MakeExprs (Arg2Id (
+                                                                                    arg),
+                                                                                  NULL)),
+                                                              MakeExprs (MakeNum (0),
+                                                                         NULL))),
+                                          MakeBlock (TYCreateWrapperCode (IBASE_SCAL (
+                                                                            type),
+                                                                          arg, args,
+                                                                          vardecs),
+                                                     NULL),
+                                          MakeBlock (assigns, NULL)),
+                                NULL);
+            }
+            break;
+
+        case TC_iarr:
+            DBUG_ASSERT ((IARR_GEN (type) != NULL), "IARR_GEN not found!");
+            assigns = TYCreateWrapperCode (IARR_GEN (type), arg, args, vardecs);
+
+            for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
+                if (IARR_IDIM (type, i) != NULL) {
+                    assigns = MakeAssign (
+                      MakeCond (MakePrf (F_eq,
+                                         MakeExprs (MakePrf (F_dim,
+                                                             MakeExprs (Arg2Id (arg),
+                                                                        NULL)),
+                                                    MakeExprs (MakeNum (IDIM_DIM (
+                                                                 IARR_IDIM (type, i))),
+                                                               NULL))),
+                                MakeBlock (TYCreateWrapperCode (IARR_IDIM (type, i), arg,
+                                                                args, vardecs),
+                                           NULL),
+                                MakeBlock (assigns, NULL)),
+                      NULL);
+                }
+            }
+            break;
+
+        case TC_idim:
+            DBUG_ASSERT ((IDIM_GEN (type) != NULL), "IDIM_GEN not found!");
+            assigns = TYCreateWrapperCode (IDIM_GEN (type), arg, args, vardecs);
+
+            for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
+                if (IDIM_ISHAPE (type, i) != NULL) {
+                    assigns = MakeAssign (
+                      MakeCond (MakePrf (F_eq,
+                                         MakeExprs (MakePrf (F_shape,
+                                                             MakeExprs (Arg2Id (arg),
+                                                                        NULL)),
+                                                    MakeExprs (SHShape2Array (
+                                                                 ISHAPE_SHAPE (
+                                                                   IDIM_ISHAPE (type,
+                                                                                i))),
+                                                               NULL))),
+                                MakeBlock (TYCreateWrapperCode (IDIM_ISHAPE (type, i),
+                                                                arg, args, vardecs),
+                                           NULL),
+                                MakeBlock (assigns, NULL)),
+                      NULL);
+                }
+            }
+            break;
+
+        case TC_ishape:
+            DBUG_ASSERT ((ISHAPE_GEN (type) != NULL), "ISHAPE_GEN not found!");
+            assigns = TYCreateWrapperCode (ISHAPE_GEN (type), arg, args, vardecs);
+            break;
+
+        case TC_ires:
+            if (TYIsProd (IRES_TYPE (type))) {
+                node *fundef = IRES_FUNDEF (type, 0); /* !!! */
+                if (fundef != NULL) {
+                    node *ap = MakeAp (StringCopy (FUNDEF_NAME (fundef)), NULL,
+                                       Args2Exprs (args));
+                    AP_FUNDEF (ap) = fundef;
+                    assigns = MakeAssign (MakeLet (ap, Vardecs2Ids (vardecs)), NULL);
+                } else {
+                    assigns = NULL; /* !!! */
+                }
+            } else {
+                assigns
+                  = TYCreateWrapperCode (IRES_TYPE (type), ARG_NEXT (arg), args, vardecs);
+            }
+            break;
+
+        case TC_prod:
+            assigns = NULL;
+            /* pure TC_prod type!!! but this is senseless, isn't it??? */
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "illegal ntype constructor found!");
+            assigns = NULL;
+            break;
+        }
+    }
 
     DBUG_RETURN (assigns);
 }
