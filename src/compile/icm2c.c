@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.24  1995/06/08 18:30:13  hw
+ * Revision 1.25  1995/06/09 15:34:30  hw
+ * - changed N_icms ND_KD_PSI_... (linenumber inserted)
+ * - boundery check for ND_KD_PSI_... inserted
+ *
+ * Revision 1.24  1995/06/08  18:30:13  hw
  * - changed names in call of ND_BEGIN_FOLDPRF & ND_BEGIN_FOLDFUN for BEtest
  *
  * Revision 1.23  1995/06/07  13:36:53  hw
@@ -378,12 +382,29 @@
         fprintf (outfile, "}\n");                                                        \
     }
 
-#define CopyBlock(a, offset, res)                                                        \
+#define CopyBlock(a, offset, res, line)                                                  \
     NewBlock (InitPtr (offset, fprintf (outfile, "0")),                                  \
-              FillRes (res, INDENT;                                                      \
-                       fprintf (outfile,                                                 \
-                                "ND_A_FIELD(%s)[__idest++]=ND_A_FIELD(%s)[__isrc++];\n", \
-                                res, a);))
+              FillRes (                                                                  \
+                res, INDENT; if (check_boundary) {                                       \
+                    fprintf (outfile, "if((0 <= __isrc)&&( __isrc < ND_A_SIZE(%s)))\n",  \
+                             a);                                                         \
+                    indent++;                                                            \
+                    INDENT;                                                              \
+                } fprintf (outfile,                                                      \
+                           "ND_A_FIELD(%s)[__idest++]=ND_A_FIELD(%s)[__isrc++];\n", res, \
+                           a);                                                           \
+                if (check_boundary) {                                                    \
+                    indent--;                                                            \
+                    INDENT;                                                              \
+                    fprintf (outfile, "else\n");                                         \
+                    indent++;                                                            \
+                    INDENT;                                                              \
+                    fprintf (outfile,                                                    \
+                             "OUT_OF_BOUND(%d, \"psi\", ND_A_SIZE(%s), __isrc);\n",      \
+                             line, a);                                                   \
+                    indent--;                                                            \
+                    INDENT;                                                              \
+                }))
 
 /*
  * TakeSeg(a, dima, offset, dimi, sz_i_str, off_i_str, res)
@@ -432,7 +453,7 @@ MAIN
     char *rotdimstr[] = {"rotindim"};
     char *numstr[] = {"rotnum"};
     char *valstr[] = {"ret-val"};
-    char *neutral[] = {"neural"};
+    char *neutral[] = {"neutral"};
     char v[] = "vector";
     char a[] = "arg";
     char reta[] = "ret-array";
@@ -451,16 +472,23 @@ MAIN
     int rotdim = 1;
     int length = 3;
     int traceflag = 0xffff;
+    int line = 777;
+    int check_boundary = 0;
 
-    OPT OTHER
+    OPT ARG 'b':
     {
+        check_boundary = 1;
+    }
+    OTHER
+    {
+        fprintf (stderr, "unknown option \"%c\"\n", **argv);
     }
     ENDOPT
 
-#else /* TEST_BACKEND */
+#else  /* TEST_BACKEND */
 
-extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
-
+extern FILE *outfile;      /* outputfile for PrintTree defined in main.c*/
+extern int check_boundary; /* defined in main.c */
 #endif /* TEST_BACKEND */
 
     /*
@@ -769,7 +797,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 /*
- * ND_KD_PSI_CxA_S( a, res, dim, v0,..., vn): selects a single element of the array
+ * ND_KD_PSI_CxA_S(line, a, res, dim, v0,..., vn): selects a single element of the array
  *
  *
  * char *type, *a, *res;
@@ -788,9 +816,29 @@ DBUG_VOID_RETURN;
 #include "icm_trace.c"
 
 INDENT;
-fprintf (outfile, "%s=ND_A_FIELD(%s)[", res, a);
-VectToOffset (dim, AccessConst (vi, i), dim, a);
-fprintf (outfile, "];\n\n");
+if (check_boundary) {
+    fprintf (outfile, "{ int idx=");
+    VectToOffset (dim, AccessConst (vi, i), dim, a);
+    fprintf (outfile, ";\n");
+    INDENT;
+    fprintf (outfile, "if((0 <= idx) && (idx < ND_A_SIZE(%s)) )\n", a);
+    indent++;
+    INDENT;
+    fprintf (outfile, "%s=ND_A_FIELD(%s)[idx];\n", res, a);
+    indent--;
+    INDENT;
+    fprintf (outfile, "else\n");
+    indent++;
+    INDENT;
+    fprintf (outfile, "OUT_OF_BOUND(%d, \"psi\", ND_A_SIZE(%s), idx);\n", line, a);
+    indent--;
+    INDENT;
+    fprintf (outfile, "}\n");
+} else {
+    fprintf (outfile, "%s=ND_A_FIELD(%s)[", res, a);
+    VectToOffset (dim, AccessConst (vi, i), dim, a);
+    fprintf (outfile, "];\n\n");
+}
 
 #undef ND_KD_PSI_CxA_S
 
@@ -801,7 +849,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 /*
- * ND_KD_PSI_VxA_S( a, res, dim, v ) : selects a single element of the array
+ * ND_KD_PSI_VxA_S(line, a, res, dim, v ) : selects a single element of the array
  *
  * char *a, *res, *v;
  * int dim;
@@ -818,9 +866,29 @@ DBUG_VOID_RETURN;
 #include "icm_trace.c"
 
 INDENT;
-fprintf (outfile, "%s=ND_A_FIELD(%s)[", res, a);
-VectToOffset (dim, AccessVect (v, i), dim, a);
-fprintf (outfile, "];\n\n");
+if (check_boundary) {
+    fprintf (outfile, "{ int idx=");
+    VectToOffset (dim, AccessVect (v, i), dim, a);
+    fprintf (outfile, ";\n");
+    INDENT;
+    fprintf (outfile, "if((0 <= idx)&&(idx < ND_A_SIZE(%s)) )\n", a);
+    indent++;
+    INDENT;
+    fprintf (outfile, "%s=ND_A_FIELD(%s)[idx];\n", res, a);
+    indent--;
+    INDENT;
+    fprintf (outfile, "else\n");
+    indent++;
+    INDENT;
+    fprintf (outfile, "OUT_OF_BOUND(%d, \"psi\", ND_A_SIZE(%s), idx);\n", line, a);
+    indent--;
+    INDENT;
+    fprintf (outfile, "}\n");
+} else {
+    fprintf (outfile, "%s=ND_A_FIELD(%s)[", res, a);
+    VectToOffset (dim, AccessVect (v, i), dim, a);
+    fprintf (outfile, "];\n\n");
+}
 
 #undef ND_KD_PSI_VxA_S
 
@@ -830,7 +898,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 /*
- * ND_KD_PSI_CxA_A( dima, a, res, dimv, v0,..., vn): selects a sub-array
+ * ND_KD_PSI_CxA_A(line, dima, a, res, dimv, v0,..., vn): selects a sub-array
  *
  * int dima;
  * char *a, *res;
@@ -849,7 +917,7 @@ DBUG_VOID_RETURN;
 #include "icm_trace.c"
 
 INDENT;
-CopyBlock (a, VectToOffset (dimv, AccessConst (vi, i), dima, a), res);
+CopyBlock (a, VectToOffset (dimv, AccessConst (vi, i), dima, a), res, line);
 fprintf (outfile, "\n\n");
 
 #undef ND_KD_PSI_CxA_A
@@ -861,7 +929,7 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 /*
- * ND_KD_PSI_VxA_A( dima, a, res, dimv, v )       : selects a sub-array
+ * ND_KD_PSI_VxA_A(line, dima, a, res, dimv, v )       : selects a sub-array
  *
  * int dima;
  * char *a, *res, *v;
@@ -879,7 +947,7 @@ DBUG_VOID_RETURN;
 #include "icm_trace.c"
 
 INDENT;
-CopyBlock (a, VectToOffset (dimv, AccessVect (v, i), dima, a), res);
+CopyBlock (a, VectToOffset (dimv, AccessVect (v, i), dima, a), res, line);
 fprintf (outfile, "\n\n");
 
 #undef ND_KD_PSI_VxA_A
