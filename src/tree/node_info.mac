@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2000/03/17 20:42:40  dkr
+ * CUDfundef added
+ *
  * Revision 1.23  2000/03/17 16:32:38  dkr
  * function table for cleanup_decls added
  *
@@ -8,7 +11,7 @@
  * dfa, blkpp
  *
  * Revision 1.21  2000/03/02 13:05:38  jhs
- * Added blkco_tab, added functiobns for BLKCO and MTFIN.
+ * Added blkco_tab, added functions for BLKCO and MTFIN.
  *
  * Revision 1.20  2000/02/24 15:55:09  dkr
  * RC and Print functions for old with-loop removed
@@ -571,9 +574,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        WLAAid, TravSons, SPMDRMid, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, L2F_INFERid,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, AIid, TravSons, TravSons, CUDid,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, AIid, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, CUDid, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
 
        0),
 
@@ -753,7 +756,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, L2F_INFERfundef,
 
        MUTHfundef, TravSons, TravSons, RFINfundef, FUN2LACfundef, AIfundef, TravSons,
-       MTFINfundef, L2F_LIFTfundef, BLKCOfundef, DFAfundef, TravSons, TravSons, TravSons,
+       MTFINfundef, L2F_LIFTfundef, BLKCOfundef, DFAfundef, TravSons, CUDfundef, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        3),
@@ -771,7 +774,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIvardec, TravSons, TravSons,
-       CUDvardec, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, CUDvardec, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        1),
@@ -789,7 +792,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, FUN2LACblock, AIblock, TravSons, TravSons,
-       CUDblock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, CUDblock, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        2),
@@ -970,7 +973,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, L2F_INFERlet,
 
        TravSons, TravSons, TravSons, RFINlet, FUN2LAClet, AIlet, TravSons, MTFINlet,
-       CUDlet, TravSons, DFAlet, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, DFAlet, TravSons, CUDlet, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        1),
@@ -1473,7 +1476,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, L2F_INFERwithid,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       CUDwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, CUDwithid, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        0),
