@@ -1,7 +1,7 @@
 /*
  *
  * $Log$
- * Revision 3.49  2003/09/17 18:12:39  dkr
+ * Revision 3.50  2003/09/17 18:54:32  dkr
  * RCAO renamed into DAO for TAGGED_ARRAYS
  *
  * Revision 3.48  2003/09/16 16:10:49  sbs
@@ -493,6 +493,7 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_FLAG ("ds", dynamic_shapes = TRUE);
 
+#ifdef TAGGED_ARRAYS
     ARGS_OPTION ("do", {
         ARG_CHOICE_BEGIN ();
 
@@ -580,13 +581,8 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("aps", optimize |= OPT_APS);
         ARG_CHOICE ("APS", optimize |= OPT_APS);
 
-#ifdef TAGGED_ARRAYS
         ARG_CHOICE ("dao", optimize |= OPT_DAO);
         ARG_CHOICE ("DAO", optimize |= OPT_DAO);
-#else  /* TAGGED_ARRAYS */
-    ARG_CHOICE( "rcao", optimize |= OPT_RCAO);
-    ARG_CHOICE( "RCAO", optimize |= OPT_RCAO);
-#endif /* TAGGED_ARRAYS */
 
         ARG_CHOICE ("msca", optimize |= OPT_MSCA);
         ARG_CHOICE ("MSCA", optimize |= OPT_MSCA);
@@ -602,6 +598,112 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE_END ();
     });
+#else  /* TAGGED_ARRAYS */
+    ARGS_OPTION ("do", {
+        ARG_CHOICE_BEGIN ();
+
+        ARG_CHOICE ("opt", optimize = OPT_ALL);
+        ARG_CHOICE ("OPT", optimize = OPT_ALL);
+
+        ARG_CHOICE ("dcr", optimize |= OPT_DCR);
+        ARG_CHOICE ("DCR", optimize |= OPT_DCR);
+
+        ARG_CHOICE ("cf", optimize |= OPT_CF);
+        ARG_CHOICE ("CF", optimize |= OPT_CF);
+
+        ARG_CHOICE ("lir", optimize |= OPT_LIR);
+        ARG_CHOICE ("LIR", optimize |= OPT_LIR);
+
+        ARG_CHOICE ("inl", optimize |= OPT_INL);
+        ARG_CHOICE ("INL", optimize |= OPT_INL);
+
+        ARG_CHOICE ("lur", optimize |= OPT_LUR);
+        ARG_CHOICE ("LUR", optimize |= OPT_LUR);
+
+        ARG_CHOICE ("wlur", optimize |= OPT_WLUR);
+        ARG_CHOICE ("WLUR", optimize |= OPT_WLUR);
+
+        ARG_CHOICE ("lus", optimize |= OPT_LUS);
+        ARG_CHOICE ("LUS", optimize |= OPT_LUS);
+
+        ARG_CHOICE ("cse", optimize |= OPT_CSE);
+        ARG_CHOICE ("CSE", optimize |= OPT_CSE);
+
+        ARG_CHOICE ("dfr", optimize |= OPT_DFR);
+        ARG_CHOICE ("DFR", optimize |= OPT_DFR);
+
+        ARG_CHOICE ("wlt", optimize |= OPT_WLT);
+        ARG_CHOICE ("WLT", optimize |= OPT_WLT);
+
+        ARG_CHOICE ("wlf", optimize |= OPT_WLF);
+        ARG_CHOICE ("WLF", optimize |= OPT_WLF);
+
+        ARG_CHOICE ("wls", optimize |= OPT_WLS);
+        ARG_CHOICE ("WLS", optimize |= OPT_WLS);
+
+        ARG_CHOICE ("al", optimize |= OPT_AL);
+        ARG_CHOICE ("AL", optimize |= OPT_AL);
+
+        ARG_CHOICE ("ive", optimize |= OPT_IVE);
+        ARG_CHOICE ("IVE", optimize |= OPT_IVE);
+
+        ARG_CHOICE ("ae", optimize |= OPT_AE);
+        ARG_CHOICE ("AE", optimize |= OPT_AE);
+
+        ARG_CHOICE ("dl", optimize |= OPT_DL);
+        ARG_CHOICE ("DL", optimize |= OPT_DL);
+
+        ARG_CHOICE ("rco", optimize |= OPT_RCO);
+        ARG_CHOICE ("RCO", optimize |= OPT_RCO);
+
+        ARG_CHOICE ("uip", optimize |= OPT_UIP);
+        ARG_CHOICE ("UIP", optimize |= OPT_UIP);
+
+        ARG_CHOICE ("tsi", optimize |= OPT_TSI);
+        ARG_CHOICE ("TSI", optimize |= OPT_TSI);
+
+        ARG_CHOICE ("ap", optimize |= OPT_AP);
+        ARG_CHOICE ("AP", optimize |= OPT_AP);
+
+        ARG_CHOICE ("apl", optimize |= OPT_APL);
+        ARG_CHOICE ("APL", optimize |= OPT_APL);
+
+        ARG_CHOICE ("tsp", optimize |= OPT_TSP);
+        ARG_CHOICE ("TSP", optimize |= OPT_TSP);
+
+        ARG_CHOICE ("mto", optimize |= OPT_MTO);
+        ARG_CHOICE ("MTO", optimize |= OPT_MTO);
+
+        ARG_CHOICE ("mti", optimize |= OPT_MTI);
+        ARG_CHOICE ("MTI", optimize |= OPT_MTI);
+
+        ARG_CHOICE ("sbe", optimize |= OPT_SBE);
+        ARG_CHOICE ("SBE", optimize |= OPT_SBE);
+
+        ARG_CHOICE ("phm", optimize |= OPT_PHM);
+        ARG_CHOICE ("PHM", optimize |= OPT_PHM);
+
+        ARG_CHOICE ("aps", optimize |= OPT_APS);
+        ARG_CHOICE ("APS", optimize |= OPT_APS);
+
+        ARG_CHOICE ("rcao", optimize |= OPT_RCAO);
+        ARG_CHOICE ("RCAO", optimize |= OPT_RCAO);
+
+        ARG_CHOICE ("msca", optimize |= OPT_MSCA);
+        ARG_CHOICE ("MSCA", optimize |= OPT_MSCA);
+
+        ARG_CHOICE ("blir", optimize |= OPT_BLIR);
+        ARG_CHOICE ("BLIR", optimize |= OPT_BLIR);
+
+        ARG_CHOICE ("sp", optimize |= OPT_SP);
+        ARG_CHOICE ("SP", optimize |= OPT_SP);
+
+        ARG_CHOICE ("pab", print_after_break = TRUE);
+        ARG_CHOICE ("PAB", print_after_break = TRUE);
+
+        ARG_CHOICE_END ();
+    });
+#endif /* TAGGED_ARRAYS */
 
     ARGS_OPTION ("d", {
         ARG_CHOICE_BEGIN ();
@@ -785,6 +887,112 @@ AnalyseCommandline (int argc, char *argv[])
         }
     });
 
+#ifdef TAGGED_ARRAYS
+    ARGS_OPTION ("no", {
+        ARG_CHOICE_BEGIN ();
+
+        ARG_CHOICE ("opt", optimize = OPT_NONE);
+        ARG_CHOICE ("OPT", optimize = OPT_NONE);
+
+        ARG_CHOICE ("dcr", optimize &= ~OPT_DCR);
+        ARG_CHOICE ("DCR", optimize &= ~OPT_DCR);
+
+        ARG_CHOICE ("cf", optimize &= ~OPT_CF);
+        ARG_CHOICE ("CF", optimize &= ~OPT_CF);
+
+        ARG_CHOICE ("lir", optimize &= ~OPT_LIR);
+        ARG_CHOICE ("LIR", optimize &= ~OPT_LIR);
+
+        ARG_CHOICE ("inl", optimize &= ~OPT_INL);
+        ARG_CHOICE ("INL", optimize &= ~OPT_INL);
+
+        ARG_CHOICE ("lur", optimize &= ~OPT_LUR);
+        ARG_CHOICE ("LUR", optimize &= ~OPT_LUR);
+
+        ARG_CHOICE ("wlur", optimize &= ~OPT_WLUR);
+        ARG_CHOICE ("WLUR", optimize &= ~OPT_WLUR);
+
+        ARG_CHOICE ("lus", optimize &= ~OPT_LUS);
+        ARG_CHOICE ("LUS", optimize &= ~OPT_LUS);
+
+        ARG_CHOICE ("cse", optimize &= ~OPT_CSE);
+        ARG_CHOICE ("CSE", optimize &= ~OPT_CSE);
+
+        ARG_CHOICE ("dfr", optimize &= ~OPT_DFR);
+        ARG_CHOICE ("DFR", optimize &= ~OPT_DFR);
+
+        ARG_CHOICE ("wlt", optimize &= ~OPT_WLT);
+        ARG_CHOICE ("WLT", optimize &= ~OPT_WLT);
+
+        ARG_CHOICE ("wlf", optimize &= ~OPT_WLF);
+        ARG_CHOICE ("WLF", optimize &= ~OPT_WLF);
+
+        ARG_CHOICE ("wls", optimize &= ~OPT_WLS);
+        ARG_CHOICE ("WLS", optimize &= ~OPT_WLS);
+
+        ARG_CHOICE ("al", optimize &= ~OPT_AL);
+        ARG_CHOICE ("AL", optimize &= ~OPT_AL);
+
+        ARG_CHOICE ("ive", optimize &= ~OPT_IVE);
+        ARG_CHOICE ("IVE", optimize &= ~OPT_IVE);
+
+        ARG_CHOICE ("ae", optimize &= ~OPT_AE);
+        ARG_CHOICE ("AE", optimize &= ~OPT_AE);
+
+        ARG_CHOICE ("dl", optimize &= ~OPT_DL);
+        ARG_CHOICE ("DL", optimize &= ~OPT_DL);
+
+        ARG_CHOICE ("rco", optimize &= ~OPT_RCO);
+        ARG_CHOICE ("RCO", optimize &= ~OPT_RCO);
+
+        ARG_CHOICE ("uip", optimize &= ~OPT_UIP);
+        ARG_CHOICE ("UIP", optimize &= ~OPT_UIP);
+
+        ARG_CHOICE ("tsi", optimize &= ~OPT_TSI);
+        ARG_CHOICE ("TSI", optimize &= ~OPT_TSI);
+
+        ARG_CHOICE ("ap", optimize &= ~OPT_AP);
+        ARG_CHOICE ("AP", optimize &= ~OPT_AP);
+
+        ARG_CHOICE ("apl", optimize &= ~OPT_APL);
+        ARG_CHOICE ("APL", optimize &= ~OPT_APL);
+
+        ARG_CHOICE ("tsp", optimize &= ~OPT_TSP);
+        ARG_CHOICE ("TSP", optimize &= ~OPT_TSP);
+
+        ARG_CHOICE ("mto", optimize &= ~OPT_MTO);
+        ARG_CHOICE ("MTO", optimize &= ~OPT_MTO);
+
+        ARG_CHOICE ("mti", optimize &= ~OPT_MTI);
+        ARG_CHOICE ("MTI", optimize &= ~OPT_MTI);
+
+        ARG_CHOICE ("sbe", optimize &= ~OPT_SBE);
+        ARG_CHOICE ("SBE", optimize &= ~OPT_SBE);
+
+        ARG_CHOICE ("phm", optimize &= ~OPT_PHM);
+        ARG_CHOICE ("PHM", optimize &= ~OPT_PHM);
+
+        ARG_CHOICE ("aps", optimize &= ~OPT_APS);
+        ARG_CHOICE ("APS", optimize &= ~OPT_APS);
+
+        ARG_CHOICE ("dao", optimize &= ~OPT_DAO);
+        ARG_CHOICE ("DAO", optimize &= ~OPT_DAO);
+
+        ARG_CHOICE ("msca", optimize &= ~OPT_MSCA);
+        ARG_CHOICE ("MSCA", optimize &= ~OPT_MSCA);
+
+        ARG_CHOICE ("blir", optimize &= ~OPT_BLIR);
+        ARG_CHOICE ("BLIR", optimize &= ~OPT_BLIR);
+
+        ARG_CHOICE ("sp", optimize &= ~OPT_SP);
+        ARG_CHOICE ("SP", optimize &= ~OPT_SP);
+
+        ARG_CHOICE ("pab", print_after_break = FALSE);
+        ARG_CHOICE ("PAB", print_after_break = FALSE);
+
+        ARG_CHOICE_END ();
+    });
+#else  /* TAGGED_ARRAYS */
     ARGS_OPTION ("no", {
         ARG_CHOICE_BEGIN ();
 
@@ -889,6 +1097,7 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE_END ();
     });
+#endif /* TAGGED_ARRAYS */
 
     ARGS_OPTION ("o", {
         strcpy (outfilename, ARG);
