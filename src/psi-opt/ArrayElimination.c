@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/02/13 17:48:11  dkr
+ * some MakeNode() eliminated
+ *
  * Revision 3.2  2000/11/27 13:06:49  sbs
  * warning eliminated
  *
@@ -137,14 +140,9 @@
  *                  R) ptr optimized 1)
  *  description   : initiates array elimination for the intermediate sac-code:
  *  global vars   : syntax_tree, act_tab, ae_tab
- *  internal funs : ---
- *  external funs : Trav, MakeNode
- *  macros        : DBUG...
- *
- *  remarks       : --
- *
  *
  */
+
 node *
 ArrayElimination (node *arg_node, node *info_node)
 {
@@ -158,7 +156,7 @@ ArrayElimination (node *arg_node, node *info_node)
 
     tmp_tab = act_tab;
     act_tab = ae_tab;
-    info_node = MakeNode (N_info);
+    info_node = MakeInfo ();
 
     arg_node = Trav (arg_node, info_node);
 
@@ -307,7 +305,7 @@ GenPsi (ids *ids_node, node *arg_info)
         arg[1] = MakeNode (N_id);
         arg[1]->info.ids = DupAllIds (ids_node);
 
-        new_let = MakeNode (N_let);
+        new_let = MakeLet (NULL, NULL);
         new_let->info.ids = GenIds (arg);
         DBUG_PRINT ("AE", ("Generating new value for %s", new_let->info.ids->id));
         IDS_VARDEC (LET_IDS (new_let))
@@ -323,7 +321,6 @@ GenPsi (ids *ids_node, node *arg_info)
                This is wrong since DupTypes ALWAYS allocetes new mem. */
             new_vardec->info.types = DupTypes (new_vardec->info.types);
             new_vardec->info.types->dim = 0;
-            FREE (new_vardec->info.types->id);
             new_vardec->info.types->id = StringCopy (new_let->info.ids->id);
             INFO_AE_TYPES (arg_info)
               = AppendNodeChain (0, new_vardec, INFO_AE_TYPES (arg_info));

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/02/13 17:48:29  dkr
+ * some MakeNode() eliminated
+ *
  * Revision 3.4  2001/02/02 10:26:42  dkr
  * removed superfluous import of access_macros.h
  *
@@ -189,14 +192,9 @@ int invaruns = 1;
  *  description   : initiates loop invariant removal reduction for the intermediate
  *                  sac-code
  *  global vars   : syntax_tree, act_tab
- *  internal funs : ---
- *  external funs : Trav, MakeNode
- *  macros        : DBUG...
- *
- *  remarks       : --
- *
  *
  */
+
 node *
 LoopInvariantRemoval (node *arg_node, node *arg_info)
 {
@@ -210,7 +208,7 @@ LoopInvariantRemoval (node *arg_node, node *arg_info)
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
     tmp_tab = act_tab;
     act_tab = lir_tab;
-    arg_info = MakeNode (N_info);
+    arg_info = MakeInfo ();
     INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
 
     arg_node = Trav (arg_node, arg_info);
@@ -441,11 +439,8 @@ DupDecleration (node *var_node, char *var_name, node *arg_info)
 
     DBUG_ASSERT ((0 != optvar_counter), "Not enough variables for LIR");
     optvar_counter--;
-    new_node = MakeNode (N_vardec);
-    new_node->info.types = DupTypes (var_node->info.types);
+    new_node = MakeVardec (var_name, DupTypes (var_node->info.types), NULL);
     new_node->varno = INFO_VARNO (arg_info)++;
-    /* FREE(new_node->info.types->id); */
-    new_node->info.types->id = var_name;
 
     DBUG_RETURN (new_node);
 }
@@ -520,8 +515,8 @@ LIRMassign (node *arg_node, node *arg_info)
         arg_node->node[1] = NULL;
         arg_node->flag = invaruns;
         UP = AppendNodeChain (1, UP, arg_node);
-        arg_node = MakeNode (N_assign);
-        arg_node->node[0] = MakeNode (N_info);
+        arg_node = MakeAssign (NULL, NULL);
+        arg_node->node[0] = MakeInfo ();
         arg_node->node[0]->flag = invaruns++;
         if ((arg_node->node[1] != NULL) && (arg_node->node[2] == NULL))
             arg_node->node[1] = LIRMassign (old_node1, arg_info);
@@ -555,9 +550,9 @@ LIRMassign (node *arg_node, node *arg_info)
         DBUG_PRINT ("LIR", ("Line %d moved partial up.", arg_node->lineno));
         /* make node that shall be moved outside the loop */
         arg_node->flag = NONE;
-        move_node = MakeNode (N_assign);
+        move_node = MakeAssign (NULL, NULL);
         move_node->lineno = arg_node->lineno;
-        move_node->node[0] = MakeNode (N_let);
+        move_node->node[0] = MakeLet (NULL, NULL);
         move_node->flag = NONE;
         move_node->node[0]->node[0] = arg_node->node[0]->node[0];
         for (i = 0; i < MAX_SONS; i++)
@@ -586,7 +581,7 @@ LIRMassign (node *arg_node, node *arg_info)
                 break;
             case MOVE_DOWN:
                 /* make new node below loop */
-                new_node = MakeNode (N_assign);
+                new_node = MakeAssign (NULL, NULL);
                 new_node->flag = NONE;
                 new_node->lineno = arg_node->lineno;
                 DOWN = AppendNodeChain (1, DOWN, new_node);
@@ -608,13 +603,12 @@ LIRMassign (node *arg_node, node *arg_info)
                   = AppendIds (move_node->node[0]->info.ids, new_ids);
                 INC_VAR (move_node->mask[0], new_vardec->varno);
 
-                new_node->node[0] = MakeNode (N_let);
+                new_node->node[0] = MakeLet (NULL, NULL);
                 new_node->node[0]->info.ids = arg_node->node[0]->info.ids;
                 arg_node->node[0]->info.ids = new_node->node[0]->info.ids->next;
                 new_node->node[0]->info.ids->next = NULL;
-                new_node->node[0]->node[0] = MakeNode (N_id);
-                new_node->node[0]->node[0]->info.ids
-                  = MakeIds (GenCseVar (lir_expr_no), NULL, ST_regular);
+                new_node->node[0]->node[0]
+                  = MakeId (GenCseVar (lir_expr_no), NULL, ST_regular);
                 new_node->node[0]->node[0]->info.ids->node = new_vardec;
                 lir_expr_no++;
 
@@ -625,7 +619,7 @@ LIRMassign (node *arg_node, node *arg_info)
                 break;
             case NONE:
                 /* make new node inside loop */
-                new_node = MakeNode (N_assign);
+                new_node = MakeAssign (NULL, NULL);
                 new_node->flag = NONE;
                 new_node->lineno = arg_node->lineno;
                 new_node->node[1] = last_node->node[1];
@@ -648,13 +642,12 @@ LIRMassign (node *arg_node, node *arg_info)
                   = AppendIds (move_node->node[0]->info.ids, new_ids);
                 INC_VAR (move_node->mask[0], new_vardec->varno);
 
-                new_node->node[0] = MakeNode (N_let);
+                new_node->node[0] = MakeLet (NULL, NULL);
                 new_node->node[0]->info.ids = arg_node->node[0]->info.ids;
                 arg_node->node[0]->info.ids = new_node->node[0]->info.ids->next;
                 new_node->node[0]->info.ids->next = NULL;
-                new_node->node[0]->node[0] = MakeNode (N_id);
-                new_node->node[0]->node[0]->info.ids
-                  = MakeIds (GenCseVar (lir_expr_no), NULL, ST_regular);
+                new_node->node[0]->node[0]
+                  = MakeId (GenCseVar (lir_expr_no), NULL, ST_regular);
                 new_node->node[0]->node[0]->info.ids->node = new_vardec;
                 lir_expr_no++;
 
@@ -850,7 +843,7 @@ LIRMblock (node *arg_node, node *arg_info)
     DBUG_ENTER ("LIRMblock");
     arg_node = OptTrav (arg_node, arg_info, 0);
     if (NULL == arg_node->node[0])
-        arg_node->node[0] = MakeNode (N_empty);
+        arg_node->node[0] = MakeEmpty ();
     DBUG_RETURN (arg_node);
 }
 
@@ -1390,7 +1383,7 @@ LIRsubexpr (node *arg_node, node *arg_info)
 
                 MinusMask (arg_info->mask[0], arg_node->mask[0], INFO_VARNO (arg_info));
                 MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
-                arg_info2 = MakeNode (N_info);
+                arg_info2 = MakeInfo ();
                 next_node = arg_node->node[1];
                 arg_node->node[1] = NULL;
                 new_node
@@ -1451,13 +1444,13 @@ LIRsubexpr (node *arg_node, node *arg_info)
 
             if ((NULL != UP) || (NULL != DOWN)) {
                 /* add if-then-else-clause to syntax-tree */
-                new_node = MakeNode (N_assign);
+                new_node = MakeAssign (NULL, NULL);
                 new_node->node[1] = arg_node->node[1];
                 arg_node->node[1] = NULL;
                 new_node->mask[0] = DupMask (arg_node->mask[0], INFO_VARNO (arg_info));
                 new_node->mask[1] = DupMask (arg_node->mask[1], INFO_VARNO (arg_info));
 
-                new_node->node[0] = MakeNode (N_cond);
+                new_node->node[0] = MakeCond (NULL, NULL, NULL);
 
                 /* Duplicate while-condition and use it with if-then-else-clause */
                 new_node->node[0]->node[0]
@@ -1474,7 +1467,7 @@ LIRsubexpr (node *arg_node, node *arg_info)
                 arg_node->node[0]->nodetype = N_do;
 
                 /* make then-block and link do-statement into it */
-                new_node->node[0]->node[1] = MakeNode (N_block);
+                new_node->node[0]->node[1] = MakeBlock (NULL, NULL);
                 new_node->node[0]->node[1]->node[0] = arg_node;
                 new_node->node[0]->node[1]->mask[0]
                   = DupMask (arg_node->mask[0], INFO_VARNO (arg_info));
@@ -1482,8 +1475,8 @@ LIRsubexpr (node *arg_node, node *arg_info)
                   = DupMask (arg_node->mask[1], INFO_VARNO (arg_info));
 
                 /* make empty else-block */
-                new_node->node[0]->node[2] = MakeNode (N_block);
-                new_node->node[0]->node[2]->node[0] = MakeNode (N_empty);
+                new_node->node[0]->node[2] = MakeBlock (NULL, NULL);
+                new_node->node[0]->node[2]->node[0] = MakeEmpty ();
                 new_node->node[0]->node[2]->mask[0] = GenMask (INFO_VARNO (arg_info));
                 new_node->node[0]->node[2]->mask[1] = GenMask (INFO_VARNO (arg_info));
 
