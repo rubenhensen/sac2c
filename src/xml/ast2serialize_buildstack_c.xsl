@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/23 23:04:48  sah
+  COMPILES!
+
   Revision 1.1  2004/11/23 11:31:11  sah
   Initial revision
 
@@ -84,18 +87,11 @@ version="1.0">
 #include "internal_lib.h"
 #include "dbug.h"
 
-#define AST_NO_COMPAT
-#include "node_compat.h"
-
   </xsl:text>
   <!-- functions -->
   <xsl:apply-templates select="//syntaxtree/node">
     <xsl:sort select="@name"/>
   </xsl:apply-templates>
-  <xsl:text>
-#undef AST_NO_COMPAT
-#include "node_compat.h"
-  </xsl:text>
   <!-- end of doxygen group -->
   <xsl:call-template name="travfun-group-end"/>
 </xsl:template>
@@ -220,7 +216,7 @@ version="1.0">
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="'= Trav( '" />
+  <xsl:value-of select="'= TRAVdo( '" />
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
       <xsl:value-of select="'arg_node'" />
@@ -266,7 +262,7 @@ version="1.0">
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="'= Trav( '" />
+  <xsl:value-of select="'= TRAVdo( '" />
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
       <xsl:value-of select="'arg_node'" />
