@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/01/07 19:40:45  cg
+ * Converted compile time output from Error.h to ctinfo.c
+ *
  * Revision 1.10  2004/12/05 16:45:38  sah
  * added SPIds SPId SPAp in frontend
  *
@@ -48,7 +51,7 @@
 #include "deserialize.h"
 #include "new_types.h"
 #include "symboltable.h"
-#include "Error.h"
+#include "ctinfo.h"
 
 /*
  * INFO structure
@@ -109,7 +112,7 @@ CheckSymbolVisibility (const char *mod, const char *symb)
     if ((symbol == NULL)
         || ((!(STsymbolVisibility (symbol) == SVT_exported))
             && (!(STsymbolVisibility (symbol) == SVT_provided)))) {
-        ERROR (global.linenum, ("Symbol `%s:%s' not defined", mod, symb));
+        CTIerrorLine (global.linenum, "Symbol `%s:%s' not defined", mod, symb);
     }
 
     table = STdestroy (table);

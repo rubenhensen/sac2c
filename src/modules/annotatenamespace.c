@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2005/01/07 19:40:45  cg
+ * Converted compile time output from Error.h to ctinfo.c
+ *
  * Revision 1.19  2004/12/07 17:01:24  sah
  * fixed withloop handling
  *
@@ -25,6 +28,8 @@
  *
  */
 
+#include "dbug.h"
+
 #include "annotatenamespace.h"
 #include "traverse.h"
 #include "tree_basic.h"
@@ -33,7 +38,8 @@
 #include "new_types.h"
 #include "stringset.h"
 #include "free.h"
-#include "Error.h"
+#include "ctinfo.h"
+#include "internal_lib.h"
 
 /*
  * INFO structure
@@ -104,12 +110,12 @@ CheckUseUnique (sttable_t *table)
             stentry_t *entry = STentryIteratorNext (entries);
 
             if (STentryIteratorHasMore (entries)) {
-                ERROR (0, ("Symbol `%s' used more than once", symbol));
-                CONT_ERROR (("... from module `%s'", STentryName (entry)));
+                CTIerror ("Symbol `%s' used more than once", symbol);
+                CTIerrorContinued ("... from module `%s'", STentryName (entry));
 
                 while (STentryIteratorHasMore (entries)) {
                     entry = STentryIteratorNext (entries);
-                    CONT_ERROR (("... from module `%s'", STentryName (entry)));
+                    CTIerrorContinued ("... from module `%s'", STentryName (entry));
                 }
             }
         }
@@ -128,7 +134,7 @@ CheckLocalNameClash (const char *symbol, sttable_t *table, int lineno)
     DBUG_ENTER ("CheckLocalNameClash");
 
     if (STcontains (symbol, table)) {
-        ERROR (lineno, ("Symbol `%s' used and locally defined", symbol));
+        CTIerrorLine (lineno, "Symbol `%s' used and locally defined", symbol);
     }
 
     DBUG_VOID_RETURN;
