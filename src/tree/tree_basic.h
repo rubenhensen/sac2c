@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.65  2000/06/30 14:27:46  mab
+ * added NCODE_APT_DUMMY_CODE
+ *
  * Revision 1.64  2000/06/30 14:10:29  mab
  * removed INFO_APT_WITH_PARTS, INFO_APT_WITH_CODE, INFO_APT_WITH_PART
  * added INFO_APT_WITH
@@ -3000,6 +3003,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    shpseg*    WLAA_ARRAYSHP(n)        (wlaa -> )
  ***    node*      WLAA_WLARRAY(n)         (wlaa -> )
  ***    shpseg*    TSI_TILESHP(n)          (tsi  -> )
+ ***    int        AP_DUMMY_CODE(n)        (ap   -> )
  ***
  ***  remarks:
  ***
@@ -3047,6 +3051,8 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_WLAA_ARRAYDIM(n) VARDEC_DIM (NCODE_WLAA_WLARRAY (n))
 
 #define NCODE_TSI_TILESHP(n) ((shpseg *)(((node *)(n)->info2)->node[4]))
+
+#define NCODE_APT_DUMMY_CODE(n) ((n)->int_data)
 
 /*--------------------------------------------------------------------------*/
 
