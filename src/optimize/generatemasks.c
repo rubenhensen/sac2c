@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/06/25 13:04:37  dkr
+ * fixed a bug in GNMap():
+ * FreeTree() on arg_info replaced by Free()
+ *
  * Revision 3.11  2001/05/17 16:45:06  sbs
  * NEVER CALL FreeTree on arg_info unless you really know what is happening!!!
  *
@@ -2033,12 +2037,6 @@ OptTrav (node *arg_node, node *arg_info, int node_no)
  *  arguments     : 1) ptr to syntax_tree
  *                  2) ptr to info_node
  *  description   : function for module traversation
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG...
- *
- *  remarks       : ---
  *
  */
 
@@ -2046,8 +2044,11 @@ node *
 GNMmodul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("GNMmodul");
-    if (MODUL_FUNS (arg_node))
+
+    if (MODUL_FUNS (arg_node)) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -2060,12 +2061,6 @@ GNMmodul (node *arg_node, node *arg_info)
  *                     variables in this function.
  *  description   : determines used and defined variables of this function recursicley
  *                  and stores this information in this node.
- *  global vars   : syntax_tree, info_node
- *  internal funs :
- *  external funs : Trav, GenMask
- *  macros        : DBUG..., FREE
- *
- *  remarks       :
  *
  */
 
@@ -2110,12 +2105,6 @@ GNMfundef (node *arg_node, node *arg_info)
  *                  2) ptr to info_node
  *                  R) arg-node 1) with varno is set to arg_info->varno++
  *  description   : enumberates arguments of a function
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
@@ -2123,12 +2112,16 @@ node *
 GNMarg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("GNMarg");
+
     DBUG_PRINT ("VAR", ("Arg. %s is number %d", arg_node->info.types->id,
                         INFO_VARNO (arg_info)));
     arg_node->varno = INFO_VARNO (arg_info);
+
     INFO_VARNO (arg_info)++;
-    if (NULL != arg_node->node[0])
+    if (NULL != arg_node->node[0]) {
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -2139,12 +2132,6 @@ GNMarg (node *arg_node, node *arg_info)
  *                  2) ptr to info_node
  *                  R) vardec-node 1) with varno is set to arg_info->varno++
  *  description   : enumerates variable-declarations of a function
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
@@ -2152,12 +2139,16 @@ node *
 GNMvardec (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("GNMvardec");
+
     DBUG_PRINT ("VAR", ("Variable %s is number %d", arg_node->info.types->id,
                         INFO_VARNO (arg_info)));
+
     VARDEC_VARNO (arg_node) = INFO_VARNO (arg_info);
     INFO_VARNO (arg_info)++;
-    if (VARDEC_NEXT (arg_node))
+    if (VARDEC_NEXT (arg_node)) {
         VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -2169,12 +2160,6 @@ GNMvardec (node *arg_node, node *arg_info)
  *                  R) not modified 1)
  *  description   : dertermines defined variable and stores information
  *                  in arg_info->mask[0].
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG..., INC_VAR
- *
- *  remarks       :
  *
  */
 
@@ -2209,13 +2194,6 @@ GNMlet (node *arg_node, node *arg_info)
  *                  R) not modified 1)
  *  description   : if application of special fundef, start traversal in it
  *
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG..., INC_VAR
- *
- *  remarks       :
- *
  */
 
 node *
@@ -2240,7 +2218,11 @@ GNMap (node *arg_node, node *arg_info)
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
 
-        new_arg_info = FreeTree (new_arg_info);
+        /*
+         * dkr: do NOT use FreeTree() here, because new_arg_info
+         *      might be no N_info node anymore ...
+         */
+        new_arg_info = Free (new_arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2254,12 +2236,6 @@ GNMap (node *arg_node, node *arg_info)
  *                  R) not modified 1)
  *  description   : dertermines used variable and stores information
  *                  in arg_info->mask[1].
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG..., INC_VAR
- *
- *  remarks       :
  *
  */
 
@@ -2267,9 +2243,13 @@ node *
 GNMid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("GNMid");
+
     DBUG_ASSERT ((ID_VARDEC (arg_node) != NULL), "N_id without pointer to declaration.");
+
     DBUG_PRINT ("VAR", ("Usage of Variable %d", ID_VARNO (arg_node)));
+
     INC_VAR (arg_info->mask[1], ID_VARNO (arg_node));
+
     DBUG_RETURN (arg_node);
 }
 
@@ -2282,12 +2262,6 @@ GNMid (node *arg_node, node *arg_info)
  *  description   : Determine defined and used variables for this subtree recursivley,
  *                  stores the information in this node, merges the old information
  *                  with the new information and goes on with next assign node.
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : Trav, ReGenMask, PlusMask
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
@@ -2344,12 +2318,6 @@ GNMassign (node *arg_node, node *arg_info)
  *                  2) ptr to info_node
  *                  R) 1) with  mask[1] is used variables in condition
  *  description   : stores used variables of condition in mask[1].
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : Trav, PlusMask, ReGenMask
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
@@ -2384,12 +2352,6 @@ GNMloop (node *arg_node, node *arg_info)
  *                  else        : arg_node->node[2]->mask
  *                  Unite the tree mask and store it in arg_info->mask
  *                  for the assignment node.
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : Trav, PlusMask, ReGenMask
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
@@ -2425,12 +2387,6 @@ GNMcond (node *arg_node, node *arg_info)
  *                  2) ptr to info-node
  *                  R) not modified 1)
  *  description   : traverse body of the block
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
@@ -2438,8 +2394,11 @@ node *
 GNMblock (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("GNMblock");
-    if (BLOCK_INSTR (arg_node))
+
+    if (BLOCK_INSTR (arg_node)) {
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -2602,9 +2561,16 @@ GenerateMasks (node *arg_node, node *arg_info)
         if (NULL == arg_info) {
             arg_info = MakeInfo ();
             arg_node = Trav (arg_node, arg_info);
-            Free (arg_info);
+            /*
+             * dkr: do NOT use FreeTree() here, because new_arg_info
+             *      might be no N_info node anymore ...
+             */
+            arg_info = Free (arg_info);
         } else {
-            /* arg_info is modified here so I guess it's better to avoid this branch. */
+            /*
+             * 'arg_info' is modified here,
+             * so I guess it's better to avoid this branch.
+             */
             arg_node = Trav (arg_node, arg_info);
         }
 
