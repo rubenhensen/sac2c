@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  1999/09/01 12:40:34  sbs
+ * typo corrected
+ *
  * Revision 2.16  1999/09/01 12:37:56  sbs
  * SET_VARDEC_OR_ARG_COLCHN added.
  *
@@ -644,7 +647,7 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
     } else {                                                                             \
         VARDEC_COLCHN (n) = (r);                                                         \
     }
-#define SET_VARDEC_OR_ARG_COLCHN(n, r)                                                   \
+#define SET_VARDEC_OR_ARG_ACTCHN(n, r)                                                   \
     if (NODE_TYPE (n) == N_arg) {                                                        \
         ARG_ACTCHN (n) = (r);                                                            \
     } else {                                                                             \
