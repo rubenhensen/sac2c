@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.71  2003/08/04 18:04:58  dkr
+ * some modifications for MT done
+ *
  * Revision 1.70  2003/06/17 09:37:49  dkr
  * bug in COMP2Array() fixed
  *
@@ -1232,7 +1235,8 @@ AddThreadIdIcm_ND_FUN_DEC (node *icm)
         EXPRS_NEXT (args)
           = MakeExprs (MakeId_Copy (ATG_string[ATG_in_nodesc]),
                        MakeExprs (MakeId_Copy ("unsigned int"),
-                                  MakeExprs (MakeId_Copy ("SAC_MT_mythread"),
+                                  MakeExprs (MakeId_Copy_NT ("SAC_MT_mythread",
+                                                             MakeTypes1 (T_int)),
                                              EXPRS_NEXT (args))));
 #endif
 
@@ -1274,7 +1278,8 @@ AddThreadIdIcm_ND_FUN_AP (node *icm_assign)
 #if TAGGED_ARRAYS
         EXPRS_NEXT (args)
           = MakeExprs (MakeId_Copy (ATG_string[ATG_in_nodesc]),
-                       MakeExprs (MakeId_Copy ("SAC_MT_mythread"), EXPRS_NEXT (args)));
+                       MakeExprs (MakeId_Copy_NT ("SAC_MT_mythread", MakeTypes1 (T_int)),
+                                  EXPRS_NEXT (args)));
 #endif
 
         (NUM_VAL (EXPRS_EXPR (args)))++;
@@ -1760,24 +1765,16 @@ static node *
 MakeParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
 {
     node *vardec;
-    char *rc_tag, *this_tag;
 
     DBUG_ENTER ("MakeParamsByDFM");
 
-    rc_tag = StringConcat (tag, "_rc");
-
     vardec = DFMGetMaskEntryDeclSet (mask);
     while (vardec != NULL) {
-
-        if (RC_IS_ACTIVE (VARDEC_OR_ARG_REFCNT (vardec))) {
-            this_tag = rc_tag;
-        } else {
-            this_tag = tag;
-        }
         icm_args
-          = MakeExprs (MakeId_Copy (this_tag),
+          = MakeExprs (MakeId_Copy (tag),
                        MakeExprs (MakeBasetypeArg (VARDEC_OR_ARG_TYPE (vardec)),
-                                  MakeExprs (MakeId_Copy (VARDEC_OR_ARG_NAME (vardec)),
+                                  MakeExprs (MakeId_Copy_NT (VARDEC_OR_ARG_NAME (vardec),
+                                                             VARDEC_OR_ARG_TYPE (vardec)),
                                              icm_args)));
         if (num_args != NULL) {
             *num_args = *num_args + 1;
@@ -1785,8 +1782,6 @@ MakeParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
-
-    rc_tag = Free (rc_tag);
 
     DBUG_RETURN (icm_args);
 }
@@ -6376,7 +6371,7 @@ COMP2Sync (node *arg_node, node *arg_info)
 
                 if ((!strcmp (ICM_NAME (instr), "ND_ALLOC"))
                     || (!strcmp (ICM_NAME (instr), "ND_CHECK_REUSE"))) {
-                    var_name = ID_NAME (ICM_ARG2 (instr));
+                    var_name = ID_NAME (ICM_ARG1 (instr));
                     prolog = TRUE;
                     epilog = FALSE;
                     DBUG_PRINT ("COMP", ("ICM: %s is prolog", ICM_NAME (instr)));
