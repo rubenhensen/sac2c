@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/07/16 12:44:20  dkr
+ * ICMs ND_PRF_IDX_... moved from sac_prf.h to sac_idx.h
+ *
  * Revision 3.6  2002/07/11 09:24:27  dkr
  * all macros deactivated for TAGGED_ARRAYS
  *
@@ -73,7 +76,30 @@
 #ifndef _SAC_IDX_H
 #define _SAC_IDX_H
 
-#ifndef TAGGED_ARRAYS
+#ifdef TAGGED_ARRAYS
+
+/******************************************************************************
+ *
+ * ICMs for primitive functions after IVE
+ * ======================================
+ *
+ * ND_PRF_IDX_SEL__SHAPE( to_nt, to_sdim, from_nt, from_sdim, idx_any)
+ * ND_PRF_IDX_SEL__DATA( to_nt, to_sdim, from_nt, from_sdim, idx_any)
+ *
+ * ND_PRF_IDX_MODARRAY__DATA( to_nt, to_sdim, from_nt, from_sdim, idx, val)
+ *
+ * ND_USE_GENVAR_OFFSET( offset, wl)
+ *
+ ******************************************************************************/
+
+/* ND_PRF_IDX_SEL__SHAPE( ...) is a C-ICM */
+/* ND_PRF_IDX_SEL__DATA( ...) is a C-ICM */
+
+/* ND_PRF_IDX_MODARRAY__DATA( ...) is a C-ICM */
+
+#define SAC_ND_USE_GENVAR_OFFSET(offset, wl) offset = SAC_WL_OFFSET (wl);
+
+#else /* TAGGED_ARRAYS */
 
 /*
  * Macros used for primitive function idx_sel:
@@ -137,6 +163,6 @@
 
 #define SAC_ND_KS_USE_GENVAR_OFFSET(offsetvar, res) offsetvar = SAC_WL_OFFSET (res);
 
-#endif
+#endif /* TAGGED_ARRAYS */
 
 #endif /* _SAC_IDX_H */
