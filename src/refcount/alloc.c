@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/09/06 13:53:56  ktr
+ * Reordered alloc sequence.
+ *
  * Revision 1.18  2004/08/27 08:18:23  ktr
  * No allocation is now done for F_type_error.
  * This caused bug #48 in alloc.c.
@@ -197,21 +200,18 @@ FreeInfo (info *info)
 static alloclist_struct *
 MakeALS (alloclist_struct *als, node *avis, node *dim, node *shape)
 {
+    alloclist_struct *res;
 
     DBUG_ENTER ("MakeALS");
 
-    if (als == NULL) {
-        als = Malloc (sizeof (alloclist_struct));
+    res = Malloc (sizeof (alloclist_struct));
 
-        als->avis = avis;
-        als->dim = dim;
-        als->shape = shape;
-        als->next = NULL;
-    } else {
-        als->next = MakeALS (als->next, avis, dim, shape);
-    }
+    res->avis = avis;
+    res->dim = dim;
+    res->shape = shape;
+    res->next = als;
 
-    DBUG_RETURN (als);
+    return (res);
 }
 
 /** <!--******************************************************************-->
