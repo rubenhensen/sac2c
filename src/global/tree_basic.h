@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.41  1996/01/22 09:03:48  cg
+ * Revision 1.42  1996/01/22 14:04:50  asi
+ * added MakeId2
+ *
+ * Revision 1.41  1996/01/22  09:03:48  cg
  * added some new macros for N_objdef node
  *
  * Revision 1.40  1996/01/16  16:55:15  cg
@@ -730,6 +733,8 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 #define OBJDEF_SIB(n) (n->node[3])
 #define OBJDEF_CREATE(n) ((node *)n->mask[0])
 
+#define OBJDEF_LINKNAME(n) (n->node[4])
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1394,6 +1399,8 @@ extern node *MakeVinfo (useflag flag, shapes *shp, node *next);
  */
 
 extern node *MakeId (char *name, char *mod, statustype status);
+
+extern node *MakeId2 (ids *ids_node);
 
 #define ID_NAME(n) (n->info.ids->id)
 #define ID_DEF(n) (n->info.ids->def)

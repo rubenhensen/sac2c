@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1996/01/05 14:14:10  asi
+ * Revision 1.15  1996/01/22 14:04:50  asi
+ * added MakeId2
+ *
+ * Revision 1.14  1996/01/05  14:14:10  asi
  * added While2Do: This function converts a while-loop into a do-loop
  *
  * Revision 1.13  1996/01/02  15:51:33  cg
@@ -877,6 +880,24 @@ MakeId (char *name, char *mod, statustype status)
     NODE_NNODE (tmp) = 0;
 
     tmp->info.ids = MakeIds (name, mod, status);
+
+    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
+                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+
+    DBUG_RETURN (tmp);
+}
+
+node *
+MakeId2 (ids *ids_node)
+{
+    node *tmp;
+    DBUG_ENTER ("MakeId2");
+    INIT_NODE (tmp);
+
+    NODE_TYPE (tmp) = N_id;
+    NODE_NNODE (tmp) = 0;
+
+    tmp->info.ids = ids_node;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
