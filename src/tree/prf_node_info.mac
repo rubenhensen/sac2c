@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/09/09 16:48:31  dkr
+ * prf_string-entry for F_mul_SxS corrected!!!
+ *
  * Revision 3.6  2002/08/30 10:49:54  dkr
  * F_type_error added
  *
@@ -100,7 +103,7 @@ PRF_IF (F_toi, "F_foi", "toi", "toi", NTCPRF_dummy),
   PRF_IF (F_sub_SxA, "F_sub_SxA", "-", "_sub_SxA_", NTCPRF_ari_op_SxA),
   PRF_IF (F_sub_AxS, "F_sub_AxS", "-", "_sub_AxS_", NTCPRF_ari_op_AxS),
   PRF_IF (F_sub_AxA, "F_sub_AxA", "-", "_sub_AxA_", NTCPRF_ari_op_AxA),
-  PRF_IF (F_mul_SxS, "F_mul_SxS", "-", "_mul_SxS_", NTCPRF_ari_op_SxS),
+  PRF_IF (F_mul_SxS, "F_mul_SxS", "*", "_mul_SxS_", NTCPRF_ari_op_SxS),
   PRF_IF (F_mul_SxA, "F_mul_SxA", "*", "_mul_SxA_", NTCPRF_ari_op_SxA),
   PRF_IF (F_mul_AxS, "F_mul_AxS", "*", "_mul_AxS_", NTCPRF_ari_op_AxS),
   PRF_IF (F_mul_AxA, "F_mul_AxA", "*", "_mul_AxA_", NTCPRF_ari_op_AxA),
