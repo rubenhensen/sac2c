@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/23 17:32:52  jhb
+ * compile
+ *
  * Revision 1.6  2004/11/19 15:42:41  ktr
  * Support for F_alloc_or_reshape added.
  *
@@ -39,6 +42,8 @@
  */
 #define NEW_INFO
 
+#include "rcopt.h"
+
 #include "globals.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -47,6 +52,8 @@
 #include "print.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
+#include "free.h"
+#include "internal_lib.h"
 
 /**
  * INFO structure
@@ -57,8 +64,8 @@ struct INFO {
     bool remassign;
     bool remnext;
     node *nextexpr;
-    ids *lhs;
-    LUT_t filllut;
+    node *lhs;
+    lut_t *filllut;
 };
 
 /**
@@ -82,7 +89,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_RCO_DOWNTRAV (result) = FALSE;
     INFO_RCO_SECONDTRAV (result) = FALSE;
@@ -100,7 +107,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -127,9 +134,11 @@ EMRCORefCountOpt (node *syntax_tree)
 
     info = MakeInfo ();
 
-    act_tab = emrco_tab;
+    TRAVpush (TR_emrco);
 
-    syntax_tree = Trav (syntax_tree, info);
+    syntax_tree = TRAVdo (syntax_tree, info);
+
+    TRAVpop ();
 
     info = FreeInfo (info);
 
@@ -169,7 +178,7 @@ EMRCOassign (node *arg_node, info *arg_info)
      * Top-down traversal
      */
     INFO_RCO_DOWNTRAV (arg_info) = TRUE;
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     secondtrav = INFO_RCO_SECONDTRAV (arg_info);
     INFO_RCO_SECONDTRAV (arg_info) = FALSE;
@@ -178,7 +187,7 @@ EMRCOassign (node *arg_node, info *arg_info)
     INFO_RCO_REMASSIGN (arg_info) = FALSE;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     /*
@@ -186,20 +195,20 @@ EMRCOassign (node *arg_node, info *arg_info)
      */
     INFO_RCO_DOWNTRAV (arg_info) = FALSE;
     INFO_RCO_SECONDTRAV (arg_info) = secondtrav;
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     INFO_RCO_SECONDTRAV (arg_info) = FALSE;
 
     if (INFO_RCO_REMNEXT (arg_info)) {
         DBUG_PRINT ("EMRCO", ("Removing assignment:"));
-        DBUG_EXECUTE ("EMRCO", PrintNode (ASSIGN_NEXT (arg_node)););
-        ASSIGN_NEXT (arg_node) = FreeNode (ASSIGN_NEXT (arg_node));
+        DBUG_EXECUTE ("EMRCO", PRTdoPrintNode (ASSIGN_NEXT (arg_node)););
+        ASSIGN_NEXT (arg_node) = FREEdoFreeNode (ASSIGN_NEXT (arg_node));
         INFO_RCO_REMNEXT (arg_info) = FALSE;
     }
 
     if (remassign || INFO_RCO_REMASSIGN (arg_info)) {
         DBUG_PRINT ("EMRCO", ("Removing assignment:"));
-        DBUG_EXECUTE ("EMRCO", PrintNode (arg_node););
-        arg_node = FreeNode (arg_node);
+        DBUG_EXECUTE ("EMRCO", PRTdoPrintNode (arg_node););
+        arg_node = FREEdoFreeNode (arg_node);
         INFO_RCO_REMASSIGN (arg_info) = FALSE;
         INFO_RCO_NEXTEXPR (arg_info) = NULL;
     }
@@ -222,22 +231,22 @@ EMRCOassign (node *arg_node, info *arg_info)
 node *
 EMRCOblock (node *arg_node, info *arg_info)
 {
-    LUT_t old_lut;
-    ids *old_lhs;
+    lut_t *old_lut;
+    node *old_lhs;
 
     DBUG_ENTER ("EMRCOblock");
 
     old_lut = INFO_RCO_FILLLUT (arg_info);
     old_lhs = INFO_RCO_LHS (arg_info);
 
-    INFO_RCO_FILLLUT (arg_info) = GenerateLUT ();
+    INFO_RCO_FILLLUT (arg_info) = LUTgenerateLut ();
     INFO_RCO_NEXTEXPR (arg_info) = NULL;
 
     if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
 
-    INFO_RCO_FILLLUT (arg_info) = RemoveLUT (INFO_RCO_FILLLUT (arg_info));
+    INFO_RCO_FILLLUT (arg_info) = LUTremoveLut (INFO_RCO_FILLLUT (arg_info));
     INFO_RCO_FILLLUT (arg_info) = old_lut;
     INFO_RCO_LHS (arg_info) = old_lhs;
 
@@ -264,7 +273,7 @@ EMRCOlet (node *arg_node, info *arg_info)
     INFO_RCO_LHS (arg_info) = LET_IDS (arg_node);
 
     if (INFO_RCO_DOWNTRAV (arg_info) || INFO_RCO_SECONDTRAV (arg_info)) {
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
         INFO_RCO_NEXTEXPR (arg_info) = NULL;
     } else {
         INFO_RCO_NEXTEXPR (arg_info) = LET_EXPR (arg_node);
@@ -310,16 +319,16 @@ EMRCOprf (node *arg_node, info *arg_info)
             break;
 
         case F_dec_rc:
-            if (!AVIS_ALIAS (ID_AVIS (PRF_ARG1 (arg_node)))) {
-                node *new_node = MakePrf1 (F_free, DupNode (PRF_ARG1 (arg_node)));
-                arg_node = FreeNode (arg_node);
+            if (!AVIS_ISALIAS (ID_AVIS (PRF_ARG1 (arg_node)))) {
+                node *new_node = TCmakePrf1 (F_free, DUPdoDupNode (PRF_ARG1 (arg_node)));
+                arg_node = FREEdoFreeNode (arg_node);
                 arg_node = new_node;
             }
             break;
 
         case F_inc_rc:
-            avis = SearchInLUT_PP (INFO_RCO_FILLLUT (arg_info),
-                                   ID_AVIS (PRF_ARG1 (arg_node)));
+            avis = LUTsearchInLutPp (INFO_RCO_FILLLUT (arg_info),
+                                     ID_AVIS (PRF_ARG1 (arg_node)));
 
             if (avis != ID_AVIS (PRF_ARG1 (arg_node))) {
                 node *alloc = ASSIGN_RHS (AVIS_SSAASSIGN (avis));
@@ -327,7 +336,7 @@ EMRCOprf (node *arg_node, info *arg_info)
                 NUM_VAL (PRF_ARG1 (alloc)) += NUM_VAL (PRF_ARG2 (arg_node));
 
                 DBUG_PRINT ("EMRCO", ("Melted inc_rc into alloc!"));
-                DBUG_EXECUTE ("EMRCO", PrintNode (AVIS_SSAASSIGN (avis)););
+                DBUG_EXECUTE ("EMRCO", PRTdoPrintNode (AVIS_SSAASSIGN (avis)););
 
                 INFO_RCO_REMASSIGN (arg_info) = TRUE;
             }
@@ -335,9 +344,9 @@ EMRCOprf (node *arg_node, info *arg_info)
 
         case F_fill:
             INFO_RCO_FILLLUT (arg_info)
-              = InsertIntoLUT_P (INFO_RCO_FILLLUT (arg_info),
-                                 IDS_AVIS (INFO_RCO_LHS (arg_info)),
-                                 ID_AVIS (PRF_ARG2 (arg_node)));
+              = LUTinsertIntoLutP (INFO_RCO_FILLLUT (arg_info),
+                                   IDS_AVIS (INFO_RCO_LHS (arg_info)),
+                                   ID_AVIS (PRF_ARG2 (arg_node)));
             break;
 
         default:
@@ -396,25 +405,17 @@ EMRCOprf (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-EMRCOwithop (node *arg_node, info *arg_info)
+EMRCOmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRCOwithop");
+    DBUG_ENTER ("EMRCOmodarray");
 
-    switch (NWITHOP_TYPE (arg_node)) {
-    case WO_genarray:
-    case WO_modarray:
-        INFO_RCO_FILLLUT (arg_info) = InsertIntoLUT_P (INFO_RCO_FILLLUT (arg_info),
-                                                       IDS_AVIS (INFO_RCO_LHS (arg_info)),
-                                                       ID_AVIS (NWITHOP_MEM (arg_node)));
-        break;
+    INFO_RCO_FILLLUT (arg_info) = LUTinsertIntoLutP (INFO_RCO_FILLLUT (arg_info),
+                                                     IDS_AVIS (INFO_RCO_LHS (arg_info)),
+                                                     ID_AVIS (MODARRAY_MEM (arg_node)));
 
-    default:
-        break;
-    }
-
-    if (NWITHOP_NEXT (arg_node) != NULL) {
+    if (MODARRAY_NEXT (arg_node) != NULL) {
         INFO_RCO_LHS (arg_info) = IDS_NEXT (INFO_RCO_LHS (arg_info));
-        NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
