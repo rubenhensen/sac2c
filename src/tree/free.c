@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2002/09/06 10:36:25  sah
+ * added FreeSetWL
+ *
  * Revision 3.39  2002/08/12 14:58:52  sbs
  * N_mop representation changed
  *
@@ -1608,6 +1611,23 @@ FreeDot (node *arg_node, node *arg_info)
     DBUG_ENTER ("FreeDot");
 
     DBUG_PRINT ("FREE", ("Removing N_dot node ..."));
+
+    arg_node = Free (arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeSetWL (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("FreeSetWL");
+
+    DBUG_PRINT ("FREE", ("Removing N_setwl node ..."));
+
+    SETWL_EXPR (arg_node) = FREETRAV (SETWL_EXPR (arg_node));
+    SETWL_IDS (arg_node) = FreeAllIds (SETWL_IDS (arg_node));
 
     arg_node = Free (arg_node);
 

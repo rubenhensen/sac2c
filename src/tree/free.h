@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/09/06 10:36:25  sah
+ * added FreeSetWL
+ *
  * Revision 3.17  2002/08/09 16:36:21  sbs
  * basic support for N_mop written.
  *
@@ -135,6 +138,7 @@ extern node *FreeDouble (node *arg_node, node *arg_info);
 extern node *FreeBool (node *arg_node, node *arg_info);
 extern node *FreeStr (node *arg_node, node *arg_info);
 extern node *FreeDot (node *arg_node, node *arg_info);
+extern node *FreeSetWL (node *arg_node, node *arg_info);
 extern node *FreePrf (node *arg_node, node *arg_info);
 extern node *FreeEmpty (node *arg_node, node *arg_info);
 extern node *FreeIcm (node *arg_node, node *arg_info);
