@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2002/03/07 02:19:02  dkr
+ * AdjustAvisData() modified: DBUG_ASSERT added
+ *
  * Revision 3.53  2002/03/01 02:39:12  dkr
  * GetArgtabIndexIn() and GetArgtabIndexOut() added
  *
@@ -2172,6 +2175,7 @@ AdjustAvisData (node *new_vardec, node *fundef)
                      "corrupted ssa form found - unknown baseid");
 
         base_id = SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (new_vardec)));
+        DBUG_ASSERT ((base_id != NULL), "no BASEID found in AVIS!");
 
         /*
          * first we check if there is already an ssacounter with this baseid in
