@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.19  2000/05/29 14:31:22  dkr
+ * precompile() renamed into Precompile()
+ *
  * Revision 2.18  2000/03/22 20:10:17  dkr
  * some PHASE_PROLOG, PHASE_EPILOG macros have been at the wrong place
  * :-(
@@ -533,7 +536,7 @@ main (int argc, char *argv[])
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = precompile (syntax_tree); /* precomp_tab */
+    syntax_tree = Precompile (syntax_tree); /* precomp_tab */
     PHASE_EPILOG;
 
     if (break_after == PH_precompile)
