@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.9  2000/12/15 14:08:55  sbs
+# -D_OSF_SOURCE for ALPHA => eliminates inconsistencies in times.h
+#
 # Revision 3.8  2000/12/13 17:00:38  sbs
 # on solaris -D__STDC__ is set now for preventing wrong initialization of mutex locks.
 #
@@ -103,7 +106,7 @@ LINUX_X86_LIBS      := -lfl
 #
 # UNIX_ALPHA specific flags and libraries:
 #
-OSF_ALPHA_FLAGS    := 
+OSF_ALPHA_FLAGS    := -D_OSF_SOURCE 
 OSF_ALPHA_LIBS     := -ll
 
 ################################################################################
