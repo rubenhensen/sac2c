@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.46  2000/06/14 10:05:52  mab
+ * added ap, exprs, id, prf, fundef for APC and APT
+ *
  * Revision 1.45  2000/06/13 13:51:42  dkr
  * functions for old with-loop removed
  * 'O2Nwith' renamed into 'patchwith'
@@ -644,7 +647,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIid, TravSons, TravSons,
        TravSons, TravSons, DFAid, TravSons, CUDid, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons,
+       TravSons, APCid, APTid,
 
        PrintId, PrintId, TravSons, TravSons, 0),
 
@@ -825,7 +828,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        MUTHfundef, TravSons, TravSons, RFINfundef, FUN2LACfundef, AIfundef, TravSons,
        MTFINfundef, L2F_LIFTfundef, BLKCOfundef, DFAfundef, BLKPPfundef, CUDfundef,
-       BARINfundef, BLKLIfundef, ADJCA1fundef, ADJCA2fundef, TravSons, TravSons, TravSons,
+       BARINfundef, BLKLIfundef, ADJCA1fundef, ADJCA2fundef, TravSons, APCfundef,
+       APTfundef,
 
        PIHfundef, TravSons, TravSons, TravSons, 3),
 
@@ -1114,7 +1118,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, DFAprf, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, APCprf, APTprf,
 
        TravSons, TravSons, TravSons, TravSons, 1),
 
@@ -1132,7 +1136,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, FUN2LACap, AIap, TravSons, TravSons,
        TravSons, TravSons, DFAap, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, APCap, APTap,
 
        TravSons, TravSons, TravSons, TravSons, 1),
 
@@ -1168,7 +1172,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIexprs, TravSons, TravSons,
        TravSons, TravSons, DFAexprs, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, APCexprs, APTexprs,
 
        TravSons, TravSons, TravSons, TravSons, 2),
 
