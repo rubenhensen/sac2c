@@ -1,5 +1,9 @@
 dnl
 dnl $Log$
+dnl Revision 1.33  2004/08/09 15:37:13  sah
+dnl removved __STDC__=0 define and added
+dnl STDC_0_IN_SYSTEM_HEADERS instead
+dnl
 dnl Revision 1.32  2004/08/09 12:03:16  sah
 dnl added better test for GNU indent
 dnl
@@ -468,18 +472,7 @@ dnl generate specific flags for known os
 OSFLAGS=""
 case "$target_os" in
   solaris*)     
-     dnl check whether __STDC__ is already defined
-     AC_MSG_CHECKING(whether __STDC__ is already defined)
-     AC_TRY_COMPILE(,
-     [#ifndef __STDC__
-       choke me
-     #endif],
-     AC_MSG_RESULT(yes)
-     STDCDEF=,
-     AC_MSG_RESULT(no)
-     STDCDEF=-D__STDC__=0
-     )
-     OSFLAGS=["-D__EXTENSIONS__ $STDCDEF -DMUST_INIT_YY"]
+     OSFLAGS=["-D__EXTENSIONS__ -DSTDC_0_IN_SYSTEM_HEADERS -DMUST_INIT_YY"]
     ;;
   *linux*)      
     OSFLAGS=["-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
