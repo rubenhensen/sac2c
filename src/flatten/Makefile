@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.5  2000/12/15 18:08:20  dkr
+# adjust_ids.* cleanup_decls.* infer_dfms.* moved to tree
+#
 # Revision 3.4  2000/12/12 15:09:02  dkr
 # make deps done
 #
@@ -78,7 +81,7 @@ CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../../inc -I../tree -I../print
 
-all: flatten.o lac2fun.o infer_dfms.o cleanup_decls.o fun2lac.o adjust_ids.o
+all: flatten.o lac2fun.o fun2lac.o
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
