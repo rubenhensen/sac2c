@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2004/07/15 13:36:59  ktr
+ * show_refcount is only true during PH_oldrefcount
+ *
  * Revision 3.62  2004/07/14 23:23:37  sah
  * removed all old ssa optimizations and the use_ssaform flag
  *
@@ -438,7 +441,7 @@ AnalyseCommandline (int argc, char *argv[])
         case PH_sacopt:
             show_idx = TRUE;
             break;
-        case PH_refcnt:
+        case PH_oldrefcnt:
             show_refcnt = TRUE;
             break;
         default:
