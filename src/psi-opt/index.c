@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2003/03/25 16:04:41  sbs
+ * do...
+ *
  * Revision 3.39  2003/03/25 15:50:24  sbs
  * dox...
  *
@@ -625,17 +628,27 @@ int ive_expr, ive_op;
  *
  * @name Some functions for handling N_vinfo nodes
  *
+ * <!--
+ * node * FindVect( node *N_vinfo_chain)        : checks whether VECT is in
+ *                                                  the chain of N_vinfo nodes
+ * node * FindIdx( node *chain, types *shape)   : dito for a specific shape
+ *
+ * node * SetVect( node *chain)                 : inserts VECT-node in chain if
+ *                                                  not already present
+ * node * SetIdx( node *chain, types *shape)    : inserts IDX-node if not
+ *                                                  already present
+ * -->
  */
 /*@{*/
 
-/*!****************************************************************************
+/**<!--*********************************************************************-->
  *
  * @fn node *FindVect( node *chain)
  *
- * @param chain  chain of vinfo-nodes to be searched
- * @return the address of the VECT-node or the address of a vinfo-node with
- *         DOLLAR-flag (= no VECT in chain)
- * @brief checks whether VECT is in the chain.
+ *   @param chain  chain of vinfo-nodes to be searched
+ *   @return the address of the VECT-node or the address of a vinfo-node with
+ *           DOLLAR-flag (= no VECT in chain)
+ *   @brief checks whether VECT is in the chain.
  *
  ******************************************************************************/
 
@@ -651,11 +664,10 @@ FindVect (node *chain)
     DBUG_RETURN (chain);
 }
 
-/*!*****************************************************************************
+/*!<!--*********************************************************************-->
  *
  * @fn  bool EqTypes( types *type1, types *type2)
  *
- * description:
  *   @param  type1
  *   @param  type2
  *   @return 1 iff the types are equal, 0 otherwise
@@ -780,10 +792,11 @@ SetIdx (node *chain, types *vartype)
 
 /*@}*/
 
-/*
+/**
  *
- * Some basic functions for handling N_vinfo chains:
- * -------------------------------------------------
+ * @name Some basic functions for handling N_vinfo chains:
+ *
+ * <!--
  * node *CutVinfoChn( node * chain) :
  *           cuts off the topmost chain and returns the rest
  * node *AppendVinfoChn( node *ca, node *cb) :
@@ -794,13 +807,18 @@ SetIdx (node *chain, types *vartype)
  *           the elements of the topmost chain of cb and returns it
  *           followed by the "rest" of cb.
  *           Expects ca to contain one chain only!
+ * -->
  *
- ******************************************************************************
+ */
+/*@{*/
+/*!****************************************************************************
  *
- * function:
- *  node *CutVinfoChn( node * chain)
+ * @fn node *CutVinfoChn( node * chain)
  *
- * description:
+ *   @param chain $-ended chain of info nodes
+ *   @return trailing chain (after $)
+ *   @brief cuts off the topmost chain and returns the rest.
+ *
  *   if we give a cinfo-chain as argument, e.g.
  *     VECT : IDX([2,2]) : $ : VECT : $
  *   CutVinfoChn cuts off the first list by setting the NEXT pointer of the first
@@ -878,6 +896,8 @@ MergeVinfoChn (node *ca, node *cb)
 
     DBUG_RETURN (cb);
 }
+
+/*@}*/
 
 /*
  *
