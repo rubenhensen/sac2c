@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.188  1998/08/11 00:14:46  dkr
+ * unused vars removed
+ *
  * Revision 1.187  1998/08/11 00:08:12  dkr
  * *** empty log message ***
  *
@@ -7309,11 +7312,10 @@ COMPWLstride (node *arg_node, node *arg_info)
 node *
 COMPWLgrid (node *arg_node, node *arg_info)
 {
-    node *icm_args, *icm_args2, *cexpr, *new_assigns, *accvar, *fun, *funap, *fold_code,
-      *assigns = NULL, *dec_rc_cexpr = NULL;
+    node *icm_args, *icm_args2, *cexpr, *new_assigns, *fold_code, *assigns = NULL,
+                                                                  *dec_rc_cexpr = NULL;
     ids *ids_vector, *ids_scalar, *withid_ids;
     char *icm_name, *icm_name_begin, *icm_name_end;
-    long *bv;
     int num_args, insert_icm, cnt_unroll, first_block_dim, d, i;
 
     DBUG_ENTER ("COMPWLgrid");
