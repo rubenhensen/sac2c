@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.79  1998/04/30 12:38:34  dkr
+ * changed DupNwith2: duplicates masks
+ *
  * Revision 1.78  1998/04/30 12:22:16  srs
  * removed duplication of NWITHOP_EXPR in DupNwithop()
  *
@@ -1073,6 +1076,12 @@ DupNwith2 (node *arg_node, node *arg_info)
     withop = DUPTRAV (NWITH2_WITHOP (arg_node));
 
     new_node = MakeNWith2 (id, seg, code, withop);
+
+    NWITH2_VARNO (new_node) = NWITH2_VARNO (arg_node);
+    NWITH2_IN (new_node) = DupMask (NWITH2_IN (arg_node), NWITH2_VARNO (arg_node));
+    NWITH2_INOUT (new_node) = DupMask (NWITH2_INOUT (arg_node), NWITH2_VARNO (arg_node));
+    NWITH2_OUT (new_node) = DupMask (NWITH2_OUT (arg_node), NWITH2_VARNO (arg_node));
+    NWITH2_LOCAL (new_node) = DupMask (NWITH2_LOCAL (arg_node), NWITH2_VARNO (arg_node));
 
     /*
      * Now we must erase NCODE_COPY for every code node in 'arg_node'.
