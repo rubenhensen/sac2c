@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.25  2000/07/28 17:17:10  cg
+ * Added correct setting of ICM_END_OF_STATEMENT for
+ * ND_KS_DECL_ARRAY ICMs.
+ *
  * Revision 1.24  2000/07/21 08:21:10  nmw
  * MakeModsepc added
  *
@@ -1266,9 +1270,9 @@ MakeIcm (char *name, node *args, node *next)
     ICM_NAME (tmp) = name;
     ICM_ARGS (tmp) = args;
     ICM_NEXT (tmp) = next;
-    ICM_END_OF_STATEMENT (tmp) = FALSE;
 
     if (name != NULL) {
+
         if (strcmp (name, "WL_NONFOLD_BEGIN") == 0) {
             ICM_INDENT_BEFORE (tmp) = 0;
             ICM_INDENT_AFTER (tmp) = 1;
@@ -1401,9 +1405,16 @@ MakeIcm (char *name, node *args, node *next)
             ICM_INDENT_BEFORE (tmp) = 0;
             ICM_INDENT_AFTER (tmp) = 0;
         }
+
+        if (strcmp (name, "ND_KS_DECL_ARRAY") == 0) {
+            ICM_END_OF_STATEMENT (tmp) = TRUE;
+        } else {
+            ICM_END_OF_STATEMENT (tmp) = FALSE;
+        }
     } else {
         ICM_INDENT_AFTER (tmp) = 0;
         ICM_INDENT_BEFORE (tmp) = 0;
+        ICM_END_OF_STATEMENT (tmp) = FALSE;
     }
 
     DBUG_PRINT ("MAKENODE",
