@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2002/10/18 13:46:16  sbs
+ * various VARDEC_OR_ARG_.... macros extended to handle
+ * N_objdef backlinks as well.
+ * VARDEC_OR_ARG_OR_OBJDEF)_... macros killed
+ *
  * Revision 3.71  2002/10/16 11:07:30  sbs
  * VARDEC_OR_ARG_OR_OBJDEF_AVIS and L_VARDEC_OR_ARG_OR_OBJDEF_AVIS added.
  *
@@ -1077,19 +1082,49 @@ extern int CmpDomain (node *args1, node *args2);
  *          (this is *no* ANSI C style!)
  *          Use the L_VARDEC_OR_... macros instead!!
  */
-#define VARDEC_OR_ARG_NAME(n) ((NODE_TYPE (n) == N_arg) ? ARG_NAME (n) : VARDEC_NAME (n))
-#define VARDEC_OR_ARG_TYPE(n) ((NODE_TYPE (n) == N_arg) ? ARG_TYPE (n) : VARDEC_TYPE (n))
+#define VARDEC_OR_ARG_NAME(n)                                                            \
+    ((NODE_TYPE (n) == N_arg)                                                            \
+       ? ARG_NAME (n)                                                                    \
+       : ((NODE_TYPE (n) == N_vardec) ? VARDEC_NAME (n) : OBJDEF_NAME (n)))
+#define VARDEC_OR_ARG_TYPE(n)                                                            \
+    ((NODE_TYPE (n) == N_arg)                                                            \
+       ? ARG_TYPE (n)                                                                    \
+       : ((NODE_TYPE (n) == N_vardec) ? VARDEC_TYPE (n) : OBJDEF_TYPE (n)))
 #define VARDEC_OR_ARG_STATUS(n)                                                          \
-    ((NODE_TYPE (n) == N_arg) ? ARG_STATUS (n) : VARDEC_STATUS (n))
+    ((NODE_TYPE (n) == N_arg) ? ARG_STATUS (n)                                           \
+                              : ((NODE_TYPE (n) == N_vardec)                             \
+                                   ? VARDEC_STATUS (n)                                   \
+                                   : DBUG_ASSERT (0, "VARDEC_OR_ARG_STATUS on objdef")))
 #define VARDEC_OR_ARG_ATTRIB(n)                                                          \
-    ((NODE_TYPE (n) == N_arg) ? ARG_ATTRIB (n) : VARDEC_ATTRIB (n))
-#define VARDEC_OR_ARG_AVIS(n) ((NODE_TYPE (n) == N_arg) ? ARG_AVIS (n) : VARDEC_AVIS (n))
+    ((NODE_TYPE (n) == N_arg) ? ARG_ATTRIB (n)                                           \
+                              : ((NODE_TYPE (n) == N_vardec)                             \
+                                   ? VARDEC_ATTRIB (n)                                   \
+                                   : DBUG_ASSERT (0, "VARDEC_OR_ARG_ATTRIB on objdef")))
+#define VARDEC_OR_ARG_AVIS(n)                                                            \
+    ((NODE_TYPE (n) == N_arg)                                                            \
+       ? ARG_AVIS (n)                                                                    \
+       : ((NODE_TYPE (n) == N_vardec) ? VARDEC_AVIS (n) : OBJDEF_AVIS (n)))
 #define VARDEC_OR_ARG_VARNO(n)                                                           \
-    ((NODE_TYPE (n) == N_arg) ? ARG_VARNO (n) : VARDEC_VARNO (n))
+    ((NODE_TYPE (n) == N_arg) ? ARG_VARNO (n)                                            \
+                              : ((NODE_TYPE (n) == N_vardec)                             \
+                                   ? VARDEC_VARNO (n)                                    \
+                                   : DBUG_ASSERT (0, "VARDEC_OR_ARG_VARNO on objdef")))
 #define VARDEC_OR_ARG_REFCNT(n)                                                          \
-    ((NODE_TYPE (n) == N_arg) ? ARG_REFCNT (n) : VARDEC_REFCNT (n))
+    ((NODE_TYPE (n) == N_arg) ? ARG_REFCNT (n)                                           \
+                              : ((NODE_TYPE (n) == N_vardec)                             \
+                                   ? VARDEC_REFCNT (n)                                   \
+                                   : DBUG_ASSERT (0, "VARDEC_OR_ARG_REFCNT on objdef")))
 #define VARDEC_OR_ARG_NAIVE_REFCNT(n)                                                    \
-    ((NODE_TYPE (n) == N_arg) ? ARG_NAIVE_REFCNT (n) : VARDEC_NAIVE_REFCNT (n))
+    ((NODE_TYPE (n) == N_arg)                                                            \
+       ? ARG_NAIVE_REFCNT (n)                                                            \
+       : ((NODE_TYPE (n) == N_vardec)                                                    \
+            ? VARDEC_NAIVE_REFCNT (n)                                                    \
+            : DBUG_ASSERT (0, "VARDEC_OR_ARG_NAIVE_REFCNT on objdef")))
+#define VARDEC_OR_ARG_NEXT(n)                                                            \
+    ((NODE_TYPE (n) == N_arg)                                                            \
+       ? ARG_NEXT (n)                                                                    \
+       : ((NODE_TYPE (n) == N_vardec) ? VARDEC_NEXT (n) : OBJDEF_NEXT (n)))
+
 #define VARDEC_OR_ARG_PADDED(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_PADDED (n) : VARDEC_PADDED (n))
 #define VARDEC_OR_ARG_ACTCHN(n)                                                          \
@@ -1098,7 +1133,6 @@ extern int CmpDomain (node *args1, node *args2);
     ((NODE_TYPE (n) == N_arg) ? ARG_COLCHN (n) : VARDEC_COLCHN (n))
 #define VARDEC_OR_ARG_OBJDEF(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_OBJDEF (n) : VARDEC_OBJDEF (n))
-#define VARDEC_OR_ARG_NEXT(n) ((NODE_TYPE (n) == N_arg) ? ARG_NEXT (n) : VARDEC_NEXT (n))
 
 #define VARDEC_OR_ARG_BASETYPE(n)                                                        \
     ((NODE_TYPE (n) == N_arg) ? ARG_BASETYPE (n) : VARDEC_BASETYPE (n))
@@ -1157,8 +1191,10 @@ extern int CmpDomain (node *args1, node *args2);
 #define L_VARDEC_OR_ARG_AVIS(n, rhs)                                                     \
     if (NODE_TYPE (n) == N_arg) {                                                        \
         ARG_AVIS (n) = (rhs);                                                            \
-    } else {                                                                             \
+    } else if (NODE_TYPE (n) == N_vardec) {                                              \
         VARDEC_AVIS (n) = (rhs);                                                         \
+    } else {                                                                             \
+        OBJDEF_AVIS (n) = (rhs);                                                         \
     }
 
 #define L_VARDEC_OR_ARG_TYPE(n, rhs)                                                     \
@@ -1182,31 +1218,6 @@ extern int CmpDomain (node *args1, node *args2);
     }
 
 extern node *SearchDecl (char *name, node *decl_node);
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_vardec :  *and*  N_arg :  *and*  N_objdef :
- ***/
-
-/*
- * CAUTION: Do not use the following macros as l-values!!!
- *          (this is *no* ANSI C style!)
- *          Use the L_VARDEC_OR_... macros instead!!
- */
-#define VARDEC_OR_ARG_OR_OBJDEF_AVIS(n)                                                  \
-    ((NODE_TYPE (n) == N_arg)                                                            \
-       ? ARG_AVIS (n)                                                                    \
-       : ((NODE_TYPE (n) == N_vardec) ? VARDEC_AVIS (n) : OBJDEF_AVIS (n)))
-
-#define L_VARDEC_OR_ARG_OR_OBJDEF_AVIS(n, rhs)                                           \
-    if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_AVIS (n) = (rhs);                                                            \
-    } else if (NODE_TYPE (n) == N_vardec) {                                              \
-        VARDEC_AVIS (n) = (rhs);                                                         \
-    } else {                                                                             \
-        OBJDEF_AVIS (n) = (rhs);                                                         \
-    }
 
 /*--------------------------------------------------------------------------*/
 
