@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2004/04/21 16:33:02  ktr
+ * Added traversal ssarefcount
+ *
  * Revision 3.40  2004/04/08 08:09:55  khf
  * wlfs_tab added
  *
@@ -243,6 +246,7 @@ extern funtab *wlf_tab;
 extern funtab *free_tab;
 extern funtab *cf_tab;
 extern funtab *refcnt_tab;
+extern funtab *ssarefcnt_tab;
 extern funtab *lir_tab;
 extern funtab *lir_mov_tab;
 extern funtab *dup_tab;

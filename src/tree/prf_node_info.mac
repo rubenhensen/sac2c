@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2004/04/21 16:33:02  ktr
+ * Added traversal ssarefcount
+ *
  * Revision 3.23  2004/02/27 12:00:55  sbs
  * NTCPRF_phi deactivated
  *
@@ -161,6 +164,9 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCPRF_toiS, COToi),
           COTake),
   PRF_IF (F_drop_SxV, "F_drop_SxV", "_drop_SxV_", "drop", FALSE, 2, NTCPRF_drop_SxV,
           CODrop),
+
+  PRF_IF (F_adjust_rc, "F_adjust_rc", "_adjust_rc_", "adjust_rc", FALSE, 2, NTCPRF_dummy,
+          NULL),
 
   PRF_IF (F_to_unq, "F_to_unq", "_to_unq_", "to_unq", FALSE, 1, NTCPRF_dummy, NULL),
   PRF_IF (F_from_unq, "F_from_unq", "_from_unq_", "from_unq", FALSE, 1, NTCPRF_dummy,

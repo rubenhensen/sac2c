@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.141  2004/04/21 16:33:02  ktr
+ * Added traversal ssarefcount
+ *
  * Revision 3.140  2004/04/16 12:14:16  skt
  * N_dataflow added, to support dataflow-graphs
  *
@@ -197,7 +200,7 @@
  *
  *   imp_tab         flat_tab        print_tab       type_tab
  *   genmask_tab     dcr_tab         wlf_tab         free_tab
- *   cf_tab          refcnt_tab      unused_tab1     lir_tab
+ *   cf_tab          refcnt_tab      ssarefcnt_tab   lir_tab
  *   dup_tab         inline_tab      unroll_tab      lir_mov_tab
  *   idx_tab         unswitch_tab    wli_tab         ae_tab
  *
@@ -311,8 +314,8 @@
 #ifndef NIFrefcnt
 #define NIFrefcnt(it_refcnt)
 #endif
-#ifndef NIFunused1
-#define NIFunused1(it_unused1)
+#ifndef NIFssarefcnt
+#define NIFssarefcnt(it_ssarefcnt)
 #endif
 #ifndef NIFlir
 #define NIFlir(it_lir)
@@ -686,7 +689,7 @@
 #define NIF(                                                                             \
                                                                                          \
   Node_name, mdb_nodetype, it_imp, it_flat, it_print, it_type, it_genmask, it_dcr,       \
-  it_wlf, it_free, it_cf, it_refcnt, it_unused1, it_lir, it_dup, it_inline, it_unroll,   \
+  it_wlf, it_free, it_cf, it_refcnt, it_ssarefcnt, it_lir, it_dup, it_inline, it_unroll, \
   it_lir_mov, it_idx, it_unswitch, it_wli, it_ae,                                        \
                                                                                          \
   it_writesib, it_obj, it_impltype, it_objinit, it_analy, it_checkdec, it_writedec,      \
@@ -715,8 +718,8 @@
                                                                                          \
       NIFimp (it_imp) NIFflat (it_flat) NIFprint (it_print) NIFtype (                    \
         it_type) NIFgenmask (it_genmask) NIFdcr (it_dcr) NIFwlf (it_wlf)                 \
-        NIFfree (it_free) NIFcf (it_cf) NIFrefcnt (it_refcnt) NIFunused1 (               \
-          it_unused1) NIFlir (it_lir) NIFdup (it_dup) NIFinline (it_inline)              \
+        NIFfree (it_free) NIFcf (it_cf) NIFrefcnt (it_refcnt) NIFssarefcnt (             \
+          it_ssarefcnt) NIFlir (it_lir) NIFdup (it_dup) NIFinline (it_inline)            \
           NIFunroll (it_unroll) NIFlir_mov (it_lir_mov) NIFidx (it_idx) NIFunswitch (    \
             it_unswitch) NIFwli (it_wli) NIFae (it_ae)                                   \
                                                                                          \
@@ -2561,7 +2564,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
 #undef NIFcf
 #undef NIFrefcnt
-#undef NIFunused1
+#undef NIFssarefcnt
 #undef NIFlir
 
 #undef NIFdup

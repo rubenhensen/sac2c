@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2004/04/21 16:33:02  ktr
+ * Added traversal ssarefcount
+ *
  * Revision 3.50  2004/04/08 08:09:55  khf
  * wlfs_tab added
  *
@@ -204,6 +207,7 @@
 #include "objects.h"
 #include "uniquecheck.h"
 #include "refcount.h"
+#include "SSARefCount.h"
 #include "wltransform.h"
 #include "precompile.h"
 #include "compile.h"
@@ -403,8 +407,15 @@ static funtab refcnt_tab_rec = {{
 funtab *refcnt_tab = &refcnt_tab_rec;
 
 /*
- *  (11) unused1_tab
+ *  (11) ssarefcnt_tab
  */
+static funtab ssarefcnt_tab_rec = {{
+#define NIFssarefcnt(it_ssarefcnt) it_ssarefcnt
+#include "node_info.mac"
+                                   },
+                                   NULL,
+                                   NULL};
+funtab *ssarefcnt_tab = &ssarefcnt_tab_rec;
 
 /*
  *  (12) lir_tab
