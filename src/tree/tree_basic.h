@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2000/12/06 09:04:50  cg
+ * Added INFO_TC_TCCP
+ *
  * Revision 3.2  2000/11/27 21:11:20  cg
  * Added new attribute PRAGMA for Nwith2 nodes.
  * Added new attribute APL for N_pragma nodes.
@@ -2126,6 +2129,7 @@ extern node *MakePragma ();
  ***    node *     NEXTASSIGN    (O)  (N_assign)
  ***    node *     LASSIGN       (O)  (N_assign)
  ***    ids*       LHSVARS       (O)
+ ***    nodelist * TCCP          (O)
  ***
  ***  when used in writesib.c :
  ***
@@ -2446,6 +2450,7 @@ extern node *MakeInfo ();
 #define INFO_TC_LASSIGN(n) (n->node[3])
 #define INFO_TC_CURRENTASSIGN(n) (n->node[4])
 #define INFO_TC_LHSVARS(n) (n->info.ids)
+#define INFO_TC_TCCP(n) (n->info2)
 
 /* writesib */
 #define INFO_WSIB_EXPORTTYPES(n) ((nodelist *)(n->node[0]))
