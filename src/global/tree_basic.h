@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.75  1998/02/23 13:12:08  srs
+ * added comments and access macros for masks
+ *
  * Revision 1.74  1998/02/17 14:08:53  srs
  * changed comments for N_info
  *
@@ -1093,6 +1096,8 @@ extern node *MakeBlock (node *instr, node *vardec);
  * TYPEDEF is a reference to the respective typedef node if the type of
  * the declared variable is user-defined.
  *
+ * srs: ? if FLAG is true this is an array vardec ?
+ *
  */
 
 extern node *MakeVardec (char *name, types *type, node *next);
@@ -2008,14 +2013,12 @@ extern node *MakeInfo ();
  ***    node*  WITHOP    (N_Nwithop)
  ***
  ***  permanent attributes:
- ***
  ***    int    PARTS     (number of N_Npart nodes for this WL.
  ***                      -1: no complete partition, exactly one N_Npart,
  ***                      >0: complete partition.
  ***
  ***  temporary attributes:
- ***
- ***    ???
+ ***    long*  MASK                    (optimize -> )
  ***
  ***  remarks:
  ***    flatten: it's important that the Npart nodes are flattened before
@@ -2029,6 +2032,7 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_CODE(n) (n->node[1])
 #define NWITH_WITHOP(n) (n->node[2])
 #define NWITH_PARTS(n) (n->info.cint)
+#define NWITH_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2044,6 +2048,9 @@ extern node *MakeNWith (node *part, node *code, node *withop);
  ***  permanent attributes:
  ***
  ***    node*  CODE          (N_Ncode)
+ ***
+ ***  temporary attributes:
+ ***    long*  MASK                    (optimize -> )
  ***/
 
 extern node *MakeNPart (node *withid, node *generator);
@@ -2052,6 +2059,7 @@ extern node *MakeNPart (node *withid, node *generator);
 #define NPART_GEN(n) (n->node[1])
 #define NPART_NEXT(n) (n->node[2])
 #define NPART_CODE(n) (n->node[3])
+#define NPART_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2125,6 +2133,7 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***  temporary attributes:
  ***    node*  EXPR            (scanparse, stays != NULL afterwards)
  ***    node*  FUNDEF          (N_fundef)  (typecheck -> )
+ ***    long*  MASK                    (optimize -> )
  ***
  ***  remarks: WithOpType is WO_genarray, WO_modarray, WO_foldfun, WO_foldprf.
  ***    FUNDEF-node is used if TYPE == WO_foldfun.
@@ -2142,6 +2151,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
 #define NWITHOP_MOD(n) (n->info.fun_name.id_mod)
 #define NWITHOP_PRF(n) (n->info.prf)
 #define NWITHOP_FUNDEF(n) (n->node[2])
+#define NWITHOP_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2158,6 +2168,18 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***
  ***    int    USED       (number of times this code is used)
  ***
+ ***  temporary attributes:
+ ***    long*  MASK                    (optimize -> )
+ ***
+ ***
+ ***  remark:
+ ***   The CBLOCK 'plus' the CEXPR is the whole assignment block
+ ***   to calculate each element of the WL. The CEXPR is the pseudo
+ ***   return statement of the block.
+ ***   In the flatten phase every node unequal N_id is flattened from
+ ***   the CEXPR into the CBLOCK. After that we do not have to inspect the
+ ***   CEXPR for every reason because we know that the *last let assignment*
+ ***   in CBLOCK holds the return statement (CEXPR).
  ***/
 
 extern node *MakeNCode (node *block, node *expr);
@@ -2166,6 +2188,7 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_CBLOCK(n) (n->node[0])
 #define NCODE_CEXPR(n) (n->node[1])
 #define NCODE_NEXT(n) (n->node[2])
+#define NCODE_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
 
