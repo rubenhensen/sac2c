@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.99  1998/03/25 13:04:02  srs
+ * corrected comment of N_modarray
+ *
  * Revision 1.98  1998/03/24 21:08:25  dkr
  * added temp. attr. WLPROJ_PART
  *
@@ -1509,7 +1512,7 @@ extern node *MakeGenarray (node *array, node *body);
  ***
  ***  sons:
  ***
- ***    node*  ARRAY  (N_array)
+ ***    node*  ARRAY  (N_id)
  ***    node*  BODY   (N_block)
  ***
  ***
