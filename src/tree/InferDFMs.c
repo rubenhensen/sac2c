@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2002/07/12 16:56:56  dkr
+ * INFDFMSicm(): modifications for TAGGED_ARRAYS done
+ *
  * Revision 1.20  2002/04/16 18:27:15  dkr
  * INFO_DFMBASE renamed into INFO_DFM_BASE
  *
@@ -1664,7 +1667,11 @@ INFDFMSicm (node *arg_node, node *arg_info)
     DBUG_PRINT ("INFDFMS", ("icm %s found", ICM_NAME (arg_node)));
 
     name = ICM_NAME (arg_node);
+#ifdef TAGGED_ARRAYS
+    if (!strcmp (name, "ND_USE_GENVAR_OFFSET")) {
+#else
     if (!strcmp (name, "ND_KS_USE_GENVAR_OFFSET")) {
+#endif
         /*
          * ND_KS_USE_GENVAR_OFFSET( offsetvar, res):
          *   offsetvar = res__destptr;
@@ -1673,7 +1680,12 @@ INFDFMSicm (node *arg_node, node *arg_info)
          * use: ---
          */
         arg_info = DefinedId (arg_info, ICM_ARG1 (arg_node));
-    } else if (!strcmp (name, "ND_KS_VECT2OFFSET")) {
+    }
+#ifdef TAGGED_ARRAYS
+    else if (!strcmp (name, "ND_VECT2OFFSET")) {
+#else
+    else if (!strcmp (name, "ND_KS_VECT2OFFSET")) {
+#endif
         /*
          * ND_KS_VECT2OFFSET( off_name, arr_name, ...):
          *   off_name = ... arr_name ...;
