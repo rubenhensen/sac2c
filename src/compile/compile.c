@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.29  1995/05/09 16:39:35  hw
+ * Revision 1.30  1995/05/10 13:54:38  hw
+ * changed increasing of refcounts of used variables in loops
+ *
+ * Revision 1.29  1995/05/09  16:39:35  hw
  * bug fixed in CompAssign ( arg_info->node[0] will be set correctly now )
  *
  * Revision 1.28  1995/05/08  15:45:53  hw
@@ -967,12 +970,16 @@ CompPrf (node *arg_node, node *arg_info)
             MAKENODE_NUM (n_node, 1);
             switch (array_is_const) {
             case 0:
-                CREATE_2_ARY_ICM (next_assign, "ND_DEC_RC", arg1, n_node);
-                APPEND_ASSIGNS (first_assign, next_assign);
-                CREATE_2_ARY_ICM (next_assign, "ND_DEC_RC", arg2, n_node);
-                APPEND_ASSIGNS (first_assign, next_assign);
                 CREATE_2_ARY_ICM (next_assign, "ND_INC_RC", res, res_ref);
                 APPEND_ASSIGNS (first_assign, next_assign);
+#if 0
+            CREATE_2_ARY_ICM(next_assign, "ND_DEC_RC", arg1, n_node);
+            APPEND_ASSIGNS(first_assign, next_assign);
+            CREATE_2_ARY_ICM(next_assign, "ND_DEC_RC", arg2, n_node);
+            APPEND_ASSIGNS(first_assign, next_assign);
+#endif
+                DEC_OR_FREE_RC_ND (arg2, n_node);
+                DEC_OR_FREE_RC_ND (arg1, n_node);
                 break;
             case 1:
                 CREATE_2_ARY_ICM (next_assign, "ND_DEC_RC_FREE", arg2, n_node);
@@ -2168,8 +2175,10 @@ CompLoop (node *arg_node, node *arg_info)
     v2 = V2;
     if (NULL != v1) {
         while (NULL != v1) {
-            MAKENODE_NUM (n_node, v1->refcnt);
-            INC_RC_ND (v1, n_node);
+            if (1 <= (v1->refcnt - 1)) {
+                MAKENODE_NUM (n_node, v1->refcnt - 1);
+                INC_RC_ND (v1, n_node);
+            }
             v1 = v1->node[0];
         }
     } else if ((NULL != v2) && (NULL == v1)) {
