@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2001/02/22 12:51:19  nmw
+ * check for empty assignment chain in blocks after removing
+ * artificial variables in precompile
+ *
  * Revision 3.20  2001/02/09 13:34:09  dkr
  * COMPIcm added in order to RC the arguments of ICMs correctly
  *
@@ -2411,7 +2415,9 @@ COMPBlock (node *arg_node, node *arg_info)
           = MakeAssign (MakeIcm1 ("CS_STOP", MakeId_Copy (cs_tag)), ASSIGN_NEXT (assign));
     }
 
-    BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    if (BLOCK_INSTR (arg_node) != NULL) {
+        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    }
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
