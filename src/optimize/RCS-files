@@ -3,5 +3,7 @@ ConstantFolding.h
 DeadCodeRemoval.c
 DeadCodeRemoval.h
 Makefile
+WorkReduction.c
+WorkReduction.h
 optimize.c
 optimize.h
