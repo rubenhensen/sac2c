@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  1998/05/15 16:05:06  dkr
+ * fixed a bug in ComputeOneCube, ...
+ *
  * Revision 1.12  1998/05/15 15:10:56  dkr
  * changed ComputeOneCube (finished :)
  *
@@ -70,7 +73,7 @@
         case N_id:                                                                       \
             /* here is no break missing!! */                                             \
         case N_num:                                                                      \
-            comp = DupTree (node, NULL);                                                 \
+            comp = DupNode (node);                                                       \
             break;                                                                       \
         case N_exprs:                                                                    \
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (node)) == N_num),                       \
@@ -2220,7 +2223,7 @@ NormalizeWL (node *nodes, int dims, int *idx_max)
 /******************************************************************************
  *
  * function:
- *   node *GenerateCompletedGrid( node *stride_var, node *cexpr_template)
+ *   node *GenerateCompleteGrid( node *stride_var, node *cexpr_template)
  *
  * description:
  *   supplements missings parts of the grid in 'stride_var'.
@@ -2231,11 +2234,11 @@ NormalizeWL (node *nodes, int dims, int *idx_max)
  ******************************************************************************/
 
 node *
-GenerateCompletedGrid (node *stride_var, node *cexpr_template)
+GenerateCompleteGrid (node *stride_var, node *cexpr_template)
 {
     node *grid_var;
 
-    DBUG_ENTER ("GenerateCompletedGrid");
+    DBUG_ENTER ("GenerateCompleteGrid");
 
     if (stride_var != NULL) {
 
@@ -2258,7 +2261,7 @@ GenerateCompletedGrid (node *stride_var, node *cexpr_template)
                 WLGRID_CEXPR_TEMPLATE (WLGRID_NEXT (grid_var)) = cexpr_template;
             }
             WLGRID_NEXTDIM (grid_var)
-              = GenerateCompletedGrid (WLGRID_NEXTDIM (grid_var), cexpr_template);
+              = GenerateCompleteGrid (WLGRID_NEXTDIM (grid_var), cexpr_template);
 
         } else {
 
@@ -2267,18 +2270,23 @@ GenerateCompletedGrid (node *stride_var, node *cexpr_template)
                           && (NUM_VAL (WLGRIDVAR_BOUND1 (grid_var)) == 0)),
                          "bound1 not zero");
 
+            /*
+             * is the grid incomplete?
+             */
             if ((NODE_TYPE (WLGRIDVAR_BOUND2 (grid_var)) != N_num)
                 || (NODE_TYPE (WLSTRIVAR_STEP (stride_var)) != N_num)
                 || (NUM_VAL (WLGRIDVAR_BOUND2 (grid_var))
-                    != NUM_VAL (WLSTRIVAR_STEP (stride_var)))) {
+                    < NUM_VAL (WLSTRIVAR_STEP (stride_var)))) {
 
                 WLGRIDVAR_NEXT (grid_var)
-                  = MakeWLgridVar (WLGRIDVAR_DIM (grid_var), WLGRIDVAR_BOUND2 (grid_var),
-                                   WLSTRIVAR_STEP (stride_var), NULL, NULL, NULL);
+                  = MakeWLgridVar (WLGRIDVAR_DIM (grid_var),
+                                   DupNode (WLGRIDVAR_BOUND2 (grid_var)),
+                                   DupNode (WLSTRIVAR_STEP (stride_var)), NULL, NULL,
+                                   NULL);
                 WLGRIDVAR_CEXPR_TEMPLATE (WLGRIDVAR_NEXT (grid_var)) = cexpr_template;
             }
             WLGRIDVAR_NEXTDIM (grid_var)
-              = GenerateCompletedGrid (WLGRIDVAR_NEXTDIM (grid_var), cexpr_template);
+              = GenerateCompleteGrid (WLGRIDVAR_NEXTDIM (grid_var), cexpr_template);
         }
     }
 
@@ -2294,6 +2302,8 @@ GenerateCompletedGrid (node *stride_var, node *cexpr_template)
  * description:
  *   returns strides/grids of the size found in 'shape'.
  *   'WLGRID_CEXPR_TEMPLATE' of the new grids is set to 'cexpr_template'.
+ *
+ *   This function is called by 'GenerateCompleteDomain'.
  *
  ******************************************************************************/
 
@@ -2324,8 +2334,8 @@ GenerateShapeStrides (int dim, node *cexpr_template, int dims, shpseg *shape)
 /******************************************************************************
  *
  * function:
- *   node *GenerateCompletedDomain( node *stride_var, node *cexpr_template,
- *                                  int dims, shpseg *shape)
+ *   node *GenerateCompleteDomain( node *stride_var, node *cexpr_template,
+ *                                 int dims, shpseg *shape)
  *
  * description:
  *   supplements strides/grids for the complement of 'stride_var'.
@@ -2336,11 +2346,11 @@ GenerateShapeStrides (int dim, node *cexpr_template, int dims, shpseg *shape)
  ******************************************************************************/
 
 node *
-GenerateCompletedDomain (node *stride_var, node *cexpr_template, int dims, shpseg *shape)
+GenerateCompleteDomain (node *stride_var, node *cexpr_template, int dims, shpseg *shape)
 {
     node *grid_var, *new_grid;
 
-    DBUG_ENTER ("GenerateCompletedDomain");
+    DBUG_ENTER ("GenerateCompleteDomain");
 
     DBUG_ASSERT ((shape != NULL), "no shape found");
     if (stride_var != NULL) {
@@ -2416,10 +2426,79 @@ GenerateCompletedDomain (node *stride_var, node *cexpr_template, int dims, shpse
             }
 
             WLGRID_NEXTDIM (grid_var)
-              = GenerateCompletedDomain (WLGRID_NEXTDIM (grid_var), cexpr_template, dims,
-                                         shape);
+              = GenerateCompleteDomain (WLGRID_NEXTDIM (grid_var), cexpr_template, dims,
+                                        shape);
 
         } else {
+
+            grid_var = WLSTRIVAR_CONTENTS (stride_var);
+
+            /*
+             * is the grid incomplete?
+             */
+            if ((NODE_TYPE (WLGRIDVAR_BOUND2 (grid_var)) != N_num)
+                || (NODE_TYPE (WLSTRIVAR_STEP (stride_var)) != N_num)
+                || (NUM_VAL (WLGRIDVAR_BOUND2 (grid_var))
+                    < NUM_VAL (WLSTRIVAR_STEP (stride_var)))) {
+
+                WLGRIDVAR_NEXT (grid_var)
+                  = MakeWLgridVar (WLGRIDVAR_DIM (grid_var),
+                                   DupNode (WLGRIDVAR_BOUND2 (grid_var)),
+                                   DupNode (WLSTRIVAR_STEP (stride_var)), NULL, NULL,
+                                   NULL);
+
+                if (WLGRIDVAR_DIM (grid_var) == dims - 1) {
+                    WLGRIDVAR_CEXPR_TEMPLATE (WLGRIDVAR_NEXT (grid_var)) = cexpr_template;
+                }
+            }
+
+            /*
+             * append lower part of complement
+             */
+            if ((NODE_TYPE (WLSTRIVAR_BOUND2 (stride_var)) != N_num)
+                || (NUM_VAL (WLSTRIVAR_BOUND2 (stride_var))
+                    < SHPSEG_SHAPE (shape, WLSTRIVAR_DIM (stride_var)))) {
+
+                new_grid = MakeWLgrid (0, WLGRIDVAR_DIM (grid_var), 0, 1, 0,
+                                       GenerateShapeStrides (WLGRIDVAR_DIM (grid_var) + 1,
+                                                             cexpr_template, dims, shape),
+                                       NULL, NULL);
+
+                if (WLGRIDVAR_DIM (grid_var) == dims - 1) {
+                    WLGRIDVAR_CEXPR_TEMPLATE (new_grid) = cexpr_template;
+                }
+
+                WLSTRIVAR_NEXT (stride_var)
+                  = MakeWLstriVar (WLSTRIVAR_DIM (stride_var),
+                                   DupNode (WLSTRIVAR_BOUND2 (stride_var)),
+                                   MakeNum (
+                                     SHPSEG_SHAPE (shape, WLSTRIVAR_DIM (stride_var))),
+                                   MakeNum (1), new_grid, NULL);
+            }
+
+            /*
+             * insert upper part of complement
+             */
+            if ((NODE_TYPE (WLSTRIVAR_BOUND1 (stride_var)) != N_num)
+                || (NUM_VAL (WLSTRIVAR_BOUND1 (stride_var)) > 0)) {
+
+                new_grid = MakeWLgrid (0, WLGRIDVAR_DIM (grid_var), 0, 1, 0,
+                                       GenerateShapeStrides (WLGRIDVAR_DIM (grid_var) + 1,
+                                                             cexpr_template, dims, shape),
+                                       NULL, NULL);
+
+                if (WLGRIDVAR_DIM (grid_var) == dims - 1) {
+                    WLGRIDVAR_CEXPR_TEMPLATE (new_grid) = cexpr_template;
+                }
+
+                stride_var = MakeWLstriVar (WLSTRIVAR_DIM (stride_var), MakeNum (0),
+                                            DupNode (WLSTRIVAR_BOUND1 (stride_var)),
+                                            MakeNum (1), new_grid, stride_var);
+            }
+
+            WLGRIDVAR_NEXTDIM (grid_var)
+              = GenerateCompleteDomain (WLGRIDVAR_NEXTDIM (grid_var), cexpr_template,
+                                        dims, shape);
         }
     }
 
@@ -2500,9 +2579,9 @@ ComputeOneCube (node *stride_var, WithOpType wltype, int dims, shpseg *shape)
     }
 
     if ((wltype == WO_genarray) || (wltype == WO_modarray)) {
-        stride_var = GenerateCompletedDomain (stride_var, cexpr_template, dims, shape);
+        stride_var = GenerateCompleteDomain (stride_var, cexpr_template, dims, shape);
     } else { /* WO_fold... */
-        stride_var = GenerateCompletedGrid (stride_var, cexpr_template);
+        stride_var = GenerateCompleteGrid (stride_var, cexpr_template);
     }
 
     DBUG_RETURN (stride_var);
