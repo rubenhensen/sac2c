@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2003/04/09 13:53:02  sbs
+ * _neg_ added.
+ *
  * Revision 3.82  2003/04/04 17:01:57  sbs
  * prf_node_info.mac extended
  *
@@ -264,7 +267,7 @@ static int prf_arity[] = {
        PRF_SUB_SxS, PRF_SUB_SxA, PRF_SUB_AxS, PRF_SUB_AxA,
        PRF_MUL_SxS, PRF_MUL_SxA, PRF_MUL_AxS, PRF_MUL_AxA,
        PRF_DIV_SxS, PRF_DIV_SxA, PRF_DIV_AxS, PRF_DIV_AxA,
-       PRF_MOD, PRF_MIN, PRF_MAX, PRF_ABS,
+       PRF_MOD, PRF_MIN, PRF_MAX, PRF_ABS, PRF_NEG,
        PRF_EQ, PRF_NEQ, PRF_LE, PRF_LT, PRF_GE, PRF_GT,
        PRF_AND, PRF_OR, PRF_NOT,
        PRF_TOI_S, PRF_TOI_A, PRF_TOF_S, PRF_TOF_A, PRF_TOD_S, PRF_TOD_A,
@@ -1504,6 +1507,7 @@ prf: foldop        { $$ = $1;        }
    | PRF_DIV_AxA   { $$ = F_div_AxA; }
    | PRF_MOD       { $$ = F_mod;     }
    | PRF_ABS       { $$ = F_abs;     }
+   | PRF_NEG       { $$ = F_neg;     }
    | PRF_NEQ       { $$ = F_neq;     }
    | PRF_LT        { $$ = F_lt;      }
    | PRF_LE        { $$ = F_le;      }

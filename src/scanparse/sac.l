@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2003/04/09 13:53:02  sbs
+ * _neg_ added.
+ *
  * Revision 3.21  2003/03/20 13:54:32  sbs
  * config.h included;  MUST_INIT_YY used.
  *
@@ -208,6 +211,7 @@ int charpos = 0;
 "_min_"                    { FILTER( PRF_MIN); }
 "_max_"                    { FILTER( PRF_MAX); }
 "_abs_"                    { FILTER( PRF_ABS); }
+"_neg_"                    { FILTER( PRF_NEG); }
 
 "_eq_"                     { FILTER( PRF_EQ);  }
 "_neq_"                    { FILTER( PRF_NEQ); }
