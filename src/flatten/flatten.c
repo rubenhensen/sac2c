@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1995/04/21 12:44:18  hw
+ * Revision 1.20  1995/04/25 09:08:02  hw
+ * index vector of with-loop will be renamed if necessary
+ *
+ * Revision 1.19  1995/04/21  12:44:18  hw
  * -added  FltnId, FltnLet & FltnArgs
  * -- removed FltnPrf
  * - now varibales in with_loops will be renamed and initialized
@@ -864,6 +867,8 @@ FltnGen (node *arg_node, node *arg_info)
 {
     node *tmp_node1, *id_node, *let_node, *assign_node;
     int i;
+    local_stack *tmp;
+    char *old_name;
 
     DBUG_ENTER ("FltnGen");
     for (i = 0; i < arg_node->nnode; i++)
@@ -898,17 +903,14 @@ FltnGen (node *arg_node, node *arg_info)
             let_node->node[0] = Trav (tmp_node1, arg_info);
         } else
             arg_node->node[i] = Trav (arg_node->node[i], arg_info);
-#if 0
-  /* rename index-vector if necessary */
-  tmp=FindId(arg_node->IDS_ID);
-  if(NULL != tmp)
-     if ((0< with_level) && (with_level >= tmp->w_level) && (0 < tmp->w_level))
-     {
-        old_name=arg_node->IDS_ID;
-        arg_node->IDS_ID=StringCopy(tmp->id_new);
-        FREE(old_name);
-     }
-#endif
+
+    /* rename index-vector if necessary */
+    tmp = FindId (arg_node->IDS_ID);
+    if (NULL != tmp) {
+        old_name = arg_node->IDS_ID;
+        arg_node->IDS_ID = RenameWithVar (old_name, with_level);
+        PUSH (old_name, arg_node->IDS_ID, with_level);
+    }
 
     DBUG_RETURN (arg_node);
 }
