@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.107  2004/12/20 12:46:10  ktr
+ * call to TBmakeWlgridvar corrected.
+ *
  * Revision 3.106  2004/12/14 14:37:40  ktr
  * Calls to TBmakeWlgridX corrected.
  *
@@ -2304,10 +2307,10 @@ GenerateNodeForGap (node *wlnode, nodetype nt1, void *pnode1, nodetype nt2, void
                 gap_node = TBmakeWlgrid (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode), val1,
                                          val2, NULL, NULL, NULL);
             } else {
-                gap_node = TBmakeWlgridvar (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode),
-                                            WLBnodeOrIntMakeNode (nt1, pnode1),
-                                            WLBnodeOrIntMakeNode (nt2, pnode2), NULL,
-                                            NULL, NULL);
+                gap_node
+                  = TBmakeWlgridvar (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode), NULL,
+                                     WLBnodeOrIntMakeNode (nt1, pnode1),
+                                     WLBnodeOrIntMakeNode (nt2, pnode2), NULL, NULL);
             }
             WLGRIDX_ISNOOP (gap_node) = is_noop;
             break;
@@ -2895,9 +2898,8 @@ Parts2Strides (node *parts, int iter_dims, shpseg *iter_shp)
                 /*
                  * width is not constant
                  */
-                new_grid
-                  = TBmakeWlgridvar (0, dim, TBmakeNum (0),
-                                     CurrentComponentGetNode (width), NULL, NULL, NULL);
+                new_grid = TBmakeWlgridvar (0, dim, NULL, TBmakeNum (0),
+                                            CurrentComponentGetNode (width), NULL, NULL);
             }
 
             if (CurrentComponentIsInt (bound1) && CurrentComponentIsInt (bound2)

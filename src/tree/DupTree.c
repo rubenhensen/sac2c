@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.139  2004/12/20 12:46:33  ktr
+ * call to TBmakeWlgridvar corrected.
+ *
  * Revision 3.138  2004/12/14 12:54:33  ktr
  * DUPids modified.
  *
@@ -2673,10 +2676,10 @@ DUPwlgridvar (node *arg_node, info *arg_info)
     DBUG_ENTER ("DUPwlgridvar");
 
     new_node = TBmakeWlgridvar (WLGRIDVAR_LEVEL (arg_node), WLGRIDVAR_DIM (arg_node),
-                                DUPTRAV (WLGRIDVAR_BOUND1 (arg_node)),
-                                DUPTRAV (WLGRIDVAR_BOUND2 (arg_node)),
                                 LUTsearchInLutPp (INFO_DUP_LUT (arg_info),
                                                   WLGRIDVAR_CODE (arg_node)),
+                                DUPTRAV (WLGRIDVAR_BOUND1 (arg_node)),
+                                DUPTRAV (WLGRIDVAR_BOUND2 (arg_node)),
                                 DUPTRAV (WLGRIDVAR_NEXTDIM (arg_node)),
                                 DUPCONT (WLGRIDVAR_NEXT (arg_node)));
 
