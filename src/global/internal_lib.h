@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/04/10 09:36:46  dkr
+ * macro F_PTR added
+ *
  * Revision 3.7  2001/03/28 14:53:26  dkr
  * CHECK_NULL moved from tree_compound.h to internal_lib.h
  *
@@ -108,6 +111,13 @@ extern void ComputeMallocAlignStep (void);
 /*********************************
  * macro definitions
  *********************************/
+
+/* format string for pointers */
+#ifdef SAC_FOR_SOLARIS_SPARC
+#define F_PTR "0x%p"
+#else
+#define F_PTR "%p"
+#endif
 
 #define CHECK_NULL(a) ((NULL == a) ? "" : a)
 
