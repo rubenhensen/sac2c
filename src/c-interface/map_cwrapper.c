@@ -122,8 +122,8 @@ MCWarg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("MCWarg");
 
-    if (ARG_ATTRIB (arg_node) == ST_was_reference) {
-        INFO_MCW_CNT_ARTIFICIAL (arg_info)++;
+    if (ARG_ATTRIB (arg_node) == ST_regular) {
+        INFO_MCW_CNT_STANDARD (arg_info)++;
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
@@ -237,21 +237,23 @@ MapCWrapper (node *syntax_tree)
 static int
 CountFunArgs (node *fundef)
 {
-
-    int count = 0;
-    node *args;
+    node *arg_info;
+    int counter;
 
     DBUG_ENTER ("CountFunArgs");
 
-    args = FUNDEF_ARGS (fundef);
+    arg_info = MakeInfo ();
 
-    while (args != NULL) {
-        if (ARG_STATUS (args) == ST_regular)
-            count++;
-        args = ARG_NEXT (args);
+    INFO_MCW_CNT_STANDARD (arg_info) = 0;
+
+    if (FUNDEF_ARGS (fundef) != NULL) {
+        Trav (FUNDEF_ARGS (fundef), arg_info);
     }
+    counter = INFO_MCW_CNT_STANDARD (arg_info);
 
-    DBUG_RETURN (count);
+    FREE (arg_info);
+
+    DBUG_RETURN (counter);
 }
 
 /******************************************************************************
@@ -271,7 +273,6 @@ static int
 CountFunResults (node *fundef)
 {
     int count = 0;
-    node *arg_info;
     types *rettypes;
 
     DBUG_ENTER ("CountFunResults");
@@ -279,17 +280,11 @@ CountFunResults (node *fundef)
     rettypes = FUNDEF_TYPES (fundef);
 
     while (rettypes != NULL) {
-        count++;
+        if (TYPES_STATUS (rettypes) == ST_regular) {
+            count++;
+        }
         rettypes = TYPES_NEXT (rettypes);
     }
-
-    arg_info = MakeInfo ();
-    INFO_MCW_CNT_ARTIFICIAL (arg_info) = 0;
-    if (FUNDEF_ARGS (fundef) != NULL) {
-        Trav (FUNDEF_ARGS (fundef), arg_info);
-    }
-    count -= INFO_MCW_CNT_ARTIFICIAL (arg_info);
-    FREE (arg_info);
 
     DBUG_RETURN (count);
 }
