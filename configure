@@ -4612,7 +4612,7 @@ elif  test "$MACC" = yes ; then
 
   RCCCFLAGS="-Wall -no-cpp-precomp -Wno-unused -fno-builtin"
 
-  MKCCFLAGS="-g"
+  MKCCFLAGS="-g -Wall -ansi"
 
   PDCCFLAGS="-g"
 

@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.39  2004/11/23 14:44:27  ktr
+dnl added compilation options for Mac OS X
+dnl
 dnl Revision 1.38  2004/11/09 17:42:36  sah
 dnl added LDDYNFLAG
 dnl
@@ -457,7 +460,7 @@ elif [ test "$MACC" = yes ]; then
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, ["-Wl,-multiply_defined,suppress"])
   AC_SUBST(RCCCFLAGS, ["-Wall -no-cpp-precomp -Wno-unused -fno-builtin"])
-  AC_SUBST(MKCCFLAGS, ["-g"])
+  AC_SUBST(MKCCFLAGS, ["-g -Wall -ansi"])
   AC_SUBST(PDCCFLAGS, ["-g"])
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["cpp3 -C -traditional-cpp"])
