@@ -5,3 +5,4 @@ serialize.h
 serialize_attribs.c
 serialize_info.h
 serialize_stack.c
+serialize_stack.h
