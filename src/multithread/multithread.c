@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2000/03/30 15:11:47  jhs
+ * added AdjustCalls
+ *
  * Revision 1.16  2000/03/29 16:09:33  jhs
  * BlocksLift added.
  *
@@ -123,6 +126,7 @@
 #include "dataflow_analysis.h"
 #include "barriers_init.h"
 #include "blocks_lift.h"
+#include "adjust_calls.h"
 
 /******************************************************************************
  *
@@ -466,6 +470,15 @@ MUTHmodul (node *arg_node, node *arg_info)
     DBUG_PRINT ("MUTH", ("end BlocksLift"));
 
     if ((break_after == PH_spmdregions) && (strcmp ("barin", break_specifier) == 0)) {
+        goto cont;
+    }
+
+    DBUG_PRINT ("MUTH", ("begin AdjustCalls"));
+    MUTHdriver (MODUL_FUNS (arg_node), arg_info, AdjustCalls1, MUTHignore);
+    MUTHdriver (MODUL_FUNS (arg_node), arg_info, AdjustCalls2, MUTHignore);
+    DBUG_PRINT ("MUTH", ("end AdjustCalls"));
+
+    if ((break_after == PH_spmdregions) && (strcmp ("adjca", break_specifier) == 0)) {
         goto cont;
     }
 
