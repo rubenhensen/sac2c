@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/04/04 15:12:04  nmw
+ * dbug assert modified for better breakpoint
+ *
  * Revision 3.16  2001/03/26 15:36:32  nmw
  * SSALIR traversal added
  *
