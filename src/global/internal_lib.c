@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1996/01/07 16:53:11  cg
+ * Revision 1.12  1996/01/16 16:44:42  cg
+ * added function TmpVar for generation of variable names
+ *
+ * Revision 1.11  1996/01/07  16:53:11  cg
  * added DBUG_PRINT
  *
  * Revision 1.10  1996/01/05  12:26:54  cg
@@ -242,4 +245,35 @@ SystemTest (char *format, ...)
     DBUG_PRINT ("SYSCALL", ("test returns %d", exit_code));
 
     DBUG_RETURN (exit_code);
+}
+
+/*
+ *
+ *  functionname  : TmpVar
+ *  arguments     : ---
+ *  description   : generates string to be used as artificial variable
+ *  global vars   : ---
+ *  internal funs : Malloc
+ *  external funs : sprintf
+ *  macros        : DBUG...
+ *
+ *  remarks       : The variable name is different in each call of TmpVar.
+ *                  The actual name "tmp__cg_??" was chosen to avoid
+ *                  conflicts with so far used artificial variables.
+ *
+ */
+
+char *
+TmpVar ()
+{
+    static int counter = 0;
+    char *result;
+
+    DBUG_ENTER ("TmpVar");
+
+    result = (char *)Malloc (sizeof (char) * 20);
+    sprintf (result, "__tmp_cg_%d", counter);
+    counter++;
+
+    DBUG_RETURN (result);
 }

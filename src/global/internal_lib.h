@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1996/01/05 12:26:54  cg
+ * Revision 1.6  1996/01/16 16:44:42  cg
+ * added function TmpVar for generation of variable names
+ *
+ * Revision 1.5  1996/01/05  12:26:54  cg
  * added functions SystemTest and SystemCall
  *
  * Revision 1.4  1995/07/24  09:01:48  asi
@@ -23,11 +26,12 @@
 
 #define _internal_lib_h
 
-void *Malloc (int size);
-char *StringCopy (char *source);
-char *itoa (long number);
-void SystemCall (char *format, ...);
-int SystemTest (char *format, ...);
+extern void *Malloc (int size);
+extern char *StringCopy (char *source);
+extern char *itoa (long number);
+extern void SystemCall (char *format, ...);
+extern int SystemTest (char *format, ...);
+extern char *TmpVar ();
 
 #define SWAP(ptr1, ptr2)                                                                 \
     {                                                                                    \
