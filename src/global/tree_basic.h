@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.93  1998/03/21 21:58:54  dkr
+ * added macros WLNODE_???
+ *
  * Revision 1.92  1998/03/21 14:06:00  dkr
  * changed MakeWLublock
  *
@@ -2315,6 +2318,18 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 
 /*--------------------------------------------------------------------------*/
 
+/*
+ * here are some macros for N_WLblock, N_WLublock and N_WLproj:
+ */
+
+#define WLNODE_BOUND1(n) (n->counter)
+#define WLNODE_BOUND2(n) (n->varno)
+#define WLNODE_NEXT(n) (n->node[4])
+
+#define WLNODE_MODIFIED(n) (n->info.prf_dec.tc)
+
+/*--------------------------------------------------------------------------*/
+
 /***
  *** N_WLblock :
  ***
@@ -2332,6 +2347,10 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***    int      BOUND2    (0)
  ***    int      BLOCKING  (0)
  ***
+ ***  temporary attributes:
+ ***
+ ***    int      MODIFIED  (!)    (Precompile ! )
+ ***
  ***
  ***  remark:
  ***    it makes no sense to use the nodes NEXTDIM and CONTENTS simultaneous!
@@ -2343,12 +2362,14 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int blocki
 
 #define WLBLOCK_LEVEL(n) (n->refcnt)
 #define WLBLOCK_DIM(n) (n->flag)
-#define WLBLOCK_BOUND1(n) (n->counter)
-#define WLBLOCK_BOUND2(n) (n->varno)
+#define WLBLOCK_BOUND1(n) (WLNODE_BOUND1 (n))
+#define WLBLOCK_BOUND2(n) (WLNODE_BOUND2 (n))
 #define WLBLOCK_BLOCKING(n) (n->lineno)
 #define WLBLOCK_NEXTDIM(n) (n->node[0])
 #define WLBLOCK_CONTENTS(n) (n->node[1])
-#define WLBLOCK_NEXT(n) (n->node[2])
+#define WLBLOCK_NEXT(n) (WLNODE_NEXT (n))
+
+#define WLBLOCK_MODIFIED(n) (WLNODE_MODIFIED (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2369,6 +2390,10 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int blocki
  ***    int      BOUND2    (0)
  ***    int      BLOCKING  (0)
  ***
+ ***  temporary attributes:
+ ***
+ ***    int      MODIFIED  (!)    (Precompile ! )
+ ***
  ***
  ***  remark:
  ***    it makes no sense to use the nodes NEXTDIM and CONTENTS simultaneous!
@@ -2386,6 +2411,8 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int block
 #define WLUBLOCK_NEXTDIM(n) (WLBLOCK_NEXTDIM (n))
 #define WLUBLOCK_CONTENTS(n) (WLBLOCK_CONTENTS (n))
 #define WLUBLOCK_NEXT(n) (WLBLOCK_NEXT (n))
+
+#define WLUBLOCK_MODIFIED(n) (WLNODE_MODIFIED (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2417,14 +2444,14 @@ extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
 
 #define WLPROJ_LEVEL(n) (n->refcnt)
 #define WLPROJ_DIM(n) (n->flag)
-#define WLPROJ_BOUND1(n) (n->counter)
-#define WLPROJ_BOUND2(n) (n->varno)
+#define WLPROJ_BOUND1(n) (WLNODE_BOUND1 (n))
+#define WLPROJ_BOUND2(n) (WLNODE_BOUND2 (n))
 #define WLPROJ_STEP(n) (n->lineno)
 #define WLPROJ_UNROLLING(n) (n->info.prf_dec.tag)
 #define WLPROJ_CONTENTS(n) (n->node[0])
-#define WLPROJ_NEXT(n) (n->node[1])
+#define WLPROJ_NEXT(n) (WLNODE_NEXT (n))
 
-#define WLPROJ_MODIFIED(n) (n->info.prf_dec.tc)
+#define WLPROJ_MODIFIED(n) (WLNODE_MODIFIED (n))
 
 /*--------------------------------------------------------------------------*/
 
