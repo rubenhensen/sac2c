@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2001/02/28 16:01:48  nmw
+ * INFO_SSADCR_LET added
+ *
  * Revision 3.33  2001/02/27 16:05:01  nmw
  * INFO_SSADCR macros added
  *
@@ -2312,6 +2315,7 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      APFUNDEF          (called functions to remove results from)
  ***    int        RESCOUNT          (counter when traversing the results)
  ***    int        RESNEEDED         (counter for needed results of a fun_ap)
+ ***    node*      LET               (actual let node)
  ***
  *** remarks:
  ***    N_info is used in many other phases without access macros :((
@@ -2723,6 +2727,7 @@ extern node *MakeInfo ();
 #define INFO_SSADCR_APFUNDEF(n) (n->node[1])
 #define INFO_SSADCR_RESCOUNT(n) (n->counter)
 #define INFO_SSADCR_RESNEEDED(n) (n->refcnt)
+#define INFO_SSADCR_LET(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
