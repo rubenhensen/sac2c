@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2004/11/29 19:30:08  sah
+ * added namespace for function main
+ *
  * Revision 3.44  2004/11/29 17:43:32  sah
  * objinit disabled
  *
@@ -871,7 +874,7 @@ GSCprintMain ()
     GSCprintMainBegin ();
 
     INDENT;
-    fprintf (global.outfile, "SACf_main( ");
+    fprintf (global.outfile, "SACf_" MAIN_MOD_NAME "__main( ");
     if (print_thread_id) {
         fprintf (global.outfile, "SAC_ND_ARG_in( %s), ", mythread_NT);
     }
