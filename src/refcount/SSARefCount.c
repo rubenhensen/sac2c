@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/05/10 16:23:28  ktr
+ * RCOracle inserted.
+ *
  * Revision 1.12  2004/05/10 16:08:19  ktr
  * Removed some printf output.
  *
@@ -309,19 +312,20 @@ IncList_PopNext (node *arg_info)
     return (res);
 }
 
+bool
+RCOracle (node *avis, int count)
+{
+    return (count != 0);
+}
+
 node *
 MakeAdjustRC (node *avis, int count, node *next_node)
 {
     node *n;
     ids *ids1, *ids2;
 
-    if (count == 0)
+    if (!RCOracle (avis, count))
         return next_node;
-
-#ifndef SSARC_DEVELOP
-    if ((count == 0) || (TYPES_DIM (VARDEC_TYPE (AVIS_VARDECORARG (avis))) == 0))
-        return next_node;
-#endif
 
     ids1 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (avis))), NULL, ST_regular);
 
