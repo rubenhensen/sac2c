@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.125  2002/06/10 20:40:23  ktr
+ * More INFO_WLS_*-Macros inserted.
+ *
  * Revision 3.124  2002/06/06 18:23:38  dkr
  * comment about ID_NT_TAG corrected
  *
@@ -2560,9 +2563,12 @@ extern node *MakeAvis (node *vardecOrArg);
  ***
  ***
  ***  when used in WithloopScalarization.c
- ***    bool       POSSIBLE          (true, if WLS is possible
+ ***    bool       POSSIBLE          (true, if WLS is possible)
  ***    int        PHASEINT          (phase of WLS, casted do wls_phase)
  ***    node*      FUNDEF            (current fundef)
+ ***    int        PARTS             (parts of the new withloop)
+ ***    ids*       WITHVEC           (withvec of new withloop)
+ ***    node*      WITHOP            (withop of the outer withloop)
  ***
  ***  remarks:
  ***
@@ -3068,6 +3074,8 @@ extern node *MakeInfo ();
 #define INFO_WLS_PHASE(n) (n->lineno)
 #define INFO_WLS_FUNDEF(n) (n->node[0])
 #define INFO_WLS_PARTS(n) (n->counter)
+#define INFO_WLS_WITHVEC(n) (n->info.ids)
+#define INFO_WLS_WITHOP(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
