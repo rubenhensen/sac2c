@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2003/03/09 13:47:42  ktr
+ * removed an unnecessary printf-line.
+ *
  * Revision 1.28  2003/03/07 22:16:37  ktr
  * aggressive behaviour now creates copy-withloops for all expressions
  * that cannot be handled by other mechanisms.
@@ -1115,8 +1118,6 @@ node *
 withloopifyPart (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("withloopifyPart");
-
-    printf ("withloopify\n");
 
     /* if the part's expr is the index vector we need to insert
        a definition of it into the codeblock */
