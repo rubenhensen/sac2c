@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.21  1997/04/25 12:04:10  sbs
+# Revision 1.22  1997/05/14 06:44:41  sbs
+# analyse.o inserted
+#
+# Revision 1.21  1997/04/25  12:04:10  sbs
 # make deps done
 #
 # Revision 1.20  1996/02/16  09:46:54  sbs
@@ -73,7 +76,7 @@ CC=gcc -ansi -g
 INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount
 MACS=icm.data icm_decl.c icm_args.c icm_comment.c icm_trace.c
 
-all: compile.o icm2c.o precompile.o libsac.a
+all: compile.o icm2c.o precompile.o libsac.a analyse.o
 
 BEtest: icm2c.c $(MACS)
 	$(CC) -o BEtest icm2c.c -DTEST_BACKEND $(INCS) ../../lib/dbug.o
@@ -83,6 +86,9 @@ compile.o: compile.c
 
 icm2c.o: icm2c.c
 	$(CC) -o icm2c.o -c icm2c.c $(INCS)
+
+analyse.o: analyse.c
+	$(CC) -o analyse.o -c analyse.c $(INCS)
 
 precompile.o: precompile.c
 	$(CC) -o precompile.o -c precompile.c $(INCS)
@@ -135,4 +141,3 @@ precompile.o: ../global/globals.h ../global/free.h ../../inc/dbug.h
 precompile.o: ../global/my_debug.h /usr/include/malloc.h
 precompile.o: ../global/internal_lib.h ../print/convert.h
 precompile.o: ../global/traverse.h ../refcount/refcount.h
-print.o: libsac.h icm2c.h /usr/include/malloc.h /usr/include/memory.h

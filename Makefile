@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.48  1997/04/25 14:27:10  sbs
+# Revision 1.49  1997/05/14 06:44:20  sbs
+# analyse.o inserted
+#
+# Revision 1.48  1997/04/25  14:27:10  sbs
 # fuer cg: libm.a deleted
 #
 # Revision 1.47  1997/04/25  12:25:01  sbs
@@ -183,7 +186,8 @@ MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
 OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/rmvoidfun.o
 REFCOUNT= src/refcount/refcount.o
-COMPILE= src/compile/compile.o src/compile/icm2c.o src/compile/precompile.o
+COMPILE= src/compile/compile.o src/compile/icm2c.o src/compile/precompile.o \
+         src/compile/analyse.o
 
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
     $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT)
