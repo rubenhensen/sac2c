@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2002/06/03 11:29:15  dkr
+ * MakeId_Copy, MakeIds_Copy: parameter 'name' might be NULL now
+ *
  * Revision 3.51  2002/06/02 21:46:48  dkr
  * ID_NT_TAG modified
  *
@@ -236,6 +239,7 @@ ids *
 MakeIds (char *name, char *mod, statustype status)
 {
     ids *tmp;
+
     DBUG_ENTER ("MakeIds");
 
     tmp = ALLOCATE (ids);
@@ -263,6 +267,10 @@ MakeIds_Copy (char *name)
 
     DBUG_ENTER ("MakeIds1");
 
+    if (name == NULL) {
+        name = "";
+    }
+
     result = MakeIds (StringCopy (name), NULL, ST_regular);
 
     DBUG_RETURN (result);
@@ -274,6 +282,7 @@ nums *
 MakeNums (int num, nums *next)
 {
     nums *tmp;
+
     DBUG_ENTER ("MakeNums");
 
     tmp = ALLOCATE (nums);
@@ -290,6 +299,7 @@ MakeDeps (char *name, char *decname, char *libname, statustype status, locationt
           deps *sub, deps *next)
 {
     deps *tmp;
+
     DBUG_ENTER ("MakeDeps");
 
     tmp = ALLOCATE (deps);
@@ -310,6 +320,7 @@ strings *
 MakeStrings (char *string, strings *next)
 {
     strings *tmp;
+
     DBUG_ENTER ("MakeStrings");
 
     tmp = ALLOCATE (strings);
@@ -325,6 +336,7 @@ nodelist *
 MakeNodelist (node *node, statustype status, nodelist *next)
 {
     nodelist *tmp;
+
     DBUG_ENTER ("MakeNodelist");
 
     tmp = ALLOCATE (nodelist);
@@ -343,7 +355,7 @@ MakeNodelist (node *node, statustype status, nodelist *next)
         NODELIST_ATTRIB (tmp) = ST_regular;
         break;
     default:
-        DBUG_ASSERT (0, ("Wrong node type in MakeNodelist"));
+        DBUG_ASSERT ((0), ("Wrong node type in MakeNodelist"));
     }
 
     DBUG_RETURN (tmp);
@@ -355,6 +367,7 @@ nodelist *
 MakeNodelistNode (node *node, nodelist *next)
 {
     nodelist *tmp;
+
     DBUG_ENTER ("MakeNodelistNode");
 
     tmp = ALLOCATE (nodelist);
@@ -1051,13 +1064,17 @@ MakeId (char *name, char *mod, statustype status)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeId_Copy (char *str)
+MakeId_Copy (char *name)
 {
     node *result;
 
     DBUG_ENTER ("MakeId_Copy");
 
-    result = MakeId (StringCopy (str), NULL, ST_regular);
+    if (name == NULL) {
+        name = "";
+    }
+
+    result = MakeId (StringCopy (name), NULL, ST_regular);
 
     DBUG_RETURN (result);
 }
@@ -1065,14 +1082,14 @@ MakeId_Copy (char *str)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeId_Copy_NT (char *str, types *type)
+MakeId_Copy_NT (char *name, types *type)
 {
     node *result;
 
     DBUG_ENTER ("MakeId_Copy");
 
-    result = MakeId_Copy (str);
-    ID_NT_TAG (result) = CreateNtTag (str, type);
+    result = MakeId_Copy (name);
+    ID_NT_TAG (result) = CreateNtTag (name, type);
 
     DBUG_RETURN (result);
 }
@@ -1082,14 +1099,14 @@ MakeId_Copy_NT (char *str, types *type)
 node *
 MakeId_Num (int val)
 {
-    char *str;
+    char *name;
     node *result;
 
     DBUG_ENTER ("MakeId_Num");
 
-    str = (char *)Malloc (20 * sizeof (char));
-    sprintf (str, "%d", val);
-    result = MakeId (str, NULL, ST_regular);
+    name = (char *)Malloc (20 * sizeof (char));
+    sprintf (name, "%d", val);
+    result = MakeId (name, NULL, ST_regular);
 
     DBUG_RETURN (result);
 }
@@ -1259,7 +1276,7 @@ MakeIcm (char *name, node *args)
     ICM_NAME (tmp) = name;
     ICM_ARGS (tmp) = args;
 
-    DBUG_ASSERT (name != NULL, "MakeIcm called with empty ICM name.");
+    DBUG_ASSERT ((name != NULL), "MakeIcm called with empty ICM name.");
 
     if (strcmp (name, "MT_START_SYNCBLOCK") == 0) {
         ICM_INDENT_BEFORE (tmp) = 0;
@@ -1945,6 +1962,7 @@ MakeCWrapper (node *next, char *name, char *mod, int argcount, int rescount)
     CWRAPPER_ARGCOUNT (new_node) = argcount;
     CWRAPPER_RESCOUNT (new_node) = rescount;
     CWRAPPER_FUNS (new_node) = NULL; /* initialized without a mapped fundef */
+
     DBUG_RETURN (new_node);
 }
 
