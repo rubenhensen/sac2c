@@ -1,5 +1,4 @@
 
-
 #include "tree.h"
 #include "traverse.h"
 #include "free.h"
@@ -131,8 +130,8 @@ O2Nwith (node *arg_node, node *arg_info)
         break;
     case N_foldfun:
         new_withop = MakeNWithOp (WO_foldfun);
-        NWITHOP_FUN (new_withop).id = FOLDFUN_NAME (old_operator);
-        NWITHOP_FUN (new_withop).id_mod = FOLDFUN_MOD (old_operator);
+        NWITHOP_FUN (new_withop) = FOLDFUN_NAME (old_operator);
+        NWITHOP_MOD (new_withop) = FOLDFUN_MOD (old_operator);
         NWITHOP_NEUTRAL (new_withop) = FOLDFUN_NEUTRAL (old_operator);
         new_block = FOLDFUN_BODY (old_operator);
 
