@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2001/03/23 15:37:22  dkr
+ * INFO_DUP_ALL removed
+ *
  * Revision 3.25  2001/03/22 20:01:08  dkr
  * include of tree.h eliminated
  *
@@ -202,7 +205,6 @@ DupTreeOrNodeLUT_Type (int NodeOnly, node *arg_node, LUT_t lut, int type)
         arg_info = MakeInfo ();
 
         INFO_DUP_TYPE (arg_info) = type;
-        INFO_DUP_ALL (arg_info) = FALSE;
 
         /*
          *  Via this (ugly) macro DUPCONT the decision to copy the whole tree
@@ -1111,19 +1113,10 @@ DupAssign (node *arg_node, node *arg_info)
     ASSIGN_CSE( new_node) = ???;
     ASSIGN_CF( new_node) = ???;
     ASSIGN_INDEX( new_node) = ???;
+    ASSIGN_DEFMASK( new_node) = DupMask( ASSIGN_DEFMASK( arg_node), 400);
+    ASSIGN_USEMASK( new_node) = DupMask( ASSIGN_USEMASK( arg_node), 400);
+    ASSIGN_MRDMASK( new_node) = DupMask( ASSIGN_MRDMASK( arg_node), 400);
 #endif
-
-        if (INFO_DUP_ALL (arg_info)) {
-            if (ASSIGN_DEFMASK (arg_node) != NULL) {
-                ASSIGN_DEFMASK (new_node) = DupMask (ASSIGN_DEFMASK (arg_node), 400);
-            }
-            if (ASSIGN_USEMASK (arg_node) != NULL) {
-                ASSIGN_USEMASK (new_node) = DupMask (ASSIGN_USEMASK (arg_node), 400);
-            }
-            if (ASSIGN_MRDMASK (arg_node) != NULL) {
-                ASSIGN_MRDMASK (new_node) = DupMask (ASSIGN_MRDMASK (arg_node), 400);
-            }
-        }
 
         CopyCommonNodeData (new_node, arg_node);
     }
