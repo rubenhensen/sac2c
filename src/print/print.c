@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.79  2000/06/21 13:30:40  jhs
+ * Added assertion, detecting ASSIGN_INSTR == NULL in PrintAssign.
+ *
  * Revision 2.78  2000/06/14 12:05:04  jhs
  * Prints ST_IDENTIFER and MT_IDENTIFER now.
  * ./
@@ -59,50 +62,6 @@
  *
  * Revision 2.60  2000/03/20 18:43:32  dkr
  * SYSWARN added for unbalanced indentation
- *
- * Revision 2.59  2000/03/20 10:33:17  dkr
- * indentation of ICMs reactivated
- * WHY THE HELL IS THE OUTPUT OF THE PRINT MODUL CORRUPTED AFTER EACH
- * UPDATE??
- *
- * Revision 2.58  2000/03/16 16:19:06  dkr
- * some output layout errors fixed
- *
- * Revision 2.57  2000/03/15 14:56:56  dkr
- * PrintNodeTree renamed to PrintAST
- * PrintNodeAST added (but not yet implemented)
- *
- * Revision 2.56  2000/03/09 18:31:53  jhs
- * Added print of [LET|RETURN][USE|DEF]MASK.
- *
- * Revision 2.55  2000/03/02 15:56:00  jhs
- * Added printing of FUNDEF_ATTRIB at N_fundef.
- *
- * Revision 2.54  2000/03/02 13:08:48  jhs
- * Added some \n.
- *
- * Revision 2.53  2000/02/24 17:59:35  dkr
- * Fixed a bug: PrintIds() has an arg_info now
- *
- * Revision 2.52  2000/02/24 16:52:08  dkr
- * some brushing done
- * functions for old with-loop removed
- *
- * Revision 2.51  2000/02/23 23:05:29  dkr
- * spacing in PrintAp, PrintArgs, PrintFundef, ... slightly changed
- *
- * Revision 2.49  2000/02/23 20:16:34  cg
- * Node status ST_imported replaced by ST_imported_mod and
- * ST_imported_class in order to allow distinction between enteties
- * that are imported from a module and those that are imported from a
- * class.
- *
- * Revision 2.48  2000/02/23 14:06:32  dkr
- * superfluous indentation of loop- and cond-bodies removed
- *
- * Revision 2.47  2000/02/21 12:49:48  jhs
- * Removed superfluous variable nametab and replaced it's only usage with
- * mdb_nodetype, already used at other places within this file
  *
  * [...]
  *
@@ -667,6 +626,8 @@ PrintAssign (node *arg_node, node *arg_info)
     DBUG_EXECUTE ("WLI", if (N_let == NODE_TYPE (ASSIGN_INSTR (arg_node))
                              && F_psi == PRF_PRF (LET_EXPR (ASSIGN_INSTR (arg_node))))
                            DbugIndexInfo (ASSIGN_INDEX (arg_node)););
+
+    DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "instruction of N_assign is NULL");
 
     if (N_icm == NODE_TYPE (ASSIGN_INSTR (arg_node))) {
         if (ICM_INDENT (ASSIGN_INSTR (arg_node)) < 0) {
