@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.13  1998/08/27 14:47:40  cg
+ * bugs fixed in implementations of ICMs ADJUST_SCHEDULER and
+ * SCHEDULER_Block_DIM0.
+ *
  * Revision 1.12  1998/08/03 10:50:52  cg
  * added implementation of new ICM MT_ADJUST_SCHEDULER
  *
@@ -443,14 +447,17 @@ typedef union {
  *  Definitions of macro-implemented ICMs for scheduling
  */
 
-#define SAC_MT_ADJUST_SCHEDULER(array, dim, lower, unrolling, offset)                    \
+#define SAC_MT_ADJUST_SCHEDULER(array, dim, lower, upper, unrolling, offset)             \
     {                                                                                    \
-        int tmp = (SAC_WL_MT_SCHEDULE_START (dim) - lower) % unrolling;                  \
+        if ((SAC_WL_MT_SCHEDULE_START (dim) > lower)                                     \
+            && (SAC_WL_MT_SCHEDULE_START (dim) < upper)) {                               \
+            int tmp = (SAC_WL_MT_SCHEDULE_START (dim) - lower) % unrolling;              \
                                                                                          \
-        if (tmp) {                                                                       \
-            tmp = unrolling - tmp;                                                       \
-            SAC_WL_MT_SCHEDULE_START (dim) += tmp;                                       \
-            array##__destptr += tmp * offset;                                            \
+            if (tmp) {                                                                   \
+                tmp = unrolling - tmp;                                                   \
+                SAC_WL_MT_SCHEDULE_START (dim) += tmp;                                   \
+                array##__destptr += tmp * (offset);                                      \
+            }                                                                            \
         }                                                                                \
     }
 
@@ -466,12 +473,12 @@ typedef union {
                                                                                          \
         if (iterations_rest && (SAC_MT_MYTHREAD () < iterations_rest)) {                 \
             SAC_WL_MT_SCHEDULE_START (0)                                                 \
-              = lower + SAC_MT_MYTHREAD () * (iterations_per_thread + 1);                \
+              = lower + SAC_MT_MYTHREAD () * (iterations_per_thread + unrolling);        \
             SAC_WL_MT_SCHEDULE_STOP (0)                                                  \
-              = SAC_WL_MT_SCHEDULE_START (0) + (iterations_per_thread + 1);              \
+              = SAC_WL_MT_SCHEDULE_START (0) + (iterations_per_thread + unrolling);      \
         } else {                                                                         \
-            SAC_WL_MT_SCHEDULE_START (0)                                                 \
-              = (lower + iterations_rest) + SAC_MT_MYTHREAD () * iterations_per_thread;  \
+            SAC_WL_MT_SCHEDULE_START (0) = (lower + iterations_rest * unrolling)         \
+                                           + SAC_MT_MYTHREAD () * iterations_per_thread; \
             SAC_WL_MT_SCHEDULE_STOP (0)                                                  \
               = SAC_WL_MT_SCHEDULE_START (0) + iterations_per_thread;                    \
         }                                                                                \
