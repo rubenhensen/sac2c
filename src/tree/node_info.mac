@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.183  2004/08/10 11:03:09  sah
+ * renamed some free functions
+ *
  * Revision 3.182  2004/08/09 03:47:34  skt
  * kicked CDFGcond and CDFGwith2, added TravNone instead CDFGreturn
  *
@@ -2344,7 +2347,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_nwithid, "N_nwithid", TravSons, FltnNwithid, PrintNwithid, TravSons, TravSons,
-       TravSons, TravSons, FreeNWithID, TravSons, RCNwithid, EMRCNwithid, TravSons,
+       TravSons, TravSons, FreeNWithId, TravSons, RCNwithid, EMRCNwithid, TravSons,
        DupNwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        PrintNwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -2460,7 +2463,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    */
 
   NIF (N_nwith2, "N_nwith2", TravSons, TravSons, PrintNwith2, TravSons, GNMwith2,
-       TravSons, TravSons, FreeNwith2, TravSons, RCNwith, EMRCNwith2, TravSons, DupNwith2,
+       TravSons, TravSons, FreeNWith2, TravSons, RCNwith, EMRCNwith2, TravSons, DupNwith2,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -2773,7 +2776,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_cseinfo, "N_cseinfo", TravSons, TravSons, PrintCSEinfo, TravSons, TravSons,
-       TravSons, TravSons, FreeCSEinfo, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeCSEInfo, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,

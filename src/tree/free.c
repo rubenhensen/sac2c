@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2004/08/10 11:03:09  sah
+ * renamed some free functions
+ *
  * Revision 3.62  2004/08/08 12:13:21  ktr
  * NWITHOP_MEM is now freed, too.
  *
@@ -2107,9 +2110,9 @@ FreeNPart (node *arg_node, info *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeNWithID (node *arg_node, info *arg_info)
+FreeNWithId (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FreeNWithID");
+    DBUG_ENTER ("FreeNWithId");
     DBUG_PRINT ("FREE", ("Removing N_Nwithid node ..."));
 
     NWITHID_IDS (arg_node) = FreeAllIds (NWITHID_IDS (arg_node));
@@ -2211,7 +2214,7 @@ FreeNCode (node *arg_node, info *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeNwith2 (node *arg_node, info *arg_info)
+FreeNWith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeNWith2");
     DBUG_PRINT ("FREE", ("Removing N_Nwith2 node ..."));
@@ -2513,11 +2516,11 @@ FreeModspec (node *arg_node, info *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeCSEinfo (node *arg_node, info *arg_info)
+FreeCSEInfo (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("FreeCSEinfo");
+    DBUG_ENTER ("FreeCSEInfo");
 
     DBUG_PRINT ("FREE", ("Removing contents of N_cseinfo node ..."));
 

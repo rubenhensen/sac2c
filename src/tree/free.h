@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2004/08/10 11:03:09  sah
+ * renamed some free functions
+ *
  * Revision 3.22  2004/07/30 17:50:33  sah
  * switch to new INFO structure
  * PHASE I
@@ -169,12 +172,12 @@ extern node *FreeEX (node *arg_node, info *arg_info);
 /* with-loop */
 extern node *FreeNWith (node *arg_node, info *arg_info);
 extern node *FreeNPart (node *arg_node, info *arg_info);
-extern node *FreeNWithID (node *arg_node, info *arg_info);
+extern node *FreeNWithId (node *arg_node, info *arg_info);
 extern node *FreeNGenerator (node *arg_node, info *arg_info);
 extern node *FreeNWithOp (node *arg_node, info *arg_info);
 extern node *FreeNCode (node *arg_node, info *arg_info);
 
-extern node *FreeNwith2 (node *arg_node, info *arg_info);
+extern node *FreeNWith2 (node *arg_node, info *arg_info);
 extern node *FreeWLseg (node *arg_node, info *arg_info);
 extern node *FreeWLsegVar (node *arg_node, info *arg_info);
 extern node *FreeWLblock (node *arg_node, info *arg_info);
@@ -186,7 +189,7 @@ extern node *FreeWLgridVar (node *arg_node, info *arg_info);
 
 extern node *FreeCWrapper (node *arg_node, info *arg_info);
 extern node *FreeModspec (node *arg_node, info *arg_info);
-extern node *FreeCSEinfo (node *arg_node, info *arg_info);
+extern node *FreeCSEInfo (node *arg_node, info *arg_info);
 extern node *FreeSSAcnt (node *arg_node, info *arg_info);
 extern node *FreeAvis (node *arg_node, info *arg_info);
 extern node *FreeSSAstack (node *arg_node, info *arg_info);
