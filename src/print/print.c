@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.70  1995/06/09 13:31:42  asi
+ * Revision 1.71  1995/06/13 15:40:35  hw
+ * changed PrintId (now N_str will be printed also )
+ *
+ * Revision 1.70  1995/06/09  13:31:42  asi
  * inline will be printed now
  *
  * Revision 1.69  1995/06/06  14:04:53  cg
@@ -601,10 +604,15 @@ PrintId (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintId");
 
-    if ((0 == show_refcnt) || (-1 == arg_node->refcnt))
-        fprintf (outfile, "%s", arg_node->info.ids->id);
-    else
-        fprintf (outfile, "%s:%d", arg_node->info.ids->id, arg_node->refcnt);
+    DBUG_ASSERT ((N_id == arg_node->nodetype) || (N_str == arg_node->nodetype),
+                 "wrong arg_node->nodetype ");
+    if (N_id == arg_node->nodetype) {
+        if ((0 == show_refcnt) || (-1 == arg_node->refcnt))
+            fprintf (outfile, "%s", arg_node->info.ids->id);
+        else
+            fprintf (outfile, "%s:%d", arg_node->info.ids->id, arg_node->refcnt);
+    } else if (N_str == arg_node->nodetype)
+        fprintf (outfile, "%s", arg_node->info.id);
 
     DBUG_RETURN (arg_node);
 }
