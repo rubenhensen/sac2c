@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.30  2000/10/24 13:23:33  dkr
+ * MakeTypes renamed into MakeTypes1
+ *
  * Revision 2.29  2000/10/23 10:28:17  dkr
  * MakeId1 replaced by MakeId_Copy
  *
@@ -159,9 +162,8 @@ CreateObjInitFundef (node *module, node *arg_info)
     assign = MakeAssign (returns, NULL);
 
     /* create void procedure without args and with empty return in body */
-    fundef = MakeFundef (ObjInitFunctionName (), MODUL_NAME (module),
-                         MakeType (T_void, 0, NULL, NULL, NULL), NULL,
-                         MakeBlock (assign, NULL), MODUL_FUNS (module));
+    fundef = MakeFundef (ObjInitFunctionName (), MODUL_NAME (module), MakeTypes1 (T_void),
+                         NULL, MakeBlock (assign, NULL), MODUL_FUNS (module));
 
     FUNDEF_RETURN (fundef) = returns;
 
