@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/07/11 15:51:15  dkr
+ * ph_psiopt removed
+ *
  * Revision 1.1  2000/03/16 14:25:28  dkr
  * Initial revision
  *
@@ -63,8 +66,6 @@ PH_SEL (PH_initial, "", 0, 0),
   PH_SEL (PH_rmvoidfun, "Generating purely functional code", 0, 0),
 
   PH_SEL (PH_sacopt, "Running SAC optimizations", 0, 0),
-
-  PH_SEL (PH_psiopt, "Running PSI optimizations", 0, 0),
 
   PH_SEL (PH_refcnt, "Running reference count inference system", 0, 0),
 
