@@ -87,8 +87,8 @@ O2Nwith (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("O2Nwith");
 
-    old_generator = WITH_GEN (arg_node);
-    old_operator = WITH_OPERATOR (arg_node);
+    old_generator = Trav (WITH_GEN (arg_node), arg_info);
+    old_operator = Trav (WITH_OPERATOR (arg_node), arg_info);
 
     new_withid
       = MakeNWithid (WI_vector, MakeIds (GEN_ID (old_generator), NULL, ST_regular));
