@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.51  1997/11/05 09:38:49  dkr
+ * export of nnode[] added
+ *
  * Revision 1.50  1997/11/02 13:58:28  dkr
  * with defined NEWTREE, node->nnode is not used anymore
  *
@@ -224,6 +227,8 @@ specific implementation of a function should remain with the source code.
 #define MOD(a) ((NULL == a) ? "" : a)
 #define MOD_CON(a) ((NULL == a) ? "" : MOD_NAME_CON)
 #define MOD_NAME(a) MOD (a), MOD_CON (a)
+
+extern int nnode[];
 
 extern char *mod_name_con;
 extern char mod_name_con_1[];
