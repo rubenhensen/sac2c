@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/13 14:51:39  sbs
+ * changed initialization of feature_t vars from NULL into 0 !
+ *
  * Revision 3.2  2000/12/06 19:22:16  cg
  * Removed compiler warnings in production mode.
  *
@@ -716,7 +719,7 @@ node *
 WLAAwhile (node *arg_node, node *arg_info)
 {
     access_t *old_access = NULL;
-    feature_t old_feature = NULL;
+    feature_t old_feature = 0;
 
     DBUG_ENTER ("WLAAwhile");
 
@@ -771,7 +774,7 @@ node *
 WLAAdo (node *arg_node, node *arg_info)
 {
     access_t *old_access = NULL;
-    feature_t old_feature = NULL;
+    feature_t old_feature = 0;
 
     DBUG_ENTER ("WLAAdo");
 
