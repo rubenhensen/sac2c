@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2003/10/06 14:18:51  sah
+ * fixed small bug
+ *
  * Revision 1.26  2003/09/29 14:05:56  sah
  * added basic support for . in set notation
  * fixed some minor bugs
@@ -1451,7 +1454,7 @@ Exprs2Ids (node *exprs)
 int
 CountDotsInVector (node *ids)
 {
-    int result;
+    int result = 0;
 
     DBUG_ENTER ("CountDotsInVector");
 
