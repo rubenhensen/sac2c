@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/08/13 16:16:39  skt
+ * some comments added
+ *
  * Revision 1.7  2004/08/12 12:52:19  skt
  * some debugging...
  *
@@ -54,7 +57,6 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "assignments_rearrange.h"
-#include "create_dataflowgraph.h"
 #include "print.h"
 #include "multithread.h"
 
@@ -137,7 +139,7 @@ AssignmentsRearrange (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************->>
+/** <!--********************************************************************-->
  *
  * @fn node *ASMRAblock(node *arg_node, info *arg_info)
  *
@@ -176,17 +178,27 @@ ASMRAblock (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************->>
+/** <!--********************************************************************-->
  *
  * @fn node *ASMRACreateNewAssignmentOrder(node *arg_node)
  *
  * @brief Top-level rearrange arg_node's assignment-chain
- *
+ *   <pre> the rearranging proceeds in several steps
+ *         1. Initialize the dataflowgraph of the block (preparation)
+ *         2. Build a list of dataflownode-cluster
+ *            each cluster consists of dataflownodes with identical
+ *            executionmodes and MUTH_ANY-executionmodes
+ *            if their executionmode is MUTH_EXCLUSIVE or MUTH_SINGLE, the
+ *            different nodes of a cluster can depend on each other, otherwise
+ *            (MUTH_MULTI) this is forbitten
+ *         3. Arrange the elements of each cluster and dissolve the cluster
+ *            into a list of dataflownodes
+ *         4. Build a new assignmentchain for arg_node out of this list
+ *  </pre>
  * @param arg_node a N_block
  * @return N_block with rearranged assignment chain on top-level
  *
  ****************************************************************************/
-
 node *
 ASMRACreateNewAssignmentOrder (node *arg_node)
 {
@@ -208,6 +220,19 @@ ASMRACreateNewAssignmentOrder (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn struct asmra_list_s *ASMRABuildListOfCluster(node *graph)
+ *
+ * @brief build cluster of dataflownodes, belonging together;
+ *        the specific cluster are arranges in a list;
+ *        the sequence of the list-members fits the sequence the assignment of
+ *        the members has to be executed
+ *
+ * @param graph
+ * @return
+ *
+ ****************************************************************************/
 struct asmra_list_s *
 ASMRABuildListOfCluster (node *graph)
 {
@@ -248,6 +273,26 @@ ASMRABuildListOfCluster (node *graph)
     DBUG_RETURN (list_of_cluster);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn struct asmra_cluster_s *ASMRABuildCluster(node *graph, int execmode)
+ *
+ * @brief builds a cluster with execmode and MUTH_ANY out of the
+ *        dataflowgraph graph; if execmode is MUTH_MULTI, use only the nodes
+ *        with depends on noone, otherwise you can iterate i.e.update the
+ *        reference-counter REFLEFT in-between;
+ *  <pre> examples:
+ *        graph:  A(MT) -> B(MT) -> C(MT) -> D(MT) -> E(MT)
+ *        execmode: MT => return <A>
+ *        graph:  A(ST) -> B(ST) -> C(ST) -> D(ST) -> E(MT)
+ *        execmode: ST => return <A,B,C,D>
+ *  <pre>
+ *
+ * @param graph
+ * @param execmode
+ * @return
+ *
+ ****************************************************************************/
 struct asmra_cluster_s *
 ASMRABuildCluster (node *graph, int execmode)
 {
@@ -255,33 +300,57 @@ ASMRABuildCluster (node *graph, int execmode)
     struct asmra_cluster_s *result;
     struct asmra_cluster_s *result_part;
     bool node_added;
+
     DBUG_ENTER ("ASMRABuildCluster");
 
     result = NULL;
     result_part = NULL;
-    /*  do {*/
-    nextnode = ASMRAFindElement (graph, execmode);
-    node_added = FALSE;
-    while (nextnode != NULL) {
-        result_part = ASMRAClusterAdd (result_part, nextnode);
+    do {
+        node_added = FALSE;
+
+        /* first, find all dataflownodes with execmode, that only depend on the
+         * source and aren't in use */
         nextnode = ASMRAFindElement (graph, execmode);
-    }
-    if (result_part != NULL) {
-        result_part = ASMRAClusterRefUpdate (result_part);
-        result = ASMRAClusterMerge (result, result_part);
-        result_part = NULL;
-        node_added = TRUE;
-    }
-    /*}
-      while((node_added == TRUE) && (execmode != MUTH_MULTI));*/
+        while (nextnode != NULL) {
+            result_part = ASMRAClusterAdd (result_part, nextnode);
+            nextnode = ASMRAFindElement (graph, execmode);
+        }
+
+        /* second, find all dataflownodes with MUTH_ANY, that only depend on the
+         * source and aren't in use */
+        nextnode = ASMRAFindElement (graph, MUTH_ANY);
+        while (nextnode != NULL) {
+            result_part = ASMRAClusterAdd (result_part, nextnode);
+            nextnode = ASMRAFindElement (graph, MUTH_ANY);
+        }
+
+        /* third, update the referencecounter of the nodes, now new in use */
+        if (result_part != NULL) {
+            result_part = ASMRAClusterRefUpdate (result_part);
+            result = ASMRAClusterMerge (result, result_part);
+            result_part = NULL;
+            node_added = TRUE;
+        }
+
+    } while ((node_added == TRUE) && (execmode != MUTH_MULTI));
 
     DBUG_RETURN (result);
 }
 
-/*
- * returns a dataflownode from the graph with no references on it (exept the
- * one by the source) and which executionmode equals MUTH_ANY or execmode
- */
+/** <!--********************************************************************-->
+ *
+ * @fn node *ASMRAFindElement(node *graph, int execmode)
+ *
+ * @brief finds and returns a dataflownode of the dataflowgraph with
+ *        DATAFLOWNODE_EXECMODE(element) = execmode,
+ *        DATAFLOWNODE_REFLEFT(element) = 1, (only depended on the source) and
+ *        DATAFLOWNODE_USED(element) = FALSE (it is not used, yet)
+ *
+ * @param graph the dataflowgraph with used and unused nodes
+ * @param execmode
+ * @return see above
+ *
+ ****************************************************************************/
 node *
 ASMRAFindElement (node *graph, int execmode)
 {
@@ -293,14 +362,13 @@ ASMRAFindElement (node *graph, int execmode)
     member_iterator = DATAFLOWGRAPH_MEMBERS (graph);
 
     while (member_iterator != NULL) {
-        if (((DATAFLOWNODE_EXECMODE (NODELIST_NODE (member_iterator)) == execmode)
-             || (DATAFLOWNODE_EXECMODE (NODELIST_NODE (member_iterator)) == MUTH_ANY))
+        if ((DATAFLOWNODE_EXECMODE (NODELIST_NODE (member_iterator)) == execmode)
             && (DATAFLOWNODE_REFLEFT (NODELIST_NODE (member_iterator)) == 1)
             && (DATAFLOWNODE_USED (NODELIST_NODE (member_iterator)) == FALSE)) {
             result = NODELIST_NODE (member_iterator);
 
             /* set the executionmode of the result
-             * (important for ASMRADissolveCLuster) */
+             * (important for ASMRADissolveCluster) */
             DATAFLOWNODE_USED (result) = TRUE;
             member_iterator = NULL;
         } else {
@@ -310,6 +378,19 @@ ASMRAFindElement (node *graph, int execmode)
     DBUG_RETURN (result);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn struct asmra_list_s *ASMRADissolveAllCluster(struct asmra_list_s *list)
+ *
+ * @brief gets a list of cluster and returns a list of the dataflownodes out
+ *        of the cluster, whereas the sequence of the nodes corresponds to the
+ *        sequence of the cluster and the sequence of the nodes of one cluster
+ *        is optimal for split-phase communication
+ *
+ * @param list list of cluster
+ * @return list of dataflownodes
+ *
+ ****************************************************************************/
 struct asmra_list_s *
 ASMRADissolveAllCluster (struct asmra_list_s *list)
 {
@@ -326,6 +407,7 @@ ASMRADissolveAllCluster (struct asmra_list_s *list)
     act_node = NULL;
     iterator = list;
 
+    /* do the appending for all list elements (cluster) */
     while (iterator != NULL) {
         act_cluster = ASMRA_LIST_ELEMENT (iterator);
         act_cluster = ASMRACalculateDistances (act_cluster, iterator);
@@ -338,6 +420,8 @@ ASMRADissolveAllCluster (struct asmra_list_s *list)
 
         act_node = ASMRAGetNodeWithLowestDistance (act_cluster);
 
+        /* appends the current node with the lowest distance to the list as long
+         * as the cluster is empty (equals act_node == NULL */
         while (act_node != NULL) {
             DATAFLOWNODE_USED (act_node) = FALSE;
             list_of_dfn = ASMRAListAppend (list_of_dfn, act_node);
@@ -354,6 +438,20 @@ ASMRADissolveAllCluster (struct asmra_list_s *list)
     DBUG_RETURN (list_of_dfn);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn struct asmra_cluster_s *ASMRACalculateDistances(
+ *                                             struct asmra_cluster_s *cluster,
+ *                                             struct asmra_list_s *list)
+ *
+ * @brief calculates the distances between each nodes of the cluster and their
+ *        dependend nodes in the list
+ *
+ * @param cluster
+ * @param list
+ * @return cluster with correct distances
+ *
+ ****************************************************************************/
 struct asmra_cluster_s *
 ASMRACalculateDistances (struct asmra_cluster_s *cluster, struct asmra_list_s *list)
 {
@@ -370,11 +468,14 @@ ASMRACalculateDistances (struct asmra_cluster_s *cluster, struct asmra_list_s *l
     if (list != NULL) {
         /* is impossible to calculate a distance from someone without someone */
         while (act_member != NULL) {
+            /* calculate the distances one by one */
 
             ASMRA_CLUSTER_DISTANCE (act_member) = 0;
             list_iterator = list;
             dependent_nodes = DATAFLOWNODE_DEPENDENT (ASMRA_CLUSTER_DFN (act_member));
 
+            /* as long as you do not find a dependend node in the actual cluster,
+             * test the next one and increment the distance */
             while (list_iterator != NULL) {
                 found_dep = ASMRAFoundDependent (dependent_nodes,
                                                  ASMRA_LIST_ELEMENT (list_iterator));
@@ -392,6 +493,20 @@ ASMRACalculateDistances (struct asmra_cluster_s *cluster, struct asmra_list_s *l
     DBUG_RETURN (cluster);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn bool ASMRAFoundDependent(nodelist* dependent_nodes,
+ *                              struct asmra_cluster_s *search_area)
+ *
+ * @brief detect whether a node of dependent_nodes is witin the search_area
+ *        or not
+ *
+ * @param dependent_nodes
+ * @param search_area
+ * @return true, if there is a dependent_node within the saerch_area,
+ *         false otherwise
+ *
+ ****************************************************************************/
 bool
 ASMRAFoundDependent (nodelist *dependent_nodes, struct asmra_cluster_s *search_area)
 {
@@ -408,6 +523,17 @@ ASMRAFoundDependent (nodelist *dependent_nodes, struct asmra_cluster_s *search_a
     DBUG_RETURN (result);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn bool ASMRAIsInCluster(node *dfn, struct asmra_cluster_s *search_area)
+ *
+ * @brief true, if dfn element of the search_area, false otherwise
+ *
+ * @param dfn
+ * @param search_area
+ * @return see above
+ *
+ ****************************************************************************/
 bool
 ASMRAIsInCluster (node *dfn, struct asmra_cluster_s *search_area)
 {
@@ -425,8 +551,20 @@ ASMRAIsInCluster (node *dfn, struct asmra_cluster_s *search_area)
     DBUG_RETURN (result);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *ASMRAGetNodeWithLowestDistance(struct asmra_cluster_s *cluster)
+ *
+ * @brief finds the dataflownode in the cluster, which has the lowest attribute
+ *        ASMRA_CLUSTER_DISTANCE, tags it as !USED and returns it
+ *
+ * @param cluster the search area
+ * @return the dataflownode out of the cluster with the lowest distance, could
+ *         be NULL
+ *
+ ****************************************************************************/
 node *
-ASMRAGetNodeWithLowestDistance (struct asmra_cluster_s *act_cluster)
+ASMRAGetNodeWithLowestDistance (struct asmra_cluster_s *cluster)
 {
     node *result;
     int lowest_distance;
@@ -434,7 +572,7 @@ ASMRAGetNodeWithLowestDistance (struct asmra_cluster_s *act_cluster)
     DBUG_ENTER ("ASMRAGetNodeWithLowestDistance");
 
     result = NULL;
-    iterator = act_cluster;
+    iterator = cluster;
     lowest_distance = INT_MAX;
 
     while (iterator != NULL) {
@@ -454,6 +592,19 @@ ASMRAGetNodeWithLowestDistance (struct asmra_cluster_s *act_cluster)
     DBUG_RETURN (result);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *ASMRABuildNewAssignmentChain(struct asmra_list_s *list_of_dfn,
+ *                                        node *arg_node)
+ *
+ * @brief gets a list of dataflownodes and builds an assignment-chain out of
+ *        their assignments for the N_block arg_node *
+ *
+ * @param list_of_dfn list of dataflownodes, will be killed afterwards
+ * @param arg_node a N_block
+ * @return arg_node with a new assignment-chain in BLOCK_INSTR
+ *
+ ****************************************************************************/
 node *
 ASMRABuildNewAssignmentChain (struct asmra_list_s *list_of_dfn, node *arg_node)
 {
@@ -461,22 +612,24 @@ ASMRABuildNewAssignmentChain (struct asmra_list_s *list_of_dfn, node *arg_node)
     node *act_dfn;
     node *act_assign, *last_assign;
     DBUG_ENTER ("ASMRABuildNewAssignmentChain");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_block), "N_block expected");
 
     list_iterator = list_of_dfn;
+
+    /* the first assignment of the block */
     act_dfn = ASMRA_LIST_ELEMENT (list_iterator);
     act_assign = DATAFLOWNODE_ASSIGN (act_dfn);
-    /*PrintNode(DATAFLOWNODE_ASSIGN(act_assign));*/
     BLOCK_INSTR (arg_node) = act_assign;
 
     list_iterator = ASMRA_LIST_NEXT (list_iterator);
 
+    /* adds assignments as long as the list of dataflownodes is empty */
     while (list_iterator != NULL) {
 
         last_assign = act_assign;
         act_dfn = ASMRA_LIST_ELEMENT (list_iterator);
         act_assign = DATAFLOWNODE_ASSIGN (act_dfn);
 
-        /*PrintNode(act_assign);*/
         ASSIGN_NEXT (last_assign) = act_assign;
         list_iterator = ASMRA_LIST_NEXT (list_iterator);
     }
@@ -486,6 +639,16 @@ ASMRABuildNewAssignmentChain (struct asmra_list_s *list_of_dfn, node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn struct asmra_cluster_s *ASMRAMakeCluster(node *dfn)
+ *
+ * @brief creates a one elemented cluster with its element dfn
+ *
+ * @param dfn the initial-element of the cluster
+ * @return the new one-elemented cluster
+ *
+ ****************************************************************************/
 struct asmra_cluster_s *
 ASMRAMakeCluster (node *dfn)
 {
@@ -502,6 +665,16 @@ ASMRAMakeCluster (node *dfn)
     DBUG_RETURN (result);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn struct asmra_cluster_s *ASMRAFreeCluster(struct asmra_cluster_s *cluster)
+ *
+ * @brief frees the cluster datastructure
+ *
+ * @param cluster
+ * @return
+ *
+ ****************************************************************************/
 struct asmra_cluster_s *
 ASMRAFreeCluster (struct asmra_cluster_s *cluster)
 {
@@ -515,6 +688,18 @@ ASMRAFreeCluster (struct asmra_cluster_s *cluster)
     return cluster;
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn struct asmra_cluster_s *ASMRAClusterAdd(struct asmra_cluster_s *cluster,
+ *                                             node *dfn)
+ *
+ * @brief adds a dataflownode to a cluster
+ *
+ * @param cluster
+ * @param dfn the dataflownode to be added to cluster
+ * @return cluster incl. its new member dfn
+ *
+ ****************************************************************************/
 struct asmra_cluster_s *
 ASMRAClusterAdd (struct asmra_cluster_s *cluster, node *dfn)
 {
@@ -526,10 +711,24 @@ ASMRAClusterAdd (struct asmra_cluster_s *cluster, node *dfn)
     DBUG_RETURN (tmp);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn struct asmra_cluster_s *ASMRAClusterMerge
+ *                                        (struct asmra_cluster_s *cluster_1,
+ *                                         struct asmra_cluster_s *cluster_2)
+ *
+ * @brief merges two cluster by appending cluster_2 to cluster_1
+ *
+ * @param cluster_1
+ * @param cluster_2
+ * @return cluster_1 -> cluster_2
+ *
+ ****************************************************************************/
 struct asmra_cluster_s *
 ASMRAClusterMerge (struct asmra_cluster_s *cluster_1, struct asmra_cluster_s *cluster_2)
 {
     struct asmra_cluster_s *tmp;
+    struct asmra_cluster_s *old_tmp;
     DBUG_ENTER ("ASMRAClusterMerge");
 
     if (cluster_1 == NULL) {
@@ -537,26 +736,43 @@ ASMRAClusterMerge (struct asmra_cluster_s *cluster_1, struct asmra_cluster_s *cl
     } else {
         tmp = cluster_1;
         do {
+            old_tmp = tmp;
             tmp = ASMRA_CLUSTER_NEXT (tmp);
-        } while (ASMRA_CLUSTER_NEXT (tmp) != NULL);
+        } while (tmp != NULL);
 
-        ASMRA_CLUSTER_NEXT (tmp) = cluster_2;
+        ASMRA_CLUSTER_NEXT (old_tmp) = cluster_2;
     }
 
     DBUG_RETURN (cluster_1);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn struct asmra_cluster_s *ASMRAClusterRefUpdate(struct asmra_cluster_s
+ *                                                   *cluster)
+ *
+ * @brief updates the REFLEFT attributes of all dataflownode, that depend
+ *        on the member of this cluster
+ *
+ * @param cluster
+ * @return
+ *
+ ****************************************************************************/
 struct asmra_cluster_s *
 ASMRAClusterRefUpdate (struct asmra_cluster_s *cluster)
 {
     struct asmra_cluster_s *tmp;
     nodelist *dependent_iterator;
+    static int cell_id = 0;
     DBUG_ENTER ("ASMRAClusterRefUpdate");
 
     tmp = cluster;
     while (tmp != NULL) {
         /* update the reflefts in the member of the cluster */
         DATAFLOWNODE_REFLEFT (ASMRA_CLUSTER_DFN (tmp))--;
+
+        /* set the cell_id for this cluster */
+        ASSIGN_CELLID (DATAFLOWNODE_ASSIGN (ASMRA_CLUSTER_DFN (tmp))) = cell_id;
 
         /* update the reflefts in its dependent nodes */
         dependent_iterator = DATAFLOWNODE_DEPENDENT (ASMRA_CLUSTER_DFN (tmp));
@@ -567,9 +783,19 @@ ASMRAClusterRefUpdate (struct asmra_cluster_s *cluster)
 
         tmp = ASMRA_CLUSTER_NEXT (tmp);
     }
+    cell_id++;
     DBUG_RETURN (cluster);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn void ASMRAPrintCluster(struct asmra_cluster_s *cluster)
+ *
+ * @brief Prints cluster to stdout
+ *
+ * @param cluster
+ *
+ ****************************************************************************/
 void
 ASMRAPrintCluster (struct asmra_cluster_s *cluster)
 {
@@ -587,6 +813,16 @@ ASMRAPrintCluster (struct asmra_cluster_s *cluster)
     DBUG_VOID_RETURN;
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn struct asmra_list_s *ASMRAMakeList(void *element)
+ *
+ * @brief create a one elemented list with element as its element
+ *
+ * @param the new element
+ * @return the new list
+ *
+ ****************************************************************************/
 struct asmra_list_s *
 ASMRAMakeList (void *element)
 {
@@ -601,6 +837,16 @@ ASMRAMakeList (void *element)
     DBUG_RETURN (result);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn struct asmra_list_s *ASMRAFreeList(struct asmra_list_s *list)
+ *
+ * @brief frees the list list
+ *
+ * @param list the superflous list
+ * @return
+ *
+ ****************************************************************************/
 struct asmra_list_s *
 ASMRAFreeList (struct asmra_list_s *list)
 {
@@ -614,6 +860,18 @@ ASMRAFreeList (struct asmra_list_s *list)
     return list;
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn struct asmra_list_s *ASMRAListAppend(struct asmra_list_s *list,
+ *                                          void* element)
+ *
+ * @brief appends an element to a list at its tail
+ *
+ * @param list the list, might be NULL
+ * @param element the new element
+ * @return the list with its new added elenemt
+ *
+ ****************************************************************************/
 struct asmra_list_s *
 ASMRAListAppend (struct asmra_list_s *list, void *element)
 {
@@ -635,6 +893,17 @@ ASMRAListAppend (struct asmra_list_s *list, void *element)
     DBUG_RETURN (list);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *ASMRAPrepareDataflowgraph(node* graph)
+ *
+ * @brief nomen est omen - prepares the dataflowgraph for its use in asmra:
+ *        sets the dataflownode-attributes REFLEFT and USED
+ *
+ * @param graph the dataflowgraph to prepare
+ * @return the prepared dataflowgraph
+ *
+ ****************************************************************************/
 node *
 ASMRAPrepareDataflowgraph (node *graph)
 {

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/08/13 16:16:39  skt
+ * some comments added
+ *
  * Revision 1.7  2004/08/13 10:27:48  skt
  * comments, comments, comments...
  *
@@ -136,7 +139,7 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/** <!--********************************************************************->>
+/** <!--********************************************************************-->
  *
  * @fn  node *CreateDataflowgraph(node *arg_node)
  *
@@ -173,7 +176,7 @@ CreateDataflowgraph (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************->>
+/** <!--********************************************************************-->
  *
  * @fn node *CDFGblock(node *arg_node, info *arg_info)
  *
@@ -241,7 +244,7 @@ CDFGblock (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************->>
+/** <!--********************************************************************-->
  *
  * @fn node *CDFGassign(node *arg_node, info *arg_info)
  *
@@ -299,7 +302,7 @@ CDFGassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************->>
+/** <!--********************************************************************-->
  *
  * @fn node *CDFGid(node *arg_node, info *arg_info)
  *
@@ -331,7 +334,7 @@ CDFGid (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************->>
+/** <!--********************************************************************-->
  *
  * @fn node *CDFGwithid(node *arg_node, info *arg_info)
  *
@@ -370,7 +373,7 @@ CDFGwithid (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************->>
+/** <!--********************************************************************-->
  *
  * @fn node *CDFGUpdateDependency(node *dfn_assign, node *outer_graph,
  *                                node *current_node)
@@ -424,7 +427,7 @@ CDFGUpdateDependency (node *dfn_assign, node *outer_graph, node *current_node)
     DBUG_RETURN (outer_graph);
 }
 
-/** <!--********************************************************************->>
+/** <!--********************************************************************-->
  *
  * @fn node *CDFGFindAssignCorrespondingNode(node *graph, node *dfn_assign)
  *
@@ -485,7 +488,7 @@ CDFGFindAssignCorrespondingNode (node *graph, node *dfn_assign)
     DBUG_RETURN (result);
 }
 
-/** <!--********************************************************************->>
+/** <!--********************************************************************-->
  *
  * @fn node *CDFGLowestCommonLevel(node *node_one, node *node_two)
  *
@@ -505,7 +508,7 @@ CDFGFindAssignCorrespondingNode (node *graph, node *dfn_assign)
  *       let node_one be BA and node_two be BAa => return(DFG2)
  *       let node_one be BAA and node_two be BAa => return(DFG2)
  *       let node_one be BAA and node_two be BAC => return(DFG3)
- *
+ * </pre>
  * @param node_one
  * @param node_two
  * @return the dataflowgraph who contains both, node_one and node_two, could
@@ -566,7 +569,7 @@ CDFGLowestCommonLevel (node *node_one, node *node_two)
     DBUG_RETURN (result);
 }
 
-/** <!--********************************************************************->>
+/** <!--********************************************************************-->
  *
  * @fn void CDFGUpdateDataflowgraph(node *graph, node *node_one,
  *                                  node *node_two)
@@ -643,7 +646,7 @@ CDFGUpdateDataflowgraph (node *graph, node *node_one, node *node_two)
     DBUG_VOID_RETURN;
 }
 
-/** <!--********************************************************************->>
+/** <!--********************************************************************-->
  *
  * @fn bool CDFGFirstIsWithinSecond(node *inner_node, node* outer_node)
  *
@@ -689,7 +692,7 @@ CDFGFirstIsWithinSecond (node *inner_node, node *outer_node)
     DBUG_RETURN (result);
 }
 
-/** <!--********************************************************************->>
+/** <!--********************************************************************-->
  *
  * @fn char *CDFGGetName(node* assign)
  *
