@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2000/07/20 11:35:46  nmw
+ * added macro for runtimecheck of initialized module
+ *
  * Revision 1.5  2000/07/13 14:59:12  nmw
  * output of errormsg now with SAC_RuntimeError()
  *
@@ -60,6 +63,13 @@
     if (SAC_ARG_LRC (var) == 0) {                                                        \
         SAC_ARG_ELEMS (var) = NULL;                                                      \
         SAC_ARG_RC (var) = NULL;                                                         \
+    }
+
+/* checks at the beginning of each wrapper if the module has been initialized */
+#define SAC_IW_CHECK_MODINIT(flag, initfun)                                              \
+    if (!flag) {                                                                         \
+        flag = true;                                                                     \
+        initfun ();                                                                      \
     }
 
 #endif
