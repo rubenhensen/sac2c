@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2003/03/25 14:32:51  sbs
+ * FindVect made doxygen conform.
+ *
  * Revision 3.34  2003/03/12 18:02:19  dkr
  * comment for CreateVect2OffsetIcm() modified
  *
@@ -160,6 +163,11 @@
  */
 
 /*
+ * @file index.c
+ *
+ * This file contains the implementation of IVE (index vector elimination).
+ *
+ *
  * 1) Basics
  * ---------
  *
@@ -565,9 +573,9 @@
  * original vardecs are needed during the traversal of the body, the vardec
  * elimination is done after traversing the bodies
  *
- */
-
-/*
+ *
+ *******************************************************************************
+ *
  * Thus, we finally find the following usages of the arg_info node:
  *
  *    INFO_IVE_FUNDEF  - holds pointer to actual N_fundef
@@ -609,15 +617,17 @@ int ive_expr, ive_op;
  *                                                  already present
  */
 
-/*
+/******************************************************************************
  *
- *  functionname  : FindVect
- *  arguments     : 1) node * chain
- *  description   : checks whether VECT is in the chain and returns
- *                  either a vinfo-node with DOLLAR-flag (= no VECT in chain)
- *                  or the adress of the VECT-node
+ * @fn: node *FindVect( node *chain)
  *
- */
+ * description:
+ *   @brief checks whether VECT is in the chain and returns either DOLLAR or it.
+ *   @param chain  chain of vinfo-nodes to be searched
+ *   @return the address of the VECT-node or the address of a vinfo-node with
+ *           DOLLAR-flag (= no VECT in chain)
+ *
+ ******************************************************************************/
 
 node *
 FindVect (node *chain)
