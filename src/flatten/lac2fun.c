@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/02/14 14:39:24  dkr
+ * some DFM2... functions renamed.
+ * some ATTRIB/STATUS adjustment is done in DFM2... functions now.
+ * ATTRIB/STATUS information of FUNDEF_TYPES is set correctly for
+ * l2f-functions now.
+ *
  * Revision 3.10  2001/02/13 17:36:36  dkr
  * act_tab is stacked now
  *
@@ -221,30 +227,11 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFM
             || (ARG_ATTRIB (tmp) == ST_readonly_reference)) {
             ARG_ATTRIB (tmp) = ST_unique;
 
-            DBUG_PRINT ("L2F", ("ATTRIB[ .. %s( .. %s .. ) { .. } ]: "
+            DBUG_PRINT ("L2F", ("ARG_ATTRIB[ .. %s( .. %s .. ) { .. } ]: "
                                 " ST_..reference -> ST_unique",
                                 funname, ARG_NAME (tmp)));
         }
         tmp = ARG_NEXT (tmp);
-    }
-
-    ret = MakeAssign (MakeReturn (DFM2Exprs (out, lut)), NULL);
-
-    /*
-     * All return ids with attrib 'ST_was_reference' must have the status
-     *  'ST_artificial'
-     */
-    tmp = RETURN_EXPRS (ASSIGN_INSTR (ret));
-    while (tmp != NULL) {
-        if (ID_ATTRIB (EXPRS_EXPR (tmp)) == ST_was_reference) {
-            ID_ATTRIB (EXPRS_EXPR (tmp)) = ST_unique;
-            ID_STATUS (EXPRS_EXPR (tmp)) = ST_artificial;
-
-            DBUG_PRINT ("L2F", ("%s():  ATTRIB/STATUS[ return( %s) ] "
-                                " .. -> ST_unique/ST_artificial",
-                                funname, ID_NAME (EXPRS_EXPR (tmp))));
-        }
-        tmp = EXPRS_NEXT (tmp);
     }
 
     /*
@@ -312,12 +299,14 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFM
                 ARG_ATTRIB (tmp) = ST_unique;
             }
 
-            DBUG_PRINT ("L2F", ("ATTRIB[ .. %s( .. %s ..) { .. } ]: "
+            DBUG_PRINT ("L2F", ("ARG_ATTRIB[ .. %s( .. %s ..) { .. } ]: "
                                 " ST_was_reference -> ST_unique",
                                 funname, ARG_NAME (tmp)));
         }
         tmp = ARG_NEXT (tmp);
     }
+
+    ret = MakeAssign (MakeReturn (DFM2ReturnExprs (out, lut)), NULL);
 
     fundef
       = MakeFundef (StringCopy (funname), StringCopy (modname), DFM2ReturnTypes (out),
@@ -414,30 +403,12 @@ static node *
 MakeL2fFunLet (char *funname, char *modname, DFMmask_t in, DFMmask_t out)
 {
     node *let;
-    ids *tmp;
 
     DBUG_ENTER ("MakeL2fFunLet");
 
     let = MakeLet (MakeAp (StringCopy (funname), StringCopy (modname),
-                           DFM2Exprs (in, NULL)),
-                   DFM2Ids (out, NULL));
-
-    /*
-     * All left hand side ids with attrib 'ST_was_reference' must have the status
-     *  'ST_artificial'
-     */
-    tmp = LET_IDS (let);
-    while (tmp != NULL) {
-        if (IDS_ATTRIB (tmp) == ST_was_reference) {
-            IDS_ATTRIB (tmp) = ST_unique;
-            IDS_STATUS (tmp) = ST_artificial;
-
-            DBUG_PRINT ("L2F", ("ATTRIB/STATUS[ %s = %s( .. ) ] "
-                                " .. -> ST_unique/ST_artificial",
-                                IDS_NAME (tmp), funname));
-        }
-        tmp = IDS_NEXT (tmp);
-    }
+                           DFM2ApArgs (in, NULL)),
+                   DFM2LetIds (out, NULL));
 
     DBUG_RETURN (let);
 }
