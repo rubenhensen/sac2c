@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.189  1998/08/11 14:34:44  dkr
+ * comment for inline-fold-bug added
+ *
  * Revision 1.188  1998/08/11 00:14:46  dkr
  * unused vars removed
  *
@@ -915,7 +918,7 @@ AppendVardecs (node *vardecs, node *append)
  *   node *GetFoldCode( node *fundef)
  *
  * description:
- *   returns the foldop-code of the dummy fold-fun 'fundef'.
+ *   returns the foldop-code of the pseudo fold-fun 'fundef'.
  *
  ******************************************************************************/
 
@@ -927,7 +930,7 @@ GetFoldCode (node *fundef)
     DBUG_ENTER ("GetFoldCode");
 
     /*
-     * get code of the dummy fold-fun
+     * get code of the pseudo fold-fun
      */
     fold_code = DupTree (FUNDEF_INSTR (fundef), NULL);
 
@@ -959,7 +962,7 @@ GetFoldCode (node *fundef)
  *   node *GetFoldVardecs( node *fundef)
  *
  * description:
- *   returns the vardecs of the dummy fold-fun 'fundef'.
+ *   returns the vardecs of the pseudo fold-fun 'fundef'.
  *
  ******************************************************************************/
 
@@ -971,7 +974,7 @@ GetFoldVardecs (node *fundef)
     DBUG_ENTER ("GetFoldVardecs");
 
     /*
-     * get vardecs of the dummy fold-fun
+     * get vardecs of the pseudo fold-fun
      */
     fold_vardecs = DupTree (FUNDEF_VARDEC (fundef), NULL);
 
@@ -6518,7 +6521,7 @@ int multiple_segs = 0;
  *
  * description:
  *   Compilation of a N_with2 node.
- *   If this is a fold-with-loop, we append the vardecs of the dummy fold-fun
+ *   If this is a fold-with-loop, we append the vardecs of the pseudo fold-fun
  *    to the vardec-chain of the current function.
  *
  * remarks:
@@ -6557,7 +6560,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
      *   (If we have a fold, this is done automaticly when compiling the
      *    init-assignment 'wl_ids = neutral' !!!)
      *
-     * If we have a fold-op, insert the vardecs of the dummy fold-fun
+     * If we have a fold-op, insert the vardecs of the pseudo fold-fun
      *  into the vardec-chain of the current function.
      * Afterwards an update of the DFM-base is done.
      * (This must be done here, because 'COMPSync()' needs the corrected masks)
@@ -6603,7 +6606,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
         fundef = INFO_COMP_FUNDEF (arg_info);
 
         /*
-         * insert vardecs of dummy fold-fun
+         * insert vardecs of pseudo fold-fun
          */
         FUNDEF_VARDEC (fundef)
           = AppendVardecs (FUNDEF_VARDEC (fundef),
@@ -7477,50 +7480,71 @@ COMPWLgrid (node *arg_node, node *arg_info)
                 icm_args2 = FreeTree (icm_args2);
 
                 /******************************************************************
-                 * get code of the dummy fold-fun
+                 * get code of the pseudo fold-fun
                  */
 
-#if 1
                 fold_code = GetFoldCode (NWITHOP_FUNDEF (NWITH2_WITHOP (wl_node)));
-#else
                 /*
-                 * first, we create a function application of the form:
-                 *    <acc> = <fun>( <acc>, <cexpr>);
-                 * where
-                 *    <acc> is the accumulator variable
-                 *          & can be found via 'wl_ids'
-                 *    <fun> is the name of the (artificially introduced) folding-fun
-                 *          & can be found via 'NWITH2_WITHOP( wl_node)'
-                 *    <cexpr> is the expression in the operation part
-                 *            & can be found via 'NCODE_CEXPR( WLGRID_CODE( arg_node))'
+                 * CAUTION: If the current with-loop is inlined, we must generate
+                 *          an inline-specific instance of the pseudo fold-fun,
+                 *          to get the right var-names.
+                 *          It seems to be a good idea to do this not here in the
+                 *          backend, but during the inlining.
+                 *          For that we must patch the inline-traversal of DupTree,
+                 *          to generate a renamed instance of NWITHOP_FUNDEF.
+                 *          This is not yet implemented!!
                  */
 
-                fun = NWITH2_WITHOP (wl_node);
-                accvar = MakeId (StringCopy (IDS_NAME (wl_ids)),
-                                 StringCopy (IDS_MOD (wl_ids)), ST_regular);
-                ID_VARDEC (accvar) = IDS_VARDEC (wl_ids);
+#if 0
+          /*
+           * This is code is only needed, if there does not exist a inline-specific
+           * instance of the pseudo fold-fun.
+           * In this case we must rename the var-names in the fold-code by hand.
+           * Note, that the following code is even incorrect :(
+           */
 
-                funap
-                  = MakeAp (StringCopy (NWITHOP_FUN (fun)),
-                            StringCopy (NWITHOP_MOD (fun)),
-                            MakeExprs (accvar, MakeExprs (DupTree (cexpr, NULL), NULL)));
-                AP_FUNDEF (funap) = NWITHOP_FUNDEF (fun);
+          /*
+           * first, we create a function application of the form:
+           *    <acc> = <fun>( <acc>, <cexpr>);
+           * where
+           *    <acc> is the accumulator variable
+           *          & can be found via 'wl_ids'
+           *    <fun> is the name of the (artificially introduced) folding-fun
+           *          & can be found via 'NWITH2_WITHOP( wl_node)'
+           *    <cexpr> is the expression in the operation part
+           *            & can be found via 'NCODE_CEXPR( WLGRID_CODE( arg_node))'
+           */
+ 
+          fun = NWITH2_WITHOP( wl_node);
+          accvar = MakeId( StringCopy( IDS_NAME( wl_ids)),
+                           StringCopy( IDS_MOD( wl_ids)),
+                           ST_regular);
+          ID_VARDEC( accvar) = IDS_VARDEC( wl_ids);
+ 
+          funap = MakeAp( StringCopy( NWITHOP_FUN( fun)),
+                          StringCopy( NWITHOP_MOD( fun)),
+                          MakeExprs( accvar,
+                                     MakeExprs( DupTree( cexpr, NULL),
+                                                NULL)));
+          AP_FUNDEF( funap) = NWITHOP_FUNDEF( fun);
+ 
+          fold_code = MakeAssign( MakeLet( funap,
+                                           DupOneIds( wl_ids, NULL)),
+                                  NULL);
 
-                fold_code = MakeAssign (MakeLet (funap, DupOneIds (wl_ids, NULL)), NULL);
-
-                /*
-                 * Inlining of the fold-pseudo-fun.
-                 */
-                fold_code = InlineSingleApplication (ASSIGN_INSTR (fold_code),
-                                                     INFO_COMP_FUNDEF (arg_info));
+          /*
+           * Inlining of the fold-pseudo-fun.
+           */
+          fold_code = InlineSingleApplication( ASSIGN_INSTR( fold_code),
+                                               INFO_COMP_FUNDEF( arg_info));
 #endif
 
                 /*
-                 * get code of the dummy fold-fun
+                 * get code of the pseudo fold-fun
                  ******************************************************************/
 
                 /*
-                 * insert code of the dummy fold-fun
+                 * insert code of the pseudo fold-fun
                  */
                 assigns = AppendAssign (assigns, fold_code);
 
@@ -7698,7 +7722,7 @@ COMPWLsegVar (node *arg_node, node *arg_info)
      * multiple segments found?
      *  -> modify 'multiple_segs'
      */
-    if ((multiple_segs == 0) && (WLSEG_NEXT (arg_node) != NULL)) {
+    if ((multiple_segs == 0) && (WLSEGVAR_NEXT (arg_node) != NULL)) {
         multiple_segs = 1;
     }
 
@@ -7709,8 +7733,45 @@ COMPWLsegVar (node *arg_node, node *arg_info)
     assigns = Trav (WLSEGVAR_CONTENTS (arg_node), arg_info);
 
     /*
-     * not yet completed!!!!
+     * insert ICM "WL_INIT_OFFSET"
      */
+    if ((NWITHOP_TYPE (NWITH2_WITHOP (wl_node)) == WO_genarray)
+        || (NWITHOP_TYPE (NWITH2_WITHOP (wl_node)) == WO_modarray)) {
+        assigns = MakeAssign (
+          MakeIcm ("WL_INIT_OFFSET",
+                   MakeExprs (MakeNum (
+                                TYPES_DIM (VARDEC_OR_ARG_TYPE (IDS_VARDEC (wl_ids)))),
+                              MakeExprs (MakeId (StringCopy (IDS_NAME (wl_ids)), NULL,
+                                                 ST_regular),
+                                         MakeExprs (MakeId (StringCopy (IDS_NAME (
+                                                              NWITHID_VEC (NWITH2_WITHID (
+                                                                wl_node)))),
+                                                            NULL, ST_regular),
+                                                    MakeExprs (MakeNum (
+                                                                 NWITH2_DIMS (wl_node)),
+                                                               NULL)))),
+                   NULL),
+          assigns);
+    }
+
+    /*
+     * Insert scheduling specific ICMs.
+     */
+    assigns
+      = AppendAssign (assigns,
+                      MakeAssign (SCHCompileSchedulingEnd (WLSEGVAR_SCHEDULING (arg_node),
+                                                           arg_node),
+                                  NULL));
+    assigns
+      = MakeAssign (SCHCompileSchedulingBegin (WLSEGVAR_SCHEDULING (arg_node), arg_node),
+                    assigns);
+
+    /*
+     * append compilat (assignment-chain) of next segment to 'assigns'
+     */
+    if (WLSEGVAR_NEXT (arg_node) != NULL) {
+        assigns = AppendAssign (assigns, Trav (WLSEGVAR_NEXT (arg_node), arg_info));
+    }
 
     /*
      * pop 'wl_seg'.
@@ -7896,11 +7957,11 @@ COMPWLgridVar (node *arg_node, node *arg_info)
                 icm_args2 = FreeTree (icm_args2);
 
                 /*
-                 * get code of the dummy fold-fun
+                 * get code of the pseudo fold-fun
                  */
                 fold_code = GetFoldCode (NWITHOP_FUNDEF (NWITH2_WITHOP (wl_node)));
                 /*
-                 * insert code of the dummy fold-fun
+                 * insert code of the pseudo fold-fun
                  */
                 assigns = AppendAssign (assigns, fold_code);
 
