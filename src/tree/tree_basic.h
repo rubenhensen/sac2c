@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2001/02/12 17:05:11  nmw
+ * N_avis node added, MakeVardec/MakeArg alloc N_avis node
+ *
  * Revision 3.23  2001/02/12 10:54:12  nmw
  * N_ssacnt and N_cseinfo added, N_arg and N_vardec modified
  * to store information for ssa. N_block holds chain of SSA counters.
@@ -284,6 +287,7 @@ extern types *MakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name,
  ***    node*       DEF                             (psi-optimize -> )
  ***    node*       USE                             (psi-optimize -> )
  ***    statustype  STATUS                          (obj-handling -> compile !!)
+ ***    node*       AVIS         (N_avis)           (ssaform ->)
  ***/
 
 /*
@@ -304,6 +308,7 @@ extern ids *MakeIds_Copy (char *name);
 #define IDS_NAIVE_REFCNT(i) (i->naive_refcnt)
 #define IDS_NEXT(i) (i->next)
 #define IDS_VARDEC(i) (i->node)
+#define IDS_AVIS(i) (i->avis)
 #define IDS_DEF(i) (i->def)
 #define IDS_USE(i) (i->use)
 #define IDS_STATUS(i) (i->status)
@@ -940,6 +945,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  ***    types*      TYPE
  ***    statustype  STATUS
  ***    statustype  ATTRIB
+ ***    node*       AVIS          (N_avis)     (should be set by MakeArg)
  ***
  ***  temporary attributes:
  ***
@@ -952,11 +958,6 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  ***    node*       ACTCHN     (O)  (N_vinfo)    (psi-optimize -> )
  ***    node*       COLCHN     (O)  (N_vinfo)    (psi-optimize -> )
  ***    node*       FUNDEF     (O)  (N_fundef)   (psi-optimize -> )
- ***    node*       SSACOUNT        (N_ssacnt)   (ssaform -> optimize !!)
- ***    node*       SSAASSIGN       (N_assign)   (ssaform -> optimize !!)
- ***    constant*   SSACONST (0)                 (cf -> optimize !!)
- ***    bool        SSAPHITARGET (0)             (ssaform -> optimize !!)
- ***    bool        SSALPINV (0)                 (lir -> optimize !!)
  ***/
 
 /*
@@ -994,11 +995,7 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
 #define ARG_ACTCHN(n) (n->node[3])
 #define ARG_COLCHN(n) (n->node[4])
 #define ARG_FUNDEF(n) (n->node[5])
-#define ARG_SSACOUNT(n) ((node *)(n->dfmask[0]))
-#define ARG_SSAASSIGN(n) ((node *)(n->dfmask[1]))
-#define ARG_SSACONST(n) ((constant *)(n->info2))
-#define ARG_SSAPHITARGET(n) ((bool)(n->counter))
-#define ARG_SSALPINV(n) ((bool)(n->refcnt))
+#define ARG_AVIS(n) ((node *)(n->dfmask[0]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1063,6 +1060,7 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***    char*       NAME          (NAME is an element of ...
  ***    types*      TYPE           ... this struct)
  ***    statustype  STATUS        (element of TYPE, too)
+ ***    node*       AVIS          (N_avis)     (should be set by MakeVardec)
  ***
  ***  temporary attributes:
  ***
@@ -1077,11 +1075,6 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***    int         FLAG                       (ael -> dcr2 !!)
  ***    bool        PADDED                     (ap -> )
  ***    node*       ICM      (O)  (N_icm)      (compile -> )
- ***    node*       SSACOUNT        (N_ssacnt)   (ssaform -> optimize !!)
- ***    node*       SSAASSIGN       (N_assign)   (ssaform -> optimize !!)
- ***    constant*   SSACONST (0)                 (cf -> optimize !!)
- ***    bool        SSAPHITARGET (0)             (ssaform -> optimize !!)
- ***    bool        SSALPINV (0)                 (lir -> optimize !!)
  ***/
 
 /*
@@ -1119,11 +1112,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
 #define VARDEC_COLCHN(n) (n->node[3])
 #define VARDEC_OBJDEF(n) (n->node[4])
 #define VARDEC_ICM(n) (n->node[5])
-#define VARDEC_SSACOUNT(n) ((node *)(n->dfmask[0]))
-#define VARDEC_SSAASSIGN(n) ((node *)(n->dfmask[1]))
-#define VARDEC_SSACONST(n) ((constant *)(n->info2))
-#define VARDEC_SSAPHITARGET(n) ((bool)(n->counter))
-#define VARDEC_SSALPINV(n) ((bool)(n->refcnt))
+#define VARDEC_AVIS(n) ((node *)(n->dfmask[0]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1543,6 +1532,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***    simpletype  VECTYPE     (O)             (flatten -> )
  ***    int         ISCONST     (O)             (flatten -> )
  ***    int         NUM         (O)
+ ***    node*       AVIS        (O)             (ssafrm -> )
  ***
  ***  remark:
  ***    ID_WL is only used in wli, wlf. But every call of DupTree() initializes
@@ -1611,6 +1601,7 @@ extern node *MakeId_Num (int val);
 #define ID_CONSTVEC(n) (n->info2)
 #define ID_ISCONST(n) (n->varno)
 #define ID_NUM(n) (n->refcnt)
+#define ID_AVIS(n) (n->info.ids->avis)
 
 /*--------------------------------------------------------------------------*/
 
@@ -1905,6 +1896,49 @@ extern node *MakeSSAcnt (node *next, int count, char *baseid);
 #define SSACNT_NEXT(n) (n->node[0])
 #define SSACNT_COUNT(n) (n->counter)
 #define SSACNT_BASEID(n) ((char *)(n->info2))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_avis :
+ ***
+ ***  sons:
+ ***
+ ***  permanent attributes:
+ ***
+ ***  temporary attributes:
+ ***
+ ***    node*       VARDECORARG     (N_vardec/N_arg)
+ ***    node*       SSACOUNT        (N_ssacnt)       (ssaform -> optimize !!)
+ ***    node*       SSAASSIGN       (N_assign)       (ssaform -> optimize !!)
+ ***    constant*   SSACONST (0)                     (cf -> optimize !!)
+ ***    bool        SSAPHITARGET (0)                 (ssaform -> optimize !!)
+ ***    bool        SSALPINV (0)                     (lir -> optimize !!)
+ ***
+ ***    the following attributes are only used within ssaform traversal:
+ ***    node*       SSASUBST (0)    (N_avis)         (ssaform!!)
+ ***    node*       SSACOND (0)     (N_avis)         (ssaform!!)
+ ***    node*       SSATHEN (0)     (N_avis)         (ssaform!!)
+ ***    node*       SSAELSE (0)     (N_avis)         (ssaform!!)
+ ***/
+
+/*
+ * avis node store information identical in vardec and args.
+ * every arg/vardec node contains exactly one avis node.
+ */
+
+extern node *MakeAvis (node *vardecOrArg);
+
+#define AVIS_VARDECORARG(n) (n->node[0])
+#define AVIS_SSACOUNT(n) (n->node[1])
+#define AVIS_SSAASSIGN(n) (n->node[2])
+#define AVIS_SSACONST(n) ((constant *)(n->info2))
+#define AVIS_SSAPHITARGET(n) ((bool)(n->flag))
+#define AVIS_SSALPINV(n) ((bool)(n->refcnt))
+#define AVIS_SSASUBST(n) ((node *)(n->dfmask[0]))
+#define AVIS_SSACOND(n) ((node *)(n->dfmask[1]))
+#define AVIS_SSATHEN(n) ((node *)(n->dfmask[2]))
+#define AVIS_SSAELSE(n) ((node *)(n->dfmask[3]))
 
 /*--------------------------------------------------------------------------*/
 
