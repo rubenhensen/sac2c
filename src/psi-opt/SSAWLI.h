@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/03/26 13:02:12  khf
+ * SSAWLINgenerator added
+ *
  * Revision 1.1  2001/05/15 15:41:11  nmw
  * Initial revision
  *
@@ -20,6 +23,7 @@ extern node *SSAWLIap (node *, node *);
 
 extern node *SSAWLINwithop (node *, node *);
 extern node *SSAWLINpart (node *, node *);
+extern node *SSAWLINgenerator (node *, node *);
 extern node *SSAWLINcode (node *, node *);
 
 extern int ssawli_phase;

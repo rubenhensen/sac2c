@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.138  2004/03/26 13:02:12  khf
+ * SSAWLINgenerator added
+ *
  * Revision 3.137  2004/03/10 00:24:16  dkrHH
  * comp_tab removed
  * comp2_tab renamed into comp_tab
@@ -1932,7 +1935,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, CMPTNgenerator, TravSons, SSACFNgen, TravSons, TravSons,
-       WLPGNgenerator, TravSons, SSAWLTNgenerator, TravSons, TravSons,
+       WLPGNgenerator, TravSons, SSAWLTNgenerator, SSAWLINgenerator, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        HDgenerator, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
