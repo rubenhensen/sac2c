@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2004/11/15 15:20:34  mwe
+ * code for type upgrade added
+ * use ntype-structure instead of types-structure
+ * new code deactivated by MWE_NTYPE_READY
+ *
  * Revision 3.23  2004/10/01 08:47:36  sah
  * removed some direct ast referenced and
  * added macro accesses instead
@@ -192,13 +197,23 @@ CorrectArraySize (ids *ids_node)
 {
     int answer = FALSE;
     int length, dim;
+#ifdef MWE_NTYPE_READY
+    ntype *type;
+#else
     types *type;
+#endif
 
     DBUG_ENTER ("CorrectArraySize");
 
+#ifdef MWE_NTYPE_READY
+    type = AVIS_TYPE (IDS_AVIS (ids_node));
+    length = SHGetUnrLen (TYGetShape (type));
+    dim = TYGetDim (type);
+#else
     type = IDS_TYPE (ids_node);
     length = GetTypesLength (type);
     dim = GetShapeDim (type);
+#endif
 
     if ((length <= minarray) && (0 != length) && (1 == dim)) {
         DBUG_PRINT ("AE", ("array %s with length %d to eliminated found",
@@ -291,13 +306,22 @@ GenSel (ids *ids_node, info *arg_info)
     node *new_nodes = NULL, *new_let, *new_assign, *new_vardec;
     node *exprn;
     int length, i;
+#ifdef MWE_NTYPE_READY
+    ntype *type;
+#else
     types *type;
+#endif
     node *arg[2];
 
     DBUG_ENTER ("GenSel");
+#ifdef MWE_NTYPE_READY
+    type = AVIS_TYPE (IDS_AVIS (ids_node));
+    length = SHGetUnrLen (TYGetShape (type));
+#else
     type = IDS_TYPE (ids_node);
     ;
     length = GetTypesLength (type);
+#endif
     for (i = 0; i < length; i++) {
         exprn = MakeExprs (MakeNum (i), NULL);
         arg[0] = MakeFlatArray (exprn);
@@ -307,8 +331,14 @@ GenSel (ids *ids_node, info *arg_info)
         ARRAY_ISCONST (arg[0]) = TRUE;
         ARRAY_VECTYPE (arg[0]) = T_int;
         ARRAY_VECLEN (arg[0]) = 1;
+#ifdef MWE_NTYPE_READY
+        ARRAY_NTYPE (arg[0]) = TYMakeAKV (TYMakeSimpleType (T_int),
+                                          COMakeConstant (T_int, SHMakeShape (1, dim),
+                                                          Array2IntVec (exprn, NULL)));
+#else
         ARRAY_TYPE (arg[0])
           = MakeTypes (T_int, 1, MakeShpseg (MakeNums (1, NULL)), NULL, NULL);
+#endif
 #if 0    
     arg[1] = MakeNode(N_id);
     arg[1]->info.ids = DupAllIds( ids_node);
@@ -326,9 +356,15 @@ GenSel (ids *ids_node, info *arg_info)
         if (IDS_VARDEC (LET_IDS (new_let)) == NULL) {
             DBUG_PRINT ("AE",
                         ("Generating new vardec for %s", IDS_NAME (LET_IDS (new_let))));
+#ifdef MWE_NTYPE_READY
+            new_vardec = MakeVardec (StringCopy (IDS_NAME (LET_IDS (new_let))), NULL,
+                                     TYMakeSimpleType (TYGetBasetype (type)), NULL);
+
+#else
             new_vardec = MakeVardec (StringCopy (IDS_NAME (LET_IDS (new_let))),
                                      DupAllTypes (GetTypes (type)), NULL);
             VARDEC_DIM (new_vardec) = 0;
+#endif
             INFO_AE_TYPES (arg_info)
               = AppendVardec (new_vardec, INFO_AE_TYPES (arg_info));
             IDS_VARDEC (LET_IDS (new_let)) = new_vardec;
