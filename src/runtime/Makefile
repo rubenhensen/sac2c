@@ -1,17 +1,14 @@
 #
 # $Log$
+# Revision 2.11  1999/06/02 16:55:39  dkr
+# path to main_args.o is now correct
+#
 # Revision 2.10  1999/06/01 15:17:09  dkr
 # make deps done
-#
-# Revision 2.9  1999/05/20 14:53:53  dkr
-# path to main_args.o ist now correct
 #
 # Revision 2.8  1999/05/20 14:13:44  cg
 # Compilation of CacheSimAnalyser streamlined:
 # it is now linked with the SAC runtime library.
-#
-# Revision 2.7  1999/05/12 15:13:30  cg
-# make deps done
 #
 # Revision 2.6  1999/04/26 11:42:05  her
 # modifications for the piped-cachesimulation
@@ -24,17 +21,8 @@
 # new targets (CacheSimTest.o, CacheSimTest) added
 # make deps done
 #
-# Revision 2.3  1999/03/11 18:18:27  dkr
-# make deps done
-#
-# Revision 2.2  1999/02/26 14:17:45  dkr
-# make deps done
-#
 # Revision 2.1  1999/02/23 12:43:33  sacbase
 # new release made
-#
-# Revision 1.15  1999/02/09 20:04:26  dkr
-# make deps done
 #
 # Revision 1.14  1999/01/14 13:16:19  sacbase
 # clean: rm sac2crc    added
@@ -50,9 +38,6 @@
 # File libsac.a will no longer be added to runtime.tar because
 # it depends on the target architecture.
 #
-# Revision 1.10  1998/11/04 18:22:41  dkr
-# make deps done
-#
 # Revision 1.9  1998/10/28 20:35:18  sbs
 # Now, sac2crc will be part of runtime.tar as well 8-))
 #
@@ -62,18 +47,6 @@
 # Revision 1.7  1998/06/29 09:16:42  cg
 # The SAC runtime library is now compiled with optimizations and
 # debug options.
-#
-# Revision 1.6  1998/05/12 14:22:27  dkr
-# make deps done
-#
-# Revision 1.5  1998/03/24 15:39:00  dkr
-# make deps done
-#
-# Revision 1.4  1998/03/24 15:19:05  cg
-# make deps done
-#
-# Revision 1.3  1998/03/24 14:41:54  dkr
-# make deps done
 #
 # Revision 1.2  1998/03/24 13:51:04  cg
 # additional include directory specified
@@ -92,7 +65,7 @@ INCS := -I../global -I../../inc
 LIBS := -L.
 
 OBJS := $(patsubst %.c,%.o,$(wildcard libsac_*.c)) libsac_trace_mt.o\
-        libsac_cachesim_access_advanced.o ../../lib/src/main_args.o
+        libsac_cachesim_access_advanced.o ../../lib/main_args.o
 
 
 .PHONY: all tar
