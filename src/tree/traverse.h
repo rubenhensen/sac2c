@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2004/04/22 14:13:12  skt
+ * Added traversal asmra (assigmantrearrange)
+ * for mt-mode 3
+ *
  * Revision 3.41  2004/04/21 16:33:02  ktr
  * Added traversal ssarefcount
  *
@@ -354,6 +358,26 @@ extern funtab *ts_tab;
 extern funtab *wlpg_tab;
 extern funtab *cvp_tab;
 extern funtab *wlfs_tab;
+extern funtab *asmra_tab;
+extern funtab *unused_tab2;
+extern funtab *unused_tab3;
+extern funtab *unused_tab4;
+extern funtab *unused_tab5;
+extern funtab *unused_tab6;
+extern funtab *unused_tab7;
+extern funtab *unused_tab8;
+extern funtab *unused_tab9;
+extern funtab *unused_tab10;
+extern funtab *unused_tab11;
+extern funtab *unused_tab12;
+extern funtab *unused_tab13;
+extern funtab *unused_tab14;
+extern funtab *unused_tab15;
+extern funtab *unused_tab16;
+extern funtab *unused_tab17;
+extern funtab *unused_tab18;
+extern funtab *unused_tab19;
+extern funtab *unused_tab20;
 
 extern int nnode[];
 

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2004/04/22 14:13:12  skt
+ * Added traversal asmra (assigmantrearrange)
+ * for mt-mode 3
+ *
  * Revision 3.51  2004/04/21 16:33:02  ktr
  * Added traversal ssarefcount
  *
@@ -1518,7 +1522,7 @@ static funtab cwc_tab_rec = {{
 funtab *cwc_tab = &cwc_tab_rec;
 
 /*
- *  (110) nt2ot_tab
+ *  (112) nt2ot_tab
  */
 static funtab hm_tab_rec = {{
 #define NIFhm(it_hm) it_hm
@@ -1529,7 +1533,7 @@ static funtab hm_tab_rec = {{
 funtab *hm_tab = &hm_tab_rec;
 
 /*
- *  (112) dl_tab
+ *  (113) dl_tab
  */
 static funtab dl_tab_rec = {{
 #define NIFdl(it_dl) it_dl
@@ -1540,7 +1544,7 @@ static funtab dl_tab_rec = {{
 funtab *dl_tab = &dl_tab_rec;
 
 /*
- *  (113) blir_tab
+ *  (114) blir_tab
  */
 static funtab blir_tab_rec = {{
 #define NIFblir(it_blir) it_blir
@@ -1551,7 +1555,7 @@ static funtab blir_tab_rec = {{
 funtab *blir_tab = &blir_tab_rec;
 
 /*
- *  (114) esd_tab
+ *  (115) esd_tab
  */
 static funtab esd_tab_rec = {{
 #define NIFesd(it_esd) it_esd
@@ -1562,7 +1566,7 @@ static funtab esd_tab_rec = {{
 funtab *esd_tab = &esd_tab_rec;
 
 /*
- *  (115) uesd_tab
+ *  (116) uesd_tab
  */
 static funtab uesd_tab_rec = {{
 #define NIFuesd(it_uesd) it_uesd
@@ -1573,7 +1577,7 @@ static funtab uesd_tab_rec = {{
 funtab *uesd_tab = &uesd_tab_rec;
 
 /*
- *  (116) sp_tab
+ *  (117) sp_tab
  */
 static funtab sp_tab_rec = {{
 #define NIFsp(it_sp) it_sp
@@ -1584,7 +1588,7 @@ static funtab sp_tab_rec = {{
 funtab *sp_tab = &sp_tab_rec;
 
 /*
- *  (117) ts_tab
+ *  (118) ts_tab
  */
 static funtab ts_tab_rec = {{
 #define NIFts(it_ts) it_ts
@@ -1595,7 +1599,7 @@ static funtab ts_tab_rec = {{
 funtab *ts_tab = &ts_tab_rec;
 
 /*
- *  (118) cvp_tab
+ *  (119) cvp_tab
  */
 static funtab cvp_tab_rec = {{
 #define NIFcvp(it_cvp) it_cvp
@@ -1606,7 +1610,7 @@ static funtab cvp_tab_rec = {{
 funtab *cvp_tab = &cvp_tab_rec;
 
 /*
- *  (119) wlfs_tab
+ *  (120) wlfs_tab
  */
 static funtab wlfs_tab_rec = {{
 #define NIFwlfs(it_wlfs) it_wlfs
@@ -1615,6 +1619,226 @@ static funtab wlfs_tab_rec = {{
                               NULL,
                               NULL};
 funtab *wlfs_tab = &wlfs_tab_rec;
+
+/*
+ *  (121) asmra_tab
+ */
+static funtab asmra_tab_rec = {{
+#define NIFasmra(it_asmra) it_asmra
+#include "node_info.mac"
+                               },
+                               NULL,
+                               NULL};
+funtab *asmra_tab = &asmra_tab_rec;
+
+/*
+ *  (122) unused_tab2
+ */
+static funtab unused_tab2_rec = {{
+#define NIFunused_2(it_unused_2) it_unused_2
+#include "node_info.mac"
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *unused_tab2 = &unused_tab2_rec;
+
+/*
+ *  (123) unused_tab3
+ */
+static funtab unused_tab3_rec = {{
+#define NIFunused_3(it_unused_3) it_unused_3
+#include "node_info.mac"
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *unused_tab3 = &unused_tab3_rec;
+
+/*
+ *  (124) unused_tab4
+ */
+static funtab unused_tab4_rec = {{
+#define NIFunused_4(it_unused_4) it_unused_4
+#include "node_info.mac"
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *unused_tab4 = &unused_tab4_rec;
+
+/*
+ *  (125) unused_tab5
+ */
+static funtab unused_tab5_rec = {{
+#define NIFunused_5(it_unused_5) it_unused_5
+#include "node_info.mac"
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *unused_tab5 = &unused_tab5_rec;
+
+/*
+ *  (126) unused_tab6
+ */
+static funtab unused_tab6_rec = {{
+#define NIFunused_6(it_unused_6) it_unused_6
+#include "node_info.mac"
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *unused_tab6 = &unused_tab6_rec;
+
+/*
+ *  (127) unused_tab7
+ */
+static funtab unused_tab7_rec = {{
+#define NIFunused_7(it_unused_7) it_unused_7
+#include "node_info.mac"
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *unused_tab7 = &unused_tab7_rec;
+
+/*
+ *  (128) unused_tab8
+ */
+static funtab unused_tab8_rec = {{
+#define NIFunused_8(it_unused_8) it_unused_8
+#include "node_info.mac"
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *unused_tab8 = &unused_tab8_rec;
+
+/*
+ *  (129) unused_tab9
+ */
+static funtab unused_tab9_rec = {{
+#define NIFunused_9(it_unused_9) it_unused_9
+#include "node_info.mac"
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *unused_tab9 = &unused_tab9_rec;
+
+/*
+ *  (130) unused_tab10
+ */
+static funtab unused_tab10_rec = {{
+#define NIFunused_10(it_unused_10) it_unused_10
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab10 = &unused_tab10_rec;
+
+/*
+ *  (131) unused_tab11
+ */
+static funtab unused_tab11_rec = {{
+#define NIFunused_11(it_unused_11) it_unused_11
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab11 = &unused_tab11_rec;
+
+/*
+ *  (132) unused_tab12
+ */
+static funtab unused_tab12_rec = {{
+#define NIFunused_12(it_unused_12) it_unused_12
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab12 = &unused_tab12_rec;
+
+/*
+ *  (133) unused_tab13
+ */
+static funtab unused_tab13_rec = {{
+#define NIFunused_13(it_unused_13) it_unused_13
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab13 = &unused_tab13_rec;
+
+/*
+ *  (134) unused_tab14
+ */
+static funtab unused_tab14_rec = {{
+#define NIFunused_14(it_unused_14) it_unused_14
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab14 = &unused_tab14_rec;
+
+/*
+ *  (135) unused_tab15
+ */
+static funtab unused_tab15_rec = {{
+#define NIFunused_15(it_unused_15) it_unused_15
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab15 = &unused_tab15_rec;
+
+/*
+ *  (136) unused_tab16
+ */
+static funtab unused_tab16_rec = {{
+#define NIFunused_16(it_unused_16) it_unused_16
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab16 = &unused_tab16_rec;
+
+/*
+ *  (137) unused_tab17
+ */
+static funtab unused_tab17_rec = {{
+#define NIFunused_17(it_unused_17) it_unused_17
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab17 = &unused_tab17_rec;
+
+/*
+ *  (138) unused_tab18
+ */
+static funtab unused_tab18_rec = {{
+#define NIFunused_18(it_unused_18) it_unused_18
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab18 = &unused_tab18_rec;
+
+/*
+ *  (139) unused_tab19
+ */
+static funtab unused_tab19_rec = {{
+#define NIFunused_19(it_unused_19) it_unused_19
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab19 = &unused_tab19_rec;
+
+/*
+ *  (140) unused_tab20
+ */
+static funtab unused_tab20_rec = {{
+#define NIFunused_20(it_unused_20) it_unused_20
+#include "node_info.mac"
+                                  },
+                                  NULL,
+                                  NULL};
+funtab *unused_tab20 = &unused_tab20_rec;
 
 /*
  *  nnode
