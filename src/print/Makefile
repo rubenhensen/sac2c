@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.24  1998/03/19 17:08:30  dkr
+# make deps done
+#
 # Revision 1.23  1998/03/04 00:10:33  dkr
 # 'clean' now deletes the subdir .sb, too
 #
@@ -101,5 +104,5 @@ print.o: ../global/tree_compound.h ../global/Error.h ../global/globals.h
 print.o: print.h ../global/tree.h ../global/internal_lib.h
 print.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h convert.h
 print.o: ../optimize/optimize.h ../global/free.h /usr/include/malloc.h
-print.o: ../compile/trace.h ../compile/profile.h ../modules/filemgr.h
-print.o: ../compile/icm.data ../global/prf_node_info.mac
+print.o: ../compile/profile.h ../modules/filemgr.h ../compile/icm.data
+print.o: ../global/prf_node_info.mac

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.35  1998/03/19 17:08:39  dkr
+# make deps done
+#
 # Revision 1.34  1998/03/04 00:09:36  dkr
 # 'clean' now deletes the subdir .sb, too
 #
@@ -177,8 +180,8 @@ icm2c.o: ../print/print.h ../global/tree.h ../global/types.h
 icm2c.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
 icm2c.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
 icm2c.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
-icm2c.o: ../../inc/main.h trace.h ../print/convert.h icm2c.h libsac.h
-icm2c.o: icm_decl.c icm.data icm_args.c icm_comment.c icm_trace.c
+icm2c.o: ../../inc/main.h ../print/convert.h icm2c.h libsac.h icm_decl.c
+icm2c.o: icm.data icm_args.c icm_comment.c icm_trace.c
 icm_args.o: icm.data
 icm_comment.o: icm.data
 icm_decl.o: icm.data
@@ -197,6 +200,7 @@ precompile.o: /usr/include/stdlib.h ../global/globals.h ../global/free.h
 precompile.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 precompile.o: ../global/internal_lib.h ../print/convert.h
 precompile.o: ../global/traverse.h ../refcount/refcount.h
+precompile.o: ../optimize/DupTree.h
 profile.o: ../../inc/dbug.h /usr/include/stdio.h
 profile.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
 profile.o: ../global/globals.h ../global/types.h profile.h
