@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2004/09/27 16:28:54  sah
+ * fixed the errorneous use of accidently copied types during specialization
+ *
  * Revision 3.45  2004/09/23 18:18:56  sbs
  * non termination detection inserted.
  * This leads to more comprehensible error messages if lower bounds
@@ -978,6 +981,17 @@ node *
 NTCvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("NTCvardec");
+
+    if (AVIS_TYPE (VARDEC_AVIS (arg_node)) != NULL) {
+        /**
+         * this means that the vardec has been created by duplicating a type-
+         * checked function. Since this may require slightly different (e.g.
+         * more specific) types to be inferred, we simply eliminate the existing
+         * ones!
+         */
+        AVIS_TYPE (VARDEC_AVIS (arg_node))
+          = TYFreeType (AVIS_TYPE (VARDEC_AVIS (arg_node)));
+    }
 
     if (TYPES_BASETYPE (VARDEC_TYPE (arg_node)) != T_unknown) {
         AVIS_TYPE (VARDEC_AVIS (arg_node))
