@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.7  2003/03/21 01:29:51  sah
+dnl stderr bugfix
+dnl
 dnl Revision 1.6  2003/03/21 01:23:09  sah
 dnl minor fixes
 dnl
@@ -110,7 +113,7 @@ dnl  check definition of sbrk
 AC_MSG_CHECKING(for sbrk argument type)
 include_file_list=`ls -1 /usr/include/*.h`
 sbrk_types=`for name in $include_file_list; do grep sbrk $name 2>/dev/null; done`
-[sbrk_types=`echo "$sbrk_types" | sed -e 's/[A-Za-z0-9 _*]*([ ]*//g' | sed -e 's/)[A-Za-z0-9_* ;]*//g' | sed -e 's/ [A-Za-z0-9_* ]//g'` ]
+[sbrk_types=`echo "$sbrk_types" | sed -e 's/[A-Za-z0-9 _*]*([ ]*//g' | sed -e 's/)[A-Za-z0-9_* ;]*//g' | sed -e 's/ [A-Za-z0-9_* ]*//g'` ]
 AC_DEFINE_UNQUOTED(SBRK_T,$sbrk_types,set to the type of sbrk argument)
 AC_MSG_RESULT($sbrk_types)
 AC_SUBST(DISABLE_PHM, no)
