@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  1998/02/28 23:35:53  dkr
+ * RCcond() uses now COND_THENVARS(arg_node), COND_ELSEVARS() instead of arg_node->node[3]
+ *
  * Revision 1.34  1998/02/27 13:21:14  dkr
  * RCloop(): changed usage of arg_node->node[2]:
  *   uses now DO_USEDVARS, DO_DEFVARS and works together with MakeDo(), MakeWidth()
@@ -721,7 +724,7 @@ RCloop (node *arg_node, node *arg_info)
     usevars = DO_USEVARS (arg_node);
     defvars = DO_DEFVARS (arg_node);
 
-    if ((DO_USEVARS (arg_node) != NULL) && (DO_DEFVARS (arg_node) != NULL)) {
+    if ((usevars != NULL) || (defvars != NULL)) {
         use_old = 1;
     }
 
@@ -742,6 +745,12 @@ RCloop (node *arg_node, node *arg_info)
                     if (0 == use_old) {
                         VAR_DEC_2_ID_NODE (id_node, var_dec);
                         ID_REFCNT (id_node) = ref_dump[i];
+                        /*
+                         * remark (dkr):
+                         *    this chain-contruction is not documented in tree_basic.h
+                         * 8-(( usually an N_id-node do not have a successor !!! (compare
+                         * with RCcond() ...)
+                         */
                         id_node->node[0] = defvars;
                         defvars = id_node;
                         DBUG_PRINT ("RC", ("store defined var (v2) %s:%d",
@@ -759,6 +768,12 @@ RCloop (node *arg_node, node *arg_info)
                      */
                     if (0 == use_old) {
                         VAR_DEC_2_ID_NODE (id_node, var_dec);
+                        /*
+                         * remark (dkr):
+                         *    this chain-contruction is not documented in tree_basic.h
+                         * 8-(( usually an N_id-node do not have a successor !!! (compare
+                         * with RCcond() ...)
+                         */
                         id_node->node[0] = usevars;
                         usevars = id_node;
                         DBUG_PRINT ("RC", ("store used var (v1) %s:%d", ID_NAME (id_node),
@@ -1006,7 +1021,7 @@ RClet (node *arg_node, node *arg_info)
 node *
 RCcond (node *arg_node, node *arg_info)
 {
-    node *new_info, *var_dec, *id_node;
+    node *thenvars, *elsevars, *var_dec, *id_node;
     int *rest_dump, *then_dump, *else_dump, i, use_old = 0;
     DBUG_ENTER ("RCcond");
 
@@ -1024,15 +1039,15 @@ RCcond (node *arg_node, node *arg_info)
     else_dump = Store ();
 
     /* now compute maximum of then- and else-dump and store it in vardec refcnt
-     * store differences between then- and else dump in new_info->node[x]
-     * -  x=0 if then_dump[i] < else_dump[i] (else_dump[i] - then_dump[i])
-     * -  x=1 if else_dump[i] < then_dump[i] (then_dump[i] - else_dump[i])
+     * store differences between then- and else dump in COND_THEN, COND_ELSE respectively:
+     * - COND_THEN if then_dump[i] < else_dump[i] (else_dump[i] - then_dump[i])
+     * - COND_ELSE if else_dump[i] < then_dump[i] (then_dump[i] - else_dump[i])
      */
-    if (NULL == arg_node->node[3])
-        new_info = MakeNode (N_info);
-    else {
+    thenvars = COND_THENVARS (arg_node);
+    elsevars = COND_ELSEVARS (arg_node);
+
+    if ((thenvars != NULL) || (elsevars != NULL)) {
         use_old = 1;
-        new_info = arg_node->node[3];
     }
 
     for (i = 0; i < varno; i++)
@@ -1042,12 +1057,18 @@ RCcond (node *arg_node, node *arg_info)
             if (0 == use_old) {
                 VAR_DEC_2_ID_NODE (id_node, var_dec);
                 ID_REFCNT (id_node) = else_dump[i] - then_dump[i];
-                id_node->node[0] = new_info->node[0];
-                new_info->node[0] = id_node;
+                /*
+                 * remark (dkr):
+                 *    this chain-contruction is not documented in tree_basic.h  8-((
+                 *    usually an N_id-node do not have a successor !!!
+                 *    (compare with RCloop() ...)
+                 */
+                id_node->node[0] = thenvars;
+                thenvars = id_node;
                 DBUG_PRINT ("RC", ("append %s :%d to then-part", ID_NAME (id_node),
                                    ID_REFCNT (id_node)));
             } else {
-                id_node = LookupId (var_dec->info.types->id, new_info->node[0]);
+                id_node = LookupId (var_dec->info.types->id, thenvars);
                 DBUG_ASSERT ((NULL != id_node), "var not found");
                 ID_REFCNT (id_node) = else_dump[i] - then_dump[i];
                 DBUG_PRINT ("RC", ("changed %s :%d in then-part", ID_NAME (id_node),
@@ -1062,12 +1083,18 @@ RCcond (node *arg_node, node *arg_info)
             if (0 == use_old) {
                 VAR_DEC_2_ID_NODE (id_node, var_dec);
                 ID_REFCNT (id_node) = then_dump[i] - else_dump[i];
-                id_node->node[0] = new_info->node[1];
-                new_info->node[1] = id_node;
+                /*
+                 * remark (dkr):
+                 *    this chain-contruction is not documented in tree_basic.h  8-((
+                 *    usually an N_id-node do not have a successor !!!
+                 *    (compare with RCloop() ...)
+                 */
+                id_node->node[0] = elsevars;
+                elsevars = id_node;
                 DBUG_PRINT ("RC", ("append %s :%d to else-part", ID_NAME (id_node),
                                    ID_REFCNT (id_node)));
             } else {
-                id_node = LookupId (var_dec->info.types->id, new_info->node[1]);
+                id_node = LookupId (var_dec->info.types->id, elsevars);
                 DBUG_ASSERT ((NULL != id_node), "var not found");
                 ID_REFCNT (id_node) = then_dump[i] - else_dump[i];
                 DBUG_PRINT ("RC", ("changed %s :%d in then-part", ID_NAME (id_node),
@@ -1079,7 +1106,8 @@ RCcond (node *arg_node, node *arg_info)
         }
 
     /* store refcount information for use while compilation */
-    arg_node->node[3] = new_info;
+    COND_THENVARS (arg_node) = thenvars;
+    COND_ELSEVARS (arg_node) = elsevars;
 
     /* free the dumps */
     FREE (rest_dump);
