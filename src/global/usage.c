@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.44  1997/03/11 16:32:44  cg
+ * Revision 1.45  1997/03/19 13:42:02  cg
+ * compiler option -l3 no longer supported
+ *
+ * Revision 1.44  1997/03/11  16:32:44  cg
  * compiler option -deps replaced by -M
  *
  * Revision 1.43  1996/09/11  06:15:08  cg
@@ -258,8 +261,6 @@ usage (char *prg_name)
     printf ("\t -l<n>\t\t\tlink level for generating SAC library\n");
     printf ("\t\t\t\t1: compile to one large object file\n");
     printf ("\t\t\t\t2: compile to archive of object files (default)\n");
-    printf ("\t\t\t\t3: compile to archive of object files\n");
-    printf ("\t\t\t\t   and include required non-standard modules\n");
 
     printf ("\n\nC-COMPILER OPTIONS:\t(handed to the C-compiler)\n\n");
 
