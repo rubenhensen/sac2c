@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/03/27 21:39:53  dkr
+ * macro DUPVECT renamed into DUP_VECT and moved to internal_lib.h
+ *
  * Revision 3.10  2001/03/22 13:29:32  dkr
  * DUP_INVARIANT removed
  *
@@ -78,17 +81,6 @@
 #define DUP_NORMAL 0
 #define DUP_INLINE 1
 #define DUP_WLF 2
-
-#define DUPVECT(new_vect, old_vect, dims, type)                                          \
-    {                                                                                    \
-        int d;                                                                           \
-        if ((old_vect) != NULL) {                                                        \
-            (new_vect) = (type *)MALLOC (dims * sizeof (type));                          \
-            for (d = 0; d < dims; d++) {                                                 \
-                (new_vect)[d] = (old_vect)[d];                                           \
-            }                                                                            \
-        }                                                                                \
-    }
 
 /*
  * Functions for duplicating (parts of) the AST

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2001/03/27 21:39:47  dkr
+ * macro DUPVECT renamed into DUP_VECT and moved to internal_lib.h
+ *
  * Revision 3.29  2001/03/27 20:49:38  dkr
  * minor changes in DupFundef() done
  *
@@ -1678,20 +1681,20 @@ DupWLseg (node *arg_node, node *arg_info)
     new_node = MakeWLseg (WLSEG_DIMS (arg_node), DUPTRAV (WLSEG_CONTENTS (arg_node)),
                           DUPCONT (WLSEG_NEXT (arg_node)));
 
-    DUPVECT (WLSEG_IDX_MIN (new_node), WLSEG_IDX_MIN (arg_node), WLSEG_DIMS (new_node),
-             int);
-    DUPVECT (WLSEG_IDX_MAX (new_node), WLSEG_IDX_MAX (arg_node), WLSEG_DIMS (new_node),
-             int);
+    DUP_VECT (WLSEG_IDX_MIN (new_node), WLSEG_IDX_MIN (arg_node), WLSEG_DIMS (new_node),
+              int);
+    DUP_VECT (WLSEG_IDX_MAX (new_node), WLSEG_IDX_MAX (arg_node), WLSEG_DIMS (new_node),
+              int);
 
     WLSEG_BLOCKS (new_node) = WLSEG_BLOCKS (arg_node);
 
     for (i = 0; i < WLSEG_BLOCKS (new_node); i++) {
-        DUPVECT (WLSEG_BV (new_node, i), WLSEG_BV (arg_node, i), WLSEG_DIMS (new_node),
-                 int);
+        DUP_VECT (WLSEG_BV (new_node, i), WLSEG_BV (arg_node, i), WLSEG_DIMS (new_node),
+                  int);
     }
 
-    DUPVECT (WLSEG_UBV (new_node), WLSEG_UBV (arg_node), WLSEG_DIMS (new_node), int);
-    DUPVECT (WLSEG_SV (new_node), WLSEG_SV (arg_node), WLSEG_DIMS (new_node), int);
+    DUP_VECT (WLSEG_UBV (new_node), WLSEG_UBV (arg_node), WLSEG_DIMS (new_node), int);
+    DUP_VECT (WLSEG_SV (new_node), WLSEG_SV (arg_node), WLSEG_DIMS (new_node), int);
 
     if (WLSEG_SCHEDULING (arg_node) != NULL) {
         WLSEG_SCHEDULING (new_node) = SCHCopyScheduling (WLSEG_SCHEDULING (arg_node));
@@ -1716,10 +1719,10 @@ DupWLsegVar (node *arg_node, node *arg_info)
       = MakeWLsegVar (WLSEGVAR_DIMS (arg_node), DUPTRAV (WLSEGVAR_CONTENTS (arg_node)),
                       DUPCONT (WLSEGVAR_NEXT (arg_node)));
 
-    DUPVECT (WLSEGVAR_IDX_MIN (new_node), WLSEGVAR_IDX_MIN (arg_node),
-             WLSEGVAR_DIMS (new_node), int);
-    DUPVECT (WLSEGVAR_IDX_MAX (new_node), WLSEGVAR_IDX_MAX (arg_node),
-             WLSEGVAR_DIMS (new_node), int);
+    DUP_VECT (WLSEGVAR_IDX_MIN (new_node), WLSEGVAR_IDX_MIN (arg_node),
+              WLSEGVAR_DIMS (new_node), int);
+    DUP_VECT (WLSEGVAR_IDX_MAX (new_node), WLSEGVAR_IDX_MAX (arg_node),
+              WLSEGVAR_DIMS (new_node), int);
 
     if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
         WLSEGVAR_SCHEDULING (new_node)
