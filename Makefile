@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.23  1995/05/26 14:23:42  asi
+# Revision 1.24  1995/06/02 09:53:02  sbs
+# psi-opt inserted.
+#
+# Revision 1.23  1995/05/26  14:23:42  asi
 # function inlineing and loop unrolling added
 #
 # Revision 1.22  1995/05/01  15:36:19  asi
@@ -86,12 +89,13 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/DeadCodeRemoval.o src/optimize/WorkReduction.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/DupTree.o \
 	  src/optimize/Inline.o src/optimize/Unroll.o
+PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o
 MODULES= src/modules/filemgr.o src/modules/import.o
 REFCOUNT= src/refcount/refcount.o
 COMPILE= src/compile/compile.o src/compile/icm2c.o
 
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) $(MODULES) \
-    $(REFCOUNT) $(COMPILE)
+    $(REFCOUNT) $(COMPILE) $(PSIOPT)
 
 all: dummy sac2c
 
@@ -105,6 +109,7 @@ dummy:
 	(cd src/modules; $(MAKE) )
 	(cd src/refcount; $(MAKE) )       
 	(cd src/compile; $(MAKE) )
+	(cd src/psi-opt; $(MAKE) )
 
 sac2c: $(OBJ) $(LIB)
 	$(CC) -o sac2c $(OBJ) $(LIB) $(LIBS)
@@ -119,6 +124,7 @@ deps:
 	(cd src/modules; $(MAKE) deps)
 	(cd src/refcount; $(MAKE) deps )
 	(cd src/compile; $(MAKE) deps )
+	(cd src/psi-opt; $(MAKE) deps)
 
 clean:
 	(cd src/scanparse; $(MAKE) clean)
@@ -130,4 +136,5 @@ clean:
 	(cd src/modules; $(MAKE) clean)
 	(cd src/refcount; $(MAKE) clean)
 	(cd src/compile; $(MAKE) clean )
+	(cd src/psi-opt; $(MAKE) clean)
 	$(RM) sac2c
