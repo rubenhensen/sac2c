@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2004/11/09 22:18:07  ktr
+ * Added Explicit Copy (emec_tab)
+ *
  * Revision 3.62  2004/11/07 16:10:51  ktr
  * added -o parameter to CPP syscall.
  *
@@ -1232,6 +1235,8 @@ PrefixForTmpVar (void)
         s = "emlr";
     } else if (act_tab == emdr_tab) {
         s = "emdr";
+    } else if (act_tab == emec_tab) {
+        s = "emec";
     } else
 #else
     if (act_tab == flat_tab) {
@@ -1324,6 +1329,8 @@ PrefixForTmpVar (void)
         s = "emlr";
     } else if (act_tab == emdr_tab) {
         s = "emdr";
+    } else if (act_tab == emec_tab) {
+        s = "emec";
     } else
 #endif /* NEW_AST */
     {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2004/11/09 22:17:32  ktr
+ * Added Explicit Copy (emec_tab)
+ *
  * Revision 3.81  2004/11/07 18:08:47  sah
  * added ResolvePragma (rsp) traversal
  *
@@ -428,7 +431,7 @@ extern funtab *uss_tab;
 extern funtab *unused_tab36;
 extern funtab *infdfms_tab;
 extern funtab *l2f_tab;
-extern funtab *unused_tab30;
+extern funtab *emec_tab;
 extern funtab *unused_tab35;
 extern funtab *unused_tab34;
 extern funtab *cudecls_tab;

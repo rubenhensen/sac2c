@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.108  2004/11/09 22:17:32  ktr
+ * Added Explicit Copy (emec_tab)
+ *
  * Revision 3.107  2004/11/08 17:00:26  sah
  * rsp_tab now hidden in old ast mode
  *
@@ -472,6 +475,7 @@
 #include "reuseelimination.h"
 #include "loopreuseopt.h"
 #include "datareuse.h"
+#include "explicitcopy.h"
 
 #include "traverse.h"
 
@@ -1302,15 +1306,15 @@ static funtab l2f_tab_rec = {{
 funtab *l2f_tab = &l2f_tab_rec;
 
 /*
- *  (70) unused_tab30
+ *  (70) emec_tab
  */
-static funtab unused_tab30_rec = {{
-#define NIFunused_30(it_unused_30) it_unused_30
+static funtab emec_tab_rec = {{
+#define NIFemec(it_emec) it_emec
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab30 = &unused_tab30_rec;
+                              },
+                              NULL,
+                              NULL};
+funtab *emec_tab = &emec_tab_rec;
 
 /*
  *  (71) unused_tab35
