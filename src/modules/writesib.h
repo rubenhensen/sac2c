@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.4  1996/01/22 18:41:45  cg
+ * Revision 1.5  1996/02/06 18:58:19  cg
+ * added special print functions WSIBfloat and WSIBdouble for printing
+ * constants followed by F or D to mark their types
+ *
+ * Revision 1.4  1996/01/22  18:41:45  cg
  * added declaration of WSIBobjdef
  *
  * Revision 1.3  1995/12/23  17:05:04  cg
@@ -28,5 +32,7 @@ extern node *WSIBtypedef (node *arg_node, node *arg_info);
 extern node *WSIBobjdef (node *arg_node, node *arg_info);
 extern node *WSIBfundef (node *arg_node, node *arg_info);
 extern node *WSIBexplist (node *arg_node, node *arg_info);
+extern node *WSIBfloat (node *arg_node, node *arg_info);
+extern node *WSIBdouble (node *arg_node, node *arg_info);
 
 #endif /* _sac_writesib_h */

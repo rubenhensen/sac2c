@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.9  1996/01/26 15:32:21  cg
+ * Revision 1.10  1996/02/06 18:58:19  cg
+ * added special print functions WSIBfloat and WSIBdouble for printing
+ * constants followed by F or D to mark their types
+ *
+ * Revision 1.9  1996/01/26  15:32:21  cg
  * function status ST_classfun now supported
  *
  * Revision 1.8  1996/01/22  18:35:31  cg
@@ -217,17 +221,61 @@ StoreExportNodes (nodelist *inserts, node *info)
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
+ *  functionname  : WSIBfloat
+ *  arguments     : 1) N_float node
+ *                  2) arg_info unused
+ *  description   : prints float constant to outfile
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : fprintf
  *  macros        :
  *
- *  remarks       :
+ *  remarks       : Main difference to PrintFloat from print.c is that the
+ *                  constant is always followed by an "F" to mark it as
+ *                  a float constant. The is necessary for a later handling
+ *                  by the typechecker.
  *
  */
+
+node *
+WSIBfloat (node *arg_node, node *arg_info)
+{
+
+    DBUG_ENTER ("WSIBfloat");
+
+    fprintf (outfile, "%.256gF", arg_node->info.cfloat);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : WSIBdouble
+ *  arguments     : 1) N_dbl node
+ *                  2) arg_info unused
+ *  description   : prints double constant to outfile
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : fprintf
+ *  macros        :
+ *
+ *  remarks       : Main difference to PrintDouble from print.c is that the
+ *                  constant is always followed by a "D" to mark it as
+ *                  a double constant. The is necessary for a later handling
+ *                  by the typechecker.
+ *
+ */
+
+node *
+WSIBdouble (node *arg_node, node *arg_info)
+{
+
+    DBUG_ENTER ("WSIBdouble");
+
+    fprintf (outfile, "%.256gD", arg_node->info.cdbl);
+
+    DBUG_RETURN (arg_node);
+}
 
 /*
  *
