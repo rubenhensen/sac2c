@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.135  1997/10/13 21:02:57  dkr
+ * min() and max() are now foldops.
+ *
  * Revision 1.134  1997/10/07 14:10:15  srs
  * new prfs PRF_MIN, PRF_MAX
  *
@@ -2589,6 +2592,8 @@ foldop:   PLUS {$$=F_add; }
 	| DIV {$$=F_div;}
 	| MUL {$$=F_mul;}
 	| PRF_MOD {$$=F_mod;}
+	| PRF_MIN {$$=F_min;}
+	| PRF_MAX {$$=F_max;}
 	| AND {$$=F_and;}
 	| OR {$$=F_or;}
 	| EQ {$$=F_eq;}
