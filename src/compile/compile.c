@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.132  2004/08/27 08:13:55  ktr
+ * Removed a DBUG_ASSERT in MakeSetShapeIcm after creation of ND_WL_GENARRAY
+ * _SHAPE_id_arr.
+ * However this icm needs testing in context of AUD-with-loops.
+ *
  * Revision 3.131  2004/08/19 10:28:22  khf
  * fixed bug in COMPWLgridx: used wrong cexpr
  *
@@ -1878,6 +1883,11 @@ MakeSetShapeIcm (node *arg_node, ids *let_ids)
             case N_id:
                 /*
                  * cat( a, [...])
+                 *
+                 * This shape descriptor is used if a with-loop's outer shape is
+                 * unknown but its element shape is known.
+                 *
+                 * !!! This has not yet been tested !!!
                  */
                 set_shape
                   = MakeIcm4 ("ND_WL_GENARRAY__SHAPE_id_arr",
@@ -1885,12 +1895,11 @@ MakeSetShapeIcm (node *arg_node, ids *let_ids)
                                             TRUE, FALSE, NULL),
                               DupId_NT (arg1), MakeSizeArg (arg2, TRUE),
                               DupExprs_NT (ARRAY_AELEMS (arg2)));
-                DBUG_ASSERT ((0), "Untested code!");
                 break;
 
             case N_array:
                 /*
-                 * cat( [...], [...]
+                 * cat( [...], [...])
                  */
                 set_shape
                   = MakeIcm2 ("ND_SET__SHAPE_arr", DupIds_Id_NT (let_ids),
