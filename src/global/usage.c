@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2004/12/16 14:36:40  ktr
+ * enhanced break spcifiers.
+ *
  * Revision 3.68  2004/11/26 21:23:54  skt
  * final version from SACDevCampDk 2k4
  *
@@ -192,8 +195,7 @@ USGprintUsage ()
     CONT_BREAK_SPEC ("functions.");
     PRINT_BREAK_SPEC (PH_wlenhance, "cha", "Stop after checking avis consistency.");
     PRINT_BREAK_SPEC (PH_wlenhance, "ssa", "Stop after converting into SSA form.");
-    PRINT_BREAK_SPEC (PH_wlenhance, "ea",
-                      "Stop after inserting explicit accumulation (if emm).");
+    PRINT_BREAK_SPEC (PH_wlenhance, "ea", "Stop after inserting explicit accumulation.");
     PRINT_BREAK_SPEC (PH_wlenhance, "cf", "Stop after constant folding.");
     PRINT_BREAK_SPEC (PH_wlenhance, "wlpg", "Stop after with-loop partition generation.");
     PRINT_BREAK_SPEC (PH_wlenhance, "ussa", "Stop after undo SSA transformation.");
@@ -272,6 +274,31 @@ USGprintUsage ()
     PRINT_BREAK_SPEC (PH_wltrans, "fit", "Stop after fitting.");
     PRINT_BREAK_SPEC (PH_wltrans, "norm", "Stop after normalization.");
     PRINT_BREAK_SPEC (PH_wltrans, "fill2", "Stop after gap filling (all nodes).");
+
+    printf ("\n");
+
+    PRINT_BREAK_SPEC (PH_alloc, "l2f", "Stop after Lac To Fun conversion.");
+    PRINT_BREAK_SPEC (PH_alloc, "ssa", "Stop after conversion into SSA form.");
+    PRINT_BREAK_SPEC (PH_alloc, "cvp", "Stop after Constant and variable Propagation.");
+    PRINT_BREAK_SPEC (PH_alloc, "dcr", "Stop after Dead Code Removal.");
+    PRINT_BREAK_SPEC (PH_alloc, "copy", "Stop after Explicit Copy Inference.");
+    PRINT_BREAK_SPEC (PH_alloc, "alloc", "Stop after Explicit Allocation Inference.");
+    PRINT_BREAK_SPEC (PH_alloc, "dcr2", "Stop after Dead Code Removal (2).");
+    PRINT_BREAK_SPEC (PH_alloc, "ri", "Stop after Reuse Inference.");
+    PRINT_BREAK_SPEC (PH_alloc, "ia", "Stop after Interface Analysis.");
+    PRINT_BREAK_SPEC (PH_alloc, "lro", "Stop after Loop Reuse Optimization.");
+    PRINT_BREAK_SPEC (PH_alloc, "frc", "Stop after Filtering Reuse Candidates.");
+    PRINT_BREAK_SPEC (PH_alloc, "sr", "Stop after Static Reuse.");
+    PRINT_BREAK_SPEC (PH_alloc, "rb", "Stop after Reuse Branching..");
+    PRINT_BREAK_SPEC (PH_alloc, "ipc", "Stop after Inplace Computation.");
+    PRINT_BREAK_SPEC (PH_alloc, "dr", "Stop after Data Reuse.");
+    PRINT_BREAK_SPEC (PH_alloc, "dcr2", "Stop after Dead Code Removal (3).");
+
+    printf ("\n");
+
+    PRINT_BREAK_SPEC (PH_refcnt, "rc", "Stop after Reference Counting Inference.");
+    PRINT_BREAK_SPEC (PH_refcnt, "rco", "Stop after Reference Counting Optimizations.");
+    PRINT_BREAK_SPEC (PH_refcnt, "re", "Stop after Reuse Elimination.");
 
     printf ("\n");
     printf ("    with \"-mt [-mtmode 2]\"\n");
@@ -854,7 +881,7 @@ USGprintUsage ()
             "      Kai Trojahner\n"
             "      Michael Werner\n"
             "      Stephan Herhut\n"
-            "      Karsten Hinckfuﬂ\n"
+            "      Karsten Hinckfuss\n"
             "      Steffen Kuthe\n"
             "      Jan-Henrik Baumgarten\n");
 
