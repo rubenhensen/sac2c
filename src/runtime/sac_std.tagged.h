@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2002/10/10 23:53:20  dkr
+ * syntax error fixed
+ *
  * Revision 3.28  2002/10/08 01:53:54  dkr
  * collisions with CAT?? macros removed
  *
@@ -1188,10 +1191,15 @@ typedef int *SAC_array_descriptor_t;
  */
 
 #define SAC_ND_ASSIGN__DATA__AUD__SCL(to_nt, from_nt, copyfun)                           \
-  CAT15( SAC_ND_ASSIGN__DATA__AUD_, CAT15( NT_HID( to_nt), CAT15( __SCL_, \
-                                    CAT15( NT_HID( from_nt), CAT15( _,    \
-                                    CAT15( NT_UNQ( from_nt),              \
-                                    BuildArgs3( to_nt, from_nt, copyfun)))))
+    {                                                                                    \
+        SAC_ND_ALLOC__DATA (to_nt)                                                       \
+        CAT15 (SAC_ND_ASSIGN__DATA__AUD_,                                                \
+               CAT15 (NT_HID (to_nt),                                                    \
+                      CAT15 (__SCL_, CAT15 (NT_HID (from_nt),                            \
+                                            CAT15 (_, CAT15 (NT_UNQ (from_nt),           \
+                                                             BuildArgs3 (to_nt, from_nt, \
+                                                                         copyfun)))))))  \
+    }
 #define SAC_ND_ASSIGN__DATA__AUD_NHD__SCL_NHD_NUQ(to_nt, from_nt, copyfun)               \
     SAC_ND_WRITE_READ_COPY (to_nt, 0, from_nt, 0, copyfun)
 #define SAC_ND_ASSIGN__DATA__AUD_NHD__SCL_NHD_UNQ(to_nt, from_nt, copyfun)               \
