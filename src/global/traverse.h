@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/01/16 10:54:50  asi
+ * Revision 1.8  1995/02/07 10:59:23  asi
+ * renamed opt1_tab -> opt_tab, opt2_tab -> dead_tab, opt3_tab -> lir.tab and
+ * added functionlist cf_tab for constant folding
+ *
+ * Revision 1.7  1995/01/16  10:54:50  asi
  * added opt3_tab for loop independent removal
  * and free_tree for deletion of a syntax(sub)-tree
  *
@@ -45,11 +49,13 @@ extern funptr print_tab[];
 
 extern funptr type_tab[];
 
-extern funptr opt1_tab[];
+extern funptr opt_tab[];
 
-extern funptr opt2_tab[];
+extern funptr dead_tab[];
 
-extern funptr opt3_tab[];
+extern funptr lir_tab[];
+
+extern funptr cf_tab[];
 
 extern funptr free_tab[];
 

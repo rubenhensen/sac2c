@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/01/31 14:59:33  asi
+ * Revision 1.12  1995/02/07 10:59:23  asi
+ * renamed opt1_tab -> opt_tab, opt2_tab -> dead_tab, opt3_tab -> lir.tab and
+ * added functionlist cf_tab for constant folding
+ *
+ * Revision 1.11  1995/01/31  14:59:33  asi
  * opt4_tab inserted and NIF macro enlarged
  *
  * Revision 1.10  1995/01/18  17:37:16  asi
@@ -98,12 +102,12 @@ funptr type_tab[] = {
 #undef NIF
 
 /*
- * 4) opt1_tab
+ * 4) opt_tab
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) o
 
-funptr opt1_tab[] = {
+funptr opt_tab[] = {
 #include "node_info.mac"
 };
 
@@ -122,24 +126,24 @@ funptr imp_tab[] = {
 #undef NIF
 
 /*
- * 6) opt2_tab
+ * 6) dead_tab
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) x
 
-funptr opt2_tab[] = {
+funptr dead_tab[] = {
 #include "node_info.mac"
 };
 
 #undef NIF
 
 /*
- * 7) opt3_tab
+ * 7) lir_tab
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) y
 
-funptr opt3_tab[] = {
+funptr lir_tab[] = {
 #include "node_info.mac"
 };
 
@@ -158,12 +162,12 @@ funptr free_tab[] = {
 #undef NIF
 
 /*
- * 9) opt4_tab
+ * 9) cf_tab
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) a
 
-funptr opt4_tab[] = {
+funptr cf_tab[] = {
 #include "node_info.mac"
 };
 
