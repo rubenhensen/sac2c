@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2004/11/25 11:19:01  mwe
+ * use now correct fundef in TBmakeAp
+ *
  * Revision 3.30  2004/11/24 21:01:53  mwe
  * SacDevCamp: compiles!!!
  * now: dinner!
@@ -491,14 +494,14 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, dfm
  ******************************************************************************/
 
 static node *
-MakeL2fFunLet (info *arg_info, dfmask_t *in, dfmask_t *out)
+MakeL2fFunLet (node *fundef, dfmask_t *in, dfmask_t *out)
 {
     node *let;
 
     DBUG_ENTER ("MakeL2fFunLet");
 
     let = TBmakeLet (DFMUdfm2LetIds (out, NULL),
-                     TBmakeAp (INFO_L2F_FUNDEF (arg_info), DFMUdfm2ApArgs (in, NULL)));
+                     TBmakeAp (fundef, DFMUdfm2ApArgs (in, NULL)));
 
     DBUG_RETURN (let);
 }
@@ -528,14 +531,18 @@ DoLifting (char *prefix, dfmask_t *in, dfmask_t *out, dfmask_t *local, node *arg
      * build call of the new LaC function
      */
     funname = GetLacFunName (prefix);
-    modname = FUNDEF_MOD (INFO_L2F_FUNDEF (arg_info));
+    modname = ILIBstringCopy (FUNDEF_MOD (INFO_L2F_FUNDEF (arg_info)));
     DBUG_ASSERT ((modname != NULL), "modul name for LAC function is NULL!");
-    let = MakeL2fFunLet (arg_info, in, out);
+    let = MakeL2fFunLet (NULL, in, out);
 
     /*
      * build new LaC function
      */
     fundef = MakeL2fFundef (funname, modname, arg_node, let, in, out, local, arg_info);
+
+    DBUG_ASSERT ((NODE_TYPE (LET_EXPR (let)) == N_ap), "N_ap expected!");
+    AP_FUNDEF (LET_EXPR (let)) = fundef;
+
     funname = ILIBfree (funname);
 
     /*
