@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2005/01/11 13:52:12  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.21  2004/11/27 05:04:01  ktr
  * dk
  *
@@ -80,7 +83,7 @@
 
 #include "scnprs.h"
 #include "dbug.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "internal_lib.h"
 #include "filemgr.h"
 #include "handle_dots.h"
@@ -123,37 +126,37 @@ SPdoScanParse ()
     if (global.sacfilename == NULL) {
         cppfile = ILIBstringConcat3 (global.tmp_dirname, "/", "stdin");
         ILIBcreateCppCallString (global.sacfilename, cccallstr, cppfile);
-        NOTE (("Parsing from stdin ..."));
+        CTInote ("Parsing from stdin ...");
     } else {
         cppfile = ILIBstringConcat3 (global.tmp_dirname, "/", global.filename);
         pathname = FMGRfindFile (PK_path, global.sacfilename);
 
         if (pathname == NULL) {
-            SYSABORT (("Unable to open file \"%s\"", global.sacfilename));
+            CTIabort ("Unable to open file \"%s\"", global.sacfilename);
         }
 
         ILIBcreateCppCallString (pathname, cccallstr, cppfile);
 
-        NOTE (("Parsing file \"%s\" ...", pathname));
+        CTInote ("Parsing file \"%s\" ...", pathname);
     }
 
     if (global.show_syscall) {
-        NOTE (("err = system( \"%s\")", cccallstr));
+        CTInote ("err = system( \"%s\")", cccallstr);
     }
 
     err = system (cccallstr);
     if (err) {
-        SYSABORT (("Unable to start C preprocessor"));
+        CTIabort ("Unable to start C preprocessor");
     }
 
     if (global.show_syscall) {
-        NOTE (("yyin = fopen( \"%s\", \"r\")", cppfile));
+        CTInote ("yyin = fopen( \"%s\", \"r\")", cppfile);
     }
 
     yyin = fopen (cppfile, "r");
 
     if ((yyin == NULL) || (ferror (yyin))) {
-        SYSABORT (("Unable to start C preprocessor"));
+        CTIabort ("Unable to start C preprocessor");
     }
 
     global.start_token = PARSE_PRG;
@@ -161,21 +164,21 @@ SPdoScanParse ()
     SPmyYyparse ();
 
     if (global.show_syscall) {
-        NOTE (("err = fclose( yyin)"));
+        CTInote ("err = fclose( yyin)");
     }
 
     err = fclose (yyin);
     if (err) {
-        SYSABORT (("C preprocessor error"));
+        CTIabort ("C preprocessor error");
     }
 
     if (global.show_syscall) {
-        NOTE (("err = remove( \"%s\")", cppfile));
+        CTInote ("err = remove( \"%s\")", cppfile);
     }
 
     err = remove (cppfile);
     if (err) {
-        SYSABORT (("Could not delete /tmp-file"));
+        CTIabort ("Could not delete /tmp-file");
     }
     ILIBfree (cppfile);
 

@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.31  2005/01/11 13:52:12  cg
+* Converted output from Error.h to ctinfo.c
+*
 * Revision 1.30  2004/12/06 20:44:56  sah
 * fixed withlop withid rule
 *
@@ -109,7 +112,7 @@
 #include "internal_lib.h"
 #include "dbug.h"
 #include "DupTree.h"        /* for use of DUPdoDupTree() */
-#include "Error.h"
+#include "ctinfo.h"
 #include "free.h"
 #include "globals.h"
 #include "handle_mops.h"
@@ -304,7 +307,7 @@ file: PARSE_PRG  prg       { global.syntax_tree = $2; }
 ;
 
 eof: { if (commlevel) {
- ABORT( global.linenum, ("Unterminated comment found"));
+ CTIabortLine( global.linenum, "Unterminated comment found");
 
 #ifdef MUST_REFERENCE_YYLABELS
 /*
@@ -820,7 +823,8 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_LINKNAME( store_pragma) != NULL) {
-            WARN( global.linenum, ("Conflicting definitions of pragma 'linkname`"));
+            CTIwarnLine( global.linenum, 
+                         "Conflicting definitions of pragma 'linkname`");
           }
           PRAGMA_LINKNAME( store_pragma) = $3;
         }
@@ -829,7 +833,8 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_LINKMOD( store_pragma) != NULL) {
-            WARN( global.linenum, ("Conflicting definitions of pragma 'linkmod`"));
+            CTIwarnLine( global.linenum,
+                         "Conflicting definitions of pragma 'linkmod`");
           }
           PRAGMA_LINKMOD( store_pragma) = $3;
         }
@@ -838,7 +843,8 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_LINKOBJ( store_pragma) != NULL) {
-            WARN( global.linenum, ("Conflicting definitions of pragma 'linkmod`"));
+            CTIwarnLine( global.linenum,
+                         "Conflicting definitions of pragma 'linkmod`");
           }
           PRAGMA_LINKOBJ( store_pragma) = $3;
         }
@@ -847,7 +853,8 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_LINKSIGN( store_pragma) != NULL) {
-            WARN(global.linenum, ("Conflicting definitions of pragma 'linksign`"));
+            CTIwarnLine( global.linenum,
+                         "Conflicting definitions of pragma 'linksign`");
           }
           PRAGMA_LINKSIGN( store_pragma) = $4;
         }
@@ -856,7 +863,8 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_REFCOUNTING( store_pragma) != NULL) {
-            WARN(global.linenum, ("Conflicting definitions of pragma 'refcounting`"));
+            CTIwarnLine( global.linenum, 
+                         "Conflicting definitions of pragma 'refcounting`");
           }
           PRAGMA_REFCOUNTING( store_pragma) = $4;
         }
@@ -865,7 +873,8 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_READONLY( store_pragma) != NULL) {
-            WARN(global.linenum, ("Conflicting definitions of pragma 'readonly`"));
+            CTIwarnLine( global.linenum,
+                         "Conflicting definitions of pragma 'readonly`");
           }
           PRAGMA_READONLY( store_pragma) = $4;
         }
@@ -874,7 +883,8 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_EFFECT( store_pragma) != NULL) {
-            WARN(global.linenum, ("Conflicting definitions of pragma 'effect`"));
+            CTIwarnLine( global.linenum, 
+                         "Conflicting definitions of pragma 'effect`");
           }
           PRAGMA_EFFECT( store_pragma) = $3;
         }
@@ -883,7 +893,8 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_TOUCH( store_pragma) != NULL) {
-            WARN(global.linenum, ("Conflicting definitions of pragma 'touch`"));
+            CTIwarnLine( global.linenum, 
+                         "Conflicting definitions of pragma 'touch`");
           }
           PRAGMA_TOUCH( store_pragma) = $3;
         }
@@ -892,7 +903,8 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_COPYFUN( store_pragma) != NULL) {
-            WARN(global.linenum, ("Conflicting definitions of pragma 'copyfun`"));
+            CTIwarnLine( global.linenum, 
+                         "Conflicting definitions of pragma 'copyfun`");
           }
           PRAGMA_COPYFUN( store_pragma) = $3;
         }
@@ -901,7 +913,8 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_FREEFUN( store_pragma) != NULL) {
-            WARN(global.linenum, ("Conflicting definitions of pragma 'freefun`"));
+            CTIwarnLine( global.linenum,
+                         "Conflicting definitions of pragma 'freefun`");
           }
           PRAGMA_FREEFUN( store_pragma) = $3;
         }
@@ -910,7 +923,8 @@ pragma: hash_pragma LINKNAME string
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_INITFUN( store_pragma) != NULL) {
-            WARN(global.linenum, ("Conflicting definitions of pragma 'initfun`"));
+            CTIwarnLine( global.linenum, 
+                         "Conflicting definitions of pragma 'initfun`");
           }
           PRAGMA_INITFUN( store_pragma) = $3;
         }
@@ -1273,8 +1287,9 @@ with: BRACKET_L generator BRACKET_R wlassignblock withop
          * For now, we do not yet ask for the new syntax, BUT later we will
          * activate the following two lines....
          */
-        WARN( global.linenum, ( "Old with-loop style depricated!"));
-        CONT_WARN( ("Please use the new syntax instead"));
+        CTIwarnLine( global.linenum, 
+                     "Old with-loop style depricated!\n"
+                     "Please use the new syntax instead");
 #endif
 
         /*
@@ -1388,8 +1403,8 @@ part: BRACKET_L generator BRACKET_R wlassignblock COLON expr SEMIC
 generator: expr LE genidx genop expr steps width
            {
              if( ($7 != NULL) && ($6 == NULL)) {
-               WARN( global.linenum,
-                     ("width vector ignored due to missing step vector"));
+               CTIwarnLine( global.linenum,
+                            "Width vector ignored due to missing step vector");
                $7 = FREEdoFreeTree( $7);
              }
              $$ = TBmakePart( NULL,
@@ -1399,8 +1414,8 @@ generator: expr LE genidx genop expr steps width
          | expr LT genidx genop expr steps width
            {
              if( ($7 != NULL) && ($6 == NULL)) {
-               WARN( global.linenum,
-                     ("width vector ignored due to missing step vector"));
+               CTIwarnLine( global.linenum,
+                            "Width vector ignored due to missing step vector");
                $7 = FREEdoFreeTree( $7);
              }
              $$ = TBmakePart( NULL,
@@ -1849,11 +1864,9 @@ int yyerror( char *errname)
   DBUG_ENTER( "yyerror");
 
   charpos -= (strlen( yytext) - 1);
-  ERROR( global.linenum, ("%s at pos %d: '%s`", errname, charpos, yytext));
-  size_of_output = MAX_LINE_LENGTH -
-                   (((global.verbose_level > 1) ? 2 : 0) +
-                    strlen( global.filename) +
-                    ILIBnumberOfDigits( global.linenum) + 9);
+
+  size_of_output = CTIgetErrorMessageLineLength();
+  
   if (strlen( linebuf_ptr) > (size_t) size_of_output) {
     if (charpos >= size_of_output - 15) {
       offset = charpos - size_of_output + 15;
@@ -1862,14 +1875,16 @@ int yyerror( char *errname)
     strcpy( linebuf_ptr + offset + size_of_output - 4, " ...");
   }
 
-  CONT_ERROR(( "%s", linebuf_ptr + offset));
-  CONT_ERROR(( "%*s", charpos - offset, "^"));
-
-  ABORT_ON_ERROR;
+  CTIabortLine( global.linenum,
+                "%s at pos %d: '%s`\n%s\n%*s",
+                errname, 
+                charpos, 
+                yytext,
+                linebuf_ptr + offset,
+                charpos - offset, "^");
 
   DBUG_RETURN( 0);
 }
-
 
 
 /******************************************************************************

@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/01/11 13:52:12  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.4  2004/11/25 22:28:51  sbs
  * compiles
  *
@@ -23,6 +26,7 @@
 
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "config.h"
 #include "types.h"
@@ -32,7 +36,7 @@
 #include "free.h"
 #include "resource.h"
 #include "y.tab.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "globals.h"
 
 
@@ -371,7 +375,7 @@ int charpos = 0;
 
 
 "/*"                       { if (commlevel == 1) {
-                               WARN( global.linenum, ("Nested comment eleminated"));
+                               CTIwarnLine( global.linenum, "Nested comment eleminated");
                              }
                              commlevel++;
                              charpos += yyleng;
