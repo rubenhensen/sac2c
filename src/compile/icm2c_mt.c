@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2004/10/07 15:32:09  khf
+ * MT_CREATE_LOCAL_DESC modified
+ * set local reference counter to 1+SAC_SET_MAX_SYNC_FOLD
+ *
  * Revision 3.44  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -1343,11 +1347,13 @@ ICMCompileMT_CREATE_LOCAL_DESC (char *var_NT, int dim)
     }
 
     /*
-     * set local reference counter to 2 in order to guarantee that the
-     * object is neither reused nor deleted.
+     * set local reference counter to 1+SAC_SET_MAX_SYNC_FOLD in order to
+     * guarantee that the object is neither reused nor deleted.
+     * A value of two does no suffice here as the IN-variable might be used as
+     * neutral element multiple times.
      */
     INDENT;
-    fprintf (outfile, "SAC_ND_SET__RC( %s, 2)\n", var_NT);
+    fprintf (outfile, "SAC_ND_SET__RC( %s, 1 + SAC_SET_MAX_SYNC_FOLD)\n", var_NT);
 
     DBUG_VOID_RETURN;
 }
