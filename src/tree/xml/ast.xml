@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.8  2004/09/01 14:13:07  sah
+  ongoing work
+
   Revision 1.7  2004/08/29 18:10:05  sah
   general improvements
 
@@ -3253,7 +3256,7 @@
             <range from="wltransform" to="final" />
           </phases>
         </attribute>
-        <attribute name="IsScheduled" mandatory="yes">
+        <attribute name="CalcParallel" mandatory="yes">
           <type name="Bool" />
           <phases>
             <range from="new_mt" to="final" />

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.6  2004/09/01 14:13:07  sah
+# ongoing work
+#
 # Revision 1.5  2004/08/07 17:59:36  sah
 # added ast2check_node_h.xsl and
 # ast2check_node_c.xsl
@@ -38,7 +41,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 TARGETS = ../attribs.h ../node_basic.h ../node_basic.c ../free_node.c \
           ../free_node.h ../free_attribs.h \
-          ../check_node.h ../check_node.c
+          ../check_node.h ../check_node.c \
+          ../serialize_node.h ../serialize_node.c
 
 all: $(TARGETS)
 
@@ -83,6 +87,14 @@ all: $(TARGETS)
 
 ../check_node.c: ast.xml ast2check_node_c.xsl
 	$(XSLTENGINE) ast2check_node_c.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
+
+../serialize_node.h: ast.xml ast2serialize_node_h.xsl
+	$(XSLTENGINE) ast2serialize_node_h.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
+
+../serialize_node.c: ast.xml ast2serialize_node_c.xsl
+	$(XSLTENGINE) ast2serialize_node_c.xsl ast.xml \
 	| $(CODE_BEAUTIFIER) >$@
 
 clean:
