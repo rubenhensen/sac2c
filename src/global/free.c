@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.23  1997/10/31 16:17:18  srs
+ * memory for module names is NOT deallocated anymore.
+ * reason: FREE() on constant string (__MAIN) not possible.
+ *
  * Revision 1.22  1997/10/31 10:32:09  dkr
  * with defined NEWTREE, node->nnode is (partly) not used anymore
  *
@@ -460,7 +464,9 @@ FreeModul (node *arg_node, node *arg_info)
     FREETRAV (MODUL_DECL (arg_node));
     FREETRAV (MODUL_STORE_IMPORTS (arg_node));
 
-    FREE (MODUL_NAME (arg_node));
+    /* srs: module_name __MAIN is allocated statically in sac.y
+       the string of the module name is potentially shared.
+       FREE(MODUL_NAME(arg_node)); */
 
     DBUG_PRINT ("FREE", ("Removing N_modul node ..."));
 
