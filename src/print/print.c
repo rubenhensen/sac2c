@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.46  1995/03/15 14:14:25  asi
+ * Revision 1.47  1995/03/16 17:22:19  asi
+ * Output for Used Variables (gen-,modarray) modified
+ *
+ * Revision 1.46  1995/03/15  14:14:25  asi
  * output for masks modified
  *
  * Revision 1.45  1995/03/14  15:46:01  asi
@@ -671,7 +674,8 @@ PrintWith (node *arg_node, node *arg_info)
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, ")\n");
 
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
+    DBUG_EXECUTE ("MASK", char *text;
+                  text = PrintMask (arg_node->node[1]->mask[1], VARNO);
                   fprintf (outfile, "**Used Variables (gen-,modarray) : %s\n", text);
                   free (text););
 
