@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.59  2000/05/31 14:09:09  dkr
+ * INFO_COMP_VARDEC is now handled correctly in COMPBlock()
+ *
  * Revision 2.58  2000/05/26 21:58:15  dkr
  * signature of GetAdjustedFoldCode() changed
  *
@@ -397,18 +400,15 @@ int basetype_size[] = {
 
 static int label_nr = 0;
 
-/*
+/******************************************************************************
  *
- *  functionname  : GenericFun
- *  arguments     : 1) type of a N_vardec or N_arg node
- *                  2) index to specify generic function:
- *                     0: copyfun
- *                     1: freefun
- *  description   : returns the name of the specified generic function
- *                  of the given type
- *  remarks       :
+ * Function:
+ *   char *GenericFun(int which, types *type)
  *
- */
+ * Description:
+ *   Returns the name of the specified generic function of the given type
+ *
+ ******************************************************************************/
 
 static char *
 GenericFun (int which, types *type)
@@ -483,113 +483,6 @@ MakeAdjustRcICM (ids *varname, int num)
     }
 
     DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *MakeExprsNum( int num)
- *
- * description:
- *   Makes an N_exprs with a N_num as EXPR, NEXT is NULL.
- *
- ******************************************************************************/
-
-static node *
-MakeExprsNum (int num)
-{
-    node *result;
-
-    DBUG_ENTER (" MakeExprsNum");
-
-    result = MakeExprs (MakeNum (num), NULL);
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *MakeAssignIcm( char *name, node *args)
- *
- * description:
- *   Makes an Assignment for an new ICM with name and args given.
- *
- ******************************************************************************/
-
-static node *
-MakeAssignIcm (char *name, node *args)
-{
-    node *result;
-
-    DBUG_ENTER ("MakeAssignIcm");
-
-    result = MakeAssign (MakeIcm1 (name, args), NULL);
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *AppendAssignIcm( node *assign, char *name, node *args)
- *
- * description:
- *   Appends an new ICM with name and args given as an assign to the given
- *   chain of assignments assign.
- *
- ******************************************************************************/
-
-static node *
-AppendAssignIcm (node *assign, char *name, node *args)
-{
-    node *result;
-
-    DBUG_ENTER ("AppendAssignIcm");
-
-    result = AppendAssign (assign, MakeAssignIcm (name, args));
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *AppendVardecs( node *vardecs, node *append)
- *
- * description:
- *   Appends 'append' to 'vardecs' and returns the new chain.
- *
- * remark:
- *   The vardec-chain could be already compiled. That means, the chain
- *   contains N_vardec- *and* N_assign-nodes!
- *
- ******************************************************************************/
-
-static node *
-AppendVardecs (node *vardecs, node *append)
-{
-    node *tmp;
-
-    DBUG_ENTER ("AppendVardecs");
-
-    tmp = vardecs;
-    if (tmp != NULL) {
-        while (((NODE_TYPE (tmp) == N_assign) ? (ASSIGN_NEXT (tmp)) : (VARDEC_NEXT (tmp)))
-               != NULL) {
-            tmp
-              = (NODE_TYPE (tmp) == N_assign) ? (ASSIGN_NEXT (tmp)) : (VARDEC_NEXT (tmp));
-        }
-        if (NODE_TYPE (tmp) == N_assign) {
-            ASSIGN_NEXT (tmp) = append;
-        } else {
-            VARDEC_NEXT (tmp) = append;
-        }
-    } else {
-        vardecs = append;
-    }
-
-    DBUG_RETURN (vardecs);
 }
 
 /******************************************************************************
@@ -978,55 +871,63 @@ IdOrNumToIndex (node *id_or_num, int dim)
     DBUG_RETURN (index);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : AddVardec
- *  description   :
- *  remarks       :
+ * Function:
+ *   node *AddVardec( node *vardec, types *type, char *name, node *fundef)
  *
- */
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 static node *
 AddVardec (node *vardec, types *type, char *name, node *fundef)
 {
-    node *tmp = vardec;
-    int insert = 1;
+    node *tmp;
+    int insert;
 
     DBUG_ENTER ("AddVardec");
 
     /* look if there is already a matching vardec */
-    if (NULL != tmp) {
-        while ((NULL != VARDEC_NEXT (tmp)) && (1 == insert)) {
-            if (!strcmp (VARDEC_NAME (tmp), name))
+    insert = 1;
+    tmp = vardec;
+    if (tmp != NULL) {
+        while ((VARDEC_NEXT (tmp) != NULL) && (insert == 1)) {
+            if (!strcmp (VARDEC_NAME (tmp), name)) {
                 insert = 0;
+            }
             tmp = VARDEC_NEXT (tmp);
         }
     }
 
-    /* now insert new vardec node */
-    if ((1 == insert) ? ((NULL != tmp) ? strcmp (VARDEC_NAME (tmp), name) : 1) : 0) {
+    if ((insert == 1) && ((tmp == NULL) || strcmp (VARDEC_NAME (tmp), name))) {
+        /*
+         * now insert new vardec node
+         */
         types *new_type = DuplicateTypes (type, 0);
         node *new_vardec = MakeVardec (StringCopy (name), new_type, NULL);
 
-        DBUG_ASSERT ((NULL != tmp) ? (NULL == VARDEC_NEXT (tmp)) : 1,
-                     "VARDEC_NEXT(tmp) != NULL");
+        if (vardec != NULL) {
+            DBUG_ASSERT ((NULL == VARDEC_NEXT (tmp)), "VARDEC_NEXT(tmp) != NULL");
+            VARDEC_NEXT (tmp) = new_vardec;
+        } else {
+            vardec = new_vardec;
 
-        APPEND_VARDECS (tmp, new_vardec);
+            /*
+             * if there is no vardec yet,
+             * store the new one in 'FUNDEF_VARDEC( fundef)'
+             */
+            FUNDEF_VARDEC (fundef) = vardec;
+        }
+
+        /*
+         * we must update FUNDEF_DFM_BASE!!
+         */
+        FUNDEF_DFM_BASE (fundef)
+          = DFMUpdateMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
+                               FUNDEF_VARDEC (fundef));
     }
-
-    /*
-     * if there is no vardec yet, store the new one in 'FUNDEF_VARDEC( fundef)'
-     */
-    if (vardec == NULL) {
-        FUNDEF_VARDEC (fundef) = tmp;
-    }
-
-    /*
-     * we must update FUNDEF_DFM_BASE!!
-     */
-    FUNDEF_DFM_BASE (fundef)
-      = DFMUpdateMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
-                           FUNDEF_VARDEC (fundef));
 
     DBUG_RETURN (vardec);
 }
@@ -1897,6 +1798,7 @@ RenameReturn (node *return_node, node *arg_info)
         }
         exprs = EXPRS_NEXT (exprs);
     }
+
     if (ASSIGN_INSTR (next_assign) != return_node) {
         /* new nodes have been inserted */
         node *last_assign = CURR_ASSIGN (arg_info);
@@ -2062,13 +1964,10 @@ COMPModul (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *COMPFundef(node *arg_node, node *arg_info)
+ *   node *COMPFundef( node *arg_node, node *arg_info)
  *
  * description:
- *   compiles a N_fundef node.
- *
- * remarks:
- *   - sets INFO_COMP_VARDECS(arg_info) to variable declaration.
+ *   Compiles a N_fundef node.
  *
  ******************************************************************************/
 
@@ -2099,21 +1998,29 @@ COMPFundef (node *arg_node, node *arg_info)
     /********** begin: traverse body **********/
 
     /*
-     *  During compilation of a N_sync, the prioir N_sync (if exists) is needed.
-     *  INFO_COMP_LAST_SYNC provides these information, it is initialized here with
-     *  NULL and will be updated by each compilation of a N_sync (one needs to
-     *  compile them ordered!), this includes the destruction of such an N_sync-tree.
-     *  After compilation of the function the last known sync is destroyed then.
+     * During compilation of a N_sync, the prioir N_sync (if exists) is needed.
+     * INFO_COMP_LAST_SYNC provides these information, it is initialized here with
+     * NULL and will be updated by each compilation of a N_sync (one needs to
+     * compile them ordered!), this includes the destruction of such an N_sync-tree.
+     * After compilation of the function the last known sync is destroyed then.
      */
     INFO_COMP_LAST_SYNC (arg_info) = NULL;
+
+    /*
+     * INFO_COMP_VARDECS points to the vardecs of the current fundef (*not* block!!)
+     * Nevertheless the VARDECs are a son of the N_block-node therefore
+     * INFO_COMP_VARDECS is set and evaluated in COMPBlock().
+     * Here, this pointer is just initialized with NULL.
+     */
+    INFO_COMP_VARDECS (arg_info) = NULL;
 
     /*
      * traverse body
      */
     if (FUNDEF_BODY (arg_node) != NULL) {
-        INFO_COMP_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
+
     /*
      *  Destruction of last known N_sync is done here, all others have be killed
      *  while traversing.
@@ -2324,20 +2231,20 @@ COMPFundef (node *arg_node, node *arg_info)
  *
  * description:
  *   Stacks INFO_COMP_LASTASSIGN and sets it to the current node while
- *    traversal.
+ *   traversal.
  *
  ******************************************************************************/
 
 node *
 COMPBlock (node *arg_node, node *arg_info)
 {
-    node *old_info, *assign;
+    node *old_lastassign, *assign;
     char *fun_name, *cs_tag;
 
     DBUG_ENTER ("COMPBlock");
 
     /* stacking of old info! (nested blocks) */
-    old_info = INFO_COMP_LASTASSIGN (arg_info);
+    old_lastassign = INFO_COMP_LASTASSIGN (arg_info);
 
     if (BLOCK_CACHESIM (arg_node) != NULL) {
         fun_name = FUNDEF_NAME (INFO_COMP_FUNDEF (arg_info));
@@ -2368,24 +2275,47 @@ COMPBlock (node *arg_node, node *arg_info)
     }
 
     INFO_COMP_LASTASSIGN (arg_info) = arg_node;
-    BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+
+    if (FUNDEF_BODY (INFO_COMP_FUNDEF (arg_info)) == arg_node) {
+        /* this block is the body of a function definition */
+
+        DBUG_ASSERT ((INFO_COMP_VARDECS (arg_info) == NULL),
+                     "INFO_COMP_VARDECS is not initialized!");
+
+        INFO_COMP_VARDECS (arg_info) = BLOCK_VARDEC (arg_node);
+        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        /*
+         * update vardecs
+         * (insert new vardecs generated during compilation of the body)
+         */
+        BLOCK_VARDEC (arg_node) = INFO_COMP_VARDECS (arg_info);
+
+        /*
+         * we must compile the vardecs last, because we need the uncompiled vardecs
+         *  during traversal of the block.
+         *
+         * vardecs are not compiled for "foldfuns" because these vardecs are later
+         * on inserted into the vardec chains of the function each foldfun belongs
+         * to, i.e., they are compiled when this function is compiled.
+         */
+        if ((BLOCK_VARDEC (arg_node) != NULL)
+            && (NODE_TYPE (BLOCK_VARDEC (arg_node)) == N_vardec)
+            /*
+             * Note: NODE_TYPE( BLOCK_VARDEC( arg_node)) might be N_icm !!
+             */
+            && (FUNDEF_STATUS (INFO_COMP_FUNDEF (arg_info)) != ST_foldfun)) {
+            BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
+        }
+    } else {
+        /* this block is *not* the body of a function definition */
+
+        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+
+        DBUG_ASSERT ((BLOCK_VARDEC (arg_node) == NULL), "local vardecs found!");
+    }
 
     /* restoring old info! (nested blocks) */
-    INFO_COMP_LASTASSIGN (arg_info) = old_info;
-
-    /*
-     * we must compile the vardecs last, because we need the uncompiled vardecs
-     *  during traversal of the block.
-     *
-     * Vardecs are not compiled for "foldfuns" because these vardecs are later
-     * on inserted into the vardec chains of the function each foldfun belongs
-     * to, i.e., they are compiled when this function is compiled.
-     */
-    if ((BLOCK_VARDEC (arg_node) != NULL)
-        && (NODE_TYPE (BLOCK_VARDEC (arg_node)) == N_vardec)
-        && (FUNDEF_STATUS (INFO_COMP_FUNDEF (arg_info)) != ST_foldfun)) {
-        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
-    }
+    INFO_COMP_LASTASSIGN (arg_info) = old_lastassign;
 
     DBUG_RETURN (arg_node);
 }
@@ -4341,10 +4271,17 @@ COMPAp (node *arg_node, node *arg_info)
                 } else {
                     id_node = MakeId1 (TmpVar ());
 
+#if 0
+          INFO_COMP_VARDECS( arg_info)
+            = MakeVardec( StringCopy( ID_NAME( id_node)),
+                          DuplicateTypes( VARDEC_TYPE( IDS_VARDEC( ids)), 1),
+                          INFO_COMP_VARDECS( arg_info));
+#else
                     INFO_COMP_VARDECS (arg_info)
-                      = MakeVardec (StringCopy (ID_NAME (id_node)),
-                                    DuplicateTypes (VARDEC_TYPE (IDS_VARDEC (ids)), 1),
-                                    INFO_COMP_VARDECS (arg_info));
+                      = AddVardec (INFO_COMP_VARDECS (arg_info),
+                                   VARDEC_TYPE (IDS_VARDEC (ids)), ID_NAME (id_node),
+                                   INFO_COMP_FUNDEF (arg_info));
+#endif
 
                     if (IsArray (VARDEC_TYPE (IDS_VARDEC (ids)))) {
                         CREATE_2_ARY_ICM (next_assign, "ND_KS_NO_RC_ASSIGN_ARRAY",
