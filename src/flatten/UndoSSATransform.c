@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.19  2005/01/26 17:32:20  mwe
+ * remove fungroups from AST (implemented in USSATfundef)
+ *
  * Revision 1.18  2005/01/11 13:05:10  cg
  * Added notification of SSA transform
  *
@@ -208,6 +211,8 @@
 #include "free.h"
 #include "UndoSSATransform.h"
 #include "DupTree.h"
+
+#include "Error.h"
 
 #define OPASSIGN_NOOP 0
 #define OPASSIGN_REMOVE 1
@@ -749,6 +754,28 @@ USSATfundef (node *arg_node, info *arg_info)
                 }
                 assign = ASSIGN_NEXT (assign);
             }
+        }
+    }
+
+    /*
+     * eleminate fungroups
+     */
+    if (FUNDEF_FUNGROUP (arg_node) != NULL) {
+        /*
+         * fungroup exists
+         */
+
+        if (FUNGROUP_REFCOUNTER (FUNDEF_FUNGROUP (arg_node)) == 1) {
+            /*
+             * last existing fundef with reference to fungroup
+             */
+            FUNDEF_FUNGROUP (arg_node) = FREEdoFreeNode (FUNDEF_FUNGROUP (arg_node));
+        } else {
+            /*
+             * other fundefs with references to fungroups exists
+             */
+            (FUNGROUP_REFCOUNTER (FUNDEF_FUNGROUP (arg_node)))--;
+            FUNDEF_FUNGROUP (arg_node) = NULL;
         }
     }
 
