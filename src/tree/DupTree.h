@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.17  2000/10/23 10:37:43  dkr
+ * function DupIds_Id added
+ *
  * Revision 1.16  2000/07/14 12:47:54  dkr
  * DupModul and DupImplist added
  *
@@ -113,17 +116,20 @@ extern node *DupNode (node *arg_node);
 
 /*
  * Functions for duplicating non-node parts of the AST
- *
- ******
+ */
+extern shpseg *DupShpSeg (shpseg *shp_seg);
+extern types *DupTypes (types *source);
+extern node *DupIds_Id (ids *ids);
+
+/*
+ * Functions for duplicating non-node parts of the AST
  *
  * Please do NOT call these functions with (arg_info != NULL) !!
  * arg_info should be used by DupTree/DupNode only!
  */
 extern ids *DupOneIds (ids *ids, node *arg_info);
 extern ids *DupIds (ids *ids, node *arg_info);
-extern shpseg *DupShpSeg (shpseg *shp_seg);
 extern nodelist *DupNodelist (nodelist *nl, node *arg_info);
-extern types *DupTypes (types *source);
 
 /*
  * Functions for internal use during AST traversal only!
