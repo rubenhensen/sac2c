@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/08/03 11:46:49  jhs
+ * Added missing end of comment.
+ *
  * Revision 2.9  1999/08/03 11:44:38  jhs
  * Some comments added.
  *
@@ -75,23 +78,24 @@
  * description:
  *   Tests whether both masks are disjoint (return TRUE) or not (return FALSE).
  *
- ******************************************************************************
-int Disjoint (DFMmask_t mask1, DFMmask_t mask2)
+ ******************************************************************************/
+int
+Disjoint (DFMmask_t mask1, DFMmask_t mask2)
 {
-  int result;
-  DFMmask_t andmask;
+    int result;
+    DFMmask_t andmask;
 
-  DBUG_ENTER( "Disjoint");
+    DBUG_ENTER ("Disjoint");
 
-  andmask = DFMGenMaskAnd (mask1, mask2);
-  if (DFMTestMask (andmask) > 0) {
-    result = FALSE;
-  } else {
-    result = TRUE;
-  }
-  DFMRemoveMask (andmask);
+    andmask = DFMGenMaskAnd (mask1, mask2);
+    if (DFMTestMask (andmask) > 0) {
+        result = FALSE;
+    } else {
+        result = TRUE;
+    }
+    DFMRemoveMask (andmask);
 
-  DBUG_RETURN( result);
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************
