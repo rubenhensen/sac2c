@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.153  2004/11/25 20:47:51  khf
+ * additional macros inserted
+ *
  * Revision 3.152  2004/11/25 20:15:15  skt
  * some brushing
  *
@@ -1489,10 +1492,6 @@ extern node *TCmakeVinfoDollar (node *next);
 
 #define ID_DECL(n) (AVIS_DECL (ID_AVIS (n)))
 
-extern node *TCmakeId_Copy_NT (char *str, types *type);
-
-extern node *TCmakeId_Num (int val);
-
 extern node *TCmakeIdFromIds (node *idss);
 
 /***************************************************************************
@@ -1898,7 +1897,7 @@ extern int TCcountParts (node *parts);
         if (vect != NULL) {                                                              \
             fprintf (handle, "[ ");                                                      \
             for (d = 0; d < WLSEGVAR_DIMS (n); d++) {                                    \
-                NodeOrInt_Print (handle, N_wlsegVar, &(vect[d]), d);                     \
+                WLBnodeOrIntPrint (handle, N_wlsegvar, &(vect[d]), d);                   \
                 fprintf (handle, " ");                                                   \
             }                                                                            \
             fprintf (handle, "]");                                                       \
@@ -2094,7 +2093,7 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
 #define WLGRIDX_DIM(n) ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_DIM (n) : WLGRIDVAR_DIM (n))
 
 #define WLGRIDX_FITTED(n)                                                                \
-    ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_FITTED (n) : WLGRIDVAR_FITTED (n))
+    ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_ISFITTED (n) : WLGRIDVAR_ISFITTED (n))
 
 #define WLGRIDX_NEXTDIM(n)                                                               \
     ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_NEXTDIM (n) : WLGRIDVAR_NEXTDIM (n))
