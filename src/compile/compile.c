@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.23  1999/07/28 13:02:01  jhs
+ * Added new barrier MT_SYNC_FOLD.
+ *
  * Revision 2.22  1999/07/21 12:12:41  jhs
  * Only Barriers FOLD, ONEFOLD, NONFOLD are used here
  * (but the code has to be brushed up).
@@ -6412,8 +6415,18 @@ COMPSpmd (node *arg_node, node *arg_info)
      */
 
     num_args = 0;
-    icm_args = NULL;
+    icm_args = BLOCK_SPMD_SETUP_ARGS (FUNDEF_BODY (SPMD_FUNDEF (arg_node)));
+    while (icm_args != NULL) {
+        num_args++;
+        icm_args = ICM_NEXT (icm_args);
+    }
+    num_args = num_args / 3;
 
+    DBUG_PRINT ("COMPi", ("catched num_args %i", num_args));
+
+    /*  icm_args = BLOCK_SPMD_SETUP_ARGS(FUNDEF_BODY(SPMD_FUNDEF(arg_node))); */
+    num_args = 0;
+    icm_args = NULL;
     icm_args = BuildParamsByDFM (SPMD_IN (arg_node), "in", &num_args, icm_args);
     icm_args = BuildParamsByDFM (SPMD_OUT (arg_node), "out", &num_args, icm_args);
     icm_args = BuildParamsByDFM (SPMD_SHARED (arg_node), "shared", &num_args, icm_args);
@@ -6453,7 +6466,7 @@ node *
 COMPSync (node *arg_node, node *arg_info)
 {
     node *icm_args, *icm_args2, *icm_args3, *vardec, *with, *block, *instr, *assign,
-      *last_assign, *prolog_icms, *epilog_icms, *new_icm, *assigns = NULL;
+      *last_assign, *prolog_icms, *epilog_icms, *new_icm, *setup_args, *assigns = NULL;
     ids *with_ids;
     types *type;
     simpletype s_type;
@@ -6642,13 +6655,6 @@ COMPSync (node *arg_node, node *arg_info)
     fold_args = MakeExprs (MakeNum (num_fold_args), fold_args);
 
     /*
-     * finish arguments of ICM 'MT_SYNC_...'
-     */
-    if (num_folds > 1) {
-        icm_args2 = MakeExprs (MakeNum (num_folds), icm_args2);
-    }
-
-    /*
      *  compile the sync-region
      *  backup is needed, so one could use the block while compiling the next
      *  N_sync. One needs to copy that here, because further compiling
@@ -6691,6 +6697,7 @@ COMPSync (node *arg_node, node *arg_info)
                  *  -> stack nested with-loops
                  */
                 count_nesting++;
+                DBUG_PRINT ("COMP", ("ICM: %s is ++", ICM_NAME (instr)));
             } else if ((strcmp (ICM_NAME (instr), "WL_FOLD_END") == 0)
                        || (strcmp (ICM_NAME (instr), "WL_NONFOLD_END") == 0)) {
                 /*
@@ -6700,6 +6707,7 @@ COMPSync (node *arg_node, node *arg_info)
                 DBUG_ASSERT ((count_nesting > 0),
                              "WL_..._BEGIN/END-ICMs non-balanced (too much ENDs)");
                 count_nesting--;
+                DBUG_PRINT ("COMP", ("ICM: %s is --", ICM_NAME (instr)));
             } else if (count_nesting == 0) {
                 /*
                  *  not within any (possibly nested) with-loop
@@ -6715,21 +6723,27 @@ COMPSync (node *arg_node, node *arg_info)
                     var_name = ID_NAME (EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (instr))));
                     prolog = 1;
                     epilog = 0;
+                    DBUG_PRINT ("COMP", ("ICM: %s is prolog", ICM_NAME (instr)));
                 } else if ((strcmp (ICM_NAME (instr), "ND_DEC_RC_FREE_ARRAY") == 0)
                            || (strcmp (ICM_NAME (instr), "ND_DEC_RC") == 0)) {
                     var_name = ID_NAME (EXPRS_EXPR (ICM_ARGS (instr)));
                     prolog = 0;
                     epilog = 1;
+                    DBUG_PRINT ("COMP", ("ICM: %s is epilog", ICM_NAME (instr)));
                 } else if (strcmp (ICM_NAME (instr), "ND_INC_RC") == 0) {
                     var_name = ID_NAME (EXPRS_EXPR (ICM_ARGS (instr)));
                     prolog = 1;
                     epilog = 0;
+                    DBUG_PRINT ("COMP", ("ICM: %s is prolog", ICM_NAME (instr)));
                 } else {
                     prolog = 0;
                     epilog = 0;
+                    DBUG_PRINT ("COMP", ("ICM: %s is nothing", ICM_NAME (instr)));
                 }
+            } else {
+                /* else var_name == NULL is valid */
+                DBUG_PRINT ("COMP", ("ICM: %s is ignored!!!!", ICM_NAME (instr)));
             }
-            /* else var_name == NULL is valid */
 
             if (var_name != NULL) {
                 if (DFMTestMaskEntry (SYNC_IN (arg_node), var_name, NULL)
@@ -6807,7 +6821,15 @@ COMPSync (node *arg_node, node *arg_info)
             fold_args = FreeTree (fold_args);
         }
 
+        num_args = 0;
+        setup_args = NULL;
+        setup_args
+          = BuildParamsByDFM (SYNC_INOUT (arg_node), "in", &num_args, setup_args);
+
+        DBUG_PRINT ("COMPi", ("num_args %i", num_args));
+
         BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (INFO_COMP_FUNDEF (arg_info))) = prolog_icms;
+        BLOCK_SPMD_SETUP_ARGS (FUNDEF_BODY (INFO_COMP_FUNDEF (arg_info))) = setup_args;
     }
     barrier_id++;
 
@@ -6848,17 +6870,26 @@ COMPSync (node *arg_node, node *arg_info)
         if (DFMTestMask (SYNC_OUT (arg_node)) > 0) {
             if (DFMTestMask (SYNC_OUT (arg_node)) > 1) {
                 /* icm_name = "MT_SYNC_FOLD_NONFOLD"; */
+                icm_args2 = MakeExprs (MakeNum (num_folds), icm_args2);
                 icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
                 icm_name = "MT_SYNC_FOLD";
+
+                DBUG_PRINT ("COMPi", ("MT_SYNC_FOLD (instead of MT_SYNC_FOLD_NONFOLD)"));
             } else {
                 /* DFMTestMask( SYNC_OUT( arg_node)) == 1  */
                 /* icm_name = "MT_SYNC_ONEFOLD_NONFOLD"; */
+                icm_args2 = MakeExprs (MakeNum (num_folds), icm_args2);
                 icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
                 icm_name = "MT_SYNC_FOLD";
+
+                DBUG_PRINT ("COMPi",
+                            ("MT_SYNC_FOLD (instead of MT_SYNC_ONEFOLD_NONFOLD)"));
             }
         } else {
             icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
             icm_name = "MT_SYNC_NONFOLD";
+
+            DBUG_PRINT ("COMPi", (" MT_SYNC_NONFOLD"));
         }
     } else {
         DBUG_ASSERT ((DFMTestMask (SYNC_OUT (arg_node)) > 0), "no target found");
@@ -6867,16 +6898,21 @@ COMPSync (node *arg_node, node *arg_info)
                     ("DFMTestMask( OUT ): %i", DFMTestMask (SYNC_OUT (arg_node))));
 
         if (DFMTestMask (SYNC_OUT (arg_node)) > 1) {
+            icm_args2 = MakeExprs (MakeNum (num_folds), icm_args2);
             icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
             icm_name = "MT_SYNC_FOLD";
+
+            DBUG_PRINT ("COMPi", (" MT_SYNC_FOLD"));
         } else {
             /* DFMTestMask( SYNC_OUT( arg_node)) == 1 */
             icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
             icm_name = "MT_SYNC_ONEFOLD";
+
+            DBUG_PRINT ("COMPi", (" MT_SYNC_ONEFOLD"));
         }
     }
 
-    DBUG_PRINT ("COMPi", ("using syncronisation: %s", icm_name));
+    DBUG_PRINT ("COMPi", ("using syncronisation: %s barrier: %i", icm_name, barrier_id));
 
     assigns = AppendAssignIcm (assigns, icm_name, icm_args2);
 
