@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2002/10/18 13:43:14  sbs
+ * accesses to ID_ATTRIB replaced by FLAG inspections
+ *
  * Revision 3.2  2001/05/17 13:12:07  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -749,8 +752,14 @@ CheckApplied (node *var)
             message_indent = 0;
             not_yet_errored = 0;
         } else {
-            if (ID_ATTRIB (var) != ST_readonly_reference) {
-                UNQ_STATE (tmp)[number] = 0;
+            DBUG_PRINT ("F_IS_REFERENCE",
+                        ("trying to access IS_REFERENCE of %s", ID_NAME (var)));
+            if (GET_FLAG (ID, var, IS_REFERENCE)) {
+                DBUG_PRINT ("F_IS_READ_ONLY",
+                            ("trying to access IS_READ_ONLY of %s", ID_NAME (var)));
+                if (!GET_FLAG (ID, var, IS_READ_ONLY)) {
+                    UNQ_STATE (tmp)[number] = 0;
+                }
             }
         }
 
