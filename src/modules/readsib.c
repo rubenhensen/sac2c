@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.9  1996/02/21 15:08:35  cg
+ * Revision 1.10  1996/04/02 15:44:50  cg
+ * bug fixed in function CheckExistFuns: now new symbols are inserted
+ * into the global mod_tab for implicitly imported functions
+ *
+ * Revision 1.9  1996/02/21  15:08:35  cg
  * Now, pragmas of functions extracted from SIBs is retrieved correctly
  *
  * Revision 1.8  1996/02/12  17:48:34  cg
@@ -647,6 +651,12 @@ EnsureExistFuns (node *fundef, node *modul, node *sib)
             FUNDEF_SIB (fundef) = sib;
 
             AddFunToModul (fundef, modul);
+
+            if (FUNDEF_MOD (fundef) != NULL) {
+                AddSymbol (FUNDEF_NAME (fundef), FUNDEF_MOD (fundef), 2);
+            }
+
+            /* new symbol is added to mod_tab if it's a sac-symbol */
 
             find = fundef;
             fundef = next;
