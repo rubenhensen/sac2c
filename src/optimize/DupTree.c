@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.95  1998/05/28 23:51:00  dkr
+ * fixed a bug in DupNwithop:
+ *   NWITHOP_FUNDEF is copied not duplicated
+ *
  * Revision 1.94  1998/05/24 00:40:25  dkr
  * removed WLGRID_CODE_TEMPLATE
  *
@@ -1081,7 +1085,7 @@ DupNwithop (node *arg_node, node *arg_info)
         NWITHOP_NEUTRAL (new_node) = DUPTRAV (NWITHOP_NEUTRAL (arg_node));
         NWITHOP_FUN (new_node) = StringCopy (NWITHOP_FUN (arg_node));
         NWITHOP_MOD (new_node) = StringCopy (NWITHOP_MOD (arg_node));
-        NWITHOP_FUNDEF (new_node) = DUPTRAV (NWITHOP_FUNDEF (arg_node));
+        NWITHOP_FUNDEF (new_node) = NWITHOP_FUNDEF (arg_node);
         break;
     case WO_foldprf:
         NWITHOP_NEUTRAL (new_node) = DUPTRAV (NWITHOP_NEUTRAL (arg_node));
