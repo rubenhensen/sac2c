@@ -1,14 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.24  2001/03/28 19:54:19  dkr
- * NodeOrInt functions modified
- *
- * Revision 3.23  2001/03/28 14:56:31  dkr
- * NodeOrInt_SetNameOrVal added
- *
- * Revision 3.22  2001/03/27 23:01:20  dkr
- * NodeOrInt_GetNameOrVal() modified
+ * Revision 3.25  2001/03/29 01:33:35  dkr
+ * functions for NodeOrInt, NameOrVal recoded
  *
  * Revision 3.21  2001/03/27 15:40:17  nmw
  * Array2Vec as wrapper for different Array2<XYZ>Vec added
@@ -32,9 +26,6 @@
  * Revision 3.15  2001/03/15 10:54:49  nmw
  * MakeVardecFromArgs adjusts VARDEC_ATTRIB correctly
  *
- * Revision 3.14  2001/03/14 16:25:55  dkr
- * some errors in comments corrected
- *
  * Revision 3.12  2001/02/22 12:45:16  nmw
  * MakeVardecFromArg added
  *
@@ -43,9 +34,6 @@
  *
  * Revision 3.10  2001/02/15 16:59:43  nmw
  * access macro for SSAstack added
- *
- * Revision 3.9  2001/02/02 09:20:56  dkr
- * no changes done
  *
  * Revision 3.8  2001/01/29 16:08:51  dkr
  * NameOrVal_Le() and NodeOrInt_Le() added
@@ -130,9 +118,6 @@
  *
  * [...]
  *
- * Revision 1.1  1995/09/27  15:13:12  cg
- * Initial revision
- *
  */
 
 #include "types.h"
@@ -207,7 +192,7 @@ GetShpsegLength (int dims, shpseg *shape)
 /*****************************************************************************
  *
  * function:
- *   shpseg *DiffShpseg(int dim, shpseg* shape1, shpseg* shape2)
+ *   shpseg *DiffShpseg( int dim, shpseg *shape1, shpseg *shape2)
  *
  * description:
  *   calculate shape1 - shape2
@@ -236,7 +221,7 @@ DiffShpseg (int dim, shpseg *shape1, shpseg *shape2)
 /*****************************************************************************
  *
  * function:
- *   bool EqualShpseg(int dim, shpseg* shape2, shpseg* shape1)
+ *   bool EqualShpseg( int dim, shpseg *shape2, shpseg *shape1)
  *
  * description:
  *   compares two shapes, result is TRUE, if shapes are equal
@@ -289,7 +274,7 @@ MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2)
 /*****************************************************************************
  *
  * function:
- *   shpseg *Array2Shpseg( node* array, int *ret_dim)
+ *   shpseg *Array2Shpseg( node *array, int *ret_dim)
  *
  * description:
  *   Convert 'array' into a shpseg (requires int-array!!!).
@@ -328,7 +313,7 @@ Array2Shpseg (node *array, int *ret_dim)
 /*****************************************************************************
  *
  * function:
- *   node *Shpseg2Array(shpseg* shape, int dim)
+ *   node *Shpseg2Array( shpseg *shape, int dim)
  *
  * description:
  *   convert shpseg with given dimension into array with simpletype T_int
@@ -893,6 +878,7 @@ CopyConstVec (simpletype vectype, int veclen, void *const_vec)
     void *res;
 
     DBUG_ENTER ("CopyConstVec");
+
     if (veclen > 0) {
         switch (vectype) {
         case T_bool:
@@ -923,6 +909,7 @@ CopyConstVec (simpletype vectype, int veclen, void *const_vec)
     } else {
         res = NULL;
     }
+
     DBUG_RETURN (res);
 }
 
@@ -942,6 +929,7 @@ AllocConstVec (simpletype vectype, int veclen)
     void *res;
 
     DBUG_ENTER ("AllocConstVec");
+
     if (veclen > 0) {
         switch (vectype) {
         case T_bool:
@@ -964,6 +952,7 @@ AllocConstVec (simpletype vectype, int veclen)
     } else {
         res = NULL;
     }
+
     DBUG_RETURN (res);
 }
 
@@ -986,6 +975,7 @@ void *
 ModConstVec (simpletype vectype, void *const_vec, int idx, node *const_node)
 {
     DBUG_ENTER ("ModConstVec");
+
     switch (vectype) {
     case T_bool:
         DBUG_ASSERT ((NODE_TYPE (const_node) == N_bool),
@@ -1026,6 +1016,7 @@ ModConstVec (simpletype vectype, void *const_vec, int idx, node *const_node)
     default:
         DBUG_ASSERT ((0), "ModConstVec called with non-const-type!");
     }
+
     DBUG_RETURN (const_vec);
 }
 
@@ -1052,8 +1043,9 @@ AnnotateIdWithConstVec (node *expr, node *id)
     DBUG_ASSERT ((NODE_TYPE (id) == N_id),
                  "AnnotateIdWithConstVec called with non-compliant arguments!");
 
-    while (NODE_TYPE (behind_casts) == N_cast)
+    while (NODE_TYPE (behind_casts) == N_cast) {
         behind_casts = CAST_EXPR (behind_casts);
+    }
 
     if (NODE_TYPE (behind_casts) == N_array) {
         ID_ISCONST (id) = ARRAY_ISCONST (behind_casts);
@@ -1845,7 +1837,7 @@ AppendAssign (node *assign_chain, node *assign)
 /******************************************************************************
  *
  * Function:
- *   node *MakeAssignLet(char *var_name, node *vardec_node, node* let_expr)
+ *   node *MakeAssignLet(char *var_name, node *vardec_node, node *let_expr)
  *
  * Description:
  *
@@ -1943,7 +1935,7 @@ MakeAssignIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node
 /******************************************************************************
  *
  * Function:
- *   node *GetCompoundNode(node* arg_node)
+ *   node *GetCompoundNode( node *arg_node)
  *
  * Description:
  *
@@ -2320,8 +2312,10 @@ IntVec2Array (int length, int *intvec)
 int *
 Array2IntVec (node *aelems, int *length)
 {
-    int *intvec, i = 0, j;
+    int *intvec;
+    int j;
     node *tmp = aelems;
+    int i = 0;
 
     DBUG_ENTER ("Array2IntVec");
 
@@ -2500,7 +2494,7 @@ Array2Vec (simpletype t, node *aelems, int *length)
         res = (void *)Array2CharVec (aelems, length);
         break;
     default:
-        DBUG_ASSERT ((FALSE), "unknown type for array");
+        DBUG_ASSERT ((0), "unknown type for array");
         res = NULL;
     }
 
@@ -2551,9 +2545,9 @@ MakeVinfoDollar (node *next)
 /******************************************************************************
  *
  * function:
- *   node *MakePrf1(prf prf, node* arg1)
- *   node *MakePrf2(prf prf, node* arg1, node* arg2)
- *   node *MakePrf3(prf prf, node* arg1, node* arg2, node* arg3)
+ *   node *MakePrf1( prf prf, node *arg1)
+ *   node *MakePrf2( prf prf, node *arg1, node *arg2)
+ *   node *MakePrf3( prf prf, node *arg1, node *arg2, node *arg3)
  *
  * description:
  *   create N_prf node for primitive function application with 1, 2, or 3
@@ -2922,6 +2916,71 @@ NameOrVal_CheckConsistency (char *name, int val)
 /******************************************************************************
  *
  * Function:
+ *   bool NameOrVal_IsInt( char *name, int val)
+ *
+ * Description:
+ *   Returns TRUE iff  [name, val]  has the type 'int'.
+ *
+ ******************************************************************************/
+
+bool
+NameOrVal_IsInt (char *name, int val)
+{
+    bool ret;
+
+    DBUG_ENTER ("NodeOrVal_IsInt");
+
+    NameOrVal_CheckConsistency (name, val);
+
+    ret = (val != IDX_OTHER);
+
+    DBUG_RETURN (ret);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool NodeOrInt_IsInt( nodetype nt, void *node_or_int)
+ *
+ * Description:
+ *   Returns TRUE iff  *node_or_int  has the type 'int'.
+ *
+ ******************************************************************************/
+
+bool
+NodeOrInt_IsInt (nodetype nt, void *node_or_int)
+{
+    bool ret;
+
+    DBUG_ENTER ("NodeOrInt_IsInt");
+
+    switch (nt) {
+    case N_WLsegVar:
+    case N_WLstrideVar:
+    case N_WLgridVar:
+        ret = FALSE;
+        break;
+
+    case N_WLseg:
+    case N_WLblock:
+    case N_WLublock:
+    case N_WLstride:
+    case N_WLgrid:
+        ret = TRUE;
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "wrong node type found!");
+        ret = FALSE;
+        break;
+    }
+
+    DBUG_RETURN (ret);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   void NodeOrInt_GetNameOrVal( char **ret_name, int *ret_val,
  *                                nodetype nt, void *node_or_int)
  *
@@ -2937,41 +2996,29 @@ NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt, void *node_o
 
     DBUG_ASSERT ((node_or_int != NULL), "no address found!");
 
-    if (ret_name != NULL) {
-        (*ret_name) = NULL;
-    }
-    if (ret_val != NULL) {
-        (*ret_val) = IDX_OTHER;
-    }
-
-    switch (nt) {
-    case N_WLsegVar:
-    case N_WLstrideVar:
-    case N_WLgridVar:
+    if (NodeOrInt_IsInt (nt, node_or_int)) {
+        if (ret_name != NULL) {
+            (*ret_name) = NULL;
+        }
+        if (ret_val != NULL) {
+            (*ret_val) = *((int *)node_or_int);
+        }
+    } else {
         if (NODE_TYPE ((*((node **)node_or_int))) == N_id) {
             if (ret_name != NULL) {
                 (*ret_name) = ID_NAME ((*((node **)node_or_int)));
             }
+            if (ret_val != NULL) {
+                (*ret_val) = IDX_OTHER;
+            }
         } else {
+            if (ret_name != NULL) {
+                (*ret_name) = NULL;
+            }
             if (ret_val != NULL) {
                 (*ret_val) = NUM_VAL ((*((node **)node_or_int)));
             }
         }
-        break;
-
-    case N_WLseg:
-    case N_WLblock:
-    case N_WLublock:
-    case N_WLstride:
-    case N_WLgrid:
-        if (ret_val != NULL) {
-            (*ret_val) = *((int *)node_or_int);
-        }
-        break;
-
-    default:
-        DBUG_ASSERT ((0), "wrong node type found!");
-        break;
     }
 
     DBUG_VOID_RETURN;
@@ -2980,7 +3027,35 @@ NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt, void *node_o
 /******************************************************************************
  *
  * Function:
- *   void NodeOrInt_SetNameOrVal( char *name, int val,
+ *   void NameOrVal_SetNodeOrInt( nodetype ret_nt, void *ret_node_or_int,
+ *                                char *name, int val)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+void
+NameOrVal_SetNodeOrInt (nodetype ret_nt, void *ret_node_or_int, char *name, int val)
+{
+    DBUG_ENTER ("NameOrVal_SetNodeOrInt");
+
+    DBUG_ASSERT ((ret_node_or_int != NULL), "no return address found!");
+
+    if (NodeOrInt_IsInt (ret_nt, ret_node_or_int)) {
+        (*((int *)ret_node_or_int)) = val;
+    } else {
+        FreeTree ((*((node **)ret_node_or_int)));
+        (*((node **)ret_node_or_int)) = NameOrVal_MakeNode (name, val);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void NodeOrInt_SetNodeOrInt( nodetype ret_nt, void *ret_node_or_int,
  *                                nodetype nt, void *node_or_int)
  *
  * Description:
@@ -2989,31 +3064,21 @@ NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt, void *node_o
  ******************************************************************************/
 
 void
-NodeOrInt_SetNameOrVal (char *name, int val, nodetype nt, void *node_or_int)
+NodeOrInt_SetNodeOrInt (nodetype ret_nt, void *ret_node_or_int, nodetype nt,
+                        void *node_or_int)
 {
-    DBUG_ENTER ("NodeOrInt_SetNameOrVal");
+    int val;
 
-    DBUG_ASSERT ((node_or_int != NULL), "no address found!");
+    DBUG_ENTER ("NodeOrInt_SetNodeOrInt");
 
-    switch (nt) {
-    case N_WLsegVar:
-    case N_WLstrideVar:
-    case N_WLgridVar:
-        FreeTree ((*((node **)node_or_int)));
-        (*((node **)node_or_int)) = NameOrVal_MakeNode (name, val, NULL);
-        break;
+    DBUG_ASSERT ((ret_node_or_int != NULL), "no return address found!");
 
-    case N_WLseg:
-    case N_WLblock:
-    case N_WLublock:
-    case N_WLstride:
-    case N_WLgrid:
-        (*((int *)node_or_int)) = val;
-        break;
-
-    default:
-        DBUG_ASSERT ((0), "wrong node type found!");
-        break;
+    if (NodeOrInt_IsInt (ret_nt, ret_node_or_int)) {
+        NodeOrInt_GetNameOrVal (NULL, &val, nt, node_or_int);
+        (*((int *)ret_node_or_int)) = val;
+    } else {
+        FreeTree ((*((node **)ret_node_or_int)));
+        (*((node **)ret_node_or_int)) = NodeOrInt_MakeNode (nt, node_or_int);
     }
 
     DBUG_VOID_RETURN;
@@ -3022,47 +3087,30 @@ NodeOrInt_SetNameOrVal (char *name, int val, nodetype nt, void *node_or_int)
 /******************************************************************************
  *
  * Function:
- *   node *NameOrVal_MakeNode( char *name, int val,
- *                             void *node_or_int)
+ *   node *NameOrVal_MakeNode( char *name, int val)
  *
  * Description:
+ *   Generates a node containing the parameter of a N_WLstride(Var) or
+ *   N_WLgrid(Var) node.
  *
+ * CAUTION:
+ *   This function creates a *fresh* node without any back-references!
+ *   You might want to use NodeOrInt_MakeNode() instead!
  *
  ******************************************************************************/
 
 node *
-NameOrVal_MakeNode (char *name, int val, void *node_or_int)
+NameOrVal_MakeNode (char *name, int val)
 {
-    node *ret = FALSE;
+    node *ret;
 
     DBUG_ENTER ("NameOrVal_MakeNode");
 
-    NameOrVal_CheckConsistency (name, val);
-
-    if (val != IDX_OTHER) {
+    if (NameOrVal_IsInt (name, val)) {
         ret = MakeNum (val);
     } else {
-        if (node_or_int != NULL) {
-            if (NODE_TYPE ((*((node **)node_or_int))) == N_num) {
-                DBUG_ASSERT ((NUM_VAL ((*((node **)node_or_int))) == val),
-                             "NUM_VAL( node) != val");
-            } else {
-                DBUG_ASSERT ((NODE_TYPE ((*((node **)node_or_int))) == N_id),
-                             "wrong node type found!");
-                DBUG_ASSERT ((!strcmp (ID_NAME ((*((node **)node_or_int))), name)),
-                             "ID_NAME( node) != name");
-            }
-            /*
-             * we better *duplicate* the node instead of building a new one
-             * in order to get the right back pointers and these sort of things ...
-             */
-            ret = DupNode (*((node **)node_or_int));
-        } else {
-            ret = MakeId_Copy (name);
-        }
+        ret = MakeId_Copy (name);
     }
-
-    DBUG_ASSERT ((ret != NULL), "illegal return value found");
 
     DBUG_RETURN (ret);
 }
@@ -3073,21 +3121,27 @@ NameOrVal_MakeNode (char *name, int val, void *node_or_int)
  *   node *NodeOrInt_MakeNode( nodetype nt, void *node_or_int)
  *
  * Description:
+ *   Generates a node containing the parameter of a N_WLstride(Var) or
+ *   N_WLgrid(Var) node.
  *
+ * Remark:
+ *   If 'node_or_int' represents a node it is duplicated in order to get
+ *   correct back-references!
  *
  ******************************************************************************/
 
 node *
 NodeOrInt_MakeNode (nodetype nt, void *node_or_int)
 {
-    char *name;
-    int val;
     node *ret;
 
     DBUG_ENTER ("NodeOrInt_MakeNode");
 
-    NodeOrInt_GetNameOrVal (&name, &val, nt, node_or_int);
-    ret = NameOrVal_MakeNode (name, val, node_or_int);
+    if (NodeOrInt_IsInt (nt, node_or_int)) {
+        ret = MakeNum (*((int *)node_or_int));
+    } else {
+        ret = DupNode (*((node **)node_or_int));
+    }
 
     DBUG_RETURN (ret);
 }
@@ -3100,8 +3154,8 @@ NodeOrInt_MakeNode (nodetype nt, void *node_or_int)
  *                              bool no_num, bool no_icm)
  *
  * Description:
- *   This function is used to convert the parameters of N_WLstride(Var),
- *   and N_WLgrid(Var) nodes into an index.
+ *   Converts the parameter of a N_WLstride(Var) or N_WLgrid(Var) node into
+ *   an index.
  *   If ('name' != NULL) the function returns a new N_id node containing the
  *   correct index selection (node_or_int[dim]).
  *   If ('name' == NULL) and ('val' == IDX_SHAPE) the functions returns a new
@@ -3116,13 +3170,11 @@ NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name, bool no_num,
                      bool no_icm)
 {
     char *str;
-    node *index = NULL;
+    node *index;
 
     DBUG_ENTER ("NodeOrVal_MakeIndex");
 
-    NameOrVal_CheckConsistency (name, val);
-
-    if (name == NULL) {
+    if (NameOrVal_IsInt (name, val)) {
         if (val == IDX_SHAPE) {
             if (no_icm) {
                 str = (char *)MALLOC ((strlen (wl_name) + 40) * sizeof (char));
@@ -3131,7 +3183,7 @@ NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name, bool no_num,
             } else {
                 index = MakeIcm2 ("ND_A_SHAPE", MakeId_Copy (wl_name), MakeNum (dim));
             }
-        } else if (val != IDX_OTHER) {
+        } else {
             if (no_num) {
                 index = MakeId_Num (val);
             } else {
@@ -3159,7 +3211,8 @@ NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name, bool no_num,
  *                              bool no_num, bool no_icm)
  *
  * Description:
- *
+ *   Converts the parameter of a N_WLstride(Var) or N_WLgrid(Var) node into
+ *   an index.
  *
  ******************************************************************************/
 
@@ -3187,8 +3240,7 @@ NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, char *wl_name, boo
  *                      int shape)
  *
  * Description:
- *   This function is used to compare two parameters of N_WLstride(Var)
- *   or N_WLgrid(Var) nodes.
+ *   Compares two parameters of N_WLstride(Var) or N_WLgrid(Var) nodes.
  *
  *   'shape' denotes the shape component of the current dimension.
  *   If the concrete value of the shape is unknown (i.e. dynamically shaped
@@ -3199,16 +3251,13 @@ NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, char *wl_name, boo
 bool
 NameOrVal_Eq (char *name1, int val1, char *name2, int val2, int shape)
 {
-    bool ret = FALSE;
+    bool ret;
 
     DBUG_ENTER ("NameOrVal_Eq");
 
     DBUG_ASSERT (((shape >= 0) || (shape == IDX_SHAPE)), "illegal shape found!");
 
-    NameOrVal_CheckConsistency (name1, val1);
-    NameOrVal_CheckConsistency (name2, val2);
-
-    if ((val1 != IDX_OTHER) && (val2 != IDX_OTHER)) {
+    if (NameOrVal_IsInt (name1, val1) && NameOrVal_IsInt (name2, val2)) {
         if (val1 == IDX_SHAPE) {
             /*
              * here we deal with the situation
@@ -3223,6 +3272,8 @@ NameOrVal_Eq (char *name1, int val1, char *name2, int val2, int shape)
         ret = (val1 == val2);
     } else if ((name1 != NULL) && (name2 != NULL)) {
         ret = (!strcmp (name1, name2));
+    } else {
+        ret = FALSE;
     }
 
     DBUG_RETURN (ret);
@@ -3236,8 +3287,7 @@ NameOrVal_Eq (char *name1, int val1, char *name2, int val2, int shape)
  *                      int shape)
  *
  * Description:
- *   This function is used to compare two parameters of N_WLstride(Var)
- *   or N_WLgrid(Var) nodes.
+ *   Compares two parameters of N_WLstride(Var) or N_WLgrid(Var) nodes.
  *
  *   'shape' denotes the shape component of the current dimension.
  *   If the concrete value of the shape is unknown (i.e. dynamically shaped
@@ -3270,8 +3320,8 @@ NodeOrInt_Eq (nodetype nt1, void *node_or_int1, nodetype nt2, void *node_or_int2
  *                         int shape)
  *
  * Description:
- *   This function is used to compare a parameters of a N_WLstride(Var)
- *   or N_WLgrid(Var) node with an integer value.
+ *   Compares a parameter of a N_WLstride(Var) or N_WLgrid(Var) node with
+ *   an integer value.
  *
  *   'shape' denotes the shape component of the current dimension.
  *   If the concrete value of the shape is unknown (i.e. dynamically shaped
@@ -3302,8 +3352,8 @@ NodeOrInt_IntEq (nodetype nt1, void *node_or_int1, int val2, int shape)
  *                         int shape)
  *
  * Description:
- *   This function is used to compare a parameters of a N_WLstride(Var)
- *   or N_WLgrid(Var) node with a string.
+ *   Compares a parameter of a N_WLstride(Var) or N_WLgrid(Var) node with
+ *   a string.
  *
  *   'shape' denotes the shape component of the current dimension.
  *   If the concrete value of the shape is unknown (i.e. dynamically shaped
@@ -3334,8 +3384,7 @@ NodeOrInt_StrEq (nodetype nt1, void *node_or_int1, char *name2, int shape)
  *                      int shape)
  *
  * Description:
- *   This function is used to compare two parameters of N_WLstride(Var)
- *   or N_WLgrid(Var) nodes.
+ *   Compares two parameters of N_WLstride(Var) or N_WLgrid(Var) nodes.
  *
  *   'shape' denotes the shape component of the current dimension.
  *   If the concrete value of the shape is unknown (i.e. dynamically shaped
@@ -3371,8 +3420,7 @@ NameOrVal_Le (char *name1, int val1, char *name2, int val2, int shape)
  *                      int shape)
  *
  * Description:
- *   This function is used to compare two parameters of N_WLstride(Var)
- *   or N_WLgrid(Var) nodes.
+ *   Compares two parameters of N_WLstride(Var) or N_WLgrid(Var) nodes.
  *
  *   'shape' denotes the shape component of the current dimension.
  *   If the concrete value of the shape is unknown (i.e. dynamically shaped

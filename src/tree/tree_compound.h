@@ -1,20 +1,14 @@
 /*
  *
  * $Log$
- * Revision 3.27  2001/03/28 19:54:33  dkr
- * NodeOrInt functions modified
+ * Revision 3.28  2001/03/29 01:33:43  dkr
+ * functions for NodeOrInt, NameOrVal recoded
  *
  * Revision 3.26  2001/03/28 14:53:49  dkr
  * CHECK_NULL moved from tree_compound.h to internal_lib.h
  *
  * Revision 3.25  2001/03/27 15:40:17  nmw
  * Array2Vec as wrapper for different Array2<XYZ>Vec added
- *
- * Revision 3.24  2001/03/19 18:23:11  dkr
- * no changes done
- *
- * Revision 3.23  2001/03/15 21:15:17  dkr
- * signature of NameOr..._MakeIndex modified
  *
  * Revision 3.22  2001/03/05 16:43:13  dkr
  * new macros NWITH???_IS_FOLD added
@@ -27,9 +21,6 @@
  *
  * Revision 3.19  2001/02/13 15:17:39  nmw
  * compound macro VARDEC_OR_ARG_AVIS added
- *
- * Revision 3.18  2001/02/09 13:34:33  dkr
- * some comments corrected
  *
  * Revision 3.17  2001/02/09 10:47:07  dkr
  * macros PRF_EXPRS?, AP_EXPRS? added
@@ -74,13 +65,7 @@
  * Revision 3.2  2000/11/29 13:13:29  dkr
  * macros AP_ARG? added
  *
- * Revision 3.1  2000/11/20 18:03:37  sacbase
- * new release made
- *
  * [...]
- *
- * Revision 1.1  1995/09/27  15:13:12  cg
- * Initial revision
  *
  */
 
@@ -972,7 +957,7 @@ extern node *AppendAssign (node *assign_chain, node *assign);
 /******************************************************************************
  *
  * function:
- *   node *MakeAssignLet(char *var_name, node *vardec_node, node* let_expr);
+ *   node *MakeAssignLet(char *var_name, node *vardec_node, node *let_expr);
  *
  * arguments: 1) name of the variable
  *            2) vardec-node
@@ -1029,7 +1014,7 @@ extern node *MakeAssignIcm7 (char *name, node *arg1, node *arg2, node *arg3, nod
 /******************************************************************************
  *
  * function:
- *   node *GetCompoundNode(node* arg_node);
+ *   node *GetCompoundNode(node *arg_node);
  *
  * description:
  *   returns the compund_node that is attached to the assign-node
@@ -1349,7 +1334,7 @@ extern int IsConstArray (node *array);
 /******************************************************************************
  *
  * Function:
- *   node *IntVec2Array(int length, int* intvec);
+ *   node *IntVec2Array( int length, int *intvec);
  *
  * Description:
  *   Returns an N_exprs node containing the elements of intvec.
@@ -1361,13 +1346,13 @@ extern node *IntVec2Array (int length, int *intvec);
 /******************************************************************************
  *
  * Function:
- *   int    *Array2IntVec(node* aelems, int* length);
- *   int    *Array2BoolVec(node* aelems, int* length);
- *   char   *Array2CharVec(node* aelems, int* length);
- *   float  *Array2FloatVec(node* aelems, int* length);
- *   double *Array2DblVec(node* aelems, int* length);
+ *   int    *Array2IntVec( node *aelems, int *length);
+ *   int    *Array2BoolVec( node *aelems, int *length);
+ *   char   *Array2CharVec( node *aelems, int *length);
+ *   float  *Array2FloatVec( node *aelems, int *length);
+ *   double *Array2DblVec( node *aelems, int *length);
  *
- *   void   *Array2Vec(simpletype t, node* aelems, int* length);
+ *   void   *Array2Vec( simpletype t, node *aelems, int *length);
  *
  * Description:
  *   Returns an iteger (char | float | double) vector and stores the number of
@@ -1768,11 +1753,36 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
  ***  N_WLseg :
  ***/
 
+#define WLSEG_IDX_PRINT(handle, n, field)                                                \
+    PRINT_VECT (handle, ((int *)(WLSEG_##field (n))), WLSEG_DIMS (n), "%i");
+
 /*--------------------------------------------------------------------------*/
 
 /***
  ***  N_WLsegVar :
  ***/
+
+#define WLSEGVAR_IDX_PRINT(handle, n, field)                                             \
+    {                                                                                    \
+        int d;                                                                           \
+        node **vect = WLSEGVAR_##field (n);                                              \
+        if (vect != NULL) {                                                              \
+            fprintf (handle, "[ ");                                                      \
+            for (d = 0; d < WLSEGVAR_DIMS (n); d++) {                                    \
+                if (NODE_TYPE (vect[d]) == N_num) {                                      \
+                    fprintf (handle, "%i ", NUM_VAL (vect[d]));                          \
+                } else {                                                                 \
+                    DBUG_ASSERT ((NODE_TYPE (vect[d]) == N_id),                          \
+                                 "entry of var. index vector is neither N_num"           \
+                                 " nor N_id!");                                          \
+                    fprintf (handle, "%s ", ID_NAME (vect[d]));                          \
+                }                                                                        \
+            }                                                                            \
+            fprintf (handle, "]");                                                       \
+        } else {                                                                         \
+            fprintf (handle, "NULL");                                                    \
+        }                                                                                \
+    }
 
 /*--------------------------------------------------------------------------*/
 
@@ -1780,13 +1790,20 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
  ***  N_WLseg :  *and*  N_WLsegVar :
  ***/
 
-extern node *MakeWLsegX (int dims, node *contents, node *next);
-
 #define WLSEGX_IDX_GET_ADDR(n, field, dim)                                               \
     ((NODE_TYPE (n) == N_WLseg) ? (void *)&(((int *)(WLSEG_##field (n)))[dim])           \
                                 : ((NODE_TYPE (n) == N_WLsegVar)                         \
                                      ? (void *)&(((node **)(WLSEGVAR_##field (n)))[dim]) \
                                      : NULL))
+
+#define WLSEGX_IDX_PRINT(handle, n, field)                                               \
+    if (NODE_TYPE (n) == N_WLseg) {                                                      \
+        WLSEG_IDX_PRINT (handle, n, field);                                              \
+    } else {                                                                             \
+        WLSEGVAR_IDX_PRINT (handle, n, field);                                           \
+    }
+
+extern node *MakeWLsegX (int dims, node *contents, node *next);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1942,11 +1959,18 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
 
 extern bool NameOrVal_CheckConsistency (char *name, int val);
 
+extern bool NameOrVal_IsInt (char *name, int val);
+extern bool NodeOrInt_IsInt (nodetype nt, void *node_or_int);
+
 extern void NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt,
                                     void *node_or_int);
-extern void NodeOrInt_SetNameOrVal (char *name, int val, nodetype nt, void *node_or_int);
 
-extern node *NameOrVal_MakeNode (char *name, int val, void *node_or_int);
+extern void NameOrVal_SetNodeOrInt (nodetype ret_nt, void *ret_node_or_int, char *name,
+                                    int val);
+extern void NodeOrInt_SetNodeOrInt (nodetype ret_nt, void *ret_node_or_int, nodetype nt,
+                                    void *node_or_int);
+
+extern node *NameOrVal_MakeNode (char *name, int val);
 extern node *NodeOrInt_MakeNode (nodetype nt, void *node_or_int);
 
 extern node *NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name,
