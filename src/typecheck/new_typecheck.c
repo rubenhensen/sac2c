@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2004/03/08 12:28:39  sbs
+ * potentially un-initialized usage of var i in NTClet eliminated.
+ *
  * Revision 3.40  2004/03/06 14:30:40  sbs
  * changed phi targets into funcond nodes.
  *
@@ -1130,10 +1133,9 @@ NTClet (node *arg_node, node *arg_info)
             DBUG_ASSERT (TYIsAlpha (existing_type), "non-alpha type for LHS found!");
             ok = SSINewTypeRel (inferred_type, existing_type);
             if (!ok) {
-                ABORT (NODE_LINE (arg_node),
-                       ("component #%d of inferred RHS type (%s) does not match %s", i,
-                        TYType2String (inferred_type, FALSE, 0),
-                        TYType2String (existing_type, FALSE, 0)));
+                ABORT (NODE_LINE (arg_node), ("inferred RHS type (%s) does not match %s",
+                                              TYType2String (inferred_type, FALSE, 0),
+                                              TYType2String (existing_type, FALSE, 0)));
             }
         }
 
