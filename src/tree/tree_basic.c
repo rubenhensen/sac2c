@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/01/29 18:33:00  dkr
+ * *** empty log message ***
+ *
  * Revision 3.8  2001/01/24 23:33:46  dkr
  * MakeId_Num() added
  * signature of MakeWLgrid() and MakeWLgridVar() modified
@@ -1633,7 +1636,6 @@ node *
 MakeWLsegVar (int dims, node *contents, node *next)
 {
     node *new_node;
-    int b;
 
     DBUG_ENTER ("MakeWLsegVar");
 
@@ -1646,14 +1648,6 @@ MakeWLsegVar (int dims, node *contents, node *next)
 
     WLSEGVAR_IDX_MIN (new_node) = NULL;
     WLSEGVAR_IDX_MAX (new_node) = NULL;
-
-    WLSEGVAR_BLOCKS (new_node) = 0;
-    for (b = 0; b < WLSEGVAR_BLOCKS (new_node); b++) {
-        WLSEGVAR_BV (new_node, b) = NULL;
-    }
-    WLSEGVAR_UBV (new_node) = NULL;
-
-    WLSEGVAR_SV (new_node) = NULL;
 
     DBUG_RETURN (new_node);
 }
