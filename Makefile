@@ -11,13 +11,18 @@ GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o
 PRINT= src/print/print.o
 FLATTEN= src/flatten/flatten.o
+OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN)
 
-sac2c: 
+all: dummy sac2c
+
+dummy:
 	(cd src/global; $(MAKE) )
 	(cd src/scanparse; $(MAKE) )
 	(cd src/print; $(MAKE) )
 	(cd src/flatten; $(MAKE) )
-	$(CC) -o sac2c $(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(LIB) $(LIBS)
+
+sac2c: $(OBJ) $(LIB)
+	$(CC) -o sac2c $(OBJ) $(LIB) $(LIBS)
 
 deps:
 	(cd src/global; $(MAKE) deps)
