@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1997/03/19 13:35:34  cg
+ * Revision 1.10  1997/05/14 08:17:34  sbs
+ * analyseflag activated
+ *
+ * Revision 1.9  1997/03/19  13:35:34  cg
  * added new global variables deps *dependencies and file_type filetype
  *
  * Revision 1.8  1996/09/11  06:29:43  cg
@@ -87,6 +90,7 @@ extern int show_refcnt;
 extern int show_idx;
 extern int show_icm;
 extern int traceflag;
+extern int analyseflag;
 
 extern int breakae;
 

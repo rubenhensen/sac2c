@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.93  1997/04/24 14:05:37  sbs
+ * Revision 1.94  1997/05/14 08:17:34  sbs
+ * analyseflag activated
+ *
+ * Revision 1.93  1997/04/24  14:05:37  sbs
  * HAVE_MALLOC_O inserted
  *
  * Revision 1.92  1997/04/24  09:54:53  cg
@@ -327,6 +330,7 @@
 #include "refcount.h"
 #include "scnprs.h"
 #include "trace.h"
+#include "analyse.h"
 #include "compile.h"
 #include "psi-opt.h"
 #include "writesib.h"
@@ -401,6 +405,7 @@ int show_refcnt = 0;
 int show_idx = 0;
 int show_icm = 0;
 int traceflag = 0;
+int analyseflag = 0;
 int check_malloc = 0;
 int breakae = 0;
 int check_boundary = 0;
@@ -659,6 +664,23 @@ MAIN
                 break;
             default:
                 SYSWARN (("Unknown trace flag '%c`", **argv));
+            }
+            ++*argv;
+        }
+    }
+    NEXTOPT
+    ARG 'a' : PARM
+    {
+        while (**argv) {
+            switch (**argv) {
+            case 'a':
+                analyseflag = ANALYSE_ALL;
+                break;
+            case 'm':
+                analyseflag = analyseflag | ANALYSE_TIME;
+                break;
+            default:
+                SYSWARN (("Unknown analyse flag '%c`", **argv));
             }
             ++*argv;
         }
