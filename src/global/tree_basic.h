@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.56  1999/11/11 18:27:51  dkr
+ * INFO_PRINT_NWITH2 renamed to INFO_PRINT_NWITH
+ *
  * Revision 2.55  1999/09/20 14:40:11  bs
  * Access macros INFO_TSI_..., INFO_WLAA_... and NCODE_WLAA_... modified.
  *
@@ -2637,7 +2640,7 @@ extern node *MakeInfo ();
 #define INFO_PRINT_FUNDEF(n) (n->node[0])
 #define INFO_PRINT_INT_SYN(n) (n->node[2])
 #define INFO_PRINT_WITH_RET(n) (n->node[3])
-#define INFO_PRINT_NWITH2(n) (n->node[4])
+#define INFO_PRINT_NWITH(n) (n->node[4])
 #define INFO_PRINT_ACCESS(n) (n->node[5])
 #define INFO_PRINT_PRAGMA_WLCOMP(n) (n->info.cint)
 #define INFO_PRINT_SIB(n) (n->flag)
