@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2004/07/14 23:25:28  sah
+ *  removed all old ssa optimizations and the use_ssaform flag
+ *
  * Revision 3.56  2004/07/13 16:45:11  sah
  * added WO_unknown WithOpType
  *
@@ -104,7 +107,6 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "typecheck.h"
-#include "LoopInvariantRemoval.h" /* needed for NodeBehindCast only! */
 #include "Error.h"
 #include "convert.h"
 #include "import.h"
