@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.194  1998/07/14 12:58:47  srs
+ * added remarks to N_id, N_vardec and N_arg
+ *
  * Revision 1.193  1998/07/03 10:16:03  cg
  * attributes of N_spmd node completely changed.
  *
@@ -1387,6 +1390,10 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  *
  *  TYPESTRING contains the argument's type as a string, used for renaming
  *             of functions.
+ *
+ * ATTENTION:
+ *   N_vardec and Narg node have to have the same structure. See remark
+ *   at N_id node.
  */
 
 extern node *MakeArg (char *name, types *type, statustype status, statustype attrib,
@@ -1486,8 +1493,9 @@ extern node *MakeBlock (node *instr, node *vardec);
  * TYPEDEF is a reference to the respective typedef node if the type of
  * the declared variable is user-defined.
  *
- * srs: ? if FLAG is true this is an array vardec ?
- *
+ * ATTENTION:
+ *   N_vardec and Narg node have to have the same structure. See remark
+ *   at N_id node.
  */
 
 extern node *MakeVardec (char *name, types *type, node *next);
@@ -2035,7 +2043,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    node*  DEF                         (Unroll !, Unswitch !)
  ***    node*  WL        (O)               (wli -> wlf !!)
  ***
- ***  remarks:
+ ***  remark:
  ***    ID_WL is only used in wli, wlf. But every call of DupTree() initializes
  ***    the copy's WL_ID with a pointer to it's original N_id node. The function
  ***    SearchWL() can define ID_WL in another way (pointer to N_assign node
@@ -2043,6 +2051,12 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***
  ***    Unroll uses ->flag without a macro :(
  ***    Even worse: Unroll uses ->flag of *every* LET_EXPR node :(((
+ ***
+ ***  remark:
+ ***    ID_VARDEC points to an N_vardec or an N_arg node. This is not
+ ***    distinguished in many places of the code. So for example
+ ***    VARDEC_NAME and ARG_NAME should both be substitutions for
+ ***    node->info.types->id
  ***/
 
 /*
