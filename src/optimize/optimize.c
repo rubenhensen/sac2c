@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2003/08/16 08:44:25  ktr
+ * SelectionPropagation added. Must currently be activated with -dosp.
+ *
  * Revision 3.53  2003/07/31 17:56:59  mwe
  * separate SSA-F
  * f
@@ -308,6 +311,7 @@
 #include "SSAInferLI.h"
 #include "ElimSubDiv.h"
 #include "UndoElimSubDiv.h"
+#include "SelectionPropagation.h"
 
 /**
  *
@@ -349,6 +353,7 @@ int ap_padded;
 int ap_unsupported;
 int al_expr;
 int dl_expr;
+int sp_expr;
 
 /**
  *
@@ -403,6 +408,7 @@ ResetCounters ()
     ap_unsupported = 0;
     al_expr = 0;
     dl_expr = 0;
+    sp_expr = 0;
 
     DBUG_VOID_RETURN;
 }
@@ -433,7 +439,7 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
                  int off_wlunr_expr, int off_uns_expr, int off_elim_arrays,
                  int off_wlf_expr, int off_wlt_expr, int off_cse_expr, int off_ap_padded,
                  int off_ap_unsupported, int off_wls_expr, int off_al_expr,
-                 int off_dl_expr, int flag)
+                 int off_dl_expr, int off_sp_expr, int flag)
 {
     int diff;
     DBUG_ENTER ("PrintStatistics");
@@ -449,6 +455,11 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     diff = cf_expr - off_cf_expr;
     if ((optimize & OPT_CF) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d primfun application(s) eliminated by constant folding", diff));
+
+    diff = sp_expr - off_sp_expr;
+    if ((optimize & OPT_SP) && ((ALL == flag) || (diff > 0)))
+        NOTE (
+          ("  %d primitive map operation(s) eliminated by selection propagation", diff));
 
     diff = (dead_expr - off_dead_expr) + (dead_var - off_dead_var);
     if ((optimize & OPT_DCR) && ((ALL == flag) || (diff > 0)))
@@ -762,7 +773,7 @@ OPTmodul (node *arg_node, node *arg_info)
 
     NOTE ((""));
     NOTE (("overall optimization statistics:"));
-    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ALL);
+    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ALL);
 
     /*
      * index vector elimination
@@ -805,6 +816,7 @@ DONE:
  * loop1: CSE        |
  *        SSAILI     |   (only in ssa form)
  *        CF         |
+ *        SP         |
  *        WLT        |
  *        WLF        |
  *        (CF)       |   (applied only if WLF succeeded!)
@@ -848,6 +860,7 @@ OPTfundef (node *arg_node, node *arg_info)
     int mem_wls_expr = wls_expr;
     int mem_al_expr = al_expr;
     int mem_dl_expr = dl_expr;
+    int mem_sp_expr = sp_expr;
 
     int old_cse_expr = cse_expr;
     int old_cf_expr = cf_expr;
@@ -862,6 +875,7 @@ OPTfundef (node *arg_node, node *arg_info)
     int old_wls_expr = wls_expr;
     int old_al_expr = al_expr;
     int old_dl_expr = dl_expr;
+    int old_sp_expr = sp_expr;
 
     int loop1 = 0;
     int loop2 = 0;
@@ -1004,6 +1018,7 @@ OPTfundef (node *arg_node, node *arg_info)
             old_wls_expr = wls_expr;
             old_al_expr = al_expr;
             old_dl_expr = dl_expr;
+            old_sp_expr = sp_expr;
 
             /*
              * !! Important !!
@@ -1050,6 +1065,15 @@ OPTfundef (node *arg_node, node *arg_info)
 
                 if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
                     && (0 == strcmp (break_specifier, "cf"))) {
+                    goto INFO;
+                }
+
+                if (optimize & OPT_SP) {
+                    arg_node = SelectionPropagation (arg_node, INFO_OPT_MODUL (arg_info));
+                }
+
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "sp"))) {
                     goto INFO;
                 }
 
@@ -1327,7 +1351,8 @@ OPTfundef (node *arg_node, node *arg_info)
                   || (lunr_expr != old_lunr_expr) || (wlunr_expr != old_wlunr_expr)
                   || (uns_expr != old_uns_expr) || (lir_expr != old_lir_expr)
                   || (wlir_expr != old_wlir_expr) || (wls_expr != old_wls_expr)
-                  || (al_expr != old_al_expr) || (dl_expr != old_dl_expr))
+                  || (al_expr != old_al_expr) || (dl_expr != old_dl_expr)
+                  || (sp_expr != old_sp_expr))
                  && (loop1 < max_optcycles));
         /* dkr:
          * How about  cf_expr, wlt_expr, dcr_expr  ??
@@ -1456,7 +1481,7 @@ OPTfundef (node *arg_node, node *arg_info)
                          mem_lir_expr, mem_wlir_expr, mem_cf_expr, mem_lunr_expr,
                          mem_wlunr_expr, mem_uns_expr, mem_elim_arrays, mem_wlf_expr,
                          mem_wlt_expr, mem_cse_expr, 0, 0, mem_wls_expr, mem_al_expr,
-                         mem_dl_expr, NON_ZERO_ONLY);
+                         mem_dl_expr, mem_sp_expr, NON_ZERO_ONLY);
 
         if (!(use_ssaform)) {
             DBUG_DO_NOT_EXECUTE ("PRINT_MASKS", arg_node = FreeMasks (arg_node););

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2003/08/16 08:45:54  ktr
+ * SelectionPropagation added. Must currently be activated with -dosp.
+ *
  * Revision 3.33  2003/04/26 20:47:13  mwe
  * support for ElimSubDiv and UndoElimSubDiv added
  *
@@ -323,6 +326,7 @@ extern funtab *dl_tab;
 extern funtab *blir_tab;
 extern funtab *esd_tab;
 extern funtab *uesd_tab;
+extern funtab *sp_tab;
 
 extern int nnode[];
 

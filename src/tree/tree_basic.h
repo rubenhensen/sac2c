@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.167  2003/08/16 08:45:54  ktr
+ * SelectionPropagation added. Must currently be activated with -dosp.
+ *
  * Revision 3.166  2003/06/11 22:03:09  ktr
  * ARRAY_SHAPE added.
  *
@@ -2412,6 +2415,10 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***    int         LIRMOVE (O)     (bitfield)        (ssalir!!)
  ***    bool        EXPRESULT (O)                     (ssalir!!)
  ***
+ ***    the following attributes are only used in SelectionPropagation
+ ***    int         SELPROP (0)                       (SelectionPropagation!!)
+ ***
+ ***
  ***/
 
 /*
@@ -2445,6 +2452,8 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_DEFDEPTH(n) (n->varno)
 #define AVIS_LIRMOVE(n) (n->lineno)
 #define AVIS_EXPRESULT(n) ((bool)(n->info.cint))
+/* used only in SelectionPropagation */
+#define AVIS_SELPROP(n) (n->varno)
 
 /*--------------------------------------------------------------------------*/
 

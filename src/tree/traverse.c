@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2003/08/16 08:45:54  ktr
+ * SelectionPropagation added. Must currently be activated with -dosp.
+ *
  * Revision 3.42  2003/04/26 20:47:13  mwe
  * support for ElimSubDiv and UndoElimSubDiv added
  *
@@ -253,6 +256,8 @@
 #include "handle_mops.h"
 #include "ElimSubDiv.h"
 #include "UndoElimSubDiv.h"
+#include "blir.h"
+#include "SelectionPropagation.h"
 
 #include "traverse.h"
 
@@ -1537,6 +1542,17 @@ static funtab uesd_tab_rec = {{
                               NULL,
                               NULL};
 funtab *uesd_tab = &uesd_tab_rec;
+
+/*
+ *  (116) sp_tab
+ */
+static funtab sp_tab_rec = {{
+#define NIFsp(it_sp) it_sp
+#include "node_info.mac"
+                            },
+                            NULL,
+                            NULL};
+funtab *sp_tab = &sp_tab_rec;
 
 /*
  *  nnode

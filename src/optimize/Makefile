@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.30  2003/08/16 08:44:25  ktr
+# SelectionPropagation added. Must currently be activated with -dosp.
+#
 # Revision 3.29  2003/04/26 20:45:38  mwe
 # ElimSubDiv and UndoElimSubDiv added
 #
@@ -75,7 +78,7 @@ all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      WLUnroll.o DeadFunctionRemoval.o freemasks.o \
      SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
      SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o DistributiveLaw.o \
-     UndoElimSubDiv.o ElimSubDiv.o
+     UndoElimSubDiv.o ElimSubDiv.o SelectionPropagation.o
 
 
 %.o: %.c

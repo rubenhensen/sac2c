@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2003/08/16 08:44:25  ktr
+ * SelectionPropagation added. Must currently be activated with -dosp.
+ *
  * Revision 3.5  2003/02/08 16:00:01  mwe
  * dl_expr added
  *
@@ -154,6 +157,7 @@ extern int old_wlf_expr, old_wlt_expr;
 extern int ap_padded;
 extern int ap_unsupported;
 extern int dl_expr;
+extern int sp_expr;
 
 extern node *Optimize (node *arg_node);
 extern node *OPTmodul (node *arg_node, node *arg_info);
