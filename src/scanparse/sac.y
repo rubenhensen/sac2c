@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/03/22 09:49:19  dkr
+ * ooops ...! bug with global wlcomp pragmas fixed
+ *
  * Revision 3.11  2001/03/21 17:47:51  dkr
  * forassign: AppendAssign() used instead of Append()
  *
@@ -84,7 +87,7 @@ node *spec_tree;
 static char *mod_name = MAIN_MOD_NAME;
 static char *link_mod_name = NULL;
 static node *store_pragma = NULL;
-static node *store_wlcomp_pragma_global = NULL;
+static node *global_wlcomp_pragma = NULL;
 
 /*
  * used to distinguish the different kinds of files
@@ -1210,14 +1213,15 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R exprblock
 
 wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_conf
                         {
-                          if (store_wlcomp_pragma_global != NULL) {
+                          if (global_wlcomp_pragma != NULL) {
                             /* remove old global pragma */
-                            store_wlcomp_pragma_global
-                              = FreeTree( store_wlcomp_pragma_global);
+                            global_wlcomp_pragma
+                              = FreeTree( global_wlcomp_pragma);
                           }
+                          $3 = CheckWlcompConf( $3);
                           if ($3 != NULL) {
-                            store_wlcomp_pragma_global = MakePragma();
-                            PRAGMA_WLCOMP_APS( store_wlcomp_pragma_global) = $3;
+                            global_wlcomp_pragma = MakePragma();
+                            PRAGMA_WLCOMP_APS( global_wlcomp_pragma) = $3;
                           }
                         }
                     | /* empty */
@@ -1237,10 +1241,10 @@ wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_conf
                          }
                        }
                    | /* empty */
-                       { if (store_wlcomp_pragma_global != NULL) {
+                       { if (global_wlcomp_pragma != NULL) {
                            $$ = MakePragma();
                            PRAGMA_WLCOMP_APS( $$)
-                             = DupTree( PRAGMA_WLCOMP_APS( store_wlcomp_pragma_global));
+                             = DupTree( PRAGMA_WLCOMP_APS( global_wlcomp_pragma));
                          }
                          else {
                            $$ = NULL;
