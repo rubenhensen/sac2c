@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/08/07 10:10:14  sbs
+ * SSANwithXXX renamed into SSAwithXXXX
+ *
  * Revision 1.4  2004/08/06 21:05:24  sbs
  * SSAfuncond added SSAexprs removed
  *
@@ -64,10 +67,10 @@ extern node *SSAicm (node *arg_node, info *arg_info);
 extern node *SSAarg (node *arg_node, info *arg_info);
 extern node *SSAvardec (node *arg_node, info *arg_info);
 extern node *SSAid (node *arg_node, info *arg_info);
-extern node *SSANwith (node *arg_node, info *arg_info);
-extern node *SSANcode (node *arg_node, info *arg_info);
-extern node *SSANpart (node *arg_node, info *arg_info);
-extern node *SSANwithid (node *arg_node, info *arg_info);
+extern node *SSAwith (node *arg_node, info *arg_info);
+extern node *SSAcode (node *arg_node, info *arg_info);
+extern node *SSApart (node *arg_node, info *arg_info);
+extern node *SSAwithid (node *arg_node, info *arg_info);
 extern node *SSAcond (node *arg_node, info *arg_info);
 extern node *SSAfuncond (node *arg_node, info *arg_info);
 extern node *SSAreturn (node *arg_node, info *arg_info);
