@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.14  2004/11/26 18:11:34  mwe
- * SacDevCamp: compiles!
+ * Revision 1.15  2004/11/26 18:26:53  mwe
+ * bug fix
  *
  * Revision 1.13  2004/11/11 18:57:15  khf
  * CreateFold(): removed non emm part,
@@ -805,7 +805,7 @@ WLUdoUnrollFold (node *wln, info *arg_info)
     /* finally add initialisation of accumulator with neutral element. */
     letn
       = TBmakeLet (DUPdoDupNode (LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)))),
-                   DUPdoDupTree (WITH_NEUTRAL (wln)));
+                   DUPdoDupTree (FOLD_NEUTRAL (WITH_WITHOP (wln))));
     res = TBmakeAssign (letn, res);
 
     DBUG_RETURN (res);
