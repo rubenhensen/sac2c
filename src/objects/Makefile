@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.8  2000/03/31 09:33:46  jhs
+# make deps done
+#
 # Revision 2.7  2000/03/01 14:52:38  dkr
 # make deps done
 #
@@ -133,7 +136,9 @@ objinit.o: ../global/globals.h ../tree/traverse.h ../../inc/dbug.h
 objinit.o: ../global/internal_lib.h ../tree/free.h ../global/my_debug.h
 objinit.o: /usr/include/malloc.h /usr/include/sys/types.h
 objinit.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-objinit.o: ../tree/DupTree.h ../tree/LookUpTable.h ../modules/filemgr.h
+objinit.o: /usr/include/sys/select.h /usr/include/sys/time.h
+objinit.o: /usr/include/sys/time.h ../tree/DupTree.h ../tree/LookUpTable.h
+objinit.o: ../modules/filemgr.h
 rmvoidfun.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 rmvoidfun.o: ../global/Error.h /usr/include/stdio.h
 rmvoidfun.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -143,7 +148,8 @@ rmvoidfun.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
 rmvoidfun.o: ../tree/traverse.h ../global/internal_lib.h ../tree/free.h
 rmvoidfun.o: ../global/my_debug.h /usr/include/malloc.h
 rmvoidfun.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-rmvoidfun.o: /usr/include/sys/int_types.h
+rmvoidfun.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+rmvoidfun.o: /usr/include/sys/time.h /usr/include/sys/time.h
 uniquecheck.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 uniquecheck.o: ../global/Error.h /usr/include/stdio.h
 uniquecheck.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -153,4 +159,5 @@ uniquecheck.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
 uniquecheck.o: ../tree/traverse.h ../global/internal_lib.h ../tree/free.h
 uniquecheck.o: ../global/my_debug.h /usr/include/malloc.h
 uniquecheck.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-uniquecheck.o: /usr/include/sys/int_types.h
+uniquecheck.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+uniquecheck.o: /usr/include/sys/time.h /usr/include/sys/time.h

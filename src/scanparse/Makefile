@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.12  2000/03/31 09:33:42  jhs
+# make deps done
+#
 # Revision 2.11  2000/03/01 14:52:33  dkr
 # make deps done
 #
@@ -176,7 +179,8 @@ lex.yy.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
 lex.yy.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
 lex.yy.o: /usr/include/malloc.h /usr/include/sys/types.h
 lex.yy.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-lex.yy.o: ../global/resource.h y.tab.h
+lex.yy.o: /usr/include/sys/select.h /usr/include/sys/time.h
+lex.yy.o: /usr/include/sys/time.h ../global/resource.h y.tab.h
 scnprs.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 scnprs.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 scnprs.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -189,9 +193,11 @@ y.tab.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 y.tab.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 y.tab.o: /usr/include/stdlib.h /usr/include/memory.h /usr/include/sys/types.h
 y.tab.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-y.tab.o: ../../inc/dbug.h ../tree/tree.h ../global/types.h
-y.tab.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-y.tab.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-y.tab.o: ../typecheck/typecheck.h ../tree/DupTree.h ../tree/LookUpTable.h
-y.tab.o: ../global/my_debug.h ../tree/free.h /usr/include/malloc.h
-y.tab.o: ../modules/readsib.h ../global/resource.h
+y.tab.o: /usr/include/sys/select.h /usr/include/sys/time.h
+y.tab.o: /usr/include/sys/time.h ../../inc/dbug.h ../tree/tree.h
+y.tab.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+y.tab.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+y.tab.o: ../global/internal_lib.h ../typecheck/typecheck.h ../tree/DupTree.h
+y.tab.o: ../tree/LookUpTable.h ../global/my_debug.h ../tree/free.h
+y.tab.o: /usr/include/malloc.h ../modules/readsib.h ../global/resource.h
+y.tab.o: /usr/include/alloca.h

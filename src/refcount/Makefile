@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.9  2000/03/31 09:33:45  jhs
+# make deps done
+#
 # Revision 2.8  2000/03/01 14:52:37  dkr
 # make deps done
 #
@@ -117,4 +120,5 @@ refcount.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/DataFlowMask.h
 refcount.o: ../tree/traverse.h ../optimize/optimize.h ../tree/free.h
 refcount.o: /usr/include/malloc.h /usr/include/sys/types.h
 refcount.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-refcount.o: ../optimize/generatemasks.h refcount.h
+refcount.o: /usr/include/sys/select.h /usr/include/sys/time.h
+refcount.o: /usr/include/sys/time.h ../optimize/generatemasks.h refcount.h

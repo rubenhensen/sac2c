@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.15  2000/03/31 09:33:43  jhs
+# make deps done
+#
 # Revision 2.14  2000/03/16 14:16:28  dkr
 # target typecheck.h added
 #
@@ -127,10 +130,11 @@ constants.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 constants.o: /usr/include/stdio_impl.h ../tree/free.h ../../inc/dbug.h
 constants.o: ../global/my_debug.h /usr/include/malloc.h
 constants.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-constants.o: /usr/include/sys/int_types.h ../global/internal_lib.h shape.h
-constants.o: cv2scalar.h cv2cv.h ../tree/tree_compound.h ../tree/tree_basic.h
-constants.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
-constants.o: constants.h
+constants.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+constants.o: /usr/include/sys/time.h /usr/include/sys/time.h
+constants.o: ../global/internal_lib.h shape.h cv2scalar.h cv2cv.h
+constants.o: ../tree/tree_compound.h ../tree/tree_basic.h ../global/Error.h
+constants.o: /usr/include/string.h /usr/include/stdlib.h constants.h
 cv2cv.o: ../../inc/dbug.h /usr/include/stdio.h
 cv2cv.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 cv2cv.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -150,8 +154,10 @@ gen_pseudo_fun.o: /usr/include/string.h ../global/globals.h
 gen_pseudo_fun.o: ../global/internal_lib.h ../tree/free.h
 gen_pseudo_fun.o: ../global/my_debug.h /usr/include/malloc.h
 gen_pseudo_fun.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-gen_pseudo_fun.o: /usr/include/sys/int_types.h ../tree/DupTree.h
-gen_pseudo_fun.o: ../tree/LookUpTable.h gen_pseudo_fun.h typecheck.h
+gen_pseudo_fun.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+gen_pseudo_fun.o: /usr/include/sys/time.h /usr/include/sys/time.h
+gen_pseudo_fun.o: ../tree/DupTree.h ../tree/LookUpTable.h gen_pseudo_fun.h
+gen_pseudo_fun.o: typecheck.h
 new_typecheck.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 new_typecheck.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 new_typecheck.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -163,18 +169,20 @@ new_typecheck.o: ../global/internal_lib.h ../tree/traverse.h user_types.h
 new_typecheck.o: new_types.h ../tree/free.h ../global/my_debug.h
 new_typecheck.o: /usr/include/malloc.h /usr/include/sys/types.h
 new_typecheck.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-new_typecheck.o: shape.h new_typecheck.h
+new_typecheck.o: /usr/include/sys/select.h /usr/include/sys/time.h
+new_typecheck.o: /usr/include/sys/time.h shape.h new_typecheck.h
 new_types.o: ../../inc/dbug.h /usr/include/stdio.h
 new_types.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 new_types.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 new_types.o: /usr/include/stdio_impl.h ../tree/free.h ../global/my_debug.h
 new_types.o: /usr/include/malloc.h /usr/include/sys/types.h
 new_types.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-new_types.o: ../global/globals.h ../global/types.h ../global/internal_lib.h
-new_types.o: ../tree/tree.h ../tree/tree_basic.h ../tree/tree_compound.h
-new_types.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
-new_types.o: ../print/convert.h shape.h type_constructor_info.mac new_types.h
-new_types.o: user_types.h
+new_types.o: /usr/include/sys/select.h /usr/include/sys/time.h
+new_types.o: /usr/include/sys/time.h ../global/globals.h ../global/types.h
+new_types.o: ../global/internal_lib.h ../tree/tree.h ../tree/tree_basic.h
+new_types.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
+new_types.o: /usr/include/stdlib.h ../print/convert.h shape.h
+new_types.o: type_constructor_info.mac new_types.h user_types.h
 prim_fun.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 prim_fun.o: /usr/include/sys/isa_defs.h ../global/globals.h ../global/types.h
 prim_fun.o: /usr/include/stdio.h /usr/include/sys/va_list.h
@@ -185,14 +193,17 @@ prim_fun.o: ../../inc/dbug.h ../global/my_debug.h ../tree/DupTree.h
 prim_fun.o: ../tree/LookUpTable.h ../tree/access_macros.h ../print/convert.h
 prim_fun.o: ../tree/free.h /usr/include/malloc.h /usr/include/sys/types.h
 prim_fun.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-prim_fun.o: typecheck.h prim_fun_tt.mac prim_fun_ft.mac
+prim_fun.o: /usr/include/sys/select.h /usr/include/sys/time.h
+prim_fun.o: /usr/include/sys/time.h typecheck.h prim_fun_tt.mac
+prim_fun.o: prim_fun_ft.mac
 shape.o: ../../inc/dbug.h /usr/include/stdio.h
 shape.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 shape.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 shape.o: /usr/include/stdio_impl.h ../tree/tree_basic.h ../global/types.h
 shape.o: ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
 shape.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-shape.o: /usr/include/sys/int_types.h ../global/globals.h
+shape.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+shape.o: /usr/include/sys/time.h /usr/include/sys/time.h ../global/globals.h
 shape.o: ../global/internal_lib.h shape.h
 typecheck.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 typecheck.o: /usr/include/sys/isa_defs.h /usr/include/stddef.h
@@ -206,8 +217,10 @@ typecheck.o: ../global/my_debug.h ../../inc/dbug.h ../tree/traverse.h
 typecheck.o: typecheck.h ../print/convert.h ../modules/import.h prim_fun.h
 typecheck.o: ../tree/free.h /usr/include/malloc.h /usr/include/sys/types.h
 typecheck.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-typecheck.o: ../tree/access_macros.h ../tree/DupTree.h ../tree/LookUpTable.h
-typecheck.o: typecheck_WL.h gen_pseudo_fun.h new_typecheck.h prim_fun_tt.mac
+typecheck.o: /usr/include/sys/select.h /usr/include/sys/time.h
+typecheck.o: /usr/include/sys/time.h ../tree/access_macros.h
+typecheck.o: ../tree/DupTree.h ../tree/LookUpTable.h typecheck_WL.h
+typecheck.o: gen_pseudo_fun.h new_typecheck.h prim_fun_tt.mac
 typecheck_WL.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 typecheck_WL.o: /usr/include/sys/isa_defs.h /usr/include/stddef.h
 typecheck_WL.o: /usr/include/string.h ../tree/tree.h ../global/types.h
@@ -219,7 +232,9 @@ typecheck_WL.o: ../global/internal_lib.h ../print/print.h
 typecheck_WL.o: ../global/my_debug.h ../../inc/dbug.h ../tree/traverse.h
 typecheck_WL.o: ../tree/free.h /usr/include/malloc.h /usr/include/sys/types.h
 typecheck_WL.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-typecheck_WL.o: ../optimize/ConstantFolding.h constants.h shape.h
+typecheck_WL.o: /usr/include/sys/select.h /usr/include/sys/time.h
+typecheck_WL.o: /usr/include/sys/time.h ../optimize/ConstantFolding.h
+typecheck_WL.o: constants.h shape.h
 user_types.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 user_types.o: /usr/include/sys/isa_defs.h ../global/Error.h
 user_types.o: /usr/include/stdio.h /usr/include/sys/va_list.h
@@ -228,4 +243,6 @@ user_types.o: /usr/include/stdlib.h ../global/types.h ../global/globals.h
 user_types.o: ../../inc/dbug.h ../tree/free.h ../global/my_debug.h
 user_types.o: /usr/include/malloc.h /usr/include/sys/types.h
 user_types.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-user_types.o: ../global/internal_lib.h user_types.h new_types.h shape.h
+user_types.o: /usr/include/sys/select.h /usr/include/sys/time.h
+user_types.o: /usr/include/sys/time.h ../global/internal_lib.h user_types.h
+user_types.o: new_types.h shape.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.17  2000/03/31 09:33:40  jhs
+# make deps done
+#
 # Revision 2.16  2000/03/31 09:22:10  cg
 # make deps done
 #
@@ -136,8 +139,23 @@ adjust_ids.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
 adjust_ids.o: ../global/internal_lib.h ../tree/traverse.h ../tree/free.h
 adjust_ids.o: ../global/my_debug.h /usr/include/malloc.h
 adjust_ids.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-adjust_ids.o: /usr/include/sys/int_types.h ../tree/DupTree.h
-adjust_ids.o: ../tree/LookUpTable.h ../print/print.h
+adjust_ids.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+adjust_ids.o: /usr/include/sys/time.h /usr/include/sys/time.h
+adjust_ids.o: ../tree/DupTree.h ../tree/LookUpTable.h ../print/print.h
+cleanup_decls.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
+cleanup_decls.o: ../tree/tree_compound.h ../global/Error.h
+cleanup_decls.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+cleanup_decls.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+cleanup_decls.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+cleanup_decls.o: /usr/include/string.h /usr/include/stdlib.h
+cleanup_decls.o: ../global/globals.h ../global/internal_lib.h
+cleanup_decls.o: ../tree/traverse.h ../tree/free.h ../../inc/dbug.h
+cleanup_decls.o: ../global/my_debug.h /usr/include/malloc.h
+cleanup_decls.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+cleanup_decls.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+cleanup_decls.o: /usr/include/sys/time.h /usr/include/sys/time.h
+cleanup_decls.o: ../tree/DataFlowMask.h ../tree/DataFlowMaskUtils.h
+cleanup_decls.o: ../tree/LookUpTable.h
 flatten.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 flatten.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 flatten.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -147,7 +165,9 @@ flatten.o: ../global/my_debug.h ../global/internal_lib.h ../tree/tree_basic.h
 flatten.o: ../tree/tree_compound.h ../tree/traverse.h ../tree/free.h
 flatten.o: /usr/include/malloc.h /usr/include/sys/types.h
 flatten.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-flatten.o: ../tree/DupTree.h ../tree/LookUpTable.h flatten.h
+flatten.o: /usr/include/sys/select.h /usr/include/sys/time.h
+flatten.o: /usr/include/sys/time.h ../tree/DupTree.h ../tree/LookUpTable.h
+flatten.o: flatten.h
 fun2lac.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
 fun2lac.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
 fun2lac.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -157,7 +177,8 @@ fun2lac.o: /usr/include/stdlib.h ../global/globals.h ../global/internal_lib.h
 fun2lac.o: ../tree/traverse.h ../tree/free.h ../../inc/dbug.h
 fun2lac.o: ../global/my_debug.h /usr/include/malloc.h
 fun2lac.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-fun2lac.o: /usr/include/sys/int_types.h adjust_ids.h
+fun2lac.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+fun2lac.o: /usr/include/sys/time.h /usr/include/sys/time.h adjust_ids.h
 lac2fun.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
 lac2fun.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
 lac2fun.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -167,6 +188,7 @@ lac2fun.o: /usr/include/stdlib.h ../global/globals.h ../global/internal_lib.h
 lac2fun.o: ../tree/traverse.h ../tree/free.h ../../inc/dbug.h
 lac2fun.o: ../global/my_debug.h /usr/include/malloc.h
 lac2fun.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-lac2fun.o: /usr/include/sys/int_types.h ../tree/DupTree.h
+lac2fun.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+lac2fun.o: /usr/include/sys/time.h /usr/include/sys/time.h ../tree/DupTree.h
 lac2fun.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h
-lac2fun.o: ../tree/DataFlowMaskUtils.h
+lac2fun.o: ../tree/DataFlowMaskUtils.h cleanup_decls.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.10  2000/03/31 09:33:42  jhs
+# make deps done
+#
 # Revision 2.9  2000/01/24 17:58:29  dkr
 # make deps done
 #
@@ -132,8 +135,9 @@ print.o: print.h ../global/my_debug.h ../../inc/dbug.h ../tree/traverse.h
 print.o: convert.h ../tree/DataFlowMask.h ../optimize/optimize.h
 print.o: ../tree/free.h /usr/include/malloc.h /usr/include/sys/types.h
 print.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-print.o: ../optimize/generatemasks.h ../modules/filemgr.h
-print.o: ../compile/gen_startup_code.h ../psi-opt/WithloopFolding.h
-print.o: ../tree/scheduling.h ../psi-opt/wl_access_analyze.h
-print.o: ../psi-opt/tile_size_inference.h ../compile/icm.data
-print.o: ../tree/prf_node_info.mac
+print.o: /usr/include/sys/select.h /usr/include/sys/time.h
+print.o: /usr/include/sys/time.h ../optimize/generatemasks.h
+print.o: ../modules/filemgr.h ../compile/gen_startup_code.h
+print.o: ../psi-opt/WithloopFolding.h ../tree/scheduling.h
+print.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
+print.o: ../compile/icm.data ../tree/prf_node_info.mac
