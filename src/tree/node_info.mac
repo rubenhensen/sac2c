@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.187  2004/08/11 08:38:09  skt
+ * ASMRA-functions update
+ *
  * Revision 3.186  2004/08/10 16:15:15  ktr
  * RIicm added.
  *
@@ -1224,7 +1227,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, SPid,
        TravSons, CVPid, WLFSid,
 
-       ASMRAid, TravSons, TravSons, EMALid, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, EMALid, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
@@ -1450,9 +1453,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        PREC4fundef, TravSons, TravSons, NT2OTfundef, CWCfundef, TravSons, TravSons,
        TravSons, TravSons, TravSons, SPfundef, TSfundef, CVPfundef, WLFSfundef,
 
-       ASMRAfundef, TravSons, PEMfundef, EMALfundef, TravSons, TravSons, TravSons,
+       TravSons, TravSons, PEMfundef, EMALfundef, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, 3),
+       TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_arg, "N_arg", TravSons, FltnArgs, PrintArg, TravSons, GNMarg, TravSons, TravSons,
        FreeArg, TravSons, RCarg, EMRCarg, RIarg, DupArg, TravSons, TravSons, TravSons,
@@ -1534,7 +1537,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, NT2OTblock, TravSons, TravSons, DLblock, TravSons, ESDblock, UESDblock,
        TravSons, TravSons, CVPblock, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       ASMRAblock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
@@ -1646,7 +1649,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       ASMRAmt, TravSons, TravSons, TravError, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravError, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
@@ -1674,7 +1677,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       ASMRAst, TravSons, TravSons, TravError, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravError, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
@@ -1787,9 +1790,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        ALassign, HDassign, TravSons, TravSons, TravSons, DLassign, TravSons, ESDassign,
        UESDassign, SPassign, TravSons, CVPassign, WLFSassign,
 
-       ASMRAassign, TEMassign, PEMassign, EMALassign, TravSons, TravSons, TravSons,
+       TravSons, TEMassign, PEMassign, EMALassign, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, 2),
+       TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_annotate, "N_annotate", TravSons, TravSons, PrintAnnotate, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1956,7 +1959,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, NT2OTlet, TravSons, TravSons, DLlet, TravSons, ESDlet, UESDlet, SPlet,
        TravSons, CVPlet, TravSons,
 
-       ASMRAlet, TEMlet, TravSons, EMALlet, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TEMlet, TravSons, EMALlet, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
@@ -2496,7 +2499,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       ASMRAwith2, TEMwith2, PEMwith2, EMALwith2, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TEMwith2, PEMwith2, EMALwith2, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 4),
 
