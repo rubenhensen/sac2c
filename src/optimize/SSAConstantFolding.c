@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.76  2004/11/26 19:46:41  khf
+ * SacDevCamp04: COMPILES!!!
+ *
  * Revision 1.75  2004/11/16 14:39:17  mwe
  * ntype-support for ID_TYPE added
  *
@@ -242,17 +245,19 @@
  *
  *****************************************************************************/
 
-#define NEW_INFO
-
 #include "dbug.h"
-#include "types.h"
 #include "tree_basic.h"
+#include "node_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "new_types.h"
+#include "globals.h"
 #include "traverse.h"
 #include "free.h"
 #include "DupTree.h"
 #include "constants.h"
+#include "shape.h"
+#include "Error.h"
 #include "optimize.h"
 #include "SSATransform.h"
 #include "Inline.h"
@@ -270,7 +275,7 @@ struct INFO {
     node *topblock;
     node *results;
     bool inlineap;
-    node *modul;
+    node *module;
     node *assign;
     bool inlfundef;
     node *withid;
@@ -279,17 +284,17 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_SSACF_REMASSIGN(n) (n->remassign)
-#define INFO_SSACF_FUNDEF(n) (n->fundef)
-#define INFO_SSACF_INSCONST(n) (n->isconst)
-#define INFO_SSACF_POSTASSIGN(n) (n->postassign)
-#define INFO_SSACF_TOPBLOCK(n) (n->topblock)
-#define INFO_SSACF_RESULTS(n) (n->results)
-#define INFO_SSACF_INLINEAP(n) (n->inlineap)
-#define INFO_SSACF_MODUL(n) (n->modul)
-#define INFO_SSACF_ASSIGN(n) (n->assign)
-#define INFO_SSACF_INLFUNDEF(n) (n->inlfundef)
-#define INFO_SSACF_WITHID(n) (n->withid)
+#define INFO_CF_REMASSIGN(n) (n->remassign)
+#define INFO_CF_FUNDEF(n) (n->fundef)
+#define INFO_CF_INSCONST(n) (n->isconst)
+#define INFO_CF_POSTASSIGN(n) (n->postassign)
+#define INFO_CF_TOPBLOCK(n) (n->topblock)
+#define INFO_CF_RESULTS(n) (n->results)
+#define INFO_CF_INLINEAP(n) (n->inlineap)
+#define INFO_CF_MODULE(n) (n->module)
+#define INFO_CF_ASSIGN(n) (n->assign)
+#define INFO_CF_INLFUNDEF(n) (n->inlfundef)
+#define INFO_CF_WITHID(n) (n->withid)
 
 /*
  * INFO functions
@@ -301,19 +306,19 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
-    INFO_SSACF_REMASSIGN (result) = FALSE;
-    INFO_SSACF_FUNDEF (result) = NULL;
-    INFO_SSACF_INSCONST (result) = FALSE;
-    INFO_SSACF_POSTASSIGN (result) = NULL;
-    INFO_SSACF_TOPBLOCK (result) = NULL;
-    INFO_SSACF_RESULTS (result) = NULL;
-    INFO_SSACF_INLINEAP (result) = FALSE;
-    INFO_SSACF_MODUL (result) = NULL;
-    INFO_SSACF_ASSIGN (result) = NULL;
-    INFO_SSACF_INLFUNDEF (result) = FALSE;
-    INFO_SSACF_WITHID (result) = NULL;
+    INFO_CF_REMASSIGN (result) = FALSE;
+    INFO_CF_FUNDEF (result) = NULL;
+    INFO_CF_INSCONST (result) = FALSE;
+    INFO_CF_POSTASSIGN (result) = NULL;
+    INFO_CF_TOPBLOCK (result) = NULL;
+    INFO_CF_RESULTS (result) = NULL;
+    INFO_CF_INLINEAP (result) = FALSE;
+    INFO_CF_MODULE (result) = NULL;
+    INFO_CF_ASSIGN (result) = NULL;
+    INFO_CF_INLFUNDEF (result) = FALSE;
+    INFO_CF_WITHID (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -323,7 +328,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -342,7 +347,7 @@ FreeInfo (info *info)
 /* maximum of supported args for primitive functions */
 #define PRF_MAX_ARGS 3
 
-/* macros used in SSACFFoldPrfExpr to handle arguments selections */
+/* macros used in CFfoldPrfExpr to handle arguments selections */
 #define ONE_CONST_ARG(arg) (arg[0] != NULL)
 
 #define TWO_CONST_ARG(arg) ((arg[0] != NULL) && (arg[1] != NULL))
@@ -381,16 +386,14 @@ struct STRUCT_CONSTANT {
 #define SCO_MOD(n) (n->name_mod)
 #define SCO_SHAPE(n) (n->shape)
 #define SCO_HIDDENCO(n) (n->hidden_co)
-#define SCO_ELEMDIM(n) (SHGetDim (SCO_SHAPE (n)) - COGetDim (SCO_HIDDENCO (n)))
+#define SCO_ELEMDIM(n) (SHgetDim (SCO_SHAPE (n)) - COgetDim (SCO_HIDDENCO (n)))
 
 /* local used helper functions */
-static ids *TravIDS (ids *arg_ids, info *arg_info);
-static ids *SSACFids (ids *arg_ids, info *arg_info);
-static node *SSACFPropagateConstants2Args (node *arg_chain, node *param_chain);
-static ids *SSACFSetSSAASSIGN (ids *chain, node *assign);
-static node **SSACFGetPrfArgs (node **array, node *prf_arg_chain, int max_args);
-static constant **SSACFArgs2Const (constant **co_array, node **arg_expr, int max_args);
-static shape *SSACFGetShapeOfExpr (node *expr);
+static node *PropagateConstants2Args (node *arg_chain, node *param_chain);
+static node *SetSsaAssign (node *chain, node *assign);
+static node **GetPrfArgs (node **array, node *prf_arg_chain, int max_args);
+static constant **Args2Const (constant **co_array, node **arg_expr, int max_args);
+static shape *GetShapeOfExpr (node *expr);
 static void RemovePhiCopyTargetAttributes (bool thenpart, info *arg_info);
 
 /*
@@ -403,26 +406,26 @@ static void RemovePhiCopyTargetAttributes (bool thenpart, info *arg_info);
  * that can handle all these cases internally
  */
 
-static constant *SSACFDim (node *expr);
-static constant *SSACFShape (node *expr);
+static constant *Dim (node *expr);
+static constant *Shape (node *expr);
 
-static node *SSACFStructOpSel (constant *idx, node *expr);
-static node *SSACFStructOpReshape (constant *idx, node *expr);
-static node *SSACFStructOpIdxSel (constant *idx, node *expr);
-static node *SSACFStructOpTake (constant *idx, node *expr);
-static node *SSACFStructOpDrop (constant *idx, node *expr);
+static node *StructOpSel (constant *idx, node *expr);
+static node *StructOpReshape (constant *idx, node *expr);
+static node *StructOpIdxSel (constant *idx, node *expr);
+static node *StructOpTake (constant *idx, node *expr);
+static node *StructOpDrop (constant *idx, node *expr);
 
 /* implements: arithmetical opt. for add, sub, mul, div, and, or */
-static node *SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr);
+static node *ArithmOpWrapper (prf op, constant **arg_co, node **arg_expr);
 
 /*
  * some primitive functions that allows special optimizations in more
  * generic cases
  */
-static node *SSACFEq (node *expr1, node *expr2);
-static node *SSACFSub (node *expr1, node *expr2);
-static node *SSACFModarray (node *a, constant *idx, node *elem);
-static node *SSACFSel (node *idx_expr, node *array_expr);
+static node *Eq (node *expr1, node *expr2);
+static node *Sub (node *expr1, node *expr2);
+static node *Modarray (node *a, constant *idx, node *elem);
+static node *Sel (node *idx_expr, node *array_expr);
 
 /*
  * functions to handle SCOs
@@ -447,7 +450,7 @@ static node *SSACFSel (node *idx_expr, node *array_expr);
  *****************************************************************************/
 
 struct_constant *
-SCOExpr2StructConstant (node *expr)
+CFscoExpr2StructConstant (node *expr)
 {
     struct_constant *struc_co;
     int dim;
@@ -458,49 +461,43 @@ SCOExpr2StructConstant (node *expr)
 
     if (NODE_TYPE (expr) == N_array) {
         /* expression is an array */
-        struc_co = SCOArray2StructConstant (expr);
+        struc_co = CFscoArray2StructConstant (expr);
     } else {
         if (NODE_TYPE (expr) == N_id) {
             if (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL) {
                 /* expression is an identifier */
-#ifdef MWE_NTYPE_READY
-                if ((TYIsAKD (AVIS_TYPE (ID_AVIS (expr))))
-                    || (TYIsAKS (AVIS_TYPE (ID_AVIS (expr))))
-                    || (TYIsAKV (AVIS_TYPE (ID_AVIS (expr)))))
-                    dim = TYGetDim (AVIS_TYPE (ID_AVIS (expr)));
-                else
+                if ((TYisAKD (AVIS_TYPE (ID_AVIS (expr))))
+                    || (TYisAKS (AVIS_TYPE (ID_AVIS (expr))))
+                    || (TYisAKV (AVIS_TYPE (ID_AVIS (expr))))) {
+                    dim = TYgetDim (AVIS_TYPE (ID_AVIS (expr)));
+                } else {
                     dim = -1;
-#else
-                dim
-                  = GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
-#endif
+                }
+
                 if (dim == SCALAR) {
                     /* id is a defined scalar */
-                    struc_co = SCOScalar2StructConstant (expr);
+                    struc_co = CFscoScalar2StructConstant (expr);
                 } else if (dim > SCALAR) {
                     /* id is a defined array */
-                    struc_co = SCOArray2StructConstant (expr);
+                    struc_co = CFscoArray2StructConstant (expr);
                 }
             } else {
                 if (AVIS_WITHID (ID_AVIS (expr))) {
                     /* expression is given by a withid */
-#ifdef MWE_NTYPE_READY
-                    if ((TYIsAKD (AVIS_TYPE (ID_AVIS (expr))))
-                        || (TYIsAKS (AVIS_TYPE (ID_AVIS (expr))))
-                        || (TYIsAKV (AVIS_TYPE (ID_AVIS (expr)))))
-                        dim = TYGetDim (AVIS_TYPE (ID_AVIS (expr)));
-                    else
+                    if ((TYisAKD (AVIS_TYPE (ID_AVIS (expr))))
+                        || (TYisAKS (AVIS_TYPE (ID_AVIS (expr))))
+                        || (TYisAKV (AVIS_TYPE (ID_AVIS (expr))))) {
+                        dim = TYgetDim (AVIS_TYPE (ID_AVIS (expr)));
+                    } else {
                         dim = -1;
-#else
-                    dim = GetShapeDim (
-                      VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
-#endif
+                    }
+
                     if (dim == SCALAR) {
                         /* id is a defined scalar */
-                        struc_co = SCOScalar2StructConstant (expr);
+                        struc_co = CFscoScalar2StructConstant (expr);
                     } else if (dim > SCALAR) {
                         /* id is a withid vector */
-                        struc_co = SCOWithidVec2StructConstant (expr);
+                        struc_co = CFscoWithidVec2StructConstant (expr);
                     }
                 }
             }
@@ -513,50 +510,42 @@ SCOExpr2StructConstant (node *expr)
 /******************************************************************************
  *
  * function:
- *   struct_constant *SCOWithidVec2StructConstant(node *expr)
+ *   struct_constant *CFscoWithidVec2StructConstant(node *expr)
  *
  * description:
  *   converts a vector defined in a NWithId-Node into a structural constant.
  *
  *****************************************************************************/
 struct_constant *
-SCOWithidVec2StructConstant (node *expr)
+CFscoWithidVec2StructConstant (node *expr)
 {
     struct_constant *struc_co;
     node *withid;
-    ids *scalars;
+    node *scalars;
     node *exprs;
     int elem_count;
     node *tmp;
-#ifdef MWE_NTYPE_READY
     ntype *vtype;
-#else
-    types *vtype;
-#endif
     node **node_vec;
     shape *vshape;
     int i;
 
-    DBUG_ENTER ("SCOWithidVec2StructConstant");
+    DBUG_ENTER ("CFscoWithidVec2StructConstant");
 
     DBUG_ASSERT ((NODE_TYPE (expr) == N_id),
-                 "SCOWithidVec2StructConstant supports only N_id nodes");
+                 "CFscoWithidVec2StructConstant supports only N_id nodes");
 
     withid = AVIS_WITHID (ID_AVIS (expr));
-    scalars = NWITHID_IDS (withid);
-    exprs = Ids2Exprs (scalars);
-    elem_count = CountIds (scalars);
+    scalars = WITHID_IDS (withid);
+    exprs = TCids2Exprs (scalars);
+    elem_count = TCcountExprs (scalars);
 
     /* create structural constant of vector */
-#ifdef MWE_NTYPE_READY
     vtype = AVIS_TYPE (ID_AVIS (expr));
-#else
-    vtype = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)));
-#endif
 
     /* alloc hidden vector */
-    vshape = SHCreateShape (1, elem_count);
-    node_vec = (node **)Malloc (elem_count * sizeof (node *));
+    vshape = SHcreateShape (1, elem_count);
+    node_vec = (node **)ILIBmalloc (elem_count * sizeof (node *));
 
     /* copy element pointers from array to vector */
     tmp = exprs;
@@ -566,18 +555,13 @@ SCOWithidVec2StructConstant (node *expr)
     }
 
     /* create struct_constant */
-    struc_co = (struct_constant *)Malloc (sizeof (struct_constant));
+    struc_co = ILIBmalloc (sizeof (struct_constant));
     SCO_BASETYPE (struc_co) = T_int;
-#ifdef MWE_NTYPE_READY
-    SCO_NAME (struc_co) = TYGetName (vtype);
-    SCO_MOD (struc_co) = TYGetMod (vtype);
-#else
-    SCO_NAME (struc_co) = TYPES_NAME (vtype);
-    SCO_MOD (struc_co) = TYPES_MOD (vtype);
-#endif
-    SCO_SHAPE (struc_co) = SHCopyShape (vshape);
+    SCO_NAME (struc_co) = TYgetName (vtype);
+    SCO_MOD (struc_co) = TYgetMod (vtype);
+    SCO_SHAPE (struc_co) = SHcopyShape (vshape);
 
-    SCO_HIDDENCO (struc_co) = COMakeConstant (T_hidden, vshape, node_vec);
+    SCO_HIDDENCO (struc_co) = COmakeConstant (T_hidden, vshape, node_vec);
 
     DBUG_RETURN (struc_co);
 }
@@ -585,7 +569,7 @@ SCOWithidVec2StructConstant (node *expr)
 /******************************************************************************
  *
  * function:
- *   struct_constant *SCOArray2StructConstant(node *expr)
+ *   struct_constant *CFscoArray2StructConstant(node *expr)
  *
  * description:
  *   converts an N_array node (or a N_id of a defined array) from AST to
@@ -595,15 +579,11 @@ SCOWithidVec2StructConstant (node *expr)
  *****************************************************************************/
 
 struct_constant *
-SCOArray2StructConstant (node *expr)
+CFscoArray2StructConstant (node *expr)
 {
     struct_constant *struc_co;
     node *array;
-#ifdef MWE_NTYPE_READY
     ntype *atype;
-#else
-    types *atype;
-#endif
     shape *realshape;
     shape *ashape;
     node **node_vec;
@@ -612,10 +592,10 @@ SCOArray2StructConstant (node *expr)
     int elem_count;
     int i;
 
-    DBUG_ENTER ("SCOArray2StructConstant");
+    DBUG_ENTER ("CFscoArray2StructConstant");
 
     DBUG_ASSERT (((NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_id)),
-                 "SCOArray2StructConstant supports only N_array and N_id nodes");
+                 "CFscoArray2StructConstant supports only N_array and N_id nodes");
 
     atype = NULL;
 
@@ -623,14 +603,8 @@ SCOArray2StructConstant (node *expr)
         /* explicit array as N_array node */
         array = expr;
         /* shape of the given array */
-#ifdef MWE_NTYPE_READY
         DBUG_ASSERT ((ARRAY_NTYPE (array) != NULL), "unknown array type");
         atype = ARRAY_NTYPE (array);
-#else
-        DBUG_ASSERT ((ARRAY_TYPE (array) != NULL), "unknown array type");
-        atype = ARRAY_TYPE (array);
-#endif
-
     } else if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)
                && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr)))))
                    == N_array)) {
@@ -639,11 +613,7 @@ SCOArray2StructConstant (node *expr)
         array = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr))));
 
         /* shape of the given array */
-#ifdef MWE_NTYPE_READY
         atype = AVIS_TYPE (ID_AVIS (expr));
-#else
-        atype = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)));
-#endif
     } else {
         /* unsupported node type */
         array = NULL;
@@ -652,16 +622,12 @@ SCOArray2StructConstant (node *expr)
     /* build an abstract structural constant of type (void*) T_hidden */
     if (array != NULL) {
         /* alloc hidden vector */
-#ifdef MWE_NTYPE_READY
-        realshape = TYType2Shape (atype);
-#else
-        realshape = SHOldTypes2Shape (atype);
-#endif
-        ashape = SHCopyShape (ARRAY_SHAPE (array));
+        realshape = SHoldTypes2Shape (TYtype2OldType (atype));
+        ashape = SHcopyShape (ARRAY_SHAPE (array));
 
         /* ktr: before it was SHGetUnrLen(realshape); */
-        elem_count = SHGetUnrLen (ashape);
-        node_vec = (node **)Malloc (elem_count * sizeof (node *));
+        elem_count = SHgetUnrLen (ashape);
+        node_vec = (node **)ILIBmalloc (elem_count * sizeof (node *));
 
         /* copy element pointers from array to vector */
         valid_const = TRUE;
@@ -678,23 +644,17 @@ SCOArray2StructConstant (node *expr)
         DBUG_ASSERT ((tmp == NULL), "array contains too many elements");
 
         /* create struct_constant */
-        struc_co = (struct_constant *)Malloc (sizeof (struct_constant));
-#ifdef MWE_NTYPE_READY
-        SCO_BASETYPE (struc_co) = TYGetBasetype (atype);
-        SCO_NAME (struc_co) = TYGetName (atype);
-        SCO_MOD (struc_co) = TYGetMod (atype);
-#else
-        SCO_BASETYPE (struc_co) = GetBasetype (atype);
-        SCO_NAME (struc_co) = TYPES_NAME (atype);
-        SCO_MOD (struc_co) = TYPES_MOD (atype);
-#endif
+        struc_co = (struct_constant *)ILIBmalloc (sizeof (struct_constant));
+        SCO_BASETYPE (struc_co) = TYgetSimpleType (TYgetScalar (atype));
+        SCO_NAME (struc_co) = TYgetName (atype);
+        SCO_MOD (struc_co) = TYgetMod (atype);
         SCO_SHAPE (struc_co) = realshape;
 
-        SCO_HIDDENCO (struc_co) = COMakeConstant (T_hidden, ashape, node_vec);
+        SCO_HIDDENCO (struc_co) = COmakeConstant (T_hidden, ashape, node_vec);
 
         /* remove invalid structural arrays */
         if (!valid_const) {
-            struc_co = SCOFreeStructConstant (struc_co);
+            struc_co = CFscoFreeStructConstant (struc_co);
         }
     } else {
         /* no array with known elements */
@@ -707,7 +667,7 @@ SCOArray2StructConstant (node *expr)
 /******************************************************************************
  *
  * function:
- *   struct_constant *SCOScalar2StructConstant(node *expr)
+ *   struct_constant *CFscoScalar2StructConstant(node *expr)
  *
  * description:
  *   converts an scalar node to a structual constant (e.g. N_num, ... or N_id)
@@ -715,56 +675,37 @@ SCOArray2StructConstant (node *expr)
  ******************************************************************************/
 
 struct_constant *
-SCOScalar2StructConstant (node *expr)
+CFscoScalar2StructConstant (node *expr)
 {
     struct_constant *struc_co;
     shape *cshape;
-#ifdef MWE_NTYPES_READY
     ntype *ctype;
-#else
-    types *ctype;
-#endif
     node **elem;
     nodetype nt;
 
-    DBUG_ENTER ("SCOScalar2StructConstant");
+    DBUG_ENTER ("CFscoScalar2StructConstant");
 
     nt = NODE_TYPE (expr);
 
     if ((nt == N_num) || (nt == N_float) || (nt == N_double) || (nt == N_bool)
-        || ((nt == N_id) &&
-#ifdef MWE_NTYPE_READY
-            (TYGetDim (AVIS_TYPE (ID_AVIS (expr))) == SCALAR))) {
+        || ((nt == N_id) && (TYgetDim (AVIS_TYPE (ID_AVIS (expr))) == SCALAR))) {
         /* create structural constant as scalar */
         ctype = AVIS_TYPE (ID_AVIS (expr));
-#else
-            (GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))))
-             == SCALAR))) {
-
-        /* create structural constant of scalar */
-        ctype = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)));
-#endif
 
         /* alloc hidden vector */
-        cshape = SHMakeShape (0);
-        elem = (node **)Malloc (sizeof (node *));
+        cshape = SHmakeShape (0);
+        elem = (node **)ILIBmalloc (sizeof (node *));
 
         /* copy element pointers from array to vector */
         *elem = expr;
 
         /* create struct_constant */
-        struc_co = (struct_constant *)Malloc (sizeof (struct_constant));
-#ifdef MWE_NTYPES_READY
-        SCO_BASETYPE (struc_co) = TYGetBasetype (ctype);
-        SCO_NAME (struc_co) = TYGetName (ctype);
-        SCO_MOD (struc_co) = TYGetMod (ctype);
-#else
-        SCO_BASETYPE (struc_co) = TYPES_BASETYPE (ctype);
-        SCO_NAME (struc_co) = TYPES_NAME (ctype);
-        SCO_MOD (struc_co) = TYPES_MOD (ctype);
-#endif
-        SCO_SHAPE (struc_co) = SHCopyShape (cshape);
-        SCO_HIDDENCO (struc_co) = COMakeConstant (T_hidden, cshape, elem);
+        struc_co = (struct_constant *)ILIBmalloc (sizeof (struct_constant));
+        SCO_BASETYPE (struc_co) = TYgetSimpleType (TYgetScalar (ctype));
+        SCO_NAME (struc_co) = TYgetName (ctype);
+        SCO_MOD (struc_co) = TYgetMod (ctype);
+        SCO_SHAPE (struc_co) = SHcopyShape (cshape);
+        SCO_HIDDENCO (struc_co) = COmakeConstant (T_hidden, cshape, elem);
 
     } else {
         struc_co = NULL;
@@ -776,7 +717,7 @@ SCOScalar2StructConstant (node *expr)
 /******************************************************************************
  *
  * function:
- *   node *SCODupStructConstant2Expr(struct_constant *struc_co)
+ *   node *CFscoDupStructConstant2Expr(struct_constant *struc_co)
  *
  * description:
  *   builds an array of the given strucural constant and duplicate
@@ -786,7 +727,7 @@ SCOScalar2StructConstant (node *expr)
  *****************************************************************************/
 
 node *
-SCODupStructConstant2Expr (struct_constant *struc_co)
+CFscoDupStructConstant2Expr (struct_constant *struc_co)
 {
     node *expr;
     node *aelems;
@@ -794,35 +735,28 @@ SCODupStructConstant2Expr (struct_constant *struc_co)
     int elems_count;
     node **node_vec;
 
-    DBUG_ENTER ("SCODupStructConstant2Expr");
+    DBUG_ENTER ("CFscoDupStructConstant2Expr");
 
     /* build up elements chain */
-    node_vec = (node **)COGetDataVec (SCO_HIDDENCO (struc_co));
+    node_vec = (node **)COgetDataVec (SCO_HIDDENCO (struc_co));
 
-    if (COGetDim (SCO_HIDDENCO (struc_co)) == 0) {
+    if (COgetDim (SCO_HIDDENCO (struc_co)) == 0) {
         /* result is a single node */
-        expr = DupNode (node_vec[0]);
+        expr = DUPdoDupNode (node_vec[0]);
     } else {
         /* result is a new array */
-        elems_count = SHGetUnrLen (COGetShape (SCO_HIDDENCO (struc_co)));
+        elems_count = SHgetUnrLen (COgetShape (SCO_HIDDENCO (struc_co)));
 
         aelems = NULL;
         for (i = elems_count - 1; i >= 0; i--) {
-            aelems = MakeExprs (DupNode (node_vec[i]), aelems);
+            aelems = TBmakeExprs (DUPdoDupNode (node_vec[i]), aelems);
         }
 
         /* build array node */
-        expr = MakeArray (aelems, SHCopyShape (COGetShape (SCO_HIDDENCO (struc_co))));
+        expr = TBmakeArray (SHcopyShape (COgetShape (SCO_HIDDENCO (struc_co))), aelems);
 
-#ifdef MWE_NTYPE_READY
         ARRAY_NTYPE (expr)
-          = TYMakeAKS (TYMakeSimpleType (SCO_BASETYPE (struc_co)), SCO_SHAPE (struc_co));
-#else
-        ARRAY_TYPE (expr)
-          = MakeTypes (SCO_BASETYPE (struc_co), SHGetDim (SCO_SHAPE (struc_co)),
-                       SHShape2OldShpseg (SCO_SHAPE (struc_co)),
-                       StringCopy (SCO_NAME (struc_co)), SCO_MOD (struc_co));
-#endif
+          = TYmakeAKS (TYmakeSimpleType (SCO_BASETYPE (struc_co)), SCO_SHAPE (struc_co));
     }
     DBUG_RETURN (expr);
 }
@@ -830,7 +764,7 @@ SCODupStructConstant2Expr (struct_constant *struc_co)
 /******************************************************************************
  *
  * function:
- *   struct_constant *SCOFreeStructConstant(struct_constant *struc_co)
+ *   struct_constant *CFscoFreeStructConstant(struct_constant *struc_co)
  *
  * description:
  *   frees the struct_constant data structure and the internal constant element.
@@ -838,23 +772,23 @@ SCODupStructConstant2Expr (struct_constant *struc_co)
  *****************************************************************************/
 
 struct_constant *
-SCOFreeStructConstant (struct_constant *struc_co)
+CFscoFreeStructConstant (struct_constant *struc_co)
 {
-    DBUG_ENTER ("SCOFreeStructConstant");
+    DBUG_ENTER ("CFscoFreeStructConstant");
 
-    DBUG_ASSERT ((struc_co != NULL), "SCOFreeStructConstant: NULL pointer");
+    DBUG_ASSERT ((struc_co != NULL), "CDscoFreeStructConstant: NULL pointer");
 
     DBUG_ASSERT ((SCO_SHAPE (struc_co) != NULL),
-                 "SCOFreeStructConstant: SCO_SHAPE is NULL");
+                 "CFscoFreeStructConstant: SCO_SHAPE is NULL");
 
     /* free shape */
-    SCO_SHAPE (struc_co) = SHFreeShape (SCO_SHAPE (struc_co));
+    SCO_SHAPE (struc_co) = SHfreeShape (SCO_SHAPE (struc_co));
 
     /* free substructure */
-    SCO_HIDDENCO (struc_co) = COFreeConstant (SCO_HIDDENCO (struc_co));
+    SCO_HIDDENCO (struc_co) = COfreeConstant (SCO_HIDDENCO (struc_co));
 
     /* free structure */
-    struc_co = Free (struc_co);
+    struc_co = ILIBfree (struc_co);
 
     DBUG_RETURN ((struct_constant *)NULL);
 }
@@ -866,7 +800,7 @@ SCOFreeStructConstant (struct_constant *struc_co)
 /******************************************************************************
  *
  * function:
- *   node *SSACFPropagateConstants2Args(node *arg_chain, node *const_arg_chain)
+ *   node *PropagateConstants2Args(node *arg_chain, node *const_arg_chain)
  *
  * description:
  *   to propagate constant expressions from the calling context into a special
@@ -876,11 +810,11 @@ SCOFreeStructConstant (struct_constant *struc_co)
  *****************************************************************************/
 
 static node *
-SSACFPropagateConstants2Args (node *arg_chain, node *param_chain)
+PropagateConstants2Args (node *arg_chain, node *param_chain)
 {
     node *arg;
 
-    DBUG_ENTER ("SSACFPropagateConstants2Args");
+    DBUG_ENTER ("PropagateConstants2Args");
 
     arg = arg_chain;
     while (arg != NULL) {
@@ -889,7 +823,7 @@ SSACFPropagateConstants2Args (node *arg_chain, node *param_chain)
 
         if (AVIS_SSACONST (ARG_AVIS (arg)) == NULL) {
             /* arg not marked as constant - try to make new constant */
-            AVIS_SSACONST (ARG_AVIS (arg)) = COAST2Constant (EXPRS_EXPR (param_chain));
+            AVIS_SSACONST (ARG_AVIS (arg)) = COaST2Constant (EXPRS_EXPR (param_chain));
         }
 
         /* traverse to next element in both chains */
@@ -903,7 +837,7 @@ SSACFPropagateConstants2Args (node *arg_chain, node *param_chain)
 /******************************************************************************
  *
  * function:
- *   ids *SSACFSetSSAASSIGN(ids *chain, node *assign)
+ *   node *SetSsaAssign(node *chain, node *assign)
  *
  * description:
  *   sets the AVIS_SSAASSIGN to the correct assignment.
@@ -912,10 +846,10 @@ SSACFPropagateConstants2Args (node *arg_chain, node *param_chain)
  *
  *****************************************************************************/
 
-static ids *
-SSACFSetSSAASSIGN (ids *chain, node *assign)
+static node *
+SetSsaAssign (node *chain, node *assign)
 {
-    DBUG_ENTER ("SSACFSetSSAASSIGN");
+    DBUG_ENTER ("CFSetSSAASSIGN");
 
     if (chain != NULL) {
         /* set current assign as defining assignement */
@@ -929,7 +863,7 @@ SSACFSetSSAASSIGN (ids *chain, node *assign)
         }
 
         /* traverse to next ids */
-        IDS_NEXT (chain) = SSACFSetSSAASSIGN (IDS_NEXT (chain), assign);
+        IDS_NEXT (chain) = SetSsaAssign (IDS_NEXT (chain), assign);
     }
 
     DBUG_RETURN (chain);
@@ -938,7 +872,7 @@ SSACFSetSSAASSIGN (ids *chain, node *assign)
 /******************************************************************************
  *
  * function:
- *   node **SSACFGetPrfArgs( node **array, node *prf_arg_chain, int max_args)
+ *   node **GetPrfArgs( node **array, node *prf_arg_chain, int max_args)
  *
  * description:
  *   fills an pointer array of len max_args with the args from an exprs chain
@@ -947,12 +881,12 @@ SSACFSetSSAASSIGN (ids *chain, node *assign)
  *****************************************************************************/
 
 static node **
-SSACFGetPrfArgs (node **array, node *prf_arg_chain, int max_args)
+GetPrfArgs (node **array, node *prf_arg_chain, int max_args)
 {
     node *expr;
     int i;
 
-    DBUG_ENTER ("SSACFGetPrfArgs");
+    DBUG_ENTER ("CFGetPrfArgs");
 
     for (i = 0; i < max_args; i++) {
         if (prf_arg_chain != NULL) {
@@ -970,7 +904,7 @@ SSACFGetPrfArgs (node **array, node *prf_arg_chain, int max_args)
 /******************************************************************************
  *
  * function:
- *   constant **SSACFArgs2Const(constant **co_array,
+ *   constant **Args2Const(constant **co_array,
  *                              node **arg_expr,
  *                              int max_args)
  *
@@ -981,15 +915,15 @@ SSACFGetPrfArgs (node **array, node *prf_arg_chain, int max_args)
  *****************************************************************************/
 
 static constant **
-SSACFArgs2Const (constant **co_array, node **arg_expr, int max_args)
+Args2Const (constant **co_array, node **arg_expr, int max_args)
 {
     int i;
 
-    DBUG_ENTER ("SSACFArgs2Const");
+    DBUG_ENTER ("CFArgs2Const");
 
     for (i = 0; i < max_args; i++) {
         if (arg_expr[i] != NULL) {
-            co_array[i] = COAST2Constant (arg_expr[i]);
+            co_array[i] = COaST2Constant (arg_expr[i]);
         } else {
             co_array[i] = NULL;
         }
@@ -1001,7 +935,7 @@ SSACFArgs2Const (constant **co_array, node **arg_expr, int max_args)
 /******************************************************************************
  *
  * function:
- *   constant *SSACFDim(node *expr)
+ *   constant *Dim(node *expr)
  *
  * description:
  *   tries computes the dimension of an identifier and returns it as
@@ -1010,29 +944,22 @@ SSACFArgs2Const (constant **co_array, node **arg_expr, int max_args)
  *****************************************************************************/
 
 static constant *
-SSACFDim (node *expr)
+Dim (node *expr)
 {
     constant *result;
     int dim;
 
-    DBUG_ENTER ("SSACFDim");
+    DBUG_ENTER ("Dim");
 
     if (NODE_TYPE (expr) == N_id) {
-#ifdef MWE_NTYPE_READY
-        if (TYHasKnownDim (AVIS_TYPE (ID_AVIS (expr)))) {
-            dim = TYGetDim (AVIS_TYPE (ID_AVIS (expr)));
-            result = COMakeConstantFromInt (dim);
+        if ((TYisAKD (AVIS_TYPE (ID_AVIS (expr))))
+            || (TYisAKS (AVIS_TYPE (ID_AVIS (expr))))
+            || (TYisAKV (AVIS_TYPE (ID_AVIS (expr))))) {
+            dim = TYgetDim (AVIS_TYPE (ID_AVIS (expr)));
+            result = COmakeConstantFromInt (dim);
         } else {
             result = NULL;
         }
-#else
-        dim = GetDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
-        if (dim >= 0) {
-            result = COMakeConstantFromInt (dim);
-        } else {
-            result = NULL;
-        }
-#endif
     } else {
         result = NULL;
     }
@@ -1043,7 +970,7 @@ SSACFDim (node *expr)
 /******************************************************************************
  *
  * function:
- *   node *SSACFShape(node *expr)
+ *   node *Shape(node *expr)
  *
  * description:
  *   computes the shape of a given identifier. returns the shape as expression
@@ -1053,43 +980,29 @@ SSACFDim (node *expr)
  *****************************************************************************/
 
 static constant *
-SSACFShape (node *expr)
+Shape (node *expr)
 {
     constant *result;
     int dim;
     shape *cshape;
     int *int_vec;
 
-    DBUG_ENTER ("SSACFDim");
+    DBUG_ENTER ("Dim");
 
     if (NODE_TYPE (expr) == N_id) {
-#ifdef MWE_NTYPE_READY
-        if (TYHasKnownDim (AVIS_TYPE (ID_AVIS (expr)))) {
-            dim = TYGetDim (AVIS_TYPE (ID_AVIS (expr)));
+        if ((TYisAKD (AVIS_TYPE (ID_AVIS (expr))))
+            || (TYisAKS (AVIS_TYPE (ID_AVIS (expr))))
+            || (TYisAKV (AVIS_TYPE (ID_AVIS (expr))))) {
+            dim = TYgetDim (AVIS_TYPE (ID_AVIS (expr)));
             /* store known shape as constant (int vector of len dim) */
-            cshape
-              = SHOldTypes2Shape (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
-            int_vec = SHShape2IntVec (cshape);
-            cshape = SHFreeShape (cshape);
+            cshape = SHoldTypes2Shape (VARDEC_OR_ARG_TYPE (AVIS_DECL (ID_AVIS (expr))));
+            int_vec = SHshape2IntVec (cshape);
+            cshape = SHfreeShape (cshape);
 
-            result = COMakeConstant (T_int, SHCreateShape (1, dim), int_vec);
+            result = COmakeConstant (T_int, SHcreateShape (1, dim), int_vec);
         } else {
             result = NULL;
         }
-#else
-        dim = GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
-        if (KNOWN_SHAPE (dim)) {
-            /* store known shape as constant (int vector of len dim) */
-            cshape
-              = SHOldTypes2Shape (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
-            int_vec = SHShape2IntVec (cshape);
-            cshape = SHFreeShape (cshape);
-
-            result = COMakeConstant (T_int, SHCreateShape (1, dim), int_vec);
-        } else {
-            result = NULL;
-        }
-#endif
     } else {
         result = NULL;
     }
@@ -1100,14 +1013,14 @@ SSACFShape (node *expr)
 /******************************************************************************
  *
  * function:
- *   node *SSACFStructOpSel(constant *idx, node *arg_expr)
+ *   node *StructOpSel(constant *idx, node *arg_expr)
  *
  * description:
  *   computes structural sel on array expressions with constant index vector.
  *
  *****************************************************************************/
 static node *
-SSACFStructOpSel (constant *idx, node *expr)
+StructOpSel (constant *idx, node *expr)
 {
     struct_constant *struc_co;
     constant *old_hidden_co;
@@ -1122,22 +1035,22 @@ SSACFStructOpSel (constant *idx, node *expr)
     constant *take_vec;
     constant *tmp_idx;
 
-    DBUG_ENTER ("SSACFStructOpSel");
+    DBUG_ENTER ("StructOpSel");
 
     result = NULL;
 
     /*
      * Try to convert expr(especially arrays) into a structual constant
      */
-    struc_co = SCOExpr2StructConstant (expr);
+    struc_co = CFscoExpr2StructConstant (expr);
 
     if (struc_co != NULL) {
         /* save internal hidden input constant */
         old_hidden_co = SCO_HIDDENCO (struc_co);
 
-        idxlen = SHGetUnrLen (COGetShape (idx));
+        idxlen = SHgetUnrLen (COgetShape (idx));
 
-        structdim = COGetDim (SCO_HIDDENCO (struc_co));
+        structdim = COgetDim (SCO_HIDDENCO (struc_co));
 
         if (structdim < idxlen) {
             /*
@@ -1145,47 +1058,47 @@ SSACFStructOpSel (constant *idx, node *expr)
              *
              * 1. Perform partial selection
              */
-            take_vec = COMakeConstantFromInt (structdim);
-            tmp_idx = COTake (take_vec, idx);
+            take_vec = COmakeConstantFromInt (structdim);
+            tmp_idx = COtake (take_vec, idx);
 
-            SCO_HIDDENCO (struc_co) = COSel (tmp_idx, SCO_HIDDENCO (struc_co));
-            tmp_idx = COFreeConstant (tmp_idx);
+            SCO_HIDDENCO (struc_co) = COsel (tmp_idx, SCO_HIDDENCO (struc_co));
+            tmp_idx = COfreeConstant (tmp_idx);
 
             /*
              * 2. return selection on the remaining array element
              */
-            tmp_idx = CODrop (take_vec, idx);
-            take_vec = COFreeConstant (take_vec);
+            tmp_idx = COdrop (take_vec, idx);
+            take_vec = COfreeConstant (take_vec);
 
-            result = MakePrf2 (F_sel, COConstant2AST (tmp_idx),
-                               SCODupStructConstant2Expr (struc_co));
-            tmp_idx = COFreeConstant (tmp_idx);
+            result = TCmakePrf2 (F_sel, COconstant2AST (tmp_idx),
+                                 CFscoDupStructConstant2Expr (struc_co));
+            tmp_idx = COfreeConstant (tmp_idx);
         } else {
             /*
              * Perform selection
              */
-            SCO_HIDDENCO (struc_co) = COSel (idx, SCO_HIDDENCO (struc_co));
+            SCO_HIDDENCO (struc_co) = COsel (idx, SCO_HIDDENCO (struc_co));
 
             if (structdim > idxlen) {
                 /*
                  * Selection vector is too short, selection yields subarray
                  */
                 tmp_shape = SCO_SHAPE (struc_co);
-                SCO_SHAPE (struc_co) = SHDropFromShape (idxlen, tmp_shape);
-                SHFreeShape (tmp_shape);
+                SCO_SHAPE (struc_co) = SHdropFromShape (idxlen, tmp_shape);
+                SHfreeShape (tmp_shape);
             }
-            result = SCODupStructConstant2Expr (struc_co);
+            result = CFscoDupStructConstant2Expr (struc_co);
         }
 
         /*
          * free tmp. struct constant
          */
-        struc_co = SCOFreeStructConstant (struc_co);
+        struc_co = CFscoFreeStructConstant (struc_co);
 
         /*
          * free internal input constant
          */
-        old_hidden_co = COFreeConstant (old_hidden_co);
+        old_hidden_co = COfreeConstant (old_hidden_co);
     }
 
     DBUG_RETURN (result);
@@ -1194,7 +1107,7 @@ SSACFStructOpSel (constant *idx, node *expr)
 /******************************************************************************
  *
  * function:
- *   node *SSACFStructOpReshape(constant *idx, node *arg_expr)
+ *   node *StructOpReshape(constant *idx, node *arg_expr)
  *
  * description:
  *   computes structural reshape on array expressions with
@@ -1202,7 +1115,7 @@ SSACFStructOpSel (constant *idx, node *expr)
  *
  *****************************************************************************/
 static node *
-SSACFStructOpReshape (constant *idx, node *expr)
+StructOpReshape (constant *idx, node *expr)
 {
     struct_constant *struc_co;
     constant *old_hidden_co;
@@ -1218,60 +1131,60 @@ SSACFStructOpReshape (constant *idx, node *expr)
     constant *drop_vec;
     constant *tmp_idx;
 
-    DBUG_ENTER ("SSACFStructOpReshape");
+    DBUG_ENTER ("CFStructOpReshape");
 
     result = NULL;
 
     /*
      * Try to convert expr(especially arrays) into a structual constant
      */
-    struc_co = SCOExpr2StructConstant (expr);
+    struc_co = CFscoExpr2StructConstant (expr);
 
     if (struc_co != NULL) {
 
-        structdim = COGetDim (SCO_HIDDENCO (struc_co));
+        structdim = COgetDim (SCO_HIDDENCO (struc_co));
 
-        elem_shape = SHDropFromShape (structdim, SCO_SHAPE (struc_co));
-        idx_shape = COConstant2Shape (idx);
-        idx_shape_postfix = SHTakeFromShape (-1 * SHGetDim (elem_shape), idx_shape);
-        idx_shape = SHFreeShape (idx_shape);
+        elem_shape = SHdropFromShape (structdim, SCO_SHAPE (struc_co));
+        idx_shape = COconstant2Shape (idx);
+        idx_shape_postfix = SHtakeFromShape (-1 * SHgetDim (elem_shape), idx_shape);
+        idx_shape = SHfreeShape (idx_shape);
 
         /*
          * If the idx_shape_postfix equals the element shape,
          * the reshape operation can be performed
          */
-        if (SHCompareShapes (elem_shape, idx_shape_postfix)) {
+        if (SHcompareShapes (elem_shape, idx_shape_postfix)) {
             /*
              * save internal hidden input constant
              */
             old_hidden_co = SCO_HIDDENCO (struc_co);
 
-            drop_vec = COMakeConstantFromInt (-1 * SHGetDim (elem_shape));
-            tmp_idx = CODrop (drop_vec, idx);
-            drop_vec = COFreeConstant (drop_vec);
+            drop_vec = COmakeConstantFromInt (-1 * SHgetDim (elem_shape));
+            tmp_idx = COdrop (drop_vec, idx);
+            drop_vec = COfreeConstant (drop_vec);
 
-            idx_shape = COConstant2Shape (tmp_idx);
-            SCO_HIDDENCO (struc_co) = COReshape (tmp_idx, SCO_HIDDENCO (struc_co));
-            tmp_idx = COFreeConstant (tmp_idx);
+            idx_shape = COconstant2Shape (tmp_idx);
+            SCO_HIDDENCO (struc_co) = COreshape (tmp_idx, SCO_HIDDENCO (struc_co));
+            tmp_idx = COfreeConstant (tmp_idx);
 
-            SCO_SHAPE (struc_co) = SHFreeShape (SCO_SHAPE (struc_co));
-            SCO_SHAPE (struc_co) = SHAppendShapes (idx_shape, elem_shape);
-            idx_shape = SHFreeShape (idx_shape);
+            SCO_SHAPE (struc_co) = SHfreeShape (SCO_SHAPE (struc_co));
+            SCO_SHAPE (struc_co) = SHappendShapes (idx_shape, elem_shape);
+            idx_shape = SHfreeShape (idx_shape);
 
-            result = SCODupStructConstant2Expr (struc_co);
+            result = CFscoDupStructConstant2Expr (struc_co);
 
             /*
              * free internal hidden input constant
              */
-            old_hidden_co = COFreeConstant (old_hidden_co);
+            old_hidden_co = COfreeConstant (old_hidden_co);
         }
-        elem_shape = SHFreeShape (elem_shape);
-        idx_shape_postfix = SHFreeShape (idx_shape_postfix);
+        elem_shape = SHfreeShape (elem_shape);
+        idx_shape_postfix = SHfreeShape (idx_shape_postfix);
 
         /*
          * free tmp. struct constant
          */
-        struc_co = SCOFreeStructConstant (struc_co);
+        struc_co = CFscoFreeStructConstant (struc_co);
     }
 
     DBUG_RETURN (result);
@@ -1280,7 +1193,7 @@ SSACFStructOpReshape (constant *idx, node *expr)
 /******************************************************************************
  *
  * function:
- *   node *SSACFStructOpIdxSel(constant *idx, node *arg_expr)
+ *   node *StructOpIdxSel(constant *idx, node *arg_expr)
  *
  * description:
  *   computes structural idxsel on array expressions with
@@ -1289,18 +1202,18 @@ SSACFStructOpReshape (constant *idx, node *expr)
  *****************************************************************************/
 
 static node *
-SSACFStructOpIdxSel (constant *idx, node *expr)
+StructOpIdxSel (constant *idx, node *expr)
 {
     struct_constant *struc_co;
     node *result;
     constant *old_hidden_co;
 
-    DBUG_ENTER ("SSACFStructOpIdxSel");
+    DBUG_ENTER ("StructOpIdxSel");
 
     /*
      * tries to convert expr(especially arrays) into a structual constant
      */
-    struc_co = SCOExpr2StructConstant (expr);
+    struc_co = CFscoExpr2StructConstant (expr);
 
     /*
      * given expression could be converted to struct_constant
@@ -1314,22 +1227,22 @@ SSACFStructOpIdxSel (constant *idx, node *expr)
         /*
          * perform struc-op on hidden constant
          */
-        SCO_HIDDENCO (struc_co) = COIdxSel (idx, SCO_HIDDENCO (struc_co));
+        SCO_HIDDENCO (struc_co) = COidxSel (idx, SCO_HIDDENCO (struc_co));
 
         /*
          * return modified array
          */
-        result = SCODupStructConstant2Expr (struc_co);
+        result = CFscoDupStructConstant2Expr (struc_co);
 
         /*
          * free tmp. struct constant
          */
-        struc_co = SCOFreeStructConstant (struc_co);
+        struc_co = CFscoFreeStructConstant (struc_co);
 
         /*
          * free internal input constant
          */
-        old_hidden_co = COFreeConstant (old_hidden_co);
+        old_hidden_co = COfreeConstant (old_hidden_co);
     } else {
         result = NULL;
     }
@@ -1340,7 +1253,7 @@ SSACFStructOpIdxSel (constant *idx, node *expr)
 /******************************************************************************
  *
  * function:
- *   node *SSACFStructOpTake(constant *idx, node *arg_expr)
+ *   node *StructOpTake(constant *idx, node *arg_expr)
  *
  * description:
  *   computes structural take on array expressions with constant index vector.
@@ -1348,7 +1261,7 @@ SSACFStructOpIdxSel (constant *idx, node *expr)
  *****************************************************************************/
 
 static node *
-SSACFStructOpTake (constant *idx, node *expr)
+StructOpTake (constant *idx, node *expr)
 {
     struct_constant *struc_co;
     constant *old_hidden_co;
@@ -1361,22 +1274,22 @@ SSACFStructOpTake (constant *idx, node *expr)
     shape *sco_shape;
     shape *dropped_shape;
 
-    DBUG_ENTER ("SSACFStructOpTake");
+    DBUG_ENTER ("StructOpTake");
 
     result = NULL;
 
     /*
      * Try to convert expr(especially arrays) into a structual constant
      */
-    struc_co = SCOExpr2StructConstant (expr);
+    struc_co = CFscoExpr2StructConstant (expr);
 
     /*
      * given expression could be converted to struct_constant
      */
     if (struc_co != NULL) {
 
-        idxlen = SHGetUnrLen (COGetShape (idx));
-        structdim = COGetDim (SCO_HIDDENCO (struc_co));
+        idxlen = SHgetUnrLen (COgetShape (idx));
+        structdim = COgetDim (SCO_HIDDENCO (struc_co));
 
         if (idxlen <= structdim) {
             /*
@@ -1384,29 +1297,29 @@ SSACFStructOpTake (constant *idx, node *expr)
              */
             old_hidden_co = SCO_HIDDENCO (struc_co);
 
-            SCO_HIDDENCO (struc_co) = COTake (idx, SCO_HIDDENCO (struc_co));
+            SCO_HIDDENCO (struc_co) = COtake (idx, SCO_HIDDENCO (struc_co));
 
             sco_shape = SCO_SHAPE (struc_co);
-            dropped_shape = SHDropFromShape (structdim, sco_shape);
-            sco_shape = SHFreeShape (sco_shape);
+            dropped_shape = SHdropFromShape (structdim, sco_shape);
+            sco_shape = SHfreeShape (sco_shape);
             SCO_SHAPE (struc_co)
-              = SHAppendShapes (COGetShape (SCO_HIDDENCO (struc_co)), dropped_shape);
-            dropped_shape = SHFreeShape (dropped_shape);
+              = SHappendShapes (COgetShape (SCO_HIDDENCO (struc_co)), dropped_shape);
+            dropped_shape = SHfreeShape (dropped_shape);
 
             /*
              * return modified array
              */
-            result = SCODupStructConstant2Expr (struc_co);
+            result = CFscoDupStructConstant2Expr (struc_co);
 
             /*
              * free tmp. struct constant
              */
-            struc_co = SCOFreeStructConstant (struc_co);
+            struc_co = CFscoFreeStructConstant (struc_co);
 
             /*
              * free internal input constant
              */
-            old_hidden_co = COFreeConstant (old_hidden_co);
+            old_hidden_co = COfreeConstant (old_hidden_co);
         }
     }
 
@@ -1416,7 +1329,7 @@ SSACFStructOpTake (constant *idx, node *expr)
 /******************************************************************************
  *
  * function:
- *   node *SSACFStructOpDrop(constant *idx, node *arg_expr)
+ *   node *StructOpDrop(constant *idx, node *arg_expr)
  *
  * description:
  *   computes structural take on array expressions with constant index vector.
@@ -1424,7 +1337,7 @@ SSACFStructOpTake (constant *idx, node *expr)
  *****************************************************************************/
 
 static node *
-SSACFStructOpDrop (constant *idx, node *expr)
+StructOpDrop (constant *idx, node *expr)
 {
     struct_constant *struc_co;
     constant *old_hidden_co;
@@ -1437,22 +1350,22 @@ SSACFStructOpDrop (constant *idx, node *expr)
     shape *sco_shape;
     shape *dropped_shape;
 
-    DBUG_ENTER ("SSACFStructOpDrop");
+    DBUG_ENTER ("StructOpDrop");
 
     result = NULL;
 
     /*
      * Try to convert expr(especially arrays) into a structual constant
      */
-    struc_co = SCOExpr2StructConstant (expr);
+    struc_co = CFscoExpr2StructConstant (expr);
 
     /*
      * given expression could be converted to struct_constant
      */
     if (struc_co != NULL) {
 
-        idxlen = SHGetUnrLen (COGetShape (idx));
-        structdim = COGetDim (SCO_HIDDENCO (struc_co));
+        idxlen = SHgetUnrLen (COgetShape (idx));
+        structdim = COgetDim (SCO_HIDDENCO (struc_co));
 
         if (idxlen <= structdim) {
             /*
@@ -1460,29 +1373,29 @@ SSACFStructOpDrop (constant *idx, node *expr)
              */
             old_hidden_co = SCO_HIDDENCO (struc_co);
 
-            SCO_HIDDENCO (struc_co) = CODrop (idx, SCO_HIDDENCO (struc_co));
+            SCO_HIDDENCO (struc_co) = COdrop (idx, SCO_HIDDENCO (struc_co));
 
             sco_shape = SCO_SHAPE (struc_co);
-            dropped_shape = SHDropFromShape (structdim, sco_shape);
-            sco_shape = SHFreeShape (sco_shape);
+            dropped_shape = SHdropFromShape (structdim, sco_shape);
+            sco_shape = SHfreeShape (sco_shape);
             SCO_SHAPE (struc_co)
-              = SHAppendShapes (COGetShape (SCO_HIDDENCO (struc_co)), dropped_shape);
-            dropped_shape = SHFreeShape (dropped_shape);
+              = SHappendShapes (COgetShape (SCO_HIDDENCO (struc_co)), dropped_shape);
+            dropped_shape = SHfreeShape (dropped_shape);
 
             /*
              * return modified array
              */
-            result = SCODupStructConstant2Expr (struc_co);
+            result = CFscoDupStructConstant2Expr (struc_co);
 
             /*
              * free tmp. struct constant
              */
-            struc_co = SCOFreeStructConstant (struc_co);
+            struc_co = CFscoFreeStructConstant (struc_co);
 
             /*
              * free internal input constant
              */
-            old_hidden_co = COFreeConstant (old_hidden_co);
+            old_hidden_co = COfreeConstant (old_hidden_co);
         }
     }
 
@@ -1492,7 +1405,7 @@ SSACFStructOpDrop (constant *idx, node *expr)
 /******************************************************************************
  *
  * function:
- *   node *SSACFArithmOpWrapper( prf op, constant **arg_co, node **arg_expr)
+ *   node *ArithmOpWrapper( prf op, constant **arg_co, node **arg_expr)
  *
  * description:
  * implements arithmetical optimizations for add, sub, mul, div, and, or on one
@@ -1501,7 +1414,7 @@ SSACFStructOpDrop (constant *idx, node *expr)
  *****************************************************************************/
 
 static node *
-SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
+ArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
 {
     node *result;
     node *expr;
@@ -1510,7 +1423,7 @@ SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
     constant *tmp_co;
     shape *target_shp;
 
-    DBUG_ENTER ("SSACFArithmOpWrapper");
+    DBUG_ENTER ("ArithmOpWrapper");
 
     /* get constant and expression, maybe we have to swap the arguments */
     if (arg_co[0] != NULL) {
@@ -1529,65 +1442,65 @@ SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
 
     switch (op) {
     case F_add_SxS:
-        if (COIsZero (co, TRUE)) { /* x+0 -> x  or 0+x -> x */
-            result = DupTree (expr);
+        if (COisZero (co, TRUE)) { /* x+0 -> x  or 0+x -> x */
+            result = DUPdoDupTree (expr);
         }
         break;
 
     case F_sub_SxS:
-        if (swap && COIsZero (co, TRUE)) { /* x-0 -> x */
-            result = DupTree (expr);
+        if (swap && COisZero (co, TRUE)) { /* x-0 -> x */
+            result = DUPdoDupTree (expr);
         }
         break;
 
     case F_mul_SxS:
-        if (COIsZero (co, TRUE)) { /* x*0 -> 0 or 0*x -> 0 */
-            target_shp = SSACFGetShapeOfExpr (expr);
+        if (COisZero (co, TRUE)) { /* x*0 -> 0 or 0*x -> 0 */
+            target_shp = GetShapeOfExpr (expr);
             if (target_shp != NULL) {
                 /* Create ZeroConstant of same type and shape as expression */
-                tmp_co = COMakeZero (COGetType (co), target_shp);
+                tmp_co = COmakeZero (COgetType (co), target_shp);
             }
-        } else if (COIsOne (co, TRUE)) { /* x*1 -> x or 1*x -> x */
-            result = DupTree (expr);
+        } else if (COisOne (co, TRUE)) { /* x*1 -> x or 1*x -> x */
+            result = DUPdoDupTree (expr);
         }
         break;
 
     case F_div_SxS:
-        if (swap && COIsZero (co, FALSE)) {
+        if (swap && COisZero (co, FALSE)) {
             /* any 0 in divisor, x/0 -> err */
             ABORT (NODE_LINE (expr), ("Division by zero expected"));
-        } else if (swap && COIsOne (co, TRUE)) { /* x/1 -> x */
-            result = DupTree (expr);
-        } else if ((!swap) && COIsZero (co, TRUE)) { /* 0/x -> 0 */
-            target_shp = SSACFGetShapeOfExpr (expr);
+        } else if (swap && COisOne (co, TRUE)) { /* x/1 -> x */
+            result = DUPdoDupTree (expr);
+        } else if ((!swap) && COisZero (co, TRUE)) { /* 0/x -> 0 */
+            target_shp = GetShapeOfExpr (expr);
             if (target_shp != NULL) {
                 /* Create ZeroConstant of same type and shape as expression */
-                tmp_co = COMakeZero (COGetType (co), target_shp);
+                tmp_co = COmakeZero (COgetType (co), target_shp);
                 WARN (NODE_LINE (expr), ("expression 0/x replaced by 0"));
             }
         }
         break;
 
     case F_and:
-        if (COIsTrue (co, TRUE)) { /* x&&true -> x or true&&x -> x */
-            result = DupTree (expr);
-        } else if (COIsFalse (co, TRUE)) { /* x&&false->false or false&&x->false */
-            target_shp = SSACFGetShapeOfExpr (expr);
+        if (COisTrue (co, TRUE)) { /* x&&true -> x or true&&x -> x */
+            result = DUPdoDupTree (expr);
+        } else if (COisFalse (co, TRUE)) { /* x&&false->false or false&&x->false */
+            target_shp = GetShapeOfExpr (expr);
             if (target_shp != NULL) {
                 /* Create False constant of same shape as expression */
-                tmp_co = COMakeFalse (target_shp);
+                tmp_co = COmakeFalse (target_shp);
             }
         }
         break;
 
     case F_or:
-        if (COIsFalse (co, TRUE)) { /* x||false->x or false||x -> x */
-            result = DupTree (expr);
-        } else if (COIsFalse (co, TRUE)) { /* x||true->true or true&&x->true */
-            target_shp = SSACFGetShapeOfExpr (expr);
+        if (COisFalse (co, TRUE)) { /* x||false->x or false||x -> x */
+            result = DUPdoDupTree (expr);
+        } else if (COisFalse (co, TRUE)) { /* x||true->true or true&&x->true */
+            target_shp = GetShapeOfExpr (expr);
             if (target_shp != NULL) {
                 /* Create True constant of same shape as expression */
-                tmp_co = COMakeFalse (target_shp);
+                tmp_co = COmakeFalse (target_shp);
             }
         }
         break;
@@ -1598,12 +1511,13 @@ SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
 
     /* convert computed constant to exporession */
     if (tmp_co != NULL) {
-        result = COConstant2AST (tmp_co);
-        tmp_co = COFreeConstant (tmp_co);
+        result = COconstant2AST (tmp_co);
+        tmp_co = COfreeConstant (tmp_co);
     }
 
     if (result != NULL) {
-        DBUG_PRINT ("SSACF", ("arithmetic constant folding done for %s.", mdb_prf[op]));
+        DBUG_PRINT ("CF",
+                    ("arithmetic constant folding done for %s.", global.mdb_prf[op]));
     }
 
     DBUG_RETURN (result);
@@ -1612,7 +1526,7 @@ SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
 /******************************************************************************
  *
  * function:
- *   shape *SSACFGetShapeOfExpr(node *expr)
+ *   shape *GetShapeOfExpr(node *expr)
  *
  * description:
  *   try to calculate the shape of the given expression. this can be a
@@ -1621,30 +1535,24 @@ SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
  *****************************************************************************/
 
 static shape *
-SSACFGetShapeOfExpr (node *expr)
+GetShapeOfExpr (node *expr)
 {
     shape *shp;
 
-    DBUG_ENTER ("SSACFGetShapeOfExpr");
+    DBUG_ENTER ("GetShapeOfExpr");
 
-    DBUG_ASSERT ((expr != NULL), "SSACFGetShapeOfExpr called with NULL pointer");
+    DBUG_ASSERT ((expr != NULL), "GetShapeOfExpr called with NULL pointer");
 
     switch (NODE_TYPE (expr)) {
     case N_id:
         /* get shape from type info */
-        shp = SHOldTypes2Shape (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
+        shp = SHoldTypes2Shape (VARDEC_OR_ARG_TYPE (AVIS_DECL (ID_AVIS (expr))));
         break;
 
     case N_array:
-#ifdef MWE_NTYPE_READY
         /* get shape from array type attribute */
         DBUG_ASSERT ((ARRAY_NTYPE (expr) != NULL), "array type attribute is missing");
-        shp = TYGetShape (ARRAY_NTYPE (expr));
-#else
-        /* get shape from array type attribute */
-        DBUG_ASSERT ((ARRAY_TYPE (expr) != NULL), "array type attribute is missing");
-        shp = SHOldTypes2Shape (ARRAY_TYPE (expr));
-#endif
+        shp = TYgetShape (ARRAY_NTYPE (expr));
         break;
 
     default:
@@ -1657,7 +1565,7 @@ SSACFGetShapeOfExpr (node *expr)
 /******************************************************************************
  *
  * function:
- *   simpletype SSACFGetBasetypeOfExpr(node *expr)
+ *   simpletype GetBasetypeOfExpr(node *expr)
  *
  * description:
  *   try to get the basetype of the given expression. this can be a
@@ -1666,31 +1574,22 @@ SSACFGetShapeOfExpr (node *expr)
  *****************************************************************************/
 
 static simpletype
-SSACFGetBasetypeOfExpr (node *expr)
+GetBasetypeOfExpr (node *expr)
 {
     simpletype stype;
-    DBUG_ENTER ("SSACFGetBasetypeOfExpr");
-    DBUG_ASSERT ((expr != NULL), "SSACFGetBasetypeOfExpr called with NULL pointer");
+    DBUG_ENTER ("GetBasetypeOfExpr");
+    DBUG_ASSERT ((expr != NULL), "GetBasetypeOfExpr called with NULL pointer");
 
     switch (NODE_TYPE (expr)) {
     case N_id:
         /* get basetype from type info */
-#ifdef MWE_NTYPE_READY
-        stype = TYGetBasetype (AVIS_TYPE (ID_AVIS (expr)));
-#else
-        stype = GetBasetype (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
-#endif
+        stype = TYgetSimpleType (TYgetScalar (AVIS_TYPE (ID_AVIS (expr))));
         break;
 
     case N_array:
         /* get shape from array type attribute */
-#ifdef MWE_NTYPE_READY
         DBUG_ASSERT ((ARRAY_NTYPE (expr) != NULL), "array type attribute is missing");
-        stype = TYGetBasetype (ARRAY_NTYPE (expr));
-#else
-        DBUG_ASSERT ((ARRAY_TYPE (expr) != NULL), "array type attribute is missing");
-        stype = GetBasetype (ARRAY_TYPE (expr));
-#endif
+        stype = TYgetSimpleType (TYgetScalar (ARRAY_NTYPE (expr)));
         break;
 
     default:
@@ -1703,7 +1602,7 @@ SSACFGetBasetypeOfExpr (node *expr)
 /******************************************************************************
  *
  * function:
- *   node *SSACFEq(node *expr1, node *expr2)
+ *   node *Eq(node *expr1, node *expr2)
  *
  * description:
  *   implements the F_eq primitive function for two expressions via a cmptree.
@@ -1711,14 +1610,14 @@ SSACFGetBasetypeOfExpr (node *expr)
  *****************************************************************************/
 
 static node *
-SSACFEq (node *expr1, node *expr2)
+Eq (node *expr1, node *expr2)
 {
     node *result;
 
-    DBUG_ENTER ("SSACFEq");
+    DBUG_ENTER ("Eq");
 
-    if (CompareTree (expr1, expr2) == CMPT_EQ) {
-        result = MakeBool (TRUE);
+    if (CMPTdoCompareTree (expr1, expr2) == CMPT_EQ) {
+        result = TBmakeBool (TRUE);
     } else {
         result = NULL; /* no concrete answer for equal operation possible */
     }
@@ -1729,7 +1628,7 @@ SSACFEq (node *expr1, node *expr2)
 /******************************************************************************
  *
  * function:
- *   node *SSACFSub(node *expr1, node *expr2)
+ *   node *Sub(node *expr1, node *expr2)
  *
  * description:
  *   implements special optimization for x - x -> 0
@@ -1737,23 +1636,23 @@ SSACFEq (node *expr1, node *expr2)
  *****************************************************************************/
 
 static node *
-SSACFSub (node *expr1, node *expr2)
+Sub (node *expr1, node *expr2)
 {
     node *result;
     constant *tmp_co;
     shape *target_shp;
 
-    DBUG_ENTER ("SSACFSub");
+    DBUG_ENTER ("Sub");
 
     result = NULL;
 
-    if (CompareTree (expr1, expr2) == CMPT_EQ) {
-        target_shp = SSACFGetShapeOfExpr (expr1);
+    if (CMPTdoCompareTree (expr1, expr2) == CMPT_EQ) {
+        target_shp = GetShapeOfExpr (expr1);
         if (target_shp != NULL) {
             /* Create ZeroConstant of same type and shape as expression */
-            tmp_co = COMakeZero (SSACFGetBasetypeOfExpr (expr1), target_shp);
-            result = COConstant2AST (tmp_co);
-            tmp_co = COFreeConstant (tmp_co);
+            tmp_co = COmakeZero (GetBasetypeOfExpr (expr1), target_shp);
+            result = COconstant2AST (tmp_co);
+            tmp_co = COfreeConstant (tmp_co);
         }
     }
 
@@ -1763,18 +1662,18 @@ SSACFSub (node *expr1, node *expr2)
 /******************************************************************************
  *
  * function:
- *   node *SSACFModarray( node *a, constant *idx, node *elem)
+ *   node *Modarray( node *a, constant *idx, node *elem)
  *
  * description:
  *   implement Modarray on gerneric structural constant arrays with given
- *   full constant index vector. This works like SSACFStructOpWrapper() but
+ *   full constant index vector. This works like CFStructOpWrapper() but
  *   has been moved to a separate function because of different function
  *   signature.
  *
  ******************************************************************************/
 
 static node *
-SSACFModarray (node *a, constant *idx, node *elem)
+Modarray (node *a, constant *idx, node *elem)
 {
     node *result;
     struct_constant *struc_a;
@@ -1782,41 +1681,33 @@ SSACFModarray (node *a, constant *idx, node *elem)
     constant *old_hidden_co;
     node *newarray;
 
-    DBUG_ENTER ("SSACFModarray");
+    DBUG_ENTER ("Modarray");
 
     /**
      * if the index is an empty vector, we simply replace the entire
      * expression by the elem value!
      */
-    if (COIsEmptyVect (idx)) {
-        result = DupTree (elem);
+    if (COisEmptyVect (idx)) {
+        result = DUPdoDupTree (elem);
     } else {
         /**
          * as we are not dealing with the degenerate case (idx == []),
          * we need a and elem to be structural constants in order to be
          * able to do anything!
          */
-        struc_a = SCOExpr2StructConstant (a);
-        struc_elem = SCOExpr2StructConstant (elem);
+        struc_a = CFscoExpr2StructConstant (a);
+        struc_elem = CFscoExpr2StructConstant (elem);
 
         /* given expressession could be converted to struct_constant */
         if ((struc_a != NULL) && (struc_elem != NULL)) {
 
             if (SCO_ELEMDIM (struc_a) != SCO_ELEMDIM (struc_elem)) {
-                newarray = MakeFlatArray (MakeExprs (elem, NULL));
-#ifdef MWE_NTYPE_READY
+                newarray = TCmakeFlatArray (TBmakeExprs (elem, NULL));
                 ARRAY_NTYPE (newarray)
-                  = TYMakeAKS (TYMakeSimpleType (COGetType (SCO_HIDDENCO (struc_elem))),
+                  = TYmakeAKS (TYmakeSimpleType (COgetType (SCO_HIDDENCO (struc_elem))),
                                SCO_SHAPE (struc_elem));
-#else
-                ARRAY_TYPE (newarray)
-                  = MakeTypes (COGetType (SCO_HIDDENCO (struc_elem)),
-                               SHGetDim (SCO_SHAPE (struc_elem)),
-                               SHShape2OldShpseg (SCO_SHAPE (struc_elem)),
-                               SCO_NAME (struc_elem), SCO_MOD (struc_elem));
-#endif
-                struc_elem = SCOFreeStructConstant (struc_elem);
-                struc_elem = SCOArray2StructConstant (newarray);
+                struc_elem = CFscoFreeStructConstant (struc_elem);
+                struc_elem = CFscoArray2StructConstant (newarray);
             }
 
             if (SCO_ELEMDIM (struc_a) == SCO_ELEMDIM (struc_elem)) {
@@ -1825,15 +1716,15 @@ SSACFModarray (node *a, constant *idx, node *elem)
 
                 /* perform modarray operation on structural constant */
                 SCO_HIDDENCO (struc_a)
-                  = COModarray (SCO_HIDDENCO (struc_a), idx, SCO_HIDDENCO (struc_elem));
+                  = COmodarray (SCO_HIDDENCO (struc_a), idx, SCO_HIDDENCO (struc_elem));
 
                 /* return modified array */
-                result = SCODupStructConstant2Expr (struc_a);
+                result = CFscoDupStructConstant2Expr (struc_a);
 
-                DBUG_PRINT ("SSACF", ("op computed on structural constant"));
+                DBUG_PRINT ("CF", ("op computed on structural constant"));
 
                 /* free internal constant */
-                old_hidden_co = COFreeConstant (old_hidden_co);
+                old_hidden_co = COfreeConstant (old_hidden_co);
             } else
                 result = NULL;
         } else {
@@ -1842,11 +1733,11 @@ SSACFModarray (node *a, constant *idx, node *elem)
 
         /* free struct constants */
         if (struc_a != NULL) {
-            struc_a = SCOFreeStructConstant (struc_a);
+            struc_a = CFscoFreeStructConstant (struc_a);
         }
 
         if (struc_elem != NULL) {
-            struc_elem = SCOFreeStructConstant (struc_elem);
+            struc_elem = CFscoFreeStructConstant (struc_elem);
         }
     }
 
@@ -1856,7 +1747,7 @@ SSACFModarray (node *a, constant *idx, node *elem)
 /******************************************************************************
  *
  * function:
- *   node *SSACFCatVxV(node *vec1, node *vec2)
+ *   node *CatVxV(node *vec1, node *vec2)
  *
  * description:
  *   tries to concatenate the given vectors as struct constants
@@ -1864,18 +1755,18 @@ SSACFModarray (node *a, constant *idx, node *elem)
  *****************************************************************************/
 
 static node *
-SSACFCatVxV (node *vec1, node *vec2)
+CatVxV (node *vec1, node *vec2)
 {
     node *result;
     struct_constant *sc_vec1;
     struct_constant *sc_vec2;
 
-    DBUG_ENTER ("SSACFVxV");
+    DBUG_ENTER ("CatVxV");
 
     result = NULL;
 
-    sc_vec1 = SCOExpr2StructConstant (vec1);
-    sc_vec2 = SCOExpr2StructConstant (vec2);
+    sc_vec1 = CFscoExpr2StructConstant (vec1);
+    sc_vec2 = CFscoExpr2StructConstant (vec2);
 
     if ((sc_vec1 != NULL) && (sc_vec2 != NULL)) {
         constant *vec2_hidden_co;
@@ -1884,34 +1775,34 @@ SSACFCatVxV (node *vec1, node *vec2)
          * if both vectors are structural constant we can concatenate then
          */
         vec2_hidden_co = SCO_HIDDENCO (sc_vec2);
-        SCO_HIDDENCO (sc_vec2) = COCat (SCO_HIDDENCO (sc_vec1), SCO_HIDDENCO (sc_vec2));
+        SCO_HIDDENCO (sc_vec2) = COcat (SCO_HIDDENCO (sc_vec1), SCO_HIDDENCO (sc_vec2));
 
-        result = SCODupStructConstant2Expr (sc_vec2);
+        result = CFscoDupStructConstant2Expr (sc_vec2);
 
-        vec2_hidden_co = COFreeConstant (vec2_hidden_co);
+        vec2_hidden_co = COfreeConstant (vec2_hidden_co);
     } else if (sc_vec1 != NULL) {
         /*
          * if vec1 is a structural constant of shape [0],
          * the result is a copy of vec2
          */
-        if (SHGetUnrLen (COGetShape (SCO_HIDDENCO (sc_vec1))) == 0) {
-            result = DupNode (vec2);
+        if (SHgetUnrLen (COgetShape (SCO_HIDDENCO (sc_vec1))) == 0) {
+            result = DUPdoDupNode (vec2);
         }
     } else if (sc_vec2 != NULL) {
         /*
          * if vec2 is a structural constant of shape [0],
          * the result is a copy of vec1
          */
-        if (SHGetUnrLen (COGetShape (SCO_HIDDENCO (sc_vec2))) == 0) {
-            result = DupNode (vec1);
+        if (SHgetUnrLen (COgetShape (SCO_HIDDENCO (sc_vec2))) == 0) {
+            result = DUPdoDupNode (vec1);
         }
     }
 
     if (sc_vec1 != NULL)
-        sc_vec1 = SCOFreeStructConstant (sc_vec1);
+        sc_vec1 = CFscoFreeStructConstant (sc_vec1);
 
     if (sc_vec2 != NULL)
-        sc_vec2 = SCOFreeStructConstant (sc_vec2);
+        sc_vec2 = CFscoFreeStructConstant (sc_vec2);
 
     DBUG_RETURN (result);
 }
@@ -1919,7 +1810,7 @@ SSACFCatVxV (node *vec1, node *vec2)
 /******************************************************************************
  *
  * function:
- *   node *SSACFShapeSel(constant *idx, node *array_expr)
+ *   node *ShapeSel(constant *idx, node *array_expr)
  *
  * description:
  *   selects element idx from the shape vector of array_expr if
@@ -1927,21 +1818,21 @@ SSACFCatVxV (node *vec1, node *vec2)
  *
  *****************************************************************************/
 static node *
-SSACFShapeSel (constant *idx, node *array_expr)
+ShapeSel (constant *idx, node *array_expr)
 {
     node *res = NULL;
 
     int shape_elem;
 
-    DBUG_ENTER ("SSACFShapeSel");
+    DBUG_ENTER ("ShapeSel");
 
-    if (TYIsAKS (AVIS_TYPE (ID_AVIS (array_expr)))
-        || TYIsAKV (AVIS_TYPE (ID_AVIS (array_expr)))) {
+    if (TYisAKS (AVIS_TYPE (ID_AVIS (array_expr)))
+        || TYisAKV (AVIS_TYPE (ID_AVIS (array_expr)))) {
 
-        shape_elem = ((int *)COGetDataVec (idx))[0];
+        shape_elem = ((int *)COgetDataVec (idx))[0];
 
-        res = MakeNum (
-          SHGetExtent (TYGetShape (AVIS_TYPE (ID_AVIS (array_expr))), shape_elem));
+        res = TBmakeNum (
+          SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (array_expr))), shape_elem));
     }
 
     DBUG_RETURN (res);
@@ -1950,7 +1841,7 @@ SSACFShapeSel (constant *idx, node *array_expr)
 /******************************************************************************
  *
  * function:
- *   node *SSACFSel(node *idx_expr, node *array_expr)
+ *   node *Sel(node *idx_expr, node *array_expr)
  *
  * description:
  *   tries a special sel-modarray optimization for the following cases:
@@ -1970,7 +1861,7 @@ SSACFShapeSel (constant *idx, node *array_expr)
  *****************************************************************************/
 
 static node *
-SSACFSel (node *idx_expr, node *array_expr)
+Sel (node *idx_expr, node *array_expr)
 {
     node *result;
     node *prf_mod;
@@ -1986,7 +1877,7 @@ SSACFSel (node *idx_expr, node *array_expr)
     constant *zero_co;
     struct_constant *idx_struc;
 
-    DBUG_ENTER ("SSACFSel");
+    DBUG_ENTER ("Sel");
 
     result = NULL;
 
@@ -2016,19 +1907,19 @@ SSACFSel (node *idx_expr, node *array_expr)
             mod_elem_expr = EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (prf_mod))));
 
             /* try to build up constants from index vectors */
-            idx_co = COAST2Constant (idx_expr);
-            mod_idx_co = COAST2Constant (mod_idx_expr);
+            idx_co = COaST2Constant (idx_expr);
+            mod_idx_co = COaST2Constant (mod_idx_expr);
 
-            if ((CompareTree (idx_expr, mod_idx_expr) == CMPT_EQ)
+            if ((CMPTdoCompareTree (idx_expr, mod_idx_expr) == CMPT_EQ)
                 || ((idx_co != NULL) && (mod_idx_co != NULL)
-                    && (COCompareConstants (idx_co, mod_idx_co)))) {
+                    && (COcompareConstants (idx_co, mod_idx_co)))) {
                 /*
                  * idx vectors in sel and modarray are equal
                  * - replace sel() with element
                  */
-                result = DupTree (mod_elem_expr);
+                result = DUPdoDupTree (mod_elem_expr);
 
-                DBUG_PRINT ("SSACF", ("sel-modarray optimization done"));
+                DBUG_PRINT ("CF", ("sel-modarray optimization done"));
 
             } else {
                 /* index vector does not match, but if both are constant, we can try
@@ -2037,7 +1928,7 @@ SSACFSel (node *idx_expr, node *array_expr)
                  * expressions.
                  */
                 if ((idx_co != NULL) && (mod_idx_co != NULL)) {
-                    result = SSACFSel (idx_expr, mod_arr_expr);
+                    result = Sel (idx_expr, mod_arr_expr);
                 } else {
                     /* no further analysis possible, because of non constant idx expr */
                     result = NULL;
@@ -2046,22 +1937,22 @@ SSACFSel (node *idx_expr, node *array_expr)
 
             /* free local constants */
             if (idx_co != NULL) {
-                idx_co = COFreeConstant (idx_co);
+                idx_co = COfreeConstant (idx_co);
             }
             if (mod_idx_co != NULL) {
-                mod_idx_co = COFreeConstant (mod_idx_co);
+                mod_idx_co = COfreeConstant (mod_idx_co);
             }
 
             break;
 
         case F_sel:
             prf_sel = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
-            concat = SSACFCatVxV (EXPRS_EXPR (PRF_ARGS (prf_sel)), idx_expr);
+            concat = CatVxV (EXPRS_EXPR (PRF_ARGS (prf_sel)), idx_expr);
 
             if (concat != NULL) {
-                result
-                  = MakePrf2 (F_sel, concat,
-                              DupTree (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (prf_sel)))));
+                result = TCmakePrf2 (F_sel, concat,
+                                     DUPdoDupTree (
+                                       EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (prf_sel)))));
             }
             break;
 
@@ -2073,32 +1964,33 @@ SSACFSel (node *idx_expr, node *array_expr)
              */
             prf_shape = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
 
-            idx_struc = SCOExpr2StructConstant (idx_expr);
+            idx_struc = CFscoExpr2StructConstant (idx_expr);
             if (idx_struc != NULL) {
                 /*
                  * save internal hidden input constant
                  */
                 old_hidden_co = SCO_HIDDENCO (idx_struc);
 
-                zero_co = COMakeConstantFromInt (0);
-                SCO_HIDDENCO (idx_struc) = COIdxSel (zero_co, SCO_HIDDENCO (idx_struc));
-                zero_co = COFreeConstant (zero_co);
+                zero_co = COmakeConstantFromInt (0);
+                SCO_HIDDENCO (idx_struc) = COidxSel (zero_co, SCO_HIDDENCO (idx_struc));
+                zero_co = COfreeConstant (zero_co);
 
                 /*
                  * free internal input constant
                  */
-                old_hidden_co = COFreeConstant (old_hidden_co);
+                old_hidden_co = COfreeConstant (old_hidden_co);
 
-                result = MakePrf2 (F_idx_shape_sel, SCODupStructConstant2Expr (idx_struc),
-                                   DupNode (PRF_ARG1 (prf_shape)));
+                result
+                  = TCmakePrf2 (F_idx_shape_sel, CFscoDupStructConstant2Expr (idx_struc),
+                                DUPdoDupNode (PRF_ARG1 (prf_shape)));
 
                 /*
                  * free scruct constant
                  */
-                idx_struc = SCOFreeStructConstant (idx_struc);
+                idx_struc = CFscoFreeStructConstant (idx_struc);
             } else {
-                result = MakePrf2 (F_shape_sel, DupNode (idx_expr),
-                                   DupNode (PRF_ARG1 (prf_shape)));
+                result = TCmakePrf2 (F_shape_sel, DUPdoDupNode (idx_expr),
+                                     DUPdoDupNode (PRF_ARG1 (prf_shape)));
             }
             break;
 
@@ -2130,11 +2022,11 @@ RemovePhiCopyTargetAttributes (bool thenpart, info *arg_info)
 
     /* pointer to first assign node behind conditional N_cond */
 
-    if (NODE_TYPE (ASSIGN_INSTR (INFO_SSACF_ASSIGN (arg_info))) == N_cond) {
-        phifun = ASSIGN_NEXT (INFO_SSACF_ASSIGN (arg_info));
-    } else if (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (INFO_SSACF_ASSIGN (arg_info))))
+    if (NODE_TYPE (ASSIGN_INSTR (INFO_CF_ASSIGN (arg_info))) == N_cond) {
+        phifun = ASSIGN_NEXT (INFO_CF_ASSIGN (arg_info));
+    } else if (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (INFO_CF_ASSIGN (arg_info))))
                == N_funcond) {
-        phifun = INFO_SSACF_ASSIGN (arg_info);
+        phifun = INFO_CF_ASSIGN (arg_info);
     } else {
         phifun = NULL;
     }
@@ -2158,7 +2050,7 @@ RemovePhiCopyTargetAttributes (bool thenpart, info *arg_info)
             }
 
             /* delete obsolete argument */
-            FreeTree (del);
+            FREEdoFreeTree (del);
 
             /* next assignment node */
             phifun = ASSIGN_NEXT (phifun);
@@ -2169,13 +2061,13 @@ RemovePhiCopyTargetAttributes (bool thenpart, info *arg_info)
 }
 
 /*
- * traversal functions for SSACF traversal
+ * traversal functions for CF traversal
  */
 
 /******************************************************************************
  *
  * function:
- *   node* SSACFfundef(node *arg_node, info *arg_info)
+ *   node* CFfundef(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses args and block in this order.
@@ -2185,23 +2077,23 @@ RemovePhiCopyTargetAttributes (bool thenpart, info *arg_info)
  *****************************************************************************/
 
 node *
-SSACFfundef (node *arg_node, info *arg_info)
+CFfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACFfundef");
+    DBUG_ENTER ("CFfundef");
 
-    INFO_SSACF_FUNDEF (arg_info) = arg_node;
+    INFO_CF_FUNDEF (arg_info) = arg_node;
 
-    if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_IS_LOOPFUN (arg_node))) {
+    if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_ISDOFUN (arg_node))) {
         /* traverse args of fundef */
-        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* save block for inserting vardecs during the traversal */
-        INFO_SSACF_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
+        INFO_CF_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
 
         /* traverse block of fundef */
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2210,7 +2102,7 @@ SSACFfundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFblock(node *arg_node, info *arg_info)
+ *   node* CFblock(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses instructions only
@@ -2218,17 +2110,17 @@ SSACFfundef (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-SSACFblock (node *arg_node, info *arg_info)
+CFblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACFblock");
+    DBUG_ENTER ("CFblock");
 
     if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
 
     if (BLOCK_INSTR (arg_node) == NULL) {
         /* insert at least the N_empty node in an empty block */
-        BLOCK_INSTR (arg_node) = MakeEmpty ();
+        BLOCK_INSTR (arg_node) = TBmakeEmpty ();
     }
 
     DBUG_RETURN (arg_node);
@@ -2237,29 +2129,29 @@ SSACFblock (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFarg(node *arg_node, info *arg_info)
+ *   node* CFarg(node *arg_node, info *arg_info)
  *
  * description:
  *   checks if only loop invariant arguments are constant
- *   SSACFarg is only called for  special loop fundefs
+ *   CFarg is only called for  special loop fundefs
  *
  *****************************************************************************/
 
 node *
-SSACFarg (node *arg_node, info *arg_info)
+CFarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACFarg");
+    DBUG_ENTER ("CFarg");
 
     /* constants for non loop invariant args are useless */
     if ((!(AVIS_SSALPINV (ARG_AVIS (arg_node)))
          && (AVIS_SSACONST (ARG_AVIS (arg_node)) != NULL))) {
         /* free constant */
         AVIS_SSACONST (ARG_AVIS (arg_node))
-          = COFreeConstant (AVIS_SSACONST (ARG_AVIS (arg_node)));
+          = COfreeConstant (AVIS_SSACONST (ARG_AVIS (arg_node)));
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2268,7 +2160,7 @@ SSACFarg (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFassign(node *arg_node, info *arg_info)
+ *   node* CFassign(node *arg_node, info *arg_info)
  *
  * description:
  *   top-down traversal of assignments. in bottom-up return traversal remove
@@ -2278,48 +2170,48 @@ SSACFarg (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-SSACFassign (node *arg_node, info *arg_info)
+CFassign (node *arg_node, info *arg_info)
 {
     bool remove_assignment;
     node *tmp;
     node *old_assign;
 
-    DBUG_ENTER ("SSACFassign");
+    DBUG_ENTER ("CFassign");
 
     /* stack current assignment */
-    old_assign = INFO_SSACF_ASSIGN (arg_info);
+    old_assign = INFO_CF_ASSIGN (arg_info);
 
     /* init flags for possible code removal/movement */
-    INFO_SSACF_REMASSIGN (arg_info) = FALSE;
-    INFO_SSACF_POSTASSIGN (arg_info) = NULL;
-    INFO_SSACF_ASSIGN (arg_info) = arg_node;
+    INFO_CF_REMASSIGN (arg_info) = FALSE;
+    INFO_CF_POSTASSIGN (arg_info) = NULL;
+    INFO_CF_ASSIGN (arg_info) = arg_node;
     if (ASSIGN_INSTR (arg_node) != NULL) {
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
 
     /* restore old assignment */
-    INFO_SSACF_ASSIGN (arg_info) = old_assign;
+    INFO_CF_ASSIGN (arg_info) = old_assign;
 
     /* save removal flag for modifications in bottom-up traversal */
-    remove_assignment = INFO_SSACF_REMASSIGN (arg_info);
+    remove_assignment = INFO_CF_REMASSIGN (arg_info);
 
     /* integrate post assignments after current assignment */
     ASSIGN_NEXT (arg_node)
-      = AppendAssign (INFO_SSACF_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
-    INFO_SSACF_POSTASSIGN (arg_info) = NULL;
+      = TCappendAssign (INFO_CF_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
+    INFO_CF_POSTASSIGN (arg_info) = NULL;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     if (remove_assignment) {
         /* skip this assignment and free it */
-        DBUG_PRINT ("SSACF", ("remove dead assignment"));
+        DBUG_PRINT ("CF", ("remove dead assignment"));
 
         tmp = arg_node;
         arg_node = ASSIGN_NEXT (arg_node);
 
-        tmp = FreeNode (tmp);
+        tmp = FREEdoFreeNode (tmp);
     }
 
     DBUG_RETURN (arg_node);
@@ -2328,7 +2220,7 @@ SSACFassign (node *arg_node, info *arg_info)
 /***********************************************************************
  *
  *  function:
- *    node *SSACFfuncond(node *arg_node, node* arg_info)
+ *    node *CFfuncond(node *arg_node, node* arg_info)
  *
  *  description:
  *    Check if the conditional predicate is constant.
@@ -2338,9 +2230,9 @@ SSACFassign (node *arg_node, info *arg_info)
  **********************************************************************/
 
 node *
-SSACFfuncond (node *arg_node, info *arg_info)
+CFfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACFfuncond");
+    DBUG_ENTER ("CFfuncond");
 
     DBUG_ASSERT ((FUNCOND_IF (arg_node) != NULL), "missing condition in conditional");
     DBUG_ASSERT ((FUNCOND_THEN (arg_node) != NULL), "missing then part in conditional");
@@ -2351,18 +2243,18 @@ SSACFfuncond (node *arg_node, info *arg_info)
      * and substitute constants with their values to get
      * a simple N_bool node for the condition (if constant)
      */
-    INFO_SSACF_INSCONST (arg_info) = SUBST_SCALAR;
+    INFO_CF_INSCONST (arg_info) = SUBST_SCALAR;
     EXPRS_EXPR (FUNCOND_IF (arg_node))
-      = Trav (EXPRS_EXPR (FUNCOND_IF (arg_node)), arg_info);
-    INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
+      = TRAVdo (EXPRS_EXPR (FUNCOND_IF (arg_node)), arg_info);
+    INFO_CF_INSCONST (arg_info) = SUBST_NONE;
 
     /* check for constant condition */
     if (NODE_TYPE (EXPRS_EXPR (FUNCOND_IF (arg_node))) == N_bool) {
 
-        INFO_SSACF_POSTASSIGN (arg_info) = NULL;
+        INFO_CF_POSTASSIGN (arg_info) = NULL;
         /* ex special function can be simply inlined in calling context */
-        INFO_SSACF_INLFUNDEF (arg_info) = TRUE;
-        /*FUNDEF_VARDEC(INFO_SSACF_FUNDEF(arg_info))*/
+        INFO_CF_INLFUNDEF (arg_info) = TRUE;
+        /*FUNDEF_VARDEC(INFO_CF_FUNDEF(arg_info))*/
         RemovePhiCopyTargetAttributes (BOOL_VAL (COND_COND (arg_node)), arg_info);
     }
     DBUG_RETURN (arg_node);
@@ -2371,7 +2263,7 @@ SSACFfuncond (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFcond(node *arg_node, info *arg_info)
+ *   node* CFcond(node *arg_node, info *arg_info)
  *
  * description:
  *   checks for constant conditional - removes corresponding counterpart
@@ -2382,9 +2274,9 @@ SSACFfuncond (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-SSACFcond (node *arg_node, info *arg_info)
+CFcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACFcond");
+    DBUG_ENTER ("CFcond");
 
     DBUG_ASSERT ((COND_COND (arg_node) != NULL), "missing condition in conditional");
     DBUG_ASSERT ((COND_THEN (arg_node) != NULL), "missing then part in conditional");
@@ -2395,22 +2287,21 @@ SSACFcond (node *arg_node, info *arg_info)
      * and substitute constants with their values to get
      * a simple N_bool node for the condition (if constant)
      */
-    INFO_SSACF_INSCONST (arg_info) = SUBST_SCALAR;
-    COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
-    INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
+    INFO_CF_INSCONST (arg_info) = SUBST_SCALAR;
+    COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
+    INFO_CF_INSCONST (arg_info) = SUBST_NONE;
 
     /* check for constant condition */
     if (NODE_TYPE (COND_COND (arg_node)) == N_bool) {
         if (BOOL_VAL (COND_COND (arg_node)) == TRUE) {
-            DBUG_PRINT ("SSACF",
-                        ("found condition with condition==true, select then part"));
+            DBUG_PRINT ("CF", ("found condition with condition==true, select then part"));
 
             /* select then-part for later insertion in assignment chain */
-            INFO_SSACF_POSTASSIGN (arg_info) = BLOCK_INSTR (COND_THEN (arg_node));
+            INFO_CF_POSTASSIGN (arg_info) = BLOCK_INSTR (COND_THEN (arg_node));
 
-            if (NODE_TYPE (INFO_SSACF_POSTASSIGN (arg_info)) == N_empty) {
+            if (NODE_TYPE (INFO_CF_POSTASSIGN (arg_info)) == N_empty) {
                 /* empty code block must not be moved */
-                INFO_SSACF_POSTASSIGN (arg_info) = NULL;
+                INFO_CF_POSTASSIGN (arg_info) = NULL;
             } else {
                 /*
                  * delete pointer to codeblock to preserve assignments from
@@ -2420,15 +2311,15 @@ SSACFcond (node *arg_node, info *arg_info)
             }
         } else {
             /* select else part */
-            DBUG_PRINT ("SSACF",
+            DBUG_PRINT ("CF",
                         ("found condition with condition==false, select else part"));
 
             /* select else-part for later insertion in assignment chain */
-            INFO_SSACF_POSTASSIGN (arg_info) = BLOCK_INSTR (COND_ELSE (arg_node));
+            INFO_CF_POSTASSIGN (arg_info) = BLOCK_INSTR (COND_ELSE (arg_node));
 
-            if (NODE_TYPE (INFO_SSACF_POSTASSIGN (arg_info)) == N_empty) {
+            if (NODE_TYPE (INFO_CF_POSTASSIGN (arg_info)) == N_empty) {
                 /* empty code block must not be moved */
-                INFO_SSACF_POSTASSIGN (arg_info) = NULL;
+                INFO_CF_POSTASSIGN (arg_info) = NULL;
             } else {
                 /*
                  * delete pointer to codeblock to preserve assignments from
@@ -2442,7 +2333,7 @@ SSACFcond (node *arg_node, info *arg_info)
          * be inserted behind this conditional assignment and traversed
          * for constant folding.
          */
-        INFO_SSACF_REMASSIGN (arg_info) = TRUE;
+        INFO_CF_REMASSIGN (arg_info) = TRUE;
 
         /*
          * because there can be only one conditional in a special function
@@ -2453,19 +2344,19 @@ SSACFcond (node *arg_node, info *arg_info)
          * to true we have an endless loop and will rise a warning message.
          */
         if ((BOOL_VAL (COND_COND (arg_node)) == TRUE)
-            && (FUNDEF_IS_LOOPFUN (INFO_SSACF_FUNDEF (arg_info)))) {
+            && (FUNDEF_ISDOFUN (INFO_CF_FUNDEF (arg_info)))) {
             WARN (NODE_LINE (arg_node),
                   ("infinite loop detected, program may not terminate"));
 
             /* ex special function cannot be inlined and is now a regular one */
-            FUNDEF_STATUS (INFO_SSACF_FUNDEF (arg_info)) = ST_regular;
-            FUNDEF_USED (INFO_SSACF_FUNDEF (arg_info)) = USED_INACTIVE;
-            /*FUNDEF_VARDEC(INFO_SSACF_FUNDEF(arg_info))*/
+            FUNDEF_ISCONDFUN (INFO_CF_FUNDEF (arg_info)) = FALSE;
+            FUNDEF_USED (INFO_CF_FUNDEF (arg_info)) = USED_INACTIVE;
+            /*FUNDEF_VARDEC(INFO_CF_FUNDEF(arg_info))*/
             RemovePhiCopyTargetAttributes (TRUE, arg_info);
         } else {
             /* ex special function can be simply inlined in calling context */
-            INFO_SSACF_INLFUNDEF (arg_info) = TRUE;
-            /*FUNDEF_VARDEC(INFO_SSACF_FUNDEF(arg_info))*/
+            INFO_CF_INLFUNDEF (arg_info) = TRUE;
+            /*FUNDEF_VARDEC(INFO_CF_FUNDEF(arg_info))*/
             RemovePhiCopyTargetAttributes (BOOL_VAL (COND_COND (arg_node)), arg_info);
         }
 
@@ -2476,12 +2367,12 @@ SSACFcond (node *arg_node, info *arg_info)
          * traverse then-part
          */
         if (COND_THEN (arg_node) != NULL) {
-            COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+            COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
         }
 
         /* traverse else-part */
         if (COND_ELSE (arg_node) != NULL) {
-            COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+            COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
         }
     }
     DBUG_RETURN (arg_node);
@@ -2490,7 +2381,7 @@ SSACFcond (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFreturn(node *arg_node, info *arg_info)
+ *   node* CFreturn(node *arg_node, info *arg_info)
  *
  * description:
  *   do NOT substitute identifiers in return statement with their value!
@@ -2498,14 +2389,14 @@ SSACFcond (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-SSACFreturn (node *arg_node, info *arg_info)
+CFreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACFreturn");
+    DBUG_ENTER ("CFreturn");
 
     /* do NOT substitue constant identifiers with their value */
-    INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
+    INFO_CF_INSCONST (arg_info) = SUBST_NONE;
     if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2514,7 +2405,7 @@ SSACFreturn (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFlet(node *arg_node, info *arg_info)
+ *   node* CFlet(node *arg_node, info *arg_info)
  *
  * description:
  *   checks expression for constant value and sets corresponding AVIS_SSACONST
@@ -2525,13 +2416,13 @@ SSACFreturn (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-SSACFlet (node *arg_node, info *arg_info)
+CFlet (node *arg_node, info *arg_info)
 {
     ntype *computed_type, *inferred_type;
     constant *new_co;
-    ids *ids;
+    node *ids;
 
-    DBUG_ENTER ("SSACFlet");
+    DBUG_ENTER ("CFlet");
 
     DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "let without expression");
 
@@ -2547,7 +2438,7 @@ SSACFlet (node *arg_node, info *arg_info)
         && (AVIS_SSACONST (IDS_AVIS (LET_IDS (arg_node))) == NULL)) {
 
         /* traverse expression to calculate constants */
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
         if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
             /*
@@ -2558,28 +2449,29 @@ SSACFlet (node *arg_node, info *arg_info)
              * function application with a dummy identifier (that will be
              * removed by the next dead code removal)
              */
-            if (INFO_SSACF_RESULTS (arg_info) != NULL) {
-                LET_IDS (arg_node) = TravIDS (LET_IDS (arg_node), arg_info);
+            if (INFO_CF_RESULTS (arg_info) != NULL) {
+                LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
             }
 
             /* called function can be inlined */
-            if (INFO_SSACF_INLINEAP (arg_info)) {
-                DBUG_PRINT ("SSACF", ("inline function %s in %s",
-                                      FUNDEF_NAME (AP_FUNDEF (LET_EXPR (arg_node))),
-                                      FUNDEF_NAME (INFO_SSACF_FUNDEF (arg_info))));
+            if (INFO_CF_INLINEAP (arg_info)) {
+                DBUG_PRINT ("CF", ("inline function %s in %s",
+                                   FUNDEF_NAME (AP_FUNDEF (LET_EXPR (arg_node))),
+                                   FUNDEF_NAME (INFO_CF_FUNDEF (arg_info))));
 
                 /* inline special function */
-                INFO_SSACF_POSTASSIGN (arg_info)
-                  = AppendAssign (InlineSingleApplication (arg_node,
-                                                           INFO_SSACF_FUNDEF (arg_info)),
-                                  INFO_SSACF_POSTASSIGN (arg_info));
+                INFO_CF_POSTASSIGN (arg_info)
+                  = TCappendAssign (INLinlineSingleApplication (arg_node, INFO_CF_FUNDEF (
+                                                                            arg_info)),
+                                    INFO_CF_POSTASSIGN (arg_info));
 
-                FUNDEF_STATUS (AP_FUNDEF (LET_EXPR (arg_node))) = ST_regular;
+                FUNDEF_ISDOFUN (AP_FUNDEF (LET_EXPR (arg_node))) = TRUE;
+                FUNDEF_ISCONDFUN (AP_FUNDEF (LET_EXPR (arg_node))) = TRUE;
 
                 /* remove this assignment and reset the inline flag */
-                INFO_SSACF_REMASSIGN (arg_info) = TRUE;
+                INFO_CF_REMASSIGN (arg_info) = TRUE;
 
-                INFO_SSACF_INLINEAP (arg_info) = FALSE;
+                INFO_CF_INLINEAP (arg_info) = FALSE;
             }
 
         } else {
@@ -2592,46 +2484,30 @@ SSACFlet (node *arg_node, info *arg_info)
              */
             if (IDS_NEXT (ids) == NULL) {
 
-                new_co = COAST2Constant (LET_EXPR (arg_node));
+                new_co = COaST2Constant (LET_EXPR (arg_node));
 
                 if (new_co != NULL) {
                     AVIS_SSACONST (IDS_AVIS (ids)) = new_co;
-                    DBUG_PRINT ("SSACF",
-                                ("identifier %s marked as constant",
-                                 VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (ids)))));
+                    DBUG_PRINT ("CF", ("identifier %s marked as constant",
+                                       VARDEC_OR_ARG_NAME (AVIS_DECL (IDS_AVIS (ids)))));
                     /**
                      * No we might have to update the type of the LHS var as well:
                      */
-                    if (sbs == 1) {
-                        computed_type = TYMakeAKS (TYMakeSimpleType (COGetType (new_co)),
-                                                   SHCopyShape (COGetShape (new_co)));
-#ifdef MWE_NTYPE_READY
-                        infered_type = AVIS_TYPE (IDS_AVIS (ids));
-#else
-                        inferred_type = TYOldType2Type (IDS_TYPE (ids));
-#endif
-                        DBUG_ASSERT (TYLeTypes (computed_type, inferred_type),
-                                     "CF lead to a result type that is not a proper "
-                                     "subtype of the inferred type!");
-#ifdef MWE_NTYPE_READY
-                        AVIS_TYPE (IDS_AVIS (ids))
-                          = TYFreeType (AVIS_TYPE (IDS_AVIS (ids)));
-                        AVIS_TYPE (IDS_AVIS (ids)) = computed_type;
-                        inferred_type = TYFreeType (inferred_type);
-#else
-                        L_VARDEC_OR_ARG_TYPE (IDS_VARDEC (ids),
-                                              FreeOneTypes (IDS_TYPE (ids)));
-                        L_VARDEC_OR_ARG_TYPE (IDS_VARDEC (ids),
-                                              TYType2OldType (computed_type));
-                        computed_type = TYFreeType (computed_type);
-                        inferred_type = TYFreeType (inferred_type);
-#endif
-                    }
+                    computed_type = TYmakeAKS (TYmakeSimpleType (COgetType (new_co)),
+                                               SHcopyShape (COgetShape (new_co)));
+                    inferred_type = AVIS_TYPE (IDS_AVIS (ids));
+                    DBUG_ASSERT (TYleTypes (computed_type, inferred_type),
+                                 "CF lead to a result type that is not a proper subtype "
+                                 "of the inferred type!");
+
+                    AVIS_TYPE (IDS_AVIS (ids)) = TYfreeType (AVIS_TYPE (IDS_AVIS (ids)));
+                    AVIS_TYPE (IDS_AVIS (ids)) = computed_type;
+                    inferred_type = TYfreeType (inferred_type);
+
                 } else {
                     /* expression is not constant */
-                    DBUG_PRINT ("SSACF",
-                                ("identifier %s is not constant",
-                                 VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (ids)))));
+                    DBUG_PRINT ("CF", ("identifier %s is not constant",
+                                       VARDEC_OR_ARG_NAME (AVIS_DECL (IDS_AVIS (ids)))));
                 }
             }
         }
@@ -2641,8 +2517,7 @@ SSACFlet (node *arg_node, info *arg_info)
     }
 
     /* update defining assigns after inlining */
-    LET_IDS (arg_node)
-      = SSACFSetSSAASSIGN (LET_IDS (arg_node), INFO_SSACF_ASSIGN (arg_info));
+    LET_IDS (arg_node) = SetSsaAssign (LET_IDS (arg_node), INFO_CF_ASSIGN (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -2650,7 +2525,7 @@ SSACFlet (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFap(node *arg_node, info *arg_info)
+ *   node* CFap(node *arg_node, info *arg_info)
  *
  * description:
  *   propagate constants and traverse in special function
@@ -2658,11 +2533,11 @@ SSACFlet (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-SSACFap (node *arg_node, info *arg_info)
+CFap (node *arg_node, info *arg_info)
 {
     info *new_arg_info;
 
-    DBUG_ENTER ("SSACFap");
+    DBUG_ENTER ("CFap");
 
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
 
@@ -2670,17 +2545,17 @@ SSACFap (node *arg_node, info *arg_info)
      * Do not subsitute constants in arguments as this is now handled
      * by ConstVarPropagation
      */
-    INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
+    INFO_CF_INSCONST (arg_info) = SUBST_NONE;
 
     /* traverse special fundef without recursion */
-    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
-        && (AP_FUNDEF (arg_node) != INFO_SSACF_FUNDEF (arg_info))) {
+    if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
+        && (AP_FUNDEF (arg_node) != INFO_CF_FUNDEF (arg_info))) {
 
-        DBUG_PRINT ("SSACF", ("traverse in special fundef %s",
-                              FUNDEF_NAME (AP_FUNDEF (arg_node))));
-        INFO_SSACF_MODUL (arg_info)
-          = CheckAndDupSpecialFundef (INFO_SSACF_MODUL (arg_info), AP_FUNDEF (arg_node),
-                                      INFO_SSACF_ASSIGN (arg_info));
+        DBUG_PRINT ("CF", ("traverse in special fundef %s",
+                           FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        INFO_CF_MODULE (arg_info)
+          = DUPcheckAndDupSpecialFundef (INFO_CF_MODULE (arg_info), AP_FUNDEF (arg_node),
+                                         INFO_CF_ASSIGN (arg_info));
 
         DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (arg_node)) == 1),
                      "more than one instance of special function used.");
@@ -2688,37 +2563,36 @@ SSACFap (node *arg_node, info *arg_info)
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
 
-        INFO_SSACF_MODUL (new_arg_info) = INFO_SSACF_MODUL (arg_info);
-        INFO_SSACF_INLFUNDEF (new_arg_info) = FALSE;
+        INFO_CF_MODULE (new_arg_info) = INFO_CF_MODULE (arg_info);
+        INFO_CF_INLFUNDEF (new_arg_info) = FALSE;
 
         /* propagate constant args into called special function */
         FUNDEF_ARGS (AP_FUNDEF (arg_node))
-          = SSACFPropagateConstants2Args (FUNDEF_ARGS (AP_FUNDEF (arg_node)),
-                                          AP_ARGS (arg_node));
+          = PropagateConstants2Args (FUNDEF_ARGS (AP_FUNDEF (arg_node)),
+                                     AP_ARGS (arg_node));
 
         /* start traversal of special fundef */
-        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
 
         /* save exprs chain of return list for later propagating constants */
-        INFO_SSACF_RESULTS (arg_info)
-          = RETURN_EXPRS (FUNDEF_RETURN (AP_FUNDEF (arg_node)));
+        INFO_CF_RESULTS (arg_info) = RETURN_EXPRS (FUNDEF_RETURN (AP_FUNDEF (arg_node)));
 
         /* can this special function be inlined? */
-        if (INFO_SSACF_INLFUNDEF (new_arg_info) == TRUE) {
-            INFO_SSACF_INLINEAP (arg_info) = TRUE;
+        if (INFO_CF_INLFUNDEF (new_arg_info) == TRUE) {
+            INFO_CF_INLINEAP (arg_info) = TRUE;
         } else {
-            INFO_SSACF_INLINEAP (arg_info) = FALSE;
+            INFO_CF_INLINEAP (arg_info) = FALSE;
         }
 
-        DBUG_PRINT ("SSACF", ("traversal of special fundef %s finished\n",
-                              FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        DBUG_PRINT ("CF", ("traversal of special fundef %s finished\n",
+                           FUNDEF_NAME (AP_FUNDEF (arg_node))));
         new_arg_info = FreeInfo (new_arg_info);
 
     } else {
         /* no traversal into a normal fundef */
-        DBUG_PRINT ("SSACF", ("do not traverse in normal fundef %s",
-                              FUNDEF_NAME (AP_FUNDEF (arg_node))));
-        INFO_SSACF_RESULTS (arg_info) = NULL;
+        DBUG_PRINT ("CF", ("do not traverse in normal fundef %s",
+                           FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        INFO_CF_RESULTS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -2727,11 +2601,11 @@ SSACFap (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFid(node *arg_node, info *arg_info)
+ *   node* CFid(node *arg_node, info *arg_info)
  *
  * description:
  *   substitute identifers with their computed constant
- *   (only when INFO_SSACF_INSCONST flag is set)
+ *   (only when INFO_CF_INSCONST flag is set)
  *   in EXPRS chain of N_ap ARGS  (if SUBST_ID_WITH_CONSTANT_IN_AP_ARGS == TRUE)
  *      EXPRS chain of N_prf ARGS (if SUBST_ID_WITH_CONSTANT_IN_AP_ARGS == TRUE)
  *      EXPRS chain of N_array AELEMS
@@ -2739,27 +2613,26 @@ SSACFap (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-SSACFid (node *arg_node, info *arg_info)
+CFid (node *arg_node, info *arg_info)
 {
     node *new_node;
     int dim;
 
-    DBUG_ENTER ("SSACFid");
+    DBUG_ENTER ("CFid");
 
     /* check for constant scalar identifier */
     if (AVIS_SSACONST (ID_AVIS (arg_node)) != NULL) {
-        dim = COGetDim (AVIS_SSACONST (ID_AVIS (arg_node)));
+        dim = COgetDim (AVIS_SSACONST (ID_AVIS (arg_node)));
 
-        if (((dim == SCALAR) && (INFO_SSACF_INSCONST (arg_info) >= SUBST_SCALAR))
+        if (((dim == SCALAR) && (INFO_CF_INSCONST (arg_info) >= SUBST_SCALAR))
             || ((dim > SCALAR)
-                && (INFO_SSACF_INSCONST (arg_info) == SUBST_SCALAR_AND_ARRAY))) {
-            DBUG_PRINT ("SSACF",
-                        ("substitue identifier %s through its value",
-                         VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (arg_node)))));
+                && (INFO_CF_INSCONST (arg_info) == SUBST_SCALAR_AND_ARRAY))) {
+            DBUG_PRINT ("CF", ("substitue identifier %s through its value",
+                               VARDEC_OR_ARG_NAME (AVIS_DECL (ID_AVIS (arg_node)))));
 
             /* substitute identifier with its value */
-            new_node = COConstant2AST (AVIS_SSACONST (ID_AVIS (arg_node)));
-            arg_node = FreeTree (arg_node);
+            new_node = COconstant2AST (AVIS_SSACONST (ID_AVIS (arg_node)));
+            arg_node = FREEdoFreeTree (arg_node);
             arg_node = new_node;
         }
     }
@@ -2770,7 +2643,7 @@ SSACFid (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFarray(node *arg_node, info *arg_info)
+ *   node* CFarray(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses array elements to propagate constant identifiers
@@ -2778,23 +2651,19 @@ SSACFid (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-SSACFarray (node *arg_node, info *arg_info)
+CFarray (node *arg_node, info *arg_info)
 {
     node *newelems = NULL;
     node *oldelems, *tmp;
-#ifdef MWE_NTYPE_READY
     ntype *newarrtypes;
-#else
-    types *newarrtypes;
-#endif
     shape *shp = NULL, *newshp;
 
-    DBUG_ENTER ("SSACFarray");
+    DBUG_ENTER ("CFarray");
 
     /* substitute constant identifiers in array elements */
-    INFO_SSACF_INSCONST (arg_info) = TRUE;
+    INFO_CF_INSCONST (arg_info) = TRUE;
     if (ARRAY_AELEMS (arg_node) != NULL) {
-        ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+        ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
 
         /* Test whether subarrays can be copied in */
         /* Therefore all elemens need to be id nodes defined by N_array nodes.
@@ -2812,7 +2681,7 @@ SSACFarray (node *arg_node, info *arg_info)
 
             if (shp == NULL)
                 shp = ARRAY_SHAPE (oldelems);
-            else if (!SHCompareShapes (shp, ARRAY_SHAPE (oldelems)))
+            else if (!SHcompareShapes (shp, ARRAY_SHAPE (oldelems)))
                 break;
 
             tmp = EXPRS_NEXT (tmp);
@@ -2822,28 +2691,21 @@ SSACFarray (node *arg_node, info *arg_info)
             oldelems = ARRAY_AELEMS (arg_node);
             tmp = oldelems;
             while (tmp != NULL) {
-                newelems = AppendExprs (newelems, DupTree (ARRAY_AELEMS (ASSIGN_RHS (
-                                                    ID_SSAASSIGN (EXPRS_EXPR (tmp))))));
+                newelems
+                  = TCappendExprs (newelems, DUPdoDupTree (ARRAY_AELEMS (ASSIGN_RHS (
+                                               ID_SSAASSIGN (EXPRS_EXPR (tmp))))));
                 tmp = EXPRS_NEXT (tmp);
             }
-#ifdef MWE_NTYPE_READY
-            newarrtypes = TYCopyType (ARRAY_NTYPE (arg_node));
-#else
-            newarrtypes = DupOneTypes (ARRAY_TYPE (arg_node));
-#endif
-            newshp = SHAppendShapes (ARRAY_SHAPE (arg_node), shp);
+            newarrtypes = TYcopyType (ARRAY_NTYPE (arg_node));
+            newshp = SHappendShapes (ARRAY_SHAPE (arg_node), shp);
 
-            FreeTree (arg_node);
+            FREEdoFreeTree (arg_node);
 
-            arg_node = MakeArray (newelems, newshp);
-#ifdef MWE_NTYPE_READY
+            arg_node = TBmakeArray (newshp, newelems);
             ARRAY_NTYPE (arg_node) = newarrtypes;
-#else
-            ARRAY_TYPE (arg_node) = newarrtypes;
-#endif
         }
     }
-    INFO_SSACF_INSCONST (arg_info) = FALSE;
+    INFO_CF_INSCONST (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -2851,7 +2713,7 @@ SSACFarray (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFprf(node *arg_node, info *arg_info)
+ *   node* CFprf(node *arg_node, info *arg_info)
  *
  * description:
  *   evaluates primitive function with constant paramters and substitutes
@@ -2860,37 +2722,37 @@ SSACFarray (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-SSACFprf (node *arg_node, info *arg_info)
+CFprf (node *arg_node, info *arg_info)
 {
     node *new_node;
     node *arg_expr_mem[PRF_MAX_ARGS];
     node **arg_expr = &arg_expr_mem[0];
 
-    DBUG_ENTER ("SSACFprf");
+    DBUG_ENTER ("CFprf");
 
-    DBUG_PRINT ("SSACF", ("evaluating prf %s", mdb_prf[PRF_PRF (arg_node)]));
+    DBUG_PRINT ("CF", ("evaluating prf %s", global.mdb_prf[PRF_PRF (arg_node)]));
 
     /*
      * ktr: There is no reason to do this as we have CVP now
-     *      SSACFFoldPrfExpr will look at the constant anyways
+     *      CFfoldPrfExpr will look at the constant anyways
      *
      * substitute constant identifiers in prf. arguments
      */
-    INFO_SSACF_INSCONST (arg_info) = SUBST_ID_WITH_CONSTANT_IN_AP_ARGS;
+    INFO_CF_INSCONST (arg_info) = SUBST_ID_WITH_CONSTANT_IN_AP_ARGS;
     if (PRF_ARGS (arg_node) != NULL) {
-        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
     }
-    INFO_SSACF_INSCONST (arg_info) = FALSE;
+    INFO_CF_INSCONST (arg_info) = FALSE;
 
     /* look up arguments */
-    arg_expr = SSACFGetPrfArgs (arg_expr, PRF_ARGS (arg_node), PRF_MAX_ARGS);
+    arg_expr = GetPrfArgs (arg_expr, PRF_ARGS (arg_node), PRF_MAX_ARGS);
 
     /* try some constant folding */
-    new_node = SSACFFoldPrfExpr (PRF_PRF (arg_node), arg_expr);
+    new_node = CFfoldPrfExpr (PRF_PRF (arg_node), arg_expr);
 
     if (new_node != NULL) {
         /* free this primitive function and substitute it with new node */
-        arg_node = FreeTree (arg_node);
+        arg_node = FREEdoFreeTree (arg_node);
         arg_node = new_node;
 
         /* increment constant folding counter */
@@ -2903,78 +2765,64 @@ SSACFprf (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACFids(info *arg_ids, node *arg_info)
+ *   node *CFids(info *arg_ids, node *arg_info)
  *
  * description:
- *   traverse ids chain and return exprs chain (stored in INFO_SSACF_RESULT)
+ *   traverse ids chain and return exprs chain (stored in INFO_CF_RESULT)
  *   and look for constant results.
  *   each constant identifier will be set in an separate assignment (added to
- *   INFO_SSACF_POSTASSIGN) and substituted in the function application with
+ *   INFO_CF_POSTASSIGN) and substituted in the function application with
  *   a new dummy identifier that can be removed by constant folding later.
  *
  *****************************************************************************/
 
-static ids *
-SSACFids (ids *arg_ids, info *arg_info)
+node *
+CFids (node *arg_ids, info *arg_info)
 {
     constant *new_co;
     node *assign_let;
     node *new_vardec;
 
-    DBUG_ENTER ("SSACFids");
+    DBUG_ENTER ("CFids");
 
-    DBUG_ASSERT ((INFO_SSACF_RESULTS (arg_info) != NULL),
-                 "different ids and result chains");
+    DBUG_ASSERT ((INFO_CF_RESULTS (arg_info) != NULL), "different ids and result chains");
 
-    new_co = COAST2Constant (EXPRS_EXPR (INFO_SSACF_RESULTS (arg_info)));
+    new_co = COaST2Constant (EXPRS_EXPR (INFO_CF_RESULTS (arg_info)));
 
     if (new_co != NULL) {
-        DBUG_PRINT ("SSACF",
-                    ("identifier %s marked as constant",
-                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
+        DBUG_PRINT ("CF", ("identifier %s marked as constant",
+                           VARDEC_OR_ARG_NAME (AVIS_DECL (IDS_AVIS (arg_ids)))));
 
         AVIS_SSACONST (IDS_AVIS (arg_ids)) = new_co;
 
         /* create one let assign for constant definition */
-        assign_let = MakeAssignLet (StringCopy (VARDEC_OR_ARG_NAME (
-                                      AVIS_VARDECORARG (IDS_AVIS (arg_ids)))),
-                                    AVIS_VARDECORARG (IDS_AVIS (arg_ids)),
-                                    COConstant2AST (new_co));
+        assign_let = TCmakeAssignLet (TBmakeAvis (ILIBstringCopy (IDS_NAME (arg_ids)),
+                                                  TYcopyType (IDS_NTYPE (arg_ids))),
+                                      COconstant2AST (new_co));
 
         /* append new copy assignment to then-part block */
-        INFO_SSACF_POSTASSIGN (arg_info)
-          = AppendAssign (INFO_SSACF_POSTASSIGN (arg_info), assign_let);
+        INFO_CF_POSTASSIGN (arg_info)
+          = TCappendAssign (INFO_CF_POSTASSIGN (arg_info), assign_let);
 
         /* store definition assignment */
         AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = assign_let;
 
-        DBUG_PRINT ("SSACF",
-                    ("create constant assignment for %s",
-                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
+        DBUG_PRINT ("CF", ("create constant assignment for %s", (IDS_NAME (arg_ids))));
 
         /* create new dummy identifier */
-        new_vardec = SSANewVardec (AVIS_VARDECORARG (IDS_AVIS (arg_ids)));
-        BLOCK_VARDEC (INFO_SSACF_TOPBLOCK (arg_info))
-          = AppendVardec (BLOCK_VARDEC (INFO_SSACF_TOPBLOCK (arg_info)), new_vardec);
+        new_vardec = SSATnewVardec (AVIS_DECL (IDS_AVIS (arg_ids)));
+        BLOCK_VARDEC (INFO_CF_TOPBLOCK (arg_info))
+          = TCappendVardec (BLOCK_VARDEC (INFO_CF_TOPBLOCK (arg_info)), new_vardec);
 
-        AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = INFO_SSACF_ASSIGN (arg_info);
+        AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = INFO_CF_ASSIGN (arg_info);
 
         /* rename this identifier */
         IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
-        IDS_VARDEC (arg_ids) = new_vardec;
-#ifndef NO_ID_NAME
-        /* for compatiblity only
-         * there is no real need for name string in ids structure because
-         * you can get it from vardec without redundancy.
-         */
-        IDS_NAME (arg_ids) = Free (IDS_NAME (arg_ids));
-        IDS_NAME (arg_ids) = StringCopy (VARDEC_NAME (new_vardec));
-#endif
     }
 
     if (IDS_NEXT (arg_ids) != NULL) {
-        INFO_SSACF_RESULTS (arg_info) = EXPRS_NEXT (INFO_SSACF_RESULTS (arg_info));
-        IDS_NEXT (arg_ids) = TravIDS (IDS_NEXT (arg_ids), arg_info);
+        INFO_CF_RESULTS (arg_info) = EXPRS_NEXT (INFO_CF_RESULTS (arg_info));
+        IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
     }
 
     DBUG_RETURN (arg_ids);
@@ -2983,29 +2831,7 @@ SSACFids (ids *arg_ids, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   ids *TravIDS(ids *arg_ids, info *arg_info)
- *
- * description:
- *   similar implementation of trav mechanism as used for nodes
- *   here used for ids.
- *
- *****************************************************************************/
-
-static ids *
-TravIDS (ids *arg_ids, info *arg_info)
-{
-    DBUG_ENTER ("TravIDS");
-
-    DBUG_ASSERT (arg_ids != NULL, "traversal in NULL ids");
-    arg_ids = SSACFids (arg_ids, arg_info);
-
-    DBUG_RETURN (arg_ids);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SSACFNwith( node *arg_node, info *arg_info)
+ *   node *CFwith( node *arg_node, info *arg_info)
  *
  * description:
  *   traverses parts and withops
@@ -3013,16 +2839,16 @@ TravIDS (ids *arg_ids, info *arg_info)
  *****************************************************************************/
 
 node *
-SSACFNwith (node *arg_node, info *arg_info)
+CFwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACFNwith");
+    DBUG_ENTER ("CFwith");
 
-    if (NWITH_PART (arg_node) != NULL) {
-        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    if (WITH_PART (arg_node) != NULL) {
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     }
 
-    if (NWITH_WITHOP (arg_node) != NULL) {
-        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    if (WITH_WITHOP (arg_node) != NULL) {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -3031,7 +2857,7 @@ SSACFNwith (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACFNpart( node *arg_node, info *arg_info)
+ *   node *CFpart( node *arg_node, info *arg_info)
  *
  * description:
  *   traverses withid, generators and code
@@ -3041,49 +2867,49 @@ SSACFNwith (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-SSACFNpart (node *arg_node, info *arg_info)
+CFpart (node *arg_node, info *arg_info)
 {
-    ids *_ids;
+    node *_ids;
 
-    DBUG_ENTER ("SSACFNpart");
+    DBUG_ENTER ("CFpart");
 
-    NPART_WITHID (arg_node) = Trav (NPART_WITHID (arg_node), arg_info);
+    PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
 
     /*
      * If this part's code is only used by this part,
      * withid may become constant
      */
-    if (NCODE_USED (NPART_CODE (arg_node)) == 1) {
-        INFO_SSACF_WITHID (arg_info) = NPART_WITHID (arg_node);
+    if (CODE_USED (PART_CODE (arg_node)) == 1) {
+        INFO_CF_WITHID (arg_info) = PART_WITHID (arg_node);
     }
-    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
+    PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
-    NPART_CODE (arg_node) = Trav (NPART_CODE (arg_node), arg_info);
+    PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
 
     /*
      * Constants must be removed again
      */
-    if (NCODE_USED (NPART_CODE (arg_node)) == 1) {
-        _ids = NWITHID_VEC (NPART_WITHID (arg_node));
+    if (CODE_USED (PART_CODE (arg_node)) == 1) {
+        _ids = WITHID_VEC (PART_WITHID (arg_node));
         if (_ids != NULL) {
             if (AVIS_SSACONST (IDS_AVIS (_ids)) != NULL) {
                 AVIS_SSACONST (IDS_AVIS (_ids))
-                  = COFreeConstant (AVIS_SSACONST (IDS_AVIS (_ids)));
+                  = COfreeConstant (AVIS_SSACONST (IDS_AVIS (_ids)));
             }
         }
 
-        _ids = NWITHID_IDS (NPART_WITHID (arg_node));
+        _ids = WITHID_IDS (PART_WITHID (arg_node));
         while (_ids != NULL) {
             if (AVIS_SSACONST (IDS_AVIS (_ids)) != NULL) {
                 AVIS_SSACONST (IDS_AVIS (_ids))
-                  = COFreeConstant (AVIS_SSACONST (IDS_AVIS (_ids)));
+                  = COfreeConstant (AVIS_SSACONST (IDS_AVIS (_ids)));
             }
             _ids = IDS_NEXT (_ids);
         }
     }
 
-    if (NPART_NEXT (arg_node) != NULL) {
-        NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+    if (PART_NEXT (arg_node) != NULL) {
+        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -3092,7 +2918,7 @@ SSACFNpart (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFNgen(node *arg_node, info *arg_info)
+ *   node* CFgenerator(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses parameter of generator to substitute constant arrays
@@ -3105,94 +2931,95 @@ SSACFNpart (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-SSACFNgen (node *arg_node, info *arg_info)
+CFgenerator (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACFNgen");
+    DBUG_ENTER ("CFgenerator");
 
-    INFO_SSACF_INSCONST (arg_info) = SUBST_SCALAR_AND_ARRAY;
-    DBUG_PRINT ("SSACF", ("substitute constant generator parameters"));
+    INFO_CF_INSCONST (arg_info) = SUBST_SCALAR_AND_ARRAY;
+    DBUG_PRINT ("CF", ("substitute constant generator parameters"));
 
-    if (NGEN_BOUND1 (arg_node) != NULL) {
-        NGEN_BOUND1 (arg_node) = Trav (NGEN_BOUND1 (arg_node), arg_info);
+    if (GENERATOR_BOUND1 (arg_node) != NULL) {
+        GENERATOR_BOUND1 (arg_node) = TRAVdo (GENERATOR_BOUND1 (arg_node), arg_info);
     }
-    if (NGEN_BOUND2 (arg_node) != NULL) {
-        NGEN_BOUND2 (arg_node) = Trav (NGEN_BOUND2 (arg_node), arg_info);
+    if (GENERATOR_BOUND2 (arg_node) != NULL) {
+        GENERATOR_BOUND2 (arg_node) = TRAVdo (GENERATOR_BOUND2 (arg_node), arg_info);
     }
-    if (NGEN_STEP (arg_node) != NULL) {
-        NGEN_STEP (arg_node) = Trav (NGEN_STEP (arg_node), arg_info);
+    if (GENERATOR_STEP (arg_node) != NULL) {
+        GENERATOR_STEP (arg_node) = TRAVdo (GENERATOR_STEP (arg_node), arg_info);
     }
-    if (NGEN_WIDTH (arg_node) != NULL) {
-        NGEN_WIDTH (arg_node) = Trav (NGEN_WIDTH (arg_node), arg_info);
+    if (GENERATOR_WIDTH (arg_node) != NULL) {
+        GENERATOR_WIDTH (arg_node) = TRAVdo (GENERATOR_WIDTH (arg_node), arg_info);
     }
 
-    if (INFO_SSACF_WITHID (arg_info) != NULL) {
+    if (INFO_CF_WITHID (arg_info) != NULL) {
         /*
          * If the upper and lower bounds vectors are known and the index space
          * covers just one element, the index vector is constant
          */
-        if ((NGEN_BOUND1 (arg_node) != NULL) && (NGEN_BOUND2 (arg_node) != NULL)) {
+        if ((GENERATOR_BOUND1 (arg_node) != NULL)
+            && (GENERATOR_BOUND2 (arg_node) != NULL)) {
             constant *lower, *upper, *diff;
             shape *diffshp;
-            ids *_ids;
+            node *_ids;
 
-            lower = COAST2Constant (NGEN_BOUND1 (arg_node));
-            upper = COAST2Constant (NGEN_BOUND2 (arg_node));
+            lower = COaST2Constant (GENERATOR_BOUND1 (arg_node));
+            upper = COaST2Constant (GENERATOR_BOUND2 (arg_node));
 
             if ((lower != NULL) && (upper != NULL)) {
-                diff = COSub (upper, lower);
-                diffshp = COConstant2Shape (diff);
-                diff = COFreeConstant (diff);
+                diff = COsub (upper, lower);
+                diffshp = COconstant2Shape (diff);
+                diff = COfreeConstant (diff);
 
                 /*
                  * Check whether the whole index vector is constant
                  */
-                if (SHGetUnrLen (diffshp) == 1) {
-                    _ids = NWITHID_VEC (INFO_SSACF_WITHID (arg_info));
+                if (SHgetUnrLen (diffshp) == 1) {
+                    _ids = WITHID_VEC (INFO_CF_WITHID (arg_info));
                     if (_ids != NULL) {
-                        AVIS_SSACONST (IDS_AVIS (_ids)) = COCopyConstant (lower);
+                        AVIS_SSACONST (IDS_AVIS (_ids)) = COcopyConstant (lower);
                     }
                 }
-                diffshp = SHFreeShape (diffshp);
+                diffshp = SHfreeShape (diffshp);
             }
 
             if (lower != NULL) {
-                lower = COFreeConstant (lower);
+                lower = COfreeConstant (lower);
             }
             if (upper != NULL) {
-                upper = COFreeConstant (upper);
+                upper = COfreeConstant (upper);
             }
 
-            if ((NODE_TYPE (NGEN_BOUND1 (arg_node)) == N_array)
-                && (NODE_TYPE (NGEN_BOUND2 (arg_node)) == N_array)) {
+            if ((NODE_TYPE (GENERATOR_BOUND1 (arg_node)) == N_array)
+                && (NODE_TYPE (GENERATOR_BOUND2 (arg_node)) == N_array)) {
                 /*
                  * Check whether the index scalars are constant
                  */
-                ids *_ids;
+                node *_ids;
                 node *lb, *ub;
                 constant *lbc, *ubc;
 
-                lb = ARRAY_AELEMS (NGEN_BOUND1 (arg_node));
-                ub = ARRAY_AELEMS (NGEN_BOUND2 (arg_node));
-                _ids = NWITHID_IDS (INFO_SSACF_WITHID (arg_info));
+                lb = ARRAY_AELEMS (GENERATOR_BOUND1 (arg_node));
+                ub = ARRAY_AELEMS (GENERATOR_BOUND2 (arg_node));
+                _ids = WITHID_IDS (INFO_CF_WITHID (arg_info));
 
                 while (_ids != NULL) {
-                    lbc = COAST2Constant (EXPRS_EXPR (lb));
-                    ubc = COAST2Constant (EXPRS_EXPR (ub));
+                    lbc = COaST2Constant (EXPRS_EXPR (lb));
+                    ubc = COaST2Constant (EXPRS_EXPR (ub));
 
                     if ((lbc != NULL) && (ubc != NULL)) {
-                        diff = COSub (ubc, lbc);
-                        if (COIsOne (diff, TRUE)) {
-                            AVIS_SSACONST (IDS_AVIS (_ids)) = COCopyConstant (lbc);
+                        diff = COsub (ubc, lbc);
+                        if (COisOne (diff, TRUE)) {
+                            AVIS_SSACONST (IDS_AVIS (_ids)) = COcopyConstant (lbc);
                         }
-                        diff = COFreeConstant (diff);
+                        diff = COfreeConstant (diff);
                     }
 
                     if (lbc != NULL) {
-                        lbc = COFreeConstant (lbc);
+                        lbc = COfreeConstant (lbc);
                     }
 
                     if (ubc != NULL) {
-                        ubc = COFreeConstant (ubc);
+                        ubc = COfreeConstant (ubc);
                     }
 
                     lb = EXPRS_NEXT (lb);
@@ -3201,10 +3028,10 @@ SSACFNgen (node *arg_node, info *arg_info)
                 }
             }
         }
-        INFO_SSACF_WITHID (arg_info) = NULL;
+        INFO_CF_WITHID (arg_info) = NULL;
     }
 
-    INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
+    INFO_CF_INSCONST (arg_info) = SUBST_NONE;
 
     DBUG_RETURN (arg_node);
 }
@@ -3212,18 +3039,18 @@ SSACFNgen (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACFNcode(node *arg_node, info *arg_info)
+ *   node* CFcode(node *arg_node, info *arg_info)
  *
  * description:
- *   traverses NCODE_CBLOCK
+ *   traverses CODE_CBLOCK
  *
  *****************************************************************************/
 node *
-SSACFNcode (node *arg_node, info *arg_info)
+CFcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSACFNcode");
+    DBUG_ENTER ("CFNcode");
 
-    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -3231,7 +3058,7 @@ SSACFNcode (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACFFoldPrfExpr(prf op, node **arg_expr)
+ *   node *CFfoldPrfExpr(prf op, node **arg_expr)
  *
  * description:
  *   try to compute the primitive function for the given args.
@@ -3243,7 +3070,7 @@ SSACFNcode (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-SSACFFoldPrfExpr (prf op, node **arg_expr)
+CFfoldPrfExpr (prf op, node **arg_expr)
 {
     node *new_node;
     constant *new_co;
@@ -3251,14 +3078,14 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
     constant **arg_co = &arg_co_mem[0];
     int i;
 
-    DBUG_ENTER ("SSACFFoldPrfExpr");
+    DBUG_ENTER ("FoldPrfExpr");
 
     /* init local variables */
     new_node = NULL;
     new_co = NULL;
 
     /* fill static arrays with converted constants */
-    arg_co = SSACFArgs2Const (arg_co, arg_expr, PRF_MAX_ARGS);
+    arg_co = Args2Const (arg_co, arg_expr, PRF_MAX_ARGS);
 
     /* do constant folding for selected primitive function */
     switch (op) {
@@ -3268,7 +3095,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             ONE_CONST_ARG (arg_co)
             {
-                new_co = COToi (arg_co[0]);
+                new_co = COtoi (arg_co[0]);
             }
         break;
 
@@ -3277,7 +3104,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             ONE_CONST_ARG (arg_co)
             {
-                new_co = COTof (arg_co[0]);
+                new_co = COtof (arg_co[0]);
             }
         break;
 
@@ -3286,7 +3113,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             ONE_CONST_ARG (arg_co)
             {
-                new_co = COTod (arg_co[0]);
+                new_co = COtod (arg_co[0]);
             }
         break;
 
@@ -3294,7 +3121,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             ONE_CONST_ARG (arg_co)
             {
-                new_co = COAbs (arg_co[0]);
+                new_co = COabs (arg_co[0]);
             }
         break;
 
@@ -3302,7 +3129,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             ONE_CONST_ARG (arg_co)
             {
-                new_co = CONot (arg_co[0]);
+                new_co = COnot (arg_co[0]);
             }
         break;
 
@@ -3311,13 +3138,13 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             ONE_CONST_ARG (arg_co)
             {
                 /* for pure constant arg */
-                new_co = CODim (arg_co[0]);
+                new_co = COdim (arg_co[0]);
             }
         else if
             ONE_ARG (arg_expr)
             {
                 /* for some non full constant expression */
-                new_co = SSACFDim (arg_expr[0]);
+                new_co = Dim (arg_expr[0]);
             }
         break;
 
@@ -3326,13 +3153,13 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             ONE_CONST_ARG (arg_co)
             {
                 /* for pure constant arg */
-                new_co = COShape (arg_co[0]);
+                new_co = COshape (arg_co[0]);
             }
         else if
             ONE_ARG (arg_expr)
             {
                 /* for some non full constant expression */
-                new_co = SSACFShape (arg_expr[0]);
+                new_co = Shape (arg_expr[0]);
             }
         break;
 
@@ -3341,7 +3168,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             TWO_CONST_ARG (arg_co)
             {
-                new_co = COMin (arg_co[0], arg_co[1]);
+                new_co = COmin (arg_co[0], arg_co[1]);
             }
         break;
 
@@ -3349,7 +3176,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             TWO_CONST_ARG (arg_co)
             {
-                new_co = COMax (arg_co[0], arg_co[1]);
+                new_co = COmax (arg_co[0], arg_co[1]);
             }
         break;
 
@@ -3360,12 +3187,12 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             TWO_CONST_ARG (arg_co)
             {
-                new_co = COAdd (arg_co[0], arg_co[1]);
+                new_co = COadd (arg_co[0], arg_co[1]);
             }
         if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
-                new_node = SSACFArithmOpWrapper (F_add_SxS, arg_co, arg_expr);
+                new_node = ArithmOpWrapper (F_add_SxS, arg_co, arg_expr);
             }
         break;
 
@@ -3376,17 +3203,17 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             TWO_CONST_ARG (arg_co)
             {
-                new_co = COSub (arg_co[0], arg_co[1]);
+                new_co = COsub (arg_co[0], arg_co[1]);
             }
         else if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
-                new_node = SSACFArithmOpWrapper (F_sub_SxS, arg_co, arg_expr);
+                new_node = ArithmOpWrapper (F_sub_SxS, arg_co, arg_expr);
             }
         else if
             TWO_ARG (arg_expr)
             {
-                new_node = SSACFSub (arg_expr[0], arg_expr[1]);
+                new_node = Sub (arg_expr[0], arg_expr[1]);
             }
         break;
 
@@ -3397,12 +3224,12 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             TWO_CONST_ARG (arg_co)
             {
-                new_co = COMul (arg_co[0], arg_co[1]);
+                new_co = COmul (arg_co[0], arg_co[1]);
             }
         if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
-                new_node = SSACFArithmOpWrapper (F_mul_SxS, arg_co, arg_expr);
+                new_node = ArithmOpWrapper (F_mul_SxS, arg_co, arg_expr);
             }
         break;
 
@@ -3413,16 +3240,16 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             TWO_CONST_ARG (arg_co)
             {
-                if (COIsZero (arg_co[1], FALSE)) { /* any 0 in divisor, x/0 -> err */
+                if (COisZero (arg_co[1], FALSE)) { /* any 0 in divisor, x/0 -> err */
                     ABORT (NODE_LINE (arg_expr[1]), ("Division by zero expected"));
                 } else {
-                    new_co = CODiv (arg_co[0], arg_co[1]);
+                    new_co = COdiv (arg_co[0], arg_co[1]);
                 }
             }
         if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
-                new_node = SSACFArithmOpWrapper (F_div_SxS, arg_co, arg_expr);
+                new_node = ArithmOpWrapper (F_div_SxS, arg_co, arg_expr);
             }
         break;
 
@@ -3430,10 +3257,10 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             TWO_CONST_ARG (arg_co)
             {
-                if (COIsZero (arg_co[1], FALSE)) { /* any 0 in divisor, x/0 -> err */
+                if (COisZero (arg_co[1], FALSE)) { /* any 0 in divisor, x/0 -> err */
                     ABORT (NODE_LINE (arg_expr[1]), ("Division by zero expected"));
                 } else {
-                    new_co = COMod (arg_co[0], arg_co[1]);
+                    new_co = COmod (arg_co[0], arg_co[1]);
                 }
             }
         break;
@@ -3442,12 +3269,12 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             TWO_CONST_ARG (arg_co)
             {
-                new_co = COAnd (arg_co[0], arg_co[1]);
+                new_co = COand (arg_co[0], arg_co[1]);
             }
         if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
-                new_node = SSACFArithmOpWrapper (F_and, arg_co, arg_expr);
+                new_node = ArithmOpWrapper (F_and, arg_co, arg_expr);
             }
         break;
 
@@ -3455,12 +3282,12 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             TWO_CONST_ARG (arg_co)
             {
-                new_co = COOr (arg_co[0], arg_co[1]);
+                new_co = COor (arg_co[0], arg_co[1]);
             }
         if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
-                new_node = SSACFArithmOpWrapper (F_or, arg_co, arg_expr);
+                new_node = ArithmOpWrapper (F_or, arg_co, arg_expr);
             }
         break;
 
@@ -3468,7 +3295,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             TWO_CONST_ARG (arg_co)
             {
-                new_co = COLe (arg_co[0], arg_co[1]);
+                new_co = COle (arg_co[0], arg_co[1]);
             }
         break;
 
@@ -3476,7 +3303,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             TWO_CONST_ARG (arg_co)
             {
-                new_co = COLt (arg_co[0], arg_co[1]);
+                new_co = COlt (arg_co[0], arg_co[1]);
             }
         break;
 
@@ -3485,13 +3312,13 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             TWO_CONST_ARG (arg_co)
             {
                 /* for pure constant arg */
-                new_co = COEq (arg_co[0], arg_co[1]);
+                new_co = COeq (arg_co[0], arg_co[1]);
             }
         else if
             TWO_ARG (arg_expr)
             {
                 /* for two expressions (does a treecmp) */
-                new_node = SSACFEq (arg_expr[0], arg_expr[1]);
+                new_node = Eq (arg_expr[0], arg_expr[1]);
             }
         break;
 
@@ -3499,7 +3326,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             TWO_CONST_ARG (arg_co)
             {
-                new_co = COGe (arg_co[0], arg_co[1]);
+                new_co = COge (arg_co[0], arg_co[1]);
             }
         break;
 
@@ -3507,7 +3334,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             TWO_CONST_ARG (arg_co)
             {
-                new_co = COGt (arg_co[0], arg_co[1]);
+                new_co = COgt (arg_co[0], arg_co[1]);
             }
         break;
 
@@ -3515,7 +3342,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             TWO_CONST_ARG (arg_co)
             {
-                new_co = CONeq (arg_co[0], arg_co[1]);
+                new_co = COneq (arg_co[0], arg_co[1]);
             }
         break;
 
@@ -3524,24 +3351,20 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             TWO_CONST_ARG (arg_co)
             {
                 /* for pure constant arg */
-                new_co = COReshape (arg_co[0], arg_co[1]);
+                new_co = COreshape (arg_co[0], arg_co[1]);
             }
         else if ((arg_co[0] != NULL) && (arg_expr[1] != NULL)) {
             /* for some non constant expression and constant index vector */
-            new_node = SSACFStructOpReshape (arg_co[0], arg_expr[1]);
+            new_node = StructOpReshape (arg_co[0], arg_expr[1]);
             if ((new_node == NULL) && (NODE_TYPE (arg_expr[1]) == N_id)) {
                 /* reshape( shp, a)  ->  a    iff (shp == shape(a)) */
-#ifdef MWE_NTYPE_READY
-                shape *shp = TYType2hape (IDS_NTYPE (ID_IDS (arg_expr[1])));
-#else
-                shape *shp = SHOldTypes2Shape (ID_TYPE (arg_expr[1]));
-#endif
+                shape *shp = SHoldTypes2Shape (TYtype2OldType (ID_NTYPE (arg_expr[1])));
                 if (shp != NULL) {
-                    if (SHCompareWithCArray (shp, COGetDataVec (arg_co[0]),
-                                             SHGetExtent (COGetShape (arg_co[0]), 0))) {
-                        new_node = DupNode (arg_expr[1]);
+                    if (SHcompareWithCArray (shp, COgetDataVec (arg_co[0]),
+                                             SHgetExtent (COgetShape (arg_co[0]), 0))) {
+                        new_node = DUPdoDupNode (arg_expr[1]);
                     }
-                    shp = SHFreeShape (shp);
+                    shp = SHfreeShape (shp);
                 }
             }
         }
@@ -3553,7 +3376,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 /* for some none constant expression and constant index vector */
-                new_node = SSACFShapeSel (arg_co[0], arg_expr[1]);
+                new_node = ShapeSel (arg_co[0], arg_expr[1]);
             }
         break;
 
@@ -3562,19 +3385,19 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             TWO_CONST_ARG (arg_co)
             {
                 /* for pure constant args */
-                new_co = COSel (arg_co[0], arg_co[1]);
+                new_co = COsel (arg_co[0], arg_co[1]);
             }
         else if
             FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 /* for some non constant expression and constant index vector */
-                new_node = SSACFStructOpSel (arg_co[0], arg_expr[1]);
+                new_node = StructOpSel (arg_co[0], arg_expr[1]);
             }
 
         if ((new_co == NULL) && (new_node == NULL) && (TWO_ARG (arg_expr))) {
             /* for some expressions concerning sel-modarray combinations or
                sel-sel combinations */
-            new_node = SSACFSel (arg_expr[0], arg_expr[1]);
+            new_node = Sel (arg_expr[0], arg_expr[1]);
         }
         break;
 
@@ -3583,13 +3406,13 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             TWO_CONST_ARG (arg_co)
             {
                 /* for pure constant args */
-                new_co = COIdxSel (arg_co[0], arg_co[1]);
+                new_co = COidxSel (arg_co[0], arg_co[1]);
             }
         else if
             FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 /* for some non constant expression and constant index skalar */
-                new_node = SSACFStructOpIdxSel (arg_co[0], arg_expr[1]);
+                new_node = StructOpIdxSel (arg_co[0], arg_expr[1]);
             }
         break;
 
@@ -3599,13 +3422,13 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             TWO_CONST_ARG (arg_co)
             {
                 /* for pure constant args */
-                new_co = COTake (arg_co[0], arg_co[1]);
+                new_co = COtake (arg_co[0], arg_co[1]);
             }
         else if
             FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 /* for some non constant expression and constant index vector */
-                new_node = SSACFStructOpTake (arg_co[0], arg_expr[1]);
+                new_node = StructOpTake (arg_co[0], arg_expr[1]);
             }
         break;
 
@@ -3615,13 +3438,13 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             TWO_CONST_ARG (arg_co)
             {
                 /* for pure constant args */
-                new_co = CODrop (arg_co[0], arg_co[1]);
+                new_co = COdrop (arg_co[0], arg_co[1]);
             }
         else if
             FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 /* for some non constant expression and constant index vector */
-                new_node = SSACFStructOpDrop (arg_co[0], arg_expr[1]);
+                new_node = StructOpDrop (arg_co[0], arg_expr[1]);
             }
         break;
 
@@ -3631,10 +3454,10 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             THREE_CONST_ARG (arg_co)
             {
                 /* for pure constant args */
-                new_co = COModarray (arg_co[0], arg_co[1], arg_co[2]);
+                new_co = COmodarray (arg_co[0], arg_co[1], arg_co[2]);
             }
         else if (SECOND_CONST_ARG_OF_THREE (arg_co, arg_expr)) {
-            new_node = SSACFModarray (arg_expr[0], arg_co[1], arg_expr[2]);
+            new_node = Modarray (arg_expr[0], arg_co[1], arg_expr[2]);
         }
         break;
 
@@ -3642,10 +3465,10 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             TWO_CONST_ARG (arg_co)
             {
-                new_co = COCat (arg_co[0], arg_co[1]);
+                new_co = COcat (arg_co[0], arg_co[1]);
             }
         else {
-            new_node = SSACFCatVxV (arg_expr[0], arg_expr[1]);
+            new_node = CatVxV (arg_expr[0], arg_expr[1]);
         }
         break;
 
@@ -3658,14 +3481,14 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         break;
 
     default:
-        DBUG_PRINT ("SSACF",
-                    ("no implementation in SSAConstantFolding for prf %s", mdb_prf[op]));
+        DBUG_PRINT ("CF", ("no implementation in SSAConstantFolding for prf %s",
+                           global.mdb_prf[op]));
     }
 
     /* free used constant data */
     for (i = 0; i < PRF_MAX_ARGS; i++) {
         if (arg_co[i] != NULL) {
-            arg_co[i] = COFreeConstant (arg_co[i]);
+            arg_co[i] = COfreeConstant (arg_co[i]);
         }
     }
 
@@ -3676,8 +3499,8 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
     if ((new_co != NULL) || (new_node != NULL)) {
         if (new_co != NULL) {
             /* create new node with constant value instead of prf node */
-            new_node = COConstant2AST (new_co);
-            new_co = COFreeConstant (new_co);
+            new_node = COconstant2AST (new_co);
+            new_co = COfreeConstant (new_co);
         } else {
             /* some constant expression of non full constant args have been computed */
         }
@@ -3698,31 +3521,27 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
  ******************************************************************************/
 
 node *
-SSAConstantFolding (node *fundef, node *modul)
+CFdoConstantFolding (node *fundef, node *module)
 {
     info *arg_info;
-    funtab *old_tab;
 
-    DBUG_ENTER ("SSAConstantFolding");
+    DBUG_ENTER ("CFdoConstantFolding");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "SSAConstantFolding called for non-fundef node");
+                 "CFdoConstantFolding called for non-fundef node");
 
     DBUG_PRINT ("OPT",
                 ("starting constant folding (ssa) in function %s", FUNDEF_NAME (fundef)));
 
     /* do not start traversal in special functions */
-    if (!(FUNDEF_IS_LACFUN (fundef))) {
+    if (!(FUNDEF_ISLACFUN (fundef))) {
         arg_info = MakeInfo ();
 
-        INFO_SSACF_MODUL (arg_info) = modul;
+        INFO_CF_MODULE (arg_info) = module;
 
-        old_tab = act_tab;
-        act_tab = ssacf_tab;
-
-        fundef = Trav (fundef, arg_info);
-
-        act_tab = old_tab;
+        TRAVpush (TR_cf);
+        fundef = TRAVdo (fundef, arg_info);
+        TRAVpop ();
 
         arg_info = FreeInfo (arg_info);
     }
