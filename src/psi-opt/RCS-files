@@ -1,9 +1,7 @@
 ArrayElimination.c
 ArrayElimination.h
 Makefile
-SSAWithloopFolding.c
 SSAWithloopFolding.h
-WithloopFolding.c
 WithloopFolding.h
 index.c
 index.h
