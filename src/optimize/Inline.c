@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/03/22 18:05:30  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.6  2001/03/22 13:33:44  dkr
  * CreateInlineName is static now.
  * Renaming of identifiers via DupTree is triggered by LUT now :-)
@@ -77,7 +80,6 @@
 #include <stdlib.h>
 
 #include "globals.h"
-#include "tree.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "Error.h"

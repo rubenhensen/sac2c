@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.2  2001/03/22 18:05:35  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.1  2000/11/20 18:03:40  sacbase
  * new release made
  *
@@ -33,14 +37,16 @@
  * Revision 1.1  2000/07/05 11:38:19  nmw
  * Initial revision
  *
- *
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "map_cwrapper.h"
 #include "my_debug.h"
 #include "dbug.h"
