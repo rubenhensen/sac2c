@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.124  2004/12/08 11:40:50  ktr
+ * nothing really changed.
+ *
  * Revision 3.123  2004/12/07 20:35:53  ktr
  * eliminated CONSTVEC which is superseded by ntypes.
  *
@@ -2479,8 +2482,7 @@ TCnodeBehindCast (node *arg_node)
  * description:
  *   Returns a vector.
  *
- ******************************************************************************/
-
+ *****************************************************************************/
 node *
 TCmakeFlatArray (node *aelems)
 {
@@ -2497,8 +2499,7 @@ TCmakeFlatArray (node *aelems)
  * description:
  *   Returns a scalar 0.
  *
- ******************************************************************************/
-
+ *****************************************************************************/
 node *
 TCcreateZeroScalar (simpletype btype)
 {
