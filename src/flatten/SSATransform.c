@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.23  2004/11/27 03:07:40  cg
+ * Functions renamed.
+ *
  * Revision 1.22  2004/11/27 00:41:46  mwe
  * function renaming
  *
@@ -1377,15 +1380,15 @@ SSATcond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSAfuncond(node *arg_node, info *arg_info)
+ * @fn node *SSATfuncond(node *arg_node, info *arg_info)
  *
  *   @brief set INFO_SSA_FUNCOND_FOUND and traverse all sons
  *
  ******************************************************************************/
 node *
-SSAfuncond (node *arg_node, info *arg_info)
+SSATfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSAfuncond");
+    DBUG_ENTER ("SSATfuncond");
 
     INFO_SSA_FUNCOND_FOUND (arg_info) = TRUE;
 
@@ -1417,15 +1420,15 @@ SSAfuncond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSAreturn(node *arg_node, info *arg_info)
+ * @fn node *SSATreturn(node *arg_node, info *arg_info)
  *
  *   @brief inserts missing funcond nodes and traverses the return elements
  *
  ******************************************************************************/
 node *
-SSAreturn (node *arg_node, info *arg_info)
+SSATreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSAreturn");
+    DBUG_ENTER ("SSATreturn");
 
     /**
      * check whether this function contains a conditional but does not contain
