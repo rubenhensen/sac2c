@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.27  2000/10/23 10:40:23  dkr
+ * MakeId2 removed
+ * MakeId1 renamed into MakeId_Copy
+ *
  * Revision 1.26  2000/07/31 10:49:31  cg
  * Eventually, the son ICM_NEXT is removed from the N_icm node.
  * The creation function MakeIcm is adjusted accordingly.
@@ -256,7 +260,7 @@ MakeIds (char *name, char *mod, statustype status)
 /*--------------------------------------------------------------------------*/
 
 ids *
-MakeIds1 (char *name)
+MakeIds_Copy (char *name)
 {
     ids *result;
 
@@ -989,54 +993,15 @@ MakeId (char *name, char *mod, statustype status)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeId1 (char *str)
+MakeId_Copy (char *str)
 {
     node *result;
 
-    DBUG_ENTER ("MakeId1");
+    DBUG_ENTER ("MakeId_Copy");
 
     result = MakeId (StringCopy (str), NULL, ST_regular);
 
     DBUG_RETURN (result);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-MakeId2 (ids *ids_node)
-{
-    node *tmp;
-
-    DBUG_ENTER ("MakeId2");
-
-    tmp = CreateCleanNode (N_id);
-
-    tmp->info.ids = ids_node;
-
-    DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-MakeId3 (ids *ids_node)
-{
-    node *tmp;
-
-    DBUG_ENTER ("MakeId3");
-
-    tmp = CreateCleanNode (N_id);
-
-    tmp->info.ids = ids_node;
-    tmp->refcnt = ids_node->refcnt;
-
-    DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
-
-    DBUG_RETURN (tmp);
 }
 
 /*--------------------------------------------------------------------------*/
