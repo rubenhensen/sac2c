@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.155  2004/12/08 12:15:47  mwe
+# type_upgrade.o added
+#
 # Revision 3.154  2004/11/29 15:01:50  ktr
 # added xml-dir to target clean
 #
@@ -143,7 +146,7 @@ OPTIMIZE= src/optimize/optimize.o \
           src/optimize/SSALUR.o src/optimize/SSAInferLI.o \
           src/optimize/SSAWLUnroll.o src/optimize/rmcasts.o \
           src/optimize/ElimSubDiv.o \
-          src/optimize/UndoElimSubDiv.o \
+          src/optimize/UndoElimSubDiv.o src/optimize/type_upgrade.o \
           src/optimize/ConstVarPropagation.o src/optimize/DistributiveLaw.o
 
 PROFILE= src/profile/annotate_fun_calls.o
