@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  1999/08/05 13:30:40  jhs
+ * Added OPT_MTI (default now: off), to steer mto-part during spmdinit.
+ *
  * Revision 2.16  1999/07/21 16:28:19  jhs
  * needed_sync_fold introduced, max_sync_fold adjusted, command-line and usage
  * updated.
@@ -12,6 +15,9 @@
  * Added global variable malloc_align_step.
  *
  * $Log$
+ * Revision 2.17  1999/08/05 13:30:40  jhs
+ * Added OPT_MTI (default now: off), to steer mto-part during spmdinit.
+ *
  * Revision 2.16  1999/07/21 16:28:19  jhs
  * needed_sync_fold introduced, max_sync_fold adjusted, command-line and usage
  * updated.
@@ -177,6 +183,7 @@ extern unsigned int optimize;
 #define OPT_MTO 0x00040000  /* multi-thread optimization           */
 #define OPT_SBE 0x00080000  /* synchronisation barrier elimination */
 #define OPT_PHM 0x00100000  /* private heap management             */
+#define OPT_MTI 0x00200000  /* private heap management             */
 
 extern int optvar;
 extern int inlnum;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  1999/08/05 13:30:40  jhs
+ * Added OPT_MTI (default now: off), to steer mto-part during spmdinit.
+ *
  * Revision 2.14  1999/07/21 16:28:19  jhs
  * needed_sync_fold introduced, max_sync_fold adjusted, command-line and usage
  * updated.
@@ -339,9 +342,9 @@ int Make_Old2NewWith = 0;
  */
 
 #ifdef PRODUCTION
-unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE);
+unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI);
 #else  /* PRODUCTION */
-unsigned int optimize = OPT_ALL & (~OPT_MTO) & (~OPT_SBE);
+unsigned int optimize = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI);
 #endif /* PRODUCTION */
 
 /*
