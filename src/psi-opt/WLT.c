@@ -1,6 +1,11 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.10  1999/07/14 12:16:31  bs
+ * The function CheckGeneratorBounds won't be used any longer:
+ * 'CheckGeneratorBounds' removed.
+ * The ConstantFolding is doing this job now (and better).
+ *
  * Revision 2.9  1999/05/17 11:20:41  jhs
  * CopyConstVec will be called only is ID/ARRAY_ISCONST.
  *
@@ -261,95 +266,6 @@ CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
     FREE (nw);
 
     DBUG_RETURN (root_ig);
-}
-
-/******************************************************************************
- *
- * function:
- *   node* CheckGeneratorBounds(node* arg_node, node* arg_info)
- *
- * description:
- *   check whether the bounds of this N_Ngenarray are N_array nodes with
- *   a compact array propagation. If there's no conpact propagation or
- *   the bound is an N_id, it will be changed into an N_array with
- *   complete compact array propagation.
- *
- ******************************************************************************/
-node *
-CheckGeneratorBounds (node *arg_node, node *arg_info)
-{
-    node **bound, *nbound, *array, *aelems;
-    int i;
-    nums *shpnums;
-
-    DBUG_ENTER ("CheckGeneratorBounds");
-
-    for (i = 1; i <= 4; i++) {
-        switch (i) {
-        case 1:
-            bound = &NGEN_BOUND1 (arg_node);
-            break;
-        case 2:
-            bound = &NGEN_BOUND2 (arg_node);
-            break;
-        case 3:
-            bound = &NGEN_STEP (arg_node);
-            break;
-        case 4:
-            bound = &NGEN_WIDTH (arg_node);
-            break;
-        default:
-            bound = NULL;
-            break;
-        }
-        if ((bound != NULL) && (*bound != NULL)) {
-
-            DBUG_ASSERT (((NODE_TYPE (*bound) == N_id)
-                          || (NODE_TYPE (*bound) == N_array)),
-                         "Constant integer array expected!");
-
-            if (NODE_TYPE (*bound) == N_array) {
-                array = *bound;
-                if ((ARRAY_CONSTVEC (array) == NULL) || ARRAY_VECLEN (array) == 0) {
-                    FREE (ARRAY_CONSTVEC (array));
-                    ((int *)ARRAY_CONSTVEC (array))
-                      = Array2IntVec (ARRAY_AELEMS (array), &ARRAY_VECLEN (array));
-                    ARRAY_VECTYPE (array) = T_int;
-                    *bound = array;
-                }
-            } else /* (NODE_TYPE(*bound) == N_id) */ {
-                nbound = *bound;
-
-                DBUG_ASSERT ((NODE_TYPE (nbound) == N_id),
-                             "N_id expected in generator-position");
-
-                if (ID_ISCONST (nbound)) {
-                    DBUG_ASSERT ((ID_VECLEN (nbound) >= 0), "corrupted VECLEN-entry!");
-
-                    aelems
-                      = IntVec2Array (ID_VECLEN (nbound), (int *)ID_CONSTVEC (nbound));
-                    array = MakeArray (aelems);
-                    shpnums = MakeNums (ID_VECLEN (nbound), NULL);
-                    ARRAY_ISCONST (array) = ID_ISCONST (nbound);
-                    ARRAY_VECTYPE (array) = ID_VECTYPE (nbound);
-                    ARRAY_VECLEN (array) = ID_VECLEN (nbound);
-                    if (ARRAY_ISCONST (array)) {
-                        ARRAY_CONSTVEC (array)
-                          = CopyConstVec (ID_VECTYPE (nbound), ID_VECLEN (nbound),
-                                          ID_CONSTVEC (nbound));
-                    }
-                    ARRAY_TYPE (array) = MakeType (T_int, ARRAY_VECLEN (array),
-                                                   MakeShpseg (shpnums), NULL, NULL);
-                    ARRAY_VECTYPE (array) = T_int;
-                    FREE (shpnums);
-                    FreeTree (nbound);
-                    *bound = array;
-                }
-            }
-        }
-    }
-
-    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -972,16 +888,6 @@ WLTNwith (node *arg_node, node *arg_info)
     INFO_USE = tmpn->mask[1];
     INFO_VARNO = tmpn->varno;
     FREE (tmpn);
-
-    /*
-     *  It's neccessary to check the boundaries of the generators. The flattened
-     *  arrays have to be rechanged from N_id nodes to N_array nodes.
-     */
-    tmpn = NWITH_PART (arg_node);
-    while (tmpn) {
-        NPART_GEN (tmpn) = CheckGeneratorBounds (NPART_GEN (tmpn), arg_info);
-        tmpn = NPART_NEXT (tmpn);
-    }
 
     DBUG_RETURN (arg_node);
 }
