@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/09/09 20:36:27  dkr
+ * Type2String() corrected
+ *
  * Revision 3.12  2002/08/13 17:22:05  dkr
  * IntBytes2String: argument is unsigned now
  *
@@ -219,10 +222,18 @@ Type2String (types *type, int flag, bool all)
 
             if (TYPES_DIM (type) != 0) {
                 if (TYPES_DIM (type) == UNKNOWN_SHAPE) {
-                    strcat (tmp_string, "[+]");
+                    if (flag == 2) {
+                        strcat (tmp_string, "_P");
+                    } else {
+                        strcat (tmp_string, "[+]");
+                    }
                 } else {
                     if (ARRAY_OR_SCALAR == TYPES_DIM (type)) {
-                        strcat (tmp_string, "[*]");
+                        if (flag == 2) {
+                            strcat (tmp_string, "_S");
+                        } else {
+                            strcat (tmp_string, "[*]");
+                        }
                     } else {
                         int i, dim;
                         static char int_string[INT_STRING_LENGTH];
@@ -260,10 +271,9 @@ Type2String (types *type, int flag, bool all)
                             } else {
                                 if (flag == 2) {
                                     if (known_shape == 1) {
-                                        sprintf (int_string, "%d_",
-                                                 TYPES_SHAPE (type, i));
+                                        sprintf (int_string, "%d", TYPES_SHAPE (type, i));
                                     } else {
-                                        sprintf (int_string, "._");
+                                        sprintf (int_string, ".");
                                     }
                                 } else {
                                     if (1 == known_shape) {
