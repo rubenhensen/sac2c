@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2003/09/15 16:45:06  dkr
+ * all NT-tags added. This revision is still incomplete!
+ *
  * Revision 1.2  2003/09/13 13:48:05  dkr
  * NT-tags added. This revision is still incomplete!
  *
@@ -74,7 +77,7 @@
  * Definition of synchronisation barrier data type.
  */
 
-typedef struct ARRAYRC {
+typedef struct ARRAY_DESC {
     /*
      * REMARK:
      *
@@ -86,8 +89,8 @@ typedef struct ARRAYRC {
      *    'ptr' is a volatile pointer to a non-volatile object
      */
     void *volatile ptr;
-    int *volatile rc;
-} arrayrc_t;
+    int *volatile desc;
+} array_desc_t;
 
 typedef union {
     union {
@@ -96,16 +99,14 @@ typedef union {
         volatile double result_double;
         volatile char result_char;
         void *volatile result_array;
-        volatile arrayrc_t result_array_rc;
+        volatile array_desc_t result_array_desc;
         void *volatile result_hidden;
     } b[SAC_SET_MAX_SYNC_FOLD + 1];
 } SAC_MT_barrier_dummy_t;
 
-#define SAC_MT_MAX(a, b) ((a) > (b) ? (a) : (b))
-
 #define SAC_MT_CACHE_LINE_MAX()                                                          \
-    SAC_MT_MAX (SAC_SET_CACHE_1_LINE,                                                    \
-                SAC_MT_MAX (SAC_SET_CACHE_2_LINE, SAC_MT_MAX (SAC_SET_CACHE_3_LINE, 1)))
+    SAC_MAX (SAC_SET_CACHE_1_LINE,                                                       \
+             SAC_MAX (SAC_SET_CACHE_2_LINE, SAC_MAX (SAC_SET_CACHE_3_LINE, 1)))
 
 #define SAC_MT_BARRIER_OFFSET()                                                          \
     ((SAC_MT_CACHE_LINE_MAX () >= sizeof (SAC_MT_barrier_dummy_t))                       \
@@ -131,7 +132,7 @@ typedef union {
         volatile double result_double;
         volatile char result_char;
         void *volatile result_array;
-        volatile arrayrc_t result_array_rc;
+        volatile array_desc_t result_array_desc;
         void *volatile result_hidden;
     } b[SAC_SET_MAX_SYNC_FOLD + 1];
 } SAC_MT_barrier_t;
@@ -142,12 +143,12 @@ typedef union {
 
 #define SAC_MT_BARRIER_READY(barrier, n) (barrier[n].b[0].result_int)
 
-#define SAC_MT_BARRIER_RESULT(barrier, n, m, type) (barrier[n].b[m].result_##type)
+#define SAC_MT_BARRIER_RESULT(barrier, n, m, basetype) (barrier[n].b[m].result_##basetype)
 
-#define SAC_MT_BARRIER_RC_RESULT_PTR(barrier, n, m, type)                                \
-    (CAT1 (barrier[n].b[m].result_, type).ptr)
-#define SAC_MT_BARRIER_RC_RESULT_RC(barrier, n, m, type)                                 \
-    (CAT1 (barrier[n].b[m].result_, type).rc)
+#define SAC_MT_BARRIER_DESC_RESULT_PTR(barrier, n, m, basetype)                          \
+    (barrier[n].b[m].result_array_desc.ptr)
+#define SAC_MT_BARRIER_DESC_RESULT_DESC(barrier, n, m, basetype)                         \
+    (barrier[n].b[m].result_array_desc.desc)
 
 /*
  *  Advanced access macros for synchronisation barrier.
@@ -159,29 +160,98 @@ typedef union {
 
 #define SAC_MT_CHECK_BARRIER(n) (SAC_MT_BARRIER_READY (SAC_MT_barrier, n))
 
-#define SAC_MT_SET_BARRIER_RESULT(n, m, type, res)                                       \
+/******************************************************************************
+ *
+ * MT_SET_BARRIER_RESULT
+ * MT_GET_BARRIER_RESULT
+ */
+
+#define SAC_MT_SET_BARRIER_RESULT(n, m, basetype, res_nt)                                \
+    CAT11 (SAC_MT_SET_BARRIER_RESULT__,                                                  \
+           NT_SHP (res_nt) BuildArgs4 (n, m, basetype, res_nt))
+
+#define SAC_MT_GET_BARRIER_RESULT(n, m, basetype, res_nt)                                \
+    CAT11 (SAC_MT_GET_BARRIER_RESULT__,                                                  \
+           NT_SHP (res_nt) BuildArgs4 (n, m, basetype, res_nt))
+
+/*
+ * SCL
+ */
+
+#define SAC_MT_SET_BARRIER_RESULT__SCL(n, m, basetype, res_nt)                           \
+    CAT12 (SAC_MT_SET_BARRIER_RESULT__SCL_,                                              \
+           NT_HID (res_nt) BuildArgs4 (n, m, basetype, res_nt))
+#define SAC_MT_SET_BARRIER_RESULT__SCL_NHD(n, m, basetype, res_nt)                       \
     {                                                                                    \
-        SAC_MT_BARRIER_RESULT (SAC_MT_barrier, n, m, type) = res;                        \
+        SAC_MT_BARRIER_RESULT (SAC_MT_barrier, n, m, basetype)                           \
+          = SAC_ND_A_FIELD (res_nt);                                                     \
+        SAC_MT_BARRIER_READY (SAC_MT_barrier, n) = m;                                    \
+    }
+#define SAC_MT_SET_BARRIER_RESULT__SCL_HID(n, m, basetype, res_nt)                       \
+    CAT13 (SAC_MT_SET_BARRIER_RESULT__SCL_HID_,                                          \
+           NT_UNQ (res_nt) BuildArgs4 (n, m, basetype, res_nt))
+#define SAC_MT_SET_BARRIER_RESULT__SCL_HID_NUQ(n, m, basetype, res_nt)                   \
+    SAC_MT_SET_BARRIER_RESULT__AKS (n, m, basetype, res_nt)
+#define SAC_MT_SET_BARRIER_RESULT__SCL_HID_UNQ(n, m, basetype, res_nt)                   \
+    SAC_MT_SET_BARRIER_RESULT__SCL_NHD (n, m, basetype, res_nt)
+
+#define SAC_MT_GET_BARRIER_RESULT__SCL(n, m, basetype, res_nt)                           \
+    CAT12 (SAC_MT_GET_BARRIER_RESULT__SCL_,                                              \
+           NT_HID (res_nt) BuildArgs4 (n, m, basetype, res_nt))
+#define SAC_MT_GET_BARRIER_RESULT__SCL_NHD(n, m, basetype, res_nt)                       \
+    {                                                                                    \
+        SAC_ND_A_FIELD (res_nt)                                                          \
+          = (SAC_MT_BARRIER_RESULT (SAC_MT_barrier, n, m, basetype));                    \
+    }
+#define SAC_MT_GET_BARRIER_RESULT__SCL_HID(n, m, basetype, res_nt)                       \
+    CAT13 (SAC_MT_GET_BARRIER_RESULT__SCL_HID_,                                          \
+           NT_UNQ (res_nt) BuildArgs4 (n, m, basetype, res_nt))
+#define SAC_MT_GET_BARRIER_RESULT__SCL_HID_NUQ(n, m, basetype, res_nt)                   \
+    SAC_MT_GET_BARRIER_RESULT__AKS (n, m, basetype, res_nt)
+#define SAC_MT_GET_BARRIER_RESULT__SCL_HID_UNQ(n, m, basetype, res_nt)                   \
+    SAC_MT_GET_BARRIER_RESULT__SCL_NHD (n, m, basetype, res_nt)
+
+/*
+ * AKS
+ */
+
+#define SAC_MT_SET_BARRIER_RESULT__AKS(n, m, basetype, res_nt)                           \
+    {                                                                                    \
+        SAC_MT_BARRIER_DESC_RESULT_PTR (SAC_MT_barrier, n, m, basetype)                  \
+          = SAC_ND_A_FIELD (res_nt);                                                     \
+        SAC_MT_BARRIER_DESC_RESULT_DESC (SAC_MT_barrier, n, m, basetype)                 \
+          = SAC_ND_A_DESC (res_nt);                                                      \
         SAC_MT_BARRIER_READY (SAC_MT_barrier, n) = m;                                    \
     }
 
-#define SAC_MT_SET_BARRIER_RC_RESULT(n, m, type, res)                                    \
+#define SAC_MT_GET_BARRIER_RESULT__AKS(n, m, basetype, res_nt)                           \
     {                                                                                    \
-        SAC_MT_BARRIER_RC_RESULT_PTR (SAC_MT_barrier, n, m, type) = res;                 \
-        SAC_MT_BARRIER_RC_RESULT_RC (SAC_MT_barrier, n, m, type) = CAT1 (res, __rc);     \
-        SAC_MT_BARRIER_READY (SAC_MT_barrier, n) = m;                                    \
+        SAC_ND_A_FIELD (res_nt)                                                          \
+          = (SAC_MT_BARRIER_DESC_RESULT_PTR (SAC_MT_barrier, n, m, basetype));           \
+        SAC_ND_A_DESC (res_nt)                                                           \
+          = (SAC_MT_BARRIER_DESC_RESULT_DESC (SAC_MT_barrier, n, m, basetype));          \
     }
+/*
+ * AKD
+ */
 
-#define SAC_MT_GET_BARRIER_RESULT(n, m, type)                                            \
-    (SAC_MT_BARRIER_RESULT (SAC_MT_barrier, n, m, type))
+#define SAC_MT_SET_BARRIER_RESULT__AKD(n, m, basetype, res_nt)                           \
+    SAC_MT_SET_BARRIER_RESULT__AKS (n, m, basetype, res_nt)
 
-#define SAC_MT_GET_BARRIER_RESULT(n, m, type)                                            \
-    (SAC_MT_BARRIER_RESULT (SAC_MT_barrier, n, m, type))
+#define SAC_MT_GET_BARRIER_RESULT__AKD(n, m, basetype, res_nt)                           \
+    SAC_MT_GET_BARRIER_RESULT__AKS (n, m, basetype, res_nt)
 
-#define SAC_MT_GET_BARRIER_RC_RESULT_PTR(n, m, type)                                     \
-    (SAC_MT_BARRIER_RC_RESULT_PTR (SAC_MT_barrier, n, m, type))
-#define SAC_MT_GET_BARRIER_RC_RESULT_RC(n, m, type)                                      \
-    (SAC_MT_BARRIER_RC_RESULT_RC (SAC_MT_barrier, n, m, type))
+/*
+ * AUD
+ */
+
+#define SAC_MT_SET_BARRIER_RESULT__AUD(n, m, basetype, res_nt)                           \
+    SAC_MT_SET_BARRIER_RESULT__AKS (n, m, basetype, res_nt)
+
+#define SAC_MT_GET_BARRIER_RESULT__AUD(n, m, basetype, res_nt)                           \
+    SAC_MT_GET_BARRIER_RESULT__AKS (n, m, basetype, res_nt)
+
+/******************************************************************************/
 
 /*
  *  Definition of macro implemented ICMs for global symbol definitions
@@ -283,9 +353,8 @@ typedef union {
 
 #define SAC_MT_BLOCK_FRAME_DUMMY() int dummy;
 
-#define I_POST(nt) NT_NAME (nt)
-#define O_POST(nt) CAT0 (NT_NAME (nt), _out)
-#define S_POST(nt) CAT0 (NT_NAME (nt), _shared)
+#define O_POST(name) CAT0 (name, _out)
+#define S_POST(name) CAT0 (name, _shared)
 
 /******************************************************************************
  *
@@ -320,7 +389,7 @@ typedef union {
     CAT12 (SAC_MT_SPMD_ARG_in__SCL_, NT_HID (nt) BuildArgs2 (basetype, nt))
 #define SAC_MT_SPMD_ARG_in__SCL_NHD(basetype, nt)                                        \
     SAC_ND_TYPE (nt, basetype)                                                           \
-    I_POST (nt);
+    SAC_ND_A_FIELD (nt);
 #define SAC_MT_SPMD_ARG_in__SCL_HID(basetype, nt)                                        \
     CAT13 (SAC_MT_SPMD_ARG_in__SCL_HID_, NT_UNQ (nt) BuildArgs2 (basetype, nt))
 #define SAC_MT_SPMD_ARG_in__SCL_HID_NUQ(basetype, nt)                                    \
@@ -332,7 +401,7 @@ typedef union {
     CAT12 (SAC_MT_SPMD_ARG_out__SCL_, NT_HID (nt) BuildArgs2 (basetype, nt))
 #define SAC_MT_SPMD_ARG_out__SCL_NHD(basetype, nt)                                       \
     SAC_ND_TYPE (nt, basetype)                                                           \
-    *O_POST (nt);
+    *O_POST (SAC_ND_A_FIELD (nt));
 #define SAC_MT_SPMD_ARG_out__SCL_HID(basetype, nt)                                       \
     CAT13 (SAC_MT_SPMD_ARG_out__SCL_HID_, NT_UNQ (nt) BuildArgs2 (basetype, nt))
 #define SAC_MT_SPMD_ARG_out__SCL_HID_NUQ(basetype, nt)                                   \
@@ -344,7 +413,7 @@ typedef union {
     CAT12 (SAC_MT_SPMD_ARG_shared__SCL_, NT_HID (nt) BuildArgs2 (basetype, nt))
 #define SAC_MT_SPMD_ARG_shared__SCL_NHD(basetype, nt)                                    \
     SAC_ND_TYPE (nt, basetype)                                                           \
-    S_POST (nt);
+    S_POST (SAC_ND_A_FIELD (nt));
 #define SAC_MT_SPMD_ARG_shared__SCL_HID(basetype, nt)                                    \
     CAT13 (SAC_MT_SPMD_ARG_shared__SCL_HID_, NT_UNQ (nt) BuildArgs2 (basetype, nt))
 #define SAC_MT_SPMD_ARG_shared__SCL_HID_NUQ(basetype, nt)                                \
@@ -356,7 +425,7 @@ typedef union {
     CAT12 (SAC_MT_SPMD_ARG_preset__SCL_, NT_HID (nt) BuildArgs2 (basetype, nt))
 #define SAC_MT_SPMD_ARG_preset__SCL_NHD(basetype, nt)                                    \
     SAC_ND_TYPE (nt, basetype)                                                           \
-    NT_NAME (nt);
+    SAC_ND_A_FIELD (nt);
 #define SAC_MT_SPMD_ARG_preset__SCL_HID(basetype, nt)                                    \
     CAT13 (SAC_MT_SPMD_ARG_preset__SCL_HID_, NT_UNQ (nt) BuildArgs2 (basetype, nt))
 #define SAC_MT_SPMD_ARG_preset__SCL_HID_NUQ(basetype, nt)                                \
@@ -369,16 +438,19 @@ typedef union {
  */
 
 #define SAC_MT_SPMD_ARG_in__AKS(basetype, nt)                                            \
-    SAC_MT_SPMD_ARG_in__SCL_NHD (basetype, nt) int CAT14 (I_POST (nt), __desc);
+    SAC_MT_SPMD_ARG_in__SCL_NHD (basetype, nt) SAC_ND_DESC_TYPE (nt) SAC_ND_A_DESC (nt);
 
 #define SAC_MT_SPMD_ARG_out__AKS(basetype, nt)                                           \
-    SAC_MT_SPMD_ARG_out__SCL_NHD (basetype, nt) int *CAT14 (O_POST (nt), __desc);
+    SAC_MT_SPMD_ARG_out__SCL_NHD (basetype, nt) SAC_ND_DESC_TYPE (nt)                    \
+      * O_POST (SAC_ND_A_DESC (nt));
 
 #define SAC_MT_SPMD_ARG_shared__AKS(basetype, nt)                                        \
-    SAC_MT_SPMD_ARG_shared__SCL_NHD (basetype, nt) int CAT14 (S_POST (nt), __desc);
+    SAC_MT_SPMD_ARG_shared__SCL_NHD (basetype, nt) SAC_ND_DESC_TYPE (nt)                 \
+      S_POST (SAC_ND_A_DESC (nt));
 
 #define SAC_MT_SPMD_ARG_preset__AKS(basetype, nt)                                        \
-    SAC_MT_SPMD_ARG_preset__SCL_NHD (basetype, nt) int CAT14 (NT_NAME (nt), __desc);
+    SAC_MT_SPMD_ARG_preset__SCL_NHD (basetype, nt) SAC_ND_DESC_TYPE (nt)                 \
+      SAC_ND_A_DESC (nt);
 
 /*
  * AKD
@@ -505,7 +577,7 @@ typedef union {
     CAT12 (SAC_MT_SPMD_PARAM_in__SCL_, NT_HID (nt) BuildArgs2 (basetype, nt))
 #define SAC_MT_SPMD_PARAM_in__SCL_NHD(basetype, nt)                                      \
     SAC_ND_TYPE (nt, basetype)                                                           \
-    I_POST (nt) = SAC_MT_SPMD_CURRENT_FRAME.I_POST (nt);
+    SAC_ND_A_FIELD (nt) = SAC_MT_SPMD_CURRENT_FRAME.SAC_ND_A_FIELD (nt);
 #define SAC_MT_SPMD_PARAM_in__SCL_HID(basetype, nt)                                      \
     CAT13 (SAC_MT_SPMD_PARAM_in__SCL_HID_, NT_UNQ (nt) BuildArgs2 (basetype, nt))
 #define SAC_MT_SPMD_PARAM_in__SCL_HID_NUQ(basetype, nt)                                  \
@@ -518,8 +590,9 @@ typedef union {
  */
 
 #define SAC_MT_SPMD_PARAM_in__AKS(basetype, nt)                                          \
-    SAC_MT_SPMD_PARAM_in__SCL_NHD (basetype, nt) int *CAT14 (I_POST (nt), __desc)        \
-      = SAC_MT_SPMD_CURRENT_FRAME.SAC_ND_A_RCP (I_POST (nt));
+    SAC_MT_SPMD_PARAM_in__SCL_NHD (basetype, nt) SAC_ND_DESC_TYPE (nt)                   \
+      SAC_ND_A_DESC (nt)                                                                 \
+      = SAC_MT_SPMD_CURRENT_FRAME.SAC_ND_A_DESC (nt);
 
 /*
  * AKD
@@ -557,7 +630,7 @@ typedef union {
 #define SAC_MT_SPMD_SETARG_in__SCL(spmdname, nt)                                         \
     CAT12 (SAC_MT_SPMD_SETARG_in__SCL_, NT_HID (nt) BuildArgs2 (spmdname, nt))
 #define SAC_MT_SPMD_SETARG_in__SCL_NHD(spmdname, nt)                                     \
-    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).I_POST (nt) = NT_NAME (nt);
+    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).SAC_ND_A_FIELD (nt) = SAC_ND_A_FIELD (nt);
 #define SAC_MT_SPMD_SETARG_in__SCL_HID(spmdname, nt)                                     \
     CAT13 (SAC_MT_SPMD_SETARG_in__SCL_HID_, NT_UNQ (nt) BuildArgs2 (spmdname, nt))
 #define SAC_MT_SPMD_SETARG_in__SCL_HID_NUQ(spmdname, nt)                                 \
@@ -568,7 +641,8 @@ typedef union {
 #define SAC_MT_SPMD_SETARG_out__SCL(spmdname, nt)                                        \
     CAT12 (SAC_MT_SPMD_SETARG_out__SCL_, NT_HID (nt) BuildArgs2 (spmdname, nt))
 #define SAC_MT_SPMD_SETARG_out__SCL_NHD(spmdname, nt)                                    \
-    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).O_POST (nt) = &NT_NAME (nt);
+    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).O_POST (SAC_ND_A_FIELD (nt))                    \
+      = &SAC_ND_A_FIELD (nt);
 #define SAC_MT_SPMD_SETARG_out__SCL_HID(spmdname, nt)                                    \
     CAT13 (SAC_MT_SPMD_SETARG_out__SCL_HID_, NT_UNQ (nt) BuildArgs2 (spmdname, nt))
 #define SAC_MT_SPMD_SETARG_out__SCL_HID_NUQ(spmdname, nt)                                \
@@ -579,7 +653,8 @@ typedef union {
 #define SAC_MT_SPMD_SETARG_shared__SCL(spmdname, nt)                                     \
     CAT12 (SAC_MT_SPMD_SETARG_shared__SCL_, NT_HID (nt) BuildArgs2 (spmdname, nt))
 #define SAC_MT_SPMD_SETARG_shared__SCL_NHD(spmdname, nt)                                 \
-    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).S_POST (nt) = NT_NAME (nt);
+    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).S_POST (SAC_ND_A_FIELD (nt))                    \
+      = SAC_ND_A_FIELD (nt);
 #define SAC_MT_SPMD_SETARG_shared__SCL_HID(spmdname, nt)                                 \
     CAT13 (SAC_MT_SPMD_SETARG_shared__SCL_HID_, NT_UNQ (nt) BuildArgs2 (spmdname, nt))
 #define SAC_MT_SPMD_SETARG_shared__SCL_HID_NUQ(spmdname, nt)                             \
@@ -593,18 +668,18 @@ typedef union {
 
 #define SAC_MT_SPMD_SETARG_in__AKS(spmdname, nt)                                         \
     SAC_MT_SPMD_SETARG_in__SCL_NHD (spmdname, nt) SAC_MT_SPMD_SPECIAL_FRAME (spmdname)   \
-      .SAC_ND_A_RCP (I_POST (nt))                                                        \
+      .SAC_ND_A_DESC (nt)                                                                \
       = SAC_ND_A_DESC (nt);
 
 #define SAC_MT_SPMD_SETARG_out__AKS(spmdname, nt)                                        \
     SAC_MT_SPMD_SETARG_out__SCL_NHD (spmdname, nt) SAC_MT_SPMD_SPECIAL_FRAME (spmdname)  \
-      .SAC_ND_A_RCP (O_POST (nt))                                                        \
+      .O_POST (SAC_ND_A_DESC (nt))                                                       \
       = &SAC_ND_A_DESC (nt);
 
 #define SAC_MT_SPMD_SETARG_shared__AKS(spmdname, nt)                                     \
     SAC_MT_SPMD_SETARG_shared__SCL_NHD (spmdname, nt)                                    \
       SAC_MT_SPMD_SPECIAL_FRAME (spmdname)                                               \
-        .SAC_ND_A_RCP (S_POST (nt))                                                      \
+        .S_POST (SAC_ND_A_DESC (nt))                                                     \
       = SAC_ND_A_DESC (nt);
 
 /*
@@ -648,7 +723,7 @@ typedef union {
 
 #define SAC_MT_SPMD_RET_out__SCL(nt) CAT12 (SAC_MT_SPMD_RET_out__SCL_, NT_HID (nt) (nt))
 #define SAC_MT_SPMD_RET_out__SCL_NHD(nt)                                                 \
-    *(SAC_MT_SPMD_CURRENT_FRAME.O_POST (nt)) = NT_NAME (nt);
+    *(SAC_MT_SPMD_CURRENT_FRAME.O_POST (SAC_ND_A_FIELD (nt))) = SAC_ND_A_FIELD (nt);
 #define SAC_MT_SPMD_RET_out__SCL_HID(nt)                                                 \
     CAT13 (SAC_MT_SPMD_RET_out__SCL_HID_, NT_UNQ (nt) (nt))
 #define SAC_MT_SPMD_RET_out__SCL_HID_NUQ(nt) SAC_MT_SPMD_RET_out__AKS (nt)
@@ -657,7 +732,7 @@ typedef union {
 #define SAC_MT_SPMD_RET_shared__SCL(nt)                                                  \
     CAT12 (SAC_MT_SPMD_RET_shared__SCL_, NT_HID (nt) (nt))
 #define SAC_MT_SPMD_RET_shared__SCL_NHD(nt)                                              \
-    SAC_MT_SPMD_CURRENT_FRAME.S_POST (nt) = NT_NAME (nt);
+    SAC_MT_SPMD_CURRENT_FRAME.S_POST (SAC_ND_A_FIELD (nt)) = SAC_ND_A_FIELD (nt);
 #define SAC_MT_SPMD_RET_shared__SCL_HID(nt)                                              \
     CAT13 (SAC_MT_SPMD_RET_shared__SCL_HID_, NT_UNQ (nt) (nt))
 #define SAC_MT_SPMD_RET_shared__SCL_HID_NUQ(nt) SAC_MT_SPMD_RET_shared__AKS (nt)
@@ -669,12 +744,12 @@ typedef union {
 
 #define SAC_MT_SPMD_RET_out__AKS(nt)                                                     \
     SAC_MT_SPMD_RET_out__SCL_NHD (nt)                                                    \
-      * (SAC_MT_SPMD_CURRENT_FRAME.SAC_ND_A_RCP (O_POST (nt)))                           \
+      * (SAC_MT_SPMD_CURRENT_FRAME.O_POST (SAC_ND_A_DESC (nt)))                          \
       = SAC_ND_A_DESC (nt);
 
 #define SAC_MT_SPMD_RET_shared__AKS(nt)                                                  \
     SAC_MT_SPMD_RET_shared__SCL_NHD (nt)                                                 \
-      SAC_MT_SPMD_CURRENT_FRAME.SAC_ND_A_RCP (S_POST (nt))                               \
+      SAC_MT_SPMD_CURRENT_FRAME.S_POST (SAC_ND_A_DESC (nt))                              \
       = SAC_ND_A_DESC (nt);
 
 /*
@@ -708,7 +783,7 @@ typedef union {
 #define SAC_MT_SPMD_GET_shared__SCL(nt)                                                  \
     CAT12 (SAC_MT_SPMD_GET_shared__SCL_, NT_HID (nt) (nt))
 #define SAC_MT_SPMD_GET_shared__SCL_NHD(nt)                                              \
-    NT_NAME (nt) = SAC_MT_SPMD_CURRENT_FRAME.S_POST (nt);
+    SAC_ND_A_FIELD (nt) = SAC_MT_SPMD_CURRENT_FRAME.S_POST (SAC_ND_A_FIELD (nt));
 #define SAC_MT_SPMD_GET_shared__SCL_HID(nt)                                              \
     CAT13 (SAC_MT_SPMD_GET_shared__SCL_HID_, NT_UNQ (nt) (nt))
 #define SAC_MT_SPMD_GET_shared__SCL_HID_NUQ(nt) SAC_MT_SPMD_GET_shared__AKS (nt)
@@ -720,7 +795,7 @@ typedef union {
 
 #define SAC_MT_SPMD_GET_shared__AKS(nt)                                                  \
     SAC_MT_SPMD_GET_shared__SCL_NHD (nt) SAC_ND_A_DESC (nt)                              \
-      = SAC_MT_SPMD_CURRENT_FRAME.SAC_ND_A_RCP (S_POST (nt));
+      = SAC_MT_SPMD_CURRENT_FRAME.S_POST (SAC_ND_A_DESC (nt));
 
 /*
  * AKD
@@ -769,14 +844,15 @@ typedef union {
               ("Waiting for worker thread #%u.", SAC_MT_MYTHREAD () + i));               \
             while (!SAC_MT_CHECK_BARRIER (SAC_MT_MYTHREAD () + i))                       \
                 ;                                                                        \
-            SAC_MT_CLEAR_BARRIER (SAC_MT_MYTHREAD () + i);                               \
+            SAC_MT_CLEAR_BARRIER (SAC_MT_MYTHREAD () + i)                                \
         }                                                                                \
                                                                                          \
-        SAC_MT_SET_BARRIER (SAC_MT_MYTHREAD (), 1);                                      \
+        SAC_MT_SET_BARRIER (SAC_MT_MYTHREAD (), 1)                                       \
                                                                                          \
         SAC_TR_MT_PRINT (("Synchronisation block %d finished", id));                     \
-        if (SAC_MT_MYTHREAD ())                                                          \
+        if (SAC_MT_MYTHREAD ()) {                                                        \
             goto label_worker_continue_##id;                                             \
+        }                                                                                \
     }
 
 #define SAC_MT_SYNC_ONEFOLD_1(type, accu_var, tmp_var, id)                               \
@@ -784,7 +860,7 @@ typedef union {
         SAC_TR_MT_PRINT_FOLD_RESULT (type, accu_var, "Pure thread fold result:");        \
                                                                                          \
         if (!SAC_MT_MYWORKERCLASS ()) {                                                  \
-            SAC_MT_SET_BARRIER_RESULT (SAC_MT_MYTHREAD (), 1, type, accu_var);           \
+            SAC_MT_SET_BARRIER_RESULT (SAC_MT_MYTHREAD (), 1, type, accu_var)            \
             SAC_TR_MT_PRINT (("Synchronisation block %d finished", id));                 \
             SAC_TR_MT_PRINT_FOLD_RESULT (type, accu_var, "Partial fold result:");        \
             if (SAC_MT_MYTHREAD ()) {                                                    \
@@ -805,12 +881,12 @@ typedef union {
                     SAC_MT_son_id = SAC_MT_MYTHREAD () + SAC_MT_i;                       \
                                                                                          \
                     if (SAC_MT_CHECK_BARRIER (SAC_MT_son_id)) {                          \
-                        SAC_MT_CLEAR_BARRIER (SAC_MT_son_id);                            \
-                        tmp_var = SAC_MT_GET_BARRIER_RESULT (SAC_MT_son_id, 1, type);
+                        SAC_MT_CLEAR_BARRIER (SAC_MT_son_id)                             \
+                    SAC_MT_GET_BARRIER_RESULT (SAC_MT_son_id, 1, type, tmp_var)
 
 #define SAC_MT_SYNC_ONEFOLD_2(type, accu_var, tmp_var, id)                               \
     if (!SAC_MT_ready_count) {                                                           \
-        SAC_MT_SET_BARRIER_RESULT (SAC_MT_MYTHREAD (), 1, type, accu_var);               \
+        SAC_MT_SET_BARRIER_RESULT (SAC_MT_MYTHREAD (), 1, type, accu_var)                \
         SAC_TR_MT_PRINT (("Synchronisation block %d finished", id));                     \
         SAC_TR_MT_PRINT_FOLD_RESULT (type, accu_var, "Partial fold result:");            \
         goto label_worker_continue_##id;                                                 \
@@ -832,12 +908,12 @@ typedef union {
                                                                                          \
             do {                                                                         \
                 if (SAC_MT_CHECK_BARRIER (SAC_MT_son_id)) {                              \
-                    SAC_MT_CLEAR_BARRIER (SAC_MT_son_id);                                \
-                    tmp_var = SAC_MT_GET_BARRIER_RESULT (SAC_MT_son_id, 1, type);
+                    SAC_MT_CLEAR_BARRIER (SAC_MT_son_id)                                 \
+                SAC_MT_GET_BARRIER_RESULT (SAC_MT_son_id, 1, type, tmp_var)
 
 #define SAC_MT_SYNC_ONEFOLD_3(type, accu_var, tmp_var, id)                               \
     if (!SAC_MT_ready_count) {                                                           \
-        SAC_MT_SET_BARRIER_RESULT (SAC_MT_MYTHREAD (), 1, type, accu_var);               \
+        SAC_MT_SET_BARRIER_RESULT (SAC_MT_MYTHREAD (), 1, type, accu_var)                \
         SAC_TR_MT_PRINT (("Synchronisation block %d finished", id));                     \
         SAC_TR_MT_PRINT_FOLD_RESULT (type, accu_var, "Partial fold result:");            \
         goto label_master_continue_##id;                                                 \
@@ -877,7 +953,7 @@ typedef union {
                 SAC_MT_son_id = SAC_MT_MYTHREAD () + SAC_MT_i;                           \
                                                                                          \
                 if (SAC_MT_CHECK_BARRIER (SAC_MT_son_id)) {                              \
-                    SAC_MT_CLEAR_BARRIER (SAC_MT_son_id);
+                SAC_MT_CLEAR_BARRIER (SAC_MT_son_id)
 
 #define SAC_MT_SYNC_MULTIFOLD_2A(id) if (!SAC_MT_ready_count) {
 
@@ -904,7 +980,7 @@ typedef union {
                                                                                          \
             do {                                                                         \
                 if (SAC_MT_CHECK_BARRIER (SAC_MT_son_id)) {                              \
-                    SAC_MT_CLEAR_BARRIER (SAC_MT_son_id);
+                SAC_MT_CLEAR_BARRIER (SAC_MT_son_id)
 
 #define SAC_MT_SYNC_MULTIFOLD_3A(id) if (!SAC_MT_ready_count) {
 
@@ -941,18 +1017,18 @@ typedef union {
 
 #define SAC_MT_ADJUST_SCHEDULER_BOUND(diff, bound, lower, upper, unrolling)              \
     {                                                                                    \
-        diff = 0;                                                                        \
+        (diff) = 0;                                                                      \
         if (((bound) > (lower)) && ((bound) < (upper))) {                                \
-            diff = ((bound) - (lower)) % (unrolling);                                    \
+            (diff) = ((bound) - (lower)) % (unrolling);                                  \
                                                                                          \
             if (diff) {                                                                  \
-                diff = (unrolling)-diff;                                                 \
+                (diff) = (unrolling) - (diff);                                           \
                                                                                          \
-                if ((bound) + diff >= (upper)) {                                         \
-                    diff = (upper) - (bound);                                            \
+                if ((bound) + (diff) >= (upper)) {                                       \
+                    (diff) = (upper) - (bound);                                          \
                     (bound) = (upper);                                                   \
                 } else {                                                                 \
-                    (bound) += diff;                                                     \
+                    (bound) += (diff);                                                   \
                 }                                                                        \
             }                                                                            \
         }                                                                                \
@@ -1032,6 +1108,7 @@ typedef union {
         const int iterations = (upper - lower) / unrolling;                              \
         const int iterations_per_thread = (iterations / number_of_tasks) * unrolling;    \
         const int iterations_rest = iterations % number_of_tasks;                        \
+                                                                                         \
         SAC_WL_MT_SCHEDULE_START (tasks_on_dim) = 0;                                     \
         SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim) = 0;                                      \
                                                                                          \
@@ -1095,8 +1172,9 @@ typedef union {
                                                                                          \
             (SAC_WL_MT_SCHEDULE_START (tasks_on_dim)) = SAC_MT_LAST_TASKEND (sched_id);  \
                                                                                          \
-            if (restiter < tasksize)                                                     \
+            if (restiter < tasksize) {                                                   \
                 tasksize = restiter;                                                     \
+            }                                                                            \
             restiter -= tasksize;                                                        \
                                                                                          \
             SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim)                                       \
@@ -1123,8 +1201,9 @@ typedef union {
     {                                                                                    \
         int i;                                                                           \
                                                                                          \
-        for (i = 0; i <= max_task; i++)                                                  \
+        for (i = 0; i <= max_task; i++) {                                                \
             SAC_MT_TASK (sched_id, i) = 0;                                               \
+        }                                                                                \
         SAC_TR_MT_PRINT (("SAC_MT_TASK set for sched_id %d", sched_id));                 \
     }
 
@@ -1147,7 +1226,8 @@ typedef union {
 #define SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC(sched_id, taskid)                       \
     {                                                                                    \
         SAC_MT_SCHEDULER_Self_NEXT_TASK (sched_id, taskid);                              \
-        SAC_TR_MT_PRINT (("SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC task=%d", taskid));  \
+        SAC_TR_MT_PRINT (                                                                \
+          ("SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC task = %d", taskid));               \
     }
 
 #define SAC_MT_SCHEDULER_Self_NEXT_TASK(sched_id, taskid)                                \
