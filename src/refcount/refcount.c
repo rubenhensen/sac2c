@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.6  2000/12/15 10:43:12  dkr
+ * signature of InferDFMs() modified
+ *
  * Revision 3.5  2000/12/12 17:14:50  dkr
  * L_VARDEC_OR_ARG... macros instead of VARDEC_OR_ARG... macros used on
  * LHS
@@ -539,7 +542,7 @@ Refcount (node *arg_node)
     /*
      * generate masks
      */
-    arg_node = InferDFMs (arg_node);
+    arg_node = InferDFMs (arg_node, HIDE_LOCALS_NEVER);
     arg_node = GenerateMasks (arg_node, NULL);
 
     act_tab = refcnt_tab;

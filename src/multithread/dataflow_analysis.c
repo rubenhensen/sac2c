@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2000/12/15 10:42:46  dkr
+ * signature of InferDFMs() modified
+ *
  * Revision 3.3  2000/12/12 12:12:09  dkr
  * NWITH_INOUT removed
  * interpretation of NWITH_IN changed:
@@ -121,7 +124,7 @@ DataflowAnalysis (node *arg_node, node *arg_info)
 
     if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)
         && (FUNDEF_ATTRIB (arg_node) != ST_call_rep)) {
-        arg_node = InferDFMs (arg_node);
+        arg_node = InferDFMs (arg_node, HIDE_LOCALS_NEVER);
 
         old_tab = act_tab;
         act_tab = dfa_tab;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2000/12/15 10:43:34  dkr
+ * signature of InferDFMs() modified
+ *
  * Revision 3.6  2000/12/07 13:43:56  dkr
  * some includes added
  *
@@ -660,7 +663,7 @@ Lac2Fun (node *syntax_tree)
      * infer the in-, out- and local-masks of each conditional or loop
      * (via fixpoint iteration)
      */
-    syntax_tree = InferDFMs (syntax_tree);
+    syntax_tree = InferDFMs (syntax_tree, HIDE_LOCALS_LAC);
 
     info_node = MakeInfo ();
     act_tab = l2f_tab;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/15 10:43:06  dkr
+ * signature of InferDFMs() modified
+ *
  * Revision 3.2  2000/12/12 12:13:15  dkr
  * call of InferDFMs added
  *
@@ -117,7 +120,7 @@ BuildSpmdRegions (node *syntax_tree)
 
     DBUG_ENTER ("BuildSpmdRegions");
 
-    syntax_tree = InferDFMs (syntax_tree);
+    syntax_tree = InferDFMs (syntax_tree, HIDE_LOCALS_NEVER);
 
     arg_info = MakeInfo ();
     act_tab = conc_tab;
