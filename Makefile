@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.30  1995/10/05 15:56:11  cg
+# Revision 1.31  1995/10/16 11:59:58  cg
+# objinit.o and new directory objects added.
+#
+# Revision 1.30  1995/10/05  15:56:11  cg
 # added implicittypes.o
 #
 # Revision 1.29  1995/09/27  12:15:18  cg
@@ -114,10 +117,12 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
 PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/sib.o  \
          src/modules/implicittypes.o
+OBJECTS= src/objects/objinit.o
 REFCOUNT= src/refcount/refcount.o
 COMPILE= src/compile/compile.o src/compile/icm2c.o
 
-OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) $(MODULES) \
+OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
+    $(MODULES) $(OBJECTS) \
     $(REFCOUNT) $(COMPILE) $(PSIOPT)
 
 all: dummy sac2c
@@ -132,6 +137,7 @@ dummy:
 	(cd src/typecheck; $(MAKE) )
 	(cd src/optimize; $(MAKE) )
 	(cd src/modules; $(MAKE) )
+	(cd src/objects; $(MAKE) )
 	(cd src/refcount; $(MAKE) )       
 	(cd src/compile; $(MAKE) )
 	(cd src/psi-opt; $(MAKE) )
@@ -144,6 +150,7 @@ prod:
 	(cd src/typecheck; $(MAKEPROD) )
 	(cd src/optimize; $(MAKEPROD) )
 	(cd src/modules; $(MAKEPROD) )
+	(cd src/objects; $(MAKEPROD) )
 	(cd src/refcount; $(MAKEPROD) )       
 	(cd src/compile; $(MAKEPROD) )
 	(cd src/psi-opt; $(MAKEPROD) )
@@ -159,6 +166,7 @@ deps:
 	(cd src/typecheck; $(MAKE) deps)
 	(cd src/optimize; $(MAKE) deps)
 	(cd src/modules; $(MAKE) deps)
+	(cd src/objects; $(MAKE) deps)
 	(cd src/refcount; $(MAKE) deps )
 	(cd src/compile; $(MAKE) deps )
 	(cd src/psi-opt; $(MAKE) deps)
@@ -171,6 +179,7 @@ clean:
 	(cd src/typecheck; $(MAKE) clean)
 	(cd src/optimize; $(MAKE) clean)
 	(cd src/modules; $(MAKE) clean)
+	(cd src/objects; $(MAKE) clean)
 	(cd src/refcount; $(MAKE) clean)
 	(cd src/compile; $(MAKE) clean )
 	(cd src/psi-opt; $(MAKE) clean)
