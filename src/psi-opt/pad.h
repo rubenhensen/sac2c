@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.2  2002/10/02 14:53:07  cg
+ * External declaration of apdiag_file removed since it is
+ * declared static in pad.c
+ *
  * Revision 3.1  2000/11/20 18:01:48  sacbase
  * new release made
  *
@@ -39,8 +43,6 @@
 #ifndef sac_pad_h
 
 #define sac_pad_h
-
-extern FILE *apdiag_file;
 
 extern void APprintDiag (char *format, ...);
 
