@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2003/03/10 09:22:41  sbs
+ * corrected errorneos ADDON POSTINC operations.
+ *
  * Revision 3.76  2003/02/11 19:30:29  sbs
  * prf modarray and genarray added
  *
@@ -1113,15 +1116,15 @@ letassign: ids LET { $<cint>$ = linenum; } expr
              NODE_LINE( $$) = $<cint>5;
            }
          | expr_ap { $$ = MakeLet( $1, NULL); }
-         | id INC { $$ = MAKE_INCDEC_LET( $1, F_add_AxA); }
-         | INC id { $$ = MAKE_INCDEC_LET( $2, F_add_AxA); }
-         | id DEC { $$ = MAKE_INCDEC_LET( $1, F_sub_AxA); }
-         | DEC id { $$ = MAKE_INCDEC_LET( $2, F_sub_AxA); }
-         | id ADDON expr { $$ = MAKE_OPON_LET( $1, $3, F_add_AxA); }
-         | id SUBON expr { $$ = MAKE_OPON_LET( $1, $3, F_sub_AxA); }
-         | id MULON expr { $$ = MAKE_OPON_LET( $1, $3, F_mul_AxA); }
-         | id DIVON expr { $$ = MAKE_OPON_LET( $1, $3, F_div_AxA); }
-         | id MODON expr { $$ = MAKE_OPON_LET( $1, $3, F_mod); }
+         | id INC { $$ = MAKE_INCDEC_LET( $1, "+"); }
+         | INC id { $$ = MAKE_INCDEC_LET( $2, "+"); }
+         | id DEC { $$ = MAKE_INCDEC_LET( $1, "-"); }
+         | DEC id { $$ = MAKE_INCDEC_LET( $2, "-"); }
+         | id ADDON expr { $$ = MAKE_OPON_LET( $1, $3, "+"); }
+         | id SUBON expr { $$ = MAKE_OPON_LET( $1, $3, "-"); }
+         | id MULON expr { $$ = MAKE_OPON_LET( $1, $3, "*"); }
+         | id DIVON expr { $$ = MAKE_OPON_LET( $1, $3, "/"); }
+         | id MODON expr { $$ = MAKE_OPON_LET( $1, $3, "%"); }
          ;
 
 selassign: IF { $<cint>$ = linenum; }
