@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2004/08/05 15:17:04  sbs
+ * ssaform_phase added.
+ *
  * Revision 3.55  2004/08/04 12:04:20  ktr
  * substituted eacc by emm
  *
@@ -515,6 +518,12 @@ unsigned int optimize = OPT_ALL & (~OPT_MTO) /*& (~OPT_SBE)*/ & (~OPT_MTI) & (~O
  * flag indicating whether ast has in valid ssa form
  */
 bool valid_ssaform = FALSE;
+
+/*
+ * counter indicating how often the ssa form has been created FROM
+ * SCRATCH(!), i.e., how often UndoSSATransform has been called.
+ */
+int ssaform_phase = 0;
 
 /*
  * do not use explicit memory management by default

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2004/08/05 15:17:04  sbs
+ * ssaform_phase added.
+ *
  * Revision 3.44  2004/08/04 12:04:20  ktr
  * substituted eacc by emm
  *
@@ -328,6 +331,8 @@ extern bool enforce_ieee;
 
 /* ast is in ssa form */
 extern bool valid_ssaform;
+/* counter for UndoSSATransform calls */
+extern int ssaform_phase;
 
 /* explicit memory management */
 extern bool emm;
