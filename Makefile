@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.27  2001/04/26 17:07:37  dkr
+# rmvoidfun.o removed
+#
 # Revision 3.26  2001/04/20 11:18:21  nmw
 # SSALUR.o added to project
 #
@@ -243,8 +246,7 @@ MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
          src/modules/implicittypes.o src/modules/analysis.o \
          src/modules/checkdec.o src/modules/readsib.o \
          src/modules/cccall.o
-OBJECTS= src/objects/objinit.o src/objects/objects.o \
-         src/objects/uniquecheck.o src/objects/rmvoidfun.o
+OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
 REFCOUNT= src/refcount/refcount.o
 CONCURRENT= src/concurrent/concurrent.o \
             src/concurrent/spmd_init.o src/concurrent/spmd_opt.o     \

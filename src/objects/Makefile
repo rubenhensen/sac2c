@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.4  2001/04/26 17:07:49  dkr
+# rmvoidfun.o removed
+#
 # Revision 3.3  2001/01/17 10:13:06  dkr
 # make deps done
 #
@@ -76,7 +79,7 @@ RM=rm -f
 
 INCS= -I../global -I../tree -I../../inc -I../typecheck -I../modules -I../print
 
-all: objinit.o objects.o uniquecheck.o rmvoidfun.o
+all: objinit.o objects.o uniquecheck.o
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
@@ -85,7 +88,7 @@ deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) objinit.o objects.o uniquecheck.o rmvoidfun.o  *.bak
+	$(RM) *.o *.bak
 	$(RM) -r .sb SunWS_cache
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
@@ -106,14 +109,6 @@ objinit.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
 objinit.o: ../global/globals.h ../tree/traverse.h ../../inc/dbug.h
 objinit.o: ../global/internal_lib.h ../tree/free.h ../global/my_debug.h
 objinit.o: ../tree/DupTree.h ../tree/LookUpTable.h ../modules/filemgr.h
-rmvoidfun.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
-rmvoidfun.o: ../global/Error.h /usr/include/stdio.h
-rmvoidfun.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-rmvoidfun.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-rmvoidfun.o: /usr/include/stdio_impl.h /usr/include/string.h
-rmvoidfun.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
-rmvoidfun.o: ../tree/traverse.h ../global/internal_lib.h ../tree/free.h
-rmvoidfun.o: ../global/my_debug.h
 uniquecheck.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 uniquecheck.o: ../global/Error.h /usr/include/stdio.h
 uniquecheck.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
