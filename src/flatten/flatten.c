@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.76  1998/06/05 15:01:21  dkr
+ * N_id nodes in NCODE_CEXPR are not flattened anymore
+ *
  * Revision 1.75  1998/05/28 23:48:38  dkr
  * in old with-loop the neutral element is not flattened anymore
  *
@@ -1904,7 +1907,7 @@ FltnNcode (node *arg_node, node *arg_info)
      */
     INFO_FLTN_LASTASSIGN (arg_info) = NULL;
     expr = NCODE_CEXPR (arg_node);
-    if (0 == 0) {
+    if (NODE_TYPE (expr) != N_id) {
         NCODE_CEXPR (arg_node) = Abstract (expr, arg_info);
     }
     expr2 = Trav (expr, arg_info);
