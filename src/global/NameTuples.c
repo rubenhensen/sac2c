@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/08/17 11:11:46  dkr
+ * signature of PrintNT changed
+ *
  * Revision 1.1  2000/08/17 10:16:08  dkr
  * Initial revision
  *
@@ -32,19 +35,21 @@ char *nt_unq_string[] = {
 /******************************************************************************
  *
  * Function:
- *   void PrintNT( char *name, types *type)
+ *   void PrintNT( FILE *handle, char *name, types *type)
  *
  * Description:
- *   Prints name tuples
+ *   Prints name tuples.
  *
  ******************************************************************************/
 
 void
-PrintNT (char *name, types *type)
+PrintNT (FILE *handle, char *name, types *type)
 {
     DBUG_ENTER ("PrintNT");
 
-    fprintf (outfile, (compiler_phase < PH_genccode) ? "%s__%s__%s" : "(%s,(%s,(%s,)))",
+    DBUG_ASSERT ((type != NULL), "No type information found!");
+
+    fprintf (handle, (compiler_phase < PH_compile) ? "%s__%s__%s" : "(%s,(%s,(%s,)))",
              name, nt_class_string[GetClassFromTypes (type)],
              nt_unq_string[GetUnqFromTypes (type)]);
 

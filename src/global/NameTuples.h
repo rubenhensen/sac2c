@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/08/17 11:10:55  dkr
+ * signature of PrintNT changed
+ *
  * Revision 1.1  2000/08/17 10:16:09  dkr
  * Initial revision
  *
@@ -38,6 +41,6 @@ typedef enum {
 extern char *nt_class_string[];
 extern char *nt_unq_string[];
 
-extern void PrintNT (char *name, types *type);
+extern void PrintNT (FILE *handle, char *name, types *type);
 extern unq_class_t GetUnqFromTypes (types *type);
 extern data_class_t GetClassFromTypes (types *type);

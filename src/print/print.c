@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.97  2000/08/17 11:10:42  dkr
+ * signature of PrintNT changed
+ *
  * Revision 2.96  2000/08/17 10:12:55  dkr
  * DBUG-string PRINT_NT added
  *
@@ -674,7 +677,7 @@ PrintIds (ids *arg, node *arg_info)
         }
 
         DBUG_EXECUTE ("PRINT_NT", if (IDS_VARDEC (arg) != NULL) {
-            PrintNT (IDS_NAME (arg), IDS_TYPE (arg));
+            PrintNT (outfile, IDS_NAME (arg), IDS_TYPE (arg));
             print_nt = TRUE;
         });
 
@@ -1559,7 +1562,7 @@ PrintId (node *arg_node, node *arg_info)
     }
 
     DBUG_EXECUTE ("PRINT_NT", if (ID_VARDEC (arg_node) != NULL) {
-        PrintNT (ID_NAME (arg_node), ID_TYPE (arg_node));
+        PrintNT (outfile, ID_NAME (arg_node), ID_TYPE (arg_node));
         print_nt = TRUE;
     });
 
@@ -1855,7 +1858,8 @@ PrintArg (node *arg_node, node *arg_info)
 
     if ((!INFO_PRINT_OMIT_FORMAL_PARAMS (arg_info)) && (ARG_NAME (arg_node) != NULL)) {
 
-        DBUG_EXECUTE ("PRINT_NT", PrintNT (ARG_NAME (arg_node), ARG_TYPE (arg_node));
+        DBUG_EXECUTE ("PRINT_NT",
+                      PrintNT (outfile, ARG_NAME (arg_node), ARG_TYPE (arg_node));
                       print_nt = TRUE;);
 
         if (!print_nt) {
@@ -1905,7 +1909,7 @@ PrintVardec (node *arg_node, node *arg_info)
         FREE (type_string);
 
         DBUG_EXECUTE ("PRINT_NT",
-                      PrintNT (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node));
+                      PrintNT (outfile, VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node));
                       print_nt = TRUE;);
 
         if (!print_nt) {
