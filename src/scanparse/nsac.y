@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.19  2004/11/23 11:14:06  sbs
+* next
+*
 * Revision 1.18  2004/11/23 01:28:37  sbs
 * next one
 *
@@ -2050,7 +2053,8 @@ node *Expr2Mop( node *expr)
  *
  ******************************************************************************/
 
-node *ConstructMop( node *expr1, ids *fun_ids, node *expr2)
+static
+node *ConstructMop( node *expr1, node *fun_ids, node *expr2)
 {
   node *res, *lmop, *rmop;
 
@@ -2061,13 +2065,13 @@ node *ConstructMop( node *expr1, ids *fun_ids, node *expr2)
 
   IDS_NEXT( fun_ids) = MOP_OPS( rmop);
 
-  res = TBmakeMop( AppendExprs( MOP_EXPRS( lmop),
-                              MOP_EXPRS( rmop)),
-                 AppendIds( MOP_OPS( lmop),
-                            fun_ids),
-                 FALSE);
-  lmop = Free( lmop);  /* only the top constructor N_mop is to be freed!!!! */
-  rmop = Free( rmop);  /* only the top constructor N_mop is to be freed!!!! */
+  res = TBmakeMop( TCappendExprs( MOP_EXPRS( lmop),
+                                  MOP_EXPRS( rmop)),
+                   TCAppendIds( MOP_OPS( lmop),
+                                fun_ids),
+                   FALSE);
+  lmop = FREEdoFreeNode( lmop);  /* only the top constructor N_mop is to be freed!!!! */
+  rmop = FREEdoFreeNode( rmop);  /* only the top constructor N_mop is to be freed!!!! */
 
   DBUG_RETURN( res);
 }
@@ -2127,7 +2131,7 @@ node *CheckWlcompConf( node *conf, node *exprs)
     /*
      * free N_id node
      */
-    conf = FreeTree( conf);
+    conf = FREEdoFreeTree( conf);
 
     /*
      * unmodified 'exprs' is returned
@@ -2165,7 +2169,7 @@ node *CheckWlcompConf( node *conf, node *exprs)
        * free last N_exprs node
        */
       EXPRS_EXPR( tmp) = NULL;
-      tmp = FreeTree( tmp);
+      tmp = FREEdoFreeTree( tmp);
 
       if ((NODE_TYPE( next_conf) != N_id) && (NODE_TYPE( next_conf) != N_ap)) {
         strcpy( yytext, AP_NAME( conf));
@@ -2249,10 +2253,10 @@ static ntype *Exprs2NType( ntype *basetype, node *exprs)
       } else {
         switch (ID_NAME( EXPRS_EXPR1( exprs))[0]) {
           case '*':
-            result = TYMakeAUD( basetype);
+            result = TYmakeAUD( basetype);
             break;
           case '+':
-            result = TYMakeAUDGZ( basetype);
+            result = TYmakeAUDGZ( basetype);
             break;
           default:
             yyerror("illegal shape specification");
