@@ -32,3 +32,4 @@ ctinfo.h
 phase.c
 phase.h
 setup.c
+setup.h
