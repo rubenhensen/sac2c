@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/11/29 13:24:05  sbs
+ * LDFLAGS added
+ *
  * Revision 3.1  2000/11/20 17:59:38  sacbase
  * new release made
  *
@@ -110,6 +113,7 @@ typedef struct {
     char *cc;
     char *ccflags;
     char *ccdir;
+    char *ldflags;
     char *cclink;
     char *ccmtlink;
     char *opt_O0;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/11/29 13:24:05  sbs
+ * LDFLAGS added
+ *
  * Revision 3.3  2001/05/17 11:15:59  sbs
  * return value of Free used now 8-()
  *
@@ -176,6 +179,7 @@ static struct {
   {"CC", str, &config.cc},
   {"CCFLAGS", str, &config.ccflags},
   {"CCDIR", str, &config.ccdir},
+  {"LDFLAGS", str, &config.ldflags},
   {"CCLINK", str, &config.cclink},
   {"CCMTLINK", str, &config.ccmtlink},
   {"OPT_O0", str, &config.opt_O0},
