@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.14  1999/01/14 13:16:19  sacbase
+# clean: rm sac2crc    added
+#
 # Revision 1.13  1998/12/21 15:46:21  cg
 # File sac2crc no longer added to runtime.tar because system dependent
 # variants do exist now. File sac2c.README added instead.
@@ -80,6 +83,7 @@ clean:
 	$(RM) *.o libsac.a *.bak *.old *~
 	$(RM) -r .sb
 	$(RM) runtime.tar
+	$(RM) sac2crc
 
 
 
