@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.28  1999/08/30 16:07:19  jhs
+ * Handling of non-with-loop-code in sync-blocks added.
+ *
  * Revision 2.27  1999/08/27 11:49:33  jhs
  * Brushed COMPSync.
  *
@@ -6601,32 +6604,35 @@ COMPSync (node *arg_node, node *arg_info)
             DBUG_ASSERT ((NODE_TYPE (let) == N_let), ("wrong node type"));
 
             with = LET_EXPR (let);
-            DBUG_ASSERT ((NODE_TYPE (with) == N_Nwith2), ("wrong node type"));
+            /* #### comments missing */
+            if (NODE_TYPE (with) == N_Nwith2) {
+                DBUG_ASSERT ((NODE_TYPE (with) == N_Nwith2), ("wrong node type"));
 
-            with_ids = LET_IDS (let);
+                with_ids = LET_IDS (let);
 
-            if ((NWITH2_TYPE (with) == WO_foldprf)
-                || (NWITH2_TYPE (with) == WO_foldfun)) {
-                num_fold_args++;
+                if ((NWITH2_TYPE (with) == WO_foldprf)
+                    || (NWITH2_TYPE (with) == WO_foldfun)) {
+                    num_fold_args++;
 
-                type = IDS_TYPE (with_ids);
-                if (TYPES_DIM (type) > 0) {
-                    fold_type = StringCopy ("array");
-                } else {
-                    GET_BASIC_SIMPLETYPE (s_type, type);
-                    fold_type = StringCopy (type_string[s_type]);
+                    type = IDS_TYPE (with_ids);
+                    if (TYPES_DIM (type) > 0) {
+                        fold_type = StringCopy ("array");
+                    } else {
+                        GET_BASIC_SIMPLETYPE (s_type, type);
+                        fold_type = StringCopy (type_string[s_type]);
+                    }
+
+                    /*
+                     * <fold_type>, <accu_var>
+                     */
+                    fold_args
+                      = MakeExprs (MakeId (fold_type, NULL, ST_regular),
+                                   MakeExprs (MakeId (StringCopy (IDS_NAME (with_ids)),
+                                                      NULL, ST_regular),
+                                              fold_args));
+
+                    DBUG_PRINT ("COMPi", ("last's folds %s", IDS_NAME (with_ids)));
                 }
-
-                /*
-                 * <fold_type>, <accu_var>
-                 */
-                fold_args
-                  = MakeExprs (MakeId (fold_type, NULL, ST_regular),
-                               MakeExprs (MakeId (StringCopy (IDS_NAME (with_ids)), NULL,
-                                                  ST_regular),
-                                          fold_args));
-
-                DBUG_PRINT ("COMPi", ("last's folds %s", IDS_NAME (with_ids)));
             }
             assign = ASSIGN_NEXT (assign);
         } /* while (assign != NULL) */
