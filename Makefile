@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.89  1998/08/14 22:21:15  dkr
+# path to efence changed
+#
 # Revision 1.88  1998/07/16 17:44:06  dkr
 # eleminated MAKEPROD reference in dummy-rule
 #
@@ -299,7 +302,7 @@ MAKEFLAGS    += --no-print-directory
 LEX          :=lex
 YACC         :=yacc -dv
 LIBS         :=-ly -ll -lm
-EFLIBS       :=-L/home/dkr/gcc/lib/ElectricFence -lefence
+EFLIBS       :=-L/home/dkr/c/lib/ElectricFence -lefence
 RM           :=rm -f
 
 LIB          :=lib/dbug.o
