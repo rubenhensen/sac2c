@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/07/16 08:23:11  cg
+ * Old tree construction function MakeNode eliminated.
+ *
  * Revision 3.5  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -56,7 +59,6 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "tree.h" /* MakeNode() */
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -273,7 +275,7 @@ ReduceGenarrayShape (node *arg_node, node *arg_info, types *expr_type)
      */
 
     infon = MakeInfo ();
-    infon->node[0] = MakeNode (N_ok); /* needed for INFO_TC_... macros */
+    infon->node[0] = MakeOk (); /* needed for INFO_TC_... macros */
     INFO_TC_STATUS (infon) = INFO_TC_STATUS (arg_info);
     INFO_TC_VARDEC (infon) = INFO_TC_VARDEC (arg_info);
     INFO_TC_FUNDEF (infon) = INFO_TC_FUNDEF (arg_info);

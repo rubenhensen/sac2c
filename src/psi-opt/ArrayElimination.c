@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/07/16 08:23:11  cg
+ * Old tree construction function MakeNode eliminated.
+ *
  * Revision 3.11  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -341,30 +344,28 @@ GenSel (ids *ids_node, node *arg_info)
         ARRAY_VECLEN (arg[0]) = 1;
         ARRAY_TYPE (arg[0])
           = MakeTypes (T_int, 1, MakeShpseg (MakeNums (1, NULL)), NULL, NULL);
+#if 0    
+    arg[1] = MakeNode(N_id);
+    arg[1]->info.ids = DupAllIds( ids_node);
+#else
+        arg[1] = MakeId (StringCopy (IDS_NAME (ids_node)), NULL, ST_regular);
+        ID_VARDEC (arg[1]) = IDS_VARDEC (ids_node);
+        ID_AVIS (arg[1]) = VARDEC_OR_ARG_AVIS (ID_VARDEC (arg[1]));
+#endif
+        new_let = MakeLet (NULL, GenIds (arg));
 
-        arg[1] = MakeNode (N_id);
-        arg[1]->info.ids = DupAllIds (ids_node);
-
-        new_let = MakeLet (NULL, NULL);
-        new_let->info.ids = GenIds (arg);
         DBUG_PRINT ("AE", ("Generating new value for %s", new_let->info.ids->id));
         IDS_VARDEC (LET_IDS (new_let))
           = SearchDecl (new_let->info.ids->id, INFO_AE_TYPES (arg_info));
 
-        if (!IDS_VARDEC (LET_IDS (new_let))) {
+        if (IDS_VARDEC (LET_IDS (new_let)) == NULL) {
             DBUG_PRINT ("AE", ("Generating new vardec for %s", new_let->info.ids->id));
-            new_vardec = MakeNode (N_vardec);
-            /* srs: something is wrong here and we lose memory.
-               GET_BASIC_TYPES always calls DupTypes(). */
-            GET_BASIC_TYPE (new_vardec->info.types, type, 0);
-            /* srs: and here in the next line we yank it without setting it free.
-               This is wrong since DupTypes ALWAYS allocetes new mem. */
-            new_vardec->info.types = DupTypes (new_vardec->info.types);
-            new_vardec->info.types->dim = 0;
-            new_vardec->info.types->id = StringCopy (new_let->info.ids->id);
+            new_vardec = MakeVardec (StringCopy (IDS_NAME (LET_IDS (new_let))),
+                                     DupTypes (GetTypes (type)), NULL);
+            VARDEC_DIM (new_vardec) = 0;
             INFO_AE_TYPES (arg_info)
               = AppendNodeChain (0, new_vardec, INFO_AE_TYPES (arg_info));
-            new_let->info.ids->node = new_vardec;
+            IDS_VARDEC (LET_IDS (new_let)) = new_vardec;
         }
         LET_EXPR (new_let)
           = MakePrf (F_sel, MakeExprs (arg[0], MakeExprs (arg[1], NULL)));
@@ -420,15 +421,16 @@ AEprf (node *arg_node, node *arg_info)
             && IsConstArray (tmpn) && CorrectArraySize (ID_IDS (arg[1]))) {
             DBUG_PRINT ("AE", ("sel function with array %s to eliminated found",
                                arg[1]->info.ids->id));
-            new_node = MakeNode (N_id);
+            new_node = MakeId (NULL, NULL, ST_regular);
             ID_IDS (new_node) = GenIds (arg);
             ID_VARDEC (new_node)
               = SearchDecl (ID_NAME (new_node), INFO_AE_TYPES (arg_info));
             if (ID_VARDEC (new_node)) {
                 FreeTree (arg_node);
                 arg_node = new_node;
-            } else
+            } else {
                 FreeTree (new_node);
+            }
         }
     }
     DBUG_RETURN (arg_node);

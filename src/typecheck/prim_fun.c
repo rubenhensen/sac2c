@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/07/16 08:23:11  cg
+ * Old tree construction function MakeNode eliminated.
+ *
  * Revision 3.11  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -405,9 +408,9 @@ InitPrimFunDeclarations ()
     tmp_node = prim_fun_dec;
 
 #define TT1(n, a, t1, res)                                                               \
-    tmp_node->node[1] = MakeNode (N_fundef);                                             \
+    tmp_node->node[1] = MakeFundef (NULL, NULL, NULL, NULL, NULL, NULL);                 \
     DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " F_PTR, tmp_node->node[1]));                \
-    arg1 = MakeNode (N_arg);                                                             \
+    arg1 = MakeArg (NULL, NULL, ST_regular, ST_regular, NULL);                           \
     t1;                                                                                  \
     arg1->info.types = type;                                                             \
     tmp_node->node[1]->node[2] = arg1;                                                   \
@@ -419,12 +422,12 @@ InitPrimFunDeclarations ()
                  tmp_node->node[1]->info.prf_dec.tag, n));                               \
     tmp_node = tmp_node->node[1];
 #define TT2(n, a, t1, t2, res)                                                           \
-    tmp_node->node[1] = MakeNode (N_fundef);                                             \
+    tmp_node->node[1] = MakeFundef (NULL, NULL, NULL, NULL, NULL, NULL);                 \
     DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " F_PTR, tmp_node->node[1]));                \
-    arg1 = MakeNode (N_arg);                                                             \
+    arg1 = MakeArg (NULL, NULL, ST_regular, ST_regular, NULL);                           \
     t1;                                                                                  \
     arg1->info.types = type;                                                             \
-    arg2 = MakeNode (N_arg);                                                             \
+    arg2 = MakeArg (NULL, NULL, ST_regular, ST_regular, NULL);                           \
     t2;                                                                                  \
     arg2->info.types = type;                                                             \
     arg1->node[0] = arg2;                                                                \
@@ -433,15 +436,15 @@ InitPrimFunDeclarations ()
     tmp_node->node[1]->info.prf_dec.tag = n;                                             \
     tmp_node = tmp_node->node[1];
 #define TT3(n, a, t1, t2, t3, res)                                                       \
-    tmp_node->node[1] = MakeNode (N_fundef);                                             \
+    tmp_node->node[1] = MakeFundef (NULL, NULL, NULL, NULL, NULL, NULL);                 \
     DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " F_PTR, tmp_node->node[1]));                \
-    arg1 = MakeNode (N_arg);                                                             \
+    arg1 = MakeArg (NULL, NULL, ST_regular, ST_regular, NULL);                           \
     t1;                                                                                  \
     arg1->info.types = type;                                                             \
-    arg2 = MakeNode (N_arg);                                                             \
+    arg2 = MakeArg (NULL, NULL, ST_regular, ST_regular, NULL);                           \
     t2;                                                                                  \
     arg2->info.types = type;                                                             \
-    arg3 = MakeNode (N_arg);                                                             \
+    arg3 = MakeArg (NULL, NULL, ST_regular, ST_regular, NULL);                           \
     t3;                                                                                  \
     arg3->info.types = type;                                                             \
     arg2->node[0] = arg3;                                                                \

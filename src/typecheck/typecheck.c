@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2001/07/16 08:23:11  cg
+ * Old tree construction function MakeNode eliminated.
+ *
  * Revision 3.30  2001/07/13 13:23:41  cg
  * Some useless DBUG_PRINTs eliminated.
  *
@@ -610,25 +613,25 @@ Types2Array (types *type, types *res_type)
     if (T_user == type->simpletype) {
         types *b_type = LookupType (type->name, type->name_mod, 042)->info.types;
         if (0 < b_type->dim + type->dim) {
-            node *dummy = MakeNode (N_exprs);
-            shape_array = MakeNode (N_array);
+            node *dummy = MakeExprs (NULL, NULL);
+            shape_array = MakeArray (NULL);
             ARRAY_TYPE (shape_array) = DupTypes (res_type);
             shape_array->node[0] = dummy;
             for (i = 0; i < type->dim - 1; i++) {
                 dummy->node[0] = MakeNum (type->shpseg->shp[i]);
-                dummy->node[1] = MakeNode (N_exprs);
+                dummy->node[1] = MakeExprs (NULL, NULL);
                 dummy = dummy->node[1];
             }
             if (0 < type->dim) {
                 dummy->node[0] = MakeNum (type->shpseg->shp[i]);
                 if (0 < b_type->dim) {
-                    dummy->node[1] = MakeNode (N_exprs);
+                    dummy->node[1] = MakeExprs (NULL, NULL);
                     dummy = dummy->node[1];
                 }
             }
             for (i = 0; i < b_type->dim - 1; i++) {
                 dummy->node[0] = MakeNum (b_type->shpseg->shp[i]);
-                dummy->node[1] = MakeNode (N_exprs);
+                dummy->node[1] = MakeExprs (NULL, NULL);
                 dummy = dummy->node[1];
             }
             if (0 < b_type->dim) {
@@ -637,13 +640,13 @@ Types2Array (types *type, types *res_type)
         }
     } else {
         if (0 < type->dim) {
-            node *dummy = MakeNode (N_exprs);
-            shape_array = MakeNode (N_array);
+            node *dummy = MakeExprs (NULL, NULL);
+            shape_array = MakeArray (NULL);
             ARRAY_TYPE (shape_array) = DupTypes (res_type);
             shape_array->node[0] = dummy;
             for (i = 0; i < type->dim - 1; i++) {
                 dummy->node[0] = MakeNum (type->shpseg->shp[i]);
-                dummy->node[1] = MakeNode (N_exprs);
+                dummy->node[1] = MakeExprs (NULL, NULL);
                 dummy = dummy->node[1];
             }
             dummy->node[0] = MakeNum (type->shpseg->shp[i]);
@@ -1904,7 +1907,7 @@ node *ComputeNeutralElem(prf prf_fun, types *neutral_type)
 
    if(length>0)
    {
-      neutral_elem=MakeNode(N_array);
+      neutral_elem=MakeArray( NULL);
       tmp=MakeNode(N_exprs);
       neutral_elem->node[0]=tmp;
       for(i=1; i<=length; i++)
@@ -1912,7 +1915,7 @@ node *ComputeNeutralElem(prf prf_fun, types *neutral_type)
          MAKE_NEUTRAL_ELEM(tmp->node[0], stype, neutral_int);
          if(i<length)
          {
-            tmp->node[1]=MakeNode(N_exprs);
+            tmp->node[1]=MakeExprs( NULL, NULL);
             tmp=tmp->node[1];
          }
       }
@@ -4738,7 +4741,7 @@ TCfundef (node *arg_node, node *arg_info)
                      : NOT_IMPORTED;
 
     info_node = MakeInfo ();
-    info_node->node[0] = MakeNode (N_ok); /* status 0 = beginning of function */
+    info_node->node[0] = MakeOk (); /* status 0 = beginning of function */
     INFO_TC_STATUS (info_node) = 0;
 
     /* pointer to variable declaration */
@@ -6993,7 +6996,7 @@ TI_Nwith (node *arg_node, node *arg_info)
      *  The next step is to typecheck the body (CBLOCK) and the additional
      *  expression (CEXPR).
      */
-    tmpn = MakeNode (N_arg);
+    tmpn = MakeArg (NULL, NULL, ST_regular, ST_regular, NULL);
     if (arg_info->node[2])
         ARG_NEXT (tmpn) = arg_info->node[2];
     arg_info->node[2] = tmpn;

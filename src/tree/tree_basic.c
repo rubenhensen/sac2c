@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2001/07/16 08:23:11  cg
+ * Old tree construction function MakeNode eliminated.
+ *
  * Revision 3.39  2001/07/13 13:23:41  cg
  * DBUG tags brushed.
  *
@@ -2020,6 +2023,23 @@ MakeModspec (char *name, node *exports)
 
     MODDEC_NAME (tmp) = name;
     MODDEC_OWN (tmp) = exports;
+
+    DBUG_PRINT ("MAKE",
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeOk ()
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeOk");
+
+    tmp = CreateCleanNode (N_ok);
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));

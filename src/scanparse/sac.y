@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2001/07/16 08:23:11  cg
+ * Old tree construction function MakeNode eliminated.
+ *
  * Revision 3.32  2001/07/13 13:23:41  cg
  * DBUG tags renamed:
  * GENTREE -> PARSE and GENSIB -> PARSE_SIB
@@ -438,7 +441,21 @@ modspec:  modheader OWN COLON expdesc
 
 modheader: modclass evextern id COLON linkwith
            {
-             $$ = MakeNode( $1);
+             switch ($1) {
+             case N_moddec: 
+               $$ = MakeModdec( $3, $5, $2, NULL, NULL);
+               break;
+             case N_classdec:
+               $$ = MakeClassdec( $3, $5, $2, NULL, NULL);
+               break;
+             case N_modspec: 
+               $$ = MakeModspec( $3, NULL);
+               break;
+             default:
+               DBUG_ASSERT((0), ("Illegal declaration type"));
+               $$ = NULL;
+             }
+                 
              link_mod_name = $3;
 
              if ($2) {
@@ -447,10 +464,6 @@ modheader: modclass evextern id COLON linkwith
              else {
                mod_name = link_mod_name;
              }
-
-             MODDEC_NAME( $$) = $3;
-             MODDEC_LINKWITH( $$) = $5;
-             MODDEC_ISEXTERNAL( $$) = $2;
            }
          ;                 
 
@@ -936,10 +949,9 @@ def3: objdefs def4
     ;
 
 def4: fundefs
-        { $$ = MakeNode( N_modul);
-          MODUL_NAME( $$) = NULL;
-          MODUL_FUNS( $$) = $1;
-
+        { 
+          $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, $1);
+          
           DBUG_PRINT("PARSE",
                      ("%s:"F_PTR"  %s"F_PTR,
                       mdb_nodetype[ NODE_TYPE( $$)],
@@ -947,9 +959,8 @@ def4: fundefs
                       mdb_nodetype[ NODE_TYPE(  $$->node[2])],
                       $$->node[2]));
         }
-    |   { $$ = MakeNode( N_modul);  /* module impl with no functions */
-          MODUL_NAME( $$) = NULL;
-          MODUL_FUNS( $$) = NULL;
+    |   { 
+          $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, NULL);
 
           DBUG_PRINT("PARSE",
                      ("%s:"F_PTR,

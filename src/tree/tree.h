@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/07/16 08:23:11  cg
+ * Old tree construction function MakeNode eliminated.
+ *
  * Revision 3.1  2000/11/20 18:03:31  sacbase
  * new release made
  *
@@ -68,11 +71,7 @@
  */
 
 #include "types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "internal_lib.h"
 
-extern node *MakeNode (nodetype nodetype);
 extern node *AppendNodeChain (int dummy, node *first, node *second);
 
 #endif /* _sac_tree_h  */
