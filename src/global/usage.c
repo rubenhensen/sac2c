@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.43  2000/11/17 16:21:06  sbs
+ * -MM and -MMlib added.
+ *
  * Revision 2.42  2000/11/14 16:47:47  sbs
  * string.h included which is needed by strlen
  *
@@ -214,10 +217,16 @@ usage ()
             "\t\t\tutility. Only dependencies from declaration files are\n"
             "\t\t\tconsidered.\n"
             "\n"
+            "\t -MM\t\tlike `-M' but the output mentions only non standard lib\n"
+            "\t\t\tdependencies.\n"
+            "\n"
             "\t -Mlib\t\tdetect dependencies from imported modules/classes and\n"
             "\t\t\twrite them to stdout in a way suitable for the make\n"
             "\t\t\tutility. Dependencies from declaration files as well\n"
             "\t\t\tas library files are (recursively) considered.\n"
+            "\n"
+            "\t -MMlib\t\tlike `-Mlib' but the output mentions only non standard lib\n"
+            "\t\t\tdependencies.\n"
             "\n"
             "\tWhen called with one of these options, sac2c does not perform\n"
             "\tany compilation steps.\n");

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.52  2000/11/17 16:21:06  sbs
+ * -MM and -MMlib added.
+ *
  * Revision 2.51  2000/11/15 20:34:57  sbs
  * -mt disabled for DEC ALPHA
  * if check b and doAP => AP is turned off, warning is given
@@ -551,9 +554,13 @@ AnalyseCommandline (int argc, char *argv[])
         }
     });
 
+    ARGS_FLAG ("M", makedeps = 1);
+
     ARGS_FLAG ("Mlib", makedeps = 2);
 
-    ARGS_FLAG ("M", makedeps = 1);
+    ARGS_FLAG ("MM", makedeps = 3);
+
+    ARGS_FLAG ("MMlib", makedeps = 4);
 
     ARGS_OPTION ("numthreads", {
         ARG_RANGE (store_num_threads, 1, max_threads);
