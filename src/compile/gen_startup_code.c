@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/06/11 12:56:07  cg
+ * Default settings for options -csfile, -csdir, and -cshost
+ * made accessible to cache simulator
+ *
  * Revision 2.7  1999/06/04 14:33:15  cg
  * added global setting CACHESIM_HOST.
  *
@@ -430,8 +434,20 @@ PrintGlobalSettings (node *syntax_tree)
     fprintf (outfile, "#define SAC_SET_CACHE_3_WRITEPOL  SAC_CS_%s\n\n",
              config.cache3_writepol);
 
-    fprintf (outfile, "#define SAC_SET_CACHESIM_HOST     \"%s\"\n\n",
+    fprintf (outfile, "#define SAC_SET_CACHESIM_HOST     \"%s\"\n",
              cachesim_host[0] == '\0' ? "" : cachesim_host);
+
+    if (cachesim_file[0] == '\0') {
+        fprintf (outfile, "#define SAC_SET_CACHESIM_FILE     \"%s.cs\"\n", outfilename);
+    } else {
+        fprintf (outfile, "#define SAC_SET_CACHESIM_FILE     \"%s\"\n", cachesim_file);
+    }
+
+    if (cachesim_dir[0] == '\0') {
+        fprintf (outfile, "#define SAC_SET_CACHESIM_DIR      \"%s\"\n", config.tmpdir);
+    } else {
+        fprintf (outfile, "#define SAC_SET_CACHESIM_DIR      \"%s\"\n", cachesim_dir);
+    }
 
     fprintf (outfile, "#define SAC_SET_MAXFUN            %d\n", PFfuncntr);
     fprintf (outfile, "#define SAC_SET_MAXFUNAP          %d\n", PFfunapmax);
