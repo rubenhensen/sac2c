@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.132  2002/10/31 19:46:47  dkr
+ * DBUG-string PRINT_PTR added
+ *
  * Revision 3.131  2002/10/30 16:25:36  dkr
  * no changes done
  *
@@ -1424,6 +1427,8 @@ PrintFunctionHeader (node *arg_node, node *arg_info, bool in_comment)
 
     DBUG_ENTER ("PrintFunctionHeader");
 
+    DBUG_EXECUTE ("PRINT_PTR", fprintf (outfile, "/* " F_PTR " */\n", arg_node););
+
     PRINT_LINE_PRAGMA_IN_SIB (outfile, arg_node);
 
     if (FUNDEF_ARGTAB (arg_node) != NULL) {
@@ -2386,6 +2391,9 @@ PrintAp (node *arg_node, node *arg_info)
         Trav (AP_ARGS (arg_node), arg_info);
     }
     fprintf (outfile, ")");
+
+    DBUG_EXECUTE ("PRINT_PTR", fprintf (outfile, " /* "); PRINT_POINTER (outfile, fundef);
+                  fprintf (outfile, " */ "););
 
     DBUG_RETURN (arg_node);
 }
