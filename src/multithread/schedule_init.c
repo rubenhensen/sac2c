@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/01/16 10:03:26  skt
+ * handling of do-loops enabled
+ *
  * Revision 3.4  2001/06/13 12:27:13  cg
  * Bug fixed after last modification by dkr:
  * The flag ISSCHEDULED is set again for with-loops to
@@ -324,15 +327,14 @@ SCHINassign (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("SCHINassign");
 
-    /* DBUG_PRINT( "SCHIN", ("assign reached")); */
-
     if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let) {
         /* it is a let */
+
         let = ASSIGN_INSTR (arg_node);
-        /* DBUG_PRINT( "SCHIN", ("let found")); */
+        /*DBUG_PRINT( "SCHIN", ("let found")); */
 
         if (NODE_TYPE (LET_EXPR (let)) == N_Nwith2) {
-            /* DBUG_PRINT( "SCHIN", ("with found")); */
+            DBUG_PRINT ("SCHIN", ("with found"));
             old_allowed = INFO_SCHIN_ALLOWED (arg_info);
             if ((!(INFO_SCHIN_INNERWLS (arg_info)))
                 && (WithLoopIsAllowedConcurrentExecution (LET_EXPR (let)))
@@ -356,8 +358,12 @@ SCHINassign (node *arg_node, node *arg_info)
         DBUG_PRINT ("SCHIN", ("trav into cond"));
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
         DBUG_PRINT ("SCHIN", ("trav from cond"));
+    } else if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_do) {
+        DBUG_PRINT ("SCHIN", ("trav into do"));
+        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        DBUG_PRINT ("SCHIN", ("trav from do"));
     } else {
-        /* assignment is not let or if : not of interest */
+        /* assignment is not let, if or do : not of interest */
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -387,6 +393,7 @@ SCHINnwith2 (node *arg_node, node *arg_info)
     int old_innerwls;
 
     DBUG_ENTER ("SCHINnwith2");
+    DBUG_PRINT ("SCHIN", ("enter SCHINnwidth2"));
 
     /* The next line is used to test propagation */
     /* NWITH2_SCHEDULING( arg_node) = SCHMakeScheduling("Block"); */

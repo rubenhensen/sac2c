@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/01/16 10:03:26  skt
+ * handling of do-loops enabled
+ *
  * Revision 3.2  2001/02/14 10:18:31  dkr
  * access macros used
  *
@@ -344,7 +347,7 @@ MustExecuteSingleThreaded (node *arg_node, node *arg_info)
         DBUG_ASSERT (0, "N_while not supported");
     } else if (NODE_TYPE (instr) == N_do) {
         result = FALSE;
-        DBUG_ASSERT (0, "N_do not supported");
+        /*DBUG_ASSERT(0, "N_do not supported");*/
     } else if (NODE_TYPE (instr) == N_cond) {
         /* N_cond does not need to be inserted in Blocks */
         result = FALSE;
@@ -456,6 +459,12 @@ BLKINassign (node *arg_node, node *arg_info)
         DBUG_PRINT ("BLKIN", ("into instr"));
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
         DBUG_PRINT ("BLKIN", ("from instr"));
+    }
+
+    if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_do) {
+        DBUG_PRINT ("BLKIN", ("into instr (N_do)"));
+        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        DBUG_PRINT ("BLKIN", ("from instr (N_do)"));
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
