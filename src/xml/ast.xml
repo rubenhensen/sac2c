@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.106  2004/11/26 18:04:30  skt
+  fixed some traversal bugs
+
   Revision 1.105  2004/11/26 17:19:48  mwe
   InferLI added
 
@@ -219,14 +222,14 @@
 	 include the include file needed for the traversal
     -->
     <general>
-      <traversal id="GSC" name="Generate Startup Code" default="user" include="gen_startup_code.h" >
+      <traversal id="GSC" name="Generate Startup Code" default="sons" include="gen_startup_code.h" >
         <travuser>
           <node name="Fundef" />
           <node name="Spmd" />
           <node name="Icm" />
         </travuser>
       </traversal>
-      <traversal id="PRT" name="Print Syntax Tree" default="user" include="print.h" prefun="PRTtravPre" postfun="PRTtravPost" />
+      <traversal id="PRT" name="Print Syntax Tree" default="sons" include="print.h" prefun="PRTtravPre" postfun="PRTtravPost" />
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
       <traversal id="FREE" name="Free Tree" default="sons" include="free_node.h" />
       <traversal id="SBT" name="Serialize Build Stack" default="user" include="serialize_buildstack.h" />
@@ -314,7 +317,6 @@
       <traversal id="USSAT" name="UndoSSATransform Traversal" default="sons" include="UndoSSATransform.h" >
 	<travuser>
 	  <node name="Assign" />
-	  <node name="Module" />
 	  <node name="Fundef" />
 	  <node name="Let" />
 	  <node name="Arg" />
