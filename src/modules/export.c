@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/08 14:20:10  sah
+ * added dbug prints and FUNDEC traversal
+ *
  * Revision 1.3  2004/10/27 08:41:20  sah
  * main is always provided now
  *
@@ -205,7 +208,7 @@ EXPFundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EXPFundef");
 
-    if (((FUNDEF_STATUS (arg_node) == ST_regular)
+    if (((FUNDEF_STATUS (arg_node) == ST_regular) || (FUNDEF_STATUS (arg_node) == ST_Cfun)
          || (FUNDEF_STATUS (arg_node) == ST_wrapperfun))
         && (!strcmp (FUNDEF_MOD (arg_node), INFO_EXP_MODNAME (arg_info)))) {
         INFO_EXP_SYMBOL (arg_info) = FUNDEF_NAME (arg_node);
@@ -242,6 +245,11 @@ EXPFundef (node *arg_node, info *arg_info)
         SET_FLAG (FUNDEF, arg_node, IS_PROVIDED, FALSE);
     }
 
+    DBUG_PRINT ("EXP",
+                ("Fundef %s:%s has status %d/%d [PROVIDE/EXPORT].", FUNDEF_MOD (arg_node),
+                 FUNDEF_NAME (arg_node), GET_FLAG (FUNDEF, arg_node, IS_PROVIDED),
+                 GET_FLAG (FUNDEF, arg_node, IS_EXPORTED)));
+
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
@@ -260,6 +268,10 @@ EXPModul (node *arg_node, info *arg_info)
 
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
+
+    if (MODUL_FUNDECS (arg_node) != NULL) {
+        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
     }
 
     MODUL_IMPORTS (arg_node) = INFO_EXP_INTERFACE (arg_info);
