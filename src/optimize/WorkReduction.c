@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/02/13 17:21:26  dkr
+ * MakeNode() eliminated
+ *
  * Revision 3.1  2000/11/20 18:00:39  sacbase
  * new release made
  *
@@ -38,20 +41,15 @@
  *                  R) ptr optimized 1)
  *  description   : initiates work reduction for the intermediate sac-code:
  *  global vars   : syntax_tree, act_tab, wr_stack
- *  internal funs : ---
- *  external funs : Trav, MakeNode
- *  macros        : DBUG...
- *
- *  remarks       : --
- *
  *
  */
+
 node *
 WorkReduction (node *arg_node, node *info_node)
 {
     DBUG_ENTER ("WorkReduction");
     act_tab = wr_tab;
-    info_node = MakeNode (N_info);
+    info_node = MakeInfo ();
 
     arg_node = Trav (arg_node, info_node);
 

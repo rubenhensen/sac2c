@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/02/13 17:16:19  dkr
+ * MakeNode() eliminated
+ *
  * Revision 3.2  2000/11/23 16:23:39  sbs
  * mem_inl_fun in Inline enclosed by ifndef DBUG_OFF to avoid compiler warning
  * in product version & node_behind initialized by NULL in INLassign to avoid
@@ -139,13 +142,6 @@ static int inline_nr = 0;
  *  arguments     : 1) ptr to root of the syntaxtree
  *                  R) ptr to root of the optimized syntaxtree
  *  description   : Starts Function Inlining
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : Trav     (traverse.h)
- *                  MakeNode (tree.h)
- *  macros        : FREE
- *
- *  remarks       : ---
  *
  */
 
@@ -162,7 +158,7 @@ Inline (node *arg_node, node *arg_info)
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
     tmp_tab = act_tab;
     act_tab = inline_tab;
-    arg_info = MakeNode (N_info);
+    arg_info = MakeInfo ();
 
     arg_node = Trav (arg_node, arg_info);
 
@@ -386,7 +382,7 @@ InlineSingleApplication (node *let_node, node *fundef_node)
     mem_tab = act_tab;
     act_tab = inline_tab;
 
-    arg_info = MakeNode (N_info);
+    arg_info = MakeInfo ();
     INFO_INL_TYPES (arg_info) = FUNDEF_VARDEC (fundef_node);
 
     assigns = DoInline (let_node, LET_EXPR (let_node), arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/02/13 17:16:59  dkr
+ * MakeNode() eliminated
+ *
  * Revision 3.3  2001/02/02 10:16:38  dkr
  * superfluous import of access_macros.h removed
  *
@@ -465,7 +468,7 @@ DoUnroll (node *arg_node, node *arg_info, linfo *loop_info)
                            INFO_VARNO (arg_info));
                 MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
                 FreeTree (arg_node);
-                arg_node = MakeNode (N_empty);
+                arg_node = MakeEmpty ();
                 break;
 
             case 1:
