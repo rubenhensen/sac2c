@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2002/02/22 13:48:19  dkr
+ * error in COMPMT2FunReturn() corrected
+ *
  * Revision 1.5  2002/02/20 14:57:01  dkr
  * fundef DupTypes() renamed into DupAllTypes()
  *
@@ -3104,7 +3107,7 @@ COMPMT2FunReturn (node *arg_node, node *arg_info)
     while (exprs != NULL) {
         DBUG_ASSERT ((N_id == NODE_TYPE (EXPRS_EXPR (exprs))), "wrong node type found");
 
-        if (RC_IS_ACTIVE (EXPRS_EXPR (exprs))) {
+        if (RC_IS_ACTIVE (ID_REFCNT (EXPRS_EXPR (exprs)))) {
             tag = MakeExprs (MakeId_Copy ("out_rc"), NULL);
         } else {
             tag = MakeExprs (MakeId_Copy ("out"), NULL);

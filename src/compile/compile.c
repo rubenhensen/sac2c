@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2002/02/22 13:48:40  dkr
+ * error in COMPMT2FunReturn() corrected
+ *
  * Revision 3.72  2002/02/21 12:08:56  dkr
  * some further code brushing done
  *
@@ -3220,7 +3223,7 @@ COMPMT2FunReturn (node *arg_node, node *arg_info)
     while (exprs != NULL) {
         DBUG_ASSERT ((N_id == NODE_TYPE (EXPRS_EXPR (exprs))), "wrong node type found");
 
-        if (RC_IS_ACTIVE (EXPRS_EXPR (exprs))) {
+        if (RC_IS_ACTIVE (ID_REFCNT (EXPRS_EXPR (exprs)))) {
             tag = MakeExprs (MakeId_Copy ("out_rc"), NULL);
         } else {
             tag = MakeExprs (MakeId_Copy ("out"), NULL);
