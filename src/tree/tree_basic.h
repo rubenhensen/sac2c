@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.103  2000/11/03 16:17:03  dkr
+ * some superfluous INFO_COMP_... macro removed
+ *
  * Revision 1.102  2000/11/02 15:45:53  dkr
  * comments for N_icm modified
  *
@@ -2574,18 +2577,14 @@ extern node *MakeInfo ();
 #define INFO_AE_TYPES(n) (n->node[1])
 
 /* compile */
+#define INFO_COMP_MODUL(n) (n->node[0])
+#define INFO_COMP_FUNDEF(n) (n->node[1])
+#define INFO_COMP_FIRSTASSIGN(n) (n->node[2])
 #define INFO_COMP_LASTIDS(n) (n->info.ids)
 #define INFO_COMP_CNTPARAM(n) (n->lineno)
 #define INFO_COMP_TYPETAB(n) ((types **)(n->info.types))
-#define INFO_COMP_FIRSTASSIGN(n) (n->node[0])
-#define INFO_COMP_LASTASSIGN(n) (n->node[0])
-#define INFO_COMP_LASTLET(n) (n->node[1])
-#define INFO_COMP_ICMTAB(n) ((node **)(n->node[1]))
-#define INFO_COMP_FUNDEF(n) (n->node[2])
-#define INFO_COMP_WITHBEGIN(n) (n->node[4])
-#define INFO_COMP_MODUL(n) (n->node[5])
+#define INFO_COMP_ICMTAB(n) ((node **)(n->node[3]))
 #define INFO_COMP_LAST_SYNC(n) (*((node **)(&(n->int_data))))
-#define INFO_COMP_ACTUALATTRIB(n) ((statustype) (n->counter))
 
 /* reuse */
 #define INFO_REUSE_WL_IDS(n) (n->info.ids)
