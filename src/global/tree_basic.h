@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.41  1999/07/27 08:35:33  jhs
+ * Added INFO_SPMDC_FIRSTSYNC.
+ *
  * Revision 2.40  1999/07/22 12:28:51  jhs
  * Added BLOCK_SPMD_SETUP_ARGS.
  *
@@ -2253,6 +2256,8 @@ extern node *MakePragma ();
  ***    node*      INFO_SYNCO_NEXTASSIGN
  ***    node*      INFO_SYNCO_THISASSIGN
  ***
+ ***    node*      INFO_SPMDC_FIRSTSYNC
+ ***
  ***  when used in tile_size_inference.c :
  ***
  ***    access_t*  ACCESS
@@ -2379,6 +2384,8 @@ extern node *MakeInfo ();
 
 #define INFO_SYNCO_THISASSIGN(n) (n->node[0])
 #define INFO_SYNCO_NEXTASSIGN(n) (n->node[1])
+
+#define INFO_SPMDC_FIRSTSYNC(n) (n->node[0])
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
