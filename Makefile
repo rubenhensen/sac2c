@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.44  1996/05/24 14:23:00  sbs
+# Revision 1.45  1997/04/24 16:09:53  sbs
+# /usr/lib/debug/malloc.o commented out
+#
+# Revision 1.44  1996/05/24  14:23:00  sbs
 # tags line inserted.
 #
 # Revision 1.43  1996/02/16  09:37:55  sbs
@@ -146,7 +149,9 @@ YACC=yacc -dv
 LIBS=-ly -ll -lm
 RM=rm -f
 
-LIB=lib/dbug.o /usr/lib/debug/malloc.o /usr/lib/libm.a
+LIB=lib/dbug.o /usr/lib/libm.a
+# /usr/lib/debug/malloc.o
+
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/my_debug.o src/global/traverse.o  src/global/tree.o \
 	src/global/tree_basic.o src/global/tree_compound.o \
