@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2001/05/18 12:42:14  nmw
+ * some discriptive comments added
+ *
  * Revision 1.6  2001/05/17 14:09:32  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -28,10 +31,30 @@
 
 /*******************************************************************************
 
- This file realizes the information gathering for the new SAC-WLs (SSAWLI phase).
+ This file realizes the information gathering for the SAC-WLs (SSAWLI phase).
  The decision to fold or not to fold (SSAWLF) is based on these informations.
  This implementation is aware of the ssa form and does not use any masks.
  Most code is unchanged from the original implementation in WLI.c.
+
+ in this phase every withloop seems to be (nmw) attributed with:
+   NWITH_REFERENCED(wl)
+     this is the number of identifier that reference this withloop
+
+   NWITH_REFERENCED_FOLD(wl)
+     this is the number of references from foldable (modarray) WL, so
+     NWITH_REFERENCED(arg_node) >= NWITH_REFERENCED_FOLD(arg_node) should hold
+
+   NWITH_REFERENCES_FOLDED(wl)
+     is a counter used in SSAWLF that counts the folding operations. it
+     is initialized here with 0.
+
+   NWITH_FOLDABLE(wl)
+     has already been set in SSAWLT and marks all WL with constant borders,
+     step and so on. only for these WLs withloop folding can be computed.
+
+ additionally all id get the attribute ID_WL, which is pointing to a definition
+ assignment with a WL as RHS or NULL else.
+
 
  *******************************************************************************
 
