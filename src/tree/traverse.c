@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.120  2004/12/01 15:23:53  sah
+ * fixed pre/posttables
+ *
  * Revision 3.119  2004/12/01 14:33:07  sah
  * added support for TRAVsetPreFun TRAVsetPostFun
  *
@@ -72,14 +75,14 @@ TRAVdo (node *arg_node, info *arg_info)
      */
     arg_node_type = NODE_TYPE (arg_node);
 
-    if (pretable[arg_node_type] != NULL) {
-        arg_node = pretable[arg_node_type](arg_node, arg_info);
+    if (pretable[travstack->traversal] != NULL) {
+        arg_node = pretable[travstack->traversal](arg_node, arg_info);
     }
 
     arg_node = (travstack->funs[arg_node_type]) (arg_node, arg_info);
 
-    if (posttable[arg_node_type] != NULL) {
-        arg_node = posttable[arg_node_type](arg_node, arg_info);
+    if (posttable[travstack->traversal] != NULL) {
+        arg_node = posttable[travstack->traversal](arg_node, arg_info);
     }
 
     global.linenum = old_linenum;
