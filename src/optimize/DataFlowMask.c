@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1998/06/19 09:08:43  sbs
+ * mask_base->num_ids = cnt instead of
+ * mask_base->num_ids += cnt  helps housekeeping the memory 8-))
+ *
  * Revision 1.11  1998/06/05 18:45:53  dkr
  * fixed a bug in DFMUpdateMaskBaseAfterCompiling
  *
@@ -314,7 +318,7 @@ DFMUpdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
 
     old_num_ids = mask_base->num_ids;
 
-    mask_base->num_ids += cnt;
+    mask_base->num_ids = cnt;
 
     mask_base->num_bitfields = (mask_base->num_ids / (sizeof (unsigned int) * 8)) + 1;
 
