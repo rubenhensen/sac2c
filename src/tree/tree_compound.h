@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.37  2000/10/17 13:02:13  dkr
+ * macro EXPRS_LENGTH added
+ *
  * Revision 1.36  2000/10/16 16:01:03  dkr
  * VARDEC_OR_ARG_OBJDEF added
  *
@@ -1091,6 +1094,20 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
  ******************************************************************************/
 
 extern node *MakeExprsNum (int num);
+
+/*
+ * length of N_exprs-chain
+ */
+#define EXPRS_LENGTH(n, exprs)                                                           \
+    {                                                                                    \
+        node *_tmp;                                                                      \
+        n = 0;                                                                           \
+        _tmp = exprs;                                                                    \
+        while (_tmp != NULL) {                                                           \
+            n++;                                                                         \
+            _tmp = EXPRS_NEXT (_tmp);                                                    \
+        }                                                                                \
+    }
 
 /*--------------------------------------------------------------------------*/
 
