@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2002/08/09 13:16:22  dkr
+ * cwc_tab added
+ *
  * Revision 3.35  2002/08/05 17:03:45  sbs
  * several extensions required for the alpha version of the new type checker
  *
@@ -108,7 +111,6 @@
  *
  * Revision 3.1  2000/11/20 18:03:29  sacbase
  * new release made
- *
  *
  * ... [eliminated] ...
  *
@@ -227,6 +229,7 @@
 #include "create_wrappers.h"
 #include "handle_dots.h"
 #include "new2old.h"
+#include "create_wrapper_code.h"
 
 #include "traverse.h"
 
@@ -1445,6 +1448,17 @@ static funtab nt2ot_tab_rec = {{
                                NULL,
                                NULL};
 funtab *nt2ot_tab = &nt2ot_tab_rec;
+
+/*
+ *  (111) cwc_tab
+ */
+static funtab cwc_tab_rec = {{
+#define NIFcwc(it_cwc) it_cwc
+#include "node_info.mac"
+                             },
+                             NULL,
+                             NULL};
+funtab *cwc_tab = &cwc_tab_rec;
 
 /*
  *  nnode

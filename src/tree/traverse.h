@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2002/08/09 13:16:28  dkr
+ * cwc_tab added
+ *
  * Revision 3.28  2002/08/05 17:03:45  sbs
  * several extensions required for the alpha version of the new type checker
  *
@@ -302,6 +305,7 @@ extern funtab *wls_tab;
 extern funtab *al_tab;
 extern funtab *hd_tab;
 extern funtab *nt2ot_tab;
+extern funtab *cwc_tab;
 
 extern int nnode[];
 
