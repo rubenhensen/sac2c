@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.152  2004/11/25 20:15:15  skt
+ * some brushing
+ *
  * Revision 3.151  2004/11/25 20:10:12  sbs
  * signature of MakeAp<n> functions changed.
  *
@@ -419,26 +422,6 @@ extern int TCgetArgtabIndexIn (types *type, argtab_t *argtab);
     }
 
 #define NODE_ISALIVE(n) (n->attribs.any != NULL)
-
-/*****************************************************************************
- *
- * function:
- *   bool TCisImported( node* symbol)
- *   bool TCisExternal( node* symbol)
- *   bool TCisFromModule( node* symbol)
- *   bool TCisFromClass( node* symbol)
- *
- * description:
- *
- *   These test functions are applicable to any kind of symbol,
- *   more precisely to N_typedef, N_objdef, and N_fundef nodes.
- *
- *****************************************************************************/
-
-extern bool TCisImported (node *symbol);
-extern bool TCisExternal (node *symbol);
-extern bool TCisFromModule (node *symbol);
-extern bool TCisFromClass (node *symbol);
 
 /*--------------------------------------------------------------------------*/
 
