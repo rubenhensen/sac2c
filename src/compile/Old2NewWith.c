@@ -362,13 +362,13 @@ O2Nnwith (node *arg_node, node *arg_info)
 }
 
 node *
-Old2NewWith (node *syntaxtree)
+Old2NewWith (node *syntax_tree)
 {
     DBUG_ENTER ("Old2NewWith");
 
     act_tab = o2nWith_tab; /* set new function-table for traverse */
 
-    syntaxtree = Trav (syntaxtree, NULL); /* convert old with-loop into new syntax */
+    syntax_tree = Trav (syntax_tree, NULL); /* convert old with-loop into new syntax */
 
-    DBUG_RETURN (syntaxtree);
+    DBUG_RETURN (syntax_tree);
 }
