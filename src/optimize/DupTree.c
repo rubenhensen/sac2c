@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  1998/03/19 19:07:02  dkr
+ * fixed bugs in DupWL...
+ *
  * Revision 1.32  1998/03/17 10:34:01  dkr
  * changed usage of MakeWLseg
  *
@@ -701,8 +704,12 @@ DupWLseg (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupWLseg");
-    new_node = MakeWLseg (WLSEG_DIM (arg_node), Trav (WLSEG_INNER (arg_node), arg_info),
-                          Trav (WLSEG_NEXT (arg_node), arg_info));
+    new_node
+      = MakeWLseg (WLSEG_DIM (arg_node), Trav (WLSEG_INNER (arg_node), arg_info), NULL);
+
+    if (WLSEG_NEXT (arg_node) != NULL) {
+        WLSEG_NEXT (new_node) = Trav (WLSEG_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (new_node);
 }
@@ -717,10 +724,19 @@ DupWLblock (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupWLblock");
     new_node = MakeWLblock (WLBLOCK_LEVEL (arg_node), WLBLOCK_DIM (arg_node),
                             WLBLOCK_BOUND1 (arg_node), WLBLOCK_BOUND2 (arg_node),
-                            WLBLOCK_BLOCKING (arg_node),
-                            Trav (WLBLOCK_NEXTDIM (arg_node), arg_info),
-                            Trav (WLBLOCK_INNER (arg_node), arg_info),
-                            Trav (WLBLOCK_NEXT (arg_node), arg_info));
+                            WLBLOCK_BLOCKING (arg_node), NULL, NULL, NULL);
+
+    if (WLBLOCK_NEXTDIM (arg_node) != NULL) {
+        WLBLOCK_NEXTDIM (new_node) = Trav (WLBLOCK_NEXTDIM (arg_node), arg_info);
+    }
+
+    if (WLBLOCK_INNER (arg_node) != NULL) {
+        WLBLOCK_INNER (new_node) = Trav (WLBLOCK_INNER (arg_node), arg_info);
+    }
+
+    if (WLBLOCK_NEXT (arg_node) != NULL) {
+        WLBLOCK_NEXT (new_node) = Trav (WLBLOCK_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (new_node);
 }
@@ -735,10 +751,19 @@ DupWLublock (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupWLublock");
     new_node = MakeWLublock (WLUBLOCK_LEVEL (arg_node), WLUBLOCK_DIM (arg_node),
                              WLUBLOCK_BOUND1 (arg_node), WLUBLOCK_BOUND2 (arg_node),
-                             WLUBLOCK_BLOCKING (arg_node),
-                             Trav (WLUBLOCK_NEXTDIM (arg_node), arg_info),
-                             Trav (WLUBLOCK_INNER (arg_node), arg_info),
-                             Trav (WLUBLOCK_NEXT (arg_node), arg_info));
+                             WLUBLOCK_BLOCKING (arg_node), NULL, NULL, NULL);
+
+    if (WLUBLOCK_NEXTDIM (arg_node) != NULL) {
+        WLUBLOCK_NEXTDIM (new_node) = Trav (WLUBLOCK_NEXTDIM (arg_node), arg_info);
+    }
+
+    if (WLUBLOCK_INNER (arg_node) != NULL) {
+        WLUBLOCK_INNER (new_node) = Trav (WLUBLOCK_INNER (arg_node), arg_info);
+    }
+
+    if (WLUBLOCK_NEXT (arg_node) != NULL) {
+        WLUBLOCK_NEXT (new_node) = Trav (WLUBLOCK_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (new_node);
 }
@@ -754,8 +779,11 @@ DupWLproj (node *arg_node, node *arg_info)
     new_node = MakeWLproj (WLPROJ_LEVEL (arg_node), WLPROJ_DIM (arg_node),
                            WLPROJ_BOUND1 (arg_node), WLPROJ_BOUND2 (arg_node),
                            WLPROJ_STEP (arg_node), WLPROJ_UNROLLING (arg_node),
-                           Trav (WLPROJ_INNER (arg_node), arg_info),
-                           Trav (WLPROJ_NEXT (arg_node), arg_info));
+                           Trav (WLPROJ_INNER (arg_node), arg_info), NULL);
+
+    if (WLPROJ_NEXT (arg_node) != NULL) {
+        WLPROJ_NEXT (new_node) = Trav (WLPROJ_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (new_node);
 }
@@ -769,10 +797,16 @@ DupWLgrid (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupWLgrid");
     new_node = MakeWLgrid (WLGRID_DIM (arg_node), WLGRID_OFFSET (arg_node),
-                           WLGRID_WIDTH (arg_node), WLGRID_UNROLLING (arg_node),
-                           Trav (WLGRID_NEXTDIM (arg_node), arg_info),
-                           Trav (WLGRID_CODE (arg_node), arg_info),
-                           Trav (WLGRID_NEXT (arg_node), arg_info));
+                           WLGRID_WIDTH (arg_node), WLGRID_UNROLLING (arg_node), NULL,
+                           WLGRID_CODE (arg_node), NULL);
+
+    if (WLGRID_NEXTDIM (arg_node) != NULL) {
+        WLGRID_NEXTDIM (new_node) = Trav (WLGRID_NEXTDIM (arg_node), arg_info);
+    }
+
+    if (WLGRID_NEXT (arg_node) != NULL) {
+        WLGRID_NEXT (new_node) = Trav (WLGRID_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (new_node);
 }
