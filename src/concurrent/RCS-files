@@ -20,3 +20,4 @@ sync_init.h
 sync_opt.c
 sync_opt.h
 spmd_emm.c
+spmd_emm.h
