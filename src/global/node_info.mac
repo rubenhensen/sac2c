@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.5  1994/11/14 17:51:13  hw
- * added FltnCond FltnFor
+ * Revision 1.6  1994/11/15 14:47:27  hw
+ * deleted FltnFor
  *
+;; Revision 1.5  1994/11/14  17:51:13  hw
+;; added FltnCond FltnFor
+;;
 ;; Revision 1.4  1994/11/11  13:59:16  hw
 ;; added new nodes: N_pre N_post N_inc N_dec and functions belonging to them
 ;;
@@ -32,7 +35,7 @@ NIF (N_num, "N_num", DummyFun, PrintNum, DummyFun),
   NIF (N_arg, "N_arg", DummyFun, PrintArg, DummyFun),
   NIF (N_assign, "N_assign", FltnAssign, PrintAssign, DummyFun),
   NIF (N_return, "N_return", DummyFun, PrintReturn, DummyFun),
-  NIF (N_for, "N_for", FltnFor, PrintFor, DummyFun),
+  NIF (N_for, "N_for", DummyFun, PrintFor, DummyFun),
   NIF (N_do, "N_do", DummyFun, PrintDo, DummyFun),
   NIF (N_while, "N_while", DummyFun, PrintWhile, DummyFun),
   NIF (N_cond, "N_cond", FltnCond, PrintCond, DummyFun),
