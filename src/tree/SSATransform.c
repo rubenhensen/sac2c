@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.7  2001/03/16 11:54:46  nmw
+ * Storing of two definitions for phi targets implemented
+ * AVIS_SSAPHITRAGET type changed
+ *
  * Revision 1.6  2001/03/15 10:52:04  nmw
  * SSATransform now sets SSAUNDOFLAG for artificial vardecs
  *
@@ -220,6 +224,13 @@ SSANewVardec (node *old_vardec_or_arg)
  *   creates a new renamed vardec as target for the ssa phi-function.
  *   inserts the necessary copy assignments for ssa in the conditional.
  *
+ * remarks:
+ *   the inserted target identifier (left_ids) has two definitions!
+ *   (this is not really in ssa-form, but it simulates the ssa phi-function
+ *   to merge different flows in execution).
+ *   these two assignments are stored in AVIS_SSAASSIGN and AVIS_SSAASSIGN2.
+ *   the AVIS node is marked as SSAPHITRAGET.
+ *
  * if(p) {
  *   ...
  *   newvar = x__SSA_1;
@@ -256,11 +267,29 @@ SSAInsertCopyAssignments (node *condassign, node *avis, node *arg_info)
     left_ids = LET_IDS (ASSIGN_INSTR (assign_let));
 
     /* mark vardec as special ssa phi target */
-    AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = TRUE;
+    switch (FUNDEF_STATUS (INFO_SSA_FUNDEF (arg_info))) {
+    case ST_condfun:
+        AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_COND;
+        break;
+
+    case ST_whilefun:
+        AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_DO;
+        break;
+
+    case ST_dofun:
+        AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_WHILE;
+        break;
+
+    default:
+        DBUG_ASSERT ((FALSE),
+                     "conditional in reglular function! (no cond, do or while function)");
+    }
 
     /* append new copy assignment to then-part block */
     BLOCK_INSTR (COND_THEN (condassign))
       = AppendAssign (BLOCK_INSTR (COND_THEN (condassign)), assign_let);
+    /* store 1. definition assignment */
+    AVIS_SSAASSIGN (IDS_AVIS (left_ids)) = assign_let;
 
     /* ELSE part */
     /* create right side (id) of copy assignment for else part */
@@ -278,6 +307,8 @@ SSAInsertCopyAssignments (node *condassign, node *avis, node *arg_info)
     /* append new copy assignment to else-part block */
     BLOCK_INSTR (COND_ELSE (condassign))
       = AppendAssign (BLOCK_INSTR (COND_ELSE (condassign)), assign_let);
+    /* store 2. definition assignment */
+    AVIS_SSAASSIGN2 (IDS_AVIS (left_ids)) = assign_let;
 
     DBUG_VOID_RETURN;
 }
@@ -383,7 +414,12 @@ SSAfundef (node *arg_node, node *arg_info)
 node *
 SSAblock (node *arg_node, node *arg_info)
 {
+    node *old_assign;
+
     DBUG_ENTER ("SSAblock");
+
+    /* save old assignment link when starting with new block */
+    old_assign = INFO_SSA_ASSIGN (arg_info);
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         /* there are some vardecs */
@@ -396,6 +432,9 @@ SSAblock (node *arg_node, node *arg_info)
         /* there are some instructions */
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
     }
+
+    /* restore old assignment link */
+    INFO_SSA_ASSIGN (arg_info) = old_assign;
 
     DBUG_RETURN (arg_node);
 }
@@ -441,6 +480,9 @@ SSAassign (node *arg_node, node *arg_info)
     DBUG_ENTER ("SSAassign");
     /* traverse expr */
     DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "no instruction in assign!");
+
+    INFO_SSA_ASSIGN (arg_info) = arg_node;
+
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
     /* traverse next exprs */
@@ -906,7 +948,7 @@ SSAleftids (ids *arg_ids, node *arg_info)
 
     DBUG_ENTER ("SSAleftids");
 
-    if (AVIS_SSAPHITARGET (IDS_AVIS (arg_ids))) {
+    if (AVIS_SSAPHITARGET (IDS_AVIS (arg_ids)) != PHIT_NONE) {
         /* special ssa phi target - no renaming needed */
         AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = IDS_AVIS (arg_ids);
         DBUG_PRINT ("SSA", ("phi target, no renaming: %s (%p)",
@@ -953,12 +995,13 @@ SSAleftids (ids *arg_ids, node *arg_info)
          * be mapped back to their original name in undossa.
          *
          */
-        if ((IDS_STATUS (arg_ids) == ST_artificial)
-            || (IDS_ATTRIB (arg_ids) == ST_global)) {
+        if ((IDS_STATUS (arg_ids) == ST_artificial) || (IDS_ATTRIB (arg_ids) == ST_global)
+            || (VARDEC_OR_ARG_ATTRIB (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))
+                == ST_unique)) {
             AVIS_SSAUNDOFLAG (IDS_AVIS (arg_ids)) = TRUE;
         }
     }
-    /* AVIS_SSAASSIGN(IDS_AVIS(arg_ids)) = ##nmw## */
+    AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
 
     /* traverese next ids */
     if (IDS_NEXT (arg_ids) != NULL) {
@@ -1002,7 +1045,7 @@ SSArightids (ids *arg_ids, node *arg_info)
     /*
      * existing phi copy target must not be renamed
      */
-    if (!(AVIS_SSAPHITARGET (IDS_AVIS (arg_ids)))) {
+    if (AVIS_SSAPHITARGET (IDS_AVIS (arg_ids)) == PHIT_NONE) {
         /* do renaming to new ssa vardec */
         IDS_AVIS (arg_ids) = AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids));
     }
