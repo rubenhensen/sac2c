@@ -3,7 +3,12 @@
 /*
  *
  * $Log$
- * Revision 1.65  1995/07/04 11:34:49  hw
+ * Revision 1.66  1995/07/06 17:01:25  hw
+ * - behind 'all' in the import declaration has to be a semicolon now
+ * - behind 'while' of a do-loop has to be a semicolon now
+ * - userdefined functins can have the same name like primitive functions now
+ *
+ * Revision 1.65  1995/07/04  11:34:49  hw
  * - parsing of primitive functions itod, ftod, dtoi, dtof inserted
  * - parsing of 'double constants' inserted
  *
@@ -262,17 +267,15 @@ static char *mod_name;
 %token PARSE_PRG, PARSE_DEC
 %token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC,
        COMMA,
-       INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF
-       AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PLUS, MINUS,
+       INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF,
        F2I, F2D, I2F,I2D, D2I, D2F,
        INC, DEC, ADDON, SUBON, MULON, DIVON,
-       RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE,CAT,PSI,
-       K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, GENARRAY, MODARRAY,
-       FOLD,
+       K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, FOLD,
        MODDEC, MODIMP, CLASSDEC, IMPORT, ALL, IMPLICIT, EXPLICIT, TYPES, FUNS,
        OWN, CONSTANTS, GLOBAL, OBJECTS, CLASSIMP,
        ARRAY,SC, TRUE, FALSE, EXTERN, C_KEYWORD
-%token <id> ID, STR
+%token <id> ID, STR,AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PLUS, MINUS,
+            RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE,CAT,PSI,GENARRAY, MODARRAY
 %token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_STR, TYPE_UNS, TYPE_SHORT,
                TYPE_LONG, TYPE_CHAR, TYPE_DBL, TYPE_VOID, TYPE_DOTS
 %token <cint> NUM
@@ -282,8 +285,9 @@ static char *mod_name;
 %type <prf> foldop
 %type <nodetype> modclass
 %type <cint> evextern
-%type <ids> ids,
-%type <nums> nums;
+%type <ids> ids
+%type <id> fun_name
+%type <nums> nums
 %type <types> localtype, type, types, simpletype, complextype;
 %type <node> arg, args, fundefs, fundef, main, prg, modimp,
              typedefs, typedef, defs, def2, def3, fundef2, exprblock, exprblock2,
@@ -365,7 +369,7 @@ imports: import imports { $1->node[0]=$2;
 import: IMPORT ID COLON impdesc { $$=$4; $$->info.id=$2; }
 	;
 
-impdesc: ALL
+impdesc: ALL SEMIC
             { $$=MakeNode( N_implist );
 
               DBUG_PRINT("GENTREE",
@@ -568,14 +572,12 @@ fundefs: fundef fundefs { $1->node[1]=$2;
 	| main {$$=$1;}
 	;
 
-fundef: types ID BRACKET_L fundef2 
-        { id *function_name;
-
-           $$=$4;
+fundef: types fun_name BRACKET_L fundef2 
+        {  $$=$4;
            $$->info.types=$1;          /*  result type(s) */
            $$->info.types->id=$2;      /*  function name */
         }
-	| types INLINE ID BRACKET_L fundef2
+	| types INLINE fun_name BRACKET_L fundef2
             {id *function_name;
 
              $$=$5;
@@ -632,6 +634,31 @@ arg: type ID {$$=MakeNode(N_arg);
                           $$->info.types->id));
              }
      ;
+fun_name : ID { $$=$1; }
+         | AND { $$=$1; }
+         | OR { $$=$1; }
+         | EQ { $$=$1; }
+         | NEQ { $$=$1; }
+         | NOT { $$=$1; }
+         | LE { $$=$1; }
+         | LT { $$=$1; }
+         | GE { $$=$1; }
+         | GT { $$=$1; }
+         | PLUS { $$=$1; }
+         | MINUS { $$=$1; }
+         | DIV { $$=$1; }
+         | MUL { $$=$1; }
+         | RESHAPE { $$=$1; }
+         | SHAPE { $$=$1; }
+         | TAKE { $$=$1; }
+         | DROP { $$=$1; }
+         | DIM { $$=$1; }
+         | ROTATE { $$=$1; }
+         | CAT { $$=$1; }
+         | PSI { $$=$1; }
+         | GENARRAY { $$=$1; }
+         | MODARRAY { $$=$1; }
+        ;
 
 main: TYPE_INT K_MAIN BRACKET_L BRACKET_R {$$=MakeNode(N_fundef);} exprblock 
        {
@@ -916,6 +943,7 @@ selassign: IF {$$=MakeNode(N_cond);} BRACKET_L expr BRACKET_R assignblock
             }
 
 forassign: DO {$$=MakeNode(N_do);} assignblock WHILE BRACKET_L expr BRACKET_R 
+           SEMIC
             { $$=$<node>2;
               $$->node[0]=$6;   /* Test */
               $$->node[1]=$3;   /* Schleifenrumpf */
