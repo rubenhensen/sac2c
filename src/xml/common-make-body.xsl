@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/24 19:37:53  sah
+  COMPILES
+
   Revision 1.1  2004/11/23 11:35:32  sah
   Initial revision
 
@@ -24,7 +27,9 @@ version="1.0">
   <!-- declarate variables -->
   <xsl:value-of select="'node *this;'" />
   <!-- counter for for-loops -->
-  <xsl:value-of select="'int cnt;'" />
+  <xsl:if test="attributes/attribute/type[key( &quot;arraytypes&quot;, @name)]" >
+    <xsl:value-of select="'int cnt;'" />
+  </xsl:if>
   <!-- DBUG_ENTER call -->
   <xsl:value-of select="'DBUG_ENTER( &quot;TBmake'"/>
   <xsl:call-template name="uppercase" >
@@ -41,14 +46,27 @@ version="1.0">
   <!-- allocate new node this -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating node structure&quot;));'"/>
   <xsl:value-of select="'this = MakeEmptyNode();'" />
-  <!-- clear all node pointers -->
-  <xsl:value-of select="'for(cnt=0;cnt&lt;MAX_SONS;cnt++){this-&gt;node[cnt]=NULL;}'"/>
+  <!-- allocate the sons structure -->
+  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating sons structure&quot;));'"/>
+  <xsl:value-of select="'this->sons.'"/>
+  <xsl:call-template name="name-to-nodeenum">
+    <xsl:with-param name="name" select="@name" />
+  </xsl:call-template>
+  <xsl:value-of select="' = ILIBmalloc(sizeof(struct SONS_N_'"/>
+  <xsl:call-template name="uppercase">
+    <xsl:with-param name="string" select="@name"/>
+  </xsl:call-template>
+  <xsl:value-of select="'));'"/>
   <!-- allocate the attrib structure -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating attrib structure&quot;));'"/>
-  <xsl:value-of select="'this->attribs.N_'"/>
-  <xsl:value-of select="@name"/>
-  <xsl:value-of select="' = Malloc(sizeof(struct AttribS_N_'"/>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="'this->attribs.'"/>
+  <xsl:call-template name="name-to-nodeenum">
+    <xsl:with-param name="name" select="@name" />
+  </xsl:call-template>
+  <xsl:value-of select="' = ILIBmalloc(sizeof(struct ATTRIBS_N_'"/>
+  <xsl:call-template name="uppercase">
+    <xsl:with-param name="string" select="@name"/>
+  </xsl:call-template>
   <xsl:value-of select="'));'"/>
   <!-- set node type -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting node type&quot;));'"/>
@@ -61,10 +79,10 @@ version="1.0">
   <xsl:value-of select="';'" />
   <!-- set lineno -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting lineno&quot;));'"/>
-  <xsl:value-of select="'this->lineno = linenum;'" />
+  <xsl:value-of select="'this->lineno = global.linenum;'" />
   <!-- set filename -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting filename&quot;));'"/>
-  <xsl:value-of select="'this->src_file = filename;'" />
+  <xsl:value-of select="'this->src_file = global.filename;'" />
   <!-- assign sons and attributes a value -->
   <xsl:apply-templates select="sons/son" mode="make-body"/>
   <xsl:apply-templates select="attributes/attribute" mode="make-body"/>

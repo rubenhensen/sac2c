@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/24 19:37:53  sah
+  COMPILES
+
   Revision 1.1  2004/11/23 11:30:42  sah
   Initial revision
 
@@ -43,15 +46,10 @@ version="1.0">
 static node *MakeEmptyNode()
 {
   node *result;
-  int cnt;
 
   DBUG_ENTER("MakeEmptyNode");
 
-  result = (node *) Malloc( sizeof( node));
-
-  for (cnt = 0; cnt &lt; MAX_SONS; cnt++) {
-    result->node[cnt] = NULL;
-  }
+  result = (node *) ILIBmalloc( sizeof( node));
 
   DBUG_RETURN( result);
 }
