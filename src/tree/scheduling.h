@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/01/24 23:40:58  dkr
+ * some signatures modified
+ *
  * Revision 3.1  2000/11/20 18:03:29  sacbase
  * new release made
  *
@@ -47,9 +50,8 @@
  *
  *****************************************************************************/
 
-#ifndef SAC_SCHEDULING_H
-
-#define SAC_SCHEDULING_H
+#ifndef _SAC_SCHEDULING_H_
+#define _SAC_SCHEDULING_H_
 
 #include <stdio.h>
 
@@ -71,7 +73,7 @@ extern int SCHAdjustmentRequired (int dim, node *wlseg);
 extern SCHsched_t *SCHMakeCompatibleSyncblockScheduling (SCHsched_t *old_sched,
                                                          SCHsched_t *new_sched);
 
-extern node *SCHCompileSchedulingEnd (SCHsched_t sched, node *arg_node);
-extern node *SCHCompileSchedulingBegin (SCHsched_t sched, node *arg_node);
+extern node *SCHCompileSchedulingEnd (char *wl_name, SCHsched_t sched, node *arg_node);
+extern node *SCHCompileSchedulingBegin (char *wl_name, SCHsched_t sched, node *arg_node);
 
-#endif /* SAC_SCHEDULING_H */
+#endif /* _SAC_SCHEDULING_H_ */
