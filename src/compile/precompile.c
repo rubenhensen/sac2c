@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2000/12/12 12:24:06  dkr
+ * PREC1fundef: marking of c-functions is done during RC now
+ *
  * Revision 3.4  2000/12/06 18:12:16  cg
  * Re-introduced code for the elimination of function bodies
  * of imported, non-specialized functions. This was disabled
@@ -131,21 +134,7 @@
  * Revision 2.2  1999/06/25 14:52:25  rob
  * Introduce definitions and utility infrastructure for tagged array support.
  *
- * Revision 2.1  1999/02/23 12:42:52  sacbase
- * new release made
- *
- * Revision 1.76  1998/11/08 14:31:15  dkr
- * PRECNcode:
- *   NCODE_CBLOCK should be never NULL
- *   (if so, we will get an assert now :-)
- *
- * Revision 1.75  1998/08/07 16:06:13  dkr
- * PRECWLsegVar added
- *
  * [...]
- *
- * Revision 1.2  1995/12/01  17:23:26  cg
- * first working revision
  *
  * Revision 1.1  1995/11/28  12:23:34  cg
  * Initial revision
@@ -189,6 +178,7 @@
 #include "adjust_ids.h"
 #include "precompile.h"
 #include "map_cwrapper.h"
+#include "refcount.h"
 #include "compile.h"
 #include "precompile.h"
 
@@ -379,15 +369,21 @@ PREC1fundef (node *arg_node, node *arg_info)
     INFO_PREC_FUNDEF (arg_info) = arg_node;
 
     /*
-     * no module name -> must be an external C-fun
+     * The following is done during reference counting now
      */
+#if 0
+  /*
+   * no module name -> must be an external C-fun
+   */
 #ifdef MAIN_HAS_MODNAME
-    if (FUNDEF_MOD (arg_node) == NULL) {
+  if (FUNDEF_MOD( arg_node) == NULL) {
 #else
-    if ((FUNDEF_MOD (arg_node) == NULL) && strcmp (FUNDEF_NAME (arg_node), "main")) {
+  if ((FUNDEF_MOD( arg_node) == NULL) &&
+      strcmp( FUNDEF_NAME( arg_node), "main")) {
 #endif
-        FUNDEF_STATUS (arg_node) = ST_Cfun;
-    }
+    FUNDEF_STATUS( arg_node) = ST_Cfun;
+  }
+#endif
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
