@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/28 17:22:37  sah
+ * now, internally a copy of the string is used
+ *
  * Revision 1.1  2004/10/27 13:10:38  sah
  * Initial revision
  *
@@ -17,7 +20,7 @@
  */
 
 struct STRINGSET_T {
-    const char *val;
+    char *val;
     stringset_t *next;
 };
 
@@ -49,7 +52,9 @@ SSAdd (const char *string, stringset_t *set)
     if (!SSContains (string, set)) {
         stringset_t *new = Malloc (sizeof (stringset_t));
 
-        new->val = string;
+        DBUG_PRINT ("SS", ("adding %s.", string));
+
+        new->val = StringCopy (string);
         new->next = set;
 
         set = new;
@@ -77,6 +82,7 @@ SSFree (stringset_t *set)
     DBUG_ENTER ("SSFree");
 
     if (set != NULL) {
+        set->val = Free (set->val);
         set->next = SSFree (set->next);
         set = Free (set);
     }
