@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2001/06/01 16:09:06  nmw
+ * removal of assignments like a=a after renaming added
+ *
  * Revision 1.15  2001/05/17 11:38:19  dkr
  * FREE/MALLOC eliminated
  *
@@ -466,6 +469,14 @@ USSAlet (node *arg_node, node *arg_info)
 
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
     }
+
+    /* remove assignments like a = a after renaming */
+    if ((LET_IDS (arg_node) != NULL) && (LET_EXPR (arg_node) != NULL)
+        && (NODE_TYPE (LET_EXPR (arg_node)) == N_id)
+        && (IDS_AVIS (LET_IDS (arg_node)) == ID_AVIS (LET_EXPR (arg_node)))) {
+        INFO_USSA_OPASSIGN (arg_info) = OPASSIGN_REMOVE;
+    }
+
     DBUG_RETURN (arg_node);
 }
 
