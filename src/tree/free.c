@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2004/10/19 11:52:18  ktr
+ * Added FUNDEF_RETALIAS
+ *
  * Revision 3.68  2004/09/30 19:50:48  sah
  * renamed FreeCSEInfo to FreeCSEinfo
  *
@@ -1156,6 +1159,8 @@ FreeFundef (node *arg_node, info *arg_info)
         if (FUNDEF_STATUS (arg_node) != ST_spmdfun) {
             FUNDEF_NEEDOBJS (arg_node) = FreeNodelist (FUNDEF_NEEDOBJS (arg_node));
         }
+
+        FUNDEF_RETALIAS (arg_node) = FreeNodelist (FUNDEF_RETALIAS (arg_node));
 
         /*
          * If  ((FUNDEF_USED > 0) || (FUNDEF_USED == USED_INACTIVE))  is hold the

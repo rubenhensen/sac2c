@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.111  2004/10/19 11:52:18  ktr
+ * Added FUNDEF_RETALIAS
+ *
  * Revision 3.110  2004/10/15 10:03:58  sah
  * removed old module system nodes in
  * new ast mode
@@ -1182,6 +1185,8 @@ DupFundef (node *arg_node, info *arg_info)
     FUNDEF_PRAGMA (new_node) = DUPTRAV (FUNDEF_PRAGMA (arg_node));
     FUNDEF_NEEDOBJS (new_node) = DupNodelist_ (FUNDEF_NEEDOBJS (arg_node), arg_info);
     FUNDEF_VARNO (new_node) = FUNDEF_VARNO (arg_node);
+
+    FUNDEF_RETALIAS (new_node) = DupNodelist_ (FUNDEF_RETALIAS (arg_node), arg_info);
 
     CopyCommonNodeData (new_node, arg_node);
 

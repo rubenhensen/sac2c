@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.228  2004/10/19 11:51:34  ktr
+ * Added FUNDEF_RETALIAS
+ *
  * Revision 3.227  2004/10/15 11:37:53  ktr
  * Modified AVIS_ALIAS
  *
@@ -1324,6 +1327,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***                                                ( -> write-SIB -> )
  ***                                                ( -> obj-handling -> )
  ***                                                ( -> liftspmd !!)
+ ***    nodelist*       RETALIAS                  ( emaa -> )
  ***    node*           ICM         (N_icm)       (compile -> print )
  ***    int             VARNO                     (optimize -> )
  ***    int             INLREC                    (inline !!)
@@ -1335,6 +1339,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    node*           FUNDEC_DEF  (N_fundef)    (checkdec -> writesib !!)
  ***
  ***    argtab_t*       ARGTAB                    (precompile -> compile !!)
+ ***    nodelist*       RETALIAS                  ( emaa -> )
  ***
  ***  temporary attributes for ST_spmdfun fundefs only:
  ***
@@ -1436,6 +1441,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_DFM_BASE(n) ((DFMmask_base_t) (n->dfmask[0]))
 #define FUNDEF_ARGTAB(n) ((argtab_t *)(n->dfmask[4]))
 #define FUNDEF_ICM(n) (n->node[5])
+#define FUNDEF_RETALIAS(n) (*((nodelist **)(&(n->mask[0]))))
 
 /* LaC functions */
 #define FUNDEF_USED(n) (n->int_data)

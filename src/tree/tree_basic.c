@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.105  2004/10/19 11:51:34  ktr
+ * Added FUNDEF_RETALIAS
+ *
  * Revision 3.104  2004/10/15 09:09:14  ktr
  * added AVIS_ALIAS ARG_ALIAS
  *
@@ -857,6 +860,8 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
     FUNDEF_USED (tmp) = USED_INACTIVE;
 
     FUNDEF_ARGTAB (tmp) = NULL;
+
+    FUNDEF_RETALIAS (tmp) = NULL;
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
