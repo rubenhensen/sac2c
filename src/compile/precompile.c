@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.101  2004/11/24 15:44:10  jhb
+ * removed include typecheck.h
+ *
  * Revision 3.100  2004/11/24 14:24:46  skt
  * some comments during SACDevCampDK 2k4
  *
@@ -323,7 +326,7 @@
 #include "convert.h"
 #include "DataFlowMask.h"
 #include "adjust_ids.h"
-#include "typecheck.h"
+/* #include "typecheck.h" */
 #include "NameTuplesUtils.h"
 #include "map_cwrapper.h"
 #include "scheduling.h"
