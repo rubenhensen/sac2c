@@ -1,6 +1,10 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.9  2000/05/11 09:58:00  sbs
+ * modified the reverse computation of bounds......
+ * unfortunately still not ok 8-((((
+ *
  * Revision 2.8  1999/11/15 18:05:31  dkr
  * VARNO replaced, INFO_VARNO with changed signature
  *
@@ -577,7 +581,7 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
 
     case F_mul:
         ig->l[dim] = (ig->l[dim] + constval - 1) / constval;
-        ig->u[dim] = (ig->u[dim] - 1) / constval + 1;
+        ig->u[dim] = (ig->u[dim] + constval - 1) / constval;
         if (ig->step) {
             DBUG_ASSERT (0, ("WL folding with transformed index variables "
                              "by multiplication and grids not supported right now."));
