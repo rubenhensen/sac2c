@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2002/08/15 11:47:39  dkr
+ * type LUT_t* replaced by LUT_t
+ *
  * Revision 3.69  2002/08/13 13:43:28  dkr
  * interface to LookUpTable.[ch] modified
  *
@@ -403,7 +406,7 @@ DupIds_ (ids *arg_ids, node *arg_info)
     DBUG_ENTER ("DupIds_");
 
     if (arg_ids != NULL) {
-        LUT_t *lut = (arg_info != NULL) ? INFO_DUP_LUT (arg_info) : NULL;
+        LUT_t lut = (arg_info != NULL) ? INFO_DUP_LUT (arg_info) : NULL;
 
         new_name = SearchInLUT_SS (lut, IDS_NAME (arg_ids));
         new_ids = MakeIds (StringCopy (new_name), StringCopy (IDS_MOD (arg_ids)),

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/08/15 11:47:33  dkr
+ * type LUT_t* replaced by LUT_t
+ *
  * Revision 3.6  2002/08/13 13:46:29  dkr
  * SearchInLUT_PP used instead of SearchInLUT_P
  *
@@ -135,7 +138,7 @@ SPMDLspmd (node *arg_node, node *arg_info)
     node *retexprs, *new_retexpr;
     node *tmp;
     types *rettypes, *new_rettype;
-    LUT_t *lut;
+    LUT_t lut;
 
     DBUG_ENTER (" SPMDLspmd");
 
