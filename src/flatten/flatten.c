@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.29  1995/05/30 06:45:57  hw
+ * Revision 1.30  1995/05/30 11:59:06  hw
+ * bug fixed in FltnExprs
+ *
+ * Revision 1.29  1995/05/30  06:45:57  hw
  * - FltnMod deleted
  * - FltnCon inserted (node[1] of N_foldfun will be flattened too)
  *
@@ -497,7 +500,7 @@ FltnExprs (node *arg_node, node *arg_info)
     }
 
     DBUG_PRINT ("FLATTEN", ("tag: %d, abstract: %d, node[0]: %s", arg_info->info.cint,
-                            abstract, mdb_nodetype[tmp_arg->node[0]->nodetype]));
+                            abstract, mdb_nodetype[tmp_arg->nodetype]));
 
     if (1 == abstract) {
         tmp_node1 = arg_node->node[0];
