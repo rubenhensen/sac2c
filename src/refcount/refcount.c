@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.49  1998/05/08 00:43:25  dkr
+ * RC for index-vector now correct.
+ * added RCO for with-loop-arguments :)
+ *
  * Revision 1.48  1998/05/07 17:13:15  dkr
  * fixed a bug in RCNcode:
  *   NCODE_RC_IDS is now initialized with NULL
@@ -676,6 +680,7 @@ Refcount (node *arg_node)
     act_tab = refcnt_tab;
     arg_info = MakeInfo ();
     INFO_RC_PRF (arg_info) = NULL;
+    INFO_RC_WITH (arg_info) = NULL;
 
     if (N_modul == NODE_TYPE (arg_node)) {
         if (MODUL_FUNS (arg_node) != NULL) {
@@ -1170,18 +1175,22 @@ RCprf (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *RCid(node *arg_node, node *arg_info)
+ *   node *RCid( node *arg_node, node *arg_info)
  *
  * description:
  *   depending on INFO_RC_PRF( arg_info) do one of the following:
  *     a) Increment refcnt at vardec and set local refcnt
  *        of the N_id node accordingly. (RC op needed)
  *     b) Set local refcnt to -1. (no RC op)
+ *   if we have found the index-vector of a with-loop, we set RC of
+ *    'NWITH_VEC' to 1 (-1 normally, see RCNwithid) --- to indicate, that we
+ *    must build the index-vector in the compilat of the with-loop.
  *
  * remarks:
- *   (INFO_RC_PRF != NULL) indicates that this N_id node is argument of a
- *    primitive function (exept F_reshape).
- *   INFO_RC_PRF then points to this prf.
+ *   - ('INFO_RC_PRF( arg_info)' != NULL) indicates that this N_id node is
+ *      argument of a primitive function (exept F_reshape).
+ *     'INFO_RC_PRF' then points to this prf.
+ *   - 'INFO_RC_WITH( arg_info)' does the same for a with-loop.
  *
  ******************************************************************************/
 
@@ -1193,32 +1202,46 @@ RCid (node *arg_node, node *arg_info)
     if (MUST_REFCOUNT (ID_TYPE (arg_node))) {
         if ((INFO_RC_PRF (arg_info) == NULL)
             || (VARDEC_REFCNT (ID_VARDEC (arg_node)) == 0) || (!opt_rco)) {
+
             /*
-             * This N_id node either is NOT an argument of a primitive
-             * function, or it is the last usage within the body of the
-             * current function. (or refcount-optimization is turned off!)
-             * In both cases, the refcnt is incremented and attached to
-             * the N_id node.
+             * This N_id node either is *not* an argument of a primitive
+             *  function, or it is the last usage within the body of the
+             *  current function. (or refcount-optimization is turned off!)
+             * In both cases the refcnt is incremented and attached to
+             *  the N_id node.
              */
+
             DBUG_PRINT ("RC", ("RC for %s increased:", ID_NAME (arg_node)));
             VARDEC_REFCNT (ID_VARDEC (arg_node))++;
             ID_REFCNT (arg_node) = VARDEC_REFCNT (ID_VARDEC (arg_node));
         } else {
+
             /*
-             * This N_id node is argument to the N_prf node
-             * AND it is definitly not the last usage of it.
+             * This N_id node is argument to the N_prf node *and*
+             *  it is definitly not the last usage of it.
              * Therefore -1 is attached to the refcnt field if N_id
              * (to indicate that this operation does not need any refcnt
              * adjustments).
              */
+
             ID_REFCNT (arg_node) = -1;
         }
     } else {
         ID_REFCNT (arg_node) = -1; /* variable needs no refcount */
     }
 
-    DBUG_PRINT ("RC",
-                ("set refcnt of %s to %d:", ID_NAME (arg_node), ID_REFCNT (arg_node)));
+    if (INFO_RC_WITH (arg_info) != NULL) {
+
+        /*
+         * if we have found the index-vector of a with-loop, we set RC of
+         *  'NWITH_VEC' to 1.
+         */
+
+        if (strcmp (IDS_NAME (NWITH_VEC (INFO_RC_WITH (arg_info))), ID_NAME (arg_node))
+            == 0) {
+            IDS_REFCNT (NWITH_VEC (INFO_RC_WITH (arg_info))) = 1;
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1493,12 +1516,6 @@ RCwith (node *arg_node, node *arg_info)
  *  arguments     : 1) argument node
  *                  2) info node
  *  description   : traverses first body of with-loop and then gen- modarray
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
@@ -1516,12 +1533,6 @@ RCcon (node *arg_node, node *arg_info)
  *  arguments     : 1) argument node
  *                  2) info node
  *  description   : traverses generator of with_loop
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
@@ -1543,12 +1554,21 @@ RCgen (node *arg_node, node *arg_info)
  *
  * description:
  *   performs the refcounting for a N_Nwith node.
+ *   collects in NWITH_RC_IDS all ids that are RC-arguments of the with-loop.
  *
  * remarks:
- *   In INFO_RC_RCDUMP( arg_info) we store the initial refcounters for RCNcode:
- *    rc(var) = 1,  if 'var' is element of NWITH_IN           \ this is done,
- *              1,  if 'var' is index-vector of the with-loop / to fool the RCO
- *              0,  otherwise
+ *   - 'INFO_RC_WITH( arg_info)' points to the current with-loop node.
+ *   - In 'INFO_RC_RCDUMP( arg_info)' we store the initial refcounters for
+ *     RCNcode:
+ *       rc(var) = 1,  if 'var' is element of 'NWITH_IN'      \ this is done,
+ *                 1,  if 'var' is index-vector of with-loop  / to fool the RCO
+ *                 0,  otherwise
+ *   - The RC of 'NWITH_VEC' indicates whether we need to build the
+ *     index-vector or not:
+ *        1: we have found references to the index-vector in at least one
+ *           code-block
+ *       -1: we do not need to build the index-vector.
+ *     This flag/RC is correctly set after traversal of the code-blocks.
  *
  ******************************************************************************/
 
@@ -1556,9 +1576,15 @@ node *
 RCNwith (node *arg_node, node *arg_info)
 {
     node *vardec;
+    ids *new_ids, *last_ids;
     int *ref_dump;
 
     DBUG_ENTER ("RCNwith");
+
+    /*
+     * 'INFO_RC_WITH( arg_info)' points to current with-loop node.
+     */
+    INFO_RC_WITH (arg_info) = arg_node;
 
     /*
      * store current refcounts, initialize them with 0
@@ -1578,10 +1604,13 @@ RCNwith (node *arg_node, node *arg_info)
                                  * remark: We only need to inspect the withid of the first
                                  * part, because the withid is in *all* parts the same!!
                                  */
-                                if (NODE_TYPE (vardec) == N_arg) {
-                                    ARG_REFCNT (vardec) = 1;
-                                } else {
-                                    VARDEC_REFCNT (vardec) = 1;
+
+                                if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+                                    if (NODE_TYPE (vardec) == N_arg) {
+                                        ARG_REFCNT (vardec) = 1;
+                                    } else {
+                                        VARDEC_REFCNT (vardec) = 1;
+                                    }
                                 }
                             }) /* FOREACH_VARDEC_AND_ARG */
     INFO_RC_RCDUMP (arg_info) = StoreRC ();
@@ -1593,6 +1622,12 @@ RCNwith (node *arg_node, node *arg_info)
     InitRC (0);
 
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    /*
+     * CAUTION: We must traverse the (parts -> withids) before we
+     *          traverse the code, to get the right RC in NWITH_VEC!
+     *          RCNwithid initializes the RC, and RCNcode sets it
+     *          correctly!
+     */
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
@@ -1606,17 +1641,50 @@ RCNwith (node *arg_node, node *arg_info)
     RestoreRC (ref_dump);
 
     /*
-     * increase refcount of each variable in NWITH_IN
+     * Increase refcount of each RC-variable that is IN-var of the with-loop.
+     *
+     * We collect all these ids in 'NWITH_RC_IDS( arg_node)'.
+     * 'compile' generates for each var found in 'NWITH_RC_IDS' a 'ND_DEC_RC'-ICM
+     *  in the epilog-code of the with-loop!
+     *
+     * RCO: with-loops are handled like prfs:
+     *      when RCO is active, we only count the last occur of IN-vars.
+     *
+     * CAUTION: we must initialize NCODE_RC_IDS because some subtrees (e.g.
+     *           bodies of while-loops) are traversed two times!!!
      */
+
+    NWITH_RC_IDS (arg_node) = NULL;
     FOREACH_VARDEC_AND_ARG (fundef_node, vardec,
                             if (DFMTestMaskEntry (NWITH_IN (arg_node),
                                                   VARDEC_OR_ARG_NAME (vardec))) {
-                                if (NODE_TYPE (vardec) == N_arg) {
-                                    ARG_REFCNT (vardec)++;
-                                } else {
-                                    VARDEC_REFCNT (vardec)++;
+                                if ((MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec)))
+                                    && ((VARDEC_OR_ARG_REFCNT (vardec) == 0)
+                                        || (!opt_rco))) {
+                                    if (NODE_TYPE (vardec) == N_arg) {
+                                        ARG_REFCNT (vardec)++;
+                                    } else {
+                                        VARDEC_REFCNT (vardec)++;
+                                    }
+
+                                    new_ids
+                                      = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
+                                                 NULL, ST_regular);
+                                    IDS_VARDEC (new_ids) = vardec;
+                                    IDS_REFCNT (new_ids) = VARDEC_REFCNT (vardec);
+                                    if (NWITH_RC_IDS (arg_node) == NULL) {
+                                        NWITH_RC_IDS (arg_node) = new_ids;
+                                    } else {
+                                        IDS_NEXT (last_ids) = new_ids;
+                                    }
+                                    last_ids = new_ids;
                                 }
                             }) /* FOREACH_VARDEC_AND_ARG */
+
+    /*
+     * we leave the with-loop -> reset 'INFO_RC_WITH( arg_info)'.
+     */
+    INFO_RC_WITH (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -1666,10 +1734,18 @@ RCNpart (node *arg_node, node *arg_info)
  *   performs reference counting for N_Ncode nodes.
  *
  * remarks:
- *   In INFO_RC_RCDUMP( arg_info) are the initial refcounters stored:
- *    rc(var) = 1,  if 'var' is element of NWITH_IN           \ this is done,
- *              1,  if 'var' is index-vector of the with-loop / to fool the RCO
- *              0,  otherwise
+ *   - In 'INFO_RC_RCDUMP( arg_info)' are the initial refcounters stored:
+ *       rc(var) = 1,  if 'var' is element of 'NWITH_IN'      \ this is done,
+ *                 1,  if 'var' is index-vector of with-loop  / to fool the RCO
+ *                 0,  otherwise
+ *   - 'INFO_RC_NEED_IDX( arg_info)' indicates whether we need to build the
+ *     index-vector or not.
+ *   - The RC of 'NWITH_VEC' indicates whether we need to build the
+ *     index-vector or not:
+ *        1: we have found references to the index-vector in at least one
+ *           code-block
+ *       -1: we do not need to build the index-vector.
+ *     This flag/RC is correctly set after traversal of the code-blocks.
  *
  ******************************************************************************/
 
@@ -1682,15 +1758,13 @@ RCNcode (node *arg_node, node *arg_info)
     DBUG_ENTER ("RCNcode");
 
     /*
-     * initialize refcounters with 0
+     * initialize refcounters
      */
-
     RestoreRC (INFO_RC_RCDUMP (arg_info));
 
     /*
      * count the references in the code
      */
-
     NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
@@ -1698,17 +1772,19 @@ RCNcode (node *arg_node, node *arg_info)
      * We collect all ids, which RC is >1, in 'NCODE_RC_IDS( arg_node)'.
      * In 'IDS_REFCNT' we store (RC - 1) --- because we started the refcounting
      *  of these vars with (RC == 1)!!!
-     * 'compile' generates for each var in NCODE_RC_IDS a 'ND_INC_RC' ICM!
+     * 'compile' generates for each var in 'NCODE_RC_IDS' a 'ND_INC_RC'-ICM
+     *  as first statement of the code-block!
      *
      * CAUTION: we must initialize NCODE_RC_IDS because some subtrees (e.g.
-     *  bodies of while-loops) are traversed two times!!!
+     *           bodies of while-loops) are traversed two times!!!
      */
 
     NCODE_RC_IDS (arg_node) = NULL;
-    FOREACH_VARDEC_AND_ARG (fundef_node, vardec, if (VARDEC_OR_ARG_REFCNT (vardec) > 0) {
+    FOREACH_VARDEC_AND_ARG (fundef_node, vardec, if (VARDEC_OR_ARG_REFCNT (vardec) > 1) {
         new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL, ST_regular);
         IDS_VARDEC (new_ids) = vardec;
         IDS_REFCNT (new_ids) = VARDEC_REFCNT (vardec) - 1;
+
         if (NCODE_RC_IDS (arg_node) == NULL) {
             NCODE_RC_IDS (arg_node) = new_ids;
         } else {
@@ -1773,8 +1849,10 @@ RCNwithid (node *arg_node, node *arg_info)
     DBUG_ENTER ("RCNwithid");
 
     /*
-     * we do not need the RC of the index-vector here.
-     *  -> mark index-vector as a non-RC-object.
+     * we initialize the RC of the index-vector with -1.
+     *  -> by default we do not need to build it.
+     * (when RCNcode founds a reference of the index-vector, the RC of the
+     *  withid in the first part (= 'NWITH_VEC') is set to 1.)
      */
 
     IDS_REFCNT (NWITHID_VEC (arg_node)) = -1;
