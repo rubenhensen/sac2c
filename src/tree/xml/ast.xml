@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.51  2004/11/22 21:06:31  sah
+  fixed typoe
+
   Revision 1.50  2004/11/22 17:16:56  sah
   changes.
   DK 04
@@ -3550,7 +3553,7 @@
       </sons>
       <attributes>
         <attribute name="Type" mandatory="yes">
-	  <type name="NewTYpe" />
+	  <type name="NewType" />
 	  <phases>
 	    <all />
 	  </phases>
