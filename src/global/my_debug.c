@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1994/12/16 14:20:59  sbs
+ * Revision 1.7  1994/12/21 11:33:29  hw
+ * added char *mdb_type[]
+ *
+ * Revision 1.6  1994/12/16  14:20:59  sbs
  * imp_tab inserted and NIF macro enlarged
  *
  * Revision 1.5  1994/12/05  13:02:03  hw
@@ -45,5 +48,13 @@ char *mdb_prf[] = {
 };
 
 #undef PRF_IF
+
+#define TYP_IF(n, s) s
+
+char *mdb_type[] = {
+#include "type_info.mac"
+};
+
+#undef TYP_IF
 
 #endif /* DBUG_OFF */
