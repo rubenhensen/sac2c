@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.5  2004/09/29 13:47:32  sah
+ * extended the ntype generation to
+ * function and return types
+ *
  * Revision 1.4  2004/08/29 18:08:38  sah
  * added some DBUG_PRINTS
  *
@@ -183,6 +187,7 @@ CAVarg (node *arg_node, info *arg_info)
             AVIS_TYPE (ARG_AVIS (arg_node)) = TYOldType2Type (ARG_TYPE (arg_node));
         } else {
             /* TYOldType2Type() can not handle T_dots yet... 8-(( */
+            DBUG_PRINT ("CAV", ("Found arg of type T_dots"));
         }
     } else {
         DBUG_EXECUTE ("CAV", tmp_str = TYType2String (AVIS_TYPE (ARG_AVIS (arg_node)),
@@ -387,14 +392,46 @@ CAVfundef (node *arg_node, info *arg_info)
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
-#if 0 /* TYOldType2Type() can not handle T_dots yet... 8-(( */
-  if (FUNDEF_RET_TYPE( arg_node) == NULL) {
-    DBUG_PRINT( "CAV", ("missing ntype in fundef %s added.",
-                        FUNDEF_NAME( arg_node)));
-    DBUG_ASSERT( (FUNDEF_TYPES( arg_node) != NULL), "old type in arg missing");
-    FUNDEF_RET_TYPE( arg_node) = TYOldType2Type( FUNDEF_TYPES( arg_node));
-  }
+    if (FUNDEF_RET_TYPE (arg_node) == NULL) {
+        DBUG_ASSERT ((FUNDEF_TYPES (arg_node) != NULL), "old type in arg missing");
+
+        if (!(HasDotTypes (FUNDEF_TYPES (arg_node)))) {
+            DBUG_PRINT ("CAV", ("missing return ntype in fundef %s added.",
+                                FUNDEF_NAME (arg_node)));
+            FUNDEF_RET_TYPE (arg_node) = TYOldTypes2ProdType (FUNDEF_TYPES (arg_node));
+        } else {
+            /* TYOldType2Type() can not handle T_dots yet... 8-(( */
+            DBUG_PRINT ("CAV", ("fundef `%s' contains T_dots type which cannot be"
+                                " converted to new type",
+                                FUNDEF_NAME (arg_node)));
+        }
+    }
+
+    /* finally, try to build a function type */
+    if ((FUNDEF_RET_TYPE (arg_node) != NULL) && (FUNDEF_TYPE (arg_node) == NULL)) {
+        ntype *result;
+
+        DBUG_PRINT ("CAV", ("trying to construct new function type for"
+                            " fundef `%s'",
+                            FUNDEF_NAME (arg_node)));
+
+        result = TYArgs2FunType (FUNDEF_ARGS (arg_node),
+                                 TYCopyType (FUNDEF_RET_TYPE (arg_node)), arg_node);
+
+#ifndef DBUG_OFF
+        if (result != NULL) {
+            DBUG_PRINT ("CAV", ("successfully built new function type for"
+                                " fundef `%s'",
+                                FUNDEF_NAME (arg_node)));
+        } else {
+            DBUG_PRINT ("CAV", ("failed to built new function type for"
+                                " fundef `%s'",
+                                FUNDEF_NAME (arg_node)));
+        }
 #endif
+
+        FUNDEF_TYPE (arg_node) = result;
+    }
 
     DBUG_RETURN (arg_node);
 }
