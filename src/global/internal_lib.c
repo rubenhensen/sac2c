@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1997/12/06 17:15:13  srs
+ * changed Malloc (SHOW_MALLOC)
+ *
  * Revision 1.20  1997/12/05 16:36:40  srs
  * StringCopy: allocate one byte less now
  *
@@ -86,6 +89,20 @@
 
 #define MAX_SYSCALL 1000
 
+#ifdef SHOW_MALLOC
+/* These types are only used to compute malloc_align_step.
+   No instances are raised */
+typedef union {
+    long int l;
+    double d;
+} malloc_align_type;
+
+typedef struct {
+    int size;
+    malloc_align_type align;
+} malloc_header_type;
+#endif
+
 /*
  *
  *  functionname  : Malloc
@@ -99,6 +116,7 @@
  *  remarks       : exit if there is not enough memory
  *
  */
+
 void *
 Malloc (int size)
 {
@@ -108,11 +126,11 @@ Malloc (int size)
     DBUG_PRINT ("MEMALLOC_TRY", ("trying to allocate %d bytes", size));
 
 #ifdef SHOW_MALLOC
-    tmp = malloc (size + sizeof (int));
+    tmp = malloc (size + malloc_align_step);
     if (NULL == tmp)
         SYSABORT (("Out of memory"));
     *(int *)tmp = size;
-    tmp = (void *)((int *)tmp + 1);
+    tmp += malloc_align_step;
 
     total_allocated_mem += size;
     current_allocated_mem += size;
@@ -364,3 +382,23 @@ TmpVar ()
 
     DBUG_RETURN (result);
 }
+
+#ifdef SHOW_MALLOC
+/* -------------------------------------------------------------------------- *
+ * task: calculates the number of bytes for a safe alignment (used in Malloc)
+ * initializes global variable malloc_align_step
+ *
+ * remarks: the c-compiler alignment of structs is exploited.
+ * -------------------------------------------------------------------------- */
+void
+compute_malloc_align_step (void)
+{
+    DBUG_ENTER ("compute_malloc_align_step");
+
+    /* calculate memory alignment steps for this machine */
+    malloc_align_step = sizeof (malloc_header_type) - sizeof (malloc_align_type);
+
+    DBUG_VOID_RETURN;
+}
+/* ========================================================================== */
+#endif
