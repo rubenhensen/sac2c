@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/03/15 10:23:04  dkr
+ * SAC_MT_ADJUST_SCHEDULER_OFFSET renamed into
+ * SAC_MT_ADJUST_SCHEDULER__OFFSET
+ *
  * Revision 3.7  2001/03/14 16:03:21  ben
  * ICM  SAC_MT_SCHEDULER_BlockVar_DIM0 modified
  *
@@ -654,7 +658,7 @@ typedef union {
  *  Definitions of macro-implemented ICMs for scheduling
  */
 
-#define SAC_MT_ADJUST_SCHEDULER_OFFSET(array, dim, lower, upper, unrolling, offset)      \
+#define SAC_MT_ADJUST_SCHEDULER__OFFSET(array, dim, lower, upper, unrolling, offset)     \
     {                                                                                    \
         if ((SAC_WL_MT_SCHEDULE_START (dim) > lower)                                     \
             && (SAC_WL_MT_SCHEDULE_START (dim) < upper)) {                               \
