@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1998/03/03 23:00:11  dkr
+ * added PRECncode()
+ *
  * Revision 1.17  1998/03/02 22:26:36  dkr
  * added PRECnwith()
  *
@@ -1012,6 +1015,400 @@ PRECid (node *arg_node, node *arg_info)
  *
  */
 
+/******************************************************************************
+ *
+ * function:
+ *   int CompareProj(node *proj1, node *proj2)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+int
+CompareProj (node *proj1, node *proj2)
+{
+    node *grid1, *grid2;
+    int result;
+
+    DBUG_ENTER ("CompareProj");
+
+#define TEST_BEGIN(a, b)                                                                 \
+    if (a > b) {                                                                         \
+        result = 1;                                                                      \
+    } else {                                                                             \
+        if (a < b) {                                                                     \
+            result = -1;                                                                 \
+        } else {
+#define TEST_END                                                                         \
+    }                                                                                    \
+    }
+
+    do {
+        DBUG_ASSERT ((proj1 != NULL), "two identical projs found");
+        DBUG_ASSERT ((proj2 != NULL), "two identical projs found");
+
+        grid1 = WLPROJ_GRID (proj1);
+        DBUG_ASSERT ((WLGRID_NEXT (grid1) == NULL), "more than one grid found");
+        grid2 = WLPROJ_GRID (proj2);
+        DBUG_ASSERT ((WLGRID_NEXT (grid2) == NULL), "more than one grid found");
+
+        TEST_BEGIN (WLPROJ_BOUND1 (proj1), WLPROJ_BOUND1 (proj2))
+        TEST_BEGIN (WLPROJ_BOUND2 (proj1), WLPROJ_BOUND2 (proj2))
+        TEST_BEGIN (WLPROJ_STEP (proj1), WLPROJ_STEP (proj2))
+        TEST_BEGIN (WLGRID_OFFSET (grid1), WLGRID_OFFSET (grid2))
+        TEST_BEGIN (WLGRID_WIDTH (grid1), WLGRID_WIDTH (grid2))
+        result = 0;
+        TEST_END
+        TEST_END
+        TEST_END
+        TEST_END
+        TEST_END
+
+        proj1 = WLGRID_NEXTDIM (grid1);
+        proj2 = WLGRID_NEXTDIM (grid2);
+    } while (result == 0);
+
+#undef TEST_BEGIN
+#undef TEST_END
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *InsertProj(node *insert, node *proj)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+InsertProj (node *insert, node *proj)
+{
+    node *to_insert, *insert_here;
+
+    DBUG_ENTER ("InsertProj");
+
+    while (insert != NULL) {
+        /* insert all elements of 'insert'-chain in 'proj' */
+        to_insert = insert;
+        insert = WLPROJ_NEXT (insert);
+
+        if (proj == NULL) { /* 'proj' is empty */
+            /* insert current element of 'insert'-chain at head of 'proj' */
+            WLPROJ_NEXT (to_insert) = proj;
+            proj = to_insert;
+        } else { /* 'proj' contains elements */
+            if (CompareProj (to_insert, proj) == -1) {
+                /* insert current element of 'insert'-chain at head of 'proj' */
+                WLPROJ_NEXT (to_insert) = proj;
+                proj = to_insert;
+            } else {
+                /* search for insert-position in 'proj' */
+                insert_here = proj;
+                while (WLPROJ_NEXT (insert_here) != NULL) {
+                    if (CompareProj (to_insert, WLPROJ_NEXT (insert_here)) == -1)
+                        break;
+                    insert_here = WLPROJ_NEXT (insert_here);
+                }
+
+                /* insert current element of 'insert'-chain at the found position */
+                WLPROJ_NEXT (to_insert) = WLPROJ_NEXT (insert_here);
+                WLPROJ_NEXT (insert_here) = to_insert;
+            }
+        }
+    }
+
+    DBUG_RETURN (proj);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *NormalizeProj(node *proj, int shape_int)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+NormalizeProj (node *proj_chain, int shape_int)
+{
+    node *cur_proj, *proj, *grid;
+    int bound1, bound2, offset, step, width, new_bound1, new_bound2;
+
+    DBUG_ENTER ("NormalizeProj");
+
+    cur_proj = proj_chain;
+    while (cur_proj != NULL) {
+
+        proj = cur_proj;
+        while (proj != NULL) {
+            grid = WLPROJ_GRID (proj);
+            DBUG_ASSERT ((WLGRID_NEXT (grid) == NULL), "more than one grid found");
+
+            bound1 = WLPROJ_BOUND1 (proj);
+            bound2 = WLPROJ_BOUND2 (proj);
+            step = WLPROJ_STEP (proj);
+            width = WLGRID_WIDTH (grid);
+            offset = WLGRID_OFFSET (grid);
+
+            /* assures: (width < step) or (width = step = 1) */
+            if ((width >= step) && (width > 1)) {
+                step = WLPROJ_STEP (proj) = width = WLGRID_WIDTH (grid) = 1;
+            }
+
+            /* maximize the outline */
+            new_bound1 = bound1 - (step - offset - width);
+            new_bound1 = MAX (0, new_bound1);
+
+            if ((bound2 - bound1 - offset) % step >= width) {
+                new_bound2 = bound2 + step - ((bound2 - bound1 - offset) % step);
+                new_bound2 = MIN (new_bound2, shape_int);
+            } else {
+                new_bound2 = bound2;
+            }
+
+            WLPROJ_BOUND1 (proj) = new_bound1;
+            WLPROJ_BOUND2 (proj) = new_bound2;
+            WLGRID_OFFSET (grid) = offset + bound1 - new_bound1;
+
+            proj = WLGRID_NEXTDIM (grid);
+        }
+
+        cur_proj = WLPROJ_NEXT (cur_proj);
+    }
+
+    DBUG_RETURN (proj_chain);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* Parts2Proj(node *parts, node *shape_vec)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+Parts2Proj (node *parts, node *shape_vec)
+{
+    node *parts_proj = NULL;
+    node *proj, *new_proj, *last_grid, *shape, *gen, *bound1, *bound2, *step, *width;
+
+    DBUG_ENTER ("Parts2Proj");
+
+    while (parts != NULL) {
+        proj = NULL;
+        shape = shape_vec;
+
+        gen = NPART_GEN (parts);
+        DBUG_ASSERT ((NGEN_OP1 (gen) == F_le), "op1 in generator is not <=");
+        DBUG_ASSERT ((NGEN_OP2 (gen) == F_lt), "op2 in generator is not <");
+
+        /* get components of current generator */
+        bound1 = ARRAY_AELEMS (NGEN_BOUND1 (gen));
+        bound2 = ARRAY_AELEMS (NGEN_BOUND2 (gen));
+        step = ARRAY_AELEMS (NGEN_STEP (gen));
+        width = ARRAY_AELEMS (NGEN_WIDTH (gen));
+
+        do {
+            DBUG_ASSERT ((shape != NULL), "shape not complete");
+            DBUG_ASSERT ((bound1 != NULL), "bound1 of generator not complete");
+            DBUG_ASSERT ((bound2 != NULL), "bound2 of generator not complete");
+            DBUG_ASSERT ((step != NULL), "step of generator not complete");
+            DBUG_ASSERT ((width != NULL), "width of generator not complete");
+
+            /* build N_WLproj-node of current dimension */
+            new_proj
+              = MakeWLproj (NUM_VAL (EXPRS_EXPR (bound1)), NUM_VAL (EXPRS_EXPR (bound2)),
+                            NUM_VAL (EXPRS_EXPR (step)),
+                            MakeWLgrid (0, NUM_VAL (EXPRS_EXPR (width)), NULL, NULL,
+                                        NULL),
+                            NULL);
+            new_proj = NormalizeProj (new_proj, NUM_VAL (EXPRS_EXPR (shape)));
+
+            /* append 'new_proj' to 'proj'-chain */
+            if (proj == NULL) {
+                proj = new_proj;
+            } else {
+                WLGRID_NEXTDIM (last_grid) = new_proj;
+            }
+            last_grid = WLPROJ_GRID (new_proj);
+
+            /* go to next dimension */
+            shape = EXPRS_NEXT (shape);
+            bound1 = EXPRS_NEXT (bound1);
+            bound2 = EXPRS_NEXT (bound2);
+            step = EXPRS_NEXT (step);
+            width = EXPRS_NEXT (width);
+        } while (shape != NULL);
+
+        WLGRID_CODE (last_grid) = NPART_CODE (parts);
+        parts_proj = InsertProj (proj, parts_proj);
+
+        parts = NPART_NEXT (parts);
+    }
+
+    DBUG_RETURN (parts_proj);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *ComputeRects(node *parts, node *shape_vec)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+ComputeRects (node *parts, node *shape_vec)
+{
+    node *rects;
+
+    DBUG_ENTER ("ComputeRects");
+
+    rects = Parts2Proj (parts, shape_vec);
+
+    DBUG_RETURN (rects);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SetSegs(node *rects)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+SetSegs (node *rects)
+{
+    node *segs;
+
+    DBUG_ENTER ("SetSegs");
+
+    DBUG_RETURN (segs);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *BuildRects(node *proj, node *rects)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+BuildRects (node *proj, node *rects)
+{
+    DBUG_ENTER ("BuildRects");
+
+    DBUG_RETURN (proj);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SplitRects(node *proj)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+SplitRects (node *proj)
+{
+    DBUG_ENTER ("SplitRects");
+
+    DBUG_RETURN (proj);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MergeRects(node *proj)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+MergeRects (node *proj)
+{
+    DBUG_ENTER ("MergeRects");
+
+    DBUG_RETURN (proj);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *OptimizeRects(node *proj)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+OptimizeRects (node *proj)
+{
+    DBUG_ENTER ("OptimizeRects");
+
+    DBUG_RETURN (proj);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *FitRects(node *proj)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+FitRects (node *proj)
+{
+    DBUG_ENTER ("FitRects");
+
+    DBUG_RETURN (proj);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *UnrollRects(node *proj)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+UnrollRects (node *proj)
+{
+    DBUG_ENTER ("UnrollRects");
+
+    DBUG_RETURN (proj);
+}
+
 #if 0
 /******************************************************************************
  *
@@ -1964,7 +2361,7 @@ void BuildProjs(int dim, int max_dim, node *withpart, node *shape,
 /******************************************************************************
  *
  * function:
- *   node* PRECnwith(node *arg_node, node *arg_info)
+ *   node *PRECnwith(node *arg_node, node *arg_info)
  *
  * description:
  *   precompilation of new with-loop (N_Nwith-node)
@@ -1974,32 +2371,102 @@ void BuildProjs(int dim, int max_dim, node *withpart, node *shape,
 node *
 PRECnwith (node *arg_node, node *arg_info)
 {
-    node *new_node;
+    node *new_node, *rects, *seg;
 
     DBUG_ENTER ("PRECnwith");
+
+    DBUG_ASSERT ((NWITHOP_TYPE (NWITH_WITHOP (arg_node)) == WO_genarray),
+                 "type of with-loop is not WO_genarray");
+
+    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
     new_node = MakeNWith2 (NPART_WITHID (NWITH_PART (arg_node)), NULL,
                            NWITH_CODE (arg_node), NWITH_WITHOP (arg_node));
 
-    NPART_WITHID (NWITH_PART (arg_node)) = NULL;
-    NWITH_CODE (arg_node) = NULL;
-    NWITH_WITHOP (arg_node) = NULL;
-
-    NWITH2_SEG (new_node) = NULL /* NWITH_PART(arg_node) !!! */;
-
 #if 0
-  if ((NPART_NEXT(NWITH_PART(arg_node)) != NULL) &&
-      (NWITHOP_TYPE(NWITH_WITHOP(arg_node)) == WO_genarray)) {
-    BuildProjs(0,
-               SHPSEG_SHAPE(TYPES_SHPSEG(ARRAY_TYPE(NWITHOP_SHAPE(NWITH_WITHOP(arg_node)))),
-                            0),
-               NWITH_PART(arg_node),
-               NWITHOP_SHAPE(NWITH_WITHOP(arg_node)),
-               NULL, NULL);
-  }
+  NPART_WITHID(NWITH_PART(arg_node)) = NULL;
+  NWITH_CODE(arg_node) = NULL;
+  NWITH_WITHOP(arg_node) = NULL;
 #endif
 
-    FreeTree (arg_node);
+    DBUG_ASSERT ((NODE_TYPE (NWITHOP_SHAPE (NWITH2_WITHOP (new_node))) == N_array),
+                 "shape of with-genarray is unknown");
+    rects = ComputeRects (NWITH_PART (arg_node),
+                          ARRAY_AELEMS (NWITHOP_SHAPE (NWITH2_WITHOP (new_node))));
+    NWITH2_SEG (new_node) = SetSegs (rects);
 
+    seg = NWITH2_SEG (new_node);
+    while (seg != NULL) {
+        WLSEG_PROJ (seg) = BuildRects (WLSEG_PROJ (seg), rects);
+        seg = WLSEG_NEXT (seg);
+    }
+
+    seg = NWITH2_SEG (new_node);
+    while (seg != NULL) {
+        WLSEG_PROJ (seg) = SplitRects (WLSEG_PROJ (seg));
+        seg = WLSEG_NEXT (seg);
+    }
+
+    seg = NWITH2_SEG (new_node);
+    while (seg != NULL) {
+        WLSEG_PROJ (seg) = MergeRects (WLSEG_PROJ (seg));
+        seg = WLSEG_NEXT (seg);
+    }
+
+    seg = NWITH2_SEG (new_node);
+    while (seg != NULL) {
+        WLSEG_PROJ (seg) = OptimizeRects (WLSEG_PROJ (seg));
+        seg = WLSEG_NEXT (seg);
+    }
+
+    seg = NWITH2_SEG (new_node);
+    while (seg != NULL) {
+        WLSEG_PROJ (seg) = FitRects (WLSEG_PROJ (seg));
+        seg = WLSEG_NEXT (seg);
+    }
+
+    seg = NWITH2_SEG (new_node);
+    while (seg != NULL) {
+        WLSEG_PROJ (seg) = UnrollRects (WLSEG_PROJ (seg));
+        seg = WLSEG_NEXT (seg);
+    }
+
+#if 0
+  FreeTree(arg_node);
+#endif
+
+#if 1
     DBUG_RETURN (new_node);
+#else
+    DBUG_RETURN (arg_node);
+#endif
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PRECncode(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   precompilation of Ncode-nodes:
+ *     CODE_NO is set in the whole Ncode-chain
+ *
+ ******************************************************************************/
+
+node *
+PRECncode (node *arg_node, node *arg_info)
+{
+    node *code;
+    int no = 0;
+
+    DBUG_ENTER ("PRECncode");
+
+    code = arg_node;
+    while (code != NULL) {
+        NCODE_NO (code) = no;
+        no++;
+        code = NCODE_NEXT (code);
+    }
+
+    DBUG_RETURN (arg_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/03/03 22:57:38  dkr
+ * added PRECncode()
+ *
  * Revision 1.7  1998/03/02 22:26:52  dkr
  * added PRECnwith()
  *
@@ -49,5 +52,6 @@ extern node *PRECid (node *arg_node, node *arg_info);
 extern node *PRECvardec (node *arg_node, node *arg_info);
 extern node *PRECtypedef (node *arg_node, node *arg_info);
 extern node *PRECnwith (node *arg_node, node *arg_info);
+extern node *PRECncode (node *arg_node, node *arg_info);
 
 #endif /* _sac_precompile_h */
