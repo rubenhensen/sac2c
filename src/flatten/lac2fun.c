@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2000/10/17 16:50:54  dkr
+ * _MAIN replaced by macro MAIN_MOD_NAME
+ *
  * Revision 1.22  2000/06/23 15:01:55  dkr
  * signature of DupTreeLUT changed
  *
@@ -1276,7 +1279,7 @@ DoLifting (char *prefix, statustype status, DFMmask_t in, DFMmask_t out, DFMmask
 #ifdef MAIN_HAS_NO_MODNAME
     if (modname == NULL) {
         /* okay, we are in the main() function ... */
-        modname = "_MAIN";
+        modname = MAIN_MOD_NAME;
     }
 #endif
     DBUG_ASSERT ((modname != NULL), "modul name for LAC function is NULL!");

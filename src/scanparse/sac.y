@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.26  2000/10/17 16:51:02  dkr
+ * _MAIN replaced by macro MAIN_MOD_NAME
+ *
  * Revision 2.25  2000/08/15 18:03:12  dkr
  * extern declaration of 'yytext' corrected:
  * 'yytext' has type char* NOT char[]!!!!
@@ -368,7 +371,7 @@ node *sib_tree;
 node *spec_tree;
 
 
-static char *mod_name="_MAIN";
+static char *mod_name=MAIN_MOD_NAME;
 static char *link_mod_name=NULL;
 static node *store_pragma=NULL;
 static node *store_wlcomp_pragma_global=NULL;
