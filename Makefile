@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.121  2004/10/20 08:10:29  khf
+# added resolvedependencies.o
+#
 # Revision 3.120  2004/10/17 17:47:54  sah
 # added serialize_helper.
 #
@@ -370,7 +373,7 @@ PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
         src/psi-opt/pad.o src/psi-opt/pad_collect.o src/psi-opt/pad_infer.o \
         src/psi-opt/pad_transform.o src/psi-opt/pad_info.o \
 	src/psi-opt/WithloopFusion.o src/psi-opt/detectdependencies.o \
-	src/psi-opt/tagdependencies.o
+	src/psi-opt/tagdependencies.o src/psi-opt/resolvedependencies.o
 PSIOPT_OLD=
 
 MODULES= src/modules/symboltable.o src/modules/filemgr.o \

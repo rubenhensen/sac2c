@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.24  2004/10/20 08:10:29  khf
+# added resolvedependencies.o
+#
 # Revision 3.23  2004/10/07 12:37:32  ktr
 # Replaced the old With-Loop Scalarization with a new implementation.
 #
@@ -83,7 +86,8 @@ all: index.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
      SSAWithloopFolding.o SSAWLT.o SSAWLI.o SSAWLF.o \
      wls.o wlscheck.o wlsbuild.o wlswithloopification.o \
      pad.o pad_info.o pad_collect.o pad_infer.o pad_transform.o \
-     WithloopFusion.o detectdependencies.o tagdependencies.o
+     WithloopFusion.o detectdependencies.o tagdependencies.o \
+     resolvedependencies.o
 
 
 #
