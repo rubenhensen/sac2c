@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/04/19 07:54:56  dkr
+ * no changes done
+ *
  * Revision 3.6  2001/04/12 12:18:37  sbs
  * two further volatiles added...
  *
@@ -31,11 +34,6 @@
  *
  * Revision 2.2  1999/07/08 12:30:02  cg
  * File moved to new directory src/libsac.
- *
- *
- */
-
-/*
  *
  * Revision 2.1  1999/02/23 12:43:40  sacbase
  * new release made
@@ -69,7 +67,6 @@
  * Revision 1.5  1998/06/29 08:57:13  cg
  * added tracing facilities
  *
- *
  */
 
 /*****************************************************************************
@@ -84,7 +81,7 @@
  *   It contains routines and global identifiers required by the
  *   multi-threaded runtime system.
  *
- * remark
+ * remark:
  *
  *   By means of the make tool, this source file is used to produce two
  *   different object files:
@@ -343,12 +340,11 @@ SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
                 break;
             }
         }
-
         if ((SAC_MT_threads <= 0) || (SAC_MT_threads > max_threads)) {
-            SAC_RuntimeError (
-              "Number of threads is unspecified or exceeds legal range (1 to %d).\n"
-              "    Use option '-mt <num>'.",
-              max_threads);
+            SAC_RuntimeError ("Number of threads is unspecified or exceeds legal"
+                              " range (1 to %d).\n"
+                              "    Use option '-mt <num>'.",
+                              max_threads);
         }
     } else {
         SAC_MT_threads = num_threads;
@@ -384,7 +380,6 @@ void
 SAC_MT_Setup (int cache_line_max, int barrier_offset)
 #endif
 {
-
     int i;
 
     SAC_TR_PRINT (("Aligning synchronization barrier data structure "
