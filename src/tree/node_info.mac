@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.154  2004/07/06 12:43:10  skt
+ * TEMreturn removed
+ *
  * Revision 3.153  2004/06/25 09:37:07  skt
  * added TEMlet, removed TEMexprs
  *
@@ -1711,7 +1714,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, SPreturn, TravSons, CVPreturn, TravSons,
 
-       TravSons, TEMreturn, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravNone, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
