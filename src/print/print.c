@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.58  2000/03/16 16:19:06  dkr
+ * some output layout errors fixed
+ *
  * Revision 2.57  2000/03/15 14:56:56  dkr
  * PrintNodeTree renamed to PrintAST
  * PrintNodeAST added (but not yet implemented)
@@ -660,13 +663,12 @@ PrintLet (node *arg_node, node *arg_info)
         fprintf (outfile, " */\n");
     }
     if (LET_DEFMASK (arg_node) != NULL) {
-        INDENT
+        INDENT;
         fprintf (outfile, "/* def:");
         DFMPrintMask (outfile, " %s", LET_DEFMASK (arg_node));
         fprintf (outfile, " */\n");
     }
 
-    INDENT
     if (LET_IDS (arg_node)) {
         PrintIds (LET_IDS (arg_node), arg_info);
         fprintf (outfile, " = ");
@@ -1332,15 +1334,15 @@ PrintReturn (node *arg_node, node *arg_info)
             fprintf (outfile, "/* use:");
             DFMPrintMask (outfile, " %s", RETURN_USEMASK (arg_node));
             fprintf (outfile, " */\n");
+            INDENT;
         }
         if (RETURN_DEFMASK (arg_node) != NULL) {
-            INDENT
             fprintf (outfile, "/* def:");
             DFMPrintMask (outfile, " %s", RETURN_DEFMASK (arg_node));
             fprintf (outfile, " */\n");
+            INDENT;
         }
 
-        INDENT
         fprintf (outfile, "return (");
         Trav (RETURN_EXPRS (arg_node), arg_info);
         fprintf (outfile, ");");
@@ -1747,7 +1749,6 @@ PrintIcm (node *arg_node, node *arg_info)
         indent += ICM_INDENT (arg_node);
     }
 
-    INDENT
     if (compiler_phase == PH_genccode) {
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
@@ -1902,6 +1903,7 @@ PrintPragma (node *arg_node, node *arg_info)
         INFO_PRINT_PRAGMA_WLCOMP (arg_info) = 1;
         Trav (PRAGMA_WLCOMP_APS (arg_node), arg_info);
         INFO_PRINT_PRAGMA_WLCOMP (arg_info) = 0;
+        fprintf (outfile, "\n");
     }
 
     DBUG_RETURN (arg_node);
@@ -1924,37 +1926,38 @@ PrintSpmd (node *arg_node, node *arg_info)
         INDENT;
         fprintf (outfile, "/*** begin of SPMD region ***\n");
 
-        INDENT
+        INDENT;
         fprintf (outfile, " * in:");
         DFMPrintMask (outfile, " %s", SPMD_IN (arg_node));
         fprintf (outfile, "\n");
 
-        INDENT
+        INDENT;
         fprintf (outfile, " * inout:");
         DFMPrintMask (outfile, " %s", SPMD_INOUT (arg_node));
         fprintf (outfile, "\n");
 
-        INDENT
+        INDENT;
         fprintf (outfile, " * out:");
         DFMPrintMask (outfile, " %s", SPMD_OUT (arg_node));
         fprintf (outfile, "\n");
 
-        INDENT
+        INDENT;
         fprintf (outfile, " * shared:");
         DFMPrintMask (outfile, " %s", SPMD_SHARED (arg_node));
         fprintf (outfile, "\n");
 
-        INDENT
+        INDENT;
         fprintf (outfile, " * local:");
         DFMPrintMask (outfile, " %s", SPMD_LOCAL (arg_node));
         fprintf (outfile, "\n");
 
-        INDENT
+        INDENT;
         fprintf (outfile, " */\n");
 
         Trav (SPMD_REGION (arg_node), arg_info);
 
-        INDENT
+        fprintf (outfile, "\n");
+        INDENT;
         fprintf (outfile, "/*** end of SPMD region ***/\n");
     } else {
         /*
@@ -1985,39 +1988,38 @@ PrintSync (node *arg_node, node *arg_info)
 
     fprintf (outfile, "/*** begin of sync region ***\n");
 
-    INDENT
+    INDENT;
     fprintf (outfile, " * in:");
     DFMPrintMask (outfile, " %s", SYNC_IN (arg_node));
     fprintf (outfile, "\n");
 
-    INDENT
+    INDENT;
     fprintf (outfile, " * inout:");
     DFMPrintMask (outfile, " %s", SYNC_INOUT (arg_node));
     fprintf (outfile, "\n");
 
-    INDENT
+    INDENT;
     fprintf (outfile, " * out:");
     DFMPrintMask (outfile, " %s", SYNC_OUT (arg_node));
     fprintf (outfile, "\n");
 
-    INDENT
+    INDENT;
     fprintf (outfile, " * outrep:");
     DFMPrintMask (outfile, " %s", SYNC_OUTREP (arg_node));
     fprintf (outfile, "\n");
 
-    INDENT
+    INDENT;
     fprintf (outfile, " * local:");
     DFMPrintMask (outfile, " %s", SYNC_LOCAL (arg_node));
     fprintf (outfile, "\n");
 
-    INDENT
+    INDENT;
     fprintf (outfile, " */\n");
 
-    indent++;
     SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
-    indent--;
 
-    INDENT
+    fprintf (outfile, "\n");
+    INDENT;
     fprintf (outfile, "/*** end of sync region ***/\n");
 
     DBUG_RETURN (arg_node);
@@ -2037,9 +2039,8 @@ PrintMT (node *arg_node, node *arg_info)
     MT_REGION (arg_node) = Trav (MT_REGION (arg_node), arg_info);
     indent--;
 
-    INDENT
     fprintf (outfile, "\n");
-    INDENT
+    INDENT;
     fprintf (outfile, "/*** end of mt region ***/\n");
 
     DBUG_RETURN (arg_node);
@@ -2059,9 +2060,8 @@ PrintST (node *arg_node, node *arg_info)
     ST_REGION (arg_node) = Trav (ST_REGION (arg_node), arg_info);
     indent--;
 
-    INDENT
     fprintf (outfile, "\n");
-    INDENT
+    INDENT;
     fprintf (outfile, "/*** end of st region ***/\n");
 
     DBUG_RETURN (arg_node);
@@ -2453,17 +2453,17 @@ PrintNwith2 (node *arg_node, node *arg_info)
     fprintf (outfile, ")\n");
 
     if (NWITH2_SCHEDULING (arg_node) != NULL) {
-        INDENT
+        INDENT;
         fprintf (outfile, "/* scheduling :");
         SCHPrintScheduling (outfile, NWITH2_SCHEDULING (arg_node));
         fprintf (outfile, " */\n");
     }
 
-    INDENT
+    INDENT;
     fprintf (outfile, "/********** operators: **********/\n");
     code = NWITH2_CODE (arg_node);
     while (code != NULL) {
-        INDENT
+        INDENT;
         fprintf (outfile, "op_%d =", NCODE_NO (code));
         indent++;
         code = Trav (code, arg_info);
@@ -2481,7 +2481,7 @@ PrintNwith2 (node *arg_node, node *arg_info)
         NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
     }
 
-    INDENT
+    INDENT;
     fprintf (outfile, "/********** conexpr: **********/\n");
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
     fprintf (outfile, ")");
@@ -2514,16 +2514,16 @@ PrintWLseg (node *arg_node, node *arg_info)
     seg = arg_node;
     while (seg != NULL) {
         if (WLSEG_SCHEDULING (seg) == NULL) {
-            INDENT
+            INDENT;
             fprintf (outfile, "/********** segment %d: **********/\n", i++);
         } else {
-            INDENT
+            INDENT;
             fprintf (outfile, "/********** segment %d: **********\n", i++);
-            INDENT
+            INDENT;
             fprintf (outfile, " * scheduling: ");
             SCHPrintScheduling (outfile, WLSEG_SCHEDULING (seg));
             fprintf (outfile, "\n");
-            INDENT
+            INDENT;
             fprintf (outfile, " */\n");
         }
 
@@ -2553,7 +2553,7 @@ PrintWLblock (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWLblock");
 
-    INDENT
+    INDENT;
     fprintf (outfile, "(%d -> %d), block%d[%d] %d: ", WLBLOCK_BOUND1 (arg_node),
              WLBLOCK_BOUND2 (arg_node), WLBLOCK_LEVEL (arg_node), WLBLOCK_DIM (arg_node),
              WLBLOCK_STEP (arg_node));
@@ -2594,7 +2594,7 @@ PrintWLublock (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWLublock");
 
-    INDENT
+    INDENT;
     fprintf (outfile, "(%d -> %d), ublock%d[%d] %d: ", WLUBLOCK_BOUND1 (arg_node),
              WLUBLOCK_BOUND2 (arg_node), WLUBLOCK_LEVEL (arg_node),
              WLUBLOCK_DIM (arg_node), WLUBLOCK_STEP (arg_node));
@@ -2639,7 +2639,7 @@ PrintWLstride (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWLstride");
 
-    INDENT
+    INDENT;
     fprintf (outfile, "(%d -> %d), step%d[%d] %d\n", WLSTRIDE_BOUND1 (arg_node),
              WLSTRIDE_BOUND2 (arg_node), WLSTRIDE_LEVEL (arg_node),
              WLSTRIDE_DIM (arg_node), WLSTRIDE_STEP (arg_node));
@@ -2674,7 +2674,7 @@ PrintWLgrid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWLgrid");
 
-    INDENT
+    INDENT;
     fprintf (outfile, "(%d -> %d): ", WLGRID_BOUND1 (arg_node), WLGRID_BOUND2 (arg_node));
 
     indent++;
@@ -2738,16 +2738,16 @@ PrintWLsegVar (node *arg_node, node *arg_info)
     seg = arg_node;
     while (seg != NULL) {
         if (WLSEGVAR_SCHEDULING (seg) == NULL) {
-            INDENT
+            INDENT;
             fprintf (outfile, "/********** (var.) segment %d: **********/\n", i++);
         } else {
-            INDENT
+            INDENT;
             fprintf (outfile, "/********** (var.) segment %d: **********\n", i++);
-            INDENT
+            INDENT;
             fprintf (outfile, " * scheduling: ");
             SCHPrintScheduling (outfile, WLSEGVAR_SCHEDULING (seg));
             fprintf (outfile, "\n");
-            INDENT
+            INDENT;
             fprintf (outfile, " */\n");
         }
 
@@ -2815,7 +2815,7 @@ PrintWLstriVar (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWLstriVar");
 
-    INDENT
+    INDENT;
     fprintf (outfile, "(");
     PrintWLvar (WLSTRIVAR_BOUND1 (arg_node), WLSTRIVAR_DIM (arg_node));
     fprintf (outfile, " => ");
@@ -2855,7 +2855,7 @@ PrintWLgridVar (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWLgridVar");
 
-    INDENT
+    INDENT;
     fprintf (outfile, "(");
     PrintWLvar (WLGRIDVAR_BOUND1 (arg_node), WLGRIDVAR_DIM (arg_node));
     fprintf (outfile, " => ");
