@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/12/09 00:39:01  sbs
+ * wrapper reuse in CTcond improved....
+ *
  * Revision 1.4  2004/11/23 22:41:11  sbs
  * SacDevCamp 04 done
  *
@@ -147,7 +150,7 @@ SDcreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args)
     /*
      * First, we create the return type as it is part of the sig_dep structure:
      */
-    if (TEgetWrapper (info) != NULL) {
+    if ((TEgetWrapper (info) != NULL) && (NODE_TYPE (TEgetWrapper (info)) == N_fundef)) {
         wrapper = TEgetWrapper (info);
         num_res = TCcountRets (FUNDEF_RETS (wrapper));
     } else {
