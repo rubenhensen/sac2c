@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2003/11/04 12:36:08  sbs
+ * rudimentary support for empty arrays added.
+ *
  * Revision 3.34  2003/09/18 15:24:47  sbs
  * prf applications whose return values are not taken
  * properly care of by the user result in an appropriate
@@ -1324,9 +1327,16 @@ NTCarray (node *arg_node, node *arg_info)
         TYFreeType (elems);
 
     } else {
-        /* we are dealing with an empty array here! */
-        type = NULL;
-        DBUG_ASSERT ((0), "empty arrays are not yet supported!");
+        /**
+         * we are dealing with an empty array here!
+         * To get started, we assume all empty arrays to be of type int[0].
+         * If an other type is desired, it has to be casted to that type
+         * (which - at the time being - is not yet supported 8-)
+         */
+        type
+          = TYMakeProductType (1, TYMakeAKV (TYMakeSimpleType (T_int),
+                                             COMakeConstant (T_int, SHCreateShape (1, 0),
+                                                             NULL)));
     }
 
     INFO_NTC_TYPE (arg_info) = TYGetProductMember (type, 0);
