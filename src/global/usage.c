@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.48  1997/05/28 12:36:51  sbs
+ * Revision 1.49  1997/06/03 08:40:21  sbs
+ * -D option added
+ *
+ * Revision 1.48  1997/05/28  12:36:51  sbs
  * Profiling integrated
  *
  * Revision 1.47  1997/05/27  08:53:59  sbs
@@ -177,6 +180,8 @@ usage (char *prg_name)
 
     printf ("\t -h\t\t\tthis helptext\n");
     printf ("\t -libstat\t\tprint status information about a SAC library file\n");
+    printf (
+      "\t -D<cpp-var><=value>\tset <cpp-var> (to <value>) when running C-preprocessor\n");
     printf ("\t -M\t\t\tonly detect dependencies and write them to stdout\n");
     printf ("\t\t\t\tdependencies from imported modules/classes.\n");
 
