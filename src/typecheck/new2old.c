@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2004/08/26 18:15:01  sbs
+ * fixed a bug in CreateFoldFun:
+ * now, the correct signature is created.
+ * => bug48.
+ *
  * Revision 1.19  2004/08/08 13:30:50  sbs
  * some debugging information added.
  *
@@ -587,19 +592,32 @@ node *
 NT2OTwithop (node *arg_node, info *arg_info)
 {
     node *foldfun;
-    node *cexpr;
+    node *cexpr, *neutr;
+    node *nwith;
+    ntype *fold_type;
+    types *old_type;
 
     DBUG_ENTER ("NT2OTwithop");
 
     if (NWITHOP_IS_FOLD (arg_node)) {
-        cexpr = NWITH_CEXPR (LET_EXPR (INFO_NT2OT_LAST_LET (arg_info)));
+        nwith = LET_EXPR (INFO_NT2OT_LAST_LET (arg_info));
+        cexpr = NWITH_CEXPR (nwith);
+        neutr = NWITH_NEUTRAL (nwith);
+        DBUG_ASSERT ((neutr != NULL), "NWITH_NEUTRAL does not exist");
+        DBUG_ASSERT ((NODE_TYPE (neutr) == N_id), "NWITH_NEUTRAL is not a N_id");
         DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "NWITH_CEXPR is not a N_id");
+        fold_type
+          = TYLubOfTypes (AVIS_TYPE (ID_AVIS (cexpr)), AVIS_TYPE (ID_AVIS (neutr)));
+        old_type = TYType2OldType (fold_type);
+        fold_type = TYFreeType (fold_type);
 
-        foldfun = CreateFoldFun (ID_TYPE (cexpr), NWITHOP_FUNDEF (arg_node),
-                                 NWITHOP_PRF (arg_node),
-                                 IDS_NAME (LET_IDS (INFO_NT2OT_LAST_LET (arg_info))),
-                                 ID_NAME (cexpr));
+        foldfun
+          = CreateFoldFun (old_type, NWITHOP_FUNDEF (arg_node), NWITHOP_PRF (arg_node),
+                           IDS_NAME (LET_IDS (INFO_NT2OT_LAST_LET (arg_info))),
+                           ID_NAME (cexpr));
         NWITHOP_FUNDEF (arg_node) = foldfun;
+
+        old_type = FreeAllTypes (old_type);
 
         /*
          * append foldfun to INFO_NT2OT_FOLDFUNS
