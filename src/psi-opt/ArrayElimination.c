@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.13  1998/08/20 12:06:14  srs
+ * Fixed bug in AEPrf():
+ * Too many psi-functions were replaced.
+ *
  * Revision 1.12  1998/05/26 13:13:24  srs
  * fixed bug in GenPsi(): ARRAY_TYPE was not initialized
  *
@@ -156,9 +160,15 @@ GetNumber (node *vector)
     number[0] = atoi ("\0");
     expr_node = vector->node[0];
     do {
-        tmp = itoa (expr_node->node[0]->info.cint);
+        tmp = itoa (NUM_VAL (EXPRS_EXPR (expr_node)));
         strcat (number, tmp);
-        expr_node = expr_node->node[1];
+        expr_node = EXPRS_NEXT (expr_node);
+
+        /* srs: we already have assured that the shape has only one element
+                (CorrectArraySize). Else we allocated to little memory
+                for 'number'. */
+        DBUG_ASSERT (expr_node == NULL, ("to many arguments in GetNumber"));
+
     } while (expr_node);
     DBUG_RETURN (number);
 }
@@ -285,20 +295,22 @@ AEprf (node *arg_node, node *arg_info)
         arg[0] = tmpn;
         arg[1] = NodeBehindCast (PRF_ARG2 (arg_node));
 
-        if (N_id == NODE_TYPE (arg[1]) && tmpn && N_array == NODE_TYPE (tmpn))
-            if (CorrectArraySize (ID_IDS (arg[1]))) {
-                DBUG_PRINT ("AE", ("psi function with array %s to eliminated found",
-                                   arg[1]->info.ids->id));
-                new_node = MakeNode (N_id);
-                ID_IDS (new_node) = GenIds (arg);
-                ID_VARDEC (new_node)
-                  = SearchDecl (ID_NAME (new_node), INFO_AE_TYPES (arg_info));
-                if (ID_VARDEC (new_node)) {
-                    FreeTree (arg_node);
-                    arg_node = new_node;
-                } else
-                    FreeTree (new_node);
-            }
+        /* srs: added IsConstantArray() so that psi([i],arr) is not replaced.
+                This led to wrong programs. */
+        if (N_id == NODE_TYPE (arg[1]) && tmpn && N_array == NODE_TYPE (tmpn)
+            && IsConstantArray (tmpn, N_num) && CorrectArraySize (ID_IDS (arg[1]))) {
+            DBUG_PRINT ("AE", ("psi function with array %s to eliminated found",
+                               arg[1]->info.ids->id));
+            new_node = MakeNode (N_id);
+            ID_IDS (new_node) = GenIds (arg);
+            ID_VARDEC (new_node)
+              = SearchDecl (ID_NAME (new_node), INFO_AE_TYPES (arg_info));
+            if (ID_VARDEC (new_node)) {
+                FreeTree (arg_node);
+                arg_node = new_node;
+            } else
+                FreeTree (new_node);
+        }
     }
     DBUG_RETURN (arg_node);
 }
