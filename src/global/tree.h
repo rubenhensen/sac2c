@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.37  1995/04/24 15:17:18  asi
+ * Revision 1.38  1995/05/30 12:14:39  cg
+ * number of sons in node structure set to 6 by macro MAX_SONS.
+ *
+ * Revision 1.37  1995/04/24  15:17:18  asi
  * MAX_MASK set to 7
  *
  * Revision 1.36  1995/04/24  15:13:46  asi
@@ -181,6 +184,9 @@ typedef struct TYPES {
     struct TYPES *next; /* only needed for fun-results */
     id *id;             /* Bezeichner  */
     char *id_mod;       /* name of modul belonging to 'id' */
+                        /*
+                              int          status;
+                        */
 } types;
 
 typedef struct FUN_NAME {
@@ -210,6 +216,7 @@ typedef enum {
 #undef PRF_IF
 
 #define MAX_MASK 7
+#define MAX_SONS 6
 
 typedef struct NODE {
     nodetype nodetype;
@@ -222,23 +229,23 @@ typedef struct NODE {
         prf prf;           /* tag for primitive functions        */
         fun_name fun_name; /* used in N_ap nodes                 */
         struct {
-            int tag;      /* tag for return type */
-            int tc;       /* type class */
-        } prf_dec;        /* used for declaration of primitive functions
-                           * this declarations are used to look for argument
-                           * and result type of primitive functions
-                           */
-    } info;               /* fu"r spezielle Informationen */
-    int refcnt;           /* is used as referenze count information */
-    int bblock;           /* number of basic block assign node belongs to */
-    int flag;             /* the flag is used for node-status */
-                          /* (loop invariant/not loop invariant , ...) */
-    int varno;            /* number of variables - 1 */
-    long *mask[MAX_MASK]; /* special informations about variables */
-    int nnode;            /* Anzahl der benutzten Knoten */
-    int lineno;           /* Zeilennummer in der ein Befehl steht */
-    struct NODE *node[4]; /* Diese Eintra"ge sind knotenspezifisch */
-} node;                   /* Knoten des Syntaxbaums  */
+            int tag;             /* tag for return type */
+            int tc;              /* type class */
+        } prf_dec;               /* used for declaration of primitive functions
+                                  * this declarations are used to look for argument
+                                  * and result type of primitive functions
+                                  */
+    } info;                      /* fu"r spezielle Informationen */
+    int refcnt;                  /* is used as referenze count information */
+    int bblock;                  /* number of basic block assign node belongs to */
+    int flag;                    /* the flag is used for node-status */
+                                 /* (loop invariant/not loop invariant , ...) */
+    int varno;                   /* number of variables - 1 */
+    long *mask[MAX_MASK];        /* special informations about variables */
+    int nnode;                   /* Anzahl der benutzten Knoten */
+    int lineno;                  /* Zeilennummer in der ein Befehl steht */
+    struct NODE *node[MAX_SONS]; /* Diese Eintra"ge sind knotenspezifisch */
+} node;                          /* Knoten des Syntaxbaums  */
 
 /*
  *  macro for the generation of nodes
