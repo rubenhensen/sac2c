@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/12/29 10:21:14  cg
+ * Revision 1.16  1996/01/02 15:43:47  cg
+ * added new compiler phase name
+ *
+ * Revision 1.15  1995/12/29  10:21:14  cg
  * added new compiler phase readsib
  *
  * Revision 1.14  1995/12/15  13:38:52  cg
@@ -66,22 +69,43 @@
 #include "dbug.h"
 #include "internal_lib.h"
 
-#include "Error.h"
+#include "filemgr.h"
 
+#if 0
 #define PUTC_STDERR(c) putc ((c), stderr)
+#endif
 
-int errors = 0;         /* counter for number of errors */
+/*
+ *  Definitions of some global variables necessary for the
+ *  glorious SAC2C compile time information system
+ */
+
+int errors = 0;         /* counter for number of errors   */
 int warnings = 0;       /* counter for number of warnings */
 int verbose_level = 3;  /* controls compile time output   */
 int compiler_phase = 1; /* counter for compilation phases */
 
-int message_indent = 0;
-int last_indent = 0;
-int current_line_length;
+int message_indent = 0;  /* used for formatting compile time output */
+int last_indent = 0;     /* used for formatting compile time output */
+int current_line_length; /* used for formatting compile time output */
 
 char error_message_buffer[MAX_ERROR_MESSAGE_LENGTH];
+/* buffer for generating formatted message */
+
+char *filename; /* current file name */
+
+char sibfilename[MAX_FILE_NAME];
+
+/*
+ *  sibfilename is defined as a global variable in Error.c because
+ *  it has to be deleted if compilation fails after having written
+ *  the SIB file. So, this variable is necessary to decide whether a
+ *  SIB file has already been generated as well as to actually delete
+ *  this file.
+ */
 
 char *compiler_phase_name[] = {"",
+                               "Evaluating command line parameters",
                                "Loading SAC program",
                                "Resolving imports from modules and classes",
                                "Evaluating SAC-Information-Blocks",
@@ -100,7 +124,7 @@ char *compiler_phase_name[] = {"",
                                "Running reference count inference system",
                                "Preparing C-code generation",
                                "Generating C-code",
-                               "Generating C-compiler call",
+                               "Generating link list for C-compiler",
                                "Unknown compiler phase"};
 
 /*
