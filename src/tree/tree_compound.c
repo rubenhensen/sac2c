@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2002/09/03 11:09:19  dkr
+ * CompareTypesImplementation() modified
+ *
  * Revision 3.68  2002/08/05 17:03:45  sbs
  * several extensions required for the alpha version of the new type checker
  *
@@ -784,41 +787,69 @@ GetBasetypeSize (types *type)
 /******************************************************************************
  *
  * Function:
- *   bool CompareTypesImplementation( types *t1, types *t2)
+ *   int CompareTypesImplementation( types *t1, types *t2)
  *
  * Description:
  *   compares two types for having the equal implementation types (resolving
  *   user defined types) - that means double[2] and Complex are equal!
  *
+ *   res ==  0:  t1 == t2
+ *   res == -1:  t1 <  t2
+ *   res ==  1:  t1 >  t2
+ *   res ==  2:  t1 != t2
+ *
  ******************************************************************************/
 
-bool
+int
 CompareTypesImplementation (types *t1, types *t2)
 {
-    bool res;
-    shpseg *shpseg1;
-    shpseg *shpseg2;
+    int res;
+    shpseg *shpseg1, *shpseg2;
+    int shpdim1, shpdim2;
     int dim;
 
     DBUG_ENTER ("CompareTypes");
-    res = FALSE;
 
-    DBUG_ASSERT (((t1 != NULL) && (t2 != NULL)), "CompareTypes() called with NULL type");
+    DBUG_ASSERT (((t1 != NULL) && (t2 != NULL)),
+                 "CompareTypesImplementation() called with NULL type");
 
     if (GetBasetype (t1) == GetBasetype (t2)) {
-        if (GetShapeDim (t1) == GetShapeDim (t2)) {
-            shpseg1 = Type2Shpseg (t1, &dim);
-            shpseg2 = Type2Shpseg (t2, NULL);
+        shpdim1 = GetShapeDim (t1);
+        shpdim2 = GetShapeDim (t2);
 
-            res = EqualShpseg (dim, shpseg1, shpseg2);
+        if (shpdim1 == shpdim2) {
+            if (KNOWN_SHAPE (shpdim1)) { /* -> KNOWN_SHAPE( shpdim2) */
+                shpseg1 = Type2Shpseg (t1, &dim);
+                shpseg2 = Type2Shpseg (t2, NULL);
 
-            if (shpseg1 != NULL) {
-                FreeShpseg (shpseg1);
+                res = (EqualShpseg (dim, shpseg1, shpseg2)) ? 0 : 2;
+
+                if (shpseg1 != NULL) {
+                    shpseg1 = FreeShpseg (shpseg1);
+                }
+                if (shpseg2 != NULL) {
+                    shpseg2 = FreeShpseg (shpseg2);
+                }
+            } else {
+                res = 0;
             }
-            if (shpseg2 != NULL) {
-                FreeShpseg (shpseg2);
-            }
+        } else if (shpdim1 == ARRAY_OR_SCALAR) {
+            res = 1;
+        } else if (shpdim2 == ARRAY_OR_SCALAR) {
+            res = -1;
+        } else if (shpdim1 == UNKNOWN_SHAPE) {
+            res = (shpdim2 == SCALAR) ? 2 : 1;
+        } else if (shpdim2 == UNKNOWN_SHAPE) {
+            res = (shpdim1 == SCALAR) ? 2 : -1;
+        } else if (KNOWN_DIMENSION (shpdim1)) {
+            res = (DIM_NO_OFFSET (shpdim1) != DIM_NO_OFFSET (shpdim2)) ? 2 : 1;
+        } else if (KNOWN_DIMENSION (shpdim2)) {
+            res = (DIM_NO_OFFSET (shpdim1) != DIM_NO_OFFSET (shpdim2)) ? 2 : -1;
+        } else {
+            DBUG_ASSERT ((0), "illegal shape constellation found!");
         }
+    } else {
+        res = 2;
     }
 
     DBUG_RETURN (res);
