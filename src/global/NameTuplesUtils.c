@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/11/26 16:36:38  cg
+ * const specifier added.
+ *
  * Revision 1.10  2004/11/25 17:53:48  cg
  * SacDevCamp 04
  *
@@ -164,7 +167,7 @@ NTUgetUniqueClassFromTypes (types *type)
 /******************************************************************************
  *
  * function:
- *   char *NTUcreateNtTag( char *name, types *type)
+ *   char *NTUcreateNtTag( const char *name, types *type)
  *
  * description:
  *   Creates the tag of an object (usually an array) from its type.
@@ -172,7 +175,7 @@ NTUgetUniqueClassFromTypes (types *type)
  ******************************************************************************/
 
 char *
-NTUcreateNtTag (char *name, types *type)
+NTUcreateNtTag (const char *name, types *type)
 {
     shape_class_t sc;
     hidden_class_t hc;
