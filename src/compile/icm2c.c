@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.50  1997/11/25 10:34:27  dkr
+ * added a \n in with-loop-output
+ *
  * Revision 1.49  1997/11/03 16:25:52  dkr
  * free -> RT_FREE
  *
@@ -238,8 +241,8 @@
             int i;                                                                       \
             for (i = 0; i < idxlen; i++) {                                               \
                 INDENT;                                                                  \
-                fprintf (outfile, "lim_%d=%s__destptr+%s__offset%d_left;", i, res, res,  \
-                         i);                                                             \
+                fprintf (outfile, "lim_%d=%s__destptr+%s__offset%d_left;\n", i, res,     \
+                         res, i);                                                        \
                 INDENT;                                                                  \
                 fprintf (outfile, "for(; %s__destptr<lim_%d; %s__destptr++) {\n", res,   \
                          i, res);                                                        \
@@ -344,7 +347,8 @@
             INDENT;                                                                      \
             fprintf (outfile, "}\n");                                                    \
             INDENT;                                                                      \
-            fprintf (outfile, "lim_%d=%s__destptr+%s__offset%d_right;", i, res, res, i); \
+            fprintf (outfile, "lim_%d=%s__destptr+%s__offset%d_right;\n", i, res, res,   \
+                     i);                                                                 \
             INDENT;                                                                      \
             fprintf (outfile, "for(; %s__destptr<lim_%d; %s__destptr++) {\n", res, i,    \
                      res);                                                               \
@@ -1772,7 +1776,7 @@ INDENT;
 fprintf (outfile, "  for(__i=__idx,__j=0; __j<ND_A_SIZE(%s); __i++,__j++)", value);
 fprintf (outfile, " ND_A_FIELD(%s)[__i]=ND_A_FIELD(%s)[__j];\n", res, value);
 INDENT;
-fprintf (outfile, " for(; __i<ND_A_SIZE(%s); __i++)", res);
+fprintf (outfile, " for(; __i<ND_A_SIZE(%s); __i++)\n", res);
 fprintf (outfile, " ND_A_FIELD(%s)[__i]=ND_A_FIELD(%s)[__i];\n", res, old);
 
 if (check_boundary) {
