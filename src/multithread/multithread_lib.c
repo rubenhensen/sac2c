@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/08/26 17:01:36  skt
+ * moved MUTHDecodeExecmode from multithread to multithread_lib
+ *
  * Revision 3.9  2004/08/18 13:24:31  skt
  * switch to mtexecmode_t done
  *
@@ -574,4 +577,43 @@ RenewExecutionmode (node *assign, mtexecmode_t executionmode)
     }
 
     DBUG_RETURN (assign);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn char *MUTHDecodeExecmode(mtexecmode_t execmode)
+ *
+ *   @brief A small helper function to make debug-output more readable
+ *          !It must be adapted if the names of the modes change!
+ *
+ *   @param execmode the executionmode to decode
+ *   @return the name of the executionmode as a string
+ *
+ *****************************************************************************/
+char *
+MUTHDecodeExecmode (mtexecmode_t execmode)
+{
+    char *result;
+    DBUG_ENTER ("MUTHDecodeExecmode");
+    switch (execmode) {
+    case MUTH_ANY:
+        result = "AT";
+        break;
+    case MUTH_EXCLUSIVE:
+        result = "EX";
+        break;
+    case MUTH_SINGLE:
+        result = "ST";
+        break;
+    case MUTH_MULTI:
+        result = "MT";
+        break;
+    case MUTH_MULTI_SPECIALIZED:
+        result = "MS";
+        break;
+    default:
+        result = "";
+        break;
+    }
+    DBUG_RETURN (result);
 }

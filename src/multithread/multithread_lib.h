@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/08/26 17:01:36  skt
+ * moved MUTHDecodeExecmode from multithread to multithread_lib
+ *
  * Revision 3.7  2004/08/18 13:24:31  skt
  * switch to mtexecmode_t done
  *
@@ -74,5 +77,6 @@ extern node *MUTHInsertMT (node *assign, node *fundef);
 extern node *MUTHGetLastExpression (node *expression);
 void TagAllocs (node *withloop, mtexecmode_t executionmode);
 node *RenewExecutionmode (node *assign, mtexecmode_t executionmode);
+extern char *MUTHDecodeExecmode (mtexecmode_t execmode);
 
 #endif /* _SAC_CONCURRENT_LIB_H_ */

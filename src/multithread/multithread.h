@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/08/26 17:01:36  skt
+ * moved MUTHDecodeExecmode from multithread to multithread_lib
+ *
  * Revision 3.12  2004/08/18 13:24:31  skt
  * switch to mtexecmode_t done
  *
@@ -74,7 +77,5 @@ extern node *MUTHmodul (node *arg_node, info *arg_info);
 extern node *MUTHfundef (node *arg_node, info *arg_info);
 
 extern node *MUTHassign (node *arg_node, info *arg_info);
-
-extern char *MUTHDecodeExecmode (int execmode);
 
 #endif /* MULTITHREAD_H */

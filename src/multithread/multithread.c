@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2004/08/26 17:01:36  skt
+ * moved MUTHDecodeExecmode from multithread to multithread_lib
+ *
  * Revision 3.16  2004/08/24 16:50:24  skt
  * creation of specialized functions within parallel withloops enabled
  *
@@ -483,51 +486,6 @@ MUTHmodul (node *arg_node, info *arg_info)
     }
 
     executionmodes_available = FALSE;
-    /*
-     *  --- RepfunsInit (rfin) ---
-     *
-     *  FUNDEF_COMPANION only used within this traversal!!
-     *  It can be reused afterwards
-     */
-    /*DBUG_PRINT( "MUTH", ("begin RepfunsInit"));
-    MODUL_FUNS( arg_node) =
-      MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, ClearCOMPANION,
-    MUTHignore_none); MODUL_FUNS( arg_node) = MUTHdriver (MODUL_FUNS( arg_node), arg_info,
-    TRUE, RepfunsInit, MUTHignore); DBUG_PRINT( "MUTH", ("end RepfunsInit"));
-
-    if ((break_after == PH_multithread) &&
-        (strcmp("rfin", break_specifier)==0)) {
-      goto cont;
-      }*/
-
-    /*
-     *  --- BlocksPropagate (blkpp) ---
-     *
-     *  FUNDEF_COMPANION used to get information from blkin, but can be
-     *  reused after blkpp.
-     */
-    /* DBUG_PRINT( "MUTH", ("begin BlocksPropagate"));
-    MODUL_FUNS( arg_node) =
-      MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, BlocksPropagate, MUTHignore);
-    DBUG_PRINT( "MUTH", ("end BlocksPropagate"));
-
-    if ((break_after == PH_multithread) &&
-        (strcmp("blkpp", break_specifier)==0)) {
-      goto cont;
-      }*/
-
-    /*
-     *  --- BlocksExpand (blkex) ---
-     */
-    /*DBUG_PRINT( "MUTH", ("begin BlocksExpand"));
-    MODUL_FUNS( arg_node) =
-      MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, BlocksExpand, MUTHignore);
-    DBUG_PRINT( "MUTH", ("end BlocksExpand"));
-
-    if ((break_after == PH_multithread) &&
-        (strcmp("blkex", break_specifier)==0)) {
-      goto cont;
-      }*/
 
     /*
      *  --- MtfunsInit (mtfin) ---
@@ -616,45 +574,6 @@ MUTHmodul (node *arg_node, info *arg_info)
 cont:
 
     DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn char *MUTHDecodeExecmode(int execmode)
- *
- *   @brief A small helper function to make debug-output more readable
- *          !It must be adapted if the names of the modes change!
- *
- *   @param execmode the executionmode to decode
- *   @return the name of the executionmode as a string
- *
- *****************************************************************************/
-char *
-MUTHDecodeExecmode (int execmode)
-{
-    char *result;
-    DBUG_ENTER ("MUTHDecodeExecmode");
-    DBUG_ASSERT (((execmode == MUTH_ANY) || (execmode == MUTH_EXCLUSIVE)
-                  || (execmode == MUTH_SINGLE) || (execmode == MUTH_MULTI)),
-                 "DecodeExecmode expects a valid executionmode");
-    switch (execmode) {
-    case MUTH_ANY:
-        result = "AT";
-        break;
-    case MUTH_EXCLUSIVE:
-        result = "EX";
-        break;
-    case MUTH_SINGLE:
-        result = "ST";
-        break;
-    case MUTH_MULTI:
-        result = "MT";
-        break;
-    default:
-        result = "";
-        break;
-    }
-    DBUG_RETURN (result);
 }
 
 /**
