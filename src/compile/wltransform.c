@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2001/04/03 10:47:08  dkr
+ * minor changes in ComputeIndexMinMax() done
+ *
  * Revision 3.43  2001/04/03 09:31:02  dkr
  * no changes done
  *
@@ -6089,7 +6092,8 @@ ComputeIndexMinMax (node *wlseg, shpseg *shape, node *wlnode)
     DBUG_ENTER ("ComputeIndexMinMax");
 
     if (wlnode != NULL) {
-        switch (NODE_TYPE (wlnode)) {
+        nt = NODE_TYPE (wlnode);
+        switch (nt) {
         case N_WLstride:
             /* here is no break missing! */
         case N_WLstrideVar:
@@ -6097,7 +6101,6 @@ ComputeIndexMinMax (node *wlseg, shpseg *shape, node *wlnode)
             ComputeIndexMinMax (wlseg, shape, WLSTRIDEX_NEXT (wlnode));
 
             dim = WLSTRIDEX_DIM (wlnode);
-            nt = NODE_TYPE (wlnode);
             p_min = WLSTRIDEX_GET_ADDR (wlnode, BOUND1);
             p_max = WLSTRIDEX_GET_ADDR (wlnode, BOUND2);
             break;
@@ -6109,7 +6112,6 @@ ComputeIndexMinMax (node *wlseg, shpseg *shape, node *wlnode)
             ComputeIndexMinMax (wlseg, shape, WLXBLOCK_NEXT (wlnode));
 
             dim = WLXBLOCK_DIM (wlnode);
-            nt = NODE_TYPE (wlnode);
             p_min = WLSTRIDEX_GET_ADDR (wlnode, BOUND1);
             p_max = WLSTRIDEX_GET_ADDR (wlnode, BOUND2);
             break;
@@ -6124,11 +6126,13 @@ ComputeIndexMinMax (node *wlseg, shpseg *shape, node *wlnode)
              * skip adjustment of 'idx_min', 'idx_max'
              */
             dim = (-1);
+            p_min = p_max = 0;
             break;
 
         default:
             DBUG_ASSERT ((0), "illegal node type found!");
             dim = (-1);
+            p_min = p_max = 0;
             break;
         }
 
