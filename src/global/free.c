@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.43  1998/03/27 18:37:36  dkr
+ * WLproj renamed in WLstride:
+ *   WLPROJ... -> WLSTRIDE...
+ *
  * Revision 1.42  1998/03/25 14:20:22  dkr
  * fixed a bug in FreeNpart:
  *    DBUG_ASSERT about (USED >= 0) is now correct
@@ -1629,15 +1633,15 @@ FreeWLublock (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeWLproj (node *arg_node, node *arg_info)
+FreeWLstride (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
 
-    DBUG_ENTER ("FreeWLproj");
-    DBUG_PRINT ("FREE", ("Removing N_WLproj node ..."));
+    DBUG_ENTER ("FreeWLstride");
+    DBUG_PRINT ("FREE", ("Removing N_WLstride node ..."));
 
-    FREETRAV (WLPROJ_CONTENTS (arg_node));
-    tmp = FREECONT (WLPROJ_NEXT (arg_node));
+    FREETRAV (WLSTRIDE_CONTENTS (arg_node));
+    tmp = FREECONT (WLSTRIDE_NEXT (arg_node));
 
     FREE (arg_node);
 
