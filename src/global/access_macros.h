@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/04/11 15:10:24  hw
+ * Revision 1.5  1995/07/04 16:36:24  asi
+ * added macros - IDS_VARNO, ARG1 ...
+ *
+ * Revision 1.4  1995/04/11  15:10:24  hw
  * added macro IDS_NEXT
  *
  * Revision 1.3  1995/03/31  15:46:33  hw
@@ -38,7 +41,13 @@
 #define IDS info.ids
 #define IDS_ID IDS->id
 #define IDS_NODE IDS->node
+#define IDS_VARNO IDS->node->varno
 #define IDS_REFCNT IDS->refcnt
 #define IDS_NEXT IDS->next
+
+/* macros for access arguments of a ap or prf - node */
+#define ARG1 node[0]->node[0]
+#define ARG2 node[0]->node[1]->node[0]
+#define ARG3 node[0]->node[1]->node[1]->node[0]
 
 #endif /* _access_macros_h */
