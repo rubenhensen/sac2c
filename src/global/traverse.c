@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/06/25 14:58:34  jhs
+ * Splitted spmdtrav_tab into spmdrmtrav_tab and spmdrotrav_tab.
+ *
  * Revision 2.5  1999/06/16 10:18:22  jhs
  * Added spmdtrav_tab.
  *
@@ -120,6 +123,7 @@
 #include "spmd_lift.h"
 #include "sync_init.h"
 #include "sync_opt.h"
+#include "spmd_trav.h"
 #include "schedule.h"
 #include "wl_access_analyze.h"
 #include "scnprs.h" /* needed for linenum only!!! */
@@ -883,7 +887,7 @@ funptr freemask_tab[] = {
 #undef NIF
 
 /*
- *  51) spmdtrav_tab
+ *  51) spmdrmtrav_tab
  */
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
@@ -892,7 +896,22 @@ funptr freemask_tab[] = {
             t47, t48, t49, t50, t51, t52, nn)                                            \
     t51
 
-funptr spmdtrav_tab[] = {
+funptr spmdrmtrav_tab[] = {
+#include "node_info.mac"
+};
+#undef NIF
+
+/*
+ *  52) spmdrotrav_tab
+ */
+
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
+            t47, t48, t49, t50, t51, t52, nn)                                            \
+    t52
+
+funptr spmdrotrav_tab[] = {
 #include "node_info.mac"
 };
 #undef NIF
