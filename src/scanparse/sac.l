@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/07/07 16:20:56  hw
+ * Revision 1.21  1995/08/07 10:30:00  cg
+ * assignement operator := deleted.
+ *
+ * Revision 1.20  1995/07/07  16:20:56  hw
  * - added macro FILTER7
  * - exchanged FILTER2 with FILTER7 to generate tokens for
  *    primitive functions
@@ -130,7 +133,6 @@ int start_token;
 ";"				{FILTER( SEMIC );}
 ","				{FILTER( COMMA );}
 "="				{FILTER( LET );}
-":="				{FILTER( ASSIGN );}
 "&"				{FILTER( AMPERS );}
 
 "&&"				{FILTER7( AND,prf_name_str[F_and]);}
