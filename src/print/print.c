@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.62  2000/03/21 13:41:22  dkr
+ * macro PRINT_VECT used
+ *
  * Revision 2.61  2000/03/20 19:28:48  dkr
  * added a second SYSWARN for unbalanced indentation in PrintFundef
  *
@@ -3160,7 +3163,7 @@ PrintIdsAST (ids *vars)
 void
 PrintAST (node *node)
 {
-    int i, d;
+    int i;
 
     DBUG_ENTER ("PrintAST");
 
@@ -3289,88 +3292,34 @@ PrintAST (node *node)
 
         case N_WLseg:
             fprintf (outfile, "(sv: ");
-            if (WLSEG_SV (node) != NULL) {
-                fprintf (outfile, "[ ");
-                for (d = 0; d < WLSEG_DIMS (node); d++) {
-                    fprintf (outfile, "%i ", (WLSEG_SV (node))[d]);
-                }
-                fprintf (outfile, "]");
-            } else {
-                fprintf (outfile, "NULL");
-            }
+            PRINT_VECT (outfile, WLSEG_SV (node), WLSEG_DIMS (node), "%i");
 
             for (i = 0; i < WLSEG_BLOCKS (node); i++) {
                 fprintf (outfile, ", bv%i: ", i);
-                if (WLSEG_BV (node, i) != NULL) {
-                    fprintf (outfile, "[ ");
-                    for (d = 0; d < WLSEG_DIMS (node); d++) {
-                        fprintf (outfile, "%i ", (WLSEG_BV (node, i))[d]);
-                    }
-                    fprintf (outfile, "]");
-                } else {
-                    fprintf (outfile, "NULL");
-                }
+                PRINT_VECT (outfile, WLSEG_BV (node, i), WLSEG_DIMS (node), "%i");
             }
 
             fprintf (outfile, ", ubv: ");
-            if (WLSEG_UBV (node) != NULL) {
-                fprintf (outfile, "[ ");
-                for (d = 0; d < WLSEG_DIMS (node); d++) {
-                    fprintf (outfile, "%i ", (WLSEG_UBV (node))[d]);
-                }
-                fprintf (outfile, "]");
-            } else {
-                fprintf (outfile, "NULL");
-            }
+            PRINT_VECT (outfile, WLSEG_UBV (node), WLSEG_DIMS (node), "%i");
 
             fprintf (outfile, ", homsv: ");
-            if (WLSEG_HOMSV (node) != NULL) {
-                fprintf (outfile, "[ ");
-                for (d = 0; d < WLSEG_DIMS (node); d++) {
-                    fprintf (outfile, "%i ", (WLSEG_HOMSV (node))[d]);
-                }
-                fprintf (outfile, "]");
-            } else {
-                fprintf (outfile, "NULL");
-            }
-            fprintf (outfile, ")\n");
+            PRINT_VECT (outfile, WLSEG_HOMSV (node), WLSEG_DIMS (node), "%i");
+            fprintf (outfile, ", maxhomdim: %i)\n", WLSEG_MAXHOMDIM (node));
+            PRINT_VECT (outfile, WLSEG_HOMSV (node), WLSEG_DIMS (node), "%i");
             break;
 
         case N_WLsegVar:
             fprintf (outfile, "(sv: ");
-            if (WLSEGVAR_SV (node) != NULL) {
-                fprintf (outfile, "[ ");
-                for (d = 0; d < WLSEGVAR_DIMS (node); d++) {
-                    fprintf (outfile, "%i ", (WLSEGVAR_SV (node))[d]);
-                }
-                fprintf (outfile, "]");
-            } else {
-                fprintf (outfile, "NULL");
-            }
+            PRINT_VECT (outfile, WLSEGVAR_SV (node), WLSEGVAR_DIMS (node), "%i");
 
             for (i = 0; i < WLSEGVAR_BLOCKS (node); i++) {
                 fprintf (outfile, ", bv%i: ", i);
-                if (WLSEGVAR_BV (node, i) != NULL) {
-                    fprintf (outfile, "[ ");
-                    for (d = 0; d < WLSEGVAR_DIMS (node); d++) {
-                        fprintf (outfile, "%i ", (WLSEGVAR_BV (node, i))[d]);
-                    }
-                    fprintf (outfile, "]");
-                } else {
-                    fprintf (outfile, "NULL");
-                }
+                PRINT_VECT (outfile, WLSEGVAR_BV (node, i), WLSEGVAR_DIMS (node), "%i");
             }
 
             fprintf (outfile, ", ubv: ");
-            if (WLSEGVAR_UBV (node) != NULL) {
-                fprintf (outfile, "[ ");
-                for (d = 0; d < WLSEGVAR_DIMS (node); d++) {
-                    fprintf (outfile, "%i ", (WLSEGVAR_UBV (node))[d]);
-                }
-                fprintf (outfile, "]");
-            } else {
-                fprintf (outfile, "NULL");
-            }
+            PRINT_VECT (outfile, WLSEGVAR_UBV (node), WLSEGVAR_DIMS (node), "%i");
+
             fprintf (outfile, ")\n");
             break;
 
