@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.80  1998/08/10 12:45:11  dkr
+ * removed unused vars in MakeWLsegVar
+ *
  * Revision 1.79  1998/08/07 14:36:33  dkr
  * stuff for N_WLsegVar added
  *
@@ -1873,7 +1876,6 @@ node *
 MakeWLsegVar (int dims, node *contents, node *next)
 {
     node *new_node;
-    int b, d;
 
     DBUG_ENTER ("MakeWLsegVar");
     INIT_NODE (new_node);
