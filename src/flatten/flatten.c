@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/04/07 13:37:42  hw
+ * Revision 1.17  1995/04/07 15:33:34  hw
+ * FltnExprs will now flatten its arguments depending on the context
+ * (modified FltExprs, FltnWhile, FltnDo)
+ * N_ap will be "abstracted" out of the termination condition of a loop
+ *  (N_prf won't)
+ *
+ * Revision 1.16  1995/04/07  13:37:42  hw
  * FltnAp, FltnReturn inserted
  * modified FtnExprs to flatten N_exprs depending on the context
  *
@@ -71,15 +77,16 @@
 #define VAR "__tmp"       /* name of new variable */
 #define VAR_LENGTH 10     /* dimension for array of char */
 #define P_FORMAT "(%06x)" /* formatstring for pointer address */
+#define FREE(a) free (a)
 
 /* macros are used as tag in  arg_info->info.cint for flatten of N_exprs
  */
 #define NORMAL 0
 #define AP 1
 #define RET 2
+#define LOOP 3
 
 extern node *MakeNode (nodetype); /* defined in sac.y or y.tab.c respectively */
-extern char *mdb_nodetype[];      /* defined in my_debug.h */
 
 static int var_counter = 0;
 
@@ -286,29 +293,48 @@ FltnPrf (node *arg_node, node *arg_info)
  *  external funs : MakeNode
  *  macros        : GEN_NODE
  *
- *  remarks       :
+ *  remarks       : arg_info->info.cint contains a tag that gives the
+ *                  context of this N_exprs
  *
  */
 node *
 FltnExprs (node *arg_node, node *arg_info)
 {
     node *tmp_node1, *id_node, *let_node, *assign_node;
+    int abstract, old_tag;
 
     DBUG_ENTER ("FltnExprs");
 
-    if ((arg_node->node[0]->nodetype == N_ap) || (arg_node->node[0]->nodetype == N_prf)
-        || (((arg_node->node[0]->nodetype == N_num)
-             || (arg_node->node[0]->nodetype == N_float)
-             || (arg_node->node[0]->nodetype == N_bool)
-             || (arg_node->node[0]->nodetype == N_str)
-             || (arg_node->node[0]->nodetype == N_array))
-            && (RET == arg_info->info.cint))
-        || ((arg_node->node[0]->nodetype == N_array) && (AP == arg_info->info.cint))) {
+    /* compute whether to abstract an expression or not , depending on the
+     * context of the expression ,given by arg_info->info.cint
+     */
+    switch (arg_info->info.cint) {
+    case LOOP:
+        abstract = (arg_node->node[0]->nodetype == N_ap);
+        break;
+    case RET:
+        abstract = ((arg_node->node[0]->nodetype == N_num)
+                    || (arg_node->node[0]->nodetype == N_float)
+                    || (arg_node->node[0]->nodetype == N_bool)
+                    || (arg_node->node[0]->nodetype == N_str)
+                    || (arg_node->node[0]->nodetype == N_array)
+                    || (arg_node->node[0]->nodetype == N_ap)
+                    || (arg_node->node[0]->nodetype == N_prf));
+        break;
+    case AP:
+        abstract = ((arg_node->node[0]->nodetype == N_array)
+                    || (arg_node->node[0]->nodetype == N_prf)
+                    || (arg_node->node[0]->nodetype == N_ap));
+        break;
+    case NORMAL:
+        abstract = ((arg_node->node[0]->nodetype == N_ap)
+                    || (arg_node->node[0]->nodetype == N_prf));
+        break;
+    default:
+        DBUG_ASSERT (0, "wrong tag ");
+    }
 
-        /* This argument is a function application and thus has to be abstracted
-        ** out. Therefore a new N_assign, a new N_let, and a new temporary
-        ** variable are generated and inserted.
-        */
+    if (1 == abstract) {
         tmp_node1 = arg_node->node[0];
 
         id_node = MakeNode (N_id);
@@ -328,8 +354,6 @@ FltnExprs (node *arg_node, node *arg_info)
 
         arg_info->node[0] = assign_node;
         if (NULL != tmp_node1) {
-            int old_tag = 0;
-
             /* Now, we have to flatten the child "tmp_node1" recursively! */
             old_tag = arg_info->info.cint;
 
@@ -342,9 +366,17 @@ FltnExprs (node *arg_node, node *arg_info)
             arg_info->info.cint = old_tag;
         }
 
-    } else if (arg_node->node[0]->nodetype == N_array)
-        /* an array has also to be flattend */
+    } else if ((arg_node->node[0]->nodetype == N_array)
+               || (arg_node->node[0]->nodetype == N_prf)
+               || (arg_node->node[0]->nodetype == N_ap)) {
+        /* components of an array and arguments of a function have
+         * to be flattend anyway.
+         */
+        old_tag = arg_info->info.cint;
+        arg_info->info.cint = NORMAL;
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+        arg_info->info.cint = old_tag;
+    }
 
     /* Last, but not least remaining exprs have to be done */
     if (arg_node->nnode == 2)
@@ -405,18 +437,34 @@ FltnCond (node *arg_node, node *arg_info)
 node *
 FltnWhile (node *arg_node, node *arg_info)
 {
-    node *info_node, *tmp, *dest_node;
+    node *info_node, *tmp, *dest_node, *tmp_exprs;
+    int old_tag;
 
     DBUG_ENTER ("FltnWhile");
 
-    info_node = MakeNode (N_info);
-    info_node->nnode = 1;
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+    /* create a temporary N_exprs node to flatten the termination condition
+     * in FltnExprs
+     */
+    tmp_exprs = MakeNode (N_exprs);
+    tmp_exprs->node[0] = arg_node->node[0];
+    tmp_exprs->nnode = 1;
+
+    old_tag = arg_info->info.cint;
+    arg_info->info.cint = LOOP; /* set tag for FltnExprs */
+    tmp_exprs = Trav (tmp_exprs, arg_info);
+    arg_node->node[0] = tmp_exprs->node[0]; /* set node of termination condition
+                                             * correctly
+                                             */
+    FREE (tmp_exprs);
+    arg_info->info.cint = old_tag; /* restore tag */
 
     DBUG_PRINT ("FLATTEN", ("arg_info: %s" P_FORMAT ": %s" P_FORMAT,
                             mdb_nodetype[arg_info->node[0]->nodetype], arg_info->node[0],
                             mdb_nodetype[arg_info->node[0]->node[0]->nodetype],
                             arg_info->node[0]->node[0]));
+
+    info_node = MakeNode (N_info);
+    info_node->nnode = 1;
 
     arg_node->node[1] = Trav (arg_node->node[1], info_node);
 
@@ -492,7 +540,7 @@ FltnWith (node *arg_node, node *arg_info)
     info_node = MakeNode (N_info);
     info_node->nnode = 1;
     arg_node->node[0] = Trav (arg_node->node[0], arg_info);  /* traverse generator */
-    arg_node->node[1] = Trav (arg_node->node[1], info_node); /* traverse body */
+    arg_node->node[1] = Trav (arg_node->node[1], info_node); /* traverse  body */
     free (info_node);
 
     DBUG_RETURN (arg_node);
@@ -515,14 +563,15 @@ FltnWith (node *arg_node, node *arg_info)
 node *
 FltnDo (node *arg_node, node *arg_info)
 {
-    node *info_node, *tmp, *last_assign;
+    node *info_node, *tmp, *last_assign, *tmp_exprs;
+    int old_tag;
 
     DBUG_ENTER ("FltnDo");
 
     info_node = MakeNode (N_info);
     info_node->nnode = 1;
 
-    /* travers termination condition */
+    /* traverse body of do-loop */
     arg_node->node[1] = Trav (arg_node->node[1], info_node);
 
     DBUG_PRINT ("FLATTEN",
@@ -554,8 +603,23 @@ FltnDo (node *arg_node, node *arg_info)
     info_node = tmp;
     info_node->node[0] = NULL;
 
-    /* traverse body of do-loop */
-    arg_node->node[0] = Trav (arg_node->node[0], info_node);
+    /* create a temporary N_exprs node to flatten the termination condition
+     * in FltnExprs
+     */
+    tmp_exprs = MakeNode (N_exprs);
+    tmp_exprs->node[0] = arg_node->node[0];
+    tmp_exprs->nnode = 1;
+
+    /* travers termination condition */
+    old_tag = info_node->info.cint;
+    info_node->info.cint = LOOP; /* set tag for FltnExprs */
+    tmp_exprs = Trav (tmp_exprs, info_node);
+    arg_node->node[0] = tmp_exprs->node[0]; /* set node of termination condition
+                                             * correctly
+                                             */
+
+    info_node->info.cint = old_tag;
+    FREE (tmp_exprs);
 
     /* append flattened termination condition to last assignment
      * in the loop's body
