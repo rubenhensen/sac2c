@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/07/24 09:01:48  asi
+ * Revision 1.4  1995/07/24 15:43:52  asi
+ * itoa will now work correctly ;-)
+ *
+ * Revision 1.3  1995/07/24  09:01:48  asi
  * added function itoa
  *
  * Revision 1.2  1995/05/12  13:14:10  hw
@@ -103,16 +106,16 @@ itoa (long number)
     int tmp;
     int length, i;
 
-    DBUG_ENTER ("ltoa");
+    DBUG_ENTER ("itoa");
     tmp = number;
     length = 1;
-    while (1 < tmp) {
+    while (9 < tmp) {
         tmp /= 10;
         length++;
     }
     str = (char *)Malloc (sizeof (char) * length + 1);
     str[length] = atoi ("\0");
-    for (i = length - 1; (0 <= i); i--) {
+    for (i = 0; (i < length); i++) {
         str[i] = ((int)'0') + (number / pow (10, (length - 1)));
         number = number % ((int)pow (10, (length - 1)));
     }
