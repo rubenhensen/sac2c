@@ -4,7 +4,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/07/26 08:41:02  cg
+ * Revision 1.6  1996/01/02 15:59:58  cg
+ * added external declaration of function ScanParse()
+ *
+ * Revision 1.5  1995/07/26  08:41:02  cg
  * extern declaration of node *sib_tree added.
  *
  * Revision 1.4  1994/12/20  13:49:27  sbs
@@ -38,5 +41,7 @@ extern int start_token;
 extern node *syntax_tree;
 extern node *decl_tree;
 extern node *sib_tree;
+
+extern node *ScanParse ();
 
 #endif /* _scnprs_h */
