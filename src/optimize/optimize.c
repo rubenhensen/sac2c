@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/04/11 10:35:16  bs
+ * TSI call moved to the 'right' place.
+ *
  * Revision 2.4  1999/03/15 15:42:52  bs
  * temporary DBUG-Flag inserted
  *
@@ -706,6 +709,9 @@ OPTfundef (node *arg_node, node *arg_info)
         arg_node = DeadCodeRemoval (arg_node, arg_info);
     }
 
+    DBUG_EXECUTE ("DO_THE_TSI", (arg_node = TileSizeInference (arg_node)););
+    /* This DBUG-Flag is a temporary one! It's for testing the tsi. */
+
 INFO:
     if (loop1 + loop2 == max_optcycles
         && ((lir_expr != old_lir_expr) || (lunr_expr != old_lunr_expr)
@@ -717,9 +723,6 @@ INFO:
                      mem_cf_expr, mem_lunr_expr, mem_wlunr_expr, mem_uns_expr,
                      mem_elim_arrays, mem_wlf_expr, mem_wlt_expr, mem_cse_expr,
                      NON_ZERO_ONLY);
-
-    DBUG_EXECUTE ("DO_THE_TSI", (arg_node = TileSizeInference (arg_node)););
-    /* This DBUG-Flag is a temporary one! It's for testing the tsi. */
 
     DBUG_DO_NOT_EXECUTE ("MASK", arg_node = FreeMasks (arg_node););
     if (FUNDEF_NEXT (arg_node))
