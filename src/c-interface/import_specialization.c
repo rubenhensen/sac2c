@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.2  2000/11/22 16:25:14  nmw
+ * when specializing generic functions the generic function
+ * itself will no longer be removed
+ *
  * Revision 3.1  2000/11/20 18:03:39  sacbase
  * new release made
  *
@@ -51,13 +55,16 @@
 #include "scnprs.h"
 #include "import_specialization.h"
 
-/* functions with only local usage */
+/* datatype for local usage */
+typedef enum { SPECTYPE_NO, SPECTYPE_YES, SPECTYPE_EQUAL } spectype;
+
+/* functions for local usage */
 static node *ScanParseSpecializationFile (char *modname);
 static node *MapSpecialized2Generic (node *spec_fundef, node *arg_info);
 static node *AddSpecializedFundef (node *fundefs, node *spec_fundef, node *gen_fundef);
 static bool isSpecialization (char *spec_name, node *spec_args, types *spec_types,
                               char *gen_name, node *gen_args, types *gen_types);
-static bool isSpecializationType (types *spec_type, types *gen_type);
+static spectype isSpecializationType (types *spec_type, types *gen_type);
 static node *RemoveGenericTemplates (node *module_node);
 
 /******************************************************************************
@@ -110,8 +117,8 @@ IMPSPECfundef (node *arg_node, node *arg_info)
 
     /* this function can be removed after specialization */
 
-    /* SBS bug */
-    FUNDEF_ATTRIB (generic_fundef) = ST_gen_remove;
+    /* SBS: mark generic function for removal before typechecking */
+    /* FUNDEF_ATTRIB(generic_fundef) = ST_gen_remove; */
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
@@ -196,8 +203,8 @@ isSpecialization (char *spec_name, node *spec_args, types *spec_types, char *gen
             /* compare types */
             s_type = ARG_TYPE (s_arg);
             g_type = ARG_TYPE (g_arg);
-            DBUG_ASSERT (s_type != NULL, "arg wthout type");
-            DBUG_ASSERT (g_type != NULL, "arg wthout type");
+            DBUG_ASSERT (s_type != NULL, "arg without type");
+            DBUG_ASSERT (g_type != NULL, "arg without type");
             error_flag = error_flag && isSpecializationType (s_type, g_type);
 
             s_arg = ARG_NEXT (s_arg);
@@ -237,45 +244,50 @@ isSpecialization (char *spec_name, node *spec_args, types *spec_types, char *gen
 /******************************************************************************
  *
  * function:
- *   bool isSpecializationType(types *spec_type, types *gen_type)
+ *   spectype isSpecializationType(types *spec_type, types *gen_type)
  *
  * description:
  *   checks: simpletype, relation of dimension and relation of specification in
  *           shape, e.g. []<[.,.,.]<[1,2,3]
  *
+ * result:
+ *   SPECTYPE_NO    spec_type is no specialization of gen_type
+ *   SPECTYPE_YES   spec_type is specialization of gen_type
+ *   SPECTYPE_EQUAL spec_type is equal to gen_type
  ******************************************************************************/
 
-static bool
+static spectype
 isSpecializationType (types *s_type, types *g_type)
 {
     int i;
-    bool error_flag;
+    spectype error_flag;
 
     DBUG_ENTER ("isSpecializationType");
 
-    error_flag = TRUE;
+    error_flag = SPECTYPE_YES;
 
     /* check basetypes */
     if (TYPES_BASETYPE (s_type) != TYPES_BASETYPE (g_type)) {
-        error_flag = FALSE;
+        error_flag = SPECTYPE_NO;
     }
 
     /* check dimensions */
     else if ((TYPES_DIM (g_type) >= 0) && (TYPES_DIM (g_type) != TYPES_DIM (s_type))) {
         /* different known dimensions */
-        error_flag = FALSE;
+        error_flag = SPECTYPE_NO;
     } else if ((TYPES_DIM (g_type) > 0) && (TYPES_DIM (g_type) == TYPES_DIM (s_type))) {
         /* same known dimensions, check shape */
+        error_flag = SPECTYPE_EQUAL;
         for (i = 0; i < TYPES_DIM (g_type); i++) {
             if (TYPES_SHAPE (g_type, i) != TYPES_SHAPE (s_type, i)) {
                 /* difference in shape */
-                error_flag = FALSE;
+                error_flag = SPECTYPE_NO;
             }
         }
     } else if ((TYPES_DIM (g_type) <= KNOWN_DIM_OFFSET)
                && ((0 - TYPES_DIM (g_type) + KNOWN_DIM_OFFSET) != TYPES_DIM (s_type))) {
         /* known dimension does not match specialized dim */
-        error_flag = FALSE;
+        error_flag = SPECTYPE_NO;
     }
 
     DBUG_RETURN (error_flag);
