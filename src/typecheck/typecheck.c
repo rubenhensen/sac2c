@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2003/06/13 09:25:25  ktr
+ * shape_array is now checked for NULL in Types2Array
+ *
  * Revision 3.50  2003/06/11 21:45:46  ktr
  * replaced calls of MakeArray with MakeFlatArray
  *
@@ -455,7 +458,8 @@ Types2Array (types *type, types *res_type)
         }
     }
 
-    shape_array = AdjustVectorShape (shape_array);
+    if (shape_array != NULL)
+        shape_array = AdjustVectorShape (shape_array);
 
     DBUG_RETURN (shape_array);
 }
