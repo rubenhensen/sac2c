@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1999/02/15 10:24:52  cg
+ * Bug fixed in scheduling for segments of variable borders.
+ *
  * Revision 1.5  1998/08/11 14:32:35  dkr
  * CompileVarSegSchedulingArgs implemented
  *
@@ -421,7 +424,7 @@ int SCHMaxSchedulingDim(sched_t *sched)
 {
   int i=0;
   
-  DBUG_ENTER("SCHSchedulingDoesAdjustment");
+  DBUG_ENTER("SCHMaxSchedulingDim");
   
   while (0!=strcmp(sched->discipline, scheduler_table[i].discipline)) {
     i++;
@@ -453,8 +456,9 @@ SCHAdjustmentRequired (int dim, node *wlseg)
 
     DBUG_ENTER ("SCHAdjustmentRequired");
 
-    while (
-      0 != strcmp (WLSEG_SCHEDULING (wlseg)->discipline, scheduler_table[i].discipline)) {
+    while (0
+           != strcmp (((sched_t *)WLSEG_SCHEDULING (wlseg))->discipline,
+                      scheduler_table[i].discipline)) {
         i++;
     }
 
