@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/04/05 14:31:07  dkr
+ * DBUG_PRINT statement added
+ *
  * Revision 3.13  2002/02/20 14:42:12  dkr
  * function DupTypes() renamed into DupAllTypes()
  *
@@ -791,6 +794,8 @@ FUN2LACap (node *arg_node, node *arg_info)
         DBUG_EXECUTE ("F2L", Print (inl_code););
 
         INFO_F2L_INLINED (arg_info) = inl_code;
+    } else {
+        DBUG_PRINT ("F2L", ("function %s is no LaC-function.", ItemName (fundef)));
     }
 
     DBUG_RETURN (arg_node);
