@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.17  2000/06/23 15:31:54  nmw
+ * N_cwrapper node added
+ *
  * Revision 1.16  2000/06/23 14:10:01  dkr
  * nodes for old with-loop removed
  *
@@ -1855,6 +1858,26 @@ MakeWLgridVar (int level, int dim, node *bound1, node *bound2, node *nextdim, no
     }
     WLGRIDVAR_CODE (new_node) = code;
 
+    DBUG_RETURN (new_node);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeCWrapper (node *next, char *name, char *mod, int argcount, int rescount)
+{
+    node *new_node;
+
+    DBUG_ENTER ("MakeCWrapper");
+
+    new_node = CreateCleanNode (N_cwrapper);
+
+    CWRAPPER_NEXT (new_node) = next;
+    CWRAPPER_NAME (new_node) = name;
+    CWRAPPER_MOD (new_node) = mod;
+    CWRAPPER_ARGCOUNT (new_node) = argcount;
+    CWRAPPER_RESCOUNT (new_node) = rescount;
+    CWRAPPER_FUNS (new_node) = NULL; /* initialized without a mapped fundef */
     DBUG_RETURN (new_node);
 }
 

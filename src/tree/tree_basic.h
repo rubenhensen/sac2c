@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.55  2000/06/23 15:31:35  nmw
+ * N_cwrapper node added
+ *
  * Revision 1.54  2000/06/23 14:17:14  dkr
  * macros for old with-loop removed
  * NWITH_COMPLEX removed
@@ -519,7 +522,8 @@ extern node *MakeModul (char *name, file_type filetype, node *imports, node *typ
 #define MODUL_DECL(n) (n->node[4])
 #define MODUL_STORE_IMPORTS(n) (n->node[4])
 #define MODUL_FOLDFUNS(n) (n->node[4])
-#define MODUL_CLASSTYPE(n) ((types *)(n->node[5]))
+#define MODUL_CWRAPPER(n) (n->node[5])
+#define MODUL_CLASSTYPE(n) ((types *)(n->info2))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3470,6 +3474,42 @@ extern node *MakeWLgridVar (int level, int dim, node *bound1, node *bound2, node
 #define WLGRIDVAR_NEXTDIM(n) (WLGRIDX_NEXTDIM (n))
 #define WLGRIDVAR_NEXT(n) (WLGRIDX_NEXT (n))
 #define WLGRIDVAR_CODE(n) (WLGRIDX_CODE (n))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ *** N_cwrapper :
+ ***
+ ***  sons:
+ ***
+ ***    node*     NEXT            (N_cwrapper)
+ ***
+ ***  permanent attributes:
+ ***
+ ***    nodelist* FUNS            nodelist with fundefs (mapwrapper -> )
+ ***    char*     NAME            name of wrapper function
+ ***    char*     MOD             modulename
+ ***    int       ARGCOUNT        # of arguments
+ ***    int       RESCOUNT        # of results
+ ***
+ ***  temporary attributes:
+ ***
+ ***    ---
+ ***
+ ***  remarks: -
+ ***
+ ***
+ ***
+ ***/
+
+extern node *MakeCWrapper (node *next, char *name, char *mod, int argcount, int rescount);
+
+#define CWRAPPER_NEXT(n) (n->node[0])
+#define CWRAPPER_NAME(n) (n->info.id)
+#define CWRAPPER_MOD(n) ((char *)(n->dfmask[0]))
+#define CWRAPPER_ARGCOUNT(n) (n->counter)
+#define CWRAPPER_RESCOUNT(n) (n->varno)
+#define CWRAPPER_FUNS(n) ((nodelist *)(n->info2))
 
 /*--------------------------------------------------------------------------*/
 
