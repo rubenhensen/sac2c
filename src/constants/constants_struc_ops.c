@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/05/30 13:03:43  khf
+ * COIdxSel added
+ *
  * Revision 1.10  2003/12/12 08:06:37  sbs
  * Idx2Offset now asserts index compatibility!
  *
@@ -356,6 +359,46 @@ COSel (constant *idx, constant *a)
      * Finally, the result node is created:
      */
     res = MakeConstant (CONSTANT_TYPE (a), res_shp, elems, res_vlen);
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    constant *COIdxSel( constant *idx, constant *a)
+ *
+ * description:
+ *    selects single elements from a.
+ *
+ ******************************************************************************/
+
+constant *
+COIdxSel (constant *idx, constant *a)
+{
+    void *elem;
+    int index;
+    shape *res_shp;
+    constant *res;
+
+    DBUG_ENTER ("COIdxSel");
+    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COIdxSel not int!");
+    DBUG_ASSERT ((CONSTANT_DIM (idx) == 0), "idx to COIdxSel not scalar!");
+    res_shp = COGetShape (a);
+    index = ((int *)COGetDataVec (idx))[0];
+    DBUG_ASSERT ((SHGetUnrLen (res_shp)) > index,
+                 "idx-scalar exceeds number of elements of array in COIdxSel!");
+    res_shp = SHFreeShape (res_shp);
+
+    /*
+     * Pick the desired element from a:
+     */
+
+    elem = PickNElemsFromCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a), index, 1);
+    /*
+     * Finally, the result node is created:
+     */
+    res = MakeConstant (CONSTANT_TYPE (a), SHMakeShape (0), elem, 1);
 
     DBUG_RETURN (res);
 }

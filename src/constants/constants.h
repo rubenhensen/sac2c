@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.19  2004/05/30 13:03:43  khf
+ * COIdxSel added
+ *
  * Revision 1.18  2003/09/26 10:14:23  sbs
  * COIsEmptyVect added
  *
@@ -160,6 +163,7 @@ extern bool COIsEmptyVect (constant *a);
 
 extern constant *COReshape (constant *idx, constant *a);
 extern constant *COSel (constant *idx, constant *a);
+extern constant *COIdxSel (constant *idx, constant *a);
 extern constant *COTake (constant *idx, constant *a);
 extern constant *CODrop (constant *idx, constant *a);
 extern constant *CODim (constant *a);
