@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2002/08/15 21:27:50  dkr
+ * MODUL_WRAPPERFUNS added (not used yet ...)
+ *
  * Revision 1.4  2002/08/13 15:59:09  dkr
  * some more cwc stuff added (not finished yet)
  *
@@ -25,7 +28,8 @@
 #include "DupTree.h"
 #include "new_types.h"
 
-#define INFO_CWC_TRAVNO(n) n->flag
+#define INFO_CWC_TRAVNO(n) ((n)->flag)
+#define INFO_CWC_WRAPPERFUNS(n) ((LUT_t) ((n)->dfmask[0]))
 
 /******************************************************************************
  *
@@ -41,6 +45,9 @@ node *
 CWCmodul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("CWCmodul");
+
+    DBUG_ASSERT ((MODUL_WRAPPERFUNS (arg_node) != NULL), "MODUL_WRAPPERFUNS not found!");
+    INFO_CWC_WRAPPERFUNS (arg_info) = MODUL_WRAPPERFUNS (arg_node);
 
     /*
      * create separate wrapper function for all base type constellations
@@ -65,6 +72,8 @@ CWCmodul (node *arg_node, node *arg_info)
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
+
+    MODUL_WRAPPERFUNS (arg_node) = RemoveLUT (MODUL_WRAPPERFUNS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -122,7 +131,7 @@ SplitWrapper (node *fundef)
 static node *
 InsertWrapperCode (node *fundef)
 {
-    node *ret_exprs;
+    node *ret;
     node *assigns;
     node *vardec;
     node *vardecs;
@@ -138,27 +147,21 @@ InsertWrapperCode (node *fundef)
     /*
      * vardecs -> return exprs
      */
-    ret_exprs = NULL;
+    ret = NULL;
     vardec = vardecs;
     while (vardec != NULL) {
-        node *ret_expr;
         node *id_node = MakeId_Copy (VARDEC_NAME (vardec));
         ID_VARDEC (id_node) = vardec;
         ID_AVIS (id_node) = VARDEC_AVIS (vardec);
-
-        if (ret_exprs == NULL) {
-            ret_expr = ret_exprs = MakeExprs (id_node, NULL);
-        } else {
-            ret_expr = EXPRS_NEXT (ret_expr) = MakeExprs (id_node, NULL);
-        }
-
+        ret = MakeExprs (id_node, ret);
         vardec = VARDEC_NEXT (vardec);
     }
+    FUNDEF_RETURN (fundef) = ret = MakeReturn (ret);
 
     /*
      * append return statement to assignments
      */
-    assigns = AppendAssign (assigns, MakeAssign (MakeReturn (ret_exprs), NULL));
+    assigns = AppendAssign (assigns, MakeAssign (ret, NULL));
 
     /*
      * insert function body
