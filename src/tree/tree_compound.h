@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.177  2004/11/27 01:35:28  sah
+ * fixed it all, yeah!
+ *
  * Revision 3.176  2004/11/26 21:52:28  ktr
  * LiftArg removed.
  *
@@ -614,9 +617,6 @@ extern node *TCappendTypedef (node *tdef_chain, node *tdef);
  *  compound access macros
  */
 
-#define OBJDEF_LINKNAME(n)                                                               \
-    (OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_LINKNAME (OBJDEF_PRAGMA (n)))
-
 #define OBJDEF_INITFUN(n)                                                                \
     (OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_INITFUN (OBJDEF_PRAGMA (n)))
 
@@ -681,10 +681,6 @@ extern node *TCappendObjdef (node *objdef_chain, node *objdef);
 #define FUNDEF_INSTR(n) (BLOCK_INSTR (FUNDEF_BODY (n)))
 #define FUNDEF_BODY_VARNO(n) (BLOCK_VARNO (FUNDEF_BODY (n)))
 #define FUNDEF_RC_ICMS(n) (BLOCK_RC_ICMS (FUNDEF_BODY (n)))
-
-#define FUNDEF_LINKNAME(n) (PRAGMA_LINKNAME (FUNDEF_PRAGMA (n)))
-#define FUNDEF_LINKSIGN(n) (PRAGMA_LINKSIGN (FUNDEF_PRAGMA (n)))
-#define FUNDEF_REFCOUNTING(n) (PRAGMA_REFCOUNTING (FUNDEF_PRAGMA (n)))
 
 #define FUNDEF_ISLACFUN(n) (FUNDEF_ISCONDFUN (n) || FUNDEF_ISDOFUN (n))
 /*
@@ -1972,6 +1968,13 @@ extern int TCcountParts (node *parts);
         WLSEG_SCHEDULING (n) = (rhs);                                                    \
     } else {                                                                             \
         WLSEGVAR_SCHEDULING (n) = (rhs);                                                 \
+    }
+
+#define L_WLSEGX_CONTENTS(n, rhs)                                                        \
+    if (NODE_TYPE (n) == N_wlseg) {                                                      \
+        WLSEG_CONTENTS (n) = (rhs);                                                      \
+    } else {                                                                             \
+        WLSEGVAR_CONTENTS (n) = (rhs);                                                   \
     }
 
 #define L_WLSEGX_TASKSEL(n, rhs)                                                         \
