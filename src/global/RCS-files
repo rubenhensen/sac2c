@@ -1,7 +1,6 @@
 Error.c
 Error.h
 Makefile
-NameTuples.h
 NameTuplesUtils.c
 NameTuplesUtils.h
 argtag_info.mac
