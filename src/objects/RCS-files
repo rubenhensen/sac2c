@@ -8,3 +8,4 @@ uniquecheck.h
 objanalysis.c
 objanalysis.h
 restore.c
+restore.h
