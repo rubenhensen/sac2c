@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.73  1998/08/31 16:04:38  sbs
+ * expanded comment in Fold reshape-function
+ *
  * Revision 1.72  1998/08/20 12:20:30  srs
  * added cf_expr++ in ArrayPrf() (case F_modarray)
  *
@@ -2020,17 +2023,18 @@ ArrayPrf (node *arg_node, node *arg_info)
          * that are defined by reshape....
          */
 
-        /* srs: NoNo, we really shouldn't do that. Imagine the following case:
-             A = WL () genarray([8]);
-             B = reshape([2,2,2],A);
-             C = WL () {...references to B...} modarray(B)
-           If the second line is replaced by B = A then while WLF the second
-           WL operates on an array of the *wrong* shape (if it's possible in
-           this situation.
-           But WLF must not become active here because no generators are known
-           for the array B. */
-
-        /*       arg_node = arg[1]; */
+        /*
+         * srs: NoNo, we really shouldn't do that. Imagine the following case:
+         *   A = WL () genarray([8]);
+         *   B = reshape([2,2,2],A);
+         *   C = WL () {...references to B...} modarray(B)
+         * If the second line is replaced by B = A then while WLF the second
+         * WL operates on an array of the *wrong* shape (if it's possible in
+         * this situation.
+         * But WLF must not become active here because no generators are known
+         * for the array B.
+         */
+        /* arg_node = arg[1]; */
 
         /*
          * Now, we should (!!!) free the N_prf-node and its first arg...
