@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.111  1998/03/02 13:58:37  cg
+ * Scanning of command line options streamlined.
+ *
  * Revision 1.110  1998/02/27 16:28:45  cg
  * added usage of sac2c configuration files for customizing sac2c for various
  * target architectures and C compilers.
@@ -753,76 +756,46 @@ MAIN
 
     ARG 'n' : PARM
     {
-        if (!strncmp (*argv, "oDCR", 4))
+        if (OptCmp (*argv, "oOPT")) {
+            optimize = 0;
             opt_dcr = 0;
-        else if (!strncmp (*argv, "odead_code_removal", 18))
+            opt_dfr = 0;
+            opt_cf = 0;
+            opt_lir = 0;
+            opt_inl = 0;
+            opt_unr = 0;
+            opt_uns = 0;
+            opt_cse = 0;
+            opt_wlf = 0;
+            opt_ae = 0;
+            opt_ive = 0;
+            opt_rco = 0;
+        }
+
+        else if (OptCmp (*argv, "oDCR"))
             opt_dcr = 0;
-        else if (!strncmp (*argv, "oCF", 3))
+        else if (OptCmp (*argv, "oCF"))
             opt_cf = 0;
-        else if (!strncmp (*argv, "oconstant_folding", 17))
-            opt_cf = 0;
-        else if (!strncmp (*argv, "odead_function_removal", 22))
+        else if (OptCmp (*argv, "oDFR"))
             opt_dfr = 0;
-        else if (!strncmp (*argv, "oSACOPT", 7))
-            sac_optimize = 0;
-        else if (!strncmp (*argv, "osacopt", 7))
-            sac_optimize = 0;
-        else if (!strncmp (*argv, "oOPT", 4)) {
-            sac_optimize = 0;
-            psi_optimize = 0;
-            backend_optimize = 0;
-        } else if (!strncmp (*argv, "oopt", 4)) {
-            sac_optimize = 0;
-            psi_optimize = 0;
-            backend_optimize = 0;
-        } else if (!strncmp (*argv, "oLIR", 4))
+        else if (OptCmp (*argv, "oLIR"))
             opt_lir = 0;
-        else if (!strncmp (*argv, "oloop_invariant_removal", 23))
-            opt_lir = 0;
-        else if (!strncmp (*argv, "oINL", 4))
+        else if (OptCmp (*argv, "oINL"))
             opt_inl = 0;
-        else if (!strncmp (*argv, "oinline_functions", 17))
-            opt_inl = 0;
-        else if (!strncmp (*argv, "oUNR", 4))
+        else if (OptCmp (*argv, "oUNR"))
             opt_unr = 0;
-        else if (!strncmp (*argv, "ounroll_loops", 13))
-            opt_unr = 0;
-        else if (!strncmp (*argv, "oUNS", 4))
+        else if (OptCmp (*argv, "oUNS"))
             opt_uns = 0;
-        else if (!strncmp (*argv, "ounswitch_loops", 15))
-            opt_uns = 0;
-        else if (!strncmp (*argv, "oPSIOPT", 7))
-            psi_optimize = 0;
-        else if (!strncmp (*argv, "opsiopt", 7))
-            psi_optimize = 0;
-        else if (!strncmp (*argv, "oindex_vect_elimination", 23))
+        else if (OptCmp (*argv, "oIVE"))
             opt_ive = 0;
-        else if (!strncmp (*argv, "oIVE", 3))
-            opt_ive = 0;
-        else if (!strncmp (*argv, "oarray_elimination", 19))
+        else if (OptCmp (*argv, "oAE"))
             opt_ae = 0;
-        else if (!strncmp (*argv, "oAE", 3))
-            opt_ae = 0;
-        else if (!strncmp (*argv, "ocse", 4))
+        else if (OptCmp (*argv, "oCSE"))
             opt_cse = 0;
-        else if (!strncmp (*argv, "oCSE", 4))
-            opt_cse = 0;
-        else if (!strncmp (*argv, "owlf", 4))
+        else if (OptCmp (*argv, "oWLF"))
             opt_wlf = 0;
-        else if (!strncmp (*argv, "oWLF", 4))
-            opt_wlf = 0;
-        else if (!strncmp (*argv, "oDFR", 4))
-            opt_dfr = 0;
-        else if (!strncmp (*argv, "orefcount_opt", 3))
+        else if (OptCmp (*argv, "oRCO"))
             opt_rco = 0;
-        else if (!strncmp (*argv, "oRCO", 3))
-            opt_rco = 0;
-        else if (!strncmp (*argv, "oBACKENDOPT", 7))
-            backend_optimize = 0;
-        else if (!strncmp (*argv, "obackendopt", 7))
-            backend_optimize = 0;
-        else if (!strncmp (*argv, "oranlib", 7))
-            useranlib = 0;
         else
             SYSWARN (("Unknown compiler option '-n%s`", *argv));
     }
@@ -1155,7 +1128,7 @@ MAIN
         goto BREAK;
     compiler_phase++;
 
-    if (sac_optimize) {
+    if (optimize) {
         NOTE_COMPILER_PHASE;
         CHECK_DBUG_START;
         syntax_tree = Optimize (syntax_tree); /* see optimize.c, Optimize() */
@@ -1167,7 +1140,7 @@ MAIN
         goto BREAK;
     compiler_phase++;
 
-    if (psi_optimize) {
+    if (optimize) {
         NOTE_COMPILER_PHASE;
         CHECK_DBUG_START;
         syntax_tree = PsiOpt (syntax_tree); /* idx_tab */
