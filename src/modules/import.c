@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/08/15 09:29:24  cg
+ * Revision 1.17  1995/08/24 14:17:09  cg
+ * GenLinkerlist modified.
+ * GenExtmodlist added.
+ *
+ * Revision 1.16  1995/08/15  09:29:24  cg
  * SIB information retrieved about:
  * -inline function bodies
  * -implicitly used objects
@@ -90,15 +94,10 @@
 #include "filemgr.h"
 #include "import.h"
 
-typedef struct CHARLIST {
-    char *name;
-    struct CHARLIST *next;
-} charlist;
-
 extern void DoImport (node *modul, node *implist, char *mastermod);
 
 static mod *mod_tab = NULL;
-static charlist *linker_tab = NULL;
+/* static charlist *linker_tab=NULL; */
 
 /* Some macros for comparing types, names, modules, etc. */
 
@@ -1102,25 +1101,89 @@ FindSibEntry (node *orig)
  *
  */
 
-void
-AddToLinkerTab (char *module)
+/*
+void AddToLinkerTab(char *module)
 {
-    charlist *tmp = linker_tab;
+  charlist *tmp=linker_tab;
 
-    DBUG_ENTER ("AddToLinkerTab");
+  DBUG_ENTER("AddToLinkerTab");
 
-    while ((tmp != NULL) && strcmp (tmp->name, module) != 0) {
-        tmp = tmp->next;
-    }
+  while ((tmp!=NULL) && strcmp(tmp->name, module)!=0)
+  {
+    tmp=tmp->next;
+  }
 
+  if (tmp==NULL)
+  {
+    tmp=(charlist*)malloc(sizeof(charlist));
+    tmp->next=linker_tab;
+    tmp->name=module;
+    linker_tab=tmp;
+
+      DBUG_PRINT("READSIB",
+                 ("Implicitly imported module %s added to linker list.",
+                  tmp->name));
+  }
+
+  DBUG_VOID_RETURN;
+}
+*/
+
+/*
+ *
+ *  functionname  : AddSymbol
+ *  arguments     : 1) name of symbol
+ *                  2) module of symbol
+ *                  3) type of symbol
+ *  description   : adds implicitly imported symbol to global mod_tab if
+ *                  it is yet unknown
+ *  global vars   : ---
+ *  internal funs : FindModul
+ *  external funs : malloc
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+void
+AddSymbol (char *name, char *module, int symbkind)
+{
+    mod *tmp;
+    int i;
+    syms *sym;
+
+    DBUG_ENTER ("AddSymbol");
+
+    tmp = FindModul (module);
     if (tmp == NULL) {
-        tmp = (charlist *)malloc (sizeof (charlist));
-        tmp->next = linker_tab;
-        tmp->name = module;
-        linker_tab = tmp;
+        tmp = (mod *)malloc (sizeof (mod));
+        tmp->name = name;
+        tmp->prefix = name;
+        tmp->flag = 0;
+        tmp->allflag = 0;
+        tmp->moddec = NULL;
+        tmp->sib = NULL;
+        for (i = 0; i < 4; i++) {
+            tmp->syms[i] = NULL;
+        }
 
-        DBUG_PRINT ("READSIB",
-                    ("Implicitly imported module %s added to linker list.", tmp->name));
+        tmp->syms[symbkind] = (syms *)malloc (sizeof (syms));
+        tmp->syms[symbkind]->id = name;
+        tmp->syms[symbkind]->next = NULL;
+        tmp->syms[symbkind]->flag = 0;
+    } else {
+        sym = tmp->syms[symbkind];
+        while ((sym != NULL) && (strcmp (sym->id, name) != 0)) {
+            sym = sym->next;
+        }
+        if (sym == NULL) {
+            sym = (syms *)malloc (sizeof (syms));
+            sym->id = name;
+            sym->flag = 0;
+            sym->next = tmp->syms[symbkind];
+            tmp->syms[symbkind] = sym;
+        }
     }
 
     DBUG_VOID_RETURN;
@@ -1167,9 +1230,17 @@ EnsureExistObjects (node *object, node *modul)
 
             modul->node[3] = tmp;
 
-            if (FindModul (object->ID_MOD) == NULL) {
-                AddToLinkerTab (object->ID_MOD);
+            /*
+                  if (FindModul(object->ID_MOD) == NULL)
+                  {
+                    AddToLinkerTab(object->ID_MOD);
+                  }
+            */
+            if (object->ID_MOD != NULL) {
+                AddSymbol (object->ID, object->ID_MOD, 3);
             }
+
+            /* new symbol is added to mod_tab if it's a sac-symbol */
 
             DBUG_PRINT ("READSIB", ("New object %s:%s inserted.", tmp->ID_MOD, tmp->ID));
         }
@@ -1218,9 +1289,11 @@ EnsureExistTypes (node *type, node *modul)
             type->nnode = (modul->node[1] == NULL) ? 0 : 1;
             modul->node[1] = type;
 
-            if (FindModul (type->ID_MOD) == NULL) {
-                AddToLinkerTab (type->ID_MOD);
+            if (type->ID_MOD != NULL) {
+                AddSymbol (type->ID, type->ID_MOD, 1);
             }
+
+            /* new symbol is added to mod_tab if it's a sac-symbol */
 
             DBUG_PRINT ("READSIB", ("New type %s:%s inserted.", type->ID_MOD, type->ID));
 
@@ -1276,9 +1349,17 @@ EnsureExistFuns (node *fundef, node *modul)
             fundef->nnode = (modul->node[2] == NULL) ? 1 : 2;
             modul->node[2] = fundef;
 
-            if (FindModul (fundef->ID_MOD) == NULL) {
-                AddToLinkerTab (fundef->ID_MOD);
+            /*
+                  if (FindModul(fundef->ID_MOD) == NULL)
+                  {
+                    AddToLinkerTab(fundef->ID_MOD);
+                  }
+            */
+            if (fundef->ID_MOD != NULL) {
+                AddSymbol (fundef->ID, fundef->ID_MOD, 2);
             }
+
+            /* new symbol is added to mod_tab if it's a sac-symbol */
 
             DBUG_PRINT ("READSIB",
                         ("New function %s:%s inserted.", fundef->ID_MOD, fundef->ID));
@@ -1371,7 +1452,7 @@ IMfundef (node *arg_node, node *arg_info)
                 arg_node->node[2] = sib_entry->node[2];
                 arg_node->node[4] = sib_entry->node[4];
 
-                arg_node->STATUS = ST_artificial;
+                arg_node->STATUS = ST_inline_import;
                 arg_node->flag = 1; /* inline flag */
 
                 DBUG_PRINT ("READSIB", ("Adding inline information to function %s:%s",
@@ -1438,7 +1519,7 @@ IMtypedef (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  : GenLinkerList
+ *  functionname  : AddToLinkList
  *  arguments     : ---
  *  description   : generates list of modules for C linker.
  *  global vars   : mod_tab, linker_tab
@@ -1450,18 +1531,102 @@ IMtypedef (node *arg_node, node *arg_info)
  *
  */
 
+charlist *
+AddToLinkList (charlist *list, char *name)
+{
+    charlist *tmp = list;
+
+    DBUG_ENTER ("AddToLinkList");
+
+    while ((tmp != NULL) && (strcmp (tmp->name, name) != 0)) {
+        tmp = tmp->next;
+    }
+
+    if (tmp == NULL) {
+        tmp = (charlist *)malloc (sizeof (charlist));
+        tmp->name = name;
+        tmp->next = list;
+    } else {
+        tmp = list;
+    }
+
+    DBUG_RETURN (tmp);
+}
+
+/*
+ *
+ *  functionname  : GenExtmodlistList
+ *  arguments     : ---
+ *  description   : generates list of imported external modules/classes.
+ *                  This list is needed as additional linker list for
+ *                  implicitly imported external symbols
+ *  global vars   : mod_tab
+ *  internal funs :
+ *  external funs : malloc
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+charlist *
+GenExtmodlistList ()
+{
+    mod *modp = mod_tab;
+    charlist *tmp, *linklist = NULL;
+
+    DBUG_ENTER ("GenExtmodlistList");
+
+    while (modp != NULL) {
+        if (modp->prefix == NULL) /* external module/class */
+        {
+            tmp = (charlist *)malloc (sizeof (charlist));
+            tmp->name = modp->name;
+            tmp->next = linklist;
+            linklist = tmp;
+        }
+    }
+
+    DBUG_RETURN (linklist);
+}
+
+/*
+ *
+ *  functionname  : GenLinkerList
+ *  arguments     : ---
+ *  description   : generates list of modules for C linker.
+ *  global vars   : mod_tab
+ *  internal funs : AddToLinkList
+ *  external funs : strcpy, strcat, FindFile
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
 char *
 GenLinkerList ()
 {
     mod *modp = mod_tab;
-    charlist *linkerp = linker_tab;
+    charlist *linklist = NULL, *tmp;
     static char buffer[MAX_FILE_NAME];
     static char list[MAX_PATH_LEN];
     char *file;
 
     DBUG_ENTER ("GenLinkerList");
 
-    while (modp) {
+    while (modp != NULL) {
+        linklist = AddToLinkList (linklist, modp->name);
+        if (modp->sib != NULL) {
+            tmp = (charlist *)modp->sib->node[2];
+            while (tmp != NULL) {
+                linklist = AddToLinkList (linklist, tmp->name);
+                tmp = tmp->next;
+            }
+        }
+    }
+
+    while (linklist != NULL) {
         strcpy (buffer, modp->name);
         strcat (buffer, ".o");
         file = FindFile (MODIMP_PATH, buffer);
@@ -1469,24 +1634,10 @@ GenLinkerList ()
         if (file) {
             strcat (list, " ");
             strcat (list, file);
-        } else
+        } else {
             ERROR1 (("Couldn't find file \"%s\"!\n", buffer));
-        modp = modp->next;
-    }
-
-    /* Now add all implicitly imported modules to linker list. */
-
-    while (linkerp) {
-        strcpy (buffer, linkerp->name);
-        strcat (buffer, ".o");
-        file = FindFile (MODIMP_PATH, buffer);
-
-        if (file) {
-            strcat (list, " ");
-            strcat (list, file);
-        } else
-            ERROR1 (("Couldn't find file \"%s\"!\n", buffer));
-        linkerp = linkerp->next;
+        }
+        linklist = linklist->next;
     }
 
     DBUG_RETURN (list);
