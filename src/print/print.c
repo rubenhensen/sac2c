@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.166  2004/10/04 16:32:02  skt
+ * some adaption for printing ex/st/mt cells without identifiers
+ *
  * Revision 3.165  2004/09/30 17:16:54  sah
  * function types are now printed using
  * the argument types and the return type iff
@@ -3416,7 +3419,7 @@ PrintMT (node *arg_node, info *arg_info)
     DBUG_ENTER ("PrintMT");
 
     /* PrintAssign already indents */
-    fprintf (outfile, "MT(%i) {", MT_IDENTIFIER (arg_node));
+    fprintf (outfile, "MT {");
     fprintf (outfile, " /*** begin of mt cell ***/\n");
 
     if (MT_USEMASK (arg_node) != NULL) {
@@ -3470,7 +3473,7 @@ PrintEX (node *arg_node, info *arg_info)
     DBUG_ENTER ("PrintEX");
 
     /* PrintAssign already indents */
-    fprintf (outfile, "EX(%i) {", EX_IDENTIFIER (arg_node));
+    fprintf (outfile, "EX {");
     fprintf (outfile, " /*** begin of exclusive cell ***/\n");
 
     if (EX_USEMASK (arg_node) != NULL) {
@@ -3518,7 +3521,7 @@ PrintST (node *arg_node, info *arg_info)
     DBUG_ENTER ("PrintST");
 
     /* PrintAssign already indents */
-    fprintf (outfile, "ST(%i) {", ST_IDENTIFIER (arg_node));
+    fprintf (outfile, "ST {");
     fprintf (outfile, " /*** begin of st cell ***/\n");
 
     if (ST_USEMASK (arg_node) != NULL) {
