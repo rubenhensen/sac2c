@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.64  1995/10/18 13:45:49  cg
+ * Revision 1.65  1995/10/18 16:47:58  cg
+ * some beautifications
+ *
+ * Revision 1.64  1995/10/18  13:45:49  cg
  * *** empty log message ***
  *
  * Revision 1.62  1995/10/16  12:01:20  cg
@@ -234,7 +237,8 @@
 extern int malloc_debug (int level);
 
 FILE *outfile;
-char filename[MAX_FILE_NAME] = "sac2c";
+
+char filename[MAX_FILE_NAME];
 /* used for error messages and others */
 
 int optimize = 1;
@@ -275,6 +279,7 @@ MAIN
 
     malloc_debug (0);
     strcpy (prgname, argv[0]);
+    strcpy (filename, prgname);
 
     /* First, we scan the given options...
      */
@@ -575,68 +580,68 @@ MAIN
 
     ABORT_ON_ERROR;
 
-    NOTE (("\nParsing file '%s` : ...\n", *argv));
+    NOTE (("\nParsing file '%s` : ...", *argv));
     compiler_phase++;
     start_token = PARSE_PRG;
     yyparse ();
     ABORT_ON_ERROR;
 
     if (!breakparse) {
-        NOTE (("\nResolving global object initializations: ...\n"));
+        NOTE (("\nResolving global object initializations: ..."));
         compiler_phase++;
         syntax_tree = objinit (syntax_tree);
         ABORT_ON_ERROR;
 
         if (!breakobjinit) {
-            NOTE (("\nResolving Imports: ...\n"));
+            NOTE (("\nResolving Imports: ..."));
             compiler_phase++;
             syntax_tree = Import (syntax_tree);
             ABORT_ON_ERROR;
 
             if (!breakimport) {
-                NOTE (("\nFlattening: ...\n"));
+                NOTE (("\nFlattening: ..."));
                 compiler_phase++;
                 syntax_tree = Flatten (syntax_tree);
                 ABORT_ON_ERROR;
 
                 if (!breakflatten) {
-                    NOTE (("\nTypechecking: ...\n"));
+                    NOTE (("\nTypechecking: ..."));
                     compiler_phase++;
                     syntax_tree = Typecheck (syntax_tree);
                     ABORT_ON_ERROR;
 
                     if (!breaktype) {
-                        NOTE (("\nResolving implicit types: ...\n"));
+                        NOTE (("\nResolving implicit types: ..."));
                         compiler_phase++;
                         syntax_tree = RetrieveImplicitTypeInfo (syntax_tree);
                         ABORT_ON_ERROR;
 
                         if (!breakimpltype) {
-                            NOTE (("\nWriting SIB: ...\n"));
+                            NOTE (("\nWriting SIB: ..."));
                             compiler_phase++;
                             syntax_tree = WriteSib (syntax_tree);
                             ABORT_ON_ERROR;
 
                             if (!breaksib) {
-                                NOTE (("\nOptimizing: ...\n"));
+                                NOTE (("\nOptimizing: ..."));
                                 compiler_phase++;
                                 syntax_tree = Optimize (syntax_tree);
                                 ABORT_ON_ERROR;
 
                                 if (!breakopt) {
-                                    NOTE (("\nPsi-Optimizing: ...\n"));
+                                    NOTE (("\nPsi-Optimizing: ..."));
                                     compiler_phase++;
                                     syntax_tree = PsiOpt (syntax_tree);
                                     ABORT_ON_ERROR;
 
                                     if (!breakpsiopt) {
-                                        NOTE (("\nRefcounting: ...\n"));
+                                        NOTE (("\nRefcounting: ..."));
                                         compiler_phase++;
                                         syntax_tree = Refcount (syntax_tree);
                                         ABORT_ON_ERROR;
 
                                         if (!breakref) {
-                                            NOTE (("\nCompiling: ...\n"));
+                                            NOTE (("\nCompiling: ..."));
                                             compiler_phase++;
                                             syntax_tree = Compile (syntax_tree);
                                             ABORT_ON_ERROR;

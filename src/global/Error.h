@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/10/18 13:30:47  cg
+ * Revision 1.11  1995/10/18 16:47:34  cg
+ * some beautifications
+ *
+ * Revision 1.10  1995/10/18  13:30:47  cg
  * new error macros : WARN, ERROR, ABORT, SYSWARN, SYSERROR, SYSABORT
  * allow for more comfortable error handling and a uniform
  * look of error messages.
@@ -141,7 +144,7 @@
 #define SYSWARN(message)                                                                 \
     {                                                                                    \
         if (!silent) {                                                                   \
-            fprintf (stderr, "%s:SYSTEM WARNING: ", filename);                           \
+            fprintf (stderr, "SYSTEM::WARNING: ");                                       \
             DoPrint message;                                                             \
             fprintf (stderr, " !\n");                                                    \
         }                                                                                \
@@ -157,7 +160,7 @@
 
 #define SYSERROR(message)                                                                \
     {                                                                                    \
-        fprintf (stderr, "%s:SYSTEM ERROR: ", filename);                                 \
+        fprintf (stderr, "SYSTEM::ERROR: ");                                             \
         DoPrint message;                                                                 \
         fprintf (stderr, " !\n");                                                        \
         errors++;                                                                        \
