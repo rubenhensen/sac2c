@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.260  1999/02/10 10:00:20  srs
+ * bugfix in PrintAssign()
+ *
  * Revision 1.259  1999/02/10 09:19:41  srs
  * added DBUG output for WLI
  *
@@ -261,7 +264,8 @@ PrintAssign (node *arg_node, node *arg_info)
         DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", arg_node->lineno););
 
         if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return)
-            || (RETURN_EXPRS (ASSIGN_INSTR (arg_node)) != NULL)) {
+            || ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_return)
+                && (RETURN_EXPRS (ASSIGN_INSTR (arg_node)) != NULL))) {
             INDENT;
             Trav (ASSIGN_INSTR (arg_node), arg_info);
             fprintf (outfile, "\n");
