@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/05/30 15:50:25  nmw
+ * break specifier for cf3 added
+ *
  * Revision 3.14  2001/05/25 09:21:56  nmw
  * ssa form related break specifier in optimizations added
  *
@@ -227,6 +230,7 @@ usage ()
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:cf2", "stop after second constant folding ...");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:dcr", "stop after dead code removal ...");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:lur", "stop after (with-)loop unrolling ...");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:cf3", "stop after third constant folding ...");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:lus", "stop after loop unswitching ...");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:lir",
                       "stop after (with-)loop invariant removal ...");
