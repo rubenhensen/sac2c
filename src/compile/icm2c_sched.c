@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/06/05 09:53:22  ben
+ * TaskSelector and Affinity_INIT modified
+ *
  * Revision 3.8  2001/05/30 12:25:01  ben
  * TaskSelectorInit implemented
  * TaskSelector modified for using of Factoring
@@ -177,6 +180,7 @@ TaskSelector (int dim, char **vararg, int strategy, int tasks_on_dim, char *num_
 {
     char **lower_bound = vararg;
     char **upper_bound = vararg + dim;
+    char **unrolling = vararg + 2 * dim;
 
     DBUG_ENTER ("TaskSelector");
 
@@ -186,9 +190,9 @@ TaskSelector (int dim, char **vararg, int strategy, int tasks_on_dim, char *num_
                      "Task Distribution Dimension should be between 0 and"
                      " the dimension of the withloop");
         INDENT;
-        fprintf (outfile, "SAC_MT_SCHEDULER_TS_Even(%d, %s, %s, %s, %s, %s);\n",
+        fprintf (outfile, "SAC_MT_SCHEDULER_TS_Even(%d, %s, %s, %s, %s, %s, %s);\n",
                  tasks_on_dim, lower_bound[tasks_on_dim], upper_bound[tasks_on_dim],
-                 num_tasks, taskid, worktodo);
+                 unrolling[tasks_on_dim], num_tasks, taskid, worktodo);
         break;
     case TS_FACTORING:
         DBUG_ASSERT ((tasks_on_dim >= 0) && (tasks_on_dim < dim),
@@ -768,7 +772,8 @@ ICMCompileMT_SCHEDULER_Affinity_INIT (int sched_id, int tasks_per_thread, int di
 #undef MT_SCHEDULER_Affinity_INIT
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SCHEDULER_SET_TASKS(%d);\n", sched_id);
+    fprintf (outfile, "SAC_MT_SCHEDULER_Affinity_INIT(%d,%d);\n", sched_id,
+             tasks_per_thread);
     sprintf (numtasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
     TaskSelectorInit (dim, vararg, TS_BLOCK, 0, numtasks, sched_id);
 
