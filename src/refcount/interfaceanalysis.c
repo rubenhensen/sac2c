@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/24 13:55:41  ktr
+ * COMPILES!!!
+ *
  * Revision 1.5  2004/11/24 12:57:15  jhb
  * imsop SACdevCamp 2k4
  *
@@ -35,8 +38,6 @@
  *
  *
  */
-#define NEW_INFO
-
 #include "interfaceanalysis.h"
 
 #include "globals.h"
@@ -76,6 +77,7 @@ struct INFO {
     dfmask_base_t *maskbase;
     node *apfundef;
     node *apfunargs;
+    bool retalias;
 };
 
 /*
@@ -87,6 +89,7 @@ struct INFO {
 #define INFO_IA_MASKBASE(n) (n->maskbase)
 #define INFO_IA_APFUNDEF(n) (n->apfundef)
 #define INFO_IA_APFUNARGS(n) (n->apfunargs)
+#define INFO_IA_RETALIAS(n) (n->retalias)
 
 /*
  * INFO functions
@@ -106,6 +109,7 @@ MakeInfo (node *fundef)
     INFO_IA_MASKBASE (result) = NULL;
     INFO_IA_APFUNDEF (result) = NULL;
     INFO_IA_APFUNARGS (result) = NULL;
+    INFO_IA_RETALIAS (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -174,55 +178,30 @@ SetArgAlias (node *arg, bool newval)
 {
     DBUG_ENTER ("SetArgAlias");
 
-    if (ARG_ALIAS (arg) && (!newval)) {
-        ARG_ALIAS (arg) = FALSE;
+    if (ARG_ISALIASING (arg) && (!newval)) {
+        ARG_ISALIASING (arg) = FALSE;
         unaliased += 1;
     }
 
     DBUG_RETURN (arg);
 }
 
-static node *
-InitializeRetAlias (node *fundef)
-{
-    DBUG_ENTER ("InitializeRetAlias");
-
-    if (FUNDEF_RETALIAS (fundef) == NULL) {
-        int retvals = 0;
-
-        retvals = CountTypes (FUNDEF_TYPES (fundef));
-
-        DBUG_PRINT ("EMIA",
-                    ("FUNDEF_RETALIAS initialized function: %s", FUNDEF_NAME (fundef)));
-
-        while (retvals > 0) {
-            FUNDEF_RETALIAS (fundef)
-              = TBmakeNodelistNode (TBmakeBool (TRUE), FUNDEF_RETALIAS (fundef));
-            retvals -= 1;
-        }
-    }
-
-    DBUG_RETURN (fundef);
-}
-
 static bool
 GetRetAlias (node *fundef, int num)
 {
     bool res = TRUE;
-    nodelist *nl;
+    node *ret;
 
     DBUG_ENTER ("GetRetAlias");
 
-    fundef = InitializeRetAlias (fundef);
-
-    nl = FUNDEF_RETALIAS (fundef);
-    while ((nl != NULL) && (num > 0)) {
-        nl = NODELIST_NEXT (nl);
+    ret = FUNDEF_RETS (fundef);
+    while ((ret != NULL) && (num > 0)) {
+        ret = RET_NEXT (ret);
         num -= 1;
     }
 
-    if (nl != NULL) {
-        res = BOOL_VAL (NODELIST_NODE (nl));
+    if (ret != NULL) {
+        res = RET_ISALIASING (ret);
     }
 
     DBUG_RETURN (res);
@@ -231,20 +210,19 @@ GetRetAlias (node *fundef, int num)
 static node *
 SetRetAlias (node *fundef, int num, bool newval)
 {
-    nodelist *nl;
+    node *ret;
 
     DBUG_ENTER ("SetRetAlias");
 
-    fundef = InitializeRetAlias (fundef);
+    ret = FUNDEF_RETS (fundef);
 
-    nl = FUNDEF_RETALIAS (fundef);
     while (num > 0) {
-        nl = NODELIST_NEXT (nl);
+        ret = RET_NEXT (ret);
         num -= 1;
     }
 
-    if (BOOL_VAL (NODELIST_NODE (nl)) && (!newval)) {
-        BOOL_VAL (NODELIST_NODE (nl)) = FALSE;
+    if (RET_ISALIASING (ret) && (!newval)) {
+        RET_ISALIASING (ret) = FALSE;
         unaliased += 1;
     }
 
@@ -262,7 +240,7 @@ IsUniqueNT (ntype *ty)
         node *tdef = UTgetTdef (TYgetUserType (ty));
         DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
 
-        if (TYPEDEF_ATTRIB (tdef) == ST_unique) {
+        if (TYPEDEF_ISUNIQUE (tdef)) {
             res = TRUE;
         }
     }
@@ -466,7 +444,7 @@ EMIAfuncond (node *arg_node, info *arg_info)
      * LOOP Functions: Alias of the return value does not depend on
      *                 the recursive application!
      */
-    if (!FUNDEF_ISLOOPFUN (INFO_IA_FUNDEF (arg_info))) {
+    if (!FUNDEF_ISDOFUN (INFO_IA_FUNDEF (arg_info))) {
         FUNCOND_THEN (arg_node) = TRAVdo (FUNCOND_THEN (arg_node), arg_info);
     }
     FUNCOND_ELSE (arg_node) = TRAVdo (FUNCOND_ELSE (arg_node), arg_info);
@@ -489,10 +467,6 @@ EMIAfuncond (node *arg_node, info *arg_info)
 node *
 EMIAfundef (node *arg_node, info *arg_info)
 {
-    int count;
-    bool retalias;
-    bool retvals = 0;
-
     DBUG_ENTER ("EMIAfundef");
 
     arg_info = MakeInfo (arg_node);
@@ -536,28 +510,15 @@ EMIAfundef (node *arg_node, info *arg_info)
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
-    if (FUNDEF_RET_TYPE (arg_node) == NULL) {
-        WARN (0, ("No FUNDEF_RET_TYPE found in function %s", FUNDEF_NAME (arg_node)));
-    } else {
-        for (count = 0; count < TYgetProductSize (FUNDEF_RET_TYPE (arg_node)); count++) {
-            ntype *scl;
-            scl = TYgetScalar (TYgetProductMember (FUNDEF_RET_TYPE (arg_node), count));
-            if (IsUniqueNT (scl)) {
-                arg_node = SetRetAlias (arg_node, count, FALSE);
-            }
-        }
-
-        /*
-         * If no return value is aliased, no argument is aliased
-         */
-        retalias = FALSE;
-
-        for (count = 0; count < TYgetProductSize (FUNDEF_RET_TYPE (arg_node)); count++) {
-            retalias = retalias || GetRetAlias (arg_node, count);
-        }
+    INFO_IA_RETALIAS (arg_info) = FALSE;
+    if (FUNDEF_RETS (arg_node) != NULL) {
+        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
     }
 
-    if (!retalias) {
+    /*
+     * If no return value is marked ALIASING, no argument can be ALIASED
+     */
+    if (!INFO_IA_RETALIAS (arg_info)) {
         INFO_IA_CONTEXT (arg_info) = IA_argnoalias;
         if (FUNDEF_ARGS (arg_node) != NULL) {
             FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
@@ -605,7 +566,7 @@ EMIAid (node *arg_node, info *arg_info)
         /*
          * Function application
          */
-        if (ARG_ALIAS (INFO_IA_APFUNARGS (arg_info))) {
+        if (ARG_ISALIASING (INFO_IA_APFUNARGS (arg_info))) {
             int retcount = 0;
             node *lhs = INFO_IA_LHS (arg_info);
             while (lhs != NULL) {
@@ -653,6 +614,40 @@ EMIAlet (node *arg_node, info *arg_info)
     INFO_IA_LHS (arg_info) = LET_IDS (arg_node);
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @node EMIAret( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+EMIAret (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMIAret");
+
+    if (IsUniqueNT (TYgetScalar (RET_TYPE (arg_node)))) {
+        if (RET_ISALIASING (arg_node)) {
+            RET_ISALIASING (arg_node) = FALSE;
+            unaliased += 1;
+        }
+    }
+
+    INFO_IA_RETALIAS (arg_info)
+      = INFO_IA_RETALIAS (arg_info) || RET_ISALIASING (arg_node);
+
+    if (RET_NEXT (arg_node) != NULL) {
+        RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
