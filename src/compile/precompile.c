@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.12  1997/04/25 09:37:40  sbs
+ * Revision 1.13  1997/04/30 11:55:34  cg
+ * Artificial return values and arguments are removed even in the case
+ * of function inlining.
+ *
+ * Revision 1.12  1997/04/25  09:37:40  sbs
  * DBUG_ASSERT in PRECfundef adjusted (no varargs)
  *
  * Revision 1.11  1996/03/05  15:32:04  cg
@@ -635,6 +639,7 @@ PRECarg (node *arg_node, node *arg_info)
  *  arguments     : 1) N_vardec node
  *                  2) arg_info unused
  *  description   : renames types of declared variables
+ *                  remove artificial variable declarations
  *  global vars   : ---
  *  internal funs : RenameTypes
  *  external funs : Trav
@@ -649,10 +654,61 @@ PRECvardec (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PRECvardec");
 
-    VARDEC_TYPE (arg_node) = RenameTypes (VARDEC_TYPE (arg_node));
+    if (VARDEC_STATUS (arg_node) == ST_artificial) {
+        arg_node = FreeNode (arg_node);
 
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+        if (arg_node != NULL) {
+            arg_node = Trav (arg_node, arg_info);
+        }
+    } else {
+        VARDEC_TYPE (arg_node) = RenameTypes (VARDEC_TYPE (arg_node));
+
+        if (VARDEC_NEXT (arg_node) != NULL) {
+            VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+#ifndef NEWTREE
+            if (VARDEC_NEXT (arg_node) == NULL) {
+                arg_node->nnode = 0;
+            }
+#endif /* NEWTREE  */
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : PRECassign
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+PRECassign (node *arg_node, node *arg_info)
+{
+    node *instrs;
+
+    DBUG_ENTER ("PRECassign");
+
+    instrs = Trav (ASSIGN_INSTR (arg_node), NULL);
+
+    if (instrs == NULL) {
+        arg_node = FreeNode (arg_node);
+        if (arg_node != NULL) {
+            arg_node = Trav (arg_node, arg_info);
+        }
+    } else {
+        ASSIGN_INSTR (arg_node) = instrs;
+        if (ASSIGN_NEXT (arg_node) != NULL) {
+            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -678,6 +734,7 @@ node *
 PREClet (node *arg_node, node *arg_info)
 {
     ids *let_ids;
+    node *expr;
 
     DBUG_ENTER ("PREClet");
 
@@ -689,7 +746,13 @@ PREClet (node *arg_node, node *arg_info)
 
     LET_IDS (arg_node) = let_ids;
 
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    expr = Trav (LET_EXPR (arg_node), arg_info);
+
+    if (expr == NULL) {
+        arg_node = FreeTree (arg_node);
+    } else {
+        LET_EXPR (arg_node) = expr;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -749,6 +812,12 @@ PRECexprs_ap (node *current, node *formal)
             if ((NODE_TYPE (ID_VARDEC (expr)) == N_arg)
                 && (ARG_STATUS (ID_VARDEC (expr)) == ST_artificial)) {
                 ID_VARDEC (expr) = ARG_OBJDEF (ID_VARDEC (expr));
+                ID_NAME (expr) = OBJDEF_NAME (ID_VARDEC (expr));
+            }
+
+            if ((NODE_TYPE (ID_VARDEC (expr)) == N_vardec)
+                && (VARDEC_STATUS (ID_VARDEC (expr)) == ST_artificial)) {
+                ID_VARDEC (expr) = VARDEC_OBJDEF (ID_VARDEC (expr));
                 ID_NAME (expr) = OBJDEF_NAME (ID_VARDEC (expr));
             }
         }
@@ -945,13 +1014,23 @@ PRECid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PRECid");
 
-    if ((NODE_TYPE (ID_VARDEC (arg_node)) == N_arg)
-        && (ARG_STATUS (ID_VARDEC (arg_node)) == ST_artificial)) {
-        ID_VARDEC (arg_node) = ARG_OBJDEF (ID_VARDEC (arg_node));
-        ID_NAME (arg_node) = OBJDEF_NAME (ID_VARDEC (arg_node));
-    }
+    if (ID_STATUS (arg_node) == ST_artificial) {
+        arg_node = FreeTree (arg_node);
+    } else {
+        if ((NODE_TYPE (ID_VARDEC (arg_node)) == N_arg)
+            && (ARG_STATUS (ID_VARDEC (arg_node)) == ST_artificial)) {
+            ID_VARDEC (arg_node) = ARG_OBJDEF (ID_VARDEC (arg_node));
+            ID_NAME (arg_node) = OBJDEF_NAME (ID_VARDEC (arg_node));
+        }
 
-    ID_MAKEUNIQUE (arg_node) = 0;
+        if ((NODE_TYPE (ID_VARDEC (arg_node)) == N_vardec)
+            && (VARDEC_STATUS (ID_VARDEC (arg_node)) == ST_artificial)) {
+            ID_VARDEC (arg_node) = VARDEC_OBJDEF (ID_VARDEC (arg_node));
+            ID_NAME (arg_node) = OBJDEF_NAME (ID_VARDEC (arg_node));
+        }
+
+        ID_MAKEUNIQUE (arg_node) = 0;
+    }
 
     DBUG_RETURN (arg_node);
 }
