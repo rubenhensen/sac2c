@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.37  2002/08/05 20:41:14  dkr
+ * shape computation for AKD with-loops added
+ *
  * Revision 1.36  2002/08/03 03:16:01  dkr
  * ND_PRF_SEL__DIM icms replaced by ND_PRF_BINOP
  *
@@ -823,7 +826,8 @@ MakeAllocIcm (char *name, types *type, int rc, node *get_dim, node *set_shape_ic
                                 DupNode (AP_ARG3 (PRAGMA_APL (pragma))), assigns);
         }
     } else {
-        assigns = MakeAssign (set_shape_icm, assigns);
+        get_dim = FreeTree (get_dim);
+        set_shape_icm = FreeTree (set_shape_icm);
     }
 
     DBUG_RETURN (assigns);
@@ -2604,15 +2608,7 @@ COMPApIds (node *ap, node *arg_info)
             DBUG_ASSERT (((ATG_is_out[tag]) || (ATG_is_inout[tag])),
                          "illegal tag found!");
 
-            ret_node
-              = MakeAssignIcm1 ("ND_REFRESH_MIRROR",
-                                MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                              FALSE, TRUE, FALSE, NULL),
-                                ret_node);
-
-            if (ATG_is_out[tag]) {
-                /* it is an out- (but no inout-) parameter */
-
+            if (ATG_is_out[tag]) { /* it is an out- (but no inout-) parameter */
                 if (ATG_has_rc[tag]) {
                     /* function does refcounting */
                     ret_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
@@ -2622,7 +2618,15 @@ COMPApIds (node *ap, node *arg_info)
                     ret_node = MakeSetRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                              IDS_REFCNT (let_ids), ret_node);
                 }
+            }
 
+            ret_node
+              = MakeAssignIcm1 ("ND_REFRESH_MIRROR",
+                                MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                              FALSE, TRUE, FALSE, NULL),
+                                ret_node);
+
+            if (ATG_is_out[tag]) { /* it is an out- (but no inout-) parameter */
                 if (!ATG_has_shp[tag]) {
                     /* function sets no shape information */
                     shape_class_t sc
@@ -4907,18 +4911,6 @@ COMP2With2 (node *arg_node, node *arg_info)
      * build ICMs for memory allocation        *
      *******************************************/
 
-    /*
-     * allocate memory for index-vector
-     */
-    vec_ids = NWITH2_VEC (arg_node);
-    alloc_icms = MakeAllocIcm (IDS_NAME (vec_ids), IDS_TYPE (vec_ids),
-                               IDS_REFCNT (vec_ids), MakeNum (1),
-#if 1
-                               /* is correct for AKS only :-( */
-                               MakeIcm0 ("NOOP"),
-#endif
-                               NULL, alloc_icms);
-
     if ((NWITH2_TYPE (arg_node) == WO_genarray)
         || (NWITH2_TYPE (arg_node) == WO_modarray)) {
         node *get_dim;
@@ -4943,10 +4935,26 @@ COMP2With2 (node *arg_node, node *arg_info)
         }
 
         if (NWITH2_TYPE (arg_node) == WO_genarray) {
-            /* is correct for AKD only :-( */
-            get_dim = MakeNum (GetDim (IDS_TYPE (wlids)));
-            /* is correct for AKS only :-( */
-            set_shape_icm = MakeIcm0 ("NOOP");
+            node *shp = NWITH2_SHAPE (arg_node);
+            get_dim = MakeNum (GetDim (IDS_TYPE (wlids))); /* AKD only!! */
+            if (NODE_TYPE (shp) == N_id) {                 /* AKD only!! */
+                set_shape_icm
+                  = MakeIcm3 ("ND_WL_GENARRAY__SHAPE_id",
+                              MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids), FALSE,
+                                            TRUE, FALSE, NULL),
+                              DupId_NT (shp), DupId_NT (NWITH2_CEXPR (arg_node)));
+            } else {
+                DBUG_ASSERT ((NODE_TYPE (shp) == N_array),
+                             "shape of genarray-WL is neither N_id nor N_array!");
+
+                set_shape_icm
+                  = MakeIcm4 ("ND_WL_GENARRAY__SHAPE_arr",
+                              MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids), FALSE,
+                                            TRUE, FALSE, NULL),
+                              MakeNum (CountExprs (ARRAY_AELEMS (shp))),
+                              DupExprs_NT (ARRAY_AELEMS (shp)),
+                              DupId_NT (NWITH2_CEXPR (arg_node)));
+            }
         } else {
             node *arr = NWITH2_ARRAY (arg_node);
             DBUG_ASSERT ((NODE_TYPE (arr) == N_id), "no N_id node found!");
@@ -4969,6 +4977,17 @@ COMP2With2 (node *arg_node, node *arg_info)
         }
     }
 
+    /*
+     * allocate memory for index-vector
+     */
+    vec_ids = NWITH2_VEC (arg_node);
+    alloc_icms = MakeAllocIcm (IDS_NAME (vec_ids), IDS_TYPE (vec_ids),
+                               IDS_REFCNT (vec_ids), MakeNum (1),
+                               MakeIcm3 ("ND_SET__SHAPE", /* AKD only!! */
+                                         DupIds_Id_NT (vec_ids), MakeNum (1),
+                                         MakeNum (NWITH2_DIMS (arg_node))),
+                               NULL, alloc_icms);
+
     /*******************************************
      * build DEC_RC_FREE ICMs                  *
      *******************************************/
@@ -4984,7 +5003,7 @@ COMP2With2 (node *arg_node, node *arg_info)
      *******************************************/
 
     /*
-     * build arguments for  'WL_..._BEGIN'-ICM and 'WL_..._END'-ICM
+     * build arguments for  'WL_BEGIN...'-ICM and 'WL_END...'-ICM
      */
     icm_args = MakeExprs (DupIds_Id_NT (wlids),
                           MakeExprs (DupIds_Id_NT (NWITH2_VEC (wlnode)),
