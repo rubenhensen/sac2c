@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/04/16 18:39:21  dkr
+ * signature of ObjInitFunctionName() modified
+ *
  * Revision 3.11  2002/03/07 18:52:43  dkr
  * GSCPrintMainEnd(): a '\n' removed
  *
@@ -816,11 +819,11 @@ GSCPrintMainBegin ()
 
     DBUG_ENTER ("GSCPrintMainBegin");
 
-    funname = ObjInitFunctionName ();
+    funname = ObjInitFunctionName (FALSE);
 
     /* call init function for a c library - no command line available */
     if (generatelibrary & GENERATELIBRARY_C) {
-        /*only call obj init function - runtimesystem already initialized */
+        /* only call obj init function - runtimesystem already initialized */
         fprintf (outfile, "  %s( 0 , NULL);\n\n", funname);
     } else {
         fprintf (outfile,
