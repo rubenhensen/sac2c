@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2000/03/17 16:32:38  dkr
+ * function table for cleanup_decls added
+ *
  * Revision 1.22  2000/03/09 18:36:43  jhs
  * dfa, blkpp
  *
@@ -123,6 +126,7 @@
  *   muth_tab        schin_tab       blkin_tab       rfin_tab
  *   func2lac_tab    ai_tab          blkex_tab       mtfin_tab
  *   l2f_lift_tab    blkco_tab       dfa_tab         blkpp_tab
+ *   cudecls_tab
  *
  *   nnode
  *
@@ -406,6 +410,10 @@
 #define NIFblkpp(it_blkpp)
 #endif
 
+#ifndef NIFcudecls
+#define NIFcudecls(it_cudecls)
+#endif
+
 #ifndef NIFnnode
 #define NIFnnode(nnode)
 #endif
@@ -431,7 +439,7 @@
   it_spmdpm, it_spmdco, it_ntc, it_l2f_infer,                                            \
                                                                                          \
   it_muth, it_schin, it_blkin, it_rfin, it_fun2lac, it_ai, it_blkex, it_mtfin,           \
-  it_l2f_lift, it_blkco, it_dfa, it_blkpp, it_unused5, it_unused6, it_unused7,           \
+  it_l2f_lift, it_blkco, it_dfa, it_blkpp, it_cudecls, it_unused6, it_unused7,           \
   it_unused8, it_unused9, it_unusedA, it_unusedB, it_unusedC,                            \
                                                                                          \
   nnode)                                                                                 \
@@ -469,8 +477,9 @@
                                                   NIFl2f_lift (it_l2f_lift)              \
                                                     NIFblkco (it_blkco) NIFdfa (it_dfa)  \
                                                       NIFblkpp (it_blkpp)                \
+                                                        NIFcudecls (it_cudecls)          \
                                                                                          \
-                                                        NIFnnode (nnode)
+                                                          NIFnnode (nnode)
 
 /******************************************************************************
  *
@@ -562,9 +571,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        WLAAid, TravSons, SPMDRMid, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, L2F_INFERid,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, AIid, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, AIid, TravSons, TravSons, CUDid,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons,
 
        0),
 
@@ -762,7 +771,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIvardec, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       CUDvardec, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        1),
@@ -780,7 +789,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, FUN2LACblock, AIblock, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       CUDblock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        2),
@@ -961,7 +970,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, L2F_INFERlet,
 
        TravSons, TravSons, TravSons, RFINlet, FUN2LAClet, AIlet, TravSons, MTFINlet,
-       TravSons, TravSons, DFAlet, TravSons, TravSons, TravSons, TravSons, TravSons,
+       CUDlet, TravSons, DFAlet, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        1),
@@ -1464,7 +1473,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, L2F_INFERwithid,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       CUDwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        0),
@@ -1814,6 +1823,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFblkco
 #undef NIFdfa
 #undef NIFblkpp
+
+#undef NIFcudecls
 
 #undef NIFnnode
 
