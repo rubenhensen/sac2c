@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.65  1998/05/13 14:04:36  srs
+ * added -noWLUNR and -maxwlunroll
+ *
  * Revision 1.64  1998/05/05 12:44:28  srs
  * changed text for -noWLT
  *
@@ -294,7 +297,8 @@ usage ()
             "\t -noOPT\t\tno optimizations at all\n"
             "\n\t -noCF \t\tno constant folding \n"
             "\t -noINL\t\tno function inlining \n"
-            "\t -noUNR\t\tno loop unrolling \n"
+            "\t -noLUNR\tno loop unrolling \n"
+            "\t -noWLUNR\tno withloop unrolling \n"
             "\t -noUNS\t\tno loop unswitching \n"
             "\t -noDCR\t\tno dead code removal \n"
             "\t -noDFR\t\tno dead function removal \n"
@@ -316,6 +320,9 @@ usage ()
     printf ("\t -maxunroll <no>\tunroll loops having no more than <no> iterations\n"
             "\t\t\t\t  Default: -maxunroll %d\n",
             unrnum);
+    printf ("\t -maxwlunroll <no>\tunroll withloops having no more than <no> elements\n"
+            "\t\t\t\t  Default: -maxwlunroll %d\n",
+            wlunrnum);
     printf ("\t -minarray <no>\t\ttry array elimination for arrays with length <= <no>\n"
             "\t\t\t\t  Default: -minarray %d\n",
             minarray);
