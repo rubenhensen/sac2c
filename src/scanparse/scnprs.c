@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1996/01/05 12:32:56  cg
+ * Revision 1.5  1996/01/07 16:56:38  cg
+ * bug fixed in initializing sacfilename
+ *
+ * Revision 1.4  1996/01/05  12:32:56  cg
  * Now, the global variables outfilename, cfilename, and
  * targetdir are set here
  *
@@ -132,7 +135,7 @@ ScanParse ()
 
     if (sacfilename[0] == '\0') {
         yyin = stdin;
-        strcpy (sacfilename, "stdin");
+        NOTE (("Parsing from stdin ..."));
     } else {
         pathname = FindFile (PATH, sacfilename);
 
@@ -141,13 +144,8 @@ ScanParse ()
         }
 
         yyin = fopen (pathname, "r");
+        NOTE (("Parsing file \"%s\" ...", pathname));
     }
-
-    if (yyin == NULL) {
-        SYSABORT (("Unable to open file \"%s\"", *argv));
-    }
-
-    NOTE (("Parsing file \"%s\" ...", pathname));
 
     start_token = PARSE_PRG;
     yyparse ();
@@ -171,7 +169,7 @@ ScanParse ()
 
     if (sacfilename[0] == '\0') {
         sprintf (cccallstr, "cpp -P -C ");
-        strcpy (sacfilename, "stdin");
+        NOTE (("Parsing from stdin ..."));
     } else {
         pathname = FindFile (PATH, sacfilename);
 
@@ -180,15 +178,10 @@ ScanParse ()
         }
 
         sprintf (cccallstr, "gcc -E -P -C -x c %s", pathname);
+        NOTE (("Parsing file \"%s\" ...", pathname));
     }
 
     yyin = popen (cccallstr, "r");
-
-    if (yyin == NULL) {
-        SYSABORT (("Unable to open file \"%s\"", sacfilename));
-    }
-
-    NOTE (("Parsing file \"%s\" ...", pathname));
 
     start_token = PARSE_PRG;
     yyparse ();
