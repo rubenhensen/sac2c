@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.114  1996/02/06 16:10:20  sbs
+ * Revision 1.115  1996/02/12 14:13:46  asi
+ * PrintArg and PrintVardec updated for correct idx-output
+ *
+ * Revision 1.114  1996/02/06  16:10:20  sbs
  * Double2String and Float2String inserted.
  *
  * Revision 1.113  1996/02/06  13:59:44  sbs
@@ -1038,8 +1041,8 @@ PrintArg (node *arg_node, node *arg_info)
         fprintf (outfile, ":%d", ARG_REFCNT (arg_node));
     }
 
-    if (arg_node->node[2] && show_idx) {
-        Trav (arg_node->node[2], arg_info);
+    if (ARG_COLCHN (arg_node) && show_idx) {
+        Trav (ARG_COLCHN (arg_node), arg_info);
     }
 
     if (1 == arg_node->nnode) {
@@ -1060,8 +1063,8 @@ PrintVardec (node *arg_node, node *arg_info)
     DBUG_EXECUTE ("MASK", fprintf (outfile, "**Number %d -> ", arg_node->varno););
 
     fprintf (outfile, "%s", Type2String (arg_node->info.types, 1));
-    if (arg_node->node[2] && show_idx)
-        Trav (arg_node->node[2], arg_info);
+    if (VARDEC_COLCHN (arg_node) && show_idx)
+        Trav (VARDEC_COLCHN (arg_node), arg_info);
     fprintf (outfile, ";\n");
     if (1 == arg_node->nnode)
         Trav (arg_node->node[0], arg_info);
