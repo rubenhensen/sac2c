@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.19  2000/08/02 13:34:10  nmw
+ * comment for simple linker command line added
+ *
  * Revision 1.18  2000/08/02 09:19:06  nmw
  * order of init function calls for interface and module changed
  *
@@ -60,8 +63,7 @@
  *
  *
  * The c-interface allows you to generate a c-library from your SAC-module.
- * at this time, only functions with a fixed shape and a c-compatible datatype
- * can be exported.
+ * at this time, only functions with a fixed shape exported.
  * When you compile your SAC-module with sac2c and the option '-genlib c'
  * you get an headerfile (myMod.h) with comments to all exported functions
  * (the shapes they accept and return) and list of library files to link with.
@@ -72,9 +74,18 @@
  *                    and building up a set of wrapper functions, witch simulate
  *                    this overloading.
  *
+ * import_specialization.[ch]: importing an additional myMod.spec file, that contains
+ *                    declarations for specializations for generic functions
+ *                    defined in myMod.sac. These specializations are defined
+ *                    and exported in the c library.
+ *                    If no spec file is available, only the functions defined
+ *                    in mytMod.sac are exported.
+ *
  * print_interface.[ch]: generating the c-code for the module headerfile and
- *                    the wrapper functions (calles cwrapper.c). The generated
+ *                    the wrapper functions (calls cwrapper.c). The generated
  *                    code uses macros, defined in runtime/sac_cwrapper.h
+ *                    It also generated files for initializing the sac-runtime
+ *                    system (heapmangement, ...) and global objects
  *
  * libsac/sac_arg.c, runtime/sac_arg.h: implements the abstract datatype used
  *                    be the c-interface functions and the wrapper functions
@@ -87,8 +98,13 @@
  * modules/cccall.c:  compiles and generates the c-library.
  *
  * known limitations:
- *   no user defined types at the interface level (but you might use them internally)
- *
+ *   - user defined types are always abstract datatypes without any conversion
+ *     function you might get them as a result from a sac-functions and use it
+ *     as an argument for another sac-function. but you cannot access the type
+ *     directly
+ *   - no multithreading in an c-library (yet)
+ *   - you have to take care of one set of switches for all modules used in one
+ *     c executable, concerning private heap management, checks and profiling
  *
  */
 
@@ -159,14 +175,19 @@ node *
 PIHmodul (node *arg_node, node *arg_info)
 {
     FILE *old_outfile;
-    strings *done;
+    strings *liblist[2];
+    strings *item;
+    int i;
+    char *libsac_string;
 
     DBUG_ENTER ("PIHmodul");
 
     old_outfile = outfile; /* save, might be in use */
 
+    NOTE (("Writing c-library headerfile \"%s%s\"", targetdir, MODUL_NAME (arg_node)));
+
     /* open <module>.h in tmpdir for writing wrapper header*/
-    outfile = WriteOpen ("%s/%s.h", tmp_dirname, MODUL_NAME (arg_node));
+    outfile = WriteOpen ("%s/%s.h", targetdir, MODUL_NAME (arg_node));
     fprintf (outfile, "/* Interface SAC <-> C for %s \n", MODUL_NAME (arg_node));
     fprintf (outfile, " * use this %s.h file with lib%s.a\n", MODUL_NAME (arg_node),
              MODUL_NAME (arg_node));
@@ -183,29 +204,64 @@ PIHmodul (node *arg_node, node *arg_info)
              " * when compiling your code add the following files to link with:\n"
              " * -l%s\n",
              MODUL_NAME (arg_node), MODUL_NAME (arg_node));
-    done = PrintDepEntry (dependencies, ST_external, NULL);
-    done = PrintDepEntry (dependencies, ST_system, NULL);
 
-    if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
-        if (optimize & OPT_PHM) {
-            if (runtimecheck & RUNTIMECHECK_HEAP) {
-                fprintf (outfile, " * -lsac_heapmgr_mt_diag\n");
-            } else {
-                fprintf (outfile, " * -lsac_heapmgr_mt\n");
+    liblist[0] = PrintDepEntry (dependencies, ST_external, NULL);
+    liblist[1] = PrintDepEntry (dependencies, ST_system, NULL);
+
+    /* determine the needed files of the sac-runtime system */
+    if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) { /* MT */
+        if (optimize & OPT_PHM) {                                     /* PHM */
+            if (runtimecheck & RUNTIMECHECK_HEAP) {                   /* diag */
+                fprintf (outfile, " * -lsac_heapmgr_mt_diag\n"
+                                  " * -lsac_mt\n"
+                                  " * -lpthread\n");
+                libsac_string = "-lsac_heapmgr_mt_diag -lsac_mt -lpthread";
+            } else { /* no diag */
+                fprintf (outfile, " * -lsac_heapmgr_mt\n"
+                                  " * -lsac_mt\n"
+                                  " * -lpthread\n");
+                libsac_string = "-lsac_heapmgr_mt -lsac_mt -lpthread";
             }
+        } else { /* no PHM */
+            fprintf (outfile, " * -lsac_mt\n"
+                              " * -lpthread\n");
+            libsac_string = "-lsac_mt -lpthread";
         }
-    } else {
-        if (optimize & OPT_PHM) {
+    } else {                      /* no MT */
+        if (optimize & OPT_PHM) { /* diag */
             if (runtimecheck & RUNTIMECHECK_HEAP) {
-                fprintf (outfile, " * -lsac_heapmgr_diag\n");
-            } else {
-                fprintf (outfile, " * -lsac_heapmgr\n");
+                fprintf (outfile, " * -lsac_heapmgr_diag\n"
+                                  " * -lsac\n");
+                libsac_string = "-lsac_heapmgr_diag -lsac";
+            } else { /* no diag */
+                fprintf (outfile, " * -lsac_heapmgr\n"
+                                  " * -lsac\n");
+                libsac_string = "-lsac_heapmgr -lsac";
             }
+        } else { /* no PHM */
+            fprintf (outfile, " * -lsac\n");
+            libsac_string = "-lsac";
         }
     }
 
-    fprintf (outfile, " * -lsac\n"
-                      " *\n */\n\n");
+    /* add a simple copy&past linkline */
+    fprintf (outfile,
+             " *\n"
+             " * simply copy&past the following line to your makefile:\n"
+             " * -L$SACBASE/runtime -L. -I$SACBASE/runtime -l%s",
+             MODUL_NAME (arg_node));
+
+    for (i = 0; i <= 1; i++) {
+        item = liblist[i];
+        while (item != NULL) {
+            fprintf (outfile, " %s", STRINGS_STRING (item));
+            item = STRINGS_NEXT (item);
+        }
+        liblist[i] = FreeAllStrings (liblist[i]);
+    }
+
+    fprintf (outfile, " %s\n", libsac_string);
+    fprintf (outfile, " *\n */\n\n");
 
     fprintf (outfile, "#include \"sac_cinterface.h\"\n");
 
@@ -1028,7 +1084,7 @@ PrintInterface (node *syntax_tree)
     funtab *old_tab;
 
     DBUG_ENTER ("PrintInterface");
-    NOTE (("Generating c library interface files\n"));
+    DBUG_PRINT ("PIW", ("Generating c library interface files\n"));
 
     arg_info = MakeInfo ();
     old_tab = act_tab;
@@ -1117,11 +1173,11 @@ PrintDepEntry (deps *depends, statustype stat, strings *done)
             tmp_done = done;
 
             while ((tmp_done != NULL)
-                   && (0 != strcmp (DEPS_NAME (tmp), STRINGS_STRING (tmp_done)))) {
+                   && (0 != strcmp (DEPS_LIBNAME (tmp), STRINGS_STRING (tmp_done)))) {
                 tmp_done = STRINGS_NEXT (tmp_done);
             }
             if (tmp_done == NULL) {
-                done = MakeStrings (DEPS_NAME (tmp), done);
+                done = MakeStrings (DEPS_LIBNAME (tmp), done);
                 fprintf (outfile, " * %s\n", DEPS_LIBNAME (tmp));
             }
         }
@@ -1186,12 +1242,12 @@ PIWModuleInitFunction (char *modname)
 /******************************************************************************
  *
  * function:
- *    void PrintInternalRuntimeInit(node *arg_node)
+ *    void PrintSACRuntimeInitExit(node *arg_node)
  *
  * description:
  *   prints code in internal_runtime_init.c which inits the heapmanager
  *   and the multithreading parts of the runtime system
- *   this function is called by SAC_InitRuntimeSystem
+ *   this function calls SAC_InitCInterface
  *
  ******************************************************************************/
 static void
@@ -1210,8 +1266,8 @@ PrintSACRuntimeInitExit (node *arg_node)
                       " * of the SAC runtime system and calls the CInterface\n"
                       " * init function\n"
                       " */\n\n"
-                      "extern void SAC_InitCInterface();"
-                      "extern void SAC_ExitCInterface();");
+                      "extern void SAC_InitCInterface();\n"
+                      "extern void SAC_ExitCInterface();\n\n");
 
     /* general preload for codefile */
     fprintf (outfile, "/* startup functions and global code */\n\n");
@@ -1229,7 +1285,7 @@ PrintSACRuntimeInitExit (node *arg_node)
                       "}\n\n");
     fprintf (outfile, "void SAC_FreeRuntimeSystem()\n"
                       "{\n"
-                      "SAC_ExitCInterface();");
+                      "SAC_ExitCInterface();\n");
     GSCPrintMainEnd ();
     fprintf (outfile, "\n}\n\n");
 
