@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/07/11 14:00:15  dkr
+ * NameTuplesUtils.h included
+ *
  * Revision 3.17  2002/07/11 13:58:44  dkr
  * modification for TAGGED_ARRAYS added
  *
@@ -84,6 +87,7 @@
 #include "DupTree.h"
 #include "free.h"
 #include "convert.h"
+#include "NameTuplesUtils.h"
 #include "index.h"
 
 /*
