@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.33  2000/07/24 14:50:19  nmw
+ * added declaration of object_counter
+ *
  * Revision 2.32  2000/06/13 13:39:39  dkr
  * Make_Old2NewWith renamed into make_patchwith
  *
@@ -292,6 +295,7 @@ extern unsigned int max_allocated_mem;
 
 extern int print_objdef_for_header_file;
 extern int function_counter;
+extern int object_counter;
 extern deps *dependencies;
 
 extern int indent;
