@@ -12,3 +12,4 @@ src/compile
 src/refcount
 src/psi-opt
 src/objects
+lib/src
