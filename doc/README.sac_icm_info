@@ -1,8 +1,12 @@
 /*
  * $Log$
- * Revision 1.5  1995/04/18 11:24:51  sbs
- * ND_KD_ROT_SxSxA_A eliminated
+ * Revision 1.6  1995/04/18 14:49:34  sbs
+ * ND_ALLOC_ARRAY modified; initial rc parameter;
+ * ND_CREATE_CONST_ARRAY modified; initial basic_type parameter eliminated;
  *
+# Revision 1.5  1995/04/18  11:24:51  sbs
+# ND_KD_ROT_SxSxA_A eliminated
+#
 # Revision 1.4  1995/04/12  15:13:23  sbs
 # cat & rot inserted.
 #
@@ -75,7 +79,7 @@ Macros for arrays as arguments:
 Macros for initializing an array:
 =================================
 
-+ND_ALLOC_ARRAY( type, name)	: allocates memory needed
++ND_ALLOC_ARRAY( type, name, rc): allocates memory needed
 
 +ND_REUSE( old, new)		: reuses old for new
 +ND_CHECK_REUSE( old, new)	: tries to reuse old for new
@@ -91,7 +95,7 @@ Macros for initializing an array:
 
  ND_KD_SET_SHAPE( name, dim, s0,..., sn)	: sets all shape components of an array
 +ND_SET_SHAPE( name, dim, s)			: sets one shape component of an array
- ND_CREATE_CONST_ARRAY( basic_type, name, dim, s0,..., sn)   : generates a constant array
+ ND_CREATE_CONST_ARRAY( name, dim, s0,..., sn)  : generates a constant array
 +ND_KS_ASSIGN_ARRAY( name, res)			: copy pointer(s) for "res=name;"
 
 
