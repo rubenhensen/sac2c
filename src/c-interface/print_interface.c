@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.16  2000/07/28 14:47:07  nmw
+ * handling of void functions added
+ * handling of T_users types added
+ *
  * Revision 1.15  2000/07/24 15:00:37  nmw
  * refcount check in cwrapper added
  * generation of separate c-files with object initflags added
@@ -212,7 +216,11 @@ PIHcwrapper (node *arg_node, node *arg_info)
     DBUG_ENTER ("PIHcwrapper");
 
     /* print general comment header for this wrapper */
-    fprintf (outfile, "\n/* function\n *   %s in %s\n * accepts arguments as follows:\n",
+    fprintf (outfile,
+             "\n"
+             "/* function %s\n"
+             " * defined in module %s\n"
+             " * accepts arguments as follows:\n",
              CWRAPPER_NAME (arg_node), CWRAPPER_MOD (arg_node));
 
     /* print accepted shapes for each spezialized function */
@@ -267,7 +275,7 @@ PIHfundef (node *arg_node, node *arg_info)
         if (FUNDEF_ARGS (arg_node) != NULL) {
             FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
         } else {
-            fprintf (outfile, "void");
+            fprintf (outfile, " () ");
         }
 
         fprintf (outfile, " -> ");
@@ -304,18 +312,23 @@ PIHarg (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PIHArg");
 
-    if (INFO_PIH_FLAG (arg_info) == PIH_PRINT_COMMENT) {
+    switch (INFO_PIH_FLAG (arg_info)) {
+    case PIH_PRINT_COMMENT:
         /* print internal accepted types of argument */
-
         typestring = Type2String (ARG_TYPE (arg_node), 0);
 
         fprintf (outfile, "%s %s", typestring, ARG_NAME (arg_node));
         FREE (typestring);
+        break;
 
-        if (ARG_NEXT (arg_node) != NULL) {
-            fprintf (outfile, ", ");
-            ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
-        }
+    default:
+        SYSERROR (("undefined case in PIWtypes!\n"));
+    }
+
+    /* traverse to next arg */
+    if (ARG_NEXT (arg_node) != NULL) {
+        fprintf (outfile, ", ");
+        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -344,10 +357,15 @@ PIHtypes (types *arg_type, node *arg_info)
 
     switch (INFO_PIH_FLAG (arg_info)) {
     case PIH_PRINT_COMMENT:
-        typestring = Type2String (arg_type, 0 | 4);
+        if (TYPES_BASETYPE (arg_type) == T_void) {
+            /* if void, do not print varname */
+            fprintf (outfile, "void");
+        } else {
+            typestring = Type2String (arg_type, 0 | 4);
 
-        fprintf (outfile, "%s out%d", typestring, INFO_PIH_COUNTER (arg_info));
-        FREE (typestring);
+            fprintf (outfile, "%s out%d", typestring, INFO_PIH_COUNTER (arg_info));
+            FREE (typestring);
+        }
 
         if (TYPES_NEXT (arg_type) != NULL) {
             fprintf (outfile, ", ");
@@ -604,24 +622,37 @@ node *
 PIWarg (node *arg_node, node *arg_info)
 {
     types *argtype;
+    char *quote; /* optional quote character in string */
+    char *tname; /* user type name */
     int i;
 
     DBUG_ENTER ("PIWArg");
 
     INFO_PIW_COUNTER (arg_info) = INFO_PIW_COUNTER (arg_info) + 1;
 
+    /* analyse argument type: T_user or T_<simple> */
+    if (TYPES_BASETYPE (ARG_TYPE (arg_node)) == T_user) {
+        /* internal user type from N_typedef */
+        argtype = TYPEDEF_TYPE (TYPES_TDEF (ARG_TYPE (arg_node)));
+        tname = TYPEDEF_NAME (TYPES_TDEF (ARG_TYPE (arg_node)));
+        quote = "\"";
+    } else {
+        /* standard type */
+        argtype = ARG_TYPE (arg_node);
+        tname = "NULL";
+        quote = "";
+    }
+
     switch (INFO_PIW_FLAG (arg_info)) {
     case PIW_SWITCH_ARGS:
         /* print check statement for argument */
-        argtype = ARG_TYPE (arg_node);
-
         if (TYPES_DIM (argtype) < 0) {
             SYSERROR (("Unknown shapes cannot be exported!\n"));
         }
 
-        fprintf (outfile, "SAC_CI_CmpSACArgType(in%d, %d, %d",
-                 INFO_PIW_COUNTER (arg_info), TYPES_BASETYPE (argtype),
-                 TYPES_DIM (argtype));
+        fprintf (outfile, "SAC_CI_CmpSACArgType(in%d, %d, %s%s%s, %d",
+                 INFO_PIW_COUNTER (arg_info), TYPES_BASETYPE (argtype), quote, tname,
+                 quote, TYPES_DIM (argtype));
 
         if (TYPES_DIM (argtype) > 0) {
             /* arraytype with fixed shape */
@@ -638,16 +669,29 @@ PIWarg (node *arg_node, node *arg_info)
 
     case PIW_CALL_ARGS:
         /* print macro for arg in SAC-function call */
-        argtype = ARG_TYPE (arg_node);
         DBUG_ASSERT ((TYPES_DIM (argtype) >= 0), "PIWarg: unknown shape dimension!\n");
 
-        if (TYPES_DIM (argtype) == 0) {
-            /* macro for simple type without refcounting */
-            fprintf (outfile, "SAC_ARGCALL_SIMPLE");
+        if (ARG_ATTRIB (arg_node) == ST_regular) {
+            if (TYPES_DIM (argtype) == 0) {
+                /* macro for simple type without refcounting */
+                fprintf (outfile, "SAC_ARGCALL_SIMPLE");
+            } else {
+                /* macro for arraytype with refcounting */
+                fprintf (outfile, "SAC_ARGCALL_REFCNT");
+            }
+        } else if (ARG_ATTRIB (arg_node) == ST_inout) {
+            /* these args are handled like out parameters */
+            if (TYPES_DIM (argtype) == 0) {
+                /* macro for simple type without refcounting */
+                fprintf (outfile, "SAC_ARGCALL_INOUT_SIMPLE");
+            } else {
+                /* macro for arraytype with refcounting */
+                fprintf (outfile, "SAC_ARGCALL_INOUT_REFCNT");
+            }
         } else {
-            /* macro for arraytype with refcounting */
-            fprintf (outfile, "SAC_ARGCALL_REFCNT");
+            DBUG_ASSERT ((1 == 0), "PIWarg: unable to handle types attribute!");
         }
+
         fprintf (outfile, "( in%d , %s )", INFO_PIW_COUNTER (arg_info),
                  ctype_string[TYPES_BASETYPE (argtype)]);
 
@@ -658,7 +702,7 @@ PIWarg (node *arg_node, node *arg_info)
 
     case PIW_REFCOUNT_ARGS:
         /* create macro, dec-and-free SAC_arg */
-        if (ARG_DIM (arg_node) > 0) {
+        if (TYPES_DIM (argtype) > 0) {
             /* refcounting only for array types */
             fprintf (outfile, "  SAC_DECLOCALRC( in%d );\n", INFO_PIW_COUNTER (arg_info));
         }
@@ -691,74 +735,98 @@ PIWarg (node *arg_node, node *arg_info)
 static types *
 PIWtypes (types *arg_type, node *arg_info)
 {
+    types *atype;
+    /* reference to implemented type - direct if simple
+     * type in tdef if T_user
+     */
+    char *quote; /* optional quote character in string */
+    char *tname; /* user type name */
     int i;
 
     DBUG_ENTER ("PIWtypes");
 
-    INFO_PIW_COUNTER (arg_info) = INFO_PIW_COUNTER (arg_info) + 1;
+    /* skip void returntypes */
+    if (!(TYPES_BASETYPE (arg_type) == T_void)) {
+        INFO_PIW_COUNTER (arg_info) = INFO_PIW_COUNTER (arg_info) + 1;
 
-    switch (INFO_PIW_FLAG (arg_info)) {
-    case PIW_CREATE_RETTYPES:
-        /* create vars for reference parameters */
-        fprintf (outfile, "  *out%d=SAC_CI_CreateSACArg(%d, %d",
-                 INFO_PIW_COUNTER (arg_info), TYPES_BASETYPE (arg_type),
-                 TYPES_DIM (arg_type));
-
-        /* write shape data*/
-        for (i = 0; i < TYPES_DIM (arg_type); i++) {
-            fprintf (outfile, ", %d", TYPES_SHAPE (arg_type, i));
+        /* analyse argument type: T_user or T_<simple> */
+        if (TYPES_BASETYPE (arg_type) == T_user) {
+            /* internal user type from N_typedef */
+            atype = TYPEDEF_TYPE (TYPES_TDEF (arg_type));
+            tname = TYPEDEF_NAME (TYPES_TDEF (arg_type));
+            quote = "\"";
+        } else {
+            /* standard type */
+            atype = arg_type;
+            tname = "NULL";
+            quote = "";
         }
-        fprintf (outfile, ");\n");
 
-        /* for simple types, alloc data memory */
-        if (TYPES_DIM (arg_type) == 0) {
-            fprintf (outfile, "  SAC_CI_INIT_SIMPLE_RESULT(out%d, %d );\n",
-                     INFO_PIW_COUNTER (arg_info), TYPES_BASETYPE (arg_type));
-        }
-        break;
+        switch (INFO_PIW_FLAG (arg_info)) {
+        case PIW_CREATE_RETTYPES:
+            /* create vars for reference parameters */
+            fprintf (outfile, "  *out%d=SAC_CI_CreateSACArg(%d, %s%s%s, %d",
+                     INFO_PIW_COUNTER (arg_info), TYPES_BASETYPE (atype), quote, tname,
+                     quote, TYPES_DIM (atype));
 
-    case PIW_CALL_RESULTS:
-        /* create macros for reference result types */
-        if (TYPES_STATUS (arg_type) != ST_crettype) {
-            if (TYPES_DIM (arg_type) == 0) {
-                /* macro for simple type without refcounting */
-                fprintf (outfile, "SAC_RESULT_SIMPLE");
-            } else {
-                /* macro for arraytype with refcounting */
-                fprintf (outfile, "SAC_RESULT_REFCNT");
+            /* write shape data*/
+            for (i = 0; i < TYPES_DIM (atype); i++) {
+                fprintf (outfile, ", %d", TYPES_SHAPE (atype, i));
             }
-            fprintf (outfile, "( out%d , %s )", INFO_PIW_COUNTER (arg_info),
-                     ctype_string[TYPES_BASETYPE (arg_type)]);
+            fprintf (outfile, ");\n");
 
-            INFO_PIW_COMMA (arg_info) = TRUE;
-        }
-
-        /* is there at least one more result?
-         * check, if there is a comma needef */
-        if ((TYPES_NEXT (arg_type) != NULL) && (TYPES_STATUS (arg_type) != ST_crettype)) {
-            if (!((TYPES_STATUS (TYPES_NEXT (arg_type)) == ST_crettype)
-                  && (TYPES_NEXT (TYPES_NEXT (arg_type)) == NULL))) {
-                fprintf (outfile, ", ");
+            /* for simple types, alloc data memory */
+            if (TYPES_DIM (atype) == 0) {
+                fprintf (outfile, "  SAC_CI_INIT_SIMPLE_RESULT(out%d, %d );\n",
+                         INFO_PIW_COUNTER (arg_info), TYPES_BASETYPE (atype));
             }
+            break;
+
+        case PIW_CALL_RESULTS:
+            /* create macros for reference result types */
+            if (TYPES_STATUS (arg_type) != ST_crettype) {
+                if (TYPES_DIM (atype) == 0) {
+                    /* macro for simple type without refcounting */
+                    fprintf (outfile, "SAC_RESULT_SIMPLE");
+                } else {
+                    /* macro for arraytype with refcounting */
+                    fprintf (outfile, "SAC_RESULT_REFCNT");
+                }
+                fprintf (outfile, "( out%d , %s )", INFO_PIW_COUNTER (arg_info),
+                         ctype_string[TYPES_BASETYPE (atype)]);
+
+                INFO_PIW_COMMA (arg_info) = TRUE;
+            }
+
+            /* is there at least one more result?
+             * check, if there is a comma needef */
+            if ((TYPES_NEXT (arg_type) != NULL)
+                && (TYPES_STATUS (arg_type) != ST_crettype)) {
+                if (!((TYPES_STATUS (TYPES_NEXT (arg_type)) == ST_crettype)
+                      && (TYPES_NEXT (TYPES_NEXT (arg_type)) == NULL))) {
+                    fprintf (outfile, ", ");
+                }
+            }
+            break;
+
+        case PIW_CALL_RETPOS:
+            /* create macro for simple direct return value */
+            if (TYPES_STATUS (arg_type) == ST_crettype) {
+                fprintf (outfile,
+                         "SAC_ASSIGN_RESULT( out%d, %s) = ", INFO_PIW_COUNTER (arg_info),
+                         ctype_string[TYPES_BASETYPE (atype)]);
+            }
+            break;
+
+        case PIW_REFCOUNT_RESULTS:
+            /* init refcounts with 1 */
+            fprintf (outfile, "  SAC_SETLOCALRC(out%d , 1 );\n",
+                     INFO_PIW_COUNTER (arg_info));
+            break;
+
+        default:
+            SYSERROR (("undefined case in PIWtypes!\n"));
         }
-        break;
-
-    case PIW_CALL_RETPOS:
-        /* create macro for simple direct return value */
-        if (TYPES_STATUS (arg_type) == ST_crettype) {
-            fprintf (outfile,
-                     "SAC_ASSIGN_RESULT( out%d, %s) = ", INFO_PIW_COUNTER (arg_info),
-                     ctype_string[TYPES_BASETYPE (arg_type)]);
-        }
-        break;
-
-    case PIW_REFCOUNT_RESULTS:
-        /* init refcounts with 1 */
-        fprintf (outfile, "  SAC_SETLOCALRC(out%d , 1 );\n", INFO_PIW_COUNTER (arg_info));
-        break;
-
-    default:
-        SYSERROR (("undefined case in PIWtypes!\n"));
     }
 
     /* traverse to next returntype */
