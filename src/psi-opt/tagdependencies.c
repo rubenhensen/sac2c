@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/10/20 08:10:29  khf
+ * added some DBUG_PRINTs
+ *
  * Revision 1.3  2004/09/21 17:03:34  khf
  * memory allocation has to be done first
  *
@@ -18,6 +21,8 @@
 /**
  *
  * @file tagdependencies.c
+ *
+ * This traversal is an special travesal for WithloopFusion.
  *
  * In this traversal all assignments outside current withloop
  * which are referenced inside are tagged.
@@ -210,14 +215,21 @@ TDEPENDwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TDEPENDwith");
 
+    DBUG_PRINT ("WLFS", ("reaching with node!"));
+    /*
+     * Traverse into parts
+     */
     DBUG_ASSERT ((NWITH_PART (arg_node) != NULL), "no Part is available!");
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
 
-    if (NWITH_CODE (arg_node) != NULL) {
-        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-    }
+    /*
+     * Traverse into codes
+     */
+    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
-    DBUG_ASSERT ((NWITH_WITHOP (arg_node) != NULL), "N_NWITHOP is missing!");
+    /*
+     * Traverse into withop
+     */
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -225,57 +237,44 @@ TDEPENDwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TagDependencies( node *arg_node, info *arg_info)
+ * @fn node *TagDependencies( node *arg_node, node *fusionable_wl)
  *
  *   @brief  Starting point for traversal TagDependencies.
  *
- *   @param  node *arg_node:  N_with node
- *   @param  info *arg_info:
- *   @return node *        :  N_with node
+ *   @param  node *arg_node      : N_with node
+ *   @param  node *fusionable_wl :
+ *   @return node *              : N_with node
  ******************************************************************************/
 
 node *
-TagDependencies (node *arg_node)
+TagDependencies (node *with, node *fusionable_wl)
 {
     funtab *tmp_tab;
     info *arg_info;
 
     DBUG_ENTER ("TagDependencies");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Nwith),
+    DBUG_ASSERT ((NODE_TYPE (with) == N_Nwith),
                  "TagDependencies not started with N_Nwith node");
 
-    DBUG_ASSERT ((NWITH_FUSIONABLE_WL (arg_node) != NULL),
-                 "no fusionable withloop found");
+    DBUG_ASSERT ((fusionable_wl != NULL), "no fusionable withloop found");
 
-    DBUG_PRINT ("TDEPEND", ("starting TagDependencies"));
+    DBUG_PRINT ("WLFS", ("starting TagDependencies"));
 
     arg_info = MakeInfo ();
 
     tmp_tab = act_tab;
     act_tab = tdepend_tab;
 
-    INFO_TDEPEND_FUSIONABLE_WL (arg_info) = NWITH_FUSIONABLE_WL (arg_node);
-
-    /*
-     * traverse N_PARTs,N_CODEs and N_WITHOP to find all assignments, the current withloop
-     * depends on. This assigments had to be tagged.
-     */
+    INFO_TDEPEND_FUSIONABLE_WL (arg_info) = fusionable_wl;
     INFO_TDEPEND_INSIDEWL (arg_info) = TRUE;
 
-    DBUG_ASSERT ((NWITH_PART (arg_node) != NULL),
-                 "NWITH_PARTS is >= 1 although no PART is available!");
-    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    with = Trav (with, arg_info);
 
-    if (NWITH_CODE (arg_node) != NULL) {
-        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-    }
-
-    DBUG_ASSERT ((NWITH_WITHOP (arg_node) != NULL), "N_NWITHOP is missing!");
-    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    DBUG_PRINT ("WLFS", ("tagging of dependencies complete"));
 
     arg_info = FreeInfo (arg_info);
     act_tab = tmp_tab;
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (with);
 }
