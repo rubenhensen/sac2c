@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.185  1998/04/23 17:31:47  dkr
+ * added new node type N_sync
+ *
  * Revision 1.184  1998/04/21 13:36:50  dkr
  * added a missing colon ...
  *
@@ -834,6 +837,12 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, FreeSPMD, TravSons, TravSons, CompSPMD, TravSons, DupSPMD, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrecSPMD,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 1),
+
+  NIF (N_sync, "N_sync", TravSons, TravSons, PrintSync, TravSons, OptSync, TravSons,
+       TravSons, FreeSync, TravSons, TravSons, CompSync, TravSons, DupSync, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrecSync,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 1),
 
   /*
