@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/03/15 11:59:16  dkr
+ * ST_inout replaced by ST_reference
+ *
  * Revision 3.2  2001/02/14 10:16:23  dkr
  * Type2String: access macros used
  *
@@ -181,6 +184,8 @@ Type2String (types *type, int flag)
             }
         }
 
+        PrintStatus (TYPES_STATUS (type), FALSE);
+
         if (TYPES_DIM (type) != 0) {
             if (TYPES_DIM (type) == -1) {
                 strcat (tmp_string, "[]");
@@ -242,11 +247,11 @@ Type2String (types *type, int flag)
         }
 
         if ((type->attrib == ST_reference) || (type->attrib == ST_readonly_reference)
-            || (type->attrib == ST_inout) || (flag == 1)) {
+            || (flag == 1)) {
             strcat (tmp_string, " ");
         }
 
-        if ((type->attrib == ST_reference) || (type->attrib == ST_inout)) {
+        if (type->attrib == ST_reference) {
             strcat (tmp_string, "&");
         } else {
             if (type->attrib == ST_readonly_reference) {

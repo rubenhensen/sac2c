@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2001/03/15 11:59:28  dkr
+ * ST_inout replaced by ST_reference
+ *
  * Revision 3.3  2000/12/05 14:35:52  nmw
  * handling of T_hidden fixed, macro calls adjusted
  *
@@ -327,7 +330,7 @@ PIWarg (node *arg_node, node *arg_info)
                 /* macro for arraytype with refcounting */
                 fprintf (outfile, "SAC_ARGCALL_REFCNT");
             }
-        } else if (ARG_ATTRIB (arg_node) == ST_inout) {
+        } else if (ARG_ATTRIB (arg_node) == ST_reference) {
             /* these args are handled like out parameters */
             if (TYPES_DIM (argtype) == 0) {
                 /* macro for simple type without refcounting */

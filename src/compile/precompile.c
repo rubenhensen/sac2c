@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/03/15 11:59:35  dkr
+ * ST_inout replaced by ST_reference
+ *
  * Revision 3.11  2001/03/05 18:33:30  dkr
  * ups! missing \n in message of DBUG_ASSERT added ...
  *
@@ -1442,7 +1445,7 @@ PREC2fundef (node *arg_node, node *arg_info)
  * description:
  *   An artificial argument is removed, the attribs are switched:
  *       ST_readonly_reference -> ST_regular
- *       ST_was_reference -> ST_inout
+ *       ST_was_reference -> ST_reference
  *
  ******************************************************************************/
 
@@ -1469,7 +1472,7 @@ PREC2arg (node *arg_node, node *arg_info)
             ARG_ATTRIB (arg_node) = ST_regular;
         } else {
             if (ARG_ATTRIB (arg_node) == ST_was_reference) {
-                ARG_ATTRIB (arg_node) = ST_inout;
+                ARG_ATTRIB (arg_node) = ST_reference;
             }
         }
 
@@ -1587,7 +1590,7 @@ PREC2let (node *arg_node, node *arg_info)
  * Description:
  *   Removes all artificial parameters.
  *   The status of those current parameters which belong to formal reference
- *   parameters is modified to ST_inout.
+ *   parameters is modified to ST_reference.
  *   Global objects given as parameters to the applied function get a reference
  *   to the object definition and are renamed with the new name of the global
  *   object.
@@ -1614,7 +1617,7 @@ PREC2exprs_ap (node *current, node *formal)
             current = FreeNode (current);
         } else {
             if (ARG_ATTRIB (formal) == ST_was_reference) {
-                ID_ATTRIB (expr) = ST_inout;
+                ID_ATTRIB (expr) = ST_reference;
             }
 
             if ((VARDEC_OR_ARG_STATUS (ID_VARDEC (expr)) == ST_artificial)) {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2001/03/15 11:59:42  dkr
+ * ST_inout replaced by ST_reference
+ *
  * Revision 3.26  2001/03/14 16:25:16  dkr
  * signature (parameter types) of icm MT_ADJUST_SCHEDULER modified
  *
@@ -2225,8 +2228,7 @@ COMPArg (node *arg_node, node *arg_info)
     id_name = (ARG_NAME (arg_node) != NULL) ? ARG_NAME (arg_node) : "";
 
     if (IS_REFCOUNTED (ARG, arg_node) && FUN_DOES_REFCOUNT (fundef, param_idx)) {
-        if ((ARG_ATTRIB (arg_node) == ST_inout)
-            || (ARG_ATTRIB (arg_node) == ST_spmd_inout)) {
+        if (ARG_ATTRIB (arg_node) == ST_reference) {
             tag = "inout_rc";
         } else {
             tag = "in_rc";
@@ -2253,7 +2255,7 @@ COMPArg (node *arg_node, node *arg_info)
                         INFO_COMP_CNTPARAM (arg_info)));
         }
 
-        if (ARG_ATTRIB (arg_node) == ST_inout) {
+        if (ARG_ATTRIB (arg_node) == ST_reference) {
             if (FUNDEF_STATUS (INFO_COMP_FUNDEF (arg_info)) == ST_Cfun) {
                 if (IsBoxed (ARG_TYPE (arg_node))) {
                     tag = "upd_bx";
@@ -2312,7 +2314,7 @@ COMPArg (node *arg_node, node *arg_info)
      * put "ND_DECL_INOUT_PARAM" or "ND_DECL_INOUT_PARAM_RC" ICMs respectively
      * at beginning of function block
      */
-    if (ARG_ATTRIB (arg_node) == ST_inout) {
+    if (ARG_ATTRIB (arg_node) == ST_reference) {
         if (IS_REFCOUNTED (ARG, arg_node)) {
             icm_node = MakeAssignIcm2 ("ND_DECL_INOUT_PARAM_RC",
                                        MakeTypeNode (ARG_TYPE (arg_node)),
@@ -3056,14 +3058,14 @@ COMPAp (node *arg_node, node *arg_info)
         if (NODE_TYPE (arg) == N_id) {
             if (IS_REFCOUNTED (ID, arg)
                 && FUN_DOES_REFCOUNT (AP_FUNDEF (arg_node), cnt_param)) {
-                if (ID_ATTRIB (arg) == ST_inout) {
+                if (ID_ATTRIB (arg) == ST_reference) {
                     tag = "inout_rc";
                 } else {
                     tag = "in_rc";
                 }
             } else {
                 /* argument is not refcounted or function does no refcounting */
-                if (ID_ATTRIB (arg) == ST_inout) {
+                if (ID_ATTRIB (arg) == ST_reference) {
                     if (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_Cfun) {
                         if (IsBoxed (ARG_TYPE (fundef_args))) {
                             tag = "upd_bx";
