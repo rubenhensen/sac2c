@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.9  1998/12/10 17:28:13  sbs
+ * ScalarPrf => FoldPrfScalars
+ *
  * Revision 1.8  1998/05/16 16:25:57  srs
  * added debug information
  *
@@ -472,11 +475,12 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                 if (iinfo->permutation[i])
                     iinfo->const_arg[i] = val;
                 else {
-                    /* constant. Use ScalarPrf() to constantfold. */
+                    /* constant. Use FoldPrfScalars() to constantfold. */
                     type = MakeType (T_int, 0, NULL, NULL, NULL);
                     args[0] = MakeNum (val);
                     args[1] = MakeNum (tmpinfo->const_arg[i]);
-                    cf_node = ScalarPrf (args, PRF_PRF (prfn), type, 2 == iinfo->arg_no);
+                    cf_node
+                      = FoldPrfScalars (PRF_PRF (prfn), args, type, 2 == iinfo->arg_no);
                     iinfo->const_arg[i] = NUM_VAL (cf_node);
                     FREE (type);
                     FREE (args[0]); /* *cf_node == *args[0] */
@@ -515,7 +519,8 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                     type = MakeType (T_int, 0, NULL, NULL, NULL);
                     args[0] = MakeNum (val);
                     args[1] = MakeNum (iinfo->const_arg[i]);
-                    cf_node = ScalarPrf (args, PRF_PRF (prfn), type, 2 == iinfo->arg_no);
+                    cf_node
+                      = FoldPrfScalars (PRF_PRF (prfn), args, type, 2 == iinfo->arg_no);
                     iinfo->const_arg[i] = NUM_VAL (cf_node);
                     FREE (type);
                     FREE (args[0]); /* *cf_node == *args[0] */

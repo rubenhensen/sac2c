@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/12/10 17:27:34  sbs
+ * ScalarPrf => FoldPrfScalars
+ *
  * Revision 1.14  1998/03/10 17:31:19  srs
  * exported ScalarPrf (used in WithloopFolding.c)
  *
@@ -75,6 +78,9 @@ extern node *CFNwith (node *, node *);
 extern node *CFNpart (node *, node *);
 extern node *CFNcode (node *, node *);
 
-extern node *ScalarPrf (node **, prf, types *, int); /* used in WLF */
+/*
+ * used in WLF:
+ */
+extern node *FoldPrfScalars (prf prf_name, node **arg, types *res_type, int swap);
 
 #endif /* _ConstantFolding_h */
