@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/05/15 08:42:08  asi
+ * Revision 1.8  1995/06/09 09:17:12  asi
+ * bug fixed for while loops
+ *
+ * Revision 1.7  1995/05/15  08:42:08  asi
  * third mask - lokal defined - removed. No longer needed, because of
  * variable renaming in flatten.c .
  *
@@ -235,7 +238,7 @@ DEADassign (node *arg_node, node *arg_info)
                 oldmask[1] = arg_info->mask[1]; /* Save old dead used variables */
                 arg_info->mask[1] = GenMask (VARNO);
                 OrMask (arg_info->mask[4], arg_node->mask[4], VARNO);
-                if (olditype == N_do)
+                if ((N_do == olditype) || (N_while == olditype))
                     OrMask (arg_info->mask[4], arg_node->node[0]->mask[1], VARNO);
                 arg_node->node[0]->node[1]->mask[4] = DupMask (arg_info->mask[4], VARNO);
 
@@ -259,7 +262,16 @@ DEADassign (node *arg_node, node *arg_info)
                 arg_node->mask[4] = oldmask[1];
             }
         } else {
-            oldmask[2] = DupMask (arg_info->mask[4], VARNO);        /* save  LU-mask */
+            int i;
+            int needed = 0;
+
+            oldmask[2] = DupMask (arg_info->mask[4], VARNO); /* save  LU-mask */
+            for (i = 0; i < VARNO; i++) {
+                if (CheckMask (arg_info->mask[4], arg_node->mask[0], VARNO))
+                    needed = 1;
+            }
+            if (needed)
+                OrMask (arg_info->mask[4], arg_node->node[0]->mask[1], VARNO);
             arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* gen new LU-mask */
             OrMask (arg_info->mask[4], oldmask[2], VARNO);
             arg_node->mask[4] = DupMask (arg_info->mask[4], VARNO);
