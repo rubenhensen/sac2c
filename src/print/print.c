@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.130  2002/10/30 16:10:02  dkr
+ * PrintAp(): wrapper annotation added
+ *
  * Revision 3.129  2002/10/29 19:51:31  dkr
  * comment added
  *
@@ -2352,10 +2355,14 @@ PrintAp (node *arg_node, node *arg_info)
          */
         DBUG_ASSERT ((fundef != NULL), "no AP_FUNDEF found!");
     }
+
     if (fundef != NULL) {
         /*
          * print name of 'AP_FUNDEF(arg_node)'
          */
+        if ((FUNDEF_STATUS (fundef) == ST_wrapperfun)) {
+            fprintf (outfile, "wrapper:");
+        }
         if (FUNDEF_MOD (fundef) != NULL) {
             fprintf (outfile, "%s:", FUNDEF_MOD (fundef));
         }
