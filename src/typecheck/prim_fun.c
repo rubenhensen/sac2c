@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/15 15:17:51  dkr
+ * signature of Type2String modified
+ *
  * Revision 3.4  2001/02/23 18:04:22  sbs
  * extended for negative take's and drop's in genarray
  *
@@ -799,9 +802,10 @@ Reshp (node *vec, types *array, types *shp_vec)
                     ret_type = MakeTypes (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL,
                                           NULL, NULL);
                 } else {
-                    ERROR2 (3, ("%s, %d: 1.argument of function `reshape` "
-                                " has wrong type (%s)",
-                                filename, NODE_LINE (vec), Type2String (shp_vec, 0)));
+                    ERROR2 (3,
+                            ("%s, %d: 1.argument of function `reshape` "
+                             " has wrong type (%s)",
+                             filename, NODE_LINE (vec), Type2String (shp_vec, 0, TRUE)));
                 }
             } else {
                 /*
@@ -1849,15 +1853,15 @@ Modarray (types *array, types *vec, types *value, int line)
     GET_BASIC_TYPE (b_vec, vec, line);
     GET_BASIC_TYPE (b_value, value, line);
 
-    DBUG_PRINT ("PRF_TYPE", ("b_array: %s", Type2String (b_array, 0)));
-    DBUG_PRINT ("PRF_TYPE", ("b_vec: %s", Type2String (b_vec, 0)));
-    DBUG_PRINT ("PRF_TYPE", ("b_value: %s", Type2String (b_value, 0)));
+    DBUG_PRINT ("PRF_TYPE", ("b_array: %s", Type2String (b_array, 0, TRUE)));
+    DBUG_PRINT ("PRF_TYPE", ("b_vec: %s", Type2String (b_vec, 0, TRUE)));
+    DBUG_PRINT ("PRF_TYPE", ("b_value: %s", Type2String (b_value, 0, TRUE)));
 
     if ((SAC_PRG == kind_of_file) && (dynamic_shapes == 0)) {
         if (b_vec->dim != 1) {
             ERROR2 (3, ("%s, %d: 2.argument of function 'modarray' has incompatible "
                         "type ( int[x] != %s)",
-                        filename, line, Type2String (vec, 0)));
+                        filename, line, Type2String (vec, 0, TRUE)));
         }
         DBUG_ASSERT (1 == TYPES_DIM (b_vec), " wrong access vector");
 
@@ -1970,8 +1974,8 @@ Modarray (types *array, types *vec, types *value, int line)
     if (0 == types_ok) {
         ERROR2 (3, ("%s, %d: arguments of function 'modarray' have wrong "
                     "types ( %s, %s, %s)",
-                    filename, line, Type2String (array, 0), Type2String (vec, 0),
-                    Type2String (value, 0)));
+                    filename, line, Type2String (array, 0, TRUE),
+                    Type2String (vec, 0, TRUE), Type2String (value, 0, TRUE)));
     } else {
         FREE (b_vec);
         FREE (b_value);

@@ -1,11 +1,14 @@
 /*
+ *
  * $Log$
+ * Revision 3.2  2001/03/15 15:12:50  dkr
+ * signature of Type2String modified
+ *
  * Revision 3.1  2000/11/20 18:03:43  sacbase
  * new release made
  *
  * Revision 1.1  2000/08/02 14:24:07  nmw
  * Initial revision
- *
  *
  */
 
@@ -274,7 +277,7 @@ PIHarg (node *arg_node, node *arg_info)
     switch (INFO_PIH_FLAG (arg_info)) {
     case PIH_PRINT_COMMENT:
         /* print internal accepted types of argument */
-        typestring = Type2String (ARG_TYPE (arg_node), 0);
+        typestring = Type2String (ARG_TYPE (arg_node), 0, TRUE);
 
         fprintf (outfile, "%s %s", typestring, ARG_NAME (arg_node));
         FREE (typestring);
@@ -320,7 +323,7 @@ PIHtypes (types *arg_type, node *arg_info)
             /* if void, do not print varname */
             fprintf (outfile, "void");
         } else {
-            typestring = Type2String (arg_type, 0 | 4);
+            typestring = Type2String (arg_type, 0, FALSE);
 
             fprintf (outfile, "%s out%d", typestring, INFO_PIH_COUNTER (arg_info));
             FREE (typestring);

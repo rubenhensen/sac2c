@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/03/15 15:24:30  dkr
+ * signature of Type2String modified
+ *
  * Revision 3.1  2000/11/20 18:00:58  sacbase
  * new release made
  *
@@ -604,6 +607,7 @@ PrintSibTypes (FILE *sibfile, nodelist *tdeflist, char *modname, node *arg_info)
 {
     node *tdef;
     nodelist *tmp;
+    char *type_str;
 
     DBUG_ENTER ("PrintSibTypes");
 
@@ -626,7 +630,10 @@ PrintSibTypes (FILE *sibfile, nodelist *tdeflist, char *modname, node *arg_info)
                 fprintf (sibfile, "#pragma freefun \"%s\"\n", TYPEDEF_FREEFUN (tdef));
             }
         } else {
-            fprintf (sibfile, "typedef %s ", Type2String (TYPEDEF_TYPE (tdef), 0));
+            type_str = Type2String (TYPEDEF_TYPE (tdef), 0, TRUE);
+            fprintf (sibfile, "typedef %s ", type_str);
+            FREE (type_str);
+
             PRINTMODNAME (TYPEDEF_MOD (tdef), TYPEDEF_NAME (tdef));
             fprintf (sibfile, ";\n");
         }
@@ -646,6 +653,7 @@ PrintSibObjs (FILE *sibfile, nodelist *objdeflist, char *modname, node *arg_info
 {
     node *objdef;
     nodelist *tmp;
+    char *type_str;
 
     DBUG_ENTER ("PrintSibObjs");
 
@@ -654,7 +662,10 @@ PrintSibObjs (FILE *sibfile, nodelist *objdeflist, char *modname, node *arg_info
     while (tmp != NULL) {
         objdef = NODELIST_NODE (tmp);
 
-        fprintf (sibfile, "objdef %s ", Type2String (OBJDEF_TYPE (objdef), 0));
+        type_str = Type2String (OBJDEF_TYPE (objdef), 0, TRUE);
+        fprintf (sibfile, "objdef %s ", type_str);
+        FREE (type_str);
+
         PRINTMODNAME (OBJDEF_MOD (objdef), OBJDEF_NAME (objdef));
         fprintf (sibfile, ";\n");
 

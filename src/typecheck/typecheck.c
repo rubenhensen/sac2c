@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/03/15 15:17:56  dkr
+ * signature of Type2String modified
+ *
  * Revision 3.17  2001/03/09 11:16:39  sbs
  * profiling hidden behind PROFILE_IN_TC.
  * Now, profiling is implemented separately!
@@ -1599,7 +1602,7 @@ LookupVar (char *id)
 
     if (is_defined) {
 #ifndef DBUG_OFF
-        db_str = Type2String (tmp->node->info.types, 0);
+        db_str = Type2String (tmp->node->info.types, 0, TRUE);
         DBUG_PRINT ("TYPE", ("found: %s %s", db_str, id));
         FREE (db_str);
 #endif
@@ -2019,7 +2022,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
                 return_type = DupTypes (fun_p->node->info.types);
 
 #ifndef DBUG_OFF
-                db_str = Type2String (return_type, 0);
+                db_str = Type2String (return_type, 0, TRUE);
                 DBUG_PRINT ("TYPE", ("return_type %s" P_FORMAT, db_str, return_type));
                 FREE (db_str);
 #endif
@@ -2067,7 +2070,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
                 return_type = DupTypes (fun_p->node->info.types);
 
 #ifndef DBUG_OFF
-                db_str = Type2String (return_type, 0);
+                db_str = Type2String (return_type, 0, TRUE);
                 DBUG_PRINT ("TYPE", ("return_type %s" P_FORMAT, db_str, return_type));
                 FREE (db_str);
 #endif
@@ -2814,7 +2817,7 @@ InitTypeTab (node *modul_node)
                 ABORT (NODE_LINE (tmp), ("User-defined type '%s` is built of"
                                          " type with unknown shape '%s`",
                                          ModName (tmp->TYPES->id_mod, tmp->TYPES->id),
-                                         Type2String (tmp->TYPES, 0)));
+                                         Type2String (tmp->TYPES, 0, TRUE)));
             }
         }
 
@@ -2937,7 +2940,8 @@ InitTypeTab (node *modul_node)
                                 ABORT (NODE_LINE (tmp),
                                        ("User-defined type '%s` is built from type "
                                         "with unknown shape (%s)",
-                                        tmp->TYPES->id, Type2String (tmp->TYPES, 0)));
+                                        tmp->TYPES->id,
+                                        Type2String (tmp->TYPES, 0, TRUE)));
                             }
                             break;
                         default: {
@@ -2961,7 +2965,7 @@ InitTypeTab (node *modul_node)
                                ("User-defined type '%s` is "
                                 "built from user-defined type "
                                 "with unknown shape (%s)",
-                                tmp->TYPES->id, Type2String (tmp->TYPES, 0)));
+                                tmp->TYPES->id, Type2String (tmp->TYPES, 0, TRUE)));
                     }
                 }
 
@@ -3002,15 +3006,17 @@ InitTypeTab (node *modul_node)
         if (i < type_tab_size) {
             tmp = modul_node->node[1];
             while (TYPEDEF_TYPE (tmp) != NULL) {
-                ABORT (NODE_LINE (tmp), ("User-defined type '%s` is built of "
-                                         "unknown type (%s)",
-                                         tmp->TYPES->id, Type2String (tmp->TYPES, 0)));
+                ABORT (NODE_LINE (tmp),
+                       ("User-defined type '%s` is built of "
+                        "unknown type (%s)",
+                        tmp->TYPES->id, Type2String (tmp->TYPES, 0, TRUE)));
                 tmp = tmp->node[0];
             }
             if (NULL != tmp) {
-                ABORT (NODE_LINE (tmp), ("User-defined type '%s` is built of "
-                                         "unknown type (%s)",
-                                         tmp->TYPES->id, Type2String (tmp->TYPES, 0)));
+                ABORT (NODE_LINE (tmp),
+                       ("User-defined type '%s` is built of "
+                        "unknown type (%s)",
+                        tmp->TYPES->id, Type2String (tmp->TYPES, 0, TRUE)));
             } else
                 exit (3);
         }
@@ -3465,8 +3471,8 @@ CmpTypes (types *type_one, types *type_two)
     DBUG_ENTER ("CmpTypes");
     DBUG_ASSERT (((NULL != type_one) && (NULL != type_two)), "one arguments is NULL ");
 #ifndef DBUG_OFF
-    db_str1 = Type2String (type_one, 0);
-    db_str2 = Type2String (type_two, 0);
+    db_str1 = Type2String (type_one, 0, TRUE);
+    db_str2 = Type2String (type_two, 0, TRUE);
     DBUG_PRINT ("TYPE", ("compare '%s' with '%s'", db_str1, db_str2));
     FREE (db_str1);
     FREE (db_str2);
@@ -3625,8 +3631,8 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
 
     DBUG_ENTER ("CompatibleTypes");
 
-    db_str1 = Type2String (type_one, 0);
-    db_str2 = Type2String (type_two, 0);
+    db_str1 = Type2String (type_one, 0, TRUE);
+    db_str2 = Type2String (type_two, 0, TRUE);
 
     DBUG_PRINT ("TYPE", ("compare %s with %s (convert_prim_type: %d", db_str1, db_str2,
                          convert_prim_type));
@@ -3896,8 +3902,8 @@ UpdateType (types *type_one, types *type_two, int line)
                  "UpdateType: wrong types or update not needed");
 
 #ifndef DBUG_OFF
-    db_str1 = Type2String (t_unknown, 0);
-    db_str2 = Type2String (t_known, 0);
+    db_str1 = Type2String (t_unknown, 0, TRUE);
+    db_str2 = Type2String (t_known, 0, TRUE);
     DBUG_PRINT ("TYPE", ("old types :%s , %s ", db_str1, db_str2));
     FREE (db_str1);
     FREE (db_str2);
@@ -3979,8 +3985,8 @@ UpdateType (types *type_one, types *type_two, int line)
     }
 
 #ifndef DBUG_OFF
-    db_str1 = Type2String (t_unknown, 0);
-    db_str2 = Type2String (t_known, 0);
+    db_str1 = Type2String (t_unknown, 0, TRUE);
+    db_str2 = Type2String (t_known, 0, TRUE);
 
     DBUG_PRINT ("TYPE", ("new types :%s , %s ", db_str1, db_str2));
 
@@ -4198,7 +4204,7 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                             count_param++;
 
                         DBUG_PRINT ("TYPE", ("%d. : %s" P_FORMAT, count_param,
-                                             Type2String (ARG_TYPE (fun_args), 0),
+                                             Type2String (ARG_TYPE (fun_args), 0, TRUE),
                                              ARG_TYPE (fun_args)));
                         fun_args = ARG_NEXT (fun_args);
                     } /* while (NULL != funargs) */
@@ -4376,13 +4382,10 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
 
             arg_str[0] = '\0';
             for (i = 0; i < count_args; i++) {
-                strcat (arg_str, Type2String (arg_type[i], 0));
+                strcat (arg_str, Type2String (arg_type[i], 0, TRUE));
                 if (i + 1 != count_args)
                     strcat (arg_str, ", ");
             }
-#if 0         
-         Print(syntax_tree);
-#endif
             ABORT (line,
                    ("Function '%s` is undefined or is applied to"
                     " wrong arguments '%s`",
@@ -4437,7 +4440,7 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                                 i + 1,
                                 ModName (mod_name,
                                          (IS_PRIMFUN) ? prf_string[*prf_fun] : fun_name),
-                                Type2String (arg_type[i], 0)));
+                                Type2String (arg_type[i], 0, TRUE)));
                     }
                 }
 
@@ -4457,7 +4460,7 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                                        "has now defined shape (%s)",
                                        filename, NODE_LINE (fun_p->node),
                                        ARG_NAME (fun_args),
-                                       Type2String (ARG_TYPE (fun_args), 0)));
+                                       Type2String (ARG_TYPE (fun_args), 0, TRUE)));
 #endif /* SHAPE_NOTE */
                             }
                         }
@@ -4543,8 +4546,8 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
             case CMP_incompatible: /* 0 */ {
                 ABORT (line, ("Incompatible types in declaration (%s) "
                               "and  usage (%s) of variable '%s`",
-                              Type2String (vardec_p->info.types, 0),
-                              Type2String (type, 0), ids->id));
+                              Type2String (vardec_p->info.types, 0, TRUE),
+                              Type2String (type, 0, TRUE), ids->id));
                 break;
             }
             case CMP_one_unknown_shape: /* 2 */ {
@@ -4554,11 +4557,11 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
             case CMP_both_unknown_shape: {
                 if (kind_of_file != SAC_MOD) {
                     if (dynamic_shapes == 0) {
-                        str = Type2String (type, 0);
-                        WARN (line,
-                              ("Types in declaration (%s) and usage "
-                               "(%s) of variable '%s` have unknown shape",
-                               Type2String (vardec_p->info.types, 0), str, ids->id));
+                        str = Type2String (type, 0, TRUE);
+                        WARN (line, ("Types in declaration (%s) and usage "
+                                     "(%s) of variable '%s` have unknown shape",
+                                     Type2String (vardec_p->info.types, 0, TRUE), str,
+                                     ids->id));
                         FREE (str);
                     } else {
                         /* update int[] => int[.,...,.] ! */
@@ -5066,15 +5069,15 @@ TClet (node *arg_node, node *arg_info)
                         ABORT (NODE_LINE (arg_node),
                                ("Incompatible types in declaration (%s) "
                                 "and usage (%s) of variable '%s`",
-                                Type2String (VARDEC_TYPE (vardec_node), 0),
-                                Type2String (type, 0), ids->id));
+                                Type2String (VARDEC_TYPE (vardec_node), 0, TRUE),
+                                Type2String (type, 0, TRUE), ids->id));
                     }
                 } else {
                     if (kind_of_file != SAC_MOD) {
                         ABORT (NODE_LINE (arg_node),
                                ("Function 'psi' is called with argument of type '%s'"
                                 ", so the type of the result has to be declared",
-                                Type2String (type, 0), ids->id));
+                                Type2String (type, 0, TRUE), ids->id));
                     }
                 }
             }
@@ -5148,10 +5151,10 @@ TClet (node *arg_node, node *arg_info)
                                 "'%s, %s`",
                                 Type2String (ID_OR_CAST_TYPE (
                                                PRF_ARG1 (LET_EXPR (arg_node))),
-                                             0),
+                                             0, TRUE),
                                 Type2String (ID_OR_CAST_TYPE (
                                                PRF_ARG2 (LET_EXPR (arg_node))),
-                                             0)));
+                                             0, TRUE)));
                     }
                 }
             }
@@ -5216,12 +5219,12 @@ TClet (node *arg_node, node *arg_info)
                                           == N_array)
                                            ? ARRAY_TYPE (PRF_ARG1 (LET_EXPR (arg_node)))
                                            : ID_TYPE (PRF_ARG1 (LET_EXPR (arg_node))),
-                                         0),
+                                         0, TRUE),
                             Type2String ((NODE_TYPE (PRF_ARG2 (LET_EXPR (arg_node)))
                                           == N_array)
                                            ? ARRAY_TYPE (PRF_ARG2 (LET_EXPR (arg_node)))
                                            : ID_TYPE (PRF_ARG2 (LET_EXPR (arg_node))),
-                                         0)));
+                                         0, TRUE)));
                 }
             }
 
@@ -5262,12 +5265,12 @@ TClet (node *arg_node, node *arg_info)
                                           == N_array)
                                            ? ARRAY_TYPE (PRF_ARG1 (LET_EXPR (arg_node)))
                                            : ID_TYPE (PRF_ARG1 (LET_EXPR (arg_node))),
-                                         0),
+                                         0, TRUE),
                             Type2String ((NODE_TYPE (PRF_ARG2 (LET_EXPR (arg_node)))
                                           == N_array)
                                            ? ARRAY_TYPE (PRF_ARG2 (LET_EXPR (arg_node)))
                                            : ID_TYPE (PRF_ARG2 (LET_EXPR (arg_node))),
-                                         0)));
+                                         0, TRUE)));
                 }
             }
 
@@ -5333,12 +5336,12 @@ TClet (node *arg_node, node *arg_info)
                                           == N_array)
                                            ? ARRAY_TYPE (PRF_ARG2 (LET_EXPR (arg_node)))
                                            : ID_TYPE (PRF_ARG2 (LET_EXPR (arg_node))),
-                                         0),
+                                         0, TRUE),
                             Type2String ((NODE_TYPE (PRF_ARG3 (LET_EXPR (arg_node)))
                                           == N_array)
                                            ? ARRAY_TYPE (PRF_ARG3 (LET_EXPR (arg_node)))
                                            : ID_TYPE (PRF_ARG3 (LET_EXPR (arg_node))),
-                                         0)));
+                                         0, TRUE)));
                 }
             }
 
@@ -5352,7 +5355,7 @@ TClet (node *arg_node, node *arg_info)
 
     if (N_ok == NODE_TYPE (arg_info->node[0])) {
 #ifndef DBUG_OFF
-        db_str = Type2String (type, 0); /* only used while debuging */
+        db_str = Type2String (type, 0, TRUE); /* only used while debuging */
         DBUG_PRINT ("TYPE", ("infered type : %s", db_str));
         FREE (db_str);
 #endif
@@ -5382,8 +5385,8 @@ TClet (node *arg_node, node *arg_info)
                     ABORT (NODE_LINE (arg_node),
                            ("Incompatible types in declaration (%s) "
                             "and usage (%s) of variable '%s`",
-                            Type2String (elem->node->info.types, 0),
-                            Type2String (type, 0), ids->id));
+                            Type2String (elem->node->info.types, 0, TRUE),
+                            Type2String (type, 0, TRUE), ids->id));
                     break;
                 case CMP_one_unknown_shape: /* 2*/
 #ifdef KNOWN_SHAPE_ONLY
@@ -5400,8 +5403,8 @@ TClet (node *arg_node, node *arg_info)
                     break;
                 case CMP_both_unknown_shape: /* neu 8.12. */
                     if (kind_of_file != SAC_MOD) {
-                        char *str1 = Type2String (elem->node->info.types, 0);
-                        char *str2 = Type2String (type, 0);
+                        char *str1 = Type2String (elem->node->info.types, 0, TRUE);
+                        char *str2 = Type2String (type, 0, TRUE);
                         WARN (NODE_LINE (arg_node),
                               ("Types in declaration (%s) and usage "
                                "(%s) of variable '%s' have unknown shape",
@@ -5450,8 +5453,8 @@ TClet (node *arg_node, node *arg_info)
             char *str1, *str2, *str3;
             int str3_len, i;
 
-            str1 = Type2String (type, 0);
-            str2 = Type2String (tmp, 0); /* infered type */
+            str1 = Type2String (type, 0, TRUE);
+            str2 = Type2String (tmp, 0, TRUE); /* infered type */
             str3_len
               = strlen (str2) - strlen (str1) - 2; /* -2 to delete comma and space*/
             /* in str3 the type of the left side of a let-statement will be
@@ -5466,7 +5469,7 @@ TClet (node *arg_node, node *arg_info)
         } else if (ids) {
             char *str1;
 
-            str1 = Type2String (tmp, 0);
+            str1 = Type2String (tmp, 0, TRUE);
             ABORT (NODE_LINE (arg_node), ("Different types (%s,... != %s)", str1, str1));
         }
         DBUG_ASSERT ((!type && !ids), "type or ids are not NULL");
@@ -5582,7 +5585,7 @@ TI_prf (node *arg_node, node *arg_info)
     FREE (arg_type);
 
 #ifndef DBUG_OFF
-    db_str = Type2String (ret_type, 0);
+    db_str = Type2String (ret_type, 0, TRUE);
 #endif
     DBUG_PRINT ("TYPE", ("return type : %s", db_str));
 
@@ -5651,7 +5654,7 @@ TCreturn (node *arg_node, node *arg_info)
             return_tmp = return_tmp->next;
             if (NULL == return_tmp) {
                 ERROR (NODE_LINE (arg_node), ("Return_type cannot be infered."));
-                CONT_ERROR (("Infered so far: %s", Type2String (return_type, 0)));
+                CONT_ERROR (("Infered so far: %s", Type2String (return_type, 0, TRUE)));
                 ABORT_ON_ERROR;
             }
 
@@ -5694,7 +5697,7 @@ TCreturn (node *arg_node, node *arg_info)
                 ABORT (NODE_LINE (arg_node),
                        ("Incompatible types in declaration (%s) "
                         "and  return value (%s) of function '%s`",
-                        Type2String (fun_tmp, 0), Type2String (return_tmp, 0),
+                        Type2String (fun_tmp, 0, TRUE), Type2String (return_tmp, 0, TRUE),
                         ModName (fun_mod, fun_name)));
                 break;
             }
@@ -5704,7 +5707,7 @@ TCreturn (node *arg_node, node *arg_info)
             case CMP_one_unknown_shape: /* 2 */
             {
                 UpdateType (fun_type, return_type, NODE_LINE (arg_node));
-                str1 = Type2String (fun_tmp, 0);
+                str1 = Type2String (fun_tmp, 0, TRUE);
 
 #ifdef SHAPE_NOTE
                 NOTE (("%s:%d: NOTE: one return_type of function '%s` has now"
@@ -5724,7 +5727,7 @@ TCreturn (node *arg_node, node *arg_info)
                          * therefore, it only occurs when compiling non-modules with -ds !
                          */
                         UpdateType (fun_type, return_type, NODE_LINE (arg_node));
-                        str1 = Type2String (fun_tmp, 0);
+                        str1 = Type2String (fun_tmp, 0, TRUE);
 #ifdef SHAPE_NOTE
                         NOTE (("%s:%d: NOTE: one return_type of function '%s` has now"
                                " defined shape (%s)",
@@ -5733,8 +5736,8 @@ TCreturn (node *arg_node, node *arg_info)
                         FREE (str1);
 
                     } else {
-                        str1 = Type2String (fun_tmp, 0);
-                        str2 = Type2String (return_type, 0);
+                        str1 = Type2String (fun_tmp, 0, TRUE);
+                        str2 = Type2String (return_type, 0, TRUE);
                         WARN (NODE_LINE (arg_node),
                               ("Types with unknown shape in declaration (%s) and return "
                                "value (%s) of function '%s`",
@@ -5903,7 +5906,9 @@ TI_ap (node *arg_node, node *arg_info)
             str_spc = MAX (str_spc, 0);
             arg = FUNDEF_ARGS (fun_p->node);
             while (arg != NULL) {
-                tmp_str = Type2String (ARG_TYPE (arg), 1);
+                tmp_str = Type2String (ARG_TYPE (arg), 0, TRUE);
+                tmp_str = strcat (tmp_str, " ");
+                tmp_str = strcat (tmp_str, ARG_NAME (arg));
                 str_buff = strncat (str_buff, tmp_str, str_spc);
                 str_spc -= strlen (tmp_str);
                 str_spc = MAX (str_spc, 0);
@@ -6089,8 +6094,8 @@ TI_array (node *arg_node, node *arg_info)
                  *  Elements of Array have incompatible types, result ist an Error. (jhs)
                  */
 
-                str1 = Type2String (tmp_type, 0);
-                str2 = Type2String (return_type, 0);
+                str1 = Type2String (tmp_type, 0, TRUE);
+                str2 = Type2String (return_type, 0, TRUE);
                 ERROR (NODE_LINE (elem),
                        ("Array of type '%s` has element of type '%s`", str2, str1));
                 FREE (str1);
@@ -6146,7 +6151,7 @@ TI_array (node *arg_node, node *arg_info)
             TYPES_DIM (return_type) += 1;
         }
 #ifndef DBUG_OFF
-        db_str = Type2String (return_type, 0);
+        db_str = Type2String (return_type, 0, TRUE);
         DBUG_PRINT ("TYPE", ("type of array: %s", db_str));
         FREE (db_str);
 #endif
@@ -6206,7 +6211,7 @@ TCcond (node *arg_node, node *arg_info)
 
     if ((T_bool != TYPES_BASETYPE (expr_type)) || (TYPES_DIM (expr_type) != SCALAR)) {
         ERROR (NODE_LINE (arg_node),
-               ("Type of condition (%s) is not bool", Type2String (expr_type, 0)));
+               ("Type of condition (%s) is not bool", Type2String (expr_type, 0, TRUE)));
     }
 
     /* now free the infered type-information */
@@ -6486,7 +6491,7 @@ TCdo (node *arg_node, node *arg_info)
                || (TYPES_DIM (expr_type) != SCALAR))
         ERROR (NODE_LINE (DO_COND (arg_node)),
                ("Type of loop condition is '%s` but must be 'bool`",
-                Type2String (expr_type, 0)));
+                Type2String (expr_type, 0, TRUE)));
 
     /* now free infered type_information */
     FREE_TYPES (expr_type);
@@ -6533,7 +6538,7 @@ TCwhile (node *arg_node, node *arg_info)
     else
         ERROR (NODE_LINE (WHILE_COND (arg_node)),
                ("Type of loop condition is '%s` but must be 'bool`",
-                Type2String (expr_type, 0)));
+                Type2String (expr_type, 0, TRUE)));
 
     /* restore scope stack by setting 'tos' pointer */
     tos = old_tos;
@@ -6614,7 +6619,7 @@ TI_cast (node *arg_node, node *arg_info)
         if (CMP_incompatible == is_comp) /* 0 */ {
             ERROR (NODE_LINE (arg_node),
                    ("%d. cast has incompatible type: inferred type: %s", i,
-                    Type2String (tmp, 0)));
+                    Type2String (tmp, 0, TRUE)));
         } else if (CMP_one_unknown_shape == is_comp) /* 2 */ {
             /* change type for return  (infered type of N_cast) */
             UpdateType (type, tmp, NODE_LINE (arg_node));
@@ -6646,7 +6651,7 @@ TI_cast (node *arg_node, node *arg_info)
 
 #ifndef DBUG_OFF
     if (NULL != ret_type) {
-        char *db_str = Type2String (ret_type, 0);
+        char *db_str = Type2String (ret_type, 0, TRUE);
         DBUG_PRINT ("TYPE", ("%s", db_str));
     }
 #endif
@@ -7246,7 +7251,8 @@ TI_Nwith (node *arg_node, node *arg_info)
                 if (CMP_equal != CmpTypes (*concrete_type, bound))                       \
                     ABORT (NODE_LINE (arg_node),                                         \
                            ("Wrong " nodetext " type: '%s`. Should be '%s`",             \
-                            Type2String (bound, 0), Type2String (*concrete_type, 0)));   \
+                            Type2String (bound, 0, TRUE),                                \
+                            Type2String (*concrete_type, 0, TRUE)));                     \
             } else {                                                                     \
                 if (1 != TYPES_DIM (bound))                                              \
                     ABORT (NODE_LINE (arg_node),                                         \
@@ -7548,7 +7554,7 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
                || (TYPES_BASETYPE (expr_type) != T_int)) {
         ABORT (NODE_LINE (arg_node),
                ("type of shape in genarray with loop is %s which does not match int[.]!",
-                Type2String (expr_type, 3)));
+                Type2String (expr_type, 3, TRUE)));
     }
     /*
      * Now, we know the type of the shape-argument from the genarray WL,
@@ -7662,8 +7668,9 @@ ConsistencyCheckModarray (int lineno, types *array_type, types *generator_type,
     DBUG_ENTER (" ConsistencyCheckModarray");
 
     if (TYPES_BASETYPE (array_type) != TYPES_BASETYPE (body_type))
-        ABORT (lineno, ("Basetypes of 'modarray` (%s) and return_type (%s) different",
-                        Type2String (array_type, 0), Type2String (body_type, 0)));
+        ABORT (lineno,
+               ("Basetypes of 'modarray` (%s) and return_type (%s) different",
+                Type2String (array_type, 0, TRUE), Type2String (body_type, 0, TRUE)));
 
     /* strong TC */
     if (SCALAR < TYPES_DIM (array_type) && SCALAR < TYPES_DIM (generator_type)
@@ -7672,17 +7679,18 @@ ConsistencyCheckModarray (int lineno, types *array_type, types *generator_type,
         if (length + TYPES_DIM (body_type) == TYPES_DIM (array_type))
             for (i = length; i < TYPES_DIM (array_type); i++) {
                 if (TYPES_SHAPE (array_type, i) != TYPES_SHAPE (body_type, i - length))
-                    ABORT (lineno,
-                           ("Type of shape vector (%s) does not match "
-                            "type of index vector (%s) and return statement (%s)",
-                            Type2String (array_type, 0), Type2String (generator_type, 0),
-                            Type2String (body_type, 0)));
+                    ABORT (lineno, ("Type of shape vector (%s) does not match "
+                                    "type of index vector (%s) and return statement (%s)",
+                                    Type2String (array_type, 0, TRUE),
+                                    Type2String (generator_type, 0, TRUE),
+                                    Type2String (body_type, 0, TRUE)));
             }
         else
             ABORT (lineno, ("Type of shape vector (%s) does not match "
                             "type of index vector (%s) and return statement (%s)",
-                            Type2String (array_type, 0), Type2String (generator_type, 0),
-                            Type2String (body_type, 0)));
+                            Type2String (array_type, 0, TRUE),
+                            Type2String (generator_type, 0, TRUE),
+                            Type2String (body_type, 0, TRUE)));
     }
 
     DBUG_VOID_RETURN;
@@ -7762,19 +7770,20 @@ TI_Nfoldprf (node *arg_node, types *body_type, types *neutral_type, node *arg_in
             ABORT (NODE_LINE (arg_node),
                    ("Function '%s` has return type '%s` != '%s`",
                     ModName (NWITHOP_MOD (arg_node), NWITHOP_FUN (arg_node)),
-                    Type2String (ret_type, 0), Type2String (body_type, 0)));
+                    Type2String (ret_type, 0, TRUE), Type2String (body_type, 0, TRUE)));
         } else {
             ABORT (NODE_LINE (arg_node),
                    ("Function '%s` has return type '%s` != '%s`",
-                    prf_string[arg_node->info.prf], Type2String (ret_type, 0),
-                    Type2String (body_type, 0)));
+                    prf_string[arg_node->info.prf], Type2String (ret_type, 0, TRUE),
+                    Type2String (body_type, 0, TRUE)));
         }
     }
     if (NWITHOP_NEUTRAL (arg_node)) {
         if (CMP_equal != CmpTypes (neutral_type, ret_type)) /* 1 */ {
             ABORT (NODE_LINE (arg_node),
                    ("neutral element of 'fold` has wrong type '%s`. Should be '%s`",
-                    Type2String (neutral_type, 0), Type2String (ret_type, 0)));
+                    Type2String (neutral_type, 0, TRUE),
+                    Type2String (ret_type, 0, TRUE)));
         }
     } else
         NWITHOP_NEUTRAL (arg_node) = ComputeNeutralElem (old_prf, body_type);
@@ -7826,12 +7835,13 @@ TI_Nfoldfun (node *arg_node, types *body_type, types *neutral_type, node *arg_in
             ABORT (NODE_LINE (arg_node),
                    ("Function '%s` has return type '%s` != '%s`",
                     ModName (NWITHOP_MOD (arg_node), NWITHOP_FUN (arg_node)),
-                    Type2String (ret_type, 0), Type2String (body_type, 0)));
+                    Type2String (ret_type, 0, TRUE), Type2String (body_type, 0, TRUE)));
         }
         if (CMP_equal != CmpTypes (neutral_type, body_type)) {
             ABORT (NODE_LINE (arg_node),
                    ("Neutral element of 'fold` has wrong type '%s`. Should be '%s`",
-                    Type2String (neutral_type, 0), Type2String (ret_type, 0)));
+                    Type2String (neutral_type, 0, TRUE),
+                    Type2String (ret_type, 0, TRUE)));
         }
 
 /*

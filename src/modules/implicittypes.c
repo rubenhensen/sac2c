@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/03/15 15:22:47  dkr
+ * signature of Type2String modified
+ *
  * Revision 3.1  2000/11/20 18:00:53  sacbase
  * new release made
  *
@@ -201,7 +204,8 @@ SearchImplementation (types *type, node *alltypes)
         }
     }
 
-    DBUG_PRINT ("IMPLTYPES", ("Found implementation for %s", Type2String (type, 0)));
+    DBUG_PRINT ("IMPLTYPES",
+                ("Found implementation for %s", Type2String (type, 0, TRUE)));
 
     DBUG_RETURN (type);
 }

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2001/03/15 15:17:47  dkr
+ * signature of Type2String modified
+ *
  * Revision 3.1  2000/11/20 18:00:09  sacbase
  * new release made
  *
@@ -979,7 +982,8 @@ TYOldType2Type (types *old, type_conversion_flag flag)
     } else { /* TYPES_DIM( old) == SCALAR */
     }
 
-    DBUG_EXECUTE ("NTY", (tmp = Type2String (old, 3), tmp2 = TYType2DebugString (res)););
+    DBUG_EXECUTE ("NTY",
+                  (tmp = Type2String (old, 3, TRUE), tmp2 = TYType2DebugString (res)););
     DBUG_PRINT ("NTY", ("%s converted into : %s\n", tmp, tmp2));
 
     DBUG_RETURN (res);
