@@ -1,6 +1,9 @@
-/*         $Id$
+/*
  *
  * $Log$
+ * Revision 2.2  2000/10/31 23:02:45  dkr
+ * header modified
+ *
  * Revision 2.1  1999/02/23 12:41:40  sacbase
  * new release made
  *
@@ -10,8 +13,8 @@
  * Revision 1.1  1998/05/13 13:47:57  srs
  * Initial revision
  *
- *
  */
+
 #ifndef _WLUnroll_h
 #define _WLUnroll_h
 
