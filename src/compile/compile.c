@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 2.89  2000/09/25 15:19:03  dkr
+ * Compilation of hidden types streamlined and simplified.
+ * MakeTypeString() modified:
+ *   Hidden types are no longer compiled into 'void*' but into the name of
+ *   the typedef (we can rely on the corresponding typedef here!)
+ * Function GetBasicType() created.
+ *
  * Revision 2.88  2000/09/20 18:20:41  dkr
  * ID_MAKEUNIQUE renamed into ID_CLSCONV
  * Compilation of  v = from_class( w)  corrected (COMPId())
@@ -484,6 +491,123 @@ int basetype_size[] = {
 #define FREE_VARDEC(a)                                                                   \
     FREE_TYPE (VARDEC_TYPE (a))                                                          \
     FREE (a)
+
+/******************************************************************************
+ *
+ * Function:
+ *   types *GetBasicType( types *type)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+types *
+GetBasicType (types *type)
+{
+    types *res_type;
+    node *tdef;
+
+    DBUG_ENTER ("GetBasicType");
+
+    DBUG_ASSERT ((TYPES_BASETYPE (type) != T_hidden), "Hidden type at top level found!");
+
+    if (TYPES_BASETYPE (type) == T_user) {
+        tdef = TYPES_TDEF (type);
+        DBUG_ASSERT ((tdef != NULL), "No typedef found!");
+
+        if (TYPEDEF_BASETYPE (tdef) == T_hidden) {
+            /*
+             * Basic type is hidden therefore we have to use the original type
+             * structure and rely on the belonging typedef.
+             */
+            res_type = DupTypes (type);
+        } else {
+            res_type = DupTypes (TYPEDEF_TYPE (tdef));
+        }
+    } else {
+        res_type = DupTypes (type);
+    }
+
+    DBUG_RETURN (res_type);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   int GetBasetypeSize(types *type)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static int
+GetBasetypeSize (types *type)
+{
+    int size;
+    node *tdef;
+
+    DBUG_ENTER ("GetBasetypeSize");
+
+    DBUG_ASSERT ((TYPES_BASETYPE (type) != T_hidden), "Hidden type at top level found!");
+
+    if (TYPES_BASETYPE (type) == T_user) {
+        tdef = TYPES_TDEF (type);
+        DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
+
+        size = basetype_size[TYPEDEF_BASETYPE (tdef)];
+    } else {
+        size = basetype_size[TYPES_BASETYPE (type)];
+    }
+
+    DBUG_RETURN (size);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   char *MakeTypeString( types *type)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static char *
+MakeTypeString (types *type)
+{
+    char *str, *ret;
+
+    DBUG_ENTER ("MakeTypeString");
+
+    /*
+     * We do not necessaryly needed the basic type here, because the compiled
+     * code contains proper typedef statements already :-)
+     */
+#if 1
+    type = GetBasicType (type);
+#endif
+
+    DBUG_ASSERT ((TYPES_BASETYPE (type) != T_hidden), "Hidden type at top level found!");
+
+    if (TYPES_BASETYPE (type) == T_user) {
+        str = TYPES_NAME (type);
+        DBUG_ASSERT ((str != NULL), "Name of user-defined type not found");
+    } else {
+        str = type_string[TYPES_BASETYPE (type)];
+    }
+
+    if (TYPES_DIM (type) != 0) {
+        ret = (char *)MALLOC (sizeof (char) * (strlen (str) + 3));
+        strcpy (ret, str);
+        strcat (ret, " *");
+    } else {
+        ret = StringCopy (str);
+    }
+
+    DBUG_RETURN (ret);
+}
 
 /******************************************************************************
  *
@@ -1168,66 +1292,6 @@ AdjustAddedAssigns (node *before, node *after)
 
 /*
  *
- *  functionname  : BasetypeSize
- *  description   :
- *  remarks       :
- *
- */
-
-static int
-BasetypeSize (types *type)
-{
-    int ret;
-    node *tdef;
-
-    DBUG_ENTER ("BasetypeSize");
-
-    if (TYPES_BASETYPE (type) == T_user) {
-        tdef = TYPES_TDEF (type);
-        DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
-
-        ret = basetype_size[TYPEDEF_BASETYPE (tdef)];
-    } else {
-        ret = basetype_size[TYPES_BASETYPE (type)];
-    }
-
-    DBUG_RETURN (ret);
-}
-
-/*
- *
- *  functionname  : MakeTypeString
- *  arguments     : 1) types structure
- *  description   : converts type to the respective string used for
- *                  compilation, which means the basetype as string
- *                  followed by * in the case of arrays.
- *  global vars   : type_string
- *  remarks       :
- *
- *
- */
-
-static char *
-MakeTypeString (types *fulltype)
-{
-    char *ret;
-
-    DBUG_ENTER ("MakeTypeString");
-
-    if (TYPES_DIM (fulltype) != 0) {
-        ret = (char *)Malloc (sizeof (char)
-                              * (strlen (type_string[TYPES_BASETYPE (fulltype)]) + 3));
-        strcpy (ret, type_string[TYPES_BASETYPE (fulltype)]);
-        strcat (ret, " *");
-    } else {
-        ret = type_string[TYPES_BASETYPE (fulltype)];
-    }
-
-    DBUG_RETURN (ret);
-}
-
-/*
- *
  *  functionname  : MergeIcmsAp
  *  arguments     : 1) icm for out-parameter which is already situated
  *                     in the table
@@ -1274,7 +1338,7 @@ MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc)
                 CREATE_3_ARY_ICM (new_assign, "ND_KS_MAKE_UNIQUE_ARRAY",
                                   MakeId1 (ID_NAME (ICMPARAM_ARG1 (in_icm))),
                                   MakeId1 (ID_NAME (ICMPARAM_ARG1 (out_icm))),
-                                  MakeNum (BasetypeSize (type)));
+                                  MakeNum (GetBasetypeSize (type)));
             } else {
                 DBUG_PRINT ("COMP", ("Merging ICM-args non-unique array with rc>1"
                                      " %s - %s",
@@ -1284,7 +1348,7 @@ MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc)
                 CREATE_3_ARY_ICM (new_assign, "ND_KS_COPY_ARRAY",
                                   MakeId1 (ID_NAME (ICMPARAM_ARG1 (in_icm))),
                                   MakeId1 (ID_NAME (ICMPARAM_ARG1 (out_icm))),
-                                  MakeNum (BasetypeSize (type)));
+                                  MakeNum (GetBasetypeSize (type)));
             }
         } else if (IsUnique (type)) {
             DBUG_PRINT ("COMP", ("Merging ICM-args unique hidden %s - %s",
@@ -2208,7 +2272,7 @@ COMPFundef (node *arg_node, node *arg_info)
     node *return_node, *return_icm, *icm_args;
     node *old_fundef, *vardec, *assigns, *assign;
     node **icm_tab;
-    types *rettypes, *fulltype;
+    types *rettypes;
     types **type_tab;
     statustype old_actualattrib;
     int cnt_param, tab_size, i;
@@ -2395,8 +2459,7 @@ COMPFundef (node *arg_node, node *arg_info)
         /*
          * second ICM arg: full type
          */
-        GET_BASIC_TYPE (fulltype, rettypes, 042);
-        icm_args = MakeExprs (MakeId1 (MakeTypeString (fulltype)), icm_args);
+        icm_args = MakeExprs (MakeId1 (MakeTypeString (rettypes)), icm_args);
 
         /*
          * first ICM arg: tag
@@ -2809,7 +2872,7 @@ COMPVardec (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPVardec");
 
-    GET_BASIC_TYPE (full_type, VARDEC_TYPE (arg_node), 0);
+    full_type = GetBasicType (VARDEC_TYPE (arg_node));
 
     if (TYPES_DIM (full_type) > SCALAR) {
         /*
@@ -2855,8 +2918,7 @@ COMPVardec (node *arg_node, node *arg_info)
         /*
          *  full_type is non-unique abstract data type (implicit type)
          */
-
-        id_type = MakeId1 (StringCopy ("void*"));
+        id_type = MakeId1 (MakeTypeString (VARDEC_TYPE (arg_node)));
         id_node = MakeId1 (VARDEC_NAME (arg_node));
 
         icm = MakeIcm2 ("ND_DECL_RC", id_type, id_node);
@@ -4279,6 +4341,9 @@ COMPId (node *arg_node, node *arg_info)
                                       MakeId1 (IDS_NAME (res)));
             last_ass = ret_ass;
 
+            icm_ass = MakeAssignIcm1 ("ND_ALLOC_RC", MakeId1 (IDS_NAME (res)));
+            last_ass = ASSIGN_NEXT (last_ass) = icm_ass;
+
             icm_ass = MakeAssignIcm2 ("ND_SET_RC", MakeId1 (IDS_NAME (res)),
                                       MakeNum (IDS_REFCNT (res)));
             ASSIGN_NEXT (last_ass) = icm_ass;
@@ -4290,12 +4355,14 @@ COMPId (node *arg_node, node *arg_info)
          * 'arg_node' is non-unique and 'res' is unique
          */
         if (IS_REFCOUNTED (ID, arg_node)) {
+            DBUG_ASSERT ((ID_REFCNT (arg_node) > 0), "Reference with (rc == 0) found!");
+
             if (ID_REFCNT (arg_node) == 1) {
                 if (IsArray (ID_TYPE (arg_node))) {
                     ret_ass
                       = MakeAssignIcm3 ("ND_KS_MAKE_UNIQUE_ARRAY", DupNode (arg_node),
                                         MakeId1 (IDS_NAME (res)),
-                                        MakeNum (BasetypeSize (ID_TYPE (arg_node))));
+                                        MakeNum (GetBasetypeSize (ID_TYPE (arg_node))));
                     last_ass = ret_ass;
 
                     icm_ass = MakeAssignIcm2 ("ND_SET_RC", MakeId1 (IDS_NAME (res)),
@@ -4312,7 +4379,7 @@ COMPId (node *arg_node, node *arg_info)
                     ret_ass
                       = MakeAssignIcm3 ("ND_KS_COPY_ARRAY", DupNode (arg_node),
                                         MakeId1 (IDS_NAME (res)),
-                                        MakeNum (BasetypeSize (ID_TYPE (arg_node))));
+                                        MakeNum (GetBasetypeSize (ID_TYPE (arg_node))));
                     last_ass = ret_ass;
 
                     icm_ass = MakeAssignIcm1 ("ND_ALLOC_RC", MakeId1 (IDS_NAME (res)));
@@ -5015,12 +5082,10 @@ COMPArg (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPArg");
 
-    GET_BASIC_TYPE (fulltype, ARG_TYPE (arg_node), 042);
-
     id_name = (NULL != ARG_NAME (arg_node)) ? ARG_NAME (arg_node) : "";
     /* store name of formal parameter */
 
-    type_id_node = MakeId1 (MakeTypeString (fulltype));
+    type_id_node = MakeId1 (MakeTypeString (ARG_TYPE (arg_node)));
 
     if ((IS_REFCOUNTED (ARG, arg_node))
         && (FUN_DOES_REFCOUNT (INFO_COMP_FUNDEF (arg_info),
@@ -5111,6 +5176,7 @@ COMPArg (node *arg_node, node *arg_info)
      * put "ND_KS_DECL_ARRAY_ARG" ICMs at beginning of function block
      */
 
+    fulltype = GetBasicType (ARG_TYPE (arg_node));
     if (TYPES_DIM (fulltype) > 0) {
         node *dim_node, *shape;
         int i;
@@ -5470,35 +5536,31 @@ COMPCond (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : COMPTypedef
- *  arguments     : 1) arg node
- *                  2) info node
- *  description   : If the type implementation is an array, an appropriate
- *                  ICM node is added as temporary attribute
- *  remarks       :
+ * Function:
+ *   node *COMPTypedef(node *arg_node, node *arg_info)
  *
- */
+ * Description:
+ *   If the type implementation is an array, an appropriate ICM node is added
+ *   as temporary attribute.
+ *
+ ******************************************************************************/
 
 node *
 COMPTypedef (node *arg_node, node *arg_info)
 {
-    node *type1, *type2;
-
     DBUG_ENTER ("COMPTypedef");
 
-    if (0 != TYPEDEF_DIM (arg_node)) {
-        /*
-         * Here, a new type is defined as a composite type
-         * (for the time being an array type!)
-         * Therefore, we have to translate the typedef-node
-         * into an ICM-node "ND_TYPEDEF_ARRAY" ....
-         */
-        type1 = MakeId1 (type_string[TYPEDEF_BASETYPE (arg_node)]);
-        type2 = MakeId1 (TYPEDEF_NAME (arg_node));
-
-        TYPEDEF_ICM (arg_node) = MakeIcm2 ("ND_TYPEDEF_ARRAY", type1, type2);
+    if (IsArray (TYPEDEF_TYPE (arg_node))) {
+        TYPEDEF_ICM (arg_node)
+          = MakeIcm2 ("ND_TYPEDEF_ARRAY",
+                      MakeId1 (StringCopy (type_string[TYPEDEF_BASETYPE (arg_node)])),
+                      MakeId1 (StringCopy (TYPEDEF_NAME (arg_node))));
+    } else if (IsHidden (TYPEDEF_TYPE (arg_node))) {
+        TYPEDEF_ICM (arg_node)
+          = MakeIcm1 ("ND_TYPEDEF_HIDDEN",
+                      MakeId1 (StringCopy (TYPEDEF_NAME (arg_node))));
     }
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
@@ -5515,7 +5577,6 @@ COMPTypedef (node *arg_node, node *arg_info)
  *                  2) arg_info unused
  *  description   : The N_objdef node is replaced if the object's type
  *                  is an array.
- *  remarks       :
  *
  */
 
@@ -5530,8 +5591,7 @@ COMPObjdef (node *arg_node, node *arg_info)
     DBUG_ENTER ("COMPObjdef");
 
     if (IsArray (OBJDEF_TYPE (arg_node))) {
-
-        GET_BASIC_TYPE (full_type, OBJDEF_TYPE (arg_node), 042);
+        full_type = GetBasicType (OBJDEF_TYPE (arg_node));
 
         type_id_node = MakeId1 (type_string[TYPES_BASETYPE (full_type)]);
         icm_arg = MakeExprs (type_id_node, NULL);
