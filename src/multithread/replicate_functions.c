@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/09/02 16:01:35  skt
+ * comments added
+ *
  * Revision 1.2  2004/09/01 16:02:27  skt
  * implementation finished
  *
@@ -45,7 +48,6 @@
  * INFO structure
  */
 struct INFO {
-    bool withinmulti;
     node *actassign;
     node *modul;
     mtexecmode_t execmode;
@@ -53,12 +55,10 @@ struct INFO {
 
 /*
  * INFO macros
- *    bool    REPFUN_WITHINMULTI
  *    node    REPFUN_ACTASSIGN
  *    node    REPFUN_MODUL
  *    node    REPFUN_EXECMODE
  */
-#define INFO_REPFUN_WITHINMULTI(n) (n->withinmulti)
 #define INFO_REPFUN_ACTASSIGN(n) (n->actassign)
 #define INFO_REPFUN_MODUL(n) (n->modul)
 #define INFO_REPFUN_EXECMODE(n) (n->execmode)
@@ -75,7 +75,6 @@ MakeInfo ()
 
     result = Malloc (sizeof (info));
 
-    INFO_REPFUN_WITHINMULTI (result) = FALSE;
     INFO_REPFUN_ACTASSIGN (result) = NULL;
     INFO_REPFUN_MODUL (result) = NULL;
     INFO_REPFUN_EXECMODE (result) = MUTH_ANY;
@@ -133,13 +132,29 @@ ReplicateFunctions (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *REPFUNfundef(node *arg_node, info *arg_info)
+ *
+ *   @brief after traversal into FUNDEF_BODY (if != NULL) it continues
+ *          traversal into FUNDEF_NEXT, but don't assign it to FUNDEF_NEXT,
+ *          because of the adding of new functions in meantime
+ *
+ *   @param arg_node a N_fundef
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
 node *
 REPFUNfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("REPFUNfundef");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef), "N_fundef expected");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        if (FUNDEF_EXECMODE (arg_node) != MUTH_ANY) {
+            FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        }
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -155,10 +170,26 @@ REPFUNfundef (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *REPFUNex(node *arg_node, info *arg_info)
+ *
+ *   @brief switches the INFO_REPFUN_EXECMODE into MUTH_EXCLUSIVE
+ *
+ *   @param arg_node a N_ex
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
 node *
 REPFUNex (node *arg_node, info *arg_info)
 {
+    mtexecmode_t old;
     DBUG_ENTER ("REPFUNex");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_ex), "N_ex expected");
+
+    /* push info */
+    old = INFO_REPFUN_EXECMODE (arg_info);
 
     INFO_REPFUN_EXECMODE (arg_info) = MUTH_EXCLUSIVE;
 
@@ -166,13 +197,32 @@ REPFUNex (node *arg_node, info *arg_info)
     EX_REGION (arg_node) = Trav (EX_REGION (arg_node), arg_info);
     DBUG_PRINT ("REPFUN", ("trav from ex-region"));
 
+    /* pop info */
+    INFO_REPFUN_EXECMODE (arg_info) = old;
+
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *REPFUNst(node *arg_node, info *arg_info)
+ *
+ *   @brief switches the INFO_REPFUN_EXECMODE into MUTH_SINGLE
+ *
+ *   @param arg_node a N_st
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
 node *
 REPFUNst (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("REPFUNmst");
+    mtexecmode_t old;
+    DBUG_ENTER ("REPFUNst");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_st), "N_st expected");
+
+    /* push info */
+    old = INFO_REPFUN_EXECMODE (arg_info);
 
     INFO_REPFUN_EXECMODE (arg_info) = MUTH_SINGLE;
 
@@ -180,19 +230,41 @@ REPFUNst (node *arg_node, info *arg_info)
     ST_REGION (arg_node) = Trav (ST_REGION (arg_node), arg_info);
     DBUG_PRINT ("REPFUN", ("trav from st-region"));
 
+    /* pop */
+    INFO_REPFUN_EXECMODE (arg_info) = old;
+
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *REPFUNmt(node *arg_node, info *arg_info)
+ *
+ *   @brief  switches the INFO_REPFUN_EXECMODE into MUTH_MULTI
+ *
+ *   @param arg_node a N_mt
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
 node *
 REPFUNmt (node *arg_node, info *arg_info)
 {
+    mtexecmode_t old;
     DBUG_ENTER ("REPFUNmt");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_mt), "N_mt expected");
+
+    /* push info */
+    old = INFO_REPFUN_EXECMODE (arg_info);
 
     INFO_REPFUN_EXECMODE (arg_info) = MUTH_MULTI;
 
     DBUG_PRINT ("REPFUN", ("trav into mt-region"));
     MT_REGION (arg_node) = Trav (MT_REGION (arg_node), arg_info);
     DBUG_PRINT ("REPFUN", ("trav from mt-region"));
+
+    /* pop info */
+    INFO_REPFUN_EXECMODE (arg_info) = old;
 
     DBUG_RETURN (arg_node);
 }
@@ -201,7 +273,8 @@ REPFUNmt (node *arg_node, info *arg_info)
  *
  * @fn node *REPFUNassign(node *arg_node, info *arg_info)
  *
- *   @brief
+ *   @brief stores the arg_node into INFO_REPFUN_ACTASSIGN and continues
+ *          traversal into the instruction
  *
  *   @param arg_node a N_assign
  *   @param arg_info
@@ -215,13 +288,16 @@ REPFUNassign (node *arg_node, info *arg_info)
     DBUG_ENTER ("REPFUNassign");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign), "arg_node is no a N_assign");
 
+    /* push info */
     old_actassign = INFO_REPFUN_ACTASSIGN (arg_info);
+
     INFO_REPFUN_ACTASSIGN (arg_info) = arg_node;
 
     DBUG_PRINT ("REPFUN", ("trav into instruction"));
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     DBUG_PRINT ("REPFUN", ("trav from instruction"));
 
+    /* pop info */
     INFO_REPFUN_ACTASSIGN (arg_info) = old_actassign;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -237,7 +313,9 @@ REPFUNassign (node *arg_node, info *arg_info)
  *
  * @fn node *REPFUNap(node *arg_node, info *arg_info)
  *
- *   @brief
+ *   @brief sets the AP_FUNDEF to its replication with the same executionmode
+ *          as the ex/st/mt-block the traversal is in. Replicates the N_fundefs
+ *          if it's neccessary
  *
  *   @param arg_node a N_ap
  *   @param arg_info
@@ -248,19 +326,22 @@ node *
 REPFUNap (node *arg_node, info *arg_info)
 {
     bool build_replications;
-    node *my_fundef;
+    node *my_fundef; /* shortcut to avoid AP_FUNDEF(arg_node) x-times */
     node *tmp_1, *tmp_2;
     DBUG_ENTER ("REPFUNap");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_ap), "arg_node is no a N_ap");
 
+    /* only function applications within MUTH_ANY assignments have to be handled
+     */
     if (ASSIGN_EXECMODE (INFO_REPFUN_ACTASSIGN (arg_info)) == MUTH_ANY) {
         ASSIGN_EXECMODE (INFO_REPFUN_ACTASSIGN (arg_info))
           = INFO_REPFUN_EXECMODE (arg_info);
         my_fundef = AP_FUNDEF (arg_node);
 
+        /* some initialization */
         build_replications = TRUE;
 
-        /* EX/ST/MT-companions available - do not replicate function */
+        /* EX/ST/MT-companions available => do not replicate function */
         if (FUNDEF_COMPANION (my_fundef) != NULL) {
             if (FUNDEF_EXECMODE (my_fundef) != MUTH_ANY) {
                 build_replications = FALSE;
@@ -311,12 +392,13 @@ REPFUNap (node *arg_node, info *arg_info)
                 }
 
                 /* search for the fundef with correct executionmode */
-                while (FUNDEF_EXECMODE (my_fundef) != INFO_REPFUN_EXECMODE (arg_info)) {
-                    my_fundef = FUNDEF_COMPANION (my_fundef);
+                if (INFO_REPFUN_EXECMODE (arg_info) != MUTH_ANY) {
+                    while (FUNDEF_EXECMODE (my_fundef)
+                           != INFO_REPFUN_EXECMODE (arg_info)) {
+                        my_fundef = FUNDEF_COMPANION (my_fundef);
+                    }
+                    AP_FUNDEF (arg_node) = my_fundef;
                 }
-
-                AP_FUNDEF (arg_node) = my_fundef;
-
             } else {
                 INFO_REPFUN_MODUL (arg_info)
                   = CheckAndDupSpecialFundef (INFO_REPFUN_MODUL (arg_info), my_fundef,
@@ -326,11 +408,12 @@ REPFUNap (node *arg_node, info *arg_info)
         /* => build_replications == FALSE) */
         else {
             /* search for the fundef with correct executionmode */
-            while (FUNDEF_EXECMODE (my_fundef) != INFO_REPFUN_EXECMODE (arg_info)) {
-                my_fundef = FUNDEF_COMPANION (my_fundef);
+            if (INFO_REPFUN_EXECMODE (arg_info) != MUTH_ANY) {
+                while (FUNDEF_EXECMODE (my_fundef) != INFO_REPFUN_EXECMODE (arg_info)) {
+                    my_fundef = FUNDEF_COMPANION (my_fundef);
+                }
+                AP_FUNDEF (arg_node) = my_fundef;
             }
-
-            AP_FUNDEF (arg_node) = my_fundef;
         }
 
         /* time to check the body of the function - perhaps we have to duplicate
