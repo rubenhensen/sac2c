@@ -1,0 +1,63 @@
+/*
+ *
+ * $Log$
+ * Revision 1.1  2004/11/22 17:44:33  cg
+ * Initial revision
+ *
+ *
+ */
+
+#ifndef OPTabbr
+#define OPTabbr(abbr)
+#endif
+
+#ifndef OPTdevl
+#define OPTdevl(devl)
+#endif
+
+#ifndef OPTprod
+#define OPTprod(prod)
+#endif
+
+#ifndef OPTname
+#define OPTname(name)
+#endif
+
+#ifndef OPTdelim
+#define OPTdelim
+#endif
+
+#define OPT(a, b, c, d) OPTabbr (a) OPTdevl (b) OPTprod (c) OPTname (d) OPTdelim
+
+OPT (dcr, TRUE, TRUE, "dead code removal")
+OPT (cf, TRUE, TRUE, "constant folding")
+OPT (lir, TRUE, TRUE, "loop invariant removal")
+OPT (inl, TRUE, TRUE, "function inlining")
+OPT (lur, TRUE, TRUE, "loop unrolling")
+OPT (wlur, TRUE, TRUE, "with-loop unrolling")
+OPT (lus, TRUE, TRUE, "loop unswitching")
+OPT (cse, TRUE, TRUE, "common subexpression elimination")
+OPT (dfr, TRUE, TRUE, "dead function removal")
+OPT (wlt, TRUE, TRUE, "with-loop transformation")
+OPT (wlf, TRUE, TRUE, "with-loop folding")
+OPT (ive, TRUE, TRUE, "index vector elimination")
+OPT (ae, TRUE, TRUE, "array elimination")
+OPT (dl, TRUE, TRUE, "distributive law")
+OPT (rco, TRUE, TRUE, "reference count optimization")
+OPT (uip, TRUE, TRUE, "update-in-place analysis")
+OPT (tsi, FALSE, FALSE, "with-loop tile size inference")
+OPT (tsp, TRUE, TRUE, "with-loop tile size pragmas")
+OPT (wlpg, TRUE, TRUE, "with-loop partition generation")
+OPT (cvp, TRUE, TRUE, "constant and variable propagation")
+OPT (srf, FALSE, FALSE, "static reuse / static free")
+OPT (phm, TRUE, TRUE, "private heap management")
+OPT (aps, TRUE, TRUE, "arena preselection (for PHM)")
+OPT (dao, TRUE, TRUE, "descriptor allocation opt. (for PHM)")
+OPT (msca, TRUE, TRUE, "memory size cache adjustment (for PHM)")
+OPT (ap, TRUE, TRUE, "array padding")
+OPT (apl, FALSE, FALSE, "array placement")
+OPT (wls, TRUE, TRUE, "with-loop scalarization")
+OPT (al, TRUE, TRUE, "associative law")
+OPT (sp, FALSE, FALSE, "selection propagation")
+OPT (wlfs, TRUE, TRUE, "with-loop fusion")
+OPT (lro, FALSE, FALSE, "loop reuse optimization")
