@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.33  1995/05/22 10:10:46  hw
+ * Revision 1.34  1995/05/22 16:51:27  hw
+ * - deleted some Check_reuse N_icms
+ * - changed args of FUN_DEC N_icm
+ *
+ * Revision 1.33  1995/05/22  10:10:46  hw
  * - added function "CompCast" to delete N_cast nodes
  *  - remove N_cast nodes while compilation in functions ( CompReturn,
  *    CompPrf, CompAp )
@@ -1049,11 +1053,14 @@ CompPrf (node *arg_node, node *arg_info)
             MAKENODE_NUM (res_ref, arg_info->IDS_REFCNT);
 
             if (N_id == arg2->nodetype) {
+                node *num;
+
                 GET_DIM (dim, arg2->IDS_NODE->TYPES);
                 MAKENODE_NUM (dim_node, dim); /* store dimension of argument-array */
-                last_assign = NEXT_ASSIGN (arg_info);
-                CHECK_REUSE__ALLOC_ARRAY_ND (arg2, res_ref);
-
+                MAKENODE_NUM (num, 0);
+                BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
+                MAKE_NEXT_ICM_ARG (icm_arg, num);
+                SET_VARS_FOR_MORE_ICMS;
             } else {
                 DBUG_ASSERT ((N_array == arg2->nodetype), "wrong nodetype");
 
@@ -1204,13 +1211,18 @@ CompPrf (node *arg_node, node *arg_info)
                 }
 
             } else {
+                node *num;
+
                 DBUG_ASSERT ((N_id == arg2->nodetype), "arg2 != N_id");
                 GET_DIM (dim, arg2->IDS_NODE->TYPES);
                 MAKENODE_NUM (dim_node, dim);
                 /* store refcount of res as N_num */
                 MAKENODE_NUM (res_ref, arg_info->IDS_REFCNT);
 
-                CHECK_REUSE__ALLOC_ARRAY_ND (arg2, res_ref);
+                MAKENODE_NUM (num, 0);
+                BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
+                MAKE_NEXT_ICM_ARG (icm_arg, num);
+                SET_VARS_FOR_MORE_ICMS;
 
                 if (N_id == arg1->nodetype) {
                     CREATE_5_ARY_ICM (next_assign, "ND_KD_PSI_VxA_A", dim_node, arg2, res,
@@ -2106,20 +2118,29 @@ node *
 CompArg (node *arg_node, node *arg_info)
 {
     node *icm_arg, *id_node, *tmp, *type_id_node, *refcnt_node, *new_assign, *next_arg,
-      *exprs;
+      *exprs, *type_node;
     simpletype s_type;
+    int dim = 0;
 
     DBUG_ENTER ("CompArg");
 
     next_arg = arg_node->node[0];
-    GET_BASIC_TYPE (s_type, arg_node->TYPES);
-    MAKENODE_ID (id_node, arg_node->ID); /* store name of formal parrameter */
+    if (T_user != arg_node->SIMPLETYPE) {
+        s_type = arg_node->SIMPLETYPE;
+        dim = arg_node->DIM;
+    } else {
+        type_node = LookupType (arg_node->NAME, arg_node->NAME_MOD, 042);
+        /* 042 is only a dummy argument */
+        /* store basic_type */
+        s_type = type_node->SIMPLETYPE;
+        dim = type_node->DIM + arg_node->DIM;
+    }
+    MAKENODE_ID (type_id_node, type_string[s_type]); /* store type of paramter */
+    MAKENODE_ID (id_node, arg_node->ID);             /* store name of formal parrameter */
     arg_node->nodetype = N_exprs;
     exprs = arg_node;
-    MAKENODE_ID (type_id_node, type_string[s_type]); /* store type of paramter */
     if (1 == IsArray (arg_node->TYPES)) {
         MAKENODE_ID (exprs->node[0], "in_a");
-
         /* put ND_ICM_RC at beginning of function block */
         if (1 < arg_node->refcnt) {
             MAKENODE_NUM (refcnt_node, arg_node->refcnt - 1);
@@ -2137,14 +2158,25 @@ CompArg (node *arg_node, node *arg_info)
     } else {
         MAKENODE_ID (exprs->node[0], "in");
     }
-    exprs->node[1] = MakeNode (N_exprs);
-    exprs->nnode = 2;
-    exprs = exprs->node[1];
-    exprs->node[0] = type_id_node;
-    exprs->node[1] = MakeNode (N_exprs);
-    exprs->nnode = 2;
-    exprs = exprs->node[1];
-    exprs->node[0] = id_node;
+    MAKE_NEXT_ICM_ARG (exprs, type_id_node);
+
+    if (dim > 0) {
+        node *dim_node, *shape;
+        int i;
+        /* store dim and shape */
+        MAKENODE_NUM (dim_node, dim);
+        MAKE_NEXT_ICM_ARG (exprs, dim_node);
+        for (i = 0; i < arg_node->DIM; i++) {
+            MAKENODE_NUM (shape, arg_node->SHP[i]);
+            MAKE_NEXT_ICM_ARG (exprs, shape);
+        }
+        if (T_user == arg_node->SIMPLETYPE)
+            for (i = 0; i < type_node->DIM; i++) {
+                MAKENODE_NUM (shape, type_node->SHP[i]);
+                MAKE_NEXT_ICM_ARG (exprs, shape);
+            }
+    }
+    MAKE_NEXT_ICM_ARG (exprs, id_node);
     if (NULL != next_arg) {
         exprs->node[1] = Trav (next_arg, arg_info);
         exprs->nnode = 2;
