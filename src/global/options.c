@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.48  2000/08/02 14:22:46  mab
+ * added flag "-apdiag"
+ *
  * Revision 2.47  2000/08/02 11:14:25  nmw
  * WARNING for MT with genlib c added
  *
@@ -436,6 +439,8 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('o', intrinsics |= INTRINSIC_TO);
         ARG_FLAGMASK_END ();
     });
+
+    ARGS_FLAG ("apdiag", apdiag = TRUE);
 
     ARGS_OPTION ("I", AppendPath (MODDEC_PATH, AbsolutePathname (ARG)));
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.33  2000/08/02 14:22:23  mab
+ * added flag "-apdiag"
+ *
  * Revision 2.32  2000/07/24 14:49:58  nmw
  * added global var object_counter
  *
@@ -137,6 +140,7 @@
 #include "types.h"
 #include "globals.h"
 #include "Error.h"
+#include "internal_lib.h"
 
 /*
  *  Version control
@@ -429,6 +433,11 @@ unsigned int generatelibrary = GENERATELIBRARY_NOTHING;
 /* Specify interfaces to generate from SAC modules
    init: nothing, but changed to default standard SAC library
    if commandline switch is not used */
+
+bool apdiag = FALSE;
+/* Diagnostics of array padding may be written into a file.
+   Per default no information is written. Use -apdiag to enable
+   output to "modulename.ap". */
 
 /*
  *  Definitions of some global variables necessary for the

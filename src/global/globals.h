@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.34  2000/08/02 14:22:23  mab
+ * added flag "-apdiag"
+ *
  * Revision 2.33  2000/07/24 14:50:19  nmw
  * added declaration of object_counter
  *
@@ -244,6 +247,8 @@ extern unsigned int generatelibrary;
 #define GENERATELIBRARY_NOTHING 0x0000 /* generate no library - dummy value for init */
 #define GENERATELIBRARY_SAC 0x0001     /* generate SAC library from module */
 #define GENERATELIBRARY_C 0x0002       /* generate C library and headerfile from module */
+
+extern bool apdiag;
 
 extern int PFfuncntr;
 extern char *PFfunnme[PF_MAXFUN];
