@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1998/05/15 23:02:31  dkr
+ * fixed some minor bugs
+ *
  * Revision 1.13  1998/05/15 16:05:06  dkr
  * fixed a bug in ComputeOneCube, ...
  *
@@ -15,7 +18,7 @@
  * added ComputeIndexMinMax()
  *
  * Revision 1.9  1998/05/12 15:00:48  dkr
- * renamed ???_RC_IDS to ???_DEC_RC_IDS
+ * renamed ..._RC_IDS to ..._DEC_RC_IDS
  *
  * Revision 1.8  1998/05/08 15:45:29  dkr
  * fixed a bug in cube-generation:
@@ -79,7 +82,7 @@
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (node)) == N_num),                       \
                          "wrong node type found");                                       \
             comp = MakeNum (NUM_VAL (EXPRS_EXPR (node)));                                \
-            node = EXPRS_EXPR (node);                                                    \
+            node = EXPRS_NEXT (node);                                                    \
             break;                                                                       \
         default:                                                                         \
             DBUG_ASSERT ((0), "wrong node type found");                                  \
@@ -107,7 +110,7 @@
 /******************************************************************************
  *
  * function:
- *   void ComputeIndexMinMax( int *idx_min, int *idx_max,
+ *   void ComputeIndexMinMax( int **idx_min, int **idx_max,
  *                            int dims, node *strides)
  *
  * description:
@@ -116,25 +119,50 @@
  ******************************************************************************/
 
 void
-ComputeIndexMinMax (int *idx_min, int *idx_max, int dims, node *strides)
+ComputeIndexMinMax (int **idx_min, int **idx_max, int dims, node *strides)
 {
     int d;
 
     DBUG_ENTER (" ComputeIndexMinMax");
 
+    *idx_min = (int *)MALLOC (dims * sizeof (int));
+    *idx_max = (int *)MALLOC (dims * sizeof (int));
+
     for (d = 0; d < dims; d++) {
 
-        DBUG_ASSERT (((strides != NULL) && (NODE_TYPE (strides) == N_WLstride)),
+        DBUG_ASSERT (((strides != NULL)
+                      && ((NODE_TYPE (strides) == N_WLstride)
+                          || (NODE_TYPE (strides) == N_WLstriVar))),
                      "no stride found");
 
-        idx_min[d] = WLSTRIDE_BOUND1 (strides);
+        if (NODE_TYPE (strides) == N_WLstride) {
 
-        while (WLSTRIDE_NEXT (strides) != NULL) {
-            strides = WLSTRIDE_NEXT (strides);
+            (*idx_min)[d] = WLSTRIDE_BOUND1 (strides);
+
+            while (WLSTRIDE_NEXT (strides) != NULL) {
+                strides = WLSTRIDE_NEXT (strides);
+            }
+            (*idx_max)[d] = WLSTRIDE_BOUND2 (strides);
+
+            strides = WLGRID_NEXTDIM (WLSTRIDE_CONTENTS (strides));
+
+        } else {
+
+            DBUG_ASSERT ((NODE_TYPE (WLSTRIVAR_BOUND1 (strides)) == N_num),
+                         "variable bound found");
+            (*idx_min)[d] = NUM_VAL (WLSTRIVAR_BOUND1 (strides));
+
+            while (WLSTRIVAR_NEXT (strides) != NULL) {
+                strides = WLSTRIVAR_NEXT (strides);
+            }
+            DBUG_ASSERT ((NODE_TYPE (WLSTRIVAR_BOUND2 (strides)) == N_num),
+                         "variable bound found");
+            (*idx_max)[d] = NUM_VAL (WLSTRIVAR_BOUND2 (strides));
+
+            strides = (NODE_TYPE (WLSTRIVAR_CONTENTS (strides)) == N_WLgridVar)
+                        ? WLGRIDVAR_NEXTDIM (WLSTRIVAR_CONTENTS (strides))
+                        : WLGRID_NEXTDIM (WLSTRIVAR_CONTENTS (strides));
         }
-        idx_max[d] = WLSTRIDE_BOUND2 (strides);
-
-        strides = WLGRID_NEXTDIM (WLSTRIDE_CONTENTS (strides));
     }
 
     DBUG_VOID_RETURN;
@@ -2385,6 +2413,13 @@ GenerateCompleteDomain (node *stride_var, node *cexpr_template, int dims, shpseg
             }
 
             /*
+             * next dim
+             */
+            WLGRID_NEXTDIM (grid_var)
+              = GenerateCompleteDomain (WLGRID_NEXTDIM (grid_var), cexpr_template, dims,
+                                        shape);
+
+            /*
              * append lower part of complement
              */
             if (WLSTRIDE_BOUND2 (stride_var)
@@ -2425,10 +2460,6 @@ GenerateCompleteDomain (node *stride_var, node *cexpr_template, int dims, shpseg
                                            stride_var);
             }
 
-            WLGRID_NEXTDIM (grid_var)
-              = GenerateCompleteDomain (WLGRID_NEXTDIM (grid_var), cexpr_template, dims,
-                                        shape);
-
         } else {
 
             grid_var = WLSTRIVAR_CONTENTS (stride_var);
@@ -2444,13 +2475,22 @@ GenerateCompleteDomain (node *stride_var, node *cexpr_template, int dims, shpseg
                 WLGRIDVAR_NEXT (grid_var)
                   = MakeWLgridVar (WLGRIDVAR_DIM (grid_var),
                                    DupNode (WLGRIDVAR_BOUND2 (grid_var)),
-                                   DupNode (WLSTRIVAR_STEP (stride_var)), NULL, NULL,
-                                   NULL);
+                                   DupNode (WLSTRIVAR_STEP (stride_var)),
+                                   GenerateShapeStrides (WLGRIDVAR_DIM (grid_var) + 1,
+                                                         cexpr_template, dims, shape),
+                                   NULL, NULL);
 
                 if (WLGRIDVAR_DIM (grid_var) == dims - 1) {
                     WLGRIDVAR_CEXPR_TEMPLATE (WLGRIDVAR_NEXT (grid_var)) = cexpr_template;
                 }
             }
+
+            /*
+             * next dim
+             */
+            WLGRIDVAR_NEXTDIM (grid_var)
+              = GenerateCompleteDomain (WLGRIDVAR_NEXTDIM (grid_var), cexpr_template,
+                                        dims, shape);
 
             /*
              * append lower part of complement
@@ -2465,7 +2505,7 @@ GenerateCompleteDomain (node *stride_var, node *cexpr_template, int dims, shpseg
                                        NULL, NULL);
 
                 if (WLGRIDVAR_DIM (grid_var) == dims - 1) {
-                    WLGRIDVAR_CEXPR_TEMPLATE (new_grid) = cexpr_template;
+                    WLGRID_CEXPR_TEMPLATE (new_grid) = cexpr_template;
                 }
 
                 WLSTRIVAR_NEXT (stride_var)
@@ -2488,17 +2528,13 @@ GenerateCompleteDomain (node *stride_var, node *cexpr_template, int dims, shpseg
                                        NULL, NULL);
 
                 if (WLGRIDVAR_DIM (grid_var) == dims - 1) {
-                    WLGRIDVAR_CEXPR_TEMPLATE (new_grid) = cexpr_template;
+                    WLGRID_CEXPR_TEMPLATE (new_grid) = cexpr_template;
                 }
 
                 stride_var = MakeWLstriVar (WLSTRIVAR_DIM (stride_var), MakeNum (0),
                                             DupNode (WLSTRIVAR_BOUND1 (stride_var)),
                                             MakeNum (1), new_grid, stride_var);
             }
-
-            WLGRIDVAR_NEXTDIM (grid_var)
-              = GenerateCompleteDomain (WLGRIDVAR_NEXTDIM (grid_var), cexpr_template,
-                                        dims, shape);
         }
     }
 
@@ -2903,15 +2939,26 @@ WLTRANwith (node *arg_node, node *arg_info)
             cubes = ComputeCubes (strides);
         }
 
+        /*
+         * we compute the infimum and supremum of the index-vector.
+         *
+         * CAUTION: if we have a fold with-loop and non-constant parameters,
+         *          we can not compute inf and sup!
+         */
+        if ((NWITH2_TYPE (new_node) == WO_genarray)
+            || (NWITH2_TYPE (new_node) == WO_modarray)
+            || (NODE_TYPE (cubes) == N_WLstride)) {
+            ComputeIndexMinMax (&(NWITH2_IDX_MIN (new_node)),
+                                &(NWITH2_IDX_MAX (new_node)), NWITH2_DIMS (new_node),
+                                cubes);
+        }
+
         if (NODE_TYPE (cubes) == N_WLstride) {
 
             /*
              * all parameters are constant.
              *  -> full-featured wltransformation
              */
-
-            ComputeIndexMinMax (NWITH2_IDX_MIN (new_node), NWITH2_IDX_MAX (new_node),
-                                NWITH2_DIMS (new_node), cubes);
 
             if (WL_break_after >= WL_PH_segs) {
                 DBUG_EXECUTE ("WLprec", NOTE (("step 2: choice of segments\n")));
