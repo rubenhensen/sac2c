@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2000/07/28 14:46:32  nmw
+ * handling of void functions added
+ *
  * Revision 1.7  2000/07/14 15:56:51  nmw
  * global object handling enabled
  *
@@ -90,7 +93,8 @@ MCWfundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("MCWfundef");
 
-    if (FUNDEF_STATUS (arg_node) == ST_regular) {
+    if ((FUNDEF_STATUS (arg_node) == ST_regular)
+        && (FUNDEF_ATTRIB (arg_node) == ST_regular)) {
         /* export only functions defined in this module */
         DBUG_ASSERT ((FUNDEF_BODY (arg_node) != NULL),
                      ("MapFunctionToWrapper: Found fundef ST_regular with empty body!"));
@@ -138,7 +142,7 @@ MCWarg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("MCWarg");
 
-    if (ARG_ATTRIB (arg_node) == ST_regular) {
+    if (ARG_STATUS (arg_node) == ST_regular) {
         INFO_MCW_CNT_STANDARD (arg_info)++;
     }
 
