@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.11  2003/04/01 09:43:45  sbs
+# knows now how to build $(PROJECT_ROOT)/Makefile.Config 8-)
+#
 # Revision 3.10  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -106,6 +109,8 @@ clean:
 	$(RM) -r .sb SunWS_cache
 	$(RM) CacheSimTest CacheSimAnalyser
 
+$(PROJECT_ROOT)/Makefile.Config: $(PROJECT_ROOT)/Makefile.Config.in
+	(cd $(PROJECT_ROOT); ./configure)
 
 #######################################################################################
 #
