@@ -18,6 +18,8 @@ UndoSSATransform.h
 access_macros.h
 adjust_ids.c
 adjust_ids.h
+change_signature.c
+change_signature.h
 cleanup_decls.c
 cleanup_decls.h
 free.c
