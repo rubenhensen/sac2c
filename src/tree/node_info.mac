@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.153  2004/06/25 09:37:07  skt
+ * added TEMlet, removed TEMexprs
+ *
  * Revision 3.152  2004/06/23 15:46:12  skt
  * TEMreturn, TEMap & TEMarray added
  *
@@ -1821,7 +1824,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, NT2OTlet, TravSons, TravSons, DLlet, TravSons, ESDlet, UESDlet, SPlet,
        TravSons, CVPlet, TravSons,
 
-       ASMRAlet, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       ASMRAlet, TEMlet, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
@@ -1933,7 +1936,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, CVPexprs, TravSons,
 
-       TravSons, TEMexprs, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
