@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.47  2004/11/24 14:57:14  mwe
+  ToNewTypes added
+
   Revision 1.46  2004/11/24 14:33:23  sah
   added TR_hd
 
@@ -235,6 +238,23 @@
       <traversal id="SET" name="Serialize Node Traversal" default="user" include="serialize_node.h" />
       <traversal id="SEL" name="Serialize Link Traversal" default="user" include="serialize_link.h" />
       <traversal id="DS" name="DeSerialize Traversal" default="sons" include="serialize_link.h" />
+      <traversal id="TNT" name="ToNewTypes Traversal" default="sons" include="ToNewTypes.h" >
+	<user>
+	  <node name="Arg" />
+	  <node name="Vardec" />
+	  <node name="Objdef" />
+	  <node name="Id" />
+	  <node name="Ids" />
+	  <node name="Let" />
+	  <node name="Fundef" />
+	  <node name="Block" />
+	  <node name="Withid" />
+	  <node name="Ap" />
+	  <node name="Cast" />
+	  <node name="Typedef" />
+	  <node name="Array" />
+	</user>
+      </traversal>
     </general>
     <phase id="scanparse" name="Parsing input file">
       <traversal id="HD" name="Handle Dots" default="sons" include="handledots.h">
