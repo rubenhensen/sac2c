@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2001/02/14 17:51:49  dkr
+ * redundant VARDEC_TYPEDEF removed
+ *
  * Revision 3.27  2001/02/14 16:31:55  nmw
  * INFO_SSA macros added
  *
@@ -1073,7 +1076,6 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***
  ***  temporary attributes:
  ***
- ***    node*       TYPEDEF  (O)  (N_typedef)  (typecheck -> fun_analysis -> )
  ***    node*       OBJDEF   (O)  (N_objdef)   (inlining -> precompile !!)
  ***    node*       ACTCHN   (O)  (N_vinfo)    (psi-optimize -> )
  ***    node*       COLCHN   (O)  (N_vinfo)    (psi-optimize -> )
@@ -1096,9 +1098,6 @@ extern node *MakeBlock (node *instr, node *vardec);
  * ATTRIB : ST_regular : normal variable
  *          ST_unique  : unique variable
  *
- * TYPEDEF is a reference to the respective typedef node if the type of
- * the declared variable is user-defined.
- *
  * ATTENTION:
  *   N_vardec and Narg node have to have the same structure. See remark
  *   at N_id node.
@@ -1116,7 +1115,6 @@ extern node *MakeVardec (char *name, types *type, node *next);
 #define VARDEC_FLAG(n) (n->flag)
 #define VARDEC_PADDED(n) ((bool)(n->flag))
 #define VARDEC_NEXT(n) (n->node[0])
-#define VARDEC_TYPEDEF(n) (n->node[1])
 #define VARDEC_ACTCHN(n) (n->node[2])
 #define VARDEC_COLCHN(n) (n->node[3])
 #define VARDEC_OBJDEF(n) (n->node[4])
