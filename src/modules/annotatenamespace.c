@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/12/06 09:58:11  sah
+ * fixed handling of args
+ *
  * Revision 1.16  2004/12/05 21:05:20  sah
  * added namespace detection for ids aka global objects
  *
@@ -326,7 +329,13 @@ ANSfundef (node *arg_node, info *arg_info)
 
     INFO_ANS_IDS (arg_info) = NULL;
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    }
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
 
     INFO_ANS_IDS (arg_info) = STRSfree (INFO_ANS_IDS (arg_info));
 
@@ -398,6 +407,9 @@ node *
 ANSarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSarg");
+
+    INFO_ANS_IDS (arg_info)
+      = STRSadd (ARG_NAME (arg_node), STRS_unknown, INFO_ANS_IDS (arg_info));
 
     if (ARG_TYPE (arg_node) != NULL) {
         ARG_TYPE (arg_node) = ANStypes (ARG_TYPE (arg_node), arg_info);
