@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/12/21 13:27:48  asi
+ * Revision 1.11  1996/01/17 14:39:34  asi
+ * bug fixed: INFO_DEF and INFO_USE masks now updated correctly
+ *
+ * Revision 1.10  1995/12/21  13:27:48  asi
  * New algorithm implemented
  *
  * Revision 1.9  1995/07/24  11:49:46  asi
@@ -73,7 +76,6 @@ typedef enum { active, redundant } assignstatus;
  *  remarks       :
  *
  *
- A
  */
 node *
 DeadCodeRemoval (node *arg_node, node *info_node)
@@ -221,7 +223,7 @@ DCRvardec (node *arg_node, node *arg_info)
  *  external funs : OPTTrav (optimize.h) - will call Trav and updates DEF- and USE-masks
  *                  FreeNode (free.h)     - removes the given node and returns a pointer
  *                                          to the next note in a list of node structures
- *  macros        : ASSIGN_NEXT, ASSIGN_STATUS, NODE_LINE
+ *  macros        : ASSIGN_NEXT, ASSIGN_STATUS, NODE_LINE, ASSIGN_INSTR
  *
  *  remarks       : --
  *
@@ -257,6 +259,8 @@ DCRassign (node *arg_node, node *arg_info)
                 break;
             }
         }
+        MinusMask (INFO_DEF, ASSIGN_DEFMASK (arg_node), INFO_VARNO);
+        MinusMask (INFO_USE, ASSIGN_USEMASK (arg_node), INFO_VARNO);
         arg_node = FreeNode (arg_node);
         dead_expr++;
     } else {
@@ -299,12 +303,22 @@ ACTassign (node *arg_node, node *arg_info)
         if (N_return == ASSIGN_INSTRTYPE (arg_node))
             ASSIGN_STATUS (arg_node) = active;
         else {
-            for (i = 0; i < VARNO; i++) {
-                if (0 != ASSIGN_DEFMASK (arg_node)[i] && INFO_ACT[i]) {
-                    ASSIGN_STATUS (arg_node) = active;
-                    INFO_NEWACT = TRUE;
-                    DBUG_PRINT ("DCR", ("Assignment marked active in line %d",
-                                        NODE_LINE (arg_node)));
+            int egal = FALSE;
+
+            if ((N_let == ASSIGN_INSTRTYPE (arg_node))
+                && (N_id == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node)))))
+                if (LET_VARNO (ASSIGN_INSTR (arg_node))
+                    == ID_VARNO (LET_EXPR ((ASSIGN_INSTR (arg_node)))))
+                    egal = TRUE;
+
+            if (!egal) {
+                for (i = 0; i < VARNO; i++) {
+                    if (0 != ASSIGN_DEFMASK (arg_node)[i] && INFO_ACT[i]) {
+                        ASSIGN_STATUS (arg_node) = active;
+                        INFO_NEWACT = TRUE;
+                        DBUG_PRINT ("DCR", ("Assignment marked active in line %d",
+                                            NODE_LINE (arg_node)));
+                    }
                 }
             }
         }
@@ -363,10 +377,14 @@ ACTcond (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("ACTcond");
     old_INFO_ACT = DupMask (INFO_ACT, INFO_VARNO);
+    DBUG_PRINT ("DCR", ("Travers cond-then-body BEGIN"));
     COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+    DBUG_PRINT ("DCR", ("Travers cond-then-body END"));
     then_ACT = INFO_ACT;
     INFO_ACT = DupMask (old_INFO_ACT, INFO_VARNO);
+    DBUG_PRINT ("DCR", ("Travers cond-else-body BEGIN"));
     COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+    DBUG_PRINT ("DCR", ("Travers cond-else-body END"));
     else_ACT = INFO_ACT;
     INFO_ACT = old_INFO_ACT;
 
@@ -441,7 +459,7 @@ ACTdo (node *arg_node, node *arg_info)
     do {
         INFO_NEWACT = FALSE;
 
-        DBUG_PRINT ("DCR", ("Travers do-body"));
+        DBUG_PRINT ("DCR", ("Travers do-body BEGIN"));
         DO_INSTR (arg_node) = Trav (DO_INSTR (arg_node), arg_info);
         DBUG_PRINT ("DCR", ("Travers do-body END"));
 
@@ -516,7 +534,7 @@ ACTwhile (node *arg_node, node *arg_info)
     do {
         INFO_NEWACT = FALSE;
 
-        DBUG_PRINT ("DCR", ("Travers while-body"));
+        DBUG_PRINT ("DCR", ("Travers while-body BEGIN"));
         WHILE_INSTR (arg_node) = Trav (WHILE_INSTR (arg_node), arg_info);
         DBUG_PRINT ("DCR", ("Travers while-body END"));
 
@@ -582,6 +600,7 @@ ACTwith (node *arg_node, node *arg_info)
     old_INFOACT = INFO_ACT;
     INFO_ACT = GenMask (INFO_VARNO);
 
+    DBUG_PRINT ("DCR", ("Travers with-body BEGIN"));
     switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
     case N_genarray:
         BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node)))
@@ -603,6 +622,7 @@ ACTwith (node *arg_node, node *arg_info)
         DBUG_ASSERT ((FALSE), "Operator not implemented for with_node");
         break;
     }
+    DBUG_PRINT ("DCR", ("Travers with-body END"));
 
     for (i = 0; i < INFO_VARNO; i++) {
         INFO_ACT[i] = INFO_ACT[i] || (old_INFOACT[i] && !(WITH_GENDEFMASK (arg_node)[i]))
