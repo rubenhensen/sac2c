@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/11/16 11:55:31  sbs
+ * translated UUUPS into proper English 8-)
+ *
  * Revision 2.3  1999/10/22 11:09:13  dkr
  * CompilerErrorBreak() finished by an explizit exit() now
  *
@@ -46,7 +49,7 @@ CompilerErrorBreak (int sig)
     FILE *error_file;
 
     /* should we use SYSERROR from Error.h here?? */
-    fprintf (stderr, "\n\nUUUPS your program crashed the compiler 8-((\n");
+    fprintf (stderr, "\n\nOOOPS your program crashed the compiler 8-((\n");
     fprintf (stderr, "Please send a bug report to sacbase@informatik.uni-kiel.de.\n\n");
     fprintf (stderr,
              "For your convenience, the compiler pre-fabricated a bug report in\n"
