@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/01/17 16:25:58  cg
+ * Exchanged sequence of #include "sac_heapmgr.h" and nclude "sac_mt.h"
+ *
  * Revision 2.5  1999/07/08 12:36:33  cg
  * Include of sac_malloc.h replaced by include of mew file sac_heapmgr.h
  *
@@ -54,7 +57,6 @@
 #define SAC_H
 
 #include "sac_boundcheck.h"
-#include "sac_heapmgr.h"
 #include "sac_misc.h"
 #include "sac_message.h"
 #include "sac_bool.h"
@@ -69,6 +71,7 @@
 #include "sac_idx.h"
 #include "sac_prf.h"
 #include "sac_mt.h"
+#include "sac_heapmgr.h"
 #include "sac_wl.h"
 #include "sac_trace.h"
 #include "sac_profile.h"
