@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.122  2004/11/26 10:58:25  mwe
+ * changes according to changes in ast.xml
+ *
  * Revision 3.121  2004/11/25 11:17:17  mwe
  * copy FUNDEF_WRAPPERTYPE
  *
@@ -1062,17 +1065,15 @@ DUPobjdef (node *arg_node, info *arg_info)
     DBUG_ENTER ("DUPobjdef");
 
     new_node
-      = TBmakeObjdef (ILIBstringCopy (OBJDEF_MOD (arg_node)),
-                      DUPTRAV (OBJDEF_AVIS (arg_node)), DUPTRAV (OBJDEF_EXPR (arg_node)),
-                      DUPCONT (OBJDEF_NEXT (arg_node)));
+      = TBmakeObjdef (TYcopyType (OBJDEF_TYPE (arg_node)),
+                      ILIBstringCopy (OBJDEF_MOD (arg_node)),
+                      ILIBstringCopy (OBJDEF_NAME (arg_node)),
+                      DUPTRAV (OBJDEF_EXPR (arg_node)), DUPCONT (OBJDEF_NEXT (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 
     INFO_DUP_LUT (arg_info)
       = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), arg_node, new_node);
-
-    /* correct backreference */
-    AVIS_DECL (OBJDEF_AVIS (new_node)) = new_node;
 
     DBUG_RETURN (new_node);
 }
@@ -2230,8 +2231,6 @@ DUPcode (node *arg_node, info *arg_info)
 
     new_node = TBmakeCode (new_block, new_cexprs);
 
-    CODE_EPILOGUE (new_node) = DUPTRAV (CODE_EPILOGUE (arg_node));
-
     INFO_DUP_LUT (arg_info)
       = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), arg_node, new_node);
 
@@ -2447,14 +2446,14 @@ DUPwlstride (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPwlstride");
 
-    new_node = TBmakeWlstride (WLSTRIDE_LEVEL (arg_node), WLSTRIDE_DIM (arg_node),
-                               WLSTRIDE_BOUND1 (arg_node), WLSTRIDE_BOUND2 (arg_node),
-                               WLSTRIDE_STEP (arg_node), WLSTRIDE_UNROLLING (arg_node),
-                               DUPTRAV (WLSTRIDE_CONTENTS (arg_node)),
-                               DUPCONT (WLSTRIDE_NEXT (arg_node)));
+    new_node
+      = TBmakeWlstride (WLSTRIDE_LEVEL (arg_node), WLSTRIDE_DIM (arg_node),
+                        WLSTRIDE_BOUND1 (arg_node), WLSTRIDE_BOUND2 (arg_node),
+                        WLSTRIDE_STEP (arg_node), DUPTRAV (WLSTRIDE_CONTENTS (arg_node)),
+                        DUPCONT (WLSTRIDE_NEXT (arg_node)));
 
     WLSTRIDE_PART (new_node) = WLSTRIDE_PART (arg_node);
-
+    WLSTRIDE_DOUNROLL (new_node) = WLSTRIDE_DOUNROLL (arg_node);
     /*
      * duplicated strides are not modified yet ;)
      */
