@@ -1,31 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.7  2004/11/21 11:22:03  sah
- * removed some old ast infos
+ * Revision 1.8  2004/11/25 21:59:21  sah
+ * COMPILES:
  *
- * Revision 1.6  2004/11/17 19:47:04  sah
- * added visibility support
- *
- * Revision 1.5  2004/10/25 11:58:47  sah
- * major code cleanup
- *
- * Revision 1.4  2004/10/22 13:23:14  sah
- * added some functions
- * this entire things needs a
- * rewrite (memo to myself ;)
- *
- * Revision 1.3  2004/10/21 17:20:13  sah
- * Added SymbolTableRemove
- *
- * Revision 1.2  2004/09/23 21:14:23  sah
- * ongoing implementation
  *
  * Revision 1.1  2004/09/22 11:37:27  sah
  * Initial revision
- *
- *
- *
  */
 
 #include "symboltable.h"
@@ -35,70 +16,70 @@
 #include <string.h>
 
 struct ST_SYMBOLITERATOR_T {
-    STsymbol_t *head;
-    STsymbol_t *pos;
+    stsymbol_t *head;
+    stsymbol_t *pos;
 };
 
 struct ST_ENTRY_T {
     char *name;
-    STentrytype_t type;
-    STentry_t *next;
+    stentrytype_t type;
+    stentry_t *next;
 };
 
 struct ST_ENTRYITERATOR_T {
-    STentry_t *head;
-    STentry_t *pos;
+    stentry_t *head;
+    stentry_t *pos;
 };
 
 struct ST_SYMBOL_T {
     char *name;
-    STentry_t *head;
-    STvisibility_t vis;
-    STsymbol_t *next;
+    stentry_t *head;
+    stvisibility_t vis;
+    stsymbol_t *next;
 };
 
 struct ST_SYMBOLTABLE_T {
-    STsymbol_t *head;
+    stsymbol_t *head;
 };
 
 /*
- * Functions for handling STentry_t types
+ * Functions for handling stentry_t types
  */
 
-static STentry_t *
-STEntryInit (const char *name, STentrytype_t type)
+static stentry_t *
+STEntryInit (const char *name, stentrytype_t type)
 {
-    STentry_t *result;
+    stentry_t *result;
 
     DBUG_ENTER ("STEntryInit");
 
-    result = (STentry_t *)Malloc (sizeof (STentry_t));
+    result = (stentry_t *)ILIBmalloc (sizeof (stentry_t));
 
-    result->name = StringCopy (name);
+    result->name = ILIBstringCopy (name);
     result->type = type;
     result->next = NULL;
 
     DBUG_RETURN (result);
 }
 
-static STentry_t *
-STEntryDestroy (STentry_t *entry)
+static stentry_t *
+STEntryDestroy (stentry_t *entry)
 {
-    STentry_t *result;
+    stentry_t *result;
 
     DBUG_ENTER ("STEntryDestroy");
 
-    entry->name = Free (entry->name);
+    entry->name = ILIBfree (entry->name);
 
     result = entry->next;
 
-    entry = Free (entry);
+    entry = ILIBfree (entry);
 
     DBUG_RETURN (result);
 }
 
 static bool
-STEntryEqual (STentry_t *one, STentry_t *two)
+STEntryEqual (stentry_t *one, stentry_t *two)
 {
     bool result = TRUE;
 
@@ -111,18 +92,18 @@ STEntryEqual (STentry_t *one, STentry_t *two)
 }
 
 /*
- * Functions for handling STsymbol_t
+ * Functions for handling stsymbol_t
  */
-static STsymbol_t *
-STSymbolInit (const char *symbol, STvisibility_t vis)
+static stsymbol_t *
+STSymbolInit (const char *symbol, stvisibility_t vis)
 {
-    STsymbol_t *result;
+    stsymbol_t *result;
 
     DBUG_ENTER ("STSymbolInit");
 
-    result = (STsymbol_t *)Malloc (sizeof (STsymbol_t));
+    result = (stsymbol_t *)ILIBmalloc (sizeof (stsymbol_t));
 
-    result->name = StringCopy (symbol);
+    result->name = ILIBstringCopy (symbol);
     result->vis = vis;
     result->head = NULL;
     result->next = NULL;
@@ -130,29 +111,29 @@ STSymbolInit (const char *symbol, STvisibility_t vis)
     DBUG_RETURN (result);
 }
 
-static STsymbol_t *
-STSymbolDestroy (STsymbol_t *symbol)
+static stsymbol_t *
+STSymbolDestroy (stsymbol_t *symbol)
 {
-    STsymbol_t *result;
+    stsymbol_t *result;
 
     DBUG_ENTER ("STSymbolDestroy");
 
     while (symbol->head != NULL)
         symbol->head = STEntryDestroy (symbol->head);
 
-    symbol->name = Free (symbol->name);
+    symbol->name = ILIBfree (symbol->name);
 
     result = symbol->next;
 
-    symbol = Free (symbol);
+    symbol = ILIBfree (symbol);
 
     DBUG_RETURN (result);
 }
 
 static void
-STEntryAdd (STentry_t *entry, STsymbol_t *symbol)
+STEntryAdd (stentry_t *entry, stsymbol_t *symbol)
 {
-    STentry_t *pos;
+    stentry_t *pos;
     bool found = FALSE;
 
     DBUG_ENTER ("STSymbolAdd");
@@ -176,10 +157,10 @@ STEntryAdd (STentry_t *entry, STsymbol_t *symbol)
 }
 
 /*
- * Functions for handling STtable_t
+ * Functions for handling sttable_t
  */
 static void
-STSymbolAdd (STsymbol_t *symbol, STtable_t *table)
+STSymbolAdd (stsymbol_t *symbol, sttable_t *table)
 {
     DBUG_ENTER ("STSymbolAdd");
 
@@ -189,10 +170,10 @@ STSymbolAdd (STsymbol_t *symbol, STtable_t *table)
     DBUG_VOID_RETURN;
 }
 
-static STsymbol_t *
-STLookupSymbol (const char *symbol, STtable_t *table)
+static stsymbol_t *
+STLookupSymbol (const char *symbol, sttable_t *table)
 {
-    STsymbol_t *result;
+    stsymbol_t *result;
 
     DBUG_ENTER ("STLookupSymbol");
 
@@ -205,22 +186,22 @@ STLookupSymbol (const char *symbol, STtable_t *table)
     DBUG_RETURN (result);
 }
 
-STtable_t *
+sttable_t *
 STInit ()
 {
-    STtable_t *result;
+    sttable_t *result;
 
     DBUG_ENTER ("STInit");
 
-    result = (STtable_t *)Malloc (sizeof (STtable_t));
+    result = (sttable_t *)ILIBmalloc (sizeof (sttable_t));
 
     result->head = NULL;
 
     DBUG_RETURN (result);
 }
 
-STtable_t *
-STDestroy (STtable_t *table)
+sttable_t *
+STDestroy (sttable_t *table)
 {
     DBUG_ENTER ("STDestroy");
 
@@ -228,16 +209,16 @@ STDestroy (STtable_t *table)
         table->head = STSymbolDestroy (table->head);
     }
 
-    table = Free (table);
+    table = ILIBfree (table);
 
     DBUG_RETURN (table);
 }
 
 static void
-STEntryInsert (const char *symbolname, STvisibility_t vis, STentry_t *entry,
-               STtable_t *table)
+STEntryInsert (const char *symbolname, stvisibility_t vis, stentry_t *entry,
+               sttable_t *table)
 {
-    STsymbol_t *symbol;
+    stsymbol_t *symbol;
 
     DBUG_ENTER ("STEntryInsert");
 
@@ -256,10 +237,10 @@ STEntryInsert (const char *symbolname, STvisibility_t vis, STentry_t *entry,
 }
 
 void
-STAdd (const char *symbol, STvisibility_t vis, const char *name, STentrytype_t type,
-       STtable_t *table)
+STAdd (const char *symbol, stvisibility_t vis, const char *name, stentrytype_t type,
+       sttable_t *table)
 {
-    STentry_t *entry;
+    stentry_t *entry;
 
     DBUG_ENTER ("STAdd");
 
@@ -270,9 +251,9 @@ STAdd (const char *symbol, STvisibility_t vis, const char *name, STentrytype_t t
 }
 
 void
-STRemove (const char *symbol, STtable_t *table)
+STRemove (const char *symbol, sttable_t *table)
 {
-    STsymbol_t *symp;
+    stsymbol_t *symp;
 
     DBUG_ENTER ("STRemove");
 
@@ -282,7 +263,7 @@ STRemove (const char *symbol, STtable_t *table)
         if (table->head == symp) {
             table->head = symp->next;
         } else {
-            STsymbol_t *pos = table->head;
+            stsymbol_t *pos = table->head;
 
             while (pos->next != symp) {
                 pos = pos->next;
@@ -298,7 +279,7 @@ STRemove (const char *symbol, STtable_t *table)
 }
 
 bool
-STContains (const char *symbol, STtable_t *table)
+STContains (const char *symbol, sttable_t *table)
 {
     bool result;
 
@@ -310,10 +291,10 @@ STContains (const char *symbol, STtable_t *table)
 }
 
 bool
-STContainsEntry (const char *name, STtable_t *table)
+STContainsEntry (const char *name, sttable_t *table)
 {
-    STsymbol_t *symbol;
-    STentry_t *entry;
+    stsymbol_t *symbol;
+    stentry_t *entry;
     bool result = FALSE;
 
     DBUG_ENTER ("STContainsEntry");
@@ -334,19 +315,19 @@ STContainsEntry (const char *name, STtable_t *table)
     DBUG_RETURN (result);
 }
 
-STsymbol_t *
-STGet (const char *symbol, STtable_t *table)
+stsymbol_t *
+STGet (const char *symbol, sttable_t *table)
 {
     DBUG_ENTER ("STGet");
 
     DBUG_RETURN (STLookupSymbol (symbol, table));
 }
 
-STentry_t *
-STGetFirstEntry (const char *symbol, STtable_t *table)
+stentry_t *
+STGetFirstEntry (const char *symbol, sttable_t *table)
 {
-    STentry_t *result;
-    STsymbol_t *symbolp;
+    stentry_t *result;
+    stsymbol_t *symbolp;
 
     DBUG_ENTER ("STGetFirstEntry");
 
@@ -357,16 +338,16 @@ STGetFirstEntry (const char *symbol, STtable_t *table)
 }
 
 /*
- * Functions for STsymboliterator_t
+ * Functions for stsymboliterator_t
  */
-STsymboliterator_t *
-STSymbolIteratorGet (STtable_t *table)
+stsymboliterator_t *
+STSymbolIteratorGet (sttable_t *table)
 {
-    STsymboliterator_t *result;
+    stsymboliterator_t *result;
 
     DBUG_ENTER ("STSymbolIteratorGet");
 
-    result = (STsymboliterator_t *)Malloc (sizeof (STsymboliterator_t));
+    result = (stsymboliterator_t *)ILIBmalloc (sizeof (stsymboliterator_t));
 
     result->head = table->head;
     result->pos = table->head;
@@ -374,20 +355,20 @@ STSymbolIteratorGet (STtable_t *table)
     DBUG_RETURN (result);
 }
 
-STsymboliterator_t *
-STSymbolIteratorRelease (STsymboliterator_t *iterator)
+stsymboliterator_t *
+STSymbolIteratorRelease (stsymboliterator_t *iterator)
 {
     DBUG_ENTER ("STSymbolIteratorRelease");
 
-    iterator = Free (iterator);
+    iterator = ILIBfree (iterator);
 
     DBUG_RETURN (iterator);
 }
 
-STsymbol_t *
-STSymbolIteratorNext (STsymboliterator_t *iterator)
+stsymbol_t *
+STSymbolIteratorNext (stsymboliterator_t *iterator)
 {
-    STsymbol_t *result;
+    stsymbol_t *result;
 
     DBUG_ENTER ("STSymbolIteratorNext");
 
@@ -402,7 +383,7 @@ STSymbolIteratorNext (STsymboliterator_t *iterator)
 }
 
 void
-STSymbolIteratorReset (STsymboliterator_t *iterator)
+STSymbolIteratorReset (stsymboliterator_t *iterator)
 {
     DBUG_ENTER ("STSymbolIteratorReset");
 
@@ -412,7 +393,7 @@ STSymbolIteratorReset (STsymboliterator_t *iterator)
 }
 
 int
-STSymbolIteratorHasMore (STsymboliterator_t *iterator)
+STSymbolIteratorHasMore (stsymboliterator_t *iterator)
 {
     DBUG_ENTER ("STSymbolIteratorHasMore");
 
@@ -420,16 +401,16 @@ STSymbolIteratorHasMore (STsymboliterator_t *iterator)
 }
 
 /*
- * Functions for STentryiterator_t
+ * Functions for stentryiterator_t
  */
-static STentryiterator_t *
-STEntryIteratorInit (STsymbol_t *symbol)
+static stentryiterator_t *
+STEntryIteratorInit (stsymbol_t *symbol)
 {
-    STentryiterator_t *result;
+    stentryiterator_t *result;
 
     DBUG_ENTER ("STEntryIteratorInit");
 
-    result = (STentryiterator_t *)Malloc (sizeof (STentryiterator_t));
+    result = (stentryiterator_t *)ILIBmalloc (sizeof (stentryiterator_t));
 
     result->head = symbol->head;
     result->pos = symbol->head;
@@ -437,11 +418,11 @@ STEntryIteratorInit (STsymbol_t *symbol)
     DBUG_RETURN (result);
 }
 
-STentryiterator_t *
-STEntryIteratorGet (const char *symbolname, STtable_t *table)
+stentryiterator_t *
+STEntryIteratorGet (const char *symbolname, sttable_t *table)
 {
-    STentryiterator_t *result;
-    STsymbol_t *symbol;
+    stentryiterator_t *result;
+    stsymbol_t *symbol;
 
     DBUG_ENTER ("STEntryIteratorGet");
 
@@ -452,20 +433,20 @@ STEntryIteratorGet (const char *symbolname, STtable_t *table)
     DBUG_RETURN (result);
 }
 
-STentryiterator_t *
-STEntryIteratorRelease (STentryiterator_t *iterator)
+stentryiterator_t *
+STEntryIteratorRelease (stentryiterator_t *iterator)
 {
     DBUG_ENTER ("STEntryIteratorRelease");
 
-    iterator = Free (iterator);
+    iterator = ILIBfree (iterator);
 
     DBUG_RETURN (iterator);
 }
 
-STentry_t *
-STEntryIteratorNext (STentryiterator_t *iterator)
+stentry_t *
+STEntryIteratorNext (stentryiterator_t *iterator)
 {
-    STentry_t *result;
+    stentry_t *result;
 
     DBUG_ENTER ("STEntryIteratorNext");
 
@@ -478,7 +459,7 @@ STEntryIteratorNext (STentryiterator_t *iterator)
 }
 
 void
-STEntryIteratorReset (STentryiterator_t *iterator)
+STEntryIteratorReset (stentryiterator_t *iterator)
 {
     DBUG_ENTER ("STEntryIteratorReset");
 
@@ -488,7 +469,7 @@ STEntryIteratorReset (STentryiterator_t *iterator)
 }
 
 int
-STEntryIteratorHasMore (STentryiterator_t *iterator)
+STEntryIteratorHasMore (stentryiterator_t *iterator)
 {
     DBUG_ENTER ("STEntryIteratorHasMore");
 
@@ -496,18 +477,18 @@ STEntryIteratorHasMore (STentryiterator_t *iterator)
 }
 
 /*
- * Functions to access STsymbol_t
+ * Functions to access stsymbol_t
  */
 const char *
-STSymbolName (STsymbol_t *symbol)
+STSymbolName (stsymbol_t *symbol)
 {
     DBUG_ENTER ("STSymbolName");
 
     DBUG_RETURN (symbol->name);
 }
 
-STvisibility_t
-STSymbolVisibility (STsymbol_t *symbol)
+stvisibility_t
+STSymbolVisibility (stsymbol_t *symbol)
 {
     DBUG_ENTER ("STSymbolVisibility");
 
@@ -515,11 +496,11 @@ STSymbolVisibility (STsymbol_t *symbol)
 }
 
 /*
- * Functions to access STentry_t
+ * Functions to access stentry_t
  */
 
 const char *
-STEntryName (STentry_t *entry)
+STEntryName (stentry_t *entry)
 {
     DBUG_ENTER ("STEntryName");
 
@@ -528,8 +509,8 @@ STEntryName (STentry_t *entry)
     DBUG_RETURN (entry->name);
 }
 
-STentrytype_t
-STEntryType (STentry_t *entry)
+stentrytype_t
+STEntryType (stentry_t *entry)
 {
     DBUG_ENTER ("STEntryType");
 
@@ -542,7 +523,7 @@ STEntryType (STentry_t *entry)
  * functions for printing
  */
 static void
-STEntryPrint (STentry_t *entry)
+STEntryPrint (stentry_t *entry)
 {
     DBUG_ENTER ("STEntryPrint");
 
@@ -552,9 +533,9 @@ STEntryPrint (STentry_t *entry)
 }
 
 static void
-STSymbolPrint (STsymbol_t *symbol)
+STSymbolPrint (stsymbol_t *symbol)
 {
-    STentry_t *entry;
+    stentry_t *entry;
     char *visname;
 
     DBUG_ENTER ("STSymbolPrint");
@@ -589,9 +570,9 @@ STSymbolPrint (STsymbol_t *symbol)
 }
 
 void
-STPrint (STtable_t *table)
+STPrint (sttable_t *table)
 {
-    STsymbol_t *symbol;
+    stsymbol_t *symbol;
 
     DBUG_ENTER ("STPrint");
 
