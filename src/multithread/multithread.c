@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2000/04/10 15:44:42  jhs
+ * Fixed dbprint
+ *
  * Revision 1.17  2000/03/30 15:11:47  jhs
  * added AdjustCalls
  *
@@ -258,6 +261,13 @@ MUTHfundef (node *arg_node, node *arg_info)
         DBUG_PRINT ("MUTH", ("ignore %s", FUNDEF_NAME (arg_node)));
     }
     if (FUNDEF_NEXT (arg_node) != NULL) {
+        /*
+         *  There is a problem here ...
+         *  If a new function is inserted by a traversal-function (that is not
+         *  applied to FUNDEF_NEXT( arg_node)) that changes the value of
+         *  FUNDEF_NEXT( arg_node), we would overwrite this here, so we cannot
+         *  do this ... and so we don't by ignoring the return value.
+         */
         /* FUNDEF_NEXT( arg_node) = */ Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
@@ -469,7 +479,7 @@ MUTHmodul (node *arg_node, node *arg_info)
     MUTHdriver (MODUL_FUNS (arg_node), arg_info, BlocksLift, MUTHignore);
     DBUG_PRINT ("MUTH", ("end BlocksLift"));
 
-    if ((break_after == PH_spmdregions) && (strcmp ("barin", break_specifier) == 0)) {
+    if ((break_after == PH_spmdregions) && (strcmp ("blkli", break_specifier) == 0)) {
         goto cont;
     }
 
