@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.14  2004/11/26 21:04:35  jhb
+ * compile .
+ *
  * Revision 3.13  2004/11/25 20:19:00  jhb
  * maybe compile
  *
@@ -684,8 +687,7 @@ APClet (node *arg_node, info *arg_info)
     if (INFO_APC_UNSUPPORTED (arg_info)) {
         ids_ptr = LET_IDS (arg_node);
         while (ids_ptr != NULL) {
-            AddUnsupported (arg_info,
-                            VARDEC_OR_ARG_TYPE (IDS_VARDEC (ids_ptr))); /* TODO */
+            AddUnsupported (arg_info, VARDEC_OR_ARG_TYPE (IDS_DECL (ids_ptr))); /* TODO */
             ids_ptr = IDS_NEXT (ids_ptr);
         }
     }

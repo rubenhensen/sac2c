@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/26 21:06:04  jhb
+ * compile .
+ *
  * Revision 1.1  2004/11/26 17:43:12  cg
  * Initial revision
  *
@@ -21,6 +24,9 @@
  *****************************************************************************/
 
 extern node *RSTOdoRestoreObjects (node *syntax_tree);
+
+#ifndef OBJR_DEACTIVATED
+
 extern char *RSTOobjInitFunctionName (bool before_rename);
 
 extern node *RSTOmodule (node *arg_node, info *arg_info);
@@ -45,5 +51,5 @@ extern node *RSTOret (node *arg_node, info *arg_info);
  * N_icm
  *
  *****************************************************************************/
-
+#endif /*  OBJR_DEACTIVATED  */
 #endif /* _SAC_RESTORE_H_ */
