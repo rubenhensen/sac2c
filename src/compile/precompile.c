@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2001/12/13 13:18:57  dkr
+ * signature of MakeAssignIcm?() modified
+ *
  * Revision 3.25  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -823,17 +826,15 @@ InsertObjInit (node *block, node *objdef)
         IDS_REFCNT (new_ids) = RC_INACTIVE;
     }
 
-    assign_end = MakeAssignIcm0 ("INITGLOBALOBJECT_END");
+    assign_end = MakeAssignIcm0 ("INITGLOBALOBJECT_END", BLOCK_INSTR (block));
     ICM_END_OF_STATEMENT (ASSIGN_INSTR (assign_end)) = TRUE;
 
-    assign_ap = MakeAssign (MakeLet (OBJDEF_EXPR (objdef), new_ids), BLOCK_INSTR (block));
+    assign_ap = MakeAssign (MakeLet (OBJDEF_EXPR (objdef), new_ids), assign_end);
+
     assign_begin = MakeAssignIcm1 ("INITGLOBALOBJECT_BEGIN",
                                    MakeId_Copy (StringConcat ("SAC_INIT_FLAG_",
-                                                              OBJDEF_NAME (objdef))));
-
-    ASSIGN_NEXT (assign_end) = BLOCK_INSTR (block);
-    ASSIGN_NEXT (assign_ap) = assign_end;
-    ASSIGN_NEXT (assign_begin) = assign_ap;
+                                                              OBJDEF_NAME (objdef))),
+                                   assign_ap);
 
     BLOCK_INSTR (block) = assign_begin;
 
