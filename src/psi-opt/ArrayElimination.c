@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/03/25 17:53:11  srs
+ * added comment to a location of a possible bug
+ *
  * Revision 1.7  1997/11/23 17:18:06  dkr
  * removed a bug in GenIds():
  * - malloc-size for new string corrected
@@ -258,7 +261,11 @@ GenPsi (ids *ids_node, node *arg_info)
         if (NULL == new_let->info.ids->node) {
             DBUG_PRINT ("AE", ("Generating new vardec for %s", new_let->info.ids->id));
             new_vardec = MakeNode (N_vardec);
+            /* srs: something is wrong here and we lose memory.
+               GET_BASIC_TYPES always calls DuplicateTypes(). */
             GET_BASIC_TYPE (new_vardec->info.types, type, 0);
+            /* srs: and here in the next line we yank it without setting it free.
+               This is wrong since DuplicateTypes ALWAYS allocetes new mem. */
             new_vardec->info.types = DuplicateTypes (new_vardec->info.types, 1);
             new_vardec->info.types->dim = 0;
             FREE (new_vardec->info.types->id);
