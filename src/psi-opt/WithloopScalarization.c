@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2002/10/17 14:51:22  ktr
+ * Fixed a bug found by sbs. Sample code now runs with 200% of speed.
+ *
  * Revision 1.12  2002/07/11 12:49:27  ktr
  * WLS now supports conversion of other non-scalar expressions into a
  * Withloop-nesting, which is scalarizeble.
@@ -451,10 +454,7 @@ checkGeneratorDependencies (node *outerpart, node *innerpart)
  * description:
  *   checks if the two nested withloops have compatible types
  *
- *   Compatibility means both Withloops are genarray-WLs OR
- *   they are both fold-WLs and have the same fold-operation/neutral-element
- *
- *   This function is NOT COMPLETED yet.
+ *   Compatibility means both Withloops are genarray-WLs.
  *
  * parameters:
  *   node *outerWithOP:   N_NWITHOP
@@ -718,6 +718,8 @@ CreateArrayWithloop (node *array, node *fundef)
     } else {
         /* reshape */
         DBUG_ASSERT (NODE_TYPE (array) == N_prf, "Invalid Node Type!");
+        DBUG_ASSERT (NODE_TYPE (PRF_ARGS (array)) == N_exprs,
+                     "NODE_TYPE(PRF_ARGS(array)) != N_exprs");
 
         dim = ARRAY_SHAPE (EXPRS_EXPR (PRF_ARGS (array)), 0);
         shpmax = Array2Shpseg (EXPRS_EXPR (PRF_ARGS (array)), NULL);
@@ -809,8 +811,11 @@ withloopifyPart (node *arg_node, node *arg_info)
           && (compatWLTypes (INFO_WLS_WITHOP (arg_info),
                              NWITH_WITHOP (NPART_LETEXPR (arg_node)))))) {
         if ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_array)
-            || ((NODE_TYPE (NPART_LETEXPR (arg_node)) = N_prf)
-                && (PRF_PRF (NPART_LETEXPR (arg_node)) = F_reshape)))
+            || ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_prf)
+                && (PRF_PRF (NPART_LETEXPR (arg_node)) == F_reshape)
+                && (NODE_TYPE (
+                     EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (NPART_LETEXPR (arg_node))))))
+                     == N_array))
             arg_node = Array2Withloop (arg_node, arg_info);
         else
             arg_node = InsertCopyWithloop (arg_node, arg_info);
@@ -1545,9 +1550,10 @@ WLSNwith (node *arg_node, node *arg_info)
 
         /* The new shape is the concatenation of both old shapes */
 
-        NWITH_SHAPE (arg_node)
-          = ConcatVecs (NWITH_SHAPE (arg_node),
-                        NWITH_SHAPE (NPART_LETEXPR (NWITH_PART (arg_node))));
+        if (NWITHOP_TYPE (INFO_WLS_WITHOP (arg_info)) == WO_genarray)
+            NWITH_SHAPE (arg_node)
+              = ConcatVecs (NWITH_SHAPE (arg_node),
+                            NWITH_SHAPE (NPART_LETEXPR (NWITH_PART (arg_node))));
 
         /* traverse all PARTS  */
 
