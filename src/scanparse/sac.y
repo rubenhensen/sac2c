@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.55  1995/04/06 13:56:09  hw
+ * Revision 1.56  1995/04/26 16:06:15  hw
+ * bug fixed in MakeLet ( identifier will be copied now)
+ *
+ * Revision 1.55  1995/04/06  13:56:09  hw
  * typeinformation of sac_main is build with MakeTypes now
  *
  * Revision 1.54  1995/03/13  16:59:59  hw
@@ -193,6 +196,7 @@
 #include "dbug.h"
 #include "tree.h"
 #include "my_debug.h"
+#include "internal_lib.h" /* for use of StringCopy */
 
 extern int linenum;
 extern char yytext[];
@@ -1763,7 +1767,8 @@ node *MakeLet(id *name, node *expr, prf fun)
    return_node->info.ids=MakeIds(name);
    id_node=MakeNode(N_id);
    id_node->info.ids=MakeIds(name);
-
+   id_node->info.ids->id=StringCopy(name);
+   
    DBUG_PRINT("GENTREE",("%s"P_FORMAT": %s",
                          mdb_nodetype[id_node->nodetype],
                          id_node,
