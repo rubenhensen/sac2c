@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/03/17 15:35:04  bs
+ * Bug fixed in FltnArray and FltnExprs. Macro EXPR_VAL added.
+ *
  * Revision 2.7  1999/03/15 14:13:37  bs
  * Access macros renamed (take a look at tree_basic.h).
  * FltnArray and FltnExprs modified: Now compact propagation of float and double
@@ -397,6 +400,11 @@
 
 #define PUSH_ENTRY(ptr) PUSH (ptr.id_old, ptr.id_new, ptr.w_level)
 
+#define EXPR_VAL(node)                                                                   \
+    (NODE_TYPE (node) == N_double)                                                       \
+      ? (DOUBLE_VAL (node))                                                              \
+      : ((NODE_TYPE (node) == N_float) ? (FLOAT_VAL (node)) : (NUM_VAL (node)))
+
 typedef struct LOCAL_STACK {
     char *id_old;
     char *id_new;
@@ -469,7 +477,6 @@ PreTypecheck (nodetype type1, simpletype type2)
         else
             type2 = T_int;
         break;
-#ifdef 0
     case N_bool:
         if (type2 == T_unknown)
             type2 = T_unknown;
@@ -482,7 +489,6 @@ PreTypecheck (nodetype type1, simpletype type2)
         else
             type2 = T_bool;
         break;
-#endif
     default:
         type2 = T_unknown;
     }
@@ -692,6 +698,7 @@ Abstract (node *arg_node, node *arg_info)
     INFO_FLTN_LASTASSIGN (arg_info)
       = MakeAssign (MakeLet (arg_node, MakeIds (tmp, NULL, ST_regular)),
                     INFO_FLTN_LASTASSIGN (arg_info));
+
     DBUG_PRINT ("FLATTEN",
                 ("node %08x inserted before %08x", INFO_FLTN_LASTASSIGN (arg_info),
                  ASSIGN_NEXT (INFO_FLTN_LASTASSIGN (arg_info))));
@@ -1123,17 +1130,19 @@ FltnArray (node *arg_node, node *arg_info)
 
     ARRAY_VECLEN (arg_node) = INFO_FLTN_VECLEN (arg_info);
 
+    ARRAY_VECTYPE (arg_node) = INFO_FLTN_VECTYPE (arg_info);
+
     switch (INFO_FLTN_VECTYPE (arg_info)) {
     case T_int:
-        ARRAY_INTVEC (arg_node) = (int *)INFO_FLTN_CONSTVEC (arg_info);
+        ARRAY_INTVEC (arg_node) = (node *)INFO_FLTN_CONSTVEC (arg_info);
         INFO_FLTN_CONSTVEC (arg_info) = NULL;
         break;
     case T_float:
-        ARRAY_FLOATVEC (arg_node) = (float *)INFO_FLTN_CONSTVEC (arg_info);
+        ARRAY_FLOATVEC (arg_node) = (node *)INFO_FLTN_CONSTVEC (arg_info);
         INFO_FLTN_CONSTVEC (arg_info) = NULL;
         break;
     case T_double:
-        ARRAY_DOUBLEVEC (arg_node) = (double *)INFO_FLTN_CONSTVEC (arg_info);
+        ARRAY_DOUBLEVEC (arg_node) = (node *)INFO_FLTN_CONSTVEC (arg_info);
         INFO_FLTN_CONSTVEC (arg_info) = NULL;
         break;
     default:
@@ -1335,22 +1344,23 @@ FltnExprs (node *arg_node, node *arg_info)
             switch (INFO_FLTN_VECTYPE (arg_info)) {
             case T_int:
                 info_fltn_intvec = MALLOC (INFO_FLTN_VECLEN (arg_info) * sizeof (int));
-                INFO_FLTN_CONSTVEC (arg_info) = info_fltn_intvec;
-                info_fltn_intvec[info_fltn_array_index] = NUM_VAL (expr);
+                INFO_FLTN_CONSTVEC (arg_info) = (node *)info_fltn_intvec;
+                info_fltn_intvec[info_fltn_array_index] = (int)EXPR_VAL (expr);
                 break;
             case T_float:
                 info_fltn_floatvec
                   = MALLOC (INFO_FLTN_VECLEN (arg_info) * sizeof (float));
-                INFO_FLTN_CONSTVEC (arg_info) = info_fltn_floatvec;
-                info_fltn_floatvec[info_fltn_array_index] = FLOAT_VAL (expr);
+                INFO_FLTN_CONSTVEC (arg_info) = (node *)info_fltn_floatvec;
+                info_fltn_floatvec[info_fltn_array_index] = (float)EXPR_VAL (expr);
                 break;
             case T_double:
                 info_fltn_doublevec
                   = MALLOC (INFO_FLTN_VECLEN (arg_info) * sizeof (double));
-                INFO_FLTN_CONSTVEC (arg_info) = info_fltn_doublevec;
-                info_fltn_doublevec[info_fltn_array_index] = DOUBLE_VAL (expr);
+                INFO_FLTN_CONSTVEC (arg_info) = (node *)info_fltn_doublevec;
+                info_fltn_doublevec[info_fltn_array_index] = (double)EXPR_VAL (expr);
             default:
                 /* Nothing to do */
+                break;
             }
         }
     } else {
@@ -1362,17 +1372,18 @@ FltnExprs (node *arg_node, node *arg_info)
             switch (INFO_FLTN_VECTYPE (arg_info)) {
             case T_int:
                 info_fltn_intvec = (int *)INFO_FLTN_CONSTVEC (arg_info);
-                info_fltn_intvec[info_fltn_array_index] = NUM_VAL (expr);
+                info_fltn_intvec[info_fltn_array_index] = (int)EXPR_VAL (expr);
                 break;
             case T_float:
                 info_fltn_floatvec = (float *)INFO_FLTN_CONSTVEC (arg_info);
-                info_fltn_floatvec[info_fltn_array_index] = FLOAT_VAL (expr);
+                info_fltn_floatvec[info_fltn_array_index] = (float)EXPR_VAL (expr);
                 break;
             case T_double:
                 info_fltn_doublevec = (double *)INFO_FLTN_CONSTVEC (arg_info);
-                info_fltn_doublevec[info_fltn_array_index] = DOUBLE_VAL (expr);
+                info_fltn_doublevec[info_fltn_array_index] = (double)EXPR_VAL (expr);
             default:
                 /* Nothing to do */
+                break;
             }
         }
     }
