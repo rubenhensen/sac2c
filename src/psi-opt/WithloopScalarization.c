@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.36  2003/11/28 22:02:28  ktr
+ * Inner arrays are now checked for emptiness before WLS.
+ * -
+ *
  * Revision 1.35  2003/09/16 18:17:04  ktr
  * Added support for AVIS_WITHID
  *
@@ -731,18 +735,31 @@ probePart (node *arg_node, node *arg_info)
                 INFO_WLS_POSSIBLE (arg_info) =
                   /* In non aggressive mode, assignment of CEXPR
                      must not be inside the WL */
-                  (((wls_aggressive)
-                    || ((ID_DIM (NPART_CEXPR (arg_node)) >= 0)
-                        && (ID_SHPSEG (NPART_CEXPR (arg_node)) != NULL)
-                        && (GetShpsegLength (ID_DIM (NPART_CEXPR (arg_node)),
-                                             ID_SHPSEG (NPART_CEXPR (arg_node)))
-                            <= maxwls))
-                    || (((!isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
-                                                BLOCK_INSTR (NPART_CBLOCK (arg_node)))))
-                        &&
+                  ((((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_array)
+                     && (ARRAY_AELEMS (NPART_LETEXPR (arg_node)) != NULL))
+                    || ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_prf)
+                        && (PRF_PRF (NPART_LETEXPR (arg_node)) == F_reshape)
+                        && (NODE_TYPE (EXPRS_EXPR (
+                              EXPRS_NEXT (PRF_ARGS (NPART_LETEXPR (arg_node)))))
+                            == N_array)
+                        && (ARRAY_AELEMS (EXPRS_EXPR (
+                              EXPRS_NEXT (PRF_ARGS (NPART_LETEXPR (arg_node)))))
+                            != NULL)))
+                   &&
 
-                        /* In non aggressive mode, CBLOCK must be empty */
-                        (NODE_TYPE (BLOCK_INSTR (NPART_CBLOCK (arg_node))) == N_empty))));
+                   (((wls_aggressive)
+                     || ((ID_DIM (NPART_CEXPR (arg_node)) >= 0)
+                         && (ID_SHPSEG (NPART_CEXPR (arg_node)) != NULL)
+                         && (GetShpsegLength (ID_DIM (NPART_CEXPR (arg_node)),
+                                              ID_SHPSEG (NPART_CEXPR (arg_node)))
+                             <= maxwls))
+                     || (((!isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
+                                                 BLOCK_INSTR (NPART_CBLOCK (arg_node)))))
+                         &&
+
+                         /* In non aggressive mode, CBLOCK must be empty */
+                         (NODE_TYPE (BLOCK_INSTR (NPART_CBLOCK (arg_node)))
+                          == N_empty)))));
             }
         }
     }
@@ -962,6 +979,8 @@ CreateArrayWithloop (node *array, node *fundef)
 
     DBUG_ENTER ("CreateArrayWithloop");
 
+    DBUG_ASSERT (ARRAY_AELEMS (array) != NULL, "array contains no elements!");
+
     if (NODE_TYPE (array) == N_array) {
         dim = ARRAY_DIM (array);
         shpmax = ARRAY_SHPSEG (array);
@@ -1041,6 +1060,13 @@ Array2Withloop (node *arg_node, node *arg_info)
     node *vardec = NULL;
 
     DBUG_ENTER ("Array2Withloop");
+
+    /* Transformation can only be performed if there actually
+       are elements in the array */
+
+    DBUG_ASSERT ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_array)
+                   && (ARRAY_AELEMS (NPART_LETEXPR (arg_node)) != NULL),
+                 "array has no elements!");
 
     assid = MakeId (TmpVar (), NULL, ST_regular);
     vardec = MakeVardec (StringCopy (ID_NAME (assid)),
