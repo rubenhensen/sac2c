@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2002/10/08 13:01:31  sbs
+ * Now, index vectors of unknown shape are attributed VECT as well
+ * and F_mul_AxS and friends only access the ivs shapes when the are in fact transformed
+ * => dkr's ASSERTS could be moved and transformed!
+ *
  * Revision 3.29  2002/10/08 11:46:15  dkr
  * some DBUG_ASSERTs added
  *
@@ -1814,12 +1819,12 @@ node *
 IdxPrf (node *arg_node, node *arg_info)
 {
     node *arg1, *arg2, *arg3, *vinfo;
-    types *type;
+    types *type1, *type2;
 
     DBUG_ENTER ("IdxPrf");
 
     /*
-     * INFO_IVE_MODE( arg_info) indicates whether this traversal inferrs
+     * INFO_IVE_MODE( arg_info) indicates whether this traversal infers
      * the usage only: M_uses_only or transforms as well: M_uses_and_transform.
      *
      * INFO_IVE_TRANSFORM_VINFO( arg_info) indicates whether this is just a
@@ -1832,18 +1837,16 @@ IdxPrf (node *arg_node, node *arg_info)
         arg2 = PRF_ARG2 (arg_node);
         DBUG_ASSERT (((arg2->nodetype == N_id) || (arg2->nodetype == N_array)),
                      "wrong arg in F_sel application");
-        if (NODE_TYPE (arg2) == N_id) {
-            type = ID_TYPE (arg2);
-        } else {
-            type = ARRAY_TYPE (arg2);
-        }
+
+        type1 = ID_OR_ARRAY_TYPE (arg1);
+        type2 = ID_OR_ARRAY_TYPE (arg2);
         /*
-         * if the shape of the array is unknown, do not(!) replace
-         * sel by idx_sel but mark the selecting vector as VECT !
+         * if the shape of the array or the shape of the index are unknown,
+         * do not(!) replace sel by idx_sel but mark the selecting vector as VECT !
          * this is done by traversal with NULL instead of vinfo!
          */
-        if (TYPES_SHPSEG (type) != NULL) {
-            vinfo = MakeVinfo (IDX, type, NULL, NULL);
+        if ((TYPES_SHPSEG (type1) != NULL) && (TYPES_SHPSEG (type2) != NULL)) {
+            vinfo = MakeVinfo (IDX, type2, NULL, NULL);
             INFO_IVE_TRANSFORM_VINFO (arg_info) = vinfo;
             PRF_ARG1 (arg_node) = Trav (arg1, arg_info);
             FreeNode (vinfo);
@@ -1870,18 +1873,16 @@ IdxPrf (node *arg_node, node *arg_info)
         arg3 = PRF_ARG3 (arg_node);
         DBUG_ASSERT (((arg1->nodetype == N_id) || (arg1->nodetype == N_array)),
                      "wrong arg in F_modarray application");
-        if (NODE_TYPE (arg1) == N_id) {
-            type = ID_TYPE (arg1);
-        } else {
-            type = ARRAY_TYPE (arg1);
-        }
+
+        type1 = ID_OR_ARRAY_TYPE (arg1);
+        type2 = ID_OR_ARRAY_TYPE (arg2);
         /*
-         * if the shape of the array is unknown, do not(!) replace
-         * modarray by idx_modarray but mark the selecting vector as VECT !
+         * if the shape of the array or the index vector are unknown, do not(!)
+         * replace modarray by idx_modarray but mark the selecting vector as VECT !
          * this is done by traversal with NULL instead of vinfo!
          */
-        if (TYPES_SHPSEG (type) != NULL) {
-            vinfo = MakeVinfo (IDX, type, NULL, NULL);
+        if ((TYPES_SHPSEG (type1) != NULL) && (TYPES_SHPSEG (type2) != NULL)) {
+            vinfo = MakeVinfo (IDX, type1, NULL, NULL);
             INFO_IVE_TRANSFORM_VINFO (arg_info) = vinfo;
             PRF_ARG2 (arg_node) = Trav (arg2, arg_info);
             FreeNode (vinfo);
@@ -1904,22 +1905,29 @@ IdxPrf (node *arg_node, node *arg_info)
         break;
 
     case F_add_SxA:
-        DBUG_ASSERT ((GetShapeDim (ID_TYPE (PRF_ARG2 (arg_node))) >= 0),
-                     "prf arg with unknown shape found: not yet implemented")
-            : INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_add_SxS;
+            DBUG_ASSERT ((GetShapeDim (ID_TYPE (PRF_ARG2 (arg_node))) >= 0),
+                         "trying to transform F_add_SxA with arg2 of unknown shape");
+            INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
         }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         ive_op++;
         break;
 
     case F_add_AxS:
-        DBUG_ASSERT ((GetShapeDim (ID_TYPE (PRF_ARG2 (arg_node))) >= 0),
-                     "prf arg with unknown shape found: not yet implemented")
-            : INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
-        /* here is no break missing */
+        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
+            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
+            PRF_PRF (arg_node) = F_add_SxS;
+            DBUG_ASSERT ((GetShapeDim (ID_TYPE (PRF_ARG1 (arg_node))) >= 0),
+                         "trying to transform F_add_AxS with arg1 of unknown shape");
+            INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
+        }
+        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+        ive_op++;
+        break;
+
     case F_add_AxA:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
@@ -1930,22 +1938,29 @@ IdxPrf (node *arg_node, node *arg_info)
         break;
 
     case F_sub_SxA:
-        DBUG_ASSERT ((GetShapeDim (ID_TYPE (PRF_ARG2 (arg_node))) >= 0),
-                     "prf arg with unknown shape found: not yet implemented")
-            : INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_sub_SxS;
+            DBUG_ASSERT ((GetShapeDim (ID_TYPE (PRF_ARG2 (arg_node))) >= 0),
+                         "trying to transform F_sub_SxA with arg2 of unknown shape");
+            INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
         }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         ive_op++;
         break;
 
     case F_sub_AxS:
-        DBUG_ASSERT ((GetShapeDim (ID_TYPE (PRF_ARG2 (arg_node))) >= 0),
-                     "prf arg with unknown shape found: not yet implemented")
-            : INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
-        /* here is no break missing */
+        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
+            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
+            PRF_PRF (arg_node) = F_sub_SxS;
+            DBUG_ASSERT ((GetShapeDim (ID_TYPE (PRF_ARG1 (arg_node))) >= 0),
+                         "trying to transform F_sub_AxS with arg1 of unknown shape");
+            INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
+        }
+        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+        ive_op++;
+        break;
+
     case F_sub_AxA:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
