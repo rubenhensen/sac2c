@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.87  2004/07/03 17:36:28  sah
+ * temporary fix for bug #38
+ * variable current_dim now also defined
+ * in DBUG_OFF mode
+ *
  * Revision 3.86  2004/06/30 12:33:51  khf
  * support for multioperator withloops added
  *
@@ -2508,8 +2513,12 @@ GetWlIterShape (node *wl, int iter_dims, types *res_types)
     int check_dims;
 #ifndef DBUG_OFF
     int arr_len;
-    int current_dim;
+/* !! REMOVED BY SAH TO FIX BUG 38 !!
+  int current_dim;
+ */
 #endif
+    /* !! ADDED BY SAH TO FIX BUG 38 !! */
+    int current_dim;
     shpseg *iter_shp = NULL, *iter_tmp = NULL;
 
     DBUG_ENTER ("GetWlIterShape");
