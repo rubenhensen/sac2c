@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2004/03/02 16:48:25  mwe
+ * OPT_CVP added
+ *
  * Revision 3.44  2004/02/25 13:02:15  khf
  * added option -khf
  *
@@ -457,7 +460,8 @@ bool patch_with = FALSE;
 
 #ifdef PRODUCTION
 unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI)
-                        & (~OPT_APL) & (~OPT_DL) & (~OPT_BLIR) & (~OPT_SP) & (~OPT_WLFS);
+                        & (~OPT_APL) & (~OPT_DL) & (~OPT_BLIR) & (~OPT_SP) & (~OPT_WLFS)
+                        & (~OPT_CVP);
 #else /* PRODUCTION */
 unsigned int optimize = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL)
                         & (~OPT_BLIR) & (~OPT_WLFS);

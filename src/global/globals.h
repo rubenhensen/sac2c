@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2004/03/02 16:48:25  mwe
+ * OPT_CVP added
+ *
  * Revision 3.37  2004/02/25 13:02:15  khf
  * added option -khf
  *
@@ -277,10 +280,15 @@ extern unsigned int optimize;
 #define OPT_TSI 0x00010000  /* with-loop tile size inference               */
 #define OPT_TSP 0x00020000  /* with-loop tile size pragmas                 */
 #define OPT_MTO 0x00040000  /* multi-thread optimization                   */
-#define OPT_SBE 0x00080000  /* synchronisation barrier elimination         */
-#define OPT_MTI 0x00100000  /* ??                                          */
-#define OPT_PHM 0x00200000  /* private heap management                     */
-#define OPT_APS 0x00400000  /* arena preselection (for PHM)                */
+/* OPT_SBE reused for OPT_CVP
+ * Because of missing space in this bitmap OPT_SBE is overloaded with OPT_CVP
+ * To prevent errors (executing sbe-phase) the call of the procedure
+ * triggered by OPT_SBE is now deactivated (in concurrent.c)                 */
+#define OPT_SBE 0x00080000 /* synchronisation barrier elimination         */
+#define OPT_CVP 0x00080000 /* Constant and Value Propagation              */
+#define OPT_MTI 0x00100000 /* ??                                          */
+#define OPT_PHM 0x00200000 /* private heap management                     */
+#define OPT_APS 0x00400000 /* arena preselection (for PHM)                */
 #ifdef TAGGED_ARRAYS
 #define OPT_DAO 0x00800000  /* descriptor allocation opt. (for PHM)        */
 #else                       /* TAGGED_ARRAYS */
