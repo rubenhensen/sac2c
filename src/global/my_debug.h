@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1994/12/21 11:33:29  hw
+ * Revision 1.6  1994/12/30 16:57:01  sbs
+ * commented out #ifndef DBUG_OFF
+ *
+ * Revision 1.5  1994/12/21  11:33:29  hw
  * added char *mdb_type[]
  *
  * Revision 1.4  1994/12/05  13:05:57  hw
@@ -16,7 +19,7 @@
  *
  */
 
-#ifndef DBUG_OFF /* the following is only used with Fred Fish */
+/* #ifndef DBUG_OFF    the following is only used with Fred Fish */
 
 #ifndef _my_debug_h
 
@@ -32,4 +35,4 @@ extern char *mdb_type[];
 
 #endif /* _my_debug_h */
 
-#endif /* DBUG_OFF */
+/* #endif   DBUG_OFF */

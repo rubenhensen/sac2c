@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1994/12/21 11:33:29  hw
+ * Revision 1.8  1994/12/30 16:57:01  sbs
+ * commented out #ifndef DBUG_OFF
+ *
+ * Revision 1.7  1994/12/21  11:33:29  hw
  * added char *mdb_type[]
  *
  * Revision 1.6  1994/12/16  14:20:59  sbs
@@ -25,7 +28,7 @@
  *
  */
 
-#ifndef DBUG_OFF     /* All this stuff is only used in connection with DBUG */
+/* #ifndef DBUG_OFF    All this stuff is only used in connection with DBUG */
 #include "tree.h"    /* to have TYPE types */
 #include "convert.h" /* to have type_string[] */
 
@@ -57,4 +60,4 @@ char *mdb_type[] = {
 
 #undef TYP_IF
 
-#endif /* DBUG_OFF */
+/* #endif  DBUG_OFF */
