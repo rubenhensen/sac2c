@@ -1,5 +1,8 @@
 /*
  *  $Log$
+ *  Revision 1.19  1998/12/03 09:24:39  sbs
+ *  ftod and friends eliminated
+ *
  *  Revision 1.18  1997/10/09 13:55:38  srs
  *  TC: inserted F_min and F_max as SxS_S
  *
@@ -139,24 +142,6 @@ FT (F_tod, I_D, F_tod_A)
 FT (F_tod, F_D, F_tod_A)
 FT (F_tod_A, I_D, F_tod_A)
 FT (F_tod_A, F_D, F_tod_A)
-FT (F_ftoi, f_i, F_ftoi)
-FT (F_ftoi, F_I, F_ftoi_A)
-FT (F_ftoi_A, F_I, F_ftoi_A)
-FT (F_ftod, f_d, F_ftod)
-FT (F_ftod, F_D, F_ftod_A)
-FT (F_ftod_A, F_D, F_ftod_A)
-FT (F_itof, i_f, F_itof)
-FT (F_itof, I_F, F_itof_A)
-FT (F_itof_A, I_F, F_itof_A)
-FT (F_itod, i_d, F_itod)
-FT (F_itod, I_D, F_itod_A)
-FT (F_itod_A, I_D, F_itod_A)
-FT (F_dtof, d_f, F_dtof)
-FT (F_dtof, D_F, F_dtof_A)
-FT (F_dtof_A, D_F, F_dtof_A)
-FT (F_dtoi, d_i, F_dtoi)
-FT (F_dtoi, D_I, F_dtoi_A)
-FT (F_dtoi_A, D_I, F_dtoi_A)
 FT (F_modarray, AxAxS_A, F_modarray)
 FT (F_modarray, AxAxA_A, F_modarray)
 FT (F_genarray, VxA_Ag, F_genarray)
