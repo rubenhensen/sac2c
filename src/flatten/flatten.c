@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.22  2000/05/30 12:35:26  dkr
+ * functions for old with-loop removed
+ *
  * Revision 2.21  2000/05/17 15:14:23  dkr
  * Use of INFO_FLTN_LASTASSIGN and INFO_FLTN_FINALASSIGN in loops
  * corrected. (Especially in case of empty loop bodies.)
@@ -1469,109 +1472,6 @@ FltnDo (node *arg_node, node *arg_info)
     DBUG_PRINT ("FLATTEN", ("appending %08x tp %08x!", INFO_FLTN_LASTASSIGN (arg_info),
                             final_assign));
     INFO_FLTN_LASTASSIGN (arg_info) = mem_last_assign;
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *  node *FltnWith(node *arg_node, node *arg_info)
- *
- * description:
- *   - increase with-level during traversal of the WL-generator and WL-body
- *     (the former is necessary since the generator pushes the generator-vars!)
- *   - pop all vars from stack which have been pushed during the traversal
- *     of the WL-body
- *
- ******************************************************************************/
-
-node *
-FltnWith (node *arg_node, node *arg_info)
-{
-    local_stack *tmp_tos;
-
-    DBUG_ENTER ("FltnWith");
-
-    with_level += 1;
-    tmp_tos = tos; /* store tos */
-    DBUG_PRINT ("RENAME", ("store tos " P_FORMAT, tos));
-
-    /*
-     * traverse the generator:
-     */
-    WITH_GEN (arg_node) = Trav (WITH_GEN (arg_node), arg_info);
-    /*
-     * traverse  N_genarray, N_modarray, N_foldfun or N_foldprf and body:
-     */
-    WITH_OPERATOR (arg_node) = Trav (WITH_OPERATOR (arg_node), arg_info);
-
-    with_level -= 1;
-    tos = tmp_tos; /* restore tos */
-    DBUG_PRINT ("RENAME", ("restore tos " P_FORMAT, tos));
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *  node *FltnGen(node *arg_node, node *arg_info)
- *
- * description:
- *   - abstract out exprs from the boundary-exprs
- *   - rename the generator-variable if necessary.
- *     For doing so, TmpVarName( <generator-variable>) is used since
- *     it might benecessary to rename <generator-variable> once more in
- *     the body of the WL (iff used on the LHS of an assignment!).
- *   - push the generator-variable on the stack with (with_level-1)
- *     Using (with_level-1) forces any assignments to the generator-variable
- *     within the body of the WL to be renamed. This does NOT affect the
- *     assignment in the level above since the stack will be cleared in FltnWith
- *     before leaving the actual WL!
- *
- ******************************************************************************/
-
-node *
-FltnGen (node *arg_node, node *arg_info)
-{
-    int i;
-    char *old_name;
-    node **bound, *bound_expr, *bound_expr2;
-    local_stack *tmp;
-
-    DBUG_ENTER ("FltnGen");
-
-    for (i = 0; i < 2; i++) {
-        if (i == 0)
-            bound = &GEN_LEFT (arg_node);
-        else
-            bound = &GEN_RIGHT (arg_node);
-        bound_expr = *bound;
-
-        DBUG_ASSERT ((bound_expr != NULL), "NULL boundary of generator in WL!");
-
-        if (NODE_TYPE (bound_expr) == N_ap || NODE_TYPE (bound_expr) == N_prf
-            || NODE_TYPE (bound_expr) == N_array) {
-            /*
-             * This generator-bound has to be abstracted out:
-             */
-            *bound = Abstract (bound_expr, arg_info);
-        }
-        bound_expr2 = Trav (bound_expr, arg_info);
-        AnnotateIdWithConstVec (bound_expr, *bound);
-
-        DBUG_ASSERT ((bound_expr == bound_expr2),
-                     "return-node differs from arg_node while flattening an expr!");
-    }
-
-    /* rename index-vector if necessary */
-    old_name = GEN_ID (arg_node);
-    tmp = FindId (old_name);
-    if (NULL != tmp) {
-        GEN_ID (arg_node) = TmpVarName (old_name);
-    }
-    PUSH (old_name, GEN_ID (arg_node), with_level - 1);
 
     DBUG_RETURN (arg_node);
 }

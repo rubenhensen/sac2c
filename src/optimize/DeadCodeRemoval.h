@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.2  2000/05/30 12:34:56  dkr
+ * functions for old with-loop removed
+ *
  * Revision 2.1  1999/02/23 12:41:12  sacbase
  * new release made
  *
@@ -24,8 +26,6 @@
  *
  * Revision 1.1  1995/02/13  16:38:56  asi
  * Initial revision
- *
- *
  */
 
 #ifndef _DeadCodeRemoval_h
@@ -39,7 +39,6 @@ extern node *ACTassign (node *arg_node, node *arg_info);
 extern node *ACTcond (node *arg_node, node *arg_info);
 extern node *ACTdo (node *arg_node, node *arg_info);
 extern node *ACTwhile (node *arg_node, node *arg_info);
-extern node *ACTwith (node *arg_node, node *arg_info);
 extern node *ACTNwith (node *arg_node, node *arg_info);
 extern node *ACTNpart (node *arg_node, node *arg_info);
 extern node *ACTNcode (node *arg_node, node *arg_info);
@@ -50,7 +49,6 @@ extern node *DCRvardec (node *arg_node, node *arg_info);
 extern node *DCRcond (node *arg_node, node *arg_info);
 extern node *DCRdo (node *arg_node, node *arg_info);
 extern node *DCRwhile (node *arg_node, node *arg_info);
-extern node *DCRwith (node *arg_node, node *arg_info);
 extern node *DCRNwith (node *arg_node, node *arg_info);
 
 extern node *DFRmodul (node *arg_node, node *arg_info);

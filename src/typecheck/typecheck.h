@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.5  2000/05/30 12:35:45  dkr
+ * functions for old with-loop removed
+ *
  * Revision 2.4  2000/05/11 10:37:36  dkr
  * Macro SHAPE_2_ARRAY replaced by function Types2Array
  *

@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.38  2000/05/30 12:35:50  dkr
+ * functions for old with-loop removed
+ *
  * Revision 2.37  2000/05/11 10:36:33  dkr
  * Bug in ReduceGenarrayShape fixed: arg_info is no longer dumped.
  * Macro SHAPE_2_ARRAY replaced by function Types2Array.
@@ -259,14 +261,11 @@
  * Revision 1.161  1998/06/08 12:38:32  cg
  * Function DuplicateTypes can now deal with type NULL
  *
- *
  * ... [eliminated] ...
  *
  * Revision 1.100  1995/12/05  11:05:33  hw
  * changed AddIdToStack ( when generating a  new vardec the name of the variable
  *  will not be shared anymore )
- *
- *
  */
 
 #include <stdlib.h>
@@ -518,7 +517,6 @@ types *TI_ap (node *arg_node, node *arg_info);
 types *TI_array (node *arg_node, node *arg_info);
 types *TI (node *arg_node, node *arg_info);
 types *TI_cast (node *arg_node, node *arg_info);
-types *TI_with (node *arg_node, node *arg_info);
 
 types *TI_Nwith (node *, node *);
 types *TI_Npart (node *, types *, node *, node *);
@@ -758,7 +756,6 @@ TypeToCount (types *type)
  *   node *BuildPsiWithLoop(types *restype, node *idx, node *array)
  *
  * description:
- *
  *   This function creates one large with-loop that replaces a single function
  *   application of a primitive psi() with an array as value.
  *
@@ -1028,9 +1025,6 @@ BuildTakeWithLoop (node *take_shp, node *array)
  * description:
  *
  *
- *
- *
- *
  ******************************************************************************/
 
 static node *
@@ -1160,9 +1154,6 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
  *   node *BuildCatWithLoop2(ids *lhs, node *arg1, node *arg2, node *arg3)
  *
  * description:
- *
- *
- *
  *
  *
  ******************************************************************************/
@@ -1903,7 +1894,6 @@ node *ComputeNeutralElem(prf prf_fun, types *neutral_type)
  *   node *TypecheckFunctionDeclarations(node *fundef)
  *
  * description:
- *
  *   Function declarations (N_fundef nodes without body) are usually not
  *   typechecked. However, since user-defined types now have a back reference
  *   to the corresponding N_typedef node, function declarations have to be
@@ -2107,6 +2097,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
  *   VARDEC_NAME( vardec) == id.
  *
  ******************************************************************************/
+
 static node *
 LookupVardec (char *id, node *vardec)
 {
@@ -2129,6 +2120,7 @@ LookupVardec (char *id, node *vardec)
  *   ARG_NAME( arg) == id.
  *
  ******************************************************************************/
+
 node *
 LookupArg (char *id, node *arg)
 {
@@ -2403,7 +2395,7 @@ CheckKnownTypes (node *arg_node)
     }
 
     /* now check whether the formal arguments have known type */
-    arg = arg_node->node[2];
+    arg = FUNDEF_ARGS (arg_node);
     while (NULL != arg) {
         if (T_user == TYPES_BASETYPE (ARG_TYPE (arg))) {
             t_node = LookupType (arg->NAME, arg->NAME_MOD, NODE_LINE (arg_node));
@@ -2459,6 +2451,7 @@ CheckKnownTypes (node *arg_node)
         }
         arg = arg->node[0];
     }
+
     DBUG_VOID_RETURN;
 }
 
@@ -4551,9 +4544,9 @@ TCfundef (node *arg_node, node *arg_info)
     CHECK_FUNCTION_TYPENAMECLASH (arg_node);
 
     /* add formal parameters to local stack */
-    fun_params = arg_node->node[2];
+    fun_params = FUNDEF_ARGS (arg_node);
     while (NULL != fun_params) {
-        tmp_node = fun_params->node[0];
+        tmp_node = ARG_NEXT (fun_params);
         j = i + 1;
         while (NULL != tmp_node) {
             if (0 == strcmp (tmp_node->ID, fun_params->ID)) {
@@ -4564,16 +4557,17 @@ TCfundef (node *arg_node, node *arg_info)
                 ok = 0;
             }
             j += 1;
-            tmp_node = tmp_node->node[0];
+            tmp_node = ARG_NEXT (tmp_node);
         }
 
         CHECK_TYPENAMECLASH (fun_params);
         if (1 == ok) {
             PUSH_VAR (fun_params->info.types->id, fun_params);
-        } else
+        } else {
             ok = 1;
+        }
 
-        fun_params = fun_params->node[0];
+        fun_params = ARG_NEXT (fun_params);
         i += 1;
     }
     ABORT_ON_ERROR;
@@ -4611,8 +4605,7 @@ TCfundef (node *arg_node, node *arg_info)
          * vardec node. This information is used by the FunctionAnalyser.
          */
 
-        vardec = arg_node->node[0]->node[1];
-
+        vardec = FUNDEF_VARDEC (arg_node);
         do {
             CHECK_TYPENAMECLASH (vardec);
 
@@ -4644,7 +4637,7 @@ TCfundef (node *arg_node, node *arg_info)
                 }
             }
 
-            vardec = vardec->node[0];
+            vardec = VARDEC_NEXT (vardec);
         } while (NULL != vardec);
         ABORT_ON_ERROR;
     }
@@ -4717,7 +4710,7 @@ CheckIfGOonlyCBR (node *arg, node *exprs)
  *                  can derive it
  *                  or NULL if one can't infer the type
  *  global vars   :
- *  internal funs : TI_prf, LookupVar, DuplicateTypes, TI_ap, TI_with, TI_cast
+ *  internal funs : TI_prf, LookupVar, DuplicateTypes, TI_ap, TI_cast
  *                  LookupObject
  *  external funs : Error, sprintf
  *  macros        : DBUG...,GEN_TYPE_NODE, NULL
@@ -4771,10 +4764,6 @@ TI (node *arg_node, node *arg_info)
                    "user-supplied shape information",
                    cnt, ModName (AP_MOD (arg_node), AP_NAME (arg_node))));
         }
-        break;
-
-    case N_with:
-        return_type = TI_with (arg_node, arg_info);
         break;
 
     case N_Nwith:
@@ -5777,7 +5766,7 @@ TI_ap (node *arg_node, node *arg_info)
     DBUG_ENTER ("TI_ap");
 
     /* count number of current arguments */
-    current_args = arg_node->node[0];
+    current_args = AP_ARGS (arg_node);
     if (NULL != current_args) {
         while (EXPRS_NEXT (current_args) != NULL) {
             count_args++;
@@ -5789,7 +5778,7 @@ TI_ap (node *arg_node, node *arg_info)
     }
 
     /* store type of the arguments in arg_type[] */
-    current_args = arg_node->node[0];
+    current_args = AP_ARGS (arg_node);
     for (i = 0; i < count_args; i++) {
         arg_type[i] = TI (current_args->node[0], arg_info);
         if (NULL == arg_type[i])
@@ -5818,7 +5807,7 @@ TI_ap (node *arg_node, node *arg_info)
     /* return_type can be T_unknown( for example if it is a recursive call and
      * one checks the functions fast (fun_p->tag == FAST_CHECK))
      */
-    arg_node->node[1] = fun_p->node; /* set pointer to function declaration */
+    AP_FUNDEF (arg_node) = fun_p->node; /* set pointer to function declaration */
 
     if (profileflag != 0) {
         if (AP_ATFLAG (arg_node) != 1) { /* we did not yet inspect this application! */
@@ -6126,7 +6115,7 @@ TCcond (node *arg_node, node *arg_info)
     old_status = arg_info->node[0]->nodetype;
     rest_node = INFO_TC_NEXTASSIGN (arg_info);
 
-    expr_type = TI (arg_node->node[0], arg_info);
+    expr_type = TI (COND_COND (arg_node), arg_info);
     if (NULL == expr_type) {
         ABORT (NODE_LINE (arg_node), ("Type not inferable"));
     }
@@ -6268,7 +6257,7 @@ TCblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *
+ *   node *TCvardec(node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -6650,444 +6639,6 @@ TI_cast (node *arg_node, node *arg_info)
         DBUG_PRINT ("TYPE", ("%s", db_str));
     }
 #endif
-
-    DBUG_RETURN (ret_type);
-}
-
-/*
- *
- *  functionname  : TI_genarray
- *  arguments     : 1) argument node
- *                  2) type of generator bounds
- *                  3) return type of local block
- *                  4) info_node
- *  description   : computes type of genarray and checks whether this type,
- *                  the type of the generator and the type of with_return fit
- *
- *  global vars   : filename
- *  internal funs : Malloc
- *  external funs : sizeof, Type2String
- *  macros        : DBUG..., ABORT, SHP_SEG_SIZE, GEN_TYPE_NODE
- *
- *  remarks       :
- *
- */
-types *
-TI_genarray (node *arg_node, types *generator_type, types *w_return_type, node *arg_info)
-{
-    types *ret_type;
-    int dim = 0, i, length;
-    node *tmp;
-
-    DBUG_ENTER ("TI_genarray");
-    if (N_array == NODE_TYPE (arg_node)) {
-        /* infer type of N_array and store it in N_array-node */
-
-        ARRAY_TYPE (arg_node) = TI (arg_node, NULL);
-        /* first compute return_type */
-        ret_type = DuplicateTypes (w_return_type, 1);
-        TYPES_SHPSEG (ret_type) = (shpseg *)Malloc (sizeof (shpseg));
-        TYPES_NEXT (ret_type) = NULL;
-
-        tmp = ARRAY_AELEMS (arg_node);
-        while (tmp) {
-            if (dim < SHP_SEG_SIZE) {
-                if (N_num == NODE_TYPE (EXPRS_EXPR (tmp))) {
-                    SHAPES_SELEMS (ret_type)[dim] = NUM_VAL (EXPRS_EXPR (tmp));
-                    tmp = EXPRS_NEXT (tmp);
-                    dim++;
-                } else {
-                    ABORT (NODE_LINE (arg_node),
-                           ("%d. element of shape vector not a constant", dim + 1));
-                }
-            } else {
-                ABORT (NODE_LINE (arg_node), ("Shape vector has too many elements"));
-            }
-        }
-
-        TYPES_DIM (ret_type) = dim;
-
-        /* now check whether the computed type ret_type and the type
-         * information form generator and with_return fit
-         */
-        length = generator_type->shpseg->shp[0];
-        if ((length + w_return_type->dim) == dim) {
-            for (i = length; i < dim; i++) {
-                if (ret_type->shpseg->shp[i] != w_return_type->shpseg->shp[i - length]) {
-                    ABORT (NODE_LINE (arg_node),
-                           ("Type of shape vector (%s) does not match "
-                            "type of index vector (%s) and return statement (%s)",
-                            Type2String (ret_type, 0), Type2String (generator_type, 0),
-                            Type2String (w_return_type, 0)));
-                }
-            }
-        } else {
-            ABORT (NODE_LINE (arg_node),
-                   ("Type of shape vector (%s) does not match "
-                    "type of index vector (%s) and return statement (%s)",
-                    Type2String (ret_type, 0), Type2String (generator_type, 0),
-                    Type2String (w_return_type, 0)));
-        }
-    } else {
-        ABORT (NODE_LINE (arg_node),
-               ("Argument of 'genarray` not a constant shape vector"));
-    }
-
-    DBUG_RETURN (ret_type);
-}
-
-/*
- *
- *  functionname  : TI_modarry
- *  arguments     : 1) argument node
- *                  2) info_node
- *  description   : checks whether the type of the array, the type of the
- *                  generator and the type of with_return fit.
- *                  returns type of the array
- *
- *  global vars   : filename
- *  internal funs : TI
- *  external funs : Type2String
- *  macros        : DBUG..., ABORT
- *
- *  remarks       :
- *
- */
-types *
-TI_modarray (node *arg_node, types *generator_type, types *w_return_type, node *arg_info)
-{
-    types *ret_type, *a_type;
-    int length, i;
-
-    DBUG_ENTER ("TI_modarray");
-
-    a_type = TI (arg_node, arg_info);
-    if (!a_type)
-        ABORT (NODE_LINE (arg_node), ("Array component of 'modarray` not inferable"));
-    ret_type = a_type;
-
-    /* now check whether the computed type ret_type and the type
-     * information form generator and with_return fit
-     */
-    if (TYPES_BASETYPE (ret_type) != TYPES_BASETYPE (w_return_type))
-        ABORT (NODE_LINE (arg_node),
-               ("Type of 'modarray` (%s) and return_type (%s) different",
-                Type2String (ret_type, 0), Type2String (w_return_type, 0)))
-
-    length = generator_type->shpseg->shp[0];
-    if ((length + w_return_type->dim) == ret_type->dim) {
-        for (i = length; i < ret_type->dim; i++) {
-            if (ret_type->shpseg->shp[i] != w_return_type->shpseg->shp[i - length])
-                ABORT (NODE_LINE (arg_node),
-                       ("Type of shape vector (%s) does not match "
-                        "type of index vector (%s) and return statement (%s)",
-                        Type2String (ret_type, 0), Type2String (generator_type, 0),
-                        Type2String (w_return_type, 0)));
-        }
-    } else {
-        ABORT (NODE_LINE (arg_node),
-               ("Type of shape vector (%s) does not match "
-                "type of index vector (%s) and return statement (%s)",
-                Type2String (ret_type, 0), Type2String (generator_type, 0),
-                Type2String (w_return_type, 0)));
-    }
-
-    DBUG_RETURN (ret_type);
-}
-
-/*
- *
- *  functionname  : TI_foldprf
- *  arguments     : 1) argument node
- *                  2) type of generator
- *                  3) type of with_return
- *                  4) info_node
- *  description   :
- *  global vars   : filename
- *  internal funs :
- *  external funs : Type2String
- *  macros        : DBUG..., ABORT
- *
- *  remarks       :
- *
- */
-types *
-TI_foldprf (node *arg_node, types *generator_type, types *w_return_type, node *arg_info)
-{
-    prim_fun_tab_elem *prf_p;
-    void *fun_p;
-    types *ret_type, **arg_type;
-    int type_c_tag, prf_tag;
-    prf old_prf;
-
-    DBUG_ENTER ("TI_foldprf");
-
-    arg_type = (types **)Malloc (sizeof (types) * 2);
-    arg_type[0] = w_return_type;
-    arg_type[1] = w_return_type;
-    old_prf = arg_node->info.prf;
-    prf_tag = arg_node->info.prf;
-    fun_p = FindFun (NULL, NULL, arg_type, 2, arg_info, NODE_LINE (arg_node), &prf_tag);
-    DBUG_ASSERT (NULL != fun_p, "fun_p is NULL");
-    if (prf_tag == arg_node->info.prf) {
-        /* it is a primitive function */
-        prf_p = (prim_fun_tab_elem *)fun_p;
-        type_c_tag = prf_p->node->info.prf_dec.tag;
-        arg_node->info.prf = prf_p->new_prf;
-        /* now compute resulting type (ret_type) */
-        switch (type_c_tag) {
-#include "prim_fun_tt.mac"
-        default:
-            DBUG_ASSERT (0, "wrong type_class_tag");
-            break;
-        }
-    } else {
-        /* userdefined primitive function */
-
-        /* change union 'info' of 'arg_node'. Use info.fun_name->id,
-         * and info.fun_name->id_mod instead of info.prf.
-         * arg_node->node[2] will point to belonging function declaration. This
-         * also indicates that the union 'info' has changed.
-         */
-        arg_node->nodetype = N_foldfun;
-        arg_node->FUN_NAME = StringCopy (((fun_tab_elem *)fun_p)->id);
-        ret_type = TI_fun (arg_node, (fun_tab_elem *)fun_p, arg_info);
-        /* set pointer to function declaration */
-        FOLDFUN_FUNDEF (arg_node) = ((fun_tab_elem *)fun_p)->node;
-    }
-
-    if (T_unknown == TYPES_BASETYPE (ret_type)) {
-        ABORT (NODE_LINE (arg_node),
-               ("Primitive function '%s` is applied to wrong arguments",
-                prf_string[NWITHOP_PRF (arg_node)]));
-    } else if (CMP_equal
-               != CompatibleTypes (w_return_type, ret_type, -1,
-                                   NODE_LINE (arg_node))) /* 1*/ {
-        if (N_foldfun == arg_node->nodetype) {
-            ABORT (NODE_LINE (arg_node),
-                   ("Function '%s` has return type '%s` != '%s`",
-                    ModName (arg_node->FUN_MOD_NAME, arg_node->FUN_NAME),
-                    Type2String (ret_type, 0), Type2String (w_return_type, 0)));
-        } else {
-            ABORT (NODE_LINE (arg_node),
-                   ("Function '%s` has return type '%s` != '%s`",
-                    prf_string[arg_node->info.prf], Type2String (ret_type, 0),
-                    Type2String (w_return_type, 0)));
-        }
-    }
-    if (FOLDPRF_NEUTRAL (arg_node)) {
-        types *neutral_type = TI (arg_node->node[1], arg_info);
-        if (CMP_equal != CmpTypes (neutral_type, ret_type)) /* 1 */ {
-            ABORT (NODE_LINE (arg_node),
-                   ("2. argument of 'fold` has wrong type '%s` != '%s`",
-                    Type2String (neutral_type, 0), Type2String (ret_type, 0)));
-        }
-    } else
-        FOLDPRF_NEUTRAL (arg_node) = ComputeNeutralElem (old_prf, w_return_type);
-
-    FREE (arg_type);
-
-    DBUG_RETURN (ret_type);
-}
-
-/*
- *
- *  functionname  : TI_foldfun
- *  arguments     : 1) argument node
- *                  2) type of generator
- *                  3) type of with_return
- *                  4) info_node
- *  description   :
- *  global vars   : filename
- *  internal funs :
- *  external funs : Type2String
- *  macros        : DBUG..., ABORT
- *
- *  remarks       :
- *
- */
-types *
-TI_foldfun (node *arg_node, types *generator_type, types *w_return_type, node *arg_info)
-{
-    fun_tab_elem *fun_p;
-    types *ret_type, **arg_type;
-    int tmp;
-
-    DBUG_ENTER ("TI_foldfun");
-
-    arg_type = (types **)Malloc (sizeof (types) * 2);
-    arg_type[0] = w_return_type;
-    arg_type[1] = w_return_type;
-
-    tmp = -1;
-    fun_p = (fun_tab_elem *)FindFun (arg_node->FUN_NAME, arg_node->FUN_MOD_NAME, arg_type,
-                                     2, arg_info, NODE_LINE (arg_node), &tmp);
-
-    DBUG_ASSERT (NULL != fun_p, "fun_p is NULL");
-
-    ret_type = TI_fun (arg_node, fun_p, arg_info);
-
-    if (T_unknown == TYPES_BASETYPE (ret_type)) {
-        ABORT (NODE_LINE (arg_node),
-               ("Type of function '%s` not inferable",
-                ModName (arg_node->FUN_MOD_NAME, arg_node->FUN_NAME)));
-    } else {
-        types *neutral_type;
-
-        if (CMP_equal != CmpTypes (w_return_type, ret_type)) /* 1 */ {
-            ABORT (NODE_LINE (arg_node),
-                   ("Function '%s` has return type '%s` != '%s`",
-                    ModName (arg_node->FUN_MOD_NAME, arg_node->FUN_NAME),
-                    Type2String (ret_type, 0), Type2String (w_return_type, 0)));
-        }
-        neutral_type = TI (arg_node->node[1], arg_info);
-        if (CMP_equal != CmpTypes (neutral_type, ret_type)) /* 1 */ {
-            ABORT (NODE_LINE (arg_node),
-                   ("2. argument of 'fold` has wrong type '%s` != '%s`",
-                    Type2String (neutral_type, 0), Type2String (ret_type, 0)));
-        }
-        arg_node->node[2] = fun_p->node; /* set pointer to function declararion */
-    }
-
-    DBUG_RETURN (ret_type);
-}
-
-/*
- *
- *  functionname  : TI_generator
- *  arguments     : 1) argument node
- *                  2) info_node
- *  description   : computes the type of the index-vector if types of left
- *                  and right border fit.
- *
- *  global vars   : filename
- *  internal funs : TI, LookupVar, CmpTypes, Malloc
- *  external funs : sizeof, Type2String
- *  macros        : DBUG..., ABORT
- *
- *  remarks       :
- *
- */
-types *
-TI_generator (node *arg_node, node *arg_info)
-{
-    types *ret_type, *left_type, *right_type;
-    stack_elem *stack_p;
-    cmp_types ok;
-
-    DBUG_ENTER ("TI_generator");
-
-    left_type = TI (arg_node->node[0], arg_info);
-    right_type = TI (arg_node->node[1], arg_info);
-    ok = CmpTypes (left_type, right_type);
-    if ((CMP_equal == ok) && (T_int == TYPES_BASETYPE (left_type))
-        && (1 == left_type->dim)) /* 1*/
-    {
-        stack_p = LookupVar (GEN_ID (arg_node));
-        if (NULL != stack_p) {
-            ok = CmpTypes (left_type, stack_p->node->info.types);
-            if (CMP_equal == ok) /* 1*/
-            {
-                GEN_VARDEC (arg_node) = stack_p->node;
-                DBUG_PRINT ("REF", ("added reference" P_FORMAT " for %s to %s",
-                                    arg_node->info.ids->id, arg_node->info.ids->id,
-                                    arg_node->info.ids->node->info.types->id));
-                ret_type = left_type;
-            } else
-                ABORT (NODE_LINE (arg_node), ("Index vector has wrong type '%s` != '%s`",
-                                              Type2String (stack_p->node->info.types, 0),
-                                              Type2String (left_type, 0)));
-        } else {
-            AddIdToStack (GEN_IDS (arg_node), left_type, arg_info, NODE_LINE (arg_node));
-            ret_type = left_type;
-        }
-    } else
-        ABORT (NODE_LINE (arg_node),
-               ("Wrong types in generator part '%s` <= .. <= '%s`",
-                Type2String (left_type, 0), Type2String (right_type, 0)));
-
-    FREE_TYPES (right_type);
-
-    DBUG_RETURN (ret_type);
-}
-
-/*
- *
- *  functionname  : TI_with
- *  arguments     : 1) argument node
- *                  2) info_node
- *  description   : manages typeinference of with-loop
- *
- *  global vars   :
- *  internal funs : TI_modarray, TI_genarray, TI_generator
- *  external funs : Trav
- *  macros        : DBUG..., FREE
- *
- *  remarks       : puts index_vec to arg_info->node[2]
- *                  gets type of with-return in arg_info->node[2]->info.types
- */
-types *
-TI_with (node *arg_node, node *arg_info)
-{
-    stack_elem *old_tos;
-    types *ret_type, *generator_type, *w_return_type;
-    char *index_var;
-    node *index_vec, *con_expr;
-    int other_with = 0;
-
-    DBUG_ENTER ("TI_with");
-
-    /* save old tos to assure that variables which area defined in the WL
-       (generatorvars, inside the body) are unknown afterwards. */
-    old_tos = tos;
-
-    generator_type = TI_generator (WITH_GEN (arg_node), arg_info);
-    index_var = GEN_ID (WITH_GEN (arg_node));
-    index_vec = MakeNode (N_arg);
-    ARG_TYPE (index_vec) = generator_type;
-    ARG_NAME (index_vec) = index_var;
-
-    if (arg_info->node[2]) {
-        ARG_NEXT (index_vec) = arg_info->node[2];
-        other_with = 1;
-    }
-    arg_info->node[2] = index_vec;
-
-    con_expr = WITH_OPERATOR (arg_node);
-
-    if (N_genarray == NODE_TYPE (con_expr)) {
-        Trav (GENARRAY_BODY (con_expr), arg_info);
-        w_return_type = ARG_TYPE (arg_info->node[2]);
-        ret_type = TI_genarray (GENARRAY_ARRAY (con_expr), generator_type, w_return_type,
-                                arg_info);
-    } else if (N_modarray == NODE_TYPE (con_expr)) {
-        Trav (MODARRAY_BODY (con_expr), arg_info);
-        w_return_type = arg_info->node[2]->info.types;
-        ret_type = TI_modarray (MODARRAY_ARRAY (con_expr), generator_type, w_return_type,
-                                arg_info);
-    } else if (N_foldprf == con_expr->nodetype) {
-        Trav (con_expr->node[0], arg_info);
-        w_return_type = arg_info->node[2]->info.types;
-        ret_type = TI_foldprf (con_expr, generator_type, w_return_type, arg_info);
-    } else if (N_foldfun == con_expr->nodetype) {
-        Trav (con_expr->node[0], arg_info);
-        w_return_type = arg_info->node[2]->info.types;
-        ret_type = TI_foldfun (con_expr, generator_type, w_return_type, arg_info);
-    } else
-        DBUG_ASSERT (0, "wrong nodetype");
-
-    if (1 == other_with) {
-        node *tmp = arg_info->node[2];
-        arg_info->node[2] = ARG_NEXT (tmp);
-        FREE_TYPES (tmp->info.types);
-        FREE (tmp);
-    } else {
-        FREE_TYPES (arg_info->node[2]->info.types);
-        FREE (arg_info->node[2]);
-    }
-    /*FREE_TYPES(generator_type); */
-
-    tos = old_tos;
 
     DBUG_RETURN (ret_type);
 }
@@ -8080,12 +7631,12 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
 /******************************************************************************
  *
  * function:
- *   void ConsistencyCheckModarray(types *array_type, types *generator_type, types
- **body_type)
+ *   void ConsistencyCheckModarray( int lineno,
+ *                                  types *array_type, types *generator_type,
+ *                                  types *body_type)
  *
  * description:
  *   additional checks for modarray operator
- *
  *
  ******************************************************************************/
 

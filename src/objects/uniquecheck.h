@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.2  2000/05/30 12:34:23  dkr
+ * functions for old with-loop removed
+ *
  * Revision 2.1  1999/02/23 12:43:29  sacbase
  * new release made
  *
@@ -9,9 +11,6 @@
  *
  * Revision 1.1  1995/11/06 08:14:10  cg
  * Initial revision
- *
- *
- *
  */
 
 #ifndef _sac_uniquecheck_h
@@ -29,7 +28,6 @@ extern node *UNQid (node *arg_node, node *arg_info);
 extern node *UNQdo (node *arg_node, node *arg_info);
 extern node *UNQwhile (node *arg_node, node *arg_info);
 extern node *UNQcond (node *arg_node, node *arg_info);
-extern node *UNQwith (node *arg_node, node *arg_info);
 extern node *UNQNwith (node *arg_node, node *arg_info);
 
 #endif /*  _sac_uniquecheck_h  */

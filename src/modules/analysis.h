@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.2  2000/05/30 12:35:40  dkr
+ * functions for old with-loop removed
+ *
  * Revision 2.1  1999/02/23 12:41:58  sacbase
  * new release made
  *
@@ -14,9 +16,6 @@
  *
  * Revision 1.1  1995/10/19  11:04:05  cg
  * Initial revision
- *
- *
- *
  */
 
 extern node *Analysis (node *syntaxtree);
@@ -26,4 +25,3 @@ extern node *ANAvardec (node *arg_node, node *arg_info);
 extern node *ANAid (node *arg_node, node *arg_info);
 extern node *ANAap (node *arg_node, node *arg_info);
 extern node *ANAnwithop (node *arg_node, node *arg_info);
-extern node *ANAfoldfun (node *arg_node, node *arg_info);

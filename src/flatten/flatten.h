@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.5  2000/05/30 12:35:23  dkr
+ * functions for old with-loop removed
+ *
  * Revision 2.4  2000/05/17 14:57:17  dkr
  * FltnCon removed (old with-loop)
  *
@@ -57,8 +59,6 @@
  *
  * Revision 1.2  1994/11/10  15:39:42  sbs
  * RCS-header inserted
- *
- *
  */
 
 #ifndef _flatten_h
@@ -71,11 +71,9 @@ extern node *FltnAssign (node *arg_node, node *arg_info);
 extern node *FltnExprs (node *arg_node, node *arg_info);
 extern node *FltnCond (node *arg_node, node *arg_info);
 extern node *FltnWhile (node *arg_node, node *arg_info);
-extern node *FltnWith (node *arg_node, node *arg_info);
 extern node *FltnDo (node *arg_node, node *arg_info);
 extern node *FltnModul (node *arg_node, node *arg_info);
 extern node *FltnFundef (node *arg_node, node *arg_info);
-extern node *FltnGen (node *arg_node, node *arg_info);
 extern node *FltnAp (node *arg_node, node *arg_info);
 extern node *FltnArray (node *arg_node, node *arg_info);
 extern node *FltnReturn (node *arg_node, node *arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.19  2000/05/30 12:35:16  dkr
+ * functions for old with-loop removed
+ *
  * Revision 2.18  2000/02/11 14:35:57  dkr
  * some hard wired tree accesses are replaced by access macros :)
  *
@@ -2281,67 +2284,6 @@ GNMloop (node *arg_node, node *arg_info)
     arg_node->node[1]->mask[1]
       = ReGenMask (arg_node->node[1]->mask[1], INFO_VARNO (arg_info));
     arg_node = OptTrav (arg_node, arg_info, 1);
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : GNMwith
- *  arguments     : 1) ptr to whith-node
- *                  2) ptr to info_node
- *                  R)
- *  description   :
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : Trav, PlusMask, ReGenMask
- *  macros        : DBUG...
- *
- *  remarks       :
- *   - USE mask of operator (array/shape/neutral elt) is stored in operator
- *     node (N_modarray,...)
- *   - USE and DEF masks of body are stored in N_with node.
- *   - USE mask of generator is stored in N_generator node.
- *   - Afterwards DEF mask in generator is modified for index variables.
- *
- */
-
-node *
-GNMwith (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("GNMwith");
-
-    DBUG_ASSERT ((NULL != arg_node->node[1]), "with-expr. without genarray or modarray");
-    DBUG_ASSERT ((NULL != arg_node->node[1]->node[0]),
-                 "genarray or modarray without array ");
-
-    /* initiate N_"operator" masks */
-    WITH_OPERATOR (arg_node)->mask[0]
-      = ReGenMask (WITH_OPERATOR (arg_node)->mask[0], INFO_VARNO (arg_info));
-    WITH_OPERATOR (arg_node)->mask[1]
-      = ReGenMask (WITH_OPERATOR (arg_node)->mask[1], INFO_VARNO (arg_info));
-    arg_node = OptTrav (arg_node, arg_info, 1);
-
-    /* initiate N_with masks */
-    arg_node->mask[0] = ReGenMask (arg_node->mask[0], INFO_VARNO (arg_info));
-    arg_node->mask[1] = ReGenMask (arg_node->mask[1], INFO_VARNO (arg_info));
-    arg_node = OptTrav (arg_node, arg_info, 2);
-
-    DBUG_ASSERT (arg_node->node[0], "with-expr. without generator.");
-    DBUG_ASSERT (arg_node->node[0]->info.ids->node,
-                 "N_generator without pointer to declaration.");
-
-    /* initiate N_generator masks */
-    WITH_GEN (arg_node)->mask[0]
-      = ReGenMask (arg_node->node[0]->mask[0], INFO_VARNO (arg_info));
-    WITH_GEN (arg_node)->mask[1] = GenMask (INFO_VARNO (arg_info));
-    /* srs: why not ReGenMask()? compare to GNMNwith.
-       I guess we lose the pointer to the old mask here. But maybe we
-       have two pointers and lose only one, so that the GenMask() is ok??? */
-    arg_node = OptTrav (arg_node, arg_info, 0);
-
-    INC_VAR (arg_node->node[0]->mask[0], arg_node->node[0]->info.ids->node->varno);
-    INC_VAR (arg_info->mask[0], arg_node->node[0]->info.ids->node->varno);
 
     DBUG_RETURN (arg_node);
 }

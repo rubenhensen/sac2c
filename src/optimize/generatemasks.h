@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/05/30 12:35:19  dkr
+ * functions for old with-loop removed
+ *
  * Revision 2.9  2000/01/26 17:26:47  dkr
  * type of traverse-function-table changed.
  *
@@ -128,7 +131,6 @@ extern node *GNMpp (node *arg_node, node *arg_info);
 extern node *GNMblock (node *arg_node, node *arg_info);
 extern node *GNMcond (node *arg_node, node *arg_info);
 extern node *GNMloop (node *arg_node, node *arg_info);
-extern node *GNMwith (node *arg_node, node *arg_info);
 extern node *GNMNwith (node *arg_node, node *arg_info);
 extern node *GNMicm (node *arg_node, node *arg_info);
 

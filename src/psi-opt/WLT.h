@@ -1,6 +1,8 @@
-/*    $Id$
- *
+/*
  * $Log$
+ * Revision 2.3  2000/05/30 12:35:11  dkr
+ * functions for old with-loop removed
+ *
  * Revision 2.2  1999/02/26 14:49:00  dkr
  * file moved from folder /optimize
  *
@@ -9,7 +11,6 @@
  *
  * Revision 1.1  1998/03/22 18:21:38  srs
  * Initial revision
- *
  */
 
 #ifndef _WLT_h
@@ -20,7 +21,6 @@ extern node *WLTassign (node *, node *);
 extern node *WLTcond (node *, node *);
 extern node *WLTdo (node *, node *);
 extern node *WLTwhile (node *, node *);
-extern node *WLTwith (node *, node *);
 extern node *WLTNwith (node *, node *);
 extern node *WLTlet (node *, node *);
 

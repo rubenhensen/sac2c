@@ -1,6 +1,8 @@
-/*    $Id$
- *
+/*
  * $Log$
+ * Revision 2.3  2000/05/30 12:35:04  dkr
+ * functions for old with-loop removed
+ *
  * Revision 2.2  1999/02/26 14:46:49  dkr
  * file moved from folder /optimize
  *
@@ -18,7 +20,6 @@
  *
  * Revision 1.1  1998/03/22 18:21:34  srs
  * Initial revision
- *
  */
 
 #ifndef _WLI_h
@@ -30,7 +31,6 @@ extern node *WLIassign (node *, node *);
 extern node *WLIcond (node *, node *);
 extern node *WLIdo (node *, node *);
 extern node *WLIwhile (node *, node *);
-extern node *WLIwith (node *, node *);
 extern node *WLINwith (node *, node *);
 extern node *WLIlet (node *, node *);
 

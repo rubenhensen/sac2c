@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.2  2000/05/30 12:34:36  dkr
+ * functions for old with-loop removed
+ *
  * Revision 2.1  1999/02/23 12:43:28  sacbase
  * new release made
  *
@@ -42,9 +44,6 @@
  *
  * Revision 1.1  1995/11/02  16:57:08  cg
  * Initial revision
- *
- *
- *
  */
 
 #include "types.h"
@@ -1179,77 +1178,6 @@ UNQcond (node *arg_node, node *arg_info)
     unqstate = MergeUnqstate (then_state, unqstate);
 
     DBUG_EXECUTE ("UNQ", fprintf (stderr, "\nUnq-state after merging then and else\n");
-                  PrintUnqstate (unqstate););
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : UNQwith
- *  arguments     : 1) N_with node of syntax tree
- *                  2) arg_info != NULL used as marker for being inside
- *                  a with-loop
- *  description   : The unique state is copied. The with-loop's body is
- *                  traversed with one unique state while the other remains
- *                  untouched. The following statements are checked with
- *                  both unique states. When traversing the with loop's body
- *                  arg_info is set to arg_node as a marker for being below
- *                  a with loop.
- *  global vars   : unqstate
- *  internal funs : CopyUnqstate, AddHistory, MergeUnqstate
- *  external funs :
- *  macros        :
- *
- *  remarks       : Uniqueness types and with loops !
- *
- *                  At least conceptually, the statements of a with loop
- *                  body are executed concurrently for each array index
- *                  specified by the generator.
- *                  This means that each access to a unique variable within
- *                  the body of a with loop automatically is a uniqueness
- *                  violation. Readonly-reference parameters may be the
- *                  only exception from this.
- *
- *                  Unfortunately, this is not always what a programmer
- *                  wants to have. Imagine a program calculating a rich
- *                  graphic concurrently. In this case, we would like to
- *                  see the graphic appearing on the screen dot by dot
- *                  instead of waiting all the calculation time before
- *                  anything is displayed. This behaviour is not possible
- *                  if the uniqueness property is checked strictly.
- *
- *                  Since so far there is no SAC compiler producing
- *                  concurrently executable code, we decided to produce
- *                  a simple warning in these cases of uniqueness violations.
- *                  This may change with later versions of sac2c
- */
-
-node *
-UNQwith (node *arg_node, node *arg_info)
-{
-    unqstatelist *skipped_state;
-
-    DBUG_ENTER ("UNQwith");
-
-    skipped_state = CopyUnqstate (unqstate);
-
-    DBUG_EXECUTE ("UNQ", fprintf (stderr, "\nskipped state of with\n");
-                  PrintUnqstate (skipped_state););
-
-    AddHistory (unqstate, H_with_enter);
-    AddHistory (skipped_state, H_with_skipped);
-
-    Trav (WITH_OPERATOR (arg_node), arg_node);
-
-    DBUG_EXECUTE ("UNQ", fprintf (stderr, "\nUnq-state after with\n");
-                  PrintUnqstate (unqstate););
-
-    AddHistory (unqstate, H_with_leave);
-
-    unqstate = MergeUnqstate (skipped_state, unqstate);
-
-    DBUG_EXECUTE ("UNQ", fprintf (stderr, "\nUnq-state after merging skip and with\n");
                   PrintUnqstate (unqstate););
 
     DBUG_RETURN (arg_node);

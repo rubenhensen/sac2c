@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.4  2000/05/30 12:35:36  dkr
+ * functions for old with-loop removed
+ *
  * Revision 2.3  2000/02/23 20:16:34  cg
  * Node status ST_imported replaced by ST_imported_mod and
  * ST_imported_class in order to allow distinction between enteties
@@ -53,9 +55,6 @@
  *
  * Revision 1.1  1995/10/19  11:04:05  cg
  * Initial revision
- *
- *
- *
  */
 
 #include "dbug.h"
@@ -331,21 +330,16 @@ ANAap (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : ANAnwithop
- *  arguments     : 1) N_Nwithop node
- *                  2) fundef node which contains this with-loop
- *  description   : The flattened fold-operation is always required
- *                  by the function containing a fold with-loop
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : StoreNeededNode
- *  macros        : ---
+ * Function:
+ *   node *ANAnwithop( node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
+ *   The flattened fold-operation is always required by the function containing
+ *   a fold with-loop.
  *
- */
+ ******************************************************************************/
 
 node *
 ANAnwithop (node *arg_node, node *arg_info)
@@ -356,33 +350,6 @@ ANAnwithop (node *arg_node, node *arg_info)
         || (NWITHOP_TYPE (arg_node) == WO_foldprf)) {
         StoreNeededNode (NWITHOP_FUNDEF (arg_node), arg_info, ST_regular);
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : ANAfoldfun
- *  arguments     : 1) N_foldfun node
- *                  2) fundef node which contains this with-loop
- *  description   : The fold-operation is always required
- *                  by the function containing a fold with-loop
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : StoreNeededNode
- *  macros        : ---
- *
- *  remarks       : This function is only required to maintain compatibility
- *                  with old with-loop.
- *
- */
-
-node *
-ANAfoldfun (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("ANAfoldfun");
-
-    StoreNeededNode (FOLDFUN_FUNDEF (arg_node), arg_info, ST_regular);
 
     DBUG_RETURN (arg_node);
 }

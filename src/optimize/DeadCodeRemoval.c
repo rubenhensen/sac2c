@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/05/30 12:34:50  dkr
+ * functions for old with-loop removed
+ *
  * Revision 2.5  2000/01/26 17:27:04  dkr
  * type of traverse-function-table changed.
  *
@@ -668,142 +671,6 @@ DCRwhile (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("DCRwhile");
     WHILE_INSTR (arg_node) = OPTTrav (WHILE_INSTR (arg_node), arg_info, arg_node);
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : ACTwith
- *  arguments     : 1) N_with - node
- *                  2) N_info - node
- *                  R) N_with - node
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs : Trav     (traverse.h) - higher order traverse function
- *  macros        :
- *
- *  remarks       :
- *
- */
-node *
-ACTwith (node *arg_node, node *arg_info)
-{
-    int i;
-    long *old_INFOACT;
-
-    DBUG_ENTER ("ACTwith");
-    old_INFOACT = INFO_ACT;
-    INFO_ACT = GenMask (INFO_VARNO (arg_info));
-
-    DBUG_PRINT ("DCR", ("Travers with-body BEGIN"));
-    switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
-    case N_genarray:
-        BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node)))
-          = Trav (BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info);
-        break;
-    case N_modarray:
-        BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node)))
-          = Trav (BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info);
-        break;
-    case N_foldprf:
-        BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node)))
-          = Trav (BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node))), arg_info);
-        break;
-    case N_foldfun:
-        BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node)))
-          = Trav (BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node))), arg_info);
-        break;
-    default:
-        DBUG_ASSERT ((FALSE), "Operator not implemented for with_node");
-        break;
-    }
-    DBUG_PRINT ("DCR", ("Travers with-body END"));
-
-    /*   for(i=0;i<INFO_VARNO(arg_info);i++) { */
-    /*     INFO_ACT[i] = INFO_ACT[i]  */
-    /*       || (old_INFOACT[i] && !(WITH_GENDEFMASK(arg_node)[i])) */
-    /*       || WITH_GENUSEMASK(arg_node)[i]  */
-    /*       || WITH_OPERATORUSEMASK(arg_node)[i]; */
-    /*   } */
-
-    /*  The situation
-        (old_INFOACT[i] && !(WITH_GENDEFMASK(arg_node)[i]))
-        is independent from the second term since every DEF in the generator
-        refers only to WL-local variables.
-
-        if we find a situation
-          with (..iv..)..;
-          ..=iv;
-        we get a typecheck error because iv is unknown in the 2nd line.
-
-        if we have
-          iv = ..;
-          with (..iv..)..;
-          ..=iv
-        the index vector is renamed (therefore cannot be active) and
-
-        if we have
-          with (..iv..)..;
-          iv = ..;
-          ..=iv
-        the index vector will keep it's name but iv is not active while
-        processing the WL. */
-
-    for (i = 0; i < INFO_VARNO (arg_info); i++)
-        INFO_ACT[i] = INFO_ACT[i] || old_INFOACT[i] || WITH_GENUSEMASK (arg_node)[i]
-                      || WITH_OPERATORUSEMASK (arg_node)[i];
-
-    FREE (old_INFOACT);
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : DCRwith
- *  arguments     : 1) N_with - node
- *                  2) N_info - node
- *                  R) N_with - node
- *  description   : with-block will be traversed and mask's will be updated
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : OPTTrav (optimize.h) - will call Trav and updates DEF- and USE-masks
- *  macros        : NODE_TYPE, WITH_OPERATOR, WITH_OPERATOR, BLOCK_INSTR,
- *                  GENARRAY_BODY, MODARRAY_BODY, FOLDPRF_BODY, FOLDFUN_BODY
- *
- *  remarks       : ---
- *
- */
-node *
-DCRwith (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("DCRwith");
-    switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
-    case N_genarray:
-        BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_modarray:
-        BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_foldprf:
-        BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_foldfun:
-        BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    default:
-        DBUG_ASSERT ((FALSE), "Operator not implemented for with_node");
-        break;
-    }
     DBUG_RETURN (arg_node);
 }
 

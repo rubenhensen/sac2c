@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.11  2000/05/30 12:35:00  dkr
+ * functions for old with-loop removed
+ *
  * Revision 2.10  2000/05/25 14:58:45  dkr
  * WLINcode(): NCODE_CEXPR is traversed now
  *
@@ -699,52 +702,6 @@ WLIwhile (node *arg_node, node *arg_info)
 
     WHILE_COND (arg_node) = OPTTrav (WHILE_COND (arg_node), arg_info, arg_node);
     WHILE_INSTR (arg_node) = OPTTrav (WHILE_INSTR (arg_node), arg_info, arg_node);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *WLIwith(node *arg_node, node *arg_info)
- *
- * description:
- *   only needed to apply OPTTrav
- *
- *
- ******************************************************************************/
-
-node *
-WLIwith (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("WLIwith");
-
-    WITH_GEN (arg_node) = OPTTrav (WITH_GEN (arg_node), arg_info, arg_node);
-    switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
-    case N_genarray:
-        BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_modarray:
-        BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_foldprf:
-        BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_foldfun:
-        BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    default:
-        DBUG_ASSERT (0, "Operator not implemented for with_node");
-        break;
-    }
 
     DBUG_RETURN (arg_node);
 }
