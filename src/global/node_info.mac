@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  1999/08/04 14:33:26  bs
+ * TSI traverse functions added.
+ *
  * Revision 2.14  1999/07/28 12:59:32  jhs
  * Added spmdcons_tab.
  *
@@ -149,18 +152,18 @@
  *   syncopt_tab     wltrans_tab     gsc_tab         reuse_tab
  *   o2nWith_tab     sched_tab       conc_tab        opt_tab
  *   wlaa_tab        freemask_tab    smpdrmtrav_tab  spmdrotrav_tav
- *   spmdcons_tab    unused1_tab     unused2_tab     unused3_tab
- *   unused4_tab     unused5_tab     unused6_tab     unused7_tab
+ *   spmdcons_tab    tsi_tab         unused1_tab     unused2_tab
+ *   unused3_tab     unused4_tab     unused5_tab     unused6_tab
  *   nnode
  *
  * usage (in this file):
  *   To define a table one needs an identifier for this table (e.g. item),
  *   for this identfier one needs an selector (NIFitem), this selector is
  *   defined as a macro at the beginning of this file (see below for exact
- *   format of circumfencing ifndef-endif), translating it's only  argument
- *   nto nothing, and undefined at the end of this file.
- *   One then inserts a new parameter (it_item) into the NIF macro, and inserts
- *   at corresponding position the selector in the body of NIF, handing over
+ *   format of circumfencing ifndef-endif), translating its only  argument
+ *   into nothing, and undefined at the end of this file.
+ *   Then insert a new parameter (it_item) into the NIF macro, and the
+ *   selector at corresponding position in the body of NIF, handing over
  *   the new argument.
  *   The NIF macros are then used to define table-entries for each node-type.
  *
@@ -366,16 +369,19 @@
 #ifndef NIFspmdcons
 #define NIFspmdcons(it_spmdcons)
 #endif
+#ifndef NIFtsi
+#define NIFtsi(it_tsi)
+#endif
 #ifndef NIFunused1
 #define NIFunused1(it_unused1)
 #endif
 #ifndef NIFunused2
 #define NIFunused2(it_unused2)
 #endif
+
 #ifndef NIFunused3
 #define NIFunused3(it_unused3)
 #endif
-
 #ifndef NIFunused4
 #define NIFunused4(it_unused4)
 #endif
@@ -384,9 +390,6 @@
 #endif
 #ifndef NIFunused6
 #define NIFunused6(it_unused6)
-#endif
-#ifndef NIFunused7
-#define NIFunused7(it_unused7)
 #endif
 
 #ifndef NIFnnode
@@ -406,8 +409,8 @@
   it_tcwl, it_spmdinit, it_spmdopt, it_spmdlift, it_syncinit,                            \
                                                                                          \
   it_syncopt, it_wltrans, it_gsc, it_reuse, it_o2nWith, it_sched, it_conc, it_opt,       \
-  it_wlaa, it_freemask, it_spmdrm, it_spmdro, it_spmdcons, it_unused1, it_unused2,       \
-  it_unused3, it_unused4, it_unused5, it_unused6, it_unused7,                            \
+  it_wlaa, it_freemask, it_spmdrm, it_spmdro, it_spmdcons, it_tsi, it_unused1,           \
+  it_unused2, it_unused3, it_unused4, it_unused5, it_unused6,                            \
                                                                                          \
   nnode)                                                                                 \
                                                                                          \
@@ -422,26 +425,30 @@
               NIFwritesib (it_writesib) NIFobj (it_obj) NIFimpltype (it_impltype)        \
                 NIFobjinit (it_objinit) NIFanaly (it_analy) NIFcheckdec (it_checkdec)    \
                   NIFwritedec (it_writedec) NIFunique (it_unique) NIFrmvoid (it_rmvoid)  \
-                    NIFprecomp (it_precomp) NIFactive (it_active) NIFreadsib (           \
-                      it_readsib) NIFwlt (it_wlt) NIFcse (it_cse) NIFdfr (it_dfr)        \
-                      NIFtcwl (it_tcwl) NIFspmdinit (it_spmdinit) NIFspmdopt (           \
-                        it_spmdopt) NIFspmdlift (it_spmdlift) NIFsyncinit (it_syncinit)  \
+                    NIFprecomp (it_precomp) NIFactive (it_active)                        \
+                      NIFreadsib (it_readsib) NIFwlt (it_wlt) NIFcse (it_cse)            \
+                        NIFdfr (it_dfr) NIFtcwl (it_tcwl) NIFspmdinit (it_spmdinit)      \
+                          NIFspmdopt (it_spmdopt) NIFspmdlift (it_spmdlift)              \
+                            NIFsyncinit (it_syncinit)                                    \
                                                                                          \
-                        NIFsyncopt (it_syncopt) NIFwltrans (it_wltrans) NIFgsc (it_gsc)  \
-                          NIFreuse (it_reuse) NIFo2nWith (it_o2nWith)                    \
-                            NIFsched (it_sched) NIFconc (it_conc) NIFopt (it_opt)        \
-                              NIFwlaa (it_wlaa) NIFfreemask (it_freemask)                \
-                                NIFspmdrm (it_spmdrm) NIFspmdro (it_spmdro)              \
-                                  NIFspmdcons (it_spmdcons) NIFunused1 (it_unused1)      \
-                                    NIFunused2 (it_unused2) NIFunused3 (it_unused3)      \
-                                      NIFunused4 (it_unused4) NIFunused5 (it_unused5)    \
-                                        NIFunused6 (it_unused6) NIFunused7 (it_unused7)  \
+                              NIFsyncopt (it_syncopt) NIFwltrans (it_wltrans)            \
+                                NIFgsc (it_gsc) NIFreuse (it_reuse)                      \
+                                  NIFo2nWith (it_o2nWith) NIFsched (it_sched)            \
+                                    NIFconc (it_conc) NIFopt (it_opt) NIFwlaa (it_wlaa)  \
+                                      NIFfreemask (it_freemask) NIFspmdrm (it_spmdrm)    \
+                                        NIFspmdro (it_spmdro) NIFspmdcons (it_spmdcons)  \
+                                          NIFtsi (it_tsi) NIFunused1 (it_unused1)        \
+                                            NIFunused2 (it_unused2)                      \
+                                              NIFunused3 (it_unused3)                    \
+                                                NIFunused4 (it_unused4)                  \
+                                                  NIFunused5 (it_unused5)                \
+                                                    NIFunused6 (it_unused6)              \
                                                                                          \
-                                          NIFnnode (nnode)
+                                                      NIFnnode (nnode)
 
 /******************************************************************************
  *
- * Here starts the definitions of tables ...
+ * Here start the definitions of tables ...
  *
  ******************************************************************************/
 
@@ -623,7 +630,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        DFRfundef, TravSons, TravSons, SPMDOfundef, TravSons, TravSons,
 
        TravSons, WLTRAFundef, GSCfundef, ReuseFundef, TravSons, TravSons, CONCfundef,
-       OPTfundef, WLAAfundef, FMTravSons, TravSons, TravSons, TravSons, TravSons,
+       OPTfundef, WLAAfundef, FMTravSons, TravSons, TravSons, TravSons, TSIfundef,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TCvardec, GNMvardec,
@@ -647,7 +654,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       WLAAblock, FMTravSons, SPMDTRMblock, SPMDTROblock, TravSons, TravSons, TravSons,
+       WLAAblock, FMTravSons, SPMDTRMblock, SPMDTROblock, TravSons, TSIblock, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_arg, "N_arg", TravSons, FltnArgs, PrintArg, TravSons, GNMarg, TravSons, TravSons,
@@ -1061,7 +1068,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, WLTRANwith, TravSons, TravSons, O2Nnwith, TravSons, TravSons, TravSons,
-       WLAAnwith, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       WLAAnwith, TravSons, TravSons, TravSons, TravSons, TSInwith, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_Npart, "N_Npart", TravSons, FltnNpart, PrintNpart, TravSons, TravSons, TravSons,
@@ -1121,7 +1128,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, WLTRANcode, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       WLAAncode, FMTravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       WLAAncode, FMTravSons, TravSons, TravSons, TravSons, TSIncode, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
   /*
@@ -1332,14 +1339,14 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFspmdro
 
 #undef NIFspmdcons
+#undef NIFtsi
 #undef NIFunused1
 #undef NIFunused2
-#undef NIFunused3
 
+#undef NIFunused3
 #undef NIFunused4
 #undef NIFunused5
 #undef NIFunused6
-#undef NIFunused7
 
 #undef NIFnnode
 
