@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.36  2004/11/09 12:58:52  sah
+dnl added some flags for new module system
+dnl
 dnl Revision 1.35  2004/11/04 16:05:57  ktr
 dnl Made some modifications for Mac OS X Panther.
 dnl
@@ -282,6 +285,9 @@ AC_SUBST(DISABLE_MT, yes)
 dnl check whether to link math library
 AC_SEARCH_LIBS(sqrt, m)
 
+dnl check whether to link dlopen library
+AC_SEARCH_LIBS(dlopen, dl)
+
 dnl checking for presence of strtok and strrchr
 AC_CHECK_FUNCS([strtok strrchr])
 
@@ -479,22 +485,35 @@ RCALPHA=$srcdir/src/runtime/sac2crc.ALPHA
 RCMAC=$srcdir/src/runtime/sac2crc.MAC
 
 dnl generate specific flags for known os
+AC_MSG_CHECKING([sac2crc system flags])
 OSFLAGS=""
 case "$target_os" in
   solaris*)     
-     OSFLAGS=["-D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY"]
+    OSFLAGS=["-D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY"]
+    LD_DYNAMIC=["ld -dy -G"]
+    AC_MSG_RESULT([solaris settings])
     ;;
   *linux*)      
     OSFLAGS=["-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
+    LD_DYNAMIC=["ld -dy -G"]
+    AC_MSG_RESULT([linux settings])
     ;;
   *osf*)	
     OSFLAGS=["-D_OSF_SOURCE"]
+    LD_DYNAMIC=[""]
+    AC_MSG_RESULT([OSF settings])
     ;;
   *darwin*)      
     OSFLAGS=["-no-cpp-precomp -Wno-long-double"]
+    LD_DYNAMIC=["ld -undefined suppress -flat_namespace -bundle /usr/lib/bundle1.o"]
+    AC_MSG_RESULT([OS X settings])
+    ;;
+  *)
+    AC_MSG_RESULT([unknown])
     ;;
 esac
 AC_SUBST(OSFLAGS)
+AC_SUBST(LD_DYNAMIC)
 
 
 

@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.136  2004/11/09 12:58:52  sah
+# added some flags for new module system
+#
 # Revision 3.135  2004/11/08 16:15:31  sah
 # resolvepragma only visible in newast mode now
 #
@@ -342,7 +345,7 @@ ifeq ($(NEWAST),yes)
                src/tree/serialize.o src/tree/serialize_stack.o  \
                src/modules/prepareinline.o src/modules/dependencies.o \
                src/scanparse/resolvepragma.o
-  NEWASTFLAGS = -ldl --export-dynamic
+  NEWASTFLAGS = --export-dynamic
 endif
 
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
