@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/07/23 10:05:46  skt
+ * complete redesign
+ *
  * Revision 1.2  2004/07/15 21:45:37  skt
  * some debug-information added (and fixed a compiler warning)
  *
@@ -55,7 +58,10 @@ node *
 PropagateExecutionmode (node *arg_node, node *arg_info)
 {
     funtab *old_tab;
-
+#if PEM_DEBUG
+    int counter;
+    counter = 1;
+#endif
     DBUG_ENTER ("PropagateExecutionmode");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
                  "PropagateExecutionmode expects a N_modul as arg_node");
@@ -65,19 +71,30 @@ PropagateExecutionmode (node *arg_node, node *arg_info)
     act_tab = pem_tab;
 
     /* some initialisation */
-    INFO_PEM_FIRSTTRAV (arg_info) = 1;
+    INFO_PEM_FIRSTTRAV (arg_info) = TRUE;
+    INFO_PEM_MYASSIGN (arg_info) = NULL;
+    INFO_PEM_LASTCONDASSIGN (arg_info) = NULL;
+    INFO_PEM_LASTWITHASSIGN (arg_info) = NULL;
+    INFO_PEM_ACTFUNDEF (arg_info) = NULL;
 
     do {
+#if PEM_DEBUG
+        fprintf (stdout, "Do another iteration.\n");
+#endif
+
         /* some more initialisation */
-        INFO_PEM_ANYCHANGE (arg_info) = 0;
+        INFO_PEM_ANYCHANGE (arg_info) = FALSE;
 
         DBUG_PRINT ("PEM", ("trav into modul-funs"));
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from modul-funs"));
 
         /* even more initialisation */
-        INFO_PEM_FIRSTTRAV (arg_info) = 0;
+        INFO_PEM_FIRSTTRAV (arg_info) = FALSE;
 
+#if PEM_DEBUG
+        fprintf (stdout, "Done iteration no. %i\n", counter++);
+#endif
     } while (INFO_PEM_ANYCHANGE (arg_info));
 
     /* pop info ... */
@@ -100,37 +117,34 @@ PropagateExecutionmode (node *arg_node, node *arg_info)
 node *
 PEMfundef (node *arg_node, node *arg_info)
 {
-    int old_execmode;
     DBUG_ENTER ("PEMfundef");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
                  "PEMfundef expects a N_fundef as arg_node");
 
-    /* initialize the execmode of the fundef */
-    if (INFO_PEM_FIRSTTRAV (arg_info)) {
-        FUNDEF_EXECMODE (arg_node) = MUTH_ANY;
-    }
-    old_execmode = FUNDEF_EXECMODE (arg_node);
-    INFO_PEM_FUNEXECMODE (arg_info) = FUNDEF_EXECMODE (arg_node);
-
+    INFO_PEM_ACTFUNDEF (arg_info) = arg_node;
+#if PEM_DEBUG
+    fprintf (stdout, "current function:\n");
+    PrintNode (arg_node);
+    fprintf (stdout, "Executionmode was %s.\n",
+             DecodeExecmode (FUNDEF_EXECMODE (arg_node)));
+#endif
     if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into function-body"));
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from function-body"));
     }
 
-#if PEM_DEBUG
-    fprintf (stdout, "current function:\n");
-    PrintNode (arg_info);
-    fprintf (stdout, "Executionmode changed from %s into %s\n",
-             DecodeExecmode (old_execmode),
-             DecodeExecmode (INFO_PEM_FUNEXECMODE (arg_info)));
-#endif
-    /* set any changing if appeared */
-    if (old_execmode != INFO_PEM_FUNEXECMODE (arg_info)) {
-        FUNDEF_EXECMODE (arg_node) = INFO_PEM_FUNEXECMODE (arg_info);
+    INFO_PEM_ACTFUNDEF (arg_info) = NULL;
 
-        /* set the corresponding flag */
-        INFO_PEM_ANYCHANGE (arg_info) = 1;
+#if PEM_DEBUG
+    fprintf (stdout, "Executionmode is %s.\n",
+             DecodeExecmode (FUNDEF_EXECMODE (arg_node)));
+#endif
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        DBUG_PRINT ("PEM", ("trav into function-next"));
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        DBUG_PRINT ("PEM", ("trav from function-next"));
     }
 
     DBUG_RETURN (arg_node);
@@ -150,32 +164,38 @@ PEMfundef (node *arg_node, node *arg_info)
 node *
 PEMassign (node *arg_node, node *arg_info)
 {
-    int old_execmode;
+    node *old_assign;
+    int my_old_execmode;
     DBUG_ENTER ("PEMassign");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign),
                  "PEMassign expects a N_assign as arg_node");
 
-    old_execmode = ASSIGN_EXECMODE (arg_node);
-    INFO_PEM_ASSIGN (arg_info) = arg_node;
+    /* push_info */
+    old_assign = INFO_PEM_MYASSIGN (arg_info);
+    INFO_PEM_MYASSIGN (arg_info) = arg_node;
 
-    DBUG_PRINT ("TEM", ("trav into instruction"));
+    my_old_execmode = ASSIGN_EXECMODE (arg_node);
+
+    DBUG_PRINT ("PEM", ("trav into instruction"));
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-    DBUG_PRINT ("TEM", ("trav from instruction"));
+    DBUG_PRINT ("PEM", ("trav from instruction"));
 
-    /* if the executionmode of the assignment had changed, update the
-       executionmode of the function */
-    if (old_execmode != ASSIGN_EXECMODE (arg_node)) {
-        INFO_PEM_FUNEXECMODE (arg_info)
-          = UpdateFunexecmode (INFO_PEM_FUNEXECMODE (arg_info),
-                               ASSIGN_EXECMODE (arg_info));
+    /* if the executionmode of the assignment had changed or we are on our first
+       traversal, update the executionmode of the function */
+    if ((my_old_execmode != ASSIGN_EXECMODE (arg_node))
+        || (INFO_PEM_FIRSTTRAV (arg_info) == TRUE)) {
+        UpdateExecmodes (arg_node, arg_info);
         /* set the change-flag */
-        INFO_PEM_ANYCHANGE (arg_info) = 1;
+        INFO_PEM_ANYCHANGE (arg_info) = TRUE;
     }
 
+    /* pop_info */
+    INFO_PEM_MYASSIGN (arg_info) = old_assign;
+
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        DBUG_PRINT ("TEM", ("trav into next"));
+        DBUG_PRINT ("PEM", ("trav into next"));
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-        DBUG_PRINT ("TEM", ("trav from next"));
+        DBUG_PRINT ("PEM", ("trav from next"));
     }
 
     DBUG_RETURN (arg_node);
@@ -198,41 +218,247 @@ PEMap (node *arg_node, node *arg_info)
     DBUG_ENTER ("PEMap");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_ap), "PEMap expects a N_ap as argument");
 
-    /*ASSIGN_EXECMODE(INFO_PEM_ASSIGN(arg_info)) =
-      FUNDEF_EXECMODE(AP_FUNDEF(arg_node));*/
+    if (FUNDEF_BODY (AP_FUNDEF (arg_node)) == NULL) {
+        ASSIGN_EXECMODE (INFO_PEM_MYASSIGN (arg_info)) = MUTH_EXCLUSIVE;
+    } else {
+        ASSIGN_EXECMODE (INFO_PEM_MYASSIGN (arg_info))
+          = FUNDEF_EXECMODE (AP_FUNDEF (arg_node));
+    }
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn int UpdateFunexecmode(int fun_execmode, int assign_execmode)
+ * @fn node *PEMcond(node *arg_node, node *arg_info)
  *
- *   @brief updates the executionmode of a function
+ *   @brief
  *
- *   @param fun_executionmode the current executionmode of the function
- *   @param assign_execmode the executionmode of the current assignment
- *   @return the new executionmode of the function
+ *   @param arg_node a N_cond
+ *   @param arg_info
+ *   @return
  *
  *****************************************************************************/
-int
-UpdateFunexecmode (int fun_execmode, int assign_execmode)
+node *
+PEMcond (node *arg_node, node *arg_info)
 {
-    int result;
-    DBUG_ENTER ("UpdateFunexecmode");
+    node *old_lastcond;
+    DBUG_ENTER ("PEMcond");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_cond),
+                 "PEMcond expects a N_cond as argument");
 
-    result = MUTH_EXCLUSIVE;
+    old_lastcond = INFO_PEM_LASTCONDASSIGN (arg_info);
+    INFO_PEM_LASTCONDASSIGN (arg_info) = INFO_PEM_MYASSIGN (arg_info);
 
-    switch (assign_execmode) {
-    case MUTH_EXCLUSIVE:
-        result = MUTH_EXCLUSIVE;
-        break;
-    case MUTH_MULTI:
-        result = MUTH_EXCLUSIVE;
-        break;
+    if (COND_THEN (arg_node) != NULL) {
+        DBUG_PRINT ("PEM", ("trav into then-branch"));
+        ASSIGN_NEXT (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+        DBUG_PRINT ("PEM", ("trav from then-branch"));
+    }
+    if (COND_ELSE (arg_node) != NULL) {
+        DBUG_PRINT ("PEM", ("trav into else-branch"));
+        ASSIGN_NEXT (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+        DBUG_PRINT ("PEM", ("trav from else-branch"));
     }
 
-    DBUG_RETURN (result);
+    INFO_PEM_LASTCONDASSIGN (arg_info) = old_lastcond;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *PEMwith2(node *arg_node, node *arg_info)
+ *
+ *   @brief
+ *
+ *   @param arg_node a N_with2
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
+node *
+PEMwith2 (node *arg_node, node *arg_info)
+{
+    node *old_lastwith2;
+    DBUG_ENTER ("PEMwith2");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Nwith2),
+                 "PEMwith2 expects a N_with2 as argument");
+
+    old_lastwith2 = INFO_PEM_LASTWITHASSIGN (arg_info);
+    INFO_PEM_LASTWITHASSIGN (arg_info) = INFO_PEM_MYASSIGN (arg_info);
+
+    if (NWITH2_SEGS (arg_node) != NULL) {
+        DBUG_PRINT ("PEM", ("trav into segments"));
+        ASSIGN_NEXT (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+        DBUG_PRINT ("PEM", ("trav from segments"));
+    }
+    if (NWITH2_CODE (arg_node) != NULL) {
+        DBUG_PRINT ("PEM", ("trav into with-loop-code"));
+        ASSIGN_NEXT (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+        DBUG_PRINT ("PEM", ("trav from with-loop-code"));
+    }
+
+    if (NWITH2_WITHOP (arg_node) != NULL) {
+        DBUG_PRINT ("PEM", ("trav into withops"));
+        ASSIGN_NEXT (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+        DBUG_PRINT ("PEM", ("trav from withops"));
+    }
+
+    INFO_PEM_LASTWITHASSIGN (arg_info) = old_lastwith2;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void UpdateExecmodes(node *assign, node *arg_info)
+ *
+ *   @brief
+ *
+ *   @param arg_info
+ *   @param assign
+ *   @return nothing at all
+ *
+ *****************************************************************************/
+void
+UpdateExecmodes (node *assign, node *arg_info)
+{
+    DBUG_ENTER ("UpdateExecmodes");
+    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
+                 "UpdateExecmodes expects a N_assign as argument");
+
+    UpdateFundefExecmode (INFO_PEM_ACTFUNDEF (arg_info), ASSIGN_EXECMODE (assign));
+
+    UpdateCondExecmode (INFO_PEM_LASTCONDASSIGN (arg_info), ASSIGN_EXECMODE (assign));
+
+    UpdateWithExecmode (INFO_PEM_LASTWITHASSIGN (arg_info), ASSIGN_EXECMODE (assign));
+    DBUG_VOID_RETURN;
+}
+
+void
+UpdateFundefExecmode (node *fundef, int execmode)
+{
+    DBUG_ENTER ("UpdateFundefExecmode");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "UpdateFundefExecmode expects a N_fundef as argument");
+
+    switch (execmode) {
+    case MUTH_ANY:
+        break;
+    case MUTH_EXCLUSIVE:
+        FUNDEF_EXECMODE (fundef) = MUTH_EXCLUSIVE;
+        break;
+    case MUTH_SINGLE:
+        switch (FUNDEF_EXECMODE (fundef)) {
+        case MUTH_EXCLUSIVE:
+            break;
+        case MUTH_SINGLE:
+            break;
+        case MUTH_MULTI:
+            FUNDEF_EXECMODE (fundef) = MUTH_EXCLUSIVE;
+            break;
+        case MUTH_ANY:
+            FUNDEF_EXECMODE (fundef) = MUTH_SINGLE;
+            break;
+        default:
+            DBUG_ASSERT (0, "fundef has an invalid executionmode");
+            break;
+        }
+        break;
+    case MUTH_MULTI:
+        switch (FUNDEF_EXECMODE (fundef)) {
+        case MUTH_EXCLUSIVE:
+            break;
+        case MUTH_SINGLE:
+            FUNDEF_EXECMODE (fundef) = MUTH_EXCLUSIVE;
+            break;
+        case MUTH_MULTI:
+            break;
+        case MUTH_ANY:
+            FUNDEF_EXECMODE (fundef) = MUTH_MULTI;
+            break;
+        default:
+            DBUG_ASSERT (0, "fundef has an invalid executionmode");
+            break;
+        }
+        break;
+    default:
+        DBUG_ASSERT (0, "UpdateFundefExecmode expects a valid executionmode");
+        break;
+    }
+    DBUG_VOID_RETURN;
+}
+
+void
+UpdateCondExecmode (node *condassign, int execmode)
+{
+    DBUG_ENTER ("UpdateCondExecmode");
+
+    if (condassign != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (condassign) == N_assign),
+                     "UpdateCondExecmode expects a N_assign as argument");
+
+        switch (execmode) {
+        case MUTH_ANY:
+            break;
+        case MUTH_EXCLUSIVE:
+            ASSIGN_EXECMODE (condassign) = MUTH_EXCLUSIVE;
+            break;
+        case MUTH_SINGLE:
+            switch (ASSIGN_EXECMODE (condassign)) {
+            case MUTH_EXCLUSIVE:
+                break;
+            case MUTH_SINGLE:
+                break;
+            case MUTH_MULTI:
+                ASSIGN_EXECMODE (condassign) = MUTH_EXCLUSIVE;
+                break;
+            case MUTH_ANY:
+                ASSIGN_EXECMODE (condassign) = MUTH_SINGLE;
+                break;
+            default:
+                DBUG_ASSERT (0, "condassign has an invalid executionmode");
+                break;
+            }
+            break;
+        case MUTH_MULTI:
+            switch (ASSIGN_EXECMODE (condassign)) {
+            case MUTH_EXCLUSIVE:
+                break;
+            case MUTH_SINGLE:
+                ASSIGN_EXECMODE (condassign) = MUTH_EXCLUSIVE;
+                break;
+            case MUTH_MULTI:
+                break;
+            case MUTH_ANY:
+                ASSIGN_EXECMODE (condassign) = MUTH_SINGLE;
+                break;
+            default:
+                DBUG_ASSERT (0, "condassign has an invalid executionmode");
+                break;
+            }
+        default:
+            DBUG_ASSERT (0, "UpdateCondExecmode expects a valid executionmode");
+            break;
+        }
+    } /* if (condassign != NULL) */
+    DBUG_VOID_RETURN;
+}
+
+void
+UpdateWithExecmode (node *withloop_assign, int execmode)
+{
+    DBUG_ENTER ("UpdateWithExecmode");
+    if (withloop_assign != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (withloop_assign) == N_assign),
+                     "UpdateWithExecmode expects a N_assign as argument");
+
+        if (execmode == MUTH_EXCLUSIVE) {
+            ASSIGN_EXECMODE (withloop_assign) = MUTH_EXCLUSIVE;
+        }
+    }
+    DBUG_VOID_RETURN;
 }
 
 #if PEM_DEBUG
@@ -261,6 +487,7 @@ DecodeExecmode (int execmode)
         return ("MT");
     default:
         DBUG_ASSERT (0, "DecodeExecmode expects a valid executionmode");
+        break;
     }
     return "NN";
 }

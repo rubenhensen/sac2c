@@ -1,18 +1,13 @@
 /*
  * $Log$
+ * Revision 1.2  2004/07/23 10:05:46  skt
+ * complete redesign
+ *
  * Revision 1.1  2004/07/06 12:31:20  skt
  * Initial revision
  *
  */
 
-/* to do in node_info.mac
- * add pem_tab
- *     - PEMfundef
- *     - PEMassign
- *     - PEMap
- * TravNone for N_nwith2, N_array und N_prf
- * TravNone for N_return for PEM & TEM
- */
 /*****************************************************************************
  *
  * file:   propagate_executionmode.h
@@ -37,8 +32,11 @@
  */
 #define INFO_PEM_ANYCHANGE(n) (n->flag)
 #define INFO_PEM_FIRSTTRAV(n) (n->counter)
-#define INFO_PEM_FUNEXECMODE(n) (n->refcnt)
-#define INFO_PEM_ASSIGN(n) (n->node[0])
+#define INFO_PEM_ACTFUNDEF(n) (n->node[0])
+#define INFO_PEM_MYASSIGN(n) (n->node[1])
+#define INFO_PEM_LASTCONDASSIGN(n) (n->node[2])
+#define INFO_PEM_LASTWITHASSIGN(n) (n->node[3])
+
 #define PEM_DEBUG 0
 
 extern node *PropagateExecutionmode (node *arg_node, node *arg_info);
@@ -49,7 +47,17 @@ extern node *PEMassign (node *arg_node, node *arg_info);
 
 extern node *PEMap (node *arg_node, node *arg_info);
 
-int UpdateFunexecmode (int fun_execmode, int assign_execmode);
+extern node *PEMcond (node *arg_node, node *arg_info);
+
+extern node *PEMwith2 (node *arg_node, node *arg_info);
+
+void UpdateExecmodes (node *assign, node *arg_info);
+
+void UpdateFundefExecmode (node *fundef, int execmode);
+
+void UpdateCondExecmode (node *condassign, int execmode);
+
+void UpdateWithExecmode (node *withloop_assign, int execmode);
 
 #if PEM_DEBUG
 char *DecodeExecmode (int execmode);
