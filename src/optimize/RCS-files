@@ -2,6 +2,8 @@ ConstantFolding.c
 ConstantFolding.h
 DeadCodeRemoval.c
 DeadCodeRemoval.h
+DupTree.c
+DupTree.h
 LoopInvariantRemoval.c
 LoopInvariantRemoval.h
 Makefile
