@@ -1,13 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.38  1996/01/17 14:48:39  asi
- * global variables moved to globals.h
- * added typedefs stelm and stack
- * added defines MIN_STACK_SIZE, MAKE_MRDL_STACK, FREE_MRDL_STACK, TOS, MRD_TOS, MRD_TAB
- * MRD_LIST, MRD, MRD_GETSUBST, MRD_GETCS, MRD_GETLAST, MRD_GETDATA
- * added external definitions for functions MrdGet, GetExpr, PushMRDL, PushDupMRDL
- * PopMRDL, PopMRDL2
+ * Revision 1.39  1996/01/17 15:59:52  asi
+ * added common subexpression elimination
  *
  * Revision 1.37  1995/12/21  13:19:27  asi
  * added macros INFO_VARNO, INFO_DEF, INFO_USE and
@@ -139,6 +134,7 @@
 #define _optimize_h
 
 #include "free.h"
+#include "globals.h"
 
 extern int dead_expr;
 extern int dead_var;
@@ -150,51 +146,6 @@ extern int unr_expr;
 extern int uns_expr;
 extern int optvar_counter;
 extern int elim_arrays;
-
-typedef struct STELM {
-    int vl_len;
-    node **varlist;
-} stelm;
-
-typedef struct STACK {
-    long tos;
-    long st_len;
-    stelm *stack;
-} stack;
-
-#define MIN_STACK_SIZE 50
-
-stack *mrdl_stack;
-
-#define MAKE_MRDL_STACK                                                                  \
-    mrdl_stack = MAlloc (sizeof (stack));                                                \
-    mrdl_stack->tos = -1;                                                                \
-    mrdl_stack->st_len = MIN_STACK_SIZE;                                                 \
-    mrdl_stack->stack = (stelm *)MAlloc (sizeof (stelm) * MIN_STACK_SIZE);
-
-#define FREE_MRDL_STACK                                                                  \
-    FREE (mrdl_stack->stack);                                                            \
-    FREE (mrdl_stack);
-
-#define TOS mrdl_stack->stack[mrdl_stack->tos]
-#define MRD_TOS mrdl_stack->stack[mrdl_stack->tos]
-#define MRD_TAB                                                                          \
-    ((cf_tab == act_tab) || (unroll_tab == act_tab) || (unswitch_tab == act_tab))
-#define MRD_LIST (long *)MRD_TOS.varlist
-#define MRD(i) MRD_TOS.varlist[i]
-
-extern node *MrdGet (int i, int varno, int outside_block);
-extern node *GetExpr (node *arg_node);
-
-#define MRD_GETSUBST(n, i, v) n = GetExpr (MrdGet (i, v, 0));
-#define MRD_GETCS(n, i, v) n = MrdGet (i, v, 1);
-#define MRD_GETLAST(n, i, v) n = GetExpr (MrdGet (i, v, 2));
-#define MRD_GETDATA(n, i, v) n = GetExpr (MrdGet (i, v, 3));
-
-extern void PushMRDL (long NumVar);
-extern void PushDupMRDL ();
-extern void PopMRDL ();
-extern void PopMRDL2 ();
 
 #define INC_VAR(mask, var) mask[var] += 1
 #define DEC_VAR(mask, var) mask[var] -= 1

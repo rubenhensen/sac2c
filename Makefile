@@ -1,6 +1,12 @@
 #
 # $Log$
-# Revision 1.40  1996/01/02 15:37:13  cg
+# Revision 1.41  1996/01/17 15:59:52  asi
+# added common subexpression elimination
+#
+# Revision 1.40  1996/01/02  15:37:13  cg
+# added linking of scnprs.o and cccall.o
+#
+# Revision 1.40  1996/01/02  15:37:13  cg
 # added linking of scnprs.o and cccall.o
 #
 # Revision 1.39  1995/12/29  10:20:15  cg
