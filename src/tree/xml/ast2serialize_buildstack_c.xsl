@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/10/19 14:05:55  sah
+  Node attributes are handeled correctly now
+
   Revision 1.1  2004/10/11 15:48:26  sah
   Initial revision
 
@@ -226,12 +229,12 @@ version="1.0">
   
      
 <!--
-     traversal main attribute
+     traversal main attribute of type Node
 
-     pushes the attribute onto the stack
+     Traverses the sub tree behind the node attribute
 -->
-<xsl:template match="attribute" >
-  <xsl:value-of select="'SerStackPush( '" />
+<xsl:template match="attribute[key(&quot;types&quot;, @name) = &quot;Node&quot;]" >
+  <xsl:value-of select="'if ('" />
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
       <xsl:value-of select="'arg_node'" />
@@ -243,7 +246,38 @@ version="1.0">
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="', INFO_SER_STACK( arg_info));'" />
+  <xsl:value-of select="' != NULL) {'" />
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">
+      <xsl:value-of select="'arg_node'" />
+    </xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name" />
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="'= Trav( '" />
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">
+      <xsl:value-of select="'arg_node'" />
+    </xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name" />
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="', arg_info);}'" />
 </xsl:template>
+
+<!--
+     template main attribute
+
+     stops further traversal of attrubutes
+-->
+<xsl:template match="attribute" />
 
 </xsl:stylesheet>
