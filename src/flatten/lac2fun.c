@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2004/07/16 17:36:23  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.24  2004/02/25 08:17:44  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -189,6 +193,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -202,6 +208,51 @@
 #include "InferDFMs.h"
 #include "cleanup_decls.h"
 #include "lac2fun.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *fundef;
+    node *funs;
+    node *assign;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_L2F_FUNDEF(n) (n->fundef)
+#define INFO_L2F_FUNS(n) (n->funs)
+#define INFO_L2F_ASSIGN(n) (n->assign)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_L2F_FUNDEF (result) = NULL;
+    INFO_L2F_FUNS (result) = NULL;
+    INFO_L2F_ASSIGN (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /******************************************************************************
  *
@@ -235,7 +286,7 @@ GetLacFunName (char *suffix)
  *   node *MakeL2fFundef( char *funname, char *modname,
  *                        node *instr, node *funcall_let,
  *                        DFMmask_t in, DFMmask_t out, DFMmask_t local,
- *                        node *arg_info)
+ *                        info *arg_info)
  *
  * description:
  *   Creates the fundef-node of a LaC function.
@@ -244,7 +295,7 @@ GetLacFunName (char *suffix)
 
 static node *
 MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFMmask_t in,
-               DFMmask_t out, DFMmask_t local, node *arg_info)
+               DFMmask_t out, DFMmask_t local, info *arg_info)
 {
     LUT_t lut;
     DFMmask_t tmp_mask;
@@ -458,7 +509,7 @@ MakeL2fFunLet (char *funname, char *modname, DFMmask_t in, DFMmask_t out)
  * function:
  *   node *DoLifting( char *prefix,
  *                    DFMmask_t in, DFMmask_t out, DFMmask_t local,
- *                    node *arg_node, node *arg_info)
+ *                    node *arg_node, info *arg_info)
  *
  * description:
  *   This function carries out the lifting of a conditional or loop.
@@ -467,7 +518,7 @@ MakeL2fFunLet (char *funname, char *modname, DFMmask_t in, DFMmask_t out)
 
 static node *
 DoLifting (char *prefix, DFMmask_t in, DFMmask_t out, DFMmask_t local, node *arg_node,
-           node *arg_info)
+           info *arg_info)
 {
     char *funname, *modname;
     node *fundef, *let;
@@ -514,7 +565,7 @@ DoLifting (char *prefix, DFMmask_t in, DFMmask_t out, DFMmask_t local, node *arg
 /******************************************************************************
  *
  * function:
- *   node *L2Ffundef( node *arg_node, node *arg_info)
+ *   node *L2Ffundef( node *arg_node, info *arg_info)
  *
  * description:
  *   All LaC fundefs created during traversal of the body are inserted
@@ -523,7 +574,7 @@ DoLifting (char *prefix, DFMmask_t in, DFMmask_t out, DFMmask_t local, node *arg
  ******************************************************************************/
 
 node *
-L2Ffundef (node *arg_node, node *arg_info)
+L2Ffundef (node *arg_node, info *arg_info)
 {
     node *ret, *tmp;
 
@@ -565,7 +616,7 @@ L2Ffundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *L2Fassign( node *arg_node, node *arg_info)
+ *   node *L2Fassign( node *arg_node, info *arg_info)
  *
  * description:
  *   Bottom-up-traversal of the assignments.
@@ -573,7 +624,7 @@ L2Ffundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-L2Fassign (node *arg_node, node *arg_info)
+L2Fassign (node *arg_node, info *arg_info)
 {
     node *old_assign;
 
@@ -597,7 +648,7 @@ L2Fassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *L2Fcond( node *arg_node, node *arg_info)
+ *   node *L2Fcond( node *arg_node, info *arg_info)
  *
  * description:
  *   Lifts the conditional and inserts an equivalent function call instead.
@@ -605,7 +656,7 @@ L2Fassign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-L2Fcond (node *arg_node, node *arg_info)
+L2Fcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("L2Fcond");
 
@@ -621,7 +672,7 @@ L2Fcond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *L2Fdo( node *arg_node, node *arg_info)
+ *   node *L2Fdo( node *arg_node, info *arg_info)
  *
  * description:
  *   Lifts the do-loop and inserts an equivalent function call instead.
@@ -629,7 +680,7 @@ L2Fcond (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-L2Fdo (node *arg_node, node *arg_info)
+L2Fdo (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("L2Fdo");
 
@@ -654,7 +705,7 @@ L2Fdo (node *arg_node, node *arg_info)
 node *
 Lac2Fun (node *syntax_tree)
 {
-    node *info_node;
+    info *info;
     funtab *old_funtab;
 
     DBUG_ENTER ("Lac2Fun");
@@ -678,14 +729,14 @@ Lac2Fun (node *syntax_tree)
     }
 #endif
 
-    info_node = MakeInfo ();
+    info = MakeInfo ();
 
     old_funtab = act_tab;
     act_tab = l2f_tab;
-    syntax_tree = Trav (syntax_tree, info_node);
+    syntax_tree = Trav (syntax_tree, info);
     act_tab = old_funtab;
 
-    info_node = FreeNode (info_node);
+    info = FreeInfo (info);
 
     /*
      * cleanup declarations (remove unused vardecs, ...)

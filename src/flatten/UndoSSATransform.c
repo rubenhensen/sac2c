@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.8  2004/07/16 17:36:23  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.7  2004/05/12 12:59:40  ktr
  * Code for NCODE_EPILOGUE added
  *
@@ -161,6 +165,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -175,14 +181,72 @@
 #define OPASSIGN_REMOVE 1
 #define OPASSIGN_MOVE 2
 
-static ids *TravIDS (ids *arg_ids, node *arg_info);
-static ids *USSAids (ids *arg_ids, node *arg_info);
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *args;
+    node *topblock;
+    node *foldtarget;
+    node *constassigns;
+    int opassign;
+    node *modul;
+    node *phifun;
+    node *fundef;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_USSA_ARGS(n) (n->args)
+#define INFO_USSA_TOPBLOCK(n) (n->topblock)
+#define INFO_USSA_FOLDTARGET(n) (n->foldtarget)
+#define INFO_USSA_CONSTASSIGNS(n) (n->constassigns)
+#define INFO_USSA_OPASSIGN(n) (n->opassign)
+#define INFO_USSA_MODUL(n) (n->modul)
+#define INFO_USSA_PHIFUN(n) (n->phifun)
+#define INFO_USSA_FUNDEF(n) (n->fundef)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    INFO_USSA_ARGS (result) = NULL;
+    INFO_USSA_TOPBLOCK (result) = NULL;
+    INFO_USSA_FOLDTARGET (result) = NULL;
+    INFO_USSA_CONSTASSIGNS (result) = NULL;
+    INFO_USSA_OPASSIGN (result) = 0;
+    INFO_USSA_MODUL (result) = NULL;
+    INFO_USSA_PHIFUN (result) = NULL;
+    INFO_USSA_FUNDEF (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
+
+static ids *TravIDS (ids *arg_ids, info *arg_info);
+static ids *USSAids (ids *arg_ids, info *arg_info);
 
 /* helper functions for local use */
 static void USSAInitAvisFlags (node *fundef);
 static node *USSARemoveUnusedVardecs (node *vardecs);
 
-static node *CondTransform (node *arg_node, node *arg_info);
+static node *CondTransform (node *arg_node, info *arg_info);
 
 /******************************************************************************
  *
@@ -257,7 +321,7 @@ USSARemoveUnusedVardecs (node *vardecs)
 /******************************************************************************
  *
  * function:
- *  node *USSAarg(node *arg_node, node *arg_info)
+ *  node *USSAarg(node *arg_node, info *arg_info)
  *
  * description:
  *  check args for AVIS_SUBST entries.
@@ -268,7 +332,7 @@ USSARemoveUnusedVardecs (node *vardecs)
  *
  ******************************************************************************/
 node *
-USSAarg (node *arg_node, node *arg_info)
+USSAarg (node *arg_node, info *arg_info)
 {
     node *tmp;
     node *vardec;
@@ -309,7 +373,7 @@ USSAarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *USSAvardec(node *arg_node, node *arg_info)
+ *   node *USSAvardec(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -330,7 +394,7 @@ USSAarg (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-USSAvardec (node *arg_node, node *arg_info)
+USSAvardec (node *arg_node, info *arg_info)
 {
     node *tmp;
     node *expr;
@@ -477,7 +541,7 @@ USSAvardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *USSAid(node *arg_node, node *arg_info)
+ *   node *USSAid(node *arg_node, info *arg_info)
  *
  * description:
  *   checks for consistent back reference from N_id node to N_arg or N_vardec
@@ -486,7 +550,7 @@ USSAvardec (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-USSAid (node *arg_node, node *arg_info)
+USSAid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("USSAid");
 
@@ -500,14 +564,14 @@ USSAid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *USSAlet(node *arg_node, node *arg_info)
+ *   node *USSAlet(node *arg_node, info *arg_info)
  *
  * description:
  *   starts traversal in ids chain.
  *
  ******************************************************************************/
 node *
-USSAlet (node *arg_node, node *arg_info)
+USSAlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("USSAlet");
     DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "N_let with empty EXPR attribute.");
@@ -547,14 +611,14 @@ USSAlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *USSANwithid(node *arg_node, node *arg_info)
+ *   node *USSANwithid(node *arg_node, info *arg_info)
  *
  * description:
  *   starts traversal for ids chains in Nwithid nodes.
  *
  ******************************************************************************/
 node *
-USSANwithid (node *arg_node, node *arg_info)
+USSANwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("USSANwithid");
 
@@ -572,7 +636,7 @@ USSANwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *USSANcode(node *arg_node, node *arg_info)
+ *   node *USSANcode(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses code blocks of with loop and inserts unique result name for
@@ -580,7 +644,7 @@ USSANwithid (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-USSANcode (node *arg_node, node *arg_info)
+USSANcode (node *arg_node, info *arg_info)
 {
     node *src_id;
 
@@ -652,7 +716,7 @@ USSANcode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *USSANwith(node *arg_node, node *arg_info)
+ *   node *USSANwith(node *arg_node, info *arg_info)
  *
  * description:
  *   if this is a fold-withloop. we have to create a new unique result valiable
@@ -661,9 +725,9 @@ USSANcode (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-USSANwith (node *arg_node, node *arg_info)
+USSANwith (node *arg_node, info *arg_info)
 {
-    node *new_arg_info;
+    info *new_arg_info;
 
     DBUG_ENTER ("USSANwith");
     /* stack arg_info node, copy pointer to vardec/args lists */
@@ -720,7 +784,7 @@ USSANwith (node *arg_node, node *arg_info)
     }
 
     /* free new_arg_info node */
-    FreeNode (new_arg_info);
+    FreeInfo (new_arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -728,14 +792,14 @@ USSANwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node* USSAfundef(node *arg_node, node *arg_info)
+ *    node* USSAfundef(node *arg_node, info *arg_info)
  *
  * description:
  *  traverses arg nodes and block in this order.
  *
  ******************************************************************************/
 node *
-USSAfundef (node *arg_node, node *arg_info)
+USSAfundef (node *arg_node, info *arg_info)
 {
 
     node *block, *assign, *cond;
@@ -802,14 +866,14 @@ USSAfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node* USSAblock(node *arg_node, node *arg_info)
+ *    node* USSAblock(node *arg_node, info *arg_info)
  *
  * description:
  *  traverses vardec nodes and assignments in this order.
  *
  ******************************************************************************/
 node *
-USSAblock (node *arg_node, node *arg_info)
+USSAblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("USSAblock");
 
@@ -851,14 +915,14 @@ USSAblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node* USSAassign(node *arg_node, node *arg_info)
+ *    node* USSAassign(node *arg_node, info *arg_info)
  *
  * description:
  *   traverses instruction and removes/moves tagges assignments.
  *
  ******************************************************************************/
 node *
-USSAassign (node *arg_node, node *arg_info)
+USSAassign (node *arg_node, info *arg_info)
 {
     int op;
     node *tmp;
@@ -917,7 +981,7 @@ USSAassign (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *CondTransform(node *arg_node, node* arg_info)
+ *   node *CondTransform(node *arg_node, info *arg_info)
  *
  * description:
  *   This method is executed at the begining of the traversal for each
@@ -947,7 +1011,7 @@ USSAassign (node *arg_node, node *arg_info)
  *
  ****************************************************************************/
 static node *
-CondTransform (node *arg_node, node *arg_info)
+CondTransform (node *arg_node, info *arg_info)
 {
 
     node *then_node, *else_node;
@@ -1079,14 +1143,14 @@ CondTransform (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *USSAids(node *arg_ids, node *arg_info)
+ *   node *USSAids(node *arg_ids, info *arg_info)
  *
  * description:
  *   re-renames artificial vardecs to their original name
  *
  ******************************************************************************/
 static ids *
-USSAids (ids *arg_ids, node *arg_info)
+USSAids (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("USSAids");
 
@@ -1122,7 +1186,7 @@ USSAids (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   ids *TravIDS(ids *arg_ids, node *arg_info)
+ *   ids *TravIDS(ids *arg_ids, info *arg_info)
  *
  * description:
  *   similar implementation of trav mechanism as used for nodes
@@ -1130,7 +1194,7 @@ USSAids (ids *arg_ids, node *arg_info)
  *
  ******************************************************************************/
 static ids *
-TravIDS (ids *arg_ids, node *arg_info)
+TravIDS (ids *arg_ids, info *arg_info)
 {
     DBUG_ENTER ("TravIDS");
 
@@ -1152,7 +1216,7 @@ TravIDS (ids *arg_ids, node *arg_info)
 node *
 UndoSSATransform (node *modul)
 {
-    node *arg_info;
+    info *arg_info;
     funtab *old_tab;
 
     DBUG_ENTER ("UndoSSATransform");
@@ -1170,7 +1234,7 @@ UndoSSATransform (node *modul)
 
     act_tab = old_tab;
 
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     /* ast is no longer in ssaform */
     valid_ssaform = FALSE;

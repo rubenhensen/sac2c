@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.3  2004/07/16 17:36:23  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.2  2004/02/25 08:22:32  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -49,22 +53,22 @@
 
 #define _SSAtransform_h
 
-extern node *SSAfundef (node *arg_node, node *arg_info);
-extern node *SSAblock (node *arg_node, node *arg_info);
-extern node *SSAexprs (node *arg_node, node *arg_info);
-extern node *SSAassign (node *arg_node, node *arg_info);
-extern node *SSAlet (node *arg_node, node *arg_info);
-extern node *SSAicm (node *arg_node, node *arg_info);
-extern node *SSAarg (node *arg_node, node *arg_info);
-extern node *SSAvardec (node *arg_node, node *arg_info);
-extern node *SSAid (node *arg_node, node *arg_info);
-extern node *SSANwith (node *arg_node, node *arg_info);
-extern node *SSANcode (node *arg_node, node *arg_info);
-extern node *SSANpart (node *arg_node, node *arg_info);
-extern node *SSANwithid (node *arg_node, node *arg_info);
-extern node *SSAcond (node *arg_node, node *arg_info);
-extern node *SSAreturn (node *arg_node, node *arg_info);
-extern node *SSAap (node *arg_node, node *arg_info);
+extern node *SSAfundef (node *arg_node, info *arg_info);
+extern node *SSAblock (node *arg_node, info *arg_info);
+extern node *SSAexprs (node *arg_node, info *arg_info);
+extern node *SSAassign (node *arg_node, info *arg_info);
+extern node *SSAlet (node *arg_node, info *arg_info);
+extern node *SSAicm (node *arg_node, info *arg_info);
+extern node *SSAarg (node *arg_node, info *arg_info);
+extern node *SSAvardec (node *arg_node, info *arg_info);
+extern node *SSAid (node *arg_node, info *arg_info);
+extern node *SSANwith (node *arg_node, info *arg_info);
+extern node *SSANcode (node *arg_node, info *arg_info);
+extern node *SSANpart (node *arg_node, info *arg_info);
+extern node *SSANwithid (node *arg_node, info *arg_info);
+extern node *SSAcond (node *arg_node, info *arg_info);
+extern node *SSAreturn (node *arg_node, info *arg_info);
+extern node *SSAap (node *arg_node, info *arg_info);
 
 extern node *SSATransform (node *ast);
 extern node *SSATransformAllowGOs (node *ast);

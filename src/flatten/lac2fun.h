@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/07/16 17:36:23  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.4  2004/02/25 08:17:44  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -45,9 +49,9 @@
 
 extern node *Lac2Fun (node *syntaxtree);
 
-extern node *L2Ffundef (node *arg_node, node *arg_info);
-extern node *L2Fcond (node *arg_node, node *arg_info);
-extern node *L2Fdo (node *arg_node, node *arg_info);
-extern node *L2Fassign (node *arg_node, node *arg_info);
+extern node *L2Ffundef (node *arg_node, info *arg_info);
+extern node *L2Fcond (node *arg_node, info *arg_info);
+extern node *L2Fdo (node *arg_node, info *arg_info);
+extern node *L2Fassign (node *arg_node, info *arg_info);
 
 #endif /* _sac_lac2fun_h */

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/07/16 17:36:23  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 1.7  2002/10/18 13:35:22  sbs
  * Now, this phase also detects all references to global objects and marks the according
  * N_id nodes as IS_GLOBAL.
@@ -56,6 +60,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -66,6 +72,51 @@
 #include "DupTree.h"
 
 #include "insert_vardec.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *objdefs;
+    node *vardecs;
+    node *args;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_INSVD_OBJDEFS(n) (n->objdefs)
+#define INFO_INSVD_VARDECS(n) (n->vardecs)
+#define INFO_INSVD_ARGS(n) (n->args)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_INSVD_OBJDEFS (result) = NULL;
+    INFO_INSVD_VARDECS (result) = NULL;
+    INFO_INSVD_ARGS (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /******************************************************************************
  *
@@ -294,14 +345,14 @@ CheckIds (ids *idents, search_for_name_fun_t SearchForName, node *vardecs, node 
 /******************************************************************************
  *
  * function:
- *   node *INSVDfundef( node *arg_node, node *arg_info)
+ *   node *INSVDfundef( node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-INSVDfundef (node *arg_node, node *arg_info)
+INSVDfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INSVDfundef");
 
@@ -323,14 +374,14 @@ INSVDfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INSVDlet( node *arg_node, node *arg_info)
+ *   node *INSVDlet( node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-INSVDlet (node *arg_node, node *arg_info)
+INSVDlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INSVDlet");
 
@@ -346,14 +397,14 @@ INSVDlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INSVDid( node *arg_node, node *arg_info)
+ *   node *INSVDid( node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-INSVDid (node *arg_node, node *arg_info)
+INSVDid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INSVDid");
 
@@ -368,14 +419,14 @@ INSVDid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INSVDwithid( node *arg_node, node *arg_info)
+ *   node *INSVDwithid( node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-INSVDwithid (node *arg_node, node *arg_info)
+INSVDwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INSVDwithid");
 
@@ -407,24 +458,24 @@ node *
 InsertVardec (node *syntax_tree)
 {
     funtab *old_funtab;
-    node *info_node;
+    info *info;
 
     DBUG_ENTER ("InsertVardecs");
 
     old_funtab = act_tab;
     act_tab = insvd_tab;
 
-    info_node = MakeInfo ();
+    info = MakeInfo ();
 
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_modul),
                  ("InsertVardec can only be called on N_modul nodes"));
 
-    INFO_INSVD_OBJDEFS (info_node) = MODUL_OBJS (syntax_tree);
+    INFO_INSVD_OBJDEFS (info) = MODUL_OBJS (syntax_tree);
 
-    syntax_tree = Trav (syntax_tree, info_node);
+    syntax_tree = Trav (syntax_tree, info);
     act_tab = old_funtab;
 
-    info_node = FreeNode (info_node);
+    info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }

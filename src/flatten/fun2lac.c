@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2004/07/16 17:36:23  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.22  2004/07/14 15:20:57  ktr
  * *** empty log message ***
  *
@@ -108,6 +112,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"
@@ -120,6 +126,51 @@
 #include "UndoSSATransform.h"
 #include "Inline.h"
 #include "globals.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *fundef;
+    node *inlined;
+    node *let;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_F2L_FUNDEF(n) (n->fundef)
+#define INFO_F2L_INLINED(n) (n->inlined)
+#define INFO_F2L_LET(n) (n->let)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_F2L_FUNDEF (result) = NULL;
+    INFO_F2L_INLINED (result) = NULL;
+    INFO_F2L_LET (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /******************************************************************************
  *
@@ -719,7 +770,7 @@ TransformIntoCond (node *fundef)
 /******************************************************************************
  *
  * function:
- *   node *FUN2LACap( node *arg_node, node *arg_info)
+ *   node *FUN2LACap( node *arg_node, info *arg_info)
  *
  * description:
  *   If the function applied is a cond or loop function, then the function
@@ -728,7 +779,7 @@ TransformIntoCond (node *fundef)
  ******************************************************************************/
 
 node *
-FUN2LACap (node *arg_node, node *arg_info)
+FUN2LACap (node *arg_node, info *arg_info)
 {
     node *fundef;
     node *inl_code;
@@ -775,7 +826,7 @@ FUN2LACap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *FUN2LAClet( node *arg_node, node *arg_info)
+ *   node *FUN2LAClet( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -783,7 +834,7 @@ FUN2LACap (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FUN2LAClet (node *arg_node, node *arg_info)
+FUN2LAClet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FUN2LAClet");
 
@@ -797,7 +848,7 @@ FUN2LAClet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *FUN2LACassign( node *arg_node, node *arg_info)
+ *   node *FUN2LACassign( node *arg_node, info *arg_info)
  *
  * description:
  *   The instruction behind the assignment is traversed. Iff it represents the
@@ -807,7 +858,7 @@ FUN2LAClet (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FUN2LACassign (node *arg_node, node *arg_info)
+FUN2LACassign (node *arg_node, info *arg_info)
 {
     node *inl_code;
 
@@ -834,7 +885,7 @@ FUN2LACassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *FUN2LACblock( node *arg_node, node *arg_info)
+ *   node *FUN2LACblock( node *arg_node, info *arg_info)
  *
  * description:
  *   This function initiates the traversal of the instruction chain
@@ -843,7 +894,7 @@ FUN2LACassign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FUN2LACblock (node *arg_node, node *arg_info)
+FUN2LACblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FUN2LACblock");
 
@@ -857,7 +908,7 @@ FUN2LACblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *FUN2LACfundef( node *arg_node, node *arg_info)
+ *   node *FUN2LACfundef( node *arg_node, info *arg_info)
  *
  * description:
  *   This function traverses the function body of any function that does NOT
@@ -866,7 +917,7 @@ FUN2LACblock (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FUN2LACfundef (node *arg_node, node *arg_info)
+FUN2LACfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FUN2LACfundef");
 
@@ -886,7 +937,7 @@ FUN2LACfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *FUN2LACmodul( node *arg_node, node *arg_info)
+ *   node *FUN2LACmodul( node *arg_node, info *arg_info)
  *
  * description:
  *   This function traverses all function definitions under a N_modul
@@ -895,7 +946,7 @@ FUN2LACfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-FUN2LACmodul (node *arg_node, node *arg_info)
+FUN2LACmodul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FUN2LACmodul");
 
@@ -928,7 +979,7 @@ FUN2LACmodul (node *arg_node, node *arg_info)
 node *
 Fun2Lac (node *syntax_tree)
 {
-    node *info_node;
+    info *info;
 
     DBUG_ENTER ("Fun2Lac");
 
@@ -940,11 +991,11 @@ Fun2Lac (node *syntax_tree)
     }
 
     act_tab = fun2lac_tab;
-    info_node = MakeInfo ();
+    info = MakeInfo ();
 
-    syntax_tree = Trav (syntax_tree, info_node);
+    syntax_tree = Trav (syntax_tree, info);
 
-    FreeNode (info_node);
+    FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }
