@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.4  2004/11/21 20:34:10  khf
+ * the big 2004 codebrushing event
+ *
  * Revision 1.3  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -15,13 +18,16 @@
  * Initial revision
  */
 
-#ifndef _UndoElimSubDiv_h_
-#define _UndoElimSubDiv_h_
+#include "types.h"
 
-extern node *UndoElimSubDiv (node *);
+#ifndef _SAC_UNDOELIMSUBDIV_H_
+#define _SAC_UNDOELIMSUBDIV_H_
+
+extern node *UESDdoUndoElimSubDiv (node *);
+
 extern node *UESDblock (node *, info *);
 extern node *UESDassign (node *, info *);
 extern node *UESDlet (node *, info *);
 extern node *UESDprf (node *, info *);
 
-#endif
+#endif /* _SAC_UNDOELIMSUBDIV_H_ */

@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.6  2004/11/21 20:34:10  khf
+ * the big 2004 codebrushing event
+ *
  * Revision 1.5  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -20,13 +23,16 @@
  *
  */
 
-#ifndef _DistributiveLaw_h_
-#define _DistributiveLaw_h_
+#include "types.h"
 
-extern node *DistributiveLaw (node *);
+#ifndef _SAC_DISTRIBUTIVELAW_H_
+#define _SAC_DISTRIBUTIVELAW_H_
+
+extern node *DLdoDistributiveLaw (node *);
 extern node *DLblock (node *, info *);
 extern node *DLassign (node *, info *);
 extern node *DLlet (node *, info *);
-extern node *DLPrfOrAp (node *, info *);
+extern node *DLap (node *, info *);
+extern node *DLprf (node *, info *);
 
-#endif
+#endif /* _SAC_DISTRIBUTIVELAW_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/11/21 20:34:10  khf
+ * the big 2004 codebrushing event
+ *
  * Revision 1.9  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -42,13 +45,16 @@
  *
  */
 
-#ifndef _AssociativeLaw_h_
-#define _AssociativeLaw_h_
+#include "types.h"
 
-extern node *AssociativeLaw (node *arg_node);
+#ifndef _SAC_ASSOCIATIVELAW_H_
+#define _SAC_ASSOCIATIVELAW_H_
+
+extern node *ALdoAssociativeLaw (node *arg_node);
+
 extern node *ALblock (node *, info *);
 extern node *ALassign (node *, info *);
 extern node *ALlet (node *, info *);
 extern node *ALprf (node *, info *);
 
-#endif
+#endif /* _SAC_ASSOCIATIVELAW_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/21 20:34:10  khf
+ * the big 2004 codebrushing event
+ *
  * Revision 1.4  2004/07/23 13:58:18  ktr
  * Added CVPNwithop to prevent CVP to propagate the neutral element.
  *
@@ -18,18 +21,23 @@
  *
  */
 
-#ifndef _ConstVarPropagation_h_
-#define _ConstVarPropagation_h_
+#include "types.h"
 
-extern node *ConstVarPropagation (node *arg_node);
+#ifndef _SAC_CONSTVARPROPAGATION_H_
+#define _SAC_CONSTVARPROPAGATION_H_
+
+extern node *CVPdoConstVarPropagation (node *arg_node);
+
 extern node *CVPfundef (node *arg_node, info *arg_info);
 extern node *CVPblock (node *arg_node, info *arg_info);
 extern node *CVPassign (node *arg_node, info *arg_info);
 extern node *CVPlet (node *arg_node, info *arg_info);
-extern node *CVPNcode (node *arg_node, info *arg_info);
+extern node *CVPcode (node *arg_node, info *arg_info);
 extern node *CVPcond (node *arg_node, info *arg_info);
-extern node *CVPNwith (node *arg_node, info *arg_info);
-extern node *CVPNwithop (node *arg_node, info *arg_info);
+extern node *CVPwith (node *arg_node, info *arg_info);
+extern node *CVPgenarray (node *arg_node, info *arg_info);
+extern node *CVPmodarray (node *arg_node, info *arg_info);
+extern node *CVPfold (node *arg_node, info *arg_info);
 extern node *CVPap (node *arg_node, info *arg_info);
 extern node *CVPprf (node *arg_node, info *arg_info);
 extern node *CVPexprs (node *arg_node, info *arg_info);
@@ -37,4 +45,5 @@ extern node *CVPid (node *arg_node, info *arg_info);
 extern node *CVPreturn (node *arg_node, info *arg_info);
 extern node *CVParray (node *arg_node, info *arg_info);
 extern node *CVPfuncond (node *arg_node, info *arg_info);
-#endif
+
+#endif /* _SAC_CONSTVARPROPAGATION_H_ */

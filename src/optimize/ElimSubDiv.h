@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.4  2004/11/21 20:34:10  khf
+ * the big 2004 codebrushing event
+ *
  * Revision 1.3  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -15,13 +18,16 @@
  * Initial revision
  */
 
-#ifndef _ElimSubDiv_h_
-#define _ElimSubDiv_h_
+#include "types.h"
 
-extern node *ElimSubDiv (node *);
+#ifndef _SAC_ELIMSUBDIV_H_
+#define _SAC_ELIMSUBDIV_H_
+
+extern node *ESdoElimSubDiv (node *);
+
 extern node *ESDblock (node *, info *);
 extern node *ESDassign (node *, info *);
 extern node *ESDlet (node *, info *);
 extern node *ESDprf (node *, info *);
 
-#endif
+#endif /* _SAC_ELIMSUBDIV_H_ */
