@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2002/09/06 10:16:48  dkr
+ * fixed a bug in handling of IDXS2OFFSET icm
+ *
  * Revision 1.24  2002/09/06 09:37:30  dkr
  * ND_IDXS2OFFSET added
  *
@@ -1720,14 +1723,15 @@ INFDFMSicm (node *arg_node, node *arg_info)
                       && (NUM_VAL (ICM_ARG2 (arg_node)) >= 0)),
                      "illegal counter for var-arg of IDXS2OFFSET found!");
         cnt = NUM_VAL (ICM_ARG2 (arg_node));
+        exprs = ICM_EXPRS3 (arg_node);
         while (cnt > 0) {
-            exprs = ICM_EXPRS3 (arg_node);
             DBUG_ASSERT ((exprs != NULL), "var-arg of IDXSOFFSET is inconsistant!");
             arg_info = UsedId (arg_info, EXPRS_EXPR (exprs));
             cnt--;
             exprs = EXPRS_NEXT (exprs);
         }
-        DBUG_ASSERT ((exprs == NULL), "var-arg of IDXSOFFSET is inconsistant!");
+        DBUG_ASSERT (((exprs != NULL) && (NODE_TYPE (EXPRS_EXPR (exprs)) == N_num)),
+                     "var-arg of IDXSOFFSET is inconsistant!");
     } else {
         DBUG_ASSERT ((0), "unknown ICM found!");
     }
