@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2004/11/25 13:41:30  skt
+ * switched to new ILIBstringCompare
+ *
  * Revision 3.24  2004/11/24 20:55:18  skt
  * some namechanging
  *
@@ -246,7 +249,7 @@ MUTHmodule (node *arg_node, info *arg_info)
     DBUG_PRINT ("MUTH", ("end initializing"));
 
     if ((global.break_after == PH_multithread)
-        && (strcmp ("init", global.break_specifier) == 0)) {
+        && ILIBstringCompare ("init", global.break_specifier)) {
         goto cont;
     }
 
@@ -260,7 +263,7 @@ MUTHmodule (node *arg_node, info *arg_info)
     DBUG_PRINT ("MUTH", ("end TEMdoTagExecutionmode"));
 
     if ((global.break_after == PH_multithread)
-        && (strcmp ("tem", global.break_specifier) == 0)) {
+        && ILIBstringCompare ("tem", global.break_specifier)) {
         goto cont;
     }
 
@@ -274,7 +277,7 @@ MUTHmodule (node *arg_node, info *arg_info)
     DBUG_PRINT ("MUTH", ("end CRWIWdoCreateWihitinwith"));
 
     if ((global.break_after == PH_multithread)
-        && (strcmp ("crwiw", global.break_specifier) == 0)) {
+        && ILIBstringCompare ("crwiw", global.break_specifier)) {
         goto cont;
     }
 
@@ -288,7 +291,7 @@ MUTHmodule (node *arg_node, info *arg_info)
     DBUG_PRINT ("MUTH", ("end PEMdoPropagateExecutionmode"));
 
     if ((global.break_after == PH_multithread)
-        && (strcmp ("pem", global.break_specifier) == 0)) {
+        && ILIBstringCompare ("pem", global.break_specifier)) {
         goto cont;
     }
 
@@ -302,7 +305,7 @@ MUTHmodule (node *arg_node, info *arg_info)
     DBUG_PRINT ("MUTH", ("end CDFGdoCreateDataflowgraph"));
 
     if ((global.break_after == PH_multithread)
-        && (strcmp ("cdfg", global.break_specifier) == 0)) {
+        && ILIBstringCompare ("cdfg", global.break_specifier)) {
         goto cont;
     }
 
@@ -316,7 +319,7 @@ MUTHmodule (node *arg_node, info *arg_info)
     DBUG_PRINT ("MUTH", ("end ASMRAdoAssignmentsRearrange"));
 
     if ((global.break_after == PH_multithread)
-        && (strcmp ("asmra", global.break_specifier) == 0)) {
+        && ILIBstringCompare ("asmra", global.break_specifier)) {
         goto cont;
     }
 
@@ -329,7 +332,7 @@ MUTHmodule (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("MUTH", ("end CRECEDoCreateCells"));
     if ((global.break_after == PH_multithread)
-        && (strcmp ("crece", global.break_specifier) == 0)) {
+        && ILIBstringCompare ("crece", global.break_specifier)) {
         goto cont;
     }
 
@@ -342,7 +345,7 @@ MUTHmodule (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("MUTH", ("end CEGROdoCellGrowth"));
     if ((global.break_after == PH_multithread)
-        && (strcmp ("cegro", global.break_specifier) == 0)) {
+        && ILIBstringCompare ("cegro", global.break_specifier)) {
         goto cont;
     }
 
@@ -358,7 +361,7 @@ MUTHmodule (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("MUTH", ("end REPFUNdoReplicateFunctions"));
     if ((global.break_after == PH_multithread)
-        && (strcmp ("repfun", global.break_specifier) == 0)) {
+        && ILIBstringCompare ("repfun", global.break_specifier)) {
         goto cont;
     }
 
@@ -371,7 +374,7 @@ MUTHmodule (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("MUTH", ("end CONCELdoConsolidateCells"));
     if ((global.break_after == PH_multithread)
-        && (strcmp ("concel", global.break_specifier) == 0)) {
+        && ILIBstringCompare ("concel", global.break_specifier)) {
         goto cont;
     }
 
