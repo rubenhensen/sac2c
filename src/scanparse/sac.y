@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.47  1995/02/13 16:41:21  sbs
+ * Revision 1.48  1995/02/14 10:11:33  hw
+ * primitive function "not" inserted
+ *
+ * Revision 1.47  1995/02/13  16:41:21  sbs
  * bug in DBUG-PRINT of N_prf psi fixed.
  *
  * Revision 1.46  1995/02/09  09:01:56  hw
@@ -191,7 +194,7 @@ static char *mod_name;
 %token PARSE_PRG, PARSE_DEC
 %token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC, COMMA,
        INLINE, LET, TYPEDEF
-       AND, OR, EQ, NEQ, LE, LT, GE, GT, MUL, DIV, PLUS, MINUS, 
+       AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PLUS, MINUS, 
        INC, DEC, ADDON, SUBON, MULON, DIVON,
        RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE,CAT,PSI,
        K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, GENARRAY, MODARRAY,
@@ -226,6 +229,7 @@ static char *mod_name;
 %left TAKE, DROP, RESHAPE
 %left SQBR_L
 %right CAST
+%right NOT
 %nonassoc UMINUS
 
 %start file
@@ -971,6 +975,16 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
                       mdb_nodetype[ $$->nodetype], $$,
                       mdb_nodetype[ $$->node[0]->nodetype], $$->node[0]));
          }
+      | NOT expr
+         {  node *exprs;
+            exprs=MakeNode(N_exprs);
+            exprs->node[0]=$2;
+            exprs->nnode=1;
+            $$=MakeNode(N_prf);
+            $$->info.prf=F_not;
+            $$->node[0]=exprs;
+            $$->nnode=1;
+         }
       | BRACKET_L expr BRACKET_R 
          { $$=$2;
          }
@@ -1168,13 +1182,13 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
                                  $$->info.cint ? "true" : "false"));
          }
       | STR
-	{ $$=MakeNode(N_str);
-	  $$->info.id=$1;
+         { $$=MakeNode(N_str);
+           $$->info.id=$1;
 
-	DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %s",
+           DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %s",
                                  mdb_nodetype[$$->nodetype],$$,
                                  $$->info.id ));
-       }
+        }
       ;
 
 generator: expr  LE ID LE expr
@@ -1229,7 +1243,7 @@ monop: DIM
              $$=MakeNode(N_prf);
              $$->info.prf=F_shape;
           }
-       ;
+          ;
 
 unaryop: INC
           { $$=MakeNode(N_inc);
