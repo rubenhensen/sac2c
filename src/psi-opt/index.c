@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/05/14 10:10:57  sbs
+ * Error in IdxNum fixed!
+ * Now, a scalar is changed only if vinfo!= NULL
+ * AND INFO_IVE_MODE( arg_info) == M_uses_and_transform !!!
+ *
  * Revision 3.10  2001/05/08 09:16:48  sbs
  * address calculations are transformed now iff
  * M_uses_and transform AND TRANSFORM_VINFO!=NULL !!
@@ -2135,7 +2140,8 @@ IdxNum (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("IdxNum");
 
-    if (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL) {
+    if ((INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)
+        && (INFO_IVE_MODE (arg_info) == M_uses_and_transform)) {
         DBUG_ASSERT ((NODE_TYPE (INFO_IVE_TRANSFORM_VINFO (arg_info)) == N_vinfo),
                      "corrupted arg_info node in IdxNum!");
         type = VINFO_TYPE (INFO_IVE_TRANSFORM_VINFO (arg_info));
