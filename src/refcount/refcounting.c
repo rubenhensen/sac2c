@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2004/11/24 11:27:01  ktr
+ * COMPILES!!!
+ *
  * Revision 1.24  2004/11/23 21:34:35  jhb
  * ismop
  *
@@ -197,16 +200,6 @@ struct RC_COUNTER {
 };
 
 /**
- * Oracle to tell which parameters of a external function must be
- * refcounted like primitive function parameters
- */
-#define FUNDEF_EXT_NOT_REFCOUNTED(n, idx)                                                \
-    ((FUNDEF_STATUS (n) == ST_Cfun)                                                      \
-     && ((FUNDEF_PRAGMA (n) == NULL) || (FUNDEF_REFCOUNTING (n) == NULL)                 \
-         || (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) <= (idx))                              \
-         || (!(FUNDEF_REFCOUNTING (n)[idx]))))
-
-/**
  * INFO structure
  */
 struct INFO {
@@ -300,22 +293,10 @@ EMRefCount (node *syntax_tree)
 {
     DBUG_ENTER ("EMRefCount");
 
-    DBUG_PRINT ("EMRC", ("Starting annotating C-functions..."));
-
-    TRAVpush (TR_emacf);
-
-    syntax_tree = TRAVdo (syntax_tree, NULL);
-
-    TRAVpop ();
-
-    DBUG_PRINT ("EMRC", ("Annotating C-functions done."));
-
     DBUG_PRINT ("EMRC", ("Starting reference counting inference..."));
 
-    TRAVpush (TR_emrefcnt);
-
+    TRAVpush (TR_emrc);
     syntax_tree = TRAVdo (syntax_tree, NULL);
-
     TRAVpop ();
 
     DBUG_PRINT ("EMRC", ("Reference counting inference complete."));
@@ -1034,25 +1015,24 @@ MakeDefAssignments (info *arg_info, node *next_node)
  ****************************************************************************/
 /** <!--******************************************************************-->
  *
- * @fn TravRightIds
+ * @fn VisitRightAvis
  *
- *  @brief traverses RHS identifiers. Depending on the surrounding construct,
+ *  @brief Counts a RHS identifier.
+ *         Depending on the surrounding construct,
  *         different actions are done. (see comments below)
  *
- *  @param arg_ids
+ *  @param avis
  *  @param arg_info
  *
- *  @return arg_ids
+ *  @return avis
  *
  ***************************************************************************/
 static node *
-TravRightIds (node *arg_ids, info *arg_info)
+VisitRightAvis (node *avis, info *arg_info)
 {
-    node *avis;
+    DBUG_ENTER ("VisitRightAvis");
 
-    DBUG_ENTER ("TravRightIds");
-
-    avis = IDS_AVIS (arg_ids);
+    DBUG_ASSERT (NODE_TYPE (avis) == N_avis, "Illecall call of VisitRightAvis");
 
     /*
      * If DEFLEVEL of this id is undefinded, set it to current CODELEVEL
@@ -1135,11 +1115,7 @@ TravRightIds (node *arg_ids, info *arg_info)
         }
     }
 
-    if (IDS_NEXT (arg_ids) != NULL) {
-        IDS_NEXT (arg_ids) = TravRightIds (IDS_NEXT (arg_ids), arg_info);
-    }
-
-    DBUG_RETURN (arg_ids);
+    DBUG_RETURN (avis);
 }
 
 /**
@@ -1178,9 +1154,8 @@ TravRightIds (node *arg_ids, info *arg_info)
 node *
 EMRCap (node *arg_node, info *arg_info)
 {
-    node *args;
+    node *args, *funargs;
     node *let_ids;
-    int argc;
 
     DBUG_ENTER ("EMRCap");
 
@@ -1227,19 +1202,12 @@ EMRCap (node *arg_node, info *arg_info)
         INFO_EMRC_MUSTCOUNT (arg_info) = FALSE;
     }
 
-    args = AP_ARGS (arg_node);
-    argc = 0;
-    let_ids = INFO_EMRC_LHS (arg_info);
-
     /*
-     * Find out the number of NON-ARTIFICIAL argumuments in the LHS
+     * Some parameters of external functions must be externally refcounted
      */
-    while (let_ids != NULL) {
-        if (VARDEC_STATUS (IDS_VARDEC (let_ids)) != ST_artificial) {
-            argc += 1;
-        }
-        let_ids = IDS_NEXT (let_ids);
-    }
+    funargs = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+    args = AP_ARGS (arg_node);
+    let_ids = INFO_EMRC_LHS (arg_info);
 
     while (args != NULL) {
 
@@ -1247,8 +1215,7 @@ EMRCap (node *arg_node, info *arg_info)
         DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (args)) == N_id,
                      "Function arguments must be N_id nodes");
 
-        if ((VARDEC_OR_ARG_STATUS (ID_VARDEC (EXPRS_EXPR (args))) != ST_artificial)
-            && (FUNDEF_EXT_NOT_REFCOUNTED (AP_FUNDEF (arg_node), argc))) {
+        if ((funargs == NULL) || (!ARG_ISREFCOUNTED (funargs))) {
             INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
         } else {
             if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
@@ -1262,11 +1229,10 @@ EMRCap (node *arg_node, info *arg_info)
             EXPRS_EXPR (args) = TRAVdo (EXPRS_EXPR (args), arg_info);
         }
 
-        if (VARDEC_OR_ARG_STATUS (ID_VARDEC (EXPRS_EXPR (args))) != ST_artificial) {
-            argc += 1;
-        }
-
         args = EXPRS_NEXT (args);
+        if (funargs != NULL) {
+            funargs = ARG_NEXT (funargs);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1689,11 +1655,12 @@ EMRCfundef (node *fundef, info *arg_info)
                  * REGULAR FUNCTION:
                  * Initialize RETVALS with ones
                  */
-                int i = CountTypes (FUNDEF_TYPES (fundef));
-                while (i > 0) {
+                node *ret = FUNDEF_RETS (fundef);
+
+                while (ret != NULL) {
                     INFO_EMRC_RETVALS (info)
                       = TBmakeExprs (TBmakeNum (1), INFO_EMRC_RETVALS (info));
-                    i -= 1;
+                    ret = RET_NEXT (ret);
                 }
             }
 
@@ -1898,7 +1865,7 @@ EMRCid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMRCid");
 
-    ID_IDS (arg_node) = TravRightIds (ID_IDS (arg_node), arg_info);
+    ID_AVIS (arg_node) = VisitRightAvis (ID_AVIS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1939,7 +1906,7 @@ EMRCNcode (node *arg_node, info *arg_info)
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     BLOCK_INSTR (CODE_CBLOCK (arg_node))
-      = AppendAssign (BLOCK_INSTR (CODE_CBLOCK (arg_node)), epicode);
+      = TCappendAssign (BLOCK_INSTR (CODE_CBLOCK (arg_node)), epicode);
 
     /*
      * Prepend block with Adjust_RC prfs
@@ -2009,7 +1976,8 @@ EMRCNwith (node *arg_node, info *arg_info)
      * definitely needed in AUD with-loops
      */
     INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
-    WITH_VEC (arg_node) = TravRightIds (WITH_VEC (arg_node), arg_info);
+    IDS_AVIS (WITH_VEC (arg_node))
+      = VisitRightAvis (IDS_AVIS (WITH_VEC (arg_node)), arg_info);
 
     if (WITH_CODE (arg_node) != NULL) {
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
@@ -2089,12 +2057,16 @@ EMRCNwith2 (node *arg_node, info *arg_info)
 node *
 EMRCNwithid (node *arg_node, info *arg_info)
 {
+    node *ids;
+
     DBUG_ENTER ("EMRCNwithid");
 
     INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
 
-    if (WITHID_IDS (arg_node) != NULL) {
-        WITHID_IDS (arg_node) = TravRightIds (WITHID_IDS (arg_node), arg_info);
+    ids = WITHID_IDS (arg_node);
+    while (ids != NULL) {
+        IDS_AVIS (ids) = VisitRightAvis (IDS_AVIS (ids), arg_info);
+        ids = IDS_NEXT (ids);
     }
 
     DBUG_RETURN (arg_node);
@@ -2369,52 +2341,6 @@ EMRCvardec (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*@}*/
-
-/** <!--*******************************************************************-->
- *
- *  TRAVERSAL FUNCTIONS: ANNOTATE C FUNS
- *
- *  This traversal marks all external C Functions with flag ST_Cfun.
- *
- *  Tab:    emacf_tab
- *  Prefix: EMACF
- *
- * @{
- ****************************************************************************/
-
-/** <!--******************************************************************-->
- *
- * @fn EMACFfundef
- *
- *  @brief
- *
- *  @param fundef
- *  @param arg_info
- *
- *  @return
- *
- ***************************************************************************/
-node *
-EMACFfundef (node *fundef, info *arg_info)
-{
-    DBUG_ENTER ("EMACFfundef");
-
-    /*
-     * special module name -> must be an external C-fun
-     */
-    if (((sbs == 1) && (strcmp (FUNDEF_MOD (fundef), EXTERN_MOD_NAME) == 0))
-        || ((sbs == 0) && (FUNDEF_MOD (fundef) == NULL))) {
-        DBUG_PRINT ("EMRC", ("%s marked as ST_Cfun", FUNDEF_NAME (fundef)));
-        FUNDEF_STATUS (fundef) = ST_Cfun;
-    }
-
-    if (FUNDEF_NEXT (fundef) != NULL) {
-        FUNDEF_NEXT (fundef) = TRAVdo (FUNDEF_NEXT (fundef), arg_info);
-    }
-
-    DBUG_RETURN (fundef);
-}
 /*@}*/
 
 /*@}*/ /* defgroup ssarc */
