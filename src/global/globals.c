@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2004/07/17 20:07:13  sah
+ * added ssa to version id
+ *
  * Revision 3.50  2004/07/14 23:23:37  sah
  * removed all old ssa optimizations and the use_ssaform flag
  *
@@ -322,7 +325,7 @@ bool khf = FALSE;
  *  Version control
  */
 
-char version_id[] = "v0.91";
+char version_id[] = "v0.91ssa";
 /* version identifier of sac2c */
 
 char target_platform[] = OS "_" ARCH;
