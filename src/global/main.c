@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.70  1995/10/31 14:46:36  sbs
+ * Revision 1.71  1995/11/01 09:41:46  cg
+ * added new compiler phase for object handling and
+ * new break parameter -be to stop right after it.
+ *
+ * Revision 1.70  1995/10/31  14:46:36  sbs
  * gcc invocation printed;
  *
  * Revision 1.69  1995/10/26  15:57:39  cg
@@ -251,6 +255,7 @@
 #include "objinit.h"
 #include "analysis.h"
 #include "checkdec.h"
+#include "objects.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -291,7 +296,7 @@ MAIN
     int Ccodeonly = 0;
     int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, breakopt = 0,
         breakpsiopt = 0, breakref = 0, breaksib = 0, breakimpltype = 0, breakobjinit = 0,
-        breakanalysis = 0, breakcheckdec = 0;
+        breakanalysis = 0, breakcheckdec = 0, breakobjects = 0;
     int write_sib = 1;
     char prgname[MAX_FILE_NAME];
     char outfilename[MAX_FILE_NAME];
@@ -386,6 +391,9 @@ MAIN
             break;
         case 'y':
             breakanalysis = 1;
+            break;
+        case 'e':
+            breakobjects = 1;
             break;
         default:
             SYSWARN (("Unknown break parameter '%s`", *argv));
@@ -615,12 +623,13 @@ MAIN
     }
 
     ABORT_ON_ERROR;
+    compiler_phase++;
 
     NOTE (("\nParsing file \"%s\" : ...", *argv));
-    compiler_phase++;
     start_token = PARSE_PRG;
     yyparse ();
     ABORT_ON_ERROR;
+    compiler_phase++;
 
     if (!breakparse) {
         if (MODUL_OBJS (syntax_tree) != NULL) {
@@ -640,15 +649,15 @@ MAIN
 
             if (!breakimport) {
                 NOTE (("\nFlattening: ..."));
-                compiler_phase++;
                 syntax_tree = Flatten (syntax_tree);
                 ABORT_ON_ERROR;
+                compiler_phase++;
 
                 if (!breakflatten) {
                     NOTE (("\nTypechecking: ..."));
-                    compiler_phase++;
                     syntax_tree = Typecheck (syntax_tree);
                     ABORT_ON_ERROR;
+                    compiler_phase++;
 
                     if (!breaktype) {
                         switch (MODUL_FILETYPE (syntax_tree)) {
@@ -679,9 +688,9 @@ MAIN
 
                             if (!breakimpltype) {
                                 NOTE (("\nAnalysing functions: ..."));
-                                compiler_phase++;
                                 syntax_tree = Analysis (syntax_tree);
                                 ABORT_ON_ERROR;
+                                compiler_phase++;
 
                                 if (!breakanalysis) {
                                     if (MODUL_FILETYPE (syntax_tree) != F_prog) {
@@ -692,32 +701,40 @@ MAIN
                                     compiler_phase++;
 
                                     if (!breaksib) {
-                                        if (sac_optimize) {
-                                            NOTE (("\nSAC-Optimizing: ..."));
-                                            syntax_tree = Optimize (syntax_tree);
-                                            ABORT_ON_ERROR;
-                                        }
+                                        NOTE (("\nHandling objects: ..."));
+                                        syntax_tree = HandleObjects (syntax_tree);
+                                        ABORT_ON_ERROR;
                                         compiler_phase++;
 
-                                        if (!breakopt) {
+                                        if (!breakobjects) {
                                             if (sac_optimize) {
-                                                NOTE (("\nPsi-Optimizing: ..."));
-                                                syntax_tree = PsiOpt (syntax_tree);
+                                                NOTE (("\nSAC-Optimizing: ..."));
+                                                syntax_tree = Optimize (syntax_tree);
                                                 ABORT_ON_ERROR;
                                             }
                                             compiler_phase++;
 
-                                            if (!breakpsiopt) {
-                                                NOTE (("\nRefcounting: ..."));
-                                                compiler_phase++;
-                                                syntax_tree = Refcount (syntax_tree);
-                                                ABORT_ON_ERROR;
-
-                                                if (!breakref) {
-                                                    NOTE (("\nCompiling: ..."));
-                                                    compiler_phase++;
-                                                    syntax_tree = Compile (syntax_tree);
+                                            if (!breakopt) {
+                                                if (sac_optimize) {
+                                                    NOTE (("\nPsi-Optimizing: ..."));
+                                                    syntax_tree = PsiOpt (syntax_tree);
                                                     ABORT_ON_ERROR;
+                                                }
+                                                compiler_phase++;
+
+                                                if (!breakpsiopt) {
+                                                    NOTE (("\nRefcounting: ..."));
+                                                    syntax_tree = Refcount (syntax_tree);
+                                                    ABORT_ON_ERROR;
+                                                    compiler_phase++;
+
+                                                    if (!breakref) {
+                                                        NOTE (("\nCompiling: ..."));
+                                                        syntax_tree
+                                                          = Compile (syntax_tree);
+                                                        ABORT_ON_ERROR;
+                                                        compiler_phase++;
+                                                    }
                                                 }
                                             }
                                         }
@@ -738,12 +755,14 @@ MAIN
     if (!Ccodeonly) {
         fclose (outfile);
 
-        if (F_prog == kind_of_file)
+        if (F_prog == kind_of_file) {
+            NOTE (("\nGenerating link list: ..."));
+
             sprintf (cccallstr,
                      "gcc %s-Wall -Wno-unused -I $RCSROOT/src/compile/"
                      " -o %s %s %s",
                      ccflagsstr, outfilename, cfilename, GenLinkerList ());
-        else if (F_modimp == kind_of_file)
+        } else if (F_modimp == kind_of_file)
             sprintf (cccallstr,
                      "gcc %s-Wall -Wno-unused -I $RCSROOT/src/compile/"
                      " -o %s.o -c %s",
