@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  1998/06/23 15:04:05  cg
+ * added global variables show_syscall and gen_cccall
+ *
  * Revision 1.19  1998/06/19 16:34:11  dkr
  * added opt_uip
  *
@@ -300,6 +303,13 @@ int libstat = 0;
 
 int makedeps = 0;
 /* Don't actually compile, but infer module dependencies. */
+
+int gen_cccall = 0;
+/* Generate shell script '.sac2c' in current directory
+   that contains the C compiler call produced by sac2c. */
+
+int show_syscall = 0;
+/* Show system calls during compilation. */
 
 compiler_phase_t break_after = PH_final;
 /* Stop compilation process after given phase. */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  1998/06/23 15:04:05  cg
+ * added global variables show_syscall and gen_cccall
+ *
  * Revision 1.30  1998/06/19 16:34:29  dkr
  * added opt_uip
  *
@@ -215,6 +218,8 @@ extern int libstat;
 extern int linkstyle;
 extern int cleanup;
 extern int makedeps;
+extern int gen_cccall;
+extern int show_syscall;
 extern compiler_phase_t break_after;
 extern char break_specifier[];
 
