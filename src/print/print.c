@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.160  2004/08/12 12:39:28  skt
+ * PrintDataflowgraph & PrintDataflownode added
+ *
  * Revision 3.159  2004/08/06 10:44:12  skt
  * support for printing executionmode of assignments added
  *
@@ -5812,4 +5815,91 @@ PrintDebugNtype (ntype *type)
     tmp = Free (tmp);
 
     DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************->>
+ *
+ * @fn node *PrintDataflowgraph(node *arg_node, info *arg_info)
+ *
+ * @brief Prints the dataflowgraph and its dataflownodes
+ *
+ * @param arg_node
+ * @param arg_info
+ * @return
+ *
+ *****************************************************************************/
+node *
+PrintDataflowgraph (node *arg_node, info *arg_info)
+{
+    nodelist *member_iterator;
+    DBUG_ENTER ("PrintDataflowgraph");
+
+    outfile = stdout;
+
+    fprintf (outfile, "****** Dataflowgraph begin ******\n");
+
+    if (arg_node != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (arg_node) == N_dataflowgraph),
+                     "PrintDataflowgraph expects a N_dataflowgraph");
+
+        member_iterator = DATAFLOWGRAPH_MEMBERS (arg_node);
+        while (member_iterator != NULL) {
+            PrintDataflownode (NODELIST_NODE (member_iterator), arg_info);
+            member_iterator = NODELIST_NEXT (member_iterator);
+        }
+    }
+
+    fprintf (outfile, "****** Dataflowgraph end ******\n\n");
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************->>
+ *
+ * @fn node *PrintDataflownode(node *arg_node, info *arg_info)
+ *
+ * @brief Prints the dataflownode
+ *
+ * @param arg_node
+ * @param arg_info
+ * @return
+ *
+ *****************************************************************************/
+node *
+PrintDataflownode (node *arg_node, info *arg_info)
+{
+    nodelist *dependent_iterator;
+    DBUG_ENTER ("PrintDataflownode");
+
+    outfile = stdout;
+
+    if (arg_node != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (arg_node) == N_dataflownode),
+                     "PrintDataflownode expects a N_dataflownode");
+
+        fprintf (outfile, "%s: %s, REFCOUNT: %i", DATAFLOWNODE_NAME (arg_node),
+                 MUTHDecodeExecmode (DATAFLOWNODE_EXECMODE (arg_node)),
+                 DATAFLOWNODE_REFCOUNT (arg_node));
+        if (break_after == PH_multithread) {
+            fprintf (outfile, ", REFLEFT: %i, USED: %i\n",
+                     DATAFLOWNODE_REFLEFT (arg_node), DATAFLOWNODE_USED (arg_node));
+        } else {
+            fprintf (outfile, "\n");
+        }
+
+        dependent_iterator = DATAFLOWNODE_DEPENDENT (arg_node);
+
+        if (dependent_iterator != NULL) {
+            fprintf (outfile, "   ->");
+
+            while (dependent_iterator != NULL) {
+                fprintf (outfile, " %s,",
+                         DATAFLOWNODE_NAME (NODELIST_NODE (dependent_iterator)));
+                dependent_iterator = NODELIST_NEXT (dependent_iterator);
+            }
+            fprintf (outfile, "\n");
+        } else {
+            fprintf (outfile, "  -> No dependent nodes\n");
+        }
+    }
+    DBUG_RETURN (arg_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2004/08/12 12:39:28  skt
+ * PrintDataflowgraph & PrintDataflownode added
+ *
  * Revision 3.25  2004/07/28 17:27:02  skt
  * PrintEX added
  *
@@ -165,6 +168,8 @@ extern node *PrintAvis (node *arg_node, info *arg_info);
 extern node *PrintInfo (node *arg_node, info *arg_info);
 extern node *PrintCWrapper (node *arg_node, info *arg_info);
 extern node *PrintFuncond (node *arg_node, info *arg_info);
+extern node *PrintDataflowgraph (node *arg_node, info *arg_info);
+extern node *PrintDataflownode (node *arg_node, info *arg_info);
 
 /* with-loop (frontend) */
 extern node *PrintNwith (node *arg_node, info *arg_info);
