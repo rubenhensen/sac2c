@@ -1,8 +1,11 @@
 /*
  *  $Log$
- *  Revision 1.3  1995/02/09 11:08:58  hw
- *  changed and added FT`s
+ *  Revision 1.4  1995/02/13 17:54:50  hw
+ *  added FT for primitive function NOT
  *
+;; Revision 1.3  1995/02/09  11:08:58  hw
+;; changed and added FT`s
+;;
 ;; Revision 1.2  1995/02/03  16:04:56  hw
 ;; extended /changed macro
 ;;
@@ -41,3 +44,4 @@ FT (F_dim, A_S, F_dim)
 FT (F_reshape, VxA_Ar, F_reshape)
 FT (F_cat, SxAxA_A, F_cat)
 FT (F_rotate, SxSxA_A, F_rotate)
+FT (F_not, B_B, F_not)
