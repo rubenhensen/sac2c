@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2001/04/19 09:51:49  dkr
+ * INFDFMSwith, INFDFMSwith2 replaced by INFDFMSwithx
+ *
  * Revision 3.44  2001/04/18 15:39:35  nmw
  * while2do added
  *
@@ -1737,7 +1740,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, WLTRAwith, TravSons, TravSons, PWwith, TravSons, TravSons, TravSons,
        WLAAnwith, TravSons, TravSons, TravSons, TravSons, TSInwith, TravSons, TravSons,
-       TravSons, TravSons, TravSons, INFDFMSwith,
+       TravSons, TravSons, TravSons, INFDFMSwithx,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIwith, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1861,7 +1864,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, ReuseNwith2, TravSons, SCHEDnwith2, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, INFDFMSwith2,
+       TravSons, TravSons, TravSons, TravSons, INFDFMSwithx,
 
        TravSons, SCHINnwith2, TravSons, RFINnwith2, TravSons, AIwith2, TravSons, TravSons,
        TravSons, TravSons, DFAnwith2, TravSons, TravSons, TravSons, TravSons, TravSons,

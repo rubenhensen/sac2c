@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2001/04/19 09:51:43  dkr
+ * INFDFMSwith, INFDFMSwith2 replaced by INFDFMSwithx
+ *
  * Revision 1.1  2000/12/15 18:29:36  dkr
  * Initial revision
  *
@@ -63,8 +66,7 @@ extern node *INFDFMSap (node *arg_node, node *arg_info);
 extern node *INFDFMSid (node *arg_node, node *arg_info);
 extern node *INFDFMSwithid (node *arg_node, node *arg_info);
 extern node *INFDFMScode (node *arg_node, node *arg_info);
-extern node *INFDFMSwith (node *arg_node, node *arg_info);
-extern node *INFDFMSwith2 (node *arg_node, node *arg_info);
+extern node *INFDFMSwithx (node *arg_node, node *arg_info);
 extern node *INFDFMScond (node *arg_node, node *arg_info);
 extern node *INFDFMSwhile (node *arg_node, node *arg_info);
 extern node *INFDFMSdo (node *arg_node, node *arg_info);
