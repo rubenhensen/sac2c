@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2001/04/02 11:43:32  dkr
+ * include of wl_bounds.h added
+ *
  * Revision 3.39  2001/03/29 01:34:25  dkr
  * WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX are now a node vector :-)
  *
@@ -115,9 +118,6 @@
  *
  * [...]
  *
- * Revision 1.1  1998/04/29 17:17:15  dkr
- * Initial revision
- *
  */
 
 /******************************************************************************
@@ -147,9 +147,10 @@
 #include "dbug.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
-#include "wltransform.h"
-#include "wlpragma_funs.h"
 #include "print.h"
+#include "wl_bounds.h"
+#include "wlpragma_funs.h"
+#include "wltransform.h"
 
 typedef enum {
     WL_PH_conv,

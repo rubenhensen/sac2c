@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2001/04/02 11:43:56  dkr
+ * include of wl_bounds.h added
+ *
  * Revision 3.32  2001/03/29 14:48:16  dkr
  * SYNC_SCHEDULING removed
  *
@@ -102,9 +105,6 @@
  *
  * [ eliminated ]
  *
- * Revision 1.1  1995/03/29  12:38:10  hw
- * Initial revision
- *
  */
 
 #include <stdlib.h>
@@ -129,7 +129,7 @@
 #include "free.h"
 #include "typecheck.h"
 #include "scheduling.h"
-#include "wltransform.h"
+#include "wl_bounds.h"
 #include "refcount.h"
 
 /******************************************************************************
