@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/06/07 15:45:39  dkr
+ * SAC_ND_TYPEDEF_...: semicolon added
+ *
  * Revision 3.9  2002/04/30 09:12:32  dkr
  * no changes done
  *
@@ -190,9 +193,9 @@
  *
  */
 
-#define SAC_ND_TYPEDEF_HIDDEN(name) typedef void *name
+#define SAC_ND_TYPEDEF_HIDDEN(name) typedef void *name;
 
-#define SAC_ND_TYPEDEF_ARRAY(basetype, name) typedef basetype *name
+#define SAC_ND_TYPEDEF_ARRAY(basetype, name) typedef basetype *name;
 
 /*
  * ICMs for declaring refcounted data:
