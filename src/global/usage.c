@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.20  2000/02/03 16:47:41  cg
+ * Added new optimization option MSCA.
+ *
  * Revision 2.19  2000/01/24 12:23:08  jhs
  * Added options to activate/dactivate printing after a break
  * (-noPAB, -doPAB).
@@ -407,7 +410,8 @@ usage ()
             "\t\tSBE \t syncronisation barrier elimination \n"
             "\t\tPHM \t private heap management \n"
             "\t\tAPS \t arena preselection (in conjunction with PHM) \n"
-            "\t\tPHM \t refcount allocation optimization (in conjunction with PHM) \n"
+            "\t\tRCAO\t refcount allocation optimization (in conjunction with PHM) \n"
+            "\t\tMSCA\t memory size cache adjustment (in conjunction with PHM) \n"
             "\n"
             "\t\tOPT  \t enables/disables all optimizations at once.\n"
             "\n"

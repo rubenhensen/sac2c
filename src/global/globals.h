@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.25  2000/02/03 16:45:11  cg
+ * Added new optimization option MSCA.
+ *
  * Revision 2.24  2000/01/24 12:23:08  jhs
  * Added options to activate/dactivate printing after a break
  * (-noPAB, -doPAB).
@@ -21,124 +24,6 @@
  * Revision 2.20  1999/10/22 14:16:41  sbs
  * made simpletype_size global, since it is needed in compile, tile_size_inference AND
  * constants already!
- *
- * Revision 2.19  1999/10/04 11:58:34  sbs
- * secret option "sbs" added!
- *
- * Revision 2.18  1999/10/04 09:24:53  sbs
- * linenum moved from scanparse to globals!
- *
- * Revision 2.17  1999/08/05 13:30:40  jhs
- * Added OPT_MTI (default now: off), to steer mto-part during spmdinit.
- *
- * Revision 2.16  1999/07/21 16:28:19  jhs
- * needed_sync_fold introduced, max_sync_fold adjusted, command-line and usage
- * updated.
- *
- * Revision 2.15  1999/07/20 12:00:11  cg
- * Added global variable malloc_align_step.
- *
- * Revision 2.14  1999/07/20 07:56:22  cg
- * Added global variable malloc_align_step.
- *
- * $Log$
- * Revision 2.24  2000/01/24 12:23:08  jhs
- * Added options to activate/dactivate printing after a break
- * (-noPAB, -doPAB).
- *
- * Revision 2.23  2000/01/21 13:19:53  jhs
- * Added new mt ... infrastructure expanded ...
- *
- * Revision 2.22  2000/01/17 17:58:45  cg
- * Added new heap manager optimization options
- * APS (arena preselection) and
- * RCAO (reference counter allocation optimization).
- *
- * Revision 2.20  1999/10/22 14:16:41  sbs
- * made simpletype_size global, since it is needed in compile, tile_size_inference AND
- * constants already!
- *
- * Revision 2.19  1999/10/04 11:58:34  sbs
- * secret option "sbs" added!
- *
- * Revision 2.18  1999/10/04 09:24:53  sbs
- * linenum moved from scanparse to globals!
- *
- * Revision 2.17  1999/08/05 13:30:40  jhs
- * Added OPT_MTI (default now: off), to steer mto-part during spmdinit.
- *
- * Revision 2.16  1999/07/21 16:28:19  jhs
- * needed_sync_fold introduced, max_sync_fold adjusted, command-line and usage
- * updated.
- *
- * Revision 2.15  1999/07/20 12:00:11  cg
- * Added global variable malloc_align_step.
- *
- * Revision 2.13  1999/07/09 12:45:32  cg
- * Basic prerequisites for diagnostic heap management introduced.
- *
- * Revision 2.12  1999/07/09 07:31:24  cg
- * SAC heap manager integrated into sac2c.
- *
- * Revision 2.11  1999/06/25 14:50:36  rob
- * Introduce definitions and utility infrastructure for tagged array support.
- *
- * Revision 2.10  1999/06/11 12:54:04  cg
- * Added global variables csfile and csdir to implement the corresponding
- * sac2c command line arguments.
- *
- * Revision 2.9  1999/06/09 08:41:02  rob
- * Introduce support for dynamic shape arrays option "ds".
- *
- * Revision 2.8  1999/06/04 14:32:48  cg
- * added global variable cachesim_host
- *
- * Revision 2.7  1999/05/27 08:50:04  cg
- * global variable show_icm made obsolete and removed.
- *
- * Revision 2.6  1999/05/26 14:32:23  jhs
- * Added options MTO and SBE for multi-thread optimsation and
- * synchronisation barrier elimination, both options are by
- * default disabled.
- *
- * Revision 2.5  1999/05/20 14:05:14  cg
- * cachesim bit mask macros reorganized.
- *
- * Revision 2.4  1999/05/12 14:31:16  cg
- * some global variables associated with options renamed.
- * Optimizations are now triggered by bit field optimize instead
- * of single individual int variables.
- *
- * Revision 2.3  1999/04/14 09:20:40  cg
- * Settings for cache simulation improved.
- *
- * Revision 2.2  1999/03/31 11:30:27  cg
- * added global variable cachesim.
- *
- * Revision 2.1  1999/02/23 12:39:21  sacbase
- * new release made
- *
- * Revision 1.44  1999/02/19 17:21:41  dkr
- * *** empty log message ***
- *
- * Revision 1.43  1999/02/19 17:15:26  dkr
- * use_efence added
- *
- * Revision 1.42  1999/02/15 13:34:09  sbs
- * added -noDLAW opt_dlaw;
- *
- * Revision 1.41  1999/01/26 14:24:46  cg
- * Added INTRINSIC_PSI
- *
- * Revision 1.40  1999/01/15 15:14:32  cg
- * added opt_tile, modified value constants for intrinsics.
- *
- * Revision 1.39  1999/01/14 14:25:54  cg
- * added variable opt_tile to enable/disable tiling.
- *
- * Revision 1.38  1999/01/07 14:01:01  sbs
- * more sophisticated breaking facilities inserted;
- * Now, a break in a specific cycle can be triggered!
  *
  * [...]
  *
@@ -241,6 +126,7 @@ extern unsigned int optimize;
 #define OPT_PHM 0x00200000  /* private heap management                     */
 #define OPT_APS 0x00400000  /* arena preselection (for PHM)                */
 #define OPT_RCAO 0x00800000 /* ref count allocation optimization (for PHM) */
+#define OPT_MSCA 0x01000000 /* memory size cache adjustment (for PHM)      */
 
 extern int optvar;
 extern int inlnum;

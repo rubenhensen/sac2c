@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.28  2000/02/03 16:45:11  cg
+ * Added new optimization option MSCA.
+ *
  * Revision 2.27  2000/01/24 12:23:08  jhs
  * Added options to activate/dactivate printing after a break
  * (-noPAB, -doPAB).
@@ -320,6 +323,9 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("rcao", optimize |= OPT_RCAO);
         ARG_CHOICE ("RCAO", optimize |= OPT_RCAO);
 
+        ARG_CHOICE ("msca", optimize |= OPT_MSCA);
+        ARG_CHOICE ("MSCA", optimize |= OPT_MSCA);
+
         ARG_CHOICE ("pab", print_after_break = PAB_YES);
         ARG_CHOICE ("PAB", print_after_break = PAB_YES);
 
@@ -499,6 +505,9 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("rcao", optimize &= ~OPT_RCAO);
         ARG_CHOICE ("RCAO", optimize &= ~OPT_RCAO);
+
+        ARG_CHOICE ("msca", optimize &= ~OPT_MSCA);
+        ARG_CHOICE ("MSCA", optimize &= ~OPT_MSCA);
 
         ARG_CHOICE ("pab", print_after_break = PAB_NO);
         ARG_CHOICE ("PAB", print_after_break = PAB_NO);
