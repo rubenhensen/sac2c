@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2003/03/12 17:53:47  dkr
+ * no modifications done
+ *
  * Revision 3.23  2002/10/18 16:53:07  dkr
  * RCfundef(): inference of ST_Cfun corrected
  * (BTW, why is this infered here)
