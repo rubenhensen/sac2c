@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.158  1998/04/30 12:22:45  srs
+ * set temporary son NWITHOP_EXPR to NULL after usage
+ *
  * Revision 1.157  1998/04/09 23:32:28  dkr
  * renamed PRAGMA_WLCOMP to PRAGMA_WLCOMP_APS
  *
@@ -2062,6 +2065,7 @@ expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
               * conflict in that rule!
               */
              $$=MakeNWith( $5, MakeNCode( $7, NWITHOP_EXPR($8)), $8);
+             NWITHOP_EXPR($8) = NULL;
              NCODE_USED(NWITH_CODE($$))++;
              NODE_LINE($$)= $<cint>3;
 
