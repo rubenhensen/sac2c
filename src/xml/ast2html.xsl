@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/12/05 20:11:38  sah
+  made QuickNav less annoying
+
   Revision 1.3  2004/12/03 15:25:09  sah
   added QuickNav
 
@@ -68,6 +71,9 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
           tr.footnote { font-size: small }
           #Nav { position:fixed; top:0px; left:0px; padding:0px; 
                  margin:0px; font-size: smaller; background-color: #AAAAAA; }
+          #miniNav { position:fixed; top:0px; right:0px; padding:0px; 
+                     margin:0px; font-size: smaller; 
+                     background-color: #AAAAAA; display: none; }
           #NavPhases{ position:fixed; padding: 0px;
                       margin:0px; font-size: smaller; 
                       background-color: #AAAAAA; visibility: hidden; 
@@ -80,10 +86,13 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
                      margin:0px; font-size: smaller; 
                      background-color: #AAAAAA; visibility: hidden; 
                      width: 200pt; max-height: 90%; overflow: scroll; }
-          #Content{ }
+          #TOC{ display: none; }
           table.nav { border-width: 1pt; border-style: solid;
                       border-color: #000000; background-color: #cccccc; 
                       padding: 0pt; margin: 0pt; width: 100% } 
+          table.mininav { border-width: 1pt; border-style: solid;
+                          border-color: #000000; background-color: #cccccc; 
+                          padding: 0pt; margin: 0pt; width: 10pt;}
           table.sub { border-width: 1pt; border-style: solid;
                       border-color: #000000; background-color: #cccccc; 
                       padding: 0pt; margin: 0pt; width: 100%;}
@@ -96,6 +105,21 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
               document.getElementById(id).style.visibility = "hidden";
             }
           }
+          function showTOC() {
+            document.getElementById("TOC").style.display = "block";
+            document.getElementById("showTOC").style.display = "none";
+          }
+          function noNav() {
+            document.getElementById("Nav").style.display = "none";
+            document.getElementById("miniNav").style.display = "block";
+          }
+          function showNav() {
+            document.getElementById("Nav").style.display = "block";
+            document.getElementById("miniNav").style.display = "none";
+          }
+          function cleanup() {
+            alert("pup");
+          }
         </script>
       </head>
       <body>
@@ -107,8 +131,8 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
               </td>
               <td>
                 <a href="javascript:void (toggle('NavPhases'))" >Phases</a>
-                <div id="NavPhases" >
-                  <table class="sub" onMouseout="(document.getElementById('NavPhases').style.visibility = 'hidden'">
+                <div id="NavPhases">
+                  <table class="sub">
                     <tr><td>
                       <ul>
                         <xsl:apply-templates select="/definition/phases/phase" mode="list-of-tables" />
@@ -144,20 +168,32 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
                 </div>
               </td>
               <td>
-                <a href="#toc">top</a>
+                <div style="text-align: right;">
+                  <a href="javascript:void( noNav())">hide &gt;&gt;</a>
+                </div>
               </td>
             </tr>
           </table>
         </div>
-        <div id="Content">
-          <a name="toc" />
+        <div id="miniNav">
+          <table class="mininav">
+            <tr><td>
+              <a href="javascript: void( showNav())">&lt;&lt;</a>
+            </td></tr>
+          </table>
+        </div>
+        <div id="showTOC">
+          In case QuickNav is not working as intended, click <a href="javascript:showTOC()">here</a> for a table of contents.
+        </div>
+        <a name="toc" />
+        <div id="TOC">
           <h1>List Of Tables</h1>
           <ul>
             <xsl:apply-templates mode="list-of-tables" />
           </ul>
           <h1>Tables</h1>
-          <xsl:apply-templates mode="table" />
         </div>
+        <xsl:apply-templates mode="table" />
       </body>
     </html>
   </xsl:template>
