@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2004/11/27 03:08:01  ktr
+ * pup
+ *
  * Revision 3.35  2004/11/27 03:02:59  sbs
  * *** empty log message ***
  *
@@ -872,7 +875,7 @@ DONE:
 node *
 FLATmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FLATmodul");
+    DBUG_ENTER ("FLATmodule");
 
     if (MODULE_FUNS (arg_node)) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
