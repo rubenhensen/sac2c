@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/10/29 19:10:34  dkr
+ * signature of some ICMs modified
+ *
  * Revision 3.13  2002/10/24 20:49:09  dkr
  * signature of ND_WL_GENARRAY__SHAPE_... modified
  *
@@ -41,8 +44,8 @@
  *
  */
 
-#ifndef _icm2c_wl_h
-#define _icm2c_wl_h
+#ifndef _icm2c_wl_h_
+#define _icm2c_wl_h_
 
 extern void ICMCompileND_WL_GENARRAY__SHAPE_id (char *to_nt, int to_sdim, char *shp_nt,
                                                 char *val_nt, int val_sdim);
@@ -82,4 +85,4 @@ extern void ICMCompileWL_SET_OFFSET (int dim, int first_block_dim, char *to_nt,
                                      int to_sdim, char *idx_vec_nt, int dims,
                                      char **idxa_scl);
 
-#endif /* _icm2c_wl_h */
+#endif /* _icm2c_wl_h_ */
