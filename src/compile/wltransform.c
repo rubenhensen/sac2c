@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2003/04/20 20:28:01  dkr
+ * EmptyWl2Expr() added [not completed yet]
+ *
  * Revision 3.76  2003/04/10 16:04:53  dkr
  * DBUG_ASSERT for with-loops with empty shape added
  *
@@ -260,6 +263,7 @@
  * access macros for 'arg_info'
  */
 #define INFO_WL_TYPES(n) (n->info.types)
+#define INFO_WL_PREASSIGNS(n) (n->node[0])
 
 /*****************************************************************************
 
@@ -2787,12 +2791,6 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
 
         /*
          * with-loops with empty shapes should have been removed already!!!
-         *
-         *    B = with( [] <= iv <= []) genarray( [], arr);   =>   B = arr;
-         *    B = with( [] <= iv <= []) modarray( A,  scl);   =>   B = scl;
-         *      where A represents a scalar
-         *    B = with( [] <= iv <= []) fold( f, n, expr);    =>   iv = [];
-         *                                                         B = f( n, expr);
          */
         DBUG_ASSERT ((dims > 0), "with-loop with empty shape found!");
         for (dim = 0; dim < dims; dim++) {
@@ -7003,6 +7001,57 @@ ConvertWith (node *wl, int dims)
 /******************************************************************************
  *
  * Function:
+ *   node *EmptyWl2Expr( node *wl, node *arg_info)
+ *
+ * Description:
+ *   This function handles the case in which the shape of the WL is empty.
+ *
+ *     B = with( [] <= iv <= []) genarray( [], arr);   =>   B = arr;
+ *     B = with( [] <= iv <= []) modarray( A,  scl);   =>   B = scl;
+ *       where A represents a scalar
+ *     B = with( [] <= iv <= []) fold( f, n, expr);    =>   iv = [];
+ *                                                          B = f( n, expr);
+ *
+ ******************************************************************************/
+
+static node *
+EmptyWl2Expr (node *wl, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("EmptyWl2Expr");
+
+    DBUG_EXECUTE ("WLtrans", NOTE (("  shape of WL is empty!")););
+
+    DBUG_ASSERT (((NWITH_PARTS (wl) == -1) || (NWITH_PARTS (wl) == 1)),
+                 "WL with empty shape and multiple parts found!");
+
+    switch (NWITH_TYPE (wl)) {
+    case WO_genarray:
+        /* here is no break missing */
+    case WO_modarray:
+        INFO_WL_PREASSIGNS (arg_info) = DupTree (BLOCK_INSTR (NWITH_CBLOCK (wl)));
+        new_node = DupNode (NWITH_CEXPR (wl));
+        break;
+
+    case WO_foldfun:
+        /* here is no break missing! */
+    case WO_foldprf:
+        DBUG_ASSERT ((0), "fold-WL with empty shape not yet implemented");
+        new_node = NULL;
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "illegal NWITH_TYPE found");
+        new_node = NULL;
+    }
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *WLTRAwith( node *arg_node, node *arg_info)
  *
  * Description:
@@ -7060,86 +7109,92 @@ WLTRAwith (node *arg_node, node *arg_info)
         idx_size = TYPES_SHAPE (idx_type, 0);
         wl_shp = GetWlShape (arg_node, idx_size, INFO_WL_TYPES (arg_info));
 
-        /*
-         * convert parts of with-loop into new format
-         */
-        DBUG_EXECUTE ("WLtrans", NOTE (("step 1.1: convert parts into strides")););
-        strides = Parts2Strides (NWITH_PART (arg_node), idx_size, wl_shp);
-
-        /*
-         * consistence check: ensures that the strides are pairwise disjoint
-         */
-        DBUG_EXECUTE ("WLtrans", NOTE (("step 1.2: check disjointness of strides")););
-        DBUG_ASSERT ((CheckDisjointness (strides)),
-                     "Consistence check failed:"
-                     " Not all strides are pairwise disjoint!\n"
-                     "This is probably due to an error during with-loop-folding.");
-
-        new_node = ConvertWith (arg_node, idx_size);
-
-        if (strides == NULL) {
-            /* all parts are empty  ->  set 'strides' or 'new_node' */
-            strides = EmptyParts2StridesOrExpr (&new_node, idx_size, wl_shp);
-        }
-
-        if (strides != NULL) {
-            node *cubes = NULL;
-            node *segs = NULL;
-            bool do_naive_comp
-              = ExtractNaiveCompPragma (NWITH_PRAGMA (arg_node), linenum);
-            if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "conv"))) {
-                goto DONE;
-            }
+        if (idx_size == 0) {
+            new_node = EmptyWl2Expr (arg_node, arg_info);
+        } else {
 
             /*
-             * build the cubes
+             * convert parts of with-loop into new format
              */
-            DBUG_EXECUTE ("WLtrans", NOTE (("step 2: build cubes")););
-            cubes = BuildCubes (strides, new_node, idx_size, wl_shp, &do_naive_comp);
-            if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "cubes"))) {
-                goto DONE;
-            }
+            DBUG_EXECUTE ("WLtrans", NOTE (("step 1.1: convert parts into strides")););
+            strides = Parts2Strides (NWITH_PART (arg_node), idx_size, wl_shp);
 
             /*
-             * normalize grids and fill gaps
+             * consistence check: ensures that the strides are pairwise disjoint
              */
-            DBUG_EXECUTE ("WLtrans", NOTE (("step 3: fill gaps (grids)")););
-            cubes = InsertNoopGrids (cubes);
-            if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "fill1"))) {
-                goto DONE;
+            DBUG_EXECUTE ("WLtrans", NOTE (("step 1.2: check disjointness of strides")););
+            DBUG_ASSERT ((CheckDisjointness (strides)),
+                         "Consistence check failed:"
+                         " Not all strides are pairwise disjoint!\n"
+                         "This is probably due to an error during with-loop-folding.");
+
+            new_node = ConvertWith (arg_node, idx_size);
+
+            if (strides == NULL) {
+                /* all parts are empty  ->  set 'strides' or 'new_node' */
+                strides = EmptyParts2StridesOrExpr (&new_node, idx_size, wl_shp);
             }
 
-            DBUG_EXECUTE ("WLtrans", NOTE (("step 4: choose segments")););
-            if (do_naive_comp) {
-                /* naive compilation  ->  put each stride in a separate segment */
-                segs = WLCOMP_Cubes (NULL, NULL, cubes, idx_size, linenum);
-            } else {
-                simpletype wl_btype = GetBasetype (INFO_WL_TYPES (arg_info));
-                bool fold_float = (NWITH2_IS_FOLD (new_node)
-                                   && ((wl_btype == T_float) || (wl_btype == T_double)));
-                segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, idx_size, fold_float);
-            }
-            if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "segs"))) {
-                goto DONE;
-            }
+            if (strides != NULL) {
+                node *cubes = NULL;
+                node *segs = NULL;
+                bool do_naive_comp
+                  = ExtractNaiveCompPragma (NWITH_PRAGMA (arg_node), linenum);
+                if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "conv"))) {
+                    goto DONE;
+                }
 
-            /*
-             * do all the segment-wise transformation stuff (step 4 -- 11)
-             */
-            segs = ProcessSegments (segs, idx_size, wl_shp, do_naive_comp);
+                /*
+                 * build the cubes
+                 */
+                DBUG_EXECUTE ("WLtrans", NOTE (("step 2: build cubes")););
+                cubes = BuildCubes (strides, new_node, idx_size, wl_shp, &do_naive_comp);
+                if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "cubes"))) {
+                    goto DONE;
+                }
 
-        DONE:
-            if (segs == NULL) {
-                segs = WLCOMP_All (NULL, NULL, (cubes == NULL) ? strides : cubes,
-                                   idx_size, linenum);
+                /*
+                 * normalize grids and fill gaps
+                 */
+                DBUG_EXECUTE ("WLtrans", NOTE (("step 3: fill gaps (grids)")););
+                cubes = InsertNoopGrids (cubes);
+                if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "fill1"))) {
+                    goto DONE;
+                }
+
+                DBUG_EXECUTE ("WLtrans", NOTE (("step 4: choose segments")););
+                if (do_naive_comp) {
+                    /* naive compilation  ->  put each stride in a separate segment */
+                    segs = WLCOMP_Cubes (NULL, NULL, cubes, idx_size, linenum);
+                } else {
+                    simpletype wl_btype = GetBasetype (INFO_WL_TYPES (arg_info));
+                    bool fold_float
+                      = (NWITH2_IS_FOLD (new_node)
+                         && ((wl_btype == T_float) || (wl_btype == T_double)));
+                    segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, idx_size, fold_float);
+                }
+                if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "segs"))) {
+                    goto DONE;
+                }
+
+                /*
+                 * do all the segment-wise transformation stuff (step 4 -- 11)
+                 */
+                segs = ProcessSegments (segs, idx_size, wl_shp, do_naive_comp);
+
+            DONE:
+                if (segs == NULL) {
+                    segs = WLCOMP_All (NULL, NULL, (cubes == NULL) ? strides : cubes,
+                                       idx_size, linenum);
+                }
+
+                /* free temporary data */
+                if (cubes != NULL) {
+                    cubes = FreeTree (cubes);
+                }
+
+                NWITH2_SEGS (new_node) = segs;
             }
-
-            /* free temporary data */
-            if (cubes != NULL) {
-                cubes = FreeTree (cubes);
-            }
-
-            NWITH2_SEGS (new_node) = segs;
         }
 
         /* old WL-representation is no longer needed */
@@ -7189,7 +7244,7 @@ WLTRAcode (node *arg_node, node *arg_info)
  *   node *WLTRAlet( node *arg_node, node *arg_info)
  *
  * Description:
- *   'INFO_WL_TYPES( arg_info)' points to the type of the (first) let-ids.
+ *   INFO_WL_TYPES is set to the type of the (first) let-ids.
  *
  ******************************************************************************/
 
@@ -7218,6 +7273,36 @@ WLTRAlet (node *arg_node, node *arg_info)
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     INFO_WL_TYPES (arg_info) = tmp;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *WLTRAassign( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Assignments found in INFO_WL_PREASSIGNS are inserted into the assignment
+ *   chain.
+ *
+ ******************************************************************************/
+
+node *
+WLTRAassign (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("WLTRAassign");
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
+    if (INFO_WL_PREASSIGNS (arg_info) != NULL) {
+        arg_node = AppendAssign (INFO_WL_PREASSIGNS (arg_info), arg_node);
+        INFO_WL_PREASSIGNS (arg_info) = NULL;
+    }
 
     DBUG_RETURN (arg_node);
 }
