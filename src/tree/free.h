@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/12 12:13:59  dkr
+ * nodes N_pre, N_post, N_inc, N_dec added
+ *
  * Revision 3.1  2000/11/20 18:03:24  sacbase
  * new release made
  *
@@ -238,11 +241,7 @@ extern node *FreeBool (node *arg_node, node *arg_info);
 extern node *FreeStr (node *arg_node, node *arg_info);
 extern node *FreePrf (node *arg_node, node *arg_info);
 extern node *FreeEmpty (node *arg_node, node *arg_info);
-extern node *FreePost (node *arg_node, node *arg_info);
-extern node *FreePre (node *arg_node, node *arg_info);
 extern node *FreeIcm (node *arg_node, node *arg_info);
-extern node *FreeDec (node *arg_node, node *arg_info);
-extern node *FreeInc (node *arg_node, node *arg_info);
 extern node *FreePragma (node *arg_node, node *arg_info);
 extern node *FreeInfo (node *arg_node, node *arg_info);
 extern node *FreeSpmd (node *arg_node, node *arg_info);
@@ -250,7 +249,7 @@ extern node *FreeSync (node *arg_node, node *arg_info);
 extern node *FreeMT (node *arg_node, node *arg_info);
 extern node *FreeST (node *arg_node, node *arg_info);
 
-/* new with-loops */
+/* with-loop */
 extern node *FreeNWith (node *arg_node, node *arg_info);
 extern node *FreeNPart (node *arg_node, node *arg_info);
 extern node *FreeNWithID (node *arg_node, node *arg_info);
