@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.61  1998/05/12 14:23:15  dkr
+ * changed FreeSpmd, FreeSync
+ *
  * Revision 1.60  1998/05/11 15:16:41  dkr
  * changed FreeNwith, FreeNwith2:
  *   free NWITH_RC_IDS
@@ -1627,8 +1630,6 @@ FreeSpmd (node *arg_node, node *arg_info)
         SPMD_LOCAL (arg_node) = DFMRemoveMask (SPMD_LOCAL (arg_node));
     }
 
-    FREE (SPMD_FUNNAME (arg_node));
-
     FREETRAV (SPMD_ICM (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_spmd node ..."));
@@ -1652,6 +1653,7 @@ FreeSync (node *arg_node, node *arg_info)
     FREETRAV (SYNC_REGION (arg_node));
 
     FreeAllIds (SYNC_INOUT_IDS (arg_node));
+    FreeAllIds (SYNC_DEC_RC_IDS (arg_node));
 
     if (SYNC_IN (arg_node) != NULL) {
         SYNC_IN (arg_node) = DFMRemoveMask (SYNC_IN (arg_node));
@@ -1716,7 +1718,7 @@ FreeNWith (node *arg_node, node *arg_info)
         NWITH_LOCAL (arg_node) = DFMRemoveMask (NWITH_LOCAL (arg_node));
     }
 
-    NWITH_RC_IDS (arg_node) = FreeAllIds (NWITH_RC_IDS (arg_node));
+    NWITH_DEC_RC_IDS (arg_node) = FreeAllIds (NWITH_DEC_RC_IDS (arg_node));
 
     FREE (arg_node);
 
@@ -1826,7 +1828,7 @@ FreeNCode (node *arg_node, node *arg_info)
     FREETRAV (NCODE_CBLOCK (arg_node));
     FREETRAV (NCODE_CEXPR (arg_node));
 
-    NCODE_RC_IDS (arg_node) = FreeAllIds (NCODE_RC_IDS (arg_node));
+    NCODE_DEC_RC_IDS (arg_node) = FreeAllIds (NCODE_DEC_RC_IDS (arg_node));
 
     FREE (arg_node);
 
@@ -1861,7 +1863,7 @@ FreeNwith2 (node *arg_node, node *arg_info)
         NWITH2_LOCAL (arg_node) = DFMRemoveMask (NWITH2_LOCAL (arg_node));
     }
 
-    NWITH2_RC_IDS (arg_node) = FreeAllIds (NWITH2_RC_IDS (arg_node));
+    NWITH2_DEC_RC_IDS (arg_node) = FreeAllIds (NWITH2_DEC_RC_IDS (arg_node));
 
     FREE (arg_node);
 
