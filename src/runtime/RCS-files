@@ -8,6 +8,8 @@ libsac_profile.c
 libsac_trace.c
 sac.h
 sac2crc
+sac2crc.LINUX_X86
+sac2crc.README
 sac_bool.h
 sac_boundcheck.h
 sac_cachesim.h
