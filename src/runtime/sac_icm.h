@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2003/11/10 20:20:46  dkrHH
+ * new macro TO_STR added
+ *
  * Revision 3.9  2003/09/20 14:17:10  dkr
  * some CAT?? macros added
  *
@@ -220,6 +223,13 @@
 
 #define BuildArgs4(a, b, c, d) xBuildArgs4 (a, b, c, d)
 #define xBuildArgs4(a, b, c, d) (a, b, c, d)
+
+/*
+ * TO_STR converts the *expanded* argument into a string
+ */
+
+#define TO_STR(a) xTO_STR (a)
+#define xTO_STR(a) #a
 
 /*
  * VIEW is a handy viewer for testing macros
