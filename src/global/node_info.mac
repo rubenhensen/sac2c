@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.162  1998/03/17 12:18:09  cg
+ * The print table now uses PrintStr instead of PrintId for
+ * writing strings.
+ *
  * Revision 1.161  1998/03/16 00:23:34  dkr
  * added DupTree- und Free-support for WL...-nodes
  *
@@ -531,7 +535,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   NIF (N_str, "N_str", TravSons, TravSons, PrintStr, TravSons, TravSons, TravSons,
        TravSons, FreeStr, TravSons, TravSons, TravSons, TravSons, DupStr, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrintId, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrintStr, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 0),
 
