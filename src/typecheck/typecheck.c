@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/02/25 11:07:23  bs
+ * TI_Ngenarray modified. Now this function is able to work with
+ * compact integer arrays.
+ *
  * Revision 2.1  1999/02/23 12:40:56  sacbase
  * new release made
  *
@@ -816,7 +820,8 @@ BuildPsiWithLoop (types *restype, node *idx, node *array)
 static node *
 BuildGenarrayWithLoop (node *shp, node *val)
 {
-    node *res;
+    node *res, *tmp_node;
+    int i;
 
     DBUG_ENTER ("BuildGenarrayWithLoop");
 
@@ -824,10 +829,24 @@ BuildGenarrayWithLoop (node *shp, node *val)
       = MakeNWith (MakeNPart (MakeNWithid (MakeIds (TmpVar (), NULL, ST_regular), NULL),
                               MakeNGenerator (NULL, NULL, F_le, F_le, NULL, NULL), NULL),
                    MakeNCode (MAKE_EMPTY_BLOCK (), val), MakeNWithOp (WO_genarray));
-
-    NWITHOP_SHAPE (NWITH_WITHOP (res)) = shp;
-    NCODE_USED (NWITH_CODE (res))++;
-
+    if (NODE_TYPE (shp) == N_array) {
+        NWITHOP_SHAPE (NWITH_WITHOP (res)) = shp;
+        NCODE_USED (NWITH_CODE (res))++;
+    } else {
+        /*
+         * unflatten the array
+         */
+        tmp_node = NULL;
+        for (i = ID_ARRAYLENGTH (shp) - 1; i >= 0; i--)
+            tmp_node = MakeExprs (MakeNum (ID_CONSTARRAY (shp)[i]), tmp_node);
+        tmp_node = MakeArray (tmp_node);
+        ARRAY_LENGTH (tmp_node) = ID_ARRAYLENGTH (shp);
+        ARRAY_INTARRAY (tmp_node)
+          = CopyIntArray (ID_ARRAYLENGTH (shp), ID_CONSTARRAY (shp));
+        ARRAY_TYPE (tmp_node) = VARDEC_TYPE (ID_VARDEC (shp));
+        NWITHOP_SHAPE (NWITH_WITHOP (res)) = tmp_node;
+        NCODE_USED (NWITH_CODE (res))++;
+    }
     /*
      * Finally, we generate the connection between the
      * (only) partition and the (only) code!
@@ -1166,7 +1185,7 @@ DuplicateTypes (types *source, int share)
 
         do {
             tmp->dim = source->dim;
-            tmp->simpletype = source->simpletype;
+            TYPES_BASETYPE (tmp) = TYPES_BASETYPE (source);
             if (source->dim > 0) {
                 DBUG_ASSERT ((source->dim <= SHP_SEG_SIZE), "dimension out of range");
                 tmp->shpseg = (shpseg *)Malloc (sizeof (shpseg));
@@ -2165,8 +2184,9 @@ CmpFunParams (node *arg1, node *arg2)
     DBUG_ENTER ("CmpFunParams");
 
     while ((NULL != arg1) && (NULL != arg2)) {
-        if (arg1->SIMPLETYPE == arg2->SIMPLETYPE) {
-            if ((arg1->SIMPLETYPE == T_user) || (arg2->SIMPLETYPE == T_hidden)) {
+        if (TYPES_BASETYPE (ARG_TYPE (arg1)) == TYPES_BASETYPE (ARG_TYPE (arg2))) {
+            if ((TYPES_BASETYPE (ARG_TYPE (arg1)) == T_user)
+                || (TYPES_BASETYPE (ARG_TYPE (arg2)) == T_hidden)) {
                 is_equal = CMP_TYPE_NAME (arg1->TYPES, arg2->TYPES);
                 if (0 == is_equal)
                     break;
@@ -2224,7 +2244,7 @@ CheckKnownTypes (node *arg_node)
     /* first check whether type of function is known */
     fun_type = arg_node->TYPES;
     while (NULL != fun_type) {
-        if (T_user == fun_type->simpletype) {
+        if (T_user == TYPES_BASETYPE (fun_type)) {
             node *t_node
               = LookupType (fun_type->name, fun_type->name_mod, NODE_LINE (arg_node));
 
@@ -2254,7 +2274,7 @@ CheckKnownTypes (node *arg_node)
     /* now check whether the formal arguments have known type */
     arg = arg_node->node[2];
     while (NULL != arg) {
-        if (T_user == arg->SIMPLETYPE) {
+        if (T_user == TYPES_BASETYPE (ARG_TYPE (arg))) {
             t_node = LookupType (arg->NAME, arg->NAME_MOD, NODE_LINE (arg_node));
 
             if (NULL == t_node) {
@@ -2611,7 +2631,7 @@ InitTypeTab (node *modul_node)
     /* first insert all typedefs that are constructed from primitive types */
     i = 0;
     while (i < type_tab_size)
-        if (T_user == TYPEDEF_TYPE (tmp)->simpletype)
+        if (T_user == TYPES_BASETYPE (TYPEDEF_TYPE (tmp)))
             if (NULL == TYPEDEF_NEXT (tmp))
                 break;
             else {
@@ -2761,9 +2781,9 @@ InitTypeTab (node *modul_node)
 
                         /* insert type to 'tab' and reduce it to primitive type */
                         (tab + i)->node = tmp;
-                        switch (T_TYPES (j)->simpletype) {
+                        switch (TYPES_BASETYPE (T_TYPES (j))) {
                         case T_hidden:
-                            T_TYPES (i)->simpletype = T_hidden;
+                            TYPES_BASETYPE (T_TYPES (i)) = T_hidden;
                             if (NULL != T_TYPES (j)->name)
                                 T_TYPES (i)->name = StringCopy (T_TYPES (j)->name);
                             if (NULL != T_TYPES (j)->name_mod)
@@ -2775,7 +2795,8 @@ InitTypeTab (node *modul_node)
                         case T_float:
                         case T_str:
                             if (0 <= T_TYPES (j)->dim) {
-                                T_TYPES (i)->simpletype = T_TYPES (j)->simpletype;
+                                TYPES_BASETYPE (T_TYPES (i))
+                                  = TYPES_BASETYPE (T_TYPES (j));
                                 T_TYPES (i)->name = NULL;
                                 T_TYPES (i)->name_mod = NULL;
                                 if ((0 < T_TYPES (j)->dim) && (0 == T_TYPES (i)->dim)) {
@@ -3280,12 +3301,12 @@ CmpTypes (types *type_one, types *type_two)
     FREE (db_str2);
 #endif
 
-    if (type_one->simpletype == type_two->simpletype) {
+    if (TYPES_BASETYPE (type_one) == TYPES_BASETYPE (type_two)) {
         int ok = 1;
 
-        if (T_hidden == type_one->simpletype)
+        if (T_hidden == TYPES_BASETYPE (type_one))
             ok = CMP_TYPE_ID (type_one, type_two);
-        else if (T_user == type_one->simpletype) {
+        else if (T_user == TYPES_BASETYPE (type_one)) {
             if (!strcmp (type_one->name, type_two->name)) {
                 if ((NULL != type_one->name_mod) && (NULL != type_two->name_mod))
                     ok = !(strcmp (type_one->name_mod, type_two->name_mod));
@@ -3446,7 +3467,7 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
     FREE (db_str2);
 #endif
 
-    if (T_user == type_one->simpletype) {
+    if (T_user == TYPES_BASETYPE (type_one)) {
         t_node = LookupType (type_one->name, type_one->name_mod, line);
         if (NULL == t_node) {
             ABORT (line, ("Type '%s` is unknown",
@@ -3474,7 +3495,7 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
     } else
         type_1 = type_one;
 
-    if (T_user == type_two->simpletype) {
+    if (T_user == TYPES_BASETYPE (type_two)) {
         t_node = LookupType (type_two->name, type_two->name_mod, line);
         if (NULL == t_node) {
             ABORT (line, ("Type '%s` is unknown",
@@ -3503,7 +3524,8 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
     } else
         type_2 = type_two;
 
-    DBUG_ASSERT (((T_user != type_1->simpletype) && (T_user != type_2->simpletype)),
+    DBUG_ASSERT (((T_user != TYPES_BASETYPE (type_1))
+                  && (T_user != TYPES_BASETYPE (type_2))),
                  " not primitive types ");
 
     /* now type_1 and type_2 contain primitive types */
@@ -3515,29 +3537,31 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
          */
     } else {
 
-        if ((((T_float == type_1->simpletype) && (T_int == type_2->simpletype))
-             || ((T_double == type_1->simpletype) && (T_int == type_2->simpletype))
-             || ((T_double == type_1->simpletype) && (T_float == type_2->simpletype)))
+        if ((((T_float == TYPES_BASETYPE (type_1)) && (T_int == TYPES_BASETYPE (type_2)))
+             || ((T_double == TYPES_BASETYPE (type_1))
+                 && (T_int == TYPES_BASETYPE (type_2)))
+             || ((T_double == TYPES_BASETYPE (type_1))
+                 && (T_float == TYPES_BASETYPE (type_2))))
             && (-1 == convert_prim_type)) {
             if ((UNKNOWN_SHAPE == type_1->dim) && (UNKNOWN_SHAPE == type_2->dim))
                 compare = CMP_both_unknown_shape;
             else if ((UNKNOWN_SHAPE == type_1->dim) || (UNKNOWN_SHAPE == type_2->dim))
                 compare = CMP_one_unknown_shape;
             else {
-                simpletype s_type = type_2->simpletype;
+                simpletype s_type = TYPES_BASETYPE (type_2);
 
-                type_2->simpletype = type_1->simpletype;
+                TYPES_BASETYPE (type_2) = TYPES_BASETYPE (type_1);
                 compare = CmpTypes (type_1, type_2);
-                type_2->simpletype = s_type;
+                TYPES_BASETYPE (type_2) = s_type;
             }
         } else if ((UNKNOWN_SHAPE == type_1->dim) && (UNKNOWN_SHAPE == type_2->dim)
-                   && (type_1->simpletype == type_2->simpletype)) {
+                   && (TYPES_BASETYPE (type_1) == TYPES_BASETYPE (type_2))) {
             compare = CMP_both_unknown_shape;
         } else if ((UNKNOWN_SHAPE == type_1->dim) && (SCALAR < type_2->dim)
-                   && (type_1->simpletype == type_2->simpletype)) {
+                   && (TYPES_BASETYPE (type_1) == TYPES_BASETYPE (type_2))) {
             compare = CMP_one_unknown_shape;
         } else if ((UNKNOWN_SHAPE == type_2->dim) && (SCALAR < type_1->dim)
-                   && (type_1->simpletype == type_2->simpletype)) {
+                   && (TYPES_BASETYPE (type_1) == TYPES_BASETYPE (type_2))) {
             compare = CMP_one_unknown_shape;
         }
         /*
@@ -3546,13 +3570,13 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
          * standard library.
          */
         else if ((ARRAY_OR_SCALAR == type_1->dim) && (ARRAY_OR_SCALAR == type_2->dim)
-                 && (type_1->simpletype == type_2->simpletype)) {
+                 && (TYPES_BASETYPE (type_1) == TYPES_BASETYPE (type_2))) {
             compare = CMP_both_unknown_shape;
         } else if ((ARRAY_OR_SCALAR == type_1->dim) && (SCALAR <= type_2->dim)
-                   && (type_1->simpletype == type_2->simpletype)) {
+                   && (TYPES_BASETYPE (type_1) == TYPES_BASETYPE (type_2))) {
             compare = CMP_one_unknown_shape;
         } else if ((ARRAY_OR_SCALAR == type_2->dim) && (SCALAR <= type_1->dim)
-                   && (type_1->simpletype == type_2->simpletype)) {
+                   && (TYPES_BASETYPE (type_1) == TYPES_BASETYPE (type_2))) {
             compare = CMP_one_unknown_shape;
         } else {
             compare = CmpTypes (type_1, type_2);
@@ -3569,9 +3593,9 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
         type_2->shpseg = shpseg_2;
         type_2->dim = old_dim2;
     }
-    if (T_user == type_one->simpletype)
+    if (T_user == TYPES_BASETYPE (type_one))
         FREE_TYPES (type_1);
-    if (T_user == type_two->simpletype)
+    if (T_user == TYPES_BASETYPE (type_two))
         FREE_TYPES (type_2);
 
     DBUG_PRINT ("TYPE", ("%d", compare));
@@ -3629,7 +3653,7 @@ UpdateType (types *type_one, types *type_two, int line)
     FREE (db_str2);
 #endif
 
-    if ((T_user != t_unknown->simpletype) && (T_user == t_known->simpletype)) {
+    if ((T_user != TYPES_BASETYPE (t_unknown)) && (T_user == TYPES_BASETYPE (t_known))) {
         t_node = LookupType (t_known->name, t_known->name_mod, line);
         if (NULL == t_node)
             ABORT (line, ("Type '%s` is unknown",
@@ -3646,7 +3670,8 @@ UpdateType (types *type_one, types *type_two, int line)
             for (i = t_known->dim; i < t_unknown->dim; i++)
                 t_unknown->shpseg->shp[i] = t_node->SHP[i - t_known->dim];
         }
-    } else if ((T_user == t_unknown->simpletype) && (T_user != t_known->simpletype)) {
+    } else if ((T_user == TYPES_BASETYPE (t_unknown))
+               && (T_user != TYPES_BASETYPE (t_known))) {
         t_node = LookupType (t_unknown->name, t_unknown->name_mod, line);
         if (NULL == t_node)
             ABORT (line,
@@ -3664,11 +3689,11 @@ UpdateType (types *type_one, types *type_two, int line)
         /* both types are arrays of compatible primitive type
          * in this case we have to copy the shape of t_known to t_unknown
          */
-        DBUG_ASSERT (((t_unknown->simpletype == t_known->simpletype)
-                      || ((T_int == t_unknown->simpletype)
-                          && (T_float == t_known->simpletype))
-                      || ((T_float == t_unknown->simpletype)
-                          && (T_int == t_known->simpletype))),
+        DBUG_ASSERT (((TYPES_BASETYPE (t_unknown) == TYPES_BASETYPE (t_known))
+                      || ((T_int == TYPES_BASETYPE (t_unknown))
+                          && (T_float == TYPES_BASETYPE (t_known)))
+                      || ((T_float == TYPES_BASETYPE (t_unknown))
+                          && (T_int == TYPES_BASETYPE (t_known)))),
                      "wrong simpletypes ");
 
         t_unknown->dim = t_known->dim;
@@ -4666,22 +4691,24 @@ TClet (node *arg_node, node *arg_info)
     ids = LET_IDS (arg_node); /* left side of let-assign */
     if (ids)
         CheckIds (ids, arg_info->node[0]->node[0], NODE_LINE (arg_node));
-    /* look for double identifiers and name clashes with global objects */
-
+    /*
+     * look for double identifiers and name clashes with global objects
+     */
     INFO_TC_LHSVARS (arg_info) = ids;
     type = TI (LET_EXPR (arg_node), arg_info); /* type of right side of let-assign */
 
-    if (NULL == type)
+    if (type == NULL)
         ABORT (NODE_LINE (arg_node), ("Type of right hand side of '=` is not inferable"));
 
     DBUG_PRINT ("STOP",
                 ("arg_info->node[0]: %s", mdb_nodetype[arg_info->node[0]->nodetype]));
 
-    if (N_prf == NODE_TYPE (LET_EXPR (arg_node))) {
+    if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf) {
         switch (PRF_PRF (LET_EXPR (arg_node))) {
         case F_psi:
-            if (ARRAY_OR_SCALAR == TYPES_DIM (type)) {
-                /* LET-expression is a call of function psi,
+            if (TYPES_DIM (type) == ARRAY_OR_SCALAR) {
+                /*
+                 * LET-expression is a call of function psi,
                  * and the infered type is SCALAR_OR_ARRAY .
                  * There has to be a declaration
                  * of the belonging variable
@@ -5007,7 +5034,7 @@ TClet (node *arg_node, node *arg_info)
 #endif
 
         tmp = type;
-        if (NULL == ids && T_void == type->simpletype)
+        if (NULL == ids && T_void == TYPES_BASETYPE (type))
             type = type->next;
 
         while (type && ids) {
@@ -5206,11 +5233,11 @@ TI_prf (node *arg_node, node *arg_info)
     current_args = PRF_ARGS (arg_node);
     for (i = 0; i < count_args; i++) {
         arg_type[i] = TI (EXPRS_EXPR (current_args), arg_info);
-        if (NULL == arg_type[i])
+        if (NULL == arg_type[i]) {
             ABORT (NODE_LINE (arg_node), ("%d. argument of function '%s` "
                                           "is not inferable",
                                           (i + 1), mdb_prf[arg_node->info.prf]));
-
+        }
         current_args = EXPRS_NEXT (current_args);
     }
 
@@ -5232,14 +5259,16 @@ TI_prf (node *arg_node, node *arg_info)
         }
         }
 
-        if (T_unknown == ret_type->simpletype) {
+        if (TYPES_BASETYPE (ret_type) == T_unknown) {
             ABORT (NODE_LINE (arg_node), ("Primitive function '%s` is applied "
                                           "to wrong arguments",
                                           mdb_prf[arg_node->info.prf]));
         }
     } else {
-        /* userdefined primitive function */
-        /* convert N_prf to N_ap */
+        /*
+         * userdefined primitive function
+         * convert N_prf to N_ap
+         */
         NODE_TYPE (arg_node) = N_ap;
         AP_NAME (arg_node) = StringCopy (((fun_tab_elem *)fun_p)->id);
         ret_type = TI_fun (arg_node, (fun_tab_elem *)fun_p, arg_info);
@@ -5742,12 +5771,12 @@ TI_array (node *arg_node, node *arg_info)
                 FREE (str1);
                 FREE (str2);
                 FREE_TYPES (tmp_type);
-            } else if ((T_int == return_type->simpletype
-                        && T_float == tmp_type->simpletype)
-                       || (T_int == return_type->simpletype
-                           && T_double == tmp_type->simpletype)
-                       || (T_float == return_type->simpletype
-                           && T_double == tmp_type->simpletype)) {
+            } else if ((T_int == TYPES_BASETYPE (return_type)
+                        && T_float == TYPES_BASETYPE (tmp_type))
+                       || (T_int == TYPES_BASETYPE (return_type)
+                           && T_double == TYPES_BASETYPE (tmp_type))
+                       || (T_float == TYPES_BASETYPE (return_type)
+                           && T_double == TYPES_BASETYPE (tmp_type))) {
                 FREE_TYPES (return_type);
                 return_type = tmp_type;
             } else
@@ -5829,7 +5858,7 @@ TCcond (node *arg_node, node *arg_info)
     DBUG_PRINT ("STOP",
                 ("arg_info->node[0]: %s", mdb_nodetype[arg_info->node[0]->nodetype]));
 
-    if (T_bool != expr_type->simpletype) {
+    if (T_bool != TYPES_BASETYPE (expr_type)) {
         ERROR (NODE_LINE (arg_node),
                ("Type of condition (%s) is not bool", Type2String (expr_type, 0)));
     }
@@ -6080,7 +6109,7 @@ TCdo (node *arg_node, node *arg_info)
     expr_type = TI (DO_COND (arg_node), arg_info);
     if (NULL == expr_type) {
         ABORT (NODE_LINE (arg_node), ("Type not inferable"));
-    } else if (T_bool != expr_type->simpletype)
+    } else if (T_bool != TYPES_BASETYPE (expr_type))
         ERROR (NODE_LINE (DO_COND (arg_node)),
                ("Type is '%s` but must be 'bool`", Type2String (expr_type, 0)));
 
@@ -6122,7 +6151,7 @@ TCwhile (node *arg_node, node *arg_info)
     if (!expr_type)
         ABORT (NODE_LINE (arg_node), ("Type not inferable"));
 
-    if (T_bool == expr_type->simpletype)
+    if (T_bool == TYPES_BASETYPE (expr_type))
         /* traverse body of while_loop */
         Trav (WHILE_BODY (arg_node), arg_info);
     else
@@ -6170,7 +6199,8 @@ TCunaryOp (node *arg_node, node *arg_info)
         types *type = stack_p->node->info.types;
 
         if ((0 != type->dim)
-            || (!((T_int == type->simpletype) || (T_float == type->simpletype)))) {
+            || (!((T_int == TYPES_BASETYPE (type))
+                  || (T_float == TYPES_BASETYPE (type))))) {
             ERROR (NODE_LINE (arg_node), ("Identifier '%s` has wrong type (%s)",
                                           arg_node->info.ids->id, Type2String (type, 0)));
         } else {
@@ -6239,7 +6269,7 @@ TI_cast (node *arg_node, node *arg_info)
    {
       type->next=DuplicateTypes(cast_node->TYPES, 1);
       type=type->next;
-      if( (T_user == type->simpletype) && (NULL == type->name_mod))
+      if( (T_user == TYPES_BASETYPE(type)) && (NULL == type->name_mod))
       {
          t_node=LookupType(type->name, NULL, NODE_LINE(cast_node));
          if(NULL == t_node)
@@ -6443,7 +6473,7 @@ TI_modarray (node *arg_node, types *generator_type, types *w_return_type, node *
     /* now check whether the computed type ret_type and the type
      * information form generator and with_return fit
      */
-    if (ret_type->simpletype != w_return_type->simpletype)
+    if (TYPES_BASETYPE (ret_type) != TYPES_BASETYPE (w_return_type))
         ABORT (NODE_LINE (arg_node),
                ("Type of 'modarray` (%s) and return_type (%s) different",
                 Type2String (ret_type, 0), Type2String (w_return_type, 0)))
@@ -6597,7 +6627,7 @@ TI_foldfun (node *arg_node, types *generator_type, types *w_return_type, node *a
 
     ret_type = TI_fun (arg_node, fun_p, arg_info);
 
-    if (T_unknown == ret_type->simpletype) {
+    if (T_unknown == TYPES_BASETYPE (ret_type)) {
         ABORT (NODE_LINE (arg_node),
                ("Type of function '%s` not inferable",
                 ModName (arg_node->FUN_MOD_NAME, arg_node->FUN_NAME)));
@@ -6652,7 +6682,7 @@ TI_generator (node *arg_node, node *arg_info)
     left_type = TI (arg_node->node[0], arg_info);
     right_type = TI (arg_node->node[1], arg_info);
     ok = CmpTypes (left_type, right_type);
-    if ((CMP_equal == ok) && (T_int == left_type->simpletype)
+    if ((CMP_equal == ok) && (T_int == TYPES_BASETYPE (left_type))
         && (1 == left_type->dim)) /* 1*/
     {
         stack_p = LookupVar (GEN_ID (arg_node));
@@ -7349,7 +7379,7 @@ types *
 TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
 {
     types *ret_type, *expr_type;
-    int dim = 0;
+    int *tmpi, i, dim = 0;
     node *tmpn;
 
     DBUG_ENTER ("TI_Ngenarray");
@@ -7359,33 +7389,44 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
         ABORT (NODE_LINE (arg_node),
                ("type of shape in genarray with loop cannot be infered!"));
     }
-    if (N_array != NODE_TYPE (arg_node)) {
+    if (((NODE_TYPE (arg_node) != N_id) && (NODE_TYPE (arg_node) != N_array))
+        || ((NODE_TYPE (arg_node) == N_id) && (ID_ARRAYLENGTH (arg_node) == SCALAR))) {
         /* weak TC */
         /* 1 dimension wanted */
-        if ((SCALAR > TYPES_DIM (expr_type) && KNOWN_DIM_OFFSET > TYPES_DIM (expr_type)
-             && KNOWN_DIM_OFFSET - 1 != TYPES_DIM (expr_type))
-            || (SCALAR <= TYPES_DIM (expr_type) && 1 != TYPES_DIM (expr_type)))
+        if (((TYPES_DIM (expr_type) < SCALAR)
+             && (TYPES_DIM (expr_type) < KNOWN_DIM_OFFSET)
+             && (TYPES_DIM (expr_type) != (KNOWN_DIM_OFFSET - 1)))
+            || ((TYPES_DIM (expr_type) >= SCALAR) && (TYPES_DIM (expr_type) != 1)))
             ABORT (NODE_LINE (arg_node), ("genarray shape has to have one dimension"));
 
-        /* if the dimension of the genarray-vector is unkown or has one dimension,
-           we try to constantfold the expression to reduce it to a const array.
-           This is only possible if we have a prf shape(). Else the integration
-           or CF would be too complex (masks, mrd, name clashed when including
-           optimize.h to patch masks and mrd). */
+        /*
+         * if the dimension of the genarray-vector is unkown or has one dimension,
+         * we try to constantfold the expression to reduce it to a const array.
+         * This is only possible if we have a prf shape(). Else the integration
+         * or CF would be too complex (masks, mrd, name clashed when including
+         * optimize.h to patch masks and mrd).
+         */
         if (N_prf == NODE_TYPE (arg_node)) {
             tmpn = ReduceGenarrayShape (arg_node, expr_type);
             if (tmpn) {
                 arg_node = tmpn;
-                *replace = arg_node; /* replace old expr in WL-syntax tree */
+                /*
+                 * replace old expr in WL-syntax tree
+                 */
+                *replace = arg_node;
             }
         }
     }
 
-    if (N_array == NODE_TYPE (arg_node)) {
-        /* infer type of N_array and store it in N_array-node */
+    if (NODE_TYPE (arg_node) == N_array) {
+        /*
+         * infer type of N_array and store it in N_array-node
+         */
         ARRAY_TYPE (arg_node) = expr_type;
 
-        /* compute return_type */
+        /*
+         * compute return_type
+         */
         ret_type = MakeType (T_int, 0, MakeShpseg (NULL), NULL, NULL);
 
         tmpn = ARRAY_AELEMS (arg_node);
@@ -7405,15 +7446,35 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
             }
 
         TYPES_DIM (ret_type) = dim;
-        /* don't free exprs_next because it is assignd to arg_node. */
+        /*
+         * don't free exprs_next because it is assignd to arg_node.
+         */
     } else {
-        /* weak TC */
-        /* return int[] or float[] ... */
-        ret_type = MakeType (TYPES_BASETYPE (expr_type), UNKNOWN_SHAPE, NULL, NULL, NULL);
-        FreeOneTypes (expr_type);
+        if ((NODE_TYPE (arg_node) == N_id) && (ID_ARRAYLENGTH (arg_node) > SCALAR)) {
+
+            /*
+             * compute return_type
+             */
+            ret_type = MakeType (T_int, 0, MakeShpseg (NULL), NULL, NULL);
+
+            tmpi = ID_CONSTARRAY (arg_node);
+            dim = ID_ARRAYLENGTH (arg_node);
+            if (dim < SHP_SEG_SIZE)
+                for (i = 0; i < dim; i++)
+                    TYPES_SHAPE (ret_type, dim) = tmpi[i];
+            else
+                ABORT (NODE_LINE (arg_node), ("Shape vector has too many elements"));
+            TYPES_DIM (ret_type) = dim;
+        } else {
+            /* weak TC */
+            /* return int[] or float[] ... */
+            ret_type
+              = MakeType (TYPES_BASETYPE (expr_type), UNKNOWN_SHAPE, NULL, NULL, NULL);
+            FreeOneTypes (expr_type);
+        }
     }
 
-    if (SAC_PRG == kind_of_file && SCALAR >= TYPES_DIM (ret_type))
+    if ((kind_of_file == SAC_PRG) && (TYPES_DIM (ret_type) <= SCALAR))
         ABORT (NODE_LINE (arg_node), ("No constant type for genarray shape inferable"));
 
     DBUG_RETURN (ret_type);
