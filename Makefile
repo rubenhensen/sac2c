@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.37  1995/11/16 19:32:03  cg
+# Revision 1.38  1995/12/01 16:07:59  cg
+# added linking of precompile.o
+#
+# Revision 1.37  1995/11/16  19:32:03  cg
 # added linking of rmvoidfun.o
 #
 # Revision 1.36  1995/11/06  09:21:09  cg
@@ -142,7 +145,7 @@ MODULES= src/modules/filemgr.o src/modules/import.o src/modules/sib.o  \
 OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/rmvoidfun.o
 REFCOUNT= src/refcount/refcount.o
-COMPILE= src/compile/compile.o src/compile/icm2c.o
+COMPILE= src/compile/compile.o src/compile/icm2c.o src/compile/precompile.o
 
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
     $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT)
