@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/07/28 13:05:52  jhs
+ * SPMD_INs are now created only from NWITH2_INs, but not NWITH2_INOUTs anymore.
+ *
  * Revision 2.3  1999/07/21 16:30:27  jhs
  * needed_sync_fold introduced, max_sync_fold_adjusted.
  *
@@ -180,13 +183,15 @@ SPMDIassign (node *arg_node, node *arg_info)
             SPMD_OUT  ( spmd) = DFMGenMaskCopy( NWITH2_OUT  ( with));
             SPMD_LOCAL( spmd) = DFMGenMaskCopy( NWITH2_LOCAL( with));
         */
-        SPMD_IN (spmd) = DFMGenMaskOr (NWITH2_IN (with), NWITH2_INOUT (with));
+
+        /* SPMD_IN   ( spmd) = DFMGenMaskOr( NWITH2_IN( with), NWITH2_INOUT( with));  */
+        SPMD_IN (spmd) = DFMGenMaskCopy (NWITH2_IN (with));
         SPMD_OUT (spmd) = DFMGenMaskOr (NWITH2_OUT (with), NWITH2_INOUT (with));
         SPMD_INOUT (spmd) = DFMGenMaskCopy (NWITH2_INOUT (with));
         SPMD_LOCAL (spmd) = DFMGenMaskCopy (NWITH2_LOCAL (with));
         /*
-                                DFMGenMaskClear (FUNDEF_DFM_BASE( SPMD_FUNDEF(
-           arg_node)));
+          #### should use here: DFMGenMaskClear (FUNDEF_DFM_BASE( SPMD_FUNDEF(
+          arg_node)));
         */
         SPMD_SHARED (spmd) = DFMGenMaskCopy (SPMD_LOCAL (spmd));
         DFMSetMaskMinus (SPMD_SHARED (spmd), SPMD_LOCAL (spmd));
