@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/24 16:30:07  nmw
+ * TRACE_CENV added
+ *
  * Revision 3.1  2000/11/20 17:59:29  sacbase
  * new release made
  *
@@ -198,13 +201,14 @@ extern unsigned int traceflag;
 #define TRACE_NONE 0x0000 /* don't trace at all */
 #define TRACE_ALL 0xffff  /* enable all implemented trace options */
 
-#define TRACE_FUN 0x0001 /* trace user-defined fun apps */
-#define TRACE_PRF 0x0002 /* trace prim fun apps */
-#define TRACE_OWL 0x0004 /* trace old with-loop execution */
-#define TRACE_REF 0x0008 /* trace reference counting operations */
-#define TRACE_MEM 0x0010 /* trace malloc/free operations */
-#define TRACE_WL 0x0020  /* trace new with-loop execution */
-#define TRACE_MT 0x0040  /* trace multi-threading specific operations */
+#define TRACE_FUN 0x0001  /* trace user-defined fun apps */
+#define TRACE_PRF 0x0002  /* trace prim fun apps */
+#define TRACE_OWL 0x0004  /* trace old with-loop execution */
+#define TRACE_REF 0x0008  /* trace reference counting operations */
+#define TRACE_MEM 0x0010  /* trace malloc/free operations */
+#define TRACE_WL 0x0020   /* trace new with-loop execution */
+#define TRACE_MT 0x0040   /* trace multi-threading specific operations */
+#define TRACE_CENV 0x0080 /* trace c runtime enviroment init/exit */
 
 extern unsigned int profileflag;
 
