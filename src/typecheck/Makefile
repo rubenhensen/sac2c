@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.27  2004/11/23 12:49:07  sbs
+# INCS eliminated
+#
 # Revision 3.26  2004/11/21 11:22:03  sah
 # removed some old ast infos
 #
@@ -77,9 +80,6 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-
-INCS=-I../global -I../tree -I../../inc -I../print -I../modules -I../optimize \
-     -I../compile -I../c-interface -I../constants -I../flatten -I.
 
 OBJS:=gen_pseudo_fun.o new_typecheck.o new_types.o user_types.o \
       create_wrappers.o ssi.o sig_deps.o ct_basic.o ct_fun.o ct_prf.o \
