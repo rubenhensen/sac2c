@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2002/02/22 13:23:43  dkr
+ * INFDFMSwithx() modified: & is used correctly now
+ *
  * Revision 1.18  2002/02/22 12:32:40  sbs
  * some comments added
  *
@@ -1488,16 +1491,23 @@ INFDFMSid (node *arg_node, node *arg_info)
 node *
 INFDFMSwithx (node *arg_node, node *arg_info)
 {
+    DFMmask_t nwith_in, nwith_out, nwith_local;
     DFMmask_t out;
 
     DBUG_ENTER ("INFDFMSwithx");
 
+    nwith_in = NWITH_OR_NWITH2_IN_MASK (arg_node);
+    nwith_out = NWITH_OR_NWITH2_OUT_MASK (arg_node);
+    nwith_local = NWITH_OR_NWITH2_LOCAL_MASK (arg_node);
+
     arg_node
-      = InferMasks (&(NWITH_OR_NWITH2_IN_MASK (arg_node)),
-                    &(NWITH_OR_NWITH2_OUT_MASK (arg_node)),
-                    &(NWITH_OR_NWITH2_LOCAL_MASK (arg_node)), arg_node, arg_info,
+      = InferMasks (&nwith_in, &nwith_out, &nwith_local, arg_node, arg_info,
                     (NODE_TYPE (arg_node) == N_Nwith) ? InferMasksWith : InferMasksWith2,
                     FALSE);
+
+    L_NWITH_OR_NWITH2_IN_MASK (arg_node, nwith_in);
+    L_NWITH_OR_NWITH2_OUT_MASK (arg_node, nwith_out);
+    L_NWITH_OR_NWITH2_LOCAL_MASK (arg_node, nwith_local);
 
     /*
      * A with-loop indeed *can* have out-vars:
