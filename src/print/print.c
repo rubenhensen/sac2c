@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.89  2002/06/07 15:46:12  dkr
+ * printing of TYPEDEF_ICM: semicolon is now part of the ICM itself
+ *
  * Revision 3.88  2002/06/07 14:39:04  dkr
  * mdb_argtag renamed into ATG_string
  *
@@ -1127,7 +1130,7 @@ PrintTypedef (node *arg_node, node *arg_info)
         fprintf (outfile, ";\n");
     } else {
         Trav (TYPEDEF_ICM (arg_node), arg_info);
-        fprintf (outfile, ";\n");
+        fprintf (outfile, "\n");
     }
 
     if (TYPEDEF_COPYFUN (arg_node) != NULL) {
