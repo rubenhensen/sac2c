@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/02/03 17:30:30  dkr
+ * GenLUT renamed to GenerateLUT
+ * DupTreeLUT and DupNodeLUT added
+ *
  * Revision 1.7  2000/02/03 08:35:43  dkr
  * GenLUT renamed to GenerateLUT
  *
@@ -157,12 +161,16 @@
 
 /******************************************************************************/
 
-static lut_t *lut;
+static lut_t *dup_lut;
 
 /******************************************************************************/
 
 /*
  *  DupTree duplicates the whole sub tree behind the given pointer.
+ *  The needed LUT is created from scratch.
+ *
+ *  DupTreeLUT duplicates the whole sub tree behind the given pointer.
+ *  The needed LUT can be given as an argument.
  *
  *  DupNode duplicates only the given node without next node.
  *
@@ -173,13 +181,13 @@ static lut_t *lut;
  */
 
 node *
-DupTree (node *arg_node, node *arg_info)
+DupTreeLUT (node *arg_node, node *arg_info, lut_t *lut)
 {
     funtab *tmp_tab;
     node *new_node = NULL;
     int new_arg_info = 0;
 
-    DBUG_ENTER ("DupTree");
+    DBUG_ENTER ("DupTreeLUT");
 
     if (arg_node != NULL) {
         tmp_tab = act_tab;
@@ -191,14 +199,22 @@ DupTree (node *arg_node, node *arg_info)
             INFO_DUP_ALL (arg_info) = 0;
             new_arg_info = 1;
         }
-
         /*
          * we want to duplicate all sons
          */
         INFO_DUP_CONT (arg_info) = NULL;
-        lut = GenerateLUT ();
+
+        if (lut == NULL) {
+            dup_lut = GenerateLUT ();
+        } else {
+            dup_lut = lut;
+        }
+
         new_node = Trav (arg_node, arg_info);
-        lut = RemoveLUT (lut);
+
+        if (lut == NULL) {
+            lut = dup_lut = RemoveLUT (dup_lut);
+        }
 
         if (new_arg_info) {
             arg_info = FreeNode (arg_info);
@@ -213,13 +229,27 @@ DupTree (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupNode (node *arg_node)
+DupTree (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupTree");
+
+    new_node = DupTreeLUT (arg_node, arg_info, NULL);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupNodeLUT (node *arg_node, lut_t *lut)
 {
     funtab *tmp_tab;
     node *arg_info;
     node *new_node = NULL;
 
-    DBUG_ENTER ("DupTree");
+    DBUG_ENTER ("DupNodeLUT");
 
     if (NULL != arg_node) {
         tmp_tab = act_tab;
@@ -231,11 +261,37 @@ DupNode (node *arg_node)
          *  DUPTRAV, DUPCONT
          */
         INFO_DUP_CONT (arg_info) = arg_node;
+
+        if (lut == NULL) {
+            dup_lut = GenerateLUT ();
+        } else {
+            dup_lut = lut;
+        }
+
         new_node = Trav (arg_node, arg_info);
+
+        if (lut == NULL) {
+            lut = dup_lut = RemoveLUT (dup_lut);
+        }
+
         FreeNode (arg_info);
 
         act_tab = tmp_tab;
     }
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupNode (node *arg_node)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupTree");
+
+    new_node = DupNodeLUT (arg_node, NULL);
 
     DBUG_RETURN (new_node);
 }
@@ -246,7 +302,7 @@ DupNode (node *arg_node)
  *   node *DupTreePre( node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   This function is called before the traversal of each node.
  *
  ******************************************************************************/
 
@@ -266,7 +322,7 @@ DupTreePre (node *arg_node, node *arg_info)
  *   node *DupTreePost( node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   This function is called after the traversal of each node.
  *
  ******************************************************************************/
 
@@ -326,7 +382,7 @@ DupOneIds (ids *old_ids, node *arg_info)
     } else {
         new_ids = MakeIds (StringCopy (IDS_NAME (old_ids)),
                            StringCopy (IDS_MOD (old_ids)), IDS_STATUS (old_ids));
-        IDS_VARDEC (new_ids) = SearchInLUT (lut, IDS_VARDEC (old_ids));
+        IDS_VARDEC (new_ids) = SearchInLUT (dup_lut, IDS_VARDEC (old_ids));
         IDS_USE (new_ids) = IDS_USE (old_ids);
     }
 
@@ -501,9 +557,9 @@ DupId (node *arg_node, node *arg_info)
         new_node = MakeId (StringCopy (ID_NAME (arg_node)),
                            StringCopy (ID_MOD (arg_node)), ID_STATUS (arg_node));
         /* ID_OBJDEF and ID_VARDEC are mapped to the same data object */
-        ID_VARDEC (new_node) = SearchInLUT (lut, ID_VARDEC (arg_node));
+        ID_VARDEC (new_node) = SearchInLUT (dup_lut, ID_VARDEC (arg_node));
     }
-    ID_DEF (new_node) = SearchInLUT (lut, ID_DEF (arg_node));
+    ID_DEF (new_node) = SearchInLUT (dup_lut, ID_DEF (arg_node));
 
     ID_ATTRIB (new_node) = ID_ATTRIB (arg_node);
     ID_REFCNT (new_node) = ID_REFCNT (arg_node);
@@ -576,7 +632,7 @@ DupReturn (node *arg_node, node *arg_info)
     NODE_LINE (new_node) = NODE_LINE (arg_node);
     NODE_FILE (new_node) = NODE_FILE (arg_node);
 
-    InsertIntoLUT (lut, arg_node, new_node);
+    dup_lut = InsertIntoLUT (dup_lut, arg_node, new_node);
 
     DBUG_RETURN (new_node);
 }
@@ -701,7 +757,7 @@ DupVardec (node *arg_node, node *arg_info)
     NODE_LINE (new_node) = NODE_LINE (arg_node);
     NODE_FILE (new_node) = NODE_FILE (arg_node);
 
-    InsertIntoLUT (lut, arg_node, new_node);
+    dup_lut = InsertIntoLUT (dup_lut, arg_node, new_node);
 
     DBUG_RETURN (new_node);
 }
@@ -733,7 +789,7 @@ DupArg (node *arg_node, node *arg_info)
     NODE_LINE (new_node) = NODE_LINE (arg_node);
     NODE_FILE (new_node) = NODE_FILE (arg_node);
 
-    InsertIntoLUT (lut, arg_node, new_node);
+    dup_lut = InsertIntoLUT (dup_lut, arg_node, new_node);
 
     DBUG_RETURN (new_node);
 }
@@ -985,7 +1041,7 @@ DupAp (node *arg_node, node *arg_info)
                        DUPTRAV (AP_ARGS (arg_node)));
     AP_ATFLAG (new_node) = AP_ATFLAG (arg_node);
 
-    AP_FUNDEF (new_node) = SearchInLUT (lut, AP_FUNDEF (arg_node));
+    AP_FUNDEF (new_node) = SearchInLUT (dup_lut, AP_FUNDEF (arg_node));
 
     NODE_LINE (new_node) = NODE_LINE (arg_node);
     NODE_FILE (new_node) = NODE_FILE (arg_node);
@@ -1015,7 +1071,7 @@ DupFundef (node *arg_node, node *arg_info)
     FUNDEF_FUNNO (new_node) = FUNDEF_FUNNO (arg_node);
     FUNDEF_PRAGMA (new_node) = DUPTRAV (FUNDEF_PRAGMA (arg_node));
 
-    FUNDEF_RETURN (new_node) = SearchInLUT (lut, FUNDEF_RETURN (arg_node));
+    FUNDEF_RETURN (new_node) = SearchInLUT (dup_lut, FUNDEF_RETURN (arg_node));
     FUNDEF_NEEDOBJS (new_node) = CopyNodelist (FUNDEF_NEEDOBJS (arg_node));
     FUNDEF_VARNO (new_node) = FUNDEF_VARNO (arg_node);
     FUNDEF_INLREC (new_node) = FUNDEF_INLREC (arg_node);
@@ -1037,7 +1093,7 @@ DupFundef (node *arg_node, node *arg_info)
     NODE_LINE (new_node) = NODE_LINE (arg_node);
     NODE_FILE (new_node) = NODE_FILE (arg_node);
 
-    InsertIntoLUT (lut, arg_node, new_node);
+    dup_lut = InsertIntoLUT (dup_lut, arg_node, new_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1277,7 +1333,7 @@ DupNpart (node *arg_node, node *arg_info)
 
     new_node
       = MakeNPart (DUPTRAV (NPART_WITHID (arg_node)), DUPTRAV (NPART_GEN (arg_node)),
-                   SearchInLUT (lut, NPART_CODE (arg_node)));
+                   SearchInLUT (dup_lut, NPART_CODE (arg_node)));
 
     NPART_NEXT (new_node) = DUPCONT (NPART_NEXT (arg_node));
 
@@ -1315,7 +1371,7 @@ DupNcode (node *arg_node, node *arg_info)
   NCODE_MASK( new_node, ?) = ???;
 #endif
 
-    InsertIntoLUT (lut, arg_node, new_node);
+    dup_lut = InsertIntoLUT (dup_lut, arg_node, new_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1536,7 +1592,7 @@ DupWLgrid (node *arg_node, node *arg_info)
                     WLGRID_BOUND1 (arg_node), WLGRID_BOUND2 (arg_node),
                     WLGRID_UNROLLING (arg_node), DUPTRAV (WLGRID_NEXTDIM (arg_node)),
                     DUPCONT (WLGRID_NEXT (arg_node)),
-                    SearchInLUT (lut, WLGRID_CODE (arg_node)));
+                    SearchInLUT (dup_lut, WLGRID_CODE (arg_node)));
 
     /*
      * duplicated grids are not modified yet ;)
@@ -1644,7 +1700,7 @@ DupWLgridVar (node *arg_node, node *arg_info)
                               DUPTRAV (WLGRIDVAR_BOUND2 (arg_node)),
                               DUPTRAV (WLGRIDVAR_NEXTDIM (arg_node)),
                               DUPCONT (WLGRIDVAR_NEXT (arg_node)),
-                              SearchInLUT (lut, WLGRIDVAR_CODE (arg_node)));
+                              SearchInLUT (dup_lut, WLGRIDVAR_CODE (arg_node)));
 
     DBUG_RETURN (new_node);
 }
