@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2001/05/09 12:28:25  nmw
+ * build only structural constants from arrays with scalar elements
+ *
  * Revision 1.12  2001/05/08 13:19:02  nmw
  * signature of IsZero.. changed, support for division by zero added
  *
@@ -478,7 +481,8 @@ SSACFExpr2StructConstant (node *expr)
  *
  * description:
  *   converts an N_array node (or a N_id of a defined array) from AST to
- *   a structural constant.
+ *   a structural constant. To convert an array to a structural constant
+ *   all array elements must be scalars!
  *
  ******************************************************************************/
 static struc_constant *
@@ -490,6 +494,7 @@ SSACFArray2StructConstant (node *expr)
     shape *ashape;
     node **node_vec;
     node *tmp;
+    bool valid_const;
     int elem_count;
     int i;
 
@@ -529,11 +534,16 @@ SSACFArray2StructConstant (node *expr)
         node_vec = (node **)MALLOC (elem_count * sizeof (node *));
 
         /* copy element pointers from array to vector */
+        valid_const = TRUE;
         tmp = ARRAY_AELEMS (array);
         for (i = 0; i < elem_count; i++) {
-            DBUG_ASSERT ((tmp != NULL), "array contains to few elements");
-            node_vec[i] = EXPRS_EXPR (tmp);
-            tmp = EXPRS_NEXT (tmp);
+            if (tmp == NULL) {
+                /* array contains to few elements - there must be non scalar elemets */
+                valid_const = FALSE;
+            } else {
+                node_vec[i] = EXPRS_EXPR (tmp);
+                tmp = EXPRS_NEXT (tmp);
+            }
         }
         DBUG_ASSERT ((tmp == NULL), "array contains to much elements");
 
@@ -548,6 +558,12 @@ SSACFArray2StructConstant (node *expr)
         /* no array with known elements */
         struc_co = NULL;
     }
+
+    /* remove invalid structural arrays */
+    if (!valid_const) {
+        struc_co = SCOFreeStructConstant (struc_co);
+    }
+
     DBUG_RETURN (struc_co);
 }
 
