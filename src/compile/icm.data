@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.37  1998/05/15 23:54:58  dkr
+ * changed signature of WL_... macros
+ *
  * Revision 1.36  1998/05/15 09:19:29  cg
  * added ICMs MT_SYNC_NONFOLD and MT_SYNC_ONEFOLD_NONFOLD
  *
@@ -509,6 +512,15 @@ ICM_DEF( WL_FOLD_BEGIN, TRACE_UDF)
 ICM_END( WL_FOLD_BEGIN, (target, idx_vec, dims, args))
 #endif
 
+#if defined(WL_FOLDVAR_BEGIN) || defined(ICM_ALL)
+ICM_DEF( WL_FOLDVAR_BEGIN, TRACE_UDF)
+  ICM_STR(target)
+  ICM_STR(idx_vec)
+  ICM_INT(dims)
+  ICM_VAR( dims, args)
+ICM_END( WL_FOLDVAR_BEGIN, (target, idx_vec, dims, args))
+#endif
+
 #if defined(WL_END) || defined(ICM_ALL)
 ICM_DEF( WL_END, TRACE_UDF)
   ICM_STR(target)
@@ -529,25 +541,27 @@ ICM_DEF( WL_ASSIGN, TRACE_UDF)
 ICM_END( WL_ASSIGN, (target, idx_vec, dims, idx_scalars, dim_expr, expr))
 #endif
 
-#if defined(WL_ASSIGN_GEN) || defined(ICM_ALL)
-ICM_DEF( WL_ASSIGN_GEN, TRACE_UDF)
+#if defined(WL_ASSIGN_INIT) || defined(ICM_ALL)
+ICM_DEF( WL_ASSIGN_INIT, TRACE_UDF)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
+  ICM_INT(dim_templ)
   ICM_STR(templ)
-ICM_END( WL_ASSIGN_GEN, (target, idx_vec, dims, idx_scalars, templ))
+ICM_END( WL_ASSIGN_INIT, (target, idx_vec, dims, idx_scalars, dim_templ, templ))
 #endif
 
-#if defined(WL_ASSIGN_MOD) || defined(ICM_ALL)
-ICM_DEF( WL_ASSIGN_MOD, TRACE_UDF)
+#if defined(WL_ASSIGN_COPY) || defined(ICM_ALL)
+ICM_DEF( WL_ASSIGN_COPY, TRACE_UDF)
   ICM_STR(source)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
+  ICM_INT(dim_templ)
   ICM_STR(templ)
-ICM_END( WL_ASSIGN_MOD, (source, target, idx_vec, dims, idx_scalars, templ))
+ICM_END( WL_ASSIGN_COPY, (source, target, idx_vec, dims, idx_scalars, dim_templ, templ))
 #endif
 
 #if defined(WL_FOLD) || defined(ICM_ALL)
