@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/05/07 09:03:44  nmw
+ * when used in ssa optimizations no masks are used
+ *
  * Revision 3.6  2001/04/18 10:07:24  dkr
  * signature of InlineSingleApplication() modified
  *
@@ -198,7 +201,7 @@ CreateBodyCode (node *partn, node *index)
         res = DupTree (BLOCK_INSTR (NCODE_CBLOCK (coden)));
 
     /* index vector */
-    if (coden->mask[1][IDS_VARNO (NPART_VEC (partn))]) {
+    if ((use_ssaform) || (coden->mask[1][IDS_VARNO (NPART_VEC (partn))])) {
         letn = MakeLet (DupTree (index), DupOneIds (NPART_VEC (partn)));
         res = MakeAssign (letn, res);
     }
@@ -208,7 +211,7 @@ CreateBodyCode (node *partn, node *index)
     index = ARRAY_AELEMS (index);
 
     while (_ids) {
-        if (coden->mask[1][IDS_VARNO (_ids)]) {
+        if ((use_ssaform) || (coden->mask[1][IDS_VARNO (_ids)])) {
             letn = MakeLet (DupTree (EXPRS_EXPR (index)), DupOneIds (_ids));
             res = MakeAssign (letn, res);
         }
