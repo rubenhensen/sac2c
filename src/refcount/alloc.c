@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2004/09/20 09:45:55  ktr
+ * Brushed use of new types while dealing with bug #56.
+ *
  * Revision 1.21  2004/09/15 17:14:13  ktr
  * Ids2ALS is now static
  *
@@ -217,7 +220,7 @@ MakeALS (alloclist_struct *als, node *avis, node *dim, node *shape)
     res->shape = shape;
     res->next = als;
 
-    return (res);
+    DBUG_RETURN (res);
 }
 
 /** <!--******************************************************************-->
@@ -393,11 +396,16 @@ MakeDimArg (node *arg)
         arg = MakeNum (0);
         break;
 
+    case N_array:
+        arg = MakeNum (SHGetDim (ARRAY_SHAPE (arg)));
+        break;
+
     case N_id:
         arg = MakePrf1 (F_dim, DupNode (arg));
         break;
 
     default:
+        DBUG_EXECUTE ("EMAL", PrintNode (arg););
         DBUG_ASSERT ((0), "Invalid argument");
     }
 
@@ -430,11 +438,16 @@ MakeShapeArg (node *arg)
         arg = CreateZeroVector (0, T_int);
         break;
 
+    case N_array:
+        arg = SHShape2Array (ARRAY_SHAPE (arg));
+        break;
+
     case N_id:
         arg = MakePrf1 (F_shape, DupNode (arg));
         break;
 
     default:
+        DBUG_EXECUTE ("EMAL", PrintNode (arg););
         DBUG_ASSERT ((0), "Invalid argument");
     }
 
@@ -476,6 +489,7 @@ MakeSizeArg (node *arg)
         break;
 
     default:
+        DBUG_EXECUTE ("EMAL", PrintNode (arg););
         DBUG_ASSERT ((0), "Invalid argument");
     }
 
@@ -551,7 +565,7 @@ EMALarray (node *arg_node, info *arg_info)
     if (ARRAY_STRING (arg_node) != NULL) {
         /* array is a string */
         als->dim = MakeNum (1);
-        als->shape = SHShape2Array (ARRAY_SHAPE (arg_node));
+        als->shape = MakeShapeArg (arg_node);
     } else {
         if (ARRAY_AELEMS (arg_node) != NULL) {
             /*
@@ -559,11 +573,10 @@ EMALarray (node *arg_node, info *arg_info)
              * alloc( outer_dim + dim(a), shape( [a, ...]))
              */
             if (NODE_TYPE (ARRAY_AELEMS (arg_node)) == N_id) {
-                als->dim
-                  = MakePrf2 (F_add_SxS, MakeNum (SHGetDim (ARRAY_SHAPE (arg_node))),
-                              MakeDimArg (EXPRS_EXPR (ARRAY_AELEMS (arg_node))));
+                als->dim = MakePrf2 (F_add_SxS, MakeDimArg (arg_node),
+                                     MakeDimArg (EXPRS_EXPR (ARRAY_AELEMS (arg_node))));
             } else {
-                als->dim = MakeNum (SHGetDim (ARRAY_SHAPE (arg_node)));
+                als->dim = MakeDimArg (arg_node);
             }
 
             als->shape = MakePrf1 (F_shape, DupTree (arg_node));
@@ -575,7 +588,9 @@ EMALarray (node *arg_node, info *arg_info)
              * The dimension of the right-hand-side is unknown
              *   -> A has to be a AKD array!
              */
-            DBUG_ASSERT (TYGetDim (AVIS_TYPE (als->avis)) >= 0,
+            DBUG_ASSERT (/* AKD not allowed here! */
+                         TYIsAKS (AVIS_TYPE (als->avis))
+                           || TYIsAKV (AVIS_TYPE (als->avis)),
                          "assignment  A = [];  found, where A has unknown shape!");
 
             als->dim = MakeNum (TYGetDim (AVIS_TYPE (als->avis)));
@@ -709,13 +724,14 @@ EMALcode (node *arg_node, info *arg_info)
         if (NWITHOP_TYPE (withops) == WO_genarray) {
 
             if (als->dim == NULL) {
-                if (TYIsAKS (AVIS_TYPE (cexavis))) {
+                if (TYIsAKD (AVIS_TYPE (cexavis)) || TYIsAKS (AVIS_TYPE (cexavis))
+                    || TYIsAKV (AVIS_TYPE (cexavis))) {
                     als->dim = MakePrf2 (F_add_SxS, MakeSizeArg (NWITHOP_SHAPE (withops)),
                                          MakeNum (TYGetDim (AVIS_TYPE (cexavis))));
                 }
             }
             if (als->shape == NULL) {
-                if (TYIsAKS (AVIS_TYPE (cexavis))) {
+                if (TYIsAKS (AVIS_TYPE (cexavis)) || TYIsAKV (AVIS_TYPE (cexavis))) {
                     als->shape
                       = MakePrf2 (F_cat_VxV, DupNode (NWITHOP_SHAPE (withops)),
                                   SHShape2Array (TYGetShape (AVIS_TYPE (cexavis))));
@@ -735,7 +751,9 @@ EMALcode (node *arg_node, info *arg_info)
         if ((NWITHOP_TYPE (withops) == WO_genarray)
             || (NWITHOP_TYPE (withops) == WO_modarray)) {
 
-            if (TYGetDim (AVIS_TYPE (cexavis)) == 0) {
+            if ((TYIsAKD (AVIS_TYPE (cexavis)) || TYIsAKS (AVIS_TYPE (cexavis))
+                 || TYIsAKV (AVIS_TYPE (cexavis)))
+                && (TYGetDim (AVIS_TYPE (cexavis)) == 0)) {
                 /*
                  * Create a new value variable
                  * Ex: a_val
@@ -1134,6 +1152,7 @@ node *
 EMALprf (node *arg_node, info *arg_info)
 {
     alloclist_struct *als;
+    ntype *nt;
 
     DBUG_ENTER ("EMALprf");
 
@@ -1205,6 +1224,9 @@ EMALprf (node *arg_node, info *arg_info)
          * a = idx_sel( idx, A);
          * alloc( dim( a), shape( idx_sel( idx, A)));
          */
+        DBUG_ASSERT (/* No AKDs allowed here! */
+                     TYIsAKS (AVIS_TYPE (als->avis)) || TYIsAKV (AVIS_TYPE (als->avis)),
+                     "idx_sel with unknown result shape found!");
         als->dim = MakeNum (TYGetDim (AVIS_TYPE (als->avis)));
         als->shape = MakePrf1 (F_shape, DupNode (arg_node));
         break;
@@ -1263,9 +1285,10 @@ EMALprf (node *arg_node, info *arg_info)
     case F_sub_SxA:
     case F_mul_SxA:
     case F_div_SxA:
+        nt = AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)));
         if ((CountExprs (PRF_ARGS (arg_node)) < 2)
             || (NODE_TYPE (PRF_ARG2 (arg_node)) != N_id)
-            || (GetShapeDim (ID_TYPE (PRF_ARG2 (arg_node))) == SCALAR)) {
+            || ((TYIsAKD (nt) || TYIsAKS (nt) || TYIsAKV (nt)) && (TYGetDim (nt) == 0))) {
             als->dim = MakeDimArg (PRF_ARG1 (arg_node));
             als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         } else {
@@ -1461,6 +1484,8 @@ EMALwith2 (node *arg_node, info *arg_info)
 
     /*
      * Allocate memory for the index vector
+     *
+     * In Nwith2, shape of the index vector is always known!
      */
     if (NWITH2_VEC (arg_node) != NULL) {
         INFO_EMAL_ALLOCLIST (arg_info)
