@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2005/03/04 21:21:42  cg
+ * LaC functions are immediately zombified when their single
+ * application is deleted.
+ *
  * Revision 3.77  2005/01/11 16:04:43  mwe
  * FUNGROUP_REFCOUNTER added
  *
@@ -36,6 +40,12 @@
 #include "free_info.h"
 #include "tree_basic.h"
 #include "new_types.h"
+
+/*
+ * static global variables
+ */
+
+static int zombies_exist = 0;
 
 /*
  * INFO functions
@@ -377,27 +387,17 @@ FREEdoFreeTree (node *free_node)
  *
  ******************************************************************************/
 
-node *
-FREEfreeZombie (node *fundef)
+static node *
+FreeZombie (node *fundef)
 {
     node *tmp;
 
-    DBUG_ENTER ("FREEfreeZombie");
+    DBUG_ENTER ("FreeZombie");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "FREEfreeZombie() is suitable for N_fundef nodes only!");
+                 "FreeZombie() is suitable for N_fundef nodes only!");
 
     if (FUNDEF_ISZOMBIE (fundef)) {
-        if (FUNDEF_USED (fundef) == USED_INACTIVE) {
-            DBUG_PRINT ("FREE", ("Removing N_fundef zombie"
-                                 " (FUNDEF_USED inactive) ..."));
-        } else {
-            DBUG_PRINT ("FREE", ("Removing N_fundef zombie"
-                                 " (FUNDEF_USED == %i) ...",
-                                 FUNDEF_USED (fundef)));
-
-            DBUG_ASSERT ((FUNDEF_USED (fundef) == 0), "N_fundef zombie is still in use!");
-        }
 
         /*
          * remove all the zombie data
@@ -407,7 +407,7 @@ FREEfreeZombie (node *fundef)
         FUNDEF_IMPL (fundef) = NULL;
 
         if (FUNDEF_TYPES (fundef) != NULL) {
-            FUNDEF_TYPES (fundef) = FREEfreeOneTypes (FUNDEF_TYPES (fundef));
+            FUNDEF_TYPES (fundef) = FREEfreeAllTypes (FUNDEF_TYPES (fundef));
         }
 
         if (FUNDEF_WRAPPERTYPE (fundef) != NULL) {
@@ -457,6 +457,8 @@ FREEfreeZombie (node *fundef)
         tmp->sons.N_fundef = ILIBfree (tmp->sons.N_fundef);
         tmp->attribs.N_fundef = ILIBfree (tmp->attribs.N_fundef);
         tmp = ILIBfree (tmp);
+
+        zombies_exist -= 1;
     }
 
     DBUG_RETURN (fundef);
@@ -468,7 +470,7 @@ FREEfreeZombie (node *fundef)
  *   node *FREEremoveAllZombies( node *arg_node)
  *
  * Description:
- *   Removes all zombies found the given N_modul node or N_fundef chain
+ *   Removes all zombies found the given N_fundef chain
  *
  ******************************************************************************/
 
@@ -479,31 +481,38 @@ FREEremoveAllZombies (node *arg_node)
 
     DBUG_ASSERT ((arg_node != NULL), "FREEremoveAllZombies called with argument NULL");
 
-    switch (NODE_TYPE (arg_node)) {
-    case N_module:
-        if (MODULE_FUNS (arg_node) != NULL) {
-            MODULE_FUNS (arg_node) = FREEremoveAllZombies (MODULE_FUNS (arg_node));
-        }
-        if (MODULE_FUNDECS (arg_node) != NULL) {
-            MODULE_FUNDECS (arg_node) = FREEremoveAllZombies (MODULE_FUNDECS (arg_node));
-        }
-
-        break;
-
-    case N_fundef:
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = FREEremoveAllZombies (FUNDEF_NEXT (arg_node));
-        }
-
-        arg_node = FREEfreeZombie (arg_node);
-        break;
-
-    default:
-        DBUG_ASSERT ((0), "FREEremoveAllZombies() is suitable for N_modul and"
-                          " N_fundef nodes only!");
-        arg_node = NULL;
-        break;
+    if ((FUNDEF_NEXT (arg_node) != NULL) && (zombies_exist > 0)) {
+        FUNDEF_NEXT (arg_node) = FREEremoveAllZombies (FUNDEF_NEXT (arg_node));
     }
+
+    arg_node = FreeZombie (arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn node *FREEzombify( node *arg_node)
+ *
+ * @brief Marks function as zombie
+ *
+ * @param arg_node Fundef node to process
+ * @param arg_info pointer to info structure
+ *
+ * @return processed node
+ *
+ ***************************************************************************/
+
+node *
+FREEzombify (node *arg_node)
+{
+    DBUG_ENTER ("FREEzombify");
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
+                 "Only N_fundef nodes may be zombified.");
+
+    FUNDEF_ISZOMBIE (arg_node) = TRUE;
+    zombies_exist += 1;
 
     DBUG_RETURN (arg_node);
 }
