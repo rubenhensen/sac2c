@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/05/05 13:04:39  jhs
+ * MakeNGenerator now sets also the values of the original
+ * withloop operators, which are equivalent to the operators
+ * delivered to the routine.
+ *
  * Revision 2.2  1999/04/29 07:32:26  bs
  * Definition of MakeAccess modified
  *
@@ -1722,6 +1727,8 @@ MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node *step, node *
     NGEN_BOUND2 (tmp) = bound2;
     NGEN_OP1 (tmp) = op1;
     NGEN_OP2 (tmp) = op2;
+    NGEN_OP1_ORIG (tmp) = op1;
+    NGEN_OP2_ORIG (tmp) = op2;
     NGEN_STEP (tmp) = step;
     NGEN_WIDTH (tmp) = width;
 
