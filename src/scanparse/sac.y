@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2002/08/13 15:15:33  sbs
+ * error in constructing unary ops eliminated.
+ *
  * Revision 3.48  2002/08/13 14:32:13  sbs
  * fun_id in foldop allowed now
  *
@@ -1143,10 +1146,10 @@ expr: fun_id                      { $$ = MakeIdFromIds( $1); }
         }
       }
     | expr fun_id expr            { $$ = ConstructMop( $1, $2, $3);} %prec BM_OP
-    | PLUS expr                   { $$ = MakeAp( "+", NULL, $2);}    %prec MM_OP
-    | MINUS expr                  { $$ = MakeAp( "-", NULL, $2);}    %prec MM_OP
-    | TILDE expr                  { $$ = MakeAp( "~", NULL, $2);}    %prec MM_OP
-    | EXCL expr                   { $$ = MakeAp( "!", NULL, $2);}    %prec MM_OP
+    | PLUS expr                   { $$ = MakeAp1( "+", NULL, $2);}    %prec MM_OP
+    | MINUS expr                  { $$ = MakeAp1( "-", NULL, $2);}    %prec MM_OP
+    | TILDE expr                  { $$ = MakeAp1( "~", NULL, $2);}    %prec MM_OP
+    | EXCL expr                   { $$ = MakeAp1( "!", NULL, $2);}    %prec MM_OP
     | expr_sel                    { $$ = $1;}  /* bracket notation      */
     | expr_ap                     { $$ = $1;}  /* prefix function calls */
     | expr_ar                     { $$ = $1;}  /* constant arrays       */
