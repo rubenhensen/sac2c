@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1998/04/07 15:17:54  srs
+ * renamed DupId to DupModarray and
+ *         DupIIds to DupId.
+ * Added Initialization of ID_WL to DupId.
+ *
  * Revision 1.20  1998/04/02 17:41:13  dkr
  * added DupConc
  *
@@ -104,8 +109,8 @@ extern node *DupFloat (node *arg_node, node *arg_info);
 extern node *DupDouble (node *arg_node, node *arg_info);
 extern node *DupStr (node *arg_node, node *arg_info);
 extern ids *DupIds (ids *ids, node *arg_info);
+extern node *DupModarray (node *arg_node, node *arg_info);
 extern node *DupId (node *arg_node, node *arg_info);
-extern node *DupIIds (node *arg_node, node *arg_info);
 extern node *DupCond (node *arg_node, node *arg_info);
 extern node *DupLoop (node *arg_node, node *arg_info);
 extern node *DupChain (node *arg_node, node *arg_info);
