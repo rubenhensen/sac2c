@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/10/11 16:55:48  sah
+ * removes TempFileName again
+ *
  * Revision 3.5  2004/09/21 16:32:42  sah
  * Added TempFileName
  *
@@ -580,23 +583,4 @@ FindLocationOfFile (char *file)
     }
 
     return (loc);
-}
-
-char *
-TempFileName (char *dir, char *pfx, char *sfx)
-{
-    char *tmp;
-    char *result;
-
-    DBUG_ENTER ("TempFileName");
-
-    tmp = tempnam (dir, pfx);
-
-    result = Malloc (sizeof (char) * (strlen (tmp) + strlen (sfx) + 1));
-    strcpy (result, tmp);
-    strcat (result, sfx);
-
-    free (tmp);
-
-    DBUG_RETURN (result);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/10/11 16:55:48  sah
+ * removes TempFileName again
+ *
  * Revision 3.3  2004/09/21 16:32:42  sah
  * Added TempFileName
  *
@@ -81,6 +84,5 @@ extern FILE *WriteOpen (char *format, ...);
 extern int CheckExistFile (char *dir, char *name);
 extern locationtype FindLocationOfFile (char *file);
 extern int CheckSystemLibrary (char *name);
-extern char *TempFileName (char *dir, char *pfx, char *sfx);
 
 #endif /* _filemgr_h */
