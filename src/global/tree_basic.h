@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.50  1997/04/30 11:49:29  cg
+ * Revision 1.51  1997/05/02 13:52:39  sbs
+ * SHAPES_SHPSEG inserted
+ *
+ * Revision 1.50  1997/04/30  11:49:29  cg
  * new macro VARDEC_OBJDEF
  *
  * Revision 1.49  1997/03/19  13:38:16  cg
@@ -294,6 +297,7 @@ file can be found in tree_basic.c
  ***/
 
 #define SHAPES_DIM(s) (s->dim)
+#define SHAPES_SHPSEG(s) (s->shpseg)
 #define SHAPES_SELEMS(s) (s->shpseg->shp)
 
 /*--------------------------------------------------------------------------*/
