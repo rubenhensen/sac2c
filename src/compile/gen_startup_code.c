@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/05/26 13:21:44  cg
+ * Bug fixed in activating cache simulation.
+ *
  * Revision 2.5  1999/05/20 14:12:49  cg
  * Now, reasonable default values are set for unspecified cache parameters.
  *
@@ -237,7 +240,8 @@ PrintGlobalSwitches ()
              (traceflag & TRACE_MT) ? 1 : 0);
     fprintf (outfile, "\n");
 
-    fprintf (outfile, "#define SAC_DO_CACHESIM        %d\n", cachesim ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_CACHESIM        %d\n",
+             (cachesim & CACHESIM_YES) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_CACHESIM_ADV    %d\n",
              (cachesim & CACHESIM_ADVANCED) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_CACHESIM_GLOBAL %d\n",
