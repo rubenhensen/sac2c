@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2003/10/08 15:50:23  cg
+ * Central documentation of the SAC private heap manager now
+ * addresses issues related to descriptor allocation optimization
+ * (DAO) and memory size cache adjustment (MSCA).
+ *
  * Revision 3.5  2003/09/16 13:59:56  dkr
  * sac_misc.h included
  *
@@ -85,7 +90,7 @@
  *   optimizing memory allocation and de-allocation tasks.
  *
  *
- * arenas:
+ * Arenas:
  *
  *   The heap is organized in so-called arenas. An arena is an organizational
  *   entity for requested heap chunks of a certain size range. Each arena is
@@ -121,7 +126,7 @@
  *   to identify completely empty bins.
  *
  *
- * bins:
+ * Bins:
  *
  *   Except for the top arena, arenas are organized in bins of contiguous
  *   memory. The first time, a memory request for a certain arena occurs,
@@ -130,7 +135,7 @@
  *   a new bin is allocated.
  *
  *
- * initialization:
+ * Initialization:
  *
  *   When the heap manager is initialized upon program startup, a certain
  *   configurable amount of memory is requested from the operating system
@@ -152,7 +157,7 @@
  *   and the top arena.
  *
  *
- * administration data layout:
+ * Administration data layout:
  *
  *   Memory is always allocated in so-called units (currently sizeof(double)).
  *   This assures proper alignment as required by malloc().
@@ -225,6 +230,72 @@
  *   number in this field means that the preceding chunk is currently allocated.
  *   This information is needed for efficient coalascing of neighboring un-allocated
  *   memory chunks.
+ *
+ *
+ *  Descriptor Allocation Optimization (DAO):
+ *
+ *   Arrays in SAC are represented by two data object: the data field itself,
+ *   which contains the array elements in row-major order, and the descriptor,
+ *   which - depending on the array type - contains structural information such
+ *   as the reference counter, the size of the data field, and the shape.
+ *
+ *   By default, data field and descriptor are allocated and de-allocated
+ *   completely independent of each other. However, in ALMOST all cases
+ *   allocation and de-allocation of data field and associated descriptor
+ *   happen to be at the same time. This raises the opportunity of an
+ *   optimization, which we have called descriptor allocation optimization.
+ *
+ *   The basic idea is to allocate just one chunk of memory which then
+ *   accomodates both the data field and the descriptor. The rationale behind
+ *   this approach is that allocation time cost is mostly independent to small
+ *   increases in memory size, and the descriptor is typically much smaller
+ *   than the data field. Moreover, de-allocation of the descriptor is avoided
+ *   completely.
+ *
+ *   The major obstacle for this approach is the fact that data field and
+ *   descriptor are in most cases, but not always allocated and de-allocated
+ *   together. This is due to SAC's foreign language interface, which allows
+ *   arrays to be allocated and/or de-allocated outside the SAC world. In
+ *   this case, descriptors need to be created and removed when an array
+ *   enters or leaves the SAC world.
+ *
+ *   Technically, DAO is realized by allocating memory for the size of the data
+ *   field plus the size of the descriptor plus the size of two basic administration
+ *   blocks. One administration block is required for storing internal information,
+ *   basically we must be able to distinguish fully-allocated descriptors from
+ *   DAO-fake-allocated ones. The other administration block assures that we have
+ *   sufficient memory to properly align the descriptor.
+ *
+ *   The offset from the beginning of the data field to the descriptor part
+ *   is then computed by determining how many basic blocks are needed for the
+ *   data field, then add another basic block for administration, and take
+ *   the following one as starting point for storing the descriptor.
+ *
+ *   DAO-fake-allocated descriptors are uniquely marked by having their arena
+ *   pointer being set to NULL. This way, we can easily distinguish between
+ *   real and fake-allocations once it comes to de-allocation of descriptors.
+ *   However, as we for performance reasons we don't want to check the arena
+ *   on all and any de-allocation, a specific de-allocation ICM for descriptors
+ *   is available and MUST be used for this purpose.
+ *
+ *
+ *  Memory Size Cache Adjustment (MSCA)
+ *
+ *   MSCA is yet another heap management trick which speeds up program execution
+ *   in many situations. Whenever array sizes are close to multiples of the
+ *   cache size, there is a significant propability that access to these arrays
+ *   results in severe cross interference cache thrashing.
+ *
+ *   As a more or less ad-hoc solution to this problem, MSCA artificially increases
+ *   memory size requests before allocation actually takes place. This simple
+ *   measure manipulates the relative positions of arrays in memory and may cause
+ *   significant performance improvements, in particular on machnies with low
+ *   associative cache memories.
+ *
+ *   Nevertheless, a more sophisticated solution to the problem of cross
+ *   interference conflicts would be desirable. Such a solution would be
+ *   Array Placements (APL). Unfortunately, APL for the time being is only
+ *   rudimentarily implemented in the SAC compiler.
  *
  *
  *
