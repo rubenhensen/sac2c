@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/06/08 10:03:44  asi
+ * Revision 1.5  1995/06/23 13:48:10  asi
+ * parameter added to functioncall DuplicateTypes in INLvar
+ *
+ * Revision 1.4  1995/06/08  10:03:44  asi
  * added multi inlineing and some bugs fixed
  *
  * Revision 1.3  1995/06/02  15:55:56  asi
@@ -429,10 +432,8 @@ INLvar (node *arg_node, node *arg_info)
     new_name = RenameInlinedVar (arg_node->info.types->id);
     if (NULL == SearchDecl (new_name, TYPES)) {
         new_vardec = MakeNode (N_vardec);
-        new_vardec->info.types = DuplicateTypes (arg_node->info.types);
-#if 0
-    FREE(new_vardec->info.types->id);
-#endif
+        new_vardec->info.types = DuplicateTypes (arg_node->info.types, 1);
+        FREE (new_vardec->info.types->id);
         new_vardec->info.types->id = new_name;
         TYPES = AppendNodeChain (0, new_vardec, TYPES);
         DBUG_PRINT ("INL", ("New decleration for %s generated", new_name));
