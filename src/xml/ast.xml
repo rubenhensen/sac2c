@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.94  2004/11/26 12:28:33  mwe
+  Inline traversal added
+
   Revision 1.93  2004/11/26 12:22:30  sbs
   IVE added
 
@@ -681,6 +684,13 @@
 	  <node name="Assign" />
 	  <node name="Let" />
 	  <node name="Prf" />
+	</travuser>
+      </traversal>
+      <traversal id="INL" name="Inline Traversal" default="sons" include="Inline.h" >
+	<travuser>
+	  <node name="Module" />
+	  <node name="Assign" />
+	  <node name="Fundef" />
 	</travuser>
       </traversal>
       <traversal id="TS" name="Print Type Statistics" default="sons" include="type_statistics.h" >
