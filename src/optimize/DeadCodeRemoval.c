@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  1999/01/18 15:46:02  sbs
+ * DBUG_PRINT( "OPTMEM",...) inserted for mem-info during optimization
+ *
  * Revision 1.23  1999/01/11 16:53:22  sbs
  * || in conditional does NOT work "lazy"[3~[3~ly"
  * only %[3~&& does!!
@@ -131,6 +134,7 @@ DeadCodeRemoval (node *arg_node, node *info_node)
 
     DBUG_ENTER ("DeadCodeRemoval");
     DBUG_PRINT ("OPT", ("DEAD CODE REMOVAL"));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
 
     /*
      * First, we traverse with active_tab, i.e. using
@@ -156,6 +160,7 @@ DeadCodeRemoval (node *arg_node, node *info_node)
 
     DBUG_PRINT ("OPT", ("                        result: %d",
                         (dead_var + dead_expr) - (mem_dead_var + mem_dead_expr)));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
     act_tab = tmp_tab;
     DBUG_RETURN (arg_node);
 }

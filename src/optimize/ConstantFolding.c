@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.79  1999/01/18 15:46:02  sbs
+ * DBUG_PRINT( "OPTMEM",...) inserted for mem-info during optimization
+ *
  * Revision 1.78  1999/01/07 13:56:58  sbs
  * optimization process restructured for a function-wise optimization!
  *
@@ -355,6 +358,7 @@ ConstantFolding (node *arg_node, node *info_node)
 
     DBUG_ENTER ("ConstantFolding");
     DBUG_PRINT ("OPT", ("CONSTANT FOLDING"));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
 
     tmp_tab = act_tab;
     act_tab = cf_tab;
@@ -368,6 +372,7 @@ ConstantFolding (node *arg_node, node *info_node)
     act_tab = tmp_tab;
 
     DBUG_PRINT ("OPT", ("                        result: %d", cf_expr - mem_cf_expr));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
     DBUG_RETURN (arg_node);
 }
 

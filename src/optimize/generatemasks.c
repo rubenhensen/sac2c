@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1999/01/18 15:46:02  sbs
+ * DBUG_PRINT( "OPTMEM",...) inserted for mem-info during optimization
+ *
  * Revision 1.1  1999/01/07 17:37:18  sbs
  * Initial revision
  *
@@ -2352,6 +2355,7 @@ GenerateMasks (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("GenerateMasks");
     DBUG_PRINT ("OPT", ("GENERATEMASKS"));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
 
     tmp_tab = act_tab;
     act_tab = genmask_tab;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1999/01/18 15:46:02  sbs
+ * DBUG_PRINT( "OPTMEM",...) inserted for mem-info during optimization
+ *
  * Revision 1.16  1999/01/07 13:56:58  sbs
  * optimization process restructured for a function-wise optimization!
  *
@@ -101,6 +104,7 @@ Unroll (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("Unroll");
     DBUG_PRINT ("OPT", ("LOOP/WL UNROLLING"));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
     tmp_tab = act_tab;
     act_tab = unroll_tab;
     arg_info = MakeNode (N_info);
@@ -113,6 +117,7 @@ Unroll (node *arg_node, node *arg_info)
     DBUG_PRINT ("OPT", ("                   LOOP result: %d", lunr_expr - mem_lunr_expr));
     DBUG_PRINT ("OPT",
                 ("                     WL result: %d", wlunr_expr - mem_wlunr_expr));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
     DBUG_RETURN (arg_node);
 }
 

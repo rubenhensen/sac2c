@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 1.22  1999/01/18 15:46:02  sbs
+ * DBUG_PRINT( "OPTMEM",...) inserted for mem-info during optimization
+ *
  * Revision 1.21  1999/01/07 13:56:58  sbs
  * optimization process restructured for a function-wise optimization!
  *
@@ -1181,6 +1184,7 @@ WithloopFolding (node *arg_node, node *arg_info)
        used to finde the wanted definition (which IS the last definition
        because of unique names. */
     DBUG_PRINT ("OPT", ("  WLI 1"));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
     wli_phase = 1;
     tmp_tab = act_tab;
     act_tab = wli_tab;
@@ -1188,6 +1192,7 @@ WithloopFolding (node *arg_node, node *arg_info)
 
     /* WLI traversal: search information */
     DBUG_PRINT ("OPT", ("  WLI 2"));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
     wli_phase = 2;
     act_tab = wli_tab;
     arg_node = Trav (arg_node, arg_info);
@@ -1196,18 +1201,18 @@ WithloopFolding (node *arg_node, node *arg_info)
     if (break_after != PH_sacopt || strcmp (break_specifier, "wli")) {
         /* WLF traversal: fold WLs */
         DBUG_PRINT ("OPT", ("  WLF"));
-        DBUG_PRINT ("WLF", ("allocated mem before folding: %d", current_allocated_mem));
+        DBUG_PRINT ("OPTMEM",
+                    ("mem currently allocated: %d bytes", current_allocated_mem));
         act_tab = wlf_tab;
         arg_node = Trav (arg_node, arg_info);
         expr = (wlf_expr - old_wlf_expr);
-        if (expr)
-            DBUG_PRINT ("OPT", ("                        result: %d", expr));
-        DBUG_PRINT ("WLF", ("allocated mem after folding : %d", current_allocated_mem));
+        DBUG_PRINT ("OPT", ("                        result: %d", expr));
+        DBUG_PRINT ("OPTMEM",
+                    ("mem currently allocated: %d bytes", current_allocated_mem));
 
-        /* rebuild mask which is necessary because of WL-body-substitutions and
-         inserted new variables to prevent wrong variable bindings. */
-        DBUG_PRINT ("OPT", ("  GENERATEMASKS"));
-        arg_node = GenerateMasks (arg_node, NULL);
+    } else {
+        DBUG_PRINT ("OPTMEM",
+                    ("mem currently allocated: %d bytes", current_allocated_mem));
     }
 
     act_tab = tmp_tab;
@@ -1240,16 +1245,13 @@ WithloopFoldingWLT (node *arg_node, node *arg_info)
 
     /* WLT traversal: transform WLs */
     DBUG_PRINT ("OPT", ("  WLT"));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
     tmp_tab = act_tab;
     act_tab = wlt_tab;
     arg_node = Trav (arg_node, arg_info);
     expr = (wlt_expr - old_wlt_expr);
-    if (expr)
-        DBUG_PRINT ("OPT", ("                        result: %d", expr));
-
-    /* rebuild mask which is necessary because of the transformations in WLT. */
-    DBUG_PRINT ("OPT", ("  GENERATEMASKS"));
-    arg_node = GenerateMasks (arg_node, NULL);
+    DBUG_PRINT ("OPT", ("                        result: %d", expr));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
 
     FREE (arg_info);
     act_tab = tmp_tab;

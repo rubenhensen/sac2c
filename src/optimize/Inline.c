@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  1999/01/18 15:46:02  sbs
+ * DBUG_PRINT( "OPTMEM",...) inserted for mem-info during optimization
+ *
  * Revision 1.23  1999/01/07 13:56:58  sbs
  * optimization process restructured for a function-wise optimization!
  *
@@ -126,6 +129,7 @@ Inline (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("Inline");
     DBUG_PRINT ("OPT", ("FUNCTION INLINING"));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
     tmp_tab = act_tab;
     act_tab = inline_tab;
     arg_info = MakeNode (N_info);
@@ -133,6 +137,7 @@ Inline (node *arg_node, node *arg_info)
     arg_node = Trav (arg_node, arg_info);
 
     DBUG_PRINT ("OPT", ("                        result: %d", inl_fun - mem_inl_fun));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
     FREE (arg_info);
     act_tab = tmp_tab;
     DBUG_RETURN (arg_node);

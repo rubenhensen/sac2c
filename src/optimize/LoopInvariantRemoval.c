@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  1999/01/18 15:46:02  sbs
+ * DBUG_PRINT( "OPTMEM",...) inserted for mem-info during optimization
+ *
  * Revision 1.24  1999/01/07 13:58:17  sbs
  * optimization process restructured for a function-wise optimization!
  *
@@ -165,6 +168,7 @@ LoopInvariantRemoval (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("LoopInvariantRemoval");
     DBUG_PRINT ("OPT", ("LOOP INVARIANT REMOVAL"));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
     tmp_tab = act_tab;
     act_tab = lir_tab;
     arg_info = MakeNode (N_info);
@@ -175,6 +179,7 @@ LoopInvariantRemoval (node *arg_node, node *arg_info)
     FREE (arg_info);
     act_tab = tmp_tab;
     DBUG_PRINT ("OPT", ("                        result: %d", lir_expr - mem_lir_expr));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
     DBUG_RETURN (arg_node);
 }
 

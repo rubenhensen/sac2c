@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1999/01/18 15:46:02  sbs
+ * DBUG_PRINT( "OPTMEM",...) inserted for mem-info during optimization
+ *
  * Revision 1.1  1999/01/07 17:36:51  sbs
  * Initial revision
  *
@@ -32,6 +35,7 @@ DeadFunctionRemoval (node *arg_node, node *info_node)
 
     DBUG_ENTER ("DeadFunctionRemoval");
     DBUG_PRINT ("OPT", ("DEAD FUNCTION REMOVAL"));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
 
     tmp_tab = act_tab;
     act_tab = dfr_tab;
@@ -40,6 +44,7 @@ DeadFunctionRemoval (node *arg_node, node *info_node)
     FREE (info_node);
 
     DBUG_PRINT ("OPT", ("                        result: %d", dead_fun - mem_dead_fun));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
 
     act_tab = tmp_tab;
     DBUG_RETURN (arg_node);
