@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2001/03/12 09:16:05  nmw
+ * Debug Messages added, no DCR for recursive function call
+ *
  * Revision 1.5  2001/03/06 13:19:35  nmw
  * *** empty log message ***
  *
@@ -364,9 +367,10 @@ SSADCRlet (node *arg_node, node *arg_info)
 
     /* check for special function as N_ap expression */
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
-        if ((FUNDEF_STATUS (AP_FUNDEF (LET_EXPR (arg_node))) == ST_condfun)
-            || (FUNDEF_STATUS (AP_FUNDEF (LET_EXPR (arg_node))) == ST_dofun)
-            || (FUNDEF_STATUS (AP_FUNDEF (LET_EXPR (arg_node))) == ST_whilefun)) {
+        if (((FUNDEF_STATUS (AP_FUNDEF (LET_EXPR (arg_node))) == ST_condfun)
+             || (FUNDEF_STATUS (AP_FUNDEF (LET_EXPR (arg_node))) == ST_dofun)
+             || (FUNDEF_STATUS (AP_FUNDEF (LET_EXPR (arg_node))) == ST_whilefun))
+            && (AP_FUNDEF (LET_EXPR (arg_node)) != INFO_SSADCR_FUNDEF (arg_info))) {
 
             /*
              * here we can modify the return values, because
@@ -407,7 +411,9 @@ SSADCRlet (node *arg_node, node *arg_info)
     } else {
         /* traverse right side of let (mark needed variables) */
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+
         /* do not remove assign node */
+        DBUG_PRINT ("SSADCR", ("preserving assignment"));
         INFO_SSADCR_REMASSIGN (arg_info) = FALSE;
     }
 
@@ -571,8 +577,10 @@ SSADCRap (node *arg_node, node *arg_info)
         /* start traversal of special fundef (and maybe reduce parameters!) */
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
 
-        DBUG_PRINT ("SSADCR", ("traversal of special fundef %s finished\n",
-                               FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        DBUG_PRINT ("SSADCR", ("traversal of special fundef %s finished"
+                               "continue in fundef %s\n",
+                               FUNDEF_NAME (AP_FUNDEF (arg_node)),
+                               FUNDEF_NAME (INFO_SSADCR_FUNDEF (arg_info))));
 
         FREE (new_arg_info);
     } else {
