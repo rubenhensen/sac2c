@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/10/22 13:24:09  sah
+ * added a default case
+ *
  * Revision 1.2  2004/10/15 10:03:58  sah
  * removed old module system nodes in
  * new ast mode
@@ -79,6 +82,9 @@ PrintLibStatCodeReadEntry (module_t *module, node *modnode, symbolentry_t *entry
         break;
     case STE_typedef:
     case STE_objdef:
+        break;
+    default:
+        DBUG_ASSERT (0, "unsupported symbol within a modules symboltable!");
         break;
     }
 
