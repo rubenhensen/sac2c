@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2001/05/22 10:03:21  dkr
+ * fixed a bug in COMPPrf:
+ * ICMs for RC are build *before* the arguments are traversed!!
+ *
  * Revision 3.57  2001/05/17 12:02:37  dkr
  * MALLOC, FREE eliminated
  *
@@ -4636,32 +4640,57 @@ COMPPrfRotate (node *arg_node, node *arg_info)
 node *
 COMPPrf (node *arg_node, node *arg_info)
 {
-    node *ret_node = NULL;
-    bool dec_rc_args = TRUE;
+    node *ret_node;
 
     DBUG_ENTER ("COMPPrf");
 
     DBUG_PRINT ("COMP",
                 ("%s line: %d", mdb_prf[PRF_PRF (arg_node)], NODE_LINE (arg_node)));
 
+    ret_node = NULL;
+    if (PRF_PRF (arg_node) != F_reshape) {
+        /*
+         * CAUTION: no DEC_RC on the args of F_reshape!!
+         */
+        node *icm_node;
+        node *args, *arg;
+
+        /*
+         * append a DEC_RC for each arg
+         */
+        args = PRF_ARGS (arg_node);
+        while (args != NULL) {
+            arg = EXPRS_EXPR (args);
+            if (NODE_TYPE (arg) == N_id) {
+                icm_node
+                  = MakeAdjustRcIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg), -1);
+                if (icm_node != NULL) {
+                    ASSIGN_NEXT (icm_node) = ret_node;
+                    ret_node = icm_node;
+                }
+            }
+            args = EXPRS_NEXT (args);
+        }
+    }
+
     if (SCALAR_ARGS (PRF_PRF (arg_node))) {
         switch (PRF_PRF (arg_node)) {
         case F_toi:
         case F_tof:
         case F_tod:
-            ret_node = COMPPrfConvertScalar (arg_node, arg_info);
+            arg_node = COMPPrfConvertScalar (arg_node, arg_info);
             break;
 
         case F_abs:
-            ret_node = COMPPrfIcm1 ("ND_ABS", arg_node, arg_info);
+            arg_node = COMPPrfIcm1 ("ND_ABS", arg_node, arg_info);
             break;
 
         case F_min:
-            ret_node = COMPPrfIcm2 ("ND_MIN", arg_node, arg_info);
+            arg_node = COMPPrfIcm2 ("ND_MIN", arg_node, arg_info);
             break;
 
         case F_max:
-            ret_node = COMPPrfIcm2 ("ND_MAX", arg_node, arg_info);
+            arg_node = COMPPrfIcm2 ("ND_MAX", arg_node, arg_info);
             break;
 
         case F_not:
@@ -4678,7 +4707,6 @@ COMPPrf (node *arg_node, node *arg_info)
         case F_neq:
         case F_ge:
         case F_gt:
-            ret_node = arg_node;
             break;
 
         default:
@@ -4692,56 +4720,52 @@ COMPPrf (node *arg_node, node *arg_info)
             break;
 
         case F_dim:
-            ret_node = COMPPrfDim (arg_node, arg_info);
+            arg_node = COMPPrfDim (arg_node, arg_info);
             break;
 
         case F_shape:
-            ret_node = COMPPrfShape (arg_node, arg_info);
+            arg_node = COMPPrfShape (arg_node, arg_info);
             break;
 
         case F_reshape:
-            ret_node = COMPPrfReshape (arg_node, arg_info);
-            /*
-             * CAUTION: no DEC_RC on the args of F_reshape!!
-             */
-            dec_rc_args = FALSE;
+            arg_node = COMPPrfReshape (arg_node, arg_info);
             break;
 
         case F_add_SxA:
         case F_sub_SxA:
         case F_mul_SxA:
         case F_div_SxA:
-            ret_node = COMPPrfArith_SxA (arg_node, arg_info);
+            arg_node = COMPPrfArith_SxA (arg_node, arg_info);
             break;
 
         case F_add_AxS:
         case F_sub_AxS:
         case F_mul_AxS:
         case F_div_AxS:
-            ret_node = COMPPrfArith_AxS (arg_node, arg_info);
+            arg_node = COMPPrfArith_AxS (arg_node, arg_info);
             break;
 
         case F_add_AxA:
         case F_sub_AxA:
         case F_mul_AxA:
         case F_div_AxA:
-            ret_node = COMPPrfArith_AxA (arg_node, arg_info);
+            arg_node = COMPPrfArith_AxA (arg_node, arg_info);
             break;
 
         case F_idx_psi:
-            ret_node = COMPPrfIdxPsi (arg_node, arg_info);
+            arg_node = COMPPrfIdxPsi (arg_node, arg_info);
             break;
 
         case F_idx_modarray:
-            ret_node = COMPPrfIdxModarray (arg_node, arg_info);
+            arg_node = COMPPrfIdxModarray (arg_node, arg_info);
             break;
 
         case F_psi:
-            ret_node = COMPPrfPsi (arg_node, arg_info);
+            arg_node = COMPPrfPsi (arg_node, arg_info);
             break;
 
         case F_modarray:
-            ret_node = COMPPrfModarray (arg_node, arg_info);
+            arg_node = COMPPrfModarray (arg_node, arg_info);
             break;
 
         default:
@@ -4753,20 +4777,20 @@ COMPPrf (node *arg_node, node *arg_info)
         case F_toi_A:
         case F_tof_A:
         case F_tod_A:
-            ret_node = COMPPrfConvertArr (arg_node, arg_info);
+            arg_node = COMPPrfConvertArr (arg_node, arg_info);
             break;
 
         case F_drop:
         case F_take:
-            ret_node = COMPPrfTakeDrop (arg_node, arg_info);
+            arg_node = COMPPrfTakeDrop (arg_node, arg_info);
             break;
 
         case F_cat:
-            ret_node = COMPPrfCat (arg_node, arg_info);
+            arg_node = COMPPrfCat (arg_node, arg_info);
             break;
 
         case F_rotate:
-            ret_node = COMPPrfRotate (arg_node, arg_info);
+            arg_node = COMPPrfRotate (arg_node, arg_info);
             break;
 
         default:
@@ -4775,32 +4799,15 @@ COMPPrf (node *arg_node, node *arg_info)
         }
     }
 
-    DBUG_ASSERT ((ret_node != NULL), "no return value found!");
+    DBUG_ASSERT ((arg_node != NULL), "no return value found!");
 
-    if (dec_rc_args) {
-        node *last_node, *icm_node;
-        node *args, *arg;
-
-        /*
-         * append a DEC_RC for each arg
-         */
-        last_node = ret_node;
-        while (ASSIGN_NEXT (last_node) != NULL) {
-            last_node = ASSIGN_NEXT (last_node);
-        }
-
-        args = PRF_ARGS (arg_node);
-        while (args != NULL) {
-            arg = EXPRS_EXPR (args);
-            if (NODE_TYPE (arg) == N_id) {
-                icm_node
-                  = MakeAdjustRcIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg), -1);
-                if (icm_node != NULL) {
-                    last_node = ASSIGN_NEXT (last_node) = icm_node;
-                }
-            }
-            args = EXPRS_NEXT (args);
-        }
+    if (ret_node != NULL) {
+        DBUG_ASSERT (((NODE_TYPE (arg_node) == N_assign)
+                      && (NODE_TYPE (ret_node) == N_assign)),
+                     "no assignment chain found!");
+        ret_node = AppendAssign (arg_node, ret_node);
+    } else {
+        ret_node = arg_node;
     }
 
     DBUG_RETURN (ret_node);
