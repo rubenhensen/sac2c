@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.156  1998/05/06 22:20:48  dkr
+ * added support for DFMasks
+ *
  * Revision 1.155  1998/05/06 15:12:16  srs
  * changed INFO_DUP_CONT macro
  * (node[1] instead of node[0] because of conflicts with INFO_INL_ macros).
@@ -1159,6 +1162,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***                                              ( -> compile -> )
  ***
  ***    node*           FUNDEC_DEF (O) (N_fundef) (checkdec -> writesib !!)
+ ***
  ***/
 
 /*
@@ -2283,6 +2287,10 @@ extern node *MakeInfo ();
 #define INFO_EXPORTOBJS(n) ((nodelist *)(n->node[1]))
 #define INFO_EXPORTFUNS(n) ((nodelist *)(n->node[2]))
 
+/* refcount */
+#define INFO_RC_PRF(n) (n->node[0])
+#define INFO_RC_RCDUMP(n) ((int *)(n->node[1]))
+
 /* spmdregions */
 #define INFO_SPMD_FUNDEF(n) (n->node[0])
 #define INFO_SPMD_FIRST(n) (n->flag)
@@ -2356,11 +2364,10 @@ extern node *MakeInfo ();
  ***
  ***    ids*       INOUT_IDS             (spmdinit -> compile -> )
  ***
- ***    int        VARNO                 (spmdinit -> spmd... -> compile -> )
- ***    long*      IN                    (spmdinit -> spmd... -> compile -> )
- ***    long*      OUT                   (spmdinit -> spmd... -> compile -> )
- ***    long*      INOUT                 (spmdinit -> spmd... -> compile -> )
- ***    long*      LOCAL                 (spmdinit -> spmd... -> )
+ ***    DFMmask_t  IN                    (spmdinit -> spmd... -> compile -> )
+ ***    DFMmask_t  OUT                   (spmdinit -> spmd... -> compile -> )
+ ***    DFMmask_t  INOUT                 (spmdinit -> spmd... -> compile -> )
+ ***    DFMmask_t  LOCAL                 (spmdinit -> spmd... -> )
  ***
  ***    char*      FUNNAME               (spmdlift -> compile -> )
  ***    node*      ICM         (N_icm)   (compile -> print -> )
@@ -2378,11 +2385,10 @@ extern node *MakeSpmd (node *region);
 
 #define SPMD_INOUT_IDS(n) ((ids *)(n->node[1]))
 
-#define SPMD_VARNO(n) (n->varno)
-#define SPMD_IN(n) (n->mask[0])
-#define SPMD_OUT(n) (n->mask[1])
-#define SPMD_INOUT(n) (n->mask[2])
-#define SPMD_LOCAL(n) (n->mask[3])
+#define SPMD_IN(n) ((DFMmask_t)n->dfmask[0])
+#define SPMD_INOUT(n) ((DFMmask_t)n->dfmask[1])
+#define SPMD_OUT(n) ((DFMmask_t)n->dfmask[2])
+#define SPMD_LOCAL(n) ((DFMmask_t)n->dfmask[3])
 
 #define SPMD_FUNNAME(n) (n->info.id)
 #define SPMD_ICM(n) (n->node[2])
@@ -2405,11 +2411,10 @@ extern node *MakeSpmd (node *region);
  ***
  ***    ids*       INOUT_IDS             (spmdinit -> compile -> )
  ***
- ***    int        VARNO                 (spmdinit -> spmd... -> compile -> )
- ***    long*      IN                    (spmdinit -> spmd... -> compile -> )
- ***    long*      OUT                   (spmdinit -> spmd... -> compile -> )
- ***    long*      INOUT                 (spmdinit -> spmd... -> compile -> )
- ***    long*      LOCAL                 (spmdinit -> spmd... -> compile -> )
+ ***    DFMmask_t  IN                    (spmdinit -> spmd... -> compile -> )
+ ***    DFMmask_t  OUT                   (spmdinit -> spmd... -> compile -> )
+ ***    DFMmask_t  INOUT                 (spmdinit -> spmd... -> compile -> )
+ ***    DFMmask_t  LOCAL                 (spmdinit -> spmd... -> compile -> )
  ***
  ***  remarks:
  ***
@@ -2425,11 +2430,10 @@ extern node *MakeSync (node *region, int first);
 
 #define SYNC_INOUT_IDS(n) ((ids *)(n->node[1]))
 
-#define SYNC_VARNO(n) (n->varno)
-#define SYNC_IN(n) (n->mask[0])
-#define SYNC_OUT(n) (n->mask[1])
-#define SYNC_INOUT(n) (n->mask[2])
-#define SYNC_LOCAL(n) (n->mask[3])
+#define SYNC_IN(n) ((DFMmask_t)n->dfmask[0])
+#define SYNC_INOUT(n) ((DFMmask_t)n->dfmask[1])
+#define SYNC_OUT(n) ((DFMmask_t)n->dfmask[2])
+#define SYNC_LOCAL(n) ((DFMmask_t)n->dfmask[3])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2622,11 +2626,12 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***
  ***  temporary attributes:
  ***
- ***    long*  MASK                    (optimize -> )
  ***    int    NO         (unambiguous number for PrintNwith2())
  ***                                   (precompile -> )
+ ***    long*  MASK                    (optimize -> )
  ***    int    FLAG                    (WLI -> WLF)
  ***    node*  COPY                    ( -> DupTree )
+ ***    ids*   RC_IDS                  (refcount -> compile ! )
  ***
  ***  remarks:
  ***   1)
@@ -2656,8 +2661,9 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_MASK(n, x) (n->mask[x])
 #define NCODE_NO(n) (n->refcnt)
 #define NCODE_FLAG(n) (n->flag)
+#define NCODE_RC_IDS(n) ((ids *)(n->node[3]))
 
-#define NCODE_COPY(n) (n->node[3])
+#define NCODE_COPY(n) (n->node[4])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2673,13 +2679,10 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***  temporary attributes:
  ***
- ***    ids*     LETIDS               (wltrans -> compile -> )
- ***
- ***    int      VARNO                (wltrans -> spmdregions -> )
- ***    long*    IN                   (wltrans -> spmdregions -> )
- ***    long*    INOUT                (wltrans -> spmdregions -> )
- ***    long*    OUT                  (wltrans -> spmdregions -> )
- ***    long*    LOCAL                (wltrans -> spmdregions -> )
+ ***    DFMmask_t  IN                 (wltransform -> spmd -> )
+ ***    DFMmask_t  INOUT              (wltransform -> spmd -> )
+ ***    DFMmask_t  OUT                (wltransform -> spmd -> )
+ ***    DFMmask_t  LOCAL              (wltransform -> spmd -> )
  ***
  ***/
 
@@ -2690,13 +2693,10 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
 #define NWITH2_CODE(n) (n->node[2])
 #define NWITH2_WITHOP(n) (n->node[3])
 
-#define NWITH2_LETIDS(n) ((ids *)(n->node[4]))
-
-#define NWITH2_VARNO(n) (n->varno)
-#define NWITH2_IN(n) (n->mask[0])
-#define NWITH2_INOUT(n) (n->mask[1])
-#define NWITH2_OUT(n) (n->mask[2])
-#define NWITH2_LOCAL(n) (n->mask[3])
+#define NWITH2_IN(n) ((DFMmask_t)n->dfmask[0])
+#define NWITH2_INOUT(n) ((DFMmask_t)n->dfmask[1])
+#define NWITH2_OUT(n) ((DFMmask_t)n->dfmask[2])
+#define NWITH2_LOCAL(n) ((DFMmask_t)n->dfmask[3])
 
 /*--------------------------------------------------------------------------*/
 
