@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.3  1999/04/06 13:44:27  cg
+ * internal declarations moved to libsac_cachesim.h
+ * added startup macros
+ *
  * Revision 2.2  1999/03/19 11:13:36  her
  * new function (SAC_CS_Start) added
  * function SAC_CS_ShowResults replaced by SAC_CS_Stop
@@ -37,44 +41,44 @@
 #ifndef SAC_CACHESIM_H
 #define SAC_CACHESIM_H
 
-#define _POSIX_C_SOURCE 199506L
-
-#define ULINT unsigned long int
-#define MAX_SHADOWARRAYS 100
-#define MAX_CACHELEVEL 3
+#define SAC_CS_NONE 0
+#define SAC_CS_FILE 1
+#define SAC_CS_SIMPLE 2
+#define SAC_CS_ADVANCED 3
 
 typedef enum eWritePolicy {
-    Default,
-    fetch_on_write,
-    write_validate,
-    write_around
+    SAC_CS_default,
+    SAC_CS_fetch_on_write,
+    SAC_CS_write_validate,
+    SAC_CS_write_around
 } tWritePolicy;
 
-typedef enum eProfilingLevel { simple, detailed } tProfilingLevel;
+typedef enum eProfilingLevel {
+    SAC_CS_none,
+    SAC_CS_file,
+    SAC_CS_simple,
+    SAC_CS_advanced
+} tProfilingLevel;
 
-typedef struct sCacheLevel { /* about simulated cache */
-    int associativity;
-    int cachelinesize;
-    tWritePolicy writepolicy;
-    ULINT cachesize;
-    ULINT internsize; /* cachesize/assoc. */
-    int cls_bits;
-    ULINT cls_mask;
-    int is_bits;
-    ULINT is_mask;
-    ULINT nr_cachelines;
-    ULINT *data;
-    /* about shadowarrays */
-    char *shadowarrays[MAX_SHADOWARRAYS];
-    ULINT shadowbases[MAX_SHADOWARRAYS];
-    ULINT shadowalignedtop[MAX_SHADOWARRAYS];
-    int shadowmaxindices[MAX_SHADOWARRAYS];
-    int shadownrcols[MAX_SHADOWARRAYS];
-} tCacheLevel;
-
-typedef void (*tFunRWAccess) (void * /*baseaddress*/, void * /*elemaddress*/);
-/* Pointer to a function which gets two void* as argument
- * and returns a void */
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_CS_CheckArguments(...)
+ *
+ * description:
+ *
+ *   checks the command line arguments of the running SAC application for
+ *   additional cache specifications that overwrite the default set when
+ *   the application was compiled.
+ *
+ ******************************************************************************/
+extern void SAC_CS_CheckArguments (int argc, char *argv[], unsigned long int *cachesize1,
+                                   int *cachelinesize1, int *associativity1,
+                                   tWritePolicy *writepolicy1,
+                                   unsigned long int *cachesize2, int *cachelinesize2,
+                                   int *associativity2, tWritePolicy *writepolicy2,
+                                   unsigned long int *cachesize3, int *cachelinesize3,
+                                   int *associativity3, tWritePolicy *writepolicy3);
 
 /******************************************************************************
  *
@@ -96,12 +100,12 @@ typedef void (*tFunRWAccess) (void * /*baseaddress*/, void * /*elemaddress*/);
  *
  *****************************************************************************/
 extern void SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel,
-                               ULINT cachesize1, int cachelinesize1, int associativity1,
-                               tWritePolicy writepolicy1, ULINT cachesize2,
-                               int cachelinesize2, int associativity2,
-                               tWritePolicy writepolicy2, ULINT cachesize3,
-                               int cachelinesize3, int associativity3,
-                               tWritePolicy writepolicy3);
+                               unsigned long int cachesize1, int cachelinesize1,
+                               int associativity1, tWritePolicy writepolicy1,
+                               unsigned long int cachesize2, int cachelinesize2,
+                               int associativity2, tWritePolicy writepolicy2,
+                               unsigned long int cachesize3, int cachelinesize3,
+                               int associativity3, tWritePolicy writepolicy3);
 
 /******************************************************************************
  *
@@ -195,4 +199,62 @@ extern void SAC_CS_Start (char *tag);
  *****************************************************************************/
 extern void SAC_CS_Stop (void);
 
+#if (SAC_SET_CACHESIM)
+
+#if (SAC_SET_CACHESIM == SAC_CS_FILE)
+#define SAC_CS_LEVEL SAC_CS_file
+#elif (SAC_SET_CACHESIM == SAC_CS_SIMPLE)
+#define SAC_CS_LEVEL SAC_CS_simple
+#elif (SAC_SET_CACHESIM == SAC_CS_ADVANCED)
+#define SAC_CS_LEVEL SAC_CS_advanced
+#else
+#define SAC_CS_LEVEL SAC_CS_none
 #endif
+
+#define SAC_CS_SETUP()                                                                   \
+    {                                                                                    \
+        tProfilingLevel profilinglevel = SAC_CS_LEVEL;                                   \
+                                                                                         \
+        unsigned long int cachesize1 = SAC_SET_CACHE_1_SIZE;                             \
+        int cachelinesize1 = SAC_SET_CACHE_1_LINE;                                       \
+        int associativity1 = SAC_SET_CACHE_1_ASSOC;                                      \
+        tWritePolicy writepolicy1 = SAC_SET_CACHE_1_WRITEPOL;                            \
+                                                                                         \
+        unsigned long int cachesize2 = SAC_SET_CACHE_2_SIZE;                             \
+        int cachelinesize2 = SAC_SET_CACHE_2_LINE;                                       \
+        int associativity2 = SAC_SET_CACHE_2_ASSOC;                                      \
+        tWritePolicy writepolicy2 = SAC_SET_CACHE_2_WRITEPOL;                            \
+                                                                                         \
+        unsigned long int cachesize3 = SAC_SET_CACHE_3_SIZE;                             \
+        int cachelinesize3 = SAC_SET_CACHE_3_LINE;                                       \
+        int associativity3 = SAC_SET_CACHE_3_ASSOC;                                      \
+        tWritePolicy writepolicy3 = SAC_SET_CACHE_3_WRITEPOL;                            \
+                                                                                         \
+        SAC_CS_CheckArguments (__argc, __argv, &cachesize1, &cachelinesize1,             \
+                               &associativity1, &writepolicy1, &cachesize2,              \
+                               &cachelinesize2, &associativity2, &writepolicy2,          \
+                               &cachesize3, &cachelinesize3, &associativity3,            \
+                               &writepolicy3);                                           \
+                                                                                         \
+        SAC_CS_Initialize (SAC_MT_THREADS (), profilinglevel, cachesize1,                \
+                           cachelinesize1, associativity1, writepolicy1, cachesize2,     \
+                           cachelinesize2, associativity2, writepolicy2, cachesize3,     \
+                           cachelinesize3, associativity3, writepolicy3);                \
+                                                                                         \
+        SAC_CS_Start ("");                                                               \
+    }
+
+#define SAC_CS_PRINT()                                                                   \
+    {                                                                                    \
+        SAC_CS_Stop ();                                                                  \
+        SAC_CS_Finalize ();                                                              \
+    }
+
+#else
+
+#define SAC_CS_SETUP()
+#define SAC_CS_PRINT()
+
+#endif
+
+#endif /* SAC_CACHESIM_H */
