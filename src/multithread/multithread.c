@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2000/03/09 18:34:22  jhs
+ * Additional mini-phases.
+ *
  * Revision 1.11  2000/03/02 12:58:36  jhs
  * Rearranged the traversal, each miniphase is apllied to all functions
  * before the next one is executed.
@@ -100,9 +103,11 @@
 #include "schedule_init.h"
 #include "repfuns_init.h"
 #include "blocks_init.h"
+#include "blocks_propagate.h"
 #include "blocks_expand.h"
 #include "mtfuns_init.h"
 #include "blocks_cons.h"
+#include "dataflow_analysis.h"
 
 /******************************************************************************
  *
@@ -248,8 +253,8 @@ MUTHfundef (node *arg_node, node *arg_info)
  *   node *ClearATTRIB(node *arg_node, node *arg_info)
  *
  * description:
- *   >>driver<< function, used to clean the N_fundef큦 before mini-phase
- *   mtfin is executed.
+ *   >>driver<< function, used to clean the N_fundef큦 before the first
+ *   mini-phase is executed.
  *   FUNDEF_ATTRIB is set to ST_call_any for all N_fundef큦.
  *
  ******************************************************************************/
@@ -263,7 +268,17 @@ ClearATTRIB (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* #### */
+/******************************************************************************
+ *
+ * function:
+ *   node *ClearCOMPANION(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   >>driver<< function, used to clean the N_fundef큦 before mini-phases
+ *   rfin and mtfin are executed.
+ *   FUNDEF_COMPANION is set to NULL for all N_fundef큦.
+ *
+ ******************************************************************************/
 node *
 ClearCOMPANION (node *arg_node, node *arg_info)
 {
@@ -291,7 +306,7 @@ MUTHignore (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("MUTHignore");
 
-    result = (FUNDEF_BODY (arg_node) == NULL) || (FUNDEF_ATTRIB (arg_node) == ST_foldfun)
+    result = (FUNDEF_BODY (arg_node) == NULL) || (FUNDEF_STATUS (arg_node) == ST_foldfun)
              || (FUNDEF_ATTRIB (arg_node) == ST_call_rep);
 
     DBUG_RETURN (result);
@@ -366,6 +381,17 @@ MUTHmodul (node *arg_node, node *arg_info)
         goto cont;
     }
 
+    /*
+      DBUG_PRINT( "MUTH", ("begin BlocksPropagate"));
+      MUTHdriver (MODUL_FUNS( arg_node), arg_info, BlocksPropagate, MUTHignore);
+      DBUG_PRINT( "MUTH", ("end BlocksPropagate"));
+
+      if ((break_after == PH_spmdregions) &&
+          (strcmp("blkpp", break_specifier)==0)) {
+        goto cont;
+      }
+    */
+
     DBUG_PRINT ("MUTH", ("begin BlocksExpand"));
     MUTHdriver (MODUL_FUNS (arg_node), arg_info, BlocksExpand, MUTHignore);
     DBUG_PRINT ("MUTH", ("end BlocksExpand"));
@@ -388,6 +414,14 @@ MUTHmodul (node *arg_node, node *arg_info)
     DBUG_PRINT ("MUTH", ("end BlocksCons"));
 
     if ((break_after == PH_spmdregions) && (strcmp ("blkco", break_specifier) == 0)) {
+        goto cont;
+    }
+
+    DBUG_PRINT ("MUTH", ("begin DataflowAnalysis"));
+    MUTHdriver (MODUL_FUNS (arg_node), arg_info, DataflowAnalysis, MUTHignore);
+    DBUG_PRINT ("MUTH", ("end DataflowAnalysis"));
+
+    if ((break_after == PH_spmdregions) && (strcmp ("dfa", break_specifier) == 0)) {
         goto cont;
     }
 
