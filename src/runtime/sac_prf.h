@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/08/03 03:16:35  dkr
+ * ND_PRF_SEL__DIM icms removed
+ *
  * Revision 3.7  2002/08/02 20:48:04  dkr
  * ND_PRF_SEL__DIM_... icms added
  *
@@ -58,15 +61,17 @@
  * ICMs for primitive functions on scalars
  * =======================================
  *
+ * ND_BINOP( op, a1, a2)
  * ND_MIN( a1, a2)
  * ND_MAX( a1, a2)
  * ND_ABS( a)
  *
  ******************************************************************************/
 
-#define SAC_ND_MIN(a1, a2) ((a1) < (a2) ? (a1) : (a2))
-#define SAC_ND_MAX(a1, a2) ((a1) > (a2) ? (a1) : (a2))
-#define SAC_ND_ABS(a) ((a) < 0 ? (-(a)) : (a))
+#define SAC_ND_BINOP(op, a1, a2) ((a1)op (a2))
+#define SAC_ND_MIN(a1, a2) (((a1) < (a2)) ? (a1) : (a2))
+#define SAC_ND_MAX(a1, a2) (((a1) > (a2)) ? (a1) : (a2))
+#define SAC_ND_ABS(a) (((a) < 0) ? (-(a)) : (a))
 
 #ifdef TAGGED_ARRAYS
 
@@ -82,8 +87,6 @@
  * ND_PRF_RESHAPE__SHAPE_id( to_nt, to_sdim, shp_nt)
  * ND_PRF_RESHAPE__SHAPE_arr( to_nt, to_sdim, shp_size, ...shpa_any...)
  *
- * ND_PRF_SEL__DIM_id( from_nt, from_sdim, idx_size, idx_nt)
- * ND_PRF_SEL__DIM_arr( from_nt, from_sdim, idx_size, idxa_any)
  * ND_PRF_SEL__SHAPE_id( to_nt, to_sdim, from_nt, from_sdim,
  *                       idx_size, idx_nt)
  * ND_PRF_SEL__SHAPE_arr( to_nt, to_sdim, from_nt, from_sdim,
@@ -116,8 +119,6 @@
 /* ND_PRF_RESHAPE__SHAPE_id( ...) is a C-ICM */
 /* ND_PRF_RESHAPE__SHAPE_arr( ...) is a C-ICM */
 
-/* ND_PRF_SEL__DIM_id( ...) is a C-ICM */
-/* ND_PRF_SEL__DIM_arr( ...) is a C-ICM */
 /* ND_PRF_SEL__SHAPE_id( ...) is a C-ICM */
 /* ND_PRF_SEL__SHAPE_arr( ...) is a C-ICM */
 /* ND_PRF_SEL__DATA_id( ...) is a C-ICM */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2002/08/03 03:16:20  dkr
+ * ND_PRF_SEL__DIM icms removed
+ *
  * Revision 3.27  2002/08/02 20:59:21  dkr
  * ND_CREATE__VECT__DIM: comment added
  *
@@ -2012,70 +2015,6 @@ PrfSel_Data (char *to_nt, int to_sdim, char *from_nt, int from_sdim, void *idx,
         INDENT;
         fprintf (outfile, "}\n");
     }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * Function:
- *   void ICMCompileND_PRF_SEL__DIM_id( char *from_nt, int from_sdim,
- *                                      int idx_size, char *idx_nt)
- *
- * Description:
- *   implements the compilation of the following ICM:
- *
- *   ND_PRF_SEL__DIM_id( from_nt, from_sdim, idx_size, idx_nt)
- *
- ******************************************************************************/
-
-void
-ICMCompileND_PRF_SEL__DIM_id (char *from_nt, int from_sdim, int idx_size, char *idx_nt)
-{
-    DBUG_ENTER ("ICMCompileND_PRF_SEL__DIM_id");
-
-#define ND_PRF_SEL__DIM_id
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_PRF_SEL__DIM_id
-
-    fprintf (outfile, "SAC_ND_A_DIM( %s) - SAC_ND_A_SIZE( %s)", from_nt, idx_nt);
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * Function:
- *   void ICMCompileND_PRF_SEL__DIM_arr( char *from_nt, int from_sdim,
- *                                       int idx_size, char **idxa_any)
- *
- * Description:
- *   implements the compilation of the following ICM:
- *
- *   ND_PRF_SEL__DIM_arr( from_nt, from_sdim, idx_size, ...idxa_any...)
- *
- ******************************************************************************/
-
-void
-ICMCompileND_PRF_SEL__DIM_arr (char *from_nt, int from_sdim, int idx_size,
-                               char **idxa_any)
-{
-    DBUG_ENTER ("ICMCompileND_PRF_SEL__DIM_arr");
-
-#define ND_PRF_SEL__DIM_arr
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_PRF_SEL__DIM_arr
-
-    /*
-     * CAUTION:
-     * 'idxa_any[i]' is either a tagged identifier or a constant scalar!!
-     */
-
-    DBUG_ASSERT ((idx_size >= 0), "illegal size found!");
-
-    fprintf (outfile, "SAC_ND_A_DIM( %s) - %d", from_nt, idx_size);
 
     DBUG_VOID_RETURN;
 }

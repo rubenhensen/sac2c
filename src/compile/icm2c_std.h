@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/08/03 03:16:30  dkr
+ * ND_PRF_SEL__DIM icms removed
+ *
  * Revision 3.18  2002/08/02 20:48:41  dkr
  * ..__DIM.. icms added
  *
@@ -144,12 +147,6 @@ extern void ICMCompileND_PRF_RESHAPE__SHAPE_id (char *to_nt, int to_sdim, char *
 
 extern void ICMCompileND_PRF_RESHAPE__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
                                                  char **shpa_any);
-
-extern void ICMCompileND_PRF_SEL__DIM_id (char *from_nt, int from_sdim, int idx_size,
-                                          char *idx_nt);
-
-extern void ICMCompileND_PRF_SEL__DIM_arr (char *from_nt, int from_sdim, int idx_size,
-                                           char **idxa_any);
 
 extern void ICMCompileND_PRF_SEL__SHAPE_id (char *to_nt, int to_sdim, char *from_nt,
                                             int from_sdim, int idx_size, char *idx_nt);
