@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.7  2004/11/22 17:16:56  sah
+  changes.
+  DK 04
+
   Revision 1.6  2004/10/12 13:20:13  sah
   added any entry to attribs union
 
@@ -32,6 +36,7 @@
   
   <xsl:import href="common-key-tables.xsl"/>
   <xsl:import href="common-travfun.xsl"/>
+  <xsl:import href="common-name-to-nodeenum.xsl"/>
 
   <xsl:output method="text" indent="no"/>
   <xsl:strip-space elements="*"/>
@@ -65,7 +70,7 @@
     <!-- start phase that unites all attribute structs to one union -->
     <xsl:apply-templates select="/definition/syntaxtree" mode="generate-attrib-union"/>
     <xsl:text>
-#endif /* _sac_attribs_h */
+#endif /* _SAC_ATTRIBS_H_ */
     </xsl:text>
   </xsl:template>
 
@@ -74,7 +79,7 @@
      <xsl:text>
 /******************************************************************************
  * For each node a structure of its attributes is defined, named 
- * nodenameAttribStruct. 
+ * ATTRIBS_&lt;nodename&gt;
  *****************************************************************************/
      </xsl:text>
      <xsl:apply-templates select="node" mode="generate-attrib-structs">
@@ -84,8 +89,13 @@
 
   <!-- generate a attribute structure for a son -->
   <xsl:template match="node" mode="generate-attrib-structs">
-    <xsl:value-of select="'struct AttribS_N_'"/>
-    <xsl:value-of select="concat( @name, '{ ')"/>
+    <xsl:value-of select="'struct ATTRIBS_N_'"/>
+    <xsl:call-template name="uppercase" >
+      <xsl:with-param name="string">
+        <xsl:value-of select="@name" />
+      </xsl:with-param>
+    </xsl:call-template>
+    <xsl:value-of select="' { '"/>
     <xsl:apply-templates select="attributes/attribute" mode="generate-attrib-structs"/>
     <xsl:apply-templates select="flags" mode="generate-attrib-structs"/>
     <xsl:value-of select="' } ;'"/>
@@ -105,8 +115,16 @@
   </xsl:template>
 
   <!-- generate the fields required for a flag -->
-  <xsl:template match="flags[flag]" mode="generate-attrib-structs">
-    <xsl:value-of select="'long _flags; long _dbug_flags; '"/>
+  <xsl:template match="flags" mode="generate-attrib-structs">
+    <xsl:value-of select="'struct { '" />
+    <xsl:apply-templates select="flag" mode="generate-attrib-structs" />
+    <xsl:value-of select="'} flags;'" />
+  </xsl:template>
+
+  <xsl:template match="flag" mode="generate-attrib-structs">
+    <xsl:value-of select="'unsigned int '" />
+    <xsl:value-of select="@name" />
+    <xsl:value-of select="' : 1;'" />
   </xsl:template>
 
   <!-- this template starts generation of the attribstruct union -->
@@ -117,7 +135,7 @@
  * called N_nodename.
  ****************************************************************************/
     </xsl:text>
-    <xsl:value-of select="'union AttribUnion { '"/>
+    <xsl:value-of select="'union ATTRIBUNION { '"/>
     <xsl:apply-templates select="node" mode="generate-attrib-union">
       <xsl:sort select="@name"/>
     </xsl:apply-templates>
@@ -126,8 +144,18 @@
  
   <!-- generate an entry for each node within the union -->
   <xsl:template match="node" mode="generate-attrib-union">
-    <xsl:value-of select="'struct AttribS_N_'"/>
-    <xsl:value-of select="concat( @name, ' *N_')"/>
-    <xsl:value-of select="concat( @name, '; ')"/>
+    <xsl:value-of select="'struct ATTRIBS_N'"/>
+    <xsl:call-template name="uppercase" >
+      <xsl:with-param name="string">
+        <xsl:value-of select="@name" />
+      </xsl:with-param>
+    </xsl:call-template>
+    <xsl:value-of select="' *'" />
+    <xsl:call-template name="name-to-nodeenum">
+      <xsl:with-param name="name">
+        <xsl:value-of select="@name" />
+      </xsl:with-param>
+    </xsl:call-template>
+    <xsl:value-of select="'; '"/>
   </xsl:template>
 </xsl:stylesheet>

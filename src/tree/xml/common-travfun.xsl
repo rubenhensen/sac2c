@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/11/22 17:16:56  sah
+  changes.
+  DK 04
+
   Revision 1.3  2004/08/08 16:09:54  sah
   added a line break to generated code
 
@@ -56,7 +60,11 @@ version="1.0">
   <xsl:param name="name" />
   <xsl:value-of select="'node *'"/>
   <xsl:value-of select="$prefix"/>
-  <xsl:value-of select="$name"/>
+  <xsl:call-template name="lowercase">
+    <xsl:with-param name="string" >
+      <xsl:value-of select="$name"/>
+    </xsl:with-param>
+  </xsl:call-template>
   <xsl:value-of select="'( node *arg_node, info *arg_info )'"/>
 </xsl:template>
 
@@ -65,7 +73,7 @@ version="1.0">
 
      generates a doxygen comment for a traversal function
 
-     param prefix   the preifx of the phase (e.g. Free)
+     param prefix   the preifx of the phase (e.g. FREE)
      param name     the name of the node (e.g. Ap)
      param text     the brief description (e.g. a traversal function)
 
@@ -73,7 +81,7 @@ version="1.0">
 
      /** &lt;!&minus;&minus;******************************************************************&minus;&minus;&gt;
       *
-      * @fn FreeAp
+      * @fn FREEap
       *
       * @brief Frees the node and its sons/attributes
       *
@@ -91,7 +99,14 @@ version="1.0">
   <xsl:text>
 /** &lt;!--******************************************************************--&gt;
  *
- * @fn </xsl:text><xsl:value-of select="$prefix"/><xsl:value-of select="$name"/><xsl:text>
+ * @fn </xsl:text>
+  <xsl:value-of select="$prefix"/>
+  <xsl:call-template name="lowercase" >
+    <xsl:with-param name="string" >
+      <xsl:value-of select="$name"/>
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:text>
  *
  * @brief </xsl:text><xsl:value-of select="$text"/><xsl:text>
  *

@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.11  2004/11/22 17:16:56  sah
+  changes.
+  DK 04
+
   Revision 1.10  2004/11/14 15:18:21  sah
   added support for default values for flags
 
@@ -59,8 +63,17 @@ version="1.0">
   <!-- counter for for-loops -->
   <xsl:value-of select="'int cnt;'" />
   <!-- DBUG_ENTER call -->
-  <xsl:value-of select="'DBUG_ENTER( &quot;Make'"/>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="'DBUG_ENTER( &quot;TBmake'"/>
+  <xsl:call-template name="uppercase" >
+    <xsl:with-param name="string" >
+      <xsl:value-of select="substring( @name, 1, 1)" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:call-template name="lowercase" >
+    <xsl:with-param name="string" >
+      <xsl:value-of select="substring( @name, 2, 30)" />
+    </xsl:with-param>
+  </xsl:call-template>
   <xsl:value-of select="'&quot;);'"/>
   <!-- allocate new node this -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating node structure&quot;));'"/>
@@ -93,7 +106,7 @@ version="1.0">
   <xsl:apply-templates select="sons/son" mode="make-body"/>
   <xsl:apply-templates select="attributes/attribute" mode="make-body"/>
   <!-- init flags -->
-  <xsl:apply-templates select="flags[flag]" mode="make-body" />
+  <xsl:apply-templates select="flags/flag" mode="make-body" />
   <!-- if DBUG enabled, check for valid arguments -->
   <xsl:call-template name="newline" />
   <xsl:value-of select="'#ifndef DBUG_OFF'" />
@@ -200,55 +213,36 @@ version="1.0">
   <xsl:value-of select="key(&quot;types&quot;, ../type/@name)/@init"/>
 </xsl:template>
 
-<xsl:template match="flags" mode="make-body">
+<xsl:template match="flag[@default]" mode="make-body">
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
       <xsl:value-of select="'this'" />
     </xsl:with-param>
     <xsl:with-param name="nodetype">
-      <xsl:value-of select="../@name" />
-    </xsl:with-param>
-    <xsl:with-param name="field">
-      <xsl:value-of select="'Flags'" />
-    </xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="' = 0;'" />
-  <xsl:call-template name="node-access">
-    <xsl:with-param name="node">
-      <xsl:value-of select="'this'" />
-    </xsl:with-param>
-    <xsl:with-param name="nodetype">
-      <xsl:value-of select="../@name" />
-    </xsl:with-param>
-    <xsl:with-param name="field">
-      <xsl:value-of select="'DBug_Flags'" />
-    </xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="' = 0;'" />
-  <!-- init values -->
-  <xsl:apply-templates select="flag[@default]" mode="make-body" />
-</xsl:template>
-
-<xsl:template match="flag" mode="make-body">
-  <xsl:value-of select="'SET_FLAG( '" />
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string">
       <xsl:value-of select="../../@name" />
     </xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="', this, IS_'" />
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string">
+    <xsl:with-param name="field">
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="', '" />
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string">
-      <xsl:value-of select="@default" />
+  <xsl:value-of select="' = '"/>
+  <xsl:value-of select="@default" />
+  <xsl:value-of select="' ;'" />
+</xsl:template>
+
+<xsl:template match="flag" mode="make-body">
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">
+      <xsl:value-of select="'this'" />
+    </xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name" />
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="');'" />
+  <xsl:value-of select="' = FALSE;'"/>
 </xsl:template>
 
 </xsl:stylesheet>

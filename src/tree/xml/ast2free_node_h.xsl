@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/11/22 17:16:56  sah
+  changes.
+  DK 04
+
   Revision 1.3  2004/08/29 18:10:05  sah
   general improvements
 
@@ -37,8 +41,8 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <xsl:text>
-#ifndef _SAC_FREE_NODE_H
-#define _SAC_FREE_NODE_H
+#ifndef _SAC_FREE_NODE_H_
+#define _SAC_FREE_NODE_H_
 
 #include "types.h"
 
@@ -47,14 +51,16 @@ version="1.0">
     <xsl:sort select="@name"/>
   </xsl:apply-templates>
   <xsl:text>
-#endif /* _SAC_FREE_NODE_H */
+
+#endif /* _SAC_FREE_NODE_H_ */
+
   </xsl:text>
 </xsl:template>
 
 <xsl:template match="node">
   <xsl:value-of select="'extern '" />
   <xsl:call-template name="travfun-head">
-    <xsl:with-param name="prefix">Free</xsl:with-param>
+    <xsl:with-param name="prefix">FREE</xsl:with-param>
     <xsl:with-param name="name"><xsl:value-of select="@name" /></xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="';'" />

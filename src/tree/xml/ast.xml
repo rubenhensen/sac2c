@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.50  2004/11/22 17:16:56  sah
+  changes.
+  DK 04
+
   Revision 1.49  2004/11/22 16:53:43  sah
   new version
 
@@ -442,7 +446,7 @@
       <flags>
         <flag name="IsExported" />
         <flag name="IsProvided" />
-	<flag name="IsLocal" default="true"/>
+	<flag name="IsLocal" default="TRUE"/>
       </flags>
     </node>
     <node name="Objdef">
@@ -516,7 +520,7 @@
       <flags>
         <flag name="IsExported" />
         <flag name="IsProvided" />
-	<flag name="IsLocal" default="true"/>
+	<flag name="IsLocal" default="TRUE"/>
         <flag name="IsExtern" />
         <flag name="IsInline" />
         <flag name="IsDoFun" />
@@ -744,7 +748,7 @@
       <flags>
         <flag name="IsExported" />
         <flag name="IsProvided" />
-	<flag name="IsLocal" default="true" />
+	<flag name="IsLocal" default="TRUE" />
         <flag name="IsNeeded" />
       </flags>
     </node>

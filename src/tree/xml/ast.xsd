@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   $Log$
+  Revision 1.11  2004/11/22 17:16:56  sah
+  changes.
+  DK 04
+
   Revision 1.10  2004/11/22 14:10:14  sah
   added flag description
 
@@ -267,8 +271,8 @@
       <xsd:attribute name="default">
         <xsd:simpleType>
           <xsd:restriction base="xsd:NMTOKEN">
-            <xsd:enumeration value="true" />
-            <xsd:enumeration value="false" />
+            <xsd:enumeration value="TRUE" />
+            <xsd:enumeration value="FALSE" />
           </xsd:restriction>
         </xsd:simpleType>
       </xsd:attribute>  

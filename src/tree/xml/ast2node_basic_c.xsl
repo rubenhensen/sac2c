@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.7  2004/11/22 17:16:56  sah
+  changes.
+  DK 04
+
   Revision 1.6  2004/11/03 17:19:24  sah
   the sons are always initialised to NULL now, as
   TravSons may try to traverse into sons that in
@@ -53,15 +57,11 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <xsl:text>
-#ifdef NEW_AST
 #include "node_basic.h"
 #include "tree_basic.h"
 #include "internal_lib.h"
 #include "dbug.h"
 #include "Error.h"
-
-#define AST_NO_COMPAT
-#include "node_compat.h"
 
 static node *MakeEmptyNode()
 {
@@ -81,12 +81,6 @@ static node *MakeEmptyNode()
 
   </xsl:text>
   <xsl:apply-templates select="//syntaxtree/node"/>
-  <xsl:text>
-#undef AST_NO_COMPAT
-#include "node_compat.h"
-
-#endif /* NEW_AST */
-  </xsl:text>
 </xsl:template>
 
 <xsl:template match="node">

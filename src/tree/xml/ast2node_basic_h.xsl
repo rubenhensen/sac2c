@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.6  2004/11/22 17:16:56  sah
+  changes.
+  DK 04
+
   Revision 1.5  2004/08/08 16:18:35  sah
   doxygen improvement
 
@@ -28,8 +32,8 @@ version="1.0">
 <xsl:import href="common-key-tables.xsl"/>
 <xsl:import href="common-accessor-macros.xsl"/>
 <xsl:import href="common-make-head.xsl"/>
-<xsl:import href="common-flag-defines.xsl"/>
 <xsl:import href="common-travfun.xsl"/>
+<xsl:import href="common-name-to-nodeenum.xsl"/>
 
 <xsl:output method="text" indent="no"/>
 <xsl:strip-space elements="*"/>
@@ -75,13 +79,18 @@ version="1.0">
   <xsl:text>
 
 /*****************************************************************************
- * macros and functions for N_</xsl:text><xsl:value-of select="@name"/><xsl:text>
+ * macros and functions for </xsl:text>
+  <xsl:call-template name="name-to-nodeenum" >
+    <xsl:with-param name="name" >
+      <xsl:value-of select="@name"/>
+    </xsl:with-param>
+  </xsl:call-template><xsl:text>
  *****************************************************************************/
 
   </xsl:text>
   <xsl:apply-templates select="sons/son" mode="accessor-macros"/>
   <xsl:apply-templates select="attributes/attribute" mode="accessor-macros"/>
-  <xsl:apply-templates select="flags" mode="flag-defines"/>
+  <xsl:apply-templates select="flags" mode="accessor-macros"/>
   <xsl:apply-templates select="." mode="make-head"/>
 </xsl:template>
 

@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 1.11  2004/11/22 17:16:56  sah
+# changes.
+# DK 04
+#
 # Revision 1.10  2004/10/25 09:45:03  sah
 # added serialize_link.[ch}]
 #
@@ -70,8 +74,7 @@ all: $(TARGETS)
 	| $(CODE_BEAUTIFIER) >$@
 
 ../node_basic.h: ast.xml ast2node_basic_h.xsl common-c-code.xsl \
-                 common-make-head.xsl common-flag-defines.xsl \
-                 common-accessor-macros.xsl
+                 common-make-head.xsl common-accessor-macros.xsl
 	$(XSLTENGINE) ast2node_basic_h.xsl ast.xml \
 	| $(CODE_BEAUTIFIER) >$@
                                                                                 

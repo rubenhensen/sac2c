@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.8  2004/11/22 17:16:56  sah
+  changes.
+  DK 04
+
   Revision 1.7  2004/11/08 16:35:23  sah
   as I found out today, FUNDEF_IMPL is needed for zombie funs as
   well in order to dispatch correctly in create_wrapper_code.c.
@@ -101,9 +105,6 @@ version="1.0">
 #include "internal_lib.h"
 #include "dbug.h"
 
-#define AST_NO_COMPAT
-#include "node_compat.h"
-
 #define FREETRAV( node, info) (node != NULL) ? Trav( node, info) : node
 #define FREECOND( node, info)                                    \
   (INFO_FREE_FLAG( info) != arg_node)                            \
@@ -115,10 +116,6 @@ version="1.0">
   <xsl:apply-templates select="//syntaxtree/node">
     <xsl:sort select="@name"/>
   </xsl:apply-templates>
-  <xsl:text>
-#undef AST_NO_COMPAT
-#include "node_compat.h"
-  </xsl:text>
   <!-- end of doxygen group -->
   <xsl:call-template name="travfun-group-end"/>
 </xsl:template>
@@ -158,8 +155,12 @@ version="1.0">
     <xsl:value-of select="'int cnt;'" />
   </xsl:if>
   <!-- DBUG_ENTER statement -->
-  <xsl:value-of select="'DBUG_ENTER( &quot;Free'"/>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="'DBUG_ENTER( &quot;FREE'"/>
+  <xsl:call-template name="lowercase" >
+    <xsl:with-param name="string" >
+      <xsl:value-of select="@name"/>
+    </xsl:with-param>
+  </xsl:call-template>
   <xsl:value-of select="'&quot;);'"/>
   <!-- set status of Fundef to zombie -->
   <xsl:value-of select="'DBUG_PRINT(&quot;FREE&quot;, (&quot;transforming %s at &quot; F_PTR &quot; into a zombie&quot;, '"/>
@@ -232,8 +233,12 @@ version="1.0">
   <!-- variable for result -->
   <xsl:value-of select="'node *result = NULL;'"/>
   <!-- DBUG_ENTER statement -->
-  <xsl:value-of select="'DBUG_ENTER( &quot;Free'"/>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="'DBUG_ENTER( &quot;FREE'"/>
+  <xsl:call-template name="lowercase" >
+    <xsl:with-param name="string" >
+      <xsl:value-of select="@name"/>
+    </xsl:with-param>
+  </xsl:call-template>
   <xsl:value-of select="'&quot;);'"/>
   <!-- give hint we start to free now -->
   <xsl:value-of select="'DBUG_PRINT( &quot;FREE&quot;, (&quot;Processing node %s at &quot; F_PTR, mdb_nodetype[ NODE_TYPE( arg_node)], arg_node));'"/>
@@ -246,7 +251,7 @@ version="1.0">
   <!-- free attribute structure -->
   <xsl:value-of select="'arg_node->attribs.N_'"/>
   <xsl:value-of select="@name"/>
-  <xsl:value-of select="' = Free( arg_node->attribs.N_'"/>
+  <xsl:value-of select="' = ILIBfree( arg_node->attribs.N_'"/>
   <xsl:value-of select="@name"/>
   <xsl:value-of select="');'"/>
   <!-- calculate return value and free node -->
@@ -261,10 +266,10 @@ version="1.0">
         </xsl:with-param>
         <xsl:with-param name="field">Next </xsl:with-param>
       </xsl:call-template>
-      <xsl:value-of select="'; arg_node = Free( arg_node);'"/>
+      <xsl:value-of select="'; arg_node = ILIBfree( arg_node);'"/>
     </xsl:when>
     <xsl:otherwise>
-      <xsl:value-of select="'result = Free( arg_node);'"/>
+      <xsl:value-of select="'result = ILIBfree( arg_node);'"/>
     </xsl:otherwise>
   </xsl:choose>
   <!-- DBUG_RETURN call -->
@@ -286,12 +291,12 @@ version="1.0">
 
 <xsl:template match="@name">
   <xsl:call-template name="travfun-comment">
-    <xsl:with-param name="prefix">Free</xsl:with-param>
+    <xsl:with-param name="prefix">FREE</xsl:with-param>
     <xsl:with-param name="name"><xsl:value-of select="." /></xsl:with-param>
     <xsl:with-param name="text">Frees the node and its sons/attributes</xsl:with-param>
   </xsl:call-template>  
   <xsl:call-template name="travfun-head">
-    <xsl:with-param name="prefix">Free</xsl:with-param>
+    <xsl:with-param name="prefix">FREE</xsl:with-param>
     <xsl:with-param name="name"><xsl:value-of select="." /></xsl:with-param>
   </xsl:call-template>
 </xsl:template>
@@ -394,9 +399,9 @@ version="1.0">
       </xsl:call-template>
       <xsl:value-of select="' = '" />
       <!-- right side of assignment -->
-      <xsl:value-of select="'Free'"/>
+      <xsl:value-of select="'FREEattrib'"/>
       <xsl:value-of select="./type/@name"/>
-      <xsl:value-of select="'Attrib('"/>
+      <xsl:value-of select="'('"/>
       <xsl:call-template name="node-access">
         <xsl:with-param name="node">
           <xsl:value-of select="'arg_node'" />

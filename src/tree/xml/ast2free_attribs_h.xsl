@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.6  2004/11/22 17:16:56  sah
+  changes.
+  DK 04
+
   Revision 1.5  2004/09/20 16:15:16  sah
   fixed a comment and a define
 
@@ -44,25 +48,26 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <xsl:text>
-#ifndef _SAC_FREE_ATTRIBS_H
-#define _SAC_FREE_ATTRIBS_H
+#ifndef _SAC_FREE_ATTRIBS_H_
+#define _SAC_FREE_ATTRIBS_H_
 
-#include "attribs.h"  
+#include "types.h"
 
   </xsl:text>
   <xsl:apply-templates select="//attributetypes/type[@copy != &quot;literal&quot;]"/>
   <xsl:text>
 
-#endif /* _SAC_FREE_ATTRIBS_H */
+#endif /* _SAC_FREE_ATTRIBS_H_ */
+
   </xsl:text>
 </xsl:template>
 
 <xsl:template match="type">
   <xsl:value-of select="'extern '"/>
   <xsl:value-of select="@ctype"/>
-  <xsl:value-of select="' Free'"/>
+  <xsl:value-of select="' FREEattrib'"/>
   <xsl:value-of select="@name"/>
-  <xsl:value-of select="'Attrib( '"/>
+  <xsl:value-of select="'( '"/>
   <xsl:value-of select="@ctype"/>
   <xsl:value-of select="' );'"/>
 </xsl:template>

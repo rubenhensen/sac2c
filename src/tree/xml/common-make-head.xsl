@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/11/22 17:16:56  sah
+  changes.
+  DK 04
+
   Revision 1.2  2004/08/07 16:19:05  sah
   most xsl files use key-tables for type lookups
   now which increases speed significantly.
@@ -20,8 +24,17 @@ version="1.0">
 
 <!-- generate a make function head -->
 <xsl:template match="node" mode="make-head">
-  <xsl:value-of select="'node *Make'"/>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="'node *TBmake'"/>
+  <xsl:call-template name="uppercase" >
+    <xsl:with-param name="string" >
+      <xsl:value-of select="substring( @name, 1, 1)" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:call-template name="lowercase" >
+    <xsl:with-param name="string" >
+      <xsl:value-of select="substring( @name, 2, 30)" />
+    </xsl:with-param>
+  </xsl:call-template>
   <xsl:value-of select="'( '"/>
   <!-- permanent attributes without default value first -->
   <xsl:apply-templates select="attributes/attribute[phases/all][not(@default)]" mode="make-head"/>
