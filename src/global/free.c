@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.42  1998/03/25 14:20:22  dkr
+ * fixed a bug in FreeNpart:
+ *    DBUG_ASSERT about (USED >= 0) is now correct
+ *
  * Revision 1.41  1998/03/24 17:13:32  dkr
  * changed FreeNPart:
  *   (code == NULL) is allowed (as provided in MakeNpart, DupNpart, ...)
@@ -1462,7 +1466,7 @@ FreeNPart (node *arg_node, node *arg_info)
 
     if (NPART_CODE (arg_node) != NULL) {
         NCODE_USED (NPART_CODE (arg_node))--; /* see remarks of N_Ncode in tree_basic.h */
-        DBUG_ASSERT (0 >= NCODE_USED (NPART_CODE (arg_node)),
+        DBUG_ASSERT ((NCODE_USED (NPART_CODE (arg_node)) >= 0),
                      ("NCODE_USED dropped below 0"));
     }
 
