@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/11/22 12:36:13  sah
+  extended layout
+
   Revision 1.2  2004/07/11 18:15:55  sah
   updated xhtml output to please sbs ;)
 
@@ -10,6 +13,10 @@
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 xmlns="http://www.w3.org/1999/xhtml" version="1.0">
+
+  <xsl:import href="common-key-tables.xsl" />
+  <xsl:import href="common-make-head.xsl" />
+
   <!-- this xslt script generates a nice html view given the ast xml
        definition file. It is no good example to get an overview, as 
        it is pretty ugly. Refer to the c code generating scripts
@@ -42,6 +49,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
                           margin: 0pt } 
           td.toclink { text-align: right; font-size: smaller } 
           td.hidden { padding: 0pt } 
+          td.makefun { font-family: courier; }
           table.hidden { border-style: none; margin: 0pt; width: 100%; 
                          padding: 2pt } 
           tr.nonmandatory { color: #666666; font-style: italic } 
@@ -193,14 +201,13 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
     <table>
       <tr>
         <td class="title">Nodeset 
-        <xsl:value-of select="@name" />
-        <xsl:apply-templates select="description"
-        mode="table" /></td>
+          <xsl:value-of select="@name" />
+          <xsl:apply-templates select="description" mode="table" />
+        </td>
       </tr>
       <tr>
         <td>
-          <xsl:apply-templates select="target/node"
-          mode="table" />
+          <xsl:apply-templates select="target/node" mode="table" />
         </td>
       </tr>
       <tr>
@@ -231,6 +238,16 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
           <xsl:apply-templates select="description" mode="table" />
         </td>
       </tr>
+      <tr>
+        <td class="heading">
+          Make Function
+        </td>
+      </tr>
+      <tr>
+        <td class="makefun">
+          <xsl:apply-templates select="." mode="make-head" />
+        </td>
+      </tr>
       <xsl:if test="sons/son">
         <tr>
           <td class="heading">Sons</td>
@@ -240,12 +257,11 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
             <table class="hidden">
               <tr>
                 <td class="subheading">Name</td>
-                <td class="subheading">Possible Target
-                Nodes</td>
+                <td class="subheading">Possible Target Nodes</td>
+                <td class="subheading">Default</td>
                 <td class="subheading">Comment</td>
               </tr>
-              <xsl:apply-templates select="sons"
-              mode="table" />
+              <xsl:apply-templates select="sons" mode="table" />
             </table>
           </td>
         </tr>
@@ -260,6 +276,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
               <tr>
                 <td class="subheading">Name</td>
                 <td class="subheading">Type</td>
+                <td class="subheading">Default</td>
                 <td class="subheading">Comment</td>
               </tr>
               <xsl:apply-templates select="attributes/attribute[phases/all]"
@@ -279,10 +296,26 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
                 <td class="subheading">Name</td>
                 <td class="subheading">Type</td>
                 <td class="subheading">Phases</td>
+                <td class="subheading">Default</td>
                 <td class="subheading">Comment</td>
               </tr>
-              <xsl:apply-templates select="attributes/attribute[not( phases/all)]"
-              mode="table" />
+              <xsl:apply-templates select="attributes/attribute[not( phases/all)]" mode="table" />
+            </table>
+          </td>
+        </tr>
+      </xsl:if>
+      <xsl:if test="flags/flag" >
+        <tr>
+          <td class="heading">Flags</td>
+        </tr>
+        <tr>
+          <td>
+            <table class="hidden">
+              <tr>
+                <td class="subheading">Name</td>
+                <td class="subheading">Default</td>
+              </tr>
+              <xsl:apply-templates select="flags/flag" mode="table" />
             </table>
           </td>
         </tr>
@@ -313,6 +346,9 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       </td>
       <td>
         <xsl:apply-templates select="target" mode="table" />
+      </td>
+      <td>
+        <xsl:value-of select="@default" />
       </td>
       <td>
         <xsl:apply-templates select="description"
@@ -372,6 +408,9 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         </td>
       </xsl:if>
       <td>
+        <xsl:value-of select="@default" />
+      </td>
+      <td>
         <xsl:apply-templates select="description"
         mode="table" />
       </td>
@@ -415,6 +454,21 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
     <xsl:value-of select="'[ '" />
     <xsl:value-of select="concat( @from, ' - ')" />
     <xsl:value-of select="concat( @to, ' ]')" />
+  </xsl:template>
+
+  <!-- flags are matched into a row of a table -->
+  <xsl:template match="flags/flag" mode="table" >
+    <tr>
+      <td>
+        <xsl:value-of select="@name" />
+      </td>
+      <td>
+        <xsl:if test="not( @default)" >
+          <xsl:value-of select="'FALSE'" />
+        </xsl:if>
+        <xsl:value-of select="@default" />
+      </td>
+    </tr>
   </xsl:template>
 
   <!-- general template for descriptions -->
