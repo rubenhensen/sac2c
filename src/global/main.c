@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.25  1995/02/15 14:32:05  asi
+ * Revision 1.26  1995/02/27 15:03:14  hw
+ * set default value for 'filename'
+ *
+ * Revision 1.25  1995/02/15  14:32:05  asi
  * PARM-macro added for ARG 'n'
  *
  * Revision 1.24  1995/02/13  17:21:03  asi
@@ -105,7 +108,7 @@
 #include <string.h>
 
 FILE *outfile;
-char *filename = NULL;
+char filename[256];
 int opt_dcr = 1, opt_cf = 1;
 
 MAIN
@@ -116,6 +119,7 @@ MAIN
     char outfilename[256] = "out.txt";
 
     strcpy (prgname, argv[0]);
+    strcpy (filename, "stdin"); /*default value */
 
     OPT ARG 'h':
     {
@@ -177,7 +181,7 @@ MAIN
 
     if (argc == 1) {
         yyin = FindFile (PATH, *argv);
-        filename = *argv;
+        strcpy (filename, *argv);
         if (yyin == NULL) {
             ERROR2 (1, ("Couldn't open file \"%s\"!\n", *argv));
         }
