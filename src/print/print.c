@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/02/12 16:56:07  nmw
+ * warning corrected
+ *
  * Revision 3.19  2001/02/12 15:57:34  nmw
  * Print functions for N_cseinfo, N_ssacnt and N_avis added
  *
@@ -3476,7 +3479,7 @@ PrintSSAcnt (node *arg_node, node *arg_info)
              SSACNT_COUNT (arg_node));
 
     if (SSACNT_NEXT (arg_node) != NULL) {
-        PRINT_CONT (Trav (SSACNT_NEXT (arg_node), arg_info), "\n\n");
+        PRINT_CONT (Trav (SSACNT_NEXT (arg_node), arg_info), );
     }
     DBUG_RETURN (arg_node);
 }
@@ -3498,7 +3501,7 @@ PrintCSEinfo (node *arg_node, node *arg_info)
     /* to be implemnted */
 
     if (CSEINFO_NEXT (arg_node) != NULL) {
-        PRINT_CONT (Trav (CSEINFO_NEXT (arg_node), arg_info), "\n\n");
+        PRINT_CONT (Trav (CSEINFO_NEXT (arg_node), arg_info), );
     }
     DBUG_RETURN (arg_node);
 }
