@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/08/03 12:35:13  asi
- * some dbug-string's corrected and prim. functions with only one argument seperated
+ * Revision 1.11  1995/08/11 17:26:00  hw
+ * N_modarray & N_genarray inserted
  *
+;; Revision 1.10  1995/08/03  12:35:13  asi
+;; some dbug-string's corrected and prim. functions with only one argument seperated
+;;
 ;; Revision 1.9  1995/07/07  14:52:14  hw
 ;; enlarged macro PRF_IF( there are 4 args now) to generate a new table
 ;; called 'prf_name'( this will be done in typecheck.c)
@@ -86,4 +89,6 @@ PRF_IF (F_ftoi, "F_ftoi", "ftoi", "_ftoi"), PRF_IF (F_ftod, "F_ftod", "ftod", "_
   PRF_IF (F_mul_AxA, "F_mul_AxA", "*", "_mul"),
   PRF_IF (F_div_SxA, "F_div_SxA", "/", "_div"),
   PRF_IF (F_div_AxS, "F_div_AxS", "/", "_div"),
-  PRF_IF (F_div_AxA, "F_div_AxA", "/", "_div")
+  PRF_IF (F_div_AxA, "F_div_AxA", "/", "_div"),
+  PRF_IF (F_modarray, "F_modarray", "modarray", "_modarray"),
+  PRF_IF (F_genarray, "F_genarray", "genarray", "_genarray")
