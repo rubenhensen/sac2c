@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/03/05 12:05:15  sbs
+ * Now, the wrapper function headers are inserted in to the fundefs immediately
+ *
  * Revision 1.16  2004/02/20 08:14:00  mwe
  * now functions with and without body are separated
  * changed tree traversal (added traverse of MODUL_FUNDECS)
@@ -300,7 +303,7 @@ CreateFuntype (node *fundef)
 {
     int num_rets;
     types *old_ret;
-    ntype *res;
+    ntype *res, *maxtype;
     int i;
 
     DBUG_ENTER ("CreateFuntype");
@@ -314,7 +317,11 @@ CreateFuntype (node *fundef)
     res = TYMakeEmptyProductType (num_rets);
 
     for (i = 0; i < num_rets; i++) {
-        res = TYSetProductMember (res, i, TYMakeAlphaType (TYOldType2Type (old_ret)));
+        maxtype = TYOldType2ScalarType (old_ret);
+        if (maxtype != NULL) {
+            maxtype = TYMakeAUD (maxtype);
+        }
+        res = TYSetProductMember (res, i, TYMakeAlphaType (maxtype));
         old_ret = TYPES_NEXT (old_ret);
     }
 
@@ -409,14 +416,26 @@ CRTWRPmodul (node *arg_node, node *arg_info)
                  "MODUL_WRAPPERFUNS is not NULL!");
     INFO_CRTWRP_WRAPPERFUNS (arg_info) = MODUL_WRAPPERFUNS (arg_node) = GenerateLUT ();
 
+    /**
+     * First, we traverse the external functions. As these per definition
+     * DO NOT have bodies, it does not matter that not all functions have
+     * been seen prior to our way back up!
+     */
     if (MODUL_FUNDECS (arg_node) != NULL) {
         MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
     }
+    /**
+     * Now, we traverse the local fundefs. Once we reach the last fundef,
+     * we know for sure, that we have seen ALL functions (including the externals)!
+     */
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
-    MODUL_FUNDECS (arg_node)
-      = FoldLUT_S (INFO_CRTWRP_WRAPPERFUNS (arg_info), MODUL_FUNDECS (arg_node),
+    /**
+     * Finally, we insert the wrapper functions into the fundef chain:
+     */
+    MODUL_FUNS (arg_node)
+      = FoldLUT_S (INFO_CRTWRP_WRAPPERFUNS (arg_info), MODUL_FUNS (arg_node),
                    (void *(*)(void *, void *))ConsFundefs);
 
     DBUG_RETURN (arg_node);
