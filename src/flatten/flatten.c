@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/03/19 09:40:19  bs
+ * PreTypecheck mutated to the global function FltnPreTypecheck
+ *
  * Revision 2.9  1999/03/17 21:44:22  bs
  * Flattening of costant boolean arrays and constant character arrays!
  *
@@ -455,44 +458,44 @@ DbugPrintStack (void)
  *
  ******************************************************************************/
 
-static simpletype
-PreTypecheck (nodetype type1, simpletype type2)
+simpletype
+FltnPreTypecheck (nodetype type1, simpletype type2, int index)
 {
     DBUG_ENTER ("PreTypecheck");
 
     switch (type1) {
     case N_double:
-        if ((type2 == T_double) || (type2 == T_float) || (type2 == T_int))
+        if ((index == 0) || (type2 == T_double) || (type2 == T_float) || (type2 == T_int))
             type2 = T_double;
         else
             type2 = T_unknown;
         break;
     case N_float:
-        if (type2 == T_double)
-            type2 = T_double;
-        else if ((type2 == T_float) || (type2 == T_int))
+        if ((index == 0) || (type2 == T_float) || (type2 == T_int))
             type2 = T_float;
+        else if (type2 == T_double)
+            type2 = T_double;
         else
             type2 = T_unknown;
         break;
     case N_num:
-        if (type2 == T_double)
+        if ((index == 0) || (type2 == T_int))
+            type2 = T_int;
+        else if (type2 == T_double)
             type2 = T_double;
         else if (type2 == T_float)
             type2 = T_float;
-        else if (type2 == T_int)
-            type2 = T_int;
         else
             type2 = T_unknown;
         break;
     case N_bool:
-        if (type2 == T_bool)
+        if ((index == 0) || (type2 == T_bool))
             type2 = T_bool;
         else
             type2 = T_unknown;
         break;
     case N_char:
-        if (type2 == T_char)
+        if ((index == 0) || (type2 == T_char))
             type2 = T_char;
         else
             type2 = T_unknown;
@@ -1316,7 +1319,8 @@ FltnExprs (node *arg_node, node *arg_info)
         abstract = ((NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
                     || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_with));
         INFO_FLTN_VECTYPE (arg_info)
-          = PreTypecheck (NODE_TYPE (expr), INFO_FLTN_VECTYPE (arg_info));
+          = FltnPreTypecheck (NODE_TYPE (expr), INFO_FLTN_VECTYPE (arg_info),
+                              info_fltn_array_index);
         INFO_FLTN_VECLEN (arg_info) = info_fltn_array_index + 1;
         break;
     default:
