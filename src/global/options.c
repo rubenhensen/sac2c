@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2003/10/14 12:21:51  cg
+ * -mt for TAGGED_ARRAYS activated (for testing only!!)
+ *
  * Revision 3.52  2003/10/09 16:52:12  dkrHH
  * DAO for TAGGED_ARRAYS activated
  *
@@ -1276,21 +1279,13 @@ CheckOptionConsistency ()
 #endif
 
 #ifdef TAGGED_ARRAYS
-#if 1
-    if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
-        gen_mt_code = GEN_MT_NONE;
-        num_threads = 1;
-        SYSWARN (("Code generation for multi-threaded program execution not"
-                  " yet available for TAGGED_ARRAYS.\n"
-                  "Code for sequential execution generated instead"));
-    }
-#endif
 #if 0
-  if (optimize & OPT_DAO) {
-    SYSWARN( ("Descriptor allocation optimization (DAO/RCAO) of private heap"
-              " management is not yet available for TAGGED_ARRAYS.\n"
-              "DAO/RCAO disabled"));
-    optimize &= ~OPT_DAO;
+  if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
+    gen_mt_code = GEN_MT_NONE;
+    num_threads = 1;
+    SYSWARN( ("Code generation for multi-threaded program execution not"
+              " yet available for TAGGED_ARRAYS.\n"
+              "Code for sequential execution generated instead"));
   }
 #endif
 #endif /* TAGGED_ARRAYS */
