@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.213  1998/06/04 17:04:14  cg
+ * *** empty log message ***
+ *
  * Revision 1.212  1998/06/03 14:27:35  cg
  * added some more functions for precomp_tab for renaming purposes
  *
@@ -1031,7 +1034,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
   NIF (N_Nwith, "N_Nwith", TravSons, FltnNwith, PrintNwith, TravSons, OPTNwith, DCRNwith,
        WLFNwith, FreeNWith, CFNwith, RCNwith, TravSons, TravSons, DupNwith, TravSons,
        UNRNwith, TravSons, IdxNwith, TravSons, WLINwith, AENwith, PrintNwith, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, UNQNwith, TravSons, PRECNwith,
+       TravSons, TravSons, TravSons, TravSons, TravSons, UNQNwith, TravSons, TravSons,
        ACTNwith, TravSons, WLTNwith, CSENwith, TravSons, TCWLnull, TravSons, TravSons,
        TravSons, TravSons, TravSons, WLTRANwith, TravSons, TravSons, O2Nnwith, 3),
 
