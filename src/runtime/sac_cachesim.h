@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.5  1999/04/14 09:22:48  cg
+ * Cache simulation may now be triggered by pragmas.
+ *
  * Revision 2.4  1999/04/12 10:13:50  cg
  * Array access and register macros added.
  *
@@ -208,16 +211,12 @@ extern void SAC_CS_Stop (void);
  *
  *****************************************************************************/
 
-#if (SAC_SET_CACHESIM)
+#if (SAC_DO_CACHESIM)
 
-#if (SAC_SET_CACHESIM == SAC_CS_FILE)
-#define SAC_CS_LEVEL SAC_CS_file
-#elif (SAC_SET_CACHESIM == SAC_CS_SIMPLE)
-#define SAC_CS_LEVEL SAC_CS_simple
-#elif (SAC_SET_CACHESIM == SAC_CS_ADVANCED)
+#if (SAC_DO_CACHESIM_ADV)
 #define SAC_CS_LEVEL SAC_CS_advanced
 #else
-#define SAC_CS_LEVEL SAC_CS_none
+#define SAC_CS_LEVEL SAC_CS_simple
 #endif
 
 #define SAC_CS_SETUP()                                                                   \
@@ -250,12 +249,12 @@ extern void SAC_CS_Stop (void);
                            cachelinesize2, associativity2, writepolicy2, cachesize3,     \
                            cachelinesize3, associativity3, writepolicy3);                \
                                                                                          \
-        SAC_CS_Start (NULL);                                                             \
+        SAC_CS_START_GLOBAL ();                                                          \
     }
 
-#define SAC_CS_PRINT()                                                                   \
+#define SAC_CS_FINALIZE()                                                                \
     {                                                                                    \
-        SAC_CS_Stop ();                                                                  \
+        SAC_CS_STOP_GLOBAL ();                                                           \
         SAC_CS_Finalize ();                                                              \
     }
 
@@ -270,14 +269,38 @@ extern void SAC_CS_Stop (void);
 
 #define SAC_CS_UNREGISTER_ARRAY(name) SAC_CS_UnregisterArray (SAC_ND_A_FIELD (name))
 
+#if SAC_DO_CACHESIM_PRAGMA
+
+#define SAC_CS_START_GLOBAL()
+#define SAC_CS_STOP_GLOBAL()
+
+#define SAC_CS_START_PRAGMA(tag) SAC_CS_Start (tag)
+#define SAC_CS_STOP_PRAGMA(tag) SAC_CS_Stop ()
+
 #else
 
+#define SAC_CS_START_GLOBAL() SAC_CS_Start (NULL)
+#define SAC_CS_STOP_GLOBAL() SAC_CS_Stop ()
+
+#define SAC_CS_START_PRAGMA(tag)
+#define SAC_CS_STOP_PRAGMA(tag)
+
+#endif
+
+#else
+
+#define SAC_CS_LEVEL SAC_CS_none
 #define SAC_CS_SETUP()
-#define SAC_CS_PRINT()
+#define SAC_CS_FINALIZE()
 #define SAC_CS_READ_ARRAY(name, pos)
 #define SAC_CS_WRITE_ARRAY(name, pos)
 #define SAC_CS_REGISTER_ARRAY(name)
 #define SAC_CS_UNREGISTER_ARRAY(name)
+
+#define SAC_CS_START_GLOBAL()
+#define SAC_CS_STOP_GLOBAL()
+#define SAC_CS_START_PRAGMA(tag)
+#define SAC_CS_STOP_PRAGMA(tag)
 
 #endif
 

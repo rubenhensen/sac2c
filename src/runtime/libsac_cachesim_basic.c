@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.5  1999/04/14 09:23:15  cg
+ * Cache simulation may now be triggered by pragmas.
+ *
  * Revision 2.4  1999/04/12 09:40:54  cg
  * Bug removed in initialization of write access function table.
  * Presentation of results immproved.
@@ -46,7 +49,7 @@ tFunRWAccess SAC_CS_ReadAccess, SAC_CS_WriteAccess,
 /* SAC_CS_xxx_access_table[0] is unused,
    SAC_CS_xxx_access_table[MAX_CACHELEVEL+1] for dummy/MainMem */
 /* END: */
-static int already_started = 0;
+static int sim_incarnation = 0;
 static char *starttag;
 static tProfilingLevel profiling_level;
 
@@ -421,6 +424,21 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, ULINT cachesiz
         SAC_RuntimeError ("No caches specified for cache simulation");
     }
 
+    /*
+     * The default write policy is resumed.
+     * This is done here in order to provide correct information to the user
+     * when printing the cache specification below.
+     */
+    if (writepolicy1 == SAC_CS_default) {
+        writepolicy1 = SAC_CS_fetch_on_write;
+    }
+    if (writepolicy2 == SAC_CS_default) {
+        writepolicy2 = SAC_CS_fetch_on_write;
+    }
+    if (writepolicy3 == SAC_CS_default) {
+        writepolicy3 = SAC_CS_fetch_on_write;
+    }
+
     InitializeOneCacheLevel (1, nr_of_cpu, profilinglevel, cachesize1, cachelinesize1,
                              associativity1, writepolicy1);
 
@@ -444,7 +462,7 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, ULINT cachesiz
     fprintf (stderr,
              "====================================================\n"
              "SAC program running with cache simulation enabled!\n"
-             "This delays program execution significantly.\n"
+             "This might delay program execution significantly.\n"
              "====================================================\n"
              "L1 cache:  cache size        : %lu KByte\n"
              "           cache line size   : %d Byte\n"
@@ -609,12 +627,15 @@ SAC_CS_ShowResults (void)
     long unsigned int accesses;
     float hit_ratio;
 
-    fprintf (stderr,
-             "\n"
-             "====================================================\n"
-             "SAC cache simulation results: %s\n"
-             "====================================================\n",
-             starttag == NULL ? "" : starttag);
+    fprintf (stderr, "\n"
+                     "====================================================\n"
+                     "SAC cache simulation results:\n");
+
+    if (starttag != NULL) {
+        fprintf (stderr, "Block: %s\n", starttag);
+    }
+
+    fprintf (stderr, "====================================================\n");
 
     digits = (int)ceil (log10 ((double)SAC_CS_hit[1] + SAC_CS_miss[1]));
 
@@ -631,6 +652,13 @@ SAC_CS_ShowResults (void)
                      SAC_CS_miss[i], 100.0 - hit_ratio);
 
             if ((profiling_level == SAC_CS_advanced)) {
+                if (SAC_CS_miss[i] == 0) {
+                    /*
+                     * This is to avoid printing of NaN in percentages.
+                     */
+                    SAC_CS_miss[i] = 1;
+                }
+
                 fprintf (stderr,
                          "  misses:  cold start:          %*lu  (%5.1f%%)\n"
                          "           cross interference:  %*lu  (%5.1f%%)\n"
@@ -655,14 +683,8 @@ SAC_CS_Start (char *tag)
 {
     int i;
 
-    if (already_started) {
-        fprintf (stderr,
-                 "libsac_cachesim: "
-                 "cachesimulation is already started. (tag=='%s')\n",
-                 starttag);
-    } else {
+    if (sim_incarnation == 0) {
         starttag = tag;
-        already_started = 1;
         /* set all counters to 0 */
         for (i = 1; i <= MAX_CACHELEVEL; i++) {
             SAC_CS_hit[i] = 0;
@@ -672,18 +694,25 @@ SAC_CS_Start (char *tag)
             SAC_CS_cross[i] = 0;
             SAC_CS_invalid[i] = 0;
         } /* for */
+    } else {
+        fprintf (stderr,
+                 "Cachesim warning:\n"
+                 "Simulation \"%s\" ignored:\n"
+                 "Simulation \"%s\" still running !\n",
+                 tag, starttag);
     }
+
+    sim_incarnation++;
+
 } /* SAC_CS_Start */
 
 void
 SAC_CS_Stop (void)
 {
-    if (!already_started) {
-        fprintf (stderr, "libsac_cachesim: "
-                         "cachesimulation is already stopped.\n");
-    } else {
+    sim_incarnation--;
+
+    if (sim_incarnation == 0) {
         SAC_CS_ShowResults ();
         starttag = NULL;
-        already_started = 0;
     }
 } /* SAC_CS_Stop  */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/04/14 09:21:17  cg
+ * Cache simulation may now be triggered by pragmas.
+ *
  * Revision 2.2  1999/03/31 11:30:27  cg
  * added command line parameter -cachesim
  *
@@ -588,19 +591,27 @@ MAIN
         if (0 == strcmp (*argv, "cachesim")) {
             if (--argc >= 1) {
                 argv++;
-                if ((*argv)[1] == '\0') {
-                    switch (**argv) {
-                    case 'f':
-                        cachesim = CACHESIM_FILE;
-                        break;
+                if ((*argv)[2] == '\0') {
+                    switch ((*argv)[0]) {
+                        /* case 'f': cachesim |= CACHESIM_FILE;  break; */
                     case 's':
-                        cachesim = CACHESIM_SIMPLE;
+                        cachesim |= CACHESIM_SIMPLE;
                         break;
                     case 'a':
-                        cachesim = CACHESIM_ADVANCED;
+                        cachesim |= CACHESIM_ADVANCED;
                         break;
                     default:
-                        SYSERROR (("Unknown cache simulation style '%c`", **argv));
+                        SYSERROR (("Unknown cache simulation style '%s`", *argv));
+                    }
+                    switch ((*argv)[1]) {
+                    case 'g':
+                        cachesim &= ~CACHESIM_PRAGMA;
+                        break;
+                    case 'p':
+                        cachesim |= CACHESIM_PRAGMA;
+                        break;
+                    default:
+                        SYSERROR (("Unknown cache simulation style '%s`", *argv));
                     }
                 } else {
                     SYSERROR (("Unknown cache simulation style '%s`", *argv));
