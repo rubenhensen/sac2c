@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.20  1999/01/15 15:29:01  cg
+# added compilation of file tile_size_inference.c
+#
 # Revision 1.19  1998/03/04 00:11:05  dkr
 # 'clean' now deletes the subdir .sb, too
 #
@@ -68,7 +71,7 @@ CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../../inc -I../optimize -I../compile -I../typecheck -I../modules
 
-all: index.o psi-opt.o ArrayElimination.o
+all: index.o psi-opt.o ArrayElimination.o tile_size_inference.o
 
 index.o: index.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o index.o -c index.c $(INCS)
@@ -79,12 +82,16 @@ psi-opt.o: psi-opt.c
 ArrayElimination.o: ArrayElimination.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o ArrayElimination.o -c ArrayElimination.c $(INCS)
 
+tile_size_inference.o: tile_size_inference.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o tile_size_inference.o -c tile_size_inference.c $(INCS)
+
 deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) index.o psi-opt.o ArrayElimination.o *.bak
+	$(RM) *.o *.bak *~
 	$(RM) -r .sb
+
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
