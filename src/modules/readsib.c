@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/04/26 00:10:10  dkr
+ * EnsureExistFuns(): call of FreeZombie() added
+ *
  * Revision 3.1  2000/11/20 18:00:56  sacbase
  * new release made
  *
@@ -880,7 +883,7 @@ EnsureExistFuns (node *fundef, node *modul, node *sib)
             DBUG_PRINT ("READSIB",
                         ("Implicitly used function %s inserted.", ItemName (find)));
         } else {
-            fundef = FreeNode (fundef);
+            fundef = FreeZombie (FreeNode (fundef));
 
             DBUG_PRINT ("READSIB",
                         ("Implicitly used function %s already exists.", ItemName (find)));
