@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.170  1998/06/18 13:45:44  cg
+ * added compilation of schedulings
+ *
  * Revision 1.169  1998/06/09 16:45:22  dkr
  * *** empty log message ***
  *
@@ -563,6 +566,7 @@
 #include "typecheck.h" /* to use LookupType() */
 #include "ReuseWithArrays.h"
 #include "free.h"
+#include "scheduling.h"
 
 #define TYP_IF(n, d, p, f, sz) sz
 
@@ -6344,13 +6348,28 @@ COMPSync (node *arg_node, node *arg_info)
     }
 
     /*
-     * insert ICM 'MT_START_SYNCBLOCK' and contents of modified sync-region-block
+     * insert ICM 'MT_START_SYNCBLOCK',
+     * ICM 'MT_SCHEDULER_BEGIN', and contents of modified sync-region-block
      */
-    assigns = AppendAssign (assigns,
-                            MakeAssign (MakeIcm ("MT_START_SYNCBLOCK", icm_args3, NULL),
-                                        BLOCK_INSTR (SYNC_REGION (arg_node))));
+    assigns
+      = AppendAssign (assigns,
+                      MakeAssign (MakeIcm ("MT_START_SYNCBLOCK", icm_args3, NULL),
+                                  MakeAssign (SCHCompileSchedulingBegin (SYNC_SCHEDULING (
+                                                                           arg_node),
+                                                                         arg_node),
+                                              BLOCK_INSTR (SYNC_REGION (arg_node)))));
+
     BLOCK_INSTR (SYNC_REGION (arg_node)) = NULL;
 
+    /*
+     * insert ICM 'MT_SCHEDULER_END'
+     */
+
+    assigns
+      = AppendAssign (assigns,
+                      MakeAssign (SCHCompileSchedulingEnd (SYNC_SCHEDULING (arg_node),
+                                                           arg_node),
+                                  NULL));
     /*
      * insert ICM 'MT_SYNC_...'
      */
@@ -6715,6 +6734,21 @@ COMPWLseg (node *arg_node, node *arg_info)
      *  -> we get an assignment-chain
      */
     assigns = Trav (WLSEG_CONTENTS (arg_node), arg_info);
+
+    if (WLSEG_SCHEDULING (arg_node) != NULL) {
+        /*
+         * If this segment contains a scheduling specification, we must insert
+         * the respective scheduler ICMs.
+         */
+        assigns
+          = MakeAssign (SCHCompileSchedulingBegin (WLSEG_SCHEDULING (arg_node), arg_node),
+                        assigns);
+        assigns
+          = AppendAssign (assigns, MakeAssign (SCHCompileSchedulingEnd (WLSEG_SCHEDULING (
+                                                                          arg_node),
+                                                                        arg_node),
+                                               NULL));
+    }
 
     if (WLSEG_NEXT (arg_node) != NULL) {
         /*
