@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/03/15 14:21:53  nmw
+ * break specifier for UndoSSA changed from "usd" to "ussa" according
+ * to DEBUG specifier for this traversal
+ *
  * Revision 3.7  2001/03/07 15:58:04  nmw
  * SSACSE for ssa optimization added
  *
@@ -213,6 +217,7 @@
 #include "lac2fun.h"
 #include "SSADeadCodeRemoval.h"
 #include "SSACSE.h"
+#include "cleanup_decls.h"
 
 /*
  * global variables to keep track of optimization's success
@@ -536,7 +541,7 @@ OPTmodul (node *arg_node, node *arg_info)
         NOTE (("undo ssa-form"));
         arg_node = UndoSSATransform (arg_node);
         if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-            && (0 == strcmp (break_specifier, "uds"))) {
+            && (0 == strcmp (break_specifier, "ussa"))) {
             goto DONE;
         }
     }
