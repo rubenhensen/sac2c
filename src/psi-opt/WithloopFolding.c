@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/15 13:41:42  sbs
+ * (int)NGEN_STEP(genn)  changed into (NGEN_STEP(genn) != NULL) for
+ * avoiding pointer to integer cast problem on DEC alpha!
+ *
  * Revision 3.1  2000/11/20 18:01:44  sacbase
  * new release made
  *
@@ -727,28 +731,28 @@ Tree2InternGen (node *wln, node *filter)
         if (!filter || NPART_CODE (partn) == filter) {
             genn = NPART_GEN (partn);
             shape = IDS_SHAPE (NPART_VEC (partn), 0);
-            tmp_ig = AppendInternGen (tmp_ig, shape, NPART_CODE (partn),
-                                      (int)NGEN_STEP (genn) || (int)NGEN_WIDTH (genn));
-            if (!root)
-                root = tmp_ig;
-
-            /* copy vector information to intern_gen */
-            ArrayST2ArrayInt (NGEN_BOUND1 (genn), &tmp_ig->l, shape); /* l */
-            ArrayST2ArrayInt (NGEN_BOUND2 (genn), &tmp_ig->u, shape); /* u */
-            if (NGEN_STEP (genn))
-                ArrayST2ArrayInt (NGEN_STEP (genn), &tmp_ig->step, shape); /* step */
-            if (NGEN_WIDTH (genn))
-                ArrayST2ArrayInt (NGEN_WIDTH (genn), &tmp_ig->width, shape); /* width */
-
-            /* normalize step and width */
-            switch (NormalizeInternGen (tmp_ig)) {
+      tmp_ig = AppendInternGen(tmp_ig, shape, NPART_CODE(partn),
+                               (NGEN_STEP(genn) != NULL) || (NGEN_WIDTH(genn) != NULL);
+      if (!root)
+        root = tmp_ig;
+    
+    /* copy vector information to intern_gen */
+      ArrayST2ArrayInt(NGEN_BOUND1(genn), &tmp_ig->l, shape); /* l */
+      ArrayST2ArrayInt(NGEN_BOUND2(genn), &tmp_ig->u, shape); /* u */
+      if (NGEN_STEP(genn))
+        ArrayST2ArrayInt(NGEN_STEP(genn), &tmp_ig->step, shape); /* step */
+      if (NGEN_WIDTH(genn)) 
+        ArrayST2ArrayInt(NGEN_WIDTH(genn), &tmp_ig->width, shape); /* width */
+    
+    /* normalize step and width */
+      switch (NormalizeInternGen(tmp_ig)) {
             case 1:
                 ABORT (NODE_LINE (wln), ("component of width greater than step"));
             case 2:
                 ABORT (NODE_LINE (wln), ("component of width less 0"));
             case 3:
                 ABORT (NODE_LINE (wln), ("width vector without step vector"));
-            }
+      }
         }
 
         partn = NPART_NEXT (partn);
