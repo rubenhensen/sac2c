@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.171  1998/03/24 15:30:29  cg
+ * #include "profile.h" removed since file no longer exists.
+ *
  * Revision 1.170  1998/03/24 13:42:01  cg
  * The generation of C code for the declaration and initialization of
  * the runtime system is extracted and moved to gen_startup_code.c
@@ -578,7 +581,6 @@
 #include "Error.h"
 #include "convert.h"
 #include "optimize.h"
-#include "profile.h"
 #include "filemgr.h"
 #include "globals.h"
 #include "gen_startup_code.h"
@@ -613,68 +615,6 @@ char *prf_string[] = {
 };
 
 #undef PRF_IF
-
-#if 0
-The following functionality is moved to gen_startup_code.c
-
-void PrintFileHeader()
-{
-  DBUG_ENTER("PrintFileHeader");
-    
-  if(show_icm == 0)
-  {
-    if(traceflag != 0 ) 
-    {
-      if(traceflag & TRACE_MEM) {
-        fprintf(outfile,"#define TRACE_MEM\n");
-      }
-
-      if(traceflag & TRACE_REF) {
-        fprintf(outfile,"#define TRACE_REF\n");
-      }
-
-      if(traceflag & TRACE_PRF) { 
-        fprintf(outfile,"#define TRACE_PRF\n");
-      }
-    }
-    if(profileflag !=0)
-    {
-      fprintf(outfile,"#define PROFILE\n");
-      if(profileflag & PROFILE_FUN) {
-        fprintf(outfile,"#define PROFILE_FUN\n");
-      }
-
-      if(profileflag & PROFILE_LIB) {
-        fprintf(outfile,"#define PROFILE_LIB\n");
-      }
-
-      if(profileflag & PROFILE_INL) {
-        fprintf(outfile,"#define PROFILE_INL\n");
-      }
-
-      if(profileflag & PROFILE_WITH) {
-        fprintf(outfile,"#define PROFILE_WITH\n");
-      }
-    }
-    
-    if (check_malloc)
-    {
-      fprintf(outfile, "#define CHECK_MALLOC\n");
-    }
-
-    if(profileflag !=0)
-    {
-      fprintf(outfile,"#include <sys/time.h>\n");
-      fprintf(outfile,"#include <sys/resource.h>\n");
-      fprintf(outfile,"extern int getrusage(int who, struct rusage *rusage);\n");
-    }
-    fprintf(outfile,"#include \"libsac.h\"\n");
-    fprintf(outfile,"#include \"icm2c.h\"\n");
-  }
-
-  DBUG_VOID_RETURN;
-}
-#endif /* 0 */
 
 /*
  * prints ids-information to outfile

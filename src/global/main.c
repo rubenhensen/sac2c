@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.115  1998/03/24 15:30:29  cg
+ * #include "profile.h" removed since file no longer exists.
+ *
  * Revision 1.114  1998/03/17 14:21:58  cg
  * file src/compile/trace.h removed.
  * definition of symbolic values of global variable traceflag moved to globals.h
@@ -398,7 +401,6 @@
 #include "import.h"
 #include "refcount.h"
 #include "scnprs.h"
-#include "profile.h"
 #include "compile.h"
 #include "psi-opt.h"
 #include "writesib.h"
