@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.42  1995/03/13 16:44:07  asi
+ * Revision 1.43  1995/03/13 16:54:00  asi
+ * changed PrintPost and PrintPre
+ *
+ * Revision 1.42  1995/03/13  16:44:07  asi
  * changed PrintId
  *
  * Revision 1.41  1995/03/10  13:10:01  hw
@@ -738,6 +741,7 @@ PrintPost (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintPost");
 
+    PrintIds (arg_node->info.ids);
     fprintf (outfile, "%s", arg_node->info.id);
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, ";");
@@ -751,7 +755,8 @@ PrintPre (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintPre");
 
     Trav (arg_node->node[0], arg_info);
-    fprintf (outfile, "%s;", arg_node->info.id);
+    PrintIds (arg_node->info.ids);
+    fprintf (outfile, ";");
 
     DBUG_RETURN (arg_node);
 }
