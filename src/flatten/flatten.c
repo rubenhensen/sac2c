@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/06/02 22:02:11  dkr
+ * support for TAGGED_ARRAYS added
+ *
  * Revision 3.6  2001/11/22 08:46:31  sbs
  * DbugPrintStack compiled when DBUG package is active only!
  *
@@ -1220,6 +1223,15 @@ FltnExprs (node *arg_node, node *arg_info)
      * context of the expression, given by INFO_FLTN_CONTEXT( arg_info)
      */
     switch (INFO_FLTN_CONTEXT (arg_info)) {
+    case CT_ap:
+#ifdef TAGGED_ARRAYS
+        /* here is no break missing! */
+#else
+        abstract = ((NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_prf)
+                    || (NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_Nwith)
+                    || (NODE_TYPE (expr) == N_cast));
+        break;
+#endif
     case CT_return:
         abstract = ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
                     || (NODE_TYPE (expr) == N_double) || (NODE_TYPE (expr) == N_bool)
@@ -1228,18 +1240,22 @@ FltnExprs (node *arg_node, node *arg_info)
                     || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_Nwith)
                     || (NODE_TYPE (expr) == N_cast));
         break;
-    case CT_ap:
-        abstract = ((NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_prf)
-                    || (NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_Nwith)
-                    || (NODE_TYPE (expr) == N_cast));
-        break;
     case CT_normal:
         abstract = ((NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
                     || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_cast));
         break;
     case CT_array:
+#ifdef TAGGED_ARRAYS
+        abstract = ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
+                    || (NODE_TYPE (expr) == N_double) || (NODE_TYPE (expr) == N_bool)
+                    || (NODE_TYPE (expr) == N_char) || (NODE_TYPE (expr) == N_str)
+                    || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_ap)
+                    || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_Nwith)
+                    || (NODE_TYPE (expr) == N_cast));
+#else
         abstract = ((NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
                     || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_cast));
+#endif
         INFO_FLTN_VECTYPE (arg_info)
           = FltnPreTypecheck (NODE_TYPE (expr), INFO_FLTN_VECTYPE (arg_info));
         INFO_FLTN_VECLEN (arg_info) = info_fltn_array_index + 1;
