@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.238  1998/06/18 13:44:04  cg
+ * file is now able to deal correctly with data objects of
+ * the abstract data type for the representation of schedulings.
+ *
  * Revision 1.237  1998/06/05 15:27:49  cg
  * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
  * Now, module name and symbol name are combined correctly by ':'.
@@ -799,6 +803,7 @@
 #include "globals.h"
 #include "gen_startup_code.h"
 #include "WithloopFolding.h"
+#include "scheduling.h"
 
 /******************************************************************************/
 
@@ -2348,6 +2353,13 @@ PrintSync (node *arg_node, node *arg_info)
     DFMPrintMask (outfile, " %s", SYNC_LOCAL (arg_node));
     fprintf (outfile, "\n");
 
+    if (SYNC_SCHEDULING (arg_node) != NULL) {
+        INDENT
+        fprintf (outfile, " * scheduling: ");
+        SCHPrintScheduling (outfile, SYNC_SCHEDULING (arg_node));
+        fprintf (outfile, "\n");
+    }
+
     INDENT
     fprintf (outfile, " */\n");
 
@@ -2698,6 +2710,13 @@ PrintNwith2 (node *arg_node, node *arg_info)
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     fprintf (outfile, ")\n");
 
+    if (NWITH2_SCHEDULING (arg_node) != NULL) {
+        INDENT
+        fprintf (outfile, "/* scheduling :");
+        SCHPrintScheduling (outfile, NWITH2_SCHEDULING (arg_node));
+        fprintf (outfile, " */\n");
+    }
+
     INDENT
     fprintf (outfile, "/********** operators: **********/\n");
     code = NWITH2_CODE (arg_node);
@@ -2751,8 +2770,20 @@ PrintWLseg (node *arg_node, node *arg_info)
 
     seg = arg_node;
     while (seg != NULL) {
-        INDENT
-        fprintf (outfile, "/********** segment %d: **********/\n", i++);
+        if (WLSEG_SCHEDULING (seg) == NULL) {
+            INDENT
+            fprintf (outfile, "/********** segment %d: **********/\n", i++);
+        } else {
+            INDENT
+            fprintf (outfile, "/********** segment %d: **********\n", i++);
+            INDENT
+            fprintf (outfile, " * scheduling: ");
+            SCHPrintScheduling (outfile, WLSEG_SCHEDULING (seg));
+            fprintf (outfile, "\n");
+            INDENT
+            fprintf (outfile, " */\n");
+        }
+
         WLSEG_CONTENTS (seg) = Trav (WLSEG_CONTENTS (seg), arg_info);
         seg = WLSEG_NEXT (seg);
     }

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.101  1998/06/18 13:44:04  cg
+ * file is now able to deal correctly with data objects of
+ * the abstract data type for the representation of schedulings.
+ *
  * Revision 1.100  1998/06/09 16:52:42  dkr
  * fixed a bug in DupWLseg()
  *
@@ -340,6 +344,7 @@
 #include "DataFlowMask.h"
 #include "optimize.h"
 #include "Inline.h"
+#include "scheduling.h"
 
 /******************************************************************************/
 
@@ -1029,6 +1034,10 @@ DupSync (node *arg_node, node *arg_info)
         SYNC_LOCAL (new_node) = DFMGenMaskCopy (SYNC_LOCAL (arg_node));
     }
 
+    if (SYNC_SCHEDULING (arg_node) != NULL) {
+        SYNC_SCHEDULING (new_node) = SCHCopyScheduling (SYNC_SCHEDULING (arg_node));
+    }
+
     DBUG_RETURN (new_node);
 }
 
@@ -1257,6 +1266,10 @@ DupNwith2 (node *arg_node, node *arg_info)
         NWITH2_LOCAL (new_node) = DFMGenMaskCopy (NWITH2_LOCAL (arg_node));
     }
 
+    if (NWITH2_SCHEDULING (arg_node) != NULL) {
+        NWITH2_SCHEDULING (new_node) = SCHCopyScheduling (NWITH2_SCHEDULING (arg_node));
+    }
+
     /*
      * Now we must erase NCODE_COPY for every code node in 'arg_node'.
      * Otherwise we get nice ;-> errors when duplicating N_Npart- or
@@ -1321,6 +1334,10 @@ DupWLseg (node *arg_node, node *arg_info)
         for (d = 0; d < WLSEG_DIMS (new_node); d++) {
             (WLSEG_IDX_MAX (new_node))[d] = (WLSEG_IDX_MAX (arg_node))[d];
         }
+    }
+
+    if (WLSEG_SCHEDULING (arg_node) != NULL) {
+        WLSEG_SCHEDULING (new_node) = SCHCopyScheduling (WLSEG_SCHEDULING (arg_node));
     }
 
     DBUG_RETURN (new_node);

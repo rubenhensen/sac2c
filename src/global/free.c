@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.71  1998/06/18 13:46:29  cg
+ * file is now able to deal correctly with data objects of
+ * the abstract data type for the representation of schedulings.
+ *
  * Revision 1.70  1998/06/09 16:45:31  dkr
  * IDX_MIN, IDX_MAX now segment-specific
  *
@@ -237,6 +241,7 @@
 
 #include "traverse.h"
 #include "DataFlowMask.h"
+#include "scheduling.h"
 
 #include "free.h"
 
@@ -1671,6 +1676,10 @@ FreeSync (node *arg_node, node *arg_info)
         SYNC_LOCAL (arg_node) = DFMRemoveMask (SYNC_LOCAL (arg_node));
     }
 
+    if (SYNC_SCHEDULING (arg_node) != NULL) {
+        SYNC_SCHEDULING (arg_node) = SCHRemoveScheduling (SYNC_SCHEDULING (arg_node));
+    }
+
     DBUG_PRINT ("FREE", ("Removing N_sync node ..."));
 
     FREE (arg_node);
@@ -1866,6 +1875,10 @@ FreeNwith2 (node *arg_node, node *arg_info)
         NWITH2_LOCAL (arg_node) = DFMRemoveMask (NWITH2_LOCAL (arg_node));
     }
 
+    if (NWITH2_SCHEDULING (arg_node) != NULL) {
+        NWITH2_SCHEDULING (arg_node) = SCHRemoveScheduling (NWITH2_SCHEDULING (arg_node));
+    }
+
     NWITH2_DEC_RC_IDS (arg_node) = FreeAllIds (NWITH2_DEC_RC_IDS (arg_node));
 
     FREE (arg_node);
@@ -1897,6 +1910,10 @@ FreeWLseg (node *arg_node, node *arg_info)
     }
     if (WLSEG_SV (arg_node) != NULL) {
         FREE (WLSEG_SV (arg_node));
+    }
+
+    if (WLSEG_SCHEDULING (arg_node) != NULL) {
+        WLSEG_SCHEDULING (arg_node) = SCHRemoveScheduling (WLSEG_SCHEDULING (arg_node));
     }
 
     FREE (WLSEG_IDX_MIN (arg_node));

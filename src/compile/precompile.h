@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.20  1998/06/18 13:44:04  cg
+ * file is now able to deal correctly with data objects of
+ * the abstract data type for the representation of schedulings.
+ *
  * Revision 1.19  1998/06/12 14:06:37  cg
  * core renaming of local identifiers moved to new function
  * PRECRenameLocalIdentifier() which is also exported for
@@ -96,6 +100,8 @@ extern node *PRECcond (node *arg_node, node *arg_info);
 extern node *PRECwith (node *arg_node, node *arg_info);
 extern node *PRECNwith2 (node *arg_node, node *arg_info);
 extern node *PRECNcode (node *arg_node, node *arg_info);
+extern node *PRECsync (node *arg_node, node *arg_info);
+extern node *PRECWLseg (node *arg_node, node *arg_info);
 
 extern char *PRECRenameLocalIdentifier (char *id);
 

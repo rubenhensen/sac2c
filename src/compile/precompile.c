@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.71  1998/06/18 13:44:04  cg
+ * file is now able to deal correctly with data objects of
+ * the abstract data type for the representation of schedulings.
+ *
  * Revision 1.70  1998/06/12 14:06:37  cg
  * core renaming of local identifiers moved to new function
  * PRECRenameLocalIdentifier() which is also exported for
@@ -244,6 +248,7 @@
 #include "traverse.h"
 #include "refcount.h"
 #include "DataFlowMask.h"
+#include "scheduling.h"
 
 #include "DupTree.h"
 #include "typecheck.h"
@@ -1533,6 +1538,65 @@ PRECNcode (node *arg_node, node *arg_info)
 
     if (NCODE_NEXT (arg_node) != NULL) {
         NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PRECsync(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *   Since the scheduling specification may contain the names of local
+ *   identifiers, these have to be renamed according to the general renaming
+ *   scheme implemented by this compiler phase.
+ *
+ ******************************************************************************/
+
+node *
+PRECsync (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PRECsync");
+
+    if (SYNC_SCHEDULING (arg_node) != NULL) {
+        SYNC_SCHEDULING (arg_node) = SCHPrecompileScheduling (SYNC_SCHEDULING (arg_node));
+    }
+
+    SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PRECWLseg(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *   Since the scheduling specification may contain the names of local
+ *   identifiers, these have to be renamed according to the general renaming
+ *   scheme implemented by this compiler phase.
+ *
+ ******************************************************************************/
+
+node *
+PRECWLseg (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PRECWLseg");
+
+    if (WLSEG_SCHEDULING (arg_node) != NULL) {
+        WLSEG_SCHEDULING (arg_node)
+          = SCHPrecompileScheduling (WLSEG_SCHEDULING (arg_node));
+    }
+
+    WLSEG_CONTENTS (arg_node) = Trav (WLSEG_CONTENTS (arg_node), arg_info);
+
+    if (WLSEG_NEXT (arg_node) != NULL) {
+        WLSEG_NEXT (arg_node) = Trav (WLSEG_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
