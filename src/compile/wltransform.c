@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2001/04/02 16:11:06  dkr
+ * Support for new with-loop bounds format added:
+ * besides '[1,2,3]' and 'A', now also '[a,b,c]' works :-)
+ *
  * Revision 3.40  2001/04/02 11:43:32  dkr
  * include of wl_bounds.h added
  *
@@ -2429,7 +2433,7 @@ ToNextComponent (node *aelems)
 /******************************************************************************
  *
  * Function:
- *   int GetCurrentComponent_Int( node *aelems)
+ *   int CurrentComponent_GetInt( node *aelems)
  *
  * Description:
  *   Returns the current int-component of 'aelems'.
@@ -2437,11 +2441,11 @@ ToNextComponent (node *aelems)
  ******************************************************************************/
 
 static int
-GetCurrentComponent_Int (node *aelems)
+CurrentComponent_GetInt (node *aelems)
 {
     int comp;
 
-    DBUG_ENTER ("GetCurrentComponent_Int");
+    DBUG_ENTER ("CurrentComponent_GetInt");
 
     if (aelems != NULL) {
         switch (NODE_TYPE (aelems)) {
@@ -2450,9 +2454,13 @@ GetCurrentComponent_Int (node *aelems)
             break;
 
         case N_exprs:
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_num),
-                         "wrong node type found");
-            comp = NUM_VAL (EXPRS_EXPR (aelems));
+            if (NODE_TYPE (EXPRS_EXPR (aelems)) == N_num) {
+                comp = NUM_VAL (EXPRS_EXPR (aelems));
+            } else {
+                DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_id),
+                             "wrong node type found");
+                comp = IDX_OTHER;
+            }
             break;
 
         default:
@@ -2470,7 +2478,52 @@ GetCurrentComponent_Int (node *aelems)
 /******************************************************************************
  *
  * Function:
- *   node *GetCurrentComponent_Node( node *aelems)
+ *   bool CurrentComponent_IsInt( node *aelems)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static bool
+CurrentComponent_IsInt (node *aelems)
+{
+    bool res;
+
+    DBUG_ENTER ("CurrentComponent_IsInt");
+
+    if (aelems != NULL) {
+        switch (NODE_TYPE (aelems)) {
+        case N_id:
+            res = FALSE;
+            break;
+
+        case N_exprs:
+            if (NODE_TYPE (EXPRS_EXPR (aelems)) == N_num) {
+                res = TRUE;
+            } else {
+                DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_id),
+                             "wrong node type found");
+                res = FALSE;
+            }
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "wrong node type found");
+            res = FALSE;
+            break;
+        }
+    } else {
+        res = TRUE;
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *CurrentComponent_GetNode( node *aelems)
  *
  * Description:
  *   Returns the current component of 'aelems' as a N_num (int-value exists)
@@ -2479,20 +2532,26 @@ GetCurrentComponent_Int (node *aelems)
  ******************************************************************************/
 
 static node *
-GetCurrentComponent_Node (node *aelems)
+CurrentComponent_GetNode (node *aelems)
 {
     node *comp;
     int comp_int;
 
-    DBUG_ENTER ("GetCurrentComponent_Node");
+    DBUG_ENTER ("CurrentComponent_GetNode");
 
-    comp_int = GetCurrentComponent_Int (aelems);
+    comp_int = CurrentComponent_GetInt (aelems);
 
     if (IDX_IS_NUM (comp_int)) {
         comp = MakeNum (comp_int);
     } else {
-        DBUG_ASSERT ((NODE_TYPE (aelems) == N_id), "wrong node type found!");
-        comp = DupNode (aelems);
+        if (NODE_TYPE (aelems) == N_exprs) {
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_id),
+                         "wrong node type found");
+            comp = DupNode (EXPRS_EXPR (aelems));
+        } else {
+            DBUG_ASSERT ((NODE_TYPE (aelems) == N_id), "wrong node type found!");
+            comp = DupNode (aelems);
+        }
     }
 
     DBUG_RETURN (comp);
@@ -2544,34 +2603,34 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
             DBUG_ASSERT ((bound1 != NULL), "bound1 incomplete");
             DBUG_ASSERT ((bound2 != NULL), "bound2 incomplete");
 
-            if ((width == NULL) || (NODE_TYPE (width) == N_exprs)) {
+            if ((width == NULL) || CurrentComponent_IsInt (width)) {
                 /*
                  * width is constant
                  */
-                new_grid = MakeWLgrid (0, dim, 0, GetCurrentComponent_Int (width), FALSE,
+                new_grid = MakeWLgrid (0, dim, 0, CurrentComponent_GetInt (width), FALSE,
                                        NULL, NULL, NULL);
             } else {
                 /*
                  * width is not constant
                  */
                 new_grid
-                  = MakeWLgridVar (0, dim, MakeNum (0), GetCurrentComponent_Node (width),
+                  = MakeWLgridVar (0, dim, MakeNum (0), CurrentComponent_GetNode (width),
                                    NULL, NULL, NULL);
             }
 
-            if ((NODE_TYPE (bound1) == N_exprs) && (NODE_TYPE (bound2) == N_exprs)
-                && ((step == NULL) || (NODE_TYPE (step) == N_exprs))) {
+            if (CurrentComponent_IsInt (bound1) && CurrentComponent_IsInt (bound2)
+                && ((step == NULL) || CurrentComponent_IsInt (step))) {
                 /*
                  * all stride parameters are constant
                  */
 
                 /* build N_WLstride-node of current dimension */
                 new_stride
-                  = MakeWLstride (0, dim, GetCurrentComponent_Int (bound1),
-                                  (shape != NULL) ? MIN (GetCurrentComponent_Int (bound2),
+                  = MakeWLstride (0, dim, CurrentComponent_GetInt (bound1),
+                                  (shape != NULL) ? MIN (CurrentComponent_GetInt (bound2),
                                                          SHPSEG_SHAPE (shape, dim))
-                                                  : GetCurrentComponent_Int (bound2),
-                                  GetCurrentComponent_Int (step), FALSE, new_grid, NULL);
+                                                  : CurrentComponent_GetInt (bound2),
+                                  CurrentComponent_GetInt (step), FALSE, new_grid, NULL);
 
                 /* the PART-information is needed by 'IntersectStrideWithOutline' */
                 WLSTRIDE_PART (new_stride) = parts;
@@ -2584,9 +2643,9 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
 
                 /* build N_WLstrideVar-node of current dimension */
                 new_stride
-                  = MakeWLstrideVar (0, dim, GetCurrentComponent_Node (bound1),
-                                     GetCurrentComponent_Node (bound2),
-                                     GetCurrentComponent_Node (step), new_grid, NULL);
+                  = MakeWLstrideVar (0, dim, CurrentComponent_GetNode (bound1),
+                                     CurrentComponent_GetNode (bound2),
+                                     CurrentComponent_GetNode (step), new_grid, NULL);
             }
 
             if (is_empty) {
