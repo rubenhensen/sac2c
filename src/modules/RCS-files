@@ -16,3 +16,4 @@ readsib.h
 writesib.c
 writesib.h
 libmanager.c
+libmanager.h
