@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.73  1998/04/25 12:58:44  dkr
+ * fixed a bug in DupWLgrid: WLGRID_CODE could be NULL!!
+ *
  * Revision 1.72  1998/04/25 12:44:27  dkr
  * added DupNwith2
  * fixed a bug in DupNwith:
@@ -1142,15 +1145,17 @@ DupWLstride (node *arg_node, node *arg_info)
 node *
 DupWLgrid (node *arg_node, node *arg_info)
 {
-    node *new_node, *code;
+    node *new_node, *code = NULL;
 
     DBUG_ENTER ("DupWLgrid");
 
     /* get pointer to duplicated code!!! */
-    code = NCODE_COPY (WLGRID_CODE (arg_node));
-    if (code == NULL) {
-        /* code has not been duplicated, so we take the original one!! */
-        code = WLGRID_CODE (arg_node);
+    if (WLGRID_CODE (arg_node) != NULL) {
+        code = NCODE_COPY (WLGRID_CODE (arg_node));
+        if (code == NULL) {
+            /* code has not been duplicated, so we take the original one!! */
+            code = WLGRID_CODE (arg_node);
+        }
     }
 
     new_node
