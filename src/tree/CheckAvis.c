@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2003/09/25 18:35:37  dkr
+ * ntype for N_arg and N_vardec are build from oldtypes now
+ *
  * Revision 1.11  2002/10/16 14:33:20  sbs
  * CAVobjdef added.
  *
@@ -75,7 +78,7 @@ static ids *CAVids (ids *arg_ids, node *arg_info);
 /******************************************************************************
  *
  * function:
- *  node *CAVarg(node *arg_node, node *arg_info)
+ *  node *CAVarg( node *arg_node, node *arg_info)
  *
  * description:
  *   Checks arg node for avis attribute. if missing create an initialize
@@ -97,6 +100,17 @@ CAVarg (node *arg_node, node *arg_info)
                      "wrong backreference from avis to arg node!");
     }
 
+    /* create ntype if it is missing */
+    if (AVIS_TYPE (ARG_AVIS (arg_node)) == NULL) {
+        if (ARG_NAME (arg_node) != NULL) {
+            DBUG_PRINT ("CAV", ("missing ntype in arg %s added.", ARG_NAME (arg_node)));
+            DBUG_ASSERT ((ARG_TYPE (arg_node) != NULL), "old type in arg missing");
+            AVIS_TYPE (ARG_AVIS (arg_node)) = TYOldType2Type (ARG_TYPE (arg_node));
+        } else {
+            /* TYOldType2Type() can not handle T_dots yet... 8-(( */
+        }
+    }
+
     if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
     }
@@ -107,7 +121,7 @@ CAVarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CAVvardec(node *arg_node, node *arg_info)
+ *   node *CAVvardec( node *arg_node, node *arg_info)
  *
  * description:
  *   Checks vardec node for avis attribute. if missing create an initialize
@@ -128,6 +142,13 @@ CAVvardec (node *arg_node, node *arg_info)
         /* check for correct backref */
         DBUG_ASSERT ((AVIS_VARDECORARG (VARDEC_AVIS (arg_node)) == arg_node),
                      "wrong backreference from avis to vardec node!");
+    }
+
+    /* create ntype if it is missing */
+    if (AVIS_TYPE (VARDEC_AVIS (arg_node)) == NULL) {
+        DBUG_PRINT ("CAV", ("missing ntype in vardec %s added.", VARDEC_NAME (arg_node)));
+        DBUG_ASSERT ((VARDEC_TYPE (arg_node) != NULL), "old type in vardec missing");
+        AVIS_TYPE (VARDEC_AVIS (arg_node)) = TYOldType2Type (VARDEC_TYPE (arg_node));
     }
 
     if (VARDEC_NEXT (arg_node) != NULL) {
@@ -246,7 +267,7 @@ CAVNwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node* CAVfundef(node *arg_node, node *arg_info)
+ *    node* CAVfundef( node *arg_node, node *arg_info)
  *
  * description:
  *  traverses arg nodes and block in this order.
@@ -273,6 +294,15 @@ CAVfundef (node *arg_node, node *arg_info)
         && (FUNDEF_NEXT (arg_node) != NULL)) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
+
+#if 0 /* TYOldType2Type() can not handle T_dots yet... 8-(( */
+  if (FUNDEF_RET_TYPE( arg_node) == NULL) {
+    DBUG_PRINT( "CAV", ("missing ntype in fundef %s added.",
+                        FUNDEF_NAME( arg_node)));
+    DBUG_ASSERT( (FUNDEF_TYPES( arg_node) != NULL), "old type in arg missing");
+    FUNDEF_RET_TYPE( arg_node) = TYOldType2Type( FUNDEF_TYPES( arg_node));
+  }
+#endif
 
     DBUG_RETURN (arg_node);
 }
