@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.167  1998/06/08 09:50:29  dkr
- * *** empty log message ***
+ * Revision 1.168  1998/06/08 14:17:59  dkr
+ * CHECK_REUSE for new with-loop finished
  *
  * Revision 1.166  1998/06/07 18:39:44  dkr
  * added CHECK_REUSE for new with-loop
@@ -954,6 +954,10 @@ GetIndexIds (ids *index_ids, int dim)
  * description:
  *   builds a ND_ALLOC_ARRAY icm for each RC-ids in 'mm_ids'.
  *
+ *   CAUTION: Do not use this function in conjunction with a
+ *            'ND_CHECK_REUSE_ARRAY' icm.
+ *            Use 'MakeAllocArrayICMs_reuse()' instead!!
+ *
  ******************************************************************************/
 
 node *
@@ -997,10 +1001,70 @@ MakeAllocArrayICMs (ids *mm_ids)
 /******************************************************************************
  *
  * function:
+ *   node *MakeAllocArrayICMs_reuse( ids *mm_ids)
+ *
+ * description:
+ *   builds a 'ND_ALLOC_ARRAY, ND_INC_RC' icm for each RC-ids in 'mm_ids':
+ *
+ *     ND_ALLOC_ARRAY( <type>, mm_ids, 0);
+ *     ND_INC_RC( mm_ids, IDS_RC( mm_ids));
+ *
+ *   The extra 'ND_INC_RC' is needed, if there are any 'ND_CHECK_REUSE_ARRAY'
+ *   ICMs above 'ND_ALLOC_ARRAY' !!!
+ *
+ ******************************************************************************/
+
+node *
+MakeAllocArrayICMs_reuse (ids *mm_ids)
+{
+    node *assigns = NULL;
+    node *assign, *last_assign;
+    simpletype s_type;
+
+    DBUG_ENTER ("MakeAllocArrayICMs_reuse");
+
+    while (mm_ids != NULL) {
+        if (IDS_REFCNT (mm_ids) >= 0) {
+            GET_BASIC_SIMPLETYPE (s_type, IDS_TYPE (mm_ids));
+            assign
+              = MakeAssign (MakeIcm ("ND_ALLOC_ARRAY",
+                                     MakeExprs (MakeId (StringCopy (type_string[s_type]),
+                                                        NULL, ST_regular),
+                                                MakeExprs (MakeId2 (
+                                                             DupOneIds (mm_ids, NULL)),
+                                                           MakeExprs (MakeNum (0),
+                                                                      NULL))),
+                                     NULL),
+                            MakeAssign (MakeIcm ("ND_INC_RC",
+                                                 MakeExprs (MakeId2 (
+                                                              DupOneIds (mm_ids, NULL)),
+                                                            MakeExprs (MakeNum (
+                                                                         IDS_REFCNT (
+                                                                           mm_ids)),
+                                                                       NULL)),
+                                                 NULL),
+                                        NULL));
+
+            if (assigns == NULL) {
+                assigns = assign;
+            } else {
+                ASSIGN_NEXT (last_assign) = assign;
+            }
+            last_assign = assign;
+        }
+        mm_ids = IDS_NEXT (mm_ids);
+    }
+
+    DBUG_RETURN (assigns);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *MakeIncRcICMs( ids *mm_ids)
  *
  * description:
- *   builds a ND_INC_RC icm for each ids in 'mm_ids', which rc is >0.
+ *   Builds a 'ND_INC_RC' icm for each ids in 'mm_ids', which rc is >0.
  *
  ******************************************************************************/
 
@@ -6040,7 +6104,7 @@ COMPSync (node *arg_node, node *arg_info)
     types *type;
     simpletype s_type;
     char *tag, *icm_name, *var_name, *fold_type;
-    int num_args, num_folds, prolog;
+    int num_args, num_folds, prolog, epilog;
 
     DBUG_ENTER ("COMPSync");
 
@@ -6150,41 +6214,72 @@ COMPSync (node *arg_node, node *arg_info)
     SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
 
     /*
-     * now we extract all ICM for memory-management concerning the
+     * now we extract all ICMs for memory-management concerning the
      *  IN/INOUT/OUT-vars of the current sync-region.
      * (they must be moved into the sync-barrier!)
      */
 
     prolog_icms = NULL;
     epilog_icms = NULL;
-
     assign = BLOCK_INSTR (SYNC_REGION (arg_node));
     last_assign = NULL;
+    prolog = 1;
+    epilog = 0;
     while (assign != NULL) {
 
         DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "no assign found");
         instr = ASSIGN_INSTR (assign);
         DBUG_ASSERT ((instr != NULL), "no instr found");
 
-        prolog = -1;
         if (NODE_TYPE (instr) == N_icm) {
-            if (strcmp (ICM_NAME (instr), "ND_ALLOC_ARRAY") == 0) {
-                var_name = ID_NAME (EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (instr))));
-                prolog = 1;
+            var_name = NULL;
+
+            /*
+             * begin of with-loop code found?
+             *  -> prolog finished; skip with-loop code
+             */
+            if ((strcmp (ICM_NAME (instr), "WL_FOLD_BEGIN") == 0)
+                || (strcmp (ICM_NAME (instr), "WL_NONFOLD_BEGIN") == 0)) {
+                DBUG_ASSERT (((prolog == 1) && (epilog == 0)), "wrong ICM order");
+                prolog = 0;
             } else {
-                if ((strcmp (ICM_NAME (instr), "ND_CHECK_REUSE_ARRAY") == 0)
-                    || (strcmp (ICM_NAME (instr), "ND_CHECK_REUSE_HIDDEN") == 0)) {
-                    var_name = ID_NAME (EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (instr))));
-                    prolog = 1;
+
+                /*
+                 * end of with-loop code found?
+                 *  -> start of epilog
+                 */
+                if (strcmp (ICM_NAME (instr), "WL_END") == 0) {
+                    DBUG_ASSERT (((prolog == 0) && (epilog == 0)), "wrong ICM order");
+                    epilog = 1;
                 } else {
-                    if (strcmp (ICM_NAME (instr), "ND_DEC_RC_FREE_ARRAY") == 0) {
-                        var_name = ID_NAME (EXPRS_EXPR (ICM_ARGS (instr)));
-                        prolog = 0;
+
+                    /*
+                     * 'epilog' or 'prolog' activ and ICM for memory management found?
+                     */
+                    if (prolog || epilog) {
+                        if (strcmp (ICM_NAME (instr), "ND_ALLOC_ARRAY") == 0) {
+                            var_name
+                              = ID_NAME (EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (instr))));
+                        } else {
+                            if ((strcmp (ICM_NAME (instr), "ND_CHECK_REUSE_ARRAY") == 0)
+                                || (strcmp (ICM_NAME (instr), "ND_CHECK_REUSE_HIDDEN")
+                                    == 0)) {
+                                var_name
+                                  = ID_NAME (EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (instr))));
+                            } else {
+                                if ((strcmp (ICM_NAME (instr), "ND_DEC_RC_FREE_ARRAY")
+                                     == 0)
+                                    || (strcmp (ICM_NAME (instr), "ND_DEC_RC") == 0)
+                                    || (strcmp (ICM_NAME (instr), "ND_INC_RC") == 0)) {
+                                    var_name = ID_NAME (EXPRS_EXPR (ICM_ARGS (instr)));
+                                }
+                            }
+                        }
                     }
                 }
             }
 
-            if (prolog != -1) {
+            if (var_name != NULL) {
                 if (DFMTestMaskEntry (SYNC_IN (arg_node), var_name, NULL)
                     || DFMTestMaskEntry (SYNC_INOUT (arg_node), var_name, NULL)
                     || DFMTestMaskEntry (SYNC_OUT (arg_node), var_name, NULL)) {
@@ -6196,17 +6291,18 @@ COMPSync (node *arg_node, node *arg_info)
                         assign = ASSIGN_NEXT (last_assign) = FreeNode (assign);
                     }
 
-                    if (prolog == 1) {
+                    if (prolog) {
                         prolog_icms = AppendAssign (prolog_icms, new_icm);
-                    } else {
+                    }
+                    if (epilog) {
                         epilog_icms = AppendAssign (epilog_icms, new_icm);
                     }
                 } else {
                     /*
-                     * we want to test (prolog == -1) later to decide, whether the current
-                     * assignment was removed or not!
+                     * we want to test (var_name == NULL) later to decide, whether the
+                     * current assignment was removed or not!
                      */
-                    prolog = -1;
+                    var_name = NULL;
                 }
             }
         }
@@ -6214,7 +6310,7 @@ COMPSync (node *arg_node, node *arg_info)
         /*
          * if current assignment was left untouched, goto next one
          */
-        if (prolog == -1) {
+        if (var_name == NULL) {
             last_assign = assign;
             assign = ASSIGN_NEXT (assign);
         }
@@ -6347,34 +6443,33 @@ COMPNwith2 (node *arg_node, node *arg_info)
         /*
          * find all arrays, that possibly can be reused.
          */
-#if 0
-    arg_node = GetReuseArrays( arg_node,
-                               INFO_COMP_FUNDEF( arg_info),
-                               wl_ids);
+        arg_node = GetReuseArrays (arg_node, INFO_COMP_FUNDEF (arg_info), wl_ids);
 
-    /*
-     * 'ND_CHECK_REUSE_ARRAY'
-     */
-    vardec = DFMGetMaskEntryDeclSet( NWITH2_REUSE( arg_node));
-    while (vardec != NULL) {
-      assigns = MakeAssign( MakeIcm( "ND_CHECK_REUSE_ARRAY",
-                  MakeExprs( MakeId( StringCopy( VARDEC_OR_ARG_NAME( vardec)),
-                                     NULL, ST_regular),
-                  MakeExprs( MakeId( StringCopy( IDS_NAME( wl_ids)),
-                                     NULL, ST_regular),
-                    NULL)),
+        /*
+         * 'ND_CHECK_REUSE_ARRAY'
+         */
+        vardec = DFMGetMaskEntryDeclSet (NWITH2_REUSE (arg_node));
+        while (vardec != NULL) {
+            assigns
+              = MakeAssign (MakeIcm ("ND_CHECK_REUSE_ARRAY",
+                                     MakeExprs (MakeId (StringCopy (
+                                                          VARDEC_OR_ARG_NAME (vardec)),
+                                                        NULL, ST_regular),
+                                                MakeExprs (MakeId (StringCopy (
+                                                                     IDS_NAME (wl_ids)),
+                                                                   NULL, ST_regular),
+                                                           NULL)),
                                      NULL),
                             assigns);
 
-      vardec = DFMGetMaskEntryDeclSet( NULL);
-    }
-    NWITH2_REUSE( arg_node) = DFMRemoveMask( NWITH2_REUSE( arg_node));
-#endif
+            vardec = DFMGetMaskEntryDeclSet (NULL);
+        }
+        NWITH2_REUSE (arg_node) = DFMRemoveMask (NWITH2_REUSE (arg_node));
 
         /*
          * 'ND_ALLOC_ARRAY'
          */
-        assigns = AppendAssign (assigns, MakeAllocArrayICMs (wl_ids));
+        assigns = AppendAssign (assigns, MakeAllocArrayICMs_reuse (wl_ids));
     } else {
         fundef = INFO_COMP_FUNDEF (arg_info);
 
