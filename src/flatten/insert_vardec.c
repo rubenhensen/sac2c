@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/11/25 15:23:07  khf
+ * more codebrushing
+ *
  * Revision 1.10  2004/11/25 14:14:35  khf
  * SacDevCamp04: COMPILES!
  *
@@ -86,7 +89,6 @@
  * INFO structure
  */
 struct INFO {
-    node *objdefs;
     node *vardecs;
     node *args;
 };
@@ -94,7 +96,6 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_INSVD_OBJDEFS(n) (n->objdefs)
 #define INFO_INSVD_VARDECS(n) (n->vardecs)
 #define INFO_INSVD_ARGS(n) (n->args)
 
@@ -110,7 +111,6 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_INSVD_OBJDEFS (result) = NULL;
     INFO_INSVD_VARDECS (result) = NULL;
     INFO_INSVD_ARGS (result) = NULL;
 
@@ -167,138 +167,6 @@ SearchForNameInArgs (char *name, node *args)
         args = ARG_NEXT (args);
     }
     DBUG_RETURN (args);
-}
-
-/******************************************************************************
- *
- * function:
- *  node * SearchForNameInObjs( char *mod, char *name, node *objs)
- *
- * description:
- *   looks up the name in the objs given. Returns the address of the obj
- *   if found, NULL otherwise. In case no module is specified AND several
- *   objects of the given name (from different classes) are available,
- *   an Error message is issued!
- *
- ******************************************************************************/
-static node *
-SearchForNameInObjs (char *mod, char *name, node *objs)
-{
-    int num_found, num_found_in_main;
-    node *last_found, *last_found_in_main;
-
-    DBUG_ENTER ("SearchForNameInObjs");
-
-    if (mod != NULL) {
-        while ((objs != NULL)
-               && ((strcmp (mod, OBJDEF_MOD (objs)) != 0)
-                   || (strcmp (name, OBJDEF_NAME (objs)) != 0))) {
-            objs = OBJDEF_NEXT (objs);
-        }
-    } else {
-        num_found = 0;
-        last_found = NULL;
-        num_found_in_main = 0;
-        last_found_in_main = NULL;
-        while (objs != NULL) {
-            if (strcmp (name, OBJDEF_NAME (objs)) == 0) {
-                num_found++;
-                last_found = objs;
-                if (strcmp (OBJDEF_MOD (objs), MAIN_MOD_NAME) == 0) {
-                    num_found_in_main++;
-                    last_found_in_main = objs;
-                }
-            }
-            objs = OBJDEF_NEXT (objs);
-        }
-
-        if (num_found_in_main == 1) {
-            objs = last_found_in_main;
-        } else if ((num_found_in_main == 0) && (num_found == 1)) {
-            objs = last_found;
-        } else if (num_found > 1) {
-            ERROR (global.linenum,
-                   ("Identifier '%s` matches more than one global object", name));
-        }
-    }
-
-    DBUG_RETURN (objs);
-}
-
-/******************************************************************************
- *
- * function:
- *  node * SearchForNameLhs( char *mod, char *name,
- *                           node *vardecs, node *args, node *objs)
- *
- * description:
- *   looks up the name (used as a lambda name, i.e., on the LHS of a let)
- *   in the vardecs/args/objs. Returns
- *    - the address of the vardec/arg/obj if found,
- *    - NULL if it is a local identifyer w/o vardec,
- *    - and an Error-Message otherwise.
- *
- ******************************************************************************/
-static node *
-SearchForNameLhs (char *mod, char *name, node *vardecs, node *args, node *objs)
-{
-    DBUG_ENTER ("SearchForNameLhs");
-
-    if (mod != NULL) {
-        ERROR (global.linenum, ("Identifier with module/class prefix '%s:%s` not allowed"
-                                " as local variable name",
-                                mod, name));
-    } else {
-        if (SearchForNameInObjs (mod, name, objs) != NULL) {
-            ERROR (global.linenum, ("Identifier '%s` as local variable name not allowed"
-                                    " as it is identical to the name of a global object",
-                                    name));
-        } else {
-            vardecs = SearchForNameInVardecs (name, vardecs);
-            if (vardecs == NULL) {
-                vardecs = SearchForNameInArgs (name, args);
-            }
-        }
-    }
-
-    DBUG_RETURN (vardecs);
-}
-
-/******************************************************************************
- *
- * function:
- *  node * SearchForNameRhs( char *mod, char *name,
- *                           node *vardecs, node *args, node *objs)
- *
- * description:
- *   looks up the name (used in expression position, i.e., on the RHS of a let)
- *   in the vardecs/args/objs. Returns
- *    - the address of the vardec/arg/obj if found,
- *    - NULL if it is a local identifyer w/o vardec,
- *    - and an Error-Message otherwise.
- *
- ******************************************************************************/
-static node *
-SearchForNameRhs (char *mod, char *name, node *vardecs, node *args, node *objs)
-{
-    DBUG_ENTER ("SearchForNameRhs");
-
-    if (mod != NULL) {
-        vardecs = SearchForNameInObjs (mod, name, objs);
-        if (vardecs == NULL) {
-            ERROR (global.linenum, ("Global object '%s:%s` not available", mod, name));
-        }
-    } else {
-        vardecs = SearchForNameInVardecs (name, vardecs);
-        if (vardecs == NULL) {
-            vardecs = SearchForNameInArgs (name, args);
-            if (vardecs == NULL) {
-                vardecs = SearchForNameInObjs (mod, name, objs);
-            }
-        }
-    }
-
-    DBUG_RETURN (vardecs);
 }
 
 /******************************************************************************
@@ -363,31 +231,22 @@ INSVDlet (node *arg_node, info *arg_info)
 node *
 INSVDid (node *arg_node, info *arg_info)
 {
-    node *vardec, *avis;
+    node *vardec;
 
     DBUG_ENTER ("INSVDid");
 
-    vardec = SearchForNameRhs (ID_SPMOD (arg_node), ID_SPNAME (arg_node),
-                               INFO_INSVD_VARDECS (arg_info), INFO_INSVD_ARGS (arg_info),
-                               INFO_INSVD_OBJDEFS (arg_info));
+    vardec = SearchForNameInVardecs (ID_SPNAME (arg_node), INFO_INSVD_VARDECS (arg_info));
+    if (vardec == NULL) {
+        vardec = SearchForNameInArgs (ID_SPNAME (arg_node), INFO_INSVD_ARGS (arg_info));
+    }
 
     if (vardec == NULL) {
-        /*
-         * The identifyer we are looking for does not have a
-         * vardec yet! So we allocate one and prepand it to vardecs.
-         */
-
-        avis = TBmakeAvis (ILIBstringCopy (ID_SPNAME (arg_node)),
-                           TYmakeAUD (TYmakeSimpleType (T_unknown)));
-        vardec = TBmakeVardec (avis, INFO_INSVD_VARDECS (arg_info));
-
-        INFO_INSVD_VARDECS (arg_info) = vardec;
-
-        DBUG_PRINT ("IVD", ("inserting new vardec (" F_PTR ") for id %s.", vardec,
-                            ID_SPNAME (arg_node)));
+        ERROR (global.linenum, ("Vardec for Identifier with name:%s is not available",
+                                ID_SPNAME (arg_node)));
     }
 
     ID_AVIS (arg_node) = VARDEC_AVIS (vardec);
+    ID_SPNAME (arg_node) = ILIBfree (ID_SPNAME (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -407,9 +266,10 @@ INSVDids (node *arg_node, info *arg_info)
     node *vardec, *avis;
     DBUG_ENTER ("INSVDids");
 
-    vardec = SearchForNameLhs (IDS_SPMOD (arg_node), IDS_SPNAME (arg_node),
-                               INFO_INSVD_VARDECS (arg_info), INFO_INSVD_ARGS (arg_info),
-                               INFO_INSVD_OBJDEFS (arg_info));
+    vardec = SearchForNameInVardecs (ID_SPNAME (arg_node), INFO_INSVD_VARDECS (arg_info));
+    if (vardec == NULL) {
+        vardec = SearchForNameInArgs (ID_SPNAME (arg_node), INFO_INSVD_ARGS (arg_info));
+    }
 
     if (vardec == NULL) {
         /*
@@ -417,14 +277,18 @@ INSVDids (node *arg_node, info *arg_info)
          * vardec yet! So we allocate one and prepand it to vardecs.
          */
 
-        avis = TBmakeAvis (ILIBstringCopy (IDS_SPNAME (arg_node)),
-                           TYmakeAUD (TYmakeSimpleType (T_unknown)));
+        avis
+          = TBmakeAvis (IDS_SPNAME (arg_node), TYmakeAUD (TYmakeSimpleType (T_unknown)));
+
         vardec = TBmakeVardec (avis, INFO_INSVD_VARDECS (arg_info));
 
         INFO_INSVD_VARDECS (arg_info) = vardec;
 
         DBUG_PRINT ("IVD", ("inserting new vardec (" F_PTR ") for id %s.", vardec,
                             IDS_SPNAME (arg_node)));
+        IDS_SPNAME (arg_node) = NULL;
+    } else {
+        IDS_SPNAME (arg_node) = ILIBfree (IDS_SPNAME (arg_node));
     }
 
     IDS_AVIS (arg_node) = VARDEC_AVIS (vardec);
@@ -452,12 +316,12 @@ INSVDwith (node *arg_node, info *arg_info)
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     }
 
-    if (WITH_WITHOP (arg_node) != NULL) {
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    }
-
     if (WITH_CODE (arg_node) != NULL) {
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    }
+
+    if (WITH_WITHOP (arg_node) != NULL) {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -487,6 +351,39 @@ INSVDpart (node *arg_node, info *arg_info)
         PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
     }
 
+    /* at this early point there are no other N_part nodes */
+    DBUG_ASSERT ((PART_NEXT (arg_node) == NULL), "PART_NEXT should not yet exist");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *INSVDcode( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+INSVDcode (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("INSVDcode");
+
+    /* cblock has to be traversed first */
+
+    if (CODE_CBLOCK (arg_node) != NULL) {
+        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+    }
+
+    if (CODE_CEXPRS (arg_node) != NULL) {
+        CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
+    }
+
+    DBUG_ASSERT ((CODE_NEXT (arg_node) == NULL),
+                 "there should be only one code block during inse_vardec!");
+
     DBUG_RETURN (arg_node);
 }
 
@@ -515,8 +412,6 @@ INSVDdoInsertVardec (node *syntax_tree)
 
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  ("InsertVardec can only be called on N_modul nodes"));
-
-    INFO_INSVD_OBJDEFS (info) = MODULE_OBJS (syntax_tree);
 
     TRAVpush (TR_insvd);
     syntax_tree = TRAVdo (syntax_tree, info);
