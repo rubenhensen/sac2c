@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.4  1999/04/12 12:51:42  sbs
+# *** empty log message ***
+#
 # Revision 2.3  1999/03/15 18:55:01  dkr
 # fixed some bugs with CCPROD
 #
@@ -114,7 +117,7 @@ CCPROD       := gcc
 #
 # gcc specific flags:
 #
-gcc_FLAGS := -ansi -Wall
+gcc_FLAGS := -ansi -Wall 
 gcc_PROD_FLAGS := -Wall -O3
 
 #
