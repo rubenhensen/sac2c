@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.18  2000/10/31 23:01:55  dkr
+ * signature of Type2Shpseg() changed
+ *
  * Revision 2.17  2000/10/26 23:10:32  dkr
  * functions GetDim(), Type2Shpseg() instead of TYPES_DIM, TYPES_SHPSEG
  * in order to get correct results even for user-defined types!!
@@ -37,7 +40,7 @@
  * be a N_arg node!!
  *
  * Revision 2.8  1999/09/27 06:43:03  sbs
- * bug in index,.c fixed
+ * bug in index.c fixed
  *
  * Revision 2.7  1999/09/01 19:38:45  sbs
  * some errors concerning the handling of WL generators and the elimination
@@ -1053,7 +1056,7 @@ IdxChangeId (char *varname, types *type)
 
     DBUG_ENTER ("IdxChangeId");
     sprintf (buffer, "%s", varname);
-    tmp_shpseg = Type2Shpseg (type);
+    tmp_shpseg = Type2Shpseg (type, NULL);
     for (i = 0; i < GetDim (type); i++) {
         sprintf (buffer2, "_%d", SHPSEG_SHAPE (tmp_shpseg, i));
         strcat (buffer, buffer2);
@@ -1954,7 +1957,7 @@ IdxArray (node *arg_node, node *arg_info)
         if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
             expr = ARRAY_AELEMS (arg_node);
             type = VINFO_TYPE (INFO_IVE_TRANSFORM_VINFO (arg_info));
-            tmp_shpseg = Type2Shpseg (type);
+            tmp_shpseg = Type2Shpseg (type, NULL);
             idx = EXPRS_EXPR (expr);
             expr = EXPRS_NEXT (expr);
             for (i = 1; i < GetDim (type); i++) {
@@ -2010,7 +2013,7 @@ IdxNum (node *arg_node, node *arg_info)
         DBUG_ASSERT ((NODE_TYPE (INFO_IVE_TRANSFORM_VINFO (arg_info)) == N_vinfo),
                      "corrupted arg_info node in IdxNum!");
         type = VINFO_TYPE (INFO_IVE_TRANSFORM_VINFO (arg_info));
-        tmp_shpseg = Type2Shpseg (type);
+        tmp_shpseg = Type2Shpseg (type, NULL);
         val = NUM_VAL (arg_node);
         dim_array = GetDim (type);
         len_iv = INFO_IVE_NON_SCAL_LEN (arg_info);
