@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.154  2004/11/29 15:01:50  ktr
+# added xml-dir to target clean
+#
 # Revision 3.153  2004/11/29 14:41:57  sah
 # added setlinksign traversal
 #
@@ -332,6 +335,7 @@ deps:
 
 clean:
 	(cd lib/src; $(MAKE_CLEAN) )
+	(cd src/xml; $(MAKE_CLEAN) )
 	(cd src/scanparse; $(MAKE_CLEAN) )
 	(cd src/global; $(MAKE_CLEAN) )
 	(cd src/tree; $(MAKE_CLEAN) )
