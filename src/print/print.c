@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.230  1998/05/19 15:40:41  dkr
+ * fixed a bug in PrintWLgridVar
+ *
  * Revision 1.229  1998/05/17 00:09:34  dkr
  * changed PrintWLgrid, PrintWLgridVar:
  *   WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
@@ -3008,15 +3011,15 @@ PrintWLgridVar (node *arg_node, node *arg_info)
         } else {
             switch (NWITH2_TYPE (INFO_PRINT_NWITH2 (arg_info))) {
             case WO_genarray:
-                fprintf (outfile, "init");
+                fprintf (outfile, "init\n");
                 break;
             case WO_modarray:
-                fprintf (outfile, "copy");
+                fprintf (outfile, "copy\n");
                 break;
             case WO_foldfun:
                 /* here is no break missing! */
             case WO_foldprf:
-                fprintf (outfile, "noop");
+                fprintf (outfile, "noop\n");
                 break;
             default:
                 DBUG_ASSERT ((0), "wrong with-loop type found");
