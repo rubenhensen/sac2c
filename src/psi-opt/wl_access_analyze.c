@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/07/05 15:28:18  bs
+ * DBUG_PRINTs added.
+ *
  * Revision 2.15  2000/07/04 17:50:58  bs
  * WLAAfundef modified (WLAA and TSI lifted on module level).
  *
@@ -127,6 +130,8 @@ WLAccessAnalyze (node *arg_node)
     node *arg_info;
 
     DBUG_ENTER ("WLAccessAnalyze");
+
+    DBUG_PRINT ("WLAA", ("WLAccessAnalyze"));
 
     DBUG_ASSERT (((NODE_TYPE (arg_node) == N_modul)
                   || (NODE_TYPE (arg_node) == N_fundef)),
@@ -479,6 +484,8 @@ WLAAfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WLAAfundef");
 
+    DBUG_PRINT ("WLAA", ("WLAAfundef"));
+
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
         /*
@@ -514,6 +521,8 @@ WLAAblock (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WLAAblock");
 
+    DBUG_PRINT ("WLAA", ("WLAAblock"));
+
     if (BLOCK_INSTR (arg_node) != NULL) {
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
         /*
@@ -541,6 +550,8 @@ node *
 WLAAassign (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WLAAassign");
+
+    DBUG_PRINT ("WLAA", ("WLAAassign"));
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
@@ -577,6 +588,8 @@ WLAAnwith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WLAAnwith");
 
+    DBUG_PRINT ("WLAA", ("WLAAnwith"));
+
     DBUG_ASSERT ((arg_info != NULL), "WLAAnwith called with empty info node!");
     INFO_WLAA_INDEXVAR (arg_info) = IDS_VARDEC (NWITH_VEC (arg_node));
     INFO_WLAA_WOTYPE (arg_info) = NWITH_TYPE (arg_node);
@@ -610,6 +623,8 @@ WLAAncode (node *arg_node, node *arg_info)
     node *old_arg_info;
 
     DBUG_ENTER ("WLAAncode");
+
+    DBUG_PRINT ("WLAA", ("WLAAncode"));
 
     if (NCODE_NEXT (arg_node) != NULL) {
         NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
@@ -680,6 +695,8 @@ WLAAwhile (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WLAAwhile");
 
+    DBUG_PRINT ("WLAA", ("WLAAwhile"));
+
     if (INFO_WLAA_WLLEVEL (arg_info) > 0) {
         old_access = INFO_WLAA_ACCESS (arg_info);
         old_feature = INFO_WLAA_FEATURE (arg_info);
@@ -733,6 +750,8 @@ WLAAdo (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WLAAdo");
 
+    DBUG_PRINT ("WLAA", ("WLAAdo"));
+
     if (INFO_WLAA_WLLEVEL (arg_info) > 0) {
         old_access = INFO_WLAA_ACCESS (arg_info);
         old_feature = INFO_WLAA_FEATURE (arg_info);
@@ -785,6 +804,8 @@ WLAAcond (node *arg_node, node *arg_info)
     access_t *access;
 
     DBUG_ENTER ("WLAAcond");
+
+    DBUG_PRINT ("WLAA", ("WLAAcond"));
 
     if (INFO_WLAA_WLLEVEL (arg_info) > 0) {
         then_arg_info = MakeInfo ();
@@ -886,6 +907,8 @@ WLAAlet (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WLAAlet");
 
+    DBUG_PRINT ("WLAA", ("WLAAlet"));
+
     INFO_WLAA_LASTLETIDS (arg_info) = LET_IDS (arg_node);
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_Nwith)
         INFO_WLAA_WLARRAY (arg_info) = IDS_VARDEC (LET_IDS (arg_node));
@@ -949,6 +972,8 @@ WLAAprf (node *arg_node, node *arg_info)
     node *arg_node_arg1, *arg_node_arg2, *prf_arg;
 
     DBUG_ENTER ("WLAAprf");
+
+    DBUG_PRINT ("WLAA", ("WLAAprf"));
 
     if (INFO_WLAA_WLLEVEL (arg_info) > 0) {
         /*
@@ -1486,6 +1511,8 @@ WLAAap (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WLAAap");
 
+    DBUG_PRINT ("WLAA", ("WLAAap"));
+
     if (INFO_WLAA_WLLEVEL (arg_info) > 0) {
         /*
          * Here, we are beyond a with-loop.
@@ -1535,6 +1562,8 @@ node *
 WLAAid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WLAAid");
+
+    DBUG_PRINT ("WLAA", ("WLAA" id));
 
     if ((INFO_WLAA_WLLEVEL (arg_info) > 0) && (INFO_WLAA_BELOWAP (arg_info))) {
         if (ID_DIM (arg_node) != SCALAR) {
