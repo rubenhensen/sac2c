@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.48  1996/02/11 20:19:01  sbs
+ * Revision 1.49  1997/03/19 13:38:16  cg
+ * Added new data type 'deps' with respective access macros and
+ * creation function
+ *
+ * Revision 1.48  1996/02/11  20:19:01  sbs
  * some minor corrections on stuff concerning N_vinfo,
  * VARDEC_ACTCHN, VARDEC_COLCHN, ARG_ACTCHN, and ARG_COLCHN added.
  *
@@ -347,9 +351,9 @@ extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name
  ***  permanent attributes:
  ***
  ***    char*       NAME
- ***    char*       MOD     (O)
+ ***    char*       MOD         (O)
  ***    statustype  ATTRIB
- ***    ids*        NEXT    (O)
+ ***    ids*        NEXT        (O)
  ***
  ***  temporary attributes:
  ***
@@ -361,11 +365,12 @@ extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name
  ***/
 
 /*
- *  ATTRIB: ST_local      :  local variable or function parameter
+ *  ATTRIB: ST_regular    :  local variable or function parameter
  *          ST_global     :  reference to global object
  *
  *  STATUS: ST_regular    :  from original source code
  *          ST_artificial :  added by obj-handling
+ *
  */
 
 extern ids *MakeIds (char *name, char *mod, statustype status);
@@ -411,6 +416,31 @@ extern strings *MakeStrings (char *string, strings *next);
 
 #define STRINGS_STRING(s) (s->name)
 #define STRINGS_NEXT(s) (s->next)
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  DEPS :
+ ***
+ ***  permanent attributes:
+ ***
+ ***    char*       NAME
+ ***    char*       DECNAME
+ ***    char*       LIBNAME
+ ***    statustype  STATUS
+ ***    deps*       SUB        (O)
+ ***    deps*       NEXT       (O)
+ ***/
+
+extern deps *MakeDeps (char *name, char *decname, char *libname, statustype status,
+                       deps *sub, deps *next);
+
+#define DEPS_NAME(d) (d->name)
+#define DEPS_DECNAME(d) (d->decname)
+#define DEPS_LIBNAME(d) (d->libname)
+#define DEPS_STATUS(d) (d->status)
+#define DEPS_SUB(d) (d->sub)
+#define DEPS_NEXT(d) (d->next)
 
 /*--------------------------------------------------------------------------*/
 
@@ -501,19 +531,22 @@ extern node *MakeModul (char *name, file_type filetype, node *imports, node *typ
  ***
  ***  sons:
  ***
- ***    node*  IMPORTS  (O)  (N_implist)
- ***    node*  OWN      (O)  (N_explist)
+ ***    node*  IMPORTS    (O)  (N_implist)
+ ***    node*  OWN        (O)  (N_explist)
  ***
  ***  permanent attributes:
  ***
  ***    char*  NAME
- ***    char*  PREFIX   (O)
+ ***    deps*  LINKWITH   (O)
+ ***    int    ISEXTERNAL
  ***/
 
-extern node *MakeModdec (char *name, char *prefix, node *imports, node *exports);
+extern node *MakeModdec (char *name, deps *linkwith, int isexternal, node *imports,
+                         node *exports);
 
 #define MODDEC_NAME(n) (n->info.fun_name.id)
-#define MODDEC_PREFIX(n) (n->info.fun_name.id_mod)
+#define MODDEC_LINKWITH(n) ((deps *)n->info.fun_name.id_mod)
+#define MODDEC_ISEXTERNAL(n) (n->refcnt)
 #define MODDEC_IMPORTS(n) (n->node[1])
 #define MODDEC_OWN(n) (n->node[0])
 
@@ -530,13 +563,16 @@ extern node *MakeModdec (char *name, char *prefix, node *imports, node *exports)
  ***  permanent attributes:
  ***
  ***    char*  NAME
- ***    char*  PREFIX   (O)
+ ***    deps*  LINKWITH (O)
+ ***    int    ISEXTERNAL
  ***/
 
-extern node *MakeClassdec (char *name, char *prefix, node *imports, node *exports);
+extern node *MakeClassdec (char *name, deps *linkwith, int isexternal, node *imports,
+                           node *exports);
 
 #define CLASSDEC_NAME(n) (n->info.fun_name.id)
-#define CLASSDEC_PREFIX(n) (n->info.fun_name.id_mod)
+#define CLASSDEC_LINKWITH(n) ((deps *)n->info.fun_name.id_mod)
+#define CLASSDEC_ISEXTERNAL(n) (n->refcnt)
 #define CLASSDEC_IMPORTS(n) (n->node[1])
 #define CLASSDEC_OWN(n) (n->node[0])
 
@@ -556,6 +592,7 @@ extern node *MakeClassdec (char *name, char *prefix, node *imports, node *export
  ***
  ***    char*     NAME
  ***    int       LINKSTYLE
+ ***    deps*     LINKWITH
  ***/
 
 /*
@@ -563,13 +600,15 @@ extern node *MakeClassdec (char *name, char *prefix, node *imports, node *export
  *  LINKSTYLE corresponds to the global variable linkstyle.
  */
 
-extern node *MakeSib (char *name, int linkstyle, node *types, node *objs, node *funs);
+extern node *MakeSib (char *name, int linkstyle, deps *linkwith, node *types, node *objs,
+                      node *funs);
 
 #define SIB_TYPES(n) (n->node[0])
 #define SIB_OBJS(n) (n->node[1])
 #define SIB_FUNS(n) (n->node[2])
 #define SIB_LINKSTYLE(n) (n->varno)
-#define SIB_NAME(n) (n->info.id)
+#define SIB_NAME(n) (n->info.fun_name.id)
+#define SIB_LINKWITH(n) ((deps *)n->info.fun_name.id_mod)
 #define SIB_NEXT(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
@@ -1419,12 +1458,12 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***
  ***  temporary attributes:
  ***
- ***    node*  VARDEC    (N_vardec)  (typecheck -> )
- ***    node*  OBJDEF    (N_objdef)  (typecheck -> )
- ***                                 ( -> analysis -> )
- ***    int    REFCNT                (refcount -> compile -> )
- ***    int    MAKEUNIQUE            (precompile -> compile -> )
- ***    node*  DEF                   (Unroll !, Unswitch !)
+ ***    node*  VARDEC    (N_vardec/N_arg)  (typecheck -> )
+ ***    node*  OBJDEF    (N_objdef)        (typecheck -> )
+ ***                                       ( -> analysis -> )
+ ***    int    REFCNT                      (refcount -> compile -> )
+ ***    int    MAKEUNIQUE                  (precompile -> compile -> )
+ ***    node*  DEF                         (Unroll !, Unswitch !)
  ***/
 
 /*
@@ -1435,6 +1474,8 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  *
  *  ATTRIB:  ST_regular     ordinary argument
  *                          in a function application or return-statement
+ *           ST_global      global object
+ *           ST_readonly_reference/
  *           ST_reference   argument in a function application which
  *                          is passed as a reference parameter or
  *                          additional argument in a return-statement

@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.16  1996/02/11 20:19:01  sbs
+ * Revision 1.17  1997/03/19 13:38:16  cg
+ * Added new data type 'deps' with respective access macros and
+ * creation function
+ *
+ * Revision 1.16  1996/02/11  20:19:01  sbs
  * some minor corrections on stuff concerning N_vinfo,
  * VARDEC_ACTCHN, VARDEC_COLCHN, ARG_ACTCHN, and ARG_COLCHN added.
  *
@@ -196,7 +200,7 @@ MakeIds (char *name, char *mod, statustype status)
     IDS_DEF (tmp) = NULL;
     IDS_USE (tmp) = NULL;
     IDS_STATUS (tmp) = status;
-    IDS_ATTRIB (tmp) = (mod == NULL) ? ST_local : ST_global;
+    IDS_ATTRIB (tmp) = (mod == NULL) ? ST_regular : ST_global;
 
     DBUG_RETURN (tmp);
 }
@@ -210,6 +214,24 @@ MakeNums (int num, nums *next)
     ALLOCATE (tmp, nums);
     NUMS_NUM (tmp) = num;
     NUMS_NEXT (tmp) = next;
+
+    DBUG_RETURN (tmp);
+}
+
+deps *
+MakeDeps (char *name, char *decname, char *libname, statustype status, deps *sub,
+          deps *next)
+{
+    deps *tmp;
+    DBUG_ENTER ("MakeDeps");
+
+    ALLOCATE (tmp, deps);
+    DEPS_NAME (tmp) = name;
+    DEPS_DECNAME (tmp) = decname;
+    DEPS_LIBNAME (tmp) = libname;
+    DEPS_STATUS (tmp) = status;
+    DEPS_SUB (tmp) = sub;
+    DEPS_NEXT (tmp) = next;
 
     DBUG_RETURN (tmp);
 }
@@ -288,7 +310,7 @@ MakeModul (char *name, file_type filetype, node *imports, node *types, node *obj
 }
 
 node *
-MakeModdec (char *name, char *prefix, node *imports, node *exports)
+MakeModdec (char *name, deps *linkwith, int isexternal, node *imports, node *exports)
 {
     node *tmp;
     DBUG_ENTER ("MakeModdec");
@@ -298,7 +320,8 @@ MakeModdec (char *name, char *prefix, node *imports, node *exports)
     NODE_NNODE (tmp) = 2;
 
     MODDEC_NAME (tmp) = name;
-    MODDEC_PREFIX (tmp) = prefix;
+    MODDEC_LINKWITH (tmp) = linkwith;
+    MODDEC_ISEXTERNAL (tmp) = isexternal;
     MODDEC_IMPORTS (tmp) = imports;
     MODDEC_OWN (tmp) = exports;
 
@@ -309,7 +332,7 @@ MakeModdec (char *name, char *prefix, node *imports, node *exports)
 }
 
 node *
-MakeClassdec (char *name, char *prefix, node *imports, node *exports)
+MakeClassdec (char *name, deps *linkwith, int isexternal, node *imports, node *exports)
 {
     node *tmp;
     DBUG_ENTER ("MakeClassdec");
@@ -319,7 +342,8 @@ MakeClassdec (char *name, char *prefix, node *imports, node *exports)
     NODE_NNODE (tmp) = 2;
 
     CLASSDEC_NAME (tmp) = name;
-    CLASSDEC_PREFIX (tmp) = prefix;
+    CLASSDEC_LINKWITH (tmp) = linkwith;
+    CLASSDEC_ISEXTERNAL (tmp) = isexternal;
     CLASSDEC_IMPORTS (tmp) = imports;
     CLASSDEC_OWN (tmp) = exports;
 
@@ -330,7 +354,7 @@ MakeClassdec (char *name, char *prefix, node *imports, node *exports)
 }
 
 node *
-MakeSib (char *name, int linkstyle, node *types, node *objs, node *funs)
+MakeSib (char *name, int linkstyle, deps *linkwith, node *types, node *objs, node *funs)
 {
     node *tmp;
     DBUG_ENTER ("MakeSib");
@@ -344,6 +368,7 @@ MakeSib (char *name, int linkstyle, node *types, node *objs, node *funs)
     SIB_OBJS (tmp) = objs;
     SIB_NAME (tmp) = name;
     SIB_LINKSTYLE (tmp) = linkstyle;
+    SIB_LINKWITH (tmp) = linkwith;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
