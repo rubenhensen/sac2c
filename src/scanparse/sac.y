@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.105  1996/01/05 14:35:17  cg
+ * Revision 1.106  1996/01/21 13:57:30  cg
+ * Macro GEN_NODE not longer used because it fails to initialize
+ * the given structure
+ *
+ * Revision 1.105  1996/01/05  14:35:17  cg
  * The return statement is no longer referenced by the
  * corresponding genarray, modarray, foldfun, or foldprf node
  *
@@ -2500,29 +2504,24 @@ triop : ROTATE
        ;
 
 ids:   id COMMA ids 
-        { $$=GEN_NODE(ids);
-          $$->id=$1;
-          $$->next=$3;
-          $$->node=NULL;
+        { 
+          $$=MakeIds($1, NULL, ST_regular);
+          IDS_NEXT($$)=$3;
         }
      | id 
-        {$$=GEN_NODE(ids); 
-         $$->id=$1; 
-         $$->next=NULL;
-         $$->node=NULL;
+        {
+          $$=MakeIds($1, NULL, ST_regular);
         }
      ;
 
 nums:   NUM COMMA nums 
-         { $$=GEN_NODE(nums);
-           $$->num=$1;
-           $$->next=$3;
-           DBUG_PRINT("GENTREE",("nums: %d", $$->num));
-         }
+        {
+          $$=MakeNums($1, $3);
+          DBUG_PRINT("GENTREE",("nums: %d", $$->num));
+        }
       | NUM 
-         { $$=GEN_NODE(nums);
-           $$->num=$1;
-           $$->next=NULL;
+         { 
+           $$=MakeNums($1, NULL);
            DBUG_PRINT("GENTREE",("nums: %d", $$->num));
          }
        ; 
@@ -3064,7 +3063,7 @@ node *GenVardec( types *type, ids *ids_p)
      if (vardec_p)
         tmp->nnode=1;
      vardec_p=tmp;
-     type_p=GEN_NODE(types);
+     type_p=MakeType(T_int, 0, NULL, NULL, NULL);
      type_p=(types*) memcpy((void*)type_p, (void*)type, sizeof(types)) ;
      vardec_p->info.types=type_p;
      vardec_p->info.types->id=ids_p->id;
