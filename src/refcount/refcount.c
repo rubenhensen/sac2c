@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.19  2000/05/24 18:58:21  dkr
+ * DBUG_ASSERT in RCblock added (BLOCK_INSTR must be != NULL)
+ *
  * Revision 2.18  2000/05/24 13:31:03  nmw
  * (jhs) Added workaround for BLOCK_INSTR == NULL
  *
@@ -668,9 +671,10 @@ RCblock (node *arg_node, node *arg_info)
     if (BLOCK_VARDEC (arg_node) != NULL) {
         BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
     }
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
-    }
+
+    DBUG_ASSERT ((BLOCK_INSTR (arg_node) != NULL),
+                 "first instruction of block is NULL (should be a N_empty node)");
+    BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
