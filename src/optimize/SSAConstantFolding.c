@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.41  2003/04/07 14:22:01  sbs
+ * F_drop_SxV and F_take_SxV mapped on the general versions (which have been extended
+ * accordingly 8-)
+ *
+ * COCat used for F_cat_VxV now.
+ *
  * Revision 1.40  2003/03/18 16:30:34  sah
  * added new prf cat_VxV, take_SxV, drop_SxV
  *
@@ -2337,6 +2343,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         }
         break;
 
+    case F_take_SxV:
     case F_take:
         if
             TWO_CONST_ARG (arg_co)
@@ -2352,6 +2359,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             }
         break;
 
+    case F_drop_SxV:
     case F_drop:
         if
             TWO_CONST_ARG (arg_co)
@@ -2367,11 +2375,6 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             }
         break;
 
-    case F_drop_SxV:
-    case F_take_SxV:
-        /* coming soon ;) */
-        break;
-
         /* three-argument functions */
     case F_modarray:
         if
@@ -2385,9 +2388,15 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         }
         break;
 
-    case F_cat:
     case F_cat_VxV:
-        /* not implemeted yet */
+        if
+            TWO_CONST_ARG (arg_co)
+            {
+                new_co = COCat (arg_co[0], arg_co[1]);
+            }
+        break;
+    case F_cat:
+        /* not implemented yet */
         break;
 
     case F_rotate:
