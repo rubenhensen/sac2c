@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.30  1995/05/30 11:59:06  hw
+ * Revision 1.31  1995/05/31 13:21:11  hw
+ * changed flatten of with-loop and of N_foldfun
+ *
+ * Revision 1.30  1995/05/30  11:59:06  hw
  * bug fixed in FltnExprs
  *
  * Revision 1.29  1995/05/30  06:45:57  hw
@@ -486,14 +489,15 @@ FltnExprs (node *arg_node, node *arg_info)
         abstract = ((tmp_arg->nodetype == N_num) || (tmp_arg->nodetype == N_float)
                     || (tmp_arg->nodetype == N_bool) || (tmp_arg->nodetype == N_str)
                     || (tmp_arg->nodetype == N_array) || (tmp_arg->nodetype == N_ap)
-                    || (tmp_arg->nodetype == N_prf));
+                    || (tmp_arg->nodetype == N_prf) || (tmp_arg->nodetype == N_with));
         break;
     case AP:
         abstract = ((tmp_arg->nodetype == N_array) || (tmp_arg->nodetype == N_prf)
-                    || (tmp_arg->nodetype == N_ap));
+                    || (tmp_arg->nodetype == N_ap) || (tmp_arg->nodetype == N_with));
         break;
     case NORMAL:
-        abstract = ((tmp_arg->nodetype == N_ap) || (tmp_arg->nodetype == N_prf));
+        abstract = ((tmp_arg->nodetype == N_ap) || (tmp_arg->nodetype == N_prf)
+                    || (tmp_arg->nodetype == N_with));
         break;
     default:
         DBUG_ASSERT (0, "wrong tag ");
@@ -752,7 +756,6 @@ FltnWhile (node *arg_node, node *arg_info)
 node *
 FltnWith (node *arg_node, node *arg_info)
 {
-    node *info_node, *tmp;
     local_stack *tmp_tos;
 
     DBUG_ENTER ("FltnWith");
@@ -760,21 +763,11 @@ FltnWith (node *arg_node, node *arg_info)
     with_level += 1;
     tmp_tos = tos; /* store tos */
     DBUG_PRINT ("RENAME", ("store tos " P_FORMAT, tos));
+
     arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* traverse generator */
 
-#if 0   
-   info_node=MakeNode(N_info);
-   info_node->nnode=1;
-   if(N_modarray == arg_node->node[1]->nodetype)
-      info_node->node[0]=arg_info->node[0];
-         
-   arg_node->node[1]=Trav(arg_node->node[1], info_node); /* traverse  body */
-
-   if(N_modarray == arg_node->node[1]->nodetype)
-      arg_info->node[0]=info_node->node[0];
-#endif
-
-    arg_node->node[1] = Trav (arg_node->node[1], arg_info); /* traverse  body */
+    /* traverse  N_genarray, N_modarray, N_foldfun or N_foldprf and body */
+    arg_node->node[1] = Trav (arg_node->node[1], arg_info);
 
     with_level -= 1; /* now decrease it */
 
@@ -1268,7 +1261,7 @@ FltnArgs (node *arg_node, node *arg_info)
  *  global vars   :
  *  internal funs :
  *  external funs : Trav
- *  macros        : DBUG, NULL
+ *  macros        : DBUG, NULL, AP
  *
  *  remarks       : if the argument of modarray is a N_prf or N_ap
  *                  node a temporary N_exprs node will be created and
@@ -1299,7 +1292,23 @@ FltnCon (node *arg_node, node *arg_info)
         break;
     }
     case N_foldfun: {
-        arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+        int old_tag = arg_info->info.cint;
+        node *exprs = MakeNode (N_exprs);
+
+        /* set new tag for FltnExprs
+         * Flatten arg_node->node[0] (neutral element) like an application.
+         * (generate new variable if arg_node->node[0]->node[0]->nodetype
+         *  is N_ap, N_prf , N_with or N_array)
+         */
+        arg_info->info.cint = AP;
+        exprs->node[0] = arg_node->node[1]; /* exprs is only used temporary to
+                                             * call FltnExprs
+                                             */
+        exprs->nnode = 1;
+        exprs = Trav (exprs, arg_info); /* call FltnExprs */
+        arg_node->node[1] = exprs->node[0];
+        FREE (exprs);
+        arg_info->info.cint = old_tag;
         arg_node->node[0] = Trav (arg_node->node[0], info_node);
         break;
     }
