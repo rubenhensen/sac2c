@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.139  2004/11/14 13:42:15  ktr
+# added src/refcount/reusebranching.o
+#
 # Revision 3.138  2004/11/09 22:18:44  ktr
 # added src/refcount/explicitcopy.o
 #
@@ -446,7 +449,8 @@ REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
           src/refcount/reuse.o src/refcount/aliasanalysis.o \
           src/refcount/staticreuse.o src/refcount/reuseelimination.o \
           src/refcount/interfaceanalysis.o src/refcount/loopreuseopt.o \
-          src/refcount/datareuse.o src/refcount/explicitcopy.o
+          src/refcount/datareuse.o src/refcount/explicitcopy.o \
+          src/refcount/reusebranching.o
 REFCOUNT_OLD=
 
 CONCURRENT=
