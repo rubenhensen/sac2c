@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/29 01:37:57  dkr
+ * signature of InlineSingleApplication() modified
+ *
  * Revision 3.4  2001/03/27 13:47:38  dkr
  * CreateFold(): 'inl_fun--' removed; InlineSingleApplication no longer
  * increments 'inl_fun'
@@ -320,7 +323,7 @@ CreateFold (node *assignn, node *index)
      * compilation process.
      */
 
-    assigns = InlineSingleApplication (ASSIGN_INSTR (assigns), fundef);
+    assigns = InlineSingleApplication (ASSIGN_INSTR (assigns), fundef, 0);
 
     /*
      * Now, we prepand it to assignn:
