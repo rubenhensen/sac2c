@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2004/10/17 17:04:05  sah
+  the generated code now no more
+  contains sac2c specific types or enums
+
   Revision 1.4  2004/09/27 13:18:12  sah
   implemented new serialization scheme
 
@@ -142,14 +146,14 @@ version="1.0">
   <xsl:value-of select="@name"/>
   <xsl:value-of select="' node&quot;));'" />
   <!-- print start of block -->
-  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, SHLPMakeNode( '" />
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, SHLPMakeNode( %d, %d, \&quot;%s\&quot; &quot;, '" />
   <!-- generate nodetype argument -->
   <xsl:call-template name="name-to-nodeenum">
     <xsl:with-param name="name">
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="', %d, \&quot;%s\&quot; &quot;, NODE_LINE( arg_node), NODE_FILE( arg_node));'" /> 
+  <xsl:value-of select="', NODE_LINE( arg_node), NODE_FILE( arg_node));'" /> 
   <!-- print generators of all arguments -->
   <xsl:apply-templates select="." mode="gen-values"/>
   <!-- print end of block -->
