@@ -1,4 +1,8 @@
 /*
+ * $Log$
+ * Revision 1.4  2000/07/12 10:14:10  nmw
+ * RCS-header added
+ *
  *
  */
 

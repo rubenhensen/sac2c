@@ -1,4 +1,9 @@
 /*
+ * $Log$
+ * Revision 1.4  2000/07/12 10:15:44  nmw
+ * RCS-header added
+ *
+ *
  *  makros for the SAC <-> Interface wrapper functions
  *
  */

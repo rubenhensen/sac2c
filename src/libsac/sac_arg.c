@@ -1,4 +1,10 @@
 /*
+ * $Log$
+ * Revision 1.6  2000/07/12 10:12:23  nmw
+ * RCS-header added
+ *
+ *
+ *
  * implementation of abstract datatype SAC_arg
  */
 
@@ -284,10 +290,8 @@ SAC_CI_FreeSACArgDirectory ()
     do {
         for (i = 0; i < in_use_directory->act_slot; i++) {
             counter++;
-            printf ("free %d.\n", counter);
             SAC_CI_FreeSACArg ((in_use_directory->vars)[i]);
         }
         in_use_directory = in_use_directory->next;
     } while (in_use_directory != NULL);
-    printf ("Freed %d SAC_args!\n", counter);
 }

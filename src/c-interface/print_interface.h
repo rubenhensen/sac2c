@@ -1,3 +1,13 @@
+/*
+ * $Log$
+ * Revision 1.2  2000/07/12 10:07:45  nmw
+ * RCS-header added
+ *
+ *
+ *
+ *
+ */
+
 #ifndef _sac_print_interface_h
 #define _sac_print_interface_h
 
