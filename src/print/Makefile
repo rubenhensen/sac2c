@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.15  2004/11/26 12:33:49  jhb
+# removed INC
+#
 # Revision 3.14  2004/08/06 10:44:12  skt
 # added path to multithread
 #
@@ -64,10 +67,6 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-
-INCS = -I../global -I../tree -I../compile -I../modules -I../refcount \
-       -I../concurrent -I../psi-opt -I../optimize -I../typecheck \
-       -I../c-interface -I../../inc -I../constants -I../multithread
 
 all: print.o convert.o
 
