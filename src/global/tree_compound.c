@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/09/01 12:31:35  sbs
+ * IsConstantArray now is able to deal with NULL-args!
+ *
  * Revision 2.9  1999/07/08 14:59:12  sbs
  * Array2BoolVec added
  *
@@ -1063,31 +1066,35 @@ IsConstantArray (node *array, nodetype type)
     /*
      *   ... and here the modified version:
      */
-    if (NODE_TYPE (array) == N_array) {
-        array = ARRAY_AELEMS (array);
-        if (array == NULL) {
-            /*
-             *  Attention: here we've got an empty array! Since this array is constant
-             *  elems must be !=0 however the number of elements is 0 !!
-             */
-            elems = -1;
-        }
-        while (array != NULL) {
-            if (NODE_TYPE (EXPRS_EXPR (array)) == N_num) {
+    if (array != NULL) {
+        if (NODE_TYPE (array) == N_array) {
+            array = ARRAY_AELEMS (array);
+            if (array == NULL) {
                 /*
-                 *  This time only integer arrays have to be checked if they are constant.
+                 *  Attention: here we've got an empty array! Since this array is constant
+                 *  elems must be !=0 however the number of elements is 0 !!
                  */
-                array = EXPRS_NEXT (array);
-                elems++;
-            } else {
-                elems = 0;
-                break;
+                elems = -1;
             }
-        }
-    } else if (NODE_TYPE (array) == N_id) {
-        elems = ID_VECLEN (array);
-        if (elems == 0)
-            elems = ID_ISCONST (array);
+            while (array != NULL) {
+                if (NODE_TYPE (EXPRS_EXPR (array)) == N_num) {
+                    /*
+                     *  This time only integer arrays have to be checked if they are
+                     * constant.
+                     */
+                    array = EXPRS_NEXT (array);
+                    elems++;
+                } else {
+                    elems = 0;
+                    break;
+                }
+            }
+        } else if (NODE_TYPE (array) == N_id) {
+            elems = ID_VECLEN (array);
+            if (elems == 0)
+                elems = ID_ISCONST (array);
+        } else
+            elems = 0;
     } else
         elems = 0;
 
