@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2004/11/22 21:35:54  khf
+ * codebrushing part2
+ *
  * Revision 3.32  2004/11/22 17:04:55  khf
  * the big 2004 codebrushing session (part1)
  *
@@ -134,13 +137,13 @@ extern nodelist *DUPdupNodelist (nodelist *arg_nl);
 /*
  * Functions for duplicating N_id/ids and converting into ids/N_id
  */
-extern node *DUPdupIdsId (ids *arg_ids);
+extern node *DUPdupIdsId (node *arg_ids);
 extern ids *DUPdupIdIds (node *arg_id);
 
 /*
  * Functions for duplicating N_id/ids and enabling NT_TAG
  */
-extern node *DUPdupIdsIdNt (ids *arg_ids);
+extern node *DUPdupIdsIdNt (node *arg_ids);
 extern node *DUPdupIdNt (node *arg_id);
 extern node *DUPdupNodeNt (node *arg_node);
 extern node *DUPdupExprsNt (node *exprs);
@@ -171,6 +174,7 @@ extern node *DUPtypedef (node *arg_node, info *arg_info);
 extern node *DUPobjdef (node *arg_node, info *arg_info);
 extern node *DUPvardec (node *arg_node, info *arg_info);
 extern node *DUParg (node *arg_node, info *arg_info);
+extern node *DUPret (node *arg_node, info *arg_info);
 extern node *DUPlet (node *arg_node, info *arg_info);
 extern node *DUPids (node *arg_node, info *arg_info);
 extern node *DUParray (node *arg_node, info *arg_info);
@@ -199,6 +203,7 @@ extern node *DUPavis (node *arg_node, info *arg_info);
 extern node *DUPssastack (node *arg_node, info *arg_info);
 extern node *DUPssacnt (node *arg_node, info *arg_info);
 extern node *DUPfuncond (node *arg_node, info *arg_info);
+extern node *DUPcseinfo (node *arg_node, info *arg_info);
 
 /* frontend with-loop */
 extern node *DUPwith (node *arg_node, info *arg_info);

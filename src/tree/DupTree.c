@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.117  2004/11/22 21:35:54  khf
+ * codebrushing part2
+ *
  * Revision 3.116  2004/11/22 17:04:55  khf
  * the big 2004 codebrushing session (part1)
  *
@@ -630,57 +633,6 @@ DupDfmask (dfmask_t *mask, info *arg_info)
 /******************************************************************************
  *
  * Function:
- *   ids *DupIds( ids *arg_ids, info *arg_info)
- *
- * Remark:
- *   'arg_info' might be NULL, because this function is not only used by
- *   the traversal mechanism but also by Dup...Ids()!
- *
- ******************************************************************************/
-
-static ids *
-DupIds (ids *arg_ids, info *arg_info)
-{
-    ids *new_ids;
-    char *new_name;
-
-    DBUG_ENTER ("DupIds");
-
-    if (arg_ids != NULL) {
-        lut_t *lut = (arg_info != NULL) ? INFO_DUP_LUT (arg_info) : NULL;
-
-        new_name = LUTsearchInLutSs (lut, IDS_NAME (arg_ids));
-        new_ids = TBmakeIds (
-          TBmakeAvis (StringCopy (new_name), TYcopyType (IDS_NTYPE (arg_ids))));
-
-        IDS_VARDEC (new_ids) = LUTsearchInLutPp (lut, IDS_VARDEC (arg_ids));
-        IDS_USE (new_ids) = IDS_USE (arg_ids);
-
-        IDS_ATTRIB (new_ids) = IDS_ATTRIB (arg_ids);
-
-        /* set corresponding AVIS node backreference */
-        if (IDS_VARDEC (arg_ids) != NULL) {
-            IDS_AVIS (new_ids) = VARDEC_OR_ARG_AVIS (IDS_VARDEC (new_ids));
-        } else {
-            IDS_AVIS (new_ids) = NULL;
-        }
-
-        IDS_NEXT (new_ids) = DupIds (IDS_NEXT (arg_ids), arg_info);
-
-        if (arg_info != NULL) {
-            INFO_DUP_LUT (arg_info)
-              = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), arg_ids, new_ids);
-        }
-    } else {
-        new_ids = NULL;
-    }
-
-    DBUG_RETURN (new_ids);
-}
-
-/******************************************************************************
- *
- * Function:
  *   shpseg *DupShpseg( shpseg *arg_shpseg, info *arg_info)
  *
  * Remark:
@@ -843,7 +795,7 @@ DUPvinfo (node *arg_node, info *arg_info)
                                 (VINFO_SHAPE (arg_node) == NULL
                                    ? NULL
                                    : SHcopyShape (VINFO_SHAPE (arg_node))),
-                                rest, VINFO_DOLLAR (rest));
+                                VINFO_DOLLAR (rest), rest);
     }
     VINFO_VARDEC (new_node) = VINFO_VARDEC (arg_node);
 
@@ -986,31 +938,12 @@ DUPsetwl (node *arg_node, info *arg_info)
 node *
 DUPid (node *arg_node, info *arg_info)
 {
-    node *new_node;
-    char *new_name;
+    node *new_node, *vardec;
 
     DBUG_ENTER ("DUPid");
 
-    new_name = SearchInLUT_SS (INFO_DUP_LUT (arg_info), ID_NAME (arg_node));
-    new_node = MakeId (StringCopy (new_name), StringCopy (ID_MOD (arg_node)),
-                       ID_STATUS (arg_node));
-
-    new_node = TBmakeId (DUPavis (ID_AVIS (arg_node)));
-
-    /* ID_OBJDEF and ID_VARDEC are mapped to the same data object */
-    ID_VARDEC (new_node) = SearchInLUT_PP (INFO_DUP_LUT (arg_info), ID_VARDEC (arg_node));
-
-    ID_DEF (new_node) = SearchInLUT_PP (INFO_DUP_LUT (arg_info), ID_DEF (arg_node));
-
-    ID_FLAGS (new_node) = ID_FLAGS (arg_node);
-#ifndef DBUG_OFF
-    ID_DBUG_FLAGS (new_node) = ID_DBUG_FLAGS (arg_node);
-#endif
-
-    ID_REFCNT (new_node) = ID_REFCNT (arg_node);
-    ID_NAIVE_REFCNT (new_node) = ID_NAIVE_REFCNT (arg_node);
-
-    ID_AVIS (new_node) = SearchInLUT_PP (INFO_DUP_LUT (arg_info), ID_AVIS (arg_node));
+    vardec = DUPTRAV (ID_VARDEC (arg_node));
+    new_node = TBmakeId (VARDEC_AVIS (vardec));
 
     if (INFO_DUP_TYPE (arg_info) == DUP_WLF) {
         /* Withloop folding (wlf) needs this. */
@@ -1032,8 +965,8 @@ DUPid (node *arg_node, info *arg_info)
     ID_VECLEN (new_node) = ID_VECLEN (arg_node);
     if (ID_ISCONST (new_node)) {
         ID_CONSTVEC (new_node)
-          = CopyConstVec (ID_VECTYPE (arg_node), ID_VECLEN (arg_node),
-                          ID_CONSTVEC (arg_node));
+          = TCcopyConstVec (ID_VECTYPE (arg_node), ID_VECLEN (arg_node),
+                            ID_CONSTVEC (arg_node));
     } else {
         ID_CONSTVEC (new_node) = NULL;
     }
@@ -1050,14 +983,14 @@ DUPid (node *arg_node, info *arg_info)
 /******************************************************************************/
 
 node *
-DupCast (node *arg_node, info *arg_info)
+DUPcast (node *arg_node, info *arg_info)
 {
     node *new_node;
 
-    DBUG_ENTER ("DupCast");
+    DBUG_ENTER ("DUPcast");
 
-    new_node = MakeCast (DUPTRAV (CAST_EXPR (arg_node)),
-                         DupTypes_ (CAST_TYPE (arg_node), arg_info));
+    new_node
+      = MakeCast (TYcopyType (CAST_NTYPE (arg_node)), DUPTRAV (CAST_EXPR (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1288,6 +1221,23 @@ DUParg (node *arg_node, info *arg_info)
 
     /* correct backreference */
     AVIS_VARDECORARG (ARG_AVIS (new_node)) = new_node;
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPret (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPret");
+
+    new_node
+      = TBmakeRet (TYcopyType (RET_TYPE (arg_node)), CONTRAV (RET_NEXT (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1585,7 +1535,7 @@ DUPlet (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPlet");
 
-    new_node = TBmakeLet (NULL, DUPTRAV (LET_IDS (arg_node), arg_info));
+    new_node = TBmakeLet (DUPTRAV (LET_IDS (arg_node), arg_info), NULL);
 
     /*
      * EXPR must be traversed after IDS (for AP_ARGTAB)
@@ -1594,6 +1544,29 @@ DUPlet (node *arg_node, info *arg_info)
 
     LET_USEMASK (new_node) = DupDfmask (LET_USEMASK (arg_node), arg_info);
     LET_DEFMASK (new_node) = DupDfmask (LET_DEFMASK (arg_node), arg_info);
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPids (node *arg_node, info *arg_info)
+{
+    node *new_node, *vardec;
+
+    DBUG_ENTER ("DUPids");
+
+    vardec = DUPTRAV (IDS_VARDEC (arg_node));
+    new_ids = TBmakeIds (VARDEC_AVIS (vardec), CONTRAV (IDS_NEXT (arg_node)));
+
+    IDS_NAME (new_node) = StringCopy (IDS_NAME (arg_node));
+    IDS_MOD (new_node) = StringCopy (IDS_MOD (arg_node));
+
+    INFO_DUP_LUT (arg_info)
+      = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), arg_ids, new_ids);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1690,8 +1663,8 @@ DUPmop (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("DUP", ("duplicating multi operation ..."));
 
-    new_node = TBmakeMop (DUPTRAV (MOP_EXPRS (arg_node)), DUPTRAV (MOP_OPS (arg_node)),
-                          MOP_FIX (arg_node));
+    new_node = TBmakeMop (DUPTRAV (MOP_OPS (arg_node)), MOP_FIX (arg_node),
+                          DUPTRAV (MOP_EXPRS (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1757,6 +1730,24 @@ DUPfuncond (node *arg_node, info *arg_info)
     new_node
       = TBmakeFuncond (DUPTRAV (FUNCOND_IF (arg_node)), DUPTRAV (FUNCOND_THEN (arg_node)),
                        DUPTRAV (FUNCOND_ELSE (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPcseinfo (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPcseinfo");
+
+    new_node = TBmakeCseinfo (DUPTRAV (CSEINFO_LAYER (arg_node)),
+                              DUPTRAV (CSEINFO_LET (arg_node)),
+                              CONTRAV (CSEINFO_NEXT (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2067,8 +2058,9 @@ DUPpart (node *arg_node, info *arg_info)
     DBUG_ASSERT (PART_CODE (arg_node), "N_part node has no valid PART_CODE");
 
     new_node
-      = TBmakePart (DUPTRAV (PART_WITHID (arg_node)), DUPTRAV (PART_GENERATOR (arg_node)),
-                    LUTsearchInLutPp (INFO_DUP_LUT (arg_info), PART_CODE (arg_node)));
+      = TBmakePart (LUTsearchInLutPp (INFO_DUP_LUT (arg_info), PART_CODE (arg_node)),
+                    DUPTRAV (PART_WITHID (arg_node)),
+                    DUPTRAV (PART_GENERATOR (arg_node)));
 
     CODE_INC_USED (PART_CODE (new_node));
     PART_NEXT (new_node) = DUPCONT (PART_NEXT (arg_node));
@@ -2146,11 +2138,11 @@ DUPgenerator (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPgenerator");
 
-    new_node
-      = TBmakeGenerator (DUPTRAV (GENERATOR_BOUND1 (arg_node)),
-                         DUPTRAV (GENERATOR_BOUND2 (arg_node)), GENERATOR_OP1 (arg_node),
-                         GENERATOR_OP2 (arg_node), DUPTRAV (GENERATOR_STEP (arg_node)),
-                         DUPTRAV (GENERATOR_WIDTH (arg_node)));
+    new_node = TBmakeGenerator (GENERATOR_OP1 (arg_node), GENERATOR_OP2 (arg_node),
+                                DUPTRAV (GENERATOR_BOUND1 (arg_node)),
+                                DUPTRAV (GENERATOR_BOUND2 (arg_node)),
+                                DUPTRAV (GENERATOR_STEP (arg_node)),
+                                DUPTRAV (GENERATOR_WIDTH (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2175,7 +2167,7 @@ DUPwith2 (node *arg_node, info *arg_info)
     segs = DUPTRAV (WITH2_SEGS (arg_node));
     withop = DUPTRAV (WITH2_WITHOP (arg_node));
 
-    new_node = TBmakeWith2 (id, segs, code, withop, WITH2_DIMS (arg_node));
+    new_node = TBmakeWith2 (WITH2_DIMS (arg_node), id, segs, code, withop);
 
     WITH2_OFFSET_NEEDED (new_node) = WITH2_OFFSET_NEEDED (arg_node);
 
@@ -2375,9 +2367,10 @@ DUPwlgrid (node *arg_node, info *arg_info)
     new_node
       = TBmakeWlgrid (WLGRID_LEVEL (arg_node), WLGRID_DIM (arg_node),
                       WLGRID_BOUND1 (arg_node), WLGRID_BOUND2 (arg_node),
-                      WLGRID_UNROLLING (arg_node), DUPTRAV (WLGRID_NEXTDIM (arg_node)),
-                      DUPCONT (WLGRID_NEXT (arg_node)),
-                      LUTsearchInLutPp (INFO_DUP_LUT (arg_info), WLGRID_CODE (arg_node)));
+                      WLGRID_UNROLLING (arg_node),
+                      LUTsearchInLutPp (INFO_DUP_LUT (arg_info), WLGRID_CODE (arg_node)),
+                      DUPTRAV (WLGRID_NEXTDIM (arg_node)),
+                      DUPCONT (WLGRID_NEXT (arg_node)));
 
     WLGRID_FITTED (new_node) = WLGRID_FITTED (arg_node);
     WLGRID_NOOP (new_node) = WLGRID_NOOP (arg_node);
@@ -2407,10 +2400,10 @@ DUPwlgridvar (node *arg_node, info *arg_info)
     new_node = TBmakeWlgridvar (WLGRIDVAR_LEVEL (arg_node), WLGRIDVAR_DIM (arg_node),
                                 DUPTRAV (WLGRIDVAR_BOUND1 (arg_node)),
                                 DUPTRAV (WLGRIDVAR_BOUND2 (arg_node)),
-                                DUPTRAV (WLGRIDVAR_NEXTDIM (arg_node)),
-                                DUPCONT (WLGRIDVAR_NEXT (arg_node)),
                                 LUTsearchInLutPp (INFO_DUP_LUT (arg_info),
-                                                  WLGRIDVAR_CODE (arg_node)));
+                                                  WLGRIDVAR_CODE (arg_node)),
+                                DUPTRAV (WLGRIDVAR_NEXTDIM (arg_node)),
+                                DUPCONT (WLGRIDVAR_NEXT (arg_node)));
 
     WLGRIDVAR_FITTED (new_node) = WLGRIDVAR_FITTED (arg_node);
     WLGRIDVAR_NOOP (new_node) = WLGRIDVAR_NOOP (arg_node);
@@ -2633,7 +2626,7 @@ DUPssastack (node *arg_node, info *arg_info)
     DBUG_ENTER ("DUPssastack");
 
     new_node
-      = TBmakessastack (DUPCONT (SSASTACK_NEXT (arg_node)), SSASTACK_AVIS (arg_node));
+      = TBmakeSsastack (SSASTACK_AVIS (arg_node), DUPCONT (SSASTACK_NEXT (arg_node)));
 
     SSASTACK_INUSE (arg_node) = SSASTACK_INUSE (arg_node);
 
@@ -2657,8 +2650,9 @@ DUPssacnt (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPssacnt");
 
-    new_node = TBmakeSsacnt (DUPCONT (SSACNT_NEXT (arg_node)), SSACNT_COUNT (arg_node),
-                             StringCopy (SSACNT_BASEID (arg_node)));
+    new_node
+      = TBmakeSsacnt (SSACNT_COUNT (arg_node), StringCopy (SSACNT_BASEID (arg_node)),
+                      DUPCONT (SSACNT_NEXT (arg_node)));
 
     INFO_DUP_LUT (arg_info)
       = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), arg_node, new_node);
@@ -2862,56 +2856,7 @@ DUPdoDupNodeLutType (node *arg_node, LUT_t lut, int type)
 /******************************************************************************
  *
  * Function:
- *   ids *DupOneIds( ids *arg_ids)
- *
- * Description:
- *   Duplicates the first IDS of the given IDS chain.
- *
- ******************************************************************************/
-
-ids *
-DupOneIds (ids *arg_ids)
-{
-    ids *new_ids, *tmp;
-
-    DBUG_ENTER ("DupOneIds");
-
-    DBUG_ASSERT ((arg_ids != NULL), "DupOneIds: argument is NULL!");
-
-    tmp = IDS_NEXT (arg_ids);
-    IDS_NEXT (arg_ids) = NULL;
-    new_ids = DupIds_ (arg_ids, NULL);
-    IDS_NEXT (arg_ids) = tmp;
-
-    DBUG_RETURN (new_ids);
-}
-
-/******************************************************************************
- *
- * Function:
- *   ids *DupAllIds( ids *arg_ids)
- *
- * Description:
- *   Duplicates an IDS chain.
- *
- ******************************************************************************/
-
-ids *
-DupAllIds (ids *arg_ids)
-{
-    ids *new_ids;
-
-    DBUG_ENTER ("DupAllIds");
-
-    new_ids = DupIds_ (arg_ids, NULL);
-
-    DBUG_RETURN (new_ids);
-}
-
-/******************************************************************************
- *
- * Function:
- *   shpseg *DupShpseg( shpseg *arg_shpseg)
+ *   shpseg *DUPdupShpseg( shpseg *arg_shpseg)
  *
  * Description:
  *
@@ -2919,13 +2864,13 @@ DupAllIds (ids *arg_ids)
  ******************************************************************************/
 
 shpseg *
-DupShpseg (shpseg *arg_shpseg)
+DUPdupShpseg (shpseg *arg_shpseg)
 {
     shpseg *new_shpseg;
 
-    DBUG_ENTER ("DupShpseg");
+    DBUG_ENTER ("DUPdupShpseg");
 
-    new_shpseg = DupShpseg_ (arg_shpseg, NULL);
+    new_shpseg = DupShpseg (arg_shpseg, NULL);
 
     DBUG_RETURN (new_shpseg);
 }
@@ -2933,7 +2878,7 @@ DupShpseg (shpseg *arg_shpseg)
 /******************************************************************************
  *
  * Function:
- *   types *DupOneTypes( types *type)
+ *   types *DUPdupOneTypes( types *type)
  *
  * Description:
  *   Duplicates the first TYPES structure of the given TYPES chain.
@@ -2947,17 +2892,17 @@ DupShpseg (shpseg *arg_shpseg)
  ******************************************************************************/
 
 types *
-DupOneTypes (types *arg_types)
+DUPdupOneTypes (types *arg_types)
 {
     types *new_types, *tmp;
 
-    DBUG_ENTER ("DupOneTypes");
+    DBUG_ENTER ("DUPdupOneTypes");
 
-    DBUG_ASSERT ((arg_types != NULL), "DupOneTypes: argument is NULL!");
+    DBUG_ASSERT ((arg_types != NULL), "DUPdupOneTypes: argument is NULL!");
 
     tmp = TYPES_NEXT (arg_types);
     TYPES_NEXT (arg_types) = NULL;
-    new_types = DupTypes_ (arg_types, NULL);
+    new_types = DupTypes (arg_types, NULL);
     TYPES_NEXT (arg_types) = tmp;
 
     DBUG_RETURN (new_types);
@@ -2966,7 +2911,7 @@ DupOneTypes (types *arg_types)
 /******************************************************************************
  *
  * Function:
- *   types *DupAllTypes( types* type)
+ *   types *DUPdupAllTypes( types* type)
  *
  * Description:
  *   This function duplicates the (real) types-structure. Unfortunately, it
@@ -2978,14 +2923,14 @@ DupOneTypes (types *arg_types)
  ******************************************************************************/
 
 types *
-DupAllTypes (types *arg_types)
+DUPdupAllTypes (types *arg_types)
 {
     types *new_types;
 
-    DBUG_ENTER ("DupAllTypes");
+    DBUG_ENTER ("DUPdupAllTypes");
 
     if (arg_types != NULL) {
-        new_types = DupTypes_ (arg_types, NULL);
+        new_types = DupTypes (arg_types, NULL);
     } else {
         new_types = NULL;
     }
@@ -2996,7 +2941,7 @@ DupAllTypes (types *arg_types)
 /******************************************************************************
  *
  * Function:
- *   nodelist *DupNodelist( nodelist *nl)
+ *   nodelist *DUPdupNodelist( nodelist *nl)
  *
  * Description:
  *
@@ -3004,13 +2949,13 @@ DupAllTypes (types *arg_types)
  ******************************************************************************/
 
 nodelist *
-DupNodelist (nodelist *nl)
+DUPdupNodelist (nodelist *nl)
 {
     nodelist *new_nl;
 
-    DBUG_ENTER ("DupNodelist");
+    DBUG_ENTER ("DUPdupNodelist");
 
-    new_nl = DupNodelist_ (nl, NULL);
+    new_nl = DupNodelist (nl, NULL);
 
     DBUG_RETURN (new_nl);
 }
@@ -3018,7 +2963,7 @@ DupNodelist (nodelist *nl)
 /******************************************************************************
  *
  * Function:
- *   node *DupIds_Id( ids *arg_ids)
+ *   node *DUPdupIdsId( ids *arg_ids)
  *
  * Description:
  *   Duplicates an IDS and returns a *N_id* node.
@@ -3026,14 +2971,13 @@ DupNodelist (nodelist *nl)
  ******************************************************************************/
 
 node *
-DupIds_Id (ids *arg_ids)
+DUPdupIdsId (node *arg_ids)
 {
     node *new_id;
 
-    DBUG_ENTER ("DupIds_Id");
+    DBUG_ENTER ("DUPdupIdsId");
 
-    new_id = MakeId (NULL, NULL, ST_regular);
-    ID_IDS (new_id) = DupOneIds (arg_ids);
+    new_id = TBmakeId (IDS_AVIS (arg_ids));
 
     DBUG_RETURN (new_id);
 }
@@ -3041,7 +2985,7 @@ DupIds_Id (ids *arg_ids)
 /******************************************************************************
  *
  * Function:
- *   ids *DupId_Ids( node *old_id)
+ *   ids *DUPdupIdIds( node *old_id)
  *
  * Description:
  *   Duplicates a N_id node and returns an *IDS*.
@@ -3049,24 +2993,15 @@ DupIds_Id (ids *arg_ids)
  ******************************************************************************/
 
 ids *
-DupId_Ids (node *old_id)
+DUPdupIdIds (node *old_id)
 {
-    ids *new_ids;
+    node *new_ids;
 
-    DBUG_ENTER ("DupId_Ids");
+    DBUG_ENTER ("DUPdupIdIds");
 
-    new_ids = MakeIds (StringCopy (ID_NAME (old_id)), StringCopy (ID_MOD (old_id)),
-                       ID_STATUS (old_id));
+    new_ids = TBmakeIds (ID_AVIS (old_id), NULL);
 
-    IDS_REFCNT (new_ids) = ID_REFCNT (old_id);
-    IDS_NAIVE_REFCNT (new_ids) = ID_NAIVE_REFCNT (old_id);
-    IDS_VARDEC (new_ids) = ID_VARDEC (old_id);
     IDS_ATTRIB (new_ids) = IDS_ATTRIB (ID_IDS (old_id));
-
-#if 0
-  IDS_DEF( new_ids) = ???
-  IDS_USE( new_ids) = ???
-#endif
 
     DBUG_RETURN (new_ids);
 }
@@ -3074,7 +3009,7 @@ DupId_Ids (node *old_id)
 /******************************************************************************
  *
  * Function:
- *   node *DupIds_Id_NT( ids *arg_ids)
+ *   node *DUPdupIdsIdNt( ids *arg_ids)
  *
  * Description:
  *   Duplicates an IDS and returns a *N_id* node.
@@ -3083,16 +3018,16 @@ DupId_Ids (node *old_id)
  ******************************************************************************/
 
 node *
-DupIds_Id_NT (ids *arg_ids)
+DUPdupIdsIdNt (ids *arg_ids)
 {
     node *new_id;
 
-    DBUG_ENTER ("DupIds_Id_NT");
+    DBUG_ENTER ("DUPdupIdsIdNt");
 
-    new_id = DupIds_Id (arg_ids);
+    new_id = DUPdupIdsId (arg_ids);
 
     DBUG_ASSERT ((IDS_TYPE (arg_ids) != NULL), "NT_TAG: no type found!");
-    ID_NT_TAG (new_id) = CreateNtTag (IDS_NAME (arg_ids), IDS_TYPE (arg_ids));
+    ID_NT_TAG (new_id) = NTUcreateNtTag (IDS_NAME (arg_ids), IDS_TYPE (arg_ids));
 
     DBUG_RETURN (new_id);
 }
@@ -3100,7 +3035,7 @@ DupIds_Id_NT (ids *arg_ids)
 /******************************************************************************
  *
  * Function:
- *   node *DupId_NT( info *arg_id)
+ *   node *DUPdupIdNt( info *arg_id)
  *
  * Description:
  *   Duplicates a N_id node.
@@ -3109,17 +3044,17 @@ DupIds_Id_NT (ids *arg_ids)
  ******************************************************************************/
 
 node *
-DupId_NT (node *arg_id)
+DUPdupIdNt (node *arg_id)
 {
     node *new_id;
 
-    DBUG_ENTER ("DupId_NT");
+    DBUG_ENTER ("DUPdupIdNt");
 
     DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "DupId_NT: no N_id node found!");
-    new_id = DupNode (arg_id);
+    new_id = DUPdoDupNode (arg_id);
 
     DBUG_ASSERT ((ID_TYPE (arg_id) != NULL), "NT_TAG: no type found!");
-    ID_NT_TAG (new_id) = CreateNtTag (ID_NAME (arg_id), ID_TYPE (arg_id));
+    ID_NT_TAG (new_id) = NTUcreateNtTag (ID_NAME (arg_id), ID_TYPE (arg_id));
 
     DBUG_RETURN (new_id);
 }
@@ -3127,7 +3062,7 @@ DupId_NT (node *arg_id)
 /******************************************************************************
  *
  * Function:
- *   node *DupNode_NT( node *arg_node)
+ *   node *DUPdupNodeNt( node *arg_node)
  *
  * Description:
  *   Duplicates a node. Sets ID_NT_TAG for N_id nodes.
@@ -3135,16 +3070,16 @@ DupId_NT (node *arg_id)
  ******************************************************************************/
 
 node *
-DupNode_NT (node *arg_node)
+DUPdupNodeNt (node *arg_node)
 {
     node *new_node;
 
-    DBUG_ENTER ("DupNode_NT");
+    DBUG_ENTER ("DUPdupNodeNt");
 
     if (NODE_TYPE (arg_node) == N_id) {
-        new_node = DupId_NT (arg_node);
+        new_node = DUPdupIdNt (arg_node);
     } else {
-        new_node = DupNode (arg_node);
+        new_node = DUPdoDupNode (arg_node);
     }
 
     DBUG_RETURN (new_node);
@@ -3153,7 +3088,7 @@ DupNode_NT (node *arg_node)
 /******************************************************************************
  *
  * Function:
- *   node *DupExprs_NT( node *exprs)
+ *   node *DUPdupExprsNt( node *exprs)
  *
  * Description:
  *   Duplicates a N_exprs chain and transforms all N_id nodes found into
@@ -3162,12 +3097,12 @@ DupNode_NT (node *arg_node)
  ******************************************************************************/
 
 node *
-DupExprs_NT (node *exprs)
+DUPdupExprsNt (node *exprs)
 {
     node *expr;
     node *new_exprs;
 
-    DBUG_ENTER ("DupExprs");
+    DBUG_ENTER ("DUPdupExprsNT");
 
     if (exprs != NULL) {
         DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "no N_exprs node found!");
@@ -3175,7 +3110,7 @@ DupExprs_NT (node *exprs)
         expr = EXPRS_EXPR (exprs);
         DBUG_ASSERT ((expr != NULL), "N_exprs node contains no data!");
 
-        new_exprs = MakeExprs (DupNode_NT (expr), DupExprs_NT (EXPRS_NEXT (exprs)));
+        new_exprs = TBmakeExprs (DUPdupNodeNt (expr), DUPdupExprsNt (EXPRS_NEXT (exprs)));
     } else {
         new_exprs = NULL;
     }
@@ -3207,14 +3142,14 @@ DupExprs_NT (node *exprs)
  *****************************************************************************/
 
 node *
-CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
+DUPcheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
 {
     node *new_fundef;
     char *new_name;
 
-    DBUG_ENTER ("CheckAndDupSpecialFundef");
+    DBUG_ENTER ("DUPcheckAndDupSpecialFundef");
 
-    DBUG_ASSERT ((NODE_TYPE (module) == N_modul), "given module node is not a module");
+    DBUG_ASSERT ((NODE_TYPE (module) == N_module), "given module node is not a module");
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "given fundef node is not a fundef");
     DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
                  "given assign node is not an assignment");
@@ -3230,18 +3165,18 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
                  "assignment is to application");
     DBUG_ASSERT ((AP_FUNDEF (ASSIGN_RHS (assign)) == fundef),
                  "application of different fundef than given fundef");
-    DBUG_ASSERT ((NodeListFind (FUNDEF_EXT_ASSIGNS (fundef), assign) != NULL),
+    DBUG_ASSERT ((TCnodeListFind (FUNDEF_EXT_ASSIGNS (fundef), assign) != NULL),
                  "given assignment is not element of external assignment list");
 
     if (FUNDEF_USED (fundef) > 1) {
         /* multiple uses - duplicate special fundef */
         DBUG_PRINT ("DUP", ("duplicating multiple fundef %s", FUNDEF_NAME (fundef)));
 
-        new_fundef = DupNode (fundef);
+        new_fundef = DUPdoDupNode (fundef);
 
         /* rename fundef */
-        new_name = TmpVarName (FUNDEF_NAME (fundef));
-        FUNDEF_NAME (new_fundef) = Free (FUNDEF_NAME (new_fundef));
+        new_name = ILIBtmpVarName (FUNDEF_NAME (fundef));
+        FUNDEF_NAME (new_fundef) = ILIBfree (FUNDEF_NAME (new_fundef));
         FUNDEF_NAME (new_fundef) = new_name;
 
         /* rename recursive funap (only do/while fundefs */
@@ -3251,7 +3186,7 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
                          "missing link to recursive function call");
 
             AP_NAME (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef)))
-              = Free (AP_NAME (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef))));
+              = ILIBfree (AP_NAME (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef))));
             AP_NAME (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef)))
               = StringCopy (FUNDEF_NAME (new_fundef));
 
@@ -3259,29 +3194,29 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
         }
 
         /* init external assignment list */
-        FUNDEF_EXT_ASSIGNS (new_fundef) = NodeListAppend (NULL, assign, NULL);
+        FUNDEF_EXT_ASSIGNS (new_fundef) = TCnodeListAppend (NULL, assign, NULL);
         FUNDEF_USED (new_fundef) = 1;
 
         /* rename the external assign/funap */
-        AP_NAME (ASSIGN_RHS (assign)) = Free (AP_NAME (ASSIGN_RHS (assign)));
+        AP_NAME (ASSIGN_RHS (assign)) = ILIBfree (AP_NAME (ASSIGN_RHS (assign)));
         AP_NAME (ASSIGN_RHS (assign)) = StringCopy (new_name);
         AP_FUNDEF (ASSIGN_RHS (assign)) = new_fundef;
 
         /* add new fundef to global chain of fundefs */
         if (FUNDEF_BODY (new_fundef) != NULL) {
-            FUNDEF_NEXT (new_fundef) = MODUL_FUNS (module);
-            MODUL_FUNS (module) = new_fundef;
+            FUNDEF_NEXT (new_fundef) = MODULE_FUNS (module);
+            MODULE_FUNS (module) = new_fundef;
         } else {
-            FUNDEF_NEXT (new_fundef) = MODUL_FUNDECS (module);
-            MODUL_FUNDECS (module) = new_fundef;
+            FUNDEF_NEXT (new_fundef) = MODULE_FUNDECS (module);
+            MODULE_FUNDECS (module) = new_fundef;
         }
 
-        DBUG_ASSERT ((NodeListFind (FUNDEF_EXT_ASSIGNS (fundef), assign) != NULL),
+        DBUG_ASSERT ((TCnodeListFind (FUNDEF_EXT_ASSIGNS (fundef), assign) != NULL),
                      "Assignment not found in FUNDEF_EXT_ASSIGNS!");
 
         /* remove assignment from old external assignment list */
         FUNDEF_EXT_ASSIGNS (fundef)
-          = NodeListDelete (FUNDEF_EXT_ASSIGNS (fundef), assign, FALSE);
+          = TCnodeListDelete (FUNDEF_EXT_ASSIGNS (fundef), assign, FALSE);
 
         (FUNDEF_USED (fundef))--;
 
