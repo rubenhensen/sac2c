@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1997/08/08 08:49:14  sbs
+ * warning that -p is turned off in modules is now only given, iff -p is
+ * actually set!
+ *
  * Revision 1.13  1997/06/03 13:51:54  sbs
  * # line - capability integrated into sac2c.
  * Now, the line-number in error messages should be correct 8-)))
@@ -121,8 +125,10 @@ SetFileNames (node *modul)
             strcat (cfilename, ".c");
         }
     } else {
-        SYSWARN (("-p option turned off for module/class compilation"));
-        profileflag = 0;
+        if (profileflag != 0) {
+            SYSWARN (("-p option turned off for module/class compilation"));
+            profileflag = 0;
+        }
 
         if (sacfilename[0] != '\0') {
             strcpy (buffer, MODUL_NAME (modul));
