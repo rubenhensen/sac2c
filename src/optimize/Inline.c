@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/06/02 11:28:18  asi
+ * Revision 1.3  1995/06/02 15:55:56  asi
+ * Bug fixed in INLfundef
+ *
+ * Revision 1.2  1995/06/02  11:28:18  asi
  * Added Inline, INLfundef, INLblock, INLMakeLet, DoInline, INLassign,
  *       RenameInlinedVar, SetDeclPtr and INLvar.
  *
@@ -81,14 +84,14 @@ node *
 INLfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INLfundef");
-    if (1 <= arg_node->nnode) {
+    if (NULL != arg_node->node[0]) {
         FUNBLOCK = arg_node->node[0];
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
         arg_node->node[0]->node[1]
           = AppendNodeChain (0, TYPES, arg_node->node[0]->node[1]);
         TYPES = NULL;
     }
-    if (2 <= arg_node->nnode)
+    if (NULL != arg_node->node[1])
         arg_node->node[1] = Trav (arg_node->node[1], arg_info);
     DBUG_RETURN (arg_node);
 }
@@ -110,7 +113,7 @@ node *
 INLblock (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INLblock");
-    if (1 <= arg_node->nnode) {
+    if (NULL != arg_node->node[0]) {
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
     }
     DBUG_RETURN (arg_node);
