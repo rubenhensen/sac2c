@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/04/25 16:25:20  sbs
+ *  new icm2c / BEtest mechanism implemented!
+ *
  * Revision 1.5  1998/03/24 13:49:23  cg
  * New prefix for libsac symbols:
  * _SAC_ instead of __SAC__Runtime_
@@ -65,7 +68,7 @@
         }                                                                                \
     }
 
-#define ICM_END(prf)                                                                     \
+#define ICM_END(prf, args)                                                               \
     INDENT;                                                                              \
     fprintf (outfile, "_SAC_Print( \")\\n\");\n");                                       \
     }                                                                                    \

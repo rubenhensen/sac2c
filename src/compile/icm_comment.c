@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/04/25 16:25:20  sbs
+ *  new icm2c / BEtest mechanism implemented!
+ *
  * Revision 1.6  1995/12/18 16:30:17  cg
  * small layout change
  *
@@ -47,7 +50,7 @@
             sep = 1;                                                                     \
         }                                                                                \
     }
-#define ICM_END(prf)                                                                     \
+#define ICM_END(prf, args)                                                               \
     fprintf (outfile, ")\n */\n");                                                       \
     }
 
