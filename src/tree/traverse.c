@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.103  2004/10/26 11:17:07  ktr
+ * added emia_tab
+ *
  * Revision 3.102  2004/10/25 13:43:14  sah
  * wlt_tab now available for everyone again ;)
  * /
@@ -450,6 +453,7 @@
 #include "serialize_link.h"
 #include "filterrc.h"
 #include "aliasanalysis.h"
+#include "interfaceanalysis.h"
 #include "staticreuse.h"
 #include "reuseelimination.h"
 
@@ -1138,16 +1142,17 @@ static funtab spmdpm_tab_rec = {{
                                 NULL};
 funtab *spmdpm_tab = &spmdpm_tab_rec;
 #endif /* NEW_AST */
+
 /*
- *  (58) unused_tab47
+ *  (58) emia_tab;
  */
-static funtab unused_tab47_rec = {{
-#define NIFunused_47(it_unused_47) it_unused_47
+static funtab emia_tab_rec = {{
+#define NIFemia(it_emia) it_emia
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab47 = &unused_tab47_rec;
+                              },
+                              NULL,
+                              NULL};
+funtab *emia_tab = &emia_tab_rec;
 
 /*
  *  (59) ntc_tab

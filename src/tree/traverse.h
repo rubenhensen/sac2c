@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2004/10/26 11:17:07  ktr
+ * added emia_tab
+ *
  * Revision 3.77  2004/10/25 11:59:14  sah
  * added SEL traversal
  *
@@ -404,7 +407,7 @@ extern funtab *tsi_tab;
 extern funtab *unused_tab46;
 extern funtab *spmddn_tab;
 extern funtab *spmdpm_tab;
-extern funtab *unused_tab47;
+extern funtab *emia_tab;
 extern funtab *ntc_tab;
 extern funtab *muth_tab;
 extern funtab *crwiw_tab;
