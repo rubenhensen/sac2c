@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/04/13 10:04:09  hw
+ * Revision 1.12  1995/04/13 17:21:28  hw
+ * compilation of primitive function 'cat' completed
+ * compilation of primitive function 'rotate' inserted
+ *
+ * Revision 1.11  1995/04/13  10:04:09  hw
  * compilation of primitive function 'cat' inserted, but not completly
  *
  * Revision 1.10  1995/04/11  15:11:55  hw
@@ -198,20 +202,20 @@ extern int malloc_debug (int level);
     APPEND_ASSIGNS (first_assign, next_assign);                                          \
     array = tmp_array1 /* set array to __TMP */
 
-#define DECL_ARRAY(assign, Node, var_str, var_str_node, n_elems_node)                    \
+#define DECL_ARRAY(assign, Node, var_str, var_str_node)                                  \
     COUNT_ELEMS (n_elems, Node);                                                         \
     MAKENODE_NUM (n_elems_node, n_elems);                                                \
     MAKENODE_NUM (n_node1, 1);                                                           \
-    MAKENODE_ID (var_str_node, "__TMP1");                                                \
+    MAKENODE_ID (var_str_node, var_str);                                                 \
     CREATE_4_ARY_ICM (assign, "ND_KS_DECL_ARRAY", type_id_node, var_str_node, n_node1,   \
                       n_elems_node)
 
-#define GET_DIM(result, vardec_node)                                                     \
-    if (T_user == vardec_node->SIMPLETYPE) {                                             \
-        result = LookupType (vardec_node->NAME, vardec_node->NAME_MOD, 042)->DIM;        \
-        result += vardec_node->DIM;                                                      \
+#define GET_DIM(result, type)                                                            \
+    if (T_user == type->simpletype) {                                                    \
+        result = LookupType (type->name, type->name_mod, 042)->DIM;                      \
+        result += type->dim;                                                             \
     } else                                                                               \
-        result = vardec_node->DIM
+        result = type->dim
 
 #define GET_BASIC_TYPE(res, type)                                                        \
     if (T_user == type->simpletype)                                                      \
@@ -557,8 +561,9 @@ node *
 CompPrf (node *arg_node, node *arg_info)
 {
     node *array, *scalar, *tmp, *res, *res_ref, *n_node, *icm_arg, *exprs, *prf_id_node,
-      *type_id_node, *arg1, *arg2, *arg3, *n_node1, *n_node2, *first_assign, *next_assign,
-      *last_assign, *old_arg_node, *length_node, *tmp_array1, *tmp_array2, *dim_node;
+      *type_id_node, *arg1, *arg2, *arg3, *n_node1, *n_elems_node, *first_assign,
+      *next_assign, *last_assign, *old_arg_node, *length_node, *tmp_array1, *tmp_array2,
+      *dim_node;
     simpletype s_type;
     int is_SxA = 0, n_elems = 0, is_drop = 0, array_is_const = 0, dim;
 
@@ -724,11 +729,9 @@ CompPrf (node *arg_node, node *arg_info)
                 old_arg_node = arg_node;
                 if ((N_array == arg1->nodetype) && (N_array == arg2->nodetype)) {
                     array_is_const = 3;
-                    DECL_ARRAY (first_assign, arg1->node[0], "__TMP1", tmp_array1,
-                                n_node);
+                    DECL_ARRAY (first_assign, arg1->node[0], "__TMP1", tmp_array1);
                     arg_node = first_assign; /* set new arg_node */
-                    DECL_ARRAY (next_assign, arg2->node[0], "__TMP2", tmp_array2,
-                                n_node2);
+                    DECL_ARRAY (next_assign, arg2->node[0], "__TMP2", tmp_array2);
                     APPEND_ASSIGNS (first_assign, next_assign);
                     CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY", type_id_node,
                                       tmp_array1, n_node);
@@ -747,8 +750,7 @@ CompPrf (node *arg_node, node *arg_info)
                     arg2 = tmp_array2;
                 } else if (N_array == arg1->nodetype) {
                     array_is_const = 1;
-                    DECL_ARRAY (first_assign, arg1->node[0], "__TMP1", tmp_array1,
-                                n_node);
+                    DECL_ARRAY (first_assign, arg1->node[0], "__TMP1", tmp_array1);
                     arg_node = first_assign;
 
                     CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY", type_id_node,
@@ -762,8 +764,7 @@ CompPrf (node *arg_node, node *arg_info)
                     arg1 = tmp_array1;
                 } else {
                     array_is_const = 2;
-                    DECL_ARRAY (first_assign, arg2->node[0], "__TMP2", tmp_array2,
-                                n_node);
+                    DECL_ARRAY (first_assign, arg2->node[0], "__TMP2", tmp_array2);
                     arg_node = first_assign;
 
                     CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY", type_id_node,
@@ -837,7 +838,7 @@ CompPrf (node *arg_node, node *arg_info)
             MAKENODE_NUM (res_ref, arg_info->IDS_REFCNT);
 
             if (N_id == arg2->nodetype) {
-                GET_DIM (dim, arg2->IDS_NODE);
+                GET_DIM (dim, arg2->IDS_NODE->TYPES);
                 MAKENODE_NUM (dim_node, dim); /* store dimension of argument-array */
                 last_assign = arg_info->node[0]->node[1];
                 CHECK_REUSE__ALLOC_ARRAY_ND (arg2);
@@ -940,7 +941,7 @@ CompPrf (node *arg_node, node *arg_info)
 
             if (0 == IsArray (res->IDS_NODE->TYPES)) {
                 if (N_id == arg2->nodetype) {
-                    GET_DIM (dim, arg2->IDS_NODE);
+                    GET_DIM (dim, arg2->IDS_NODE->TYPES);
                     MAKENODE_NUM (dim_node, dim); /* store dimension of array */
                     if (N_id == arg1->nodetype) {
                         BIN_ICM_REUSE (arg_info->node[1], "ND_KD_PSI_VxA_S", dim_node,
@@ -988,7 +989,7 @@ CompPrf (node *arg_node, node *arg_info)
 
             } else {
                 DBUG_ASSERT ((N_id == arg2->nodetype), "arg2 != N_id");
-                GET_DIM (dim, arg2->IDS_NODE);
+                GET_DIM (dim, arg2->IDS_NODE->TYPES);
                 MAKENODE_NUM (dim_node, dim);
                 /* store refcount of res as N_num */
                 MAKENODE_NUM (res_ref, arg_info->IDS_REFCNT);
@@ -1021,7 +1022,7 @@ CompPrf (node *arg_node, node *arg_info)
             if (N_array == arg1->nodetype) {
                 arg_node->info.cint = 1;
             } else {
-                GET_DIM (arg_node->info.cint, arg1->IDS_NODE);
+                GET_DIM (arg_node->info.cint, arg1->IDS_NODE->TYPES);
             }
             arg_node->nnode = 1;
             FREE_TREE (arg_node->node[0]);
@@ -1038,7 +1039,7 @@ CompPrf (node *arg_node, node *arg_info)
             BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
             SET_VARS_FOR_MORE_ICMS;
             if (N_id == arg1->nodetype) {
-                GET_DIM (dim, arg1->IDS_NODE);
+                GET_DIM (dim, arg1->IDS_NODE->TYPES);
                 tmp_array1 = ShapeToArray (arg1->IDS_NODE);
             } else {
                 DBUG_ASSERT ((N_array == arg1->nodetype), "wrong nodetype");
@@ -1071,7 +1072,7 @@ CompPrf (node *arg_node, node *arg_info)
             MAKENODE_NUM (res_ref, arg_info->IDS_REFCNT);
 
             if ((N_id == arg2->nodetype) && (N_id == arg3->nodetype)) {
-                GET_DIM (dim, arg2->IDS_NODE);
+                GET_DIM (dim, arg2->IDS_NODE->TYPES);
                 MAKENODE_NUM (dim_node, dim);
                 BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
                 SET_VARS_FOR_MORE_ICMS;
@@ -1093,27 +1094,150 @@ CompPrf (node *arg_node, node *arg_info)
                 INSERT_ASSIGN;
 
             } else {
+                arg_info->node[1]->nodetype = N_block; /*  reuse previous N_let*/
+                old_arg_node = arg_node;
                 if ((N_array == arg2->nodetype) && (N_array == arg3->nodetype)) {
-                    GET_DIM (dim, res->IDS_NODE);
-                    if (1 == dim) {
-                        n_elems = res->IDS_NODE->SHP[0];
-                        MAKENODE_NUM (n_node, n_elems);
-                        BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node,
-                                       res);
-                        SET_VARS_FOR_MORE_ICMS;
-                        CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY",
-                                          type_id_node, res, n_node);
-                        icm_arg->node[1] = arg2->node[0];
-                        icm_arg->nnode = 2;
-                        do {
-                            icm_arg = icm_arg->node[1];
-                        } while (2 == icm_arg->nnode);
-                        icm_arg->node[1] = arg3->node[0];
-                        icm_arg->nnode = 2;
-                        APPEND_ASSIGNS (first_assign, next_assign);
-                        INSERT_ASSIGN;
-                    }
+                    array_is_const = 3;
+                    GET_DIM (dim, arg2->TYPES);
+                    DECL_ARRAY (first_assign, arg2->node[0], "__TMP1", tmp_array1);
+                    arg_node = first_assign; /* set new arg_node */
+                    DECL_ARRAY (next_assign, arg3->node[0], "__TMP2", tmp_array2);
+                    APPEND_ASSIGNS (first_assign, next_assign);
+                    COUNT_ELEMS (n_elems, arg2->node[0]);
+                    MAKENODE_NUM (n_node, n_elems);
+                    CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY", type_id_node,
+                                      tmp_array1, n_node);
+                    icm_arg->node[1] = arg2->node[0];
+                    icm_arg->nnode = 2;
+                    APPEND_ASSIGNS (first_assign, next_assign);
+                    COUNT_ELEMS (n_elems, arg3->node[0]);
+                    MAKENODE_NUM (n_node, n_elems);
+                    CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY", type_id_node,
+                                      tmp_array2, n_node);
+                    icm_arg->node[1] = arg3->node[0];
+                    icm_arg->nnode = 2;
+                    APPEND_ASSIGNS (first_assign, next_assign);
+                    arg2 = tmp_array1;
+                    arg3 = tmp_array2;
+                } else if (N_array == arg2->nodetype) {
+                    array_is_const = 1;
+                    GET_DIM (dim, arg2->TYPES);
+                    DECL_ARRAY (first_assign, arg2->node[0], "__TMP1", tmp_array1);
+                    arg_node = first_assign;
+                    COUNT_ELEMS (n_elems, arg2->node[0]);
+                    MAKENODE_NUM (n_node, n_elems);
+                    CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY", type_id_node,
+                                      tmp_array1, n_node);
+                    icm_arg->node[1] = arg2->node[0];
+                    icm_arg->nnode = 2;
+                    APPEND_ASSIGNS (first_assign, next_assign);
+                    /* set arg2 for later use as parameters of ND_KD_CAT*/
+                    arg2 = tmp_array1;
+                } else {
+                    array_is_const = 2;
+                    GET_DIM (dim, arg3->TYPES);
+                    DECL_ARRAY (first_assign, arg3->node[0], "__TMP2", tmp_array2);
+                    arg_node = first_assign;
+                    COUNT_ELEMS (n_elems, arg3->node[0]);
+                    MAKENODE_NUM (n_node, n_elems);
+                    CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY", type_id_node,
+                                      tmp_array2, n_node);
+                    icm_arg->node[1] = arg3->node[0];
+                    icm_arg->nnode = 2;
+                    APPEND_ASSIGNS (first_assign, next_assign);
+                    /* set arg3 for later use as parameters of ND_KD_CAT*/
+                    arg3 = tmp_array2;
                 }
+                CREATE_2_ARY_ICM (next_assign, "ND_ALLOC_ARRAY", type_id_node, res);
+                APPEND_ASSIGNS (first_assign, next_assign);
+                MAKENODE_NUM (dim_node, dim);
+                CREATE_5_ARY_ICM (next_assign, "ND_KD_CAT_SxAxA_A", dim_node, arg2, arg3,
+                                  res, arg1);
+                APPEND_ASSIGNS (first_assign, next_assign);
+                MAKENODE_NUM (n_node, 1);
+                switch (array_is_const) {
+                case 1: {
+                    if (1 >= arg3->IDS_REFCNT) {
+                        DEC_RC_FREE_ND (arg3, n_node);
+                    } else {
+                        DEC_RC_ND (arg3, n_node);
+                    }
+                    DEC_RC_FREE_ND (arg2, n_node);
+                    break;
+                }
+                case 2: {
+                    if (1 >= arg2->IDS_REFCNT) {
+                        DEC_RC_FREE_ND (arg2, n_node);
+                    } else {
+                        DEC_RC_ND (arg2, n_node);
+                    }
+                    DEC_RC_FREE_ND (arg3, n_node);
+                    break;
+                }
+                case 3: {
+                    DEC_RC_FREE_ND (arg2, n_node);
+                    DEC_RC_FREE_ND (arg3, n_node);
+                    break;
+                }
+                default:
+                    DBUG_ASSERT (0, "array_is_const is out of range");
+                    break;
+                }
+                CREATE_2_ARY_ICM (next_assign, "ND_INC_RC", res, res_ref);
+                APPEND_ASSIGNS (first_assign, next_assign);
+                FREE (old_arg_node);
+            }
+            break;
+        }
+        case F_rotate: {
+            arg1 = arg_node->node[0]->node[0];
+            arg2 = arg_node->node[0]->node[1]->node[0];
+            arg3 = arg_node->node[0]->node[1]->node[1]->node[0];
+            MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+            /* compute basic_type of result */
+            GET_BASIC_TYPE (s_type, arg_info->IDS_NODE->TYPES);
+            MAKENODE_ID (type_id_node, type_string[s_type]);
+            /* store refcount of res as N_num */
+            MAKENODE_NUM (res_ref, arg_info->IDS_REFCNT);
+            MAKENODE_NUM (n_node, 1);
+
+            if (N_id == arg3->nodetype) {
+                last_assign = arg_info->node[0]->node[1];
+                GET_DIM (dim, arg3->IDS_NODE->TYPES);
+                CHECK_REUSE__ALLOC_ARRAY_ND (arg3);
+            } else {
+                array_is_const = 1;
+                arg_info->node[1]->nodetype = N_block; /*  reuse previous N_let*/
+                old_arg_node = arg_node;
+                GET_DIM (dim, arg3->TYPES);
+                DECL_ARRAY (first_assign, arg3->node[0], "__TMP1", tmp_array1);
+                arg_node = first_assign;
+                COUNT_ELEMS (n_elems, arg3->node[0]);
+                CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY", type_id_node,
+                                  tmp_array1, n_node);
+                icm_arg->node[1] = arg3->node[0];
+                icm_arg->nnode = 2;
+                APPEND_ASSIGNS (first_assign, next_assign);
+                arg3 = tmp_array1;
+            }
+            /* store dimension of arg3 */
+            MAKENODE_NUM (dim_node, dim);
+            if (N_id == arg1->nodetype) {
+                CREATE_5_ARY_ICM (next_assign, "ND_KD_ROT_SxSxA_A", arg1, arg2, dim_node,
+                                  arg3, res);
+            } else {
+                CREATE_5_ARY_ICM (next_assign, "ND_KD_ROT_CxSxA_A", arg1, arg2, dim_node,
+                                  arg3, res);
+            }
+            APPEND_ASSIGNS (first_assign, next_assign);
+            if (0 == array_is_const) {
+                DEC_RC_ND (arg3, n_node);
+                INC_RC_ND (res, res_ref);
+                INSERT_ASSIGN;
+            } else {
+                DEC_RC_FREE_ND (arg3, n_node);
+                INC_RC_ND (res, res_ref);
+                FREE (old_arg_node);
             }
             break;
         }
