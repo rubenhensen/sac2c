@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/10/31 18:06:27  cg
+ * Added new status type entry ST_exported.
+ *
  * Revision 1.8  2000/10/17 16:27:25  dkr
  * status flags sorted and classified :-))
  * comments added
@@ -61,6 +64,9 @@ SELECT (ST_sac, "ST_sac",
 
   SELECT (ST_imported_mod, "ST_imported_mod",
           /* typedef, objdef, fundef: imported from other module             */),
+
+  SELECT (ST_exported, "ST_exported",
+          /* fundef: exported by module or program                           */),
 
   SELECT (ST_unique, "ST_unique",
           /* typedef, vardec, arg: unique                                    */),
