@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.157  2002/10/16 11:46:13  mwe
+ * INFO_AL_CURRENTASSIGN added
+ *
  * Revision 3.156  2002/10/16 11:07:04  sbs
  * OBJDEF_AVIS(n) added.
  *
@@ -2752,6 +2755,7 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      BLOCKNODE         (current block node)
  ***    prf        CURRENTPRF        (current used primitive function)
  ***    node*      LETNODE           (current optimized let node)
+ ***    node*      CURRENTASSIGN     (current assign node)
  ***
  ***  remarks:
  ***
@@ -3251,6 +3255,7 @@ extern node *MakeInfo ();
 #define INFO_AL_BLOCKNODE(n) (n->node[0])
 #define INFO_AL_CURRENTPRF(n) (n->info.prf)
 #define INFO_AL_LETNODE(n) (n->node[1])
+#define INFO_AL_CURRENTASSIGN(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
