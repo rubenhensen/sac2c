@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.103  1997/11/11 00:43:13  dkr
+ * removed a bug with NEWTREE in CompTypedef
+ *
  * Revision 1.102  1997/11/10 16:09:47  dkr
  * removed a bug with DBUG_ASSERT in GOTO_LAST_BUT_LEAST_N_EXPRS (with defined NEWTREE)
  *
@@ -6034,6 +6037,10 @@ CompCond (node *arg_node, node *arg_info)
 node *
 CompTypedef (node *arg_node, node *arg_info)
 {
+#ifdef NEWTREE
+    node *tmp_node;
+#endif
+
     DBUG_ENTER ("CompTypedef");
 
     if (0 != arg_node->DIM) {
@@ -6047,11 +6054,15 @@ CompTypedef (node *arg_node, node *arg_info)
         arg_node->nodetype = N_icm;
         MAKE_ICM_NAME (arg_node, "ND_TYPEDEF_ARRAY");
 #ifndef NEWTREE
-        if (1 == arg_node->nnode)
+        if (1 == arg_node->nnode) {
+            arg_node->node[1] = arg_node->node[0];
+        }
 #else
         if (arg_node->node[1] == NULL)
+            tmp_node = arg_node->node[0];
+        else
+            tmp_node = NULL;
 #endif
-            arg_node->node[1] = arg_node->node[0];
         MAKENODE_ID (type1, typename);
         MAKE_ICM_ARG (arg_node->node[0], type1);
         icm_arg = arg_node->node[0];
@@ -6059,16 +6070,14 @@ CompTypedef (node *arg_node, node *arg_info)
         MAKE_NEXT_ICM_ARG (icm_arg, type2);
 
 #ifndef NEWTREE
-        if (1 == arg_node->nnode)
-#else
-        if (arg_node->node[1] == NULL)
-#endif
-        {
+        if (1 == arg_node->nnode) {
             arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-#ifndef NEWTREE
             arg_node->nnode = 2;
-#endif
         }
+#else
+        if (tmp_node != NULL)
+            arg_node->node[1] = Trav (tmp_node, arg_info);
+#endif
     } else {
         if (arg_node->node[0] != NULL) {
             arg_node->node[0] = Trav (arg_node->node[0], arg_info);
