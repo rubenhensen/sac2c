@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.18  2003/02/24 17:40:36  mwe
+ * declare local used functions as static
+ *
  * Revision 1.17  2003/02/15 16:45:38  mwe
  * changed assignment for INFO_AL_TYPES
  *
@@ -260,6 +263,1005 @@
 #include "SSATransform.h"
 
 #include "AssociativeLaw.h"
+
+/*****************************************************************************
+ *
+ * function:
+ *   IsAssociativeAndCommutative(node *arg_node)
+ *
+ * description:
+ *   returns '1' if the primitive operation is associative and commutative
+ *
+ ****************************************************************************/
+
+static int
+IsAssociativeAndCommutative (node *arg_node)
+{
+
+    int return_bool;
+    DBUG_ENTER ("IsAssociativeAndCommutative");
+    switch (PRF_PRF (arg_node)) {
+    case F_add_SxS:
+    case F_mul_SxS:
+    case F_max:
+    case F_min:
+    case F_and:
+    case F_or:
+        return_bool = 1;
+        break;
+
+    default:
+        return_bool = 0;
+    }
+
+    DBUG_RETURN (return_bool);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   int ReachedArgument(node *arg_node)
+ *
+ * description:
+ *   returns '1' if the arg_node is an argument defined outside current
+ *   block node
+ *
+ ****************************************************************************/
+
+static int
+ReachedArgument (node *arg_node)
+{
+
+    int return_bool;
+    DBUG_ENTER ("ReachedArgument");
+
+    if (NODE_TYPE (arg_node) == N_id) {
+        if (AVIS_SSAASSIGN (ID_AVIS (arg_node)) == NULL)
+            return_bool = 1;
+        else
+            return_bool = 0;
+    } else
+        return_bool = 0;
+
+    DBUG_RETURN (return_bool);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   int ReachedDefinition(node *arg_node)
+ *
+ * description:
+ *   returns '1' if the definition of the arg_node contain no prf-node
+ *
+ ****************************************************************************/
+
+static int
+ReachedDefinition (node *arg_node)
+{
+
+    int return_bool;
+    DBUG_ENTER ("ReachedDefinition");
+
+    if (NODE_TYPE (arg_node) == N_id) {
+        if (AVIS_SSAASSIGN (ID_AVIS (arg_node)) == NULL)
+            return_bool = 0;
+        else if (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node)))))
+                 != N_prf)
+            return_bool = 1;
+        else
+            return_bool = 0;
+    } else
+        return_bool = 0;
+
+    DBUG_RETURN (return_bool);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   int IsConstant(node *arg_node)
+ *
+ * description:
+ *   returns '1' if the arg_node is a constant value
+ *
+ ****************************************************************************/
+
+static int
+IsConstant (node *arg_node)
+{
+
+    int return_bool;
+    DBUG_ENTER ("IsConstant");
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_num:
+    case N_double:
+    case N_float:
+    case N_bool:
+    case N_char:
+        return_bool = 1;
+        break;
+
+    default:
+        return_bool = 0;
+    }
+
+    DBUG_RETURN (return_bool);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *AddNode(node *arg_node, node *arg_info, int constant)
+ *
+ * description:
+ *   Add the arg_node to the node-list in arg_info
+ *   If the int-argument is '1', the arg_node contains a constant value
+ *   If the int-argument is '0', the arg_node contains no constant value
+ *   Increase the corresponding counter
+ *   arg_node is added to the corresponding list
+ *
+ ****************************************************************************/
+
+static node *
+AddNode (node *arg_node, node *arg_info, int constant)
+{
+    nodelist *newnodelistnode = MakeNodelistNode (EXPRS_EXPR (arg_node), NULL);
+
+    DBUG_ENTER ("AddNode");
+
+    if (constant == 1) {
+        INFO_AL_NUMBEROFCONSTANTS (arg_info) = INFO_AL_NUMBEROFCONSTANTS (arg_info) + 1;
+    }
+
+    else {
+        INFO_AL_NUMBEROFVARIABLES (arg_info) = INFO_AL_NUMBEROFVARIABLES (arg_info) + 1;
+    }
+
+    if (constant == 1) {
+        NODELIST_NEXT (newnodelistnode) = (INFO_AL_CONSTANTLIST (arg_info));
+        INFO_AL_CONSTANTLIST (arg_info) = newnodelistnode;
+    } else {
+        NODELIST_NEXT (newnodelistnode) = ((nodelist *)(INFO_AL_VARIABLELIST (arg_info)));
+        INFO_AL_VARIABLELIST (arg_info) = newnodelistnode;
+    }
+
+    DBUG_RETURN (arg_info);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   int OtherPrfOp(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Thje arg_node is an exprs-node
+ *   Returns '1' if the argument of the exprs-node is an id-node and the
+ *   used primitive operation in its definition is not the same as saved
+ *   in arg_info
+ *
+ ****************************************************************************/
+
+static int
+OtherPrfOp (node *arg_node, node *arg_info)
+{
+    int otherOp;
+    prf otherPrf;
+    DBUG_ENTER ("OtherPrfOp");
+    if (NODE_TYPE (EXPRS_EXPR (arg_node)) == N_id) {
+        if (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))) == NULL)
+            otherOp = 0;
+        else {
+            otherPrf = PRF_PRF (
+              LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))));
+
+            if (INFO_AL_CURRENTPRF (arg_info) == otherPrf)
+                otherOp = 0;
+            else
+                otherOp = 1;
+        }
+    } else
+        otherOp = 0;
+
+    DBUG_RETURN (otherOp);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   ContainOptInformation(node *arg_info)
+ *
+ * description:
+ *   returns 1 (true) if the arg_info-node contains N_assign-nodes to include
+ *   in the tree
+ *
+ ****************************************************************************/
+
+static int
+ContainOptInformation (node *arg_info)
+{
+    DBUG_ENTER ("ContainOptInformation");
+
+    if ((INFO_AL_NUMBEROFCONSTANTS (arg_info) > 1)
+        && (INFO_AL_NUMBEROFCONSTANTS (arg_info) + INFO_AL_NUMBEROFVARIABLES (arg_info)
+            > 3))
+        DBUG_RETURN (1);
+    else
+        DBUG_RETURN (0);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   nodelist *RemoveNodelistNodes( nodelist* current_list )
+ *
+ * description:
+ *   set all NODELIST_NODE to NULL
+ *   These function remove all connected nodes. This circumvent deleting
+ *   of the NODELIST_NODE-elements when FREE_NODELIST is executed.
+ *
+ ****************************************************************************/
+
+static nodelist *
+RemoveNodelistNodes (nodelist *current_list)
+{
+
+    nodelist *temp = current_list;
+    DBUG_ENTER ("RemoveNodelistNodes");
+
+    if (temp != NULL) {
+        while (NODELIST_NEXT (temp) != NULL) {
+            NODELIST_NODE (temp) = NULL;
+            temp = NODELIST_NEXT (temp);
+        }
+        NODELIST_NODE (temp) = NULL;
+    }
+
+    DBUG_RETURN (current_list);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *MakeAssignNodeFromExprsNode( node *newnode , node *arg_info)
+ *
+ * description:
+ *   This function create a new assign-node with the exprs-node as an
+ *   argument. The correct primitive and vardec-root-node are provided
+ *   by the arg_info-node.
+ *
+ ****************************************************************************/
+
+static node *
+MakeAssignNodeFromExprsNode (node *newnode, node *arg_info)
+{
+
+    node *newvardec;
+    types *type;
+    char *newname1, *newname2;
+
+    DBUG_ENTER ("MakeAssignNodeFromExprsNode");
+    newnode = MakePrf (INFO_AL_CURRENTPRF (arg_info), newnode);
+
+    type = MakeTypes (TYPES_BASETYPE ((INFO_AL_TYPE (arg_info))),
+                      TYPES_DIM ((INFO_AL_TYPE (arg_info))), NULL, NULL, NULL);
+
+    newname1 = TmpVar ();
+
+    newvardec
+      = MakeVardec (newname1, type, (BLOCK_VARDEC (INFO_AL_BLOCKNODE (arg_info))));
+
+    BLOCK_VARDEC (INFO_AL_BLOCKNODE (arg_info)) = newvardec;
+
+    newname2 = StringCopy (newname1);
+    newnode = MakeAssignLet (newname2, newvardec, newnode);
+
+    VARDEC_OBJDEF (newvardec) = newnode;
+    AVIS_SSAASSIGN (VARDEC_AVIS (newvardec)) = newnode;
+    AVIS_SSAASSIGN2 (VARDEC_AVIS (newvardec)) = newnode;
+
+    DBUG_RETURN (newnode);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   nodelist *RemoveNullpointerNodes( nodelist *source  )
+ *
+ * description:
+ *   While the optimization process it is possible, that some NULL-Pointer
+ *   in the NODELIST_NODE-pointer can accure. This can cause exceptions,
+ *   so these NULL-Pointer-elements have to be removed.
+ *   The following function do so.
+ *
+ ****************************************************************************/
+
+static nodelist *
+RemoveNullpointerNodes (nodelist *source)
+{
+
+    nodelist *currentElem, *secElem;
+
+    DBUG_ENTER ("RemoveNullpointerNodes");
+
+    currentElem = source; /*Pointer on first list element*/
+    ;
+    secElem = NULL;
+    while ((currentElem != NULL) && (NODELIST_NEXT (currentElem) != NULL)) {
+        if (NODELIST_NODE (currentElem) == NULL) {
+            if (secElem != NULL) {
+                NODELIST_NEXT (secElem) = NODELIST_NEXT (currentElem);
+                /*
+                 * remove currentElem
+                 */
+
+                NODELIST_NEXT (currentElem) = NULL;
+                FreeNodelist (currentElem);
+
+                currentElem = secElem;
+            } else {
+                if (NODELIST_NEXT (currentElem) != NULL) {
+
+                    secElem = currentElem;
+
+                    source = NODELIST_NEXT (currentElem);
+
+                    NODELIST_NEXT (secElem) = NULL;
+                    FreeNodelist (secElem);
+                    secElem = NULL;
+                    currentElem = source;
+                } else {
+                    FreeNodelist (currentElem);
+                    source = NULL;
+                    break;
+                }
+            }
+        }
+        secElem = currentElem;
+        currentElem = NODELIST_NEXT (currentElem);
+    }
+
+    if ((currentElem != NULL) && (NODELIST_NODE (currentElem) == NULL)) {
+        FreeNodelist (currentElem);
+        if (secElem != NULL)
+            NODELIST_NEXT (secElem) = NULL;
+    }
+
+    DBUG_RETURN (source);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *MakeExprsNodeFromAssignNodes(node *elem1, node *elem2)
+ *
+ * description:
+ *   Both assign-nodes get arguments of new id-nodes. These id-nodes
+ *   get arguments of a new exprs-node.
+ *
+ ****************************************************************************/
+
+static node *
+MakeExprsNodeFromAssignNodes (node *elem1, node *elem2)
+{
+
+    node *newnode;
+    statustype status1, status2;
+    char *varname1, *newname1, *varmod1, *newmod1, *varname2, *newname2, *varmod2,
+      *newmod2;
+
+    DBUG_ENTER ("MakeExprsNodeFromAssignNodes");
+
+    newname1 = NULL;
+    newname2 = NULL;
+    varname1 = IDS_NAME (LET_IDS (ASSIGN_INSTR (elem1)));
+    DBUG_ASSERT ((varname1 != NULL),
+                 "Unexpected error, existing variable has no name: IDS_NAME == NULL");
+    newname1 = StringCopy (varname1);
+    varmod1 = IDS_MOD (LET_IDS (ASSIGN_INSTR (elem1)));
+    if (varmod1 != NULL)
+        newmod1 = StringCopy (varmod1);
+    else
+        newmod1 = NULL;
+    status1 = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (elem1)));
+
+    varname2 = IDS_NAME (LET_IDS (ASSIGN_INSTR (elem2)));
+    DBUG_ASSERT ((varname2 != NULL),
+                 "Unexpected error, existing variable has no name: IDS_NAME == NULL");
+    newname2 = StringCopy (varname2);
+    varmod2 = IDS_MOD (LET_IDS (ASSIGN_INSTR (elem2)));
+    if (varmod2 != NULL)
+        newmod2 = StringCopy (varmod2);
+    else
+        newmod2 = NULL;
+    status2 = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (elem2)));
+
+    newnode = MakeExprs (MakeId (newname1, newmod1, status1),
+                         MakeExprs (MakeId (newname2, newmod2, status2), NULL));
+
+    ID_AVIS (EXPRS_EXPR (newnode)) = IDS_AVIS (LET_IDS (ASSIGN_INSTR (elem1)));
+    ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (newnode)))
+      = IDS_AVIS (LET_IDS (ASSIGN_INSTR (elem2)));
+
+    ID_VARDEC (EXPRS_EXPR (newnode)) = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (elem1)));
+    ID_VARDEC (EXPRS_EXPR (EXPRS_NEXT (newnode)))
+      = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (elem2)));
+
+    DBUG_RETURN (newnode);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *CreateExprsNode(nodelist *currentElem, int number_of_list_elements)
+ *
+ * description:
+ *   aktelem contains 'number_of_list_elements' list elements.
+ *   These list elements are constant nodes or id nodes.
+ *   The list elements will be duplicated and the new nodes will replace the
+ *   original nodes.
+ *
+ ****************************************************************************/
+
+static nodelist *
+CreateExprsNodes (nodelist *currentElem, int number_of_list_elements)
+{
+    int count;
+    node *listElem;
+
+    DBUG_ENTER ("CreateExprsNodes");
+
+    for (count = 0; count < number_of_list_elements; count++) {
+        listElem
+          = NODELIST_NODE (currentElem); /*pointer on actual node stored in nodelist*/
+        listElem = DupTree (listElem);   /*pointer on duplicated node */
+        listElem = MakeExprs (listElem, NULL); /* create N_expr-node */
+        NODELIST_NODE (currentElem) = listElem;
+        currentElem = NODELIST_NEXT (currentElem);
+    }
+    /* all elements of the nodelist are N_expr nodes*/
+
+    DBUG_RETURN (currentElem);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   nodelist *CreateAssignNodesFromExprsNodes( nodelist *currentElem,
+ *                                              node *arg_info )
+ *
+ * description:
+ *   The nodelist currentElem contains exprs-nodes. The first and the second
+ *   node in list will be connected to one assign-node.
+ *   After that, the two exprs-nodes will be replaced by the new
+ *   assign node.
+ *
+ ****************************************************************************/
+
+static nodelist *
+CreateAssignNodesFromExprsNodes (nodelist *currentElem, node *arg_info)
+{
+
+    nodelist *secElem;
+    node *listElem, *listElem2;
+
+    DBUG_ENTER ("CreateAssignNodesFromExprsNodes");
+
+    secElem = NODELIST_NEXT (currentElem); /*pointer on next list element*/
+    listElem = NODELIST_NODE (currentElem);
+    listElem2 = NODELIST_NODE (secElem);
+
+    EXPRS_NEXT (listElem) = listElem2; /*concatenate first with second N_expr-node*/
+    listElem = MakeAssignNodeFromExprsNode (listElem, arg_info);
+
+    NODELIST_NODE (currentElem) = listElem;
+    NODELIST_NEXT (currentElem) = NODELIST_NEXT (secElem); /* remove second node*/
+    secElem = currentElem; /* store pointer on last element */
+
+    DBUG_RETURN (currentElem);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *MakeExprsNodeFromExprsAndAssignNode(nodelist *assignnode,
+ *                                             nodelist *exprsnode )
+ *
+ * description:
+ *   One NODELIST_NODE contain an assign-node and the other an exprs-node.
+ *   The assign-node becomes the argument of a new id node.
+ *   This id node and the exprs node are connected to a new exprs-node.
+ *
+ ****************************************************************************/
+
+static node *
+MakeExprsNodeFromExprsAndAssignNode (nodelist *assignnode, nodelist *exprsnode)
+{
+
+    node *listElem, *listElem2, *newnode;
+    char *newname1, *newname2, *mod, *mod2;
+    statustype status;
+
+    DBUG_ENTER ("MakeExprsNodeFromExprsAndAssignNode");
+
+    listElem = NODELIST_NODE (assignnode); /* pointer on last constant N_assign-node */
+    listElem2 = NODELIST_NODE (exprsnode); /* pointer on node in list */
+
+    newname2 = NULL;
+    newname1 = IDS_NAME (LET_IDS (ASSIGN_INSTR (listElem)));
+    DBUG_ASSERT ((newname1 != NULL),
+                 "Unexpected error, existing variable has no name: IDS_NAME == NULL");
+    newname2 = StringCopy (newname1);
+    mod = IDS_MOD (LET_IDS (ASSIGN_INSTR (listElem)));
+
+    if (mod != NULL)
+        mod2 = StringCopy (mod);
+    else
+        mod2 = NULL;
+
+    status = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (listElem)));
+
+    newnode = MakeId (newname2, mod2, status);
+    newnode = MakeExprs (newnode, listElem2); /* create new N_Expr-node */
+
+    ID_AVIS (EXPRS_EXPR (newnode)) = IDS_AVIS (LET_IDS (ASSIGN_INSTR (listElem)));
+
+    ID_VARDEC (EXPRS_EXPR (newnode)) = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (listElem)));
+
+    DBUG_RETURN (newnode);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *CreateAssignNodeFromAssignAndExprsNode(nodelist *currentElem,
+ *                                       nodelist *secElem, node* arg_info)
+ *
+ * description:
+ *    This function creates a new assign-node with another assign-node and
+ *    an exprs-node as an argument.
+ *
+ ****************************************************************************/
+
+static node *
+CreateAssignNodeFromAssignAndExprsNode (nodelist *currentElem, nodelist *secElem,
+                                        node *arg_info)
+{
+
+    node *newnode;
+
+    DBUG_ENTER ("CreateAssignNodeFromAssignAndExprsNode");
+
+    newnode = MakeExprsNodeFromExprsAndAssignNode (secElem, currentElem);
+    newnode = MakeAssignNodeFromExprsNode (newnode, arg_info);
+
+    DBUG_RETURN (newnode);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   CommitNAssignNodes(node *arg_info)
+ *
+ * description:
+ *   When this function is called, all nodes in the VARIABLELIST and
+ *   CONSTANTLIST are duplicated and processed to assign-nodes.
+ *   Now, first the first and second assign-node in CONSTANTLIST get
+ *   arguments of a new assign-node, which get the last element of
+ *   CONSTANTLIST. The first and second element are removed from the list
+ *   and added to the OPTCONSTANTLIST. This procedure is repeated until
+ *   only one assign-node is in CONSTANTLIST.
+ *   This node and the first node of the VARIABLELIST are handled the same
+ *   way. Both nodes are removed from their lists and inserted in
+ *   OPTVARIABLELIST.
+ *   Now, this procedure works the same way for VARIABLELIST. The last both
+ *   assign-nodes become arguments of an prf-node, which replace the
+ *   old prf-node of the 'starting assign-node'.
+ *
+ ****************************************************************************/
+
+static node *
+CommitNAssignNodes (node *arg_info)
+{
+    node *newnode, *elem1, *elem2;
+    nodelist *lastListElem, *aktListElem, *constlist, *varlist;
+
+    DBUG_ENTER ("CommitNAssignNodes");
+
+    constlist = INFO_AL_OPTCONSTANTLIST (arg_info);
+    if (constlist != NULL) {
+        while (NODELIST_NEXT (constlist) != NULL)
+            constlist = NODELIST_NEXT (constlist);
+    }
+
+    varlist = INFO_AL_OPTVARIABLELIST (arg_info);
+    if (varlist != NULL) {
+        while (NODELIST_NEXT (varlist) != NULL)
+            varlist = NODELIST_NEXT (varlist);
+    }
+
+    aktListElem = INFO_AL_CONSTANTLIST (arg_info);
+    lastListElem = aktListElem;
+
+    while (NODELIST_NEXT (lastListElem) != NULL) {
+        lastListElem = NODELIST_NEXT (lastListElem);
+    }
+
+    while (aktListElem != lastListElem) {
+        elem1 = NODELIST_NODE (aktListElem);
+
+        if (constlist != NULL) {
+            NODELIST_NEXT (constlist) = aktListElem;
+            constlist = NODELIST_NEXT (constlist);
+        } else {
+            INFO_AL_OPTCONSTANTLIST (arg_info) = aktListElem;
+            constlist = INFO_AL_OPTCONSTANTLIST (arg_info);
+        }
+
+        aktListElem = NODELIST_NEXT (aktListElem);
+        elem2 = NODELIST_NODE (aktListElem);
+
+        NODELIST_NEXT (constlist) = aktListElem;
+        constlist = NODELIST_NEXT (constlist);
+
+        newnode = MakeExprsNodeFromAssignNodes (elem1, elem2);
+        newnode = MakeAssignNodeFromExprsNode (newnode, arg_info);
+
+        NODELIST_NEXT (lastListElem) = MakeNodelistNode (newnode, NULL);
+        lastListElem = NODELIST_NEXT (lastListElem);
+        aktListElem = NODELIST_NEXT (aktListElem);
+    }
+
+    /* constant nodes ready */
+
+    /* connect last constant node with first variable node */
+
+    elem1 = NODELIST_NODE (lastListElem);
+
+    if (constlist != NULL) {
+        NODELIST_NEXT (constlist) = lastListElem;
+        constlist = NODELIST_NEXT (constlist);
+    } else {
+        INFO_AL_OPTCONSTANTLIST (arg_info) = lastListElem;
+        constlist = INFO_AL_OPTCONSTANTLIST (arg_info);
+    }
+    NODELIST_NEXT (constlist) = NULL;
+
+    aktListElem = INFO_AL_VARIABLELIST (arg_info);
+    lastListElem = aktListElem;
+    while (NODELIST_NEXT (lastListElem) != NULL) {
+        lastListElem = NODELIST_NEXT (lastListElem);
+    }
+
+    if (aktListElem != lastListElem) {
+
+        elem2 = NODELIST_NODE (aktListElem);
+
+        if (varlist != NULL) {
+            NODELIST_NEXT (varlist) = aktListElem;
+            varlist = NODELIST_NEXT (varlist);
+        } else {
+            INFO_AL_OPTVARIABLELIST (arg_info) = aktListElem;
+            varlist = INFO_AL_OPTVARIABLELIST (arg_info);
+        }
+
+        aktListElem = NODELIST_NEXT (aktListElem);
+
+        newnode = MakeExprsNodeFromAssignNodes (elem1, elem2);
+        newnode = MakeAssignNodeFromExprsNode (newnode, arg_info);
+
+        NODELIST_NEXT (lastListElem) = MakeNodelistNode (newnode, NULL);
+        lastListElem = NODELIST_NEXT (lastListElem);
+
+        while (NODELIST_NEXT (aktListElem) != lastListElem) {
+            elem1 = NODELIST_NODE (aktListElem);
+
+            NODELIST_NEXT (varlist) = aktListElem;
+            varlist = NODELIST_NEXT (varlist);
+
+            aktListElem = NODELIST_NEXT (aktListElem);
+            elem2 = NODELIST_NODE (aktListElem);
+
+            NODELIST_NEXT (varlist) = aktListElem;
+            varlist = NODELIST_NEXT (varlist);
+
+            newnode = MakeExprsNodeFromAssignNodes (elem1, elem2);
+            newnode = MakeAssignNodeFromExprsNode (newnode, arg_info);
+
+            NODELIST_NEXT (lastListElem) = MakeNodelistNode (newnode, NULL);
+            lastListElem = NODELIST_NEXT (lastListElem);
+
+            aktListElem = NODELIST_NEXT (aktListElem);
+        }
+
+        /* variable nodes ready  */
+
+        /* connect last two N_assign nodes of variable list */
+
+        elem1 = NODELIST_NODE (aktListElem);
+        elem2 = NODELIST_NODE (lastListElem);
+
+        NODELIST_NEXT (varlist) = aktListElem;
+        varlist = NODELIST_NEXT (varlist);
+        NODELIST_NEXT (varlist) = lastListElem;
+        varlist = NODELIST_NEXT (varlist);
+        NODELIST_NEXT (varlist) = NULL;
+
+        newnode = MakeExprsNodeFromAssignNodes (elem1, elem2);
+
+        elem1 = PRF_ARGS (LET_EXPR (INFO_AL_LETNODE (arg_info)));
+
+        FreeNode (elem1);
+
+        PRF_ARGS (LET_EXPR (INFO_AL_LETNODE (arg_info))) = newnode;
+
+    } else {
+
+        elem2 = NODELIST_NODE (lastListElem);
+
+        if (varlist != NULL)
+            NODELIST_NEXT (varlist) = lastListElem;
+        else {
+            INFO_AL_OPTVARIABLELIST (arg_info) = lastListElem;
+            varlist = INFO_AL_OPTVARIABLELIST (arg_info);
+        }
+
+        if (NODELIST_NEXT (varlist) != NULL) {
+            varlist = NODELIST_NEXT (varlist);
+        }
+        NODELIST_NEXT (varlist) = aktListElem;
+        varlist = NODELIST_NEXT (varlist);
+        NODELIST_NEXT (varlist) = NULL;
+
+        newnode = MakeExprsNodeFromAssignNodes (elem1, elem2);
+
+        elem1 = PRF_ARGS (LET_EXPR (INFO_AL_LETNODE (arg_info)));
+
+        FreeNode (elem1);
+
+        PRF_ARGS (LET_EXPR (INFO_AL_LETNODE (arg_info))) = newnode;
+    }
+    NODELIST_NEXT (varlist) = NULL;
+
+    DBUG_RETURN (arg_info);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   CreateNAssignNodes(node *arg_info)
+ *
+ * description:
+ *   Replace all nodes in CONSTANTLIST by copies and imbed them in exprs-nodes
+ *   Create assign-nodes from two adjacent exprs-nodes
+ *   If an odd number of nodes is in list, create with last created
+ *   assign-node and last exprs-node new assign-node (and store
+ *   'old' assign_node in OPTCONSTANTLIST to avoid double usage
+ *
+ *   The same procedure for nodes stored in VARIABLELIST
+ *   additional:
+ *     If there is only one variable node in list it is neccessary
+ *     to check how much constant nodes are in list:
+ *       - remain only one assign node: create new prf-node with
+ *           the both last nodes as arguments and set it behind stored
+ *           let node and stop this optimization step
+ *       - remain more than one assign node: create new assign node
+ *           with sole variable expr-node and last 'constant' assign-node
+ *           and store new assign node in VARIABLELIST instead of expr-node
+ *
+ *   Remove NODELIST_NODES with NULL-pointer as arguments
+ *
+ ****************************************************************************/
+
+static node *
+CreateNAssignNodes (node *arg_info)
+{
+    int count;
+    node *listElem, *newnode;
+    nodelist *currentElem, *secElem;
+
+    DBUG_ENTER ("CreateNAssignNodes");
+
+    /*
+     * create assign nodes with node of CONSTANTLIST
+     */
+
+    currentElem = INFO_AL_CONSTANTLIST (arg_info); /*Pointer on first list element*/
+    secElem = NULL;
+
+    currentElem = CreateExprsNodes (currentElem, INFO_AL_NUMBEROFCONSTANTS (arg_info));
+
+    currentElem = INFO_AL_CONSTANTLIST (arg_info); /*pointer on first list element*/
+    for (count = 0; count < (div (INFO_AL_NUMBEROFCONSTANTS (arg_info), 2).quot);
+         count++) {
+        currentElem = CreateAssignNodesFromExprsNodes (currentElem, arg_info);
+        currentElem = NODELIST_NEXT (currentElem);
+    }
+
+    /*
+     * If CONSTANTLIST has an odd number of list elements:
+     */
+    if (div (INFO_AL_NUMBEROFCONSTANTS (arg_info), 2).rem == 1) {
+
+        currentElem = INFO_AL_CONSTANTLIST (arg_info); /*Pointer on first list element*/
+        while (NODELIST_NEXT (currentElem) != NULL) {
+            secElem = currentElem;
+            currentElem = NODELIST_NEXT (currentElem);
+        }
+
+        newnode = CreateAssignNodeFromAssignAndExprsNode (currentElem, secElem, arg_info);
+
+        (INFO_AL_OPTCONSTANTLIST (arg_info))
+          = MakeNodelistNode (NODELIST_NODE (secElem), NULL);
+        NODELIST_NEXT ((INFO_AL_OPTCONSTANTLIST (arg_info))) = NULL;
+
+        FreeNodelist (currentElem);
+
+        NODELIST_NODE (secElem) = newnode; /* store new node */
+        NODELIST_NEXT (secElem) = NULL;    /* remove old N_expr-node */
+    }
+
+    /*
+     * constant nodes ready
+     * create assign nodes with nodes of VARIABLELIST
+     */
+
+    currentElem = INFO_AL_VARIABLELIST (arg_info); /*Pointer on first list element*/
+    currentElem = CreateExprsNodes (currentElem, INFO_AL_NUMBEROFVARIABLES (arg_info));
+
+    currentElem = INFO_AL_VARIABLELIST (arg_info); /*Pointer on first list element*/
+
+    /*
+     * check number of list elements
+     */
+
+    if ((INFO_AL_NUMBEROFVARIABLES (arg_info) == 1)
+        && (INFO_AL_NUMBEROFCONSTANTS (arg_info) <= 3)) {
+
+        secElem
+          = INFO_AL_CONSTANTLIST (arg_info); /*Pointer on first constant list element*/
+        while (NODELIST_NEXT (secElem) != NULL)
+            secElem = NODELIST_NEXT (secElem);
+
+        newnode = MakeExprsNodeFromExprsAndAssignNode (secElem, currentElem);
+
+        listElem = PRF_ARGS (LET_EXPR (INFO_AL_LETNODE (arg_info)));
+
+        /* free listElem */
+
+        INFO_AL_OPTVARIABLELIST (arg_info)
+          = MakeNodelistNode (NODELIST_NODE (secElem), NULL);
+        NODELIST_NEXT ((INFO_AL_OPTVARIABLELIST (arg_info))) = NULL;
+
+        PRF_ARGS (LET_EXPR (INFO_AL_LETNODE (arg_info))) = newnode;
+        /* prohibits functioncall of 'CommitNassignNodes()' */
+        INFO_AL_NUMBEROFCONSTANTS (arg_info) = 0;
+        INFO_AL_NUMBEROFVARIABLES (arg_info) = 0;
+    } else {
+
+        if (INFO_AL_NUMBEROFVARIABLES (arg_info) == 1) {
+
+            secElem = INFO_AL_CONSTANTLIST (
+              arg_info); /*Pointer on first constant list element*/
+            while (NODELIST_NEXT (secElem) != NULL)
+                secElem = NODELIST_NEXT (secElem);
+
+            newnode = MakeExprsNodeFromExprsAndAssignNode (secElem, currentElem);
+            newnode = MakeAssignNodeFromExprsNode (newnode, arg_info);
+
+            if (INFO_AL_OPTCONSTANTLIST (arg_info) != NULL) {
+                NODELIST_NEXT ((INFO_AL_OPTCONSTANTLIST (arg_info)))
+                  = MakeNodelistNode (NODELIST_NODE (secElem), NULL);
+                NODELIST_NEXT (NODELIST_NEXT ((INFO_AL_OPTCONSTANTLIST (arg_info))))
+                  = NULL;
+            } else {
+                (INFO_AL_OPTCONSTANTLIST (arg_info))
+                  = MakeNodelistNode (NODELIST_NODE (secElem), NULL);
+                ;
+                NODELIST_NEXT ((INFO_AL_OPTCONSTANTLIST (arg_info))) = NULL;
+            }
+            NODELIST_NODE (secElem) = NULL; /* store new node */ /* vorher currentElem */
+            /*NODELIST_NEXT(secElem) = NULL;*/ /* remove old N_expr-node */
+            NODELIST_NODE (currentElem) = newnode;
+        } else {
+
+            for (count = 0; count < (div (INFO_AL_NUMBEROFVARIABLES (arg_info), 2).quot);
+                 count++) {
+                currentElem = CreateAssignNodesFromExprsNodes (currentElem, arg_info);
+                currentElem = NODELIST_NEXT (currentElem);
+            }
+            /*
+             * If VARIABLELIST has odd number of list elements
+             */
+            if (div (INFO_AL_NUMBEROFVARIABLES (arg_info), 2).rem == 1) {
+
+                currentElem
+                  = INFO_AL_VARIABLELIST (arg_info); /*Pointer on first list element*/
+                while (NODELIST_NEXT (currentElem) != NULL) {
+                    secElem = currentElem;
+                    currentElem = NODELIST_NEXT (currentElem);
+                }
+
+                newnode = CreateAssignNodeFromAssignAndExprsNode (currentElem, secElem,
+                                                                  arg_info);
+
+                (INFO_AL_OPTVARIABLELIST (arg_info))
+                  = MakeNodelistNode (NODELIST_NODE (secElem), NULL);
+                NODELIST_NEXT ((INFO_AL_OPTVARIABLELIST (arg_info))) = NULL;
+
+                FreeNodelist (currentElem);
+
+                NODELIST_NODE (secElem) = newnode; /* store new node */
+                NODELIST_NEXT (secElem) = NULL;    /* remove old N_expr-node */
+            }
+        }
+    }
+
+    /*
+     *  remove NULL-pointer-nodes
+     */
+
+    INFO_AL_CONSTANTLIST (arg_info)
+      = RemoveNullpointerNodes ((INFO_AL_CONSTANTLIST (arg_info)));
+
+    INFO_AL_VARIABLELIST (arg_info)
+      = RemoveNullpointerNodes ((INFO_AL_VARIABLELIST (arg_info)));
+
+    DBUG_RETURN (arg_info);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   TravElems(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   The arg_node is an exprs-node
+ *   The function terminates, when
+ *     (a) the expr-node contain an constant node
+ *     (b) in the definition of the argument of the expr-node
+ *         (i) another primitive is used
+ *         (ii) no primitive node is used
+ *     (c) a variable is reached, which is defined outside the actual N_block
+ *   All nodes TravElems terminates for, are collected in arg_info with
+ *   function AddNode (argument '1': constant node ; '0' no constant node)
+ *
+ ****************************************************************************/
+
+static node *
+TravElems (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("TravElems");
+
+    if (IsConstant (EXPRS_EXPR (arg_node))) {
+
+        arg_info = AddNode (arg_node, arg_info, 1);
+
+    } else {
+
+        if (OtherPrfOp (arg_node, arg_info) || ReachedArgument (EXPRS_EXPR (arg_node))
+            || ReachedDefinition (EXPRS_EXPR (arg_node))) {
+
+            arg_info = AddNode (arg_node, arg_info, 0);
+
+        } else {
+
+            ASSIGN_STATUS (INFO_AL_CURRENTASSIGN (arg_info)) = 0;
+            INFO_AL_CURRENTASSIGN (arg_info)
+              = AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)));
+
+            arg_info = TravElems (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
+                                    AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)))))),
+                                  arg_info);
+            arg_info = TravElems (EXPRS_NEXT (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
+                                    AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))))),
+                                  arg_info);
+        }
+    }
+
+    DBUG_RETURN (arg_info);
+}
 
 /*****************************************************************************
  *
@@ -569,1003 +1571,4 @@ ALprf (node *arg_node, node *arg_info)
         }
     }
     DBUG_RETURN (arg_node);
-}
-
-/*****************************************************************************
- *
- * function:
- *   IsAssociativeAndCommutative(node *arg_node)
- *
- * description:
- *   returns '1' if the primitive operation is associative and commutative
- *
- ****************************************************************************/
-
-int
-IsAssociativeAndCommutative (node *arg_node)
-{
-
-    int return_bool;
-    DBUG_ENTER ("IsAssociativeAndCommutative");
-    switch (PRF_PRF (arg_node)) {
-    case F_add_SxS:
-    case F_mul_SxS:
-    case F_max:
-    case F_min:
-    case F_and:
-    case F_or:
-        return_bool = 1;
-        break;
-
-    default:
-        return_bool = 0;
-    }
-
-    DBUG_RETURN (return_bool);
-}
-
-/*****************************************************************************
- *
- * function:
- *   TravElems(node *arg_node, node *arg_info)
- *
- * description:
- *   The arg_node is an exprs-node
- *   The function terminates, when
- *     (a) the expr-node contain an constant node
- *     (b) in the definition of the argument of the expr-node
- *         (i) another primitive is used
- *         (ii) no primitive node is used
- *     (c) a variable is reached, which is defined outside the actual N_block
- *   All nodes TravElems terminates for, are collected in arg_info with
- *   function AddNode (argument '1': constant node ; '0' no constant node)
- *
- ****************************************************************************/
-
-node *
-TravElems (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("TravElems");
-
-    if (IsConstant (EXPRS_EXPR (arg_node))) {
-
-        arg_info = AddNode (arg_node, arg_info, 1);
-
-    } else {
-
-        if (OtherPrfOp (arg_node, arg_info) || ReachedArgument (EXPRS_EXPR (arg_node))
-            || ReachedDefinition (EXPRS_EXPR (arg_node))) {
-
-            arg_info = AddNode (arg_node, arg_info, 0);
-
-        } else {
-
-            ASSIGN_STATUS (INFO_AL_CURRENTASSIGN (arg_info)) = 0;
-            INFO_AL_CURRENTASSIGN (arg_info)
-              = AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)));
-
-            arg_info = TravElems (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
-                                    AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)))))),
-                                  arg_info);
-            arg_info = TravElems (EXPRS_NEXT (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
-                                    AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))))),
-                                  arg_info);
-        }
-    }
-
-    DBUG_RETURN (arg_info);
-}
-
-/*****************************************************************************
- *
- * function:
- *   int ReachedArgument(node *arg_node)
- *
- * description:
- *   returns '1' if the arg_node is an argument defined outside current
- *   block node
- *
- ****************************************************************************/
-
-int
-ReachedArgument (node *arg_node)
-{
-
-    int return_bool;
-    DBUG_ENTER ("ReachedArgument");
-
-    if (NODE_TYPE (arg_node) == N_id) {
-        if (AVIS_SSAASSIGN (ID_AVIS (arg_node)) == NULL)
-            return_bool = 1;
-        else
-            return_bool = 0;
-    } else
-        return_bool = 0;
-
-    DBUG_RETURN (return_bool);
-}
-
-/*****************************************************************************
- *
- * function:
- *   int ReachedDefinition(node *arg_node)
- *
- * description:
- *   returns '1' if the definition of the arg_node contain no prf-node
- *
- ****************************************************************************/
-
-int
-ReachedDefinition (node *arg_node)
-{
-
-    int return_bool;
-    DBUG_ENTER ("ReachedDefinition");
-
-    if (NODE_TYPE (arg_node) == N_id) {
-        if (AVIS_SSAASSIGN (ID_AVIS (arg_node)) == NULL)
-            return_bool = 0;
-        else if (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node)))))
-                 != N_prf)
-            return_bool = 1;
-        else
-            return_bool = 0;
-    } else
-        return_bool = 0;
-
-    DBUG_RETURN (return_bool);
-}
-
-/*****************************************************************************
- *
- * function:
- *   int IsConstant(node *arg_node)
- *
- * description:
- *   returns '1' if the arg_node is a constant value
- *
- ****************************************************************************/
-
-int
-IsConstant (node *arg_node)
-{
-
-    int return_bool;
-    DBUG_ENTER ("IsConstant");
-
-    switch (NODE_TYPE (arg_node)) {
-    case N_num:
-    case N_double:
-    case N_float:
-    case N_bool:
-    case N_char:
-        return_bool = 1;
-        break;
-
-    default:
-        return_bool = 0;
-    }
-
-    DBUG_RETURN (return_bool);
-}
-
-/*****************************************************************************
- *
- * function:
- *   node *AddNode(node *arg_node, node *arg_info, int constant)
- *
- * description:
- *   Add the arg_node to the node-list in arg_info
- *   If the int-argument is '1', the arg_node contains a constant value
- *   If the int-argument is '0', the arg_node contains no constant value
- *   Increase the corresponding counter
- *   arg_node is added to the corresponding list
- *
- ****************************************************************************/
-
-node *
-AddNode (node *arg_node, node *arg_info, int constant)
-{
-    nodelist *newnodelistnode = MakeNodelistNode (EXPRS_EXPR (arg_node), NULL);
-
-    DBUG_ENTER ("AddNode");
-
-    if (constant == 1) {
-        INFO_AL_NUMBEROFCONSTANTS (arg_info) = INFO_AL_NUMBEROFCONSTANTS (arg_info) + 1;
-    }
-
-    else {
-        INFO_AL_NUMBEROFVARIABLES (arg_info) = INFO_AL_NUMBEROFVARIABLES (arg_info) + 1;
-    }
-
-    if (constant == 1) {
-        NODELIST_NEXT (newnodelistnode) = (INFO_AL_CONSTANTLIST (arg_info));
-        INFO_AL_CONSTANTLIST (arg_info) = newnodelistnode;
-    } else {
-        NODELIST_NEXT (newnodelistnode) = ((nodelist *)(INFO_AL_VARIABLELIST (arg_info)));
-        INFO_AL_VARIABLELIST (arg_info) = newnodelistnode;
-    }
-
-    DBUG_RETURN (arg_info);
-}
-
-/*****************************************************************************
- *
- * function:
- *   int OtherPrfOp(node *arg_node, node *arg_info)
- *
- * description:
- *   Thje arg_node is an exprs-node
- *   Returns '1' if the argument of the exprs-node is an id-node and the
- *   used primitive operation in its definition is not the same as saved
- *   in arg_info
- *
- ****************************************************************************/
-
-int
-OtherPrfOp (node *arg_node, node *arg_info)
-{
-    int otherOp;
-    prf otherPrf;
-    DBUG_ENTER ("OtherPrfOp");
-    if (NODE_TYPE (EXPRS_EXPR (arg_node)) == N_id) {
-        if (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))) == NULL)
-            otherOp = 0;
-        else {
-            otherPrf = PRF_PRF (
-              LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))));
-
-            if (INFO_AL_CURRENTPRF (arg_info) == otherPrf)
-                otherOp = 0;
-            else
-                otherOp = 1;
-        }
-    } else
-        otherOp = 0;
-
-    DBUG_RETURN (otherOp);
-}
-
-/*****************************************************************************
- *
- * function:
- *   CreateNAssignNodes(node *arg_info)
- *
- * description:
- *   Replace all nodes in CONSTANTLIST by copies and imbed them in exprs-nodes
- *   Create assign-nodes from two adjacent exprs-nodes
- *   If an odd number of nodes is in list, create with last created
- *   assign-node and last exprs-node new assign-node (and store
- *   'old' assign_node in OPTCONSTANTLIST to avoid double usage
- *
- *   The same procedure for nodes stored in VARIABLELIST
- *   additional:
- *     If there is only one variable node in list it is neccessary
- *     to check how much constant nodes are in list:
- *       - remain only one assign node: create new prf-node with
- *           the both last nodes as arguments and set it behind stored
- *           let node and stop this optimization step
- *       - remain more than one assign node: create new assign node
- *           with sole variable expr-node and last 'constant' assign-node
- *           and store new assign node in VARIABLELIST instead of expr-node
- *
- *   Remove NODELIST_NODES with NULL-pointer as arguments
- *
- ****************************************************************************/
-
-node *
-CreateNAssignNodes (node *arg_info)
-{
-    int count;
-    node *listElem, *newnode;
-    nodelist *currentElem, *secElem;
-
-    DBUG_ENTER ("CreateNAssignNodes");
-
-    /*
-     * create assign nodes with node of CONSTANTLIST
-     */
-
-    currentElem = INFO_AL_CONSTANTLIST (arg_info); /*Pointer on first list element*/
-    secElem = NULL;
-
-    currentElem = CreateExprsNodes (currentElem, INFO_AL_NUMBEROFCONSTANTS (arg_info));
-
-    currentElem = INFO_AL_CONSTANTLIST (arg_info); /*pointer on first list element*/
-    for (count = 0; count < (div (INFO_AL_NUMBEROFCONSTANTS (arg_info), 2).quot);
-         count++) {
-        currentElem = CreateAssignNodesFromExprsNodes (currentElem, arg_info);
-        currentElem = NODELIST_NEXT (currentElem);
-    }
-
-    /*
-     * If CONSTANTLIST has an odd number of list elements:
-     */
-    if (div (INFO_AL_NUMBEROFCONSTANTS (arg_info), 2).rem == 1) {
-
-        currentElem = INFO_AL_CONSTANTLIST (arg_info); /*Pointer on first list element*/
-        while (NODELIST_NEXT (currentElem) != NULL) {
-            secElem = currentElem;
-            currentElem = NODELIST_NEXT (currentElem);
-        }
-
-        newnode = CreateAssignNodeFromAssignAndExprsNode (currentElem, secElem, arg_info);
-
-        (INFO_AL_OPTCONSTANTLIST (arg_info))
-          = MakeNodelistNode (NODELIST_NODE (secElem), NULL);
-        NODELIST_NEXT ((INFO_AL_OPTCONSTANTLIST (arg_info))) = NULL;
-
-        FreeNodelist (currentElem);
-
-        NODELIST_NODE (secElem) = newnode; /* store new node */
-        NODELIST_NEXT (secElem) = NULL;    /* remove old N_expr-node */
-    }
-
-    /*
-     * constant nodes ready
-     * create assign nodes with nodes of VARIABLELIST
-     */
-
-    currentElem = INFO_AL_VARIABLELIST (arg_info); /*Pointer on first list element*/
-    currentElem = CreateExprsNodes (currentElem, INFO_AL_NUMBEROFVARIABLES (arg_info));
-
-    currentElem = INFO_AL_VARIABLELIST (arg_info); /*Pointer on first list element*/
-
-    /*
-     * check number of list elements
-     */
-
-    if ((INFO_AL_NUMBEROFVARIABLES (arg_info) == 1)
-        && (INFO_AL_NUMBEROFCONSTANTS (arg_info) <= 3)) {
-
-        secElem
-          = INFO_AL_CONSTANTLIST (arg_info); /*Pointer on first constant list element*/
-        while (NODELIST_NEXT (secElem) != NULL)
-            secElem = NODELIST_NEXT (secElem);
-
-        newnode = MakeExprsNodeFromExprsAndAssignNode (secElem, currentElem);
-
-        listElem = PRF_ARGS (LET_EXPR (INFO_AL_LETNODE (arg_info)));
-
-        /* free listElem */
-
-        INFO_AL_OPTVARIABLELIST (arg_info)
-          = MakeNodelistNode (NODELIST_NODE (secElem), NULL);
-        NODELIST_NEXT ((INFO_AL_OPTVARIABLELIST (arg_info))) = NULL;
-
-        PRF_ARGS (LET_EXPR (INFO_AL_LETNODE (arg_info))) = newnode;
-        /* prohibits functioncall of 'CommitNassignNodes()' */
-        INFO_AL_NUMBEROFCONSTANTS (arg_info) = 0;
-        INFO_AL_NUMBEROFVARIABLES (arg_info) = 0;
-    } else {
-
-        if (INFO_AL_NUMBEROFVARIABLES (arg_info) == 1) {
-
-            secElem = INFO_AL_CONSTANTLIST (
-              arg_info); /*Pointer on first constant list element*/
-            while (NODELIST_NEXT (secElem) != NULL)
-                secElem = NODELIST_NEXT (secElem);
-
-            newnode = MakeExprsNodeFromExprsAndAssignNode (secElem, currentElem);
-            newnode = MakeAssignNodeFromExprsNode (newnode, arg_info);
-
-            if (INFO_AL_OPTCONSTANTLIST (arg_info) != NULL) {
-                NODELIST_NEXT ((INFO_AL_OPTCONSTANTLIST (arg_info)))
-                  = MakeNodelistNode (NODELIST_NODE (secElem), NULL);
-                NODELIST_NEXT (NODELIST_NEXT ((INFO_AL_OPTCONSTANTLIST (arg_info))))
-                  = NULL;
-            } else {
-                (INFO_AL_OPTCONSTANTLIST (arg_info))
-                  = MakeNodelistNode (NODELIST_NODE (secElem), NULL);
-                ;
-                NODELIST_NEXT ((INFO_AL_OPTCONSTANTLIST (arg_info))) = NULL;
-            }
-            NODELIST_NODE (secElem) = NULL; /* store new node */ /* vorher currentElem */
-            /*NODELIST_NEXT(secElem) = NULL;*/ /* remove old N_expr-node */
-            NODELIST_NODE (currentElem) = newnode;
-        } else {
-
-            for (count = 0; count < (div (INFO_AL_NUMBEROFVARIABLES (arg_info), 2).quot);
-                 count++) {
-                currentElem = CreateAssignNodesFromExprsNodes (currentElem, arg_info);
-                currentElem = NODELIST_NEXT (currentElem);
-            }
-            /*
-             * If VARIABLELIST has odd number of list elements
-             */
-            if (div (INFO_AL_NUMBEROFVARIABLES (arg_info), 2).rem == 1) {
-
-                currentElem
-                  = INFO_AL_VARIABLELIST (arg_info); /*Pointer on first list element*/
-                while (NODELIST_NEXT (currentElem) != NULL) {
-                    secElem = currentElem;
-                    currentElem = NODELIST_NEXT (currentElem);
-                }
-
-                newnode = CreateAssignNodeFromAssignAndExprsNode (currentElem, secElem,
-                                                                  arg_info);
-
-                (INFO_AL_OPTVARIABLELIST (arg_info))
-                  = MakeNodelistNode (NODELIST_NODE (secElem), NULL);
-                NODELIST_NEXT ((INFO_AL_OPTVARIABLELIST (arg_info))) = NULL;
-
-                FreeNodelist (currentElem);
-
-                NODELIST_NODE (secElem) = newnode; /* store new node */
-                NODELIST_NEXT (secElem) = NULL;    /* remove old N_expr-node */
-            }
-        }
-    }
-
-    /*
-     *  remove NULL-pointer-nodes
-     */
-
-    INFO_AL_CONSTANTLIST (arg_info)
-      = RemoveNullpointerNodes ((INFO_AL_CONSTANTLIST (arg_info)));
-
-    INFO_AL_VARIABLELIST (arg_info)
-      = RemoveNullpointerNodes ((INFO_AL_VARIABLELIST (arg_info)));
-
-    DBUG_RETURN (arg_info);
-}
-
-/*****************************************************************************
- *
- * function:
- *   node *CreateAssignNodeFromAssignAndExprsNode(nodelist *currentElem,
- *                                       nodelist *secElem, node* arg_info)
- *
- * description:
- *    This function creates a new assign-node with another assign-node and
- *    an exprs-node as an argument.
- *
- ****************************************************************************/
-
-node *
-CreateAssignNodeFromAssignAndExprsNode (nodelist *currentElem, nodelist *secElem,
-                                        node *arg_info)
-{
-
-    node *newnode;
-
-    DBUG_ENTER ("CreateAssignNodeFromAssignAndExprsNode");
-
-    newnode = MakeExprsNodeFromExprsAndAssignNode (secElem, currentElem);
-    newnode = MakeAssignNodeFromExprsNode (newnode, arg_info);
-
-    DBUG_RETURN (newnode);
-}
-
-/*****************************************************************************
- *
- * function:
- *   node *CreateExprsNode(nodelist *currentElem, int number_of_list_elements)
- *
- * description:
- *   aktelem contains 'number_of_list_elements' list elements.
- *   These list elements are constant nodes or id nodes.
- *   The list elements will be duplicated and the new nodes will replace the
- *   original nodes.
- *
- ****************************************************************************/
-
-nodelist *
-CreateExprsNodes (nodelist *currentElem, int number_of_list_elements)
-{
-    int count;
-    node *listElem;
-
-    DBUG_ENTER ("CreateExprsNodes");
-
-    for (count = 0; count < number_of_list_elements; count++) {
-        listElem
-          = NODELIST_NODE (currentElem); /*pointer on actual node stored in nodelist*/
-        listElem = DupTree (listElem);   /*pointer on duplicated node */
-        listElem = MakeExprs (listElem, NULL); /* create N_expr-node */
-        NODELIST_NODE (currentElem) = listElem;
-        currentElem = NODELIST_NEXT (currentElem);
-    }
-    /* all elements of the nodelist are N_expr nodes*/
-
-    DBUG_RETURN (currentElem);
-}
-
-/*****************************************************************************
- *
- * function:
- *   nodelist *CreateAssignNodesFromExprsNodes( nodelist *currentElem,
- *                                              node *arg_info )
- *
- * description:
- *   The nodelist currentElem contains exprs-nodes. The first and the second
- *   node in list will be connected to one assign-node.
- *   After that, the two exprs-nodes will be replaced by the new
- *   assign node.
- *
- ****************************************************************************/
-
-nodelist *
-CreateAssignNodesFromExprsNodes (nodelist *currentElem, node *arg_info)
-{
-
-    nodelist *secElem;
-    node *listElem, *listElem2;
-
-    DBUG_ENTER ("CreateAssignNodesFromExprsNodes");
-
-    secElem = NODELIST_NEXT (currentElem); /*pointer on next list element*/
-    listElem = NODELIST_NODE (currentElem);
-    listElem2 = NODELIST_NODE (secElem);
-
-    EXPRS_NEXT (listElem) = listElem2; /*concatenate first with second N_expr-node*/
-    listElem = MakeAssignNodeFromExprsNode (listElem, arg_info);
-
-    NODELIST_NODE (currentElem) = listElem;
-    NODELIST_NEXT (currentElem) = NODELIST_NEXT (secElem); /* remove second node*/
-    secElem = currentElem; /* store pointer on last element */
-
-    DBUG_RETURN (currentElem);
-}
-
-/*****************************************************************************
- *
- * function:
- *   CommitNAssignNodes(node *arg_info)
- *
- * description:
- *   When this function is called, all nodes in the VARIABLELIST and
- *   CONSTANTLIST are duplicated and processed to assign-nodes.
- *   Now, first the first and second assign-node in CONSTANTLIST get
- *   arguments of a new assign-node, which get the last element of
- *   CONSTANTLIST. The first and second element are removed from the list
- *   and added to the OPTCONSTANTLIST. This procedure is repeated until
- *   only one assign-node is in CONSTANTLIST.
- *   This node and the first node of the VARIABLELIST are handled the same
- *   way. Both nodes are removed from their lists and inserted in
- *   OPTVARIABLELIST.
- *   Now, this procedure works the same way for VARIABLELIST. The last both
- *   assign-nodes become arguments of an prf-node, which replace the
- *   old prf-node of the 'starting assign-node'.
- *
- ****************************************************************************/
-
-node *
-CommitNAssignNodes (node *arg_info)
-{
-    node *newnode, *elem1, *elem2;
-    nodelist *lastListElem, *aktListElem, *constlist, *varlist;
-
-    DBUG_ENTER ("CommitNAssignNodes");
-
-    constlist = INFO_AL_OPTCONSTANTLIST (arg_info);
-    if (constlist != NULL) {
-        while (NODELIST_NEXT (constlist) != NULL)
-            constlist = NODELIST_NEXT (constlist);
-    }
-
-    varlist = INFO_AL_OPTVARIABLELIST (arg_info);
-    if (varlist != NULL) {
-        while (NODELIST_NEXT (varlist) != NULL)
-            varlist = NODELIST_NEXT (varlist);
-    }
-
-    aktListElem = INFO_AL_CONSTANTLIST (arg_info);
-    lastListElem = aktListElem;
-
-    while (NODELIST_NEXT (lastListElem) != NULL) {
-        lastListElem = NODELIST_NEXT (lastListElem);
-    }
-
-    while (aktListElem != lastListElem) {
-        elem1 = NODELIST_NODE (aktListElem);
-
-        if (constlist != NULL) {
-            NODELIST_NEXT (constlist) = aktListElem;
-            constlist = NODELIST_NEXT (constlist);
-        } else {
-            INFO_AL_OPTCONSTANTLIST (arg_info) = aktListElem;
-            constlist = INFO_AL_OPTCONSTANTLIST (arg_info);
-        }
-
-        aktListElem = NODELIST_NEXT (aktListElem);
-        elem2 = NODELIST_NODE (aktListElem);
-
-        NODELIST_NEXT (constlist) = aktListElem;
-        constlist = NODELIST_NEXT (constlist);
-
-        newnode = MakeExprsNodeFromAssignNodes (elem1, elem2);
-        newnode = MakeAssignNodeFromExprsNode (newnode, arg_info);
-
-        NODELIST_NEXT (lastListElem) = MakeNodelistNode (newnode, NULL);
-        lastListElem = NODELIST_NEXT (lastListElem);
-        aktListElem = NODELIST_NEXT (aktListElem);
-    }
-
-    /* constant nodes ready */
-
-    /* connect last constant node with first variable node */
-
-    elem1 = NODELIST_NODE (lastListElem);
-
-    if (constlist != NULL) {
-        NODELIST_NEXT (constlist) = lastListElem;
-        constlist = NODELIST_NEXT (constlist);
-    } else {
-        INFO_AL_OPTCONSTANTLIST (arg_info) = lastListElem;
-        constlist = INFO_AL_OPTCONSTANTLIST (arg_info);
-    }
-    NODELIST_NEXT (constlist) = NULL;
-
-    aktListElem = INFO_AL_VARIABLELIST (arg_info);
-    lastListElem = aktListElem;
-    while (NODELIST_NEXT (lastListElem) != NULL) {
-        lastListElem = NODELIST_NEXT (lastListElem);
-    }
-
-    if (aktListElem != lastListElem) {
-
-        elem2 = NODELIST_NODE (aktListElem);
-
-        if (varlist != NULL) {
-            NODELIST_NEXT (varlist) = aktListElem;
-            varlist = NODELIST_NEXT (varlist);
-        } else {
-            INFO_AL_OPTVARIABLELIST (arg_info) = aktListElem;
-            varlist = INFO_AL_OPTVARIABLELIST (arg_info);
-        }
-
-        aktListElem = NODELIST_NEXT (aktListElem);
-
-        newnode = MakeExprsNodeFromAssignNodes (elem1, elem2);
-        newnode = MakeAssignNodeFromExprsNode (newnode, arg_info);
-
-        NODELIST_NEXT (lastListElem) = MakeNodelistNode (newnode, NULL);
-        lastListElem = NODELIST_NEXT (lastListElem);
-
-        while (NODELIST_NEXT (aktListElem) != lastListElem) {
-            elem1 = NODELIST_NODE (aktListElem);
-
-            NODELIST_NEXT (varlist) = aktListElem;
-            varlist = NODELIST_NEXT (varlist);
-
-            aktListElem = NODELIST_NEXT (aktListElem);
-            elem2 = NODELIST_NODE (aktListElem);
-
-            NODELIST_NEXT (varlist) = aktListElem;
-            varlist = NODELIST_NEXT (varlist);
-
-            newnode = MakeExprsNodeFromAssignNodes (elem1, elem2);
-            newnode = MakeAssignNodeFromExprsNode (newnode, arg_info);
-
-            NODELIST_NEXT (lastListElem) = MakeNodelistNode (newnode, NULL);
-            lastListElem = NODELIST_NEXT (lastListElem);
-
-            aktListElem = NODELIST_NEXT (aktListElem);
-        }
-
-        /* variable nodes ready  */
-
-        /* connect last two N_assign nodes of variable list */
-
-        elem1 = NODELIST_NODE (aktListElem);
-        elem2 = NODELIST_NODE (lastListElem);
-
-        NODELIST_NEXT (varlist) = aktListElem;
-        varlist = NODELIST_NEXT (varlist);
-        NODELIST_NEXT (varlist) = lastListElem;
-        varlist = NODELIST_NEXT (varlist);
-        NODELIST_NEXT (varlist) = NULL;
-
-        newnode = MakeExprsNodeFromAssignNodes (elem1, elem2);
-
-        elem1 = PRF_ARGS (LET_EXPR (INFO_AL_LETNODE (arg_info)));
-
-        FreeNode (elem1);
-
-        PRF_ARGS (LET_EXPR (INFO_AL_LETNODE (arg_info))) = newnode;
-
-    } else {
-
-        elem2 = NODELIST_NODE (lastListElem);
-
-        if (varlist != NULL)
-            NODELIST_NEXT (varlist) = lastListElem;
-        else {
-            INFO_AL_OPTVARIABLELIST (arg_info) = lastListElem;
-            varlist = INFO_AL_OPTVARIABLELIST (arg_info);
-        }
-
-        if (NODELIST_NEXT (varlist) != NULL) {
-            varlist = NODELIST_NEXT (varlist);
-        }
-        NODELIST_NEXT (varlist) = aktListElem;
-        varlist = NODELIST_NEXT (varlist);
-        NODELIST_NEXT (varlist) = NULL;
-
-        newnode = MakeExprsNodeFromAssignNodes (elem1, elem2);
-
-        elem1 = PRF_ARGS (LET_EXPR (INFO_AL_LETNODE (arg_info)));
-
-        FreeNode (elem1);
-
-        PRF_ARGS (LET_EXPR (INFO_AL_LETNODE (arg_info))) = newnode;
-    }
-    NODELIST_NEXT (varlist) = NULL;
-
-    DBUG_RETURN (arg_info);
-}
-
-/*****************************************************************************
- *
- * function:
- *   ContainOptInformation(node *arg_info)
- *
- * description:
- *   returns 1 (true) if the arg_info-node contains N_assign-nodes to include
- *   in the tree
- *
- ****************************************************************************/
-
-int
-ContainOptInformation (node *arg_info)
-{
-    DBUG_ENTER ("ContainOptInformation");
-
-    if ((INFO_AL_NUMBEROFCONSTANTS (arg_info) > 1)
-        && (INFO_AL_NUMBEROFCONSTANTS (arg_info) + INFO_AL_NUMBEROFVARIABLES (arg_info)
-            > 3))
-        DBUG_RETURN (1);
-    else
-        DBUG_RETURN (0);
-}
-
-/*****************************************************************************
- *
- * function:
- *   nodelist *RemoveNodelistNodes( nodelist* current_list )
- *
- * description:
- *   set all NODELIST_NODE to NULL
- *   These function remove all connected nodes. This circumvent deleting
- *   of the NODELIST_NODE-elements when FREE_NODELIST is executed.
- *
- ****************************************************************************/
-
-nodelist *
-RemoveNodelistNodes (nodelist *current_list)
-{
-
-    nodelist *temp = current_list;
-    DBUG_ENTER ("RemoveNodelistNodes");
-
-    if (temp != NULL) {
-        while (NODELIST_NEXT (temp) != NULL) {
-            NODELIST_NODE (temp) = NULL;
-            temp = NODELIST_NEXT (temp);
-        }
-        NODELIST_NODE (temp) = NULL;
-    }
-
-    DBUG_RETURN (current_list);
-}
-
-/*****************************************************************************
- *
- * function:
- *   nodelist *RemoveNullpointerNodes( nodelist *source  )
- *
- * description:
- *   While the optimization process it is possible, that some NULL-Pointer
- *   in the NODELIST_NODE-pointer can accure. This can cause exceptions,
- *   so these NULL-Pointer-elements have to be removed.
- *   The following function do so.
- *
- ****************************************************************************/
-
-nodelist *
-RemoveNullpointerNodes (nodelist *source)
-{
-
-    nodelist *currentElem, *secElem;
-
-    DBUG_ENTER ("RemoveNullpointerNodes");
-
-    currentElem = source; /*Pointer on first list element*/
-    ;
-    secElem = NULL;
-    while ((currentElem != NULL) && (NODELIST_NEXT (currentElem) != NULL)) {
-        if (NODELIST_NODE (currentElem) == NULL) {
-            if (secElem != NULL) {
-                NODELIST_NEXT (secElem) = NODELIST_NEXT (currentElem);
-                /*
-                 * remove currentElem
-                 */
-
-                NODELIST_NEXT (currentElem) = NULL;
-                FreeNodelist (currentElem);
-
-                currentElem = secElem;
-            } else {
-                if (NODELIST_NEXT (currentElem) != NULL) {
-
-                    secElem = currentElem;
-
-                    source = NODELIST_NEXT (currentElem);
-
-                    NODELIST_NEXT (secElem) = NULL;
-                    FreeNodelist (secElem);
-                    secElem = NULL;
-                    currentElem = source;
-                } else {
-                    FreeNodelist (currentElem);
-                    source = NULL;
-                    break;
-                }
-            }
-        }
-        secElem = currentElem;
-        currentElem = NODELIST_NEXT (currentElem);
-    }
-
-    if ((currentElem != NULL) && (NODELIST_NODE (currentElem) == NULL)) {
-        FreeNodelist (currentElem);
-        if (secElem != NULL)
-            NODELIST_NEXT (secElem) = NULL;
-    }
-
-    DBUG_RETURN (source);
-}
-
-/*****************************************************************************
- *
- * function:
- *   node *MakeExprsNodeFromExprsAndAssignNode(nodelist *assignnode,
- *                                             nodelist *exprsnode )
- *
- * description:
- *   One NODELIST_NODE contain an assign-node and the other an exprs-node.
- *   The assign-node becomes the argument of a new id node.
- *   This id node and the exprs node are connected to a new exprs-node.
- *
- ****************************************************************************/
-
-node *
-MakeExprsNodeFromExprsAndAssignNode (nodelist *assignnode, nodelist *exprsnode)
-{
-
-    node *listElem, *listElem2, *newnode;
-    char *newname1, *newname2, *mod, *mod2;
-    statustype status;
-
-    DBUG_ENTER ("MakeExprsNodeFromExprsAndAssignNode");
-
-    listElem = NODELIST_NODE (assignnode); /* pointer on last constant N_assign-node */
-    listElem2 = NODELIST_NODE (exprsnode); /* pointer on node in list */
-
-    newname2 = NULL;
-    newname1 = IDS_NAME (LET_IDS (ASSIGN_INSTR (listElem)));
-    DBUG_ASSERT ((newname1 != NULL),
-                 "Unexpected error, existing variable has no name: IDS_NAME == NULL");
-    newname2 = StringCopy (newname1);
-    mod = IDS_MOD (LET_IDS (ASSIGN_INSTR (listElem)));
-
-    if (mod != NULL)
-        mod2 = StringCopy (mod);
-    else
-        mod2 = NULL;
-
-    status = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (listElem)));
-
-    newnode = MakeId (newname2, mod2, status);
-    newnode = MakeExprs (newnode, listElem2); /* create new N_Expr-node */
-
-    ID_AVIS (EXPRS_EXPR (newnode)) = IDS_AVIS (LET_IDS (ASSIGN_INSTR (listElem)));
-
-    ID_VARDEC (EXPRS_EXPR (newnode)) = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (listElem)));
-
-    DBUG_RETURN (newnode);
-}
-
-/*****************************************************************************
- *
- * function:
- *   node *MakeAssignNodeFromExprsNode( node *newnode , node *arg_info)
- *
- * description:
- *   This function create a new assign-node with the exprs-node as an
- *   argument. The correct primitive and vardec-root-node are provided
- *   by the arg_info-node.
- *
- ****************************************************************************/
-
-node *
-MakeAssignNodeFromExprsNode (node *newnode, node *arg_info)
-{
-
-    node *newvardec;
-    types *type;
-    char *newname1, *newname2;
-
-    DBUG_ENTER ("MakeAssignNodeFromExprsNode");
-    newnode = MakePrf (INFO_AL_CURRENTPRF (arg_info), newnode);
-
-    type = MakeTypes (TYPES_BASETYPE ((INFO_AL_TYPE (arg_info))),
-                      TYPES_DIM ((INFO_AL_TYPE (arg_info))), NULL, NULL, NULL);
-
-    newname1 = TmpVar ();
-
-    newvardec
-      = MakeVardec (newname1, type, (BLOCK_VARDEC (INFO_AL_BLOCKNODE (arg_info))));
-
-    BLOCK_VARDEC (INFO_AL_BLOCKNODE (arg_info)) = newvardec;
-
-    newname2 = StringCopy (newname1);
-    newnode = MakeAssignLet (newname2, newvardec, newnode);
-
-    VARDEC_OBJDEF (newvardec) = newnode;
-    AVIS_SSAASSIGN (VARDEC_AVIS (newvardec)) = newnode;
-    AVIS_SSAASSIGN2 (VARDEC_AVIS (newvardec)) = newnode;
-
-    DBUG_RETURN (newnode);
-}
-
-/*****************************************************************************
- *
- * function:
- *   node *MakeExprsNodeFromAssignNodes(node *elem1, node *elem2)
- *
- * description:
- *   Both assign-nodes get arguments of new id-nodes. These id-nodes
- *   get arguments of a new exprs-node.
- *
- ****************************************************************************/
-
-node *
-MakeExprsNodeFromAssignNodes (node *elem1, node *elem2)
-{
-
-    node *newnode;
-    statustype status1, status2;
-    char *varname1, *newname1, *varmod1, *newmod1, *varname2, *newname2, *varmod2,
-      *newmod2;
-
-    DBUG_ENTER ("MakeExprsNodeFromAssignNodes");
-
-    newname1 = NULL;
-    newname2 = NULL;
-    varname1 = IDS_NAME (LET_IDS (ASSIGN_INSTR (elem1)));
-    DBUG_ASSERT ((varname1 != NULL),
-                 "Unexpected error, existing variable has no name: IDS_NAME == NULL");
-    newname1 = StringCopy (varname1);
-    varmod1 = IDS_MOD (LET_IDS (ASSIGN_INSTR (elem1)));
-    if (varmod1 != NULL)
-        newmod1 = StringCopy (varmod1);
-    else
-        newmod1 = NULL;
-    status1 = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (elem1)));
-
-    varname2 = IDS_NAME (LET_IDS (ASSIGN_INSTR (elem2)));
-    DBUG_ASSERT ((varname2 != NULL),
-                 "Unexpected error, existing variable has no name: IDS_NAME == NULL");
-    newname2 = StringCopy (varname2);
-    varmod2 = IDS_MOD (LET_IDS (ASSIGN_INSTR (elem2)));
-    if (varmod2 != NULL)
-        newmod2 = StringCopy (varmod2);
-    else
-        newmod2 = NULL;
-    status2 = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (elem2)));
-
-    newnode = MakeExprs (MakeId (newname1, newmod1, status1),
-                         MakeExprs (MakeId (newname2, newmod2, status2), NULL));
-
-    ID_AVIS (EXPRS_EXPR (newnode)) = IDS_AVIS (LET_IDS (ASSIGN_INSTR (elem1)));
-    ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (newnode)))
-      = IDS_AVIS (LET_IDS (ASSIGN_INSTR (elem2)));
-
-    ID_VARDEC (EXPRS_EXPR (newnode)) = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (elem1)));
-    ID_VARDEC (EXPRS_EXPR (EXPRS_NEXT (newnode)))
-      = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (elem2)));
-
-    DBUG_RETURN (newnode);
 }
