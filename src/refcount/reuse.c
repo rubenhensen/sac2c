@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/23 19:28:31  jhb
+ * ismop
+ *
  * Revision 1.7  2004/11/19 15:42:41  ktr
  * Support for F_alloc_or_reshape added.
  *
@@ -42,6 +45,8 @@
  */
 #define NEW_INFO
 
+#include "reuse.h"
+
 #include "types.h"
 #include "new_types.h"
 #include "traverse.h"
@@ -55,7 +60,7 @@
 #include "print.h"
 #include "ReuseWithArrays.h"
 #include "DataFlowMask.h"
-
+#include "internal_lib.h"
 /**
  * traversal modes
  */
@@ -65,9 +70,9 @@ typedef enum { ri_default, ri_annotate } ri_mode;
  * INFO structure
  */
 struct INFO {
-    DFMmask_t candidates;
+    dfmask_t *candidates;
     node *rhscand;
-    ids *lhs;
+    node *lhs;
     node *fundef;
     bool addlhs;
     ri_mode travmode;
@@ -93,7 +98,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_RI_CANDIDATES (result) = NULL;
     INFO_RI_RHSCAND (result) = NULL;
@@ -110,7 +115,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -128,15 +133,15 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 static node *
-CutExprs (DFMmask_t candidates, node *list)
+CutExprs (dfmask_t *candidates, node *list)
 {
     DBUG_ENTER ("CutExprs");
 
     if (list != NULL) {
         EXPRS_NEXT (list) = CutExprs (candidates, EXPRS_NEXT (list));
 
-        if (!DFMTestMaskEntry (candidates, NULL, ID_VARDEC (EXPRS_EXPR (list)))) {
-            list = FreeNode (list);
+        if (!DFMtestMaskEntry (candidates, NULL, ID_AVIS (EXPRS_EXPR (list)))) {
+            list = FREEdoFreeNode (list);
         }
     }
 
@@ -156,7 +161,7 @@ CutExprs (DFMmask_t candidates, node *list)
  *
  *****************************************************************************/
 static node *
-TypeMatch (node *cand, ids *lhs)
+TypeMatch (node *cand, node *lhs)
 {
     ntype *lhs_aks;
     ntype *cand_aks;
@@ -169,17 +174,17 @@ TypeMatch (node *cand, ids *lhs)
         }
 
         if (NODE_TYPE (EXPRS_EXPR (cand)) == N_id) {
-            lhs_aks = TYEliminateAKV (AVIS_TYPE (IDS_AVIS (lhs)));
-            cand_aks = TYEliminateAKV (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (cand))));
+            lhs_aks = TYeliminateAKV (AVIS_TYPE (IDS_AVIS (lhs)));
+            cand_aks = TYeliminateAKV (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (cand))));
 
-            if ((!TYIsAKS (lhs_aks)) || (!TYEqTypes (lhs_aks, cand_aks))) {
-                cand = FreeNode (cand);
+            if ((!TYisAKS (lhs_aks)) || (!TYeqTypes (lhs_aks, cand_aks))) {
+                cand = FREEdoFreeNode (cand);
             }
 
-            lhs_aks = TYFreeType (lhs_aks);
-            cand_aks = TYFreeType (cand_aks);
+            lhs_aks = TYfreeType (lhs_aks);
+            cand_aks = TYfreeType (cand_aks);
         } else {
-            cand = FreeNode (cand);
+            cand = FREEdoFreeNode (cand);
         }
     }
     DBUG_RETURN (cand);
@@ -201,11 +206,11 @@ RIarg (node *arg_node, info *arg_info)
     DBUG_ENTER ("RIarg");
 
     if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
 
-    if (ARG_STATUS (arg_node) != ST_artificial) {
-        DFMSetMaskEntrySet (INFO_RI_CANDIDATES (arg_info), NULL, arg_node);
+    if (ARG_ISARTIFICIAL (arg_node)) {
+        DFMsetMaskEntrySet (INFO_RI_CANDIDATES (arg_info), NULL, arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -230,7 +235,7 @@ RIassign (node *arg_node, info *arg_info)
      * Traverse instruction
      */
     if (ASSIGN_INSTR (arg_node) != NULL) {
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
 
     /*
@@ -238,7 +243,7 @@ RIassign (node *arg_node, info *arg_info)
      */
     if (INFO_RI_TRAVMODE (arg_info) != ri_annotate) {
         if (ASSIGN_NEXT (arg_node) != NULL) {
-            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
         }
     }
 
@@ -258,7 +263,7 @@ RIassign (node *arg_node, info *arg_info)
 node *
 RIcode (node *arg_node, info *arg_info)
 {
-    DFMmask_t oldcands;
+    dfmask_t *oldcands;
 
     DBUG_ENTER ("RIcode");
 
@@ -267,21 +272,21 @@ RIcode (node *arg_node, info *arg_info)
      */
     oldcands = INFO_RI_CANDIDATES (arg_info);
     INFO_RI_CANDIDATES (arg_info)
-      = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_RI_FUNDEF (arg_info)));
+      = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_RI_FUNDEF (arg_info)));
 
     /*
      * Traverse CBLOCK
      */
-    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
     /*
      * Erase the code block's candidate list before traversing on
      */
-    INFO_RI_CANDIDATES (arg_info) = DFMRemoveMask (INFO_RI_CANDIDATES (arg_info));
+    INFO_RI_CANDIDATES (arg_info) = DFMremoveMask (INFO_RI_CANDIDATES (arg_info));
     INFO_RI_CANDIDATES (arg_info) = oldcands;
 
-    if (NCODE_NEXT (arg_node) != NULL) {
-        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    if (CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -300,26 +305,26 @@ RIcode (node *arg_node, info *arg_info)
 node *
 RIcond (node *arg_node, info *arg_info)
 {
-    node *oldcands;
+    dfmask_t *oldcands;
     DBUG_ENTER ("RIcond");
 
     /*
      * Rescue reuse candidates
      */
-    oldcands = DFMGenMaskCopy (INFO_RI_CANDIDATES (arg_info));
-    COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+    oldcands = DFMgenMaskCopy (INFO_RI_CANDIDATES (arg_info));
+    COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
 
     /*
      * Restore reuse candidates for traversal of else-Branch
      */
-    INFO_RI_CANDIDATES (arg_info) = DFMRemoveMask (INFO_RI_CANDIDATES (arg_info));
+    INFO_RI_CANDIDATES (arg_info) = DFMremoveMask (INFO_RI_CANDIDATES (arg_info));
     INFO_RI_CANDIDATES (arg_info) = oldcands;
-    COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+    COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
     /*
      * After a conditional, nothing can be reused
      */
-    DFMSetMaskClear (INFO_RI_CANDIDATES (arg_info));
+    DFMsetMaskClear (INFO_RI_CANDIDATES (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -347,38 +352,38 @@ RIfundef (node *arg_node, info *arg_info)
          * Generate DFM-base
          */
         FUNDEF_DFM_BASE (arg_node)
-          = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+          = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
-        INFO_RI_CANDIDATES (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
+        INFO_RI_CANDIDATES (arg_info) = DFMgenMaskClear (FUNDEF_DFM_BASE (arg_node));
 
         /*
          * FUNDEF args are the initial reuse candidates
          */
         if (FUNDEF_ARGS (arg_node) != NULL) {
-            FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
         }
 
         /*
          * Traverse body
          */
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
         /*
          * Remove reuse candidates mask
          */
-        INFO_RI_CANDIDATES (arg_info) = DFMRemoveMask (INFO_RI_CANDIDATES (arg_info));
+        INFO_RI_CANDIDATES (arg_info) = DFMremoveMask (INFO_RI_CANDIDATES (arg_info));
 
         /*
          * Remove DFM-base
          */
-        FUNDEF_DFM_BASE (arg_node) = DFMRemoveMaskBase (FUNDEF_DFM_BASE (arg_node));
+        FUNDEF_DFM_BASE (arg_node) = DFMremoveMaskBase (FUNDEF_DFM_BASE (arg_node));
     }
 
     /*
      * Traverse other fundefs
      */
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -406,8 +411,8 @@ RIicm (node *arg_node, info *arg_info)
     if ((strstr (name, "USE_GENVAR_OFFSET") != NULL)
         || (strstr (name, "VECT2OFFSET") != NULL)
         || (strstr (name, "IDXS2OFFSET") != NULL)) {
-        DFMSetMaskEntrySet (INFO_RI_CANDIDATES (arg_info), NULL,
-                            ID_VARDEC (ICM_ARG1 (arg_node)));
+        DFMsetMaskEntrySet (INFO_RI_CANDIDATES (arg_info), NULL,
+                            ID_AVIS (ICM_ARG1 (arg_node)));
     } else {
         DBUG_ASSERT ((0), "Unknown ICM found during EMRI");
     }
@@ -434,13 +439,13 @@ RIlet (node *arg_node, info *arg_info)
     INFO_RI_ADDLHS (arg_info) = TRUE;
 
     if (LET_EXPR (arg_node) != NULL) {
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
 
     if (INFO_RI_ADDLHS (arg_info)) {
-        ids *_ids = LET_IDS (arg_node);
+        node *_ids = LET_IDS (arg_node);
         while (_ids != NULL) {
-            DFMSetMaskEntrySet (INFO_RI_CANDIDATES (arg_info), NULL, IDS_VARDEC (_ids));
+            DFMsetMaskEntrySet (INFO_RI_CANDIDATES (arg_info), NULL, IDS_AVIS (_ids));
             _ids = IDS_NEXT (_ids);
         }
     }
@@ -477,7 +482,7 @@ RIprf (node *arg_node, info *arg_info)
 
     case F_suballoc:
         if (INFO_RI_RHSCAND (arg_info) != NULL) {
-            INFO_RI_RHSCAND (arg_info) = FreeTree (INFO_RI_RHSCAND (arg_info));
+            INFO_RI_RHSCAND (arg_info) = FREEdoFreeTree (INFO_RI_RHSCAND (arg_info));
         }
         break;
 
@@ -487,7 +492,7 @@ RIprf (node *arg_node, info *arg_info)
 
     case F_alloc_or_reshape:
         if (INFO_RI_TRAVMODE (arg_info) == ri_annotate) {
-            INFO_RI_RHSCAND (arg_info) = FreeTree (INFO_RI_RHSCAND (arg_info));
+            INFO_RI_RHSCAND (arg_info) = FREEdoFreeTree (INFO_RI_RHSCAND (arg_info));
         }
         INFO_RI_ADDLHS (arg_info) = FALSE;
         break;
@@ -497,19 +502,19 @@ RIprf (node *arg_node, info *arg_info)
         if (INFO_RI_TRAVMODE (arg_info) == ri_annotate) {
             PRF_PRF (arg_node) = F_alloc_or_reuse;
             PRF_ARGS (arg_node)
-              = AppendExprs (PRF_ARGS (arg_node), INFO_RI_RHSCAND (arg_info));
+              = TCappendExprs (PRF_ARGS (arg_node), INFO_RI_RHSCAND (arg_info));
             INFO_RI_RHSCAND (arg_info) = NULL;
         }
         INFO_RI_ADDLHS (arg_info) = FALSE;
         break;
 
     case F_fill:
-        PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
 
         if (INFO_RI_RHSCAND (arg_info) != NULL) {
             INFO_RI_TRAVMODE (arg_info) = ri_annotate;
             AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)))
-              = Trav (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node))), arg_info);
+              = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node))), arg_info);
             INFO_RI_TRAVMODE (arg_info) = ri_default;
         }
         INFO_RI_ADDLHS (arg_info) = TRUE;
@@ -518,21 +523,22 @@ RIprf (node *arg_node, info *arg_info)
     default:
         if (PRF_ARGS (arg_node) != NULL) {
             DBUG_PRINT ("RI", ("prf args"));
-            DBUG_EXECUTE ("RI", Print (PRF_ARGS (arg_node)););
+            DBUG_EXECUTE ("RI", PRTdoPrint (PRF_ARGS (arg_node)););
         }
 
-        rhc = TypeMatch (DupTree (PRF_ARGS (arg_node)), INFO_RI_LHS (arg_info));
+        rhc = TypeMatch (DUPdoDupTree (PRF_ARGS (arg_node)), INFO_RI_LHS (arg_info));
 
         if (rhc != NULL) {
             DBUG_PRINT ("RI", ("rhc"));
-            DBUG_EXECUTE ("RI", Print (rhc); Print (INFO_RI_CANDIDATES (arg_info)););
+            DBUG_EXECUTE ("RI", PRTdoPrint (rhc);
+                          PRTdoPrint (INFO_RI_CANDIDATES (arg_info)););
         }
 
         INFO_RI_RHSCAND (arg_info) = CutExprs (INFO_RI_CANDIDATES (arg_info), rhc);
 
         if (INFO_RI_RHSCAND (arg_info) != NULL) {
             DBUG_PRINT ("RI", ("RHSCAND"));
-            DBUG_EXECUTE ("RI", Print (INFO_RI_RHSCAND (arg_info)););
+            DBUG_EXECUTE ("RI", PRTdoPrint (INFO_RI_RHSCAND (arg_info)););
         }
     }
     DBUG_RETURN (arg_node);
@@ -551,35 +557,34 @@ RIprf (node *arg_node, info *arg_info)
 node *
 RIwith2 (node *arg_node, info *arg_info)
 {
-    ids *wlids;
+    node *wlids;
     node *rhc;
     node *withop;
 
     DBUG_ENTER ("RIwith2");
 
     wlids = INFO_RI_LHS (arg_info);
-    withop = NWITH2_WITHOP (arg_node);
+    withop = WITH2_WITHOP (arg_node);
 
     while (withop != NULL) {
-        if ((NWITHOP_TYPE (withop) == WO_genarray)
-            || (NWITHOP_TYPE (withop) == WO_modarray)) {
+        if ((NODE_TYPE (withop) == N_genarray) || (NODE_TYPE (withop) == N_modarray)) {
 
-            rhc = GetReuseCandidates (arg_node, INFO_RI_FUNDEF (arg_info), wlids);
+            rhc = REUSEdoGetReuseCandidates (arg_node, INFO_RI_FUNDEF (arg_info), wlids);
             INFO_RI_RHSCAND (arg_info) = CutExprs (INFO_RI_CANDIDATES (arg_info), rhc);
 
             if (INFO_RI_RHSCAND (arg_info) != NULL) {
                 INFO_RI_TRAVMODE (arg_info) = ri_annotate;
-                AVIS_SSAASSIGN (ID_AVIS (NWITHOP_MEM (withop)))
-                  = Trav (AVIS_SSAASSIGN (ID_AVIS (NWITHOP_MEM (withop))), arg_info);
+                AVIS_SSAASSIGN (ID_AVIS (WITHOP_MEM (withop)))
+                  = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (WITHOP_MEM (withop))), arg_info);
                 INFO_RI_TRAVMODE (arg_info) = ri_default;
             }
         }
         wlids = IDS_NEXT (wlids);
-        withop = NWITHOP_NEXT (withop);
+        withop = WITHOP_NEXT (withop);
     }
 
-    if (NWITH2_CODE (arg_node) != NULL) {
-        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    if (WITH2_CODE (arg_node) != NULL) {
+        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
     }
 
     INFO_RI_ADDLHS (arg_info) = TRUE;
@@ -604,13 +609,16 @@ ReuseInference (node *arg_node)
 
     DBUG_ENTER ("ReuseInference");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
                  "ReuseInference not started with modul node");
 
-    act_tab = emri_tab;
     arg_info = MakeInfo ();
 
-    arg_node = Trav (arg_node, arg_info);
+    TRAVpush (TR_emri);
+
+    arg_node = TRAVdo (arg_node, arg_info);
+
+    TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
 
