@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/10/06 16:35:40  cg
+ * Revision 1.16  1995/12/04 13:51:03  cg
+ * now, attrib and status are copied by function DupIds
+ *
+ * Revision 1.15  1995/10/06  16:35:40  cg
  * calls to MakeIds adjusted to new signature (3 parameters)
  *
  * Revision 1.14  1995/08/16  09:23:01  asi
@@ -162,6 +165,10 @@ DupIds (ids *old_ids, node *arg_info)
         new_ids->use = old_ids->use;
         break;
     }
+
+    new_ids->status = old_ids->status;
+    new_ids->attrib = old_ids->attrib;
+
     if (NULL != old_ids->next)
         new_ids->next = DupIds (old_ids->next, arg_info);
     DBUG_RETURN (new_ids);
