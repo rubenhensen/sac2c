@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.19  1998/05/07 16:19:44  dkr
+ * added support for new with-loop
+ *
  * Revision 1.18  1998/05/04 19:42:18  dkr
  * added StringCopy(...) ...
  *    ... to first argument of each MakeId(...),
@@ -93,9 +96,6 @@
 
 #include "access_macros.h"
 
-#undef IDS_NEXT               /* These 2 are nec. since access_macros.h */
-#define IDS_NEXT(i) (i->next) /* redefines them !!!                     */
-
 #include "compile.h"
 
 /*
@@ -168,7 +168,7 @@
  *     VINFO_NEXT(n), and          ( cmp. tree_basic.h )
  *     VINFO_TYPE(n)
  *
- * There are two chaines of such nodes attached to the N_vardec/N_arg nodes:
+ * There are two chains of such nodes attached to the N_vardec/N_arg nodes:
  * The "actual ones" and the "collected ones". The "actual ones" contain all
  * uses-infos collected during the (bottom up) traversal since the last
  * assignment to that particular variable. In contrast, the "collected ones"
@@ -193,7 +193,7 @@
  * 3) Inserting new variable declarations
  * --------------------------------------
  *
- * Since all variables have bachkreferences to their declarations, the
+ * Since all variables have backreferences to their declarations, the
  * new declarations needed have to be created when the first occurence of the
  * identifier is met. The adresses of these N_vardecs are stored in the
  * respective N_vinfo-nodes of the collected-chain. It can be accessed by:
@@ -435,11 +435,6 @@ VardecIdx (node *vardec, types *type, char *varname)
                      VARDEC_NAME (vardec),
                      (VARDEC_NEXT (newvardec) ? VARDEC_NAME (VARDEC_NEXT (newvardec))
                                               : "NULL")));
-
-#ifndef NEWTREE
-        newvardec->nnode = vardec->nnode;
-        vardec->nnode = 1;
-#endif
     }
     DBUG_PRINT ("IDX", ("vinfo %p points to vardec %s", vinfo, varname));
 
@@ -479,11 +474,6 @@ ArgIdx (node *arg, types *type, char *varname)
                     ("inserting new vardec %s between NULL and %s", varname,
                      (VARDEC_NEXT (newvardec) ? VARDEC_NAME (VARDEC_NEXT (newvardec))
                                               : "NULL")));
-
-#ifndef NEWTREE
-/*    newvardec->nnode = vardec->nnode; */
-/*    vardec->nnode = 1; */
-#endif
     }
     DBUG_PRINT ("IDX", ("vinfo %p points to vardec %s", vinfo, varname));
 
@@ -606,9 +596,6 @@ IdxArg (node *arg_node, node *arg_info)
                     MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (VINFO_SELEMS (vinfo)[i]));
 
                 ASSIGN_NEXT (newassign) = BLOCK_INSTR (block);
-#ifndef NEWTREE
-                newassign->nnode = 2;
-#endif
                 BLOCK_INSTR (block) = newassign;
             }
             vinfo = VINFO_NEXT (vinfo);
@@ -666,11 +653,7 @@ IdxLet (node *arg_node, node *arg_info)
 {
     ids *vars;
     node *vardec, *vinfo, *act_let, *newassign, *icm_arg;
-#ifndef NEWTREE
-    int nnode;
-#else
     node *arg_info1;
-#endif
     int i;
 
     DBUG_ENTER ("IdxLet");
@@ -756,25 +739,12 @@ IdxLet (node *arg_node, node *arg_info)
                  * More precisely, we have to copy the Assign node, who is the father
                  * of the let node and whose adress is given by arg_info!
                  */
-#ifndef NEWTREE
-                nnode = arg_info->nnode;
-                arg_info->nnode = 1; /* only one assignment is to be copied! */
-                newassign = DupTree (arg_info, NULL);
-                arg_info->nnode = 2;
-#else  /* NEWTREE */
                 arg_info1 = arg_info->node[1];
                 arg_info->node[1] = NULL;
                 newassign = DupTree (arg_info, NULL);
                 arg_info->node[1] = arg_info1;
-#endif /* NEWTREE */
                 ASSIGN_NEXT (newassign) = ASSIGN_NEXT (arg_info);
-#ifndef NEWTREE
-                newassign->nnode = nnode;
-#endif /* NEWTREE */
                 ASSIGN_NEXT (arg_info) = newassign;
-#ifndef NEWTREE
-                arg_info->nnode = 2;
-#endif /* NEWTREE */
             }
             LET_EXPR (act_let) = Trav (LET_EXPR (act_let), vinfo);
             LET_NAME (act_let) = ChgId (LET_NAME (act_let), VINFO_TYPE (vinfo));
@@ -799,9 +769,6 @@ IdxLet (node *arg_node, node *arg_info)
                 if (VINFO_FLAG (vinfo) == IDX) {
                     node *name_node, *dim_node, *dim_node2;
 
-#ifndef NEWTREE
-                    nnode = arg_info->nnode;
-#endif
                     name_node = MakeId2 (DupOneIds (vars, NULL));
                     ID_VARDEC (name_node) = IDS_VARDEC (vars);
                     dim_node = MakeNum (vars->node->info.types->shpseg->shp[0]);
@@ -816,22 +783,18 @@ IdxLet (node *arg_node, node *arg_info)
                         MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (VINFO_SELEMS (vinfo)[i]));
 
                     newassign->node[1] = arg_info->node[1];
-#ifndef NEWTREE
-                    newassign->nnode = nnode;
-#endif
                     arg_info->node[1] = newassign;
-#ifndef NEWTREE
-                    arg_info->nnode = 2;
-#endif
                     arg_info = newassign;
                 }
                 vinfo = VINFO_NEXT (vinfo);
             }
 
-            if (NODE_TYPE (LET_EXPR (arg_node)) == N_with)
+            if ((NODE_TYPE (LET_EXPR (arg_node)) == N_with)
+                || (NODE_TYPE (LET_EXPR (arg_node)) == N_Nwith)) {
                 LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_node);
-            else
+            } else {
                 LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), NULL);
+            }
             vars = IDS_NEXT (vars);
         } while (vars != NULL);
     }
@@ -1123,19 +1086,15 @@ IdxNum (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : IdxWith
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * function:
+ *   node *IdxWith(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * description:
  *
- */
+ *
+ ******************************************************************************/
 
 node *
 IdxWith (node *arg_node, node *arg_info)
@@ -1158,19 +1117,17 @@ IdxWith (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : IdxGenerator
- *  arguments     : 2) node * arg_info ; prior N_let node!
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * function:
+ *   node *IdxGenerator(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * description:
  *
- */
+ * remark:
+ *   arg_info contains prior N_let node.
+ *
+ ******************************************************************************/
 
 node *
 IdxGenerator (node *arg_node, node *arg_info)
@@ -1181,9 +1138,9 @@ IdxGenerator (node *arg_node, node *arg_info)
     int i;
 
     DBUG_ENTER ("IdxGenerator");
-    DBUG_ASSERT ((NODE_TYPE (arg_info) == N_let), "wrong arg_info node (!N_let)!");
+    DBUG_ASSERT ((NODE_TYPE (arg_info) == N_let), "arg_info is not a N_let-node");
     DBUG_ASSERT ((NODE_TYPE (LET_EXPR (arg_info)) == N_with),
-                 "wrong arg_info node (!N_with)!");
+                 "N_let node in arg_info contains no with-loop");
 
     body = WITH_OPERATOR (LET_EXPR (arg_info));
     GEN_LEFT (arg_node) = Trav (GEN_LEFT (arg_node), NULL);
@@ -1193,7 +1150,7 @@ IdxGenerator (node *arg_node, node *arg_info)
 
     /* first, we memorize the actuall chain */
     GEN_USE (arg_node) = vinfo;
-    /* then, we free the actual chain! */
+    /* then, we remove the actual chain! */
     VARDEC_ACTCHN (vardec) = NULL;
 
     /* for each IDX-vinfo-node we have to instanciate the respective
@@ -1276,12 +1233,183 @@ IdxGenerator (node *arg_node, node *arg_info)
                     MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (VINFO_SELEMS (vinfo)[i]));
             }
             ASSIGN_NEXT (newassign) = BLOCK_INSTR (block);
-#ifndef NEWTREE
-            newassign->nnode = 2;
-#endif
             BLOCK_INSTR (block) = newassign;
         }
         vinfo = VINFO_NEXT (vinfo);
     }
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *IdxNwith( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+IdxNwith (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("IdxNwith");
+
+    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), NULL);
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), NULL);
+
+    /*
+     * We traverse the code-blocks at last!
+     * We potentially want to insert some index conversions into the body;
+     * therfore, we supply the N_let node as surplus argument.
+     */
+
+    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *IdxNcode( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+IdxNcode (node *arg_node, node *arg_info)
+{
+    node *with, *idx_vardec, *vinfo, *withop_arr, *col_vinfo, *new_assign, *icm_arg,
+      *new_id, *array_id, *name_node, *dim_node, *dim_node2;
+    types *arr_type;
+    int i;
+
+    DBUG_ENTER ("IdxNcode");
+
+    /*
+     * we traverse the current code block
+     */
+
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), NULL);
+    NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), NULL);
+
+    DBUG_ASSERT (((NODE_TYPE (arg_info) == N_let)
+                  && (NODE_TYPE (LET_EXPR (arg_info)) == N_Nwith)),
+                 "arg_info contains no with-loop");
+
+    /*
+     * we insert instances of the index-vector-var as first statement of the
+     *  current code block.
+     */
+
+    with = LET_EXPR (arg_info);
+    idx_vardec = IDS_VARDEC (NWITH_VEC (with));
+    vinfo = VARDEC_ACTCHN (idx_vardec);
+    VARDEC_ACTCHN (idx_vardec) = NULL;
+
+    while (vinfo != NULL) {
+
+        if (VINFO_FLAG (vinfo) == IDX) {
+
+            switch (NWITH_TYPE (with)) {
+
+            case WO_modarray:
+                withop_arr = NWITHOP_ARRAY (NWITH_WITHOP (with));
+                if (NODE_TYPE (withop_arr) == N_array) {
+                    arr_type = ARRAY_TYPE (withop_arr);
+                } else {
+                    DBUG_ASSERT ((NODE_TYPE (withop_arr) == N_id),
+                                 "array of modarray neither N_array nor N_id");
+                    arr_type = ID_TYPE (withop_arr);
+                }
+                break;
+
+            case WO_genarray:
+                withop_arr = NWITHOP_SHAPE (NWITH_WITHOP (with));
+                DBUG_ASSERT ((NODE_TYPE (withop_arr) == N_array),
+                             "shape of genarray is not N_array");
+                arr_type = ARRAY_TYPE (withop_arr);
+                break;
+
+            case WO_foldprf:
+                /* here is no break missing! */
+            case WO_foldfun:
+                break;
+
+            default:
+                DBUG_ASSERT ((0), "wrong with-loop type");
+            }
+
+            if (((NWITH_TYPE (with) == WO_modarray) || (NWITH_TYPE (with) == WO_genarray))
+                && EqTypes (VINFO_TYPE (vinfo), arr_type)) {
+
+                /*
+                 * we can reuse the genvar as index directly!
+                 * therefore we create an ICM of the form:
+                 * ND_KS_USE_GENVAR_OFFSET( <idx-varname>, <result-array-varname>)
+                 */
+
+                new_id = MakeId (ChgId (IDS_NAME (NWITH_VEC (with)), arr_type), NULL,
+                                 ST_regular);
+                col_vinfo = FindIdx (VARDEC_COLCHN (idx_vardec), arr_type);
+                DBUG_ASSERT (((col_vinfo != NULL) && (VINFO_VARDEC (col_vinfo) != NULL)),
+                             "missing vardec for IDX variable");
+                ID_VARDEC (new_id) = VINFO_VARDEC (col_vinfo);
+                array_id = MakeId (StringCopy (LET_NAME (arg_info)), NULL, ST_regular);
+
+                /*
+                 * The backref of the arrayid is set wrongly to the actual
+                 * integer index-variable. This is done on purpose for
+                 * fooling the refcount-inference system.
+                 * The "correct" backref would be LET_VARDEC( arg_info) !
+                 */
+                ID_VARDEC (array_id) = VINFO_VARDEC (col_vinfo);
+
+                CREATE_2_ARY_ICM (new_assign, "ND_KS_USE_GENVAR_OFFSET", new_id,
+                                  array_id);
+            } else {
+
+                /*
+                 * we have to instanciate the idx-variable by an ICM of the form:
+                 * ND_KS_VECT2OFFSET( <var-name>, <dim of var>, <dim of array>,
+                 * shape_elems)
+                 */
+
+                name_node
+                  = MakeId (StringCopy (IDS_NAME (NWITH_VEC (with))), NULL, ST_regular);
+                ID_VARDEC (name_node) = idx_vardec;
+                dim_node = MakeNum (VARDEC_SHAPE (idx_vardec, 0));
+                dim_node2 = MakeNum (VINFO_DIM (vinfo));
+
+                CREATE_3_ARY_ICM (new_assign, "ND_KS_VECT2OFFSET",
+                                  name_node,  /* var-name */
+                                  dim_node,   /* dim of var */
+                                  dim_node2); /* dim of array */
+
+                /*
+                 * Now, we append the shape elems to the 'ND_KS_VECT2OFFSET' ICM
+                 */
+                for (i = 0; i < VINFO_DIM (vinfo); i++)
+                    MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (VINFO_SELEMS (vinfo)[i]));
+            }
+
+            ASSIGN_NEXT (new_assign) = BLOCK_INSTR (NCODE_CBLOCK (arg_node));
+            BLOCK_INSTR (NCODE_CBLOCK (arg_node)) = new_assign;
+        }
+
+        vinfo = VINFO_NEXT (vinfo);
+    }
+
+    /*
+     * now we traverse the next code block
+     */
+
+    if (NCODE_NEXT (arg_node) != NULL) {
+        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
