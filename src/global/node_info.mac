@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.22  1994/12/19 13:00:44  hw
- * inserted TCdo & TCwhile
+ * Revision 1.23  1994/12/19 14:48:07  asi
+ * Added - OPTfundef OPTarg OPTvardec OPTmodul OPTlet OPTblock
  *
+;; Revision 1.22  1994/12/19  13:00:44  hw
+;; inserted TCdo & TCwhile
+;;
 ;; Revision 1.21  1994/12/16  14:20:59  sbs
 ;; imp_tab inserted and NIF macro enlarged
 ;;
@@ -84,7 +87,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
   NIF (N_typedef, "N_typedef", DummyFun, DummyFun, PrintTypedef, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun),
-  NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, DummyFun, DummyFun, DummyFun,
+  NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, DummyFun, OPTmodul, DummyFun,
        DummyFun, DummyFun),
   NIF (N_moddec, "N_moddec", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
@@ -94,25 +97,25 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
   NIF (N_implist, "N_implist", DummyFun, DummyFun, PrintImplist, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun),
-  NIF (N_fundef, "N_fundef", DummyFun, DummyFun, PrintFundef, TCfundef, DummyFun,
+  NIF (N_fundef, "N_fundef", DummyFun, DummyFun, PrintFundef, TCfundef, OPTfundef,
        DummyFun, DummyFun, DummyFun),
-  NIF (N_vardec, "N_vardec", DummyFun, DummyFun, PrintVardec, DummyFun, DummyFun,
+  NIF (N_vardec, "N_vardec", DummyFun, DummyFun, PrintVardec, DummyFun, OPTvardec,
        DummyFun, DummyFun, DummyFun),
-  NIF (N_block, "N_block", DummyFun, DummyFun, PrintBlock, DummyFun, DummyFun, DummyFun,
+  NIF (N_block, "N_block", DummyFun, DummyFun, PrintBlock, DummyFun, OPTblock, DummyFun,
        DummyFun, DummyFun),
-  NIF (N_arg, "N_arg", DummyFun, DummyFun, PrintArg, DummyFun, DummyFun, DummyFun,
-       DummyFun, DummyFun),
+  NIF (N_arg, "N_arg", DummyFun, DummyFun, PrintArg, DummyFun, OPTarg, DummyFun, DummyFun,
+       DummyFun),
   NIF (N_assign, "N_assign", DummyFun, FltnAssign, PrintAssign, TCassign, DummyFun,
        DummyFun, DummyFun, DummyFun),
   NIF (N_return, "N_return", DummyFun, DummyFun, PrintReturn, TCreturn, DummyFun,
        DummyFun, DummyFun, DummyFun),
-  NIF (N_do, "N_do", DummyFun, FltnDo, PrintDo, TCdo, OPTdo, DummyFun, DummyFun,
+  NIF (N_do, "N_do", DummyFun, FltnDo, PrintDo, TCdo, DummyFun, DummyFun, DummyFun,
        DummyFun),
   NIF (N_while, "N_while", DummyFun, FltnWhile, PrintWhile, TCwhile, DummyFun, DummyFun,
        DummyFun, DummyFun),
   NIF (N_cond, "N_cond", DummyFun, FltnCond, PrintCond, TCcond, DummyFun, DummyFun,
        DummyFun, DummyFun),
-  NIF (N_let, "N_let", DummyFun, DummyFun, PrintLet, TClet, DummyFun, DummyFun, DummyFun,
+  NIF (N_let, "N_let", DummyFun, DummyFun, PrintLet, TClet, OPTlet, DummyFun, DummyFun,
        DummyFun),
   NIF (N_addon, "N_addon", DummyFun, DummyFun, PrintLeton, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
