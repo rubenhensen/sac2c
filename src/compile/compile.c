@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.60  2000/06/05 12:34:56  dkr
+ * minor corrections in comments done
+ *
  * Revision 2.59  2000/05/31 14:09:09  dkr
  * INFO_COMP_VARDEC is now handled correctly in COMPBlock()
  *
@@ -476,7 +479,7 @@ MakeAdjustRcICM (ids *varname, int num)
         if (num == 0) {
             result = NULL;
         } else {
-            /* num < -1 */
+            /* num < 0 */
             result = MakeAssignIcm2 ("ND_DEC_RC_FREE_ARRAY",
                                      MakeId2 (DupOneIds (varname, NULL)), MakeNum (-num));
         }
@@ -6211,9 +6214,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
      * insert 'DEC_RC_FREE'-ICM for index-vector.
      */
     if (IDS_REFCNT (NWITHID_VEC (NWITH2_WITHID (arg_node))) > 0) {
-        assigns
-          = AppendAssign (assigns,
-                          MakeDecRcICMs (NWITHID_VEC (NWITH2_WITHID (arg_node)), NULL));
+        assigns = AppendAssign (assigns, MakeDecRcICMs (NWITH2_VEC (arg_node), NULL));
     }
 
     /*
