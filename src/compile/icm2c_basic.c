@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2002/10/29 19:09:40  dkr
+ * Vect2Offset2() rewritten
+ *
  * Revision 1.13  2002/10/24 16:00:14  dkr
  * minor changes done
  *
@@ -44,6 +47,7 @@
 #include "print.h"
 #include "NameTuples.h"
 #include "icm2c_utils.h"
+#include "icm2c_basic.h"
 
 int print_comment = 1; /* bool */
 
@@ -161,12 +165,11 @@ ReadScalar_Check (void *scl, char *idx_str, int idx)
         if (sc == C_aud) {
             fprintf (outfile, "\n");
             indent++;
-            INDENT;
-            fprintf (outfile,
-                     "( SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == 0),"
-                     " (\"Scalar expected but array with (dim > 0)"
-                     " found!\")) , \n",
-                     (char *)scl);
+            fprintf (outfile, "( ");
+            ASSURE_TYPE_EXPR (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", (char *)scl);
+                              , fprintf (outfile, "Scalar expected but array with (dim > "
+                                                  "0) found!"););
+            fprintf (outfile, " , \n");
             INDENT;
             fprintf (outfile, "  ");
             ReadId (scl, idx_str, idx);
@@ -299,13 +302,13 @@ GetAttr (void *v, int v_attr, void (*v_attr_fun) (void *))
 /******************************************************************************
  *
  * Function:
- *   void VectToOffset2( char *off_any,
- *                       void *v_any, int v_size,
- *                       void (*v_size_fun)( void *),
- *                       void (*v_read_fun)( void *, char *, int),
- *                       void *a_any, int a_dim,
- *                       void (*a_dim_fun)( void *),
- *                       void (*a_shape_fun)( void *, char *, int))
+ *   void Vect2Offset2( char *off_any,
+ *                      void *v_any, int v_size,
+ *                      void (*v_size_fun)( void *),
+ *                      void (*v_read_fun)( void *, char *, int),
+ *                      void *a_any, int a_dim,
+ *                      void (*a_dim_fun)( void *),
+ *                      void (*a_shape_fun)( void *, char *, int))
  *
  * Description:
  *
@@ -313,133 +316,102 @@ GetAttr (void *v, int v_attr, void (*v_attr_fun) (void *))
  ******************************************************************************/
 
 void
-VectToOffset2 (char *off_any, void *v_any, int v_size, void (*v_size_fun) (void *),
-               void (*v_read_fun) (void *, char *, int), void *a_any, int a_dim,
-               void (*a_dim_fun) (void *), void (*a_shape_fun) (void *, char *, int))
+Vect2Offset2 (char *off_any, void *v_any, int v_size, void (*v_size_fun) (void *),
+              void (*v_read_fun) (void *, char *, int), void *a_any, int a_dim,
+              void (*a_dim_fun) (void *), void (*a_shape_fun) (void *, char *, int))
 {
     int i;
 
-    DBUG_ENTER ("VectToOffset2");
+    DBUG_ENTER ("Vect2Offset2");
 
     DBUG_ASSERT ((v_read_fun != NULL), "access function not found!");
     DBUG_ASSERT ((a_shape_fun != NULL), "access function not found!");
 
-    if (v_size != 0) {
-        if ((v_size < 0) || (a_dim < 0)) {
-            DBUG_ASSERT ((((v_size >= 0) || (v_size_fun != NULL))
-                          && ((a_dim >= 0) || (a_dim_fun != NULL))),
-                         "access function not found!");
-            INDENT;
-            fprintf (outfile, "{\n");
-            indent++;
-            INDENT;
-            fprintf (outfile, "int SAC_start;\n");
-            INDENT;
-            fprintf (outfile, "int SAC_rest = 1;\n");
-            INDENT;
-            fprintf (outfile, "int SAC_i;\n");
+    DBUG_ASSERT ((((v_size >= 0) || (v_size_fun != NULL))
+                  && ((a_dim >= 0) || (a_dim_fun != NULL))),
+                 "access function not found!");
 
-            /*
-             * compute SAC_rest
-             */
-            INDENT;
-            fprintf (outfile, "for (SAC_i = ");
-            GetAttr (v_any, v_size, v_size_fun);
-            fprintf (outfile, "; SAC_i < ");
-            GetAttr (a_any, a_dim, a_dim_fun);
-            fprintf (outfile, "; SAC_i++) {\n");
-            indent++;
-            INDENT;
-            fprintf (outfile, "SAC_rest *= ");
-            a_shape_fun (a_any, "SAC_i", -1);
-            fprintf (outfile, ";\n");
-            indent--;
-            INDENT;
-            fprintf (outfile, "}\n");
-
-            /*
-             * compute SAC_start
-             */
-            if (v_size < 0) {
-                INDENT;
-                fprintf (outfile, "SAC_start = 0;\n");
-                INDENT;
-                fprintf (outfile, "for (SAC_i = 0; SAC_i < ");
-                v_size_fun (v_any);
-                fprintf (outfile, "; SAC_i++) {\n");
-                indent++;
-                INDENT;
-                fprintf (outfile, "int SAC_tmp = 1;\n");
-                INDENT;
-                fprintf (outfile, "int SAC_j;\n");
-                INDENT;
-                fprintf (outfile, "for (SAC_j = ");
-                v_size_fun (v_any);
-                fprintf (outfile, " - 1; SAC_j > SAC_i;  SAC_j--) {\n");
-                indent++;
-                INDENT;
-                fprintf (outfile, "SAC_tmp *= ");
-                a_shape_fun (a_any, "SAC_i", -1);
-                fprintf (outfile, ";\n");
-                indent--;
-                INDENT;
-                fprintf (outfile, "}\n");
-                INDENT;
-                fprintf (outfile, "SAC_start += SAC_tmp * ");
-                v_read_fun (v_any, "SAC_i", -1);
-                fprintf (outfile, ";\n");
-                indent--;
-                INDENT;
-                fprintf (outfile, "}\n");
-            } else {
-                INDENT;
-                fprintf (outfile, "SAC_start = ");
-                for (i = v_size - 1; i > 0; i--) {
-                    fprintf (outfile, "( ");
-                    a_shape_fun (a_any, NULL, i);
-                    fprintf (outfile, " * ");
-                }
-                v_read_fun (v_any, NULL, 0);
-                for (i = 1; i < v_size; i++) {
-                    fprintf (outfile, " + ");
-                    v_read_fun (v_any, NULL, i);
-                    fprintf (outfile, " )");
-                }
-                fprintf (outfile, ";\n");
-            }
-
-            INDENT;
-            WriteScalar (off_any);
-            fprintf (outfile, " = SAC_start * SAC_rest;\n");
-            indent--;
-            INDENT;
-            fprintf (outfile, "}\n");
-        } else {
-            DBUG_ASSERT (((v_size >= 0) && (a_dim >= 0)), "illegal dimension found!");
-            INDENT;
-            WriteScalar (off_any);
-            fprintf (outfile, " = ");
-            for (i = v_size - 1; i > 0; i--) {
-                fprintf (outfile, "( ");
-                a_shape_fun (a_any, NULL, i);
-                fprintf (outfile, " * ");
-            }
-            v_read_fun (v_any, NULL, 0);
-            for (i = 1; i < v_size; i++) {
-                fprintf (outfile, " + ");
-                v_read_fun (v_any, NULL, i);
-                fprintf (outfile, " )");
-            }
-            for (i = v_size; i < a_dim; i++) {
-                fprintf (outfile, " * ");
-                a_shape_fun (a_any, NULL, i);
-            }
-            fprintf (outfile, ";\n");
-        }
-    } else {
+    if (v_size == 0) {
         INDENT;
         WriteScalar (off_any);
         fprintf (outfile, " = 0;\n");
+    } else if ((v_size >= 0) && (a_dim >= 0)) {
+        INDENT;
+        WriteScalar (off_any);
+        fprintf (outfile, " = ");
+        for (i = v_size - 1; i > 0; i--) {
+            fprintf (outfile, "( ");
+            a_shape_fun (a_any, NULL, i);
+            fprintf (outfile, " * ");
+        }
+        v_read_fun (v_any, NULL, 0);
+        for (i = 1; i < v_size; i++) {
+            fprintf (outfile, " + ");
+            v_read_fun (v_any, NULL, i);
+            fprintf (outfile, " )");
+        }
+        for (i = v_size; i < a_dim; i++) {
+            fprintf (outfile, " * ");
+            a_shape_fun (a_any, NULL, i);
+        }
+        fprintf (outfile, ";\n");
+    } else if (a_dim < 0) {
+        BLOCK_VARDECS (
+          fprintf (outfile, "int SAC_i;");,
+                                          /*
+                                           * init offset
+                                           */
+                                          INDENT;
+          WriteScalar (off_any); fprintf (outfile, " = 0;\n");
+
+          /*
+           * compute offset for indices (0 <= .. < v_size)
+           */
+          if (v_size < 0) {
+              FOR_LOOP (fprintf (outfile, "SAC_i = 0");, fprintf (outfile, "SAC_i < ");
+                        v_size_fun (v_any);, fprintf (outfile, "SAC_i++");, INDENT;
+                        WriteScalar (off_any); fprintf (outfile, " = ");
+                        a_shape_fun (a_any, "SAC_i", -1); fprintf (outfile, " * ");
+                        WriteScalar (off_any); fprintf (outfile, " + ");
+                        v_read_fun (v_any, "SAC_i", -1); fprintf (outfile, ";\n"););
+          } else {
+              INDENT;
+              WriteScalar (off_any);
+              fprintf (outfile, " = ");
+              for (i = v_size - 1; i > 0; i--) {
+                  fprintf (outfile, "( ");
+                  a_shape_fun (a_any, NULL, i);
+                  fprintf (outfile, " * ");
+              }
+              v_read_fun (v_any, NULL, 0);
+              for (i = 1; i < v_size; i++) {
+                  fprintf (outfile, " + ");
+                  v_read_fun (v_any, NULL, i);
+                  fprintf (outfile, " )");
+              }
+              fprintf (outfile, ";\n");
+          }
+
+          /*
+           * compute offset for indices (v_size <= .. < a_dim)
+           */
+          FOR_LOOP (fprintf (outfile, "SAC_i = "); GetAttr (v_any, v_size, v_size_fun);
+                    , fprintf (outfile, "SAC_i < "); GetAttr (a_any, a_dim, a_dim_fun);
+                    , fprintf (outfile, "SAC_i++");, INDENT; WriteScalar (off_any);
+                    fprintf (outfile, " *= "); a_shape_fun (a_any, "SAC_i", -1);
+                    fprintf (outfile, ";\n");););
+    } else { /* ((a_dim >= 0) && (v_size < 0)) */
+        BLOCK_VARDECS (fprintf (outfile, "int SAC_i;");, INDENT; WriteScalar (off_any);
+                       fprintf (outfile, " = 0;\n"); for (i = 0; i < a_dim; i++) {
+                           INDENT;
+                           WriteScalar (off_any);
+                           fprintf (outfile, " *= ");
+                           a_shape_fun (a_any, NULL, i);
+                           fprintf (outfile, ";\n");
+                           COND1 (fprintf (outfile, "%d < ", i); v_size_fun (v_any);
+                                  , WriteScalar (off_any); fprintf (outfile, " += ");
+                                  v_read_fun (v_any, NULL, i); fprintf (outfile, ";\n"););
+                       });
     }
 
     DBUG_VOID_RETURN;
@@ -448,11 +420,11 @@ VectToOffset2 (char *off_any, void *v_any, int v_size, void (*v_size_fun) (void 
 /******************************************************************************
  *
  * Function:
- *   void VectToOffset( char *off_any,
- *                      void *v_any, int v_size,
- *                      void (*v_size_fun)( void *),
- *                      void (*v_read_fun)( void *, char *, int),
- *                      void *a_nt, int a_dim)
+ *   void Vect2Offset( char *off_any,
+ *                     void *v_any, int v_size,
+ *                     void (*v_size_fun)( void *),
+ *                     void (*v_read_fun)( void *, char *, int),
+ *                     void *a_nt, int a_dim)
  *
  * Description:
  *
@@ -460,13 +432,13 @@ VectToOffset2 (char *off_any, void *v_any, int v_size, void (*v_size_fun) (void 
  ******************************************************************************/
 
 void
-VectToOffset (char *off_any, void *v_any, int v_size, void (*v_size_fun) (void *),
-              void (*v_read_fun) (void *, char *, int), void *a_nt, int a_dim)
+Vect2Offset (char *off_any, void *v_any, int v_size, void (*v_size_fun) (void *),
+             void (*v_read_fun) (void *, char *, int), void *a_nt, int a_dim)
 {
-    DBUG_ENTER ("VectToOffset");
+    DBUG_ENTER ("Vect2Offset");
 
-    VectToOffset2 (off_any, v_any, v_size, v_size_fun, v_read_fun, a_nt, a_dim, DimId,
-                   ShapeId);
+    Vect2Offset2 (off_any, v_any, v_size, v_size_fun, v_read_fun, a_nt, a_dim, DimId,
+                  ShapeId);
 
     DBUG_VOID_RETURN;
 }
