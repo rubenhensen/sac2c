@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/03/31 15:09:00  bs
+ * I did some code cosmetics with the MRD_GET... macros.
+ *
  * Revision 2.2  1999/03/17 20:37:13  bs
  * Function GenPsi modified: arrays with compact vector propagation will be generated.
  *
@@ -312,7 +315,7 @@ AEprf (node *arg_node, node *arg_info)
     if (F_psi == PRF_PRF (arg_node)) {
         tmpn = NodeBehindCast (PRF_ARG1 (arg_node));
         if (N_id == NODE_TYPE (tmpn))
-            MRD_GETDATA (tmpn, ID_VARNO (tmpn), INFO_VARNO);
+            tmpn = MRD_GETDATA (ID_VARNO (tmpn), INFO_VARNO);
 
         arg[0] = tmpn;
         arg[1] = NodeBehindCast (PRF_ARG2 (arg_node));

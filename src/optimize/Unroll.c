@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/31 15:06:17  bs
+ * I did some code cosmetics with the MRD_GET... macros.
+ *
  * Revision 2.1  1999/02/23 12:41:26  sacbase
  * new release made
  *
@@ -183,7 +186,7 @@ UNRid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNRid");
     arg_node->flag = LEVEL;
-    MRD_GETLAST (ID_DEF (arg_node), ID_VARNO (arg_node), INFO_VARNO);
+    ID_DEF (arg_node) = MRD_GETLAST (ID_VARNO (arg_node), INFO_VARNO);
     DBUG_RETURN (arg_node);
 }
 
@@ -583,7 +586,7 @@ UNRdo (node *arg_node, node *arg_info)
         cond_node = DO_COND (arg_node);
 
         if (N_id == NODE_TYPE (cond_node))
-            MRD_GETLAST (ID_DEF (cond_node), ID_VARNO (cond_node), INFO_VARNO);
+            ID_DEF (cond_node) = MRD_GETLAST (ID_VARNO (cond_node), INFO_VARNO);
 
         loop_info = (linfo *)Malloc (sizeof (linfo));
         loop_info->loop_num = UNDEF;

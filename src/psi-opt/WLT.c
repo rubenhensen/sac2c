@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.3  1999/03/31 15:09:29  bs
+ * I did some code cosmetics with the MRD_GET... macros.
+ *
  * Revision 2.2  1999/02/26 14:49:06  dkr
  * file moved from folder /optimize
  *
@@ -437,7 +440,7 @@ CheckOptimizePsi (node **psi, node *arg_info)
     indexn = PRF_ARG1 ((*psi));
 
     if (N_id == NODE_TYPE (indexn)) {
-        MRD_GETDATA (datan, ID_VARNO (indexn), INFO_VARNO);
+        datan = MRD_GETDATA (ID_VARNO (indexn), INFO_VARNO);
     } else
         datan = indexn;
 
@@ -923,7 +926,7 @@ WLTNgenerator (node *arg_node, node *arg_info)
             }
 
             if (*bound && N_id == NODE_TYPE ((*bound))) {
-                MRD_GETDATA (tmpn, ID_VARNO ((*bound)), INFO_VARNO);
+                tmpn = MRD_GETDATA (ID_VARNO ((*bound)), INFO_VARNO);
                 if (IsConstantArray (tmpn, N_num)) {
                     /* this bound references a constant array, which can be substituted.
                      */

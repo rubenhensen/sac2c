@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/31 15:10:02  bs
+ * I did some code cosmetics with the MRD_GET... macros.
+ *
  * Revision 2.1  1999/02/23 12:41:51  sacbase
  * new release made
  *
@@ -51,10 +54,11 @@ extern stack *mrdl_stack;
 extern node *MrdGet (int i, int varno, int outside_block);
 extern int CheckScope (long *act_mrdl, node *assign_node, int varno, int checkdef);
 
-#define MRD_GETSUBST(i, v) GetExpr (MrdGet (i, v, 0));       /* only in CF */
-#define MRD_GETLAST(n, i, v) n = GetExpr (MrdGet (i, v, 1)); /* CF, Unroll, Unswitch */
-#define MRD_GETDATA(n, i, v) n = GetExpr (MrdGet (i, v, 2)); /* only in CF, WLI */
-#define MRD_GETCSE(n, i, v) n = GetExpr (MrdGet (i, v, 3));  /* only in CSE */
+#define MRD_GETSUBST(i, v) GetExpr (MrdGet (i, v, 0)); /* only in CF */
+#define MRD_GETLAST(i, v) GetExpr (MrdGet (i, v, 1));  /* CF, Unroll, Unswitch */
+#define MRD_GETDATA(i, v) GetExpr (MrdGet (i, v, 2));  /* CF, WLI, ArrayElimination */
+#define MRD_GETCSE(i, v) GetExpr (MrdGet (i, v, 3));   /* only in CSE */
+#define MRD_GETCFID(i, v) GetExpr (MrdGet (i, v, 4));  /* only in CFid */
 
 extern void PushMRDL (long NumVar);
 extern void PushDupMRDL ();

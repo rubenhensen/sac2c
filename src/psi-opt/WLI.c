@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.4  1999/03/31 15:09:19  bs
+ * I did some code cosmetics with the MRD_GET... macros.
+ *
  * Revision 2.3  1999/02/28 21:44:12  srs
  * renamed FREE_INDEX to FREE_INDEX_INFO
  *
@@ -423,9 +426,9 @@ CreateIndexInfoA (node *prfn, node *arg_info)
 
     data1 = data2 = NULL;
     if (N_id == NODE_TYPE (PRF_ARG1 (prfn)))
-        MRD_GETDATA (data1, ID_VARNO (PRF_ARG1 (prfn)), INFO_VARNO);
+        data1 = MRD_GETDATA (ID_VARNO (PRF_ARG1 (prfn)), INFO_VARNO);
     if (N_id == NODE_TYPE (PRF_ARG2 (prfn)))
-        MRD_GETDATA (data2, ID_VARNO (PRF_ARG2 (prfn)), INFO_VARNO);
+        data2 = MRD_GETDATA (ID_VARNO (PRF_ARG2 (prfn)), INFO_VARNO);
 
     /* Which argument is the constant (so which will be the Id)? */
     if (N_num == NODE_TYPE (PRF_ARG1 (prfn))

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/31 15:08:06  bs
+ * I did some code cosmetics with the MRD_GET... macros.
+ *
  * Revision 2.1  1999/02/23 12:41:02  sacbase
  * new release made
  *
@@ -328,7 +331,7 @@ node *
 CSEid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("CSEid");
-    MRD_GETCSE (ID_DEF (arg_node), ID_VARNO (arg_node), INFO_VARNO);
+    ID_DEF (arg_node) = MRD_GETCSE (ID_VARNO (arg_node), INFO_VARNO);
     DBUG_RETURN (arg_node);
 }
 
@@ -342,7 +345,7 @@ Equal (node *arg1, node *arg2, node *arg_info)
 
     if (N_id == NODE_TYPE (arg1)) {
         varno1 = ID_VARNO (arg1);
-        arg1 = MRD_GETCSE (ID_DEF (arg1), ID_VARNO (arg1), INFO_VARNO);
+        ID_DEF (arg1) = arg1 = MRD_GETCSE (ID_VARNO (arg1), INFO_VARNO);
     }
 
     if (N_id == NODE_TYPE (arg2)) {
