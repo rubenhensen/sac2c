@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/07/24 15:07:09  dkr
+ * TAGGED_ARRAYS: VECT2OFFSET and USE_GENVAR_OFFSET icms modified
+ *
  * Revision 3.21  2002/07/15 17:24:00  dkr
  * N_prf arguments of F_idx_... are lifted now :-)
  *
@@ -1141,6 +1144,7 @@ CreateVect2OffsetIcm (node *vardec, types *type)
      */
 #ifdef TAGGED_ARRAYS
     iv_vect_id = AddNtTag (iv_vect_id);
+    iv_off_id = AddNtTag (iv_off_id);
 
     icm = MakeIcm5 ("ND_VECT2OFFSET", iv_off_id,
                     MakeNum (GetTypesLength (ID_TYPE (iv_vect_id))), iv_vect_id,
@@ -2292,6 +2296,7 @@ IdxNcode (node *arg_node, node *arg_info)
 #endif
 
 #ifdef TAGGED_ARRAYS
+                    new_id = AddNtTag (new_id);
                     array_id = AddNtTag (array_id);
 
                     new_assign
