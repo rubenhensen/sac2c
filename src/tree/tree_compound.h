@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2002/10/11 15:58:52  sbs
+ * FUNDEF_IS_EXTERNAL added.
+ *
  * Revision 3.69  2002/10/09 22:00:11  dkr
  * IDS_SHPSEG, ID_SHPSEG added
  *
@@ -851,6 +854,11 @@ extern node *AppendObjdef (node *objdef_chain, node *objdef);
 #define FUNDEF_IS_CONDFUN(n) (FUNDEF_STATUS (n) == ST_condfun)
 #define FUNDEF_IS_LOOPFUN(n)                                                             \
     ((FUNDEF_STATUS (n) == ST_dofun) || (FUNDEF_STATUS (n) == ST_whilefun))
+#define FUNDEF_IS_EXTERNAL(n)                                                            \
+    ((FUNDEF_STATUS (n) == ST_imported_mod) || (FUNDEF_STATUS (n) == ST_imported_class)  \
+     || (FUNDEF_STATUS (n) == ST_imported_extclass)                                      \
+     || (FUNDEF_STATUS (n) == ST_imported_extmod)                                        \
+     || (FUNDEF_STATUS (n) == ST_objinitfun) || (FUNDEF_STATUS (n) == ST_classfun))
 
 /*
  *  The following compound access macros are useful whenever a fundef
