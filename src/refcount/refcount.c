@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  2000/03/31 14:09:34  dkr
+ * refcounting for N_Nwith2 added
+ *
  * Revision 2.16  2000/03/30 12:23:30  dkr
  * some comments added
  *
@@ -711,7 +714,7 @@ RCvardec (node *arg_node, node *arg_info)
  *
  * description:
  *   Performs bottom-up traversal for refcounting.
- *   When containing a with-loop, NWITH_IN/INOUT/OUT/LOCAL are infered.
+ *   When containing a with-loop, NWITH(2)_IN/INOUT/OUT/LOCAL are infered.
  *
  ******************************************************************************/
 
@@ -726,11 +729,12 @@ RCassign (node *arg_node, node *arg_info)
     DBUG_ENTER ("RCassign");
 
     /*
-     * if the instruction contains a with-loop, infer NWITH_IN/INOUT/OUT/LOCAL
+     * if the instruction contains a with-loop, infer NWITH(2)_IN/INOUT/OUT/LOCAL
      */
 
     if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
-        && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith)) {
+        && ((NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith)
+            || (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith2))) {
 
         /*
          * generate masks.
@@ -755,12 +759,14 @@ RCassign (node *arg_node, node *arg_info)
         ids_mask = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
         DFMSetMaskEntrySet (ids_mask, IDS_NAME (let_ids), IDS_VARDEC (let_ids));
 
-        if ((NWITH_TYPE (with) == WO_genarray) || (NWITH_TYPE (with) == WO_modarray)) {
-            NWITH_OUT (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
-            NWITH_INOUT (with) = ids_mask;
+        if ((NWITH_OR_NWITH2_TYPE (with) == WO_genarray)
+            || (NWITH_OR_NWITH2_TYPE (with) == WO_modarray)) {
+            NWITH_OR_NWITH2_OUT (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
+            NWITH_OR_NWITH2_INOUT (with) = ids_mask;
         } else {
-            NWITH_OUT (with) = ids_mask;
-            NWITH_INOUT (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
+            NWITH_OR_NWITH2_OUT (with) = ids_mask;
+            NWITH_OR_NWITH2_INOUT (with)
+              = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
         }
 
         /*
@@ -770,14 +776,14 @@ RCassign (node *arg_node, node *arg_info)
          *  for the let-var (ids_mask), are local.
          */
 
-        NWITH_LOCAL (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
+        NWITH_OR_NWITH2_LOCAL (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
         for (i = 0; i < INFO_RC_VARNO (arg_info); i++) {
             if ((ASSIGN_MASK (arg_node, 0))[i] > 0) {
-                DFMSetMaskEntrySet (NWITH_LOCAL (with), NULL,
+                DFMSetMaskEntrySet (NWITH_OR_NWITH2_LOCAL (with), NULL,
                                     FindVardec_Varno (i, fundef_node));
             }
         }
-        DFMSetMaskMinus (NWITH_LOCAL (with), ids_mask);
+        DFMSetMaskMinus (NWITH_OR_NWITH2_LOCAL (with), ids_mask);
 
         /*
          * IN:
@@ -786,14 +792,14 @@ RCassign (node *arg_node, node *arg_info)
          *  except for local vars.
          */
 
-        NWITH_IN (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
+        NWITH_OR_NWITH2_IN (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef_node));
         for (i = 0; i < INFO_RC_VARNO (arg_info); i++) {
             if ((ASSIGN_MASK (arg_node, 1))[i] > 0) {
-                DFMSetMaskEntrySet (NWITH_IN (with), NULL,
+                DFMSetMaskEntrySet (NWITH_OR_NWITH2_IN (with), NULL,
                                     FindVardec_Varno (i, fundef_node));
             }
         }
-        DFMSetMaskMinus (NWITH_IN (with), NWITH_LOCAL (with));
+        DFMSetMaskMinus (NWITH_OR_NWITH2_IN (with), NWITH_OR_NWITH2_LOCAL (with));
     }
 
     /*
@@ -1343,7 +1349,7 @@ RCicm (node *arg_node, node *arg_info)
  *        accordingly. (RC op needed)
  *     b) Set local refcnt to -1. (no RC op)
  *   If we have found the index-vector of a with-loop, we set RC of
- *    'NWITH_VEC' to 1 (-1 normally, see RCNwithid) --- to indicate, that we
+ *    'NWITH(2)_VEC' to 1 (-1 normally, see RCNwithid) --- to indicate, that we
  *    must build the index-vector in the compilat of the with-loop.
  *
  * remarks:
@@ -1414,19 +1420,20 @@ RCid (node *arg_node, node *arg_info)
 
     /*
      * if we have found the index-vector of a with-loop, we set RC of
-     *  'NWITH_VEC' to 1.
+     *  'NWITH(2)_VEC' to 1.
      */
     wl_node = INFO_RC_WITH (arg_info);
     while (wl_node != NULL) {
         DBUG_ASSERT ((NODE_TYPE (wl_node) == N_exprs),
                      "N_exprs-chain of WL-nodes not found in arg_info");
 
-        if (strcmp (IDS_NAME (NWITH_VEC (EXPRS_EXPR (wl_node))), ID_NAME (arg_node))
+        if (strcmp (IDS_NAME (NWITH_OR_NWITH2_VEC (EXPRS_EXPR (wl_node))),
+                    ID_NAME (arg_node))
             == 0) {
             if (!INFO_RC_ONLYNAIVE (arg_info)) {
-                IDS_REFCNT (NWITH_VEC (EXPRS_EXPR (wl_node))) = 1;
+                IDS_REFCNT (NWITH_OR_NWITH2_VEC (EXPRS_EXPR (wl_node))) = 1;
             }
-            IDS_NAIVE_REFCNT (NWITH_VEC (EXPRS_EXPR (wl_node))) = 1;
+            IDS_NAIVE_REFCNT (NWITH_OR_NWITH2_VEC (EXPRS_EXPR (wl_node))) = 1;
         }
 
         wl_node = EXPRS_NEXT (wl_node);
@@ -2008,10 +2015,10 @@ RCNpart (node *arg_node, node *arg_info)
  *
  * remarks:
  *   - In 'INFO_RC_RCDUMP( arg_info)' are the initial refcounters stored:
- *       rc(var) = 1,  if 'var' is element of 'NWITH_IN'      \ this is done,
+ *       rc(var) = 1,  if 'var' is element of 'NWITH(2)_IN'   \ this is done,
  *                 1,  if 'var' is index-vector of with-loop  / to fool the RCO
  *                 0,  otherwise
- *   - The RC of 'NWITH_VEC' indicates whether we need to build the
+ *   - The RC of 'NWITH(2)_VEC' indicates whether we need to build the
  *     index-vector or not:
  *        1: we have found references to the index-vector in at least one
  *           code-block
@@ -2038,7 +2045,6 @@ RCNcode (node *arg_node, node *arg_info)
      * count the references in the code
      */
     NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
-
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
     /*
@@ -2130,7 +2136,7 @@ RCNwithid (node *arg_node, node *arg_info)
      * we initialize the RC of the index-vector with -1.
      *  -> by default we do not need to build it.
      * (if a reference of the index-vector is found while traversal of the codes,
-     *  the RC of the withid in the first part (= 'NWITH_VEC') is set to 1.)
+     *  the RC of the withid in the first part (= 'NWITH(2)_VEC') is set to 1.)
      */
 
     if (!INFO_RC_ONLYNAIVE (arg_info)) {
@@ -2174,7 +2180,7 @@ RCNwithop (node *arg_node, node *arg_info)
 
     case WO_genarray:
         /*
-         * We count this reference via 'NWITH_IN' ('RCNwith()').
+         * We count this reference via 'NWITH(2)_IN' ('RCNwith()').
          *  -> set RC to -1.
          */
         if (NODE_TYPE (NWITHOP_SHAPE (arg_node)) == N_id) {
@@ -2187,7 +2193,7 @@ RCNwithop (node *arg_node, node *arg_info)
 
     case WO_modarray:
         /*
-         * We count this reference via 'NWITH_IN' ('RCNwith()').
+         * We count this reference via 'NWITH(2)_IN' ('RCNwith()').
          *  -> set RC to -1.
          */
         DBUG_ASSERT ((NODE_TYPE (NWITHOP_ARRAY (arg_node)) == N_id), "no id found");
@@ -2202,7 +2208,7 @@ RCNwithop (node *arg_node, node *arg_info)
     case WO_foldprf:
         /*
          * 'compile' needs an annotated RC at this node,
-         *  therefore this reference is counted here, *not* via 'NWITH_IN'.
+         *  therefore this reference is counted here, *not* via 'NWITH(2)_IN'.
          */
         if (NWITHOP_NEUTRAL (arg_node) != NULL) {
             NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
@@ -2212,6 +2218,212 @@ RCNwithop (node *arg_node, node *arg_info)
     default:
         DBUG_ASSERT ((0), "wrong withop type found");
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *RCNwith2( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   performs the refcounting for a N_Nwith node.
+ *   collects in NWITH2_DEC_RC_IDS all ids that are RC-arguments of the
+ *    with-loop.
+ *
+ * remarks:
+ *   - 'INFO_RC_WITH( arg_info)' contains a N_exprs-chain with all parent
+ *     WL-nodes.
+ *   - In 'INFO_RC_RCDUMP( arg_info)' we store the initial refcounters for
+ *     RCNcode:
+ *       rc(var) = 1,  if 'var' is element of 'NWITH2_IN'     \ this is done,
+ *               = 1,  if 'var' is index-vector of with-loop  / to fool the RCO
+ *               = 0,  otherwise
+ *   - The RC of 'NWITH2_VEC' indicates whether we need to build the
+ *     index-vector or not:
+ *        1: we have found references to the index-vector in at least one
+ *           code-block
+ *       -1: we do not need to build the index-vector.
+ *     This flag/RC is correctly set after traversal of the code-blocks.
+ *
+ ******************************************************************************/
+
+node *
+RCNwith2 (node *arg_node, node *arg_info)
+{
+    node *vardec, *neutral_vardec;
+    ids *new_ids, *last_ids;
+    int *ref_dump, *tmp_rcdump;
+    int *naive_ref_dump;
+    int *tmp_naive_rcdump;
+
+    DBUG_ENTER ("RCNwith2");
+
+    /*
+     * insert current WL into 'INFO_RC_WITH( arg_info)' (at head of chain).
+     */
+    INFO_RC_WITH (arg_info) = MakeExprs (arg_node, INFO_RC_WITH (arg_info));
+
+    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+
+    /*
+     * store current refcounts, initialize them with 0
+     */
+    ref_dump = StoreAndInitRC (RC_REAL, INFO_RC_VARNO (arg_info), 0, arg_info);
+    naive_ref_dump = StoreAndInitRC (RC_NAIVE, INFO_RC_VARNO (arg_info), 0, arg_info);
+
+    vardec = DFMGetMaskEntryDeclSet (NWITH2_IN (arg_node));
+    while (vardec != NULL) {
+        if (!INFO_RC_ONLYNAIVE (arg_info)) {
+            if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+                L_VARDEC_OR_ARG_REFCNT (vardec, 1);
+            }
+        }
+        if (MUST_NAIVEREFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+            L_VARDEC_OR_ARG_NAIVE_REFCNT (vardec, 1);
+        }
+        vardec = DFMGetMaskEntryDeclSet (NULL);
+    }
+
+    vardec = IDS_VARDEC (NWITH2_VEC (arg_node));
+    if (!INFO_RC_ONLYNAIVE (arg_info)) {
+        if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+            L_VARDEC_OR_ARG_REFCNT (vardec, 1);
+        }
+    }
+    if (MUST_NAIVEREFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
+        L_VARDEC_OR_ARG_NAIVE_REFCNT (vardec, 1);
+    }
+
+    /*
+     *  now we set up 'INFO_RC_RCDUMP( arg_info)' (needed in RCNcode)
+     */
+    tmp_rcdump = INFO_RC_RCDUMP (arg_info);
+    tmp_naive_rcdump = INFO_RC_NAIVE_RCDUMP (arg_info);
+    INFO_RC_RCDUMP (arg_info)
+      = StoreAndInitRC (RC_REAL, INFO_RC_VARNO (arg_info), 0, arg_info);
+    INFO_RC_NAIVE_RCDUMP (arg_info)
+      = StoreAndInitRC (RC_NAIVE, INFO_RC_VARNO (arg_info), 0, arg_info);
+
+    /*************************************************************
+     * count references in with-loop
+     */
+
+    /*
+     * CAUTION:
+     *   We must traverse the (parts -> withids) before we traverse the code,
+     *   to get the right RC in 'NWITH2_VEC'!
+     *   'RCNwithid()' initializes the RC, and while traversal of the code
+     *   it is set correctly!
+     */
+
+    DBUG_PRINT ("RC", ("Entering: count references in with-loop."));
+    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
+    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    DBUG_PRINT ("RC", ("Leaving: count references in with-loop."));
+
+    /*
+     * count references in with-loop
+     *************************************************************/
+
+    /*
+     *  Restore refcounts and ...
+     */
+    RestoreRC (RC_REAL, ref_dump, arg_info);
+    RestoreRC (RC_NAIVE, naive_ref_dump, arg_info);
+    FreeDump (ref_dump);
+    FreeDump (naive_ref_dump);
+    /*
+     *  ... delete dumps from the info-node.
+     */
+    FreeDump (INFO_RC_RCDUMP (arg_info));
+    FreeDump (INFO_RC_NAIVE_RCDUMP (arg_info));
+    INFO_RC_RCDUMP (arg_info) = tmp_rcdump;
+    INFO_RC_NAIVE_RCDUMP (arg_info) = tmp_naive_rcdump;
+
+    /*
+     * Increase refcount of each RC-variable that is IN-var of the with-loop.
+     *
+     * We collect all these ids in 'NWITH2_DEC_RC_IDS( arg_node)'.
+     * 'compile' generates for each var found in 'NWITH2_DEC_RC_IDS' a
+     *  'ND_DEC_RC'-ICM in the epilog-code of the with-loop!
+     *
+     * RCO: with-loops are handled like prfs:
+     *      when RCO is active, we only count the last occur of IN-vars.
+     *
+     * CAUTION: we must initialize NCODE_INC_RC_IDS because some subtrees
+     *          (e.g. bodies of while-loops) are traversed twice!!!
+     *
+     * There is one *exception*:
+     * The neutral element of a fold-with-loop is neither RC-counted here,
+     *  nor inserted into 'NWITH2_DEC_RC_IDS'.
+     * This is done, because 'RCNwithop' has counted it already, and the
+     *  with-loop does not consume it
+     * (compile generates a 'ASSIGN_ARRAY( neutral, wl_id)' instead!!).
+     */
+
+    /*
+     * get vardec of neutral element
+     */
+    switch (NWITH2_TYPE (arg_node)) {
+    case WO_foldfun:
+        /* here is no break missing!! */
+    case WO_foldprf:
+        if (NODE_TYPE (NWITHOP_NEUTRAL (NWITH2_WITHOP (arg_node))) == N_id) {
+            neutral_vardec = ID_VARDEC (NWITHOP_NEUTRAL (NWITH2_WITHOP (arg_node)));
+        }
+        break;
+    default:
+        neutral_vardec = NULL;
+    }
+
+    if (NWITH2_DEC_RC_IDS (arg_node) != NULL) {
+        NWITH2_DEC_RC_IDS (arg_node) = FreeAllIds (NWITH2_DEC_RC_IDS (arg_node));
+    }
+    vardec = DFMGetMaskEntryDeclSet (NWITH2_IN (arg_node));
+    while (vardec != NULL) {
+        if ((MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) && (vardec != neutral_vardec)) {
+            if ((VARDEC_OR_ARG_REFCNT (vardec) == 0) || (!(optimize & OPT_RCO))) {
+                /*
+                 * increment RC of non-withop-params
+                 */
+                L_VARDEC_OR_ARG_REFCNT (vardec, VARDEC_OR_ARG_REFCNT (vardec) + 1);
+
+                new_ids
+                  = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL, ST_regular);
+                IDS_VARDEC (new_ids) = vardec;
+                IDS_REFCNT (new_ids) = VARDEC_REFCNT (vardec);
+                IDS_NAIVE_REFCNT (new_ids) = VARDEC_NAIVE_REFCNT (vardec);
+                /* #### */
+                /* onlynaive missing here #### */
+                if (NWITH2_DEC_RC_IDS (arg_node) == NULL) {
+                    NWITH2_DEC_RC_IDS (arg_node) = new_ids;
+                } else {
+                    IDS_NEXT (last_ids) = new_ids;
+                }
+                last_ids = new_ids;
+            }
+        }
+
+        if ((MUST_NAIVEREFCOUNT (VARDEC_OR_ARG_TYPE (vardec)))
+            && (vardec != neutral_vardec)) {
+            /*
+             * Naive refcounting is always done.
+             */
+            L_VARDEC_OR_ARG_NAIVE_REFCNT (vardec,
+                                          VARDEC_OR_ARG_NAIVE_REFCNT (vardec) + 1);
+        }
+        vardec = DFMGetMaskEntryDeclSet (NULL);
+    }
+
+    /*
+     * we leave the with-loop
+     *   -> remove current WL from 'INFO_RC_WITH( arg_info)' (head of chain!).
+     */
+    EXPRS_EXPR (INFO_RC_WITH (arg_info)) = NULL;
+    INFO_RC_WITH (arg_info) = FreeNode (INFO_RC_WITH (arg_info));
 
     DBUG_RETURN (arg_node);
 }
