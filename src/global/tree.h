@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.53  1995/07/26 08:40:10  cg
+ * Revision 1.54  1995/08/03 14:53:45  cg
+ * NIF-macro adjusted to 26 parameters.
+ *
+ * Revision 1.53  1995/07/26  08:40:10  cg
  * new status ST_readonly_reference
  *
  * Revision 1.52  1995/07/24  09:07:41  hw
@@ -264,7 +267,9 @@ typedef struct FUN_NAME {
  *
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa) n
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa, ab, ac,   \
+            ad, ae)                                                                      \
+    n
 
 typedef enum {
 #include "node_info.mac"
