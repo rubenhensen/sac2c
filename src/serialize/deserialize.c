@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/12/19 18:09:33  sah
+ * post dk fixes
+ *
  * Revision 1.4  2004/11/27 02:48:08  sah
  * fix
  *
@@ -302,8 +305,6 @@ AddEntryToAst (stentry_t *entry, stentrytype_t type, module_t *module)
             if (FindSymbolInAst (STentryName (entry)) == NULL) {
                 serfun = MODMgetDeSerializeFunction (STentryName (entry), module);
                 entryp = serfun (DSstate);
-                /* add old types */
-                entryp = NT2OTdoTransform (entryp);
                 /* add to ast */
                 InsertIntoState (entryp);
             }
@@ -364,8 +365,6 @@ DSaddSymbolById (const char *symbid, const char *module)
 
     entryp = fun ();
 
-    /* add old types */
-    entryp = NT2OTdoTransform (entryp);
     /* add to ast */
     InsertIntoState (entryp);
 
@@ -431,9 +430,6 @@ DSlookupFunction (const char *module, const char *symbol)
         result = serfun ();
         mod = MODMunLoadModule (mod);
 
-        /* generate the old types */
-        result = NT2OTdoTransform (result);
-
         InsertIntoState (result);
     }
 
@@ -498,12 +494,6 @@ DSdoDeserialize (node *fundef)
     TRAVdo (fundef, DSstate);
 
     TRAVpop ();
-
-    /* finaly, we have to do e new2old, as the old types are not
-     * serialized.
-     */
-
-    fundef = NT2OTdoTransform (fundef);
 
     DBUG_RETURN (fundef);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/12/19 18:09:33  sah
+ * post dk fixes
+ *
  * Revision 1.3  2004/12/07 20:36:58  ktr
  * eliminated CONSTVEC which is superseded by ntypes.
  *
@@ -358,45 +361,6 @@ void
 SATserializeDownLink (info *info, node *attr, node *parent)
 {
     DBUG_ENTER ("SATserializeDownLink");
-
-    DBUG_VOID_RETURN;
-}
-
-/** <!--******************************************************************-->
- *
- * @fn SATserializeIntegerArray
- *
- * @brief generates code to de-serialize the given attribute
- *
- * @param info   info structure of serialize traversal
- * @param attr   the attribute itself
- * @param parent the parent node
- *
- ***************************************************************************/
-
-void
-SATserializeIntegerArray (info *info, int *attr, node *parent)
-{
-    DBUG_ENTER ("SATserializeIntegerArray");
-
-    if (attr == NULL) {
-        fprintf (INFO_SER_FILE (info), "NULL");
-    } else {
-        int cnt;
-
-        DBUG_ASSERT ((NODE_TYPE (parent) == N_pragma),
-                     ("Found an IntegerArrayute attached to a node different from "
-                      "N_pragma! "));
-
-        fprintf (INFO_SER_FILE (info), "CreateIntegerArray( %d",
-                 PRAGMA_NUMPARAMS (parent));
-
-        for (cnt = 0; cnt < PRAGMA_NUMPARAMS (parent); cnt++) {
-            fprintf (INFO_SER_FILE (info), ", %d", attr[cnt]);
-        }
-
-        fprintf (INFO_SER_FILE (info), ")");
-    }
 
     DBUG_VOID_RETURN;
 }

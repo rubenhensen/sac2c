@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/12/19 18:09:33  sah
+ * post dk fixes
+ *
  * Revision 1.9  2004/11/17 19:49:06  sah
  * interface changes
  *
@@ -32,23 +35,20 @@
  *
  */
 
-#ifndef _SAC_SERIALIZE_H
-#define _SAC_SERIALIZE_H
+#ifndef _SAC_SERIALIZE_H_
+#define _SAC_SERIALIZE_H_
 
-extern void *SHLPMakeNode (int ntype, int lineno, char *sfile, ...);
-extern void *SHLPFixLink (void *stack, int a, int b, int c);
-extern void *CODeserializeConstant (int type, void *shp, int vlen, char *vec);
-extern void *SHCreateShape (int dim, ...);
-extern void *TYDeserializeType (int con, ...);
-extern void *StringCopy (void *s1);
-extern void *MemCopy (int size, void *mem);
-extern void *CreateIds (char *s1, char *s2, int a, int b, int c, int d, void *p1);
-extern void *CreateNums (int s, ...);
-extern void *CreateIntegerArray (int s, ...);
-extern void *SerializeBuildSerStack (void *node);
-extern void *DeserializeLookupFunction (const char *s, const char *t);
+extern void *SHLPmakeNode (int ntype, int lineno, char *sfile, ...);
+extern void *SHLPfixLink (void *stack, int a, int b, int c);
+extern void *COdeserializeConstant (int type, void *shp, int vlen, char *vec);
+extern void *SHcreateShape (int dim, ...);
+extern void *TYdeserializeType (int con, ...);
+extern void *ILIBstringCopy (void *s1);
+extern void *ILIBmemCopy (int size, void *mem);
+extern void *SERbuildSerStack (void *node);
+extern void *DSlookupFunction (const char *s, const char *t);
 extern void *STInit ();
 extern void STAdd (char *s1, int l, char *s2, int i, void *table);
-extern void *SSAdd (char *s1, int i, void *p);
+extern void *STRSAdd (char *s1, int i, void *p);
 
-#endif /* _SAC_SERIALIZE_H */
+#endif /* _SAC_SERIALIZE_H_ */

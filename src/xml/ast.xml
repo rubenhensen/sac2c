@@ -17,8 +17,6 @@
     <type name="Link" ctype="node*" init="NULL" copy="hash" persist="no" />
     <type name="ExtLink" ctype="node*" init="NULL" copy="hash" persist="yes" />
     <type name="DownLink" ctype="node*" init="NULL" copy="hash" persist="no" />
-    <type name="IntegerArray" ctype="int*" init="NULL"
-    copy="function" />
     <type name="FileType" ctype="file_type" init="F_unknown"
     copy="literal" />
     <type name="LUT" ctype="lut_t*" init="NULL" copy="function" persist="no" />

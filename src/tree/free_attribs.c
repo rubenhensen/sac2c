@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2004/12/19 18:09:33  sah
+ * post dk fixes
+ *
  * Revision 1.21  2004/12/12 08:00:49  ktr
  * removed sons.any, attribs.any, NODE_ISALIVE because they were incompatible
  * with CLEANMEM.
@@ -307,28 +310,6 @@ FREEattribDownLink (node *attr, node *parent)
      */
 
     DBUG_RETURN ((node *)NULL);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn FREEattribIntegerArray
- *
- * @brief Frees IntegerArray attribute
- *
- * @param attr IntegerArray node to process
- * @param parent parent node
- *
- * @return result of Free call, usually NULL
- *
- ***************************************************************************/
-int *
-FREEattribIntegerArray (int *attr)
-{
-    DBUG_ENTER ("FREEattribIntegerArray");
-
-    /* TODO */
-
-    DBUG_RETURN (attr);
 }
 
 /** <!--******************************************************************-->
