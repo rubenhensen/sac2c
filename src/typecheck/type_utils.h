@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/26 20:56:26  sbs
+ * TUisHidden added
+ *
  * Revision 1.2  2004/11/25 18:01:40  sbs
  * compiles
  *
@@ -24,5 +27,6 @@ extern node *TUrettypes2AUD (node *rets);
 extern node *TUargtypes2AUD (node *rets);
 extern node *TUrettypes2alphaAUD (node *rets);
 extern bool TUisUniqueUserType (ntype *type);
+extern bool TUisHidden (ntype *type);
 
 #endif /* _SAC_TYPE_UTILS_H_*/
