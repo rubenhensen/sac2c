@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2003/03/26 15:46:20  sbs
+ * group wls added
+ *
  * Revision 1.30  2003/03/13 07:22:02  ktr
  * Fixed bug #7 WLS does illegal transformation on non-scalar fold-WLs.
  *
@@ -103,14 +106,27 @@
 
 /**
  *
+ * @defgroup wls WLS
+ * @ingroup opt
+ *
+ * @brief WithloopScalarization is a high-level optimization which composes
+ *        a single withloop from two nested ones in order to minimize memory-
+ *        transactions and thereby improving time of program execution.
+ * <pre>
+ * Example:
+ *
+ *   would be nice to have, wouldn't it?
+ *
+ * </pre>
+ *
+ * @{
+ */
+
+/**
+ *
  * @file WithloopScalarization.c
  *
  *   This implements the WithloopScalarization in ssa-form.
- *
- *   WithloopScalarization is a high-level optimization which composes
- *   a single withloop from two nested ones in order to minimize memory-
- *   transactions and thereby improving time of program execution.
- *
  *
  *   WithloopScalarization works in four phases:
  *
@@ -1949,3 +1965,5 @@ WithloopScalarization (node *fundef, node *modul)
 
     DBUG_RETURN (fundef);
 }
+
+/*@}*/ /* defgroup wls */
