@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/12/09 10:59:30  mwe
+ * support for type_upgrade added
+ *
  * Revision 3.12  2004/11/26 17:54:18  skt
  * renamed OPTmodul into OPTmodule
  *
@@ -80,6 +83,7 @@ extern int dl_expr;
 extern int sp_expr;
 extern int cvp_expr;
 extern int wlfs_expr;
+extern int tup_expr;
 
 extern node *OPTdoOptimize (node *arg_node);
 extern node *OPTmodule (node *arg_node, info *arg_info);

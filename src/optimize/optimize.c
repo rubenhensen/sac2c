@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2004/12/09 10:59:30  mwe
+ * support for type_upgrade added
+ *
  * Revision 3.71  2004/11/27 01:48:24  jhb
  * comment out WLAdoAccessAnalysis and ApdoArrayPadding
  *
@@ -363,6 +366,7 @@
 #include "ConstVarPropagation.h"
 #include "WLPartitionGeneration.h"
 #include "WithloopFusion.h"
+#include "type_upgrade.h"
 
 /*
  * INFO structure
@@ -446,6 +450,7 @@ int dl_expr;
 int sp_expr;
 int cvp_expr;
 int wlfs_expr;
+int tup_expr;
 
 /**
  *
@@ -502,6 +507,7 @@ ResetCounters ()
     sp_expr = 0;
     cvp_expr = 0;
     wlfs_expr = 0;
+    tup_expr = 0;
 
     DBUG_VOID_RETURN;
 }
@@ -534,7 +540,7 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
                  int off_wlf_expr, int off_wlt_expr, int off_cse_expr, int off_ap_padded,
                  int off_ap_unsupported, int off_wls_expr, int off_al_expr,
                  int off_dl_expr, int off_sp_expr, int off_cvp_expr, int off_wlfs_expr,
-                 int flag)
+                 int off_tup_expr, int flag)
 {
     int diff;
     DBUG_ENTER ("PrintStatistics");
@@ -620,6 +626,10 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     diff = wlfs_expr - off_wlfs_expr;
     if ((global.optimize.dowlfs) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d with-loop(s) fused", diff));
+
+    diff = tup_expr - off_tup_expr;
+    if ((global.optimize.dotup) && ((ALL == flag) || (diff > 0)))
+        NOTE (("  %d type(s) upgraded", diff));
 
     DBUG_VOID_RETURN;
 }
@@ -852,7 +862,7 @@ OPTmodule (node *arg_node, info *arg_info)
 
     NOTE ((""));
     NOTE (("overall optimization statistics:"));
-    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                      ALL);
 
     /*
@@ -908,6 +918,7 @@ DONE:
  *        (CF)       |   (applied only if Unrolling succeeded!)
  *        LIR        |
  *        WLS        |
+ *        TUP        |
  *        ESD        |
  *        DL         |
  *        AL         |
@@ -948,6 +959,7 @@ OPTfundef (node *arg_node, info *arg_info)
     int mem_sp_expr = sp_expr;
     int mem_cvp_expr = cvp_expr;
     int mem_wlfs_expr = wlfs_expr;
+    int mem_tup_expr = tup_expr;
 
     int old_cse_expr = cse_expr;
     int old_cf_expr = cf_expr;
@@ -964,6 +976,7 @@ OPTfundef (node *arg_node, info *arg_info)
     int old_dl_expr = dl_expr;
     int old_sp_expr = sp_expr;
     int old_cvp_expr = cvp_expr;
+    int old_tup_expr = tup_expr;
 
     int loop1 = 0;
     int loop2 = 0;
@@ -1226,6 +1239,16 @@ OPTfundef (node *arg_node, info *arg_info)
                 goto INFO;
             }
 
+            if (global.optimize.dotup) {
+                arg_node = TUPdoTypeUpgrade (arg_node);
+            }
+
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && (0 == strcmp (global.break_specifier, "tup"))) {
+                goto INFO;
+            }
+
             if ((global.optimize.doal) || (global.optimize.dodl)) {
                 arg_node = ESDdoElimSubDiv (arg_node);
             }
@@ -1259,7 +1282,8 @@ OPTfundef (node *arg_node, info *arg_info)
                 || (uns_expr != old_uns_expr) || (lir_expr != old_lir_expr)
                 || (wlir_expr != old_wlir_expr) || (wls_expr != old_wls_expr)
                 || (al_expr != old_al_expr) || (dl_expr != old_dl_expr)
-                || (sp_expr != old_sp_expr) || (cvp_expr != old_cvp_expr))
+                || (sp_expr != old_sp_expr) || (cvp_expr != old_cvp_expr)
+                || (tup_expr != old_tup_expr))
                && (loop1 < global.max_optcycles));
         /* dkr:
          * How about  cf_expr, wlt_expr, dcr_expr  ??
@@ -1366,7 +1390,7 @@ OPTfundef (node *arg_node, info *arg_info)
                          mem_wlunr_expr, mem_uns_expr, mem_elim_arrays, mem_wlf_expr,
                          mem_wlt_expr, mem_cse_expr, 0, 0, mem_wls_expr, mem_al_expr,
                          mem_dl_expr, mem_sp_expr, mem_cvp_expr, mem_wlfs_expr,
-                         NON_ZERO_ONLY);
+                         mem_tup_expr, NON_ZERO_ONLY);
     }
 
     if (FUNDEF_NEXT (arg_node)) {
