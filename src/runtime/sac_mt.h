@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1998/07/02 09:27:39  cg
+ * fixed several bugs
+ * dynamic multi-threading option renamed to -mt <num>
+ *
  * Revision 1.8  1998/06/29 08:57:13  cg
  * added tracing facilities
  *
@@ -67,12 +71,12 @@
 
 typedef union {
     union {
-        int result_int;
-        float result_float;
-        double result_double;
-        char result_char;
-        void *result_array;
-        void *result_hidden;
+        volatile int result_int;
+        volatile float result_float;
+        volatile double result_double;
+        volatile char result_char;
+        volatile void *result_array;
+        volatile void *result_hidden;
     } b[SAC_SET_MAX_SYNC_FOLD + 1];
 } SAC_MT_barrier_dummy_t;
 
@@ -91,12 +95,12 @@ typedef union {
 typedef union {
     char dummy[SAC_MT_BARRIER_OFFSET ()];
     union {
-        int result_int;
-        float result_float;
-        double result_double;
-        char result_char;
-        void *result_array;
-        void *result_hidden;
+        volatile int result_int;
+        volatile float result_float;
+        volatile double result_double;
+        volatile char result_char;
+        volatile void *result_array;
+        volatile void *result_hidden;
     } b[SAC_SET_MAX_SYNC_FOLD + 1];
 } SAC_MT_barrier_t;
 
@@ -193,7 +197,7 @@ typedef union {
     }
 
 #define SAC_MT_SETUP_PTHREAD()                                                           \
-    {                                                                                    \
+    if (SAC_MT_THREADS () > 1) {                                                         \
         pthread_attr_init (&SAC_MT_thread_attribs);                                      \
         pthread_attr_setscope (&SAC_MT_thread_attribs, PTHREAD_SCOPE_SYSTEM);            \
         pthread_attr_setdetachstate (&SAC_MT_thread_attribs, PTHREAD_CREATE_DETACHED);   \
@@ -353,9 +357,12 @@ typedef union {
 
 #define SAC_MT_SYNC_ONEFOLD_1(type, accu_var, tmp_var, id)                               \
     {                                                                                    \
+        SAC_TR_MT_PRINT_FOLD_RESULT (type, accu_var, "Pure thread fold result:");        \
+                                                                                         \
         if (!SAC_MT_MYWORKERCLASS ()) {                                                  \
             SAC_MT_SET_BARRIER_RESULT (SAC_MT_MYTHREAD (), 1, type, accu_var);           \
             SAC_TR_MT_PRINT (("Synchronisation block %d finished", id));                 \
+            SAC_TR_MT_PRINT_FOLD_RESULT (type, accu_var, "Partial fold result:");        \
             goto label_worker_continue_##id;                                             \
         }                                                                                \
                                                                                          \
@@ -377,6 +384,8 @@ typedef union {
 #define SAC_MT_SYNC_ONEFOLD_2(type, accu_var, tmp_var, id)                               \
     if (!SAC_MT_ready_count) {                                                           \
         SAC_MT_SET_BARRIER_RESULT (SAC_MT_MYTHREAD (), 1, type, accu_var);               \
+        SAC_TR_MT_PRINT (("Synchronisation block %d finished", id));                     \
+        SAC_TR_MT_PRINT_FOLD_RESULT (type, accu_var, "Partial fold result:");            \
         goto label_worker_continue_##id;                                                 \
     }                                                                                    \
     SAC_MT_ready_count >>= 1;                                                            \
@@ -386,7 +395,7 @@ typedef union {
         ;                                                                                \
     }                                                                                    \
     }                                                                                    \
-                                                                                         \
+    else                                                                                 \
     {                                                                                    \
         unsigned int SAC_MT_ready_count = SAC_MT_MASTERCLASS () >> 1;                    \
         unsigned int SAC_MT_son_id;                                                      \
@@ -402,6 +411,8 @@ typedef union {
 #define SAC_MT_SYNC_ONEFOLD_3(type, accu_var, tmp_var, id)                               \
     if (!SAC_MT_ready_count) {                                                           \
         SAC_MT_SET_BARRIER_RESULT (SAC_MT_MYTHREAD (), 1, type, accu_var);               \
+        SAC_TR_MT_PRINT (("Synchronisation block %d finished", id));                     \
+        SAC_TR_MT_PRINT_FOLD_RESULT (type, accu_var, "Partial fold result:");            \
         goto label_master_continue_##id;                                                 \
     }                                                                                    \
     SAC_MT_ready_count >>= 1;                                                            \
@@ -437,10 +448,10 @@ typedef union {
               = (lower + iterations_rest) + SAC_MT_MYTHREAD () * iterations_per_thread;  \
             SAC_WL_MT_SCHEDULE_STOP (0)                                                  \
               = SAC_WL_MT_SCHEDULE_START (0) + iterations_per_thread;                    \
-            SAC_TR_MT_PRINT (("Scheduler 'Block': dim 0: %d -> %d",                      \
-                              SAC_WL_MT_SCHEDULE_START (0),                              \
-                              SAC_WL_MT_SCHEDULE_STOP (0)));                             \
         }                                                                                \
+                                                                                         \
+        SAC_TR_MT_PRINT (("Scheduler 'Block': dim 0: %d -> %d",                          \
+                          SAC_WL_MT_SCHEDULE_START (0), SAC_WL_MT_SCHEDULE_STOP (0)));   \
     }
 
 #if SAC_DO_THREADS_STATIC
@@ -535,24 +546,21 @@ extern const unsigned int SAC_TRMT_master_id;
 
 #define SAC_MT_SETUP_NUMTHREADS()                                                        \
     {                                                                                    \
-        unsigned int i, j;                                                               \
-        char option[] = "-threads=";                                                     \
+        unsigned int i;                                                                  \
                                                                                          \
-        for (i = 1; i < __argc; i++) {                                                   \
-            for (j = 0; j < 9; j++) {                                                    \
-                if (option[j] != __argv[j]) {                                            \
-                    goto next_opt;                                                       \
-                }                                                                        \
-            }                                                                            \
-                                                                                         \
-            SAC_MT_threads = atoi (__argv[i] + 9);                                       \
-            if ((SAC_MT_threads > 0) && (SAC_MT_threads <= SAC_SET_THREADS_MAX)) {       \
+        for (i = 1; i < __argc - 1; i++) {                                               \
+            if ((__argv[i][0] == '-') && (__argv[i][1] == 'm') && (__argv[i][2] == 't')  \
+                && (__argv[i][3] == '\0')) {                                             \
+                SAC_MT_threads = atoi (__argv[i + 1]);                                   \
                 break;                                                                   \
             }                                                                            \
+        }                                                                                \
                                                                                          \
-            SAC_RuntimeError ("Number of threads exceeds legal range (1 to %d)",         \
-                              SAC_SET_THREADS_MAX);                                      \
-        next_opt:                                                                        \
+        if ((SAC_MT_threads <= 0) || (SAC_MT_threads > SAC_SET_THREADS_MAX)) {           \
+            SAC_RuntimeError (                                                           \
+              "Number of threads is unspecified or exceeds legal range (1 to %d).\n"     \
+              "    Use option '-mt <num>'.",                                             \
+              SAC_SET_THREADS_MAX);                                                      \
         }                                                                                \
     }
 
