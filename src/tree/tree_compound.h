@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.129  2004/11/24 12:33:33  ktr
+ * TCappendRets added.
+ *
  * Revision 3.128  2004/11/24 11:45:14  sah
  * added TCgetNthExpr
  *
@@ -775,6 +778,7 @@ extern int TCcmpDomain (node *args1, node *args2);
  ***/
 
 extern int TCcountRets (node *rets);
+extern node *TCappendRets (node *chain, node *item);
 
 /*--------------------------------------------------------------------------*/
 

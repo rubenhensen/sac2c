@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.105  2004/11/24 12:33:33  ktr
+ * TCappendRets added.
+ *
  * Revision 3.104  2004/11/24 11:45:14  sah
  * added TCgetNthExpr
  *
@@ -2296,6 +2299,33 @@ CountArgs (node *args)
 /******************************************************************************
  *
  * function:
+ *   node *AppendRets( node *exprs1, node *exprs2)
+ *
+ * description:
+ *   This function concatenates two N_ret chains of nodes.
+ *
+ ******************************************************************************/
+
+node *
+TCappendRets (node *ret_chain, node *item)
+{
+    node *ret;
+
+    DBUG_ENTER ("TCappendRets");
+
+    DBUG_ASSERT (((ret_chain == NULL) || (NODE_TYPE (ret_chain) == N_ret)),
+                 ("First argument of AppendRets() has wrong node type."));
+    DBUG_ASSERT (((item == NULL) || (NODE_TYPE (item) == N_ret)),
+                 ("Second argument of AppendRets() has wrong node type."));
+
+    APPEND (ret, node *, RET, ret_chain, item);
+
+    DBUG_RETURN (ret);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   int CountRets( node *rets)
  *
  * description:
@@ -2304,11 +2334,11 @@ CountArgs (node *args)
  ******************************************************************************/
 
 int
-CountRets (node *rets)
+TCcountRets (node *rets)
 {
     int count = 0;
 
-    DBUG_ENTER ("CountRets");
+    DBUG_ENTER ("TCcountRets");
 
     while (rets != NULL) {
         DBUG_ASSERT ((NODE_TYPE (rets) == N_ret), "no N_ret node found!");
