@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.55  1998/02/05 17:07:42  srs
+ * removed wr_tab and changed fusion_tab into wlf_tab.
+ * wr(work reduction) and fusion are unused optimizations.
+ *
  * Revision 1.54  1997/12/02 18:42:56  srs
  * removed NEWTREE
  *
@@ -189,7 +193,6 @@
 #include "free.h"
 #include "ConstantFolding.h"
 #include "DeadCodeRemoval.h"
-#include "WorkReduction.h"
 #include "LoopInvariantRemoval.h"
 #include "CSE.h"
 #include "import.h"
@@ -307,18 +310,15 @@ funptr dcr_tab[] = {
 #undef NIF
 
 /*
- * 7) wr_tab
+ * 7) unused2 (was wr_tab)
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
-    y
-
-funptr wr_tab[] = {
-#include "node_info.mac"
-};
-
-#undef NIF
+/* #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, \ */
+/*   q, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn) y */
+/* funptr wr_tab[]={ */
+/* #include "node_info.mac" */
+/*                   }; */
+/* #undef NIF */
 
 /*
  * 8) free_tab
@@ -475,14 +475,14 @@ funptr unswitch_tab[] = {
 #undef NIF
 
 /*
- * 19) fusion_tab
+ * 19) wlf_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, wlf, q, aa, ab,  \
             ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
-    m
+    wlf
 
-funptr fusion_tab[] = {
+funptr wlf_tab[] = {
 #include "node_info.mac"
 };
 
