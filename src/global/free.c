@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/02/25 09:41:24  bs
+ * FreeId and FreeArray modified: compact propagation of constant
+ * integer vectors will be deallocated now.
+ *
  * Revision 2.1  1999/02/23 12:39:17  sacbase
  * new release made
  *
@@ -1222,6 +1226,9 @@ FreeExprs (node *arg_node, node *arg_info)
 node *
 FreeArray (node *arg_node, node *arg_info)
 {
+    int *iarray;
+    char *carray;
+
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeArray");
@@ -1235,6 +1242,12 @@ FreeArray (node *arg_node, node *arg_info)
     }
 
     DBUG_PRINT ("FREE", ("Removing N_array node ..."));
+
+    iarray = ARRAY_INTARRAY (arg_node);
+    FREE (iarray);
+
+    carray = ARRAY_STRING (arg_node);
+    FREE (carray);
 
     FREE (arg_node);
 
@@ -1268,6 +1281,8 @@ FreeVinfo (node *arg_node, node *arg_info)
 node *
 FreeId (node *arg_node, node *arg_info)
 {
+    int *carray;
+
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeId");
@@ -1277,6 +1292,9 @@ FreeId (node *arg_node, node *arg_info)
     FREE (ID_NAME (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_id node ..."));
+
+    carray = ID_CONSTARRAY (arg_node);
+    FREE (carray);
 
     FREE (arg_node);
 
