@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/01/09 17:21:46  dkr
+ * COMPWLstriVar renamed into COMPWLstrideVar
+ *
  * Revision 3.2  2000/12/12 11:50:02  dkr
  * function declarations for Make...RcIcm() added
  *
@@ -92,7 +95,7 @@ extern node *COMPWLublock (node *arg_node, node *arg_info);
 extern node *COMPWLstride (node *arg_node, node *arg_info);
 extern node *COMPWLgrid (node *arg_node, node *arg_info);
 extern node *COMPWLsegVar (node *arg_node, node *arg_info);
-extern node *COMPWLstriVar (node *arg_node, node *arg_info);
+extern node *COMPWLstrideVar (node *arg_node, node *arg_info);
 extern node *COMPWLgridVar (node *arg_node, node *arg_info);
 extern node *COMPMt (node *arg_node, node *arg_info);
 extern node *COMPSt (node *arg_node, node *arg_info);
