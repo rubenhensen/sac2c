@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/11/27 00:19:26  cg
+ * Typo fixed.
+ *
  * Revision 1.15  2004/11/25 23:44:04  sbs
  * FREEattribIndexInfo added.
  *
@@ -333,7 +336,7 @@ FREEattribMask (long *attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeNodeList
+ * @fn FREEattribNodeList
  *
  * @brief Frees NodeList attribute
  *
@@ -343,9 +346,9 @@ FREEattribMask (long *attr)
  *
  ***************************************************************************/
 nodelist *
-FreeNodeList (nodelist *attr)
+FREEattribNodeList (nodelist *attr)
 {
-    DBUG_ENTER ("FreeNodeList");
+    DBUG_ENTER ("FREEattribNodeList");
 
     attr = FREEfreeNodelist (attr);
 
