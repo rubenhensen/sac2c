@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/02/12 17:04:36  nmw
+ * chkavis_tab added
+ *
  * Revision 3.3  2000/12/06 20:12:25  dkr
  * l2f_infer... renamed into infdfms_...
  * l2f_lift... renamed into l2f...
@@ -202,6 +205,8 @@ extern funtab *pih_tab;
 extern funtab *piw_tab;
 extern funtab *impspec_tab;
 extern funtab *tccp_tab;
+extern funtab *ssafrm_tab;
+extern funtab *chkavis_tab;
 
 extern int nnode[];
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/02/12 17:04:36  nmw
+ * chkavis_tab added
+ *
  * Revision 3.5  2000/12/15 18:25:15  dkr
  * infer_dfms.h renamed into InferDFMs.h
  *
@@ -287,6 +290,7 @@
 #include "print_interface_wrapper.h"
 #include "map_cwrapper.h"
 #include "import_specialization.h"
+#include "CheckAvis.h"
 
 #include "traverse.h"
 
@@ -1230,6 +1234,28 @@ static funtab tccp_tab_rec = {{
                               NULL,
                               NULL};
 funtab *tccp_tab = &tccp_tab_rec;
+
+/*
+ *  (86) ssafrm_tab
+ */
+static funtab ssafrm_tab_rec = {{
+#define NIFssafrm(it_ssafrm) it_ssafrm
+#include "node_info.mac"
+                                },
+                                NULL,
+                                NULL};
+funtab *ssafrm_tab = &ssafrm_tab_rec;
+
+/*
+ *  (87) chkavis_tab
+ */
+static funtab chkavis_tab_rec = {{
+#define NIFchkavis(it_chkavis) it_chkavis
+#include "node_info.mac"
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *chkavis_tab = &chkavis_tab_rec;
 
 /*
  *  nnode
