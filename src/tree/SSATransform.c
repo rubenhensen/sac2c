@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2002/08/15 10:12:25  sbs
+ * Now, SSArightids produces an error message whenever a non previously defined variable i
+ * encountered,
+ * ,
+ *
  * Revision 1.23  2002/08/05 09:52:04  sbs
  * eliminated the requirement for Nwithid nodes to always have both,
  * an IDS and a VEC attribute. This change is motivated by the requirement
@@ -1210,7 +1215,11 @@ SSArightids (ids *arg_ids, node *arg_info)
      */
     if (AVIS_SSAPHITARGET (IDS_AVIS (arg_ids)) == PHIT_NONE) {
         /* do renaming to new ssa vardec */
-        IDS_AVIS (arg_ids) = AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids));
+        if (AVIS_SSADEFINED (IDS_AVIS (arg_ids)) == FALSE) {
+            ERROR (linenum, ("var %s used without definition", IDS_NAME (arg_ids)));
+        } else {
+            IDS_AVIS (arg_ids) = AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids));
+        }
     }
 
     /* restore all depended attributes with correct values */
