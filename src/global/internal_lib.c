@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  2000/01/25 13:39:03  dkr
+ * all the Constvec stuff moved to tree_compound.c
+ *
  * Revision 2.10  1999/07/20 11:48:29  cg
  * Definition (!) of global variable malloc_align_step removed;
  * malloc_align_step is now defined in globals.c.
@@ -34,9 +37,6 @@
  *
  * Revision 2.1  1999/02/23 12:39:23  sacbase
  * new release made
- *
- * Revision 1.35  1999/01/07 14:02:15  sbs
- * *** empty log message ***
  *
  * Revision 1.34  1998/08/20 12:09:00  srs
  * removed upper allocation bound in Malloc (maybe this was inserted
@@ -227,7 +227,6 @@ Malloc (int size)
     DBUG_PRINT ("MEM_OBSERVE", ("mem currently allocated: %d", current_allocated_mem));
     if (max_allocated_mem < current_allocated_mem)
         max_allocated_mem = current_allocated_mem;
-
 #else /* not SHOW_MALLOC */
     tmp = malloc (size);
     if (NULL == tmp)
@@ -236,208 +235,6 @@ Malloc (int size)
 
     DBUG_PRINT ("MEMALLOC", ("new memory: " P_FORMAT, tmp));
     DBUG_RETURN (tmp);
-}
-
-/******************************************************************************
- *
- * function:
- *  void * CopyConstVec( simpletype vectype, int veclen, void * const_vec)
- *
- * description:
- *   allocates a new vector of size veclen*sizeof(vectype) and copies all
- *   elements from const_vec into it.
- *
- ******************************************************************************/
-
-void *
-CopyConstVec (simpletype vectype, int veclen, void *const_vec)
-{
-    int n;
-    void *res;
-
-    DBUG_ENTER ("CopyConstVec");
-    if (veclen > 0) {
-        switch (vectype) {
-        case T_bool:
-        case T_int:
-            n = veclen * sizeof (int);
-            res = Malloc (n);
-            res = memcpy (res, const_vec, n);
-            break;
-        case T_float:
-            n = veclen * sizeof (float);
-            res = Malloc (n);
-            res = memcpy (res, const_vec, n);
-            break;
-        case T_double:
-            n = veclen * sizeof (double);
-            res = Malloc (n);
-            res = memcpy (res, const_vec, n);
-            break;
-        case T_char:
-            n = veclen * sizeof (char);
-            res = Malloc (n);
-            res = memcpy (res, const_vec, n);
-            break;
-        default:
-            DBUG_ASSERT ((0), "CopyConstVec called with non-const-type!");
-            res = NULL;
-        }
-    } else {
-        res = NULL;
-    }
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *  void * AllocConstVec( simpletype vectype, int veclen)
- *
- * description:
- *   allocates a new vector of size veclen*sizeof(vectype).
- *
- ******************************************************************************/
-
-void *
-AllocConstVec (simpletype vectype, int veclen)
-{
-    void *res;
-
-    DBUG_ENTER ("AllocConstVec");
-    if (veclen > 0) {
-        switch (vectype) {
-        case T_bool:
-        case T_int:
-            res = Malloc (veclen * sizeof (int));
-            break;
-        case T_float:
-            res = Malloc (veclen * sizeof (float));
-            break;
-        case T_double:
-            res = Malloc (veclen * sizeof (double));
-            break;
-        case T_char:
-            res = Malloc (veclen * sizeof (int));
-            break;
-        default:
-            DBUG_ASSERT ((0), "AllocConstVec called with non-const-type!");
-            res = NULL;
-        }
-    } else {
-        res = NULL;
-    }
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *  void * ModConstVec( simpletype vectype, void * const_vec, int idx,
- *                                                           node * const_node)
- *
- * description:
- *   modifies const_vec at position idx by inserting the value stored in
- *   const_node. It is assumed (!!!) that simpletype is compatible to the const_node;
- *   if this requires a cast (e.g. NODE_TYPE(const_node) == N_num && vectype==T_double)
- *   it will be done implicitly.
- *
- ******************************************************************************/
-
-void *
-ModConstVec (simpletype vectype, void *const_vec, int idx, node *const_node)
-{
-    DBUG_ENTER ("ModConstVec");
-    switch (vectype) {
-    case T_bool:
-        DBUG_ASSERT ((NODE_TYPE (const_node) == N_bool),
-                     "array element type does not match infered vectype!");
-        ((int *)const_vec)[idx] = BOOL_VAL (const_node);
-        break;
-    case T_int:
-        DBUG_ASSERT ((NODE_TYPE (const_node) == N_num),
-                     "array element type does not match infered vectype!");
-        ((int *)const_vec)[idx] = NUM_VAL (const_node);
-        break;
-    case T_float:
-        DBUG_ASSERT (((NODE_TYPE (const_node) == N_num)
-                      || (NODE_TYPE (const_node) == N_float)),
-                     "array element type does not match infered vectype!");
-        if (NODE_TYPE (const_node) == N_num)
-            ((float *)const_vec)[idx] = (float)NUM_VAL (const_node);
-        else
-            ((float *)const_vec)[idx] = FLOAT_VAL (const_node);
-        break;
-    case T_double:
-        DBUG_ASSERT (((NODE_TYPE (const_node) == N_num)
-                      || (NODE_TYPE (const_node) == N_float)
-                      || (NODE_TYPE (const_node) == N_double)),
-                     "array element type does not match infered vectype!");
-        if (NODE_TYPE (const_node) == N_num)
-            ((double *)const_vec)[idx] = (double)NUM_VAL (const_node);
-        else if (NODE_TYPE (const_node) == N_float)
-            ((double *)const_vec)[idx] = FLOAT_VAL (const_node);
-        else
-            ((double *)const_vec)[idx] = DOUBLE_VAL (const_node);
-        break;
-    case T_char:
-        DBUG_ASSERT ((NODE_TYPE (const_node) == N_char),
-                     "array element type does not match infered vectype!");
-        ((char *)const_vec)[idx] = CHAR_VAL (const_node);
-        break;
-    default:
-        DBUG_ASSERT ((0), "ModConstVec called with non-const-type!");
-    }
-    DBUG_RETURN (const_vec);
-}
-
-/******************************************************************************
- *
- * function:
- *  node *AnnotateIdWithConstVec(node *expr, node *id)
- *
- * description:
- *   - if expr is an N_array-node or an N_id-node,
- *     the const-array decoration from expr is copied to id.
- *   - leading casts will be ignored.
- *   - returns the id-node.
- *
- ******************************************************************************/
-
-node *
-AnnotateIdWithConstVec (node *expr, node *id)
-{
-    node *behind_casts = expr;
-
-    DBUG_ENTER ("AnnotateIdWithConstVec");
-
-    DBUG_ASSERT ((NODE_TYPE (id) == N_id),
-                 "AnnotateIdWithConstVec called with non-compliant arguments!");
-
-    while (NODE_TYPE (behind_casts) == N_cast)
-        behind_casts = CAST_EXPR (behind_casts);
-
-    if (NODE_TYPE (behind_casts) == N_array) {
-        ID_ISCONST (id) = ARRAY_ISCONST (behind_casts);
-        ID_VECTYPE (id) = ARRAY_VECTYPE (behind_casts);
-        ID_VECLEN (id) = ARRAY_VECLEN (behind_casts);
-        if (ID_ISCONST (id)) {
-            ID_CONSTVEC (id)
-              = CopyConstVec (ARRAY_VECTYPE (behind_casts), ARRAY_VECLEN (behind_casts),
-                              ARRAY_CONSTVEC (behind_casts));
-        }
-    } else if (NODE_TYPE (behind_casts) == N_id) {
-        ID_ISCONST (id) = ID_ISCONST (behind_casts);
-        ID_VECTYPE (id) = ID_VECTYPE (behind_casts);
-        ID_VECLEN (id) = ID_VECLEN (behind_casts);
-        if (ID_ISCONST (id)) {
-            ID_CONSTVEC (id)
-              = CopyConstVec (ID_VECTYPE (behind_casts), ID_VECLEN (behind_casts),
-                              ID_CONSTVEC (behind_casts));
-        }
-    }
-
-    DBUG_RETURN (id);
 }
 
 /******************************************************************************
