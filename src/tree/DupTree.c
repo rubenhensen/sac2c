@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.35  2000/10/09 17:07:31  dkr
+ * DupNodelist():
+ *   wrong DBUG_ASSERT in DupNodelist removed.
+ *   NODELIST_ATTRIB is duplicated now, too.
+ *
  * Revision 1.34  2000/09/20 18:19:10  dkr
  * ID_MAKEUNIQUE renamed into ID_CLSCONV
  *
@@ -572,9 +577,7 @@ DupNodelist (nodelist *nl, node *arg_info)
         new_nl = MakeNodelist (SearchInLUT (INFO_DUP_LUT (arg_info), NODELIST_NODE (nl)),
                                NODELIST_STATUS (nl),
                                DupNodelist (NODELIST_NEXT (nl), arg_info));
-
-        DBUG_ASSERT ((NODELIST_ATTRIB (new_nl) == NODELIST_ATTRIB (nl)),
-                     "Inconsistent ATTRIBs in Nodelist found!");
+        NODELIST_ATTRIB (new_nl) = NODELIST_ATTRIB (nl);
     }
 
     DBUG_RETURN (new_nl);
