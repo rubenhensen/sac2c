@@ -3,7 +3,6 @@ barriers_init.c
 barriers_init.h
 blocks_cons.c
 blocks_cons.h
-blocks_expand.h
 blocks_init.c
 blocks_init.h
 blocks_lift.c
