@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.85  1995/07/07 14:58:38  asi
- * added loop unswitching - basic version
+ * Revision 1.86  1995/07/12 15:21:56  asi
+ * added UNSid and UNRid
  *
+;; Revision 1.85  1995/07/07  14:58:38  asi
+;; added loop unswitching - basic version
+;;
 ;; Revision 1.84  1995/07/06  17:28:06  cg
 ;; constdef- node removed
 ;;
@@ -291,8 +294,8 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeInfoId, DummyFun, DummyFun, DummyFun, DummyFun, DupStr, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_id, "N_id", DummyFun, FltnId, PrintId, DummyFun, OPTid, DummyFun, DummyFun,
-       FreeInfoId, CFid, RCid, CompId, DummyFun, DupIIds, DummyFun, DummyFun, DummyFun,
-       IdxId, DummyFun, DummyFun, DummyFun),
+       FreeInfoId, CFid, RCid, CompId, DummyFun, DupIIds, DummyFun, UNRid, DummyFun,
+       IdxId, UNSid, DummyFun, DummyFun),
   NIF (N_float, "N_float", DummyFun, DummyFun, PrintFloat, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun, DupFloat, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
