@@ -15,6 +15,12 @@ Unroll.c
 Unroll.h
 Unswitch.c
 Unswitch.h
+WLF.c
+WLF.h
+WLI.c
+WLI.h
+WLT.c
+WLT.h
 WithloopFolding.c
 WithloopFolding.h
 WorkReduction.c
