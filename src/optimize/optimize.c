@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2001/05/31 10:51:26  sbs
+ * Generate Mask required prior to CF3 in case of non-ssa!!!
+ * otherwise wrong results in NASmg are produced ...
+ *
  * Revision 3.32  2001/05/30 15:54:13  nmw
  * comment on cf3 added
  *
@@ -1064,6 +1068,7 @@ OPTfundef (node *arg_node, node *arg_info)
                         arg_node
                           = SSAConstantFolding (arg_node, INFO_OPT_MODUL (arg_info));
                     } else {
+                        arg_node = GenerateMasks (arg_node, NULL);
                         arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
                         arg_node = GenerateMasks (arg_node, NULL);
                     }
