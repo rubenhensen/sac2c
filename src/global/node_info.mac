@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.176  1998/04/08 17:32:08  srs
+ * added WLFlet and WLFNcode
+ *
  * Revision 1.175  1998/04/07 16:51:16  srs
  * inserted WLF functions
  *
@@ -700,7 +703,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, UNQcond, TravSons, TravSons, ACTcond,
        TravSons, WLTcond, CSEcond, TravSons, TravSons, TravSons, 3),
 
-  NIF (N_let, "N_let", TravSons, FltnLet, PrintLet, TClet, OPTlet, TravSons, TravSons,
+  NIF (N_let, "N_let", TravSons, FltnLet, PrintLet, TClet, OPTlet, TravSons, WLFlet,
        FreeLet, CFlet, RClet, CompLet, TravSons, DupId, TravSons, UNRlet, TravSons,
        IdxLet, UNSlet, WLIlet, TravSons, PrintLet, OBJlet, TravSons, TravSons, TravSons,
        TravSons, TravSons, UNQlet, TravSons, PREClet, TravSons, TravSons, WLTlet,
@@ -898,7 +901,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, 1),
 
   NIF (N_Ncode, "N_Ncode", TravSons, FltnNcode, PrintNcode, TCNcode, TravSons, TravSons,
-       TravSons, FreeNCode, CFNcode, RCNcode, CompNcode, TravSons, DupChain, TravSons,
+       WLFNcode, FreeNCode, CFNcode, RCNcode, CompNcode, TravSons, DupChain, TravSons,
        TravSons, TravSons, TravSons, TravSons, WLINcode, TravSons, PrintNcode, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PRECncode,
        ACTNcode, TravSons, WLTNcode, CSENcode, TravSons, TravSons, TravSons, 3),
