@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.51  2000/06/21 15:00:49  mab
+ * added macros *_PADDED for ARG and VARDEC
+ * added INFO_APT_EXPRESSION_PADDED
+ *
  * Revision 1.50  2000/06/21 12:36:54  jhs
  * Added MT_ALLOC.
  *
@@ -1022,6 +1026,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  ***    int         VARNO                        (optimize -> )
  ***    int         REFCNT                       (refcount -> compile -> )
  ***    int         NAIVE_REFCNT                 (refcount -> concurrent -> )
+ ***    int         PADDED                       (ap -> )
  ***    char*       TYPESTRING (O)               (precompile -> )
  ***    node*       OBJDEF     (O)  (N_objdef)   (obj-handling ->
  ***                                             ( -> precompile !!)
@@ -1058,6 +1063,7 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
 #define ARG_VARNO(n) (n->varno)
 #define ARG_REFCNT(n) (n->refcnt)
 #define ARG_NAIVE_REFCNT(n) (n->int_data)
+#define ARG_PADDED(n) (n->flag)
 #define ARG_NEXT(n) (n->node[0])
 #define ARG_TYPESTRING(n) ((char *)(n->node[1]))
 #define ARG_OBJDEF(n) (n->node[2])
@@ -1139,6 +1145,7 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***    int         VARNO                      (optimize -> )
  ***    statustype  ATTRIB                     (typecheck -> uniquecheck -> )
  ***    int         FLAG                       (ael  -> dcr2 !! )
+ ***    int         PADDED                     (ap -> )
  ***/
 
 /*
@@ -1169,6 +1176,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
 #define VARDEC_REFCNT(n) (n->refcnt)
 #define VARDEC_NAIVE_REFCNT(n) (n->int_data)
 #define VARDEC_FLAG(n) (n->flag)
+#define VARDEC_PADDED(n) (n->flag)
 #define VARDEC_NEXT(n) (n->node[0])
 #define VARDEC_TYPEDEF(n) (n->node[1])
 #define VARDEC_ACTCHN(n) (n->node[2])
@@ -2238,6 +2246,13 @@ extern node *MakePragma ();
  ***    char*      WRAPPERNAME                   - string with wrapper name
  ***
  ***
+ ***
+ ***  when used in pad_transform.c
+ ***
+ ***    int        EXPRESSION_PADDED
+ ***
+ ***
+ ***
  *** remarks:
  ***    N_info is used in many other phases without access macros :((
  ***/
@@ -2608,6 +2623,9 @@ extern node *MakeInfo ();
 #define INFO_PIW_RETPOS(n) (n->int_data)
 #define INFO_PIW_ARGCOUNT(n) (n->counter)
 #define INFO_PIW_WRAPPERNAME(n) (n->src_file)
+
+/* when used in pad_transform.c */
+#define INFO_APT_EXPRESSION_PADDED (n->flag)
 
 /*--------------------------------------------------------------------------*/
 

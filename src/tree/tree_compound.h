@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2000/06/21 15:00:49  mab
+ * added macros *_PADDED for ARG and VARDEC
+ * added INFO_APT_EXPRESSION_PADDED
+ *
  * Revision 1.18  2000/06/13 14:18:11  dkr
  * macros L_NWITH_OR_NWITH2_... added
  *
@@ -227,6 +231,9 @@ extern int IsUnique (types *type);
 #define IDS_DIM(n) VARDEC_OR_ARG_DIM (IDS_VARDEC (n))
 #define IDS_SHAPE(n, x)                                                                  \
     SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (IDS_VARDEC (n))), x)
+#define IDS_VNAME(n) VARDEC_OR_ARG_NAME (IDS_VARDEC (n))
+#define IDS_VNEXT(n) VARDEC_OR_ARG_NEXT (IDS_VARDEC (n))
+#define IDS_PADDED(n) VARDEC_OR_ARG_PADDED (IDS_VARDEC (n))
 
 /*
  *  functionname  : AppendIdsChain
@@ -956,6 +963,12 @@ extern node *AppendVardecs (node *vardecs, node *append);
 #define VARDEC_OR_ARG_STATUS(n)                                                          \
     ((NODE_TYPE (n) == N_arg) ? ARG_STATUS (n) : VARDEC_STATUS (n))
 #define VARDEC_OR_ARG_NEXT(n) ((NODE_TYPE (n) == N_arg) ? ARG_NEXT (n) : VARDEC_NEXT (n))
+#define VARDEC_OR_ARG_VNAME(n)                                                           \
+    ((NODE_TYPE (n) == N_arg) ? ARG_PADDED (n) : VARDEC_PADDED (n))
+#define VARDEC_OR_ARG_VNEXT(n)                                                           \
+    ((NODE_TYPE (n) == N_arg) ? ARG_PADDED (n) : VARDEC_PADDED (n))
+#define VARDEC_OR_ARG_PADDED(n)                                                          \
+    ((NODE_TYPE (n) == N_arg) ? ARG_PADDED (n) : VARDEC_PADDED (n))
 
 #define L_VARDEC_OR_ARG_ACTCHN(n, rhs)                                                   \
     if (NODE_TYPE (n) == N_arg) {                                                        \
@@ -990,6 +1003,13 @@ extern node *AppendVardecs (node *vardecs, node *append);
         ARG_NEXT (n) = (rhs);                                                            \
     } else {                                                                             \
         VARDEC_NEXT (n) = (rhs);                                                         \
+    }
+
+#define L_VARDEC_OR_ARG_PADDED(n, rhs)                                                   \
+    if (NODE_TYPE (n) == N_arg) {                                                        \
+        ARG_PADDED (n) = (rhs);                                                          \
+    } else {                                                                             \
+        VARDEC_PADDED (n) = (rhs);                                                       \
     }
 
 /*
@@ -1426,6 +1446,9 @@ extern node *MakeVinfoDollar (node *next);
 #define ID_TYPE(n) VARDEC_OR_ARG_TYPE (ID_VARDEC (n))
 #define ID_DIM(n) VARDEC_OR_ARG_DIM (ID_VARDEC (n))
 #define ID_SHAPE(n, x) SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (ID_VARDEC (n))), x)
+#define ID_VNAME(n) VARDEC_OR_ARG_NAME (ID_VARDEC (n))
+#define ID_VNEXT(n) VARDEC_OR_ARG_NEXT (ID_VARDEC (n))
+#define ID_PADDED(n) VARDEC_OR_ARG_PADDED (ID_VARDEC (n))
 
 /*--------------------------------------------------------------------------*/
 
