@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  1999/01/15 15:13:19  cg
+ * added functions FreeOneAccess() and FreeAllAccess().
+ *
  * Revision 1.24  1998/08/07 14:36:48  dkr
  * FreeWLsegVar added
  *
@@ -138,6 +141,8 @@ extern deps *FreeAllDeps (deps *fr);
 extern strings *FreeOneStrings (strings *fr);
 extern strings *FreeAllStrings (strings *fr);
 extern nodelist *FreeNodelist (nodelist *fr);
+extern access_t *FreeOneAccess (access_t *fr);
+extern access_t *FreeAllAccess (access_t *fr);
 
 extern node *FreeModul (node *arg_node, node *arg_info);
 extern node *FreeModdec (node *arg_node, node *arg_info);

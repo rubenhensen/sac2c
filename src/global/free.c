@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.77  1999/01/15 15:13:19  cg
+ * added functions FreeOneAccess() and FreeAllAccess().
+ *
  * Revision 1.76  1998/11/10 10:32:09  sbs
  * CHECK_NULL inserted in DBUG_PRINT("FREE"..) in FreeArg.
  *
@@ -81,163 +84,8 @@
  * Revision 1.48  1998/04/13 19:01:47  dkr
  * support for wlcomp-pragmas added in FreePragma
  *
- * Revision 1.47  1998/04/10 02:23:24  dkr
- * removed a typo in FreeWLseg
  *
- * Revision 1.46  1998/04/10 02:21:57  dkr
- * changed FreeWLseg
  *
- * Revision 1.45  1998/04/02 17:40:48  dkr
- * added FreeConc
- *
- * Revision 1.44  1998/04/01 23:55:20  dkr
- * added FreeWLstriVar, FreeWLgridVar
- *
- * Revision 1.43  1998/03/27 18:37:36  dkr
- * WLproj renamed in WLstride:
- *   WLPROJ... -> WLSTRIDE...
- *
- * Revision 1.42  1998/03/25 14:20:22  dkr
- * fixed a bug in FreeNpart:
- *    DBUG_ASSERT about (USED >= 0) is now correct
- *
- * Revision 1.41  1998/03/24 17:13:32  dkr
- * changed FreeNPart:
- *   (code == NULL) is allowed (as provided in MakeNpart, DupNpart, ...)
- *
- * Revision 1.40  1998/03/24 12:19:44  srs
- * NWITHIF_VEC() has not been set free in FreeNWithID
- *
- * Revision 1.39  1998/03/24 10:17:42  srs
- * changed FreeNPart
- *
- * Revision 1.38  1998/03/21 21:43:54  dkr
- * changed FREETRAV:
- *   FreeNode now skips only the NEXT node of the root
- *
- * Revision 1.37  1998/03/20 17:25:06  dkr
- * in N_WL... nodes: INNER is now called CONTENTS
- *
- * Revision 1.36  1998/03/19 20:18:19  dkr
- * removed a bug in FreeWLgrid
- *
- * Revision 1.35  1998/03/19 19:29:08  dkr
- * in FreeNPart and FreeWLgrid NCODE_USED is now correctly set
- *
- * Revision 1.34  1998/03/19 19:06:07  dkr
- * fixed a bug in FreeWLgrid()
- *
- * Revision 1.33  1998/03/16 00:06:57  dkr
- * added FreeWLseg, FreeWLblock, FreeWLublock, FreeWLproj, FreeWLgrid
- *
- * Revision 1.32  1998/03/06 13:19:47  srs
- * added free node->info2 of N_Nwith node
- *
- * Revision 1.31  1998/02/11 17:15:19  srs
- * changed NPART_IDX to NPART_WITHID
- *
- * Revision 1.29  1997/11/24 16:12:38  sbs
- * usage of NWITHOP_FUN in FreeNWithOp adapted to the changed tree_basic.h
- *
- * Revision 1.28  1997/11/23 14:24:31  dkr
- * FreeFundef():
- * FUNDEF_ICM, FUNDEF_RETURN are stored in the same real son.
- * Because of that the test (NODE_TYPE(FUNDEF_ICM(.)) == N_icm) must happen before ...
- * ... FREETRAV(FUNDEF_BODY(.)) !!!
- *
- * Revision 1.27  1997/11/18 18:03:59  srs
- * changed new WL-functions
- *
- * Revision 1.26  1997/11/13 16:12:11  srs
- * free functions for the new WL-syntaxtree
- * removed unused functions
- *
- * Revision 1.25  1997/10/31 16:37:38  dkr
- * removed an error with #if #endif
- *
- * Revision 1.24  1997/10/31 16:35:41  dkr
- * with defined NEWTREE, node->nnode is not used anymore
- *
- * Revision 1.23  1997/10/31 16:17:18  srs
- * memory for module names is NOT deallocated anymore.
- * reason: FREE() on constant string (__MAIN) not possible.
- *
- * Revision 1.22  1997/10/31 10:32:09  dkr
- * with defined NEWTREE, node->nnode is (partly) not used anymore
- *
- * Revision 1.21  1997/08/04 19:11:38  dkr
- * no FREE, FREETRAV in FreeIcm
- *
- * Revision 1.20  1997/03/19 13:34:57  cg
- * added functions FreeAllDeps() and FreeOneDeps()
- *
- * Revision 1.19  1996/02/11  20:19:01  sbs
- * some minor corrections on stuff concerning N_vinfo
- *
- * Revision 1.18  1996/01/22  09:38:55  cg
- * modified FreeObjdef with respect to new pragmas
- *
- * Revision 1.17  1996/01/07  16:52:11  cg
- * N_typedef and N_objdef node have no longer N_pragma subnodes
- *
- * Revision 1.16  1995/12/29  10:22:52  cg
- * modified FreeSib according to new node structure,
- * added FreeInfo
- *
- * Revision 1.15  1995/12/20  08:13:05  cg
- * modified FreePragma with respect to using arrays for pragmas linksign,
- * refcounting, and readonly.
- * new function FreeChar for new N_char node
- *
- * Revision 1.14  1995/12/18  16:12:44  cg
- * last free() changed to macro FREE().
- * types->id no longer freed by FreeOneTypes and FreeAllTypes
- *
- * Revision 1.13  1995/12/07  14:16:18  cg
- * Now, the free functions traverse chained lists onlyn with
- * respect to the current setting of nnode, which may be different
- * to the original setting in the respective Make function due to
- * old code. This applies to the following nodes:
- * N_arg, N_vardec, N_assign, N_exprs, N_vinfo, N_icm
- *
- * Revision 1.12  1995/12/01  16:14:27  cg
- * added function FreePragma for new node type N_pragma.
- * renamed function FreeTypes to FreeOneTypes in contrast to FreeAllTypes.
- * same with other free functions for non-node structures.
- *
- * Revision 1.11  1995/11/16  19:33:24  cg
- * The free module was entirely rewritten.
- * Each node type now has its own free function.
- * Functions FreeTree and FreeNode for deleting single nodes and
- * whole sub trees.
- * Various free functions for non-node structures.
- * FreeNodelist moved from tree_compound.c
- *
- * Revision 1.10  1995/08/24  14:01:56  cg
- * minor changes concerning objects etc.
- *
- * Revision 1.9  1995/06/16  13:10:46  asi
- * added FreePrf2, which will free memory occupied by a N_prf-subtree,
- *                 but it will not free one given argument.
- *
- * Revision 1.8  1995/03/24  15:42:31  asi
- * Bug fixed in FreeMask
- *
- * Revision 1.7  1995/03/17  15:54:56  hw
- * changed function FreeInfoType
- *
- * Revision 1.5  1995/01/18  17:28:37  asi
- * Added FreeTree, FreeNoInfo, FreeInfoId, FreeInfoIds, FreeInfoType, FreeModul
- *
- * Revision 1.4  1994/12/30  16:59:33  sbs
- * added FreeIds
- *
- * Revision 1.3  1994/12/20  17:42:23  hw
- * added includes dbug.h & stdio.h
- *
- * Revision 1.2  1994/12/20  17:34:35  hw
- * bug fixed in FreeIdsOnly
- * exchanged stdio.h with stdlib.h
  *
  * Revision 1.1  1994/12/20  15:42:10  sbs
  * Initial revision
@@ -538,6 +386,47 @@ FreeNodelist (nodelist *list)
     tmp = NULL;
 
     DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+access_t *
+FreeOneAccess (access_t *fr)
+{
+    access_t *tmp;
+
+    DBUG_ENTER ("FreeOneAccess");
+
+    if (fr != NULL) {
+        DBUG_PRINT ("FREE",
+                    ("Removing Access: psi(%s, %s)", VARDEC_OR_ARG_NAME (ACCESS_IV (fr)),
+                     VARDEC_OR_ARG_NAME (ACCESS_ARRAY (fr))));
+
+        tmp = fr;
+        fr = ACCESS_NEXT (fr);
+
+        if (ACCESS_OFFSET (tmp) != NULL) {
+            ACCESS_OFFSET (tmp) = FreeShpseg (ACCESS_OFFSET (tmp));
+        }
+
+        FREE (tmp);
+    }
+
+    DBUG_RETURN (fr);
+}
+
+/*--------------------------------------------------------------------------*/
+
+access_t *
+FreeAllAccess (access_t *fr)
+{
+    DBUG_ENTER ("FreeAllAccess");
+
+    while (fr != NULL) {
+        fr = FreeOneAccess (fr);
+    }
+
+    DBUG_RETURN (fr);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1861,6 +1750,7 @@ FreeNCode (node *arg_node, node *arg_info)
     FREETRAV (NCODE_CEXPR (arg_node));
 
     NCODE_INC_RC_IDS (arg_node) = FreeAllIds (NCODE_INC_RC_IDS (arg_node));
+    NCODE_ACCESS (arg_node) = FreeAllAccess (NCODE_ACCESS (arg_node));
 
     FREE (arg_node);
 
