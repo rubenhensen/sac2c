@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.102  2003/11/14 18:54:58  dkrHH
+ * compiler warning added: NWITH2_DEFAULT not supported by the old backend!
+ *
  * Revision 3.101  2003/10/20 15:39:11  dkr
  * COMPSync(): MT_SYNCBLOCK_UPDATE added
  *
@@ -4681,6 +4684,13 @@ COMPWith2 (node *arg_node, node *arg_info)
     node *fold_rc_icms = NULL;
 
     DBUG_ENTER ("COMPWith2");
+
+    if (NWITH2_DEFAULT (arg_node) != NULL) {
+        WARN (linenum, ("genarray with-loop with default expression found. "
+                        "You use the old backend which lacks support for default "
+                        "expressions, hence you most likely will obtain wrong results! "
+                        "Please re-compile the compiler with TAGGED_ARRAYS!"));
+    }
 
     /*
      * we must store the with-loop ids *before* compiling the codes
