@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1998/06/19 18:30:01  dkr
+ * removed WL_END
+ * removed WL_START, WL_STOP
+ * added SAC_WL_SCHEDULE_START, ..._STOP
+ *
  * Revision 1.13  1998/06/15 10:35:17  dkr
  * added WL_START, WL_STOP
  *
@@ -82,11 +87,11 @@
  *** these macros is used to generate names of aux-variables
  ***/
 
-#define WL_VAR(type, idx_scalar) __##type##idx_scalar
+#define SAC_WL_VAR(type, idx_scalar) __##type##idx_scalar
 
-#define WL_START(idx_vec, dim) __start##idx_vec##dim
+#define SAC_WL_SCHEDULE_START(dim) __schedule_start##dim
 
-#define WL_STOP(idx_vec, dim) __stop##idx_vec##dim
+#define SAC_WL_SCHEDULE_STOP(dim) __schedule_stop##dim
 
 /*****************************************************************************/
 
@@ -94,9 +99,9 @@
  *** minimum, maximum of two values
  ***/
 
-#define WL_MIN(x, y) SAC_ND_MIN (x, y)
+#define SAC_WL_MIN(x, y) SAC_ND_MIN (x, y)
 
-#define WL_MAX(x, y) SAC_ND_MAX (x, y)
+#define SAC_WL_MAX(x, y) SAC_ND_MAX (x, y)
 
 /*****************************************************************************/
 
@@ -111,19 +116,21 @@
 #if SAC_DO_MULTITHREAD
 #define SAC_WL_BLOCK_LOOP0_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)         \
     {                                                                                    \
-        int WL_VAR (block, idx_scalar) = WL_MIN (bound2, WL_STOP (idx_vec, dim));        \
-        for (idx_scalar = WL_MAX (bound1, WL_START (idx_vec, dim));                      \
-             idx_scalar < WL_VAR (block, idx_scalar);) {                                 \
-            int WL_VAR (start, idx_scalar) = idx_scalar;                                 \
-            int WL_VAR (stop, idx_scalar)                                                \
-              = WL_MIN (WL_VAR (start, idx_scalar) + step, WL_VAR (block, idx_scalar));
+        int SAC_WL_VAR (block, idx_scalar)                                               \
+          = SAC_WL_MIN (bound2, SAC_WL_SCHEDULE_STOP (dim));                             \
+        for (idx_scalar = SAC_WL_MAX (bound1, SAC_WL_SCHEDULE_START (dim));              \
+             idx_scalar < SAC_WL_VAR (block, idx_scalar);) {                             \
+            int SAC_WL_VAR (start, idx_scalar) = idx_scalar;                             \
+            int SAC_WL_VAR (stop, idx_scalar)                                            \
+              = SAC_WL_MIN (SAC_WL_VAR (start, idx_scalar) + step,                       \
+                            SAC_WL_VAR (block, idx_scalar));
 #else /* SAC_DO_MULTITHREAD */
 #define SAC_WL_BLOCK_LOOP0_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)         \
     {                                                                                    \
         for (idx_scalar = bound1; idx_scalar < bound2;) {                                \
-            int WL_VAR (start, idx_scalar) = idx_scalar;                                 \
-            int WL_VAR (stop, idx_scalar)                                                \
-              = WL_MIN (WL_VAR (start, idx_scalar) + step, bound2);
+            int SAC_WL_VAR (start, idx_scalar) = idx_scalar;                             \
+            int SAC_WL_VAR (stop, idx_scalar)                                            \
+              = SAC_WL_MIN (SAC_WL_VAR (start, idx_scalar) + step, bound2);
 #endif /* SAC_DO_MULTITHREAD */
 
 /*
@@ -132,12 +139,13 @@
 
 #define SAC_WL_BLOCK_LOOP_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)          \
     {                                                                                    \
-        int WL_VAR (block, idx_scalar) = WL_VAR (stop, idx_scalar);                      \
-        for (idx_scalar = WL_VAR (start, idx_scalar);                                    \
-             idx_scalar < WL_VAR (block, idx_scalar);) {                                 \
-            int WL_VAR (start, idx_scalar) = idx_scalar;                                 \
-            int WL_VAR (stop, idx_scalar)                                                \
-              = WL_MIN (WL_VAR (start, idx_scalar) + step, WL_VAR (block, idx_scalar));
+        int SAC_WL_VAR (block, idx_scalar) = SAC_WL_VAR (stop, idx_scalar);              \
+        for (idx_scalar = SAC_WL_VAR (start, idx_scalar);                                \
+             idx_scalar < SAC_WL_VAR (block, idx_scalar);) {                             \
+            int SAC_WL_VAR (start, idx_scalar) = idx_scalar;                             \
+            int SAC_WL_VAR (stop, idx_scalar)                                            \
+              = SAC_WL_MIN (SAC_WL_VAR (start, idx_scalar) + step,                       \
+                            SAC_WL_VAR (block, idx_scalar));
 
 #define SAC_WL_BLOCK_LOOP_END(dim, idx_vec, idx_scalar, bound1, bound2, step)            \
     }                                                                                    \
@@ -156,19 +164,21 @@
 #if SAC_DO_MULTITHREAD
 #define SAC_WL_UBLOCK_LOOP0_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)        \
     {                                                                                    \
-        int WL_VAR (block, idx_scalar) = WL_MIN (bound2, WL_STOP (idx_vec, dim));        \
-        for (idx_scalar = WL_MAX (bound1, WL_START (idx_vec, dim));                      \
-             idx_scalar < WL_VAR (block, idx_scalar);) {                                 \
-            int WL_VAR (start, idx_scalar) = idx_scalar;                                 \
-            int WL_VAR (stop, idx_scalar)                                                \
-              = WL_MIN (WL_VAR (start, idx_scalar) + step, WL_VAR (block, idx_scalar));
+        int SAC_WL_VAR (block, idx_scalar)                                               \
+          = SAC_WL_MIN (bound2, SAC_WL_SCHEDULE_STOP (dim));                             \
+        for (idx_scalar = SAC_WL_MAX (bound1, SAC_WL_SCHEDULE_START (dim));              \
+             idx_scalar < SAC_WL_VAR (block, idx_scalar);) {                             \
+            int SAC_WL_VAR (start, idx_scalar) = idx_scalar;                             \
+            int SAC_WL_VAR (stop, idx_scalar)                                            \
+              = SAC_WL_MIN (SAC_WL_VAR (start, idx_scalar) + step,                       \
+                            SAC_WL_VAR (block, idx_scalar));
 #else /* SAC_DO_MULTITHREAD */
 #define SAC_WL_UBLOCK_LOOP0_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)        \
     {                                                                                    \
         for (idx_scalar = bound1; idx_scalar < bound2;) {                                \
-            int WL_VAR (start, idx_scalar) = idx_scalar;                                 \
-            int WL_VAR (stop, idx_scalar)                                                \
-              = WL_MIN (WL_VAR (start, idx_scalar) + step, bound2);
+            int SAC_WL_VAR (start, idx_scalar) = idx_scalar;                             \
+            int SAC_WL_VAR (stop, idx_scalar)                                            \
+              = SAC_WL_MIN (SAC_WL_VAR (start, idx_scalar) + step, bound2);
 #endif /* SAC_DO_MULTITHREAD */
 
 /*
@@ -177,9 +187,9 @@
 
 #define SAC_WL_UBLOCK_LOOP_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)         \
     {                                                                                    \
-        for (idx_scalar = WL_VAR (start, idx_scalar);                                    \
-             idx_scalar < WL_VAR (stop, idx_scalar);) {                                  \
-            int WL_VAR (start, idx_scalar) = idx_scalar;
+        for (idx_scalar = SAC_WL_VAR (start, idx_scalar);                                \
+             idx_scalar < SAC_WL_VAR (stop, idx_scalar);) {                              \
+            int SAC_WL_VAR (start, idx_scalar) = idx_scalar;
 
 #define SAC_WL_UBLOCK_LOOP_END(dim, idx_vec, idx_scalar, bound1, bound2, step)           \
     }                                                                                    \
@@ -198,14 +208,16 @@
 #if SAC_DO_MULTITHREAD
 #define SAC_WL_STRIDE_LOOP0_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)        \
     {                                                                                    \
-        int WL_VAR (start, idx_scalar) = WL_MAX (bound1, WL_START (idx_vec, dim));       \
-        int WL_VAR (stop, idx_scalar) = WL_MIN (bound2, WL_STOP (idx_vec, dim));         \
-        for (idx_scalar = WL_VAR (start, idx_scalar);                                    \
-             idx_scalar < WL_VAR (stop, idx_scalar);) {
+        int SAC_WL_VAR (start, idx_scalar)                                               \
+          = SAC_WL_MAX (bound1, SAC_WL_SCHEDULE_START (dim));                            \
+        int SAC_WL_VAR (stop, idx_scalar)                                                \
+          = SAC_WL_MIN (bound2, SAC_WL_SCHEDULE_STOP (dim));                             \
+        for (idx_scalar = SAC_WL_VAR (start, idx_scalar);                                \
+             idx_scalar < SAC_WL_VAR (stop, idx_scalar);) {
 #else /* SAC_DO_MULTITHREAD */
 #define SAC_WL_STRIDE_LOOP0_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)        \
     {                                                                                    \
-        int WL_VAR (stop, idx_scalar) = bound2;                                          \
+        int SAC_WL_VAR (stop, idx_scalar) = bound2;                                      \
         for (idx_scalar = bound1; idx_scalar < bound2;) {
 #endif /* SAC_DO_MULTITHREAD */
 
@@ -215,8 +227,8 @@
 
 #define SAC_WL_STRIDE_LOOP_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)         \
     {                                                                                    \
-        for (idx_scalar = WL_VAR (start, idx_scalar);                                    \
-             idx_scalar < WL_VAR (stop, idx_scalar);) {
+        for (idx_scalar = SAC_WL_VAR (start, idx_scalar);                                \
+             idx_scalar < SAC_WL_VAR (stop, idx_scalar);) {
 
 #define SAC_WL_STRIDE_LOOP_END(dim, idx_vec, idx_scalar, bound1, bound2, step)           \
     }                                                                                    \
@@ -227,7 +239,7 @@
  */
 
 #define SAC_WL_STRIDE_UNROLL_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)       \
-    idx_scalar = WL_VAR (start, idx_scalar);
+    idx_scalar = SAC_WL_VAR (start, idx_scalar);
 
 #define SAC_WL_STRIDE_UNROLL_END(dim, idx_vec, idx_scalar, bound1, bound2, step)         \
     /* empty */
@@ -280,8 +292,8 @@
 
 #define SAC_WL_GRID_LOOP_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2)                 \
     {                                                                                    \
-        int grid_##idx_scalar = idx_scalar + bound2 - bound1;                            \
-        for (; idx_scalar < grid_##idx_scalar; idx_scalar++) {
+        int SAC_WL_VAR (grid, idx_scalar) = idx_scalar + bound2 - bound1;                \
+        for (; idx_scalar < SAC_WL_VAR (grid, idx_scalar); idx_scalar++) {
 
 #define SAC_WL_GRID_LOOP_END(dim, idx_vec, idx_scalar, bound1, bound2)                   \
     }                                                                                    \
@@ -303,9 +315,9 @@
 
 #define SAC_WL_GRIDVAR_LOOP_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2)              \
     {                                                                                    \
-        int grid_##idx_scalar                                                            \
-          = WL_MIN (idx_scalar + bound2 - bound1, WL_VAR (stop, idx_scalar));            \
-        for (; idx_scalar < grid_##idx_scalar; idx_scalar++) {
+        int SAC_WL_VAR (grid, idx_scalar)                                                \
+          = SAC_WL_MIN (idx_scalar + bound2 - bound1, SAC_WL_VAR (stop, idx_scalar));    \
+        for (; idx_scalar < SAC_WL_VAR (grid, idx_scalar); idx_scalar++) {
 
 #define SAC_WL_GRIDVAR_LOOP_END(dim, idx_vec, idx_scalar, bound1, bound2)                \
     }                                                                                    \
@@ -320,14 +332,6 @@
 
 #define SAC_WL_GRID_SET_IDX(dim, idx_vec, idx_scalar, bound1, bound2)                    \
     SAC_ND_A_FIELD (idx_vec)[dim] = idx_scalar;
-
-/*****************************************************************************/
-
-/***
- *** end of with-loop
- ***/
-
-#define SAC_WL_END() }
 
 /*****************************************************************************/
 
