@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/06/27 14:36:22  ben
+ * last routines for tasksel-pragma implemented
+ *
  * Revision 3.6  2001/06/13 13:06:09  ben
  * SCHMakeTaskselByPragma, SCHRemoveTasksel, SCHCopyTasksel,
  * SCHPrecompileTasksel, SCHPrintTasksel added
@@ -100,5 +103,15 @@ extern SCHtasksel_t SCHRemoveTasksel (SCHtasksel_t tasksel);
 extern SCHtasksel_t SCHCopyTasksel (SCHtasksel_t tasksel);
 extern SCHtasksel_t SCHPrecompileTasksel (SCHtasksel_t tasksel);
 extern void SCHPrintTasksel (FILE *outfile, SCHtasksel_t *tasksel);
+
+extern node *SCHCompileSchedulingWithTaskselBegin (int seg_id, char *wl_name,
+                                                   SCHsched_t sched, SCHtasksel_t tasksel,
+                                                   node *arg_node);
+extern node *SCHCompileSchedulingWithTaskselEnd (int seg_id, char *wl_name,
+                                                 SCHsched_t sched, SCHtasksel_t tasksel,
+                                                 node *arg_node);
+extern node *SCHCompileSchedulingWithTaskselInit (int seg_id, char *wl_name,
+                                                  SCHsched_t sched, SCHtasksel_t tasksel,
+                                                  node *arg_node);
 
 #endif /* _SAC_SCHEDULING_H_ */
