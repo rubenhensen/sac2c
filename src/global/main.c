@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2004/02/09 19:27:54  skt
+ * SSA-Transformation for mtmode 3 added
+ *
  * Revision 3.30  2004/02/05 10:39:30  cg
  * Implementation for MT mode 1 (thread create/join) added.
  *
@@ -518,7 +521,11 @@ main (int argc, char *argv[])
     case MT_mtstblock:
         NOTE_COMPILER_PHASE;
         NOTE (("Using mt/st-block version of multithreading (MT3)"));
+        /* this version of multithreading is only for code in SSA-form */
+        syntax_tree = DoSSA (syntax_tree);
         syntax_tree = BuildMultiThread (syntax_tree);
+        /* for compatibility reasons, the code is retransformed from SSA-form */
+        syntax_tree = UndoSSA (syntax_tree);
         PHASE_DONE_EPILOG;
         SYSABORT (("Mt/st-block version of multithreading de-activated !!"));
         /* following comment concerning for mt/st-block version:
