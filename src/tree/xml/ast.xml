@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.40  2004/11/14 15:46:48  sah
+  fixed a malformed xml document
+
   Revision 1.39  2004/11/14 15:26:27  sah
   added local flag and TYPEDEF_NTYPE
 
@@ -1298,10 +1301,10 @@
             <target>
               <node name="NWith" />
             </target>
+          </type>
           <phases>
             <phase name="wlf" />
           </phases>
-          </type>
         </attribute>
         <attribute name="Tag" mandatory="no">
           <type name="Link">
@@ -2496,7 +2499,7 @@
 	<attribute name="Alias" default="TRUE" mandatory="yes">
 	  <type name="Bool" />
 	  <phases>
-	    <phase from="ssatransform" to="undossatransform" />
+	    <range from="ssatransform" to="undossatransform" />
 	  </phases>
 	</attribute>
 	<attribute name="AliasMask" mandatory="no">
