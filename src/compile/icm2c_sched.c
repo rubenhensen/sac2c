@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/06/15 12:32:43  ben
+ * Taskselector gets now tasks_per_thread instead of num_tasks
+ *
  * Revision 3.11  2001/06/12 11:04:59  ben
  * one minor bug removed
  *
@@ -117,7 +120,7 @@ InitializeBoundaries (int dim, char **vararg, int sched_dim)
  * function:
  *   void TaskSelectorInit(int dim, char **vararg,
  *                    int strategy, int tasks_on_dim,
- *                    char *num_tasks, char *taskid,int sched_id)
+ *                    int tasks_per_thread, char *taskid,int sched_id)
  *
  * description:
  *
@@ -128,14 +131,16 @@ InitializeBoundaries (int dim, char **vararg, int sched_dim)
  *
  ******************************************************************************/
 static void
-TaskSelectorInit (int dim, char **vararg, int strategy, int tasks_on_dim, char *num_tasks,
-                  int sched_id)
+TaskSelectorInit (int dim, char **vararg, int strategy, int tasks_on_dim,
+                  int tasks_per_thread, int sched_id)
 {
+    char num_tasks[100];
     char **lower_bound = vararg;
     char **upper_bound = vararg + dim;
 
     DBUG_ENTER ("TaskSelectorInit");
 
+    sprintf (num_tasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
     switch (strategy) {
     case TS_BLOCK:
         DBUG_ASSERT ((tasks_on_dim >= 0) && (tasks_on_dim < dim),
@@ -164,7 +169,7 @@ TaskSelectorInit (int dim, char **vararg, int strategy, int tasks_on_dim, char *
  * function:
  *   void TaskSelector( int dim, char **vararg,
  *                    int strategy, int tasks_on_dim,
- *                    char *num_tasks, char *taskid,char *worktodo,int sched_id)
+ *                    int tasks_per_thread, char *taskid,char *worktodo,int sched_id)
  *
  * description:
  *   this function divides the given withloop (dim,vararg) with the strategy
@@ -181,15 +186,17 @@ TaskSelectorInit (int dim, char **vararg, int strategy, int tasks_on_dim, char *
  ******************************************************************************/
 
 static void
-TaskSelector (int dim, char **vararg, int strategy, int tasks_on_dim, char *num_tasks,
-              char *taskid, char *worktodo, int sched_id)
+TaskSelector (int dim, char **vararg, int strategy, int tasks_on_dim,
+              int tasks_per_thread, char *taskid, char *worktodo, int sched_id)
 {
+    char num_tasks[100];
     char **lower_bound = vararg;
     char **upper_bound = vararg + dim;
     char **unrolling = vararg + 2 * dim;
 
     DBUG_ENTER ("TaskSelector");
 
+    sprintf (num_tasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
     switch (strategy) {
     case TS_BLOCK:
         DBUG_ASSERT ((tasks_on_dim >= 0) && (tasks_on_dim < dim),
@@ -501,7 +508,6 @@ void
 ICMCompileMT_SCHEDULER_Static_BEGIN (int sched_id, int tasks_per_thread, int dim,
                                      char **vararg)
 {
-    char numtasks[100];
 
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Static_BEGIN");
 
@@ -510,7 +516,6 @@ ICMCompileMT_SCHEDULER_Static_BEGIN (int sched_id, int tasks_per_thread, int dim
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Static_BEGIN
 
-    sprintf (numtasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
     INDENT;
     fprintf (outfile, "int SAC_MT_taskid,SAC_MT_worktodo;\n");
     INDENT;
@@ -522,7 +527,7 @@ ICMCompileMT_SCHEDULER_Static_BEGIN (int sched_id, int tasks_per_thread, int dim
 
     InitializeBoundaries (dim, vararg, 0);
 
-    TaskSelector (dim, vararg, TS_FACTORING, 0, numtasks, "SAC_MT_taskid",
+    TaskSelector (dim, vararg, TS_FACTORING, 0, tasks_per_thread, "SAC_MT_taskid",
                   "SAC_MT_worktodo", sched_id);
 
     INDENT;
@@ -535,7 +540,6 @@ void
 ICMCompileMT_SCHEDULER_Static_END (int sched_id, int tasks_per_thread, int dim,
                                    char **vararg)
 {
-    char numtasks[100];
 
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Static_END");
 
@@ -544,11 +548,10 @@ ICMCompileMT_SCHEDULER_Static_END (int sched_id, int tasks_per_thread, int dim,
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Static_END
 
-    sprintf (numtasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
     INDENT;
     fprintf (outfile, "SAC_MT_SCHEDULER_Static_NEXT_TASK(%d,SAC_MT_taskid);\n",
              tasks_per_thread);
-    TaskSelector (dim, vararg, TS_FACTORING, 0, numtasks, "SAC_MT_taskid",
+    TaskSelector (dim, vararg, TS_FACTORING, 0, tasks_per_thread, "SAC_MT_taskid",
                   "SAC_MT_worktodo", sched_id);
 
     INDENT;
@@ -562,7 +565,6 @@ void
 ICMCompileMT_SCHEDULER_Static_INIT (int sched_id, int tasks_per_thread, int dim,
                                     char **vararg)
 {
-    char numtasks[100];
 
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Static_INIT");
 
@@ -571,8 +573,7 @@ ICMCompileMT_SCHEDULER_Static_INIT (int sched_id, int tasks_per_thread, int dim,
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Static_INIT
 
-    sprintf (numtasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
-    TaskSelectorInit (dim, vararg, TS_FACTORING, 0, numtasks, sched_id);
+    TaskSelectorInit (dim, vararg, TS_FACTORING, 0, tasks_per_thread, sched_id);
 
     DBUG_VOID_RETURN;
 }
@@ -602,7 +603,6 @@ void
 ICMCompileMT_SCHEDULER_Self_BEGIN (int sched_id, int tasks_per_thread, int dim,
                                    char **vararg)
 {
-    char numtasks[100];
 
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Self_BEGIN");
 
@@ -611,7 +611,6 @@ ICMCompileMT_SCHEDULER_Self_BEGIN (int sched_id, int tasks_per_thread, int dim,
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Self_BEGIN
 
-    sprintf (numtasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
     INDENT;
     fprintf (outfile, "int SAC_MT_taskid,SAC_MT_worktodo;\n");
     INDENT;
@@ -624,7 +623,7 @@ ICMCompileMT_SCHEDULER_Self_BEGIN (int sched_id, int tasks_per_thread, int dim,
     }
     InitializeBoundaries (dim, vararg, 0);
 
-    TaskSelector (dim, vararg, TS_FACTORING, 0, numtasks, "SAC_MT_taskid",
+    TaskSelector (dim, vararg, TS_FACTORING, 0, tasks_per_thread, "SAC_MT_taskid",
                   "SAC_MT_worktodo", sched_id);
     INDENT;
     fprintf (outfile, " while (SAC_MT_worktodo) {\n");
@@ -636,7 +635,7 @@ void
 ICMCompileMT_SCHEDULER_Self_END (int sched_id, int tasks_per_thread, int dim,
                                  char **vararg)
 {
-    char numtasks[100];
+
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Self_END");
 
 #define MT_SCHEDULER_Self_END
@@ -644,10 +643,9 @@ ICMCompileMT_SCHEDULER_Self_END (int sched_id, int tasks_per_thread, int dim,
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Self_END
 
-    sprintf (numtasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
     INDENT;
     fprintf (outfile, "SAC_MT_SCHEDULER_Self_NEXT_TASK(%d,SAC_MT_taskid);\n", sched_id);
-    TaskSelector (dim, vararg, TS_FACTORING, 0, numtasks, "SAC_MT_taskid",
+    TaskSelector (dim, vararg, TS_FACTORING, 0, tasks_per_thread, "SAC_MT_taskid",
                   "SAC_MT_worktodo", sched_id);
 
     INDENT;
@@ -660,7 +658,6 @@ void
 ICMCompileMT_SCHEDULER_Self_INIT (int sched_id, int tasks_per_thread, int dim,
                                   char **vararg)
 {
-    char numtasks[100];
 
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Self_INIT");
 
@@ -678,8 +675,7 @@ ICMCompileMT_SCHEDULER_Self_INIT (int sched_id, int tasks_per_thread, int dim,
                  sched_id);
     }
 
-    sprintf (numtasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
-    TaskSelectorInit (dim, vararg, TS_FACTORING, 0, numtasks, sched_id);
+    TaskSelectorInit (dim, vararg, TS_FACTORING, 0, tasks_per_thread, sched_id);
 
     INDENT;
     fprintf (outfile, "\n");
@@ -711,7 +707,6 @@ void
 ICMCompileMT_SCHEDULER_Affinity_BEGIN (int sched_id, int tasks_per_thread, int dim,
                                        char **vararg)
 {
-    char numtasks[100];
 
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Affinity_BEGIN");
 
@@ -720,10 +715,9 @@ ICMCompileMT_SCHEDULER_Affinity_BEGIN (int sched_id, int tasks_per_thread, int d
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Affinity_BEGIN
 
-    sprintf (numtasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
     INDENT;
     fprintf (outfile, "int SAC_MT_taskid, SAC_MT_maxloadthread, SAC_MT_mintask, "
-                      "SAC_MT_worktodo,SAC_MT_affinityDummy;\n");
+                      "SAC_MT_worktodo,SAC_MT_affinitydummy;\n");
     InitializeBoundaries (dim, vararg, 0);
     INDENT;
     fprintf (outfile,
@@ -732,8 +726,8 @@ ICMCompileMT_SCHEDULER_Affinity_BEGIN (int sched_id, int tasks_per_thread, int d
              sched_id, tasks_per_thread);
     INDENT;
     fprintf (outfile, " while (SAC_MT_worktodo){\n");
-    TaskSelector (dim, vararg, TS_BLOCK, 0, numtasks, "SAC_MT_taskid",
-                  "SAC_MT_affinityDummy", sched_id);
+    TaskSelector (dim, vararg, TS_BLOCK, 0, tasks_per_thread, "SAC_MT_taskid",
+                  "SAC_MT_affinitydummy", sched_id);
 
     DBUG_VOID_RETURN;
 }
@@ -765,8 +759,6 @@ ICMCompileMT_SCHEDULER_Affinity_INIT (int sched_id, int tasks_per_thread, int di
                                       char **vararg)
 {
 
-    char numtasks[100];
-
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Affinity_INIT");
 
 #define MT_SCHEDULER_Affinity_INIT
@@ -777,8 +769,7 @@ ICMCompileMT_SCHEDULER_Affinity_INIT (int sched_id, int tasks_per_thread, int di
     INDENT;
     fprintf (outfile, "SAC_MT_SCHEDULER_Affinity_INIT(%d,%d);\n", sched_id,
              tasks_per_thread);
-    sprintf (numtasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
-    TaskSelectorInit (dim, vararg, TS_BLOCK, 0, numtasks, sched_id);
+    TaskSelectorInit (dim, vararg, TS_BLOCK, 0, tasks_per_thread, sched_id);
 
     fprintf (outfile, "\n");
 
