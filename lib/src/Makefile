@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.4  1999/05/12 14:36:50  cg
+# added compilation of main_args.c
+#
 # Revision 2.3  1999/03/11 18:18:26  dkr
 # make deps done
 #
@@ -34,19 +37,25 @@ MYFLAGS   :=
 
 INCS=
 
-all: ../dbug.o
+all: ../dbug.o ../main_args.o 
 
 ../dbug.o: dbug.c
 	$(CC) $(MYFLAGS) -o ../dbug.o -c dbug.c $(INCS)
+
+../main_args.o: main_args.c
+	$(CC) $(MYFLAGS) -o ../main_args.o -c main_args.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) ../dbug.o *.bak
+	$(RM) ../dbug.o ../main_args.o *.bak *~
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 dbug.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 dbug.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 dbug.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+main_args.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+main_args.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+main_args.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
