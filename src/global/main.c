@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.55  1995/07/19 18:43:49  asi
+ * Revision 1.56  1995/07/24 09:08:55  hw
+ * compilation of SAC-modules inserted
+ *
+ * Revision 1.55  1995/07/19  18:43:49  asi
  * added new parameter -maxoptcycles and variable max_optcycles
  *
  * Revision 1.54  1995/07/07  14:58:38  asi
@@ -538,9 +541,21 @@ MAIN
 
     if (!Ccodeonly && (0 == errors)) {
         fclose (outfile);
-        sprintf (cccallstr,
-                 "gcc %s-Wall -Wno-unused -I $RCSROOT/src/compile/ -o %s %s %s",
-                 ccflagsstr, outfilename, cfilename, GenLinkerList ());
+
+        if (F_prog == kind_of_file)
+            sprintf (cccallstr,
+                     "gcc %s-Wall -Wno-unused -I $RCSROOT/src/compile/"
+                     " -o %s %s %s",
+                     ccflagsstr, outfilename, cfilename, GenLinkerList ());
+        else if (F_modimp == kind_of_file)
+            sprintf (cccallstr,
+                     "gcc %s-Wall -Wno-unused -I $RCSROOT/src/compile/"
+                     " -o %s.o -c %s",
+                     ccflagsstr, (NULL != module_name) ? module_name : outfilename,
+                     cfilename);
+        else
+            DBUG_ASSERT (0, "wrong value of kind_of_file ");
+
         NOTE (("%s\n", cccallstr));
         system (cccallstr);
     }
