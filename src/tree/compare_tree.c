@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2001/03/20 14:22:50  nmw
+ * CMPTarray added, checks for equal types, too
+ *
  * Revision 1.4  2001/03/12 17:19:51  nmw
  * weak compare for NULL terminated chains fixed
  *
@@ -33,6 +36,7 @@
 #include "traverse.h"
 #include "free.h"
 #include "compare_tree.h"
+#include "typecheck.h"
 
 static ids *TravIDS (ids *arg_ids, node *arg_info);
 static ids *CMPTids (ids *arg_ids, node *arg_info);
@@ -189,6 +193,32 @@ CMPTdouble (node *arg_node, node *arg_info)
     INFO_CMPT_EQFLAG (arg_info)
       = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
                    DOUBLE_VAL (arg_node) == DOUBLE_VAL (INFO_CMPT_TREE (arg_info)));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTarray(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   compares two arrays
+ *
+ ******************************************************************************/
+node *
+CMPTarray (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("CMPTarray");
+
+    INFO_CMPT_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
+                   CmpTypes (ARRAY_TYPE (arg_node),
+                             ARRAY_TYPE (INFO_CMPT_TREE (arg_info)))
+                     == 1);
+
+    /* traverse ArrayElements (the real son) */
+    arg_node = CMPTTravSons (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }

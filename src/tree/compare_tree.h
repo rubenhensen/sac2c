@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2001/03/20 14:22:50  nmw
+ * CMPTarray added, checks for equal types, too
+ *
  * Revision 1.3  2001/03/09 11:48:54  sbs
  * types.h now explicitly included.
  *
@@ -43,6 +46,7 @@ extern node *CMPTstr (node *arg_node, node *arg_info);
 extern node *CMPTid (node *arg_node, node *arg_info);
 extern node *CMPTfloat (node *arg_node, node *arg_info);
 extern node *CMPTdouble (node *arg_node, node *arg_info);
+extern node *CMPTarray (node *arg_node, node *arg_info);
 extern node *CMPTlet (node *arg_node, node *arg_info);
 extern node *CMPTprf (node *arg_node, node *arg_info);
 extern node *CMPTap (node *arg_node, node *arg_info);
@@ -53,16 +57,5 @@ extern node *CMPTNcode (node *arg_node, node *arg_info);
 extern node *CMPTunknown (node *arg_node, node *arg_info);
 extern node *CMPTTravSons (node *arg_node, node *arg_info);
 extern node *CMPTnodeType (node *arg_node, node *arg_info);
-/*
- * compare tree is only implemented for expressions !
- * the following node types are not implemented (now):
- *   typedef, objdef, modul, moddec, classdec, explist, implist,
- *   fundef, vardec, arg, mt, st, MTsignal, MTsync, MTalloc,
- *   annotate, cast, info,, stop, icm, vinfo, sib, pragma,
- *   spmd, sync, Nwith2, WLseg, WLsefVar, WLblock, WLublock,
- *   WLstride, WLstrideVar, WLgrid, WLgridVar, cwrapper,
- *   modspec, cseinfo, ssacnt, avis, ssastack
- *
- */
 
 #endif /* SAC_CHECKAVIS_H */
