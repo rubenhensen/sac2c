@@ -16,3 +16,4 @@ src/runtime
 src/concurrent
 distrib
 distrib/src
+distrib/srcpacks
