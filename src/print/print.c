@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.47  1995/03/16 17:22:19  asi
+ * Revision 1.48  1995/03/16 17:46:20  asi
+ * output for arguments and variable numbers changed
+ *
+ * Revision 1.47  1995/03/16  17:22:19  asi
  * Output for Used Variables (gen-,modarray) modified
  *
  * Revision 1.46  1995/03/15  14:14:25  asi
@@ -512,7 +515,7 @@ PrintArg (node *arg_node, node *info_node)
 {
     DBUG_ENTER ("PrintArg");
 
-    DBUG_EXECUTE ("MASK", fprintf (outfile, "**Number = %d\n", arg_node->varno););
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**Number %d -> ", arg_node->varno););
 
     fprintf (outfile, "%s", Type2String (arg_node->info.types, 1));
 
@@ -531,7 +534,7 @@ PrintVardec (node *arg_node, node *arg_info)
 
     INDENT;
 
-    DBUG_EXECUTE ("MASK", fprintf (outfile, "**Number = %d\n", arg_node->varno););
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "**Number %d -> ", arg_node->varno););
 
     fprintf (outfile, "%s;\n", Type2String (arg_node->info.types, 1));
     if (1 == arg_node->nnode)
