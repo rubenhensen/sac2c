@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/02/09 14:39:46  nmw
+ * ssa switch added
+ *
  * Revision 3.7  2001/01/25 10:18:38  dkr
  * -b21 added
  *
@@ -686,6 +689,8 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE_END ();
     });
+
+    ARGS_FLAG ("ssa", use_ssaform = TRUE);
 
     ARGS_OPTION ("o", {
         strcpy (outfilename, ARG);
