@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.73  1995/06/02 16:41:49  sbs
- * idx_tab extended
+ * Revision 1.74  1995/06/06 08:52:47  sbs
+ * IdxAp deleted
  *
+;; Revision 1.73  1995/06/02  16:41:49  sbs
+;; idx_tab extended
+;;
 ;; Revision 1.72  1995/06/02  11:31:34  asi
 ;; Added some functions for DupTree, Inline and Unroll.
 ;;
@@ -349,7 +352,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, IdxPrf, DummyFun, DummyFun, DummyFun),
   NIF (N_ap, "N_ap", DummyFun, FltnAp, PrintAp, DummyFun, DummyFun, DummyFun, DummyFun,
        FreeInfoId, CFap, DummyFun, CompAp, DummyFun, DupFun, DummyFun, DummyFun, DummyFun,
-       IdxAp, DummyFun, DummyFun, DummyFun),
+       DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_cast, "N_cast", DummyFun, DummyFun, PrintCast, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeInfoType, CFcast, DummyFun, CompCast, DummyFun, DupCast, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
@@ -383,12 +386,17 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_icm, "N_icm", DummyFun, DummyFun, PrintIcm, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
-  NIF (N_ok, "N_ok", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
-       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
-       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_vinfo, "N_vinfo", DummyFun, DummyFun, PrintVectInfo, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
-       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun)
+       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
+  NIF (N_ok, "N_ok", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun)
+
+/* ATTENTION !!!! N_ok has to be the last node declared here;
+ *                otherwise a DBUG_ASSERT in traverse.c: Trav will
+ *                cause nice :-> errors!
+ */
 
 #if 0
 NIF( N_and,      "N_and",      DummyFun, DummyFun, DummyFun ),
