@@ -34,3 +34,4 @@ tile_size_inference.h
 wl_access_analyze.c
 wl_access_analyze.h
 WithloopScalarization.h
+WithloopScalarization.c
