@@ -22,6 +22,8 @@ change_signature.c
 change_signature.h
 cleanup_decls.c
 cleanup_decls.h
+compare_tree.c
+compare_tree.h
 free.c
 free.h
 node_info.mac
