@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.55  1998/04/20 00:43:57  dkr
+ * removed a bug in PrecSPMD:
+ *   no sharing of strings anymore
+ *
  * Revision 1.54  1998/04/20 00:06:34  dkr
  * changed PrecLet, PrecSPMD:
  *   used INFO_PREC_LETIDS to build let vars for SPMD_AP_LET
@@ -1364,7 +1368,7 @@ PrecSPMD (node *arg_node, node *arg_info)
     FUNDEF_INLINE (fundec) = 0;
     FUNDEF_RETURN (fundec) = ret;
 
-    ap = MakeAp (name, NULL, args);
+    ap = MakeAp (StringCopy (name), NULL, args);
     AP_FUNDEF (ap) = fundec;
     AP_ATFLAG (ap) = 1;
 
