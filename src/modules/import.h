@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/01/02 16:08:59  sbs
+ * Revision 1.3  1995/01/02 16:32:06  sbs
+ * found arg added for FindSymbolInModul
+ *
+ * Revision 1.2  1995/01/02  16:08:59  sbs
  * FindSymbolInModul inserted
  *
  * Revision 1.1  1994/12/16  14:39:17  sbs
@@ -39,7 +42,7 @@ typedef struct MODS {
     struct MODS *next;
 } mods;
 
-extern mods *FindSymbolInModul (char *modname, char *name, int symbkind);
+extern mods *FindSymbolInModul (char *modname, char *name, int symbkind, mods *found);
 
 extern node *IMmodul (node *, node *);
 extern node *Import (node *);
