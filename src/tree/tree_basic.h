@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2001/03/05 13:39:15  nmw
+ * AVIS_SUBST added
+ *
  * Revision 3.36  2001/03/02 16:11:06  dkr
  * INFO_PREC_... macros modifed
  *
@@ -1983,6 +1986,9 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***
  ***    the following attributes are only used within SSADeadCodeRemoval
  ***    bool        NEEDCOUNT                        (ssadcr!!)
+ ***
+ ***    the following attributes are only used within SSACSE
+ ***    bool        SUBST (O)       (N_avis)         (ssacse!!)
  ***/
 
 /*
@@ -1998,13 +2004,15 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_SSACONST(n) ((constant *)(n->info2))
 #define AVIS_SSAPHITARGET(n) ((bool)(n->flag))
 #define AVIS_SSALPINV(n) ((bool)(n->refcnt))
-
+/* used only in ssatranform */
 #define AVIS_SSADEFINED(n) ((bool)(n->int_data))
 #define AVIS_SSASTACK(n) ((node *)(n->dfmask[0]))
 #define AVIS_SSATHEN(n) ((node *)(n->dfmask[1]))
 #define AVIS_SSAELSE(n) ((node *)(n->dfmask[2]))
-
+/* used only in ssadcr */
 #define AVIS_NEEDCOUNT(n) (n->int_data)
+/* used only in ssacse */
+#define AVIS_SUBST(n) ((node *)(n->dfmask[0]))
 
 /*--------------------------------------------------------------------------*/
 
