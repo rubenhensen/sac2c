@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.96  1998/03/22 23:45:19  dkr
+ * fixed a bug with WLNODE_BOUND1
+ *
  * Revision 1.95  1998/03/22 15:31:54  dkr
  * N_WLproj: OFFSET, WIDTH -> BOUND1, BOUND2
  *
@@ -2325,12 +2328,13 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 /*--------------------------------------------------------------------------*/
 
 /*
- * here are some macros for N_WLblock, N_WLublock and N_WLproj:
+ * here are some macros for N_WL... nodes:
  */
 
-#define WLNODE_BOUND1(n) (n->counter)
-#define WLNODE_BOUND2(n) (n->varno)
-#define WLNODE_STEP(n) (n->lineno)
+#define WLNODE_DIM(n) (n->refcnt)
+#define WLNODE_BOUND1(n) (n->flag)
+#define WLNODE_BOUND2(n) (n->counter)
+#define WLNODE_STEP(n) (n->varno)
 #define WLNODE_NEXT(n) (n->node[4])
 
 #define WLNODE_MODIFIED(n) (n->info.prf_dec.tc)
@@ -2367,8 +2371,8 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
                           node *nextdim, node *contents, node *next);
 
-#define WLBLOCK_LEVEL(n) (n->refcnt)
-#define WLBLOCK_DIM(n) (n->flag)
+#define WLBLOCK_LEVEL(n) (n->lineno)
+#define WLBLOCK_DIM(n) (WLNODE_DIM (n))
 #define WLBLOCK_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLBLOCK_BOUND2(n) (WLNODE_BOUND2 (n))
 #define WLBLOCK_STEP(n) (WLNODE_STEP (n))
@@ -2449,8 +2453,8 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
 extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
                          int unrolling, node *contents, node *next);
 
-#define WLPROJ_LEVEL(n) (n->refcnt)
-#define WLPROJ_DIM(n) (n->flag)
+#define WLPROJ_LEVEL(n) (n->lineno)
+#define WLPROJ_DIM(n) (WLNODE_DIM (n))
 #define WLPROJ_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLPROJ_BOUND2(n) (WLNODE_BOUND2 (n))
 #define WLPROJ_STEP(n) (WLNODE_STEP (n))
@@ -2487,10 +2491,10 @@ extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
 extern node *MakeWLgrid (int dim, int bound1, int bound2, int unrolling, node *nextdim,
                          node *code, node *next);
 
-#define WLGRID_DIM(n) (n->refcnt)
-#define WLGRID_BOUND1(n) (n->flag)
-#define WLGRID_BOUND2(n) (WLNODE_BOUND1 (n))
-#define WLGRID_UNROLLING(n) (WLNODE_BOUND2 (n))
+#define WLGRID_DIM(n) (WLNODE_DIM (n))
+#define WLGRID_BOUND1(n) (WLNODE_BOUND1 (n))
+#define WLGRID_BOUND2(n) (WLNODE_BOUND2 (n))
+#define WLGRID_UNROLLING(n) (n->info.prf_dec.tag)
 #define WLGRID_NEXTDIM(n) (n->node[0])
 #define WLGRID_CODE(n) (n->node[1])
 #define WLGRID_NEXT(n) (WLNODE_NEXT (n))
