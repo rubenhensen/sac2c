@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/09/01 17:13:38  jhs
+ * Added rc's in barriers.
+ *
  * Revision 2.9  1999/07/30 13:51:14  jhs
  * Deleted unused macros.
  *
@@ -126,14 +129,20 @@
  * Definition of synchronisation barrier data type.
  */
 
+typedef struct ARRAYRC {
+    /* volatile */ void *ptr;
+    /* volatile */ int *rc;
+} arrayrc_t;
+
 typedef union {
     union {
         volatile int result_int;
         volatile float result_float;
         volatile double result_double;
         volatile char result_char;
-        volatile void *result_array;
-        volatile void *result_hidden;
+        /* volatile */ void *result_array;
+        arrayrc_t result_array_rc;
+        /* volatile */ void *result_hidden;
     } b[SAC_SET_MAX_SYNC_FOLD + 1];
 } SAC_MT_barrier_dummy_t;
 
@@ -156,8 +165,9 @@ typedef union {
         volatile float result_float;
         volatile double result_double;
         volatile char result_char;
-        volatile void *result_array;
-        volatile void *result_hidden;
+        /* volatile */ void *result_array;
+        arrayrc_t result_array_rc;
+        /* volatile */ void *result_hidden;
     } b[SAC_SET_MAX_SYNC_FOLD + 1];
 } SAC_MT_barrier_t;
 
@@ -165,9 +175,17 @@ typedef union {
  *  Basic access macros for synchronisation barrier.
  */
 
+#define CONCAT(a, b) a##b
+#define CATCAT(a, b) CONCAT (a, b)
+
 #define SAC_MT_BARRIER_READY(barrier, n) (barrier[n].b[0].result_int)
 
 #define SAC_MT_BARRIER_RESULT(barrier, n, m, type) (barrier[n].b[m].result_##type)
+
+#define SAC_MT_BARRIER_RC_RESULT_PTR(barrier, n, m, type)                                \
+    (CATCAT (CATCAT (barrier[n].b[m].result_, type), .ptr))
+#define SAC_MT_BARRIER_RC_RESULT_RC(barrier, n, m, type)                                 \
+    (CATCAT (CATCAT (barrier[n].b[m].result_, type), .rc))
 
 /*
  *  Advanced access macros for synchronisation barrier.
@@ -185,8 +203,23 @@ typedef union {
         SAC_MT_BARRIER_READY (SAC_MT_barrier, n) = m;                                    \
     }
 
+#define SAC_MT_SET_BARRIER_RC_RESULT(n, m, type, res)                                    \
+    {                                                                                    \
+        SAC_MT_BARRIER_RC_RESULT_PTR (SAC_MT_barrier, n, m, type) = res;                 \
+        SAC_MT_BARRIER_RC_RESULT_RC (SAC_MT_barrier, n, m, type) = CONCAT (res, __rc);   \
+        SAC_MT_BARRIER_READY (SAC_MT_barrier, n) = m;                                    \
+    }
+
 #define SAC_MT_GET_BARRIER_RESULT(n, m, type)                                            \
     (SAC_MT_BARRIER_RESULT (SAC_MT_barrier, n, m, type))
+
+#define SAC_MT_GET_BARRIER_RESULT(n, m, type)                                            \
+    (SAC_MT_BARRIER_RESULT (SAC_MT_barrier, n, m, type))
+
+#define SAC_MT_GET_BARRIER_RC_RESULT_PTR(n, m, type)                                     \
+    (SAC_MT_BARRIER_RC_RESULT_PTR (SAC_MT_barrier, n, m, type))
+#define SAC_MT_GET_BARRIER_RC_RESULT_RC(n, m, type)                                      \
+    (SAC_MT_BARRIER_RC_RESULT_RC (SAC_MT_barrier, n, m, type))
 
 /*
  *  Definition of macro implemented ICMs for global symbol definitions
