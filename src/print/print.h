@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1996/01/05 13:12:55  cg
+ * Revision 1.19  1997/05/14 08:14:41  sbs
+ * PrintAnnotate added
+ *
+ * Revision 1.18  1996/01/05  13:12:55  cg
  * added function PrintStr.
  *
  * Revision 1.17  1995/12/29  10:36:39  cg
@@ -74,6 +77,7 @@ extern char *prf_string[];
 extern node *PrintAssign (node *, node *);
 extern node *PrintBlock (node *, node *);
 extern node *PrintLet (node *, node *);
+extern node *PrintAnnotate (node *, node *);
 extern node *PrintFundef (node *, node *);
 extern node *PrintTypedef (node *, node *);
 extern node *PrintObjdef (node *, node *);
