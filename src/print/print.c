@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2001/05/09 08:58:53  dkr
+ * output for DBUG-string PRINT_RC corrected
+ *
  * Revision 3.59  2001/05/08 13:15:59  dkr
  * new macros for RC used
  *
@@ -140,9 +143,6 @@
  * output for new with-loop modified
  * PrintAST... updated
  *
- * Revision 3.15  2001/02/02 09:45:02  dkr
- * minor changes in output for with-loop done
- *
  * Revision 3.14  2001/01/30 09:56:00  dkr
  * output for N_WLgrid(Var)-nodes modified
  *
@@ -162,29 +162,6 @@
  *
  * Revision 3.9  2001/01/09 17:25:45  dkr
  * N_WLstriVar renamed into N_WLstrideVar
- *
- * Revision 3.8  2000/12/14 17:42:24  dkr
- * indentation warning deactivated for old MT
- *
- * Revision 3.7  2000/12/12 15:33:55  dkr
- * handling of ..._ICM sons corrected
- *
- * Revision 3.6  2000/12/12 12:29:00  dkr
- * nodes N_pre, N_post, N_inc, N_dec removed
- *
- * Revision 3.5  2000/12/06 11:42:51  dkr
- * PrintTravPre, PrintTravPost added
- * DBUG-string PRINT_LINE added: prints NODE_LINE for each node
- *
- * Revision 3.4  2000/12/04 13:32:58  dkr
- * DoPrintTypesAST extended
- *
- * Revision 3.3  2000/11/27 21:05:17  cg
- * Added print support for APL pragma in Nwith2 nodes.
- *
- * Revision 3.2  2000/11/23 16:08:29  sbs
- * definitions of DbugPrintArray, WLAAprintAccesses, and TSIprintInfo
- * enclosed in ifndef DBUG_OFF to avoid warnings in product version!
  *
  * [ eliminated ]
  *
@@ -2895,8 +2872,12 @@ PrintNwith (node *arg_node, node *arg_info)
         INDENT;
     }
 
-    DBUG_EXECUTE ("PRINT_RC", fprintf (outfile, "\n"); INDENT;
-                  fprintf (outfile, "/* DEC_RC: "); if (
+    DBUG_EXECUTE ("PRINT_RC",
+                  if (NWITH_PRAGMA (arg_node) == NULL) {
+                      fprintf (outfile, "\n");
+                      INDENT;
+                  } fprintf (outfile, "/* DEC_RC: ");
+                  if (
                     NWITH_DEC_RC_IDS (arg_node)
                     != NULL) { PrintIds (NWITH_DEC_RC_IDS (arg_node), arg_info); } else {
                       fprintf (outfile, "-");
@@ -3064,12 +3045,11 @@ PrintNcode (node *arg_node, node *arg_info)
                   INDENT; PrintUseMask (outfile, NCODE_USEMASK (arg_node),
                                         INFO_PRINT_VARNO (arg_info)););
 
-    DBUG_EXECUTE ("PRINT_RC", fprintf (outfile, "\n"); INDENT;
-                  fprintf (outfile, "/* INC_RC: "); if (
+    DBUG_EXECUTE ("PRINT_RC", INDENT; fprintf (outfile, "/* INC_RC: "); if (
                     NCODE_INC_RC_IDS (arg_node)
                     != NULL) { PrintIds (NCODE_INC_RC_IDS (arg_node), arg_info); } else {
-                      fprintf (outfile, "-");
-                  } fprintf (outfile, " */\n"););
+        fprintf (outfile, "-");
+    } fprintf (outfile, " */\n"););
 
     /* print the code section; the body first */
     Trav (NCODE_CBLOCK (arg_node), arg_info);
@@ -3246,8 +3226,12 @@ PrintNwith2 (node *arg_node, node *arg_info)
         INDENT;
     }
 
-    DBUG_EXECUTE ("PRINT_RC", fprintf (outfile, "\n"); INDENT;
-                  fprintf (outfile, "/* DEC_RC: "); if (
+    DBUG_EXECUTE ("PRINT_RC",
+                  if (NWITH2_PRAGMA (arg_node) == NULL) {
+                      fprintf (outfile, "\n");
+                      INDENT;
+                  } fprintf (outfile, "/* DEC_RC: ");
+                  if (
                     NWITH2_DEC_RC_IDS (arg_node)
                     != NULL) { PrintIds (NWITH2_DEC_RC_IDS (arg_node), arg_info); } else {
                       fprintf (outfile, "-");
