@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/03/20 22:28:48  dkr
+ * MakeVardecFromArg: VARDEC_OBJDEF set
+ *
  * Revision 3.18  2001/03/19 14:24:54  nmw
  * AVIS_ASSIGN2 init in MakeVardecFromArg added
  *
@@ -16,9 +19,6 @@
  *
  * Revision 3.14  2001/03/14 16:25:55  dkr
  * some errors in comments corrected
- *
- * Revision 3.13  2001/02/26 09:43:33  nmw
- * *** empty log message ***
  *
  * Revision 3.12  2001/02/22 12:45:16  nmw
  * MakeVardecFromArg added
@@ -1605,7 +1605,7 @@ AppendVardec (node *vardec_chain, node *vardec)
 /******************************************************************************
  *
  * function:
- *   extern node *MakeVardecFromArg( node *arg)
+ *   node *MakeVardecFromArg( node *arg)
  *
  * description:
  *   copies all attributes from an arg node to a new allocated vardec node.
@@ -1617,7 +1617,7 @@ AppendVardec (node *vardec_chain, node *vardec)
  *
  ******************************************************************************/
 
-extern node *
+node *
 MakeVardecFromArg (node *arg_node)
 {
     node *new_vardec;
@@ -1626,8 +1626,7 @@ MakeVardecFromArg (node *arg_node)
 
     new_vardec = MakeVardec (StringCopy (ARG_NAME (arg_node)),
                              DupTypes (ARG_TYPE (arg_node)), NULL);
-    /* VARDEC_TYPE(new_vardec) = set by MakeVardec;
-       VARDEC_NAME(new_vardec) = set by MakeVardec; */
+
     VARDEC_STATUS (new_vardec) = ARG_STATUS (arg_node);
 
     /* reference parameter will be changed to unique vardecs */
@@ -1636,7 +1635,9 @@ MakeVardecFromArg (node *arg_node)
     } else {
         VARDEC_ATTRIB (new_vardec) = ARG_ATTRIB (arg_node);
     }
+
     VARDEC_TDEF (new_vardec) = ARG_TDEF (arg_node);
+    VARDEC_OBJDEF (new_vardec) = ARG_OBJDEF (arg_node);
 
     /* duplicate avis node manually */
     FreeNode (VARDEC_AVIS (new_vardec));
@@ -1758,12 +1759,6 @@ CmpDomain (node *arg1, node *arg2)
  *                  R) true or false
  *  description   : returns ptr to N_vardec - or N_arg - node  if variable or argument
  *                  with same name as in 1) has been found, else NULL
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : strcmp
- *  macros        : NODE_TYPE, VARDEC_NAME, VARDEC_NEXT, ARG_NAME, ARG_NEXT
- *
- *  remarks       : ---
  *
  */
 
