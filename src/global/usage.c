@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.80  1998/12/07 17:31:04  cg
+ * Now, the version identifier and the target platform are
+ * printed as well with the -h and -i options.
+ * The information is taken from global vars version_id and
+ * target_platform
+ *
  * Revision 1.79  1998/12/01 09:41:24  cg
  * bug fixed in description of -trace, -profile, and -intrinsic options.
  * added new section DESCRIPTION with general information on sac2c.
@@ -133,8 +139,10 @@ usage ()
 
             "BUILD:    \t%s\n\n"
 
+            "VERSION:  \t%s for %s\n\n"
+
             "SYNOPSIS: \tsac2c [options] [filename]\n",
-            build_date_time);
+            build_date_time, version_id, target_platform);
 
     printf (
       "\n\nDESCRIPTION:\n\n"
@@ -421,8 +429,13 @@ copyright ()
 
     printf ("\n\t\tSAC - Single Assignment C\n"
             "\t--------------------------------------------\n"
-            "\tBUILD: \t%s\n\n"
-            "\tSAC COPYRIGHT NOTICE, LICENSE AND DISCLAIMER\n\n"
+            "\n"
+            "BUILD:   \t%s\n\n"
+            "VERSION: \t%s for %s\n"
+            "\n"
+            "\n"
+
+            "\tSAC COPYRIGHT NOTICE, LICENSE, AND DISCLAIMER\n\n"
             "(c) Copyright 1994 - 1999 by\n\n"
 
             "  Christian-Albrechts-Universitaet zu Kiel\n"
@@ -430,7 +443,7 @@ copyright ()
             "  Preusserstrasse 1 - 9\n"
             "  D-24105 Kiel\n"
             "  Germany\n\n",
-            build_date_time);
+            build_date_time, version_id, target_platform);
 
     printf ("The SAC compiler, the SAC standard library, and all accompanying\n"
             "software and documentation (in the following named this software)\n"
