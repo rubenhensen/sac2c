@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  1998/03/27 18:39:38  dkr
+ * PrintWLproj -> PrintWLstride
+ *
  * Revision 1.24  1998/03/13 16:22:04  dkr
  * new nodes added:
  *   N_WLblock, N_WLublock
@@ -144,7 +147,7 @@ extern node *PrintNwith2 (node *arg_node, node *arg_info);
 extern node *PrintWLseg (node *arg_node, node *arg_info);
 extern node *PrintWLblock (node *arg_node, node *arg_info);
 extern node *PrintWLublock (node *arg_node, node *arg_info);
-extern node *PrintWLproj (node *arg_node, node *arg_info);
+extern node *PrintWLstride (node *arg_node, node *arg_info);
 extern node *PrintWLgrid (node *arg_node, node *arg_info);
 
 extern void PrintFunctionHeader (node *arg_node, node *arg_info);

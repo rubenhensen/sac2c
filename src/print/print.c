@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.175  1998/03/27 18:39:28  dkr
+ * PrintWLproj -> PrintWLstride
+ *
  * Revision 1.174  1998/03/26 18:37:41  srs
  * modified WLI DBUG output in PrintNwith
  *
@@ -2357,29 +2360,29 @@ PrintWLublock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PrintWLproj(node *arg_node, node *arg_info)
+ *   node *PrintWLstride(node *arg_node, node *arg_info)
  *
  * description:
- *   prints N_WLproj-nodes
+ *   prints N_WLstride-nodes
  *
  ******************************************************************************/
 
 node *
-PrintWLproj (node *arg_node, node *arg_info)
+PrintWLstride (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PrintWLproj");
+    DBUG_ENTER ("PrintWLstride");
 
     INDENT
-    fprintf (outfile, "(%d -> %d), step%d[%d] %d\n", WLPROJ_BOUND1 (arg_node),
-             WLPROJ_BOUND2 (arg_node), WLPROJ_LEVEL (arg_node), WLPROJ_DIM (arg_node),
-             WLPROJ_STEP (arg_node));
+    fprintf (outfile, "(%d -> %d), step%d[%d] %d\n", WLSTRIDE_BOUND1 (arg_node),
+             WLSTRIDE_BOUND2 (arg_node), WLSTRIDE_LEVEL (arg_node),
+             WLSTRIDE_DIM (arg_node), WLSTRIDE_STEP (arg_node));
 
     indent++;
-    WLPROJ_CONTENTS (arg_node) = Trav (WLPROJ_CONTENTS (arg_node), arg_info);
+    WLSTRIDE_CONTENTS (arg_node) = Trav (WLSTRIDE_CONTENTS (arg_node), arg_info);
     indent--;
 
-    if (WLPROJ_NEXT (arg_node) != NULL) {
-        WLPROJ_NEXT (arg_node) = Trav (WLPROJ_NEXT (arg_node), arg_info);
+    if (WLSTRIDE_NEXT (arg_node) != NULL) {
+        WLSTRIDE_NEXT (arg_node) = Trav (WLSTRIDE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2557,10 +2560,10 @@ PrintNodeTree (node *node)
                      WLUBLOCK_BOUND2 (node), WLUBLOCK_LEVEL (node), WLUBLOCK_DIM (node),
                      WLUBLOCK_STEP (node));
             break;
-        case N_WLproj:
-            fprintf (outfile, "(%d->%d step%d[%d] %d)\n", WLPROJ_BOUND1 (node),
-                     WLPROJ_BOUND2 (node), WLPROJ_LEVEL (node), WLPROJ_DIM (node),
-                     WLPROJ_STEP (node));
+        case N_WLstride:
+            fprintf (outfile, "(%d->%d step%d[%d] %d)\n", WLSTRIDE_BOUND1 (node),
+                     WLSTRIDE_BOUND2 (node), WLSTRIDE_LEVEL (node), WLSTRIDE_DIM (node),
+                     WLSTRIDE_STEP (node));
             break;
         case N_WLgrid:
             fprintf (outfile, "(%d->%d [%d])\n", WLUBLOCK_BOUND1 (node),
