@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/03/30 15:08:30  jhs
+ *  Tried to build in removal of st-interior ...
+ *
  * Revision 1.1  2000/03/30 13:24:53  jhs
  * Initial revision
  *
@@ -26,6 +29,7 @@ extern node *AdjustCalls2 (node *arg_node, node *arg_info);
 extern node *ADJCA1fundef (node *arg_node, node *arg_info);
 
 extern node *ADJCA2fundef (node *arg_node, node *arg_info);
+extern node *ADJCA2st (node *arg_node, node *arg_info);
 extern node *ADJCA2let (node *arg_node, node *arg_info);
 
 #endif /* ADJUST_CALLS_H */
