@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/02 12:15:21  sah
+ * empty dependencies are handeled correctly now
+ *
  * Revision 1.3  2004/10/28 17:18:58  sah
  * added handling of dependencies
  *
@@ -199,6 +202,7 @@ BuildDepLibsString (const char *lib, void *rest)
         sprintf (temp, "%s %s", (char *)rest, result);
 
         result = Free (result);
+        rest = Free (rest);
         result = temp;
     }
 
@@ -214,7 +218,7 @@ InvokeCCProg (char *cccall, char *ccflags, char *libs, stringset_t *deps)
 
     DBUG_ENTER ("InvokeCCProg");
 
-    deplibs = (char *)SSFold (&BuildDepLibsString, deps, NULL);
+    deplibs = (char *)SSFold (&BuildDepLibsString, deps, StringCopy (""));
 
     SystemCall ("%s %s -o %s %s %s %s", cccall, ccflags, outfilename, cfilename, deplibs,
                 libs);
