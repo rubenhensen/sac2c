@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2003/10/15 17:28:31  dkrHH
+ * MT_CREATE_LOCAL_DESC added
+ *
  * Revision 3.68  2003/10/15 12:26:57  dkrHH
  * MT_START_SYNCBLOCK renamed into MT_SYNCBLOCK_BEGIN.
  * MT_SYNCBLOCK_END added.
@@ -1135,6 +1138,15 @@ ICM_DEF( MT_SPMD_SETUP, TRACE_NONE)
   ICM_VARANY( (3*vararg_cnt), vararg)
 ICM_END( MT_SPMD_SETUP, (name, vararg_cnt, vararg))
 #endif
+
+
+#if defined(MT_CREATE_LOCAL_DESC) || defined(ICM_ALL)
+ICM_DEF( MT_CREATE_LOCAL_DESC, TRACE_NONE)
+  ICM_ID( var_NT)
+  ICM_INT( dim)
+ICM_END( MT_CREATE_LOCAL_DESC, (var_NT, dim))
+#endif
+
 
 #if defined(MT_ADJUST_SCHEDULER__OFFSET) || defined(ICM_ALL)
 ICM_DEF( MT_ADJUST_SCHEDULER__OFFSET, TRACE_NONE)

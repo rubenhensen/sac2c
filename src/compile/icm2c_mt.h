@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2003/10/15 17:30:06  dkrHH
+ * MT_CREATE_LOCAL_DESC added
+ *
  * Revision 3.20  2003/10/15 12:31:00  dkrHH
  * MT_START_SYNCBLOCK renamed into MT_SYNCBLOCK_BEGIN.
  * MT_SYNCBLOCK_END added.
@@ -167,5 +170,7 @@ extern void ICMCompileMT_SPMD_SETUP (char *name, int vararg_cnt, char **vararg);
 extern void ICMCompileMT_SPMD_BEGIN (char *name);
 extern void ICMCompileMT_SPMD_ALTSEQ (char *name);
 extern void ICMCompileMT_SPMD_END (char *name);
+
+extern void ICMCompileMT_CREATE_LOCAL_DESC (char *var_NT, int dim);
 
 #endif /* _SAC_ICM2C_MT_H_ */
