@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2003/03/12 23:34:07  dkr
+ * SSA transform removed...
+ *
  * Revision 3.70  2003/03/12 17:28:47  dkr
  * SSA form used if flag -ssa is set
  *
@@ -238,11 +241,6 @@
 #include "wl_bounds.h"
 #include "wlpragma_funs.h"
 #include "wltransform.h"
-#include "lac2fun.h"
-#include "CheckAvis.h"
-#include "SSATransform.h"
-#include "fun2lac.h"
-#include "UndoSSATransform.h"
 
 /*
  * access macros for 'arg_info'
@@ -7235,47 +7233,9 @@ WlTransform (node *syntax_tree)
 
     info = MakeInfo ();
 
-    if (use_ssaform) {
-        DBUG_EXECUTE ("WLtrans",
-                      NOTE (("step 0.1: loops and conditionals -> LaC functions")));
-        syntax_tree = Lac2Fun (syntax_tree);
-        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "l2f"))) {
-            goto DONE;
-        }
-
-        DBUG_EXECUTE ("WLtrans", NOTE (("step 0.2: check AVIS consistency")));
-        syntax_tree = CheckAvis (syntax_tree);
-        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "cha"))) {
-            goto DONE;
-        }
-
-        DBUG_EXECUTE ("WLtrans", NOTE (("step 0.3: do SSA form")));
-        syntax_tree = SSATransform (syntax_tree);
-        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "ssa"))) {
-            goto DONE;
-        }
-    }
-
     act_tab = wltrans_tab;
     syntax_tree = Trav (syntax_tree, info);
 
-    if (use_ssaform) {
-        DBUG_EXECUTE ("WLtrans", NOTE (("step 13.1: undo SSA form")));
-        syntax_tree = UndoSSATransform (syntax_tree);
-        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "ussa"))) {
-            goto DONE;
-        }
-
-        /* undo lac2fun transformation */
-        DBUG_EXECUTE ("WLtrans",
-                      NOTE (("step 13.2: LaC functions -> loops and conditionals")));
-        syntax_tree = Fun2Lac (syntax_tree);
-        if ((break_after == PH_wltrans) && (!strcmp (break_specifier, "f2l"))) {
-            goto DONE;
-        }
-    }
-
-DONE:
     info = FreeTree (info);
 
     DBUG_RETURN (syntax_tree);
