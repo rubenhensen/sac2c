@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.27  1997/11/03 15:13:15  dkr
+# make deps done
+#
 # Revision 1.26  1997/08/05 11:31:00  sbs
 # profile.o added in clean-line
 #
@@ -138,8 +141,8 @@ icm2c.o: ../print/print.h ../global/tree.h ../global/types.h
 icm2c.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
 icm2c.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
 icm2c.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
-icm2c.o: ../../inc/main.h trace.h ../print/convert.h icm_decl.c icm.data
-icm2c.o: icm_args.c icm_comment.c icm_trace.c
+icm2c.o: ../../inc/main.h trace.h ../print/convert.h icm2c.h libsac.h
+icm2c.o: icm_decl.c icm.data icm_args.c icm_comment.c icm_trace.c
 icm_args.o: icm.data
 icm_comment.o: icm.data
 icm_decl.o: icm.data
