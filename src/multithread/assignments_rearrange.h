@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/11/22 12:49:31  skt
+ * code brushing in SACDevCampDK 2005
+ *
  * Revision 1.7  2004/08/19 15:01:03  skt
  * rearranging algorithm improved
  *
@@ -33,92 +36,14 @@
  *
  *****************************************************************************/
 
-#ifndef ASSIGNMENTS_REARRANGE_H
+#ifndef _SAC_ASSIGNMENTS_REARRANGE_H
 
-#define ASSIGNMENTS_REARRANGE_H
+#define _SAC_ASSIGNMENTS_REARRANGE_H
 
-#define ASMRA_DEBUG 0
+#include "types.h"
 
-/*
- * some structures
- */
-
-struct asmra_cluster_s {
-    node *dfn;
-    int distance;
-    struct asmra_cluster_s *next;
-};
-
-struct asmra_list_s {
-    void *element;
-    struct asmra_list_s *next;
-};
-
-/*
- * some access macros
- *   node*                    ASMRA_CLUSTER_DFN
- *   int                      ASMRA_CLUSTER_DISTANCE
- *   struct asmra_cluster_s*  ASMRA_CLUSTER_NEXT
- *
- *   void*                    ASMRA_LIST_ELEMENT
- *   struct asmra_list_s*     ASMRA_LIST_NEXT
- */
-#define ASMRA_CLUSTER_DFN(n) (n->dfn)
-#define ASMRA_CLUSTER_DISTANCE(n) (n->distance)
-#define ASMRA_CLUSTER_NEXT(n) (n->next)
-#define ASMRA_LIST_ELEMENT(n) (n->element)
-#define ASMRA_LIST_NEXT(n) (n->next)
-
-extern node *AssignmentsRearrange (node *arg_node);
+extern node *ASMRAdoAssignmentsRearrange (node *arg_node);
 
 extern node *ASMRAblock (node *arg_node, info *arg_info);
-
-extern node *ASMRACreateNewAssignmentOrder (node *arg_node);
-
-struct asmra_list_s *ASMRABuildListOfCluster (node *graph);
-
-struct asmra_cluster_s *ASMRABuildCluster (node *graph, int execmode);
-
-node *ASMRAFindElement (node *graph, int execmode);
-
-struct asmra_list_s *ASMRADissolveAllCluster (struct asmra_list_s *list_of_cluster);
-
-struct asmra_cluster_s *ASMRACalculateDistances (struct asmra_cluster_s *cluster,
-                                                 struct asmra_list_s *list);
-
-bool ASMRAOneNodeIsDependent (struct asmra_cluster_s *cluster,
-                              struct asmra_cluster_s *dependent_cluster);
-
-bool ASMRAFoundDependent (nodelist *dependent_nodes, struct asmra_cluster_s *search_area);
-
-bool ASMRAIsInCluster (node *dfn, struct asmra_cluster_s *search_area);
-
-node *ASMRAGetNodeWithLowestDistance (struct asmra_cluster_s *cluster,
-                                      struct asmra_list_s *list);
-
-int ASMRAGetMinDistanceToFather (node *dfn, struct asmra_list_s *list);
-
-node *ASMRABuildNewAssignmentChain (struct asmra_list_s *list_of_dfn, node *arg_node);
-
-struct asmra_cluster_s *ASMRAMakeCluster (node *arg_node);
-
-struct asmra_cluster_s *ASMRAFreeCluster (struct asmra_cluster_s *cluster);
-
-struct asmra_cluster_s *ASMRAClusterAdd (struct asmra_cluster_s *cluster, node *dfn);
-
-struct asmra_cluster_s *ASMRAClusterMerge (struct asmra_cluster_s *cluster_1,
-                                           struct asmra_cluster_s *cluster_2);
-
-struct asmra_cluster_s *ASMRAClusterRefUpdate (struct asmra_cluster_s *cluster);
-
-void ASMRAPrintCluster (struct asmra_cluster_s *cluster);
-
-struct asmra_list_s *ASMRAMakeList (void *element);
-
-struct asmra_list_s *ASMRAFreeList (struct asmra_list_s *list);
-
-struct asmra_list_s *ASMRAListAppend (struct asmra_list_s *list, void *element);
-
-node *ASMRAPrepareDataflowgraph (node *graph);
 
 #endif /* ASSIGNMENTS_REARRANGE_H */
