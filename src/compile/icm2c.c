@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.25  1995/06/09 15:34:30  hw
+ * Revision 1.26  1995/07/13 16:42:39  hw
+ * - changed N_icm ND_BEGIN_FOLDPRF & ND_BEGIN_FOLDFUN
+ * - changed ND_FUN_DEC to handel declaration of imported functions
+ *   ( imported function do not have formal paramter names anymore !!!)
+ *
+ * Revision 1.25  1995/06/09  15:34:30  hw
  * - changed N_icms ND_KD_PSI_... (linenumber inserted)
  * - boundery check for ND_KD_PSI_... inserted
  *
@@ -159,6 +164,7 @@
         fprintf (outfile, "\n");                                                         \
     }
 
+#ifdef OLD_FOLD
 #define BeginFoldWith(res, dimres, neutral, form, to, idx, idixlen, fun_tag)             \
     INDENT;                                                                              \
     fprintf (outfile, "{ int __i;\n");                                                   \
@@ -188,6 +194,43 @@
         }                                                                                \
     }                                                                                    \
     fprintf (outfile, "\n")
+#else
+#define BeginFoldWith(res, sizeres, form, to, idx, idixlen, n_neutral, neutral)          \
+    if (0 < sizeres) {                                                                   \
+        indent++;                                                                        \
+        INDENT;                                                                          \
+        {                                                                                \
+            int i, j;                                                                    \
+            if (sizeres == n_neutral)                                                    \
+                for (i = 0; i < n_neutral; i += 1)                                       \
+                    if (1 == IsDigit ((neutral[i])[0]))                                  \
+                        fprintf (outfile, "ND_A_FIELD(%s)[%d]=%s;\n", res, i,            \
+                                 neutral[i]);                                            \
+                    else                                                                 \
+                        fprintf (outfile, "ND_A_FIELD(%s)[%d]=ND_A_FIELD(%s);\n", res,   \
+                                 i, neutral[i]);                                         \
+            else                                                                         \
+                for (i = 0, j = 0; i < n_neutral; i += 1, j = i / n_neutral)             \
+                    fprintf (outfile, " ND_A_FIELD(%s)[%d]=ND_A_FIELD(%s)[%d];\n", res,  \
+                             i, neutral[j], i - n_neutral * j);                          \
+        }                                                                                \
+    } else                                                                               \
+        fprintf (outfile, " %s=%s;\n", res, neutral[0]);                                 \
+    {                                                                                    \
+        int i;                                                                           \
+        for (i = 0; i < idxlen; i++) {                                                   \
+            INDENT;                                                                      \
+            fprintf (outfile,                                                            \
+                     "for( ND_A_FIELD(%s)[%d]=ND_A_FIELD(%s)[%d]; "                      \
+                     "ND_A_FIELD(%s)[%d]<=ND_A_FIELD(%s)[%d]; ND_A_FIELD(%s)[%d]++) "    \
+                     "{\n",                                                              \
+                     idx, i, from, i, idx, i, to, i, idx, i);                            \
+            indent++;                                                                    \
+        }                                                                                \
+    }                                                                                    \
+    fprintf (outfile, "\n")
+
+#endif
 
 #define EndWith(res, dimres, idxlen, fillstr)                                            \
     indent--;                                                                            \
@@ -229,6 +272,7 @@
     INDENT;                                                                              \
     fprintf (outfile, "}\n\n")
 
+#ifdef OLD_FOLD
 #define EndFoldWith(idxlen)                                                              \
     {                                                                                    \
         int i;                                                                           \
@@ -238,6 +282,17 @@
             fprintf (outfile, "}\n");                                                    \
         }                                                                                \
     }
+#else
+#define EndFoldWith(idxlen)                                                              \
+    {                                                                                    \
+        int i;                                                                           \
+        for (i = 0; i < idxlen; i++) {                                                   \
+            indent--;                                                                    \
+            INDENT;                                                                      \
+            fprintf (outfile, "}\n");                                                    \
+        }                                                                                \
+    }
+#endif
 
 #define FirstOut(arg, n, body, default, step)                                            \
     {                                                                                    \
@@ -433,6 +488,32 @@
                                                          "A_FIELD(%s)[__isrc++];\n",     \
                                                          res, a);)))
 
+int
+IsDigit (char alpha)
+{
+    int ret;
+
+    DBUG_ENTER ("IsDigit");
+    switch (alpha) {
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+    case '0':
+        ret = 1;
+        break;
+    default:
+        ret = 0;
+        break;
+    }
+    DBUG_RETURN (ret);
+}
+
 #ifdef TEST_BACKEND
 
 MAIN
@@ -474,6 +555,7 @@ MAIN
     int traceflag = 0xffff;
     int line = 777;
     int check_boundary = 0;
+    int n_neutral = 1;
 
     OPT ARG 'b':
     {
@@ -513,17 +595,25 @@ extern int check_boundary; /* defined in main.c */
     FirstOut (tyarg, 3 * narg, fprintf (outfile, "%s ", tyarg[i]),
               fprintf (outfile, "void "), 2);
     fprintf (outfile, "%s( ", name);
-    ScanArglist (tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]);
-                 sep = 1, i += 2;
-                 sep = 0, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
-                 sep = 1, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
-                 sep = 1,
+    ScanArglist (
+      tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]);
+      sep = 1, i += 2; sep = 0, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
+      sep = 1, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
+      sep = 1, if (NULL != (tyarg[i + 1])[0])
                  fprintf (outfile, " ND_KS_DEC_IN_ARRAY(%s, %s)", tyarg[i++], tyarg[i++]);
-                 sep = 1, fprintf (outfile, " ND_KS_DEC_OUT_ARRAY(%s, %s)", tyarg[i++],
-                                   tyarg[i++]);
-                 sep = 1, fprintf (outfile, " ND_KS_DEC_OUT_ARRAY(%s, %s)", tyarg[i++],
-                                   tyarg[i++]);
-                 sep = 1, ",");
+      else {
+          fprintf (outfile, "ND_KS_DEC_IMPORT_IN_ARRAY(%s)", tyarg[i++]);
+          i++;
+      };
+      sep = 1,
+      if (NULL != (tyarg[i + 1])[0])
+        fprintf (outfile, " ND_KS_DEC_OUT_ARRAY(%s, %s)", tyarg[i++], tyarg[i++]);
+      else {
+          fprintf (outfile, "ND_KS_DEC_IMPORT_OUT_ARRAY(%s)", tyarg[i++]);
+          i++;
+      };
+      sep = 1, fprintf (outfile, " ND_KS_DEC_OUT_ARRAY(%s, %s)", tyarg[i++], tyarg[i++]);
+      sep = 1, ",");
     fprintf (outfile, ")\n");
 
 #undef ND_FUN_DEC
@@ -1172,7 +1262,9 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 /*
- * ND_BEGIN_FOLDPRF( res, dimres, neutral, from, to, idx, idxlen)
+ * OLD_FOLD: ND_BEGIN_FOLDPRF( res, dimres, neutral, from, to, idx, idxlen)
+ *
+ * ND_BEGIN_FOLDPRF( res, dimres, from, to, idx, idxlen, n_neutral, neutral)
  */
 
 #define ND_BEGIN_FOLDPRF
@@ -1185,7 +1277,11 @@ DBUG_VOID_RETURN;
 #include "icm_comment.c"
 #include "icm_trace.c"
 
+#ifdef OLD_FOLD
 BeginFoldWith (res, dimres, neutral, from, to, idx, idxlen, 1);
+#else
+BeginFoldWith (res, dimres, from, to, idx, idxlen, n_neutral, neutral);
+#endif
 
 #ifdef TEST_BACKEND
 indent -= idxlen + 1;
@@ -1212,7 +1308,11 @@ DBUG_VOID_RETURN;
 #include "icm_comment.c"
 #include "icm_trace.c"
 
+#ifdef OLD_FOLF
 BeginFoldWith (res, dimres, neutral, from, to, idx, idxlen, 0);
+#else
+BeginFoldWith (res, dimres, from, to, idx, idxlen, n_neutral, neutral);
+#endif
 
 #ifdef TEST_BACKEND
 indent -= idxlen + 1;
