@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.1  1995/06/02 10:09:27  sbs
+# Revision 1.2  1995/07/14 08:31:48  sbs
+# *** empty log message ***
+#
+# Revision 1.1  1995/06/02  10:09:27  sbs
 # Initial revision
 #
 #
@@ -9,7 +12,7 @@
 MAKE=make
 CC=gcc -ansi -g
 
-INCS=-I../global -I../../inc -I../optimize
+INCS=-I../global -I../../inc -I../optimize -I../compile
 
 all: index.o psi-opt.o
 
