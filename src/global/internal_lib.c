@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/06/21 11:04:40  ben
+ * one bug fixed in StrTok
+ *
  * Revision 3.13  2001/06/20 11:33:59  ben
  * StrTok implemented
  *
@@ -359,7 +362,9 @@ StrTok (char *first, char *sep)
 
     DBUG_ENTER ("StrTok");
 
-    if (act_string == NULL) {
+    if (first != NULL) {
+        if (act_string != NULL)
+            act_string = Free (act_string);
         new_string = StringCopy (first);
         act_string = new_string;
     }
