@@ -1,5 +1,11 @@
 /*
  * $Log$
+ * Revision 3.2  2000/11/27 21:07:35  cg
+ * APL entry of wlcomp pragma is extracted from wlcomp chain and
+ * added to new Nwith2 node for further processing in compile.c.
+ * Basic consistency checks and some transformations are applied
+ * to parameters.
+ *
  * Revision 3.1  2000/11/20 18:01:31  sacbase
  * new release made
  *
@@ -230,6 +236,7 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "print.h"
+#include "resource.h"
 
 #include "wlpragma_funs.h"
 
@@ -1501,6 +1508,109 @@ Internal representation in the abstract syntax tree:
 
 /* forward declaration */
 static int CompareWLnode (node *node1, node *node2, int outline);
+
+/******************************************************************************
+ *
+ * function:
+ *
+ *
+ * description:
+ *
+ *
+ *
+ *
+ *
+ ******************************************************************************/
+
+static node *
+ExtractAplPragmaAp (node *exprs, node *pragma)
+{
+    node *ap, *del;
+    int size;
+
+    DBUG_ENTER ("ExtractAplPragmaAp");
+
+    if (exprs != NULL) {
+        ap = EXPRS_EXPR (exprs);
+        DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), ("Illegal wlcomp pragma."));
+        if (0 == strcmp (AP_NAME (ap), "APL")) {
+            if (!((AP_ARGS (ap) != NULL)
+                  && (NODE_TYPE (EXPRS_EXPR (AP_ARGS (ap))) == N_id)
+                  && (EXPRS_NEXT (AP_ARGS (ap)) != NULL)
+                  && (NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (AP_ARGS (ap)))) == N_num)
+                  && (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (ap))) != NULL)
+                  && (NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (ap)))))
+                      == N_num))) {
+                ERROR (line, ("Illegal wlcomp pragma entry APL found"));
+            } else {
+                switch (NUM_VAL (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (ap)))))) {
+                case 1:
+                    size = 1024 * config.cache1_size;
+                    break;
+                case 2:
+                    size = 1024 * config.cache2_size;
+                    break;
+                case 3:
+                    size = 1024 * config.cache3_size;
+                    break;
+                default:
+                    size = 0;
+                }
+                if (size > 0) {
+                    NUM_VAL (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (ap))))) = size;
+                    PRAGMA_APL (pragma) = ap;
+                } else {
+                    FreeTree (ap);
+                }
+            }
+
+            del = exprs;
+            exprs = ExtractAplPragmaAp (EXPRS_NEXT (exprs), pragma);
+            FREE (del);
+        } else {
+            EXPRS_NEXT (exprs) = ExtractAplPragmaAp (EXPRS_NEXT (exprs), pragma);
+        }
+    }
+
+    DBUG_RETURN (exprs);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *
+ *
+ * description:
+ *
+ *
+ *
+ *
+ *
+ ******************************************************************************/
+
+static node *
+ExtractAplPragma (node *pragma)
+{
+    node *res;
+
+    DBUG_ENTER ("ExtractAplPragma");
+
+    if (pragma != NULL) {
+        PRAGMA_WLCOMP_APS (pragma)
+          = ExtractAplPragmaAp (PRAGMA_WLCOMP_APS (pragma), pragma);
+        if (PRAGMA_APL (pragma) != NULL) {
+            res = MakePragma ();
+            PRAGMA_APL (res) = PRAGMA_APL (pragma);
+            PRAGMA_APL (pragma) = NULL;
+        } else {
+            res = NULL;
+        }
+    } else {
+        res = NULL;
+    }
+
+    DBUG_RETURN (res);
+}
 
 /******************************************************************************
  *
@@ -6160,6 +6270,17 @@ WLTRAwith (node *arg_node, node *arg_info)
 
             if (WL_break_after >= WL_PH_segs) {
                 DBUG_EXECUTE ("WLprec", NOTE (("step 2: choice of segments\n")));
+
+                NWITH2_PRAGMA (new_node) = ExtractAplPragma (NWITH_PRAGMA (arg_node));
+                if ((NWITH2_PRAGMA (new_node) != NULL)
+                    && ((NWITH2_TYPE (new_node) == WO_foldfun)
+                        || (NWITH2_TYPE (new_node) == WO_foldprf))) {
+                    /*
+                     * No array placement for fold with-loops.
+                     */
+                    NWITH2_PRAGMA (new_node) = FreeTree (NWITH2_PRAGMA (new_node));
+                }
+
                 segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, wl_dims);
                 /* free temporary data */
                 if (NWITH_PRAGMA (arg_node) != NULL) {
