@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.152  2004/11/29 09:35:04  sbs
+# xml dir added
+#
 # Revision 3.151  2004/11/27 03:19:10  sbs
 # AEAETSCH!!!!!
 #
@@ -241,6 +244,7 @@ check_os:
 
 dummy:
 	(cd lib/src; $(MAKE_NORM) )
+	(cd src/xml; $(MAKE_NORM) )
 	(cd src/scanparse; $(MAKE_NORM) )
 	(cd src/global; $(MAKE_NORM) )
 	(cd src/tree; $(MAKE_NORM) )
@@ -276,6 +280,7 @@ endif
 
 prod:
 	(cd lib/src; $(MAKE_PROD) )
+	(cd src/xml; $(MAKE_PROD) )
 	(cd src/scanparse; $(MAKE_PROD) )
 	(cd src/global; $(MAKE_PROD) )
 	(cd src/tree; $(MAKE_PROD) )
