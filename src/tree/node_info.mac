@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2000/02/24 15:55:09  dkr
+ * RC and Print functions for old with-loop removed
+ *
  * Revision 1.19  2000/02/23 23:03:06  dkr
  * new functions for LAC2FUN added
  *
@@ -1372,11 +1375,11 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    *
    */
 
-  NIF (N_with, "N_with", TravSons, FltnWith, PrintWith, TravSons, GNMwith, DCRwith,
-       TravSons, FreeWith, CFwith, RCwith, TravSons, LIRloop, TravSons, TravSons, UNRwith,
-       LIRMloop, IdxWith, UNSwith, WLIwith, AEwith,
+  NIF (N_with, "N_with", TravSons, FltnWith, TravSons, TravSons, GNMwith, DCRwith,
+       TravSons, FreeWith, CFwith, TravSons, TravSons, LIRloop, TravSons, TravSons,
+       UNRwith, LIRMloop, IdxWith, UNSwith, WLIwith, AEwith,
 
-       PrintWith, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, UNQwith,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, UNQwith,
        TravSons, PRECwith, ACTwith, TravSons, WLTwith, CSEwith, TravSons, TCWLnull,
        TravSons, TravSons, TravSons, TravSons,
 
@@ -1390,11 +1393,11 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        2),
 
-  NIF (N_generator, "N_generator", TravSons, FltnGen, PrintGenator, TravSons, TravSons,
-       TravSons, TravSons, FreeGenerator, TravSons, RCgen, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, IdxGenerator, TravSons, TravSons, TravSons,
+  NIF (N_generator, "N_generator", TravSons, FltnGen, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeGenerator, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, IdxGenerator, TravSons, TravSons, TravSons,
 
-       PrintGenator, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, PRECgenerator, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -1408,13 +1411,13 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        2),
 
-  NIF (N_genarray, "N_genarray", TravSons, FltnCon, PrintGenarray, TravSons, TravSons,
-       TravSons, TravSons, FreeGenarray, TravSons, RCcon, TravSons, TravSons, TravSons,
+  NIF (N_genarray, "N_genarray", TravSons, FltnCon, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeGenarray, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
-       PrintGenarray, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, FMTravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1426,11 +1429,29 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        2),
 
-  NIF (N_foldprf, "N_foldprf", TravSons, FltnCon, PrintFoldprf, TravSons, TravSons,
-       TravSons, TravSons, FreeFoldprf, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+  NIF (N_foldprf, "N_foldprf", TravSons, FltnCon, TravSons, TravSons, TravSons, TravSons,
+       TravSons, FreeFoldprf, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
-       PrintFoldprf, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       2),
+
+  NIF (N_foldfun, "N_foldfun", TravSons, FltnCon, TravSons, TravSons, TravSons, TravSons,
+       TravSons, FreeFoldfun, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, ANAfoldfun, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
@@ -1444,31 +1465,13 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        2),
 
-  NIF (N_foldfun, "N_foldfun", TravSons, FltnCon, PrintFoldfun, TravSons, TravSons,
-       TravSons, TravSons, FreeFoldfun, TravSons, TravSons, TravSons, TravSons, TravSons,
+  NIF (N_modarray, "N_modarray", TravSons, FltnCon, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeModarray, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-
-       PrintFoldfun, TravSons, TravSons, TravSons, ANAfoldfun, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
-
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
-
-       2),
-
-  NIF (N_modarray, "N_modarray", TravSons, FltnCon, PrintModarray, TravSons, TravSons,
-       TravSons, TravSons, FreeModarray, TravSons, RCcon, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-
-       PrintModarray, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
