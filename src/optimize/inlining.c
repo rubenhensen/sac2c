@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/03/04 21:21:42  cg
+ * First working revision.
+ *
  * Revision 1.1  2005/02/14 11:17:24  cg
  * Initial revision
  *
@@ -132,6 +135,8 @@ INLfundef (node *arg_node, info *arg_info)
 node *
 INLassign (node *arg_node, info *arg_info)
 {
+    node *assign_to_be_removed;
+
     DBUG_ENTER ("INLassign");
 
     if (ASSIGN_INSTR (arg_node) != NULL) {
@@ -139,9 +144,10 @@ INLassign (node *arg_node, info *arg_info)
     }
 
     if (INFO_CODE (arg_info) != NULL) {
-        arg_node = FREEdoFreeNode (arg_node);
+        assign_to_be_removed = arg_node;
         arg_node = TCappendAssign (INFO_CODE (arg_info), ASSIGN_NEXT (arg_node));
         INFO_CODE (arg_info) = NULL;
+        assign_to_be_removed = FREEdoFreeNode (assign_to_be_removed);
         inl_fun++; /* global optimization counter */
 
         if (INFO_VARDECS (arg_info) != NULL) {
@@ -176,10 +182,26 @@ INLap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INLap");
 
-    if (FUNDEF_ISINLINE (AP_FUNDEF (arg_node))) {
+    if ((FUNDEF_ISINLINE (AP_FUNDEF (arg_node)))
+#if 0
+      /*
+       * We still need a solution for recursive functions marked inline.
+       */
+      && ((FUNDEF_FUNGROUP( AP_FUNDEF( arg_node)) == NULL)
+          || (FUNGROUP_INLCOUNTER( FUNDEF_FUNGROUP( AP_FUNDEF( arg_node)))
+              <= global.max_inl))
+#endif
+    ) {
         INFO_CODE (arg_info)
           = PINLdoPrepareInlining (&INFO_VARDECS (arg_info), AP_FUNDEF (arg_node),
                                    INFO_LETIDS (arg_info), AP_ARGS (arg_node));
+
+        if (FUNDEF_EXT_ASSIGN (AP_FUNDEF (arg_node)) != NULL) {
+            /*
+             * Inlined function was loop or cond function.
+             */
+            AP_FUNDEF (arg_node) = FREEdoFreeNode (AP_FUNDEF (arg_node));
+        }
     }
 
     DBUG_RETURN (arg_node);
