@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2004/09/27 14:07:33  sbs
+ * tried to replace FUNDEF_RET_TYPE with fixed type - wont work
+ * => commented out again....
+ *
  * Revision 1.20  2004/08/26 18:15:01  sbs
  * fixed a bug in CreateFoldFun:
  * now, the correct signature is created.
@@ -260,6 +264,10 @@ NT2OTfundef (node *arg_node, info *arg_info)
     type = FUNDEF_RET_TYPE (arg_node);
     DBUG_ASSERT ((type != NULL), "FUNDEF_RET_TYPE not found!");
     type = TYFixAndEliminateAlpha (type);
+#if 0
+  FUNDEF_RET_TYPE( arg_node) = TYFreeType( FUNDEF_RET_TYPE( arg_node));
+  FUNDEF_RET_TYPE( arg_node) = type;
+#endif
 
     if (TYIsProdOfArray (type)) {
         old_type = FUNDEF_TYPES (arg_node);
