@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.22  2004/12/08 18:02:10  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.21  2004/11/27 02:32:32  mwe
  * function renaming
  *
@@ -632,11 +635,10 @@ WLFtree2InternGen (node *wln, node *filter)
     DBUG_RETURN (root);
 }
 
-#ifdef MWE_TYPE_READY
 /******************************************************************************
  *
  * function:
- *   node *WLFcreateArrayFromInternGen( int *source, int number, ntype *type)
+ *   node *WLFcreateArrayFromInternGen( int *source, int number)
  *
  * description:
  *   copies 'number' elements of the array source to an N_array struct and
@@ -644,7 +646,7 @@ WLFtree2InternGen (node *wln, node *filter)
  *
  ******************************************************************************/
 static node *
-WLFcreateArrayFromInternGen (int *source, int number, ntype *type)
+WLFcreateArrayFromInternGen (int *source, int number)
 {
     node *arrayn, *tmpn;
     int i;
@@ -656,39 +658,9 @@ WLFcreateArrayFromInternGen (int *source, int number, ntype *type)
         tmpn = TBmakeExprs (TBmakeNum (source[i]), tmpn);
     }
     arrayn = TCmakeFlatArray (tmpn);
-    ARRAY_TYPE (arrayn) = TYcopyType (type);
 
     DBUG_RETURN (arrayn);
 }
-#else
-/******************************************************************************
- *
- * function:
- *   node *WLFcreateArrayFromInternGen( int *source, int number, types *type)
- *
- * description:
- *   copies 'number' elements of the array source to an N_array struct and
- *   returns it.
- *
- ******************************************************************************/
-static node *
-WLFcreateArrayFromInternGen (int *source, int number, types *type)
-{
-    node *arrayn, *tmpn;
-    int i;
-
-    DBUG_ENTER ("WLFcreateArrayFromInternGen");
-
-    tmpn = NULL;
-    for (i = number - 1; i >= 0; i--) {
-        tmpn = TBmakeExprs (TBmakeNum (source[i]), tmpn);
-    }
-    arrayn = TCmakeFlatArray (tmpn);
-    ARRAY_TYPE (arrayn) = DUPdupAllTypes (type);
-
-    DBUG_RETURN (arrayn);
-}
-#endif
 
 /******************************************************************************
  *
@@ -708,13 +680,6 @@ node *
 WLFinternGen2Tree (node *wln, intern_gen *ig)
 {
     node **part, *withidn, *genn, *b1n, *b2n, *stepn, *widthn;
-#ifdef MWE_TYPE_READY
-    shape *shp;
-    ntype *type;
-#else
-    shpseg *shpseg;
-    types *type;
-#endif
     int no_parts; /* number of N_Npart nodes */
 
     DBUG_ENTER ("WLFinternGen2Tree");
@@ -726,29 +691,19 @@ WLFinternGen2Tree (node *wln, intern_gen *ig)
 
     /* create type for N_array nodes*/
 #ifdef MWE_TYPE_READY
-    shp = SHcreateShape (1, ig->shape);
-    type = TYmakeAKS (TYmakeSimpleType (T_int), shp);
     while (ig) {
         /* create generator components */
-        b1n = WLFcreateArrayFromInternGen (ig->l, ig->shape, type);
-        b2n = WLFcreateArrayFromInternGen (ig->u, ig->shape, type);
-        stepn = ig->step ? WLFcreateArrayFromInternGen (ig->step, ig->shape, type) : NULL;
-        widthn
-          = ig->width ? WLFcreateArrayFromInternGen (ig->width, ig->shape, type) : NULL;
+        b1n = WLFcreateArrayFromInternGen (ig->l, ig->shape);
+        b2n = WLFcreateArrayFromInternGen (ig->u, ig->shape);
+        stepn = ig->step ? WLFcreateArrayFromInternGen (ig->step, ig->shape) : NULL;
+        widthn = ig->width ? WLFcreateArrayFromInternGen (ig->width, ig->shape) : NULL;
 #else
-    shpseg = TBmakeShpseg (TBmakeNums (ig->shape, NULL));
-
-    /* nums struct is freed inside TBmakeShpseg. */
-
-    type = TBmakeTypes (T_int, 1, shpseg, NULL, NULL);
-
     while (ig) {
         /* create generator components */
-        b1n = WLFcreateArrayFromInternGen (ig->l, ig->shape, type);
-        b2n = WLFcreateArrayFromInternGen (ig->u, ig->shape, type);
-        stepn = ig->step ? WLFcreateArrayFromInternGen (ig->step, ig->shape, type) : NULL;
-        widthn
-          = ig->width ? WLFcreateArrayFromInternGen (ig->width, ig->shape, type) : NULL;
+        b1n = WLFcreateArrayFromInternGen (ig->l, ig->shape);
+        b2n = WLFcreateArrayFromInternGen (ig->u, ig->shape);
+        stepn = ig->step ? WLFcreateArrayFromInternGen (ig->step, ig->shape) : NULL;
+        widthn = ig->width ? WLFcreateArrayFromInternGen (ig->width, ig->shape) : NULL;
 #endif
         /* create tree structures */
         genn = TBmakeGenerator (F_le, F_lt, b1n, b2n, stepn, widthn);
@@ -763,12 +718,6 @@ WLFinternGen2Tree (node *wln, intern_gen *ig)
     WITH_PARTS (wln) = no_parts;
 
     FREEdoFreeTree (withidn);
-#ifdef MWE_TYPE_READY
-    type = TYfreeType (type);
-    shp = SHfreeShape (shp);
-#else
-    FREEfreeOneTypes (type);
-#endif
 
     DBUG_RETURN (wln);
 }

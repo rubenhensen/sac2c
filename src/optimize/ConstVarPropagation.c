@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/12/08 18:00:42  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.12  2004/11/26 13:14:48  ktr
  * Comment of CVPprf enhanced.
  *
@@ -147,7 +150,6 @@ typedef enum {
     CON_cond,
     CON_funcond,
     CON_neutral,
-    CON_sel,
     CON_undef
 } context_t;
 
@@ -316,9 +318,13 @@ AskPropagationOracle (node *let, info *arg_info)
 
     switch (INFO_CVP_CONTEXT (arg_info)) {
 
+    case CON_let:
+        answer = ((IsConstant (LET_EXPR (let))) || (IsConstantArray (LET_EXPR (let)))
+                  || (IsVariable (LET_EXPR (let))));
+        break;
+
     case CON_array:
     case CON_primfun:
-    case CON_let:
     case CON_withloop:
     case CON_cond:
         /*
@@ -335,11 +341,6 @@ AskPropagationOracle (node *let, info *arg_info)
     case CON_funcond:
         /* TRUE iff behind let node is an id node */
         answer = IsVariable (LET_EXPR (let));
-        break;
-
-    case CON_sel:
-        /* TRUE iff behind let node is an id node or an array of constant N_num */
-        answer = ((IsVariable (LET_EXPR (let))) || (IsConstantArray (LET_EXPR (let))));
         break;
 
     case CON_undef:
@@ -608,6 +609,8 @@ CVPprf (node *arg_node, info *arg_info)
     case F_shape:
     case F_accu:
     case F_type_error:
+    case F_sel:
+    case F_shape_sel:
         /*
          * Only propagate variables here
          */
@@ -615,20 +618,6 @@ CVPprf (node *arg_node, info *arg_info)
         if (PRF_ARGS (arg_node) != NULL) {
             PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         }
-        break;
-
-    case F_sel:
-    case F_shape_sel:
-        /*
-         * First argument may be N_id or array of N_num,
-         * second argument may only be variable
-         */
-        INFO_CVP_CONTEXT (arg_info) = CON_sel;
-        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
-
-        INFO_CVP_CONTEXT (arg_info) = CON_ap;
-        EXPRS_EXPRS2 (PRF_ARGS (arg_node))
-          = TRAVdo (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
         break;
 
     case F_idx_sel:
@@ -646,27 +635,11 @@ CVPprf (node *arg_node, info *arg_info)
           = TRAVdo (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
         break;
 
+    case F_idx_modarray:
     case F_modarray:
         /*
-         * The first argument of modarray must be variable
-         * the others can as well be constant
-         *
-         * 2nd arg of modarray may be a constant array.
-         */
-        INFO_CVP_CONTEXT (arg_info) = CON_ap;
-        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
-
-        INFO_CVP_CONTEXT (arg_info) = CON_sel;
-        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
-
-        INFO_CVP_CONTEXT (arg_info) = CON_primfun;
-        PRF_ARG3 (arg_node) = TRAVdo (PRF_ARG3 (arg_node), arg_info);
-        break;
-
-    case F_idx_modarray:
-        /*
-         * The first argument of idx_modarray must be variable
-         * the others can as well be constant
+         * The first argument of modarray/idx_modarray must be variable
+         * the others can as well be constant scalars
          */
         INFO_CVP_CONTEXT (arg_info) = CON_ap;
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
@@ -816,9 +789,16 @@ CVPgenarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CVPgenarray");
 
+    INFO_CVP_CONTEXT (arg_info) = CON_withloop;
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
+
+    INFO_CVP_CONTEXT (arg_info) = CON_withloop;
     if (GENARRAY_DEFAULT (arg_node) != NULL) {
         GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
+    }
+
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -830,7 +810,13 @@ CVPmodarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CVPmodarray");
 
+    INFO_CVP_CONTEXT (arg_info) = CON_withloop;
     MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
+
+    INFO_CVP_CONTEXT (arg_info) = CON_withloop;
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -843,7 +829,10 @@ CVPfold (node *arg_node, info *arg_info)
 
     INFO_CVP_CONTEXT (arg_info) = CON_neutral;
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
-    INFO_CVP_CONTEXT (arg_info) = CON_withloop;
+
+    if (FOLD_NEXT (arg_node) != NULL) {
+        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

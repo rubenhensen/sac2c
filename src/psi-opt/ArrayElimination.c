@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2004/12/08 18:02:10  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 3.26  2004/11/26 14:07:08  jhb
  * deactdeactiveted unless macro AE_ACTIVETED is defined
  *
@@ -336,20 +339,6 @@ GenSel (node *ids_node, info *arg_info)
     for (i = 0; i < length; i++) {
         exprn = TBmakeExprs (TBmakeNum (i), NULL);
         arg[0] = TCmakeFlatArray (exprn);
-        ((int *)ARRAY_CONSTVEC (arg[0])) = TCarray2IntVec (exprn, NULL);
-        /* srs: AE only works on arrays which have 1 dimension.
-           type attribut was missing here. */
-        ARRAY_ISCONST (arg[0]) = TRUE;
-        ARRAY_VECTYPE (arg[0]) = T_int;
-        ARRAY_VECLEN (arg[0]) = 1;
-#ifdef MWE_NTYPE_READY
-        ARRAY_NTYPE (arg[0]) = TYmakeAKV (TYmakeSimpleType (T_int),
-                                          COmakeConstant (T_int, SHmakeShape (1, dim),
-                                                          TCarray2IntVec (exprn, NULL)));
-#else
-        ARRAY_TYPE (arg[0])
-          = TBmakeTypes (T_int, 1, TBmakeShpseg (TBmakeNums (1, NULL)), NULL, NULL);
-#endif
 #if 0    
     arg[1] = MakeNode(N_id);
     arg[1]->info.ids = DUPdupAllIds( ids_node);

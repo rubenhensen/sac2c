@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/12/08 17:59:15  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.2  2004/11/24 17:16:49  mwe
  * SacDevCamp: Compiles!
  *
@@ -32,37 +35,6 @@
 #include "traverse.h"
 #include "free.h"
 #include "ToOldTypes.h"
-
-/***************************************************************
- *
- * function:
- *  node *TOTarray(node *arg_node, node *arg_info)
- *
- *
- * description:
- *   Transforms ntype-structure to types-structure.
- *   Removes ntype-structure.
- *
- ***************************************************************/
-
-node *
-TOTarray (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("TOTarray");
-
-    DBUG_ASSERT ((NULL != ARRAY_NTYPE (arg_node)), "missing ntype information");
-
-    if (ARRAY_TYPE (arg_node) != NULL) {
-        ARRAY_TYPE (arg_node) = FREEfreeAllTypes (ARRAY_TYPE (arg_node));
-    }
-
-    ARRAY_TYPE (arg_node) = TYtype2OldType (ARRAY_NTYPE (arg_node));
-
-    ARRAY_NTYPE (arg_node) = TYfreeType (ARRAY_NTYPE (arg_node));
-
-    DBUG_RETURN (arg_node);
-}
 
 /***************************************************************
  *

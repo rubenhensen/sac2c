@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/12/08 17:59:15  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.7  2004/11/26 12:50:08  mwe
  * changes according to changes in tree_compound.h
  *
@@ -381,38 +384,6 @@ TNTwithid (node *arg_node, info *arg_info)
     if (WITHID_IDS (arg_node)) {
         WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *TNTarray *arg_node, info *arg_info)
- *
- * description:
- *   sets ntype-structure if missing and remove types-structure
- *
- ******************************************************************************/
-node *
-TNTarray (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("TNTarray");
-
-    if (ARRAY_NTYPE (arg_node) == NULL) {
-
-        DBUG_ASSERT ((ARRAY_TYPE (arg_node) != NULL),
-                     "whether 'types' or 'ntype' structure found");
-
-        ARRAY_NTYPE (arg_node) = TYoldType2Type (ARRAY_TYPE (arg_node));
-    }
-
-#ifdef MWE_NTYPE_READY
-    if ((ARRAY_TYPE (arg_node) != NULL) && (global.compiler_phase > PH_typecheck))
-        ARRAY_TYPE (arg_node) = FREEfreeAllTypes (ARRAY_TYPE (arg_node));
-#endif
-
-    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }

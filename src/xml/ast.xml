@@ -126,7 +126,6 @@
 	  <node name="Ap" />
 	  <node name="Cast" />
 	  <node name="Typedef" />
-	  <node name="Array" />
 	</travuser>
       </traversal>
       <traversal id="TOT" name="ToOldTypes Traversal" default="sons" include="ToOldTypes.h" >
@@ -137,7 +136,6 @@
 	  <node name="Vardec" />
 	  <node name="Arg" />
 	  <node name="Fundef" />
-	  <node name="Array" />
 	</travuser>
       </traversal>
       <traversal id="L2F" name="Lac2Fun Traversal" default="sons" include="lac2fun.h" >
@@ -432,7 +430,6 @@
           <node name="Arg" />
           <node name="Block" />
           <node name="Vardec" />
-          <node name="Array" />
           <node name="Cast" />
           <node name="Let" />
           <node name="Fold" />
@@ -1508,7 +1505,6 @@
 	  <node name="Return" />
 	  <node name="Ap" />
 	  <node name="Icm" />
-	  <node name="Array" />
 	  <node name="WLseg" />
 	  <node name="WLsegVar" />
 	  <node name="Avis" />
@@ -2889,22 +2885,6 @@
           <phases>
             <all />
           </phases>
-        </attribute>
-        <attribute name="Type" mandatory="yes">
-          <type name="OldType" />
-          <phases>
-            <range from="typecheck" to="final" />
-          </phases>
-          <description>Deprecated. TODO: This should be eliminated as soon as possible.
-          </description>
-        </attribute>
-        <attribute name="NType" mandatory="yes">
-          <type name="NewType" />
-          <phases>
-            <range from="typecheck" to="final" />
-          </phases>
-          <description>Deprecated. TODO: This should be eliminated as soon as possible.
-          </description>
         </attribute>
       </attributes>
       <flags>

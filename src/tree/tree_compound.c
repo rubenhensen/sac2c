@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.125  2004/12/08 18:02:40  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 3.124  2004/12/08 11:40:50  ktr
  * nothing really changed.
  *
@@ -93,6 +96,7 @@
 #include "dbug.h"
 #include "free.h"
 #include "new_types.h"
+#include "new_typecheck.h"
 #include "Error.h"
 #include "DataFlowMask.h"
 #include "wltransform.h"
@@ -382,7 +386,6 @@ TCshpseg2Array (shpseg *shape, int dim)
     int i;
     node *next;
     node *array_node;
-    shpseg *array_shape;
 
     DBUG_ENTER ("TCshpseg2Array");
 
@@ -392,10 +395,6 @@ TCshpseg2Array (shpseg *shape, int dim)
     }
 
     array_node = TCmakeFlatArray (next);
-
-    array_shape = TBmakeShpseg (NULL);
-    SHPSEG_SHAPE (array_shape, 0) = dim;
-    ARRAY_TYPE (array_node) = TBmakeTypes (T_int, 1, array_shape, NULL, NULL);
 
     DBUG_RETURN (array_node);
 }
@@ -2549,7 +2548,6 @@ TCcreateZeroVector (int length, simpletype btype)
 {
     node *ret_node, *exprs_node;
     int i;
-    shpseg *shpseg;
 
     DBUG_ENTER ("TCcreateZeroVector");
 
@@ -2562,10 +2560,6 @@ TCcreateZeroVector (int length, simpletype btype)
     }
 
     ret_node = TCmakeFlatArray (exprs_node);
-
-    /* nums struct is freed inside of MakeShpseg() */
-    shpseg = TBmakeShpseg (TBmakeNums (length, NULL));
-    ARRAY_TYPE (ret_node) = TBmakeTypes (btype, 1, shpseg, NULL, NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -2588,6 +2582,7 @@ TCcreateZeroVector (int length, simpletype btype)
 bool
 TCisConstArray (node *array)
 {
+    ntype *atype;
     nodetype type;
     bool isconst = FALSE;
 
@@ -2596,7 +2591,10 @@ TCisConstArray (node *array)
     if (array != NULL) {
         switch (NODE_TYPE (array)) {
         case N_array:
-            isconst = TYisAKV (ARRAY_NTYPE (array));
+            atype = NTCnewTypeCheck_Expr (array);
+            isconst = TYisAKV (atype);
+            atype = TYfreeType (atype);
+
             if (!isconst) {
                 /*
                  * Although ARRAY_ISCONST is false, the array still may be constant:
@@ -2674,31 +2672,14 @@ node *
 TCids2Array (node *ids_arg)
 {
     node *array;
-    types *array_type;
-    shpseg *array_shape;
-    int len, i;
 
     DBUG_ENTER ("TCids2Array");
 
     if (ids_arg != NULL) {
-        len = TCcountIds (ids_arg);
         array = TCmakeFlatArray (TCids2Exprs (ids_arg));
     } else {
-        len = 0;
         array = TCmakeFlatArray (NULL);
     }
-
-    array_type = DUPdupOneTypes (IDS_TYPE (ids_arg));
-    if (TYPES_SHPSEG (array_type) == NULL) {
-        TYPES_SHPSEG (array_type) = TBmakeShpseg (NULL);
-    }
-    array_shape = TYPES_SHPSEG (array_type);
-    for (i = TYPES_DIM (array_type); i > 0; i--) {
-        SHPSEG_SHAPE (array_shape, i) = SHPSEG_SHAPE (array_shape, (i - 1));
-    }
-    (TYPES_DIM (array_type))++;
-    SHPSEG_SHAPE (array_shape, 0) = len;
-    ARRAY_TYPE (array) = array_type;
 
     DBUG_RETURN (array);
 }
@@ -3427,108 +3408,6 @@ TCcreateZero (int dim, shpseg *shape, simpletype btype, bool no_wl, node *fundef
     }
 
     DBUG_RETURN (zero);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *TCcreateSel( ids *sel_vec, ids *sel_ids, node *sel_array,
- *                      bool no_wl, node *fundef)
- *
- * Description:
- *   Creates an array of zeros.
- *
- ******************************************************************************/
-
-node *
-TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no_wl, node *fundef)
-{
-    node *sel;
-    int len_index, dim_array;
-    node *new_index, *id, *vardec, *ass, *new_avis;
-    node *tmp_ids;
-    shpseg *shape, *shape2;
-    simpletype btype;
-    int dim, i;
-
-    DBUG_ENTER ("CreateSel");
-
-    DBUG_ASSERT ((NODE_TYPE (sel_array) == N_id), "no N_id node found!");
-
-    len_index = TCgetTypesLength (IDS_TYPE (sel_vec));
-    DBUG_ASSERT ((len_index > 0), "illegal index length found!");
-
-    dim_array = TCgetDim (ID_TYPE (sel_array));
-    DBUG_ASSERT ((dim_array > 0), "illegal array dimensionality found!");
-
-    if (len_index > dim_array) {
-        DBUG_ASSERT ((0), "illegal array selection found!");
-        sel = NULL;
-    } else if ((len_index == dim_array) || no_wl) {
-        sel
-          = TBmakePrf (F_sel, TBmakeExprs (DUPdoDupNode (sel_vec),
-                                           TBmakeExprs (DUPdoDupNode (sel_array), NULL)));
-    } else { /* (len_index < dim_array) */
-
-        /*
-         * compute basetype/dim/shape of WL
-         */
-        btype = TCgetBasetype (ID_TYPE (sel_array));
-
-        dim = (dim_array - len_index);
-
-        shape = TCtype2Shpseg (ID_TYPE (sel_array), NULL);
-        shape2 = TCtype2Shpseg (ID_TYPE (sel_array), NULL);
-        for (i = 0; i < dim; i++) {
-            SHPSEG_SHAPE (shape, i) = SHPSEG_SHAPE (shape2, (len_index + i));
-        }
-        shape2 = FREEfreeShpseg (shape2);
-
-        /*
-         * create WL without expression
-         */
-        sel = TCcreateScalarWith (dim, shape, btype, NULL, fundef);
-
-        /*
-         * create index vector for F_sel
-         */
-        tmp_ids = sel_ids;
-        while (IDS_NEXT (tmp_ids) != NULL) {
-            tmp_ids = IDS_NEXT (tmp_ids);
-        }
-        IDS_NEXT (tmp_ids) = WITH_IDS (sel); /* concat ids chains */
-        new_index = TCids2Array (sel_ids);
-        IDS_NEXT (tmp_ids) = NULL; /* restore ids chains */
-
-        /*
-         * create new id
-         */
-
-        new_avis = TBmakeAvis (ILIBtmpVar (),
-                               TYoldType2Type (DUPdupOneTypes (ARRAY_TYPE (new_index))));
-        id = TBmakeId (new_avis);
-        vardec = TBmakeVardec (new_avis, NULL);
-        VARDEC_TYPE (vardec) = TYtype2OldType (AVIS_TYPE (new_avis));
-
-        fundef = TCaddVardecs (fundef, vardec);
-
-        /*
-         * create expression 'sel( tmp, A)' and insert it into WL
-         */
-        ASSIGN_RHS (BLOCK_INSTR (WITH_CBLOCK (sel)))
-          = TBmakePrf (F_sel,
-                       TBmakeExprs (id, TBmakeExprs (DUPdoDupNode (sel_array), NULL)));
-
-        /*
-         * create assignment 'tmp = [...];' and insert it into WL
-         */
-        ass
-          = TCmakeAssignLet (TBmakeAvis (ILIBstringCopy (ID_NAME (id)), NULL), new_index);
-        ASSIGN_NEXT (ass) = BLOCK_INSTR (WITH_CBLOCK (sel));
-        BLOCK_INSTR (WITH_CBLOCK (sel)) = ass;
-    }
-
-    DBUG_RETURN (sel);
 }
 
 /*--------------------------------------------------------------------------*/

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/12/08 18:02:40  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.15  2004/11/26 13:12:18  khf
  * SacDevCamp04: COMPILES!!
  *
@@ -63,6 +66,8 @@
  *
  *****************************************************************************/
 
+#include "compare_tree.h"
+
 #include <string.h>
 
 #include "types.h"
@@ -74,7 +79,7 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "free.h"
-#include "compare_tree.h"
+#include "shape.h"
 
 /*
  * INFO structure
@@ -406,9 +411,8 @@ CMPTarray (node *arg_node, info *arg_info)
 
     INFO_CMPT_EQFLAG (arg_info)
       = CMPT_TEST (INFO_CMPT_EQFLAG (arg_info),
-                   TYcmpTypes (ARRAY_NTYPE (arg_node),
-                               ARRAY_NTYPE (INFO_CMPT_TREE (arg_info)))
-                     == 1);
+                   SHcompareShapes (ARRAY_SHAPE (arg_node),
+                                    ARRAY_SHAPE (INFO_CMPT_TREE (arg_info))));
 
     /* traverse ArrayElements (the real son) */
     arg_node = TravLocal (arg_node, arg_info);

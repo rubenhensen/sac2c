@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.78  2004/12/08 18:00:42  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.77  2004/11/27 02:55:25  ktr
  * YO!
  *
@@ -254,6 +257,7 @@
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "new_types.h"
+#include "new_typecheck.h"
 #include "globals.h"
 #include "traverse.h"
 #include "free.h"
@@ -606,8 +610,7 @@ CFscoArray2StructConstant (node *expr)
         /* explicit array as N_array node */
         array = expr;
         /* shape of the given array */
-        DBUG_ASSERT ((ARRAY_NTYPE (array) != NULL), "unknown array type");
-        atype = ARRAY_NTYPE (array);
+        atype = NTCnewTypeCheck_Expr (array);
     } else if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)
                && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr)))))
                    == N_array)) {
@@ -623,12 +626,11 @@ CFscoArray2StructConstant (node *expr)
     }
 
     /* build an abstract structural constant of type (void*) T_hidden */
-    if (array != NULL) {
+    if ((array != NULL) && (TYisAKS (atype) || TYisAKV (atype))) {
         /* alloc hidden vector */
-        realshape = SHoldTypes2Shape (TYtype2OldType (atype));
+        realshape = SHcopyShape (TYgetShape (atype));
         ashape = SHcopyShape (ARRAY_SHAPE (array));
 
-        /* ktr: before it was SHGetUnrLen(realshape); */
         elem_count = SHgetUnrLen (ashape);
         node_vec = (node **)ILIBmalloc (elem_count * sizeof (node *));
 
@@ -662,6 +664,10 @@ CFscoArray2StructConstant (node *expr)
     } else {
         /* no array with known elements */
         struc_co = NULL;
+    }
+
+    if (NODE_TYPE (expr) == N_array) {
+        atype = TYfreeType (atype);
     }
 
     DBUG_RETURN (struc_co);
@@ -757,9 +763,6 @@ CFscoDupStructConstant2Expr (struct_constant *struc_co)
 
         /* build array node */
         expr = TBmakeArray (SHcopyShape (COgetShape (SCO_HIDDENCO (struc_co))), aelems);
-
-        ARRAY_NTYPE (expr)
-          = TYmakeAKS (TYmakeSimpleType (SCO_BASETYPE (struc_co)), SCO_SHAPE (struc_co));
     }
     DBUG_RETURN (expr);
 }
@@ -1540,27 +1543,20 @@ ArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
 static shape *
 GetShapeOfExpr (node *expr)
 {
-    shape *shp;
+    ntype *etype = NULL;
+    shape *shp = NULL;
 
     DBUG_ENTER ("GetShapeOfExpr");
 
     DBUG_ASSERT ((expr != NULL), "GetShapeOfExpr called with NULL pointer");
 
-    switch (NODE_TYPE (expr)) {
-    case N_id:
-        /* get shape from type info */
-        shp = SHoldTypes2Shape (VARDEC_OR_ARG_TYPE (AVIS_DECL (ID_AVIS (expr))));
-        break;
+    etype = NTCnewTypeCheck_Expr (expr);
 
-    case N_array:
-        /* get shape from array type attribute */
-        DBUG_ASSERT ((ARRAY_NTYPE (expr) != NULL), "array type attribute is missing");
-        shp = TYgetShape (ARRAY_NTYPE (expr));
-        break;
-
-    default:
-        shp = NULL;
+    if (TYisAKS (etype) || TYisAKV (etype)) {
+        shp = SHcopyShape (TYgetShape (etype));
     }
+
+    etype = TYfreeType (etype);
 
     DBUG_RETURN (shp);
 }
@@ -1580,24 +1576,16 @@ static simpletype
 GetBasetypeOfExpr (node *expr)
 {
     simpletype stype;
+    ntype *etype;
+
     DBUG_ENTER ("GetBasetypeOfExpr");
     DBUG_ASSERT ((expr != NULL), "GetBasetypeOfExpr called with NULL pointer");
 
-    switch (NODE_TYPE (expr)) {
-    case N_id:
-        /* get basetype from type info */
-        stype = TYgetSimpleType (TYgetScalar (AVIS_TYPE (ID_AVIS (expr))));
-        break;
+    etype = NTCnewTypeCheck_Expr (expr);
 
-    case N_array:
-        /* get shape from array type attribute */
-        DBUG_ASSERT ((ARRAY_NTYPE (expr) != NULL), "array type attribute is missing");
-        stype = TYgetSimpleType (TYgetScalar (ARRAY_NTYPE (expr)));
-        break;
+    stype = TYgetSimpleType (TYgetScalar (etype));
 
-    default:
-        stype = T_unknown;
-    }
+    etype = TYfreeType (etype);
 
     DBUG_RETURN (stype);
 }
@@ -1706,9 +1694,6 @@ Modarray (node *a, constant *idx, node *elem)
 
             if (SCO_ELEMDIM (struc_a) != SCO_ELEMDIM (struc_elem)) {
                 newarray = TCmakeFlatArray (TBmakeExprs (elem, NULL));
-                ARRAY_NTYPE (newarray)
-                  = TYmakeAKS (TYmakeSimpleType (COgetType (SCO_HIDDENCO (struc_elem))),
-                               SCO_SHAPE (struc_elem));
                 struc_elem = CFscoFreeStructConstant (struc_elem);
                 struc_elem = CFscoArray2StructConstant (newarray);
             }
@@ -2658,7 +2643,6 @@ CFarray (node *arg_node, info *arg_info)
 {
     node *newelems = NULL;
     node *oldelems, *tmp;
-    ntype *newarrtypes;
     shape *shp = NULL, *newshp;
 
     DBUG_ENTER ("CFarray");
@@ -2699,13 +2683,11 @@ CFarray (node *arg_node, info *arg_info)
                                                ID_SSAASSIGN (EXPRS_EXPR (tmp))))));
                 tmp = EXPRS_NEXT (tmp);
             }
-            newarrtypes = TYcopyType (ARRAY_NTYPE (arg_node));
             newshp = SHappendShapes (ARRAY_SHAPE (arg_node), shp);
 
             FREEdoFreeTree (arg_node);
 
             arg_node = TBmakeArray (newshp, newelems);
-            ARRAY_NTYPE (arg_node) = newarrtypes;
         }
     }
     INFO_CF_INSCONST (arg_info) = FALSE;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.135  2004/12/08 18:02:40  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 3.134  2004/12/07 20:35:53  ktr
  * eliminated CONSTVEC which is superseded by ntypes.
  *
@@ -1741,9 +1744,6 @@ DUParray (node *arg_node, info *arg_info)
                             DUPTRAV (ARRAY_AELEMS (arg_node)));
 
     ARRAY_STRING (new_node) = ILIBstringCopy (ARRAY_STRING (arg_node));
-
-    ARRAY_TYPE (new_node) = DupTypes (ARRAY_TYPE (arg_node), arg_info);
-    ARRAY_NTYPE (new_node) = TYcopyType (ARRAY_NTYPE (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 

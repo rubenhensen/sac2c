@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.24  2004/12/08 18:03:14  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.23  2004/11/23 00:46:20  ktr
  * Ismop SacDEVCamp
  *
@@ -134,7 +137,6 @@
 extern constant *COmakeConstant (simpletype type, shape *shp, void *elems);
 extern constant *COmakeConstantFromShape (shape *shp);
 extern constant *COmakeConstantFromInt (int val);
-extern constant *COmakeConstantFromArray (node *a);
 
 extern constant *COmakeZero (simpletype type, shape *shp);
 extern constant *COmakeOne (simpletype type, shape *shp);

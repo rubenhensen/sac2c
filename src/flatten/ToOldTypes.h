@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/12/08 17:59:15  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.4  2004/11/24 17:18:19  mwe
  * interface changes
  *
@@ -35,7 +38,6 @@
  *****************************************************************************/
 extern node *TOTdoToOldTypes (node *syntax_tree);
 
-extern node *TOTarray (node *arg_node, info *arg_info);
 extern node *TOTlet (node *arg_node, info *arg_info);
 extern node *TOTassign (node *arg_node, info *arg_info);
 extern node *TOTvardec (node *arg_node, info *arg_info);

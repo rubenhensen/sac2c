@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/12/08 18:00:11  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.9  2004/11/22 15:36:00  sbs
  * SacDevCamp04
  *
@@ -43,7 +46,6 @@ extern node *NT2OTfundef (node *arg_node, info *arg_info);
 extern node *NT2OTarg (node *arg_node, info *arg_info);
 extern node *NT2OTblock (node *arg_node, info *arg_info);
 extern node *NT2OTvardec (node *arg_node, info *arg_info);
-extern node *NT2OTarray (node *arg_node, info *arg_info);
 extern node *NT2OTcast (node *arg_node, info *arg_info);
 extern node *NT2OTlet (node *arg_node, info *arg_info);
 extern node *NT2OTfold (node *arg_node, info *arg_info);

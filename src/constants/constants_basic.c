@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2004/12/08 18:03:14  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.31  2004/12/07 20:36:16  ktr
  * eliminated CONSTVEC which is superseded by ntypes.
  *
@@ -89,6 +92,8 @@
 #include "tree_compound.h"
 #include "basecv.h"
 #include "internal_lib.h"
+#include "new_types.h"
+#include "new_typecheck.h"
 
 #include "constants.h"
 /*
@@ -373,53 +378,6 @@ COmakeConstantFromInt (int val)
     CONSTANT_ELEMS (res) = intelems;
     CONSTANT_VLEN (res) = 1;
 
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *    constant *COmakeConstantFromArray( node *a)
- *
- * description:
- *    translates an N_array node into a constant. It checks, whether a indeed
- *    is a constant. If so an according constant structure is created; otherwise
- *    NULL is returned!
- *
- ******************************************************************************/
-
-constant *
-COmakeConstantFromArray (node *a)
-{
-#ifdef MWE_NTYPE_READY
-    ntype *type;
-    constant *res;
-
-    DBUG_ENTER ("COmakeConstantFromArray");
-
-    type = ARRAY_NTYPE (a);
-
-    /*
-     * This implementation does not yet comply to its desired functionality!
-     * We assume here that a is a constant integer vector!
-     */
-    res = COmakeConstant (TYgetBasetype (type), TYtypes2Shape (type),
-                          Array2IntVec (ARRAY_AELEMS (a), NULL));
-#else
-    types *type;
-    constant *res;
-
-    DBUG_ENTER ("COmakeConstantFromArray");
-
-    type = ARRAY_TYPE (a);
-
-    /*
-     * This implementation does not yet comply to its desired functionality!
-     * We assume here that a is a constant integer vector!
-     */
-    res = COmakeConstant (TYPES_BASETYPE (type), SHoldTypes2Shape (type),
-                          TCarray2IntVec (ARRAY_AELEMS (a), NULL));
-#endif
     DBUG_RETURN (res);
 }
 
@@ -739,25 +697,6 @@ COconstant2AST (constant *a)
         }
         /* Finally, the N_array node is created! */
         res = TBmakeArray (SHcopyShape (COgetShape (a)), exprs);
-        /*
-         * After creating the array, we have to create a types-node to preserve
-         * the shape of the array!
-         */
-#ifdef MWE_NTYPE_READY
-
-        DBUG_ASSERT ((ARRAY_NTYPE (a) != NULL),
-                     "no ntype-structure found in ARRAY_NTYPE");
-        ARRAY_NTYPE (res)
-          = TYmakeAKV (TYmakeSimpleType (CONSTANT_TYPE (a)),
-                       COINTmakeConstant (CONSTANT_TYPE (a), CONSTANT_SHAPE (a),
-                                          Array2Vec (CONSTANT_TYPE (a),
-                                                     ARRAY_AELEMS (res), NULL)));
-
-#else
-        ARRAY_TYPE (res)
-          = TBmakeTypes (CONSTANT_TYPE (a), CONSTANT_DIM (a),
-                         SHshape2OldShpseg (CONSTANT_SHAPE (a)), NULL, NULL);
-#endif
     }
 
     DBUG_RETURN (res);
@@ -784,6 +723,8 @@ COaST2Constant (node *n)
 {
     constant *new_co;
     void *element;
+    ntype *atype;
+    simpletype simple;
 
     DBUG_ENTER ("COAST2Constant");
 
@@ -816,19 +757,15 @@ COaST2Constant (node *n)
             break;
 
         case N_array:
-#ifdef MWE_NTYPE_READY
-            DBUG_ASSERT ((ARRAY_NTYPE (n) != NULL),
-                         "no ntype-structure found in ARRAY_NTYPE");
-            new_co = COmakeConstant (TYgetBasetype (ARRAY_NTYPE (n)),
-                                     TYgetShape (ARRAY_NTYPE (n)),
-                                     Array2Vec (TYgetBasetype (ARRAY_NTYPE (n)),
-                                                ARRAY_AELEMS (n), NULL));
-#else
-            new_co = COmakeConstant (TCgetBasetype (ARRAY_TYPE (n)),
-                                     SHoldTypes2Shape (ARRAY_TYPE (n)),
-                                     TCarray2Vec (TCgetBasetype (ARRAY_TYPE (n)),
-                                                  ARRAY_AELEMS (n), NULL));
-#endif
+            atype = NTCnewTypeCheck_Expr (n);
+            if (TYisAKS (atype) || TYisAKV (atype)) {
+                simple = TYgetSimpleType (TYgetScalar (atype));
+                new_co = COmakeConstant (simple, TYgetShape (atype),
+                                         TCarray2Vec (simple, ARRAY_AELEMS (n), NULL));
+            } else {
+                new_co = NULL;
+            }
+            atype = TYfreeType (atype);
             break;
 
         case N_id:

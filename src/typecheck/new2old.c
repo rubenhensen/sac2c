@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2004/12/08 18:00:11  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.27  2004/12/07 15:47:38  sbs
  * NT2OTwithid fixed.
  *
@@ -477,32 +480,6 @@ NT2OTvardec (node *arg_node, info *arg_info)
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *NT2OTarray( node *arg_node, info *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-NT2OTarray (node *arg_node, info *arg_info)
-{
-    ntype *type;
-
-    DBUG_ENTER ("NT2OTarray");
-
-    if (ARRAY_TYPE (arg_node) == NULL) {
-        type = NTCnewTypeCheck_Expr (arg_node);
-        ARRAY_TYPE (arg_node) = TYtype2OldType (type);
-        type = TYfreeType (type);
     }
 
     DBUG_RETURN (arg_node);

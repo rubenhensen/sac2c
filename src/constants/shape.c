@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2004/12/08 18:03:14  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.22  2004/11/27 00:14:41  sbs
  * some further renamings
  *
@@ -842,28 +845,10 @@ node *
 SHshape2Array (shape *shp)
 {
     node *array;
-#ifndef MWE_NTYPE_READY
-    shpseg *shp_seg;
-#endif
-    int dim;
 
     DBUG_ENTER ("SHshape2Array");
 
-    dim = SHAPE_DIM (shp);
-
     array = TCmakeFlatArray (SHshape2Exprs (shp));
-
-#ifdef MWE_NTYPE_READY
-    /*  ARRAY_NTYPE(array) = TYmakeAKS(TYmakeSimpleType(T_int), SHmakeShape(1,dim)); */
-    ARRAY_NTYPE (array)
-      = TYmakeAKV (TYmakeSimpleType (T_int),
-                   COmakeConstant (T_int, SHmakeShape (1, dim),
-                                   TCarray2IntVec (Array_AELEMS (a), NULL)));
-#else
-    shp_seg = TBmakeShpseg (NULL);
-    SHPSEG_SHAPE (shp_seg, 0) = dim;
-    ARRAY_TYPE (array) = TBmakeTypes (T_int, 1, shp_seg, NULL, NULL);
-#endif
 
     DBUG_RETURN (array);
 }

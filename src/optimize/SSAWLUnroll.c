@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/12/08 18:00:42  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.15  2004/11/26 18:26:53  mwe
  * bug fix
  *
@@ -312,9 +315,6 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
                 index = TBmakeExprs (TBmakeNum (ind[i - 1]), index);
             }
             index = TCmakeFlatArray (index);
-            /* nums struct is freed inside MakeShpseg() */
-            ARRAY_NTYPE (index)
-              = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, maxdim));
 
             assignn = opfun (assignn, index);
         } else {
@@ -369,9 +369,6 @@ ForEachElement (node *partn, node *assignn)
         /* create index */
         index = TCmakeFlatArray (NULL);
         /* nums struct is freed inside MakeShpseg() */
-
-        ARRAY_NTYPE (index)
-          = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, maxdim));
 
         res = opfun (assignn, index);
     } else {

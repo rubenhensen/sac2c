@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2004/12/08 18:02:10  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.21  2004/11/26 23:16:29  jhb
  * the ONE before the LASt
  *
@@ -1371,7 +1374,6 @@ Modarray2Genarray (node *wln, node *substwln)
     node *shape, *eltn;
     types *type;
     int dimensions, i;
-    shpseg *shpseg;
 
     DBUG_ENTER ("Modarray2Genarray");
 
@@ -1393,10 +1395,6 @@ Modarray2Genarray (node *wln, node *substwln)
     }
 
     shape = TCmakeFlatArray (eltn);
-
-    shpseg = TBmakeShpseg (
-      TBmakeNums (dimensions, NULL)); /* nums struct is freed inside MakeShpseg. */
-    ARRAY_TYPE (shape) = TBmakeTypes (T_int, 1, shpseg, NULL, NULL);
 
     /* delete old withop and create new one */
     FREEdoFreeTree (WITH_WITHOP (wln));
@@ -1497,10 +1495,10 @@ WLFassign (node *arg_node, info *arg_info)
                                               TYPES_SHAPE (TYtype2OldType (idt), i - 1)),
                                             tmpn); /* Array elements */
                     tmpn = TCmakeFlatArray (tmpn); /* N_Array */
-
-                    ARRAY_NTYPE (tmpn) = TYmakeAKS (TYmakeSimpleType (T_int),
-                                                    SHcreateShape (1, TYgetDim (idt)));
-
+                    /*
+                     * TODO: F_genarray is not implemented!
+                     *       A withloop must be used!
+                     */
                     tmpn = TBmakePrf (F_genarray, /* prf N_genarray */
                                       TBmakeExprs (tmpn,
                                                    TBmakeExprs (TCcreateZeroScalar (
@@ -1658,9 +1656,6 @@ WLFid (node *arg_node, info *arg_info)
                      (and DC-removing) some new variables. */
 
                 arrayn = TCmakeFlatArray (TBmakeExprs (TBmakeNum (count), NULL));
-
-                ARRAY_NTYPE (arrayn)
-                  = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 1));
 
                 argsn = TBmakeExprs (arrayn, TBmakeExprs (DUPdoDupTree (vectorn), NULL));
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2004/12/08 18:02:10  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.21  2004/11/26 22:27:38  khf
  * FUNZT!!!
  *
@@ -124,6 +127,7 @@
 #include "types.h"
 #include "tree_basic.h"
 #include "new_types.h"
+#include "new_typecheck.h"
 #include "shape.h"
 #include "tree_compound.h"
 #include "node_basic.h"
@@ -315,12 +319,14 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
     index_info *iinfo, *tmpii;
     int elts = 1, ok = 1, i, *valid_permutation;
     node *idn;
+    ntype *atype;
 
     DBUG_ENTER ("Scalar2ArrayIndex");
     DBUG_ASSERT (N_array == NODE_TYPE (arrayn), ("wrong nodetype (array)"));
 
-    if (TYgetDim (ARRAY_NTYPE (arrayn)) >= 0) {
-        elts = SHgetExtent (TYgetShape (ARRAY_NTYPE (arrayn)), 0);
+    atype = NTCnewTypeCheck_Expr (arrayn);
+    if (TYisAKS (atype) || TYisAKV (atype)) {
+        elts = SHgetExtent (TYgetShape (atype), 0);
         arrayn = ARRAY_AELEMS (arrayn);
 
         iinfo = WLFcreateIndex (elts);
@@ -372,6 +378,8 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
     } else {
         iinfo = NULL;
     }
+
+    atype = TYfreeType (atype);
 
     DBUG_RETURN (iinfo);
 }

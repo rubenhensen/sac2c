@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2004/12/08 17:59:15  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.28  2004/12/07 20:32:19  ktr
  * eliminated CONSTVEC which is superseded by ntypes.
  *
@@ -285,7 +288,6 @@ static node *
 CreateStructConstant (node *expr, node *nassigns)
 {
     node *tmp1, *tmp2, *idn, *iterator;
-    shpseg *nshpseg;
     int dim = 0;
 
     DBUG_ENTER ("CreateStructConstant");
@@ -312,8 +314,7 @@ CreateStructConstant (node *expr, node *nassigns)
     }
 
     tmp1 = TCmakeFlatArray (tmp1);
-    nshpseg = TBmakeShpseg (TBmakeNums (dim, NULL));
-    ARRAY_NTYPE (tmp1) = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (dim));
+
     if (expr != NULL) {
         expr = FREEdoFreeTree (expr);
     }
@@ -499,8 +500,6 @@ CreateEntryFlatArray (int entry, int number)
         tmp = TBmakeExprs (TBmakeNum (entry), tmp);
     }
     tmp = TCmakeFlatArray (tmp);
-
-    ARRAY_NTYPE (tmp) = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (number));
 
     DBUG_RETURN (tmp);
 }
@@ -992,7 +991,7 @@ CreateScalarWL (int dim, node *array_shape, simpletype btype, node *expr, node *
     DBUG_ASSERT ((dim >= 0), "CreateScalarWl() used with unknown shape!");
 
     vec_ids = TBmakeIds (TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
-                                                               SHmakeShape (dim))),
+                                                               SHcreateShape (1, dim))),
                          NULL);
 
     vardecs = TBmakeVardec (IDS_AVIS (vec_ids), vardecs);
@@ -1068,8 +1067,6 @@ CreateZeros (node *array, node **nassigns, node *fundef)
         if (TYisAKV (array_type) || TYisAKS (array_type)) {
 
             array_shape = SHshape2Array (shape);
-            ARRAY_NTYPE (array_shape)
-              = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (dim));
         } else { /* AKD array */
             assigns = CreateIdxShapeSelAssigns (array, 0, (dim - 1), fundef);
             array_shape = CreateStructConstant (array_shape, assigns);
@@ -1124,7 +1121,7 @@ CreateArraySel (node *sel_vec, node *sel_ids, node *sel_array, node **nassigns,
           = TBmakePrf (F_sel, TBmakeExprs (DUPdupIdsId (sel_vec),
                                            TBmakeExprs (DUPdoDupNode (sel_array), NULL)));
     } else { /* (len_index < dim_array) */
-        node *new_index, *id, *vardec, *ass, *tmp_ids;
+        node *new_index, *id, *vardec, *ass, *tmp_ids, *avis;
         node *array_shape = NULL;
         shape *shape, *mshape;
         simpletype btype;
@@ -1141,8 +1138,6 @@ CreateArraySel (node *sel_vec, node *sel_ids, node *sel_array, node **nassigns,
             shape = TYgetShape (array_type);
             mshape = SHdropFromShape (len_index, shape);
             array_shape = SHshape2Array (mshape);
-            ARRAY_NTYPE (array_shape)
-              = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (dim));
 
             if (mshape) {
                 SHfreeShape (mshape);
@@ -1174,9 +1169,11 @@ CreateArraySel (node *sel_vec, node *sel_ids, node *sel_array, node **nassigns,
         /*
          * create new id
          */
-        id = TBmakeId (
-          TBmakeAvis (ILIBtmpVar (), TYoldType2Type (ARRAY_TYPE (new_index))));
-        vardec = TBmakeVardec (ID_AVIS (id), NULL);
+        avis = TBmakeAvis (ILIBtmpVar (),
+                           TYmakeAKS (TYmakeSimpleType (T_int),
+                                      SHcreateShape (1, TCcountIds (sel_ids))));
+        id = TBmakeId (avis);
+        vardec = TBmakeVardec (avis, NULL);
 
         fundef = TCaddVardecs (fundef, vardec);
 
@@ -1246,8 +1243,6 @@ CreateFullPartition (node *wln, info *arg_info)
             /* only for iteration space */
             mshape = SHtakeFromShape (gen_shape, shape);
             array_shape = SHshape2Array (mshape);
-            ARRAY_NTYPE (array_shape)
-              = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (gen_shape));
 
             if (mshape) {
                 SHfreeShape (mshape);

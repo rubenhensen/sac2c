@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2004/12/08 18:02:10  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.20  2004/12/07 20:34:45  ktr
  * eliminated CONSTVEC which is superseded by ntypes.
  *
@@ -1037,8 +1040,6 @@ CreateEntryFlatArray (int entry, int number)
         tmp = TBmakeExprs (TBmakeNum (entry), tmp);
     }
     tmp = TCmakeFlatArray (tmp);
-
-    ARRAY_NTYPE (tmp) = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (number));
 
     DBUG_RETURN (tmp);
 }

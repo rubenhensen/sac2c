@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2004/12/08 18:02:10  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 3.68  2004/11/27 02:17:29  cg
  * Functions renamed according to standard.
  *
@@ -2166,11 +2169,11 @@ IVEprf (node *arg_node, info *arg_info)
                      "wrong arg in F_sel application");
 
 #ifdef MWE_NTYPE_READY
-        type1 = ID_OR_ARRAY_NTYPE (arg1);
-        type2 = ID_OR_ARRAY_NTYPE (arg2);
+        type1 = ID_NTYPE (arg1);
+        type2 = ID_NTYPE (arg2);
 #else
-        type1 = ID_OR_ARRAY_TYPE (arg1);
-        type2 = ID_OR_ARRAY_TYPE (arg2);
+        type1 = ID_TYPE (arg1);
+        type2 = ID_TYPE (arg2);
 #endif
         /*
          * if the shape of the array or the shape of the index are unknown,
@@ -2219,11 +2222,11 @@ IVEprf (node *arg_node, info *arg_info)
                      "wrong arg in F_modarray application");
 
 #ifdef MWE_NTYPE_READY
-        type1 = ID_OR_ARRAY_NTYPE (arg1);
-        type2 = ID_OR_ARRAY_NTYPE (arg2);
+        type1 = ID_NTYPE (arg1);
+        type2 = ID_NTYPE (arg2);
 #else
-        type1 = ID_OR_ARRAY_TYPE (arg1);
-        type2 = ID_OR_ARRAY_TYPE (arg2);
+        type1 = ID_TYPE (arg1);
+        type2 = ID_TYPE (arg2);
 #endif
         /*
          * if the shape of the array or the index vector are unknown, do not(!)

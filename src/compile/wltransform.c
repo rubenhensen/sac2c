@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.105  2004/12/08 18:01:17  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 3.104  2004/11/26 20:19:30  khf
  * compiles!
  *
@@ -3044,7 +3047,6 @@ EmptyParts2StridesOrExpr (node **wl, info *arg_info, int iter_dims, shpseg *iter
     node *strides = NULL;
     node *cexpr, *def;
     node *tmp_wl, *tmp, *tmp2;
-    shpseg *shp;
     int res_sdim, sdim;
 
     DBUG_ENTER ("EmptyParts2StridesOrExpr");
@@ -3114,9 +3116,6 @@ EmptyParts2StridesOrExpr (node **wl, info *arg_info, int iter_dims, shpseg *iter
                         *wl = TCmakeFlatArray (TCappendExprs (DUPdoDupTree (ARRAY_AELEMS (
                                                                 WITH2_SHAPE (tmp_wl))),
                                                               ARRAY_AELEMS (tmp)));
-                        shp = TBmakeShpseg (NULL);
-                        SHPSEG_SHAPE (shp, 0) = TCcountExprs (ARRAY_AELEMS ((*wl)));
-                        ARRAY_TYPE ((*wl)) = TBmakeTypes (T_int, 1, shp, NULL, NULL);
                         ARRAY_AELEMS (tmp) = NULL;
                         tmp = FREEdoFreeTree (tmp);
                     } else {
@@ -3337,9 +3336,6 @@ EmptyParts2StridesOrExpr (node **wl, info *arg_info, int iter_dims, shpseg *iter
                         tmp = TCmakeFlatArray (TCappendExprs (DUPdoDupTree (ARRAY_AELEMS (
                                                                 GENARRAY_SHAPE (withop))),
                                                               ARRAY_AELEMS (tmp2)));
-                        shp = TBmakeShpseg (NULL);
-                        SHPSEG_SHAPE (shp, 0) = TCcountExprs (ARRAY_AELEMS (tmp));
-                        ARRAY_TYPE (tmp) = TBmakeTypes (T_int, 1, shp, NULL, NULL);
                         ARRAY_AELEMS (tmp2) = NULL;
                         tmp2 = FREEdoFreeTree (tmp2);
                     } else {
@@ -7583,8 +7579,6 @@ EmptyWl2Expr (node *wl, info *arg_info)
             assigns = NULL;
 
         tmp = TCmakeFlatArray (NULL);
-        ARRAY_TYPE (tmp)
-          = TBmakeTypes (T_int, 1, TBmakeShpseg (TBmakeNums (0, NULL)), NULL, NULL);
 
         assigns
           = TBmakeAssign (TBmakeLet (DUPdoDupNode (WITHID_VEC (WITH_WITHID (wl))), tmp),
@@ -7597,8 +7591,6 @@ EmptyWl2Expr (node *wl, info *arg_info)
     case N_fold:
 
         tmp = TCmakeFlatArray (NULL);
-        ARRAY_TYPE (tmp)
-          = TBmakeTypes (T_int, 1, TBmakeShpseg (TBmakeNums (0, NULL)), NULL, NULL);
         assigns
           = TBmakeAssign (TBmakeLet (DUPdoDupNode (WITHID_VEC (WITH_WITHID (wl))), tmp),
                           DUPdoDupTree (BLOCK_INSTR (WITH_CBLOCK (wl))));

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.16  2004/12/08 18:02:10  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 3.15  2004/11/26 22:07:12  sbs
  * JHs typo
  *
@@ -105,7 +108,7 @@
  *
  *****************************************************************************/
 
-#define NEW_INFO
+#include "pad_collect.h"
 
 #include "dbug.h"
 
@@ -117,9 +120,10 @@
 #include "globals.h"
 #include "DupTree.h"
 #include "internal_lib.h"
+#include "new_types.h"
+#include "new_typecheck.h"
 
 #include "pad_info.h"
-#include "pad_collect.h"
 
 /*
  * INFO structure
@@ -427,11 +431,20 @@ AddUnsupported (info *arg_info, types *array_type)
 node *
 APCarray (node *arg_node, info *arg_info)
 {
+    ntype *atype;
+    types *otype;
+
     DBUG_ENTER ("APCarray");
 
     DBUG_PRINT ("APC", ("array-node detected"));
 
-    AddUnsupported (arg_info, ARRAY_TYPE (arg_node));
+    atype = NTCnewTypeCheck_Expr (arg_node);
+    otype = TYtype2OldType (atype);
+
+    AddUnsupported (arg_info, otype);
+
+    otype = FREEfreeOneTypes (otype);
+    atype = TYfreeType (atype);
 
     DBUG_RETURN (arg_node);
 }
@@ -723,18 +736,21 @@ APCgenarray (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("APC", (" genarray-loop"));
     if (INFO_APC_UNSUPPORTED (arg_info)) {
-        /* do not add type of vector, but contents of array to unsupported shapes */
-        basetype = TYPES_BASETYPE (ID_TYPE (WITH_CEXPR (INFO_APC_WITH (arg_info))));
+#if 0
+  TODO: the following assumes, genarray_shape is given by a N_array node
+    /* do not add type of vector, but contents of array to unsupported shapes */
+    basetype = TYPES_BASETYPE(ID_TYPE(WITH_CEXPR(INFO_APC_WITH(arg_info))));
 
-        dim = SHPSEG_SHAPE (TYPES_SHPSEG (ARRAY_TYPE (GENARRAY_SHAPE (arg_node))), 0);
+    dim = SHPSEG_SHAPE(TYPES_SHPSEG(ARRAY_TYPE(GENARRAY_SHAPE(arg_node))),0);
 
-        shape = TCarray2Shpseg (GENARRAY_SHAPE (arg_node), NULL);
+    shape = TCarray2Shpseg(GENARRAY_SHAPE(arg_node), NULL);
 
-        type = TBmakeTypes (basetype, dim, shape, NULL, NULL);
+    type = TBmakeTypes(basetype,dim,shape,NULL,NULL);
 
-        AddUnsupported (arg_info, type);
+    AddUnsupported(arg_info,type);
 
-        FREEfreeOneTypes (type);
+    FREEfreeOneTypes( type);
+#endif
     }
 
     DBUG_RETURN (arg_node);

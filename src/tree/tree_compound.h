@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.183  2004/12/08 18:02:40  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 3.182  2004/12/07 20:35:53  ktr
  * eliminated CONSTVEC which is superseded by ntypes.
  *
@@ -1314,8 +1317,6 @@ extern node *TCmakeVinfoDollar (node *next);
 
 #define ID_SSAASSIGN(n) (AVIS_SSAASSIGN (ID_AVIS (n)))
 
-#define ID_OR_ARRAY_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : ARRAY_TYPE (n))
-
 #define ID_NAME_OR_ICMTEXT(n) ((ID_AVIS (n) != NULL) ? ID_NAME (n) : ID_ICMTEXT (n))
 
 extern node *TCmakeIdCopyString (const char *str);
@@ -1552,9 +1553,6 @@ extern node *TCcreateScalarWith (int dim, shpseg *shape, simpletype btype, node 
 
 extern node *TCcreateZero (int dim, shpseg *shape, simpletype btype, bool unroll,
                            node *fundef);
-
-extern node *TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no_wl,
-                          node *fundef);
 
 /*--------------------------------------------------------------------------*/
 

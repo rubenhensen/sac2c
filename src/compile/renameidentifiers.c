@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/12/08 18:01:17  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 1.8  2004/11/29 17:34:54  sah
  * fixed a mini bug
  *
@@ -639,32 +642,6 @@ RIDicm (node *arg_node, info *arg_info)
 
     if (ICM_ARGS (arg_node) != NULL) {
         ICM_ARGS (arg_node) = TRAVdo (ICM_ARGS (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *RIDarray( node *arg_node, info *arg_info)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-RIDarray (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("RIDarray");
-
-    if (ARRAY_AELEMS (arg_node) != NULL) {
-        ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
-    }
-
-    if (ARRAY_TYPE (arg_node) != NULL) {
-        ARRAY_TYPE (arg_node) = RenameTypes (ARRAY_TYPE (arg_node));
     }
 
     DBUG_RETURN (arg_node);

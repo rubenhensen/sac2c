@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2004/12/08 17:58:25  ktr
+ * removed ARRAY_TYPE/ARRAY_NTYPE
+ *
  * Revision 3.42  2004/12/07 20:32:19  ktr
  * eliminated CONSTVEC which is superseded by ntypes.
  *
@@ -232,66 +235,6 @@ DbugPrintStack (void)
 }
 
 #endif /* !DBUG_OFF */
-
-/******************************************************************************
- *
- * function:
- *   simpletype PreTypecheck(nodetype act_node_t, simpletype elem_type)
- *
- * description:
- *   Checks whether the type of act_node_t is compatible (or can be made
- *   compatible) to the type of the other elements (elem_type).
- *   If so, the type is returned, otherwise T_unknown will be returned.
- *   Note here, that T_nothing indicates that this is the first element
- *   of the array to be checked (cf. FltnArray).
- *
- ******************************************************************************/
-
-static simpletype
-FltnPreTypecheck (nodetype act_node_t, simpletype elem_type)
-{
-    DBUG_ENTER ("PreTypecheck");
-
-    switch (act_node_t) {
-    case N_num:
-        if ((elem_type == T_int) || (elem_type == T_nothing)) {
-            elem_type = T_int;
-            break;
-        }
-    case N_float:
-        if ((elem_type == T_float) || (elem_type == T_int) || (elem_type == T_nothing)) {
-            elem_type = T_float;
-            break;
-        }
-    case N_double:
-        if ((elem_type == T_double) || (elem_type == T_float) || (elem_type == T_int)
-            || (elem_type == T_nothing)) {
-            elem_type = T_double;
-        } else {
-            elem_type = T_unknown;
-        }
-        break;
-
-    case N_bool:
-        if ((elem_type == T_bool) || (elem_type == T_nothing)) {
-            elem_type = T_bool;
-        } else {
-            elem_type = T_unknown;
-        }
-        break;
-    case N_char:
-        if ((elem_type == T_char) || (elem_type == T_nothing)) {
-            elem_type = T_char;
-        } else {
-            elem_type = T_unknown;
-        }
-        break;
-    default:
-        elem_type = T_unknown;
-    }
-
-    DBUG_RETURN (elem_type);
-}
 
 /******************************************************************************
  *
