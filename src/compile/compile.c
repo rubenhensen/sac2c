@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/06/03 13:11:01  jhs
+ * Changed parameters for ICMCompileMT_CONTINUE. Vaaribalenames for master-worker
+ * exchange are handed over now.
+ *
  * Revision 2.11  1999/05/27 14:58:50  jhs
  * Fixed counting of fold loops in COMPSync.
  *
@@ -6207,6 +6211,7 @@ COMPSync (node *arg_node, node *arg_info)
     simpletype s_type;
     char *tag, *icm_name, *var_name, *fold_type;
     int num_args, num_folds, prolog, epilog, count_nesting;
+    int num_sync_args;
 
     DBUG_ENTER ("COMPSync");
 
@@ -6239,11 +6244,28 @@ COMPSync (node *arg_node, node *arg_info)
     }
     icm_args3 = MakeExprs (MakeNum (num_args), icm_args3);
 
+    /* inter-thread sync parameters */
+    icm_args1 = NULL;
+    num_sync_args = 0;
+    vardec = DFMGetMaskEntryDeclSet (SYNC_INOUT (arg_node));
+    while (vardec != NULL) {
+
+        icm_args1
+          = AppendExprs (icm_args1,
+                         MakeExprs (MakeId (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
+                                            NULL, ST_regular),
+                                    NULL));
+
+        num_sync_args++;
+        vardec = DFMGetMaskEntryDeclSet (NULL);
+    }
+    icm_args1 = MakeExprs (MakeNum (num_sync_args++), icm_args1);
+
     /*
      * build arguments of ICMs (use 'SYNC_WITH_PTRS')
      */
     num_folds = 0;
-    icm_args1 = icm_args2 = NULL;
+    icm_args2 = NULL;
     while (SYNC_WITH_PTRS (arg_node) != NULL) {
         with_ids = LET_IDS (EXPRS_EXPR (SYNC_WITH_PTRS (arg_node)));
         with = LET_EXPR (EXPRS_EXPR (SYNC_WITH_PTRS (arg_node)));
@@ -6364,9 +6386,7 @@ COMPSync (node *arg_node, node *arg_info)
                      */
                     count_nesting++;
                 }
-
             } else {
-
                 /*
                  * end of with-loop code found?
                  *  -> start of epilog
@@ -6389,7 +6409,7 @@ COMPSync (node *arg_node, node *arg_info)
                         DBUG_ASSERT ((count_nesting > 0),
                                      "WL_..._BEGIN/END-ICMs non-balanced");
                         count_nesting--;
-                    }
+                    } /* if (count_nesting ==0) */
 
                 } else {
 
@@ -6454,7 +6474,7 @@ COMPSync (node *arg_node, node *arg_info)
             last_assign = assign;
             assign = ASSIGN_NEXT (assign);
         }
-    }
+    } /* while (assign != NULL) */
 
     /*
      * if this sync-region is *not* the first one of the current SPMD-region
