@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/03/10 09:41:09  cg
+ * External declarations of phase driver functions are now created
+ * automatically from phase_info.mac
+ *
  * Revision 1.1  2005/03/07 13:40:22  cg
  * Initial revision
  *
@@ -13,17 +17,15 @@
 #include "globals.h"
 #include "internal_lib.h"
 
-#include "setup.h"
-#include "options.h"
-#include "resource.h"
-
 #include "phase.h"
 
-static node *
-PhaseDummy (node *syntax_tree)
-{
-    return (syntax_tree);
-}
+#define PHASEfun(it_fun) extern node *it_fun (node *syntax_tree);
+#define SUBPHASEfun(it_fun) extern node *it_fun (node *syntax_tree);
+
+#include "phase_info.mac"
+
+#undef PHASEfun
+#undef SUBPHASEfun
 
 typedef node *(*phase_fun_p) (node *);
 
@@ -35,7 +37,7 @@ static const char *phase_name[] = {
 static const phase_fun_p phase_fun[] = {
 #define PHASEfun(it_fun) it_fun,
 #include "phase_info.mac"
-  PhaseDummy};
+  PHdummy};
 
 static const char *subphase_name[] = {
 #define SUBPHASEtext(it_text) it_text,
@@ -50,7 +52,7 @@ static const char *subphase_specifier[] = {
 static const phase_fun_p subphase_fun[] = {
 #define SUBPHASEfun(it_fun) it_fun,
 #include "phase_info.mac"
-  PhaseDummy};
+  PHdummy};
 
 const char *
 PHphaseName (compiler_phase_t phase)
@@ -127,6 +129,16 @@ PHrunCompilerSubPhase (compiler_subphase_t subphase, node *syntax_tree)
         CTIterminateCompilation (global.compiler_phase, global.break_specifier,
                                  syntax_tree);
     }
+
+    DBUG_RETURN (syntax_tree);
+}
+
+node *
+PHdummy (node *syntax_tree)
+{
+    DBUG_ENTER ("PHdummy");
+
+    DBUG_ASSERT (FALSE, "This function should never be called.");
 
     DBUG_RETURN (syntax_tree);
 }
