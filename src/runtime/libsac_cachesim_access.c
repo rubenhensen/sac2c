@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.5  1999/07/02 12:10:28  her
+ * bug in write back strategy write_around fixed
+ *
  * Revision 2.4  1999/04/26 11:43:43  her
  * modifications for the piped-cachesimulation
  *
@@ -298,6 +301,7 @@ DetailedAnalysis (tCacheLevel *act_cl, void *baseaddress, ULINT aligned_addr,
     unsigned i, idx;
     char *act_sh_ary, *p2Entry, entry;
 
+    /*printf("DetailedAnalysis: enter\n");*/
     /* BEGIN: run through all shadowarrays and their affected entries
      */
     delta_entry_addr = act_cl->cachelinesize * act_cl->nr_cachelines;
@@ -318,22 +322,33 @@ DetailedAnalysis (tCacheLevel *act_cl, void *baseaddress, ULINT aligned_addr,
             p2Entry = GET_SH_PTR_2ENTRY (act_sh_ary, idx);
             entry = GET_SH_ENTRY (p2Entry, idx);
             if (aligned_addr == entry_addr) {
+#if 1
                 SAC_CS_cold[SAC_CS_level] += !L_BIT (entry);
                 SAC_CS_cross[SAC_CS_level] += C_BIT (entry);
                 SAC_CS_self[SAC_CS_level] += S_BIT (entry);
+#endif
+#if 1
                 entry = 4 /*%00000100*/; /* set only l-bit */
+#endif
             } else {
                 entry
                   = entry
                     | (L_BIT (entry) << ((ULINT)baseaddress != act_cl->shadowbases[i]));
+            } /* if */
+#if 1
+            if (p2Entry == NULL) {
+                printf ("p2Entry ==NULL\n");
+                exit (1);
             }
             *p2Entry = SETABLE_SH_ENTRY (p2Entry, idx, entry);
+#endif
             entry_addr += delta_entry_addr;
             idx += nr_cachelines;
         } /* while:entry_addr */
         i++;
     } /* while:i */
       /* END: run through all shadowarrays and their affected entries */
+      /*printf("DetailedAnalysis: exit\n");*/
 } /* DetailedAnalysis */
 #endif
 
@@ -360,6 +375,7 @@ void SAC_CS_ACCESS_DMREAD (TYPE) (void *baseaddress, void *elemaddress)
         SAC_CS_level = 1; /* next access has to seek in cachelevel 1 again */
         return;           /* leave function here */
     } else {
+        /*printf("RDM: enter miss-case\n");*/
         /* we have a miss */
         SAC_CS_miss[SAC_CS_level]++;
         SAC_CS_invalid[SAC_CS_level] += was_invalid;
@@ -376,6 +392,7 @@ void SAC_CS_ACCESS_DMREAD (TYPE) (void *baseaddress, void *elemaddress)
         SAC_CS_level++;
         SAC_CS_read_access_table[SAC_CS_level](baseaddress, elemaddress);
 
+        /*printf("RDM: exit\n");*/
         return; /* leave function here */
     }           /* if-else:hit or miss */
 } /* SAC_CS_Access_DMRead */
@@ -403,6 +420,7 @@ void SAC_CS_ACCESS_DMFOW (TYPE) (void *baseaddress, void *elemaddress)
         SAC_CS_level = 1; /* next access has to seek in cachelevel 1 again */
         return;           /* leave function here */
     } else {
+        /*printf("WFOW: enter miss-case\n");*/
         /* we have a miss */
         SAC_CS_miss[SAC_CS_level]++;
         SAC_CS_invalid[SAC_CS_level] += was_invalid;
@@ -419,6 +437,7 @@ void SAC_CS_ACCESS_DMFOW (TYPE) (void *baseaddress, void *elemaddress)
         SAC_CS_level++;
         SAC_CS_write_access_table[SAC_CS_level](baseaddress, elemaddress);
 
+        /*printf("WFOW: exit\n");*/
         return; /* leave function here */
     }           /* if-else:hit or miss */
 } /* SAC_CS_Access_DMFOW */
@@ -492,6 +511,11 @@ void SAC_CS_ACCESS_DMWA (TYPE) (void *baseaddress, void *elemaddress)
         /* we have a miss */
         SAC_CS_miss[SAC_CS_level]++;
         SAC_CS_invalid[SAC_CS_level] += was_invalid;
+
+#ifdef DETAILED
+        /* run through all shadowarrays and their affected entries */
+        DetailedAnalysis (act_cl, baseaddress, aligned_addr, cacheline);
+#endif
 
         return; /* leave function here */
     }           /* if-else:hit or miss */
