@@ -1,8 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.22  1999/10/27 11:37:17  dkr
+ * bugs in CompareNumArrayElts() fixed
+ *
  * Revision 2.21  1999/10/25 17:09:45  dkr
- * some comments added
+ * bug in CF for psi() fixed:
+ *   for new assignments (ASSIGN_CF) correct MRDs, USE_MASKs and DEF_MASKs are created :))
  *
  * Revision 2.20  1999/10/17 18:12:07  sacbase
  * few minor changes
@@ -353,38 +357,39 @@ CompareNumArrayElts (node *array1, node *array2)
         && (ARRAY_VECTYPE (array1) == ARRAY_VECTYPE (array2))) {
         switch (ARRAY_VECTYPE (array1)) {
         case T_int:
-            for (i = 0; i < ARRAY_VECLEN (array1); i++)
-                ok = (((int *)ARRAY_CONSTVEC (array1))[i]
-                      == ((int *)ARRAY_CONSTVEC (array2))[i]);
+            for (i = 0; i < ARRAY_VECLEN (array1); i++) {
+                if (((int *)ARRAY_CONSTVEC (array1))[i]
+                    != ((int *)ARRAY_CONSTVEC (array2))[i]) {
+                    ok = 0;
+                    break;
+                }
+            }
             break;
         case T_float:
-            for (i = 0; i < ARRAY_VECLEN (array1); i++)
-                ok = (((float *)ARRAY_CONSTVEC (array1))[i]
-                      == ((float *)ARRAY_CONSTVEC (array2))[i]);
+            for (i = 0; i < ARRAY_VECLEN (array1); i++) {
+                if (((float *)ARRAY_CONSTVEC (array1))[i]
+                    != ((float *)ARRAY_CONSTVEC (array2))[i]) {
+                    ok = 0;
+                    break;
+                }
+            }
             break;
         case T_double:
-            for (i = 0; i < ARRAY_VECLEN (array1); i++)
-                ok = (((double *)ARRAY_CONSTVEC (array1))[i]
-                      == ((double *)ARRAY_CONSTVEC (array2))[i]);
+            for (i = 0; i < ARRAY_VECLEN (array1); i++) {
+                if (((double *)ARRAY_CONSTVEC (array1))[i]
+                    != ((double *)ARRAY_CONSTVEC (array2))[i]) {
+                    ok = 0;
+                    break;
+                }
+            }
             break;
         default:
             ok = 0;
         }
-    } else
+    } else {
         ok = 0;
+    }
 
-#if 0
-  array1 = ARRAY_AELEMS(array1);
-  array2 = ARRAY_AELEMS(array2);
-  while (ok && array1 && array2) {
-    ok = (N_num == NODE_TYPE(EXPRS_EXPR(array1)) &&
-          N_num == NODE_TYPE(EXPRS_EXPR(array2)) &&
-          NUM_VAL(EXPRS_EXPR(array1)) == NUM_VAL(EXPRS_EXPR(array2)));
-    
-    array1 = EXPRS_NEXT(array1);
-    array2 = EXPRS_NEXT(array2);
-  }
-#endif
     DBUG_RETURN (ok);
 }
 
