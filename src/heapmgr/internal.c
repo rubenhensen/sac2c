@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2003/03/20 13:59:20  sbs
+ * config.h included; HAVE_MALLOC_H used.
+ *
  * Revision 3.1  2000/11/20 18:02:53  sacbase
  * new release made
  *
@@ -30,8 +33,9 @@
  *
  *****************************************************************************/
 
+#include "config.h"
 #include <unistd.h>
-#ifdef SAC_FOR_LINUX_X86
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
 
