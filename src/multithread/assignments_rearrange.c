@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2004/08/27 09:02:01  skt
+ * processing MUTH_MULTI_SPECIALIZED assignments enabled
+ *
  * Revision 1.11  2004/08/26 17:23:56  skt
  * changed inclusion of multithread.h into multithread_lib.h
  *
@@ -170,8 +173,12 @@ ASMRAblock (node *arg_node, info *arg_info)
     PrintNode (arg_node);
 #endif
 
-    if (NODE_TYPE (BLOCK_INSTR (arg_node)) == N_assign) {
-        arg_node = ASMRACreateNewAssignmentOrder (arg_node);
+    if (BLOCK_INSTR (arg_node) != NULL) {
+        if (NODE_TYPE (BLOCK_INSTR (arg_node)) == N_assign) {
+            if (ASSIGN_EXECMODE (BLOCK_INSTR (arg_node)) != MUTH_MULTI_SPECIALIZED) {
+                arg_node = ASMRACreateNewAssignmentOrder (arg_node);
+            }
+        }
     }
 
 #if ASMRA_DEBUG
