@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.20  1995/06/07 08:55:00  hw
- * added information about N_array
+ * Revision 1.21  1995/07/06 17:30:30  cg
+ * Constants removed, statustype modified.
  *
+# Revision 1.20  1995/06/07  08:55:00  hw
+# added information about N_array
+#
 # Revision 1.19  1995/06/06  10:06:45  cg
 # statustype added.
 #
@@ -104,12 +107,12 @@ typedef struct NODE
 } node;      
              
 typedef enum { ST_regular,        /* normal types */
-               ST_hidden,         /* implicit type imported from module     */
-               ST_known_hidden,   /* implicit type in module implementation */
-               ST_unique,         /* implicit type imported from class      */
-               ST_known_unique,   /* implicit type in class implementation  */
-               ST_artificial      /* unique type inserted during            */
-                                  /* signature expansion                    */
+               ST_unique,         /* unique types */
+               ST_reference,      /* reference parameter (unique)  */
+               ST_ref,            /* Id must be referenced         */
+               ST_deref,          /* Id must be dereferenced       */
+               ST_artificial      /* unique type inserted during   */
+                                  /* signature expansion           */
              } statustype;
           
 typedef struct TYPES{
@@ -121,7 +124,8 @@ typedef struct TYPES{
    struct TYPES *next;         /* only needed for fun-results */
    id           *id;           /* Bezeichner  */
    char         *id_mod;       /* name of modul belonging to 'id' */
-   statustype   status;        /* type status */
+   statustype   attrib;        /* uniqueness attribute */
+   statustype   status;        /* regular or artificial */
 } types;
  
 typedef struct IDS{
@@ -130,8 +134,10 @@ typedef struct IDS{
                               * it is set while refcounting
                               * and is used while compilation
                               * /
-   struct NODE   *node;    /* ptr. to decleration after typechecking */
+   struct NODE   *node;    /* ptr. to declaration after typechecking */
    struct NCHAIN *nchain;  /* ptr. to definition(s) resp. usage(s) */
+   statustype    attrib;        /* ref/deref attribute */
+   statustype    status;        /* regular or artificial */
    struct IDS    *next;
 } ids;
 
@@ -158,9 +164,7 @@ N_explist:
 node[0]    : implicit types (N_typedef) if present...
 node[1]    : explicit types (N_typedef) if present...
 node[2]    : function declarations (N_fundef with NULL-body) if present...
-node[3]    : constant declarations (N_constdef with optional value) if present...
-              !! not yet implemented !!
-node[4]    : object declarations (N_objdef with NULL-initialization) if present...
+node[3]    : object declarations (N_objdef with NULL-initialization) if present...
               !! not yet implemented !!
 
 N_modul:
@@ -169,11 +173,9 @@ nnode = 0 !!!!
 node[0]    : import-list (N_implist) if present...
 node[1]    : typedefs (N_typedef) if present...
 node[2]    : fundefs (N_fundef) if present...
-node[3]    : constdefs (N_constdef) if present...
+node[3]    : objdefs (N_objdef) if present...
               !! not yet implemented !!
-node[4]    : objdefs (N_objdef) if present...
-              !! not yet implemented !!
-node[5]    : N_isclass node if module is a class implementation
+node[4]    : N_isclass node if module is a class implementation
               !! not yet implemented !!
 info.id    : Modul name/ NULL if simple program.
 
@@ -184,9 +186,7 @@ node[0]    : subsequent imports if present...
 node[1]    : casted to (ids *) !!! list of implicit type names!
 node[2]    : casted to (ids *) !!! list of explicit type names!
 node[3]    : casted to (ids *) !!! list of function names!
-node[4]    : casted to (ids *) !!! list of constant names!
-              !! not yet implemented !!
-node[5]    : casted to (ids *) !!! list of object names!
+node[4]    : casted to (ids *) !!! list of global object names!
               !! not yet implemented !!
 info.id    : name of import-file.
 
@@ -196,20 +196,14 @@ N_typedef:
 ==========
 node[0]    : subsequent typedefs if present...
 info.types : containes type and new typename (info.type->id) in one types-structure.
-
-N_constdef:
-==========
-              !! not yet implemented !!
-nnode = 1/2 !!!
-node[0]    : value of constant (expr)
-node[1]    : subsequent constdefs if present...
-node[2]    : N_imported node if constant is imported from another module/class
-info.types : containes type and name of constant.
+             If type is T_hidden then the next types-structure may
+             contain the actual base type.
+             !! not yet implemented !!
 
 N_objdef:
 ==========
               !! not yet implemented !!
-node[0]    : generator function call (N_ap)
+node[0]    : initialization expression 
 node[1]    : subsequent objdefs if present...
 info.types : containes type and name of global object.
 
@@ -227,7 +221,7 @@ info.types : first types structure contains the functions name (info.types->id,
 -added after type check:
 node[3]    : pointer to corresponding N_return
 node[4]    : casted to (ids *) !!! list of global object identifiers
-             used in this function 
+             needed by this function 
               !! not yet implemented !!
 
 -Created before optimizing:
@@ -238,9 +232,8 @@ mask[1]    : contains number of usages for all variables in this function
 N_arg:
 =====
 node[0]    : next argument (N_arg), if any
-info.types : contains name and type of the argument. For infomation
-	     about the structure of `types` look at description of
-	     N_fundef.
+info.types : contains name and type of the argument. 
+
 -Created before optimizing:
 varno      : number assignd to this argument
 
@@ -248,15 +241,15 @@ N_block:
 ========
 node[0]    : first node of the block (N_assign or N_empty)
 node[1]    : variable declaration, if there are any
+
 -Created before optimizing:
 see N_cond, N_do, N_while and N_with
 
 N_vardec:
 =========
 node[0]    : next declaration (N_vardec), if any
-info.types : contains name and type of the declaration. For infomation
-	     about the structure of `types` look at description of
-	     N_fundef.
+info.types : contains name and type of the declaration.
+
 -Created before optimizing:
 varno      : number assignd to this variable
 
@@ -264,6 +257,7 @@ N_assign:
 =========
 node[0]    : instruction (N_let, N_cond, N_while, N_do, N_return, ...)
 node[1]    : next assign node(N_assign), if any
+
 -Created before optimizing:
 mask[0]    : contains number of definitions for all variables in the instruction
 mask[1]    : contains number of usages for all variables in the instruction
@@ -272,7 +266,6 @@ N_let:
 ======
 node[0]    : expression 
 info.ids   : names of variables to assign to.
-	     The structure of ids is:
 
 N_cast:
 =======
@@ -329,7 +322,7 @@ node[1]->mask[1] : contains number of usages for all variables in loop body
 N_ap:
 =====
 node[0]    : arguments of function application (N_exprs)
-node[1]    : pointer to the belonging functiondeclaration
+node[1]    : pointer to the belonging function declaration
              this pointer will be set while typechecking
              !!! nnode will not be increased !!!
 info_node  : name of function to apply ( info.fun_name.id, 
@@ -424,14 +417,14 @@ N_empty:
 N_post:
 ======
 node[0]     : indicates whether it is a postincrement or postdecrement
-info.id     : name of the identificator to be modified
+info.id     : name of the identifier to be modified
 node[1]     : will be set to belonging varaiable declaration while typechecking
               !!! nnode is still 1 !!!
 
 N_pre:
 ======
 node[0]     : indicates wheter it is a preincrement or predecrement
-info.id     : name of modified identifikator
+info.id     : name of modified identifier
 node[1]     : will be set to belonging varaiable declaration while typechecking
               !!! nnode is still 1 !!!
 
@@ -442,13 +435,6 @@ N_inc:
 N_dec :
 =======
 /* this node indicates that the unary operator is a decrementation */
-
-N_imported:
-===========
-/* This node indicates that a constant is imported from another module/class. 
-   It is necessary because the value of the constant can be made public 
-   in a module/class declaration.
-*/
 
 N_class:
 ========
