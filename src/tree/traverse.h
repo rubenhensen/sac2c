@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2004/10/11 15:49:10  sah
+ * added BST traversal
+ *
  * Revision 3.66  2004/10/10 09:58:05  ktr
  * added emrco_tab
  *
@@ -317,7 +320,7 @@ extern funtab *imp_tab;
 extern funtab *flat_tab;
 extern funtab *print_tab;
 extern funtab *type_tab;
-extern funtab *unused_tab40;
+extern funtab *sbt_tab;
 extern funtab *mmv_tab;
 extern funtab *spmdemm_tab;
 extern funtab *crece_tab;

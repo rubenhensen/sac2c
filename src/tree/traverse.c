@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.88  2004/10/11 15:49:10  sah
+ * added BST traversal
+ *
  * Revision 3.87  2004/10/10 09:58:05  ktr
  * added emrco_tab
  *
@@ -394,6 +397,7 @@
 #include "serialize_node.h"
 #include "serialize.h"
 #include "deserialize.h"
+#include "serialize_buildstack.h"
 
 #include "traverse.h"
 
@@ -446,18 +450,23 @@ static funtab type_tab_rec = {{
                               NULL,
                               NULL};
 funtab *type_tab = &type_tab_rec;
-
+#endif /* NEW_AST */
 /*
- *  (5) unused_tab40
+ *  (5) sbt_tab
  */
-static funtab unused_tab40_rec = {{
-#define NIFunused_40(it_unused_40) it_unused_40
+static funtab sbt_tab_rec = {{
+#ifdef NEW_AST
+#define NIFsbt(it_sbt) it_sbt
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab40 = &unused_tab40_rec;
-
+#else /* NEW_AST */
+#define NIFunused_39(it_unused39) it_unused39
+#include "node_info.mac"
+#endif /* NEW_AST */
+                             },
+                             NULL,
+                             NULL};
+funtab *sbt_tab = &sbt_tab_rec;
+#ifndef NEW_AST
 /*
  *  (6) crece_tab
  */
