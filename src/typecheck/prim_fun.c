@@ -1,6 +1,10 @@
 /*
  * $Log$
- * Revision 1.21  1996/01/25 16:19:07  hw
+ * Revision 1.22  1996/02/06 13:14:14  hw
+ * bug fixed in Genarray_S ( checking whether the elements of the
+ *  shape-vector are konstant)
+ *
+ * Revision 1.21  1996/01/25  16:19:07  hw
  * added typechecking of primitive functions in modules
  * (in modules the resultung type can be also one with known dimension only
  *  (without known shape). This feature can be added by compiling this file
@@ -1677,19 +1681,29 @@ Genarray_S (node *v_node, types *vec, types *scalar)
 
     if (SAC_PRG == kind_of_file) {
         if (N_array == NODE_TYPE (v_node)) {
-
+            int ok = 1;
             /* create shpseg of resulting type */
             shpseg_p = MakeShpseg (NULL);
             tmp = ARRAY_AELEMS (v_node);
             do {
-                SHPSEG_SHAPE (shpseg_p, dim) = NUM_VAL (EXPRS_EXPR (tmp));
-                tmp = EXPRS_NEXT (tmp);
-                dim++;
+                if (NODE_TYPE (EXPRS_EXPR (tmp)) != N_num) {
+                    ok = 0;
+                    break;
+                } else {
+                    SHPSEG_SHAPE (shpseg_p, dim) = NUM_VAL (EXPRS_EXPR (tmp));
+                    tmp = EXPRS_NEXT (tmp);
+                    dim++;
+                }
             } while (NULL != tmp);
 
             /* create resulting types */
-            ret_type = MakeType (TYPES_BASETYPE (scalar), dim, shpseg_p,
-                                 StringCopy (TYPES_NAME (scalar)), TYPES_MOD (scalar));
+            if (1 == ok)
+                ret_type
+                  = MakeType (TYPES_BASETYPE (scalar), dim, shpseg_p,
+                              StringCopy (TYPES_NAME (scalar)), TYPES_MOD (scalar));
+            else
+                ret_type = MakeType (T_unknown, NULL, NULL, NULL, NULL);
+
         } else
             ret_type = MakeType (T_unknown, NULL, NULL, NULL, NULL);
         /*
