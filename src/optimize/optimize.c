@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2005/03/17 19:05:17  sbs
+ * IVE still runs on old types.....
+ *
  * Revision 3.84  2005/03/17 14:03:11  sah
  * removed global check for function body
  *
@@ -411,6 +414,9 @@
 #include "WithloopFusion.h"
 #include "type_upgrade.h"
 #include "signature_simplification.h"
+
+#include "ToOldTypes.h"
+#include "ToNewTypes.h"
 
 /*
  * INFO structure
@@ -1115,7 +1121,9 @@ OPTmodule (node *arg_node, info *arg_info)
      * apply IVE (index vector elimination)
      */
     if (global.optimize.doive) {
+        arg_node = TOTdoToOldTypes (arg_node);
         arg_node = IVEdoIndexVectorElimination (arg_node);
+        arg_node = TNTdoToNewTypes (arg_node);
 
         if ((global.break_after == PH_sacopt)
             && (0 == strcmp (global.break_specifier, "ive"))) {
