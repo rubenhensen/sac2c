@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.14  1994/11/21 17:59:42  hw
+ * Revision 1.15  1994/11/22 11:41:25  hw
+ * - declaration of arrays without shape is possible now
+ * - changed exprblock assignblock retassignblock, because of changes in assigns
+ *
+ * Revision 1.14  1994/11/21  17:59:42  hw
  * inserted linenumber to each node
  *
  * Revision 1.13  1994/11/18  16:55:52  hw
@@ -40,6 +44,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <memory.h>
 #include "dbug.h"
 #include "tree.h"
@@ -184,53 +189,68 @@ main: TYPE_INT MAIN BRACKET_L BRACKET_R {$$=MakeNode(N_fundef);} exprblock
 
 exprblock: BRACE_L {$$=MakeNode(N_block);} vardecs assigns retassign 
            COLON BRACE_R 
-            { $$=$<node>2;
-              
-              /* append retassign node($5) to assigns nodes */
-              $$->node[0]=Append($4,$5);
-              
-              $$->node[1]=$3;  /* Variablendeklarationen */
-              $$->nnode=2;              /* set number of child nodes */
-
-              DBUG_PRINT("GENTREE",
-                         ("%s "P_FORMAT", %s "P_FORMAT,
-                          mdb_nodetype[$$->nodetype], $$,
-                          mdb_nodetype[$$->node[0]->nodetype], $$->node[0],
-                          mdb_nodetype[$$->node[1]->nodetype], $$->node[1]));
-
-            }
-         | BRACE_L assigns retassign COLON BRACE_R 
             { 
-              $$=MakeNode(N_block);
-
-             /* append retassign node($4) to assigns nodes */
-              $$->node[0]=Append($2,$3); 
+               $$=$<node>2;
+               $$->node[1]=$3;  /* declarations of variables */
+               $$->nnode=2;              /* set number of child nodes */
+               if (NULL != $4)
+               {  DBUG_PRINT("GENTREE",
+                             (" assigns:"P_FORMAT,$4));
+                  /* append retassign node($5) to assigns nodes */
+                  $$->node[0]=Append($4,$5);
+               }
+               else /* no assign */
+               {
+                 $$->node[0]=MakeNode(N_assign);
+                 $$->node[0]->node[0]=$5;  /* Returnanweisung */
+                 $$->node[0]->nnode=1;
               
-              $$->nnode=1;
+                 DBUG_PRINT("GENTREE",
+                            ("%s "P_FORMAT", %s " P_FORMAT ,
+                             mdb_nodetype[$$->node[0]->nodetype],$$->node[0],
+                             mdb_nodetype[$$->node[0]->node[0]->nodetype],
+                             $$->node[0]->node[0]));
+               }
+                                 
+               DBUG_PRINT("GENTREE",
+                          ("%s "P_FORMAT", %s "P_FORMAT,
+                           mdb_nodetype[$$->nodetype], $$,
+                           mdb_nodetype[$$->node[0]->nodetype], $$->node[0],
+                           mdb_nodetype[$$->node[1]->nodetype], $$->node[1]));
+            }
+         | BRACE_L {$$=MakeNode(N_block);} assigns retassign COLON BRACE_R 
+            { 
+              $$=$<node>2;
+              if (NULL != $3)
+              {
+                 /* append retassign node($4) to assigns nodes */
+                 $$->node[0]=Append($3,$4); 
+                 $$->nnode=1;
 
-              DBUG_PRINT("GENTREE",
-                         ("%s "P_FORMAT", %s"P_FORMAT,
-                          mdb_nodetype[$$->nodetype], $$,
-                          mdb_nodetype[$$->node[0]->nodetype], $$->node[0]));
-            }
-         | BRACE_L { $$=MakeNode(N_block); } retassign COLON BRACE_R 
-            { $$=$<node>2;
-              $$->node[0]=MakeNode(N_assign);
-              $$->node[0]->node[0]=$3;  /* Returnanweisung */
-              $$->node[0]->nnode=1;
-              $$->nnode=1;
+                 DBUG_PRINT("GENTREE",
+                            ("%s "P_FORMAT", %s"P_FORMAT,
+                             mdb_nodetype[$$->nodetype], $$,
+                             mdb_nodetype[$$->node[0]->nodetype], $$->node[0]));
+              }
+              else /* no assigns */
+              {
+                 $$->node[0]=MakeNode(N_assign);
+                 $$->node[0]->node[0]=$3;  /* Returnanweisung */
+                 $$->node[0]->nnode=1;
+                 $$->nnode=1;
               
-              DBUG_PRINT("GENTREE",
-                         ("%s "P_FORMAT", %s " P_FORMAT ,
-                          mdb_nodetype[$$->node[0]->nodetype],$$->node[0],
-                          mdb_nodetype[$$->node[0]->node[0]->nodetype],
-                          $$->node[0]->node[0]));
-                      
-              DBUG_PRINT("GENTREE",
-                         ("%s "P_FORMAT", %s " P_FORMAT ,
-                          mdb_nodetype[$$->nodetype], $$,
-                          mdb_nodetype[$$->node[0]->nodetype],$$->node[0]));
-            }
+                 DBUG_PRINT("GENTREE",
+                            ("%s "P_FORMAT", %s " P_FORMAT ,
+                             mdb_nodetype[$$->node[0]->nodetype],$$->node[0],
+                             mdb_nodetype[$$->node[0]->node[0]->nodetype],
+                             $$->node[0]->node[0]));
+                 
+                 DBUG_PRINT("GENTREE",
+                            ("%s "P_FORMAT", %s " P_FORMAT ,
+                             mdb_nodetype[$$->nodetype], $$,
+                             mdb_nodetype[$$->node[0]->nodetype],$$->node[0]));
+              }
+           }
            ;
 
 assignblock: COLON     
@@ -238,18 +258,25 @@ assignblock: COLON
               }
 
              | BRACE_L { $$=MakeNode(N_block); } assigns BRACE_R 
-                { $$=$<node>2;
-                  $$->node[0]=$3;
-                  $$->nnode=1;
-                  
-                  DBUG_PRINT("GENTREE",
-                             ("%s"P_FORMAT", %s"P_FORMAT,
-                              mdb_nodetype[$$->nodetype], $$,
-                              mdb_nodetype[$$->node[0]->nodetype],$$->node[0]));
+                { 
+                   if (NULL != $3)
+                   {
+                      $$=$<node>2;
+                      $$->node[0]=$3;
+                      $$->nnode=1;
+                      
+                      DBUG_PRINT("GENTREE",
+                                 ("%s"P_FORMAT", %s"P_FORMAT,
+                                  mdb_nodetype[$$->nodetype], $$,
+                                  mdb_nodetype[$$->node[0]->nodetype],
+                                  $$->node[0]));
+                   }
+                   else /* block is empty */
+                   {
+                      free($<node>2);
+                      $$=MakeEmptyBlock();
+                   }
                 }
-             | BRACE_L{  $$=MakeEmptyBlock(); } BRACE_R  
-               { $$=$<node>2;
-               }
              | assign  
                 { $$=MakeNode(N_block);
                   $$->node[0]=$1;
@@ -265,9 +292,16 @@ assignblock: COLON
 retassignblock: BRACE_L {$$=MakeNode(N_block);} assigns retassign COLON BRACE_R
                   {  $$=$<node>2;
                    
-                    /* append retassign node($4) to assigns nodes($3)
+                    /* append retassign node($4) to assigns nodes($3), if any
                      */
-                    $$->node[0]=Append($3,$4);
+                    if (NULL != $3)
+                       $$->node[0]=Append($3,$4);
+                    else
+                    {
+                       $$->node[0]=MakeNode(N_assign);
+                       $$->node[0]->node[0]=$4;
+                       $$->node[0]->nnode=1;
+                    }
                     $$->nnode=1;
 
                     DBUG_PRINT("GENTREE",
@@ -309,12 +343,17 @@ vardecs:   vardec vardecs
 
 vardec: type ids COLON {$$=GenVardec($1,$2);};
 
-assigns: assign assigns 
+assigns: /* empty */ 
+         { $$=NULL; 
+         }
+       | assign assigns 
           { $$=$1;
-            $$->node[1]=$2;
-            $$->nnode=2;
-          }
-       | assign {$$=$1;}
+            if (NULL != $2) /* there are more assigns */
+            {
+               $$->node[1]=$2;
+               $$->nnode=2;
+            }
+         }
          ;
 
 assign: letassign COLON 
@@ -555,7 +594,7 @@ expr:   ID  BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
          }
       | ID {$$=MakeNode(N_prf);} SQBR_L exprs SQBR_R 
          { $$=$<node>2;
-           $$->node[0]=$4;       /* list of expresions  */
+           $$->node[0]=$4;       /* list of expressions  */
            $$->info.prf=F_psi;
            $$->node[1]=MakeNode(N_id);
            $$->node[1]->info.id=$1 ;      /* name of array */
@@ -818,10 +857,6 @@ types:   type COMMA types
        ;
 
 type:   complextype {$$=$1;}
-      | simpletype  SQBR_L SQBR_R
-         { $$=$1;
-           $$->dim=-1;   /* it is an array of any shape */
-         }  
       | simpletype {$$=$1;}
        ;
 
@@ -848,6 +883,13 @@ complextype:  TYPE_INT SQBR_L nums SQBR_R
                  $$->next=NULL; 
                  $$->id=NULL;     /* not used in this case */
                  $$=GenComplexType($$,$3);
+               }
+            | TYPE_INT  SQBR_L SQBR_R  
+               { $$=GEN_NODE(types);
+                 $$->simpletype=T_int; 
+                 $$->dim=-1;
+                 $$->next=NULL; 
+                 $$->id=NULL;     /* not used in this case */
                }
              ;
 
@@ -878,7 +920,7 @@ simpletype: TYPE_INT
 
 int yyerror( char *errname)
 {
-  fprintf(stderr, "sac : %s in line %d at \"%s\"\n", errname, linenum, yytext);
+  fprintf(stderr, "sac2c : %s in line %d at \"%s\"\n", errname, linenum, yytext);
   exit(1);
 }
 
