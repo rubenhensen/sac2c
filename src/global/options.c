@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/06/02 15:39:39  cg
+ * Bug fixed in break option: show_idx and show_refcnt are now triggered correctly.
+ *
  * Revision 2.6  1999/05/26 14:32:23  jhs
  * Added options MTO and SBE for multi-thread optimsation and
  * synchronisation barrier elimination, both options are by
@@ -85,6 +88,17 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG = strtok (ARG, ":");
         ARG_RANGE (break_after, 1, 21);
+        switch (break_after) {
+        case PH_psiopt:
+            show_idx = 1;
+            break;
+        case PH_refcnt:
+            show_refcnt = 1;
+            break;
+        default:
+            break;
+        }
+
         ARG = strtok (NULL, ":");
         if (ARG != NULL) {
             if (0 == strncmp (ARG, "cyc", 3)) {
