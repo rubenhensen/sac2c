@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.26  1999/07/08 14:21:40  sbs
+ * Now in modules . in NGeneratoras are kept!
+ *
  * Revision 2.25  1999/07/06 16:16:33  jhs
  * Removed ABORT in isBoundEmpty and inserted a DBUG_ASSERT instead.
  *
@@ -7674,12 +7677,15 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
             /*
              * here, we have to use new-shape or new_shape-1, respectively.
              */
-            if (F_le == NGEN_OP2 (gen)) {
-                NGEN_OP2 (gen) = F_lt;
-                NGEN_BOUND2 (gen) = new_shp;
-            } else {
-                NGEN_BOUND2 (gen)
-                  = MakePrf (F_sub, MakeExprs (new_shp, MakeExprs (MakeNum (1), NULL)));
+            if (SAC_MOD != kind_of_file) {
+                if (F_le == NGEN_OP2 (gen)) {
+                    NGEN_OP2 (gen) = F_lt;
+                    NGEN_BOUND2 (gen) = new_shp;
+                } else {
+                    NGEN_BOUND2 (gen)
+                      = MakePrf (F_sub,
+                                 MakeExprs (new_shp, MakeExprs (MakeNum (1), NULL)));
+                }
             }
         }
     }
