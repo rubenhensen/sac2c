@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2002/08/13 14:27:04  sbs
+ * now, non local funids can be defined as well 8-)))
+ *
  * Revision 3.46  2002/08/13 14:09:54  sbs
  * params of sel exchanged
  *
@@ -615,7 +618,7 @@ fundef: INLINE fundef1 { $$ = $2; FUNDEF_INLINE( $$) = TRUE;}
       | fundef1        { $$ = $1; FUNDEF_INLINE( $$) = FALSE;}
       ;
 
-fundef1: returntypes BRACKET_L local_fun_id BRACKET_R BRACKET_L fundef2
+fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
          { $$ = $6;
            FUNDEF_TYPES( $$) = $1;              /* result type(s) */
            FUNDEF_NAME( $$) = IDS_NAME( $3);    /* function name  */
@@ -633,7 +636,7 @@ fundef1: returntypes BRACKET_L local_fun_id BRACKET_R BRACKET_L fundef2
 		       FUNDEF_NAME( $$)));
 
          }
-       | returntypes local_fun_id BRACKET_L fundef2
+       | returntypes fun_id BRACKET_L fundef2
          { $$ = $4;
            FUNDEF_TYPES( $$) = $1;              /* result type(s) */
            FUNDEF_NAME( $$) = IDS_NAME( $2);    /* function name  */
@@ -1803,7 +1806,7 @@ fundecs: fundec fundecs
        | fundec { $$ = $1; }
        ;
 
-fundec: varreturntypes local_fun_id BRACKET_L fundec2
+fundec: varreturntypes fun_id BRACKET_L fundec2
           {
             $$ = $4;
             FUNDEF_TYPES( $$) = $1;
