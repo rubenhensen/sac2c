@@ -1,0 +1,62 @@
+/*
+**info
+** Some macro definitions used for the automatic creation
+** of tables which depend on th correct order of the tags
+** for the nodes of the syntax tree.
+**
+*/
+
+/*   Node_name   dbug-string   flat_tab    print_tab    .......        */
+
+NIF (N_num, "N_num", DummyFun, PrintNum, DummyFun),
+  NIF (N_id, "N_id", DummyFun, PrintId, DummyFun),
+  NIF (N_float, "N_float", DummyFun, PrintFloat, DummyFun),
+  NIF (N_fundef, "N_fundef", DummyFun, PrintFundef, DummyFun),
+  NIF (N_vardec, "N_vardec", DummyFun, PrintVardec, DummyFun),
+  NIF (N_block, "N_block", DummyFun, PrintBlock, DummyFun),
+  NIF (N_arg, "N_arg", DummyFun, PrintArg, DummyFun),
+  NIF (N_assign, "N_assign", FltnAssign, PrintAssign, DummyFun),
+  NIF (N_return, "N_return", DummyFun, PrintReturn, DummyFun),
+  NIF (N_for, "N_for", DummyFun, PrintFor, DummyFun),
+  NIF (N_do, "N_do", DummyFun, PrintDo, DummyFun),
+  NIF (N_while, "N_while", DummyFun, PrintWhile, DummyFun),
+  NIF (N_cond, "N_cond", DummyFun, PrintCond, DummyFun),
+  NIF (N_let, "N_let", DummyFun, PrintLet, DummyFun),
+  NIF (N_addon, "N_addon", DummyFun, PrintLeton, DummyFun),
+  NIF (N_mulon, "N_mulon", DummyFun, PrintLeton, DummyFun),
+  NIF (N_subon, "N_subon", DummyFun, PrintLeton, DummyFun),
+  NIF (N_divon, "N_divon", DummyFun, PrintLeton, DummyFun),
+  NIF (N_with, "N_with", DummyFun, DummyFun, DummyFun),
+  NIF (N_generator, "N_generator", DummyFun, DummyFun, DummyFun),
+  NIF (N_genarray, "N_genarray", DummyFun, DummyFun, DummyFun),
+  NIF (N_modarray, "N_modarray", DummyFun, DummyFun, DummyFun),
+  NIF (N_prf, "N_prf", FltnPrf, PrintPrf, DummyFun),
+  NIF (N_ap, "N_ap", DummyFun, PrintAp, DummyFun),
+  NIF (N_exprs, "N_exprs", FltnExprs, PrintExprs, DummyFun),
+  NIF (N_array, "N_array", DummyFun, DummyFun, DummyFun),
+  NIF (N_info, "N_info", DummyFun, DummyFun, DummyFun),
+  NIF (N_empty, "N_empty", DummyFun, PrintEmpty, DummyFun)
+
+#if 0
+NIF( N_and,      "N_and",      DummyFun, DummyFun, DummyFun ),
+NIF( N_or,       "N_or",       DummyFun, DummyFun, DummyFun ),
+NIF( N_eq,       "N_eq",       DummyFun, DummyFun, DummyFun ),
+NIF( N_neq,      "N_neq",      DummyFun, DummyFun, DummyFun ),
+NIF( Nneg,       "Nneg",       DummyFun, DummyFun, DummyFun ),
+NIF( N_le,       "N_le",       DummyFun, DummyFun, DummyFun ),
+NIF( N_lt,       "N_lt",       DummyFun, DummyFun, DummyFun ),
+NIF( N_ge,       "N_ge",       DummyFun, DummyFun, DummyFun ),
+NIF( N_gt,       "N_gt",       DummyFun, DummyFun, DummyFun ),
+NIF( N_add,      "N_add",      DummyFun, DummyFun, DummyFun ),
+NIF( N_sub,      "N_sub",      DummyFun, DummyFun, DummyFun ),
+NIF( N_mul,      "N_mul",      DummyFun, DummyFun, DummyFun ),
+NIF( N_div,      "N_div",      DummyFun, DummyFun, DummyFun ),
+NIF( N_dim,      "N_dim",      DummyFun, DummyFun, DummyFun ),
+NIF( N_shape,    "N_shape",    DummyFun, DummyFun, DummyFun ),
+NIF( N_psi,      "N_psi",      DummyFun, DummyFun, DummyFun ),
+NIF( N_take,     "N_take",     DummyFun, DummyFun, DummyFun ),
+NIF( N_drop,     "N_drop",     DummyFun, DummyFun, DummyFun ),
+NIF( N_reshape,  "N_reshape",  DummyFun, DummyFun, DummyFun ),
+NIF( N_cat,      "N_cat",      DummyFun, DummyFun, DummyFun ),
+NIF( N_rotate,   "N_rotate",   DummyFun, DummyFun, DummyFun ),
+#endif

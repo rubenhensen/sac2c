@@ -1,0 +1,19 @@
+/*
+**
+** Some macro definitions used for the automatic creation
+** of tables which depend on the correct order of the tags
+** for the prf Type
+**
+*/
+
+/*   Node_name       dbug-string    */
+
+PRF_IF (F_add, "F_add", "+"), PRF_IF (F_sub, "F_sub", "-"), PRF_IF (F_mul, "F_mul", "*"),
+  PRF_IF (F_div, "F_div", "\\"), PRF_IF (F_take, "F_take", "take"),
+  PRF_IF (F_drop, "F_drop", "drop"), PRF_IF (F_psi, "F_psi", "psi"),
+  PRF_IF (F_shape, "F_shape", "shape"), PRF_IF (F_reshape, "F_reshape", "reshape"),
+  PRF_IF (F_cat, "F_cat", "++"), PRF_IF (F_dim, "F_dim", "dim"),
+  PRF_IF (F_rotate, "F_rotate", "rotate"), PRF_IF (F_and, "F_and", "&&"),
+  PRF_IF (F_or, "F_or", "||"), PRF_IF (F_not, "F_not", "!"), PRF_IF (F_le, "F_le", "<="),
+  PRF_IF (F_lt, "F_lt", "<"), PRF_IF (F_eq, "F_eq", "=="), PRF_IF (F_ge, "F_ge", ">="),
+  PRF_IF (F_gt, "F_gt", ">"), PRF_IF (F_neq, "F_neq", "!=")
