@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1994/11/18 16:55:52  hw
+ * Revision 1.14  1994/11/21 17:59:42  hw
+ * inserted linenumber to each node
+ *
+ * Revision 1.13  1994/11/18  16:55:52  hw
  * error in assignblock fixed
  *
  * Revision 1.12  1994/11/18  14:54:56  hw
@@ -106,25 +109,26 @@ funs:  fundef funs  { $1->node[2]=$2;
      | main  {$$=$1;}
       ;
 
-fundef:  types ID BRACKET_L args BRACKET_R exprblock 
-          { $$=MakeNode(N_fundef);
-            $$->node[0]=$6;             /* Funktionsrumpf  */
+fundef:  types ID BRACKET_L args BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
+          { 
+            $$=$<node>6;
+            $$->node[0]=$7;             /* Funktionsrumpf  */
             $$->node[1]=$4;             /* Funktionsargumente */
-            $$->info.types=$1;       /*  Typ der Funktion */
-            $$->info.types->id=$2;   /* Name der Funktion */
+            $$->info.types=$1;          /*  Typ der Funktion */
+            $$->info.types->id=$2;      /* Name der Funktion */
             $$->nnode=2;
-            
+         
             DBUG_PRINT("GENTREE",
-                       ("%s:" P_FORMAT " Id: %s , %s "P_FORMAT " %s," P_FORMAT,
+                       ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT" %s," P_FORMAT,
                         mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
                         mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0],
                         mdb_nodetype[ $$->node[1]->nodetype ], $$->node[1]));
           }
 
        | types INLINE {warn("inline not yet implemented!");} ID BRACKET_L
-         args BRACKET_R exprblock 
-          { $$=MakeNode(N_fundef);
-            $$->node[0]=$8;              /* Funktionsrumpf  */
+         args BRACKET_R  {$$=MakeNode(N_fundef);} exprblock 
+          { $$=$<node>8;
+            $$->node[0]=$9;              /* Funktionsrumpf  */
             $$->node[1]=$6;              /* Funktionsargumente */
             $$->info.types=$1;        /*  Typ der Funktion */
             $$->info.types->id=$4;    /* Name der Funktion */
@@ -155,9 +159,10 @@ arg: type ID {$$=MakeNode(N_arg);
              }
      ;
 
-main: TYPE_INT MAIN BRACKET_L BRACKET_R exprblock 
-       {$$=MakeNode(N_fundef);
-        $$->node[0]=$5;                 /* Funktionsrumpf */
+main: TYPE_INT MAIN BRACKET_L BRACKET_R {$$=MakeNode(N_fundef);} exprblock 
+       {
+        $$=$<node>5;     /* $$=$5 */
+        $$->node[0]=$6;                 /* Funktionsrumpf */
 
         $$->info.types=GEN_NODE(types);  /* Knoten fu"r Typinformation */ 
         $$->info.types->simpletype=T_int;
@@ -177,13 +182,14 @@ main: TYPE_INT MAIN BRACKET_L BRACKET_R exprblock
        }
       ;
 
-exprblock: BRACE_L vardecs assigns retassign COLON BRACE_R 
-            { $$=MakeNode(N_block);
+exprblock: BRACE_L {$$=MakeNode(N_block);} vardecs assigns retassign 
+           COLON BRACE_R 
+            { $$=$<node>2;
               
-              /* append retassign node($4) to assigns nodes */
-              $$->node[0]=Append($3,$4);
+              /* append retassign node($5) to assigns nodes */
+              $$->node[0]=Append($4,$5);
               
-              $$->node[1]=$2;  /* Variablendeklarationen */
+              $$->node[1]=$3;  /* Variablendeklarationen */
               $$->nnode=2;              /* set number of child nodes */
 
               DBUG_PRINT("GENTREE",
@@ -207,10 +213,10 @@ exprblock: BRACE_L vardecs assigns retassign COLON BRACE_R
                           mdb_nodetype[$$->nodetype], $$,
                           mdb_nodetype[$$->node[0]->nodetype], $$->node[0]));
             }
-         | BRACE_L retassign COLON BRACE_R 
-            { $$=MakeNode(N_block); 
+         | BRACE_L { $$=MakeNode(N_block); } retassign COLON BRACE_R 
+            { $$=$<node>2;
               $$->node[0]=MakeNode(N_assign);
-              $$->node[0]->node[0]=$2;  /* Returnanweisung */
+              $$->node[0]->node[0]=$3;  /* Returnanweisung */
               $$->node[0]->nnode=1;
               $$->nnode=1;
               
@@ -231,9 +237,9 @@ assignblock: COLON
               {  $$=MakeEmptyBlock();
               }
 
-             | BRACE_L assigns BRACE_R 
-                { $$=MakeNode(N_block);
-                  $$->node[0]=$2;
+             | BRACE_L { $$=MakeNode(N_block); } assigns BRACE_R 
+                { $$=$<node>2;
+                  $$->node[0]=$3;
                   $$->nnode=1;
                   
                   DBUG_PRINT("GENTREE",
@@ -241,9 +247,9 @@ assignblock: COLON
                               mdb_nodetype[$$->nodetype], $$,
                               mdb_nodetype[$$->node[0]->nodetype],$$->node[0]));
                 }
-             | BRACE_L BRACE_R  
-                {  $$=MakeEmptyBlock();
-                }
+             | BRACE_L{  $$=MakeEmptyBlock(); } BRACE_R  
+               { $$=$<node>2;
+               }
              | assign  
                 { $$=MakeNode(N_block);
                   $$->node[0]=$1;
@@ -256,12 +262,12 @@ assignblock: COLON
                 } 
              ;
 
-retassignblock: BRACE_L assigns retassign COLON BRACE_R
-                  { 
-                    $$=MakeNode(N_block);
-                    /* append retassign node($3) to assigns nodes($2)
+retassignblock: BRACE_L {$$=MakeNode(N_block);} assigns retassign COLON BRACE_R
+                  {  $$=$<node>2;
+                   
+                    /* append retassign node($4) to assigns nodes($3)
                      */
-                    $$->node[0]=Append($2,$3);
+                    $$->node[0]=Append($3,$4);
                     $$->nnode=1;
 
                     DBUG_PRINT("GENTREE",
@@ -276,6 +282,7 @@ retassignblock: BRACE_L assigns retassign COLON BRACE_R
                       $$->node[0]->node[0]=$1;  /* Returnanweisung */
                       $$->node[0]->nnode=1;
                       $$->nnode=1;
+                      $$->lineno=$1->lineno; /* set lineno correktly */
                       
                       DBUG_PRINT("GENTREE",
                                  ("%s "P_FORMAT", %s " P_FORMAT ,
@@ -346,11 +353,11 @@ assign: letassign COLON
                          mdb_nodetype[$$->nodetype], $$,
                          mdb_nodetype[$$->node[0]->nodetype], $$->node[0]));
            }
-        ;
+         ;
 
-retassign: RETURN BRACKET_L exprs BRACKET_R
-             { $$=MakeNode(N_return);
-               $$->node[0]=$3;   /* Returnwert */
+retassign: RETURN BRACKET_L {$$=MakeNode(N_return);} exprs BRACKET_R
+             { $$=$<node>3;
+               $$->node[0]=$4;   /* Returnwert */
                $$->nnode=1;
 
               DBUG_PRINT("GENTREE",
@@ -409,11 +416,12 @@ let: LET { $$=MakeNode(N_let); }
              }
      ;
 
-selassign: IF BRACKET_L expr BRACKET_R assignblock ELSE assignblock
-            { $$=MakeNode(N_cond);
-              $$->node[0]=$3;  /* Bedingung */
-              $$->node[1]=$5;  /* Then-Teil */
-              $$->node[2]=$7;  /* Else-Teil */
+selassign: IF {$$=MakeNode(N_cond);} BRACKET_L expr BRACKET_R assignblock 
+           ELSE assignblock
+            { $$=$<node>2;
+              $$->node[0]=$4;  /* Bedingung */
+              $$->node[1]=$6;  /* Then-Teil */
+              $$->node[2]=$8;  /* Else-Teil */
               $$->nnode=3;
 
              DBUG_PRINT("GENTREE",
@@ -425,10 +433,10 @@ selassign: IF BRACKET_L expr BRACKET_R assignblock ELSE assignblock
 
             }
 
-forassign: DO assignblock WHILE BRACKET_L expr BRACKET_R 
-            { $$=MakeNode(N_do);
-              $$->node[0]=$5;   /* Test */
-              $$->node[1]=$2;   /* Schleifenrumpf */
+forassign: DO {$$=MakeNode(N_do);} assignblock WHILE BRACKET_L expr BRACKET_R 
+            { $$=$<node>2;
+              $$->node[0]=$6;   /* Test */
+              $$->node[1]=$3;   /* Schleifenrumpf */
               $$->nnode=2;
 
              DBUG_PRINT("GENTREE",
@@ -438,10 +446,10 @@ forassign: DO assignblock WHILE BRACKET_L expr BRACKET_R
                          mdb_nodetype[$$->node[1]->nodetype], $$->node[1] ));
  
             }
-           | WHILE BRACKET_L expr BRACKET_R assignblock 
-              { $$=MakeNode(N_while);
-                $$->node[0]=$3;  /* Test */
-                $$->node[1]=$5;  /* Schleifenrumpf */
+           | WHILE {$$=MakeNode(N_while);} BRACKET_L expr BRACKET_R assignblock 
+              { $$=$<node>2;
+                $$->node[0]=$4;  /* Test */
+                $$->node[1]=$6;  /* Schleifenrumpf */
                 $$->nnode=2;
 
              DBUG_PRINT("GENTREE",
@@ -450,13 +458,14 @@ forassign: DO assignblock WHILE BRACKET_L expr BRACKET_R
                          mdb_nodetype[$$->node[0]->nodetype], $$->node[0],
                          mdb_nodetype[$$->node[1]->nodetype], $$->node[1] ));
               }
-           | FOR BRACKET_L assign expr COLON letassign BRACKET_R assignblock
-              { $$=$3;  /* initialisation */
+           | FOR {$$=MakeNode(N_while);} BRACKET_L assign expr COLON 
+             letassign BRACKET_R assignblock
+              { $$=$4;  /* initialisation */
                 $$->node[1]=MakeNode(N_assign);
                 $$->nnode=2;
-                $$->node[1]->node[0]=MakeNode(N_while);
-                $$->node[1]->node[0]->node[0]=$4;  /* condition  */
-                $$->node[1]->node[0]->node[1]=Append($8,$6);  /* body of loop */
+                $$->node[1]->node[0]=$<node>2;
+                $$->node[1]->node[0]->node[0]=$5;  /* condition  */
+                $$->node[1]->node[0]->node[1]=Append($9,$7);  /* body of loop */
                 $$->node[1]->node[0]->nnode=2;
                 $$->node[1]->nnode=1;
                 
@@ -502,10 +511,10 @@ exprs: expr COMMA exprs
           }
        ;
 
-expr:   ID BRACKET_L exprs BRACKET_R 
-         { $$=MakeNode(N_ap);
-           $$->node[0]=$3;                /* Argumente */
-           $$->info.id=$1;         /* Funktionsname */
+expr:   ID  BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R 
+         { $$=$<node>3;
+           $$->node[0]=$4;                /* arguments */
+           $$->info.id=$1;                /* name of function */
            $$->nnode=1;
 
            DBUG_PRINT("GENTREE",
@@ -515,16 +524,17 @@ expr:   ID BRACKET_L exprs BRACKET_R
          }
       | ID BRACKET_L BRACKET_R 
         { $$=MakeNode(N_ap);
-          $$->info.id=$1;         /* Funktionsname */
+          $$->info.id=$1;         /* name of function */
           
           DBUG_PRINT("GENTREE",
                      ("%s " P_FORMAT " Id: %s,",
                       mdb_nodetype[ $$->nodetype ], $$, $$->info.id));
         }
-      | WITH BRACKET_L generator  BRACKET_R conexpr 
-        { $$=MakeNode(N_with);
-          $$->node[0]=$3;   /* Generator und Filter */
-          $$->node[1]=$5;   /* Rumpf */
+      | WITH {$$=MakeNode(N_with);} BRACKET_L generator  BRACKET_R conexpr 
+        { $$=$<node>2;
+          $$->node[0]=$4;   /* Generator und Filter */
+          $$->node[0]->lineno=$$->lineno;
+          $$->node[1]=$6;   /* Rumpf */
           $$->nnode=2;
 
           DBUG_PRINT("GENTREE",
@@ -543,12 +553,13 @@ expr:   ID BRACKET_L exprs BRACKET_R
       | BRACKET_L expr BRACKET_R 
          { $$=$2;
          }
-      | ID SQBR_L exprs SQBR_R 
-         { $$=MakeNode(N_prf);
-           $$->node[0]=$3;   /* Expression-Liste  */
+      | ID {$$=MakeNode(N_prf);} SQBR_L exprs SQBR_R 
+         { $$=$<node>2;
+           $$->node[0]=$4;       /* list of expresions  */
            $$->info.prf=F_psi;
            $$->node[1]=MakeNode(N_id);
-           $$->node[1]->info.id=$1 ;      /* Arrayname */
+           $$->node[1]->info.id=$1 ;      /* name of array */
+           $$->node[1]->lineno=$$->lineno; /* set korrect linenumber */
            $$->nnode=2;
           
            DBUG_PRINT("GENTREE",
@@ -558,9 +569,9 @@ expr:   ID BRACKET_L exprs BRACKET_R
                        $$->node[1], mdb_nodetype[ $$->node[0]->nodetype ],
                        $$->node[0]));
          }
-      | SQBR_L exprs SQBR_R
-         { $$=MakeNode(N_array);
-           $$->node[0]=$2;
+      | SQBR_L {$$=MakeNode(N_array);} exprs SQBR_R
+         { $$=$<node>2;
+           $$->node[0]=$3;
            $$->nnode=1;
 
           DBUG_PRINT("GENTREE",
@@ -680,7 +691,7 @@ expr:   ID BRACKET_L exprs BRACKET_R
          }
       ;
 
-generator: expr LE ID LE expr
+generator: expr  LE ID LE expr
             { $$=MakeNode(N_generator);
               $$->node[0]=$1;        /* linke Grenze  */
               $$->node[1]=$5;        /* rechte Grenze */
@@ -696,10 +707,11 @@ generator: expr LE ID LE expr
             }
         ;
 
-conexpr: GENARRAY BRACKET_L expr BRACKET_R retassignblock 
-           { $$=MakeNode(N_genarray);
-             $$->node[0]=$3;         /* Name des Arrays */
-             $$->node[1]=$5;            /* Rumpf */
+conexpr: GENARRAY {$$=MakeNode(N_genarray);} BRACKET_L expr BRACKET_R 
+         retassignblock 
+           { $$=$<node>2;
+             $$->node[0]=$4;         /* Name des Arrays */
+             $$->node[1]=$6;            /* Rumpf */
              $$->nnode=2;
 
              DBUG_PRINT("GENTREE",
@@ -707,10 +719,11 @@ conexpr: GENARRAY BRACKET_L expr BRACKET_R retassignblock
                          mdb_nodetype[$$->nodetype], $$,$$->info.id,
                          mdb_nodetype[$$->node[0]->nodetype], $$->node[0] ));
            }
-         | MODARRAY BRACKET_L expr BRACKET_R retassignblock
-           { $$=MakeNode(N_modarray);
-             $$->node[0]=$3;         /* Name des Arrays */
-             $$->node[1]=$5;            /* Rumpf */
+         | MODARRAY {$$=MakeNode(N_modarray);} BRACKET_L expr BRACKET_R 
+           retassignblock
+           { $$=$<node>2;
+             $$->node[0]=$4;         /* Name des Arrays */
+             $$->node[1]=$6;            /* Rumpf */
              $$->nnode=2;
 
              DBUG_PRINT("GENTREE",
@@ -805,8 +818,12 @@ types:   type COMMA types
        ;
 
 type:   complextype {$$=$1;}
+      | simpletype  SQBR_L SQBR_R
+         { $$=$1;
+           $$->dim=-1;   /* it is an array of any shape */
+         }  
       | simpletype {$$=$1;}
-      ;
+       ;
 
 complextype:  TYPE_INT SQBR_L nums SQBR_R  
                { $$=GEN_NODE(types); 
@@ -819,6 +836,14 @@ complextype:  TYPE_INT SQBR_L nums SQBR_R
             | TYPE_FLOAT  SQBR_L nums SQBR_R  
                { $$=GEN_NODE(types);
                  $$->simpletype=T_float; 
+                 $$->dim=0;
+                 $$->next=NULL; 
+                 $$->id=NULL;     /* not used in this case */
+                 $$=GenComplexType($$,$3);
+               }
+            | TYPE_BOOL  SQBR_L nums SQBR_R  
+               { $$=GEN_NODE(types);
+                 $$->simpletype=T_bool; 
                  $$->dim=0;
                  $$->next=NULL; 
                  $$->id=NULL;     /* not used in this case */
@@ -882,8 +907,11 @@ node *MakeNode(nodetype nodetype)
       tmp->node[i]=NULL;
    tmp->nnode=0;
    tmp->info.id=NULL;
-
-   DBUG_PRINT("MAKENODE",("nodetype: %s "P_FORMAT,mdb_nodetype[nodetype],tmp)); 
+   tmp->lineno=linenum;
+   
+   DBUG_PRINT("MAKENODE",("%d nodetype: %s "P_FORMAT,
+                          tmp->lineno,
+                          mdb_nodetype[nodetype],tmp)); 
 
    DBUG_RETURN(tmp);
 }
