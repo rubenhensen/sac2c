@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/05/19 18:58:59  dkr
+ * added missing {s in BeginFold
+ *
  * Revision 2.4  1999/05/12 16:38:22  cg
  * include main.h removed
  *
@@ -194,7 +197,7 @@
             fprintf (outfile,                                                            \
                      "for( SAC_ND_WRITE_ARRAY(%s, %d) = SAC_ND_READ_ARRAY(%s, %d); "     \
                      "SAC_ND_READ_ARRAY(%s, %d)<=SAC_ND_READ_ARRAY(%s, %d); "            \
-                     "SAC_ND_WRITE_ARRAY(%s, %d) = SAC_ND_READ_ARRAY(%s, %d) + 1)\n",    \
+                     "SAC_ND_WRITE_ARRAY(%s, %d) = SAC_ND_READ_ARRAY(%s, %d) + 1) {\n",  \
                      idx, i, from, i, idx, i, to, i, idx, i, idx, i);                    \
             indent++;                                                                    \
         }                                                                                \
