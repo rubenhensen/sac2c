@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2000/12/06 18:56:06  dkr
+ * GNMwith2 added
+ *
  * Revision 3.3  2000/12/06 18:26:04  cg
  * Added new traversal tccp for typecheck constant propagation.
  *
@@ -1596,7 +1599,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    * Here is the node information for the NEW withloop.
    */
 
-  NIF (N_Nwith, "N_Nwith", TravSons, FltnNwith, PrintNwith, TravSons, GNMNwith, DCRNwith,
+  NIF (N_Nwith, "N_Nwith", TravSons, FltnNwith, PrintNwith, TravSons, GNMwith, DCRNwith,
        WLFNwith, FreeNWith, CFNwith, RCNwith, TravSons, TravSons, DupNwith, TravSons,
        UNRNwith, TravSons, IdxNwith, TravSons, WLINwith, AENwith,
 
@@ -1714,7 +1717,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    * here is the node information for the transformed new with-loop
    */
 
-  NIF (N_Nwith2, "N_Nwith2", TravSons, TravSons, PrintNwith2, TravSons, TravSons,
+  NIF (N_Nwith2, "N_Nwith2", TravSons, TravSons, PrintNwith2, TravSons, GNMwith2,
        TravSons, TravSons, FreeNwith2, TravSons, RCNwith2, COMPNwith2, TravSons,
        DupNwith2, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 

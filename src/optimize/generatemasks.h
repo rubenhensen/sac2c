@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 18:55:58  dkr
+ * GNMwith2 added
+ *
  * Revision 3.1  2000/11/20 18:00:43  sacbase
  * new release made
  *
@@ -138,7 +141,8 @@ extern node *GNMpp (node *arg_node, node *arg_info);
 extern node *GNMblock (node *arg_node, node *arg_info);
 extern node *GNMcond (node *arg_node, node *arg_info);
 extern node *GNMloop (node *arg_node, node *arg_info);
-extern node *GNMNwith (node *arg_node, node *arg_info);
+extern node *GNMwith (node *arg_node, node *arg_info);
+extern node *GNMwith2 (node *arg_node, node *arg_info);
 extern node *GNMicm (node *arg_node, node *arg_info);
 
 #endif /* _generatemasks_h */
