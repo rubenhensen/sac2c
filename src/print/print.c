@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/01/17 17:38:37  dkr
+ * printing of dummy code changed (AP, naive compilation)
+ *
  * Revision 3.9  2001/01/09 17:25:45  dkr
  * N_WLstriVar renamed into N_WLstrideVar
  *
@@ -248,6 +251,7 @@
 #include "wl_access_analyze.h"
 #include "tile_size_inference.h"
 #include "NameTuples.h"
+#include "wltransform.h"
 
 #define WARN_INDENT
 
@@ -3028,7 +3032,11 @@ PrintNcode (node *arg_node, node *arg_info)
             INFO_PRINT_INT_SYN (arg_info) = NCODE_CEXPR (arg_node);
         } else {
             fprintf (outfile, " : ");
-            Trav (NCODE_CEXPR (arg_node), arg_info);
+            if (!NCODE_AP_DUMMY_CODE (arg_node)) {
+                Trav (NCODE_CEXPR (arg_node), arg_info);
+            } else {
+                fprintf (outfile, "noop");
+            }
         }
     }
 
@@ -3212,39 +3220,83 @@ PrintNwith2 (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PrintWLseg(node *arg_node, node *arg_info)
+ *   node *PrintWLsegx(node *arg_node, node *arg_info)
  *
  * description:
- *   prints N_WLseg-nodes
+ *   prints N_WLseg- and N_WLsegVar-nodes.
  *
  ******************************************************************************/
 
-node *
-PrintWLseg (node *arg_node, node *arg_info)
+static node *
+PrintWLsegx (node *arg_node, node *arg_info)
 {
     node *seg;
     int i = 0;
 
-    DBUG_ENTER ("PrintWLseg");
+    DBUG_ENTER ("PrintWLsegx");
 
     seg = arg_node;
     while (seg != NULL) {
         INDENT;
-        fprintf (outfile, "/********** segment %d: **********", i++);
-        if (WLSEG_SCHEDULING (seg) != NULL) {
+        fprintf (outfile,
+                 (NODE_TYPE (arg_node) == N_WLseg)
+                   ? "/********** segment %d: **********"
+                   : "/********** (var.) segment %d: **********",
+                 i++);
+        if (WLSEGX_SCHEDULING (seg) != NULL) {
             fprintf (outfile, "\n");
             INDENT;
             fprintf (outfile, " * scheduling: ");
-            SCHPrintScheduling (outfile, WLSEG_SCHEDULING (seg));
+            SCHPrintScheduling (outfile, WLSEGX_SCHEDULING (seg));
             fprintf (outfile, "\n");
             INDENT;
             fprintf (outfile, " *");
         }
         fprintf (outfile, "/\n");
 
-        Trav (WLSEG_CONTENTS (seg), arg_info);
-        PRINT_CONT (seg = WLSEG_NEXT (seg), seg = NULL)
+        Trav (WLSEGX_CONTENTS (seg), arg_info);
+        PRINT_CONT (seg = WLSEGX_NEXT (seg), seg = NULL)
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintWLseg(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_WLseg-nodes.
+ *
+ ******************************************************************************/
+
+node *
+PrintWLseg (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintWLseg");
+
+    arg_node = PrintWLsegx (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintWLsegVar(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_WLsegVar-nodes.
+ *
+ ******************************************************************************/
+
+node *
+PrintWLsegVar (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintWLsegVar");
+
+    arg_node = PrintWLsegx (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -3334,6 +3386,44 @@ PrintWLublock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   void PrintWLvar(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints a son of N_WLstrideVar- and N_WLgridVar-nodes.
+ *
+ ******************************************************************************/
+
+static void
+PrintWLvar (node *arg_node, int dim)
+{
+    int val;
+
+    DBUG_ENTER ("PrintWLvar");
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_num:
+        val = NUM_VAL (arg_node);
+        if (val == IDX_SHAPE) {
+            fprintf (outfile, ".");
+        } else {
+            fprintf (outfile, "%d", val);
+        }
+        break;
+
+    case N_id:
+        fprintf (outfile, "%s[%d]", ID_NAME (arg_node), dim);
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "wrong node type found");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *PrintWLstride(node *arg_node, node *arg_info)
  *
  * description:
@@ -3364,140 +3454,6 @@ PrintWLstride (node *arg_node, node *arg_info)
     }
 
     DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PrintWLgrid(node *arg_node, node *arg_info)
- *
- * description:
- *   prints N_WLgrid-nodes
- *
- * remark:
- *   N_WLgrid, N_WLgridVar differs in output.
- *   The former prints '->', the latter '=>' !!!
- *
- ******************************************************************************/
-
-node *
-PrintWLgrid (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PrintWLgrid");
-
-    INDENT;
-    fprintf (outfile, "(%d -> %d): ", WLGRID_BOUND1 (arg_node), WLGRID_BOUND2 (arg_node));
-
-    indent++;
-    if (WLGRID_NEXTDIM (arg_node) != NULL) {
-        fprintf (outfile, "\n");
-        Trav (WLGRID_NEXTDIM (arg_node), arg_info);
-    } else {
-        if (WLGRID_CODE (arg_node) != NULL) {
-            fprintf (outfile, "op_%d\n", NCODE_NO (WLGRID_CODE (arg_node)));
-        } else {
-            if (INFO_PRINT_NWITH (arg_info) != NULL) {
-                DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NWITH (arg_info)) == N_Nwith2),
-                             "INFO_PRINT_NWITH( arg_info) contains no N_Nwith2 node");
-                switch (NWITH2_TYPE (INFO_PRINT_NWITH (arg_info))) {
-                case WO_genarray:
-                    fprintf (outfile, "init\n");
-                    break;
-                case WO_modarray:
-                    fprintf (outfile, "copy\n");
-                    break;
-                case WO_foldfun:
-                    /* here is no break missing! */
-                case WO_foldprf:
-                    fprintf (outfile, "noop\n");
-                    break;
-                default:
-                    DBUG_ASSERT ((0), "wrong with-loop type found");
-                }
-            } else {
-                fprintf (outfile, "?\n");
-            }
-        }
-    }
-    indent--;
-
-    if (WLGRID_NEXT (arg_node) != NULL) {
-        PRINT_CONT (Trav (WLGRID_NEXT (arg_node), arg_info), );
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PrintWLsegVar(node *arg_node, node *arg_info)
- *
- * description:
- *   prints N_WLsegVar-nodes
- *
- ******************************************************************************/
-
-node *
-PrintWLsegVar (node *arg_node, node *arg_info)
-{
-    node *seg;
-    int i = 0;
-
-    DBUG_ENTER ("PrintWLsegVar");
-
-    seg = arg_node;
-    while (seg != NULL) {
-        if (WLSEGVAR_SCHEDULING (seg) == NULL) {
-            INDENT;
-            fprintf (outfile, "/********** (var.) segment %d: **********/\n", i++);
-        } else {
-            INDENT;
-            fprintf (outfile, "/********** (var.) segment %d: **********\n", i++);
-            INDENT;
-            fprintf (outfile, " * scheduling: ");
-            SCHPrintScheduling (outfile, WLSEGVAR_SCHEDULING (seg));
-            fprintf (outfile, "\n");
-            INDENT;
-            fprintf (outfile, " */\n");
-        }
-
-        Trav (WLSEGVAR_CONTENTS (seg), arg_info);
-        PRINT_CONT (seg = WLSEGVAR_NEXT (seg), seg = NULL);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   void PrintWLvar(node *arg_node, node *arg_info)
- *
- * description:
- *   prints a son of N_WLstrideVar- and N_WLgridVar-nodes.
- *
- ******************************************************************************/
-
-void
-PrintWLvar (node *arg_node, int dim)
-{
-    DBUG_ENTER ("PrintWLvar");
-
-    switch (NODE_TYPE (arg_node)) {
-    case N_num:
-        fprintf (outfile, "%d", NUM_VAL (arg_node));
-        break;
-
-    case N_id:
-        fprintf (outfile, "%s[%d]", ID_NAME (arg_node), dim);
-        break;
-
-    default:
-        DBUG_ASSERT ((0), "wrong node type found");
-    }
-
-    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
@@ -3542,6 +3498,99 @@ PrintWLstrideVar (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
+ * Function:
+ *   node *PrintWLcode( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+PrintWLcode (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintWLcode");
+
+    if (arg_node != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Ncode), "illegal code node found!");
+
+        if (NCODE_AP_DUMMY_CODE (arg_node)) {
+            fprintf (outfile, "noop\n");
+        } else {
+            fprintf (outfile, "op_%d\n", NCODE_NO (arg_node));
+        }
+    } else {
+        if (INFO_PRINT_NWITH (arg_info) != NULL) {
+            DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NWITH (arg_info)) == N_Nwith2),
+                         "INFO_PRINT_NWITH( arg_info) contains no N_Nwith2 node");
+
+            if (NWITH2_NAIVE_COMP (INFO_PRINT_NWITH (arg_info))) {
+                fprintf (outfile, "noop\n");
+            } else {
+                switch (NWITH2_TYPE (INFO_PRINT_NWITH (arg_info))) {
+                case WO_genarray:
+                    fprintf (outfile, "init\n");
+                    break;
+                case WO_modarray:
+                    fprintf (outfile, "copy\n");
+                    break;
+                case WO_foldfun:
+                    /* here is no break missing! */
+                case WO_foldprf:
+                    fprintf (outfile, "noop\n");
+                    break;
+                default:
+                    DBUG_ASSERT ((0), "wrong with-loop type found");
+                }
+            }
+        } else {
+            fprintf (outfile, "?\n");
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintWLgrid(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_WLgrid-nodes
+ *
+ * remark:
+ *   N_WLgrid, N_WLgridVar differs in output.
+ *   The former prints '->', the latter '=>' !!!
+ *
+ ******************************************************************************/
+
+node *
+PrintWLgrid (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintWLgrid");
+
+    INDENT;
+    fprintf (outfile, "(%d -> %d): ", WLGRID_BOUND1 (arg_node), WLGRID_BOUND2 (arg_node));
+
+    indent++;
+    if (WLGRID_NEXTDIM (arg_node) != NULL) {
+        fprintf (outfile, "\n");
+        Trav (WLGRID_NEXTDIM (arg_node), arg_info);
+    } else {
+        PrintWLcode (WLGRID_CODE (arg_node), arg_info);
+    }
+    indent--;
+
+    if (WLGRID_NEXT (arg_node) != NULL) {
+        PRINT_CONT (Trav (WLGRID_NEXT (arg_node), arg_info), );
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
  * function:
  *   node *PrintWLgridVar( node *arg_node, node *arg_info)
  *
@@ -3571,31 +3620,7 @@ PrintWLgridVar (node *arg_node, node *arg_info)
         fprintf (outfile, "\n");
         Trav (WLGRIDVAR_NEXTDIM (arg_node), arg_info);
     } else {
-        if (WLGRIDVAR_CODE (arg_node) != NULL) {
-            fprintf (outfile, "op_%d\n", NCODE_NO (WLGRIDVAR_CODE (arg_node)));
-        } else {
-            if (INFO_PRINT_NWITH (arg_info) != NULL) {
-                DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NWITH (arg_info)) == N_Nwith2),
-                             "INFO_PRINT_NWITH( arg_info) contains no N_Nwith2 node");
-                switch (NWITH2_TYPE (INFO_PRINT_NWITH (arg_info))) {
-                case WO_genarray:
-                    fprintf (outfile, "init\n");
-                    break;
-                case WO_modarray:
-                    fprintf (outfile, "copy\n");
-                    break;
-                case WO_foldfun:
-                    /* here is no break missing! */
-                case WO_foldprf:
-                    fprintf (outfile, "noop\n");
-                    break;
-                default:
-                    DBUG_ASSERT ((0), "wrong with-loop type found");
-                }
-            } else {
-                fprintf (outfile, "?\n");
-            }
-        }
+        PrintWLcode (WLGRIDVAR_CODE (arg_node), arg_info);
     }
     indent--;
 
