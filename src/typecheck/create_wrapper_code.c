@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2002/10/30 16:11:35  dkr
+ * trivial wrappers are no longer built but dispatched statically
+ *
  * Revision 1.10  2002/10/30 13:23:59  sbs
  * handling of dot args introduced.
  *
@@ -175,6 +178,7 @@ SplitWrapper (node *fundef)
 static node *
 InsertWrapperCode (node *fundef)
 {
+    node *spec_fundef;
     node *ret;
     node *assigns;
     node *vardec;
@@ -182,43 +186,47 @@ InsertWrapperCode (node *fundef)
 
     DBUG_ENTER ("InsertWrapperCode");
 
-    /*
-     * generate wrapper code together with the needed vardecs
-     */
-    vardecs1 = TYCreateWrapperVardecs (fundef);
-    vardecs2 = NULL;
-    assigns = TYCreateWrapperCode (fundef, vardecs1, &vardecs2);
+    spec_fundef = TYStaticDispatchWrapper (fundef);
+    if (spec_fundef == NULL) {
+        /*
+         * generate wrapper code together with the needed vardecs
+         */
+        vardecs1 = TYCreateWrapperVardecs (fundef);
+        vardecs2 = NULL;
+        assigns = TYCreateWrapperCode (fundef, vardecs1, &vardecs2);
 
-    /*
-     * vardecs -> return exprs
-     */
-    ret = NULL;
-    vardec = vardecs1;
-    while (vardec != NULL) {
-        node *id_node = MakeId_Copy (VARDEC_NAME (vardec));
-        ID_VARDEC (id_node) = vardec;
-        SET_FLAG (ID, id_node, IS_GLOBAL, FALSE); /* ok since GOs may not be returned */
-        SET_FLAG (ID, id_node, IS_REFERENCE, FALSE);
-        ID_AVIS (id_node) = VARDEC_AVIS (vardec);
-        ret = MakeExprs (id_node, ret);
-        vardec = VARDEC_NEXT (vardec);
+        /*
+         * vardecs -> return exprs
+         */
+        ret = NULL;
+        vardec = vardecs1;
+        while (vardec != NULL) {
+            node *id_node = MakeId_Copy (VARDEC_NAME (vardec));
+            ID_VARDEC (id_node) = vardec;
+            SET_FLAG (ID, id_node, IS_GLOBAL, FALSE);
+            /* ok since GOs may not be returned */
+            SET_FLAG (ID, id_node, IS_REFERENCE, FALSE);
+            ID_AVIS (id_node) = VARDEC_AVIS (vardec);
+            ret = MakeExprs (id_node, ret);
+            vardec = VARDEC_NEXT (vardec);
+        }
+        FUNDEF_RETURN (fundef) = ret = MakeReturn (ret);
+
+        /*
+         * append return statement to assignments
+         */
+        assigns = AppendAssign (assigns, MakeAssign (ret, NULL));
+
+        /*
+         * insert function body
+         */
+        FUNDEF_BODY (fundef) = MakeBlock (assigns, AppendVardec (vardecs1, vardecs2));
+
+        /*
+         * mark wrapper function as a inline function
+         */
+        FUNDEF_INLINE (fundef) = TRUE;
     }
-    FUNDEF_RETURN (fundef) = ret = MakeReturn (ret);
-
-    /*
-     * append return statement to assignments
-     */
-    assigns = AppendAssign (assigns, MakeAssign (ret, NULL));
-
-    /*
-     * insert function body
-     */
-    FUNDEF_BODY (fundef) = MakeBlock (assigns, AppendVardec (vardecs1, vardecs2));
-
-    /*
-     * mark wrapper function as a inline function
-     */
-    FUNDEF_INLINE (fundef) = TRUE;
 
     DBUG_RETURN (fundef);
 }
@@ -294,10 +302,15 @@ CorrectFundef (node *fundef, char *funname, node *args)
         DBUG_PRINT ("CWC", ("correcting fundef for %s", funname));
         do {
             fundef = FUNDEF_NEXT (fundef);
-            DBUG_ASSERT ((fundef != NULL), "no appropriate wrapper function found!");
+            DBUG_ASSERT (((fundef != NULL) && (!strcmp (funname, FUNDEF_NAME (fundef)))
+                          && (FUNDEF_STATUS (fundef) == ST_wrapperfun)),
+                         "no appropriate wrapper function found!");
         } while (!SignatureMatches (FUNDEF_ARGS (fundef), args));
-        DBUG_ASSERT (((fundef == NULL) || (!strcmp (funname, FUNDEF_NAME (fundef)))),
-                     "no appropriate wrapper function found!");
+
+        if (FUNDEF_BODY (fundef) == NULL) {
+            fundef = TYStaticDispatchWrapper (fundef);
+            DBUG_ASSERT ((fundef != NULL), "static dipatch of empty wrapper failed");
+        }
     }
 
     DBUG_RETURN (fundef);
@@ -378,7 +391,7 @@ CWCfundef (node *arg_node, node *arg_info)
     } else {
         DBUG_ASSERT ((INFO_CWC_TRAVNO (arg_info) == 3), "illegal INFO_CWC_TRAVNO found!");
         /*
-         * third traversal -> remove zombie functions
+         * third traversal -> remove zombies and empty wrappers
          */
 
         if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -387,6 +400,9 @@ CWCfundef (node *arg_node, node *arg_info)
 
         if (FUNDEF_STATUS (arg_node) == ST_zombiefun) {
             arg_node = FreeZombie (arg_node);
+        } else if ((FUNDEF_STATUS (arg_node) == ST_wrapperfun)
+                   && (FUNDEF_BODY (arg_node) == NULL)) {
+            arg_node = FreeZombie (FreeNode (arg_node));
         }
     }
 
