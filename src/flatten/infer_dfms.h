@@ -1,11 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.3  2000/12/06 20:03:50  dkr
- * Infer_DFMs renamed into InferDFMs
+ * Revision 1.4  2000/12/06 20:05:53  dkr
+ * ups, syntax error eliminated
  *
- * Revision 1.2  2000/12/06 20:03:23  dkr
- * Infer_DFMs added
+ * Revision 1.3  2000/12/06 20:03:23  dkr
+ * InferDFMs added
  *
  * Revision 1.1  2000/12/06 19:57:54  dkr
  * Initial revision
@@ -29,7 +29,6 @@ extern node *INFDFMScond (node *arg_node, node *arg_info);
 extern node *INFDFMSwhile (node *arg_node, node *arg_info);
 extern node *INFDFMSdo (node *arg_node, node *arg_info);
 
-node *
-InferDFMs (node *syntax_tree)
+extern node *InferDFMs (node *syntax_tree);
 
 #endif /* _sac_infer_dfms_h */
