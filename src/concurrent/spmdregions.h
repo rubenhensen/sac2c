@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/05/21 13:32:54  dkr
+ * added SPMDLiftNwith2
+ *
  * Revision 1.7  1998/05/12 12:21:58  dkr
  * added SPMDLiftNwithid, SPMDLiftLet, SPMDLiftIds
  *
@@ -42,6 +45,7 @@ extern node *SPMDLiftFundef (node *arg_node, node *arg_info);
 extern node *SPMDLiftSpmd (node *arg_node, node *arg_info);
 extern node *SPMDLiftId (node *arg_node, node *arg_info);
 extern node *SPMDLiftLet (node *arg_node, node *arg_info);
+extern node *SPMDLiftNwith2 (node *arg_node, node *arg_info);
 extern node *SPMDLiftNwithid (node *arg_node, node *arg_info);
 extern ids *SPMDLiftIds (ids *arg_node, node *arg_info);
 

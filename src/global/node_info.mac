@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.211  1998/05/21 13:30:12  dkr
+ * added SPMDLiftNwith2
+ *
  * Revision 1.210  1998/05/20 20:14:57  sbs
  * FltnBlock and FltnArray inserted in fltntab!!
  *
@@ -1076,8 +1079,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        DupNwith2, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, 4),
+       TravSons, TravSons, SPMDLiftNwith2, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, 4),
 
   NIF (N_WLseg, "N_WLseg", TravSons, TravSons, PrintWLseg, TravSons, TravSons, TravSons,
        TravSons, FreeWLseg, TravSons, TravSons, COMPWLseg, TravSons, DupWLseg, TravSons,
