@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.45  2000/07/21 14:44:48  nmw
+ * typechecker calls import specializations first
+ * generates fundefs with specified shaped
+ *
  * Revision 2.44  2000/07/14 11:43:07  dkr
  * FUNDEF_INLINE==1 replaced by FUNDEF_INLINE
  *
@@ -316,6 +320,7 @@
 #include "globals.h"
 #include "typecheck_WL.h"
 #include "gen_pseudo_fun.h"
+#include "import_specialization.h"
 
 #include "new_typecheck.h"
 
@@ -3275,6 +3280,7 @@ InitFunTable (node *arg_node)
  *
  * Description:
  *   Initializes and starts typechecking of a SAC programm
+ *     - first off all extends fundefs by specializations
  *     - initializes table of primitive functions
  *     - set stack (scope stack)
  *     - initializes table of userdefined types
@@ -3298,6 +3304,15 @@ Typecheck (node *arg_node)
      */
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
                  "Typecheck() not called with N_modul node!");
+
+    /*
+     * if compiling for a c library, search for specializations
+     * of functions and integrate them
+     *
+     */
+    if (generatelibrary & GENERATELIBRARY_C) {
+        arg_node = ImportSpecialization (arg_node);
+    }
 
     /*
      * initialize profile-tool !
