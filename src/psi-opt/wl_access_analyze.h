@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/18 13:09:23  dkr
+ * removed prototypes for WLAAprintAccesses (moved to print.h) and
+ * WLAAprintFeatures (no longer defined)
+ *
  * Revision 2.1  1999/05/12 14:03:25  bs
  * new release number
  *
@@ -43,8 +47,5 @@ extern node *WLAAwhile (node *arg_node, node *arg_info);
 extern node *WLAAdo (node *arg_node, node *arg_info);
 extern node *WLAAcond (node *arg_node, node *arg_info);
 extern node *WLAAprf (node *arg_node, node *arg_info);
-
-extern void WLAAprintAccesses (node *arg_node, node *arg_info);
-extern void WLAAprintFeatures (node *arg_node, node *arg_info);
 
 #endif /* _wl_access_analyze_h  */
