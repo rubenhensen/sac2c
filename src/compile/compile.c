@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.76  2000/07/21 11:26:03  jhs
+ * Added CreateIcmMT2_FUN_DEC.
+ * Building RECEIVE/BARRIER combination around functions lifted
+ * by mt2; rearrange their args as vardec.
+ * Using MT2_FUN_DEC, MT2_FUN_RET for mt2 connected functions.
+ *
  * Revision 2.75  2000/07/17 14:34:56  jhs
  * all allocs of mt2 are now done by MakeAllocs.
  *
@@ -1536,6 +1542,55 @@ CreateIcmMT_SPMD_FUN_DEC (char *name, char *from, node **icm_tab, int tab_size)
     DBUG_RETURN (icm);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   static
+ *   node *CreateIcmMT2_FUN_DEC( char *kindof, node *fundef,
+ *                               node **icm_tab, int tab_size)
+ *
+ * description:
+ *   creates a MT2_FUN_DEC ICM.
+ *
+ ******************************************************************************/
+static node *
+CreateIcmMT2_FUN_DEC (char *kindof, node *fundef, node **icm_tab, int tab_size)
+{
+    node *icm, *icm_arg;
+    int i;
+    int cnt_icm = 0;
+
+    DBUG_ENTER ("CreateIcmMT2_FUN_DEC");
+
+    DBUG_PRINT ("COMP", ("Creating ICM \"MT2_FUN_DEC\""));
+
+    icm = MakeIcm0 ("MT2_FUN_DEC");
+
+    icm_arg = MakeExprs (MakeId1 (kindof), NULL);
+    ICM_ARGS (icm) = icm_arg;
+
+    MAKE_NEXT_ICM_ARG (icm_arg, MakeId1 (FUNDEF_NAME (fundef)));
+
+    MAKE_NEXT_ICM_ARG (icm_arg, MakeId1 (FUNDEF_NAME (FUNDEF_LIFTEDFROM (fundef))));
+
+    for (i = 1; i < tab_size; i++) {
+        if (icm_tab[i] != NULL) {
+            cnt_icm++;
+        }
+    }
+
+    MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (cnt_icm));
+
+    for (i = 1; i < tab_size; i++) {
+        if (icm_tab[i] != NULL) {
+            APPEND_ICM_ARG (icm_arg, icm_tab[i]);
+            icm_arg = EXPRS_NEXT (EXPRS_NEXT (icm_arg));
+        }
+    }
+
+    DBUG_RETURN (icm);
+}
+
 /*
  *
  *  functionname  : InsertApDotsParam
@@ -2018,6 +2073,26 @@ COMPModul (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+static node *BuildParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args);
+static node *BuildParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args,
+                                   node *icm_args);
+
+void
+InsertBeforeReturn (node *assigns, node *assign)
+{
+    DBUG_ENTER ("InsertBeforeReturn");
+
+    while ((ASSIGN_NEXT (assigns) != NULL)
+           && (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (assigns))) != N_return)) {
+        assigns = ASSIGN_NEXT (assigns);
+    }
+
+    ASSIGN_NEXT (assign) = ASSIGN_NEXT (assigns);
+    ASSIGN_NEXT (assigns) = assign;
+
+    DBUG_VOID_RETURN;
+}
+
 /******************************************************************************
  *
  * function:
@@ -2036,6 +2111,8 @@ COMPFundef (node *arg_node, node *arg_info)
     types *rettypes, *fulltype, **type_tab;
     statustype old_actualattrib;
     int cnt_param, tab_size, i;
+    node *front;
+    node *back;
 
     DBUG_ENTER ("COMPFundef");
 
@@ -2044,6 +2121,53 @@ COMPFundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("COMPjhs", ("compiling %s attrib: %s status: %s", FUNDEF_NAME (arg_node),
                             mdb_statustype[FUNDEF_ATTRIB (arg_node)],
                             mdb_statustype[FUNDEF_STATUS (arg_node)]));
+
+    /*
+     *  building icms for mt2,
+     *  vardecs are needed for this operation, but vardecs
+     *  will be rebuiled into icms, while compiling the body, so
+     *  we do it now.
+     */
+    if (FUNDEF_ATTRIB (arg_node) == ST_call_mtlift) {
+        node *vardec;
+        front
+          = MakeIcm4 ("MT2_WORKER_RECEIVE", MakeId1 ("SYNC"),
+                      MakeNum (FUNDEF_IDENTIFIER (arg_node)),
+                      MakeNum (DFMTestMask (FUNDEF_MT2USE (arg_node))),
+                      BuildParamsByDFM (FUNDEF_MT2USE (arg_node), "receive", NULL, NULL));
+        back
+          = MakeIcm3 ("MT2_WORKER_BARRIER", MakeNum (FUNDEF_IDENTIFIER (arg_node)),
+                      MakeNum (DFMTestMask (FUNDEF_MT2DEF (arg_node))),
+                      BuildParamsByDFM (FUNDEF_MT2DEF (arg_node), "barrier", NULL, NULL));
+
+        BLOCK_INSTR (FUNDEF_BODY (arg_node))
+          = MakeAssign (front, BLOCK_INSTR (FUNDEF_BODY (arg_node)));
+
+        InsertBeforeReturn (BLOCK_INSTR (FUNDEF_BODY (arg_node)),
+                            MakeAssign (back, NULL));
+
+        /* args to vardecs .... */
+
+        if (FUNDEF_VARDEC (arg_node) != NULL) {
+            vardec = FUNDEF_VARDEC (arg_node);
+            while (VARDEC_NEXT (vardec) != NULL) {
+                vardec = VARDEC_NEXT (vardec);
+            }
+
+            VARDEC_NEXT (vardec) = FUNDEF_ARGS (arg_node);
+            vardec = VARDEC_NEXT (vardec);
+        } else {
+            FUNDEF_VARDEC (arg_node) = FUNDEF_ARGS (arg_node);
+            vardec = FUNDEF_VARDEC (arg_node);
+        }
+
+        while (vardec != NULL) {
+            NODE_TYPE (vardec) = N_vardec;
+            vardec = VARDEC_NEXT (vardec);
+        }
+
+        FUNDEF_ARGS (arg_node) = NULL;
+    }
 
     /*
      *  "push arg_info"
@@ -2114,6 +2238,8 @@ COMPFundef (node *arg_node, node *arg_info)
         if (strcmp (ICM_NAME (return_icm), "ND_FUN_RET") == 0) {
             return_node = EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (return_icm))));
         } else if (strcmp (ICM_NAME (return_icm), "MT_SPMD_FUN_RET") == 0) {
+            return_node = EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (return_icm))));
+        } else if (strcmp (ICM_NAME (return_icm), "MT2_FUN_RET") == 0) {
             return_node = EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (return_icm))));
         } else {
             DBUG_ASSERT ((0), "wrong ICM found");
@@ -2226,7 +2352,11 @@ COMPFundef (node *arg_node, node *arg_info)
 
     if ((FUNDEF_RETURN (arg_node) != NULL)
         && (ICM_ARGS (FUNDEF_RETURN (arg_node)) != NULL)
-        && (FUNDEF_STATUS (arg_node) != ST_spmdfun)) {
+        && (FUNDEF_STATUS (arg_node) != ST_spmdfun)
+        && (FUNDEF_ATTRIB (arg_node) != ST_call_mtlift)
+        && (FUNDEF_ATTRIB (arg_node) != ST_call_mt_worker)
+        && (FUNDEF_ATTRIB (arg_node) != ST_call_mt_master)
+        && (FUNDEF_ATTRIB (arg_node) != ST_call_rep)) {
         ReorganizeReturnIcm (ICM_ARGS (FUNDEF_RETURN (arg_node)));
     }
 
@@ -2235,10 +2365,33 @@ COMPFundef (node *arg_node, node *arg_info)
      *  FUNDEF_ATTRIB, otherwise we check FUNDEF_STATUS to see if this is
      *  an spmd-function (old mt==mto) or decide it is a "normal" function.
      */
-    if ((gen_mt_code == GEN_MT_NEW) && (FUNDEF_ATTRIB (arg_node) == ST_call_mtlift)) {
-        /* DBUG_ASSERT( 0, "cannot compile!!!"); */
-        FUNDEF_ICM (arg_node)
-          = CreateIcmND_FUN_DEC (FUNDEF_NAME (arg_node), icm_tab, tab_size);
+    if (gen_mt_code == GEN_MT_NEW) {
+
+        if (FUNDEF_ATTRIB (arg_node) == ST_call_mtlift) {
+            FUNDEF_ICM (arg_node)
+              = CreateIcmMT2_FUN_DEC ("CALL_MTLIFT", arg_node, NULL, 0);
+        } else if (FUNDEF_ATTRIB (arg_node) == ST_call_mt_worker) {
+            FUNDEF_ICM (arg_node)
+              = CreateIcmMT2_FUN_DEC ("CALL_MTWORKER", arg_node, icm_tab, tab_size);
+        } else if (FUNDEF_ATTRIB (arg_node) == ST_call_mt_master) {
+            FUNDEF_ICM (arg_node)
+              = CreateIcmMT2_FUN_DEC ("CALL_MTMASTER", arg_node, icm_tab, tab_size);
+        } else if (FUNDEF_ATTRIB (arg_node) == ST_call_rep) {
+            FUNDEF_ICM (arg_node)
+              = CreateIcmMT2_FUN_DEC ("CALL_MTREP", arg_node, icm_tab, tab_size);
+        } else if (FUNDEF_ATTRIB (arg_node) == ST_call_st) {
+            /* using normal function-declaration for single threaded calls */
+            FUNDEF_ICM (arg_node)
+              = CreateIcmND_FUN_DEC (FUNDEF_NAME (arg_node), icm_tab, tab_size);
+        } else if (FUNDEF_ATTRIB (arg_node) == ST_regular) {
+            /* using normal function-declaration for single threaded calls */
+            FUNDEF_ICM (arg_node)
+              = CreateIcmND_FUN_DEC (FUNDEF_NAME (arg_node), icm_tab, tab_size);
+        } else {
+            DBUG_PRINT ("jhs", ("%s", mdb_statustype[FUNDEF_ATTRIB (arg_node)]));
+            DBUG_PRINT ("jhs", ("%s", mdb_statustype[FUNDEF_STATUS (arg_node)]));
+            DBUG_ASSERT (0, "unknown kind of function while in mt2");
+        }
     } else if (FUNDEF_STATUS (arg_node) == ST_spmdfun) {
         FUNDEF_ICM (arg_node)
           = CreateIcmMT_SPMD_FUN_DEC (FUNDEF_NAME (arg_node),
@@ -4762,6 +4915,58 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *COMPMT2FunReturn(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   generates ICMs for N_return-node found in body of a MT2-function.
+ *
+ ******************************************************************************/
+
+node *
+COMPMT2FunReturn (node *arg_node, node *arg_info)
+{
+    node *exprs, *args, *last_arg, *tag;
+    int cnt_params;
+
+    DBUG_ENTER ("COMPMT2FunReturn");
+
+    exprs = RETURN_EXPRS (arg_node);
+    args = NULL;
+    cnt_params = 0;
+#if 1
+    while (exprs != NULL) {
+        DBUG_ASSERT ((N_id == NODE_TYPE (EXPRS_EXPR (exprs))), "wrong node type found");
+
+        if (ID_REFCNT (EXPRS_EXPR (exprs)) >= 0) {
+            tag = MakeExprs (MakeId ("out_rc", NULL, ST_regular), NULL);
+        } else {
+            tag = MakeExprs (MakeId ("out", NULL, ST_regular), NULL);
+        }
+
+        if (args == NULL) {
+            args = tag;
+        } else {
+            EXPRS_NEXT (last_arg) = tag;
+        }
+        EXPRS_NEXT (tag) = last_arg = exprs;
+
+        exprs = EXPRS_NEXT (exprs);
+        cnt_params++;
+    }
+
+    args = MakeExprs (MakeNum (cnt_params), args);
+#endif
+    args = MakeExprs (MakeNum (barrier_id), args);
+
+    arg_node = MakeIcm1 ("MT2_FUN_RET", args);
+    FUNDEF_RETURN (INFO_COMP_FUNDEF (arg_info)) = arg_node;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *COMPReturn(node *arg_node, node *arg_info)
  *
  * description:
@@ -4772,9 +4977,27 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
 node *
 COMPReturn (node *arg_node, node *arg_info)
 {
+    node *fundef;
+
     DBUG_ENTER ("COMPReturn");
 
-    if (FUNDEF_STATUS (INFO_COMP_FUNDEF (arg_info)) == ST_spmdfun) {
+    fundef = INFO_COMP_FUNDEF (arg_info);
+
+    if (gen_mt_code == GEN_MT_NEW) {
+        if ((FUNDEF_ATTRIB (fundef) == ST_call_mtlift)
+            || (FUNDEF_ATTRIB (fundef) == ST_call_mt_worker)
+            || (FUNDEF_ATTRIB (fundef) == ST_call_mt_master)
+            || (FUNDEF_ATTRIB (fundef) == ST_call_rep)) {
+            arg_node = COMPMT2FunReturn (arg_node, arg_info);
+        } else if ((FUNDEF_ATTRIB (fundef) == ST_call_st)
+                   || (FUNDEF_ATTRIB (fundef) == ST_regular)) {
+            arg_node = COMPNormalFunReturn (arg_node, arg_info);
+        } else {
+            DBUG_PRINT ("jhs", ("%s", mdb_statustype[FUNDEF_ATTRIB (fundef)]));
+            DBUG_PRINT ("jhs", ("%s", mdb_statustype[FUNDEF_STATUS (fundef)]));
+            DBUG_ASSERT (0, "unknown kind of function while in mt2");
+        }
+    } else if (FUNDEF_STATUS (fundef) == ST_spmdfun) {
         arg_node = COMPSpmdFunReturn (arg_node, arg_info);
     } else {
         arg_node = COMPNormalFunReturn (arg_node, arg_info);
@@ -5449,6 +5672,7 @@ BuildParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
 
     FREE (rc_tag);
 
+    DBUG_PRINT ("JHS", ("end %s", tag));
     DBUG_RETURN (icm_args);
 }
 
