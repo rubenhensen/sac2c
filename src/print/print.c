@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.218  1998/05/12 19:12:10  srs
+ * saving/restoring act_tab in Print() now.
+ *
  * Revision 1.217  1998/05/08 09:04:34  cg
  * The syntax tree is now given as an argument to function GSCPrintFileHeader()
  *
@@ -2912,7 +2915,13 @@ PrintWLgridVar (node *arg_node, node *arg_info)
 node *
 Print (node *syntax_tree)
 {
+    funptr *old_tab;
+
     DBUG_ENTER ("Print");
+
+    /* save act_tab to restore it afterwards. This could be useful if
+       Print() is called from inside a debugger. */
+    old_tab = act_tab;
 
     act_tab = print_tab;
     mod_name_con = mod_name_con_1;
@@ -2967,6 +2976,8 @@ Print (node *syntax_tree)
         syntax_tree = Trav (syntax_tree, NULL);
         fprintf (outfile, "\n-----------------------------------------------\n");
     }
+
+    act_tab = old_tab;
 
     DBUG_RETURN (syntax_tree);
 }
