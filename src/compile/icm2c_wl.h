@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/08/05 18:46:02  dkr
+ * ND_WL_GENARRAY__SHAPE_... added
+ *
  * Revision 3.9  2002/07/15 14:43:55  dkr
  * bug in WL_ASSIGN__COPY fixed
  *
@@ -31,6 +34,11 @@
 
 #ifndef _icm2c_wl_h
 #define _icm2c_wl_h
+
+extern void ICMCompileND_WL_GENARRAY__SHAPE_id (char *to_nt, int to_sdim, char *shp_nt,
+                                                char *val);
+extern void ICMCompileND_WL_GENARRAY__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
+                                                 char **shpa_any, char *val);
 
 extern void ICMCompileWL_BEGIN__OFFSET (char *to_nt, char *idx_vec_nt, int dims);
 extern void ICMCompileWL_BEGIN (char *to_nt, char *idx_vec_nt, int dims);
