@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/24 16:01:13  cg
+ * some renamings
+ *
  * Revision 1.5  2004/11/23 21:51:49  cg
  * Added genlib flags.
  *
@@ -27,22 +30,30 @@
 #define TRACEflag(flag)
 #endif
 
+#ifndef TRACEchar
+#define TRACEchar(char)
+#endif
+
 #ifndef TRACEdefault
 #define TRACEdefault(default)
 #endif
 
-#define TRACE(flag, default) TRACEflag (flag) TRACEdefault (default)
+#ifndef TRACE
+#define TRACE(flag, char, default)                                                       \
+    TRACEflag (flag) TRACEchar (char) TRACEdefault (default)
+#endif
 
-TRACE (fun, FALSE)
-TRACE (prf, FALSE)
-TRACE (ref, FALSE)
-TRACE (mem, FALSE)
-TRACE (wl, FALSE)
-TRACE (aa, FALSE)
-TRACE (mt, FALSE)
-TRACE (cenv, FALSE)
+TRACE (fun, 'f', FALSE)
+TRACE (prf, 'p', FALSE)
+TRACE (ref, 'r', FALSE)
+TRACE (mem, 'm', FALSE)
+TRACE (wl, 'w', FALSE)
+TRACE (aa, 's', FALSE)
+TRACE (mt, 't', FALSE)
+TRACE (cenv, 'c', FALSE)
 
 #undef TRACEflag
+#undef TRACEchar
 #undef TRACEdefault
 #undef TRACE
 
@@ -56,18 +67,26 @@ TRACE (cenv, FALSE)
 #define PROFILEflag(flag)
 #endif
 
+#ifndef PROFILEchar
+#define PROFILEchar(char)
+#endif
+
 #ifndef PROFILEdefault
 #define PROFILEdefault(default)
 #endif
 
-#define PROFILE(flag, default) PROFILEflag (flag) PROFILEdefault (default)
+#ifndef PROFILE
+#define PROFILE(flag, char, default)                                                     \
+    PROFILEflag (flag) PROFILEchar (char) PROFILEdefault (default)
+#endif
 
-PROFILE (fun, FALSE)
-PROFILE (inl, FALSE)
-PROFILE (lib, FALSE)
-PROFILE (with, FALSE)
+PROFILE (fun, 'f', FALSE)
+PROFILE (inl, 'i', FALSE)
+PROFILE (lib, 'l', FALSE)
+PROFILE (with, 'w', FALSE)
 
 #undef PROFILEflag
+#undef PROFILEchar
 #undef PROFILEdefault
 #undef PROFILE
 
@@ -81,20 +100,28 @@ PROFILE (with, FALSE)
 #define CSflag(flag)
 #endif
 
+#ifndef CSchar
+#define CSchar(char)
+#endif
+
 #ifndef CSdefault
 #define CSdefault(default)
 #endif
 
-#define CS(flag, default) CSflag (flag) CSdefault (default)
+#ifndef CS
+#define CS(flag, char, default) CSflag (flag) CSchar (char) CSdefault (default)
+#endif
 
-CS (simple, FALSE) /* was YES */
-CS (advanced, FALSE)
-CS (file, FALSE)
-CS (pipe, FALSE)
-CS (immediate, FALSE)
-CS (block, FALSE)
+CS (simple, 's', TRUE)
+CS (advanced, 'a', FALSE)
+CS (block, 'b', FALSE)
+CS (global, 'g', TRUE)
+CS (file, 'f', FALSE)
+CS (pipe, 'p', FALSE)
+CS (immediate, 'i', TRUE)
 
 #undef CSflag
+#undef CSchar
 #undef CSdefault
 #undef CS
 
@@ -108,19 +135,26 @@ CS (block, FALSE)
 #define RTCflag(flag)
 #endif
 
+#ifndef RTCchar
+#define RTCchar(char)
+#endif
+
 #ifndef RTCdefault
 #define RTCdefault(default)
 #endif
 
-#define RTC(flag, default) RTCflag (flag) RTCdefault (default)
+#ifndef RTC
+#define RTC(flag, char, default) RTCflag (flag) RTCchar (char) RTCdefault (default)
+#endif
 
-RTC (boundary, FALSE)
-RTC (type, FALSE)
-RTC (malloc, FALSE)
-RTC (errno, FALSE)
-RTC (heap, FALSE)
+RTC (boundary, 'b', FALSE)
+RTC (type, 't', FALSE)
+RTC (malloc, 'm', FALSE)
+RTC (errno, 'e', FALSE)
+RTC (heap, 'h', FALSE)
 
 #undef RTCflag
+#undef RTCchar
 #undef RTCdefault
 #undef RTC
 
@@ -134,15 +168,23 @@ RTC (heap, FALSE)
 #define GENLIBflag(flag)
 #endif
 
+#ifndef GENLIBstr
+#define GENLIBstr(str)
+#endif
+
 #ifndef GENLIBdefault
 #define GENLIBdefault(default)
 #endif
 
-#define GENLIB(flag, default) GENLIBflag (flag) GENLIBdefault (default)
+#ifndef GENLIB
+#define GENLIB(flag, str, default)                                                       \
+    GENLIBflag (flag) GENLIBstr (str) GENLIBdefault (default)
+#endif
 
-GENLIB (sac, FALSE)
-GENLIB (c, FALSE)
+GENLIB (sac, "sac", FALSE)
+GENLIB (c, "c", FALSE)
 
 #undef GENLIBflag
+#undef GENLIBstr
 #undef GENLIBdefault
 #undef GENLIB
