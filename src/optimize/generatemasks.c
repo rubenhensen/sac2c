@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/10/28 17:49:25  dkr
+ * Output of PrintMrdMask() changed
+ *
  * Revision 2.8  1999/10/28 17:11:44  dkr
  * functions Print...Mask() changed
  *
@@ -574,7 +577,9 @@ ReadMask (long *mask, long number)
  *   void PrintDefUseMask( FILE *handle, long *mask, int varno)
  *
  * description:
- *
+ *   Prints the given def/use mask into the given file.
+ *   If (handle == NULL), 'stdout' is used. This is done for use in a debugging
+ *   session.
  *
  ******************************************************************************/
 
@@ -585,6 +590,10 @@ PrintDefUseMask (FILE *handle, long *mask, int varno)
     int empty = 1;
 
     DBUG_ENTER ("PrintDefUseMask");
+
+    if (handle == NULL) {
+        handle = stdout;
+    }
 
     if (mask) {
         for (i = 0; i < varno; i++) {
@@ -633,7 +642,10 @@ PrintDefUseMasks (FILE *handle, long *defmask, long *usemask, int varno)
  *  void PrintMRDMask( FILE *handle, long *mrdmask, int varno)
  *
  * description:
- *   generates an output with a textual description of the MRD-list
+ *   Generates an output in the given file with a textual description of the
+ *   MRD-list.
+ *   If (handle == NULL), 'stdout' is used. This is done for use in a debugging
+ *   session.
  *
  ******************************************************************************/
 
@@ -642,12 +654,17 @@ PrintMrdMask (FILE *handle, long *mrdmask, int varno)
 {
     node *nodeptr;
     nodetype n_type;
+    char *typestr;
     int i;
     int empty = 1;
 
     DBUG_ENTER ("PrintMRD");
 
-    fprintf (handle, "**MRD list: ");
+    if (handle == NULL) {
+        handle = stdout;
+    }
+
+    fprintf (handle, "**MRD list: \n");
     if (mrdmask) {
         for (i = 0; i < varno; i++) {
             if (mrdmask[i]) {
@@ -655,22 +672,19 @@ PrintMrdMask (FILE *handle, long *mrdmask, int varno)
                 n_type = NODE_TYPE ((node *)mrdmask[i]);
                 switch (n_type) {
                 case N_assign:
+                    typestr = mdb_nodetype[NODE_TYPE (nodeptr)];
                     nodeptr = ASSIGN_INSTR (((node *)mrdmask[i]));
-                    fprintf (handle, "(%3d,%-5.5s(%6p))\n%19s", i,
-                             mdb_nodetype[NODE_TYPE (nodeptr)], nodeptr, "");
-                    break;
-                case N_Npart:
-                    fprintf (handle, "(%3d,%-8.8s)\n%19s", i, mdb_nodetype[N_Npart], "");
                     break;
                 default:
                     if ((N_num <= n_type) && (n_type <= N_ok)) {
-                        fprintf (handle, "(%3d,%-8.8s)\n%19s", i, mdb_nodetype[n_type],
-                                 "");
+                        typestr = mdb_nodetype[n_type];
                     } else {
-                        fprintf (handle, "(%3d,%-8p)\n%19s", i, (node *)mrdmask[i], "");
+                        typestr = "N_unknown";
                     }
+                    nodeptr = (node *)mrdmask[i];
                     break;
                 }
+                fprintf (handle, "(%3d, %-8.8s(%8p))\n", i, typestr, nodeptr);
             }
         }
         if (empty) {
