@@ -197,7 +197,11 @@ assignblock: COLON
               {  $$=MakeNode(N_empty);
               }
 
-             | BRACE_L assigns BRACE_R    {$$=$2;}
+             | BRACE_L assigns BRACE_R 
+                { $$=MakeNode(N_block);
+                  $$->node[0]=$2;
+                  $$->nnode=1;
+                }
              | BRACE_L BRACE_R  { $$=MakeNode(N_empty); }
              | assign  {$$=$1;}
              ;
