@@ -1,8 +1,10 @@
 /*
  * $Log$
+ * Revision 1.11  2002/10/09 02:11:39  dkr
+ * constants modul used instead of ID/ARRAY_CONSTVEC
+ *
  * Revision 1.10  2002/10/08 10:32:29  dkr
- * SSAArrayST2ArrayInt(): AVIS_SSACONST(ID_AVIS()) used instead of
- * ID_CONSTVEC
+ * SSAArrayST2ArrayInt(): AVIS_SSACONST(ID_AVIS()) used instead of ID_CONSTVEC
  *
  * Revision 1.9  2002/09/11 23:17:23  dkr
  * prf_string replaced by mdb_prf
@@ -419,6 +421,7 @@ SSANormalizeInternGen (intern_gen *ig)
 void
 SSAArrayST2ArrayInt (node *arrayn, int **iarray, int shape)
 {
+    constant *tmp_co;
     int *tmp;
     int i;
 
@@ -435,11 +438,14 @@ SSAArrayST2ArrayInt (node *arrayn, int **iarray, int shape)
             (*iarray)[i] = 0;
         }
     } else if (NODE_TYPE (arrayn) == N_array) {
+        tmp_co = COAST2Constant (arrayn);
+        tmp = COGetDataVec (tmp_co);
         for (i = 0; i < shape; i++) {
-            (*iarray)[i] = ((int *)ARRAY_CONSTVEC (arrayn))[i];
+            (*iarray)[i] = tmp[i];
         }
+        tmp_co = COFreeConstant (tmp_co);
     } else /* (NODE_TYPE(arrayn) == N_id) */ {
-        DBUG_ASSERT ((NODE_TYPE (arrayn) == N_id), "Wrong arrayn");
+        DBUG_ASSERT ((NODE_TYPE (arrayn) == N_id), "wrong arrayn");
 
         if (AVIS_SSACONST (ID_AVIS (arrayn)) != NULL) {
             tmp = COGetDataVec (AVIS_SSACONST (ID_AVIS (arrayn)));
@@ -516,7 +522,7 @@ SSATree2InternGen (node *wln, node *filter)
 /******************************************************************************
  *
  * function:
- *   node *SSACreateArrayFromInternGen(int *source, int number)
+ *   node *SSACreateArrayFromInternGen( int *source, int number, types *type)
  *
  * description:
  *   copies 'number' elements of the array source to an N_array struct and
@@ -536,10 +542,6 @@ SSACreateArrayFromInternGen (int *source, int number, types *type)
         tmpn = MakeExprs (MakeNum (source[i]), tmpn);
     }
     arrayn = MakeArray (tmpn);
-    ARRAY_ISCONST (arrayn) = TRUE;
-    ARRAY_VECTYPE (arrayn) = T_int;
-    ((int *)ARRAY_CONSTVEC (arrayn)) = Array2IntVec (tmpn, NULL);
-    ARRAY_VECLEN (arrayn) = number;
     ARRAY_TYPE (arrayn) = DupAllTypes (type);
 
     DBUG_RETURN (arrayn);

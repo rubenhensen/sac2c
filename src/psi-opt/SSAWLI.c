@@ -1,11 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2002/10/09 02:11:26  dkr
+ * constants modul used instead of ID/ARRAY_CONSTVEC
+ *
  * Revision 1.12  2002/10/07 04:51:05  dkr
  * some modifications for dynamic shapes added
- *
- * Revision 1.11  2002/09/16 14:27:38  dkr
- * no changes done
  *
  * Revision 1.9  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
@@ -90,6 +90,7 @@
 #include "Error.h"
 #include "dbug.h"
 #include "my_debug.h"
+#include "constants.h"
 #include "traverse.h"
 #include "optimize.h"
 #include "SSAConstantFolding.h"
@@ -401,8 +402,8 @@ CreateIndexInfoSxS (node *prfn, node *arg_info)
 
             iinfo->prf = SimplifyFun (PRF_PRF (prfn));
             iinfo->const_arg[0]
-              = NUM_VAL ((1 == id_no ? PRF_ARG2 (prfn) : PRF_ARG1 (prfn)));
-            iinfo->arg_no = 1 == id_no ? 2 : 1;
+              = NUM_VAL (((id_no == 1) ? PRF_ARG2 (prfn) : PRF_ARG1 (prfn)));
+            iinfo->arg_no = (id_no == 1) ? 2 : 1;
         }
     }
 
@@ -434,174 +435,132 @@ CreateIndexInfoSxS (node *prfn, node *arg_info)
 static void
 CreateIndexInfoA (node *prfn, node *arg_info)
 {
-    int id_no = 0, elts, i, index, val = 0;
-    node *idn = NULL, *constn = NULL, *tmpn = NULL, *cf_node, *args[3], *assignn, *wln;
+    int elts, i, index;
+    int val = 0;
+    node *idn = NULL;
+    node *cf_node, *assignn, *wln;
+    node *args[3];
     index_info *iinfo, *tmpinfo;
-    node *data1, *data2;
+    constant *const1, *const2, *constn = NULL;
+    int *const_elems;
 
     DBUG_ENTER (" CreateIndexInfoA");
 
     assignn = INFO_WLI_ASSIGN (arg_info);
     wln = INFO_WLI_WL (arg_info);
 
-    data1 = data2 = NULL;
-    if (N_id == NODE_TYPE (PRF_ARG1 (prfn))) {
-        /* look up definition via ssa form */
-        if (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (prfn))) != NULL) {
-            data1 = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (prfn))));
-        }
-    }
-    if (N_id == NODE_TYPE (PRF_ARG2 (prfn))) {
-        /* look up definition via ssa form */
-        if (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (prfn))) != NULL) {
-            data2 = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (prfn))));
-        }
-    }
+    const1 = COAST2Constant (PRF_ARG1 (prfn));
+    const2 = COAST2Constant (PRF_ARG2 (prfn));
 
     /* Which argument is the constant (so which will be the Id)? */
-    if (N_num == NODE_TYPE (PRF_ARG1 (prfn)) || IsConstArray (PRF_ARG1 (prfn))) {
-        id_no = 2;
+    if (const1 != NULL) {
         idn = PRF_ARG2 (prfn);
-        constn = PRF_ARG1 (prfn);
-    } else if (data1 && IsConstArray (data1)) {
-        id_no = 2;
-        idn = PRF_ARG2 (prfn);
-        constn = data1;
+        constn = const1;
     }
-
-    if (N_num == NODE_TYPE (PRF_ARG2 (prfn)) || IsConstArray (PRF_ARG2 (prfn))) {
-        id_no = 1;
+    if (const2 != NULL) {
         idn = PRF_ARG1 (prfn);
-        constn = PRF_ARG2 (prfn);
-    } else if (data2 && IsConstArray (data2)) {
-        id_no = 1;
-        idn = PRF_ARG1 (prfn);
-        constn = data2;
+        constn = const2;
     }
+    DBUG_ASSERT (((const1 == NULL) || (const2 == NULL)), "both arguments are constants!");
+    if (constn != NULL) {
+        const_elems = COGetDataVec (constn);
 
-    /* Is idn an Id of an index vector (or transformation)? */
-    if (id_no && (NODE_TYPE (idn) == N_id)) {
-        tmpinfo = SSAValidLocalId (idn);
-        index = SSALocateIndexVar (idn, wln);
+        /* Is idn an Id of an index vector (or transformation)? */
+        if (NODE_TYPE (idn) == N_id) {
+            tmpinfo = SSAValidLocalId (idn);
+            index = SSALocateIndexVar (idn, wln);
 
-        /* The Id is the index vector itself or, else it has to
-           be an Id which is a valid vector. It must not be based
-           on an index scalar (we do want "i prfop [c,c,c]"). */
-        if ((GetShapeDim (ID_TYPE (idn)) >= 0)
-            && ((-1 == index) ||
-                /* ^^^ index vector itself */
-                (tmpinfo && (1 == TYPES_DIM (ID_TYPE (idn)))))) {
-            /* ^^^ valid local id (vector) */
-            elts = ID_SHAPE (idn, 0);
-            iinfo = SSACreateIndex (elts);
-            SSAINDEX (assignn) = iinfo; /* make this N_assign valid */
+            /* The Id is the index vector itself or, else it has to
+               be an Id which is a valid vector. It must not be based
+               on an index scalar (we do want "i prfop [c,c,c]"). */
+            if ((GetShapeDim (ID_TYPE (idn)) >= 0)
+                && ((-1 == index) ||
+                    /* ^^^ index vector itself */
+                    (tmpinfo && (1 == TYPES_DIM (ID_TYPE (idn)))))) {
+                /* ^^^ valid local id (vector) */
+                elts = ID_SHAPE (idn, 0);
+                iinfo = SSACreateIndex (elts);
+                SSAINDEX (assignn) = iinfo; /* make this N_assign valid */
 
-            iinfo->arg_no = (1 == id_no) ? 2 : 1;
-            iinfo->prf = SimplifyFun (PRF_PRF (prfn));
+                iinfo->arg_no = (constn == const1) ? 1 : 2;
+                iinfo->prf = SimplifyFun (PRF_PRF (prfn));
 
-            if (NODE_TYPE (constn) == N_array) {
-                tmpn = ARRAY_AELEMS (constn);
-            }
+                for (i = 0; i < elts; i++) {
+                    val = (COGetDim (constn) == 0) ? const_elems[0] : const_elems[i];
 
-            for (i = 0; i < elts; i++) {
-                switch (NODE_TYPE (constn)) {
-                case N_num:
-                    val = NUM_VAL (constn);
-                    break;
-                case N_array:
-                    DBUG_ASSERT (tmpn, "Too few elements in array");
-                    val = NUM_VAL (EXPRS_EXPR (tmpn));
-                    tmpn = EXPRS_NEXT (tmpn);
-                    break;
-                case N_id:
-                    if (!IsConstArray (constn)) {
-                        break;
+                    if (-1 == index) { /* index vector */
+                        iinfo->last[i] = NULL;
+                        iinfo->permutation[i] = i + 1;
+                    } else { /* local var, not index vector */
+                        if ((iinfo->permutation[i] = tmpinfo->permutation[i])) { /* !!! */
+                            iinfo->last[i] = tmpinfo;
+                        } else {
+                            iinfo->last[i] = NULL; /* elt is constant */
+                        }
                     }
-                    val = ((int *)ID_CONSTVEC (constn))[i];
-                    break;
-                default:
-                    break;
+
+                    if (iinfo->permutation[i]) {
+                        iinfo->const_arg[i] = val;
+                    } else {
+                        /*
+                         * constant. Use SSACFFoldPrfExpr() to constantfold.,
+                         * there MUST always be three args in arg array!!!
+                         */
+                        args[0] = MakeNum (val);
+                        args[1] = MakeNum (tmpinfo->const_arg[i]);
+                        args[2] = NULL;
+                        cf_node = SSACFFoldPrfExpr (PRF_PRF (prfn), args);
+                        DBUG_ASSERT ((NODE_TYPE (cf_node) == N_num),
+                                     "non integer result from constant folding");
+                        iinfo->const_arg[i] = NUM_VAL (cf_node);
+                        args[0] = FreeTree (args[0]);
+                        args[1] = FreeTree (args[1]);
+                        cf_node = FreeTree (cf_node);
+                    }
                 }
+            } /* this Id is valid. */
+        }     /* this is an Id. */
 
-                if (-1 == index) { /* index vector */
-                    iinfo->last[i] = NULL;
-                    iinfo->permutation[i] = i + 1;
-                } else { /* local var, not index vector */
-                    if ((iinfo->permutation[i] = tmpinfo->permutation[i]))
-                        iinfo->last[i] = tmpinfo;
-                    else
-                        iinfo->last[i] = NULL; /* elt is constant */
-                }
+        /* Is it a contruction based on index scalars ([i,i,c])? */
+        if (NODE_TYPE (idn) == N_array) {
+            iinfo = Scalar2ArrayIndex (idn, wln);
+            if (iinfo) {
+                /* This is a valid vector. Permutation and last of index_info are
+                   already set. But we still need to handle the prf. */
+                elts = iinfo->vector;
+                SSAINDEX (assignn) = iinfo;
 
-                if (iinfo->permutation[i]) {
-                    iinfo->const_arg[i] = val;
-                } else {
-                    /*
-                     * constant. Use SSACFFoldPrfExpr() to constantfold.,
-                     * there MUST always be three args in arg array!!!
-                     */
-                    args[0] = MakeNum (val);
-                    args[1] = MakeNum (tmpinfo->const_arg[i]);
-                    args[2] = NULL;
-                    cf_node = SSACFFoldPrfExpr (PRF_PRF (prfn), args);
-                    DBUG_ASSERT ((NODE_TYPE (cf_node) == N_num),
-                                 "non integer result from constant folding");
-                    iinfo->const_arg[i] = NUM_VAL (cf_node);
-                    args[0] = FreeTree (args[0]);
-                    args[1] = FreeTree (args[1]);
-                    cf_node = FreeTree (cf_node);
-                }
-            }
-        } /* this Id is valid. */
-    }     /* this is an Id. */
+                iinfo->arg_no = (constn == const1) ? 1 : 2;
+                iinfo->prf = SimplifyFun (PRF_PRF (prfn));
 
-    /* Is it a contruction based on index scalars ([i,i,c])? */
-    if (id_no && NODE_TYPE (idn) == N_array) {
-        iinfo = Scalar2ArrayIndex (idn, wln);
-        if (iinfo) {
-            /* This is a valid vector. Permutation and last of index_info are
-               already set. But we still need to handle the prf. */
-            elts = iinfo->vector;
-            SSAINDEX (assignn) = iinfo;
+                for (i = 0; i < elts; i++) {
+                    val = (COGetDim (constn) == 0) ? const_elems[0] : const_elems[i];
 
-            iinfo->arg_no = (1 == id_no) ? (2) : (1);
-            iinfo->prf = SimplifyFun (PRF_PRF (prfn));
-
-            if (N_num == NODE_TYPE (constn)) {
-                val = NUM_VAL (constn);
-            } else {
-                tmpn = ARRAY_AELEMS (constn);
-            }
-            for (i = 0; i < elts; i++) {
-                if (N_num != NODE_TYPE (constn)) {
-                    DBUG_ASSERT (tmpn, ("Too few elements in array"));
-
-                    val = NUM_VAL (EXPRS_EXPR (tmpn));
-                    tmpn = EXPRS_NEXT (tmpn);
-                }
-
-                /* is the element in the other vector a constant, too?
-                   Then we have to fold immedeately. */
-                if (!iinfo->permutation[i]) {
-                    /*
-                     * constant. Use SSACFFoldPrfExpr() to constantfold.
-                     * there MUST always be 3 args in array!!!
-                     */
-                    args[0] = MakeNum (val);
-                    args[1] = MakeNum (iinfo->const_arg[i]);
-                    args[2] = NULL;
-                    cf_node = SSACFFoldPrfExpr (PRF_PRF (prfn), args);
-                    DBUG_ASSERT ((NODE_TYPE (cf_node) == N_num),
-                                 "non integer result from constant folding");
-                    iinfo->const_arg[i] = NUM_VAL (cf_node);
-                    args[0] = Free (args[0]);
-                    args[1] = Free (args[1]);
-                    cf_node = Free (cf_node);
-                } else {
-                    iinfo->const_arg[i] = val;
+                    /* is the element in the other vector a constant, too?
+                       Then we have to fold immedeately. */
+                    if (!iinfo->permutation[i]) {
+                        /*
+                         * constant. Use SSACFFoldPrfExpr() to constantfold.
+                         * there MUST always be 3 args in array!!!
+                         */
+                        args[0] = MakeNum (val);
+                        args[1] = MakeNum (iinfo->const_arg[i]);
+                        args[2] = NULL;
+                        cf_node = SSACFFoldPrfExpr (PRF_PRF (prfn), args);
+                        DBUG_ASSERT ((NODE_TYPE (cf_node) == N_num),
+                                     "non integer result from constant folding");
+                        iinfo->const_arg[i] = NUM_VAL (cf_node);
+                        args[0] = Free (args[0]);
+                        args[1] = Free (args[1]);
+                        cf_node = Free (cf_node);
+                    } else {
+                        iinfo->const_arg[i] = val;
+                    }
                 }
             }
         }
+
+        constn = COFreeConstant (constn);
     }
 
     DBUG_VOID_RETURN;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2002/10/09 02:11:31  dkr
+ * constants modul used instead of ID/ARRAY_CONSTVEC
+ *
  * Revision 1.14  2002/10/08 10:33:47  dkr
  * CreateFullPartition(): modifications for dynamic shapes done
  *
@@ -91,6 +94,7 @@
 #include "Error.h"
 #include "dbug.h"
 #include "traverse.h"
+#include "constants.h"
 #include "optimize.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLT.h"
@@ -964,27 +968,15 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
              *                        ^^^^^^^^^ :-))
              */
             if ((*bound) != NULL) {
-                if (NODE_TYPE ((*bound)) == N_array) {
-                    tmpn = (*bound);
-                } else {
-                    DBUG_ASSERT ((NODE_TYPE (*bound) == N_id),
-                                 "type of generator son is neither N_id nor N_array");
+                constant *bound_const = COAST2Constant (*bound);
 
-                    /* resolve id via AVIS_SSAASSIGN attribute */
-                    if (AVIS_SSAASSIGN (ID_AVIS ((*bound))) != NULL) {
-                        tmpn = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS ((*bound))));
-                    } else {
-                        /* unknown definition */
-                        tmpn = NULL;
-                    }
-                    if ((tmpn != NULL) && (NODE_TYPE (tmpn) == N_array)) {
-                        /* this bound references an array, which may be substituted */
-                        (*bound) = FreeTree (*bound);
-                        /* copy const array to *bound */
-                        (*bound) = DupTree (tmpn);
-                    }
-                }
-                if (!IsConstArray (tmpn)) {
+                if (bound_const != NULL) {
+                    /* substitute bound */
+                    (*bound) = FreeTree (*bound);
+                    (*bound) = COConstant2AST (bound_const);
+                    DBUG_ASSERT ((NODE_TYPE (*bound) == N_array), "illegal node found!");
+                    bound_const = COFreeConstant (bound_const);
+                } else {
                     /* non-constant son found */
                     if (i <= 2) {
                         /* non-constant lower or upper bound found */
@@ -1029,11 +1021,6 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
                           NODE_LINE (arg_node),
                           ("lower bound of WL-generator in dim %d below zero: set to 0",
                            dim));
-                        if (ARRAY_ISCONST (lb)) {
-                            DBUG_ASSERT ((dim < ARRAY_VECLEN (lb)),
-                                         "some entries are missing in ARRAY_CONSTVEC");
-                            ((int *)ARRAY_CONSTVEC (lb))[dim] = 0;
-                        }
                     }
                     if (ubnum > tnum) {
                         warning = 1;
@@ -1042,11 +1029,6 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
                               ("upper bound of WL-generator in dim %d greater than shape:"
                                " set to %d",
                                dim, tnum));
-                        if (ARRAY_ISCONST (ub)) {
-                            DBUG_ASSERT ((dim < ARRAY_VECLEN (ub)),
-                                         "some entries are missing in ARRAY_CONSTVEC");
-                            ((int *)ARRAY_CONSTVEC (ub))[dim] = tnum;
-                        }
                     }
                 }
 
@@ -1095,18 +1077,7 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
                     i = 0;
                     while ((i < dim) && (lbe != NULL)) {
                         NUM_VAL (EXPRS_EXPR (lbe)) = 0;
-                        if (ARRAY_ISCONST (lb)) {
-                            DBUG_ASSERT ((i < ARRAY_VECLEN (lb)),
-                                         "some entries are missing in ARRAY_CONSTVEC");
-                            ((int *)ARRAY_CONSTVEC (lb))[i] = 0;
-                        }
-
                         NUM_VAL (EXPRS_EXPR (ube)) = IDS_SHAPE (let_ids, i);
-                        if (ARRAY_ISCONST (ub)) {
-                            DBUG_ASSERT ((i < ARRAY_VECLEN (ub)),
-                                         "some entries are missing in ARRAY_CONSTVEC");
-                            ((int *)ARRAY_CONSTVEC (ub))[i] = IDS_SHAPE (let_ids, i);
-                        }
 
                         lbe = EXPRS_NEXT (lbe);
                         ube = EXPRS_NEXT (ube);
