@@ -1,5 +1,9 @@
 dnl
 dnl $Log$
+dnl Revision 1.4  2003/03/21 00:34:39  sah
+dnl added support for linux
+dnl (tested on gentoo linux)
+dnl
 dnl Revision 1.3  2003/03/20 23:12:59  sah
 dnl cpu sparc now matches sac SPARC setting
 dnl
@@ -40,12 +44,14 @@ dnl match autoconf os names to
 dnl the ususal sac ones
 case $target_os in
  *solaris*) target_os=SOLARIS;;
+ *linux*)   target_os=LINUX;;
 esac
 
 dnl match autoconf arch names to
 dnl the usual sac ones
 case $target_cpu in
  sparc) target_cpu=SPARC;;
+ i?86)  target_cpu=X86;;
 esac
 
 AC_DEFINE_UNQUOTED(OS,"$target_os",set to the os type)
@@ -96,8 +102,8 @@ dnl if found, check type
 dnl  check definition of sbrk
 AC_MSG_CHECKING(for sbrk argument type)
 include_file_list=`ls -1 /usr/include/*.h`
-sbrk_types=`for name in $include_file_list; do grep sbrk $name; done`
-[sbrk_types=`echo "$sbrk_types" | sed 's/[A-Za-z *]*(//g' | sed 's/)[A-Za-z ;]*//g'`]
+sbrk_types=`for name in $include_file_list; do grep sbrk $name 2>/dev/null; done`
+[sbrk_types=`echo "$sbrk_types" | sed 's/[A-Za-z0-9 _*]*([ ]*//g' | sed 's/\( [A-Za-z0-9*_ ]*\)*)[A-Za-z0-9_ ;]*//g'`]
 AC_DEFINE_UNQUOTED(SBRK_T,$sbrk_types,set to the type of sbrk argument)
 AC_MSG_RESULT($sbrk_types)
 AC_SUBST(DISABLE_PHM, no)
