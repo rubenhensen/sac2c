@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/10/20 09:29:02  cg
+ * Revision 1.3  1995/10/20 13:51:10  cg
+ * calls to function InsertNode are extended to 3 parameters
+ *
+ * Revision 1.2  1995/10/20  09:29:02  cg
  * first working revision
  *
  * Revision 1.1  1995/10/19  11:04:05  cg
@@ -129,7 +132,8 @@ ANAvardec (node *arg_node, node *arg_info)
     DBUG_ENTER ("ANAvardec");
 
     if (VARDEC_TYPEDEF (arg_node) != NULL) {
-        FUNDEF_NEEDTYPES (arg_info) = InsertNode (VARDEC_TYPEDEF (arg_node), arg_info);
+        FUNDEF_NEEDTYPES (arg_info)
+          = InsertNode (VARDEC_TYPEDEF (arg_node), arg_info, ST_regular);
     }
 
     if (VARDEC_NEXT (arg_node) != NULL) {
@@ -162,7 +166,8 @@ ANAid (node *arg_node, node *arg_info)
     DBUG_ENTER ("ANAid");
 
     if (ID_ATTRIB (arg_node) == ST_global) {
-        FUNDEF_NEEDOBJS (arg_info) = InsertNode (ID_OBJDEF (arg_node), arg_info);
+        FUNDEF_NEEDOBJS (arg_info)
+          = InsertNode (ID_OBJDEF (arg_node), arg_info, ST_regular);
     }
 
     DBUG_RETURN (arg_node);
@@ -189,7 +194,7 @@ ANAap (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("ANAap");
 
-    FUNDEF_NEEDFUNS (arg_info) = InsertNode (AP_FUNDEF (arg_node), arg_info);
+    FUNDEF_NEEDFUNS (arg_info) = InsertNode (AP_FUNDEF (arg_node), arg_info, ST_regular);
 
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
