@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/11/30 21:57:31  ktr
+ * exxxtreme codebrushing.
+ *
  * Revision 3.5  2004/11/23 11:10:38  khf
  * codebrushing DevCamp
  *
@@ -23,27 +26,12 @@
 
 #include "types.h"
 
-typedef int (*fun_t) (dfmask_t *mask, char *id, node *avis);
-
-extern dfmstack_t *DFMUgenerateDfmStack ();
-extern int DFMUisEmptyDfmStack (dfmstack_t *stack);
-extern void DFMUremoveDfmStack (dfmstack_t **stack);
-
-extern void DFMUpushDfmStack (dfmstack_t **stack, dfmask_t *mask);
-extern dfmask_t *DFMUpopDfmStack (dfmstack_t **stack);
-
-extern void DFMUforeachDfmStack (dfmstack_t *stack, fun_t fun, char *id, node *decl);
-extern void DFMUwhileDfmStack (dfmstack_t *stack, fun_t fun, char *id, node *decl);
-
 extern types *DFMUdfm2ReturnTypes (dfmask_t *mask);
-extern ntype *DFMUdfm2ProductType (dfmask_t *mask);
-extern ntype *DFMUdfm2FunctionType (dfmask_t *in, dfmask_t *out, node *fundef);
+extern node *DFMUdfm2Rets (dfmask_t *mask);
 extern node *DFMUdfm2Vardecs (dfmask_t *mask, lut_t *lut);
 extern node *DFMUdfm2Args (dfmask_t *mask, lut_t *lut);
 extern node *DFMUdfm2ReturnExprs (dfmask_t *mask, lut_t *lut);
 extern node *DFMUdfm2ApArgs (dfmask_t *mask, lut_t *lut);
 extern node *DFMUdfm2LetIds (dfmask_t *mask, lut_t *lut);
-
-extern dfmask_t *DFMUduplicateMask (dfmask_t *mask, dfmask_base_t *base);
 
 #endif /* _SAC_DATAFLOWMASKUTILS_H_ */
