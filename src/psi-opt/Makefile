@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.10  1996/02/16 09:46:57  sbs
+# Revision 1.11  1996/07/18 12:23:42  sbs
+# ArrayElimination.o included in clean-line
+#
+# Revision 1.10  1996/02/16  09:46:57  sbs
 # make deps done
 #
 # Revision 1.9  1996/01/18  13:05:44  asi
@@ -53,7 +56,7 @@ deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) index.o psi-opt.o *.bak
+	$(RM) index.o psi-opt.o ArrayElimination.o *.bak
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
