@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.62  1995/09/05 15:21:34  hw
+ * Revision 1.63  1995/09/06 16:13:35  hw
+ * changed compilation of idx_psi
+ *
+ * Revision 1.62  1995/09/05  15:21:34  hw
  * bug fixed in compilation of "idx_psi"
  * (changed condition of DBUG_ASSERT)
  *
@@ -1637,25 +1640,76 @@ CompPrf (node *arg_node, node *arg_info)
             break;
         }
         case F_idx_psi: {
+            node *arg2_ref;
             arg1 = arg_node->node[0]->node[0];
             arg2 = arg_node->node[0]->node[1]->node[0];
             DBUG_ASSERT ((N_id == arg1->nodetype || N_num == arg1->nodetype),
                          "wrong first arg of idx_psi");
             DBUG_ASSERT (N_id == arg2->nodetype, "wrong second arg of idx_psi");
 
+#ifdef OLD_IDX_PSI
             /* reuse last N_let node */
             arg_info->node[1]->nodetype = N_icm;
-            MAKE_ICM_NAME (arg_info->node[1], "ND_IDX_PSI");
-
             MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
-            MAKE_ICM_ARG (icm_arg, res);
+            if (1 == IsArray (arg_info->IDS_NODE->TYPES)) {
+                /*
+                   types *b_type;
+                   int length, i;
+                   node *next_icm_arg;
+
+                   if( T_user == arg_info->IDS_NODE->SIMPLETYPE)
+                   {
+                     GET_BASIC_TYPE(b_type,arg_info->IDS_NODE->TYPES, 0);
+                   }
+                   else
+                     b_type=arg_info->IDS_NODE->TYPES;
+
+                   length=1;
+                   for(i=0; i< b_type->dim; i++)
+                     length*=b_type->shpseg->shp[i];
+                   MAKENODE_NUM(n_node, length);
+                */
+                MAKE_ICM_NAME (arg_info->node[1], "ND_IDX_PSI_A");
+
+                MAKE_ICM_ARG (icm_arg, res);
+                /*
+                   next_icm_arg=icm_arg;
+                   MAKE_NEXT_ICM_ARG(next_icm_arg, n_node);
+                */
+            } else {
+                MAKE_ICM_NAME (arg_info->node[1], "ND_IDX_PSI_S");
+                MAKE_ICM_ARG (icm_arg, res);
+            }
             /* append res to arguments of current node  */
             arg_node->node[0]->node[1]->node[1] = icm_arg;
             arg_node->node[0]->node[1]->nnode = 2;
+
             /* set arg_node, because arg_node will be returned */
             old_arg_node = arg_node;
             arg_node = arg_node->node[0];
             FREE (old_arg_node);
+            break;
+#endif
+            MAKENODE_NUM (arg2_ref, arg2->IDS_REFCNT);
+            MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+            if (1 == IsArray (arg_info->IDS_NODE->TYPES)) {
+                simpletype s_type;
+
+                MAKENODE_NUM (res_ref, arg_info->IDS_REFCNT);
+                GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
+                MAKENODE_ID (type_id_node, type_string[s_type]);
+                BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
+                SET_VARS_FOR_MORE_ICMS;
+                MAKE_NEXT_ICM_ARG (icm_arg, res_ref);
+                CREATE_3_ARY_ICM (next_assign, "ND_IDX_PSI_A", arg1, arg2, res);
+                APPEND_ASSIGNS (first_assign, next_assign);
+            } else {
+                BIN_ICM_REUSE (arg_info->node[1], "ND_IDX_PSI_S", arg1, arg2);
+                MAKE_NEXT_ICM_ARG (icm_arg, res);
+                SET_VARS_FOR_MORE_ICMS;
+            }
+            DEC_OR_FREE_RC_ND (arg2, arg2_ref);
+            INSERT_ASSIGN;
             break;
         }
         case F_dim: {
