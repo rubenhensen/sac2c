@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.103  2003/12/10 16:07:14  skt
+ * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one.
+ *
  * Revision 3.102  2003/11/14 18:54:58  dkrHH
  * compiler warning added: NWITH2_DEFAULT not supported by the old backend!
  *
@@ -913,7 +916,7 @@ AddThreadIdIcm_ND_FUN_DEC (node *icm)
     DBUG_ASSERT (((NODE_TYPE (icm) == N_icm) && (!strcmp (ICM_NAME (icm), "ND_FUN_DEC"))),
                  "no ND_FUN_DEC icm found!");
 
-    if ((gen_mt_code == GEN_MT_OLD) && (optimize & OPT_PHM)) {
+    if ((gen_mt_mode == GEN_MT_LIFTWAIT) && (optimize & OPT_PHM)) {
         args = ICM_EXPRS3 (icm);
 
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (args)) == N_num),
@@ -956,7 +959,7 @@ AddThreadIdIcm_ND_FUN_AP (node *icm_assign)
     DBUG_ASSERT (((NODE_TYPE (icm) == N_icm) && (!strcmp (ICM_NAME (icm), "ND_FUN_AP"))),
                  "no ND_FUN_AP icm found!");
 
-    if ((gen_mt_code == GEN_MT_OLD) && (optimize & OPT_PHM)) {
+    if ((gen_mt_mode == GEN_MT_LIFTWAIT) && (optimize & OPT_PHM)) {
         args = ICM_EXPRS3 (icm);
 
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (args)) == N_num),
@@ -1218,11 +1221,11 @@ MakeFundefIcm (node *fundef, node *arg_info)
     DBUG_ENTER ("MakeFundefIcm");
 
     /*
-     * if mtn(==mt2) is set, we check if this is a lifted mt-function inspecting
+     * if mtmode 3  is set, we check if this is a lifted mt-function inspecting
      * FUNDEF_ATTRIB, otherwise we check FUNDEF_STATUS to see if this is
      * a spmd-function (old mt==mto) or decide it is a "normal" function.
      */
-    if (gen_mt_code == GEN_MT_NEW) {
+    if (gen_mt_mode == GEN_MT_MTSTBLOCK) {
         switch (FUNDEF_ATTRIB (fundef)) {
         case ST_call_mtlift:
             icm = MakeIcm_MT2_FUN_DEC ("CALL_MTLIFT", fundef);
@@ -2422,7 +2425,7 @@ COMPReturn (node *arg_node, node *arg_info)
 
     fundef = INFO_COMP_FUNDEF (arg_info);
 
-    if (gen_mt_code == GEN_MT_NEW) {
+    if (gen_mt_mode == GEN_MT_MTSTBLOCK) {
         switch (FUNDEF_ATTRIB (fundef)) {
         case ST_call_mtlift:
             /* here is no break missing */
