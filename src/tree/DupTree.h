@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2005/01/11 15:19:49  mwe
+ * support for N_fungroup added
+ *
  * Revision 3.42  2005/01/11 12:30:42  jhb
  * node CHK included
  *
@@ -254,6 +257,7 @@ extern node *DUPnums (node *arg_node, info *arg_info);
 extern node *DUPsymbol (node *arg_node, info *arg_info);
 extern node *DUPglobobj (node *arg_node, info *arg_info);
 extern node *DUPchk (node *arg_node, info *arg_info);
+extern node *DUPfungroup (node *arg_node, info *arg_info);
 
 /* frontend with-loop */
 extern node *DUPwith (node *arg_node, info *arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.141  2005/01/11 15:19:49  mwe
+ * support for N_fungroup added
+ *
  * Revision 3.140  2005/01/11 12:30:42  jhb
  * node CHK included
  *
@@ -2874,6 +2877,36 @@ DUPchk (node *arg_node, info *arg_info)
 
     new_node = TBmakeChk ();
 
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DUPfungroup( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Duplicates a N_fungroup node.
+ *
+ ******************************************************************************/
+
+node *
+DUPfungroup (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPfungroup");
+
+    new_node = TBmakeFungroup ();
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    FUNGROUP_SPECCOUNTER (new_node) = FUNGROUP_SPECCOUNTER (arg_node);
+    FUNGROUP_REFCOUNTER (new_node) = FUNGROUP_REFCOUNTER (arg_node);
+    FUNGROUP_INLCOUNTER (new_node) = FUNGROUP_INLCOUNTER (arg_node);
+    if (FUNGROUP_FUNLIST (new_node) != NULL) {
+        FUNGROUP_FUNLIST (new_node) = DUPTRAV (FUNGROUP_FUNLIST (arg_node));
+    }
     DBUG_RETURN (new_node);
 }
 
