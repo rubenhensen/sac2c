@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.46  1998/04/09 23:43:30  dkr
+# added wlpragma_funs.o
+#
 # Revision 1.45  1998/04/09 12:03:58  dkr
 # make deps done
 #
@@ -149,7 +152,7 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount -I../optimize
 MACS=icm.data icm_decl.c icm_args.c icm_comment.c icm_trace.c
 
-all: compile.o icm2c.o precompile.o Old2NewWith.o gen_startup_code.o
+all: compile.o icm2c.o precompile.o Old2NewWith.o gen_startup_code.o wlpragma_funs.o
 
 BEtest: icm2c.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest icm2c.c -DTEST_BACKEND $(INCS) ../../lib/dbug.o
@@ -168,6 +171,10 @@ precompile.o: precompile.c
 
 gen_startup_code.o: gen_startup_code.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o gen_startup_code.o -c gen_startup_code.c $(INCS)
+
+wlpragma_funs.o: wlpragma_funs.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o wlpragma_funs.o -c wlpragma_funs.c $(INCS)
+
 
 Old2NewWith.o: Old2NewWith.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o Old2NewWith.o -c Old2NewWith.c $(INCS)
@@ -222,6 +229,15 @@ precompile.o: /usr/include/sys/va_list.h /usr/include/string.h
 precompile.o: /usr/include/stdlib.h ../global/globals.h ../global/free.h
 precompile.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 precompile.o: ../global/internal_lib.h ../print/convert.h
-precompile.o: ../global/traverse.h ../optimize/DupTree.h
+precompile.o: ../global/traverse.h wlpragma_funs.h ../optimize/DupTree.h
 precompile.o: ../refcount/refcount.h /usr/include/limits.h
 precompile.o: /usr/include/sys/isa_defs.h
+wlpragma_funs.o: ../global/types.h ../global/tree_basic.h
+wlpragma_funs.o: ../global/tree_compound.h ../global/Error.h
+wlpragma_funs.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+wlpragma_funs.o: /usr/include/sys/va_list.h /usr/include/string.h
+wlpragma_funs.o: /usr/include/stdlib.h ../global/globals.h ../global/free.h
+wlpragma_funs.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
+wlpragma_funs.o: ../global/internal_lib.h ../print/convert.h
+wlpragma_funs.o: ../global/traverse.h wlpragma_funs.h ../optimize/DupTree.h
+wlpragma_funs.o: ../refcount/refcount.h
