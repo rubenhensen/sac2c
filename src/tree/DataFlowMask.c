@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2000/12/08 13:51:45  dkr
+ * some DBUG_ENTER strings corrected
+ *
  * Revision 3.1  2000/11/20 18:03:16  sacbase
  * new release made
  *
@@ -1254,7 +1257,7 @@ DFMGetMaskEntryNameSet (mask_t *mask)
     static mask_t *store_mask;
     static int i;
 
-    DBUG_ENTER ("DFMGetMaskEntryNameClear");
+    DBUG_ENTER ("DFMGetMaskEntryNameSet");
 
     if (mask != NULL) {
         CHECK_MASK (mask);
@@ -1309,7 +1312,7 @@ DFMGetMaskEntryDeclSet (mask_t *mask)
     static mask_t *store_mask;
     static int i;
 
-    DBUG_ENTER ("DFMGetMaskEntryDeclClear");
+    DBUG_ENTER ("DFMGetMaskEntryDeclSet");
 
     if (mask != NULL) {
         CHECK_MASK (mask);
