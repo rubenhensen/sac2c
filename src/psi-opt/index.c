@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2002/09/11 23:13:38  dkr
+ * IdxLet(): entries of prf_node_info.mac can be arranged in any order
+ * now
+ *
  * Revision 3.25  2002/09/09 17:48:05  dkr
  * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
  *
@@ -1652,26 +1656,18 @@ IdxLet (node *arg_node, node *arg_info)
     if ((vinfo != NULL) && (VINFO_FLAG (FindVect (vinfo)) == DOLLAR)
         && (VINFO_FLAG (vinfo) == IDX)
         && (((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
-             && (F_add_SxA <= PRF_PRF (LET_EXPR (arg_node)))
-             && (PRF_PRF (LET_EXPR (arg_node)) <= F_div_AxA)
-             && (PRF_PRF (LET_EXPR (arg_node)) != F_mul_AxA)
-             && (PRF_PRF (LET_EXPR (arg_node)) != F_div_AxA))
-
+             && ((PRF_PRF (LET_EXPR (arg_node)) == F_add_SxA)
+                 || (PRF_PRF (LET_EXPR (arg_node)) == F_add_AxS)
+                 || (PRF_PRF (LET_EXPR (arg_node)) == F_add_AxA)
+                 || (PRF_PRF (LET_EXPR (arg_node)) == F_sub_SxA)
+                 || (PRF_PRF (LET_EXPR (arg_node)) == F_sub_AxS)
+                 || (PRF_PRF (LET_EXPR (arg_node)) == F_sub_AxA)
+                 || (PRF_PRF (LET_EXPR (arg_node)) == F_mul_SxA)
+                 || (PRF_PRF (LET_EXPR (arg_node)) == F_mul_AxS)
+                 || (PRF_PRF (LET_EXPR (arg_node)) == F_div_SxA)
+                 || (PRF_PRF (LET_EXPR (arg_node)) == F_div_AxS)))
             || (NODE_TYPE (LET_EXPR (arg_node)) == N_id)
             || (NODE_TYPE (LET_EXPR (arg_node)) == N_array))) {
-        DBUG_ASSERT (((NODE_TYPE (LET_EXPR (arg_node)) == N_id)
-                      || (NODE_TYPE (LET_EXPR (arg_node)) == N_array)
-                      || (PRF_PRF (LET_EXPR (arg_node)) == F_add_SxA)
-                      || (PRF_PRF (LET_EXPR (arg_node)) == F_add_AxS)
-                      || (PRF_PRF (LET_EXPR (arg_node)) == F_add_AxA)
-                      || (PRF_PRF (LET_EXPR (arg_node)) == F_sub_SxA)
-                      || (PRF_PRF (LET_EXPR (arg_node)) == F_sub_AxS)
-                      || (PRF_PRF (LET_EXPR (arg_node)) == F_sub_AxA)
-                      || (PRF_PRF (LET_EXPR (arg_node)) == F_mul_SxA)
-                      || (PRF_PRF (LET_EXPR (arg_node)) == F_mul_AxS)
-                      || (PRF_PRF (LET_EXPR (arg_node)) == F_div_SxA)
-                      || (PRF_PRF (LET_EXPR (arg_node)) == F_div_AxS)),
-                     " wrong prf sequence in \"prf_node_info.mac\"!");
         /*
          * Here, for each IDX(...) in LET_USE(arg_node), we traverse the assignment
          * with INFO_IVE_TRANSFORM_VINFO( arg_info) being set accordingly.
