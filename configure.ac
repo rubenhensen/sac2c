@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.16  2003/03/26 09:18:30  sbs
+dnl -pthread option added for DEC cc.
+dnl
 dnl Revision 1.15  2003/03/25 21:02:43  sah
 dnl replaced 0 by O for optimization
 dnl flags;)
@@ -314,7 +317,7 @@ elif [ test "$DECC" = yes ]; then
   AC_SUBST(OPT_O2, [-O2])
   AC_SUBST(OPT_O3, [-O3])
   AC_SUBST(OPT_g, [-g])
-  AC_SUBST(RCLDFLAGS, [""])
+  AC_SUBST(RCLDFLAGS, ["-pthread"])
   AC_SUBST(RCCCFLAGS, [""])
   AC_SUBST(MKCCFLAGS, ["-g"])
   AC_SUBST(PDCCFLAGS, ["-g3"])
