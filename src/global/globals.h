@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1998/03/02 13:57:07  cg
+ *  global variables psi_optimize and backend_optimize removed.
+ *
  * Revision 1.17  1998/02/26 15:22:58  cg
  * added declaration of target_name
  *
@@ -91,10 +94,7 @@ extern char target_name[];
 extern char *cppvars[];
 extern int num_cpp_vars;
 
-extern int sac_optimize;
-extern int psi_optimize;
-extern int backend_optimize;
-
+extern int optimize;
 extern int opt_dcr;
 extern int opt_dfr;
 extern int opt_cf;
@@ -104,10 +104,8 @@ extern int opt_unr;
 extern int opt_uns;
 extern int opt_cse;
 extern int opt_wlf;
-
 extern int opt_ae;
 extern int opt_ive;
-
 extern int opt_rco;
 
 extern int optvar;
