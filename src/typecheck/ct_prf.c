@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2003/05/27 09:33:02  sbs
+ * error in NTCPRF_modarrayS eliminated.
+ *
  * Revision 1.16  2003/04/14 10:49:49  sbs
  * no double usage of TEPrfArg2Obj anymore as this fun uses static buffers 8-)
  *
@@ -521,7 +524,7 @@ NTCPRF_modarrayS (te_info *info, ntype *args)
                              array);
     TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 3), val);
     TEAssureScalar (TEPrfArg2Obj (TEGetNameStr (info), 3), val);
-    TEAssureSameSimpleType (TEArg2Obj (2), idx, TEPrfArg2Obj (TEGetNameStr (info), 3),
+    TEAssureSameSimpleType (TEArg2Obj (2), array, TEPrfArg2Obj (TEGetNameStr (info), 3),
                             val);
 
     if (TYIsAKV (array)) {
