@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.17  1999/12/13 11:26:07  dkr
+# *** empty log message ***
+#
 # Revision 2.16  1999/10/19 17:11:34  sbs
 # new files in typecheck included and UNIX_ALPHA changed to OSF_ALPHA
 #
@@ -301,12 +304,12 @@ clean:
 	(cd src/runtime; $(MAKE) clean)
 	$(RM) sac2c
 	$(RM) sac2c.efence
-	$(RM) -r .sb
+	$(RM) -r .sb SunWS_cache
 	$(RM) src.tar.gz
 
 clean_sb:
-	$(RM) -r .sb
-	$(RM) -r src/*/.sb
+	$(RM) -r .sb SunWS_cache
+	$(RM) -r src/*/.sb src/*/SunWS_cache
 
 floppy: src.tar.gz
 	$(TAR) -cvf /dev/rfd0c src.tar.gz

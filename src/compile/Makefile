@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.8  1999/12/13 11:28:42  dkr
+# *** empty log message ***
+#
 # Revision 2.7  1999/06/25 14:54:35  rob
 # Introduce definitions and utility infrastructure for tagged array support.
 #
@@ -305,7 +308,7 @@ deps:
 
 clean:
 	$(RM) *.o *.bak BEtest *.sib *.sac
-	$(RM) -r .sb
+	$(RM) -r .sb SunWS_cache
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.17  1999/12/13 11:27:07  dkr
+# *** empty log message ***
+#
 # Revision 2.16  1999/07/16 09:45:19  cg
 # Added -libsac variant for heap management diagnostics.
 #
@@ -124,9 +127,8 @@ deps:
 
 clean:
 	$(RM) *.o *.a *.bak *.old *~
-	$(RM) -r .sb
+	$(RM) -r .sb  SunWS_cache
 	$(RM) runtime.tar
 	$(RM) sac2crc CacheSimAnalyser
-
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.

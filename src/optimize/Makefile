@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.9  1999/12/13 11:27:00  dkr
+# *** empty log message ***
+#
 # Revision 2.8  1999/07/09 11:38:47  cg
 # make deps done
 #
@@ -145,7 +148,7 @@ deps:
 
 clean:
 	$(RM) *.o *.bak
-	$(RM) -r .sb
+	$(RM) -r .sb SunWS_cache
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 

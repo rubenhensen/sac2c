@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.6  1999/12/13 11:29:06  dkr
+# *** empty log message ***
+#
 # Revision 1.5  1999/09/20 13:16:23  cg
 # Added compilation of new source file heapmgr_diag.c
 #
@@ -106,7 +109,7 @@ prod:
 
 clean:
 	$(RM) *.o *.a *.bak *.old *~
-	$(RM) -r .sb
+	$(RM) -r .sb SunWS_cache
 
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.

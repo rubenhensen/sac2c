@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.8  1999/12/13 11:27:53  dkr
+# *** empty log message ***
+#
 # Revision 2.7  1999/10/20 13:02:06  sbs
 # new lines for constants / new-Types added.
 #
@@ -78,7 +81,7 @@ deps:
 
 clean:
 	$(RM) *.o *.bak
-	$(RM) -r .sb
+	$(RM) -r .sb SunWS_cache
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 

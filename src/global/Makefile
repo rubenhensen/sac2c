@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.10  1999/12/13 11:26:55  dkr
+# *** empty log message ***
+#
 # Revision 2.9  1999/10/08 08:34:05  sbs
 # in build.c :
 # changed more into cat since some systems (eg alpha) do request an
@@ -130,7 +133,7 @@ deps:
 
 clean:
 	$(RM) *.o *.bak *~
-	$(RM) -r .sb
+	$(RM) -r .sb SunWS_cache
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
