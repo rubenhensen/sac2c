@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1998/03/04 16:20:08  cg
+ * added  cc_debug,  cc_optimize, tmp_dirname.
+ * removed ccflagsstr, useranlib.
+ *
  * Revision 1.18  1998/03/02 13:57:07  cg
  *  global variables psi_optimize and backend_optimize removed.
  *
@@ -84,15 +88,18 @@ extern char sacfilename[];
 extern char outfilename[];
 extern char modulename[];
 extern char cfilename[];
-extern char ccflagsstr[];
 extern char targetdir[];
 extern char commandline[];
 extern file_type filetype;
+extern char *tmp_dirname;
 
 extern char target_name[];
 
 extern char *cppvars[];
 extern int num_cpp_vars;
+
+extern int cc_debug;
+extern int cc_optimize;
 
 extern int optimize;
 extern int opt_dcr;
@@ -124,7 +131,6 @@ extern int profileflag;
 extern int check_boundary;
 extern int check_malloc;
 
-extern int useranlib;
 extern int libstat;
 extern int linkstyle;
 extern int cleanup;
