@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   $Log$
+  Revision 1.6  2004/10/19 09:09:57  sah
+  added persist flag
+
   Revision 1.5  2004/07/31 16:16:57  sah
   added support for flags and moved to memory saving attribute
   structure.
@@ -67,6 +70,14 @@
             use="required" />
             <xsd:attribute name="size"
             type="xsd:positiveInteger" />
+            <xsd:attribute name="persist">
+              <xsd:simpleType>
+                <xsd:restriction base="xsd:NMTOKEN">
+                  <xsd:enumeration value="yes" />
+                  <xsd:enumeration value="no" />
+                </xsd:restriction>
+              </xsd:simpleType>
+            </xsd:attribute>
           </xsd:complexType>
         </xsd:element>
       </xsd:sequence>
