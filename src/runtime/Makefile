@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.14  2003/06/17 18:18:40  dkr
+# target 'icm_test' added
+#
 # Revision 3.13  2003/03/25 12:06:41  sbs
 # config.h added
 #
@@ -121,6 +124,12 @@ runtime.tar: *.h sac2crc.README
 	tar cvf $@ $^
 	$(CLOCK_SKEW_ELIMINATION) $@
 
+
+#
+# call the CC preprocessor on 'icm_test.C' to test the expansion of H-ICMs
+#
+icm_test: icm_test.C
+	$(CC) -I$$SACBASE/runtime -E $^
 
 clean:
 	$(RM) *.o *.a *.bak *~ .*.d
