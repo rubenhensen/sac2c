@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1997/10/07 14:11:16  srs
+ * new prfs F_min, F_max
+ *
  * Revision 1.17  1997/10/03 17:59:49  dkr
  * added prf abs()
  *
@@ -72,6 +75,7 @@ PRF_IF (F_toi, "F_foi", "toi", "_toi"), PRF_IF (F_tof, "F_fof", "tof", "_tof"),
   PRF_IF (F_dtof, "F_dtof", "dtof", "_dtof"), PRF_IF (F_abs, "F_abs", "abs", "_abs"),
   PRF_IF (F_not, "F_not", "!", "_not"),
 
+  PRF_IF (F_min, "F_min", "min", "_min"), PRF_IF (F_max, "F_max", "max", "_max"),
   PRF_IF (F_add, "F_add", "+", "_add"), PRF_IF (F_sub, "F_sub", "-", "_sub"),
   PRF_IF (F_mul, "F_mul", "*", "_mul"), PRF_IF (F_div, "F_div", "/", "_div"),
   PRF_IF (F_mod, "F_mod", "%", "_mod"), PRF_IF (F_and, "F_and", "&&", "_and"),
