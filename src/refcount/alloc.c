@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/07/19 12:38:47  ktr
+ * INFO structure is now initialized correctly.
+ *
  * Revision 1.5  2004/07/17 10:26:04  ktr
  * EMAL now uses an INFO structure.
  *
@@ -97,6 +100,12 @@ MakeInfo ()
     DBUG_ENTER ("MakeInfo");
 
     result = Malloc (sizeof (info));
+
+    INFO_EMAL_ALLOCLIST (result) = NULL;
+    INFO_EMAL_FUNDEF (result) = NULL;
+    INFO_EMAL_WITHOPS (result) = NULL;
+    INFO_EMAL_INDEXVECTOR (result) = NULL;
+    INFO_EMAL_MUSTFILL (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -1239,7 +1248,6 @@ EMAllocateFill (node *syntax_tree)
     DBUG_ENTER ("EMALAllocateFill");
 
     info = MakeInfo ();
-    INFO_EMAL_MUSTFILL (info) = FALSE;
 
     act_tab = emalloc_tab;
     syntax_tree = Trav (syntax_tree, info);
