@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1998/04/01 23:56:15  dkr
+ * added DupWLstriVar, DupWLgridVar
+ *
  * Revision 1.18  1998/03/27 18:39:03  dkr
  * DupWLproj -> DupWLstride
  *
@@ -123,5 +126,7 @@ extern node *DupWLblock (node *arg_node, node *arg_info);
 extern node *DupWLublock (node *arg_node, node *arg_info);
 extern node *DupWLstride (node *arg_node, node *arg_info);
 extern node *DupWLgrid (node *arg_node, node *arg_info);
+extern node *DupWLstriVar (node *arg_node, node *arg_info);
+extern node *DupWLgridVar (node *arg_node, node *arg_info);
 
 #endif /* _DupTree_h */
