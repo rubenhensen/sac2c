@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/08/06 08:58:30  dkr
+ * works also without TAGGED_ARRAYS, now
+ *
  * Revision 3.18  2002/08/05 20:42:10  dkr
  * ND_WL_GENARRAY__SHAPE... added
  *
@@ -142,6 +145,8 @@ PrintShapeFactor (int current_dim, int to_dim, char *to_nt)
 
     DBUG_VOID_RETURN;
 }
+
+#ifdef TAGGED_ARRAYS
 
 /******************************************************************************
  *
@@ -429,6 +434,8 @@ ICMCompileND_WL_GENARRAY__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
 
     DBUG_VOID_RETURN;
 }
+
+#endif /* TAGGED_ARRAYS */
 
 /******************************************************************************
  *
