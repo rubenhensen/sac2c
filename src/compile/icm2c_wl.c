@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2004/11/24 15:46:31  jhb
+ * removed include my_dbug.h
+ *
  * Revision 3.41  2004/10/28 17:50:22  khf
  * splitted WL_OFFSET into WL_OFFSET and WL_OFFSET_SHAPE_FACR
  * to avoid mixed declarations and code
@@ -119,7 +122,7 @@
 #include "icm2c_wl.h"
 
 #include "dbug.h"
-#include "my_debug.h"
+/* #include "my_debug.h" */
 #include "convert.h"
 #include "globals.h"
 #include "print.h"

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2004/11/24 15:50:42  jhb
+ * removed include my_dbug.h
+ *
  * Revision 1.14  2004/09/27 07:56:34  ktr
  * replaced ICMCompileND_SET__SHAPE_arr( to_NT, 1, shp);
  * with     ICMCompileND_SET__SHAPE_arr( to_NT, to_dim, shp);
@@ -60,7 +63,7 @@
 #include "icm2c_prf.h"
 
 #include "dbug.h"
-#include "my_debug.h"
+/* #include "my_debug.h" */
 #include "convert.h"
 #include "globals.h"
 #include "print.h"

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2004/11/24 15:48:08  jhb
+ * removed include my_dbug.h
+ *
  * Revision 3.60  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -86,7 +89,7 @@
 #include "icm2c_std.h"
 
 #include "dbug.h"
-#include "my_debug.h"
+/* #include "my_debug.h" */
 #include "convert.h"
 #include "globals.h"
 #include "print.h"
