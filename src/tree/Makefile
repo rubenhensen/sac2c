@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.7  2001/02/12 10:52:40  nmw
+# make deps made
+#
 # Revision 3.6  2001/02/02 10:39:11  dkr
 # make deps done
 #
@@ -120,6 +123,7 @@ DupTree.o: ../global/globals.h ../global/internal_lib.h traverse.h free.h
 DupTree.o: ../../inc/dbug.h ../global/my_debug.h DupTree.h LookUpTable.h
 DupTree.o: DataFlowMask.h DataFlowMaskUtils.h ../optimize/Inline.h
 DupTree.o: ../typecheck/typecheck.h scheduling.h ../optimize/generatemasks.h
+DupTree.o: ../typecheck/constants.h ../typecheck/shape.h
 InferDFMs.o: tree.h ../global/types.h tree_basic.h tree_compound.h
 InferDFMs.o: ../global/Error.h /usr/include/stdio.h
 InferDFMs.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
