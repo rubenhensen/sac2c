@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.24  2000/03/21 15:51:41  jhs
+ * Added some information about mtn.
+ *
  * Revision 2.23  2000/03/21 11:05:16  dkr
  * code brushed
  *
@@ -229,6 +232,7 @@ usage ()
       "\t-b18:fit       \tstop after fitting\n"
       "\t-b18:norm      \tstop after normalization\n"
       "\n"
+      "with -mt\n"
       "\t-b19:spmdinit  \tstop after building SPMD blocks\n"
       "\t-b19:spmdopt   \tstop after optimizing SPMD blocks\n"
       "\t-b19:spmdlift  \tstop after lifting SPMD blocks\n"
@@ -236,7 +240,19 @@ usage ()
       "\t-b19:syncopt   \tstop after optimizing SYNC blocks\n"
       "\t-b19:scheduling\tstop after scheduling SYNC blocks and with-loop segments\n"
       "\t-b19:spmdcons  \tstop after constrainig SPMD blocks\n"
-      "\t               \t(same as -b19 only)");
+      "\t               \t(same as -b19 only)\n"
+      "\n"
+      "with -mtn (UNDER CONSTRUCTION!!!)\n"
+      "\t-b19:init      \tstop after internal initialization\n"
+      "\t-b19:schin     \tstop after schedulings initialized\n"
+      "\t-b19:rfin      \tstop after replicated functions builded\n"
+      "\t-b19:blkin     \tstop after ST- and MT-blocks builded\n"
+      "\t-b19:blkpp     \tstop after blocks propagated\n"
+      "\t-b19:blkex     \tstop after blocks expanded\n"
+      "\t-b19:mtfin     \tstop after multithread functions builded\n"
+      "\t-b19:blkco     \t...\n"
+      "\t-b19dfa        \t...\n"
+      "\t ... to be continued ...");
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
 
