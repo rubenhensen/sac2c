@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2002/10/09 12:43:24  dkr
+ * structural constants exported now
+ *
  * Revision 1.5  2001/05/23 15:48:11  nmw
  * comments added, code beautified
  *
@@ -15,7 +18,6 @@
  * Revision 1.1  2001/03/20 16:16:54  nmw
  * Initial revision
  *
- *
  */
 
 /*****************************************************************************
@@ -30,12 +32,26 @@
  *
  *****************************************************************************/
 
-#ifndef SAC_SSACONSTANTFOLDING_H
+#ifndef _SAC_SSAConstantFolding_h_
+#define _SAC_SSAConstantFolding_h_
 
-#define SAC_SSACONSTANTFOLDING_H
+/*
+ * structural constant (SCO) should be integrated in constants.[ch] in future
+ */
+typedef struct STRUCT_CONSTANT struct_constant;
+
+/*
+ * functions to handle SCOs
+ */
+struct_constant *SCOExpr2StructConstant (node *expr);
+struct_constant *SCOArray2StructConstant (node *expr);
+struct_constant *SCOScalar2StructConstant (node *expr);
+node *SCODupStructConstant2Expr (struct_constant *struc_co);
+struct_constant *SCOFreeStructConstant (struct_constant *struc_co);
 
 extern node *SSAConstantFolding (node *fundef, node *modul);
 
+/* traversal functions */
 extern node *SSACFfundef (node *arg_node, node *arg_info);
 extern node *SSACFblock (node *arg_node, node *arg_info);
 extern node *SSACFarg (node *arg_node, node *arg_info);
@@ -50,4 +66,5 @@ extern node *SSACFprf (node *arg_node, node *arg_info);
 extern node *SSACFNgen (node *arg_node, node *arg_info);
 
 extern node *SSACFFoldPrfExpr (prf op, node **arg_expr);
-#endif /* SAC_SSACONSTANTFOLDING_H */
+
+#endif /* SAC_SSAConstantFolding_h */
