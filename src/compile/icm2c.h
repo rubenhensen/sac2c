@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.23  1995/06/30 12:19:57  hw
+ * Revision 1.24  1995/07/04 09:26:11  hw
+ * macros ND_I2D_A, ND_F2D_A, ND_D2I_A & ND_D2F_A inserted
+ *
+ * Revision 1.23  1995/06/30  12:19:57  hw
  * macros  ND_F2I_A & ND_I2F_A inserted
  *
  * Revision 1.22  1995/06/26  16:55:57  sbs
@@ -375,7 +378,10 @@
     }
 
 #define ND_I2F_A(a1, res) ND_F2I_A (a1, res)
-
+#define ND_I2D_A(a1, res) ND_F2I_A (a1, res)
+#define ND_F2D_A(a1, res) ND_F2I_A (a1, res)
+#define ND_D2I_A(a1, res) ND_F2I_A (a1, res)
+#define ND_D2F_A(a1, res) ND_F2I_A (a1, res)
 /* and now some macros that don't belong to N_icm
  */
 #define OUT_OF_BOUND(line, prf, size, idx)                                               \
