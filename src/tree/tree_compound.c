@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/06/30 15:24:39  jhs
+ * CombineExprs can handle arguments being NULL now.
+ * This effect can be used within MakeIcmXXX now.
+ *
  * Revision 1.8  2000/06/30 13:48:44  mab
  * added Array2Shpseg and DiffShpseg
  *
@@ -1902,6 +1906,22 @@ MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3)
  ***  N_icm :
  ***/
 
+/******************************************************************************
+ *
+ * function:
+ *   static node *CombineExprs( node *first, node *second)
+ *
+ * description:
+ *   This one is used only within MakeIcmXXX.
+ *   first and second are to nodes that will be conactenated as a chain
+ *   of exprs, if the first is an expr second will be appended at the end
+ *   of that chain, otherwise an N_exprs will be created ...
+ *
+ * exception:
+ *   if first and second are NULL, NULL will be returned ...
+ *
+ ******************************************************************************/
+
 static node *
 CombineExprs (node *first, node *second)
 {
@@ -1909,10 +1929,20 @@ CombineExprs (node *first, node *second)
 
     DBUG_ENTER ("CombineExprs");
 
-    if (NODE_TYPE (first) != N_exprs) {
-        result = MakeExprs (first, second);
+    if (first != NULL) {
+        if (NODE_TYPE (first) != N_exprs) {
+            result = MakeExprs (first, second);
+        } else {
+            result = AppendExprs (first, second);
+        }
+    } else if (second != NULL) {
+        if (NODE_TYPE (second) != N_exprs) {
+            result = MakeExprs (second, NULL);
+        } else {
+            result = second;
+        }
     } else {
-        result = AppendExprs (first, second);
+        result = NULL;
     }
 
     DBUG_RETURN (result);
@@ -1922,14 +1952,16 @@ CombineExprs (node *first, node *second)
  *
  * function:
  *   node *MakeIcm0(char *name)
- *   node *MakeIcm1(char *name, node *arg1)
- *   node *MakeIcm3(char *name, node *arg1, node *arg2)
- *   node *MakeIcm4(char *name, node *arg1, node *arg2, node *arg3, node *arg4)
- *   node *MakeIcm5(char *name, node *arg1, node *arg2, node *arg3, node *arg4, node
- **arg5)
+ *   node *MakeIcm1(char *name,
+ *                  node *arg1)
+ *   node *MakeIcm3(char *name,
+ *                  node *arg1, node *arg2)
+ *   node *MakeIcm4(char *name,
+ *                  node *arg1, node *arg2, node *arg3, node *arg4)
+ *   node *MakeIcm5(char *name,
+ *                  node *arg1, node *arg2, node *arg3, node *arg4, node *arg5)
  *
  * description:
- *
  *   These functions generate complete ICM representations including arguments.
  *   Each function argument may be an arbitrary list of single ICM arguments.
  *   These are concatenated correctly.
