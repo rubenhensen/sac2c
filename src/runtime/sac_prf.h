@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2003/09/19 15:41:07  dkr
+ * some more PRFs added
+ *
  * Revision 3.12  2003/09/18 14:43:18  dkr
  * support for F_neg added
  *
@@ -111,43 +114,52 @@
  * ICMs for primitive functions
  * ============================
  *
- * ND_PRF_DIM__DATA( to_nt, to_sdim, from_nt, from_sdim)
+ * ND_PRF_DIM__DATA( to_NT, to_sdim, from_NT, from_sdim)
  *
- * ND_PRF_SHAPE__DATA( to_nt, to_sdim, from_nt, from_sdim)
+ * ND_PRF_SHAPE__DATA( to_NT, to_sdim, from_NT, from_sdim)
  *
- * ND_PRF_RESHAPE__SHAPE_id( to_nt, to_sdim, shp_nt)
- * ND_PRF_RESHAPE__SHAPE_arr( to_nt, to_sdim, shp_size, ...shpa_any...)
+ * ND_PRF_RESHAPE__SHAPE_id( to_NT, to_sdim, shp_NT)
+ * ND_PRF_RESHAPE__SHAPE_arr( to_NT, to_sdim, shp_size, ...shp_ANY...)
  *
- * ND_PRF_SEL__SHAPE_id( to_nt, to_sdim, from_nt, from_sdim,
- *                       idx_size, idx_nt)
- * ND_PRF_SEL__SHAPE_arr( to_nt, to_sdim, from_nt, from_sdim,
- *                        idx_size, idxa_any)
- * ND_PRF_SEL__DATA_id( to_nt, to_sdim, from_nt, from_sdim,
- *                      idx_size, idx_nt, copyfun)
- * ND_PRF_SEL__DATA_arr( to_nt, to_sdim, from_nt, from_sdim,
- *                       idx_size, idxa_any, copyfun)
+ * ND_PRF_SEL__SHAPE_id( to_NT, to_sdim, from_NT, from_sdim,
+ *                       idx_size, idx_NT)
+ * ND_PRF_SEL__SHAPE_arr( to_NT, to_sdim, from_NT, from_sdim,
+ *                        idx_size, idxs_ANY)
+ * ND_PRF_SEL__DATA_id( to_NT, to_sdim, from_NT, from_sdim,
+ *                      idx_size, idx_NT, copyfun)
+ * ND_PRF_SEL__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
+ *                       idx_size, idxs_ANY, copyfun)
  *
- * ND_PRF_MODARRAY__DATA_id( to_nt, to_sdim, from_nt, from_sdim,
- *                           idx_size, idx_nt, val_any, copyfun)
- * ND_PRF_MODARRAY__DATA_arr( to_nt, to_sdim, from_nt, from_sdim,
- *                            idx_size, ...idxa_any..., val_any, copyfun)
+ * ND_PRF_MODARRAY__DATA_id( to_NT, to_sdim, from_NT, from_sdim,
+ *                           idx_size, idx_NT, val_ANY, copyfun)
+ * ND_PRF_MODARRAY__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
+ *                            idx_size, ...idxs_ANY..., val_ANY, copyfun)
  *
- * ND_PRF_CONV_A__DATA( to_nt, from_nt)
+ * ND_PRF_TAKE__SHAPE( to_NT, from_NT, cnt_ANY)
+ * ND_PRF_TAKE__DATA( to_NT, from_NT, cnt_ANY)
  *
- * ND_PRF_S__DATA( to_nt, op, scl)
- * ND_PRF_A__DATA( to_nt, op, scl)
+ * ND_PRF_DROP__SHAPE( to_NT, from_NT, cnt_ANY)
+ * ND_PRF_DROP__DATA( to_NT, from_NT, cnt_ANY)
  *
- * ND_PRF_SxS__DATA( to_nt, op, scl1,     scl2)
- * ND_PRF_SxA__DATA( to_nt, op, scl,      from_nt)
- * ND_PRF_AxS__DATA( to_nt, op, from_nt,  scl)
- * ND_PRF_AxA__DATA( to_nt, op, from1_nt, from2_nt)
+ * ND_PRF_CAT__SHAPE( to_NT, from1_NT, from2_NT)
+ * ND_PRF_CAT__DATA( to_NT, from1_NT, from2_NT)
+ *
+ * ND_PRF_CONV_A__DATA( to_NT, from_NT)
+ *
+ * ND_PRF_S__DATA( to_NT, op, scl)
+ * ND_PRF_A__DATA( to_NT, op, scl)
+ *
+ * ND_PRF_SxS__DATA( to_NT, op, scl1,     scl2)
+ * ND_PRF_SxA__DATA( to_NT, op, scl,      from_NT)
+ * ND_PRF_AxS__DATA( to_NT, op, from_NT,  scl)
+ * ND_PRF_AxA__DATA( to_NT, op, from1_NT, from2_NT)
  *
  ******************************************************************************/
 
-#define SAC_ND_PRF_DIM__DATA(to_nt, to_sdim, from_nt, from_sdim)                         \
+#define SAC_ND_PRF_DIM__DATA(to_NT, to_sdim, from_NT, from_sdim)                         \
     SAC_TR_PRF_PRINT (                                                                   \
-      ("ND_PRF_DIM__...( %s, %d, %s, %d)\n", #to_nt, to_sdim, #from_nt, from_sdim))      \
-    SAC_ND_CREATE__SCALAR__DATA (to_nt, SAC_ND_A_DIM (from_nt))
+      ("ND_PRF_DIM__...( %s, %d, %s, %d)\n", #to_NT, to_sdim, #from_NT, from_sdim))      \
+    SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_DIM (from_NT))
 
 /* ND_PRF_SHAPE__DATA( ...) is a C-ICM */
 
@@ -159,67 +171,77 @@
 /* ND_PRF_SEL__DATA_id( ...) is a C-ICM */
 /* ND_PRF_SEL__DATA_arr( ...) is a C-ICM */
 
-/* ND_PRF_MODARRAY__DATA( ...) is a C-ICM */
+/* ND_PRF_MODARRAY__DATA_id( ...) is a C-ICM */
+/* ND_PRF_MODARRAY__DATA_arr( ...) is a C-ICM */
 
-#define SAC_ND_PRF_CONV_A__DATA(to_nt, from_nt)                                          \
-    SAC_TR_PRF_PRINT (("ND_PRF_CONV_A__DATA( %s, %s)\n", #to_nt, #from_nt));             \
+/* ND_PRF_TAKE__SHAPE( ...) is a C-ICM */
+/* ND_PRF_TAKE__DATA( ...) is a C-ICM */
+
+/* ND_PRF_DROP__SHAPE( ...) is a C-ICM */
+/* ND_PRF_DROP__DATA( ...) is a C-ICM */
+
+/* ND_PRF_CAT__SHAPE( ...) is a C-ICM */
+/* ND_PRF_CAT__DATA( ...) is a C-ICM */
+
+#define SAC_ND_PRF_CONV_A__DATA(to_NT, from_NT)                                          \
+    SAC_TR_PRF_PRINT (("ND_PRF_CONV_A__DATA( %s, %s)\n", #to_NT, #from_NT));             \
     {                                                                                    \
         int SAC_i;                                                                       \
-        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_nt); SAC_i++) {                        \
-            SAC_ND_WRITE (to_nt, SAC_i) = SAC_ND_READ (from_nt, SAC_i);                  \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_NT); SAC_i++) {                        \
+            SAC_ND_WRITE (to_NT, SAC_i) = SAC_ND_READ (from_NT, SAC_i);                  \
         }                                                                                \
     }
 
-#define SAC_ND_PRF_S__DATA(to_nt, op_macro, op, scl)                                     \
+#define SAC_ND_PRF_S__DATA(to_NT, op_macro, op, scl)                                     \
     SAC_TR_PRF_PRINT (                                                                   \
-      ("ND_PRF_S__DATA( %s, %s, %s, %s)\n", #to_nt, #op_macro, #op, #scl));              \
-    SAC_ND_WRITE (to_nt, 0) = op_macro (op, scl);
+      ("ND_PRF_S__DATA( %s, %s, %s, %s)\n", #to_NT, #op_macro, #op, #scl));              \
+    SAC_ND_WRITE (to_NT, 0) = op_macro (op, scl);
 
-#define SAC_ND_PRF_A__DATA(to_nt, op_macro, op, arg_nt)                                  \
+#define SAC_ND_PRF_A__DATA(to_NT, op_macro, op, arg_NT)                                  \
     SAC_TR_PRF_PRINT (                                                                   \
-      ("ND_PRF_A__DATA( %s, %s, %s, %s)\n", #to_nt, #op_macro, #op, #arg_nt));           \
+      ("ND_PRF_A__DATA( %s, %s, %s, %s)\n", #to_NT, #op_macro, #op, #arg_NT));           \
     {                                                                                    \
         int SAC_i;                                                                       \
-        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_nt); SAC_i++) {                        \
-            SAC_ND_WRITE (to_nt, SAC_i) = op_macro (op, SAC_ND_READ (arg_nt, SAC_i));    \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_NT); SAC_i++) {                        \
+            SAC_ND_WRITE (to_NT, SAC_i) = op_macro (op, SAC_ND_READ (arg_NT, SAC_i));    \
         }                                                                                \
     }
 
-#define SAC_ND_PRF_SxS__DATA(to_nt, op_macro, op, scl1, scl2)                            \
-    SAC_TR_PRF_PRINT (("ND_PRF_SxS__DATA( %s, %s, %s, %s, %s)\n", #to_nt, #op_macro,     \
+#define SAC_ND_PRF_SxS__DATA(to_NT, op_macro, op, scl1, scl2)                            \
+    SAC_TR_PRF_PRINT (("ND_PRF_SxS__DATA( %s, %s, %s, %s, %s)\n", #to_NT, #op_macro,     \
                        #op, #scl1, #scl2));                                              \
-    SAC_ND_WRITE (to_nt, 0) = op_macro (op, scl1, scl2);
+    SAC_ND_WRITE (to_NT, 0) = op_macro (op, scl1, scl2);
 
-#define SAC_ND_PRF_SxA__DATA(to_nt, op_macro, op, scl, from_nt)                          \
-    SAC_TR_PRF_PRINT (("ND_PRF_SxA__DATA( %s, %s, %s, %s, %s)\n", #to_nt, #op_macro,     \
-                       #op, #scl, #from_nt));                                            \
+#define SAC_ND_PRF_SxA__DATA(to_NT, op_macro, op, scl, from_NT)                          \
+    SAC_TR_PRF_PRINT (("ND_PRF_SxA__DATA( %s, %s, %s, %s, %s)\n", #to_NT, #op_macro,     \
+                       #op, #scl, #from_NT));                                            \
     {                                                                                    \
         int SAC_i;                                                                       \
-        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_nt); SAC_i++) {                        \
-            SAC_ND_WRITE (to_nt, SAC_i)                                                  \
-              = op_macro (op, scl, SAC_ND_READ (from_nt, SAC_i));                        \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_NT); SAC_i++) {                        \
+            SAC_ND_WRITE (to_NT, SAC_i)                                                  \
+              = op_macro (op, scl, SAC_ND_READ (from_NT, SAC_i));                        \
         }                                                                                \
     }
 
-#define SAC_ND_PRF_AxS__DATA(to_nt, op_macro, op, from_nt, scl)                          \
-    SAC_TR_PRF_PRINT (("ND_PRF_AxS__DATA( %s, %s, %s, %s, %s)\n", #to_nt, #op_macro,     \
-                       #op, #from_nt, #scl));                                            \
+#define SAC_ND_PRF_AxS__DATA(to_NT, op_macro, op, from_NT, scl)                          \
+    SAC_TR_PRF_PRINT (("ND_PRF_AxS__DATA( %s, %s, %s, %s, %s)\n", #to_NT, #op_macro,     \
+                       #op, #from_NT, #scl));                                            \
     {                                                                                    \
         int SAC_i;                                                                       \
-        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_nt); SAC_i++) {                        \
-            SAC_ND_WRITE (to_nt, SAC_i)                                                  \
-              = op_macro (op, SAC_ND_READ (from_nt, SAC_i), scl);                        \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_NT); SAC_i++) {                        \
+            SAC_ND_WRITE (to_NT, SAC_i)                                                  \
+              = op_macro (op, SAC_ND_READ (from_NT, SAC_i), scl);                        \
         }                                                                                \
     }
 
-#define SAC_ND_PRF_AxA__DATA(to_nt, op_macro, op, from1_nt, from2_nt)                    \
-    SAC_TR_PRF_PRINT (("ND_PRF_AxA__DATA( %s, %s, %s, %s, %s)\n", #to_nt, #op_macro,     \
-                       #op, #from1_nt, #from2_nt));                                      \
+#define SAC_ND_PRF_AxA__DATA(to_NT, op_macro, op, from1_NT, from2_NT)                    \
+    SAC_TR_PRF_PRINT (("ND_PRF_AxA__DATA( %s, %s, %s, %s, %s)\n", #to_NT, #op_macro,     \
+                       #op, #from1_NT, #from2_NT));                                      \
     {                                                                                    \
         int SAC_i;                                                                       \
-        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_nt); SAC_i++) {                        \
-            SAC_ND_WRITE (to_nt, SAC_i) = op_macro (op, SAC_ND_READ (from1_nt, SAC_i),   \
-                                                    SAC_ND_READ (from2_nt, SAC_i));      \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (to_NT); SAC_i++) {                        \
+            SAC_ND_WRITE (to_NT, SAC_i) = op_macro (op, SAC_ND_READ (from1_NT, SAC_i),   \
+                                                    SAC_ND_READ (from2_NT, SAC_i));      \
         }                                                                                \
     }
 
