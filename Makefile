@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.17  1995/03/28 12:07:46  hw
+# Revision 1.18  1995/03/29 11:49:43  hw
+# compile inserted
+#
+# Revision 1.17  1995/03/28  12:07:46  hw
 # added internal_lib.o
 #
 # Revision 1.16  1995/03/22  11:19:57  asi
@@ -68,8 +71,10 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/DeadCodeRemoval.o src/optimize/WorkReduction.o
 MODULES= src/modules/filemgr.o src/modules/import.o
 REFCOUNT= src/refcount/refcount.o
+COMPILE= src/compile/compile.o
+
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) $(MODULES) \
-    $(REFCOUNT)
+    $(REFCOUNT) $(COMPILE)
 
 all: dummy sac2c
 
@@ -81,7 +86,8 @@ dummy:
 	(cd src/typecheck; $(MAKE) )
 	(cd src/optimize; $(MAKE) )
 	(cd src/modules; $(MAKE) )
-	(cd src/refcount; $(MAKE) )        
+	(cd src/refcount; $(MAKE) )       
+	(cd src/compile; $(MAKE) )
 
 sac2c: $(OBJ) $(LIB)
 	$(CC) -o sac2c $(OBJ) $(LIB) $(LIBS)
@@ -95,6 +101,8 @@ deps:
 	(cd src/optimize; $(MAKE) deps)
 	(cd src/modules; $(MAKE) deps)
 	(cd src/refcount; $(MAKE) deps )
+	(cd src/compile; $(MAKE) )
+
 clean:
 	(cd src/scanparse; $(MAKE) clean)
 	(cd src/global; $(MAKE) clean)
@@ -104,4 +112,5 @@ clean:
 	(cd src/optimize; $(MAKE) clean)
 	(cd src/modules; $(MAKE) clean)
 	(cd src/refcount; $(MAKE) clean)
+	(cd src/compile; $(MAKE) )
 	$(RM) sac2c
