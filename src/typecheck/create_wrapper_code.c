@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2003/05/30 15:10:13  dkr
+ * InsertWrapperCode() modified: wrapper code is build for all
+ * non-var-args functions now,
+ * bug in CorrectFundefPointer() fixed.
+ *
  * Revision 1.14  2003/05/29 14:39:09  dkr
  * bug in CorrectFundefPointer() fixed
  *
@@ -181,15 +186,14 @@ SplitWrapper (node *fundef)
  *   node *InsertWrapperCode( node *fundef)
  *
  * Description:
- *   If the given wrapper function 'fundef' can not be dispatched statically,
- *   appropriate dispatch code is created and stored in FUNDEF_BODY.
+ *   Creates dispatch code for the given wrapper function and stores it in
+ *   FUNDEF_BODY.
  *
  ******************************************************************************/
 
 static node *
 InsertWrapperCode (node *fundef)
 {
-    node *spec_fundef;
     node *ret;
     node *assigns;
     node *vardec;
@@ -197,8 +201,16 @@ InsertWrapperCode (node *fundef)
 
     DBUG_ENTER ("InsertWrapperCode");
 
-    spec_fundef = TYStaticDispatchWrapper (fundef);
-    if (spec_fundef == NULL) {
+    DBUG_ASSERT (((NODE_TYPE (fundef) == N_fundef)
+                  && (FUNDEF_STATUS (fundef) == ST_wrapperfun)
+                  && (FUNDEF_BODY (fundef) == NULL)),
+                 "inconsistant wrapper function found!");
+
+    /*
+     * SAC functions with var-args are not allowed
+     *   -> no wrapper functions for C functions with var-args!!
+     */
+    if (!HasDotTypes (FUNDEF_TYPES (fundef)) && !HasDotArgs (FUNDEF_ARGS (fundef))) {
         /*
          * generate wrapper code together with the needed vardecs
          */
@@ -308,21 +320,19 @@ SignatureMatches (node *formal, ntype *actual_prod_type)
         actual_type = TYGetProductMember (actual_prod_type, pos);
         DBUG_EXECUTE ("CWC", tmp_str = TYType2String (formal_type, FALSE, 0);
                       tmp2_str = TYType2String (actual_type, FALSE, 0););
-        DBUG_PRINT ("CWC",
-                    ("comparing formal type %s with actual type %s", tmp_str, tmp2_str));
+        DBUG_PRINT ("CWC", ("    comparing formal type %s with actual type %s", tmp_str,
+                            tmp2_str));
         DBUG_EXECUTE ("CWC", tmp_str = Free (tmp_str); tmp2_str = Free (tmp2_str););
 
         if (!TYLeTypes (actual_type, formal_type)) {
             match = FALSE;
             break;
         }
-        DBUG_PRINT ("CWC", ("result: %d", match));
 
         formal = ARG_NEXT (formal);
         pos++;
     }
-
-    actual_prod_type = TYFreeType (actual_prod_type);
+    DBUG_PRINT ("CWC", ("    result: %d", match));
 
     DBUG_RETURN (match);
 }
@@ -364,9 +374,12 @@ CorrectFundefPointer (node *fundef, char *funname, node *args)
         if (dft_res == NULL) {
             DBUG_ASSERT ((args == NULL), "illegal dispatch result found!");
             /*
-             * no args found -> static dispatch possible -> use FUNDEF_IMPL
+             * no args found -> static dispatch possible
+             *
+             * fundef can be found in FUNDEF_IMPL (dirty hack!)
              */
             fundef = FUNDEF_IMPL (fundef);
+            DBUG_PRINT ("CWC", ("  dispatched statically", funname));
         } else if ((dft_res->num_partials == 0)
                    && (dft_res->num_deriveable_partials == 0)) {
             /*
@@ -378,10 +391,34 @@ CorrectFundefPointer (node *fundef, char *funname, node *args)
             } else {
                 fundef = dft_res->deriveable;
             }
+            DBUG_PRINT ("CWC", ("  dispatched statically", funname));
+        } else if (HasDotTypes (FUNDEF_TYPES (fundef))
+                   || HasDotArgs (FUNDEF_ARGS (fundef))) {
+            /*
+             * static dispatch impossible, but function header contains dots
+             *   -> no wrapper function could be created
+             * if only a single instance available do the dispatch statically and
+             * give a warning message, otherwise we are stuck here!
+             */
+            if ((dft_res->num_partials + dft_res->num_deriveable_partials == 1)
+                && (dft_res->def == NULL) && (dft_res->deriveable == NULL)) {
+                fundef = (dft_res->num_partials == 1) ? dft_res->partials[0]
+                                                      : dft_res->deriveable_partials[0];
+                WARN (linenum, ("application of var-arg function %s found which may"
+                                " cause a type error",
+                                FUNDEF_NAME (fundef)));
+                DBUG_PRINT ("CWC", ("  dispatched statically although only partial"
+                                    " has been found (T_dots)!",
+                                    funname));
+            } else {
+                DBUG_ASSERT ((0), "wrapper with T_dots found which could be dispatched "
+                                  "statically!");
+            }
         } else {
             /*
              * static dispatch impossible -> search for correct wrapper
              */
+            DBUG_PRINT ("CWC", ("  static dispatch impossible, search for wrapper"));
             do {
                 fundef = FUNDEF_NEXT (fundef);
                 DBUG_ASSERT (((fundef != NULL)
@@ -389,9 +426,9 @@ CorrectFundefPointer (node *fundef, char *funname, node *args)
                               && (FUNDEF_STATUS (fundef) == ST_wrapperfun)),
                              "no appropriate wrapper function found!");
             } while (!SignatureMatches (FUNDEF_ARGS (fundef), arg_types));
+            DBUG_PRINT ("CWC", ("  correct wrapper found"));
 
-            DBUG_ASSERT ((FUNDEF_BODY (fundef) != NULL),
-                         "static dispatch of empty wrapper failed");
+            DBUG_ASSERT ((FUNDEF_BODY (fundef) != NULL), "no wrapper code found!");
         }
 
         arg_types = TYFreeType (arg_types);
