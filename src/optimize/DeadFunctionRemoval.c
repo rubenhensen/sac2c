@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/05/02 09:09:53  nmw
+ * change implementation to be more agressive when removing dead functions
+ * from SAC programs
+ *
  * Revision 3.3  2001/03/22 21:11:25  dkr
  * include of tree.h eliminated
  *
@@ -97,17 +101,40 @@ DeadFunctionRemoval (node *arg_node, node *arg_info)
  *
  * Description:
  *   Prevents DFR in modules
+ *   in programs the DFR starts in fundef main.
  *
  ******************************************************************************/
 
 node *
 DFRmodul (node *arg_node, node *arg_info)
 {
+    node *fun;
     DBUG_ENTER ("DFRmodul");
 
     if (MODUL_FUNS (arg_node) != NULL) {
+        /* clear dfr flag */
+        fun = MODUL_FUNS (arg_node);
+        while (fun != NULL) {
+            FUNDEF_EXPORT (fun) = FALSE;
+            fun = FUNDEF_NEXT (fun);
+        }
+
+        /* check fundefs for applications (only main in programs) */
         INFO_DFR_SPINE (arg_info) = TRUE;
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+
+        /* turn unused fundefs into zombies */
+        fun = MODUL_FUNS (arg_node);
+        while (fun != NULL) {
+            if (!(FUNDEF_EXPORT (fun))) {
+                dead_fun++;
+                fun = FreeNode (fun);
+            }
+            fun = FUNDEF_NEXT (fun);
+        }
+
+        /* remove all produced zombies */
+        MODUL_FUNS (arg_node) = RemoveAllZombies (MODUL_FUNS (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -134,7 +161,8 @@ DFRfundef (node *arg_node, node *arg_info)
                     ("Dead Function Removal in function: %s", FUNDEF_NAME (arg_node)));
 
         if ((FUNDEF_STATUS (arg_node) == ST_exported)
-            || (FUNDEF_STATUS (arg_node) == ST_objinitfun)) {
+            || (FUNDEF_STATUS (arg_node) == ST_objinitfun)
+            || (strcmp (FUNDEF_NAME (arg_node), "main") == 0)) {
             FUNDEF_EXPORT (arg_node) = TRUE;
 
             if (FUNDEF_BODY (arg_node) != NULL) {
@@ -144,16 +172,12 @@ DFRfundef (node *arg_node, node *arg_info)
             }
         }
 
-        if (FUNDEF_NEXT (arg_node) != NULL) {
+        /* traverse all fundefs in modules only */
+        if ((strcmp (FUNDEF_NAME (arg_node), "main") != 0)
+            && (FUNDEF_NEXT (arg_node) != NULL)) {
             FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
         }
 
-        if (FUNDEF_EXPORT (arg_node)) {
-            FUNDEF_EXPORT (arg_node) = FALSE;
-        } else {
-            dead_fun++;
-            arg_node = FreeNode (arg_node);
-        }
     } else {
         if (!FUNDEF_EXPORT (arg_node)) {
             FUNDEF_EXPORT (arg_node) = TRUE;
