@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/06/28 12:58:46  dkr
+ * ICM_UNDEF moved to sac_misc.h
+ *
  * Revision 3.2  2002/04/30 08:46:28  dkr
  * no changes done
  *
@@ -160,13 +163,6 @@
 
 #define BuildArgs4(a, b, c, d) xBuildArgs4 (a, b, c, d)
 #define xBuildArgs4(a, b, c, d) (##a##, ##b##, ##c##, ##d##)
-
-/*
- * Handling of undefined ICMs
- */
-
-#define ICM_UNDEF                                                                        \
-    ICM_IS_UNDEFINED /* CC will report a undefined symbol ICM_IS_UNDEFINED */
 
 /*
  * VIEW is a handy viewer for testing macros
