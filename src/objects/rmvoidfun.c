@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1997/09/05 17:44:38  dkr
+ * fixed a bug in function RMVassign with nnode
+ *
  * Revision 1.3  1997/09/05 13:46:04  cg
  * All cast expressions are now removed by rmvoidfun.c. Therefore,
  * the respective attempts in precompile.c and ConstantFolding.c
@@ -131,25 +134,29 @@ RMVassign (node *arg_node, node *arg_info)
 
     while ((arg_node != NULL) && (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
            && (LET_IDS (ASSIGN_INSTR (arg_node)) == NULL)) {
+        /* remove all void-functions */
         arg_node = FreeNode (arg_node);
     }
 
     if (arg_node != NULL) {
         if (ASSIGN_INSTR (arg_node) != NULL) {
+            /* travers the instruction of the actual assignment to remove the casts */
             ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
         }
 
         if (ASSIGN_NEXT (arg_node) != NULL) {
+            /* if another assignment follows, travers this one */
             ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-        }
 
-        /*-------------------------------------------------------------------*/
+            /*-------------------------------------------------------------------*/
 #ifndef NEWTREE
-        if (ASSIGN_NEXT (arg_node) == NULL) {
-            arg_node->nnode -= 1;
-        }
+            if (ASSIGN_NEXT (arg_node) == NULL) {
+                /* if the following assignment had been removed, fix the node-counter */
+                arg_node->nnode -= 1;
+            }
 #endif
-        /*-------------------------------------------------------------------*/
+            /*-------------------------------------------------------------------*/
+        }
     }
 
     DBUG_RETURN (arg_node);
