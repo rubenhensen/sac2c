@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/23 21:00:52  ktr
+ * COMPILES!!!
+ *
  * Revision 1.5  2004/11/19 15:42:41  ktr
  * Support for F_alloc_or_reshape added.
  *
@@ -36,7 +39,7 @@
  *
  *
  */
-#define NEW_INFO
+#include "filterrc.h"
 
 #include "globals.h"
 #include "tree_basic.h"
@@ -45,15 +48,17 @@
 #include "dbug.h"
 #include "print.h"
 #include "DataFlowMask.h"
+#include "internal_lib.h"
+#include "free.h"
 
 /**
  * INFO structure
  */
 struct INFO {
-    DFMmask_t usemask;
-    DFMmask_t oldmask;
-    DFMmask_t thenmask;
-    DFMmask_t elsemask;
+    dfmask_t *usemask;
+    dfmask_t *oldmask;
+    dfmask_t *thenmask;
+    dfmask_t *elsemask;
     node *condargs;
 };
 
@@ -76,7 +81,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_FRC_USEMASK (result) = NULL;
     INFO_FRC_OLDMASK (result) = NULL;
@@ -92,7 +97,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -111,7 +116,6 @@ FreeInfo (info *info)
 node *
 EMFRCFilterReuseCandidates (node *syntax_tree)
 {
-    funtab *old_tab;
     info *info;
 
     DBUG_ENTER ("EMFRCFilterReuseCandidates");
@@ -120,12 +124,9 @@ EMFRCFilterReuseCandidates (node *syntax_tree)
 
     info = MakeInfo ();
 
-    old_tab = act_tab;
-    act_tab = emfrc_tab;
-
-    syntax_tree = Trav (syntax_tree, info);
-
-    act_tab = old_tab;
+    TRAVpush (TR_emfrc);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
 
     info = FreeInfo (info);
 
@@ -160,13 +161,13 @@ FilterTrav (node *arg_node, info *arg_info)
         EXPRS_NEXT (arg_node) = FilterTrav (EXPRS_NEXT (arg_node), arg_info);
     }
 
-    if (DFMTestMaskEntry (INFO_FRC_USEMASK (arg_info), NULL,
-                          ID_VARDEC (EXPRS_EXPR (arg_node)))) {
+    if (DFMtestMaskEntry (INFO_FRC_USEMASK (arg_info), NULL,
+                          ID_AVIS (EXPRS_EXPR (arg_node)))) {
         DBUG_PRINT ("EMFRC", ("Invalid reuse candidate removed: %s",
                               ID_NAME (EXPRS_EXPR (arg_node))));
-        arg_node = FreeNode (arg_node);
+        arg_node = FREEdoFreeNode (arg_node);
     } else {
-        EXPRS_EXPR (arg_node) = Trav (EXPRS_EXPR (arg_node), arg_info);
+        EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -193,7 +194,7 @@ FilterRCs (node *arg_node, info *arg_info)
 
     alloc = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (arg_node)));
 
-    DBUG_EXECUTE ("EMFRC", Print (alloc););
+    DBUG_EXECUTE ("EMFRC", PRTdoPrint (alloc););
 
     DBUG_ASSERT ((NODE_TYPE (alloc) == N_prf)
                    && ((PRF_PRF (alloc) == F_alloc)
@@ -240,13 +241,13 @@ EMFRCap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMFRCap");
 
-    if (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node))) {
+    if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
         INFO_FRC_CONDARGS (arg_info) = AP_ARGS (arg_node);
-        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
     }
 
     if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -269,17 +270,17 @@ EMFRCarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMFRCarg");
 
-    if (DFMTestMaskEntry (INFO_FRC_OLDMASK (arg_info), NULL,
-                          ID_VARDEC (EXPRS_EXPR (INFO_FRC_CONDARGS (arg_info))))) {
+    if (DFMtestMaskEntry (INFO_FRC_OLDMASK (arg_info), NULL,
+                          ID_AVIS (EXPRS_EXPR (INFO_FRC_CONDARGS (arg_info))))) {
         DBUG_PRINT ("EMFRC",
                     ("Variable used in calling context: %s", ARG_NAME (arg_node)));
-        DFMSetMaskEntrySet (INFO_FRC_USEMASK (arg_info), NULL, arg_node);
+        DFMsetMaskEntrySet (INFO_FRC_USEMASK (arg_info), NULL, ARG_AVIS (arg_node));
     }
 
     INFO_FRC_CONDARGS (arg_info) = EXPRS_NEXT (INFO_FRC_CONDARGS (arg_info));
 
     if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -306,10 +307,10 @@ EMFRCassign (node *arg_node, info *arg_info)
      * Bottom-up traversal
      */
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -334,17 +335,17 @@ EMFRCcond (node *arg_node, info *arg_info)
     DBUG_PRINT ("EMFRC", ("Filtering conditional"));
 
     INFO_FRC_USEMASK (arg_info) = INFO_FRC_THENMASK (arg_info);
-    COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+    COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
 
     INFO_FRC_USEMASK (arg_info) = INFO_FRC_ELSEMASK (arg_info);
-    COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+    COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
-    DFMSetMaskOr (INFO_FRC_USEMASK (arg_info), INFO_FRC_THENMASK (arg_info));
+    DFMsetMaskOr (INFO_FRC_USEMASK (arg_info), INFO_FRC_THENMASK (arg_info));
 
-    INFO_FRC_THENMASK (arg_info) = DFMRemoveMask (INFO_FRC_THENMASK (arg_info));
+    INFO_FRC_THENMASK (arg_info) = DFMremoveMask (INFO_FRC_THENMASK (arg_info));
     INFO_FRC_ELSEMASK (arg_info) = NULL;
 
-    COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
+    COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -366,18 +367,18 @@ EMFRCfuncond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMFRCfuncond");
 
-    FUNCOND_IF (arg_node) = Trav (FUNCOND_IF (arg_node), arg_info);
+    FUNCOND_IF (arg_node) = TRAVdo (FUNCOND_IF (arg_node), arg_info);
 
     if (INFO_FRC_THENMASK (arg_info) == NULL) {
-        INFO_FRC_THENMASK (arg_info) = DFMGenMaskCopy (INFO_FRC_USEMASK (arg_info));
+        INFO_FRC_THENMASK (arg_info) = DFMgenMaskCopy (INFO_FRC_USEMASK (arg_info));
         INFO_FRC_ELSEMASK (arg_info) = INFO_FRC_USEMASK (arg_info);
     }
 
     INFO_FRC_USEMASK (arg_info) = INFO_FRC_THENMASK (arg_info);
-    FUNCOND_THEN (arg_node) = Trav (FUNCOND_THEN (arg_node), arg_info);
+    FUNCOND_THEN (arg_node) = TRAVdo (FUNCOND_THEN (arg_node), arg_info);
 
     INFO_FRC_USEMASK (arg_info) = INFO_FRC_ELSEMASK (arg_info);
-    FUNCOND_ELSE (arg_node) = Trav (FUNCOND_ELSE (arg_node), arg_info);
+    FUNCOND_ELSE (arg_node) = TRAVdo (FUNCOND_ELSE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -400,10 +401,10 @@ EMFRCfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMFRCfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        if ((!FUNDEF_IS_CONDFUN (arg_node)) || (INFO_FRC_USEMASK (arg_info) != NULL)) {
+        if ((!FUNDEF_ISCONDFUN (arg_node)) || (INFO_FRC_USEMASK (arg_info) != NULL)) {
 
-            DFMmask_base_t maskbase;
-            DFMmask_t oldmask, oldthen, oldelse;
+            dfmask_base_t *maskbase;
+            dfmask_t *oldmask, *oldthen, *oldelse;
 
             DBUG_PRINT ("EMFRC", ("Filtering reuse candidates in function %s",
                                   FUNDEF_NAME (arg_node)));
@@ -412,25 +413,25 @@ EMFRCfundef (node *arg_node, info *arg_info)
             oldthen = INFO_FRC_THENMASK (arg_info);
             oldelse = INFO_FRC_ELSEMASK (arg_info);
 
-            maskbase = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+            maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
-            INFO_FRC_USEMASK (arg_info) = DFMGenMaskClear (maskbase);
+            INFO_FRC_USEMASK (arg_info) = DFMgenMaskClear (maskbase);
             INFO_FRC_THENMASK (arg_info) = NULL;
             INFO_FRC_ELSEMASK (arg_info) = NULL;
 
             if (oldmask != NULL) {
                 INFO_FRC_OLDMASK (arg_info) = oldmask;
                 if (FUNDEF_ARGS (arg_node) != NULL) {
-                    FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+                    FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
                 }
                 INFO_FRC_OLDMASK (arg_info) = NULL;
             }
 
-            FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-            INFO_FRC_USEMASK (arg_info) = DFMRemoveMask (INFO_FRC_USEMASK (arg_info));
+            INFO_FRC_USEMASK (arg_info) = DFMremoveMask (INFO_FRC_USEMASK (arg_info));
 
-            maskbase = DFMRemoveMaskBase (maskbase);
+            maskbase = DFMremoveMaskBase (maskbase);
 
             INFO_FRC_USEMASK (arg_info) = oldmask;
             INFO_FRC_THENMASK (arg_info) = oldthen;
@@ -442,7 +443,7 @@ EMFRCfundef (node *arg_node, info *arg_info)
     }
 
     if ((INFO_FRC_USEMASK (arg_info) == NULL) && (FUNDEF_NEXT (arg_node) != NULL)) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -465,11 +466,11 @@ EMFRCid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMFRCid");
 
-    if (!DFMTestMaskEntry (INFO_FRC_USEMASK (arg_info), NULL, ID_VARDEC (arg_node))) {
+    if (!DFMtestMaskEntry (INFO_FRC_USEMASK (arg_info), NULL, ID_AVIS (arg_node))) {
 
         DBUG_PRINT ("EMFRC", ("Used Variable: %s", ID_NAME (arg_node)););
 
-        DFMSetMaskEntrySet (INFO_FRC_USEMASK (arg_info), NULL, ID_VARDEC (arg_node));
+        DFMsetMaskEntrySet (INFO_FRC_USEMASK (arg_info), NULL, ID_AVIS (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -497,7 +498,7 @@ EMFRCprf (node *arg_node, info *arg_info)
     }
 
     if (PRF_ARGS (arg_node) != NULL) {
-        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -520,9 +521,9 @@ EMFRCwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMFRCwith");
 
-    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
-    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
-    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -544,17 +545,17 @@ EMFRCwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMFRCwith2");
 
-    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
-    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
-    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
-    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+    WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+    WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
+    WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMFRCwithop( node *arg_node, info *arg_info)
+ * @fn node *EMFRCfold( node *arg_node, info *arg_info)
  *
  * @brief
  *
@@ -565,35 +566,72 @@ EMFRCwith2 (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-EMFRCwithop (node *arg_node, info *arg_info)
+EMFRCfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMFRCwithop");
+    DBUG_ENTER ("EMFRCfold");
 
-    switch (NWITHOP_TYPE (arg_node)) {
-    case WO_genarray:
-        NWITHOP_MEM (arg_node) = FilterRCs (NWITHOP_MEM (arg_node), arg_info);
-        NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
-        if (NWITHOP_DEFAULT (arg_node) != NULL) {
-            NWITHOP_DEFAULT (arg_node) = Trav (NWITHOP_DEFAULT (arg_node), arg_info);
-        }
-        break;
+    FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
-    case WO_modarray:
-        NWITHOP_MEM (arg_node) = FilterRCs (NWITHOP_MEM (arg_node), arg_info);
-        NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
-        break;
-
-    case WO_foldfun:
-    case WO_foldprf:
-        NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
-        break;
-
-    default:
-        break;
+    if (FOLD_NEXT (arg_node) != NULL) {
+        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
     }
 
-    if (NWITHOP_NEXT (arg_node) != NULL) {
-        NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMFRCgenarray( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+EMFRCgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMFRCgenarray");
+
+    GENARRAY_MEM (arg_node) = FilterRCs (GENARRAY_MEM (arg_node), arg_info);
+    GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
+
+    if (GENARRAY_DEFAULT (arg_node) != NULL) {
+        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
+    }
+
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMFRCmodarray( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+EMFRCmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMFRCmodarray");
+
+    MODARRAY_MEM (arg_node) = FilterRCs (MODARRAY_MEM (arg_node), arg_info);
+    MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
+
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
