@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.17  2004/10/04 11:48:17  sah
+  added Sync and Alloc attribute to
+  ST node
+
   Revision 1.16  2004/09/30 20:03:21  sah
   added refcounting info to avis node
   renamed CSEInfo to CSEinfo
@@ -2839,6 +2843,18 @@
           </phases>
         </attribute>
         <attribute name="NeedLater_ST" mandatory="yes">
+          <type name="DFMMask" />
+          <phases>
+            <range from="multithread.dfa" to="final" />
+          </phases>
+        </attribute>
+        <attribute name="Alloc" mandatory="no">
+          <type name="DFMMask" />
+          <phases>
+            <range from="multithread.dfa" to="final" />
+          </phases>
+        </attribute>
+        <attribute name="Sync" mandatory="no">
           <type name="DFMMask" />
           <phases>
             <range from="multithread.dfa" to="final" />
