@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/07/21 14:47:35  nmw
+ * keyword ModuleSpec for specialization files added
+ *
  * Revision 2.13  2000/06/13 12:54:40  dkr
  * old_with removed
  *
@@ -243,6 +246,7 @@ int start_token;
 "inline"                        { FILTER( INLINE );}
 
 "ModuleDec"                     { FILTER( MODDEC );}
+"ModuleSpec"                    { FILTER( MODSPEC );}
 "Module"                        { FILTER( MODIMP );}
 "ClassDec"                      { FILTER( CLASSDEC );}
 "Class"                         { FILTER( CLASSIMP );}
@@ -273,6 +277,7 @@ int start_token;
 "wlcomp"                        { FILTER( WLCOMP );}
 "cachesim"                      { FILTER( CACHESIM );}
 "Default"                       { FILTER( DEFAULT );}
+"specialize"                    { FILTER( SPECIALIZE );}
 
 "int"                           { FILTER( TYPE_INT );}
 "float"                         { FILTER( TYPE_FLOAT );}
