@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2000/05/24 18:57:50  dkr
+ * macros for old with-loop separated
+ * macro NCODE_CBLOCK_INSTR added
+ *
  * Revision 1.13  2000/03/31 14:09:47  dkr
  * NWITH_OR_NWITH2_... macros added
  *
@@ -1294,156 +1298,6 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_generator :
- ***/
-
-/*
- *  compound access macros
- */
-
-#define GEN_DEFMASK(n) (GEN_MASK (n, 0))
-#define GEN_USEMASK(n) (GEN_MASK (n, 1))
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_with :
- ***/
-
-/*
- *  compound access macros
- */
-
-#define WITH_LEFT(n) (GEN_LEFT (WITH_GEN (n)))
-#define WITH_RIGHT(n) (GEN_RIGHT (WITH_GEN (n)))
-#define WITH_ID(n) (GEN_ID (WITH_GEN (n)))
-
-#define WITH_GENDEFMASK(n) (GEN_DEFMASK (WITH_GEN (n)))
-#define WITH_GENUSEMASK(n) (GEN_USEMASK (WITH_GEN (n)))
-
-#define WITH_OPERATORDEFMASK(n) (OPERATOR_USEMASK (WITH_OPERATOR (n)))
-#define WITH_OPERATORUSEMASK(n) (OPERATOR_USEMASK (WITH_OPERATOR (n)))
-
-#define WITH_BODYDEFMASK(n) (WITH_MASK (n, 0))
-#define WITH_BODYUSEMASK(n) (WITH_MASK (n, 0))
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_Nwith :
- ***/
-
-#define NWITH_TYPE(n) (NWITHOP_TYPE (NWITH_WITHOP (n)))
-#define NWITH_WITHID(n) (NPART_WITHID (NWITH_PART (n)))
-#define NWITH_IDS(n) (NPART_IDS (NWITH_PART (n)))
-#define NWITH_VEC(n) (NPART_VEC (NWITH_PART (n)))
-#define NWITH_BOUND2(n) (NPART_BOUND2 (NWITH_PART (n)))
-/*
- * remark: We only need to inspect the withid of the first part,
- *         because the withid is in *all* parts the same!!
- */
-#define NWITH_CEXPR(n) (NCODE_CEXPR (NWITH_CODE (n)))
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_Npart:
- ***/
-
-#define NPART_IDS(n) (NWITHID_IDS (NPART_WITHID (n)))
-#define NPART_VEC(n) (NWITHID_VEC (NPART_WITHID (n)))
-#define NPART_BOUND2(n) (NGEN_BOUND2 (NPART_GEN (n)))
-
-#define NPART_DEFMASK(n) (NPART_MASK (n, 0))
-#define NPART_USEMASK(n) (NPART_MASK (n, 1))
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_Ncode :
- ***/
-
-#define NCODE_DEFMASK(n) (NCODE_MASK (n, 0))
-#define NCODE_USEMASK(n) (NCODE_MASK (n, 1))
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_Nwithop :
- ***/
-
-#define NWITHOP_OPARG(n)                                                                 \
-    (WO_modarray == NWITHOP_TYPE (n)                                                     \
-       ? NWITHOP_ARRAY (n)                                                               \
-       : WO_genarray == NWITHOP_TYPE (n) ? NWITHOP_SHAPE (n) : NWITHOP_NEUTRAL (n))
-
-#define NWITHOP_DEFMASK(n) (NWITHOP_MASK (n, 0))
-#define NWITHOP_USEMASK(n) (NWITHOP_MASK (n, 1))
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_Nwith2 :
- ***/
-
-#define NWITH2_TYPE(n) (NWITHOP_TYPE (NWITH2_WITHOP (n)))
-#define NWITH2_VEC(n) (NWITHID_VEC (NWITH2_WITHID (n)))
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_Nwith : / N_Nwith2 :
- ***/
-
-#define NWITH_OR_NWITH2_TYPE(n)                                                          \
-    ((NODE_TYPE (n) == N_Nwith) ? NWITH_TYPE (n) : NWITH2_TYPE (n))
-#define NWITH_OR_NWITH2_VEC(n)                                                           \
-    ((NODE_TYPE (n) == N_Nwith) ? NWITH_VEC (n) : NWITH2_VEC (n))
-
-#define NWITH_OR_NWITH2_IN(n) ((NODE_TYPE (n) == N_Nwith) ? NWITH_IN (n) : NWITH2_IN (n))
-#define NWITH_OR_NWITH2_INOUT(n)                                                         \
-    ((NODE_TYPE (n) == N_Nwith) ? NWITH_INOUT (n) : NWITH2_INOUT (n))
-#define NWITH_OR_NWITH2_OUT(n)                                                           \
-    ((NODE_TYPE (n) == N_Nwith) ? NWITH_OUT (n) : NWITH2_OUT (n))
-#define NWITH_OR_NWITH2_LOCAL(n)                                                         \
-    ((NODE_TYPE (n) == N_Nwith) ? NWITH_LOCAL (n) : NWITH2_LOCAL (n))
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_genarray :
- ***/
-
-#define OPERATOR_DEFMASK(n) OPERATOR_MASK (n, 0)
-#define OPERATOR_USEMASK(n) OPERATOR_MASK (n, 1)
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_modarray :
- ***/
-
-/* see N_genarray for OPERATOR_DEFMASK and OPERATOR_USEMASK */
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_foldprf :
- ***/
-
-/* see N_genarray for OPERATOR_DEFMASK and OPERATOR_USEMASK */
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_foldfun :
- ***/
-
-/* see N_genarray for OPERATOR_DEFMASK and OPERATOR_USEMASK */
-
-/*--------------------------------------------------------------------------*/
-
-/***
  ***  N_array :
  ***/
 
@@ -1567,18 +1421,6 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_spmd :
- ***/
-
-/*
- *  compound access macros
- */
-
-#define SPMD_VARDEC(n) BLOCK_VARDEC (SPMD_REGION (n))
-
-/*--------------------------------------------------------------------------*/
-
-/***
  ***  N_pragma :
  ***/
 
@@ -1589,39 +1431,6 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
 #define PRAGMA_LS(n, i) PRAGMA_LINKSIGN (n)[i]
 #define PRAGMA_RC(n, i) PRAGMA_REFCOUNTING (n)[i]
 #define PRAGMA_RO(n, i) PRAGMA_READONLY (n)[i]
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_mt :   N_st :
- ***/
-
-#define MT_OR_ST_REGION(n) (((NODE_TYPE (n) == N_mt)) ? MT_REGION (n) : ST_REGION (n))
-
-#define MT_OR_ST_USEMASK(n) (((NODE_TYPE (n) == N_mt)) ? MT_USEMASK (n) : ST_USEMASK (n))
-
-#define MT_OR_ST_DEFMASK(n) (((NODE_TYPE (n) == N_mt)) ? MT_DEFMASK (n) : ST_DEFMASK (n))
-
-#define L_MT_OR_ST_REGION(n, region)                                                     \
-    if (NODE_TYPE (n) == N_mt) {                                                         \
-        MT_REGION (n) = region;                                                          \
-    } else {                                                                             \
-        ST_REGION (n) = region;                                                          \
-    }
-
-#define L_MT_OR_ST_USEMASK(n, region)                                                    \
-    if (NODE_TYPE (n) == N_mt) {                                                         \
-        MT_USEMASK (n) = region;                                                         \
-    } else {                                                                             \
-        ST_USEMASK (n) = region;                                                         \
-    }
-
-#define L_MT_OR_ST_DEFMASK(n, region)                                                    \
-    if (NODE_TYPE (n) == N_mt) {                                                         \
-        MT_DEFMASK (n) = region;                                                         \
-    } else {                                                                             \
-        ST_DEFMASK (n) = region;                                                         \
-    }
 
 /*--------------------------------------------------------------------------*/
 
@@ -1673,5 +1482,226 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
                        node *arg5, node *arg6, node *arg7);
 
 /*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_mt :   N_st :
+ ***/
+
+#define MT_OR_ST_REGION(n) (((NODE_TYPE (n) == N_mt)) ? MT_REGION (n) : ST_REGION (n))
+
+#define MT_OR_ST_USEMASK(n) (((NODE_TYPE (n) == N_mt)) ? MT_USEMASK (n) : ST_USEMASK (n))
+
+#define MT_OR_ST_DEFMASK(n) (((NODE_TYPE (n) == N_mt)) ? MT_DEFMASK (n) : ST_DEFMASK (n))
+
+#define L_MT_OR_ST_REGION(n, region)                                                     \
+    if (NODE_TYPE (n) == N_mt) {                                                         \
+        MT_REGION (n) = region;                                                          \
+    } else {                                                                             \
+        ST_REGION (n) = region;                                                          \
+    }
+
+#define L_MT_OR_ST_USEMASK(n, region)                                                    \
+    if (NODE_TYPE (n) == N_mt) {                                                         \
+        MT_USEMASK (n) = region;                                                         \
+    } else {                                                                             \
+        ST_USEMASK (n) = region;                                                         \
+    }
+
+#define L_MT_OR_ST_DEFMASK(n, region)                                                    \
+    if (NODE_TYPE (n) == N_mt) {                                                         \
+        MT_DEFMASK (n) = region;                                                         \
+    } else {                                                                             \
+        ST_DEFMASK (n) = region;                                                         \
+    }
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_spmd :
+ ***/
+
+/*
+ *  compound access macros
+ */
+
+#define SPMD_VARDEC(n) BLOCK_VARDEC (SPMD_REGION (n))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Nwith :
+ ***/
+
+#define NWITH_TYPE(n) (NWITHOP_TYPE (NWITH_WITHOP (n)))
+
+/*
+ * We only need to inspect the withid of the first part,
+ * because the withid is in *all* parts the same!!
+ */
+#define NWITH_WITHID(n) (NPART_WITHID (NWITH_PART (n)))
+#define NWITH_IDS(n) (NPART_IDS (NWITH_PART (n)))
+#define NWITH_VEC(n) (NPART_VEC (NWITH_PART (n)))
+
+/*
+ * BOUND2 of the *first* N_Npart-node
+ * (useful before with-loop-folding only)
+ */
+#define NWITH_BOUND2(n) (NPART_BOUND2 (NWITH_PART (n)))
+
+/*
+ * CEXPR of the *first* N_Ncode-node
+ * (useful before with-loop-folding only)
+ */
+#define NWITH_CEXPR(n) (NCODE_CEXPR (NWITH_CODE (n)))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Npart:
+ ***/
+
+#define NPART_IDS(n) (NWITHID_IDS (NPART_WITHID (n)))
+#define NPART_VEC(n) (NWITHID_VEC (NPART_WITHID (n)))
+#define NPART_BOUND2(n) (NGEN_BOUND2 (NPART_GEN (n)))
+
+#define NPART_DEFMASK(n) (NPART_MASK (n, 0))
+#define NPART_USEMASK(n) (NPART_MASK (n, 1))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Ncode :
+ ***/
+
+#define NCODE_CBLOCK_INSTR(n) (BLOCK_INSTR (NCODE_CBLOCK (n)))
+
+#define NCODE_DEFMASK(n) (NCODE_MASK (n, 0))
+#define NCODE_USEMASK(n) (NCODE_MASK (n, 1))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Nwithop :
+ ***/
+
+#define NWITHOP_OPARG(n)                                                                 \
+    (WO_modarray == NWITHOP_TYPE (n)                                                     \
+       ? NWITHOP_ARRAY (n)                                                               \
+       : WO_genarray == NWITHOP_TYPE (n) ? NWITHOP_SHAPE (n) : NWITHOP_NEUTRAL (n))
+
+#define NWITHOP_DEFMASK(n) (NWITHOP_MASK (n, 0))
+#define NWITHOP_USEMASK(n) (NWITHOP_MASK (n, 1))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Nwith2 :
+ ***/
+
+#define NWITH2_TYPE(n) (NWITHOP_TYPE (NWITH2_WITHOP (n)))
+#define NWITH2_IDS(n) (NWITHID_IDS (NWITH2_WITHID (n)))
+#define NWITH2_VEC(n) (NWITHID_VEC (NWITH2_WITHID (n)))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Nwith : / N_Nwith2 :
+ ***/
+
+#define NWITH_OR_NWITH2_TYPE(n)                                                          \
+    ((NODE_TYPE (n) == N_Nwith) ? NWITH_TYPE (n) : NWITH2_TYPE (n))
+#define NWITH_OR_NWITH2_IDS(n)                                                           \
+    ((NODE_TYPE (n) == N_Nwith) ? NWITH_IDS (n) : NWITH2_IDS (n))
+#define NWITH_OR_NWITH2_VEC(n)                                                           \
+    ((NODE_TYPE (n) == N_Nwith) ? NWITH_VEC (n) : NWITH2_VEC (n))
+
+#define NWITH_OR_NWITH2_IN(n) ((NODE_TYPE (n) == N_Nwith) ? NWITH_IN (n) : NWITH2_IN (n))
+#define NWITH_OR_NWITH2_INOUT(n)                                                         \
+    ((NODE_TYPE (n) == N_Nwith) ? NWITH_INOUT (n) : NWITH2_INOUT (n))
+#define NWITH_OR_NWITH2_OUT(n)                                                           \
+    ((NODE_TYPE (n) == N_Nwith) ? NWITH_OUT (n) : NWITH2_OUT (n))
+#define NWITH_OR_NWITH2_LOCAL(n)                                                         \
+    ((NODE_TYPE (n) == N_Nwith) ? NWITH_LOCAL (n) : NWITH2_LOCAL (n))
+
+/*--------------------------------------------------------------------------*/
+
+/*************************
+ * start of OLD WITH-LOOP
+ */
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_with :
+ ***/
+
+/*
+ *  compound access macros
+ */
+
+#define WITH_LEFT(n) (GEN_LEFT (WITH_GEN (n)))
+#define WITH_RIGHT(n) (GEN_RIGHT (WITH_GEN (n)))
+#define WITH_ID(n) (GEN_ID (WITH_GEN (n)))
+
+#define WITH_GENDEFMASK(n) (GEN_DEFMASK (WITH_GEN (n)))
+#define WITH_GENUSEMASK(n) (GEN_USEMASK (WITH_GEN (n)))
+
+#define WITH_OPERATORDEFMASK(n) (OPERATOR_USEMASK (WITH_OPERATOR (n)))
+#define WITH_OPERATORUSEMASK(n) (OPERATOR_USEMASK (WITH_OPERATOR (n)))
+
+#define WITH_BODYDEFMASK(n) (WITH_MASK (n, 0))
+#define WITH_BODYUSEMASK(n) (WITH_MASK (n, 0))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_generator :
+ ***/
+
+/*
+ *  compound access macros
+ */
+
+#define GEN_DEFMASK(n) (GEN_MASK (n, 0))
+#define GEN_USEMASK(n) (GEN_MASK (n, 1))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_genarray :
+ ***/
+
+#define OPERATOR_DEFMASK(n) OPERATOR_MASK (n, 0)
+#define OPERATOR_USEMASK(n) OPERATOR_MASK (n, 1)
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_modarray :
+ ***/
+
+/* see N_genarray for OPERATOR_DEFMASK and OPERATOR_USEMASK */
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_foldprf :
+ ***/
+
+/* see N_genarray for OPERATOR_DEFMASK and OPERATOR_USEMASK */
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_foldfun :
+ ***/
+
+/* see N_genarray for OPERATOR_DEFMASK and OPERATOR_USEMASK */
+
+/*--------------------------------------------------------------------------*/
+
+/*
+ * end of OLD WITH-LOOP
+ ***********************/
 
 #endif /* _sac_tree_compound_h */
