@@ -16,3 +16,4 @@ SSATransform.c
 UndoSSATransform.c
 UndoSSATransform.h
 CheckAvis.h
+CheckAvis.c
