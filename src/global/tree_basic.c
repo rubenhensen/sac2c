@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  1997/12/10 14:24:37  sbs
+ * a couple of NEWTREE's killed 8-)
+ *
  * Revision 1.25  1997/11/18 18:05:23  srs
  * changed new WL-functions
  *
@@ -796,9 +799,6 @@ MakeAp (char *name, char *mod, node *args)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_ap;
-#ifndef NEWTREE
-    NODE_NNODE (tmp) = 1;
-#endif
 
     AP_NAME (tmp) = name;
     AP_MOD (tmp) = mod;
@@ -959,9 +959,6 @@ MakeExprs (node *expr, node *next)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_exprs;
-#ifndef NEWTREE
-    NODE_NNODE (tmp) = 2;
-#endif
 
     EXPRS_EXPR (tmp) = expr;
     EXPRS_NEXT (tmp) = next;
@@ -980,9 +977,6 @@ MakeArray (node *aelems)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_array;
-#ifndef NEWTREE
-    NODE_NNODE (tmp) = 1;
-#endif
 
     ARRAY_AELEMS (tmp) = aelems;
 
@@ -1063,9 +1057,6 @@ MakeNum (int val)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_num;
-#ifndef NEWTREE
-    NODE_NNODE (tmp) = 0;
-#endif
 
     NUM_VAL (tmp) = val;
 
@@ -1183,9 +1174,6 @@ MakePrf (prf prf, node *args)
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_prf;
-#ifndef NEWTREE
-    NODE_NNODE (tmp) = 1;
-#endif
 
     PRF_PRF (tmp) = prf;
     PRF_ARGS (tmp) = args;
