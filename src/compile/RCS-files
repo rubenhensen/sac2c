@@ -21,3 +21,5 @@ precompile.h
 wlpragma_funs.c
 wlpragma_funs.h
 wlpragma_funs.mac
+wltransform.c
+wltransform.h
