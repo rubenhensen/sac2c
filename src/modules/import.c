@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.57  1999/01/20 09:26:24  cg
+ * bug fixed in function ImportSymbol()
+ *
  * Revision 1.56  1999/01/19 17:26:35  cg
  * Bug fixed in selective import in the presence of function overloading.
  * Now, all functions with the given name but varying parameters
@@ -1768,22 +1771,24 @@ ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
         tmpdef = explist->node[symbtype];
     }
 
-    last = tmpdef;
-    tmpdef = tmpdef->node[next];
+    if (tmpdef != NULL) {
+        last = tmpdef;
+        tmpdef = tmpdef->node[next];
 
-    while (tmpdef != NULL) {
-        if (strcmp (tmpdef->info.types->id, name) == 0) {
-            last->node[next] = tmpdef->node[next];
+        while (tmpdef != NULL) {
+            if (strcmp (tmpdef->info.types->id, name) == 0) {
+                last->node[next] = tmpdef->node[next];
 
-            AppendModnameToSymbol (tmpdef, mod->name);
+                AppendModnameToSymbol (tmpdef, mod->name);
 
-            tmpdef->node[next] = modul->node[son];
-            modul->node[son] = tmpdef;
+                tmpdef->node[next] = modul->node[son];
+                modul->node[son] = tmpdef;
 
-            tmpdef = last->node[next];
-        } else {
-            last = tmpdef;
-            tmpdef = tmpdef->node[next];
+                tmpdef = last->node[next];
+            } else {
+                last = tmpdef;
+                tmpdef = tmpdef->node[next];
+            }
         }
     }
 
