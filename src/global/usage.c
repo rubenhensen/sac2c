@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2004/12/19 23:31:50  sbs
+ * cha break speciiers eliminated
+ *
  * Revision 3.69  2004/12/16 14:36:40  ktr
  * enhanced break spcifiers.
  *
@@ -180,7 +183,6 @@ USGprintUsage ()
     PRINT_BREAK_SPEC (PH_typecheck, "l2f",
                       "Stop after converting loops and conditionals into");
     CONT_BREAK_SPEC ("functions.");
-    PRINT_BREAK_SPEC (PH_typecheck, "cha", "Stop after checking avis consistency.");
     PRINT_BREAK_SPEC (PH_typecheck, "ssa", "Stop after converting into SSA form.");
     PRINT_BREAK_SPEC (PH_typecheck, "ntc", "Stop after infering all types.");
     PRINT_BREAK_SPEC (PH_typecheck, "cwc",
@@ -193,7 +195,6 @@ USGprintUsage ()
     PRINT_BREAK_SPEC (PH_wlenhance, "l2f",
                       "Stop after converting loops and conditionals into");
     CONT_BREAK_SPEC ("functions.");
-    PRINT_BREAK_SPEC (PH_wlenhance, "cha", "Stop after checking avis consistency.");
     PRINT_BREAK_SPEC (PH_wlenhance, "ssa", "Stop after converting into SSA form.");
     PRINT_BREAK_SPEC (PH_wlenhance, "ea", "Stop after inserting explicit accumulation.");
     PRINT_BREAK_SPEC (PH_wlenhance, "cf", "Stop after constant folding.");
