@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/05/16 19:48:15  dkr
+ * added comments
+ *
  * Revision 1.7  1998/05/16 16:38:59  dkr
  * WL_END is a h-icm now
  *
@@ -59,15 +62,27 @@
 
 #define _sac_wl_h
 
-/*
+/*****************************************************************************
  * Macros used for compilation of with-loop:
+ */
+
+/*
+ * this macro is used to generate names of aux-variables
  */
 
 #define VAR(type, level, idx_scalar) __##type##level##_##idx_scalar
 
+/*
+ * minimum, maximum of two values
+ */
+
 #define MIN(x, y) SAC_ND_MIN (x, y)
 
 #define MAX(x, y) SAC_ND_MAX (x, y)
+
+/*
+ * blocking-loop
+ */
 
 #define SAC_WL_BLOCK_LOOP0_BEGIN(level, next_level, dim, idx_vec, idx_scalar, bound1,    \
                                  bound2, step)                                           \
@@ -94,6 +109,10 @@
     }                                                                                    \
     }
 
+/*
+ * unrolling-blocking-loop
+ */
+
 #define SAC_WL_UBLOCK_LOOP0_BEGIN(level, next_level, dim, idx_vec, idx_scalar, bound1,   \
                                   bound2, step)                                          \
     {                                                                                    \
@@ -115,6 +134,10 @@
     }                                                                                    \
     }
 
+/*
+ * stride-loop
+ */
+
 #define SAC_WL_STRIDE_LOOP0_BEGIN(level, next_level, dim, idx_vec, idx_scalar, bound1,   \
                                   bound2, step)                                          \
     {                                                                                    \
@@ -134,14 +157,49 @@
     }                                                                                    \
     }
 
+/*
+ * grid-loop (constant step)
+ *
+ * CAUTION: This macro executes unconditionlly the whole grid.
+ *          Therefore we must take care that the parent stride meets the condition
+ *                step | (bound2 - bound1).
+ *
+ *          Examples:
+ *
+ *              0 -> 10 step 4               Here the step (4) is not a divisor of
+ *                      0 -> 1: op0          the stride-width (10);
+ *                      1 -> 3: op1          In the last loop-pass we must cut off
+ *                      3 -> 4: op2          the grids (1->3), (3->4).
+ *
+ *            For constant parameters this is done statically in compiler-phase
+ *            'wltransform: fit':
+ *
+ *              0 -> 8  step 4
+ *                      0 -> 1: op0
+ *                      1 -> 3: op1
+ *                      3 -> 4: op2
+ *              8 -> 10 step 2
+ *                      0 -> 1: op0
+ *                      1 -> 2: op1
+ *
+ *            Therefore we can use 'WL_GRID_LOOP_...' in this case.
+ *
+ *            But if some of the parameters are not constant, e.g.
+ *
+ *              0 -> b step 2
+ *                     0 -> 1: op0
+ *                     1 -> 2: op1,
+ *
+ *            we can use these macros only for (0->1) grids!!!!
+ *            For all other grids we must add a runtime-check, whether the grid
+ *            must be cut or not ('WL_GRIDVAR_LOOP_...').
+ */
+
 #define SAC_WL_GRID_LOOP_BEGIN(level, next_level, dim, idx_vec, idx_scalar, bound1,      \
                                bound2)                                                   \
     {                                                                                    \
         int grid_##idx_scalar = idx_scalar + bound2 - bound1;                            \
         for (; idx_scalar < grid_##idx_scalar; idx_scalar++) {
-
-#define SAC_WL_GRID_SET_IDX(level, next_level, dim, idx_vec, idx_scalar, bound1, bound2) \
-    SAC_ND_A_FIELD (idx_vec)[dim] = idx_scalar;
 
 #define SAC_WL_GRID_LOOP_END(level, next_level, dim, idx_vec, idx_scalar, bound1,        \
                              bound2)                                                     \
@@ -160,6 +218,14 @@
     }                                                                                    \
     }
 
-#define SAC_WL_END }
+/*
+ * This macro is needed, if the index-vector is referenced somewhere in the
+ *  with-loop-body.
+ */
+
+#define SAC_WL_GRID_SET_IDX(level, next_level, dim, idx_vec, idx_scalar, bound1, bound2) \
+    SAC_ND_A_FIELD (idx_vec)[dim] = idx_scalar;
+
+#define SAC_WL_END() }
 
 #endif /* _sac_wl_h */
