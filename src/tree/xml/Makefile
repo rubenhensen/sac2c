@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.4  2004/08/07 16:23:07  sah
+# added some files
+#
 # Revision 1.3  2004/07/31 16:16:57  sah
 # added support for flags and moved to memory saving attribute
 # structure.
@@ -29,7 +32,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-TARGETS = ../attribs.h ../node_basic.h ../node_basic.c
+TARGETS = ../attribs.h ../node_basic.h ../node_basic.c ../free_node.c \
+          ../free_node.h ../free_attribs.h
 
 all: $(TARGETS)
 
@@ -48,10 +52,25 @@ all: $(TARGETS)
 	| $(CODE_BEAUTIFIER) >$@
                                                                                 
 ../node_basic.c: ast.xml ast2node_basic_c.xsl common-c-code.xsl \
-                 common-make-head.xsl common-make-body.xsl
+                 common-make-head.xsl common-make-body.xsl \
+                 common-make-assertion.xsl
 	$(XSLTENGINE) ast2node_basic_c.xsl ast.xml \
 	| $(CODE_BEAUTIFIER) >$@
 
+../free_node.c: ast.xml ast2free_node_c.xsl common-c-code.xsl \
+                 common-travfun.xsl
+	$(XSLTENGINE) ast2free_node_c.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
+
+
+../free_node.h: ast.xml ast2free_node_h.xsl common-c-code.xsl \
+                 common-travfun.xsl
+	$(XSLTENGINE) ast2free_node_h.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
+
+../free_attribs.h: ast.xml ast2free_attribs_h.xsl
+	$(XSLTENGINE) ast2free_attribs_h.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
 
 clean:
 	$(RM) $(TARGETS)
