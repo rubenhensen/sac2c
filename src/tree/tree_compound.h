@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.162  2004/11/26 11:22:44  cg
+ * TCappendRets renamed to TCappendRet to be consistent
+ * with other append functions.
+ *
  * Revision 3.161  2004/11/26 11:18:13  skt
  * some renaming - exclusive checkin for cg
  *
@@ -864,7 +868,7 @@ extern int TCcountArgs (node *args);
  ***/
 
 extern int TCcountRets (node *rets);
-extern node *TCappendRets (node *chain, node *item);
+extern node *TCappendRet (node *chain, node *item);
 extern node *TCreturnTypes2Ret (types *type);
 
 /*--------------------------------------------------------------------------*/
