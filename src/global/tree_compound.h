@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.63  1998/04/24 17:19:56  dkr
+ * added compound macros for N_spmd
+ *
  * Revision 1.62  1998/03/25 18:10:40  srs
  * renamed IDS_VARDEV_TYPE to IDS_TYPE
  *
@@ -1427,6 +1430,18 @@ extern int IsConstantArray (node *array, nodetype type);
 #define PRF_ARG3(n) (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (n)))))
 
 #define MAKE_BIN_PRF(f, arg1, arg2) MakePrf (f, MakeExprs (arg1, MakeExprs (arg2, NULL)))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_spmd :
+ ***/
+
+/*
+ *  compound access macros
+ */
+
+#define SPMD_VARDEC(n) BLOCK_VARDEC (SPMD_REGION (n))
 
 /*--------------------------------------------------------------------------*/
 
