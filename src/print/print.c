@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1994/12/15 17:14:03  sbs
+ * Revision 1.20  1994/12/21 13:18:42  sbs
+ * PrintFundef changed (works for empty function bodies too
+ *
+ * Revision 1.19  1994/12/15  17:14:03  sbs
  * PrintCast inserted
  *
  * Revision 1.18  1994/12/14  10:18:39  sbs
@@ -244,13 +247,14 @@ PrintFundef (node *arg_node, node *arg_info)
     fprintf (outfile, "\n%s %s", Type2String (arg_node->info.types, 0),
              arg_node->info.types->id);
     fprintf (outfile, "(");
-    if (3 == arg_node->nnode)
+    if (arg_node->node[2] != NULL)
         Trav (arg_node->node[2], arg_info); /* print args of function */
     fprintf (outfile, ")\n");
 
-    Trav (arg_node->node[0], arg_info); /* traverse functionbody */
+    if (arg_node->node[0] != NULL)
+        Trav (arg_node->node[0], arg_info); /* traverse functionbody */
 
-    if (2 <= arg_node->nnode)
+    if (arg_node->node[1] != NULL)
         Trav (arg_node->node[1], arg_info); /* traverse next function */
 
     DBUG_RETURN (arg_node);
