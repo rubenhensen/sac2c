@@ -1,6 +1,15 @@
 /*
  *
  * $Log$
+ * Revision 2.24  1999/11/10 09:10:18  cg
+ * Bug fixed: folding of psi() with prior modarray() to the same index
+ * location now works correctly even if the variable pointing to the
+ * new (after folding) result of psi has been assigned a new value
+ * between the applications of modarray() and psi()
+ *      AND
+ * if multiple applications of psi() refer to the same application
+ * of modarray().
+ *
  * Revision 2.23  1999/10/29 16:44:23  dkr
  * fixed a bug in ArrayPrf:
  *   when introducing a new var, the MRD list must be expanded (MAlloc!)
@@ -2370,63 +2379,91 @@ ArrayPrf (node *arg_node, node *arg_info)
                                          * rare and dubious circumstance.
                                          */
 
-                                        /*
-                                         * create a new variable
-                                         */
-                                        fresh_var = TmpVar ();
-                                        new_ids = MakeIds (fresh_var, NULL, ST_regular);
+                                        if (ASSIGN_CF (assign) == NULL) {
+                                            /*
+                                             * No fresh variable has yet been introduced
+                                             * for this application of prf modarray().
+                                             */
 
-                                        /*
-                                         * create a new vardec for this variable,
-                                         * increment VARNO
-                                         */
-                                        vardecs
-                                          = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (assign)));
-                                        new_vardec
-                                          = MakeVardec (StringCopy (fresh_var),
-                                                        DuplicateTypes (ID_TYPE (val), 0),
-                                                        VARDEC_NEXT (vardecs));
-                                        VARDEC_NEXT (vardecs) = new_vardec;
-                                        VARDEC_VARNO (new_vardec)
-                                          = (INFO_CF_VARNO (arg_info))++;
-                                        IDS_VARDEC (new_ids) = new_vardec;
+                                            /*
+                                             * create a new variable
+                                             */
+                                            fresh_var = TmpVar ();
+                                            new_ids
+                                              = MakeIds (fresh_var, NULL, ST_regular);
 
-                                        /*
-                                         * create the new assignment,
-                                         * build masks for this assignment
-                                         */
-                                        new_assign
-                                          = MakeAssign (MakeLet (DupTree (val, NULL),
-                                                                 new_ids),
-                                                        NULL);
-                                        ASSIGN_MRDMASK (new_assign)
-                                          = GenMask (INFO_CF_VARNO (arg_info));
-                                        ASSIGN_MRDMASK (new_assign)
-                                          = CopyMask (ASSIGN_MRDMASK (assign),
-                                                      INFO_CF_VARNO (arg_info) - 1,
-                                                      ASSIGN_MRDMASK (new_assign),
-                                                      INFO_CF_VARNO (arg_info));
-                                        ASSIGN_DEFMASK (new_assign)
-                                          = ReGenMask (ASSIGN_DEFMASK (new_assign),
-                                                       INFO_CF_VARNO (arg_info));
-                                        INC_VAR (ASSIGN_DEFMASK (new_assign),
-                                                 IDS_VARNO (new_ids));
-                                        ASSIGN_USEMASK (new_assign)
-                                          = ReGenMask (ASSIGN_USEMASK (new_assign),
-                                                       INFO_CF_VARNO (arg_info));
-                                        INC_VAR (ASSIGN_USEMASK (new_assign),
-                                                 ID_VARNO (val));
+                                            /*
+                                             * create a new vardec for this variable,
+                                             * increment VARNO
+                                             */
+                                            vardecs = IDS_VARDEC (
+                                              LET_IDS (ASSIGN_INSTR (assign)));
+                                            new_vardec
+                                              = MakeVardec (StringCopy (fresh_var),
+                                                            DuplicateTypes (ID_TYPE (val),
+                                                                            0),
+                                                            VARDEC_NEXT (vardecs));
+                                            VARDEC_NEXT (vardecs) = new_vardec;
+                                            VARDEC_VARNO (new_vardec)
+                                              = (INFO_CF_VARNO (arg_info))++;
+                                            IDS_VARDEC (new_ids) = new_vardec;
 
-                                        /*
-                                         * store new assignment in ASSIGN_CF,
-                                         * correct current MRD-masks
-                                         */
-                                        ASSIGN_CF (assign) = new_assign;
-                                        ExpandMRDL (1);
-                                        MRD (IDS_VARNO (new_ids)) = new_assign;
-                                        FREE (ASSIGN_MRDMASK (INFO_CF_ASSIGN (arg_info)));
-                                        ASSIGN_MRDMASK (INFO_CF_ASSIGN (arg_info))
-                                          = DupMask (MRD_LIST, INFO_CF_VARNO (arg_info));
+                                            /*
+                                             * create the new assignment,
+                                             * build masks for this assignment
+                                             */
+                                            new_assign
+                                              = MakeAssign (MakeLet (DupTree (val, NULL),
+                                                                     new_ids),
+                                                            NULL);
+                                            ASSIGN_MRDMASK (new_assign)
+                                              = GenMask (INFO_CF_VARNO (arg_info));
+                                            ASSIGN_MRDMASK (new_assign)
+                                              = CopyMask (ASSIGN_MRDMASK (assign),
+                                                          INFO_CF_VARNO (arg_info) - 1,
+                                                          ASSIGN_MRDMASK (new_assign),
+                                                          INFO_CF_VARNO (arg_info));
+                                            ASSIGN_DEFMASK (new_assign)
+                                              = ReGenMask (ASSIGN_DEFMASK (new_assign),
+                                                           INFO_CF_VARNO (arg_info));
+                                            INC_VAR (ASSIGN_DEFMASK (new_assign),
+                                                     IDS_VARNO (new_ids));
+                                            ASSIGN_USEMASK (new_assign)
+                                              = ReGenMask (ASSIGN_USEMASK (new_assign),
+                                                           INFO_CF_VARNO (arg_info));
+                                            INC_VAR (ASSIGN_USEMASK (new_assign),
+                                                     ID_VARNO (val));
+
+                                            /*
+                                             * store new assignment in ASSIGN_CF,
+                                             * correct current MRD-masks
+                                             */
+                                            ASSIGN_CF (assign) = new_assign;
+                                            ExpandMRDL (1);
+                                            MRD (IDS_VARNO (new_ids)) = new_assign;
+                                            FREE (
+                                              ASSIGN_MRDMASK (INFO_CF_ASSIGN (arg_info)));
+                                            ASSIGN_MRDMASK (INFO_CF_ASSIGN (arg_info))
+                                              = DupMask (MRD_LIST,
+                                                         INFO_CF_VARNO (arg_info));
+                                        } else {
+                                            /*
+                                             * A fresh variable has already been inserted
+                                             * behind this application of prf modarray()
+                                             * within this run of constant folding, i.e.
+                                             * the assignment is not yet really inserted
+                                             * but temporarily stored in the ASSIGN_CF
+                                             * field. As a consequence, this variable must
+                                             * still be a fresh one and may therefore be
+                                             * reused for further applications of prf
+                                             * psi() referring to this application of prf
+                                             * modarray().
+                                             */
+                                            ids *still_fresh_var = LET_IDS (
+                                              ASSIGN_INSTR (ASSIGN_CF (assign)));
+                                            fresh_var = IDS_NAME (still_fresh_var);
+                                            new_vardec = IDS_VARDEC (still_fresh_var);
+                                        }
 
                                         res_array = MakeId (StringCopy (fresh_var), NULL,
                                                             ST_regular);
