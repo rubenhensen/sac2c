@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.104  1996/01/05 12:33:43  cg
+ * Revision 1.105  1996/01/05 14:35:17  cg
+ * The return statement is no longer referenced by the
+ * corresponding genarray, modarray, foldfun, or foldprf node
+ *
+ * Revision 1.104  1996/01/05  12:33:43  cg
  * Now, we check that module/class names are not longer than
  * 12 characters.
  *
@@ -2216,7 +2220,6 @@ conexpr: assignblock GENARRAY BRACKET_L exprORarray COMMA {$$=MakeGenarray($4, N
              RETURN_INWITH(ret)=1;
              
              GENARRAY_BODY($$)=Append( $1, ret);
-             GENARRAY_RETURN($$)=ret;
              
 /*--------------------------------------------------------------------------*/
              RETURN_EXPRS(ret)->nnode = 1;
@@ -2233,7 +2236,6 @@ conexpr: assignblock GENARRAY BRACKET_L exprORarray COMMA {$$=MakeGenarray($4, N
              GENARRAY_BODY($$)=MakeBlock(
                                  MakeAssign( ret, NULL),
                                  NULL );
-             GENARRAY_RETURN($$)=ret;
 
 /*--------------------------------------------------------------------------*/
              GENARRAY_BODY($$)->nnode = 1;
@@ -2252,7 +2254,6 @@ conexpr: assignblock GENARRAY BRACKET_L exprORarray COMMA {$$=MakeGenarray($4, N
              RETURN_INWITH(ret)=1;
 
              MODARRAY_BODY($$)=Append( $1, ret);
-             MODARRAY_RETURN($$)=ret;
              MODARRAY_ID($$)=$6;
              
 /*--------------------------------------------------------------------------*/
@@ -2270,7 +2271,6 @@ conexpr: assignblock GENARRAY BRACKET_L exprORarray COMMA {$$=MakeGenarray($4, N
              MODARRAY_BODY($$)=MakeBlock(
                                  MakeAssign( ret, NULL),
                                  NULL );
-             MODARRAY_RETURN($$)=ret;
              MODARRAY_ID($$)=$5;
 /*--------------------------------------------------------------------------*/
              MODARRAY_BODY($$)->nnode = 1;
@@ -2286,7 +2286,7 @@ conexpr: assignblock GENARRAY BRACKET_L exprORarray COMMA {$$=MakeGenarray($4, N
              ret = MakeReturn( MakeExprs($6, NULL) );
              RETURN_INWITH(ret)=1;
              FOLDPRF_BODY($$)=Append( $1, ret);
-             FOLDPRF_RETURN($$)=ret;
+
 /*--------------------------------------------------------------------------*/
              RETURN_EXPRS(ret)->nnode = 1;
              $$->nnode=1;
@@ -2302,7 +2302,7 @@ conexpr: assignblock GENARRAY BRACKET_L exprORarray COMMA {$$=MakeGenarray($4, N
                             MakeBlock( MakeAssign( ret, NULL),
                                        NULL ),
                             NULL);
-             FOLDPRF_RETURN($$)=ret;
+
 /*--------------------------------------------------------------------------*/
              $$->nnode = 1;
              FOLDPRF_BODY($$)->nnode = 1;
@@ -2319,7 +2319,7 @@ conexpr: assignblock GENARRAY BRACKET_L exprORarray COMMA {$$=MakeGenarray($4, N
              ret = MakeReturn( MakeExprs($8, NULL) );
              RETURN_INWITH(ret)=1;
              FOLDPRF_BODY($$)=Append($1, ret);
-             FOLDPRF_RETURN($$)=ret;
+
 /*--------------------------------------------------------------------------*/
              RETURN_EXPRS(ret)->nnode = 1;
 /*--------------------------------------------------------------------------*/
@@ -2334,7 +2334,7 @@ conexpr: assignblock GENARRAY BRACKET_L exprORarray COMMA {$$=MakeGenarray($4, N
                             MakeBlock( MakeAssign( ret, NULL),
                                        NULL ),
                             $5);
-             FOLDPRF_RETURN($$)=ret;
+
 /*--------------------------------------------------------------------------*/
              FOLDPRF_BODY($$)->nnode = 1;
              BLOCK_INSTR(FOLDPRF_BODY($$))->nnode = 1;
@@ -2351,7 +2351,7 @@ conexpr: assignblock GENARRAY BRACKET_L exprORarray COMMA {$$=MakeGenarray($4, N
               RETURN_INWITH(ret)=1;
               FOLDFUN_BODY($$)=Append( $1, ret);
               FOLDFUN_NEUTRAL($$)= $5;
-              FOLDFUN_RETURN($$)=ret;
+
 /*--------------------------------------------------------------------------*/
              RETURN_EXPRS(ret)->nnode = 1;
              $$->nnode=2;
@@ -2367,7 +2367,7 @@ conexpr: assignblock GENARRAY BRACKET_L exprORarray COMMA {$$=MakeGenarray($4, N
              FOLDFUN_BODY($$)= MakeBlock( MakeAssign( ret, NULL),
                                        NULL );
              FOLDFUN_NEUTRAL($$)= $4;
-             FOLDFUN_RETURN($$)=ret;
+
 /*--------------------------------------------------------------------------*/
              $$->nnode=2;
              FOLDFUN_BODY($$)->nnode = 1;
