@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.18  1999/05/14 10:36:53  jhs
+ * Corrected little Bug in FltnNwithop, Bug was inserted while changeing
+ * Annotation to AnnotateIdWithConstVec.
+ *
  * Revision 2.17  1999/05/14 09:25:13  jhs
  * Dbugged constvec annotations and their housekeeping in various compilation stages.
  *
@@ -1706,11 +1710,10 @@ FltnNwithop (node *arg_node, node *arg_info)
             NWITHOP_NEUTRAL (arg_node) = Abstract (expr, arg_info);
             expr2 = Trav (expr, arg_info);
             AnnotateIdWithConstVec (expr, NWITHOP_NEUTRAL (arg_node));
-        } else {
-            expr2 = Trav (expr, arg_info);
+
+            DBUG_ASSERT ((expr == expr2),
+                         "return-node differs from arg_node while flattening an expr!");
         }
-        DBUG_ASSERT ((expr == expr2),
-                     "return-node differs from arg_node while flattening an expr!");
         break;
     default:
         DBUG_ASSERT (0, "wrong withop tag in N_Nwithop node!");
@@ -1720,9 +1723,6 @@ FltnNwithop (node *arg_node, node *arg_info)
          */
         expr = 0;
         break;
-    }
-
-    if (expr != NULL) {
     }
 
     DBUG_RETURN (arg_node);
