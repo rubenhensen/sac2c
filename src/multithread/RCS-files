@@ -7,6 +7,7 @@ blocks_expand.c
 blocks_expand.h
 blocks_init.c
 blocks_init.h
+blocks_lift.c
 blocks_propagate.c
 blocks_propagate.h
 dataflow_analysis.c
