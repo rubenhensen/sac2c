@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2004/07/14 15:20:57  ktr
+ * *** empty log message ***
+ *
  * Revision 3.21  2004/05/12 12:59:40  ktr
  * TransformIntoDoLoop modified. The adjust_rc operations in the branches
  * of the conditional are now moved into DO_SKIP and after the new do-loop.
@@ -501,11 +504,11 @@ ReturnVarsAreIdentical (node *ext_rets, ids *int_rets)
  *     {
  *       <ass>
  *       if (<pred>) {
- *         B\A = adjust_rc( B\A, -1);
+ *         B\A = dec_rc( B\A);
  *         res_1 = DoLoopFun( A );
  *       }
  *       else {
- *         A\B = adjust_rc( A\B, -1);
+ *         A\B = dec_rc( A\B);
  *       }
  *       return( B);
  *     }
@@ -515,15 +518,15 @@ ReturnVarsAreIdentical (node *ext_rets, ids *int_rets)
  *     goto LABEL:
  *     do
  *     {
- *       adjust_rc(B\A, -1);
+ *       dec_rc(B\A );
  *     LABEL:
  *       <ass>;
  *     }
  *     while(<pred>);
- *     adjust_rc(A/B, -1);
+ *     dec_rc(A/B );
  *
  *     The string LABEL is stored in DO_LABEL, while the block containing
- *     adjust(B/A) is stores in DO_SKIP
+ *     dec_rc(B/A ) is stores in DO_SKIP
  *
  *     !!!!! There is no lac2fun transformation for this (yet) !!!!!
  *
@@ -584,8 +587,9 @@ TransformIntoDoLoop (node *fundef)
                   (BLOCK_INSTR (COND_THEN (cond)) != NULL)
                   && (NODE_TYPE (BLOCK_INSTR (COND_THEN (cond))) == N_assign)
                   && (NODE_TYPE (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond)))) == N_prf)
-                  && (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond))))
-                      == F_adjust_rc)) {
+                  && ((PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond)))) == F_inc_rc)
+                      || (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_THEN (cond))))
+                          == F_dec_rc))) {
                     tmp = ASSIGN_NEXT (BLOCK_INSTR (COND_THEN (cond)));
                     ASSIGN_NEXT (BLOCK_INSTR (COND_THEN (cond))) = NULL;
                     skip = AppendAssign (skip, BLOCK_INSTR (COND_THEN (cond)));
@@ -598,8 +602,9 @@ TransformIntoDoLoop (node *fundef)
                   (BLOCK_INSTR (COND_ELSE (cond)) != NULL)
                   && (NODE_TYPE (BLOCK_INSTR (COND_ELSE (cond))) == N_assign)
                   && (NODE_TYPE (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond)))) == N_prf)
-                  && (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond))))
-                      == F_adjust_rc)) {
+                  && ((PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond)))) == F_inc_rc)
+                      || (PRF_PRF (ASSIGN_RHS (BLOCK_INSTR (COND_ELSE (cond))))
+                          == F_dec_rc))) {
                     tmp = ASSIGN_NEXT (BLOCK_INSTR (COND_ELSE (cond)));
                     ASSIGN_NEXT (BLOCK_INSTR (COND_ELSE (cond))) = NULL;
                     epilogue = AppendAssign (epilogue, BLOCK_INSTR (COND_ELSE (cond)));
