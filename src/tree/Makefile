@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.10  2001/02/22 12:41:12  nmw
+# UndoSSATransfrom added
+#
 # Revision 3.9  2001/02/13 15:15:45  nmw
 # SSATransform added
 #
@@ -79,7 +82,7 @@ INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck
 all: tree.o tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
      DataFlowMask.o DataFlowMaskUtils.o InferDFMs.o CheckAvis.o \
      LookUpTable.o adjust_ids.o cleanup_decls.o scheduling.o \
-     SSATransform.o
+     SSATransform.o UndoSSATransform.o
 
 
 #
@@ -159,11 +162,20 @@ LookUpTable.o: ../global/my_debug.h
 SSATransform.o: ../../inc/dbug.h /usr/include/stdio.h
 SSATransform.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 SSATransform.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-SSATransform.o: /usr/include/stdio_impl.h tree.h ../global/types.h
-SSATransform.o: tree_basic.h tree_compound.h ../global/Error.h
-SSATransform.o: /usr/include/string.h /usr/include/stdlib.h
-SSATransform.o: ../global/globals.h ../global/internal_lib.h traverse.h
-SSATransform.o: free.h ../global/my_debug.h SSATransform.h
+SSATransform.o: /usr/include/stdio_impl.h ../global/globals.h
+SSATransform.o: ../global/types.h tree.h tree_basic.h tree_compound.h
+SSATransform.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
+SSATransform.o: ../global/internal_lib.h traverse.h free.h
+SSATransform.o: ../global/my_debug.h DupTree.h LookUpTable.h SSATransform.h
+UndoSSATransform.o: ../../inc/dbug.h /usr/include/stdio.h
+UndoSSATransform.o: /usr/include/sys/feature_tests.h
+UndoSSATransform.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+UndoSSATransform.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h tree.h
+UndoSSATransform.o: ../global/types.h tree_basic.h tree_compound.h
+UndoSSATransform.o: ../global/Error.h /usr/include/string.h
+UndoSSATransform.o: /usr/include/stdlib.h ../global/globals.h
+UndoSSATransform.o: ../global/internal_lib.h traverse.h free.h
+UndoSSATransform.o: ../global/my_debug.h UndoSSATransform.h
 adjust_ids.o: ../../inc/dbug.h /usr/include/stdio.h
 adjust_ids.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 adjust_ids.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -188,7 +200,7 @@ free.o: /usr/include/stdio_impl.h ../../inc/dbug.h ../global/my_debug.h
 free.o: ../global/types.h tree.h tree_basic.h tree_compound.h
 free.o: ../global/Error.h /usr/include/string.h ../global/globals.h
 free.o: ../global/internal_lib.h traverse.h DataFlowMask.h scheduling.h
-free.o: free.h
+free.o: ../typecheck/constants.h ../typecheck/shape.h free.h
 scheduling.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 scheduling.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 scheduling.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -242,7 +254,7 @@ traverse.o: ../c-interface/print_interface_header.h
 traverse.o: ../c-interface/print_interface_wrapper.h
 traverse.o: ../c-interface/map_cwrapper.h
 traverse.o: ../c-interface/import_specialization.h CheckAvis.h SSATransform.h
-traverse.o: traverse.h
+traverse.o: UndoSSATransform.h traverse.h
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 tree.o: /usr/include/sys/isa_defs.h tree.h ../global/types.h tree_basic.h
 tree.o: tree_compound.h ../global/Error.h /usr/include/stdio.h
