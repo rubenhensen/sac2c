@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.83  1998/05/28 14:57:10  sbs
+# gen_pseudo_fun.o in typecheck added!
+#
 # Revision 1.82  1998/05/13 13:37:38  srs
 # added WLUnroll
 #
@@ -295,7 +298,7 @@ SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
 PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
-           src/typecheck/typecheck_WL.o
+           src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/DeadCodeRemoval.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/DupTree.o \
