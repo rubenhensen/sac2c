@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/04/19 07:47:30  dkr
+ * macro F_PTR used as format string for pointers
+ *
  * Revision 3.6  2001/04/06 12:50:11  sbs
  * INFO_IVE_CURRENTASSIGN( arg_info) left unchanged in IdxLet
  *
@@ -798,7 +801,7 @@ SetIdx (node *chain, types *vartype)
     DBUG_ENTER ("SetIdx");
     if (VINFO_FLAG (FindIdx (chain, vartype)) == DOLLAR) {
         chain = MakeVinfo (IDX, vartype, chain, VINFO_DOLLAR (chain));
-        DBUG_PRINT ("IDX", ("IDX(%p) assigned", chain));
+        DBUG_PRINT ("IDX", ("IDX(" F_PTR ") assigned", chain));
     }
     DBUG_RETURN (chain);
 }
@@ -1153,7 +1156,7 @@ VardecIdx (node *vardec, types *type)
                                               : "NULL")));
     }
 
-    DBUG_PRINT ("IDX", ("vinfo %p points to vardec %s", vinfo,
+    DBUG_PRINT ("IDX", ("vinfo " F_PTR " points to vardec %s", vinfo,
                         VARDEC_NAME (VINFO_VARDEC (vinfo))));
 
     DBUG_RETURN (VINFO_VARDEC (vinfo));

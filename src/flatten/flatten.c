@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/04/19 07:47:34  dkr
+ * macro F_PTR used as format string for pointers
+ *
  * Revision 3.1  2000/11/20 17:59:19  sacbase
  * new release made
  *
@@ -210,7 +213,6 @@ static local_stack *tos, *stack, *stack_limit;
  * description:
  *   prints stack top-down from tos.
  *
- *
  ******************************************************************************/
 
 static void
@@ -218,10 +220,15 @@ DbugPrintStack (void)
 {
     local_stack *tmp;
 
+    DBUG_ENTER ("DbugPrintStack");
+
     tmp = tos;
-    while (tmp-- > stack)
-        printf ("%p : %s -> %s on level %d\n", tmp, tmp->id_old, tmp->id_new,
+    while (tmp-- > stack) {
+        printf (F_PTR " : %s -> %s on level %d\n", tmp, tmp->id_old, tmp->id_new,
                 tmp->w_level);
+    }
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
@@ -299,6 +306,7 @@ static char *
 RenameWithVar (char *name, int level)
 {
     char *string;
+
     DBUG_ENTER ("RenameWithVar");
 
     string = (char *)Malloc (sizeof (char) * (strlen (name) + WITH_PREFIX_LENGTH + 6));

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2001/04/19 07:40:33  dkr
+ * macro F_PTR used as format string for pointers
+ *
  * Revision 1.7  2001/04/04 19:41:13  dkr
  * uups, typo corrected :-/
  *
@@ -164,12 +167,14 @@ DefinedVar (node *decl, DFMmask_t needed, DFMmask_t in, DFMmask_t out, DFMmask_t
     DBUG_ENTER ("DefinedVar");
 
     DBUG_ASSERT ((decl != NULL),
-                 "Variable declaration missing!"
-                 "For the time being Lac2fun() can be used after type checking only!");
+                 "Variable declaration missing! "
+                 "For the time being Lac2fun() can be used after type checking"
+                 " only!");
 
     if ((NODE_TYPE (decl) != N_vardec) && (NODE_TYPE (decl) != N_arg)) {
         DBUG_ASSERT ((NODE_TYPE (decl) == N_objdef),
-                     "declaration is neither a N_arg/N_vardec-node nor a N_objdef-node");
+                     "Declaration is neither a N_arg/N_vardec node nor a N_objdef"
+                     " node");
     } else {
         DFMSetMaskEntryClear (in, NULL, decl);
         if (DFMTestMaskEntry (needed, NULL, decl)) {
@@ -278,11 +283,13 @@ UsedVar (node *decl, DFMmask_t in, DFMmask_t local)
 
     DBUG_ASSERT ((decl != NULL),
                  "Variable declaration missing! "
-                 "For the time being Lac2fun() can be used after type checking only!");
+                 "For the time being Lac2fun() can be used after type checking"
+                 " only!");
 
     if ((NODE_TYPE (decl) != N_vardec) && (NODE_TYPE (decl) != N_arg)) {
         DBUG_ASSERT ((NODE_TYPE (decl) == N_objdef),
-                     "declaration is neither a N_arg/N_vardec-node nor a N_objdef-node");
+                     "declaration is neither a N_arg/N_vardec node nor a N_objdef"
+                     " node");
     } else {
         DFMSetMaskEntrySet (in, NULL, decl);
         DFMSetMaskEntryClear (local, NULL, decl);
@@ -721,14 +728,14 @@ INFDFMSfundef (node *arg_node, node *arg_info)
     INFO_INFDFMS_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_PRINT ("INFDFMS", ("-> %s():", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("INFDFMS", (">> %s():", FUNDEF_NAME (arg_node)));
 
         old_dfm_base = FUNDEF_DFM_BASE (arg_node);
         if (old_dfm_base == NULL) {
             FUNDEF_DFM_BASE (arg_node)
               = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
-            DBUG_PRINT ("INFDFMS", ("no DFM base found -> created (%p)",
+            DBUG_PRINT ("INFDFMS", ("no DFM base found -> created (" F_PTR ")",
                                     FUNDEF_DFM_BASE (arg_node)));
         } else {
             FUNDEF_DFM_BASE (arg_node)
@@ -738,8 +745,8 @@ INFDFMSfundef (node *arg_node, node *arg_info)
             DBUG_ASSERT ((FUNDEF_DFM_BASE (arg_node) == old_dfm_base),
                          "address of DFM base has changed during update!");
 
-            DBUG_PRINT ("INFDFMS",
-                        ("DFM base found -> updated (%p)", FUNDEF_DFM_BASE (arg_node)));
+            DBUG_PRINT ("INFDFMS", ("DFM base found -> updated (" F_PTR ")",
+                                    FUNDEF_DFM_BASE (arg_node)));
         }
 
         INFO_INFDFMS_IN (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
@@ -770,7 +777,7 @@ INFDFMSfundef (node *arg_node, node *arg_info)
             INFO_INFDFMS_FIRST (arg_info) = FALSE;
         } while (!INFO_INFDFMS_ISFIX (arg_info));
 
-        DBUG_PRINT ("INFDFMS", ("<- %s(): finished after %i iterations\n",
+        DBUG_PRINT ("INFDFMS", ("<< %s(): finished after %i iterations\n",
                                 FUNDEF_NAME (arg_node), cnt));
 
         INFO_INFDFMS_IN (arg_info) = DFMRemoveMask (INFO_INFDFMS_IN (arg_info));
@@ -977,36 +984,37 @@ INFDFMSwith (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("INFDFMSwith");
 
-    /*
-     * Stricly speaking, the scope of all vars defined within a with-loop
-     * is restricted to the with-loop itself:
-     *
-     *   val = 1;
-     *   with (...) {
-     *     val = 2;
-     *   }
-     *   genarray( ...)
-     *   ... val ...         <---  here, 'val' still contains the value 1
-     *
-     * That means, we have to clear the INFO_INFDFMS_NEEDED mask here!
-     *
-     * BUT, in case of global objects this behaviour is NOT wanted.
-     * Therefore, during the flattening phase all not-global vars defined
-     * within a with-loop are renamed:
-     *
-     *   val = 1;
-     *   with (...) {
-     *     _val = val;
-     *     _val = 2;
-     *   }
-     *   genarray( ...)
-     *   ... val ...         <---  here, 'val' still contains the value 1
-     *
-     * Because of that, we can leave the INFO_INFDFMS_NEEDED mask untouched
-     * here in order to detect OUT- (global-) vars :-)
-     */
 #if 0
-  INFO_INFDFMS_NEEDED( arg_info) = DFMRemoveMask( INFO_INFDFMS_NEEDED( arg_info));
+  /*
+   * Stricly speaking, the scope of all vars defined within a with-loop
+   * is restricted to the with-loop itself:
+   *
+   *   val = 1;
+   *   with (...) {
+   *     val = 2;
+   *   }
+   *   genarray( ...)
+   *   ... val ...         <---  here, 'val' still contains the value 1
+   *
+   * That means, we have to clear the INFO_INFDFMS_NEEDED mask here!
+   *
+   * BUT, in case of global objects this behaviour is NOT wanted.
+   * Therefore, during the flattening phase all not-global vars defined
+   * within a with-loop are renamed:
+   *
+   *   val = 1;
+   *   with (...) {
+   *     _val = val;
+   *     _val = 2;
+   *   }
+   *   genarray( ...)
+   *   ... val ...         <---  here, 'val' still contains the value 1
+   *
+   * Because of that, we can leave the INFO_INFDFMS_NEEDED mask untouched
+   * here in order to detect OUT- (global-) vars :-)
+   */
+  INFO_INFDFMS_NEEDED( arg_info)
+    = DFMRemoveMask( INFO_INFDFMS_NEEDED( arg_info));
   INFO_INFDFMS_NEEDED( arg_info) = DFMGenMaskClear( INFO_DFMBASE( arg_info));
 #endif
 
@@ -1050,36 +1058,37 @@ INFDFMSwith2 (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("INFDFMSwith2");
 
-    /*
-     * Stricly speaking, the scope of all vars defined within a with-loop
-     * is restricted to the with-loop itself:
-     *
-     *   val = 1;
-     *   with (...) {
-     *     val = 2;
-     *   }
-     *   genarray( ...)
-     *   ... val ...         <---  here, 'val' still contains the value 1
-     *
-     * That means, we have to clear the INFO_INFDFMS_NEEDED mask here!
-     *
-     * BUT, in case of global objects this behaviour is NOT wanted.
-     * Therefore, during the flattening phase all not-global vars defined
-     * within a with-loop are renamed:
-     *
-     *   val = 1;
-     *   with (...) {
-     *     _val = val;
-     *     _val = 2;
-     *   }
-     *   genarray( ...)
-     *   ... val ...         <---  here, 'val' still contains the value 1
-     *
-     * Because of that, we can leave the INFO_INFDFMS_NEEDED mask untouched
-     * here in order to detect OUT- (global-) vars :-)
-     */
 #if 0
-  INFO_INFDFMS_NEEDED( arg_info) = DFMRemoveMask( INFO_INFDFMS_NEEDED( arg_info));
+  /*
+   * Stricly speaking, the scope of all vars defined within a with-loop
+   * is restricted to the with-loop itself:
+   *
+   *   val = 1;
+   *   with (...) {
+   *     val = 2;
+   *   }
+   *   genarray( ...)
+   *   ... val ...         <---  here, 'val' still contains the value 1
+   *
+   * That means, we have to clear the INFO_INFDFMS_NEEDED mask here!
+   *
+   * BUT, in case of global objects this behaviour is NOT wanted.
+   * Therefore, during the flattening phase all not-global vars defined
+   * within a with-loop are renamed:
+   *
+   *   val = 1;
+   *   with (...) {
+   *     _val = val;
+   *     _val = 2;
+   *   }
+   *   genarray( ...)
+   *   ... val ...         <---  here, 'val' still contains the value 1
+   *
+   * Because of that, we can leave the INFO_INFDFMS_NEEDED mask untouched
+   * here in order to detect OUT- (global-) vars :-)
+   */
+  INFO_INFDFMS_NEEDED( arg_info)
+    = DFMRemoveMask( INFO_INFDFMS_NEEDED( arg_info));
   INFO_INFDFMS_NEEDED( arg_info) = DFMGenMaskClear( INFO_DFMBASE( arg_info));
 #endif
 

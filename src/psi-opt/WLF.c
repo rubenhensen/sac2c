@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/04/19 07:47:42  dkr
+ * macro F_PTR used as format string for pointers
+ *
  * Revision 3.6  2001/03/27 11:13:17  nmw
  * fixed bug in dummy genarray assignment with missing
  * ARRAY_TYPE attribute in WLFassign
@@ -439,7 +442,7 @@ DbugRen (void)
 
     ren = renaming;
     while (ren) {
-        printf ("%s -> %s,    Vardec: 0x%p\n", ren->old, ren->new, ren->vardec);
+        printf ("%s -> %s,    Vardec: " F_PTR "\n", ren->old, ren->new, ren->vardec);
         ren = ren->next;
     }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/04/19 07:42:40  dkr
+ * macro F_PTR used as format string for pointers
+ *
  * Revision 3.14  2001/04/02 11:06:25  nmw
  * MakeL2Ffundef inits counter/list for multiple used special fundefs.
  *
@@ -278,7 +281,7 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFM
      *
      * After L2F transformation:
      *
-     *    IntStack __Cond1( IntStack new_stack, bool _flat_3, IntStack:IntStack stack)
+     *    IntStack __Cond1( IntStack new_stack, bool _flat_3, IntStack stack)
      *    {
      *      if (_flat_3) {
      *        new_stack = push( new_stack, top( stack));
@@ -295,9 +298,9 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFM
      *      return (stack, new_stack);
      *    }
      *
-     * Although 'stack' was marked as 'ST_was_reference' in function 'fun' that is
-     * no longer true in the context of the dummy function '__Cond1' because 'stack'
-     * is not an out-var of this function!!
+     * Although 'stack' was marked as 'ST_was_reference' in function 'fun' that
+     * is no longer true in the context of the dummy function '__Cond1' because
+     * 'stack' is not an out-var of this function!!
      */
     tmp = args;
     while (tmp != NULL) {
@@ -329,7 +332,7 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFM
     FUNDEF_EXT_ASSIGNS (fundef) = NodeListAppend (NULL, INFO_L2F_ASSIGN (arg_info), NULL);
     FUNDEF_USED (fundef) = 1;
     DBUG_PRINT ("L2F",
-                ("set link to external assignment: %p\n\n", INFO_L2F_ASSIGN (arg_info)));
+                ("set link to external assignment: " F_PTR, INFO_L2F_ASSIGN (arg_info)));
 
     switch (NODE_TYPE (instr)) {
     case N_cond:

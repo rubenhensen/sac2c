@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/04/19 07:47:25  dkr
+ * macro F_PTR used as format string for pointers
+ *
  * Revision 3.12  2001/04/11 09:43:38  dkr
  * fixed a bug in DuplicateLUT(): StringCopy() used :-/
  *
@@ -977,7 +980,7 @@ PrintLUT (FILE *handle, lut_t *lut)
             DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
             tmp = lut[k].first;
             for (i = 0; i < lut[k].size; i++) {
-                fprintf (handle, "%li: [ 0x%p -> 0x%p ]\n", i, tmp[0], tmp[1]);
+                fprintf (handle, "%li: [ " F_PTR " -> " F_PTR " ]\n", i, tmp[0], tmp[1]);
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /*

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/04/19 07:47:38  dkr
+ * macro F_PTR used as format string for pointers
+ *
  * Revision 3.4  2001/03/22 19:41:06  dkr
  * include of tree.h eliminated
  *
@@ -943,7 +946,7 @@ WLINwith (node *arg_node, node *arg_info)
     DBUG_PRINT ("WLI", ("searching code of  WL in line %d", NODE_LINE (arg_node)));
     tmpn = NWITH_PART (arg_node);
     while (tmpn) {
-        DBUG_PRINT ("WLI", ("code : %p", tmpn));
+        DBUG_PRINT ("WLI", ("code : " F_PTR, tmpn));
         tmpn = OPTTrav (tmpn, arg_info, arg_node);
         tmpn = NPART_NEXT (tmpn);
     }

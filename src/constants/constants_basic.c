@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2001/04/19 07:49:26  dkr
+ * macro F_PTR used as format string for pointers
+ *
  * Revision 1.4  2001/03/30 16:31:32  nmw
  * *** empty log message ***
  *
@@ -455,7 +458,7 @@ COPrintConstant (FILE *file, constant *a)
 {
     DBUG_ENTER ("COPrintConstant");
 
-    fprintf (file, "constant at %p: type %s, ", a, mdb_type[CONSTANT_TYPE (a)]);
+    fprintf (file, "constant at " F_PTR ": type %s, ", a, mdb_type[CONSTANT_TYPE (a)]);
     SHPrintShape (file, CONSTANT_SHAPE (a));
     fprintf (file, " [%s]\n",
              cv2str[CONSTANT_TYPE (a)](CONSTANT_ELEMS (a), 0, CONSTANT_VLEN (a)));
