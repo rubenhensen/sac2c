@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.120  1998/04/23 19:14:46  dkr
+ * SpmdRegions() has now two traverse-tab
+ *
  * Revision 1.119  1998/04/17 17:26:07  dkr
  * 'concurrent regions' are now called 'SPMD regions'
  *
@@ -1204,7 +1207,7 @@ MAIN
 
     NOTE_COMPILER_PHASE;
     CHECK_DBUG_START;
-    syntax_tree = SpmdRegions (syntax_tree); /* spmdregions_tab */
+    syntax_tree = SpmdRegions (syntax_tree); /* spmdinit_tab, spmdopt_tab */
     CHECK_DBUG_STOP;
     ABORT_ON_ERROR;
 
