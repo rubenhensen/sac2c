@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.8  1995/03/01 12:49:50  hw
+ * Revision 1.9  1995/03/09 16:04:47  hw
+ * added extern declaration for function StringCopy
+ *
+ * Revision 1.8  1995/03/01  12:49:50  hw
  * added LookupType
  *
  * Revision 1.7  1994/12/30  10:16:36  hw
@@ -31,7 +34,6 @@
 extern void Typecheck (node *arg_node);
 
 extern node *TCfundef (node *arg_node, node *arg_info);
-
 extern node *TClet (node *arg_node, node *arg_info);
 extern node *TCreturn (node *arg_node, node *arg_info);
 extern node *TCcond (node *arg_node, node *arg_info);
@@ -39,6 +41,8 @@ extern node *TCassign (node *arg_node, node *arg_info);
 extern node *TCdo (node *arg_node, node *arg_info);
 extern node *TCwhile (node *arg_node, node *arg_info);
 extern node *TCunaryOp (node *arg_node, node *arg_info);
+
 extern node *LookupType (char *type_name, char *mod_name, int line);
+extern char *StringCopy (char *source);
 
 #endif /* _typecheck_h */
