@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2003/01/28 18:19:02  ktr
+ * Much cleaner version, does not recycle old WLs.
+ * Phases CODE UNSHARE and DISTRIBUTE eliminated
+ * Shared code is treated correctly
+ * wlcorrect now detects shared code. This should be extended into a new optimization.
+ *
  * Revision 1.26  2003/01/27 16:18:58  ktr
  * Code is now explicitely unshared before WLS
  *
@@ -134,17 +140,8 @@
  *     scalar values for each member of the previous vector.
  *
  *
- *   - Phase 4: Distribution
+ *   - Phase 4: Scalarization
  *
- *     In this step, we distribute the parts of the outer WL over
- *     all the parts of the inner WLs in order to get an outer WL which's
- *     parts contain a WL holding exactly ONE part each.
- *
- *
- *   - Phase 5: Scalarization
- *
- *     After the structure has been simplified in phase 4, we can now
- *     start the main process of scalarization:
  *     For each part of the outer WL, the outer and the inner parts are
  *     joined into one part of the outer WL:
  *     - The new generator consists of concatenations of the former
@@ -193,6 +190,7 @@
 #include "LookUpTable.h"
 #include "SSAWLT.h"
 #include "print.h"
+#include "compare_tree.h"
 
 #include "WithloopScalarization.h"
 
@@ -209,12 +207,20 @@
  */
 typedef enum {
     wls_probe,
-    wls_unshare,
     wls_withloopification,
     wls_normgen,
-    wls_distribute,
     wls_scalarize
 } wls_phase_type;
+
+/**
+ * Structure needed to preserve code sharing
+ */
+typedef struct CODE_T {
+    node *outercode;
+    node *innercode;
+    node *newcode;
+    struct CODE_T *next;
+} code_t;
 
 /**
  * returns the current phase of WLS
@@ -336,6 +342,7 @@ ConcatVecs (node *vec1, node *vec2)
  * corrects the part/code pointer structure of a withloop in three steps.
  *
  * - add all parts' codes to the NWITH_CODE list
+ * - share as many codes as possible
  * - determine which of the codes in NWITH_CODE list are actually used
  * - remove all unused codes
  *
@@ -347,7 +354,10 @@ node *
 correctWL (node *arg_node)
 {
     node *temp, *tempcode;
+    node *tc1, *tc2;
     node **codepp;
+
+    LUT_t lut;
 
     DBUG_ENTER ("correctWL");
 
@@ -367,6 +377,44 @@ correctWL (node *arg_node)
             NCODE_NEXT (NPART_CODE (temp)) = NWITH_CODE (arg_node);
             NWITH_CODE (arg_node) = NPART_CODE (temp);
         }
+        temp = NPART_NEXT (temp);
+    }
+
+    /* share codes */
+    temp = NWITH_PART (arg_node);
+
+    if (temp != NULL)
+        temp = NPART_NEXT (temp);
+
+    while (temp != NULL) {
+        tempcode = NWITH_PART (arg_node);
+        lut = GenerateLUT ();
+
+        tc1 = NCODE_NEXT (NPART_CODE (temp));
+        NCODE_NEXT (NPART_CODE (temp)) = NULL;
+        tc2 = NCODE_NEXT (NPART_CODE (tempcode));
+        NCODE_NEXT (NPART_CODE (tempcode)) = NULL;
+
+        while ((tempcode != temp) && (NPART_CODE (tempcode) != NPART_CODE (temp))
+               && (CompareTreeLUT (NPART_CODE (temp), NPART_CODE (tempcode), lut)
+                   == CMPT_NEQ)) {
+            NCODE_NEXT (NPART_CODE (tempcode)) = tc2;
+            tempcode = NPART_NEXT (tempcode);
+            tc2 = NCODE_NEXT (NPART_CODE (tempcode));
+            NCODE_NEXT (NPART_CODE (tempcode)) = NULL;
+            lut = RemoveLUT (lut);
+            lut = GenerateLUT ();
+        }
+
+        lut = RemoveLUT (lut);
+
+        NCODE_NEXT (NPART_CODE (tempcode)) = tc2;
+        NCODE_NEXT (NPART_CODE (temp)) = tc1;
+
+        /* share code */
+        if ((tempcode != temp) && (NPART_CODE (tempcode) != NPART_CODE (temp)))
+            NPART_CODE (temp) = NPART_CODE (tempcode);
+
         temp = NPART_NEXT (temp);
     }
 
@@ -672,36 +720,6 @@ probePart (node *arg_node, node *arg_info)
 
 /****************************************************************************
  *
- * Code unsharing
- *
- ****************************************************************************/
-
-/**
- * ensures that a part's code is not used by other parts.
- * This is achieved by copying the part's code.
- *
- * @param arg_node N_NPart
- * @param arg_info N_info
- *
- * @return The same part but with a unique NPART_CODE
- */
-node *
-unsharePart (node *arg_node, node *arg_info)
-{
-    node *temp;
-
-    if (NCODE_USED (NPART_CODE (arg_node)) > 1) {
-        NCODE_USED (NPART_CODE (arg_node))--;
-        temp = DupNode (NPART_CODE (arg_node));
-        NCODE_NEXT (temp) = NCODE_NEXT (NPART_CODE (arg_node));
-        NCODE_NEXT (NPART_CODE (arg_node)) = temp;
-        NPART_CODE (arg_node) = temp;
-    }
-    return arg_node;
-}
-
-/****************************************************************************
- *
  * Withloopification functions
  *
  ****************************************************************************/
@@ -763,7 +781,9 @@ InsertCopyWithloop (node *arg_node, node *arg_info)
 
     ID_SSAASSIGN (assid) = assign;
 
+    NPART_CEXPR (arg_node) = FreeTree (NPART_CEXPR (arg_node));
     NPART_CEXPR (arg_node) = assid;
+
     BLOCK_INSTR (NPART_CBLOCK (arg_node))
       = AppendAssign (BLOCK_INSTR (NPART_CBLOCK (arg_node)), assign);
 
@@ -1006,7 +1026,9 @@ Array2Withloop (node *arg_node, node *arg_info)
 
     ID_SSAASSIGN (assid) = assign;
 
+    NPART_CEXPR (arg_node) = FreeTree (NPART_CEXPR (arg_node));
     NPART_CEXPR (arg_node) = DupNode (assid);
+
     BLOCK_INSTR (NPART_CBLOCK (arg_node))
       = AppendAssign (BLOCK_INSTR (NPART_CBLOCK (arg_node)), assign);
 
@@ -1060,7 +1082,9 @@ insertIndexDefinition (node *arg_node, node *arg_info)
 
     ID_SSAASSIGN (assid) = assign;
 
+    NPART_CEXPR (arg_node) = FreeTree (NPART_CEXPR (arg_node));
     NPART_CEXPR (arg_node) = DupNode (assid);
+
     BLOCK_INSTR (NPART_CBLOCK (arg_node))
       = AppendAssign (BLOCK_INSTR (NPART_CBLOCK (arg_node)), assign);
 
@@ -1078,7 +1102,7 @@ insertIndexDefinition (node *arg_node, node *arg_info)
  *   Otherwise a copy withloop is inserted.
  *
  * parameters:
- *   node *arg_node:   N_node
+ *   node *arg_node:   N_Npart
  *   node *arg_info:   N_INFO
  *
  ******************************************************************************/
@@ -1235,138 +1259,6 @@ NormGenerator (node *gen, node *arg_info)
         NGEN_WIDTH (gen) = Nid2Narray (NGEN_WIDTH (gen), arg_info);
 
     DBUG_RETURN (gen);
-}
-
-/****************************************************************************
- *
- * Distribution functions
- *
- ****************************************************************************/
-
-/******************************************************************************
- *
- * function:
- *   node *distributePart(node *arg_node, node *arg_info)
- *
- * description:
- *   distributes an outer part over all k parts of an inner withloop,
- *   creating k outer parts with one inner part each.
- *
- * parameters:
- *   node *arg_node:   N_NPART
- *   node *arg_info:   N_INFO
- *
- ******************************************************************************/
-node *
-distributePart (node *arg_node, node *arg_info)
-{
-    node *res;
-    node *innerwith;
-    node *tmpnode;
-    LUT_t lut;
-
-    node *vardec;
-    ids *ids;
-    node *vardec_chain;
-    char *new_name;
-    node *temp;
-
-    DBUG_ENTER ("distributePart");
-
-    innerwith = NPART_LETEXPR (arg_node);
-
-    DBUG_ASSERT (NWITH_PARTS (innerwith) >= 1, "NWITH_PARTS(innerwith) < 1");
-
-    /* are there more two or more inner parts to distribute? */
-    if (NWITH_PARTS (innerwith) == 1) {
-        res = arg_node;
-    } else {
-        /* duplicate this part and make the copy the next part in the chain. */
-
-        /* Therefore we have to rename all assignments, we use a LUT */
-
-        lut = GenerateLUT ();
-        vardec = NULL;
-        vardec_chain = NULL;
-        temp = BLOCK_INSTR (NPART_CBLOCK (arg_node));
-
-        /* Create all vardec and insert the names and pointers into the LUT */
-        while ((temp != NULL) && (NODE_TYPE (temp) != N_empty)) {
-            if (NODE_TYPE (ASSIGN_INSTR (temp)) == N_let) {
-                ids = LET_IDS (ASSIGN_INSTR (temp));
-
-                while (ids != NULL) {
-                    new_name = TmpVar ();
-                    vardec = DupNode (IDS_VARDEC (ids));
-                    VARDEC_NAME (vardec) = StringCopy (new_name);
-
-                    InsertIntoLUT_S (lut, IDS_NAME (ids), new_name);
-                    InsertIntoLUT_P (lut, IDS_VARDEC (ids), vardec);
-                    InsertIntoLUT_P (lut, IDS_AVIS (ids), VARDEC_AVIS (vardec));
-
-                    if (vardec_chain == NULL)
-                        vardec_chain = vardec;
-                    else
-                        vardec_chain = AppendVardec (vardec_chain, vardec);
-
-                    ids = IDS_NEXT (ids);
-                }
-            }
-            temp = ASSIGN_NEXT (temp);
-        }
-
-        /* append the vardecs to the function's vardecs */
-        FUNDEF_VARDEC (INFO_WLS_FUNDEF (arg_info))
-          = AppendVardec (FUNDEF_VARDEC (INFO_WLS_FUNDEF (arg_info)), vardec_chain);
-
-        /* Duplicate the part */
-        tmpnode = DupTreeLUT (arg_node, lut);
-
-        /* Duplicate the codes */
-        NPART_CODE (tmpnode) = DupNodeLUT (NPART_CODE (arg_node), lut);
-        NCODE_USED (NPART_CODE (tmpnode))++;
-
-        RemoveLUT (lut);
-
-        /* Make the AVIS-nodes point to the correct assignments */
-        temp = BLOCK_INSTR (NPART_CBLOCK (tmpnode));
-        vardec = vardec_chain;
-
-        while ((temp != NULL) && (NODE_TYPE (temp) != N_empty)) {
-            if (NODE_TYPE (ASSIGN_INSTR (temp)) == N_let) {
-                ids = LET_IDS (ASSIGN_INSTR (temp));
-                while (ids != NULL) {
-                    AVIS_SSAASSIGN (VARDEC_AVIS (vardec)) = temp;
-                    vardec = VARDEC_NEXT (vardec);
-                    ids = IDS_NEXT (ids);
-                }
-            }
-            temp = ASSIGN_NEXT (temp);
-        }
-
-        /* Insert the part into the chain of parts */
-        NPART_NEXT (arg_node) = tmpnode;
-
-        /* Drop all parts except of the first */
-        NWITH_PARTS (innerwith) = 1;
-        NPART_NEXT (NWITH_PART (innerwith))
-          = FreeTree (NPART_NEXT (NWITH_PART (innerwith)));
-
-        DBUG_ASSERT (NPART_NEXT (NWITH_PART (innerwith)) == NULL,
-                     "NPART_NEXT(NWITH_PART(innerwith)) != NULL");
-        DBUG_ASSERT (innerwith != NPART_LETEXPR (tmpnode), "innerwith == NPART_LETEXPR");
-
-        /* Drop the first part from the inner withloop of the next part */
-        innerwith = correctWL (NPART_LETEXPR (tmpnode));
-        NWITH_PARTS (innerwith) -= 1;
-        NWITH_PART (innerwith) = FreeNode (NWITH_PART (innerwith));
-
-        /* increase the outer withloop's partcounter */
-        INFO_WLS_PARTS (arg_info) += 1;
-        res = arg_node;
-    }
-
-    DBUG_RETURN (res);
 }
 
 /****************************************************************************
@@ -1647,34 +1539,61 @@ scalarizePart (node *outerpart, node *arg_info)
     node *withid;
     node *code;
 
+    code_t *code_table, *temp;
+
     DBUG_ENTER ("scalarizePart");
 
     innerpart = NWITH_PART (NPART_LETEXPR (outerpart));
 
-    /* Make a new generator */
-    generator = joinGenerators (outerpart, innerpart);
+    while (innerpart != NULL) {
+        /* Make a new generator */
+        generator = joinGenerators (outerpart, innerpart);
 
-    /* Make a new withid */
-    withid = joinWithids (NPART_WITHID (outerpart), NPART_WITHID (innerpart), arg_info);
+        /* Make a new withid */
+        withid
+          = joinWithids (NPART_WITHID (outerpart), NPART_WITHID (innerpart), arg_info);
 
-    /* Make new code */
-    code
-      = joinCodes (NPART_CODE (outerpart), NPART_CODE (innerpart),
-                   NPART_WITHID (outerpart), NPART_WITHID (innerpart), withid, arg_info);
+        /* Try to find a cached codeblock to make use of codesharing */
+        code_table = INFO_WLS_CODETABLE (arg_info);
+        while ((code_table != NULL)
+               && ((code_table->outercode != NPART_CODE (outerpart))
+                   || (code_table->innercode != NPART_CODE (innerpart))))
+            code_table = code_table->next;
 
-    /* Now we can build a new part */
-    newpart = MakeNPart (withid, generator, code);
+        if (code_table == NULL) {
+            /* Make new code */
+            code = joinCodes (NPART_CODE (outerpart), NPART_CODE (innerpart),
+                              NPART_WITHID (outerpart), NPART_WITHID (innerpart), withid,
+                              arg_info);
 
-    /* Rebuild the chain */
-    NPART_NEXT (newpart) = NPART_NEXT (outerpart);
+            NCODE_NEXT (code) = INFO_WLS_NEWCODES (arg_info);
+            INFO_WLS_NEWCODES (arg_info) = code;
 
-    /* free outer part */
-    FreeNode (outerpart);
+            temp = (code_t *)Malloc (sizeof (code_t));
+            temp->outercode = NPART_CODE (outerpart);
+            temp->innercode = NPART_CODE (innerpart);
+            temp->newcode = code;
+            temp->next = INFO_WLS_CODETABLE (arg_info);
+            INFO_WLS_CODETABLE (arg_info) = temp;
+        } else {
+            code = code_table->newcode;
+        }
 
-    /* Present the Results */
-    wls_expr++;
+        /* Now we can build a new part */
+        newpart = MakeNPart (withid, generator, code);
 
-    DBUG_RETURN (newpart);
+        /* Enter in the part in the new chain of parts */
+        NPART_NEXT (newpart) = INFO_WLS_NEWPARTS (arg_info);
+        INFO_WLS_NEWPARTS (arg_info) = newpart;
+        INFO_WLS_PARTS (arg_info)++;
+
+        /* Present the Results */
+        wls_expr++;
+
+        innerpart = NPART_NEXT (innerpart);
+    }
+
+    DBUG_RETURN (outerpart);
 }
 
 /******************************************************************************
@@ -1759,6 +1678,8 @@ WLSNwith (node *arg_node, node *arg_info)
 {
     node *tmpnode;
     node *outerblock;
+    node *withop;
+    code_t *codetable;
 
     DBUG_ENTER ("WLSNwith");
 
@@ -1809,20 +1730,6 @@ WLSNwith (node *arg_node, node *arg_info)
 
         /***************************************************************************
          *
-         *  CODE UNSHARING
-         *
-         *  Ensure all the Parts are using different N_NCode nodes.
-         *
-         ***************************************************************************/
-
-        WLS_PHASE (arg_info) = wls_unshare;
-
-        if (NWITH_PART (arg_node) != NULL) {
-            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
-        }
-
-        /***************************************************************************
-         *
          *  WITHLOOPIFICATION
          *
          *  The applicabilty of the WLS is increased in the part by means of
@@ -1854,26 +1761,6 @@ WLSNwith (node *arg_node, node *arg_info)
 
         /***************************************************************************
          *
-         *  DISTRIBUTION
-         *
-         *  The outer withloop's parts are distributed over their inner withloops'
-         *  parts in order to get outer parts containing a single generator
-         *  withloop each.
-         *
-         ***************************************************************************/
-
-        WLS_PHASE (arg_info) = wls_distribute;
-
-        /* traverse all parts */
-
-        if (NWITH_PART (arg_node) != NULL) {
-            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
-        }
-
-        NWITH_PARTS (arg_node) = INFO_WLS_PARTS (arg_info);
-
-        /***************************************************************************
-         *
          *  SCALARIZATION
          *
          *  All the outer part are melted with the contained single-generator
@@ -1899,11 +1786,35 @@ WLSNwith (node *arg_node, node *arg_info)
                                                 NPART_LETEXPR (NWITH_PART (arg_node))))));
         }
 
+        withop = DupTree (NWITH_WITHOP (arg_node));
+
         /* traverse all PARTS  */
+
+        INFO_WLS_NEWPARTS (arg_info) = NULL;
+        INFO_WLS_NEWCODES (arg_info) = NULL;
+        INFO_WLS_CODETABLE (arg_info) = NULL;
+        INFO_WLS_PARTS (arg_info) = 0;
 
         if (NWITH_PART (arg_node) != NULL) {
             NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
         }
+
+        /* clear the codetable */
+        while (INFO_WLS_CODETABLE (arg_info) != NULL) {
+            codetable = INFO_WLS_CODETABLE (arg_info)->next;
+            Free (INFO_WLS_CODETABLE (arg_info));
+            INFO_WLS_CODETABLE (arg_info) = codetable;
+        }
+
+        /* erase the old withloop */
+        FreeTree (arg_node);
+
+        /* create the new withloop */
+
+        arg_node = MakeNWith (INFO_WLS_NEWPARTS (arg_info), INFO_WLS_NEWCODES (arg_info),
+                              withop);
+
+        NWITH_PARTS (arg_node) = INFO_WLS_PARTS (arg_info);
 
         arg_node = correctWL (arg_node);
     }
@@ -1943,14 +1854,6 @@ WLSNpart (node *arg_node, node *arg_info)
         }
         break;
 
-    case wls_unshare:
-        arg_node = unsharePart (arg_node, arg_info);
-
-        if ((INFO_WLS_POSSIBLE (arg_info)) && (NPART_NEXT (arg_node) != NULL)) {
-            NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
-        }
-        break;
-
     case wls_withloopification:
         arg_node = withloopifyPart (arg_node, arg_info);
 
@@ -1968,14 +1871,6 @@ WLSNpart (node *arg_node, node *arg_info)
             NPART_GEN (innerpart) = NormGenerator (NPART_GEN (innerpart), arg_info);
             innerpart = NPART_NEXT (innerpart);
         }
-
-        if (NPART_NEXT (arg_node) != NULL) {
-            NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
-        }
-        break;
-
-    case wls_distribute:
-        arg_node = distributePart (arg_node, arg_info);
 
         if (NPART_NEXT (arg_node) != NULL) {
             NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
