@@ -26,3 +26,4 @@ src/multithread
 src/tree
 src/c-interface
 
+tools/cache_analysis
