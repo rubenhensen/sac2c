@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/07/11 13:58:44  dkr
+ * modification for TAGGED_ARRAYS added
+ *
  * Revision 3.16  2002/06/27 15:27:03  dkr
  * bug in IdxNcode() fixed:
  * INFO_IVE_TRANSFORM_VINFO reset before NCODE_CEXPR is traversed
@@ -120,10 +123,10 @@
  *            z = idx_sel(a, __i_4_4);
  *
  * For doing so, an attribute "Uses" has to be infered. It is attached to each
- * left hand side of an array assignment, and to each variable/argument declaration
- * of an array.
- * Since we want to eliminate index vectors the attribute attachment is restricted
- * to one-dimensional integer arrays( array identifiers) !
+ * left hand side of an array assignment, and to each variable/argument
+ * declaration of an array.
+ * Since we want to eliminate index vectors the attribute attachment is
+ * restricted to one-dimensional integer arrays( array identifiers)!
  * The "Uses" attribute consists of a set (chain) of attributes of the kind:
  *
  *     VECT/ IDX(<shape>).
@@ -138,8 +141,8 @@
  *            i:IDX(int[4,4]) = [2,3];
  *            z= a[i];
  *
- * BTW, this can be made visible by using the break option that stops compilation
- * after IVE is done (at the time being this is -b16)!
+ * BTW, this can be made visible by using the break option that stops
+ * compilation after IVE is done (at the time being this is -b16)!
  *
  *
  *
@@ -150,7 +153,8 @@
  * ----------------------
  *
  * The "Uses" information is stored as follows:
- * During the (bottom up) traversal all information is kept at the N_vardec/N_arg nodes.
+ * During the (bottom up) traversal all information is kept at the
+ * N_vardec/N_arg nodes.
  * This is realized by the introduction of a new node: "N_vinfo"
  * which is organized as follows:
  *
@@ -175,8 +179,8 @@
  *     ARG_COLCHN(n) respectively.
  *
  * Whenever an array identifier is met in index-position of an array-selection,
- * the respective IDX(...) attribute is added (without duplicates) to both chains
- * of the variable's declaration.
+ * the respective IDX(...) attribute is added (without duplicates) to both
+ * chains of the variable's declaration.
  *
  * When meeting a "N_let" with an array variable to be defined, the actual info
  * node(s) attached to the variable's declaration( "actual chain")
@@ -188,12 +192,13 @@
  * 2b) conditionals
  * ----------------
  *
- * The mechanism described so far does not properly support programs that contain
- * program parts that may or may not be "executed", i.e., conditionals or loops.
+ * The mechanism described so far does not properly support programs that
+ * contain program parts that may or may not be "executed", i.e., conditionals
+ * or loops.
  * Since we want to replace all sel ops by idx_sel ops, we have to infer all
- * potential uses rather than only those taken by a particular branch. To achieve
- * this, different actual chains for the alternative branches have to be created
- * and merged, e.g.,
+ * potential uses rather than only those taken by a particular branch. To
+ * achieve this, different actual chains for the alternative branches have to
+ * be created and merged, e.g.,
  *
  *            a= reshape([4,4], [1,2,...,16]);
  *            b= reshape([8,2], [1,2,...,16]);
@@ -223,8 +228,8 @@
  * conditional starting out with an "actual chain" gained by traversing the
  * rest, which in our example is: IDX(int[4,4]).
  * The results -- empty / IDX(int[8,2]):IDX(int[4,4])  in our example --
- * have to be merged, thus yielding IDX(int[8,2]):IDX(int[4,4]) as "actual chain"
- * when leaving the conditional.
+ * have to be merged, thus yielding IDX(int[8,2]):IDX(int[4,4]) as "actual
+ * chain" when leaving the conditional.
  *
  * The implementation of this requires as many "actual chaines" to be kept
  * simultaneously as we have nestings of conditionals. Therefore, we need a
@@ -297,9 +302,9 @@
  * 2c) loops
  * ---------
  *
- * For loops a similar mechanism is rquired; we have to stack the "actual chain"
- * of the assignments that follow the loop, and we have to merge those with
- * the "actual chain" obtained from traversing the loop body.
+ * For loops a similar mechanism is rquired; we have to stack the "actual
+ * chain" of the assignments that follow the loop, and we have to merge those
+ * with the "actual chain" obtained from traversing the loop body.
  *
  * For example, consider the following code fragment:
  *
@@ -397,7 +402,8 @@
  *                              trv( L; R; ++ R;) $    merge chains
  *          trv( L; R; ++ R;) $ trv( L; R; ++ R;) $    copy actual chain
  *     trv( L; (L; R; ++ R;)) $ trv( L; R; ++ R;) $    traverse loop body again
- *                              trv( L; R; ++ R;) $    delete topmost chain & leave loop
+ *                              trv( L; R; ++ R;) $    delete topmost chain
+ *                                                        and leave loop
  *
  * Since for do-loops we know that the loop will be evaluated at least once,
  * for these loops
@@ -415,12 +421,14 @@
  *                   trv( L; R;) $ trv( R;) $    traverse loop body
  *          trv( L; R; ++ R;) $ trv( L; R;) $    merge chains and copy old top
  *     trv( L; (L; R; ++ R;)) $ trv( L; R;) $    traverse loop body
- *                              trv( L; R;) $    delete topmost chain & leave loop
+ *                              trv( L; R;) $    delete topmost chain
+ *                                                   and leave loop
  *
  * Implementation-wise, we face another problem with loops here:
- * Since the code is changed in the same traversal as the uses attributes are built
- * during the first traversal of loops these changes have to be prevented. This is
- * indicated by a mode-flag in INFO_IVE_MODE( arg_info) which either is set to
+ * Since the code is changed in the same traversal as the uses attributes are
+ * built during the first traversal of loops these changes have to be
+ * prevented. This is indicated by a mode-flag in INFO_IVE_MODE(arg_info)
+ * which either is set to
  *     M_uses_and_transform    or to      M_uses_only
  *
  *
@@ -438,9 +446,10 @@
  * to the vardec-section of the function. In case of local variables this can
  * be achieved easily be following the N_id's backref to its N_vardec.
  * For function arguments the situation is more complicated. Their backref
- * leads to the N_arg node from which we can not reach the function's vardec-section.
- * Therefore, we first traverse a function's arguments and insert backrefs to the
- * N_fundef node. This enables us to find the vardec-section when creating
+ * leads to the N_arg node from which we can not reach the function's
+ * vardec-section.
+ * Therefore, we first traverse a function's arguments and insert backrefs to
+ * the N_fundef node. This enables us to find the vardec-section when creating
  * new vardecs for variables which are formal parametes of the function.
  *
  *
@@ -449,16 +458,19 @@
  * ----------------------------
  *
  * Apart from the two traversals due to loops ( see above) the insertion of new
- * assignments is done in the same traversal during which the uses-inference is done.
- * The central function for initiating this process id IdxLet. Basically, for each
- * of the variables <var> of the LHS and for each IDX(<shp>) usage, an assignment of the
- * form __<varname>__<shp> = ComputeIdxFromShape( <varname>, <shp>) is inserted.
- * This is achieved by generating an ND_KS_VECT2OFFSET icm.
- * Complementary to this code modification, all F_sel and all F_modarray operations
- * are replaced by their idx counterparts, e.g., an application sel( iv, a) is
- * replaced by idxsel( __iv__<shp>, a).
- * To avoid superfluous computations of this form, so-called "pure address computations"
- * are identified. These are assignments of the form
+ * assignments is done in the same traversal during which the uses-inference is
+ * done.
+ * The central function for initiating this process id IdxLet. Basically, for
+ * each of the variables <var> of the LHS and for each IDX(<shp>) usage, an
+ * assignment of the form
+ *    __<varname>__<shp> = ComputeIdxFromShape( <varname>, <shp>)
+ * is inserted.
+ * This is achieved by generating an ND_VECT2OFFSET icm.
+ * Complementary to this code modification, all F_sel and all F_modarray
+ * operations are replaced by their idx counterparts, e.g., an application
+ *   sel( iv, a)   is replaced by   idxsel( __iv__<shp>, a)   .
+ * To avoid superfluous computations of this form, so-called "pure address
+ * computations" are identified. These are assignments of the form
  *
  *    iv = iv1;             or of the form
  *    iv = exp1 op exp2;
@@ -466,24 +478,25 @@
  *    iv only has IDX(...) usages and
  *    op is +,-,*,\    (without *,\ between two vectors)
  *
- * These assignments propagate the uses flags and lead to new assignments of the form
+ * These assignments propagate the uses flags and lead to new assignments of
+ * the form
  *
  *    __iv__<shp> = __iv1__<shp>;
  *    __iv__<shp> = Vect2Off( iv1) op Vect2Off( iv2);
  * where
  *    Vect2Off( exp) =
  *
- *    / __iv__<shp>                                             iff exp == iv
- *   |  (.((s *shp1 + s )*shp2 + s )...)*shp(n-1) + s           iff exp == s  scalar
- *    \ (.((s0*shp1 + s1)...)*shpm + sm)*shp(m+1)...*shp(n-1)   otherwise, i.e.
- *                                                              exp == [s0, ..., sm]
+ *   / __iv__<shp>                                             iff exp == iv
+ *  |  (.((s *shp1 + s )*shp2 + s )...)*shp(n-1) + s           iff exp == s (scalar)
+ *   \ (.((s0*shp1 + s1)...)*shpm + sm)*shp(m+1)...*shp(n-1)   otherwise, i.e.
+ *                                                             exp == [s0, ..., sm]
  *
  * The CENTRAL MECHANISM to achieve these transformations is steered by IdxLet.
- * Prior to the traversal of a RHS IdxLet copies the actual assignment (if required)
- * and then traverses the RHS with INFO_IVE_TRANSFORM_VINFO( arg_info) either
- * containing a pointer to the N_vinfo node containing the shape information required
- * for the transformation process or being NULL in order to indicate that the vector
- * version should be kept as it is.
+ * Prior to the traversal of a RHS IdxLet copies the actual assignment (if
+ * required) and then traverses the RHS with INFO_IVE_TRANSFORM_VINFO(arg_info)
+ * either containing a pointer to the N_vinfo node containing the shape
+ * information required for the transformation process or being NULL in order
+ * to indicate that the vector version should be kept as it is.
  * All Idx functions that will be called during that traversal, i.e.
  *     IdxId, IdxNum, IdxPrf, IdxArray, IdxWith, and IdxNwith
  * are steered by that mechanism.
@@ -492,31 +505,33 @@
  * 5) Eliminating Superfluous Vardecs
  * ----------------------------------
  *
- * Since DCR will not be run after IVE, IVE tries to eliminate superfluous vardecs
- * of vectors which were successfully eliminated by IVE. Since the original vardecs
- * are needed during the traversal of the body, the vardec elimination is done after
- * traversing the bodies
-
-
+ * Since DCR will not be run after IVE, IVE tries to eliminate superfluous
+ * vardecs of vectors which were successfully eliminated by IVE. Since the
+ * original vardecs are needed during the traversal of the body, the vardec
+ * elimination is done after traversing the bodies
+ *
  */
+
 /*
  * Thus, we finally find the following usages of the arg_info node:
  *
  *    INFO_IVE_FUNDEF  - holds pointer to actual N_fundef
  *                     - is needed for creating backrefs of arg-nodes.
  *    INFO_IVE_VARDECS - holds pointer to the topmost vardec of the function
- *                     - is needed for traversing all vardecs in loops / conditionals
- *    INFO_IVE_MODE    - indicates whether we are interested in uses only (M_uses_only)
- *                       or in code transformations as well (M_uses_and_transform)
+ *                     - is needed for traversing all vardecs in loops/conds
+ *    INFO_IVE_MODE    - indicates whether we are interested in uses only
+ *                       (M_uses_only) or in code transformations as well
+ *                       (M_uses_and_transform)
  *    INFO_IVE_CURRENTASSIGN - holds the current assign node
  *                           - needed for inserting new assignments and in WLs
  *    INFO_IVE_TRANSFORM_VINFO - indicates whether N_nums, N_prfs, and N_arrays
  *                               should be transformed or not.
- *    INFO_IVE_NON_SCAL_LEN - needed for F_add_SxA, F_add_AxS, F_sub_SxA, and F_sub_AxS
- *                            if the are used for pure iv address computations on ivs
- *                            of non-maximal length! In these situations the length
- *                            of the non-scalar argument has to be known when traversing
- *                            the scalar argument (cf. IdxNum).
+ *    INFO_IVE_NON_SCAL_LEN - needed for F_add_SxA, F_add_AxS, F_sub_SxA, and
+ *                            F_sub_AxS if the are used for pure iv address
+ *                            computations on ivs of non-maximal length!
+ *                            In these situations the length of the non-scalar
+ *                            argument has to be known when traversing the
+ *                            scalar argument (cf. IdxNum).
  */
 
 int ive_expr, ive_op;
@@ -524,13 +539,14 @@ int ive_expr, ive_op;
 /*
  * Some functions for handling N_vinfo nodes:
  * ------------------------------------------
- * node * FindVect( node *N_vinfo_chain)	 : checks whether VECT is in the chain
- *						   of N_vinfo nodes
- * node * FindIdx( node *chain, types *shape)	 : dito for a specific shape
+ * node * FindVect( node *N_vinfo_chain)	: checks whether VECT is in
+ *                                                  the chain of N_vinfo nodes
+ * node * FindIdx( node *chain, types *shape)	: dito for a specific shape
  *
- * node * SetVect( node *chain)			 : inserts VECT-node in chain if
- *                                                 not already present
- * node * SetIdx( node *chain, types *shape)	 : inserts IDX-node if not already present
+ * node * SetVect( node *chain)	                : inserts VECT-node in chain if
+ *                                                  not already present
+ * node * SetIdx( node *chain, types *shape)    : inserts IDX-node if not
+ *                                                  already present
  */
 
 /*
@@ -1065,9 +1081,9 @@ VardecIdx (node *vardec, types *type)
  *    'vardec' points to the N_vardec/ N_arg node of the original
  *    declaration, i.e. the "VECT"-version, of an index variable.
  *    'type' indicates which IDX(type) version has to be computed.
- *    CreateVect2OffsetIcm creates the required  ND_KS_VECT2OFFSET - ICM, e.g.,
+ *    CreateVect2OffsetIcm creates the required  ND_VECT2OFFSET-ICM, e.g.,
  *    if   vardec ->  int[2] iv    and   type -> double [4,5,6],
- *    an icm ND_KS_VECT2OFFSET( iv_4_5_6__, iv, 2, 3, 4, 5, 6)  is created.
+ *    an icm ND_VECT2OFFSET( iv_4_5_6__, iv, 2, 3, 4, 5, 6)  is created.
  *    While doing so it makes sure, that a vardec for iv_3_4_5__ exists and
  *    it insertes back-refs from the N_id nodes of the icm to the respective
  *    vardecs!
@@ -1105,9 +1121,17 @@ CreateVect2OffsetIcm (node *vardec, types *type)
     /*
      * Now, we create the desired icm:
      */
+#ifdef TAGGED_ARRAYS
+    iv_vect_id = AddNtTag (iv_vect_id);
+
+    icm = MakeIcm5 ("ND_VECT2OFFSET", iv_off_id, iv_vect_id,
+                    MakeNum (GetShapeDim (ID_TYPE (iv_vect_id))),
+                    MakeNum (GetShapeDim (type)), exprs);
+#else
     icm = MakeIcm5 ("ND_KS_VECT2OFFSET", iv_off_id, iv_vect_id,
                     MakeNum (VARDEC_OR_ARG_SHAPE (vardec, 0)),
                     MakeNum (GetShapeDim (type)), exprs);
+#endif
 
     /*
      * Finally, we mark vardec as VECT!
@@ -1233,8 +1257,9 @@ IdxArg (node *arg_node, node *arg_info)
             ARG_COLCHN (arg_node) = MakeVinfoDollar (NULL);
         }
     } else {
-        /* This is the second pass; insert index-arg initialisations
-         * of the form: ND_KS_VECT2OFFSET( <off-name>, <var-name>, <dim>, <dims>, <shape>)
+        /*
+         * This is the second pass; insert index-arg initialisations of the form:
+         *   ND_VECT2OFFSET( <off-name>, <var-name>, <dim>, <dims>, <shape>)
          */
         block = FUNDEF_BODY (ARG_FUNDEF (arg_node));
         if (block != NULL) { /* insertion not necessary for external decls! */
@@ -1496,7 +1521,7 @@ IdxLet (node *arg_node, node *arg_info)
      *    Iff ( NFO_IVE_MODE( arg_info) == M_uses_and_transform ),
      *    for each variable of the LHS that is needed as IDX(shape) we
      *    generate an assignment of the form:
-     *    ND_KS_VECT2OFFSET( off-name, var-name, dim, dims, shape)
+     *      ND_VECT2OFFSET( off-name, var-name, dim, dims, shape)
      *    this instruction will calculate the indices needed from the vector
      *    generated by the RHS.
      *
@@ -1592,7 +1617,7 @@ IdxLet (node *arg_node, node *arg_info)
          * Therefore, iff (INFO_IVE_MODE( arg_info) == M_uses_and_transform)
          * we insert for each shape-index needed for each variable of
          * the LHS an assignment of the form :
-         * ND_KS_VECT2OFFSET( <off-name>, <var-name>, <dim>, <dims>, <shape> )
+         *   ND_VECT2OFFSET( <off-name>, <var-name>, <dim>, <dims>, <shape> )
          */
         if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
             do { /* loop over all LHS-Vars */
@@ -2232,8 +2257,8 @@ IdxNcode (node *arg_node, node *arg_info)
                 } else {
                     /*
                      * we have to instanciate the idx-variable by an ICM of the form:
-                     * ND_KS_VECT2OFFSET( <off-name>, <var-name>,
-                     *                    <dim of var>, <dim of array>, shape_elems)
+                     *   ND_VECT2OFFSET( <off-name>, <var-name>,
+                     *                   <dim of var>, <dim of array>, shape_elems)
                      */
                     new_assign = CreateVect2OffsetIcm (idx_decl, VINFO_TYPE (vinfo));
                 }
