@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/01/14 08:46:31  cg
+ * Bug fixed in application of variable argument list functions.
+ *
  * Revision 1.4  2005/01/12 15:50:46  cg
  * Added CTIterminateCompilation.
  *
@@ -70,6 +73,7 @@ static char *message_buffer = NULL;
 static int message_buffer_size = 0;
 static int message_line_length = 76;
 
+static char *abort_message_header = "ABORT: ";
 static char *error_message_header = "ERROR: ";
 static char *warn_message_header = "WARNING: ";
 static char *state_message_header = "";
@@ -135,7 +139,7 @@ ProcessMessage (char *buffer, int line_length)
 
 /** <!--********************************************************************-->
  *
- * @fn void PrintMessage( const char *header, const char *format,  ...)
+ * @fn void PrintMessage( const char *header, const char *format, va_list arg_p)
  *
  *   @brief prints message
  *
@@ -152,17 +156,14 @@ ProcessMessage (char *buffer, int line_length)
  ******************************************************************************/
 
 static void
-PrintMessage (const char *header, const char *format, ...)
+PrintMessage (const char *header, const char *format, va_list arg_p)
 {
-    va_list arg_p;
     char *line;
     int len;
 
     DBUG_ENTER ("PrintMessage");
 
-    va_start (arg_p, format);
     len = vsnprintf (message_buffer, message_buffer_size, format, arg_p);
-    va_end (arg_p);
 
     if (len >= message_buffer_size) {
         /* buffer too small */
@@ -170,9 +171,7 @@ PrintMessage (const char *header, const char *format, ...)
         message_buffer = (char *)ILIBmalloc (len + 2);
         message_buffer_size = len + 2;
 
-        va_start (arg_p, format);
         len = vsnprintf (message_buffer, message_buffer_size, format, arg_p);
-        va_end (arg_p);
 
         DBUG_ASSERT ((len < message_buffer_size), "message buffer corruption");
     }
@@ -468,9 +467,12 @@ CTIabort (const char *format, ...)
 
     va_start (arg_p, format);
 
-    CTIerror (format, arg_p);
+    fprintf (stderr, "\n");
+    PrintMessage (abort_message_header, format, arg_p);
 
     va_end (arg_p);
+
+    errors++;
 
     AbortCompilation ();
 
@@ -498,9 +500,13 @@ CTIabortLine (int line, const char *format, ...)
 
     va_start (arg_p, format);
 
-    CTIerrorLine (line, format, arg_p);
+    fprintf (stderr, "\n");
+    fprintf (stderr, "%sline %d  file: %s", abort_message_header, line, global.filename);
+    PrintMessage (abort_message_header, format, arg_p);
 
     va_end (arg_p);
+
+    errors++;
 
     AbortCompilation ();
 
