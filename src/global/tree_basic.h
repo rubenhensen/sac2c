@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.87  1998/03/18 10:48:16  dkr
+ * changed MakeWLproj
+ * added WLPROJ_MODIFIED
+ *
  * Revision 1.86  1998/03/17 10:36:25  dkr
  * added WLSEG_DIM, WLSEG_BV, WLSEG_UBV
  *
@@ -2393,17 +2397,21 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int block
  ***
  ***  permanent attributes:
  ***
- ***    int      LEVEL     (0)
+ ***    int      LEVEL     (!)
  ***    int      DIM       (0)
  ***    int      BOUND1    (0)
  ***    int      BOUND2    (0)
  ***    int      STEP      (0)
  ***    int      UNROLLING (0)
  ***
+ ***  temporary attributes:
+ ***
+ ***    int      MODIFIED  (!)    (Precompile ! )
+ ***
  ***/
 
-extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
-                         int unrolling, node *inner, node *next);
+extern node *MakeWLproj (int dim, int bound1, int bound2, int step, int unrolling,
+                         node *inner, node *next);
 
 #define WLPROJ_LEVEL(n) (n->refcnt)
 #define WLPROJ_DIM(n) (n->flag)
@@ -2413,6 +2421,8 @@ extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
 #define WLPROJ_UNROLLING(n) (n->info.cint)
 #define WLPROJ_INNER(n) (n->node[0])
 #define WLPROJ_NEXT(n) (n->node[1])
+
+#define WLPROJ_MODIFIED(n) (n->refcnt)
 
 /*--------------------------------------------------------------------------*/
 
