@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2002/09/06 17:29:31  sbs
+ * TC_poly added.
+ *
  * Revision 3.3  2002/05/31 14:51:54  sbs
  * intermediate version to ensure compilable overall state.
  *
@@ -56,7 +59,8 @@ TCI (TC_simple, 0, "Simple", 0), TCI (TC_symbol, 0, "Symbol", 0),
   TCI (TC_union, 2, "UNION", 1), TCI (TC_fun, 1, "FUN", 1), TCI (TC_ibase, 3, "IBASE", 0),
   TCI (TC_iarr, 1, "IARR", 1), TCI (TC_idim, 1, "IDIM", 1),
   TCI (TC_ishape, 1, "ISHAPE", 0), TCI (TC_ires, 1, "IRES", 0),
-  TCI (TC_alpha, 0, "ALPHA", 0), TCI (TC_dummy, 0, "LastTCI", 0)
+  TCI (TC_alpha, 0, "ALPHA", 0), TCI (TC_poly, 0, "POLY", 0),
+  TCI (TC_dummy, 0, "LastTCI", 0)
 
 #undef TCITypeConstr
 #undef TCIArity

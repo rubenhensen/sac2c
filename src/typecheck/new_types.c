@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2002/09/06 17:29:31  sbs
+ * TC_poly added.
+ *
  * Revision 3.26  2002/09/06 15:16:40  sbs
  * FUNDEF_RETURN now set properly?!
  *
@@ -210,6 +213,7 @@ typedef union {
     shape *a_ishape;
     attr_ires a_ires;
     tvar *a_alpha;
+    char *a_poly;
 } typeattr;
 
 /*
@@ -269,6 +273,8 @@ struct NTYPE {
 #define IRES_POS(n, i) (n->typeattr.a_ires.poss[i])
 
 #define ALPHA_SSI(n) (n->typeattr.a_alpha)
+
+#define POLY_NAME(n) (n->typeattr.a_poly)
 
 /*
  * Macros for accessing the sons...
@@ -842,6 +848,50 @@ TYGetProductMember (ntype *prod, int pos)
                  "TYGetProductMember applied with illegal index");
 
     DBUG_RETURN (PROD_MEMBER (prod, pos));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   ntype * TYMakePolyType( char *name)
+ *
+ * description:
+ *   Function for creating poly types.
+ *
+ ******************************************************************************/
+
+ntype *
+TYMakePolyType (char *name)
+{
+    ntype *res;
+
+    DBUG_ENTER ("TYMakePolyType");
+
+    res = MakeNtype (TC_poly, 0);
+    POLY_NAME (res) = name;
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char * TYGetPolyName( ntype *type)
+ *
+ * description:
+ *  function for extracting the name of a polymorphic type.
+ *
+ ******************************************************************************/
+
+char *
+TYGetPolyName (ntype *type)
+{
+    DBUG_ENTER ("TYGetPolyName");
+
+    DBUG_ASSERT ((NTYPE_CON (type) == TC_poly),
+                 "TYGetPolyName applied to non poly type!");
+
+    DBUG_RETURN (POLY_NAME (type));
 }
 
 /******************************************************************************
@@ -3110,6 +3160,9 @@ CopyTypeConstructor (ntype *type, TV_treatment new_tvars)
             SYMBOL_MOD (res) = StringCopy (SYMBOL_MOD (type));
             SYMBOL_NAME (res) = StringCopy (SYMBOL_NAME (type));
             break;
+        case TC_poly:
+            POLY_NAME (res) = StringCopy (POLY_NAME (type));
+            break;
         case TC_user:
             USER_TYPE (res) = USER_TYPE (type);
             break;
@@ -3281,6 +3334,9 @@ ScalarType2String (ntype *type)
         break;
     case TC_user:
         buf = StrBufprintf (buf, "%s", UTGetName (USER_TYPE (type)));
+        break;
+    case TC_poly:
+        buf = StrBufprintf (buf, "<%s>", POLY_NAME (type));
         break;
     default:
         DBUG_ASSERT (0, "ScalarType2String called with non-scalar type!");
@@ -3616,7 +3672,7 @@ TYType2DebugString (ntype *type, bool multiline, int offset)
         case TC_symbol:
             multiline = FALSE;
             if (SYMBOL_MOD (type) == NULL) {
-                buf = StrBufprintf (buf, "%s", SYMBOL_NAME (type));
+                buf = StrBufprint (buf, SYMBOL_NAME (type));
             } else {
                 buf = StrBufprintf (buf, "%s:%s", SYMBOL_MOD (type), SYMBOL_NAME (type));
             }
@@ -3624,6 +3680,10 @@ TYType2DebugString (ntype *type, bool multiline, int offset)
         case TC_user:
             multiline = FALSE;
             buf = StrBufprintf (buf, "%d", USER_TYPE (type));
+            break;
+        case TC_poly:
+            multiline = FALSE;
+            buf = StrBufprint (buf, POLY_NAME (type));
             break;
         case TC_ibase:
             tmp_str = TYType2DebugString (IBASE_BASE (type), FALSE, offset);
@@ -3940,12 +4000,16 @@ TYOldType2Type (types *old)
 
     switch (TYPES_BASETYPE (old)) {
     case T_user:
-        udt = UTFindUserType (TYPES_NAME (old), TYPES_MOD (old));
-        if (udt == UT_NOT_DEFINED) {
-            res = TYMakeSymbType (StringCopy (TYPES_NAME (old)),
-                                  StringCopy (TYPES_MOD (old)));
+        if (TYPES_POLY (old)) {
+            res = TYMakePolyType (TYPES_NAME (old));
         } else {
-            res = TYMakeUserType (udt);
+            udt = UTFindUserType (TYPES_NAME (old), TYPES_MOD (old));
+            if (udt == UT_NOT_DEFINED) {
+                res = TYMakeSymbType (StringCopy (TYPES_NAME (old)),
+                                      StringCopy (TYPES_MOD (old)));
+            } else {
+                res = TYMakeUserType (udt);
+            }
         }
         break;
     case T_int:

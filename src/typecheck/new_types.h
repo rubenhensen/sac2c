@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/09/06 17:29:31  sbs
+ * TC_poly added.
+ *
  * Revision 3.9  2002/09/03 13:19:56  dkr
  * signature of TYCreateWrapperCode() modified
  *
@@ -126,6 +129,13 @@
  *    a, b = foo( [2]);
  *
  *    where a and b are of type int[*]  !!
+ *
+ * 4) Polymorphic types
+ * =====================
+ *
+ *    These are type variables that can be specified by the user in order to define
+ *    polymorphic functions. However, their usage is restricted to function definitions
+ *    AND they have to be scalar types....  ( comment is to be improved....)
  */
 
 /*
@@ -228,6 +238,12 @@ extern ntype *TYSetProductMember (ntype *prod, int pos, ntype *member);
 
 extern int TYGetProductSize (ntype *prod);
 extern ntype *TYGetProductMember (ntype *prod, int pos);
+
+/*
+ * Polymorphic Types:
+ */
+extern ntype *TYMakePolyType (char *name);
+extern char *TYGetPolyName (ntype *poly);
 
 /*
  * Function Types:
