@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.186  2004/05/06 18:20:00  khf
+ * moved DupTree makros for node N_info to DupTree.c
+ *
  * Revision 3.185  2004/05/05 15:02:59  ktr
  * Added new son to Ncode: NCODE_EPILOGUE
  *
@@ -2950,14 +2953,6 @@ extern node *MakeInfo ();
  * This has been done for a few modules only yet!!!
  */
 
-/* DupTree */
-#define INFO_DUP_TYPE(n) (n->flag)
-#define INFO_DUP_CONT(n) (n->node[0])
-#define INFO_DUP_FUNDEF(n) (n->node[1])
-#define INFO_DUP_LUT(n) ((LUT_t) (n->dfmask[0]))
-#define INFO_DUP_INSPECIAL(n) ((bool)(n->counter))
-#define INFO_DUP_ASSIGN(n) (n->node[2])
-
 /* readsib */
 #define INFO_RSIB_FOLDFUNS(n) (n->node[0])
 #define INFO_RSIB_MODUL(n) (n->node[1])
@@ -3869,14 +3864,14 @@ extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
  ***    For *fold* with-loops with multiple codes all NCODE_CEXPR must have
  ***    identical names before phase 19 (pre-compilation) can be applied!!!
  ***
- ***    The CBLOCK 'plus' the CEXPR is the whole assignment block
- ***    to calculate each element of the WL. The CEXPR is the pseudo
+ ***    The CBLOCK 'plus' the CEXPRS is the whole assignment block
+ ***    to calculate each element of the WL. The CEXPRS is the pseudo
  ***    return statement of the block.
  ***    In the flatten phase every node unequal N_id is flattened from
- ***    the CEXPR into the CBLOCK.
+ ***    the CEXPRS into the CBLOCK.
  ***
  ***    EPILOGUE points to a block containing ADJUST_RC assignments which have
- ***    executed _after_ the value of CEXPR has been used.
+ ***    executed _after_ the value of CEXPRS has been used.
  ***
  ***    The USED component is a reference counter for the NPART_CODE pointer.
  ***    MakeNPart increments it if the code parameter is != NULL,
