@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.4  2000/11/29 16:21:59  nmw
+ * handling of mixed variable identifiers in specialization
+ * file for one generic fundef added
+ *
  * Revision 3.3  2000/11/23 16:19:14  nmw
  * function RemoveGenericTemplates() removed
  *
@@ -56,6 +60,7 @@
 #include "DupTree.h"
 #include "resource.h"
 #include "scnprs.h"
+#include "internal_lib.h"
 #include "import_specialization.h"
 
 /* datatype for local usage */
@@ -117,10 +122,13 @@ IMPSPECfundef (node *arg_node, node *arg_info)
 
     generic_fundef = MapSpecialized2Generic (arg_node, arg_info);
 
-    /* this function can be removed after specialization */
-
-    /* SBS: mark generic function for removal before typechecking */
-    /* FUNDEF_ATTRIB(generic_fundef) = ST_gen_remove; */
+    /*
+     * this generic fundef is not needed anymore after specialization
+     * because generic functions are not exported when using c libraries.
+     * to avoid errors when parsing the modules declaration file these
+     * fundefs are marked in the typechecker to be ignored in the
+     * further compiling steps.
+     */
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
@@ -315,9 +323,12 @@ isSpecializationType (types *s_type, types *g_type)
  *   body. adds generated fundef to list of fundefs
  *
  * remark: IMPORTANT
- *   this funcction dublicates the generic function gen_fundef and substitutes
+ *   this function dublicates the generic function gen_fundef and substitutes
  *   all types with the specialized one from spec_fundef. Because the first result
  *   type stores some data of the fundef node these data has to be copied manually.
+ *   the identifier of all types is copied from the generic fundef typelist to
+ *   avoid mixed variable identifiers in different specialized fundef to one
+ *   generic body.
  *
  ******************************************************************************/
 
@@ -328,6 +339,7 @@ AddSpecializedFundef (node *fundefs, node *spec_fundef, node *gen_fundef)
     node *new_fundef;
     node *s_arg;
     node *n_arg;
+    char *arg_name;
 
     DBUG_ENTER ("AddSpecializedFundef");
     NOTE (("Adding specialization for %s...\n", FUNDEF_NAME (gen_fundef)));
@@ -340,18 +352,17 @@ AddSpecializedFundef (node *fundefs, node *spec_fundef, node *gen_fundef)
     s_arg = FUNDEF_ARGS (spec_fundef);
     n_arg = FUNDEF_ARGS (new_fundef);
     while (n_arg != NULL) {
+        arg_name = StringCopy (ARG_NAME (n_arg)); /* make a copy of original arg. id */
         ARG_TYPE (n_arg) = FreeOneTypes (ARG_TYPE (n_arg));
         ARG_TYPE (n_arg) = DupTypes (ARG_TYPE (s_arg));
-        /*    if(TYPES_SHPSEG(ARG_TYPE(s_arg))!=NULL) {
-          TYPES_SHPSEG(ARG_TYPE(n_arg)) = FreeShpseg(TYPES_SHPSEG(ARG_TYPE(n_arg)));
-          TYPES_SHPSEG(ARG_TYPE(n_arg)) = DupShpSeg(TYPES_SHPSEG(ARG_TYPE(s_arg)));
-          ARG_DIM(n_arg)=ARG_DIM(s_arg);
-        } */
+        FREE (ARG_NAME (n_arg));     /* free identifier of spec declaration */
+        ARG_NAME (n_arg) = arg_name; /* reset original arg. identifier */
+
         n_arg = ARG_NEXT (n_arg);
         s_arg = ARG_NEXT (s_arg);
     }
 
-    /* adjust to specialyed resulttypes */
+    /* adjust to specialized resulttypes */
     old_type = FUNDEF_TYPES (new_fundef);
     FUNDEF_TYPES (new_fundef) = DupTypes (FUNDEF_TYPES (spec_fundef));
 
