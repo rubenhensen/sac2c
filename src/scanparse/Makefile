@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.7  1999/12/13 10:41:15  dkr
+# flag -erroff=E_CAST_DOESNT_YIELD_LVALUE for CC added
+#
 # Revision 2.6  1999/05/12 15:13:23  cg
 # make deps done
 #
@@ -99,7 +102,7 @@ CCFLAGS   := -ansi -Wall -g
 CFLAGS    := -D__EXTENSIONS__
 
 gcc_FLAGS := -ansi
-cc_FLAGS  := -xsb
+cc_FLAGS  := -xsb -erroff=E_CAST_DOESNT_YIELD_LVALUE
 
 CCL_FLAGS := $($(CC)_FLAGS) -g
 
@@ -134,7 +137,7 @@ deps: y.tab.c lex.yy.c
 
 clean:
 	$(RM) y.tab.h y.tab.c lex.yy.c *.o *.bak y.output
-	$(RM) -r .sb
+	$(RM) -r .sb SunWS_cache
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
