@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/03/27 13:48:08  dkr
+ * signature of Inline() modified
+ *
  * Revision 3.7  2001/03/22 18:05:30  dkr
  * include of tree.h eliminated
  *
@@ -96,8 +99,9 @@
 #include "DupTree.h"
 #include "Inline.h"
 
+#define INL_COUNT 1
+
 #define INLINE_PREFIX "__inl"
-#define INLINE_PREFIX_LENGTH 5
 
 static int inline_nr = 0;
 
@@ -121,7 +125,7 @@ CreateInlineName (char *old_name)
     DBUG_ENTER ("CreateInlineName");
 
     new_name = (char *)MALLOC (sizeof (char)
-                               * (strlen (old_name) + INLINE_PREFIX_LENGTH + 1 + /* _ */
+                               * (strlen (old_name) + strlen (INLINE_PREFIX) + 1 + /* _ */
                                   NumberOfDigits (inline_nr) + 1)); /* '\0' */
 
     sprintf (new_name, INLINE_PREFIX "%d_%s", inline_nr, old_name);
@@ -203,11 +207,10 @@ InlineArg (node *arg_node, node *arg_info)
       = InsertIntoLUT_P (INFO_INL_LUT (arg_info), arg_node, new_vardec);
 
     /*
-     * insert names of ['arg_node', 'new_vardec'] into INFO_INL_LUT
+     * insert strings [ARG_NAME(arg_node), new_name] into INFO_INL_LUT
      */
     INFO_INL_LUT (arg_info)
-      = InsertIntoLUT_S (INFO_INL_LUT (arg_info), ARG_NAME (arg_node),
-                         VARDEC_NAME (new_vardec));
+      = InsertIntoLUT_S (INFO_INL_LUT (arg_info), ARG_NAME (arg_node), new_name);
 
     /*
      * insert assignment
@@ -268,11 +271,10 @@ InlineVardec (node *arg_node, node *arg_info)
       = InsertIntoLUT_P (INFO_INL_LUT (arg_info), arg_node, new_vardec);
 
     /*
-     * insert names of ['arg_node', 'new_vardec'] into INFO_INL_LUT
+     * insert strings [VARDEC_NAME(arg_node), new_name] into INFO_INL_LUT
      */
     INFO_INL_LUT (arg_info)
-      = InsertIntoLUT_S (INFO_INL_LUT (arg_info), VARDEC_NAME (arg_node),
-                         VARDEC_NAME (new_vardec));
+      = InsertIntoLUT_S (INFO_INL_LUT (arg_info), VARDEC_NAME (arg_node), new_name);
 
     if (VARDEC_NEXT (arg_node)) {
         VARDEC_NEXT (arg_node) = InlineVardec (VARDEC_NEXT (arg_node), arg_info);
@@ -392,7 +394,9 @@ DoInline (node *let_node, node *arg_info)
     inl_nodes = AppendAssign (INFO_INL_PROLOG (arg_info), inl_nodes);
     inl_nodes = AppendAssign (inl_nodes, INFO_INL_EPILOG (arg_info));
 
-    inline_nr++;
+    if (INFO_INL_TYPE (arg_info) & INL_COUNT) {
+        inline_nr++;
+    }
     INFO_INL_LUT (arg_info) = RemoveLUT (INFO_INL_LUT (arg_info));
 
     DBUG_RETURN (inl_nodes);
@@ -528,10 +532,10 @@ INLassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *InlineSingleApplication( node *let_node, node *fundef_node)
+ *  node *InlineSingleApplication( node *let, node *fundef)
  *
  * description:
- *   this function allows a single function application to be inlined.
+ *   This function allows a single function application to be inlined.
  *   It is ment for external calls only and preserves the actual fun_tab!
  *   <let_node> should point to the N_let node which RHS is to be unrolled,
  *   <fundef_node> should point to the N_fundef node of the function in which
@@ -542,7 +546,7 @@ INLassign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-InlineSingleApplication (node *let_node, node *fundef_node)
+InlineSingleApplication (node *let, node *fundef)
 {
     node *arg_info;
     node *assigns;
@@ -553,11 +557,12 @@ InlineSingleApplication (node *let_node, node *fundef_node)
     mem_tab = act_tab;
     act_tab = inline_tab;
     arg_info = MakeInfo ();
-    INFO_INL_VARDECS (arg_info) = FUNDEF_VARDEC (fundef_node);
+    INFO_INL_TYPE (arg_info) = 0;
+    INFO_INL_VARDECS (arg_info) = FUNDEF_VARDEC (fundef);
 
-    assigns = DoInline (let_node, arg_info);
+    assigns = DoInline (let, arg_info);
 
-    FUNDEF_VARDEC (fundef_node) = INFO_INL_VARDECS (arg_info);
+    FUNDEF_VARDEC (fundef) = INFO_INL_VARDECS (arg_info);
     FreeTree (arg_info);
     act_tab = mem_tab;
 
@@ -567,7 +572,7 @@ InlineSingleApplication (node *let_node, node *fundef_node)
 /******************************************************************************
  *
  * Function:
- *   node *Inline( node *arg_node, node *arg_info)
+ *   node *Inline( node *arg_node)
  *
  * Description:
  *   Starts function inlining.
@@ -575,8 +580,9 @@ InlineSingleApplication (node *let_node, node *fundef_node)
  ******************************************************************************/
 
 node *
-Inline (node *arg_node, node *arg_info)
+Inline (node *arg_node)
 {
+    node *arg_info;
     funtab *mem_tab;
 #ifndef DBUG_OFF
     int mem_inl_fun = inl_fun;
@@ -584,12 +590,17 @@ Inline (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("Inline");
 
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
+                 "Inline() can be used for N_modul nodes only!");
+
     DBUG_PRINT ("OPT", ("FUNCTION INLINING"));
+
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
 
     mem_tab = act_tab;
     act_tab = inline_tab;
     arg_info = MakeInfo ();
+    INFO_INL_TYPE (arg_info) = INL_COUNT;
 
     arg_node = Trav (arg_node, arg_info);
 

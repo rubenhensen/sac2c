@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/27 13:47:56  dkr
+ * signature of Inline() modified
+ *
  * Revision 3.3  2001/03/22 13:32:47  dkr
  * CreateInlineName removed
  *
@@ -43,14 +46,14 @@
  *
  */
 
-#ifndef _Inline_h_
-#define _Inline_h_
+#ifndef _sac_Inline_h_
+#define _sac_Inline_h_
 
-extern node *Inline (node *arg_node, node *arg_info);
-extern node *InlineSingleApplication (node *let_node, node *fundef_node);
+extern node *Inline (node *arg_node);
+extern node *InlineSingleApplication (node *let, node *fundef);
 
 extern node *INLmodul (node *arg_node, node *arg_info);
 extern node *INLfundef (node *arg_node, node *arg_info);
 extern node *INLassign (node *arg_node, node *arg_info);
 
-#endif /* _Inline_h_ */
+#endif /* _sac_Inline_h_ */

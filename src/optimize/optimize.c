@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/03/27 13:49:09  dkr
+ * signature of Inline() modified
+ *
  * Revision 3.12  2001/03/26 15:56:18  nmw
  * SSALoopInvarinatRemoval added
  *
@@ -486,7 +489,7 @@ OPTmodul (node *arg_node, node *arg_info)
     DBUG_ENTER ("OPTmodul");
 
     if (optimize & OPT_INL) {
-        arg_node = Inline (arg_node, arg_info); /* inline_tab */
+        arg_node = Inline (arg_node); /* inline_tab */
     }
 
     if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
