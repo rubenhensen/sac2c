@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.224  1998/05/15 12:33:32  srs
+ * added WLI debug info in PrintAssign()
+ *
  * Revision 1.223  1998/05/15 10:08:29  cg
  * bug in PrintBlock fixed.
  *
@@ -741,6 +744,7 @@
 #include "filemgr.h"
 #include "globals.h"
 #include "gen_startup_code.h"
+#include "WithloopFolding.h"
 
 /******************************************************************************/
 
@@ -838,6 +842,10 @@ PrintAssign (node *arg_node, node *arg_info)
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - assign : %s\n",
                                    mdb_nodetype[NODE_TYPE (ASSIGN_INSTR (arg_node))]);
                   PrintMasks (arg_node, arg_info););
+
+    DBUG_EXECUTE ("WLI", if (N_let == NODE_TYPE (ASSIGN_INSTR (arg_node))
+                             && F_psi == PRF_PRF (LET_EXPR (ASSIGN_INSTR (arg_node))))
+                           DbugIndexInfo (ASSIGN_INDEX (arg_node)););
 
     if (N_icm == NODE_TYPE (ASSIGN_INSTR (arg_node))) {
         PrintIcm (ASSIGN_INSTR (arg_node), arg_info);
@@ -1370,9 +1378,9 @@ PrintPrf (node *arg_node, node *arg_info)
                           mdb_prf[PRF_PRF (arg_node)], arg_node));
 
     switch (PRF_PRF (arg_node)) {
+    case F_psi:
     case F_take:
     case F_drop:
-    case F_psi:
     case F_shape:
     case F_reshape:
     case F_cat:
