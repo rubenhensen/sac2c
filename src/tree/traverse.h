@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2004/11/14 13:44:42  ktr
+ * added emrb_tab (reuse branching)
+ *
  * Revision 3.82  2004/11/09 22:17:32  ktr
  * Added Explicit Copy (emec_tab)
  *
@@ -428,7 +431,7 @@ extern funtab *concel_tab;
 extern funtab *fun2lac_tab;
 extern funtab *ai_tab;
 extern funtab *uss_tab;
-extern funtab *unused_tab36;
+extern funtab *emrb_tab;
 extern funtab *infdfms_tab;
 extern funtab *l2f_tab;
 extern funtab *emec_tab;

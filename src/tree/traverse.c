@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.109  2004/11/14 13:44:42  ktr
+ * added emrb_tab (reuse branching)
+ *
  * Revision 3.108  2004/11/09 22:17:32  ktr
  * Added Explicit Copy (emec_tab)
  *
@@ -476,6 +479,7 @@
 #include "loopreuseopt.h"
 #include "datareuse.h"
 #include "explicitcopy.h"
+#include "reusebranching.h"
 
 #include "traverse.h"
 
@@ -1273,15 +1277,15 @@ static funtab uss_tab_rec = {{
 funtab *uss_tab = &uss_tab_rec;
 
 /*
- *  (67) unused_tab36
+ *  (67) emrb_tab
  */
-static funtab unused_tab36_rec = {{
-#define NIFunused_36(it_unused_36) it_unused_36
+static funtab emrb_tab_rec = {{
+#define NIFemrb(it_emrb) it_emrb
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab36 = &unused_tab36_rec;
+                              },
+                              NULL,
+                              NULL};
+funtab *emrb_tab = &emrb_tab_rec;
 
 /*
  *  (68) infdfms_tab
