@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/24 16:30:24  nmw
+ * -trace c for c library runtime enviroment tracing added
+ *
  * Revision 3.1  2000/11/20 17:59:35  sacbase
  * new release made
  *
@@ -700,6 +703,7 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('o', traceflag |= TRACE_OWL);
         ARG_FLAGMASK ('w', traceflag |= TRACE_WL);
         ARG_FLAGMASK ('t', traceflag |= TRACE_MT);
+        ARG_FLAGMASK ('c', traceflag |= TRACE_CENV);
         ARG_FLAGMASK_END ();
     });
 
