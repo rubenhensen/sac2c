@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2004/11/27 03:03:02  ktr
+ * typos
+ *
  * Revision 1.27  2004/11/26 23:44:17  ktr
  * some changes.
  *
@@ -1878,7 +1881,7 @@ EMRCid (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMRCNcode
+ * @fn EMRCcode
  *
  *  @brief traverses a with-loop's code and inserts ADJUST_RCs before and
  *         after (in CODE_EPILOGUE) the code block
@@ -1890,12 +1893,12 @@ EMRCid (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-EMRCNcode (node *arg_node, info *arg_info)
+EMRCcode (node *arg_node, info *arg_info)
 {
     int env;
     node *n, *epicode;
 
-    DBUG_ENTER ("EMRCNcode");
+    DBUG_ENTER ("EMRCcode");
 
     /*
      * Traverse CEXPRS and insert adjust_rc operations into
@@ -1957,7 +1960,7 @@ EMRCNcode (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMRCNwith
+ * @fn EMRCwith
  *
  *  @brief traverses a withloop and thereby allocates memory for the index
  *         variables and the result
@@ -1969,9 +1972,9 @@ EMRCNcode (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-EMRCNwith (node *arg_node, info *arg_info)
+EMRCwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRCNwith");
+    DBUG_ENTER ("EMRCwith");
 
     INFO_EMRC_DEPTH (arg_info) += 1;
 
@@ -2002,7 +2005,7 @@ EMRCNwith (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMRCNwith2
+ * @fn EMRCwith2
  *
  *  @brief traverses a withloop and thereby allocates memory for the index
  *         variables and the result
@@ -2014,9 +2017,9 @@ EMRCNwith (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-EMRCNwith2 (node *arg_node, info *arg_info)
+EMRCwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRCNwith2");
+    DBUG_ENTER ("EMRCwith2");
 
     INFO_EMRC_DEPTH (arg_info) += 1;
 
@@ -2050,7 +2053,7 @@ EMRCNwith2 (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMRCNwithid
+ * @fn EMRCwithid
  *
  *  @brief
  *
@@ -2061,11 +2064,11 @@ EMRCNwith2 (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-EMRCNwithid (node *arg_node, info *arg_info)
+EMRCwithid (node *arg_node, info *arg_info)
 {
     node *ids;
 
-    DBUG_ENTER ("EMRCNwithid");
+    DBUG_ENTER ("EMRCwithid");
 
     INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
 
@@ -2080,7 +2083,7 @@ EMRCNwithid (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMRCNgenarray
+ * @fn EMRCgenarray
  *
  *  @brief
  *
@@ -2091,9 +2094,9 @@ EMRCNwithid (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-EMRCNgenarray (node *arg_node, info *arg_info)
+EMRCgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRCNgenarray");
+    DBUG_ENTER ("EMRCgenarray");
 
     /*
      * genarray( shp, def, mem)
@@ -2117,7 +2120,7 @@ EMRCNgenarray (node *arg_node, info *arg_info)
 }
 /** <!--******************************************************************-->
  *
- * @fn EMRCNmodarray
+ * @fn EMRCmodarray
  *
  *  @brief
  *
@@ -2128,9 +2131,9 @@ EMRCNgenarray (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-EMRCNmodarray (node *arg_node, info *arg_info)
+EMRCmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRCNmodarray");
+    DBUG_ENTER ("EMRCmodarray");
 
     /*
      * modarray( A, mem);
@@ -2152,7 +2155,7 @@ EMRCNmodarray (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMRCNfold
+ * @fn EMRCfold
  *
  *  @brief
  *
@@ -2163,9 +2166,9 @@ EMRCNmodarray (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-EMRCNfold (node *arg_node, info *arg_info)
+EMRCfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRCNfold");
+    DBUG_ENTER ("EMRCfold");
 
     /*
      * fold( op, n);
