@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.51  1997/05/02 13:52:39  sbs
+ * Revision 1.52  1997/05/14 08:16:43  sbs
+ * N_annotate added
+ *
+ * Revision 1.51  1997/05/02  13:52:39  sbs
  * SHAPES_SHPSEG inserted
  *
  * Revision 1.50  1997/04/30  11:49:29  cg
@@ -825,6 +828,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    statustype  STATUS
  ***    statustype  ATTRIB
  ***    int         INLINE
+ ***    int         FUNNO
  ***    node*       PRAGMA   (O)  (N_pragma)
  ***
  ***  temporary attributes:
@@ -868,6 +872,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *body,
                          node *next);
 
+#define FUNDEF_FUNNO(n) (n->counter)
 #define FUNDEF_NAME(n) (n->info.types->id)
 #define FUNDEF_MOD(n) (n->info.types->id_mod)
 #define FUNDEF_LINKMOD(n) (n->info.types->id_cmod)
@@ -1062,7 +1067,7 @@ extern node *MakeAssign (node *instr, node *next);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_let :
+ ***  N_let :					( one of "N_instr" )
  ***
  ***  sons:
  ***
@@ -1216,6 +1221,23 @@ extern node *While2Do (node *while_node);
 #define WHILE_USEVARS(n) (n->node[2]->node[0])
 #define WHILE_DEFVARS(n) (n->node[2]->node[1])
 #define WHILE_MASK(n, x) (n->mask[x])
+
+/*--------------------------------------------------------------------------*/
+/***
+ ***  N_annotate :                              ( one of "N_instr" )
+ ***
+ ***  permanent attributes:
+ ***
+ ***    int    TAG
+ ***	int    FUNNUMBER
+ ***/
+
+extern node *MakeAnnotate (int tag, int funnumber);
+
+#define CALL_FUN 0
+#define RETURN_FROM_FUN 1
+#define ANNOTATE_TAG(n) (n->flag)
+#define ANNOTATE_FUNNUMBER(n) (n->counter)
 
 /*--------------------------------------------------------------------------*/
 
@@ -1777,6 +1799,11 @@ extern node *MakePragma ();
  ***  outside the syntax tree. So, its concrete look depends on the
  ***  specific task.
  ***
+ ***  when used in typecheck.c :
+ ***
+ ***    node *     NEXTASSIGN    <O>  (N_assign)
+ ***    node *     LASSIGN       <O>  (N_assign)
+ ***
  ***  when used in writesib.c :
  ***
  ***    nodelist*  EXPORTTYPES   (O)
@@ -1804,6 +1831,9 @@ extern node *MakePragma ();
  */
 
 extern node *MakeInfo ();
+
+#define INFO_NEXTASSIGN(n) (n->node[1])
+#define INFO_LASSIGN(n) (n->node[3])
 
 #define INFO_EXPORTTYPES(n) ((nodelist *)n->node[0])
 #define INFO_EXPORTOBJS(n) ((nodelist *)n->node[1])

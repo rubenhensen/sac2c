@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.26  1996/01/02 15:50:34  cg
+ * Revision 1.27  1997/05/14 08:16:43  sbs
+ * N_annotate added
+ *
+ * Revision 1.26  1996/01/02  15:50:34  cg
  * function MakeTypes now initializes new struct entries tdef and id_cmod
  * of struct types
  *
@@ -221,6 +224,7 @@ MakeNode (nodetype nodetype)
     tmp->varno = 0;
     tmp->lineno = linenum;
     tmp->refcnt = 0;
+    tmp->counter = 0;
     for (i = 0; i < MAX_MASK; i++)
         tmp->mask[i] = NULL;
 

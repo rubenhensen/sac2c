@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.131  1997/04/30 11:48:36  cg
- * function PRECassign added in precompiler function table
+ * Revision 1.132  1997/05/14 08:16:43  sbs
+ * N_annotate added
  *
+;; Revision 1.131  1997/04/30  11:48:36  cg
+;; function PRECassign added in precompiler function table
+;;
 ;; Revision 1.130  1997/03/19  13:37:07  cg
 ;; The entire link_tab is removed
 ;;
@@ -530,7 +533,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, ANAvardec, TravSons, TravSons, UNQvardec, TravSons,
        PRECvardec, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons),
 
-  NIF (N_block, "N_block", TravSons, TravSons, PrintBlock, TravSons, OPTblock, TravSons,
+  NIF (N_block, "N_block", TravSons, TravSons, PrintBlock, TCblock, OPTblock, TravSons,
        TravSons, FreeBlock, TravSons, TravSons, CompBlock, TravSons, DupChain, TravSons,
        TravSons, LIRMblock, TravSons, TravSons, TravSons, TravSons, PrintBlock, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, UNQblock, RMVblock, TravSons,
@@ -566,6 +569,12 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        UNRwhile, LIRMloop, TravSons, UNSwhile, TravSons, TravSons, PrintWhile, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, UNQwhile, TravSons, TravSons,
        ACTwhile, TravSons, TravSons, CSEwhile, TravSons, TravSons),
+
+  NIF (N_annotate, "N_annotate", TravSons, TravSons, PrintAnnotate, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons),
 
   NIF (N_cond, "N_cond", TravSons, FltnCond, PrintCond, TCcond, OPTcond, DCRcond,
        TravSons, FreeCond, CFcond, RCcond, CompCond, LIRcond, DupChain, TravSons, UNRcond,

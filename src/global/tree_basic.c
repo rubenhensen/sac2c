@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1997/04/25 09:12:13  sbs
+ * Revision 1.19  1997/05/14 08:16:43  sbs
+ * N_annotate added
+ *
+ * Revision 1.18  1997/04/25  09:12:13  sbs
  * DBUG_ASSERT in MakeNodelist adjusted (no varargs)
  *
  * Revision 1.17  1997/03/19  13:38:16  cg
@@ -482,6 +485,7 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
     FUNDEF_ARGS (tmp) = args;
     FUNDEF_BODY (tmp) = body;
     FUNDEF_NEXT (tmp) = next;
+    FUNDEF_FUNNO (tmp) = 0;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
@@ -701,6 +705,25 @@ While2Do (node *while_node)
     DBUG_ENTER ("While2Do");
     NODE_TYPE (while_node) = N_do;
     DBUG_RETURN (while_node);
+}
+
+node *
+MakeAnnotate (int tag, int funno)
+{
+    node *tmp;
+    DBUG_ENTER ("MakeAnnotate");
+    INIT_NODE (tmp);
+
+    NODE_TYPE (tmp) = N_annotate;
+    NODE_NNODE (tmp) = 0;
+
+    ANNOTATE_TAG (tmp) = tag;
+    ANNOTATE_FUNNUMBER (tmp) = funno;
+
+    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
+                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+
+    DBUG_RETURN (tmp);
 }
 
 node *
