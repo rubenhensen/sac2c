@@ -27,5 +27,6 @@ sac_mt.h
 sac_prf.h
 sac_profile.h
 sac_std.h
+sac_std.tagged.h
 sac_trace.h
 sac_wl.h
