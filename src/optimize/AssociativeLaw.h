@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2003/02/24 17:40:36  mwe
+ * removed some functions
+ *
  * Revision 1.7  2002/11/02 21:01:25  mwe
  * removed unused functions
  *
@@ -40,27 +43,7 @@
 extern node *AssociativeLaw (node *arg_node, node *);
 extern node *ALblock (node *, node *);
 extern node *ALassign (node *, node *);
-/* extern node *ALinstr(node*, node* );*/
 extern node *ALlet (node *, node *);
 extern node *ALprf (node *, node *);
-extern node *TravElems (node *, node *);
-extern int ContainOptInformation (node *);
-extern int IsAssociativeAndCommutative (node *);
-extern int IsConstant (node *);
-extern node *AddNode (node *, node *, bool);
-extern bool OtherPrfOp (node *, node *);
-extern node *SortList (node *);
-extern node *CreateNAssignNodes (node *);
-extern node *CommitNAssignNodes (node *);
-extern int ReachedArgument (node *);
-extern int ReachedDefinition (node *);
-extern node *CreateAssignNodeFromAssignAndExprsNode (nodelist *, nodelist *, node *);
-nodelist *CreateExprsNodes (nodelist *, int);
-nodelist *CreateAssignNodesFromExprsNodes (nodelist *, node *);
-nodelist *RemoveNodelistNodes (nodelist *);
-nodelist *RemoveNullpointerNodes (nodelist *);
-node *MakeExprsNodeFromExprsAndAssignNode (nodelist *, nodelist *);
-node *MakeAssignNodeFromExprsNode (node *, node *);
-node *MakeExprsNodeFromAssignNodes (node *, node *);
 
 #endif
