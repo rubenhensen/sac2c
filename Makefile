@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.28  2001/05/02 07:57:34  nmw
+# basecv.o added
+#
 # Revision 3.27  2001/04/26 17:07:37  dkr
 # rmvoidfun.o removed
 #
@@ -221,7 +224,7 @@ FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/fun2lac.o \
 CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/constants_struc_ops.o src/constants/constants_ari_ops.o \
            src/constants/cv2cv.o src/constants/cv2scalar.o src/constants/cv2str.o \
-           src/constants/zipcv.o
+           src/constants/zipcv.o src/constants/basecv.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o \
            src/typecheck/new_typecheck.o src/typecheck/new_types.o \
