@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/09/22 17:40:40  ktr
+ * Commented out some lines not needed in EMM
+ *
  * Revision 1.5  2004/08/01 16:00:43  sah
  * switch to new INFO structure
  * PHASE I
@@ -287,20 +290,23 @@ AIids (ids *arg_ids, info *arg_info)
          * function and in the called function disjoint.
          */
 
-        if (RC_IS_INACTIVE (IDS_REFCNT (arg_ids))) {
-            ID_REFCNT (LET_EXPR (new_let)) = RC_INACTIVE;
-        } else if (RC_IS_ACTIVE (IDS_REFCNT (arg_ids))) {
-            ID_REFCNT (LET_EXPR (new_let)) = 1;
-        } else {
-            DBUG_ASSERT ((0), "illegal RC value found!");
+        if (!emm) {
+            if (RC_IS_INACTIVE (IDS_REFCNT (arg_ids))) {
+                ID_REFCNT (LET_EXPR (new_let)) = RC_INACTIVE;
+            } else if (RC_IS_ACTIVE (IDS_REFCNT (arg_ids))) {
+                ID_REFCNT (LET_EXPR (new_let)) = 1;
+            } else {
+                DBUG_ASSERT ((0), "illegal RC value found!");
+            }
         }
-
         INFO_AI_POSTASSIGN (arg_info)
           = MakeAssign (new_let, INFO_AI_POSTASSIGN (arg_info));
         arg_ids
           = MakeIds (StringCopy (IDS_NAME (INFO_AI_IDS (arg_info))), NULL, ST_regular);
         IDS_VARDEC (arg_ids) = ID_VARDEC (LET_EXPR (new_let));
-        IDS_REFCNT (arg_ids) = ID_REFCNT (LET_EXPR (new_let));
+        if (!emm) {
+            IDS_REFCNT (arg_ids) = ID_REFCNT (LET_EXPR (new_let));
+        }
 
         IDS_NEXT (arg_ids) = IDS_NEXT (LET_IDS (new_let));
         IDS_NEXT (LET_IDS (new_let)) = NULL;
@@ -502,12 +508,14 @@ AIid (node *arg_node, info *arg_info)
             IDS_VARDEC (new_ids) = IDS_VARDEC (INFO_AI_IDS (arg_info));
 #endif
 
-            if (RC_IS_INACTIVE (ID_REFCNT (arg_node))) {
-                IDS_REFCNT (new_ids) = RC_INACTIVE;
-            } else if (RC_IS_ACTIVE (ID_REFCNT (arg_node))) {
-                IDS_REFCNT (new_ids) = 1;
-            } else {
-                DBUG_ASSERT ((0), "illegal RC value found!");
+            if (!emm) {
+                if (RC_IS_INACTIVE (ID_REFCNT (arg_node))) {
+                    IDS_REFCNT (new_ids) = RC_INACTIVE;
+                } else if (RC_IS_ACTIVE (ID_REFCNT (arg_node))) {
+                    IDS_REFCNT (new_ids) = 1;
+                } else {
+                    DBUG_ASSERT ((0), "illegal RC value found!");
+                }
             }
 
             new_let = MakeLet (arg_node, new_ids);
@@ -544,19 +552,22 @@ AIid (node *arg_node, info *arg_info)
               = ID_VARDEC (EXPRS_EXPR (INFO_AI_ARGS (arg_info)));
 #endif
 
-            if (RC_IS_INACTIVE (ID_REFCNT (arg_node))) {
-                IDS_REFCNT (LET_IDS (new_let)) = RC_INACTIVE;
-            } else if (RC_IS_ACTIVE (ID_REFCNT (arg_node))) {
-                IDS_REFCNT (LET_IDS (new_let)) = 1;
-            } else {
-                DBUG_ASSERT ((0), "illegal RC value found!");
+            if (!emm) {
+                if (RC_IS_INACTIVE (ID_REFCNT (arg_node))) {
+                    IDS_REFCNT (LET_IDS (new_let)) = RC_INACTIVE;
+                } else if (RC_IS_ACTIVE (ID_REFCNT (arg_node))) {
+                    IDS_REFCNT (LET_IDS (new_let)) = 1;
+                } else {
+                    DBUG_ASSERT ((0), "illegal RC value found!");
+                }
             }
-
             INFO_AI_PREASSIGN (arg_info)
               = MakeAssign (new_let, INFO_AI_PREASSIGN (arg_info));
             arg_node = MakeId (StringCopy (desired_name), NULL, ST_regular);
             ID_VARDEC (arg_node) = IDS_VARDEC (LET_IDS (new_let));
-            ID_REFCNT (arg_node) = IDS_REFCNT (LET_IDS (new_let));
+            if (!emm) {
+                ID_REFCNT (arg_node) = IDS_REFCNT (LET_IDS (new_let));
+            }
         }
     }
 
