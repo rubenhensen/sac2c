@@ -1,14 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/12/12 09:41:52  dkr
+ * some minor changes done
+ *
  * Revision 3.1  2000/11/20 17:59:35  sacbase
  * new release made
  *
  * Revision 1.5  2000/09/13 15:06:15  dkr
  * C_last? renamed into C_unknown?
- *
- * Revision 1.4  2000/08/17 10:09:00  dkr
- * some minor changes done
  *
  * Revision 1.2  2000/03/23 14:02:11  jhs
  * Brushing, same system as in node_info.mac now.
@@ -45,13 +45,13 @@ YOU HAVE TO DEFINE ATTRIB !!!Do this before you include this file.
 
 #if (ATTRIB == 1)
 
-  NTIF (C_aks, "AKS"),
-  NTIF (C_akd, "AKD"), NTIF (C_aud, "AUD"), NTIF (C_hid, "HID"), NTIF (C_scl, "SCL"),
+  NTIF (C_scl, "SCL"),
+  NTIF (C_aks, "AKS"), NTIF (C_akd, "AKD"), NTIF (C_aud, "AUD"), NTIF (C_hid, "HID"),
   NTIF (C_unknownc, "???") /* should be the last entry! */
 
 #elif (ATTRIB == 2)
 
-NTIF (C_unq, "UNQ"), NTIF (C_nuq, "NUQ"),
+NTIF (C_nuq, "NUQ"), NTIF (C_unq, "UNQ"),
   NTIF (C_unknownu, "???") /* should be the last entry! */
 
 #endif
