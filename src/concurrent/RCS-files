@@ -1,3 +1,5 @@
 Makefile
+scheduling.c
+scheduling.h
 spmdregions.c
 spmdregions.h
