@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.189  2004/11/29 09:57:57  sah
+ * removed nested comment
+ *
  * Revision 3.188  2004/11/29 09:35:35  sbs
  * some further brushing
  *
@@ -2092,49 +2095,47 @@ PRTprf (node *arg_node, info *arg_info)
     DBUG_PRINT ("PRINT",
                 ("%s (%s)" F_PTR, NODE_TEXT (arg_node), global.mdb_prf[prf], arg_node));
 
-    /*** TODO: needs to be moved into PRTap!
-      if ((prf == F_sel) && (TCcountExprs( PRF_ARGS( arg_node)) == 2)) {
-        /*
-         * F_sel is printed with special [] notation:
-         * first the array argument is printed, then a leading '[' followed by
-         * the selection vector and finally the closing ']'.
-         */
-    TRAVdo (PRF_ARG2 (arg_node), arg_info);
-    fprintf (global.outfile, "[");
-    TRAVdo (PRF_ARG1 (arg_node), arg_info);
-    fprintf (global.outfile, "]");
-}
-
-*** / if (global.prf_is_infix[prf])
-{
-    /* primitive functions in infix notation */
-    fprintf (global.outfile, "(");
-    if (PRF_EXPRS2 (arg_node) == NULL) {
-        fprintf (global.outfile, "%s ", prf_str);
-        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
-    }
-    if (PRF_EXPRS2 (arg_node) != NULL) {
-        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
-        fprintf (global.outfile, " %s ", prf_str);
-        DBUG_ASSERT ((PRF_EXPRS3 (arg_node) == NULL), "more than two args found");
-        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
-    }
-    fprintf (global.outfile, ")");
-}
-else
-{
-    /**
-     * print prf in prefix format
+#if 0 /*  TODO: needs to be moved into PRTap! */
+  if ((prf == F_sel) && (TCcountExprs( PRF_ARGS( arg_node)) == 2)) {
+    /*
+     * F_sel is printed with special [] notation:
+     * first the array argument is printed, then a leading '[' followed by
+     * the selection vector and finally the closing ']'.
      */
-    fprintf (global.outfile, "%s(", prf_str);
-    if (PRF_ARGS (arg_node) != NULL) {
-        fprintf (global.outfile, " ");
-        TRAVdo (PRF_ARGS (arg_node), arg_info);
-    }
-    fprintf (global.outfile, ")");
-}
+    TRAVdo( PRF_ARG2( arg_node), arg_info);
+    fprintf( global.outfile, "[");
+    TRAVdo( PRF_ARG1( arg_node), arg_info);
+    fprintf( global.outfile, "]"); 
+  }
+#endif
 
-DBUG_RETURN (arg_node);
+    if (global.prf_is_infix[prf]) {
+        /* primitive functions in infix notation */
+        fprintf (global.outfile, "(");
+        if (PRF_EXPRS2 (arg_node) == NULL) {
+            fprintf (global.outfile, "%s ", prf_str);
+            PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+        }
+        if (PRF_EXPRS2 (arg_node) != NULL) {
+            PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+            fprintf (global.outfile, " %s ", prf_str);
+            DBUG_ASSERT ((PRF_EXPRS3 (arg_node) == NULL), "more than two args found");
+            PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
+        }
+        fprintf (global.outfile, ")");
+    } else {
+        /**
+         * print prf in prefix format
+         */
+        fprintf (global.outfile, "%s(", prf_str);
+        if (PRF_ARGS (arg_node) != NULL) {
+            fprintf (global.outfile, " ");
+            TRAVdo (PRF_ARGS (arg_node), arg_info);
+        }
+        fprintf (global.outfile, ")");
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
