@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.234  1998/05/28 16:33:45  dkr
+ * changed output for N_Nwith, N_Nwith2, N_spmd, N_sync
+ * added an indent-mechanismus for H-ICMs in PrintIcm
+ *
  * Revision 1.233  1998/05/27 11:19:44  cg
  * global variable 'filename' which contains the current file name in order
  * to provide better error messages is now handled correctly.
@@ -2105,7 +2109,13 @@ PrintIcm (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("icm-node %s\n", ICM_NAME (arg_node)));
 
+    if (ICM_INDENT (arg_node) < 0) {
+        indent += ICM_INDENT (arg_node);
+    }
     INDENT
+    if (ICM_INDENT (arg_node) > 0) {
+        indent += ICM_INDENT (arg_node);
+    }
     if (show_icm == 0)
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
@@ -2261,6 +2271,9 @@ PrintSpmd (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintSpmd");
 
+    fprintf (outfile, "\n");
+    INDENT;
+
     if (SPMD_ICM (arg_node) == NULL) {
         fprintf (outfile, "/*** begin of SPMD region ***\n");
 
@@ -2299,7 +2312,7 @@ PrintSpmd (node *arg_node, node *arg_info)
 
     if (SPMD_ICM (arg_node) == NULL) {
         INDENT
-        fprintf (outfile, "/*** end of SPMD region ***/");
+        fprintf (outfile, "/*** end of SPMD region ***/\n");
     }
 
     DBUG_RETURN (arg_node);
@@ -2311,6 +2324,9 @@ node *
 PrintSync (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintSync");
+
+    fprintf (outfile, "\n");
+    INDENT;
 
     fprintf (outfile, "/*** begin of sync region ***\n");
 
@@ -2342,7 +2358,7 @@ PrintSync (node *arg_node, node *arg_info)
     indent--;
 
     INDENT
-    fprintf (outfile, "/*** end of sync region ***/");
+    fprintf (outfile, "/*** end of sync region ***/\n");
 
     DBUG_RETURN (arg_node);
 }
@@ -2385,7 +2401,7 @@ PrintNwith (node *arg_node, node *arg_info)
                            NWITH_REFERENCED_FOLD (arg_node), NWITH_COMPLEX (arg_node),
                            NWITH_FOLDABLE (arg_node), NWITH_NO_CHANCE (arg_node)););
 
-    indent++;
+    indent += 2;
 
     /*
      * check wether to use output format 1 (multiple NParts)
@@ -2421,7 +2437,7 @@ PrintNwith (node *arg_node, node *arg_info)
     }
     fprintf (outfile, ")");
 
-    indent--;
+    indent -= 2;
 
     INFO_PRINT_INT_SYN (arg_info) = buffer;
 
@@ -2678,7 +2694,7 @@ PrintNwith2 (node *arg_node, node *arg_info)
 
     tmp_nwith2 = INFO_PRINT_NWITH2 (arg_info);
     INFO_PRINT_NWITH2 (arg_info) = arg_node;
-    indent++;
+    indent += 2;
 
     fprintf (outfile, "new_with2 (");
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
@@ -2711,7 +2727,7 @@ PrintNwith2 (node *arg_node, node *arg_info)
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
     fprintf (outfile, ")");
 
-    indent--;
+    indent -= 2;
     INFO_PRINT_NWITH2 (arg_info) = tmp_nwith2;
 
     DBUG_RETURN (arg_node);
