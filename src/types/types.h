@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/11/26 16:29:55  khf
+ * changed struct_constant to STRUCT_CONSTANT
+ *
  * Revision 1.16  2004/11/26 16:19:26  cg
  * void pointer in definition of argtab_t removed.
  *
@@ -1049,7 +1052,7 @@ typedef struct GLOBAL_T {
  *
  * structural constant (SCO) should be integrated in constants.[ch] in future
  */
-typedef struct struct_constant struct_constant;
+typedef struct STRUCT_CONSTANT struct_constant;
 
 /*******************************************************************************
  * moved from DataFlowMask.h:
