@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/01/22 13:46:02  dkr
+ * ICM SAC_MT_ADJUST_SCHEDULER renamed into SAC_MT_ADJUST_SCHEDULER_OFFSET
+ * new ICM SAC_MT_ADJUST_SCHEDULER added
+ *
  * Revision 3.4  2001/01/19 11:56:51  dkr
  * SAC_WL_DEST renamed into SAC_WL_OFFSET
  *
@@ -644,7 +648,7 @@ typedef union {
  *  Definitions of macro-implemented ICMs for scheduling
  */
 
-#define SAC_MT_ADJUST_SCHEDULER(array, dim, lower, upper, unrolling, offset)             \
+#define SAC_MT_ADJUST_SCHEDULER_OFFSET(array, dim, lower, upper, unrolling, offset)      \
     {                                                                                    \
         if ((SAC_WL_MT_SCHEDULE_START (dim) > lower)                                     \
             && (SAC_WL_MT_SCHEDULE_START (dim) < upper)) {                               \
@@ -654,6 +658,19 @@ typedef union {
                 tmp = unrolling - tmp;                                                   \
                 SAC_WL_MT_SCHEDULE_START (dim) += tmp;                                   \
                 SAC_WL_OFFSET (array) += tmp * (offset);                                 \
+            }                                                                            \
+        }                                                                                \
+    }
+
+#define SAC_MT_ADJUST_SCHEDULER(array, dim, lower, upper, unrolling, offset)             \
+    {                                                                                    \
+        if ((SAC_WL_MT_SCHEDULE_START (dim) > lower)                                     \
+            && (SAC_WL_MT_SCHEDULE_START (dim) < upper)) {                               \
+            int tmp = (SAC_WL_MT_SCHEDULE_START (dim) - lower) % unrolling;              \
+                                                                                         \
+            if (tmp) {                                                                   \
+                tmp = unrolling - tmp;                                                   \
+                SAC_WL_MT_SCHEDULE_START (dim) += tmp;                                   \
             }                                                                            \
         }                                                                                \
     }
