@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1999/02/22 13:02:16  cg
+ * usage of efence: final version.
+ *
  * Revision 1.20  1999/02/19 18:43:21  dkr
  * usage of efence added (first hack only :((
  *
@@ -520,6 +523,7 @@ InvokeCC ()
 {
     int i;
     char opt_buffer[36];
+    char *lib_efence;
 
     DBUG_ENTER ("InvokeCC");
 
@@ -553,32 +557,31 @@ InvokeCC ()
             /*
              * caution: -lefence should be last -l<...> parameter!
              */
-#if 1
-            /*
-             * ugly workaround so far:
-             *   "/home/sacbase/efence" has been added to SYSTEM_LINKPATH in sac2crc.
-             *   Now sac2c should search for the correct path of 'efence' automaticly.
-             *   How can this be done??
-             */
-            strcat (linklist, " -L/home/sacbase/efence -lefence");
-#endif
+            lib_efence = FindFile (SYSTEMLIB_PATH, "libefence.a");
+            if (lib_efence == NULL) {
+                SYSWARN (("Unable to find libefence.a in SYSTEMLIB_PATH"));
+                use_efence = 0;
+            }
         }
 
         if (gen_cccall) {
             shellscript = WriteOpen (".sac2c");
             fprintf (shellscript, "#!/bin/sh -v\n\n");
-            fprintf (shellscript, "%s %s %s -L%s %s -o %s %s %s %s %s\n\n", config.cc,
+            fprintf (shellscript, "%s %s %s -L%s %s -o %s %s %s %s %s %s\n\n", config.cc,
                      config.ccflags, config.ccdir, tmp_dirname, opt_buffer, outfilename,
                      cfilename, linklist, config.cclink,
-                     (gen_mt_code ? config.ccmtlink : ""));
+                     (gen_mt_code ? config.ccmtlink : ""),
+                     (use_efence ? lib_efence : ""));
             fclose (shellscript);
             SystemCall ("chmod a+x .sac2c");
         }
 
         if (all_threads == 0) {
-            SystemCall ("%s %s %s -L%s %s -o %s %s %s %s %s", config.cc, config.ccflags,
-                        config.ccdir, tmp_dirname, opt_buffer, outfilename, cfilename,
-                        linklist, config.cclink, (gen_mt_code ? config.ccmtlink : ""));
+            SystemCall ("%s %s %s -L%s %s -o %s %s %s %s %s %s", config.cc,
+                        config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
+                        outfilename, cfilename, linklist, config.cclink,
+                        (gen_mt_code ? config.ccmtlink : ""),
+                        (use_efence ? lib_efence : ""));
 
         } else {
             SystemCall ("%s %s %s -L%s %s -o %s.1 "
@@ -587,10 +590,11 @@ InvokeCC ()
                         "-DSAC_SET_THREADS_MAX=1 "
                         "-DSAC_SET_THREADS=1 "
                         "-DSAC_SET_MASTERCLASS=0 "
-                        "%s %s %s %s",
+                        "%s %s %s %s %s",
                         config.cc, config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
                         outfilename, cfilename, linklist, config.cclink,
-                        (gen_mt_code ? config.ccmtlink : ""));
+                        (gen_mt_code ? config.ccmtlink : ""),
+                        (use_efence ? lib_efence : ""));
 
             NOTEDOT;
             SystemCall ("%s %s %s -L%s %s -o %s.d%d "
@@ -599,10 +603,11 @@ InvokeCC ()
                         "-DSAC_SET_THREADS_MAX=%d "
                         "-DSAC_SET_THREADS=0 "
                         "-DSAC_SET_MASTERCLASS=0 "
-                        "%s %s %s %s",
+                        "%s %s %s %s %s",
                         config.cc, config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
                         outfilename, all_threads, all_threads, cfilename, linklist,
-                        config.cclink, (gen_mt_code ? config.ccmtlink : ""));
+                        config.cclink, (gen_mt_code ? config.ccmtlink : ""),
+                        (use_efence ? lib_efence : ""));
 
             for (i = 2; i <= all_threads; i++) {
                 NOTEDOT;
@@ -612,11 +617,12 @@ InvokeCC ()
                             "-DSAC_SET_THREADS_MAX=%d "
                             "-DSAC_SET_THREADS=%d "
                             "-DSAC_SET_MASTERCLASS=%d "
-                            "%s %s %s %s",
+                            "%s %s %s %s %s",
                             config.cc, config.ccflags, config.ccdir, tmp_dirname,
                             opt_buffer, outfilename, i, i, i, GSCCalcMasterclass (i),
                             cfilename, linklist, config.cclink,
-                            (gen_mt_code ? config.ccmtlink : ""));
+                            (gen_mt_code ? config.ccmtlink : ""),
+                            (use_efence ? lib_efence : ""));
             }
         }
 
