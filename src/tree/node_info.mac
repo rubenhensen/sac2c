@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.185  2004/08/10 13:42:56  sah
+ * renamed FreeNWithId to FreeNWithid and
+ * added switch to new xml generated free
+ *
  * Revision 3.184  2004/08/10 13:32:03  ktr
  * EMM reuse inference (emri) added.
  *
@@ -2350,7 +2354,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_nwithid, "N_nwithid", TravSons, FltnNwithid, PrintNwithid, TravSons, TravSons,
-       TravSons, TravSons, FreeNWithId, TravSons, RCNwithid, EMRCNwithid, TravSons,
+       TravSons, TravSons, FreeNWithid, TravSons, RCNwithid, EMRCNwithid, TravSons,
        DupNwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        PrintNwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2004/08/10 13:42:56  sah
+ * renamed FreeNWithId to FreeNWithid and
+ * added switch to new xml generated free
+ *
  * Revision 3.23  2004/08/10 11:03:09  sah
  * renamed some free functions
  *
@@ -123,6 +127,9 @@ extern argtab_t *FreeArgtab (argtab_t *argtab);
  * traversal functions
  */
 
+#ifdef NEW_AST
+#include "free_node.h"
+#else
 extern node *FreeModul (node *arg_node, info *arg_info);
 extern node *FreeModdec (node *arg_node, info *arg_info);
 extern node *FreeClassdec (node *arg_node, info *arg_info);
@@ -160,9 +167,11 @@ extern node *FreePrf (node *arg_node, info *arg_info);
 extern node *FreeEmpty (node *arg_node, info *arg_info);
 extern node *FreeIcm (node *arg_node, info *arg_info);
 extern node *FreePragma (node *arg_node, info *arg_info);
+#endif /* NEW_AST */
 #ifndef NEW_INFO
 extern node *FreeInfo (node *arg_node, info *arg_info);
 #endif
+#ifndef NEW_AST
 extern node *FreeSpmd (node *arg_node, info *arg_info);
 extern node *FreeSync (node *arg_node, info *arg_info);
 extern node *FreeMT (node *arg_node, info *arg_info);
@@ -172,7 +181,7 @@ extern node *FreeEX (node *arg_node, info *arg_info);
 /* with-loop */
 extern node *FreeNWith (node *arg_node, info *arg_info);
 extern node *FreeNPart (node *arg_node, info *arg_info);
-extern node *FreeNWithId (node *arg_node, info *arg_info);
+extern node *FreeNWithid (node *arg_node, info *arg_info);
 extern node *FreeNGenerator (node *arg_node, info *arg_info);
 extern node *FreeNWithOp (node *arg_node, info *arg_info);
 extern node *FreeNCode (node *arg_node, info *arg_info);
@@ -194,5 +203,6 @@ extern node *FreeSSAcnt (node *arg_node, info *arg_info);
 extern node *FreeAvis (node *arg_node, info *arg_info);
 extern node *FreeSSAstack (node *arg_node, info *arg_info);
 extern node *FreeFuncond (node *arg_node, info *arg_info);
+#endif
 
 #endif /* _sac_free_h */

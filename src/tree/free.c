@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2004/08/10 13:42:56  sah
+ * renamed FreeNWithId to FreeNWithid and
+ * added switch to new xml generated free
+ *
  * Revision 3.63  2004/08/10 11:03:09  sah
  * renamed some free functions
  *
@@ -872,6 +876,8 @@ RemoveAllZombies (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#ifndef NEW_AST
 
 /*--------------------------------------------------------------------------*/
 /*  Specific free-functions for node structures                             */
@@ -2110,7 +2116,7 @@ FreeNPart (node *arg_node, info *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeNWithId (node *arg_node, info *arg_info)
+FreeNWithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FreeNWithId");
     DBUG_PRINT ("FREE", ("Removing N_Nwithid node ..."));
@@ -2618,3 +2624,4 @@ FreeFuncond (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+#endif /* NEW_AST */
