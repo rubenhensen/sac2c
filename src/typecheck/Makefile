@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.28  1998/06/04 17:21:59  dkr
+# changed target 'clean'
+#
 # Revision 1.27  1998/05/28 14:51:50  sbs
 # line for gen_pseudo_fun.c inserted.
 # -DNEWTREE flag inserted!
@@ -114,7 +117,7 @@ deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) typecheck.o prim_fun.o typecheck_WL.o *.bak
+	$(RM) *.o *.bak
 	$(RM) -r .sb
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
