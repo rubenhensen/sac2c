@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.220  1999/01/07 14:02:33  sbs
+ * new tab opt_tab inserted and old "opt_tab" renamed to genmask_tab!
+ *
  * Revision 1.219  1998/08/07 14:38:01  dkr
  * stuff for N_WLsegVar added
  *
@@ -59,599 +62,7 @@
  * Revision 1.201  1998/05/06 21:42:10  dkr
  * added WLTRALet
  *
- * Revision 1.199  1998/05/06 18:55:47  dkr
- * added DupExprs
- *
- * Revision 1.198  1998/05/06 18:09:44  dkr
- * removed WLTRAAssign
- *
- * Revision 1.197  1998/05/05 11:25:02  dkr
- * added RCNwithop
- *
- * Revision 1.196  1998/04/29 20:15:13  dkr
- * added new phases, tabs, funs, ...
- *
- * Revision 1.195  1998/04/29 08:51:20  srs
- * new functions for tab tcwl_tab
- *
- * Revision 1.194  1998/04/28 15:43:34  srs
- * added tcwl_tab
- *
- * Revision 1.193  1998/04/28 13:23:18  dkr
- * added RCblock, RCvardec
- *
- * Revision 1.192  1998/04/26 21:50:47  dkr
- * ...SPMD renamed to ...Spmd
- *
- * Revision 1.191  1998/04/25 13:19:32  dkr
- * added DupIcm
- *
- * Revision 1.190  1998/04/25 12:33:30  dkr
- * added DupNwith2
- *
- * Revision 1.189  1998/04/24 17:14:06  dkr
- * renamed Comp...() to COMP...()
- *
- * Revision 1.188  1998/04/24 12:11:58  dkr
- * removed SpmdInitNcode, SpmdInitNpart
- *
- * Revision 1.187  1998/04/23 22:02:23  dkr
- * removed SpmdOpt...
- *
- * Revision 1.186  1998/04/23 18:56:36  dkr
- * added new tabs
- *
- * Revision 1.185  1998/04/23 17:31:47  dkr
- * added new node type N_sync
- *
- * Revision 1.184  1998/04/21 13:36:50  dkr
- * added a missing colon ...
- *
- * Revision 1.183  1998/04/21 13:30:04  dkr
- * added funs CompWL...
- *
- * Revision 1.182  1998/04/17 17:28:40  dkr
- * 'concurrent regions' are now called 'SPMD regions'
- *
- * Revision 1.181  1998/04/17 11:39:27  srs
- * added DupNcode
- *
- * Revision 1.180  1998/04/16 15:59:45  srs
- * INLvar splitted into INLvardec and INLarg
- *
- * Revision 1.179  1998/04/14 21:45:24  dkr
- * added CompModul
- *
- * Revision 1.178  1998/04/11 15:09:32  srs
- * added DupNwith
- *
- * Revision 1.177  1998/04/09 13:54:29  dkr
- * added ConcNpart, ConcNcode, ...
- *
- * Revision 1.176  1998/04/08 17:32:08  srs
- * added WLFlet and WLFNcode
- *
- * Revision 1.175  1998/04/07 16:51:16  srs
- * inserted WLF functions
- *
- * Revision 1.174  1998/04/07 14:45:51  dkr
- * added CompNcode
- *
- * Revision 1.173  1998/04/03 19:26:49  dkr
- * corrected nnode for N_conc
- *
- * Revision 1.171  1998/04/03 11:24:56  dkr
- * concregs renamed to concregions
- *
- * Revision 1.170  1998/04/02 18:45:41  dkr
- * added new compiler phase concregs
- * added new node type N_conc
- * added CompConc, PRECconc, PrintConc, FreeConc, DupConc, ...
- *
- * Revision 1.169  1998/04/01 23:57:33  dkr
- * added N_WLstriVar, N_WLgridVar
- *
- * Revision 1.167  1998/03/27 18:36:42  dkr
- * WLproj renamed in WLstride
- *
- * Revision 1.166  1998/03/26 13:59:25  dkr
- * changed nnode for N_WLgrid:
- *    CODE must be a attribute, not a son!
- *
- * Revision 1.165  1998/03/22 18:04:54  srs
- * added new phase WLT
- *
- * Revision 1.164  1998/03/18 09:56:07  dkr
- * added O2Nnwith
- *
- * Revision 1.163  1998/03/18 08:33:40  srs
- * added WLIid to N_id node
- *
- * Revision 1.162  1998/03/17 12:18:09  cg
- * The print table now uses PrintStr instead of PrintId for
- * writing strings.
- *
- * Revision 1.161  1998/03/16 00:23:34  dkr
- * added DupTree- und Free-support for WL...-nodes
- *
- * Revision 1.160  1998/03/13 16:21:02  dkr
- * new nodes added:
- *   N_WLblock, N_WLublock
- *
- * Revision 1.159  1998/03/13 13:43:15  srs
- * remved WLI function from N_id
- *
- * Revision 1.157  1998/03/03 23:04:47  dkr
- * added PrintNwithid, PrintNwithop, PrintNcode, ...
- * added PRECncode
- *
- * Revision 1.156  1998/03/03 21:22:37  dkr
- * added print-routines for N_Nwith2, ...
- *
- * Revision 1.155  1998/03/03 19:39:02  dkr
- * renamed N_WLindex to N_WLproj
- *
- * Revision 1.154  1998/03/02 22:27:59  dkr
- * added nodes for precompilation of new with-loop
- *
- * Revision 1.150  1998/02/12 16:57:28  dkr
- * DupTree() now works with the new with-loop
- *
- * Revision 1.147  1998/02/08 10:56:10  dkr
- * added RCNwithid
- *
- * Revision 1.145  1998/02/05 17:12:42  srs
- * Changed refcnt_tab at N_post and N_pre.
- * introduced wlf_tab (was fusion_tab).
- * replaced wr_tab with unused2.
- * changed several new WL tabs.
- *
- * Revision 1.144  1998/01/28 19:39:25  dkr
- * nnode[N_Ngenerator] is now 4 instead of 6
- *
- * added RC-functions for new with-loop
- *
- * Revision 1.143  1998/01/26 09:47:15  dkr
- * in new with-loop-nodes: replaced NoTrav by TravSons
- *
- * Revision 1.140  1997/11/25 11:02:10  srs
- * All my future changes (with no RCS-comments) will modify the new
- * WL-nodes
- *
- * Revision 1.139  1997/11/25 10:35:25  dkr
- * CompNWith inserted
- *
- * Revision 1.138  1997/11/19 19:38:29  dkr
- * added o2nWith_tab
- * added print-functions for N_Nwith, N_Npart
- *
- * Revision 1.137  1997/11/13 16:15:14  srs
- * changed node structure for new WL
- * all nodes (and related functions in other sourcefiles)
- * have an additional N (for New) in their names to distinguish
- * between old (e.g N_with) and new (N_Nwith) syntax.
- *
- * Revision 1.136  1997/11/07 14:18:35  srs
- * removed unused nodes N_isclass, N_imported, N_addon (subon, ..)
- * added rudimental support for new withloops
- *
- * Revision 1.135  1997/11/05 10:53:07  dkr
- * changed the nnode data in NIF-table
- *
- * Revision 1.134  1997/11/05 09:31:34  dkr
- * added nnode data to NIF-tables
- *
- * Revision 1.133  1997/09/05 13:46:04  cg
- * All cast expressions are now removed by rmvoidfun.c. Therefore,
- * the respective attempts in precompile.c and ConstantFolding.c
- * are removed. Cast expressions are only used by the type checker.
- * Afterwards, they are useless, and they are not supported by
- * Constant Folding as well as code generation.
- *
- * Revision 1.132  1997/05/14 08:16:43  sbs
- * N_annotate added
- *
- * Revision 1.131  1997/04/30  11:48:36  cg
- * function PRECassign added in precompiler function table
- *
- * Revision 1.130  1997/03/19  13:37:07  cg
- * The entire link_tab is removed
- *
- * Revision 1.129  1996/09/11  14:13:08  asi
- * DFRmodul added
- *
- * Revision 1.128  1996/09/11  06:14:24  cg
- * added function FltnPrf.
- *
- * Revision 1.127  1996/08/09  16:44:12  asi
- * dead function removal added
- *
- * Revision 1.126  1996/05/27  13:31:02  sbs
- * RCprf inserted
- *
- * Revision 1.125  1996/02/21  15:02:42  cg
- * added function DupPragma for dup_tab
- *
- * Revision 1.124  1996/02/11  20:19:01  sbs
- * IdxArgs inserted
- *
- * Revision 1.123  1996/02/06  18:57:36  cg
- * added functions WSIBfloat and WSIBdouble for writesib_tab
- *
- * Revision 1.122  1996/01/22  17:29:05  cg
- * added WSIBobjdef for writesib_tab
- *
- * Revision 1.121  1996/01/22  14:34:29  asi
- * added some functions for CSE
- *
- * Revision 1.120  1996/01/21  13:55:33  cg
- * added function RCarg for refcount_tab
- *
- * Revision 1.119  1996/01/07  16:53:39  cg
- * added functions IMfundef, IMtypedef, and IMobjdef in import_tab
- *
- * Revision 1.118  1996/01/05  14:43:51  cg
- * use DupId instead of DupChain to copy modarray
- *
- * Revision 1.117  1996/01/05  13:12:22  cg
- * added function PrintStr in print_tab
- *
- * Revision 1.116  1996/01/05  12:29:05  cg
- * new function RSIBobjdef in readsib_tab
- *
- * Revision 1.115  1996/01/02  15:48:55  cg
- * added link_tab
- *
- * Revision 1.114  1995/12/29  10:25:44  cg
- * added readsib_tab, replaced PrintFold by PrintFoldprf and
- * PrintFoldfun, replaced PrintCon by PrintGenarray and
- * PrintModarray.
- *
- * Revision 1.113  1995/12/22  16:30:11  cg
- * added FreeInfo to free_tab
- *
- * Revision 1.112  1995/12/21  15:26:46  asi
- * INLblock removed
- *
- * Revision 1.111  1995/12/21  13:22:01  asi
- * added functions for dcr_tab and active_tab
- *
- * Revision 1.110  1995/12/20  08:14:37  cg
- * added function table for new N_char node.
- *
- * Revision 1.109  1995/12/18  16:15:15  cg
- * added entry for N_objdef: CompObjdef
- * removed entry for N_exprs: PRECexprs -> now TravSons
- *
- * Revision 1.108  1995/12/07  14:15:54  cg
- * renamed DummyFun to TravSons
- *
- * Revision 1.107  1995/12/04  16:58:54  cg
- * added function PRECcast for N_cast
- *
- * Revision 1.106  1995/12/01  20:24:09  cg
- * added functions PRECvardec and PRECtypedef for precomp_tab
- *
- * Revision 1.105  1995/12/01  17:07:02  cg
- * new table entry for node type N_pragma
- * new funtab tab_precomp for precompiler
- *
- * Revision 1.104  1995/11/16  19:37:48  cg
- * added new entries for free functions.
- * added new table rmvoid_tab.
- *
- * Revision 1.103  1995/11/06  09:21:35  cg
- * added unique_tab
- *
- * Revision 1.102  1995/11/01  16:23:45  cg
- * added more functions in obj_tab
- *
- * Revision 1.101  1995/11/01  08:01:44  cg
- * added obj_tab.
- *
- * Revision 1.100  1995/10/30  10:20:48  cg
- * final version of sib_tab integrated.
- *
- * Revision 1.99  1995/10/22  17:25:34  cg
- * added checkdec_tab and writedec_tab
- * renamed sib_tab to writesib_tab
- *
- * Revision 1.98  1995/10/20  09:24:42  cg
- * added analy_table and 3 yet unused table entries
- *
- * Revision 1.97  1995/10/16  12:02:18  cg
- * added 'TCobjdef' in type_tab.
- * added new function table 'objinit_tab'.
- *
- * Revision 1.96  1995/10/05  15:56:48  cg
- * impltype_tab added
- *
- * Revision 1.95  1995/10/05  14:23:47  sbs
- * IDX... funs adjusted
- *
- * Revision 1.94  1995/09/01  07:47:18  cg
- * call of SIBmodul added to SIB-tab.
- *
- * Revision 1.93  1995/08/16  09:23:55  asi
- * changed DupChain to DupTypes for N_array (duplicating info.types now)
- *
- * Revision 1.92  1995/08/09  15:53:59  cg
- * IMfundef inserted for inline functions from other modules.
- *
- * Revision 1.91  1995/08/08  09:56:28  cg
- * IMtypedef for SIB-retrieval added.
- *
- * Revision 1.90  1995/08/03  14:54:24  cg
- * 4 new entries added to each NIF-macro.
- * 2 of these used for sib_tab and obj_tab.
- *
- * Revision 1.89  1995/07/28  12:51:24  asi
- * added DupInfo
- *
- * Revision 1.88  1995/07/25  10:20:37  cg
- * new status ST_readonly_reference.
- *
- * Revision 1.87  1995/07/24  11:45:53  asi
- * added OPTmodul, AEfundef, AEassign and AEprf for ae_tab (array elimination)
- *
- * Revision 1.86  1995/07/12  15:21:56  asi
- * added UNSid and UNRid
- *
- * Revision 1.85  1995/07/07  14:58:38  asi
- * added loop unswitching - basic version
- *
- * Revision 1.84  1995/07/06  17:28:06  cg
- * constdef- node removed
- *
- * Revision 1.83  1995/07/04  08:34:12  hw
- * N_double inserted
- *
- * Revision 1.82  1995/06/26  16:22:49  asi
- * added UNRfundef
- *
- * Revision 1.81  1995/06/26  10:00:12  sbs
- * Idx-calls inserted
- *
- * Revision 1.80  1995/06/23  12:22:46  hw
- * added DubFundef & DupDec  to dup_tab
- *
- * Revision 1.79  1995/06/13  08:50:00  asi
- * added UNRdo, UNRwhile and UNRassign
- *
- * Revision 1.78  1995/06/08  17:48:26  hw
- * -CompTypedef inserted
- *
- * Revision 1.77  1995/06/08  09:54:18  asi
- * added INLmodul
- *
- * Revision 1.76  1995/06/07  15:48:59  sbs
- * DummyFun2 used in N_fundef
- *
- * Revision 1.75  1995/06/06  14:05:28  cg
- * N_isclass and N_imported added.
- * N_constdef and N_objdef will now be printed.
- *
- * Revision 1.74  1995/06/06  08:52:47  sbs
- * IdxAp deleted
- *
- * Revision 1.73  1995/06/02  16:41:49  sbs
- * idx_tab extended
- *
- * Revision 1.72  1995/06/02  11:31:34  asi
- * Added some functions for DupTree, Inline and Unroll.
- *
- * Revision 1.71  1995/05/30  10:15:16  cg
- * N_constdef and N_objdef nodes added.
- *
- * Revision 1.70  1995/05/30  06:44:02  hw
- * FltnMod deleted
- * FltnCon inserted
- *
- * Revision 1.69  1995/05/26  14:23:42  asi
- * function inlineing and loop unrolling added
- *
- * Revision 1.68  1995/05/22  10:11:39  hw
- * added function "CompCast" to comp_tab
- *
- * Revision 1.67  1995/05/15  08:35:09  asi
- * Added DupNum, DupId, DupFloat, DupPrf, DupAp, DupCast, DupExprs, DupArray, DupBool,
- * and LIRfundef, LIRMblock, LIRassign, LIRMassign, LIRloop, LIRMloop, LIRcond.
- *
- * Revision 1.66  1995/05/08  15:45:38  hw
- * added CompBlock
- *
- * Revision 1.65  1995/05/03  16:25:48  asi
- * CFap added
- *
- * Revision 1.64  1995/05/02  08:47:49  asi
- * added functions for DupTree
- *
- * Revision 1.63  1995/04/28  17:23:58  hw
- * added RCgen
- *
- * Revision 1.62  1995/04/28  11:36:44  hw
- * added FltnMod
- *
- * Revision 1.61  1995/04/24  18:06:14  hw
- * - renamed CompWhile to CompLoop
- * - added CompLoop in comp_tab[N_do]
- *
- * Revision 1.60  1995/04/24  14:21:16  hw
- *  CompWhile & CompCond inserted
- *
- * Revision 1.59  1995/04/21  12:34:31  hw
- * added FltnId, FltnLet & FltnArgs to flat_tab
- *
- * Revision 1.58  1995/04/11  15:57:47  asi
- * NIF macro enlarged
- *
- * Revision 1.57  1995/04/07  13:42:12  hw
- * FltnAp, FltnReturn inserted
- * NoTrav for N_ap (in cf_tab) inserted
- *
- * Revision 1.56  1995/04/05  15:52:38  asi
- * loop invariant removal added
- *
- * Revision 1.55  1995/04/04  12:20:27  asi
- * added WRfundef
- *
- * Revision 1.54  1995/04/03  16:34:48  hw
- * CompFundef inserted
- *
- * Revision 1.53  1995/03/31  15:43:52  hw
- * CompId, CompArg, CompWith, CompArray, CompAp, CompReturn inserted
- *
- * Revision 1.52  1995/03/29  11:58:08  hw
- * comp_tab inserted
- * N_icm inserted
- *
- * Revision 1.51  1995/03/17  17:41:13  asi
- * added work reduction
- *
- * Revision 1.50  1995/03/16  17:42:28  hw
- *  RCwith and RCcon (used for N_genarray and N_modarray) inserted
- *
- * Revision 1.49  1995/03/14  18:43:08  hw
- * deleted RCwhile
- * added RCloop for N_while and N_do
- *
- * Revision 1.48  1995/03/10  10:49:57  hw
- * refcnt_tab inserted
- *
- * Revision 1.47  1995/03/07  11:00:03  hw
- * added function FltnGen (flatten N_generator)
- *
- * Revision 1.46  1995/03/07  10:22:03  asi
- * added CFwith,DEADwith,OPTwith and CFcast
- *
- * Revision 1.45  1995/02/28  18:24:01  asi
- * CFwith added
- *
- * Revision 1.44  1995/02/22  18:13:16  asi
- * Added CFfundef, CFassign, CFdo, CFwhile, CFcond, CFprf
- *
- * Revision 1.43  1995/02/14  12:23:08  sbs
- * PrintFold inserted
- *
- * Revision 1.42  1995/02/14  12:00:11  sbs
- * N_foldprf and N_foldfun inserted
- *
- * Revision 1.41  1995/02/14  09:59:56  asi
- * added CFid
- *
- * Revision 1.40  1995/02/13  17:24:25  asi
- * added CFlet
- *
- * Revision 1.39  1995/02/07  11:03:21  asi
- * renamed opt1_tab -> opt_tab, opt2_tab -> dead_tab, opt3_tab -> lir.tab
- * resp. the functions OPT1* -> OPT*, OPT2* -> DEAD*, OPT3* -> LIR*
- * added functionlist cf_tab for constant folding with first entry CFprf
- *
- * Revision 1.38  1995/02/02  14:53:19  hw
- * deleted FltnPrf
- *
- * Revision 1.37  1995/01/31  14:59:33  asi
- * opt4_tab inserted and NIF macro enlarged
- *
- * Revision 1.36  1995/01/18  17:30:48  asi
- * free_tab filled with functions
- *
- * Revision 1.35  1995/01/17  11:24:58  asi
- * added OPT1loop
- *
- * Revision 1.34  1995/01/17  11:03:39  asi
- * added OPT2loop and OPT3assign
- *
- * Revision 1.33  1995/01/16  10:54:50  asi
- * added opt3_tab for loop independent removal
- * and free_tree for deletion of a syntax(sub)-tree
- *
- * Revision 1.32  1995/01/12  13:11:59  asi
- * inserted OPT2fundef OPT2block OPT2assign OPT2while OPT2cond
- *
- * Revision 1.31  1995/01/06  16:45:15  hw
- * added FltnFundef
- *
- * Revision 1.30  1995/01/06  14:56:09  asi
- * Dead-Vardec-Removal implemented
- *
- * Revision 1.29  1995/01/05  15:26:09  asi
- * opt2_tab = Dead-Code-Removal filled
- *
- * Revision 1.28  1995/01/05  12:45:51  sbs
- * N_str inserted
- *
- * Revision 1.27  1995/01/02  16:04:46  asi
- * Renamed opt_tab in opt1_tab and all OPT.. in OPT1..
- * Added OPT1while, OPT1do, OPT1cond, OPT1cc
- * Added opt2_tab
- *
- * Revision 1.26  1995/01/02  10:50:49  asi
- * added OPTassign
- *
- * Revision 1.25  1994/12/20  13:48:29  hw
- * inserted TCunaryOp at N_pre & N_post
- *
- * Revision 1.24  1994/12/19  15:27:07  asi
- * Added - OPTid
- *
- * Revision 1.23  1994/12/19  14:48:07  asi
- * Added - OPTfundef OPTarg OPTvardec OPTmodul OPTlet OPTblock
- *
- * Revision 1.22  1994/12/19  13:00:44  hw
- * inserted TCdo & TCwhile
- *
- * Revision 1.21  1994/12/16  14:20:59  sbs
- * imp_tab inserted and NIF macro enlarged
- *
- * Revision 1.20  1994/12/16  11:15:42  sbs
- * redef of N_moddec and N_explist eliminated:->>>
- *
- * Revision 1.19  1994/12/16  11:12:36  sbs
- * N_classdec inserted
- *
- * Revision 1.18  1994/12/16  10:24:00  sbs
- * N_explist & N-moddec inserted
- *
- * Revision 1.17  1994/12/15  17:13:41  sbs
- * N_cast inserted
- *
- * Revision 1.16  1994/12/15  11:45:22  hw
- * inserted FltnModul
- *
- * Revision 1.15  1994/12/14  11:16:42  hw
- * inserted TClet , TCassign, N_stop & N_ok
- *
- * Revision 1.13  1994/12/12  11:02:14  asi
- * added OPT1do
- *
- * Revision 1.12  1994/12/09  10:13:19  sbs
- * optimize inserted
- *
- * Revision 1.11  1994/12/05  17:28:06  hw
- * inserted TCreturn
- *
- * Revision 1.10  1994/12/01  17:39:37  hw
- * added new functions for typechecking
- * changed dimension of NIF
- *
- * Revision 1.9  1994/11/23  09:46:23  hw
- * inserted N_bool
- *
- * Revision 1.8  1994/11/22  16:40:39  hw
- * added FltnDo
- *
- * Revision 1.7  1994/11/17  16:48:17  hw
- * added FltnWhile
- *
- * Revision 1.6  1994/11/15  14:47:27  hw
- * deleted FltnFor
- *
- * Revision 1.5  1994/11/14  17:51:13  hw
- * added FltnCond FltnFor
- *
- * Revision 1.4  1994/11/11  13:59:16  hw
- * added new nodes: N_pre N_post N_inc N_dec and functions belonging to them
+ * ... [eliminated]
  *
  * Revision 1.3  1994/11/10  15:44:34  sbs
  * RCS-header inserted
@@ -669,7 +80,7 @@
  */
 
 /*   Node_name   dbug-string   imp_tab       flat_tab      print_tab     type_tab
- *                             opt_tab       dcr_tab       wlf_tab       free_tab
+ *                             genmask_tab   dcr_tab       wlf_tab       free_tab
  *                             cf_tab        refcnt_tab    comp_tab      lir_tab
  *                             dup_tab       inline_tab    unroll_tab    lir_mov_tab
  *                             idx_tab       unswitch_tab  wli_tab       ae_tab
@@ -679,7 +90,7 @@
  *                             wlt_tab       cse_tab       dfr_tab       tcwl_tab
  *                             spmdinit_tab  spmdopt_tab   spmdlift_tab  syncinit_tab
  *                             syncopt_tab   wltrans_tab   gsc_tab       reuse_tab
- *                             o2nWith_tab   sched_tab     conc_tab      *unused*
+ *                             o2nWith_tab   sched_tab     conc_tab      opt_tab
  *                             nnode
  */
 
@@ -715,7 +126,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, 0),
 
-  NIF (N_id, "N_id", TravSons, FltnId, PrintId, TravSons, OPTid, TravSons, WLFid, FreeId,
+  NIF (N_id, "N_id", TravSons, FltnId, PrintId, TravSons, GNMid, TravSons, WLFid, FreeId,
        CFid, RCid, COMPId, TravSons, DupId, TravSons, UNRid, TravSons, IdxId, UNSid,
        WLIid, TravSons, PrintId, OBJid, TravSons, TravSons, ANAid, TravSons, TravSons,
        UNQid, TravSons, PRECid, TravSons, TravSons, TravSons, CSEid, TravSons, TCWLnull,
@@ -754,13 +165,13 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
-  NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, TravSons, OPTmodul, OPTmodul,
-       OPTmodul, FreeModul, OPTmodul, TravSons, COMPModul, OPTmodul, OPTmodul, INLmodul,
-       OPTmodul, TravSons, IdxModul, OPTmodul, TravSons, OPTmodul, WSIBmodul, OBJmodul,
+  NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, TravSons, GNMmodul, GNMmodul,
+       GNMmodul, FreeModul, GNMmodul, TravSons, COMPModul, GNMmodul, GNMmodul, INLmodul,
+       GNMmodul, TravSons, IdxModul, GNMmodul, TravSons, GNMmodul, WSIBmodul, OBJmodul,
        IMPLmodul, OImodul, ANAmodul, TravSons, WDECmodul, UNQmodul, RMVmodul, PRECmodul,
-       OPTmodul, RSIBmodul, TravSons, OPTmodul, DFRmodul, TravSons, TravSons, TravSons,
+       GNMmodul, RSIBmodul, TravSons, GNMmodul, DFRmodul, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       CONCmodul, TravSons, 4),
+       CONCmodul, OPTmodul, 4),
 
   NIF (N_moddec, "N_moddec", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, FreeModdec, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -794,15 +205,15 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, 1),
 
-  NIF (N_fundef, "N_fundef", IMfundef, FltnFundef, PrintFundef, TCfundef, OPTfundef,
+  NIF (N_fundef, "N_fundef", IMfundef, FltnFundef, PrintFundef, TCfundef, GNMfundef,
        DCRfundef, WLFfundef, FreeFundef, CFfundef, RCfundef, COMPFundef, LIRfundef,
        DupFundef, INLfundef, UNRfundef, TravSons, IdxFundef, UNSfundef, WLIfundef,
        AEfundef, WSIBfundef, OBJfundef, TravSons, TravSons, ANAfundef, CDECfundef,
        WDECfundef, UNQfundef, RMVfundef, PRECfundef, ACTfundef, RSIBfundef, WLTfundef,
        CSEfundef, DFRfundef, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       WLTRAFundef, GSCfundef, ReuseFundef, TravSons, TravSons, CONCfundef, TravSons, 3),
+       WLTRAFundef, GSCfundef, ReuseFundef, TravSons, TravSons, CONCfundef, OPTfundef, 3),
 
-  NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TCvardec, OPTvardec,
+  NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TCvardec, GNMvardec,
        DCRvardec, TravSons, FreeVardec, TravSons, RCvardec, COMPVardec, TravSons, DupDec,
        INLvardec, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrintVardec,
        TravSons, TravSons, TravSons, ANAvardec, TravSons, TravSons, UNQvardec, TravSons,
@@ -810,7 +221,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, 1),
 
-  NIF (N_block, "N_block", TravSons, FltnBlock, PrintBlock, TCblock, OPTblock, TravSons,
+  NIF (N_block, "N_block", TravSons, FltnBlock, PrintBlock, TCblock, GNMblock, TravSons,
        TravSons, FreeBlock, TravSons, RCblock, COMPBlock, TravSons, DupChain, TravSons,
        TravSons, LIRMblock, TravSons, TravSons, TravSons, TravSons, PrintBlock, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, UNQblock, RMVblock, TravSons,
@@ -818,14 +229,14 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, 2),
 
-  NIF (N_arg, "N_arg", TravSons, FltnArgs, PrintArg, TravSons, OPTarg, TravSons, TravSons,
+  NIF (N_arg, "N_arg", TravSons, FltnArgs, PrintArg, TravSons, GNMarg, TravSons, TravSons,
        FreeArg, TravSons, RCarg, COMPArg, TravSons, DupDec, INLarg, TravSons, TravSons,
        IdxArg, TravSons, TravSons, TravSons, PrintArg, OBJarg, TravSons, TravSons,
        TravSons, TravSons, WDECarg, UNQarg, TravSons, PRECarg, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 1),
 
-  NIF (N_assign, "N_assign", TravSons, FltnAssign, PrintAssign, TCassign, OPTassign,
+  NIF (N_assign, "N_assign", TravSons, FltnAssign, PrintAssign, TCassign, GNMassign,
        DCRassign, WLFassign, FreeAssign, CFassign, RCassign, COMPAssign, LIRassign,
        DupAssign, INLassign, UNRassign, LIRMassign, IdxAssign, UNSassign, WLIassign,
        AEassign, PrintAssign, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -841,14 +252,14 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, 1),
 
-  NIF (N_do, "N_do", TravSons, FltnDo, PrintDo, TCdo, OPTloop, DCRdo, TravSons, FreeDo,
+  NIF (N_do, "N_do", TravSons, FltnDo, PrintDo, TCdo, GNMloop, DCRdo, TravSons, FreeDo,
        CFdo, RCloop, COMPLoop, LIRloop, DupLoop, TravSons, UNRdo, LIRMloop, TravSons,
        UNSdo, WLIdo, AEdo, PrintDo, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, UNQdo, TravSons, PRECdo, ACTdo, TravSons, WLTdo, CSEdo, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
-  NIF (N_while, "N_while", TravSons, FltnWhile, PrintWhile, TCwhile, OPTloop, DCRwhile,
+  NIF (N_while, "N_while", TravSons, FltnWhile, PrintWhile, TCwhile, GNMloop, DCRwhile,
        TravSons, FreeWhile, CFwhile, RCloop, COMPLoop, LIRloop, DupLoop, TravSons,
        UNRwhile, LIRMloop, TravSons, UNSwhile, WLIwhile, AEwhile, PrintWhile, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, UNQwhile, TravSons, PRECwhile,
@@ -864,7 +275,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, 0),
 
-  NIF (N_cond, "N_cond", TravSons, FltnCond, PrintCond, TCcond, OPTcond, DCRcond,
+  NIF (N_cond, "N_cond", TravSons, FltnCond, PrintCond, TCcond, GNMcond, DCRcond,
        TravSons, FreeCond, CFcond, RCcond, COMPCond, LIRcond, DupCond, TravSons, UNRcond,
        TravSons, TravSons, UNScond, WLIcond, AEcond, PrintCond, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, UNQcond, TravSons, PRECcond, ACTcond,
@@ -872,7 +283,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, 3),
 
-  NIF (N_let, "N_let", TravSons, FltnLet, PrintLet, TClet, OPTlet, TravSons, WLFlet,
+  NIF (N_let, "N_let", TravSons, FltnLet, PrintLet, TClet, GNMlet, TravSons, WLFlet,
        FreeLet, CFlet, RClet, COMPLet, TravSons, DupId, TravSons, UNRlet, TravSons,
        IdxLet, UNSlet, WLIlet, TravSons, PrintLet, OBJlet, TravSons, TravSons, TravSons,
        TravSons, TravSons, UNQlet, TravSons, PREClet, TravSons, TravSons, WLTlet,
@@ -950,7 +361,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, 0),
 
-  NIF (N_post, "N_post", TravSons, TravSons, PrintPost, TCunaryOp, OPTpp, TravSons,
+  NIF (N_post, "N_post", TravSons, TravSons, PrintPost, TCunaryOp, GNMpp, TravSons,
        TravSons, FreePost, TravSons, RCprepost, TravSons, TravSons, DupId, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -958,7 +369,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, 1),
 
-  NIF (N_pre, "N_pre", TravSons, TravSons, PrintPre, TCunaryOp, OPTpp, TravSons, TravSons,
+  NIF (N_pre, "N_pre", TravSons, TravSons, PrintPre, TCunaryOp, GNMpp, TravSons, TravSons,
        FreePre, TravSons, RCprepost, TravSons, TravSons, DupId, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -974,7 +385,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, 0),
 
-  NIF (N_icm, "N_icm", TravSons, TravSons, PrintIcm, TravSons, OPTicm, TravSons, TravSons,
+  NIF (N_icm, "N_icm", TravSons, TravSons, PrintIcm, TravSons, GNMicm, TravSons, TravSons,
        FreeIcm, TravSons, RCicm, NoTrav, TravSons, DupIcm, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1027,7 +438,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    *
    */
 
-  NIF (N_with, "N_with", TravSons, FltnWith, PrintWith, TravSons, OPTwith, DCRwith,
+  NIF (N_with, "N_with", TravSons, FltnWith, PrintWith, TravSons, GNMwith, DCRwith,
        TravSons, FreeWith, CFwith, RCwith, COMPWith, LIRloop, DupChain, TravSons, UNRwith,
        LIRMloop, IdxWith, UNSwith, WLIwith, AEwith, PrintWith, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, UNQwith, TravSons, PRECwith, ACTwith,
@@ -1086,7 +497,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    *
    */
 
-  NIF (N_Nwith, "N_Nwith", TravSons, FltnNwith, PrintNwith, TravSons, OPTNwith, DCRNwith,
+  NIF (N_Nwith, "N_Nwith", TravSons, FltnNwith, PrintNwith, TravSons, GNMNwith, DCRNwith,
        WLFNwith, FreeNWith, CFNwith, RCNwith, TravSons, TravSons, DupNwith, TravSons,
        UNRNwith, TravSons, IdxNwith, TravSons, WLINwith, AENwith, PrintNwith, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, UNQNwith, TravSons, TravSons,

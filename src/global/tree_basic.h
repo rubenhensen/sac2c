@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.206  1999/01/07 14:02:33  sbs
+ * new tab opt_tab inserted and old "opt_tab" renamed to genmask_tab!
+ *
  * Revision 1.205  1999/01/06 13:03:33  cg
  * extern declaration of prf_name_str moved from tree.h to tree_basic.h
  *
@@ -1951,6 +1954,12 @@ extern node *MakePragma ();
  ***    types      TYPE               (no son)
  ***    int        VARNO
  ***
+ ***  when used in DeadCodeRemoval.c:
+ ***    nodetype   TRAVTYPE
+ ***    int        VARNO
+ ***    int        NEWACT
+ ***    long*      ACT
+ ***
  ***  when used in managing spmd- and sync blocks :
  ***
  ***    node*      INFO_SPMD_FUNDEF   (N_fundef)
@@ -2064,6 +2073,12 @@ extern node *MakeInfo ();
 #define INFO_CF_ASSIGN(n) (n->node[0])
 #define INFO_CF_TYPE(n) (n->info.types)
 #define INFO_CF_VARNO(n) (n->varno)
+
+/* DCR */
+#define INFO_DCR_VARNO(n) (n->varno)
+#define INFO_DCR_TRAVTYPE(n) (n->flag)
+#define INFO_DCR_ACT(n) (n->mask[2])
+#define INFO_DCR_NEWACT(n) (n->lineno)
 
 /* Unrolling */
 #define INFO_UNR_ASSIGN(n) (n->node[0])

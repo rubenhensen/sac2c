@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.69  1999/01/07 14:02:33  sbs
+ * new tab opt_tab inserted and old "opt_tab" renamed to genmask_tab!
+ *
  * Revision 1.68  1998/10/29 16:56:31  cg
  * Implementation of Trav() slightly modified in order to
  * simplify debugging.
@@ -231,8 +234,10 @@
 #include "typecheck_WL.h"
 #include "optimize.h"
 #include "free.h"
+#include "generatemasks.h"
 #include "ConstantFolding.h"
 #include "DeadCodeRemoval.h"
+#include "DeadFunctionRemoval.h"
 #include "LoopInvariantRemoval.h"
 #include "CSE.h"
 #include "import.h"
@@ -341,7 +346,7 @@ funptr type_tab[] = {
 #undef NIF
 
 /*
- * 5) opt_tab
+ * 5) genmask_tab
  */
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
@@ -350,7 +355,7 @@ funptr type_tab[] = {
             t47, t48, nn)                                                                \
     t5
 
-funptr opt_tab[] = {
+funptr genmask_tab[] = {
 #include "node_info.mac"
 };
 #undef NIF
@@ -981,6 +986,21 @@ funptr sched_tab[] = {
     t47
 
 funptr conc_tab[] = {
+#include "node_info.mac"
+};
+#undef NIF
+
+/*
+ * 48) opt_tab
+ */
+
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
+            t47, t48, nn)                                                                \
+    t48
+
+funptr opt_tab[] = {
 #include "node_info.mac"
 };
 #undef NIF

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.50  1999/01/07 14:02:33  sbs
+ * new tab opt_tab inserted and old "opt_tab" renamed to genmask_tab!
+ *
  * Revision 1.49  1998/06/18 13:42:11  cg
  * added traversal function tables conc_tab and sched_tab
  *
@@ -171,7 +174,7 @@ extern funptr imp_tab[];
 extern funptr flat_tab[];
 extern funptr print_tab[];
 extern funptr type_tab[];
-extern funptr opt_tab[];
+extern funptr genmask_tab[];
 extern funptr active_tab[];
 extern funptr dcr_tab[];
 extern funptr wlf_tab[];
@@ -214,6 +217,7 @@ extern funptr reuse_tab[];
 extern funptr o2nWith_tab[];
 extern funptr sched_tab[];
 extern funptr conc_tab[];
+extern funptr opt_tab[];
 
 extern int nnode[];
 
