@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1994/11/23 09:44:03  hw
+ * Revision 1.6  1994/12/08 17:45:58  sbs
+ * modules inserted
+ *
+ * Revision 1.5  1994/11/23  09:44:03  hw
  * inserted true & false
  *
  * Revision 1.4  1994/11/10  15:10:01  sbs
@@ -49,7 +52,8 @@ int commlevel=0;
 ")"				{FILTER( BRACKET_R );}
 "["				{FILTER( SQBR_L );}
 "]"				{FILTER( SQBR_R );}
-";"				{FILTER( COLON );}
+":"				{FILTER( COLON );}
+";"				{FILTER( SEMIC );}
 ","				{FILTER( COMMA );}
 "="				{FILTER( LET );}
 
@@ -95,6 +99,17 @@ int commlevel=0;
 "genarray"			{FILTER( GENARRAY );}
 "modarray"			{FILTER( MODARRAY );}
 "inline"			{FILTER( INLINE );}
+
+[mM]odul[dD]ec			{FILTER( MODDEC );}
+[mM]odul			{FILTER( MODIMP );}
+[cC]lass[dD]ec			{FILTER( CLASSDEC );}
+"import"			{FILTER( IMPORT );}
+"all"				{FILTER( ALL );}
+"implicit"			{FILTER( IMPLICIT );}
+"explicit"			{FILTER( EXPLICIT );}
+"types"				{FILTER( TYPES );}
+"funs"				{FILTER( FUNS );}
+"own"				{FILTER( OWN );}
 
 "int"				{FILTER( TYPE_INT );}
 "float"				{FILTER( TYPE_FLOAT );}

@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.22  1994/12/08 14:15:04  hw
+ * Revision 1.23  1994/12/08 17:46:57  sbs
+ * modules inserted
+ *
+ * Revision 1.22  1994/12/08  14:15:04  hw
  * changed node[1] and node[2] of N_fundef
  * now node[1] points to the next function and
  *
@@ -95,12 +98,13 @@ node *syntax_tree;
          nums            *nums;
        }
 
-%token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, COMMA,
+%token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC, COMMA,
        INLINE, LET,
        AND, OR, EQ, NEQ, LE, LT, GE, GT, MUL, DIV, PLUS, MINUS, 
        INC, DEC, ADDON, SUBON, MULON, DIVON,
        RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE,CAT,PSI,
        MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, GENARRAY, MODARRAY,
+       MODDEC, MODIMP, CLASSDEC, IMPORT, ALL, IMPLICIT, EXPLICIT, TYPES, FUNS, OWN,
        ARRAY,SC, TRUE, FALSE;
 %token <id> ID;
 %token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL;
@@ -126,11 +130,56 @@ node *syntax_tree;
 %left SQBR_L
 %nonassoc UMINUS
 
-%start prg
+%start file
 
 %%
 
-prg: funs {syntax_tree=$1;}
+file: moddec
+	| modimp
+	| prg
+	;
+
+moddec: MODDEC ID COLON OWN COLON eidesc
+	| MODDEC ID COLON imports OWN COLON eidesc
+	| CLASSDEC ID COLON OWN COLON eidesc
+	| CLASSDEC ID COLON imports OWN COLON eidesc
+	;
+
+eidesc: ALL
+	| BRACE_L impty eidesc2
+	| BRACE_L eidesc2
+	;
+
+impty: IMPLICIT TYPES COLON ID SEMIC
+
+eidesc2: expty eidesc3
+	| eidesc3
+	;
+
+expty: EXPLICIT TYPES COLON ID SEMIC
+
+eidesc3: fundecls BRACE_R
+	| BRACE_R
+	;
+
+fundecls: FUNS COLON ID SEMIC
+
+imports: import SEMIC imports
+	| import SEMIC
+	;
+
+import: IMPORT ID COLON eidesc
+
+modimp: MODIMP ID imports
+	| MODIMP ID imports fundefs
+	| MODIMP ID fundefs
+	;
+
+fundefs: fundef fundefs 
+	| fundef
+	;
+
+prg: funs {syntax_tree=$1;} ;
 
 funs:  fundef funs  { $1->node[1]=$2;
                       $1->nnode+=1;
@@ -241,7 +290,7 @@ main: TYPE_INT MAIN BRACKET_L BRACKET_R {$$=MakeNode(N_fundef);} exprblock
       ;
 
 exprblock: BRACE_L {$$=MakeNode(N_block);} vardecs assigns retassign 
-           COLON BRACE_R 
+           SEMIC BRACE_R 
             { 
                $$=$<node>2;
                $$->node[1]=$3;  /* declarations of variables */
@@ -271,7 +320,7 @@ exprblock: BRACE_L {$$=MakeNode(N_block);} vardecs assigns retassign
                            mdb_nodetype[$$->node[0]->nodetype], $$->node[0],
                            mdb_nodetype[$$->node[1]->nodetype], $$->node[1]));
             }
-         | BRACE_L {$$=MakeNode(N_block);} assigns retassign COLON BRACE_R 
+         | BRACE_L {$$=MakeNode(N_block);} assigns retassign SEMIC BRACE_R 
             { 
               $$=$<node>2;
               if (NULL != $3)
@@ -306,7 +355,7 @@ exprblock: BRACE_L {$$=MakeNode(N_block);} vardecs assigns retassign
            }
            ;
 
-assignblock: COLON     
+assignblock: SEMIC     
               {  $$=MakeEmptyBlock();
               }
 
@@ -342,7 +391,7 @@ assignblock: COLON
                 } 
              ;
 
-retassignblock: BRACE_L {$$=MakeNode(N_block);} assigns retassign COLON BRACE_R
+retassignblock: BRACE_L {$$=MakeNode(N_block);} assigns retassign SEMIC BRACE_R
                   {  $$=$<node>2;
                    
                     /* append retassign node($4) to assigns nodes($3), if any
@@ -397,7 +446,7 @@ vardecs:   vardec vardecs
          | vardec {$$=$1;}
          ;
 
-vardec: type ids COLON {$$=GenVardec($1,$2);};
+vardec: type ids SEMIC {$$=GenVardec($1,$2);};
 
 assigns: /* empty */ 
          { $$=NULL; 
@@ -412,7 +461,7 @@ assigns: /* empty */
          }
          ;
 
-assign: letassign COLON 
+assign: letassign SEMIC 
            { $$=MakeNode(N_assign);
              $$->node[0]=$1;
              $$->nnode=1;
@@ -553,7 +602,7 @@ forassign: DO {$$=MakeNode(N_do);} assignblock WHILE BRACKET_L expr BRACKET_R
                          mdb_nodetype[$$->node[0]->nodetype], $$->node[0],
                          mdb_nodetype[$$->node[1]->nodetype], $$->node[1] ));
               }
-           | FOR {$$=MakeNode(N_while);} BRACKET_L assign expr COLON 
+           | FOR {$$=MakeNode(N_while);} BRACKET_L assign expr SEMIC 
              letassign BRACKET_R assignblock
               { $$=$4;  /* initialisation */
                 $$->node[1]=MakeNode(N_assign);
