@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/07/21 12:13:29  jhs
+ * Adjusted indenting.
+ *
  * Revision 2.5  1999/07/20 16:55:06  jhs
  * Added comments.
  * Changed behaviour of MT_SPMD_SETUP, so shared[_rc] variables are no longer setuped.
@@ -437,6 +440,8 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
     INDENT;
     fprintf (outfile, "SAC_MT_SYNC_MULTIFOLD_3B( %d)\n", barrier_id);
 
+    indent--;
+    INDENT;
     fprintf (outfile, "}\n");
 
     free (foldcodes);
