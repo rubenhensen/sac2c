@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/07 18:06:28  sah
+ * added support for different stringkinds
+ *
  * Revision 1.5  2004/11/04 14:53:43  sah
  * implemented dependencies between modules
  *
@@ -32,6 +35,7 @@
 
 struct STRINGSET_T {
     char *val;
+    SStype_t kind;
     stringset_t *next;
 };
 
@@ -56,7 +60,7 @@ SSContains (const char *string, stringset_t *set)
 }
 
 stringset_t *
-SSAdd (const char *string, stringset_t *set)
+SSAdd (const char *string, SStype_t kind, stringset_t *set)
 {
     DBUG_ENTER ("SSAdd");
 
@@ -66,6 +70,7 @@ SSAdd (const char *string, stringset_t *set)
         DBUG_PRINT ("SS", ("adding %s.", string));
 
         new->val = StringCopy (string);
+        new->kind = kind;
         new->next = set;
 
         set = new;
@@ -80,7 +85,7 @@ SSFold (SSfoldfun_p fun, stringset_t *set, void *init)
     DBUG_ENTER ("SSFold");
 
     while (set != NULL) {
-        init = fun (set->val, init);
+        init = fun (set->val, set->kind, init);
         set = set->next;
     }
 
@@ -127,11 +132,23 @@ SSFree (stringset_t *set)
 }
 
 void *
-SSPrintFoldFun (const char *entry, void *rest)
+SSPrintFoldFun (const char *entry, SStype_t kind, void *rest)
 {
     DBUG_ENTER ("SSPrintFoldFun");
 
-    printf ("%s\n", entry);
+    printf ("%s ", entry);
+
+    switch (kind) {
+    case SS_saclib:
+        printf ("(sac library)\n");
+        break;
+    case SS_extlib:
+        printf ("(external library)\n");
+        break;
+    default:
+        printf ("(unknown)\n");
+        break;
+    }
 
     DBUG_RETURN ((void *)0);
 }
