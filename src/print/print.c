@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1994/11/11 16:43:07  hw
+ * Revision 1.10  1994/11/14 16:57:44  hw
+ * make nicer output
+ *
+ * Revision 1.9  1994/11/11  16:43:07  hw
  * embellish output
  *
  * Revision 1.8  1994/11/11  13:55:56  hw
@@ -453,6 +456,7 @@ PrintLeton (node *arg_node, node *arg_info)
         break;
     }
     Trav (arg_node->node[0], arg_info);
+    fprintf (outfile, ";");
 
     DBUG_RETURN (arg_node);
 }
@@ -462,12 +466,18 @@ PrintCond (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintCond");
 
-    fprintf (outfile, " if ");
+    fprintf (outfile, "if ");
+    indent++;
     Trav (arg_node->node[0], arg_info);
-    fprintf (outfile, "\n\t");
+    fprintf (outfile, "\n");
     Trav (arg_node->node[1], arg_info);
-    fprintf (outfile, ";\n else\n\t ");
+    fprintf (outfile, "\n");
+    indent--;
+    INDENT;
+    fprintf (outfile, "else\n");
+    indent++;
     Trav (arg_node->node[2], arg_info);
+    indent--;
 
     DBUG_RETURN (arg_node);
 }
