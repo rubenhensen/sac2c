@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 1.16  1998/05/05 11:20:44  srs
+ * changed SearchWL()
+ *
  * Revision 1.15  1998/04/24 18:57:54  srs
  * added creation of types for N_array node
  *
@@ -887,9 +890,9 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
 
     DBUG_ENTER ("SearchWL");
 
-    /* MRDs point at N_assign or at N_Npart nodes. If N_Npart, the Id is
-       an index vector, not a WL. Return NULL */
-    if (startn && N_Npart == NODE_TYPE (startn))
+    /* MRDs point at N_assign, N_Npart or N_with nodes.
+       If N_Npart or N_with, the Id is an index vector, not a WL. Return NULL */
+    if (startn && (N_Npart == NODE_TYPE (startn) || N_with == NODE_TYPE (startn)))
         startn = NULL;
 
     if (startn) { /* N_assign node. */
@@ -898,7 +901,7 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
 
         while (loop_level > original_level) {
             /* jumped INTO a do-loop. The MRDs of do loops are stored
-               differently as the MRDs in while loops. Correct this: find
+               differently than the MRDs in while loops. Correct this: find
                do node of same level. That's the equivalent to
                while loops that we expect. */
             startn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
@@ -932,13 +935,15 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
                     SearchWL (id_varno, tmpn, valid, mode, original_level);
                 }
             } else { /* loop_level < original_level */
-                /* this means: Id is defined in this loop, but we did not find
-                   it directly by MRD. Hence it is defined below the occurence
-                   of the Id and we connot use it for folding. */
+                /* this means: Id is defined in this loop (and of course before the loop,
+                   too), but we did not find it directly by MRD. Hence it is defined
+                   - below the occurence of the Id and we connot use it for folding.
+                   - as index of an OLD WL which does not store MRDs correctly in
+                     its assign nodes but only in superior compound nodes. */
 
                 /* Search last definition in body and mark it invalid. This
-                   MAY be go wrong if we don't create MRDs in wli_phase 1. */
-                SearchWLHelp (id_varno, tmpn, valid, mode, original_level + 1);
+                   MAY go wrong if we don't create MRDs in wli_phase 1. */
+                SearchWLHelp (id_varno, tmpn, valid, mode, loop_level + 1);
 
                 /* Search definition above loop to mark it invalid. */
                 tmpn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
@@ -971,6 +976,13 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
 
                 *valid = 0;
             } else { /* loop_level < original_level */
+                /* This means: Id is defined in this condition, but we did not
+                   find it by MRD because it is defined in the other branch or
+                   behind the occurance of Id in the same branch. Neither definition
+                   interests us because we search the definition that is bound
+                   to the current Id. This HAS (*) to be defined before the conditional,
+                   so call SearchWL with a new startn and loop_level.
+                   (*)Exception: Index Variables of OLD WLs, see comment above. */
                 tmpn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
                 startn = SearchWL (id_varno, tmpn, valid, mode, loop_level);
             }
@@ -1144,7 +1156,6 @@ WithloopFolding (node *arg_node, node *arg_info)
     arg_node = Trav (arg_node, arg_info);
 
     /* WLF traversal: fold WLs */
-
     DBUG_PRINT ("OPT", ("  WLF"));
     DBUG_PRINT ("WLI", ("currently allocated mem : %d", current_allocated_mem));
     act_tab = wlf_tab;
