@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.56  1999/01/19 17:26:35  cg
+ * Bug fixed in selective import in the presence of function overloading.
+ * Now, all functions with the given name but varying parameters
+ * are actually imported.
+ *
  * Revision 1.55  1999/01/19 16:22:04  cg
  * removed bug in handling of file names when reading a module's
  * own declaration.
@@ -1711,6 +1716,8 @@ ImportAll (mod *mod, node *modul)
  *                     to be inserted
  *  description   : moves a particular symbol from the parsed modul declaration
  *                  into the syntax tree for the whole program.
+ *                  In the case of functions, all functions with the given name
+ *                  are moved in the presence of function overloading.
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : ---
@@ -1724,7 +1731,7 @@ void
 ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
 {
     node *explist;
-    node *tmpdef, *tmp2def;
+    node *tmpdef, *last;
     int next, son;
 
     DBUG_ENTER ("ImportSymbol");
@@ -1739,49 +1746,46 @@ ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
     else
         next = 0; /* next pointer in N_typedef and N_objdef nodes */
 
-    tmpdef = explist->node[symbtype];
-
-    if (strcmp (tmpdef->info.types->id, name) == 0)
-    /* The first entry has to be moved ! */
-    {
-        explist->node[symbtype] = tmpdef->node[next];
-        /* eliminating tmpdef from the chain */
-    } else {
-        tmp2def = tmpdef;
-        while (strcmp (tmp2def->node[next]->info.types->id, name) != 0)
-            tmp2def = tmp2def->node[next];
-
-        tmpdef = tmp2def->node[next]; /* neu neu, war node[0] */
-        tmp2def->node[next] = tmpdef->node[next];
-
-#ifndef NEWTREE
-        if (tmp2def->node[next] == NULL)
-            tmp2def->nnode--;
-#endif
-    }
-
-    /* tmpdef points on the def which is to be inserted */
-
-    AppendModnameToSymbol (tmpdef, mod->name);
-
-#ifndef NEWTREE
-    if (tmpdef->node[next] == NULL)
-        tmpdef->nnode++;
-#endif
-
-    /* Now, we do know, that nnode in tmpdef is set for having a successor! */
-
     if (symbtype == 0)
         son = 1;
     else
         son = symbtype;
 
-    tmpdef->node[next] = modul->node[son];
-    modul->node[son] = tmpdef;
-#ifndef NEWTREE
-    if (tmpdef->node[next] == NULL)
-        tmpdef->nnode--;
-#endif
+    tmpdef = explist->node[symbtype];
+
+    while ((tmpdef != NULL) && (strcmp (tmpdef->info.types->id, name) == 0))
+    /* The first entry has to be moved ! */
+    {
+        explist->node[symbtype] = tmpdef->node[next];
+        /* eliminating tmpdef from the chain */
+        /* tmpdef points on the def which is to be inserted */
+
+        AppendModnameToSymbol (tmpdef, mod->name);
+
+        tmpdef->node[next] = modul->node[son];
+        modul->node[son] = tmpdef;
+
+        tmpdef = explist->node[symbtype];
+    }
+
+    last = tmpdef;
+    tmpdef = tmpdef->node[next];
+
+    while (tmpdef != NULL) {
+        if (strcmp (tmpdef->info.types->id, name) == 0) {
+            last->node[next] = tmpdef->node[next];
+
+            AppendModnameToSymbol (tmpdef, mod->name);
+
+            tmpdef->node[next] = modul->node[son];
+            modul->node[son] = tmpdef;
+
+            tmpdef = last->node[next];
+        } else {
+            last = tmpdef;
+            tmpdef = tmpdef->node[next];
+        }
+    }
 
     DBUG_VOID_RETURN;
 }
