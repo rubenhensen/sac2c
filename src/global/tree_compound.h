@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/04 10:08:02  bs
+ * Functions IntVec2Array() and Array2IntVec added.
+ *
  * Revision 2.1  1999/02/23 12:40:11  sacbase
  * new release made
  *
@@ -1552,15 +1555,28 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
 
 extern node *Shape2Array (shapes *shp);
 
+extern int IsConstantArray (node *array, nodetype type);
+
 /* description:
- *   returns number of constant elements if argument is an N_array and all
+ *   Returns number of constant elements if argument is an N_array and all
  *   its elements are N_num, N_char, N_float, N_double, N_bool or otherwise
  *   returns 0.
  *
  *   The parameter type specified the necessary type all elements have to
  *   be of (nodetype, e.g. N_num). If N_ok is given, the type is ignored.*/
 
-extern int IsConstantArray (node *array, nodetype type);
+extern node *IntVec2Array (int length, int *intvec);
+
+/* description:
+ *   Returns an N_exprs node containing the elements of intvec. */
+
+extern int *Array2IntVec (node *aelems, int *length);
+
+/* description:
+ *   Returns an iteger vector and stores the number of constant integer
+ *   elements in *length if first argument is an N_exprs and all its elements
+ *   are N_num otherwise the result is not defined.
+ *   If the length of the vector is not of interest, length may be NULL. */
 
 /*--------------------------------------------------------------------------*/
 
