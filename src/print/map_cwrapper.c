@@ -33,13 +33,13 @@ MCWmodul (node *arg_node, node *arg_info)
     if (MODUL_FUNS (arg_node) != NULL) {
         /* if there are some fundefs traverse them */
 
-        INFO_MW_MODUL (arg_info) _arg_node;
+        INFO_MCW_MODUL (arg_info) = arg_node;
 
         /* the modul node is needed to hang the wrapperchain in N_module */
         Trav (MODUL_FUNS (arg_node), arg_info);
     }
 
-    DBUG_RETURN (argnode);
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -55,9 +55,27 @@ MCWmodul (node *arg_node, node *arg_info)
 node *
 MCWfundef (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("MWfundef");
+    DBUG_ENTER ("MCWfundef");
 
-    DBUG_RETURN (argnode);
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MCWarg(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   traverses N_arg nodes
+ *
+ ******************************************************************************/
+
+node *
+MCWarg (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("MCWarg");
+
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
