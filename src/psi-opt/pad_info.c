@@ -1,6 +1,9 @@
 /*
- *
  * $Log$
+ * Revision 1.13  2000/10/27 13:24:56  cg
+ * Added functions PInoteResults() and PIpaddingOverhead().
+ * Improved layout of diagnostic output.
+ *
  * Revision 1.12  2000/10/26 12:56:13  dkr
  * DupShpSeg renamed into DupShpseg
  *
@@ -27,6 +30,9 @@
  * Revision 1.5  2000/07/05 09:13:10  mab
  * fixed problem with global data structure pad_info
  *
+ * Revision 1.4  2000/06/30 15:21:01  mab
+ * *** empty log message ***
+ *
  * Revision 1.3  2000/06/28 10:43:10  mab
  * made some code modifications according to code review
  *
@@ -49,41 +55,43 @@
 #include "DupTree.h"
 #include "optimize.h"
 #include "Error.h"
+#include "convert.h"
 
 #include "pad_info.h"
 #include "pad.h"
 
 /* access macros for array_type_t */
-#define AT_TYPE(p) p->type
-#define AT_DIM(p) p->dim
-#define AT_SHAPE(p) p->shape
-#define AT_GROUPS(p) p->groups
-#define AT_NEXT(p) p->next
+#define AT_TYPE(p) (p)->type
+#define AT_DIM(p) (p)->dim
+#define AT_SHAPE(p) (p)->shape
+#define AT_GROUPS(p) (p)->groups
+#define AT_NEXT(p) (p)->next
 
 /* access macros for conflict_group_t */
-#define CG_GROUP(p) p->group
-#define CG_DIR(p) p->direction
-#define CG_PATTERNS(p) p->patterns
-#define CG_NEXT(p) p->next
+#define CG_GROUP(p) (p)->group
+#define CG_DIR(p) (p)->direction
+#define CG_PATTERNS(p) (p)->patterns
+#define CG_NEXT(p) (p)->next
 
 /* access macros for pattern_t */
-#define PT_PATTERN(p) p->pattern
-#define PT_NEXT(p) p->next
+#define PT_PATTERN(p) (p)->pattern
+#define PT_NEXT(p) (p)->next
 
 /* access macros for unsupported_shapes_t */
-#define US_TYPE(p) p->type
-#define US_DIM(p) p->dim
-#define US_SHAPE(p) p->shape
-#define US_NEXT(p) p->next
+#define US_TYPE(p) (p)->type
+#define US_DIM(p) (p)->dim
+#define US_SHAPE(p) (p)->shape
+#define US_NEXT(p) (p)->next
 
 /* access_macros for pad_info_t */
-#define PI_TYPE(p) p->type
-#define PI_DIM(p) p->dim
-#define PI_OLD_SHAPE(p) p->old_shape
-#define PI_NEW_SHAPE(p) p->new_shape
-#define PI_FUNDEF_PAD(p) p->fundef_pad
-#define PI_FUNDEF_UNPAD(p) p->fundef_unpad
-#define PI_NEXT(p) p->next
+#define PI_TYPE(p) (p)->type
+#define PI_DIM(p) (p)->dim
+#define PI_OLD_SHAPE(p) (p)->old_shape
+#define PI_NEW_SHAPE(p) (p)->new_shape
+#define PI_PADDING(p) (p)->padding
+#define PI_FUNDEF_PAD(p) (p)->fundef_pad
+#define PI_FUNDEF_UNPAD(p) (p)->fundef_unpad
+#define PI_NEXT(p) (p)->next
 
 /*****************************************************************************
  *
@@ -98,11 +106,6 @@
  *
  *
  *****************************************************************************/
-
-#define TYP_IFpr_str(str) str
-static char *ctype_string[] = {
-#include "type_info.mac"
-};
 
 static pad_info_t *pad_info;
 static array_type_t *array_type;
@@ -723,7 +726,7 @@ PIprintShpSeg (int dim, shpseg *shape)
     DBUG_ASSERT ((dim <= SHP_SEG_SIZE), " dimension out of range in PrintVect()!");
 
     APprintDiag ("[");
-    for (i = 0; i < dim - i; i++) {
+    for (i = 0; i < dim - 1; i++) {
         APprintDiag ("%3d, ", SHPSEG_SHAPE (shape, i));
     }
     APprintDiag ("%3d]", SHPSEG_SHAPE (shape, dim - 1));
@@ -747,7 +750,7 @@ PIprintArrayTypeElement (array_type_t *at_ptr)
 
     DBUG_ENTER ("PIprintArrayTypeElement");
 
-    APprintDiag ("\tarray type: %s\t%i\t", ctype_string[AT_TYPE (at_ptr)],
+    APprintDiag ("\tarray type: %s\t%i\t", Basetype2String (AT_TYPE (at_ptr)),
                  AT_DIM (at_ptr));
     PIprintShpSeg (AT_DIM (at_ptr), AT_SHAPE (at_ptr));
     APprintDiag ("\n");
@@ -826,7 +829,7 @@ PrintUnsupportedShapeElement (unsupported_shape_t *us_ptr)
 
     DBUG_ENTER ("PrintUnsupportedShapeElement");
 
-    APprintDiag ("\t%s\t%i\t", ctype_string[US_TYPE (us_ptr)], US_DIM (us_ptr));
+    APprintDiag ("\t%s\t%i\t", Basetype2String (US_TYPE (us_ptr)), US_DIM (us_ptr));
     PIprintShpSeg (US_DIM (us_ptr), US_SHAPE (us_ptr));
     APprintDiag ("\n");
 
@@ -849,7 +852,7 @@ PrintPadInfoElement (pad_info_t *pi_ptr)
 
     DBUG_ENTER ("PrintPadInfoElement");
 
-    APprintDiag ("\t%i\t%s\t", PI_DIM (pi_ptr), ctype_string[PI_TYPE (pi_ptr)]);
+    APprintDiag ("\t%i\t%s\t", PI_DIM (pi_ptr), Basetype2String (PI_TYPE (pi_ptr)));
     PIprintShpSeg (PI_DIM (pi_ptr), PI_OLD_SHAPE (pi_ptr));
     APprintDiag ("\t");
     PIprintShpSeg (PI_DIM (pi_ptr), PI_NEW_SHAPE (pi_ptr));
@@ -1500,8 +1503,9 @@ PIgetNextPattern (pattern_t *pt_ptr)
 /*****************************************************************************
  *
  * function:
- *   void PIaddInferredShape(simpletype type, int dim, shpseg* old_shape, shpseg*
- *new_shape)
+ *   void PIaddInferredShape(simpletype type, int dim,
+ *                           shpseg* old_shape, shpseg* new_shape
+ *                           shpseg *padding)
  *
  * description:
  *   add a new entry to the data structure for a newly inferred type
@@ -1510,9 +1514,9 @@ PIgetNextPattern (pattern_t *pt_ptr)
  *****************************************************************************/
 
 void
-PIaddInferredShape (simpletype type, int dim, shpseg *old_shape, shpseg *new_shape)
+PIaddInferredShape (simpletype type, int dim, shpseg *old_shape, shpseg *new_shape,
+                    shpseg *padding)
 {
-
     pad_info_t *tmp;
 
     DBUG_ENTER ("PIaddInferredShape");
@@ -1522,12 +1526,102 @@ PIaddInferredShape (simpletype type, int dim, shpseg *old_shape, shpseg *new_sha
     PI_TYPE (tmp) = type;
     PI_OLD_SHAPE (tmp) = old_shape;
     PI_NEW_SHAPE (tmp) = new_shape;
+    PI_PADDING (tmp) = padding;
     PI_FUNDEF_PAD (tmp) = NULL;
     PI_FUNDEF_UNPAD (tmp) = NULL;
     PI_NEXT (tmp) = pad_info;
     pad_info = tmp;
 
     ap_padded++;
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int PIpaddingOverhead(int dim,
+ *                         shpseg* orig_shape,
+ *                         shpseg* padding)
+ *
+ * description
+ *
+ *   This function computes the overhead in memory consumption
+ *   caused by a specific padding as percentage of the original
+ *   array size.
+ *
+ ******************************************************************************/
+
+int
+PIpaddingOverhead (int dim, shpseg *orig_shape, shpseg *padding)
+{
+    int i, overhead;
+    unsigned long int orig_size, padding_size;
+
+    DBUG_ENTER ("PIpaddingOverhead");
+
+    orig_size = 1;
+    padding_size = 1;
+
+    for (i = 0; i < dim; i++) {
+        orig_size *= SHPSEG_SHAPE (orig_shape, i);
+        padding_size *= (SHPSEG_SHAPE (orig_shape, i) + SHPSEG_SHAPE (padding, i));
+    }
+
+    if (padding_size < orig_size) {
+        /*
+         * Probably, a numerical overflow has occurred.
+         */
+        overhead = 200;
+    } else {
+        overhead = (int)((padding_size - orig_size) * 100) / orig_size;
+        if (overhead * orig_size < (padding_size - orig_size) * 100) {
+            overhead++;
+        }
+    }
+
+    DBUG_RETURN (overhead);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   void PInoteResults()
+ *
+ * description:
+ *
+ *   print padding resume to display
+ *
+ *****************************************************************************/
+
+void
+PInoteResults ()
+{
+    pad_info_t *pi_ptr;
+    char *basetype, *old, *new, *pad;
+    int overhead;
+
+    DBUG_ENTER ("PInoteResults");
+
+    pi_ptr = pad_info;
+
+    while (pi_ptr != NULL) {
+        basetype = Basetype2String (PI_TYPE (pi_ptr));
+        old = Shpseg2String (PI_DIM (pi_ptr), PI_OLD_SHAPE (pi_ptr));
+        new = Shpseg2String (PI_DIM (pi_ptr), PI_NEW_SHAPE (pi_ptr));
+        pad = Shpseg2String (PI_DIM (pi_ptr), PI_PADDING (pi_ptr));
+        overhead = PIpaddingOverhead (PI_DIM (pi_ptr), PI_OLD_SHAPE (pi_ptr),
+                                      PI_PADDING (pi_ptr));
+
+        NOTE (("  %s%s  by  %s", basetype, old, pad));
+        NOTE (("     ->  %s%s    <= %d%% overhead", basetype, new, overhead));
+
+        FREE (old);
+        FREE (new);
+        FREE (pad);
+
+        pi_ptr = PI_NEXT (pi_ptr);
+    }
 
     DBUG_VOID_RETURN;
 }
