@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2002/02/21 17:46:09  dkr
+ * access macros used for TYPES structure (not finished yet)
+ *
  * Revision 3.34  2002/02/20 15:06:10  dkr
  * fundef DupTypes() renamed into DupAllTypes()
  *
@@ -303,16 +306,10 @@
  * ugly macros from access_macros.h included here ...
  */
 
-#undef ID_MOD
-
 /* macros for access to elements of struct info.types */
-#define TYPES info.types
-#define DIM TYPES->dim
-#define ID TYPES->id
-#define ID_MOD TYPES->id_mod
-#define SHP TYPES->shpseg->shp
-#define NAME TYPES->name
-#define NAME_MOD TYPES->name_mod
+#define DIM info.types->dim
+#define SHP info.types->shpseg->shp
+#define NAME info.types->name
 
 /* macros used for N_ap nodes to get the function's name */
 #define FUN_NAME info.fun_name.id
@@ -391,7 +388,7 @@
 #define BODY 0 /* checking plane part of function, no branch */
 
 /* macro used for type_tab access */
-#define T_TYPES(i) (tab + i)->node->info.types
+#define T_TYPES(i) TYPEDEF_TYPE ((tab + i)->node)
 
 #define CMP_TYPE_ID(a, b)                                                                \
     ((NULL == a->id_mod)                                                                 \
@@ -424,22 +421,22 @@
 
 #define CHECK_FUNCTION_TYPENAMECLASH(arg)                                                \
     {                                                                                    \
-        if (NULL != LookupType (arg->ID, NULL, NODE_LINE (arg))) {                       \
-            ERROR (NODE_LINE (arg),                                                      \
-                   ("Function '%s` has same name as user-defined type", arg->ID));       \
+        if (NULL != LookupType (FUNDEF_NAME (arg), NULL, NODE_LINE (arg))) {             \
+            ERROR (NODE_LINE (arg), ("Function '%s` has same name as user-defined type", \
+                                     FUNDEF_NAME (arg)));                                \
         }                                                                                \
         if ((NULL != FUNDEF_PRAGMA (arg)) && (NULL != FUNDEF_LINKNAME (arg)))            \
             if (NULL != LookupType (FUNDEF_LINKNAME (arg), NULL, NODE_LINE (arg))) {     \
                 ERROR (NODE_LINE (arg), ("Link name '%s` of function '%s` has same name" \
                                          " as user-defined type",                        \
-                                         FUNDEF_LINKNAME (arg), arg->ID));               \
+                                         FUNDEF_LINKNAME (arg), FUNDEF_NAME (arg)));     \
             }                                                                            \
     }
 
 #define CHECK_TYPENAMECLASH(arg)                                                         \
-    if (NULL != LookupType (arg->ID, NULL, NODE_LINE (arg))) {                           \
-        ERROR (NODE_LINE (arg),                                                          \
-               ("Identifier '%s` has same name as user-defined type", arg->ID));         \
+    if (NULL != LookupType (VARDEC_OR_ARG_NAME (arg), NULL, NODE_LINE (arg))) {          \
+        ERROR (NODE_LINE (arg), ("Identifier '%s` has same name as user-defined type",   \
+                                 VARDEC_OR_ARG_NAME (arg)));                             \
     }
 
 /* some macros for fun_tab access */
@@ -620,7 +617,7 @@ Types2Array (types *type, types *res_type)
     DBUG_ENTER ("Types2Array");
 
     if (T_user == type->simpletype) {
-        types *b_type = LookupType (type->name, type->name_mod, 042)->info.types;
+        types *b_type = TYPEDEF_TYPE (LookupType (type->name, type->name_mod, 042));
         if (0 < b_type->dim + type->dim) {
             node *dummy = MakeExprs (NULL, NULL);
             shape_array = MakeArray (NULL);
@@ -944,7 +941,7 @@ BuildGenarrayWithLoop (node *shp, node *val)
         ARRAY_VECLEN (tmp_node) = ID_VECLEN (shp);
         ARRAY_CONSTVEC (tmp_node)
           = CopyConstVec (ID_VECTYPE (shp), ID_VECLEN (shp), ID_CONSTVEC (shp));
-        ARRAY_TYPE (tmp_node) = VARDEC_TYPE (ID_VARDEC (shp));
+        ARRAY_TYPE (tmp_node) = ID_TYPE (shp);
         NWITHOP_SHAPE (NWITH_WITHOP (res)) = tmp_node;
     }
     NCODE_USED (NWITH_CODE (res))++;
@@ -1036,12 +1033,12 @@ BuildTakeWithLoop (node *take_shp, node *array)
         ARRAY_CONSTVEC (tmp_node)
           = CopyConstVec (ID_VECTYPE (take_shp), ID_VECLEN (take_shp),
                           ID_CONSTVEC (take_shp));
-        ARRAY_TYPE (tmp_node) = VARDEC_TYPE (ID_VARDEC (take_shp));
+        ARRAY_TYPE (tmp_node) = ID_TYPE (take_shp);
         ARRAY_VECTYPE (tmp_node) = ID_VECTYPE (take_shp);
         ARRAY_ISCONST (tmp_node) = TRUE;
         NWITHOP_SHAPE (NWITH_WITHOP (res)) = tmp_node;
     }
-    NCODE_USED (NWITH_CODE (res))++;
+    (NCODE_USED (NWITH_CODE (res)))++;
 
     /*
      * Finally, we generate the connection between the
@@ -1076,7 +1073,7 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
 
     DBUG_ASSERT (((NODE_TYPE (drop_vec) == N_array)
                   || ((NODE_TYPE (drop_vec) == N_id) && (ID_ISCONST (drop_vec))
-                      && (VARDEC_BASETYPE (ID_VARDEC (drop_vec)) == T_int))),
+                      && (VARDEC_OR_ARG_BASETYPE (ID_VARDEC (drop_vec)) == T_int))),
                  "First arg of drop should be a constant integer array!");
 
     wl_body_var_vec = TmpVar ();
@@ -1593,15 +1590,15 @@ LookupType (char *type_name, char *mod_name, int line)
             }
         }
         for (i = 0; i < type_tab_size; i++) {
-            if (CMP_MOD (mod_name, (type_table + i)->node->ID_MOD)
-                && (!strcmp (type_name, (type_table + i)->node->ID))) {
+            if (CMP_MOD (mod_name, TYPEDEF_MOD ((type_table + i)->node))
+                && (!strcmp (type_name, TYPEDEF_NAME ((type_table + i)->node)))) {
                 ret_node = (type_table + i)->node;
                 break;
             }
         }
     } else {
         for (i = 0; i < type_tab_size; i++) {
-            if (!strcmp (type_name, (type_table + i)->node->ID)) {
+            if (!strcmp (type_name, TYPEDEF_NAME ((type_table + i)->node))) {
                 if (1 == (type_table + i)->id_count) {
                     ret_node = (type_table + i)->node;
                     break;
@@ -1996,7 +1993,7 @@ TypecheckFunctionDeclarations (node *fundef)
              */
             arg = FUNDEF_ARGS (fun);
             while (arg != NULL) {
-                if (TYPES_BASETYPE (ARG_TYPE (arg)) == T_user) {
+                if (ARG_BASETYPE (arg) == T_user) {
                     tdef = LookupType (TYPES_NAME (ARG_TYPE (arg)),
                                        TYPES_MOD (ARG_TYPE (arg)), NODE_LINE (fun));
                     if (tdef == NULL) {
@@ -2063,14 +2060,14 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
             } else {
 #ifndef DO_NOT_SET_FUN_MOD_NAME
                 if (NULL != arg_node->FUN_MOD_NAME) {
-                    if (0 != strcmp (arg_node->FUN_MOD_NAME, fun_p->node->ID_MOD)) {
+                    if (0 != strcmp (arg_node->FUN_MOD_NAME, FUNDEF_MOD (fun_p->node))) {
                         arg_node->FUN_MOD_NAME = Free (arg_node->FUN_MOD_NAME);
-                        arg_node->FUN_MOD_NAME = StringCopy (fun_p->node->ID_MOD);
+                        arg_node->FUN_MOD_NAME = StringCopy (FUNDEF_MOD (fun_p->node));
                     }
                 } else
-                    arg_node->FUN_MOD_NAME = StringCopy (fun_p->node->ID_MOD);
+                    arg_node->FUN_MOD_NAME = StringCopy (FUNDEF_MOD (fun_p->node));
 #endif
-                return_type = DupAllTypes (fun_p->node->info.types);
+                return_type = DupAllTypes (FUNDEF_TYPE (fun_p->node));
 
 #ifndef DBUG_OFF
                 db_str = Type2String (return_type, 0, TRUE);
@@ -2116,7 +2113,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
                  * the infered type.
                  */
 #ifndef DO_NOT_SET_FUN_MOD_NAME
-                arg_node->FUN_MOD_NAME = fun_p->node->ID_MOD;
+                arg_node->FUN_MOD_NAME = FUNDEF_MOD (fun_p->node);
 #endif
                 return_type = DupAllTypes (fun_p->node->info.types);
 
@@ -2362,7 +2359,7 @@ CmpFunParams (node *arg1, node *arg2)
         if (TYPES_BASETYPE (ARG_TYPE (arg1)) == TYPES_BASETYPE (ARG_TYPE (arg2))) {
             if ((TYPES_BASETYPE (ARG_TYPE (arg1)) == T_user)
                 || (TYPES_BASETYPE (ARG_TYPE (arg2)) == T_hidden)) {
-                is_equal = CMP_TYPE_NAME (arg1->TYPES, arg2->TYPES);
+                is_equal = CMP_TYPE_NAME (ARG_TYPE (arg1), ARG_TYPE (arg2));
                 if (0 == is_equal)
                     break;
             }
@@ -2398,8 +2395,6 @@ CmpFunParams (node *arg1, node *arg2)
  *  global vars   : filename
  *  internal funs : LookupType
  *  external funs : InsertNode
- *  macros        : DBUG...,TYPES, MOD_NAME_CON, SIMPLETYPE, NAME, NAME_MOD, ID
- *                  NULL, MOD, MOD_CON, NULL, ERROR
  *
  *  remarks       : fundef node must have a body.
  *
@@ -2414,7 +2409,7 @@ CheckKnownTypes (node *arg_node)
     DBUG_ENTER ("CheckKnownTypes");
 
     /* first check whether type of function is known */
-    fun_type = arg_node->TYPES;
+    fun_type = FUNDEF_TYPES (arg_node);
     while (NULL != fun_type) {
         if (T_user == TYPES_BASETYPE (fun_type)) {
             node *t_node
@@ -2424,11 +2419,11 @@ CheckKnownTypes (node *arg_node)
                 ERROR (NODE_LINE (arg_node),
                        ("Function '%s` has"
                         " unknown type '%s` in declaration",
-                        ModName (arg_node->ID_MOD, arg_node->ID),
+                        ModName (FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node)),
                         ModName (fun_type->name_mod, fun_type->name)));
             } else {
                 TYPES_TDEF (fun_type) = t_node;
-                fun_type->name_mod = t_node->ID_MOD;
+                fun_type->name_mod = TYPEDEF_MOD (t_node);
 
                 if (FUNDEF_INLINE (arg_node)) {
                     StoreNeededNode (t_node, arg_node, ST_artificial);
@@ -2448,17 +2443,18 @@ CheckKnownTypes (node *arg_node)
     arg = FUNDEF_ARGS (arg_node);
     while (NULL != arg) {
         if (T_user == TYPES_BASETYPE (ARG_TYPE (arg))) {
-            t_node = LookupType (arg->NAME, arg->NAME_MOD, NODE_LINE (arg_node));
+            t_node = LookupType (arg->NAME, ARG_TMOD (arg), NODE_LINE (arg_node));
 
             if (NULL == t_node) {
                 ERROR (NODE_LINE (arg_node),
                        ("Formal parameter '%s` of function '%s` "
                         "has unknown type '%s`",
-                        arg->ID, ModName (arg_node->ID_MOD, arg_node->ID),
-                        ModName (arg->NAME_MOD, arg->NAME)));
+                        ARG_NAME (arg),
+                        ModName (FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node)),
+                        ModName (ARG_TMOD (arg), arg->NAME)));
             } else {
                 TYPES_TDEF (ARG_TYPE (arg)) = t_node;
-                arg->NAME_MOD = t_node->ID_MOD;
+                ARG_TMOD (arg) = TYPEDEF_MOD (t_node);
 
                 if ((TYPEDEF_ATTRIB (t_node) == ST_unique)
                     && (ARG_ATTRIB (arg) == ST_regular)) {
@@ -2816,9 +2812,9 @@ InitTypeTab (node *modul_node)
             }
         } else {
             /* insert node into type tabel (tab) and remove it from chain */
-            if (-1 != TYPEDEF_TYPE (tmp)->dim) {
-                name = TYPEDEF_TYPE (tmp)->id;
-                mod_name = tmp->TYPES->id_mod;
+            if (-1 != TYPEDEF_DIM (tmp)) {
+                name = TYPEDEF_NAME (tmp);
+                mod_name = TYPEDEF_MOD (tmp);
                 /* look whether current type is defined more than once */
                 for (k = 0; k < i; k++)
 #ifdef OLD_TEST
@@ -2831,22 +2827,22 @@ InitTypeTab (node *modul_node)
                         && CMP_TYPE_MOD (mod_name, T_TYPES (k)->id_mod))
 #endif /* OLD_TEST */
                     {
-                        if (NULL == tmp->TYPES->id_mod) {
+                        if (NULL == TYPEDEF_MOD (tmp)) {
                             ABORT (NODE_LINE (tmp),
                                    ("Type '%s` is defined more than once",
-                                    tmp->TYPES->id));
+                                    TYPEDEF_NAME (tmp)));
                         } else {
-                            ABORT (NODE_LINE (tmp), ("Type '%s` is defined more than"
-                                                     " once in module/class '%s`",
-                                                     tmp->TYPES->id, tmp->TYPES->id_mod));
+                            ABORT (NODE_LINE (tmp),
+                                   ("Type '%s` is defined more than"
+                                    " once in module/class '%s`",
+                                    TYPEDEF_NAME (tmp), TYPEDEF_MOD (tmp)));
                         }
                     }
 
                 (tab + i)->node = tmp;
-                DBUG_PRINT ("TYPE",
-                            ("inserted %d: %s%s" F_PTR ", " F_PTR, i,
-                             (NULL == tmp->TYPES->id_mod) ? "" : tmp->TYPES->id_mod,
-                             tmp->TYPES->id, tmp->TYPES, tmp));
+                DBUG_PRINT ("TYPE", ("inserted %d: %s%s" F_PTR ", " F_PTR, i,
+                                     (NULL == TYPEDEF_MOD (tmp)) ? "" : TYPEDEF_MOD (tmp),
+                                     TYPEDEF_NAME (tmp), TYPEDEF_TYPE (tmp), tmp));
                 i++;
                 if (NULL == TYPEDEF_NEXT (tmp)) {
                     if (N_modul == last_node->nodetype) {
@@ -2867,8 +2863,8 @@ InitTypeTab (node *modul_node)
             } else {
                 ABORT (NODE_LINE (tmp), ("User-defined type '%s` is built of"
                                          " type with unknown shape '%s`",
-                                         ModName (tmp->TYPES->id_mod, tmp->TYPES->id),
-                                         Type2String (tmp->TYPES, 0, TRUE)));
+                                         ModName (TYPEDEF_MOD (tmp), TYPEDEF_NAME (tmp)),
+                                         Type2String (TYPEDEF_TYPE (tmp), 0, TRUE)));
             }
         }
 
@@ -2928,31 +2924,32 @@ InitTypeTab (node *modul_node)
                     && CMP_TYPE_MOD (mod_name, T_TYPES (j)->id_mod))
 #endif /* OLD_TEST */
                 {
-                    if (-1 != tmp->TYPES->dim) {
+                    if (-1 != TYPEDEF_TYPE (tmp)->dim) {
                         /* look whether current type is defined more than once */
                         for (k = 0; k < i; k++)
 #ifdef OLD_TEST
-                            if (!strcmp (tmp->TYPES->id, T_TYPES (k)->id)
-                                && (((NULL == tmp->TYPES->id_mod)
+                            if (!strcmp (TYPEDEF_NAME (tmp), T_TYPES (k)->id)
+                                && (((NULL == TYPEDEF_MOD (tmp))
                                      || (NULL == T_TYPES (k)->id_mod))
-                                      ? (tmp->TYPES->id_mod == T_TYPES (k)->id_mod)
-                                      : (!strcmp (tmp->TYPES->id_mod,
+                                      ? (TYPEDEF_MOD (tmp) == T_TYPES (k)->id_mod)
+                                      : (!strcmp (TYPEDEF_MOD (tmp),
                                                   T_TYPES (k)->id_mod))))
 #else
-                            if (!strcmp (tmp->TYPES->id, T_TYPES (k)->id)
-                                && CMP_TYPE_MOD (tmp->TYPES->id_mod, T_TYPES (k)->id_mod))
+                            if (!strcmp (TYPEDEF_NAME (tmp), T_TYPES (k)->id)
+                                && CMP_TYPE_MOD (TYPEDEF_MOD (tmp), T_TYPES (k)->id_mod))
 #endif /* OLD_TEST */
                             {
-                                if (NULL == tmp->TYPES->id_mod) {
-                                    ABORT (NODE_LINE (tmp), ("Type '%s` is "
-                                                             "defined more than once",
-                                                             ModName (tmp->TYPES->id_mod,
-                                                                      tmp->TYPES->id)));
+                                if (NULL == TYPEDEF_MOD (tmp)) {
+                                    ABORT (NODE_LINE (tmp),
+                                           ("Type '%s` is "
+                                            "defined more than once",
+                                            ModName (TYPEDEF_MOD (tmp),
+                                                     TYPEDEF_NAME (tmp))));
                                 } else {
                                     ABORT (NODE_LINE (tmp),
                                            ("Type '%s' is defined more "
                                             "than once in module/class '%s`",
-                                            tmp->TYPES->id, tmp->TYPES->id_mod));
+                                            TYPEDEF_NAME (tmp), TYPEDEF_MOD (tmp)));
                                 }
                             }
 
@@ -2991,8 +2988,8 @@ InitTypeTab (node *modul_node)
                                 ABORT (NODE_LINE (tmp),
                                        ("User-defined type '%s` is built from type "
                                         "with unknown shape (%s)",
-                                        tmp->TYPES->id,
-                                        Type2String (tmp->TYPES, 0, TRUE)));
+                                        TYPEDEF_NAME (tmp),
+                                        Type2String (TYPEDEF_TYPE (tmp), 0, TRUE)));
                             }
                             break;
                         default: {
@@ -3002,9 +2999,8 @@ InitTypeTab (node *modul_node)
                         }
                         DBUG_PRINT ("TYPE",
                                     ("inserted %d: %s%s" F_PTR ", " F_PTR, i,
-                                     (NULL == tmp->TYPES->id_mod) ? ""
-                                                                  : tmp->TYPES->id_mod,
-                                     tmp->TYPES->id, tmp->TYPES, tmp));
+                                     (NULL == TYPEDEF_MOD (tmp)) ? "" : TYPEDEF_MOD (tmp),
+                                     TYPEDEF_NAME (tmp), TYPEDEF_TYPE (tmp), tmp));
                         i++;
 
                         /* now remove inserted N_typedef(tmp) form typedef-chain
@@ -3016,7 +3012,8 @@ InitTypeTab (node *modul_node)
                                ("User-defined type '%s` is "
                                 "built from user-defined type "
                                 "with unknown shape (%s)",
-                                tmp->TYPES->id, Type2String (tmp->TYPES, 0, TRUE)));
+                                TYPEDEF_NAME (tmp),
+                                Type2String (TYPEDEF_TYPE (tmp), 0, TRUE)));
                     }
                 }
 
@@ -3060,14 +3057,14 @@ InitTypeTab (node *modul_node)
                 ABORT (NODE_LINE (tmp),
                        ("User-defined type '%s` is built of "
                         "unknown type (%s)",
-                        tmp->TYPES->id, Type2String (tmp->TYPES, 0, TRUE)));
+                        TYPEDEF_NAME (tmp), Type2String (TYPEDEF_TYPE (tmp), 0, TRUE)));
                 tmp = tmp->node[0];
             }
             if (NULL != tmp) {
                 ABORT (NODE_LINE (tmp),
                        ("User-defined type '%s` is built of "
                         "unknown type (%s)",
-                        tmp->TYPES->id, Type2String (tmp->TYPES, 0, TRUE)));
+                        TYPEDEF_NAME (tmp), Type2String (TYPEDEF_TYPE (tmp), 0, TRUE)));
             } else
                 exit (3);
         }
@@ -3087,10 +3084,10 @@ InitTypeTab (node *modul_node)
     }
     /* now add id_count */
     for (i = 0; i < type_tab_size; i++) {
-        name = (tab + i)->node->ID;
+        name = TYPEDEF_NAME ((tab + i)->node);
         (tab + i)->id_count = 0;
         for (k = 0; k < type_tab_size; k++)
-            if (!strcmp ((tab + k)->node->ID, name))
+            if (!strcmp (TYPEDEF_NAME ((tab + k)->node), name))
                 (tab + k)->id_count++;
     }
 
@@ -3114,7 +3111,7 @@ InitTypeTab (node *modul_node)
  *  global vars   : fun_table, filename
  *  internal funs : Malloc, CheckFunctionDeclaration, LookupFun, CmpFunParam
  *  external funs : sizeof
- *  macros        : DBUG..., ERROR, TYPES, ID, ID_MOD, IS_CHECKED, NOT_CHECKED,
+ *  macros        : DBUG..., ERROR, TYPES, IS_CHECKED, NOT_CHECKED,
  *                  MOD_NAME_CON, INSERT_FUN ,CMP_FUN_NAME, NULL
  *  remarks       : ----
  *
@@ -3151,8 +3148,8 @@ InitFunTable (node *arg_node)
             /* check whether there are more external functions with name for
              * extern function (node[5])
              */
-            /* fun_name=(NULL == fun_node->node[5])?fun_node->ID
-                                                : (char*)fun_node->node[5]; */
+            /* fun_name=(NULL == fun_node->node[5]) ? FUNDEF_NAME( fun_node)
+                                                    : (char*)fun_node->node[5]; */
             fun_name
               = (NULL == FUNDEF_PRAGMA (fun_node)
                    ? FUNDEF_NAME (fun_node)
@@ -3161,9 +3158,9 @@ InitFunTable (node *arg_node)
 
             while (NULL != tmp_fun_node) {
                 if (NULL == tmp_fun_node->node[0]) {
-                    if (NULL == tmp_fun_node->ID_MOD) {
+                    if (NULL == FUNDEF_MOD (tmp_fun_node)) {
                         /* tmp_fun_name=(NULL != tmp_fun_node->node[5])
-                           ?(char*)(tmp_fun_node->node[5]):tmp_fun_node->ID;
+                           ?(char*)(tmp_fun_node->node[5]) : FUNDEF_NAME( tmp_fun_node);
                          */
                         tmp_fun_name = (NULL == FUNDEF_PRAGMA (tmp_fun_node)
                                           ? FUNDEF_NAME (tmp_fun_node)
@@ -3182,9 +3179,11 @@ InitFunTable (node *arg_node)
                     /* it is a local defined function, so stop checking */
                     break;
             }
-            if (0 != equal_name) { /*
-                                     WARN(0,("More than one external function with name
-                                     '%s`", fun_name)); */
+            if (0 != equal_name) {
+                /*
+                  WARN(0,("More than one external function with name '%s`",
+                          fun_name));
+                 */
                 /*
                  * This is allowed due to overloading external functions
                  * using the linkname pragma.
@@ -3194,7 +3193,7 @@ InitFunTable (node *arg_node)
             CheckKnownTypes (fun_node);
 
         /* now insert function into fun_table */
-        fun_name = fun_node->ID;
+        fun_name = FUNDEF_NAME (fun_node);
         mod_name = (NULL == FUNDEF_MOD (fun_node)) ? (FUNDEF_LINKMOD (fun_node))
                                                    : (FUNDEF_MOD (fun_node));
         fun_p = LookupFun (fun_name, NULL, NULL);
@@ -3207,7 +3206,7 @@ InitFunTable (node *arg_node)
         } else {
             do {
                 last_fun_p = fun_p;
-                if (CMP_MOD (fun_p->id_mod, fun_node->ID_MOD)) {
+                if (CMP_MOD (fun_p->id_mod, FUNDEF_MOD (fun_node))) {
                     if (1 == CmpFunParams (fun_p->node->node[2], fun_node->node[2])) {
                         ERROR (0, ("Function '%s` is defined more"
                                    " than once with equal domain",
@@ -3216,7 +3215,8 @@ InitFunTable (node *arg_node)
                     }
                 }
                 fun_p = NEXT_FUN_TAB_ELEM (fun_p);
-            } while (END_OF_FUN_TAB (fun_p) ? 0 : (!strcmp (fun_p->id, fun_node->ID)));
+            } while (
+              END_OF_FUN_TAB (fun_p) ? 0 : (!strcmp (fun_p->id, FUNDEF_NAME (fun_node))));
             /*         INSERT_FUN(last_fun_p, fun_name, mod_name, fun_node,
                                 (NULL == fun_node->node[0])?IS_CHECKED:NOT_CHECKED,
                                 max_overload);*/
@@ -3241,8 +3241,8 @@ InitFunTable (node *arg_node)
    fun_node=arg_node;
    while(NULL != fun_node)
    {
-      fun_name=fun_node->ID;
-      mod_name=fun_node->ID_MOD;
+      fun_name = FUNDEF_NAME( fun_node);
+      mod_name = FUNDEF_MOD( fun_node);
       if (NULL == LookupFun(NULL, NULL, fun_node))
       {
          old_tos=fun_tos;
@@ -3257,18 +3257,18 @@ InitFunTable (node *arg_node)
          tmp=fun_node->node[1];
          while(NULL != tmp)
          {
-            if (!strcmp(tmp->ID,fun_node->ID ))
+            if (! strcmp(FUNDEF_NAME( tmp), FUNDEF_NAME( fun_node)))
             {
                tmp_tos=old_tos;
                while(tmp_tos < fun_tos)
                {
-                  if (CMP_MOD(tmp->ID_MOD, fun_node->ID_MOD))
+                  if (CMP_MOD( FUNDEF_MOD( tmp), FUNDEF_MOD( fun_node)))
                   {
                      if (1==CmpFunParams(tmp_tos->node->node[2], tmp->node[2]))
                      {
                         ERROR(0, ("Function '%s` is defined more"
                                   " than once with equal domain",
-                                  ModName(tmp->ID_MOD, tmp->ID)));
+                                  ModName( FUNDEF_MOD( tmp), FUNDEF_NAME( tmp))));
                         break;
                      }
                   }
@@ -3281,9 +3281,9 @@ InitFunTable (node *arg_node)
                   /* there isn't a function with equal name & mod_name and 
                    * equal domain. So insert function to fun_table.
                    */
-                  INSERT_FUN(tmp->ID, tmp->ID_MOD, tmp, 
-                           (NULL == tmp->node[0])?IS_CHECKED: NOT_CHECKED, 
-                             max_overload);
+                  INSERT_FUN( FUNDEF_NAME( tmp), FUNDEF_MOD( tmp), tmp, 
+                              (NULL == tmp->node[0])?IS_CHECKED: NOT_CHECKED, 
+                              max_overload);
                }
             }
             tmp=tmp->node[1];
@@ -3551,8 +3551,9 @@ CmpTypes (types *type_one, types *type_two)
                         TYPES_TDEF (type_one) = t_node;
                     }
 
-                    ok = !(
-                      strcmp (mod_name, (NULL != t_node->ID_MOD) ? t_node->ID_MOD : ""));
+                    ok = !(strcmp (mod_name, (NULL != TYPEDEF_MOD (t_node))
+                                               ? TYPEDEF_MOD (t_node)
+                                               : ""));
                 }
             } else
                 ok = 0;
@@ -3701,7 +3702,7 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
                           ModName (type_one->name_mod, type_one->name)));
         } else {
             TYPES_TDEF (type_one) = t_node;
-            type_1 = DupAllTypes (t_node->TYPES);
+            type_1 = DupAllTypes (TYPEDEF_TYPE (t_node));
             if (type_one->dim > 0) {
                 if (type_1->dim >= 0) {
                     int dim;
@@ -3733,7 +3734,7 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
                           ModName (type_two->name_mod, type_two->name)));
         } else {
             TYPES_TDEF (type_two) = t_node;
-            type_2 = DupAllTypes (t_node->TYPES);
+            type_2 = DupAllTypes (TYPEDEF_TYPE (t_node));
             if (type_two->dim > 0) {
                 if (type_2->dim >= 0) {
                     int i, dim;
@@ -3906,8 +3907,8 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
  *  remarks       : If one type is not a primitive type and one is a primitive
  *                  type, it has to be checked whether one type can be updated.
  *                  The function CompatileTypes checks it.
- *                  !!!! Call this function only after calling CmpTypes or
- *                       CompatibleTypes. !!!!
+ *                  !!! Call this function only after calling CmpTypes or
+ *                      CompatibleTypes. !!!
  *
  */
 
@@ -4053,12 +4054,6 @@ UpdateType (types *type_one, types *type_two, int line)
  *  arguments     : 1) pointer to fun-table-entrie
  *  description   : duplicates a function(fun_p->node)(insert it into
  *                  fun-table and syntax-tree) if fun_p->n_dup >0
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG..., NULL, INSERT_FUN, NOT_CHECKED, ID, ID_MOD
- *
- *  remarks       :
  *
  */
 
@@ -4106,8 +4101,8 @@ DuplicateFun (fun_tab_elem *fun_p)
             fun_p = fun_p->next;
         }
 
-        OLD_INSERT_FUN (fun_p, new_fun_node->ID, new_fun_node->ID_MOD, new_fun_node,
-                        NOT_CHECKED, -2);
+        OLD_INSERT_FUN (fun_p, FUNDEF_NAME (new_fun_node), FUNDEF_MOD (new_fun_node),
+                        new_fun_node, NOT_CHECKED, -2);
         new_fun_p = NEXT_FUN_TAB_ELEM (fun_p);
     } else {
         ABORT (NODE_LINE (fun_p->node),
@@ -4140,8 +4135,6 @@ DuplicateFun (fun_tab_elem *fun_p)
  *  internal funs : Malloc, IsNameInMods,  LookupFun, LookupPrf, CmpTypes,
  *                  CompatibleTypes, UpdateType
  *  external funs : sizeof, FindSymbolInModul
- *  macros        : DBUG..., NULL, F_PTR, NOTE, ID, TYPES, ERROR, ABORT,
- *                  WARN,  MOD_NAME
  *
  *  remarks       : if no function is found that matches the types of the
  *                  arguments then it will be looked for a function that has
@@ -4576,12 +4569,12 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
     if (vardec_p) {
         /* looking, if ids->id is defined in variable declaration */
         while ((VARDEC_NEXT (vardec_p)) && !is_defined)
-            if (!(strcmp (ids->id, vardec_p->info.types->id)))
+            if (!(strcmp (ids->id, VARDEC_NAME (vardec_p))))
                 is_defined = 1;
             else
                 vardec_p = VARDEC_NEXT (vardec_p);
 
-        if (is_defined || (!strcmp (ids->id, vardec_p->info.types->id))) {
+        if (is_defined || (!strcmp (ids->id, VARDEC_NAME (vardec_p)))) {
             /* variable ids->id is defined in variable declaration part
              * so check if typedeclaration is ok
              */
@@ -4632,8 +4625,8 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
         ids->node = vardec_p;
         VARDEC_STATUS (vardec_p) = ST_used;
 
-        DBUG_PRINT ("REF", ("added reference" F_PTR " from %s to %s", ids->node, ids->id,
-                            ids->node->info.types->id));
+        DBUG_PRINT ("REF", ("added reference" F_PTR " from %s to %s", IDS_VARDEC (ids),
+                            ids->id, VARDEC_OR_ARG_NAME (IDS_VARDEC (ids))));
 
         PUSH_VAR (ids->id, vardec_p);
     } else {
@@ -4657,8 +4650,8 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
 
         /* insert reference to variable declaration */
         ids->node = vardec;
-        DBUG_PRINT ("REF", ("added reference" F_PTR " from %s to %s", ids->node, ids->id,
-                            ids->node->info.types->id));
+        DBUG_PRINT ("REF", ("added reference" F_PTR " from %s to %s", IDS_VARDEC (ids),
+                            ids->id, VARDEC_OR_ARG_NAME (IDS_VARDEC (ids))));
 
         /* add variable to local stack */
         PUSH_VAR (ids->id, vardec);
@@ -4707,7 +4700,7 @@ TCfundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("TCfundef");
 
-    DBUG_PRINT ("TYPE", ("checking function %s", arg_node->info.types->id));
+    DBUG_PRINT ("TYPE", ("checking function %s", FUNDEF_NAME (arg_node)));
 
     act_frame = tos; /* set new frame pointer */
 
@@ -4720,11 +4713,12 @@ TCfundef (node *arg_node, node *arg_info)
         tmp_node = ARG_NEXT (fun_params);
         j = i + 1;
         while (NULL != tmp_node) {
-            if (0 == strcmp (tmp_node->ID, fun_params->ID)) {
+            if (0 == strcmp (ARG_NAME (tmp_node), ARG_NAME (fun_params))) {
                 ERROR (NODE_LINE (arg_node),
                        ("%d. and %d. argument of function '%s' have same"
                         " name '%s`",
-                        i, j, ModName (arg_node->ID_MOD, arg_node->ID), fun_params->ID));
+                        i, j, ModName (FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node)),
+                        ARG_NAME (fun_params)));
                 ok = 0;
             }
             j += 1;
@@ -4733,7 +4727,7 @@ TCfundef (node *arg_node, node *arg_info)
 
         CHECK_TYPENAMECLASH (fun_params);
         if (1 == ok) {
-            PUSH_VAR (fun_params->info.types->id, fun_params);
+            PUSH_VAR (ARG_NAME (fun_params), fun_params);
         } else {
             ok = 1;
         }
@@ -4756,7 +4750,7 @@ TCfundef (node *arg_node, node *arg_info)
     /* pointer to variable declaration */
     INFO_TC_VARDEC (info_node) = BLOCK_VARDEC (FUNDEF_BODY (arg_node));
     INFO_TC_FUNDEF (info_node) = arg_node; /* function declaration */
-    info_node->info.id = arg_node->info.types->id;
+    info_node->info.id = FUNDEF_NAME (arg_node);
 
     INFO_TC_NEXTASSIGN (info_node) = NULL;
     INFO_TC_LASSIGN (info_node) = NULL;
@@ -4949,15 +4943,15 @@ TypeInference (node *arg_node, node *arg_info)
              *  The identifier may be a local variable or a global object.
              */
 
-            stack_p = LookupVar (arg_node->info.ids->id);
+            stack_p = LookupVar (ID_NAME (arg_node));
 
             if (stack_p) {
                 return_type = DupAllTypes (stack_p->node->info.types);
                 ID_VARDEC (arg_node) = stack_p->node;
 
                 DBUG_PRINT ("REF", ("added reference" F_PTR " for %s to %s",
-                                    arg_node->info.ids->id, arg_node->info.ids->id,
-                                    arg_node->info.ids->node->info.types->id));
+                                    ID_NAME (arg_node), ID_NAME (arg_node),
+                                    VARDEC_OR_ARG_NAME (ID_VARDEC (arg_node))));
             } else {
                 /*
                  *  If the identifier is not yet locally bound, it may be a
@@ -5450,7 +5444,8 @@ TClet (node *arg_node, node *arg_info)
                 case CMP_equal: /* 1 */
                     ids->node = elem->node;
                     DBUG_PRINT ("REF", ("added reference" F_PTR " from %s to %s",
-                                        ids->node, ids->id, ids->node->info.types->id));
+                                        IDS_VARDEC (ids), ids->id,
+                                        VARDEC_OR_ARG_NAME (IDS_VARDEC (ids))));
                     break;
                 case CMP_both_unknown_shape: /* neu 8.12. */
                     if (kind_of_file != SAC_MOD) {
@@ -5727,14 +5722,23 @@ TCreturn (node *arg_node, node *arg_info)
         if (NULL == fun_p) {
             ABORT (NODE_LINE (arg_node),
                    ("Function '%s` undefined",
-                    ModName (INFO_TC_FUNDEF (arg_info)->info.types->id_mod,
-                             INFO_TC_FUNDEF (arg_info)->info.types->id)));
-        } else
-            fun_type = fun_p->node->TYPES;
+                    ModName (FUNDEF_MOD (INFO_TC_FUNDEF (arg_info)),
+                             FUNDEF_NAME (INFO_TC_FUNDEF (arg_info)))));
+        } else {
+            fun_type = FUNDEF_TYPES (fun_p->node);
+        }
 
         fun_p->node->node[3] = arg_node; /* set node[3] of N_fundef to this N_return
                                           * node.
                                           */
+
+        /*
+         * dkr:
+         * !!!!!! very ugly !!!!!!
+         *
+         * FUNDEF_NAME, FUNDEF_MOD should be used instead of
+         *   fun_type->id, fun_type->id_mod
+         */
         fun_name = fun_type->id;
         fun_mod = fun_type->id_mod;
         fun_tmp = fun_type;
@@ -6659,8 +6663,7 @@ TI_cast (node *arg_node, node *arg_info)
     if (NULL == inf_type)
         switch (arg_node->nodetype) {
         case N_id: {
-            ABORT (NODE_LINE (arg_node),
-                   ("Variable '%s` undefined", arg_node->info.ids->id));
+            ABORT (NODE_LINE (arg_node), ("Variable '%s` undefined", ID_NAME (arg_node)));
             break;
         }
         case N_ap: {
@@ -6876,7 +6879,7 @@ isBoundEmpty (node *arg_node, node *bound_node)
         } else {
             /* They are not annotated but perhaps the shape is empty?
              * Therefore count elements. */
-            ltypes = VARDEC_TYPE (ID_VARDEC (bound_node));
+            ltypes = ID_TYPE (bound_node);
             elements = 1;
             for (i = 0; i < TYPES_DIM (ltypes); i++) {
                 elements = elements * SHPSEG_SHAPE (TYPES_SHPSEG (ltypes), i);
@@ -7093,8 +7096,8 @@ TI_Nwith (node *arg_node, node *arg_info)
         NWITHOP_MOD (withop) = StringCopy (PSEUDO_MOD_FOLD);
 
         /* insert new function into fun_table */
-        OLD_INSERT_FUN (fun_table, new_fundef->ID, new_fundef->ID_MOD, new_fundef,
-                        PLEASE_CHECK, -2);
+        OLD_INSERT_FUN (fun_table, FUNDEF_NAME (new_fundef), FUNDEF_MOD (new_fundef),
+                        new_fundef, PLEASE_CHECK, -2);
 
         /*
          * insert 'new_fundef' into fundef-chain 'pseudo_fold_fundefs'
@@ -7132,8 +7135,8 @@ TI_Nwith (node *arg_node, node *arg_info)
             NWITHOP_MOD (withop) = StringCopy (PSEUDO_MOD_FOLD);
 
             /* insert new function into fun_table */
-            OLD_INSERT_FUN (fun_table, new_fundef->ID, new_fundef->ID_MOD, new_fundef,
-                            PLEASE_CHECK, -2);
+            OLD_INSERT_FUN (fun_table, FUNDEF_NAME (new_fundef), FUNDEF_MOD (new_fundef),
+                            new_fundef, PLEASE_CHECK, -2);
 
             /*
              * insert 'new_fundef' into fundef-chain 'pseudo_fold_fundefs'
