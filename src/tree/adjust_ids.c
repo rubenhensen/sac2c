@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 1.2  2001/03/22 19:51:01  dkr
+ * include of tree.h eliminated
+ *
  * Revision 1.1  2000/12/15 18:31:14  dkr
  * Initial revision
  *
@@ -31,6 +35,7 @@
  *
  * Revision 1.1  2000/02/17 16:15:25  cg
  * Initial revision
+ *
  */
 
 /*****************************************************************************
@@ -63,25 +68,14 @@
 
 #include "dbug.h"
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "traverse.h"
 #include "free.h"
-#include "internal_lib.h"
 #include "DupTree.h"
 #include "print.h"
-
-/******************************************************************************
- *
- * function:
- *
- *
- * description:
- *
- *
- *
- *
- *
- ******************************************************************************/
 
 /******************************************************************************
  *
@@ -143,9 +137,6 @@ RenameId (node *id_node)
  * description:
  *
  *
- *
- *
- *
  ******************************************************************************/
 
 #if 0
@@ -196,9 +187,6 @@ node *FindOrMakeVardec(char *var_name, node *fundef, node *vardec_or_arg)
  * description:
  *
  *
- *
- *
- *
  ******************************************************************************/
 
 ids *
@@ -212,11 +200,11 @@ AIids (ids *arg_ids, node *arg_info)
         new_let = MakeLet (MakeId (StringCopy (IDS_NAME (INFO_AI_IDS (arg_info))), NULL,
                                    ST_regular),
                            arg_ids);
-        /*
-        ID_VARDEC(LET_EXPR(new_let)) = FindOrMakeVardec(IDS_NAME(INFO_AI_IDS(arg_info)),
-                                                        INFO_AI_FUNDEF(arg_info),
-                                                        IDS_VARDEC(INFO_AI_IDS(arg_info)));
-        */
+#if 0
+    ID_VARDEC(LET_EXPR(new_let)) = FindOrMakeVardec(IDS_NAME(INFO_AI_IDS(arg_info)),
+                                                    INFO_AI_FUNDEF(arg_info),
+                                                    IDS_VARDEC(INFO_AI_IDS(arg_info)));
+#endif
         ID_VARDEC (LET_EXPR (new_let)) = IDS_VARDEC (INFO_AI_IDS (arg_info));
         /*
          * This back reference is a dirty trick. Formally we would have to introduce
@@ -258,9 +246,6 @@ AIids (ids *arg_ids, node *arg_info)
  *   node *AIassign(node *arg_node, node *arg_info)
  *
  * description:
- *
- *
- *
  *
  *
  ******************************************************************************/
@@ -313,9 +298,6 @@ AIassign (node *arg_node, node *arg_info)
  * description:
  *
  *
- *
- *
- *
  ******************************************************************************/
 
 node *
@@ -348,9 +330,6 @@ AIexprs (node *arg_node, node *arg_info)
  * description:
  *
  *
- *
- *
- *
  ******************************************************************************/
 
 node *
@@ -375,9 +354,6 @@ AIreturn (node *arg_node, node *arg_info)
  *   node *AIap(node *arg_node, node *arg_info)
  *
  * description:
- *
- *
- *
  *
  *
  ******************************************************************************/
@@ -409,12 +385,9 @@ AIap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AIid(node *arg_node, node *arg_info)
+ *   node *AIid( node *arg_node, node *arg_info)
  *
  * description:
- *
- *
- *
  *
  *
  ******************************************************************************/
@@ -516,9 +489,6 @@ AIid (node *arg_node, node *arg_info)
  * description:
  *
  *
- *
- *
- *
  ******************************************************************************/
 
 node *
@@ -546,9 +516,6 @@ AIlet (node *arg_node, node *arg_info)
  * description:
  *
  *
- *
- *
- *
  ******************************************************************************/
 
 node *
@@ -570,12 +537,9 @@ AIvardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *AIarg(node *arg_node, node *arg_info)
+ *   node *AIarg( node *arg_node, node *arg_info)
  *
  * description:
- *
- *
- *
  *
  *
  ******************************************************************************/
@@ -609,9 +573,6 @@ AIarg (node *arg_node, node *arg_info)
  * description:
  *
  *
- *
- *
- *
  ******************************************************************************/
 
 node *
@@ -634,9 +595,6 @@ AIblock (node *arg_node, node *arg_info)
  *   node *AIfundef(node *arg_node, node *arg_info)
  *
  * description:
- *
- *
- *
  *
  *
  ******************************************************************************/
@@ -772,9 +730,6 @@ AIcode (node *arg_node, node *arg_info)
  *   node *AdjustIdentifiers(node *fundef, node *let)
  *
  * description:
- *
- *
- *
  *
  *
  ******************************************************************************/
