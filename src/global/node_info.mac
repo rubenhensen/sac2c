@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.8  1994/11/22 16:40:39  hw
- * added FltnDo
+ * Revision 1.9  1994/11/23 09:46:23  hw
+ * inserted N_bool
  *
+;; Revision 1.8  1994/11/22  16:40:39  hw
+;; added FltnDo
+;;
 ;; Revision 1.7  1994/11/17  16:48:17  hw
 ;; added FltnWhile
 ;;
@@ -62,7 +65,8 @@ NIF (N_num, "N_num", DummyFun, PrintNum, DummyFun),
   NIF (N_inc, "N_inc", DummyFun, PrintInc, DummyFun),
   NIF (N_dec, "N_dec", DummyFun, PrintDec, DummyFun),
   NIF (N_post, "N_post", DummyFun, PrintPost, DummyFun),
-  NIF (N_pre, "N_pre", DummyFun, PrintPre, DummyFun)
+  NIF (N_pre, "N_pre", DummyFun, PrintPre, DummyFun),
+  NIF (N_bool, "N_bool", DummyFun, PrintBool, Dummyfun)
 
 #if 0
 NIF( N_and,      "N_and",      DummyFun, DummyFun, DummyFun ),
