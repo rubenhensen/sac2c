@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2004/07/06 17:54:52  skt
+ * support for propagate_executionmode (pem_tab) added
+ *
  * Revision 3.43  2004/06/08 14:20:35  skt
  * support for tem_tab added
  *
@@ -363,7 +366,7 @@ extern funtab *cvp_tab;
 extern funtab *wlfs_tab;
 extern funtab *asmra_tab;
 extern funtab *tem_tab;
-extern funtab *unused_tab3;
+extern funtab *pem_tab;
 extern funtab *unused_tab4;
 extern funtab *unused_tab5;
 extern funtab *unused_tab6;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2004/07/06 17:54:52  skt
+ * support for propagate_executionmode (pem_tab) added
+ *
  * Revision 3.54  2004/06/08 14:20:35  skt
  * support for tem_tab added
  *
@@ -262,6 +265,7 @@
 #include "blocks_propagate.h"
 #include "barriers_init.h"
 #include "tag_executionmode.h"
+#include "propagate_executionmode.h"
 #include "assignments_rearrange.h"
 #include "blocks_lift.h"
 #include "adjust_calls.h"
@@ -1651,15 +1655,15 @@ static funtab tem_tab_rec = {{
 funtab *tem_tab = &tem_tab_rec;
 
 /*
- *  (123) unused_tab3
+ *  (123) pem_tab
  */
-static funtab unused_tab3_rec = {{
-#define NIFunused_3(it_unused_3) it_unused_3
+static funtab pem_tab_rec = {{
+#define NIFpem(it_pem) it_pem
 #include "node_info.mac"
-                                 },
-                                 NULL,
-                                 NULL};
-funtab *unused_tab3 = &unused_tab3_rec;
+                             },
+                             NULL,
+                             NULL};
+funtab *pem_tab = &pem_tab_rec;
 
 /*
  *  (124) unused_tab4
