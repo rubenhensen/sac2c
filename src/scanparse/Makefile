@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.6  1994/12/30 17:28:08  sbs
+# Revision 1.7  1994/12/30 17:37:07  sbs
+# *** empty log message ***
+#
+# Revision 1.6  1994/12/30  17:28:08  sbs
 # *** empty log message ***
 #
 # Revision 1.5  1994/12/14  13:56:58  sbs
@@ -18,7 +21,7 @@
 #
 
 CC=gcc -ansi -g 
-CCL=gcc ansi -g 
+CCL=gcc -ansi -g 
 LEX=lex
 YACC=yacc -dv
 LIBS=-ly -ll
