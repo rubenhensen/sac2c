@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2003/04/14 15:16:51  sbs
+ * cast from int into unsigned int added for safe comparisons.
+ *
  * Revision 3.10  2003/03/21 13:17:10  sbs
  * emptied iff DISABLE_MT is set.
  *
@@ -422,7 +425,7 @@ SAC_MT_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
 
     for (n = 0; n < num_schedulers; n++) {
         pthread_mutex_init (&(SAC_MT_TS_TASKLOCK (n)), NULL);
-        for (i = 0; i < SAC_MT_threads; i++) {
+        for (i = 0; (unsigned int)i < SAC_MT_threads; i++) {
             pthread_mutex_init (&(SAC_MT_TASKLOCK_INIT (n, i, num_schedulers)), NULL);
         }
     }
