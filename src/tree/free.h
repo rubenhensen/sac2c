@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/06/13 12:25:28  dkr
+ * functions for old with-loop removed
+ *
  * Revision 1.2  2000/03/29 16:09:54  jhs
  * FreeST and FreeMT added.
  *
@@ -214,12 +217,6 @@ extern node *FreeCond (node *arg_node, node *arg_info);
 extern node *FreeDo (node *arg_node, node *arg_info);
 extern node *FreeWhile (node *arg_node, node *arg_info);
 extern node *FreeAp (node *arg_node, node *arg_info);
-extern node *FreeWith (node *arg_node, node *arg_info);
-extern node *FreeGenerator (node *arg_node, node *arg_info);
-extern node *FreeGenarray (node *arg_node, node *arg_info);
-extern node *FreeModarray (node *arg_node, node *arg_info);
-extern node *FreeFoldprf (node *arg_node, node *arg_info);
-extern node *FreeFoldfun (node *arg_node, node *arg_info);
 extern node *FreeExprs (node *arg_node, node *arg_info);
 extern node *FreeArray (node *arg_node, node *arg_info);
 extern node *FreeVinfo (node *arg_node, node *arg_info);

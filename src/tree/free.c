@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 1.6  2000/06/13 12:24:55  dkr
+ * functions for old with-loop removed
+ *
  * Revision 1.5  2000/03/31 14:11:20  dkr
  * bug in FreeOneAccess identified
  *
@@ -48,106 +50,10 @@
  * FreeId and FreeArray modified: compact propagation of constant
  * integer vectors will be deallocated now.
  *
- * Revision 2.1  1999/02/23 12:39:17  sacbase
- * new release made
- *
- * Revision 1.79  1999/02/11 13:37:23  cg
- * Improved debugging opportunities by hiding calls to free() behind
- * wrapper function Free().
- *
- * Revision 1.78  1999/02/06 12:53:32  srs
- * added FreeNodelistNode
- *
- * Revision 1.77  1999/01/15 15:13:19  cg
- * added functions FreeOneAccess() and FreeAllAccess().
- *
- * Revision 1.76  1998/11/10 10:32:09  sbs
- * CHECK_NULL inserted in DBUG_PRINT("FREE"..) in FreeArg.
- *
- * Revision 1.75  1998/08/11 12:08:27  dkr
- * FreeWLsegVar changed
- *
- * Revision 1.74  1998/08/11 00:03:34  dkr
- * changed FreeWLsegVar
- *
- * Revision 1.73  1998/08/07 14:36:39  dkr
- * FreeWLsegVar added
- *
- * Revision 1.72  1998/07/03 10:14:02  cg
- * freeing of N_spmd node completely changed.
- *
- * Revision 1.71  1998/06/18 13:46:29  cg
- * file is now able to deal correctly with data objects of
- * the abstract data type for the representation of schedulings.
- *
- * Revision 1.70  1998/06/09 16:45:31  dkr
- * IDX_MIN, IDX_MAX now segment-specific
- *
- * Revision 1.69  1998/06/08 08:57:34  cg
- * handling of attribute ARRAY_TYPE corrected.
- *
- * Revision 1.68  1998/06/04 16:57:07  cg
- * information about refcounted variables in the context of loops,
- * conditionals and the old with-loop are now stored in ids-chains
- * instead of N_exprs lists.
- *
- * Revision 1.67  1998/06/03 14:23:43  cg
- *  free now handles attribute FUNDEF_LIFTEDFROM correctly
- *
- * Revision 1.66  1998/05/24 00:40:13  dkr
- * removed WLGRID_CODE_TEMPLATE
- *
- * Revision 1.65  1998/05/21 13:30:35  dkr
- * renamed NCODE_DEC_RC_IDS into NCODE_INC_RC_IDS
- *
- * Revision 1.64  1998/05/17 00:08:46  dkr
- * changed FreeWLgrid, FreeWLgridVar
- *
- * Revision 1.63  1998/05/12 22:44:44  dkr
- * changed FreeNwith2:
- *   added NWITH2_IDX_MIN, NWITH2_IDX_MAX
- *
- * Revision 1.62  1998/05/12 15:51:41  dkr
- * removed ???_VARINFO
- *
- * Revision 1.60  1998/05/11 15:16:41  dkr
- * changed FreeNwith, FreeNwith2:
- *   free NWITH_RC_IDS
- *
- * Revision 1.56  1998/04/26 21:51:15  dkr
- * FreeSPMD renamed to FreeSpmd
- *
- * Revision 1.55  1998/04/24 17:15:47  dkr
- * changed usage of SPMD_IN/OUT/INOUT, SYNC_INOUT
- *
- * Revision 1.54  1998/04/24 12:12:45  dkr
- * changed FreeSPMD
- *
- * Revision 1.53  1998/04/24 01:14:37  dkr
- * added FreeSync
- *
- * Revision 1.52  1998/04/21 13:30:51  dkr
- * NWITH2_SEG renamed to NWITH2_SEGS
- *
- * Revision 1.51  1998/04/20 02:37:53  dkr
- * changed comments
- *
- * Revision 1.50  1998/04/17 17:25:19  dkr
- * 'concurrent regions' are now called 'SPMD regions'
- *
- * Revision 1.49  1998/04/14 19:01:46  srs
- * changed FreeAssign()
- *
- * Revision 1.48  1998/04/13 19:01:47  dkr
- * support for wlcomp-pragmas added in FreePragma
- *
- *
- *
+ * [...]
  *
  * Revision 1.1  1994/12/20  15:42:10  sbs
  * Initial revision
- *
- *
  */
 
 #include <stdlib.h>
@@ -231,7 +137,6 @@ Free (void *addr)
  *
  *  FreeAll<struct> removes the whole sub tree which is referenced.
  *  All elements of list are freed in this case.
- *
  */
 
 node *
@@ -248,6 +153,7 @@ FreeNCodeWLAA (node *arg_node)
 }
 
 /*--------------------------------------------------------------------------*/
+
 shpseg *
 FreeShpseg (shpseg *fr)
 {
@@ -495,7 +401,9 @@ FreeNodelistNode (nodelist *nl)
 access_t *
 FreeOneAccess (access_t *fr)
 {
-    access_t *tmp;
+#if 0
+  access_t *tmp;
+#endif
 
     DBUG_ENTER ("FreeOneAccess");
 
@@ -968,8 +876,9 @@ FreeAssign (node *arg_node, node *arg_info)
     FREETRAV (ASSIGN_INSTR (arg_node));
     FREEMASK (ASSIGN_MASK);
     index = (index_info *)ASSIGN_INDEX (arg_node);
-    if (index)
+    if (index) {
         FREE_INDEX_INFO (index);
+    }
 
     DBUG_PRINT ("FREE", ("Removing N_assign node ..."));
 
@@ -1132,138 +1041,6 @@ FreeAp (node *arg_node, node *arg_info)
     FREE (AP_NAME (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_ap node ..."));
-
-    FREE (arg_node);
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-FreeWith (node *arg_node, node *arg_info)
-{
-    node *tmp = NULL;
-
-    DBUG_ENTER ("FreeWith");
-
-    DBUG_PRINT ("FREE", ("Removing contents of N_with node ..."));
-
-    FREETRAV (WITH_GEN (arg_node));
-    FREETRAV (WITH_OPERATOR (arg_node));
-    FREEMASK (WITH_MASK);
-
-    DBUG_PRINT ("FREE", ("Removing N_with node ..."));
-
-    FREE (arg_node);
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-FreeGenerator (node *arg_node, node *arg_info)
-{
-    node *tmp = NULL;
-
-    DBUG_ENTER ("FreeGenerator");
-
-    DBUG_PRINT ("FREE", ("Removing contents of N_generator node ..."));
-
-    FREETRAV (GEN_LEFT (arg_node));
-    FREETRAV (GEN_RIGHT (arg_node));
-    FREE (GEN_ID (arg_node));
-    FREEMASK (GEN_MASK);
-
-    DBUG_PRINT ("FREE", ("Removing N_generator node ..."));
-
-    FREE (arg_node);
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-FreeGenarray (node *arg_node, node *arg_info)
-{
-    node *tmp = NULL;
-
-    DBUG_ENTER ("FreeGenarray");
-
-    DBUG_PRINT ("FREE", ("Removing contents of N_genarray node ..."));
-
-    FREETRAV (GENARRAY_ARRAY (arg_node));
-    FREETRAV (GENARRAY_BODY (arg_node));
-
-    DBUG_PRINT ("FREE", ("Removing N_genarray node ..."));
-
-    FREE (arg_node);
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-FreeModarray (node *arg_node, node *arg_info)
-{
-    node *tmp = NULL;
-
-    DBUG_ENTER ("FreeModarray");
-
-    DBUG_PRINT ("FREE", ("Removing contents of N_modarray node ..."));
-
-    FREETRAV (MODARRAY_ARRAY (arg_node));
-    FREETRAV (MODARRAY_BODY (arg_node));
-
-    DBUG_PRINT ("FREE", ("Removing N_modarray node ..."));
-
-    FREE (arg_node);
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-FreeFoldprf (node *arg_node, node *arg_info)
-{
-    node *tmp = NULL;
-
-    DBUG_ENTER ("FreeFoldprf");
-
-    DBUG_PRINT ("FREE", ("Removing contents of N_folfprf node ..."));
-
-    FREETRAV (FOLDPRF_BODY (arg_node));
-    FREETRAV (FOLDPRF_NEUTRAL (arg_node));
-
-    DBUG_PRINT ("FREE", ("Removing N_foldprf node ..."));
-
-    FREE (arg_node);
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-FreeFoldfun (node *arg_node, node *arg_info)
-{
-    node *tmp = NULL;
-
-    DBUG_ENTER ("FreeFoldfun");
-
-    DBUG_PRINT ("FREE",
-                ("Removing contents of N_foldfun node %s ...", FOLDFUN_NAME (arg_node)));
-
-    FREETRAV (FOLDFUN_BODY (arg_node));
-    FREETRAV (FOLDFUN_NEUTRAL (arg_node));
-    FREE (FOLDFUN_NAME (arg_node));
-    /* the module name must not be set free because it is shared. */
-
-    DBUG_PRINT ("FREE", ("Removing N_foldfun node ..."));
 
     FREE (arg_node);
 
