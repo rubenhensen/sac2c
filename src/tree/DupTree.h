@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2004/03/04 13:23:04  mwe
+ * DupCondfun added
+ *
  * Revision 3.25  2002/09/06 10:36:09  sah
  * added DupSetWL
  *
@@ -179,6 +182,7 @@ extern node *DupMTalloc (node *arg_node, node *arg_info);
 extern node *DupAvis (node *arg_node, node *arg_info);
 extern node *DupSSAstack (node *arg_node, node *arg_info);
 extern node *DupSSAcnt (node *arg_node, node *arg_info);
+extern node *DupCondfun (node *arg_node, node *arg_info);
 
 /* frontend with-loop */
 extern node *DupNwith (node *arg_node, node *arg_info);

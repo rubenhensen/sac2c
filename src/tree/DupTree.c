@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.88  2004/03/04 13:23:04  mwe
+ * DupCondfun added
+ *
  * Revision 3.87  2004/02/20 08:22:18  mwe
  * signature of MakeModul changed (new argument for FUNDECS)
  * updated DupTree: now duplicates also FUNDECS
@@ -1643,6 +1646,24 @@ DupPrf (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupPrf");
 
     new_node = MakePrf (PRF_PRF (arg_node), DUPTRAV (PRF_ARGS (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupCondfun (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupCondfun");
+
+    new_node
+      = MakeCondfun (DUPTRAV (CONDFUN_IF (arg_node)), DUPTRAV (CONDFUN_THEN (arg_node)),
+                     DUPTRAV (CONDFUN_ELSE (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 
