@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2003/11/18 16:46:06  dkr
+ * DupNwithop(): NWITHOP_DEFAULT added
+ *
  * Revision 3.83  2003/09/25 13:54:54  dkr
  * ID_UNQCONV removed
  *
@@ -1830,6 +1833,7 @@ DupNwithop (node *arg_node, node *arg_info)
     switch (NWITHOP_TYPE (arg_node)) {
     case WO_genarray:
         NWITHOP_SHAPE (new_node) = DUPTRAV (NWITHOP_SHAPE (arg_node));
+        NWITHOP_DEFAULT (new_node) = DUPTRAV (NWITHOP_DEFAULT (arg_node));
         break;
     case WO_modarray:
         NWITHOP_ARRAY (new_node) = DUPTRAV (NWITHOP_ARRAY (arg_node));
