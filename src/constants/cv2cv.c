@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/22 18:55:29  cg
+ * Moved all definitions/declarations of global variables to globals.mac
+ *
  * Revision 1.3  2001/04/30 12:30:20  nmw
  * COCv2CvHidden() added
  *
@@ -34,11 +37,6 @@
 #include "dbug.h"
 
 #include "cv2cv.h"
-
-#define TYP_IFcv2cv(fun) fun
-cv2cvfunptr cv2cv[] = {
-#include "type_info.mac"
-};
 
 /******************************************************************************
  *

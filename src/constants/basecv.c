@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/22 18:55:29  cg
+ * Moved all definitions/declarations of global variables to globals.mac
+ *
  * Revision 1.2  2001/05/17 14:16:21  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -23,22 +26,13 @@
 
 #include <strings.h>
 #include <stdlib.h>
+
 #include "dbug.h"
 #include "types.h"
 #include "shape.h"
 #include "constants.h"
 #include "basecv.h"
 #include "internal_lib.h"
-
-#define TYP_IFbasecv(fun) fun##Zero
-basecvfunptr basecv_zero[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFbasecv(fun) fun##One
-basecvfunptr basecv_one[] = {
-#include "type_info.mac"
-};
 
 /******************************************************************************
  *

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/11/22 18:55:29  cg
+ * Moved all definitions/declarations of global variables to globals.mac
+ *
  * Revision 1.4  2004/11/22 11:27:04  ktr
  * Ismop SacDevCamp 04
  *
@@ -19,28 +22,6 @@
 #define _SAC_ZIPCV_H_
 
 #include "types.h"
-
-extern zipcvfunptr zipcv_plus[];
-extern zipcvfunptr zipcv_minus[];
-extern zipcvfunptr zipcv_mul[];
-extern zipcvfunptr zipcv_div[];
-extern zipcvfunptr zipcv_mod[];
-extern zipcvfunptr zipcv_min[];
-extern zipcvfunptr zipcv_max[];
-extern zipcvfunptr zipcv_and[];
-extern zipcvfunptr zipcv_or[];
-extern zipcvfunptr zipcv_eq[];
-extern zipcvfunptr zipcv_neq[];
-extern zipcvfunptr zipcv_le[];
-extern zipcvfunptr zipcv_lt[];
-extern zipcvfunptr zipcv_gt[];
-extern zipcvfunptr zipcv_ge[];
-extern zipcvfunptr zipcv_not[];
-extern zipcvfunptr zipcv_toi[];
-extern zipcvfunptr zipcv_tof[];
-extern zipcvfunptr zipcv_tod[];
-extern zipcvfunptr zipcv_abs[];
-extern zipcvfunptr zipcv_neg[];
 
 #define EXT_DECLS(fun)                                                                   \
     extern void COZipCvUShort##fun (void *arg1, int pos1, void *arg2, int pos2,          \

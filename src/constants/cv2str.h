@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/11/22 18:55:29  cg
+ * Moved all definitions/declarations of global variables to globals.mac
+ *
  * Revision 1.4  2004/11/22 11:27:04  ktr
  * Ismop SacDevCamp 04
  *
@@ -20,8 +23,6 @@
 
 #ifndef _SAC_CV2STR_H_
 #define _SAC_CV2STR_H_
-
-extern cv2strfunptr cv2str[];
 
 extern char *COCv2StrUShort (void *src, int off, int len, int max_char);
 extern char *COCv2StrUInt (void *src, int off, int len, int max_char);

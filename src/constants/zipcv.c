@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/22 18:55:29  cg
+ * Moved all definitions/declarations of global variables to globals.mac
+ *
  * Revision 1.3  2003/04/09 15:37:16  sbs
  * zipcv_neg added.
  *
@@ -30,111 +33,6 @@
 #include "types.h"
 
 #include "zipcv.h"
-
-#define TYP_IFzipcv(fun) fun##Plus
-zipcvfunptr zipcv_plus[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Minus
-zipcvfunptr zipcv_minus[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Mul
-zipcvfunptr zipcv_mul[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Div
-zipcvfunptr zipcv_div[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Mod
-zipcvfunptr zipcv_mod[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Min
-zipcvfunptr zipcv_min[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Max
-zipcvfunptr zipcv_max[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##And
-zipcvfunptr zipcv_and[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Or
-zipcvfunptr zipcv_or[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Eq
-zipcvfunptr zipcv_eq[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Neq
-zipcvfunptr zipcv_neq[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Le
-zipcvfunptr zipcv_le[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Lt
-zipcvfunptr zipcv_lt[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Gt
-zipcvfunptr zipcv_gt[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Ge
-zipcvfunptr zipcv_ge[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Not
-zipcvfunptr zipcv_not[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Toi
-zipcvfunptr zipcv_toi[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Tof
-zipcvfunptr zipcv_tof[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Tod
-zipcvfunptr zipcv_tod[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Abs
-zipcvfunptr zipcv_abs[] = {
-#include "type_info.mac"
-};
-
-#define TYP_IFzipcv(fun) fun##Neg
-zipcvfunptr zipcv_neg[] = {
-#include "type_info.mac"
-};
 
 /******************************************************************************
  *

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/22 18:55:29  cg
+ * Moved all definitions/declarations of global variables to globals.mac
+ *
  * Revision 1.3  2004/11/22 11:27:04  ktr
  * Ismop SacDevCamp 04
  *
@@ -23,8 +26,6 @@
 #define _SAC_CV2SCALAR_H_
 
 #include "types.h"
-
-extern cv2scalarfunptr cv2scalar[];
 
 extern node *COCv2Num (void *elems, int offset);
 extern node *COCv2Double (void *elems, int offset);

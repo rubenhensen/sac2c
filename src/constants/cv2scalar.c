@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/22 18:55:29  cg
+ * Moved all definitions/declarations of global variables to globals.mac
+ *
  * Revision 1.3  2003/08/11 16:16:18  sbs
  * Now, COCv2Char indeed creates Chars (instead of Booleans) in COCv2Char!
  *
@@ -22,11 +25,6 @@
 #include "dbug.h"
 
 #include "cv2scalar.h"
-
-#define TYP_IFcv2scal(fun) fun
-cv2scalarfunptr cv2scalar[] = {
-#include "type_info.mac"
-};
 
 /*
  * Functions for converting a single element from a Constant-Vector (void *)

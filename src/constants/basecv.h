@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/11/22 18:55:29  cg
+ * Moved all definitions/declarations of global variables to globals.mac
+ *
  * Revision 1.2  2004/11/22 11:27:04  ktr
  * Ismop SacDevCamp 04
  *
@@ -13,9 +16,6 @@
 #define _SAC_BASECV_H_
 
 #include "types.h"
-
-extern basecvfunptr basecv_zero[];
-extern basecvfunptr basecv_one[];
 
 #define EXT_DECLS(fun)                                                                   \
     extern constant *COBaseCvUShort##fun (shape *shp);                                   \

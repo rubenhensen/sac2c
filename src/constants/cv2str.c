@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/22 18:55:29  cg
+ * Moved all definitions/declarations of global variables to globals.mac
+ *
  * Revision 1.5  2003/04/07 14:24:41  sbs
  * new printing mechanism built and correct format strings inserted
  * for longs etcpp.
@@ -42,11 +45,6 @@
 #include "internal_lib.h"
 
 #include "cv2str.h"
-
-#define TYP_IFcv2str(fun) fun
-cv2strfunptr cv2str[] = {
-#include "type_info.mac"
-};
 
 /******************************************************************************
  *
