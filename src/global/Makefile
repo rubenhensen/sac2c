@@ -1,6 +1,10 @@
 #
 # $Log$
-# Revision 1.16  1995/03/28 12:08:16  hw
+# Revision 1.17  1995/03/29 11:50:51  hw
+# added -I../compile
+# make deps done
+#
+# Revision 1.16  1995/03/28  12:08:16  hw
 #  added internal_lib.o
 # make deps done
 #
@@ -57,7 +61,7 @@ MAKE=make
 CC=gcc -ansi -g 
 
 INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
-     -I../optimize -I../modules -I../global -I../refcount \
+     -I../optimize -I../modules -I../global -I../refcount -I../compile \
      -I/usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include
 
 all: main.o Error.o traverse.o usage.o my_debug.o tree.o free.o internal_lib.o
@@ -116,7 +120,7 @@ main.o: usage.h ../flatten/flatten.h ../print/print.h
 main.o: ../typecheck/typecheck.h ../optimize/optimize.h
 main.o: ../optimize/ConstantFolding.h ../optimize/DeadCodeRemoval.h
 main.o: ../modules/filemgr.h ../modules/import.h ../refcount/refcount.h
-main.o: ../scanparse/scnprs.h ../scanparse/y.tab.h
+main.o: ../scanparse/scnprs.h ../scanparse/y.tab.h ../compile/compile.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
@@ -130,7 +134,8 @@ traverse.o: tree.h type_info.mac node_info.mac prf_node_info.mac free.h
 traverse.o: Error.h ../../inc/dbug.h my_debug.h ../flatten/flatten.h
 traverse.o: ../print/print.h ../typecheck/typecheck.h ../optimize/optimize.h
 traverse.o: ../optimize/ConstantFolding.h ../optimize/DeadCodeRemoval.h
-traverse.o: ../modules/import.h ../refcount/refcount.h traverse.h
+traverse.o: ../modules/import.h ../refcount/refcount.h ../compile/compile.h
+traverse.o: traverse.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 tree.o: tree.h type_info.mac node_info.mac prf_node_info.mac ../../inc/dbug.h
