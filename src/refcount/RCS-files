@@ -8,3 +8,4 @@ allocation.h
 reuse.c
 reuse.h
 rcopt.c
+rcopt.h
