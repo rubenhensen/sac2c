@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.43  2000/10/26 23:11:20  dkr
+ * functions GetDim(), Type2Shpseg() used instead of TYPES_DIM, TYPES_SHPSEG
+ * in order to get correct results even for user-defined types!!
+ *
  * Revision 2.42  2000/10/26 12:47:47  dkr
  * DupShpSeg renamed into DupShpseg
  *
@@ -348,6 +352,7 @@ static inside_wl *inside_wl_root;
 int
 CalculateArrayOffset (types *array, node *index)
 {
+    shpseg *tmp_shpseg;
     int offset;
     int i, n, m;
 
@@ -356,19 +361,23 @@ CalculateArrayOffset (types *array, node *index)
     DBUG_ASSERT ((1 == TYPES_DIM (ARRAY_TYPE (index))), "wrong index vector dimension");
 
     n = TYPES_SHAPE (ARRAY_TYPE (index), 0); /* length of index vector */
-    m = TYPES_DIM (array);                   /* dimension of array */
+    m = GetDim (array);                      /* dimension of array */
+    tmp_shpseg = Type2Shpseg (array);
 
     index = ARRAY_AELEMS (index);
     offset = NUM_VAL (EXPRS_EXPR (index));
     index = EXPRS_NEXT (index);
 
     for (i = 1; i < n; i++) {
-        offset = offset * TYPES_SHAPE (array, i) + NUM_VAL (EXPRS_EXPR (index));
+        offset = offset * SHPSEG_SHAPE (tmp_shpseg, i) + NUM_VAL (EXPRS_EXPR (index));
         index = EXPRS_NEXT (index);
     }
 
-    for (i = n; i < m; i++)
-        offset *= TYPES_SHAPE (array, i);
+    for (i = n; i < m; i++) {
+        offset *= SHPSEG_SHAPE (tmp_shpseg, i);
+    }
+
+    tmp_shpseg = FreeShpseg (tmp_shpseg);
 
     DBUG_RETURN (offset);
 }
@@ -1822,10 +1831,10 @@ FetchElem (int pos, node *array)
 node *
 CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
 {
-    int length, start, mult, i, j, arg_length;
+    int length, start, mult, i, j, array_length;
     int vec_dim, array_dim, result_dim;
     int vec_shape[SHP_SEG_SIZE];
-    shpseg *array_shape, *result_shape;
+    shpseg *array_shape;
     node *res_node = NULL;
 
     DBUG_ENTER ("CalcPsi");
@@ -1834,17 +1843,11 @@ CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
 
     /* Calculate dimension and shape vector of first argument */
     vec_dim = GetShapeVector (shape, vec_shape);
-    array_dim = TYPES_DIM (array_type);
-    array_shape = TYPES_SHPSEG (array_type);
-    result_dim = TYPES_DIM (INFO_CF_TYPE (arg_info));
-
-    /* Calculate length of result array */
-    length = 1;
-    if (0 < result_dim) {
-        result_shape = TYPES_SHPSEG (INFO_CF_TYPE (arg_info));
-        for (i = 0; i < result_dim; i++)
-            length *= SHPSEG_SHAPE (result_shape, i);
-    }
+    array_dim = GetDim (array_type);
+    array_length = GetTypesLength (array_type);
+    array_shape = Type2Shpseg (array_type);
+    result_dim = GetDim (INFO_CF_TYPE (arg_info));
+    length = GetTypesLength (INFO_CF_TYPE (arg_info));
 
     /* Calculate startposition of result array in argument array */
     start = 0;
@@ -1859,13 +1862,9 @@ CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
         }
     }
 
-    arg_length = 1;
-    for (i = 0; i < array_dim; i++)
-        arg_length *= SHPSEG_SHAPE (array_shape, i);
-
-    DBUG_PRINT ("CF",
-                ("start = %d, lenght = %d, arg_length = %d", start, length, arg_length));
-    if ((start + length <= arg_length) && (start >= 0)) {
+    DBUG_PRINT ("CF", ("start = %d, lenght = %d, arg_length = %d", start, length,
+                       array_length));
+    if ((start + length <= array_length) && (start >= 0)) {
         if (vec_dim == array_dim)
             res_node = FetchElem (start, array);
         else
