@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1994/11/10 17:30:44  sbs
+ * Revision 1.8  1994/11/10 17:31:54  sbs
+ * error in modarray fixed
+ *
+ * Revision 1.7  1994/11/10  17:30:44  sbs
  * Expr inserted in modarray + genarray
  *
  * Revision 1.6  1994/11/10  15:19:42  sbs
@@ -637,7 +640,7 @@ conexpr: GENARRAY BRACKET_L expr BRACKET_R retassignblock
            { $$=MakeNode(N_modarray);
              $$->node[0]=$3;         /* Name des Arrays */
              $$->node[1]=$5;            /* Rumpf */
-             $$->nnode=1;
+             $$->nnode=2;
 
              DBUG_PRINT("GENTREE",
                         ("%s " P_FORMAT ": ID: %s, %s " P_FORMAT,
