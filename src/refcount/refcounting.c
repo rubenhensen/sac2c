@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2004/10/22 17:10:04  ktr
+ * removed unused variables.
+ *
  * Revision 1.20  2004/10/22 15:39:19  ktr
  * Added support for F_reuse.
  *
@@ -2098,8 +2101,6 @@ EMRCNwithid (node *arg_node, info *arg_info)
 node *
 EMRCNwithop (node *arg_node, info *arg_info)
 {
-    rc_mode old_rc_mode;
-
     DBUG_ENTER ("EMRCNwithop");
 
     switch (NWITHOP_TYPE (arg_node)) {
@@ -2171,8 +2172,6 @@ EMRCNwithop (node *arg_node, info *arg_info)
 node *
 EMRCprf (node *arg_node, info *arg_info)
 {
-    rc_mode old_rc_mode;
-
     DBUG_ENTER ("EMRCprf");
 
     switch (PRF_PRF (arg_node)) {
