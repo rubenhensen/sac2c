@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/11/16 19:33:24  cg
+ * Revision 1.5  1995/12/01 16:16:12  cg
+ * new macro FREE is designed to replace macros with the same name
+ * in typecheck, compile, optimize, etc.
+ *
+ * Revision 1.4  1995/11/16  19:33:24  cg
  * The free module was entirely rewritten.
  * Each node type now has its own free function.
  * Functions FreeTree and FreeNode for deleting single nodes and
@@ -26,18 +30,24 @@
 
 #define _sac_free_h
 
+#define FREE(address)                                                                    \
+    if (address != NULL) {                                                               \
+        DBUG_PRINT ("MEM", ("Free memory at adress: %08x", address));                    \
+        free (address);                                                                  \
+        address = NULL;                                                                  \
+    }
+
 extern node *FreeNode (node *);
 extern node *FreeTree (node *);
 
 extern shpseg *FreeShpseg (shpseg *fr);
-extern shpseg *FreeAllShpseg (shpseg *fr);
-extern types *FreeTypes (types *fr);
+extern types *FreeOneTypes (types *fr);
 extern types *FreeAllTypes (types *fr);
-extern ids *FreeIds (ids *fr);
+extern ids *FreeOneIds (ids *fr);
 extern ids *FreeAllIds (ids *fr);
-extern nums *FreeNums (nums *fr);
+extern nums *FreeOneNums (nums *fr);
 extern nums *FreeAllNums (nums *fr);
-extern strings *FreeStrings (strings *fr);
+extern strings *FreeOneStrings (strings *fr);
 extern strings *FreeAllStrings (strings *fr);
 extern nodelist *FreeNodelist (nodelist *fr);
 
@@ -83,6 +93,7 @@ extern node *FreePre (node *arg_node, node *arg_info);
 extern node *FreeIcm (node *arg_node, node *arg_info);
 extern node *FreeDec (node *arg_node, node *arg_info);
 extern node *FreeInc (node *arg_node, node *arg_info);
+extern node *FreePragma (node *arg_node, node *arg_info);
 
 extern void FreePrf2 (node *arg_node, int arg_no);
 
