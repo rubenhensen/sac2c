@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/11/23 11:06:20  khf
+ * ismop 2004
+ *
  * Revision 3.13  2004/11/22 21:29:55  ktr
  * Big Switch Header! SacDevCamp 04
  *
@@ -163,16 +166,16 @@ extern void **LUTsearchInLutNextS (void);
 extern void *LUTsearchInLutPp (lut_t *lut, void *old_item);
 extern char *LUTsearchInLutSs (lut_t *lut, char *old_item);
 
-extern lut_t LUTinsertIntoLutP (lut_t *lut, void *old_item, void *new_item);
-extern lut_t LUTinsertIntoLutS (lut_t *lut, char *old_item, void *new_item);
+extern lut_t *LUTinsertIntoLutP (lut_t *lut, void *old_item, void *new_item);
+extern lut_t *LUTinsertIntoLutS (lut_t *lut, char *old_item, void *new_item);
 
-extern lut_t LUTupdateLutP (lut_t *lut, void *old_item, void *new_item,
-                            void **found_item);
-extern lut_t LUTupdateLutS (lut_t *lut, char *old_item, void *new_item,
-                            void **found_item);
+extern lut_t *LUTupdateLutP (lut_t *lut, void *old_item, void *new_item,
+                             void **found_item);
+extern lut_t *LUTupdateLutS (lut_t *lut, char *old_item, void *new_item,
+                             void **found_item);
 
-extern lut_t LUTmapLutS (lut_t *lut, void *(*fun) (void *));
-extern lut_t LUTmapLutP (lut_t *lut, void *(*fun) (void *));
+extern lut_t *LUTmapLutS (lut_t *lut, void *(*fun) (void *));
+extern lut_t *LUTmapLutP (lut_t *lut, void *(*fun) (void *));
 extern void *LUTfoldLutS (lut_t *lut, void *init, void *(*fun) (void *, void *));
 extern void *LUTfoldLutP (lut_t *lut, void *init, void *(*fun) (void *, void *));
 
