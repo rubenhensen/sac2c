@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/08 10:11:42  nmw
+ * no more warnings on alpha
+ *
  * Revision 3.1  2000/11/20 18:01:11  sacbase
  * new release made
  *
@@ -189,7 +192,7 @@
 
 #include <stdio.h>
 #include <string.h>
-
+#include <stdlib.h>
 #include "dbug.h"
 #include "globals.h"
 #include "resource.h"
