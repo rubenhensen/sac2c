@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.19  1999/09/20 11:33:32  jhs
+ * Added (L_)VARDEC_OR_ARG_BNEXT.
+ * Brushed MakeIcm(0..6).
+ *
  * Revision 2.18  1999/09/10 14:24:39  jhs
  * Added some DO_OR_WHILE_xxx macros to access both type of loops with one
  * type of macro.
@@ -634,6 +638,14 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
     ((NODE_TYPE (n) == N_arg) ? ARG_REFCNT (n) : VARDEC_REFCNT (n))
 #define VARDEC_OR_ARG_NAIVE_REFCNT(n)                                                    \
     ((NODE_TYPE (n) == N_arg) ? ARG_NAIVE_REFCNT (n) : VARDEC_NAIVE_REFCNT (n))
+#define VARDEC_OR_ARG_NEXT(n) ((NODE_TYPE (n) == N_arg) ? ARG_NEXT (n) : VARDEC_NEXT (n))
+
+#define L_VARDEC_OR_ARG_NEXT(n, rhs)                                                     \
+    if (NODE_TYPE (n) == N_arg) {                                                        \
+        ARG_NEXT (n) = (rhs);                                                            \
+    } else {                                                                             \
+        VARDEC_NEXT (n) = (rhs);                                                         \
+    }
 
 #define L_VARDEC_OR_ARG_REFCNT(n, rhs)                                                   \
     if (NODE_TYPE (n) == N_arg) {                                                        \
@@ -1718,6 +1730,8 @@ extern node *MakeIcm3 (char *name, node *arg1, node *arg2, node *arg3);
 extern node *MakeIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4);
 extern node *MakeIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
                        node *arg5);
+extern node *MakeIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                       node *arg5, node *arg6);
 
 /*--------------------------------------------------------------------------*/
 

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/09/20 11:33:32  jhs
+ * Added (L_)VARDEC_OR_ARG_BNEXT.
+ * Brushed MakeIcm(0..6).
+ *
  * Revision 2.10  1999/09/01 12:31:35  sbs
  * IsConstantArray now is able to deal with NULL-args!
  *
@@ -1346,6 +1350,22 @@ AppendExprs (node *exprs1, node *exprs2)
  ******************************************************************************/
 
 node *
+CombineExprs (node *first, node *second)
+{
+    node *result;
+
+    DBUG_ENTER ("CombineExprs");
+
+    if (NODE_TYPE (first) != N_exprs) {
+        result = MakeExprs (first, second);
+    } else {
+        result = AppendExprs (first, second);
+    }
+
+    DBUG_RETURN (result);
+}
+
+node *
 MakeIcm0 (char *name)
 {
     node *icm;
@@ -1364,9 +1384,7 @@ MakeIcm1 (char *name, node *arg1)
 
     DBUG_ENTER ("MakeIcm1");
 
-    if (NODE_TYPE (arg1) != N_exprs) {
-        arg1 = MakeExprs (arg1, NULL);
-    }
+    arg1 = CombineExprs (arg1, NULL);
 
     icm = MakeIcm (name, arg1, NULL);
 
@@ -1380,15 +1398,8 @@ MakeIcm2 (char *name, node *arg1, node *arg2)
 
     DBUG_ENTER ("MakeIcm2");
 
-    if (NODE_TYPE (arg2) != N_exprs) {
-        arg2 = MakeExprs (arg2, NULL);
-    }
-
-    if (NODE_TYPE (arg1) != N_exprs) {
-        arg1 = MakeExprs (arg1, arg2);
-    } else {
-        arg1 = AppendExprs (arg1, arg2);
-    }
+    arg2 = CombineExprs (arg2, NULL);
+    arg1 = CombineExprs (arg1, arg2);
 
     icm = MakeIcm (name, arg1, NULL);
 
@@ -1402,21 +1413,9 @@ MakeIcm3 (char *name, node *arg1, node *arg2, node *arg3)
 
     DBUG_ENTER ("MakeIcm3");
 
-    if (NODE_TYPE (arg3) != N_exprs) {
-        arg3 = MakeExprs (arg3, NULL);
-    }
-
-    if (NODE_TYPE (arg2) != N_exprs) {
-        arg2 = MakeExprs (arg2, arg3);
-    } else {
-        arg2 = AppendExprs (arg2, arg3);
-    }
-
-    if (NODE_TYPE (arg1) != N_exprs) {
-        arg1 = MakeExprs (arg1, arg2);
-    } else {
-        arg1 = AppendExprs (arg1, arg2);
-    }
+    arg3 = CombineExprs (arg3, NULL);
+    arg2 = CombineExprs (arg2, arg3);
+    arg1 = CombineExprs (arg1, arg2);
 
     icm = MakeIcm (name, arg1, NULL);
 
@@ -1430,27 +1429,10 @@ MakeIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4)
 
     DBUG_ENTER ("MakeIcm4");
 
-    if (NODE_TYPE (arg4) != N_exprs) {
-        arg4 = MakeExprs (arg4, NULL);
-    }
-
-    if (NODE_TYPE (arg3) != N_exprs) {
-        arg3 = MakeExprs (arg3, arg4);
-    } else {
-        arg3 = AppendExprs (arg3, arg4);
-    }
-
-    if (NODE_TYPE (arg2) != N_exprs) {
-        arg2 = MakeExprs (arg2, arg3);
-    } else {
-        arg2 = AppendExprs (arg2, arg3);
-    }
-
-    if (NODE_TYPE (arg1) != N_exprs) {
-        arg1 = MakeExprs (arg1, arg2);
-    } else {
-        arg1 = AppendExprs (arg1, arg2);
-    }
+    arg4 = CombineExprs (arg4, NULL);
+    arg3 = CombineExprs (arg4, arg4);
+    arg2 = CombineExprs (arg2, arg3);
+    arg1 = CombineExprs (arg1, arg2);
 
     icm = MakeIcm (name, arg1, NULL);
 
@@ -1464,33 +1446,31 @@ MakeIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5
 
     DBUG_ENTER ("MakeIcm5");
 
-    if (NODE_TYPE (arg5) != N_exprs) {
-        arg5 = MakeExprs (arg5, NULL);
-    }
+    arg5 = CombineExprs (arg5, NULL);
+    arg4 = CombineExprs (arg4, arg5);
+    arg3 = CombineExprs (arg4, arg4);
+    arg2 = CombineExprs (arg2, arg3);
+    arg1 = CombineExprs (arg1, arg2);
 
-    if (NODE_TYPE (arg4) != N_exprs) {
-        arg4 = MakeExprs (arg4, arg5);
-    } else {
-        arg4 = AppendExprs (arg4, arg5);
-    }
+    icm = MakeIcm (name, arg1, NULL);
 
-    if (NODE_TYPE (arg3) != N_exprs) {
-        arg3 = MakeExprs (arg3, arg4);
-    } else {
-        arg3 = AppendExprs (arg3, arg4);
-    }
+    DBUG_RETURN (icm);
+}
 
-    if (NODE_TYPE (arg2) != N_exprs) {
-        arg2 = MakeExprs (arg2, arg3);
-    } else {
-        arg2 = AppendExprs (arg2, arg3);
-    }
+node *
+MakeIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5,
+          node *arg6)
+{
+    node *icm;
 
-    if (NODE_TYPE (arg1) != N_exprs) {
-        arg1 = MakeExprs (arg1, arg2);
-    } else {
-        arg1 = AppendExprs (arg1, arg2);
-    }
+    DBUG_ENTER ("MakeIcm6");
+
+    arg6 = CombineExprs (arg6, NULL);
+    arg5 = CombineExprs (arg5, arg6);
+    arg4 = CombineExprs (arg4, arg5);
+    arg3 = CombineExprs (arg4, arg4);
+    arg2 = CombineExprs (arg2, arg3);
+    arg1 = CombineExprs (arg1, arg2);
 
     icm = MakeIcm (name, arg1, NULL);
 
