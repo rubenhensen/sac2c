@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.169  1998/05/14 16:06:49  srs
+ * renamed INFO_UNR_LET into INFO_UNR_ASSIGN
+ *
  * Revision 1.168  1998/05/14 15:21:00  srs
  * added INFO_UNR_LET
  *
@@ -2394,7 +2397,7 @@ extern node *MakeInfo ();
 #define INFO_CF_TYPE(n) (n->info.types)
 
 /* Unrolling */
-#define INFO_UNR_LET(n) (n->node[0])
+#define INFO_UNR_ASSIGN(n) (n->node[0])
 
 /* Icm2c, ... */
 #define INFO_FUNDEF(n) (n->node[0])
