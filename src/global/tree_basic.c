@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/08/25 15:30:44  bs
+ * MakeNCode modified.
+ *
  * Revision 2.9  1999/07/20 16:39:19  jhs
  * Added SYNC_FOLDCOUNT.
  *
@@ -1583,6 +1586,7 @@ MakeNCode (node *block, node *expr)
     NCODE_CEXPR (tmp) = expr;
     NCODE_USED (tmp) = 0;
     NCODE_COPY (tmp) = NULL;
+    NCODE_WLAA_INFO (tmp) = NULL;
 
     DBUG_RETURN (tmp);
 }
