@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.78  1995/08/07 10:30:38  cg
+ * Revision 1.79  1995/08/08 09:55:08  cg
+ * Bug in DBUG_PRINT of function declaration fixed for parameterless functions.
+ *
+ * Revision 1.78  1995/08/07  10:30:38  cg
  * varargs added. Optional function names for external declarations added.
  *
  * Revision 1.77  1995/07/26  08:41:57  cg
@@ -600,7 +603,9 @@ fundec: varreturntypes ID BRACKET_L fundec2
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT" Id: %s , NULL body,  %s" P_FORMAT,
                         mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
-                        mdb_nodetype[ $$->node[2]->nodetype ], $$->node[2]));
+                        mdb_nodetype[ ($$->node[2]==NULL)
+                                      ?T_void:($$->node[2]->nodetype) ],
+                        $$->node[2]));
           }         
       | varreturntypes ID BRACE_L ID BRACE_R BRACKET_L fundec2
           {
@@ -622,7 +627,9 @@ fundec: varreturntypes ID BRACKET_L fundec2
                           "%s" P_FORMAT,
                           mdb_nodetype[$$->nodetype ], $$, $$->info.types->id,
                           (char *)$$->node[5],
-                          mdb_nodetype[$$->node[2]->nodetype ], $$->node[2]));
+                          mdb_nodetype[($$->node[2]==NULL)
+                                      ?T_void:($$->node[2]->nodetype) ],
+                          $$->node[2]));
 
             }
           }         
@@ -647,7 +654,9 @@ fundec: varreturntypes ID BRACKET_L fundec2
                           "%s" P_FORMAT,
                           mdb_nodetype[$$->nodetype ], $$, $$->info.types->id,
                           (char *)$$->node[5],
-                          mdb_nodetype[$$->node[2]->nodetype ], $$->node[2]));
+                          mdb_nodetype[($$->node[2]==NULL)
+                                      ?T_void:($$->node[2]->nodetype) ],
+                          $$->node[2]));
              }
              
           }
@@ -669,7 +678,9 @@ fundec: varreturntypes ID BRACKET_L fundec2
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT" Id: %s , NULL body,  %s" P_FORMAT,
                         mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
-                        mdb_nodetype[ $$->node[2]->nodetype ], $$->node[2]));
+                        mdb_nodetype[ ($$->node[2]==NULL)
+                                      ?T_void:($$->node[2]->nodetype) ],
+                        $$->node[2]));
 
              }
              
