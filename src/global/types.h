@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2004/11/22 14:05:54  sbs
+ * stuff from new_types.h added
+ *
  * Revision 3.37  2004/11/22 14:01:39  ktr
  * Ismop SacDevCamp 04
  *
@@ -745,5 +748,21 @@ typedef void (*zipcvfunptr) (void *, int, void *, int, void *, int);
  */
 typedef struct STR_BUF str_buf;
 typedef struct PTR_BUF ptr_buf;
+
+/**
+ * moved from new_types.h
+ */
+
+typedef struct NTYPE ntype;
+
+/*
+ * basic stuff which should only be used if essential from a performance
+ * point of view, as it unleashes part of the implementation...
+ */
+
+typedef enum {
+#define TCITypeConstr(a) a
+#include "type_constructor_info.mac"
+} typeconstr;
 
 #endif /* _SAC_TYPES_H_ */
