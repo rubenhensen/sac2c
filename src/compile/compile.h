@@ -1,5 +1,10 @@
 /*
+ *
  * $Log$
+ * Revision 2.11  2000/10/09 19:20:05  dkr
+ * GetUnadjustedFoldCode() renamed into GetFoldCode()
+ * GetAdjustedFoldCode() removed
+ *
  * Revision 2.10  2000/07/31 10:45:52  cg
  * Eventually, the son ICM_NEXT is removed from the N_icm node.
  * The creation function MakeIcm is adjusted accordingly.
@@ -27,10 +32,10 @@
  *
  * Revision 1.1  1995/03/29  12:38:10  hw
  * Initial revision
+ *
  */
 
 #ifndef _sac_compile_h
-
 #define _sac_compile_h
 
 extern node *Compile (node *arg_node);
@@ -70,8 +75,7 @@ extern node *COMPMTsignal (node *arg_node, node *arg_info);
 extern node *COMPMTalloc (node *arg_node, node *arg_info);
 extern node *COMPMTsync (node *arg_node, node *arg_info);
 
-extern node *GetUnadjustedFoldCode (node *fundef);
-extern node *GetAdjustedFoldCode (node *fundef, ids *acc, node *cexpr);
+extern node *GetFoldCode (node *fundef);
 extern node *GetFoldVardecs (node *fundef);
 
 /*
