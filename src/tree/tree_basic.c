@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2003/09/11 15:26:17  sbs
+ * FUNDEF_SPECS added.
+ *
  * Revision 3.71  2003/06/11 22:03:09  ktr
  * ARRAY_SHAPE added.
  *
@@ -741,6 +744,7 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
 
     FUNDEF_FUNNO (tmp) = 0;
     FUNDEF_INLINE (tmp) = FALSE;
+    FUNDEF_SPECS (tmp) = 0;
 
     FUNDEF_USED (tmp) = USED_INACTIVE;
 

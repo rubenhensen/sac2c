@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.168  2003/09/11 15:26:06  sbs
+ * FUNDEF_SPECS added.
+ *
  * Revision 3.167  2003/08/16 08:45:54  ktr
  * SelectionPropagation added. Must currently be activated with -dosp.
  *
@@ -1086,6 +1089,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***  temporary attributes:
  ***
  ***    node*           SIB         (N_sib)       (readsib !!)
+ ***    int             SPECS                     (new_typecheck !!)
  ***    node*           RETURN      (N_return)    (typecheck -> compile !!)
  ***    node*           IMPL        (N_fundef)    (typecheck !!)          only newTS!!
  ***    nodelist*       NEEDOBJS                  (import -> )
@@ -1197,6 +1201,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEC_DEF(n) (n->node[3])
 #define FUNDEF_NEEDOBJS(n) ((nodelist *)(n->dfmask[6]))
 #define FUNDEF_VARNO(n) (n->varno)
+#define FUNDEF_SPECS(n) (n->varno)
 #define FUNDEF_INLREC(n) (n->refcnt)
 #define FUNDEF_EXPORT(n) (n->refcnt)
 #define FUNDEF_TCSTAT(n) (n->refcnt)
