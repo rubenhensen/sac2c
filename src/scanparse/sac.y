@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1994/11/23 09:45:00  hw
+ * Revision 1.19  1994/11/28 13:26:02  hw
+ * error in "exprblock" fixed
+ *
+ * Revision 1.18  1994/11/23  09:45:00  hw
  * added rule: expr -> TRUE ; expr -> FALSE
  *
  * Revision 1.17  1994/11/22  14:22:53  hw
@@ -244,7 +247,7 @@ exprblock: BRACE_L {$$=MakeNode(N_block);} vardecs assigns retassign
               else /* no assigns */
               {
                  $$->node[0]=MakeNode(N_assign);
-                 $$->node[0]->node[0]=$3;  /* Returnanweisung */
+                 $$->node[0]->node[0]=$4;  /* Returnanweisung */
                  $$->node[0]->nnode=1;
                  $$->nnode=1;
               
