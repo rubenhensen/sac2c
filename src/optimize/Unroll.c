@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/10/10 12:45:28  dkr
+ * no changes done
+ *
  * Revision 2.9  2000/06/23 15:19:38  dkr
  * signature of DupTree changed
  *
@@ -87,7 +90,6 @@
  * Revision 1.1  1995/05/26  14:22:26  asi
  * Initial revision
  *
- *
  */
 
 #include <stdio.h>
@@ -110,150 +112,21 @@
 #include "Unroll.h"
 #include "WLUnroll.h"
 
-/*
+/******************************************************************************
  *
- *  functionname  : Unroll
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   prf ReversePrf(prf fun)
  *
- *  remarks       :
+ * Description:
  *
- */
-node *
-Unroll (node *arg_node, node *arg_info)
-{
-    funtab *tmp_tab;
-    int mem_lunr_expr = lunr_expr;
-    int mem_wlunr_expr = wlunr_expr;
-
-    DBUG_ENTER ("Unroll");
-    DBUG_PRINT ("OPT", ("LOOP/WL UNROLLING"));
-    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
-    tmp_tab = act_tab;
-    act_tab = unroll_tab;
-    arg_info = MakeNode (N_info);
-
-    arg_node = Trav (arg_node, arg_info);
-
-    FREE (arg_info);
-    act_tab = tmp_tab;
-
-    DBUG_PRINT ("OPT", ("                   LOOP result: %d", lunr_expr - mem_lunr_expr));
-    DBUG_PRINT ("OPT",
-                ("                     WL result: %d", wlunr_expr - mem_wlunr_expr));
-    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
-    DBUG_RETURN (arg_node);
-}
-
-/*
  *
- *  functionname  : UNRfundef
- *  arguments     : 1) fundef-node
- *                  2) NULL
- *                  R) fundef-node with unrolled loops in body of function
- *  description   : - generates info_node
- *                  - varno of the info_node will be set to the number of local variables
- *                      and arguments in this functions
- *                  - new entry will be pushed on the mrdl_stack
- *                  - generates two masks and links them to the info_node
- *                      [0] - variables additional defined in function and
- *                      [1] - variables additional used in function after optimization
- *                  - calls Trav to  unrolled loops in body of current function
- *                  - last entry will be poped from mrdl_stack
- *                  - updates masks in fundef node.
- *  global vars   : syntax_tree, mrdl_stack
- *  internal funs :
- *  external funs : GenMask, OptTrav
- *  macros        : DBUG...
- *
- *  remarks       : --
- *
- */
-node *
-UNRfundef (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("UNRfundef");
+ ******************************************************************************/
 
-    DBUG_PRINT ("UNR", ("Unroll in function: %s", arg_node->info.types->id));
-    LEVEL = 1;
-
-    /* needed to access the vardec in DoUnrollFold() in file  WLUnroll.c */
-    INFO_UNR_FUNDEF (arg_info) = arg_node;
-
-    if (FUNDEF_BODY (arg_node))
-        FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : UNRid
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-node *
-UNRid (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("UNRid");
-    arg_node->flag = LEVEL;
-    ID_DEF (arg_node) = MRD_GETLAST (ID_VARNO (arg_node), INFO_VARNO (arg_info));
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : UNRlet
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-node *
-UNRlet (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("UNRlet");
-
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-
-    arg_node->node[0]->flag = LEVEL;
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : ReversePrf
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
 prf
 ReversePrf (prf fun)
 {
     DBUG_ENTER ("ReversePrf");
+
     switch (fun) {
     case F_gt:
         fun = F_lt;
@@ -270,22 +143,20 @@ ReversePrf (prf fun)
     default:
         break;
     }
+
     DBUG_RETURN (fun);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : LoopIterations
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   linfo *LoopIterations(linfo *loop_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 linfo *
 LoopIterations (linfo *loop_info)
 {
@@ -304,15 +175,19 @@ LoopIterations (linfo *loop_info)
             default:
                 loop_info->loop_num = UNDEF;
             }
-        } else if (N_do == loop_info->ltype)
-            loop_info->loop_num = 1;
-        else
-            loop_info->loop_num = 0;
+        } else {
+            if (N_do == loop_info->ltype) {
+                loop_info->loop_num = 1;
+            } else {
+                loop_info->loop_num = 0;
+            }
+        }
 
         /* calculate value of index variable after the loop */
         loop_info->end_num
           = loop_info->start_num + (loop_info->loop_num * loop_info->mod_num);
         break;
+
     case F_sub:
         num = (loop_info->start_num - loop_info->test_num) / loop_info->mod_num;
         rest = (loop_info->start_num - loop_info->test_num) % loop_info->mod_num;
@@ -324,15 +199,19 @@ LoopIterations (linfo *loop_info)
             default:
                 loop_info->loop_num = UNDEF;
             }
-        } else if (N_do == loop_info->ltype)
-            loop_info->loop_num = 1;
-        else
-            loop_info->loop_num = 0;
+        } else {
+            if (N_do == loop_info->ltype) {
+                loop_info->loop_num = 1;
+            } else {
+                loop_info->loop_num = 0;
+            }
+        }
 
         /* calculate value of index variable after the loop */
         loop_info->end_num
           = loop_info->start_num - (loop_info->loop_num * loop_info->mod_num);
         break;
+
     case F_mul:
         num = loop_info->test_num / (loop_info->start_num * loop_info->mod_num);
         rest = loop_info->test_num % (loop_info->start_num * loop_info->mod_num);
@@ -344,15 +223,19 @@ LoopIterations (linfo *loop_info)
             default:
                 loop_info->loop_num = UNDEF;
             }
-        } else if (N_do == loop_info->ltype)
-            loop_info->loop_num = 1;
-        else
-            loop_info->loop_num = 0;
+        } else {
+            if (N_do == loop_info->ltype) {
+                loop_info->loop_num = 1;
+            } else {
+                loop_info->loop_num = 0;
+            }
+        }
 
         /* calculate value of index variable after the loop */
         loop_info->end_num
           = loop_info->start_num * (loop_info->loop_num * loop_info->mod_num);
         break;
+
     default:
         loop_info->loop_num = UNDEF;
     }
@@ -360,19 +243,16 @@ LoopIterations (linfo *loop_info)
     DBUG_RETURN (loop_info);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : AnalyseLoop
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   linfo *AnalyseLoop(linfo *loop_info, node *id_node, int level)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 linfo *
 AnalyseLoop (linfo *loop_info, node *id_node, int level)
 {
@@ -387,6 +267,7 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
     if ((NULL != test) && (N_prf == NODE_TYPE (test))
         && (F_le <= (test_prf = PRF_PRF (test))) && (F_neq >= test_prf)
         && (test->flag == level)) {
+
         /* the constant value shall be on the right side of the expression */
         /* i.e. cond = Num op i will be changed to cond = i op Num         */
         if (IsConst (PRF_ARG1 (test))) {
@@ -410,59 +291,69 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
         if (N_id == NODE_TYPE (arg[0])) {
             loop_info->decl_node = ID_VARDEC (arg[0]);
             index = arg[0];
-        } else
+        } else {
             allright = FALSE;
+        }
 
-        if (N_num == NODE_TYPE (arg[1]))
+        if (N_num == NODE_TYPE (arg[1])) {
             loop_info->test_num = NUM_VAL (arg[1]);
-        else
+        } else {
             allright = FALSE;
+        }
     } else {
         allright = FALSE;
     }
 
     /* Do I have somthing like i = i op Num1 ...  cond = i op Num2 */
-    /*			           ^^^^^^^^^             |         */
-    /*		        	      mod  <-------------|         */
+    /*                               ^^^^^^^^^             |         */
+    /*                                  mod  <-------------|         */
     if (allright) {
         mod = ID_DEF (index);
         if ((NULL != mod) && (N_prf == NODE_TYPE (mod))
             && ((F_add == (loop_info->mod_prf = PRF_PRF (mod)))
                 || (F_sub == loop_info->mod_prf) || (F_mul == loop_info->mod_prf))
             && (mod->flag == level)) {
+
             arg[0] = mod->ARG1;
             arg[1] = mod->ARG2;
+
             if ((N_id == NODE_TYPE (arg[0]))
                 && (VARDEC_VARNO (loop_info->decl_node) == ID_VARNO (arg[0]))
                 && (N_num == NODE_TYPE (arg[1])) && (0 != NUM_VAL (arg[1]))) {
                 loop_info->mod_num = NUM_VAL (arg[1]);
                 index = arg[0];
-            } else if ((N_id == NODE_TYPE (arg[1]))
-                       && (loop_info->decl_node->varno == ID_VARNO (arg[1]))
-                       && (N_num == NODE_TYPE (arg[0])) && (0 != NUM_VAL (arg[0]))
-                       && (F_sub != loop_info->mod_prf)) {
-                loop_info->mod_num = NUM_VAL (arg[0]);
-                index = arg[1];
-            } else
-                allright = FALSE;
-        } else
+            } else {
+                if ((N_id == NODE_TYPE (arg[1]))
+                    && (loop_info->decl_node->varno == ID_VARNO (arg[1]))
+                    && (N_num == NODE_TYPE (arg[0])) && (0 != NUM_VAL (arg[0]))
+                    && (F_sub != loop_info->mod_prf)) {
+                    loop_info->mod_num = NUM_VAL (arg[0]);
+                    index = arg[1];
+                } else {
+                    allright = FALSE;
+                }
+            }
+        } else {
             allright = FALSE;
+        }
     }
 
     if (allright) {
         init = index->info.ids->def;
+
         /* index variable must be initialize with a constant value */
         if ((NULL != init) && (init->flag < level) && (N_num == init->nodetype)) {
             loop_info->start_num = init->info.cint;
-        } else
+        } else {
             allright = FALSE;
+        }
     }
 
     if (allright) {
         if ((F_mul == loop_info->mod_prf)
-            && ((0 == loop_info->mod_num) || (0 == loop_info->start_num)))
+            && ((0 == loop_info->mod_num) || (0 == loop_info->start_num))) {
             allright = FALSE;
-        else {
+        } else {
             if (0 == loop_info->mod_num) {
                 allright = FALSE;
             } else {
@@ -488,24 +379,32 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
             if (F_sub == loop_info->mod_prf) {
                 loop_info->test_prf = F_ge;
                 loop_info->test_num++;
-            } else
+            } else {
                 allright = FALSE;
+            }
             break;
+
         case F_lt:
             if ((F_add == loop_info->mod_prf) || (F_mul == loop_info->mod_prf)) {
                 loop_info->test_prf = F_le;
                 loop_info->test_num--;
-            } else
+            } else {
                 allright = FALSE;
+            }
             break;
+
         case F_le:
-            if (!((F_add == loop_info->mod_prf) || (F_mul == loop_info->mod_prf)))
+            if (!((F_add == loop_info->mod_prf) || (F_mul == loop_info->mod_prf))) {
                 allright = FALSE;
+            }
             break;
+
         case F_ge:
-            if (!(F_sub == loop_info->mod_prf))
+            if (!(F_sub == loop_info->mod_prf)) {
                 allright = FALSE;
+            }
             break;
+
         default:
             break;
         }
@@ -518,27 +417,26 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
     }
 
     DBUG_PRINT ("UNR", ("numbers of iteration %d", loop_info->loop_num));
+
     DBUG_RETURN (loop_info);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : DoUnroll
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *DoUnroll(node *arg_node, node *arg_info, linfo *loop_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 node *
 DoUnroll (node *arg_node, node *arg_info, linfo *loop_info)
 {
     int i;
-    node *tmp, *unroll = NULL;
+    node *tmp;
+    node *unroll = NULL;
 
     DBUG_ENTER ("DoUnroll");
 
@@ -547,6 +445,7 @@ DoUnroll (node *arg_node, node *arg_info, linfo *loop_info)
             DBUG_PRINT ("UNR", ("Unrolling %d times %s in line %d", loop_info->loop_num,
                                 mdb_nodetype[arg_node->nodetype], arg_node->lineno));
             lunr_expr++;
+
             switch (loop_info->loop_num) {
             case 0:
                 MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0],
@@ -557,6 +456,7 @@ DoUnroll (node *arg_node, node *arg_info, linfo *loop_info)
                 FreeTree (arg_node);
                 arg_node = MakeNode (N_empty);
                 break;
+
             case 1:
                 MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
                 unroll = arg_node->node[1]->node[0];
@@ -564,13 +464,13 @@ DoUnroll (node *arg_node, node *arg_info, linfo *loop_info)
                 FreeTree (arg_node);
                 arg_node = unroll;
                 break;
+
             default:
                 MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0],
                            INFO_VARNO (arg_info));
                 MinusMask (arg_info->mask[1], arg_node->node[1]->mask[1],
                            INFO_VARNO (arg_info));
                 MinusMask (arg_info->mask[1], arg_node->mask[1], INFO_VARNO (arg_info));
-
                 for (i = 0; i < loop_info->loop_num; i++) {
                     tmp = DupTree (arg_node->node[1]->node[0]);
                     unroll = AppendNodeChain (1, unroll, tmp);
@@ -590,19 +490,95 @@ DoUnroll (node *arg_node, node *arg_info, linfo *loop_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : UNRdo
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *UNRfundef(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
+ *   - generates info_node
+ *   - varno of the info_node will be set to the number of local variables
+ *     and arguments in this functions
+ *   - new entry will be pushed on the mrdl_stack
+ *   - generates two masks and links them to the info_node
+ *       [0] - variables additional defined in function and
+ *       [1] - variables additional used in function after optimization
+ *   - calls Trav to  unrolled loops in body of current function
+ *   - last entry will be poped from mrdl_stack
+ *   - updates masks in fundef node.
  *
- */
+ ******************************************************************************/
+
+node *
+UNRfundef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("UNRfundef");
+
+    DBUG_PRINT ("UNR", ("Unroll in function: %s", arg_node->info.types->id));
+    LEVEL = 1;
+
+    /* needed to access the vardec in DoUnrollFold() in file  WLUnroll.c */
+    INFO_UNR_FUNDEF (arg_info) = arg_node;
+
+    if (FUNDEF_BODY (arg_node)) {
+        FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *UNRid(node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+UNRid (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("UNRid");
+
+    arg_node->flag = LEVEL;
+    ID_DEF (arg_node) = MRD_GETLAST (ID_VARNO (arg_node), INFO_VARNO (arg_info));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *UNRlet(node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+UNRlet (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("UNRlet");
+
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    arg_node->node[0]->flag = LEVEL;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *UNRdo(node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
 node *
 UNRdo (node *arg_node, node *arg_info)
 {
@@ -619,9 +595,10 @@ UNRdo (node *arg_node, node *arg_info)
     if (optimize & OPT_LUR) {
         cond_node = DO_COND (arg_node);
 
-        if (N_id == NODE_TYPE (cond_node))
+        if (N_id == NODE_TYPE (cond_node)) {
             ID_DEF (cond_node)
               = MRD_GETLAST (ID_VARNO (cond_node), INFO_VARNO (arg_info));
+        }
 
         loop_info = (linfo *)Malloc (sizeof (linfo));
         loop_info->loop_num = UNDEF;
@@ -651,41 +628,37 @@ UNRdo (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : UNRwhile
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *UNRwhile(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 node *
 UNRwhile (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNRwhile");
+
     DBUG_PRINT ("UNR", ("Trav while loop in line %d", NODE_LINE (arg_node)));
     WHILE_INSTR (arg_node) = OPTTrav (WHILE_INSTR (arg_node), arg_info, arg_node);
+
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : UNRcond
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *UNRcond(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 node *
 UNRcond (node *arg_node, node *arg_info)
 {
@@ -758,6 +731,7 @@ UNRNwith (node *arg_node, node *arg_info)
                 arg_node = tmpn;
             }
             break;
+
         case WO_genarray:
             if (CheckUnrollGenarray (arg_node, arg_info)) {
                 wlunr_expr++;
@@ -773,6 +747,7 @@ UNRNwith (node *arg_node, node *arg_info)
                 arg_node = tmpn;
             }
             break;
+
         default:
             if (CheckUnrollFold (arg_node)) {
                 wlunr_expr++;
@@ -796,19 +771,16 @@ UNRNwith (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : UNRassign
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *UNRassign(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
+
 node *
 UNRassign (node *arg_node, node *arg_info)
 {
@@ -861,13 +833,54 @@ UNRassign (node *arg_node, node *arg_info)
             ASSIGN_NEXT (arg_node) = NULL;
             FreeTree (arg_node);
             arg_node = UNRassign (tmp_node, arg_info);
-        } else
+        } else {
             ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
+        }
         break;
 
     default:
         ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
         break;
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *Unroll(node *arg_node,node *arg_info)
+ *
+ * Description:
+ *   Top-level function for loop-unrolling. Starts the traversal.
+ *
+ ******************************************************************************/
+
+node *
+Unroll (node *arg_node, node *arg_info)
+{
+    int mem_lunr_expr = lunr_expr;
+    int mem_wlunr_expr = wlunr_expr;
+    funtab *tmp_tab;
+
+    DBUG_ENTER ("Unroll");
+
+    DBUG_PRINT ("OPT", ("LOOP/WL UNROLLING"));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
+
+    tmp_tab = act_tab;
+    act_tab = unroll_tab;
+    arg_info = MakeInfo ();
+
+    arg_node = Trav (arg_node, arg_info);
+
+    arg_info = FreeTree (arg_info);
+    act_tab = tmp_tab;
+
+    DBUG_PRINT ("OPT", ("                   LOOP result: %d", lunr_expr - mem_lunr_expr));
+    DBUG_PRINT ("OPT",
+                ("                     WL result: %d", wlunr_expr - mem_wlunr_expr));
+    DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
+
     DBUG_RETURN (arg_node);
 }
