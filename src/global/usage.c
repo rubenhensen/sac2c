@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2002/10/19 13:16:25  dkr
+ * some \n added
+ *
  * Revision 3.29  2002/10/18 14:16:50  ktr
  * changed option -wlsx to -wls <level>
  *
@@ -50,9 +53,6 @@
  * Revision 3.14  2001/05/25 09:21:56  nmw
  * ssa form related break specifier in optimizations added
  *
- * Revision 3.13  2001/05/07 15:13:28  dkr
- * minor changes done
- *
  * Revision 3.12  2001/05/07 14:21:24  dkr
  * all output lines contain <= 80 characters now
  *
@@ -70,52 +70,6 @@
  *
  * Revision 3.7  2001/02/05 15:55:42  dkr
  * break specifier for -b16 updated
- *
- * Revision 3.6  2001/01/25 10:17:29  dkr
- * -b21 added
- *
- * Revision 3.5  2001/01/08 12:03:52  dkr
- * compiler phases renumbered
- *
- * Revision 3.3  2000/11/27 21:04:38  cg
- * Added general support for new optimization APL,
- * "array placement"
- *
- * Revision 3.2  2000/11/24 16:31:06  nmw
- * trace option -trace c added
- *
- * Revision 3.1  2000/11/20 17:59:41  sacbase
- * new release made
- *
- * Revision 2.43  2000/11/17 16:21:06  sbs
- * -MM and -MMlib added.
- *
- * Revision 2.42  2000/11/14 16:47:47  sbs
- * string.h included which is needed by strlen
- *
- * Revision 2.41  2000/10/31 18:06:27  cg
- * Added additional break specifier -b15:dfr2.
- *
- * Revision 2.40  2000/10/27 13:23:13  cg
- * Added new command line options -aplimit and -apdiaglimit.
- *
- * Revision 2.39  2000/08/04 13:26:10  mab
- * added description for flag -apdiag
- *
- * Revision 2.38  2000/08/04 09:54:30  nmw
- * added hint for additional docu of the cinterface
- *
- * Revision 2.37  2000/08/02 11:13:44  nmw
- * genlib c comment for profiling and MT changed
- *
- * Revision 2.36  2000/08/01 13:44:40  nmw
- * comment to -genlib c switch adjusted
- *
- * Revision 2.35  2000/07/11 16:13:58  dkr
- * psi-opt phase removed
- *
- * Revision 2.34  2000/06/14 10:56:57  jhs
- * Added information about "out-of-order" phase 17 while doing -mtn
  *
  * [...]
  *
@@ -487,8 +441,10 @@ usage ()
 
     printf ("\t -wls <level> \t\tset WLS optimization level\n"
             "\t\t\t\t0: no optimization (same as -noWLS)\n"
-            "\t\t\t\t1: conservative WLS optimization scheme (default)\n"
-            "\t\t\t\t2: aggressive WLS optimization scheme (experimental)\n\n");
+            "\t\t\t\t1: conservative WLS optimization scheme\n"
+            "\t\t\t\t   (default)\n"
+            "\t\t\t\t2: aggressive WLS optimization scheme\n"
+            "\t\t\t\t   (experimental)\n\n");
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
