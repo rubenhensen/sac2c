@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1997/11/20 13:39:15  srs
+ * added PrintNPart and PrintNWith
+ *
  * Revision 1.20  1997/11/07 13:32:08  srs
  * removed unused function PrintLeton
  *
@@ -120,6 +123,8 @@ extern node *PrintPre (node *, node *);
 extern node *PrintIcm (node *, node *);
 extern node *PrintVectInfo (node *, node *);
 extern node *PrintPragma (node *, node *);
+extern node *PrintNWith (node *, node *);
+extern node *PrintNPart (node *, node *);
 
 extern void PrintFunctionHeader (node *arg_node, node *arg_info);
 
