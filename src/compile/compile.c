@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/05/12 14:35:16  cg
+ * Optimizations are now triggered by bit field optimize instead
+ * of single individual int variables.
+ *
  * Revision 2.8  1999/05/12 11:39:24  jhs
  * Adjusted macros to new access on constant vectors.
  *
@@ -760,7 +764,7 @@ int basetype_size[] = {
     } else {                                                                             \
         /* create ND_ALLOC_ARRAY */                                                      \
         node *num;                                                                       \
-        DBUG_ASSERT (((old->refcnt == -1) || (opt_rco == 0)),                            \
+        DBUG_ASSERT (((old->refcnt == -1) || (!(optimize & OPT_RCO))),                   \
                      "Refcnt of prf-arg neither -1 nor 1 !");                            \
         MAKENODE_NUM (num, 0);                                                           \
         BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), "ND_ALLOC_ARRAY", type_id_node,     \
@@ -3612,7 +3616,7 @@ COMPPrf (node *arg_node, node *arg_info)
                             arg_node = LET_EXPR (INFO_COMP_LASTLET (arg_info));
 
                             DBUG_ASSERT ((((-1 == arg1->refcnt) && (-1 == arg2->refcnt))
-                                          || (opt_rco == 0)),
+                                          || (!(optimize & OPT_RCO))),
                                          "Refcnt of BINOP_A_A arg neither -1 nor 1 !");
                         }
                     }
@@ -6593,7 +6597,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
     if ((NWITH2_TYPE (arg_node) == WO_genarray)
         || (NWITH2_TYPE (arg_node) == WO_modarray)) {
 
-        if (opt_uip) {
+        if (optimize & OPT_UIP) {
             /*
              * find all arrays, that possibly can be reused.
              */

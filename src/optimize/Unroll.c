@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/05/12 14:35:16  cg
+ * Optimizations are now triggered by bit field optimize instead
+ * of single individual int variables.
+ *
  * Revision 2.3  1999/04/19 12:50:45  jhs
  * TRUE and FALSE from internal_lib.h used from now on.
  *
@@ -519,7 +523,8 @@ DoUnroll (node *arg_node, node *arg_info, linfo *loop_info)
     node *tmp, *unroll = NULL;
 
     DBUG_ENTER ("DoUnroll");
-    if (opt_lunr && (loop_info->loop_num <= unrnum)) {
+
+    if ((optimize & OPT_LUR) && (loop_info->loop_num <= unrnum)) {
         DBUG_PRINT ("UNR", ("Unrolling %d times %s in line %d", loop_info->loop_num,
                             mdb_nodetype[arg_node->nodetype], arg_node->lineno));
         lunr_expr++;
@@ -582,7 +587,7 @@ UNRdo (node *arg_node, node *arg_info)
     DBUG_PRINT ("UNR", ("Trav do loop in line %d", NODE_LINE (arg_node)));
     DO_INSTR (arg_node) = OPTTrav (DO_INSTR (arg_node), arg_info, arg_node);
 
-    if (opt_lunr) {
+    if (optimize & OPT_LUR) {
         cond_node = DO_COND (arg_node);
 
         if (N_id == NODE_TYPE (cond_node))
@@ -754,7 +759,7 @@ UNRNwith (node *arg_node, node *arg_info)
 
     INFO_UNR_ASSIGN (arg_info) = save;
 
-    if (opt_wlunr) {
+    if (optimize & OPT_WLUR) {
         /* can this WL be unrolled? */
         switch (NWITH_TYPE (arg_node)) {
         case WO_modarray:

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/05/12 14:35:16  cg
+ * Optimizations are now triggered by bit field optimize instead
+ * of single individual int variables.
+ *
  * Revision 2.7  1999/05/10 11:08:55  bs
  * New optimization phase 'WLAccessAnalize' added.
  *
@@ -244,49 +248,49 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     DBUG_ENTER ("PrintStatistics");
 
     diff = inl_fun - off_inl_fun;
-    if (opt_inl && ((ALL == flag) || (diff > 0)))
+    if ((optimize & OPT_INL) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d function(s) inlined", diff));
 
     diff = elim_arrays - off_elim_arrays;
-    if (opt_ae && ((ALL == flag) || (diff > 0)))
+    if ((optimize & OPT_AE) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d array(s) eliminated", diff));
 
     diff = cf_expr - off_cf_expr;
-    if (opt_cf && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d primfun application(s) eliminated (constant folding)", diff));
+    if ((optimize & OPT_CF) && ((ALL == flag) || (diff > 0)))
+        NOTE (("  %d primfun application(s) eliminated by constant folding", diff));
 
     diff = (dead_expr - off_dead_expr) + (dead_var - off_dead_var);
-    if (opt_dcr && ((ALL == flag) || (diff > 0)))
+    if ((optimize & OPT_DCR) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d dead assignment(s) and %d unused variable declaration(s) removed",
                dead_expr - off_dead_expr, dead_var - off_dead_var));
 
     diff = dead_fun - off_dead_fun;
-    if (opt_dfr && ((ALL == flag) || (diff > 0)))
+    if ((optimize & OPT_DFR) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d dead functions(s) removed", diff));
 
     diff = cse_expr - off_cse_expr;
-    if (opt_cse && ((ALL == flag) || (diff > 0)))
+    if ((optimize & OPT_CSE) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d common subexpression(s) eliminated", diff));
 
     diff = wlf_expr - off_wlf_expr;
-    if (opt_wlf && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d withloop(s) folded", diff));
+    if ((optimize & OPT_WLF) && ((ALL == flag) || (diff > 0)))
+        NOTE (("  %d with-loop(s) folded", diff));
 
     diff = lir_expr - off_lir_expr;
-    if (opt_lir && ((ALL == flag) || (diff > 0)))
+    if ((optimize & OPT_LIR) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d loop invariant expression(s) moved", diff));
 
     diff = uns_expr - off_uns_expr;
-    if (opt_uns && ((ALL == flag) || (diff > 0)))
+    if ((optimize & OPT_LUS) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d loop(s) unswitched", diff));
 
     diff = lunr_expr - off_lunr_expr;
-    if (opt_lunr && ((ALL == flag) || (diff > 0)))
+    if ((optimize & OPT_LUR) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d loop(s) unrolled", diff));
 
     diff = wlunr_expr - off_wlunr_expr;
-    if (opt_wlunr && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d withloop(s) unrolled", diff));
+    if ((optimize & OPT_WLUR) && ((ALL == flag) || (diff > 0)))
+        NOTE (("  %d with-loop(s) unrolled", diff));
 
     DBUG_VOID_RETURN;
 }
@@ -367,7 +371,7 @@ OPTmodul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("OPTmodul");
 
-    if (opt_inl) {
+    if (optimize & OPT_INL) {
         arg_node = Inline (arg_node, arg_info); /* inline_tab */
     }
 
@@ -375,7 +379,7 @@ OPTmodul (node *arg_node, node *arg_info)
         && (0 == strcmp (break_specifier, "inl")))
         goto DONE;
 
-    if (opt_dfr) {
+    if (optimize & OPT_DFR) {
         arg_node = DeadFunctionRemoval (arg_node, arg_info);
     }
 
@@ -392,7 +396,7 @@ OPTmodul (node *arg_node, node *arg_info)
         /*
          * After doing so, we apply DFR once again!
          */
-        if (opt_dfr) {
+        if (optimize & OPT_DFR) {
             arg_node = DeadFunctionRemoval (arg_node, arg_info);
         }
     }
@@ -470,245 +474,255 @@ OPTfundef (node *arg_node, node *arg_info)
     strcpy (argtype_buffer, "( ");
     buffer_space = 77;
 
-    arg = FUNDEF_ARGS (arg_node);
-    while ((arg != NULL) && (buffer_space > 5)) {
-
-        tmp_str = Type2String (ARG_TYPE (arg), 1);
-        tmp_str_size = strlen (tmp_str);
-
-        if ((tmp_str_size + 3) <= buffer_space) {
-            strcat (argtype_buffer, tmp_str);
-            buffer_space -= tmp_str_size;
-            if (ARG_NEXT (arg) != NULL) {
-                strcat (argtype_buffer, ", ");
-                buffer_space -= 2;
-            }
-        } else {
-            strcat (argtype_buffer, "...");
-            buffer_space = 0;
-        }
-        arg = ARG_NEXT (arg);
-    }
-    strcat (argtype_buffer, ")");
-
-    NOTE (("optimizing %s %s: ...", FUNDEF_NAME (arg_node), argtype_buffer));
-
-    if (opt_ae) {
+    if (FUNDEF_BODY (arg_node) != NULL) {
         /*
-         * AE needs mask for MRD generation now.
+         * Any optimization technique may only be applied iff there's a function
+         * body.
+         */
+        arg = FUNDEF_ARGS (arg_node);
+        while ((arg != NULL) && (buffer_space > 5)) {
+
+            tmp_str = Type2String (ARG_TYPE (arg), 1);
+            tmp_str_size = strlen (tmp_str);
+
+            if ((tmp_str_size + 3) <= buffer_space) {
+                strcat (argtype_buffer, tmp_str);
+                buffer_space -= tmp_str_size;
+                if (ARG_NEXT (arg) != NULL) {
+                    strcat (argtype_buffer, ", ");
+                    buffer_space -= 2;
+                }
+            } else {
+                strcat (argtype_buffer, "...");
+                buffer_space = 0;
+            }
+            arg = ARG_NEXT (arg);
+        }
+        strcat (argtype_buffer, ")");
+
+        NOTE (("optimizing function %s %s: ...", FUNDEF_NAME (arg_node), argtype_buffer));
+
+        if (optimize & OPT_AE) {
+            /*
+             * AE needs mask for MRD generation now.
+             */
+            arg_node = GenerateMasks (arg_node, NULL);
+
+            arg_node = ArrayElimination (arg_node, arg_node); /* ae_tab */
+        }
+
+        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
+            && (0 == strcmp (break_specifier, "ae")))
+            goto INFO;
+
+        /*
+         * necessary after AE (which does not care about masks while introducing
+         * new variables:
          */
         arg_node = GenerateMasks (arg_node, NULL);
 
-        arg_node = ArrayElimination (arg_node, arg_node); /* ae_tab */
-    }
-
-    if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-        && (0 == strcmp (break_specifier, "ae")))
-        goto INFO;
-
-    /*
-     * necessary after AE (which does not care about masks while introducing
-     * new variables:
-     */
-    arg_node = GenerateMasks (arg_node, NULL);
-
-    if (opt_dcr) {
-        arg_node = DeadCodeRemoval (arg_node, arg_info);
-    }
-
-    if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-        && (0 == strcmp (break_specifier, "dcr")))
-        goto INFO;
-
-    /*
-     * Now, we enter the first loop. It consists of:
-     *   CSE, CF, WLT, WLF, (CF), DCR, LUNR/WLUNR, UNS, and LIR.
-     */
-    do {
-        loop1++;
-        DBUG_PRINT ("OPT", ("---------------------------------------- loop ONE, pass %d",
-                            loop1));
-
-        old_lir_expr = lir_expr;
-        old_lunr_expr = lunr_expr;
-        old_wlunr_expr = wlunr_expr;
-        old_uns_expr = uns_expr;
-        old_cse_expr = cse_expr;
-        old_wlf_expr = wlf_expr;
-        old_wlt_expr = wlt_expr;
-        old_dcr_expr = dead_fun + dead_var + dead_expr;
-        old_cf_expr = cf_expr;
-
-        if (opt_cse) {
-            arg_node = CSE (arg_node, arg_info); /* cse_tab */
-            arg_node = GenerateMasks (arg_node, NULL);
+        if (optimize & OPT_DCR) {
+            arg_node = DeadCodeRemoval (arg_node, arg_info);
         }
 
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-            && (0 == strcmp (break_specifier, "cse")))
-            goto INFO;
-
-        if (opt_cf) {
-            arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
-            /* srs: CF does not handle the USE mask correctly. For example
-               a = f(3);
-               b = a;
-               c = b;
-               will be transformed to
-               a = f(3);
-               b = a;
-               c = a;
-               after CF. But the USE mask of b is not reduced.
-               This leads to a DCR problem (b = a is removed but variable declaration
-               for b not. */
-
-            /* quick fix: always rebuild masks after CF */
-            arg_node = GenerateMasks (arg_node, NULL);
-        }
-
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-            && (0 == strcmp (break_specifier, "cf")))
-            goto INFO;
-
-        if (opt_wlt) {
-            arg_node = WithloopFoldingWLT (arg_node, arg_info); /* wlt */
-            arg_node = GenerateMasks (arg_node, NULL);
-        }
-
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-            && (0 == strcmp (break_specifier, "wlt")))
-            goto INFO;
-
-        if (opt_wlf) {
-            arg_node = WithloopFolding (arg_node, arg_info); /* wli, wlf */
-            /*
-             * rebuild mask which is necessary because of WL-body-substitutions
-             * and nserted new variables to prevent wrong variable bindings.
-             */
-            arg_node = GenerateMasks (arg_node, NULL);
-        }
-
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-            && ((0 == strcmp (break_specifier, "wli"))
-                || (0 == strcmp (break_specifier, "wlf"))))
-            goto INFO;
-
-        if (wlf_expr != old_wlf_expr) {
-            /*
-             * this may speed up the optimization phase a lot if a lot of code
-             * has been inserted by WLF.
-             */
-            if (opt_cf) {
-                arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
-                arg_node = GenerateMasks (arg_node, NULL);
-            }
-        }
-
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-            && (0 == strcmp (break_specifier, "cf2")))
-            goto INFO;
-
-        if (opt_dcr) {
-            arg_node = DeadCodeRemoval (arg_node, arg_info); /* s.o. */
-            arg_node = GenerateMasks (arg_node, NULL);
-        }
-
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
             && (0 == strcmp (break_specifier, "dcr")))
             goto INFO;
 
-        if (opt_lunr || opt_wlunr) {
-            arg_node = Unroll (arg_node, arg_info); /* unroll_tab */
-        }
+        /*
+         * Now, we enter the first loop. It consists of:
+         *   CSE, CF, WLT, WLF, (CF), DCR, LUNR/WLUNR, UNS, and LIR.
+         */
+        do {
+            loop1++;
+            DBUG_PRINT ("OPT",
+                        ("---------------------------------------- loop ONE, pass %d",
+                         loop1));
 
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-            && (0 == strcmp (break_specifier, "unr")))
-            goto INFO;
+            old_lir_expr = lir_expr;
+            old_lunr_expr = lunr_expr;
+            old_wlunr_expr = wlunr_expr;
+            old_uns_expr = uns_expr;
+            old_cse_expr = cse_expr;
+            old_wlf_expr = wlf_expr;
+            old_wlt_expr = wlt_expr;
+            old_dcr_expr = dead_fun + dead_var + dead_expr;
+            old_cf_expr = cf_expr;
 
-        if (opt_uns) {
-            arg_node = Unswitch (arg_node, arg_info); /* unswitch_tab */
-        }
+            if (optimize & OPT_CSE) {
+                arg_node = CSE (arg_node, arg_info); /* cse_tab */
+                arg_node = GenerateMasks (arg_node, NULL);
+            }
 
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-            && (0 == strcmp (break_specifier, "uns")))
-            goto INFO;
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                && (0 == strcmp (break_specifier, "cse")))
+                goto INFO;
 
-        if (opt_lir) {
-            arg_node
-              = LoopInvariantRemoval (arg_node, arg_info); /* lir_tab and lir_mov_tab */
-        }
+            if (optimize & OPT_CF) {
+                arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
+                /* srs: CF does not handle the USE mask correctly. For example
+                   a = f(3);
+                   b = a;
+                   c = b;
+                   will be transformed to
+                   a = f(3);
+                   b = a;
+                   c = a;
+                   after CF. But the USE mask of b is not reduced.
+                   This leads to a DCR problem (b = a is removed but variable declaration
+                   for b not. */
 
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-            && (0 == strcmp (break_specifier, "lir")))
-            goto INFO;
+                /* quick fix: always rebuild masks after CF */
+                arg_node = GenerateMasks (arg_node, NULL);
+            }
 
-    } while (((lir_expr != old_lir_expr) || (lunr_expr != old_lunr_expr)
-              || (uns_expr != old_uns_expr) || (wlunr_expr != old_wlunr_expr)
-              || (wlf_expr != old_wlf_expr) || (cse_expr != old_cse_expr))
-             && (loop1 < max_optcycles));
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                && (0 == strcmp (break_specifier, "cf")))
+                goto INFO;
 
-    /*
-     * Now, we enter the second loop consisting of
-     *   WLT and CF only.
-     */
-    while (wlt_expr != old_wlt_expr && opt_cf && (loop1 + loop2) < max_optcycles) {
-        old_wlt_expr = wlt_expr;
-        old_cf_expr = cf_expr;
+            if (optimize & OPT_WLT) {
+                arg_node = WithloopFoldingWLT (arg_node, arg_info); /* wlt */
+                arg_node = GenerateMasks (arg_node, NULL);
+            }
 
-        loop2++;
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                && (0 == strcmp (break_specifier, "wlt")))
+                goto INFO;
 
-        DBUG_PRINT ("OPT", ("---------------------------------------- loop TWO, pass %d",
-                            loop2));
+            if (optimize & OPT_WLF) {
+                arg_node = WithloopFolding (arg_node, arg_info); /* wli, wlf */
+                /*
+                 * rebuild mask which is necessary because of WL-body-substitutions
+                 * and nserted new variables to prevent wrong variable bindings.
+                 */
+                arg_node = GenerateMasks (arg_node, NULL);
+            }
 
-        arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
-        /* srs: CF does not handle the USE mask correctly. */
-        /* quick fix: always rebuild masks after CF */
-        arg_node = GenerateMasks (arg_node, NULL);
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                && ((0 == strcmp (break_specifier, "wli"))
+                    || (0 == strcmp (break_specifier, "wlf"))))
+                goto INFO;
 
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == (loop1 + loop2))
-            && (0 == strcmp (break_specifier, "cf")))
-            goto INFO;
+            if (wlf_expr != old_wlf_expr) {
+                /*
+                 * this may speed up the optimization phase a lot if a lot of code
+                 * has been inserted by WLF.
+                 */
+                if (optimize & OPT_CF) {
+                    arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
+                    arg_node = GenerateMasks (arg_node, NULL);
+                }
+            }
+
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                && (0 == strcmp (break_specifier, "cf2")))
+                goto INFO;
+
+            if (optimize & OPT_DCR) {
+                arg_node = DeadCodeRemoval (arg_node, arg_info); /* s.o. */
+                arg_node = GenerateMasks (arg_node, NULL);
+            }
+
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                && (0 == strcmp (break_specifier, "dcr")))
+                goto INFO;
+
+            if ((optimize & OPT_LUR) || (optimize & OPT_WLUR)) {
+                arg_node = Unroll (arg_node, arg_info); /* unroll_tab */
+            }
+
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                && (0 == strcmp (break_specifier, "lur")))
+                goto INFO;
+
+            if (optimize & OPT_LUS) {
+                arg_node = Unswitch (arg_node, arg_info); /* unswitch_tab */
+            }
+
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                && (0 == strcmp (break_specifier, "lus")))
+                goto INFO;
+
+            if (optimize & OPT_LIR) {
+                arg_node = LoopInvariantRemoval (arg_node,
+                                                 arg_info); /* lir_tab and lir_mov_tab */
+            }
+
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                && (0 == strcmp (break_specifier, "lir")))
+                goto INFO;
+
+        } while (((lir_expr != old_lir_expr) || (lunr_expr != old_lunr_expr)
+                  || (uns_expr != old_uns_expr) || (wlunr_expr != old_wlunr_expr)
+                  || (wlf_expr != old_wlf_expr) || (cse_expr != old_cse_expr))
+                 && (loop1 < max_optcycles));
 
         /*
-         *  This is needed to transform more index vectors in skalars
-         * or vice versa.
+         * Now, we enter the second loop consisting of
+         *   WLT and CF only.
          */
-        DBUG_PRINT ("WLF", ("WITHLOOP TRANSFORMATIONS"));
-        arg_node = WithloopFoldingWLT (arg_node, arg_info); /* wlt */
-        arg_node = GenerateMasks (arg_node, NULL);
+        while ((wlt_expr != old_wlt_expr) && (optimize & OPT_CF)
+               && (loop1 + loop2) < max_optcycles) {
+            old_wlt_expr = wlt_expr;
+            old_cf_expr = cf_expr;
 
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == (loop1 + loop2))
-            && (0 == strcmp (break_specifier, "wli")))
-            goto INFO;
+            loop2++;
+
+            DBUG_PRINT ("OPT",
+                        ("---------------------------------------- loop TWO, pass %d",
+                         loop2));
+
+            arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
+            /* srs: CF does not handle the USE mask correctly. */
+            /* quick fix: always rebuild masks after CF */
+            arg_node = GenerateMasks (arg_node, NULL);
+
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == (loop1 + loop2))
+                && (0 == strcmp (break_specifier, "cf")))
+                goto INFO;
+
+            /*
+             *  This is needed to transform more index vectors in skalars
+             * or vice versa.
+             */
+            DBUG_PRINT ("WLF", ("WITHLOOP TRANSFORMATIONS"));
+            arg_node = WithloopFoldingWLT (arg_node, arg_info); /* wlt */
+            arg_node = GenerateMasks (arg_node, NULL);
+
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == (loop1 + loop2))
+                && (0 == strcmp (break_specifier, "wli")))
+                goto INFO;
+        }
+
+        /*
+         * Finally, we apply DCR once again:
+         */
+        if (optimize & OPT_DCR) {
+            arg_node = DeadCodeRemoval (arg_node, arg_info);
+        }
+
+        /*
+         * Now, it's indicated to analyze the array accesses within WLs.
+         */
+        if (optimize & OPT_TSI) {
+            arg_node = WLAccessAnalyze (arg_node);
+        }
+
+    INFO:
+        if (loop1 + loop2 == max_optcycles
+            && ((lir_expr != old_lir_expr) || (lunr_expr != old_lunr_expr)
+                || (uns_expr != old_uns_expr) || (wlunr_expr != old_wlunr_expr)
+                || (wlf_expr != old_wlf_expr) || (cse_expr != old_cse_expr))) {
+            SYSWARN (("max_optcycles reached !!"));
+        }
+        PrintStatistics (mem_inl_fun, mem_dead_expr, mem_dead_var, mem_dead_fun,
+                         mem_lir_expr, mem_cf_expr, mem_lunr_expr, mem_wlunr_expr,
+                         mem_uns_expr, mem_elim_arrays, mem_wlf_expr, mem_wlt_expr,
+                         mem_cse_expr, NON_ZERO_ONLY);
+
+        DBUG_DO_NOT_EXECUTE ("MASK", arg_node = FreeMasks (arg_node););
     }
 
-    /*
-     * Finally, we apply DCR once again:
-     */
-    if (opt_dcr) {
-        arg_node = DeadCodeRemoval (arg_node, arg_info);
-    }
-
-    /*
-     * Now, it's indicated to analyze the array accesses within WLs.
-     */
-    if (opt_tile) {
-        arg_node = WLAccessAnalyze (arg_node);
-    }
-
-INFO:
-    if (loop1 + loop2 == max_optcycles
-        && ((lir_expr != old_lir_expr) || (lunr_expr != old_lunr_expr)
-            || (uns_expr != old_uns_expr) || (wlunr_expr != old_wlunr_expr)
-            || (wlf_expr != old_wlf_expr) || (cse_expr != old_cse_expr))) {
-        SYSWARN (("max_optcycles reached !!"));
-    }
-    PrintStatistics (mem_inl_fun, mem_dead_expr, mem_dead_var, mem_dead_fun, mem_lir_expr,
-                     mem_cf_expr, mem_lunr_expr, mem_wlunr_expr, mem_uns_expr,
-                     mem_elim_arrays, mem_wlf_expr, mem_wlt_expr, mem_cse_expr,
-                     NON_ZERO_ONLY);
-
-    DBUG_DO_NOT_EXECUTE ("MASK", arg_node = FreeMasks (arg_node););
     if (FUNDEF_NEXT (arg_node))
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
 

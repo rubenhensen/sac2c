@@ -1,6 +1,10 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.6  1999/05/12 14:35:16  cg
+ * Optimizations are now triggered by bit field optimize instead
+ * of single individual int variables.
+ *
  * Revision 2.5  1999/05/12 11:39:24  jhs
  * Adjusted macros to new access on constant vectors.
  *
@@ -1478,7 +1482,7 @@ WLFassign (node *arg_node, node *arg_info)
            are not referenced anymore. DCR could remove the WLs later, but we
            hope that the mem requirement in GenerateMasks will go down dramatically.
            */
-        if (opt_dcr) {
+        if (optimize & OPT_DCR) {
             tmpn = ASSIGN_INSTR (arg_node);
             if (N_let == NODE_TYPE (tmpn)) {
                 if (N_Nwith == NODE_TYPE (LET_EXPR (tmpn))

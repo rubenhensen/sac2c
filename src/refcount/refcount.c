@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/12 14:35:16  cg
+ * Optimizations are now triggered by bit field optimize instead
+ * of single individual int variables.
+ *
  * Revision 2.1  1999/02/23 12:43:05  sacbase
  * new release made
  *
@@ -1116,7 +1120,7 @@ RCid (node *arg_node, node *arg_info)
 
     if (MUST_REFCOUNT (ID_TYPE (arg_node))) {
         if ((INFO_RC_PRF (arg_info) == NULL)
-            || (VARDEC_REFCNT (ID_VARDEC (arg_node)) == 0) || (!opt_rco)) {
+            || (VARDEC_REFCNT (ID_VARDEC (arg_node)) == 0) || (!(optimize & OPT_RCO))) {
 
             /*
              * This N_id node either is *not* an argument of a primitive
@@ -1625,7 +1629,7 @@ RCNwith (node *arg_node, node *arg_info)
     vardec = DFMGetMaskEntryDeclSet (NWITH_IN (arg_node));
     while (vardec != NULL) {
         if ((MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) && (vardec != neutral_vardec)
-            && ((VARDEC_OR_ARG_REFCNT (vardec) == 0) || (!opt_rco))) {
+            && ((VARDEC_OR_ARG_REFCNT (vardec) == 0) || (!(optimize & OPT_RCO)))) {
             /*
              * increment RC of non-withop-params
              */

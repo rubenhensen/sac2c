@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/12 14:35:16  cg
+ * Optimizations are now triggered by bit field optimize instead
+ * of single individual int variables.
+ *
  * Revision 2.1  1999/02/23 12:43:15  sacbase
  * new release made
  *
@@ -59,7 +63,7 @@ PsiOpt (node *arg_node)
 
     NOTE (("Optimizing arrays: ...\n"));
 
-    if (opt_ive) {
+    if (optimize & OPT_IVE) {
         ive_expr = 0;
         ive_op = 0;
 
