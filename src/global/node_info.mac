@@ -1,10 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.105  1995/12/01 17:07:02  cg
- * new table entry for node type N_pragma
- * new funtab tab_precomp for precompiler
+ * Revision 1.106  1995/12/01 20:24:09  cg
+ * added functions PRECvardec and PRECtypedef for precomp_tab
  *
+;; Revision 1.105  1995/12/01  17:07:02  cg
+;; new table entry for node type N_pragma
+;; new funtab tab_precomp for precompiler
+;;
 ;; Revision 1.104  1995/11/16  19:37:48  cg
 ;; added new entries for free functions.
 ;; added new table rmvoid_tab.
@@ -388,7 +391,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeTypedef, DummyFun, DummyFun, CompTypedef, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        SIBtypedef, DummyFun, DummyFun, DummyFun, DummyFun, CDECtypedef, WDECtypedef,
-       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
+       DummyFun, DummyFun, PRECtypedef, DummyFun, DummyFun),
 
   NIF (N_objdef, "N_objdef", DummyFun, DummyFun, PrintObjdef, TCobjdef, DummyFun,
        DummyFun, DummyFun, FreeObjdef, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
@@ -436,7 +439,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DEADvardec, DummyFun, FreeVardec, DummyFun, DummyFun, CompVardec, DummyFun, DupDec,
        INLvar, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, PrintVardec,
        DummyFun, DummyFun, DummyFun, ANAvardec, DummyFun, DummyFun, UNQvardec, DummyFun,
-       DummyFun, DummyFun, DummyFun),
+       PRECvardec, DummyFun, DummyFun),
 
   NIF (N_block, "N_block", DummyFun, DummyFun, PrintBlock, DummyFun, OPTblock, DEADblock,
        DummyFun, FreeBlock, DummyFun, DummyFun, CompBlock, DummyFun, DupChain, INLblock,
