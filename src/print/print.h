@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/12/20 08:18:38  cg
+ * Revision 1.17  1995/12/29 10:36:39  cg
+ * new functions PrintFoldfun, PrintFoldprf, PrintGenarray, PrintModarray
+ *
+ * Revision 1.16  1995/12/20  08:18:38  cg
  * added PrintChar
  *
  * Revision 1.15  1995/12/01  17:14:59  cg
@@ -95,8 +98,10 @@ extern node *PrintLeton (node *, node *);
 extern node *PrintCond (node *, node *);
 extern node *PrintWith (node *, node *);
 extern node *PrintGenator (node *, node *);
-extern node *PrintConexpr (node *, node *);
-extern node *PrintFold (node *, node *);
+extern node *PrintGenarray (node *arg_node, node *arg_info);
+extern node *PrintModarray (node *arg_node, node *arg_info);
+extern node *PrintFoldprf (node *, node *);
+extern node *PrintFoldfun (node *, node *);
 extern node *PrintArray (node *, node *);
 extern node *PrintInc (node *, node *);
 extern node *PrintDec (node *, node *);
@@ -105,6 +110,8 @@ extern node *PrintPre (node *, node *);
 extern node *PrintIcm (node *, node *);
 extern node *PrintVectInfo (node *, node *);
 extern node *PrintPragma (node *, node *);
+
+extern void PrintFunctionHeader (node *arg_node, node *arg_info);
 
 extern node *Print (node *);
 
