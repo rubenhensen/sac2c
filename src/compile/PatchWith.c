@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2003/06/11 21:49:16  ktr
+ * added support for multidimensional arrays
+ *
  * Revision 3.5  2002/02/20 14:40:06  dkr
  * function DupTypes() renamed into DupAllTypes()
  *
@@ -128,7 +131,7 @@ ReadOneGenPart (FILE *infile, types *type)
             aelems = FreeTree (aelems);
         arr_node = NULL;
     } else {
-        arr_node = MakeArray (aelems);
+        arr_node = MakeFlatArray (aelems);
         ARRAY_TYPE (arr_node) = DupAllTypes (type);
     }
 
