@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1999/02/15 13:34:51  sbs
+ * added generation of SACbugreport
+ *
  * Revision 1.1  1999/01/25 16:24:30  sbs
  * Initial revision
  *
@@ -13,6 +16,9 @@
 
 #include "Error.h"
 #include "interrupt.h"
+#include "internal_lib.h"
+#include "usage.h"
+#include "globals.h"
 
 /******************************************************************************
  *
@@ -28,9 +34,55 @@
 void
 CompilerErrorBreak (int sig)
 {
+    FILE *error_file;
+
     /* should we use SYSERROR from Error.h here?? */
     fprintf (stderr, "\n\nUUUPS your program crashed the compiler 8-((\n");
     fprintf (stderr, "Please send a bug report to sacbase@informatik.uni-kiel.de.\n\n");
+    fprintf (stderr,
+             "For your convenience, the compiler pre-fabricated a bug report in\n"
+             "the file \"SACbugreport\" which was created in the current directory!\n"
+             "Besides some infos concerning the compiler version and its\n"
+             "usage it contains the specified source file.\n"
+             "If you want to send that bug report to us you may simply use\n\n"
+             "  mail sacbase@informatik.uni-kiel.de < SACbugreport\n\n");
+
+    error_file = fopen ("SACbugreport", "w");
+    if (error_file != NULL) {
+        fprintf (error_file, "/*\n"
+                             " * SAC - bug report\n"
+                             " * ================\n"
+                             " *\n"
+                             " * automatically generated on ");
+        fclose (error_file);
+        SystemCall2 ("date >> SACbugreport");
+        error_file = fopen ("SACbugreport", "a");
+
+        fprintf (error_file, " *\n");
+        fprintf (error_file, " * using sac2c %s for %s\n", version_id, target_platform);
+        fprintf (error_file, " * built on %s.\n", build_date_time);
+        fprintf (error_file, " *\n");
+        if (commandline[0] != '\0') {
+            fprintf (error_file, " * The compiler was called by\n");
+            fprintf (error_file, " * %s\n", commandline);
+        } else {
+            fprintf (error_file,
+                     " * Compiler crashed before the commandline was examined!\n");
+        }
+        fprintf (error_file, " *\n");
+        if (sacfilename[0] != '\0') {
+            fprintf (error_file, " * The contents of %s is:\n", sacfilename);
+            fprintf (error_file, " */\n\n");
+            fclose (error_file);
+            SystemCall2 ("cat %s >> SACbugreport", sacfilename);
+        } else {
+            fprintf (error_file,
+                     " * Compiler crashed before sacfilename could be determined!\n");
+            fprintf (error_file, " */\n\n");
+            fclose (error_file);
+        }
+    }
+    CleanUp ();
 }
 
 /******************************************************************************
