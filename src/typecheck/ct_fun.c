@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/24 18:47:53  sbs
+ * compiles
+ *
  * Revision 1.5  2004/10/26 10:46:29  sbs
  * FUNDEF_MOD printed as well know
  *
@@ -20,8 +23,16 @@
  */
 
 #include "ct_fun.h"
+#include "dbug.h"
+#include "Error.h"
+#include "internal_lib.h"
+#include "globals.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "new_types.h"
 #include "new_typecheck.h"
 #include "type_errors.h"
+#include "type_utils.h"
 #include "specialize.h"
 
 /*
@@ -45,7 +56,7 @@
 /******************************************************************************
  *
  * function:
- *    DFT_res *DispatchFunType( node *wrapper, ntype *args)
+ *    dft_res *DispatchFunType( node *wrapper, ntype *args)
  *
  * description:
  *    This function encapsulates TYDispatchFunType.
@@ -54,25 +65,25 @@
  *
  ******************************************************************************/
 
-static DFT_res *
+static dft_res *
 DispatchFunType (node *wrapper, ntype *args)
 {
-    DFT_res *res;
+    dft_res *res;
 #ifndef DBUG_OFF
     char *tmp_str;
 #endif
 
     DBUG_ENTER ("DispatchFunType");
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYType2String (args, 0, 0););
+    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (args, 0, 0););
     DBUG_PRINT ("NTC", ("dispatching %s for %s:%s", FUNDEF_MOD (wrapper),
                         FUNDEF_NAME (wrapper), tmp_str));
 
-    res = TYDispatchFunType (FUNDEF_TYPE (wrapper), args);
+    res = TYdispatchFunType (FUNDEF_WRAPPERTYPE (wrapper), args);
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYDFT_res2DebugString (res););
+    DBUG_EXECUTE ("NTC", tmp_str = TYdft_res2DebugString (res););
     DBUG_PRINT ("NTC", ("%s", tmp_str));
-    DBUG_EXECUTE ("NTC", Free (tmp_str););
+    DBUG_EXECUTE ("NTC", ILIBfree (tmp_str););
 
     DBUG_RETURN (res);
 }
@@ -80,14 +91,14 @@ DispatchFunType (node *wrapper, ntype *args)
 /******************************************************************************
  *
  * function:
- *    void TriggerTypeChecking( DFT_res *dft)
+ *    void TriggerTypeChecking( dft_res *dft)
  *
  * description:
  *
  ******************************************************************************/
 
 static void
-TriggerTypeChecking (DFT_res *dft)
+TriggerTypeChecking (dft_res *dft)
 {
     int i;
 
@@ -98,7 +109,7 @@ TriggerTypeChecking (DFT_res *dft)
      */
     if (dft->num_partials > 0) {
         for (i = 0; i < dft->num_partials; i++) {
-            dft->partials[i] = NTCTriggerTypeCheck (dft->partials[i]);
+            dft->partials[i] = NTCtriggerTypeCheck (dft->partials[i]);
         }
     }
 
@@ -106,7 +117,7 @@ TriggerTypeChecking (DFT_res *dft)
      * trigger the typechecking the defining function:
      */
     if (dft->def != NULL) {
-        dft->def = NTCTriggerTypeCheck (dft->def);
+        dft->def = NTCtriggerTypeCheck (dft->def);
     }
 
     DBUG_VOID_RETURN;
@@ -122,7 +133,7 @@ TriggerTypeChecking (DFT_res *dft)
 /******************************************************************************
  *
  * function:
- *    DFT_res *NTCFUNDispatchFunType( node *wrapper, ntype *args)
+ *    dft_res *NTCCTdispatchFunType( node *wrapper, ntype *args)
  *
  * description:
  *    This function encapsulates TYDispatchFunType.
@@ -131,25 +142,25 @@ TriggerTypeChecking (DFT_res *dft)
  *
  ******************************************************************************/
 
-DFT_res *
-NTCFUNDispatchFunType (node *wrapper, ntype *args)
+dft_res *
+NTCCTdispatchFunType (node *wrapper, ntype *args)
 {
-    DFT_res *res;
+    dft_res *res;
 #ifndef DBUG_OFF
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("NTCFUNDispatchFunType");
+    DBUG_ENTER ("NTCCTdispatchFunType");
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYType2String (args, 0, 0););
+    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (args, 0, 0););
     DBUG_PRINT ("NTC", ("dispatching %s:%s for %s", FUNDEF_MOD (wrapper),
                         FUNDEF_NAME (wrapper), tmp_str));
 
-    res = TYDispatchFunType (FUNDEF_TYPE (wrapper), args);
+    res = TYdispatchFunType (FUNDEF_WRAPPERTYPE (wrapper), args);
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYDFT_res2DebugString (res););
+    DBUG_EXECUTE ("NTC", tmp_str = TYdft_res2DebugString (res););
     DBUG_PRINT ("NTC", ("%s", tmp_str));
-    DBUG_EXECUTE ("NTC", Free (tmp_str););
+    DBUG_EXECUTE ("NTC", ILIBfree (tmp_str););
 
     DBUG_RETURN (res);
 }
@@ -164,7 +175,7 @@ NTCFUNDispatchFunType (node *wrapper, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCFUN_udf( te_info info, ntype *args)
+ *    ntype *NTCCTudf( te_info info, ntype *args)
  *
  * description:
  *    Here, we assume that all argument types are either array types or
@@ -173,30 +184,30 @@ NTCFUNDispatchFunType (node *wrapper, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCFUN_udf (te_info *info, ntype *args)
+NTCCTudf (te_info *info, ntype *args)
 {
     ntype *res;
     node *fundef, *assign;
-    DFT_res *dft_res;
+    dft_res *dft_res;
     te_info *old_info_chn;
 
-    DBUG_ENTER ("NTCFUN_udf");
-    DBUG_ASSERT ((TYIsProdOfArray (args)), "NTCFUN_udf called with non-fixed args!");
+    DBUG_ENTER ("NTCCTudf");
+    DBUG_ASSERT ((TYisProdOfArray (args)), "NTCCTudf called with non-fixed args!");
 
-    fundef = TEGetWrapper (info);
-    assign = TEGetAssign (info);
+    fundef = TEgetWrapper (info);
+    assign = TEgetAssign (info);
 
-    old_info_chn = act_info_chn;
-    act_info_chn = info;
-    DBUG_PRINT ("NTC_INFOCHN", ("act_info_chn set to %p", info));
+    old_info_chn = global.act_info_chn;
+    global.act_info_chn = info;
+    DBUG_PRINT ("NTC_INFOCHN", ("global.act_info_chn set to %p", info));
 
-    if (FUNDEF_IS_LACFUN (fundef)) {
+    if (FUNDEF_ISLACFUN (fundef)) {
         /*
          * specialize it, trigger its typecheck, and pick its return type:
          */
-        fundef = SPECHandleLacFun (fundef, assign, args);
-        fundef = NTCTriggerTypeCheck (fundef);
-        res = TYCopyType (FUNDEF_RET_TYPE (fundef));
+        fundef = SPEChandleLacFun (fundef, assign, args);
+        fundef = NTCtriggerTypeCheck (fundef);
+        res = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
 
     } else {
         /*
@@ -213,8 +224,8 @@ NTCFUN_udf (te_info *info, ntype *args)
              * Trigger its type check, and pick its return type:
              */
             fundef = FUNDEF_IMPL (fundef);
-            fundef = NTCTriggerTypeCheck (fundef);
-            res = TYCopyType (FUNDEF_RET_TYPE (fundef));
+            fundef = NTCtriggerTypeCheck (fundef);
+            res = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
 
         } else {
             /*
@@ -222,32 +233,32 @@ NTCFUN_udf (te_info *info, ntype *args)
              * check of all potentially involved fundefs and extract the
              * return type from the dft_res structure:
              */
-            dft_res = SPECHandleDownProjections (dft_res, fundef, args);
+            dft_res = SPEChandleDownProjections (dft_res, fundef, args);
 
             if ((dft_res->def == NULL) && (dft_res->num_partials == 0)) {
                 /*
                  * no match at all!
                  */
-                ERROR (linenum,
+                ERROR (global.linenum,
                        ("No matching definition found for the application of \"%s:%s\" "
                         " to arguments %s",
                         FUNDEF_MOD (fundef), FUNDEF_NAME (fundef),
-                        TYType2String (args, FALSE, 0)));
-                act_info_chn = TEGetParent (act_info_chn);
-                TEExtendedAbort ();
+                        TYtype2String (args, FALSE, 0)));
+                global.act_info_chn = TEgetParent (global.act_info_chn);
+                TEextendedAbort ();
             }
 
             TriggerTypeChecking (dft_res);
 
-            res = TYCopyType (dft_res->type);
+            res = TYcopyType (dft_res->type);
             DBUG_ASSERT ((res != NULL),
                          "HandleDownProjections did not return proper return type");
-            TYFreeDFT_res (dft_res);
+            TYfreeDft_res (dft_res);
         }
     }
 
-    act_info_chn = old_info_chn;
-    DBUG_PRINT ("NTC_INFOCHN", ("act_info_chn reset to %p", act_info_chn));
+    global.act_info_chn = old_info_chn;
+    DBUG_PRINT ("NTC_INFOCHN", ("global.act_info_chn reset to %p", global.act_info_chn));
 
     DBUG_RETURN (res);
 }
