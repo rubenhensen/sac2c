@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/04/27 12:57:05  sbs
+ * Revision 1.18  1995/05/02 07:11:31  sbs
+ * with-constructs debugged
+ *
+ * Revision 1.17  1995/04/27  12:57:05  sbs
  * WITH-LOOP ICM s inserted.
  *
  * Revision 1.16  1995/04/18  14:45:55  sbs
@@ -64,14 +67,14 @@
 
 #define RetWithScal(res, val)                                                            \
     INDENT;                                                                              \
-    fprintf (outfile, "ND_A_FIELD(%s)[__destptr++]=%s;\n", res, val[0]);
+    fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr++]=%s;\n", res, res, val[0]);
 
 #define RetWithArray(res, a)                                                             \
     INDENT;                                                                              \
     fprintf (outfile, "{ int __i;\n\n");                                                 \
     indent++;                                                                            \
     INDENT;                                                                              \
-    fprintf (outfile, "for{__i=0; __i<ND_A_SIZE(%s); __i++)\n", a);                      \
+    fprintf (outfile, "for(__i=0; __i<ND_A_SIZE(%s); __i++)\n", a);                      \
     indent++;                                                                            \
     INDENT;                                                                              \
     fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr++]=ND_A_FIELD(%s)[__i];\n", res, res,  \
@@ -82,15 +85,25 @@
 
 #define BeginWith(res, dimres, from, to, idx, idxlen, fillstr)                           \
     INDENT;                                                                              \
-    fprintf (outfile, "{ int %s__destptr=0;\n", res);                                    \
+    fprintf (outfile, "{ int __i;\n");                                                   \
     indent++;                                                                            \
     INDENT;                                                                              \
-    fprintf (outfile, "int __start=...;\n");                                             \
+    fprintf (outfile, "int %s__destptr=0;\n", res);                                      \
+    INDENT;                                                                              \
+    fprintf (outfile, "int __start=");                                                   \
+    VectToOffset (idxlen, AccessVect (from, i), dimres, res);                            \
+    fprintf (outfile, ";\n");                                                            \
     {                                                                                    \
-        int i;                                                                           \
+        int i, j;                                                                        \
         for (i = 1; i < idxlen; i++) {                                                   \
             INDENT;                                                                      \
-            fprintf (outfile, "int %s__offset%d=...;\n", res, i);                        \
+            fprintf (outfile, "int %s__offset%d=", res, i);                              \
+            fprintf (outfile, "(ND_KD_A_SHAPE(%s, %d)-ND_A_FIELD(%s)[%d]", res, i, to,   \
+                     i);                                                                 \
+            fprintf (outfile, "+ND_A_FIELD(%s)[%d]-1)", from, i);                        \
+            for (j = (i + 1); j < dimres; j++)                                           \
+                fprintf (outfile, " *ND_KD_A_SHAPE(%s, %d)", res, j);                    \
+            fprintf (outfile, ";\n");                                                    \
         }                                                                                \
         fprintf (outfile, "\n");                                                         \
         INDENT;                                                                          \
@@ -209,7 +222,7 @@
             }                                                                            \
         }                                                                                \
     }
-#define AccessVect(v, i) fprintf (outfile, "ND_A_FIELD(%s)[%i])", v, i)
+#define AccessVect(v, i) fprintf (outfile, "ND_A_FIELD(%s)[%i]", v, i)
 
 #define AccessConst(v, i) fprintf (outfile, "%s", v[i])
 
