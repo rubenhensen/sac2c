@@ -3,7 +3,12 @@
 /*
  *
  * $Log$
- * Revision 1.90  1995/10/18 13:15:03  cg
+ * Revision 1.91  1995/10/22 17:35:52  cg
+ * Now, key words like explicit types: or global objects:
+ * are allowed in import statements as well as in export
+ * declarations even if not followed by any item.
+ *
+ * Revision 1.90  1995/10/18  13:15:03  cg
  * converted to new error macros.
  *
  * Revision 1.89  1995/10/16  12:36:22  cg
@@ -493,6 +498,9 @@ impdesc: ALL SEMIC
             { $$=$7;
               $$->node[1]=(node *)$5; /* dirty trick for keeping ids !*/
             }
+	| BRACE_L IMPLICIT TYPES COLON SEMIC impdesc2
+            { $$=$6;
+            }
 	| BRACE_L impdesc2 { $$=$2; }
 	;
 
@@ -500,14 +508,20 @@ impdesc2: EXPLICIT TYPES COLON ids SEMIC impdesc3
             { $$=$6;
               $$->node[2]=(node *)$4; /* dirty trick for keeping ids !*/
             }
-	| impdesc3 { $$=$1; }
-	;
+        | EXPLICIT TYPES COLON SEMIC impdesc3
+            { $$=$5;
+            }
+	     | impdesc3 { $$=$1; }
+	     ;
 
 impdesc3: GLOBAL OBJECTS COLON ids SEMIC impdesc4
             { $$=$6;
               $$->node[4]=(node *)$4; /* dirty trick for keeping ids !*/
             }
-	| impdesc4 { $$=$1; }
+        | GLOBAL OBJECTS COLON SEMIC impdesc4
+            { $$=$5;
+            }
+	     | impdesc4 { $$=$1; }
 	;
 
 impdesc4: FUNS COLON ids SEMIC BRACE_R
@@ -517,7 +531,13 @@ impdesc4: FUNS COLON ids SEMIC BRACE_R
               DBUG_PRINT("GENTREE",
                          ("%s:"P_FORMAT,mdb_nodetype[ $$->nodetype ], $$));
             }
-	| BRACE_R
+        | FUNS COLON SEMIC BRACE_R
+            { $$=MakeNode( N_implist );
+
+              DBUG_PRINT("GENTREE",
+                         ("%s:"P_FORMAT,mdb_nodetype[ $$->nodetype ], $$));
+            }
+	     | BRACE_R
             { $$=MakeNode( N_implist );
 
               DBUG_PRINT("GENTREE",
@@ -528,15 +548,19 @@ impdesc4: FUNS COLON ids SEMIC BRACE_R
 expdesc: BRACE_L IMPLICIT TYPES COLON imptypes expdesc2
          { $$=$6;
            $$->node[0]=$5;
-           $$->nnode++;
          }
-        | BRACE_L expdesc2 {$$=$2;}
+        | BRACE_L expdesc2 
+           {$$=$2;}
+        | BRACE_L IMPLICIT TYPES COLON expdesc2
+           { $$=$5;}
         ;
 
 expdesc2: EXPLICIT TYPES COLON exptypes expdesc3
           { $$=$5;
             $$->node[1]=$4;
-            $$->nnode++;
+          }
+        | EXPLICIT TYPES COLON expdesc3
+          { $$=$4;
           }
         | expdesc3 {$$=$1;}
         ;
@@ -544,7 +568,9 @@ expdesc2: EXPLICIT TYPES COLON exptypes expdesc3
 expdesc3: GLOBAL OBJECTS COLON objdecs expdesc4
           { $$=$5;
             $$->node[3]=$4;
-            $$->nnode++;
+          }
+        | GLOBAL OBJECTS COLON expdesc4
+          { $$=$4;
           }
         | expdesc4 {$$=$1;}
         ;
@@ -552,7 +578,15 @@ expdesc3: GLOBAL OBJECTS COLON objdecs expdesc4
 expdesc4: FUNS COLON fundecs BRACE_R
           { $$=MakeNode(N_explist);
             $$->node[2]=$3;
-            $$->nnode=1;
+            $$->nnode=0;
+
+            DBUG_PRINT("GENTREE",
+                       ("%s:"P_FORMAT,
+                        mdb_nodetype[ $$->nodetype ], $$));
+          }
+        | FUNS COLON BRACE_R
+          { $$=MakeNode(N_explist);
+            $$->nnode=0;
 
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT,
