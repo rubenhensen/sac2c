@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.31  2000/11/03 14:04:16  dkr
+ * unterminated comments are detected now
+ *
  * Revision 2.30  2000/10/31 18:06:27  cg
  * main() function is now tagged ST_exported.
  *
@@ -350,7 +353,6 @@
  * Revision 1.100  1995/12/21  15:04:43  cg
  * added primitive type char and all pragmas to parser
  *
- *
  */
 
 #include <stdio.h>
@@ -371,11 +373,10 @@
 #include "resource.h"
 
 
+extern int commlevel;
 extern int charpos;
 extern char *linebuf_ptr;
 extern char *yytext;
-
-int i;
 
 node *syntax_tree;
 node *decl_tree;
@@ -383,26 +384,29 @@ node *sib_tree;
 node *spec_tree;
 
 
-static char *mod_name=MAIN_MOD_NAME;
-static char *link_mod_name=NULL;
-static node *store_pragma=NULL;
-static node *store_wlcomp_pragma_global=NULL;
+static char *mod_name = MAIN_MOD_NAME;
+static char *link_mod_name = NULL;
+static node *store_pragma = NULL;
+static node *store_wlcomp_pragma_global = NULL;
 
 
-/* used to distinguish the different kinds of files  */
-/* which are parsed with this single parser          */
-
+/*
+ * used to distinguish the different kinds of files
+ * which are parsed with this single parser
+ */
 static file_type file_kind = F_prog;
 
-static statustype sib_imported_status;
 /*
  * This variable is used to easily distinguish between modules and
  * classes when parsing a SIB.
  */
+static statustype sib_imported_status;
 
-extern node *Append(node *target_node, node *append_node);
-extern node *string2array(char *str);
-extern types *GenComplexType( types *types, nums *numsp);
+
+node *Append(node *target_node, node *append_node);
+node *string2array(char *str);
+types *GenComplexType( types *types, nums *numsp);
+
 
 %}
 
@@ -514,13 +518,20 @@ extern types *GenComplexType( types *types, nums *numsp);
 %}
 %%
 
-file:   PARSE_PRG prg {syntax_tree=$2;}
-      | PARSE_PRG modimp {syntax_tree=$2;}
-      | PARSE_DEC moddec {decl_tree=$2;}
-      | PARSE_SIB sib {sib_tree=$2;}
-      | PARSE_RC  targets {target_list=RSCAddTargetList($2, target_list);}
-      | PARSE_SPEC modspec {spec_tree=$2;}
+file:   PARSE_PRG prg {syntax_tree=$2;} eof
+      | PARSE_PRG modimp {syntax_tree=$2;} eof
+      | PARSE_DEC moddec {decl_tree=$2;} eof
+      | PARSE_SIB sib {sib_tree=$2;} eof
+      | PARSE_RC  targets {target_list=RSCAddTargetList($2, target_list);} eof
+      | PARSE_SPEC modspec {spec_tree=$2;} eof
       ;
+
+eof:
+     {
+       if (commlevel) {
+         ABORT( linenum, ("Unterminated comment found"));
+       }
+     }
 
 id: ID
       {
@@ -528,12 +539,10 @@ id: ID
       }
   | PRIVATEID
       {
-        if (file_kind!=F_sib)
-        {
-          ABORT(linenum, ("Identifier name '%s` illegal", $1));
+        if (file_kind != F_sib) {
+          ABORT( linenum, ("Identifier name '%s` illegal", $1));
         }
-        else
-        {
+        else {
           $$=$1;
         }
       }

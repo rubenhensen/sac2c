@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  2000/11/03 14:04:10  dkr
+ * unterminated comments are detected now
+ *
  * Revision 2.16  2000/08/30 13:04:29  dkr
  * rule '#\ .*\n' revisited:
  * 'linenum' must be incremented by 1 because \n is still in
@@ -119,12 +122,10 @@
  * # line - capability integrated into sac2c.
  * Now, the line-number in error messages should be correct 8-)))
  *
- *
- *
+ * [...]
  *
  * Revision 1.3  1994/11/10  14:53:24  sbs
  * RCS-header inserted
- *
  *
  */
 
@@ -140,20 +141,20 @@
 #include "globals.h"
 
 
-#define FILTER(token)   charpos += yyleng; \
-                        if (0==commlevel)  return(token)
+#define FILTER(token) \
+  charpos += yyleng;  \
+  if (commlevel == 0)  return( token)
 
 #define LINEBUF_SIZE 256
 
-extern int indent;
-extern int i;
- 
-char linebuf[LINEBUF_SIZE];
-char *linebuf_ptr;
-char *tmp_buf=NULL;
-int charpos=0;
-int commlevel=0;
+
 int start_token;
+char linebuf[ LINEBUF_SIZE];
+char *tmp_buf = NULL;
+
+char *linebuf_ptr = NULL;
+int commlevel = 0;
+int charpos = 0;
 
 
 %}
@@ -161,22 +162,21 @@ int start_token;
 %p 6000 /* set positions to 6000 */
 %e 2000 /* set nodes to 1100 */
 
+
 %%
 %{
 
 /* the next few lines allow for smuggling in a start_token! */
-
-     if(start_token) {
+     if (start_token) {
        int mem=start_token;
-
 #ifdef OSF_ALPHA
        yy_init = 1;  /* force new initialization of lex! */
 #endif
-
-       start_token=0;
-       return(mem);
+       start_token = 0;
+       return( mem);
      }
 %}
+
 
 "{"                             { FILTER( BRACE_L );}
 "}"                             { FILTER( BRACE_R );}
@@ -424,10 +424,11 @@ int start_token;
                                 }
 \n.*                            { linenum++;
                                   charpos = 0;
-                                  if( yyleng <= LINEBUF_SIZE) {
+                                  if (yyleng <= LINEBUF_SIZE) {
                                     strncpy( linebuf, yytext+1,yyleng);
                                     linebuf_ptr = linebuf;
-                                  } else {
+                                  }
+                                  else {
                                     if( tmp_buf != NULL)
                                       FREE( tmp_buf);
                                     tmp_buf = MALLOC( (yyleng) * sizeof(char));
