@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.231  2004/10/26 12:13:38  ktr
+ * added avis_aliasmask
+ *
  * Revision 3.230  2004/10/20 08:04:09  khf
  * removed NWITH_FUSIONABLE_WL, NWITH_REFERENCES_FUSIONABLE
  * added NWITH_MTO_OFFSET_NEEDED, NCODE_RESOLVEABLE_DEPEND
@@ -2689,6 +2692,8 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***    the following attributes are only used in SelectionPropagation
  ***    int         SELPROP (0)                       (SelectionPropagation!!)
  ***
+ ***    the following attributes are only used in InterfaceAnalysis
+ ***    DFMmask_t   ALIASMASK                         (interfaceanalysis!!)
  ***
  ***    the following attributes are only used in refcounting.c (EMM)
  ***    int         DEFLEVEL                          (refcounting!!)
@@ -2732,6 +2737,8 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_EXPRESULT(n) ((bool)(n->info.cint))
 /* used only in SelectionPropagation */
 #define AVIS_SELPROP(n) (n->varno)
+/* used only in interfaceanalysis */
+#define AVIS_ALIASMASK(n) (n->dfmask[0])
 /* used only in refounting (EMM) */
 #define AVIS_EMRC_DEFLEVEL(n) (n->int_data)
 #define AVIS_EMRC_COUNTER(n) ((rc_counter *)(n->dfmask[0]))
