@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 2.15  1999/10/07 13:57:31  sbs
+ * YYMAXDEPTH is preset to 10000 to ensure a reasonable stack size for
+ * the parser.
+ *
  * Revision 2.14  1999/10/04 09:24:07  sbs
  * linenum moved to globals.[ch]
  *
@@ -445,7 +449,12 @@ extern types *GenComplexType( types *types, nums *numsp);
 %start file
 
 %{
-  /* SBSBSBSBS */
+
+/*
+ * Make sure, the stack of the generated parser is big enough!
+ */
+#define YYMAXDEPTH 10000 
+
 %}
 %%
 
