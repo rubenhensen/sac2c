@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/06/06 13:55:59  dkr
+ * fixed a bug with new variable names in ND_KS_VECT2OFFSET
+ *
  * Revision 1.6  1998/06/05 19:41:43  dkr
  * added some INDENTs
  *
@@ -1990,13 +1993,13 @@ ICMCompileND_KS_VECT2OFFSET (char *name, int dim, int dims, char **s)
 #endif /* TEST_BACKEND */
 
     INDENT;
-    fprintf (outfile, "SAC_%s", name);
+    fprintf (outfile, "%s", name);
     {
         int i;
         for (i = 0; i < dims; i++) {
             fprintf (outfile, "_%s", s[i]);
         }
-        fprintf (outfile, "= ");
+        fprintf (outfile, "__ = ");
         VectToOffset2 (dim, AccessVect (name, i), dims, AccessConst (s, i));
         fprintf (outfile, ";\n");
     }
