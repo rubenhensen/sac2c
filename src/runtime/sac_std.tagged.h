@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2002/08/02 20:58:54  dkr
+ * bug in SAC_ND_ALLOC__DESC__AKS fixed
+ *
  * Revision 3.23  2002/08/02 20:48:56  dkr
  * ..__DIM.. icms added
  *
@@ -903,7 +906,6 @@ typedef int *SAC_array_descriptor_t;
                                                         * sizeof (*SAC_ND_A_DESC (nt)))  \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DESC( %s, %d) at addr: %p", #nt, #dim, SAC_ND_A_DESC (nt)))        \
-        SAC_ASSURE_TYPE ((SAC_ND_A_DIM (nt) == dim), "Illegal dimension found!");        \
     }
 
 #define SAC_ND_FREE__DESC__AKS(nt)                                                       \
