@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.25  1995/05/11 16:50:10  hw
+ * Revision 1.26  1995/05/29 10:31:04  hw
+ * - bug fixed in FltnWith
+ * - changed renameing of variables in FltnLet
+ *
+ * Revision 1.25  1995/05/11  16:50:10  hw
  * - bug fixed in FltnWhile ( now traverse first the body of the loop and
  *     than the termination condition, because of renaming of variables
  *     in a with-loop)
@@ -751,9 +755,16 @@ FltnWith (node *arg_node, node *arg_info)
         tmp = info_node->node[1];
         while (1 < tmp->nnode)
             tmp = tmp->node[1];
-        tmp->node[1] = arg_node->node[1]->node[1]->node[0];
-        tmp->nnode = 2;
-        arg_node->node[1]->node[1]->node[0] = info_node->node[1];
+        if ((N_foldprf == arg_node->node[1]->nodetype)
+            || (N_foldfun == arg_node->node[1]->nodetype)) {
+            tmp->node[1] = arg_node->node[1]->node[0]->node[0];
+            tmp->nnode = 2;
+            arg_node->node[1]->node[0]->node[0] = info_node->node[1];
+        } else {
+            tmp->node[1] = arg_node->node[1]->node[1]->node[0];
+            tmp->nnode = 2;
+            arg_node->node[1]->node[1]->node[0] = info_node->node[1];
+        }
     }
 
     FREE (info_node);
@@ -1164,6 +1175,9 @@ FltnLet (node *arg_node, node *arg_info)
                     arg_info->node[1]
                       = AppendIdentity (arg_info->node[1], StringCopy (tmp->id_new),
                                         ids->id);
+                } else if ((0 < with_level) && (with_level == tmp->w_level)) {
+                    FREE (ids->id);
+                    ids->id = StringCopy (tmp->id_new);
                 }
             }
             ids = ids->next;
@@ -1172,11 +1186,17 @@ FltnLet (node *arg_node, node *arg_info)
         new_assign = MakeNode (N_assign);
         tmp = FindId (ids->id);
         if (NULL != tmp) {
-            char *new_name;
+            char *new_name, *let_name;
+
             new_name = RenameWithVar (ids->id, -(with_level));
+            if (with_level > 0) {
+                let_name = RenameWithVar (ids->id, with_level);
+                PUSH (ids->id, let_name, with_level);
+            } else
+                let_name = tmp->id_new;
             tmp_tos = tos;
             PUSH (ids->id, new_name, with_level);
-            ids->id = StringCopy (tmp->id_new);
+            ids->id = StringCopy (let_name);
             new_assign = AppendIdentity (new_assign, StringCopy (tmp->id_new), new_name);
         }
     }
