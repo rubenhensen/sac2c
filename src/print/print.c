@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.106  2000/10/31 08:58:30  cg
+ * Made dummy symbol in file globals.c :
+ * __dummy_value_which_is_completely_useless
+ * module/class name spaecific in order to avoid disgusting error messages
+ * about multiply defined symbols.
+ *
  * Revision 2.105  2000/10/23 12:34:52  dkr
  * PrintAST now prints addresses of attribute notes.
  *
@@ -1026,7 +1032,8 @@ PrintModul (node *arg_node, node *arg_info)
 
         outfile = WriteOpen ("%s/globals.c", tmp_dirname);
         fprintf (outfile, "#include \"header.h\"\n\n");
-        fprintf (outfile, "int __dummy_value_which_is_completely_useless=0;\n\n");
+        fprintf (outfile, "int SAC__%s__dummy_value_which_is_completely_useless = 0;\n\n",
+                 MODUL_NAME (arg_node));
 
         if (NULL != MODUL_OBJS (arg_node)) {
             fprintf (outfile, "\n\n");
