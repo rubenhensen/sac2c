@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2003/09/29 18:17:50  dkr
+ * no changes done
+ *
  * Revision 3.18  2003/09/25 10:54:42  dkr
  * to_unq() and from_unq() are prfs now
  *
@@ -76,8 +79,8 @@
  **/
 
 /*
- *      node_name        mdb_prf[]           prf_string[]      prf_symbol[]
- *      prf_is_infix[]   prf_arity           NTCPRF_funtab[]   NTCPRF_cffuntab[]
+ *      node_name        mdb_prf[]          prf_string[]        prf_symbol[]
+ *      prf_is_infix[]   prf_arity          NTCPRF_funtab[]     NTCPRF_cffuntab[]
  */
 
 PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCPRF_toiS, COToi),
