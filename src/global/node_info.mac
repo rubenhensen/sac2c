@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.112  1995/12/21 15:26:46  asi
- * INLblock removed
+ * Revision 1.113  1995/12/22 16:30:11  cg
+ * added FreeInfo to free_tab
  *
+;; Revision 1.112  1995/12/21  15:26:46  asi
+;; INLblock removed
+;;
 ;; Revision 1.111  1995/12/21  13:22:01  asi
 ;; added functions for dcr_tab and active_tab
 ;;
@@ -601,7 +604,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons),
 
   NIF (N_info, "N_info", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, DupInfo, TravSons,
+       TravSons, FreeInfo, TravSons, TravSons, TravSons, TravSons, DupInfo, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons),
