@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.51  1995/06/26 09:27:07  sbs
+ * Revision 1.52  1995/06/26 12:01:37  hw
+ * compilation of idx_psi added
+ *
+ * Revision 1.51  1995/06/26  09:27:07  sbs
  * insertion of idx_psi initiated :->
  *
  * Revision 1.50  1995/06/23  13:13:53  hw
@@ -1593,6 +1596,25 @@ CompPrf (node *arg_node, node *arg_info)
             break;
         }
         case F_idx_psi: {
+            arg1 = arg_node->node[0]->node[0];
+            arg2 = arg_node->node[0]->node[1]->node[0];
+            DBUG_ASSERT (N_id == arg1->nodetype, "wrong first arg of idx_psi");
+            DBUG_ASSERT (N_id == arg2->nodetype, "wrong second arg of idx_psi");
+
+            MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+            /* reuse last N_let node */
+            arg_info->node[1]->nodetype = N_icm;
+            MAKE_ICM_NAME (arg_info->node[1], "ND_IDX_PSI");
+
+            MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+            MAKE_ICM_ARG (icm_arg, res);
+            /* append res to arguments of current node  */
+            arg_node->node[0]->node[1]->node[1] = icm_arg;
+            arg_node->node[0]->node[1]->nnode = 2;
+            /* set arg_node, because arg_node will be returned */
+            old_arg_node = arg_node;
+            arg_node = arg_node->node[0];
+            FREE (old_arg_node);
             break;
         }
         case F_dim: {
