@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2003/03/18 17:15:33  sah
+ * now using new drop/cat prfs.
+ * fixed the drop withloop code for
+ * better performance.
+ *
  * Revision 1.19  2003/03/18 12:23:35  sah
  * added doxygen style comments,
  * shapes are as less flattened as possible,
@@ -121,12 +126,12 @@
 /**
  * set this to use build in take/drop instead of withloops.
  */
-#undef HD_USE_BUILTIN_TAKEDROP
+#define HD_USE_BUILTIN_TAKEDROP
 
 /**
  * set this to use build in concat instead of withloops.
  */
-#undef HD_USE_BUILTIN_CONCAT
+#define HD_USE_BUILTIN_CONCAT
 
 /**
  * Structures to store all information about dots occuring in select state-
@@ -462,53 +467,58 @@ MakeTmpId (char *name)
 }
 
 /**
- * builds code for a take/drop operation used to isolate the middle part
+ * builds code for a drop operation used to isolate the middle part
  * of an index or shape vector.
  *
- * @param from a sac expression that can be evaluated to an integer. Lower
- *             bound of the part to grab.
- * @param to a sac expression that can be evaluated to an integer. Upper
- *           bound of the part to grab.
+ * @param left a sac expression that can be evaluated to an integer. Amount
+ *             of elements to drop on the left side.
+ * @param right a sac expression that can be evaluated to an integer. Amount
+ *              of elements to drop on the right side.
  * @param vector vector to operate on
  * @return part of the AST that evaluates to the requested desired middle part.
  */
 node *
-BuildTakeDrop (node *from, node *to, node *vector)
+BuildDrop (node *left, node *right, node *vector)
 {
 #ifdef HD_USE_BUILTIN_TAKEDROP
     node *result;
 
-    DBUG_ENTER ("BuildTakeDrop");
+    DBUG_ENTER ("BuildDrop");
 
-    result
-      = MAKE_BIN_PRF (F_drop, from,
-                      MAKE_BIN_PRF (F_drop, MAKE_BIN_PRF (F_mul_SxS, MakeNum (-1), to),
-                                    vector));
+    result = MAKE_BIN_PRF (F_drop_SxV, left,
+                           MAKE_BIN_PRF (F_drop_SxV,
+                                         MAKE_BIN_PRF (F_mul_SxS, MakeNum (-1), right),
+                                         vector));
 
     DBUG_RETURN (result);
 #else
     node *result;
     node *iv;
+    node *to;
 
-    DBUG_ENTER ("BuildTakeDrop");
+    DBUG_ENTER ("BuildDrop");
 
-    iv = MakeTmpId ("index_take_drop");
+    iv = MakeTmpId ("index_drop");
+    to = MAKE_BIN_PRF (F_sub_AxA, MakePrf (F_shape, MakeExprs (DupTree (vector), NULL)),
+                       MakeArray (MakeExprs (DupTree (right), NULL)));
 
     result
       = MakeNWith (MakeNPart (MakeNWithid (DupId_Ids (iv), NULL),
-                              MakeNGenerator (MakeArray (MakeExprs (from, NULL)),
-                                              MakeArray (MakeExprs (to, NULL)), F_le,
-                                              F_le, NULL, NULL),
+                              MakeNGenerator (MakeArray (MakeExprs (left, NULL)), to,
+                                              F_le, F_lt, NULL, NULL),
                               NULL),
                    MakeNCode (MAKE_EMPTY_BLOCK (),
                               MAKE_BIN_PRF (F_sel, iv, DupTree (vector))),
                    MakeNWithOp (WO_genarray,
-                                MakeArray (
-                                  MakeExprs (MAKE_BIN_PRF (F_add_SxS, MakeNum (1),
-                                                           MAKE_BIN_PRF (F_sub_SxS,
-                                                                         DupTree (to),
-                                                                         DupTree (from))),
-                                             NULL))));
+                                MAKE_BIN_PRF (F_sub_AxA,
+                                              MakePrf (F_shape,
+                                                       MakeExprs (DupTree (vector),
+                                                                  NULL)),
+                                              MakeArray (
+                                                MakeExprs (MAKE_BIN_PRF (F_add_SxS,
+                                                                         DupTree (left),
+                                                                         DupTree (right)),
+                                                           NULL)))));
 
     NCODE_USED (NWITH_CODE (result))++;
     NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
@@ -533,7 +543,7 @@ BuildConcat (node *a, node *b)
 
     DBUG_ENTER ("BuildConcat");
 
-    result = MAKE_BIN_PRF (F_cat, a, b);
+    result = MAKE_BIN_PRF (F_cat_VxV, a, b);
 
     DBUG_RETURN (result);
 #else
@@ -679,23 +689,18 @@ BuildMiddleShape (node *args, node *array, dotinfo *info)
 {
     node *result = NULL;
     node *shape = NULL;
-    node *dim = NULL;
-    node *from = NULL;
-    node *to = NULL;
+    node *left = NULL;
+    node *right = NULL;
 
     DBUG_ENTER ("BuildMiddleShape");
 
     shape = MakePrf (F_shape, MakeExprs (DupTree (array), NULL));
 
-    dim = MakePrf (F_dim, MakeExprs (DupTree (array), NULL));
+    left = MakeNum (info->triplepos - 1);
 
-    from = MakeNum (info->triplepos - 1);
+    right = MakeNum (info->selcnt - info->triplepos);
 
-    to = MakePrf (F_sub_SxS,
-                  MakeExprs (dim, MakeExprs (MakeNum (info->selcnt - info->triplepos + 1),
-                                             NULL)));
-
-    result = BuildTakeDrop (from, to, shape);
+    result = BuildDrop (left, right, shape);
 
     DBUG_RETURN (result);
 }
@@ -878,15 +883,15 @@ node *
 BuildMiddleIndex (node *args, node *iv, dotinfo *info)
 {
     node *result = NULL;
-    node *from = NULL;
-    node *to = NULL;
+    node *left = NULL;
+    node *right = NULL;
 
     DBUG_ENTER ("BuildMiddleIndex");
 
-    from = MakeNum (LDot2Pos (info->tripledot, info) - 1);
-    to = MakeNum (info->selcnt - RDot2Pos (info->tripledot, info));
+    left = MakeNum (info->tripledot - 1);
+    right = MakeNum (info->dotcnt - info->tripledot);
 
-    result = BuildTakeDrop (from, to, DupTree (iv));
+    result = BuildDrop (left, right, DupTree (iv));
 
     DBUG_RETURN (result);
 }
@@ -916,17 +921,21 @@ BuildRightIndex (node *args, node *iv, dotinfo *info)
     for (cnt = 1; cnt <= maxcnt; cnt++) {
         if (RIsDot (cnt, info)) {
             /* Make selection iv[selcnt - rdot(cnt)] */
-            result
-              = MakeExprs (MAKE_BIN_PRF (F_sel,
-                                         MakeArray (MakeExprs (
-                                           MAKE_BIN_PRF (F_sub_SxS,
-                                                         MakePrf (F_dim,
+            result = MakeExprs (
+              MAKE_BIN_PRF (
+                F_sel,
+                MakeArray (
+                  MakeExprs (MAKE_BIN_PRF (F_sub_SxS,
+                                           MAKE_BIN_PRF (F_sel,
+                                                         MakeArray (
+                                                           MakeExprs (MakeNum (0), NULL)),
+                                                         MakePrf (F_shape,
                                                                   MakeExprs (DupTree (iv),
-                                                                             NULL)),
-                                                         MakeNum (RIsDot (cnt, info))),
-                                           NULL)),
-                                         DupTree (iv)),
-                           result);
+                                                                             NULL))),
+                                           MakeNum (RIsDot (cnt, info))),
+                             NULL)),
+                DupTree (iv)),
+              result);
         } else {
             result
               = MakeExprs (DupTree (GetNthExpr (info->selcnt - cnt + 1, args)), result);
