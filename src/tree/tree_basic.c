@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.24  2000/07/21 08:21:10  nmw
+ * MakeModsepc added
+ *
  * Revision 1.23  2000/07/19 15:42:42  nmw
  * flag ICM_END_OF_STATEMENT added, forces printing of ;
  *
@@ -1971,6 +1974,26 @@ MakeCWrapper (node *next, char *name, char *mod, int argcount, int rescount)
     CWRAPPER_RESCOUNT (new_node) = rescount;
     CWRAPPER_FUNS (new_node) = NULL; /* initialized without a mapped fundef */
     DBUG_RETURN (new_node);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeModspec (char *name, node *exports)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeModspec");
+
+    tmp = CreateCleanNode (N_modspec);
+
+    MODDEC_NAME (tmp) = name;
+    MODDEC_OWN (tmp) = exports;
+
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+
+    DBUG_RETURN (tmp);
 }
 
 /*--------------------------------------------------------------------------*/
