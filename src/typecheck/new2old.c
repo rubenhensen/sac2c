@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2004/11/22 13:54:09  sbs
+ * changed NT2OTwithop into NT2OTfold
+ *
  * Revision 1.23  2004/10/26 09:38:38  sah
  * TYFixAndEliminateAlpha is called on funtion types now as well
  *
@@ -601,7 +604,7 @@ NT2OTwithid (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *NT2OTwithop( node *arg_node, info *arg_info)
+ *   node *NT2OTfold( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -609,7 +612,7 @@ NT2OTwithid (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-NT2OTwithop (node *arg_node, info *arg_info)
+NT2OTfold (node *arg_node, info *arg_info)
 {
     node *foldfun;
     node *cexpr, *neutr;
@@ -617,34 +620,27 @@ NT2OTwithop (node *arg_node, info *arg_info)
     ntype *fold_type;
     types *old_type;
 
-    DBUG_ENTER ("NT2OTwithop");
+    DBUG_ENTER ("NT2OTfold");
 
-    if (NWITHOP_IS_FOLD (arg_node)) {
-        nwith = LET_EXPR (INFO_NT2OT_LAST_LET (arg_info));
-        cexpr = NWITH_CEXPR (nwith);
-        neutr = NWITH_NEUTRAL (nwith);
-        DBUG_ASSERT ((neutr != NULL), "NWITH_NEUTRAL does not exist");
-        DBUG_ASSERT ((NODE_TYPE (neutr) == N_id), "NWITH_NEUTRAL is not a N_id");
-        DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "NWITH_CEXPR is not a N_id");
-        fold_type
-          = TYLubOfTypes (AVIS_TYPE (ID_AVIS (cexpr)), AVIS_TYPE (ID_AVIS (neutr)));
-        old_type = TYType2OldType (fold_type);
-        fold_type = TYFreeType (fold_type);
+    nwith = LET_EXPR (INFO_NT2OT_LAST_LET (arg_info));
+    cexpr = NWITH_CEXPR (nwith);
+    neutr = NWITH_NEUTRAL (nwith);
+    DBUG_ASSERT ((neutr != NULL), "NWITH_NEUTRAL does not exist");
+    DBUG_ASSERT ((NODE_TYPE (neutr) == N_id), "NWITH_NEUTRAL is not a N_id");
+    DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "NWITH_CEXPR is not a N_id");
+    fold_type = TYLubOfTypes (AVIS_TYPE (ID_AVIS (cexpr)), AVIS_TYPE (ID_AVIS (neutr)));
 
-        foldfun
-          = CreateFoldFun (old_type, NWITHOP_FUNDEF (arg_node), NWITHOP_PRF (arg_node),
-                           IDS_NAME (LET_IDS (INFO_NT2OT_LAST_LET (arg_info))),
-                           ID_NAME (cexpr));
-        NWITHOP_FUNDEF (arg_node) = foldfun;
+    foldfun = GPFcreateFoldFun (fold_type, FOLD_FUNDEF (arg_node), FOLD_PRF (arg_node),
+                                IDS_NAME (LET_IDS (INFO_NT2OT_LAST_LET (arg_info))),
+                                ID_NAME (cexpr));
+    FOLD_FUNDEF (arg_node) = foldfun;
+    fold_type = TYfreeType (fold_type);
 
-        old_type = FreeAllTypes (old_type);
-
-        /*
-         * append foldfun to INFO_NT2OT_FOLDFUNS
-         */
-        FUNDEF_NEXT (foldfun) = INFO_NT2OT_FOLDFUNS (arg_info);
-        INFO_NT2OT_FOLDFUNS (arg_info) = foldfun;
-    }
+    /*
+     * append foldfun to INFO_NT2OT_FOLDFUNS
+     */
+    FUNDEF_NEXT (foldfun) = INFO_NT2OT_FOLDFUNS (arg_info);
+    INFO_NT2OT_FOLDFUNS (arg_info) = foldfun;
 
     DBUG_RETURN (arg_node);
 }
