@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/03/15 12:58:46  dkr
+ * macro DUPVECT added
+ *
  * Revision 1.7  2000/03/02 13:06:30  jhs
  * Added DupSt and DupMt.
  *
@@ -63,6 +66,17 @@
 #define DUP_INLINE 1
 #define DUP_INVARIANT 2
 #define DUP_WLF 3
+
+#define DUPVECT(new_vect, old_vect, dims, type)                                          \
+    {                                                                                    \
+        int d;                                                                           \
+        if ((old_vect) != NULL) {                                                        \
+            (new_vect) = (type *)MALLOC (dims * sizeof (type));                          \
+            for (d = 0; d < dims; d++) {                                                 \
+                (new_vect)[d] = (old_vect)[d];                                           \
+            }                                                                            \
+        }                                                                                \
+    }
 
 extern node *DupTreeLUT (node *arg_node, node *arg_info, lut_t *lut);
 extern node *DupTree (node *arg_node, node *arg_info);
