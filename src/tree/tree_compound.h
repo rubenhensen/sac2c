@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.166  2004/11/26 12:03:34  sbs
+ * *** empty log message ***
+ *
  * Revision 3.165  2004/11/26 11:59:25  ktr
  * changed *_NOOP into *_ISNOOP
  *
@@ -302,16 +305,15 @@ extern bool TCisNonUniqueHidden (types *type);
  ***/
 
 #define IDS_NAME(n) AVIS_NAME (IDS_AVIS (n))
-#define IDS_VARNO(n) VARDEC_OR_ARG_VARNO (IDS_VARDEC (n))
+#define IDS_VARNO(n) VARDEC_OR_ARG_VARNO (IDS_DECL (n))
 #define IDS_DECL(n) AVIS_DECL (IDS_AVIS (n))
-#define IDS_TYPE(n) VARDEC_TYPE (IDS_VARDEC (n))
+#define IDS_TYPE(n) VARDEC_TYPE (IDS_DECL (n))
 #define IDS_NTYPE(n) AVIS_TYPE (IDS_AVIS (n))
-#define IDS_DIM(n) VARDEC_OR_ARG_DIM (IDS_VARDEC (n))
-#define IDS_SHPSEG(n) TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (IDS_VARDEC (n)))
+#define IDS_DIM(n) VARDEC_OR_ARG_DIM (IDS_DECL (n))
+#define IDS_SHPSEG(n) TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (IDS_DECL (n)))
 #define IDS_SHAPE(n, x) SHPSEG_SHAPE (IDS_SHPSEG (n), x)
-#define IDS_VARDEC_NAME(n) VARDEC_OR_ARG_NAME (IDS_VARDEC (n))
-#define IDS_VARDEC_NEXT(n) VARDEC_OR_ARG_NEXT (IDS_VARDEC (n))
-#define IDS_PADDED(n) VARDEC_OR_ARG_PADDED (IDS_VARDEC (n))
+#define IDS_VARDEC_NAME(n) VARDEC_OR_ARG_NAME (IDS_DECL (n))
+#define IDS_PADDED(n) VARDEC_OR_ARG_PADDED (IDS_DECL (n))
 
 extern node *TCappendIds (node *chain, node *item);
 extern int TCcountIds (node *ids_arg);
