@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2002/06/07 17:15:33  mwe
+ * AssociativeLaw added
+ *
  * Revision 3.35  2002/03/13 16:03:20  ktr
  * Withloop-Scalarization added to optimization-cycle
  *
@@ -296,6 +299,7 @@
 #include "CSE.h"
 #include "WithloopFolding.h"
 #include "WithloopScalarization.h"
+#include "AssociativeLaw.h"
 #include "wl_access_analyze.h"
 #include "tile_size_inference.h"
 #include "index.h"
@@ -1103,6 +1107,10 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if ((optimize & OPT_WLS) && (use_ssaform)) {
                 arg_node = WithloopScalarization (arg_node, INFO_OPT_MODUL (arg_info));
+            }
+
+            if ((optimize & OPT_AL) && (use_ssaform)) {
+                arg_node = AssociativeLaw (arg_node, arg_info);
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
