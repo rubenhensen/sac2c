@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/01/10 18:44:27  dkr
+ * function ComputeIndexMinMax modified
+ *
  * Revision 3.11  2001/01/10 11:44:18  dkr
  * WLBLOCKX_... macros used
  *
@@ -152,7 +155,6 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "print.h"
-
 #include "wlpragma_funs.h"
 
 #include <limits.h> /* INT_MAX */
@@ -5895,6 +5897,8 @@ ComputeCubes (node *strides)
  *
  * description:
  *   Computes the minimum and maximum of the index-vector found in 'strides'.
+ *   If the minimum/maximum can not determined (var. strides), it is set
+ *   to (-1).
  *
  * remark:
  *   if 'strides' is a N_WLstride-node, this must be a sequence of cubes.
@@ -5918,7 +5922,7 @@ ComputeIndexMinMax (int *idx_min, int *idx_max, int dims, node *strides)
          * initialize 'idx_min', 'idx_max'.
          */
         for (d = 0; d < dims; d++) {
-            idx_min[d] = INT_MAX;
+            idx_min[d] = INT_MAX; /* *** caution!! type dependent!! *** */
             idx_max[d] = 0;
         }
 
@@ -5959,7 +5963,7 @@ ComputeIndexMinMax (int *idx_min, int *idx_max, int dims, node *strides)
                 if (NODE_TYPE (WLSTRIDEVAR_BOUND1 (strides)) == N_num) {
                     idx_min[d] = NUM_VAL (WLSTRIDEVAR_BOUND1 (strides));
                 } else {
-                    idx_min[d] = 0; /* *** caution! *** */
+                    idx_min[d] = (-1);
                 }
             }
 
@@ -5977,7 +5981,7 @@ ComputeIndexMinMax (int *idx_min, int *idx_max, int dims, node *strides)
                 if (NODE_TYPE (WLSTRIDEVAR_BOUND2 (stride)) == N_num) {
                     idx_max[d] = NUM_VAL (WLSTRIDEVAR_BOUND2 (stride));
                 } else {
-                    idx_max[d] = INT_MAX; /* *** caution!!!! LONG_MAX??? *** */
+                    idx_max[d] = (-1);
                 }
             }
 
