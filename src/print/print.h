@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/07/11 09:02:10  cg
+ * Revision 1.15  1995/12/01 17:14:59  cg
+ * added function PrintPragma.
+ *
+ * Revision 1.14  1995/07/11  09:02:10  cg
  * declaration of PrintConstdef deleted.
  *
  * Revision 1.13  1995/07/04  08:38:17  hw
@@ -64,7 +67,6 @@ extern node *PrintBlock (node *, node *);
 extern node *PrintLet (node *, node *);
 extern node *PrintFundef (node *, node *);
 extern node *PrintTypedef (node *, node *);
-/* extern node *PrintConstdef(node * , node *); */
 extern node *PrintObjdef (node *, node *);
 extern node *PrintModul (node *, node *);
 extern node *PrintImplist (node *, node *);
@@ -98,6 +100,7 @@ extern node *PrintPost (node *, node *);
 extern node *PrintPre (node *, node *);
 extern node *PrintIcm (node *, node *);
 extern node *PrintVectInfo (node *, node *);
+extern node *PrintPragma (node *, node *);
 
 extern node *Print (node *);
 
