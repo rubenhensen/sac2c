@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.29  1999/10/17 13:32:23  sbs
+ * sbs-mechanism included - but still commented out...
+ *
  * Revision 2.28  1999/09/10 14:27:22  jhs
  * Removed those ugly MAKENODE_xxx macros.
  *
@@ -220,41 +223,6 @@
  * Revision 1.161  1998/06/08 12:38:32  cg
  * Function DuplicateTypes can now deal with type NULL
  *
- * Revision 1.160  1998/06/05 15:27:49  cg
- * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
- * Now, module name and symbol name are combined correctly by ':'.
- * Only when it really comes to the generation of C code, the ':' is
- * replaced by '__'. This is done by the renaming of all identifiers
- * during the precompilation phase.
- *
- * Revision 1.159  1998/05/30 19:43:14  dkr
- * creation of PseudoFun debugged:
- *   FUNNAME is no longer shared
- *
- * Revision 1.158  1998/05/30 17:46:21  dkr
- * corrected an error-message
- *
- * Revision 1.157  1998/05/29 12:39:32  sbs
- * pseudo-fun creation debugged...
- *
- * Revision 1.156  1998/05/28 23:54:46  dkr
- * NWITHOP_FUNDEF is now set correctly after creation of pseudo-fold-fun
- *
- * Revision 1.155  1998/05/28 14:52:22  sbs
- * abstraction of pseudo-funs for WL-fold inserted!
- * this automatically converts all folds into FOLDFUN instead of FOLDPRF!
- *
- * Revision 1.154  1998/05/25 09:56:28  srs
- * removed unused parameter from functions TI_Nfold..()
- *
- * Revision 1.153  1998/05/18 07:51:46  srs
- * fixed bug in TI_Nwith()
- *
- * Revision 1.152  1998/05/17 07:26:30  srs
- * fixed bug in TI_Nwith
- *
- * Revision 1.151  1998/05/12 22:34:17  dkr
- * removed unused var
  *
  * ... [eliminated] ...
  *
@@ -289,6 +257,10 @@
 #include "globals.h"
 #include "typecheck_WL.h"
 #include "gen_pseudo_fun.h"
+
+#if 0 /* only sbs uses this right now... */
+#include "new_typecheck.h"
+#endif
 
 static node *top_fundef;
 
@@ -3215,6 +3187,12 @@ Typecheck (node *arg_node)
     for (i = 1; i < PF_MAXFUN; i++)
         PFfunapcntr[i] = 0;
 
+#if 0 /* only sbs uses this right now... */
+   if( sbs == 1) {
+     NewTypeCheck( arg_node);
+     exit(0);
+   }
+#endif
     /*
      * generate a table of primitive functions to look up their
      * types later on
