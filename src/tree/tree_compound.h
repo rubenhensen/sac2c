@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.113  2004/11/23 14:55:11  ktr
+ * Added IDS_NAME, VARDEC_NAME
+ *
  * Revision 3.112  2004/11/23 14:49:38  skt
  * brushing during SDC 2k4
  *
@@ -134,6 +137,7 @@ extern bool TCisNonUniqueHidden (types *type);
  ***  IDS :
  ***/
 
+#define IDS_NAME(n) AVIS_NAME (IDS_AVIS (n))
 #define IDS_VARNO(n) VARDEC_OR_ARG_VARNO (IDS_VARDEC (n))
 #define IDS_TYPE(n) VARDEC_OR_ARG_TYPE (IDS_VARDEC (n))
 #define IDS_NTYPE(n) AVIS_TYPE (IDS_AVIS (n))
@@ -601,6 +605,7 @@ extern node *TCremoveFundef (node *fundef_chain, node *fundef);
  *  compound access macros
  */
 
+#define VARDEC_NAME(n) AVIS_NAME (VARDEC_AVIS (n))
 #define VARDEC_BASETYPE(n) (TYPES_BASETYPE (VARDEC_TYPE (n)))
 #define VARDEC_DIM(n) (TYPES_DIM (VARDEC_TYPE (n)))
 #define VARDEC_SHAPE(n, x) (TYPES_SHAPE (VARDEC_TYPE (n), x))
