@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/11/26 19:58:50  sah
+  bugfix
+
   Revision 1.3  2004/11/26 11:58:04  sah
   implemented pre/post tables
 
@@ -196,7 +199,7 @@ preposttable_t posttable = {
     <xsl:value-of select="', NULL'" />
   </xsl:template>
 
-  <xsl:template match="traversal[@prefun]" mode="posttable">
+  <xsl:template match="traversal[@postfun]" mode="posttable">
     <xsl:value-of select="', &amp;'" />
     <xsl:value-of select="@postfun" />
   </xsl:template>
