@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/05/07 15:02:46  dkr
+ * type of flags is defined as 'bool' instead of 'int' now
+ *
  * Revision 3.5  2001/02/09 14:39:29  nmw
  * global ssa flag added
  *
@@ -78,13 +81,10 @@
  * top arena.
  *
  * Revision 2.20  1999/10/22 14:16:41  sbs
- * made simpletype_size global, since it is needed in compile, tile_size_inference AND
- * constants already!
+ * made simpletype_size global, since it is needed in compile,
+ * tile_size_inference AND constants already!
  *
  * [...]
- *
- * Revision 1.1  1995/12/30  14:47:06  cg
- * Initial revision
  *
  */
 
@@ -103,14 +103,8 @@
 
 #define MAIN_MOD_NAME "_MAIN"
 
-#define MAX_BREAK_SPECIFIER 32
-
-#define PF_MAXFUN 100
-#define PF_MAXFUNAP 100
-#define PF_MAXFUNNAMELEN 100
-
-extern int dkr;
-extern int sbs;
+extern bool sbs;
+extern bool dkr;
 
 extern char version_id[];
 extern char target_platform[];
@@ -127,21 +121,21 @@ extern char commandline[];
 extern file_type filetype;
 extern char *tmp_dirname;
 
-extern int dynamic_shapes;
+extern bool dynamic_shapes;
 
 extern char *target_name;
+
+extern int gen_mt_code;
 
 #define GEN_MT_NONE 0
 #define GEN_MT_OLD 1
 #define GEN_MT_NEW 2
 
-extern int gen_mt_code;
 extern int num_threads;
 extern int max_sync_fold;
 extern int needed_sync_fold;
 extern int max_threads;
 extern int min_parallel_size;
-
 extern int max_replication_size;
 
 #define MAX_CPP_VARS 32
@@ -149,10 +143,10 @@ extern int max_replication_size;
 extern char *cppvars[MAX_CPP_VARS];
 extern int num_cpp_vars;
 
-extern int cc_debug;
+extern bool cc_debug;
 extern int cc_optimize;
 
-extern int make_patchwith;
+extern int patch_with;
 
 extern unsigned int optimize;
 
@@ -187,7 +181,8 @@ extern unsigned int optimize;
 #define OPT_AP 0x02000000   /* array padding                               */
 #define OPT_APL 0x04000000  /* array placement                             */
 
-extern bool use_ssaform; /* use ssa-form based optimizations instead of old opts */
+/* use ssa-form based optimizations instead of old opts */
+extern bool use_ssaform;
 
 extern int optvar;
 extern int inlnum;
@@ -201,13 +196,14 @@ extern int initial_master_heapsize;
 extern int initial_worker_heapsize;
 extern int initial_unified_heapsize;
 
-extern int show_refcnt;
-extern int show_idx;
+extern bool show_refcnt;
+extern bool show_idx;
 
-#define PAB_NO 0
-#define PAB_YES 1
+extern bool print_after_break;
 
-extern int print_after_break;
+extern bool apdiag;
+extern int padding_overhead_limit;
+extern int apdiag_limit;
 
 extern unsigned int traceflag;
 
@@ -276,13 +272,17 @@ extern unsigned int intrinsics;
 #define INTRINSIC_MODA 0x0400
 
 extern unsigned int generatelibrary;
-#define GENERATELIBRARY_NOTHING 0x0000 /* generate no library - dummy value for init */
-#define GENERATELIBRARY_SAC 0x0001     /* generate SAC library from module */
-#define GENERATELIBRARY_C 0x0002       /* generate C library and headerfile from module */
 
-extern bool apdiag;
-extern int padding_overhead_limit;
-extern int apdiag_limit;
+/* generate no library - dummy value for init */
+#define GENERATELIBRARY_NOTHING 0x0000
+/* generate SAC library from module */
+#define GENERATELIBRARY_SAC 0x0001
+/* generate C library and headerfile from module */
+#define GENERATELIBRARY_C 0x0002
+
+#define PF_MAXFUN 100
+#define PF_MAXFUNAP 100
+#define PF_MAXFUNNAMELEN 100
 
 extern int PFfuncntr;
 extern char *PFfunnme[PF_MAXFUN];
@@ -290,17 +290,19 @@ extern int PFfunapcntr[PF_MAXFUN];
 extern int PFfunapline[PF_MAXFUN][PF_MAXFUNAP];
 extern int PFfunapmax;
 
-extern int use_efence;
-extern int cleanup;
-extern int linkstyle;
-extern int libstat;
-extern int makedeps;
-extern int gen_cccall;
-extern int show_syscall;
+#define MAX_BREAK_SPECIFIER 32
 
 extern compiler_phase_t break_after;
 extern int break_cycle_specifier;
 extern char break_specifier[MAX_BREAK_SPECIFIER];
+
+extern bool use_efence;
+extern bool cleanup;
+extern int linkstyle;
+extern bool libstat;
+extern int makedeps;
+extern bool gen_cccall;
+extern bool show_syscall;
 
 extern int errors;
 extern int warnings;
