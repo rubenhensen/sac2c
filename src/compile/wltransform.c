@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2001/02/12 17:54:35  dkr
+ * fixed a bug in GenerateCompleteDomain()
+ *
  * Revision 3.30  2001/02/09 10:51:21  dkr
  * fixed a bug in InferFitted
  *
@@ -1786,6 +1789,52 @@ NormalizeStride_1 (node *stride)
     WLSTRIDE_STEP (stride) = step;
     WLGRID_BOUND1 (grid) = grid_b1 + (bound1 - new_bound1);
     WLGRID_BOUND2 (grid) = grid_b2 + (bound1 - new_bound1);
+
+    DBUG_RETURN (stride);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *NormalizeGrids( node *stride)
+ *
+ * Description:
+ *   If the grids contained in the given stride have an offset, remove it:
+ *
+ *       5 -> 15 step 5                  7 -> 15 step 5
+ *               2 -> 3: ...     ==>             0 -> 1: ...
+ *               4 -> 5: ...                     2 -> 3: ...
+ *
+ ******************************************************************************/
+
+node *
+NormalizeGrids (node *stride)
+{
+    node *grids;
+    int offset;
+
+    DBUG_ENTER ("NormalizeGrids");
+
+    DBUG_ASSERT (((NODE_TYPE (stride) == N_WLstride)
+                  || (NODE_TYPE (stride) == N_WLstrideVar)),
+                 "illegal stride found!");
+
+    if (NODE_TYPE (stride) == N_WLstride) {
+        grids = WLSTRIDE_CONTENTS (stride);
+        DBUG_ASSERT ((grids != NULL), "no grid found");
+        offset = WLGRID_BOUND1 (grids);
+
+        if (offset > 0) {
+            WLSTRIDE_BOUND1 (stride) += offset;
+            do {
+                DBUG_ASSERT ((NODE_TYPE (grids) == N_WLgrid), "var. grid found!");
+
+                WLGRID_BOUND1 (grids) -= offset;
+                WLGRID_BOUND2 (grids) -= offset;
+                grids = WLGRID_NEXT (grids);
+            } while (grids != NULL);
+        }
+    }
 
     DBUG_RETURN (stride);
 }
@@ -3864,10 +3913,9 @@ CompareWLtrees (node *tree1, node *tree2)
 static node *
 OptWL (node *nodes)
 {
-    node *next, *grids;
+    node *next;
     node *cont1, *cont2;
     node *nextdim1, *nextdim2;
-    int offset;
 
     DBUG_ENTER ("OptWL");
 
@@ -3906,17 +3954,7 @@ OptWL (node *nodes)
              * if the grids contained in the stride have an offset
              * (the first grid does not begin at index 0), remove this offset.
              */
-            grids = cont1;
-            DBUG_ASSERT ((grids != NULL), "no grid found");
-            offset = WLGRID_BOUND1 (grids);
-            WLSTRIDE_BOUND1 (nodes) += offset;
-            if (offset > 0) {
-                do {
-                    WLGRID_BOUND1 (grids) -= offset;
-                    WLGRID_BOUND2 (grids) -= offset;
-                    grids = WLGRID_NEXT (grids);
-                } while (grids != NULL);
-            }
+            nodes = NormalizeGrids (nodes);
 
             /*
              * if the first (and only) grid fills the whole step range
@@ -4389,6 +4427,222 @@ NormWL (int dims, node *nodes)
 /******************************************************************************
  *
  * Function:
+ *   node *GenerateCompleteDomain( node *stride, int dims, shpseg *shape)
+ *
+ * Description:
+ *   Supplements strides/grids for the complement of 'stride'.
+ *
+ *   For constant strides we must *not* optimize and merge strides, because
+ *   'BlockWL()' can not handle them!! We must create simple cubes instead.
+ *   Example (with shape [10,10]):
+ *
+ *       5 -> 10 step[0] 2
+ *                  0 -> 1: 0 -> 5  step[1] 1
+ *                                     0 -> 1: op
+ *
+ *     is *not* converted into
+ *
+ *       0 ->  5 step[0] 1
+ *                  0 -> 1: 0 -> 10 step[1] 1
+ *                                     0 -> 1: init/copy
+ *       5 -> 10 step[0] 2
+ *                  0 -> 1: 0 -> 5  step[1] 1
+ *                                     0 -> 1: op
+ *                          5 -> 10 step[1] 1
+ *                                     0 -> 1: init/copy
+ *                  1 -> 2: 0 -> 10 step[1] 1
+ *                                     0 -> 1: init/copy
+ *
+ *     but into
+ *
+ *       0 ->  5 step[0] 1
+ *                  0 -> 1: 0 -> 10 step[1] 1
+ *                                     0 -> 1: init/copy
+ *       5 -> 10 step[0] 2
+ *                  0 -> 1: 0 -> 5  step[1] 1
+ *                                     0 -> 1: op
+ *                  1 -> 2: 0 -> 5  step[1] 1
+ *                                     0 -> 1: init/copy
+ *       5 -> 10 step[0] 1
+ *                  0 -> 1: 5 -> 10 step[1] 1
+ *                                     0 -> 1: init/copy
+ *
+ *   This function is called by 'ComputeOneCube'.
+ *
+ ******************************************************************************/
+
+static node *
+GenerateCompleteDomain (node *stride, int dims, shpseg *shape)
+{
+    node *new_strides, *new_stride, *new_grid;
+    node *next_dim;
+    node *compl_stride;
+    node *act_stride, *act_grid;
+    node *act_compl_stride, *act_compl_grid, *last_compl_grid;
+    node *dup_strides = NULL;
+    node *last_dup_grid = NULL;
+
+    DBUG_ENTER ("GenerateCompleteDomain");
+
+    DBUG_ASSERT ((stride != NULL), "no stride found");
+    DBUG_ASSERT ((NODE_TYPE (stride) == N_WLstride), "var. stride found");
+    DBUG_ASSERT ((WLSTRIDE_NEXT (stride) == NULL), "more than one stride found");
+
+    /*
+     * we duplicate 'strides'
+     *  -> later on we use this to generate complement strides
+     */
+    compl_stride = DupNode (stride);
+    /*
+     * set all steps to '1' and remove the code in the duplicated chain
+     */
+    act_compl_stride = compl_stride;
+    while (act_compl_stride != NULL) {
+        act_compl_stride = NormalizeGrids (act_compl_stride);
+        WLSTRIDE_STEP (act_compl_stride) = 1;
+        act_compl_grid = WLSTRIDE_CONTENTS (act_compl_stride);
+        WLGRID_BOUND2 (act_compl_grid) = 1;
+        act_compl_stride = WLGRID_NEXTDIM (act_compl_grid);
+    }
+    WLGRID_CODE (act_compl_grid) = NULL;
+
+    new_strides = NULL;
+    act_stride = stride;
+    act_compl_stride = compl_stride;
+    last_compl_grid = NULL;
+    while (act_stride != NULL) {
+        act_grid = WLSTRIDE_CONTENTS (act_stride);
+        act_compl_grid = WLSTRIDE_CONTENTS (act_compl_stride);
+        DBUG_ASSERT ((NODE_TYPE (act_stride) == N_WLstride), "var. stride found");
+        DBUG_ASSERT ((NODE_TYPE (act_grid) == N_WLgrid), "var. grid found");
+
+        /*
+         * normalize the bounds
+         */
+        act_stride = NormalizeGrids (act_stride);
+
+        /*
+         * insert lower part of complement
+         */
+        new_stride
+          = GenerateNodeForGap (act_stride, NULL, WLSTRIDE_BOUND2 (act_stride), NULL,
+                                NULL, SHPSEG_SHAPE (shape, WLSTRIDE_DIM (act_stride)),
+                                NULL, FALSE);
+        if (new_stride != NULL) {
+            WLSTRIDE_CONTENTS (new_stride)
+              = MakeWLgrid (0, WLGRID_DIM (act_grid), 0, 1, FALSE,
+                            GenerateShapeStrides (WLGRID_DIM (act_grid) + 1, dims, shape),
+                            NULL, NULL);
+
+            if (last_compl_grid != NULL) {
+                /*
+                 * duplicate 'compl_stride' from root til 'last_compl_grid'.
+                 */
+                next_dim = WLGRID_NEXTDIM (last_compl_grid);
+                WLGRID_NEXTDIM (last_compl_grid) = NULL;
+                dup_strides = DupNode (compl_stride);
+                WLGRID_NEXTDIM (last_compl_grid) = next_dim;
+                /*
+                 * go to duplicated 'last_compl_grid'
+                 */
+                last_dup_grid = WLSTRIDE_CONTENTS (dup_strides);
+                while (WLGRID_NEXTDIM (last_dup_grid) != NULL) {
+                    last_dup_grid = WLSTRIDE_CONTENTS (WLGRID_NEXTDIM (last_dup_grid));
+                }
+            }
+
+            /*
+             * append new stride/grid to duplicated 'compl_stride'
+             */
+            if (last_compl_grid != NULL) {
+                WLGRID_NEXTDIM (last_dup_grid) = new_stride;
+            } else {
+                dup_strides = new_stride;
+            }
+
+            /*
+             * insert 'dup_strides' into 'new_strides'
+             */
+            new_strides = InsertWLnodes (new_strides, dup_strides);
+        }
+
+        /*
+         * insert upper part of complement
+         */
+        new_stride = GenerateNodeForGap (act_stride, NULL, 0, NULL, NULL,
+                                         WLSTRIDE_BOUND1 (act_stride), NULL, FALSE);
+        if (new_stride != NULL) {
+            WLSTRIDE_CONTENTS (new_stride)
+              = MakeWLgrid (0, WLGRID_DIM (act_grid), 0, 1, FALSE,
+                            GenerateShapeStrides (WLGRID_DIM (act_grid) + 1, dims, shape),
+                            NULL, NULL);
+
+            if (last_compl_grid != NULL) {
+                /*
+                 * duplicate 'compl_stride' from root til 'last_compl_grid'.
+                 */
+                next_dim = WLGRID_NEXTDIM (last_compl_grid);
+                WLGRID_NEXTDIM (last_compl_grid) = NULL;
+                dup_strides = DupNode (compl_stride);
+                WLGRID_NEXTDIM (last_compl_grid) = next_dim;
+                /*
+                 * go to duplicated 'last_compl_grid'
+                 */
+                last_dup_grid = WLSTRIDE_CONTENTS (dup_strides);
+                while (WLGRID_NEXTDIM (last_dup_grid) != NULL) {
+                    last_dup_grid = WLSTRIDE_CONTENTS (WLGRID_NEXTDIM (last_dup_grid));
+                }
+            }
+
+            /*
+             * append new stride/grid to duplicated 'compl_stride'
+             */
+            if (last_compl_grid != NULL) {
+                WLGRID_NEXTDIM (last_dup_grid) = new_stride;
+            } else {
+                dup_strides = new_stride;
+            }
+
+            /*
+             * insert 'dup_strides' into 'new_strides'
+             */
+            new_strides = InsertWLnodes (new_strides, dup_strides);
+        }
+
+        /*
+         * is the grid incomplete?
+         */
+        act_grid = FillGapSucc (&new_grid, act_grid, NULL,
+                                WLGRID_BOUND2 (act_grid) - WLGRID_BOUND1 (act_grid), NULL,
+                                NULL, WLSTRIDE_STEP (act_stride), NULL, FALSE);
+        if (new_grid != NULL) {
+            WLGRID_NEXTDIM (new_grid) = DupNode (WLGRID_NEXTDIM (act_compl_grid));
+        }
+
+        /*
+         * next dim
+         */
+        act_stride = WLGRID_NEXTDIM (act_grid);
+        act_compl_stride = WLGRID_NEXTDIM (act_compl_grid);
+        last_compl_grid = act_compl_grid;
+    }
+
+    /*
+     * insert completed stride/grid into 'new_strides'
+     */
+    new_strides = InsertWLnodes (new_strides, stride);
+
+    /*
+     * the copy of 'strides' is useless now
+     */
+    compl_stride = FreeTree (compl_stride);
+
+    DBUG_RETURN (new_strides);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *GenerateCompleteDomainVar( node *stride_var, int dims, shpseg *shape)
  *
  * Description:
@@ -4407,16 +4661,16 @@ NormWL (int dims, node *nodes)
  *
  *       0 ->  5 step[0] 1
  *                  0 -> 1: 0 -> 10 step[1] 1
- *                                     0 -> 1: init/copy/noop
+ *                                     0 -> 1: init/copy
  *       5 -> 10 step[0] 2
  *                  0 -> 1: 0 -> a  step[1] 1
- *                                     0 -> 1: init/copy/noop
+ *                                     0 -> 1: init/copy
  *                          a -> b  step[1] 1
  *                                     0 -> 1: op
  *                          b -> 10 step[1] 1
- *                                     0 -> 1: init/copy/noop
+ *                                     0 -> 1: init/copy
  *                  1 -> 2: 0 -> 10 step[1] 1
- *                                     0 -> 1: init/copy/noop
+ *                                     0 -> 1: init/copy
  *
  *   This function is called by 'ComputeOneCube'.
  *
@@ -4435,9 +4689,7 @@ GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
     DBUG_ENTER ("GenerateCompleteDomainVar");
 
     if (stride != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (stride) == N_WLstrideVar), "no variable stride found");
-
-        grid = WLSTRIDEVAR_CONTENTS (stride);
+        grid = WLSTRIDEX_CONTENTS (stride);
         /*
          * CAUTION: the grid can be a N_WLgrid *or* N_WLgridVar node!!
          */
@@ -4473,7 +4725,7 @@ GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
         /*
          * append lower part of complement
          */
-        shp_idx = GET_SHAPE_IDX (shape, WLSTRIDEVAR_DIM (stride));
+        shp_idx = GET_SHAPE_IDX (shape, WLSTRIDEX_DIM (stride));
         stride = FillGapSucc (&new_node, stride, name2, val2, pnode2, NULL, shp_idx, NULL,
                               FALSE);
         if (new_node != NULL) {
@@ -5459,9 +5711,8 @@ ComputeCubes (node *strides)
 static node *
 InsertNoopGrids (node *stride)
 {
-    node *grid, *grid_next, *tmp;
+    node *grid, *grid_next;
     void *pnode1, *pnode2;
-    int offset;
     char *name1, *name2;
     int val1, val2;
 
@@ -5481,16 +5732,7 @@ InsertNoopGrids (node *stride)
             /*
              * lower bound of first grid >0 ??
              */
-            if (WLGRID_BOUND1 (grid) > 0) {
-                offset = WLGRID_BOUND1 (grid);
-                WLSTRIDE_BOUND1 (stride) += offset;
-                tmp = grid;
-                while (tmp != NULL) {
-                    WLGRID_BOUND1 (tmp) -= offset;
-                    WLGRID_BOUND2 (tmp) -= offset;
-                    tmp = WLGRID_NEXT (tmp);
-                }
-            }
+            stride = NormalizeGrids (stride);
         } else {
             DBUG_ASSERT ((NodeOrInt_IntEq (NODE_TYPE (grid),
                                            WLGRIDX_GET_ADDR (grid, BOUND1), 0)),
@@ -6098,7 +6340,7 @@ WLTRAwith (node *arg_node, node *arg_info)
 {
     node *strides, *cubes, *segs, *seg;
     shpseg *wl_shape;
-    bool is_fold, do_naive_comp;
+    bool is_fold, do_naive_comp, all_const;
     int wl_dims, b;
     wl_bs_t WL_break_after;
     node *new_node = NULL;
@@ -6204,48 +6446,63 @@ WLTRAwith (node *arg_node, node *arg_info)
              */
             DBUG_EXECUTE ("WLtrans", NOTE (("step 1: cube building\n")));
 
-            if (!AllStridesAreConstant (strides, TRUE, TRUE)) {
-                if (WLSTRIDEX_NEXT (strides) == NULL) {
-                    /*
-                     * we have a single stride (generator), which is not constant
-                     *  -> the index-range of the stride is possibly a *proper* subset
-                     *     of the index-vector-space.
-                     *  -> add the missing indices
-                     *  -> if we have a genarray/modarray with-loop, deactivate naive
-                     *     compilation, because naive compilation can't handle implicit
-                     *     init/copy operations!
-                     */
-                    if (!is_fold) {
-                        strides = GenerateCompleteDomainVar (strides, wl_dims, wl_shape);
+            all_const = AllStridesAreConstant (strides, TRUE, TRUE);
 
+            if (WLSTRIDEX_NEXT (strides) == NULL) {
+                /*
+                 * we have a single stride (generator)
+                 *  -> the index-range of the stride is possibly a *proper* subset
+                 *     of the index-vector-space.
+                 */
+                if (!is_fold) {
+                    /*
+                     * no fold with-loop
+                     *  -> add the missing indices (init/copy operations)
+                     */
+                    if (all_const) {
+                        cubes = GenerateCompleteDomain (strides, wl_dims, wl_shape);
+                    } else {
+                        cubes = GenerateCompleteDomainVar (strides, wl_dims, wl_shape);
+
+                        /*
+                         * the generated cubes are already splitted and merged
+                         *  -> no naive compilation possible anymore ...
+                         */
                         if (do_naive_comp) {
-                            /*
-                             * we have generated a *cube* now!
-                             */
+                            do_naive_comp = FALSE;
                             WARN (line, ("wlcomp-pragma function Naive() ignored for"
                                          " single-generator with-loops"));
-                            do_naive_comp = FALSE;
                         }
                     }
                 } else {
+                    /*
+                     * fold with-loop
+                     *  -> the missing indices represent 'noop'
+                     */
+                    cubes = strides;
+                }
+            } else {
+                if (!all_const) {
                     /*
                      * we have multiple strides, which are not all constant
                      *  -> just naive compilation possible for the time being :-(
                      */
                     do_naive_comp = TRUE;
-                }
+                    WARN (line, ("naive compilation of multi-generator with-loop"
+                                 " activated"));
 
-                cubes = strides;
-            } else {
-                if (do_naive_comp) {
-                    /*
-                     * this is a trick in order to put each stride in a separate segment
-                     * later on
-                     */
                     cubes = strides;
                 } else {
-                    strides = NormalizeAllStrides (strides);
-                    cubes = ComputeCubes (strides);
+                    if (do_naive_comp) {
+                        /*
+                         * this is a trick in order to put each stride in a separate
+                         * segment later on
+                         */
+                        cubes = strides;
+                    } else {
+                        strides = NormalizeAllStrides (strides);
+                        cubes = ComputeCubes (strides);
+                    }
                 }
             }
 
