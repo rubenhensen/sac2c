@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/04/19 11:48:13  nmw
+ * missing recursive traversal in converted while loops added
+ *
  * Revision 1.1  2001/04/18 15:38:34  nmw
  * Initial revision
  *
@@ -54,12 +57,22 @@ W2Dwhile (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("W2Dwhile");
 
-    /* create do-node */
+    /* first traverse condition and body */
+    if (WHILE_COND (arg_node) != NULL) {
+        WHILE_COND (arg_node) = Trav (WHILE_COND (arg_node), arg_info);
+    }
+
+    if (WHILE_BODY (arg_node) != NULL) {
+        WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
+    }
+
+    /* create new do-node */
     new_do = MakeDo (WHILE_COND (arg_node), WHILE_BODY (arg_node));
 
-    /* create cond-node */
+    /* create cond-node with do-loop in then-part */
     new_cond
-      = MakeCond (DupTree (DO_COND (new_do)), MakeAssign (new_do, NULL), MakeEmpty ());
+      = MakeCond (DupTree (DO_COND (new_do)), MakeBlock (MakeAssign (new_do, NULL), NULL),
+                  MakeBlock (MakeEmpty (), NULL));
 
     /* delete links in old while-node */
     WHILE_COND (arg_node) = NULL;
