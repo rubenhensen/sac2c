@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/02 12:15:08  sah
+ * added MemCopy
+ *
  * Revision 1.4  2004/10/26 09:34:26  sah
  * interface changes
  *
@@ -26,6 +29,7 @@ extern void *CODeserializeConstant (int type, void *shp, int vlen, char *vec);
 extern void *SHCreateShape (int dim, ...);
 extern void *TYDeserializeType (int con, ...);
 extern void *StringCopy (void *s1);
+extern void *MemCopy (int size, void *mem);
 extern void *CreateIds (char *s1, char *s2, int a, int b, int c, int d, void *p1);
 extern void *SerializeBuildSerStack (void *node);
 extern void *DeserializeLookupFunction (const char *s, const char *t, void *p);
