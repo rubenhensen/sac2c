@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2002/10/28 22:17:31  sah
+ * fixed small performance issue:
+ * - a min-WL was created even if there was only one
+ *   element to calculate the minimum from
+ *
  * Revision 1.17  2002/10/23 15:01:33  sah
  * -created identifiers now have names related to their use
  * -BuildConcat creates sac conform code now;)
@@ -1065,7 +1070,15 @@ BuildWLShape (idtable *table, idtable *end)
         if (table->shapes == NULL) {
             ERROR (linenum, ("no shape information found for %s", table->id));
         } else {
-            result = BuildShapeVectorMin (table->shapes);
+            /*
+             * do not build min-WL if there is only one shape
+             */
+
+            if (table->shapes->next == NULL) {
+                result = table->shapes->shape;
+            } else {
+                result = BuildShapeVectorMin (table->shapes);
+            }
         }
     }
 
