@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/05/07 16:18:59  dkr
+ * added IdxNwith, IdxNcode
+ *
  * Revision 1.6  1996/02/11 20:17:07  sbs
  * IdxArgs inserted.
  *
@@ -37,5 +40,7 @@ extern node *IdxPrf (node *, node *);
 extern node *IdxId (node *, node *);
 extern node *IdxNum (node *, node *);
 extern node *IdxArray (node *, node *);
+extern node *IdxNwith (node *arg_node, node *arg_info);
+extern node *IdxNcode (node *arg_node, node *arg_info);
 
 #endif /* sac_index_h */
