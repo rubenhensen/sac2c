@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2002/09/09 11:51:23  dkr
+ * DupFundef(): FUNDEF_IMPL added
+ *
  * Revision 3.74  2002/09/06 12:17:19  sah
  * handling of N_setwl nodes modified.
  *
@@ -1036,14 +1039,20 @@ DupFundef (node *arg_node, node *arg_info)
     /*
      * must be done after traversal of BODY
      */
+
 #if DUP_DFMS
     FUNDEF_DFM_BASE (new_node)
       = SearchInLUT_PP (INFO_DUP_LUT (arg_info), FUNDEF_DFM_BASE (arg_node));
 #else
     FUNDEF_DFM_BASE (new_node) = NULL;
 #endif
+
     FUNDEF_RETURN (new_node)
       = SearchInLUT_PP (INFO_DUP_LUT (arg_info), FUNDEF_RETURN (arg_node));
+
+    FUNDEF_IMPL (new_node)
+      = SearchInLUT_PP (INFO_DUP_LUT (arg_info), FUNDEF_IMPL (arg_node));
+
     if (FUNDEF_IS_LACFUN (new_node)) {
         FUNDEF_INT_ASSIGN (new_node)
           = SearchInLUT_PP (INFO_DUP_LUT (arg_info), FUNDEF_INT_ASSIGN (arg_node));
