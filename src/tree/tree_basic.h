@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.44  2000/05/26 11:11:12  jhs
+ * Added INFO_COMP_ACTUALATTRIB
+ *
  * Revision 1.43  2000/05/25 22:52:01  dkr
  * some comments changed for N_fundef
  *
@@ -907,7 +910,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***
  ***    node*           LIFTEDFROM  (N_fundef)    (liftspmd -> compile -> )
  ***    node*           COMPANION (N_fundef)         (rfin and mtfin)
- ***                                      FLAG WILL BE CLEANED before these phases!!!
+ ***                                      FLAG WILL BE CLEANED before mt-phases!!!
  ***/
 
 /*
@@ -925,11 +928,15 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *          ST_independent  dimension-independent array function
  *          ST_generic      generic function derived from dimension-
  *                          independent array function
- *  after multithreading:
- *  ATTRIB: ST_call_any     default_flag (will be installed before using)
- *          ST_call_st      function is CALL_ST
- *          ST_call_mt      function is CALL_MT
- *          ST_call_rep     function is CALL_REP
+ *  whlie/after multithreading:
+ *  ATTRIB: ST_call_any       default_flag
+ *                            (will be installed before using ATTRIB in mt-phases,
+ *                             should not occur after mt-phases done)
+ *          ST_call_st        function is CALL_ST
+ *          ST_call_mt_master function is CALL_MT to be used by master
+ *          ST_call_mt_worker function is CALL_MT to be used by workers
+ *          ST_call_rep       function is CALL_REP
+ *          ST_call_mtlift    function is a thread-function
  *
  *
  *  The FUNDEC_DEF slot is only used when a fundef node is used as a
@@ -2419,6 +2426,7 @@ extern node *MakeInfo ();
 #define INFO_COMP_WITHBEGIN(n) (n->node[4])
 #define INFO_COMP_MODUL(n) (n->node[5])
 #define INFO_COMP_LAST_SYNC(n) (*((node **)(&(n->int_data))))
+#define INFO_COMP_ACTUALATTRIB(n) ((statustype) (n->counter))
 
 /* reuse */
 #define INFO_REUSE_WL_IDS(n) (n->info.ids)
@@ -2662,6 +2670,9 @@ extern node *MakeSync (node *region);
  ***  sons:
  ***    node*      REGION     (N_block)
  ***
+ ***  permanent attributes:
+ ***    int        IDENTIFIER
+ ***
  ***  temporary attributes:
  ***    DFMmask_t  USEMASK                (multithread.dfa   ->)
  ***    DFMmask_t  DEFMASK                (multithread.dfa   ->)
@@ -2673,6 +2684,7 @@ extern node *MakeSync (node *region);
 
 extern node *MakeMT (node *region);
 
+#define MT_IDENTIFIER(n) (n->int_data)
 #define MT_REGION(n) (n->node[0])
 #define MT_USEMASK(n) (n->dfmask[0])
 #define MT_DEFMASK(n) (n->dfmask[1])
@@ -2687,6 +2699,9 @@ extern node *MakeMT (node *region);
  ***  sons:
  ***    node*     REGION      (N_block)
  ***
+ ***  permanent attributes:
+ ***    int        IDENTIFIER
+ ***
  ***  temporary attributes:
  ***    DFMmask_t  USEMASK        (multithread.dfa ->)
  ***    DFMmask_t  DEFMASK        (multithread.dfa ->)
@@ -2696,6 +2711,7 @@ extern node *MakeMT (node *region);
 
 extern node *MakeST (node *region);
 
+#define ST_IDENTIFIER(n) (n->int_data)
 #define ST_REGION(n) (n->node[0])
 #define ST_USEMASK(n) (n->dfmask[0])
 #define ST_DEFMASK(n) (n->dfmask[1])
