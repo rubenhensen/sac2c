@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2003/06/17 11:45:33  ktr
+ * Quick fix of SSALoopInvariantRemoval by inserting SSATransformOneFunction afterwards.
+ *
  * Revision 3.51  2003/05/20 16:29:56  ktr
  * Moved WLS before WLUR.
  *
@@ -1147,6 +1150,10 @@ OPTfundef (node *arg_node, node *arg_info)
                 if (use_ssaform) {
                     arg_node
                       = SSALoopInvariantRemoval (arg_node, INFO_OPT_MODUL (arg_info));
+                    /* ktr: This is a very dirty solution for bug #16.
+                       The problem of AVIS_SSAASSIGN being wrongly assigned in SSALIR.c
+                       is still unresolved. */
+                    arg_node = SSATransformOneFunction (arg_node);
                 } else {
                     arg_node = LoopInvariantRemoval (arg_node, arg_info);
                     /* lir_tab and lir_mov_tab */
