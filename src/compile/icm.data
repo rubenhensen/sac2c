@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2004/03/10 00:19:34  dkrHH
+ * old backend removed
+ *
  * Revision 3.70  2003/10/20 15:34:39  dkr
  * MT_SYNCBLOCK_CLEANUP added
  *
@@ -67,7 +70,7 @@
  * ND_IDXS2OFFSET added
  *
  * Revision 3.49  2002/08/06 08:58:54  dkr
- * ND_WL_GENARRAY__SHAPE removed if TAGGED_ARRAYS is undefined
+ * ND_WL_GENARRAY__SHAPE removed for old backend
  *
  * Revision 3.48  2002/08/05 20:41:44  dkr
  * ND_WL_GENARRAY__SHAPE... added
@@ -95,7 +98,7 @@
  * some bugs fixed
  *
  * Revision 3.40  2002/07/12 18:53:25  dkr
- * first complete TAGGED_ARRAYS revision :-)
+ * first complete revision for new backend :-)
  *
  * Revision 3.28  2002/03/07 20:07:49  dkr
  * ND_FUN_RET: parameter arg_info removed
@@ -207,9 +210,6 @@ ICM_DEF( ND_FUN_RET, TRACE_FUN)
   ICM_VARANY( (3*vararg_cnt), vararg)
 ICM_END( ND_FUN_RET, (retname, vararg_cnt, vararg))
 #endif
-
-
-#ifdef TAGGED_ARRAYS
 
 
 #if defined(ND_OBJDEF) || defined(ICM_ALL)
@@ -636,227 +636,9 @@ ICM_END( ND_IDXS2OFFSET, (off_NT, idxs_size, idxs_NT, shp_size, shp_ANY))
 #endif
 
 
-#else /* TAGGED_ARRAYS */
-
-
-#if defined(ND_KS_DECL_GLOBAL_ARRAY) || defined(ICM_ALL)
-ICM_DEF( ND_KS_DECL_GLOBAL_ARRAY, TRACE_NONE)
-  ICM_ID(basetype)
-  ICM_ID(name)
-  ICM_INT(dim)
-  ICM_VARANY( dim, s)
-ICM_END( ND_KS_DECL_GLOBAL_ARRAY, (basetype, name, dim, s))
-#endif
-
-#if defined(ND_KD_DECL_EXTERN_ARRAY) || defined(ICM_ALL)
-ICM_DEF( ND_KD_DECL_EXTERN_ARRAY, TRACE_NONE)
-  ICM_ID(basetype)
-  ICM_ID(name)
-  ICM_INT(dim)
-ICM_END( ND_KD_DECL_EXTERN_ARRAY, (basetype, name, dim))
-#endif
-
-#if defined(ND_KS_DECL_ARRAY) || defined(ICM_ALL)
-ICM_DEF( ND_KS_DECL_ARRAY, TRACE_NONE)
-  ICM_ID(basetype)
-  ICM_ID(name)
-  ICM_INT(dim)
-  ICM_VARANY( dim, s)
-ICM_END( ND_KS_DECL_ARRAY, (basetype, name, dim, s))
-#endif
-
-#if defined(ND_KS_DECL_ARRAY_ARG) || defined(ICM_ALL)
-ICM_DEF( ND_KS_DECL_ARRAY_ARG, TRACE_NONE)
-  ICM_ID(name)
-  ICM_INT(dim)
-  ICM_VARANY( dim, s)
-ICM_END( ND_KS_DECL_ARRAY_ARG, (name, dim, s))
-#endif
-
-
-#if defined(ND_CREATE_CONST_ARRAY_S) || defined(ICM_ALL)
-ICM_DEF( ND_CREATE_CONST_ARRAY_S, TRACE_NONE)
-  ICM_ID(name)
-  ICM_INT(len)
-  ICM_VARANY(len, s)
-ICM_END( ND_CREATE_CONST_ARRAY_S, (name, len, s))
-#endif
-
-#if defined(ND_CREATE_CONST_ARRAY_H) || defined(ICM_ALL)
-ICM_DEF( ND_CREATE_CONST_ARRAY_H, TRACE_NONE)
-  ICM_ID(name)
-  ICM_ID(copyfun)
-  ICM_INT(len)
-  ICM_VARANY(len, A)
-ICM_END( ND_CREATE_CONST_ARRAY_H, (name, copyfun, len, A))
-#endif
-
-#if defined(ND_CREATE_CONST_ARRAY_A) || defined(ICM_ALL)
-ICM_DEF( ND_CREATE_CONST_ARRAY_A, TRACE_NONE)
-  ICM_ID(name)
-  ICM_INT(len2)
-  ICM_INT(len1)
-  ICM_VARANY( len1, A)
-ICM_END( ND_CREATE_CONST_ARRAY_A, (name, len2, len1, A))
-#endif
-
-
-#if defined(ND_KD_SEL_CxA_S) || defined(ICM_ALL)
-ICM_DEF( ND_KD_SEL_CxA_S, TRACE_PRF)
-  ICM_ID(a)
-  ICM_ID(res)
-  ICM_INT(dim)
-  ICM_VARANY( dim, vi)
-ICM_END( ND_KD_SEL_CxA_S, (a, res, dim, vi))
-#endif
-
-#if defined(ND_KD_SEL_VxA_S) || defined(ICM_ALL)
-ICM_DEF( ND_KD_SEL_VxA_S, TRACE_PRF)
-  ICM_ID(a)
-  ICM_ID(res)
-  ICM_INT(dim)
-  ICM_ID( v)
-ICM_END( ND_KD_SEL_VxA_S, (a, res, dim, v))
-#endif
-
-#if defined(ND_KD_SEL_CxA_A) || defined(ICM_ALL)
-ICM_DEF( ND_KD_SEL_CxA_A, TRACE_PRF)
-  ICM_INT(dima)
-  ICM_ID(a)
-  ICM_ID(res)
-  ICM_INT(dimv)
-  ICM_VARANY( dimv, vi)
-ICM_END( ND_KD_SEL_CxA_A, (dima, a, res, dimv, vi))
-#endif
-
-#if defined(ND_KD_SEL_VxA_A) || defined(ICM_ALL)
-ICM_DEF( ND_KD_SEL_VxA_A, TRACE_PRF)
-  ICM_INT(dima)
-  ICM_ID(a)
-  ICM_ID(res)
-  ICM_INT(dimv)
-  ICM_ID( v)
-ICM_END( ND_KD_SEL_VxA_A, (dima, a, res, dimv, v))
-#endif
-
-#if defined(ND_KD_TAKE_CxA_A) || defined(ICM_ALL)
-ICM_DEF( ND_KD_TAKE_CxA_A, TRACE_PRF)
-  ICM_INT(dima)
-  ICM_ID(a)
-  ICM_ID(res)
-  ICM_INT(dimv)
-  ICM_VARANY( dimv, vi)
-ICM_END( ND_KD_TAKE_CxA_A, (dima, a, res, dimv, vi))
-#endif
-
-#if defined(ND_KD_DROP_CxA_A) || defined(ICM_ALL)
-ICM_DEF( ND_KD_DROP_CxA_A, TRACE_PRF)
-  ICM_INT(dima)
-  ICM_ID(a)
-  ICM_ID(res)
-  ICM_INT(dimv)
-  ICM_VARANY( dimv, vi)
-ICM_END( ND_KD_DROP_CxA_A, (dima, a, res, dimv, vi))
-#endif
-
-#if defined(ND_KD_CAT_SxAxA_A) || defined(ICM_ALL)
-ICM_DEF( ND_KD_CAT_SxAxA_A, TRACE_PRF)
-  ICM_INT(dima)
-  ICM_VARANY( 2,ar)
-  ICM_ID(res)
-  ICM_INT(catdim)
-ICM_END( ND_KD_CAT_SxAxA_A, (dima, ar, res, catdim))
-#endif
-
-#if defined(ND_KD_ROT_CxSxA_A) || defined(ICM_ALL)
-ICM_DEF( ND_KD_ROT_CxSxA_A, TRACE_PRF)
-  ICM_INT( rotdim)
-  ICM_VARANY( 1, numstr)
-  ICM_INT(dima)
-  ICM_ID(a)
-  ICM_ID(res)
-ICM_END( ND_KD_ROT_CxSxA_A, (rotdim, numstr, dima, a, res))
-#endif
-
-
-#if defined(ND_PRF_MODARRAY_AxCxS) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_MODARRAY_AxCxS, TRACE_PRF)
-  ICM_ID( res_btype)
-  ICM_INT( dimres)
-  ICM_ID( res)
-  ICM_ID( old)
-  ICM_VARANY( 1, value)
-  ICM_INT( dimv)
-  ICM_VARANY( dimv, vi)
-ICM_END( ND_PRF_MODARRAY_AxCxS, (res_btype, dimres, res, old, value, dimv, vi))
-#endif
-
-#if defined(ND_PRF_MODARRAY_AxVxS) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_MODARRAY_AxVxS, TRACE_PRF)
-  ICM_ID(res_btype)
-  ICM_INT(dimres)
-  ICM_ID(res)
-  ICM_ID(old)
-  ICM_VARANY( 1, value)
-  ICM_INT(dim)
-  ICM_ID(v)
-ICM_END( ND_PRF_MODARRAY_AxVxS, (res_btype, dimres, res, old, value, dim, v))
-#endif
-
-#if defined(ND_PRF_MODARRAY_AxCxA) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_MODARRAY_AxCxA, TRACE_PRF)
-  ICM_ID(res_btype)
-  ICM_INT(dimres)
-  ICM_ID(res)
-  ICM_ID(old)
-  ICM_ID(val)
-  ICM_INT(dimv)
-  ICM_VARANY( dimv, vi)
-ICM_END( ND_PRF_MODARRAY_AxCxA, (res_btype, dimres, res, old, val, dimv, vi))
-#endif
-
-#if defined(ND_PRF_MODARRAY_AxVxA) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_MODARRAY_AxVxA, TRACE_PRF)
-  ICM_ID(res_btype)
-  ICM_INT(dimres)
-  ICM_ID(res)
-  ICM_ID(old)
-  ICM_ID(val)
-  ICM_INT(dim)
-  ICM_ID( v)
-ICM_END( ND_PRF_MODARRAY_AxVxA, (res_btype, dimres, res, old, val, dim, v))
-#endif
-
-
-#if defined(ND_KS_VECT2OFFSET) || defined(ICM_ALL)
-ICM_DEF( ND_KS_VECT2OFFSET, TRACE_PRF)
-  ICM_ID( off_name)
-  ICM_ID( arr_name)
-  ICM_INT( dim)
-  ICM_INT( dims)
-  ICM_VARANY( dims, shp)
-ICM_END( ND_KS_VECT2OFFSET, (off_name, arr_name, dim, dims, shp))
-#endif
-
-#if defined(ND_IDXS2OFFSET) || defined(ICM_ALL)
-ICM_DEF( ND_IDXS2OFFSET, TRACE_PRF)
-  ICM_ID( off)
-  ICM_INT( idxs_size)
-  ICM_VARID( idxs_size, idxs)
-  ICM_INT( shp_size)
-  ICM_VARANY( shp_size, shp)
-ICM_END( ND_IDXS2OFFSET, (off, idxs_size, idxs, shp_size, shp))
-#endif
-
-
-#endif /* TAGGED_ARRAYS */
-
-
 /*
  * ICMs for compilation of new with-loop
  */
-
-#ifdef TAGGED_ARRAYS
 
 #if defined(ND_WL_GENARRAY__SHAPE_id) || defined(ICM_ALL)
 ICM_DEF( ND_WL_GENARRAY__SHAPE_id, TRACE_NONE)
@@ -879,8 +661,6 @@ ICM_DEF( ND_WL_GENARRAY__SHAPE_arr, TRACE_NONE)
 ICM_END( ND_WL_GENARRAY__SHAPE_arr, (to_NT, to_sdim, shp_size, shp_ANY,
                                      val_NT, val_sdim))
 #endif
-
-#endif /* TAGGED_ARRAYS */
 
 #if defined(WL_BEGIN__OFFSET) || defined(ICM_ALL)
 ICM_DEF( WL_BEGIN__OFFSET, TRACE_NONE)
