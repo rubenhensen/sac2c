@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2002/06/02 21:45:03  dkr
+ * ID_NT_TAG added
+ *
  * Revision 3.33  2002/04/08 19:54:12  dkr
  * FreeMT(): Free(arg_node) added
  * FreeST(): Free(arg_node) added
@@ -1459,6 +1462,10 @@ FreeId (node *arg_node, node *arg_info)
 
     if (ID_ISCONST (arg_node) && (ID_VECLEN (arg_node) > 0)) {
         ID_CONSTVEC (arg_node) = Free (ID_CONSTVEC (arg_node));
+    }
+
+    if (ID_NT_TAG (arg_node) != NULL) {
+        ID_NT_TAG (arg_node) = Free (ID_NT_TAG (arg_node));
     }
 
     arg_node = Free (arg_node);
