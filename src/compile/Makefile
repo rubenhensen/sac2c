@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.27  2003/03/12 17:24:35  dkr
+# INCS modified
+#
 # Revision 3.26  2003/03/09 17:15:26  ktr
 # added blir.o
 #
@@ -69,9 +72,9 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 
-INCS = -I../global -I../tree -I../../inc -I../print -I../typecheck \
-       -I../refcount -I../optimize -I../psi-opt -I../scanparse -I../concurrent \
-       -I../flatten -I../c-interface
+INCS = -I../global -I../tree -I../../inc -I../print -I../constants \
+       -I../typecheck -I../refcount -I../optimize -I../psi-opt -I../scanparse \
+       -I../concurrent -I../flatten -I../c-interface
 
 MACS = icm.data icm_comment.c icm_trace.c
 
