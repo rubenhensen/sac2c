@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.164  2003/04/24 16:19:52  sbs
+ * OBJDEF_VARNAME replaced from int_data to dfmask[1].
+ * Reason: On the alpha, sizeof( char*) == 8 != 4 == sizeof(int)
+ * too bad....
+ *
  * Revision 3.163  2003/04/20 20:25:37  dkr
  * INFO_PREC... moved to precompile.c
  *
@@ -1025,7 +1030,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 #define OBJDEF_LINKMOD(n) (*((char **)(&(n->mask[6]))))     /* for cc */
 #define OBJDEF_STATUS(n) (*((statustype *)(&(n->info2))))   /* for cc */
 #define OBJDEF_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* for cc */
-#define OBJDEF_VARNAME(n) (*((char **)(&(n->int_data))))    /* for cc */
+#define OBJDEF_VARNAME(n) ((char *)(n->dfmask[1]))
 #define OBJDEF_AVIS(n) ((node *)(n->dfmask[0]))
 #define OBJDEF_NEXT(n) (n->node[0])
 #define OBJDEF_EXPR(n) (n->node[1])
