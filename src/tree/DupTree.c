@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2000/06/23 14:04:01  dkr
+ * NWITH_COMPLEX removed
+ *
  * Revision 1.21  2000/06/14 12:04:02  jhs
  * Dups ST_IDENTIFIER and MT_IDENTIFIER now.
  *
@@ -1480,7 +1483,6 @@ DupNwith (node *arg_node, node *arg_info)
     NWITH_REFERENCED (new_node) = NWITH_REFERENCED (arg_node);
     NWITH_REFERENCED_FOLD (new_node) = NWITH_REFERENCED_FOLD (arg_node);
     NWITH_REFERENCES_FOLDED (new_node) = NWITH_REFERENCES_FOLDED (arg_node);
-    NWITH_COMPLEX (new_node) = NWITH_COMPLEX (arg_node);
     NWITH_FOLDABLE (new_node) = NWITH_FOLDABLE (arg_node);
     NWITH_NO_CHANCE (new_node) = NWITH_NO_CHANCE (arg_node);
 #if 0
