@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/02/28 15:44:16  nmw
+ * L2Fassign included in traversal to set correct FUNDEF_EXT_ASSIGN
+ *
  * Revision 3.2  2000/12/06 19:58:08  dkr
  * inference parts are moved into a new module infer_dfms.[ch]
  *
@@ -39,5 +42,6 @@ extern node *L2Ffundef (node *arg_node, node *arg_info);
 extern node *L2Fcond (node *arg_node, node *arg_info);
 extern node *L2Fwhile (node *arg_node, node *arg_info);
 extern node *L2Fdo (node *arg_node, node *arg_info);
+extern node *L2Fassign (node *arg_node, node *arg_info);
 
 #endif /* _sac_lac2fun_h */

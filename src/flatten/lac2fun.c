@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/02/28 15:44:16  nmw
+ * L2Fassign included in traversal to set correct FUNDEF_EXT_ASSIGN
+ *
  * Revision 3.11  2001/02/14 14:39:24  dkr
  * some DFM2... functions renamed.
  * some ATTRIB/STATUS adjustment is done in DFM2... functions now.
@@ -316,6 +319,8 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFM
     FUNDEF_INT_ASSIGN (fundef) = NULL;
     FUNDEF_EXT_ASSIGN (fundef) = INFO_L2F_ASSIGN (arg_info);
 
+    DBUG_PRINT ("L2F", ("link to assignment: %p\n\n", FUNDEF_EXT_ASSIGN (fundef)));
+
     switch (NODE_TYPE (instr)) {
     case N_cond:
         status = ST_condfun;
@@ -544,6 +549,7 @@ L2Fassign (node *arg_node, node *arg_info)
     DBUG_ENTER ("L2Fassign");
 
     old_assign = INFO_L2F_ASSIGN (arg_info);
+
     INFO_L2F_ASSIGN (arg_info) = arg_node;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
