@@ -16,3 +16,4 @@ common-make-assertion.xsl
 common-travfun.xsl
 common-key-tables.xsl
 ast2free_node_c.xsl
+ast2free_node_h.xsl
