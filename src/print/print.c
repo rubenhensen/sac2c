@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/03/17 15:37:09  bs
+ * DbugPrintArray modified.
+ *
  * Revision 2.4  1999/03/15 15:57:29  sbs
  * braces for if's inserted which might cause ambiguities.
  *
@@ -219,28 +222,62 @@ char *prf_string[] = {
 static void
 DbugPrintArray (node *arg_node)
 {
-    int i, length, *intptr;
+    int *intptr, length, i;
+    float *fltptr;
+    double *dblptr;
 
     if (NODE_TYPE (arg_node) == N_array) {
-        intptr = ARRAY_INTVEC (arg_node);
         length = ARRAY_VECLEN (arg_node);
+        switch (ARRAY_VECTYPE (arg_node)) {
+        case T_int:
+            intptr = ARRAY_INTVEC (arg_node);
+            if ((intptr == NULL) || (length < 1))
+                return;
+            else {
+                fprintf (outfile, ":[%d", intptr[0]);
+                for (i = 1; i < ((length < 10) ? (length) : (10)); i++)
+                    fprintf (outfile, ",%d", intptr[i]);
+            }
+            break;
+        case T_float:
+            fltptr = ARRAY_FLOATVEC (arg_node);
+            if ((fltptr == NULL) || (length < 1))
+                return;
+            else {
+                fprintf (outfile, ":[%f", fltptr[0]);
+                for (i = 1; i < ((length < 10) ? (length) : (10)); i++)
+                    fprintf (outfile, ",%f", fltptr[i]);
+            }
+            break;
+        case T_double:
+            dblptr = ARRAY_DOUBLEVEC (arg_node);
+            if ((dblptr == NULL) || (length < 1))
+                return;
+            else {
+                fprintf (outfile, ":[%f", dblptr[0]);
+                for (i = 1; i < ((length < 10) ? (length) : (10)); i++)
+                    fprintf (outfile, ",%f", dblptr[i]);
+            }
+            break;
+        default:
+            return;
+        }
     } else /* (NODE_TYPE(arg_node) == N_id) */ {
-        intptr = ID_INTVEC (arg_node);
         length = ID_VECLEN (arg_node);
+        intptr = ID_INTVEC (arg_node);
+        if ((intptr == NULL) || (length < 1))
+            return;
+        else {
+            fprintf (outfile, ":[%d", intptr[0]);
+            for (i = 1; i < ((length < 10) ? (length) : (10)); i++)
+                fprintf (outfile, ",%d", intptr[i]);
+        }
     }
-
-    if ((intptr == NULL) || (length <= 1))
-        return;
-    else {
-        fprintf (outfile, ":[%d", intptr[0]);
-        for (i = 1; i < ((length < 10) ? (length) : (10)); i++)
-            fprintf (outfile, ",%d", intptr[i]);
-        if (length > 10)
-            fprintf (outfile, ",..]");
-        else
-            fprintf (outfile, "]");
-        return;
-    }
+    if (length > 10)
+        fprintf (outfile, ",..]");
+    else
+        fprintf (outfile, "]");
+    return;
 }
 
 /******************************************************************************/
