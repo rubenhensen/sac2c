@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.103  1998/07/20 19:06:50  dkr
+ * In DupOneIds:
+ *   ASSERT is replaced by a warning
+ *
  * Revision 1.102  1998/07/20 16:52:28  dkr
  * fixed a bug in DupPragma
  *
@@ -565,7 +569,19 @@ DupOneIds (ids *old_ids, node *arg_info)
         new_ids = MakeIds (RenameInlinedVar (IDS_NAME (old_ids)),
                            StringCopy (IDS_MOD (old_ids)), IDS_STATUS (old_ids));
         IDS_VARDEC (new_ids) = SearchDecl (IDS_NAME (new_ids), INFO_INL_TYPES (arg_info));
-        DBUG_ASSERT ((NULL != IDS_VARDEC (new_ids)), "No declaration found for ids-node");
+
+        /*
+         * If (IDS_VARDEC == NULL) we better not abort, because this should be
+         * a IDS-node of a wlcomp-pragma !!
+         * We only print a warning here, 'wltransform' will check the rest !!
+         */
+        if (NULL == IDS_VARDEC (new_ids)) {
+            /*
+             * Sorry, we do not have any line numbers at IDS-nodes :(
+             * This is no good, I guess !!
+             */
+            WARN (0, ("No declaration found for ids-node"));
+        }
     } else {
         new_ids = MakeIds (StringCopy (IDS_NAME (old_ids)),
                            StringCopy (IDS_MOD (old_ids)), IDS_STATUS (old_ids));
