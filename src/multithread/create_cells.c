@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/08/05 17:42:19  skt
+ * moved handling of the allocation around the withloop into propagate_executionmode
+ *
  * Revision 1.6  2004/08/05 13:50:18  skt
  * welcome to the new INFO structure
  *
@@ -205,9 +208,6 @@ CRECEassign (node *arg_node, info *arg_info)
         break;
     case MUTH_MULTI:
         DBUG_PRINT ("CRECE", ("Executionmode is MUTH_MULTI"));
-        if (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith2) {
-            CRECEHandleIv (LET_EXPR (ASSIGN_INSTR (arg_node)), arg_info);
-        }
         arg_node = MUTHInsertMT (arg_node, INFO_CRECE_FUNDEF (arg_info));
         break;
     default:
@@ -222,52 +222,4 @@ CRECEassign (node *arg_node, info *arg_info)
     }
 
     DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void CRECEHandleIv(node *withloop, info *arg_info)
- *
- *   @brief creates a MT-cell for the allocation(s) of the indexvector(s) of
- *          an parallel executed with-loop
- *
- *   @param withloop a N_Nwith2
- *   @param arg_info
- *   @return nothing
- *
- *****************************************************************************/
-void
-CRECEHandleIv (node *withloop, info *arg_info)
-{
-    ids *iterator;
-    int executionmode;
-    DBUG_ENTER ("CRECEAddIv");
-    DBUG_ASSERT ((NODE_TYPE (withloop) == N_Nwith2),
-                 "CRECEAddIv expects a N_Nwith2 as argument withloop");
-
-    /* handle the vector */
-    iterator = NWITHID_VEC (NWITH2_WITHID (withloop));
-    executionmode = ASSIGN_EXECMODE (AVIS_SSAASSIGN (IDS_AVIS (iterator)));
-    DBUG_ASSERT ((executionmode == MUTH_ANY) || (executionmode == MUTH_MULTI),
-                 "Executionmode of iv-alloc must be MUTH_ANY or MUTH_MULTI");
-    ASSIGN_EXECMODE (AVIS_SSAASSIGN (IDS_AVIS (iterator))) = MUTH_MULTI;
-
-    AVIS_SSAASSIGN (IDS_AVIS (iterator))
-      = MUTHInsertMT (AVIS_SSAASSIGN (IDS_AVIS (iterator)), INFO_CRECE_FUNDEF (arg_info));
-
-    /* handle the vector elements */
-    iterator = NWITHID_IDS (NWITH2_WITHID (withloop));
-    while (iterator != NULL) {
-        executionmode = ASSIGN_EXECMODE (AVIS_SSAASSIGN (IDS_AVIS (iterator)));
-        DBUG_ASSERT ((executionmode == MUTH_ANY) || (executionmode == MUTH_MULTI),
-                     "Executionmode of iv-alloc must be MUTH_ANY or MUTH_MULTI");
-        ASSIGN_EXECMODE (AVIS_SSAASSIGN (IDS_AVIS (iterator))) = MUTH_MULTI;
-
-        AVIS_SSAASSIGN (IDS_AVIS (iterator))
-          = MUTHInsertMT (AVIS_SSAASSIGN (IDS_AVIS (iterator)),
-                          INFO_CRECE_FUNDEF (arg_info));
-        iterator = IDS_NEXT (iterator);
-    }
-
-    DBUG_VOID_RETURN;
 }

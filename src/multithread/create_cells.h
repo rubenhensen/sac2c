@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/08/05 17:42:19  skt
+ * moved handling of the allocation around the withloop into propagate_executionmode
+ *
  * Revision 1.4  2004/08/05 13:50:18  skt
  * welcome to the new INFO structure
  *
@@ -34,7 +37,5 @@ extern node *CreateCells (node *arg_node);
 extern node *CRECEfundef (node *arg_node, info *arg_info);
 
 extern node *CRECEassign (node *arg_node, info *arg_info);
-
-void CRECEHandleIv (node *withloop, info *arg_info);
 
 #endif /* CREATE_CELLS_H */
