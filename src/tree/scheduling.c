@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/03/15 21:25:25  dkr
+ * signature of NodeOr..._MakeIndex modified
+ *
  * Revision 3.7  2001/03/14 15:36:51  ben
  * SCHAdjustmentRequired works correctly even for var. segments now :-)
  *
@@ -934,13 +937,15 @@ CompileConstSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
     }
 
     for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
-        index = NameOrVal_MakeIndex (NULL, WLSEG_IDX_MAX (wlseg)[d], d, wl_name, TRUE);
+        index
+          = NameOrVal_MakeIndex (NULL, WLSEG_IDX_MAX (wlseg)[d], d, wl_name, TRUE, TRUE);
         DBUG_ASSERT ((index != NULL), "illegal supremum found!");
         args = MakeExprs (index, args);
     }
 
     for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
-        index = NameOrVal_MakeIndex (NULL, WLSEG_IDX_MIN (wlseg)[d], d, wl_name, TRUE);
+        index
+          = NameOrVal_MakeIndex (NULL, WLSEG_IDX_MIN (wlseg)[d], d, wl_name, TRUE, TRUE);
         DBUG_ASSERT ((index != NULL), "illegal infimum found!");
         args = MakeExprs (index, args);
     }
@@ -985,7 +990,8 @@ CompileVarSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
     }
 
     for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
-        index = NameOrVal_MakeIndex (NULL, WLSEGVAR_IDX_MAX (wlseg)[d], d, wl_name, TRUE);
+        index = NameOrVal_MakeIndex (NULL, WLSEGVAR_IDX_MAX (wlseg)[d], d, wl_name, TRUE,
+                                     TRUE);
         if (index == NULL) {
             index = MakeNum (INT_MAX);
         }
@@ -993,7 +999,8 @@ CompileVarSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
     }
 
     for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
-        index = NameOrVal_MakeIndex (NULL, WLSEGVAR_IDX_MIN (wlseg)[d], d, wl_name, TRUE);
+        index = NameOrVal_MakeIndex (NULL, WLSEGVAR_IDX_MIN (wlseg)[d], d, wl_name, TRUE,
+                                     TRUE);
         if (index == NULL) {
             index = MakeNum (0);
         }
