@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.88  2000/07/28 11:36:33  dkr
+ * DoPrintAST: \n added
+ *
  * Revision 2.87  2000/07/24 14:51:18  nmw
  * generation of global object init flag in globals.c removed
  * now every global var is a separate c file
@@ -3532,7 +3535,7 @@ DoPrintAST (node *arg_node, int skip_next)
         case N_array:
             fprintf (outfile, "(");
             DoPrintTypesAST (ARRAY_TYPE (arg_node));
-            fprintf (outfile, ")");
+            fprintf (outfile, ")\n");
             break;
 
         case N_prf:
