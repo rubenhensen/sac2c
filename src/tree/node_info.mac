@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2000/03/23 17:37:48  dkr
+ * L2F_INFERap and L2F_INFERarg added
+ *
  * Revision 1.26  2000/03/22 17:36:19  jhs
  * Added N_MTsignal, N_MTalloc, N_MTsync and barin_tab.
  *
@@ -817,7 +820,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, L2F_INFERarg,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIarg, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1070,7 +1073,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        WLAAap, TravSons, TravSons, TravSons, TravSons, TravSons, SPMDLCap, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, L2F_INFERap,
 
        TravSons, TravSons, TravSons, TravSons, FUN2LACap, AIap, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
