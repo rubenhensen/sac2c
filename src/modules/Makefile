@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.31  1998/04/09 23:47:32  dkr
+# make deps done
+#
 # Revision 1.30  1998/04/09 21:27:06  dkr
 # make deps done
 #
@@ -149,8 +152,8 @@ cccall.o: /usr/include/stdlib.h ../global/types.h ../global/tree_basic.h
 cccall.o: ../global/tree_compound.h ../global/Error.h /usr/include/string.h
 cccall.o: ../global/globals.h ../../inc/dbug.h ../global/internal_lib.h
 cccall.o: ../global/free.h ../global/my_debug.h /usr/include/malloc.h
-cccall.o: ../scanparse/scnprs.h ../global/resource.h filemgr.h
-cccall.o: ../global/traverse.h
+cccall.o: ../scanparse/scnprs.h ../global/resource.h ../scanparse/y.tab.h
+cccall.o: filemgr.h ../global/traverse.h
 checkdec.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 checkdec.o: ../global/types.h ../global/tree_basic.h
 checkdec.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
@@ -158,8 +161,8 @@ checkdec.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 checkdec.o: ../global/globals.h ../../inc/dbug.h ../global/my_debug.h
 checkdec.o: ../global/traverse.h ../global/free.h /usr/include/malloc.h
 checkdec.o: ../global/internal_lib.h import.h ../print/convert.h filemgr.h
-checkdec.o: ../scanparse/scnprs.h ../global/resource.h implicittypes.h
-checkdec.o: ../print/print.h ../global/tree.h
+checkdec.o: ../scanparse/scnprs.h ../global/resource.h ../scanparse/y.tab.h
+checkdec.o: implicittypes.h ../print/print.h ../global/tree.h
 filemgr.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 filemgr.o: /usr/include/string.h /usr/include/stdarg.h /usr/include/varargs.h
 filemgr.o: /usr/include/sys/va_list.h /usr/include/unistd.h
@@ -183,7 +186,8 @@ import.o: ../global/Error.h /usr/include/stdio.h /usr/include/sys/va_list.h
 import.o: /usr/include/stdlib.h ../global/globals.h ../global/internal_lib.h
 import.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 import.o: /usr/include/malloc.h ../scanparse/scnprs.h ../global/resource.h
-import.o: ../global/traverse.h ../global/access_macros.h filemgr.h import.h
+import.o: ../scanparse/y.tab.h ../global/traverse.h ../global/access_macros.h
+import.o: filemgr.h import.h
 readsib.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
 readsib.o: ../global/Error.h /usr/include/stdio.h
 readsib.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
@@ -191,7 +195,7 @@ readsib.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
 readsib.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 readsib.o: /usr/include/malloc.h ../global/internal_lib.h
 readsib.o: ../global/traverse.h import.h ../scanparse/scnprs.h
-readsib.o: ../global/resource.h filemgr.h cccall.h
+readsib.o: ../global/resource.h ../scanparse/y.tab.h filemgr.h cccall.h
 writesib.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 writesib.o: ../global/types.h ../global/tree_basic.h
 writesib.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h

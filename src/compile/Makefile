@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.47  1998/04/09 23:47:34  dkr
+# make deps done
+#
 # Revision 1.46  1998/04/09 23:43:30  dkr
 # added wlpragma_funs.o
 #
@@ -232,12 +235,8 @@ precompile.o: ../global/internal_lib.h ../print/convert.h
 precompile.o: ../global/traverse.h wlpragma_funs.h ../optimize/DupTree.h
 precompile.o: ../refcount/refcount.h /usr/include/limits.h
 precompile.o: /usr/include/sys/isa_defs.h
-wlpragma_funs.o: ../global/types.h ../global/tree_basic.h
-wlpragma_funs.o: ../global/tree_compound.h ../global/Error.h
-wlpragma_funs.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-wlpragma_funs.o: /usr/include/sys/va_list.h /usr/include/string.h
-wlpragma_funs.o: /usr/include/stdlib.h ../global/globals.h ../global/free.h
-wlpragma_funs.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
-wlpragma_funs.o: ../global/internal_lib.h ../print/convert.h
-wlpragma_funs.o: ../global/traverse.h wlpragma_funs.h ../optimize/DupTree.h
-wlpragma_funs.o: ../refcount/refcount.h
+wlpragma_funs.o: ../global/types.h ../global/tree_basic.h ../global/free.h
+wlpragma_funs.o: ../../inc/dbug.h /usr/include/stdio.h
+wlpragma_funs.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+wlpragma_funs.o: ../global/my_debug.h /usr/include/malloc.h
+wlpragma_funs.o: ../global/internal_lib.h wlpragma_funs.h
