@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/01/19 11:54:55  dkr
+ * NameOrVal_MakeNode() modified
+ *
  * Revision 3.4  2001/01/17 14:17:19  dkr
  * functions NameOrVal_... and NodeOrInt_... added
  *
@@ -2800,7 +2803,7 @@ NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt, void *node_o
  ******************************************************************************/
 
 node *
-NameOrVal_MakeNode (char *name, int val)
+NameOrVal_MakeNode (char *name, int val, void *node_or_int)
 {
     node *ret;
 
@@ -2809,7 +2812,15 @@ NameOrVal_MakeNode (char *name, int val)
     if (val >= 0) {
         ret = MakeNum (val);
     } else {
-        ret = MakeId_Copy (name);
+        if (node_or_int != NULL) {
+            /*
+             * we better *duplicate* the node instead of building a new one
+             * in order to get the right back pointers and these sort of things ...
+             */
+            ret = DupNode (*((node **)node_or_int));
+        } else {
+            ret = MakeId_Copy (name);
+        }
     }
 
     DBUG_RETURN (ret);
@@ -2835,7 +2846,7 @@ NodeOrInt_MakeNode (nodetype nt, void *node_or_int)
     DBUG_ENTER ("NodeOrInt_MakeNode");
 
     NodeOrInt_GetNameOrVal (&name, &val, nt, node_or_int);
-    ret = NameOrVal_MakeNode (name, val);
+    ret = NameOrVal_MakeNode (name, val, node_or_int);
 
     DBUG_RETURN (ret);
 }
