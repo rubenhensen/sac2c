@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/23 20:33:20  ktr
+ * COMPILES!!!
+ *
  * Revision 1.2  2004/11/19 15:42:41  ktr
  * Support for F_alloc_or_reshape added.
  *
@@ -25,7 +28,7 @@
  *
  *
  */
-#define NEW_INFO
+#include "explicitcopy.h"
 
 #include "globals.h"
 #include "tree_basic.h"
@@ -35,6 +38,7 @@
 #include "print.h"
 #include "DupTree.h"
 #include "new_types.h"
+#include "internal_lib.h"
 
 /**
  * INFO structure
@@ -60,7 +64,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_EMEC_PREASSIGN (result) = NULL;
     INFO_EMEC_FUNDEF (result) = NULL;
@@ -73,7 +77,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -98,11 +102,11 @@ EMECExplicitCopy (node *syntax_tree)
 
     DBUG_PRINT ("EMEC", ("Starting explicit copy traversal."));
 
-    act_tab = emec_tab;
-
     info = MakeInfo ();
 
-    syntax_tree = Trav (syntax_tree, info);
+    TRAVpush (TR_emec);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
 
     info = FreeInfo (info);
 
@@ -133,37 +137,30 @@ static node *
 CreateCopyId (node *oldid, info *arg_info)
 {
     node *avis;
-    ids *newids;
 
     DBUG_ENTER ("CreateCopyId");
 
     /*
      * Create a new variable for b'
      */
+    avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (oldid)),
+                       TYcopyType (AVIS_TYPE (ID_AVIS (oldid))));
+
     FUNDEF_VARDEC (INFO_EMEC_FUNDEF (arg_info))
-      = MakeVardec (TmpVarName (ID_NAME (oldid)),
-                    DupOneTypes (VARDEC_TYPE (ID_VARDEC (oldid))),
-                    FUNDEF_VARDEC (INFO_EMEC_FUNDEF (arg_info)));
-
-    avis = VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMEC_FUNDEF (arg_info)));
-    AVIS_TYPE (avis) = TYCopyType (AVIS_TYPE (ID_AVIS (oldid)));
-
-    newids
-      = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (avis))), NULL, ST_regular);
-    IDS_AVIS (newids) = avis;
-    IDS_VARDEC (newids) = AVIS_VARDECORARG (avis);
+      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_EMEC_FUNDEF (arg_info)));
 
     /*
      * Create copy operation
      */
     INFO_EMEC_PREASSIGN (arg_info)
-      = MakeAssign (MakeLet (MakePrf (F_copy, MakeExprs (oldid, NULL)), newids),
-                    INFO_EMEC_PREASSIGN (arg_info));
+      = TBmakeAssign (TBmakeLet (TCmakePrf1 (F_copy, oldid), TBmakeIds (avis, NULL)),
+                      INFO_EMEC_PREASSIGN (arg_info));
+    AVIS_SSAASSIGN (avis) = INFO_EMEC_PREASSIGN (arg_info);
 
     /*
      * Replace oldid with newid
      */
-    oldid = MakeIdFromIds (DupOneIds (newids));
+    oldid = TBmakeId (avis);
 
     DBUG_RETURN (oldid);
 }
@@ -193,13 +190,13 @@ EMECassign (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMECassign");
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_EMEC_PREASSIGN (arg_info) != NULL) {
-        arg_node = AppendAssign (INFO_EMEC_PREASSIGN (arg_info), arg_node);
+        arg_node = TCappendAssign (INFO_EMEC_PREASSIGN (arg_info), arg_node);
         INFO_EMEC_PREASSIGN (arg_info) = NULL;
     }
 
@@ -228,13 +225,13 @@ EMECfundef (node *arg_node, info *arg_info)
 
         INFO_EMEC_FUNDEF (arg_info) = arg_node;
 
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
         DBUG_PRINT ("EMEC", ("Traversing function %s complete.", FUNDEF_NAME (arg_node)));
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
