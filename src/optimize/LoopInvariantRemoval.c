@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.9  2000/06/23 15:18:29  dkr
+ * function DupTree() with argument (arg_info != NULL) replaced by
+ * function DupTreeInfo()
+ *
  * Revision 2.8  2000/06/23 13:58:17  dkr
  * nodetype N_with removed
  *
@@ -1314,9 +1318,9 @@ InvarUnswitch (node *arg_node, node *loop_node, node *arg_info)
     if (NONE != MOVE) {
         INFO_DUP_TYPE (arg_info) = DUP_INVARIANT; /* arg_info->flag = 2 */
         arg_info->node[0] = arg_node->node[0]->node[1]->node[0];
-        arg_node->node[0]->node[1]->node[0] = DupTree (loop_node, arg_info);
+        arg_node->node[0]->node[1]->node[0] = DupTreeInfo (loop_node, arg_info);
         arg_info->node[0] = arg_node->node[0]->node[2]->node[0];
-        arg_node->node[0]->node[2]->node[0] = DupTree (loop_node, arg_info);
+        arg_node->node[0]->node[2]->node[0] = DupTreeInfo (loop_node, arg_info);
         MOVE = NONE;
     } else {
         arg_node = AppendNodeChain (1, arg_node, loop_node);
@@ -1442,7 +1446,7 @@ LIRsubexpr (node *arg_node, node *arg_info)
 
                 /* Duplicate while-condition and use it with if-then-else-clause */
                 new_node->node[0]->node[0]
-                  = DupTree (WHILE_COND (arg_node)->node[0], arg_info);
+                  = DupTreeInfo (WHILE_COND (arg_node)->node[0], arg_info);
                 new_node->node[0]->mask[1]
                   = DupMask (WHILE_COND (arg_node)->mask[1], INFO_VARNO (arg_info));
                 PlusMask (new_node->mask[1], arg_node->node[0]->mask[1],
