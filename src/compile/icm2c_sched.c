@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/05/17 13:22:54  dkr
+ * static strings instead of Malloc/Free used
+ * (this is needed for BEtest!!!)
+ *
  * Revision 3.3  2001/05/17 12:08:48  dkr
  * FREE, MALLOC eliminated
  *
@@ -416,7 +420,7 @@ void
 ICMCompileMT_SCHEDULER_Static_BEGIN (int sched_id, int tasks_per_thread, int dim,
                                      char **vararg)
 {
-    char *numtasks;
+    char numtasks[100];
 
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Static_BEGIN");
 
@@ -424,8 +428,6 @@ ICMCompileMT_SCHEDULER_Static_BEGIN (int sched_id, int tasks_per_thread, int dim
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Static_BEGIN
-
-    numtasks = (char *)Malloc (50 * sizeof (char));
 
     sprintf (numtasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
     INDENT;
@@ -442,8 +444,6 @@ ICMCompileMT_SCHEDULER_Static_BEGIN (int sched_id, int tasks_per_thread, int dim
     fprintf (outfile, " while (SAC_MT_worktodo){\n");
 
     TaskSelector (dim, vararg, ST_BLOCK, 0, numtasks, "SAC_MT_taskid");
-
-    numtasks = Free (numtasks);
 
     DBUG_VOID_RETURN;
 }
@@ -509,7 +509,7 @@ void
 ICMCompileMT_SCHEDULER_Self_BEGIN (int sched_id, int tasks_per_thread, int dim,
                                    char **vararg)
 {
-    char *numtasks;
+    char numtasks[100];
 
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Self_BEGIN");
 
@@ -517,8 +517,6 @@ ICMCompileMT_SCHEDULER_Self_BEGIN (int sched_id, int tasks_per_thread, int dim,
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Self_BEGIN
-
-    numtasks = (char *)Malloc (50 * sizeof (char));
 
     sprintf (numtasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
     INDENT;
@@ -539,8 +537,6 @@ ICMCompileMT_SCHEDULER_Self_BEGIN (int sched_id, int tasks_per_thread, int dim,
     INDENT;
     fprintf (outfile, " while (SAC_MT_worktodo) {\n");
     TaskSelector (dim, vararg, ST_BLOCK, 0, numtasks, "SAC_MT_taskid");
-
-    numtasks = Free (numtasks);
 
     DBUG_VOID_RETURN;
 }
@@ -616,7 +612,7 @@ void
 ICMCompileMT_SCHEDULER_Affinity_BEGIN (int sched_id, int tasks_per_thread, int dim,
                                        char **vararg)
 {
-    char *numtasks;
+    char numtasks[100];
 
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Affinity_BEGIN");
 
@@ -624,8 +620,6 @@ ICMCompileMT_SCHEDULER_Affinity_BEGIN (int sched_id, int tasks_per_thread, int d
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Affinity_BEGIN
-
-    numtasks = (char *)Malloc (50 * sizeof (char));
 
     sprintf (numtasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
     INDENT;
@@ -640,8 +634,6 @@ ICMCompileMT_SCHEDULER_Affinity_BEGIN (int sched_id, int tasks_per_thread, int d
     INDENT;
     fprintf (outfile, " while (SAC_MT_worktodo){\n");
     TaskSelector (dim, vararg, ST_BLOCK, 0, numtasks, "SAC_MT_taskid");
-
-    numtasks = Free (numtasks);
 
     DBUG_VOID_RETURN;
 }
