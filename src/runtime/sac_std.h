@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/03/07 02:25:48  dkr
+ * macros ND_MAKE_UNIQUE_HIDDEN, ND_KS_NO_RC_MAKE_UNIQUE_ARRAY removed
+ * some minor changes done
+ *
  * Revision 3.4  2001/12/21 13:29:52  dkr
  * no changes done
  *
@@ -320,7 +324,6 @@
         SAC_TR_MEM_PRINT (("ND_COPY_HIDDEN(%s, %s, %s)", #old, #new, #copyfun));         \
         SAC_TR_MEM_PRINT (("new hidden object at addr: %p", new));                       \
         SAC_TR_INC_HIDDEN_MEMCNT (1);                                                    \
-        SAC_TR_REF_PRINT_RC (new);                                                       \
     }
 
 #define SAC_ND_KS_ASSIGN_ARRAY(name, res)                                                \
@@ -343,7 +346,6 @@
         }                                                                                \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_KS_COPY_ARRAY(%s, %s) at addr: %p", #old, #new, SAC_ND_A_FIELD (new)));   \
-        SAC_TR_REF_PRINT_RC (old);                                                       \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (new));                                   \
     }
 
@@ -468,14 +470,6 @@
  *   assigns old to new if refcount is zero and copies the array otherwise
  *   A new refcount is allocated if necessary
  *
- * ND_MAKE_UNIQUE_HIDDEN(old, new, copyfun)
- *   assigns old to new if refcount is zero and copies the hidden otherwise
- *   A new refcount is allocated if necessary
- *
- * ND_KS_NO_RC_MAKE_UNIQUE_ARRAY(old, new, basetypesize)
- *   assigns old to new if refcount is zero and copies the array otherwise
- *   No new refcount is allocated, the old one is freed when not copying
- *
  * ND_NO_RC_MAKE_UNIQUE_HIDDEN(old, new, copyfun)
  *   assigns old to new if refcount is zero and copies the hidden otherwise
  *   No new refcount is allocated, the old one is freed when not copying
@@ -542,37 +536,8 @@
             SAC_TR_MEM_PRINT (("%s is already unique.", old));                           \
         } else {                                                                         \
             SAC_ND_KS_COPY_ARRAY (old, new, basetypesize);                               \
+            SAC_ND_DEC_RC (old, 1);                                                      \
             SAC_ND_ALLOC_RC (new);                                                       \
-            SAC_ND_DEC_RC (old, 1);                                                      \
-        }                                                                                \
-    }
-
-#define SAC_ND_MAKE_UNIQUE_HIDDEN(old, new, copyfun)                                     \
-    {                                                                                    \
-        SAC_TR_MEM_PRINT (("ND_MAKE_UNIQUE_HIDDEN(%s, %s, %s)", #old, #new, #copyfun));  \
-        SAC_TR_REF_PRINT_RC (old);                                                       \
-        if (SAC_ND_A_RC (old) == 1) {                                                    \
-            SAC_ND_ASSIGN_HIDDEN (old, new);                                             \
-            SAC_TR_MEM_PRINT (("%s is already unique.", old));                           \
-        } else {                                                                         \
-            SAC_ND_ALLOC_RC (new);                                                       \
-            SAC_ND_COPY_HIDDEN (old, new, copyfun);                                      \
-            SAC_ND_DEC_RC (old, 1);                                                      \
-        }                                                                                \
-    }
-
-#define SAC_ND_KS_NO_RC_MAKE_UNIQUE_ARRAY(old, new, basetypesize)                        \
-    {                                                                                    \
-        SAC_TR_MEM_PRINT (                                                               \
-          ("ND_KS_NO_RC_MAKE_UNIQUE_ARRAY(%s, %s, %d)", #old, #new, basetypesize));      \
-        SAC_TR_REF_PRINT_RC (old);                                                       \
-        if ((SAC_ND_A_RC (old)) == 1) {                                                  \
-            SAC_ND_KS_NO_RC_ASSIGN_ARRAY (old, new);                                     \
-            SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_RCP (old), sizeof (int));                   \
-            SAC_TR_MEM_PRINT (("%s is already unique.", old));                           \
-        } else {                                                                         \
-            SAC_ND_KS_COPY_ARRAY (old, new, basetypesize);                               \
-            SAC_ND_DEC_RC (old, 1);                                                      \
         }                                                                                \
     }
 
