@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/04/27 14:24:48  hw
+ * Revision 1.21  1995/04/27 14:44:10  hw
+ * bug fixed in CompWith (renamed N_icm for genarray)
+ *
+ * Revision 1.20  1995/04/27  14:24:48  hw
  * added compilation of with-loop (modarray and genarray)
  *
  * Revision 1.19  1995/04/24  18:08:06  hw
@@ -1702,7 +1705,7 @@ CompWith (node *arg_node, node *arg_info)
         arg_info->node[2] = next_assign->node[0];
         APPEND_ASSIGNS (first_assign, next_assign);
     } else if (N_genarray == old_arg_node->node[1]->nodetype) {
-        CREATE_6_ARY_ICM (next_assign, "ND_BEGIN_MODARRAY", res, dim_node, form, to,
+        CREATE_6_ARY_ICM (next_assign, "ND_BEGIN_GENARRAY", res, dim_node, form, to,
                           index, indexlen);
         arg_info->node[2] = next_assign->node[0];
         APPEND_ASSIGNS (first_assign, next_assign);
