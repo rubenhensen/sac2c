@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2001/03/22 19:33:54  dkr
+ * include of tree.h eliminated
+ *
  * Revision 1.6  2001/03/15 20:39:48  dkr
  * Fundef2ProfileString: '&' for reference objects is no longer printed
  * by Type2String()
@@ -58,8 +61,11 @@
  ***
  ***/
 
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "dbug.h"
-#include "tree.h"
 #include "traverse.h"
 #include "free.h"
 #include "globals.h"
