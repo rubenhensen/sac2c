@@ -1,4 +1,5 @@
 Makefile
+Makefile.Config.in
 Makefile.Deps
 RCS-directories
 sac2cdoxy
