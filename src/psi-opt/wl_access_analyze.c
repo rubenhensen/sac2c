@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/05/26 14:24:54  sbs
+ * restriction on N_fundef as sole entry point alleviated
+ * Now, N_module is allowed as well.
+ *
  * Revision 2.13  2000/04/25 17:17:18  bs
  * Bug fixed in WLAAprf.
  *
@@ -121,8 +125,9 @@ WLAccessAnalyze (node *arg_node)
 
     DBUG_ENTER ("WLAccessAnalyze");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "WLAccessAnalyze not initiated on N_fundef level");
+    DBUG_ASSERT (((NODE_TYPE (arg_node) == N_modul)
+                  || (NODE_TYPE (arg_node) == N_fundef)),
+                 "WLAccessAnalyze not initiated on N_modul or N_fundef level");
 
     tmp_tab = act_tab;
     act_tab = wlaa_tab;
