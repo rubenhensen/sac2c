@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2002/07/11 17:30:13  dkr
+ * several modifications done
+ *
  * Revision 3.38  2002/07/10 20:06:43  dkr
  * some bugs modified
  *
@@ -305,18 +308,18 @@ ICM_END( ND_MAKE_UNIQUE, (to_nt, to_sdim, from_nt, from_sdim, copyfun))
 ICM_DEF( ND_CREATE__VECT__SHAPE, TRACE_NONE)
   ICM_NT( nt)
   ICM_INT( sdim)
-  ICM_INT( len)
-  ICM_VARANY( len, vala_any)
-ICM_END( ND_CREATE__VECT__SHAPE, (nt, sdim, len, vala_any))
+  ICM_INT( val_size)
+  ICM_VARANY( val_size, vala_any)
+ICM_END( ND_CREATE__VECT__SHAPE, (nt, sdim, val_size, vala_any))
 #endif
 
 #if defined(ND_CREATE__VECT__DATA) || defined(ICM_ALL)
 ICM_DEF( ND_CREATE__VECT__DATA, TRACE_NONE)
   ICM_NT( nt)
   ICM_INT( sdim)
-  ICM_INT( len)
-  ICM_VARANY( len, vala_any)
-ICM_END( ND_CREATE__VECT__DATA, (nt, sdim, len, vala_any))
+  ICM_INT( val_size)
+  ICM_VARANY( val_size, vala_any)
+ICM_END( ND_CREATE__VECT__DATA, (nt, sdim, val_size, vala_any))
 #endif
 
 
@@ -335,9 +338,10 @@ ICM_DEF( ND_PRF_MODARRAY__DATA_id, TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_NT( from_nt)
   ICM_INT( from_sdim)
-  ICM_ANY( idx_any)
+  ICM_INT( idx_size)
+  ICM_NT( idx_nt)
   ICM_ANY( val_any)
-ICM_END( ND_PRF_MODARRAY__DATA_id, (to_nt, to_sdim, from_nt, from_sdim, idx_any, val_any))
+ICM_END( ND_PRF_MODARRAY__DATA_id, (to_nt, to_sdim, from_nt, from_sdim, idx_size, idx_nt, val_any))
 #endif
 
 #if defined(ND_PRF_MODARRAY__DATA_arr) || defined(ICM_ALL)
@@ -346,10 +350,10 @@ ICM_DEF( ND_PRF_MODARRAY__DATA_arr, TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_NT( from_nt)
   ICM_INT( from_sdim)
-  ICM_INT( idx_len)
-  ICM_VARANY( idx_len, idxa_any)
+  ICM_INT( idx_size)
+  ICM_VARANY( idx_size, idxa_any)
   ICM_ANY( val_any)
-ICM_END( ND_PRF_MODARRAY__DATA_arr, (to_nt, to_sdim, from_nt, from_sdim, idx_len, idxa_any, val_any))
+ICM_END( ND_PRF_MODARRAY__DATA_arr, (to_nt, to_sdim, from_nt, from_sdim, idx_size, idxa_any, val_any))
 #endif
 
 #if defined(ND_PRF_IDX_MODARRAY__DATA) || defined(ICM_ALL)
@@ -358,9 +362,20 @@ ICM_DEF( ND_PRF_IDX_MODARRAY__DATA, TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_NT( from_nt)
   ICM_INT( from_sdim)
-  ICM_ID( idx)
-  ICM_ID( val)
-ICM_END( ND_PRF_IDX_MODARRAY__DATA, (to_nt, to_sdim, from_nt, from_sdim, idx, val))
+  ICM_ANY( idx_any)
+  ICM_ANY( val_any)
+ICM_END( ND_PRF_IDX_MODARRAY__DATA, (to_nt, to_sdim, from_nt, from_sdim, idx_any, val_any))
+#endif
+
+
+#if defined(ND_VECT2OFFSET) || defined(ICM_ALL)
+ICM_DEF( ND_VECT2OFFSET, TRACE_PRF)
+  ICM_ID( offset)
+  ICM_INT( from_size)
+  ICM_NT( from_nt)
+  ICM_INT( shp_size)
+  ICM_VARANY( shp_size, shp_any)
+ICM_END( ND_VECT2OFFSET, (offset, from_size, from_nt, shp_size, shp_any))
 #endif
 
 
@@ -556,9 +571,6 @@ ICM_END( ND_PRF_MODARRAY_AxVxA, (res_btype,dimres,res,old,val,dim,v))
 #endif
 
 
-#endif /* TAGGED_ARRAYS */
-
-
 #if defined(ND_KS_VECT2OFFSET) || defined(ICM_ALL)
 ICM_DEF( ND_KS_VECT2OFFSET, TRACE_PRF)
   ICM_ID( off_name)
@@ -568,6 +580,9 @@ ICM_DEF( ND_KS_VECT2OFFSET, TRACE_PRF)
   ICM_VARANY( dims, shp_any)
 ICM_END( ND_KS_VECT2OFFSET, (off_name, arr_name, dim, dims, shp_any))
 #endif
+
+
+#endif /* TAGGED_ARRAYS */
 
 
 /*
