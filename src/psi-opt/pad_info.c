@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2000/08/04 09:36:21  mab
+ * fixed bug in RemoveSingleAccessPattern (case at_prv_ptr==NULL)
+ *
  * Revision 1.9  2000/08/03 15:35:24  mab
  * completed implementation of data structure
  *
@@ -437,12 +440,12 @@ RemoveSingleAccessPatterns ()
         if (AT_GROUPS (at_ptr) == NULL) {
             if (at_prv_ptr == NULL) {
                 /* remove first element from list */
-                AT_NEXT (at_prv_ptr) = RemoveArrayTypeElement (at_ptr);
-                at_ptr = AT_NEXT (at_prv_ptr);
-            } else {
-                /* remove other element */
                 array_type = RemoveArrayTypeElement (at_ptr);
                 at_ptr = array_type;
+            } else {
+                /* remove other element */
+                AT_NEXT (at_prv_ptr) = RemoveArrayTypeElement (at_ptr);
+                at_ptr = AT_NEXT (at_prv_ptr);
             }
         } else {
             at_prv_ptr = at_ptr;
