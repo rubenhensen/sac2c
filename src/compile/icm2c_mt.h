@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/03/22 12:45:02  ben
+ * ICMs MT_SCHEDULER_Cyclic_... added
+ *
  * Revision 3.7  2001/03/20 16:11:38  ben
  * Just implemented Static renamed to Even, because of existing Static scheduling
  *
@@ -131,5 +134,8 @@ extern void ICMCompileMT_SCHEDULER_BlockVar_END (int dim, char **vararg);
 
 extern void ICMCompileMT_SCHEDULER_Even_BEGIN (int dim, char **vararg);
 extern void ICMCompileMT_SCHEDULER_Even_END (int dim, char **vararg);
+
+extern void ICMCompileMT_SCHEDULER_Cyclic_BEGIN (int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Cyclic_END (int dim, char **vararg);
 
 #endif /* _ICM2C_MT_H_ */

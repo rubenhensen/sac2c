@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/03/22 12:44:12  ben
+ * ICMs MT_SCHEDULER_Cyclic_... added
+ *
  * Revision 3.10  2001/03/21 11:55:42  ben
  * Bugs fixed in ICMs MT_SCHEDULER_Even_..., SelectTask
  *
@@ -1633,6 +1636,61 @@ ICMCompileMT_SCHEDULER_Even_END (int dim, char **vararg)
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Even_END
 
+    fprintf (outfile, "\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_SCHEDULER_Cyclic_BEGIN(int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Cyclic_END(int dim, char **vararg)
+ *
+ * description:
+ *   These two ICMs implement the scheduling for withloops
+ *
+ *   This scheduling is a very simple one that partitions the iteration
+ *   space with the strategy specified for SelectTask (at the moment
+ *   Blocks on dimension 0).
+ *
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_SCHEDULER_Cyclic_BEGIN (int dim, char **vararg)
+{
+
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Cyclic_BEGIN");
+
+#define MT_SCHEDULER_Cyclic_BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_Cyclic_BEGIN
+
+    INDENT;
+    fprintf (outfile, "int taskid=SAC_MT_MYTHREAD();\n");
+    INDENT;
+    fprintf (outfile, " while (taskid<SAC_MT_THREADS()*4){\n");
+    SelectTask (dim, vararg, 1, 0, "SAC_MT_THREADS()*4", "taskid");
+
+    DBUG_VOID_RETURN;
+}
+
+void
+ICMCompileMT_SCHEDULER_Cyclic_END (int dim, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Cyclic_END");
+
+#define MT_SCHEDULER_Cyclic_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_Cyclic_END
+
+    INDENT;
+    fprintf (outfile, "taskid+=SAC_MT_THREADS();\n");
+    INDENT;
+    fprintf (outfile, "}\n");
     fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
