@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2003/09/18 15:11:38  dkr
+ * nesting of CAT?? macros for ALLOC ICMs corrected
+ *
  * Revision 3.43  2003/09/18 12:23:37  dkr
  * BYTE_SIZE_OF_DESC added.
  * some bugs fixed.
@@ -915,15 +918,15 @@ typedef int *SAC_array_descriptor_t;
  * usually a C-ICM but this macro support H-ICMs only:
  */
 #define SAC_ND_ALLOC(nt, rc, dim, set_shape_icm)                                         \
-    CAT11 (SAC_ND_ALLOC__, NT_SHP (nt) BuildArgs4 (nt, rc, dim, set_shape_icm))
+    CAT10 (SAC_ND_ALLOC__, NT_SHP (nt) BuildArgs4 (nt, rc, dim, set_shape_icm))
 
 /*
  * these two macros are used instead:
  */
 #define SAC_ND_ALLOC_BEGIN(nt, rc, dim)                                                  \
-    CAT11 (SAC_ND_ALLOC_BEGIN__, NT_SHP (nt) BuildArgs3 (nt, rc, dim))
+    CAT10 (SAC_ND_ALLOC_BEGIN__, NT_SHP (nt) BuildArgs3 (nt, rc, dim))
 #define SAC_ND_ALLOC_END(nt, rc, dim)                                                    \
-    CAT11 (SAC_ND_ALLOC_END__, NT_SHP (nt) BuildArgs3 (nt, rc, dim))
+    CAT10 (SAC_ND_ALLOC_END__, NT_SHP (nt) BuildArgs3 (nt, rc, dim))
 
 #define SAC_ND_ALLOC__DATA(nt) CAT11 (SAC_ND_ALLOC__DATA__, NT_SHP (nt) (nt))
 
@@ -931,7 +934,7 @@ typedef int *SAC_array_descriptor_t;
     CAT11 (SAC_ND_ALLOC__DESC__, NT_SHP (nt) BuildArgs2 (nt, dim))
 
 #define SAC_ND_ALLOC__DESC_AND_DATA(nt, dim)                                             \
-    CAT10 (SAC_ND_ALLOC__DESC_AND_DATA__, NT_SHP (nt) BuildArgs2 (nt, dim))
+    CAT11 (SAC_ND_ALLOC__DESC_AND_DATA__, NT_SHP (nt) BuildArgs2 (nt, dim))
 
 /* ND_CHECK_REUSE( ...)  is a C-ICM */
 
