@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.16  1999/07/16 09:45:19  cg
+# Added -libsac variant for heap management diagnostics.
+#
 # Revision 2.15  1999/07/09 11:39:00  cg
 # make deps done
 #
@@ -90,23 +93,26 @@ OS        := SOLARIS_SPARC
 
 
 all:  libsac.a libsac_mt.a libsac_heapmgr.a libsac_noheapmgr.a  libsac_noheapmgr_mt.a  \
-      CacheSimAnalyser sac2crc
+      libsac_heapmgr_diag.a CacheSimAnalyser sac2crc
 
 tar: runtime.tar
 
 %.a : 
 	@ if [ ! -f $@ ]; \
-	    then ln -s ../libsac/$@; \
+	    then ln -s ../libsac/$@;  \
+                 echo ln -s ../libsac/$@;  \
 	  fi
 
 sac2crc: 
 	@ if [ ! -f $@ ]; \
 	    then ln -s $@.$(OS) $@; \
+                 echo ln -s $@.$(OS) $@;  \
 	  fi
 
 CacheSimAnalyser: 
 	@ if [ ! -f $@ ]; \
 	    then ln -s ../tools/$@; \
+                 echo ln -s ../tools/$@; \
 	  fi
 
 
