@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.26  2000/03/02 13:09:18  jhs
+ * Added ST_call_rep. ST_call_st, ST_call_mt.
+ *
  * Revision 2.25  2000/02/23 20:24:53  cg
  * Node status ST_imported replaced by ST_imported_mod and
  * ST_imported_class in order to allow distinction between enteties
@@ -383,7 +386,10 @@ typedef enum {
     ST_condfun,            /* function representing an if-else-clause */
     ST_dofun,              /* function representing a do-loop         */
     ST_whilefun,           /* function representing a while-loop      */
-    ST_repfun              /* function replicated for mt-execution    */
+    ST_call_rep,           /* function replicated for mt-execution    */
+    ST_call_st,            /* function for st-execution               */
+    ST_call_mt,            /* function for mt-execution               */
+    ST_call_any            /* default flag, used during inferation    */
 } statustype;
 
 typedef enum { DOLLAR, VECT, IDX } useflag;
