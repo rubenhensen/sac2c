@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.97  2004/10/21 15:22:52  sah
+ * added some DBUG_ASSERTS and fixed a macro
+ *
  * Revision 3.96  2004/10/07 15:39:09  khf
  * removed non emm parts from third traversal
  * creation of pseudo fold-funs supports multioperator WLs
@@ -2367,7 +2370,11 @@ PREC3with (node *arg_node, info *arg_info)
     /*
      * It is sufficient to take the CEXPRS of the first code-node!
      */
-    INFO_PREC3_CEXPRS (arg_info) = NCODE_CEXPRS (NWITH2_CODE (arg_node));
+
+    DBUG_ASSERT ((NCODE_CEXPRS (NWITH_CODE (arg_node)) != NULL),
+                 "Found NCode without CExprs.");
+
+    INFO_PREC3_CEXPRS (arg_info) = NCODE_CEXPRS (NWITH_CODE (arg_node));
     INFO_PREC3_WITH_IDS (arg_info) = LET_IDS (INFO_PREC3_LET (arg_info));
 
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
@@ -2400,6 +2407,10 @@ PREC3with2 (node *arg_node, info *arg_info)
     /*
      * It is sufficient to take the CEXPRS of the first code-node!
      */
+
+    DBUG_ASSERT ((NCODE_CEXPRS (NWITH2_CODE (arg_node)) != NULL),
+                 "Found NCode without CExprs.");
+
     INFO_PREC3_CEXPRS (arg_info) = NCODE_CEXPRS (NWITH2_CODE (arg_node));
     INFO_PREC3_WITH_IDS (arg_info) = LET_IDS (INFO_PREC3_LET (arg_info));
 
@@ -2483,6 +2494,8 @@ PREC3withop (node *arg_node, info *arg_info)
 
         NWITHOP_FUNDEF (arg_node) = new_foldfun;
     }
+
+    DBUG_ASSERT ((INFO_PREC3_CEXPRS (arg_info) != NULL), "Missing CExprs found!");
 
     INFO_PREC3_WITH_IDS (arg_info) = IDS_NEXT (INFO_PREC3_WITH_IDS (arg_info));
     INFO_PREC3_CEXPRS (arg_info) = EXPRS_NEXT (INFO_PREC3_CEXPRS (arg_info));
