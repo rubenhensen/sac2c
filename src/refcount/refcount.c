@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.50  1998/05/11 15:15:58  dkr
+ * added RCicm:
+ *   no refcounting of ICM-args
+ *
  * Revision 1.49  1998/05/08 00:43:25  dkr
  * RC for index-vector now correct.
  * added RCO for with-loop-arguments :)
@@ -314,8 +318,6 @@ IsArray (types *type)
 
     DBUG_ENTER ("IsArray");
 
-    DBUG_PRINT ("RC", ("looking for %s", type->id));
-
     if ((SCALAR != TYPES_DIM (type)) && (ARRAY_OR_SCALAR != TYPES_DIM (type))) {
         ret = 1;
     } else {
@@ -330,8 +332,6 @@ IsArray (types *type)
             }
         }
     }
-
-    DBUG_PRINT ("RC", ("%d", ret));
 
     DBUG_RETURN (ret);
 }
@@ -461,8 +461,6 @@ LookupId (char *id, node *id_chain)
             tmp = EXPRS_NEXT (tmp);
         }
     }
-
-    DBUG_PRINT ("RC", ("found %s:" P_FORMAT, id, ret_node));
 
     DBUG_RETURN (ret_node);
 }
@@ -660,8 +658,8 @@ RestoreRC (int *dump)
  * remarks:
  *   INFO_RC_PRF( arg_info) is relevant for N_id nodes only.
  *   (INFO_RC_PRF != NULL) indicates that a N_id node is argument of a
- *    primitive function (exept F_reshape).
- *   INFO_RC_PRF then points to this prf.
+ *    primitive function (exept F_reshape) or ICM.
+ *   INFO_RC_PRF then points to this prf/icm.
  *
  ******************************************************************************/
 
@@ -1145,11 +1143,10 @@ RCloop (node *arg_node, node *arg_info)
  *
  * description:
  *   Traverse the args with INFO_RC_PRF( arg_info) pointing to the N_prf!
- *   If N_prf is F_reshape it has to be treated in exactly the same way
- *    as if we had an assignment, i.e., traverse with (INFO_RC_PRF( arg_info)
+ *   This is done for RCO in RCid().
+ *   If N_prf is F_reshape it has to be treated in exactly the same way as if
+ *    we had a simple assignment, i.e., traverse with (INFO_RC_PRF( arg_info)
  *    == NULL)!
- *   The reason for this situation is that it is compiled as if it would be a
- *    simple assignment!
  *
  ******************************************************************************/
 
@@ -1158,8 +1155,6 @@ RCprf (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("RCprf");
 
-    DBUG_PRINT ("RC", ("traversing args of prf-node (%08x) %s", arg_node,
-                       mdb_prf[PRF_PRF (arg_node)]));
     if (PRF_PRF (arg_node) == F_reshape) {
         INFO_RC_PRF (arg_info) = NULL;
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
@@ -1175,21 +1170,48 @@ RCprf (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *RCicm( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Traverses the args with INFO_RC_PRF( arg_info) pointing to the N_icm!
+ *   This is done for RCO in RCid().
+ *
+ ******************************************************************************/
+
+node *
+RCicm (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCicm");
+
+    INFO_RC_PRF (arg_info) = arg_node;
+    ICM_ARGS (arg_node) = Trav (ICM_ARGS (arg_node), arg_info);
+    INFO_RC_PRF (arg_info) = NULL;
+
+    if (ICM_NEXT (arg_node) != NULL) {
+        ICM_NEXT (arg_node) = Trav (ICM_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *RCid( node *arg_node, node *arg_info)
  *
  * description:
- *   depending on INFO_RC_PRF( arg_info) do one of the following:
- *     a) Increment refcnt at vardec and set local refcnt
- *        of the N_id node accordingly. (RC op needed)
+ *   Depending on INFO_RC_PRF( arg_info) do one of the following:
+ *     a) Increment refcnt at vardec and set local refcnt of the N_id node
+ *        accordingly. (RC op needed)
  *     b) Set local refcnt to -1. (no RC op)
- *   if we have found the index-vector of a with-loop, we set RC of
- *    'NWITH_VEC' to 1 (-1 normally, see RCNwithid) --- to indicate, that we
+ *   If we have found the index-vector of a with-loop, we set RC of
+ *    'NWITH_VEC' to 0 (-1 normally, see RCNwithid) --- to indicate, that we
  *    must build the index-vector in the compilat of the with-loop.
  *
  * remarks:
  *   - ('INFO_RC_PRF( arg_info)' != NULL) indicates that this N_id node is
- *      argument of a primitive function (exept F_reshape).
- *     'INFO_RC_PRF' then points to this prf.
+ *      argument of a primitive function (exept F_reshape) or ICM.
+ *     'INFO_RC_PRF' then points to this prf/icm.
  *   - 'INFO_RC_WITH( arg_info)' does the same for a with-loop.
  *
  ******************************************************************************/
@@ -1234,12 +1256,12 @@ RCid (node *arg_node, node *arg_info)
 
         /*
          * if we have found the index-vector of a with-loop, we set RC of
-         *  'NWITH_VEC' to 1.
+         *  'NWITH_VEC' to 0.
          */
 
         if (strcmp (IDS_NAME (NWITH_VEC (INFO_RC_WITH (arg_info))), ID_NAME (arg_node))
             == 0) {
-            IDS_REFCNT (NWITH_VEC (INFO_RC_WITH (arg_info))) = 1;
+            IDS_REFCNT (NWITH_VEC (INFO_RC_WITH (arg_info))) = 0;
         }
     }
 
@@ -1565,7 +1587,7 @@ RCgen (node *arg_node, node *arg_info)
  *                 0,  otherwise
  *   - The RC of 'NWITH_VEC' indicates whether we need to build the
  *     index-vector or not:
- *        1: we have found references to the index-vector in at least one
+ *        0: we have found references to the index-vector in at least one
  *           code-block
  *       -1: we do not need to build the index-vector.
  *     This flag/RC is correctly set after traversal of the code-blocks.
@@ -1654,7 +1676,9 @@ RCNwith (node *arg_node, node *arg_info)
      *           bodies of while-loops) are traversed two times!!!
      */
 
-    NWITH_RC_IDS (arg_node) = NULL;
+    if (NWITH_RC_IDS (arg_node) != NULL) {
+        NWITH_RC_IDS (arg_node) = FreeAllIds (NWITH_RC_IDS (arg_node));
+    }
     FOREACH_VARDEC_AND_ARG (fundef_node, vardec,
                             if (DFMTestMaskEntry (NWITH_IN (arg_node),
                                                   VARDEC_OR_ARG_NAME (vardec))) {
@@ -1779,7 +1803,9 @@ RCNcode (node *arg_node, node *arg_info)
      *           bodies of while-loops) are traversed two times!!!
      */
 
-    NCODE_RC_IDS (arg_node) = NULL;
+    if (NCODE_RC_IDS (arg_node) != NULL) {
+        NCODE_RC_IDS (arg_node) = FreeAllIds (NCODE_RC_IDS (arg_node));
+    }
     FOREACH_VARDEC_AND_ARG (fundef_node, vardec, if (VARDEC_OR_ARG_REFCNT (vardec) > 1) {
         new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL, ST_regular);
         IDS_VARDEC (new_ids) = vardec;
@@ -1852,7 +1878,7 @@ RCNwithid (node *arg_node, node *arg_info)
      * we initialize the RC of the index-vector with -1.
      *  -> by default we do not need to build it.
      * (when RCNcode founds a reference of the index-vector, the RC of the
-     *  withid in the first part (= 'NWITH_VEC') is set to 1.)
+     *  withid in the first part (= 'NWITH_VEC') is set to 0.)
      */
 
     IDS_REFCNT (NWITHID_VEC (arg_node)) = -1;
