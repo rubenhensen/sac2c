@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/11/27 00:21:34  ktr
+ * JUHUUUUU!!!!!!!!!!!!!!!!!!
+ *
  * Revision 3.13  2004/11/22 21:29:55  ktr
  * Big Switch Header! SacDevCamp 04
  *
@@ -102,7 +105,7 @@ extern sched_t *SCHmakeSchedulingByPragma (node *ap_node, int line);
 extern sched_t *SCHremoveScheduling (sched_t *sched);
 extern sched_t *SCHcopyScheduling (sched_t *sched);
 extern sched_t *SCHprecompileScheduling (sched_t *sched);
-extern sched_t *SCHmarkmemvalscheduling (sched_t *sched, lut_t *lut);
+extern sched_t *SCHmarkmemvalsScheduling (sched_t *sched, lut_t *lut);
 extern void SCHprintScheduling (FILE *outfile, sched_t *sched);
 
 extern void SCHcheckSuitabilityConstSeg (sched_t *sched);
