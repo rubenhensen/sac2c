@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1997/10/31 10:32:09  dkr
+ * with defined NEWTREE, node->nnode is (partly) not used anymore
+ *
  * Revision 1.21  1997/08/04 19:11:38  dkr
  * no FREE, FREETRAV in FreeIcm
  *
@@ -1538,8 +1541,13 @@ node *FreeNoInfo(node *arg_node, node *arg_info)
   int i;
   
   DBUG_ENTER("FreeNoInfo");
-  for(i=0;i<arg_node->nnode;i++)
-    arg_node->node[i]=Trav(arg_node->node[i],arg_info);
+#ifndef NEWTREE
+  for(i=0; i<arg_node->nnode; i++)
+#else
+  for(i=0; i<MAX_SONS; i++)
+    if (arg_node->node[i] != NULL)
+#endif
+      arg_node->node[i]=Trav(arg_node->node[i],arg_info);
   FreeMask(arg_node);
   FREE(arg_node);
   DBUG_RETURN((node *)NULL);
@@ -1550,8 +1558,13 @@ node *FreeInfoIds(node *arg_node, node *arg_info)
   int i;
   
   DBUG_ENTER("FreeInfoIds");
-  for(i=0;i<arg_node->nnode;i++)
-    arg_node->node[i]=Trav(arg_node->node[i],arg_info);
+#ifndef NEWTREE
+  for(i=0; i<arg_node->nnode; i++)
+#else
+  for(i=0; i<MAX_SONS; i++)
+    if (arg_node->node[i] != NULL)
+#endif
+      arg_node->node[i]=Trav(arg_node->node[i],arg_info);
   FreeMask(arg_node);
   FREE(arg_node);
   DBUG_RETURN((node *)NULL);
@@ -1562,8 +1575,13 @@ node *FreeInfoId(node *arg_node, node *arg_info)
   int i;
   
   DBUG_ENTER("FreeInfoId");
-  for(i=0;i<arg_node->nnode;i++)
-    arg_node->node[i]=Trav(arg_node->node[i],arg_info);
+#ifndef NEWTREE
+  for(i=0; i<arg_node->nnode; i++)
+#else
+  for(i=0; i<MAX_SONS; i++)
+    if (arg_node->node[i] != NULL)
+#endif
+      arg_node->node[i]=Trav(arg_node->node[i],arg_info);
   FreeMask(arg_node);
   FREE(arg_node->info.id);
   FREE(arg_node);
@@ -1575,7 +1593,11 @@ node *FreeInfoType(node *arg_node, node *arg_info)
   int i;
 
   DBUG_ENTER("FreeInfoType");
-  for(i=0;i<arg_node->nnode;i++)
+#ifndef NEWTREE
+  for(i=0; i<arg_node->nnode; i++)
+#else
+  for(i=0; i<MAX_SONS; i++)
+#endif
     if(NULL != arg_node->node[i])
     {
       arg_node->node[i]=Trav(arg_node->node[i],arg_info);
