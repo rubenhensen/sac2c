@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  1998/02/24 16:10:32  srs
+ * new function TmpVarName()
+ *
  * Revision 1.24  1998/02/05 17:08:30  srs
  * TmpVar(): wr_tab and changed fusion_tab into wlf_tab
  *
@@ -92,6 +95,7 @@
 #include <stdarg.h>
 
 #include "Error.h"
+#include "free.h"
 #include "dbug.h"
 #include "my_debug.h"
 #include "internal_lib.h"
@@ -493,6 +497,32 @@ TmpVar ()
 
     sprintf (result, "__tmp_%s_%d", s, counter);
     counter++;
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char *TmpVarName(char* postfix)
+ *
+ * description:
+ *   creates a unique variable like TmpVar() and additionally appends
+ *   an individual string.
+ *
+ ******************************************************************************/
+
+char *
+TmpVarName (char *postfix)
+{
+    char *result, *tmp;
+
+    DBUG_ENTER ("TmpVarName");
+
+    tmp = TmpVar ();
+    result = (char *)Malloc ((strlen (tmp) + strlen (postfix) + 2) * sizeof (char));
+    sprintf (result, "%s_%s", tmp, postfix);
+    FREE (tmp);
 
     DBUG_RETURN (result);
 }

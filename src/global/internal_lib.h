@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1998/02/24 16:10:43  srs
+ * new function TmpVarName()
+ *
  * Revision 1.11  1997/12/06 17:16:01  srs
  * new global var malloc_align_step
  * new function compute_malloc_align_step()
@@ -50,6 +53,7 @@ extern void SystemCall (char *format, ...);
 extern int SystemCall2 (char *format, ...);
 extern int SystemTest (char *format, ...);
 extern char *TmpVar ();
+extern char *TmpVarName (char *postfix);
 
 #ifdef SHOW_MALLOC
 extern void compute_malloc_align_step (void);
