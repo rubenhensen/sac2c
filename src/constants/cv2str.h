@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/11/23 11:38:17  cg
+ * SacDevCamp renaming
+ *
  * Revision 1.5  2004/11/22 18:55:29  cg
  * Moved all definitions/declarations of global variables to globals.mac
  *
@@ -24,19 +27,19 @@
 #ifndef _SAC_CV2STR_H_
 #define _SAC_CV2STR_H_
 
-extern char *COCv2StrUShort (void *src, int off, int len, int max_char);
-extern char *COCv2StrUInt (void *src, int off, int len, int max_char);
-extern char *COCv2StrULong (void *src, int off, int len, int max_char);
-extern char *COCv2StrShort (void *src, int off, int len, int max_char);
-extern char *COCv2StrInt (void *src, int off, int len, int max_char);
-extern char *COCv2StrLong (void *src, int off, int len, int max_char);
+extern char *COcv2StrUShort (void *src, int off, int len, int max_char);
+extern char *COcv2StrUInt (void *src, int off, int len, int max_char);
+extern char *COcv2StrULong (void *src, int off, int len, int max_char);
+extern char *COcv2StrShort (void *src, int off, int len, int max_char);
+extern char *COcv2StrInt (void *src, int off, int len, int max_char);
+extern char *COcv2StrLong (void *src, int off, int len, int max_char);
 
-extern char *COCv2StrFloat (void *src, int off, int len, int max_char);
-extern char *COCv2StrDouble (void *src, int off, int len, int max_char);
-extern char *COCv2StrLongDouble (void *src, int off, int len, int max_char);
+extern char *COcv2StrFloat (void *src, int off, int len, int max_char);
+extern char *COcv2StrDouble (void *src, int off, int len, int max_char);
+extern char *COcv2StrLongDouble (void *src, int off, int len, int max_char);
 
-extern char *COCv2StrChar (void *src, int off, int len, int max_char);
+extern char *COcv2StrChar (void *src, int off, int len, int max_char);
 
-extern char *COCv2StrDummy (void *src, int off, int len, int max_char);
+extern char *COcv2StrDummy (void *src, int off, int len, int max_char);
 
 #endif /* _SAC_CV2STR_H_ */

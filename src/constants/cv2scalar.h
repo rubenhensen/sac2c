@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/11/23 11:38:17  cg
+ * SacDevCamp renaming
+ *
  * Revision 1.4  2004/11/22 18:55:29  cg
  * Moved all definitions/declarations of global variables to globals.mac
  *
@@ -27,11 +30,11 @@
 
 #include "types.h"
 
-extern node *COCv2Num (void *elems, int offset);
-extern node *COCv2Double (void *elems, int offset);
-extern node *COCv2Bool (void *elems, int offset);
-extern node *COCv2Float (void *elems, int offset);
-extern node *COCv2Char (void *elems, int offset);
-extern node *COCv2ScalarDummy (void *elems, int offset);
+extern node *COcv2Num (void *elems, int offset);
+extern node *COcv2Double (void *elems, int offset);
+extern node *COcv2Bool (void *elems, int offset);
+extern node *COcv2Float (void *elems, int offset);
+extern node *COcv2Char (void *elems, int offset);
+extern node *COcv2ScalarDummy (void *elems, int offset);
 
 #endif /* _SAC_CV2SCALAR_H_ */

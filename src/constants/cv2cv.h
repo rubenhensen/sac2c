@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/11/23 11:38:17  cg
+ * SacDevCamp renaming
+ *
  * Revision 1.5  2004/11/22 18:55:29  cg
  * Moved all definitions/declarations of global variables to globals.mac
  *
@@ -31,21 +34,21 @@
 #ifndef _SAC_CV2CV_H_
 #define _SAC_CV2CV_H_
 
-extern void COCv2CvUShort (void *src, int off, int len, void *res, int res_off);
-extern void COCv2CvUInt (void *src, int off, int len, void *res, int res_off);
-extern void COCv2CvULong (void *src, int off, int len, void *res, int res_off);
-extern void COCv2CvShort (void *src, int off, int len, void *res, int res_off);
-extern void COCv2CvInt (void *src, int off, int len, void *res, int res_off);
-extern void COCv2CvLong (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvUShort (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvUInt (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvULong (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvShort (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvInt (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvLong (void *src, int off, int len, void *res, int res_off);
 
-extern void COCv2CvFloat (void *src, int off, int len, void *res, int res_off);
-extern void COCv2CvDouble (void *src, int off, int len, void *res, int res_off);
-extern void COCv2CvLongDouble (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvFloat (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvDouble (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvLongDouble (void *src, int off, int len, void *res, int res_off);
 
-extern void COCv2CvChar (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvChar (void *src, int off, int len, void *res, int res_off);
 
-extern void COCv2CvHidden (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvHidden (void *src, int off, int len, void *res, int res_off);
 
-extern void COCv2CvDummy (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvDummy (void *src, int off, int len, void *res, int res_off);
 
 #endif /* _SAC_CV2CV_H_ */

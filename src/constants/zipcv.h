@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/11/23 11:38:17  cg
+ * SacDevCamp renaming
+ *
  * Revision 1.5  2004/11/22 18:55:29  cg
  * Moved all definitions/declarations of global variables to globals.mac
  *
@@ -24,30 +27,30 @@
 #include "types.h"
 
 #define EXT_DECLS(fun)                                                                   \
-    extern void COZipCvUShort##fun (void *arg1, int pos1, void *arg2, int pos2,          \
+    extern void COzipCvUShort##fun (void *arg1, int pos1, void *arg2, int pos2,          \
                                     void *res, int res_pos);                             \
-    extern void COZipCvUInt##fun (void *arg1, int pos1, void *arg2, int pos2, void *res, \
+    extern void COzipCvUInt##fun (void *arg1, int pos1, void *arg2, int pos2, void *res, \
                                   int res_pos);                                          \
-    extern void COZipCvULong##fun (void *arg1, int pos1, void *arg2, int pos2,           \
+    extern void COzipCvULong##fun (void *arg1, int pos1, void *arg2, int pos2,           \
                                    void *res, int res_pos);                              \
-    extern void COZipCvShort##fun (void *arg1, int pos1, void *arg2, int pos2,           \
+    extern void COzipCvShort##fun (void *arg1, int pos1, void *arg2, int pos2,           \
                                    void *res, int res_pos);                              \
-    extern void COZipCvInt##fun (void *arg1, int pos1, void *arg2, int pos2, void *res,  \
+    extern void COzipCvInt##fun (void *arg1, int pos1, void *arg2, int pos2, void *res,  \
                                  int res_pos);                                           \
-    extern void COZipCvLong##fun (void *arg1, int pos1, void *arg2, int pos2, void *res, \
+    extern void COzipCvLong##fun (void *arg1, int pos1, void *arg2, int pos2, void *res, \
                                   int res_pos);                                          \
                                                                                          \
-    extern void COZipCvFloat##fun (void *arg1, int pos1, void *arg2, int pos2,           \
+    extern void COzipCvFloat##fun (void *arg1, int pos1, void *arg2, int pos2,           \
                                    void *res, int res_pos);                              \
-    extern void COZipCvDouble##fun (void *arg1, int pos1, void *arg2, int pos2,          \
+    extern void COzipCvDouble##fun (void *arg1, int pos1, void *arg2, int pos2,          \
                                     void *res, int res_pos);                             \
-    extern void COZipCvLongDouble##fun (void *arg1, int pos1, void *arg2, int pos2,      \
+    extern void COzipCvLongDouble##fun (void *arg1, int pos1, void *arg2, int pos2,      \
                                         void *res, int res_pos);                         \
                                                                                          \
-    extern void COZipCvBool##fun (void *arg1, int pos1, void *arg2, int pos2, void *res, \
+    extern void COzipCvBool##fun (void *arg1, int pos1, void *arg2, int pos2, void *res, \
                                   int res_pos);                                          \
                                                                                          \
-    extern void COZipCvDummy##fun (void *arg1, int pos1, void *arg2, int pos2,           \
+    extern void COzipCvDummy##fun (void *arg1, int pos1, void *arg2, int pos2,           \
                                    void *res, int res_pos);
 
 EXT_DECLS (Plus)
@@ -71,5 +74,7 @@ EXT_DECLS (Tof)
 EXT_DECLS (Tod)
 EXT_DECLS (Abs)
 EXT_DECLS (Neg)
+
+#undef EXT_DECLS
 
 #endif /* _SAC_ZIPCV_H_ */
