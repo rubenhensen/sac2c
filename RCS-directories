@@ -32,3 +32,4 @@ src/profile
 tools/clock_skew_detection
 tools/clock_skew_detection/src
 tools/echo
+tools/echo/src
