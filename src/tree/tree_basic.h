@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2001/03/15 13:57:26  dkr
+ * definition of INFO_PREC2_OBJINITFUNDEF modified
+ *
  * Revision 3.48  2001/03/15 13:29:09  nmw
  * INFO_SSA_ASSIGN added
  *
@@ -2606,7 +2609,7 @@ extern node *MakeInfo ();
 #define INFO_PREC1_LET(n) (n->node[1])
 #define INFO_PREC1_LASTASSIGN(n) (n->node[2])
 #define INFO_PREC1_CEXPR(n) (n->node[3])
-#define INFO_PREC2_OBJINITFUNDEF(n) (n->node[4])
+#define INFO_PREC2_OBJINITFUNDEF(n) (n->node[0])
 
 /* ArrayElemination */
 #define INFO_AE_TYPES(n) (n->node[1])
