@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/03/16 17:40:35  hw
+ * Revision 1.6  1995/03/28 12:09:38  hw
+ * added #include "internal_lib.h"
+ *
+ * Revision 1.5  1995/03/16  17:40:35  hw
  * RCwith and RCcon (used for N_genarray and N_modarray) inserted
  * bug fixed in RCfundef
  *
@@ -31,9 +34,8 @@
 #include "dbug.h"
 #include "typecheck.h" /* to use LookupType */
 #include "traverse.h"
+#include "internal_lib.h"
 #include "refcount.h"
-
-extern void *Malloc (int size); /*defined in typecheck.c */
 
 #define ID info.ids->id
 #define VAR_DEC info.ids->node
