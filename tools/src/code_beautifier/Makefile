@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.3  2004/08/18 10:33:15  sah
+# added missing dependency to cb
+#
 # Revision 1.2  2004/08/18 09:59:34  sbs
 # no dependencies for cb!
 #
@@ -26,7 +29,7 @@ TOOLS = ../..
 
 all: $(TOOLS)/bin/cb
 
-$(TOOLS)/bin/cb: cb.c
+$(TOOLS)/bin/cb: cb.c $(LIBS)
 	mkdir -p $(TOOLS)/bin
 	$(CC) $(CCFLAGS) -o $@ $< $(INCS) $(LIBS) 
 
