@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2004/11/22 16:18:29  ktr
+ * ISMOP SacDevCamp 04
+ *
  * Revision 3.47  2004/11/22 14:48:43  ktr
  * deleted all IDS-Structure SacDevCamp 04
  *
@@ -919,5 +922,18 @@ typedef bool (*tvar_ass_handle_fun) (sig_dep *handle);
  */
 
 typedef struct TE_INFO te_info;
+
+/*
+ * moved from stringset.h
+ */
+
+typedef enum { SS_saclib, SS_extlib, SS_objfile } SStype_t;
+typedef void *(*SSfoldfun_p) (const char *elem, SStype_t kind, void *rest);
+
+/*
+ * moved from filemgr.h
+ */
+
+typedef enum { PK_path, PK_moddec_path, PK_modimp_path, PK_systemlib_path } pathkind;
 
 #endif /* _SAC_TYPES_H_ */
