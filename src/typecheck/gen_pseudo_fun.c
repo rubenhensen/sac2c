@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2004/11/23 15:07:12  sbs
+ * SacSacDevCamp 04 done
+ *
  * Revision 3.15  2004/11/22 13:43:54  sbs
  * CreatePseudoFoldFun eliminated
  *
@@ -84,7 +87,7 @@
  *
  */
 
-#include <stdlib.h>
+#include <string.h>
 
 #include "types.h"
 #include "tree_basic.h"
@@ -100,11 +103,11 @@
 /******************************************************************************
  *
  * function:
- *   node *CreateFoldFun( types *elem_type,
- *                        node  *fold_fundef,
- *                        prf    fold_prf,
- *                        char  *res_name,
- *                        char  *cexpr_name)
+ *   node *GPFcreateFoldFun( ntype *elem_type,
+ *                           node  *fold_fundef,
+ *                           prf    fold_prf,
+ *                           char  *res_name,
+ *                           char  *cexpr_name)
  *
  * description:
  *  - generates an N_fundef node of the following kind:
@@ -124,42 +127,31 @@
  ******************************************************************************/
 
 node *
-CreateFoldFun (types *elem_type, node *fold_fundef, prf fold_prf, char *res_name,
-               char *cexpr_name)
+GPFcreateFoldFun (ntype *elem_type, node *fold_fundef, prf fold_prf, char *res_name,
+                  char *cexpr_name)
 {
-    char *pseudo_fold_fun_name, *tmp_res_name;
+    const char *pseudo_fold_fun_name;
+    char *tmp_res_name;
     char *buffer;
     node *new_fundef, *formal_args, *application, *args, *ret_ass;
-    node *res_id, *tmp_res_id, *cexpr_id;
     node *tmp_res_vardec;
+    node *res_avis, *cexpr_avis, *tmp_res_avis;
 
-    DBUG_ENTER ("CreateFoldFun");
+    DBUG_ENTER ("GPFcreateFoldFun");
 
-    formal_args
-      = MakeArg (StringCopy (res_name), DupAllTypes (elem_type), ST_regular, ST_regular,
-                 MakeArg (StringCopy (cexpr_name), DupAllTypes (elem_type), ST_regular,
-                          ST_regular, NULL));
+    res_avis = TBmakeAvis (ILIBstringCopy (res_name), TYcopyType (elem_type));
+    cexpr_avis = TBmakeAvis (ILIBstringCopy (cexpr_name), TYcopyType (elem_type));
+    formal_args = TBmakeArg (res_avis, TBmakeArg (cexpr_avis, NULL));
 
-    res_id = MakeId_Copy (res_name);
-    SET_FLAG (ID, res_id, IS_GLOBAL, FALSE);
-    SET_FLAG (ID, res_id, IS_REFERENCE, FALSE);
-    ID_VARDEC (res_id) = formal_args;
-
-    cexpr_id = MakeId_Copy (cexpr_name);
-    SET_FLAG (ID, cexpr_id, IS_GLOBAL, FALSE);
-    SET_FLAG (ID, cexpr_id, IS_REFERENCE, FALSE);
-    ID_VARDEC (cexpr_id) = ARG_NEXT (formal_args);
-
-    args = MakeExprs (res_id, MakeExprs (cexpr_id, NULL));
+    args = TBmakeExprs (TBmakeId (res_avis), TBmakeExprs (TBmakeId (cexpr_avis), NULL));
 
     if (fold_fundef != NULL) {
-        application = MakeAp (StringCopy (FUNDEF_NAME (fold_fundef)), NULL, args);
-        AP_FUNDEF (application) = fold_fundef;
+        application = TBmakeAp (fold_fundef, args);
         pseudo_fold_fun_name = FUNDEF_NAME (fold_fundef);
     } else {
         DBUG_ASSERT (LEGAL_PRF (fold_prf), "fold_prf is out of range!");
-        application = MakePrf (fold_prf, args);
-        pseudo_fold_fun_name = prf_string[fold_prf];
+        application = TBmakePrf (fold_prf, args);
+        pseudo_fold_fun_name = global.prf_string[fold_prf];
     }
 
     /*
@@ -168,33 +160,33 @@ CreateFoldFun (types *elem_type, node *fold_fundef, prf fold_prf, char *res_name
      * that no two fold functions from different modules may have the same
      * internal name.
      */
-    buffer = (char *)Malloc (strlen (pseudo_fold_fun_name) + strlen (modulename) + 3);
-    strcpy (buffer, modulename);
+    buffer = (char *)ILIBmalloc (strlen (pseudo_fold_fun_name)
+                                 + strlen (global.modulename) + 3);
+    strcpy (buffer, global.modulename);
     strcat (buffer, "__");
     strcat (buffer, pseudo_fold_fun_name);
-    pseudo_fold_fun_name = TmpVarName (buffer);
-    buffer = Free (buffer);
+    pseudo_fold_fun_name = ILIBtmpVarName (buffer);
+    buffer = ILIBfree (buffer);
 
-    tmp_res_name = TmpVarName (res_name);
-    tmp_res_vardec
-      = MakeVardec (StringCopy (tmp_res_name), DupAllTypes (elem_type), NULL);
-    tmp_res_id = MakeId_Copy (tmp_res_name);
-    SET_FLAG (ID, tmp_res_id, IS_GLOBAL, FALSE);
-    SET_FLAG (ID, tmp_res_id, IS_REFERENCE, FALSE);
-    ID_VARDEC (tmp_res_id) = tmp_res_vardec;
+    tmp_res_name = ILIBtmpVarName (res_name);
+    tmp_res_avis = TBmakeAvis (ILIBstringCopy (tmp_res_name), TYcopyType (elem_type));
+    tmp_res_vardec = TBmakeVardec (tmp_res_avis, NULL);
 
-    ret_ass = MakeReturn (MakeExprs (tmp_res_id, NULL));
+    ret_ass = TBmakeReturn (TBmakeExprs (TBmakeId (tmp_res_avis), NULL));
 
     new_fundef
-      = MakeFundef (pseudo_fold_fun_name, PSEUDO_MOD_FOLD, DupAllTypes (elem_type),
-                    formal_args,
-                    MakeBlock (MakeAssign (MakeLet (application, DupId_Ids (tmp_res_id)),
-                                           MakeAssign (ret_ass, NULL)),
-                               tmp_res_vardec),
-                    NULL);
-    FUNDEF_STATUS (new_fundef) = ST_foldfun;
+      = TBmakeFundef (ILIBstringCopy (pseudo_fold_fun_name),
+                      ILIBstringCopy (PSEUDO_MOD_FOLD),
+                      TBmakeRet (TYcopyType (elem_type), NULL), formal_args,
+                      TBmakeBlock (TBmakeAssign (TBmakeLet (application,
+                                                            TBmakeIds (tmp_res_avis,
+                                                                       NULL)),
+                                                 TBmakeAssign (ret_ass, NULL)),
+                                   tmp_res_vardec),
+                      NULL);
+    FUNDEF_ISFOLDFUN (new_fundef) = TRUE;
+    FUNDEF_ISINLINE (new_fundef) = TRUE;
     FUNDEF_RETURN (new_fundef) = ret_ass;
-    FUNDEF_INLINE (new_fundef) = TRUE;
 
     DBUG_RETURN (new_fundef);
 }
