@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2001/04/05 01:38:17  dkr
+ * INFO_COMP_MERGE added
+ *
  * Revision 3.74  2001/04/04 22:20:49  dkr
  * INFO_COMP_FOLDFUNS added
  *
@@ -2694,13 +2697,14 @@ extern node *MakeInfo ();
 #define INFO_COMP_MODUL(n) (n->node[0])
 #define INFO_COMP_FUNDEF(n) (n->node[1])
 #define INFO_COMP_FIRSTASSIGN(n) (n->node[2])
-#define INFO_COMP_LAST_SYNC(n) (n->node[3])
+#define INFO_COMP_LASTSYNC(n) (n->node[3])
 #define INFO_COMP_LASTIDS(n) (n->info.ids)
-#define INFO_COMP_CNTPARAM(n) (n->lineno)
-#define INFO_COMP_TYPETAB(n) ((types **)(n->info.types))
-#define INFO_COMP_ICMTAB(n) ((node **)(n->node[4]))
-#define INFO_COMP_TABSIZE(n) (n->flag)
 #define INFO_COMP_FOLDFUNS(n) ((bool)(n->varno))
+#define INFO_COMP_MERGE(n) (n->node[4])
+#define INFO_COMP_CNTPARAM(n) (n->lineno)
+#define INFO_COMP_TYPETAB(n) ((types **)(n->dfmask[0]))
+#define INFO_COMP_ICMTAB(n) ((node **)(n->dfmask[1]))
+#define INFO_COMP_TABSIZE(n) (n->flag)
 
 /* reuse */
 #define INFO_REUSE_WL_IDS(n) (n->info.ids)
