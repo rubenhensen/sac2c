@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.129  2002/06/25 14:09:29  sbs
+ * N_dot added including MakeDot
+ *
  * Revision 3.128  2002/06/20 15:22:47  dkr
  * signature of MakeNWithOp modified
  *
@@ -1888,6 +1891,31 @@ extern node *MakePrf (prf prf, node *args);
 
 #define PRF_PRF(n) (n->info.prf)
 #define PRF_ARGS(n) (n->node[0])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_dot :
+ ***
+ ***  sons:
+ ***
+ ***  permanent attributes:
+ ***
+ ***     int    NUM
+ ***
+ ***  remarks:
+ ***
+ ***    This node is used as a meta representation for dots in two syntactical
+ ***    positions:
+ ***      a) in the generator part of WLs
+ ***      b) as selection specifier for applications of SEL
+ ***    In both positions these will be eliminated prior to (case b) or during
+ ***    type inference (case a).
+ ***/
+
+extern node *MakeDot (int num);
+
+#define DOT_NUM(n) (n->counter)
 
 /*--------------------------------------------------------------------------*/
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2002/06/25 14:09:29  sbs
+ * N_dot added including MakeDot
+ *
  * Revision 3.54  2002/06/20 15:22:34  dkr
  * signature of MakeNWithOp modified
  *
@@ -1279,6 +1282,24 @@ MakeEmpty ()
     DBUG_ENTER ("MakeEmpty");
 
     tmp = CreateCleanNode (N_empty);
+
+    DBUG_PRINT ("MAKE",
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeDot (int num)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeDot");
+
+    tmp = CreateCleanNode (N_dot);
+    DOT_NUM (tmp) = num;
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
