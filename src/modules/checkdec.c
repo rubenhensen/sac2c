@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/11/24 14:49:40  nmw
+ * CDECfundef does not export fundef marked to be ignored
+ *
  * Revision 3.2  2000/11/22 16:24:18  nmw
  * null-pointer access removed
  *
@@ -634,7 +637,9 @@ CDECfundef (node *arg_node, node *arg_info)
                         ItemName (arg_node)));
             }
         }
-        FUNDEF_STATUS (fundef) = ST_exported;
+        if (FUNDEF_STATUS (fundef) != ST_ignore) {
+            FUNDEF_STATUS (fundef) = ST_exported;
+        }
     }
 
     FUNDEC_DEF (arg_node) = fundef;
