@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2005/01/07 18:05:21  cg
+ * Updated usage of ctinfo
+ *
  * Revision 1.20  2005/01/07 17:32:55  cg
  * Converted compile time output from Error.h to ctinfo.c
  *
@@ -350,9 +353,9 @@ INSVDspid (node *arg_node, info *arg_info)
         }
 
         if (vardec == NULL) {
-            CTIerror (global.linenum,
-                      "Vardec for Identifier with name '%s` is not available",
-                      SPID_NAME (arg_node));
+            CTIerrorLine (global.linenum,
+                          "Vardec for Identifier with name '%s` is not available",
+                          SPID_NAME (arg_node));
         } else {
             /*
              * now we can build a real id and remove the spid node
@@ -369,8 +372,8 @@ INSVDspid (node *arg_node, info *arg_info)
                                       INFO_INSVD_OBJDEFS (arg_info));
 
         if (vardec == NULL) {
-            CTIerror (global.linenum, "No definition for global object %s:%s found",
-                      SPID_MOD (arg_node), SPID_NAME (arg_node));
+            CTIerrorLine (global.linenum, "No definition for global object %s:%s found",
+                          SPID_MOD (arg_node), SPID_NAME (arg_node));
         } else {
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = TBmakeGlobobj (vardec);

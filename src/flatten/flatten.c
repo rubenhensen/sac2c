@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2005/01/07 18:05:21  cg
+ * Updated usage of ctinfo
+ *
  * Revision 3.44  2005/01/07 17:32:55  cg
  * Converted compile time output from Error.h to ctinfo.c
  *
@@ -182,7 +185,7 @@ FreeInfo (info *info)
         tos++;                                                                           \
         DBUG_EXECUTE ("RENAME", DbugPrintStack (););                                     \
     } else {                                                                             \
-        CTIsyserror ("stack overflow (local)");                                          \
+        CTIerror ("stack overflow (local)");                                             \
     }
 
 #define PUSH_ENTRY(ptr) PUSH (ptr.id_old, ptr.id_new, ptr.w_level)

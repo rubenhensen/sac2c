@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2005/01/07 18:01:31  cg
+ * Updated usage of ctinfo
+ *
  * Revision 1.10  2005/01/07 17:24:50  cg
  * Converted compile time output from Error.h to ctinfo.c
  *
@@ -233,8 +236,8 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
          * the c return expression
          */
         if (idx == 0) {
-            CTIerror (line, "Pragma 'linksign' or 'refcounting' illegal: "
-                            "return value must not use a descriptor");
+            CTIerrorLine (line, "Pragma 'linksign' or 'refcounting' illegal: "
+                                "return value must not use a descriptor");
         }
     }
 
@@ -301,19 +304,19 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
                          " (RET) inserted at position %d with tag %s.",
                          FUNDEF_NAME (fundef), ret, idx, global.argtag_string[argtag]));
         } else if (idx == 0) {
-            CTIerror (line, "Pragma 'linksign' illegal: "
-                            "return value found twice");
+            CTIerrorLine (line, "Pragma 'linksign' illegal: "
+                                "return value found twice");
         } else {
-            CTIerror (line,
-                      "Pragma 'linksign' illegal: "
-                      "out-parameter at position %d found twice",
-                      idx);
+            CTIerrorLine (line,
+                          "Pragma 'linksign' illegal: "
+                          "out-parameter at position %d found twice",
+                          idx);
         }
     } else {
-        CTIerror (line,
-                  "Pragma 'linksign' illegal: "
-                  "entry contains illegal value %d",
-                  idx);
+        CTIerrorLine (line,
+                      "Pragma 'linksign' illegal: "
+                      "entry contains illegal value %d",
+                      idx);
     }
 
     DBUG_RETURN (argtab);
@@ -359,8 +362,8 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
     }
 
     if (idx == 0) {
-        CTIerror (line, "Pragma 'linksign' illegal: "
-                        "in-parameter cannot be used as return value");
+        CTIerrorLine (line, "Pragma 'linksign' illegal: "
+                            "in-parameter cannot be used as return value");
     } else {
         if ((idx > 0) && (idx < argtab->size)) {
             /*
@@ -408,28 +411,29 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
                                                  ARG_NTYPE (arg), argtab->ptr_out[idx],
                                                  global.argtag_string[argtag]));
                         } else {
-                            CTIerror (line,
-                                      "Pragma 'linksign' illegal: "
-                                      "mappings allowed exclusively between parameters"
-                                      " with identical types");
+                            CTIerrorLine (line, "Pragma 'linksign' illegal: "
+                                                "mappings allowed exclusively between "
+                                                "parameters"
+                                                " with identical types");
                         }
                     } else {
-                        CTIerror (line, "Pragma 'linksign' illegal: "
-                                        "mappings allowed exclusively between parameters"
-                                        " without descriptor");
+                        CTIerrorLine (line,
+                                      "Pragma 'linksign' illegal: "
+                                      "mappings allowed exclusively between parameters"
+                                      " without descriptor");
                     }
                 }
             } else {
-                CTIerror (line,
-                          "Pragma 'linksign' illegal: "
-                          "in-parameter at position %d found twice",
-                          idx);
+                CTIerrorLine (line,
+                              "Pragma 'linksign' illegal: "
+                              "in-parameter at position %d found twice",
+                              idx);
             }
         } else {
-            CTIerror (line,
-                      "Pragma 'linksign' illegal: "
-                      "entry contains illegal value %d",
-                      idx);
+            CTIerrorLine (line,
+                          "Pragma 'linksign' illegal: "
+                          "entry contains illegal value %d",
+                          idx);
         }
     }
 
