@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2002/10/28 10:41:08  sbs
+ * wrong ASSERT in TYOldType2Type eliminated again 8-)
+ *
  * Revision 3.33  2002/10/28 10:31:28  sbs
  * some DBUG_ASSERTS added in TYOldType2Type
  *
@@ -4073,20 +4076,13 @@ TYOldType2Type (types *old)
         res = TYMakeSimpleType (TYPES_BASETYPE (old));
         break;
     case T_void:
+    case T_unknown:
+    case T_nothing:
         res = NULL;
-        DBUG_ASSERT (0, "TYOldType2Type applied to T_void");
         break;
     case T_dots:
         res = NULL;
         DBUG_ASSERT (0, "TYOldType2Type applied to T_dots");
-        break;
-    case T_nothing:
-        res = NULL;
-        DBUG_ASSERT (0, "TYOldType2Type applied to T_nothing");
-        break;
-    case T_unknown:
-        res = NULL;
-        DBUG_ASSERT (0, "TYOldType2Type applied to T_unknown");
         break;
     default:
         res = NULL;
