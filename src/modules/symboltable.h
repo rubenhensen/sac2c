@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/10/22 15:17:20  sah
+ * added STE_wrapperbody, STE_wrapperhead
+ *
  * Revision 1.4  2004/10/22 13:23:14  sah
  * added some functions
  * this entire things needs a
@@ -29,6 +32,8 @@ typedef enum {
     STE_funhead,
     STE_typedef,
     STE_objdef,
+    STE_wrapperbody,
+    STE_wrapperhead,
     STE_namespace
 } symbolentrytype_t;
 
