@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/07/30 13:47:41  jhs
+ * Clean sweep, deleted unused parts.
+ *
  * Revision 2.2  1999/06/25 15:36:33  jhs
  * Checked these in just to provide compileabilty.
  *
@@ -46,15 +49,7 @@
 #include "refcount.h"
 #include "internal_lib.h"
 
-/*
- * returns 0 for refcounting-objects and -1 otherwise
- */
-#define GET_ZERO_REFCNT(prefix, node) ((prefix##_REFCNT (node) >= 0) ? 0 : -1)
-
-/*
- * returns 1 for refcounting-objects and -1 otherwise
- */
-#define GET_STD_REFCNT(prefix, node) ((prefix##_REFCNT (node) >= 0) ? 1 : -1)
+#include "concurrent_lib.h"
 
 /******************************************************************************
  *
@@ -247,29 +242,6 @@ SPMDLspmd (node *arg_node, node *arg_info)
         fargs = new_farg;
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
-
-#if 0
-  since i changed masks: inouts are no longer used any more
-  so this can be deleted in a clean sweep ####
-
-  vardec = DFMGetMaskEntryDeclSet( SPMD_INOUT( arg_node));
-  while (vardec != NULL) {
-    if (NODE_TYPE( vardec) == N_arg) {
-      new_farg = DupNode( vardec);
-      ARG_NEXT( new_farg) = fargs;
-    }
-    else {
-      new_farg = MakeArg( StringCopy(ARG_NAME( vardec)),
-                          DuplicateTypes( VARDEC_TYPE( vardec), 1),
-                          ST_regular,
-                          ST_spmd_inout,
-                          fargs);
-      ARG_REFCNT( new_farg) = GET_STD_REFCNT( VARDEC, vardec);
-    }
-    fargs = new_farg;
-    vardec = DFMGetMaskEntryDeclSet( NULL);
-  }
-#endif
 
     /*
      * build return types, return exprs (use SPMD_OUT).
