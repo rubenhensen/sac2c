@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.4  2000/11/29 10:31:24  nmw
- * *** empty log message ***
+ * Revision 3.5  2001/01/08 12:03:52  dkr
+ * compiler phases renumbered
  *
  * Revision 3.3  2000/11/27 21:04:38  cg
  * Added general support for new optimization APL,
@@ -279,14 +279,6 @@ usage ()
         printf ("\t -b%i\tstop after: %s\n", ph, compiler_phase_name[ph]);
     }
 
-    printf ("\n\tATTENTION while using new multithread (-mtn)!\n"
-            "\t  When using -mtn the phase 16 will be done after phase 18!\n"
-            "\t  Therefore with -mtn the sequence of phases will be:\n"
-            "\t\t ... 15 17 18 16 19 ...\n"
-            "\t  The phases are still identified by the same numbers.\n"
-            "\t  -b16 will stop after phases 17, 18 and 16 are done.\n"
-            "\t  -b17 (-b18) stops after phase 17 (and 18) without phase 16 done.\n");
-
     printf ("\n\nBREAK SPECIFIERS:\n\n"
 
             "\tBreak specifiers allow you to stop the compilation process\n"
@@ -315,42 +307,41 @@ usage ()
             "\t -b15:dfr2         stop after final dead function removal\n"
             "\t -b15:ive          stop after index vector elimination\n"
             "\n"
-            "\t -b17:conv         stop after converting\n"
-            "\t -b17:cubes        stop after cube-building\n"
-            "\t -b17:segs         stop after choice of segments\n"
-            "\t -b17:split        stop after splitting\n"
-            "\t -b17:block        stop after hierarchical blocking\n"
-            "\t -b17:ublock       stop after unrolling-blocking\n"
-            "\t -b17:merge        stop after merging\n"
-            "\t -b17:opt          stop after optimization\n"
-            "\t -b17:fit          stop after fitting\n"
-            "\t -b17:norm         stop after normalization\n"
+            "\t -b16:conv         stop after converting\n"
+            "\t -b16:cubes        stop after cube-building\n"
+            "\t -b16:segs         stop after choice of segments\n"
+            "\t -b16:split        stop after splitting\n"
+            "\t -b16:block        stop after hierarchical blocking\n"
+            "\t -b16:ublock       stop after unrolling-blocking\n"
+            "\t -b16:merge        stop after merging\n"
+            "\t -b16:opt          stop after optimization\n"
+            "\t -b16:fit          stop after fitting\n"
+            "\t -b16:norm         stop after normalization\n"
             "\n"
             "\twith -mt\n"
-            "\t -b18:spmdinit     stop after building SPMD blocks\n"
-            "\t -b18:spmdopt      stop after optimizing SPMD blocks\n"
-            "\t -b18:spmdlift     stop after lifting SPMD blocks\n"
-            "\t -b18:syncinit     stop after building SYNC blocks\n"
-            "\t -b18:syncopt      stop after optimizing SYNC blocks\n"
-            "\t -b18:scheduling   stop after scheduling SYNC blocks and with-loop\n"
+            "\t -b17:spmdinit     stop after building SPMD blocks\n"
+            "\t -b17:spmdopt      stop after optimizing SPMD blocks\n"
+            "\t -b17:spmdlift     stop after lifting SPMD blocks\n"
+            "\t -b17:syncinit     stop after building SYNC blocks\n"
+            "\t -b17:syncopt      stop after optimizing SYNC blocks\n"
+            "\t -b17:scheduling   stop after scheduling SYNC blocks and with-loop\n"
             "\t                     segments\n"
-            "\t -b18:spmdcons     stop after constrainig SPMD blocks\n"
-            "\t                     (same as [-mt] -b18 only)\n"
+            "\t -b17:spmdcons     stop after constrainig SPMD blocks\n"
+            "\t                     (same as [-mt] -b17 only)\n"
             "\n"
             "\twith -mtn (UNDER CONSTRUCTION!!!)\n"
-            "\t -b18:init         stop after internal initialization\n"
-            "\t -b18:schin        stop after schedulings initialized\n"
-            "\t -b18:rfin         stop after replicated functions builded\n"
-            "\t -b18:blkin        stop after ST- and MT-blocks builded\n"
-            "\t -b18:blkpp        stop after blocks propagated\n"
-            "\t -b18:blkex        stop after blocks expanded\n"
-            "\t -b18:mtfin        stop after multithread functions builded\n"
-            "\t -b18:blkco        stop after blocks consolidated\n"
-            "\t -b18:dfa          stop after dataflow-analysis\n"
-            "\t -b18:barin        stop after barriers initialized\n"
-            "\t -b18:blkli        stop after blocks lifted\n"
-            "\t -b18:adjca        stop after adjusted calls\n"
-            "\t ... to be continued ...");
+            "\t -b17:init         stop after internal initialization\n"
+            "\t -b17:schin        stop after schedulings initialized\n"
+            "\t -b17:rfin         stop after replicated functions builded\n"
+            "\t -b17:blkin        stop after ST- and MT-blocks builded\n"
+            "\t -b17:blkpp        stop after blocks propagated\n"
+            "\t -b17:blkex        stop after blocks expanded\n"
+            "\t -b17:mtfin        stop after multithread functions builded\n"
+            "\t -b17:blkco        stop after blocks consolidated\n"
+            "\t -b17:dfa          stop after dataflow-analysis\n"
+            "\t -b17:barin        stop after barriers initialized\n"
+            "\t -b17:blkli        stop after blocks lifted\n"
+            "\t -b17:adjca        stop after adjusted calls\n");
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
 
