@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/04/19 11:36:03  jhs
+ * TRUE and FALSE from internal_lib.h will be used from now on.
+ *
  * Revision 2.1  1999/02/23 12:41:11  sacbase
  * new release made
  *
@@ -110,9 +113,6 @@
     INFO_DCR_NEWACT (arg_info) /* is there any new active                                \
                                   assignment in loop ? */
 #define INFO_TRAVTYPE INFO_DCR_TRAVTYPE (arg_info)
-
-#define TRUE 1
-#define FALSE 0
 
 typedef enum { active, redundant } assignstatus;
 
