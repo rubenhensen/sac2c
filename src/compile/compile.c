@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.92  1997/08/29 09:58:41  sbs
+ * Compilation of F_cat changed.
+ * the refcnt of the result is set at the array allocation only.
+ * No more INC_RC after copying the elements!
+ *
  * Revision 1.91  1997/05/29 13:41:44  sbs
  * ND_IDX_MODARRAY... added
  *
@@ -4007,7 +4012,6 @@ CompPrf (node *arg_node, node *arg_info)
 
                 DEC_OR_FREE_RC_ND (arg2, n_node);
                 DEC_OR_FREE_RC_ND (arg3, n_node);
-                INC_RC_ND (res, res_ref);
                 INSERT_ASSIGN;
 
             } else {
@@ -4070,8 +4074,6 @@ CompPrf (node *arg_node, node *arg_info)
                     DBUG_ASSERT (0, "array_is_const is out of range");
                     break;
                 }
-                CREATE_2_ARY_ICM (next_assign, "ND_INC_RC", res, res_ref);
-                APPEND_ASSIGNS (first_assign, next_assign);
                 FREE (old_arg_node);
             }
             break;
