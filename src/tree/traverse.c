@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2001/07/13 13:23:41  cg
+ * Some useless DBUG_PRINTs eliminated.
+ *
  * Revision 3.25  2001/05/30 14:04:11  nmw
  * ssalil_tab traversal added (SSAInferLoopInvariants())
  *
@@ -1356,12 +1359,9 @@ Trav (node *arg_node, node *arg_info)
     }
 
     if (NODE_TYPE (arg_node) >= N_ok) {
-        DBUG_PRINT ("TRAV",
-                    ("N_ok is %i, this is %i", (int)(N_ok), (int)NODE_TYPE (arg_node)));
         DBUG_ASSERT (0, "Trav: illegal node type !");
     }
 
-    DBUG_PRINT ("TRAV", ("case %s: node adress: %06x", NODE_TEXT (arg_node), arg_node));
 #endif /* not DBUG_OFF */
 
     /*

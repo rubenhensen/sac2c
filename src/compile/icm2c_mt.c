@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2001/07/13 13:23:41  cg
+ * Some useless DBUG_PRINTs eliminated.
+ *
  * Revision 3.24  2001/05/18 09:58:03  cg
  * #include <malloc.h> removed.
  *
@@ -329,8 +332,6 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg)
         INDENT;
         fprintf (outfile, "SAC_MT_SPMD_PARAM_%s( %s, %s)\n", vararg[i], vararg[i + 1],
                  vararg[i + 2]);
-        DBUG_PRINT ("ICMCompile", ("SAC_MT_SPMD_PARAM_%s( %s, %s)", vararg[i],
-                                   vararg[i + 1], vararg[i + 2]));
     }
 
     DBUG_VOID_RETURN;
@@ -501,7 +502,6 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
     foldcodes = (node **)Malloc (narg * sizeof (node *));
     for (i = 0; i < narg; i++) {
         foldop = vararg[(i * 4) + 3];
-        DBUG_PRINT ("COMPi", ("%i %s", i, foldop));
         foldcodes[i] = SearchFoldImplementation (foldop);
     }
 #endif /* BEtest */

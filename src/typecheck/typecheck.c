@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2001/07/13 13:23:41  cg
+ * Some useless DBUG_PRINTs eliminated.
+ *
  * Revision 3.29  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -6249,7 +6252,6 @@ TCcond (node *arg_node, node *arg_info)
 
     old_tos = tos;
 
-    DBUG_PRINT ("STACK", ("old_tos is set to " F_PTR, old_tos));
     DBUG_ASSERT (N_cond == NODE_TYPE (arg_node), "wrong nodetype");
 
     old_status = arg_info->node[0]->nodetype;
@@ -6275,7 +6277,6 @@ TCcond (node *arg_node, node *arg_info)
     if ((CHECKING == fun_p->tag) || (IS_CHECKED == fun_p->tag)) {
         for (i = 1; i < nnode[NODE_TYPE (arg_node)]; i++) {
             tos = old_tos;
-            DBUG_PRINT ("STACK", ("tos is set to " F_PTR, tos));
             INFO_TC_STATUS (arg_info) += 1;
 #ifndef DBUG_OFF
             if (1 == i) {
@@ -6296,7 +6297,6 @@ TCcond (node *arg_node, node *arg_info)
         }
         if ((1 == check_again) || (2 == check_again)) {
             tos = old_tos;
-            DBUG_PRINT ("STACK", ("tos is set to " F_PTR, tos));
             arg_info->node[0]->nodetype = old_status;
             INFO_TC_STATUS (arg_info) += 1;
 #ifndef DBUG_OFF
@@ -6318,7 +6318,6 @@ TCcond (node *arg_node, node *arg_info)
     } else {
         for (i = 1; i < nnode[NODE_TYPE (arg_node)]; i++) {
             tos = old_tos;
-            DBUG_PRINT ("STACK", ("tos is set to " F_PTR, tos));
             INFO_TC_STATUS (arg_info) += 1;
 
             if (1 == i) {

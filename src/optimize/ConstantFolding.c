@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/07/13 13:23:41  cg
+ * Some useless DBUG_PRINTs eliminated.
+ *
  * Revision 3.12  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -2142,7 +2145,6 @@ ArrayPrf (node *arg_node, node *arg_info)
                 FreeTree (arg[1]);
 
             arg_node = arg[0];
-            DBUG_PRINT ("MEM", ("Argument has address: %08x", arg_node));
         }
     } break;
 
