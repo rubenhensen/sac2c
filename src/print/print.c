@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2001/03/14 17:27:08  nmw
+ * DoPrintIdsAST: order of attributes modified
+ *
  * Revision 3.27  2001/03/08 12:26:53  dkr
  * DBUG-string PRINT_PROFILE added:
  * prints profiling instructions in *all* phases
@@ -3994,12 +3997,13 @@ DoPrintIdsAST (ids *vars, bool print_status)
     fprintf (outfile, "{ ");
     while (vars != NULL) {
         fprintf (outfile, "%s<" F_PTR ">", IDS_NAME (vars), IDS_NAME (vars));
-        PrintRC (IDS_REFCNT (vars), IDS_NAIVE_REFCNT (vars), TRUE);
 
         if (print_status) {
             DoPrintStatusAST (IDS_ATTRIB (vars));
             DoPrintStatusAST (IDS_STATUS (vars));
         }
+
+        PrintRC (IDS_REFCNT (vars), IDS_NAIVE_REFCNT (vars), TRUE);
 
         fprintf (outfile, " ");
         vars = IDS_NEXT (vars);
