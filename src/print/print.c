@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.57  2000/03/15 14:56:56  dkr
+ * PrintNodeTree renamed to PrintAST
+ * PrintNodeAST added (but not yet implemented)
+ *
  * Revision 2.56  2000/03/09 18:31:53  jhs
  * Added print of [LET|RETURN][USE|DEF]MASK.
  *
@@ -3037,21 +3041,26 @@ PrintNode (node *syntax_tree)
 
 /******************************************************************************
  *
+ *  debug output
+ */
+
+/******************************************************************************
+ *
  * function:
- *   void PrintNodeTreeSon( int num, node *node)
+ *   void PrintSonAST( int num, node *node)
  *
  * description:
- *   This function is call from 'PrintNodeTree' only.
+ *   This function is call from 'PrintAST' only.
  *   Prints a son or attribute containing a hole sub-tree.
  *
  ******************************************************************************/
 
 static void
-PrintNodeTreeSon (int num, node *node)
+PrintSonAST (int num, node *node)
 {
     int j;
 
-    DBUG_ENTER ("PrintNodeTreeSon");
+    DBUG_ENTER ("PrintSonAST");
 
     for (j = 0; j < indent; j++) {
         if (j % 4) {
@@ -3066,7 +3075,7 @@ PrintNodeTreeSon (int num, node *node)
     } else {
         fprintf (outfile, "+-");
     }
-    PrintNodeTree (node);
+    PrintAST (node);
 
     DBUG_VOID_RETURN;
 }
@@ -3074,18 +3083,18 @@ PrintNodeTreeSon (int num, node *node)
 /******************************************************************************
  *
  * function:
- *   void PrintNodeTreeIds( ids *vars)
+ *   void PrintIdsAST( ids *vars)
  *
  * description:
- *   This function is call from 'PrintNodeTree' only.
+ *   This function is call from 'PrintAST' only.
  *   Prints a 'ids'-chain.
  *
  ******************************************************************************/
 
 static void
-PrintNodeTreeIds (ids *vars)
+PrintIdsAST (ids *vars)
 {
-    DBUG_ENTER ("PrintNodeTreeIds");
+    DBUG_ENTER ("PrintIdsAST");
 
     fprintf (outfile, "( ");
     while (vars != NULL) {
@@ -3105,10 +3114,10 @@ PrintNodeTreeIds (ids *vars)
 /******************************************************************************
  *
  * function:
- *   void PrintNodeTree( node *node)
+ *   void PrintAST( node *node)
  *
  * description:
- *   this function is for debug assistance.
+ *   This function is for debug assistance.
  *   It prints the syntax tree without any interpretation.
  *   Some attribues of interest are printed inside of parenthesizes behind
  *   the node name.
@@ -3116,11 +3125,11 @@ PrintNodeTreeIds (ids *vars)
  ******************************************************************************/
 
 void
-PrintNodeTree (node *node)
+PrintAST (node *node)
 {
     int i, d;
 
-    DBUG_ENTER ("PrintNodeTree");
+    DBUG_ENTER ("PrintAST");
 
     outfile = stdout;
 
@@ -3134,16 +3143,18 @@ PrintNodeTree (node *node)
             if (PRAGMA_WLCOMP_APS (node) != NULL) {
                 fprintf (outfile, "(wlcomp)\n");
                 indent++;
-                PrintNodeTreeSon (0, PRAGMA_WLCOMP_APS (node));
+                PrintSonAST (0, PRAGMA_WLCOMP_APS (node));
                 indent--;
             } else {
                 fprintf (outfile, "\n");
             }
             break;
+
         case N_let:
-            PrintNodeTreeIds (LET_IDS (node));
+            PrintIdsAST (LET_IDS (node));
             fprintf (outfile, "\n");
             break;
+
         case N_id:
             fprintf (outfile, "(%s:%d::%d)\n", ID_NAME (node), ID_REFCNT (node),
                      ID_NAIVE_REFCNT (node));
@@ -3152,15 +3163,19 @@ PrintNodeTree (node *node)
                 fprintf (outfile, "**");
             }
             break;
+
         case N_num:
             fprintf (outfile, "(%i)\n", NUM_VAL (node));
             break;
+
         case N_prf:
             fprintf (outfile, "(%s)\n", mdb_prf[PRF_PRF (node)]);
             break;
+
         case N_ap:
             fprintf (outfile, "(%s)\n", AP_NAME (node));
             break;
+
         case N_arg:
             fprintf (outfile, "(%s %s:%d::%d)\n",
                      mdb_type[TYPES_BASETYPE (ARG_TYPE (node))],
@@ -3171,6 +3186,7 @@ PrintNodeTree (node *node)
                 fprintf (outfile, "**");
             }
             break;
+
         case N_vardec:
             fprintf (outfile, "(%s %s:%d::%d)\n",
                      mdb_type[TYPES_BASETYPE (VARDEC_TYPE (node))], VARDEC_NAME (node),
@@ -3180,17 +3196,20 @@ PrintNodeTree (node *node)
                 fprintf (outfile, "**");
             }
             break;
+
         case N_fundef:
             fprintf (outfile, "(%s)\n", FUNDEF_NAME (node));
             break;
+
         case N_Nwith:
             fprintf (outfile, "\n");
             if (NWITH_PRAGMA (node) != NULL) {
                 indent++;
-                PrintNodeTreeSon (-1, NWITH_PRAGMA (node));
+                PrintSonAST (-1, NWITH_PRAGMA (node));
                 indent--;
             }
             break;
+
         case N_Nwithid:
             fprintf (outfile, "( ");
             if (NWITHID_VEC (node) != NULL) {
@@ -3208,12 +3227,13 @@ PrintNodeTree (node *node)
             }
             fprintf (outfile, " = ");
             if (NWITHID_IDS (node) != NULL) {
-                PrintNodeTreeIds (NWITHID_IDS (node));
+                PrintIdsAST (NWITHID_IDS (node));
             } else {
                 fprintf (outfile, "?");
             }
             fprintf (outfile, " )\n");
             break;
+
         case N_Nwithop:
             fprintf (outfile, "( ");
             if (NWITHOP_FUNDEF (node) != NULL) {
@@ -3221,6 +3241,7 @@ PrintNodeTree (node *node)
             }
             fprintf (outfile, " )\n");
             break;
+
         case N_Npart:
             if (NPART_CODE (node) != NULL) {
                 fprintf (outfile, "(code used: 0x%p)\n", NPART_CODE (node));
@@ -3228,58 +3249,116 @@ PrintNodeTree (node *node)
                 fprintf (outfile, "(no code)\n");
             }
             break;
+
         case N_Ncode:
             fprintf (outfile, "(adr: 0x%p, used: %d)\n", node, NCODE_USED (node));
             break;
+
         case N_WLseg:
-            fprintf (outfile, "(sv: [ ");
-            for (d = 0; d < WLSEG_DIMS (node); d++) {
-                fprintf (outfile, "%li ", (WLSEG_SV (node))[d]);
-            }
-            for (i = 0; i < WLSEG_BLOCKS (node); i++) {
-                fprintf (outfile, "], bv%i: [ ", i);
+            fprintf (outfile, "(sv: ");
+            if (WLSEG_SV (node) != NULL) {
+                fprintf (outfile, "[ ");
                 for (d = 0; d < WLSEG_DIMS (node); d++) {
-                    fprintf (outfile, "%li ", (WLSEG_BV (node, i))[d]);
+                    fprintf (outfile, "%i ", (WLSEG_SV (node))[d]);
+                }
+                fprintf (outfile, "]");
+            } else {
+                fprintf (outfile, "NULL");
+            }
+
+            for (i = 0; i < WLSEG_BLOCKS (node); i++) {
+                fprintf (outfile, ", bv%i: ", i);
+                if (WLSEG_BV (node, i) != NULL) {
+                    fprintf (outfile, "[ ");
+                    for (d = 0; d < WLSEG_DIMS (node); d++) {
+                        fprintf (outfile, "%i ", (WLSEG_BV (node, i))[d]);
+                    }
+                    fprintf (outfile, "]");
+                } else {
+                    fprintf (outfile, "NULL");
                 }
             }
-            fprintf (outfile, "], ubv: [ ");
-            for (d = 0; d < WLSEG_DIMS (node); d++) {
-                fprintf (outfile, "%li ", (WLSEG_UBV (node))[d]);
+
+            fprintf (outfile, ", ubv: ");
+            if (WLSEG_UBV (node) != NULL) {
+                fprintf (outfile, "[ ");
+                for (d = 0; d < WLSEG_DIMS (node); d++) {
+                    fprintf (outfile, "%i ", (WLSEG_UBV (node))[d]);
+                }
+                fprintf (outfile, "]");
+            } else {
+                fprintf (outfile, "NULL");
             }
-            fprintf (outfile, "])\n");
+
+            fprintf (outfile, ", homsv: ");
+            if (WLSEG_HOMSV (node) != NULL) {
+                fprintf (outfile, "[ ");
+                for (d = 0; d < WLSEG_DIMS (node); d++) {
+                    fprintf (outfile, "%i ", (WLSEG_HOMSV (node))[d]);
+                }
+                fprintf (outfile, "]");
+            } else {
+                fprintf (outfile, "NULL");
+            }
+            fprintf (outfile, ")\n");
             break;
+
         case N_WLsegVar:
-            fprintf (outfile, "(sv: [ ");
-            for (d = 0; d < WLSEGVAR_DIMS (node); d++) {
-                fprintf (outfile, "%li ", (WLSEGVAR_SV (node))[d]);
-            }
-            for (i = 0; i < WLSEGVAR_BLOCKS (node); i++) {
-                fprintf (outfile, "], bv%i: [ ", i);
+            fprintf (outfile, "(sv: ");
+            if (WLSEGVAR_SV (node) != NULL) {
+                fprintf (outfile, "[ ");
                 for (d = 0; d < WLSEGVAR_DIMS (node); d++) {
-                    fprintf (outfile, "%li ", (WLSEGVAR_BV (node, i))[d]);
+                    fprintf (outfile, "%i ", (WLSEGVAR_SV (node))[d]);
+                }
+                fprintf (outfile, "]");
+            } else {
+                fprintf (outfile, "NULL");
+            }
+
+            for (i = 0; i < WLSEGVAR_BLOCKS (node); i++) {
+                fprintf (outfile, ", bv%i: ", i);
+                if (WLSEGVAR_BV (node, i) != NULL) {
+                    fprintf (outfile, "[ ");
+                    for (d = 0; d < WLSEGVAR_DIMS (node); d++) {
+                        fprintf (outfile, "%i ", (WLSEGVAR_BV (node, i))[d]);
+                    }
+                    fprintf (outfile, "]");
+                } else {
+                    fprintf (outfile, "NULL");
                 }
             }
-            fprintf (outfile, "], ubv: [ ");
-            for (d = 0; d < WLSEGVAR_DIMS (node); d++) {
-                fprintf (outfile, "%li ", (WLSEGVAR_UBV (node))[d]);
+
+            fprintf (outfile, ", ubv: ");
+            if (WLSEGVAR_UBV (node) != NULL) {
+                fprintf (outfile, "[ ");
+                for (d = 0; d < WLSEGVAR_DIMS (node); d++) {
+                    fprintf (outfile, "%i ", (WLSEGVAR_UBV (node))[d]);
+                }
+                fprintf (outfile, "]");
+            } else {
+                fprintf (outfile, "NULL");
             }
-            fprintf (outfile, "])\n");
+            fprintf (outfile, ")\n");
             break;
+
         case N_WLblock:
             fprintf (outfile, "(%d->%d block%d[%d] %d)\n", WLBLOCK_BOUND1 (node),
                      WLBLOCK_BOUND2 (node), WLBLOCK_LEVEL (node), WLBLOCK_DIM (node),
                      WLBLOCK_STEP (node));
             break;
+
         case N_WLublock:
             fprintf (outfile, "(%d->%d ublock%d[%d] %d)\n", WLUBLOCK_BOUND1 (node),
                      WLUBLOCK_BOUND2 (node), WLUBLOCK_LEVEL (node), WLUBLOCK_DIM (node),
                      WLUBLOCK_STEP (node));
             break;
+
         case N_WLstride:
             fprintf (outfile, "(%d->%d step%d[%d] %d)\n", WLSTRIDE_BOUND1 (node),
                      WLSTRIDE_BOUND2 (node), WLSTRIDE_LEVEL (node), WLSTRIDE_DIM (node),
                      WLSTRIDE_STEP (node));
             break;
+
         case N_WLgrid:
             fprintf (outfile, "(%d->%d [%d])", WLUBLOCK_BOUND1 (node),
                      WLUBLOCK_BOUND2 (node), WLUBLOCK_DIM (node));
@@ -3289,6 +3368,7 @@ PrintNodeTree (node *node)
                 fprintf (outfile, ": ..\n");
             }
             break;
+
         case N_WLstriVar:
             fprintf (outfile, "(");
             PrintWLvar (WLSTRIVAR_BOUND1 (node), WLSTRIVAR_DIM (node));
@@ -3316,11 +3396,34 @@ PrintNodeTree (node *node)
         indent++;
         for (i = 0; i < nnode[NODE_TYPE (node)]; i++)
             if (node->node[i]) {
-                PrintNodeTreeSon (i, node->node[i]);
+                PrintSonAST (i, node->node[i]);
             }
         indent--;
     } else
         fprintf (outfile, "NULL\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void PrintNodeAST( node *node)
+ *
+ * description:
+ *   This function is for debug assistance.
+ *   It prints the current node (without NEXT-son) without any interpretation.
+ *   Some attribues of interest are printed inside of parenthesizes behind
+ *   the node name.
+ *
+ ******************************************************************************/
+
+void
+PrintNodeAST (node *node)
+{
+    DBUG_ENTER ("PrintNodeAST");
+
+    fprintf (outfile, "not yet implemented :-(\n");
 
     DBUG_VOID_RETURN;
 }
