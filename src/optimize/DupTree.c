@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.47  1998/03/27 18:38:46  dkr
+ * WLproj renamed in WLstride:
+ *   WLPROJ... -> WLSTRIDE...
+ *   DupWLproj -> DupWLstride
+ *
  * Revision 1.46  1998/03/26 14:04:39  dkr
  * changed usage of MakeWLgrid
  *
@@ -806,20 +811,20 @@ DupWLublock (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupWLproj (node *arg_node, node *arg_info)
+DupWLstride (node *arg_node, node *arg_info)
 {
     node *new_node;
 
-    DBUG_ENTER ("DupWLproj");
-    new_node = MakeWLproj (WLPROJ_LEVEL (arg_node), WLPROJ_DIM (arg_node),
-                           WLPROJ_BOUND1 (arg_node), WLPROJ_BOUND2 (arg_node),
-                           WLPROJ_STEP (arg_node), WLPROJ_UNROLLING (arg_node),
-                           DUPTRAV (WLPROJ_CONTENTS (arg_node)), NULL);
+    DBUG_ENTER ("DupWLstride");
+    new_node = MakeWLstride (WLSTRIDE_LEVEL (arg_node), WLSTRIDE_DIM (arg_node),
+                             WLSTRIDE_BOUND1 (arg_node), WLSTRIDE_BOUND2 (arg_node),
+                             WLSTRIDE_STEP (arg_node), WLSTRIDE_UNROLLING (arg_node),
+                             DUPTRAV (WLSTRIDE_CONTENTS (arg_node)), NULL);
 
-    WLPROJ_PART (new_node) = WLPROJ_PART (arg_node);
-    WLPROJ_MODIFIED (new_node) = 0;
+    WLSTRIDE_PART (new_node) = WLSTRIDE_PART (arg_node);
+    WLSTRIDE_MODIFIED (new_node) = 0;
 
-    WLPROJ_NEXT (new_node) = DUPCONT (WLPROJ_NEXT (arg_node));
+    WLSTRIDE_NEXT (new_node) = DUPCONT (WLSTRIDE_NEXT (arg_node));
 
     DBUG_RETURN (new_node);
 }
