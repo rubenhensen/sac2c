@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  1999/04/26 09:32:28  her
+ * fixed some things
+ *
  * Revision 1.1  1999/03/19 11:02:43  her
  * Initial revision
  *
@@ -14,8 +17,8 @@ main ()
     int i;
     void *base;
 
-    SAC_CS_Initialize (1, detailed, 16, 16, 4, fetch_on_write, 256, 16, 1, fetch_on_write,
-                       1024, 32, 1, fetch_on_write);
+    SAC_CS_Initialize (1, SAC_CS_advanced, 16, 16, 4, SAC_CS_fetch_on_write, 256, 16, 1,
+                       SAC_CS_fetch_on_write, 1024, 32, 1, SAC_CS_fetch_on_write);
     /* aligned(12345)=12336 */
     SAC_CS_RegisterArray ((void *)12345, 1024 * 1024);
     SAC_CS_RegisterArray ((void *)12345678, 1024 * 1024);
