@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.42  2003/05/23 16:24:59  ktr
+ * A multidimensional array is created if an array is found that contains
+ * arrays itself.
+ *
  * Revision 1.41  2003/04/07 14:22:01  sbs
  * F_drop_SxV and F_take_SxV mapped on the general versions (which have been extended
  * accordingly 8-)
@@ -1810,12 +1814,52 @@ SSACFid (node *arg_node, node *arg_info)
 node *
 SSACFarray (node *arg_node, node *arg_info)
 {
+    node *newelems = NULL;
+    node *oldelems, *tmp;
+    int subarrdim = 0, dim;
+
     DBUG_ENTER ("SSACFarray");
 
     /* substitute constant identifiers in array elements */
     INFO_SSACF_INSCONST (arg_info) = TRUE;
     if (ARRAY_AELEMS (arg_node) != NULL) {
         ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+
+        /* Test whether subarrays can be copied in */
+        /* Therefore all elemens need to be id nodes defined by N_array nodes.
+           Furthermore, they must all add the same dimensionality to
+           the dimension of their children */
+        tmp = ARRAY_AELEMS (arg_node);
+        while (tmp != NULL) {
+            if ((NODE_TYPE (EXPRS_EXPR (tmp)) != N_id)
+                || (ID_SSAASSIGN (EXPRS_EXPR (tmp)) == NULL)
+                || (NODE_TYPE (ASSIGN_RHS (ID_SSAASSIGN (EXPRS_EXPR (tmp))))
+                    != N_array)) {
+                break;
+            }
+            oldelems = ASSIGN_RHS (ID_SSAASSIGN (EXPRS_EXPR (tmp)));
+            dim = ARRAY_DIM (oldelems)
+                  - (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (oldelems))) == N_id
+                       ? ID_DIM (EXPRS_EXPR (ARRAY_AELEMS (oldelems)))
+                       : 0);
+            if (subarrdim == 0)
+                subarrdim = dim;
+            else if (dim != subarrdim)
+                break;
+            tmp = EXPRS_NEXT (tmp);
+        }
+        if ((tmp == NULL) && (subarrdim > 0)) {
+            /* Merge subarrays into this arrays */
+            oldelems = ARRAY_AELEMS (arg_node);
+            tmp = oldelems;
+            while (tmp != NULL) {
+                newelems = AppendExprs (newelems, DupTree (ARRAY_AELEMS (ASSIGN_RHS (
+                                                    ID_SSAASSIGN (EXPRS_EXPR (tmp))))));
+                tmp = EXPRS_NEXT (tmp);
+            }
+            oldelems = FreeTree (oldelems);
+            ARRAY_AELEMS (arg_node) = newelems;
+        }
     }
     INFO_SSACF_INSCONST (arg_info) = FALSE;
 
