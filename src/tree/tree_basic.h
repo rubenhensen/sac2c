@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.217  2004/08/19 10:12:51  skt
+ * some comments
+ *
  * Revision 3.216  2004/08/18 12:53:20  skt
  * changed type of executionmodes from int into mtexecmode_t
  * added ASSIGN_DATAFLOWNODE
@@ -4630,14 +4633,19 @@ extern node *MakeDataflownode (node *graph, node *assignment, char *name);
  ***
  ***  permanent attributes:
  ***
- ***    nodelist*  MEMBERS      (all nodes of the dataflowgraph)
- ***    node*      MYHOMEDFN    (the dataflownode who holds this dataflowgraph;
- ***                             usually it is NULL, exception if this data-
- ***                             flowgraph corresponds to a then- or else-block
- ***                             (see DATAFLOWNODE_DFGTHEN for detail))
- ***    node*      SOURCE       (the source of the dataflowgraph)
- ***    node*      SINK         (the sink of the dataflowgraph)
- ***                            (CreateDataflowgraph -> AssignmentsRearrange!!)
+ ***    nodelist*  MEMBERS       (all nodes of the dataflowgraph)
+ ***    node*      MYHOMEDFN (O) (N_dataflownode)
+ ***    node*      SOURCE        (N_dataflownode)
+ ***    node*      SINK          (N_dataflownode)
+ ***                                     (CreateDataflowgraph -> CreateCells!!)
+ ***
+ ***  remarks:
+ ***    MYHOMEDFN: if this dataflowgraph is not the one on top-level (e.g. this
+ ***               graph belongs to an else-branch of a conditional) MYHOMEDFN
+ ***               will point to the dataflownode of the dataflowgraph above
+ ***               (e.g. (cont.) it points to the dataflownode which
+ ***               ASSIGN_INSTR is the conditional)
+ ***
  ***/
 
 extern node *MakeDataflowgraph ();
