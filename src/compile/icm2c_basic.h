@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/07/09 17:14:28  dkr
+ * modification for TAGGED_ARRAYS done
+ *
  * Revision 3.3  2002/07/02 13:05:00  dkr
  * global var 'print_comment' added
  *
@@ -38,7 +41,11 @@
 
 extern int print_comment; /* bool */
 
+#if TAGGED_ARRAYS
+#define AccessVect(v, i) fprintf (outfile, "SAC_ND_READ( %s, %i)", v, i)
+#else
 #define AccessVect(v, i) fprintf (outfile, "SAC_ND_READ_ARRAY( %s, %i)", v, i)
+#endif
 
 #define AccessConst(v, i) fprintf (outfile, "%s", v[i])
 
