@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.54  1998/01/02 10:57:47  srs
+ * changes comments
+ *
  * Revision 1.53  1997/12/19 16:08:30  srs
  * changed some functions headers to new style
  *
@@ -203,7 +206,7 @@
  *          FltnAssign returns this node[0]
  * node[1]: this node is only used in the context of WLs. It is necessary
  *          to put assignments (var initialisations) at the beginning of
- *          the WL-body. These assihnments are stored here. See comment in
+ *          the WL-body. These assignments are stored here. See comment in
  *          FltnNcode.
  */
 
@@ -1328,9 +1331,7 @@ FltnLet (node *arg_node, node *arg_info)
                     old_name = ids->id;
                     ids->id = RenameWithVar (old_name, with_level);
                     PUSH (old_name, ids->id, with_level);
-                    /* srs: what happens if node[1] != 0 ? */
-                    /*                arg_info->node[1]=AppendIdentity(arg_info->node[1],
-                     */
+                    /*             arg_info->node[1]=AppendIdentity(arg_info->node[1],  */
                     /* 						StringCopy(tmp->id_new), ids->id);
                      */
                     arg_info->node[1]
