@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/07/19 16:19:57  cg
+ * Added new status entries ST_imported_extmod and ST_imported_extclass.
+ *
  * Revision 3.7  2001/04/25 13:55:14  dkr
  * ST_zombiefun added
  *
@@ -91,6 +94,12 @@ SELECT (ST_undef, "ST_undef",
 
   SELECT (ST_imported_mod, "ST_imported_mod",
           /* typedef, objdef, fundef: imported from other module             */),
+
+  SELECT (ST_imported_extclass, "ST_imported_extclass",
+          /* typedef, objdef, fundef: imported from external class           */),
+
+  SELECT (ST_imported_extmod, "ST_imported_extmod",
+          /* typedef, objdef, fundef: imported from external module          */),
 
   SELECT (ST_exported, "ST_exported",
           /* fundef: exported by module or program                           */),

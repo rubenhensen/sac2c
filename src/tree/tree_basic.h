@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.103  2001/07/19 16:19:57  cg
+ * Added new status entries ST_imported_extmod and ST_imported_extclass.
+ *
  * Revision 3.102  2001/07/17 15:12:12  cg
  * Some compound macros moved from tree_basic.h to tree_compound.h
  *
@@ -893,7 +896,11 @@ extern node *MakeExplist (node *itypes, node *etypes, node *objs, node *funs);
 
 /*
  * The STATUS indicates whether a type is defined or imported.
- * Possible values: ST_regular | ST_imported_mod | ST_imported_class
+ * Possible values:
+ *   ST_imported_mod   : imported from module
+ *   ST_imported_class : imported from class
+ *   ST_imported_mod   : imported from external module
+ *   ST_imported_class : imported from external class
  *
  * The ATTRIB indicates whether a type is unique or not.
  * Possible values: ST_regular | ST_unique
@@ -962,7 +969,11 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
 
 /*
  *  The STATUS indicates whether an object is defined or imported.
- *  Possible values: ST_regular | ST_imported_mod | ST_imported_class
+ *  Possible values:
+ *   ST_imported_mod   : imported from module
+ *   ST_imported_class : imported from class
+ *   ST_imported_mod   : imported from external module
+ *   ST_imported_class : imported from external class
  *
  *  ATTRIB: ST_unresolved | ST_resolved
  *  used in objects.c to distinguish between already initialized and
@@ -1068,6 +1079,8 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *   ST_regular        : function defined in this module
  *   ST_imported_mod   : function imported from module
  *   ST_imported_class : function imported from class
+ *   ST_imported_mod   : function imported from external module
+ *   ST_imported_class : function imported from external class
  *   ST_exported       : function is exported by module/class or program ('main')
  *   ST_objinitfun     : generic function for object initialization
  *   ST_classfun       : class conversion function
