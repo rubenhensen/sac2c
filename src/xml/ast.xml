@@ -241,7 +241,7 @@
           <node name="Empty" />
 	</travuser>
       </traversal>
-	  <traversal id="CHK" name="Check the Tree" default="sons" include="check_lib.h" />
+	 <!--traversal id="CHK" name="Check the Tree" default="sons" include="check_lib.h" /-->
     </general>
 
     <phase id="scanparse" name="Parsing input file">
@@ -2211,7 +2211,9 @@
 	<flag name="IsWrapperfun" />
 	<flag name="IsZombie" />
 	<flag name="IsClassConversionFun" />
-        <flag name="IsSpecialized" />
+        <flag name="IsSpecialized" default="TRUE">
+	  <description>TRUE if function should be accounted for next optimization cycle</description>
+	</flag>
       </flags>
     </node>
 <!--
