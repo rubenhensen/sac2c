@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 1.148  1998/03/02 13:54:47  srs
+ * the parser flattens the operators ++ and -- to the equivalent
+ * binary functions.
+ *
  * Revision 1.147  1998/02/27 16:30:29  cg
  * added parsing rules for sac2crc files
  * bug fixed in parsing primitive function NOT
@@ -1749,6 +1753,7 @@ letassign: ids LET expr
            }
 
 /* left for later BRUSHING BEGIN */
+/*
          | id unaryop 
             { $$=MakeNode(N_post);
               $$->info.ids=MakeIds($1, NULL, ST_regular);
@@ -1769,6 +1774,12 @@ letassign: ids LET expr
                            mdb_nodetype[$$->nodetype], $$, $$->info.ids->id,
                            mdb_nodetype[$$->node[0]->nodetype] )); 
             }
+*/
+         | id INC { $$=MAKE_INCDEC_LET($1,F_add); }
+         | INC id { $$=MAKE_INCDEC_LET($2,F_add); }
+         | id DEC { $$=MAKE_INCDEC_LET($1,F_sub); }
+         | DEC id { $$=MAKE_INCDEC_LET($2,F_sub); }
+
 /* left for later BRUSHING END */
 
          | id ADDON expr { $$=MAKE_OPON_LET($1,$3,F_add); }
