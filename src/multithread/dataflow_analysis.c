@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/06/21 13:32:23  jhs
+ * Added creation af MT_ALLOCmask.
+ *
  * Revision 1.6  2000/06/08 12:16:03  jhs
  * Fixed some problems caused by non-flatend code of IVE.
  *
@@ -636,6 +639,7 @@ DFAxt_up (node *arg_node, node *arg_info)
     if (NODE_TYPE (arg_node) == N_mt) {
         MT_NEEDLATER (arg_node)
           = DFMGenMaskOr (INFO_DFA_NEEDCHAIN (arg_info), INFO_DFA_NEEDBLOCK (arg_info));
+        MT_ALLOC (arg_node) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_info));
     } else if (NODE_TYPE (arg_node) == N_st) {
         ST_NEEDLATER_ST (arg_node) = DFMGenMaskMinus (INFO_DFA_NEEDCHAIN (arg_info),
                                                       INFO_DFA_NEEDBLOCK (arg_info));
