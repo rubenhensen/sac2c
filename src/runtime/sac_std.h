@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/06/19 18:31:01  dkr
+ * *** empty log message ***
+ *
  * Revision 1.2  1998/06/03 14:59:05  cg
  * generation of new identifier names as extensions of old ones
  * by macros made compatible with new renaming scheme
@@ -61,6 +64,7 @@
 #define SAC_ND_A_SIZE(name) name##__sz
 #define SAC_ND_A_DIM(name) name##__d
 #define SAC_ND_KD_A_SHAPE(name, dim) name##__s##dim
+#define SAC_ND_A_SHAPEP(name) name##__s
 #define SAC_ND_A_SHAPE(name, dim) name##__s[dim]
 
 /*
@@ -96,15 +100,15 @@
 
 #define SAC_ND_KD_DECL_ARRAY(basetype, name, dim)                                        \
     SAC_ND_DECL_RC (basetype *, name)                                                    \
-    int name##__sz;                                                                      \
-    int name##__d = dim;                                                                 \
-    int *name##__s;
+    int SAC_ND_A_SIZE (name);                                                            \
+    int SAC_ND_A_DIM (name) = dim;                                                       \
+    int *SAC_ND_A_SHAPEP (name);
 
 #define SAC_ND_DECL_ARRAY(basetype, name)                                                \
     SAC_ND_DECL_RC (basetype *, name)                                                    \
-    int name##__sz;                                                                      \
-    int name##__d;                                                                       \
-    int *name##__s;
+    int SAC_ND_A_SIZE (name);                                                            \
+    int SAC_ND_A_DIM (name);                                                             \
+    int *SAC_ND_A_SHAPEP (name);
 
 /*
  * ICMs for removing refcounted data :
