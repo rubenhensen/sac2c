@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.78  2004/02/02 15:49:35  skt
+# ssa.o added
+#
 # Revision 3.77  2004/01/28 18:02:41  skt
 # some adaptions, because of moving from CheckAvis.[hc]
 # SSATransform.[hc] and UndoSSATransform.[hs] from
@@ -166,6 +169,7 @@ FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/fun2lac.o \
          src/flatten/while2do.o src/flatten/insert_vardec.o \
          src/flatten/handle_mops.o src/flatten/UndoSSATransform.o \
          src/flatten/CheckAvis.o src/flatten/SSATransform.o \
+         src/flatten/ssa.o
 
 CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/constants_struc_ops.o \
