@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2000/10/23 11:33:48  dkr
+ * MakeIds1 renamed into MakeIds_Copy
+ *
  * Revision 1.13  2000/10/23 10:27:19  dkr
  * MakeId1 replaced by MakeId_Copy
  *
@@ -455,7 +458,7 @@ DFM2Ids (DFMmask_t mask, LUT_t lut)
     decl = DFMGetMaskEntryDeclSet (mask);
     while (decl != NULL) {
         tmp = _ids;
-        _ids = MakeIds1 (VARDEC_OR_ARG_NAME (decl));
+        _ids = MakeIds_Copy (VARDEC_OR_ARG_NAME (decl));
         IDS_ATTRIB (_ids) = VARDEC_OR_ARG_ATTRIB (decl);
         IDS_STATUS (_ids) = VARDEC_OR_ARG_STATUS (decl);
         IDS_VARDEC (_ids) = SearchInLUT (lut, decl);
