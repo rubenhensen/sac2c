@@ -3859,7 +3859,7 @@ RCMAC=$srcdir/src/runtime/sac2crc.MAC
 OSFLAGS=""
 case "$target_os" in
   solaris*)     OSFLAGS="-D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY";;
-  *linux*)      OSFLAGS="-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE";;
+  *linux*)      OSFLAGS="-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint";;
   *osf*)	OSFLAGS="-D_OSF_SOURCE";;
   *darwin*)      OSFLAGS="-traditional-cpp -Wno-long-double";;
 esac
