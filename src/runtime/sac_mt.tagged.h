@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2003/10/15 17:31:09  dkrHH
+ * MT_CREATE_LOCAL_DESC is a C-ICM now
+ *
  * Revision 1.8  2003/10/15 12:32:15  dkrHH
  * MT_FREE_LOCAL_DESC added
  *
@@ -375,17 +378,18 @@ typedef union {
 
 /******************************************************************************
  *
- * MT_DECL_LOCAL_DESC( var_NT, dim)
- * MT_CREATE_LOCAL_DESC( var_NT, dim)
- * MT_FREE_LOCAL_DESC( var_NT, dim)
- *
+ * MT_DECL_LOCAL_DESC( var_NT, dim) :
+ *   declarations for the local descriptor
+ * MT_CREATE_LOCAL_DESC( var_NT, dim) :
+ *   creates/initializes the local descriptor
+ * MT_FREE_LOCAL_DESC( var_NT, dim) :
+ *   frees the local descriptor (if necessary)
  */
 
 #define SAC_MT_DECL_LOCAL_DESC(var_NT, dim)                                              \
     CAT11 (SAC_MT_DECL_LOCAL_DESC__, NT_SHP (var_NT) BuildArgs2 (var_NT, dim))
 
-#define SAC_MT_CREATE_LOCAL_DESC(var_NT, dim)                                            \
-    CAT11 (SAC_MT_CREATE_LOCAL_DESC__, NT_SHP (var_NT) BuildArgs2 (var_NT, dim))
+/* MT_CREATE_LOCAL_DESC( ...)  is a C-ICM */
 
 #define SAC_MT_FREE_LOCAL_DESC(var_NT, dim)                                              \
     CAT11 (SAC_MT_FREE_LOCAL_DESC__, NT_SHP (var_NT) BuildArgs2 (var_NT, dim))
@@ -404,25 +408,7 @@ typedef union {
 #define SAC_MT_DECL_LOCAL_DESC__SCL_HID_UNQ(var_NT, dim)                                 \
     SAC_MT_DECL_LOCAL_DESC__SCL_NHD (var_NT, dim)
 
-#define SAC_MT_CREATE_LOCAL_DESC__SCL(var_NT, dim)                                       \
-    CAT12 (SAC_MT_CREATE_LOCAL_DESC__SCL_, NT_HID (var_NT) BuildArgs2 (var_NT, dim))
-#define SAC_MT_CREATE_LOCAL_DESC__SCL_NHD(var_NT, dim) SAC_NOOP ()
-#define SAC_MT_CREATE_LOCAL_DESC__SCL_HID(var_NT, dim)                                   \
-    CAT13 (SAC_MT_CREATE_LOCAL_DESC__SCL_HID_, NT_UNQ (var_NT) BuildArgs2 (var_NT, dim))
-#define SAC_MT_CREATE_LOCAL_DESC__SCL_HID_NUQ(var_NT, dim)                               \
-    SAC_MT_CREATE_LOCAL_DESC__AKS (var_NT, dim)
-#define SAC_MT_CREATE_LOCAL_DESC__SCL_HID_UNQ(var_NT, dim)                               \
-    SAC_MT_CREATE_LOCAL_DESC__SCL_NHD (var_NT, dim)
-
-#define SAC_MT_FREE_LOCAL_DESC__SCL(var_NT, dim)                                         \
-    CAT12 (SAC_MT_FREE_LOCAL_DESC__SCL_, NT_HID (var_NT) BuildArgs2 (var_NT, dim))
-#define SAC_MT_FREE_LOCAL_DESC__SCL_NHD(var_NT, dim) SAC_NOOP ()
-#define SAC_MT_FREE_LOCAL_DESC__SCL_HID(var_NT, dim)                                     \
-    CAT13 (SAC_MT_FREE_LOCAL_DESC__SCL_HID_, NT_UNQ (var_NT) BuildArgs2 (var_NT, dim))
-#define SAC_MT_FREE_LOCAL_DESC__SCL_HID_NUQ(var_NT, dim)                                 \
-    SAC_MT_FREE_LOCAL_DESC__AKS (var_NT, dim)
-#define SAC_MT_FREE_LOCAL_DESC__SCL_HID_UNQ(var_NT, dim)                                 \
-    SAC_MT_FREE_LOCAL_DESC__SCL_NHD (var_NT, dim)
+#define SAC_MT_FREE_LOCAL_DESC__SCL(var_NT, dim) SAC_NOOP ()
 
 /*
  * AKS
@@ -432,11 +418,6 @@ typedef union {
     int CAT0 (local_, SAC_ND_A_DESC (var_NT))[SIZE_OF_DESC (dim)];                       \
     SAC_array_descriptor_t SAC_ND_A_DESC (var_NT) = CAT0 (local_, SAC_ND_A_DESC (var_NT));
 
-#define SAC_MT_CREATE_LOCAL_DESC__AKS(var_NT, dim)                                       \
-    {                                                                                    \
-        SAC_ND_A_RC (var_NT) = 2;                                                        \
-    }
-
 #define SAC_MT_FREE_LOCAL_DESC__AKS(var_NT, dim) SAC_NOOP ()
 
 /*
@@ -445,13 +426,6 @@ typedef union {
 
 #define SAC_MT_DECL_LOCAL_DESC__AKD(var_NT, dim) SAC_MT_DECL_LOCAL_DESC__AKS (var_NT, dim)
 
-#define SAC_MT_CREATE_LOCAL_DESC__AKD(var_NT, dim)                                       \
-    {                                                                                    \
-        SAC_ND_A_RC (var_NT) = 2;                                                        \
-        SAC_ND_A_DESC_SIZE (var_NT) = SAC_ND_A_SIZE (var_NT);                            \
-        /* must be C-ICM in order to copy the shape components!!! */                     \
-    }
-
 #define SAC_MT_FREE_LOCAL_DESC__AKD(var_NT, dim) SAC_NOOP ()
 
 /*
@@ -459,13 +433,11 @@ typedef union {
  */
 
 #define SAC_MT_DECL_LOCAL_DESC__AUD(var_NT, dim)                                         \
-    SAC_NOTHING () /* not implemented yet!!! */
+    SAC_array_descriptor_t CAT0 (orig_, SAC_ND_A_DESC (var_NT))                          \
+      = SAC_ND_A_DESC (var_NT);                                                          \
+    SAC_array_descriptor_t SAC_ND_A_DESC (var_NT);
 
-#define SAC_MT_CREATE_LOCAL_DESC__AUD(var_NT, dim)                                       \
-    SAC_NOTHING () /* not implemented yet!!! */
-
-#define SAC_MT_FREE_LOCAL_DESC__AUD(var_NT, dim)                                         \
-    SAC_NOTHING () /* not implemented yet!!! */
+#define SAC_MT_FREE_LOCAL_DESC__AUD(var_NT, dim) SAC_ND_FREE__DESC (var_NT)
 
 /******************************************************************************
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2003/10/15 17:33:03  dkrHH
+ * MT_CREATE_LOCAL_DESC is a C-ICM now
+ *
  * Revision 3.38  2003/10/15 12:31:00  dkrHH
  * MT_START_SYNCBLOCK renamed into MT_SYNCBLOCK_BEGIN.
  * MT_SYNCBLOCK_END added.
@@ -262,6 +265,8 @@
 #include <string.h>
 
 #include "icm2c_basic.h"
+#include "icm2c_utils.h"
+#include "icm2c_mt.h"
 
 #include "dbug.h"
 #include "my_debug.h"
@@ -496,9 +501,11 @@ ICMCompileMT_SYNCBLOCK_BEGIN (int barrier_id, int vararg_cnt, char **vararg)
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
 #ifdef TAGGED_ARRAYS
         if (!strcmp (vararg[i], "in")) {
-            INDENT;
-            fprintf (outfile, "SAC_MT_CREATE_LOCAL_DESC( %s, %s)\n", vararg[i + 1],
-                     vararg[i + 2]);
+            int dim;
+            int cnt = sscanf (vararg[i + 2], "%d", &dim);
+            DBUG_ASSERT ((cnt == 1),
+                         "3rd vararg component of MT_SYNCBLOCK_BEGIN is no integer!");
+            ICMCompileMT_CREATE_LOCAL_DESC (vararg[i + 1], dim);
         }
 #else  /* TAGGED_ARRAYS */
         if (!strcmp (vararg[i], "in_rc")) {
@@ -1320,6 +1327,92 @@ ICMCompileMT_SPMD_END (char *name)
     fprintf (outfile, "}\n");
 
     fprintf (outfile, "#endif  /* SAC_DO_MULTITHREAD */\n\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_CREATE_LOCAL_DESC( char *var_NT, int dim)
+ *
+ * description:
+ *   compiles the corresponding ICM:
+ *
+ *   MT_CREATE_LOCAL_DESC( var_NT, dim )
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_CREATE_LOCAL_DESC (char *var_NT, int dim)
+{
+    shape_class_t sc = ICUGetShapeClass (var_NT);
+    int i;
+
+    DBUG_ENTER ("ICMCompileMT_CREATE_LOCAL_DESC");
+
+#define MT_CREATE_LOCAL_DESC
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_CREATE_LOCAL_DESC
+
+    INDENT;
+    fprintf (outfile, "/* init local descriptors */\n");
+
+    switch (sc) {
+    case C_scl:
+        /* here is no break missing */
+    case C_aks:
+        /* noop */
+        break;
+
+    case C_akd:
+        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
+        INDENT;
+        fprintf (outfile, "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", var_NT,
+                 var_NT);
+        for (i = 0; i < dim; i++) {
+            INDENT;
+            fprintf (outfile,
+                     "SAC_ND_A_DESC_SHAPE( %s, %d)"
+                     " = SAC_ND_A_SHAPE( %s, %d);\n",
+                     var_NT, i, var_NT, i);
+        }
+        break;
+
+    case C_aud:
+        INDENT;
+        fprintf (outfile, "SAC_ND_ALLOC__DESC( %s, %d)\n", var_NT, dim);
+        INDENT;
+        fprintf (outfile,
+                 "SAC_ND_A_DESC_DIM( %s)"
+                 " = DESC_DIM( CAT0( orig_, SAC_ND_A_DESC( %s)));\n",
+                 var_NT, var_NT);
+        INDENT;
+        fprintf (outfile,
+                 "SAC_ND_A_DESC_SIZE( %s)"
+                 " = DESC_SIZE( CAT0( orig_, SAC_ND_A_DESC( %s)));\n",
+                 var_NT, var_NT);
+        for (i = 0; i < dim; i++) {
+            INDENT;
+            fprintf (outfile,
+                     "SAC_ND_A_DESC_SHAPE( %s, %d)"
+                     " = DESC_SHAPE( CAT0( orig_, SAC_ND_A_DESC( %s)), %d);\n",
+                     var_NT, i, var_NT, i);
+        }
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Unknown shape class found!");
+        break;
+    }
+
+    /*
+     * set local reference counter to 2 in order to guarantee that the
+     * object is neither reused nor deleted.
+     */
+    INDENT;
+    fprintf (outfile, "SAC_ND_SET__RC( %s, 2)\n", var_NT);
 
     DBUG_VOID_RETURN;
 }
