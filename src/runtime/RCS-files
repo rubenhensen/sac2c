@@ -3,9 +3,11 @@ sac.h
 sac2crc.LINUX_X86
 sac2crc.README
 sac2crc.SOLARIS_SPARC
+sac_arg.h
 sac_bool.h
 sac_boundcheck.h
 sac_cachesim.h
+sac_cinterface.h
 sac_heapmgr.h
 sac_icm.h
 sac_idx.h
