@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.27  1999/11/15 14:25:26  dkr
+ * message "CF not yet implemented for prf ..." is now a DBUG_PRINT instead of a NOTE2
+ *
  * Revision 2.26  1999/11/12 13:53:04  dkr
  * FetchNum() changed:
  *   renamed to FetchElem
@@ -1553,6 +1556,7 @@ FoldPrfScalars (prf prf_name, node **arg, types *res_type, int swap)
     case F_mod:
         res = MakeNum (NUM_VAL (arg[0]) % NUM_VAL (arg[1]));
         break;
+
     case F_gt:
         REL_OP (>, arg[0], arg[1], res, res_type);
         break;
@@ -1586,7 +1590,8 @@ FoldPrfScalars (prf prf_name, node **arg, types *res_type, int swap)
         break;
 
     default:
-        NOTE2 (("CF not yet implemented for prf \"%s\"!", prf_string[prf_name]));
+        DBUG_PRINT ("CF",
+                    ("CF not yet implemented for prf \"%s\"!", prf_string[prf_name]));
         res = NULL;
         break;
     }
@@ -1646,6 +1651,7 @@ FoldExpr (node *arg_node, int test_arg, int res_arg, int test_pattern, node *arg
         FreePrf2 (tmp, res_arg);
         arg_node = arg[res_arg];
     }
+
     DBUG_RETURN (arg_node);
 }
 
