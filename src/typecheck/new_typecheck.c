@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2004/03/22 18:31:15  sbs
+ * the number of return expressions now has to match the number of return types!
+ * Otherwise, a proper error message is generated!.
+ *
  * Revision 3.41  2004/03/08 12:28:39  sbs
  * potentially un-initialized usage of var i in NTClet eliminated.
  *
@@ -232,7 +236,7 @@ TypeCheckFunctionBody (node *fundef, node *arg_info)
 {
     ntype *spec_type, *inf_type;
     ntype *stype, *itype;
-    int i;
+    int i, inf_n, spec_n;
     bool ok;
 #ifndef DBUG_OFF
     char *tmp_str;
@@ -295,6 +299,7 @@ TypeCheckFunctionBody (node *fundef, node *arg_info)
      */
 
     inf_type = INFO_NTC_TYPE (arg_info);
+    inf_n = TYGetProductSize (inf_type);
 
     DBUG_EXECUTE ("NTC", tmp_str = TYType2String (inf_type, FALSE, 0););
     DBUG_PRINT ("NTC",
@@ -302,6 +307,14 @@ TypeCheckFunctionBody (node *fundef, node *arg_info)
     DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
 
     spec_type = FUNDEF_RET_TYPE (fundef);
+    spec_n = TYGetProductSize (spec_type);
+
+    if ((spec_n > inf_n) || ((spec_n < inf_n) && !HasDotTypes (FUNDEF_TYPES (fundef)))) {
+        ABORT (NODE_LINE (fundef),
+               ("number of return expressions in function \"%s\" does not match"
+                " the number of return types specified",
+                FUNDEF_NAME (fundef)));
+    }
 
     for (i = 0; i < TYGetProductSize (spec_type); i++) {
         stype = TYGetProductMember (spec_type, i);
