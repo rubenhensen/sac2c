@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2004/11/23 21:49:39  cg
+ * brushed usage of genlib
+ * min_array_rep_t turned into enum type.
+ *
  * Revision 3.38  2004/07/17 17:07:16  sah
  * switch to new INFO structure
  * PHASE I
@@ -292,7 +296,7 @@ PrintGlobalSwitches ()
 
     fprintf (outfile, "#define SAC_DO_COMPILE_MODULE  %d\n",
              ((filetype == F_modimp) || (filetype == F_classimp)) ? 1 : 0);
-    if (generatelibrary & GENERATELIBRARY_C) {
+    if (global.genlib.c) {
         fprintf (outfile, "#define SAC_GENERATE_CLIBRARY\n");
     }
     fprintf (outfile, "\n");
@@ -823,7 +827,7 @@ GSCPrintMainBegin ()
     funname = ObjInitFunctionName (FALSE);
 
     /* call init function for a c library - no command line available */
-    if (generatelibrary & GENERATELIBRARY_C) {
+    if (global.genlib.c) {
         /* only call obj init function - runtimesystem already initialized */
         INDENT;
         fprintf (outfile, "%s( 0 , NULL);\n\n", funname);

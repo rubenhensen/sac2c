@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2004/11/23 21:49:39  cg
+ * brushed usage of genlib
+ * min_array_rep_t turned into enum type.
+ *
  * Revision 3.55  2004/11/19 21:05:39  sah
  * removed some unused code
  *
@@ -278,7 +282,7 @@ NewTypeCheck (node *arg_node)
      * at all, i.e., needs attention 8-)
      *
      */
-    if (generatelibrary & GENERATELIBRARY_C) {
+    if (global.genlib.c) {
         arg_node = ImportSpecialization (arg_node);
     }
 #endif

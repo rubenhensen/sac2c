@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/11/23 21:49:39  cg
+ * brushed usage of genlib
+ * min_array_rep_t turned into enum type.
+ *
  * Revision 3.4  2001/05/17 12:52:48  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -247,7 +251,7 @@ MapCWrapper (node *syntax_tree)
 
     DBUG_ENTER ("MapCWrapper");
 
-    if (generatelibrary & GENERATELIBRARY_C) {
+    if (generatelibrary == GL_clib) {
         arg_info = MakeInfo ();
 
         old_tab = act_tab;
