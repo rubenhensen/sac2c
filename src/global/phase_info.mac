@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/05/11 12:49:47  ktr
+ * Order of phases wltransform, refcount and mt streamlined
+ *
  * Revision 3.6  2004/04/21 16:38:56  ktr
  * Added SSA-based refcounting
  *
@@ -89,11 +92,9 @@ PH_SEL (PH_initial, "", 0, 0),
 
   PH_SEL (PH_wltrans, "Transforming with-loop representation", 0, 0),
 
-  PH_SEL (PH_multithread, "Generating annotations for MT", 0, 0),
-
   PH_SEL (PH_refcnt, "Running reference count inference system", 0, 0),
 
-  PH_SEL (PH_ssarefcnt, "Running SSA reference count inference system", 0, 0),
+  PH_SEL (PH_multithread, "Generating annotations for MT", 0, 0),
 
   PH_SEL (PH_precompile, "Preparing C code generation", 0, 0),
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2004/05/11 12:49:47  ktr
+ * Order of phases wltransform, refcount and mt streamlined
+ *
  * Revision 3.37  2004/04/26 17:18:17  sah
  * added a hack so that new ssarefcnt phase
  * is passed always. solves the problem that
@@ -504,24 +507,25 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if ((!ktr) && (mtmode != MT_mtstblock)) {
-        compiler_phase += 2;
+    if (!(((ktr) || (mtmode == MT_mtstblock)) && (use_ssaform))) {
+        compiler_phase += 1;
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
         syntax_tree = Refcount (syntax_tree); /* refcnt_tab */
         PHASE_DONE_EPILOG;
         PHASE_EPILOG;
-
         if (break_after == PH_refcnt)
             goto BREAK;
-        compiler_phase -= 2;
+        compiler_phase -= 1;
     }
 
-    if (patch_with) {
-        NOTE2 (("   \n"
-                "** Patching with-loops (generating multiple parts) ...\n"));
-        syntax_tree = PatchWith (syntax_tree); /* patchwith_tab */
-    }
+#if 0
+  if (patch_with) {
+    NOTE2( ("   \n"
+            "** Patching with-loops (generating multiple parts) ...\n"));
+    syntax_tree = PatchWith( syntax_tree);  /* patchwith_tab */
+  }
+#endif
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
@@ -533,25 +537,19 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if ((ktr) && (use_ssaform)) {
-        compiler_phase += 1;
+    if (((ktr) || (mtmode == MT_mtstblock)) && (use_ssaform)) {
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
         syntax_tree = DoSSA (syntax_tree);
-        syntax_tree = SSARefCount (syntax_tree);
+        syntax_tree = SSARefCount (syntax_tree); /* ssarefcnt_tab */
         PHASE_DONE_EPILOG;
         PHASE_EPILOG;
-        goto BREAK;
-        compiler_phase -= 1;
+    } else {
+        /* syntax_tree = Refcount( syntax_tree); */ /* refcnt_tab */
     }
 
-    /* whatever kai wants to do with compiler_phase-=1,
-     * as he added a phase, it has to be passed always
-     * because otherwise the - may I say - dirty
-     * hack of Print working different in phase
-     * PH_gencode does not work. Maybe kai fixes it
-     * somewhen. The following line is a hack...
-     */
+    if (break_after == PH_refcnt)
+        goto BREAK;
     compiler_phase++;
 
     if ((ktr) && (use_ssaform) && (optimize & OPT_BLIR)) {
@@ -581,10 +579,11 @@ main (int argc, char *argv[])
         NOTE_COMPILER_PHASE;
         NOTE (("Using mt/st-block version of multithreading (MT3)"));
         /* this version of multithreading is only for code in SSA-form */
-        syntax_tree = DoSSA (syntax_tree);
+        /* After SSA-Refcounting, Code is already in SSA-Form */
+        /* syntax_tree = DoSSA(syntax_tree); */
         syntax_tree = BuildMultiThread (syntax_tree);
         /* for compatibility reasons, the code is retransformed from SSA-form */
-        syntax_tree = UndoSSA (syntax_tree);
+        /*syntax_tree = UndoSSA(syntax_tree);*/
         PHASE_DONE_EPILOG;
         break;
     }
@@ -603,17 +602,9 @@ main (int argc, char *argv[])
          */
     }
 
-    if (mtmode == MT_mtstblock) {
-        PHASE_PROLOG;
-        NOTE_COMPILER_PHASE;
-        syntax_tree = Refcount (syntax_tree); /* refcnt_tab */
-        PHASE_DONE_EPILOG;
-        PHASE_EPILOG;
-
-        if (break_after == PH_refcnt)
-            goto BREAK;
+    if (((ktr) || (mtmode == MT_mtstblock)) && (use_ssaform)) {
+        syntax_tree = UndoSSA (syntax_tree);
     }
-    compiler_phase++;
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
