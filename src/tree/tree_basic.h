@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.92  2001/05/07 09:06:16  nmw
+ * macros for shared usage of WLUnroll adjusted
+ *
  * Revision 3.91  2001/05/03 17:32:16  dkr
  * WLSEG_MAXHOMDIM replaced by WLSEG_HOMSV
  *
@@ -2857,7 +2860,11 @@ extern node *MakeInfo ();
 /* DFR */
 #define INFO_DFR_SPINE(n) (n->flag)
 
-/* Unrolling */
+/*
+ * Unrolling
+ * these macros must be mapped to the same components
+ * due to the shared usage of WLUnroll code.
+ */
 #define INFO_UNR_ASSIGN(n) (n->node[0])
 #define INFO_UNR_FUNDEF(n) (n->node[1])
 
@@ -3062,10 +3069,15 @@ extern node *MakeInfo ();
 #define INFO_CAV_FUNDEF(n) (n->node[0])
 #define INFO_CAV_SINGLEFUNDEF(n) ((bool)(n->counter))
 
-/* when used in SSALUR.c */
-#define INFO_SSALUR_FUNDEF(n) (n->node[0])
-#define INFO_SSALUR_MODUL(n) (n->node[1])
-#define INFO_SSALUR_ASSIGN(n) (n->node[2])
+/*
+ * when used in SSALUR.c:
+ * INFO_SSALURASSIGN/FUNDEF must be mapped to the same componentes
+ * due to the shared usage of WLUnroll code */
+#define INFO_SSALUR_ASSIGN(n) INFO_UNR_ASSIGN (n)
+#define INFO_SSALUR_FUNDEF(n) INFO_UNR_FUNDEF (n)
+#define INFO_SSALUR_MODUL(n) (n->node[2])
+#define INFO_SSALUR_REMASSIGN(n) ((bool)(n->refcnt))
+#define INFO_SSALUR_PREASSIGN(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
 
