@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2000/03/21 13:12:56  jhs
+ * Added macros: [L_]MT_OR_ST_xxx
+ *
  * Revision 1.10  2000/03/15 15:59:53  dkr
  * SET_VARDEC_OR_ARG_ACTCHN renamed to L_VARDEC_OR_ARG_ACTCHN, ...
  *
@@ -1566,11 +1569,29 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
 
 #define MT_OR_ST_REGION(n) (((NODE_TYPE (n) == N_mt)) ? MT_REGION (n) : ST_REGION (n))
 
+#define MT_OR_ST_USEMASK(n) (((NODE_TYPE (n) == N_mt)) ? MT_USEMASK (n) : ST_USEMASK (n))
+
+#define MT_OR_ST_DEFMASK(n) (((NODE_TYPE (n) == N_mt)) ? MT_DEFMASK (n) : ST_DEFMASK (n))
+
 #define L_MT_OR_ST_REGION(n, region)                                                     \
     if (NODE_TYPE (n) == N_mt) {                                                         \
         MT_REGION (n) = region;                                                          \
     } else {                                                                             \
         ST_REGION (n) = region;                                                          \
+    }
+
+#define L_MT_OR_ST_USEMASK(n, region)                                                    \
+    if (NODE_TYPE (n) == N_mt) {                                                         \
+        MT_USEMASK (n) = region;                                                         \
+    } else {                                                                             \
+        ST_USEMASK (n) = region;                                                         \
+    }
+
+#define L_MT_OR_ST_DEFMASK(n, region)                                                    \
+    if (NODE_TYPE (n) == N_mt) {                                                         \
+        MT_DEFMASK (n) = region;                                                         \
+    } else {                                                                             \
+        ST_DEFMASK (n) = region;                                                         \
     }
 
 /*--------------------------------------------------------------------------*/
