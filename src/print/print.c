@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.118  1996/04/02 19:35:46  cg
+ * Revision 1.119  1996/08/09 10:10:11  sbs
+ * removed 'fprintf(outfile,"%s",arg_node->info.id);'
+ * from PrintPost. This led to errorneous charackters
+ * in id++ statements between the idtentifier id and ++
+ * since the id is stored in info.ids and NOT in info.id.
+ *
+ * Revision 1.118  1996/04/02  19:35:46  cg
  * non-printable characters are printed correctly using octal numbers
  *
  * Revision 1.117  1996/03/21  18:01:08  cg
@@ -1416,7 +1422,6 @@ PrintPost (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintPost");
 
     PrintIds (arg_node->info.ids);
-    fprintf (outfile, "%s", arg_node->info.id);
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, ";");
 
