@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/01/25 12:06:13  dkr
+ * ExtractAplPragmaAp() modified.
+ * bug in ExtractNaiveCompPragmaAp() fixed.
+ *
  * Revision 3.9  2001/01/24 23:35:22  dkr
  * signature of MakeWLgridVar, MakeWLgrid, MakeWLseg, MakeWLsegVar
  * modified
@@ -122,7 +126,7 @@
 static node *
 ExtractNaiveCompPragmaAp (bool *do_naive_comp, node *exprs, int line)
 {
-    node *ap, *del;
+    node *ap;
 
     DBUG_ENTER ("ExtractNaiveCompPragmaAp");
 
@@ -138,9 +142,7 @@ ExtractNaiveCompPragmaAp (bool *do_naive_comp, node *exprs, int line)
             }
             (*do_naive_comp) = TRUE;
 
-            del = exprs;
-            exprs = ExtractNaiveCompPragmaAp (do_naive_comp, EXPRS_NEXT (exprs), line);
-            FreeTree (del);
+            exprs = ExtractNaiveCompPragmaAp (do_naive_comp, FreeNode (exprs), line);
         } else {
             EXPRS_NEXT (exprs)
               = ExtractNaiveCompPragmaAp (do_naive_comp, EXPRS_NEXT (exprs), line);
@@ -194,7 +196,7 @@ ExtractNaiveCompPragma (node *pragma, int line)
 static node *
 ExtractAplPragmaAp (node *exprs, node *pragma, int line)
 {
-    node *ap, *del;
+    node *ap;
     int size;
 
     DBUG_ENTER ("ExtractAplPragmaAp");
@@ -204,14 +206,14 @@ ExtractAplPragmaAp (node *exprs, node *pragma, int line)
         ap = EXPRS_EXPR (exprs);
         DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), "Illegal wlcomp pragma.");
         if (0 == strcmp (AP_NAME (ap), "APL")) {
-            if (!((AP_ARGS (ap) != NULL) && (NODE_TYPE (AP_ARG1 (ap)) == N_id)
-                  && (EXPRS_NEXT (AP_ARGS (ap)) != NULL)
-                  && (NODE_TYPE (AP_ARG2 (ap)) == N_num)
-                  && (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (ap))) != NULL)
-                  && (NODE_TYPE (AP_ARG3 (ap)) == N_num))) {
+            if ((AP_ARGS (ap) == NULL) || (NODE_TYPE (AP_ARG1 (ap)) != N_id)
+                || (EXPRS_NEXT (AP_ARGS (ap)) == NULL)
+                || (NODE_TYPE (AP_ARG2 (ap)) != N_num)
+                || (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (ap))) == NULL)
+                || (NODE_TYPE (AP_ARG3 (ap)) != N_num)) {
                 ERROR (line, ("Illegal wlcomp-pragma entry APL found"));
             } else {
-                switch (NUM_VAL (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (ap)))))) {
+                switch (NUM_VAL (AP_ARG3 (ap))) {
                 case 1:
                     size = 1024 * config.cache1_size;
                     break;
@@ -231,10 +233,9 @@ ExtractAplPragmaAp (node *exprs, node *pragma, int line)
                     FreeTree (ap);
                 }
             }
+            EXPRS_EXPR (exprs) = NULL;
 
-            del = exprs;
-            exprs = ExtractAplPragmaAp (EXPRS_NEXT (exprs), pragma, line);
-            FREE (del);
+            exprs = ExtractAplPragmaAp (FreeNode (exprs), pragma, line);
         } else {
             EXPRS_NEXT (exprs) = ExtractAplPragmaAp (EXPRS_NEXT (exprs), pragma, line);
         }
