@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.83  2004/04/08 08:06:42  khf
+# WithloopFusion.o added
+#
 # Revision 3.82  2004/03/09 23:47:40  dkrHH
 # compile.tagged.o removed
 #
@@ -224,7 +227,8 @@ PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
         src/psi-opt/SSAWithloopFolding.o src/psi-opt/SSAWLT.o \
         src/psi-opt/SSAWLI.o src/psi-opt/SSAWLF.o \
         src/psi-opt/pad.o src/psi-opt/pad_collect.o src/psi-opt/pad_infer.o \
-        src/psi-opt/pad_transform.o src/psi-opt/pad_info.o
+        src/psi-opt/pad_transform.o src/psi-opt/pad_info.o \
+	src/psi-opt/WithloopFusion.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o \
          src/modules/implicittypes.o src/modules/analysis.o \
          src/modules/checkdec.o src/modules/readsib.o src/modules/cccall.o

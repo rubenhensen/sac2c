@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.20  2004/04/08 08:09:55  khf
+# WithloopFusion.o added
+#
 # Revision 3.19  2004/01/29 13:06:05  skt
 # some adaptions because of moving ssa-files
 # from src/tree to src/flatten
@@ -71,7 +74,7 @@ all: index.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
      WithloopFolding.o WLT.o WLI.o WLF.o \
      SSAWithloopFolding.o SSAWLT.o SSAWLI.o SSAWLF.o \
      pad.o pad_info.o pad_collect.o pad_infer.o pad_transform.o \
-     WithloopScalarization.o
+     WithloopScalarization.o WithloopFusion.o
 
 
 #
