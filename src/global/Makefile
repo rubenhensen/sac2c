@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.59  1998/03/24 14:41:44  dkr
+# make deps done
+#
 # Revision 1.58  1998/03/22 18:03:52  srs
 # made deps
 #
@@ -278,12 +281,12 @@ main.o: /usr/include/stdlib.h globals.h internal_lib.h free.h my_debug.h
 main.o: /usr/include/malloc.h usage.h ../flatten/flatten.h ../print/print.h
 main.o: ../typecheck/typecheck.h ../optimize/optimize.h ../modules/filemgr.h
 main.o: ../modules/import.h ../refcount/refcount.h ../scanparse/scnprs.h
-main.o: resource.h ../scanparse/y.tab.h ../compile/profile.h
-main.o: ../compile/compile.h ../psi-opt/psi-opt.h ../modules/writesib.h
-main.o: ../modules/readsib.h ../modules/implicittypes.h ../objects/objinit.h
-main.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
-main.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
-main.o: ../compile/precompile.h ../modules/cccall.h ../compile/Old2NewWith.h
+main.o: resource.h ../scanparse/y.tab.h ../compile/compile.h
+main.o: ../psi-opt/psi-opt.h ../modules/writesib.h ../modules/readsib.h
+main.o: ../modules/implicittypes.h ../objects/objinit.h ../modules/analysis.h
+main.o: ../modules/checkdec.h ../objects/objects.h ../objects/uniquecheck.h
+main.o: ../objects/rmvoidfun.h ../compile/precompile.h ../modules/cccall.h
+main.o: ../compile/Old2NewWith.h
 my_debug.o: tree.h types.h tree_basic.h tree_compound.h Error.h
 my_debug.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 my_debug.o: /usr/include/sys/va_list.h /usr/include/string.h

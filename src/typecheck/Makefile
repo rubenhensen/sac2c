@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.24  1998/03/24 14:41:47  dkr
+# make deps done
+#
 # Revision 1.23  1998/03/04 00:10:01  dkr
 # 'clean' now deletes the subdir .sb, too
 #
@@ -117,4 +120,4 @@ typecheck.o: ../global/internal_lib.h ../print/print.h ../global/my_debug.h
 typecheck.o: ../../inc/dbug.h ../global/traverse.h typecheck.h
 typecheck.o: ../print/convert.h ../modules/import.h prim_fun.h
 typecheck.o: ../global/free.h /usr/include/malloc.h ../global/access_macros.h
-typecheck.o: ../optimize/DupTree.h ../compile/profile.h prim_fun_tt.mac
+typecheck.o: ../optimize/DupTree.h prim_fun_tt.mac

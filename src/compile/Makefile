@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.37  1998/03/24 14:41:50  dkr
+# make deps done
+#
 # Revision 1.36  1998/03/24 13:44:52  cg
 # libsac as well as profile.[ch] removed
 # gen_startup_code.[ch] added
@@ -173,24 +176,21 @@ compile.o: ../global/my_debug.h ../global/traverse.h compile.h
 compile.o: ../print/convert.h ../optimize/DupTree.h ../refcount/refcount.h
 compile.o: ../typecheck/typecheck.h ../global/free.h /usr/include/malloc.h
 compile.o: ../global/type_info.mac
+gen_startup_code.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+gen_startup_code.o: /usr/include/sys/va_list.h ../../inc/dbug.h
+gen_startup_code.o: ../global/globals.h ../global/types.h
 icm2c.o: /usr/include/malloc.h /usr/include/stdio.h
 icm2c.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
 icm2c.o: ../print/print.h ../global/tree.h ../global/types.h
 icm2c.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
 icm2c.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
 icm2c.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
-icm2c.o: ../../inc/main.h ../print/convert.h icm2c.h libsac.h icm_decl.c
+icm2c.o: ../../inc/main.h ../print/convert.h gen_startup_code.h icm_decl.c
 icm2c.o: icm.data icm_args.c icm_comment.c icm_trace.c
 icm_args.o: icm.data
 icm_comment.o: icm.data
 icm_decl.o: icm.data
 icm_trace.o: icm.data
-libsac.o: /usr/include/sys/time.h /usr/include/sys/feature_tests.h
-libsac.o: /usr/include/sys/types.h /usr/include/sys/isa_defs.h
-libsac.o: /usr/include/sys/machtypes.h /usr/include/sys/resource.h
-libsac.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-libsac.o: /usr/include/stdarg.h /usr/include/varargs.h /usr/include/malloc.h
-libsac.o: profile.h
 precompile.o: ../global/types.h ../global/tree_basic.h
 precompile.o: ../global/tree_compound.h ../global/Error.h
 precompile.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
@@ -200,6 +200,3 @@ precompile.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 precompile.o: ../global/internal_lib.h ../print/convert.h
 precompile.o: ../global/traverse.h ../refcount/refcount.h
 precompile.o: ../optimize/DupTree.h
-profile.o: ../../inc/dbug.h /usr/include/stdio.h
-profile.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
-profile.o: ../global/globals.h ../global/types.h profile.h

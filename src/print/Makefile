@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.25  1998/03/24 14:41:45  dkr
+# make deps done
+#
 # Revision 1.24  1998/03/19 17:08:30  dkr
 # make deps done
 #
@@ -104,5 +107,5 @@ print.o: ../global/tree_compound.h ../global/Error.h ../global/globals.h
 print.o: print.h ../global/tree.h ../global/internal_lib.h
 print.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h convert.h
 print.o: ../optimize/optimize.h ../global/free.h /usr/include/malloc.h
-print.o: ../compile/profile.h ../modules/filemgr.h ../compile/icm.data
-print.o: ../global/prf_node_info.mac
+print.o: ../modules/filemgr.h ../compile/gen_startup_code.h
+print.o: ../compile/icm.data ../global/prf_node_info.mac
