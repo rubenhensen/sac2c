@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2001/02/14 16:31:55  nmw
+ * INFO_SSA macros added
+ *
  * Revision 3.26  2001/02/14 14:40:44  dkr
  * INFO_PREC_CNT_ARTIFICIAL removed
  *
@@ -2240,6 +2243,10 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      SPECS             (chain of specialized fundefs)
  ***    node*      FUNDEF            (actual working fundef)
  ***
+ ***  when used in SSATransformc.
+ ***    node*      FUNDEF            (actual working fundef)
+ ***    node*      BLOCK             (top-level block of function)
+ ***    bool       RETINSTR          (working on return instruction)
  ***
  ***
  *** remarks:
@@ -2630,6 +2637,11 @@ extern node *MakeInfo ();
 #define INFO_IMPSPEC_SPECS(n) (n->node[0])
 #define INFO_IMPSPEC_FUNDEF(n) (n->node[1])
 #define INFO_IMPSPEC_MODUL(n) (n->node[2])
+
+/* when used in SSATransform.c */
+#define INFO_SSA_FUNDEF(n) (n->node[0])
+#define INFO_SSA_BLOCK(n) (n->node[1])
+#define INFO_SSA_RETINSTR(n) ((bool)(n->flag))
 
 /*--------------------------------------------------------------------------*/
 
