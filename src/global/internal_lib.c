@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/05/14 09:25:13  jhs
+ * Dbugged constvec annotations and their housekeeping in various compilation stages.
+ *
  * Revision 2.5  1999/05/12 08:41:11  sbs
  * CopyIntVector and friends eliminated ; instead,
  * CopyConstVec, AllocConstVec, and ModConstVec have been added.
@@ -365,6 +368,51 @@ ModConstVec (simpletype vectype, void *const_vec, int idx, node *const_node)
         DBUG_ASSERT ((0), "CopyConstVec called with non-const-type!");
     }
     DBUG_RETURN (const_vec);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *AnnotateIdWithConstVec(node *expr, node *id)
+ *
+ * description:
+ *   - if expr is an N_array-node or an N_id-node,
+ *     the const-array decoration from expr is copied to id.
+ *   - leading casts will be ignored.
+ *   - returns the id-node.
+ *
+ ******************************************************************************/
+
+node *
+AnnotateIdWithConstVec (node *expr, node *id)
+{
+    node *behind_casts = expr;
+
+    DBUG_ENTER ("AnnotateIdWithConstVec");
+
+    DBUG_ASSERT ((NODE_TYPE (id) == N_id),
+                 "AnnotateIdWithConstVec called with non-compliant arguments!");
+
+    while (NODE_TYPE (behind_casts) == N_cast)
+        behind_casts = CAST_EXPR (behind_casts);
+
+    if (NODE_TYPE (behind_casts) == N_array) {
+        ID_ISCONST (id) = ARRAY_ISCONST (behind_casts);
+        ID_VECTYPE (id) = ARRAY_VECTYPE (behind_casts);
+        ID_VECLEN (id) = ARRAY_VECLEN (behind_casts);
+        ID_CONSTVEC (id)
+          = CopyConstVec (ARRAY_VECTYPE (behind_casts), ARRAY_VECLEN (behind_casts),
+                          ARRAY_CONSTVEC (behind_casts));
+    } else if (NODE_TYPE (behind_casts) == N_id) {
+        ID_ISCONST (id) = ID_ISCONST (behind_casts);
+        ID_VECTYPE (id) = ID_VECTYPE (behind_casts);
+        ID_VECLEN (id) = ID_VECLEN (behind_casts);
+        ID_CONSTVEC (id)
+          = CopyConstVec (ID_VECTYPE (behind_casts), ID_VECLEN (behind_casts),
+                          ID_CONSTVEC (behind_casts));
+    }
+
+    DBUG_RETURN (id);
 }
 
 /******************************************************************************

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  1999/05/14 09:25:13  jhs
+ * Dbugged constvec annotations and their housekeeping in various compilation stages.
+ *
  * Revision 2.16  1999/05/12 09:15:04  jhs
  * Adjusted macros to access constant vectors.
  *
@@ -825,6 +828,12 @@ BuildTakeWithLoop (node *take_shp, node *array)
     /* NWITHOP_SHAPE(NWITH_WITHOP(res)) = take_shp; */
 
     if (NODE_TYPE (take_shp) == N_array) {
+        /*
+         * since we have constant arrays flattened, we assume that this case does not
+         * occur anymore.
+         */
+        DBUG_ASSERT (0, "First argument of take operation not flattened!");
+
         NWITHOP_SHAPE (NWITH_WITHOP (res)) = take_shp;
     } else {
         /*
@@ -840,6 +849,8 @@ BuildTakeWithLoop (node *take_shp, node *array)
           = CopyConstVec (ID_VECTYPE (take_shp), ID_VECLEN (take_shp),
                           ID_CONSTVEC (take_shp));
         ARRAY_TYPE (tmp_node) = VARDEC_TYPE (ID_VARDEC (take_shp));
+        ARRAY_VECTYPE (tmp_node) = ID_VECTYPE (take_shp);
+        ARRAY_ISCONST (tmp_node) = TRUE;
         NWITHOP_SHAPE (NWITH_WITHOP (res)) = tmp_node;
     }
     NCODE_USED (NWITH_CODE (res))++;
@@ -895,6 +906,13 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
     tmp_var = NULL;
 
     if (NODE_TYPE (drop_vec) == N_array) {
+
+        /*
+         * since we have constant arrays flattened, we assume that this case does not
+         * occur anymore.
+         */
+        DBUG_ASSERT (0, "First argument of drop operation not flattened!");
+
         len_vec = TYPES_SHAPE (ARRAY_TYPE (drop_vec), 0);
         dim_array = TYPES_DIM (new_shape); /* shape(result) == shape(array) !! */
 
@@ -939,6 +957,8 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
             FREE (ID_CONSTVEC (drop_vec));
             ((int *)ID_CONSTVEC (drop_vec))
               = Array2IntVec (ARRAY_AELEMS (new_array), NULL);
+            ID_VECTYPE (drop_vec) = T_int;
+            ID_ISCONST (drop_vec) = TRUE;
         }
     }
 

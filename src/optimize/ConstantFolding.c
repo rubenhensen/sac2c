@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  1999/05/14 09:25:13  jhs
+ * Dbugged constvec annotations and their housekeeping in various compilation stages.
+ *
  * Revision 2.13  1999/05/12 09:55:53  jhs
  * Adjusted macros to access constant vectors.
  *
@@ -732,11 +735,8 @@ CFid (node *arg_node, node *arg_info)
             cf_expr++;
             break;
         case N_array:
-            if ((ARRAY_VECTYPE (mrd) == T_int) && (ID_CONSTVEC (arg_node) == NULL)) {
-                ID_VECLEN (arg_node) = ARRAY_VECLEN (mrd);
-                ID_CONSTVEC (arg_node)
-                  = CopyConstVec (ARRAY_VECTYPE (mrd), ARRAY_VECLEN (mrd),
-                                  ARRAY_CONSTVEC (mrd));
+            if (ARRAY_ISCONST (mrd) && (ID_CONSTVEC (arg_node) == NULL)) {
+                AnnotateIdWithConstVec (mrd, arg_node);
             }
             break;
         case N_prf:

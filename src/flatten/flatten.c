@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  1999/05/14 09:25:13  jhs
+ * Dbugged constvec annotations and their housekeeping in various compilation stages.
+ *
  * Revision 2.16  1999/05/12 15:30:16  jhs
  * Annotate... added; const-annotation dbugged.
  *
@@ -434,51 +437,6 @@ Abstract (node *arg_node, node *arg_info)
     res = MakeId (StringCopy (tmp), NULL, ST_regular);
 
     DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *  node *AnnotateIdWithConstvec(node *expr, node *id)
- *
- * description:
- *   - if expr is an N_array-node or an N_id-node,
- *     the const-array decoration from expr is copied to id.
- *   - leading casts will be ignored.
- *   - returns the id-node.
- *
- ******************************************************************************/
-
-node *
-AnnotateIdWithConstvec (node *expr, node *id)
-{
-    node *behind_casts = expr;
-
-    DBUG_ENTER ("AnnotateIdWithConstvec");
-
-    DBUG_ASSERT ((NODE_TYPE (id) == N_id),
-                 "AnnotateIdWithConstvec called with non-compliant arguments!");
-
-    while (NODE_TYPE (behind_casts) == N_cast)
-        behind_casts = CAST_EXPR (behind_casts);
-
-    if (NODE_TYPE (behind_casts) == N_array) {
-        ID_ISCONST (id) = ARRAY_ISCONST (behind_casts);
-        ID_VECTYPE (id) = ARRAY_VECTYPE (behind_casts);
-        ID_VECLEN (id) = ARRAY_VECLEN (behind_casts);
-        ID_CONSTVEC (id)
-          = CopyConstVec (ARRAY_VECTYPE (behind_casts), ARRAY_VECLEN (behind_casts),
-                          ARRAY_CONSTVEC (behind_casts));
-    } else if (NODE_TYPE (behind_casts) == N_id) {
-        ID_ISCONST (id) = ID_ISCONST (behind_casts);
-        ID_VECTYPE (id) = ID_VECTYPE (behind_casts);
-        ID_VECLEN (id) = ID_VECLEN (behind_casts);
-        ID_CONSTVEC (id)
-          = CopyConstVec (ID_VECTYPE (behind_casts), ID_VECLEN (behind_casts),
-                          ID_CONSTVEC (behind_casts));
-    }
-
-    DBUG_RETURN (id);
 }
 
 /******************************************************************************
@@ -1114,7 +1072,7 @@ FltnExprs (node *arg_node, node *arg_info)
          */
         EXPRS_EXPR (arg_node) = Abstract (casts_expr, arg_info);
         expr2 = Trav (expr, arg_info);
-        AnnotateIdWithConstvec (expr, EXPRS_EXPR (arg_node));
+        AnnotateIdWithConstVec (expr, EXPRS_EXPR (arg_node));
 
     } else {
         expr2 = Trav (expr, arg_info);
@@ -1529,7 +1487,7 @@ FltnGen (node *arg_node, node *arg_info)
             *bound = Abstract (bound_expr, arg_info);
         }
         bound_expr2 = Trav (bound_expr, arg_info);
-        AnnotateIdWithConstvec (bound_expr, *bound);
+        AnnotateIdWithConstVec (bound_expr, *bound);
 
         DBUG_ASSERT ((bound_expr == bound_expr2),
                      "return-node differs from arg_node while flattening an expr!");
@@ -1571,7 +1529,7 @@ FltnCon (node *arg_node, node *arg_info)
             tos = tos - 1; /* DIRTY TRICK: hide the generator-variable! */
             expr2 = Trav (expr, arg_info);
             tos = tos + 1; /* DIRTY TRICK: make the generator-variable visible again! */
-            AnnotateIdWithConstvec (expr, MODARRAY_ARRAY (arg_node));
+            AnnotateIdWithConstVec (expr, MODARRAY_ARRAY (arg_node));
         } else {
             tos = tos - 1; /* DIRTY TRICK: hide the generator-variable! */
             expr2 = Trav (expr, arg_info);
@@ -1597,7 +1555,7 @@ FltnCon (node *arg_node, node *arg_info)
          tos = tos -1; /* DIRTY TRICK: hide the generator-variable! */
          expr2 = Trav( expr, arg_info);
          tos = tos +1; /* DIRTY TRICK: make the generator-variable visible again! */
-         AnnotateIdWithConstvec( expr, FOLDFUN_NEUTRAL( arg_node));
+         AnnotateIdWithConstVec( expr, FOLDFUN_NEUTRAL( arg_node));
        } else {
          tos = tos -1; /* DIRTY TRICK: hide the generator-variable! */
          expr2 = Trav( expr, arg_info);
@@ -1625,7 +1583,7 @@ FltnCon (node *arg_node, node *arg_info)
          tos = tos -1; /* DIRTY TRICK: hide the generator-variable! */
          expr2 = Trav( expr, arg_info);
          tos = tos +1; /* DIRTY TRICK: make the generator-variable visible again! */
-         AnnotateIdWithConstvec( expr, FOLDPRF_NEUTRAL( arg_node));
+         AnnotateIdWithConstVec( expr, FOLDPRF_NEUTRAL( arg_node));
        } else {
          tos = tos -1; /* DIRTY TRICK: hide the generator-variable! */
          expr2 = Trav( expr, arg_info);
@@ -1727,7 +1685,7 @@ FltnNwithop (node *arg_node, node *arg_info)
             || (NODE_TYPE (expr) == N_array)) {
             NWITHOP_ARRAY (arg_node) = Abstract (expr, arg_info);
             expr2 = Trav (expr, arg_info);
-            AnnotateIdWithConstvec (expr, NWITHOP_ARRAY (arg_node));
+            AnnotateIdWithConstVec (expr, NWITHOP_ARRAY (arg_node));
         } else {
             expr2 = Trav (expr, arg_info);
         }
@@ -1747,7 +1705,7 @@ FltnNwithop (node *arg_node, node *arg_info)
                 || (NODE_TYPE (expr) == N_Nwith))) {
             NWITHOP_NEUTRAL (arg_node) = Abstract (expr, arg_info);
             expr2 = Trav (expr, arg_info);
-            AnnotateIdWithConstvec (expr, NWITHOP_NEUTRAL (arg_node));
+            AnnotateIdWithConstVec (expr, NWITHOP_NEUTRAL (arg_node));
         } else {
             expr2 = Trav (expr, arg_info);
         }
@@ -1910,7 +1868,7 @@ FltnNgenerator (node *arg_node, node *arg_info)
             if (N_id != NODE_TYPE (act_son_expr)) {
                 *act_son = Abstract (act_son_expr, arg_info);
                 act_son_expr2 = Trav (act_son_expr, arg_info);
-                AnnotateIdWithConstvec (act_son_expr, *act_son);
+                AnnotateIdWithConstVec (act_son_expr, *act_son);
             } else {
                 act_son_expr2 = Trav (act_son_expr, arg_info);
             }
@@ -1978,7 +1936,7 @@ FltnNcode (node *arg_node, node *arg_info)
     if (NODE_TYPE (expr) != N_id) {
         NCODE_CEXPR (arg_node) = Abstract (expr, arg_info);
         expr2 = Trav (expr, arg_info);
-        AnnotateIdWithConstvec (expr, NCODE_CEXPR (arg_node));
+        AnnotateIdWithConstVec (expr, NCODE_CEXPR (arg_node));
     } else {
         expr2 = Trav (expr, arg_info);
     }

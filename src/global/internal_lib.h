@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/05/14 09:25:13  jhs
+ * Dbugged constvec annotations and their housekeeping in various compilation stages.
+ *
  * Revision 2.5  1999/05/12 08:41:11  sbs
  * CopyIntVector and friends eliminated ; instead,
  * CopyConstVec, AllocConstVec, and ModConstVec have been added.
@@ -84,6 +87,7 @@ extern char *StringCopy (char *source);
 extern void *CopyConstVec (simpletype vectype, int veclen, void *const_vec);
 extern void *AllocConstVec (simpletype vectype, int veclen);
 extern void *ModConstVec (simpletype vectype, void *const_vec, int idx, node *const_node);
+extern node *AnnotateIdWithConstVec (node *expr, node *id);
 
 extern int lcm (int x, int y);
 extern char *itoa (long number);
