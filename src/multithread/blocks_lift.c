@@ -1,13 +1,25 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/03/29 16:08:51  jhs
+ * Duplication of lifted function added.
+ *
  * Revision 1.1  2000/03/29 09:23:28  jhs
  * Initial revision
  *
  *
  */
 
-/* #### filecomment */
+/******************************************************************************
+ *
+ * file:   blocks_lift.c
+ *
+ * prefix: BLKLI
+ *
+ * description
+ *   ####
+ *
+ ******************************************************************************/
 
 #include "dbug.h"
 
@@ -23,19 +35,83 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "multithread_lib.h"
+#include "LookUpTable.h"
 
 #include "internal_lib.h"
+
+/******************************************************************************
+ *
+ * function:
+ *   node *BlocksLift( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   ####
+ *
+ ******************************************************************************/
+node *
+BlocksLift (node *arg_node, node *arg_info)
+{
+    funtab *old_tab;
+
+    DBUG_ENTER ("BlocksLift");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef), ("wrong type of arg_node"));
+
+    if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)
+        && (FUNDEF_ATTRIB (arg_node) != ST_call_rep)) {
+        old_tab = act_tab;
+        act_tab = blkli_tab;
+
+        /* push arg_info */
+
+        arg_node = Trav (arg_node, arg_info);
+
+        /* pop arg_info */
+
+        act_tab = old_tab;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+DupNodeVardec (node *vardec, node *next)
+{
+    node *result;
+
+    DBUG_ENTER ("DupNodeVardec");
+
+    result = DupNode (vardec);
+    VARDEC_NEXT (result) = next;
+
+    DBUG_RETURN (result);
+}
 
 node *
 DupNodeArgToVardec (node *arg, node *next)
 {
     node *result;
 
-    DBUG_ENTER ("DupTreeArgToVardec");
+    DBUG_ENTER ("DupNodeArgToVardec");
 
-    DBUG_ASSERT (0, ("not implemented yet"));
+    result = DupNode (arg);
+    NODE_TYPE (result) = N_vardec;
+
+    ARG_NEXT (result) = next;
 
     DBUG_RETURN (result);
+}
+
+node *
+BLKLIfundef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("BLKLIfundef");
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /* #### */
@@ -55,13 +131,17 @@ BLKLImt (node *arg_node, node *arg_info)
     node *retexprs;
     types *new_rettype;
     node *new_retexpr;
+    LUT_t lut;
 
     DBUG_ENTER ("BLKLImt");
+    DBUG_PRINT ("BLKLI", ("begin"));
 
     fundef = INFO_MUTH_FUNDEF (arg_info);
 
+    lut = GenerateLUT ();
+
     /*
-     *  we have to copy all the veardecs and args to the new function ...
+     *  we have to copy all the vardecs and args to the new function ...
      *  MT_USEMASK does not say anything about local variales *<:(
      */
     new_vardecs = NULL;
@@ -70,13 +150,23 @@ BLKLImt (node *arg_node, node *arg_info)
     /*
      *  ... first we copy the vardecs, that is easy ...
      */
-    new_vardecs = DupTree (old_vardecs, NULL);
+    while (old_vardecs != NULL) {
+        if (!DFMTestMaskEntry (MT_USEMASK (arg_node), NULL, old_vardecs)) {
+            new_vardecs = DupNodeVardec (old_vardecs, new_vardecs);
+            InsertIntoLUT (lut, old_vardecs, new_vardecs);
+        }
+        old_vardecs = VARDEC_NEXT (old_vardecs);
+    }
+
     /*
      *  ... now we have to copy the args, that is tricky,
      *  so we hide the main part in DupNodeArgToVardec( old_arg) ...
      */
     while (old_args != NULL) {
-        new_vardecs = DupNodeArgToVardec (old_args, new_vardecs);
+        if (!DFMTestMaskEntry (MT_USEMASK (arg_node), NULL, old_args)) {
+            new_vardecs = DupNodeArgToVardec (old_args, new_vardecs);
+            InsertIntoLUT (lut, old_args, new_vardecs);
+        }
         old_args = ARG_NEXT (old_args);
     }
     /*
@@ -84,8 +174,10 @@ BLKLImt (node *arg_node, node *arg_info)
      */
     /* to be done #### */
 
-    new_block = DupNode (MT_REGION (arg_node));
+    new_block = DupNodeLUT (MT_REGION (arg_node), lut);
     BLOCK_VARDEC (new_block) = new_vardecs;
+
+    lut = RemoveLUT (lut);
 
     /*
      *  Build args by MT_USEMASK
@@ -164,8 +256,8 @@ BLKLImt (node *arg_node, node *arg_info)
     new_fundef = MakeFundef (TmpVarName (FUNDEF_NAME (fundef)), "_MTLIFT", rettypes,
                              new_args /* args */, new_block /* body */, NULL /* next */);
 
-    FUNDEF_STATUS (new_fundef) = ST_mtlift;
-    FUNDEF_LIFTEDFROM (new_fundef) = fundef;
+    FUNDEF_STATUS (new_fundef) = ST_spmdfun;
+    FUNDEF_ATTRIB (new_fundef) = ST_call_mtlift;
     FUNDEF_VARNO (new_fundef) = FUNDEF_VARNO (fundef); /* ####???? */
 
     FUNDEF_RETURN (new_fundef) = MakeReturn (retexprs);
@@ -174,14 +266,31 @@ BLKLImt (node *arg_node, node *arg_info)
     FUNDEF_DFM_BASE (new_fundef)
       = DFMGenMaskBase (FUNDEF_ARGS (new_fundef), FUNDEF_VARDEC (new_fundef));
 
-    if (FUNDEF_NEXT (fundef) != NULL) {
-        FUNDEF_NEXT (new_fundef) = FUNDEF_NEXT (fundef);
-        FUNDEF_NEXT (fundef) = new_fundef;
-    } else {
-        FUNDEF_NEXT (fundef) = new_fundef;
-    }
+    FUNDEF_NEXT (new_fundef) = FUNDEF_NEXT (fundef);
+    FUNDEF_NEXT (fundef) = new_fundef;
 
-    MT_FUNDEF (arg_node) = new_fundef;
+    MT_MASTERFUN (arg_node) = new_fundef;
 
+    /*
+     *  A comment in tree_basic.h says, that FUNDEF_NEEDOBJS is not needed here
+     *  anymore, so FUNDEF_LIFTEDFROM reuses the slot in the node-structure,
+     *  but DupTree does not know that, so it tries to copy the objs ... *<:[
+     *  While cursing the node-structure, we work around that too ...
+     *
+     *  ... we set LIFTEDFROM to NULL for the copyaction ...
+     */
+    FUNDEF_LIFTEDFROM (arg_node) = NULL;
+    new_fundef = DupNode (new_fundef);
+
+    FUNDEF_NEXT (new_fundef) = FUNDEF_NEXT (fundef);
+    FUNDEF_NEXT (fundef) = new_fundef;
+
+    MT_WORKERFUN (arg_node) = new_fundef;
+
+    /* ... and finally we set LIFTEDFROM to the value needed. */
+    FUNDEF_LIFTEDFROM (MT_WORKERFUN (arg_node)) = fundef;
+    FUNDEF_LIFTEDFROM (MT_MASTERFUN (arg_node)) = fundef;
+
+    DBUG_PRINT ("BLKLI", ("end"));
     DBUG_RETURN (arg_node);
 }
