@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.177  1998/04/01 19:17:12  dkr
+ * changed output for N_Nwith2...
+ *
  * Revision 1.176  1998/04/01 17:22:15  srs
  * changed DBUG output of PrintNwith
  *
@@ -2221,9 +2224,9 @@ PrintNwith2 (node *arg_node, node *arg_info)
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     fprintf (outfile, ")\n");
 
-    indent++;
     INDENT
-    fprintf (outfile, "/* operators: */\n");
+    fprintf (outfile, "/********** operators: **********/\n");
+    indent++;
     code = NWITH2_CODE (arg_node);
     while (code != NULL) {
         INDENT
@@ -2245,6 +2248,8 @@ PrintNwith2 (node *arg_node, node *arg_info)
     NWITH2_SEG (arg_node) = Trav (NWITH2_SEG (arg_node), arg_info);
     indent--;
 
+    INDENT
+    fprintf (outfile, "/********** conexpr: **********/\n");
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
     fprintf (outfile, ")");
 
@@ -2271,8 +2276,10 @@ PrintWLseg (node *arg_node, node *arg_info)
 
     seg = arg_node;
     while (seg != NULL) {
+        indent--;
         INDENT
-        fprintf (outfile, "/* segment %d: */\n", i++);
+        fprintf (outfile, "/********** segment %d: **********/\n", i++);
+        indent++;
         WLSEG_CONTENTS (seg) = Trav (WLSEG_CONTENTS (seg), arg_info);
         seg = WLSEG_NEXT (seg);
     }
