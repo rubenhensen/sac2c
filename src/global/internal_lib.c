@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  1998/06/19 09:10:37  sbs
+ * added some DBUG_PRINTs
+ *
  * Revision 1.30  1998/06/03 14:24:00  cg
  * added some new fun_tabs for TmpVar.
  * now, sufficient memory is allocated even for unknown fun_tabs in TmpVar
@@ -161,12 +164,17 @@ Malloc (int size)
 #ifdef SHOW_MALLOC
     tmp = malloc (size + malloc_align_step);
     if (NULL == tmp)
-        SYSABORT (("Out of memory"));
+        SYSABORT (("Out of memory: %d Bytes allocated!", current_allocated_mem));
     *(int *)tmp = size;
     tmp = (char *)tmp + malloc_align_step;
 
     total_allocated_mem += size;
     current_allocated_mem += size;
+    if (current_allocated_mem > 500000000) {
+        /* set brek here */
+        tmp = NULL;
+    }
+    DBUG_PRINT ("MEM_OBSERVE", ("mem currently allocated: %d", current_allocated_mem));
     if (max_allocated_mem < current_allocated_mem)
         max_allocated_mem = current_allocated_mem;
 
