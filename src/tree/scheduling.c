@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/03/28 12:52:52  ben
+ * scheduler_table modified with numerical parameters for Cyclic, Self and Afs
+ * minor Bug in CheckSchedulingArgs fixed
+ * minor bug in SCHCopyScheduling fixed
+ *
  * Revision 3.16  2001/03/27 11:50:36  ben
  * Afs added to scheduler_table
  *
@@ -242,8 +247,8 @@ static struct {
 } scheduler_table[] = {
   /* Name            Class          Adjust Dim  Args  ArgTypes */
   {"Block", SC_const_seg, 1, 0, 0, ""},   {"BlockVar", SC_var_seg, 1, 0, 0, ""},
-  {"Even", SC_var_seg, 1, 0, 0, ""},      {"Cyclic", SC_var_seg, 1, 0, 0, ""},
-  {"Self", SC_var_seg, 1, 0, 0, ""},      {"Afs", SC_var_seg, 1, 0, 0, ""},
+  {"Even", SC_var_seg, 1, 0, 0, ""},      {"Cyclic", SC_var_seg, 1, 0, 1, "n"},
+  {"Self", SC_var_seg, 1, 0, 1, "n"},     {"Afs", SC_var_seg, 1, 0, 1, "n"},
   {"AllByOne", SC_var_seg, 0, 0, 1, "i"}, {"BlockBySome", SC_const_seg, 0, 0, 2, "i,i"},
   {"Static", SC_withloop, 0, 0, 0, ""},   {"", SC_const_seg, 0, 0, 0, ""}};
 
@@ -386,6 +391,7 @@ SCHMakeSchedulingByPragma (node *ap_node, int line)
          */
         sched->class = scheduler_table[i].class;
         sched->num_args = scheduler_table[i].num_args;
+        sched->args = (sched_arg_t *)MALLOC (sched->num_args * sizeof (sched_arg_t));
         sched->line = line;
 
         sched = CheckSchedulingArgs (sched, scheduler_table[i].arg_spec,
@@ -634,12 +640,12 @@ SCHCopyScheduling (sched_t *sched)
         for (i = 0; i < sched->num_args; i++) {
             new_sched->args[i].arg_type = sched->args[i].arg_type;
             switch (sched->args[i].arg_type) {
-            case AT_num_vec:
-            case AT_num_for_id_vec:
+            case AT_num:
+            case AT_num_for_id:
                 new_sched->args[i].arg.num = sched->args[i].arg.num;
                 break;
 
-            case AT_id_vec:
+            case AT_id:
                 new_sched->args[i].arg.id = sched->args[i].arg.id;
                 break;
 
