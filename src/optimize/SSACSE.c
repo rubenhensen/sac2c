@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2001/05/31 14:53:28  nmw
+ * CmpTypes() replaced by CompareTypesImplementation() to allow assignments
+ * to types with same internal representation (e.g. double[2] and Complex)
+ *
  * Revision 1.20  2001/05/30 15:50:55  nmw
  * ASSERT when substituting identifier of different types
  *
@@ -131,7 +135,6 @@
 #include "SSACSE.h"
 #include "compare_tree.h"
 #include "optimize.h"
-#include "typecheck.h"
 
 typedef enum { THENPART, ELSEPART } condpart;
 
@@ -310,9 +313,11 @@ CmpIdsTypes (ids *ichain1, ids *ichain2)
 
     if (ichain1 != NULL) {
         DBUG_ASSERT ((ichain2 != NULL), "comparing different ids chains");
-        if (CmpTypes (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (IDS_AVIS (ichain1))),
-                      VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (IDS_AVIS (ichain2))))
-            == 1) {
+        if (CompareTypesImplementation (VARDEC_OR_ARG_TYPE (
+                                          AVIS_VARDECORARG (IDS_AVIS (ichain1))),
+                                        VARDEC_OR_ARG_TYPE (
+                                          AVIS_VARDECORARG (IDS_AVIS (ichain2))))
+            == TRUE) {
             result = CmpIdsTypes (IDS_NEXT (ichain1), IDS_NEXT (ichain2));
         } else {
             result = FALSE;
@@ -1049,11 +1054,11 @@ SSACSElet (node *arg_node, node *arg_info)
                && (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == PHIT_NONE)
                && (ForbiddenSubstitution (LET_IDS (arg_node)) == FALSE)) {
         /* only substitute ids of equal types */
-        DBUG_ASSERT ((CmpTypes (VARDEC_OR_ARG_TYPE (
-                                  AVIS_VARDECORARG (IDS_AVIS (LET_IDS (arg_node)))),
-                                VARDEC_OR_ARG_TYPE (
-                                  AVIS_VARDECORARG (ID_AVIS (LET_EXPR (arg_node)))))
-                      == 1),
+        DBUG_ASSERT ((CompareTypesImplementation (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (
+                                                    IDS_AVIS (LET_IDS (arg_node)))),
+                                                  VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (
+                                                    ID_AVIS (LET_EXPR (arg_node)))))
+                      == TRUE),
                      "SSACSElet() tries to substitute identifier of different type");
 
         /* set subst attributes for results */
