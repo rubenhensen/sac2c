@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.43  1996/05/28 11:30:51  sbs
+ * Revision 1.44  1996/08/29 17:46:51  sbs
+ * LET_BASETYPE inserted
+ *
+ * Revision 1.43  1996/05/28  11:30:51  sbs
  * BLOCK_INSTR_OR_ASSIGN_NEXT inserted.
  *
  * Revision 1.42  1996/04/02  19:35:10  cg
@@ -1106,6 +1109,7 @@ extern node *GetCompoundNode (node *arg_node);
 #define LET_MOD(n) (IDS_MOD (LET_IDS (n)))
 #define LET_STATUS(n) (IDS_STATUS (LET_IDS (n)))
 #define LET_VARNO(n) (VARDEC_VARNO (LET_VARDEC (n)))
+#define LET_BASETYPE(n) (TYPES_BASETYPE (VARDEC_TYPE (LET_VARDEC (n))))
 #define LET_USE(n) (IDS_USE (LET_IDS (n)))
 
 /*--------------------------------------------------------------------------*/
