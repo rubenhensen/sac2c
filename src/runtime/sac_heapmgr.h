@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2000/05/24 09:32:35  cg
+ * Added declaration for SAC_HM_ShowDiagnostics() in no diag variant.
+ * Heap manager diagnostics are now printed after termination through
+ * runtime error.
+ *
  * Revision 1.11  2000/02/07 09:51:59  cg
  * Changed setting of semicolons in definitions and declarations of
  * mutex locks in order to avoid nasty warnings from cc.
@@ -848,6 +853,8 @@ extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
 #define SAC_HM_FREE_FIXED_SIZE(addr, size) SAC_HM_FREE (addr)
 
 #define SAC_HM_DEFINE_THREAD_STATUS(status)
+
+extern void SAC_HM_ShowDiagnostics ();
 
 #if SAC_DO_CHECK_MALLOC
 
