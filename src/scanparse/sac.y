@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.49  1995/02/14 12:00:42  sbs
+ * Revision 1.50  1995/02/14 12:42:42  sbs
+ * New Prf's allowed in fold( prf)!
+ *
+ * Revision 1.49  1995/02/14  12:00:42  sbs
  * fold inserted
  *
  * Revision 1.48  1995/02/14  10:11:33  hw
@@ -1267,7 +1270,15 @@ conexpr: GENARRAY {$$=MakeNode(N_genarray);} BRACKET_L expr BRACKET_R
 
          ;
 
-foldop: PLUS {$$=F_add; };
+foldop: PLUS {$$=F_add; }
+	| MINUS {$$=F_sub;}
+	| DIV {$$=F_div;}
+	| MUL {$$=F_mul;}
+	| AND {$$=F_and;}
+	| OR {$$=F_or;}
+	| EQ {$$=F_eq;}
+	| NEQ {$$=F_neq;}
+	;
 
 monop: DIM
          { 
