@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/07/02 16:17:30  rob
+ * Begin to replace ScanArglist with the hopefully more readable,
+ * table-driven ScanArglist2.
+ *
  * Revision 2.8  1999/07/02 14:18:58  rob
  * Start to introduce TAGGED_ARRAYS support. Incomplete.
  *
@@ -264,6 +268,35 @@
     INDENT;                                                                              \
     fprintf (outfile, "}\n\n")
 
+#ifdef TAGGED_ARRAYS
+int
+FindArg (char *str)
+{
+    int i = 0;
+    char *bnames[]
+      = {"in", "out", "inout", "upd", "upd_bx", "in_rc", "out_rc", "binoutrc"};
+
+    while ((i < 8) && (strcmp (str, bnames[i]) != 0))
+        i++;
+    DBUG_ASSERT ((i < 8), "FindArg was passed illegal str argument");
+    return (i);
+}
+#define ScanArglist2(arg, n, baction, sepstr)                                            \
+    {                                                                                    \
+        int i = 0;                                                                       \
+        int loc;                                                                         \
+        int sep = 0;                                                                     \
+        while (i < n) {                                                                  \
+            if (sep)                                                                     \
+                fprintf (outfile, "%s", sepstr);                                         \
+            DBUG_PRINT ("PRINT", ("arg-index: %d, arg-tag : %s", i, arg[i]));            \
+            loc = FindArg (arg[i]);                                                      \
+            i++;                                                                         \
+            baction (loc);                                                               \
+        }                                                                                \
+    }
+#endif TAGGED_ARRAYS
+
 #define ScanArglist(arg, n, bin, bout, binout, bupd, bupdbox, binrc, boutrc, binoutrc,   \
                     sepstr)                                                              \
     {                                                                                    \
@@ -432,7 +465,28 @@ void
 ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **tyarg)
 {
 #ifdef TAGGED_ARRAYS
-    char *macvalues[] = {"%s SAC_ND_A_FIELD(%s)", "%s"};
+    char *macvalues[] = {
+      "%s",
+      "%s", /* no string */
+      "%s %s",
+      "%s %s", /* bin */
+      "%s *%s",
+      "%s *%s__p", /* bout */
+      "%s *%s",
+      "%s *%s__p", /* binout */
+      "%s *%s",
+      "%s *%s", /* bupd */
+      "%s SAC_ND_A_FIELD(%s)",
+      "%s SAC_ND_A_FIELD(%s)", /* bupdbox */
+      "SAC_ND_DEC_IMPORT_IN_RC(%s)",
+      "SAC_ND_DEC_IN_RC(%s, %s)", /* binrc */
+      "SAC_ND_DEC_IMPORT_OUT_RC(%s)",
+      "SAC_ND_DEC_OUT_RC(%s, %s)", /* boutrc */
+      "SAC_ND_DEC_IMPORT_INOUT_RC(%s)",
+      "SAC_ND_DEC_INOUT_RC(%s, %s)", /* binoutrc */
+      ",",
+      "," /* sepstr */
+    };
     char *mymac;
 #endif /* TAGGED_ARRAYS */
 
@@ -455,65 +509,28 @@ ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **tyarg)
         /*
          * Arguments to ScanArglist are: arg, n, bin, bout, binout, bupd, bupdbox,
          *                               binrc, boutrc, binoutrc, sepstr
+         *
+         * ScanArglist2 is intended as a more readable replacement for ScanArglist.
+         * In baction, we pick first table row if character string is empty.
+         * Otherwise, we chose a table row based on tag value.
+         * The first element in the table is used when the tyarg[i+1] is zero;
+         *  otherwise, we use the second element.
+         *
          */
-        ScanArglist (tyarg, 3 * narg,
 
-                     if (0 == strlen (tyarg[i + 1])) /* bin */
-                     mymac
-                     = macvalues[1];
-                     else mymac = macvalues[0];
-                     fprintf (outfile, mymac, tyarg[i], tyarg[i + 1]); i += 2;
-                     sep = 1,
+#define baction(loc)                                                                     \
+    if (0 == strlen (tyarg[i + 1]))                                                      \
+        loc = 0;                                                                         \
+    else                                                                                 \
+        loc++;                                                                           \
+    mymac = macvalues[2 * loc];                                                          \
+    fprintf (outfile, mymac, tyarg[i], tyarg[i + 1]);                                    \
+    i += 2;                                                                              \
+    sep = 1;
 
-                     if (0 != (tyarg[i + 1])[0]) /* bout */
-                     {
-                         fprintf (outfile, " %s *%s__p", tyarg[i], tyarg[i + 1]);
-                         i += 2;
-                         sep = 1;
-                     } else {
-                         fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
-                         i += 2;
-                         sep = 1;
-                     },
+        ScanArglist2 (tyarg, 3 * narg, baction, ",");
 
-                     if (0 != (tyarg[i + 1])[0]) /* binout */
-                     {
-                         fprintf (outfile, " %s *%s__p", tyarg[i], tyarg[i + 1]);
-                         i += 2;
-                         sep = 1;
-                     } else {
-                         fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
-                         i += 2;
-                         sep = 1;
-                     },
-                     /* bupd */
-                     fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
-                     i += 2;
-                     sep = 1,
-                     /* bupdbox */
-                     fprintf (outfile, " %s SAC_ND_A_FIELD(%s)", tyarg[i], tyarg[i + 1]);
-                     i += 2; sep = 1,
-
-                             if (0 != (tyarg[i + 1])[0]) /* binrc */
-                             fprintf (outfile, " SAC_ND_DEC_IN_RC(%s, %s)", tyarg[i],
-                                      tyarg[i + 1]);
-                     else fprintf (outfile, "SAC_ND_DEC_IMPORT_IN_RC(%s)", tyarg[i]);
-                     i += 2; sep = 1,
-
-                             if (0 != (tyarg[i + 1])[0]) /* boutrc */
-                             fprintf (outfile, " SAC_ND_DEC_OUT_RC(%s, %s)", tyarg[i],
-                                      tyarg[i + 1]);
-                     else fprintf (outfile, "SAC_ND_DEC_IMPORT_OUT_RC(%s)", tyarg[i]);
-                     i += 2; sep = 1,
-
-                             if (0 != (tyarg[i + 1])[0]) /* binoutrc */
-                             fprintf (outfile, " SAC_ND_DEC_INOUT_RC(%s, %s)", tyarg[i],
-                                      tyarg[i + 1]);
-                     else fprintf (outfile, "SAC_ND_DEC_IMPORT_INOUT_RC(%s)", tyarg[i]);
-                     i += 2; sep = 1,
-
-                             ","); /* sepstr */
-#else                              /* TAGGED_ARRAYS */
+#else  /* TAGGED_ARRAYS */
         ScanArglist (tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i], tyarg[i + 1]);
                      i += 2; sep = 1,
 
@@ -563,7 +580,7 @@ ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **tyarg)
                      i += 2; sep = 1,
 
                              ",");
-#endif                             /* TAGGED_ARRAYS */
+#endif /* TAGGED_ARRAYS */
         fprintf (outfile, ")");
     }
 
