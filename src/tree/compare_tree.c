@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2001/05/22 14:57:37  nmw
+ * bug fixed in CMPwithid(), destroys sometimes arg_info :-(
+ *
  * Revision 1.9  2001/05/17 11:15:47  dkr
  * FREE(info) replaced by FreeTree(info)
  *
@@ -251,13 +254,21 @@ CMPTarray (node *arg_node, node *arg_info)
 node *
 CMPTlet (node *arg_node, node *arg_info)
 {
+    node *let_node2;
+
     DBUG_ENTER ("CMPTlet");
+
+    /* save current compare node */
+    let_node2 = INFO_CMPT_TREE (arg_info);
 
     /* traverse ids-chain */
     if ((INFO_CMPT_EQFLAG (arg_info) == CMPT_EQ) && (LET_IDS (arg_node) != NULL)) {
         INFO_CMPT_TREE (arg_info) = (node *)(LET_IDS (INFO_CMPT_TREE (arg_info)));
         LET_IDS (arg_node) = TravIDS (LET_IDS (arg_node), arg_info);
     }
+
+    /* restore current compare node */
+    INFO_CMPT_TREE (arg_info) = let_node2;
 
     /* traverse expr (the real son) */
     arg_node = CMPTTravSons (arg_node, arg_info);
@@ -325,18 +336,30 @@ CMPTap (node *arg_node, node *arg_info)
 node *
 CMPTNwithid (node *arg_node, node *arg_info)
 {
+    node *withid_node2;
+
     DBUG_ENTER ("CMPTNwithid");
+
+    /* save current compare node */
+    withid_node2 = INFO_CMPT_TREE (arg_info);
+
     /* traverse IDS-chain */
     if ((INFO_CMPT_EQFLAG (arg_info) == CMPT_EQ) && (NWITHID_IDS (arg_node) != NULL)) {
         INFO_CMPT_TREE (arg_info) = (node *)(NWITHID_IDS (INFO_CMPT_TREE (arg_info)));
         NWITHID_IDS (arg_node) = TravIDS (NWITHID_IDS (arg_node), arg_info);
     }
 
+    /* restore current compare node */
+    INFO_CMPT_TREE (arg_info) = withid_node2;
+
     /* traverse VEC-chain */
     if ((INFO_CMPT_EQFLAG (arg_info) == CMPT_EQ) && (NWITHID_VEC (arg_node) != NULL)) {
         INFO_CMPT_TREE (arg_info) = (node *)(NWITHID_VEC (INFO_CMPT_TREE (arg_info)));
         NWITHID_VEC (arg_node) = TravIDS (NWITHID_VEC (arg_node), arg_info);
     }
+
+    /* restore current compare node */
+    INFO_CMPT_TREE (arg_info) = withid_node2;
 
     DBUG_RETURN (arg_node);
 }
