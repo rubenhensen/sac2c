@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.30  1995/03/17 17:40:37  asi
+ * Revision 1.31  1995/03/24 15:44:19  asi
+ * malloc_debug inserted
+ *
+ * Revision 1.30  1995/03/17  17:40:37  asi
  * added work reduction
  *
  * Revision 1.29  1995/03/17  15:45:44  hw
@@ -120,6 +123,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+extern int malloc_debug (int level);
+
 FILE *outfile;
 char filename[256];
 int opt_dcr = 1, opt_cf = 1, opt_wr = 1;
@@ -134,6 +139,7 @@ MAIN
     char prgname[256];
     char outfilename[256] = "out.txt";
 
+    malloc_debug (0);
     strcpy (prgname, argv[0]);
     strcpy (filename, "stdin"); /*default value */
 
