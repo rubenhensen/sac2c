@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2002/07/11 13:37:51  dkr
+ * SAC_ASSURE_TYPE is an expression instead of an instruction now
+ *
  * Revision 1.3  2002/07/08 20:38:14  dkr
  * fixed a bug in definition of SAC_ASSURE_TYPE
  *
@@ -68,14 +71,12 @@
 
 #if SAC_DO_CHECK_TYPE
 
-#define SAC_ASSURE_TYPE(cond, message)                                                   \
-    if (!(cond)) {                                                                       \
-        SAC_RuntimeError (message);                                                      \
-    }
+#define SAC_ASSURE_TYPE(cond, message) (cond) ? 0 : SAC_RuntimeError (message)
+/* yes, in C '0;' is indeed a legal statement 8-)) */
 
 #else /* SAC_DO_CHECK_TYPE */
 
-#define SAC_ASSURE_TYPE(cond, message)
+#define SAC_ASSURE_TYPE(cond, message) /* nothing */
 
 #endif /* SAC_DO_CHECK_TYPE */
 
