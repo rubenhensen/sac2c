@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.15  2002/07/03 13:49:05  dkr
+# type corrected #$%-(
+#
 # Revision 3.14  2002/07/03 13:47:00  dkr
 # boundcheck.o removed
 #
@@ -78,7 +81,7 @@ OBJS_LIBSAC := message.o misc.o profile.o trace.o nophm.o sac_arg.o \
                cachesim_access_advanced.o cachesim_access_simple.o \
                cachesim_basic.o ../../lib/main_args.o cinterface.o
 
-OBJS_LIBSAC_MT := message_mt.o misc_mt.o trace_mt.o mt.o mt_trace.o
+OBJS_LIBSAC_MT := message_mt.o misc_mt.o trace_mt.o mt.o mt_trace.o \
                   nophm_mt.o sac_arg.o cinterface.o
 
 
