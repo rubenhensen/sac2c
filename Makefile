@@ -1,6 +1,10 @@
 #
 # $Log$
-# Revision 1.15  1995/03/17 17:39:11  asi
+# Revision 1.16  1995/03/22 11:19:57  asi
+# added debuging tools for malloc, free etc. - malloc.o
+# should be removed in final version
+#
+# Revision 1.15  1995/03/17  17:39:11  asi
 # WorkReduction.o added
 #
 # Revision 1.14  1995/03/10  10:52:39  hw
@@ -49,7 +53,7 @@ YACC=yacc -dv
 LIBS=-ly -ll
 RM=rm -f
 
-LIB=lib/dbug.o
+LIB=lib/dbug.o /usr/lib/debug/malloc.o
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/my_debug.o src/global/traverse.o  src/global/tree.o \
         src/global/free.o
