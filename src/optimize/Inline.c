@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/04/04 09:54:20  nmw
+ * AdjustAvisData added to modify fundef related attributes
+ * in avis nodes when moving them out of a fundef
+ *
  * Revision 3.11  2001/04/03 14:12:49  dkr
  * INL_NAIVE removed
  *
@@ -261,6 +265,7 @@ InlineArg (node *arg_node, node *arg_info)
     node *new_ass;
     node *new_vardec;
     char *new_name;
+    node *new_avis;
 
     DBUG_ENTER ("InlineArg");
 
@@ -279,6 +284,13 @@ InlineArg (node *arg_node, node *arg_info)
     new_name = CreateInlineName (ARG_NAME (arg_node), arg_info);
     FREE (VARDEC_NAME (new_vardec));
     VARDEC_NAME (new_vardec) = new_name;
+
+    new_avis = AdjustAvisData (new_vardec, INFO_INL_FUNDEF (arg_info));
+    /*
+     * insert pointers ['old_avis', 'new_avis'] into INFO_INL_LUT
+     */
+    INFO_INL_LUT (arg_info)
+      = InsertIntoLUT_P (INFO_INL_LUT (arg_info), ARG_AVIS (arg_node), new_avis);
 
     /*
      * insert new vardec into INFO_INL_VARDECS chain
@@ -330,6 +342,7 @@ InlineVardec (node *arg_node, node *arg_info)
 {
     node *new_vardec;
     char *new_name;
+    node *new_avis;
 
     DBUG_ENTER ("InlineVardec");
 
@@ -348,6 +361,13 @@ InlineVardec (node *arg_node, node *arg_info)
      */
     VARDEC_NEXT (new_vardec) = INFO_INL_VARDECS (arg_info);
     INFO_INL_VARDECS (arg_info) = new_vardec;
+
+    new_avis = AdjustAvisData (new_vardec, INFO_INL_FUNDEF (arg_info));
+    /*
+     * insert pointers ['old_avis', 'new_avis'] into INFO_INL_LUT
+     */
+    INFO_INL_LUT (arg_info)
+      = InsertIntoLUT_P (INFO_INL_LUT (arg_info), ARG_AVIS (arg_node), new_avis);
 
     /*
      * insert pointers ['arg_node', 'new_vardec'] into INFO_INL_LUT
@@ -549,6 +569,7 @@ INLfundef (node *arg_node, node *arg_info)
 
         ResetInlineNo (INFO_INL_MODUL (arg_info));
         INFO_INL_VARDECS (arg_info) = NULL;
+        INFO_INL_FUNDEF (arg_info) = arg_node;
 
         FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
 
@@ -699,6 +720,7 @@ InlineSingleApplication (node *let, node *fundef, int type)
     arg_info = MakeInfo ();
     INFO_INL_TYPE (arg_info) = type;
     INFO_INL_VARDECS (arg_info) = FUNDEF_VARDEC (fundef);
+    INFO_INL_FUNDEF (arg_info) = fundef;
 
     assigns = DoInline (let, arg_info);
 
