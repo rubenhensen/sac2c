@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/06/13 08:30:27  asi
+ * Revision 1.17  1995/06/23 14:05:49  hw
+ * added -maxoverload
+ *
+ * Revision 1.16  1995/06/13  08:30:27  asi
  * added -maxoptvar, -maxinline und -maxunroll
  *
  * Revision 1.15  1995/06/09  15:28:46  hw
@@ -55,6 +58,8 @@
 #include "tree.h"
 #include "optimize.h"
 
+extern int max_overload; /* defined in main.c */
+
 void
 usage (char *prg_name)
 {
@@ -99,6 +104,10 @@ usage (char *prg_name)
     printf ("\t -maxunroll <no>\tunroll loops having no more than <no> iterations\n"
             "\t\t\t\tDefault: -maxunroll %d\n",
             unrnum);
+    printf ("\t -maxoverload <no>\tfunctions with unknown shape will <no> times"
+            " overloaded\n"
+            "\t\t\t\tDefault: -maxoverload %d\n",
+            max_overload);
 
     printf ("\nTRACE OPTIONS:\n");
     printf ("\t -t [arupw] \t\ttrace array-opts\n");
