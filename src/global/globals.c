@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/31 11:30:27  cg
+ * added global variable cachesim.
+ *
  * Revision 2.1  1999/02/23 12:39:20  sacbase
  * new release made
  *
@@ -379,6 +382,7 @@ int profileflag = 0;
 int check_malloc = 0;
 int check_boundary = 0;
 int intrinsics = 0;
+int cachesim = NO_CACHESIM;
 
 /*
  * Profiling information storage facilities

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/31 11:30:27  cg
+ * added global variable cachesim.
+ *
  * Revision 2.1  1999/02/23 12:39:21  sacbase
  * new release made
  *
@@ -277,6 +280,16 @@ extern int profileflag;
 #define PROFILE_ALL 0xffff
 /*
  * Allowed values of profileflag
+ */
+
+extern int cachesim;
+
+#define NO_CACHESIM 0
+#define CACHESIM_FILE 1
+#define CACHESIM_SIMPLE 2
+#define CACHESIM_ADVANCED 3
+/*
+ * Allowed values of cachesim
  */
 
 extern int check_boundary;
