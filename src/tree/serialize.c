@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/09/21 09:49:34  sah
+ * fixed missing ;
+ *
  * Revision 1.1  2004/09/20 19:55:13  sah
  * Initial revision
  *
@@ -27,9 +30,9 @@ MakeInfo ()
 
     result = Malloc (sizeof (info));
 
-    INFO_SER_FILE (result) = NULL :
+    INFO_SER_FILE (result) = NULL;
 
-      DBUG_RETURN (result);
+    DBUG_RETURN (result);
 }
 
 info *
