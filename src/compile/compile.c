@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.45  2000/02/23 17:47:34  cg
+ * Header file refcount.h no longer included.
+ * Type property functions IsUnique(<type>), IsBoxed(<type>)
+ * moved from refcount.c to tree_compound.c.
+ *
  * Revision 2.44  2000/02/23 17:27:01  cg
  * The entry TYPES_TDEF of the TYPES data structure now contains a
  * reference to the corresponding N_typedef node for all user-defined
@@ -109,7 +114,6 @@
 #include "compile.h"
 #include "convert.h"
 #include "DupTree.h"
-#include "refcount.h"
 #include "ReuseWithArrays.h"
 #include "free.h"
 #include "scheduling.h"

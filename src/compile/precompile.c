@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/02/23 17:47:34  cg
+ * Header file refcount.h no longer included.
+ * Type property functions IsUnique(<type>), IsBoxed(<type>)
+ * moved from refcount.c to tree_compound.c.
+ *
  * Revision 2.4  1999/09/01 17:12:39  jhs
  * Expanded COMPSync to refcounters in barriers.
  *
@@ -21,244 +26,7 @@
  * Revision 1.75  1998/08/07 16:06:13  dkr
  * PRECWLsegVar added
  *
- * Revision 1.74  1998/07/03 10:14:49  cg
- * function PRECspmd removed because attribute INOUT_IDS is no longer needed.
- *
- * Revision 1.73  1998/06/25 08:06:10  cg
- * renaming of spmd-functions simplified
- *
- * Revision 1.72  1998/06/23 12:53:19  cg
- * added traversal function PRECspmd in order to correctly rename
- * the identifiers stored in SPMD_INOUT_IDS.
- *
- * Revision 1.71  1998/06/18 13:44:04  cg
- * file is now able to deal correctly with data objects of
- * the abstract data type for the representation of schedulings.
- *
- * Revision 1.70  1998/06/12 14:06:37  cg
- * core renaming of local identifiers moved to new function
- * PRECRenameLocalIdentifier() which is also exported for
- * usage in other compiler modules.
- *
- * Revision 1.69  1998/06/05 15:27:49  cg
- * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
- * Now, module name and symbol name are combined correctly by ':'.
- * Only when it really comes to the generation of C code, the ':' is
- * replaced by '__'. This is done by the renaming of all identifiers
- * during the precompilation phase.
- *
- * Revision 1.68  1998/06/04 17:00:54  cg
- * information about refcounted variables in the context of loops,
- * conditionals and the old with-loop are now stored in ids-chains
- * instead of N_exprs lists.
- *
- * Revision 1.67  1998/06/03 14:53:41  cg
- * Now, all identifiers including local ones are systematically renamed.
- *
- * Revision 1.66  1998/04/30 13:26:22  dkr
- * added support for ST_spmdfun
- *
- * Revision 1.65  1998/04/29 18:25:14  dkr
- * include missing header-file
- *
- * Revision 1.64  1998/04/29 17:19:45  dkr
- * with-loop transformation moved to wltransform.[ch]
- *
- * Revision 1.63  1998/04/26 21:53:37  dkr
- * fixed a bug in PRECSpmd
- *
- * Revision 1.62  1998/04/26 16:47:26  dkr
- * fixed a bug in Parts2Strides
- *
- * Revision 1.61  1998/04/25 14:21:05  dkr
- * removed a bug in PRECNcode: sons are traversed now!!
- *
- * Revision 1.60  1998/04/25 13:20:33  dkr
- * extended PRECSPMD
- *
- * Revision 1.58  1998/04/24 01:15:43  dkr
- * added PrecSync
- *
- * Revision 1.57  1998/04/21 13:31:14  dkr
- * NWITH2_SEG renamed to NWITH2_SEGS
- *
- * Revision 1.56  1998/04/20 02:39:15  dkr
- * includes now tree.h
- *
- * Revision 1.55  1998/04/20 00:43:57  dkr
- * removed a bug in PrecSPMD:
- *   no sharing of strings anymore
- *
- * Revision 1.54  1998/04/20 00:06:34  dkr
- * changed PrecLet, PrecSPMD:
- *   used INFO_PREC_LETIDS to build let vars for SPMD_AP_LET
- *
- * Revision 1.53  1998/04/17 19:21:36  dkr
- * lifting of spmd-fun is performed here now
- *
- * Revision 1.52  1998/04/17 17:27:03  dkr
- * 'concurrent regions' are now called 'SPMD regions'
- *
- * Revision 1.51  1998/04/16 23:21:53  dkr
- * DBUG_ASSERT added in BlockWL (bv[.] >= 1)
- *
- * Revision 1.50  1998/04/16 11:55:56  dkr
- * removed unused vars
- *
- * Revision 1.49  1998/04/10 03:13:20  dkr
- * fixed a bug in FitWL
- *
- * Revision 1.48  1998/04/10 02:25:58  dkr
- * added support for wlcomp-pragmas
- *
- * Revision 1.47  1998/04/09 14:00:07  dkr
- * attributes for N_conc nodes are now build in 'concregions.[ch]'
- *
- * Revision 1.46  1998/04/07 17:33:19  dkr
- * removed a bug in PRECnwith
- *
- * Revision 1.45  1998/04/04 21:07:29  dkr
- * changed PRECconc
- *
- * Revision 1.44  1998/04/03 21:07:54  dkr
- * changed usage of arg_info
- * changed PRECconc
- *
- * Revision 1.43  1998/04/02 18:47:31  dkr
- * added PRECconc
- *
- * Revision 1.42  1998/04/01 23:57:14  dkr
- * removed a few bugs
- *
- * Revision 1.41  1998/03/31 18:34:33  dkr
- * the UNROLLING flag in N_WLstride, N_WLgrid is now set correctly
- *
- * Revision 1.40  1998/03/31 00:03:52  dkr
- * removed unused vars
- *
- * Revision 1.39  1998/03/30 23:57:51  dkr
- * fixed a bug in PRECnwith:
- *   default value for 'PREC_break_after' is now correct
- *
- * Revision 1.38  1998/03/30 23:43:05  dkr
- * PRECnwith is completed!!!
- *
- * Revision 1.37  1998/03/29 23:28:57  dkr
- * first release with complete support for WL-PREC-phases 1-6
- *
- * Revision 1.36  1998/03/28 20:29:10  dkr
- * removed a bug in splitting phase
- * added merging phase (for blocks only)
- *
- * Revision 1.35  1998/03/27 18:39:56  dkr
- * added split phase
- * N_WLproj renamed in N_WLstride
- *
- * Revision 1.34  1998/03/26 15:38:58  dkr
- * improved sort order in CompareWLnode.
- * fixed a few bugs in PRECnwith ...
- * new usage of MakeWLgrid.
- *
- * Revision 1.33  1998/03/25 19:45:12  dkr
- * PRECnwith:
- *   added break specifiers
- *   new phase order: split - block - merge !!
- *
- * Revision 1.32  1998/03/24 21:45:41  dkr
- * changed IntersectOutline
- *
- * Revision 1.31  1998/03/24 21:31:41  dkr
- * removed a bug with WLPROJ_PART
- *
- * Revision 1.30  1998/03/24 21:09:53  dkr
- * removed a bug in IntersectOutline
- *
- * Revision 1.29  1998/03/22 23:43:35  dkr
- * N_WLgrid: OFFSET, WIDTH -> BOUND1, BOUND2
- *
- * Revision 1.28  1998/03/21 23:45:24  dkr
- * fixed a few bugs in PRECnwith
- * added parts of phase 5 (split-merge)
- *
- * Revision 1.27  1998/03/21 16:19:10  dkr
- * fixed a few bugs in PRECnwith
- *
- * Revision 1.26  1998/03/20 21:57:48  dkr
- * first version of PRECnwith:
- *   cube-building implemented
- *   choice of segments implemented (rudimental)
- *   hierarchical blocking implemented
- *
- * Revision 1.25  1998/03/20 20:52:29  dkr
- * changed usage of MakeWLseg
- *
- * Revision 1.24  1998/03/20 17:25:54  dkr
- * in N_WL... nodes: INNER is now called CONTENTS
- *
- * Revision 1.22  1998/03/19 20:57:42  dkr
- * added computation of the cubes
- *
- * Revision 1.20  1998/03/15 23:22:39  dkr
- * changed PRECnwith()
- *
- * Revision 1.18  1998/03/03 23:00:11  dkr
- * added PRECncode()
- *
- * Revision 1.17  1998/03/02 22:26:36  dkr
- * added PRECnwith()
- *
- * Revision 1.16  1997/11/24 15:45:45  dkr
- * removed a bug in PREClet(), PRECassign():
- * - LET_EXPR, ASSIGN_INSTR now only freed once!
- *
- * Revision 1.15  1997/11/22 15:41:31  dkr
- * problem with shared linknames fixed:
- * RenameFun() now copies the linkname to FUNDEF_NAME
- *
- * Revision 1.14  1997/09/05 13:46:04  cg
- * All cast expressions are now removed by rmvoidfun.c. Therefore,
- * the respective attempts in precompile.c and ConstantFolding.c
- * are removed. Cast expressions are only used by the type checker.
- * Afterwards, they are useless, and they are not supported by
- * Constant Folding as well as code generation.
- *
- * Revision 1.13  1997/04/30 11:55:34  cg
- * Artificial return values and arguments are removed even in the case
- * of function inlining.
- *
- * Revision 1.12  1997/04/25  09:37:40  sbs
- * DBUG_ASSERT in PRECfundef adjusted (no varargs)
- *
- * Revision 1.11  1996/03/05  15:32:04  cg
- * bug fixed in handling of functions with variable argument list
- *
- * Revision 1.10  1996/01/26  15:33:01  cg
- * applications of class conversion functions are removed
- * where necessary we mark where to copy
- *
- * Revision 1.9  1996/01/22  18:36:37  cg
- * new implementation of object initializations
- *
- * Revision 1.8  1996/01/09  09:19:43  cg
- * implemented pragma linkname for global objects
- *
- * Revision 1.7  1995/12/29  10:44:10  cg
- * some DBUG_PRINTs added.
- *
- * Revision 1.6  1995/12/18  16:30:55  cg
- * many bugs fixed, function PRECexprs replaced by PRECexprs_ap and
- * PRECexprs_return
- *
- * Revision 1.5  1995/12/04  17:00:04  cg
- * added function PRECcast
- * All casts are now eliminated by the precompiler
- *
- * Revision 1.4  1995/12/04  13:38:16  cg
- * bug fixed in string handling of function PRECtypedef
- *
- * Revision 1.3  1995/12/01  20:29:24  cg
- * now the prefix "SAC__" is added to all SAC-identifiers
- * in order to avoid name clashes with C indentifiers.
+ *  [...]
  *
  * Revision 1.2  1995/12/01  17:23:26  cg
  * first working revision
@@ -277,7 +45,6 @@
 #include "internal_lib.h"
 #include "convert.h"
 #include "traverse.h"
-#include "refcount.h"
 #include "DataFlowMask.h"
 #include "scheduling.h"
 
