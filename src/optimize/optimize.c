@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/02/27 16:06:27  nmw
+ * SSADeadCodeRemoval with -ssa switch added
+ *
  * Revision 3.5  2001/02/22 12:50:43  nmw
  * UndoSSATransform after OPTfundef added
  *
@@ -204,6 +207,8 @@
 #include "tile_size_inference.h"
 #include "index.h"
 #include "pad.h"
+
+#include "SSADeadCodeRemoval.h"
 
 /*
  * global variables to keep track of optimization's success
@@ -729,7 +734,13 @@ OPTfundef (node *arg_node, node *arg_info)
         arg_node = GenerateMasks (arg_node, NULL);
 
         if (optimize & OPT_DCR) {
-            arg_node = DeadCodeRemoval (arg_node, arg_info);
+            if (use_ssaform) {
+                arg_node = CheckAvis (arg_node);
+                arg_node = SSATransform (arg_node);
+                arg_node = SSADeadCodeRemoval (arg_node);
+            } else {
+                arg_node = DeadCodeRemoval (arg_node, arg_info);
+            }
         }
 
         if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
@@ -831,7 +842,13 @@ OPTfundef (node *arg_node, node *arg_info)
             }
 
             if (optimize & OPT_DCR) {
-                arg_node = DeadCodeRemoval (arg_node, arg_info); /* s.o. */
+                if (use_ssaform) {
+                    arg_node = CheckAvis (arg_node);
+                    arg_node = SSATransform (arg_node);
+                    arg_node = SSADeadCodeRemoval (arg_node);
+                } else {
+                    arg_node = DeadCodeRemoval (arg_node, arg_info);
+                }
                 arg_node = GenerateMasks (arg_node, NULL);
             }
 
@@ -935,7 +952,13 @@ OPTfundef (node *arg_node, node *arg_info)
          * Finally, we apply DCR once again:
          */
         if (optimize & OPT_DCR) {
-            arg_node = DeadCodeRemoval (arg_node, arg_info);
+            if (use_ssaform) {
+                arg_node = CheckAvis (arg_node);
+                arg_node = SSATransform (arg_node);
+                arg_node = SSADeadCodeRemoval (arg_node);
+            } else {
+                arg_node = DeadCodeRemoval (arg_node, arg_info);
+            }
         }
 
         /*
