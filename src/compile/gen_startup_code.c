@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/07/30 16:09:34  dkr
+ * GSCPrintMain() modified:
+ * CreateNtTag() used to create the tag for the argument of SACf_main_()
+ *
  * Revision 3.16  2002/07/03 15:34:38  dkr
  * some spaces added :)
  *
@@ -63,8 +67,8 @@
  *
  * description:
  *
- *   This file provides routines that write C code that is rather independent from
- *   the specific SAC source file. It is essentially required to specify
+ *   This file provides routines that write C code that is rather independent
+ *   from the specific SAC source file. It is essentially required to specify
  *   and initialize the SAC runtime system. For this reason, additional code
  *   is produced at 3 different positions: at the beginning of each C source,
  *   at the beginning of the statement sequence of the main() function, and
@@ -84,6 +88,7 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "free.h"
+#include "NameTuplesUtils.h"
 #include "precompile.h"
 #include "gen_startup_code.h"
 
@@ -780,7 +785,7 @@ GSCPrintMainBegin ()
                  "  SAC_HM_SETUP();\n"
                  "  SAC_MT_SETUP();\n"
                  "  SAC_CS_SETUP();\n"
-                 "  %s( __argc, __argv);\n\n",
+                 "  %s( SAC_argc, SAC_argv);\n\n",
                  funname);
     }
     funname = Free (funname);
@@ -826,29 +831,32 @@ GSCPrintMainEnd ()
 void
 GSCPrintMain ()
 {
+    char *nt;
     bool print_thread_id = ((gen_mt_code == GEN_MT_OLD) && (optimize & OPT_PHM));
 
     DBUG_ENTER ("GSCPrintMain");
 
-    fprintf (outfile, "int main( int __argc, char *__argv[])\n");
+    fprintf (outfile, "int main( int SAC_argc, char *SAC_argv[])\n");
     fprintf (outfile, "{\n");
     if (print_thread_id) {
         fprintf (outfile, "  SAC_MT_DECL_MYTHREAD()\n");
     }
-    fprintf (outfile, "  int __res;\n\n");
+    fprintf (outfile, "  int SAC_res;\n\n");
     GSCPrintMainBegin ();
 
 #ifdef TAGGED_ARRAYS
-    fprintf (outfile, "  SACf_main_( SAC_ND_ARG_out( (__res, (SCL, (NUQ,))))");
+    nt = CreateNtTag ("SAC_res", MakeTypes1 (T_int));
+    fprintf (outfile, "  SACf_main_( SAC_ND_ARG_out( %s)", nt);
+    nt = Free (nt);
 #else
-    fprintf (outfile, "  __res = SACf_main_(");
+    fprintf (outfile, "  SAC_res = SACf_main_(");
 #endif
     if (print_thread_id) {
         fprintf (outfile, " SAC_ND_ARG_in( SAC_MT_mythread)");
     }
     fprintf (outfile, ");\n\n");
     GSCPrintMainEnd ();
-    fprintf (outfile, "  return( __res);\n");
+    fprintf (outfile, "  return( SAC_res);\n");
     fprintf (outfile, "}\n");
 
     DBUG_VOID_RETURN;
