@@ -23,7 +23,7 @@ pthread_attr_t SAC_MT_thread_attribs;
 
 void *SAC_MT_barrier;
 
-volatile unsigned int SAC_MT_worker_flag = 0;
+volatile unsigned int SAC_MT_master_flag = 0;
 
 unsigned int SAC_MT_not_yet_parallel = 1;
 
@@ -40,7 +40,7 @@ volatile unsigned int(SAC_MT_spmd_function) (unsigned int, unsigned int, unsigne
 static void
 ThreadControl (void *arg)
 {
-    unsigned int wait_flag = 0;
+    unsigned int worker_flag = 0;
     unsigned int i;
     unsigned int my_worker_class = ((unsigned int)arg) >> 17;
     const unsigned int my_thread_id = ((unsigned int)arg) & 0xFFFF;
@@ -56,18 +56,18 @@ ThreadControl (void *arg)
     }
 
     for (;;) {
-        while (wait_flag == SAC_MT_worker_flag)
+        while (worker_flag == SAC_MT_master_flag)
             ;
-        wait_flag = SAC_MT_worker_flag;
+        worker_flag = SAC_MT_master_flag;
 
-        wait_flag = SAC_MT_spmd_function (my_thread_id, my_worker_class, wait_flag);
+        worker_flag = SAC_MT_spmd_function (my_thread_id, my_worker_class, worker_flag);
     }
 }
 
 void
 SAC_MT_ThreadControl (void *arg)
 {
-    unsigned int wait_flag = 0;
+    unsigned int worker_flag = 0;
     unsigned int i;
 
     for (i = SAC_MT_masterclass; i > 1; i >>= 1) {
@@ -77,10 +77,10 @@ SAC_MT_ThreadControl (void *arg)
     }
 
     for (;;) {
-        while (wait_flag == SAC_MT_worker_flag)
+        while (worker_flag == SAC_MT_master_flag)
             ;
-        wait_flag = SAC_MT_worker_flag;
+        worker_flag = SAC_MT_master_flag;
 
-        wait_flag = SAC_MT_spmd_function (1, 0, wait_flag);
+        worker_flag = SAC_MT_spmd_function (1, 0, worker_flag);
     }
 }
