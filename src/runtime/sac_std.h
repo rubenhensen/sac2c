@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/07/16 09:36:57  cg
+ * Fixed serious bug in call of FIXED_SIZE memory allocation /
+ * de-allocation macros.
+ *
  * Revision 2.5  1999/07/08 12:39:25  cg
  * New heap manager is now used for array allocation /
  * de-allocation purposes.
@@ -146,7 +150,7 @@
 #define SAC_ND_KD_DECL_ARRAY(basetype, name, dim)                                        \
     SAC_ND_DECL_RC (basetype *, name)                                                    \
     int SAC_ND_A_SIZE (name);                                                            \
-    int SAC_ND_A_DIM (name) = dim;                                                       \
+    const int SAC_ND_A_DIM (name) = dim;                                                 \
     int *SAC_ND_A_SHAPEP (name);
 
 #define SAC_ND_DECL_ARRAY(basetype, name)                                                \
@@ -193,7 +197,8 @@
 
 #define SAC_ND_FREE_ARRAY(name)                                                          \
     if (SAC_ND_A_SIZE (name) != 0) {                                                     \
-        SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (name), SAC_ND_A_SIZE (name));            \
+        SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (name),                                   \
+                                SAC_ND_A_SIZE (name) * sizeof (*SAC_ND_A_FIELD (name))); \
     }                                                                                    \
     SAC_FREE_FIXED_SIZE (SAC_ND_A_RCP (name), sizeof (int));                             \
     SAC_TR_MEM_PRINT (("ND_FREE_ARRAY(%s) at addr: %p", #name, name));                   \
@@ -202,7 +207,8 @@
 
 #define SAC_ND_NO_RC_FREE_ARRAY(name)                                                    \
     if (SAC_ND_A_SIZE (name) != 0) {                                                     \
-        SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (name), SAC_ND_A_SIZE (name));            \
+        SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (name),                                   \
+                                SAC_ND_A_SIZE (name) * sizeof (*SAC_ND_A_FIELD (name))); \
     }                                                                                    \
     SAC_TR_MEM_PRINT (("ND_NO_RC_FREE_ARRAY(%s) at addr: %p", #name, name));             \
     SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                      \
@@ -211,14 +217,16 @@
 #else /* SECURE_ALLOC_FREE */
 
 #define SAC_ND_FREE_ARRAY(name)                                                          \
-    SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (name), SAC_ND_A_SIZE (name));                \
+    SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (name),                                       \
+                            SAC_ND_A_SIZE (name) * sizeof (*SAC_ND_A_FIELD (name)));     \
     SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_RCP (name), sizeof (int));                          \
     SAC_TR_MEM_PRINT (("ND_FREE_ARRAY(%s) at addr: %p", #name, name));                   \
     SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                      \
     SAC_CS_UNREGISTER_ARRAY (name);
 
 #define SAC_ND_NO_RC_FREE_ARRAY(name)                                                    \
-    SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (name), SAC_ND_A_SIZE (name));                \
+    SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (name),                                       \
+                            SAC_ND_A_SIZE (name) * sizeof (*SAC_ND_A_FIELD (name)));     \
     SAC_TR_MEM_PRINT (("ND_NO_RC_FREE_ARRAY(%s) at addr: %p", #name, name));             \
     SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                      \
     SAC_CS_UNREGISTER_ARRAY (name);
@@ -333,7 +341,7 @@
         } else {                                                                         \
             SAC_ND_A_FIELD (name) = NULL;                                                \
         }                                                                                \
-        SAC_ND_A_RCP (name) = (int *)SAC_MALLOC (sizeof (int));                          \
+        SAC_ND_A_RCP (name) = (int *)SAC_HM_MALLOC_FIXED_SIZE (sizeof (int));            \
         SAC_ND_A_RC (name) = rc;                                                         \
         SAC_TR_MEM_PRINT (("ND_ALLOC_ARRAY(%s, %s, %d) at addr: %p", #basetype, #name,   \
                            rc, SAC_ND_A_FIELD (name)));                                  \
@@ -346,7 +354,7 @@
     {                                                                                    \
         SAC_ND_A_FIELD (name) = (basetype *)SAC_HM_MALLOC_FIXED_SIZE (                   \
           sizeof (basetype) * SAC_ND_A_SIZE (name));                                     \
-        SAC_ND_A_RCP (name) = (int *)SAC_MALLOC (sizeof (int));                          \
+        SAC_ND_A_RCP (name) = (int *)SAC_HM_MALLOC_FIXED_SIZE (sizeof (int));            \
         SAC_ND_A_RC (name) = rc;                                                         \
         SAC_TR_MEM_PRINT (("ND_ALLOC_ARRAY(%s, %s, %d) at addr: %p", #basetype, #name,   \
                            rc, SAC_ND_A_FIELD (name)));                                  \
