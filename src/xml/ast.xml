@@ -1,6 +1,11 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.40  2004/11/24 11:50:48  mwe
+  ConstVarPropagation added
+  N_let modified (rotate arguments)
+  IsUnique in N_avis added
+
   Revision 1.39  2004/11/24 11:28:42  sah
   *** empty log message ***
 
@@ -317,6 +322,33 @@
 	  <node name="Prf" />
         </travuser>
         <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="CVP" name="Constant Variable Propagation" defaults="sons" include="ConstVarPropagation.h" >
+	<travuser>
+	  <node name="Fundef" />
+	  <node name="Block" />
+	  <node name="Assign" />
+	  <node name="Let" />
+	  <node name="Code" />
+	  <node name="Cond" />
+	  <node name="With" />
+	  <node name="Genarray" />
+	  <node name="Modarray" />
+	  <node name="Fold" />
+	  <node name="Ap" />
+	  <node name="Prf" />
+	  <node name="Exprs" />
+	  <node name="Id" />
+	  <node name="Return" />
+	  <node name="Array" />
+	  <node name="Funcond" />
+	</travuser>
+	<travsons>
         </travsons>
         <travnone>
         </travnone>
@@ -1661,14 +1693,14 @@
     </node>
     <node name="Let">
       <sons>
-        <son name="Expr" mandatory="yes">
+        <son name="Ids" mandatory="yes">
           <target>
-            <set name="Expr" />
+            <set name="Ids" />
           </target>
         </son>
-        <son name="Ids" mandatory="yes">
+        <son name="Expr" mandatory="yes">
 	  <target>
-	    <node name="Ids" />
+	    <node name="Expr" />
 	  </target>
 	</son>
       </sons>
@@ -2728,6 +2760,7 @@
         <flag name="SSADefined" />
         <flag name="SSALPINV" />
         <flag name="IsAlias" default="TRUE" />
+	<flag name="IsUnique" />
       </flags>
     </node>
     <node name="Spmd">
