@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2002/10/23 10:19:29  ktr
+ * ASSIGN_INDENT is now increased by the number of dimensions of the inner with loop.
+ *
  * Revision 1.18  2002/10/20 13:23:59  ktr
  * Added support for WLS N_assign indentation by adding field ASSIGN_INDENT(n) to N_assign
  * node which is increased on every indentation performed by WLS.
@@ -1336,7 +1339,7 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
             tmp_node2 = ASSIGN_NEXT (tmp_node2);
         }
         if (NODE_TYPE (tmp_node) != N_empty) {
-            ASSIGN_INDENT (tmp_node2)++;
+            ASSIGN_INDENT (tmp_node2) += CountIds (NWITHID_IDS (innerwithid));
             ASSIGN_NEXT (tmp_node2) = tmp_node;
         } else
             ASSIGN_NEXT (tmp_node2) = NULL;
