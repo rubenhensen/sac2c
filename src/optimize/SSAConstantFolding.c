@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.37  2002/09/17 15:07:05  dkr
+ * SSACFlet(): support for prfs with multiple return values added
+ *
  * Revision 1.36  2002/09/13 22:13:44  dkr
  * detects (. % 0) now -> division by zero
  *
@@ -1608,33 +1611,41 @@ SSACFlet (node *arg_node, node *arg_info)
 
         } else {
             /* set AVIS_SSACONST attributes */
-            DBUG_ASSERT ((IDS_NEXT (LET_IDS (arg_node)) == NULL),
-                         "only one result allowed for non N_ap nodes");
+            ids *ids;
 
             /*
-             * do not set SSACONST in phi target variables due to two different
-             * definitions of this variable in one conditional.
-             * the phi-copy-target definition in loop then parts are never constant
-             * because they are defined as result of the recursive call.
-             * the assignments in the else part of a tail-end recursive loop can be
-             * used without any problems.
+             * F_type_error has multiple return values!
              */
-            if (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == PHIT_COND) {
-                new_co = NULL;
-            } else {
-                new_co = COAST2Constant (LET_EXPR (arg_node));
-            }
+            ids = LET_IDS (arg_node);
+            while (ids != NULL) {
 
-            if (new_co != NULL) {
-                AVIS_SSACONST (IDS_AVIS (LET_IDS (arg_node))) = new_co;
-                DBUG_PRINT ("SSACF", ("identifier %s marked as constant",
-                                      VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (
-                                        IDS_AVIS (LET_IDS (arg_node))))));
-            } else {
-                /* expression is not constant */
-                DBUG_PRINT ("SSACF", ("identifier %s is not constant",
-                                      VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (
-                                        IDS_AVIS (LET_IDS (arg_node))))));
+                /*
+                 * do not set SSACONST in phi target variables due to two different
+                 * definitions of this variable in one conditional.
+                 * the phi-copy-target definition in loop then parts are never constant
+                 * because they are defined as result of the recursive call.
+                 * the assignments in the else part of a tail-end recursive loop can be
+                 * used without any problems.
+                 */
+                if (AVIS_SSAPHITARGET (IDS_AVIS (ids)) == PHIT_COND) {
+                    new_co = NULL;
+                } else {
+                    new_co = COAST2Constant (LET_EXPR (arg_node));
+                }
+
+                if (new_co != NULL) {
+                    AVIS_SSACONST (IDS_AVIS (ids)) = new_co;
+                    DBUG_PRINT ("SSACF",
+                                ("identifier %s marked as constant",
+                                 VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (ids)))));
+                } else {
+                    /* expression is not constant */
+                    DBUG_PRINT ("SSACF",
+                                ("identifier %s is not constant",
+                                 VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (ids)))));
+                }
+
+                ids = IDS_NEXT (ids);
             }
         }
     } else {
