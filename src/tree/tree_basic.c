@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2001/07/17 08:38:24  nmw
+ * MakeArg() can now handle NULL types (used temporaly by typechecker)
+ *
  * Revision 3.41  2001/07/16 09:13:21  cg
  * Added function MakeOk for construction of N_ok nodes.
  *
@@ -774,14 +777,20 @@ MakeArg (char *name, types *type, statustype status, statustype attrib, node *ne
 
     ARG_NEXT (tmp) = next;
     ARG_TYPE (tmp) = type;
+    if (type != NULL) {
+        /*
+         * these attributes are part of the types structure
+         * so we cannot access them without given type
+         */
 #if NAMES_IN_TYPES
-    if (ARG_NAME (tmp) != NULL) {
-        Free (ARG_NAME (tmp));
-    }
+        if (ARG_NAME (tmp) != NULL) {
+            Free (ARG_NAME (tmp));
+        }
 #endif
-    ARG_NAME (tmp) = name;
-    ARG_STATUS (tmp) = status;
-    ARG_ATTRIB (tmp) = attrib;
+        ARG_NAME (tmp) = name;
+        ARG_STATUS (tmp) = status;
+        ARG_ATTRIB (tmp) = attrib;
+    }
     ARG_AVIS (tmp) = MakeAvis (tmp);
 
     ARG_ACTCHN (tmp) = NULL;
