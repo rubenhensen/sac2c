@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/08/06 08:52:31  dkr
+ * cc warning eliminated
+ *
  * Revision 3.17  2002/07/30 16:09:34  dkr
  * GSCPrintMain() modified:
  * CreateNtTag() used to create the tag for the argument of SACf_main_()
@@ -831,7 +834,9 @@ GSCPrintMainEnd ()
 void
 GSCPrintMain ()
 {
+#ifdef TAGGED_ARRAYS
     char *nt;
+#endif
     bool print_thread_id = ((gen_mt_code == GEN_MT_OLD) && (optimize & OPT_PHM));
 
     DBUG_ENTER ("GSCPrintMain");
