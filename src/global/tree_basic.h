@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.123  1998/04/14 22:46:55  dkr
+ * new macros:
+ *   INFO_COMP_...
+ *   INFO_DUPCONT
+ *
  * Revision 1.122  1998/04/14 15:03:50  srs
  * added INFO_* macros
  *
@@ -2152,6 +2157,9 @@ extern node *MakePragma ();
 
 extern node *MakeInfo ();
 
+/* DupTree */
+#define INFO_DUPCONT(n) (n->flag)
+
 /* TC */
 #define INFO_NEXTASSIGN(n) (n->node[1])
 #define INFO_LASSIGN(n) (n->node[3])
@@ -2171,17 +2179,19 @@ extern node *MakeInfo ();
 #define INFO_PREC_CNT_ARTIFICIAL(n) (n->lineno)
 
 /* compile */
-#define INFO_LASTIDS(n) (n->info.ids)
-#define INFO_LASTLET(n) (n->node[1])
-#define INFO_LASTASSIGN(n) (n->node[0])
-#define INFO_VARDECS(n) (n->node[3])
-#define INFO_WITHBEGIN(n) (n->node[2])
+#define INFO_COMP_LASTIDS(n) (n->info.ids)
+#define INFO_COMP_LASTLET(n) (n->node[1])
+#define INFO_COMP_LASTASSIGN(n) (n->node[0])
+#define INFO_COMP_VARDECS(n) (n->node[3])
+#define INFO_COMP_WITHBEGIN(n) (n->node[2])
 
-#define INFO_FIRSTASSIGN(n) (n->node[0])
-#define INFO_FUNDEF(n) (n->node[1])
-#define INFO_CNTPARAM(n) (n->lineno)
-#define INFO_ICMTAB(n) ((node **)(n->node[2]))
-#define INFO_TYPETAB(n) ((types **)(n->info.types))
+#define INFO_COMP_FIRSTASSIGN(n) (n->node[0])
+#define INFO_COMP_FUNDEF(n) (n->node[1])
+#define INFO_COMP_CNTPARAM(n) (n->lineno)
+#define INFO_COMP_ICMTAB(n) ((node **)(n->node[2]))
+#define INFO_COMP_TYPETAB(n) ((types **)(n->info.types))
+
+#define INFO_COMP_MODUL(n) (n->node[4])
 
 /* optimize */
 #define INFO_MASK(n, x) (n->mask[x])
@@ -2199,6 +2209,9 @@ extern node *MakeInfo ();
 /* CF */
 #define INFO_CF_ASSIGN(n) (n->node[0])
 #define INFO_CF_TYPE(n) (n->info.types)
+
+/* Print, Icm2c, ... */
+#define INFO_FUNDEF(n) (n->node[0])
 
 /*--------------------------------------------------------------------------*/
 
