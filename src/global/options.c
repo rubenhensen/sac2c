@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  1999/07/09 11:52:18  cg
+ * Added consistency check for command line options.
+ *
  * Revision 2.13  1999/07/09 07:31:24  cg
  * SAC heap manager integrated into sac2c.
  *
@@ -506,6 +509,52 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_UNKNOWN (ARGS_ERROR ("Invalid command line entry"));
 
     ARGS_END ();
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void CheckOptionConsistency()
+ *
+ * description:
+ *
+ *   This function is called from main() right after command line arguments
+ *   have been analysed. Errors and warnings are produced whenever the user
+ *   has selected an incompatible combination of options.
+ *
+ ******************************************************************************/
+
+void
+CheckOptionConsistency ()
+{
+    DBUG_ENTER ("CheckOptionConsistency");
+
+    if (gen_mt_code) {
+
+        if (cachesim != CACHESIM_NO) {
+            SYSERROR (("Cache simulation is not available for multi-threaded "
+                       "program execution"));
+        }
+
+        if (profileflag != PROFILE_NONE) {
+            SYSERROR (("Profiling is not available for multi-threaded "
+                       "program execution"));
+        }
+
+        if (optimize & OPT_PHM) {
+            SYSWARN (("Private heap management is not (yet) available for "
+                      "multi-threaded program execution.\n"
+                      "Conventional heap management is used instead"));
+            optimize &= ~OPT_PHM;
+        }
+    }
+
+    if ((!(optimize & OPT_PHM)) && (runtimecheck & RUNTIMECHECK_HEAPMGR)) {
+        SYSWARN (("Diagnostic heap management is only available in "
+                  "conjunction with private heap management"));
+    }
 
     DBUG_VOID_RETURN;
 }

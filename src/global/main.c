@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/07/09 11:52:18  cg
+ * Added consistency check for command line options.
+ *
  * Revision 2.6  1999/05/31 18:33:59  sbs
  * Print in BREAK surrounded by CHECK_DBUGs
  * => enables DBUG-output during print,
@@ -199,17 +202,11 @@ main (int argc, char *argv[])
     }
 
     AnalyseCommandline (argc, argv);
+    CheckOptionConsistency ();
 
     if (sacfilename[0] == '\0') {
         puresacfilename = "stdin";
     }
-
-#ifdef NONE
-    if (gen_mt_code)
-        SYSABORT (("Sorry, multi-threaded execution is not yet supported on "
-                   "target platform %s",
-                   target_platform));
-#endif /* NONE */
 
     /*
      * Now, we read in the sac2c configuration files.
