@@ -4,6 +4,11 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2002/07/02 15:24:07  sah
+ * added support for ., ... in sel statements. updated
+ * parsing of WLs to use N_dot nodes instead of NULL
+ * to represent '.'.
+ *
  * Revision 3.40  2002/06/20 15:34:23  dkr
  * signature of MakeNWithOP modified
  *
@@ -223,6 +228,8 @@ static node *CheckWlcompConf( node *ap, node *exprs);
              expr, expr_main,
              expr_br, expr_sel, expr_expr, expr_sign, expr_ap, expr_ar,
              exprORdot, exprNOar, exprNObr, expr_selNObr,
+             exprsWITHdot, exprWITHdot, exprNOarWITHdot, expr_dot, expr_arWITHdot,
+             exprsNOarWITHdot, expr_tridot,
              exprs, exprsNOar,
              generator, steps, width, withop, genidx,
              moddec, modspec, expdesc, expdesc2, expdesc3, expdesc4,
@@ -1629,15 +1636,35 @@ exprs: expr COMMA exprs { $$ = MakeExprs( $1, $3);   }
      | expr             { $$ = MakeExprs( $1, NULL); }
      ;
 
+exprsWITHdot: exprWITHdot COMMA exprsWITHdot { $$ = MakeExprs( $1, $3);   }
+     | exprWITHdot                           { $$ = MakeExprs( $1, NULL); }
+     ;
+
 exprsNOar: exprNOar COMMA exprsNOar { $$ = MakeExprs( $1, $3);   }
          | exprNOar                 { $$ = MakeExprs( $1, NULL); }
          ;
 
+exprsNOarWITHdot: exprNOarWITHdot COMMA exprsNOarWITHdot { $$ = MakeExprs( $1, $3);   }
+                | exprNOarWITHdot                        { $$ = MakeExprs( $1, NULL); }
+                ;
 
-exprORdot: expr  %prec GENERATOR { $$ = $1;   }
-         | DOT                   { $$ = NULL; }
+expr_dot: DOT { $$ = MakeDot(1); }
+
+expr_tridot: TYPE_DOTS { $$ = MakeDot(3); }
+
+exprORdot: expr  %prec GENERATOR { $$ = $1; }
+         | expr_dot              { $$ = $1; }
          ;
 
+exprNOarWITHdot: expr_main { $$ = $1; }
+               | expr_br   { $$ = $1; }
+               | expr_sel  { $$ = $1; }
+               | expr_expr { $$ = $1; }
+               | expr_sign { $$ = $1; }
+               | expr_ap   { $$ = $1; }
+               | expr_dot  { $$ = $1; }
+               | expr_tridot { $$ = $1; }
+               ;
 
 exprNOar: expr_main { $$ = $1; }
         | expr_br   { $$ = $1; }
@@ -1656,17 +1683,26 @@ exprNObr: expr_main     { $$ = $1; }
         ;
 
 /* see 'expr_sel' */
-expr_selNObr: exprNObr SQBR_L expr SQBR_R
+expr_selNObr: exprNObr SQBR_L exprWITHdot SQBR_R
               { $$ = MAKE_BIN_PRF( F_sel, $3, $1);
                 NODE_LINE( $$) = NODE_LINE( $1);
               }
-            | exprNObr SQBR_L expr COMMA exprs SQBR_R
+            | exprNObr SQBR_L exprWITHdot COMMA exprsWITHdot SQBR_R
               { $$ = MAKE_BIN_PRF( F_sel,
                                    MakeArray( MakeExprs( $3, $5)),
                                    $1);
                 NODE_LINE( $$) = NODE_LINE( $1);
               }
             ;
+
+exprWITHdot: expr_main        { $$ = $1; }
+           | expr_br          { $$ = $1; }
+           | expr_sel         { $$ = $1; }
+           | expr_expr        { $$ = $1; }
+           | expr_sign        { $$ = $1; }
+           | expr_ap          { $$ = $1; }
+           | expr_arWITHdot   { $$ = $1; }
+           ;
 
 expr: expr_main { $$ = $1; }
     | expr_br   { $$ = $1; }
@@ -1723,11 +1759,11 @@ expr_br: BRACKET_L expr BRACKET_R
        ;
 
 /* see 'expr_selNObr' */
-expr_sel: expr SQBR_L expr SQBR_R
+expr_sel: expr SQBR_L exprWITHdot SQBR_R
           { $$ = MAKE_BIN_PRF( F_sel, $3, $1);
             NODE_LINE( $$) = NODE_LINE( $1);
           }
-        | expr SQBR_L expr COMMA exprs SQBR_R
+        | expr SQBR_L exprWITHdot COMMA exprsWITHdot SQBR_R
           { $$ = MAKE_BIN_PRF( F_sel,
                                MakeArray( MakeExprs( $3, $5)),
                                $1);
@@ -1786,6 +1822,16 @@ expr_sign: MINUS exprNObr  %prec SIGN
            }
          | PLUS exprNObr  %prec SIGN  { $$ = $2; }
          ;
+
+expr_arWITHdot: SQBR_L { $<cint>$ = linenum; } exprsNOarWITHdot SQBR_R
+                { $$ = MakeArray( $3);
+                  NODE_LINE( $$) = $<cint>2;
+                }
+              | SQBR_L { $<cint>$ = linenum; } SQBR_R
+                { $$ = MakeArray( NULL);
+                  NODE_LINE( $$) = $<cint>2;
+                }
+       ;       
 
 expr_ar: SQBR_L { $<cint>$ = linenum; } exprsNOar SQBR_R
          { $$ = MakeArray( $3);
@@ -1933,7 +1979,6 @@ withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
           NWITHOP_EXPR( $$) = $9;
         }
       ;
-
 
 foldop: PLUS    { $$ = F_add; }
       | MUL     { $$ = F_mul; }
