@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/10/05 14:55:52  sbs
+ * Revision 1.4  1996/01/17 14:19:11  asi
+ * added globals.h and removed optimize.h
+ *
+ * Revision 1.3  1995/10/05  14:55:52  sbs
  * some bug fixes.
  *
  * Revision 1.2  1995/06/06  15:19:13  sbs
@@ -22,7 +25,7 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "psi-opt.h"
-#include "optimize.h"
+#include "globals.h"
 
 /*
  *
