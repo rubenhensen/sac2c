@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/02/05 21:16:37  skt
+ * SCHINlet added
+ *
  * Revision 3.5  2004/01/16 10:03:26  skt
  * handling of do-loops enabled
  *
@@ -51,9 +54,18 @@
  *
  */
 
+/**
+ *
+ * @defgroup schin Scheduling Initialisation
+ * @ingroup muth
+ *
+ * @brief Implementation of scheduling initialisation, used by mtmode 3
+ * @{
+ */
+
 /******************************************************************************
  *
- * file:   schedule_init.c
+ * @file schedule_init.c
  *
  * prefix: SCHIN
  *
@@ -62,10 +74,9 @@
  *   which withloops shall be executed concurrently and how they should be
  *   scheduled if executed concurrently.
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 #include "dbug.h"
-
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -73,25 +84,30 @@
 #include "scheduling.h"
 #include "internal_lib.h"
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *ScheduleInit(node *arg_node, node *arg_info)
+ * @fn node *ScheduleInit(node *arg_node, node *arg_info)
  *
- * description:
- *   Call this function to run mini-phase schedule-init.
- *   Expects an N_fundef as arg_node!
+ * @brief Initializes and initiates traversal for scheduling
+ *  <pre>
+ *    Call this function to run mini-phase schedule-init.
+ *    Expects an N_fundef as arg_no
  *
- *   Traverses *only* the function handed over via arg_node with dfa_tab,
- *   will not traverse FUNDEF_NEXT( arg_node).
+ *    Traverses *only* the function handed over via arg_node with dfa_tab,
+ *    will not traverse FUNDEF_NEXT( arg_node).
  *
- *   This routine ignores (returns without changes):
- *   - functions f with no body (FUNDEF_BODY( f) == NULL)
- *   - functions f with FUNDEF_STATUS( f) = ST_foldfun
- *   - repfuns
- *     functions f with FUNDEF_ATTRIB( f) = ST_call_rep
+ *    This routine ignores (returns without changes):
+ *    - functions f with no body (FUNDEF_BODY( f) == NULL)
+ *    - functions f with FUNDEF_STATUS( f) = ST_foldfun
+ *    - repfuns
+ *      functions f with FUNDEF_ATTRIB( f) = ST_call_rep
+ *  </pre>
  *
- ******************************************************************************/
+ *  @param arg_node syntax-branch, usually the whole tree
+ *  @param arg_info an information container
+ *  @return syntax-tree with scheduling annotations
+ *
+ *****************************************************************************/
 
 node *
 ScheduleInit (node *arg_node, node *arg_info)
@@ -302,13 +318,14 @@ InferSchedulingVarSegment (node *wlsegvar, node *arg_info)
     DBUG_RETURN (sched);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *SCHINassign( node *arg_node, node *arg_info)
+ * @fn node *SCHINlet( node *arg_node, node *arg_info)
  *
- * description:
- *   Locks for let-assigments with a rhs with-loop,
+ * @brief Looks a rhs with-loop und checks for scheduling
+ *
+ * <pre>
+ *   Looks for let-assigments with a rhs with-loop,
  *   Such a with-loop will be checked if allowed and worth for mt and not a
  *   nested with-loop.
  *   In any case the with-loop will be traversed, to find nested pragmas
@@ -316,75 +333,56 @@ InferSchedulingVarSegment (node *wlsegvar, node *arg_info)
  *   The flag INFO_SCHIN_ALLOWED says whether a with-loop will be executed
  *   multithreaded.
  *   While traversing the with-loop the Segments will be scheduled.
+ * </pre>
  *
- ******************************************************************************/
+ *  @param arg_node A branch of the syntax-tree
+ *  @param arg_info An information container
+ *  @return The branch with completed scheduling
+ *
+ *****************************************************************************/
 
 node *
-SCHINassign (node *arg_node, node *arg_info)
+SCHINlet (node *let, node *arg_info)
 {
-    node *let;
     int old_allowed;
 
-    DBUG_ENTER ("SCHINassign");
+    DBUG_ENTER ("SCHIN_let");
 
-    if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let) {
-        /* it is a let */
-
-        let = ASSIGN_INSTR (arg_node);
-        /*DBUG_PRINT( "SCHIN", ("let found")); */
-
-        if (NODE_TYPE (LET_EXPR (let)) == N_Nwith2) {
-            DBUG_PRINT ("SCHIN", ("with found"));
-            old_allowed = INFO_SCHIN_ALLOWED (arg_info);
-            if ((!(INFO_SCHIN_INNERWLS (arg_info)))
-                && (WithLoopIsAllowedConcurrentExecution (LET_EXPR (let)))
-                && (WithLoopIsWorthConcurrentExecution (LET_EXPR (let), LET_IDS (let)))) {
-                DBUG_PRINT ("SCHIN", ("wl is allowed and worth mt"));
-                INFO_SCHIN_ALLOWED (arg_info) = TRUE;
-            } else {
-                DBUG_PRINT ("SCHIN", ("wl is (inner or not-allowed-mt or not-worth-mt)"));
-                INFO_SCHIN_ALLOWED (arg_info) = FALSE;
-            }
-            /*
-             *  in any case the expr will be traversed to find annotated pragmas
-             *  in inner-wls.
-             */
-            LET_EXPR (let) = Trav (LET_EXPR (let), arg_info);
-            INFO_SCHIN_ALLOWED (arg_info) = old_allowed;
+    if (NODE_TYPE (LET_EXPR (let)) == N_Nwith2) {
+        DBUG_PRINT ("SCHIN", ("with found"));
+        old_allowed = INFO_SCHIN_ALLOWED (arg_info);
+        if ((!(INFO_SCHIN_INNERWLS (arg_info)))
+            && (WithLoopIsAllowedConcurrentExecution (LET_EXPR (let)))
+            && (WithLoopIsWorthConcurrentExecution (LET_EXPR (let), LET_IDS (let)))) {
+            DBUG_PRINT ("SCHIN", ("wl is allowed and worth mt"));
+            INFO_SCHIN_ALLOWED (arg_info) = TRUE;
         } else {
-            /* rhs is not a with: not of interest */
+            DBUG_PRINT ("SCHIN", ("wl is (inner or not-allowed-mt or not-worth-mt)"));
+            INFO_SCHIN_ALLOWED (arg_info) = FALSE;
         }
-    } else if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_cond) {
-        DBUG_PRINT ("SCHIN", ("trav into cond"));
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-        DBUG_PRINT ("SCHIN", ("trav from cond"));
-    } else if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_do) {
-        DBUG_PRINT ("SCHIN", ("trav into do"));
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-        DBUG_PRINT ("SCHIN", ("trav from do"));
+        /*
+         *  in any case the expr will be traversed to find annotated pragmas
+         *  in inner-wls.
+         */
+        LET_EXPR (let) = Trav (LET_EXPR (let), arg_info);
+        INFO_SCHIN_ALLOWED (arg_info) = old_allowed;
     } else {
-        /* assignment is not let, if or do : not of interest */
+        /* who knows, what the expression contains? */
+        LET_EXPR (let) = Trav (LET_EXPR (let), arg_info);
+        /* rhs is not a with: not of interest */
     }
-
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (let);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *SCHINnwith2( node* arg_node, node *arg_info)
+ * @fn node *SCHINnwith2( node* arg_node, node *arg_info)
  *
- * description:
- *   Checks if a given pragma-scheduling (if exists) can be propagated, saves
- *   the information  about that in the arg_info, gives warnings if necessary,
- *   because of nested with-loops etc.
- *   Traverses Segments and Code of the with-loop afterwards to do propagation
- *   and Scheduling of the with-loop.
+ * @brief Annotates scheduling, including its segmentsand code
  *
+ *  @param arg_node A branch of the syntax-tree
+ *  @param arg_info An information container
+ *  @return The branch with completed scheduling*
  ******************************************************************************/
 
 node *
@@ -574,3 +572,6 @@ SCHINwlsegVar (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+/**
+ * @}
+ **/

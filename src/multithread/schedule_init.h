@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/02/05 21:16:37  skt
+ * SCHINlet added
+ *
  * Revision 3.1  2000/11/20 18:03:15  sacbase
  * new release made
  *
@@ -30,8 +33,7 @@
 #define SCHEDULE_INIT_H
 
 extern node *ScheduleInit (node *arg_node, node *arg_info);
-
-extern node *SCHINassign (node *arg_node, node *arg_info);
+extern node *SCHINlet (node *arg_node, node *arg_info);
 extern node *SCHINnwith2 (node *arg_node, node *arg_info);
 extern node *SCHINwlseg (node *arg_node, node *arg_info);
 extern node *SCHINwlsegVar (node *arg_node, node *arg_info);
