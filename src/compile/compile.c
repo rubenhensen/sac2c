@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.191  1998/10/26 20:33:18  dkr
+ * fixed a bug in COMPLet:
+ *   no DBUG_PRINT on NULL-pointers!
+ *
  * Revision 1.190  1998/08/27 14:49:24  cg
  * compilation of ICM ADJUST_SCHEDULER now fixed.
  *
@@ -2730,7 +2734,9 @@ COMPLet (node *arg_node, node *arg_info)
     INFO_COMP_LASTLET (arg_info) = arg_node;
     INFO_COMP_LASTIDS (arg_info) = LET_IDS (arg_node);
 
-    DBUG_PRINT ("COMP", ("LHS of let-assignment: %s", CHECK_NULL (LET_NAME (arg_node))));
+    if (LET_IDS (arg_node) != NULL) {
+        DBUG_PRINT ("COMP", ("LHS of let-assignment: %s", LET_NAME (arg_node)));
+    }
 
     expr = Trav (LET_EXPR (arg_node), arg_info);
 
