@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.24  1995/12/13 13:32:46  asi
+ * Revision 1.25  1995/12/18 18:27:11  cg
+ * added macro OBJDEF_ICM
+ *
+ * Revision 1.24  1995/12/13  13:32:46  asi
  * added ASSIGN_STATUS, modified ICM_NAME
  *
  * Revision 1.23  1995/12/13  09:38:26  cg
@@ -589,6 +592,7 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  ***    node*       ARG       (O)  (obj-handling !!)
  ***    nodelist    NEEDOBJS  (O)  (import -> analysis -> writesib ->)
  ***    node*       INIT      (O)  (precompile !!)
+ ***    node*       ICM       (O)  (compile ->)
  ***/
 
 /*
@@ -606,6 +610,12 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  *
  *  INIT is a pointer to an N_let node containing an application of the
  *  init function (SAC objects only).
+ *
+ *  ICM contains a pointer to the respective icm if the global object
+ *  is an array (ND_KS_DECL_ARRAY_GLOBAL or ND_KD_DECL_ARRAY_EXTERN)
+ *
+ *  ATTENTION: ARG, INIT, and ICM are mapped to the same real node !
+ *
  */
 
 extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *next);
@@ -621,6 +631,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 #define OBJDEF_PRAGMA(n) (n->node[4])
 #define OBJDEF_NEEDOBJS(n) ((nodelist *)n->node[5])
 #define OBJDEF_INIT(n) (n->node[3])
+#define OBJDEF_ICM(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
 
