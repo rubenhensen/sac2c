@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.61  1998/04/17 17:26:22  dkr
+ * 'concurrent regions' are now called 'SPMD regions'
+ *
  * Revision 1.60  1998/04/17 16:22:20  dkr
  * MakeWLgrid, MakeWLgridvar now adjust NCODE_USED
  *
@@ -1410,15 +1413,15 @@ MakeInfo ()
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeConc (node *region)
+MakeSPMD (node *region)
 {
     node *tmp;
 
-    DBUG_ENTER ("MakeConc");
+    DBUG_ENTER ("MakeSPMD");
     INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_conc;
-    CONC_REGION (tmp) = region;
+    NODE_TYPE (tmp) = N_spmd;
+    SPMD_REGION (tmp) = region;
 
     DBUG_RETURN (tmp);
 }

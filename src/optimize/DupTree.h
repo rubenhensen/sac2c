@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  1998/04/17 17:26:38  dkr
+ * 'concurrent regions' are now called 'SPMD regions'
+ *
  * Revision 1.25  1998/04/17 11:42:17  srs
  * added DupNcode()
  *
@@ -136,7 +139,7 @@ extern node *DupFundef (node *arg_node, node *arg_info);
 extern node *DupDec (node *arg_node, node *arg_info);
 extern node *DupInfo (node *arg_node, node *arg_info);
 extern node *DupPragma (node *arg_node, node *arg_info);
-extern node *DupConc (node *arg_node, node *arg_info);
+extern node *DupSPMD (node *arg_node, node *arg_info);
 
 /* new with-loop */
 extern node *DupNwith (node *arg_node, node *arg_info);

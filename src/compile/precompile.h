@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1998/04/17 17:27:06  dkr
+ * 'concurrent regions' are now called 'SPMD regions'
+ *
  * Revision 1.11  1998/04/17 15:28:57  dkr
  * InsertWLnodes is now external
  *
@@ -49,20 +52,20 @@
 
 extern node *precompile (node *syntax_tree);
 
-extern node *PRECmodul (node *arg_node, node *arg_info);
-extern node *PRECobjdef (node *arg_node, node *arg_info);
-extern node *PRECfundef (node *arg_node, node *arg_info);
-extern node *PRECarg (node *arg_node, node *arg_info);
-extern node *PREClet (node *arg_node, node *arg_info);
-extern node *PRECap (node *arg_node, node *arg_info);
-extern node *PRECassign (node *arg_node, node *arg_info);
-extern node *PRECreturn (node *arg_node, node *arg_info);
-extern node *PRECid (node *arg_node, node *arg_info);
-extern node *PRECvardec (node *arg_node, node *arg_info);
-extern node *PRECtypedef (node *arg_node, node *arg_info);
-extern node *PRECconc (node *arg_node, node *arg_info);
-extern node *PRECnwith (node *arg_node, node *arg_info);
-extern node *PRECncode (node *arg_node, node *arg_info);
+extern node *PrecModul (node *arg_node, node *arg_info);
+extern node *PrecObjdef (node *arg_node, node *arg_info);
+extern node *PrecFundef (node *arg_node, node *arg_info);
+extern node *PrecArg (node *arg_node, node *arg_info);
+extern node *PrecLet (node *arg_node, node *arg_info);
+extern node *PrecAp (node *arg_node, node *arg_info);
+extern node *PrecAssign (node *arg_node, node *arg_info);
+extern node *PrecReturn (node *arg_node, node *arg_info);
+extern node *PrecId (node *arg_node, node *arg_info);
+extern node *PrecVardec (node *arg_node, node *arg_info);
+extern node *PrecTypedef (node *arg_node, node *arg_info);
+extern node *PrecSPMD (node *arg_node, node *arg_info);
+extern node *PrecNwith (node *arg_node, node *arg_info);
+extern node *PrecNcode (node *arg_node, node *arg_info);
 
 extern int GridOffset (int new_bound1, int bound1, int step, int grid_b2);
 extern node *InsertWLnodes (node *nodes, node *insert_nodes);

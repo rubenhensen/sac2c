@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  1998/04/17 17:26:13  dkr
+ * 'concurrent regions' are now called 'SPMD regions'
+ *
  * Revision 1.32  1998/04/03 11:28:06  dkr
  * concregs renamed to concregions
  *
@@ -200,7 +203,7 @@ typedef enum {
     PH_sacopt,
     PH_psiopt,
     PH_refcnt,
-    PH_concregions,
+    PH_spmdregions,
     PH_precompile,
     PH_compile,
     PH_genccode,
@@ -238,7 +241,7 @@ typedef enum {
     ST_external,           /* external module/class                  */
     ST_system,             /* external system library                */
     ST_own,                /* own declaration of module impl.        */
-    ST_concfun             /* function generated from a concurrent region */
+    ST_spmdfun             /* function generated from a spmd-region  */
 } statustype;
 
 typedef enum { VECT, IDX } useflag;

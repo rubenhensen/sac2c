@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.130  1998/04/17 17:26:25  dkr
+ * 'concurrent regions' are now called 'SPMD regions'
+ *
  * Revision 1.129  1998/04/17 11:39:54  srs
  * added NCODE_COPY
  *
@@ -2189,10 +2192,10 @@ extern node *MakeInfo ();
 #define INFO_EXPORTOBJS(n) ((nodelist *)(n->node[1]))
 #define INFO_EXPORTFUNS(n) ((nodelist *)(n->node[2]))
 
-/* concregions */
-#define INFO_CONC_FUNDEF(n) (n->node[1])
-#define INFO_CONC_LOCALUSED(n) (n->mask[1])
-#define INFO_CONC_LOCALDEF(n) (n->mask[0])
+/* spmdregions */
+#define INFO_SPMD_FUNDEF(n) (n->node[1])
+#define INFO_SPMD_LOCALUSED(n) (n->mask[1])
+#define INFO_SPMD_LOCALDEF(n) (n->mask[0])
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
@@ -2211,7 +2214,7 @@ extern node *MakeInfo ();
 #define INFO_COMP_ICMTAB(n) ((node **)(n->node[2]))
 #define INFO_COMP_TYPETAB(n) ((types **)(n->info.types))
 
-#define INFO_COMP_CONCFUNS(n) (n->node[4])
+#define INFO_COMP_SPMDFUNS(n) (n->node[4])
 
 /* optimize */
 #define INFO_MASK(n, x) (n->mask[x])
@@ -2246,7 +2249,7 @@ extern node *MakeInfo ();
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_conc :
+ ***  N_spmd :
  ***
  ***  sons:
  ***
@@ -2258,22 +2261,22 @@ extern node *MakeInfo ();
  ***
  ***  temporary attributes:
  ***
- ***    node*      FUNDEC      (0)  (N_fundef)    (concregions -> compile ! )
- ***    node*      VARDEC      (0)  (N_vardec)    (concregions -> compile ! )
- ***    node*      AP_LET      (0)  (N_let)       (concregions -> compile ! )
- ***    long*      MASK[x]                        (concregions -> )
+ ***    node*      FUNDEC      (0)  (N_fundef)    (spmdregions -> compile ! )
+ ***    node*      VARDEC      (0)  (N_vardec)    (spmdregions -> compile ! )
+ ***    node*      AP_LET      (0)  (N_let)       (spmdregions -> compile ! )
+ ***    long*      MASK[x]                        (spmdregions -> )
  ***
  ***/
 
-extern node *MakeConc (node *region);
+extern node *MakeSPMD (node *region);
 
-#define CONC_REGION(n) (n->node[0])
+#define SPMD_REGION(n) (n->node[0])
 
-#define CONC_FUNDEC(n) (n->node[1])
-#define CONC_VARDEC(n) (n->node[2])
-#define CONC_AP_LET(n) (n->node[3])
-#define CONC_USEDVARS(n) (n->mask[1])
-#define CONC_DEFVARS(n) (n->mask[0])
+#define SPMD_FUNDEC(n) (n->node[1])
+#define SPMD_VARDEC(n) (n->node[2])
+#define SPMD_AP_LET(n) (n->node[3])
+#define SPMD_USEDVARS(n) (n->mask[1])
+#define SPMD_DEFVARS(n) (n->mask[0])
 
 /*--------------------------------------------------------------------------*/
 

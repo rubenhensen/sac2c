@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1998/04/17 17:28:18  dkr
+ * 'concurrent regions' are now called 'SPMD regions'
+ *
  * Revision 1.9  1998/04/02 16:09:41  dkr
  * added new compiler phase name:
  *   generating concurrent regions
@@ -300,7 +303,7 @@ char *compiler_phase_name[] = {"",
                                "Running SAC optimizations",
                                "Running PSI optimizations",
                                "Running reference count inference system",
-                               "Generating concurrent regions",
+                               "Generating SPMD regions",
                                "Preparing C code generation",
                                "Generating C code",
                                "Creating C file",

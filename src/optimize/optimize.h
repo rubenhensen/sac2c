@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.58  1998/04/17 17:26:43  dkr
+ * 'concurrent regions' are now called 'SPMD regions'
+ *
  * Revision 1.57  1998/04/09 12:01:40  dkr
  * ReGenMask() is now external
  *
@@ -303,6 +306,6 @@ extern node *OPTcond (node *arg_node, node *arg_info);
 extern node *OPTloop (node *arg_node, node *arg_info);
 extern node *OPTwith (node *arg_node, node *arg_info);
 extern node *OPTNwith (node *arg_node, node *arg_info);
-extern node *OPTconc (node *arg_node, node *arg_info);
+extern node *OptSPMD (node *arg_node, node *arg_info);
 
 #endif /* _sac_optimize_h */

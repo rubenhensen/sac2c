@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.61  1998/04/17 17:28:29  dkr
+ * 'concurrent regions' are now called 'SPMD regions'
+ *
  * Revision 1.60  1998/04/03 11:27:55  dkr
  * concregs renamed to concregions
  *
@@ -225,7 +228,7 @@
 #include "uniquecheck.h"
 #include "rmvoidfun.h"
 #include "refcount.h"
-#include "concregions.h"
+#include "spmdregions.h"
 #include "precompile.h"
 #include "compile.h"
 #include "cccall.h"
@@ -730,14 +733,14 @@ funptr dfr_tab[] = {
 #undef NIF
 
 /*
- * 36) concregions_tab
+ * 36) spmdregions_tab
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
             ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
     ap
 
-funptr concregions_tab[] = {
+funptr spmdregions_tab[] = {
 #include "node_info.mac"
 };
 #undef NIF

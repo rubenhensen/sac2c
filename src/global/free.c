@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.50  1998/04/17 17:25:19  dkr
+ * 'concurrent regions' are now called 'SPMD regions'
+ *
  * Revision 1.49  1998/04/14 19:01:46  srs
  * changed FreeAssign()
  *
@@ -1561,17 +1564,17 @@ FreePragma (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeConc (node *arg_node, node *arg_info)
+FreeSPMD (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
 
-    DBUG_ENTER ("FreeConc");
+    DBUG_ENTER ("FreeSPMD");
 
-    DBUG_PRINT ("FREE", ("Removing contents of N_conc node ..."));
+    DBUG_PRINT ("FREE", ("Removing contents of N_spmd node ..."));
 
-    FREE (CONC_REGION (arg_node));
+    FREE (SPMD_REGION (arg_node));
 
-    DBUG_PRINT ("FREE", ("Removing N_conc node ..."));
+    DBUG_PRINT ("FREE", ("Removing N_spmd node ..."));
 
     FREE (arg_node);
 

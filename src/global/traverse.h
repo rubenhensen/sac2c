@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.43  1998/04/17 17:28:32  dkr
+ * 'concurrent regions' are now called 'SPMD regions'
+ *
  * Revision 1.42  1998/04/03 11:56:56  dkr
  * renamed concregs_tab to concregions_tab
  *
@@ -180,7 +183,7 @@ extern funptr readsib_tab[];
 extern funptr wlt_tab[];
 extern funptr cse_tab[];
 extern funptr dfr_tab[];
-extern funptr concregions_tab[];
+extern funptr spmdregions_tab[];
 extern funptr o2nWith_tab[];
 
 extern int nnode[];

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  1998/04/17 17:27:51  dkr
+ * 'concurrent regions' are now called 'SPMD regions'
+ *
  * Revision 1.27  1998/04/02 17:41:21  dkr
  * added PrintConc
  *
@@ -144,7 +147,7 @@ extern node *PrintPre (node *arg_node, node *arg_info);
 extern node *PrintIcm (node *arg_node, node *arg_info);
 extern node *PrintVectInfo (node *arg_node, node *arg_info);
 extern node *PrintPragma (node *arg_node, node *arg_info);
-extern node *PrintConc (node *arg_node, node *arg_info);
+extern node *PrintSPMD (node *arg_node, node *arg_info);
 
 /* new with-loop */
 extern node *PrintNwith (node *arg_node, node *arg_info);

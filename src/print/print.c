@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.192  1998/04/17 17:27:46  dkr
+ * 'concurrent regions' are now called 'SPMD regions'
+ *
  * Revision 1.191  1998/04/17 11:02:06  srs
  * changec N_Ncode output of PrintNodeTree()
  *
@@ -2071,18 +2074,18 @@ PrintPragma (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-PrintConc (node *arg_node, node *arg_info)
+PrintSPMD (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PrintConc");
+    DBUG_ENTER ("PrintSPMD");
 
-    fprintf (outfile, "/*** begin of concurrent region ***/\n");
+    fprintf (outfile, "/*** begin of SPMD region ***/\n");
 
     indent++;
-    CONC_REGION (arg_node) = Trav (CONC_REGION (arg_node), arg_info);
+    SPMD_REGION (arg_node) = Trav (SPMD_REGION (arg_node), arg_info);
     indent--;
 
     INDENT
-    fprintf (outfile, "/*** end of concurrent region ***/");
+    fprintf (outfile, "/*** end of SPMD region ***/");
 
     DBUG_RETURN (arg_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1998/04/17 17:26:00  dkr
+ * 'concurrent regions' are now called 'SPMD regions'
+ *
  * Revision 1.20  1998/04/02 17:40:54  dkr
  * added FreeConc
  *
@@ -172,7 +175,7 @@ extern node *FreeDec (node *arg_node, node *arg_info);
 extern node *FreeInc (node *arg_node, node *arg_info);
 extern node *FreePragma (node *arg_node, node *arg_info);
 extern node *FreeInfo (node *arg_node, node *arg_info);
-extern node *FreeConc (node *arg_node, node *arg_info);
+extern node *FreeSPMD (node *arg_node, node *arg_info);
 
 /* new with-loops */
 extern node *FreeNWith (node *arg_node, node *arg_info);

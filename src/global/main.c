@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.119  1998/04/17 17:26:07  dkr
+ * 'concurrent regions' are now called 'SPMD regions'
+ *
  * Revision 1.118  1998/04/07 13:33:23  dkr
  * prints now a message if Old2NewWith is called.
  *
@@ -409,7 +412,7 @@
 #include "objects.h"
 #include "uniquecheck.h"
 #include "rmvoidfun.h"
-#include "concregions.h"
+#include "spmdregions.h"
 #include "precompile.h"
 #include "compile.h"
 #include "cccall.h"
@@ -652,7 +655,7 @@ MAIN
                 show_refcnt = 1;
                 break;
             case '8':
-                break_after = PH_concregions;
+                break_after = PH_spmdregions;
                 tmp_break = 2;
                 break;
             case '9':
@@ -1201,11 +1204,11 @@ MAIN
 
     NOTE_COMPILER_PHASE;
     CHECK_DBUG_START;
-    syntax_tree = ConcRegions (syntax_tree); /* concregions_tab */
+    syntax_tree = SpmdRegions (syntax_tree); /* spmdregions_tab */
     CHECK_DBUG_STOP;
     ABORT_ON_ERROR;
 
-    if (break_after == PH_concregions)
+    if (break_after == PH_spmdregions)
         goto BREAK;
     compiler_phase++;
 

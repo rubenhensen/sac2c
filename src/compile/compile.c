@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.128  1998/04/17 17:26:53  dkr
+ * 'concurrent regions' are now called 'SPMD regions'
+ *
  * Revision 1.127  1998/04/17 00:33:54  dkr
  * changed CompConc
  *
@@ -2308,7 +2311,7 @@ Compile (node *arg_node)
  * description:
  *   compiles an N_modul node:
  *     - traverses sons.
- *     - append concregion-funs at fundef chain.
+ *     - append spmd-funs at fundef chain.
  *
  ******************************************************************************/
 
@@ -2330,17 +2333,17 @@ CompModul (node *arg_node, node *arg_info)
     }
 
     /*
-     * insert concregion-funs (INFO_COMP_CONCFUNS(arg_info)) at top of
+     * insert spmd-funs (INFO_COMP_SPMDFUNS(arg_info)) at top of
      *  fundef chain.
      */
-    if (INFO_COMP_CONCFUNS (arg_info) != NULL) {
+    if (INFO_COMP_SPMDFUNS (arg_info) != NULL) {
         tmp = MODUL_FUNS (arg_node);
         DBUG_ASSERT ((tmp != NULL), "no funs found");
         while (FUNDEF_NEXT (tmp) != NULL) {
             tmp = FUNDEF_NEXT (tmp);
         }
-        /* compile concregion-funs (INFO_COMP_CONCFUNS(arg_info)) */
-        FUNDEF_NEXT (tmp) = Trav (INFO_COMP_CONCFUNS (arg_info), arg_info);
+        /* compile spmd-funs (INFO_COMP_SPMDFUNS(arg_info)) */
+        FUNDEF_NEXT (tmp) = Trav (INFO_COMP_SPMDFUNS (arg_info), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -5904,37 +5907,37 @@ CompWith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CompConc(node *arg_node, node *arg_info)
+ *   node *CompSPMD(node *arg_node, node *arg_info)
  *
  * description:
- *   compiles a Nconc node.
+ *   compiles a N_spmd node.
  *
  ******************************************************************************/
 
 node *
-CompConc (node *arg_node, node *arg_info)
+CompSPMD (node *arg_node, node *arg_info)
 {
     node *tmp, *new_fundef;
 
-    DBUG_ENTER ("CompConc");
+    DBUG_ENTER ("CompSPMD");
 
-    /* build definition of concregion-fun */
-    new_fundef = CONC_FUNDEC (arg_node);
-    tmp = BLOCK_INSTR (CONC_REGION (arg_node));
+    /* build definition of spmd-fun */
+    new_fundef = SPMD_FUNDEC (arg_node);
+    tmp = BLOCK_INSTR (SPMD_REGION (arg_node));
     while (ASSIGN_NEXT (tmp) != NULL) {
         tmp = ASSIGN_NEXT (tmp);
     } /* we have found the position for the return-assignment */
-    ASSIGN_NEXT (tmp) = MakeAssign (FUNDEF_RETURN (CONC_FUNDEC (arg_node)), NULL);
-    FUNDEF_BODY (new_fundef) = CONC_REGION (arg_node);
-    BLOCK_VARDEC (FUNDEF_BODY (new_fundef)) = CONC_VARDEC (arg_node);
+    ASSIGN_NEXT (tmp) = MakeAssign (FUNDEF_RETURN (SPMD_FUNDEC (arg_node)), NULL);
+    FUNDEF_BODY (new_fundef) = SPMD_REGION (arg_node);
+    BLOCK_VARDEC (FUNDEF_BODY (new_fundef)) = SPMD_VARDEC (arg_node);
 
-    /* insert new fundef into INFO_COMP_CONCFUNS */
-    FUNDEF_NEXT (new_fundef) = INFO_COMP_CONCFUNS (arg_info);
-    INFO_COMP_CONCFUNS (arg_info) = new_fundef;
+    /* insert new fundef into INFO_COMP_SPMDFUNS */
+    FUNDEF_NEXT (new_fundef) = INFO_COMP_SPMDFUNS (arg_info);
+    INFO_COMP_SPMDFUNS (arg_info) = new_fundef;
 
-    /* replace concregion by CONC_AP_LET */
-    tmp = Trav (CONC_AP_LET (arg_node), arg_info);
-    CONC_REGION (arg_node) = NULL;
+    /* replace spmdregion by SPMD_AP_LET */
+    tmp = Trav (SPMD_AP_LET (arg_node), arg_info);
+    SPMD_REGION (arg_node) = NULL;
     arg_node = FreeTree (arg_node);
     arg_node = tmp;
     switch (NODE_TYPE (INFO_COMP_LASTASSIGN (arg_info))) {

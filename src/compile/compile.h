@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  1998/04/17 17:26:57  dkr
+ * 'concurrent regions' are now called 'SPMD regions'
+ *
  * Revision 1.25  1998/04/14 21:44:56  dkr
  * added CompModul
  *
@@ -97,7 +100,7 @@ extern node *CompCast (node *arg_node, node *arg_info);
 extern node *CompTypedef (node *arg_node, node *arg_info);
 extern node *CompObjdef (node *arg_node, node *arg_info);
 extern node *CompWith (node *arg_node, node *arg_info);
-extern node *CompConc (node *arg_node, node *arg_info);
+extern node *CompSPMD (node *arg_node, node *arg_info);
 extern node *CompNcode (node *arg_node, node *arg_info);
 extern node *CompNwith2 (node *arg_node, node *arg_info);
 
