@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.82  1998/05/13 13:37:38  srs
+# added WLUnroll
+#
 # Revision 1.81  1998/05/13 07:12:25  cg
 # added linking of file icm2c_mt.o
 #
@@ -296,7 +299,7 @@ TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/DeadCodeRemoval.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/DupTree.o \
-	  src/optimize/Inline.o src/optimize/Unroll.o \
+	  src/optimize/Inline.o src/optimize/Unroll.o src/optimize/WLUnroll.o \
           src/optimize/Unswitch.o src/optimize/CSE.o \
 	  src/optimize/WithloopFolding.o src/optimize/WLT.o \
 	  src/optimize/WLI.o src/optimize/WLF.o src/optimize/DataFlowMask.o
