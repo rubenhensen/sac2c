@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.158  1998/03/17 16:28:06  dkr
+ * removed bug in PrintWLseg()
+ *
  * Revision 1.157  1998/03/17 14:21:58  cg
  * file src/compile/trace.h removed.
  * definition of symbolic values of global variable traceflag moved to globals.h
@@ -2210,7 +2213,7 @@ PrintNwith2 (node *arg_node, node *arg_info)
     INDENT
     fprintf (outfile, "/* operators: */\n");
     code = NWITH2_CODE (arg_node);
-    do {
+    while (code != NULL) {
         INDENT
         fprintf (outfile, "op_%d =", NCODE_NO (code));
         indent++;
@@ -2223,7 +2226,7 @@ PrintNwith2 (node *arg_node, node *arg_info)
         } else {
             fprintf (outfile, "\n");
         }
-    } while (code != NULL);
+    }
     indent--;
 
     indent++;
@@ -2255,13 +2258,13 @@ PrintWLseg (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintWLseg");
 
     seg = arg_node;
-    do {
+    while (seg != NULL) {
         INDENT
         fprintf (outfile, "/* segment %d: */", i++);
-        WLSEG_INNER (arg_node) = Trav (WLSEG_INNER (arg_node), arg_info);
+        WLSEG_INNER (seg) = Trav (WLSEG_INNER (seg), arg_info);
         fprintf (outfile, "\n");
         seg = WLSEG_NEXT (seg);
-    } while (seg != NULL);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -2283,7 +2286,7 @@ PrintWLblock (node *arg_node, node *arg_info)
 
     fprintf (outfile, "\n");
     INDENT
-    fprintf (outfile, "(%d -> %d), block%d %d\n", WLBLOCK_BOUND1 (arg_node),
+    fprintf (outfile, "(%d -> %d), block[%d] %d\n", WLBLOCK_BOUND1 (arg_node),
              WLBLOCK_BOUND2 (arg_node), WLBLOCK_DIM (arg_node),
              WLBLOCK_BLOCKING (arg_node));
 
@@ -2315,7 +2318,7 @@ PrintWLublock (node *arg_node, node *arg_info)
 
     fprintf (outfile, "\n");
     INDENT
-    fprintf (outfile, "(%d -> %d), ublock%d %d\n", WLUBLOCK_BOUND1 (arg_node),
+    fprintf (outfile, "(%d -> %d), ublock[%d] %d\n", WLUBLOCK_BOUND1 (arg_node),
              WLUBLOCK_BOUND2 (arg_node), WLUBLOCK_DIM (arg_node),
              WLUBLOCK_BLOCKING (arg_node));
 
@@ -2347,7 +2350,7 @@ PrintWLproj (node *arg_node, node *arg_info)
 
     fprintf (outfile, "\n");
     INDENT
-    fprintf (outfile, "(%d -> %d), step%d %d\n", WLPROJ_BOUND1 (arg_node),
+    fprintf (outfile, "(%d -> %d), step[%d] %d\n", WLPROJ_BOUND1 (arg_node),
              WLPROJ_BOUND2 (arg_node), WLPROJ_DIM (arg_node), WLPROJ_STEP (arg_node));
 
     indent++;
@@ -2380,14 +2383,14 @@ PrintWLgrid (node *arg_node, node *arg_info)
     fprintf (outfile, "(%d -> %d): ", WLGRID_OFFSET (arg_node),
              WLGRID_OFFSET (arg_node) + WLGRID_WIDTH (arg_node));
 
-    indent += 2;
+    indent++;
     if (WLGRID_NEXTDIM (arg_node) != NULL) {
         WLGRID_NEXTDIM (arg_node) = Trav (WLGRID_NEXTDIM (arg_node), arg_info);
     } else {
         DBUG_ASSERT ((WLGRID_CODE (arg_node) != NULL), "WLGRID_CODE not found");
         fprintf (outfile, "op_%d", NCODE_NO (WLGRID_CODE (arg_node)));
     }
-    indent -= 2;
+    indent--;
 
     if (WLGRID_NEXT (arg_node) != NULL) {
         WLGRID_NEXT (arg_node) = Trav (WLGRID_NEXT (arg_node), arg_info);
