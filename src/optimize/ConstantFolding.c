@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/03/19 10:03:44  bs
+ * Function IsConst modified.
+ *
  * Revision 2.6  1999/03/15 17:51:05  bs
  * Bug fixed
  *
@@ -354,6 +357,7 @@ int
 IsConst (node *arg_node)
 {
     int isit;
+    node *expr;
 
     DBUG_ENTER ("IsConst");
 
@@ -367,9 +371,15 @@ IsConst (node *arg_node)
             isit = TRUE;
             break;
         case N_array:
-            if (ARRAY_VECTYPE (arg_node) == T_unknown)
-                isit = FALSE;
-            else
+            if (ARRAY_VECTYPE (arg_node) == T_unknown) {
+                isit = TRUE;
+                expr = ARRAY_AELEMS (arg_node);
+                while ((expr != NULL) && (isit == TRUE)) {
+                    if (NODE_TYPE (EXPRS_EXPR (expr)) == N_id)
+                        isit = FALSE;
+                    expr = EXPRS_NEXT (expr);
+                }
+            } else
                 isit = TRUE;
             break;
         default:
