@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.70  2003/03/25 12:00:42  sbs
+# target configure changed
+#
 # Revision 3.69  2003/03/25 11:58:15  sbs
 # configure target added.
 #
@@ -381,8 +384,7 @@ configure: configure.ac
 	co -l src/global/config.h.in
 	autoconf
 	autoheader
-	ci -u configure
-	ci -u src/global/config.h.in
+	ci -u configure src/global/config.h.in
 
 
 LINUX_HOST = bunasera
