@@ -37,3 +37,4 @@ type_upgrade.h
 signature_simplification.c
 signature_simplification.h
 inlining.c
+inlining.h
