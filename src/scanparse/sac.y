@@ -4,6 +4,10 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2002/10/10 12:16:41  sbs
+ * Now, MakePrf is only called if the number of arguments supplied matches
+ * the number of arguments specified in prf_node_info.mac.
+ *
  * Revision 3.69  2002/10/02 12:08:08  sbs
  * now, sqare brackets used in set notation rather than brackets
  *
@@ -248,6 +252,11 @@ static types *Exprs2ShpInfo( types *, node *);
 static node *ConstructMop( node *, ids *, node *);
 static node *CheckWlcompConf( node *ap, node *exprs);
 
+static int prf_arity[] = {
+  #define PRF_IF( a, b, c, d, e, f, g) f
+  #include "prf_node_info.mac"
+  #undef PRF_IF
+};
 
 %}
 
@@ -1371,7 +1380,16 @@ expr_ap: fun_id BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
            $1 = FreeAllIds( $1);
          }
        | prf BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
-         { $$ = MakePrf( $1, $4);
+         { char tmp[64];
+           int num_args;
+
+           num_args = CountExprs( $4);
+           if( num_args != prf_arity[$1]) {
+             sprintf( tmp, "%d argument(s) expected instead of %d", prf_arity[$1], num_args);
+             yyerror( tmp);
+           } else {
+             $$ = MakePrf( $1, $4);
+           }
            NODE_LINE( $$) = $<cint>3;
          }
        ;
