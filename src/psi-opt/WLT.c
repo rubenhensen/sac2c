@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/22 19:40:57  dkr
+ * include of tre.h eliminated
+ *
  * Revision 3.4  2001/03/05 16:41:44  dkr
  * no macros NWITH???_IS_FOLD used
  *
@@ -177,9 +180,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tree.h"
-#include "tree_compound.h"
 #include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
 #include "internal_lib.h"
 #include "free.h"
 #include "DupTree.h"
