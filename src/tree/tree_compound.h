@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.132  2004/11/24 13:51:35  mwe
+ * DECL_AVIS added
+ *
  * Revision 3.131  2004/11/24 13:17:16  skt
  * some old refcnt-macros deleted
  *
@@ -372,6 +375,17 @@ extern bool TCisImported (node *symbol);
 extern bool TCisExternal (node *symbol);
 extern bool TCisFromModule (node *symbol);
 extern bool TCisFromClass (node *symbol);
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  "N_decl" (N_vardec, N_arg, N_objdef)
+ ***/
+
+#define DECL_AVIS(n)                                                                     \
+    ((NODE_TYPE (n) == N_arg)                                                            \
+       ? ARG_AVIS (n)                                                                    \
+       : ((NODE_TYPE (n) == N_vardec) ? VARDEC_AVIS (n) : OBJDEF_AVIS (n)))
 
 /*--------------------------------------------------------------------------*/
 
