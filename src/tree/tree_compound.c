@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2002/04/29 15:59:34  sbs
+ * function HasDotTypes added.
+ *
  * Revision 3.55  2002/03/07 16:42:03  sbs
  * HasDotArgs added.
  *
@@ -496,6 +499,31 @@ CountTypes (types *type)
     }
 
     DBUG_RETURN (count);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int HasDotTypes( types *type)
+ *
+ * description:
+ *   Checks whether any T_dot type is contained in the given types chain.
+ *
+ ******************************************************************************/
+
+int
+HasDotTypes (types *type)
+{
+    int flag = FALSE;
+
+    DBUG_ENTER ("HasDotTypes");
+
+    while (type != NULL) {
+        flag = (flag || (TYPES_BASETYPE (type) == T_dots));
+        type = TYPES_NEXT (type);
+    }
+
+    DBUG_RETURN (flag);
 }
 
 /******************************************************************************

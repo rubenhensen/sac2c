@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2002/04/29 15:59:34  sbs
+ * function HasDotTypes added.
+ *
  * Revision 3.56  2002/03/07 16:42:03  sbs
  * HasDotArgs added.
  *
@@ -253,6 +256,7 @@ extern node *Shpseg2Array (shpseg *shape, int dim);
 
 extern types *AppendTypes (types *chain, types *item);
 extern int CountTypes (types *type);
+extern int HasDotTypes (types *type);
 extern types *GetTypes_Line (types *type, int line);
 extern types *GetTypes (types *type);
 extern int GetShapeDim (types *type);
