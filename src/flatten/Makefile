@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.12  2000/02/18 16:32:31  cg
+# Added -I../print
+#
 # Revision 2.11  2000/02/17 16:16:55  cg
 # Added compilation of adjust_ids.c and fun2lac.c.
 #
@@ -96,7 +99,7 @@ CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
 CFLAGS    := -D__EXTENSIONS__
 
 
-INCS=-I../global -I../../inc -I../tree
+INCS=-I../global -I../../inc -I../tree -I../print
 
 all: flatten.o lac2fun.o fun2lac.o adjust_ids.o
 
