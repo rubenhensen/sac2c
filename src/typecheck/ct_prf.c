@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2002/11/04 13:18:11  sbs
+ * cast computation improved:  (:xx[*])expr   now yields
+ * most specific subtype of xx[*] that may be derived from the
+ * type of expr. E.g., ((:complex[*])expr::double[5,2)) :: complex[5]  now!!
+ *
  * Revision 1.8  2002/10/30 12:11:56  sbs
  * cast modified; now casts between defined type and its base definition type are
  * legal as well ;-)
@@ -128,22 +133,31 @@ NTCPRF_array (te_info *info, ntype *elems)
 ntype *
 NTCPRF_cast (te_info *info, ntype *elems)
 {
-    ntype *cast_t, *expr_t;
-    ntype *res;
+    ntype *cast_t, *cast_bt, *expr_bt;
+    ntype *res, *res_bt;
 
     DBUG_ENTER ("NTCPRF_cast");
 
-    cast_t = TYEliminateUser (TYGetProductMember (elems, 0));
-    expr_t = TYEliminateUser (TYGetProductMember (elems, 1));
+    cast_t = TYGetProductMember (elems, 0);
+    cast_bt = TYEliminateUser (cast_t);
+    expr_bt = TYEliminateUser (TYGetProductMember (elems, 1));
 
-    TEAssureSameScalarType ("cast-type", cast_t, "expr-type", expr_t);
-    res = TEAssureSameShape ("cast-type", cast_t, "expr-type", expr_t);
+    TEAssureSameScalarType ("cast-type", cast_bt, "expr-type", expr_bt);
+    res_bt = TEAssureSameShape ("cast-type", cast_bt, "expr-type", expr_bt);
 
-    cast_t = TYFreeType (cast_t);
-    expr_t = TYFreeType (expr_t);
-    res = TYFreeType (res);
+    cast_bt = TYFreeType (cast_bt);
+    expr_bt = TYFreeType (expr_bt);
 
-    DBUG_RETURN (TYMakeProductType (1, TYCopyType (TYGetProductMember (elems, 0))));
+    if (TYIsArray (cast_t) && TYIsUser (TYGetScalar (cast_t))) {
+        res
+          = TYDeNestTypes (res_bt, UTGetBaseType (TYGetUserType (TYGetScalar (cast_t))));
+        res = TYSetScalar (res, TYCopyType (TYGetScalar (cast_t)));
+        res_bt = TYFreeType (res_bt);
+    } else {
+        res = res_bt;
+    }
+
+    DBUG_RETURN (TYMakeProductType (1, res));
 }
 
 /******************************************************************************
