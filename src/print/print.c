@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2002/05/31 17:23:21  dkr
+ * PrintNT() moved from NameTuples.c to print.c
+ *
  * Revision 3.84  2002/05/31 14:53:15  sbs
  * Now the wrapper functions are printed as well
  *
@@ -141,7 +144,7 @@
 #include "scheduling.h"
 #include "wl_access_analyze.h"
 #include "tile_size_inference.h"
-#include "NameTuples.h"
+#include "NameTuplesUtils.h"
 #include "wltransform.h"
 #include "wl_bounds.h"
 #include "refcount.h"
@@ -590,6 +593,30 @@ TSIprintInfo (node *arg_node, node *arg_info)
 }
 
 #endif /* ! DBUG_OFF */
+
+/******************************************************************************
+ *
+ * Function:
+ *   void PrintNT( char *name, types *type)
+ *
+ * Description:
+ *   Prints name tuples.
+ *
+ ******************************************************************************/
+
+static void
+PrintNT (char *name, types *type)
+{
+    DBUG_ENTER ("PrintNT");
+
+    DBUG_ASSERT ((type != NULL), "No type information found!");
+
+    fprintf (outfile, (compiler_phase < PH_compile) ? "%s__%s_%s" : "(%s, (%s,(%s,)))",
+             name, nt_class_string[GetClassFromTypes (type)],
+             nt_unq_string[GetUnqFromTypes (type)]);
+
+    DBUG_VOID_RETURN;
+}
 
 /******************************************************************************
  *
@@ -2342,7 +2369,7 @@ PrintId (node *arg_node, node *arg_info)
 #endif
 
     if (print_nt) {
-        PrintNT (outfile, ID_NAME (arg_node), VARDEC_OR_ARG_TYPE (ID_NT_TAG (arg_node)));
+        PrintNT (ID_NAME (arg_node), VARDEC_OR_ARG_TYPE (ID_NT_TAG (arg_node)));
     } else {
         fprintf (outfile, "%s", ID_NAME (arg_node));
     }
