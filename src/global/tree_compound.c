@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.43  1999/01/26 14:25:46  cg
+ * Added functions MakePrf1(), MakePrf2(), and MakePrf3() to
+ * create N_prf nodes with 1,2, or 3 arguments, repsectively.
+ *
  * Revision 1.42  1999/01/19 14:20:38  sbs
  * some warnings concerning uninitialized values eliminated.
  *
@@ -725,6 +729,55 @@ GetCompoundNode (node *arg_node)
         compound_node = NULL;
     }
     DBUG_RETURN (compound_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MakePrf1(prf prf, node* arg1)
+ *   node *MakePrf2(prf prf, node* arg1, node* arg2)
+ *   node *MakePrf3(prf prf, node* arg1, node* arg2, node* arg3)
+ *
+ * description:
+ *   create N_prf node for primitive function application with 1, 2, or 3
+ *   arguments, respectively.
+ *
+ ******************************************************************************/
+
+node *
+MakePrf1 (prf prf, node *arg1)
+{
+    node *res;
+
+    DBUG_ENTER ("MakePrf1");
+
+    res = MakePrf (prf, MakeExprs (arg1, NULL));
+
+    DBUG_RETURN (res);
+}
+
+node *
+MakePrf2 (prf prf, node *arg1, node *arg2)
+{
+    node *res;
+
+    DBUG_ENTER ("MakePrf2");
+
+    res = MakePrf (prf, MakeExprs (arg1, MakeExprs (arg2, NULL)));
+
+    DBUG_RETURN (res);
+}
+
+node *
+MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3)
+{
+    node *res;
+
+    DBUG_ENTER ("MakePrf3");
+
+    res = MakePrf (prf, MakeExprs (arg1, MakeExprs (arg2, MakeExprs (arg3, NULL))));
+
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************

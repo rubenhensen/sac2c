@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.78  1999/01/26 14:25:46  cg
+ * Added functions MakePrf1(), MakePrf2(), and MakePrf3() to
+ * create N_prf nodes with 1,2, or 3 arguments, repsectively.
+ *
  * Revision 1.77  1999/01/15 15:18:55  cg
  * added compound macro for type access from ids structures and
  * N_id nodes.
@@ -1569,6 +1573,16 @@ extern int IsConstantArray (node *array, nodetype type);
 #define PRF_ARG3(n) (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (n)))))
 
 #define MAKE_BIN_PRF(f, arg1, arg2) MakePrf (f, MakeExprs (arg1, MakeExprs (arg2, NULL)))
+
+/*
+ *  function declarations
+ */
+
+extern node *MakePrf1 (prf prf, node *arg1);
+
+extern node *MakePrf2 (prf prf, node *arg1, node *arg2);
+
+extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
 
 /*--------------------------------------------------------------------------*/
 
