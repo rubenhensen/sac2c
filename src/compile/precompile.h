@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/04/26 21:49:52  dkr
+ * PRECSPMD renamed to PRECSpmd
+ *
  * Revision 1.14  1998/04/24 17:14:51  dkr
  * renamed Prec...() to PREC...()
  *
@@ -69,7 +72,7 @@ extern node *PRECReturn (node *arg_node, node *arg_info);
 extern node *PRECId (node *arg_node, node *arg_info);
 extern node *PRECVardec (node *arg_node, node *arg_info);
 extern node *PRECTypedef (node *arg_node, node *arg_info);
-extern node *PRECSPMD (node *arg_node, node *arg_info);
+extern node *PRECSpmd (node *arg_node, node *arg_info);
 extern node *PRECSync (node *arg_node, node *arg_info);
 extern node *PRECNwith (node *arg_node, node *arg_info);
 extern node *PRECNcode (node *arg_node, node *arg_info);
