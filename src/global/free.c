@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.72  1998/07/03 10:14:02  cg
+ * freeing of N_spmd node completely changed.
+ *
  * Revision 1.71  1998/06/18 13:46:29  cg
  * file is now able to deal correctly with data objects of
  * the abstract data type for the representation of schedulings.
@@ -612,6 +615,7 @@ FreeModul (node *arg_node, node *arg_info)
     FREETRAV (MODUL_OBJS (arg_node));
     FREETRAV (MODUL_FUNS (arg_node));
     FREETRAV (MODUL_DECL (arg_node));
+    FREETRAV (MODUL_FOLDFUNS (arg_node));
     FREETRAV (MODUL_STORE_IMPORTS (arg_node));
 
 /* srs: module_name __MAIN is allocated statically in sac.y
@@ -1626,8 +1630,6 @@ FreeSpmd (node *arg_node, node *arg_info)
 
     FREETRAV (SPMD_REGION (arg_node));
 
-    FreeAllIds (SPMD_INOUT_IDS (arg_node));
-
     if (SPMD_IN (arg_node) != NULL) {
         SPMD_IN (arg_node) = DFMRemoveMask (SPMD_IN (arg_node));
     }
@@ -1641,7 +1643,11 @@ FreeSpmd (node *arg_node, node *arg_info)
         SPMD_LOCAL (arg_node) = DFMRemoveMask (SPMD_LOCAL (arg_node));
     }
 
-    FREETRAV (SPMD_ICM (arg_node));
+    FREETRAV (SPMD_ICM_BEGIN (arg_node));
+    FREETRAV (SPMD_ICM_PARALLEL (arg_node));
+    FREETRAV (SPMD_ICM_ALTSEQ (arg_node));
+    FREETRAV (SPMD_ICM_SEQUENTIAL (arg_node));
+    FREETRAV (SPMD_ICM_END (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_spmd node ..."));
 
