@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/06/26 14:36:40  asi
+ * Revision 1.13  1995/07/07 15:00:57  asi
+ * debug output changed in LIRassign and LIRMassign
+ *
+ * Revision 1.12  1995/06/26  14:36:40  asi
  * bug fixed in CheckDown - variables used in an expression, that will be moved up
  * set to loop invariant for move below loop algorithm
  *
@@ -395,7 +398,7 @@ LIRMassign (node *arg_node, node *arg_info)
     int todo;
 
     DBUG_ENTER ("LIRMassign");
-    DBUG_PRINT ("OPT",
+    DBUG_PRINT ("LIR",
                 ("Travers assign - %s", mdb_nodetype[arg_node->node[0]->nodetype]));
     todo = arg_node->flag;
     if ((N_let == arg_node->node[0]->nodetype) && (MOVE_UP == todo)) {
@@ -1350,7 +1353,7 @@ LIRassign (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("LIRassign");
 
-    DBUG_PRINT ("OPT", ("Travers assign - %s, line - %d",
+    DBUG_PRINT ("LIR", ("Travers assign - %s, line - %d",
                         mdb_nodetype[arg_node->node[0]->nodetype], arg_node->lineno));
 
     /* optimize subexpression */
