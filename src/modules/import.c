@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/07/19 08:54:27  cg
+ * Warnings eliminated.
+ *
  * Revision 3.8  2001/07/18 12:57:45  cg
  * Applications of old tree construction function
  * AppendNodeChain eliminated.
@@ -1368,7 +1371,7 @@ ImportAll (mod *mod, node *modul)
 {
     syms *symptr;
     node *explist, *tmpnode;
-    int i, next, son;
+    int i;
 
     DBUG_ENTER ("ImportAll");
 
@@ -1376,36 +1379,6 @@ ImportAll (mod *mod, node *modul)
 
     if (mod->allflag != 1) {
         explist = mod->moddec->node[0];
-
-#if 0
-
-    for(i=0; i<4; i++) {
-      if (i==2) {
-        next=1;
-      }
-      else {
-        next=0;
-      }
-
-      tmpnode=explist->node[i];
-
-      while(tmpnode != NULL) {
-        AppendModnameToSymbol(tmpnode, mod->name);
-        tmpnode=tmpnode->node[next];
-      }
-
-      if (i==0) {
-         son=1;
-      }
-      else {
-         son=i;
-      }
-
-      modul->node[son]=AppendNodeChain(next, explist->node[i],
-                                       modul->node[son]);
-    }
-
-#else
 
         tmpnode = EXPLIST_ITYPES (explist);
 
@@ -1444,8 +1417,6 @@ ImportAll (mod *mod, node *modul)
         }
 
         MODUL_FUNS (modul) = AppendFundef (EXPLIST_FUNS (explist), MODUL_FUNS (modul));
-
-#endif
 
         /* We mark all syms entries as imported! */
         for (i = 0; i < 4; i++) {
