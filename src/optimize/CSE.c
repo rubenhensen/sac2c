@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1999/01/07 13:56:58  sbs
+ * optimization process restructured for a function-wise optimization!
+ *
  * Revision 1.8  1998/04/23 18:44:31  srs
  * removed feature:
  * constants have been replaced by variables of the same value. This
@@ -44,6 +47,7 @@
 #include "internal_lib.h"
 
 #include "optimize.h"
+#include "generatemasks.h"
 #include "DupTree.h"
 #include "CSE.h"
 
@@ -68,13 +72,22 @@
 node *
 CSE (node *arg_node, node *info_node)
 {
+    funptr *tmp_tab;
+    int mem_cse_expr = cse_expr;
+
     DBUG_ENTER ("CSE");
+    DBUG_PRINT ("OPT", ("CSE"));
+
+    tmp_tab = act_tab;
     act_tab = cse_tab;
     info_node = MakeNode (N_info);
 
     arg_node = Trav (arg_node, info_node);
 
     FREE (info_node);
+    act_tab = tmp_tab;
+
+    DBUG_PRINT ("OPT", ("                        result: %d", cse_expr - mem_cse_expr));
     DBUG_RETURN (arg_node);
 }
 
@@ -100,7 +113,6 @@ CSEfundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("CSE", ("CSE function: %s", FUNDEF_NAME (arg_node)));
     if (NULL != FUNDEF_BODY (arg_node))
         FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
-    FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
     DBUG_RETURN (arg_node);
 }
 
@@ -148,7 +160,7 @@ CSEwhile (node *arg_node, node *arg_info)
 node *
 CSEdo (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("CFdo");
+    DBUG_ENTER ("CSEdo");
     DBUG_PRINT ("CSE", ("CSE do-loop in line: %d START", NODE_LINE (arg_node)));
 
     DO_INSTR (arg_node) = OPTTrav (DO_INSTR (arg_node), arg_info, arg_node);
@@ -175,7 +187,7 @@ CSEdo (node *arg_node, node *arg_info)
 node *
 CSEcond (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("CFcond");
+    DBUG_ENTER ("CSEcond");
 
     COND_COND (arg_node) = OPTTrav (COND_COND (arg_node), arg_info, arg_node);
 

@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.18  1999/01/07 13:56:58  sbs
+ * optimization process restructured for a function-wise optimization!
+ *
  * Revision 1.17  1998/12/02 16:41:13  cg
  * changed #include "limits.h" to #include <limits.h>
  *
@@ -134,6 +137,7 @@
 #include "my_debug.h"
 #include "traverse.h"
 #include "optimize.h"
+#include "generatemasks.h"
 #include "ConstantFolding.h"
 #include "tree_compound.h"
 #include "WithloopFolding.h"
@@ -1379,7 +1383,10 @@ WLFfundef (node *arg_node, node *arg_info)
     INFO_VARNO = FUNDEF_VARNO (arg_node);
 
     wlf_mode = wlfm_search_WL;
-    arg_node = TravSons (arg_node, arg_info);
+    if (FUNDEF_BODY (arg_node))
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    if (FUNDEF_ARGS (arg_node))
+        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

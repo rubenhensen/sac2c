@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.10  1999/01/07 13:56:58  sbs
+ * optimization process restructured for a function-wise optimization!
+ *
  * Revision 1.9  1998/12/10 17:28:13  sbs
  * ScalarPrf => FoldPrfScalars
  *
@@ -62,6 +65,7 @@
 #include "my_debug.h"
 #include "traverse.h"
 #include "optimize.h"
+#include "generatemasks.h"
 #include "ConstantFolding.h"
 #include "WithloopFolding.h"
 #include "WLI.h"
@@ -555,7 +559,6 @@ WLIfundef (node *arg_node, node *arg_info)
 
     if (FUNDEF_BODY (arg_node))
         FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
-    FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
 
     DBUG_RETURN (arg_node);
 }

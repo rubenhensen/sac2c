@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  1999/01/07 13:58:17  sbs
+ * optimization process restructured for a function-wise optimization!
+ *
  * Revision 1.23  1998/04/09 21:22:52  dkr
  *  renamed macros:
  *    INLINE -> DUP_INLINE
@@ -95,6 +98,7 @@
 #include "access_macros.h"
 
 #include "optimize.h"
+#include "generatemasks.h"
 #include "DupTree.h"
 #include "LoopInvariantRemoval.h"
 
@@ -156,7 +160,12 @@ int invaruns = 1;
 node *
 LoopInvariantRemoval (node *arg_node, node *arg_info)
 {
+    funptr *tmp_tab;
+    int mem_lir_expr = lir_expr;
+
     DBUG_ENTER ("LoopInvariantRemoval");
+    DBUG_PRINT ("OPT", ("LOOP INVARIANT REMOVAL"));
+    tmp_tab = act_tab;
     act_tab = lir_tab;
     arg_info = MakeNode (N_info);
     DUPTYPE = DUP_NORMAL;
@@ -164,6 +173,8 @@ LoopInvariantRemoval (node *arg_node, node *arg_info)
     arg_node = Trav (arg_node, arg_info);
 
     FREE (arg_info);
+    act_tab = tmp_tab;
+    DBUG_PRINT ("OPT", ("                        result: %d", lir_expr - mem_lir_expr));
     DBUG_RETURN (arg_node);
 }
 
@@ -208,8 +219,6 @@ LIRfundef (node *arg_node, node *arg_info)
         LIR_TYPE = NULL;
     }
     arg_node->varno = VARNO;
-
-    arg_node = OptTrav (arg_node, arg_info, 1); /* next function */
 
     DBUG_RETURN (arg_node);
 }

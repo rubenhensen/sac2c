@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 1.21  1999/01/07 13:56:58  sbs
+ * optimization process restructured for a function-wise optimization!
+ *
  * Revision 1.20  1998/11/18 15:07:24  srs
  * N_empty nodes are supported now
  *
@@ -101,6 +104,7 @@
 #include "my_debug.h"
 #include "traverse.h"
 #include "optimize.h"
+#include "generatemasks.h"
 #include "Inline.h"    /* SearchDecl() */
 #include "typecheck.h" /* DuplicateTypes() */
 #include "ConstantFolding.h"
@@ -1160,6 +1164,7 @@ MakeNullVec (int dim, simpletype type)
 node *
 WithloopFolding (node *arg_node, node *arg_info)
 {
+    funptr *tmp_tab;
     int expr;
 
     DBUG_ENTER ("WithloopFolding");
@@ -1177,6 +1182,7 @@ WithloopFolding (node *arg_node, node *arg_info)
        because of unique names. */
     DBUG_PRINT ("OPT", ("  WLI 1"));
     wli_phase = 1;
+    tmp_tab = act_tab;
     act_tab = wli_tab;
     arg_node = Trav (arg_node, arg_info);
 
@@ -1204,6 +1210,7 @@ WithloopFolding (node *arg_node, node *arg_info)
         arg_node = GenerateMasks (arg_node, NULL);
     }
 
+    act_tab = tmp_tab;
     FREE (arg_info);
 
     DBUG_RETURN (arg_node);
@@ -1223,6 +1230,7 @@ WithloopFolding (node *arg_node, node *arg_info)
 node *
 WithloopFoldingWLT (node *arg_node, node *arg_info)
 {
+    funptr *tmp_tab;
     int expr;
 
     DBUG_ENTER ("WithloopFoldingWLT");
@@ -1232,6 +1240,7 @@ WithloopFoldingWLT (node *arg_node, node *arg_info)
 
     /* WLT traversal: transform WLs */
     DBUG_PRINT ("OPT", ("  WLT"));
+    tmp_tab = act_tab;
     act_tab = wlt_tab;
     arg_node = Trav (arg_node, arg_info);
     expr = (wlt_expr - old_wlt_expr);
@@ -1243,6 +1252,7 @@ WithloopFoldingWLT (node *arg_node, node *arg_info)
     arg_node = GenerateMasks (arg_node, NULL);
 
     FREE (arg_info);
+    act_tab = tmp_tab;
 
     DBUG_RETURN (arg_node);
 }

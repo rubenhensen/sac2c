@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.78  1999/01/07 13:56:58  sbs
+ * optimization process restructured for a function-wise optimization!
+ *
  * Revision 1.77  1998/12/11 18:13:08  sbs
  * F_reshape patched again ++
  * BAD ERROR when swapping args in FoldPrfScalars....
@@ -136,6 +139,7 @@
 #include "access_macros.h"
 
 #include "optimize.h"
+#include "generatemasks.h"
 #include "DupTree.h"
 #include "LoopInvariantRemoval.h"
 #include "ConstantFolding.h"
@@ -346,8 +350,13 @@ IsConst (node *arg_node)
 node *
 ConstantFolding (node *arg_node, node *info_node)
 {
-    DBUG_ENTER ("ConstantFolding");
+    funptr *tmp_tab;
+    int mem_cf_expr = cf_expr;
 
+    DBUG_ENTER ("ConstantFolding");
+    DBUG_PRINT ("OPT", ("CONSTANT FOLDING"));
+
+    tmp_tab = act_tab;
     act_tab = cf_tab;
 
     info_node = MakeNode (N_info);
@@ -356,6 +365,9 @@ ConstantFolding (node *arg_node, node *info_node)
     arg_node = Trav (arg_node, info_node);
 
     FREE (info_node);
+    act_tab = tmp_tab;
+
+    DBUG_PRINT ("OPT", ("                        result: %d", cf_expr - mem_cf_expr));
     DBUG_RETURN (arg_node);
 }
 
@@ -382,7 +394,6 @@ CFfundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("CF", ("Constant folding function: %s", FUNDEF_NAME (arg_node)));
     if (FUNDEF_BODY (arg_node))
         FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
-    FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
     DBUG_RETURN (arg_node);
 }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1999/01/07 13:56:58  sbs
+ * optimization process restructured for a function-wise optimization!
+ *
  * Revision 1.21  1998/04/02 14:11:47  srs
  * removed Warnings
  * Conditional
@@ -85,11 +88,15 @@
 #include "traverse.h"
 
 #include "optimize.h"
+#include "generatemasks.h"
 #include "DeadCodeRemoval.h"
 
-#define INFO_ACT arg_info->mask[2]   /* active variables */
-#define INFO_NEWACT arg_info->lineno /* is there any new active assignment in loop ? */
-#define INFO_TRAVTYPE NODE_TYPE (arg_info)
+#define INFO_ACT INFO_DCR_ACT (arg_info) /* active variables */
+#define INFO_NEWACT                                                                      \
+    INFO_DCR_NEWACT (arg_info) /* is there any new active                                \
+                                  assignment in loop ? */
+#define INFO_TRAVTYPE INFO_DCR_TRAVTYPE (arg_info)
+
 #define TRUE 1
 #define FALSE 0
 
@@ -113,7 +120,25 @@ typedef enum { active, redundant } assignstatus;
 node *
 DeadCodeRemoval (node *arg_node, node *info_node)
 {
+    funptr *tmp_tab;
+    int mem_dead_var = dead_var;
+    int mem_dead_expr = dead_expr;
+
     DBUG_ENTER ("DeadCodeRemoval");
+    DBUG_PRINT ("OPT", ("DEAD CODE REMOVAL"));
+
+    /*
+     * First, we traverse with active_tab, i.e. using
+     * ACTfundef, ACTassign, ACTcond, ACTdo, ...
+     * The effect, as far as I (sbs) can see, of that phase
+     * is that all N_assign nodes are marked either
+     * "active" or "redundant" in their ASSIGN_STATUS.
+     * This is done by a bottom up traversal during which
+     * the INFO_DCR_ACT - mask indicates (TRUE / FALSE) which
+     * vars are needed further below.
+     * For loops this requires multiple traversals...
+     */
+    tmp_tab = act_tab;
     act_tab = active_tab;
     info_node = MakeNode (N_info);
     arg_node = Trav (arg_node, info_node);
@@ -124,39 +149,12 @@ DeadCodeRemoval (node *arg_node, node *info_node)
     arg_node = Trav (arg_node, info_node);
     FREE (info_node);
 
-    if (opt_dfr) {
-        act_tab = dfr_tab;
-        info_node = MakeNode (N_info);
-        arg_node = Trav (arg_node, info_node);
-        FREE (info_node);
-    }
+    DBUG_PRINT ("OPT", ("                        result: %d",
+                        (dead_var + dead_expr) - (mem_dead_var + mem_dead_expr)));
+    act_tab = tmp_tab;
     DBUG_RETURN (arg_node);
 }
 
-/*
- *
- *  functionname  : DFRmodul
- *  arguments     : 1) N_modul - node
- *                  R) N_modul - node
- *  description   : Prevents DFR in modules
- *  global vars   : syntax_tree,
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG..., MODUL_FILETYPE
- *
- *  remarks       :
- *
- *
- */
-node *
-DFRmodul (node *arg_node, node *info_node)
-{
-    DBUG_ENTER ("DFRmodul");
-    if (F_prog == MODUL_FILETYPE (arg_node)) {
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), info_node);
-    }
-    DBUG_RETURN (arg_node);
-}
 /*
  *
  *  functionname  : DCRfundef
@@ -194,7 +192,6 @@ DCRfundef (node *arg_node, node *arg_info)
     INFO_USE = NULL;
     INFO_VARNO = 0;
 
-    FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
     DBUG_RETURN (arg_node);
 }
 
@@ -222,69 +219,15 @@ ACTfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("ACTfundef");
     DBUG_PRINT ("DCR",
                 ("Active Asssignment Search in function: %s", FUNDEF_NAME (arg_node)));
-    INFO_VARNO = FUNDEF_VARNO (arg_node);
 
-    NODE_TYPE (arg_info) = N_assign;
-    INFO_ACT = GenMask (VARNO);
+    INFO_DCR_VARNO (arg_info) = FUNDEF_VARNO (arg_node);
+
+    INFO_DCR_TRAVTYPE (arg_info) = N_assign;
+    INFO_DCR_ACT (arg_info) = GenMask (VARNO);
     if (NULL != FUNDEF_BODY (arg_node) && NULL != FUNDEF_INSTR (arg_node))
         FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
     FREE (INFO_ACT);
 
-    if (NULL != FUNDEF_NEXT (arg_node))
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : DFRfundef
- *  arguments     : 1) N_fundef - node
- *                  2) N_info - node
- *                  R) N_fundef - node
- *  description   : Traverses instruction- (if not inline marked) and function-chain
- *                  in this sequence.
- *  global vars   : --
- *  internal funs : --
- *  external funs : Trav (optimize.h)
- *  macros        : FUNDEF_NAME, FUNDEF_BODY, FUNDEF_INSTR, FUNDEF_NEXT
- *
- *  remarks       : --
- *
- */
-node *
-DFRfundef (node *arg_node, node *arg_info)
-{
-    node *nextfun;
-
-    DBUG_ENTER ("DFRfundef");
-    DBUG_PRINT ("DCR", ("Dead Function Removal in function: %s", FUNDEF_NAME (arg_node)));
-
-    if ((NULL != FUNDEF_BODY (arg_node)) && (0 == FUNDEF_INLINE (arg_node)))
-        FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
-
-    if (NULL != FUNDEF_NEXT (arg_node))
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-
-    if (1 == FUNDEF_INLINE (arg_node)) {
-        dead_fun++;
-        nextfun = FUNDEF_NEXT (arg_node);
-        FUNDEF_NEXT (arg_node) = NULL;
-        FreeTree (arg_node);
-        arg_node = nextfun;
-    }
-    DBUG_RETURN (arg_node);
-}
-
-node *
-DFRap (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("DFRap");
-    if ((1 == FUNDEF_INLINE (AP_FUNDEF (arg_node)))
-        && (NULL != FUNDEF_INSTR (AP_FUNDEF (arg_node)))) {
-        FUNDEF_INLINE (AP_FUNDEF (arg_node)) = 0;
-        FUNDEF_INSTR (AP_FUNDEF (arg_node))
-          = Trav (FUNDEF_INSTR (AP_FUNDEF (arg_node)), arg_info);
-    }
     DBUG_RETURN (arg_node);
 }
 
@@ -398,32 +341,44 @@ ACTassign (node *arg_node, node *arg_info)
 {
     int i;
     node *tmp;
+    node *instr;
+    nodetype instrtype;
 
     DBUG_ENTER ("ACTassign");
-    if (N_assign == INFO_TRAVTYPE)
+
+    /*
+     * On our way down, we mark all assignments redundant:
+     */
+    if (N_assign == INFO_DCR_TRAVTYPE (arg_info))
         ASSIGN_STATUS (arg_node) = redundant;
 
     if (ASSIGN_NEXT (arg_node))
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
 
+    instr = ASSIGN_INSTR (arg_node);
+    instrtype = NODE_TYPE (instr);
+
     if (redundant == ASSIGN_STATUS (arg_node)) {
-        if (N_return == ASSIGN_INSTRTYPE (arg_node)
-            || N_annotate == ASSIGN_INSTRTYPE (arg_node))
+        /*
+         * check, whether this assignment has to be marked active:
+         */
+        if (N_return == instrtype || N_annotate == instrtype)
             ASSIGN_STATUS (arg_node) = active;
         else {
-            int egal = FALSE;
-
-            if ((N_let == ASSIGN_INSTRTYPE (arg_node))
-                && (N_id == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node)))))
-                if (LET_VARNO (ASSIGN_INSTR (arg_node))
-                    == ID_VARNO (LET_EXPR ((ASSIGN_INSTR (arg_node)))))
-                    egal = TRUE;
-
-            if (!egal) {
-                for (i = 0; i < VARNO; i++) {
-                    if (ASSIGN_DEFMASK (arg_node)[i] && INFO_ACT[i]) {
+            /*
+             * if we are dealing with an assignment that contains
+             * active vars on its LHS (DEF-mask), activate the assignment.
+             * The only exception is a simple assignment of the form:
+             *   a = a;      where a is marked active
+             * In this case, the assignment is NOT marked active.
+             * (sbs: though I don't know why)
+             */
+            if ((instrtype != N_let) || (NODE_TYPE (LET_EXPR (instr)) != N_id)
+                || (LET_VARNO (instr) == ID_VARNO (LET_EXPR (instr)))) {
+                for (i = 0; i < INFO_DCR_VARNO (arg_info); i++) {
+                    if (ASSIGN_DEFMASK (arg_node)[i] && INFO_DCR_ACT (arg_info)[i]) {
                         ASSIGN_STATUS (arg_node) = active;
-                        INFO_NEWACT = TRUE;
+                        INFO_DCR_NEWACT (arg_info) = TRUE;
                         DBUG_PRINT ("DCR", ("Assignment marked active in line %d",
                                             NODE_LINE (arg_node)));
                     }
@@ -438,25 +393,32 @@ ACTassign (node *arg_node, node *arg_info)
             case N_cond:
             case N_while:
             case N_do:
-                ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+                ASSIGN_INSTR (arg_node) = Trav (instr, arg_info);
                 break;
             case N_with:
             case N_Nwith:
                 /* i is varno of the resulting WL array. */
                 i = VARDEC_VARNO (IDS_VARDEC (LET_IDS (ASSIGN_INSTR (arg_node))));
-                INFO_ACT[i] = FALSE;
-                ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+                INFO_DCR_ACT (arg_info)[i] = FALSE;
+                ASSIGN_INSTR (arg_node) = Trav (instr, arg_info);
                 break;
             default:
                 DBUG_ASSERT ((FALSE), "Compound-node not implemented for DCR");
                 break;
             }
         } else {
+            /*
+             * we are dealing with a simple assignment!
+             * e.g.    a,b = f( c, d, e);
+             * foreach variable do:
+             *    mark vars on the LHS as passive (a,b)
+             *    mark vars on the RHS as active  (c,d,e)
+             */
             for (i = 0; i < VARNO; i++) {
                 if (ASSIGN_DEFMASK (arg_node)[i])
-                    INFO_ACT[i] = FALSE;
+                    INFO_DCR_ACT (arg_info)[i] = FALSE;
                 if (ASSIGN_USEMASK (arg_node)[i])
-                    INFO_ACT[i] = TRUE;
+                    INFO_DCR_ACT (arg_info)[i] = TRUE;
             }
         }
     }

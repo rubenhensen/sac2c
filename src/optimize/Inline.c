@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  1999/01/07 13:56:58  sbs
+ * optimization process restructured for a function-wise optimization!
+ *
  * Revision 1.22  1998/08/07 21:46:22  dkr
  * comment added
  *
@@ -118,13 +121,20 @@ static int inline_nr = 0;
 node *
 Inline (node *arg_node, node *arg_info)
 {
+    funptr *tmp_tab;
+    int mem_inl_fun = inl_fun;
+
     DBUG_ENTER ("Inline");
+    DBUG_PRINT ("OPT", ("FUNCTION INLINING"));
+    tmp_tab = act_tab;
     act_tab = inline_tab;
     arg_info = MakeNode (N_info);
 
     arg_node = Trav (arg_node, arg_info);
 
+    DBUG_PRINT ("OPT", ("                        result: %d", inl_fun - mem_inl_fun));
     FREE (arg_info);
+    act_tab = tmp_tab;
     DBUG_RETURN (arg_node);
 }
 

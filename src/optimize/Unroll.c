@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1999/01/07 13:56:58  sbs
+ * optimization process restructured for a function-wise optimization!
+ *
  * Revision 1.15  1998/07/16 15:56:27  srs
  * initialized INFO_UNR_FUNDEF
  *
@@ -67,6 +70,7 @@
 #include "internal_lib.h"
 
 #include "optimize.h"
+#include "generatemasks.h"
 #include "ConstantFolding.h"
 #include "DupTree.h"
 #include "Unroll.h"
@@ -92,8 +96,11 @@ node *
 Unroll (node *arg_node, node *arg_info)
 {
     funptr *tmp_tab;
+    int mem_lunr_expr = lunr_expr;
+    int mem_wlunr_expr = wlunr_expr;
 
     DBUG_ENTER ("Unroll");
+    DBUG_PRINT ("OPT", ("LOOP/WL UNROLLING"));
     tmp_tab = act_tab;
     act_tab = unroll_tab;
     arg_info = MakeNode (N_info);
@@ -102,6 +109,10 @@ Unroll (node *arg_node, node *arg_info)
 
     FREE (arg_info);
     act_tab = tmp_tab;
+
+    DBUG_PRINT ("OPT", ("                   LOOP result: %d", lunr_expr - mem_lunr_expr));
+    DBUG_PRINT ("OPT",
+                ("                     WL result: %d", wlunr_expr - mem_wlunr_expr));
     DBUG_RETURN (arg_node);
 }
 
@@ -143,7 +154,6 @@ UNRfundef (node *arg_node, node *arg_info)
     if (FUNDEF_BODY (arg_node))
         FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
 
-    FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
     DBUG_RETURN (arg_node);
 }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1999/01/07 13:56:58  sbs
+ * optimization process restructured for a function-wise optimization!
+ *
  * Revision 1.13  1998/08/20 12:06:14  srs
  * Fixed bug in AEPrf():
  * Too many psi-functions were replaced.
@@ -63,6 +66,7 @@
 #include "internal_lib.h"
 
 #include "optimize.h"
+#include "generatemasks.h"
 #include "Inline.h"
 #include "LoopInvariantRemoval.h"
 #include "ArrayElimination.h"
@@ -92,13 +96,22 @@
 node *
 ArrayElimination (node *arg_node, node *info_node)
 {
+    funptr *tmp_tab;
+    int mem_elim_arrays = elim_arrays;
+
     DBUG_ENTER ("ArrayElimination");
+    DBUG_PRINT ("OPT", ("ARRAY ELIMINATION"));
+
+    tmp_tab = act_tab;
     act_tab = ae_tab;
     info_node = MakeNode (N_info);
 
     arg_node = Trav (arg_node, info_node);
 
     FREE (info_node);
+    act_tab = tmp_tab;
+    DBUG_PRINT ("OPT",
+                ("                        result: %d", elim_arrays - mem_elim_arrays));
     DBUG_RETURN (arg_node);
 }
 
@@ -338,13 +351,10 @@ AEfundef (node *arg_node, node *arg_info)
           = AppendNodeChain (0, INFO_AE_TYPES (arg_info), FUNDEF_VARDEC (arg_node));
         INFO_AE_TYPES (arg_info) = NULL;
 
-        if (FUNDEF_NEXT (arg_node))
-            FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
         /* srs: I don't know what this is for. It is not used here in this file
            and it's no initialisatzion for ref counting :((( */
         arg_node->refcnt = 0;
-    } else if (FUNDEF_NEXT (arg_node))
-        FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
+    }
 
     DBUG_RETURN (arg_node);
 }

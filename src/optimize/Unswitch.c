@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1999/01/07 13:56:58  sbs
+ * optimization process restructured for a function-wise optimization!
+ *
  * Revision 1.11  1998/03/04 09:47:18  srs
  * added support for new WL
  *
@@ -51,6 +54,7 @@
 #include "internal_lib.h"
 
 #include "optimize.h"
+#include "generatemasks.h"
 #include "ConstantFolding.h"
 #include "DupTree.h"
 #include "Unroll.h"
@@ -90,9 +94,12 @@ typedef struct CINFO {
 node *
 Unswitch (node *arg_node, node *arg_info)
 {
+    int mem_uns_expr = uns_expr;
     funptr *tmp_tab;
 
     DBUG_ENTER ("Unswitch");
+    DBUG_PRINT ("OPT", ("LOOP UNSWITCHING"));
+
     tmp_tab = act_tab;
     act_tab = unswitch_tab;
     arg_info = MakeNode (N_info);
@@ -101,6 +108,8 @@ Unswitch (node *arg_node, node *arg_info)
 
     FREE (arg_info);
     act_tab = tmp_tab;
+
+    DBUG_PRINT ("OPT", ("                        result: %d", uns_expr - mem_uns_expr));
     DBUG_RETURN (arg_node);
 }
 /*
@@ -143,7 +152,6 @@ UNSfundef (node *arg_node, node *arg_info)
         } while (ONCE_MORE);
     }
 
-    FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
     DBUG_RETURN (arg_node);
 }
 

@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.14  1999/01/07 13:56:58  sbs
+ * optimization process restructured for a function-wise optimization!
+ *
  * Revision 1.13  1998/11/18 15:07:01  srs
  * N_empty nodes are supported now
  *
@@ -95,6 +98,7 @@
 #include "my_debug.h"
 #include "traverse.h"
 #include "optimize.h"
+#include "generatemasks.h"
 #include "WithloopFolding.h"
 #include "WLT.h"
 
@@ -490,7 +494,6 @@ WLTfundef (node *arg_node, node *arg_info)
 
     if (FUNDEF_BODY (arg_node))
         FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
-    FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
 
     DBUG_RETURN (arg_node);
 }
