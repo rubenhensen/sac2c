@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.121  2004/11/23 20:14:47  skt
+ * WITHOP_MEM added
+ *
  * Revision 3.120  2004/11/23 20:09:51  sbs
  * VARDEC_NTYPE added.
  *
@@ -1731,6 +1734,9 @@ extern node *TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no
     ((NODE_TYPE (n) == N_genarray)                                                       \
        ? GENARRAY_NEXT (n)                                                               \
        : ((NODE_TYPE (n) == N_modarray) ? MODARRAY_NEXT (n) : FOLD_NEXT (n)))
+
+#define WITHOP_MEM(n)                                                                    \
+    ((NODE_TYPE (n) == N_genarray) ? GENARRAY_MEM (n) : MODARRAY_NEXT (n))
 
 /*--------------------------------------------------------------------------*/
 
