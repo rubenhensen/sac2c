@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1994/12/31 14:09:37  sbs
+ * Revision 1.5  1995/01/16 11:10:25  asi
+ * masks initial set to NULL in MakeNode
+ *
+ * Revision 1.4  1994/12/31  14:09:37  sbs
  * DBUG_PRINT in MakeTypes inserted
  *
  * Revision 1.3  1994/12/30  16:57:48  sbs
@@ -88,6 +91,8 @@ MakeNode (nodetype nodetype)
     tmp->nnode = 0;
     tmp->info.id = NULL;
     tmp->lineno = linenum;
+    for (i = 0; i < 3; i++)
+        tmp->mask[1] = NULL;
 
     DBUG_PRINT ("MAKENODE",
                 ("%d nodetype: %s " P_FORMAT, tmp->lineno, mdb_nodetype[nodetype], tmp));
