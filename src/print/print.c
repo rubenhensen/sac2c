@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.235  1998/05/28 23:47:45  dkr
+ * fixed a bug with ICM_INDENT
+ * changed output in PrintNwithop
+ *
  * Revision 1.234  1998/05/28 16:33:45  dkr
  * changed output for N_Nwith, N_Nwith2, N_spmd, N_sync
  * added an indent-mechanismus for H-ICMs in PrintIcm
@@ -2113,9 +2117,6 @@ PrintIcm (node *arg_node, node *arg_info)
         indent += ICM_INDENT (arg_node);
     }
     INDENT
-    if (ICM_INDENT (arg_node) > 0) {
-        indent += ICM_INDENT (arg_node);
-    }
     if (show_icm == 0)
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
@@ -2139,6 +2140,11 @@ PrintIcm (node *arg_node, node *arg_info)
         }
 
     if ((show_icm == 1) || (compiled_icm == 0)) {
+
+        if (ICM_INDENT (arg_node) > 0) {
+            indent += ICM_INDENT (arg_node);
+        }
+
         if ((strcmp (ICM_NAME (arg_node), "ND_FUN_RET") == 0)
             && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)
             && (compiler_phase == PH_genccode)) {
@@ -2658,8 +2664,8 @@ PrintNwithop (node *arg_node, node *arg_info)
         if (NWITHOP_MOD (arg_node) == NULL) {
             fprintf (outfile, "fold/*fun*/( %s, ", NWITHOP_FUN (arg_node));
         } else {
-            fprintf (outfile, "fold/*fun*/( %s:%s, ", NWITHOP_MOD (arg_node),
-                     NWITHOP_FUN (arg_node));
+            fprintf (outfile, "fold/*fun*/( %s%s%s, ", NWITHOP_MOD (arg_node),
+                     mod_name_con, NWITHOP_FUN (arg_node));
         }
         Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
         break;
