@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2001/06/28 13:13:28  cg
+ * Type syntax changed: type[] is now equivalent to type.
+ *
  * Revision 3.30  2001/06/28 09:26:06  cg
  * Syntax of array types changed:
  * int[] -> int[+]  and  int[?] -> int[*]
@@ -2060,7 +2063,7 @@ localtype_main: simpletype { $$ = $1; }
                 { $$ = GenComplexType( $1, $3); }
               | simpletype_main SQBR_L SQBR_R  
                 { $$ = $1;
-                  TYPES_DIM( $$) = UNKNOWN_SHAPE;
+                  TYPES_DIM( $$) = 0;
                 }
               | simpletype_main SQBR_L PLUS SQBR_R  
                 { $$ = $1;
@@ -2077,7 +2080,7 @@ localtype_main: simpletype { $$ = $1; }
               | id SQBR_L SQBR_R
                 { $$ = MakeTypes1( T_user);
                   TYPES_NAME( $$) = $1;
-                  TYPES_DIM( $$) = UNKNOWN_SHAPE;
+                  TYPES_DIM( $$) = 0;
                 }
               | id SQBR_L PLUS SQBR_R
                 { $$ = MakeTypes1( T_user);
