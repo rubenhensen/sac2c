@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.11  2000/08/18 23:04:34  dkr
+ * definition of ND_KS_RET_OUT_RC and ND_KS_RET_INOUT_RC modified
+ * in order to support renaming of out-paramters in case of name
+ * conflicts
+ *
  * Revision 2.10  2000/07/19 16:38:16  nmw
  * SAC_INITGLOBALOBJECT macros added
  *
@@ -26,7 +31,7 @@
  * de-allocation purposes.
  *
  * Revision 2.4  1999/06/25 14:50:48  jhs
- * Changed some macros. I had problems with multiple poccurences of ## during
+ * Changed some macros. I had problems with multiple occurences of ## during
  * expansion of combinated macros. I introduced a Macro called CAT, this solution
  * is described in Kernighan/Ritchie A.12.3.
  *
@@ -51,9 +56,6 @@
  * Revision 1.4  1998/06/29 08:52:19  cg
  * streamlined tracing facilities
  * tracing on new with-loop and multi-threading operations implemented
- *
- * Revision 1.3  1998/06/19 18:31:01  dkr
- * *** empty log message ***
  *
  * Revision 1.2  1998/06/03 14:59:05  cg
  * generation of new identifier names as extensions of old ones
@@ -119,11 +121,11 @@
  */
 
 #define SAC_ND_A_FIELD(name) name
-#define SAC_ND_A_SIZE(name) name##__sz
-#define SAC_ND_A_DIM(name) name##__d
-#define SAC_ND_A_SHAPE(name, dim) name##__s##dim
-#define SAC_ND_A_SHAPEP_AKD(name) name##__s
-#define SAC_ND_A_SHAPE_AKD(name, dim) name##__s[dim]
+#define SAC_ND_A_SIZE(name) cat0 (name, __sz)
+#define SAC_ND_A_DIM(name) cat0 (name, __d)
+#define SAC_ND_A_SHAPE(name, dim) cat0 (cat0 (name, __s), dim)
+#define SAC_ND_A_SHAPEP_AKD(name) cat0 (name, __s)
+#define SAC_ND_A_SHAPE_AKD(name, dim) cat0 (name, __s[dim])
 
 #define SAC_ND_WRITE_ARRAY(name, pos)                                                    \
     SAC_BC_WRITE (name, pos) SAC_CS_WRITE_ARRAY (name, pos) SAC_ND_A_FIELD (name)[pos]
@@ -140,9 +142,8 @@
  *
  */
 
-#define CAT(x, y) x##y
-#define SAC_ND_A_RC(name) CAT (*name, __rc)
-#define SAC_ND_A_RCP(name) CAT (name, __rc)
+#define SAC_ND_A_RC(name) *cat0 (name, __rc)
+#define SAC_ND_A_RCP(name) cat0 (name, __rc)
 
 /*
  * ICMs for declaring refcounted data:
@@ -574,19 +575,27 @@
  * ND_KS_AP_INOUT_RC( name)
  *   macro for giving refcounted data as "inout" argument
  *
- * ND_KS_RET_OUT_RC( name)
+ * ND_KS_RET_OUT_RC( name, namep)
  *   macro for returning refcounted data
  *
- * ND_KS_RET_INOUT_RC( name)
+ * ND_KS_RET_INOUT_RC( name, namep)
  *   macro for returning "inout" refcounted data
  *
  */
 
-#define SAC_ND_KS_DEC_IN_RC(type, name) type name, int *name##__rc
+/*
+ * creates name for formal function parameter
+ */
+#define SAC_NAMEP(name) cat0 (name, __p)
 
-#define SAC_ND_KS_DEC_OUT_RC(type, name) type *name##__p, int **name##__rc__p
+#define SAC_ND_KS_DEC_IN_RC(type, name)                                                  \
+    type SAC_ND_A_FIELD (name), int *SAC_ND_A_RCP (name)
 
-#define SAC_ND_KS_DEC_INOUT_RC(type, name) type *name##__p, int **name##__rc__p
+#define SAC_ND_KS_DEC_OUT_RC(type, name)                                                 \
+    type *SAC_NAMEP (SAC_ND_A_FIELD (name)), int **SAC_NAMEP (SAC_ND_A_RCP (name))
+
+#define SAC_ND_KS_DEC_INOUT_RC(type, name)                                               \
+    type *SAC_NAMEP (SAC_ND_A_FIELD (name)), int **SAC_NAMEP (SAC_ND_A_RCP (name))
 
 #define SAC_ND_KS_DEC_IMPORT_IN_RC(type) type, int *
 
@@ -594,25 +603,26 @@
 
 #define SAC_ND_KS_DEC_IMPORT_INOUT_RC(type) type *, int **
 
-#define SAC_ND_KS_AP_IN_RC(name) name, name##__rc
+#define SAC_ND_KS_AP_IN_RC(name) SAC_ND_A_FIELD (name), SAC_ND_A_RCP (name)
 
-#define SAC_ND_KS_AP_OUT_RC(name) &name, &name##__rc
+#define SAC_ND_KS_AP_OUT_RC(name) &SAC_ND_A_FIELD (name), &SAC_ND_A_RCP (name)
 
-#define SAC_ND_KS_AP_INOUT_RC(name) &name, &name##__rc
+#define SAC_ND_KS_AP_INOUT_RC(name) &SAC_ND_A_FIELD (name), &SAC_ND_A_RCP (name)
 
-#define SAC_ND_KS_RET_OUT_RC(name)                                                       \
-    *##name##__p = name;                                                                 \
-    *name##__rc__p = name##__rc
+#define SAC_ND_KS_RET_OUT_RC(name, namep)                                                \
+    *SAC_NAMEP (SAC_ND_A_FIELD (namep)) = SAC_ND_A_FIELD (name);                         \
+    *SAC_NAMEP (SAC_ND_A_RCP (namep)) = SAC_ND_A_RCP (name)
 
-#define SAC_ND_KS_RET_INOUT_RC(name)                                                     \
-    *##name##__p = name;                                                                 \
-    *name##__rc__p = name##__rc
+#define SAC_ND_KS_RET_INOUT_RC(name, namep)                                              \
+    *SAC_NAMEP (SAC_ND_A_FIELD (namep)) = SAC_ND_A_FIELD (name);                         \
+    *SAC_NAMEP (SAC_ND_A_RCP (namep)) = SAC_ND_A_RCP (name)
 
-#define SAC_ND_DECL_INOUT_PARAM(type, name) type name = *##name##__p;
+#define SAC_ND_DECL_INOUT_PARAM(type, name)                                              \
+    type SAC_ND_A_FIELD (name) = *SAC_NAMEP (SAC_ND_A_FIELD (name));
 
 #define SAC_ND_DECL_INOUT_PARAM_RC(type, name)                                           \
-    type name = *##name##__p;                                                            \
-    int *name##__rc = *name##__rc__p;
+    type SAC_ND_A_FIELD (name) = *SAC_NAMEP (SAC_ND_A_FIELD (name));                     \
+    int *SAC_ND_A_RCP (name) = *SAC_NAMEP (SAC_ND_A_RCP (name));
 
 /*
  * SAC_INITGLOBALOBJECT( initfun, varname )
