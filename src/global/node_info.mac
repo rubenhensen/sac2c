@@ -1,10 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.52  1995/03/29 11:58:08  hw
- * comp_tab inserted
- * N_icm inserted
+ * Revision 1.53  1995/03/31 15:43:52  hw
+ * CompId, CompArg, CompWith, CompArray, CompAp, CompReturn inserted
  *
+;; Revision 1.52  1995/03/29  11:58:08  hw
+;; comp_tab inserted
+;; N_icm inserted
+;;
 ;; Revision 1.51  1995/03/17  17:41:13  asi
 ;; added work reduction
 ;;
@@ -180,7 +183,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_str, "N_str", DummyFun, DummyFun, PrintId, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeInfoId, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_id, "N_id", DummyFun, DummyFun, PrintId, DummyFun, OPTid, DummyFun, DummyFun,
-       FreeInfoId, CFid, RCid, DummyFun, DummyFun),
+       FreeInfoId, CFid, RCid, CompId, DummyFun),
   NIF (N_float, "N_float", DummyFun, DummyFun, PrintFloat, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_typedef, "N_typedef", DummyFun, DummyFun, PrintTypedef, DummyFun, DummyFun,
@@ -202,11 +205,11 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_block, "N_block", DummyFun, DummyFun, PrintBlock, DummyFun, OPTblock, DEADblock,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_arg, "N_arg", DummyFun, DummyFun, PrintArg, DummyFun, OPTarg, DummyFun, DummyFun,
-       FreeInfoType, DummyFun, DummyFun, DummyFun, DummyFun),
+       FreeInfoType, DummyFun, DummyFun, CompArg, DummyFun),
   NIF (N_assign, "N_assign", DummyFun, FltnAssign, PrintAssign, TCassign, OPTassign,
        DEADassign, DummyFun, FreeNoInfo, CFassign, RCassign, CompAssign, DummyFun),
   NIF (N_return, "N_return", DummyFun, DummyFun, PrintReturn, TCreturn, DummyFun,
-       DummyFun, DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
+       DummyFun, DummyFun, FreeNoInfo, DummyFun, DummyFun, CompReturn, DummyFun),
   NIF (N_do, "N_do", DummyFun, FltnDo, PrintDo, TCdo, OPTloop, DEADloop, DummyFun,
        FreeNoInfo, CFdo, RCloop, DummyFun, DummyFun),
   NIF (N_while, "N_while", DummyFun, FltnWhile, PrintWhile, TCwhile, OPTloop, DEADloop,
@@ -224,7 +227,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_divon, "N_divon", DummyFun, DummyFun, PrintLeton, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeInfoIds, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_with, "N_with", DummyFun, FltnWith, PrintWith, DummyFun, OPTwith, DEADwith,
-       DummyFun, FreeNoInfo, CFwith, RCwith, DummyFun, DummyFun),
+       DummyFun, FreeNoInfo, CFwith, RCwith, CompWith, DummyFun),
   NIF (N_generator, "N_generator", DummyFun, FltnGen, PrintGenator, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeInfoId, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_genarray, "N_genarray", DummyFun, DummyFun, PrintConexpr, DummyFun, DummyFun,
@@ -238,13 +241,13 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_prf, "N_prf", DummyFun, DummyFun, PrintPrf, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, CFprf, DummyFun, CompPrf, DummyFun),
   NIF (N_ap, "N_ap", DummyFun, DummyFun, PrintAp, DummyFun, DummyFun, DummyFun, DummyFun,
-       FreeInfoId, DummyFun, DummyFun, DummyFun, DummyFun),
+       FreeInfoId, DummyFun, DummyFun, CompAp, DummyFun),
   NIF (N_cast, "N_cast", DummyFun, DummyFun, PrintCast, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeInfoType, CFcast, DummyFun, DummyFun, DummyFun),
   NIF (N_exprs, "N_exprs", DummyFun, FltnExprs, PrintExprs, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_array, "N_array", DummyFun, DummyFun, PrintArray, DummyFun, DummyFun, DummyFun,
-       DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
+       DummyFun, FreeNoInfo, DummyFun, DummyFun, CompArray, DummyFun),
   NIF (N_info, "N_info", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_empty, "N_empty", DummyFun, DummyFun, PrintEmpty, DummyFun, DummyFun, DummyFun,
