@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.241  2004/12/11 17:39:12  ktr
+ * sons/attribs are structs iff CLEANMEM is set.
+ *
  * Revision 3.240  2004/11/24 16:45:28  sah
  * changed internal node representation
  *
@@ -235,11 +238,16 @@ extern access_t *TBmakeAccess (node *array, node *iv, accessclass_t class, shpse
 #include "attribs.h"
 
 struct NODE {
-    nodetype nodetype;         /* type of node */
-    int lineno;                /* line number in source code */
-    char *src_file;            /* pointer to filename or source code */
+    nodetype nodetype; /* type of node */
+    int lineno;        /* line number in source code */
+    char *src_file;    /* pointer to filename or source code */
+#ifdef CLEANMEM
+    struct SONUNION sons;       /* the sons */
+    struct ATTRIBUNION attribs; /* the nodes attributes */
+#else
     union SONUNION sons;       /* the sons */
     union ATTRIBUNION attribs; /* the nodes attributes */
+#endif
 };
 
 #include "node_basic.h"

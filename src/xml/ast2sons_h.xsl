@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/12/11 17:40:00  ktr
+  sons/attribs are structs iff CLEANMEM is set.
+
   Revision 1.1  2004/11/24 16:46:55  sah
   Initial revision
 
@@ -79,8 +82,16 @@
  * This union handles all different types of sons. Its members are
  * called N_nodename.
  ****************************************************************************/
+#ifdef CLEANMEM
+    </xsl:text>
+    <xsl:value-of select="'struct SONUNION { '"/>
+    <xsl:text>
+#else
     </xsl:text>
     <xsl:value-of select="'union SONUNION { '"/>
+    <xsl:text>
+#endif
+    </xsl:text>
     <xsl:apply-templates select="node" mode="generate-sons-union">
       <xsl:sort select="@name"/>
     </xsl:apply-templates>
