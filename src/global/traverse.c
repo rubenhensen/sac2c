@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/01/16 10:54:50  asi
+ * Revision 1.10  1995/01/18 17:37:16  asi
+ * added include free.h
+ *
+ * Revision 1.9  1995/01/16  10:54:50  asi
  * added opt3_tab for loop independent removal
  * and free_tree for deletion of a syntax(sub)-tree
  *
@@ -36,6 +39,7 @@
 #include <stdlib.h>
 
 #include "tree.h"
+#include "free.h"
 #include "Error.h"
 #include "dbug.h"
 #include "my_debug.h"
