@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2002/06/26 08:49:05  dkr
+ * CreateZero() creates vectors for WL-unrolling only :)
+ *
  * Revision 3.58  2002/06/25 23:52:06  ktr
- * CreateZero now always creates a Withloop for non-scalar values, because WLS can't
- * handle ZeroVectors.
+ * CreateZero now always creates a Withloop for non-scalar values, because
+ * WLS can't handle ZeroVectors.
  *
  * Revision 3.57  2002/06/20 15:35:36  dkr
  * - AddVardecs() added
@@ -3114,15 +3117,9 @@ CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll, node *fundef)
 
     if (dim == 0) {
         zero = CreateZeroScalar (btype);
-    }
-
-    /* Commented out because it's bad for WLS */
-    /*
-      else if (dim == 1) {
-        zero = CreateZeroVector( length, btype);
-      }
-    */
-    else {
+    } else if (unroll && (dim == 1)) {
+        zero = CreateZeroVector (length, btype);
+    } else {
         if (unroll) {
             zero
               = MakePrf (F_reshape,
