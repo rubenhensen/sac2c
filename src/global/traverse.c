@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.58  1998/03/22 18:06:33  srs
+ * added new tab wlt_tab and included new WL-files WLT.h, WLI.h and WLF.h
+ *
  * Revision 1.57  1998/03/06 13:20:40  srs
  * added wli_tab (gather information for WLF)
  *
@@ -223,6 +226,9 @@
 #include "cccall.h"
 #include "Old2NewWith.h"
 #include "WithloopFolding.h"
+#include "WLT.h"
+#include "WLI.h"
+#include "WLF.h"
 
 #include "traverse.h"
 
@@ -679,18 +685,19 @@ funptr readsib_tab[] = {
 #undef NIF
 
 /*
- * 33) unused (was link_tab)
+ * 33) wlt_tab
  */
-/*
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, \
-  q, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn) am
 
-funptr link_tab[]={
+#define NIF(n, s, i, f, p, t, o, x, wlf, z, a, b, c, d, e, g, h, j, k, l, wli, q, aa,    \
+            ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, wlt, an, ao, ap, nn)             \
+    wlt
+
+funptr wlt_tab[] = {
 #include "node_info.mac"
-                  };
+};
 
 #undef NIF
-*/
+
 /*
  * 34) cse_tab
  */
