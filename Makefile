@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.92  2004/07/21 12:40:38  khf
+# added WLEnhancement.o and ExplicitAccumulate.o to FLATTEN
+#
 # Revision 3.91  2004/07/18 08:50:09  ktr
 # added src/refcount/refcounting.o to REFCOUNT.
 #
@@ -212,7 +215,8 @@ FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o \
          src/flatten/fun2lac.o src/flatten/insert_vardec.o \
          src/flatten/handle_mops.o src/flatten/UndoSSATransform.o \
          src/flatten/CheckAvis.o src/flatten/SSATransform.o \
-         src/flatten/ssa.o src/flatten/WLPartitionGeneration.o
+         src/flatten/ssa.o src/flatten/WLPartitionGeneration.o \
+	 src/flatten/WLEnhancement.o src/flatten/ExplicitAccumulate.o
 
 CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/constants_struc_ops.o \
