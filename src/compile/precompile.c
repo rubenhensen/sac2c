@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.27  1998/03/21 16:19:10  dkr
+ * fixed a few bugs in PRECnwith
+ *
  * Revision 1.26  1998/03/20 21:57:48  dkr
  * first version of PRECnwith:
- *   rectangle-building implemented
+ *   cube-building implemented
  *   choice of segments implemented (rudimental)
  *   hierarchical blocking implemented
  *
@@ -14,7 +17,7 @@
  * in N_WL... nodes: INNER is now called CONTENTS
  *
  * Revision 1.22  1998/03/19 20:57:42  dkr
- * added computation of the rectangles
+ * added computation of the cubes
  *
  * Revision 1.20  1998/03/15 23:22:39  dkr
  * changed PRECnwith()
@@ -1777,7 +1780,7 @@ ComputeOffset (int new_bound1, int bound1, int step, int offset, int width)
  *
  * description:
  *   returns in 'isect1' and 'isect2' the part of 'proj1', 'proj2' respectively
- *     that lies in a common rectangle.
+ *     that lies in a common cube.
  *   eventually present next nodes in 'proj1' or 'proj2' are ignored.
  *
  ******************************************************************************/
@@ -1883,7 +1886,7 @@ IntersectOutline (node *proj1, node *proj2, node *shape_elems, node **isect1,
 /******************************************************************************
  *
  * function:
- *   node *MergeProj(node *proj1, node *proj2)
+ *   node *MergeRect(node *proj1, node *proj2)
  *
  * description:
  *   merges 'proj2' into 'proj1'
@@ -1893,12 +1896,12 @@ IntersectOutline (node *proj1, node *proj2, node *shape_elems, node **isect1,
  ******************************************************************************/
 
 node *
-MergeProj (node *proj1, node *proj2)
+MergeRect (node *proj1, node *proj2)
 {
     node *grid1, *grid2, *new_grid, *tmp;
     int bound11, bound12;
 
-    DBUG_ENTER ("MergeProj");
+    DBUG_ENTER ("MergeRect");
 
     if (proj1 != NULL) {
 
@@ -1952,7 +1955,7 @@ MergeProj (node *proj1, node *proj2)
             if (WLGRID_OFFSET (tmp) == WLGRID_OFFSET (grid2)) {
                 /* range of 'grid2' is already in grid list -> merge next dim */
                 WLGRID_NEXTDIM (tmp)
-                  = MergeProj (WLGRID_NEXTDIM (tmp), WLGRID_NEXTDIM (grid2));
+                  = MergeRect (WLGRID_NEXTDIM (tmp), WLGRID_NEXTDIM (grid2));
             } else {
                 /* insert 'grid2' after 'tmp' */
                 if (WLGRID_NEXT (tmp) != NULL) {
@@ -1994,23 +1997,23 @@ MergeProj (node *proj1, node *proj2)
 /******************************************************************************
  *
  * function:
- *   node *ComputeRects(node *projs, node *shape_arr)
+ *   node *ComputeCubes(node *projs, node *shape_arr)
  *
  * description:
- *   returns the set of rectangles as a N_WLproj-chain
+ *   returns the set of cubes as a N_WLproj-chain
  *
  ******************************************************************************/
 
 node *
-ComputeRects (node *projs, node *shape_arr)
+ComputeCubes (node *projs, node *shape_arr)
 {
     node *tmp, *new_projs, *new_proj1, *last_proj2, *isect1, *isect2, *proj1, *proj2;
-    int fixpoint, new_step;
+    int fixpoint;
 
-    DBUG_ENTER ("ComputeRects");
+    DBUG_ENTER ("ComputeCubes");
 
     /*
-     * step 1: create disjunct outlines -> every proj lies in one and only one rectangle
+     * step 1: create disjunct outlines -> every proj lies in one and only one cube
      */
     do {
         fixpoint = 1;
@@ -2043,11 +2046,12 @@ ComputeRects (node *projs, node *shape_arr)
                     WLPROJ_MODIFIED (proj2) = 1;
                     new_projs = InsertProjs (new_projs, isect2);
                 }
+
                 proj2 = WLPROJ_NEXT (proj2);
             }
 
             /* have 'proj1' only empty intersections with the others? */
-            if (WLPROJ_MODIFIED (tmp) == 0) {
+            if (WLPROJ_MODIFIED (proj1) == 0) {
                 /* insert 'proj1' in 'new_projs' */
                 tmp = proj1;
                 proj1 = WLPROJ_NEXT (proj1);
@@ -2063,7 +2067,7 @@ ComputeRects (node *projs, node *shape_arr)
     } while (!fixpoint);
 
     /*
-     * step 2: merge all projs that lie in the same rectangle -> set of rectangles
+     * step 2: merge all projs that lie in the same cube -> set of cubes
      */
     new_projs = NULL;
 
@@ -2080,7 +2084,7 @@ ComputeRects (node *projs, node *shape_arr)
 
 #if 0
     /*
-     * collect all projs, that lie in the same rectangle as 'proj1', in 'new_proj1'
+     * collect all projs, that lie in the same cube as 'proj1', in 'new_proj1'
      */
     while (proj2 != NULL) {
       /* intersect outlines of 'proj1' and 'proj2' */
@@ -2101,7 +2105,7 @@ ComputeRects (node *projs, node *shape_arr)
     }
 
     /*
-     * compute step value for rectangle 'new_proj1'
+     * compute step value for cube 'new_proj1'
      */
 
     (...)
@@ -2115,7 +2119,7 @@ ComputeRects (node *projs, node *shape_arr)
 
                 WLPROJ_NEXT (last_proj2)
                   = WLPROJ_NEXT (proj2);                  /* remove 'proj2' from chain */
-                new_proj1 = MergeProj (new_proj1, proj2); /* merge 'proj2' with 'proj1' */
+                new_proj1 = MergeRect (new_proj1, proj2); /* merge 'proj2' with 'proj1' */
 
                 proj2 = FreeNode (proj2); /* data of 'proj2' is no longer needed */
                                           /* 'proj2' points now to his successor!! */
@@ -2180,7 +2184,7 @@ CalcSV (node *proj, long *sv)
 /******************************************************************************
  *
  * function:
- *   node *SetSegAttribs(node *seg, int dims)
+ *   node *SetSegAttribs(node *seg)
  *
  * description:
  *   sets the attributes UBV, BV for segment 'seg' (N_WLseg node):
@@ -2208,11 +2212,7 @@ SetSegAttribs (node *seg)
      */
     WLSEG_UBV (seg) = (long *)MALLOC (sizeof (long) * dims);
     for (d = 0; d < dims; d++) {
-#if 1
-        (WLSEG_UBV (seg))[d] = 2 * sv[d];
-#else
-        (WLSEG_UBV (seg))[d] = 1;
-#endif
+        (WLSEG_UBV (seg))[d] = 1; /* ??? */
     }
 
     /*
@@ -2221,29 +2221,33 @@ SetSegAttribs (node *seg)
      *           except that the first components could have value 1
      *           --- but in any case: (bv[b] >= bv[b+1]), (bv[BLOCK-1] >= ubv))
      */
-#if 1
-    WLSEG_BLOCKS (seg) = 2;
-#endif
+    WLSEG_BLOCKS (seg) = 2; /* ??? */
     for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
         WLSEG_BV (seg, b) = (long *)MALLOC (sizeof (long) * dims);
         for (d = 0; d < dims; d++) {
-#if 1
-            (WLSEG_BV (seg, b))[d] = 4 * (WLSEG_BLOCKS (seg) - b) * sv[d];
-#else
-            (WLSEG_BV (seg, b))[d] = 1;
-#endif
+            (WLSEG_BV (seg, b))[d] = 1; /* ??? */
         }
     }
 
-#if 1
-    (WLSEG_BV (seg, 0))[0] = 180; /* 1 or 180 */
-    (WLSEG_BV (seg, 0))[1] = 156;
+#if 0
+  WLSEG_BLOCKS(seg) = 2;
 
-    (WLSEG_BV (seg, 1))[0] = 1;
-    (WLSEG_BV (seg, 1))[1] = 6;
+  (WLSEG_BV(seg, 0))[0] = 600;
+  (WLSEG_BV(seg, 0))[1] = 400;
 
-    (WLSEG_UBV (seg))[0] = 1;
-    (WLSEG_UBV (seg))[1] = 6;
+  (WLSEG_BV(seg, 1))[0] = 180;
+  (WLSEG_BV(seg, 1))[1] = 156;
+
+  (WLSEG_UBV(seg))[0] = 18;
+  (WLSEG_UBV(seg))[1] = 3;
+#else
+    WLSEG_BLOCKS (seg) = 1;
+
+    (WLSEG_BV (seg, 0))[0] = 180; /* 180 or 1 */
+    (WLSEG_BV (seg, 0))[1] = 156; /* 156 */
+
+    (WLSEG_UBV (seg))[0] = 1; /* 1 */
+    (WLSEG_UBV (seg))[1] = 6; /* 6 */
 #endif
 
     FREE (sv);
@@ -2254,19 +2258,21 @@ SetSegAttribs (node *seg)
 /******************************************************************************
  *
  * function:
- *   node *SetSegs(node *rects, int dims)
+ *   node *SetSegs(node *cubes, int dims)
  *
  * description:
- *   returns chain of segments (based on the calculated rectangles 'rects')
+ *   returns chain of segments (based on the calculated cubes 'cubes')
  *
  ******************************************************************************/
 
 node *
-SetSegs (node *rects, int dims)
+SetSegs (node *cubes, int dims)
 {
     node *rect, *last_seg, *new_seg, *segs;
 
     DBUG_ENTER ("SetSegs");
+
+    /* ??? */
 
 #if 1
     /*
@@ -2274,21 +2280,21 @@ SetSegs (node *rects, int dims)
      *
      */
 
-    segs = MakeWLseg (dims, rects, NULL);
+    segs = MakeWLseg (dims, cubes, NULL);
     segs = SetSegAttribs (segs);
 #else
     /*
-     * choose every rectangle as a segment
+     * choose every cube as a segment
      *
      */
 
     segs = NULL;
-    while (rects != NULL) {
+    while (cubes != NULL) {
         /*
-         * extract next rectangle
+         * extract next cube
          */
-        rect = rects;
-        rects = WLPROJ_NEXT (rects);
+        rect = cubes;
+        cubes = WLPROJ_NEXT (cubes);
         WLPROJ_NEXT (rect) = NULL;
         /*
          * build new segment
@@ -2316,7 +2322,7 @@ SetSegs (node *rects, int dims)
  *   node *BlockProj(node *proj, long *bv)
  *
  * description:
- *
+ *   correct bounds and blocking levels of Wlproj-chain 'proj' after a blocking
  *
  ******************************************************************************/
 
@@ -2332,21 +2338,27 @@ BlockProj (node *proj, long *bv)
         DBUG_ASSERT ((NODE_TYPE (proj)), "no N_WLproj node found");
 
         curr_proj = proj;
-        while (curr_proj != NULL) {
+        do {
+
+            /* correct blocking level */
+            WLPROJ_LEVEL (curr_proj)++;
 
             /* fit bounds of proj to blocking step */
+            DBUG_ASSERT ((bv[WLPROJ_DIM (curr_proj)] > 1), "wrong bv value found");
+            DBUG_ASSERT ((bv[WLPROJ_DIM (curr_proj)] >= WLPROJ_STEP (curr_proj)),
+                         "blocking step (>1) is smaller than proj step");
             WLPROJ_BOUND1 (curr_proj) = 0;
             WLPROJ_BOUND2 (curr_proj) = bv[WLPROJ_DIM (curr_proj)];
 
             curr_grid = WLPROJ_CONTENTS (curr_proj);
             do {
-                BlockProj (WLGRID_NEXTDIM (curr_grid), bv);
+                WLGRID_NEXTDIM (curr_grid) = BlockProj (WLGRID_NEXTDIM (curr_grid), bv);
 
                 curr_grid = WLGRID_NEXT (curr_grid);
             } while (curr_grid != NULL);
 
             curr_proj = WLPROJ_NEXT (curr_proj);
-        }
+        } while (curr_proj != NULL);
     }
 
     DBUG_RETURN (proj);
@@ -2355,19 +2367,24 @@ BlockProj (node *proj, long *bv)
 /******************************************************************************
  *
  * function:
- *   node *BlockWL(node *proj, int dims, long *bv, int level)
+ *   node *BlockWL(node *proj, int dims, long *bv, int unroll)
  *
  * description:
+ *   carries out a blocking on 'proj' with blocking-vector 'bv'.
+ *   when called multiple times in a row, this function even realizes
+ *     hierarchical blocking!! (top-down: coarse blocking first!)
  *
+ *   ('unroll' > 0) means unrolling-blocking (allowed only once after all
+ *     convential blocking!).
  *
  ******************************************************************************/
 
 node *
-BlockWL (node *proj, int dims, long *bv, int level)
+BlockWL (node *proj, int dims, long *bv, int unroll)
 {
     node *curr_block, *curr_dim, *curr_proj, *curr_grid, *contents, *lastdim, *last_block,
       *block;
-    int d;
+    int level, d;
 
     DBUG_ENTER ("BlockWL");
 
@@ -2375,7 +2392,7 @@ BlockWL (node *proj, int dims, long *bv, int level)
 
         switch (NODE_TYPE (proj)) {
 
-        case N_WLblock: /* block found */
+        case N_WLblock: /* block found -> hierarchical blocking */
 
             curr_block = proj;
             while (curr_block != NULL) {
@@ -2388,20 +2405,23 @@ BlockWL (node *proj, int dims, long *bv, int level)
                     DBUG_ASSERT ((NODE_TYPE (curr_dim) == N_WLblock), "no block found");
                 }
 
-                /* block contents of found block (with next blocking-level) */
+                /* block contents of found block */
                 WLBLOCK_CONTENTS (curr_dim)
-                  = BlockWL (WLBLOCK_CONTENTS (curr_dim), dims, bv, level + 1);
+                  = BlockWL (WLBLOCK_CONTENTS (curr_dim), dims, bv, unroll);
 
                 curr_block = WLBLOCK_NEXT (curr_block);
             }
             break;
 
         case N_WLublock: /* ublock found ?!?! */
+            /* unrolling-blocking is allowed only once after all conventional blocking */
 
-            DBUG_ASSERT ((0), "ublock found while blocking");
+            DBUG_ASSERT ((0), "data of unrolling-blocking found while blocking");
             break;
 
         case N_WLproj: /* unblocked proj found */
+
+            level = WLPROJ_LEVEL (proj);
 
             last_block = NULL;
             curr_proj = proj;
@@ -2412,21 +2432,29 @@ BlockWL (node *proj, int dims, long *bv, int level)
                     curr_grid = WLPROJ_CONTENTS (curr_proj);
                     do {
                         WLGRID_NEXTDIM (curr_grid)
-                          = BlockWL (WLGRID_NEXTDIM (curr_grid), dims, bv, level);
+                          = BlockWL (WLGRID_NEXTDIM (curr_grid), dims, bv, unroll);
 
                         curr_grid = WLGRID_NEXT (curr_grid);
                     } while (curr_grid != NULL);
 
                     curr_proj = WLPROJ_NEXT (curr_proj);
                 } else {
-                    /* blocking -> create a N_WLblock node for each following dim */
+                    /* blocking -> create a N_WLblock (N_WLublock respectively) node for
+                     * each following dim */
                     contents = curr_proj;
                     lastdim = NULL;
                     for (d = WLPROJ_DIM (curr_proj); d < dims; d++) {
+                        DBUG_ASSERT ((NODE_TYPE (contents) == N_WLproj),
+                                     "wrong hierarchical blocking");
+
                         block = MakeWLblock (level, WLPROJ_DIM (contents),
                                              WLPROJ_BOUND1 (contents),
                                              WLPROJ_BOUND2 (contents),
                                              bv[WLPROJ_DIM (contents)], NULL, NULL, NULL);
+
+                        if (unroll > 0) { /* unrolling-blocking wanted? */
+                            NODE_TYPE (block) = N_WLublock;
+                        }
 
                         if (lastdim != NULL) {
                             /* not first blocking dim -> append at block node of last dim
@@ -2456,7 +2484,7 @@ BlockWL (node *proj, int dims, long *bv, int level)
                     curr_proj = WLPROJ_NEXT (curr_proj);
                     WLPROJ_NEXT (WLBLOCK_CONTENTS (lastdim))
                       = NULL; /* successor is in next block */
-                    /* correct the bounds in contents of block */
+                    /* correct the bounds and blocking level in contents of block */
                     WLBLOCK_CONTENTS (lastdim)
                       = BlockProj (WLBLOCK_CONTENTS (lastdim), bv);
                 }
@@ -2476,7 +2504,7 @@ BlockWL (node *proj, int dims, long *bv, int level)
 /******************************************************************************
  *
  * function:
- *   node *UnrollBlockWL(node *proj, int dims, long *ubv)
+ *   node *SplitMergeWL(node *projs)
  *
  * description:
  *
@@ -2484,29 +2512,65 @@ BlockWL (node *proj, int dims, long *bv, int level)
  ******************************************************************************/
 
 node *
-UnrollBlockWL (node *proj, int dims, long *ubv)
-{
-    DBUG_ENTER ("UnrollBlockWL");
-
-    DBUG_RETURN (proj);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SplitMergeWL(node *proj)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-SplitMergeWL (node *proj)
+SplitMergeWL (node *projs)
 {
     DBUG_ENTER ("SplitMergeWL");
 
-    DBUG_RETURN (proj);
+#if 0
+  do {
+    fixpoint = 1;
+    new_projs = NULL;
+
+    /* initialize WLPROJ_MODIFIED */
+    proj1 = projs;
+    while (proj1 != NULL) {
+      WLPROJ_MODIFIED(proj1) = 0;
+      proj1 = WLPROJ_NEXT(proj1);
+    }
+
+    /* intersect the elements of 'projs' in pairs */
+    proj1 = projs;
+    while (proj1 != NULL) {
+
+      proj2 = WLPROJ_NEXT(proj1);
+      while (proj2 != NULL) {
+
+        /* intersect outlines of 'proj1' and 'proj2' */
+        IntersectOutline(proj1, proj2, ARRAY_AELEMS(shape_arr), &isect1, &isect2);
+        if ((isect1 != NULL) && (CompareProj(proj1, isect1) != 0)) {
+          fixpoint = 0;
+          WLPROJ_MODIFIED(proj1) = 1;
+          new_projs = InsertProjs(new_projs, isect1);
+	}
+        if ((isect2 != NULL) && (CompareProj(proj2, isect2) != 0)) {
+          fixpoint = 0;
+          WLPROJ_MODIFIED(proj2) = 1;
+          new_projs = InsertProjs(new_projs, isect2);
+	}
+
+        proj2 = WLPROJ_NEXT(proj2);
+      }
+
+      /* have 'proj1' only empty intersections with the others? */
+      if (WLPROJ_MODIFIED(proj1) == 0) {
+        /* insert 'proj1' in 'new_projs' */
+        tmp = proj1;
+        proj1 = WLPROJ_NEXT(proj1);
+        EXPRS_NEXT(tmp) = NULL;
+        new_projs = InsertProjs(new_projs, tmp);
+      }
+      else {
+        proj1 = FreeNode(proj1);        /* 'proj1' is no longer needed */
+        /* 'proj1' points now to his successor!! */
+      }
+    }
+
+    projs = new_projs;
+  }
+  while (! fixpoint);
+#endif
+
+    DBUG_RETURN (projs);
 }
 
 /******************************************************************************
@@ -2576,7 +2640,7 @@ FitWL (node *proj)
 node *
 PRECnwith (node *arg_node, node *arg_info)
 {
-    node *new_node, *rects, *segs, *seg, *shape;
+    node *new_node, *cubes, *segs, *seg, *shape;
     int dims, b;
 
     DBUG_ENTER ("PRECnwith");
@@ -2606,29 +2670,65 @@ PRECnwith (node *arg_node, node *arg_info)
     /* get number of dims of genarray: */
     dims = SHPSEG_SHAPE (TYPES_SHPSEG (ARRAY_TYPE (shape)), 0);
     DBUG_ASSERT ((NODE_TYPE (shape) == N_array), "shape of with-genarray is unknown");
-    rects = ComputeRects (Parts2Projs (NWITH_PART (arg_node), shape), shape);
-    segs = SetSegs (rects, dims);
+    cubes = ComputeCubes (Parts2Projs (NWITH_PART (arg_node), shape), shape);
 
 #if 1
+    NOTE2 (("\n * step 1: cube-building\n"))
+    Print (cubes);
+#endif
+
+    segs = SetSegs (cubes, dims);
+
+#if 1
+    NOTE2 (("\n * step 2: choise of segments\n"))
     Print (segs);
 #endif
 
     seg = segs;
     while (seg != NULL) {
+        /* hierarchical blocking */
         for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
             WLSEG_CONTENTS (seg)
               = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_BV (seg, b), 0);
+            FREE (WLSEG_BV (seg, b));
 #if 1
+            NOTE2 (("\n * step 3: hierarchical blocking\n"))
             Print (segs);
 #endif
         }
 
-        WLSEG_CONTENTS (seg)
-          = UnrollBlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_UBV (seg));
+        /* unrolling-blocking */
+        WLSEG_CONTENTS (seg) = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_UBV (seg), 1);
+        FREE (WLSEG_UBV (seg));
+#if 1
+        NOTE2 (("\n * step 4: unrolling-blocking\n"))
+        Print (segs);
+#endif
+
         WLSEG_CONTENTS (seg) = SplitMergeWL (WLSEG_CONTENTS (seg));
+#if 1
+        NOTE2 (("\n * step 5: splitting-merging\n"))
+        Print (segs);
+#endif
+
         WLSEG_CONTENTS (seg) = OptimizeWL (WLSEG_CONTENTS (seg));
+#if 1
+        NOTE2 (("\n * step 6: optimization\n"))
+        Print (segs);
+#endif
+
         WLSEG_CONTENTS (seg) = NormalizeWL (WLSEG_CONTENTS (seg));
+#if 1
+        NOTE2 (("\n * step 7: normalization\n"))
+        Print (segs);
+#endif
+
         WLSEG_CONTENTS (seg) = FitWL (WLSEG_CONTENTS (seg));
+#if 1
+        NOTE2 (("\n * step 8: fitting\n"))
+        Print (segs);
+#endif
+
         seg = WLSEG_NEXT (seg);
     }
 
