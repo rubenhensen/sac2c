@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.12  2000/01/31 19:29:50  bs
+ * Function added: AddIntVec2Shpseg
+ * Function modified: WLAAprf: the cases F_add_AxA and F_sub_AxA
+ * Function modified: SearchAccess has got no break anymore.
+ *
  * Revision 2.11  2000/01/26 17:26:20  dkr
  * type of traverse-function-table changed.
  *
@@ -90,16 +95,6 @@
 #include "print.h" /* WLAAprintAccesses */
 #include "Error.h"
 #include "wl_access_analyze.h"
-
-#define ACLT(arg)                                                                        \
-    (arg == ACL_unknown)                                                                 \
-      ? ("ACL_unknown")                                                                  \
-      : ((arg == ACL_irregular)                                                          \
-           ? ("ACL_irregular")                                                           \
-           : ((arg == ACL_offset) ? ("ACL_offset")                                       \
-                                  : ((arg == ACL_const) ? ("ACL_const") : (""))))
-
-#define IV(a) ((a) == 0) ? ("") : ("iv + ")
 
 /******************************************************************************
  *
@@ -257,6 +252,41 @@ IntVec2Shpseg (int coeff, int length, int *intvec, shpseg *next)
 /******************************************************************************
  *
  * function:
+ *   shpseg *AddIntVec2Shpseg(int coeff, int length, int *intvec)
+ *
+ * description:
+ *   This functions convert a vector of constant integers into a shape vector.
+ *   During the format conversion each element is multiplied by <coeff>.
+ *   The result will be added to the shape vector <next> if not NULL.
+ *
+ ******************************************************************************/
+
+static shpseg *
+AddIntVec2Shpseg (int coeff, int length, int *intvec, shpseg *next)
+{
+    int i;
+    shpseg *result;
+
+    DBUG_ENTER ("IntVec2Shpseg");
+
+    if (next == NULL) {
+        result = Malloc (sizeof (shpseg));
+        for (i = 0; i < SHP_SEG_SIZE; i++)
+            SHPSEG_SHAPE (result, i) = 0;
+        SHPSEG_NEXT (result) = next;
+    } else {
+        result = next;
+    }
+
+    for (i = 0; i < length; i++)
+        SHPSEG_SHAPE (result, i) += (coeff * intvec[i]);
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   int IsIndexVect(types *type)
  *
  * description:
@@ -403,17 +433,17 @@ CatAccesslists (access_t *a_list_1, access_t *a_list_2)
 static access_t *
 SearchAccess (access_t *access, node *arg_info)
 {
+    int found = 0;
+
     DBUG_ENTER ("SearchAccess");
-    /*
-     *     access == INFO_WLAA_ACCESS(arg_info)
-     *  || access == INFO_WLAA_TMPACCESS(arg_info)
-     */
-    while (access != NULL) {
+
+    while ((access != NULL) && (found == 0)) {
         if ((ACCESS_IV (access) == IDS_VARDEC (INFO_WLAA_LASTLETIDS (arg_info)))
             && (ACCESS_CLASS (access) == ACL_unknown)) {
-            break;
+            found = 1;
+        } else {
+            access = ACCESS_NEXT (access);
         }
-        access = ACCESS_NEXT (access);
     }
 
     DBUG_RETURN (access);
@@ -859,7 +889,13 @@ WLAAlet (node *arg_node, node *arg_info)
             while (access != NULL) {
                 if ((IDS_VARDEC (var) == ACCESS_IV (access))
                     && (ACCESS_CLASS (access) == ACL_unknown)) {
-                    ACCESS_CLASS (access) = ACL_irregular;
+
+                    DBUG_ASSERT (((NODE_TYPE (ACCESS_IV (access)) == N_arg)
+                                  || (NODE_TYPE (ACCESS_IV (access)) == N_vardec)),
+                                 "Not a valid index-vector!");
+#if 0          
+          ACCESS_CLASS(access) = ACL_irregular;
+#endif
                     INFO_WLAA_FEATURE (arg_info) |= FEATURE_UNKNOWN;
                 }
                 access = ACCESS_NEXT (access);
@@ -921,7 +957,7 @@ WLAAprf (node *arg_node, node *arg_info)
 
                 if (INFO_WLAA_INDEXDIM (arg_info) != INFO_WLAA_ARRAYDIM (arg_info)) {
                     /*
-                     *  Result of psi cannot be a skalar !
+                     *  Result of psi must not be a skalar !
                      */
                     DBUG_PRINT ("WLAA_INFO",
                                 ("primitive function psi with array return value"));
@@ -1010,11 +1046,6 @@ WLAAprf (node *arg_node, node *arg_info)
             case F_add_SxA:
                 DBUG_PRINT ("WLAA_INFO", ("primitive function F_add_SxA"));
                 access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
-                /* not used yet:
-                if (access == NULL) {
-                  access = SearchAccess(INFO_WLAA_TMPACCESS(arg_info), arg_info);
-                  access_flag = TEMP_A;
-                } */
                 if (access != NULL) {
                     if (NODE_TYPE (arg_node_arg1) == N_num) {
                         if (ID_VARDEC (arg_node_arg2) == INFO_WLAA_INDEXVAR (arg_info)) {
@@ -1061,11 +1092,6 @@ WLAAprf (node *arg_node, node *arg_info)
             case F_add_AxS:
                 DBUG_PRINT ("WLAA_INFO", ("primitive function F_add_AxS"));
                 access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
-                /* not used yet:
-                if (access == NULL) {
-                  access = SearchAccess(INFO_WLAA_TMPACCESS(arg_info), arg_info);
-                  access_flag = TEMP_A;
-                } */
                 if (access != NULL) {
                     if (NODE_TYPE (arg_node_arg2) == N_num) {
                         if (ID_VARDEC (arg_node_arg1) == INFO_WLAA_INDEXVAR (arg_info)) {
@@ -1118,59 +1144,102 @@ WLAAprf (node *arg_node, node *arg_info)
                               " N_id exspected !"));
                 } else {
                     access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
-                    /* not used yet:
+
                     if (access == NULL) {
-                      access = SearchAccess(INFO_WLAA_TMPACCESS(arg_info), arg_info);
-                      access_flag = TEMP_A;
-                    } */
-                    if (access != NULL) {
-                        if (ID_VARDEC (arg_node_arg1) == INFO_WLAA_INDEXVAR (arg_info)) {
-                            if (ID_CONSTVEC (arg_node_arg2) != NULL) {
-                                ACCESS_CLASS (access) = ACL_offset;
-                                ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
-                                  = IntVec2Shpseg (1, ID_VECLEN (arg_node_arg2),
-                                                   ((int *)ID_CONSTVEC (arg_node_arg2)),
-                                                   ACCESS_OFFSET (
-                                                     INFO_WLAA_ACCESS (arg_info)));
-                                ACCESS_IV (INFO_WLAA_ACCESS (arg_info))
-                                  = INFO_WLAA_INDEXVAR (arg_info);
-                            } else { /* arg2 is not constant */
-                                ACCESS_CLASS (access) = ACL_irregular;
-                            }
-                        } else {
-                            if (ID_VARDEC (arg_node_arg2)
-                                == INFO_WLAA_INDEXVAR (arg_info)) {
-                                if (ID_CONSTVEC (arg_node_arg1) != NULL) {
-                                    ACCESS_CLASS (access) = ACL_offset;
-                                    ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
-                                      = IntVec2Shpseg (1, ID_VECLEN (arg_node_arg1),
-                                                       ((int *)ID_CONSTVEC (
-                                                         arg_node_arg1)),
-                                                       ACCESS_OFFSET (
-                                                         INFO_WLAA_ACCESS (arg_info)));
-                                } else { /* arg1 is not constant */
-                                    ACCESS_CLASS (access) = ACL_irregular;
-                                }
-                            } else { /* None of the arguments is the index vector! */
-
-                                if ((ID_VECLEN (arg_node_arg1) < 0)
-                                    && (ID_VECLEN (arg_node_arg2) < 0)) {
-
-                                    SYSWARN (
-                                      ("WLAA only works correctly with constant folding,"
-                                       " variable exspected !"));
-                                }
-
-                                ACCESS_CLASS (access) = ACL_irregular;
-                            }
-                        }
-                    } else { /* access == NULL */
                         if (!IsIndexVect (IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
                             DBUG_PRINT ("WLAA_INFO",
                                         ("primitive arithmetic operation on arrays "
                                          "(not index vector access)"));
                             INFO_WLAA_FEATURE (arg_info)
                               = INFO_WLAA_FEATURE (arg_info) | FEATURE_AARI;
+                        }
+                    } else { /* access != NULL */
+                        while (access != NULL) {
+                            if (ID_VARDEC (arg_node_arg1)
+                                == INFO_WLAA_INDEXVAR (arg_info)) {
+                                ACCESS_IV (access) = INFO_WLAA_INDEXVAR (arg_info);
+                                if (ID_CONSTVEC (arg_node_arg2)
+                                    != NULL) { /* arg2 is constant */
+                                    ACCESS_CLASS (access) = ACL_offset;
+                                    ACCESS_OFFSET (access)
+                                      = AddIntVec2Shpseg (1, ID_VECLEN (arg_node_arg2),
+                                                          ((int *)ID_CONSTVEC (
+                                                            arg_node_arg2)),
+                                                          ACCESS_OFFSET (access));
+                                    /* offset = offset + arg2 */
+                                } else { /* arg2 is not constant */
+                                    ACCESS_CLASS (access) = ACL_irregular;
+                                }
+                            } else { /* arg1 is not the wl-indexvector */
+                                if (ID_VARDEC (arg_node_arg2)
+                                    == INFO_WLAA_INDEXVAR (arg_info)) {
+                                    ACCESS_IV (access) = INFO_WLAA_INDEXVAR (arg_info);
+                                    if (ID_CONSTVEC (arg_node_arg1)
+                                        != NULL) { /* arg1 is constant */
+                                        ACCESS_CLASS (access) = ACL_offset;
+                                        ACCESS_OFFSET (access)
+                                          = AddIntVec2Shpseg (1,
+                                                              ID_VECLEN (arg_node_arg1),
+                                                              ((int *)ID_CONSTVEC (
+                                                                arg_node_arg1)),
+                                                              ACCESS_OFFSET (access));
+                                        /* offset = offset + arg1 */
+                                    } else { /* arg1 is not constant */
+                                        ACCESS_CLASS (access) = ACL_irregular;
+                                    }
+                                } else { /* None of the arguments is the index vector! */
+#if 0                
+                  if ((ID_VECLEN(arg_node_arg1) < 0)
+                      && (ID_VECLEN(arg_node_arg2) < 0)) {
+                    
+                    SYSWARN(("WLAA only works correctly with constant folding,"
+                             " variable exspected !"));
+                  }
+#endif
+                                    if (ID_CONSTVEC (arg_node_arg1)
+                                        != NULL) { /* arg1 is constant */
+                                        ACCESS_OFFSET (access)
+                                          = AddIntVec2Shpseg (1,
+                                                              ID_VECLEN (arg_node_arg1),
+                                                              ((int *)ID_CONSTVEC (
+                                                                arg_node_arg1)),
+                                                              ACCESS_OFFSET (access));
+                                        /* offset = offset + arg1 */
+                                        if (ID_CONSTVEC (arg_node_arg2)
+                                            != NULL) { /* arg2 is constant */
+                                            ACCESS_CLASS (access) = ACL_const;
+                                            ACCESS_OFFSET (access)
+                                              = AddIntVec2Shpseg (1,
+                                                                  ID_VECLEN (
+                                                                    arg_node_arg2),
+                                                                  ((int *)ID_CONSTVEC (
+                                                                    arg_node_arg2)),
+                                                                  ACCESS_OFFSET (access));
+                                            /* offset = offset + arg2 */
+                                        } else {
+                                            ACCESS_IV (access)
+                                              = ID_VARDEC (arg_node_arg2);
+                                        }
+                                    } else { /* arg1 is not constant */
+                                        if (ID_CONSTVEC (arg_node_arg2)
+                                            != NULL) { /* arg2 is constant */
+                                            ACCESS_IV (access)
+                                              = ID_VARDEC (arg_node_arg1);
+                                            ACCESS_OFFSET (access)
+                                              = AddIntVec2Shpseg (1,
+                                                                  ID_VECLEN (
+                                                                    arg_node_arg2),
+                                                                  ((int *)ID_CONSTVEC (
+                                                                    arg_node_arg2)),
+                                                                  ACCESS_OFFSET (access));
+                                            /* offset = offset + arg2 */
+                                        } else {
+                                            ACCESS_CLASS (access) = ACL_irregular;
+                                        }
+                                    }
+                                }
+                            }
+                            access = SearchAccess (ACCESS_NEXT (access), arg_info);
                         }
                     }
                 }
@@ -1189,13 +1258,11 @@ WLAAprf (node *arg_node, node *arg_info)
                     if (ID_VARDEC (arg_node_arg1) == INFO_WLAA_INDEXVAR (arg_info)) {
                         if (NODE_TYPE (arg_node_arg2) == N_num) {
                             ACCESS_CLASS (access) = ACL_offset;
-                            ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
+                            ACCESS_OFFSET (access)
                               = IntVec2Shpseg (-1, ID_VECLEN (arg_node_arg2),
                                                ((int *)ID_CONSTVEC (arg_node_arg2)),
-                                               ACCESS_OFFSET (
-                                                 INFO_WLAA_ACCESS (arg_info)));
-                            ACCESS_IV (INFO_WLAA_ACCESS (arg_info))
-                              = INFO_WLAA_INDEXVAR (arg_info);
+                                               ACCESS_OFFSET (access));
+                            ACCESS_IV (access) = INFO_WLAA_INDEXVAR (arg_info);
                         } else {
                             ACCESS_CLASS (access) = ACL_irregular;
                         }
@@ -1219,45 +1286,103 @@ WLAAprf (node *arg_node, node *arg_info)
                 break;
 
             case F_sub_AxA:
-                DBUG_ASSERT ((NODE_TYPE (arg_node_arg1) == N_id)
-                               && (NODE_TYPE (arg_node_arg2) == N_id),
-                             ("WLAA is only possible with constant folding,"
-                              " N_id exspected !"));
+                DBUG_PRINT ("WLAA_INFO", ("primitive function F_sub_AxA"));
 
-                access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
-                /* noy used yet:
-                if (access == NULL) {
-                  access = SearchAccess(INFO_WLAA_TMPACCESS(arg_info), arg_info);
-                  access_flag = TEMP_A;
-                } */
-                if (access != NULL) {
-                    if (ID_VARDEC (arg_node_arg1) == INFO_WLAA_INDEXVAR (arg_info)) {
-                        DBUG_PRINT ("WLAA_INFO", ("primitive function F_sub_AxA"));
-                        if (ID_CONSTVEC (arg_node_arg2) != NULL) {
-                            ACCESS_CLASS (access) = ACL_offset;
-                            ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
-                              = IntVec2Shpseg (-1, ID_VECLEN (arg_node_arg2),
-                                               ((int *)ID_CONSTVEC (arg_node_arg2)),
-                                               ACCESS_OFFSET (
-                                                 INFO_WLAA_ACCESS (arg_info)));
-                            ACCESS_IV (INFO_WLAA_ACCESS (arg_info))
-                              = INFO_WLAA_INDEXVAR (arg_info);
-                        } else { /* arg2 is not constant */
-                            ACCESS_CLASS (access) = ACL_irregular;
+                if ((NODE_TYPE (arg_node_arg1) != N_id)
+                    || (NODE_TYPE (arg_node_arg2) != N_id)) {
+                    SYSWARN (("WLAA only works correctly with constant folding,"
+                              " N_id exspected !"));
+                } else {
+                    access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
+
+                    if (access == NULL) {
+                        if (!IsIndexVect (IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
+                            DBUG_PRINT ("WLAA_INFO",
+                                        ("primitive arithmetic operation on arrays "
+                                         "(not index vector access)"));
+                            INFO_WLAA_FEATURE (arg_info)
+                              = INFO_WLAA_FEATURE (arg_info) | FEATURE_AARI;
                         }
-                    } else if (!IsIndexVect (
-                                 IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
-                        DBUG_PRINT ("WLAA_INFO",
-                                    ("primitive function not inferable or unknown"));
-                        INFO_WLAA_FEATURE (arg_info)
-                          = INFO_WLAA_FEATURE (arg_info) | FEATURE_AARI;
-                    }
-                } else { /* access == NULL */
-                    if (!IsIndexVect (IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
-                        DBUG_PRINT ("WLAA_INFO",
-                                    ("primitive function not inferable or unknown"));
-                        INFO_WLAA_FEATURE (arg_info)
-                          = INFO_WLAA_FEATURE (arg_info) | FEATURE_AARI;
+                    } else { /* access != NULL */
+                        while (access != NULL) {
+                            if (ID_VARDEC (arg_node_arg1)
+                                == INFO_WLAA_INDEXVAR (arg_info)) {
+                                /*
+                                 *  arg1 is the wl-indexvector
+                                 */
+                                ACCESS_IV (access) = INFO_WLAA_INDEXVAR (arg_info);
+                                if (ID_CONSTVEC (arg_node_arg2)
+                                    != NULL) { /* arg2 is constant */
+                                    ACCESS_CLASS (access) = ACL_offset;
+                                    ACCESS_OFFSET (access)
+                                      = AddIntVec2Shpseg (-1, ID_VECLEN (arg_node_arg2),
+                                                          ((int *)ID_CONSTVEC (
+                                                            arg_node_arg2)),
+                                                          ACCESS_OFFSET (access));
+                                    /* offset = offset - arg2 */
+                                } else { /* arg2 is not constant */
+                                    ACCESS_CLASS (access) = ACL_irregular;
+                                }
+                            } else { /* arg1 is not the wl-indexvector */
+                                if (ID_VARDEC (arg_node_arg2)
+                                    == INFO_WLAA_INDEXVAR (arg_info)) {
+                                    /*
+                                     *  arg2 is the wl-indexvector
+                                     */
+                                    ACCESS_CLASS (access) = ACL_irregular;
+                                } else { /* None of the arguments is the index vector! */
+#if 0                
+                  if ((ID_VECLEN(arg_node_arg1) < 0)
+                      && (ID_VECLEN(arg_node_arg2) < 0)) {
+                    
+                    SYSWARN(("WLAA only works correctly with constant folding,"
+                             " variable exspected !"));
+                  }
+#endif
+                                    if (ID_CONSTVEC (arg_node_arg1)
+                                        != NULL) { /* arg1 is constant */
+                                        ACCESS_OFFSET (access)
+                                          = AddIntVec2Shpseg (1,
+                                                              ID_VECLEN (arg_node_arg1),
+                                                              ((int *)ID_CONSTVEC (
+                                                                arg_node_arg1)),
+                                                              ACCESS_OFFSET (access));
+                                        /* offset = offset + arg1 */
+                                        if (ID_CONSTVEC (arg_node_arg2)
+                                            != NULL) { /* arg2 is constant */
+                                            ACCESS_CLASS (access) = ACL_const;
+                                            ACCESS_OFFSET (access)
+                                              = AddIntVec2Shpseg (-1,
+                                                                  ID_VECLEN (
+                                                                    arg_node_arg2),
+                                                                  ((int *)ID_CONSTVEC (
+                                                                    arg_node_arg2)),
+                                                                  ACCESS_OFFSET (access));
+                                            /* offset = offset - arg2 */
+                                        } else {
+                                            ACCESS_CLASS (access) = ACL_irregular;
+                                        }
+                                    } else { /* arg1 is not constant */
+                                        if (ID_CONSTVEC (arg_node_arg2)
+                                            != NULL) { /* arg2 is constant */
+                                            ACCESS_IV (access)
+                                              = ID_VARDEC (arg_node_arg1);
+                                            ACCESS_OFFSET (access)
+                                              = AddIntVec2Shpseg (-1,
+                                                                  ID_VECLEN (
+                                                                    arg_node_arg2),
+                                                                  ((int *)ID_CONSTVEC (
+                                                                    arg_node_arg2)),
+                                                                  ACCESS_OFFSET (access));
+                                            /* offset = offset - arg2 */
+                                        } else {
+                                            ACCESS_CLASS (access) = ACL_irregular;
+                                        }
+                                    }
+                                }
+                            }
+                            access = SearchAccess (ACCESS_NEXT (access), arg_info);
+                        }
                     }
                 }
                 break;
