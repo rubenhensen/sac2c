@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.5  2001/03/09 11:15:11  sbs
+# -I ../profile/ added
+#
 # Revision 3.4  2001/03/02 10:36:02  dkr
 # /home/dkr/sac/BASE/sac2c/src/global/RCS/Makefile,v used in touch-rules
 #
@@ -12,44 +15,6 @@
 # Revision 3.1  2000/11/20 17:59:26  sacbase
 # new release made
 #
-# Revision 2.32  2000/11/02 14:36:55  dkr
-# explicit .mac dependencies added
-#
-# Revision 2.31  2000/08/17 10:10:09  dkr
-# NameTupels.[ch] added
-#
-# Revision 2.30  2000/07/28 09:16:19  mab
-# make deps done
-#
-# Revision 2.29  2000/07/26 18:30:35  dkr
-# Ups! Special rule for build.o restored
-#
-# Revision 2.28  2000/07/24 14:46:52  dkr
-# suffix rule for .c.o added
-#
-# Revision 2.27  2000/07/11 15:56:19  dkr
-# make deps done
-#
-# Revision 2.26  2000/06/13 13:38:40  dkr
-# path -I../Old2NewWith removed
-#
-# Revision 2.25  2000/05/29 14:36:35  dkr
-# make deps done
-#
-# Revision 2.21  2000/03/23 14:00:04  jhs
-# Added build_os.
-#
-# Revision 2.20  2000/03/16 14:32:41  dkr
-# make deps done
-#
-# Revision 2.19  2000/03/16 14:16:43  dkr
-# target types.h updated
-#
-# Revision 2.18  2000/03/01 14:52:32  dkr
-# make deps done
-#
-# Revision 2.16  2000/01/21 16:46:12  dkr
-# tree related stuff moved from directory 'global' into 'tree'
 #
 # [...]
 #
@@ -78,7 +43,7 @@ ECHO      := echo -n
 
 INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules -I../global -I../refcount -I../compile \
-     -I../psi-opt -I../objects -I../concurrent -I../multithread
+     -I../psi-opt -I../objects -I../concurrent -I../multithread -I../profile
 
 all: main.o Error.o usage.o my_debug.o internal_lib.o globals.o resource.o types.h \
      build.o interrupt.o options.o NameTuples.o
