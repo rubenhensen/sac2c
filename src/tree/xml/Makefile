@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.9  2004/10/11 15:48:43  sah
+# added BST traversal xsl files
+#
 # Revision 1.8  2004/09/20 19:57:30  sah
 # added serialize_helper.c
 #
@@ -49,7 +52,8 @@ TARGETS = ../attribs.h ../node_basic.h ../node_basic.c ../free_node.c \
           ../free_node.h ../free_attribs.h \
           ../check_node.h ../check_node.c \
           ../serialize_node.h ../serialize_node.c \
-          ../serialize_attribs.h ../serialize_helper.c
+          ../serialize_attribs.h ../serialize_helper.c \
+          ../serialize_buildstack.c ../serialize_buildstack.h
 
 all: $(TARGETS)
 
@@ -110,6 +114,14 @@ all: $(TARGETS)
 
 ../serialize_helper.c: ast.xml ast2serialize_helper_c.xsl
 	$(XSLTENGINE) ast2serialize_helper_c.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
+
+../serialize_buildstack.c: ast.xml ast2serialize_buildstack_c.xsl
+	$(XSLTENGINE) ast2serialize_buildstack_c.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
+
+../serialize_buildstack.h: ast.xml ast2serialize_buildstack_h.xsl
+	$(XSLTENGINE) ast2serialize_buildstack_h.xsl ast.xml \
 	| $(CODE_BEAUTIFIER) >$@
 
 clean:
