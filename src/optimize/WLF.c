@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.24  1999/02/12 13:48:33  srs
+ * fixed bug in WLFassign()
+ *
  * Revision 1.23  1999/02/10 10:02:57  srs
  * Unreferenced WLs are replaced instantly with an N_empty node.
  * (see version 1.20)
@@ -1450,6 +1453,7 @@ WLFassign (node *arg_node, node *arg_info)
             tmpn = ASSIGN_INSTR (arg_node);
             if (N_let == NODE_TYPE (tmpn)) {
                 if (N_Nwith == NODE_TYPE (LET_EXPR (tmpn))
+                    && NWITH_REFERENCED (LET_EXPR (tmpn)) > 0
                     && NWITH_REFERENCED (LET_EXPR (tmpn))
                          == NWITH_REFERENCES_FOLDED (LET_EXPR (tmpn))) {
                     FreeTree (tmpn);
