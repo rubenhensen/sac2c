@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2000/03/24 00:51:56  dkr
+ * handling of reference parameters corrected
+ *
  * Revision 1.18  2000/03/21 14:53:31  dkr
  * ASSERT added: For the time being Lac2fun() can be used after type
  * checking only
@@ -538,6 +541,8 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
  * description:
  *   All DFM-masks needed during traversal of the body are build before
  *   and removed afterwards.
+ *   The formal arguments are traversed to take reference parameters into
+ *   account.
  *   The body is traversed until the signature of the contained conditions and
  *   loops remains unchanged (fixpoint iteration).
  *
@@ -568,6 +573,14 @@ L2F_INFERfundef (node *arg_node, node *arg_info)
         DBUG_PRINT ("LAC2FUN", ("Infering signatures of conditionals/loops in %s():\n",
                                 FUNDEF_NAME (arg_node)));
 
+        /*
+         * search in formal args for reference parameters
+         *  -> adjust INFO_LAC2FUN_IN accordingly (resolve the reference parameters)
+         */
+        if (FUNDEF_ARGS (arg_node) != NULL) {
+            FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+        }
+
         do {
             DBUG_EXECUTE ("LAC2FUN", cnt++;);
             DBUG_PRINT ("LAC2FUN", ("fixpoint iteration --- loop %i", cnt));
@@ -592,6 +605,38 @@ L2F_INFERfundef (node *arg_node, node *arg_info)
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *L2F_INFERarg( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Searches for reference parameters and marks them in INFO_LAC2FUN_IN.
+ *
+ ******************************************************************************/
+
+node *
+L2F_INFERarg (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("L2F_INFERarg");
+
+    if ((ARG_ATTRIB (arg_node) == ST_reference)
+        || (ARG_ATTRIB (arg_node) == ST_readonly_reference)) {
+
+        DBUG_PRINT ("LAC2FUN",
+                    ("Reference parameter: .. %s( .. %s .. ) { .. }",
+                     FUNDEF_NAME (INFO_LAC2FUN_FUNDEF (arg_info)), ARG_NAME (arg_node)));
+
+        DFMSetMaskEntrySet (INFO_LAC2FUN_IN (arg_info), NULL, arg_node);
+    }
+
+    if (ARG_NEXT (arg_node) != NULL) {
+        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -642,6 +687,66 @@ L2F_INFERlet (node *arg_node, node *arg_info)
     DefinedIds (LET_IDS (arg_node), arg_info);
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *L2F_INFERap( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Searches for reference parameters and marks them as 'defined vars'.
+ *
+ ******************************************************************************/
+
+node *
+L2F_INFERap (node *arg_node, node *arg_info)
+{
+    node *fundef_args, *ap_args;
+
+    DBUG_ENTER ("L2F_INFERap");
+
+    /*
+     * search for reference parameters and mark them as 'defined vars'
+     * (resolve them explicitly)
+     */
+    DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL),
+                 "Application with missing pointer to fundef found!");
+    /*
+     * traverse the formal (fundef_args) and current (ap_args) parameters
+     */
+    fundef_args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+    ap_args = AP_ARGS (arg_node);
+    while (fundef_args != NULL) {
+        DBUG_ASSERT ((ap_args != NULL), "Partial function application found!");
+
+        if ((ARG_ATTRIB (fundef_args) == ST_reference)
+            || (ARG_ATTRIB (fundef_args) == ST_readonly_reference)) {
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ap_args)) == N_id),
+                         "Reference parameter must be a N_id node!");
+
+            DBUG_PRINT ("LAC2FUN",
+                        ("Reference parameter (in %s()):  %s( .. %s .. )",
+                         FUNDEF_NAME (INFO_LAC2FUN_FUNDEF (arg_info)),
+                         FUNDEF_NAME (AP_FUNDEF (arg_node)), EXPRS_EXPR (ap_args)));
+
+            DefinedVar (ID_VARDEC (EXPRS_EXPR (ap_args)), INFO_LAC2FUN_NEEDED (arg_info),
+                        INFO_LAC2FUN_IN (arg_info), INFO_LAC2FUN_OUT (arg_info),
+                        INFO_LAC2FUN_LOCAL (arg_info));
+        }
+
+        fundef_args = ARG_NEXT (fundef_args);
+        ap_args = EXPRS_NEXT (ap_args);
+    }
+
+    /*
+     * traverse the arguments -> mark them as 'used vars'
+     */
+    if (AP_ARGS (arg_node) != NULL) {
+        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -862,9 +967,9 @@ GetDummyFunName (char *suffix)
 /******************************************************************************
  *
  * function:
- *   node *MakeDummyFundef( char *funname, char *modname, status status,
- *                          node *instr, node *funcall_let,
- *                          DFMmask_t in, DFMmask_t out, DFMmask_t local)
+ *   node *MakeL2fFundef( char *funname, char *modname, status status,
+ *                        node *instr, node *funcall_let,
+ *                        DFMmask_t in, DFMmask_t out, DFMmask_t local)
  *
  * description:
  *   Creates the fundef-node of a dummy function.
@@ -872,15 +977,14 @@ GetDummyFunName (char *suffix)
  ******************************************************************************/
 
 static node *
-MakeDummyFundef (char *funname, char *modname, statustype status, node *instr,
-                 node *funcall_let, DFMmask_t in, DFMmask_t out, DFMmask_t local)
+MakeL2fFundef (char *funname, char *modname, statustype status, node *instr,
+               node *funcall_let, DFMmask_t in, DFMmask_t out, DFMmask_t local)
 {
-
     LUT_t lut;
     DFMmask_t tmp_mask;
     node *args, *vardecs, *ret, *fundef, *assigns, *new_body, *let, *tmp;
 
-    DBUG_ENTER ("MakeDummyFundef");
+    DBUG_ENTER ("MakeL2fFundef");
 
     /*
      * Create a new LUT and store the old/new args and vardecs in it.
@@ -893,11 +997,118 @@ MakeDummyFundef (char *funname, char *modname, statustype status, node *instr,
     vardecs = DFM2Vardecs (tmp_mask, lut);
     tmp_mask = DFMRemoveMask (tmp_mask);
 
+    /*
+     * Convert parameters from call-by-reference into call-by-value
+     *  because they have already been resolved!
+     */
+    tmp = args;
+    while (tmp != NULL) {
+        if ((ARG_ATTRIB (tmp) == ST_reference)
+            || (ARG_ATTRIB (tmp) == ST_readonly_reference)) {
+            ARG_ATTRIB (tmp) = ST_unique;
+
+            DBUG_PRINT ("LAC2FUN", ("ATTRIB[ .. %s( .. %s .. ) { .. } ]: "
+                                    " ST_..reference -> ST_unique",
+                                    funname, ARG_NAME (tmp)));
+        }
+        tmp = ARG_NEXT (tmp);
+    }
+
     ret = MakeAssign (MakeReturn (DFM2Exprs (out, lut)), NULL);
 
-    fundef = MakeFundef (StringCopy (funname), StringCopy (modname), DFM2Types (out),
-                         args, NULL, /* the block is not complete yet */
-                         NULL);
+    /*
+     * All return ids with attrib 'ST_was_reference' must have the status
+     *  'ST_artificial'
+     */
+    tmp = RETURN_EXPRS (ASSIGN_INSTR (ret));
+    while (tmp != NULL) {
+        if (ID_ATTRIB (EXPRS_EXPR (tmp)) == ST_was_reference) {
+            ID_ATTRIB (EXPRS_EXPR (tmp)) = ST_unique;
+            ID_STATUS (EXPRS_EXPR (tmp)) = ST_artificial;
+
+            DBUG_PRINT ("LAC2FUN", ("%s():  ATTRIB/STATUS[ return( %s) ] "
+                                    " .. -> ST_unique/ST_artificial",
+                                    funname, ID_NAME (EXPRS_EXPR (tmp))));
+        }
+        tmp = EXPRS_NEXT (tmp);
+    }
+
+    /*
+     * All args with attrib 'ST_was_reference' which are no out-vars must have
+     *  the attrib 'ST_unique' instead.
+     *
+     * Example:
+     *
+     *    IntStack fun( IntStack &stack)
+     *    {
+     *      new_stack = create_stack();
+     *      _flat_3 = !( is_empty( stack));
+     *      if (_flat_3) {
+     *        push( new_stack, top( stack));
+     *      }
+     *      stack = create_stack();
+     *      return (new_stack);
+     *    }
+     *
+     * With resolved reference parameters:
+     *
+     *    IntStack, IntStack fun( IntStack stack)
+     *    {
+     *      new_stack = create_stack();
+     *      _flat_3 = !( is_empty( stack));
+     *      if (_flat_3) {
+     *        new_stack = push( new_stack, top( stack));
+     *      }
+     *      stack = create_stack();
+     *      return (stack, new_stack);
+     *    }
+     *
+     * After L2F transformation:
+     *
+     *    IntStack __Cond1( IntStack new_stack, bool _flat_3, IntStack:IntStack stack)
+     *    {
+     *      if (_flat_3) {
+     *        new_stack = push( new_stack, top( stack));
+     *      }
+     *      return (new_stack);         // 'stack' is not needed in outer block!!
+     *    }
+     *
+     *    IntStack, IntStack fun( IntStack stack)
+     *    {
+     *      new_stack = create_stack();
+     *      _flat_3 = !( is_empty( stack));
+     *      new_stack = __Cond1( new_stack, _flat_3, stack);
+     *      stack = create_stack();     // redefinition of 'stack'
+     *      return (stack, new_stack);
+     *    }
+     *
+     * Although 'stack' was marked as 'ST_was_reference' in function 'fun' that is
+     * no longer true in the context of the dummy function '__Cond1' because 'stack'
+     * is not an out-var of this function!!
+     */
+    tmp = args;
+    while (tmp != NULL) {
+        if (ARG_ATTRIB (tmp) == ST_was_reference) {
+            /*
+             * CAUTION: the arg-node is a new one not contained in the relevant
+             * DFM-base! Therefore we must search for ARG_NAME instead of the pointer
+             * itself!
+             */
+            if (!DFMTestMaskEntry (out, ARG_NAME (tmp), NULL)) {
+                ARG_ATTRIB (tmp) = ST_unique;
+            }
+
+            DBUG_PRINT ("LAC2FUN", ("ATTRIB[ .. %s( .. %s ..) { .. } ]: "
+                                    " ST_was_reference -> ST_unique",
+                                    funname, ARG_NAME (tmp)));
+        }
+        tmp = ARG_NEXT (tmp);
+    }
+
+    fundef
+      = MakeFundef (StringCopy (funname), StringCopy (modname), DFM2ReturnTypes (out),
+                    args, NULL, /* the block is not complete yet */
+                    NULL);
     FUNDEF_STATUS (fundef) = status;
     FUNDEF_RETURN (fundef) = ASSIGN_INSTR (ret);
 
@@ -959,14 +1170,16 @@ MakeDummyFundef (char *funname, char *modname, statustype status, node *instr,
      */
     FUNDEF_BODY (fundef) = MakeBlock (assigns, vardecs);
 
+    lut = RemoveLUT (lut);
+
     DBUG_RETURN (fundef);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *MakeDummyFunLet( char *funname,
- *                          DFMmask_t in, DFMmask_t out)
+ *   node *MakeL2fFunLet( char *funname,
+ *                        DFMmask_t in, DFMmask_t out)
  *
  * description:
  *   Creates the let node containing the call of a dummy function.
@@ -974,15 +1187,33 @@ MakeDummyFundef (char *funname, char *modname, statustype status, node *instr,
  ******************************************************************************/
 
 static node *
-MakeDummyFunLet (char *funname, char *modname, DFMmask_t in, DFMmask_t out)
+MakeL2fFunLet (char *funname, char *modname, DFMmask_t in, DFMmask_t out)
 {
     node *let;
+    ids *tmp;
 
-    DBUG_ENTER ("MakeDummyFunLet");
+    DBUG_ENTER ("MakeL2fFunLet");
 
     let = MakeLet (MakeAp (StringCopy (funname), StringCopy (modname),
                            DFM2Exprs (in, NULL)),
                    DFM2Ids (out, NULL));
+
+    /*
+     * All left hand side ids with attrib 'ST_was_reference' must have the status
+     *  'ST_artificial'
+     */
+    tmp = LET_IDS (let);
+    while (tmp != NULL) {
+        if (IDS_ATTRIB (tmp) == ST_was_reference) {
+            IDS_ATTRIB (tmp) = ST_unique;
+            IDS_STATUS (tmp) = ST_artificial;
+
+            DBUG_PRINT ("LAC2FUN", ("ATTRIB/STATUS[ %s = %s( .. ) ] "
+                                    " .. -> ST_unique/ST_artificial",
+                                    IDS_NAME (tmp), funname));
+        }
+        tmp = IDS_NEXT (tmp);
+    }
 
     DBUG_RETURN (let);
 }
@@ -1020,12 +1251,12 @@ DoLifting (char *prefix, statustype status, DFMmask_t in, DFMmask_t out, DFMmask
     }
 #endif
     DBUG_ASSERT ((modname != NULL), "modul name for LAC function is NULL!");
-    let = MakeDummyFunLet (funname, modname, in, out);
+    let = MakeL2fFunLet (funname, modname, in, out);
 
     /*
      * build new dummy function
      */
-    fundef = MakeDummyFundef (funname, modname, status, arg_node, let, in, out, local);
+    fundef = MakeL2fFundef (funname, modname, status, arg_node, let, in, out, local);
 
     /*
      * set back-references let <-> fundef
