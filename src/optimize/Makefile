@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.8  2001/03/05 16:03:23  nmw
+# SSACSE added
+#
 # Revision 3.7  2001/03/02 16:13:52  dkr
 # make deps done
 #
@@ -88,7 +91,7 @@ INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules
 all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o Inline.o Unroll.o Unswitch.o CSE.o \
      WLUnroll.o DeadFunctionRemoval.o freemasks.o \
-     SSADeadCodeRemoval.o
+     SSADeadCodeRemoval.o SSACSE.o
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
@@ -164,6 +167,14 @@ LoopInvariantRemoval.o: ../../inc/dbug.h ../global/my_debug.h
 LoopInvariantRemoval.o: ../tree/traverse.h ../typecheck/typecheck.h
 LoopInvariantRemoval.o: optimize.h generatemasks.h ../tree/DupTree.h
 LoopInvariantRemoval.o: ../tree/LookUpTable.h LoopInvariantRemoval.h
+SSACSE.o: ../../inc/dbug.h /usr/include/stdio.h
+SSACSE.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+SSACSE.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+SSACSE.o: /usr/include/stdio_impl.h ../tree/tree.h ../global/types.h
+SSACSE.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+SSACSE.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
+SSACSE.o: ../global/internal_lib.h ../tree/traverse.h ../tree/free.h
+SSACSE.o: ../global/my_debug.h SSACSE.h
 SSADeadCodeRemoval.o: ../../inc/dbug.h /usr/include/stdio.h
 SSADeadCodeRemoval.o: /usr/include/sys/feature_tests.h
 SSADeadCodeRemoval.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
