@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/07/02 14:04:34  dkr
+ * SAC_BLOCK_BEGIN, SAC_BLOCK_END added
+ *
  * Revision 3.4  2002/06/28 13:22:17  dkr
  * ICM_UNDEF -> SAC_ICM_UNDEF()
  * ICM_NOOP -> SAC_NOOP()
@@ -45,18 +48,21 @@
 #ifndef _SAC_MISC_H
 #define _SAC_MISC_H
 
-/*
- * Handling of undefined ICMs
- */
+extern void SAC_String2Array (char *array, const char *string);
 
+/* handling of undefined ICMs */
 #define SAC_ICM_UNDEF()                                                                  \
     _ICM_IS_UNDEFINED_ /* CC will report undefined symbol _ICM_IS_UNDEFINED_ */
 
+/* noop ICM */
 #define SAC_NOOP() /* noop */;
 
+/* empty ICM */
 #define SAC_NOTHING()
 
-extern void SAC_String2Array (char *array, const char *string);
+/* block ICMs */
+#define SAC_BLOCK_BEGIN() {
+#define SAC_BLOCK_END() }
 
 /*
  * Macros used for compilation of do-loop
