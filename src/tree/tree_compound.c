@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/03/21 17:48:12  dkr
+ * comment for AppendAssign() modified
+ *
  * Revision 3.19  2001/03/20 22:28:48  dkr
  * MakeVardecFromArg: VARDEC_OBJDEF set
  *
@@ -1802,8 +1805,8 @@ SearchDecl (char *name, node *decl_node)
  *   node *AppendAssign( node *assign_chain, node *assign)
  *
  * description:
- *   appends 'assign' to the N_assign-chain 'assings' and returns the new
- *   chain.
+ *   Appends 'assign' to 'assing_chain' and returns the new chain.
+ *   If 'assign_chain' was a N_empty node, this node is removed first.
  *
  ******************************************************************************/
 
@@ -1814,7 +1817,7 @@ AppendAssign (node *assign_chain, node *assign)
 
     DBUG_ENTER ("AppendAssign");
 
-    if (assign_chain != NULL) {
+    if ((assign != NULL) && (assign_chain != NULL)) {
         if (NODE_TYPE (assign_chain) == N_empty) {
             /* empty block */
             FreeNode (assign_chain);
