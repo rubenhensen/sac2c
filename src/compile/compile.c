@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.125  2004/08/06 13:12:58  ktr
+ * COMPIdToUnq works entirely different in EMM
+ *
  * Revision 3.124  2004/08/05 16:11:24  ktr
  * Scalar with-loops are now treated as they always were. By using the
  * F_wl_assign abstraction we can now explicitly refcount this case.
@@ -3737,34 +3740,46 @@ COMPIdToUnique (node *arg_node, info *arg_info)
     rhs_type = ID_TYPE (arg_node);
     DBUG_ASSERT ((!IsUnique (rhs_type)), "to_unq() with unique RHS found!");
 
-    if (RC_IS_ACTIVE (ID_REFCNT (arg_node))) {
-        DBUG_ASSERT ((ID_REFCNT (arg_node) > 0), "reference with (rc == 0) found!");
-
+    if (emm) {
         icm_args = MakeTypeArgs (IDS_NAME (let_ids), lhs_type, FALSE, TRUE, FALSE,
                                  MakeTypeArgs (ID_NAME (arg_node), rhs_type, FALSE, TRUE,
                                                FALSE, NULL));
 
-        ret_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                    IDS_REFCNT (let_ids), NULL);
-
-        if (ID_REFCNT (arg_node) == 1) {
-            ret_node = MakeAssignIcm2 ("ND_MAKE_UNIQUE", icm_args,
-                                       MakeId_Copy (GenericFun (0, rhs_type)), ret_node);
-        } else {
-            ret_node
-              = MakeAssignIcm2 ("ND_COPY", icm_args,
-                                MakeId_Copy (GenericFun (0, rhs_type)),
-                                MakeDecRcIcm (ID_NAME (arg_node), ID_TYPE (arg_node),
-                                              ID_REFCNT (arg_node), 1, ret_node));
-        }
-    } else {
         /*
-         * object not refcounted
-         *   -> ignore to_unq() in order to get a simpler ICM code
+         * No RC manipulation requires as MAKE_UNIQUE always yields rc == 1
          */
-        ret_node = COMPId (arg_node, arg_info);
-    }
+        ret_node = MakeAssignIcm2 ("ND_MAKE_UNIQUE", icm_args,
+                                   MakeId_Copy (GenericFun (0, rhs_type)), NULL);
+    } else {
+        if (RC_IS_ACTIVE (ID_REFCNT (arg_node))) {
+            DBUG_ASSERT ((ID_REFCNT (arg_node) > 0), "reference with (rc == 0) found!");
 
+            icm_args = MakeTypeArgs (IDS_NAME (let_ids), lhs_type, FALSE, TRUE, FALSE,
+                                     MakeTypeArgs (ID_NAME (arg_node), rhs_type, FALSE,
+                                                   TRUE, FALSE, NULL));
+
+            ret_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                        IDS_REFCNT (let_ids), NULL);
+
+            if (ID_REFCNT (arg_node) == 1) {
+                ret_node
+                  = MakeAssignIcm2 ("ND_MAKE_UNIQUE", icm_args,
+                                    MakeId_Copy (GenericFun (0, rhs_type)), ret_node);
+            } else {
+                ret_node
+                  = MakeAssignIcm2 ("ND_COPY", icm_args,
+                                    MakeId_Copy (GenericFun (0, rhs_type)),
+                                    MakeDecRcIcm (ID_NAME (arg_node), ID_TYPE (arg_node),
+                                                  ID_REFCNT (arg_node), 1, ret_node));
+            }
+        } else {
+            /*
+             * object not refcounted
+             *   -> ignore to_unq() in order to get a simpler ICM code
+             */
+            ret_node = COMPId (arg_node, arg_info);
+        }
+    }
     DBUG_RETURN (ret_node);
 }
 
