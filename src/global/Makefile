@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.42  1997/10/28 18:28:00  srs
+# removed unused dir from INCS
+#
 # Revision 1.41  1997/09/23 13:23:50  dkr
 # forced make to recognize the dependency between types.h and
 # type_info.mac, node_info.mac, prf_node_info.mac
@@ -135,8 +138,7 @@ CC=gcc -ansi -g
 
 INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules -I../global -I../refcount -I../compile \
-     -I../psi-opt -I../objects \
-     -I/usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include
+     -I../psi-opt -I../objects
 
 all: main.o Error.o traverse.o usage.o my_debug.o tree.o free.o  \
      internal_lib.o tree_basic.o tree_compound.o types.h
