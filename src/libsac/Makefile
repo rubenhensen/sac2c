@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.3  1999/07/16 09:41:16  cg
+# Added facilities for heap management diagnostics.
+#
 # Revision 1.2  1999/07/09 11:39:06  cg
 # make deps done
 #
@@ -10,7 +13,7 @@
 
 
 CC        := gcc
-CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g -O3
+CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g 
 
 MTFLAGS   := -D_REENTRANT -D_POSIX_C_SOURCE=199506L
 
@@ -26,6 +29,9 @@ OBJS_LIBSAC_MT := boundcheck_mt.o message_mt.o misc_mt.o trace_mt.o mt.o
 OBJS_LIBSAC_HEAPMGR := heapmgr_basic.o heapmgr_malloc.o heapmgr_memalign.o \
                        heapmgr_realloc.o
 
+OBJS_LIBSAC_HEAPMGR_DIAG := heapmgr_basic_diag.o heapmgr_malloc_diag.o heapmgr_memalign_diag.o \
+                            heapmgr_realloc_diag.o
+
 OBJS_LIBSAC_NOHEAPMGR := heapmgr_disabled.o
 
 OBJS_LIBSAC_NOHEAPMGR_MT := heapmgr_disabled_mt.o
@@ -35,7 +41,8 @@ OBJS_LIBSAC_NOHEAPMGR_MT := heapmgr_disabled_mt.o
 .PHONY: all tar
 
 
-all: libsac.a libsac_mt.a libsac_heapmgr.a libsac_noheapmgr.a libsac_noheapmgr_mt.a
+all: libsac.a libsac_mt.a libsac_heapmgr.a libsac_heapmgr_diag.a   \
+     libsac_noheapmgr.a libsac_noheapmgr_mt.a
 
 
 libsac.a: $(OBJS_LIBSAC)
@@ -47,6 +54,10 @@ libsac_mt.a: $(OBJS_LIBSAC_MT)
 	ranlib $@
 
 libsac_heapmgr.a: $(OBJS_LIBSAC_HEAPMGR)
+	ar rc $@ $^
+	ranlib $@
+
+libsac_heapmgr_diag.a: $(OBJS_LIBSAC_HEAPMGR_DIAG)
 	ar rc $@ $^
 	ranlib $@
 
@@ -71,6 +82,9 @@ cachesim_access_advanced.o: cachesim_access.c
 
 %_mt.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(MTFLAGS) -o $@ -c $<
+
+%_diag.o: %.c
+	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -DDIAG -o $@ -c $<
 
 %.o: %.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<

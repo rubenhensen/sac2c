@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1999/07/16 09:41:16  cg
+ * Added facilities for heap management diagnostics.
+ *
  * Revision 1.1  1999/07/08 12:28:56  cg
  * Initial revision
  *
@@ -28,6 +31,8 @@ void *
 malloc (size_byte_t size)
 {
     size_unit_t units;
+
+    DIAG_INC (SAC_HM_call_malloc);
 
     if (size <= ARENA_4_MAXCS_BYTES) {
         /* Now, it's arena 1, 2, 3, or 4. */
@@ -72,7 +77,10 @@ free (void *addr)
 {
     SAC_HM_arena_t *arena;
 
+    DIAG_INC (SAC_HM_call_free);
+
     if (addr != NULL) {
+        DIAG_CHECK_ALLOCPATTERN_ANYCHUNK ((SAC_HM_header_t *)addr);
         arena = SAC_HM_ADDR_2_ARENA (addr);
         arena->freefun ((SAC_HM_header_t *)addr, arena);
     }

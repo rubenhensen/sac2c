@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1999/07/16 09:41:16  cg
+ * Added facilities for heap management diagnostics.
+ *
  * Revision 1.1  1999/07/08 12:28:56  cg
  * Initial revision
  *
@@ -32,6 +35,8 @@ memalign (size_byte_t alignment, size_byte_t size)
     SAC_HM_header_t *freep, *prefixp, *prevp, *freelist;
     SAC_HM_arena_t *arena;
     size_unit_t offset_units, units_allocated;
+
+    DIAG_INC (SAC_HM_call_memalign);
 
     if (alignment <= UNIT_SIZE) {
         /* automatic alignment */
@@ -113,5 +118,7 @@ memalign (size_byte_t alignment, size_byte_t size)
 void *
 valloc (size_byte_t size)
 {
+    DIAG_INC (SAC_HM_call_valloc);
+
     return (memalign (SAC_HM_pagesize, size));
 }
