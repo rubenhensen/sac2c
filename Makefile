@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.12  1995/02/03 07:57:47  hw
+# Revision 1.13  1995/02/13 17:25:14  asi
+# added ConstantFolding.o and DeadCodeRemoval.o
+#
+# Revision 1.12  1995/02/03  07:57:47  hw
 # added  TYPECHECK
 #
 # Revision 1.11  1994/12/20  17:33:45  hw
@@ -43,12 +46,13 @@ RM=rm -f
 LIB=lib/dbug.o
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/my_debug.o src/global/traverse.o  src/global/tree.o \
-         src/global/free.o
+        src/global/free.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o
 PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o
-OPTIMIZE= src/optimize/optimize.o
+OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
+          src/optimize/DeadCodeRemoval.o
 MODULES= src/modules/filemgr.o src/modules/import.o
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) $(MODULES)
 
