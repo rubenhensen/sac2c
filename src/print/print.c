@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/23 16:08:29  sbs
+ * definitions of DbugPrintArray, WLAAprintAccesses, and TSIprintInfo
+ * enclosed in ifndef DBUG_OFF to avoid warnings in product version!
+ *
  * Revision 3.1  2000/11/20 17:59:45  sacbase
  * new release made
  *
@@ -301,6 +305,8 @@ char *prf_string[] = {
 
 #undef PRF_IF
 
+#ifndef DBUG_OFF
+
 /******************************************************************************
  *
  * function:
@@ -409,7 +415,7 @@ DbugPrintArray (node *arg_node)
 
 /******************************************************************************
  *
- * Function:
+ * Function: void WLAAprintAccesses(node* arg_node, node* arg_info)
  *
  *
  * Description:
@@ -577,7 +583,7 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: void TSIprintInfo(node* arg_node, node* arg_info)
  *
  *
  * Description:
@@ -649,9 +655,11 @@ TSIprintInfo (node *arg_node, node *arg_info)
     DBUG_VOID_RETURN;
 }
 
+#endif /* ! DBUG_OFF */
+
 /******************************************************************************
  *
- * Function:
+ * Function: void PrintRC( int rc, int nrc, int show_rc)
  *
  *
  * Description:
@@ -686,7 +694,7 @@ PrintRC (int rc, int nrc, int show_rc)
 
 /******************************************************************************
  *
- * Function:
+ * Function: void PrintIds(ids *arg, node *arg_info)
  *
  *
  * Description:
@@ -733,7 +741,7 @@ PrintIds (ids *arg, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: void PrintNums(nums *n)
  *
  *
  * Description:
@@ -761,7 +769,7 @@ PrintNums (nums *n)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintAssign( node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -826,7 +834,7 @@ PrintAssign (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintBlock(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -895,7 +903,7 @@ PrintBlock (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintLet(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -935,7 +943,7 @@ PrintLet (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintAnnotate(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -984,7 +992,7 @@ PrintAnnotate (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintModul(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1141,7 +1149,7 @@ PrintModul (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintImplist(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1199,7 +1207,7 @@ PrintImplist (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintTypedef(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1248,7 +1256,7 @@ PrintTypedef (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintObjdef(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1315,7 +1323,7 @@ PrintObjdef (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: void PrintFunctionHeader(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1492,7 +1500,7 @@ PrintFundef (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintPrf(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1557,7 +1565,7 @@ PrintPrf (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintStr(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1579,7 +1587,7 @@ PrintStr (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintId(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1620,7 +1628,7 @@ PrintId (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintNum(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1640,7 +1648,7 @@ PrintNum (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintChar(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1665,7 +1673,7 @@ PrintChar (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintFloat(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1689,7 +1697,7 @@ PrintFloat (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintDouble(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1713,7 +1721,7 @@ PrintDouble (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintBool(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1737,7 +1745,7 @@ PrintBool (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintReturn(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1781,7 +1789,7 @@ PrintReturn (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintAp(node  *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1811,7 +1819,7 @@ PrintAp (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintCast(node  *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1832,7 +1840,7 @@ PrintCast (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintExprs( node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1857,7 +1865,7 @@ PrintExprs (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintArg(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1903,7 +1911,7 @@ PrintArg (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintVardec(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1955,7 +1963,7 @@ PrintVardec (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintEmpty(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -1976,7 +1984,7 @@ PrintEmpty (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintDo(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -2032,7 +2040,7 @@ PrintDo (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintWhile(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -2085,7 +2093,7 @@ PrintWhile (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintCond(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -2151,7 +2159,7 @@ PrintCond (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintArray(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -2181,7 +2189,7 @@ PrintArray (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintDec(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -2201,7 +2209,7 @@ PrintDec (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintInc(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -2221,7 +2229,7 @@ PrintInc (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintPost(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -2243,7 +2251,7 @@ PrintPost (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintPre(node *arg_node, node *arg_info)
  *
  *
  * Description:
@@ -2265,7 +2273,7 @@ PrintPre (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function:
+ * Function: node *PrintVectInfo(node *arg_node, node *arg_info)
  *
  *
  * Description:
