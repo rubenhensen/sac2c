@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/11/26 14:13:50  mwe
+ * char* arguments of external functions are now declared as const
+ *
  * Revision 3.9  2004/11/25 18:17:42  mwe
  * SacDevCamp Dk: compiles!!
  *
@@ -1125,7 +1128,7 @@ DFMprintMaskDetailed (FILE *handle, mask_t *mask)
  */
 
 void
-DFMsetMaskEntryClear (mask_t *mask, char *id, node *avis)
+DFMsetMaskEntryClear (mask_t *mask, const char *id, node *avis)
 {
     int i;
     node *decl = NULL;
@@ -1169,7 +1172,7 @@ DFMsetMaskEntryClear (mask_t *mask, char *id, node *avis)
 }
 
 void
-DFMsetMaskEntrySet (mask_t *mask, char *id, node *avis)
+DFMsetMaskEntrySet (mask_t *mask, const char *id, node *avis)
 {
     int i;
     node *decl = NULL;
@@ -1221,7 +1224,7 @@ DFMsetMaskEntrySet (mask_t *mask, char *id, node *avis)
 }
 
 int
-DFMtestMaskEntry (mask_t *mask, char *id, node *avis)
+DFMtestMaskEntry (mask_t *mask, const char *id, node *avis)
 {
     int i, res;
     node *decl = NULL;
