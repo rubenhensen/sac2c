@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2001/04/06 16:58:29  dkr
+ * CreateFundefIcm: no warning about uninitialized variable anymore
+ *
  * Revision 3.40  2001/04/05 14:52:36  dkr
  * COMPAp() brushed
  *
@@ -1576,6 +1579,7 @@ CreateFundefIcm (node *fundef, node *arg_info)
             DBUG_PRINT ("jhs", ("%s", mdb_statustype[FUNDEF_ATTRIB (fundef)]));
             DBUG_PRINT ("jhs", ("%s", mdb_statustype[FUNDEF_STATUS (fundef)]));
             DBUG_ASSERT (0, "unknown kind of function while in mt2");
+            icm = NULL;
             break;
         }
     } else if (FUNDEF_STATUS (fundef) == ST_spmdfun) {
