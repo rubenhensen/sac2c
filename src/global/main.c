@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/01/03 15:09:02  asi
+ * Revision 1.19  1995/01/05 09:55:17  asi
+ * bug removed
+ *
+ * Revision 1.18  1995/01/03  15:09:02  asi
  * *** empty log message ***
  *
  * Revision 1.17  1995/01/03  15:00:47  asi
@@ -166,7 +169,7 @@ MAIN
                 NOTE (("Typechecking: ..."));
                 Typecheck (syntax_tree);
                 NOTE (("\n%d Warnings, %d Errors \n", warnings, errors));
-                if (!breaktype || (errors = 0)) {
+                if ((!breaktype) && (errors == 0)) {
                     NOTE (("Optimizing: ...\n"));
                     syntax_tree = Optimize (syntax_tree);
                     /*  GenCCode(); */
