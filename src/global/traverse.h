@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.52  1999/01/15 17:00:19  sbs
+ * freemask_tab added
+ *
  * Revision 1.51  1999/01/15 15:14:32  cg
  * added tsi_tab for new compiler module tile size inference.
  *
@@ -178,6 +181,7 @@ extern funptr flat_tab[];
 extern funptr print_tab[];
 extern funptr type_tab[];
 extern funptr genmask_tab[];
+extern funptr freemask_tab[];
 extern funptr active_tab[];
 extern funptr dcr_tab[];
 extern funptr wlf_tab[];
