@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2001/05/30 15:50:55  nmw
+ * ASSERT when substituting identifier of different types
+ *
  * Revision 1.19  2001/05/28 09:03:58  nmw
  * CSE now removes duplicated results from special fundefs
  *
@@ -1045,6 +1048,14 @@ SSACSElet (node *arg_node, node *arg_info)
     } else if ((NODE_TYPE (LET_EXPR (arg_node)) == N_id)
                && (AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (arg_node))) == PHIT_NONE)
                && (ForbiddenSubstitution (LET_IDS (arg_node)) == FALSE)) {
+        /* only substitute ids of equal types */
+        DBUG_ASSERT ((CmpTypes (VARDEC_OR_ARG_TYPE (
+                                  AVIS_VARDECORARG (IDS_AVIS (LET_IDS (arg_node)))),
+                                VARDEC_OR_ARG_TYPE (
+                                  AVIS_VARDECORARG (ID_AVIS (LET_EXPR (arg_node)))))
+                      == 1),
+                     "SSACSElet() tries to substitute identifier of different type");
+
         /* set subst attributes for results */
         LET_IDS (arg_node)
           = SetSubstAttributes (LET_IDS (arg_node), ID_IDS (LET_EXPR (arg_node)));
