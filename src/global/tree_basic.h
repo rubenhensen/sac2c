@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.42  1999/07/29 07:30:53  cg
+ * Added new access macro ASSIGN_CF to hold temporary sub assign
+ * chains during constant folding. This was necessary to make a
+ * major bug fix in CF.
+ *
  * Revision 2.41  1999/07/27 08:35:33  jhs
  * Added INFO_SPMDC_FIRSTSYNC.
  *
@@ -1233,6 +1238,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***    long*  MASK[x]                    (optimize -> )
  ***    int    STATUS                     (dcr1 -> dcr2 !!)
  ***    node*  CSE                        (CSE (GenerateMasks()) -> ??? )
+ ***    node*  CF                         (CF !!)
  ***    void*  INDEX    (O)               (wli -> wlf ->)
  ***    int    LEVEL                      (wli !!)
  ***
@@ -1241,6 +1247,10 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***   tree traversal would be necessary), so it stays afterwards.
  ***   Nevertheless only wlf will use it. The type of INDEX is index_info*,
  ***   defined in WithloopFolding.c (not in types.h).
+ ***
+ ***   CF is used to temporarily store an N_assign node behind another one.
+ ***   This additional N_assign node will later be inserted before the original
+ ***   one into the assignment chain.
  ***/
 
 extern node *MakeAssign (node *instr, node *next);
@@ -1248,6 +1258,7 @@ extern node *MakeAssign (node *instr, node *next);
 #define ASSIGN_INSTR(n) (n->node[0])
 #define ASSIGN_NEXT(n) (n->node[1])
 #define ASSIGN_CSE(n) (n->node[2])
+#define ASSIGN_CF(n) (n->node[3])
 #define ASSIGN_MASK(n, x) (n->mask[x])
 #define ASSIGN_STATUS(n) (n->flag)
 #define ASSIGN_INDEX(n) (n->info2)
