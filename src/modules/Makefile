@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.18  2004/10/17 17:02:58  sah
+# added new ccmanager
+#
 # Revision 3.17  2004/10/17 14:52:06  sah
 # added export traversal
 #
@@ -80,13 +83,14 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 INCS = -I../global -I../tree -I../../inc -I../scanparse -I../print  \
        -I../typecheck -I../compile -I../constants -I../optimize -I.
-OBJS := filemgr.o symboltable.o cccall.o implicittypes.o
+OBJS := filemgr.o symboltable.o implicittypes.o
 
 ifeq ($(NEWAST),no)
   OBJS := import.o readsib.o writesib.o analysis.o \
-          checkdec.o $(OBJS)
+          checkdec.o cccall.o $(OBJS)
 else
-  OBJS := libmanager.o modulemanager.o libstat.o export.o $(OBJS)
+  OBJS := libmanager.o modulemanager.o libstat.o export.o \
+          ccmanager.o $(OBJS)
 endif
 
 all: $(OBJS)

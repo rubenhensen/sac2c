@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.119  2004/10/17 17:02:25  sah
+# added new ccmanager
+#
 # Revision 3.118  2004/10/17 14:52:06  sah
 # added export traversal
 #
@@ -284,7 +287,7 @@ ifeq ($(NEWAST),yes)
                src/tree/serialize_attribs.o src/modules/libstat.o \
                src/modules/modulemanager.o src/modules/libmanager.o \
                src/tree/deserialize.o src/tree/serialize_buildstack.o \
-               src/modules/export.o
+               src/modules/export.o src/modules/ccmanager.o
   NEWASTFLAGS = -ldl --export-dynamic
 endif
 
@@ -367,9 +370,9 @@ PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
 PSIOPT_OLD=
 
 MODULES= src/modules/symboltable.o src/modules/filemgr.o \
-         src/modules/implicittypes.o src/modules/cccall.o
+         src/modules/implicittypes.o 
 MODULES_OLD= src/modules/import.o src/modules/writesib.o \
-             src/modules/analysis.o \
+             src/modules/analysis.o src/modules/cccall.o \
              src/modules/checkdec.o src/modules/readsib.o
 
 OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
