@@ -1,6 +1,12 @@
 Makefile
+icm_test.C
 sac.h
+sac2crc.ALPHA
+sac2crc.MAC
 sac2crc.README
+sac2crc.SUN
+sac2crc.X86
+sac2crc.in
 sac_arg.h
 sac_bool.h
 sac_cachesim.h
@@ -21,8 +27,3 @@ sac_std.tagged.h
 sac_trace.h
 sac_wl.h
 sac_wl.tagged.h
-sac2crc.in
-sac2crc.X86
-sac2crc.SUN
-sac2crc.MAC
-sac2crc.ALPHA
