@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.251  1998/10/30 09:51:32  cg
+ * primtive functions min and max or no longer printed
+ * in infix notation.
+ *
  * Revision 1.250  1998/10/26 18:04:48  dkr
  * with -> old_with
  * new_with -> with
@@ -1494,7 +1498,9 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_idx_psi:
     case F_modarray:
     case F_genarray:
-    case F_idx_modarray: {
+    case F_idx_modarray:
+    case F_min:
+    case F_max: {
         /* primitive functions that are printed as function application */
         fprintf (outfile, "%s( ", prf_string[PRF_PRF (arg_node)]);
         Trav (PRF_ARGS (arg_node), arg_info);
