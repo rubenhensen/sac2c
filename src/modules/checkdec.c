@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/07/18 15:06:12  sah
+ * resolves bug introduced by new
+ * INFO structure
+ *
  * Revision 3.13  2004/07/17 19:50:26  sah
  * switch to INFO structure
  * PHASE I
@@ -780,6 +784,9 @@ WDECmodul (node *arg_node, info *arg_info)
     fprintf (outfile, "\nexplicit types:\n");
 
     fprintf (outfile, "\nglobal objects:\n");
+
+    /* set module name */
+    INFO_CDEC_NAME (arg_info) = MODUL_NAME (arg_node);
 
     if (MODUL_OBJS (arg_node) != NULL) {
         Trav (MODUL_OBJS (arg_node), arg_info);
