@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2001/06/13 13:07:03  ben
+ *  SCHMakeTaskselByPragma, SCHRemoveTasksel, SCHCopyTasksel,
+ * SCHPrecompileTasksel, SCHPrintTasksel, CheckTaskselArgs
+ * taskselector_table[] added
+ *
  * Revision 3.27  2001/05/22 15:25:41  dkr
  * fixed a bug in SCHMakeSchedulingByPragma():
  * if (sched->num_args==0) is hold sched->args is set to NULL.
@@ -1121,4 +1126,237 @@ SCHCompileSchedulingInit (int seg_id, char *wl_name, sched_t *sched, node *arg_n
     ret_node = CompileScheduling (seg_id, wl_name, sched, arg_node, "INIT");
 
     DBUG_RETURN (ret_node);
+}
+
+/******************************************************************************
+ *
+ *     All Code for the TaskSelector
+ *
+ ******************************************************************************/
+
+typedef struct {
+    char *discipline;
+    int line;
+    int dim;
+} tasksel_t;
+
+typedef tasksel_t *SCHtasksel_t;
+
+/******************************************************************************
+ *
+ * global variable: TaskSel_table[]
+ *
+ * description:
+ *   This global variable defines a table of Taskselector specifications. Each
+ *   Taskselector is described by one entrie: the selctors name.
+ *
+ ******************************************************************************/
+
+static struct {
+    char *discipline;
+} taskselector_table[] = {
+  /* Name           */
+  {"Even"},
+  {"Factoring"}};
+
+/******************************************************************************
+ *
+ * function:
+ *   tasksel_t *CheckTaskselArgs( tasksel_t *tasksel, node *exprs,
+ *                                 int line)
+ *
+ * description:
+ *   This function produces the arguments of a taskselector specification that
+ *   is derived from a wlcomp pragma.The line number of the pragma in the
+ *   original source code is required to produce sufficient error messages.
+ *
+ ******************************************************************************/
+
+static tasksel_t *
+CheckTaskselArgs (tasksel_t *tasksel, node *exprs, int line)
+{
+
+    node *expr;
+
+    DBUG_ENTER ("CheckTaskselArgs");
+
+    if (exprs == NULL) {
+        ABORT (line, ("Taskselector discipline '%s` expects 1 arguments"
+                      "(too few specified)",
+                      tasksel->discipline));
+    }
+
+    expr = EXPRS_EXPR (exprs);
+
+    if (NODE_TYPE (expr) != N_num) {
+        ABORT (line, ("Argument 1 of taskselector discipline '%s` must be"
+                      " a number",
+                      tasksel->discipline));
+    }
+    tasksel->dim = NUM_VAL (expr);
+
+    exprs = EXPRS_NEXT (exprs);
+
+    if (exprs != NULL) {
+        ABORT (line, ("Taskselector discipline '%s` expects 1 arguments "
+                      "(too many specified)",
+                      tasksel->discipline));
+    }
+
+    DBUG_RETURN (tasksel);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   tasksel_t *SCHMakeTaskselByPragma( node *ap_node, int line)
+ *
+ * description:
+ *   This function constructs a taskselector specification from a 'Tasksel'
+ *   entry of the wlcomp pragma. The pragma information is compared with the
+ *   taskselector specification table. The line number of the pragma in the
+ *   original source code is required to produce sufficient error messages.
+ *
+ ******************************************************************************/
+
+tasksel_t *
+SCHMakeTaskselByPragma (node *ap_node, int line)
+{
+    tasksel_t *tasksel = NULL;
+    int i = 0;
+
+    DBUG_ENTER ("MakeTaskselByPragma");
+
+    while ((taskselector_table[i].discipline[0] != '\0')
+           && (0 != strcmp (taskselector_table[i].discipline, AP_NAME (ap_node)))) {
+        i++;
+    }
+
+    if (taskselector_table[i].discipline[0] != '\0') {
+        tasksel = (tasksel_t *)Malloc (sizeof (tasksel_t));
+        tasksel->discipline = taskselector_table[i].discipline;
+
+        tasksel->line = line;
+
+        tasksel = CheckTaskselArgs (tasksel, AP_ARGS (ap_node), line);
+    } else {
+        ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                      "Tasksel(): Unknown Taskselector"));
+    }
+
+    DBUG_RETURN (tasksel);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   tasksel_t *SCHRemoveTasksel( tasksel_t *tasksel)
+ *
+ * description:
+ *   This function may be used to release the resources bound to a data object
+ *   of the abstract data type for the representation of a taskselctor.
+ *
+ ******************************************************************************/
+
+tasksel_t *
+SCHRemoveTasksel (tasksel_t *tasksel)
+{
+
+    DBUG_ENTER ("SCHRemoveTasksel");
+
+    /*
+     * The discipline string must not be freed since it is only a pointer
+     * to the respective entry of the taskselector table.
+     */
+
+    tasksel = Free (tasksel);
+
+    DBUG_RETURN (tasksel);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   tasksel_t *SCHCopyTaskselector( tasksel_t *tasksel)
+ *
+ * description:
+ *   This function may be used to copy a data object
+ *   of the abstract data type for the representation of schedulings.
+ *
+ ******************************************************************************/
+
+tasksel_t *
+SCHCopyTasksel (tasksel_t *tasksel)
+{
+    tasksel_t *new_tasksel;
+
+    DBUG_ENTER ("SCHCopyTasksel");
+
+    new_tasksel = (tasksel_t *)Malloc (sizeof (tasksel_t));
+
+    new_tasksel->discipline = tasksel->discipline;
+    /*
+     * The discipline string must not be copied since it is only a pointer
+     * to the respective entry of the scheduler table.
+     */
+
+    new_tasksel->dim = tasksel->dim;
+    new_tasksel->line = tasksel->line;
+
+    DBUG_RETURN (new_tasksel);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   tasksel_t *SCHPrecompileTasksel( tasksel_t *tasksel)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+tasksel_t *
+SCHPrecompileTasksel (tasksel_t *tasksel)
+{
+
+    DBUG_ENTER ("SCHPrecompileTasksel");
+
+    DBUG_RETURN (tasksel);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void SCHPrintTasksel( FILE *handle, tasksel_t *tasksel)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+SCHPrintTasksel (FILE *outfile, tasksel_t *tasksel)
+{
+
+    DBUG_ENTER ("SCHPrintTasksel");
+
+    if (outfile == NULL) {
+        /*
+         * NULL -> stderr
+         * This is done for use in a debugging session.
+         */
+        outfile = stderr;
+    }
+
+    if (tasksel != NULL) {
+        fprintf (outfile, "%s(", tasksel->discipline);
+        fprintf (outfile, "%d", tasksel->dim);
+        fprintf (outfile, ")");
+
+    } else {
+        fprintf (outfile, "NULL");
+    }
+
+    DBUG_VOID_RETURN;
 }
