@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/28 13:51:50  jhs
+ * SCHCopyScheduling does not retun NULL any more, but the
+ * real copy of the scheduling.
+ *
  * Revision 1.1  2000/01/24 10:53:33  jhs
  * Initial revision
  *
@@ -586,7 +590,8 @@ SCHCopyScheduling (sched_t *sched)
         new_sched->args = NULL;
     }
 
-    DBUG_RETURN ((sched_t *)NULL);
+    /* DBUG_RETURN((sched_t *)NULL); */
+    DBUG_RETURN (new_sched);
 }
 
 /******************************************************************************
