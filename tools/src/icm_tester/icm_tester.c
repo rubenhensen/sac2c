@@ -4,18 +4,35 @@
 #include <stdarg.h>
 
 #define DBUG 0
+#define USE_CB 1
+
 #define BUFLEN 5000
+
+void
+RemoveFile (char *prefix, char *postfix)
+{
+    char filename[BUFLEN];
+
+    sprintf (filename, "%s%s", prefix, postfix);
+    remove (filename);
+}
+
+void
+RenameFile (char *prefix, char *old_postfix, char *new_postfix)
+{
+    char filename1[BUFLEN];
+    char filename2[BUFLEN];
+
+    sprintf (filename1, "%s%s", prefix, old_postfix);
+    sprintf (filename2, "%s%s", prefix, new_postfix);
+    rename (filename1, filename2);
+}
 
 void
 CleanUp (char *prefix)
 {
-    char filename[BUFLEN];
-
-    sprintf (filename, "%s.c", prefix);
-    remove (filename);
-
-    sprintf (filename, "%s.E", prefix);
-    remove (filename);
+    RemoveFile (prefix, ".c");
+    RemoveFile (prefix, ".E");
 }
 
 int
@@ -71,9 +88,31 @@ InvokeCC (char *prefix, char *shp, char *hid, char *unq)
                             cc, shp, hid, unq, getenv ("SACBASE"), prefix, prefix);
 
     if (exit_code != 0) {
-        fprintf (stderr, "ERROR: System call failed (exit code %d)!\n\n", exit_code);
+        fprintf (stderr, "ERROR: Call of C compiler failed (exit code %d)!\n\n",
+                 exit_code);
         CleanUp (prefix);
         exit (2);
+    }
+}
+
+void
+InvokeCB (char *prefix)
+{
+    char cb[] = "cb";
+    char cb_flags[] = "-r";
+
+    int exit_code;
+
+    exit_code
+      = SystemCall ("%s %s %s.E 1> %s.cb 2> /dev/null", cb, cb_flags, prefix, prefix);
+
+    if (exit_code != 0) {
+        RemoveFile (prefix, ".cb");
+
+        fprintf (stderr, "WARNING: Call of code beautifier failed (exit code %d)!\n\n",
+                 exit_code);
+    } else {
+        RenameFile (prefix, ".cb", ".E");
     }
 }
 
@@ -123,10 +162,12 @@ PrintFile (FILE *file, char *shp, char *hid, char *unq)
     PrintTag (unq);
     fprintf (stdout, "\n");
     fprintf (stdout, " */\n");
-    do {
-        p = fgets (line, BUFLEN, file);
+    p = fgets (line, BUFLEN, file);
+    while (p != NULL) {
         fprintf (stdout, "%s", line);
-    } while (p != NULL);
+        p = fgets (line, BUFLEN, file);
+    }
+    fprintf (stdout, "\n");
 
     return (file);
 }
@@ -149,7 +190,46 @@ CreateCFile (char *prefix, int *use_shp, int *use_hid, int *use_unq)
                     "\n"
                     "\n"
                     "#define TAGGED_ARRAYS\n"
-                    "#define SAC_DO_MULTITHREAD 1\n"
+
+                    "#define SAC_DO_CHECK           1\n"
+                    "#define SAC_DO_CHECK_TYPE      1\n"
+                    "#define SAC_DO_CHECK_BOUNDARY  1\n"
+                    "#define SAC_DO_CHECK_MALLOC    1\n"
+                    "#define SAC_DO_CHECK_ERRNO     1\n"
+                    "#define SAC_DO_CHECK_HEAP      1\n"
+
+                    "#define SAC_DO_PHM             0\n"
+                    "#define SAC_DO_APS             0\n"
+                    "#define SAC_DO_DAO             0\n"
+                    "#define SAC_DO_MSCA            0\n"
+
+                    "#define SAC_DO_PROFILE         1\n"
+                    "#define SAC_DO_PROFILE_WITH    1\n"
+                    "#define SAC_DO_PROFILE_FUN     1\n"
+                    "#define SAC_DO_PROFILE_INL     1\n"
+                    "#define SAC_DO_PROFILE_LIB     1\n"
+
+                    "#define SAC_DO_TRACE           1\n"
+                    "#define SAC_DO_TRACE_REF       1\n"
+                    "#define SAC_DO_TRACE_MEM       1\n"
+                    "#define SAC_DO_TRACE_PRF       1\n"
+                    "#define SAC_DO_TRACE_FUN       1\n"
+                    "#define SAC_DO_TRACE_WL        1\n"
+                    "#define SAC_DO_TRACE_AA        1\n"
+                    "#define SAC_DO_TRACE_MT        1\n"
+
+                    "#define SAC_DO_CACHESIM        0\n"
+                    "#define SAC_DO_CACHESIM_ADV    0\n"
+                    "#define SAC_DO_CACHESIM_GLOBAL 1\n"
+                    "#define SAC_DO_CACHESIM_FILE   0\n"
+                    "#define SAC_DO_CACHESIM_PIPE   1\n"
+                    "#define SAC_DO_CACHESIM_IMDT   0\n"
+
+                    "#define SAC_DO_MULTITHREAD     1\n"
+                    "#define SAC_DO_THREADS_STATIC  1\n"
+
+                    "#define SAC_DO_COMPILE_MODULE  0\n"
+
                     "#include \"sac.h\"\n"
                     "\n";
 
@@ -208,6 +288,9 @@ ProcessCFile (char *prefix, int use_shp, int use_hid, int use_unq)
         for (j = 0; (hid[j] != NULL); j++) {
             for (k = 0; (unq[k] != NULL); k++) {
                 InvokeCC (prefix, shp[i], hid[j], unq[k]);
+#if USE_CB
+                InvokeCB (prefix);
+#endif
 
                 file = OpenFile (prefix, ".E", "r");
 
