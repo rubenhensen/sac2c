@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.110  1998/02/27 16:28:45  cg
+ * added usage of sac2c configuration files for customizing sac2c for various
+ * target architectures and C compilers.
+ *
  * Revision 1.109  1998/02/25 09:11:41  cg
  * Global variables moved to globals.c
  * Compilation process rigidly streamlined.
@@ -397,6 +401,7 @@
 #include "cccall.h"
 #include "Old2NewWith.h"
 #include "internal_lib.h"
+#include "resource.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -419,6 +424,8 @@ MAIN
 
     /* initializations */
     InitPaths ();
+
+    compiler_phase = PH_setup;
 
     /*
      *  The command line is written to a single string.
@@ -656,32 +663,38 @@ MAIN
     NEXTOPT
     ARG 't' : PARM
     {
-        while (**argv) {
-            switch (**argv) {
-            case 'a':
-                traceflag = TRACE_ALL;
-                break;
-            case 'm':
-                traceflag = traceflag | TRACE_MEM;
-                break;
-            case 'r':
-                traceflag = traceflag | TRACE_REF;
-                break;
-            case 'u':
-                traceflag = traceflag | TRACE_UDF;
-                break;
-            case 'p':
-                traceflag = traceflag | TRACE_PRF;
-                break;
-            case 'w':
-                traceflag = traceflag | TRACE_WST;
-                break;
-            default:
-                SYSWARN (("Unknown trace flag '%c`", **argv));
+        if (0 == strcmp (*argv, "arget")) {
+            strcpy (target_name, *(argv + 1));
+        } else {
+
+            while (**argv) {
+                switch (**argv) {
+                case 'a':
+                    traceflag = TRACE_ALL;
+                    break;
+                case 'm':
+                    traceflag = traceflag | TRACE_MEM;
+                    break;
+                case 'r':
+                    traceflag = traceflag | TRACE_REF;
+                    break;
+                case 'u':
+                    traceflag = traceflag | TRACE_UDF;
+                    break;
+                case 'p':
+                    traceflag = traceflag | TRACE_PRF;
+                    break;
+                case 'w':
+                    traceflag = traceflag | TRACE_WST;
+                    break;
+                default:
+                    SYSWARN (("Unknown trace flag '%c`", **argv));
+                }
+                ++*argv;
             }
-            ++*argv;
         }
     }
+
     NEXTOPT
     ARG 'p' : PARM
     {
@@ -962,15 +975,13 @@ MAIN
 
     NOTE_COMPILER_PHASE;
 
+    RSCEvaluateConfiguration (target_name);
+
+    ABORT_ON_ERROR;
+
     if (break_after == PH_setup)
         goto BREAK;
     compiler_phase++;
-
-    /*
-     *  Now, we reset some debugging tools.
-     */
-
-    filename = sacfilename;
 
     /*
      *  Finally the compilation process is started.
@@ -1259,6 +1270,8 @@ BREAK:
 
     if (compiler_phase >= PH_scanparse)
         Print (syntax_tree);
+    else
+        RSCShowResources ();
 
     NEWLINE (2);
     NOTE2 (("*** Compilation successful ***"));
