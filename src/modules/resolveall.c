@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/17 19:48:18  sah
+ * added visibility checking
+ *
  * Revision 1.2  2004/10/25 11:58:47  sah
  * major code cleanup
  *
@@ -19,6 +22,7 @@
 #include "dbug.h"
 #include "modulemanager.h"
 #include "symboltable.h"
+#include "Error.h"
 #include "free.h"
 
 static void
@@ -42,14 +46,66 @@ Symboltable2Symbols (STsymboliterator_t *iterator, bool exportedonly)
     DBUG_ENTER ("Symboltable2Symbols");
 
     if (STSymbolIteratorHasMore (iterator)) {
-        char *id = StringCopy (STSymbolIteratorNext (iterator));
+        STsymbol_t *symb = STSymbolIteratorNext (iterator);
         node *next = Symboltable2Symbols (iterator, exportedonly);
-        result = MakeSymbol (id, next);
+        result = MakeSymbol (StringCopy (STSymbolName (symb)), next);
     } else {
         result = NULL;
     }
 
     DBUG_RETURN (result);
+}
+
+static node *
+CheckSymbolExistsRec (const char *mod, STtable_t *table, node *symbols, bool exportedonly)
+{
+    STsymbol_t *symbol;
+
+    DBUG_ENTER ("CheckSymbolExistsRec");
+
+    if (symbols != NULL) {
+
+        SYMBOL_NEXT (symbols)
+          = CheckSymbolExistsRec (mod, table, SYMBOL_NEXT (symbols), exportedonly);
+
+        /* check visibility */
+        symbol = STGet (SYMBOL_ID (symbols), table);
+        if ((symbol == NULL)
+            || ((!(STSymbolVisibility (symbol) == SVT_exported))
+                && ((!(STSymbolVisibility (symbol) == SVT_provided)) || exportedonly))) {
+            node *tmp;
+
+            WARN (NODE_LINE (symbols),
+                  ("Symbol `%s:%s' is undefined. Ignoring...", mod, SYMBOL_ID (symbols)));
+
+            tmp = symbols;
+            symbols = SYMBOL_NEXT (symbols);
+
+            tmp = FreeNode (tmp);
+        }
+    }
+
+    DBUG_RETURN (symbols);
+}
+
+static node *
+CheckSymbolExists (const char *mod, node *symbols, bool exportedonly)
+{
+    module_t *module;
+    STtable_t *table;
+
+    DBUG_ENTER ("CheckSymbolExists");
+
+    module = LoadModule (mod);
+
+    table = GetSymbolTable (module);
+
+    symbols = CheckSymbolExistsRec (mod, table, symbols, exportedonly);
+
+    table = STDestroy (table);
+    module = UnLoadModule (module);
+
+    DBUG_RETURN (symbols);
 }
 
 static node *
@@ -89,6 +145,9 @@ RSAUse (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSAUse");
 
+    USE_SYMBOL (arg_node)
+      = CheckSymbolExists (USE_MOD (arg_node), USE_SYMBOL (arg_node), FALSE);
+
     if (USE_ALL (arg_node)) {
         USE_SYMBOL (arg_node)
           = ResolveAllFlag (USE_MOD (arg_node), USE_SYMBOL (arg_node), FALSE);
@@ -106,6 +165,9 @@ node *
 RSAImport (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSAImport");
+
+    IMPORT_SYMBOL (arg_node)
+      = CheckSymbolExists (IMPORT_MOD (arg_node), IMPORT_SYMBOL (arg_node), TRUE);
 
     if (IMPORT_ALL (arg_node)) {
         IMPORT_SYMBOL (arg_node)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/17 19:48:18  sah
+ * added visibility checking
+ *
  * Revision 1.5  2004/11/14 15:23:04  sah
  * extended traversal to typedefs
  *
@@ -295,6 +298,25 @@ node *
 EXPObjdef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EXPObjdef");
+
+    INFO_EXP_SYMBOL (arg_info) = OBJDEF_NAME (arg_node);
+    INFO_EXP_EXPORTED (arg_info) = FALSE;
+    INFO_EXP_PROVIDED (arg_info) = FALSE;
+
+    if (INFO_EXP_INTERFACE (arg_info) != NULL) {
+        INFO_EXP_INTERFACE (arg_info) = Trav (INFO_EXP_INTERFACE (arg_info), arg_info);
+    }
+
+    if (INFO_EXP_EXPORTED (arg_info)) {
+        SET_FLAG (OBJDEF, arg_node, IS_EXPORTED, TRUE);
+        SET_FLAG (OBJDEF, arg_node, IS_PROVIDED, TRUE);
+    } else if (INFO_EXP_PROVIDED (arg_info)) {
+        SET_FLAG (OBJDEF, arg_node, IS_EXPORTED, FALSE);
+        SET_FLAG (OBJDEF, arg_node, IS_PROVIDED, TRUE);
+    } else {
+        SET_FLAG (OBJDEF, arg_node, IS_EXPORTED, FALSE);
+        SET_FLAG (OBJDEF, arg_node, IS_PROVIDED, FALSE);
+    }
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
         OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
