@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.51  2003/11/28 10:25:21  sbs
+ * L_VARDEC_OR_ARG_TYPE(IDS_VARDEC( ids), expr) used instead of IDS_TYPE( ids) = expr
+ *
  * Revision 1.50  2003/11/25 14:30:23  sbs
  * type improvement after CF (newTC only) added.
  *
@@ -1935,8 +1938,10 @@ SSACFlet (node *arg_node, node *arg_info)
                                      "CF lead to a result type that is not a proper "
                                      "subtype of the inferred type!");
 
-                        IDS_TYPE (ids) = FreeOneTypes (IDS_TYPE (ids));
-                        IDS_TYPE (ids) = TYType2OldType (computed_type);
+                        L_VARDEC_OR_ARG_TYPE (IDS_VARDEC (ids),
+                                              FreeOneTypes (IDS_TYPE (ids)));
+                        L_VARDEC_OR_ARG_TYPE (IDS_VARDEC (ids),
+                                              TYType2OldType (computed_type));
                         computed_type = TYFreeType (computed_type);
                         inferred_type = TYFreeType (inferred_type);
                     }
