@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2002/10/09 22:00:11  dkr
+ * IDS_SHPSEG, ID_SHPSEG added
+ *
  * Revision 3.68  2002/10/08 13:03:36  sbs
  * ID_OR_ARRAY_TYPE added.
  *
@@ -224,17 +227,118 @@ specific implementation of a function should remain with the source code.
 #include "tree_basic.h"
 #include "Error.h"
 
-/*--------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------*/
-/* general function declarations / Macros                                   */
-/*--------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------*/
+/*****************************************************************************/
+
+/**
+ **  some ugly macros (better use modul CompareTree!)
+ **/
 
 /*
- * compares two module names (name maybe NULL)
- * result: 1 - equal, 0 - not equal
+ *  macro name    : CMP_TYPE_USER
+ *  arg types     : 1) types*
+ *                  2) types*
+ *  result type   : int
+ *  description   : compares two user-defined types (name and module)
+ *                  Names and module names must be equal.
+ *  remarks       : result: 1 - equal, 0 - not equal
  */
-#define CMP_MOD(a, b) ((NULL == a) ? (NULL == b) : ((NULL == b) ? 0 : (!strcmp (a, b))))
+
+#define CMP_TYPE_USER(a, b)                                                              \
+    ((!strcmp (TYPES_NAME (a), TYPES_NAME (b)))                                          \
+     && (!strcmp (STR_OR_EMPTY (TYPES_MOD (a)), STR_OR_EMPTY (TYPES_MOD (b)))))
+
+/*
+ *  macro name    : CMP_TYPEDEF(a,b)
+ *  arg types     : 1) node*  (N_typedef)
+ *                  2) node*  (N_typedef)
+ *  result type   : int
+ *  description   : compares two typedef nodes (name and module)
+ *                  result: 1 - equal, 0 - not equal
+ */
+
+#define CMP_TYPEDEF(a, b)                                                                \
+    ((NULL == TYPEDEF_MOD (a))                                                           \
+       ? (!strcmp (TYPEDEF_NAME (a), TYPEDEF_NAME (b)) && (NULL == TYPEDEF_MOD (b)))     \
+       : ((NULL == TYPEDEF_MOD (b))                                                      \
+            ? 0                                                                          \
+            : ((!strcmp (TYPEDEF_NAME (a), TYPEDEF_NAME (b)))                            \
+               && (!strcmp (TYPEDEF_MOD (a), TYPEDEF_MOD (b))))))
+
+/*
+ *  macro name    : CMP_TYPE_TYPEDEF(name, mod, typedef)
+ *  arg types     : 1) char*
+ *                  2) char*
+ *                  3) node*  (N_typedef)
+ *  result type   : int
+ *  description   : compares name and module name of a type with the
+ *                  defined name and module name of a typedef
+ *                  result: 1 - equal, 0 - not equal
+ */
+
+#define CMP_TYPE_TYPEDEF(name, mod, tdef)                                                \
+    ((!strcmp (name, TYPEDEF_NAME (tdef)))                                               \
+     && (!strcmp (STR_OR_EMPTY (mod), STR_OR_EMPTY (TYPEDEF_MOD (tdef)))))
+
+/*
+ *  macro name    : CMP_OBJDEF(a,b)
+ *  arg types     : 1) node*  (N_objdef)
+ *                  2) node*  (N_objdef)
+ *  result type   : int
+ *  description   : compares two objdef nodes (name and module)
+ *                  result: 1 - equal, 0 - not equal
+ */
+
+#define CMP_OBJDEF(a, b)                                                                 \
+    ((NULL == OBJDEF_MOD (a))                                                            \
+       ? (!strcmp (OBJDEF_NAME (a), OBJDEF_NAME (b)) && (NULL == OBJDEF_MOD (b)))        \
+       : ((NULL == OBJDEF_MOD (b)) ? 0                                                   \
+                                   : ((!strcmp (OBJDEF_NAME (a), OBJDEF_NAME (b)))       \
+                                      && (!strcmp (OBJDEF_MOD (a), OBJDEF_MOD (b))))))
+
+/*
+ *  macro name    : CMP_OBJ_OBJDEF
+ *  arg types     : 1) char*
+ *                  2) char*
+ *                  3) node*  (N_objdef)
+ *  result type   : int
+ *  description   : compares name and module name of an object with the
+ *                  defined name and module name of an objdef
+ *                  result: 1 - equal, 0 - not equal
+ */
+
+#define CMP_OBJ_OBJDEF(name, mod, odef)                                                  \
+    ((mod == NULL)                                                                       \
+       ? (0 == strcmp (name, OBJDEF_NAME (odef)))                                        \
+       : ((0 == strcmp (name, OBJDEF_NAME (odef)))                                       \
+          && ((OBJDEF_MOD (odef) == NULL) ? (0 == strcmp (mod, OBJDEF_LINKMOD (odef)))   \
+                                          : (0 == strcmp (mod, OBJDEF_MOD (odef))))))
+
+/*
+ *  macro name    : CMP_FUN_ID(a,b)
+ *  arg types     : 1) node*  (N_objdef)
+ *                  2) node*  (N_objdef)
+ *  result type   : int
+ *  description   : compares two fundef nodes (name and module only)
+ *                  result: 1 - equal, 0 - not equal
+ */
+
+#define CMP_FUN_ID(a, b)                                                                 \
+    ((0 == strcmp (FUNDEF_NAME (a), FUNDEF_NAME (b)))                                    \
+     && (0 == strcmp (STR_OR_EMPTY (FUNDEF_MOD (a)), STR_OR_EMPTY (FUNDEF_MOD (b)))))
+
+/*
+ *  macro name    : CMP_FUNDEF(a,b)
+ *  arg types     : 1) node*  (N_objdef)
+ *                  2) node*  (N_objdef)
+ *  result type   : int
+ *  description   : compares two fundef nodes (name, module, and domain)
+ *                  result: 1 - equal, 0 - not equal
+ */
+
+#define CMP_FUNDEF(a, b)                                                                 \
+    ((CMP_FUN_ID (a, b)) ? CmpDomain (FUNDEF_ARGS (a), FUNDEF_ARGS (b)) : 0)
+
+/*****************************************************************************/
 
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
@@ -274,20 +378,6 @@ extern node *Shpseg2Array (shpseg *shape, int dim);
  */
 
 #define TYPES_SHAPE(t, x) (SHPSEG_SHAPE (TYPES_SHPSEG (t), x))
-
-/*
- *  macro name    : CMP_TYPE_USER
- *  arg types     : 1) types*
- *                  2) types*
- *  result type   : int
- *  description   : compares two user-defined types (name and module)
- *                  Names and module names must be equal.
- *  remarks       : result: 1 - equal, 0 - not equal
- */
-
-#define CMP_TYPE_USER(a, b)                                                              \
-    ((!strcmp (TYPES_NAME (a), TYPES_NAME (b)))                                          \
-     && (!strcmp (STR_OR_EMPTY (TYPES_MOD (a)), STR_OR_EMPTY (TYPES_MOD (b)))))
 
 extern types *AppendTypes (types *chain, types *item);
 extern int CountTypes (types *type);
@@ -334,8 +424,8 @@ extern bool IsNonUniqueHidden (types *type);
 #define IDS_VARNO(n) VARDEC_OR_ARG_VARNO (IDS_VARDEC (n))
 #define IDS_TYPE(n) VARDEC_OR_ARG_TYPE (IDS_VARDEC (n))
 #define IDS_DIM(n) VARDEC_OR_ARG_DIM (IDS_VARDEC (n))
-#define IDS_SHAPE(n, x)                                                                  \
-    SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (IDS_VARDEC (n))), x)
+#define IDS_SHPSEG(n) TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (IDS_VARDEC (n)))
+#define IDS_SHAPE(n, x) SHPSEG_SHAPE (IDS_SHPSEG (n), x)
 #define IDS_VARDEC_NAME(n) VARDEC_OR_ARG_NAME (IDS_VARDEC (n))
 #define IDS_VARDEC_NEXT(n) VARDEC_OR_ARG_NEXT (IDS_VARDEC (n))
 #define IDS_PADDED(n) VARDEC_OR_ARG_PADDED (IDS_VARDEC (n))
@@ -361,14 +451,6 @@ extern ids *LookupIds (char *name, ids *ids_chain);
 /***
  ***  NUMS :
  ***/
-
-/*
- *
- *  functionname  : CountNums
- *  arguments     : pointer to nums-chain (chained list of integers)
- *  description   : returns the length of th chained list
- *
- */
 
 extern int CountNums (nums *numsp);
 
@@ -497,7 +579,6 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
  ***/
 
 extern int GetArgtabIndexOut (types *type, argtab_t *argtab);
-
 extern int GetArgtabIndexIn (types *type, argtab_t *argtab);
 
 /*--------------------------------------------------------------------------*/
@@ -648,42 +729,6 @@ extern bool IsFromClass (node *symbol);
 
 /*
  *
- *  macro name    : CMP_TYPEDEF(a,b)
- *  arg types     : 1) node*  (N_typedef)
- *                  2) node*  (N_typedef)
- *  result type   : int
- *  description   : compares two typedef nodes (name and module)
- *                  result: 1 - equal, 0 - not equal
- *
- */
-
-#define CMP_TYPEDEF(a, b)                                                                \
-    ((NULL == TYPEDEF_MOD (a))                                                           \
-       ? (!strcmp (TYPEDEF_NAME (a), TYPEDEF_NAME (b)) && (NULL == TYPEDEF_MOD (b)))     \
-       : ((NULL == TYPEDEF_MOD (b))                                                      \
-            ? 0                                                                          \
-            : ((!strcmp (TYPEDEF_NAME (a), TYPEDEF_NAME (b)))                            \
-               && (!strcmp (TYPEDEF_MOD (a), TYPEDEF_MOD (b))))))
-
-/*
- *
- *  macro name    : CMP_TYPE_TYPEDEF(name, mod, typedef)
- *  arg types     : 1) char*
- *                  2) char*
- *                  3) node*  (N_typedef)
- *  result type   : int
- *  description   : compares name and module name of a type with the
- *                  defined name and module name of a typedef
- *                  result: 1 - equal, 0 - not equal
- *
- */
-
-#define CMP_TYPE_TYPEDEF(name, mod, tdef)                                                \
-    ((!strcmp (name, TYPEDEF_NAME (tdef)))                                               \
-     && (!strcmp (STR_OR_EMPTY (mod), STR_OR_EMPTY (TYPEDEF_MOD (tdef)))))
-
-/*
- *
  *  functionname  : SearchTypedef
  *  arguments     : 1) type name to be searched for
  *                  2) module name of type to be searched for
@@ -733,44 +778,6 @@ extern node *AppendTypedef (node *tdef_chain, node *tdef);
 
 #define OBJDEF_EFFECT(n)                                                                 \
     (OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_EFFECT (OBJDEF_PRAGMA (n)))
-
-/*
- *
- *  macro name    : CMP_OBJDEF(a,b)
- *  arg types     : 1) node*  (N_objdef)
- *                  2) node*  (N_objdef)
- *  result type   : int
- *  description   : compares two objdef nodes (name and module)
- *                  result: 1 - equal, 0 - not equal
- *
- */
-
-#define CMP_OBJDEF(a, b)                                                                 \
-    ((NULL == OBJDEF_MOD (a))                                                            \
-       ? (!strcmp (OBJDEF_NAME (a), OBJDEF_NAME (b)) && (NULL == OBJDEF_MOD (b)))        \
-       : ((NULL == OBJDEF_MOD (b)) ? 0                                                   \
-                                   : ((!strcmp (OBJDEF_NAME (a), OBJDEF_NAME (b)))       \
-                                      && (!strcmp (OBJDEF_MOD (a), OBJDEF_MOD (b))))))
-
-/*
- *
- *  macro name    : CMP_OBJ_OBJDEF
- *  arg types     : 1) char*
- *                  2) char*
- *                  3) node*  (N_objdef)
- *  result type   : int
- *  description   : compares name and module name of an object with the
- *                  defined name and module name of an objdef
- *                  result: 1 - equal, 0 - not equal
- *
- */
-
-#define CMP_OBJ_OBJDEF(name, mod, odef)                                                  \
-    ((mod == NULL)                                                                       \
-       ? (0 == strcmp (name, OBJDEF_NAME (odef)))                                        \
-       : ((0 == strcmp (name, OBJDEF_NAME (odef)))                                       \
-          && ((OBJDEF_MOD (odef) == NULL) ? (0 == strcmp (mod, OBJDEF_LINKMOD (odef)))   \
-                                          : (0 == strcmp (mod, OBJDEF_MOD (odef))))))
 
 /*
  *
@@ -863,33 +870,7 @@ extern node *AppendObjdef (node *objdef_chain, node *objdef);
 #define FUNDEC_TNAME(n) (FUNDEF_NAME (FUNDEC_DEF (n)))
 #define FUNDEC_TMOD(n) (FUNDEF_MOD (FUNDEC_DEF (n)))
 
-/*
- *  macro name    : CMP_FUN_ID(a,b)
- *  arg types     : 1) node*  (N_objdef)
- *                  2) node*  (N_objdef)
- *  result type   : int
- *  description   : compares two fundef nodes (name and module only)
- *                  result: 1 - equal, 0 - not equal
- */
-
-#define CMP_FUN_ID(a, b)                                                                 \
-    ((0 == strcmp (FUNDEF_NAME (a), FUNDEF_NAME (b)))                                    \
-     && (0 == strcmp (STR_OR_EMPTY (FUNDEF_MOD (a)), STR_OR_EMPTY (FUNDEF_MOD (b)))))
-
-/*
- *  macro name    : CMP_FUNDEF(a,b)
- *  arg types     : 1) node*  (N_objdef)
- *                  2) node*  (N_objdef)
- *  result type   : int
- *  description   : compares two fundef nodes (name, module, and domain)
- *                  result: 1 - equal, 0 - not equal
- */
-
-#define CMP_FUNDEF(a, b)                                                                 \
-    ((CMP_FUN_ID (a, b)) ? CmpDomain (FUNDEF_ARGS (a), FUNDEF_ARGS (b)) : 0)
-
 extern node *FindVardec_Name (char *name, node *fundef);
-
 extern node *FindVardec_Varno (int varno, node *fundef);
 
 /*
@@ -914,11 +895,6 @@ extern int CountFunctionParams (node *fundef);
  *  arguments     : 1) fundef node of function to search for
  *                  2) ptr to head of fundef chain
  *  description   : returns a ptr to the respective fundef node
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : CMP_FUNDEF
- *
  *  remarks       : This function is used to find the implementation of
  *                  a function which is declared in a module/class
  *                  implementation. For the representation of function
@@ -1076,9 +1052,7 @@ extern node *AdjustAvisData (node *new_vardec, node *fundef);
 #define ARG_TDEF(n) (TYPES_TDEF (ARG_TYPE (n)))
 
 extern int CountArgs (node *args);
-
 extern int HasDotArgs (node *args);
-
 extern int CmpDomain (node *args1, node *args2);
 
 /*--------------------------------------------------------------------------*/
@@ -1649,7 +1623,6 @@ extern node *CreateZeroVector (int length, simpletype btype);
 extern int IsConstArray (node *array);
 
 extern node *Ids2Exprs (ids *ids_arg);
-
 extern node *Ids2Array (ids *ids_arg);
 
 /******************************************************************************
@@ -1721,7 +1694,8 @@ extern node *MakeVinfoDollar (node *next);
 #define ID_VARNO(n) VARDEC_OR_ARG_VARNO (ID_VARDEC (n))
 #define ID_TYPE(n) VARDEC_OR_ARG_TYPE (ID_VARDEC (n))
 #define ID_DIM(n) VARDEC_OR_ARG_DIM (ID_VARDEC (n))
-#define ID_SHAPE(n, x) SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (ID_VARDEC (n))), x)
+#define ID_SHPSEG(n) TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (ID_VARDEC (n)))
+#define ID_SHAPE(n, x) SHPSEG_SHAPE (ID_SHPSEG (n), x)
 #define ID_VARDEC_NAME(n) VARDEC_OR_ARG_NAME (ID_VARDEC (n))
 #define ID_VARDEC_NEXT(n) VARDEC_OR_ARG_NEXT (ID_VARDEC (n))
 #define ID_PADDED(n) VARDEC_OR_ARG_PADDED (ID_VARDEC (n))
@@ -1759,9 +1733,7 @@ extern node *MakeVinfoDollar (node *next);
  */
 
 extern node *MakePrf1 (prf prf, node *arg1);
-
 extern node *MakePrf2 (prf prf, node *arg1, node *arg2);
-
 extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
 
 /*--------------------------------------------------------------------------*/
