@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2001/04/03 14:26:26  nmw
+ * set correct avis attribute in DupIds
+ *
  * Revision 3.36  2001/04/02 15:21:14  dkr
  * ups, typo corrected ...
  *
@@ -410,7 +413,7 @@ DupIds_ (ids *arg_ids, node *arg_info)
 
     /* set corresponding AVIS node backreference */
     if (IDS_VARDEC (arg_ids) != NULL) {
-        IDS_AVIS (new_ids) = VARDEC_OR_ARG_AVIS (IDS_VARDEC (arg_ids));
+        IDS_AVIS (new_ids) = VARDEC_OR_ARG_AVIS (IDS_VARDEC (new_ids));
     } else {
         IDS_AVIS (new_ids) = NULL;
     }
