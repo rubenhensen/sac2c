@@ -1,16 +1,19 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/11/26 14:14:29  sbs
+ * change run
+ *
  * Revision 1.17  2004/11/09 14:03:00  mwe
  * code for type upgrade added
  * use ntype-structure instead of types-structure
  * new code deactivated by MWE_NTYPE_READY macro
  *
  * Revision 1.16  2004/10/14 22:36:57  sbs
- * DBUG_assert in SHCopySHape split over two lines for easier debugging.
+ * DBUG_assert in SHcopySHape split over two lines for easier debugging.
  *
  * Revision 1.15  2004/10/14 11:47:49  sbs
- * SHShape2Exprs added
+ * SHshape2Exprs added
  *
  * Revision 1.14  2004/09/27 13:15:20  sah
  * added serialization support
@@ -19,7 +22,7 @@
  * added SHSerializeShape
  *
  * Revision 1.12  2003/06/13 09:28:23  ktr
- * Fixed a bug in SHTakeFromShape which caused a call of SHMakeShape with a
+ * Fixed a bug in SHTakeFromShape which caused a call of SHmakeShape with a
  * negative argument.
  *
  * Revision 1.11  2003/06/11 22:05:36  ktr
@@ -33,22 +36,22 @@
  * SHDropFromShape added.
  *
  * Revision 1.8  2002/06/21 14:04:13  dkr
- * SHShape2Array() added
+ * SHshape2Array() added
  *
  * Revision 1.6  2001/05/22 14:59:08  nmw
  * OldTypes2Shape is now aware of user defined types
  *
  * Revision 1.5  2001/05/17 12:57:46  nmw
- * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ * MALLOC/FREE replaced by ILIBmalloc/Free, using result of ILIBfree()
  *
  * Revision 1.4  2001/05/03 16:55:13  nmw
  * COTypes2OldShapes can handle scalars correctly now
  *
  * Revision 1.3  2001/04/30 12:31:34  nmw
- * SHShape2IntVec added
+ * SHshape2IntVec added
  *
  * Revision 1.2  2001/03/05 16:57:04  sbs
- * SHCompareShapes added
+ * SHcompareShapes added
  *
  * Revision 1.1  2001/03/02 14:33:07  sbs
  * Initial revision
@@ -83,7 +86,7 @@
  * - whenever a shape is given as argument, it will be inspected only!
  *   Neither the pointer to it nor any pointer to a sub structure will be
  *   returned or used within a data structure that serves as a result!
- * - The only function for freeing a shape structure is SHFreeShape!
+ * - The only function for freeing a shape structure is SHfreeShape!
  * - If the result is a shape structure, it has been freshly allocated!
  *
  */
@@ -120,7 +123,7 @@ struct SHAPE {
 
 /** <!--********************************************************************-->
  *
- * @fn shape *SHMakeShape( int dim)
+ * @fn shape *SHmakeShape( int dim)
  *
  * @brief creates a new shape-structure of size dim which is not yet initialized
  *
@@ -131,16 +134,16 @@ struct SHAPE {
  ******************************************************************************/
 
 shape *
-SHMakeShape (int dim)
+SHmakeShape (int dim)
 {
     shape *res;
 
-    DBUG_ENTER ("SHMakeShape");
-    DBUG_ASSERT (dim >= 0, ("SHMakeShape called with negative dimensionality!"));
+    DBUG_ENTER ("SHmakeShape");
+    DBUG_ASSERT (dim >= 0, ("SHmakeShape called with negative dimensionality!"));
 
-    res = (shape *)Malloc (sizeof (shape));
+    res = (shape *)ILIBmalloc (sizeof (shape));
     if (dim > 0) {
-        SHAPE_ELEMS (res) = (int *)Malloc (dim * sizeof (int));
+        SHAPE_ELEMS (res) = (int *)ILIBmalloc (dim * sizeof (int));
     } else {
         SHAPE_ELEMS (res) = NULL;
     }
@@ -170,14 +173,14 @@ SHCreateShape (int dim, ...)
     shape *result;
 
     DBUG_ENTER ("SHCreateShape");
-    result = SHMakeShape (dim);
+    result = SHmakeShape (dim);
 
     DBUG_ASSERT (result != NULL, ("CreateShape: Get NULL shape from MakeShape!"));
 
     if (dim > 0) {
         va_start (Argp, dim);
         for (i = 0; i < dim; i++) {
-            result = SHSetExtent (result, i, va_arg (Argp, int));
+            result = SHsetExtent (result, i, va_arg (Argp, int));
         }
     }
 
@@ -186,7 +189,7 @@ SHCreateShape (int dim, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn shape *SHCopyShape( shape *shp)
+ * @fn shape *SHcopyShape( shape *shp)
  *
  * @brief duplicates the shape structure given as argument.
  *
@@ -197,16 +200,16 @@ SHCreateShape (int dim, ...)
  ******************************************************************************/
 
 shape *
-SHCopyShape (shape *shp)
+SHcopyShape (shape *shp)
 {
     shape *res;
     int i, n;
 
-    DBUG_ENTER ("SHCopyShape");
-    DBUG_ASSERT ((shp != NULL), ("SHCopyShape called with NULL shape!"));
+    DBUG_ENTER ("SHcopyShape");
+    DBUG_ASSERT ((shp != NULL), ("SHcopyShape called with NULL shape!"));
 
     n = SHAPE_DIM (shp);
-    res = SHMakeShape (n);
+    res = SHmakeShape (n);
     for (i = 0; i < n; i++) {
         SHAPE_EXT (res, i) = SHAPE_EXT (shp, i);
     }
@@ -247,7 +250,7 @@ SHPrintShape (FILE *file, shape *shp)
 
 /** <!--********************************************************************-->
  *
- * @fn shape *SHFreeShape( shape *shp)
+ * @fn shape *SHfreeShape( shape *shp)
  *
  * @brief frees the given shape structure.
  *
@@ -258,15 +261,15 @@ SHPrintShape (FILE *file, shape *shp)
  ******************************************************************************/
 
 shape *
-SHFreeShape (shape *shp)
+SHfreeShape (shape *shp)
 {
-    DBUG_ENTER ("SHFreeShape");
-    DBUG_ASSERT ((shp != NULL), ("SHFreeShape called with NULL shape!"));
+    DBUG_ENTER ("SHfreeShape");
+    DBUG_ASSERT ((shp != NULL), ("SHfreeShape called with NULL shape!"));
 
     if (SHAPE_DIM (shp) > 0) {
-        SHAPE_ELEMS (shp) = Free (SHAPE_ELEMS (shp));
+        SHAPE_ELEMS (shp) = ILIBfree (SHAPE_ELEMS (shp));
     }
-    shp = Free (shp);
+    shp = ILIBfree (shp);
 
     DBUG_RETURN (shp);
 }
@@ -291,53 +294,53 @@ SHSerializeShape (FILE *file, shape *shp)
 
 /** <!--********************************************************************-->
  *
- * @fn int SHGetDim( shape *shp)
+ * @fn int SHgetDim( shape *shp)
  *
  * @brief return the dimension of the given shape structure
  *
  ******************************************************************************/
 
 int
-SHGetDim (shape *shp)
+SHgetDim (shape *shp)
 {
-    DBUG_ENTER ("SHGetDim");
-    DBUG_ASSERT ((shp != NULL), ("SHGetDim called with NULL shape!"));
+    DBUG_ENTER ("SHgetDim");
+    DBUG_ASSERT ((shp != NULL), ("SHgetDim called with NULL shape!"));
 
     DBUG_RETURN (SHAPE_DIM (shp));
 }
 
 /** <!--********************************************************************-->
  *
- * @fn int SHGetExtent( shape *shp, int dim)
+ * @fn int SHgetExtent( shape *shp, int dim)
  *
  * @brief return the shape's extent along the given dimension
  *
  ******************************************************************************/
 int
-SHGetExtent (shape *shp, int dim)
+SHgetExtent (shape *shp, int dim)
 {
-    DBUG_ENTER ("SHGetExtent");
-    DBUG_ASSERT ((shp != NULL), ("SHGetExtent called with NULL shape!"));
+    DBUG_ENTER ("SHgetExtent");
+    DBUG_ASSERT ((shp != NULL), ("SHgetExtent called with NULL shape!"));
     DBUG_ASSERT ((SHAPE_DIM (shp) > dim) && (dim >= 0),
-                 ("SHGetExtent called with dim out of range!"));
+                 ("SHgetExtent called with dim out of range!"));
 
     DBUG_RETURN (SHAPE_EXT (shp, dim));
 }
 
 /** <!--********************************************************************-->
  *
- * @fn int SHGetUnrLen( shape *shp)
+ * @fn int SHgetUnrLen( shape *shp)
  *
  * @brief return the length of a vector if shp was to be unrolled
  *
  ******************************************************************************/
 int
-SHGetUnrLen (shape *shp)
+SHgetUnrLen (shape *shp)
 {
     int i, length;
 
-    DBUG_ENTER ("SHGetUnrLen");
-    DBUG_ASSERT ((shp != NULL), ("SHGetUnrLen called with NULL shape!"));
+    DBUG_ENTER ("SHgetUnrLen");
+    DBUG_ASSERT ((shp != NULL), ("SHgetUnrLen called with NULL shape!"));
 
     length = 1;
     for (i = SHAPE_DIM (shp) - 1; i >= 0; i--) {
@@ -382,19 +385,19 @@ SHSubarrayDim (shape *shp, int n)
 
 /** <!--********************************************************************-->
  *
- * @fn shape *SHSetExtent( shape *shp, int dim, int val)
+ * @fn shape *SHsetExtent( shape *shp, int dim, int val)
  *
  * @brief function to set the shape extent along a given axis
  *
  ******************************************************************************/
 
 shape *
-SHSetExtent (shape *shp, int dim, int val)
+SHsetExtent (shape *shp, int dim, int val)
 {
-    DBUG_ENTER ("SHSetExtent");
-    DBUG_ASSERT ((shp != NULL), ("SHSetExtent called with NULL shape!"));
+    DBUG_ENTER ("SHsetExtent");
+    DBUG_ASSERT ((shp != NULL), ("SHsetExtent called with NULL shape!"));
     DBUG_ASSERT ((SHAPE_DIM (shp) > dim) && (dim >= 0),
-                 ("SHSetExtent called with dim out of range!"));
+                 ("SHsetExtent called with dim out of range!"));
 
     SHAPE_EXT (shp, dim) = val;
     DBUG_RETURN (shp);
@@ -402,7 +405,7 @@ SHSetExtent (shape *shp, int dim, int val)
 
 /** <!--********************************************************************-->
  *
- * @fn bool SHCompareShapes( shape *a, shape *b)
+ * @fn bool SHcompareShapes( shape *a, shape *b)
  *
  * @brief compares two given shapes a and b
  *
@@ -411,12 +414,12 @@ SHSetExtent (shape *shp, int dim, int val)
  ******************************************************************************/
 
 bool
-SHCompareShapes (shape *a, shape *b)
+SHcompareShapes (shape *a, shape *b)
 {
     bool res;
     int i;
 
-    DBUG_ENTER ("SHCompareShapes");
+    DBUG_ENTER ("SHcompareShapes");
 
     res = TRUE;
     if (SHAPE_DIM (a) == SHAPE_DIM (b)) {
@@ -451,7 +454,7 @@ SHAppendShapes (shape *a, shape *b)
     m = SHAPE_DIM (a);
     n = SHAPE_DIM (b);
 
-    res = SHMakeShape (m + n);
+    res = SHmakeShape (m + n);
     for (i = 0; i < m; i++) {
         SHAPE_EXT (res, i) = SHAPE_EXT (a, i);
     }
@@ -485,12 +488,12 @@ SHDropFromShape (int n, shape *a)
     DBUG_ASSERT ((m - abs (n)) >= 0, "dropping more elems from shape than available!");
 
     if (n < 0) {
-        res = SHMakeShape (m + n);
+        res = SHmakeShape (m + n);
         for (i = 0; i < m + n; i++) {
             SHAPE_EXT (res, i) = SHAPE_EXT (a, i);
         }
     } else {
-        res = SHMakeShape (m - n);
+        res = SHmakeShape (m - n);
         for (i = 0; i < m - n; i++) {
             SHAPE_EXT (res, i) = SHAPE_EXT (a, i + n);
         }
@@ -522,13 +525,13 @@ SHTakeFromShape (int n, shape *a)
     DBUG_ASSERT ((m - abs (n)) >= 0, "taking more elems from shape than available!");
 
     if (n > 0) {
-        res = SHMakeShape (n);
+        res = SHmakeShape (n);
         for (i = 0; i < n; i++) {
             SHAPE_EXT (res, i) = SHAPE_EXT (a, i);
         }
     } else {
         n *= -1;
-        res = SHMakeShape (n);
+        res = SHmakeShape (n);
         for (i = 0; i < n; i++) {
             SHAPE_EXT (res, i) = SHAPE_EXT (a, i + m - n);
         }
@@ -539,23 +542,23 @@ SHTakeFromShape (int n, shape *a)
 
 /** <!--********************************************************************-->
  *
- * @fn char *SHShape2String( int dots, shape *shp)
+ * @fn char *SHshape2String( int dots, shape *shp)
  *
  * @brief generates a string representation of a shape.
  *        The argument "dots" allows some dots to be inserted into the vector
- *        representsation. e.g. SHShape2String( 2, <2,3,4>)  =>  "[.,.,2,3,4]"
+ *        representsation. e.g. SHshape2String( 2, <2,3,4>)  =>  "[.,.,2,3,4]"
  *
  ******************************************************************************/
 
 char *
-SHShape2String (int dots, shape *shp)
+SHshape2String (int dots, shape *shp)
 {
     static char buf[256];
     char *tmp = &buf[0];
     int i, j, n;
 
-    DBUG_ENTER ("SHShape2String");
-    DBUG_ASSERT ((shp != NULL), ("SHShape2String called with NULL shape!"));
+    DBUG_ENTER ("SHshape2String");
+    DBUG_ASSERT ((shp != NULL), ("SHshape2String called with NULL shape!"));
 
     tmp += sprintf (tmp, "[");
     for (i = 0; i < dots; i++) {
@@ -575,7 +578,7 @@ SHShape2String (int dots, shape *shp)
     }
     tmp += sprintf (tmp, "]");
 
-    DBUG_RETURN (StringCopy (buf));
+    DBUG_RETURN (ILIBstringCopy (buf));
 }
 
 /** <!--********************************************************************-->
@@ -625,7 +628,7 @@ SHOldShpseg2Shape (int dim, shpseg *shpseg)
     DBUG_ENTER ("SHOldShpseg2Shape");
 
     if (dim >= 0) {
-        res = SHMakeShape (dim);
+        res = SHmakeShape (dim);
 
         if (dim > 0) {
             i = 0;
@@ -651,7 +654,7 @@ SHOldShpseg2Shape (int dim, shpseg *shpseg)
 
 /** <!--********************************************************************-->
  *
- * @fn shpseg *SHShape2OldShpseg( shape *shp)
+ * @fn shpseg *SHshape2OldShpseg( shape *shp)
  *
  * @brief if shp has a dim>0 a shpseg structure is created which carries the
  *        same shape info as the shp does. Otherwise, NULL is returned.
@@ -659,13 +662,13 @@ SHOldShpseg2Shape (int dim, shpseg *shpseg)
  ******************************************************************************/
 
 shpseg *
-SHShape2OldShpseg (shape *shp)
+SHshape2OldShpseg (shape *shp)
 {
     int dim, i, j;
     shpseg *res, *curr_seg;
 
-    DBUG_ENTER ("SHShape2OldShpseg");
-    DBUG_ASSERT ((shp != NULL), ("SHShape2OldShpseg called with NULL shp!"));
+    DBUG_ENTER ("SHshape2OldShpseg");
+    DBUG_ASSERT ((shp != NULL), ("SHshape2OldShpseg called with NULL shp!"));
 
     dim = SHAPE_DIM (shp);
     if (dim > 0) {
@@ -692,7 +695,7 @@ SHShape2OldShpseg (shape *shp)
 
 /** <!--********************************************************************-->
  *
- * @fn bool SHCompareWithCArray( shape *shp, int* shpdata, int dim)
+ * @fn bool SHcompareWithCArray( shape *shp, int* shpdata, int dim)
  *
  * @brief compares given shape with a shape specified as a c integer array
  *
@@ -701,16 +704,16 @@ SHShape2OldShpseg (shape *shp)
  *
  ******************************************************************************/
 bool
-SHCompareWithCArray (shape *shp, int *shpdata, int dim)
+SHcompareWithCArray (shape *shp, int *shpdata, int dim)
 {
     bool flag;
     int i;
 
-    DBUG_ENTER ("SHCompareWithCArray");
+    DBUG_ENTER ("SHcompareWithCArray");
 
     flag = TRUE;
     DBUG_ASSERT ((shp != NULL && shpdata != NULL),
-                 ("SHCompareWithCArray called with NULL pointer(s)!\n"));
+                 ("SHcompareWithCArray called with NULL pointer(s)!\n"));
     if (dim == SHAPE_DIM (shp)) {
         for (i = 0; i < dim; i++)
             if (SHAPE_EXT (shp, i) != shpdata[i])
@@ -724,10 +727,10 @@ SHCompareWithCArray (shape *shp, int *shpdata, int dim)
 
 /** <!--********************************************************************-->
  *
- * @fn bool SHCompareWithArguments( shape *shp, int dim, ...)
+ * @fn bool SHcompareWithArguments( shape *shp, int dim, ...)
  *
  * @brief compares given shape with a shape specified as an list of arguments.
- *        usage: e.g. SHCompareWithArguments(shp, 3, 4,4,5)
+ *        usage: e.g. SHcompareWithArguments(shp, 3, 4,4,5)
  *
  * @return true iff shapes are equal in dim and shape vector
  *         false otherwise
@@ -735,16 +738,16 @@ SHCompareWithCArray (shape *shp, int *shpdata, int dim)
  ******************************************************************************/
 
 bool
-SHCompareWithArguments (shape *shp, int dim, ...)
+SHcompareWithArguments (shape *shp, int dim, ...)
 {
     va_list Argp;
     bool flag;
     int i;
 
-    DBUG_ENTER ("SHCompareWithArguments");
+    DBUG_ENTER ("SHcompareWithArguments");
 
     flag = TRUE;
-    DBUG_ASSERT ((shp != NULL), ("SHCompareWithCArray called with NULL pointer(s)!\n"));
+    DBUG_ASSERT ((shp != NULL), ("SHcompareWithCArray called with NULL pointer(s)!\n"));
     if (dim == SHAPE_DIM (shp)) {
         va_start (Argp, dim);
         for (i = 0; i < dim; i++)
@@ -759,24 +762,24 @@ SHCompareWithArguments (shape *shp, int dim, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn int *SHShape2IntVec( shape *shp)
+ * @fn int *SHshape2IntVec( shape *shp)
  *
  * @brief creates a simple int vector from the given shape vector
  *
  ******************************************************************************/
 
 int *
-SHShape2IntVec (shape *shp)
+SHshape2IntVec (shape *shp)
 {
     int *int_vec;
     int i;
     int n;
 
-    DBUG_ENTER ("SHShape2IntVec");
+    DBUG_ENTER ("SHshape2IntVec");
 
     n = SHAPE_DIM (shp);
     if (n > 0) {
-        int_vec = (int *)Malloc (n * sizeof (int));
+        int_vec = (int *)ILIBmalloc (n * sizeof (int));
         for (i = 0; i < n; i++) {
             int_vec[i] = SHAPE_EXT (shp, i);
         }
@@ -789,25 +792,25 @@ SHShape2IntVec (shape *shp)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SHShape2Exprs( shape *shp)
+ * @fn node *SHshape2Exprs( shape *shp)
  *
  * @brief creates a nesting of N_exprs nodes from the given shape vector
  *
  ******************************************************************************/
 
 node *
-SHShape2Exprs (shape *shp)
+SHshape2Exprs (shape *shp)
 {
     node *exprs;
     int dim;
     int i;
 
-    DBUG_ENTER ("SHShape2Exprs");
+    DBUG_ENTER ("SHshape2Exprs");
 
     dim = SHAPE_DIM (shp);
     exprs = NULL;
     for (i = dim - 1; i >= 0; i--) {
-        exprs = MakeExprs (MakeNum (SHAPE_EXT (shp, i)), exprs);
+        exprs = TBmakeExprs (MakeNum (SHAPE_EXT (shp, i)), exprs);
     }
 
     DBUG_RETURN (exprs);
@@ -815,14 +818,14 @@ SHShape2Exprs (shape *shp)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SHShape2Array( shape *shp)
+ * @fn node *SHshape2Array( shape *shp)
  *
  * @brief creates a simple int vector from the given shape vector
  *
  ******************************************************************************/
 
 node *
-SHShape2Array (shape *shp)
+SHshape2Array (shape *shp)
 {
     node *array;
 #ifndef MWE_NTYPE_READY
@@ -830,17 +833,17 @@ SHShape2Array (shape *shp)
 #endif
     int dim;
 
-    DBUG_ENTER ("SHShape2Array");
+    DBUG_ENTER ("SHshape2Array");
 
     dim = SHAPE_DIM (shp);
 
-    array = MakeFlatArray (SHShape2Exprs (shp));
+    array = TCmakeFlatArray (SHshape2Exprs (shp));
 
 #ifdef MWE_NTYPE_READY
-    /*  ARRAY_NTYPE(array) = TYMakeAKS(TYMakeSimpleType(T_int), SHMakeShape(1,dim)); */
+    /*  ARRAY_NTYPE(array) = TYmakeAKS(TYmakeSimpleType(T_int), SHmakeShape(1,dim)); */
     ARRAY_NTYPE (array)
-      = TYMakeAKV (TYMakeSimpleType (T_int),
-                   COMakeConstant (T_int, SHMakeShape (1, dim),
+      = TYmakeAKV (TYmakeSimpleType (T_int),
+                   COMakeConstant (T_int, SHmakeShape (1, dim),
                                    Array2IntVec (Array_AELEMS (a), NULL)));
 #else
     shp_seg = MakeShpseg (NULL);
