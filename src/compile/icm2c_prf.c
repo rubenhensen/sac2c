@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2003/10/19 19:50:40  dkrHH
+ * idx_sel() for non-scalar results implemented
+ *
  * Revision 1.10  2003/09/30 19:29:24  dkr
  * code brushed: Set_Shape() used
  *
@@ -426,6 +429,7 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT, int fr
 {
     shape_class_t to_sc = ICUGetShapeClass (to_NT);
     int to_dim = DIM_NO_OFFSET (to_sdim);
+    int from_dim = DIM_NO_OFFSET (from_sdim);
 
     DBUG_ENTER ("ICMCompileND_PRF_SEL__SHAPE_arr");
 
@@ -895,7 +899,11 @@ void
 ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
                                  char *idx_ANY)
 {
+    shape_class_t to_sc = ICUGetShapeClass (to_NT);
     int to_dim = DIM_NO_OFFSET (to_sdim);
+    int from_dim = DIM_NO_OFFSET (from_sdim);
+    char **shp;
+    int i;
 
     DBUG_ENTER ("ICMCompileND_PRF_IDX_SEL__SHAPE");
 
@@ -916,10 +924,43 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int fr
              " (\"ND_PRF_IDX_SEL__SHAPE( %s, %d, %s, %d, %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, idx_ANY);
 
-    if (to_dim == 0) {
+    switch (to_sc) {
+    case C_scl:
         ICMCompileND_SET__SHAPE_arr (to_NT, 0, NULL);
-    } else {
-        DBUG_ASSERT ((0), "idx_sel() with non-scalar result not yet implemented");
+        break;
+
+    case C_aks:
+        /* here is no break missing */
+    case C_akd:
+        DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+        shp = (char **)Malloc (to_dim * sizeof (char *));
+        for (i = 0; i < to_dim; i++) {
+            shp[i] = (char *)Malloc ((2 * strlen (from_NT) + 50) * sizeof (char));
+            if (from_dim >= 0) {
+                sprintf (shp[i], "SAC_ND_A_SHAPE( %s, %d)", from_NT,
+                         from_dim - (to_dim - i));
+            } else {
+                sprintf (shp[i], "SAC_ND_A_SHAPE( %s, SAC_ND_A_DIM( %s) - %d)", from_NT,
+                         from_NT, to_dim - i);
+            }
+        }
+        ICMCompileND_SET__SHAPE_arr (to_NT, 1, shp);
+        for (i = 0; i < to_dim; i++) {
+            shp[i] = Free (shp[i]);
+        }
+        shp = Free (shp);
+        break;
+
+    case C_aud:
+        /*
+         * idx_sel() works only for arrays with known dimension!
+         */
+        DBUG_ASSERT ((0), "idx_sel() with unknown dimension found!");
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Unknown shape class found!");
+        break;
     }
 
     DBUG_VOID_RETURN;
@@ -970,11 +1011,6 @@ ICMCompileND_PRF_IDX_SEL__DATA (char *to_NT, int to_sdim, char *from_NT, int fro
                          , fprintf (outfile,
                                     "1st argument of F_idx_sel is not a scalar!"););
     }
-
-    /*
-     * idx_sel() works only for arrays with known dimension!
-     */
-    DBUG_ASSERT ((to_dim >= 0), "idx_sel() with unknown dimension found!");
 
     if (to_dim == 0) {
         /*
