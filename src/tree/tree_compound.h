@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.104  2004/11/07 18:09:30  sah
+ * modified some macros to reflect newast
+ *
  * Revision 3.103  2004/10/26 16:14:31  sah
  * added RemoveFundef
  *
@@ -420,12 +423,19 @@ specific implementation of a function should remain with the source code.
  *                  result: 1 - equal, 0 - not equal
  */
 
+#ifndef NEW_AST
 #define CMP_OBJ_OBJDEF(name, mod, odef)                                                  \
     ((mod == NULL)                                                                       \
        ? (0 == strcmp (name, OBJDEF_NAME (odef)))                                        \
        : ((0 == strcmp (name, OBJDEF_NAME (odef)))                                       \
           && ((OBJDEF_MOD (odef) == NULL) ? (0 == strcmp (mod, OBJDEF_LINKMOD (odef)))   \
                                           : (0 == strcmp (mod, OBJDEF_MOD (odef))))))
+#else
+#define CMP_OBJ_OBJDEF(name, mod, odef)                                                  \
+    ((mod == NULL) ? (0 == strcmp (name, OBJDEF_NAME (odef)))                            \
+                   : ((0 == strcmp (name, OBJDEF_NAME (odef)))                           \
+                      && (0 == strcmp (mod, OBJDEF_MOD (odef)))))
+#endif /* NEW_AST */
 
 /*
  *  macro name    : CMP_FUN_ID(a,b)
@@ -1001,11 +1011,15 @@ extern node *AppendObjdef (node *objdef_chain, node *objdef);
 #define FUNDEF_IS_CONDFUN(n) (FUNDEF_STATUS (n) == ST_condfun)
 #define FUNDEF_IS_LOOPFUN(n)                                                             \
     ((FUNDEF_STATUS (n) == ST_dofun) || (FUNDEF_STATUS (n) == ST_whilefun))
+#ifndef NEW_AST
 #define FUNDEF_IS_EXTERNAL(n)                                                            \
     ((FUNDEF_STATUS (n) == ST_imported_mod) || (FUNDEF_STATUS (n) == ST_imported_class)  \
      || (FUNDEF_STATUS (n) == ST_imported_extclass)                                      \
      || (FUNDEF_STATUS (n) == ST_imported_extmod)                                        \
      || (FUNDEF_STATUS (n) == ST_objinitfun) || (FUNDEF_STATUS (n) == ST_classfun))
+#else
+#define FUNDEF_IS_EXTERNAL(n) ((FUNDEF_STATUS (n) == ST_Cfun))
+#endif /* NEW_AST */
 
 /*
  *  The following compound access macros are useful whenever a fundef
