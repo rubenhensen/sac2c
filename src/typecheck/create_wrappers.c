@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2004/12/01 15:49:17  sah
+ * bugfixing
+ *
  * Revision 1.24  2004/12/01 14:16:59  sah
  * fixed handling op SPNAME and SPMOD for AP nodes
  *
@@ -457,7 +460,7 @@ CRTWRPfundef (node *arg_node, info *arg_info)
     /*
      * Check whether the function has a different namespace than the current one.
      */
-    if (FUNDEF_ISLOCAL (arg_node)) {
+    if (!FUNDEF_ISLOCAL (arg_node)) {
         /**
          * The function has been imported or used.
          * Used functions are just ignored, used wrappers are processed.
@@ -593,7 +596,7 @@ CRTWRPap (node *arg_node, info *arg_info)
 
     num_args = TCcountExprs (AP_ARGS (arg_node));
     wrapper
-      = FindWrapper (AP_SPNAME (arg_node), AP_SPMOD (arg_node), num_args,
+      = FindWrapper (AP_SPMOD (arg_node), AP_SPNAME (arg_node), num_args,
                      INFO_CRTWRP_EXPRETS (arg_info), INFO_CRTWRP_WRAPPERFUNS (arg_info));
 
     DBUG_PRINT ("CRTWRP", ("Adding backreference to %s:%s as " F_PTR ".",
