@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/06/25 15:36:33  jhs
+ * Checked these in just to provide compileabilty.
+ *
  * Revision 2.1  1999/02/23 12:44:14  sacbase
  * new release made
  *
@@ -74,6 +77,10 @@ GetVardec (char *name, node *fundef)
                             if (strcmp (VARDEC_OR_ARG_NAME (tmp), name) == 0) {
                                 vardec = tmp;
                             }) /* FOREACH_VARDEC_AND_ARG */
+
+    if (vardec == NULL) {
+        DBUG_PRINT ("SPMDL", ("Cannot find %s", name));
+    }
 
     DBUG_RETURN (vardec);
 }
@@ -161,15 +168,23 @@ SPMDLspmd (node *arg_node, node *arg_info)
     last_vardec = NULL;
     vardec = DFMGetMaskEntryDeclSet (SPMD_OUT (arg_node));
     while (vardec != NULL) {
-        if (NODE_TYPE (vardec) == N_vardec) {
-            new_vardec = DupNode (vardec);
-            VARDEC_NEXT (new_vardec) = last_vardec;
-        } else {
-            new_vardec = MakeVardec (StringCopy (ARG_NAME (vardec)),
-                                     DuplicateTypes (ARG_TYPE (vardec), 1), last_vardec);
-            VARDEC_REFCNT (new_vardec) = ARG_REFCNT (vardec);
+        /* reduce outs by ins */
+        if (!(DFMTestMaskEntry (SPMD_IN (arg_node), NULL, vardec))) {
+            if (NODE_TYPE (vardec) == N_vardec) {
+                new_vardec = DupNode (vardec);
+                VARDEC_NEXT (new_vardec) = last_vardec;
+
+                DBUG_PRINT ("SPMDL", ("inserted vardec out %s", VARDEC_NAME (vardec)));
+            } else {
+                new_vardec
+                  = MakeVardec (StringCopy (ARG_NAME (vardec)),
+                                DuplicateTypes (ARG_TYPE (vardec), 1), last_vardec);
+                VARDEC_REFCNT (new_vardec) = ARG_REFCNT (vardec);
+
+                DBUG_PRINT ("SPMDL", ("inserted arg out %s", ARG_NAME (vardec)));
+            }
+            last_vardec = new_vardec;
         }
-        last_vardec = new_vardec;
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
 
@@ -188,6 +203,30 @@ SPMDLspmd (node *arg_node, node *arg_info)
     }
     BLOCK_VARDEC (body) = last_vardec;
 
+    vardec = DFMGetMaskEntryDeclSet (SPMD_SHARED (arg_node));
+    while (vardec != NULL) {
+        /* reduce shareds by ins and outs */
+        if ((!(DFMTestMaskEntry (SPMD_IN (arg_node), NULL, vardec)))
+            && (!(DFMTestMaskEntry (SPMD_OUT (arg_node), NULL, vardec)))) {
+            if (NODE_TYPE (vardec) == N_vardec) {
+                new_vardec = DupNode (vardec);
+                VARDEC_NEXT (new_vardec) = last_vardec;
+
+                DBUG_PRINT ("SPMDL", ("inserted vardec shared %s", VARDEC_NAME (vardec)));
+            } else {
+                new_vardec
+                  = MakeVardec (StringCopy (ARG_NAME (vardec)),
+                                DuplicateTypes (ARG_TYPE (vardec), 1), last_vardec);
+                VARDEC_REFCNT (new_vardec) = ARG_REFCNT (vardec);
+
+                DBUG_PRINT ("SPMDL", ("inserted arg shared %s", ARG_NAME (vardec)));
+            }
+            last_vardec = new_vardec;
+        }
+        vardec = DFMGetMaskEntryDeclSet (NULL);
+    }
+    BLOCK_VARDEC (body) = last_vardec;
+
     /*
      * build formal parameters (SPMD_IN/INOUT).
      */
@@ -202,25 +241,35 @@ SPMDLspmd (node *arg_node, node *arg_info)
                                 DuplicateTypes (VARDEC_TYPE (vardec), 1), ST_regular,
                                 ST_regular, fargs);
             ARG_REFCNT (new_farg) = GET_STD_REFCNT (VARDEC, vardec);
+
+            DBUG_PRINT ("SPMDL", ("inserted arg %s", ARG_NAME (vardec)));
         }
         fargs = new_farg;
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
 
-    vardec = DFMGetMaskEntryDeclSet (SPMD_INOUT (arg_node));
-    while (vardec != NULL) {
-        if (NODE_TYPE (vardec) == N_arg) {
-            new_farg = DupNode (vardec);
-            ARG_NEXT (new_farg) = fargs;
-        } else {
-            new_farg = MakeArg (StringCopy (ARG_NAME (vardec)),
-                                DuplicateTypes (VARDEC_TYPE (vardec), 1), ST_regular,
-                                ST_spmd_inout, fargs);
-            ARG_REFCNT (new_farg) = GET_STD_REFCNT (VARDEC, vardec);
-        }
-        fargs = new_farg;
-        vardec = DFMGetMaskEntryDeclSet (NULL);
+#if 0
+  since i changed masks: inouts are no longer used any more
+  so this can be deleted in a clean sweep ####
+
+  vardec = DFMGetMaskEntryDeclSet( SPMD_INOUT( arg_node));
+  while (vardec != NULL) {
+    if (NODE_TYPE( vardec) == N_arg) {
+      new_farg = DupNode( vardec);
+      ARG_NEXT( new_farg) = fargs;
     }
+    else {
+      new_farg = MakeArg( StringCopy(ARG_NAME( vardec)),
+                          DuplicateTypes( VARDEC_TYPE( vardec), 1),
+                          ST_regular,
+                          ST_spmd_inout,
+                          fargs);
+      ARG_REFCNT( new_farg) = GET_STD_REFCNT( VARDEC, vardec);
+    }
+    fargs = new_farg;
+    vardec = DFMGetMaskEntryDeclSet( NULL);
+  }
+#endif
 
     /*
      * build return types, return exprs (use SPMD_OUT).

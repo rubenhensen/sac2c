@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/06/25 15:36:33  jhs
+ * Checked these in just to provide compileabilty.
+ *
  * Revision 2.1  1999/02/23 12:44:12  sacbase
  * new release made
  *
@@ -123,11 +126,22 @@ SPMDIassign (node *arg_node, node *arg_info)
         /*
          * get IN/INOUT/OUT/LOCAL from the N_Nwith2 node.
          */
-
-        SPMD_IN (spmd) = DFMGenMaskCopy (NWITH2_IN (with));
+        /*
+            SPMD_IN   ( spmd) = DFMGenMaskCopy( NWITH2_IN   ( with));
+            SPMD_INOUT( spmd) = DFMGenMaskCopy( NWITH2_INOUT( with));
+            SPMD_OUT  ( spmd) = DFMGenMaskCopy( NWITH2_OUT  ( with));
+            SPMD_LOCAL( spmd) = DFMGenMaskCopy( NWITH2_LOCAL( with));
+        */
+        SPMD_IN (spmd) = DFMGenMaskOr (NWITH2_IN (with), NWITH2_INOUT (with));
+        SPMD_OUT (spmd) = DFMGenMaskOr (NWITH2_OUT (with), NWITH2_INOUT (with));
         SPMD_INOUT (spmd) = DFMGenMaskCopy (NWITH2_INOUT (with));
-        SPMD_OUT (spmd) = DFMGenMaskCopy (NWITH2_OUT (with));
         SPMD_LOCAL (spmd) = DFMGenMaskCopy (NWITH2_LOCAL (with));
+        /*
+                                DFMGenMaskClear (FUNDEF_DFM_BASE( SPMD_FUNDEF(
+           arg_node)));
+        */
+        SPMD_SHARED (spmd) = DFMGenMaskCopy (SPMD_LOCAL (spmd));
+        DFMSetMaskMinus (SPMD_SHARED (spmd), SPMD_LOCAL (spmd));
 
         /*
          * we only traverse the following assignments to prevent nested

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/06/25 15:36:33  jhs
+ * Checked these in just to provide compileabilty.
+ *
  * Revision 2.2  1999/05/28 15:31:45  jhs
  * Implemented first steps of spmd-optimisation.
  *
@@ -35,6 +38,9 @@
 #include "free.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
+#include "spmd_trav.h"
+
+#include "spmd_opt.h"
 
 /******************************************************************************
  *
@@ -100,12 +106,20 @@ BlocksLastInstruction (node *block)
 
 /******************************************************************************
  *
- * function:
- *   node *MeltBlocks (node *first_block, node *second_block)
- *   node *MeltBlocksOnCopies (node *first_block, node *second_block)
+ * functions:
+ * (1) node *MeltBlocks (node *first_block, node *second_block)
+ * (2) node *MeltBlocksOnCopies (node *first_block, node *second_block)
  *
  * description:
- *   ...
+ *   Melts to N_blocks to one.
+ *
+ * (1) normal version:
+ *   If the normal version is used the first entry is reused, and the second
+ *   one is given free. That means both arguments are modified!
+ *
+ * (2) copying version:
+ *   Both arguments (and also the two complete trees!) are copied here, and
+ *   no harm is done to them, one gets a complety new node as result.
  *
  ******************************************************************************/
 node *
@@ -130,9 +144,9 @@ MeltBlocks (node *first_block, node *second_block)
     DBUG_RETURN (result);
 }
 
-/*
+/******************************************************************************
  *  see comment above
- */
+ ******************************************************************************/
 node *
 MeltBlocksOnCopies (node *first_block, node *second_block)
 {
@@ -156,11 +170,23 @@ MeltBlocksOnCopies (node *first_block, node *second_block)
  * description:
  *   This function takes two N_spmd's and melts them to a new one.
  *
+ * attention:
+ *   There are some sideeffects!
+ *   first_spmd will be used to build the result, while second_spmd will be
+ *   freed. Use MeltSPMDsOnCopies (see below) to avoid this, that function
+ *   first copies both arguments, so no sideeffects occur.
+ *
  ******************************************************************************/
 node *
-MeltSPMDs (node *first_spmd, node *second_spmd)
+MeltSPMDs (node *first_spmd, node *second_spmd, node *fundef)
 {
+    int i;
     node *result; /* result value of this function */
+    DFMmask_t newin;
+    DFMmask_t newout;
+    DFMmask_t newshared;
+    int *counters;
+    node *vv;
 
     DBUG_ENTER ("MeltSPMDs");
 
@@ -173,28 +199,84 @@ MeltSPMDs (node *first_spmd, node *second_spmd)
     DBUG_ASSERT (SPMD_STATIC (first_spmd) == SPMD_STATIC (second_spmd),
                  "SPMD_STATIC differs in SPMDs to be melted");
 
+    /*
+     *  Count which varibales are consumned how often in second block ...
+     */
+    DBUG_PRINT ("SPMD", ("Entering CountOccurences"));
+    counters = CountOccurences (SPMD_REGION (second_spmd), SPMD_OUT (first_spmd));
+    /*
+     *  this is only to debug, it prints out all variables (each with a varno
+     *  and the correspondin value of counter[varno].
+     */
+    vv = BLOCK_VARDEC (FUNDEF_BODY (fundef));
+    for (i = 0; i < 20; i++) {
+        if (vv != NULL) {
+            DBUG_PRINT ("SPMD", ("%i %i %s(varno=%i)", i, counters[VARDEC_VARNO (vv)],
+                                 VARDEC_NAME (vv), VARDEC_VARNO (vv)));
+            vv = VARDEC_NEXT (vv);
+        } else {
+            /* rest will be NULL, so we jump out of here */
+            DBUG_PRINT ("SPMD", ("Rest NULL!!!"));
+            break;
+        }
+    }
+    DBUG_PRINT ("SPMD", ("Leaving CountOccurences"));
+
+    /*
+     *  ... reduce all this occurences in the first block.
+     */
+    DBUG_PRINT ("SPMD", ("Entering ReduceOccurences"));
+    ReduceOccurences (SPMD_REGION (first_spmd), counters, SPMD_OUT (first_spmd));
+    DestroyCM (counters);
+    DBUG_PRINT ("SPMD", ("Leaving ReduceOccurences"));
+
     /* build one combined region from the two original regions */
     SPMD_REGION (first_spmd)
       = MeltBlocks (SPMD_REGION (first_spmd), SPMD_REGION (second_spmd));
     SPMD_REGION (second_spmd) = NULL;
 
     /* melt the masks of used variables */
-    /* --->>> not finished, simple version <<<---
-      SPMD_IN(first_spmd)    = DFMGenMaskOr (SPMD_IN(first_spmd)   , SPMD_IN(second_spmd)
-      ); SPMD_OUT(first_spmd)   = DFMGenMaskOr (SPMD_OUT(first_spmd)  ,
-      SPMD_OUT(second_spmd)  ); SPMD_INOUT(first_spmd) = DFMGenMaskOr
-      (SPMD_INOUT(first_spmd), SPMD_INOUT(second_spmd)); SPMD_LOCAL(first_spmd) =
-      DFMGenMaskOr (SPMD_LOCAL(first_spmd), SPMD_LOCAL(second_spmd));
-    */
+    /* #### masken checken und fertig machen!!!!  */
 
-    SPMD_IN (first_spmd) = DFMGenMaskOr (SPMD_IN (first_spmd), SPMD_IN (second_spmd));
-    SPMD_OUT (first_spmd) = DFMGenMaskOr (SPMD_OUT (first_spmd), SPMD_OUT (second_spmd));
-    DFMSetMaskOr (SPMD_OUT (first_spmd), SPMD_INOUT (second_spmd));
-    /* SPMD_INOUT(first_spmd) = DFMGenMaskSet (SPMD_INOUT(first_spmd)); */
-    SPMD_LOCAL (first_spmd)
-      = DFMGenMaskOr (SPMD_LOCAL (first_spmd), SPMD_LOCAL (second_spmd));
+    /*  -> IN <- */
+    /*  newin = first's ins and second's ins,
+     *          but without second's inouts and without first's out
+     */
+    newin = DFMGenMaskCopy (SPMD_IN (second_spmd));
+    DFMSetMaskMinus (newin, SPMD_INOUT (second_spmd));
+    DFMSetMaskMinus (newin, SPMD_OUT (first_spmd));
+    DFMSetMaskOr (newin, SPMD_IN (first_spmd));
 
-    DFMSetMaskMinus (SPMD_IN (first_spmd), SPMD_INOUT (first_spmd));
+    /* -> OUT <- */
+    newout = DFMGenMaskCopy (SPMD_OUT (first_spmd));
+    DFMSetMaskOr (newout, SPMD_OUT (second_spmd));
+    /*
+     *  cut out the ones produced in first but not used beyond second.
+     *  (here one runs over both blocks now melted, that makes no difference).
+     */
+    DBUG_PRINT ("SPMD", ("Entering ReduceMasks"));
+    newout = ReduceMasks (SPMD_REGION (first_spmd), newout);
+    /* memory leak #### */
+    DBUG_PRINT ("SPMD", ("Leaving ReduceMasks"));
+
+    /* -> SHARED <- */
+    /* dummy = intersection of first's outs and second's ins */
+    /* complete = dummy and already shared's */
+    newshared = DFMGenMaskAnd (SPMD_OUT (first_spmd), SPMD_IN (second_spmd));
+    DFMSetMaskOr (newshared, SPMD_INOUT (second_spmd));
+    DFMSetMaskOr (newshared, SPMD_SHARED (first_spmd));
+    DFMSetMaskOr (newshared, SPMD_SHARED (second_spmd));
+
+    SPMD_IN (first_spmd) = newin;
+    SPMD_OUT (first_spmd) = newout;
+    SPMD_SHARED (first_spmd) = newshared;
+
+    /* -> LOCAL <- */
+    /* combination of locals of both blocks */
+    DFMSetMaskOr (SPMD_LOCAL (first_spmd), SPMD_LOCAL (second_spmd));
+
+    /* -> INOUT <- */
+    /* nothing to be done, only values of first needed */
 
     FreeTree (second_spmd);
 
@@ -202,10 +284,21 @@ MeltSPMDs (node *first_spmd, node *second_spmd)
     DBUG_RETURN (result);
 }
 
-/*
- *  see comment above
- */
-
+/******************************************************************************
+ *
+ * function:
+ *   node MeltSPMDsOnCopies (node *first_spmd, node *second_spmd)
+ *
+ * description:
+ *   Copies both arguments an returns a new melted SPMD. Both arguments are
+ *   not touched during this process (compare MeltSPMDS above), but both
+ *   arguments (and alos the complete tree below!) are copied. The return
+ *   value is a completly new node.
+ *
+ * remark:
+ *   A simple version without any copying is alos available (see above).
+ *
+ ******************************************************************************/
 node *
 MeltSPMDsOnCopies (node *first_spmd, node *second_spmd)
 {
@@ -216,7 +309,7 @@ MeltSPMDsOnCopies (node *first_spmd, node *second_spmd)
     first_spmd = DupTree (first_spmd, NULL);
     second_spmd = DupTree (second_spmd, NULL);
 
-    result = MeltSPMDs (first_spmd, second_spmd);
+    result = MeltSPMDs (first_spmd, second_spmd, NULL);
 
     DBUG_RETURN (result);
 }
@@ -224,9 +317,21 @@ MeltSPMDsOnCopies (node *first_spmd, node *second_spmd)
 /******************************************************************************
  *
  * function:
+ *   node *SPMDOspmd (node* arg_node, node* arg_info)
+ *
+ * description:
+ *   The traversal of N_spmd during SPMDO.
+ *
+ *   Melts the N_spmd with all *directly* following N_spmds to one remaining
+ *   block. The process will be done by checking if the actual N_spmd is
+ *   followed *directly* be another N_spmd. These will be melted together and
+ *   the resulting N_spmd becomes the new actual N_spmd. The Process lasts
+ *   until there is no *directly* following N_spmd to the actual anymore.
+ *
+ * ATTENTION:
+ *   The THISASSIGN and NEXTASSIGN values at the arg_info have to be updated.
  *
  ******************************************************************************/
-
 node *
 SPMDOspmd (node *arg_node, node *arg_info)
 {
@@ -240,12 +345,24 @@ SPMDOspmd (node *arg_node, node *arg_info)
     DBUG_ASSERT ((arg_info != NULL), "arg_info is NULL");
 
     result = arg_node;
+    /*
+     *  if this SPMD-Block is followed directly (!) by another SPMD-Block both blocks
+     *  are melted here.
+     */
     while ((INFO_SPMDO_NEXTASSIGN (arg_info) != NULL)
            && (NODE_TYPE (ASSIGN_INSTR (INFO_SPMDO_NEXTASSIGN (arg_info))) == N_spmd)) {
-        /* optimze */
+        DBUG_PRINT ("SPMDO", ("melting"));
+        /*
+         *  The actual optimisation takes place here.
+         */
+        result = MeltSPMDs (arg_node, ASSIGN_INSTR (INFO_SPMDO_NEXTASSIGN (arg_info)),
+                            INFO_SPMDT_ACTUAL_FUNDEF (arg_info));
 
-        result = MeltSPMDs (arg_node, ASSIGN_INSTR (INFO_SPMDO_NEXTASSIGN (arg_info)));
-
+        /*
+         *  Rearrange the pointers between the two assigments around the assignment
+         *  who's spmd-block (ASSIGN_INSTR) has been deleted by melting.
+         *  Cut of connections between assignment and the block and delete it.
+         */
         ASSIGN_NEXT (INFO_SPMDO_THISASSIGN (arg_info))
           = ASSIGN_NEXT (INFO_SPMDO_NEXTASSIGN (arg_info));
         ASSIGN_NEXT (INFO_SPMDO_NEXTASSIGN (arg_info)) = NULL;
@@ -255,13 +372,25 @@ SPMDOspmd (node *arg_node, node *arg_info)
 
         INFO_SPMDO_NEXTASSIGN (arg_info) = ASSIGN_NEXT (INFO_SPMDO_THISASSIGN (arg_info));
     } /* while */
-      /* else {
-          result = arg_node;
-        }*/
 
     DBUG_RETURN (result);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *SPMDOassign (node* arg_node, node* arg_info)
+ *
+ * description:
+ *   Traversal of N_assign during SPMDO.
+ *
+ *   Sets some values at arg_info. If no arg_info exists one is created.
+ *   The values set are THISASSIGN and NEXTASSIGN, they have to be corrected
+ *   be outer routines if the configuration of assignments is changed.
+ *   Especially when N_spmds (under a N_assign-node) are deleted (and also
+ *   the N_assign-node).
+ *
+ ******************************************************************************/
 node *
 SPMDOassign (node *arg_node, node *arg_info)
 {
@@ -273,7 +402,8 @@ SPMDOassign (node *arg_node, node *arg_info)
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_assign, "Wrong NODE_TYPE");
 
-    /*  check if there is an arg_info, else create one, and set variable
+    /*
+     *  check if there is an arg_info, else create one, and set variable
      *  to remember the arg_info has to be destroyed later.
      */
     if (arg_info == NULL) {
@@ -290,7 +420,7 @@ SPMDOassign (node *arg_node, node *arg_info)
 
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     /*
-     *  NEXT might have changed during traversal of instrcution!
+     *  NEXT might have changed during traversal of instruction!
      */
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
@@ -301,6 +431,40 @@ SPMDOassign (node *arg_node, node *arg_info)
     } else {
         INFO_SPMDO_THISASSIGN (arg_info) = old_thisassign;
         INFO_SPMDO_NEXTASSIGN (arg_info) = old_nextassign;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/* #### document!!!! */
+node *
+SPMDOfundef (node *arg_node, node *arg_info)
+{
+    int own_arg_info;
+    node *old_fundef;
+
+    DBUG_ENTER ("SPMDOfundef");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef), "Wrong NODE_TYPE");
+
+    /*
+     *  check if there is an arg_info, else create one, and set variable
+     *  to remember the arg_info has to be destroyed later.
+     */
+    if (arg_info == NULL) {
+        own_arg_info = TRUE;
+        arg_info = MakeInfo ();
+    } else {
+        own_arg_info = FALSE;
+        old_fundef = INFO_SPMDT_ACTUAL_FUNDEF (arg_info);
+    }
+
+    FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+
+    if (own_arg_info) {
+        FreeTree (arg_info);
+    } else {
+        INFO_SPMDT_ACTUAL_FUNDEF (arg_info) = old_fundef;
     }
 
     DBUG_RETURN (arg_node);
