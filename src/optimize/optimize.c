@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2001/05/16 09:23:46  nmw
+ * removed unnecessary SSATransform and GenerateMasks to improve performance
+ *
  * Revision 3.25  2001/05/15 08:02:29  nmw
  * call of SSAWithloopFoldingWLT added
  *
@@ -640,9 +643,6 @@ OPTmodul (node *arg_node, node *arg_info)
             && (0 == strcmp (break_specifier, "f2l"))) {
             goto DONE;
         }
-
-        /* update mask information for later phases */
-        arg_node = GenerateMasks (arg_node, NULL);
     }
 
     /*
@@ -943,24 +943,23 @@ OPTfundef (node *arg_node, node *arg_info)
             }
 
             if (optimize & OPT_WLF) {
-                arg_node = GenerateMasks (arg_node, NULL);
-                arg_node = WithloopFolding (arg_node, loop1); /* wli, wlf */
-                /*
-                 * rebuild mask which is necessary because of WL-body-substitutions
-                 * and inserted new variables to prevent wrong variable bindings.
-                 */
-                arg_node = GenerateMasks (arg_node, NULL);
+                if (use_ssaform) {
+                    arg_node = SSAWithloopFolding (arg_node, loop1);
+                } else {
+                    arg_node = GenerateMasks (arg_node, NULL);
+                    arg_node = WithloopFolding (arg_node, loop1); /* wli, wlf */
+                    /*
+                     * rebuild mask which is necessary because of WL-body-substitutions
+                     * and inserted new variables to prevent wrong variable bindings.
+                     */
+                    arg_node = GenerateMasks (arg_node, NULL);
+                }
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
                 && ((0 == strcmp (break_specifier, "wli"))
                     || (0 == strcmp (break_specifier, "wlf")))) {
                 goto INFO;
-            }
-
-            if (use_ssaform && (optimize & OPT_WLF)) {
-                arg_node = CheckAvisOneFunction (arg_node);
-                arg_node = SSATransformOneFunction (arg_node);
             }
 
             if (wlf_expr != old_wlf_expr) {
@@ -1132,7 +1131,9 @@ OPTfundef (node *arg_node, node *arg_info)
                          mem_wlunr_expr, mem_uns_expr, mem_elim_arrays, mem_wlf_expr,
                          mem_wlt_expr, mem_cse_expr, 0, 0, NON_ZERO_ONLY);
 
-        DBUG_DO_NOT_EXECUTE ("PRINT_MASKS", arg_node = FreeMasks (arg_node););
+    if (!(use_ssaform) {
+            DBUG_DO_NOT_EXECUTE ("PRINT_MASKS", arg_node = FreeMasks (arg_node););
+    }
     }
 
     if (FUNDEF_NEXT (arg_node)) {
