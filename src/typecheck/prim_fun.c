@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.40  1999/01/19 08:52:26  sbs
+ * error message for drop corrected.
+ *
  * Revision 1.39  1999/01/18 15:30:18  sbs
  * to[dif] made selectable for intrinsics
  *
@@ -1167,7 +1170,7 @@ DropV (node *vec, types *vec_type, types *array)
 
     if (SAC_PRG == kind_of_file) {
         if (N_array != vec->nodetype)
-            ERROR2 (3, ("%s, %d: 1.argument of function `take` "
+            ERROR2 (3, ("%s, %d: 1.argument of function `drop` "
                         " should be a constant vector",
                         filename, vec->lineno));
         DBUG_ASSERT ((N_array == vec->nodetype), "not a N_array node");
