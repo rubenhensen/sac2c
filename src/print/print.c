@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.138  1997/11/25 11:05:04  srs
+ * modifies output for new WLs
+ *
  * Revision 1.137  1997/11/24 16:44:33  sbs
  * changed nodename->mdb_nodetype and
  * adjusted WITHOP_FUN-macro
@@ -1858,7 +1861,7 @@ PrintNWith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintNWith");
 
-    fprintf (outfile, "with\n");
+    fprintf (outfile, "new_with\n");
     indent++;
     Trav (NWITH_PART (arg_node), arg_info);
     indent--;
@@ -1875,15 +1878,18 @@ PrintNWith (node *arg_node, node *arg_info)
         break;
     case WO_foldfun:
         if (NWITHOP_MOD (NWITH_WITHOP (arg_node)) == NULL)
-            fprintf (outfile, "fold( %s,", NWITHOP_FUN (NWITH_WITHOP (arg_node)));
+            fprintf (outfile, "fold( %s, ", NWITHOP_FUN (NWITH_WITHOP (arg_node)));
         else
-            fprintf (outfile, "fold( %s:%s,", NWITHOP_MOD (NWITH_WITHOP (arg_node)),
+            fprintf (outfile, "fold( %s:%s, ", NWITHOP_MOD (NWITH_WITHOP (arg_node)),
                      NWITHOP_FUN (NWITH_WITHOP (arg_node)));
         Trav (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node)), arg_info);
         break;
     case WO_foldprf:
-        fprintf (outfile, "fold( %s,", prf_string[NWITHOP_PRF (NWITH_WITHOP (arg_node))]);
-        Trav (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node)), arg_info);
+        fprintf (outfile, "fold( %s", prf_string[NWITHOP_PRF (NWITH_WITHOP (arg_node))]);
+        if (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node))) {
+            fprintf (outfile, ", ");
+            Trav (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node)), arg_info);
+        }
         break;
     }
 
@@ -1903,11 +1909,11 @@ PrintNGenerator (node *gen, node *idx, node *arg_info)
     fprintf (outfile, "(");
 
     /* print upper bound and first operator*/
-    if (NGEN_BOUND1 (gen)) {
+    if (NGEN_BOUND1 (gen))
         Trav (NGEN_BOUND1 (gen), arg_info);
-        fprintf (outfile, " %s ", prf_string[NGEN_OP1 (gen)]);
-    } else
-        fprintf (outfile, "(. <= ");
+    else
+        fprintf (outfile, ".");
+    fprintf (outfile, " %s ", prf_string[NGEN_OP1 (gen)]);
 
     /* print indices */
     if (WI_scalars == NWITHID_TYPE (idx))
@@ -1917,11 +1923,11 @@ PrintNGenerator (node *gen, node *idx, node *arg_info)
         fprintf (outfile, "]");
 
     /* print second operator and lower bound */
-    if (NGEN_BOUND2 (gen)) {
-        fprintf (outfile, " %s ", prf_string[NGEN_OP2 (gen)]);
+    fprintf (outfile, " %s ", prf_string[NGEN_OP2 (gen)]);
+    if (NGEN_BOUND2 (gen))
         Trav (NGEN_BOUND2 (gen), arg_info);
-    } else
-        fprintf (outfile, "<= .");
+    else
+        fprintf (outfile, " .");
 
     /* print step and width */
     if (NGEN_STEP (gen)) {
