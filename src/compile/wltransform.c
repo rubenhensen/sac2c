@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.34  1998/08/13 22:20:53  dkr
+ * InferMaxHomDim finished
+ *
  * Revision 1.33  1998/08/11 18:17:34  dkr
  * InferMaxHomDim() added (not yet completed :-((
  *
@@ -3767,32 +3770,71 @@ InferInnerStep (node *nodes, int curr_dim, int dims)
 /******************************************************************************
  *
  * function:
+ *   int IsHom( node *wlnode, int sv_d)
+ *
+ * description:
+ *   Infers, whether 'wlnode' has a homogenous grid or not.
+ *
+ ******************************************************************************/
+
+int
+IsHom (node *wlnode, int sv_d)
+{
+    int width;
+
+    DBUG_ENTER ("IsHom");
+
+    width = WLNODE_BOUND2 (wlnode) - WLNODE_BOUND1 (wlnode);
+    DBUG_ASSERT ((WLNODE_INNERSTEP (wlnode) > 0), "illegal INNERSTEP found");
+    DBUG_ASSERT (((WLNODE_INNERSTEP (wlnode) % sv_d) == 0),
+                 "INNERSTEP and SV not consistent");
+    DBUG_RETURN (((width % sv_d) == 0));
+}
+
+/******************************************************************************
+ *
+ * function:
  *   int InferMaxHomDim( node *wlnode, int *sv, int max_hom_dim)
  *
  * description:
- *
+ *   Infers the maximal homogenous dimension of the given wlnode-tree 'wlnode'.
  *
  ******************************************************************************/
 
 int
 InferMaxHomDim (node *wlnode, long *sv, int max_hom_dim)
 {
+    node *grid;
+
     DBUG_ENTER ("InferMaxHomDim");
 
-#if 0
-  while (wlnode != NULL) {
-    width = WLNODE_BOUND2( wlnode) - WLNODE_BOUND1( wlnode);
-    if ((width % sv[ WLNODE_DIM( wlnode)]) != 0) {
-      max_hom_dim = WLNODE_DIM( wlnode) - 1;
-      break;
+    if (wlnode != NULL) {
+        if (IsHom (wlnode, sv[WLNODE_DIM (wlnode)])) {
+            max_hom_dim = InferMaxHomDim (WLNODE_NEXT (wlnode), sv, max_hom_dim);
+            if (max_hom_dim > WLNODE_DIM (wlnode)) {
+                switch (NODE_TYPE (wlnode)) {
+                case N_WLblock:
+                    /* here is no break missing */
+                case N_WLublock:
+                    max_hom_dim
+                      = InferMaxHomDim (WLNODE_NEXTDIM (wlnode), sv, max_hom_dim);
+                    break;
+                case N_WLstride:
+                    grid = WLSTRIDE_CONTENTS (wlnode);
+                    do {
+                        max_hom_dim
+                          = InferMaxHomDim (WLGRID_NEXTDIM (grid), sv, max_hom_dim);
+                        grid = WLGRID_NEXT (grid);
+                    } while ((grid != NULL) && (max_hom_dim > WLSTRIDE_DIM (wlnode)));
+                    break;
+                default:
+                    DBUG_ASSERT ((0), "wrong node type found");
+                }
+            }
+        } else {
+            max_hom_dim = WLNODE_DIM (wlnode) - 1;
+        }
     }
-
-    wlnode = WLNODE_NEXT( wlnode);
-  }
-
-#else
-    max_hom_dim = -1;
-#endif
 
     DBUG_RETURN (max_hom_dim);
 }
