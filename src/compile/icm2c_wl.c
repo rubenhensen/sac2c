@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/07/28 11:43:37  cg
+ * Added new ICM WL_ASSIGN_NOOP for efficient handling of dummy
+ * iteration space segments introduced through array padding.
+ *
  * Revision 2.9  2000/07/06 16:41:38  dkr
  * macro SAC_WL_DEST used
  *
@@ -501,6 +505,40 @@ ICMCompileWL_ASSIGN_COPY (char *source, int dims_target, char *target, char *idx
         INDENT;
         fprintf (outfile, "}\n");
     }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL_ASSIGN_NOOP( int dims_target, char *target,
+ *                                  char *idx_vec,
+ *                                  int dims, char **idx_scalars,
+ *                                  int cnt_bounds, char **bounds)
+ *
+ * description:
+ *   Implements the compilation of the following ICM:
+ *
+ *   WL_ASSIGN_NOOP( dims_target, target, idx_vec, dims, [ idx_scalars ]* )
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_ASSIGN_NOOP (int dims_target, char *target, char *idx_vec, int dims,
+                          char **idx_scalars)
+{
+    DBUG_ENTER ("ICMCompileWL_ASSIGN_NOOP");
+
+#define WL_ASSIGN_NOOP
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_ASSIGN_NOOP
+
+    INDENT;
+    fprintf (outfile, "/* extra elements introduced by array padding */\n");
+    INDENT;
+    fprintf (outfile, "SAC_WL_DEST(%s)++;\n", target);
 
     DBUG_VOID_RETURN;
 }

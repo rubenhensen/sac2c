@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.11  2000/07/28 11:43:37  cg
+ * Added new ICM WL_ASSIGN_NOOP for efficient handling of dummy
+ * iteration space segments introduced through array padding.
+ *
  * Revision 2.10  2000/07/24 15:06:44  dkr
  * redundant parameter 'line' removed from ICMs for array-prfs
  *
@@ -428,6 +432,16 @@ ICM_DEF( WL_ASSIGN_COPY, TRACE_NONE)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
 ICM_END( WL_ASSIGN_COPY, (source, dims_target, target, idx_vec, dims, idx_scalars))
+#endif
+
+#if defined(WL_ASSIGN_NOOP) || defined(ICM_ALL)
+ICM_DEF( WL_ASSIGN_NOOP, TRACE_NONE)
+  ICM_INT(dims_target)
+  ICM_STR(target)
+  ICM_STR(idx_vec)
+  ICM_INT(dims)
+  ICM_VAR(dims, idx_scalars)
+ICM_END( WL_ASSIGN_NOOP, (dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
 #if defined(WL_FOLD_NOOP) || defined(ICM_ALL)

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/07/28 11:43:37  cg
+ * Added new ICM WL_ASSIGN_NOOP for efficient handling of dummy
+ * iteration space segments introduced through array padding.
+ *
  * Revision 2.1  1999/02/23 12:42:45  sacbase
  * new release made
  *
@@ -76,6 +80,9 @@ extern void ICMCompileWL_ASSIGN_INIT (int dims_target, char *target, char *idx_v
 
 extern void ICMCompileWL_ASSIGN_COPY (char *source, int dims_target, char *target,
                                       char *idx_vec, int dims, char **idx_scalars);
+
+extern void ICMCompileWL_ASSIGN_NOOP (int dims_target, char *target, char *idx_vec,
+                                      int dims, char **idx_scalars);
 
 extern void ICMCompileWL_FOLD_NOOP (int dims_target, char *target, char *idx_vec,
                                     int dims, char **idx_scalars);
