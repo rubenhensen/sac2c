@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/03/19 14:24:54  nmw
+ * AVIS_ASSIGN2 init in MakeVardecFromArg added
+ *
  * Revision 3.17  2001/03/16 11:57:07  nmw
  * AVIS_SSAPHITRAGET type changed
  *
@@ -1642,6 +1645,7 @@ MakeVardecFromArg (node *arg_node)
 
     /* delete wrong data in copied AVIS node */
     AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = NULL;
+    AVIS_SSAASSIGN2 (VARDEC_AVIS (new_vardec)) = NULL;
     AVIS_SSAPHITARGET (VARDEC_AVIS (new_vardec)) = PHIT_NONE;
     AVIS_SSALPINV (VARDEC_AVIS (new_vardec)) = FALSE;
     AVIS_SSASTACK_TOP (VARDEC_AVIS (new_vardec)) = NULL;
