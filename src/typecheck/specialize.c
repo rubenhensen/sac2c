@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/11/27 02:14:16  sbs
+ * *** empty log message ***
+ *
  * Revision 1.15  2004/11/25 17:52:55  sbs
  * compiles
  *
@@ -479,18 +482,18 @@ SPECHandleLacFun (node *fundef, node *assign, ntype *args)
 /******************************************************************************
  *
  * function:
- *    node *SPECResetSpecChain()
+ *    node *SPECresetSpecChain()
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-SPECResetSpecChain ()
+SPECresetSpecChain ()
 {
     node *res;
 
-    DBUG_ENTER ("SPECResetSpecChain");
+    DBUG_ENTER ("SPECresetSpecChain");
 
     res = specialized_fundefs;
     specialized_fundefs = NULL;
