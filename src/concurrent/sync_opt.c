@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/07/28 13:08:17  jhs
+ * Bug fixed: Allsync-blocks are melted (erarlier versions left the
+ * first synd-block out).
+ *
  * Revision 2.5  1999/07/21 16:30:27  jhs
  * needed_sync_fold introduced, max_sync_fold_adjusted.
  *
@@ -121,6 +125,7 @@ MeltableSYNCs (node *first_sync, node *second_sync /* , ... */)
         result = result
                  & ((SYNC_FOLDCOUNT (first_sync) + SYNC_FOLDCOUNT (second_sync))
                     <= max_sync_fold);
+        /* warning if max reached #### */
     }
 
     if (result) {
@@ -246,10 +251,11 @@ SYNCOsync (node *arg_node, node *arg_info)
     if (SYNC_FIRST (arg_node)) {
         DBUG_PRINT ("SYNCO", ("cannot melt first sync-block *<:("));
     }
-    while (
-      (!SYNC_FIRST (arg_node)) && (INFO_SYNCO_NEXTASSIGN (arg_info) != NULL)
-      && (NODE_TYPE (ASSIGN_INSTR (INFO_SYNCO_NEXTASSIGN (arg_info))) == N_sync)
-      && (MeltableSYNCs (arg_node, ASSIGN_INSTR (INFO_SYNCO_NEXTASSIGN (arg_info))))) {
+    while (/* (! SYNC_FIRST( arg_node)) &&  */
+           (INFO_SYNCO_NEXTASSIGN (arg_info) != NULL)
+           && (NODE_TYPE (ASSIGN_INSTR (INFO_SYNCO_NEXTASSIGN (arg_info))) == N_sync)
+           && (MeltableSYNCs (arg_node,
+                              ASSIGN_INSTR (INFO_SYNCO_NEXTASSIGN (arg_info))))) {
         DBUG_PRINT ("SYNCO", ("melting sync-blocks"));
         /*
          *  The actual optimazation of SYNC-blocks takes place here.
