@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2001/05/03 16:54:49  nmw
+ * COModarray implemented
+ *
  * Revision 1.2  2001/03/23 12:49:53  nmw
  * CODim/COShape implemented
  *
@@ -538,6 +541,42 @@ COShape (constant *a)
     } else {
         res = NULL;
     }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    constant *COModarray( constant *a, constant *idx, constant *elem)
+ *
+ * description:
+ *    returns modified a with value elem at index idx
+ *
+ ******************************************************************************/
+constant *
+COModarray (constant *a, constant *idx, constant *elem)
+{
+    constant *res;
+
+    DBUG_ENTER ("COModarray");
+    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COPsi not int!");
+    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to COPsi not vector!");
+    DBUG_ASSERT ((CONSTANT_TYPE (a) == CONSTANT_TYPE (elem)),
+                 "mixed types for array and inserted elements");
+    DBUG_ASSERT (((CONSTANT_DIM (a)) == (CONSTANT_VLEN (idx) + CONSTANT_DIM (elem))),
+                 "idx-vector exceeds dim of array in COPsi!");
+
+    /* first we create the modified target constant as copy of a */
+    res = COCopyConstant (a);
+
+    /* now we copy the modified elements into the target constant vector */
+    CopyElemsFromCVToCV (CONSTANT_TYPE (res),                 /* basetype */
+                         CONSTANT_ELEMS (elem),               /* from */
+                         0,                                   /* offset */
+                         SHGetUnrLen (CONSTANT_SHAPE (elem)), /* len */
+                         CONSTANT_ELEMS (res),                /* to */
+                         Idx2Offset (idx, res));              /* offset */
 
     DBUG_RETURN (res);
 }
