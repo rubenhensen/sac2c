@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.31  2004/11/14 13:43:59  ktr
+# added reusebranching.o
+#
 # Revision 3.30  2004/11/09 22:16:53  ktr
 # explicitcopy.o added.
 #
@@ -121,7 +124,8 @@ INCS = -I../global -I../tree -I../../inc -I../flatten -I../typecheck \
 
 all: allocation.o alloc.o refcounting.o reuse.o rcopt.o rcphase.o \
      filterrc.o aliasanalysis.o staticreuse.o reuseelimination.o \
-     interfaceanalysis.o loopreuseopt.o datareuse.o explicitcopy.o
+     interfaceanalysis.o loopreuseopt.o datareuse.o explicitcopy.o \
+     reusebranching.o
 
 
 %.o: %.c
