@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2004/08/12 12:01:31  ktr
+ * EMM reuse is now activated by default.
+ *
  * Revision 3.60  2004/08/10 16:13:42  ktr
  * reuse inference in EMM can now be activated using -reuse.
  *
@@ -558,7 +561,7 @@ bool emm = FALSE;
 /*
  * Do not apply reuse inference in emm by dafault
  */
-bool reuse = FALSE;
+bool reuse = TRUE;
 
 /*
  * per default do not use aggressive WLS
