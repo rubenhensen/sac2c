@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1996/01/23 09:03:10  cg
+ * Revision 1.7  1996/01/23 09:57:28  cg
+ * Now, the length of a module name is checked
+ *
+ * Revision 1.6  1996/01/23  09:03:10  cg
  * Now, we check if a module/class implementation is in the correct file
  *
  * Revision 1.5  1996/01/07  16:56:38  cg
@@ -93,6 +96,11 @@ SetFileNames (node *modul)
             strcat (cfilename, ".c");
         }
     } else {
+        if (strlen (MODUL_NAME (modul)) > 13) {
+            ERROR (1, ("Module/class name '%s` too long (maximum: 13 characters)",
+                       MODUL_NAME (modul)));
+        }
+
         if (sacfilename[0] != '\0') {
             strcpy (buffer, MODUL_NAME (modul));
             strcat (buffer, ".sac");
