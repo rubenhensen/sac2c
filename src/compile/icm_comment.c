@@ -1,13 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/06/07 15:44:48  dkr
+ * ICM_DEF: one \n removed
+ *
  * Revision 3.3  2002/03/07 20:11:52  dkr
  * Support for ICMs arguments of type N_icm (H-ICMs with str-, int-, var- or
  * varint-arguments only) added (ICM_ICM).
  * This feature is not just yet, so it might contain several bugs...
- *
- * Revision 3.2  2001/02/06 01:46:34  dkr
- * no changes done
  *
  * Revision 3.1  2000/11/20 18:01:22  sacbase
  * new release made
@@ -53,8 +53,6 @@
 #define ICM_DEF(prf, trf)                                                                \
     {                                                                                    \
         int sep = 0;                                                                     \
-        fprintf (outfile, "\n");                                                         \
-        INDENT;                                                                          \
         fprintf (outfile, "/*\n");                                                       \
         INDENT;                                                                          \
         fprintf (outfile, " * %s( ", #prf);
