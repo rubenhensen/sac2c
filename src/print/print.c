@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2002/04/15 16:08:34  dkr
+ * bug in PrintArgtab() fixed
+ *
  * Revision 3.80  2002/04/09 16:34:55  dkr
  * debug output for FUNDEF_ARGTAB and AP_ARGTAB added
  *
@@ -171,16 +174,17 @@
  * macros for printing debug information
  */
 
-#define PRINTF_POINTER(file, format, p)                                                  \
+#define PRINT_POINTER(file, p)                                                           \
     if ((p) != NULL) {                                                                   \
-        fprintf (file, format, p);                                                       \
+        fprintf (file, F_PTR, p);                                                        \
     } else {                                                                             \
         fprintf (file, "NULL");                                                          \
     }
 
-#define PRINT_POINTER(file, p) PRINTF_POINTER (file, F_PTR, p);
-
-#define PRINT_POINTER_BRACKETS(file, p) PRINTF_POINTER (file, "<" F_PTR ">", p);
+#define PRINT_POINTER_BRACKETS(file, p)                                                  \
+    fprintf (file, "<");                                                                 \
+    PRINT_POINTER (file, p);                                                             \
+    fprintf (file, ">");
 
 #define PRINT_STRING(file, str)                                                          \
     fprintf (file, "%s", STR_OR_UNKNOWN (str));                                          \
@@ -630,7 +634,9 @@ PrintArgtab (argtab_t *argtab, bool is_def)
                     DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_arg),
                                  "illegal argtab entry found!");
 
-                    fprintf (outfile, "%s", ARG_NAME (argtab->ptr_in[i]));
+                    if (ARG_NAME (argtab->ptr_in[i]) != NULL) {
+                        fprintf (outfile, "%s", ARG_NAME (argtab->ptr_in[i]));
+                    }
                 } else {
                     DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_exprs),
                                  "illegal argtab entry found!");
