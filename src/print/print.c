@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.30  1999/09/01 17:10:03  jhs
+ * SYNC_SCHEDULING
+ *
  * Revision 2.29  1999/08/27 11:09:40  jhs
  * Delete the long message for different refcounters, instead only "**"
  * will be printed (keep in mind, naive-refcounters are done one
@@ -2096,13 +2099,6 @@ PrintSync (node *arg_node, node *arg_info)
     fprintf (outfile, " * local:");
     DFMPrintMask (outfile, " %s", SYNC_LOCAL (arg_node));
     fprintf (outfile, "\n");
-
-    if (SYNC_SCHEDULING (arg_node) != NULL) {
-        INDENT
-        fprintf (outfile, " * scheduling: ");
-        SCHPrintScheduling (outfile, SYNC_SCHEDULING (arg_node));
-        fprintf (outfile, "\n");
-    }
 
     INDENT
     fprintf (outfile, " */\n");
