@@ -100,7 +100,6 @@
       <traversal id="PRT" name="Print Syntax Tree" default="user" include="print.h" prefun="PRTtravPre" postfun="PRTtravPost" >
         <travsons>
           <node name="Vinfo" />
-          <node name="Prf" />
           <node name="SSAstack" />
           <node name="WLblock" />
           <node name="WLublock" />
