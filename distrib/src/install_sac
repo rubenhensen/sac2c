@@ -158,15 +158,19 @@ else
 fi
 insert_component f libsac.a $base/runtime/libsac.a
 
+echo
+ask 'How to call GNU-make?' $make
+make=$ask_res
 
 insert_component d stdlib.tar $base/stdlib
 if [ -f $SACBASE/stdlib/stdlib.tar ] ; then
-  echo
-  ask 'How to call GNU-make?' $make
-  make=$ask_res
-
-  # (cd $SACBASE/stdlib; tar xvf stdlib.tar; $make untar )
+  (cd $SACBASE/stdlib; tar xvf stdlib.tar; $make untar; rm stdlib.tar )
   mess "stdlib.tar UNPACKED !!"
+else
+  warn "stdlib.tar NOT UNPACKED !!"
+fi
+
+if [ -f $SACBASE/stdlib/Makefile ] ; then
   ask 'Do you want to compile the standard library right now?' "y"
   if [ $ask_res = "y" ] ; then
     mess "COMPILING stdlib !!"
@@ -174,8 +178,6 @@ if [ -f $SACBASE/stdlib/stdlib.tar ] ; then
   else
     mess 'if you want to compile the stdlib later, use "cd $SACBASE/stdlib;'" $make"'"'
   fi
-else
-  warn "stdlib.tar NOT UNPACKED !!"
 fi
 
 
@@ -195,6 +197,15 @@ else
   warn "demo.tar NOT UNPACKED !!"
 fi
 
+if [ -f $demo/Makefile ] ; then
+  ask 'Do you want to compile the demo programs right now?' "y"
+  if [ $ask_res = "y" ] ; then
+    mess "COMPILING demo programs !!"
+    (cd $demo; $make )
+  else
+    mess 'if you want to compile the demo programs later, use "cd '"$demo; $make"'"'
+  fi
+fi
 
 
 
