@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.21  1995/01/18 17:39:17  asi
+ * Revision 1.22  1995/01/31 10:57:29  hw
+ * added new entrie in union 'info' of struct 'node'
+ *
+ * Revision 1.21  1995/01/18  17:39:17  asi
  * MAX_MASK inserted
  *
  * Revision 1.20  1995/01/05  12:37:02  sbs
@@ -161,13 +164,20 @@ typedef struct NODE {
         float cfloat;      /* Float-Wert                         */
         prf prf;           /* tag for primitive functions        */
         fun_name fun_name; /* used in N_ap nodes                 */
-    } info;                /* fu"r spezielle Informationen */
-    long *mask[MAX_MASK];  /* special informations for optimization */
-    int nnode;             /* Anzahl der benutzten Knoten */
-    int lineno;            /* Zeilennummer in der ein Befehl steht */
-                           /* later used for variable number while optimizing */
-    struct NODE *node[4];  /* Diese Eintra"ge sind knotenspezifisch */
-} node;                    /* Knoten des Syntaxbaums  */
+        union {
+            int tag;      /* tag for return type */
+            int tc;       /* type class */
+        } prf_dec;        /* used for declaration of primitive functions
+                           * this declarations are used to look for argument
+                           * and result type of primitive functions
+                           */
+    } info;               /* fu"r spezielle Informationen */
+    long *mask[MAX_MASK]; /* special informations for optimization */
+    int nnode;            /* Anzahl der benutzten Knoten */
+    int lineno;           /* Zeilennummer in der ein Befehl steht */
+                          /* later used for variable number while optimizing */
+    struct NODE *node[4]; /* Diese Eintra"ge sind knotenspezifisch */
+} node;                   /* Knoten des Syntaxbaums  */
 
 /*
  *  macro for the generation of nodes
