@@ -173,10 +173,15 @@ if [ -f $SACBASE/stdlib/stdlib.tar ] ; then
   ask 'How to call GNU-make?' $make
   make=$ask_res
 
-  (cd $SACBASE/stdlib; tar xvf stdlib.tar; $make untar )
+  # (cd $SACBASE/stdlib; tar xvf stdlib.tar; $make untar )
   mess "stdlib.tar UNPACKED !!"
-  mess "COMPILING stdlib !!"
-  (cd $SACBASE/stdlib; $make )
+  ask 'Do you want to compile the standard library right now?' "y"
+  if [ $ask_res = "y" ] ; then
+    mess "COMPILING stdlib !!"
+    (cd $SACBASE/stdlib; $make )
+  else
+    mess 'if you want to compile the stdlib later, use "cd $SACBASE/stdlib;'" $make"'"'
+  fi
 else
   warn "stdlib.tar NOT UNPACKED !!"
 fi
