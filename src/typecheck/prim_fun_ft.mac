@@ -1,8 +1,11 @@
 /*
  *  $Log$
- *  Revision 1.2  1995/02/03 16:04:56  hw
- *  extended /changed macro
+ *  Revision 1.3  1995/02/09 11:08:58  hw
+ *  changed and added FT`s
  *
+;; Revision 1.2  1995/02/03  16:04:56  hw
+;; extended /changed macro
+;;
 ;; Revision 1.1  1995/02/03  07:45:32  hw
 ;; Initial revision
 ;; $
@@ -17,6 +20,9 @@ FT (F_sub, AxS_A, F_sub)
 FT (F_mul, SxS_S, F_mul)
 FT (F_mul, AxA_A, F_mul)
 FT (F_mul, AxS_A, F_mul)
+FT (F_div, SxS_F, F_div)
+FT (F_div, AxA_F, F_div)
+FT (F_div, AxS_F, F_div)
 FT (F_eq, BxB_B, F_eq)
 FT (F_eq, SxS_B, F_eq)
 FT (F_neq, BxB_B, F_neq)
@@ -25,3 +31,13 @@ FT (F_le, SxS_B, F_le)
 FT (F_lt, SxS_B, F_lt)
 FT (F_ge, SxS_B, F_ge)
 FT (F_gt, SxS_B, F_gt)
+FT (F_drop, VxA_Ad, F_drop)
+FT (F_drop, SxA_Ad, F_drop)
+FT (F_take, VxA_At, F_take)
+FT (F_take, SxA_At, F_take)
+FT (F_psi, VxA_Ap, F_psi)
+FT (F_shape, V_As, F_shape)
+FT (F_dim, A_S, F_dim)
+FT (F_reshape, VxA_Ar, F_reshape)
+FT (F_cat, SxAxA_A, F_cat)
+FT (F_rotate, SxSxA_A, F_rotate)
