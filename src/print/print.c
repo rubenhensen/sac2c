@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/04/15 15:00:56  cg
+ * ICMs are no longer printed with ';' behind. This was a bug.
+ *
  * Revision 2.10  1999/04/14 09:24:31  cg
  * ICMs are now printed with a following ';'
  *
@@ -1668,7 +1671,7 @@ PrintIcm (node *arg_node, node *arg_info)
         if (NULL != ICM_ARGS (arg_node)) {
             Trav (ICM_ARGS (arg_node), arg_info);
         }
-        fprintf (outfile, ");");
+        fprintf (outfile, ")");
     }
 
     if (NULL != ICM_NEXT (arg_node)) {
