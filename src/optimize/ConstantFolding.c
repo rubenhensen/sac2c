@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.72  1998/08/20 12:20:30  srs
+ * added cf_expr++ in ArrayPrf() (case F_modarray)
+ *
  * Revision 1.71  1998/08/06 18:35:12  srs
  * removed comments (cleanup)
  *
@@ -2288,6 +2291,7 @@ ArrayPrf (node *arg_node, node *arg_info)
             /* replace F_modarray with newn */
             FreeTree (arg_node);
             arg_node = newn;
+            cf_expr++;
         }
 
     } break;
