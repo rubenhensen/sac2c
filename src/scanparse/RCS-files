@@ -7,3 +7,4 @@ scnprs.c
 scnprs.h
 nsac.l
 nsac.y
+resolvepragma.c
