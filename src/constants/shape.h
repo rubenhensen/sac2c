@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 1.4  2002/06/21 14:03:48  dkr
+ * SHShape2Array() added
+ *
  * Revision 1.3  2001/04/30 12:31:34  nmw
  * SHShape2IntVec added
  *
@@ -8,7 +12,6 @@
  *
  * Revision 1.1  2001/03/02 14:33:09  sbs
  * Initial revision
- *
  *
  */
 
@@ -49,7 +52,8 @@ extern shape *SHSetExtent (shape *shp, int dim, int val);
 extern bool SHCompareShapes (shape *a, shape *b);
 extern shape *SHAppendShapes (shape *a, shape *b);
 extern char *SHShape2String (int dots, shape *shp);
-extern int *SHShape2IntVec (shape *a);
+extern int *SHShape2IntVec (shape *shp);
+extern node *SHShape2Array (shape *shp);
 
 extern shape *SHOldTypes2Shape (types *shpseg);
 extern shpseg *SHShape2OldShpseg (shape *shp);

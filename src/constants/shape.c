@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.7  2002/05/31 14:54:28  sbs
- * *** empty log message ***
+ * Revision 1.8  2002/06/21 14:04:13  dkr
+ * SHShape2Array() added
  *
  * Revision 1.6  2001/05/22 14:59:08  nmw
  * OldTypes2Shape is now aware of user defined types
@@ -21,7 +21,6 @@
  *
  * Revision 1.1  2001/03/02 14:33:07  sbs
  * Initial revision
- *
  *
  */
 
@@ -355,7 +354,7 @@ SHAppendShapes (shape *a, shape *b)
 /******************************************************************************
  *
  * function:
- *    char * SHShape2String( int dots, shape *shp)
+ *    char *SHShape2String( int dots, shape *shp)
  *
  * description:
  *    generates a string representation of a shape. The argument "dots" allows
@@ -398,7 +397,7 @@ SHShape2String (int dots, shape *shp)
 /******************************************************************************
  *
  * function:
- *    shape *SHOldTypes2Shape( types * types)
+ *    shape *SHOldTypes2Shape( types *types)
  *
  * description:
  *    if types has a dim>=0 a shape structure is created which carries the same
@@ -491,7 +490,7 @@ SHShape2OldShpseg (shape *shp)
 /******************************************************************************
  *
  * function:
- *    bool SHCompareWithCArray(shape *shp, int* shpdata, int dim)
+ *    bool SHCompareWithCArray( shape *shp, int* shpdata, int dim)
  *
  * description:
  *    compares given shape with a shape specified as a c integer array
@@ -524,7 +523,7 @@ SHCompareWithCArray (shape *shp, int *shpdata, int dim)
 /******************************************************************************
  *
  * function:
- *    bool SHCompareWithArguments(shape *shp, int dim, ...)
+ *    bool SHCompareWithArguments( shape *shp, int dim, ...)
  *
  * description:
  *    compares given shape with a shape specified as an list of arguments
@@ -562,14 +561,15 @@ SHCompareWithArguments (shape *shp, int dim, ...)
 /******************************************************************************
  *
  * function:
- *   int *SHShape2IntVec( shape *a)
+ *   int *SHShape2IntVec( shape *shp)
  *
  * description:
  *    creates a simple int vector from the given shape vector
  *
  ******************************************************************************/
+
 int *
-SHShape2IntVec (shape *a)
+SHShape2IntVec (shape *shp)
 {
     int *int_vec;
     int i;
@@ -577,15 +577,49 @@ SHShape2IntVec (shape *a)
 
     DBUG_ENTER ("SHShape2IntVec");
 
-    n = SHAPE_DIM (a);
+    n = SHAPE_DIM (shp);
     if (n > 0) {
         int_vec = (int *)Malloc (n * sizeof (int));
         for (i = 0; i < n; i++) {
-            int_vec[i] = SHAPE_EXT (a, i);
+            int_vec[i] = SHAPE_EXT (shp, i);
         }
     } else {
         int_vec = NULL;
     }
 
     DBUG_RETURN (int_vec);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SHShape2Array( shape *shp)
+ *
+ * description:
+ *    creates a simple int vector from the given shape vector
+ *
+ ******************************************************************************/
+
+node *
+SHShape2Array (shape *shp)
+{
+    node *array;
+    shpseg *shp_seg;
+    int dim;
+    int i;
+
+    DBUG_ENTER ("SHShape2Array");
+
+    dim = SHAPE_DIM (shp);
+    array = NULL;
+    for (i = dim - 1; i >= 0; i--) {
+        array = MakeExprs (MakeNum (SHAPE_EXT (shp, i)), array);
+    }
+    array = MakeArray (array);
+
+    shp_seg = MakeShpseg (NULL);
+    SHPSEG_SHAPE (shp_seg, 0) = dim;
+    ARRAY_TYPE (array) = MakeTypes (T_int, 1, shp_seg, NULL, NULL);
+
+    DBUG_RETURN (array);
 }
