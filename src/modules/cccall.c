@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/03/20 22:25:59  dkr
+ * superfluous include of scnprs.h removed
+ *
  * Revision 3.1  2000/11/20 18:00:48  sacbase
  * new release made
  *
@@ -173,7 +176,6 @@
 #include "internal_lib.h"
 #include "free.h"
 #include "globals.h"
-#include "scnprs.h"
 
 #include "filemgr.h"
 #include "traverse.h"

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/20 22:26:04  dkr
+ * superfluous include of scnprs.h removed
+ *
  * Revision 3.5  2001/03/15 16:47:52  dkr
  * WDECarg: the '&' for reference objects is no longer printed by
  * Type2String().
@@ -150,7 +153,6 @@
 #include "import.h"
 #include "convert.h"
 #include "filemgr.h"
-#include "scnprs.h"
 #include "implicittypes.h"
 #include "print.h"
 #include "checkdec.h"
