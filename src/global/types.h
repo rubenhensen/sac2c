@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/10/20 09:27:00  cg
+ * Revision 1.6  1995/11/01 09:39:36  cg
+ * new member of enum statustype: ST_was_reference
+ *
+ * Revision 1.5  1995/10/20  09:27:00  cg
  * added 4 new items to macro NIF
  *
  * Revision 1.4  1995/10/19  10:08:41  cg
@@ -58,6 +61,7 @@ typedef enum {
     ST_regular,            /* normal types */
     ST_unique,             /* unique types */
     ST_reference,          /* reference parameter (unique)           */
+    ST_was_reference,      /* for eliminated reference parameter     */
     ST_readonly_reference, /* readonly reference param (unique)  */
     ST_ref,                /* Id must be referenced                  */
     ST_deref,              /* Id must be dereferenced                */
