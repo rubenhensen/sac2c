@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.34  1995/07/21 13:16:52  asi
+ * Revision 1.35  1995/07/24 09:04:47  asi
+ * bug fixed in function ArrayPrf case F_psi
+ *
+ * Revision 1.34  1995/07/21  13:16:52  asi
  * substitutes also within prim. functions
  *
  * Revision 1.33  1995/07/20  15:00:37  asi
@@ -1745,10 +1748,10 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
                       = DupPartialArray (start, length,
                                          VAR (arg[1]->info.ids->node->varno), arg_info);
                 }
-                FreeTree (arg_node);
-                arg_node = res_node;
                 DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
                                    prf_string[arg_node->info.prf], arg_info->lineno));
+                FreeTree (arg_node);
+                arg_node = res_node;
                 cf_expr++;
             } else {
                 if (old_arg_0 != arg[0])
