@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2004/08/18 11:50:08  skt
+ * added enumeration-type mtexecmode_t
+ *
  * Revision 3.29  2004/07/29 15:05:03  sah
  * added access_info_t structure to annotate acces information
  * to the syntax tree (instead of using a N_info node). This
@@ -292,6 +295,9 @@ typedef enum { PHIT_NONE, PHIT_COND, PHIT_DO, PHIT_WHILE } ssaphit_t;
 typedef enum { SS_aks, SS_akd, SS_aud } spec_mode_t;
 
 typedef enum { MT_none = 0, MT_createjoin, MT_startstop, MT_mtstblock } mtmode_t;
+
+/* the possible executiomodes of mtmode 3 (mtstblock) */
+typedef enum { MUTH_ANY, MUTH_EXCLUSIVE, MUTH_SINGLE, MUTH_MULTI } mtexecmode_t;
 
 /*
  * new nodes for yacc and the syntax tree
