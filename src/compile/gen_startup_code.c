@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/04/02 15:24:17  dkr
+ * no changes done
+ *
  * Revision 3.4  2001/03/29 01:40:11  dkr
  * CHECK_NULL used
  *
@@ -737,9 +740,7 @@ GSCfundef (node *arg_node, node *arg_info)
 
     if ((FUNDEF_STATUS (arg_node) == ST_regular) ||
 #if 0
-      (FUNDEF_STATUS( arg_node) == ST_dofun) ||
-      (FUNDEF_STATUS( arg_node) == ST_whilefun) ||
-      (FUNDEF_STATUS( arg_node) == ST_condfun) ||
+      (FUNDEF_IS_LACFUN( arg_node)) ||
 #endif
         (FUNDEF_STATUS (arg_node) == ST_exported)
         || (((FUNDEF_STATUS (arg_node) == ST_imported_mod)
