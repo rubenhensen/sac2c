@@ -4,6 +4,11 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2002/10/18 13:31:09  sbs
+ * iff the new type checker is used, all module names for external objects are
+ * preset by _EXT. This is the first stage on the way to have FULL names for these
+ * as well....
+ *
  * Revision 3.70  2002/10/10 12:16:41  sbs
  * Now, MakePrf is only called if the number of arguments supplied matches
  * the number of arguments specified in prf_node_info.mac.
@@ -1862,7 +1867,7 @@ modheader: modclass evextern id COLON linkwith
              link_mod_name = $3;
 
              if ($2) {
-               mod_name = NULL;
+               mod_name = ((sbs==1)? "_EXT" : NULL);
              } else {
                mod_name = link_mod_name;
              }
@@ -2415,7 +2420,8 @@ sibfuns: sibfun sibfuns
 sibfun: sibevmarker varreturntypes fun_id BRACKET_L sibarglist
         BRACKET_R { $<cint>$ = linenum; } sibfunbody sibpragmas
         { $$ = MakeFundef( StringCopy( IDS_NAME( $3)),
-                           IDS_MOD( $3), $2, $5, $8, NULL);
+                           (((sbs==1) && (IDS_MOD( $3) == NULL)) ? "_EXT" : IDS_MOD( $3)),
+                           $2, $5, $8, NULL);
           $3 = FreeOneIds( $3);
           NODE_LINE( $$) = $<cint>7;
           switch ($1) {
@@ -2543,7 +2549,9 @@ sibfunlist: sibfunlistentry COMMA sibfunlist
 
 sibfunlistentry: fun_id BRACKET_L sibarglist BRACKET_R
                  { $$ = MakeFundef( StringCopy( IDS_NAME( $1)),
-                                      IDS_MOD( $1),
+                                      (((sbs==1) && (IDS_MOD( $1) == NULL)) ?
+                                        "_EXT" :
+                                        IDS_MOD( $1)),
                                       MakeTypes1( T_unknown),
                                       $3, NULL, NULL);
                    FUNDEF_STATUS( $$) = sib_imported_status;
@@ -2662,7 +2670,7 @@ int My_yyparse()
   filename = tmp;
 
 #ifdef SAC_FOR_SOLARIS_SPARC
-  DBUG_EXECUTE( "PARSE", yydebug=1;);
+  DBUG_EXECUTE( "YACC", yydebug=1;);
 #endif
 
   DBUG_RETURN( yyparse());
