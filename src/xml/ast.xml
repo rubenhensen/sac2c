@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.31  2004/11/23 23:40:26  sah
+  added some traversals
+
   Revision 1.30  2004/11/23 22:49:52  sah
   removed ids attribute
 
@@ -181,8 +184,14 @@
     -->
     <general>
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
+      <traversal id="SBT" name="Serialize Build Stack" default="user" include="serialize_buildstack.h" />
+      <traversal id="SET" name="Serialize Node Traversal" default="user" include="serialize_node.h" />
+      <traversal id="SEL" name="Serialize Link Traversal" default="user" include="serialize_link.h" />
     </general>
     <phase id="typecheck" name="Running type inference system">
+    </phase>
+    <phase id="export" name="Exporting symbols">
+      <traversal id="SER" name="Serialize Module" default="sons" include="serialize_node.h" />
     </phase>
     <phase id="wlenhance" name="Enhancement of With-Loops">
       <traversal id="WLE" name="With-Loop Enhancement" default="sons" include="WLEnhancement.h" >
