@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.146  1998/02/13 12:50:08  srs
+ * changed PrintNgenerator. = now between vector and scalars
+ *
  * Revision 1.145  1998/02/11 17:15:06  srs
  * changed NPART_IDX to NPART_WITHID
  * removed NEW_TREE
@@ -1985,7 +1988,7 @@ PrintNGenerator (node *gen, node *idx, node *arg_info)
     if (NWITHID_VEC (idx))
         PrintIds (NWITHID_VEC (idx));
     if (NWITHID_VEC (idx) && NWITHID_IDS (idx))
-        fprintf (outfile, ":");
+        fprintf (outfile, "=");
     if (NWITHID_IDS (idx)) {
         fprintf (outfile, "[");
         PrintIds (NWITHID_IDS (idx));
