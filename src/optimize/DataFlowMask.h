@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/06/03 14:35:05  cg
+ * added function DFMUpdateMaskBaseAfterRenaming for special update
+ * during precompiling .
+ *
  * Revision 1.6  1998/05/19 08:53:26  cg
  * added strtok() like functions for retrieving variables from masks
  *
@@ -123,6 +127,8 @@ typedef void *DFMmask_t;
 extern DFMmask_base_t DFMGenMaskBase (node *arguments, node *vardecs);
 extern DFMmask_base_t DFMUpdateMaskBase (DFMmask_base_t mask_base, node *arguments,
                                          node *vardecs);
+extern DFMmask_base_t DFMUpdateMaskBaseAfterRenaming (DFMmask_base_t mask_base,
+                                                      node *arguments, node *vardecs);
 extern DFMmask_base_t DFMRemoveMaskBase (DFMmask_base_t mask_base);
 
 extern DFMmask_t DFMGenMaskClear (DFMmask_base_t mask_base);

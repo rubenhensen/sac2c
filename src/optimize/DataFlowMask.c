@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1998/06/03 14:35:05  cg
+ * added function DFMUpdateMaskBaseAfterRenaming for special update
+ * during precompiling .
+ *
  * Revision 1.8  1998/05/19 08:53:26  cg
  * added strtok() like functions for retrieving variables from masks
  *
@@ -367,6 +371,53 @@ DFMRemoveMaskBase (mask_base_t *mask_base)
     FREE (mask_base);
 
     DBUG_RETURN ((mask_base_t *)NULL);
+}
+
+mask_base_t *
+DFMUpdateMaskBaseAfterRenaming (mask_base_t *mask_base, node *arguments, node *vardecs)
+{
+    int i;
+    node *tmp;
+
+    DBUG_ENTER ("DFMUpdateMaskBaseAfterRenaming");
+
+    for (i = 0; i < mask_base->num_ids; i++) {
+        tmp = arguments;
+        while ((tmp != NULL) && (tmp != mask_base->decls[i])) {
+            tmp = ARG_NEXT (tmp);
+        }
+
+        if (tmp == NULL) {
+            tmp = vardecs;
+            while ((tmp != NULL) && (tmp != mask_base->decls[i])) {
+                tmp = VARDEC_NEXT (tmp);
+            }
+
+            if (tmp == NULL) {
+                /*
+                 * Variable i has been removed from the local identifier set.
+                 */
+                mask_base->decls[i] = NULL;
+                mask_base->ids[i] = NULL;
+            } else {
+                /*
+                 * Variable i still exists in the local identifier set.
+                 * So it has been renamed which requires to store a reference
+                 * to its new name.
+                 */
+                mask_base->ids[i] = VARDEC_NAME (mask_base->decls[i]);
+            }
+        } else {
+            /*
+             * Variable i still exists in the local identifier set.
+             * So it has been renamed which requires to store a reference
+             * to its new name.
+             */
+            mask_base->ids[i] = ARG_NAME (mask_base->decls[i]);
+        }
+    }
+
+    DBUG_RETURN (mask_base);
 }
 
 /*
