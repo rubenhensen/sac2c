@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/12/01 20:29:24  cg
+ * Revision 1.4  1995/12/04 13:38:16  cg
+ * bug fixed in string handling of function PRECtypedef
+ *
+ * Revision 1.3  1995/12/01  20:29:24  cg
  * now the prefix "SAC__" is added to all SAC-identifiers
  * in order to avoid name clashes with C indentifiers.
  *
@@ -97,9 +100,10 @@ RenameTypes (types *type)
 
     if (TYPES_MOD (type) != NULL) {
         tmp = (char *)Malloc (sizeof (char)
-                              * (strlen (TYPES_NAME (type)) + strlen (TYPES_MOD (type))
+                              * (strlen (TYPES_NAME (type))
+                                 + strlen (MOD (TYPES_MOD (type)))
                                  + 2 * strlen (mod_name_con) + 4));
-        sprintf (tmp, "SAC%s%s%s%s", mod_name_con, TYPES_MOD (type), mod_name_con,
+        sprintf (tmp, "SAC%s%s%s%s", mod_name_con, MOD (TYPES_MOD (type)), mod_name_con,
                  TYPES_NAME (type));
 
         FREE (TYPES_NAME (type));
@@ -190,13 +194,13 @@ RenameFun (node *fun)
             args = ARG_NEXT (args);
         }
 
-        length += (strlen (FUNDEF_NAME (fun)) + strlen (FUNDEF_MOD (fun))
-                   + 2 * strlen (mod_name_con) + 4);
+        length += (strlen (FUNDEF_NAME (fun)) + strlen (MOD (FUNDEF_MOD (fun)))
+                   + 2 * strlen (mod_name_con) + 6);
 
         new_name = (char *)Malloc (sizeof (char) * length);
 
-        sprintf (new_name, "SAC%s%s%s%s", mod_name_con, FUNDEF_MOD (fun), mod_name_con,
-                 FUNDEF_NAME (fun));
+        sprintf (new_name, "SAC%s%s%s%s", mod_name_con, MOD (FUNDEF_MOD (fun)),
+                 mod_name_con, FUNDEF_NAME (fun));
 
         args = FUNDEF_ARGS (fun);
 
@@ -290,9 +294,9 @@ PRECtypedef (node *arg_node, node *arg_info)
 
     tmp = (char *)Malloc (sizeof (char)
                           * (strlen (TYPEDEF_NAME (arg_node))
-                             + strlen (TYPEDEF_MOD (arg_node)) + 2 * strlen (mod_name_con)
-                             + 4));
-    sprintf (tmp, "SAC%s%s%s%s", mod_name_con, TYPEDEF_MOD (arg_node), mod_name_con,
+                             + strlen (MOD (TYPEDEF_MOD (arg_node)))
+                             + 2 * strlen (mod_name_con) + 5));
+    sprintf (tmp, "SAC%s%s%s%s", mod_name_con, MOD (TYPEDEF_MOD (arg_node)), mod_name_con,
              TYPEDEF_NAME (arg_node));
 
     FREE (TYPEDEF_NAME (arg_node));
@@ -327,8 +331,6 @@ PRECtypedef (node *arg_node, node *arg_info)
 node *
 PRECobjdef (node *arg_node, node *arg_info)
 {
-    char *init_fun_name;
-    node *new_node;
     ids *new_ids;
 
     DBUG_ENTER ("PRECobjdef");
@@ -343,26 +345,24 @@ PRECobjdef (node *arg_node, node *arg_info)
     } else {
         OBJDEF_TYPE (arg_node) = RenameTypes (OBJDEF_TYPE (arg_node));
 
-        if (OBJDEF_EXPR (arg_node) == NULL) {
-            init_fun_name = (char *)Malloc (strlen (OBJDEF_NAME (arg_node)) + 10);
+        if (OBJDEF_EXPR (arg_node) != NULL) {
+            /*
+             *  Here, we know that OBJDEF_EXPR contains an application of a
+             *  generic object init fun. After objinit.c this is the case for
+             *  all imported objdefs in a SAC program.
+             */
 
-            init_fun_name = strcpy (init_fun_name, "CREATE__");
-            init_fun_name = strcat (init_fun_name, OBJDEF_NAME (arg_node));
+            new_ids = MakeIds (StringCopy (OBJDEF_VARNAME (arg_node)), NULL, ST_regular);
 
-            new_node = MakeAp (init_fun_name, OBJDEF_MOD (arg_node), NULL);
-        } else {
-            new_node = OBJDEF_EXPR (arg_node);
+            OBJDEF_INIT (arg_node) = MakeLet (OBJDEF_EXPR (arg_node), new_ids);
+
             OBJDEF_EXPR (arg_node) = NULL;
         }
-
-        new_ids = MakeIds (StringCopy (OBJDEF_VARNAME (arg_node)), NULL, ST_regular);
-
-        OBJDEF_INIT (arg_node) = MakeLet (new_node, new_ids);
 
         FREE (OBJDEF_NAME (arg_node));
         OBJDEF_NAME (arg_node) = (char *)Malloc (
           sizeof (char)
-          * (strlen (OBJDEF_VARNAME (arg_node)) + strlen (mod_name_con) + 4));
+          * (strlen (OBJDEF_VARNAME (arg_node)) + strlen (mod_name_con) + 5));
 
         sprintf (OBJDEF_NAME (arg_node), "SAC%s%s", mod_name_con,
                  OBJDEF_VARNAME (arg_node));
@@ -631,7 +631,7 @@ PREClet (node *arg_node, node *arg_info)
  *  arguments     : 1) N_ap node
  *                  2) arg_info unused
  *  description   : traverses the current arguments and sets arg_info
- *                  to the first fromal parameter of the applied function.
+ *                  to the first formal parameter of the applied function.
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : Trav
