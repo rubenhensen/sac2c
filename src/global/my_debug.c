@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/10/20 09:24:17  cg
+ * Revision 1.17  1995/11/16 19:37:21  cg
+ * NIF macro extended by 4 new parameters.
+ *
+ * Revision 1.16  1995/10/20  09:24:17  cg
  * added 4 new items for macro NIF
  *
  * Revision 1.15  1995/08/03  14:51:40  cg
@@ -61,7 +64,7 @@
 */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa, ab, ac,   \
-            ad, ae, af, ag, ah, ai)                                                      \
+            ad, ae, af, ag, ah, ai, aj, ak, al, am)                                      \
     s
 
 char *mdb_nodetype[] = {
