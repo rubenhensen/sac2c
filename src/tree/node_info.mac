@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.9  2001/01/09 17:23:02  dkr
+ * functions for N_WLstrideVar renamed
+ *
  * Revision 3.8  2001/01/09 17:05:37  dkr
  * N_WLstriVar renamed into N_WLstrideVar
  *
@@ -1787,10 +1790,10 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
-  NIF (N_WLstrideVar, "N_WLstrideVar", TravSons, TravSons, PrintWLstriVar, TravSons,
-       TravSons, TravSons, TravSons, FreeWLstriVar, TravSons, TravSons, COMPWLstriVar,
-       TravSons, DupWLstriVar, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons,
+  NIF (N_WLstrideVar, "N_WLstrideVar", TravSons, TravSons, PrintWLstrideVar, TravSons,
+       TravSons, TravSons, TravSons, FreeWLstrideVar, TravSons, TravSons, COMPWLstrideVar,
+       TravSons, DupWLstrideVar, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
