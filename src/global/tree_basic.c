@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.66  1998/05/06 14:32:02  dkr
+ * added support for DataFlowMasks
+ *
  * Revision 1.65  1998/04/26 21:51:43  dkr
  * MakeSPMD renamed to MakeSpmd
  *
@@ -251,10 +254,13 @@ char *prf_name_str[] = {
         v->varno = 0;                                                                    \
         v->lineno = linenum;                                                             \
         v->info2 = NULL;                                                                 \
-        for (i = 0; i < MAX_SONS; i++)                                                   \
+        for (i = 0; i < MAX_SONS; i++) {                                                 \
             v->node[i] = NULL;                                                           \
-        for (i = 0; i < MAX_MASK; i++)                                                   \
+        }                                                                                \
+        for (i = 0; i < MAX_MASK; i++) {                                                 \
             v->mask[i] = NULL;                                                           \
+            v->dfmask[i] = NULL;                                                         \
+        }                                                                                \
     }
 
 /*--------------------------------------------------------------------------*/

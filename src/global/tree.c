@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  1998/05/06 14:30:37  dkr
+ * added support for DataFlowMasks
+ *
  * Revision 1.30  1998/03/25 14:33:49  srs
  * removed NEWTREE
  *
@@ -232,8 +235,10 @@ MakeNode (nodetype nodetype)
     tmp->refcnt = 0;
     tmp->counter = 0;
     tmp->info2 = NULL;
-    for (i = 0; i < MAX_MASK; i++)
+    for (i = 0; i < MAX_MASK; i++) {
         tmp->mask[i] = NULL;
+        tmp->dfmask[i] = NULL;
+    }
 
     DBUG_PRINT ("MAKENODE",
                 ("%d nodetype: %s " P_FORMAT, tmp->lineno, mdb_nodetype[nodetype], tmp));
