@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/06/06 18:33:55  dkr
+ * works correctly without TAGGED_ARRAYS now
+ *
  * Revision 3.15  2002/06/06 18:14:31  dkr
  * some bugs about TAGGED_ARRAYS fixed
  *
@@ -227,6 +230,8 @@
                                   fprintf (outfile, "SAC_idest++; SAC_isrc++;\n");)))
 #endif /* TAGGED_ARRAYS */
 
+#ifdef TAGGED_ARRAYS
+
 /******************************************************************************
  *
  * Function:
@@ -329,6 +334,8 @@ AssignDesc (char *to_nt, char *from_nt)
 
     DBUG_VOID_RETURN;
 }
+
+#endif
 
 /******************************************************************************
  *
