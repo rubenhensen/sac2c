@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.41  1996/03/21 18:00:20  cg
+ * Revision 1.42  1996/04/02 19:35:10  cg
+ * function string2array moved to sac.y
+ *
+ * Revision 1.41  1996/03/21  18:00:20  cg
  * added function string2array for new-fashioned string handling
  *
  * Revision 1.40  1996/03/12  17:02:44  hw
@@ -1274,23 +1277,6 @@ extern node *GetCompoundNode (node *arg_node);
  */
 
 extern node *Shape2Array (shapes *shp);
-
-/*
- *
- *  functionname  : string2array
- *  arguments     : 1) string
- *  description   : converts string into char array,
- *                  used by sac.y for handling of string constants
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : MakeArray, MakeChar, MakeExprs, strlen
- *  macros        : ---
- *
- *  remarks       :
- *
- */
-
-extern node *string2array (char *str);
 
 /*--------------------------------------------------------------------------*/
 
