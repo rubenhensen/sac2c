@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/10/22 13:26:25  sbs
+ * bug in setting flags for reference_only functions solved.
+ * Now, ListIO should compile correctly 8-)
+ *
  * Revision 3.7  2002/10/18 13:41:42  sbs
  * handling of the various ID-ATTRIBUTES changed to the new
  * FLAG system.
@@ -785,6 +789,7 @@ OBJlet (node *arg_node, node *arg_info)
                         } else if (ARG_ATTRIB (params) == ST_readonly_reference) {
                             DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id),
                                          "no N_id node found!");
+                            SET_FLAG (ID, arg_id, IS_REFERENCE, TRUE);
                             SET_FLAG (ID, arg_id, IS_READ_ONLY, TRUE);
 
                         } else {
