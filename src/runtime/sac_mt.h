@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1999/02/19 09:31:22  cg
+ * Support for MIT-threads discarded.
+ *
  * Revision 1.16  1999/01/18 08:15:18  sbs
  * changed SAC_MT_SETUP_PTHREAD:
  * Errorchecking plus non-NULL first arg for pthread_create
@@ -87,10 +90,6 @@
  ***/
 
 #define _POSIX_C_SOURCE 199506L
-
-#ifdef SAC_FOR_LINUX_X86
-#define _MIT_POSIX_THREADS 1
-#endif /* SAC_FOR_LINUX_X86 */
 
 #include <pthread.h>
 
