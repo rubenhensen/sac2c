@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.42  1995/06/09 15:30:42  hw
+ * Revision 1.43  1995/06/09 17:35:53  hw
+ * -bug fixed in CompLoop (look whether next there is a assignment ater loop)
+ *
+ * Revision 1.42  1995/06/09  15:30:42  hw
  * changed N_icms ND_KD_PSI_... (linenumber inserted)
  *
  * Revision 1.41  1995/06/08  17:48:57  hw
@@ -2662,8 +2665,10 @@ CompLoop (node *arg_node, node *arg_info)
 
     if (NULL != dummy_assign->node[1]) {
         /* now put dummy_assign->node[1] behind while_loop */
-        first_assign->node[1] = loop_assign->node[1];
-        first_assign->nnode = 2;
+        if (NULL != loop_assign->node[1]) {
+            first_assign->node[1] = loop_assign->node[1];
+            first_assign->nnode = 2;
+        }
         loop_assign->node[1] = dummy_assign->node[1];
     }
     FREE (dummy_assign);
@@ -2671,13 +2676,16 @@ CompLoop (node *arg_node, node *arg_info)
     if (N_do == arg_node->nodetype) {
         /* put N_icm 'ND_GOTO', in front of N_do node */
         CREATE_1_ARY_ICM (first_assign, "ND_GOTO", label);
-        first_assign->node[1] = loop_assign->node[1];
-        first_assign->nnode = 2;
-        first_assign->node[2] = loop_assign->node[0]; /* only temporary used */
-        loop_assign->node[0] = first_assign->node[0];
+        if (NULL != loop_assign->node[1]) {
+            first_assign->node[1] = loop_assign->node[1]; /* next assign after do-loop */
+            first_assign->nnode = 2;
+        }
+        first_assign->node[2] = loop_assign->node[0]; /* only temporary used (N_do) */
+        loop_assign->node[0] = first_assign->node[0]; /* N_icm (ND_GOTO) node */
         loop_assign->node[1] = first_assign;
+        loop_assign->nnode = 2;
         arg_node = first_assign->node[0];
-        first_assign->node[0] = first_assign->node[2];
+        first_assign->node[0] = first_assign->node[2]; /* put N_do node */
         first_assign->node[2] = NULL;
     }
 
