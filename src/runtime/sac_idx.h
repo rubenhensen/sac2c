@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/07/24 15:04:33  dkr
+ * SAC_ND_USE_GENVAR_OFFSET modified
+ *
  * Revision 3.8  2002/07/24 13:46:20  dkr
  * SAC_ND_USE_GENVAR_OFFSET: argument renamed
  *
@@ -100,7 +103,8 @@
 
 /* ND_PRF_IDX_MODARRAY__DATA( ...) is a C-ICM */
 
-#define SAC_ND_USE_GENVAR_OFFSET(offset, wl_nt) offset = SAC_WL_OFFSET (wl_nt);
+#define SAC_ND_USE_GENVAR_OFFSET(off_nt, wl_nt)                                          \
+    SAC_ND_WRITE (off_nt, 0) = SAC_WL_OFFSET (wl_nt);
 
 #else /* TAGGED_ARRAYS */
 
