@@ -6,7 +6,11 @@
 #include "dbug.h"
 #include "DupTree.h"
 
+#define CODETAB_MAX 10
+
 static int error = 1;
+static node *codetab[CODETAB_MAX];
+static int codetab_lastidx;
 
 /*
  *
@@ -180,7 +184,12 @@ ReadCode (FILE *infile)
     error = (feof (infile) || (fscanf (infile, "%d ", &val) == EOF) || ferror (infile));
 
     if (!error) {
-        code = MakeNCode (NULL, MakeNum (val));
+        DBUG_ASSERT ((val >= 0), "wrong index for codetab");
+        DBUG_ASSERT ((val < CODETAB_MAX), "codetab too small");
+        code = codetab[val];
+        if (val > codetab_lastidx) {
+            codetab_lastidx = val;
+        }
     }
 
     DBUG_RETURN (code);
@@ -223,23 +232,20 @@ BuildNpart (FILE *infile, node *arg_node)
         type = VARDEC_TYPE (ID_VARDEC (NGEN_BOUND1 (NPART_GEN (arg_node))));
 
         /* replace now the generator-nodes */
-        if (!error)
-            NGEN_BOUND1 (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
-        if (!error)
-            NGEN_BOUND2 (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
-        if (!error)
-            NGEN_STEP (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
-        if (!error)
-            NGEN_WIDTH (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
         if (!error) {
-            /* search last entry in code table */
-            new_code = NPART_CODE (new_node);
-            while (NCODE_NEXT (new_code) != NULL) {
-                new_code = NCODE_NEXT (new_code);
-            }
-            /* append new code at code table */
-            NCODE_NEXT (new_code) = ReadCode (infile);
-            NPART_CODE (new_node) = NCODE_NEXT (new_code);
+            NGEN_BOUND1 (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
+        }
+        if (!error) {
+            NGEN_BOUND2 (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
+        }
+        if (!error) {
+            NGEN_STEP (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
+        }
+        if (!error) {
+            NGEN_WIDTH (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
+        }
+        if (!error) {
+            NPART_CODE (new_node) = ReadCode (infile);
         }
     } while (!error);
 
@@ -287,25 +293,27 @@ O2Nnpart (node *arg_node, node *arg_info)
 node *
 O2Nnwith (node *arg_node, node *arg_info)
 {
-    node *tmp_node, *shape, *bound2_el, *shape_el, *last_code;
+    node *tmp_node, *shape, *bound2_el, *shape_el;
+    int i;
 
     DBUG_ENTER ("O2Nnwith");
 
-    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    NWITH_CODE (arg_node) = FreeTree (NWITH_CODE (arg_node));
 
-    /* save last entry in code table */
-    last_code = NWITH_CODE (arg_node);
-    while (NCODE_NEXT (last_code) != NULL) {
-        last_code = NCODE_NEXT (last_code);
+    /* generate a new code table */
+    for (i = 0; i < CODETAB_MAX; i++) {
+        codetab[i] = MakeNCode (NULL, MakeNum (i));
+        if (i == 0) {
+            NWITH_CODE (arg_node) = codetab[i];
+        } else {
+            NCODE_NEXT (codetab[i - 1]) = codetab[i];
+        }
     }
 
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
 
-    /* skip old code table */
-    tmp_node = NWITH_CODE (arg_node);
-    NWITH_CODE (arg_node) = NCODE_NEXT (last_code);
-    NCODE_NEXT (last_code) = NULL;
-    tmp_node = FreeTree (tmp_node);
+    NCODE_NEXT (codetab[codetab_lastidx])
+      = FreeTree (NCODE_NEXT (codetab[codetab_lastidx]));
 
     /* modify the genarray-shape */
     if (NWITHOP_TYPE (NWITH_WITHOP (arg_node)) == WO_genarray) {
