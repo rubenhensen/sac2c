@@ -1,9 +1,15 @@
 /*
  *
+<<<<<<< WithloopScalarization.c
  * $Log$
+ * Revision 1.5  2002/06/09 20:40:09  ktr
+ * works so good, it should be called alpha. :)
+ *
  * Revision 1.4  2002/06/09 19:59:49  ktr
  * works even better, still some known bugs
  *
+=======
+>>>>>>> 1.2
  * Revision 1.3  2002/05/16 09:40:07  ktr
  * an early version of a working WithLoop-Scalarization
  *
@@ -41,7 +47,6 @@
 #include "free.h"
 #include "DataFlowMask.h"
 #include "DupTree.h"
-#include "SSATransform.h"
 
 #include "WithloopScalarization.h"
 
@@ -49,6 +54,9 @@
 #define wls_distribute 1
 #define wls_transform 2
 #define wls_codecorrect 3
+
+#define INFO_WLS_WITHVEC(n) (n->info.ids)
+#define INFO_WLS_WITHOP(n) (n->node[1])
 
 node *
 WLSfundef (node *arg_node, node *arg_info)
@@ -66,8 +74,6 @@ WLSfundef (node *arg_node, node *arg_info)
         /* traverse args of fundef */
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
     }
-
-    /* arg_node = SSATransformOneFundef(arg_node); */
 
     DBUG_RETURN (arg_node);
 }
@@ -141,6 +147,7 @@ WLSNwith (node *arg_node, node *arg_info)
 
     INFO_WLS_POSSIBLE (arg_info) = TRUE;
     INFO_WLS_PHASE (arg_info) = wls_probe;
+    INFO_WLS_WITHOP (arg_info) = NWITH_WITHOP (arg_node);
 
     if (NWITH_PART (arg_node) != NULL) {
         NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
@@ -167,6 +174,7 @@ WLSNwith (node *arg_node, node *arg_info)
         /* Now we can start the scalarization */
 
         INFO_WLS_PHASE (arg_info) = wls_transform;
+        INFO_WLS_WITHVEC (arg_info) = NULL;
 
         /* The new shape is the concatenation of both old shapes */
 
@@ -181,7 +189,6 @@ WLSNwith (node *arg_node, node *arg_info)
         }
 
         /* correct the Ncode pointers */
-
         INFO_WLS_PHASE (arg_info) = wls_codecorrect;
 
         NWITH_CODE (arg_node) = NPART_CODE (NWITH_PART (arg_node));
@@ -284,29 +291,33 @@ joinWithids (node *outerwithid, node *innerwithid, node *arg_info)
 
     DBUG_ENTER ("joinWithids");
 
-    new_name = TmpVar ();
+    if (INFO_WLS_WITHVEC (arg_info) == NULL) {
+        new_name = TmpVar ();
 
-    newshpseg = MakeShpseg (NULL);
+        newshpseg = MakeShpseg (NULL);
 
-    SHPSEG_SHAPE (newshpseg, 0) = IDS_SHAPE (NWITHID_VEC (outerwithid), 0)
-                                  + IDS_SHAPE (NWITHID_VEC (innerwithid), 0);
+        SHPSEG_SHAPE (newshpseg, 0) = IDS_SHAPE (NWITHID_VEC (outerwithid), 0)
+                                      + IDS_SHAPE (NWITHID_VEC (innerwithid), 0);
 
-    newtype = MakeTypes (T_int, 1, newshpseg, NULL, NULL);
+        newtype = MakeTypes (T_int, 1, newshpseg, NULL, NULL);
 
-    vardec = MakeVardec (new_name, newtype, NULL);
+        vardec = MakeVardec (new_name, newtype, NULL);
 
-    vec = MakeIds (StringCopy (new_name), NULL, ST_used);
+        vec = MakeIds (StringCopy (new_name), NULL, ST_used);
 
-    FUNDEF_VARDEC (INFO_WLS_FUNDEF (arg_info))
-      = AppendVardec (FUNDEF_VARDEC (INFO_WLS_FUNDEF (arg_info)), vardec);
+        FUNDEF_VARDEC (INFO_WLS_FUNDEF (arg_info))
+          = AppendVardec (FUNDEF_VARDEC (INFO_WLS_FUNDEF (arg_info)), vardec);
 
-    IDS_VARDEC (vec) = vardec;
-    IDS_AVIS (vec) = VARDEC_AVIS (vardec);
+        IDS_VARDEC (vec) = vardec;
+        IDS_AVIS (vec) = VARDEC_AVIS (vardec);
+
+        INFO_WLS_WITHVEC (arg_info) = vec;
+    }
 
     scalars = AppendIds (DupAllIds (NWITHID_IDS (outerwithid)),
                          DupAllIds (NWITHID_IDS (innerwithid)));
 
-    newwithid = MakeNWithid (vec, scalars);
+    newwithid = MakeNWithid (DupAllIds (INFO_WLS_WITHVEC (arg_info)), scalars);
 
     DBUG_RETURN (newwithid);
 }
@@ -370,7 +381,7 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
         ASSIGN_NEXT (ASSIGN_NEXT (tmp_node)) = BLOCK_INSTR (NCODE_CBLOCK (newcode));
 
     BLOCK_INSTR (NCODE_CBLOCK (newcode)) = tmp_node;
-
+    NCODE_NEXT (newcode) = NCODE_NEXT (outercode);
     DBUG_RETURN (newcode);
 }
 
@@ -388,10 +399,14 @@ joinPart (node *outerpart, node *arg_info)
     node *withid;
     node *code;
 
-    DBUG_ENTER ("joinGenerators");
+    DBUG_ENTER ("joinPart");
 
-    innerpart = NWITH_PART (LET_EXPR (
-      ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (NCODE_CEXPR (NPART_CODE (outerpart)))))));
+    /*
+      innerpart = NWITH_PART(LET_EXPR(ASSIGN_INSTR(
+                  AVIS_SSAASSIGN(ID_AVIS(NCODE_CEXPR(NPART_CODE(outerpart)))))));
+    */
+    innerpart = NWITH_PART (
+      LET_EXPR (ASSIGN_INSTR (BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (outerpart))))));
 
     /* Make a new generator */
     generator = joinGenerators (NPART_GEN (outerpart), NPART_GEN (innerpart), arg_info);
@@ -408,6 +423,7 @@ joinPart (node *outerpart, node *arg_info)
 
     /* Rebuild the chain */
     NPART_NEXT (newpart) = NPART_NEXT (outerpart);
+    NCODE_NEXT (NPART_CODE (newpart)) = NCODE_NEXT (NPART_CODE (outerpart));
 
     /* Present the Results */
     wls_expr++;
@@ -432,6 +448,7 @@ distributePart (node *arg_node, node *arg_info)
     else {
         tmpnode = DupTree (arg_node);
         NPART_CODE (tmpnode) = DupTree (NPART_CODE (arg_node));
+        NCODE_USED (NPART_CODE (tmpnode))++;
 
         NCODE_NEXT (NPART_CODE (arg_node)) = NPART_CODE (tmpnode);
         NPART_NEXT (arg_node) = tmpnode;
@@ -452,6 +469,82 @@ distributePart (node *arg_node, node *arg_info)
     DBUG_RETURN (res);
 }
 
+int
+isAssignInsideBlock (node *arg_node, node *instr)
+{
+    int res = TRUE;
+
+    DBUG_ENTER ("isAssignInsideBlock");
+
+    if (NODE_TYPE (instr) == N_empty)
+        res = FALSE;
+    else if (arg_node == instr)
+        res = TRUE;
+    else if (ASSIGN_NEXT (instr) == NULL)
+        res = FALSE;
+    else
+        res = isAssignInsideBlock (arg_node, ASSIGN_NEXT (instr));
+
+    DBUG_RETURN (res);
+}
+
+int
+checkExprsDependencies (node *outer, node *exprs)
+{
+    int res = TRUE;
+
+    DBUG_ENTER ("checkExprsDependencies");
+
+    if (exprs == NULL)
+        res = TRUE;
+    else if (NODE_TYPE (exprs) != N_array)
+        res = FALSE; /* INTERESSANT!!! */
+    else
+        res = checkExprsDependencies (outer, EXPRS_NEXT (exprs));
+
+    DBUG_RETURN (res);
+}
+
+int
+checkGeneratorDependencies (node *outer, node *inner)
+{
+    int res;
+    node *innergen;
+
+    DBUG_ENTER ("checkGeneratorDependencies");
+
+    if (inner == NULL)
+        res = TRUE;
+    else {
+        innergen = NPART_GEN (inner);
+
+        res = TRUE;
+
+        if ((res) && (!(checkExprsDependencies (outer, NGEN_BOUND1 (innergen)))))
+            res = FALSE;
+
+        if ((res) && (!(checkExprsDependencies (outer, NGEN_BOUND2 (innergen)))))
+            res = FALSE;
+        if ((res) && (NGEN_STEP (innergen) != NULL))
+            if (!(checkExprsDependencies (outer, NGEN_STEP (innergen))))
+                res = FALSE;
+        if ((res) && (NGEN_WIDTH (innergen) != NULL))
+            if (!(checkExprsDependencies (outer, NGEN_WIDTH (innergen))))
+                res = FALSE;
+
+        if (res)
+            res = checkGeneratorDependencies (outer, NPART_NEXT (inner));
+    }
+    DBUG_RETURN (res);
+}
+
+int
+compatWLTypes (node *outerWO, node *innerWO)
+{
+    return ((NWITHOP_TYPE (outerWO) == WO_genarray)
+            && (NWITHOP_TYPE (innerWO) == WO_genarray));
+}
+
 node *
 WLSNpart (node *arg_node, node *arg_info)
 {
@@ -469,7 +562,7 @@ WLSNpart (node *arg_node, node *arg_info)
             NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
         }
 
-        /* Handelt es sich um die Schachtelung? */
+        /* Handelt es sich um eine korrekte Schachtelung? */
 
         INFO_WLS_POSSIBLE (arg_info)
           = (INFO_WLS_POSSIBLE (arg_info) &&
@@ -478,20 +571,38 @@ WLSNpart (node *arg_node, node *arg_info)
                 AVIS_VARDECORARG (ID_AVIS (NCODE_CEXPR (NPART_CODE (arg_node))))))
               > 0)
              &&
-             /* Ist der Ausdruck ein With-Loop? */
+
+             /* Ist der Ausdruck eine With-Loop? */
              (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (
                 AVIS_SSAASSIGN (ID_AVIS (NCODE_CEXPR (NPART_CODE (arg_node)))))))
-              == N_Nwith));
+              == N_Nwith)
+             &&
+             /* Ist der innere Withloop wirklich innen? */
+             (isAssignInsideBlock (AVIS_SSAASSIGN (
+                                     ID_AVIS (NCODE_CEXPR (NPART_CODE (arg_node)))),
+                                   BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (arg_node)))))
+             &&
 
-        /* Was noch zu überprüfen ist:
-           - ist die With-Loop überhaupt eine genarray-withloop?
-           - hängt der innere Generator wirklich nicht vom  äußeren ab?
-           - ist die innere With-loop wirklich innen?
+             /* Ist vor der inneren With-Loop wirklich kein Code mehr? */
+             /* Hier könnte evtl. noch aggressiv optimiert werden! */
+             (BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (arg_node)))
+              == AVIS_SSAASSIGN (ID_AVIS (NCODE_CEXPR (NPART_CODE (arg_node)))))
+             &&
 
-           - Ist vor der With-loop kein Code mehr? (konservativ / aggressiv )
-           - Lassen sich Arrays integrieren?
-           - Überall die gleiche Dimensionalität?
-        */
+             /* Hängt der innere Generator nicht vom äußeren Code ab? */
+             (checkGeneratorDependencies (arg_node,
+                                          NWITH_PART (LET_EXPR (
+                                            ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (
+                                              NCODE_CEXPR (NPART_CODE (arg_node)))))))))
+             &&
+
+             /* Haben alle inneren With-Loops die gleiche Dimensionalität? */
+             (TRUE) &&
+
+             /* Haben beide Withloops einen kompatiblen Typ? */
+             (compatWLTypes (INFO_WLS_WITHOP (arg_info),
+                             NWITH_WITHOP (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (
+                               ID_AVIS (NCODE_CEXPR (NPART_CODE (arg_node))))))))));
 
         if (NPART_NEXT (arg_node) != NULL) {
             NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
@@ -525,6 +636,55 @@ WLSNpart (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   node *WithloopScalarization(node *fundef, node *modul)
+ *
+ * description:
+ *   starting point of WithloopScalarization
+ *   Starting fundef must not be a special fundef (do, while, cond) created by
+ *   lac2fun transformation. These "inline" functions will be traversed in
+ *   their order of usage. The traversal mode (on toplevel, in special
+ *   function) is annotated in the stacked INFO_SSADCR_DEPTH attribute.
+ *
+ *****************************************************************************/
+
+node *
+WithloopScalarization (node *fundef, node *modul)
+{
+    node *arg_info;
+    funtab *old_tab;
+
+    DBUG_ENTER ("WithloopScalarization");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "WithloopScalarization called for non-fundef node");
+
+    DBUG_PRINT ("OPT", ("starting WithloopScalarization (ssa) in function %s",
+                        FUNDEF_NAME (fundef)));
+
+    /* do not start traversal in special functions */
+    if (!(FUNDEF_IS_LACFUN (fundef))) {
+        arg_info = MakeInfo ();
+
+        old_tab = act_tab;
+        act_tab = wls_tab;
+
+        fundef = Trav (fundef, arg_info);
+
+        act_tab = old_tab;
+
+        arg_info = FreeTree (arg_info);
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+/*
+ * TO BE REMOVED
+ */
 
 node *
 WLSNwithid (node *arg_node, node *arg_info)
@@ -584,50 +744,4 @@ WLSNcode (node *arg_node, node *arg_info)
     }
 
     DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *WithloopScalarization(node *fundef, node *modul)
- *
- * description:
- *   starting point of WithloopScalarization
- *   Starting fundef must not be a special fundef (do, while, cond) created by
- *   lac2fun transformation. These "inline" functions will be traversed in
- *   their order of usage. The traversal mode (on toplevel, in special
- *   function) is annotated in the stacked INFO_SSADCR_DEPTH attribute.
- *
- *****************************************************************************/
-
-node *
-WithloopScalarization (node *fundef, node *modul)
-{
-    /* arg_info is not necessary at all */
-    node *arg_info;
-    funtab *old_tab;
-
-    DBUG_ENTER ("WithloopScalarization");
-
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "WithloopScalarization called for non-fundef node");
-
-    DBUG_PRINT ("OPT", ("starting WithloopScalarization (ssa) in function %s",
-                        FUNDEF_NAME (fundef)));
-
-    /* do not start traversal in special functions */
-    if (!(FUNDEF_IS_LACFUN (fundef))) {
-        arg_info = MakeInfo ();
-
-        old_tab = act_tab;
-        act_tab = wls_tab;
-
-        fundef = Trav (fundef, arg_info);
-
-        act_tab = old_tab;
-
-        arg_info = FreeTree (arg_info);
-    }
-
-    DBUG_RETURN (fundef);
 }
