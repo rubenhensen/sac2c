@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.43  1997/03/11 16:27:10  cg
+ * Revision 1.44  1997/03/19 13:48:59  cg
+ * Now, all imported modules are stored in the global dependency tree for
+ * later use (checking libraries, link list)
+ *
+ * Revision 1.43  1997/03/11  16:27:10  cg
  * new function PrintDependencies corresponding to compiler option -M
  * old compiler option -deps (updating makefile) no longer supported
  * absolute pathnams used for all dependencies
@@ -191,12 +195,10 @@
 
 #include "filemgr.h"
 #include "import.h"
-#include "cccall.h"
 
 extern void DoImport (node *modul, node *implist, char *mastermod);
 
 static mod *mod_tab = NULL;
-static strings *dependencies = NULL;
 
 /*
  *
@@ -234,55 +236,6 @@ Import (node *arg_node)
     act_tab = imp_tab;
 
     DBUG_RETURN (Trav (arg_node, NULL));
-}
-
-/*
- *
- *  functionname  : PrintDependencies
- *  arguments     : N_modul node of syntax tree
- *  description   : For module/class implementations, the own declaration
- *                  file is looked for and added to the list of dependencies.
- *                  A list of dependencies is printed in Makefile-style
- *                  to stdout.
- *  global vars   : dependencies
- *  internal funs : FindFile
- *  external funs : strcpy, strcat, StringCopy, MakeStrings
- *  macros        :
- *
- *  remarks       : This function corresponds to the -M compiler option.
- *
- */
-
-void
-PrintDependencies (node *arg_node)
-{
-    strings *deps;
-    static char buffer[MAX_FILE_NAME];
-    char *pathname;
-
-    DBUG_ENTER ("PrintDependencies");
-
-    if (MODUL_FILETYPE (arg_node) != F_prog) {
-        strcpy (buffer, MODUL_NAME (arg_node));
-        strcat (buffer, ".dec");
-
-        pathname = FindFile (MODDEC_PATH, buffer);
-        if (pathname != NULL) {
-            dependencies
-              = MakeStrings (StringCopy (AbsolutePathname (pathname)), dependencies);
-        }
-    }
-
-    deps = dependencies;
-
-    printf ("%s: ", outfilename);
-    while (deps != NULL) {
-        printf ("  \\\n  %s", STRINGS_STRING (deps));
-        deps = STRINGS_NEXT (deps);
-    }
-    printf ("\n");
-
-    DBUG_VOID_RETURN;
 }
 
 /*
@@ -1152,8 +1105,7 @@ GenMod (char *name, int checkdec)
     int i;
     mod *tmp;
     static char buffer[MAX_FILE_NAME];
-    static char libinfo[MAX_PATH_LEN];
-    char *pathname;
+    char *pathname, *abspathname;
 
     DBUG_ENTER ("GenMod");
 
@@ -1177,14 +1129,9 @@ GenMod (char *name, int checkdec)
     if (yyin == NULL) {
         SYSABORT (("Unable to open file \"%s\"", buffer));
     } else {
-        NOTE (("  Parsing file \"%s\" ...", pathname));
+        abspathname = AbsolutePathname (pathname);
 
-        if (!checkdec) {
-            sprintf (libinfo, "  %-15sfound : %s", name, AbsolutePathname (pathname));
-            imported_decs = MakeStrings (StringCopy (libinfo), imported_decs);
-            dependencies
-              = MakeStrings (StringCopy (AbsolutePathname (pathname)), dependencies);
-        }
+        NOTE (("  Parsing file \"%s\" ...", abspathname));
 
         filename = buffer;
 
@@ -1199,16 +1146,59 @@ GenMod (char *name, int checkdec)
                        "but module/class '%s`",
                        buffer, name, decl_tree->info.fun_name.id));
         }
+
+        if ((MODDEC_LINKWITH (decl_tree) != NULL) && (!MODDEC_ISEXTERNAL (decl_tree))) {
+            WARN (NODE_LINE (decl_tree),
+                  ("Pragma 'linkwith` has no effect on SAC module/class"));
+            MODDEC_LINKWITH (decl_tree) = FreeAllDeps (MODDEC_LINKWITH (decl_tree));
+        }
+
         /*
+        Restriction no longer needed due to new library format using tar
+        instead of ar.
+
         if (strlen(name)>13)
         {
           SYSERROR(("Module/class name '%s` too long (maximum: 13 characters)",
                     name));
         }
         */
-        tmp->prefix = decl_tree->info.fun_name.id_mod;
+
+        tmp->prefix = MODDEC_ISEXTERNAL (decl_tree) ? NULL : decl_tree->info.fun_name.id;
         tmp->name = decl_tree->info.fun_name.id;
         tmp->next = NULL;
+
+        if (!checkdec) {
+            if (MODDEC_LINKWITH (decl_tree) == NULL) {
+                dependencies
+                  = MakeDeps (StringCopy (name), StringCopy (abspathname), NULL,
+                              MODDEC_ISEXTERNAL (decl_tree) ? ST_external : ST_sac, NULL,
+                              dependencies);
+            } else {
+                dependencies
+                  = MakeDeps (StringCopy (name), StringCopy (abspathname), NULL,
+                              ST_external, MODDEC_LINKWITH (decl_tree), dependencies);
+                MODDEC_LINKWITH (decl_tree) = NULL;
+            }
+
+            /*
+             * If checkdec is set, GenMod() is called from checkdec.c in order
+             * to compare defined and declared items. Here, declarations are read
+             * which are imported by the module's own declaration. These are
+             * not necessarily required for linking.
+             *
+             * All imported modules/classes are put to the dependencies list
+             * which is stored in the global variable dependencies.
+             *
+             * For external modules and classes the contents of the optional pragma
+             * linkwith is added to the list of dependencies as a sub tree of the
+             * respective module or class.
+             *
+             * The list of dependencies is used in readsib for searching for
+             * required libraries, updated and then again used in cccall for
+             * generating a link list.
+             */
+        }
 
         for (i = 0; i < 4; i++)
             tmp->syms[i] = NULL;
@@ -1438,42 +1428,6 @@ FindSymbolInModul (char *modname, char *name, int symbkind, mods *found, int rec
 
     DBUG_RETURN (found);
 }
-
-/*
- *
- *  functionname  : ModulePrefix
- *  arguments     : 1) name of module
- *  description   : returns the prefix of the given module
- *  global vars   : ---
- *  internal funs : FindModul
- *  external funs : ---
- *  macros        : ---
- *
- *  remarks       :
- *
- */
-
-#if 0
-char *ModulePrefix(char *name)
-{
-  mod *module;
-  char *prefix;
-  
-  DBUG_ENTER("ModulePrefix");
-  
-  module=FindModul(name);
-  if (module==NULL)
-  {
-    prefix=NULL;
-  }
-  else
-  {
-    prefix=module->prefix;
-  }
-  
-  DBUG_RETURN(prefix);
-}
-#endif
 
 /*
  *
@@ -1963,9 +1917,9 @@ ImportOwnDeclaration (char *name, file_type modtype)
 {
     mod *modptr, *old_mod_tab;
     int i;
-    char buffer[MAX_FILE_NAME], libinfo[MAX_FILE_NAME];
+    char buffer[MAX_FILE_NAME];
     node *decl = NULL, *symbol;
-    char *pathname;
+    char *pathname, *abspathname;
 
     DBUG_ENTER ("ImportOwnDeclaration");
 
@@ -1985,11 +1939,10 @@ ImportOwnDeclaration (char *name, file_type modtype)
     if (yyin == NULL) {
         FREE (mod_tab);
     } else {
-        NOTE (("Loading own declaration !"));
-        NOTE (("  Parsing file \"%s\" ...", pathname));
+        abspathname = AbsolutePathname (pathname);
 
-        sprintf (libinfo, "  %-15sfound : %s", name, AbsolutePathname (pathname));
-        imported_decs = MakeStrings (StringCopy (libinfo), imported_decs);
+        NOTE (("Loading own declaration !"));
+        NOTE (("  Parsing file \"%s\" ...", abspathname));
 
         linenum = 1;
         start_token = PARSE_DEC;
@@ -2019,7 +1972,8 @@ ImportOwnDeclaration (char *name, file_type modtype)
         decl = decl_tree;
 
         mod_tab->moddec = decl_tree;
-        mod_tab->prefix = decl_tree->info.fun_name.id_mod;
+        mod_tab->prefix
+          = MODDEC_ISEXTERNAL (decl_tree) ? NULL : decl_tree->info.fun_name.id;
         mod_tab->next = NULL;
 
         for (i = 0; i < 4; i++) {
