@@ -1,302 +1,10 @@
 /*
- *
  * $Log$
+ * Revision 3.100  2004/11/25 15:15:07  skt
+ * some code brushing - lookfor HERE to go on
+ *
  * Revision 3.99  2004/10/27 14:13:57  khf
  * EmptyWl2Expr: added definition of iv in front of assigns
- *
- * Revision 3.98  2004/10/26 16:51:23  khf
- * stacked arg_info before traversal in Ncode
- * EmptyParts2StridesOrExpr corrected
- * ExtractOtherOperators reimplemented
- *
- * Revision 3.97  2004/10/04 17:17:51  sah
- * updated wltransform to use the new L_WLNODE and
- * WLNODE macros
- *
- * Revision 3.96  2004/09/28 12:49:45  khf
- * fixed bug #63
- *
- * Revision 3.95  2004/09/22 19:15:24  khf
- * corrected setting of fold_float in WLTRAwith
- *
- * Revision 3.94  2004/09/08 23:55:42  dkrHH
- * InferWlIterShape(): replaced ASSERT by WARN since this ion
- *
- * Revision 3.93  2004/08/13 14:20:32  khf
- * ConvertWith(): added setting of NWITHOP_OFFSET_NEEDED,
- *                modified setting of NWITH2_OFFSET_NEEDED
- *
- * Revision 3.92  2004/07/18 15:11:39  sah
- * initialised some pointers to NULL
- * to please the compiler
- *
- * Revision 3.91  2004/07/17 17:07:16  sah
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 3.90  2004/07/15 10:25:49  khf
- * bug #38 already fixed by dkrHH
- * some code brushing done.
- * WO_unknown WithOp added.
- *
- * Revision 3.89  2004/07/04 03:46:11  dkrHH
- * NOTE-output about naive compilation added
- *
- * Revision 3.88  2004/07/04 02:44:42  dkrHH
- * use/definition of GET_SHAPE_IDX modified (iter_shp may be NULL!)
- * function GetWlIterShape streamlined
- *
- * Revision 3.87  2004/07/03 17:36:28  sah
- * temporary fix for bug #38
- * variable current_dim now also defined
- * in DBUG_OFF mode
- *
- * Revision 3.86  2004/06/30 12:33:51  khf
- * support for multioperator withloops added
- *
- * Revision 3.85  2004/03/26 13:45:26  khf
- * added support of multigenerator withloops with variable
- * strides or grids, but they get compiled natively
- *
- * Revision 3.84  2003/12/11 21:38:39  dkrHH
- * bug in EmptyParts2StridesOrExpr() fixed: 'iter_shp' my be NULL!
- *
- * Revision 3.83  2003/11/12 00:02:12  dkrHH
- * genarray-WLs with empty parts and empty result are transformed
- * correctly now (however, the generated code is not flattened yet :-((
- *
- * Revision 3.82  2003/11/11 19:27:27  dkr
- * error message for missing default expression modified
- *
- * Revision 3.81  2003/11/11 18:19:33  dkr
- * some code brushing done.
- * CheckWith() added, NWITH_DEFAULT used.
- *
- * Revision 3.80  2003/11/10 20:50:28  dkrHH
- * some error messages modified
- *
- * Revision 3.79  2003/06/23 15:11:36  dkr
- * comment modified
- *
- * Revision 3.78  2003/06/17 15:57:54  dkr
- * comment in header extended
- *
- * Revision 3.77  2003/04/20 20:28:01  dkr
- * EmptyWl2Expr() added [not completed yet]
- *
- * Revision 3.76  2003/04/10 16:04:53  dkr
- * DBUG_ASSERT for with-loops with empty shape added
- *
- * Revision 3.75  2003/04/10 13:27:22  dkr
- * GetWlIterShape() streamlined and corrected
- *
- * Revision 3.74  2003/03/13 19:11:54  dkr
- * GetShapeDim() used instead of GetShapeClassFromTypes()
- *
- * Revision 3.73  2003/03/13 14:42:18  dkr
- * global variable 'line' removed -- 'linenum' used instead
- *
- * Revision 3.72  2003/03/13 00:13:35  dkr
- * comment in GetWlIterShape() added
- *
- * Revision 3.71  2003/03/12 23:34:07  dkr
- * SSA transform removed...
- *
- * Revision 3.70  2003/03/12 17:28:47  dkr
- * SSA form used if flag -ssa is set
- *
- * Revision 3.69  2003/03/05 15:33:09  dkr
- * bug in GetWlIterShape() fixed:
- * works correcly for nested type definitions (user defined types...) now
- *
- * Revision 3.68  2002/10/30 14:12:58  dkr
- * -enforceIEEE for WLs implemented
- *
- * Revision 3.67  2002/10/29 19:06:49  dkr
- * message of DBUG_PRINT modified
- *
- * Revision 3.66  2002/10/11 16:27:41  dkr
- * bug in Parts2Strides fixed
- *
- * Revision 3.65  2002/10/08 15:43:16  dkr
- * EmptyParts2StridesOrExpr(): default brance in switch contruct added in
- * order to please the cc.
- *
- * Revision 3.64  2002/10/07 23:35:29  dkr
- * some bugs fixed
- *
- * Revision 3.62  2002/08/15 11:58:23  dkr
- * EmptyParts2Expr(): no cc warning anymore
- *
- * Revision 3.61  2002/08/09 12:44:46  dkr
- * minor changes done
- *
- * Revision 3.60  2002/08/09 12:38:36  dkr
- * - more code brushing done
- * - INFO_WLTRANS_LHS_TYPE move from tree_basic.h to wltransform.c
- *
- * Revision 3.59  2002/08/08 12:34:58  dkr
- * code brushed, some DBUG_ASSERTs added for AKD, AUD
- *
- * Revision 3.58  2002/08/07 13:06:34  dkr
- * DBUG_ASSERT added
- *
- * Revision 3.57  2002/07/15 15:04:02  dkr
- * grrrr... modification of last revision undone
- *
- * Revision 3.54  2001/11/22 08:41:17  sbs
- * CheckWithids is only compiled in the dbug version since
- * it is used from DBUG_ASSERT only!
- *
- * Revision 3.53  2001/11/14 16:02:00  dkr
- * fixed a bug in OptWL()
- *
- * Revision 3.52  2001/06/28 09:30:42  sbs
- * catenation in WP macro def eliminated
- *
- * Revision 3.50  2001/05/17 12:03:24  dkr
- * FREE eliminated
- *
- * Revision 3.49  2001/05/03 17:31:44  dkr
- * MAXHOMDIM replaced by HOMSV
- *
- * Revision 3.48  2001/04/26 18:17:43  dkr
- * fixed a bug in WLTRAlet: LET_IDS may be NULL ...
- *
- * Revision 3.47  2001/04/10 13:17:22  dkr
- * file description modified
- *
- * Revision 3.46  2001/04/03 18:00:06  dkr
- * signature of IsHomSV modified
- *
- * Revision 3.45  2001/04/03 17:52:21  dkr
- * calculation of WLSEG_SV corrected (BV is also taken into account now)
- *
- * Revision 3.44  2001/04/03 10:47:08  dkr
- * minor changes in ComputeIndexMinMax() done
- *
- * Revision 3.42  2001/04/02 17:06:42  dkr
- * illegal wlcomp-pragma functions produce a warning now instead of an
- * error
- *
- * Revision 3.41  2001/04/02 16:11:06  dkr
- * Support for new with-loop bounds format added:
- * besides '[1,2,3]' and 'A', now also '[a,b,c]' works :-)
- *
- * Revision 3.40  2001/04/02 11:43:32  dkr
- * include of wl_bounds.h added
- *
- * Revision 3.39  2001/03/29 01:34:25  dkr
- * WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX are now a node vector :-)
- *
- * Revision 3.38  2001/03/22 19:19:02  dkr
- * include of tree.h eliminated
- *
- * Revision 3.37  2001/03/20 15:32:20  ben
- * prefix WLCOMP_ for wlcomp-functions added
- *
- * Revision 3.36  2001/03/20 15:26:11  dkr
- * WLSEG_HOMSV removed (WLSEG_SV used instead)
- *
- * Revision 3.35  2001/03/05 17:01:45  dkr
- * message text of DBUG_ASSERT about CheckWithids() modified
- *
- * Revision 3.34  2001/03/05 16:42:27  dkr
- * no macros NWITH???_IS_FOLD used
- *
- * Revision 3.33  2001/03/05 15:00:00  dkr
- * NCODE_NO no longer used here (but in print.c only)
- *
- * Revision 3.32  2001/02/22 10:47:18  sbs
- * compiler warning in GenerateCompleteDomain eliminated by
- * initializing act_compl_grid to NULL.
- *
- * Revision 3.31  2001/02/12 17:54:35  dkr
- * fixed a bug in GenerateCompleteDomain()
- *
- * Revision 3.30  2001/02/09 10:51:21  dkr
- * fixed a bug in InferFitted
- *
- * Revision 3.29  2001/02/08 16:30:13  dkr
- * warning about uninitialized variable eliminated
- *
- * Revision 3.28  2001/02/07 20:16:07  dkr
- * InsertNoopNodes(): NOOP optimization added
- *
- * Revision 3.27  2001/02/06 18:21:39  dkr
- * fixed a bug in Parts2Strides()
- *
- * Revision 3.26  2001/02/06 01:48:34  dkr
- * NOOP nodes added
- *
- * Revision 3.22  2001/01/29 19:21:21  dkr
- * fixed a bug in FitWL
- *
- * Revision 3.21  2001/01/29 18:34:51  dkr
- * some superfluous attributes of N_WLsegVar removed
- *
- * Revision 3.20  2001/01/25 14:35:47  dkr
- * InferSchedulingParams() renamed into InferSegsSchedulingParams().
- * InferSegParams() renamed into InferSegsParams().
- * signature of NormWL() modified.
- * NormWL() can handle also N_WLxblock-nodes now.
- *
- * Revision 3.19  2001/01/25 12:07:08  dkr
- * ResetBV() added
- *
- * Revision 3.18  2001/01/25 00:40:31  dkr
- * fixed a bug in WLTRAwith:
- * split, block, merge, opt, fit, norm are skipped for var. segments now
- *
- * Revision 3.17  2001/01/24 23:36:22  dkr
- * signature of MakeWLgridVar, MakeWLgrid, MakeWLseg, MakeWLsegVar
- * modified.
- * GenerateCompleteDomain() brushed.
- * WLGRIDX_FITTED used.
- *
- * Revision 3.16  2001/01/22 13:47:06  dkr
- * DBUG string WLprec renamed into WLtrans
- *
- * Revision 3.15  2001/01/19 11:57:40  dkr
- * usage of NodeOrInt_GetNameOrVal() modified
- *
- * Revision 3.12  2001/01/10 18:44:27  dkr
- * function ComputeIndexMinMax modified
- *
- * Revision 3.11  2001/01/10 11:44:18  dkr
- * WLBLOCKX_... macros used
- *
- * Revision 3.10  2001/01/09 20:00:10  dkr
- * code brushed
- * support for naive compilation extended
- * support for AKDs added (not finished yet)
- *
- * Revision 3.9  2001/01/09 17:28:36  dkr
- * N_WLstriVar renamed into N_WLstrideVar
- *
- * Revision 3.8  2001/01/08 16:11:57  dkr
- * support for naive compilation of with-loops added (not finished yet)
- *
- * Revision 3.7  2001/01/08 13:40:34  dkr
- * functions ExtractAplPragma... moved from wltransform.c to
- * wlpragma_funs.c
- *
- * Revision 3.6  2000/12/12 13:08:37  dkr
- * fixed in bug in WLTRAwith:
- * NWITH_OUT_MASK no longer accidentially removed
- *
- * Revision 3.5  2000/12/12 11:43:45  dkr
- * NWITH2_IN renamed into NWITH2_IN_MASK
- * NWITH2_INOUT removed
- *
- * Revision 3.2  2000/11/27 21:07:35  cg
- * APL entry of wlcomp pragma is extracted from wlcomp chain and
- * added to new Nwith2 node for further processing in compile.c.
- * Basic consistency checks and some transformations are applied
- * to parameters.
- *
- * Revision 3.1  2000/11/20 18:01:31  sacbase
- * new release made
  *
  * [...]
  *
@@ -309,20 +17,20 @@
  * description:
  *
  * This module implements the transformation of the with-loops from the
- * frontend representation (N_Nwith) into the backend representation
- * (N_Nwith or N_Nwith2).
+ * frontend representation (N_with) into the backend representation
+ * (N_with or N_with2).
  *
  * If the index vector of a with-loop is AKS (array of known shape), the
- * N_Nwith node is transformed into a N_Nwith2 node.
+ * N_with node is transformed into a N_with2 node.
  * If the index vector is AKD or AUD (array of unknown shape), the with-loop
- * can not be transformed into a N_Nwith2 node, and the backend must create
- * totally different C code. Hence, the N_Nwith node is left untouched.
+ * can not be transformed into a N_with2 node, and the backend must create
+ * totally different C code. Hence, the N_with node is left untouched.
  *
- * ==> After this phase the AST constains N_Nwith as well as N_Nwith2 nodes <==
+ * ==> After this phase the AST constains N_with as well as N_with2 nodes <==
  *
  * *** CAUTION ***
  * For a successful transformation the AST has to meet some requirements:
- *   - For all N_Ngenerator nodes of a with-loop is hold:
+ *   - For all N_generator nodes of a with-loop is hold:
  *       - OP1 equals <= and OP2 equals <.
  *       - BOUND1, BOUND2, STEP, WIDTH are not NULL.
  *       - BOUND1, BOUND2, STEP, WIDTH are N_id nodes, N_array nodes containing
@@ -333,9 +41,6 @@
  *
  ******************************************************************************/
 
-#define NEW_INFO
-
-#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
@@ -364,11 +69,11 @@ typedef struct EXTRACTOPTS {
     node *withop;
     nodelist *ncodes_cexprs;
     types *res_types;
-    ids *lhs_ids;
+    node *lhs_ids;
     node *withop_ext;
     node *cexprs_ext;
     types *res_types_ext;
-    ids *ids_ext;
+    node *ids_ext;
 } extractopts;
 
 /*
@@ -400,7 +105,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_WL_LHS_TYPE (result) = NULL;
     INFO_WL_PREASSIGNS (result) = NULL;
@@ -414,7 +119,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -429,7 +134,7 @@ MakeExtractOpts ()
 
     DBUG_ENTER ("MakeExtractOpts");
 
-    result = Malloc (sizeof (extractopts));
+    result = ILIBmalloc (sizeof (extractopts));
 
     EXTRACTOPTS_WITHOP (result) = NULL;
     EXTRACTOPTS_NCODES_CEXPRS (result) = NULL;
@@ -451,10 +156,10 @@ InitExtractOpts (extractopts *arg_extractopts, node *wl, info *arg_info)
 
     DBUG_ENTER ("InitExtractOpts");
 
-    EXTRACTOPTS_WITHOP (arg_extractopts) = NWITH2_WITHOP (wl);
+    EXTRACTOPTS_WITHOP (arg_extractopts) = WITH2_WITHOP (wl);
 
     /* Store pointer to cexprs of different Ncodes for easier removal */
-    ncodes = NWITH2_CODE (wl);
+    ncodes = WITH2_CODE (wl);
     while (ncodes != NULL) {
         nl_cexprs = NodeListAppend (nl_cexprs, NCODE_CEXPRS (ncodes), NULL);
         ncodes = NCODE_NEXT (ncodes);
@@ -464,12 +169,14 @@ InitExtractOpts (extractopts *arg_extractopts, node *wl, info *arg_info)
     EXTRACTOPTS_RES_TYPES (arg_extractopts) = INFO_WL_LHS_TYPE (arg_info);
     EXTRACTOPTS_LHS_IDS (arg_extractopts) = ASSIGN_LHS (INFO_WL_ASSIGN (arg_info));
 
-    EXTRACTOPTS_WITHOP_EXT (arg_extractopts) = DupTree (NWITH2_WITHOP (wl));
+    EXTRACTOPTS_WITHOP_EXT (arg_extractopts) = DUPdoDupTree (WITH2_WITHOP (wl));
     /* a cexprs of one NCODE is sufficient */
-    EXTRACTOPTS_CEXPRS_EXT (arg_extractopts) = DupTree (NCODE_CEXPRS (NWITH2_CODE (wl)));
-    EXTRACTOPTS_RES_TYPES (arg_extractopts) = DupAllTypes (INFO_WL_LHS_TYPE (arg_info));
+    EXTRACTOPTS_CEXPRS_EXT (arg_extractopts)
+      = DUPdoDupTree (NCODE_CEXPRS (WITH2_CODE (wl)));
+    EXTRACTOPTS_RES_TYPES (arg_extractopts)
+      = DUPdupAllTypes (INFO_WL_LHS_TYPE (arg_info));
     EXTRACTOPTS_LHS_IDS (arg_extractopts)
-      = DupAllIds (ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)));
+      = DUPdupAllIds (ASSIGN_LHS (INFO_WL_ASSIGN (arg_info)));
 
     DBUG_RETURN (arg_extractopts);
 }
@@ -484,7 +191,7 @@ ExtractOptsStep (extractopts *extractopts_next, extractopts *arg_extractopts)
     EXTRACTOPTS_WITHOP (extractopts_next)
       = NWITHOP_NEXT (EXTRACTOPTS_WITHOP (arg_extractopts));
 
-    nl_tmp = DupNodelist (EXTRACTOPTS_NCODES_CEXPRS (arg_extractopts));
+    nl_tmp = DUPdupNodelist (EXTRACTOPTS_NCODES_CEXPRS (arg_extractopts));
 
     while (NODELIST_NODE (nl_tmp) != NULL) {
         NODELIST_NODE (nl_tmp) = EXPRS_NEXT (NODELIST_NODE (nl_tmp));
@@ -516,13 +223,13 @@ ExtractOptsIsGenarray (extractopts *arg_extractopts)
     DBUG_ENTER ("ExtractOptsIsGenarray");
 
     EXTRACTOPTS_WITHOP_EXT (arg_extractopts)
-      = FreeNode (EXTRACTOPTS_WITHOP_EXT (arg_extractopts));
+      = FREEdoFreeNode (EXTRACTOPTS_WITHOP_EXT (arg_extractopts));
     EXTRACTOPTS_CEXPRS_EXT (arg_extractopts)
-      = FreeNode (EXTRACTOPTS_CEXPRS_EXT (arg_extractopts));
+      = FREEdoFreeNode (EXTRACTOPTS_CEXPRS_EXT (arg_extractopts));
     EXTRACTOPTS_RES_TYPES_EXT (arg_extractopts)
-      = FreeOneTypes (EXTRACTOPTS_RES_TYPES_EXT (arg_extractopts));
+      = FREEfreeOneTypes (EXTRACTOPTS_RES_TYPES_EXT (arg_extractopts));
     EXTRACTOPTS_IDS_EXT (arg_extractopts)
-      = FreeOneIds (EXTRACTOPTS_IDS_EXT (arg_extractopts));
+      = FREEdoFreeNode (EXTRACTOPTS_IDS_EXT (arg_extractopts));
 
     DBUG_RETURN (arg_extractopts);
 }
@@ -534,19 +241,19 @@ ExtractOptsIsntGenarray (extractopts *arg_extractopts)
     DBUG_ENTER ("ExtractOptsIsntGenarray");
 
     EXTRACTOPTS_WITHOP (arg_extractopts)
-      = FreeNode (EXTRACTOPTS_WITHOP (arg_extractopts));
+      = FREEdoFreeNode (EXTRACTOPTS_WITHOP (arg_extractopts));
 
     nl_tmp = EXTRACTOPTS_NCODES_CEXPRS (arg_extractopts);
 
     while (NODELIST_NODE (nl_tmp) != NULL) {
-        NODELIST_NODE (nl_tmp) = FreeNode (NODELIST_NODE (nl_tmp));
+        NODELIST_NODE (nl_tmp) = FREEdoFreeNode (NODELIST_NODE (nl_tmp));
         nl_tmp = NODELIST_NEXT (nl_tmp);
     }
 
     EXTRACTOPTS_RES_TYPES (arg_extractopts)
-      = FreeOneTypes (EXTRACTOPTS_RES_TYPES (arg_extractopts));
+      = FREEfreeOneTypes (EXTRACTOPTS_RES_TYPES (arg_extractopts));
     EXTRACTOPTS_LHS_IDS (arg_extractopts)
-      = FreeOneIds (EXTRACTOPTS_LHS_IDS (arg_extractopts));
+      = FREEdoFreeNode (EXTRACTOPTS_LHS_IDS (arg_extractopts));
 
     DBUG_RETURN (arg_extractopts);
 }
@@ -558,13 +265,14 @@ FreeExtractOpts (extractopts *extractopts)
 
     if (EXTRACTOPTS_NCODES_CEXPRS (extractopts) != NULL)
         EXTRACTOPTS_NCODES_CEXPRS (extractopts)
-          = FreeNodelist (EXTRACTOPTS_NCODES_CEXPRS (extractopts));
+          = FREEfreeNodelist (EXTRACTOPTS_NCODES_CEXPRS (extractopts));
 
-    extractopts = Free (extractopts);
+    extractopts = ILIBfree (extractopts);
 
     DBUG_RETURN (extractopts);
 }
 
+/* HERE */
 /*****************************************************************************
 
 
