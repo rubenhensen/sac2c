@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2003/03/25 14:41:09  sah
+ * added ld link test for system library
+ * look up.
+ *
  * Revision 3.4  2002/10/18 15:51:35  dkr
  * EXTERN_MOD_NAME used
  *
@@ -290,6 +294,11 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
                 if ((strcmp (buffer + n - 2, ".a") == 0)
                     || (strcmp (buffer + n - 3, ".so") == 0)) {
                     pathname = FindFile (SYSTEMLIB_PATH, buffer);
+                    if (pathname == NULL) {
+                        if (CheckSystemLibrary (buffer)) {
+                            pathname = "";
+                        }
+                    }
                 } else {
                     strcat (buffer, ".so");
                     pathname = FindFile (SYSTEMLIB_PATH, buffer);
@@ -297,6 +306,12 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
                         buffer[n] = 0;
                         strcat (buffer, ".a");
                         pathname = FindFile (SYSTEMLIB_PATH, buffer);
+                        if (pathname == NULL) {
+                            buffer[n] = 0;
+                            if (CheckSystemLibrary (buffer)) {
+                                pathname = "";
+                            }
+                        }
                     }
                 }
 
