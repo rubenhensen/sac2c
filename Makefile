@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.60  2002/10/08 22:09:17  dkr
+# SSAWLUnroll.o added
+#
 # Revision 3.59  2002/09/09 14:19:26  dkr
 # icm2c_error.o added
 #
@@ -125,7 +128,8 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/AssociativeLaw.o \
           src/optimize/SSADeadCodeRemoval.o src/optimize/SSACSE.o \
           src/optimize/SSAConstantFolding.o src/optimize/SSALIR.o \
-          src/optimize/SSALUR.o src/optimize/rmcasts.o src/optimize/SSAInferLI.o
+          src/optimize/SSALUR.o src/optimize/SSAInferLI.o \
+          src/optimize/SSAWLUnroll.o src/optimize/rmcasts.o
 
 PROFILE= src/profile/annotate_fun_calls.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
