@@ -149,7 +149,7 @@ add_search_path $bin
 # doc=$ask_res
 
 # mv -f  doc.tar $doc/doc.tar
-# (cd $doc; tar xvf doc.tar; rm doc.tar)
+# (cd $doc; tar xvf doc.tar; rm -f doc.tar)
 # chmod -R u+w $doc
 
 
@@ -168,7 +168,7 @@ export SACBASE
 
 insert_component d runtime.tar $base/runtime r
 if [ -f $SACBASE/runtime/runtime.tar ] ; then
-  (cd $SACBASE/runtime; tar xvf runtime.tar; rm runtime.tar)
+  (cd $SACBASE/runtime; tar xvf runtime.tar; rm -f runtime.tar)
   chmod -R u+w $SACBASE/runtime
   mess "runtime.tar UNPACKED !!"
 else
@@ -177,13 +177,12 @@ fi
 
 insert_component d libsac.tar $base/runtime r
 if [ -f $SACBASE/runtime/libsac.tar ] ; then
-  (cd $SACBASE/runtime; tar xvf libsac.tar; rm libsac.tar)
+  (cd $SACBASE/runtime; tar xvf libsac.tar; rm -f libsac.tar)
   chmod -R u+w $SACBASE/runtime
   mess "libsac.tar UNPACKED !!"
 else
   warn "libsac.tar NOT UNPACKED !!"
 fi
-
 
 insert_component f sac2crc $base/runtime/sac2crc r
 
@@ -193,12 +192,15 @@ make=$ask_res
 
 insert_component d stdlib.tar $base/stdlib r
 if [ -f $SACBASE/stdlib/stdlib.tar ] ; then
-  (cd $SACBASE/stdlib; tar xvf stdlib.tar; $make untar TARGET=untar; rm stdlib.tar )
+  (cd $SACBASE/stdlib; tar xvf stdlib.tar; $make untar TARGET=untar; rm -f stdlib.tar )
   chmod -R u+w $SACBASE/stdlib
   mess "stdlib.tar UNPACKED !!"
+  rm -f $base/stdlib/Makefiles/Makefile.Config
 else
   warn "stdlib.tar NOT UNPACKED !!"
 fi
+
+insert_component f Makefile.Config $base/stdlib/Makefiles/Makefile.Config r
 
 if [ -f $SACBASE/stdlib/Makefile ] ; then
   ask 'Do you want to compile the standard library right now?' "y"
@@ -221,7 +223,7 @@ demo=$ask_res
 
 insert_component d demo.tar $demo/ n
 if [ -f $demo/demo.tar ] ; then
-  (cd $demo; tar xvf demo.tar; $make untar TARGET=untar TARFILENAME=demo.tar; rm demo.tar)
+  (cd $demo; tar xvf demo.tar; $make untar TARGET=untar TARFILENAME=demo.tar; rm -f demo.tar)
   chmod -R u+w $demo
   mess "demo.tar UNPACKED !!"
 else
