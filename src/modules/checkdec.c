@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/11/16 19:44:22  cg
+ * Revision 1.10  1996/01/02 16:02:04  cg
+ * handling of global vaariable outfile modified.
+ *
+ * Revision 1.9  1995/11/16  19:44:22  cg
  * Former call of function FreeImplist converted to new free.c standard
  *
  * Revision 1.8  1995/11/10  15:04:14  cg
@@ -47,6 +50,7 @@
 #include "my_debug.h"
 #include "traverse.h"
 #include "free.h"
+#include "globals.h"
 
 #include "import.h"
 #include "convert.h"
@@ -54,10 +58,6 @@
 #include "scnprs.h"
 #include "implicittypes.h"
 #include "print.h"
-
-extern FILE *outfile; /* set in main.c */
-
-static FILE *decfile;
 
 /*
  *
@@ -108,10 +108,10 @@ CheckTypes (types *decl, types *impl)
  *  arguments     : 1) type to be printed
  *                  2) name of module for which a default declaration
  *                     file is generated.
- *  description   : The given types are printed to 'decfile`, but all
+ *  description   : The given types are printed to 'outfile`, but all
  *                  module names which are identical to the given one are
  *                  omitted.
- *  global vars   : decfile
+ *  global vars   : outfile
  *  internal funs : ---
  *  external funs : Type2String
  *  macros        : DBUG, TREE
@@ -127,13 +127,13 @@ PrintDecTypes (types *type, char *modname)
 
     do {
         if (strcmp (MOD (TYPES_MOD (type)), modname) == 0) {
-            fprintf (decfile, "%s", Type2String (type, 3));
+            fprintf (outfile, "%s", Type2String (type, 3));
         } else {
-            fprintf (decfile, "%s", Type2String (type, 0));
+            fprintf (outfile, "%s", Type2String (type, 0));
         }
 
         if (TYPES_NEXT (type) != NULL) {
-            fprintf (decfile, ", ");
+            fprintf (outfile, ", ");
         }
 
         type = TYPES_NEXT (type);
@@ -166,14 +166,14 @@ PrintDecTypes (types *type, char *modname)
 node *
 CheckDec (node *syntax_tree)
 {
-    char store_filename[MAX_FILE_NAME];
+    char decfilename[MAX_FILE_NAME];
     node *decl;
 
     DBUG_ENTER ("CheckDec");
 
-    strcpy (store_filename, filename);
     strcpy (filename, MODUL_NAME (syntax_tree));
     strcat (filename, ".dec");
+    filename = decfilename;
 
     decl = ImportOwnDeclaration (MODUL_NAME (syntax_tree), MODUL_FILETYPE (syntax_tree));
 
@@ -215,7 +215,7 @@ CheckDec (node *syntax_tree)
 
     MODUL_DECL (syntax_tree) = Trav (decl, syntax_tree);
 
-    strcpy (filename, store_filename);
+    filename = decfilename;
 
     DBUG_RETURN (syntax_tree);
 }
@@ -519,34 +519,28 @@ CDECfundef (node *arg_node, node *arg_info)
 node *
 WDECmodul (node *arg_node, node *arg_info)
 {
-    FILE *store_outfile;
-
     DBUG_ENTER ("WDECmodul");
 
-    decfile = fopen (filename, "w");
+    outfile = fopen (filename, "w");
 
-    if (decfile == NULL) {
+    if (outfile == NULL) {
         SYSABORT (("Unable to open file \"%s\" for writing", filename));
     }
 
     if (MODUL_FILETYPE (arg_node) == F_modimp) {
-        fprintf (decfile, "ModuleDec %s :\n\n", MODUL_NAME (arg_node));
+        fprintf (outfile, "ModuleDec %s :\n\n", MODUL_NAME (arg_node));
     } else {
-        fprintf (decfile, "ClassDec %s :\n\n", MODUL_NAME (arg_node));
+        fprintf (outfile, "ClassDec %s :\n\n", MODUL_NAME (arg_node));
     }
 
     if (MODUL_STORE_IMPORTS (arg_node) != NULL) {
-        store_outfile = outfile;
-        outfile = decfile;
-
         PrintImplist (MODUL_STORE_IMPORTS (arg_node), NULL);
-
-        outfile = store_outfile;
     }
 
-    fprintf (decfile, "own:\n{\n");
+    fprintf (outfile, "own:\n{\n");
 
-    fprintf (decfile, "implicit types:\n");
+    fprintf (outfile, "implicit types:\n");
+
     if (MODUL_TYPES (arg_node) != NULL) {
         if (MODUL_FILETYPE (arg_node) == F_classimp) {
             Trav (MODUL_TYPES (arg_node), (node *)MODUL_NAME (arg_node));
@@ -555,19 +549,23 @@ WDECmodul (node *arg_node, node *arg_info)
         }
     }
 
-    fprintf (decfile, "\nexplicit types:\n");
+    fprintf (outfile, "\nexplicit types:\n");
 
-    fprintf (decfile, "\nglobal objects:\n");
-    if (MODUL_OBJS (arg_node) != NULL)
+    fprintf (outfile, "\nglobal objects:\n");
+
+    if (MODUL_OBJS (arg_node) != NULL) {
         Trav (MODUL_OBJS (arg_node), (node *)MODUL_NAME (arg_node));
+    }
 
-    fprintf (decfile, "\nfunctions:\n");
-    if (MODUL_FUNS (arg_node) != NULL)
+    fprintf (outfile, "\nfunctions:\n");
+
+    if (MODUL_FUNS (arg_node) != NULL) {
         Trav (MODUL_FUNS (arg_node), (node *)MODUL_NAME (arg_node));
+    }
 
-    fprintf (decfile, "}\n");
+    fprintf (outfile, "}\n");
 
-    fclose (decfile);
+    fclose (outfile);
 
     DBUG_RETURN (arg_node);
 }
@@ -597,11 +595,11 @@ WDECtypedef (node *arg_node, node *arg_info)
 
     if (TYPEDEF_STATUS (arg_node) == ST_regular) {
         if (classname == NULL) {
-            fprintf (decfile, "  %s;\n", TYPEDEF_NAME (arg_node));
+            fprintf (outfile, "  %s;\n", TYPEDEF_NAME (arg_node));
         } else {
             if ((strcmp (TYPEDEF_NAME (arg_node), classname) != 0)
                 || (strcmp (MOD (TYPEDEF_MOD (arg_node)), classname) != 0)) {
-                fprintf (decfile, "  %s;\n", TYPEDEF_NAME (arg_node));
+                fprintf (outfile, "  %s;\n", TYPEDEF_NAME (arg_node));
             }
         }
     }
@@ -633,11 +631,11 @@ WDECobjdef (node *arg_node, node *arg_info)
     DBUG_ENTER ("WDECobjdef");
 
     if (OBJDEF_STATUS (arg_node) == ST_regular) {
-        fprintf (decfile, "  ");
+        fprintf (outfile, "  ");
 
         PrintDecTypes (OBJDEF_TYPE (arg_node), (char *)arg_info);
 
-        fprintf (decfile, " %s;\n", OBJDEF_NAME (arg_node));
+        fprintf (outfile, " %s;\n", OBJDEF_NAME (arg_node));
     }
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
@@ -667,17 +665,17 @@ WDECfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("WDECfundef");
 
     if (FUNDEF_STATUS (arg_node) == ST_regular) {
-        fprintf (decfile, "  ");
+        fprintf (outfile, "  ");
 
         PrintDecTypes (FUNDEF_TYPES (arg_node), (char *)arg_info);
 
-        fprintf (decfile, " %s(", FUNDEF_NAME (arg_node));
+        fprintf (outfile, " %s(", FUNDEF_NAME (arg_node));
 
         if (FUNDEF_ARGS (arg_node) != NULL) {
             Trav (FUNDEF_ARGS (arg_node), arg_info);
         }
 
-        fprintf (decfile, ");\n");
+        fprintf (outfile, ");\n");
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -715,13 +713,13 @@ WDECarg (node *arg_node, node *arg_info)
     }
 
     if ((ARG_ATTRIB (arg_node) == ST_unique) || (ARG_ATTRIB (arg_node) == ST_regular)) {
-        fprintf (decfile, " ");
+        fprintf (outfile, " ");
     }
 
-    fprintf (decfile, "%s", ARG_NAME (arg_node));
+    fprintf (outfile, "%s", ARG_NAME (arg_node));
 
     if (ARG_NEXT (arg_node) != NULL) {
-        fprintf (decfile, ", ");
+        fprintf (outfile, ", ");
         Trav (ARG_NEXT (arg_node), arg_info);
     }
 
