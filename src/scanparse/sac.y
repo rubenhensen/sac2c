@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2002/08/13 14:09:54  sbs
+ * params of sel exchanged
+ *
  * Revision 3.45  2002/08/13 14:04:13  sbs
  * several minor bugs fixed
  *
@@ -1181,15 +1184,15 @@ expr: fun_id                      { $$ = MakeIdFromIds( $1); }
 
 expr_sel: expr SQBR_L exprs SQBR_R
           { if( CountExprs($3) == 1) {
-              $$ = MakeAp2( "sel", NULL, $1, EXPRS_EXPR( $3)); 
+              $$ = MakeAp2( "sel", NULL, EXPRS_EXPR( $3), $1 ); 
               EXPRS_EXPR( $3) = NULL;
               $3 = FreeNode( $3);
             } else {
-              $$ = MakeAp2( "sel", NULL, $1, MakeArray( $3)); 
+              $$ = MakeAp2( "sel", NULL, MakeArray( $3), $1); 
             }
         }
         | expr SQBR_L SQBR_R
-          { $$ = MakeAp2( "sel", NULL, $1, MakeArray( NULL)); }
+          { $$ = MakeAp2( "sel", NULL, MakeArray( NULL), $1); }
         ;
 
 expr_ap: fun_id BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
