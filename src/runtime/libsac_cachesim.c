@@ -133,11 +133,3 @@ SAC_CPF_ReadAccess (void *baseaddress, void *elemaddress)
         level++;
     }
 } // SAC_CPF_ReadAccess
-
-int
-main ()
-{
-    int i = 1;
-    printf ("%i %i\n", i, i << 1);
-    return (0);
-}
