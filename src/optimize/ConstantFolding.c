@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.38  1996/01/17 14:21:59  asi
+ * Revision 1.39  1996/02/09 17:34:07  asi
+ * Bug fixed in function IsConst
+ *
+ * Revision 1.38  1996/01/17  14:21:59  asi
  * new dataflow-information 'most-recently-defined-Listen' MRD used for substitution
  * added constant-folding for double-type
  * new trav-function OPTTrav used and some functions uses new access-macros for
@@ -202,9 +205,9 @@ IsConst (node *arg_node)
         case N_array:
             isit = TRUE;
             expr = ARRAY_AELEMS (arg_node);
-            while (NULL != expr) {
+            while ((NULL != expr) && (TRUE == isit)) {
                 if (N_id == NODE_TYPE (EXPRS_EXPR (expr)))
-                    isit = TRUE;
+                    isit = FALSE;
                 expr = EXPRS_NEXT (expr);
             }
             break;
@@ -1540,13 +1543,13 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
     /***********************/
     case F_psi:
 
-        switch (arg[1]->nodetype) {
+        switch (NODE_TYPE (arg[1])) {
         case N_array: {
             int start;
             node *tmp;
 
-            if ((0 <= arg[0]->node[0]->node[0]->info.cint)
-                && (arg[0]->node[0]->node[0]->info.cint < ArraySize (arg[1]))) {
+            if ((0 <= NUM_VAL (EXPRS_EXPR (ARRAY_AELEMS (arg[0]))))
+                && (NUM_VAL (EXPRS_EXPR (ARRAY_AELEMS (arg[0]))) < ArraySize (arg[1]))) {
                 DBUG_PRINT ("CF", ("primitive function %s folded",
                                    prf_string[arg_node->info.prf]));
                 cf_expr++;
