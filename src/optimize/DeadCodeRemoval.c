@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1996/08/09 16:42:52  asi
+ * Revision 1.13  1996/09/10 13:42:32  asi
+ * Dead function removal no longer enabled in modules
+ *
+ * Revision 1.12  1996/08/09  16:42:52  asi
  * dead function removal added
  *
  * Revision 1.11  1996/01/17  14:39:34  asi
@@ -95,7 +98,7 @@ DeadCodeRemoval (node *arg_node, node *info_node)
     arg_node = Trav (arg_node, info_node);
     FREE (info_node);
 
-    if (opt_dfr) {
+    if (opt_dfr && (F_prog == MODUL_FILETYPE (arg_node))) {
         act_tab = dfr_tab;
         info_node = MakeNode (N_info);
         arg_node = Trav (arg_node, info_node);
