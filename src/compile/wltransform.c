@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 2.5  1999/11/30 20:27:52  dkr
- * Finally I have done it 8-))))
- * The must
+ * Revision 2.6  1999/11/30 20:30:22  dkr
+ * finally I have done it 8-)))
+ * The "must-resign" problem is fixed now!
+ * Therefore the cube calculation should work in general now!
+ *
+ * Moreover, some bugs have been fixed, e.g. in NormalizeStride_1() ...
  *
  * Revision 2.4  1999/11/30 10:07:35  dkr
  * fixed a bug in AdjustBounds()
