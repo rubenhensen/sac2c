@@ -11,7 +11,6 @@ spmd_init.c
 spmd_init.h
 spmd_lift.c
 spmd_lift.h
-spmd_opt.h
 spmd_trav.c
 spmd_trav.h
 sync_init.c
