@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.29  2005/03/10 13:38:22  mwe
+ * bug fixed (duplication of loop funs)
+ *
  * Revision 1.28  2005/03/04 21:21:42  cg
  * FUNDEF_USED counter etc removed.
  * Handling of FUNDEF_EXT_ASSIGNS drastically simplified.
@@ -283,7 +286,7 @@ TryToDoTypeUpgrade (node *fundef)
         INFO_TUP_FUNDEF (arg_info) = fundef;
 
         TRAVpush (TR_tup);
-        FUNDEF_BODY (fundef) = TRAVdo (FUNDEF_BODY (fundef), arg_info);
+        fundef = TRAVdo (fundef, arg_info);
         TRAVpop ();
     }
 
@@ -984,7 +987,7 @@ TryToSpecializeFunction (node *fundef, node *ap_node, info *arg_info)
                 /*
                  * function is a loop function
                  */
-                new_fun = DUPdoDupTree (fundef);
+                new_fun = DUPdoDupNode (fundef);
 
                 FUNDEF_ARGS (new_fun)
                   = AdjustSignatureToArgs (FUNDEF_ARGS (new_fun), args);
@@ -1005,6 +1008,7 @@ TryToSpecializeFunction (node *fundef, node *ap_node, info *arg_info)
 
                     DBUG_PRINT ("TUP", ("SUCCESS"));
 
+                    new_fun = FREEdoFreeNode (new_fun);
                     FUNDEF_ARGS (fundef)
                       = AdjustSignatureToArgs (FUNDEF_ARGS (fundef), args);
                     fundef = TryToDoTypeUpgrade (fundef);
@@ -1016,7 +1020,6 @@ TryToSpecializeFunction (node *fundef, node *ap_node, info *arg_info)
                      * Why not taking new_fun here?
                      * Who de-allocates new_fun as it is no longer used?
                      */
-
                     tup_fsp_expr++;
 
                 } else {
@@ -1522,6 +1525,8 @@ TUPreturn (node *arg_node, info *arg_info)
     ntype *best;
     DBUG_ENTER ("TUPreturn");
 
+    DBUG_PRINT ("TUP", ("evaluationg return node"));
+
     if ((NULL != RETURN_EXPRS (arg_node))
         && (!FUNDEF_ISEXPORTED (INFO_TUP_FUNDEF (arg_info)))
         && (!FUNDEF_ISPROVIDED (INFO_TUP_FUNDEF (arg_info)))
@@ -2010,8 +2015,7 @@ TUPap (node *arg_node, info *arg_info)
     DBUG_ENTER ("TUPap");
 
     if (INFO_TUP_CHECKLOOPFUN (arg_info)) {
-        if (ILIBstringCompare (FUNDEF_NAME (INFO_TUP_FUNDEF (arg_info)),
-                               FUNDEF_NAME (AP_FUNDEF (arg_node)))) {
+        if (ASSIGN_RHS (FUNDEF_INT_ASSIGN (INFO_TUP_FUNDEF (arg_info))) == arg_node) {
             /*
              * at the moment we are checking, if the recursive call of a loop function
              * will work with specialized signature
