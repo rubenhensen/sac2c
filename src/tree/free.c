@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2002/06/25 13:55:51  sbs
+ * FreeDot added.
+ *
  * Revision 3.34  2002/06/02 21:45:03  dkr
  * ID_NT_TAG added
  *
@@ -1556,6 +1559,20 @@ FreeStr (node *arg_node, node *arg_info)
     STR_STRING (arg_node) = Free (STR_STRING (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_str node ..."));
+
+    arg_node = Free (arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeDot (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("FreeDot");
+
+    DBUG_PRINT ("FREE", ("Removing N_dot node ..."));
 
     arg_node = Free (arg_node);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/06/25 13:55:51  sbs
+ * FreeDot added.
+ *
  * Revision 3.15  2002/03/01 02:36:53  dkr
  * FreeArgtab() added
  *
@@ -127,6 +130,7 @@ extern node *FreeFloat (node *arg_node, node *arg_info);
 extern node *FreeDouble (node *arg_node, node *arg_info);
 extern node *FreeBool (node *arg_node, node *arg_info);
 extern node *FreeStr (node *arg_node, node *arg_info);
+extern node *FreeDot (node *arg_node, node *arg_info);
 extern node *FreePrf (node *arg_node, node *arg_info);
 extern node *FreeEmpty (node *arg_node, node *arg_info);
 extern node *FreeIcm (node *arg_node, node *arg_info);
