@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/03/07 18:52:43  dkr
+ * GSCPrintMainEnd(): a '\n' removed
+ *
  * Revision 3.10  2001/05/21 12:44:03  ben
  * SAC_MT_SET_MAX_SCHEDULERS renamed to SAC_MR_SET_NUM_SCHEDULERS
  *
@@ -852,8 +855,7 @@ GSCPrintMainEnd ()
     /*
      * outfile is already indented by 2
      */
-    fprintf (outfile, "\n"
-                      "  SAC_PF_PRINT();\n");
+    fprintf (outfile, "  SAC_PF_PRINT();\n");
     fprintf (outfile, "  SAC_CS_FINALIZE();\n");
     fprintf (outfile, "  SAC_HM_PRINT();\n\n");
 
