@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.20  2000/08/01 13:17:45  dkr
+ * check of (break_cycle_specifier == 0) added for breaks before the
+ * optimization cycle.
+ *
  * Revision 2.19  2000/08/01 11:57:30  dkr
  * bug in break handling fixed
  *
@@ -610,7 +614,8 @@ OPTfundef (node *arg_node, node *arg_info)
             arg_node = ArrayElimination (arg_node, arg_node); /* ae_tab */
         }
 
-        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "ae")))
+        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
+            && (0 == strcmp (break_specifier, "ae")))
             goto INFO;
 
         /*
@@ -623,7 +628,8 @@ OPTfundef (node *arg_node, node *arg_info)
             arg_node = DeadCodeRemoval (arg_node, arg_info);
         }
 
-        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "dcr")))
+        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
+            && (0 == strcmp (break_specifier, "dcr")))
             goto INFO;
 
         /*
@@ -677,7 +683,7 @@ OPTfundef (node *arg_node, node *arg_info)
                 goto INFO;
 
             if (optimize & OPT_WLT) {
-                arg_node = WithloopFoldingWLT (arg_node, arg_info); /* wlt */
+                arg_node = WithloopFoldingWLT (arg_node); /* wlt */
                 arg_node = GenerateMasks (arg_node, NULL);
             }
 
@@ -686,10 +692,10 @@ OPTfundef (node *arg_node, node *arg_info)
                 goto INFO;
 
             if (optimize & OPT_WLF) {
-                arg_node = WithloopFolding (arg_node, arg_info); /* wli, wlf */
+                arg_node = WithloopFolding (arg_node, loop1); /* wli, wlf */
                 /*
                  * rebuild mask which is necessary because of WL-body-substitutions
-                 * and nserted new variables to prevent wrong variable bindings.
+                 * and inserted new variables to prevent wrong variable bindings.
                  */
                 arg_node = GenerateMasks (arg_node, NULL);
             }
@@ -786,7 +792,7 @@ OPTfundef (node *arg_node, node *arg_info)
              * This is needed to transform more index vectors in scalars or vice versa.
              */
             DBUG_PRINT ("WLF", ("WITHLOOP TRANSFORMATIONS"));
-            arg_node = WithloopFoldingWLT (arg_node, arg_info); /* wlt */
+            arg_node = WithloopFoldingWLT (arg_node); /* wlt */
             arg_node = GenerateMasks (arg_node, NULL);
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == (loop1 + loop2))
