@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/02/06 13:33:19  srs
+ * extern int opt_wlf;
+ *
  * Revision 1.14  1997/10/29 14:34:53  srs
  * added more counters for malloc statistics
  *
@@ -89,6 +92,7 @@ extern int opt_unr;
 extern int opt_uns;
 extern int opt_ae;
 extern int opt_cse;
+extern int opt_wlf;
 
 extern int optvar;
 extern int inlnum;
