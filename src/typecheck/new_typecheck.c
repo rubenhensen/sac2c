@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2005/02/16 22:29:13  sah
+ * fixed handling of external funs
+ *
  * Revision 3.69  2005/01/10 17:27:06  cg
  * Converted error messages from Error.h to ctinfo.c
  *
@@ -452,7 +455,8 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
         /*
          * We simply accept the type found in the external. declaration here:
          */
-        INFO_NTC_TYPE (arg_info) = TYoldTypes2ProdType (FUNDEF_TYPES (fundef));
+        INFO_NTC_TYPE (arg_info) = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
+
         DBUG_PRINT ("NTC", ("trusting imported return type"));
     }
 
@@ -493,7 +497,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
         }
         /**
          * Now, we check whether we could infer at least one approximation for each
-         * return value of a function. However, we have to make shure that this is a
+         * return value of a function. However, we have to make sure that this is a
          * top-level tc-run, since runs that are triggered during tc of other functions
          * may lack approximations due to mutual recursion.
          *
