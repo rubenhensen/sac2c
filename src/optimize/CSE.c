@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/04/03 12:21:51  srs
+ * fixed bug in eleminate(),
+ * fixed bug for WL-traversing, added CSENcode()
+ *
  * Revision 1.6  1998/02/25 15:20:31  srs
  * added support for new WL
  *
@@ -236,7 +240,7 @@ CSEwith (node *arg_node, node *arg_info)
  *   node *CSENwith(node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   traverses though bodies
  *
  *
  ******************************************************************************/
@@ -264,6 +268,27 @@ CSENwith (node *arg_node, node *arg_info)
         tmpn = OPTTrav (tmpn, arg_info, arg_node);
         tmpn = NCODE_NEXT (tmpn);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CSENcode(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   traverses only this code, not its next sons. This has to be done
+ *   from within N_Nwith.
+ *
+ ******************************************************************************/
+
+node *
+CSENcode (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("CSENcode");
+
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -348,7 +373,7 @@ FindCS (node *arg1, node *arg2, node *arg_info)
 
     DBUG_ENTER ("FindCS");
 
-    if ((NULL != arg1) && (NULL != arg2)) {
+    if (arg1 && arg2) {
         if (arg1 == arg2) {
             cs = arg2;
             DBUG_PRINT ("CSE", (">CSE, because same node"));
@@ -364,10 +389,12 @@ FindCS (node *arg1, node *arg2, node *arg_info)
                 case N_float:
                 case N_double:
                 case N_char:
+                    /* srs: why is this done? CF reverses this step. */
                     if (Equal (arg1_expr, arg2_expr, arg_info))
                         cs = arg2;
                     DBUG_PRINT ("CSE", (">CSE, same constant value"));
                     break;
+
                 case N_prf:
                     if (EQUAL_NTYPE && (PRF_PRF (arg1_expr) == PRF_PRF (arg2_expr))) {
                         equal = TRUE;
@@ -387,27 +414,23 @@ FindCS (node *arg1, node *arg2, node *arg_info)
                         }
                     }
                     break;
+
                 case N_ap:
                     if (EQUAL_NTYPE && (AP_FUNDEF (arg1_expr) == AP_FUNDEF (arg2_expr))) {
                         equal = TRUE;
                         arg1_expr = AP_ARGS (arg1_expr);
                         arg2_expr = AP_ARGS (arg2_expr);
 
-                        /*
-                                      do
-                                        {
-                                        if (Equal(EXPRS_EXPR(arg1_expr),
-                           EXPRS_EXPR(arg2_expr), arg_info))
-                                          {
-                                          arg1_expr = EXPRS_NEXT(arg1_expr);
-                                          arg2_expr = EXPRS_NEXT(arg2_expr);
-                                          }
-                                        else
-                                          equal = FALSE;
-                                        }
-                                      while(equal && ((NULL!=arg1_expr) ||
-                           (NULL!=arg2_expr)));
-                        */
+                        /*             do { */
+                        /*               if (Equal(EXPRS_EXPR(arg1_expr),
+                         * EXPRS_EXPR(arg2_expr), arg_info)) { */
+                        /*                 arg1_expr = EXPRS_NEXT(arg1_expr); */
+                        /*                 arg2_expr = EXPRS_NEXT(arg2_expr); */
+                        /*               } */
+                        /*               else */
+                        /*                 equal = FALSE; */
+                        /*             } while(equal && ((NULL!=arg1_expr) ||
+                         * (NULL!=arg2_expr))); */
 
                         while (equal && ((NULL != arg1_expr) || (NULL != arg2_expr))) {
                             if (Equal (EXPRS_EXPR (arg1_expr), EXPRS_EXPR (arg2_expr),
@@ -428,6 +451,7 @@ FindCS (node *arg1, node *arg2, node *arg_info)
                         }
                     }
                     break;
+
                 default:
                     break;
                 }
@@ -463,7 +487,7 @@ Eliminate (node *arg_node, node *equal_node, node *arg_info)
     node *id_node, *let_node;
 
     DBUG_ENTER ("Eliminate");
-    switch (NODE_TYPE (ASSIGN_INSTR (LET_EXPR (arg_node)))) {
+    switch (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node)))) {
     case N_num:
     case N_float:
     case N_double:
@@ -525,8 +549,6 @@ CSEassign (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CSEassign");
 
-    ASSIGN_CSE (arg_node) = NULL;
-
     if (NULL == (cmp_node = GetCompoundNode (arg_node))) {
         i = 0;
         equal_node = NULL;
@@ -539,11 +561,11 @@ CSEassign (node *arg_node, node *arg_info)
             i++;
         }
 
-        if (NULL != equal_node) {
+        if (equal_node) {
             DBUG_PRINT ("CSE", (">Found common subexpression in line %d",
                                 NODE_LINE (equal_node)));
             new_node = Eliminate (arg_node, equal_node, arg_info);
-            if (NULL != new_node) {
+            if (new_node) {
                 DBUG_PRINT ("CSE", (">Common subexpression eliminated in line %d",
                                     NODE_LINE (arg_node)));
                 cse_expr++;
@@ -562,8 +584,6 @@ CSEassign (node *arg_node, node *arg_info)
     if (next) {
         ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
         ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
-        if (NULL != ASSIGN_CSE (arg_node)) {
-        }
     }
 
     DBUG_RETURN (arg_node);
