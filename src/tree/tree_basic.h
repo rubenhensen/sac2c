@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.90  2000/08/04 17:11:56  dkr
+ * removed NEWTREE
+ *
  * Revision 1.89  2000/08/03 10:22:36  nmw
  * N_fundef comment changed
  *
@@ -300,12 +303,6 @@ file can be found in tree_basic.c
 #define _sac_tree_basic_h
 
 #include "types.h"
-
-/*
- * Uncomment the #define statement to use new virtual syntaxtree
- */
-
-#define NEWTREE
 
 /*
  *   Decalarations of global variables exported by tree_basic.c
