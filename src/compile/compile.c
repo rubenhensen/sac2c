@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.104  2003/12/17 15:07:36  skt
+ * enabled GEN_MT_LIFTWAIT-options for GEN_MT_STARTSTOP
+ *
  * Revision 3.103  2003/12/10 16:07:14  skt
  * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one.
  *
@@ -916,7 +919,8 @@ AddThreadIdIcm_ND_FUN_DEC (node *icm)
     DBUG_ASSERT (((NODE_TYPE (icm) == N_icm) && (!strcmp (ICM_NAME (icm), "ND_FUN_DEC"))),
                  "no ND_FUN_DEC icm found!");
 
-    if ((gen_mt_mode == GEN_MT_LIFTWAIT) && (optimize & OPT_PHM)) {
+    if (((gen_mt_mode == GEN_MT_LIFTWAIT) || (gen_mt_mode == GEN_MT_STARTSTOP))
+        && (optimize & OPT_PHM)) {
         args = ICM_EXPRS3 (icm);
 
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (args)) == N_num),
@@ -959,7 +963,8 @@ AddThreadIdIcm_ND_FUN_AP (node *icm_assign)
     DBUG_ASSERT (((NODE_TYPE (icm) == N_icm) && (!strcmp (ICM_NAME (icm), "ND_FUN_AP"))),
                  "no ND_FUN_AP icm found!");
 
-    if ((gen_mt_mode == GEN_MT_LIFTWAIT) && (optimize & OPT_PHM)) {
+    if (((gen_mt_mode == GEN_MT_LIFTWAIT) || (gen_mt_mode == GEN_MT_STARTSTOP))
+        && (optimize & OPT_PHM)) {
         args = ICM_EXPRS3 (icm);
 
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (args)) == N_num),
