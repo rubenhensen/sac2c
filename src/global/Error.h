@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1996/01/05 12:24:20  cg
+ * Revision 1.19  1997/04/24 09:54:04  cg
+ * added Output macro NOTEDOT
+ *
+ * Revision 1.18  1996/01/05  12:24:20  cg
  * Now, CleanUp is called by macro EXIT instead of removing the
  * sibfile only
  *
@@ -486,6 +489,14 @@
     {                                                                                    \
         if (verbose_level > 2) {                                                         \
             PRINT_MESSAGE (message, "", 2, message_indent, 1, 0);                        \
+        }                                                                                \
+    }
+
+#define NOTEDOT                                                                          \
+    {                                                                                    \
+        if (verbose_level > 2) {                                                         \
+            fprintf (stderr, "*");                                                       \
+            fflush (stderr);                                                             \
         }                                                                                \
     }
 
