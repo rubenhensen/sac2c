@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.120  2004/11/23 20:09:51  sbs
+ * VARDEC_NTYPE added.
+ *
  * Revision 3.119  2004/11/23 20:06:58  sbs
  * ARG_NTYPE added.
  *
@@ -624,7 +627,8 @@ extern node *TCremoveFundef (node *fundef_chain, node *fundef);
  *  compound access macros
  */
 
-#define VARDEC_NAME(n) AVIS_NAME (VARDEC_AVIS (n))
+#define VARDEC_NTYPE(n) (AVIS_TYPE (VARDEC_AVIS (n)))
+#define VARDEC_NAME(n) (AVIS_NAME (VARDEC_AVIS (n)))
 #define VARDEC_BASETYPE(n) (TYPES_BASETYPE (VARDEC_TYPE (n)))
 #define VARDEC_DIM(n) (TYPES_DIM (VARDEC_TYPE (n)))
 #define VARDEC_SHAPE(n, x) (TYPES_SHAPE (VARDEC_TYPE (n), x))
