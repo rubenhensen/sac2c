@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1996/01/23 09:57:28  cg
+ * Revision 1.8  1996/09/11 06:19:49  cg
+ * Now, the global variable outfilename is always set correctly.
+ *
+ * Revision 1.7  1996/01/23  09:57:28  cg
  * Now, the length of a module name is checked
  *
  * Revision 1.6  1996/01/23  09:03:10  cg
@@ -88,6 +91,9 @@ SetFileNames (node *modul)
     DBUG_ENTER ("SetFileNames");
 
     if (MODUL_FILETYPE (modul) == F_prog) {
+        linkstyle = 0; /* Programs are always linked in style 0, i.e. a single
+                          C-file is generated and compiled as a whole. */
+
         if (outfilename[0] == '\0') {
             strcpy (outfilename, "a.out");
             strcpy (cfilename, "a.out.c");
@@ -96,11 +102,6 @@ SetFileNames (node *modul)
             strcat (cfilename, ".c");
         }
     } else {
-        if (strlen (MODUL_NAME (modul)) > 13) {
-            ERROR (1, ("Module/class name '%s` too long (maximum: 13 characters)",
-                       MODUL_NAME (modul)));
-        }
-
         if (sacfilename[0] != '\0') {
             strcpy (buffer, MODUL_NAME (modul));
             strcat (buffer, ".sac");
@@ -119,11 +120,13 @@ SetFileNames (node *modul)
             strcat (targetdir, "/");
         }
 
-        strcpy (outfilename, MODUL_NAME (modul));
-        strcat (outfilename, ".o");
+        strcpy (modulename, MODUL_NAME (modul));
 
         strcpy (cfilename, MODUL_NAME (modul));
         strcat (cfilename, ".c");
+
+        strcpy (outfilename, MODUL_NAME (modul));
+        strcat (outfilename, ".lib");
     }
 
     DBUG_VOID_RETURN;
