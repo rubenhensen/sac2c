@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/09 18:16:05  sah
+ * noew fundefs and fundecs can be mixed
+ *
  * Revision 1.6  2004/11/09 15:22:34  sah
  * aadded missing ;...
  *
@@ -152,8 +155,8 @@ static int prf_arity[] = {
 
 %type <node> objdefs  objdef
 
-%type <node> fundefs  fundef  fundef1  fundef2  main
-%type <node> fundecs fundec fundec2 fundecargs varargs
+%type <node> fundef  fundef1  fundef2  main
+%type <node> fundec fundec2 fundecargs varargs
 %type <node> mainargs  fundefargs  args  arg 
 %type <node> exprblock  exprblock2  assignsOPTret  assigns  assign 
              let cond optelse  doloop whileloop forloop  assignblock
@@ -299,26 +302,24 @@ def3: objdefs def4
       { $$ = $1; }
     ;
 
-def4: fundecs def5
+def4: fundec def4
       { $$ = $2;
-        MODUL_FUNDECS( $$) = $1;
+        MODUL_FUNDECS( $$) = AppendFundef( MODUL_FUNDECS( $$), $1);
+      }
+    | wlcomp_pragma_global main def5
+      { $$ = $3;
+        MODUL_FUNS( $$) = AppendFundef( MODUL_FUNDECS( $$), $2);
+      } 
+    | wlcomp_pragma_global fundef def4
+      { $$ = $2;
+        MODUL_FUNS( $$) = AppendFundef( MODUL_FUNDECS( $$), $1);
       }
     | def5
       { $$ = $1;
       }
     ;
 
-def5: fundefs
-      { $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, $1, NULL);
-
-        DBUG_PRINT( "PARSE",
-                    ("%s:"F_PTR" %s"F_PTR,
-                     mdb_nodetype[ NODE_TYPE( $$)],
-                     $$,
-                     mdb_nodetype[ NODE_TYPE(  MODUL_FUNS( $$))],
-                     MODUL_FUNS( $$)));
-      }
-    | { $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, NULL, NULL);
+def5: { $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, NULL, NULL);
 
         DBUG_PRINT( "PARSE",
                     ("%s:"F_PTR,
@@ -496,18 +497,6 @@ objdef: OBJDEF type id LET expr SEMIC
 *********************************************************************
 */
 
-fundefs: wlcomp_pragma_global fundef fundefs
-         { $$ = $2;
-           FUNDEF_NEXT( $$) = $3;
-         }
-       | wlcomp_pragma_global main
-         { $$ = $2;
-         }
-       | wlcomp_pragma_global fundef
-         { $$ = $2;
-         }
-       ;
-
 fundef: INLINE fundef1
         { $$ = $2;
           FUNDEF_INLINE( $$) = TRUE;
@@ -656,14 +645,6 @@ mainargs: TYPE_VOID     { $$ = NULL; }
 *
 *********************************************************************
 */
-
-fundecs: fundec fundecs
-         { $$ = $1;
-           FUNDEF_NEXT( $$) = $2;
-         }
-       | fundec { $$ = $1;
-         }
-       ;
 
 fundec: EXTERN varreturntypes local_fun_id BRACKET_L fundec2
         { $$ = $5;
