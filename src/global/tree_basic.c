@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  1997/11/18 17:33:19  dkr
+ * modified MakeNWith()
+ *
  * Revision 1.23  1997/11/13 16:17:09  srs
  * added functions for creation of WL-nodes (new syntaxtree)
  *
@@ -1346,7 +1349,7 @@ MakeInfo ()
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeNWith ()
+MakeNWith (node *part, node *code, node *withop)
 {
     node *tmp;
 
@@ -1354,6 +1357,9 @@ MakeNWith ()
     INIT_NODE (tmp);
 
     NODE_TYPE (tmp) = N_Nwith;
+    NWITH_PART (tmp) = part;
+    NWITH_CODE (tmp) = code;
+    NWITH_WITHOP (tmp) = withop;
 
     DBUG_RETURN (tmp);
 }

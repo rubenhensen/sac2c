@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.56  1997/11/18 17:33:31  dkr
+ * modified MakeNWith()
+ *
  * Revision 1.55  1997/11/13 16:16:00  srs
  * created access macros for new WL-syntaxtree
  *
@@ -1914,7 +1917,7 @@ extern node *MakeInfo ();
  ***    ?
  ***/
 
-extern node *MakeNWith ();
+extern node *MakeNWith (node *part, node *code, node *withop);
 
 #define NWITH_PART(n) (n->node[0])
 #define NWITH_CODE(n) (n->node[1])
