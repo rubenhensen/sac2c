@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2003/09/17 12:57:29  dkr
+ * postfixes _nt, _any renamed into _NT, _ANY
+ *
  * Revision 3.15  2003/03/14 13:22:46  dkr
  * all arguments of WL-ICMs are tagged now
  *
@@ -50,42 +53,42 @@
 #ifndef _icm2c_wl_h_
 #define _icm2c_wl_h_
 
-extern void ICMCompileND_WL_GENARRAY__SHAPE_id (char *to_nt, int to_sdim, char *shp_nt,
-                                                char *val_nt, int val_sdim);
-extern void ICMCompileND_WL_GENARRAY__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
-                                                 char **shpa_any, char *val_nt,
+extern void ICMCompileND_WL_GENARRAY__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT,
+                                                char *val_NT, int val_sdim);
+extern void ICMCompileND_WL_GENARRAY__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
+                                                 char **shpa_ANY, char *val_NT,
                                                  int val_sdim);
 
-extern void ICMCompileWL_BEGIN__OFFSET (char *to_nt, int to_sdim, char *idx_vec_nt,
+extern void ICMCompileWL_BEGIN__OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT,
                                         int dims);
-extern void ICMCompileWL_BEGIN (char *to_nt, int to_sdim, char *idx_vec_nt, int dims);
-extern void ICMCompileWL_END__OFFSET (char *to_nt, int to_sdim, char *idx_vec_nt,
+extern void ICMCompileWL_BEGIN (char *to_NT, int to_sdim, char *idx_vec_NT, int dims);
+extern void ICMCompileWL_END__OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT,
                                       int dims);
-extern void ICMCompileWL_END (char *to_nt, int to_sdim, char *idx_vec_nt, int dims);
+extern void ICMCompileWL_END (char *to_NT, int to_sdim, char *idx_vec_NT, int dims);
 
-extern void ICMCompileWL_ASSIGN (char *val_nt, int val_sdim, char *to_nt, int to_dim,
-                                 char *idx_vec_nt, int dims, char **idxa_scl_nt);
+extern void ICMCompileWL_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_dim,
+                                 char *idx_vec_NT, int dims, char **idxa_scl_NT);
 
-extern void ICMCompileWL_ASSIGN__INIT (char *to_nt, int to_sdim, char *idx_vec_nt,
-                                       int dims, char **idxa_scl_nt);
+extern void ICMCompileWL_ASSIGN__INIT (char *to_NT, int to_sdim, char *idx_vec_NT,
+                                       int dims, char **idxa_scl_NT);
 
-extern void ICMCompileWL_ASSIGN__COPY (char *from_nt, char *to_nt, int to_sdim,
-                                       char *idx_vec_nt, int dims, char **idxa_scl_nt);
+extern void ICMCompileWL_ASSIGN__COPY (char *from_NT, char *to_NT, int to_sdim,
+                                       char *idx_vec_NT, int dims, char **idxa_scl_NT);
 
-extern void ICMCompileWL_FOLD__OFFSET (char *to_nt, int to_sdim, char *idx_vec_nt,
-                                       int dims, char **idxa_scl_nt);
+extern void ICMCompileWL_FOLD__OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT,
+                                       int dims, char **idxa_scl_NT);
 
-extern void ICMCompileWL_FOLD (char *to_nt, int to_sdim, char *idx_vec_nt, int dims,
-                               char **idxa_scl_nt);
+extern void ICMCompileWL_FOLD (char *to_NT, int to_sdim, char *idx_vec_NT, int dims,
+                               char **idxa_scl_NT);
 
-extern void ICMCompileWL_INIT_OFFSET (char *to_nt, int to_sdim, char *idx_vec_nt,
+extern void ICMCompileWL_INIT_OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT,
                                       int dims);
 
-extern void ICMCompileWL_ADJUST_OFFSET (int dim, char *to_nt, int to_sdim,
-                                        char *idx_vec_nt, int dims, char **idxa_scl_nt);
+extern void ICMCompileWL_ADJUST_OFFSET (int dim, char *to_NT, int to_sdim,
+                                        char *idx_vec_NT, int dims, char **idxa_scl_NT);
 
-extern void ICMCompileWL_SET_OFFSET (int dim, int first_block_dim, char *to_nt,
-                                     int to_sdim, char *idx_vec_nt, int dims,
-                                     char **idxa_scl_nt);
+extern void ICMCompileWL_SET_OFFSET (int dim, int first_block_dim, char *to_NT,
+                                     int to_sdim, char *idx_vec_NT, int dims,
+                                     char **idxa_scl_NT);
 
 #endif /* _icm2c_wl_h_ */

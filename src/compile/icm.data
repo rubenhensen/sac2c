@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2003/09/17 13:01:22  dkr
+ * postfixes _nt, _any renamed into _NT, _ANY
+ *
  * Revision 3.59  2003/08/04 16:57:14  dkr
  * argument of MT_SPMD_FUN_DEC, MT_SPMD_FUN_RET renamed
  *
@@ -151,10 +154,10 @@
 #if defined(ND_FUN_DEC) || defined(ICM_ALL)
 ICM_DEF( ND_FUN_DEC, TRACE_NONE)
   ICM_ID( name)
-  ICM_NT( rettype_nt)
+  ICM_NT( rettype_NT)
   ICM_INT( narg)
-  ICM_VARANY( (3*narg), arg_any)
-ICM_END( ND_FUN_DEC, (name, rettype_nt, narg, arg_any))
+  ICM_VARANY( (3*narg), arg_ANY)
+ICM_END( ND_FUN_DEC, (name, rettype_NT, narg, arg_ANY))
 #endif
 
 #if defined(ND_FUN_AP) || defined(ICM_ALL)
@@ -162,16 +165,16 @@ ICM_DEF( ND_FUN_AP, TRACE_FUN)
   ICM_ID( name)
   ICM_ID( retname)
   ICM_INT( narg)
-  ICM_VARANY( (2*narg), arg_any)
-ICM_END( ND_FUN_AP, (name, retname, narg, arg_any))
+  ICM_VARANY( (2*narg), arg_ANY)
+ICM_END( ND_FUN_AP, (name, retname, narg, arg_ANY))
 #endif
 
 #if defined(ND_FUN_RET) || defined(ICM_ALL)
 ICM_DEF( ND_FUN_RET, TRACE_FUN)
   ICM_ID( retname)
   ICM_INT( narg)
-  ICM_VARANY( (3*narg), arg_any)
-ICM_END( ND_FUN_RET, (retname, narg, arg_any))
+  ICM_VARANY( (3*narg), arg_ANY)
+ICM_END( ND_FUN_RET, (retname, narg, arg_ANY))
 #endif
 
 
@@ -242,12 +245,12 @@ ICM_END( ND_DECL__MIRROR_EXTERN, (nt, sdim))
 
 #if defined(ND_CHECK_REUSE) || defined(ICM_ALL)
 ICM_DEF( ND_CHECK_REUSE, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( from_sdim)
   ICM_ID( copyfun)
-ICM_END( ND_CHECK_REUSE, (to_nt, to_sdim, from_nt, from_sdim, copyfun))
+ICM_END( ND_CHECK_REUSE, (to_NT, to_sdim, from_NT, from_sdim, copyfun))
 #endif
 
 /* ND_ALLOC( ...) is a H-ICM */
@@ -261,10 +264,10 @@ ICM_END( ND_CHECK_REUSE, (to_nt, to_sdim, from_nt, from_sdim, copyfun))
 
 #if defined(ND_SET__SHAPE) || defined(ICM_ALL)
 ICM_DEF( ND_SET__SHAPE, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( dim)
-  ICM_VARANY( dim, shp_any)
-ICM_END( ND_SET__SHAPE, (to_nt, dim, shp_any))
+  ICM_VARANY( dim, shp_ANY)
+ICM_END( ND_SET__SHAPE, (to_NT, dim, shp_ANY))
 #endif
 
 
@@ -277,72 +280,72 @@ ICM_END( ND_REFRESH_MIRROR, (nt, sdim))
 
 #if defined(ND_CHECK_MIRROR) || defined(ICM_ALL)
 ICM_DEF( ND_CHECK_MIRROR, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( from_sdim)
-ICM_END( ND_CHECK_MIRROR, (to_nt, to_sdim, from_nt, from_sdim))
+ICM_END( ND_CHECK_MIRROR, (to_NT, to_sdim, from_NT, from_sdim))
 #endif
 
 
 #if defined(ND_ASSIGN) || defined(ICM_ALL)
 ICM_DEF( ND_ASSIGN, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( from_sdim)
   ICM_ID( copyfun)
-ICM_END( ND_ASSIGN, (to_nt, to_sdim, from_nt, from_sdim, copyfun))
+ICM_END( ND_ASSIGN, (to_NT, to_sdim, from_NT, from_sdim, copyfun))
 #endif
 
 /* ASSIGN__DATA( ...) is a H-ICM */
 
 #if defined(ND_ASSIGN__DESC) || defined(ICM_ALL)
 ICM_DEF( ND_ASSIGN__DESC, TRACE_NONE)
-  ICM_NT( to_nt)
-  ICM_NT( from_nt)
-ICM_END( ND_ASSIGN__DESC, (to_nt, from_nt))
+  ICM_NT( to_NT)
+  ICM_NT( from_NT)
+ICM_END( ND_ASSIGN__DESC, (to_NT, from_NT))
 #endif
 
 #if defined(ND_ASSIGN__DIMSHP) || defined(ICM_ALL)
 ICM_DEF( ND_ASSIGN__DIMSHP, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( from_sdim)
-ICM_END( ND_ASSIGN__DIMSHP, (to_nt, to_sdim, from_nt, from_sdim))
+ICM_END( ND_ASSIGN__DIMSHP, (to_NT, to_sdim, from_NT, from_sdim))
 #endif
 
 
 #if defined(ND_COPY) || defined(ICM_ALL)
 ICM_DEF( ND_COPY, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( from_sdim)
   ICM_ID( copyfun)
-ICM_END( ND_COPY, (to_nt, to_sdim, from_nt, from_sdim, copyfun))
+ICM_END( ND_COPY, (to_NT, to_sdim, from_NT, from_sdim, copyfun))
 #endif
 
 /* COPY__DATA( ...) is a H-ICM */
 
 #if defined(ND_COPY__SHAPE) || defined(ICM_ALL)
 ICM_DEF( ND_COPY__SHAPE, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( from_sdim)
-ICM_END( ND_COPY__SHAPE, (to_nt, to_sdim, from_nt, from_sdim))
+ICM_END( ND_COPY__SHAPE, (to_NT, to_sdim, from_NT, from_sdim))
 #endif
 
 #if defined(ND_MAKE_UNIQUE) || defined(ICM_ALL)
 ICM_DEF( ND_MAKE_UNIQUE, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( from_sdim)
   ICM_ID( copyfun)
-ICM_END( ND_MAKE_UNIQUE, (to_nt, to_sdim, from_nt, from_sdim, copyfun))
+ICM_END( ND_MAKE_UNIQUE, (to_NT, to_sdim, from_NT, from_sdim, copyfun))
 #endif
 
 
@@ -350,190 +353,190 @@ ICM_END( ND_MAKE_UNIQUE, (to_nt, to_sdim, from_nt, from_sdim, copyfun))
 ICM_DEF( ND_CREATE__ARRAY__DIM, TRACE_NONE)
   ICM_INT( dim)
   ICM_INT( val_size)
-  ICM_VARANY( val_size, vala_any)
-ICM_END( ND_CREATE__ARRAY__DIM, (dim, val_size, vala_any))
+  ICM_VARANY( val_size, vala_ANY)
+ICM_END( ND_CREATE__ARRAY__DIM, (dim, val_size, vala_ANY))
 #endif
 
 #if defined(ND_CREATE__ARRAY__SHAPE) || defined(ICM_ALL)
 ICM_DEF( ND_CREATE__ARRAY__SHAPE, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_INT( dim)
   ICM_VARINT( dim, shp)
   ICM_INT( val_size)
-  ICM_VARANY( val_size, vala_any)
+  ICM_VARANY( val_size, vala_ANY)
   ICM_INT( val0_sdim)
-ICM_END( ND_CREATE__ARRAY__SHAPE, (to_nt, to_sdim, dim, shp,
-                                   val_size, vala_any, val0_sdim))
+ICM_END( ND_CREATE__ARRAY__SHAPE, (to_NT, to_sdim, dim, shp,
+                                   val_size, vala_ANY, val0_sdim))
 #endif
 
 #if defined(ND_CREATE__ARRAY__DATA) || defined(ICM_ALL)
 ICM_DEF( ND_CREATE__ARRAY__DATA, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_INT( val_size)
-  ICM_VARANY( val_size, vala_any)
+  ICM_VARANY( val_size, vala_ANY)
   ICM_ID( copyfun)
-ICM_END( ND_CREATE__ARRAY__DATA, (to_nt, to_sdim, val_size, vala_any, copyfun))
+ICM_END( ND_CREATE__ARRAY__DATA, (to_NT, to_sdim, val_size, vala_ANY, copyfun))
 #endif
 
 
 #if defined(ND_PRF_SHAPE__DATA) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_SHAPE__DATA, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( from_sdim)
-ICM_END( ND_PRF_SHAPE__DATA, (to_nt, to_sdim, from_nt, from_sdim))
+ICM_END( ND_PRF_SHAPE__DATA, (to_NT, to_sdim, from_NT, from_sdim))
 #endif
 
 #if defined(ND_PRF_RESHAPE__SHAPE_id) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_RESHAPE__SHAPE_id, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( shp_nt)
-ICM_END( ND_PRF_RESHAPE__SHAPE_id, (to_nt, to_sdim, shp_nt))
+  ICM_NT( shp_NT)
+ICM_END( ND_PRF_RESHAPE__SHAPE_id, (to_NT, to_sdim, shp_NT))
 #endif
 
 #if defined(ND_PRF_RESHAPE__SHAPE_arr) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_RESHAPE__SHAPE_arr, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_INT( shp_size)
-  ICM_VARANY( shp_size, shpa_any)
-ICM_END( ND_PRF_RESHAPE__SHAPE_arr, (to_nt, to_sdim, shp_size, shpa_any))
+  ICM_VARANY( shp_size, shpa_ANY)
+ICM_END( ND_PRF_RESHAPE__SHAPE_arr, (to_NT, to_sdim, shp_size, shpa_ANY))
 #endif
 
 #if defined(ND_PRF_SEL__SHAPE_id) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_SEL__SHAPE_id, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( from_sdim)
-  ICM_NT( idx_nt)
-ICM_END( ND_PRF_SEL__SHAPE_id, (to_nt, to_sdim, from_nt, from_sdim, idx_nt))
+  ICM_NT( idx_NT)
+ICM_END( ND_PRF_SEL__SHAPE_id, (to_NT, to_sdim, from_NT, from_sdim, idx_NT))
 #endif
 
 #if defined(ND_PRF_SEL__SHAPE_arr) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_SEL__SHAPE_arr, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( from_sdim)
   ICM_INT( idx_size)
-  ICM_VARANY( idx_size, idxa_any)
-ICM_END( ND_PRF_SEL__SHAPE_arr, (to_nt, to_sdim, from_nt, from_sdim,
-                                 idx_size, idxa_any))
+  ICM_VARANY( idx_size, idxa_ANY)
+ICM_END( ND_PRF_SEL__SHAPE_arr, (to_NT, to_sdim, from_NT, from_sdim,
+                                 idx_size, idxa_ANY))
 #endif
 
 #if defined(ND_PRF_SEL__DATA_id) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_SEL__DATA_id, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( from_sdim)
-  ICM_NT( idx_nt)
+  ICM_NT( idx_NT)
   ICM_INT( idx_size)
   ICM_ID( copyfun)
-ICM_END( ND_PRF_SEL__DATA_id, (to_nt, to_sdim, from_nt, from_sdim,
-                               idx_nt, idx_size, copyfun))
+ICM_END( ND_PRF_SEL__DATA_id, (to_NT, to_sdim, from_NT, from_sdim,
+                               idx_NT, idx_size, copyfun))
 #endif
 
 #if defined(ND_PRF_SEL__DATA_arr) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_SEL__DATA_arr, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( from_sdim)
   ICM_INT( idx_size)
-  ICM_VARANY( idx_size, idxa_any)
+  ICM_VARANY( idx_size, idxa_ANY)
   ICM_ID( copyfun)
-ICM_END( ND_PRF_SEL__DATA_arr, (to_nt, to_sdim, from_nt, from_sdim,
-                                idx_size, idxa_any, copyfun))
+ICM_END( ND_PRF_SEL__DATA_arr, (to_NT, to_sdim, from_NT, from_sdim,
+                                idx_size, idxa_ANY, copyfun))
 #endif
 
 #if defined(ND_PRF_MODARRAY__DATA_id) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_MODARRAY__DATA_id, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( from_sdim)
-  ICM_NT( idx_nt)
+  ICM_NT( idx_NT)
   ICM_INT( idx_size)
-  ICM_ANY( val_any)
+  ICM_ANY( val_ANY)
   ICM_ID( copyfun)
-ICM_END( ND_PRF_MODARRAY__DATA_id, (to_nt, to_sdim, from_nt, from_sdim,
-                                    idx_nt, idx_size, val_any, copyfun))
+ICM_END( ND_PRF_MODARRAY__DATA_id, (to_NT, to_sdim, from_NT, from_sdim,
+                                    idx_NT, idx_size, val_ANY, copyfun))
 #endif
 
 #if defined(ND_PRF_MODARRAY__DATA_arr) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_MODARRAY__DATA_arr, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( from_sdim)
   ICM_INT( idx_size)
-  ICM_VARANY( idx_size, idxa_any)
-  ICM_ANY( val_any)
+  ICM_VARANY( idx_size, idxa_ANY)
+  ICM_ANY( val_ANY)
   ICM_ID( copyfun)
-ICM_END( ND_PRF_MODARRAY__DATA_arr, (to_nt, to_sdim, from_nt, from_sdim,
-                                     idx_size, idxa_any, val_any, copyfun))
+ICM_END( ND_PRF_MODARRAY__DATA_arr, (to_NT, to_sdim, from_NT, from_sdim,
+                                     idx_size, idxa_ANY, val_ANY, copyfun))
 #endif
 
 #if defined(ND_PRF_IDX_SEL__SHAPE) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_IDX_SEL__SHAPE, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( from_sdim)
-  ICM_ANY( idx_any)
-ICM_END( ND_PRF_IDX_SEL__SHAPE, (to_nt, to_sdim, from_nt, from_sdim, idx_any))
+  ICM_ANY( idx_ANY)
+ICM_END( ND_PRF_IDX_SEL__SHAPE, (to_NT, to_sdim, from_NT, from_sdim, idx_ANY))
 #endif
 
 #if defined(ND_PRF_IDX_SEL__DATA) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_IDX_SEL__DATA, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( from_sdim)
-  ICM_ANY( idx_any)
+  ICM_ANY( idx_ANY)
   ICM_ID( copyfun)
-ICM_END( ND_PRF_IDX_SEL__DATA, (to_nt, to_sdim, from_nt, from_sdim,
-                                idx_any, copyfun))
+ICM_END( ND_PRF_IDX_SEL__DATA, (to_NT, to_sdim, from_NT, from_sdim,
+                                idx_ANY, copyfun))
 #endif
 
 #if defined(ND_PRF_IDX_MODARRAY__DATA) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_IDX_MODARRAY__DATA, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( from_sdim)
-  ICM_ANY( idx_any)
-  ICM_ANY( val_any)
+  ICM_ANY( idx_ANY)
+  ICM_ANY( val_ANY)
   ICM_ID( copyfun)
-ICM_END( ND_PRF_IDX_MODARRAY__DATA, (to_nt, to_sdim, from_nt, from_sdim,
-                                     idx_any, val_any, copyfun))
+ICM_END( ND_PRF_IDX_MODARRAY__DATA, (to_NT, to_sdim, from_NT, from_sdim,
+                                     idx_ANY, val_ANY, copyfun))
 #endif
 
 
 #if defined(ND_VECT2OFFSET) || defined(ICM_ALL)
 ICM_DEF( ND_VECT2OFFSET, TRACE_PRF)
-  ICM_NT( off_nt)
+  ICM_NT( off_NT)
   ICM_INT( from_size)
-  ICM_NT( from_nt)
+  ICM_NT( from_NT)
   ICM_INT( shp_size)
-  ICM_VARANY( shp_size, shpa_any)
-ICM_END( ND_VECT2OFFSET, (off_nt, from_size, from_nt, shp_size, shpa_any))
+  ICM_VARANY( shp_size, shpa_ANY)
+ICM_END( ND_VECT2OFFSET, (off_NT, from_size, from_NT, shp_size, shpa_ANY))
 #endif
 
 #if defined(ND_IDXS2OFFSET) || defined(ICM_ALL)
 ICM_DEF( ND_IDXS2OFFSET, TRACE_PRF)
-  ICM_NT( off_nt)
+  ICM_NT( off_NT)
   ICM_INT( idxs_size)
-  ICM_VARNT( idxs_size, idxs_nt)
+  ICM_VARNT( idxs_size, idxs_NT)
   ICM_INT( shp_size)
-  ICM_VARANY( shp_size, shpa_any)
-ICM_END( ND_IDXS2OFFSET, (off_nt, idxs_size, idxs_nt, shp_size, shpa_any))
+  ICM_VARANY( shp_size, shpa_ANY)
+ICM_END( ND_IDXS2OFFSET, (off_NT, idxs_size, idxs_NT, shp_size, shpa_ANY))
 #endif
 
 
@@ -735,8 +738,8 @@ ICM_DEF( ND_KS_VECT2OFFSET, TRACE_PRF)
   ICM_ID( arr_name)
   ICM_INT( dim)
   ICM_INT( dims)
-  ICM_VARANY( dims, shp_any)
-ICM_END( ND_KS_VECT2OFFSET, (off_name, arr_name, dim, dims, shp_any))
+  ICM_VARANY( dims, shp_ANY)
+ICM_END( ND_KS_VECT2OFFSET, (off_name, arr_name, dim, dims, shp_ANY))
 #endif
 
 #if defined(ND_IDXS2OFFSET) || defined(ICM_ALL)
@@ -745,8 +748,8 @@ ICM_DEF( ND_IDXS2OFFSET, TRACE_PRF)
   ICM_INT( idxs_size)
   ICM_VARID( idxs_size, idxs)
   ICM_INT( shp_size)
-  ICM_VARANY( shp_size, shpa_any)
-ICM_END( ND_IDXS2OFFSET, (off, idxs_size, idxs, shp_size, shpa_any))
+  ICM_VARANY( shp_size, shpa_ANY)
+ICM_END( ND_IDXS2OFFSET, (off, idxs_size, idxs, shp_size, shpa_ANY))
 #endif
 
 
@@ -761,149 +764,149 @@ ICM_END( ND_IDXS2OFFSET, (off, idxs_size, idxs, shp_size, shpa_any))
 
 #if defined(ND_WL_GENARRAY__SHAPE_id) || defined(ICM_ALL)
 ICM_DEF( ND_WL_GENARRAY__SHAPE_id, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( shp_nt)
-  ICM_NT( val_nt)
+  ICM_NT( shp_NT)
+  ICM_NT( val_NT)
   ICM_INT( val_sdim)
-ICM_END( ND_WL_GENARRAY__SHAPE_id, (to_nt, to_sdim, shp_nt, val_nt, val_sdim))
+ICM_END( ND_WL_GENARRAY__SHAPE_id, (to_NT, to_sdim, shp_NT, val_NT, val_sdim))
 #endif
 
 #if defined(ND_WL_GENARRAY__SHAPE_arr) || defined(ICM_ALL)
 ICM_DEF( ND_WL_GENARRAY__SHAPE_arr, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_INT( shp_size)
-  ICM_VARANY( shp_size, shpa_any)
-  ICM_NT( val_nt)
+  ICM_VARANY( shp_size, shpa_ANY)
+  ICM_NT( val_NT)
   ICM_INT( val_sdim)
-ICM_END( ND_WL_GENARRAY__SHAPE_arr, (to_nt, to_sdim, shp_size, shpa_any,
-                                     val_nt, val_sdim))
+ICM_END( ND_WL_GENARRAY__SHAPE_arr, (to_NT, to_sdim, shp_size, shpa_ANY,
+                                     val_NT, val_sdim))
 #endif
 
 #endif /* TAGGED_ARRAYS */
 
 #if defined(WL_BEGIN__OFFSET) || defined(ICM_ALL)
 ICM_DEF( WL_BEGIN__OFFSET, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( idx_vec_nt)
+  ICM_NT( idx_vec_NT)
   ICM_INT( dims)
-ICM_END( WL_BEGIN__OFFSET, (to_nt, to_sdim, idx_vec_nt, dims))
+ICM_END( WL_BEGIN__OFFSET, (to_NT, to_sdim, idx_vec_NT, dims))
 #endif
 
 #if defined(WL_BEGIN) || defined(ICM_ALL)
 ICM_DEF( WL_BEGIN, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( idx_vec_nt)
+  ICM_NT( idx_vec_NT)
   ICM_INT( dims)
-ICM_END( WL_BEGIN, (to_nt, to_sdim, idx_vec_nt, dims))
+ICM_END( WL_BEGIN, (to_NT, to_sdim, idx_vec_NT, dims))
 #endif
 
 #if defined(WL_END__OFFSET) || defined(ICM_ALL)
 ICM_DEF( WL_END__OFFSET, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( idx_vec_nt)
+  ICM_NT( idx_vec_NT)
   ICM_INT( dims)
-ICM_END( WL_END__OFFSET, (to_nt, to_sdim, idx_vec_nt, dims))
+ICM_END( WL_END__OFFSET, (to_NT, to_sdim, idx_vec_NT, dims))
 #endif
 
 #if defined(WL_END) || defined(ICM_ALL)
 ICM_DEF( WL_END, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( idx_vec_nt)
+  ICM_NT( idx_vec_NT)
   ICM_INT( dims)
-ICM_END( WL_END, (to_nt, to_sdim, idx_vec_nt, dims))
+ICM_END( WL_END, (to_NT, to_sdim, idx_vec_NT, dims))
 #endif
 
 #if defined(WL_INIT_OFFSET) || defined(ICM_ALL)
 ICM_DEF( WL_INIT_OFFSET, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( idx_vec_nt)
+  ICM_NT( idx_vec_NT)
   ICM_INT( dims)
-ICM_END( WL_INIT_OFFSET, (to_nt, to_sdim, idx_vec_nt, dims))
+ICM_END( WL_INIT_OFFSET, (to_NT, to_sdim, idx_vec_NT, dims))
 #endif
 
 #if defined(WL_ASSIGN) || defined(ICM_ALL)
 ICM_DEF( WL_ASSIGN, TRACE_NONE)
-  ICM_NT( val_nt)
+  ICM_NT( val_NT)
   ICM_INT( val_sdim)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( idx_vec_nt)
+  ICM_NT( idx_vec_NT)
   ICM_INT( dims)
-  ICM_VARNT( dims, idxa_scl_nt)
-ICM_END( WL_ASSIGN, (val_nt, val_sdim, to_nt, to_sdim,
-                     idx_vec_nt, dims, idxa_scl_nt))
+  ICM_VARNT( dims, idxa_scl_NT)
+ICM_END( WL_ASSIGN, (val_NT, val_sdim, to_NT, to_sdim,
+                     idx_vec_NT, dims, idxa_scl_NT))
 #endif
 
 #if defined(WL_ASSIGN__INIT) || defined(ICM_ALL)
 ICM_DEF( WL_ASSIGN__INIT, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( idx_vec_nt)
+  ICM_NT( idx_vec_NT)
   ICM_INT( dims)
-  ICM_VARNT( dims, idxa_scl_nt)
-ICM_END( WL_ASSIGN__INIT, (to_nt, to_sdim, idx_vec_nt, dims, idxa_scl_nt))
+  ICM_VARNT( dims, idxa_scl_NT)
+ICM_END( WL_ASSIGN__INIT, (to_NT, to_sdim, idx_vec_NT, dims, idxa_scl_NT))
 #endif
 
 #if defined(WL_ASSIGN__COPY) || defined(ICM_ALL)
 ICM_DEF( WL_ASSIGN__COPY, TRACE_NONE)
-  ICM_NT( from_nt)
-  ICM_NT( to_nt)
+  ICM_NT( from_NT)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( idx_vec_nt)
+  ICM_NT( idx_vec_NT)
   ICM_INT( dims)
-  ICM_VARNT( dims, idxa_scl_nt)
-ICM_END( WL_ASSIGN__COPY, (from_nt, to_nt, to_sdim, idx_vec_nt, dims, idxa_scl_nt))
+  ICM_VARNT( dims, idxa_scl_NT)
+ICM_END( WL_ASSIGN__COPY, (from_NT, to_NT, to_sdim, idx_vec_NT, dims, idxa_scl_NT))
 #endif
 
 #if defined(WL_FOLD__OFFSET) || defined(ICM_ALL)
 ICM_DEF( WL_FOLD__OFFSET, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( idx_vec_nt)
+  ICM_NT( idx_vec_NT)
   ICM_INT( dims)
-  ICM_VARNT( dims, idxa_scl_nt)
-ICM_END( WL_FOLD__OFFSET, (to_nt, to_sdim, idx_vec_nt, dims, idxa_scl_nt))
+  ICM_VARNT( dims, idxa_scl_NT)
+ICM_END( WL_FOLD__OFFSET, (to_NT, to_sdim, idx_vec_NT, dims, idxa_scl_NT))
 #endif
 
 #if defined(WL_FOLD) || defined(ICM_ALL)
 ICM_DEF( WL_FOLD, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( idx_vec_nt)
+  ICM_NT( idx_vec_NT)
   ICM_INT( dims)
-  ICM_VARNT( dims, idxa_scl_nt)
-ICM_END( WL_FOLD, (to_nt, to_sdim, idx_vec_nt, dims, idxa_scl_nt))
+  ICM_VARNT( dims, idxa_scl_NT)
+ICM_END( WL_FOLD, (to_NT, to_sdim, idx_vec_NT, dims, idxa_scl_NT))
 #endif
 
 #if defined(WL_ADJUST_OFFSET) || defined(ICM_ALL)
 ICM_DEF( WL_ADJUST_OFFSET, TRACE_NONE)
   ICM_INT( dim)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( idx_vec_nt)
+  ICM_NT( idx_vec_NT)
   ICM_INT( dims)
-  ICM_VARNT( dims, idxa_scl_nt)
-ICM_END( WL_ADJUST_OFFSET, (dim, to_nt, to_sdim, idx_vec_nt, dims, idxa_scl_nt))
+  ICM_VARNT( dims, idxa_scl_NT)
+ICM_END( WL_ADJUST_OFFSET, (dim, to_NT, to_sdim, idx_vec_NT, dims, idxa_scl_NT))
 #endif
 
 #if defined(WL_SET_OFFSET) || defined(ICM_ALL)
 ICM_DEF( WL_SET_OFFSET, TRACE_NONE)
   ICM_INT( dim)
   ICM_INT( first_block_dim)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
-  ICM_NT( idx_vec_nt)
+  ICM_NT( idx_vec_NT)
   ICM_INT( dims)
-  ICM_VARNT( dims, idxa_scl_nt)
-ICM_END( WL_SET_OFFSET, (dim, first_block_dim, to_nt, to_sdim,
-                         idx_vec_nt, dims, idxa_scl_nt))
+  ICM_VARNT( dims, idxa_scl_NT)
+ICM_END( WL_SET_OFFSET, (dim, first_block_dim, to_NT, to_sdim,
+                         idx_vec_NT, dims, idxa_scl_NT))
 #endif
 
 
@@ -917,16 +920,16 @@ ICM_DEF( MT_SPMD_FUN_DEC, TRACE_NONE)
   ICM_ID( name)
   ICM_ID( from)
   ICM_INT( narg)
-  ICM_VARANY( (3*narg), arg_any)
-ICM_END( MT_SPMD_FUN_DEC, (name, from, narg, arg_any))
+  ICM_VARANY( (3*narg), arg_ANY)
+ICM_END( MT_SPMD_FUN_DEC, (name, from, narg, arg_ANY))
 #endif
 
 #if defined(MT_SPMD_FUN_RET) || defined(ICM_ALL)
 ICM_DEF( MT_SPMD_FUN_RET, TRACE_NONE)
   ICM_INT( barrier_id)
   ICM_INT( narg)
-  ICM_VARANY( (2*narg), arg_any)
-ICM_END( MT_SPMD_FUN_RET, (barrier_id, narg, arg_any))
+  ICM_VARANY( (2*narg), arg_ANY)
+ICM_END( MT_SPMD_FUN_RET, (barrier_id, narg, arg_ANY))
 #endif
 
 #if defined(MT_START_SYNCBLOCK) || defined(ICM_ALL)
@@ -1051,13 +1054,13 @@ ICM_END( MT_SPMD_PRESET, (name, narg, vararg))
 
 #if defined(MT_ADJUST_SCHEDULER__OFFSET) || defined(ICM_ALL)
 ICM_DEF( MT_ADJUST_SCHEDULER__OFFSET, TRACE_NONE)
-  ICM_NT( to_nt)
+  ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_INT( current_dim)
   ICM_ANY( lower)
   ICM_ANY( upper)
   ICM_ANY( unrolling)
-ICM_END( MT_ADJUST_SCHEDULER__OFFSET, (to_nt, to_sdim, current_dim,
+ICM_END( MT_ADJUST_SCHEDULER__OFFSET, (to_NT, to_sdim, current_dim,
                                        lower, upper, unrolling))
 #endif
 
@@ -1272,9 +1275,9 @@ ICM_END( MT_SCHEDULER_Affinity_INIT, (sched_id, ts_name, ts_dims,
 #if defined(TYPE_ERROR) || defined(ICM_ALL)
 ICM_DEF( TYPE_ERROR, TRACE_NONE)
   ICM_INT( cnt_to)
-  ICM_VARANY( (cnt_to), to_any)
+  ICM_VARANY( (cnt_to), to_ANY)
   ICM_STR( funname)
   ICM_INT( cnt_from)
-  ICM_VARANY( (cnt_from), from_any)
-ICM_END( TYPE_ERROR, (cnt_to, to_any, funname, cnt_from, from_any))
+  ICM_VARANY( (cnt_from), from_ANY)
+ICM_END( TYPE_ERROR, (cnt_to, to_ANY, funname, cnt_from, from_ANY))
 #endif

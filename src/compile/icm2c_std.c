@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2003/09/17 13:03:12  dkr
+ * postfixes _nt, _any renamed into _NT, _ANY
+ *
  * Revision 3.46  2003/06/12 17:23:12  dkr
  * support for multi-dimensional constant arrays added:
  * ICMs CREATE__VECT__... renamed into CREATE__ARRAY__... and modified
@@ -279,20 +282,20 @@
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_FUN_DEC( char *name, char *rettype_nt,
- *                              int narg, char **arg_any)
+ *   void ICMCompileND_FUN_DEC( char *name, char *rettype_NT,
+ *                              int narg, char **arg_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_FUN_DEC( name, rettype_nt, narg, [ TAG, basetype, arg_nt ]* )
+ *   ND_FUN_DEC( name, rettype_NT, narg, [ TAG, basetype, arg_NT ]* )
  *
  *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
  *
  ******************************************************************************/
 
 void
-ICMCompileND_FUN_DEC (char *name, char *rettype_nt, int narg, char **arg_any)
+ICMCompileND_FUN_DEC (char *name, char *rettype_NT, int narg, char **arg_ANY)
 {
     DBUG_ENTER ("ICMCompileND_FUN_DEC");
 
@@ -303,13 +306,13 @@ ICMCompileND_FUN_DEC (char *name, char *rettype_nt, int narg, char **arg_any)
 
     INDENT;
 #ifdef TAGGED_ARRAYS
-    if (rettype_nt[0] != '\0') {
-        fprintf (outfile, "SAC_ND_TYPE_NT( %s) ", rettype_nt);
+    if (rettype_NT[0] != '\0') {
+        fprintf (outfile, "SAC_ND_TYPE_NT( %s) ", rettype_NT);
     } else {
         fprintf (outfile, "void ");
     }
 #else
-    fprintf (outfile, "%s ", rettype_nt);
+    fprintf (outfile, "%s ", rettype_NT);
 #endif
     if (strcmp (name, "create_TheCommandLine") == 0) {
         fprintf (outfile, "%s( int __argc, char *__argv[])", name);
@@ -319,12 +322,12 @@ ICMCompileND_FUN_DEC (char *name, char *rettype_nt, int narg, char **arg_any)
         fprintf (outfile, "%s(", name);
 #ifdef TAGGED_ARRAYS
         ScanArglist (narg, 3, ",", ,
-                     fprintf (outfile, " SAC_ND_PARAM_%s( %s, %s)", arg_any[i],
-                              arg_any[i + 2], arg_any[i + 1]));
+                     fprintf (outfile, " SAC_ND_PARAM_%s( %s, %s)", arg_ANY[i],
+                              arg_ANY[i + 2], arg_ANY[i + 1]));
 #else
         ScanArglist (narg, 3, ",", ,
-                     fprintf (outfile, " SAC_ND_PARAM_%s( %s, %s)", arg_any[i],
-                              arg_any[i + 1], arg_any[i + 2]));
+                     fprintf (outfile, " SAC_ND_PARAM_%s( %s, %s)", arg_ANY[i],
+                              arg_ANY[i + 1], arg_ANY[i + 2]));
 #endif
         fprintf (outfile, ")");
     }
@@ -336,19 +339,19 @@ ICMCompileND_FUN_DEC (char *name, char *rettype_nt, int narg, char **arg_any)
  *
  * function:
  *   void ICMCompileND_FUN_AP( char *name, char *retname,
- *                             int narg, char **arg_any)
+ *                             int narg, char **arg_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_FUN_DEC( name, retname, narg, [ TAG, arg_nt ]* )
+ *   ND_FUN_DEC( name, retname, narg, [ TAG, arg_NT ]* )
  *
  *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
  *
  ******************************************************************************/
 
 void
-ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg_any)
+ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg_ANY)
 {
     DBUG_ENTER ("ICMCompileND_FUN_AP");
 
@@ -366,8 +369,8 @@ ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg_any)
     } else {
         fprintf (outfile, "%s(", name);
         ScanArglist (narg, 2, ",", ,
-                     fprintf (outfile, " SAC_ND_ARG_%s( %s)", arg_any[i],
-                              arg_any[i + 1]));
+                     fprintf (outfile, " SAC_ND_ARG_%s( %s)", arg_ANY[i],
+                              arg_ANY[i + 1]));
         fprintf (outfile, ");");
     }
     fprintf (outfile, "\n");
@@ -378,19 +381,19 @@ ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg_any)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_FUN_RET( char *retname, int narg, char **arg_any)
+ *   void ICMCompileND_FUN_RET( char *retname, int narg, char **arg_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_FUN_RET( retname, narg, [ TAG, arg_nt, decl_arg_nt ]* )
+ *   ND_FUN_RET( retname, narg, [ TAG, arg_NT, decl_arg_NT ]* )
  *
  *   where TAG is element in { out, inout }.
  *
  ******************************************************************************/
 
 void
-ICMCompileND_FUN_RET (char *retname, int narg, char **arg_any)
+ICMCompileND_FUN_RET (char *retname, int narg, char **arg_ANY)
 {
     DBUG_ENTER ("ICMCompileND_FUN_RET");
 
@@ -401,8 +404,8 @@ ICMCompileND_FUN_RET (char *retname, int narg, char **arg_any)
 
     INDENT;
     ScanArglist (narg, 3, "\n", INDENT,
-                 fprintf (outfile, "SAC_ND_RET_%s( %s, %s)", arg_any[i], arg_any[i + 1],
-                          arg_any[i + 2]));
+                 fprintf (outfile, "SAC_ND_RET_%s( %s, %s)", arg_ANY[i], arg_ANY[i + 1],
+                          arg_ANY[i + 2]));
     if (narg > 0) {
         fprintf (outfile, "\n");
         INDENT;
@@ -801,23 +804,23 @@ ICMCompileND_DECL__MIRROR_EXTERN (char *nt, int sdim)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_CHECK_REUSE( char *to_nt, int to_sdim,
- *                                  char *from_nt, int from_sdim,
+ *   void ICMCompileND_CHECK_REUSE( char *to_NT, int to_sdim,
+ *                                  char *from_NT, int from_sdim,
  *                                  char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_CHECK_REUSE( to_nt, to_sdim, from_nt, from_sdim, copyfun)
+ *   ND_CHECK_REUSE( to_NT, to_sdim, from_NT, from_sdim, copyfun)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_CHECK_REUSE (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
+ICMCompileND_CHECK_REUSE (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
                           char *copyfun)
 {
-    shape_class_t to_sc = ICUGetShapeClass (to_nt);
-    unique_class_t to_uc = ICUGetUniqueClass (to_nt);
+    shape_class_t to_sc = ICUGetShapeClass (to_NT);
+    unique_class_t to_uc = ICUGetUniqueClass (to_NT);
 
     DBUG_ENTER ("ICMCompileND_CHECK_REUSE");
 
@@ -831,19 +834,19 @@ ICMCompileND_CHECK_REUSE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
         fprintf (outfile, "SAC_NOOP()\n");
     } else {
         INDENT;
-        fprintf (outfile, "SAC_IS_LASTREF__BLOCK_BEGIN( %s)\n", from_nt);
+        fprintf (outfile, "SAC_IS_LASTREF__BLOCK_BEGIN( %s)\n", from_NT);
         indent++;
-        ICMCompileND_ASSIGN (to_nt, to_sdim, from_nt, from_sdim, copyfun);
+        ICMCompileND_ASSIGN (to_NT, to_sdim, from_NT, from_sdim, copyfun);
 
         INDENT;
         fprintf (outfile,
                  "SAC_TR_MEM_PRINT("
                  " (\"reuse memory of %s at %%p for %s\","
                  " SAC_ND_A_FIELD( %s)))\n",
-                 from_nt, to_nt, from_nt);
+                 from_NT, to_NT, from_NT);
         indent--;
         INDENT;
-        fprintf (outfile, "SAC_IS_LASTREF__BLOCK_END( %s)\n", from_nt);
+        fprintf (outfile, "SAC_IS_LASTREF__BLOCK_END( %s)\n", from_NT);
         INDENT;
         fprintf (outfile, "else\n");
     }
@@ -854,20 +857,20 @@ ICMCompileND_CHECK_REUSE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_SET__SHAPE( char *to_nt, int dim, char **shp_any)
+ *   void ICMCompileND_SET__SHAPE( char *to_NT, int dim, char **shp_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_SET__SHAPE( to_nt, dim, [shp]* )
+ *   ND_SET__SHAPE( to_NT, dim, [shp]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileND_SET__SHAPE (char *to_nt, int dim, char **shp_any)
+ICMCompileND_SET__SHAPE (char *to_NT, int dim, char **shp_ANY)
 {
     int i;
-    shape_class_t to_sc = ICUGetShapeClass (to_nt);
+    shape_class_t to_sc = ICUGetShapeClass (to_NT);
 
     DBUG_ENTER ("ICMCompileND_SET__SHAPE");
 
@@ -878,7 +881,7 @@ ICMCompileND_SET__SHAPE (char *to_nt, int dim, char **shp_any)
 
     /*
      * CAUTION:
-     * 'shp_any[i]' is either a tagged identifier (representing a scalar)
+     * 'shp_ANY[i]' is either a tagged identifier (representing a scalar)
      * or a constant scalar!
      */
 
@@ -890,24 +893,24 @@ ICMCompileND_SET__SHAPE (char *to_nt, int dim, char **shp_any)
         /*
          * ND_A_DESC_DIM, ND_A_MIRROR_DIM have already been set by ND_ALLOC__DESC!
          */
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == %d", to_nt, dim);
+        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == %d", to_NT, dim);
                          ,
                          fprintf (outfile, "Assignment with incompatible types found!"););
         BLOCK_VARDECS (fprintf (outfile, "int SAC_size = 1;");
-                       , SET_SHAPES_AUD__NUM (to_nt, i, 0, dim, INDENT;
+                       , SET_SHAPES_AUD__NUM (to_NT, i, 0, dim, INDENT;
                                               fprintf (outfile, "SAC_size *= \n");
-                                              , ReadScalar (shp_any[i], NULL, 0););
+                                              , ReadScalar (shp_ANY[i], NULL, 0););
 
-                       SET_SIZE (to_nt, fprintf (outfile, "SAC_size");););
+                       SET_SIZE (to_NT, fprintf (outfile, "SAC_size");););
         break;
 
     case C_akd:
         BLOCK_VARDECS (fprintf (outfile, "int SAC_size = 1;");
-                       , SET_SHAPES_AKD (to_nt, i, 0, dim, INDENT;
+                       , SET_SHAPES_AKD (to_NT, i, 0, dim, INDENT;
                                          fprintf (outfile, "SAC_size *= \n");
-                                         , ReadScalar (shp_any[i], NULL, 0););
+                                         , ReadScalar (shp_ANY[i], NULL, 0););
 
-                       SET_SIZE (to_nt, fprintf (outfile, "SAC_size");););
+                       SET_SIZE (to_NT, fprintf (outfile, "SAC_size");););
         break;
 
     case C_aks:
@@ -934,15 +937,15 @@ ICMCompileND_SET__SHAPE (char *to_nt, int dim, char **shp_any)
     case C_aks:
         DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
         for (i = 0; i < dim; i++) {
-            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d) == ", to_nt, i);
-                             ReadScalar (shp_any[i], NULL, 0);
+            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d) == ", to_NT, i);
+                             ReadScalar (shp_ANY[i], NULL, 0);
                              , fprintf (outfile,
                                         "Assignment with incompatible types found!"););
         }
         /* here is no break missing */
 
     case C_akd:
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == %d", to_nt, dim);
+        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == %d", to_NT, dim);
                          ,
                          fprintf (outfile, "Assignment with incompatible types found!"););
         break;
@@ -1036,22 +1039,22 @@ ICMCompileND_REFRESH_MIRROR (char *nt, int sdim)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_CHECK_MIRROR( char *to_nt, int to_sdim,
- *                                   char *from_nt, int from_sdim)
+ *   void ICMCompileND_CHECK_MIRROR( char *to_NT, int to_sdim,
+ *                                   char *from_NT, int from_sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_CHECK_MIRROR( to_nt, to_sdim, from_nt, from_sdim)
+ *   ND_CHECK_MIRROR( to_NT, to_sdim, from_NT, from_sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_CHECK_MIRROR (char *to_nt, int to_sdim, char *from_nt, int from_sdim)
+ICMCompileND_CHECK_MIRROR (char *to_NT, int to_sdim, char *from_NT, int from_sdim)
 {
     int i;
-    shape_class_t to_sc = ICUGetShapeClass (to_nt);
-    shape_class_t from_sc = ICUGetShapeClass (from_nt);
+    shape_class_t to_sc = ICUGetShapeClass (to_NT);
+    shape_class_t from_sc = ICUGetShapeClass (from_NT);
     int to_dim = DIM_NO_OFFSET (to_sdim);
 
     DBUG_ENTER ("ICMCompileND_CHECK_MIRROR");
@@ -1064,7 +1067,7 @@ ICMCompileND_CHECK_MIRROR (char *to_nt, int to_sdim, char *from_nt, int from_sdi
 #if 0
   if ((runtimecheck & RUNTIMECHECK_TYPE) && (from_sc == C_aud)) {
     INDENT;
-    fprintf( outfile, "if (SAC_ND_A_DIM( %s) > 0) {\n", from_nt);
+    fprintf( outfile, "if (SAC_ND_A_DIM( %s) > 0) {\n", from_NT);
     indent++;
   }
 #endif
@@ -1075,10 +1078,10 @@ ICMCompileND_CHECK_MIRROR (char *to_nt, int to_sdim, char *from_nt, int from_sdi
     switch (to_sc) {
     case C_scl:
         /* check dimension/size */
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", from_nt);
+        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", from_NT);
                          ,
                          fprintf (outfile, "Assignment with incompatible types found!"););
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SIZE( %s) == 1", from_nt);
+        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SIZE( %s) == 1", from_NT);
                          ,
                          fprintf (outfile, "Assignment with incompatible types found!"););
         break;
@@ -1087,7 +1090,7 @@ ICMCompileND_CHECK_MIRROR (char *to_nt, int to_sdim, char *from_nt, int from_sdi
         switch (from_sc) {
         case C_aud:
             ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s)",
-                                      to_nt, from_nt);
+                                      to_NT, from_NT);
                              , fprintf (outfile,
                                         "Assignment with incompatible types found!"););
             /* here is no break missing! */
@@ -1097,13 +1100,13 @@ ICMCompileND_CHECK_MIRROR (char *to_nt, int to_sdim, char *from_nt, int from_sdi
                 ASSURE_TYPE_ASS (fprintf (outfile,
                                           "SAC_ND_A_SHAPE( %s, %d) == SAC_ND_A_SHAPE( "
                                           "%s, %d)",
-                                          to_nt, i, from_nt, i);
+                                          to_NT, i, from_NT, i);
                                  ,
                                  fprintf (outfile,
                                           "Assignment with incompatible types found!"););
             }
             ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SIZE( %s) == SAC_ND_A_SIZE( %s)",
-                                      to_nt, from_nt);
+                                      to_NT, from_NT);
                              , fprintf (outfile,
                                         "Assignment with incompatible types found!"););
             break;
@@ -1121,7 +1124,7 @@ ICMCompileND_CHECK_MIRROR (char *to_nt, int to_sdim, char *from_nt, int from_sdi
         switch (from_sc) {
         case C_aud:
             ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s)",
-                                      to_nt, from_nt);
+                                      to_NT, from_NT);
                              , fprintf (outfile,
                                         "Assignment with incompatible types found!"););
             break;
@@ -1161,19 +1164,19 @@ ICMCompileND_CHECK_MIRROR (char *to_nt, int to_sdim, char *from_nt, int from_sdi
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_ASSIGN( char *to_nt, int to_sdim,
- *                             char *from_nt, int from_sdim,
+ *   void ICMCompileND_ASSIGN( char *to_NT, int to_sdim,
+ *                             char *from_NT, int from_sdim,
  *                             char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_ASSIGN( to_nt, to_sdim, from_nt, from_sdim, copyfun)
+ *   ND_ASSIGN( to_NT, to_sdim, from_NT, from_sdim, copyfun)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_ASSIGN (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
+ICMCompileND_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
                      char *copyfun)
 {
     DBUG_ENTER ("ICMCompileND_ASSIGN");
@@ -1183,12 +1186,12 @@ ICMCompileND_ASSIGN (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
 #include "icm_trace.c"
 #undef ND_ASSIGN
 
-    ICMCompileND_ASSIGN__DESC (to_nt, from_nt);
+    ICMCompileND_ASSIGN__DESC (to_NT, from_NT);
 
-    ICMCompileND_ASSIGN__DIMSHP (to_nt, to_sdim, from_nt, from_sdim);
+    ICMCompileND_ASSIGN__DIMSHP (to_NT, to_sdim, from_NT, from_sdim);
 
     INDENT;
-    fprintf (outfile, "SAC_ND_ASSIGN__DATA( %s, %s, %s)\n", to_nt, from_nt, copyfun);
+    fprintf (outfile, "SAC_ND_ASSIGN__DATA( %s, %s, %s)\n", to_NT, from_NT, copyfun);
 
     DBUG_VOID_RETURN;
 }
@@ -1196,24 +1199,24 @@ ICMCompileND_ASSIGN (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_ASSIGN__DESC( char *to_nt, char *from_nt)
+ *   void ICMCompileND_ASSIGN__DESC( char *to_NT, char *from_NT)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_ASSIGN__DESC( to_nt, to_sdim, from_nt, from_sdim)
+ *   ND_ASSIGN__DESC( to_NT, to_sdim, from_NT, from_sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_ASSIGN__DESC (char *to_nt, char *from_nt)
+ICMCompileND_ASSIGN__DESC (char *to_NT, char *from_NT)
 {
-    shape_class_t to_sc = ICUGetShapeClass (to_nt);
-    hidden_class_t to_hc = ICUGetHiddenClass (to_nt);
-    unique_class_t to_uc = ICUGetUniqueClass (to_nt);
-    shape_class_t from_sc = ICUGetShapeClass (from_nt);
-    hidden_class_t from_hc = ICUGetHiddenClass (from_nt);
-    unique_class_t from_uc = ICUGetUniqueClass (from_nt);
+    shape_class_t to_sc = ICUGetShapeClass (to_NT);
+    hidden_class_t to_hc = ICUGetHiddenClass (to_NT);
+    unique_class_t to_uc = ICUGetUniqueClass (to_NT);
+    shape_class_t from_sc = ICUGetShapeClass (from_NT);
+    hidden_class_t from_hc = ICUGetHiddenClass (from_NT);
+    unique_class_t from_uc = ICUGetUniqueClass (from_NT);
 
     DBUG_ENTER ("ICMCompileND_ASSIGN__DESC");
 
@@ -1226,54 +1229,54 @@ ICMCompileND_ASSIGN__DESC (char *to_nt, char *from_nt)
 
     if (((to_sc == C_scl) && ((to_hc == C_nhd) || (to_uc == C_unq)))
         && ((from_sc == C_scl) && ((from_hc == C_nhd) || (from_uc == C_unq)))) {
-        /* 'to_nt' has no desc, 'from_nt' has no desc */
+        /* 'to_NT' has no desc, 'from_NT' has no desc */
         INDENT;
         fprintf (outfile, "SAC_NOOP()\n");
     } else if (((to_sc == C_scl) && ((to_hc == C_nhd) || (to_uc == C_unq)))
                && ((from_sc == C_aud) || ((from_hc == C_hid) && (from_uc == C_nuq)))) {
-        /* 'to_nt' has no desc, 'from_nt' has a desc */
+        /* 'to_NT' has no desc, 'from_NT' has a desc */
         INDENT;
         if (to_hc == C_hid) {
             DBUG_ASSERT ((to_uc == C_unq), "Illegal assignment found!");
             /*
-             * data vector of 'from_nt' is reused by 'to_nt'
-             * (and 'to_nt' is unique, i.e. RC of 'from_nt' is 1)
-             *   -> ND_FREE__DESC( from_nt)
+             * data vector of 'from_NT' is reused by 'to_NT'
+             * (and 'to_NT' is unique, i.e. RC of 'from_NT' is 1)
+             *   -> ND_FREE__DESC( from_NT)
              */
-            fprintf (outfile, "SAC_ND_FREE__DESC( %s)\n", from_nt);
+            fprintf (outfile, "SAC_ND_FREE__DESC( %s)\n", from_NT);
         } else {
             /*
-             * data vector of 'from_nt' is not reused by 'to_nt'
-             *   -> ND_DEC_RC_FREE( from_nt) in ND_ASSIGN__DATA
+             * data vector of 'from_NT' is not reused by 'to_NT'
+             *   -> ND_DEC_RC_FREE( from_NT) in ND_ASSIGN__DATA
              */
         }
     } else if (((to_sc == C_aud) || ((to_hc == C_hid) && (to_uc == C_nuq)))
                && ((from_sc == C_scl) && ((from_hc == C_nhd) || (from_uc == C_unq)))) {
-        /* 'to_nt' has a desc, 'from_nt' has no desc */
+        /* 'to_NT' has a desc, 'from_NT' has no desc */
         INDENT;
-        fprintf (outfile, "SAC_ND_ALLOC__DESC( %s, 0)\n", to_nt);
+        fprintf (outfile, "SAC_ND_ALLOC__DESC( %s, 0)\n", to_NT);
         INDENT;
-        fprintf (outfile, "SAC_ND_SET__RC( %s, 1)\n", to_nt);
+        fprintf (outfile, "SAC_ND_SET__RC( %s, 1)\n", to_NT);
     } else if (((to_sc == C_aks) || (to_sc == C_akd) || (to_sc == C_aud))
                && ((from_sc == C_aks) || (from_sc == C_akd) || (from_sc == C_aud))) {
-        /* 'to_nt' has a desc, 'from_nt' has a desc, no scalar involved */
+        /* 'to_NT' has a desc, 'from_NT' has a desc, no scalar involved */
         INDENT;
-        fprintf (outfile, "SAC_ND_A_DESC( %s) = SAC_ND_A_DESC( %s);\n", to_nt, from_nt);
+        fprintf (outfile, "SAC_ND_A_DESC( %s) = SAC_ND_A_DESC( %s);\n", to_NT, from_NT);
     } else if (((to_sc == C_aud) || ((to_hc == C_hid) && (to_uc == C_nuq)))
                && ((from_sc == C_aud) || ((from_hc == C_hid) && (from_uc == C_nuq)))) {
-        /* 'to_nt' has a desc, 'from_nt' has a desc, scalar involved */
+        /* 'to_NT' has a desc, 'from_NT' has a desc, scalar involved */
         if ((to_sc == C_aud) || ((from_sc == C_aud) && (from_uc == C_nuq))) {
             /*
-             * 'from_nt' is a non-unique hidden and cannot be reused by 'to_nt'
-             *   -> ND_ALLOC__DESC( to_nt, 0)
-             *   -> ND_DEC_RC_FREE( from_nt) in ND_ASSIGN__DATA
+             * 'from_NT' is a non-unique hidden and cannot be reused by 'to_NT'
+             *   -> ND_ALLOC__DESC( to_NT, 0)
+             *   -> ND_DEC_RC_FREE( from_NT) in ND_ASSIGN__DATA
              */
             INDENT;
-            fprintf (outfile, "SAC_ND_ALLOC__DESC( %s, 0)\n", to_nt);
+            fprintf (outfile, "SAC_ND_ALLOC__DESC( %s, 0)\n", to_NT);
         } else {
             INDENT;
-            fprintf (outfile, "SAC_ND_A_DESC( %s) = SAC_ND_A_DESC( %s);\n", to_nt,
-                     from_nt);
+            fprintf (outfile, "SAC_ND_A_DESC( %s) = SAC_ND_A_DESC( %s);\n", to_NT,
+                     from_NT);
         }
     } else {
         DBUG_ASSERT ((0), "Illegal assignment found!");
@@ -1285,22 +1288,22 @@ ICMCompileND_ASSIGN__DESC (char *to_nt, char *from_nt)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_ASSIGN__DIMSHP( char *to_nt, int to_sdim,
- *                                     char *from_nt, int from_sdim)
+ *   void ICMCompileND_ASSIGN__DIMSHP( char *to_NT, int to_sdim,
+ *                                     char *from_NT, int from_sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_ASSIGN__DIMSHP( to_nt, to_sdim, from_nt, from_sdim)
+ *   ND_ASSIGN__DIMSHP( to_NT, to_sdim, from_NT, from_sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_ASSIGN__DIMSHP (char *to_nt, int to_sdim, char *from_nt, int from_sdim)
+ICMCompileND_ASSIGN__DIMSHP (char *to_NT, int to_sdim, char *from_NT, int from_sdim)
 {
     int i;
-    shape_class_t to_sc = ICUGetShapeClass (to_nt);
-    shape_class_t from_sc = ICUGetShapeClass (from_nt);
+    shape_class_t to_sc = ICUGetShapeClass (to_NT);
+    shape_class_t from_sc = ICUGetShapeClass (from_NT);
     int to_dim = DIM_NO_OFFSET (to_sdim);
     int from_dim = DIM_NO_OFFSET (from_sdim);
 
@@ -1311,7 +1314,7 @@ ICMCompileND_ASSIGN__DIMSHP (char *to_nt, int to_sdim, char *from_nt, int from_s
 #include "icm_trace.c"
 #undef ND_ASSIGN__DIMSHP
 
-    ICMCompileND_CHECK_MIRROR (to_nt, to_sdim, from_nt, from_sdim);
+    ICMCompileND_CHECK_MIRROR (to_NT, to_sdim, from_NT, from_sdim);
 
     /*
      * assign missing descriptor entries
@@ -1333,11 +1336,11 @@ ICMCompileND_ASSIGN__DIMSHP (char *to_nt, int to_sdim, char *from_nt, int from_s
                 fprintf (outfile,
                          "SAC_ND_A_DESC_SHAPE( %s, %d)"
                          " = SAC_ND_A_SHAPE( %s, %d);\n",
-                         to_nt, i, from_nt, i);
+                         to_NT, i, from_NT, i);
             }
             INDENT;
-            fprintf (outfile, "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_nt,
-                     from_nt);
+            fprintf (outfile, "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_NT,
+                     from_NT);
             break;
         case C_akd:
             /* here is no break missing */
@@ -1362,16 +1365,16 @@ ICMCompileND_ASSIGN__DIMSHP (char *to_nt, int to_sdim, char *from_nt, int from_s
                 fprintf (outfile,
                          "SAC_ND_A_DESC_SHAPE( %s, %d)"
                          " = SAC_ND_A_SHAPE( %s, %d);\n",
-                         to_nt, i, from_nt, i);
+                         to_NT, i, from_NT, i);
             }
             INDENT;
-            fprintf (outfile, "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_nt,
-                     from_nt);
+            fprintf (outfile, "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_NT,
+                     from_NT);
             /* here is no break missing */
         case C_akd:
             INDENT;
-            fprintf (outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_DIM( %s);\n", to_nt,
-                     from_nt);
+            fprintf (outfile, "SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_DIM( %s);\n", to_NT,
+                     from_NT);
             break;
         case C_aud:
             INDENT;
@@ -1405,20 +1408,20 @@ ICMCompileND_ASSIGN__DIMSHP (char *to_nt, int to_sdim, char *from_nt, int from_s
             fprintf (outfile,
                      "SAC_ND_A_MIRROR_SHAPE( %s, %d) = "
                      "SAC_ND_A_SHAPE( %s, %d);\n",
-                     to_nt, i, from_nt, i);
+                     to_NT, i, from_NT, i);
         }
         INDENT;
-        fprintf (outfile, "SAC_ND_A_MIRROR_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_nt,
-                 from_nt);
+        fprintf (outfile, "SAC_ND_A_MIRROR_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_NT,
+                 from_NT);
         break;
 
     case C_aud:
         INDENT;
-        fprintf (outfile, "SAC_ND_A_MIRROR_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_nt,
-                 from_nt);
+        fprintf (outfile, "SAC_ND_A_MIRROR_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_NT,
+                 from_NT);
         INDENT;
-        fprintf (outfile, "SAC_ND_A_MIRROR_DIM( %s) = SAC_ND_A_DIM( %s);\n", to_nt,
-                 from_nt);
+        fprintf (outfile, "SAC_ND_A_MIRROR_DIM( %s) = SAC_ND_A_DIM( %s);\n", to_NT,
+                 from_NT);
         break;
 
     default:
@@ -1432,19 +1435,19 @@ ICMCompileND_ASSIGN__DIMSHP (char *to_nt, int to_sdim, char *from_nt, int from_s
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_COPY( char *to_nt, int to_sdim,
- *                           char *from_nt, int from_sdim,
+ *   void ICMCompileND_COPY( char *to_NT, int to_sdim,
+ *                           char *from_NT, int from_sdim,
  *                           char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_COPY( to_nt, to_sdim, from_nt, copyfun)
+ *   ND_COPY( to_NT, to_sdim, from_NT, copyfun)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_COPY (char *to_nt, int to_sdim, char *from_nt, int from_sdim, char *copyfun)
+ICMCompileND_COPY (char *to_NT, int to_sdim, char *from_NT, int from_sdim, char *copyfun)
 {
     DBUG_ENTER ("ICMCompileND_COPY");
 
@@ -1455,16 +1458,16 @@ ICMCompileND_COPY (char *to_nt, int to_sdim, char *from_nt, int from_sdim, char 
 
     /* allocate descriptor */
     INDENT;
-    fprintf (outfile, "SAC_ND_ALLOC_BEGIN( %s, 1, SAC_ND_A_DIM( %s))\n", to_nt, from_nt);
+    fprintf (outfile, "SAC_ND_ALLOC_BEGIN( %s, 1, SAC_ND_A_DIM( %s))\n", to_NT, from_NT);
 
     /* copy descriptor entries and mirror */
-    ICMCompileND_COPY__SHAPE (to_nt, to_sdim, from_nt, from_sdim);
+    ICMCompileND_COPY__SHAPE (to_NT, to_sdim, from_NT, from_sdim);
 
     INDENT;
-    fprintf (outfile, "SAC_ND_ALLOC_END( %s, 1, SAC_ND_A_DIM( %s))\n", to_nt, from_nt);
+    fprintf (outfile, "SAC_ND_ALLOC_END( %s, 1, SAC_ND_A_DIM( %s))\n", to_NT, from_NT);
 
     INDENT;
-    fprintf (outfile, "SAC_ND_COPY__DATA( %s, %s, %s)\n", to_nt, from_nt, copyfun);
+    fprintf (outfile, "SAC_ND_COPY__DATA( %s, %s, %s)\n", to_NT, from_NT, copyfun);
 
     DBUG_VOID_RETURN;
 }
@@ -1472,21 +1475,21 @@ ICMCompileND_COPY (char *to_nt, int to_sdim, char *from_nt, int from_sdim, char 
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_COPY__SHAPE( char *to_nt, int to_sdim,
- *                                  char *from_nt, int from_sdim)
+ *   void ICMCompileND_COPY__SHAPE( char *to_NT, int to_sdim,
+ *                                  char *from_NT, int from_sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_COPY__SHAPE( to_nt, to_sdim, from_nt, from_sdim)
+ *   ND_COPY__SHAPE( to_NT, to_sdim, from_NT, from_sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim)
+ICMCompileND_COPY__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sdim)
 {
     int i;
-    shape_class_t to_sc = ICUGetShapeClass (to_nt);
+    shape_class_t to_sc = ICUGetShapeClass (to_NT);
     int to_dim = DIM_NO_OFFSET (to_sdim);
     int from_dim = DIM_NO_OFFSET (from_sdim);
 
@@ -1497,7 +1500,7 @@ ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
 #include "icm_trace.c"
 #undef ND_COPY__SHAPE
 
-    ICMCompileND_CHECK_MIRROR (to_nt, to_sdim, from_nt, from_sdim);
+    ICMCompileND_CHECK_MIRROR (to_NT, to_sdim, from_NT, from_sdim);
 
     /*
      * copy descriptor entries and mirror
@@ -1508,12 +1511,12 @@ ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
          * ND_A_DESC_DIM, ND_A_MIRROR_DIM have already been set by ND_ALLOC__DESC!
          */
         ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s)",
-                                  to_nt, from_nt);
+                                  to_NT, from_NT);
                          ,
                          fprintf (outfile, "Assignment with incompatible types found!"););
         /* here is no break missing */
     case C_akd:
-        SET_SIZE (to_nt, fprintf (outfile, "SAC_ND_A_SIZE( %s)", from_nt););
+        SET_SIZE (to_NT, fprintf (outfile, "SAC_ND_A_SIZE( %s)", from_NT););
         break;
 
     case C_aks:
@@ -1530,18 +1533,18 @@ ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
 
     switch (to_sc) {
     case C_aud:
-        SET_SHAPES_AUD__XXX (to_nt, i, fprintf (outfile, "SAC_i");
+        SET_SHAPES_AUD__XXX (to_NT, i, fprintf (outfile, "SAC_i");
                              , 0, fprintf (outfile, "0");
-                             , from_dim, fprintf (outfile, "SAC_ND_A_DIM( %s)", from_nt);
+                             , from_dim, fprintf (outfile, "SAC_ND_A_DIM( %s)", from_NT);
                              ,
                              /* noop */
-                             , fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", from_nt, i);
-                             , fprintf (outfile, "SAC_ND_A_SHAPE( %s, SAC_i)", from_nt););
+                             , fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", from_NT, i);
+                             , fprintf (outfile, "SAC_ND_A_SHAPE( %s, SAC_i)", from_NT););
         break;
 
     case C_akd:
-        SET_SHAPES_AKD (to_nt, i, 0, to_dim, ,
-                        fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", from_nt, i););
+        SET_SHAPES_AKD (to_NT, i, 0, to_dim, ,
+                        fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", from_NT, i););
         break;
 
     case C_aks:
@@ -1561,19 +1564,19 @@ ICMCompileND_COPY__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_MAKE_UNIQUE( char *to_nt, int to_sdim,
- *                                  char *from_nt, int from_sdim,
+ *   void ICMCompileND_MAKE_UNIQUE( char *to_NT, int to_sdim,
+ *                                  char *from_NT, int from_sdim,
  *                                  char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_MAKE_UNIQUE( to_nt, to_sdim, from_nt, from_sdim, copyfun)
+ *   ND_MAKE_UNIQUE( to_NT, to_sdim, from_NT, from_sdim, copyfun)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_MAKE_UNIQUE (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
+ICMCompileND_MAKE_UNIQUE (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
                           char *copyfun)
 {
     DBUG_ENTER ("ICMCompileND_MAKE_UNIQUE");
@@ -1587,25 +1590,25 @@ ICMCompileND_MAKE_UNIQUE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
     fprintf (outfile,
              "SAC_TR_MEM_PRINT("
              " (\"ND_MAKE_UNIQUE( %s, %d, %s, %d, %s)\"))\n",
-             to_nt, to_sdim, from_nt, from_sdim, copyfun);
+             to_NT, to_sdim, from_NT, from_sdim, copyfun);
     INDENT;
-    fprintf (outfile, "SAC_TR_REF_PRINT_RC( %s)\n", from_nt);
+    fprintf (outfile, "SAC_TR_REF_PRINT_RC( %s)\n", from_NT);
     INDENT;
-    fprintf (outfile, "SAC_IS_LASTREF__BLOCK_BEGIN( %s)\n", from_nt);
+    fprintf (outfile, "SAC_IS_LASTREF__BLOCK_BEGIN( %s)\n", from_NT);
     indent++;
     INDENT;
-    fprintf (outfile, "SAC_TR_MEM_PRINT( (\"%s is already unique.\"))\n", from_nt);
-    ICMCompileND_ASSIGN (to_nt, to_sdim, from_nt, from_sdim, copyfun);
+    fprintf (outfile, "SAC_TR_MEM_PRINT( (\"%s is already unique.\"))\n", from_NT);
+    ICMCompileND_ASSIGN (to_NT, to_sdim, from_NT, from_sdim, copyfun);
     indent--;
     INDENT;
-    fprintf (outfile, "SAC_IS_LASTREF__BLOCK_ELSE( %s)\n", from_nt);
+    fprintf (outfile, "SAC_IS_LASTREF__BLOCK_ELSE( %s)\n", from_NT);
     indent++;
-    ICMCompileND_COPY (to_nt, to_sdim, from_nt, from_sdim, copyfun);
+    ICMCompileND_COPY (to_NT, to_sdim, from_NT, from_sdim, copyfun);
     INDENT;
-    fprintf (outfile, "SAC_ND_DEC_RC( %s, 1)\n", from_nt);
+    fprintf (outfile, "SAC_ND_DEC_RC( %s, 1)\n", from_NT);
     indent--;
     INDENT;
-    fprintf (outfile, "SAC_IS_LASTREF__BLOCK_END( %s)\n", from_nt);
+    fprintf (outfile, "SAC_IS_LASTREF__BLOCK_END( %s)\n", from_NT);
 
     DBUG_VOID_RETURN;
 }
@@ -1614,23 +1617,23 @@ ICMCompileND_MAKE_UNIQUE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
  *
  * function:
  *   void ICMCompileND_CREATE__ARRAY__DIM( int dim,
- *                                         int val_size, char **vala_any)
+ *                                         int val_size, char **vala_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_CREATE__ARRAY__DIM( dim, val_size, [ vala_any ]* )
+ *   ND_CREATE__ARRAY__DIM( dim, val_size, [ vala_ANY ]* )
  *
  *   dim: top-level dimension
  *           [a,b,c,d]       ->   dim == 1
  *           [[a,b],[c,d]]   ->   dim == 2
  *   val_size: size of data vector
- *   vala_any: data vector
+ *   vala_ANY: data vector
  *
  ******************************************************************************/
 
 void
-ICMCompileND_CREATE__ARRAY__DIM (int dim, int val_size, char **vala_any)
+ICMCompileND_CREATE__ARRAY__DIM (int dim, int val_size, char **vala_ANY)
 {
     bool entries_are_scalars;
     int i;
@@ -1644,14 +1647,14 @@ ICMCompileND_CREATE__ARRAY__DIM (int dim, int val_size, char **vala_any)
 
     /*
      * CAUTION:
-     * 'vala_any[i]' is either a tagged identifier (scalar or non-scalar)
+     * 'vala_ANY[i]' is either a tagged identifier (scalar or non-scalar)
      * or a constant scalar!
      */
 
     entries_are_scalars = FALSE;
     for (i = 0; i < val_size; i++) {
-        if ((vala_any[i][0] != '(') || /* not a tagged id -> is a const scalar! */
-            (ICUGetShapeClass (vala_any[i]) == C_scl)) {
+        if ((vala_ANY[i][0] != '(') || /* not a tagged id -> is a const scalar! */
+            (ICUGetShapeClass (vala_ANY[i]) == C_scl)) {
             entries_are_scalars = TRUE;
         }
     }
@@ -1664,8 +1667,8 @@ ICMCompileND_CREATE__ARRAY__DIM (int dim, int val_size, char **vala_any)
     } else if (entries_are_scalars) {
         fprintf (outfile, "%d", dim);
     } else {
-        /* 'vala_any[i]' is a tagged identifier! */
-        fprintf (outfile, "SAC_ND_A_DIM( %s) + %d", vala_any[0], dim);
+        /* 'vala_ANY[i]' is a tagged identifier! */
+        fprintf (outfile, "SAC_ND_A_DIM( %s) + %d", vala_ANY[0], dim);
     }
 
     DBUG_VOID_RETURN;
@@ -1674,34 +1677,34 @@ ICMCompileND_CREATE__ARRAY__DIM (int dim, int val_size, char **vala_any)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_CREATE__ARRAY__SHAPE( char *to_nt, int to_sdim,
+ *   void ICMCompileND_CREATE__ARRAY__SHAPE( char *to_NT, int to_sdim,
  *                                           int dim, int *shp,
- *                                           int val_size, char **vala_any,
+ *                                           int val_size, char **vala_ANY,
  *                                           int val0_sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_CREATE__ARRAY__SHAPE( to_nt, to_sdim, dim, [ shp ]* ,
- *                            val_size, [ vala_any ]* , val0_sdim )
+ *   ND_CREATE__ARRAY__SHAPE( to_NT, to_sdim, dim, [ shp ]* ,
+ *                            val_size, [ vala_ANY ]* , val0_sdim )
  *
  *   dim: top-level dimension
  *   shape: top-level shape
  *           [a,b,c,d]       ->   dim == 1, shape == [4]
  *           [[a,b],[c,d]]   ->   dim == 2, shape == [2,2]
  *   val_size: size of data vector
- *   vala_any: data vector
+ *   vala_ANY: data vector
  *   val0_sdim: shape-encoded dimension of the data vector elements
  *
  ******************************************************************************/
 
 void
-ICMCompileND_CREATE__ARRAY__SHAPE (char *to_nt, int to_sdim, int dim, int *shp,
-                                   int val_size, char **vala_any, int val0_sdim)
+ICMCompileND_CREATE__ARRAY__SHAPE (char *to_NT, int to_sdim, int dim, int *shp,
+                                   int val_size, char **vala_ANY, int val0_sdim)
 {
     bool entries_are_scalars;
     int i;
-    shape_class_t to_sc = ICUGetShapeClass (to_nt);
+    shape_class_t to_sc = ICUGetShapeClass (to_NT);
     int to_dim = DIM_NO_OFFSET (to_sdim);
     int val0_dim = DIM_NO_OFFSET (val0_sdim);
 
@@ -1714,14 +1717,14 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_nt, int to_sdim, int dim, int *shp,
 
     /*
      * CAUTION:
-     * 'vala_any[i]' is either a tagged identifier (scalar or non-scalar)
+     * 'vala_ANY[i]' is either a tagged identifier (scalar or non-scalar)
      * or a constant scalar!
      */
 
     entries_are_scalars = FALSE;
     for (i = 0; i < val_size; i++) {
-        if ((vala_any[i][0] != '(') || /* not a tagged id -> is a const scalar! */
-            (ICUGetShapeClass (vala_any[i]) == C_scl)) {
+        if ((vala_ANY[i][0] != '(') || /* not a tagged id -> is a const scalar! */
+            (ICUGetShapeClass (vala_ANY[i]) == C_scl)) {
             entries_are_scalars = TRUE;
         }
     }
@@ -1737,13 +1740,13 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_nt, int to_sdim, int dim, int *shp,
             shp_str[i] = (char *)Malloc (20 * sizeof (char));
             sprintf (shp_str[i], "%d", shp[i]);
         }
-        ICMCompileND_SET__SHAPE (to_nt, dim, shp_str);
+        ICMCompileND_SET__SHAPE (to_NT, dim, shp_str);
         for (i = 0; i < dim; i++) {
             shp_str[i] = Free (shp_str[i]);
         }
         shp_str = Free (shp_str);
     } else {
-        /* 'vala_any[i]' is a tagged identifier */
+        /* 'vala_ANY[i]' is a tagged identifier */
 
         /*
          * set descriptor and non-constant part of mirror
@@ -1754,7 +1757,7 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_nt, int to_sdim, int dim, int *shp,
             for (i = 1; i < val_size; i++) {
                 ASSURE_TYPE_ASS (fprintf (outfile,
                                           "SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s)",
-                                          vala_any[i], vala_any[0]);
+                                          vala_ANY[i], vala_ANY[0]);
                                  , fprintf (outfile,
                                             "Inconsistent vector found:"
                                             " First entry and entry at position %d have"
@@ -1763,7 +1766,7 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_nt, int to_sdim, int dim, int *shp,
                 /* check whether all entries have identical size */
                 ASSURE_TYPE_ASS (fprintf (outfile,
                                           "SAC_ND_A_SIZE( %s) == SAC_ND_A_SIZE( %s)",
-                                          vala_any[i], vala_any[0]);
+                                          vala_ANY[i], vala_ANY[0]);
                                  , fprintf (outfile,
                                             "Inconsistent vector found:"
                                             " First entry and entry at position %d have"
@@ -1777,29 +1780,29 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_nt, int to_sdim, int dim, int *shp,
              */
             ASSURE_TYPE_ASS (fprintf (outfile,
                                       "SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s) + %d",
-                                      to_nt, vala_any[0], dim);
+                                      to_NT, vala_ANY[0], dim);
                              , fprintf (outfile,
                                         "Assignment with incompatible types found!"););
 
             for (i = 0; i < dim; i++) {
-                SET_SHAPE_AUD__NUM (to_nt, i, fprintf (outfile, "%d", shp[i]););
+                SET_SHAPE_AUD__NUM (to_NT, i, fprintf (outfile, "%d", shp[i]););
             }
-            SET_SHAPES_AUD__XXX (to_nt, i, fprintf (outfile, "SAC_i");
+            SET_SHAPES_AUD__XXX (to_NT, i, fprintf (outfile, "SAC_i");
                                  , dim, fprintf (outfile, "%d", dim);
                                  , dim + val0_dim,
-                                 fprintf (outfile, "SAC_ND_A_DIM( %s)", to_nt);
+                                 fprintf (outfile, "SAC_ND_A_DIM( %s)", to_NT);
                                  ,
                                  /* noop */
                                  , fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)",
-                                            vala_any[0], i - dim);
+                                            vala_ANY[0], i - dim);
                                  , fprintf (outfile, "SAC_ND_A_SHAPE( %s, SAC_i-%d)",
-                                            vala_any[0], dim);
+                                            vala_ANY[0], dim);
                                  /* SAC_ND_A_SHAPE() with variable index works for AUD
                                     only! */
             );
 
-            SET_SIZE (to_nt, fprintf (outfile, "%d * SAC_ND_A_SIZE( %s)", val_size,
-                                      vala_any[0]););
+            SET_SIZE (to_NT, fprintf (outfile, "%d * SAC_ND_A_SIZE( %s)", val_size,
+                                      vala_ANY[0]););
             break;
 
         case C_akd:
@@ -1810,7 +1813,7 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_nt, int to_sdim, int dim, int *shp,
                     ASSURE_TYPE_ASS (fprintf (outfile,
                                               "SAC_ND_A_SHAPE( %s, %d) == "
                                               "SAC_ND_A_SHAPE( %s, %d)",
-                                              vala_any[i], d, vala_any[0], d);
+                                              vala_ANY[i], d, vala_ANY[0], d);
                                      ,
                                      fprintf (outfile,
                                               "Inconsistent vector found:"
@@ -1821,14 +1824,14 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_nt, int to_sdim, int dim, int *shp,
             }
 
             for (i = 0; i < dim; i++) {
-                SET_SHAPE_AKD (to_nt, i, fprintf (outfile, "%d", shp[i]););
+                SET_SHAPE_AKD (to_NT, i, fprintf (outfile, "%d", shp[i]););
             }
-            SET_SHAPES_AKD (to_nt, i, dim, to_dim, ,
-                            fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", vala_any[0],
+            SET_SHAPES_AKD (to_NT, i, dim, to_dim, ,
+                            fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", vala_ANY[0],
                                      i - dim););
 
-            SET_SIZE (to_nt, fprintf (outfile, "%d * SAC_ND_A_SIZE( %s)", val_size,
-                                      vala_any[0]););
+            SET_SIZE (to_NT, fprintf (outfile, "%d * SAC_ND_A_SIZE( %s)", val_size,
+                                      vala_ANY[0]););
             break;
 
         case C_aks:
@@ -1852,7 +1855,7 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_nt, int to_sdim, int dim, int *shp,
 
         case C_aks:
             for (i = 0; i < dim; i++) {
-                ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d) == %d", to_nt,
+                ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d) == %d", to_NT,
                                           i, shp[i]);
                                  ,
                                  fprintf (outfile,
@@ -1863,7 +1866,7 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_nt, int to_sdim, int dim, int *shp,
                 ASSURE_TYPE_ASS (fprintf (outfile,
                                           "SAC_ND_A_SHAPE( %s, %d) == SAC_ND_A_SHAPE( "
                                           "%s, %d)",
-                                          to_nt, i, vala_any[0], i - dim);
+                                          to_NT, i, vala_ANY[0], i - dim);
                                  ,
                                  fprintf (outfile,
                                           "Assignment with incompatible types found!"););
@@ -1873,7 +1876,7 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_nt, int to_sdim, int dim, int *shp,
         case C_akd:
             ASSURE_TYPE_ASS (fprintf (outfile,
                                       "SAC_ND_A_DIM( %s) == SAC_ND_A_DIM( %s) + %d",
-                                      to_nt, vala_any[0], dim);
+                                      to_NT, vala_ANY[0], dim);
                              , fprintf (outfile,
                                         "Assignment with incompatible types found!"););
             break;
@@ -1894,19 +1897,19 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_nt, int to_sdim, int dim, int *shp,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_CREATE__ARRAY__DATA( char *to_nt, int to_sdim,
- *                                          int val_size, char **vala_any,
+ *   void ICMCompileND_CREATE__ARRAY__DATA( char *to_NT, int to_sdim,
+ *                                          int val_size, char **vala_ANY,
  *                                          char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_CREATE__VEC__DATAT( to_nt, to_sdim, val_size, [ vala_any ]* , copyfun)
+ *   ND_CREATE__VEC__DATAT( to_NT, to_sdim, val_size, [ vala_ANY ]* , copyfun)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_CREATE__ARRAY__DATA (char *to_nt, int to_sdim, int val_size, char **vala_any,
+ICMCompileND_CREATE__ARRAY__DATA (char *to_NT, int to_sdim, int val_size, char **vala_ANY,
                                   char *copyfun)
 {
     bool entries_are_scalars;
@@ -1921,14 +1924,14 @@ ICMCompileND_CREATE__ARRAY__DATA (char *to_nt, int to_sdim, int val_size, char *
 
     /*
      * CAUTION:
-     * 'vala_any[i]' is either a tagged identifier (scalar or non-scalar)
+     * 'vala_ANY[i]' is either a tagged identifier (scalar or non-scalar)
      * or a constant scalar!
      */
 
     entries_are_scalars = FALSE;
     for (i = 0; i < val_size; i++) {
-        if ((vala_any[i][0] != '(') || /* not a tagged id -> is a const scalar! */
-            (ICUGetShapeClass (vala_any[i]) == C_scl)) {
+        if ((vala_ANY[i][0] != '(') || /* not a tagged id -> is a const scalar! */
+            (ICUGetShapeClass (vala_ANY[i]) == C_scl)) {
             entries_are_scalars = TRUE;
         }
     }
@@ -1936,12 +1939,12 @@ ICMCompileND_CREATE__ARRAY__DATA (char *to_nt, int to_sdim, int val_size, char *
     if (entries_are_scalars) {
         for (i = 0; i < val_size; i++) {
             INDENT;
-            fprintf (outfile, "SAC_ND_WRITE_COPY( %s, %d, ", to_nt, i);
-            ReadScalar_Check (vala_any[i], NULL, 0);
+            fprintf (outfile, "SAC_ND_WRITE_COPY( %s, %d, ", to_NT, i);
+            ReadScalar_Check (vala_ANY[i], NULL, 0);
             fprintf (outfile, ", %s)\n", copyfun);
         }
     } else {
-        /* 'vala_any[i]' is a tagged identifier */
+        /* 'vala_ANY[i]' is a tagged identifier */
 
         if (val_size > 0) {
             BLOCK_VARDECS (fprintf (outfile, "int SAC_j, SAC_i = 0;");
@@ -1952,7 +1955,7 @@ ICMCompileND_CREATE__ARRAY__DATA (char *to_nt, int to_sdim, int val_size, char *
                                    ASSURE_TYPE_ASS (fprintf (outfile,
                                                              "SAC_ND_A_SIZE( %s) == "
                                                              "SAC_ND_A_SIZE( %s)",
-                                                             vala_any[i], vala_any[0]);
+                                                             vala_ANY[i], vala_ANY[0]);
                                                     ,
                                                     fprintf (outfile,
                                                              "Inconsistent vector found:"
@@ -1966,18 +1969,18 @@ ICMCompileND_CREATE__ARRAY__DATA (char *to_nt, int to_sdim, int val_size, char *
                                FOR_LOOP_INC (fprintf (outfile, "SAC_j");
                                              , fprintf (outfile, "0");
                                              , fprintf (outfile, "SAC_ND_A_SIZE( %s)",
-                                                        vala_any[i]);
+                                                        vala_ANY[i]);
                                              , INDENT;
                                              fprintf (outfile,
                                                       "SAC_ND_WRITE_READ_COPY("
                                                       " %s, SAC_i, %s, SAC_j, %s)\n",
-                                                      to_nt, vala_any[i], copyfun);
+                                                      to_NT, vala_ANY[i], copyfun);
                                              INDENT; fprintf (outfile, "SAC_i++;\n"););
                            }
 
                            ASSURE_TYPE_ASS (fprintf (outfile,
                                                      "SAC_ND_A_SIZE( %s) == SAC_i",
-                                                     to_nt);
+                                                     to_NT);
                                             , fprintf (outfile, "Assignment with "
                                                                 "incompatible types "
                                                                 "found!");););
@@ -1990,21 +1993,21 @@ ICMCompileND_CREATE__ARRAY__DATA (char *to_nt, int to_sdim, int val_size, char *
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_SHAPE__DATA( char *to_nt, int to_sdim,
- *                                      char *from_nt, int from_sdim)
+ *   void ICMCompileND_PRF_SHAPE__DATA( char *to_NT, int to_sdim,
+ *                                      char *from_NT, int from_sdim)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_SHAPE__DATA( to_nt, to_sdim, from_nt, from_sdim)
+ *   ND_PRF_SHAPE__DATA( to_NT, to_sdim, from_NT, from_sdim)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_SHAPE__DATA (char *to_nt, int to_sdim, char *from_nt, int from_sdim)
+ICMCompileND_PRF_SHAPE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim)
 {
     int i;
-    shape_class_t from_sc = ICUGetShapeClass (from_nt);
+    shape_class_t from_sc = ICUGetShapeClass (from_NT);
     int from_dim = DIM_NO_OFFSET (from_sdim);
 
     DBUG_ENTER ("ICMCompileND_PRF_SHAPE__DATA");
@@ -2018,7 +2021,7 @@ ICMCompileND_PRF_SHAPE__DATA (char *to_nt, int to_sdim, char *from_nt, int from_
     fprintf (outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_SHAPE__DATA( %s, %d, %s, %d)\"))\n",
-             to_nt, to_sdim, from_nt, from_sdim);
+             to_NT, to_sdim, from_NT, from_sdim);
 
     switch (from_sc) {
     case C_scl:
@@ -2032,18 +2035,18 @@ ICMCompileND_PRF_SHAPE__DATA (char *to_nt, int to_sdim, char *from_nt, int from_
         DBUG_ASSERT ((from_dim >= 0), "illegal dimension found!");
         for (i = 0; i < from_dim; i++) {
             INDENT;
-            fprintf (outfile, "SAC_ND_WRITE( %s, %d) = SAC_ND_A_SHAPE( %s, %d);\n", to_nt,
-                     i, from_nt, i);
+            fprintf (outfile, "SAC_ND_WRITE( %s, %d) = SAC_ND_A_SHAPE( %s, %d);\n", to_NT,
+                     i, from_NT, i);
         }
         break;
 
     case C_aud:
         FOR_LOOP_INC_VARDEC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
-                             , fprintf (outfile, "SAC_ND_A_DIM( %s)", from_nt);, INDENT;
+                             , fprintf (outfile, "SAC_ND_A_DIM( %s)", from_NT);, INDENT;
                              fprintf (outfile,
                                       "SAC_ND_WRITE( %s, SAC_i) = "
                                       "SAC_ND_A_SHAPE( %s, SAC_i);\n",
-                                      to_nt, from_nt););
+                                      to_NT, from_NT););
         break;
 
     default:
@@ -2057,7 +2060,7 @@ ICMCompileND_PRF_SHAPE__DATA (char *to_nt, int to_sdim, char *from_nt, int from_
 /******************************************************************************
  *
  * Function:
- *   void PrfReshape_Shape( char *to_nt, int to_sdim,
+ *   void PrfReshape_Shape( char *to_NT, int to_sdim,
  *                          void *shp, int shp_size,
  *                          void (*shp_size_fun)( void *),
  *                          void (*shp_read_fun)( void *, char *, int))
@@ -2068,12 +2071,12 @@ ICMCompileND_PRF_SHAPE__DATA (char *to_nt, int to_sdim, char *from_nt, int from_
  ******************************************************************************/
 
 static void
-PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
+PrfReshape_Shape (char *to_NT, int to_sdim, void *shp, int shp_size,
                   void (*shp_size_fun) (void *),
                   void (*shp_read_fun) (void *, char *, int))
 {
     int i;
-    shape_class_t to_sc = ICUGetShapeClass (to_nt);
+    shape_class_t to_sc = ICUGetShapeClass (to_NT);
     int to_dim = DIM_NO_OFFSET (to_sdim);
 
     DBUG_ENTER ("PrfReshape_Shape");
@@ -2086,35 +2089,35 @@ PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
         /*
          * ND_A_DESC_DIM, ND_A_MIRROR_DIM have already been set by ND_ALLOC__DESC!
          */
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == ", to_nt);
+        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == ", to_NT);
                          GetAttr (shp, shp_size, shp_size_fun);
                          ,
                          fprintf (outfile, "Assignment with incompatible types found!"););
         BLOCK_VARDECS (fprintf (outfile, "int SAC_size = 1;");
                        ,
                        /*
-                        * although 'to_nt' is AUD, 'to_dim' may indeed be >=0 if the sac2c
-                        * flag -minarrayrep has been used, i.e. 'to_nt' may be implemented
+                        * although 'to_NT' is AUD, 'to_dim' may indeed be >=0 if the sac2c
+                        * flag -minarrayrep has been used, i.e. 'to_NT' may be implemented
                         * as AUD although it is AKD!!!
                         */
-                       SET_SHAPES_AUD__XXX (to_nt, i, fprintf (outfile, "SAC_i");
+                       SET_SHAPES_AUD__XXX (to_NT, i, fprintf (outfile, "SAC_i");
                                             , 0, fprintf (outfile, "0");
                                             , to_dim,
-                                            fprintf (outfile, "SAC_ND_A_DIM( %s)", to_nt);
+                                            fprintf (outfile, "SAC_ND_A_DIM( %s)", to_NT);
                                             , INDENT; fprintf (outfile, "SAC_size *= \n");
                                             , shp_read_fun (shp, NULL, i);
                                             , shp_read_fun (shp, "SAC_i", -1););
 
-                       SET_SIZE (to_nt, fprintf (outfile, "SAC_size");););
+                       SET_SIZE (to_NT, fprintf (outfile, "SAC_size");););
         break;
 
     case C_akd:
         BLOCK_VARDECS (fprintf (outfile, "int SAC_size = 1;");
-                       , SET_SHAPES_AKD (to_nt, i, 0, to_dim, INDENT;
+                       , SET_SHAPES_AKD (to_NT, i, 0, to_dim, INDENT;
                                          fprintf (outfile, "SAC_size *= \n");
                                          , shp_read_fun (shp, NULL, i););
 
-                       SET_SIZE (to_nt, fprintf (outfile, "SAC_size");););
+                       SET_SIZE (to_NT, fprintf (outfile, "SAC_size");););
         break;
 
     case C_aks:
@@ -2139,7 +2142,7 @@ PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
     case C_aks:
         DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
         for (i = 0; i < to_dim; i++) {
-            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d) == ", to_nt, i);
+            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d) == ", to_NT, i);
                              shp_read_fun (shp, NULL, i);
                              , fprintf (outfile,
                                         "Assignment with incompatible types found!"););
@@ -2147,7 +2150,7 @@ PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
         /* here is no break missing */
 
     case C_akd:
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == ", to_nt);
+        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == ", to_NT);
                          GetAttr (shp, shp_size, shp_size_fun);
                          ,
                          fprintf (outfile, "Assignment with incompatible types found!"););
@@ -2168,18 +2171,18 @@ PrfReshape_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_RESHAPE__SHAPE_id( char *to_nt, int to_sdim,
- *                                            char *shp_nt)
+ *   void ICMCompileND_PRF_RESHAPE__SHAPE_id( char *to_NT, int to_sdim,
+ *                                            char *shp_NT)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_RESHAPE__SHAPE_id( to_nt, to_sdim, shp_nt)
+ *   ND_PRF_RESHAPE__SHAPE_id( to_NT, to_sdim, shp_NT)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_RESHAPE__SHAPE_id (char *to_nt, int to_sdim, char *shp_nt)
+ICMCompileND_PRF_RESHAPE__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT)
 {
     DBUG_ENTER ("ICMCompileND_PRF_RESHAPE__SHAPE_id");
 
@@ -2192,12 +2195,12 @@ ICMCompileND_PRF_RESHAPE__SHAPE_id (char *to_nt, int to_sdim, char *shp_nt)
     fprintf (outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_RESHAPE__SHAPE( %s, %d, ...)\"))\n",
-             to_nt, to_sdim);
+             to_NT, to_sdim);
 
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", shp_nt);
+    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", shp_NT);
                      , fprintf (outfile, "1st argument of F_reshape has (dim != 1)!"););
 
-    PrfReshape_Shape (to_nt, to_sdim, shp_nt, -1, SizeId, ReadId);
+    PrfReshape_Shape (to_NT, to_sdim, shp_NT, -1, SizeId, ReadId);
 
     DBUG_VOID_RETURN;
 }
@@ -2205,19 +2208,19 @@ ICMCompileND_PRF_RESHAPE__SHAPE_id (char *to_nt, int to_sdim, char *shp_nt)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_RESHAPE__SHAPE_arr( char *to_nt, int to_sdim,
- *                                             int shp_size, char **shpa_any)
+ *   void ICMCompileND_PRF_RESHAPE__SHAPE_arr( char *to_NT, int to_sdim,
+ *                                             int shp_size, char **shpa_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_RESHAPE__SHAPE_arr( to_nt, to_sdim, shp_size, shpa_any)
+ *   ND_PRF_RESHAPE__SHAPE_arr( to_NT, to_sdim, shp_size, shpa_ANY)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_RESHAPE__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
-                                     char **shpa_any)
+ICMCompileND_PRF_RESHAPE__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
+                                     char **shpa_ANY)
 {
     int i;
 
@@ -2230,7 +2233,7 @@ ICMCompileND_PRF_RESHAPE__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
 
     /*
      * CAUTION:
-     * 'shpa_any[i]' is either a tagged identifier (representing a scalar)
+     * 'shpa_ANY[i]' is either a tagged identifier (representing a scalar)
      * or a constant scalar!
      */
 
@@ -2238,17 +2241,17 @@ ICMCompileND_PRF_RESHAPE__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
     fprintf (outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_RESHAPE__SHAPE( %s, %d, ...)\"))\n",
-             to_nt, to_sdim);
+             to_NT, to_sdim);
 
     for (i = 0; i < shp_size; i++) {
-        if (shpa_any[i][0] == '(') {
-            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", shpa_any[i]);
+        if (shpa_ANY[i][0] == '(') {
+            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", shpa_ANY[i]);
                              , fprintf (outfile,
                                         "1st argument of F_reshape has (dim != 1)!"););
         }
     }
 
-    PrfReshape_Shape (to_nt, to_sdim, shpa_any, shp_size, NULL, ReadConstArray);
+    PrfReshape_Shape (to_NT, to_sdim, shpa_ANY, shp_size, NULL, ReadConstArray);
 
     DBUG_VOID_RETURN;
 }
@@ -2256,22 +2259,22 @@ ICMCompileND_PRF_RESHAPE__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
 /******************************************************************************
  *
  * Function:
- *   void ICMCompileND_PRF_SEL__SHAPE_id( char *to_nt, int to_sdim,
- *                                        char *from_nt, int from_sdim,
- *                                        char *idx_nt)
+ *   void ICMCompileND_PRF_SEL__SHAPE_id( char *to_NT, int to_sdim,
+ *                                        char *from_NT, int from_sdim,
+ *                                        char *idx_NT)
  *
  * Description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_SEL__SHAPE_id( to_nt, to_sdim, from_nt, from_sdim, idx_nt)
+ *   ND_PRF_SEL__SHAPE_id( to_NT, to_sdim, from_NT, from_sdim, idx_NT)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_SEL__SHAPE_id (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
-                                char *idx_nt)
+ICMCompileND_PRF_SEL__SHAPE_id (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                                char *idx_NT)
 {
-    shape_class_t to_sc = ICUGetShapeClass (to_nt);
+    shape_class_t to_sc = ICUGetShapeClass (to_NT);
     int to_dim = DIM_NO_OFFSET (to_sdim);
 
     DBUG_ENTER ("ICMCompileND_PRF_SEL__SHAPE_id");
@@ -2285,7 +2288,7 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_nt, int to_sdim, char *from_nt, int fro
     fprintf (outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_SEL__SHAPE( %s, %d, %s, %d, ...)\"))\n",
-             to_nt, to_sdim, from_nt, from_sdim);
+             to_NT, to_sdim, from_NT, from_sdim);
 
     switch (to_sc) {
     case C_aud:
@@ -2294,10 +2297,10 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_nt, int to_sdim, char *from_nt, int fro
          */
         if (to_dim != 0) {
             ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == SAC_ND_A_SIZE( %s)",
-                                      from_nt, idx_nt);
+                                      from_NT, idx_NT);
                              , fprintf (outfile, "Result of F_sel has (dim != 0)!"););
         }
-        ICMCompileND_SET__SHAPE (to_nt, 0, NULL);
+        ICMCompileND_SET__SHAPE (to_NT, 0, NULL);
         break;
 
     case C_akd:
@@ -2322,23 +2325,23 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_nt, int to_sdim, char *from_nt, int fro
 /******************************************************************************
  *
  * Function:
- *   void ICMCompileND_PRF_SEL__SHAPE_arr( char *to_nt, int to_sdim,
- *                                         char *from_nt, int from_sdim,
- *                                         int idx_size, char **idxa_any)
+ *   void ICMCompileND_PRF_SEL__SHAPE_arr( char *to_NT, int to_sdim,
+ *                                         char *from_NT, int from_sdim,
+ *                                         int idx_size, char **idxa_ANY)
  *
  * Description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_SEL__SHAPE_arr( to_nt, to_sdim, from_nt, from_sdim,
- *                          idx_size, [ idxa_any ]* )
+ *   ND_PRF_SEL__SHAPE_arr( to_NT, to_sdim, from_NT, from_sdim,
+ *                          idx_size, [ idxa_ANY ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_SEL__SHAPE_arr (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
-                                 int idx_size, char **idxa_any)
+ICMCompileND_PRF_SEL__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                                 int idx_size, char **idxa_ANY)
 {
-    shape_class_t to_sc = ICUGetShapeClass (to_nt);
+    shape_class_t to_sc = ICUGetShapeClass (to_NT);
     int to_dim = DIM_NO_OFFSET (to_sdim);
 
     DBUG_ENTER ("ICMCompileND_PRF_SEL__SHAPE_arr");
@@ -2350,14 +2353,14 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_nt, int to_sdim, char *from_nt, int fr
 
     /*
      * CAUTION:
-     * 'idxa_any[i]' is either a tagged identifier or a constant scalar!
+     * 'idxa_ANY[i]' is either a tagged identifier or a constant scalar!
      */
 
     INDENT;
     fprintf (outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_SEL__SHAPE( %s, %d, %s, %d, ...)\"))\n",
-             to_nt, to_sdim, from_nt, from_sdim);
+             to_NT, to_sdim, from_NT, from_sdim);
 
     switch (to_sc) {
     case C_aud:
@@ -2365,11 +2368,11 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_nt, int to_sdim, char *from_nt, int fr
          * for the time being implemented for scalar results only!
          */
         if (to_dim != 0) {
-            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == %d", from_nt,
+            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == %d", from_NT,
                                       idx_size);
                              , fprintf (outfile, "Result of F_sel has (dim != 0)!"););
         }
-        ICMCompileND_SET__SHAPE (to_nt, 0, NULL);
+        ICMCompileND_SET__SHAPE (to_NT, 0, NULL);
         break;
 
     case C_akd:
@@ -2394,8 +2397,8 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_nt, int to_sdim, char *from_nt, int fr
 /******************************************************************************
  *
  * Function:
- *   void PrfSel_Data( char *to_nt, int to_sdim,
- *                     char *from_nt, int from_sdim,
+ *   void PrfSel_Data( char *to_NT, int to_sdim,
+ *                     char *from_NT, int from_sdim,
  *                     void *idx, int idx_size,
  *                     void (*idx_size_fun)( void *),
  *                     void (*idx_read_fun)( void *, char *, int),
@@ -2407,7 +2410,7 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_nt, int to_sdim, char *from_nt, int fr
  ******************************************************************************/
 
 static void
-PrfSel_Data (char *to_nt, int to_sdim, char *from_nt, int from_sdim, void *idx,
+PrfSel_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim, void *idx,
              int idx_size, void (*idx_size_fun) (void *),
              void (*idx_read_fun) (void *, char *, int), char *copyfun)
 {
@@ -2419,21 +2422,21 @@ PrfSel_Data (char *to_nt, int to_sdim, char *from_nt, int from_sdim, void *idx,
     if (to_dim == 0) {
         BLOCK_VARDECS (fprintf (outfile, "int SAC_idx;");
                        , Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun,
-                                      idx_read_fun, from_nt, from_dim);
+                                      idx_read_fun, from_NT, from_dim);
                        INDENT;
                        fprintf (outfile,
                                 "SAC_ND_WRITE_READ_COPY( %s, 0, %s, SAC_idx, %s)\n",
-                                to_nt, from_nt, copyfun););
+                                to_NT, from_NT, copyfun););
     } else {
         BLOCK_VARDECS (fprintf (outfile, "int SAC_idx, SAC_i;");
                        , Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun,
-                                      idx_read_fun, from_nt, from_dim);
+                                      idx_read_fun, from_NT, from_dim);
                        FOR_LOOP_INC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
-                                     , fprintf (outfile, "SAC_ND_A_SIZE( %s)", to_nt);
+                                     , fprintf (outfile, "SAC_ND_A_SIZE( %s)", to_NT);
                                      , INDENT; fprintf (outfile,
                                                         "SAC_ND_WRITE_READ_COPY( %s, "
                                                         "SAC_i, %s, SAC_idx, %s)\n",
-                                                        to_nt, from_nt, copyfun);
+                                                        to_NT, from_NT, copyfun);
                                      INDENT; fprintf (outfile, "SAC_idx++;\n");););
     }
 
@@ -2443,22 +2446,22 @@ PrfSel_Data (char *to_nt, int to_sdim, char *from_nt, int from_sdim, void *idx,
 /******************************************************************************
  *
  * Function:
- *   void ICMCompileND_PRF_SEL__DATA_id( char *to_nt, int to_sdim,
- *                                       char *from_nt, int from_sdim,
- *                                       char *idx_nt, int idx_size,
+ *   void ICMCompileND_PRF_SEL__DATA_id( char *to_NT, int to_sdim,
+ *                                       char *from_NT, int from_sdim,
+ *                                       char *idx_NT, int idx_size,
  *                                       char *copyfun)
  *
  * Description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_SEL__DATA_id( to_nt, to_sdim, from_nt, from_sdim, idx_nt, idx_size,
+ *   ND_PRF_SEL__DATA_id( to_NT, to_sdim, from_NT, from_sdim, idx_NT, idx_size,
  *                        copyfun)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_SEL__DATA_id (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
-                               char *idx_nt, int idx_size, char *copyfun)
+ICMCompileND_PRF_SEL__DATA_id (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                               char *idx_NT, int idx_size, char *copyfun)
 {
     DBUG_ENTER ("ICMCompileND_PRF_SEL__DATA_id");
 
@@ -2471,15 +2474,15 @@ ICMCompileND_PRF_SEL__DATA_id (char *to_nt, int to_sdim, char *from_nt, int from
     fprintf (outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_SEL__DATA( %s, %d, %s, %d, ...)\"))\n",
-             to_nt, to_sdim, from_nt, from_sdim);
+             to_NT, to_sdim, from_NT, from_sdim);
 
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", idx_nt);
+    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", idx_NT);
                      , fprintf (outfile, "1st argument of F_sel has (dim != 1)!"););
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) >= SAC_ND_A_SIZE( %s)", from_nt,
-                              idx_nt);
+    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) >= SAC_ND_A_SIZE( %s)", from_NT,
+                              idx_NT);
                      , fprintf (outfile, "1st argument of F_sel has illegal size!"););
 
-    PrfSel_Data (to_nt, to_sdim, from_nt, from_sdim, idx_nt, idx_size, SizeId, ReadId,
+    PrfSel_Data (to_NT, to_sdim, from_NT, from_sdim, idx_NT, idx_size, SizeId, ReadId,
                  copyfun);
 
     DBUG_VOID_RETURN;
@@ -2488,22 +2491,22 @@ ICMCompileND_PRF_SEL__DATA_id (char *to_nt, int to_sdim, char *from_nt, int from
 /******************************************************************************
  *
  * Function:
- *   void ICMCompileND_PRF_SEL__DATA_arr( char *to_nt, int to_sdim,
- *                                        char *from_nt, int from_sdim,
- *                                        int idx_size, char **idxa_any,
+ *   void ICMCompileND_PRF_SEL__DATA_arr( char *to_NT, int to_sdim,
+ *                                        char *from_NT, int from_sdim,
+ *                                        int idx_size, char **idxa_ANY,
  *                                        char *copyfun)
  *
  * Description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_SEL__DATA_arr( to_nt, to_sdim, from_nt, from_sdim,
- *                         idx_size, [ idxa_any ]* , copyfun)
+ *   ND_PRF_SEL__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
+ *                         idx_size, [ idxa_ANY ]* , copyfun)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_SEL__DATA_arr (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
-                                int idx_size, char **idxa_any, char *copyfun)
+ICMCompileND_PRF_SEL__DATA_arr (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                                int idx_size, char **idxa_ANY, char *copyfun)
 {
     int i;
 
@@ -2516,7 +2519,7 @@ ICMCompileND_PRF_SEL__DATA_arr (char *to_nt, int to_sdim, char *from_nt, int fro
 
     /*
      * CAUTION:
-     * 'idxa_any[i]' is either a tagged identifier (representing a scalar)
+     * 'idxa_ANY[i]' is either a tagged identifier (representing a scalar)
      * or a constant scalar!
      */
 
@@ -2524,19 +2527,19 @@ ICMCompileND_PRF_SEL__DATA_arr (char *to_nt, int to_sdim, char *from_nt, int fro
     fprintf (outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_SEL__DATA( %s, %d, %s, %d, ...)\"))\n",
-             to_nt, to_sdim, from_nt, from_sdim);
+             to_NT, to_sdim, from_NT, from_sdim);
 
     for (i = 0; i < idx_size; i++) {
-        if (idxa_any[i][0] == '(') {
-            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", idxa_any[i]);
+        if (idxa_ANY[i][0] == '(') {
+            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", idxa_ANY[i]);
                              ,
                              fprintf (outfile, "1st argument of F_sel has (dim != 1)!"););
         }
     }
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) >= %d", from_nt, idx_size);
+    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) >= %d", from_NT, idx_size);
                      , fprintf (outfile, "1st argument of F_sel has illegal size!"););
 
-    PrfSel_Data (to_nt, to_sdim, from_nt, from_sdim, idxa_any, idx_size, NULL,
+    PrfSel_Data (to_NT, to_sdim, from_NT, from_sdim, idxa_ANY, idx_size, NULL,
                  ReadConstArray, copyfun);
 
     DBUG_VOID_RETURN;
@@ -2545,12 +2548,12 @@ ICMCompileND_PRF_SEL__DATA_arr (char *to_nt, int to_sdim, char *from_nt, int fro
 /******************************************************************************
  *
  * Function:
- *   void PrfModarray_Data( char *to_nt, int to_sdim,
- *                          char *from_nt, int from_sdim,
+ *   void PrfModarray_Data( char *to_NT, int to_sdim,
+ *                          char *from_NT, int from_sdim,
  *                          bool idx_unrolled, void *idx, int idx_size,
  *                          void (*idx_size_fun)( void *),
  *                          void (*idx_read_fun)( void *, char *, int),
- *                          char *val_any,
+ *                          char *val_ANY,
  *                          char *copyfun)
  *
  * Description:
@@ -2559,10 +2562,10 @@ ICMCompileND_PRF_SEL__DATA_arr (char *to_nt, int to_sdim, char *from_nt, int fro
  ******************************************************************************/
 
 static void
-PrfModarray_Data (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
+PrfModarray_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
                   bool idx_unrolled, void *idx, int idx_size,
                   void (*idx_size_fun) (void *),
-                  void (*idx_read_fun) (void *, char *, int), char *val_any,
+                  void (*idx_read_fun) (void *, char *, int), char *val_ANY,
                   char *copyfun)
 {
     int to_dim = DIM_NO_OFFSET (to_sdim);
@@ -2571,35 +2574,35 @@ PrfModarray_Data (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
 
     /*
      * CAUTION:
-     * 'val_any' is either a tagged identifier or a constant scalar!
+     * 'val_ANY' is either a tagged identifier or a constant scalar!
      */
 
-    if ((val_any[0] != '(') || /* not a tagged id -> is a const scalar! */
-        (ICUGetShapeClass (val_any) == C_scl)) {
-        /* 'val_any' is scalar */
+    if ((val_ANY[0] != '(') || /* not a tagged id -> is a const scalar! */
+        (ICUGetShapeClass (val_ANY) == C_scl)) {
+        /* 'val_ANY' is scalar */
         INDENT;
-        fprintf (outfile, "SAC_IS_REUSED__BLOCK_BEGIN( %s, %s)\n", to_nt, from_nt);
+        fprintf (outfile, "SAC_IS_REUSED__BLOCK_BEGIN( %s, %s)\n", to_NT, from_NT);
         indent++;
         INDENT;
         fprintf (outfile,
                  "SAC_TR_MEM_PRINT("
                  " (\"reuse memory of %s at %%p for %s\","
                  " SAC_ND_A_FIELD( %s)))\n",
-                 from_nt, to_nt, from_nt);
+                 from_NT, to_NT, from_NT);
         indent--;
         INDENT;
-        fprintf (outfile, "SAC_IS_REUSED__BLOCK_ELSE( %s, %s)\n", to_nt, from_nt);
+        fprintf (outfile, "SAC_IS_REUSED__BLOCK_ELSE( %s, %s)\n", to_NT, from_NT);
         indent++;
         INDENT;
         fprintf (outfile, "int SAC_i;\n");
         FOR_LOOP_INC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
-                      , fprintf (outfile, "SAC_ND_A_SIZE( %s)", to_nt);, INDENT;
+                      , fprintf (outfile, "SAC_ND_A_SIZE( %s)", to_NT);, INDENT;
                       fprintf (outfile,
                                "SAC_ND_WRITE_READ_COPY( %s, SAC_i, %s, SAC_i, %s)\n",
-                               to_nt, from_nt, copyfun););
+                               to_NT, from_NT, copyfun););
         indent--;
         INDENT;
-        fprintf (outfile, "SAC_IS_REUSED__BLOCK_END( %s, %s)\n", to_nt, from_nt);
+        fprintf (outfile, "SAC_IS_REUSED__BLOCK_END( %s, %s)\n", to_NT, from_NT);
 
         BLOCK_VARDECS (fprintf (outfile, "int SAC_idx;");
                        ,
@@ -2610,13 +2613,13 @@ PrfModarray_Data (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
                            fprintf (outfile, ";\n");
                        } else {
                            Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun,
-                                        idx_read_fun, to_nt, to_dim);
+                                        idx_read_fun, to_NT, to_dim);
                        } INDENT;
-                       fprintf (outfile, "SAC_ND_WRITE_COPY( %s, SAC_idx, ", to_nt);
-                       ReadScalar (val_any, NULL, 0);
+                       fprintf (outfile, "SAC_ND_WRITE_COPY( %s, SAC_idx, ", to_NT);
+                       ReadScalar (val_ANY, NULL, 0);
                        fprintf (outfile, " , %s)\n", copyfun););
     } else {
-        /* 'val_any' is a tagged identifier representing a non-scalar array */
+        /* 'val_ANY' is a tagged identifier representing a non-scalar array */
         BLOCK_VARDECS (fprintf (outfile, "int SAC_i, SAC_j, SAC_idx;");
                        ,
                        if (idx_unrolled) {
@@ -2626,51 +2629,51 @@ PrfModarray_Data (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
                            fprintf (outfile, ";\n");
                        } else {
                            Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun,
-                                        idx_read_fun, to_nt, to_dim);
+                                        idx_read_fun, to_NT, to_dim);
                        } INDENT;
-                       fprintf (outfile, "SAC_IS_REUSED__BLOCK_BEGIN( %s, %s)\n", to_nt,
-                                from_nt);
+                       fprintf (outfile, "SAC_IS_REUSED__BLOCK_BEGIN( %s, %s)\n", to_NT,
+                                from_NT);
                        indent++; INDENT;
                        fprintf (outfile,
                                 "SAC_TR_MEM_PRINT("
                                 " (\"reuse memory of %s at %%p for %s\","
                                 " SAC_ND_A_FIELD( %s)))\n",
-                                from_nt, to_nt, from_nt);
+                                from_NT, to_NT, from_NT);
                        FOR_LOOP (fprintf (outfile, "SAC_i = SAC_idx, SAC_j = 0");
                                  ,
-                                 fprintf (outfile, "SAC_j < SAC_ND_A_SIZE( %s)", val_any);
+                                 fprintf (outfile, "SAC_j < SAC_ND_A_SIZE( %s)", val_ANY);
                                  , fprintf (outfile, "SAC_i++, SAC_j++");, INDENT;
                                  fprintf (outfile,
                                           "SAC_ND_WRITE_READ_COPY("
                                           " %s, SAC_i, %s, SAC_j, %s)\n",
-                                          to_nt, val_any, copyfun););
+                                          to_NT, val_ANY, copyfun););
                        indent--; INDENT;
-                       fprintf (outfile, "SAC_IS_REUSED__BLOCK_ELSE( %s, %s)\n", to_nt,
-                                from_nt);
+                       fprintf (outfile, "SAC_IS_REUSED__BLOCK_ELSE( %s, %s)\n", to_NT,
+                                from_NT);
                        indent++;
                        FOR_LOOP_INC (fprintf (outfile, "SAC_i");, fprintf (outfile, "0");
                                      , fprintf (outfile, "SAC_idx");, INDENT;
                                      fprintf (outfile,
                                               "SAC_ND_WRITE_READ_COPY("
                                               " %s, SAC_i, %s, SAC_i, %s)\n",
-                                              to_nt, from_nt, copyfun););
+                                              to_NT, from_NT, copyfun););
                        FOR_LOOP_INC (fprintf (outfile, "SAC_j");, fprintf (outfile, "0");
-                                     , fprintf (outfile, "SAC_ND_A_SIZE( %s)", val_any);
+                                     , fprintf (outfile, "SAC_ND_A_SIZE( %s)", val_ANY);
                                      , INDENT; fprintf (outfile,
                                                         "SAC_ND_WRITE_READ_COPY("
                                                         " %s, SAC_i, %s, SAC_j, %s)\n",
-                                                        to_nt, val_any, copyfun);
+                                                        to_NT, val_ANY, copyfun);
                                      INDENT; fprintf (outfile, "SAC_i++;\n"););
                        FOR_LOOP (fprintf (outfile, " ");
-                                 , fprintf (outfile, "SAC_i < SAC_ND_A_SIZE( %s)", to_nt);
+                                 , fprintf (outfile, "SAC_i < SAC_ND_A_SIZE( %s)", to_NT);
                                  , fprintf (outfile, "SAC_i++");, INDENT;
                                  fprintf (outfile,
                                           "SAC_ND_WRITE_READ_COPY("
                                           " %s, SAC_i, %s, SAC_i, %s)\n",
-                                          to_nt, from_nt, copyfun););
+                                          to_NT, from_NT, copyfun););
                        indent--; INDENT;
-                       fprintf (outfile, "SAC_IS_REUSED__BLOCK_END( %s, %s)\n", to_nt,
-                                from_nt););
+                       fprintf (outfile, "SAC_IS_REUSED__BLOCK_END( %s, %s)\n", to_NT,
+                                from_NT););
     }
 
     DBUG_VOID_RETURN;
@@ -2679,23 +2682,23 @@ PrfModarray_Data (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY__DATA_id( char *to_nt, int to_sdim,
- *                                            char *from_nt, int from_sdim,
- *                                            char *idx_nt, int idx_size,
- *                                            char *val_any, char *copyfun)
+ *   void ICMCompileND_PRF_MODARRAY__DATA_id( char *to_NT, int to_sdim,
+ *                                            char *from_NT, int from_sdim,
+ *                                            char *idx_NT, int idx_size,
+ *                                            char *val_ANY, char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY__DATA_id( to_nt, to_sdim, from_nt, from_sdim,
- *                             idx_nt, idx_size, val_any, copyfun)
+ *   ND_PRF_MODARRAY__DATA_id( to_NT, to_sdim, from_NT, from_sdim,
+ *                             idx_NT, idx_size, val_ANY, copyfun)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_MODARRAY__DATA_id (char *to_nt, int to_sdim, char *from_nt,
-                                    int from_sdim, char *idx_nt, int idx_size,
-                                    char *val_any, char *copyfun)
+ICMCompileND_PRF_MODARRAY__DATA_id (char *to_NT, int to_sdim, char *from_NT,
+                                    int from_sdim, char *idx_NT, int idx_size,
+                                    char *val_ANY, char *copyfun)
 {
     DBUG_ENTER ("ICMCompileND_PRF_MODARRAY__DATA_id");
 
@@ -2706,24 +2709,24 @@ ICMCompileND_PRF_MODARRAY__DATA_id (char *to_nt, int to_sdim, char *from_nt,
 
     /*
      * CAUTION:
-     * 'val_any' is either a tagged identifier or a constant scalar!
+     * 'val_ANY' is either a tagged identifier or a constant scalar!
      */
 
     INDENT;
     fprintf (outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_MODARRAY__DATA( %s, %d, %s, %d, ..., %s)\"))\n",
-             to_nt, to_sdim, from_nt, from_sdim, val_any);
+             to_NT, to_sdim, from_NT, from_sdim, val_ANY);
 
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", idx_nt);
+    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 1", idx_NT);
                      , fprintf (outfile, "2nd argument of F_modarray has (dim != 1)!"););
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) >= SAC_ND_A_SIZE( %s)", from_nt,
-                              idx_nt);
+    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) >= SAC_ND_A_SIZE( %s)", from_NT,
+                              idx_NT);
                      ,
                      fprintf (outfile, "2nd argument of F_modarray has illegal size!"););
 
-    PrfModarray_Data (to_nt, to_sdim, from_nt, from_sdim, FALSE, idx_nt, idx_size, SizeId,
-                      ReadId, val_any, copyfun);
+    PrfModarray_Data (to_NT, to_sdim, from_NT, from_sdim, FALSE, idx_NT, idx_size, SizeId,
+                      ReadId, val_ANY, copyfun);
 
     DBUG_VOID_RETURN;
 }
@@ -2731,24 +2734,24 @@ ICMCompileND_PRF_MODARRAY__DATA_id (char *to_nt, int to_sdim, char *from_nt,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY__DATA_arr( char *to_nt, int to_sdim,
- *                                             char *from_nt, int from_sdim,
- *                                             int idx_size, char **idxa_any,
- *                                             char *val_any,
+ *   void ICMCompileND_PRF_MODARRAY__DATA_arr( char *to_NT, int to_sdim,
+ *                                             char *from_NT, int from_sdim,
+ *                                             int idx_size, char **idxa_ANY,
+ *                                             char *val_ANY,
  *                                             char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY__DATA_arr( to_nt, to_sdim, from_nt, from_sdim,
- *                              idx_size, [ idxa_any ]* , val_any, copyfun)
+ *   ND_PRF_MODARRAY__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
+ *                              idx_size, [ idxa_ANY ]* , val_ANY, copyfun)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_MODARRAY__DATA_arr (char *to_nt, int to_sdim, char *from_nt,
-                                     int from_sdim, int idx_size, char **idxa_any,
-                                     char *val_any, char *copyfun)
+ICMCompileND_PRF_MODARRAY__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
+                                     int from_sdim, int idx_size, char **idxa_ANY,
+                                     char *val_ANY, char *copyfun)
 {
     int i;
 
@@ -2761,9 +2764,9 @@ ICMCompileND_PRF_MODARRAY__DATA_arr (char *to_nt, int to_sdim, char *from_nt,
 
     /*
      * CAUTION:
-     * 'idxa_any[i]' is either a tagged identifier (representing a scalar)
+     * 'idxa_ANY[i]' is either a tagged identifier (representing a scalar)
      * or a constant scalar!
-     * 'val_any' is either a tagged identifier (scalar or non-scalar)
+     * 'val_ANY' is either a tagged identifier (scalar or non-scalar)
      * or a constant scalar!
      */
 
@@ -2771,21 +2774,21 @@ ICMCompileND_PRF_MODARRAY__DATA_arr (char *to_nt, int to_sdim, char *from_nt,
     fprintf (outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_MODARRAY__DATA( %s, %d, %s, %d, ..., %s)\"))\n",
-             to_nt, to_sdim, from_nt, from_sdim, val_any);
+             to_NT, to_sdim, from_NT, from_sdim, val_ANY);
 
     for (i = 0; i < idx_size; i++) {
-        if (idxa_any[i][0] == '(') {
-            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", idxa_any[i]);
+        if (idxa_ANY[i][0] == '(') {
+            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", idxa_ANY[i]);
                              , fprintf (outfile,
                                         "2nd argument of F_modarray has (dim != 1)"););
         }
     }
-    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) >= %d", from_nt, idx_size);
+    ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) >= %d", from_NT, idx_size);
                      ,
                      fprintf (outfile, "2nd argument of F_modarray has illegal size!"););
 
-    PrfModarray_Data (to_nt, to_sdim, from_nt, from_sdim, FALSE, idxa_any, idx_size, NULL,
-                      ReadConstArray, val_any, copyfun);
+    PrfModarray_Data (to_NT, to_sdim, from_NT, from_sdim, FALSE, idxa_ANY, idx_size, NULL,
+                      ReadConstArray, val_ANY, copyfun);
 
     DBUG_VOID_RETURN;
 }
@@ -2793,20 +2796,20 @@ ICMCompileND_PRF_MODARRAY__DATA_arr (char *to_nt, int to_sdim, char *from_nt,
 /******************************************************************************
  *
  * Function:
- *   void ICMCompileND_PRF_IDX_SEL__SHAPE( char *to_nt, int to_sdim,
- *                                         char *from_nt, int from_sdim,
- *                                         char *idx_any)
+ *   void ICMCompileND_PRF_IDX_SEL__SHAPE( char *to_NT, int to_sdim,
+ *                                         char *from_NT, int from_sdim,
+ *                                         char *idx_ANY)
  *
  * Description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_IDX_SEL__SHAPE( to_nt, to_sdim, from_nt, from_sdim, idx_any)
+ *   ND_PRF_IDX_SEL__SHAPE( to_NT, to_sdim, from_NT, from_sdim, idx_ANY)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
-                                 char *idx_any)
+ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                                 char *idx_ANY)
 {
     int to_dim = DIM_NO_OFFSET (to_sdim);
 
@@ -2819,7 +2822,7 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_nt, int to_sdim, char *from_nt, int fr
 
     /*
      * CAUTION:
-     * 'idx_any' is either a tagged identifier (representing a scalar)
+     * 'idx_ANY' is either a tagged identifier (representing a scalar)
      * or a constant scalar!
      */
 
@@ -2827,10 +2830,10 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_nt, int to_sdim, char *from_nt, int fr
     fprintf (outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_IDX_SEL__SHAPE( %s, %d, %s, %d, %s)\"))\n",
-             to_nt, to_sdim, from_nt, from_sdim, idx_any);
+             to_NT, to_sdim, from_NT, from_sdim, idx_ANY);
 
     if (to_dim == 0) {
-        ICMCompileND_SET__SHAPE (to_nt, 0, NULL);
+        ICMCompileND_SET__SHAPE (to_NT, 0, NULL);
     } else {
         DBUG_ASSERT ((0), "idx_sel() with non-scalar result not yet implemented");
     }
@@ -2841,21 +2844,21 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_nt, int to_sdim, char *from_nt, int fr
 /******************************************************************************
  *
  * Function:
- *   void ICMCompileND_PRF_IDX_SEL__DATA( char *to_nt, int to_sdim,
- *                                        char *from_nt, int from_sdim,
- *                                        char *idx_any,
+ *   void ICMCompileND_PRF_IDX_SEL__DATA( char *to_NT, int to_sdim,
+ *                                        char *from_NT, int from_sdim,
+ *                                        char *idx_ANY,
  *                                        char *copyfun)
  *
  * Description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_IDX_SEL__DATA( to_nt, to_sdim, from_nt, from_sdim, idx_any)
+ *   ND_PRF_IDX_SEL__DATA( to_NT, to_sdim, from_NT, from_sdim, idx_ANY)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_IDX_SEL__DATA (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
-                                char *idx_any, char *copyfun)
+ICMCompileND_PRF_IDX_SEL__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
+                                char *idx_ANY, char *copyfun)
 {
     int to_dim = DIM_NO_OFFSET (to_sdim);
 
@@ -2868,7 +2871,7 @@ ICMCompileND_PRF_IDX_SEL__DATA (char *to_nt, int to_sdim, char *from_nt, int fro
 
     /*
      * CAUTION:
-     * 'idx_any' is either a tagged identifier (representing a scalar)
+     * 'idx_ANY' is either a tagged identifier (representing a scalar)
      * or a constant scalar!
      */
 
@@ -2876,10 +2879,10 @@ ICMCompileND_PRF_IDX_SEL__DATA (char *to_nt, int to_sdim, char *from_nt, int fro
     fprintf (outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_IDX_SEL__DATA( %s, %d, %s, %d, %s)\"))\n",
-             to_nt, to_sdim, from_nt, from_sdim, idx_any);
+             to_NT, to_sdim, from_NT, from_sdim, idx_ANY);
 
-    if (idx_any[0] == '(') {
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", idx_any);
+    if (idx_ANY[0] == '(') {
+        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
                          ,
                          fprintf (outfile, "1st argument of F_idx_sel has (dim != 0)!"););
     }
@@ -2891,24 +2894,24 @@ ICMCompileND_PRF_IDX_SEL__DATA (char *to_nt, int to_sdim, char *from_nt, int fro
 
     if (to_dim == 0) {
         /*
-         * 'to_nt' is scalar
+         * 'to_NT' is scalar
          */
         INDENT;
-        fprintf (outfile, "SAC_ND_WRITE_READ_COPY( %s, 0, %s, ", to_nt, from_nt);
-        ReadScalar (idx_any, NULL, 0);
+        fprintf (outfile, "SAC_ND_WRITE_READ_COPY( %s, 0, %s, ", to_NT, from_NT);
+        ReadScalar (idx_ANY, NULL, 0);
         fprintf (outfile, ", %s)\n", copyfun);
     } else {
         /*
-         * 'to_nt' is array
+         * 'to_NT' is array
          */
         FOR_LOOP_VARDECS (fprintf (outfile, "int SAC_i, SAC_j;");
                           , fprintf (outfile, "SAC_i = 0, SAC_j = ");
-                          ReadScalar (idx_any, NULL, 0);
-                          , fprintf (outfile, "SAC_i < SAC_ND_A_SIZE( %s)", to_nt);
+                          ReadScalar (idx_ANY, NULL, 0);
+                          , fprintf (outfile, "SAC_i < SAC_ND_A_SIZE( %s)", to_NT);
                           , fprintf (outfile, "SAC_i++, SAC_j++");, INDENT;
                           fprintf (outfile,
                                    "SAC_ND_WRITE_READ_COPY( %s, SAC_i, %s, SAC_j, %s)\n",
-                                   to_nt, from_nt, copyfun););
+                                   to_NT, from_NT, copyfun););
     }
 
     DBUG_VOID_RETURN;
@@ -2917,22 +2920,22 @@ ICMCompileND_PRF_IDX_SEL__DATA (char *to_nt, int to_sdim, char *from_nt, int fro
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_IDX_MODARRAY__DATA( char *to_nt, int to_sdim,
- *                                             char *from_nt, int from_sdim,
- *                                             char *idx_any, char *val_any,
+ *   void ICMCompileND_PRF_IDX_MODARRAY__DATA( char *to_NT, int to_sdim,
+ *                                             char *from_NT, int from_sdim,
+ *                                             char *idx_ANY, char *val_ANY,
  *                                             char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_IDX_MODARRAY__DATA( to_nt, to_sdim, from_nt, from_sdim, idx, val,
+ *   ND_PRF_IDX_MODARRAY__DATA( to_NT, to_sdim, from_NT, from_sdim, idx, val,
  *                              copyfun)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_nt, int to_sdim, char *from_nt,
-                                     int from_sdim, char *idx_any, char *val_any,
+ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_NT, int to_sdim, char *from_NT,
+                                     int from_sdim, char *idx_ANY, char *val_ANY,
                                      char *copyfun)
 {
     DBUG_ENTER ("ICMCompileND_PRF_IDX_MODARRAY__DATA");
@@ -2944,9 +2947,9 @@ ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_nt, int to_sdim, char *from_nt,
 
     /*
      * CAUTION:
-     * 'idx_any' is either a tagged identifier (representing a scalar)
+     * 'idx_ANY' is either a tagged identifier (representing a scalar)
      * or a constant scalar!
-     * 'val_any' is either a tagged identifier (scalar or non-scalar)
+     * 'val_ANY' is either a tagged identifier (scalar or non-scalar)
      * or a constant scalar!
      */
 
@@ -2954,16 +2957,16 @@ ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_nt, int to_sdim, char *from_nt,
     fprintf (outfile,
              "SAC_TR_PRF_PRINT("
              " (\"ND_PRF_IDX_MODARRAY__DATA( %s, %d, %s, %d, %s, %s)\"))\n",
-             to_nt, to_sdim, from_nt, from_sdim, idx_any, val_any);
+             to_NT, to_sdim, from_NT, from_sdim, idx_ANY, val_ANY);
 
-    if (idx_any[0] == '(') {
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", idx_any);
+    if (idx_ANY[0] == '(') {
+        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
                          , fprintf (outfile,
                                     "2nd argument of F_modarray has (dim != 0)!"););
     }
 
-    PrfModarray_Data (to_nt, to_sdim, from_nt, from_sdim, TRUE, idx_any, 1, NULL,
-                      ReadScalar, val_any, copyfun);
+    PrfModarray_Data (to_NT, to_sdim, from_NT, from_sdim, TRUE, idx_ANY, 1, NULL,
+                      ReadScalar, val_ANY, copyfun);
 
     DBUG_VOID_RETURN;
 }
@@ -2971,19 +2974,19 @@ ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_nt, int to_sdim, char *from_nt,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_VECT2OFFSET( char *off_nt, int from_size, char *from_nt,
- *                                  int shp_size, char **shpa_any)
+ *   void ICMCompileND_VECT2OFFSET( char *off_NT, int from_size, char *from_NT,
+ *                                  int shp_size, char **shpa_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_VECT2OFFSET( off_nt, from_size, from_nt, shp_size, shpa_any)
+ *   ND_VECT2OFFSET( off_NT, from_size, from_NT, shp_size, shpa_ANY)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_VECT2OFFSET (char *off_nt, int from_size, char *from_nt, int shp_size,
-                          char **shpa_any)
+ICMCompileND_VECT2OFFSET (char *off_NT, int from_size, char *from_NT, int shp_size,
+                          char **shpa_ANY)
 {
     DBUG_ENTER ("ICMCompileND_VECT2OFFSET");
 
@@ -2994,13 +2997,13 @@ ICMCompileND_VECT2OFFSET (char *off_nt, int from_size, char *from_nt, int shp_si
 
     /*
      * CAUTION:
-     * 'shpa_any[i]' is either a tagged identifier (representing a scalar)
+     * 'shpa_ANY[i]' is either a tagged identifier (representing a scalar)
      * or a constant scalar!
      */
 
     DBUG_ASSERT ((from_size >= 0), "Illegal size found!");
 
-    Vect2Offset2 (off_nt, from_nt, from_size, NULL, ReadId, shpa_any, shp_size, NULL,
+    Vect2Offset2 (off_NT, from_NT, from_size, NULL, ReadId, shpa_ANY, shp_size, NULL,
                   ReadConstArray);
 
     DBUG_VOID_RETURN;
@@ -3009,19 +3012,19 @@ ICMCompileND_VECT2OFFSET (char *off_nt, int from_size, char *from_nt, int shp_si
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_IDXS2OFFSET( char *off_nt, int idxs_size, char **idxs_nt,
- *                                  int shp_size, char **shpa_any)
+ *   void ICMCompileND_IDXS2OFFSET( char *off_NT, int idxs_size, char **idxs_NT,
+ *                                  int shp_size, char **shpa_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_IDXS2OFFSET( off_nt, idxs_size, idxs_nt, shp_size, shpa_any)
+ *   ND_IDXS2OFFSET( off_NT, idxs_size, idxs_NT, shp_size, shpa_ANY)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_IDXS2OFFSET (char *off_nt, int idxs_size, char **idxs_nt, int shp_size,
-                          char **shpa_any)
+ICMCompileND_IDXS2OFFSET (char *off_NT, int idxs_size, char **idxs_NT, int shp_size,
+                          char **shpa_ANY)
 {
     DBUG_ENTER ("ICMCompileND_IDXS2OFFSET");
 
@@ -3032,13 +3035,13 @@ ICMCompileND_IDXS2OFFSET (char *off_nt, int idxs_size, char **idxs_nt, int shp_s
 
     /*
      * CAUTION:
-     * 'shpa_any[i]' is either a tagged identifier (representing a scalar)
+     * 'shpa_ANY[i]' is either a tagged identifier (representing a scalar)
      * or a constant scalar!
      */
 
     DBUG_ASSERT ((idxs_size >= 0), "Illegal size found!");
 
-    Vect2Offset2 (off_nt, idxs_nt, idxs_size, NULL, ReadConstArray, shpa_any, shp_size,
+    Vect2Offset2 (off_NT, idxs_NT, idxs_size, NULL, ReadConstArray, shpa_ANY, shp_size,
                   NULL, ReadConstArray);
 
     DBUG_VOID_RETURN;
@@ -3951,18 +3954,18 @@ ICMCompileND_PRF_MODARRAY_AxVxA (char *res_btype, int dimres, char *res, char *o
  *
  * function:
  *   void ICMCompileND_KS_VECT2OFFSET( char *off_name, char *arr_name,
- *                                     int dim, int dims, char **shp_any)
+ *                                     int dim, int dims, char **shp_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_KS_VECT2OFFSET( off_name, arr_name, dim, dims, shp_any )
+ *   ND_KS_VECT2OFFSET( off_name, arr_name, dim, dims, shp_ANY )
  *
  ******************************************************************************/
 
 void
 ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim, int dims,
-                             char **shp_any)
+                             char **shp_ANY)
 {
     DBUG_ENTER ("ICMCompileND_KS_VECT2OFFSET");
 
@@ -3973,7 +3976,7 @@ ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim, int dims,
 
     INDENT;
     fprintf (outfile, "%s = ", off_name);
-    Vect2Offset2 (dim, AccessVect (arr_name, i), dims, AccessConst (shp_any, i));
+    Vect2Offset2 (dim, AccessVect (arr_name, i), dims, AccessConst (shp_ANY, i));
     fprintf (outfile, ";\n");
 
     DBUG_VOID_RETURN;
@@ -3983,18 +3986,18 @@ ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim, int dims,
  *
  * function:
  *   void ICMCompileND_IDXS2OFFSET( char *off, int idxs_size, char **idxs,
- *                                  int shp_size, char **shpa_any)
+ *                                  int shp_size, char **shpa_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_IDXS2OFFSET( off, idxs_size, idxs, shp_size, shpa_any )
+ *   ND_IDXS2OFFSET( off, idxs_size, idxs, shp_size, shpa_ANY )
  *
  ******************************************************************************/
 
 void
 ICMCompileND_IDXS2OFFSET (char *off, int idxs_size, char **idxs, int shp_size,
-                          char **shpa_any)
+                          char **shpa_ANY)
 {
     DBUG_ENTER ("ICMCompileND_IDXS2OFFSET");
 
@@ -4005,7 +4008,7 @@ ICMCompileND_IDXS2OFFSET (char *off, int idxs_size, char **idxs, int shp_size,
 
     INDENT;
     fprintf (outfile, "%s = ", off);
-    Vect2Offset2 (idxs_size, AccessConst (idxs, i), shp_size, AccessConst (shpa_any, i));
+    Vect2Offset2 (idxs_size, AccessConst (idxs, i), shp_size, AccessConst (shpa_ANY, i));
     fprintf (outfile, ";\n");
 
     DBUG_VOID_RETURN;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2003/09/17 13:03:03  dkr
+ * postfixes _nt, _any renamed into _NT, _ANY
+ *
  * Revision 3.16  2003/08/04 16:56:36  dkr
  * argument of MT_SPMD_FUN_DEC, MT_SPMD_FUN_RET renamed
  *
@@ -127,9 +130,11 @@
 #ifndef _SAC_ICM2C_MT_H_
 #define _SAC_ICM2C_MT_H_
 
-extern void ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **arg_any);
-extern void ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **arg_any);
+extern void ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **arg_ANY);
+extern void ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **arg_ANY);
+
 extern void ICMCompileMT_START_SYNCBLOCK (int barrier_id, int narg, char **vararg);
+
 extern void ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg);
 extern void ICMCompileMT_SYNC_NONFOLD (int barrier_id);
 extern void ICMCompileMT_SYNC_ONEFOLD (int barrier_id, char *foldtype, char *accu_var,

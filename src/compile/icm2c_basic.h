@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2003/09/17 12:57:54  dkr
+ * postfixes _nt, _any renamed into _NT, _ANY
+ *
  * Revision 3.13  2003/04/15 18:59:54  dkr
  * macro SET_SHAPES_AUD__XXX added
  *
@@ -126,56 +129,56 @@ extern int print_comment; /* bool */
     fprintf (outfile, "else ");                                                          \
     BLOCK__NOINDENT (else_ass)
 
-#define SET_SIZE(to_nt, set_ass)                                                         \
+#define SET_SIZE(to_NT, set_ass)                                                         \
     INDENT;                                                                              \
-    fprintf (outfile, "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_MIRROR_SIZE( %s) = ", to_nt,   \
-             to_nt);                                                                     \
+    fprintf (outfile, "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_MIRROR_SIZE( %s) = ", to_NT,   \
+             to_NT);                                                                     \
     set_ass fprintf (outfile, ";\n")
 
-#define SET_SHAPE_AUD(to_nt, idx_ass, set_ass)                                           \
+#define SET_SHAPE_AUD(to_NT, idx_ass, set_ass)                                           \
     INDENT;                                                                              \
-    fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, ", to_nt);                               \
+    fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, ", to_NT);                               \
     idx_ass fprintf (outfile, ") = ");                                                   \
     set_ass fprintf (outfile, ";\n")
 
-#define SET_SHAPE_AUD__NUM(to_nt, idx_num, set_ass)                                      \
+#define SET_SHAPE_AUD__NUM(to_NT, idx_num, set_ass)                                      \
     INDENT;                                                                              \
-    fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_nt, idx_num);                \
+    fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_NT, idx_num);                \
     set_ass fprintf (outfile, ";\n")
 
-#define SET_SHAPE_AKD(to_nt, idx_num, set_ass)                                           \
+#define SET_SHAPE_AKD(to_NT, idx_num, set_ass)                                           \
     INDENT;                                                                              \
-    fprintf (outfile, "SAC_ND_A_MIRROR_SHAPE( %s, %d) = \n", to_nt, idx_num);            \
+    fprintf (outfile, "SAC_ND_A_MIRROR_SHAPE( %s, %d) = \n", to_NT, idx_num);            \
     INDENT;                                                                              \
-    fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_nt, idx_num);                \
+    fprintf (outfile, "SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_NT, idx_num);                \
     set_ass fprintf (outfile, ";\n")
 
-#define SET_SHAPES_AUD(to_nt, idx_ass, idx_start_ass, idx_stop_ass, prolog_ass, set_ass) \
+#define SET_SHAPES_AUD(to_NT, idx_ass, idx_start_ass, idx_stop_ass, prolog_ass, set_ass) \
     FOR_LOOP_INC_VARDEC (idx_ass, idx_start_ass, idx_stop_ass,                           \
-                         prolog_ass SET_SHAPE_AUD (to_nt, idx_ass, set_ass);)
+                         prolog_ass SET_SHAPE_AUD (to_NT, idx_ass, set_ass);)
 
-#define SET_SHAPES_AUD__NUM(to_nt, idx, idx_start, idx_stop, prolog_ass, set_ass)        \
+#define SET_SHAPES_AUD__NUM(to_NT, idx, idx_start, idx_stop, prolog_ass, set_ass)        \
     DBUG_ASSERT ((idx_start >= 0), "illegal dimension found!");                          \
     DBUG_ASSERT ((idx_stop >= 0), "illegal dimension found!");                           \
     for (idx = idx_start; idx < idx_stop; i++) {                                         \
-        prolog_ass SET_SHAPE_AUD__NUM (to_nt, idx, set_ass);                             \
+        prolog_ass SET_SHAPE_AUD__NUM (to_NT, idx, set_ass);                             \
     }
 
-#define SET_SHAPES_AUD__XXX(to_nt, idx, idx_ass2, idx_start, idx_start_ass2, idx_stop,   \
+#define SET_SHAPES_AUD__XXX(to_NT, idx, idx_ass2, idx_start, idx_start_ass2, idx_stop,   \
                             idx_stop_ass2, prolog_ass, set_ass, set_ass2)                \
     if ((idx_start >= 0) && (idx_stop >= 0)) {                                           \
         for (idx = idx_start; idx < idx_stop; i++) {                                     \
-            prolog_ass SET_SHAPE_AUD__NUM (to_nt, idx, set_ass);                         \
+            prolog_ass SET_SHAPE_AUD__NUM (to_NT, idx, set_ass);                         \
         }                                                                                \
     } else {                                                                             \
         FOR_LOOP_INC_VARDEC (idx_ass2, idx_start_ass2, idx_stop_ass2,                    \
-                             prolog_ass SET_SHAPE_AUD (to_nt, idx_ass2, set_ass2););     \
+                             prolog_ass SET_SHAPE_AUD (to_NT, idx_ass2, set_ass2););     \
     }
 
-#define SET_SHAPES_AKD(to_nt, idx, idx_start, idx_stop, prolog_ass, set_ass)             \
+#define SET_SHAPES_AKD(to_NT, idx, idx_start, idx_stop, prolog_ass, set_ass)             \
     DBUG_ASSERT ((idx_stop >= 0), "illegal dimension found!");                           \
     for (idx = idx_start; idx < idx_stop; i++) {                                         \
-        prolog_ass SET_SHAPE_AKD (to_nt, idx, set_ass);                                  \
+        prolog_ass SET_SHAPE_AKD (to_NT, idx, set_ass);                                  \
     }
 
 #ifdef TAGGED_ARRAYS
@@ -196,15 +199,15 @@ extern void SizeId (void *nt);
 
 extern void GetAttr (void *v, int v_attr, void (*v_attr_fun) (void *));
 
-extern void Vect2Offset2 (char *off_any, void *v_any, int v_dim,
+extern void Vect2Offset2 (char *off_ANY, void *v_ANY, int v_dim,
                           void (*v_size_fun) (void *),
-                          void (*v_read_fun) (void *, char *, int), void *a_any,
+                          void (*v_read_fun) (void *, char *, int), void *a_ANY,
                           int a_dim, void (*a_dim_fun) (void *),
                           void (*a_shape_fun) (void *, char *, int));
 
-extern void Vect2Offset (char *off_any, void *v_any, int v_dim,
+extern void Vect2Offset (char *off_ANY, void *v_ANY, int v_dim,
                          void (*v_size_fun) (void *),
-                         void (*v_read_fun) (void *, char *, int), void *a_nt, int a_dim);
+                         void (*v_read_fun) (void *, char *, int), void *a_NT, int a_dim);
 
 #else
 

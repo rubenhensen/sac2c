@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2003/09/17 13:03:26  dkr
+ * postfixes _nt, _any renamed into _NT, _ANY
+ *
  * Revision 3.31  2003/09/15 17:06:05  dkr
  * bug in ICMCompileMT_MASTER_RECEIVE_FOLDRESULT() fixed
  *
@@ -294,12 +297,12 @@ SearchFoldImplementation (char *foldop)
  *
  * function:
  *   void ICMCompileMT_SPMD_FUN_DEC(char *name, char *from,
- *                                  int narg, char **arg_any)
+ *                                  int narg, char **arg_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SPMD_FUN_DEC( name, from, narg [, TAG, type, param_nt]*)
+ *   MT_SPMD_FUN_DEC( name, from, narg [, TAG, type, param_NT]*)
  *
  *   This ICM implements the protoype of an spmd function. The first parameter
  *   specifies the name of this function while the seconf one specifies the
@@ -309,7 +312,7 @@ SearchFoldImplementation (char *foldop)
  ******************************************************************************/
 
 void
-ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **arg_any)
+ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **arg_ANY)
 {
     int i;
 
@@ -338,16 +341,18 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **arg_any)
 
     indent++;
 
+#ifndef TAGGED_ARRAYS
     INDENT;
     fprintf (outfile, "int SAC_dummy_refcount=10;\n");
+#endif /* TAGGED_ARRAYS */
 
     INDENT;
     fprintf (outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_single_threaded)\n");
 
     for (i = 0; i < 3 * narg; i += 3) {
         INDENT;
-        fprintf (outfile, "SAC_MT_SPMD_PARAM_%s( %s, %s)\n", arg_any[i], arg_any[i + 1],
-                 arg_any[i + 2]);
+        fprintf (outfile, "SAC_MT_SPMD_PARAM_%s( %s, %s)\n", arg_ANY[i], arg_ANY[i + 1],
+                 arg_ANY[i + 2]);
     }
 
     DBUG_VOID_RETURN;
@@ -356,7 +361,7 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **arg_any)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SPMD_FUN_RET( int barrier_id, int narg, char **arg_any)
+ *   void ICMCompileMT_SPMD_FUN_RET( int barrier_id, int narg, char **arg_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -370,7 +375,7 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **arg_any)
  ******************************************************************************/
 
 void
-ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **arg_any)
+ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **arg_ANY)
 {
     int i;
 
@@ -383,7 +388,7 @@ ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **arg_any)
 
     for (i = 0; i < 2 * narg; i += 2) {
         INDENT;
-        fprintf (outfile, "SAC_MT_SPMD_RET_%s(%s);\n", arg_any[i], arg_any[i + 1]);
+        fprintf (outfile, "SAC_MT_SPMD_RET_%s(%s);\n", arg_ANY[i], arg_ANY[i + 1]);
     }
 
     INDENT;
@@ -425,14 +430,15 @@ ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **arg_any)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_START_SYNCBLOCK( barrier_id, narg [, tag, type, param]*)
+ *   MT_START_SYNCBLOCK( barrier_id, narg [, tag, type, param_NT]*)
  *
- *   This ICM implements the begin of a synchronisation block. Essentially,
- *   the reference counters of the arguments tagged in_rc are shadowed by
- *   thread-specific dummy reference counters. Dummies can be used safely
- *   since memory may exclusively been released in between synchronisation
- *   blocks. Nevertheless, they must be provided because arbitrary code in
- *   the with-loop body may want to increment/decrement reference counters.
+ *   This ICM implements the begin of a synchronisation block.
+ *   Essentially, the reference counters of the arguments tagged in_rc are
+ *   shadowed by thread-specific dummy reference counters. Dummies can be
+ *   used safely since memory may exclusively been released in between
+ *   synchronisation blocks. Nevertheless, they must be provided because
+ *   arbitrary code in the with-loop body may want to increment/decrement
+ *   reference counters.
  *
  *   However, this ICM also complements the various ICMs that implement
  *   different kinds of barrier synchronisations.
@@ -455,15 +461,28 @@ ICMCompileMT_START_SYNCBLOCK (int barrier_id, int narg, char **vararg)
     fprintf (outfile, "{\n");
     indent++;
 
+#ifdef TAGGED_ARRAYS
+    for (i = 0; i < 3 * narg; i += 3) {
+        INDENT;
+        fprintf (outfile, "SAC_MT_DECL_LOCAL_DESC( %s)\n", vararg[i + 2]);
+    }
+    fprintf (outfile, "\n");
+#endif /* TAGGED_ARRAYS */
+
     INDENT;
     fprintf (outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_multi_threaded)\n");
 
     for (i = 0; i < 3 * narg; i += 3) {
+#ifdef TAGGED_ARRAYS
+        INDENT;
+        fprintf (outfile, "SAC_MT_INIT_DESC( %s)\n", vararg[i + 2]);
+#else  /* TAGGED_ARRAYS */
         if (0 == strcmp (vararg[i], "in_rc")) {
             INDENT;
             fprintf (outfile, "int SAC_ND_A_RC( %s) = &SAC_dummy_refcount;\n",
                      vararg[i + 2]);
         }
+#endif /* TAGGED_ARRAYS */
     }
 
     INDENT;
@@ -481,7 +500,7 @@ ICMCompileMT_START_SYNCBLOCK (int barrier_id, int narg, char **vararg)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SYNC_FOLD( barrier_id, narg [, foldtype, accu_nt, tmp_nt, foldop]*)
+ *   MT_SYNC_FOLD( barrier_id, narg [, foldtype, accu_NT, tmp_NT, foldop]*)
  *
  *   This ICM implements barrier synchronisation for synchronisation blocks
  *   that contain several fold with-loops but no genarray/modarray
@@ -861,7 +880,7 @@ ICMCompileMT_SYNC_NONFOLD (int barrier_id)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SYNC_FOLD_NONFOLD( narg [, foldtype, accu_nt, tmp_nt, foldop]*)
+ *   MT_SYNC_FOLD_NONFOLD( narg [, foldtype, accu_NT, tmp_NT, foldop]*)
  *
  *   This ICM implements barrier synchronisation for synchronisation blocks
  *   that contain several fold with-loops as well as additional genarray/modarray
@@ -933,7 +952,7 @@ ICMCompileMT_SYNC_ONEFOLD_NONFOLD (char *foldtype, char *accu_var, char *tmp_var
  * description:
  *   compiles the corresponding ICM:
  *
- *   MT_MASTER_SEND_FOLDRESULTS( nfoldargs, [, foldtype, accu_nt]*)
+ *   MT_MASTER_SEND_FOLDRESULTS( nfoldargs, [, foldtype, accu_NT]*)
  *
  *   As part of the value exchange between two SYNC-blocks it is responsible
  *   to send results of fold with-loops to the SPMD-frame ... BUT ...
@@ -971,7 +990,7 @@ ICMCompileMT_MASTER_SEND_FOLDRESULTS (int nfoldargs, char **foldargs)
  * description:
  *   compiles the corresponding ICM:
  *
- *   MT_MASTER_RECEIVE_FOLDRESULTS( nfoldargs, [, foldtype, accu_nt]*)
+ *   MT_MASTER_RECEIVE_FOLDRESULTS( nfoldargs, [, foldtype, accu_NT]*)
  *
  *   As part of the value exchange between two SYNC-blocks it is responsible
  *   to receive results of fold with-loops from the SPMD-frame ... BUT ...
@@ -1052,7 +1071,7 @@ ICMCompileMT_MASTER_SEND_SYNCARGS (int nsyncargs, char **syncargs)
  * description:
  *   compiles the corresponding ICM:
  *
- *   MT_MASTER_RECEIVE_FOLDRESULTS( nfoldargs, [, foldtype, accu_var]*)
+ *   MT_MASTER_RECEIVE_FOLDRESULTS( nfoldargs, [, foldtype, accu_var_NT]*)
  *
  *   As part of the value exchange between two SYNC-blocks it is responsible
  *   to receive values changed in the master part.
@@ -1074,7 +1093,11 @@ ICMCompileMT_MASTER_RECEIVE_SYNCARGS (int nsyncargs, char **syncargs)
 
     for (i = 0; i < nsyncargs; i++) {
         INDENT;
+#ifdef TAGGED_ARRAYS
+        fprintf (outfile, "SAC_MT_SPMD_GET_shared( %s);\n", syncargs[i]);
+#else  /* TAGGED_ARRAYS */
         fprintf (outfile, "SAC_MT_SPMD_GET_shared_rc( %s);\n", syncargs[i]);
+#endif /* TAGGED_ARRAYS */
     }
 
     DBUG_VOID_RETURN;
@@ -1091,7 +1114,7 @@ ICMCompileMT_MASTER_RECEIVE_SYNCARGS (int nsyncargs, char **syncargs)
  *   implements the compilation of the following ICM:
  *
  *   MT_CONTINUE( nfoldargs, nsyncargs
- *                [, foldtype, accu_nt]*,
+ *                [, foldtype, accu_NT]*,
  *                [, ... ]*);
  *
  *   This ICM implements the continuation after a barrier synchronisation.
