@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.137  2004/09/30 20:02:07  sah
+ * fixed type of DFMmask_t arguments
+ *
  * Revision 3.136  2004/09/28 14:08:45  ktr
  * removed old refcount and generatemasks
  *
@@ -1410,7 +1413,7 @@ MakeAllocIcm_CheckReuse (char *name, types *type, int rc, node *get_dim,
 
 static node *
 DFM2AllocIcm_CheckReuse (char *name, types *type, int rc, node *get_dim,
-                         node *set_shape_icm, node *pragma, DFMmask_t *reuse_dfm,
+                         node *set_shape_icm, node *pragma, DFMmask_t reuse_dfm,
                          node *assigns)
 {
     node *vardec;
@@ -2491,7 +2494,7 @@ CheckAp (node *ap, info *arg_info)
  ******************************************************************************/
 
 static node *
-MakeParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
+MakeParamsByDFM (DFMmask_t mask, char *tag, int *num_args, node *icm_args)
 {
     node *vardec;
 
