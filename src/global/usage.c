@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.66  1998/05/15 11:33:22  srs
+ * added -no:wli
+ *
  * Revision 1.65  1998/05/13 14:04:36  srs
  * added -noWLUNR and -maxwlunroll
  *
@@ -280,6 +283,7 @@ usage ()
 
             "\t-bo:inl   \t-b15:inl   \tstop after function inlining\n"
             "\t-bo:ae    \t-b15:ae    \tstop after array elimination\n"
+            "\t-bo:wli   \t-b15:wli   \tstop after withloop information gathering\n"
             "\t-bo:cyc   \t-b15:cyc   \tstop after one complete optimization cycle\n\n"
 
             "\t-bn:cubes \t-b18:cubes \tstop after cube-building\n"
