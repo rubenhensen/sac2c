@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2003/03/26 12:17:50  sah
+ * replaced tmpnam by mkdtemp on
+ * platforms supporting this
+ *
  * Revision 3.19  2003/03/09 17:13:54  ktr
  * added basic support for BLIR.
  *
@@ -74,6 +78,7 @@
  *  this file contains the main function of the SAC->C compiler!
  */
 
+#include "config.h"
 #include "convert.h"
 #include "types.h"
 #include "tree_basic.h"
@@ -198,9 +203,21 @@ main (int argc, char *argv[])
      * which is defined in globals.c.
      */
 
+#ifdef HAVE_MKDTEMP
+    tmp_dirname = malloc (strlen (config.mkdir) + 11)
+        : tmp_dirname = strcpy (tmp_dirname, config.tmpdir);
+    tmp_dirname = strcat (tmp_dirname, "SAC_XXXXXX");
+
+    tmp_dirname = mkdtemp (tmp_dirname);
+
+    if (tmp_dirname = NULL) {
+        SYSABORT (("System failed to create temporary directory '%s'\n", tmp_dirname));
+    }
+#else
     tmp_dirname = tempnam (config.tmpdir, "SAC_");
 
     SystemCall ("%s %s", config.mkdir, tmp_dirname);
+#endif
 
     /*
      * If sac2c was started with the option -libstat,
