@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.68  1995/07/11 09:00:45  cg
+ * Revision 1.69  1995/07/11 10:02:45  cg
+ * bug in parsing typedefs fixed.
+ *
+ * Revision 1.68  1995/07/11  09:00:45  cg
  * most grammar version 0.6 features integrated.
  *
  * Revision 1.67  1995/07/06  17:27:05  cg
@@ -594,12 +597,11 @@ def4: fundefs { $$=MakeNode(N_modul);
               }
 	;
 
-modimp: impclass ID COLON defs
-          { $$=$4;
+modimp: impclass ID {  mod_name=$2; } COLON defs
+          { $$=$5;
             $$->info.id=$2;
             if (file_kind==F_classimp)
                $$->node[4]=MakeNode(N_isclass);
-            mod_name=$2;
           }
 	;
 
@@ -621,7 +623,7 @@ typedef: TYPEDEF type ID SEMIC
           { $$=MakeNode(N_typedef);
             $$->info.types=$2;
             $$->info.types->id=$3;
-            if ((file_kind==F_classimp) && (!strcmp((char*)$2,mod_name)))
+            if ((file_kind==F_classimp) && (!strcmp((char*) $3, mod_name)))
                $$->info.types->attrib=ST_unique;
             
             DBUG_PRINT("GENTREE",
