@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2004/11/22 14:37:51  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 3.43  2004/11/22 14:35:06  sbs
  * types from sig_deps.h added.
  *
@@ -814,5 +817,100 @@ typedef enum { TY_symb, TY_user } type_conversion_flag;
 
 typedef ntype *(*ct_funptr) (te_info *, ntype *);
 typedef struct SIG_DEP sig_dep;
+
+/*
+ * moved from resource.h
+ *
+/*****************************************************************************
+ *
+ * type: resource_list_t
+ * type: target_list_t
+ *
+ * description:
+ *
+ *  These types are used to build up a tree-like structure for temporaily
+ *  storing all information read in from sac2crc files.
+ *
+ ******************************************************************************/
+
+typedef struct resource_list_t {
+    char *name;
+    char *value_str;
+    int value_num;
+    int add_flag;
+    struct resource_list_t *next;
+} resource_list_t;
+
+typedef struct target_list_t {
+    char *name;
+    node *super_targets;
+    resource_list_t *resource_list;
+    struct target_list_t *next;
+} target_list_t;
+
+/*****************************************************************************
+ *
+ * type: resource_t
+ *
+ * description:
+ *
+ *  This structure is used to permanently store all relevant resource
+ *  information for the selected target.
+ *
+ ******************************************************************************/
+
+typedef struct {
+    char *cc;
+    char *ccflags;
+    char *ccdir;
+    char *ldflags;
+    char *cclink;
+    char *ccmtlink;
+    char *opt_O0;
+    char *opt_O1;
+    char *opt_O2;
+    char *opt_O3;
+    char *opt_g;
+    char *opt_D;
+    char *opt_I;
+
+    char *cpp_stdin;
+    char *cpp_file;
+    char *tar_create;
+    char *tar_extract;
+    char *ar_create;
+    char *ld_dynamic;
+    char *ranlib;
+    char *mkdir;
+    char *rmdir;
+    char *chdir;
+    char *cat;
+    char *move;
+    char *rsh;
+    char *dump_output;
+
+    char *stdlib_decpath;
+    char *stdlib_libpath;
+    char *system_libpath;
+    char *tmpdir;
+
+    int cache1_size;
+    int cache1_line;
+    int cache1_assoc;
+    char *cache1_writepol;
+    int cache1_msca_factor;
+
+    int cache2_size;
+    int cache2_line;
+    int cache2_assoc;
+    char *cache2_writepol;
+    int cache2_msca_factor;
+
+    int cache3_size;
+    int cache3_line;
+    int cache3_assoc;
+    char *cache3_writepol;
+    int cache3_msca_factor;
+} configuration_t;
 
 #endif /* _SAC_TYPES_H_ */
