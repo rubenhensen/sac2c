@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.7  2000/10/31 18:10:58  cg
+ * Functions that are exported via the module/class declaration
+ * file are now tagged as ST_exported.
+ *
  * Revision 2.6  2000/10/12 15:45:21  dkr
  * macros in prf.h used
  *
@@ -613,6 +617,7 @@ CDECfundef (node *arg_node, node *arg_info)
     }
 
     FUNDEC_DEF (arg_node) = fundef;
+    FUNDEF_STATUS (fundef) = ST_exported;
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
