@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2004/11/29 10:54:09  ktr
+  added newline.
+
   Revision 1.4  2004/11/29 10:43:09  sah
   added handling of AVIS backlink to DECL
 
@@ -185,6 +188,7 @@ version="1.0">
       </xsl:with-param>
     </xsl:call-template>
     <xsl:value-of select="'= this; }'"/>
+    <xsl:call-template name="newline" />
   </xsl:if>
 </xsl:template>
  
