@@ -1,11 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 1.41  1998/04/19 21:19:09  dkr
+ * changed FindVardec
+ *
  * Revision 1.40  1998/04/14 21:43:29  dkr
  * fixed a bug with COND_VARINFO, DO_VARINFO, ...
  *
  * Revision 1.39  1998/04/04 21:06:38  dkr
- * fixed a bug in FindVarDec
+ * fixed a bug in FindVardec
  *
  * Revision 1.38  1998/03/25 18:10:05  srs
  * renamed IDS_VARDEC_TYPE to IDS_TYPE
@@ -352,42 +355,48 @@ IsNonUniqueHidden (types *type)
     DBUG_RETURN (ret);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : FindVarDec
- *  arguments     : 1) number of variable
- *  description   : returns pointer to vardec if found
- *                  returns NULL if not found
- *  global vars   : fundef_node, args_no
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...
+ * function:
+ *   node *FindVardec(int varno, node *fundef)
  *
- *  remarks       :
+ * description:
+ *   returns the vardec of var number 'varno'
  *
- */
+ ******************************************************************************/
+
 node *
-FindVarDec (int var_no)
+FindVardec (int varno, node *fundef)
 {
-    node *tmp, *ret_node = NULL;
+    node *tmp, *result = NULL;
 
-    DBUG_ENTER ("FindVarDec");
+    DBUG_ENTER ("FindVardec");
 
-    if (var_no < args_no) {
-        tmp = FUNDEF_ARGS (fundef_node);
-    } else {
-        tmp = BLOCK_VARDEC (FUNDEF_BODY (fundef_node));
-    }
-    while (NULL != tmp) {
-        if (tmp->varno == var_no) {
-            ret_node = tmp;
-            break;
-        } else {
-            tmp = (NODE_TYPE (tmp) == N_vardec) ? VARDEC_NEXT (tmp) : ARG_NEXT (tmp);
+    if (result == NULL) {
+        tmp = FUNDEF_ARGS (fundef);
+        while (tmp != NULL) {
+            if (ARG_VARNO (tmp) == varno) {
+                result = tmp;
+                break;
+            } else {
+                tmp = ARG_NEXT (tmp);
+            }
         }
     }
 
-    DBUG_RETURN (ret_node);
+    if (result == NULL) {
+        tmp = BLOCK_VARDEC (FUNDEF_BODY (fundef));
+        while (tmp != NULL) {
+            if (VARDEC_VARNO (tmp) == varno) {
+                result = tmp;
+                break;
+            } else {
+                tmp = VARDEC_NEXT (tmp);
+            }
+        }
+    }
+
+    DBUG_RETURN (result);
 }
 
 /*
@@ -758,7 +767,7 @@ RCloop (node *arg_node, node *arg_info)
     /* first compute sets v1 and v2 */
     for (i = 0; i < varno; i++)
         if ((defined_mask[i] > 0) || (used_mask[i] > 0)) {
-            var_dec = FindVarDec (i);
+            var_dec = FindVardec (i, fundef_node);
             DBUG_ASSERT ((NULL != var_dec), "variable not found");
             if (MUST_REFCOUNT (VARDEC_TYPE (var_dec))) {
 
@@ -830,7 +839,7 @@ RCloop (node *arg_node, node *arg_info)
     /* compute new refcounts because of 'virtuell function application' */
     for (i = 0; i < varno; i++) {
         if ((defined_mask[i] > 0) || (used_mask[i] > 0)) {
-            var_dec = FindVarDec (i);
+            var_dec = FindVardec (i, fundef_node);
             DBUG_ASSERT ((NULL != var_dec), "variable not found");
             if (MUST_REFCOUNT (VARDEC_TYPE (var_dec))) {
                 if ((used_mask[i] > 0) && (0 < var_dec->refcnt) && (1 == again)) {
@@ -1072,7 +1081,7 @@ RCcond (node *arg_node, node *arg_info)
 
     for (i = 0; i < varno; i++) {
         if (then_dump[i] < else_dump[i]) {
-            var_dec = FindVarDec (i);
+            var_dec = FindVardec (i, fundef_node);
             DBUG_ASSERT ((NULL != var_dec), " var not found");
             if (0 == use_old) {
                 VAR_DEC_2_ID_NODE (id_node, var_dec);
@@ -1093,7 +1102,7 @@ RCcond (node *arg_node, node *arg_info)
                         ("set refcount of %s to %d", ID_NAME (id_node), var_dec->refcnt));
         } else {
             if (else_dump[i] < then_dump[i]) {
-                var_dec = FindVarDec (i);
+                var_dec = FindVardec (i, fundef_node);
                 DBUG_ASSERT ((NULL != var_dec), " var not found");
                 if (0 == use_old) {
                     VAR_DEC_2_ID_NODE (id_node, var_dec);
@@ -1194,7 +1203,7 @@ RCwith (node *arg_node, node *arg_info)
      */
     for (i = 0; i < varno; i++) {
         if (used_mask[i] > 0) {
-            var_dec = FindVarDec (i);
+            var_dec = FindVardec (i, fundef_node);
             DBUG_ASSERT ((NULL != var_dec), "variable not found");
             if (MUST_REFCOUNT (VARDEC_TYPE (var_dec))) {
                 if (0 < VARDEC_REFCNT (var_dec)) {
@@ -1215,7 +1224,7 @@ RCwith (node *arg_node, node *arg_info)
      */
     for (i = 0; i < varno; i++) {
         if ((with_dump[i] > 0) && (i != index_vec_varno) && (i != mod_array_varno)) {
-            var_dec = FindVarDec (i);
+            var_dec = FindVardec (i, fundef_node);
             DBUG_ASSERT ((NULL != var_dec), "var not found");
             if (0 < var_dec->refcnt) {
                 ref_dump[i]++;
@@ -1227,7 +1236,7 @@ RCwith (node *arg_node, node *arg_info)
 
     if (-1 != mod_array_varno) {
         /* now increase refcount of modified array */
-        var_dec = FindVarDec (mod_array_varno);
+        var_dec = FindVardec (mod_array_varno, fundef_node);
         DBUG_ASSERT ((NULL != var_dec), "var not found");
         ref_dump[mod_array_varno]++;
         DBUG_PRINT ("RC", ("set refcount of %s to %d:", var_dec->info.types->id,
@@ -1349,7 +1358,7 @@ RCNpart (node *arg_node, node *arg_info)
   NPART_USEDVARS(arg_node) = MakeInfo();
   for (i=0; i<varno; i++)
     if (used_mask[i] > 0) {
-      var_dec=FindVarDec(i);
+      var_dec=FindVardec(i, fundef_node);
       DBUG_ASSERT((NULL!=var_dec),"variable not found");
       if (0 < VARDEC_REFCNT(var_dec)) {
         /* store refcount of used variables in NPART_USEDVARS() */
@@ -1368,7 +1377,7 @@ RCNpart (node *arg_node, node *arg_info)
      */
     for (i = 0; i < varno; i++) {
         if (with_dump[i] > 0) {
-            var_dec = FindVarDec (i);
+            var_dec = FindVardec (i, fundef_node);
             DBUG_ASSERT ((NULL != var_dec), "variable not found");
             if (0 < VARDEC_REFCNT (var_dec)) {
                 ref_dump[i]++;
@@ -1421,10 +1430,12 @@ RCNgen (node *arg_node, node *arg_info)
 
     NGEN_BOUND1 (arg_node) = Trav (NGEN_BOUND1 (arg_node), arg_info);
     NGEN_BOUND2 (arg_node) = Trav (NGEN_BOUND2 (arg_node), arg_info);
-    if (NGEN_STEP (arg_node) != NULL)
+    if (NGEN_STEP (arg_node) != NULL) {
         NGEN_STEP (arg_node) = Trav (NGEN_STEP (arg_node), arg_info);
-    if (NGEN_WIDTH (arg_node) != NULL)
+    }
+    if (NGEN_WIDTH (arg_node) != NULL) {
         NGEN_WIDTH (arg_node) = Trav (NGEN_WIDTH (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
