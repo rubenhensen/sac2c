@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.51  1998/04/02 17:41:00  dkr
+ * added DupConc
+ *
  * Revision 1.50  1998/04/01 23:55:51  dkr
  * added DupWLstriVar, DupWLgridVar
  *
@@ -169,6 +172,8 @@
 #include "optimize.h"
 #include "Inline.h"
 
+/******************************************************************************/
+
 #define LEVEL arg_info->lineno
 
 #define DUPTRAV(node)                                                                    \
@@ -179,6 +184,8 @@
 
 #define DUPCONT(node)                                                                    \
     ((arg_info != NULL) && (node != NULL)) ? Trav (node, arg_info) : NULL
+
+/******************************************************************************/
 
 /*
  *  DupTree duplicates the whole sub tree behind the given pointer.
@@ -210,6 +217,8 @@ DupTree (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
+/******************************************************************************/
+
 node *
 DupNode (node *arg_node)
 {
@@ -230,6 +239,8 @@ DupNode (node *arg_node)
     DBUG_RETURN (new_node);
 }
 
+/******************************************************************************/
+
 node *
 DupInt (node *arg_node, node *arg_info)
 {
@@ -243,6 +254,8 @@ DupInt (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
+/******************************************************************************/
+
 node *
 DupChar (node *arg_node, node *arg_info)
 {
@@ -254,6 +267,8 @@ DupChar (node *arg_node, node *arg_info)
     DUP (arg_node, new_node);
     DBUG_RETURN (new_node);
 }
+
+/******************************************************************************/
 
 node *
 DupFloat (node *arg_node, node *arg_info)
@@ -268,6 +283,8 @@ DupFloat (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
+/******************************************************************************/
+
 node *
 DupDouble (node *arg_node, node *arg_info)
 {
@@ -281,6 +298,8 @@ DupDouble (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
+/******************************************************************************/
+
 node *
 DupStr (node *arg_node, node *arg_info)
 {
@@ -293,6 +312,8 @@ DupStr (node *arg_node, node *arg_info)
     DUP (arg_node, new_node);
     DBUG_RETURN (new_node);
 }
+
+/******************************************************************************/
 
 ids *
 DupIds (ids *old_ids, node *arg_info)
@@ -320,6 +341,8 @@ DupIds (ids *old_ids, node *arg_info)
         new_ids->next = DupIds (old_ids->next, arg_info);
     DBUG_RETURN (new_ids);
 }
+
+/******************************************************************************/
 
 /*
  * DupIIds is used for N_id node.
@@ -349,6 +372,8 @@ DupIIds (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
+/******************************************************************************/
+
 /*
  * DupId is used for N_modarray node.
  */
@@ -376,6 +401,8 @@ DupId (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
+/******************************************************************************/
+
 node *
 DupCond (node *arg_node, node *arg_info)
 {
@@ -399,6 +426,8 @@ DupCond (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
+/******************************************************************************/
+
 node *
 DupLoop (node *arg_node, node *arg_info)
 {
@@ -421,6 +450,8 @@ DupLoop (node *arg_node, node *arg_info)
 
     DBUG_RETURN (new_node);
 }
+
+/******************************************************************************/
 
 node *
 DupChain (node *arg_node, node *arg_info)
@@ -447,6 +478,8 @@ DupChain (node *arg_node, node *arg_info)
 
     DBUG_RETURN (new_node);
 }
+
+/******************************************************************************/
 
 node *
 DupAssign (node *arg_node, node *arg_info)
@@ -481,6 +514,8 @@ DupAssign (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
+/******************************************************************************/
+
 node *
 DupTypes (node *arg_node, node *arg_info)
 {
@@ -504,6 +539,8 @@ DupTypes (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
+/******************************************************************************/
+
 shpseg *
 DupShpSeg (shpseg *shp_seg)
 {
@@ -516,6 +553,8 @@ DupShpSeg (shpseg *shp_seg)
         SHPSEG_SHAPE (new_shpseg, i) = SHPSEG_SHAPE (shp_seg, i);
     DBUG_RETURN (new_shpseg);
 }
+
+/******************************************************************************/
 
 node *
 DupPrf (node *arg_node, node *arg_info)
@@ -539,6 +578,8 @@ DupPrf (node *arg_node, node *arg_info)
     }
     DBUG_RETURN (new_node);
 }
+
+/******************************************************************************/
 
 node *
 DupFun (node *arg_node, node *arg_info)
@@ -565,6 +606,8 @@ DupFun (node *arg_node, node *arg_info)
     }
     DBUG_RETURN (new_node);
 }
+
+/******************************************************************************/
 
 node *
 DupFundef (node *arg_node, node *arg_info)
@@ -595,9 +638,10 @@ DupFundef (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
+/******************************************************************************/
+
 /*
  * This function is used for N_vardec & N_arg nodes
- *
  */
 node *
 DupDec (node *arg_node, node *arg_info)
@@ -620,6 +664,8 @@ DupDec (node *arg_node, node *arg_info)
 
     DBUG_RETURN (new_node);
 }
+
+/******************************************************************************/
 
 node *
 DupInfo (node *arg_node, node *arg_info)
@@ -644,6 +690,8 @@ DupInfo (node *arg_node, node *arg_info)
 
     DBUG_RETURN (new_node);
 }
+
+/******************************************************************************/
 
 node *
 DupPragma (node *arg_node, node *arg_info)
@@ -685,11 +733,26 @@ DupPragma (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
+DupConc (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupConc");
+
+    new_node = MakeConc (DUPTRAV (CONC_REGION (arg_node)));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
 DupNwithop (node *arg_node, node *arg_info)
 {
     node *new_node;
 
     DBUG_ENTER ("DupNwithop");
+
     new_node = MakeNWithOp (NWITHOP_TYPE (arg_node));
     switch (NWITHOP_TYPE (arg_node)) {
     case WO_genarray:
@@ -741,6 +804,7 @@ DupNwithid (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupNwithid");
+
     new_node = MakeNWithid (DupIds (NWITHID_VEC (arg_node), arg_info),
                             DupIds (NWITHID_IDS (arg_node), arg_info));
 
@@ -755,6 +819,7 @@ DupNgen (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupNgen");
+
     new_node = MakeNGenerator (DUPTRAV (NGEN_BOUND1 (arg_node)),
                                DUPTRAV (NGEN_BOUND2 (arg_node)), NGEN_OP1 (arg_node),
                                NGEN_OP2 (arg_node), DUPTRAV (NGEN_STEP (arg_node)),
@@ -771,6 +836,7 @@ DupWLseg (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupWLseg");
+
     new_node = MakeWLseg (WLSEG_DIMS (arg_node), DUPTRAV (WLSEG_CONTENTS (arg_node)),
                           DUPCONT (WLSEG_NEXT (arg_node)));
 
@@ -785,6 +851,7 @@ DupWLblock (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupWLblock");
+
     new_node = MakeWLblock (WLBLOCK_LEVEL (arg_node), WLBLOCK_DIM (arg_node),
                             WLBLOCK_BOUND1 (arg_node), WLBLOCK_BOUND2 (arg_node),
                             WLBLOCK_STEP (arg_node), DUPTRAV (WLBLOCK_NEXTDIM (arg_node)),
@@ -802,6 +869,7 @@ DupWLublock (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupWLublock");
+
     new_node
       = MakeWLublock (WLUBLOCK_LEVEL (arg_node), WLUBLOCK_DIM (arg_node),
                       WLUBLOCK_BOUND1 (arg_node), WLUBLOCK_BOUND2 (arg_node),
@@ -820,6 +888,7 @@ DupWLstride (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupWLstride");
+
     new_node = MakeWLstride (WLSTRIDE_LEVEL (arg_node), WLSTRIDE_DIM (arg_node),
                              WLSTRIDE_BOUND1 (arg_node), WLSTRIDE_BOUND2 (arg_node),
                              WLSTRIDE_STEP (arg_node), WLSTRIDE_UNROLLING (arg_node),
@@ -840,6 +909,7 @@ DupWLgrid (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupWLgrid");
+
     new_node
       = MakeWLgrid (WLGRID_LEVEL (arg_node), WLGRID_DIM (arg_node),
                     WLGRID_BOUND1 (arg_node), WLGRID_BOUND2 (arg_node),
@@ -863,6 +933,7 @@ DupWLstriVar (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupWLstriVar");
+
     new_node
       = MakeWLstriVar (WLSTRIVAR_DIM (arg_node), DUPTRAV (WLSTRIVAR_BOUND1 (arg_node)),
                        DUPTRAV (WLSTRIVAR_BOUND2 (arg_node)),
@@ -881,6 +952,7 @@ DupWLgridVar (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupWLgridVar");
+
     new_node
       = MakeWLgridVar (WLGRIDVAR_DIM (arg_node), DUPTRAV (WLGRIDVAR_BOUND1 (arg_node)),
                        DUPTRAV (WLGRIDVAR_BOUND2 (arg_node)),

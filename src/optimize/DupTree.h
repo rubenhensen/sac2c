@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  1998/04/02 17:41:13  dkr
+ * added DupConc
+ *
  * Revision 1.19  1998/04/01 23:56:15  dkr
  * added DupWLstriVar, DupWLgridVar
  *
@@ -62,9 +65,9 @@
  *
  */
 
-#ifndef _DupTree_h
+#ifndef _sac_DupTree_h
 
-#define _DupTree_h
+#define _sac_DupTree_h
 
 #define DUPTYPE arg_info->flag
 #define NORMAL 0
@@ -115,7 +118,9 @@ extern node *DupFundef (node *arg_node, node *arg_info);
 extern node *DupDec (node *arg_node, node *arg_info);
 extern node *DupInfo (node *arg_node, node *arg_info);
 extern node *DupPragma (node *arg_node, node *arg_info);
+extern node *DupConc (node *arg_node, node *arg_info);
 
+/* new with-loop */
 extern node *DupNwithop (node *arg_node, node *arg_info);
 extern node *DupNpart (node *arg_node, node *arg_info);
 extern node *DupNwithid (node *arg_node, node *arg_info);
@@ -129,4 +134,4 @@ extern node *DupWLgrid (node *arg_node, node *arg_info);
 extern node *DupWLstriVar (node *arg_node, node *arg_info);
 extern node *DupWLgridVar (node *arg_node, node *arg_info);
 
-#endif /* _DupTree_h */
+#endif /* _sac_DupTree_h */
