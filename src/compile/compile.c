@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.130  1998/04/20 12:46:50  dkr
+ * fixed a bug in CompSPMD
+ *
  * Revision 1.129  1998/04/20 02:39:47  dkr
  * fixed a bug with shared icm-args
  * (but there are many more bugs of this sort 8-((
@@ -5815,7 +5818,8 @@ CompSPMD (node *arg_node, node *arg_info)
             icm_args = MakeExprs (MakeId2 (DupOneIds (let_ids, NULL)), icm_args);
             GET_BASIC_SIMPLETYPE (s_type, VARDEC_TYPE (IDS_VARDEC (let_ids)));
             icm_args
-              = MakeExprs (MakeId (type_string[s_type], NULL, ST_regular), icm_args);
+              = MakeExprs (MakeId (StringCopy (type_string[s_type]), NULL, ST_regular),
+                           icm_args);
             icms = MakeIcm ("ND_ALLOC_ARRAY", icm_args, icms);
         }
 
