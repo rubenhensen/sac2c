@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/07/03 15:27:23  dkr
+ * RUNTIMECHECK_TYPE added
+ *
  * Revision 3.15  2002/06/10 09:18:37  dkr
  * some structures for argtags (ATG_...) added
  *
@@ -284,10 +287,13 @@ extern unsigned int runtimecheck;
 #define RUNTIMECHECK_NONE 0x0000
 #define RUNTIMECHECK_ALL 0xffff
 
-#define RUNTIMECHECK_MALLOC 0x0001
-#define RUNTIMECHECK_BOUNDARY 0x0002
-#define RUNTIMECHECK_ERRNO 0x0004
-#define RUNTIMECHECK_HEAP 0x0008
+#define RUNTIMECHECK_BOUNDARY 0x0001
+#ifdef TAGGED_ARRAYS
+#define RUNTIMECHECK_TYPE 0x0002
+#endif
+#define RUNTIMECHECK_MALLOC 0x0004
+#define RUNTIMECHECK_ERRNO 0x0008
+#define RUNTIMECHECK_HEAP 0x0010
 
 extern unsigned int intrinsics;
 
