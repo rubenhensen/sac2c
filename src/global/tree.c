@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1995/07/07 16:21:19  hw
+ * Revision 1.20  1995/07/10 07:31:59  asi
+ * removed bblock from structure node and added def to structure ids
+ *
+ * Revision 1.19  1995/07/07  16:21:19  hw
  * added 'char *prf_name_str[]'( moved from typecheck.c)
  *
  * Revision 1.18  1995/07/06  17:28:34  cg
@@ -144,7 +147,6 @@ MakeNode (nodetype nodetype)
         tmp->node[i] = NULL;
     tmp->nnode = 0;
     tmp->info.id = NULL;
-    tmp->bblock = 0;
     tmp->flag = 0;
     tmp->varno = 0;
     tmp->lineno = linenum;
@@ -259,10 +261,10 @@ MakeIds (char *id)
     tmp->id = id;
     tmp->refcnt = 0;
     tmp->node = NULL;
-    tmp->nchain = NULL;
     tmp->attrib = ST_regular;
     tmp->status = ST_regular;
     tmp->next = NULL;
+    tmp->def = NULL;
 
     DBUG_RETURN (tmp);
 }

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.49  1995/07/07 16:21:19  hw
+ * Revision 1.50  1995/07/10 07:31:59  asi
+ * removed bblock from structure node and added def to structure ids
+ *
+ * Revision 1.49  1995/07/07  16:21:19  hw
  * added 'char *prf_name_str[]'( moved from typecheck.c)
  *
  * Revision 1.48  1995/07/07  14:28:53  hw
@@ -198,23 +201,17 @@ typedef enum { VECT, IDX } useflag;
 
 typedef char id;
 
-typedef struct NCHAIN {
-    int refcnt;
-    struct NCHAIN *next;
-    struct NODE *node;
-} nchain;
-
 typedef struct IDS {
     id *id;
     int refcnt;
-    int flag;              /* the flag is used for ids-status */
-                           /* (loop invariant/not loop invariant , ...) */
-    struct NODE *node;     /* ptr. to decleration */
-    struct NCHAIN *nchain; /* ptr. to definition(s) resp. usage(s) */
-    struct NODE *use;      /* ptr. to usage chain (used only if the var */
-                           /* is a one dimensional array! */
-    statustype attrib;     /* ref/deref attribute */
-    statustype status;     /* regular or artificial */
+    int flag;          /* the flag is used for ids-status */
+                       /* (loop invariant/not loop invariant , ...) */
+    struct NODE *node; /* ptr. to decleration */
+    struct NODE *def;  /* ptr. to definition(s) resp. usage(s) */
+    struct NODE *use;  /* ptr. to usage chain (used only if the var */
+                       /* is a one dimensional array! */
+    statustype attrib; /* ref/deref attribute */
+    statustype status; /* regular or artificial */
 
     struct IDS *next;
 } ids;
@@ -287,7 +284,6 @@ typedef struct NODE {
                                   */
     } info;                      /* fu"r spezielle Informationen */
     int refcnt;                  /* is used as referenze count information */
-    int bblock;                  /* number of basic block assign node belongs to */
     int flag;                    /* the flag is used for node-status */
                                  /* (loop invariant/not loop invariant , ...) */
     int varno;                   /* number of variables - 1 */
