@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.183  1998/04/07 13:08:27  dkr
+ * PrintNodeTree:
+ *   added NCODE_USED info for N_part nodes
+ *
  * Revision 1.182  1998/04/07 11:32:37  dkr
  * now more access macros are used
  *
@@ -2802,6 +2806,13 @@ PrintNodeTree (node *node)
             break;
         case N_fundef:
             fprintf (outfile, "(%s)\n", FUNDEF_NAME (node));
+            break;
+        case N_Npart:
+            if (NPART_CODE (node) != NULL) {
+                fprintf (outfile, "(code used: %d)\n", NCODE_USED (NPART_CODE (node)));
+            } else {
+                fprintf (outfile, "(no code)\n");
+            }
             break;
         case N_Ncode:
             fprintf (outfile, "(used: %d)\n", NCODE_USED (node));
