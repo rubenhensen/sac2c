@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1994/12/15 17:14:03  sbs
+ * Revision 1.6  1995/02/14 12:22:37  sbs
+ * PrintFold inserted
+ *
+ * Revision 1.5  1994/12/15  17:14:03  sbs
  * PrintCast inserted
  *
  * Revision 1.4  1994/12/14  10:18:39  sbs
@@ -48,6 +51,7 @@ extern node *PrintCond (node *, node *);
 extern node *PrintWith (node *, node *);
 extern node *PrintGenator (node *, node *);
 extern node *PrintConexpr (node *, node *);
+extern node *PrintFold (node *, node *);
 extern node *PrintArray (node *, node *);
 extern node *PrintInc (node *, node *);
 extern node *PrintDec (node *, node *);

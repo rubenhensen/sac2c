@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.32  1995/02/14 10:12:05  sbs
+ * Revision 1.33  1995/02/14 12:22:37  sbs
+ * PrintFold inserted
+ *
+ * Revision 1.32  1995/02/14  10:12:05  sbs
  * superfluous "i"-declaration in PrintPrf removed
  *
  * Revision 1.31  1995/02/02  14:56:39  hw
@@ -653,6 +656,21 @@ PrintConexpr (node *arg_node, node *arg_info)
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, " )\n");
     Trav (arg_node->node[1], arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintFold (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintFold");
+
+    INDENT;
+    if (N_foldprf == arg_node->nodetype)
+        fprintf (outfile, "fold( %s )\n", prf_string[arg_node->info.prf]);
+    else
+        fprintf (outfile, "fold( %s )\n", arg_node->info.id);
+    Trav (arg_node->node[0], arg_info);
 
     DBUG_RETURN (arg_node);
 }
