@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.43  2004/11/24 13:52:27  ktr
+  TYPEDEF_ISUNIQUE added.
+
   Revision 1.42  2004/11/24 13:33:30  khf
   added WLPG
 
@@ -1049,7 +1052,7 @@
     </node>
 <!--
 
-  N_typedef:
+  N_typedef :
 
 -->
     <node name="Typedef">
@@ -1123,6 +1126,7 @@
         <flag name="IsExported" />
         <flag name="IsProvided" />
 	<flag name="IsLocal" default="TRUE"/>
+        <flag name="IsUnique" />
       </flags>
     </node>
 <!--
