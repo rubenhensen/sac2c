@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.48  2000/03/27 14:53:53  dkr
+ * ICMs SAC_WL_..._END and SAC_PF_END_WITH are in correct order now
+ *
  * Revision 2.47  2000/03/21 15:46:03  dkr
  * ICM_INDENT explicitly set to 0 if MakeNode is used instead of MakeIcm
  *
@@ -6114,9 +6117,10 @@ COMPNwith2 (node *arg_node, node *arg_info)
     /*
      * create PF_END_WITH (for profiling) and  'WL_END'-ICM
      */
-    assigns = AppendAssign (assigns,
-                            MakeAssign (MakeIcm1 ("PF_END_WITH", MakeId1 (profile_name)),
-                                        MakeAssignIcm1 (icm_name2, icm_args)));
+    assigns
+      = AppendAssign (assigns, MakeAssign (MakeIcm1 (icm_name2, icm_args),
+                                           MakeAssignIcm1 ("PF_END_WITH",
+                                                           MakeId1 (profile_name))));
 
     /*
      * insert RC-ICMs from 'wl_ids = neutral'
