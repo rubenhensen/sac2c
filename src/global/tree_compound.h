@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.76  1998/07/16 13:49:30  sbs
+ * LET_TYPE inserted
+ *
  * Revision 1.75  1998/07/03 10:16:38  cg
  * new functions MakeIcm[012345] added
  * function AppendExpr renamed to AppendExprs
@@ -1256,7 +1259,8 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
 #define LET_MOD(n) (IDS_MOD (LET_IDS (n)))
 #define LET_STATUS(n) (IDS_STATUS (LET_IDS (n)))
 #define LET_VARNO(n) (VARDEC_VARNO (LET_VARDEC (n)))
-#define LET_BASETYPE(n) (TYPES_BASETYPE (VARDEC_TYPE (LET_VARDEC (n))))
+#define LET_TYPE(n) (VARDEC_TYPE (LET_VARDEC (n)))
+#define LET_BASETYPE(n) (TYPES_BASETYPE (LET_TYPE (n)))
 #define LET_USE(n) (IDS_USE (LET_IDS (n)))
 
 #define MAKE_OPON_LET(id, expr, op)                                                      \
