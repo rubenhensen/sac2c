@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  2004/12/12 07:55:42  ktr
+ * Corrected node usage.
+ *
  * Revision 1.35  2004/11/27 03:02:01  mwe
  * renaming
  *
@@ -708,15 +711,6 @@ AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef)
                     /* rename ids */
                     IDS_AVIS (result_chain) = DECL_AVIS (new_vardec);
 
-#ifndef NO_ID_NAME
-                    /* for compatiblity only
-                     * there is no real need for name string in ids structure because
-                     * you can get it from vardec without redundancy.
-                     */
-                    IDS_NAME (result_chain) = ILIBfree (IDS_NAME (result_chain));
-                    IDS_NAME (result_chain)
-                      = ILIBstringCopy (AVIS_NAME (DECL_AVIS (new_vardec)));
-#endif
                     /* stop seerching */
                     result_chain = NULL;
 
@@ -2047,15 +2041,6 @@ LIRMOVid (node *arg_node, info *arg_info)
 
         /* do renaming to new ssa vardec */
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
-
-#ifndef NO_ID_NAME
-        /* for compatiblity only
-         * there is no real need for name string in ids structure because
-         * you can get it from vardec without redundancy.
-         */
-        ID_NAME (arg_node) = ILIBfree (ID_NAME (arg_node));
-        ID_NAME (arg_node) = ILIBstringCopy (AVIS_NAME (ID_AVIS (arg_node)));
-#endif
     }
 
     /*

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.26  2004/12/12 07:55:02  ktr
+ * Corrected node usage.
+ *
  * Revision 1.25  2004/11/30 21:58:09  ktr
  * Should work with new vardec/arg/avis constellation and ntypes now.
  *
@@ -1533,15 +1536,6 @@ SSATids (node *arg_ids, info *arg_info)
         /* rename this ids */
         IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
 
-#ifndef NO_ID_NAME
-        /* for compatiblity only
-         * there is no real need for name string in ids structure because
-         * you can get it from vardec without redundancy.
-         */
-        ILIBfree (IDS_NAME (arg_ids));
-        IDS_NAME (arg_ids) = ILIBstringCopy (VARDEC_NAME (new_vardec));
-#endif
-
         /*
          * mark this avis for undo ssa transform:
          * all global objects and artificial identifier must
@@ -1612,15 +1606,6 @@ TreatIdAsLhs (node *arg_node, info *arg_info)
 
         /* rename this ids */
         ID_AVIS (arg_node) = VARDEC_AVIS (new_vardec);
-
-#ifndef NO_ID_NAME
-        /* for compatiblity only
-         * there is no real need for name string in ids structure because
-         * you can get it from vardec without redundancy.
-         */
-        ILIBfree (ID_NAME (arg_node));
-        ID_NAME (arg_node) = ILIBstringCopy (VARDEC_NAME (new_vardec));
-#endif
 
         /*
          * mark this avis for undo ssa transform:

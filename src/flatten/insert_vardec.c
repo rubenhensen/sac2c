@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/12/12 07:55:02  ktr
+ * Corrected node usage.
+ *
  * Revision 1.16  2004/12/07 17:24:30  sah
  * added INSVDdo to fix dependency on ast
  * defined traversal order
@@ -345,7 +348,7 @@ INSVDspid (node *arg_node, info *arg_info)
              * now we can build a real id and remove the spid node
              */
             arg_node = FREEdoFreeNode (arg_node);
-            arg_node = TBmakeId (VARDEC_AVIS (vardec));
+            arg_node = TBmakeId (VARDEC_OR_ARG_AVIS (vardec));
         }
     } else {
         /*

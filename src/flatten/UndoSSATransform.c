@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.16  2004/12/12 07:55:02  ktr
+ * Corrected node usage.
+ *
  * Revision 1.15  2004/12/01 16:32:23  ktr
  * FUNCOND transformed
  *
@@ -691,7 +694,7 @@ USSATfundef (node *arg_node, info *arg_info)
         block = FUNDEF_BODY (arg_node);
         if (block != NULL) {
             assign = BLOCK_INSTR (block);
-            if ((assign != NULL)
+            if ((assign != NULL) && (NODE_TYPE (ASSIGN_INSTR (assign)) == N_let)
                 && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assign))) == N_funcond)) {
                 /* condition function without N_cond node found */
                 cond = TBmakeCond (DUPdoDupTree (
