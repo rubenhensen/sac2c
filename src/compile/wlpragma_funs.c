@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/03/20 16:02:55  ben
+ * wlcomp-pragma functions SchedulingWL, SchedulingSegs added
+ *
  * Revision 3.12  2001/02/06 01:44:47  dkr
  * signature of MakeWLgrid() and MakeWLgridVar() modified
  *
@@ -50,6 +53,7 @@
 #include "DupTree.h"
 #include "resource.h"
 #include "wltransform.h"
+#include "scheduling.h"
 #include "wlpragma_funs.h"
 
 /******************************************************************************
@@ -230,8 +234,9 @@ ExtractAplPragma (node *pragma, int line)
  **  Here the funs for wlcomp-pragmas are defined.
  **
  **  Each wlcomp-pragma-fun has the signature
- **     node *WlcompFun( node *segs, node *parms, node *cubes, int dims)
- **  and returns a WL_seg-chain with annotated temporary attributes (BV, UBV, ...).
+ **     node *WLCOMP_Fun( node *segs, node *parms, node *cubes, int dims, int line)
+ **  and returns a N_WLseg(Var)-chain with annotated temporary attributes
+ **  (BV, UBV, SCHEDULING, ...).
  **
  **  The meaning of the parameters:
  **    - In 'segs' the current segmentation is given. This segmentation is the
@@ -425,7 +430,7 @@ Array2Bv (node *array, int *bv, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *All( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_All( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * Description:
  *   choose the hole array as the only segment;
@@ -437,9 +442,9 @@ Array2Bv (node *array, int *bv, int dims, int line)
  ******************************************************************************/
 
 node *
-All (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_All (node *segs, node *parms, node *cubes, int dims, int line)
 {
-    DBUG_ENTER ("All");
+    DBUG_ENTER ("WLCOMP_All");
 
     if (parms != NULL) {
         ABORT (line, ("Illegal argument in wlcomp-pragma found; "
@@ -451,7 +456,7 @@ All (node *segs, node *parms, node *cubes, int dims, int line)
     }
 
     segs = MakeWLsegX (dims, DupTree (cubes), NULL);
-    segs = NoBlocking (segs, parms, cubes, dims, line);
+    segs = WLCOMP_NoBlocking (segs, parms, cubes, dims, line);
 
     DBUG_RETURN (segs);
 }
@@ -459,7 +464,7 @@ All (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *Cubes( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_Cubes( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * Description:
  *   choose every cube as a segment;
@@ -468,12 +473,12 @@ All (node *segs, node *parms, node *cubes, int dims, int line)
  ******************************************************************************/
 
 node *
-Cubes (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_Cubes (node *segs, node *parms, node *cubes, int dims, int line)
 {
     node *new_seg;
     node *last_seg = NULL;
 
-    DBUG_ENTER ("Cubes");
+    DBUG_ENTER ("WLCOMP_Cubes");
 
     if (parms != NULL) {
         ABORT (line, ("Illegal argument in wlcomp-pragma found; "
@@ -505,7 +510,7 @@ Cubes (node *segs, node *parms, node *cubes, int dims, int line)
         cubes = WLSTRIDEX_NEXT (cubes);
     }
 
-    segs = NoBlocking (segs, parms, cubes, dims, line);
+    segs = WLCOMP_NoBlocking (segs, parms, cubes, dims, line);
 
     DBUG_RETURN (segs);
 }
@@ -513,7 +518,7 @@ Cubes (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *ConstSegs( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_ConstSegs( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * Description:
  *   Defines a new set of segments in reliance on the given extra parameters
@@ -523,12 +528,12 @@ Cubes (node *segs, node *parms, node *cubes, int dims, int line)
  ******************************************************************************/
 
 node *
-ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
 {
     node *new_cubes, *new_seg;
     node *last_seg = NULL;
 
-    DBUG_ENTER ("ConstSegs");
+    DBUG_ENTER ("WLCOMP_ConstSegs");
 
     if (NODE_TYPE (cubes) == N_WLstride) {
         if (segs != NULL) {
@@ -541,6 +546,9 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
         }
 
         do {
+            DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
+                         "illegal parameter of wlcomp-pragma found!");
+
             if (EXPRS_NEXT (parms) == NULL) {
                 ABORT (line, ("Illegal argument in wlcomp-pragma found; "
                               "ConstSegs(): Upper bound not found"));
@@ -570,7 +578,7 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
             parms = EXPRS_NEXT (EXPRS_NEXT (parms));
         } while (parms != NULL);
 
-        segs = NoBlocking (segs, parms, cubes, dims, line);
+        segs = WLCOMP_NoBlocking (segs, parms, cubes, dims, line);
     } else {
         WARN (line, ("wlcomp-pragma function ConstSeg() ignored"
                      " because generator is not constant"));
@@ -582,7 +590,7 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *NoBlocking( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_NoBlocking( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * Description:
  *   sets all blocking vectors and the unrolling-blocking vector to
@@ -591,12 +599,12 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
  ******************************************************************************/
 
 node *
-NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
 {
     int b, d;
     node *seg = segs;
 
-    DBUG_ENTER ("NoBlocking");
+    DBUG_ENTER ("WLCOMP_NoBlocking");
 
     if (parms != NULL) {
         ABORT (line, ("Illegal argument in wlcomp-pragma found; "
@@ -638,7 +646,7 @@ NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *Bv( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_Bv( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * Description:
  *   Changes the blocking-vector for one blocking level (ubv respectively).
@@ -654,17 +662,21 @@ NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
  ******************************************************************************/
 
 node *
-Bv (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_Bv (node *segs, node *parms, node *cubes, int dims, int line)
 {
     node *seg = segs;
     int level;
 
-    DBUG_ENTER ("Bv");
+    DBUG_ENTER ("WLCOMP_Bv");
 
     if (parms == NULL) {
         ABORT (line, ("Illegal argument in wlcomp-pragma found; "
                       "Bv(): First parameter not found"));
     }
+
+    DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
+                 "illegal parameter of wlcomp-pragma found!");
+
     if (NODE_TYPE (EXPRS_EXPR (parms)) != N_num) {
         ABORT (line, ("Illegal argument in wlcomp-pragma found; "
                       "Bv(): First argument is not an 'int'"));
@@ -707,20 +719,20 @@ Bv (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *BvL0( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_BvL0( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * Description:
- *   uses 'Bv' to change the blocking-vectors in level 0.
+ *   uses 'WLCOMP_Bv' to change the blocking-vectors in level 0.
  *
  ******************************************************************************/
 
 node *
-BvL0 (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_BvL0 (node *segs, node *parms, node *cubes, int dims, int line)
 {
-    DBUG_ENTER ("BvL0");
+    DBUG_ENTER ("WLCOMP_BvL0");
 
     parms = MakeExprs (MakeNum (0), parms);
-    segs = Bv (segs, parms, cubes, dims, line);
+    segs = WLCOMP_Bv (segs, parms, cubes, dims, line);
     parms = FreeNode (parms);
 
     DBUG_RETURN (segs);
@@ -729,7 +741,7 @@ BvL0 (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *BvL1( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_BvL1( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * Description:
  *   uses 'Bv' to change the blocking-vectors in level 1.
@@ -737,12 +749,12 @@ BvL0 (node *segs, node *parms, node *cubes, int dims, int line)
  ******************************************************************************/
 
 node *
-BvL1 (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_BvL1 (node *segs, node *parms, node *cubes, int dims, int line)
 {
-    DBUG_ENTER ("BvL1");
+    DBUG_ENTER ("WLCOMP_BvL1");
 
     parms = MakeExprs (MakeNum (1), parms);
-    segs = Bv (segs, parms, cubes, dims, line);
+    segs = WLCOMP_Bv (segs, parms, cubes, dims, line);
     parms = FreeNode (parms);
 
     DBUG_RETURN (segs);
@@ -751,20 +763,20 @@ BvL1 (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *BvL2( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_BvL2( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * Description:
- *   uses 'Bv' to change the blocking-vectors in level 2.
+ *   uses 'WLCOMP_Bv' to change the blocking-vectors in level 2.
  *
  ******************************************************************************/
 
 node *
-BvL2 (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_BvL2 (node *segs, node *parms, node *cubes, int dims, int line)
 {
-    DBUG_ENTER ("BvL2");
+    DBUG_ENTER ("WLCOMP_BvL2");
 
     parms = MakeExprs (MakeNum (2), parms);
-    segs = Bv (segs, parms, cubes, dims, line);
+    segs = WLCOMP_Bv (segs, parms, cubes, dims, line);
     parms = FreeNode (parms);
 
     DBUG_RETURN (segs);
@@ -773,22 +785,112 @@ BvL2 (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *Ubv( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_Ubv( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * Description:
- *   uses 'Bv' to change the unrolling-blocking-vectors.
+ *   uses 'WLCOMP_Bv' to change the unrolling-blocking-vectors.
  *
  ******************************************************************************/
 
 node *
-Ubv (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_Ubv (node *segs, node *parms, node *cubes, int dims, int line)
 {
-    DBUG_ENTER ("Ubv");
+    DBUG_ENTER ("WLCOMP_Ubv");
 
     if (segs != NULL) {
         parms = MakeExprs (MakeNum (-1), parms);
-        segs = Bv (segs, parms, cubes, dims, line);
+        segs = WLCOMP_Bv (segs, parms, cubes, dims, line);
         parms = FreeNode (parms);
+    }
+
+    DBUG_RETURN (segs);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *WLCOMP_SchedulingWL( node *segs, node *parms, node *cubes, int dims, int line)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+WLCOMP_SchedulingWL (node *segs, node *parms, node *cubes, int dims, int line)
+{
+    node *arg1;
+    node *seg = segs;
+
+    DBUG_ENTER ("WLCOMP_SchedulingWL");
+
+    if (parms == NULL) {
+        ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                      "SchedulingWL(): No Parameters found"));
+    }
+
+    DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
+                 "illegal parameter of wlcomp-pragma found!");
+
+    arg1 = EXPRS_EXPR (parms);
+    if (NODE_TYPE (arg1) != N_ap) {
+        ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                      "SchedulingWL(): First argument is not an application"));
+    }
+
+    while (seg != NULL) {
+        /*
+         * set SCHEDULING
+         */
+        WLSEGX_SCHEDULING (seg) = SCHMakeSchedulingByPragma (arg1, line);
+
+        seg = WLSEGX_NEXT (seg);
+    }
+
+    DBUG_RETURN (segs);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *WLCOMP_SchedulingSegs( node *segs, node *parms, node *cubes, int dims, int
+ *line)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+WLCOMP_SchedulingSegs (node *segs, node *parms, node *cubes, int dims, int line)
+{
+    node *arg;
+    node *seg = segs;
+
+    DBUG_ENTER ("WLCOMP_SchedulingSegs");
+
+    while (seg != NULL) {
+        if (parms == NULL) {
+            ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                          "SchedulingSegs(): Missing Parameter"));
+        }
+
+        DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
+                     "illegal parameter of wlcomp-pragma found!");
+
+        arg = EXPRS_EXPR (parms);
+        if (NODE_TYPE (arg) != N_ap) {
+            ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                          "SchedulingSegs(): Argument is not an application"));
+        }
+
+        /*
+         * set SCHEDULING
+         */
+        WLSEGX_SCHEDULING (seg) = SCHMakeSchedulingByPragma (arg, line);
+
+        seg = WLSEGX_NEXT (seg);
+        parms = EXPRS_NEXT (parms);
     }
 
     DBUG_RETURN (segs);

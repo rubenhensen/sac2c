@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/20 16:04:51  ben
+ * wlcomp-pragma functions SchedulingWL, SchedulingSegs added
+ *
  * Revision 3.4  2001/01/08 16:12:37  dkr
  * function ExtractNaiveCompPragma added
  *

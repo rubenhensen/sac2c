@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/03/20 16:05:08  ben
+ * wlcomp-pragma functions SchedulingWL, SchedulingSegs added
+ *
  * Revision 3.2  2001/01/08 12:06:47  dkr
  * no changes done
  *
@@ -22,12 +25,14 @@
  * fun_name  fun_string
  */
 
-WLP (All, "All")
-WLP (Cubes, "Cubes")
-WLP (ConstSegs, "ConstSegs")
-WLP (NoBlocking, "NoBlocking")
-WLP (Bv, "Bv")
-WLP (BvL0, "BvL0")
-WLP (BvL1, "BvL1")
-WLP (BvL2, "BvL2")
-WLP (Ubv, "Ubv")
+WLP (WLCOMP_All, "All")
+WLP (WLCOMP_Cubes, "Cubes")
+WLP (WLCOMP_ConstSegs, "ConstSegs")
+WLP (WLCOMP_NoBlocking, "NoBlocking")
+WLP (WLCOMP_Bv, "Bv")
+WLP (WLCOMP_BvL0, "BvL0")
+WLP (WLCOMP_BvL1, "BvL1")
+WLP (WLCOMP_BvL2, "BvL2")
+WLP (WLCOMP_Ubv, "Ubv")
+WLP (WLCOMP_SchedulingWL, "SchedulingWL")
+WLP (WLCOMP_SchedulingSegs, "SchedulingSegs")
