@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2003/04/09 08:10:22  sbs
+ * when replacing ob and lb dots in modarray WLs, the shape
+ * is computed using the prf _shape_ instead of the udf shape
+ * now.
+ *
  * Revision 1.20  2003/03/18 17:15:33  sah
  * now using new drop/cat prfs.
  * fixed the drop withloop code for
@@ -1481,8 +1486,7 @@ HDwithop (node *arg_node, node *arg_info)
         case WO_modarray:
             if (sbs == 1) {
                 INFO_HD_DOTSHAPE (arg_info)
-                  = MakeAp1 (StringCopy ("shape"), NULL,
-                             DupTree (NWITHOP_ARRAY (arg_node)));
+                  = MakePrf1 (F_shape, DupTree (NWITHOP_ARRAY (arg_node)));
             } else {
                 INFO_HD_DOTSHAPE (arg_info) = NULL;
             }
