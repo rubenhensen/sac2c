@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.5  1999/05/05 09:19:40  jhs
+ * TakeV and DropV modified. Both routines now handle flattened empty
+ * arrays as arguments of Take and Drop.
+ *
  * Revision 2.4  1999/04/16 11:47:30  jhs
  * Changes made for empty arrays.
  *
@@ -1158,8 +1162,9 @@ TakeV (node *vec, types *vec_type, types *array)
     DBUG_ASSERT (((NODE_TYPE (vec) == N_array) || (NODE_TYPE (vec) == N_id)),
                  "neither an N_id nor an N_array node");
     if (SAC_PRG == kind_of_file) {
-        if (((NODE_TYPE (vec) != N_id) && (NODE_TYPE (vec) != N_array))
-            || ((NODE_TYPE (vec) == N_id) && (ID_VECLEN (vec) < 1)))
+        if (((NODE_TYPE (vec) != N_id) || (TYPES_BASETYPE (vec_type) != T_int)
+             || (!(ID_CONSTARRAY (vec))))
+            && (NODE_TYPE (vec) != N_array))
             ERROR2 (3, ("%s, %d: 1.argument of function `take` "
                         " should be a constant vector",
                         filename, NODE_LINE (vec)));
@@ -1248,7 +1253,8 @@ TakeV (node *vec, types *vec_type, types *array)
     }
 
     else {
-        if ((NODE_TYPE (vec) == N_id) && (ID_VECLEN (vec) >= 1)) {
+        if ((NODE_TYPE (vec) == N_id) && (ID_CONSTARRAY (vec))
+            && (TYPES_BASETYPE (vec_type) == T_int)) {
             dim2 = ID_VECLEN (vec);
             tmp2 = ID_INTVEC (vec);
 
@@ -1337,7 +1343,8 @@ TakeV (node *vec, types *vec_type, types *array)
  *
  *  functionname  : DropV
  *  arguments     : 1) node of shape-vector
- *                  2) type of an array
+ *                  2) type of shape-vector
+ *                  3) type of an array
  *
  *  description   : computes the resulttype of a 'drop' operation, whoes
  *                  first argument was a constant vector
@@ -1364,10 +1371,11 @@ DropV (node *vec, types *vec_type, types *array)
     GET_BASIC_TYPE (array_btype, array, NODE_LINE (vec));
 
     if (kind_of_file == SAC_PRG) {
-        if (((NODE_TYPE (vec) != N_id) && (NODE_TYPE (vec) != N_array))
-            || ((NODE_TYPE (vec) == N_id) && (ID_VECLEN (vec) < 1)))
+        if (((NODE_TYPE (vec) != N_id) || (TYPES_BASETYPE (vec_type) != T_int)
+             || (!(ID_CONSTARRAY (vec))))
+            && (NODE_TYPE (vec) != N_array))
             ERROR2 (3, ("%s, %d: 1.argument of function `drop` "
-                        " should be a constant vector",
+                        " should be a constant integer vector",
                         filename, NODE_LINE (vec)));
     }
 
@@ -1451,7 +1459,8 @@ DropV (node *vec, types *vec_type, types *array)
     }
 
     else {
-        if ((NODE_TYPE (vec) == N_id) && (ID_VECLEN (vec) >= 1)) {
+        if ((NODE_TYPE (vec) == N_id) && (ID_CONSTARRAY (vec))
+            && (TYPES_BASETYPE (vec_type) == T_int)) {
             dim2 = ID_VECLEN (vec);
             tmp2 = ID_INTVEC (vec);
 
