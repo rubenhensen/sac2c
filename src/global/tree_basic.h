@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.118  1998/04/07 16:50:56  srs
+ * new macro INFO_WLI_FLAG
+ *
  * Revision 1.117  1998/04/07 14:42:49  srs
  * added comment
  *
@@ -2157,11 +2160,12 @@ extern node *MakeInfo ();
 /* optimize */
 #define INFO_MASK(n, x) (n->mask[x])
 
-/* WLF, all phases, not only WLI. */
+/* WLF, all phases of WLF use these macros, not only WLI. */
 #define INFO_WLI_NEXT(n) (n->node[0])
 #define INFO_WLI_WL(n) (n->node[1])
 #define INFO_WLI_ASSIGN(n) (n->node[2])
 #define INFO_WLI_FUNDEF(n) (n->node[3])
+#define INFO_WLI_FLAG(n) (n->flag)
 
 /* CF */
 #define INFO_CF_ASSIGN(n) (n->node[0])
