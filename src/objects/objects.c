@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.13  1996/04/02 19:39:25  cg
+ * Revision 1.14  1996/04/25 11:31:36  cg
+ * bug fixed, now even in bodies of with-loops new return values are bound to new
+ * variables.
+ *
+ * Revision 1.13  1996/04/02  19:39:25  cg
  * bug fixed in function OBJlet:
  * runs now with functions with variable argument lists.
  *
@@ -722,6 +726,11 @@ OBJlet (node *arg_node, node *arg_info)
             }
 
             LET_IDS (arg_node) = AppendIdsChain (new_ids, LET_IDS (arg_node));
+
+        } else {
+            if (NODE_TYPE (LET_EXPR (arg_node)) == N_with) {
+                LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+            }
         }
     }
 
