@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.19  1995/06/06 10:06:45  cg
- * statustype added.
+ * Revision 1.20  1995/06/07 08:55:00  hw
+ * added information about N_array
  *
+# Revision 1.19  1995/06/06  10:06:45  cg
+# statustype added.
+#
 # Revision 1.18  1995/06/06  08:01:31  cg
 # status in types added.
 #
@@ -412,6 +415,7 @@ node[1]     : next expression (N_exprs), if any
 N_array:
 ========
 node[0]     : elements of the array (N_exprs)
+info.types  : contains the type of the array (will be set while typechecking)
 
 N_empty:
 ========
