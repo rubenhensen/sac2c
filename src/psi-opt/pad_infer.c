@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.5  2000/08/03 15:33:42  mab
+ * completed implementation of inference algorithm
+ * (conversion functions not yet supported)
+ *
  * Revision 1.4  2000/07/21 14:42:18  mab
  * completed APinfer, added SortAccesses
  *
@@ -32,6 +36,12 @@
  *
  *****************************************************************************/
 
+/* @@@
+ - Aufruf mit Wurzelknoten
+ - nach RemoveUnsupportedShapes
+ - Konvertier-Funktionen (pad, unpad) fuer alle verbliebenen Shapes erzeugen
+*/
+
 #include "dbug.h"
 
 #include "types.h"
@@ -45,6 +55,7 @@
 
 #include "pad_infer.h"
 #include "pad_info.h"
+#include "pad.h"
 
 /******************************************************************************
  *
@@ -92,7 +103,6 @@ typedef struct c_u_t {
     int tr_conflicts;   /* number of potential temporal reuse conflicts */
     int tr_minpaddim;   /* minimal padding dimension for temporal reuse */
     int tr_maxpaddim;   /* maximal padding dimension for temporal reuse */
-    struct c_u_t *next; /* pointer to next row of table                 */
 } cache_util_t;
 
 #define TYP_IFsize(size) size
@@ -167,13 +177,13 @@ PrintCache (cache_t *cache)
 
     DBUG_ENTER ("PrintCache");
 
-    printf (" assoc       :  %d\n", cache->assoc);
-    printf (" size        :  %d\n", cache->size);
-    printf (" line_size   :  %d\n", cache->line_size);
-    printf (" set_num     :  %d\n", cache->set_num);
-    printf (" mask        :  %u\n", cache->mask);
-    printf (" inc_shift   :  %u\n", cache->inc_shift);
-    printf (" line_shift  :  %u\n", cache->line_shift);
+    APprintDiag (" assoc       :  %d\n", cache->assoc);
+    APprintDiag (" size        :  %d\n", cache->size);
+    APprintDiag (" line_size   :  %d\n", cache->line_size);
+    APprintDiag (" set_num     :  %d\n", cache->set_num);
+    APprintDiag (" mask        :  %u\n", cache->mask);
+    APprintDiag (" inc_shift   :  %u\n", cache->inc_shift);
+    APprintDiag (" line_shift  :  %u\n\n", cache->line_shift);
 
     DBUG_VOID_RETURN;
 }
@@ -238,28 +248,10 @@ AddVect (int dim, shpseg *res, shpseg *a, shpseg *b)
     DBUG_VOID_RETURN;
 }
 
-static void
-PrintVect (int dim, shpseg *v)
-{
-    int j;
-
-    DBUG_ENTER ("PrintVect");
-
-    DBUG_ASSERT ((dim <= SHP_SEG_SIZE), " dimension out of range in PrintVect()!");
-
-    printf ("[");
-    for (j = 0; j < dim - 1; j++) {
-        printf ("%3d, ", SHPSEG_SHAPE (v, j));
-    }
-    printf ("%3d]", SHPSEG_SHAPE (v, dim - 1));
-
-    DBUG_VOID_RETURN;
-}
-
 /******************************************************************************
  *
  * function:
- *   static void PrintCacheUtil(int dim, cache_util_t* cache_util)
+ *   static void PrintCacheUtil(int dim, int rows, cache_util_t* cache_util)
  *
  * description
  *
@@ -269,24 +261,26 @@ PrintVect (int dim, shpseg *v)
  ******************************************************************************/
 
 static void
-PrintCacheUtil (int dim, cache_util_t *cache_util)
+PrintCacheUtil (int dim, int rows, cache_util_t *cache_util)
 {
-    int a;
+
+    int i;
 
     DBUG_ENTER ("PrintCacheUtil");
 
-    a = 0;
-    while (cache_util != NULL) {
-        PrintVect (dim, cache_util[a].access);
-        printf ("  %10d  %10d  %5d  |  %2d  %2d  %2d  |  %2d  %2d  %2d  %2d\n",
-                cache_util[a].offset, cache_util[a].shifted_offset, cache_util[a].set,
-                cache_util[a].sr_conflicts, cache_util[a].sr_minpaddim,
-                cache_util[a].sr_maxpaddim, cache_util[a].tr_potflag,
-                cache_util[a].tr_conflicts, cache_util[a].tr_minpaddim,
-                cache_util[a].tr_maxpaddim);
+    APprintDiag ("cache "
+                 "utilisation\n(access,offs,shoffs,set|srconfl,srmindim,srmaxdim|trflag,"
+                 "trconfl,trmindim,trmaxdim)\n");
 
-        cache_util = cache_util->next;
-        a++;
+    for (i = 0; i < rows; i++) {
+
+        PIprintShpSeg (dim, cache_util[i].access);
+        APprintDiag ("  %10d  %10d  %5d  |  %2d  %2d  %2d  |  %2d  %2d  %2d  %2d\n",
+                     cache_util[i].offset, cache_util[i].shifted_offset,
+                     cache_util[i].set, cache_util[i].sr_conflicts,
+                     cache_util[i].sr_minpaddim, cache_util[i].sr_maxpaddim,
+                     cache_util[i].tr_potflag, cache_util[i].tr_conflicts,
+                     cache_util[i].tr_minpaddim, cache_util[i].tr_maxpaddim);
     }
 
     DBUG_VOID_RETURN;
@@ -295,7 +289,8 @@ PrintCacheUtil (int dim, cache_util_t *cache_util)
 /******************************************************************************
  *
  * function:
- *   static int InitCacheUtil( cache_util_t* cache_util, pattern_t* pattern)
+ *   static int InitCacheUtil( cache_util_t** cache_util, pattern_t* pattern,
+ *array_type_t* array)
  *
  * description
  *
@@ -306,7 +301,7 @@ PrintCacheUtil (int dim, cache_util_t *cache_util)
  ******************************************************************************/
 
 static int
-InitCacheUtil (cache_util_t *cache_util, pattern_t *pattern)
+InitCacheUtil (cache_util_t **cache_util, pattern_t *pattern, array_type_t *array)
 {
     int rows;
     int i;
@@ -314,25 +309,31 @@ InitCacheUtil (cache_util_t *cache_util, pattern_t *pattern)
 
     DBUG_ENTER ("InitCacheUtil");
 
+    APprintDiag ("initialize cache utilisation (read access patterns):\n");
+
     rows = 0;
     pt_ptr = pattern;
     while (pt_ptr != NULL) {
         rows++;
         pt_ptr = PIgetNextPattern (pt_ptr);
     }
-    cache_util = (cache_util_t *)MALLOC (rows * sizeof (cache_util_t));
+    (*cache_util) = (cache_util_t *)MALLOC (rows * sizeof (cache_util_t));
 
+    pt_ptr = pattern;
     for (i = 0; i < rows; i++) {
-        cache_util[i].access = PIgetPatternShape (&pattern[i]);
-        cache_util[i].offset = 0;
-        cache_util[i].shifted_offset = 0;
-        cache_util[i].set = 0;
-        cache_util[i].sr_conflicts = 0;
-        cache_util[i].sr_minpaddim = 0;
-        cache_util[i].tr_potflag = 0;
-        cache_util[i].tr_conflicts = 0;
-        cache_util[i].tr_minpaddim = 0;
-        cache_util[i].tr_maxpaddim = 0;
+        PIprintPatternElement (array, pt_ptr);
+        (*cache_util)[i].access = PIgetPatternShape (pt_ptr);
+        (*cache_util)[i].offset = 0;
+        (*cache_util)[i].shifted_offset = 0;
+        (*cache_util)[i].set = 0;
+        (*cache_util)[i].sr_conflicts = 0;
+        (*cache_util)[i].sr_minpaddim = 0;
+        (*cache_util)[i].sr_maxpaddim = 0;
+        (*cache_util)[i].tr_potflag = 0;
+        (*cache_util)[i].tr_conflicts = 0;
+        (*cache_util)[i].tr_minpaddim = 0;
+        (*cache_util)[i].tr_maxpaddim = 0;
+        pt_ptr = PIgetNextPattern (pt_ptr);
     }
 
     DBUG_RETURN (rows);
@@ -354,6 +355,7 @@ InitCacheUtil (cache_util_t *cache_util, pattern_t *pattern)
 static int
 IsSpatialReuseConflict (cache_util_t *cache_util, cache_t *cache, int a, int b)
 {
+
     int is_conflict = 0;
     int offset_diff, set_diff;
 
@@ -387,6 +389,7 @@ IsSpatialReuseConflict (cache_util_t *cache_util, cache_t *cache, int a, int b)
 static int
 IsPotentialTemporalReuse (cache_util_t *cache_util, cache_t *cache, int a)
 {
+
     int is_reuse = 0;
 
     DBUG_ENTER ("IsPotentialTemopralReuseConflict");
@@ -416,6 +419,7 @@ IsPotentialTemporalReuse (cache_util_t *cache_util, cache_t *cache, int a)
 static int
 IsTemporalReuseConflict (cache_util_t *cache_util, cache_t *cache, int a, int b)
 {
+
     int is_conflict = 0;
 
     DBUG_ENTER ("IsTemporalReuseConflict");
@@ -468,13 +472,14 @@ static cache_util_t *
 ComputeAccessData (int rows, cache_util_t *cache_util, cache_t *cache, int dim,
                    shpseg *shape)
 {
+
     int a;
 
     DBUG_ENTER ("ComputeAccessData");
 
     for (a = 0; a < rows; a++) {
 
-        cache_util[a].offset = PIlinearizeAccessVector (dim, shape, cache_util[a].access);
+        cache_util[a].offset = PIlinearizeVector (dim, shape, cache_util[a].access);
 
         cache_util[a].shifted_offset = cache_util[a].offset - cache_util[0].offset;
 
@@ -504,6 +509,7 @@ ComputeAccessData (int rows, cache_util_t *cache_util, cache_t *cache, int dim,
 static cache_util_t *
 ComputeSpatialReuse (int rows, cache_util_t *cache_util, cache_t *cache, int dim)
 {
+
     int a, i, d, conflicts, minpaddim, maxpaddim;
 
     DBUG_ENTER ("ComputeSpatialReuse");
@@ -564,6 +570,7 @@ static int
 ComputeTemporalMinpaddim (int rows, cache_util_t *cache_util, int a, int i,
                           int current_minpaddim, int dim)
 {
+
     int d, min1, min2, res, h;
 
     DBUG_ENTER ("ComputeTemporalMinpaddim");
@@ -630,6 +637,7 @@ ComputeTemporalMinpaddim (int rows, cache_util_t *cache_util, int a, int i,
 static int
 ComputeTemporalMaxpaddim (cache_util_t *cache_util, int a, int dim)
 {
+
     int d;
 
     DBUG_ENTER ("ComputeTemporalMaxpaddim");
@@ -664,6 +672,7 @@ ComputeTemporalMaxpaddim (cache_util_t *cache_util, int a, int dim)
 static cache_util_t *
 ComputeTemporalReuse (int rows, cache_util_t *cache_util, cache_t *cache, int dim)
 {
+
     int a, i, conflicts, minpaddim;
 
     DBUG_ENTER ("ComputeTemporalReuse");
@@ -731,6 +740,7 @@ ComputeTemporalReuse (int rows, cache_util_t *cache_util, cache_t *cache, int di
 static int
 SelectPaddim (int min, int max, shpseg *shape)
 {
+
     int d, res;
 
     DBUG_ENTER ("SelectPaddim");
@@ -763,6 +773,7 @@ static int
 ChoosePaddimForTemporalReuse (int rows, cache_util_t *cache_util, cache_t *cache,
                               shpseg *shape)
 {
+
     int res, a, minpaddim, maxpaddim;
 
     DBUG_ENTER ("ChoosePaddimForTemporalReuse");
@@ -818,9 +829,10 @@ static int
 ChoosePaddimForSpatialReuse (int rows, cache_util_t *cache_util, cache_t *cache,
                              shpseg *shape)
 {
+
     int res, a, minpaddim, maxpaddim;
 
-    DBUG_ENTER ("CHoosePaddimForSpatialReuse");
+    DBUG_ENTER ("ChoosePaddimForSpatialReuse");
 
     minpaddim = -1;
     maxpaddim = -1;
@@ -858,7 +870,7 @@ ChoosePaddimForSpatialReuse (int rows, cache_util_t *cache_util, cache_t *cache,
  * function:
  *   static void ComputePadding( int size, int line_size, int assoc, int dim,
  *                               shpseg* pv_sr, shpseg* pv_tr, shpseg* shape,
- *                               int el_size, pattern_t* pattern)
+ *                               int el_size, pattern_t* pattern, array_type_t* array)
  *
  * description
  *
@@ -869,8 +881,9 @@ ChoosePaddimForSpatialReuse (int rows, cache_util_t *cache_util, cache_t *cache,
 
 static void
 ComputePadding (int size, int line_size, int assoc, int dim, shpseg *pv_sr, shpseg *pv_tr,
-                shpseg *shape, int el_size, pattern_t *pattern)
+                shpseg *shape, int el_size, pattern_t *pattern, array_type_t *array)
 {
+
     cache_t cache;
     cache_util_t *cache_util;
     shpseg *actual_shape;
@@ -886,9 +899,9 @@ ComputePadding (int size, int line_size, int assoc, int dim, shpseg *pv_sr, shps
      */
     ComputeCache (&cache, size, line_size, assoc, el_size);
 
-    DBUG_EXECUTE ("API", PrintCache (&cache); printf ("\n\n"););
+    PrintCache (&cache);
 
-    rows = InitCacheUtil (cache_util, pattern);
+    rows = InitCacheUtil (&cache_util, pattern, array);
 
     pv = pv_sr;
 
@@ -901,10 +914,12 @@ ComputePadding (int size, int line_size, int assoc, int dim, shpseg *pv_sr, shps
         cache_util = ComputeSpatialReuse (rows, cache_util, &cache, dim);
         cache_util = ComputeTemporalReuse (rows, cache_util, &cache, dim);
 
-        DBUG_EXECUTE ("API", printf ("Current shape :"); PrintVect (dim, actual_shape);
-                      printf ("\n\n");
+        APprintDiag ("\nCurrent shape :");
+        PIprintShpSeg (dim, actual_shape);
+        APprintDiag ("\n\n");
 
-                      PrintCacheUtil (dim, cache_util); printf ("\n\n"););
+        PrintCacheUtil (dim, rows, cache_util);
+        APprintDiag ("\n\n");
 
         paddim = ChoosePaddimForSpatialReuse (rows, cache_util, &cache, shape);
 
@@ -956,6 +971,7 @@ ComputePadding (int size, int line_size, int assoc, int dim, shpseg *pv_sr, shps
 static int
 ComputePaddingOverhead (int dim, shpseg *orig_shape, shpseg *padding)
 {
+
     int i, orig_size, padding_size, overhead;
 
     DBUG_ENTER ("ComputePaddingOverhead");
@@ -997,24 +1013,42 @@ SelectRecommendedPadding (int dim, shpseg *shape, shpseg *nopad, shpseg *pv_sr_L
                           shpseg *pv_sr_L2, shpseg *pv_sr_L3, shpseg *pv_tr_L1,
                           shpseg *pv_tr_L2, shpseg *pv_tr_L3, int threshold)
 {
+
     shpseg *res;
 
     DBUG_ENTER ("SelectRecommendedPadding");
 
-    if (ComputePaddingOverhead (dim, shape, pv_tr_L3) <= threshold) {
-        res = pv_tr_L3;
-    } else if (ComputePaddingOverhead (dim, shape, pv_sr_L3) <= threshold) {
-        res = pv_sr_L3;
-    } else if (ComputePaddingOverhead (dim, shape, pv_tr_L2) <= threshold) {
-        res = pv_tr_L2;
-    } else if (ComputePaddingOverhead (dim, shape, pv_sr_L2) <= threshold) {
-        res = pv_sr_L2;
-    } else if (ComputePaddingOverhead (dim, shape, pv_tr_L1) <= threshold) {
-        res = pv_tr_L1;
-    } else if (ComputePaddingOverhead (dim, shape, pv_sr_L1) <= threshold) {
+    res = nopad;
+
+    if ((ComputePaddingOverhead (dim, shape, pv_sr_L1) <= threshold)
+        && (PIlinearizeVector (dim, shape, pv_sr_L1)
+            >= PIlinearizeVector (dim, shape, res))) {
         res = pv_sr_L1;
-    } else {
-        res = nopad;
+    }
+    if ((ComputePaddingOverhead (dim, shape, pv_tr_L1) <= threshold)
+        && (PIlinearizeVector (dim, shape, pv_tr_L1)
+            >= PIlinearizeVector (dim, shape, res))) {
+        res = pv_tr_L1;
+    }
+    if ((ComputePaddingOverhead (dim, shape, pv_sr_L2) <= threshold)
+        && (PIlinearizeVector (dim, shape, pv_sr_L2)
+            >= PIlinearizeVector (dim, shape, res))) {
+        res = pv_sr_L2;
+    }
+    if ((ComputePaddingOverhead (dim, shape, pv_tr_L2) <= threshold)
+        && (PIlinearizeVector (dim, shape, pv_tr_L2)
+            >= PIlinearizeVector (dim, shape, res))) {
+        res = pv_tr_L2;
+    }
+    if ((ComputePaddingOverhead (dim, shape, pv_sr_L3) <= threshold)
+        && (PIlinearizeVector (dim, shape, pv_sr_L3)
+            >= PIlinearizeVector (dim, shape, res))) {
+        res = pv_sr_L3;
+    }
+    if ((ComputePaddingOverhead (dim, shape, pv_tr_L3) <= threshold)
+        && (PIlinearizeVector (dim, shape, pv_tr_L3)
+            >= PIlinearizeVector (dim, shape, res))) {
+        res = pv_tr_L3;
     }
 
     DBUG_RETURN (res);
@@ -1066,6 +1100,8 @@ APinfer ()
 
     PItidyAccessPattern ();
 
+    PIprintAccessPatterns ();
+
     /* init additional data structures */
 
     pv_sr_L1 = MakeShpseg (NULL);
@@ -1081,6 +1117,9 @@ APinfer ()
     /* for every array type... */
     at_ptr = PIgetFirstArrayType ();
     while (at_ptr != NULL) {
+
+        APprintDiag ("\n\nInfering new shape for array type:\n");
+        PIprintArrayTypeElement (at_ptr);
 
         dim = PIgetArrayTypeDim (at_ptr);
         shape = DupShpSeg (PIgetArrayTypeShape (at_ptr));
@@ -1099,36 +1138,46 @@ APinfer ()
         cg_ptr = PIgetFirstConflictGroup (at_ptr);
         while (cg_ptr != NULL) {
 
+            APprintDiag (
+              "\n\nInfering new shape for single conflict group of array type:\n");
+            PIprintConflictGroupElement (at_ptr, cg_ptr);
+
             /* for every access pattern infer new shape */
             pt_ptr = PIgetFirstPattern (cg_ptr);
 
             /* check, if first level cache is specified */
             if (config.cache1_size > 0) {
 
+                APprintDiag ("using 1st level cache:\n");
+
                 /* first level cache */
-                ComputePadding (config.cache1_size, config.cache1_line,
+                ComputePadding (config.cache1_size * 1024, config.cache1_line,
                                 config.cache1_assoc, dim, pv_sr_L1, pv_tr_L1, shape,
-                                element_size, pt_ptr);
+                                element_size, pt_ptr, at_ptr);
 
                 /* check, if second level cache is specified */
                 if (config.cache2_size > 0) {
 
+                    APprintDiag ("using 2nd level cache:\n");
+
                     CopyVect (dim, pv_sr_L2, pv_tr_L1);
 
                     /* second level cache */
-                    ComputePadding (config.cache2_size, config.cache2_line,
+                    ComputePadding (config.cache2_size * 1024, config.cache2_line,
                                     config.cache2_assoc, dim, pv_sr_L2, pv_tr_L2, shape,
-                                    element_size, pt_ptr);
+                                    element_size, pt_ptr, at_ptr);
 
                     /* check, if third level cache is specified */
                     if (config.cache3_size > 0) {
 
+                        APprintDiag ("using 3rd level cache:\n");
+
                         CopyVect (dim, pv_sr_L3, pv_tr_L2);
 
                         /* third level cache */
-                        ComputePadding (config.cache3_size, config.cache3_line,
+                        ComputePadding (config.cache3_size * 1024, config.cache3_line,
                                         config.cache3_assoc, dim, pv_sr_L3, pv_tr_L3,
-                                        shape, element_size, pt_ptr);
+                                        shape, element_size, pt_ptr, at_ptr);
                     }
                 }
             }
@@ -1139,9 +1188,57 @@ APinfer ()
                                           pv_tr_L1, pv_tr_L2, pv_tr_L3,
                                           overhead_threshold);
 
+            APprintDiag ("Original shape                       :  ");
+            PIprintShpSeg (dim, shape);
+            APprintDiag ("\n");
+
+            if (config.cache1_size > 0) {
+
+                APprintDiag ("L1 Padding vector for spatial reuse  :  ");
+                PIprintShpSeg (dim, pv_sr_L1);
+                APprintDiag ("    Overhead: <= %4d%%\n",
+                             ComputePaddingOverhead (dim, shape, pv_sr_L1));
+
+                APprintDiag ("L1 Padding vector for temporal reuse :  ");
+                PIprintShpSeg (dim, pv_tr_L1);
+                APprintDiag ("    Overhead: <= %4d%%\n",
+                             ComputePaddingOverhead (dim, shape, pv_tr_L1));
+                if (config.cache2_size > 0) {
+
+                    APprintDiag ("L2 Padding vector for spatial reuse  :  ");
+                    PIprintShpSeg (dim, pv_sr_L2);
+                    APprintDiag ("    Overhead: <= %4d%%\n",
+                                 ComputePaddingOverhead (dim, shape, pv_sr_L2));
+
+                    APprintDiag ("L2 Padding vector for temporal reuse :  ");
+                    PIprintShpSeg (dim, pv_tr_L2);
+                    APprintDiag ("    Overhead: <= %4d%%\n",
+                                 ComputePaddingOverhead (dim, shape, pv_tr_L2));
+
+                    if (config.cache3_size > 0) {
+
+                        APprintDiag ("L3 Padding vector for spatial reuse  :  ");
+                        PIprintShpSeg (dim, pv_sr_L2);
+                        APprintDiag ("    Overhead: <= %4d%%\n",
+                                     ComputePaddingOverhead (dim, shape, pv_sr_L3));
+
+                        APprintDiag ("L3 Padding vector for temporal reuse :  ");
+                        PIprintShpSeg (dim, pv_tr_L2);
+                        APprintDiag ("    Overhead: <= %4d%%\n",
+                                     ComputePaddingOverhead (dim, shape, pv_tr_L3));
+                    }
+                }
+            }
+
+            APprintDiag ("Recommended padding vector           :  ");
+            PIprintShpSeg (dim, recommended_pv);
+            APprintDiag ("    Overhead: <= %4d%%\n\n",
+                         ComputePaddingOverhead (dim, shape, recommended_pv));
+
             /* start with recommended padding vector for next conflict group for same
              * array type */
             CopyVect (dim, pv_sr_L1, recommended_pv);
+            recommended_pv = pv_sr_L1;
             SetVect (dim, pv_sr_L2, 0);
             SetVect (dim, pv_sr_L3, 0);
             SetVect (dim, pv_tr_L1, 0);
@@ -1154,54 +1251,12 @@ APinfer ()
         /* if shape needs padding, add to pad_info */
         new_shape = MakeShpseg (NULL);
         AddVect (dim, new_shape, shape, recommended_pv);
-        if (EqualShpseg (dim, shape, new_shape)) {
+        if (!EqualShpseg (dim, shape, new_shape)) {
 
-            PIaddInferredShape (dim, type, shape, new_shape);
-
-            DBUG_EXECUTE ("API",
-
-                          printf ("Original shape                       :  ");
-                          PrintVect (dim, shape); printf ("\n");
-
-                          printf ("L1 Padding vector for spatial reuse  :  ");
-                          PrintVect (dim, pv_sr_L1);
-                          printf ("    Overhead: <= %4d%%\n",
-                                  ComputePaddingOverhead (dim, shape, pv_sr_L1));
-
-                          printf ("L1 Padding vector for temporal reuse :  ");
-                          PrintVect (dim, pv_tr_L1);
-                          printf ("    Overhead: <= %4d%%\n",
-                                  ComputePaddingOverhead (dim, shape, pv_tr_L1));
-
-                          printf ("L2 Padding vector for spatial reuse  :  ");
-                          PrintVect (dim, pv_sr_L2);
-                          printf ("    Overhead: <= %4d%%\n",
-                                  ComputePaddingOverhead (dim, shape, pv_sr_L2));
-
-                          printf ("L2 Padding vector for temporal reuse :  ");
-                          PrintVect (dim, pv_tr_L2);
-                          printf ("    Overhead: <= %4d%%\n",
-                                  ComputePaddingOverhead (dim, shape, pv_tr_L2));
-
-                          printf ("L3 Padding vector for spatial reuse  :  ");
-                          PrintVect (dim, pv_sr_L2);
-                          printf ("    Overhead: <= %4d%%\n",
-                                  ComputePaddingOverhead (dim, shape, pv_sr_L3));
-
-                          printf ("L3 Padding vector for temporal reuse :  ");
-                          PrintVect (dim, pv_tr_L2);
-                          printf ("    Overhead: <= %4d%%\n",
-                                  ComputePaddingOverhead (dim, shape, pv_tr_L3));
-
-                          printf ("Recommended padding vector           :  ");
-                          PrintVect (dim, recommended_pv);
-                          printf ("    Overhead: <= %4d%%\n",
-                                  ComputePaddingOverhead (dim, shape, recommended_pv));
-
-                          printf ("\n\n=================================================="
-                                  "==========\n\n\n"););
+            PIaddInferredShape (type, dim, shape, new_shape);
 
         } else {
+
             FreeShpseg (shape);
             FreeShpseg (new_shape);
         }
@@ -1220,6 +1275,12 @@ APinfer ()
     FreeShpseg (pv_tr_L3);
 
     FreeShpseg (nopad);
+
+    PIprintPadInfo ();
+
+    PIremoveUnsupportedShapes ();
+
+    PIprintPadInfo ();
 
     DBUG_VOID_RETURN;
 }
