@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2004/10/28 16:58:43  khf
+ * support for max_newgens and no_fold_fusion added
+ *
  * Revision 3.76  2004/10/23 12:00:31  ktr
  * Added switches for static reuse / static free.
  *
@@ -784,6 +787,9 @@ AnalyseCommandline (int argc, char *argv[])
         if (mtmode != MT_none)
             mtmode = store_mtmode;
     });
+
+    ARGS_OPTION ("maxnewgens", ARG_NUM (max_newgens));
+    ARGS_FLAG ("nofoldfusion", no_fold_fusion = TRUE);
 
     ARGS_OPTION ("maxoptcyc", ARG_NUM (max_optcycles));
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2004/10/28 16:58:43  khf
+ * support for max_newgens and no_fold_fusion added
+ *
  * Revision 3.64  2004/10/23 12:00:31  ktr
  * Added switches for static reuse / static free.
  *
@@ -634,8 +637,15 @@ Usage ()
             "which\n"
             "                    aggressive behaviour will be used even if "
             "-wls_aggressive is\n"
-            "                    not given. (default: %d)\n",
+            "                    not given. (default: %d)\n\n",
             maxwls);
+
+    printf ("    -nofoldfusion   Eliminate fusion of with-loops with fold operator.\n\n"
+            "    -maxnewgens <n> Set the maximum number of new created generators while\n"
+            "                    intersection of generatorsets from two with-loops in\n"
+            "                    with-loop fusion to <n>.\n"
+            "                      (default: %d)\n",
+            max_newgens);
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2004/10/28 16:58:43  khf
+ * support for max_newgens and no_fold_fusion added
+ *
  * Revision 3.69  2004/10/27 15:53:14  khf
  * WLFS activated
  *
@@ -638,6 +641,8 @@ int unrnum = 2;
 int wlunrnum = 9;
 int minarray = 4;
 int max_optcycles = 10;
+int max_newgens = 100;
+bool no_fold_fusion = FALSE;
 
 int initial_master_heapsize = 1024;
 int initial_worker_heapsize = 64;

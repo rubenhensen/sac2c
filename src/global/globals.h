@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2004/10/28 16:58:43  khf
+ * support for max_newgens and no_fold_fusion added
+ *
  * Revision 3.49  2004/10/23 12:00:31  ktr
  * Added switches for static reuse / static free.
  *
@@ -359,6 +362,8 @@ extern int unrnum;
 extern int wlunrnum;
 extern int minarray;
 extern int max_optcycles;
+extern int max_newgens;
+extern bool no_fold_fusion;
 
 extern int initial_master_heapsize;
 extern int initial_worker_heapsize;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/10/28 16:58:43  khf
+ * support for max_newgens and no_fold_fusion added
+ *
  * Revision 1.16  2004/10/27 15:50:19  khf
  * some debugging
  *
@@ -195,8 +198,6 @@ typedef struct GRIDINFO {
 #define GRIDINFO_NPARTS_1(n) (n->nparts_1)
 #define GRIDINFO_NPARTS_2(n) (n->nparts_2)
 
-#define MAX_NEWGENS 100
-
 #define CONTAINS_FOLD(wotype) ((wotype == WOT_fold) || (wotype == WOT_gen_mod_fold))
 
 /*
@@ -227,8 +228,6 @@ typedef enum {
 } gen_property_t;
 
 typedef enum { ARRAY_aks, ARRAY_akd, ARRAY_unknown } array_types_t;
-
-bool no_fold_fusion = FALSE;
 
 /**
  * INFO functions
@@ -1222,6 +1221,7 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
             dim = SHGetUnrLen (COGetShape (const_tmp));
             const_tmp = COFreeConstant (const_tmp);
         } else {
+            dim = 0;
             DBUG_ASSERT ((0), "lower bound of generator is not constant!");
         }
     }
@@ -1267,7 +1267,7 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                 ub_new = EXPRS_NEXT (ub_new);
             }
 
-            if (d == dim && gen_counter < MAX_NEWGENS) {
+            if (d == dim && gen_counter < max_newgens) {
                 /* non empty generator */
 
                 if (create_step) {
@@ -1421,13 +1421,13 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                     new_step = FreeNode (new_step);
                     arg_gridinfo = FreeGridInfo (arg_gridinfo);
 
-                    if (gen_counter > MAX_NEWGENS) {
+                    if (gen_counter > max_newgens) {
                         /*
                          * Max. numbers of new generators is exceeded.
                          * Remove all new generators.
                          */
                         WARN (linenum, ("WLFS: number of new generators exceeds "
-                                        "MAX_NEWGENS -> roll back"));
+                                        "max_newgens -> roll back"));
 
                         nparts_1 = FreeTree (nparts_1);
                         nparts_2 = FreeTree (nparts_2);
@@ -1467,7 +1467,7 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                  * Max. numbers of new generators is exceeded.
                  * Remove all new generators.
                  */
-                WARN (linenum, ("WLFS: number of new generators exceeds MAX_NEWGENS -> "
+                WARN (linenum, ("WLFS: number of new generators exceeds max_newgens -> "
                                 "roll back"));
 
                 nparts_1 = FreeTree (nparts_1);
