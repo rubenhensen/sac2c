@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.10  2004/11/14 15:20:00  sah
+* fixed a bug
+*
 * Revision 1.9  2004/11/11 10:43:39  sah
 * intermediate checkin
 *
@@ -527,7 +530,7 @@ fundef1: returntypes BRACKET_L local_fun_id BRACKET_R BRACKET_L fundef2
            FUNDEF_ATTRIB( $$) = ST_regular;
            FUNDEF_STATUS( $$) = ST_regular;
            FUNDEF_INFIX( $$) = TRUE;
-              
+
            DBUG_PRINT( "PARSE",
                         ("%s: %s:%s "F_PTR,
                         mdb_nodetype[ NODE_TYPE( $$)],
@@ -2353,10 +2356,12 @@ static ntype *Exprs2NType( ntype *basetype, node *exprs)
 
   switch (NODE_TYPE( EXPRS_EXPR1( exprs))) {
     case N_id:
-      if (ID_MOD(  EXPRS_EXPR1( exprs)) != NULL) {
+      if (ID_MOD( EXPRS_EXPR1( exprs)) != NULL) {
+        yyerror("illegal shape specification");
+      } else if (ID_NAME( EXPRS_EXPR1( exprs))[1] != '\0') {
         yyerror("illegal shape specification");
       } else {
-        switch (ID_MOD(  EXPRS_EXPR1( exprs))[0]) {
+        switch (ID_NAME( EXPRS_EXPR1( exprs))[0]) {
           case '*':
             result = TYMakeAUD( basetype);
             break;
@@ -2374,7 +2379,7 @@ static ntype *Exprs2NType( ntype *basetype, node *exprs)
       if (dots != n) {
         yyerror("illegal shape specification");
       } else {
-        result = TYMakeAKD( basetype, dots, NULL);
+        result = TYMakeAKD( basetype, dots, SHMakeShape(0));
       }
       break;
     case N_num:
