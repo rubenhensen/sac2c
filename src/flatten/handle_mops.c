@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2002/08/15 11:46:26  dkr
+ * function ApplyToEach_S() renamed into MapLUT_S()
+ *
  * Revision 1.10  2002/08/14 13:49:43  sbs
  * handling of unary minus for old type checker adopted
  * more closely to the old solution 8-(((
@@ -30,7 +33,6 @@
  * Revision 1.1  2002/08/13 10:22:39  sbs
  * Initial revision
  *
- *
  */
 
 #include "handle_mops.h"
@@ -39,7 +41,7 @@
 #include "free.h"
 #include "LookUpTable.h"
 
-static LUT_t *prec_lut;
+static LUT_t prec_lut;
 
 typedef enum { Ass_l, Ass_r, Ass_n } assoc_t;
 
@@ -105,17 +107,17 @@ FreePrec (prec_t *prec)
 /******************************************************************************
  *
  * function:
- *    LUT_t * InitPrecLut( )
+ *    LUT_t InitPrecLut()
  *
  * description:
  *    ...
  *
  ******************************************************************************/
 
-static LUT_t *
+static LUT_t
 InitPrecLut ()
 {
-    LUT_t *res;
+    LUT_t res;
 
     DBUG_ENTER ("InitPrecLut");
 
@@ -194,17 +196,17 @@ LeftAssoc (ids *lop, ids *rop)
  *    node * Mop2Ap( node *mop)
  *
  * description:
- *   transformes a N_mop node into a nesting of N_ap nodes according to the
- *   following algorithm (e's are expressions; o's are operations) :
+ *   Transformes a N_mop node into a nesting of N_ap nodes according to the
+ *   following algorithm (e's are expressions; o's are operations):
  *
- *    e1 : e2
- *       o1       =>   Ap{ o1, e1, e2}
+ *   e1 : e2
+ *      o1            =>  Ap{ o1, e1, e2}
  *
- *    e1 : e2 : es          /        / Ap{ o1, e1,e2} : es     \
- *       o1 : o2 :os    =>  |  Mop2Ap\                o2 : os  /  iff prec(o1) >prec(o2)
- *                          |
- *                          |                    / e2 : es    \
- *                          \  Ap{ o1, e1, Mop2Ap\    o2 : os /   otherwise
+ *   e1 : e2 : es         /        / Ap{ o1, e1, e2} : es     \
+ *      o1 : o2 : os  =>  |  Mop2Ap\                 o2 : os  /  iff prec(o1)
+ *                        |                                           > prec(o2)
+ *                        |                    / e2 : es    \
+ *                        \  Ap{ o1, e1, Mop2Ap\    o2 : os / }  otherwise
  *
  ******************************************************************************/
 
@@ -266,7 +268,7 @@ Mop2Ap (node *mop)
 /******************************************************************************
  *
  * function:
- *    node *HandleMops(node *arg_node)
+ *    node *HandleMops( node *arg_node)
  *
  * description:
  *    starts the elimination of N_mop nodes
@@ -284,14 +286,13 @@ HandleMops (node *arg_node)
     tmp_tab = act_tab;
     act_tab = hm_tab;
 
-    info_node = MakeInfo ();
     prec_lut = InitPrecLut ();
 
+    info_node = MakeInfo ();
     arg_node = Trav (arg_node, info_node);
-
     info_node = FreeNode (info_node);
 
-    prec_lut = ApplyToEach_S (prec_lut, (void *(*)(void *))FreePrec);
+    prec_lut = MapLUT_S (prec_lut, (void *(*)(void *))FreePrec);
     prec_lut = RemoveLUT (prec_lut);
 
     act_tab = tmp_tab;
@@ -302,7 +303,7 @@ HandleMops (node *arg_node)
 /******************************************************************************
  *
  * function:
- *    node *HMmop(node *arg_node, node *arg_info)
+ *    node *HMmop( node *arg_node, node *arg_info)
  *
  * description:
  *
