@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/22 14:23:36  nmw
+ * F_abs implemented without abs() for different types
+ *
  * Revision 3.5  2001/03/05 16:41:49  dkr
  * no macros NWITH???_IS_FOLD used
  *
@@ -1517,6 +1520,8 @@ FoldPrfScalars (prf prf_name, node **arg, types *res_type, int swap)
         res = NULL;                                                                      \
         break;                                                                           \
     }
+#define ABS_OP(op, a1, res, rt)                                                          \
+    SET_RESULT (res, rt, (CONST_VAL (a1) < 0 ? (-CONST_VAL (a1)) : (CONST_VAL (a1))))
 
 #define MON_OP(op, a1, res, rt) SET_RESULT (res, rt, op (CONST_VAL (a1)))
 
@@ -1541,7 +1546,7 @@ FoldPrfScalars (prf prf_name, node **arg, types *res_type, int swap)
         MON_OP (!, arg[0], res, res_type);
         break;
     case F_abs:
-        MON_OP (abs, arg[0], res, res_type);
+        ABS_OP (abs, arg[0], res, res_type);
         break;
 
     case F_add:
