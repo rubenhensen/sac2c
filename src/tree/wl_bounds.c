@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2002/07/15 14:49:34  dkr
+ * signature of NodeOrInt_MakeIndex() modified:
+ * parameters 'no_num' and 'no_icm' removed
+ * (even C-ICMs can handle N_num and N_icm args now :-)
+ *
  * Revision 1.5  2002/07/15 14:28:01  dkr
  * modifications for TAGGED_ARRAYS done
  *
@@ -312,8 +317,7 @@ NodeOrInt_MakeNode (nodetype nt, void *node_or_int)
  *
  * Function:
  *   node *NodeOrInt_MakeIndex( nodetype nt, void *node_or_int,
- *                              int dim, node *wl_id,
- *                              bool no_num, bool no_icm)
+ *                              int dim, ids *wl_ids)
  *
  * Description:
  *   Converts the parameter of a N_WLstride(Var) or N_WLgrid(Var) node into
@@ -328,11 +332,9 @@ NodeOrInt_MakeNode (nodetype nt, void *node_or_int)
  ******************************************************************************/
 
 node *
-NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, ids *wl_ids, bool no_num,
-                     bool no_icm)
+NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, ids *wl_ids)
 {
     node *index;
-    char *str;
     char *name;
     int val;
 
@@ -343,30 +345,12 @@ NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, ids *wl_ids, bool 
     if (NameOrVal_IsInt (name, val)) {
         if (val == IDX_SHAPE) {
 #ifdef TAGGED_ARRAYS
-            if (no_icm) {
-                name = CreateNtTag (IDS_NAME (wl_ids), IDS_TYPE (wl_ids));
-                str = (char *)Malloc ((strlen (name) + 40) * sizeof (char));
-                sprintf (str, "SAC_ND_A_SHAPE( %s, %d)", name, dim);
-                name = Free (name);
-                index = MakeId (str, NULL, ST_regular);
-            } else {
-                index = MakeIcm2 ("ND_A_SHAPE", DupIds_Id_NT (wl_ids), MakeNum (dim));
-            }
+            index = MakeIcm2 ("ND_A_SHAPE", DupIds_Id_NT (wl_ids), MakeNum (dim));
 #else
-            if (no_icm) {
-                str = (char *)Malloc ((strlen (IDS_NAME (wl_ids)) + 40) * sizeof (char));
-                sprintf (str, "SAC_ND_A_SHAPE( %s, %d)", IDS_NAME (wl_ids), dim);
-                index = MakeId (str, NULL, ST_regular);
-            } else {
-                index = MakeIcm2 ("ND_A_SHAPE", DupIds_Id (wl_ids), MakeNum (dim));
-            }
+            index = MakeIcm2 ("ND_A_SHAPE", DupIds_Id (wl_ids), MakeNum (dim));
 #endif
         } else {
-            if (no_num) {
-                index = MakeId_Num (val);
-            } else {
-                index = MakeNum (val);
-            }
+            index = MakeNum (val);
         }
     } else {
         int sel_dim;
@@ -376,28 +360,13 @@ NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, ids *wl_ids, bool 
 #ifdef TAGGED_ARRAYS
         sel_dim = (ID_DIM ((*((node **)node_or_int))) == SCALAR) ? 0 : dim;
 
-        if (no_icm) {
-            name = CreateNtTag (ID_NAME ((*((node **)node_or_int))),
-                                ID_TYPE ((*((node **)node_or_int))));
-            str = (char *)Malloc ((strlen (name) + 43) * sizeof (char));
-            sprintf (str, "SAC_ND_READ( %s, %d)", name, sel_dim);
-            name = Free (name);
-            index = MakeId (str, NULL, ST_regular);
-        } else {
-            index = MakeIcm2 ("ND_READ", DupId_NT ((*((node **)node_or_int))),
-                              MakeNum (sel_dim));
-        }
+        index
+          = MakeIcm2 ("ND_READ", DupId_NT ((*((node **)node_or_int))), MakeNum (sel_dim));
 #else
         if (ID_DIM ((*((node **)node_or_int))) == SCALAR) {
             index = DupNode (*((node **)node_or_int));
         } else {
-            if (no_icm) {
-                str = (char *)Malloc ((strlen (name) + 43) * sizeof (char));
-                sprintf (str, "SAC_ND_READ_ARRAY( %s, %d)", name, dim);
-                index = MakeId (str, NULL, ST_regular);
-            } else {
-                index = MakeIcm2 ("ND_READ_ARRAY", MakeId_Copy (name), MakeNum (dim));
-            }
+            index = MakeIcm2 ("ND_READ_ARRAY", MakeId_Copy (name), MakeNum (dim));
         }
 #endif
     }
