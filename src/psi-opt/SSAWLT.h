@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/11/25 17:27:32  sbs
+ * include debugged
+ *
  * Revision 1.5  2004/11/22 17:29:51  sbs
  * SacDevCamp04
  *
@@ -24,10 +27,9 @@
 #ifndef _SAC_WLT_H_
 #define _SAC_WLT_H_
 
-include "types.h"
+#include "types.h"
 
-  extern node *
-  WLTfundef (node *, info *);
+extern node *WLTfundef (node *, info *);
 extern node *WLTassign (node *, info *);
 extern node *WLTcond (node *, info *);
 extern node *WLTlet (node *, info *);

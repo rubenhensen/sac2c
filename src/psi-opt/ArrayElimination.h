@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/11/25 17:26:21  sbs
+ * include debugged
+ *
  * Revision 3.5  2004/11/22 17:29:51  sbs
  * SacDevCamp04
  *
@@ -39,10 +42,9 @@
 #ifndef _SAC_ARRAYELIMINATION_H_
 #define _SAC_ARRAYELIMINATION_H_
 
-include "types.h"
+#include "types.h"
 
-  extern node *
-  AEdoArrayElimination (node *arg_node);
+extern node *AEdoArrayElimination (node *arg_node);
 
 extern node *AEprf (node *arg_node, info *arg_info);
 extern node *AEfundef (node *arg_node, info *arg_info);
