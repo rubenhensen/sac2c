@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.131  2002/06/27 12:50:49  dkr
+ * INFO_WLI_NEXT modified
+ *
  * Revision 3.130  2002/06/25 23:52:06  ktr
  * INFO_WLS_WITHVEC renamed to INFO_WLS_WITHID
  *
@@ -2857,7 +2860,7 @@ extern node *MakeInfo ();
 #define INFO_INL_FUNDEF(n) (n->node[5])
 
 /* WLF, all phases of WLF use these macros, not only WLI. */
-#define INFO_WLI_NEXT(n) (n->node[0])
+#define INFO_WLI_NEXT(n) ((node *)(n->dfmask[0]))
 #define INFO_WLI_SUBST(n) (n->node[0])
 #define INFO_WLI_WL(n) (n->node[1])
 #define INFO_WLI_NEW_ID(n) (n->node[1])
