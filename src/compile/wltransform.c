@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  1998/05/24 21:15:39  dkr
+ * fixed a bug in ComputeIndexMinMax
+ *
  * Revision 1.19  1998/05/24 00:41:16  dkr
  * fixed some minor bugs
  * code templates are not used anymore
@@ -1380,8 +1383,8 @@ ComputeIndexMinMax (int **idx_min, int **idx_max, int dims, node *strides)
          * initialize 'idx_min', 'idx_max'.
          */
         for (d = 0; d < dims; d++) {
-            (*idx_min)[d] = 0;
-            (*idx_max)[d] = INT_MAX;
+            (*idx_min)[d] = INT_MAX;
+            (*idx_max)[d] = 0;
         }
 
         /*
