@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/09/09 19:25:42  dkr
+ * prf_name_string added
+ *
  * Revision 3.19  2002/09/06 10:35:43  sah
  * added PrintSetWL
  *
@@ -72,6 +75,7 @@
 #define INDENT DO_INDENT (indent)
 
 extern char *prf_string[];
+extern char *prf_name_string[];
 
 /*
  * Functions for printing (parts of) the AST
