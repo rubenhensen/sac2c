@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.39  1997/05/05 07:46:09  cg
+ * Revision 1.40  1997/06/03 13:51:54  sbs
+ * # line - capability integrated into sac2c.
+ * Now, the line-number in error messages should be correct 8-)))
+ *
+ * Revision 1.39  1997/05/05  07:46:09  cg
  * SIB limit removed
  *
  * Revision 1.38  1997/04/28  11:57:08  cg
@@ -371,6 +375,7 @@ int start_token;
 "\n"	{linenum++;}
 [ \t]	{}
 "\f"    {}
+#\ .*\n {linenum=atoi(yytext+2);}
 .	{FILTER( SC ); }
 
 %%

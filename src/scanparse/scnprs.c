@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.12  1997/06/03 10:14:09  sbs
+ * Revision 1.13  1997/06/03 13:51:54  sbs
+ * # line - capability integrated into sac2c.
+ * Now, the line-number in error messages should be correct 8-)))
+ *
+ * Revision 1.12  1997/06/03  10:14:09  sbs
  * -D option integrated
  *
  * Revision 1.11  1997/05/28  12:36:27  sbs
@@ -216,7 +220,7 @@ ScanParse ()
     DBUG_ENTER ("ScanParse");
 
     if (sacfilename[0] == '\0') {
-        sprintf (cccallstr, "cpp -P -C ");
+        sprintf (cccallstr, "cpp -C ");
         if (num_cpp_vars > 0) {
             for (i = 0; i < num_cpp_vars; i++) {
                 strcat (cccallstr, " -D");
@@ -231,7 +235,7 @@ ScanParse ()
             SYSABORT (("Unable to open file \"%s\"", sacfilename));
         }
 
-        sprintf (cccallstr, "gcc -E -P -C -x c ");
+        sprintf (cccallstr, "gcc -E -C -x c ");
         if (num_cpp_vars > 0) {
             for (i = 0; i < num_cpp_vars; i++) {
                 strcat (cccallstr, " -D");
