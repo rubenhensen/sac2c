@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/04/06 13:43:33  cg
+ * SAC_MT_THREADS() is now set to 1 in case of single threaded execution.
+ *
  * Revision 2.1  1999/02/23 12:43:55  sacbase
  * new release made
  *
@@ -649,6 +652,8 @@ extern const unsigned int SAC_TRMT_master_id;
 /***
  ***   Definitions and declarations for sequential execution (dummies)
  ***/
+
+#define SAC_MT_THREADS() 1
 
 #define SAC_MT_SETUP()
 
