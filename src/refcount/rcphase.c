@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/26 23:49:23  jhb
+ * same function name header and c-file
+ *
  * Revision 1.6  2004/11/26 23:34:25  ktr
  * EMRCdoRefcounting changed to EMRdoRefcounting
  *
@@ -51,7 +54,7 @@
 
 /** <!--*******************************************************************-->
  *
- * @fn node *RCphase( node *syntax_tree)
+ * @fn node *EMRdoRefcounting( node *syntax_tree)
  *
  * @brief
  *
@@ -61,7 +64,7 @@
  *
  ****************************************************************************/
 node *
-RCphase (node *syntax_tree)
+EMRdoRefcounting (node *syntax_tree)
 {
     DBUG_ENTER ("RCphase");
 
