@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/11/27 01:35:10  ktr
+ * function names fixed.
+ *
  * Revision 1.11  2004/11/26 14:12:51  ktr
  * function application changed.
  *
@@ -38,7 +41,7 @@
  */
 /**
  *
- * @defgroup ri Reuse Inference
+ * @defgroup emri Reuse Inference
  * @ingroup emm
  *
  * <pre>
@@ -52,8 +55,6 @@
  *
  *
  */
-#define NEW_INFO
-
 #include "reuse.h"
 
 #include "types.h"
@@ -201,7 +202,38 @@ TypeMatch (node *cand, node *lhs)
 
 /** <!--********************************************************************-->
  *
- * @fn RIarg
+ * @fn EMRIdoReuseInference
+ *
+ *   @brief
+ *
+ *   @param  node *arg_node:  the whole syntax tree
+ *   @return node *        :  the transformed syntax tree
+ *
+ *****************************************************************************/
+node *
+EMRIdoReuseInference (node *arg_node)
+{
+    info *arg_info;
+
+    DBUG_ENTER ("EMRIdoReuseInference");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+                 "ReuseInference not started with modul node");
+
+    arg_info = MakeInfo ();
+
+    TRAVpush (TR_emri);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn EMRIarg
  *
  *  @brief
  *
@@ -210,9 +242,9 @@ TypeMatch (node *cand, node *lhs)
  *
  *****************************************************************************/
 node *
-RIarg (node *arg_node, info *arg_info)
+EMRIarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RIarg");
+    DBUG_ENTER ("EMRIarg");
 
     if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
@@ -227,7 +259,7 @@ RIarg (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn RIassign
+ * @fn EMRIassign
  *
  *  @brief
  *
@@ -236,9 +268,9 @@ RIarg (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-RIassign (node *arg_node, info *arg_info)
+EMRIassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RIassign");
+    DBUG_ENTER ("EMRIassign");
 
     /*
      * Traverse instruction
@@ -261,7 +293,7 @@ RIassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn RIcode
+ * @fn EMRIcode
  *
  *  @brief
  *
@@ -270,11 +302,11 @@ RIassign (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-RIcode (node *arg_node, info *arg_info)
+EMRIcode (node *arg_node, info *arg_info)
 {
     dfmask_t *oldcands;
 
-    DBUG_ENTER ("RIcode");
+    DBUG_ENTER ("EMRIcode");
 
     /*
      * Inside a code block a new candidate list is needed
@@ -303,7 +335,7 @@ RIcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn RIcond
+ * @fn EMRIcond
  *
  *  @brief
  *
@@ -312,10 +344,10 @@ RIcode (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-RIcond (node *arg_node, info *arg_info)
+EMRIcond (node *arg_node, info *arg_info)
 {
     dfmask_t *oldcands;
-    DBUG_ENTER ("RIcond");
+    DBUG_ENTER ("EMRIcond");
 
     /*
      * Rescue reuse candidates
@@ -340,7 +372,7 @@ RIcond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn RIfundef
+ * @fn EMRIfundef
  *
  *  @brief
  *
@@ -349,9 +381,9 @@ RIcond (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-RIfundef (node *arg_node, info *arg_info)
+EMRIfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RIfundef");
+    DBUG_ENTER ("EMRIfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
 
@@ -400,7 +432,7 @@ RIfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn RIicm
+ * @fn EMRIicm
  *
  *  @brief
  *
@@ -409,11 +441,11 @@ RIfundef (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-RIicm (node *arg_node, info *arg_info)
+EMRIicm (node *arg_node, info *arg_info)
 {
     char *name;
 
-    DBUG_ENTER ("RIicm");
+    DBUG_ENTER ("EMRIicm");
 
     name = ICM_NAME (arg_node);
 
@@ -431,7 +463,7 @@ RIicm (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn RIlet
+ * @fn EMRIlet
  *
  *  @brief
  *
@@ -440,9 +472,9 @@ RIicm (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-RIlet (node *arg_node, info *arg_info)
+EMRIlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RIlet");
+    DBUG_ENTER ("EMRIlet");
 
     INFO_RI_LHS (arg_info) = LET_IDS (arg_node);
     INFO_RI_ADDLHS (arg_info) = TRUE;
@@ -464,7 +496,7 @@ RIlet (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn RIprf
+ * @fn EMRIprf
  *
  *  @brief
  *
@@ -473,11 +505,11 @@ RIlet (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-RIprf (node *arg_node, info *arg_info)
+EMRIprf (node *arg_node, info *arg_info)
 {
     node *rhc;
 
-    DBUG_ENTER ("RIprf");
+    DBUG_ENTER ("EMRIprf");
 
     switch (PRF_PRF (arg_node)) {
     case F_accu:
@@ -556,7 +588,7 @@ RIprf (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn RIwith2
+ * @fn EMRIwith2
  *
  *  @brief
  *
@@ -565,14 +597,14 @@ RIprf (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-RIwith2 (node *arg_node, info *arg_info)
+EMRIwith2 (node *arg_node, info *arg_info)
 {
     node *wlids;
     node *rhc = NULL;
     node *withop;
     node *avis;
 
-    DBUG_ENTER ("RIwith2");
+    DBUG_ENTER ("EMRIwith2");
 
     wlids = INFO_RI_LHS (arg_info);
     withop = WITH2_WITHOP (arg_node);
@@ -610,37 +642,6 @@ RIwith2 (node *arg_node, info *arg_info)
     }
 
     INFO_RI_ADDLHS (arg_info) = TRUE;
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn EMRIdoReuseInference
- *
- *   @brief
- *
- *   @param  node *arg_node:  the whole syntax tree
- *   @return node *        :  the transformed syntax tree
- *
- *****************************************************************************/
-node *
-EMRIdoReuseInference (node *arg_node)
-{
-    info *arg_info;
-
-    DBUG_ENTER ("EMRIdoReuseInference");
-
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
-                 "ReuseInference not started with modul node");
-
-    arg_info = MakeInfo ();
-
-    TRAVpush (TR_emri);
-    arg_node = TRAVdo (arg_node, arg_info);
-    TRAVpop ();
-
-    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
