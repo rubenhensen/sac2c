@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1998/07/07 13:40:08  cg
+ * added global variable all_threads implementing the command line option -mt-all
+ *
  * Revision 1.20  1998/06/23 15:04:05  cg
  * added global variables show_syscall and gen_cccall
  *
@@ -159,6 +162,11 @@ int max_sync_fold = 3;
 int max_threads = 32;
 /*
  * maximum number of threads if exact number is determined dynamically.
+ */
+
+int all_threads = 0;
+/*
+ * maximum number of threads if -mt-all command line option is used.
  */
 
 /*

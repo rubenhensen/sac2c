@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  1998/07/07 13:40:08  cg
+ * added global variable all_threads implementing the command line option -mt-all
+ *
  * Revision 1.32  1998/06/29 08:52:19  cg
  * streamlined tracing facilities
  * tracing on new with-loop and multi-threading operations implemented
@@ -148,6 +151,7 @@ extern char target_name[];
 extern int num_threads;
 extern int max_sync_fold;
 extern int max_threads;
+extern int all_threads;
 
 extern char *cppvars[];
 extern int num_cpp_vars;
