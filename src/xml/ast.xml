@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.81  2004/11/25 20:40:54  sah
+  added comment
+
   Revision 1.80  2004/11/25 19:47:52  sbs
   default value for N_pragma sons added.
 
@@ -1952,7 +1955,9 @@
       </attributes>
       <flags>
         <flag name="IsPadded" />
-        <flag name="HasBeenEliminated" />
+        <flag name="HasBeenEliminated" >
+	  <description>Used in ArrayElimination to mark vardecs that are not used anymore. These are later freed by DCR</description>
+	</flag>
       </flags>
     </node>
 <!--
