@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.83  1995/08/11 17:35:36  hw
+ * Revision 1.84  1995/09/04 11:48:33  asi
+ * PrintFloat and PrintDouble changed ( %.256g used in printf )
+ *
+ * Revision 1.83  1995/08/11  17:35:36  hw
  * changed PrintPrf (F_modarray, F_genarray inserted)
  *
  * Revision 1.82  1995/08/05  15:45:38  hw
@@ -689,7 +692,7 @@ PrintFloat (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintFloat");
 
-    fprintf (outfile, "%f", arg_node->info.cfloat);
+    fprintf (outfile, "%.256g", arg_node->info.cfloat);
 
     DBUG_RETURN (arg_node);
 }
@@ -700,7 +703,7 @@ PrintDouble (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintDouble");
 
-    fprintf (outfile, "%f", arg_node->info.cdbl);
+    fprintf (outfile, "%.256g", arg_node->info.cdbl);
 
     DBUG_RETURN (arg_node);
 }
