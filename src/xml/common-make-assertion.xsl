@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2005/01/11 15:11:23  cg
+  Bug fixed in output conversion.
+
   Revision 1.2  2004/11/24 19:37:53  sah
   COMPILES
 
@@ -84,7 +87,7 @@ version="1.0">
     <xsl:with-param name="self" select="$self" />
   </xsl:apply-templates>
   <!-- a reasonable errormessage -->
-  <xsl:value-of select="') { SYSWARN(( &quot;Field '" />
+  <xsl:value-of select="') { CTIwarn( &quot;Field '" />
   <xsl:value-of select="@name" />
   <xsl:value-of select="' of node N_'" />
   <xsl:value-of select="../../@name" />
@@ -101,7 +104,7 @@ version="1.0">
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="'))); }'" />
+  <xsl:value-of select="')); }'" />
 </xsl:template>
 
 <!-- for each target node we generate one N_xxx for the conditional -->

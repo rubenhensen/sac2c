@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2005/01/11 15:10:54  cg
+ * Bug fixed in output conversion.
+ *
  * Revision 3.77  2005/01/11 11:28:11  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -1099,7 +1102,7 @@ ILIBsystemCall (char *format, ...)
      * This allows for easy C-code patches.
      */
     if (global.show_syscall) {
-        NOTE (("%s", syscall));
+        CTInote ("System call:\n %s", syscall);
     }
 
     exit_code = system (syscall);
