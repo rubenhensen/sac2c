@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/04/03 13:58:57  sbs
- * first "complete" version
+ * Revision 1.4  1995/04/07 09:30:52  sbs
+ * dima's inserted in psi*_A, take & drop
  *
+# Revision 1.3  1995/04/03  13:58:57  sbs
+# first "complete" version
+#
 # Revision 1.2  1995/03/31  13:57:34  sbs
 # ND_CREATE_CONST_ARRAY,ND_KS_ARG_ARRAY & ND_KS_RET_ARRAY inserted
 #
@@ -59,37 +62,41 @@ ICM_END( ND_KD_PSI_VxA_S )
 
 #if defined(ND_KD_PSI_CxA_A) || defined(ICM_ALL)
 ICM_DEF( ND_KD_PSI_CxA_A)
+  ICM_INT(dima)
   ICM_STR(a)
   ICM_STR(res)
-  ICM_INT(dim)
-  ICM_VAR( dim, vi)
+  ICM_INT(dimv)
+  ICM_VAR( dimv, vi)
 ICM_END( ND_KD_PSI_CxA_A )
 #endif
 
 #if defined(ND_KD_PSI_VxA_A) || defined(ICM_ALL)
 ICM_DEF( ND_KD_PSI_VxA_A)
+  ICM_INT(dima)
   ICM_STR(a)
   ICM_STR(res)
-  ICM_INT(dim)
+  ICM_INT(dimv)
   ICM_STR( v)
 ICM_END( ND_KD_PSI_VxA_A )
 #endif
 
 #if defined(ND_KD_TAKE_CxA_A) || defined(ICM_ALL)
 ICM_DEF( ND_KD_TAKE_CxA_A)
+  ICM_INT(dima)
   ICM_STR(a)
   ICM_STR(res)
-  ICM_INT(dim)
-  ICM_VAR( dim, vi)
+  ICM_INT(dimv)
+  ICM_VAR( dimv, vi)
 ICM_END( ND_KD_TAKE_CxA_A )
 #endif
 
 #if defined(ND_KD_DROP_CxA_A) || defined(ICM_ALL)
 ICM_DEF( ND_KD_DROP_CxA_A)
+  ICM_INT(dima)
   ICM_STR(a)
   ICM_STR(res)
-  ICM_INT(dim)
-  ICM_VAR( dim, vi)
+  ICM_INT(dimv)
+  ICM_VAR( dimv, vi)
 ICM_END( ND_KD_DROP_CxA_A )
 #endif
 
