@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2003/05/18 21:58:23  ktr
+ * Inserted a condition to ensure that (W)LUR ist applied no earlier than the fourth
+ * optimization cycle.
+ *
  * Revision 3.48  2003/05/18 13:23:15  ktr
  * no changes done, experimented around with order of WLS and LUR.
  *
@@ -1074,16 +1078,7 @@ OPTfundef (node *arg_node, node *arg_info)
                 goto INFO;
             }
 
-            if ((optimize & OPT_WLS) && (use_ssaform)) {
-                arg_node = WithloopScalarization (arg_node, INFO_OPT_MODUL (arg_info));
-            }
-
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "wls"))) {
-                goto INFO;
-            }
-
-            if ((optimize & OPT_LUR) || (optimize & OPT_WLUR)) {
+            if ((loop1 > 3) && ((optimize & OPT_LUR) || (optimize & OPT_WLUR))) {
                 if (use_ssaform) {
                     arg_node = SSALoopUnrolling (arg_node, INFO_OPT_MODUL (arg_info));
                     /*
@@ -1144,6 +1139,15 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
                 && (0 == strcmp (break_specifier, "lir"))) {
+                goto INFO;
+            }
+
+            if ((optimize & OPT_WLS) && (use_ssaform)) {
+                arg_node = WithloopScalarization (arg_node, INFO_OPT_MODUL (arg_info));
+            }
+
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                && (0 == strcmp (break_specifier, "wls"))) {
                 goto INFO;
             }
 
