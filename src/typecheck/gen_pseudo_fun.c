@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2004/12/09 00:38:18  sbs
+ * swapped the ars of TBmakeLet
+ *
  * Revision 3.17  2004/11/25 17:52:55  sbs
  * compiles
  *
@@ -182,9 +185,9 @@ GPFcreateFoldFun (ntype *elem_type, node *fold_fundef, prf fold_prf, char *res_n
       = TBmakeFundef (ILIBstringCopy (pseudo_fold_fun_name),
                       ILIBstringCopy (PSEUDO_MOD_FOLD),
                       TBmakeRet (TYcopyType (elem_type), NULL), formal_args,
-                      TBmakeBlock (TBmakeAssign (TBmakeLet (application,
-                                                            TBmakeIds (tmp_res_avis,
-                                                                       NULL)),
+                      TBmakeBlock (TBmakeAssign (TBmakeLet (TBmakeIds (tmp_res_avis,
+                                                                       NULL),
+                                                            application),
                                                  TBmakeAssign (ret_ass, NULL)),
                                    tmp_res_vardec),
                       NULL);
