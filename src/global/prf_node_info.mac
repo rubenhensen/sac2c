@@ -1,10 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.15  1997/09/11 14:33:55  dkr
- * deleted "%" and "%="
- * (some parts of the compiler break down with the new prf-table. i guess this is a bug
-...)
+ * Revision 1.16  1997/10/01 12:33:22  dkr
+ * added F_mod
+ *
+ * Revision 1.14  1997/09/11 11:56:24  dkr
+ * added prf % (F_mod)
  *
  * Revision 1.13  1997/05/29 13:42:53  sbs
  * F_idx_modarray added
@@ -72,10 +73,11 @@ PRF_IF (F_toi, "F_foi", "toi", "_toi"), PRF_IF (F_tof, "F_fof", "tof", "_tof"),
 
   PRF_IF (F_add, "F_add", "+", "_add"), PRF_IF (F_sub, "F_sub", "-", "_sub"),
   PRF_IF (F_mul, "F_mul", "*", "_mul"), PRF_IF (F_div, "F_div", "/", "_div"),
-  PRF_IF (F_and, "F_and", "&&", "_and"), PRF_IF (F_or, "F_or", "||", "_or"),
-  PRF_IF (F_le, "F_le", "<=", "_le"), PRF_IF (F_lt, "F_lt", "<", "_lt"),
-  PRF_IF (F_eq, "F_eq", "==", "_eq"), PRF_IF (F_ge, "F_ge", ">=", "_ge"),
-  PRF_IF (F_gt, "F_gt", ">", "_gt"), PRF_IF (F_neq, "F_neq", "!=", "_neq"),
+  PRF_IF (F_mod, "F_mod", "%", "_mod"), PRF_IF (F_and, "F_and", "&&", "_and"),
+  PRF_IF (F_or, "F_or", "||", "_or"), PRF_IF (F_le, "F_le", "<=", "_le"),
+  PRF_IF (F_lt, "F_lt", "<", "_lt"), PRF_IF (F_eq, "F_eq", "==", "_eq"),
+  PRF_IF (F_ge, "F_ge", ">=", "_ge"), PRF_IF (F_gt, "F_gt", ">", "_gt"),
+  PRF_IF (F_neq, "F_neq", "!=", "_neq"),
 
   PRF_IF (F_take, "F_take", "take", "_take"), PRF_IF (F_drop, "F_drop", "drop", "_drop"),
   PRF_IF (F_psi, "F_psi", "psi", "_psi"),
