@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2002/10/29 19:07:41  dkr
+ * definition of ND_A_DESC_... modified
+ *
  * Revision 3.29  2002/10/10 23:53:20  dkr
  * syntax error fixed
  *
@@ -76,8 +79,8 @@
  *
  *****************************************************************************/
 
-#ifndef _SAC_STD_H
-#define _SAC_STD_H
+#ifndef _SAC_STD_H_
+#define _SAC_STD_H_
 
 /*
  * Positional parameters for name tuples (nt):
@@ -180,11 +183,12 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_A_DESC(nt) CAT2 (SAC_ND_A_DESC__, CAT2 (NT_SHP (nt), (nt)))
 
-#define SAC_ND_A_DESC_DIM(nt) DESC_DIM (SAC_ND_A_DESC (nt))
+#define SAC_ND_A_DESC_DIM(nt) CAT7 (SAC_ND_A_DESC_DIM__, CAT7 (NT_SHP (nt), (nt)))
 
-#define SAC_ND_A_DESC_SIZE(nt) DESC_SIZE (SAC_ND_A_DESC (nt))
+#define SAC_ND_A_DESC_SIZE(nt) CAT7 (SAC_ND_A_DESC_SIZE__, CAT7 (NT_SHP (nt), (nt)))
 
-#define SAC_ND_A_DESC_SHAPE(nt, dim) DESC_SHAPE (SAC_ND_A_DESC (nt), dim)
+#define SAC_ND_A_DESC_SHAPE(nt, dim)                                                     \
+    CAT7 (SAC_ND_A_DESC_SHAPE__, CAT7 (NT_SHP (nt), BuildArgs2 (nt, dim)))
 
 #define SAC_ND_A_MIRROR_DIM(nt) CAT7 (SAC_ND_A_MIRROR_DIM__, CAT7 (NT_SHP (nt), (nt)))
 
@@ -227,6 +231,12 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_A_DESC__SCL_HID_NUQ(nt) SAC_ND_A_DESC__AKS (nt)
 #define SAC_ND_A_DESC__SCL_HID_UNQ(nt) SAC_ICM_UNDEF ()
 
+#define SAC_ND_A_DESC_DIM__SCL(nt) SAC_ICM_UNDEF ()
+
+#define SAC_ND_A_DESC_SIZE__SCL(nt) SAC_ICM_UNDEF ()
+
+#define SAC_ND_A_DESC_SHAPE__SCL(nt, dim) SAC_ICM_UNDEF ()
+
 #define SAC_ND_A_MIRROR_DIM__SCL(nt) 0
 
 #define SAC_ND_A_MIRROR_SIZE__SCL(nt) 1
@@ -258,6 +268,12 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_A_DESC__AKS(nt) CAT5 (NT_NAME (nt), __desc)
 
+#define SAC_ND_A_DESC_DIM__AKS(nt) SAC_ICM_UNDEF ()
+
+#define SAC_ND_A_DESC_SIZE__AKS(nt) SAC_ICM_UNDEF ()
+
+#define SAC_ND_A_DESC_SHAPE__AKS(nt, dim) SAC_ICM_UNDEF ()
+
 #define SAC_ND_A_MIRROR_DIM__AKS(nt) CAT8 (NT_NAME (nt), __dim)
 
 #define SAC_ND_A_MIRROR_SIZE__AKS(nt) CAT8 (NT_NAME (nt), __sz)
@@ -280,6 +296,12 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_A_DESC__AKD(nt) SAC_ND_A_DESC__AKS (nt)
 
+#define SAC_ND_A_DESC_DIM__AKD(nt) SAC_ICM_UNDEF ()
+
+#define SAC_ND_A_DESC_SIZE__AKD(nt) DESC_SIZE (SAC_ND_A_DESC (nt))
+
+#define SAC_ND_A_DESC_SHAPE__AKD(nt, dim) DESC_SHAPE (SAC_ND_A_DESC (nt), dim)
+
 #define SAC_ND_A_MIRROR_DIM__AKD(nt) SAC_ND_A_MIRROR_DIM__AKS (nt)
 
 #define SAC_ND_A_MIRROR_SIZE__AKD(nt) SAC_ND_A_MIRROR_SIZE__AKS (nt)
@@ -301,6 +323,12 @@ typedef int *SAC_array_descriptor_t;
  */
 
 #define SAC_ND_A_DESC__AUD(nt) SAC_ND_A_DESC__AKS (nt)
+
+#define SAC_ND_A_DESC_DIM__AUD(nt) DESC_DIM (SAC_ND_A_DESC (nt))
+
+#define SAC_ND_A_DESC_SIZE__AUD(nt) DESC_SIZE (SAC_ND_A_DESC (nt))
+
+#define SAC_ND_A_DESC_SHAPE__AUD(nt, dim) DESC_SHAPE (SAC_ND_A_DESC (nt), dim)
 
 #define SAC_ND_A_MIRROR_DIM__AUD(nt) SAC_ND_A_MIRROR_DIM__AKS (nt)
 
@@ -1508,4 +1536,4 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_INITGLOBALOBJECT_END() SAC_NOTHING ()
 #endif
 
-#endif /* _SAC_STD_H */
+#endif /* _SAC_STD_H_ */
