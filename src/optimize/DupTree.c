@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.85  1998/05/12 18:43:25  srs
+ * inserted DUP_WLF
+ *
  * Revision 1.84  1998/05/08 00:56:24  dkr
  * removed unused var
  *
@@ -326,11 +329,11 @@ DupTree (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupTree");
 
-    if (NULL != arg_node) {
+    if (arg_node) {
         tmp_tab = act_tab;
         act_tab = dup_tab;
 
-        if (NULL == arg_info) {
+        if (!arg_info) {
             arg_info = MakeInfo ();
             DUPTYPE = DUP_NORMAL;
             new_arg_info = 1;
@@ -555,7 +558,8 @@ DupId (node *arg_node, node *arg_info)
         }
     }
 
-    if (N_id == NODE_TYPE (arg_node)) {
+    if (N_id == NODE_TYPE (arg_node) && DUP_WLF == DUPTYPE) {
+        DBUG_PRINT ("SRS", ("Here I am"));
         /* Withloop folding (wlf) needs this. */
         if (ID_WL (arg_node) && N_id == NODE_TYPE (ID_WL (arg_node)))
             /* new code in new_codes, see 'usage of ID_WL' in WLF.c for more infos */
