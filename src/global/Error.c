@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/11/16 15:33:20  cg
+ * Revision 1.11  1995/11/16 19:32:38  cg
+ * added new compilation phase name for 'RemoveVoidFunctions'
+ *
+ * Revision 1.10  1995/11/16  15:33:20  cg
  * renamed compiler phase flatten
  *
  * Revision 1.9  1995/11/10  14:59:22  cg
@@ -78,6 +81,7 @@ char *compiler_phase_name[] = {"",
                                "Generating SAC-Information-Block",
                                "Resolving global objects and reference parameters",
                                "Checking uniqueness property of objects",
+                               "Generating purely functional code",
                                "Running SAC optimizations",
                                "Running PSI optimizations",
                                "Running reference count inference system",
