@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/04/26 21:11:44  dkr
+ * fixed a bug in CFid: type information is copied correctly now
+ *
  * Revision 3.8  2001/04/26 17:10:24  dkr
  * CFcast reactivated
  *
@@ -881,8 +884,8 @@ CFid (node *arg_node, node *arg_info)
                  *     return ( ... a ... );
                  *   }.
                  *
-                 * When constant-folding now eliminates "a", the array-shape "[5]" must be
-                 * handed over to "inl__tmp" (a = inl__tmp):
+                 * When constant-folding now eliminates "a", the array-shape "[5]" must
+                 * be handed over to "inl__tmp" (a = inl__tmp):
                  *
                  *   int main()
                  *   {
@@ -894,12 +897,29 @@ CFid (node *arg_node, node *arg_info)
                  *
                  */
                 /*
-                  if the type of mrd has not a shape yet, but the type of arg_node has,
-                  then copy the dimension and the shape-segments from arg_node to mrd
-                  */
-                VARDEC_DIM (ID_VARDEC (mrd)) = VARDEC_DIM (ID_VARDEC (arg_node));
-                VARDEC_SHPSEG (ID_VARDEC (mrd))
-                  = DupShpseg (VARDEC_SHPSEG (ID_VARDEC (arg_node)));
+                 * if the type of mrd has not a shape yet, but the type of arg_node has,
+                 * then copy the dimension and the shape-segments from 'arg_node' to 'mrd'
+                 */
+#if 0
+        /*
+         * dkr: works not correctly!!!!
+         *
+         * example:
+         *   typedef double[2] complex;
+         *   complex mrd;         // double[2]
+         *   double[2] arg_node;
+         * must *not* be transformed into:
+         *   complex[2] mrd;
+         *   double[2] arg_node;
+         * but into:
+         *   double[2] mrd;
+         *   double[2] arg_node;
+         */
+	VARDEC_DIM(ID_VARDEC(mrd)) = VARDEC_DIM(ID_VARDEC(arg_node));
+	VARDEC_SHPSEG(ID_VARDEC(mrd)) = DupShpseg(VARDEC_SHPSEG(ID_VARDEC(arg_node)));
+#else
+                DupTypesOnly (&(ID_TYPE (mrd)), ID_TYPE (arg_node));
+#endif
             }
 
             arg_node = FreeTree (arg_node);
