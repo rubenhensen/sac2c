@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.13  1996/02/16 09:46:49  sbs
+# Revision 1.14  1996/07/18 12:22:58  sbs
+# prim_fun.o included in clean-line
+#
+# Revision 1.13  1996/02/16  09:46:49  sbs
 # make deps done
 #
 # Revision 1.12  1996/01/04  18:11:08  cg
@@ -60,7 +63,7 @@ deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) typecheck.o *.bak
+	$(RM) typecheck.o prim_fun.o *.bak
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 prim_fun.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
