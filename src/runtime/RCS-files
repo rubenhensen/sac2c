@@ -1,5 +1,6 @@
 CacheSimTest.c
 Makefile
+libsac_cachesim.h
 libsac_cachesim_access.c
 libsac_cachesim_basic.c
 libsac_malloc.c
