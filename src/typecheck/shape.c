@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  1999/10/22 14:13:32  sbs
+ * corrected some typos; added SHGetUnrLen for computing the prod of the extents
+ *
  * Revision 1.3  1999/10/20 13:28:31  sbs
  * some minor brushing done.
  *
@@ -151,6 +154,7 @@ SHFreeShape (shape *shp)
  * function:
  *    int SHGetDim( shape *shp)
  *    int SHGetExtent( shape*shp, int dim)
+ *    int SHGetUnrLen( shape*shp)
  *
  * description:
  *    several functions for retrieving shape infos.
@@ -177,10 +181,26 @@ SHGetExtent (shape *shp, int dim)
     DBUG_RETURN (SHAPE_EXT (shp, dim));
 }
 
+int
+SHGetUnrLen (shape *shp)
+{
+    int i, length;
+
+    DBUG_ENTER ("SHGetUnrLen");
+    DBUG_ASSERT ((shp != NULL), ("SHGetUnrLen called with NULL shape!"));
+
+    length = 1;
+    for (i = SHAPE_DIM (shp) - 1; i >= 0; i--) {
+        length *= SHAPE_EXT (shp, i);
+    }
+
+    DBUG_RETURN (length);
+}
+
 /******************************************************************************
  *
  * function:
- *    shape *SHSetExtend( shape *shp, int dim, int val)
+ *    shape *SHSetExtent( shape *shp, int dim, int val)
  *
  * description:
  *    several functions for setting shape values.
@@ -189,7 +209,7 @@ SHGetExtent (shape *shp, int dim)
  ******************************************************************************/
 
 shape *
-SHSetExtend (shape *shp, int dim, int val)
+SHSetExtent (shape *shp, int dim, int val)
 {
     DBUG_ENTER ("SHSetExtent");
     DBUG_ASSERT ((shp != NULL), ("SHSetExtent called with NULL shape!"));
@@ -315,6 +335,49 @@ SHOldTypes2Shape (types *types)
         }
         for (j = 0; j < dim; j++, i++) {
             SHAPE_EXT (res, i) = SHPSEG_SHAPE (shpseg, j);
+        }
+    } else {
+        res = NULL;
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    shpseg *SHShape2OldShpseg( shape *shp)
+ *
+ * description:
+ *    if shp has a dim>0 a shpseg structure is created which carries the same
+ *    shape info as the shp does. Otherwise, NULL is returned.
+ *
+ ******************************************************************************/
+
+shpseg *
+SHShape2OldShpseg (shape *shp)
+{
+    int dim, i, j;
+    shpseg *res, *curr_seg;
+
+    DBUG_ENTER ("SHShape2OldShpseg");
+    DBUG_ASSERT ((shp != NULL), ("SHShape2OldShpseg called with NULL shp!"));
+
+    dim = SHAPE_DIM (shp);
+    if (dim > 0) {
+        i = 0;
+        res = (shpseg *)MALLOC (sizeof (shpseg));
+        curr_seg = res;
+        while (dim > SHP_SEG_SIZE) {
+            for (j = 0; j < SHP_SEG_SIZE; j++, i++) {
+                SHPSEG_SHAPE (curr_seg, j) = SHAPE_EXT (shp, i);
+            }
+            SHPSEG_NEXT (curr_seg) = (shpseg *)MALLOC (sizeof (shpseg));
+            curr_seg = SHPSEG_NEXT (curr_seg);
+            dim -= SHP_SEG_SIZE;
+        }
+        for (j = 0; j < dim; j++, i++) {
+            SHPSEG_SHAPE (curr_seg, j) = SHAPE_EXT (shp, i);
         }
     } else {
         res = NULL;

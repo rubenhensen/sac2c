@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  1999/10/22 14:13:32  sbs
+ * corrected some typos; added SHGetUnrLen for computing the prod of the extents
+ *
  * Revision 1.2  1999/10/20 13:29:22  sbs
  * some minor brushing done.
  *
@@ -40,12 +43,14 @@ extern void SHFreeShape (shape *shp);
 
 extern int SHGetDim (shape *shp);
 extern int SHGetExtent (shape *shp, int dim);
+extern int SHGetUnrLen (shape *shp);
 
-extern shape *SHSetExtend (shape *shp, int dim, int val);
+extern shape *SHSetExtent (shape *shp, int dim, int val);
 
 extern shape *SHAppendShapes (shape *a, shape *b);
 extern char *SHShape2String (int dots, shape *shp);
 
 extern shape *SHOldTypes2Shape (types *shpseg);
+extern shpseg *SHShape2OldShpseg (shape *shp);
 
 #endif /* _shape_h */
