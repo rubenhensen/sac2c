@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2004/11/23 23:08:54  cg
+ * removed CACHESIM_YES.
+ *
  * Revision 3.39  2004/11/23 21:49:39  cg
  * brushed usage of genlib
  * min_array_rep_t turned into enum type.
@@ -276,8 +279,7 @@ PrintGlobalSwitches ()
              (traceflag & TRACE_MT) ? 1 : 0);
     fprintf (outfile, "\n");
 
-    fprintf (outfile, "#define SAC_DO_CACHESIM        %d\n",
-             (cachesim & CACHESIM_YES) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_CACHESIM        %d\n", (docachesim) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_CACHESIM_ADV    %d\n",
              (cachesim & CACHESIM_ADVANCED) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_CACHESIM_GLOBAL %d\n",
