@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.6  2001/11/20 13:35:23  sbs
+# -lm commented out on MAC_OS
+#
 # Revision 3.5  2001/11/15 15:36:48  sacbase
 # CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
 #
@@ -61,6 +64,9 @@ LIBDIR    := ../libsac
 INCS      := -I../runtime -I../libsac -I../../inc
 LIBS      := -L$(LIBDIR)
 
+ifneq ($(OS),OSX_MAC)
+  LIBM = -lm
+endif
 
 .PHONY: all tar
 
@@ -69,11 +75,11 @@ all:  CacheSimAnalyser CacheSimTest
 
 
 CacheSimAnalyser: CacheSimAnalyser.o $(LIBDIR)/libsac.a
-	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(LIBS) -o $@ $< -lsac -lm
+	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(LIBS) -o $@ $< -lsac $(LIBM)
 	$(CLOCK_SKEW_ELIMINATION) $@
 
 CacheSimTest: CacheSimTest.o $(LIBDIR)/libsac.a
-	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(LIBS) -o $@ $< -lsac -lm
+	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(LIBS) -o $@ $< -lsac $(LIBM)
 	$(CLOCK_SKEW_ELIMINATION) $@
 
 %.o: %.c 
