@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.30  2000/06/23 14:01:56  dkr
+ * type of some components of struct WL_INFO changed from 'int' into
+ * 'bool'
+ *
  * Revision 2.29  2000/03/23 14:01:19  jhs
  * Brushing around includes of nt_info.mac.
  * Added DFMfoldmask_t.
@@ -351,8 +355,8 @@ typedef struct WL_INFO {
     int references_folded; /* number of refs eliminated by WLF */
     int parts;             /* number of N_part nodes */
     int complex;           /* indicator of fold complexity */
-    int foldable;          /* has constant generator */
-    int no_chance;         /* 1 if WL is defined within loop/cond */
+    bool foldable;         /* has constant generator */
+    bool no_chance;        /* 1 if WL is defined within loop/cond */
 } wl_info;
 
 typedef struct FUN_NAME {
