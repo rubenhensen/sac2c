@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/07/23 08:49:48  ktr
+ * fill operations and genarray/modarray withloops now behave like true
+ * function applications with respect to the memory used.
+ *
  * Revision 1.5  2004/07/19 14:53:38  ktr
  * Fixed a bug related to reference counting of conditionals.
  *
@@ -152,7 +156,7 @@ struct INFO {
     rc_list_struct *deflist;
     rc_countmode countmode;
     bool cond;
-    bool memval;
+    bool mustcount;
     node *fundef;
     ids *lhs;
 };
@@ -166,7 +170,7 @@ struct INFO {
 #define INFO_EMRC_DEFLIST(n) (n->deflist)
 #define INFO_EMRC_COUNTMODE(n) (n->countmode)
 #define INFO_EMRC_COND(n) (n->cond)
-#define INFO_EMRC_MEMVAL(n) (n->memval)
+#define INFO_EMRC_MUSTCOUNT(n) (n->mustcount)
 #define INFO_EMRC_FUNDEF(n) (n->fundef)
 #define INFO_EMRC_LHS(n) (n->lhs)
 
@@ -971,7 +975,7 @@ TravRightIds (ids *arg_ids, info *arg_info)
           = PopEnvironment (IDS_AVIS (INFO_EMRC_LHS (arg_info)),
                             INFO_EMRC_DEPTH (arg_info));
 
-        INFO_EMRC_MEMVAL (arg_info) = FALSE;
+        INFO_EMRC_MUSTCOUNT (arg_info) = FALSE;
         break;
 
     case rc_apuse:
@@ -1508,14 +1512,14 @@ EMRClet (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMRClet");
 
     INFO_EMRC_COUNTMODE (arg_info) = rc_unknown;
-    INFO_EMRC_MEMVAL (arg_info) = TRUE;
+    INFO_EMRC_MUSTCOUNT (arg_info) = TRUE;
     INFO_EMRC_LHS (arg_info) = LET_IDS (arg_node);
 
     if (LET_EXPR (arg_node) != NULL) {
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
     }
 
-    if (INFO_EMRC_MEMVAL (arg_info)) {
+    if (INFO_EMRC_MUSTCOUNT (arg_info)) {
         /*
          * Add all lhs ids to deflist
          */
@@ -1752,7 +1756,7 @@ EMRCNwith (node *arg_node, info *arg_info)
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
-    INFO_EMRC_MEMVAL (arg_info) = TRUE;
+    INFO_EMRC_MUSTCOUNT (arg_info) = TRUE;
 
     DBUG_RETURN (arg_node);
 }
@@ -1790,7 +1794,7 @@ EMRCNwith2 (node *arg_node, info *arg_info)
 
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
 
-    INFO_EMRC_MEMVAL (arg_info) = TRUE;
+    INFO_EMRC_MUSTCOUNT (arg_info) = TRUE;
 
     DBUG_RETURN (arg_node);
 }
@@ -1842,31 +1846,46 @@ EMRCNwithop (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMRCNwithop");
 
-    INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
-
     switch (NWITHOP_TYPE (arg_node)) {
     case WO_genarray:
-        if (NWITHOP_SHAPE (arg_node) != NULL) {
-            NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
-        }
+        /*
+         * genarray( shp, def, mem)
+         *
+         * - shp, def must be refcounted like a prf use
+         * - mem must be refcounted like a funap use
+         */
+        INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
+        NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
         if (NWITHOP_DEFAULT (arg_node) != NULL) {
             NWITHOP_DEFAULT (arg_node) = Trav (NWITHOP_DEFAULT (arg_node), arg_info);
         }
+        INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
+        NWITHOP_MEM (arg_node) = Trav (NWITHOP_MEM (arg_node), arg_info);
         break;
 
     case WO_modarray:
-        if (NWITHOP_ARRAY (arg_node) != NULL) {
-            NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
-        }
+        /*
+         * modarray( A, mem);
+         *
+         * - A must be refcounted like a prf use
+         * - mem must be refcoutned like a funap use
+         */
+        INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
+        NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
+        INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
+        NWITHOP_MEM (arg_node) = Trav (NWITHOP_MEM (arg_node), arg_info);
         break;
 
     case WO_foldfun:
     case WO_foldprf:
+        /*
+         * fold( op, n);
+         *
+         * - op is not a variable
+         * - n must be refcoutned like a funap use
+         */
         INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
-
-        if (NWITHOP_NEUTRAL (arg_node) != NULL) {
-            NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
-        }
+        NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
         break;
 
     case WO_unknown:
@@ -1898,25 +1917,48 @@ EMRCprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMRCprf");
 
-    INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
-
     switch (PRF_PRF (arg_node)) {
-    case F_accu:
     case F_fill:
+        /*
+         * fill( expr, a);
+         *
+         * - expr must be traversed
+         * - a must be counted like a funap use of a
+         */
         PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+        INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
+        PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
+        break;
+
+    case F_accu:
+        /*
+         * accu( iv, n)
+         *
+         * - iv must not be counted as it is already counted by WITHID traversal
+         * - n  must not be counted as it is already counted by WITHOP traversal
+         */
         break;
 
     case F_alloc:
+        /*
+         * alloc( dim, shp)
+         *
+         * - initialize rc with 1
+         */
         PRF_ARGS (arg_node) = MakeExprs (MakeNum (1), PRF_ARGS (arg_node));
-        INFO_EMRC_MEMVAL (arg_info) = FALSE;
         break;
 
     case F_suballoc:
-        PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
-        INFO_EMRC_MEMVAL (arg_info) = FALSE;
+        /*
+         * suballoc( A, iv);
+         *
+         * - A  must not be counted as it is already counted by WITHOP traversal
+         * - iv must not be counted as it is already counted by WITHID traversal
+         */
         break;
 
     default:
+        INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
         if (PRF_ARGS (arg_node) != NULL) {
             PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         }
