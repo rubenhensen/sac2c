@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2004/07/17 17:07:16  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.37  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -134,6 +138,8 @@
  *   right before the return() statement of the main() function.
  *
  *****************************************************************************/
+
+#define NEW_INFO
 
 #include <stdio.h>
 #include <string.h>
@@ -578,7 +584,7 @@ PrintDefines ()
 /******************************************************************************
  *
  * function:
- *   node *GSCicm( node *arg_node, node *arg_info)
+ *   node *GSCicm( node *arg_node, info *arg_info)
  *
  * description:
  *   filters the variables needed for the spmd-frame of a specific function
@@ -587,7 +593,7 @@ PrintDefines ()
  ******************************************************************************/
 
 node *
-GSCicm (node *arg_node, node *arg_info)
+GSCicm (node *arg_node, info *arg_info)
 {
     node *icm_arg;
     char *tag, *type, *name;
@@ -645,7 +651,7 @@ GSCicm (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *GSCspmd( node *arg_node, node *arg_info)
+ *   node *GSCspmd( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -653,7 +659,7 @@ GSCicm (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-GSCspmd (node *arg_node, node *arg_info)
+GSCspmd (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("GSCspmd");
 
@@ -678,7 +684,7 @@ GSCspmd (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *GSCfundef( node *arg_node, node *arg_info)
+ *   node *GSCfundef( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -686,7 +692,7 @@ GSCspmd (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-GSCfundef (node *arg_node, node *arg_info)
+GSCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("GSCfundef");
 

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/07/17 17:07:16  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.6  2003/06/11 21:49:16  ktr
  * added support for multidimensional arrays
  *
@@ -78,6 +82,8 @@
  * and is then called just before the transformation into the intermediate WL
  * representation is performed.
  */
+
+#define NEW_INFO
 
 #include "types.h"
 #include "tree_basic.h"
@@ -254,7 +260,7 @@ BuildNpart (FILE *infile, node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node *PWpart(node *arg_node, node *arg_info)
+ *   node *PWpart(node *arg_node, info *arg_info)
  *
  * description:
  *   generates a more complex N_Npart syntaxtree (reads data from stdin)
@@ -262,7 +268,7 @@ BuildNpart (FILE *infile, node *arg_node)
  ******************************************************************************/
 
 node *
-PWpart (node *arg_node, node *arg_info)
+PWpart (node *arg_node, info *arg_info)
 {
     FILE *infile;
 
@@ -284,7 +290,7 @@ PWpart (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PWwith(node *arg_node, node *arg_info)
+ *   node *PWwith(node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -292,7 +298,7 @@ PWpart (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PWwith (node *arg_node, node *arg_info)
+PWwith (node *arg_node, info *arg_info)
 {
     node *tmp_node, *shape, *bound2_el, *shape_el;
     int i;

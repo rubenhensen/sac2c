@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.108  2004/07/17 17:07:16  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.107  2004/03/09 23:51:45  dkrHH
  * file compile.tagged.c renamed into compile.c
  * old backend removed
@@ -301,6 +305,8 @@
  * the new backend
  */
 
+#define NEW_INFO
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -347,6 +353,65 @@
  *     the other functions are traversed.
  */
 
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *modul;
+    node *fundef;
+    node *lastsync;
+    ids *lastids;
+    bool foldfuns;
+    node *assign;
+    int schedid;
+    node *schedinit;
+};
+/*
+ * INFO macros
+ */
+#define INFO_COMP_MODUL(n) (n->modul)
+#define INFO_COMP_FUNDEF(n) (n->fundef)
+#define INFO_COMP_LASTSYNC(n) (n->lastsync)
+#define INFO_COMP_LASTIDS(n) (n->lastids)
+#define INFO_COMP_FOLDFUNS(n) (n->foldfuns)
+#define INFO_COMP_ASSIGN(n) (n->assign)
+#define INFO_COMP_SCHEDULERID(n) (n->schedid)
+#define INFO_COMP_SCHEDULERINIT(n) (n->schedinit)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_COMP_MODUL (result) = NULL;
+    INFO_COMP_FUNDEF (result) = NULL;
+    INFO_COMP_LASTSYNC (result) = NULL;
+    INFO_COMP_LASTIDS (result) = NULL;
+    INFO_COMP_FOLDFUNS (result) = FALSE;
+    INFO_COMP_ASSIGN (result) = NULL;
+    INFO_COMP_SCHEDULERID (result) = 0;
+    INFO_COMP_SCHEDULERINIT (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
+
 /******************************************************************************
  *
  * global variable:  int barrier_id
@@ -371,18 +436,6 @@ static ids *wlids = NULL;
 static node *wlnode = NULL;
 static node *wlseg = NULL;
 static node *wlstride = NULL;
-
-/*
- * access macros for 'arg_info'
- */
-#define INFO_COMP_MODUL(n) (n->node[0])
-#define INFO_COMP_FUNDEF(n) (n->node[1])
-#define INFO_COMP_LASTSYNC(n) (n->node[3])
-#define INFO_COMP_LASTIDS(n) (n->info.ids)
-#define INFO_COMP_FOLDFUNS(n) ((bool)(n->varno))
-#define INFO_COMP_ASSIGN(n) (n->node[5])
-#define INFO_COMP_SCHEDULERID(n) (n->counter)
-#define INFO_COMP_SCHEDULERINIT(n) (n->info2)
 
 /* postfix for goto labels */
 #define LABEL_POSTFIX "SAC_label"
@@ -1601,14 +1654,14 @@ MakeIcm_MT2_FUN_DEC (char *kindof, node *fundef)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *MakeFundefIcm( node *fundef, node *arg_info)
+ * @fn  node *MakeFundefIcm( node *fundef, info *arg_info)
  *
  * @brief  ...
  *
  ******************************************************************************/
 
 static node *
-MakeFundefIcm (node *fundef, node *arg_info)
+MakeFundefIcm (node *fundef, info *arg_info)
 {
     node *icm;
 
@@ -1730,7 +1783,7 @@ MakeIcm_ND_FUN_AP (node *ap, node *fundef, node *assigns)
 
 /** <!--********************************************************************-->
  *
- * @fn  bool CheckPrf( ids *let_ids, node *prf, node *arg_info)
+ * @fn  bool CheckPrf( ids *let_ids, node *prf, info *arg_info)
  *
  * @brief  Checks whether no one of the refcounted arguments occurs on LHS of
  *         the given application. (precompile should guarantee that!)
@@ -1738,7 +1791,7 @@ MakeIcm_ND_FUN_AP (node *ap, node *fundef, node *assigns)
  ******************************************************************************/
 
 static bool
-CheckPrf (ids *let_ids, node *prf, node *arg_info)
+CheckPrf (ids *let_ids, node *prf, info *arg_info)
 {
     node *args, *arg_id;
     ids *_ids;
@@ -1771,7 +1824,7 @@ CheckPrf (ids *let_ids, node *prf, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  bool CheckAp( node *ap, node *arg_info)
+ * @fn  bool CheckAp( node *ap, info *arg_info)
  *
  * @brief  Checks whether no one of the externally refcounted in-arguments
  *         occurs on the LHS of the given application as well. (precompile
@@ -1780,7 +1833,7 @@ CheckPrf (ids *let_ids, node *prf, node *arg_info)
  ******************************************************************************/
 
 static bool
-CheckAp (node *ap, node *arg_info)
+CheckAp (node *ap, info *arg_info)
 {
     argtab_t *argtab;
     node *arg, *arg_id;
@@ -2000,7 +2053,7 @@ node *
 Compile (node *arg_node)
 {
     funtab *old_tab;
-    node *info;
+    info *info;
 
     DBUG_ENTER ("Compile");
 
@@ -2010,7 +2063,7 @@ Compile (node *arg_node)
 
     arg_node = Trav (arg_node, info);
 
-    info = FreeTree (info);
+    info = FreeInfo (info);
     act_tab = old_tab;
 
     DBUG_RETURN (arg_node);
@@ -2018,14 +2071,14 @@ Compile (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPModul( node *arg_node, node *arg_info)
+ * @fn  node *COMPModul( node *arg_node, info *arg_info)
  *
  * @brief  Compiles a N_modul node: traverses sons.
  *
  ******************************************************************************/
 
 node *
-COMPModul (node *arg_node, node *arg_info)
+COMPModul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("COMPModul");
 
@@ -2080,7 +2133,7 @@ COMPModul (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPTypedef( node *arg_node, node *arg_info)
+ * @fn  node *COMPTypedef( node *arg_node, info *arg_info)
  *
  * @brief  If needed an appropriate ICM is generated and stored in TYPEDEF_ICM.
  *         The rest of the N_typdef node ist left untouched!
@@ -2088,7 +2141,7 @@ COMPModul (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPTypedef (node *arg_node, node *arg_info)
+COMPTypedef (node *arg_node, info *arg_info)
 {
     node *icm = NULL;
 
@@ -2109,7 +2162,7 @@ COMPTypedef (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPObjdef( node *arg_node, node *arg_info)
+ * @fn  node *COMPObjdef( node *arg_node, info *arg_info)
  *
  * @brief  If needed an appropriate ICM is generated and stored in OBJDEF_ICM.
  *         The rest of the N_objdef node ist left untouched!
@@ -2117,7 +2170,7 @@ COMPTypedef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPObjdef (node *arg_node, node *arg_info)
+COMPObjdef (node *arg_node, info *arg_info)
 {
     node *icm;
 
@@ -2144,14 +2197,14 @@ COMPObjdef (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPFundefArgs( node *fundef, node *arg_info)
+ * @fn  node *COMPFundefArgs( node *fundef, info *arg_info)
  *
  * @brief  ...
  *
  ******************************************************************************/
 
 static node *
-COMPFundefArgs (node *fundef, node *arg_info)
+COMPFundefArgs (node *fundef, info *arg_info)
 {
     argtab_t *argtab;
     node *arg;
@@ -2227,14 +2280,14 @@ COMPFundefArgs (node *fundef, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPFundef( node *arg_node, node *arg_info)
+ * @fn  node *COMPFundef( node *arg_node, info *arg_info)
  *
  * @brief  ...
  *
  ******************************************************************************/
 
 node *
-COMPFundef (node *arg_node, node *arg_info)
+COMPFundef (node *arg_node, info *arg_info)
 {
     node *old_fundef;
     node *assigns;
@@ -2369,7 +2422,7 @@ COMPFundef (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPVardec( node *arg_node, node *arg_info)
+ * @fn  node *COMPVardec( node *arg_node, info *arg_info)
  *
  * @brief  Compiles a N_vardec node. The generated ICM chain is stored in
  *         VARDEC_ICM. The rest of the N_vardec node is left untouched in order
@@ -2379,7 +2432,7 @@ COMPFundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPVardec (node *arg_node, node *arg_info)
+COMPVardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("COMPVardec");
 
@@ -2396,14 +2449,14 @@ COMPVardec (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPBlock( node *arg_node, node *arg_info)
+ * @fn  node *COMPBlock( node *arg_node, info *arg_info)
  *
  * @brief  Compiles a N_block node.
  *
  ******************************************************************************/
 
 node *
-COMPBlock (node *arg_node, node *arg_info)
+COMPBlock (node *arg_node, info *arg_info)
 {
     node *assign;
     char *fun_name, *cs_tag;
@@ -2452,7 +2505,7 @@ COMPBlock (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPAssign( node *arg_node, node *arg_info)
+ * @fn  node *COMPAssign( node *arg_node, info *arg_info)
  *
  * @brief  Compiles a N_assign node.
  *         Note, that the traversal of ASSIGN_INSTR( arg_node) may return a
@@ -2461,7 +2514,7 @@ COMPBlock (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPAssign (node *arg_node, node *arg_info)
+COMPAssign (node *arg_node, info *arg_info)
 {
     node *instr, *last, *next;
 
@@ -2507,7 +2560,7 @@ COMPAssign (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPNormalFunReturn( node *arg_node, node *arg_info)
+ * @fn  node *COMPNormalFunReturn( node *arg_node, info *arg_info)
  *
  * @brief  Generates ICMs for N_return-node found in body of a
  *         non-SPMD-function.
@@ -2515,7 +2568,7 @@ COMPAssign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static node *
-COMPNormalFunReturn (node *arg_node, node *arg_info)
+COMPNormalFunReturn (node *arg_node, info *arg_info)
 {
     node *fundef;
     argtab_t *argtab;
@@ -2622,14 +2675,14 @@ COMPNormalFunReturn (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPSpmdFunReturn( node *arg_node, node *arg_info)
+ * @fn  node *COMPSpmdFunReturn( node *arg_node, info *arg_info)
  *
  * @brief  Generates ICMs for N_return-node found in body of a SPMD-function.
  *
  ******************************************************************************/
 
 static node *
-COMPSpmdFunReturn (node *arg_node, node *arg_info)
+COMPSpmdFunReturn (node *arg_node, info *arg_info)
 {
     node *fundef;
     argtab_t *argtab;
@@ -2686,14 +2739,14 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPMT2FunReturn( node *arg_node, node *arg_info)
+ * @fn  node *COMPMT2FunReturn( node *arg_node, info *arg_info)
  *
  * @brief  Generates ICMs for N_return-node found in body of a MT2-function.
  *
  ******************************************************************************/
 
 static node *
-COMPMT2FunReturn (node *arg_node, node *arg_info)
+COMPMT2FunReturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("COMPMT2FunReturn");
 
@@ -2702,14 +2755,14 @@ COMPMT2FunReturn (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPReturn( node *arg_node, node *arg_info)
+ * @fn  node *COMPReturn( node *arg_node, info *arg_info)
  *
  * @brief  Generates ICMs for N_return of a function (ND or MT).
  *
  ******************************************************************************/
 
 node *
-COMPReturn (node *arg_node, node *arg_info)
+COMPReturn (node *arg_node, info *arg_info)
 {
     node *fundef;
 
@@ -2748,7 +2801,7 @@ COMPReturn (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPLet( node *arg_node, node *arg_info)
+ * @fn  node *COMPLet( node *arg_node, info *arg_info)
  *
  * @brief  Compiles a N_let node.
  *         The return value is a RHS expression or a N_assign chain of ICMs.
@@ -2757,7 +2810,7 @@ COMPReturn (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPLet (node *arg_node, node *arg_info)
+COMPLet (node *arg_node, info *arg_info)
 {
     node *expr;
     node *ret_node;
@@ -2795,14 +2848,14 @@ COMPLet (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  ids *COMPApIds( node *ap, node *arg_info)
+ * @fn  ids *COMPApIds( node *ap, info *arg_info)
  *
  * @brief  Traverses ids on LHS of application.
  *
  ******************************************************************************/
 
 static node *
-COMPApIds (node *ap, node *arg_info)
+COMPApIds (node *ap, info *arg_info)
 {
     argtab_t *argtab;
     argtag_t tag;
@@ -2870,14 +2923,14 @@ COMPApIds (node *ap, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPApArgs( node *ap, node *arg_info)
+ * @fn  node *COMPApArgs( node *ap, info *arg_info)
  *
  * @brief  ...
  *
  ******************************************************************************/
 
 static node *
-COMPApArgs (node *ap, node *arg_info)
+COMPApArgs (node *ap, info *arg_info)
 {
     argtab_t *argtab;
     argtag_t tag;
@@ -2914,7 +2967,7 @@ COMPApArgs (node *ap, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPAp( node *arg_node, node *arg_info)
+ * @fn  node *COMPAp( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_ap node.
  *   Creates an ICM for function application and insert ICMs to decrement the
@@ -2930,7 +2983,7 @@ COMPApArgs (node *ap, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPAp (node *arg_node, node *arg_info)
+COMPAp (node *arg_node, info *arg_info)
 {
     ids *let_ids;
     node *fundef;
@@ -2980,7 +3033,7 @@ COMPAp (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPId( node *arg_node, node *arg_info)
+ * @fn  node *COMPId( node *arg_node, info *arg_info)
  *
  * @brief  Compiles let expression with id on RHS.
  *   The return value is a N_assign chain of ICMs.
@@ -2989,7 +3042,7 @@ COMPAp (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPId (node *arg_node, node *arg_info)
+COMPId (node *arg_node, info *arg_info)
 {
     ids *let_ids;
     node *ret_node;
@@ -3029,7 +3082,7 @@ COMPId (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPIdFromUnique( node *arg_node, node *arg_info)
+ * @fn  node *COMPIdFromUnique( node *arg_node, info *arg_info)
  *
  * @brief  Compiles let expression with a N_id node representing an application
  *         of the from_class() conversion function on RHS.
@@ -3039,7 +3092,7 @@ COMPId (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static node *
-COMPIdFromUnique (node *arg_node, node *arg_info)
+COMPIdFromUnique (node *arg_node, info *arg_info)
 {
     ids *let_ids;
     types *lhs_type, *rhs_type;
@@ -3086,7 +3139,7 @@ COMPIdFromUnique (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPIdToUnique( node *arg_node, node *arg_info)
+ * @fn  node *COMPIdToUnique( node *arg_node, info *arg_info)
  *
  * @brief  Compiles let expression with a N_id node representing an application
  *   of the to_class() conversion function on RHS.
@@ -3096,7 +3149,7 @@ COMPIdFromUnique (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static node *
-COMPIdToUnique (node *arg_node, node *arg_info)
+COMPIdToUnique (node *arg_node, info *arg_info)
 {
     ids *let_ids;
     types *lhs_type, *rhs_type;
@@ -3155,7 +3208,7 @@ COMPIdToUnique (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPScalar( node *arg_node, node *arg_info)
+ * @fn  node *COMPScalar( node *arg_node, info *arg_info)
  *
  * @brief  Compiles let expression with a constant scalar on the RHS.
  *   The return value is a N_assign chain of ICMs (the old 'arg_node' is
@@ -3164,7 +3217,7 @@ COMPIdToUnique (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPScalar (node *arg_node, node *arg_info)
+COMPScalar (node *arg_node, info *arg_info)
 {
     node *ret_node;
     ids *let_ids;
@@ -3191,7 +3244,7 @@ COMPScalar (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPArray( node *arg_node, node *arg_info)
+ * @fn  node *COMPArray( node *arg_node, info *arg_info)
  *
  * @brief  Compiles let expression with a constant array on the RHS.
  *   The return value is a N_assign chain of ICMs (the old 'arg_node' is
@@ -3200,7 +3253,7 @@ COMPScalar (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPArray (node *arg_node, node *arg_info)
+COMPArray (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
     node *aelems, *aelem;
@@ -3306,7 +3359,7 @@ COMPArray (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfDim( node *arg_node, node *arg_info,
+ * @fn  node *COMPPrfDim( node *arg_node, info *arg_info,
  *                        node **check_reuse1, node **check_reuse2,
  *                        node **get_dim, node **set_shape_icm)
  *
@@ -3320,7 +3373,7 @@ COMPArray (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfDim (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
+COMPPrfDim (node *arg_node, info *arg_info, node **check_reuse1, node **check_reuse2,
             node **get_dim, node **set_shape_icm)
 {
     ids *let_ids;
@@ -3352,7 +3405,7 @@ COMPPrfDim (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfShape( node *arg_node, node *arg_info,
+ * @fn  node *COMPPrfShape( node *arg_node, info *arg_info,
  *                          node **check_reuse1, node **check_reuse2,
  *                          node **get_dim, node **set_shape_icm)
  *
@@ -3366,7 +3419,7 @@ COMPPrfDim (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
  ******************************************************************************/
 
 static node *
-COMPPrfShape (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
+COMPPrfShape (node *arg_node, info *arg_info, node **check_reuse1, node **check_reuse2,
               node **get_dim, node **set_shape_icm)
 {
     node *arg;
@@ -3398,7 +3451,7 @@ COMPPrfShape (node *arg_node, node *arg_info, node **check_reuse1, node **check_
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfReshape( node *arg_node, node *arg_info,
+ * @fn  node *COMPPrfReshape( node *arg_node, info *arg_info,
  *                            node *rc_icms)
  *
  * @brief  Compiles N_prf node of type F_reshape.
@@ -3411,7 +3464,7 @@ COMPPrfShape (node *arg_node, node *arg_info, node **check_reuse1, node **check_
  ******************************************************************************/
 
 static node *
-COMPPrfReshape (node *arg_node, node *arg_info, node *rc_icms)
+COMPPrfReshape (node *arg_node, info *arg_info, node *rc_icms)
 {
     node *arg1, *arg2;
     ids *let_ids;
@@ -3560,7 +3613,7 @@ COMPPrfReshape (node *arg_node, node *arg_info, node *rc_icms)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfIdxSel( node *arg_node, node *arg_info,
+ * @fn  node *COMPPrfIdxSel( node *arg_node, info *arg_info,
  *                           node **check_reuse1, node **check_reuse2,
  *                           node **get_dim, node **set_shape_icm)
  *
@@ -3574,7 +3627,7 @@ COMPPrfReshape (node *arg_node, node *arg_info, node *rc_icms)
  ******************************************************************************/
 
 static node *
-COMPPrfIdxSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
+COMPPrfIdxSel (node *arg_node, info *arg_info, node **check_reuse1, node **check_reuse2,
                node **get_dim, node **set_shape_icm)
 {
     node *arg1, *arg2;
@@ -3622,7 +3675,7 @@ COMPPrfIdxSel (node *arg_node, node *arg_info, node **check_reuse1, node **check
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfIdxModarray( node *arg_node, node *arg_info,
+ * @fn  node *COMPPrfIdxModarray( node *arg_node, info *arg_info,
  *                                node **check_reuse1, node **check_reuse2,
  *                                node **get_dim, node **set_shape_icm)
  *
@@ -3636,7 +3689,7 @@ COMPPrfIdxSel (node *arg_node, node *arg_info, node **check_reuse1, node **check
  ******************************************************************************/
 
 static node *
-COMPPrfIdxModarray (node *arg_node, node *arg_info, node **check_reuse1,
+COMPPrfIdxModarray (node *arg_node, info *arg_info, node **check_reuse1,
                     node **check_reuse2, node **get_dim, node **set_shape_icm)
 {
     node *arg1, *arg2, *arg3;
@@ -3687,7 +3740,7 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info, node **check_reuse1,
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfSel( node *arg_node, node *arg_info,
+ * @fn  node *COMPPrfSel( node *arg_node, info *arg_info,
  *                        node **check_reuse1, node **check_reuse2,
  *                        node **get_dim, node **set_shape_icm)
  *
@@ -3701,7 +3754,7 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info, node **check_reuse1,
  ******************************************************************************/
 
 static node *
-COMPPrfSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
+COMPPrfSel (node *arg_node, info *arg_info, node **check_reuse1, node **check_reuse2,
             node **get_dim, node **set_shape_icm)
 {
     node *arg1, *arg2;
@@ -3775,7 +3828,7 @@ COMPPrfSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfModarray( node *arg_node, node *arg_info,
+ * @fn  node *COMPPrfModarray( node *arg_node, info *arg_info,
  *                             node **check_reuse1, node **check_reuse2,
  *                             node **get_dim, node **set_shape_icm)
  *
@@ -3789,7 +3842,7 @@ COMPPrfSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
  ******************************************************************************/
 
 static node *
-COMPPrfModarray (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
+COMPPrfModarray (node *arg_node, info *arg_info, node **check_reuse1, node **check_reuse2,
                  node **get_dim, node **set_shape_icm)
 {
     node *arg1, *arg2, *arg3;
@@ -3865,7 +3918,7 @@ COMPPrfModarray (node *arg_node, node *arg_info, node **check_reuse1, node **che
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfGenarray( node *arg_node, node *arg_info,
+ * @fn  node *COMPPrfGenarray( node *arg_node, info *arg_info,
  *                             node **check_reuse1, node **check_reuse2,
  *                             node **get_dim, node **set_shape_icm)
  *
@@ -3879,7 +3932,7 @@ COMPPrfModarray (node *arg_node, node *arg_info, node **check_reuse1, node **che
  ******************************************************************************/
 
 static node *
-COMPPrfGenarray (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
+COMPPrfGenarray (node *arg_node, info *arg_info, node **check_reuse1, node **check_reuse2,
                  node **get_dim, node **set_shape_icm)
 {
     node *arg1, *arg2;
@@ -3905,7 +3958,7 @@ COMPPrfGenarray (node *arg_node, node *arg_info, node **check_reuse1, node **che
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfTake( node *arg_node, node *arg_info,
+ * @fn  node *COMPPrfTake( node *arg_node, info *arg_info,
  *                         node **check_reuse1, node **check_reuse2,
  *                         node **get_dim, node **set_shape_icm)
  *
@@ -3919,7 +3972,7 @@ COMPPrfGenarray (node *arg_node, node *arg_info, node **check_reuse1, node **che
  ******************************************************************************/
 
 static node *
-COMPPrfTake (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
+COMPPrfTake (node *arg_node, info *arg_info, node **check_reuse1, node **check_reuse2,
              node **get_dim, node **set_shape_icm)
 {
     node *arg1, *arg2;
@@ -3955,7 +4008,7 @@ COMPPrfTake (node *arg_node, node *arg_info, node **check_reuse1, node **check_r
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfDrop( node *arg_node, node *arg_info,
+ * @fn  node *COMPPrfDrop( node *arg_node, info *arg_info,
  *                         node **check_reuse1, node **check_reuse2,
  *                         node **get_dim, node **set_shape_icm)
  *
@@ -3969,7 +4022,7 @@ COMPPrfTake (node *arg_node, node *arg_info, node **check_reuse1, node **check_r
  ******************************************************************************/
 
 static node *
-COMPPrfDrop (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
+COMPPrfDrop (node *arg_node, info *arg_info, node **check_reuse1, node **check_reuse2,
              node **get_dim, node **set_shape_icm)
 {
     node *arg1, *arg2;
@@ -4005,7 +4058,7 @@ COMPPrfDrop (node *arg_node, node *arg_info, node **check_reuse1, node **check_r
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfCat( node *arg_node, node *arg_info,
+ * @fn  node *COMPPrfCat( node *arg_node, info *arg_info,
  *                        node **check_reuse1, node **check_reuse2,
  *                        node **get_dim, node **set_shape_icm)
  *
@@ -4019,7 +4072,7 @@ COMPPrfDrop (node *arg_node, node *arg_info, node **check_reuse1, node **check_r
  ******************************************************************************/
 
 static node *
-COMPPrfCat (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
+COMPPrfCat (node *arg_node, info *arg_info, node **check_reuse1, node **check_reuse2,
             node **get_dim, node **set_shape_icm)
 {
     node *arg1, *arg2;
@@ -4063,7 +4116,7 @@ COMPPrfCat (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfConvertScalar( node *arg_node, node *arg_info,
+ * @fn  node *COMPPrfConvertScalar( node *arg_node, info *arg_info,
  *                                  node **check_reuse1, node **check_reuse2,
  *                                  node **get_dim, node **set_shape_icm)
  *
@@ -4073,7 +4126,7 @@ COMPPrfCat (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
  ******************************************************************************/
 
 static node *
-COMPPrfConvertScalar (node *arg_node, node *arg_info, node **check_reuse1,
+COMPPrfConvertScalar (node *arg_node, info *arg_info, node **check_reuse1,
                       node **check_reuse2, node **get_dim, node **set_shape_icm)
 {
     node *arg;
@@ -4104,7 +4157,7 @@ COMPPrfConvertScalar (node *arg_node, node *arg_info, node **check_reuse1,
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfConvertArray( node *arg_node, node *arg_info,
+ * @fn  node *COMPPrfConvertArray( node *arg_node, info *arg_info,
  *                                 node **check_reuse1, node **check_reuse2,
  *                                 node **get_dim, node **set_shape_icm)
  *
@@ -4113,7 +4166,7 @@ COMPPrfConvertScalar (node *arg_node, node *arg_info, node **check_reuse1,
  ******************************************************************************/
 
 static node *
-COMPPrfConvertArray (node *arg_node, node *arg_info, node **check_reuse1,
+COMPPrfConvertArray (node *arg_node, info *arg_info, node **check_reuse1,
                      node **check_reuse2, node **get_dim, node **set_shape_icm)
 {
     node *arg;
@@ -4148,7 +4201,7 @@ COMPPrfConvertArray (node *arg_node, node *arg_info, node **check_reuse1,
 /** <!--********************************************************************-->
  *
  * @fn  node *COMPPrfUniScalar( char *icm_name,
- *                              node *arg_node, node *arg_info,
+ *                              node *arg_node, info *arg_info,
  *                              node **check_reuse1, node **check_reuse2,
  *                              node **get_dim, node **set_shape_icm)
  *
@@ -4162,7 +4215,7 @@ COMPPrfConvertArray (node *arg_node, node *arg_info, node **check_reuse1,
  ******************************************************************************/
 
 static node *
-COMPPrfUniScalar (char *icm_name, node *arg_node, node *arg_info, node **check_reuse1,
+COMPPrfUniScalar (char *icm_name, node *arg_node, info *arg_info, node **check_reuse1,
                   node **check_reuse2, node **get_dim, node **set_shape_icm)
 {
     node *arg;
@@ -4199,7 +4252,7 @@ COMPPrfUniScalar (char *icm_name, node *arg_node, node *arg_info, node **check_r
 /** <!--********************************************************************-->
  *
  * @fn  node *COMPPrfBin( char *icm_name,
- *                        node *arg_node, node *arg_info,
+ *                        node *arg_node, info *arg_info,
  *                        node **check_reuse1, node **check_reuse2,
  *                        node **get_dim, node **set_shape_icm)
  *
@@ -4213,7 +4266,7 @@ COMPPrfUniScalar (char *icm_name, node *arg_node, node *arg_info, node **check_r
  ******************************************************************************/
 
 static node *
-COMPPrfBin (char *icm_name, node *arg_node, node *arg_info, node **check_reuse1,
+COMPPrfBin (char *icm_name, node *arg_node, info *arg_info, node **check_reuse1,
             node **check_reuse2, node **get_dim, node **set_shape_icm)
 {
     node *arg1, *arg2, *arg;
@@ -4286,14 +4339,14 @@ COMPPrfBin (char *icm_name, node *arg_node, node *arg_info, node **check_reuse1,
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfTypeError( node *arg_node, node *arg_info)
+ * @fn  node *COMPPrfTypeError( node *arg_node, info *arg_info)
  *
  * @brief  ...
  *
  ******************************************************************************/
 
 static node *
-COMPPrfTypeError (node *arg_node, node *arg_info)
+COMPPrfTypeError (node *arg_node, info *arg_info)
 {
     ids *let_ids;
     node *head, *tail;
@@ -4317,7 +4370,7 @@ COMPPrfTypeError (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrf( node *arg_node, node *arg_info)
+ * @fn  node *COMPPrf( node *arg_node, info *arg_info)
  *
  * @brief  Compilation of a N_prf node.
  *         The return value is a N_assign chain of ICMs.
@@ -4326,7 +4379,7 @@ COMPPrfTypeError (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPPrf (node *arg_node, node *arg_info)
+COMPPrf (node *arg_node, info *arg_info)
 {
     ids *let_ids;
     node *args, *arg;
@@ -4554,7 +4607,7 @@ COMPPrf (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPLoop( node *arg_node, node *arg_info)
+ * @fn  node *COMPLoop( node *arg_node, info *arg_info)
  *
  * @brief  I brushed the whole function and named the variables ingeniously,
  *   but I still do not fully unterstand the whole exercise. My opinion:
@@ -4572,7 +4625,7 @@ COMPPrf (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPLoop (node *arg_node, node *arg_info)
+COMPLoop (node *arg_node, info *arg_info)
 {
     node *ret_node, *first_node, *icm_node, *last_node;
     node *cond, *body;
@@ -4783,7 +4836,7 @@ COMPLoop (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPCond( node *arg_node, node *arg_info)
+ * @fn  node *COMPCond( node *arg_node, info *arg_info)
  *
  * @brief  Compiling a conditional, that should be easy, except for the fact
  *         that refcount corrections are needed in both branches.
@@ -4793,7 +4846,7 @@ COMPLoop (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPCond (node *arg_node, node *arg_info)
+COMPCond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("COMPCond");
 
@@ -4833,7 +4886,7 @@ COMPCond (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPIcm( node *arg_node, node *arg_info)
+ * @fn  node *COMPIcm( node *arg_node, info *arg_info)
  *
  * @brief  Insert reference-counting ICMs for some ICM arguments!
  *         If new ICMs are inserted, the return value is a N_assign chain of
@@ -4842,7 +4895,7 @@ COMPCond (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPIcm (node *arg_node, node *arg_info)
+COMPIcm (node *arg_node, info *arg_info)
 {
     node *args, *arg;
     char *name;
@@ -4940,14 +4993,14 @@ COMPIcm (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPCast( node *arg_node, node *arg_info)
+ * @fn  node *COMPCast( node *arg_node, info *arg_info)
  *
  * @brief  Compiles a N_cast node: The cast is simply removed.
  *
  ******************************************************************************/
 
 node *
-COMPCast (node *arg_node, node *arg_info)
+COMPCast (node *arg_node, info *arg_info)
 {
     node *tmp;
 
@@ -5293,14 +5346,14 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPWith( node *arg_node, node *arg_info)
+ * @fn  node *COMPWith( node *arg_node, info *arg_info)
  *
  * @brief  ...
  *
  ******************************************************************************/
 
 node *
-COMPWith (node *arg_node, node *arg_info)
+COMPWith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("COMPWith");
 
@@ -5318,7 +5371,7 @@ COMPWith (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPWith2( node *arg_node, node *arg_info)
+ * @fn  node *COMPWith2( node *arg_node, info *arg_info)
  *
  * @brief  Compilation of a N_with2 node.
  *   If this is a fold-with-loop, we append the vardecs of all special fold-funs
@@ -5333,7 +5386,7 @@ COMPWith (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPWith2 (node *arg_node, node *arg_info)
+COMPWith2 (node *arg_node, info *arg_info)
 {
     node *icm_args;
     node *old_wlnode;
@@ -5700,7 +5753,7 @@ COMPWith2 (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPWLsegx( node *arg_node, node *arg_info)
+ * @fn  node *COMPWLsegx( node *arg_node, info *arg_info)
  *
  * @brief  Compilation of a N_WLseg- or N_WLsegVar-node:
  *   Returns a N_assign-chain with ICMs and leaves 'arg_node' untouched!!
@@ -5713,7 +5766,7 @@ COMPWith2 (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPWLsegx (node *arg_node, node *arg_info)
+COMPWLsegx (node *arg_node, info *arg_info)
 {
     node *old_wlseg;
     node *ret_node;
@@ -5780,7 +5833,7 @@ COMPWLsegx (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPWLxblock( node *arg_node, node *arg_info)
+ * @fn  node *COMPWLxblock( node *arg_node, info *arg_info)
  *
  * @brief  Compilation of a N_WLblock- or N_WLublock-node:
  *     Returns a N_assign-chain with ICMs and leaves 'arg_node' untouched!!
@@ -5795,7 +5848,7 @@ COMPWLsegx (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPWLxblock (node *arg_node, node *arg_info)
+COMPWLxblock (node *arg_node, info *arg_info)
 {
     int level, dim;
     bool is_block, mt_active, offset_needed;
@@ -5929,7 +5982,7 @@ COMPWLxblock (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPWLstridex( node *arg_node, node *arg_info)
+ * @fn  node *COMPWLstridex( node *arg_node, info *arg_info)
  *
  * @brief  Compilation of a N_WLstride- or N_WLstrideVar-node:
  *     Returns a N_assign-chain with ICMs and leaves 'arg_node' untouched!!
@@ -5946,7 +5999,7 @@ COMPWLxblock (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPWLstridex (node *arg_node, node *arg_info)
+COMPWLstridex (node *arg_node, info *arg_info)
 {
     node *old_wlstride;
     int level, dim;
@@ -6090,7 +6143,7 @@ COMPWLstridex (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPWLgridx( node *arg_node, node *arg_info)
+ * @fn  node *COMPWLgridx( node *arg_node, info *arg_info)
  *
  * @brief  Compilation of a N_WLgrid- or N_WLgridVar-node:
  *     Returns a N_assign-chain with ICMs and leaves 'arg_node' untouched!!
@@ -6107,7 +6160,7 @@ COMPWLstridex (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-COMPWLgridx (node *arg_node, node *arg_info)
+COMPWLgridx (node *arg_node, info *arg_info)
 {
     int dim;
     bool mt_active, offset_needed, is_fitted;
@@ -6396,14 +6449,14 @@ COMPWLgridx (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPWLcode( node *arg_node, node *arg_info)
+ * @fn  node *COMPWLcode( node *arg_node, info *arg_info)
  *
  * @brief  Compiles a N_Ncode node.
  *
  ******************************************************************************/
 
 node *
-COMPWLcode (node *arg_node, node *arg_info)
+COMPWLcode (node *arg_node, info *arg_info)
 {
     node *icm_assigns;
 
@@ -6452,14 +6505,14 @@ COMPWLcode (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPSpmd( node *arg_node, node *arg_info)
+ * @fn  node *COMPSpmd( node *arg_node, info *arg_info)
  *
  * @brief  Compiles a N_spmd node.
  *
  ******************************************************************************/
 
 node *
-COMPSpmd (node *arg_node, node *arg_info)
+COMPSpmd (node *arg_node, info *arg_info)
 {
     node *fundef, *icm_args, *assigns;
     int num_args;
@@ -6562,7 +6615,7 @@ GetFoldTypeTag (ids *with_ids)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPSync( node *arg_node, node *arg_info)
+ * @fn  node *COMPSync( node *arg_node, info *arg_info)
  *
  * @brief  Compiles a N_sync node:
  *
@@ -6578,7 +6631,7 @@ GetFoldTypeTag (ids *with_ids)
  ******************************************************************************/
 
 node *
-COMPSync (node *arg_node, node *arg_info)
+COMPSync (node *arg_node, info *arg_info)
 {
     node *icm_args, *icm_args3, *vardec, *with, *block, *instr, *assign, *last_assign,
       *prolog_icms, *epilog_icms, *move_icm;
@@ -7187,14 +7240,14 @@ MakeAllocs (DFMmask_t mask)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPMt( node *arg_node, node *arg_info)
+ * @fn  node *COMPMt( node *arg_node, info *arg_info)
  *
  * @brief  Compiles a N_mt-node.
  *
  ******************************************************************************/
 
 node *
-COMPMt (node *arg_node, node *arg_info)
+COMPMt (node *arg_node, info *arg_info)
 {
     node *result;
     node *allocate;
@@ -7259,14 +7312,14 @@ COMPMt (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPSt( node *arg_node, node *arg_info)
+ * @fn  node *COMPSt( node *arg_node, info *arg_info)
  *
  * @brief  Compiles a N_st-node.
  *
  ******************************************************************************/
 
 node *
-COMPSt (node *arg_node, node *arg_info)
+COMPSt (node *arg_node, info *arg_info)
 {
     node *result, *fundef, *barrier, *code, *allocate;
     node *broadcast, *activate, *suspend, *receive;
@@ -7323,14 +7376,14 @@ COMPSt (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPMTsignal( node *arg_node, node *arg_info)
+ * @fn  node *COMPMTsignal( node *arg_node, info *arg_info)
  *
  * @brief  ...
  *
  ******************************************************************************/
 
 node *
-COMPMTsignal (node *arg_node, node *arg_info)
+COMPMTsignal (node *arg_node, info *arg_info)
 {
     node *assigns;
 
@@ -7354,14 +7407,14 @@ COMPMTsignal (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPMTalloc( node *arg_node, node *arg_info)
+ * @fn  node *COMPMTalloc( node *arg_node, info *arg_info)
  *
  * @brief  ...
  *
  ******************************************************************************/
 
 node *
-COMPMTalloc (node *arg_node, node *arg_info)
+COMPMTalloc (node *arg_node, info *arg_info)
 {
     node *fundef;
     node *assigns;
@@ -7417,14 +7470,14 @@ COMPMTalloc (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPMTsync( node *arg_node, node *arg_info)
+ * @fn  node *COMPMTsync( node *arg_node, info *arg_info)
  *
  * @brief  ...
  *
  ******************************************************************************/
 
 node *
-COMPMTsync (node *arg_node, node *arg_info)
+COMPMTsync (node *arg_node, info *arg_info)
 {
     node *result;
     node *fundef;

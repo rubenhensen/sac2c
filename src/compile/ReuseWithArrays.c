@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/07/17 17:07:16  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.8  2004/06/09 09:51:51  ktr
  * adjusted treatment of f_fill to new paramter constellation
  *
@@ -102,6 +106,8 @@
  *
  ******************************************************************************/
 
+#define NEW_INFO
+
 #include "dbug.h"
 #include "types.h"
 #include "free.h"
@@ -112,13 +118,62 @@
 #include "DataFlowMaskUtils.h"
 #include "index.h"
 
-#define INFO_REUSE_WL_IDS(n) (n->info.ids)
-#define INFO_REUSE_FUNDEF(n) (n->node[0])
-#define INFO_REUSE_IDX(n) ((ids *)(n->node[1]))
-#define INFO_REUSE_DEC_RC_IDS(n) ((ids *)(n->node[2]))
-#define INFO_REUSE_MASK(n) (n->dfmask[0])
-#define INFO_REUSE_NEGMASK(n) (n->dfmask[1])
-#define INFO_REUSE_NODEC(n) (n->flag)
+/*
+ * INFO structure
+ */
+struct INFO {
+    ids *wl_ids;
+    node *fundef;
+    ids *idx;
+    ids *dec_rc_ids;
+    void *mask;
+    void *negmask;
+    int nodec;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_REUSE_WL_IDS(n) (n->wl_ids)
+#define INFO_REUSE_FUNDEF(n) (n->fundef)
+#define INFO_REUSE_IDX(n) (n->idx)
+#define INFO_REUSE_DEC_RC_IDS(n) (n->dec_rc_ids)
+#define INFO_REUSE_MASK(n) (n->mask)
+#define INFO_REUSE_NEGMASK(n) (n->negmask)
+#define INFO_REUSE_NODEC(n) (n->nodec)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_REUSE_WL_IDS (result) = NULL;
+    INFO_REUSE_FUNDEF (result) = NULL;
+    INFO_REUSE_IDX (result) = NULL;
+    INFO_REUSE_DEC_RC_IDS (result) = NULL;
+    INFO_REUSE_NODEC (result) = 0;
+    INFO_REUSE_MASK (result) = NULL;
+    INFO_REUSE_NEGMASK (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /******************************************************************************
  *
@@ -187,7 +242,7 @@ IsFound (char *varname, ids *ids_chain)
 /******************************************************************************
  *
  * function:
- *   node *ReuseFundef( node *arg_node, node *arg_info)
+ *   node *ReuseFundef( node *arg_node, info *arg_info)
  *
  * description:
  *   stores fundef node in 'INFO_REUSE_FUNDEF( arg_info)'.
@@ -195,7 +250,7 @@ IsFound (char *varname, ids *ids_chain)
  ******************************************************************************/
 
 node *
-ReuseFundef (node *arg_node, node *arg_info)
+ReuseFundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ReuseFundef");
 
@@ -214,7 +269,7 @@ ReuseFundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *ReuseNwith2( node *arg_node, node *arg_info)
+ *   node *ReuseNwith2( node *arg_node, info *arg_info)
  *
  * description:
  *   generates a new DFM for reuse-arrays and stores it in
@@ -236,7 +291,7 @@ ReuseFundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-ReuseNwith2 (node *arg_node, node *arg_info)
+ReuseNwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("REUSENwith2");
 
@@ -285,7 +340,7 @@ ReuseNwith2 (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *ReuseNwithop( node *arg_node, node *arg_info)
+ *   node *ReuseNwithop( node *arg_node, info *arg_info)
  *
  * description:
  *   stores 'NWITHOP_ARRAY( arg_node)' in the reuse-mask
@@ -294,7 +349,7 @@ ReuseNwith2 (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-ReuseNwithop (node *arg_node, node *arg_info)
+ReuseNwithop (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ReuseNwithop");
 
@@ -339,13 +394,13 @@ ReuseNwithop (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *ReuseSel( node *arg_node, node *arg_info)
+ *   node *ReuseSel( node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 bool
-ReuseSel (node *arg1, node *arg2, node *arg_info)
+ReuseSel (node *arg1, node *arg2, info *arg_info)
 {
     if ((NODE_TYPE (arg1) == N_id)
         && (!strcmp (ID_NAME (arg1), IDS_NAME (INFO_REUSE_IDX (arg_info))))
@@ -372,13 +427,13 @@ ReuseSel (node *arg1, node *arg2, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *ReuseIdxSel( node *arg_node, node *arg_info)
+ *   node *ReuseIdxSel( node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 bool
-ReuseIdxSel (node *arg1, node *arg2, node *arg_info)
+ReuseIdxSel (node *arg1, node *arg2, info *arg_info)
 {
     bool traverse;
     char *idx_sel_name;
@@ -412,7 +467,7 @@ ReuseIdxSel (node *arg1, node *arg2, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *ReuseLet( node *arg_node, node *arg_info)
+ *   node *ReuseLet( node *arg_node, info *arg_info)
  *
  * description:
  *   Removes all left hand side ids from the reuse-mask (and stores them into
@@ -429,7 +484,7 @@ ReuseIdxSel (node *arg1, node *arg2, node *arg_info)
  ******************************************************************************/
 
 node *
-ReuseLet (node *arg_node, node *arg_info)
+ReuseLet (node *arg_node, info *arg_info)
 {
     node *arg1, *arg2, *tmpnode;
     ids *tmp;
@@ -514,7 +569,7 @@ ReuseLet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *ReuseId( node *arg_node, node *arg_info)
+ *   node *ReuseId( node *arg_node, info *arg_info)
  *
  * description:
  *   Removes 'arg_node' from the reuse-mask ('INFO_REUSE_MASK( arg_info)')
@@ -524,7 +579,7 @@ ReuseLet (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-ReuseId (node *arg_node, node *arg_info)
+ReuseId (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ReuseId");
 
@@ -547,7 +602,7 @@ ReuseId (node *arg_node, node *arg_info)
 node *
 GetReuseArrays (node *syntax_tree, node *fundef, ids *wl_ids)
 {
-    node *info;
+    info *info;
     funtab *old_tab;
 
     DBUG_ENTER ("GetReuseArrays");
@@ -562,7 +617,7 @@ GetReuseArrays (node *syntax_tree, node *fundef, ids *wl_ids)
     syntax_tree = Trav (syntax_tree, info);
     act_tab = old_tab;
 
-    info = FreeTree (info);
+    info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -582,7 +637,7 @@ GetReuseArrays (node *syntax_tree, node *fundef, ids *wl_ids)
 node *
 GetReuseCandidates (node *syntax_tree, node *fundef, ids *wl_ids)
 {
-    node *info;
+    info *info;
     funtab *old_tab;
 
     DBUG_ENTER ("GetReuseArrays");
@@ -599,7 +654,7 @@ GetReuseCandidates (node *syntax_tree, node *fundef, ids *wl_ids)
     syntax_tree = Trav (syntax_tree, info);
     act_tab = old_tab;
 
-    info = FreeTree (info);
+    info = FreeInfo (info);
 
     DBUG_RETURN (Ids2Exprs (DFM2LetIds (NWITH2_REUSE (syntax_tree), NULL)));
 }

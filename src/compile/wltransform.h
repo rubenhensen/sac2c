@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/07/17 17:07:16  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.10  2003/04/20 18:58:25  dkr
  * WLTRAassign added
  *
@@ -81,10 +85,10 @@
 
 extern node *WlTransform (node *syntax_tree);
 
-extern node *WLTRAassign (node *arg_node, node *arg_info);
-extern node *WLTRAlet (node *arg_node, node *arg_info);
-extern node *WLTRAwith (node *arg_node, node *arg_info);
-extern node *WLTRAcode (node *arg_node, node *arg_info);
+extern node *WLTRAassign (node *arg_node, info *arg_info);
+extern node *WLTRAlet (node *arg_node, info *arg_info);
+extern node *WLTRAwith (node *arg_node, info *arg_info);
+extern node *WLTRAcode (node *arg_node, info *arg_info);
 
 extern node *InsertWLnodes (node *nodes, node *insert_nodes);
 extern int GridOffset (int new_bound1, int bound1, int step, int grid_b2);

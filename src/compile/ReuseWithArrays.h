@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/07/17 17:07:16  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.2  2004/06/08 14:27:46  ktr
  * New Entryfunction GetReuseCandidates yields an N_exprs chain of
  * identifiers which could be reused.
@@ -27,10 +31,10 @@
 extern node *GetReuseArrays (node *syntax_tree, node *fundef, ids *wl_ids);
 extern node *GetReuseCandidates (node *syntax_tree, node *fundef, ids *wl_ids);
 
-extern node *ReuseFundef (node *arg_node, node *arg_info);
-extern node *ReuseNwith2 (node *arg_node, node *arg_info);
-extern node *ReuseNwithop (node *arg_node, node *arg_info);
-extern node *ReuseLet (node *arg_node, node *arg_info);
-extern node *ReuseId (node *arg_node, node *arg_info);
+extern node *ReuseFundef (node *arg_node, info *arg_info);
+extern node *ReuseNwith2 (node *arg_node, info *arg_info);
+extern node *ReuseNwithop (node *arg_node, info *arg_info);
+extern node *ReuseLet (node *arg_node, info *arg_info);
+extern node *ReuseId (node *arg_node, info *arg_info);
 
 #endif /* _sac_ReuseWithArrays_h */

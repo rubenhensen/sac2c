@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.91  2004/07/17 17:07:16  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.90  2004/07/15 10:25:49  khf
  * bug #38 already fixed by dkrHH
  * some code brushing done.
@@ -300,6 +304,8 @@
  *
  ******************************************************************************/
 
+#define NEW_INFO
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -316,14 +322,8 @@
 #include "wltransform.h"
 
 /*
- * access macros for 'arg_info'
+ * INFO structure
  */
-#define INFO_WL_LHS_TYPE(n) (n->info.types)
-#define INFO_WL_PREASSIGNS(n) (n->node[0])
-#define INFO_WL_ASSIGN(n) (n->node[1])
-/* for EmptyParts2StridesOrExpr() called with a multioperator WL */
-#define INFO_WL_EXTR_OPS(n) ((extr_ops_t *)(n->node[2]))
-
 /* for EmptyParts2StridesOrExpr() called with a multioperator WL */
 typedef struct extr_ops {
     node *withop_ext;
@@ -331,6 +331,51 @@ typedef struct extr_ops {
     types *res_types_ext;
     ids *ids_ext;
 } extr_ops_t;
+struct INFO {
+    types *types;
+    node *preassigns;
+    node *assign;
+    extr_ops_t *extr_ops;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_WL_LHS_TYPE(n) (n->types)
+#define INFO_WL_PREASSIGNS(n) (n->preassigns)
+#define INFO_WL_ASSIGN(n) (n->assign)
+/* for EmptyParts2StridesOrExpr() called with a multioperator WL */
+#define INFO_WL_EXTR_OPS(n) (n->extr_ops)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_WL_LHS_TYPE (result) = NULL;
+    INFO_WL_PREASSIGNS (result) = NULL;
+    INFO_WL_ASSIGN (result) = NULL;
+    INFO_WL_EXTR_OPS (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /*****************************************************************************
 
@@ -3016,7 +3061,7 @@ Parts2Strides (node *parts, int iter_dims, shpseg *iter_shp)
 /******************************************************************************
  *
  * Function:
- *   node *ExtractOtherOperators( node *wl, node *arg_info, types *res_types)
+ *   node *ExtractOtherOperators( node *wl, info *arg_info, types *res_types)
  *
  * Description:
  *   Removes all WL-operators except genarray-operators, it's corresponding
@@ -3024,8 +3069,8 @@ Parts2Strides (node *parts, int iter_dims, shpseg *iter_shp)
  *   the corresponding types from 'res_types' and returns them.
  *
  ******************************************************************************/
-static node *
-ExtractOtherOperators (node *wl, node *arg_info, types *res_types)
+static info *
+ExtractOtherOperators (node *wl, info *arg_info, types *res_types)
 {
     node *withop, *ncodes;
     ids *_ids;
@@ -3188,7 +3233,7 @@ ExtractOtherOperators (node *wl, node *arg_info, types *res_types)
 /******************************************************************************
  *
  * Function:
- *   node *EmptyParts2StridesOrExpr( node **wl, node *arg_info,
+ *   node *EmptyParts2StridesOrExpr( node **wl, info *arg_info,
  *                                   int iter_dims, shpseg *iter_shp,
  *                                   types *res_types)
  *
@@ -3203,7 +3248,7 @@ ExtractOtherOperators (node *wl, node *arg_info, types *res_types)
  ******************************************************************************/
 
 static node *
-EmptyParts2StridesOrExpr (node **wl, node *arg_info, int iter_dims, shpseg *iter_shp,
+EmptyParts2StridesOrExpr (node **wl, info *arg_info, int iter_dims, shpseg *iter_shp,
                           types *res_types)
 {
     node *strides = NULL;
@@ -7661,7 +7706,7 @@ ConvertWith (node *wl, int iter_dims)
 /******************************************************************************
  *
  * Function:
- *   node *EmptyWl2Expr( node *wl, node *arg_info)
+ *   node *EmptyWl2Expr( node *wl, info *arg_info)
  *
  * Description:
  *   This function handles the case in which the shape of the WL is empty.
@@ -7675,7 +7720,7 @@ ConvertWith (node *wl, int iter_dims)
  ******************************************************************************/
 
 static node *
-EmptyWl2Expr (node *wl, node *arg_info)
+EmptyWl2Expr (node *wl, info *arg_info)
 {
     node *new_node;
 
@@ -7793,7 +7838,7 @@ CheckWith (node *arg_node, types *res_types)
 /******************************************************************************
  *
  * Function:
- *   node *WLTRAwith( node *arg_node, node *arg_info)
+ *   node *WLTRAwith( node *arg_node, info *arg_info)
  *
  * Description:
  *   transforms with-loop (N_Nwith-node) into new representation (N_Nwith2).
@@ -7805,7 +7850,7 @@ CheckWith (node *arg_node, types *res_types)
  ******************************************************************************/
 
 node *
-WLTRAwith (node *arg_node, node *arg_info)
+WLTRAwith (node *arg_node, info *arg_info)
 {
     types *idx_type;
     int idx_sdim;
@@ -7980,7 +8025,7 @@ WLTRAwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *WLTRAcode( node *arg_node, node *arg_info)
+ *   node *WLTRAcode( node *arg_node, info *arg_info)
  *
  * Description:
  *   checks NCODE_USED
@@ -7988,7 +8033,7 @@ WLTRAwith (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-WLTRAcode (node *arg_node, node *arg_info)
+WLTRAcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLTRAcode");
 
@@ -8012,7 +8057,7 @@ WLTRAcode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *WLTRAlet( node *arg_node, node *arg_info)
+ *   node *WLTRAlet( node *arg_node, info *arg_info)
  *
  * Description:
  *   INFO_WL_LHS_TYPE is set to a list of the types of the let-ids.
@@ -8020,7 +8065,7 @@ WLTRAcode (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-WLTRAlet (node *arg_node, node *arg_info)
+WLTRAlet (node *arg_node, info *arg_info)
 {
     ids *tmp_ids;
     types *tmp, *ltype = NULL;
@@ -8055,7 +8100,7 @@ WLTRAlet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *WLTRAassign( node *arg_node, node *arg_info)
+ *   node *WLTRAassign( node *arg_node, info *arg_info)
  *
  * Description:
  *   Assignments found in INFO_WL_PREASSIGNS are inserted into the assignment
@@ -8064,7 +8109,7 @@ WLTRAlet (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-WLTRAassign (node *arg_node, node *arg_info)
+WLTRAassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLTRAassign");
 
@@ -8096,7 +8141,7 @@ WLTRAassign (node *arg_node, node *arg_info)
 node *
 WlTransform (node *syntax_tree)
 {
-    node *info;
+    info *info;
 
     DBUG_ENTER ("WlTransform");
 
@@ -8105,7 +8150,7 @@ WlTransform (node *syntax_tree)
     act_tab = wltrans_tab;
     syntax_tree = Trav (syntax_tree, info);
 
-    info = FreeTree (info);
+    info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2004/07/17 17:07:16  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.76  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -223,6 +227,8 @@
  *
  ******************************************************************************/
 
+#define NEW_INFO
+
 #include <string.h>
 
 #include "dbug.h"
@@ -246,16 +252,64 @@
 #include "precompile.h"
 
 /*
- * access macros for 'arg_info'
+ * INFO structure
  */
-#define INFO_PREC_FUNDEF(n) (n->node[0])
-#define INFO_PREC1_OBJINITFUNDEF(n) (n->node[1])
-#define INFO_PREC1_MODUL(n) (n->node[2])
-#define INFO_PREC2_PREASSIGNS(n) (n->node[1])
-#define INFO_PREC2_POSTASSIGNS(n) (n->node[2])
-#define INFO_PREC3_LET(n) (n->node[1])
-#define INFO_PREC3_LASTASSIGN(n) (n->node[2])
-#define INFO_PREC3_CEXPR(n) (n->node[3])
+struct INFO {
+    node *fundef;
+    node *objinitfundef;
+    node *modul;
+    node *preassigns;
+    node *postassigns;
+    node *let;
+    node *lastassign;
+    node *cexpr;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_PREC_FUNDEF(n) (n->fundef)
+#define INFO_PREC1_OBJINITFUNDEF(n) (n->objinitfundef)
+#define INFO_PREC1_MODUL(n) (n->modul)
+#define INFO_PREC2_PREASSIGNS(n) (n->preassigns)
+#define INFO_PREC2_POSTASSIGNS(n) (n->postassigns)
+#define INFO_PREC3_LET(n) (n->let)
+#define INFO_PREC3_LASTASSIGN(n) (n->lastassign)
+#define INFO_PREC3_CEXPR(n) (n->cexpr)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_PREC_FUNDEF (result) = NULL;
+    INFO_PREC1_OBJINITFUNDEF (result) = NULL;
+    INFO_PREC1_MODUL (result) = NULL;
+    INFO_PREC2_PREASSIGNS (result) = NULL;
+    INFO_PREC2_POSTASSIGNS (result) = NULL;
+    INFO_PREC3_LET (result) = NULL;
+    INFO_PREC3_LASTASSIGN (result) = NULL;
+    INFO_PREC3_CEXPR (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 #define FUNDEF_NO_DESC(n, idx)                                                           \
     ((FUNDEF_STATUS (n) == ST_Cfun)                                                      \
@@ -466,7 +520,7 @@ RemoveArtificialIds (ids *arg, node *rhs)
 /******************************************************************************
  *
  * function:
- *   node *CreateObjInitFundef( node *module, node *arg_info)
+ *   node *CreateObjInitFundef( node *module, info *arg_info)
  *
  * description:
  *   builds up new fundef with empty block, that will contain all init calls
@@ -484,7 +538,7 @@ RemoveArtificialIds (ids *arg, node *rhs)
  ******************************************************************************/
 
 static node *
-CreateObjInitFundef (node *module, node *arg_info)
+CreateObjInitFundef (node *module, info *arg_info)
 {
     node *fundef;
     node *assign;
@@ -555,7 +609,7 @@ InsertObjInit (node *block, node *objdef)
 /******************************************************************************
  *
  * function:
- *   node *PREC1modul( node *arg_node, node *arg_info)
+ *   node *PREC1modul( node *arg_node, info *arg_info)
  *
  * description:
  *   Creates fundef for object-initialization code.
@@ -563,7 +617,7 @@ InsertObjInit (node *block, node *objdef)
  ******************************************************************************/
 
 node *
-PREC1modul (node *arg_node, node *arg_info)
+PREC1modul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC1modul");
 
@@ -591,7 +645,7 @@ PREC1modul (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC1objdef( node *arg_node, node *arg_info)
+ *   node *PREC1objdef( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -599,7 +653,7 @@ PREC1modul (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC1objdef (node *arg_node, node *arg_info)
+PREC1objdef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC1objdef");
 
@@ -617,7 +671,7 @@ PREC1objdef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC1fundef(node *arg_node, node *arg_info)
+ *   node *PREC1fundef(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -625,7 +679,7 @@ PREC1objdef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC1fundef (node *arg_node, node *arg_info)
+PREC1fundef (node *arg_node, info *arg_info)
 {
     types *ret_types;
     char *keep_name, *keep_mod;
@@ -727,7 +781,7 @@ PREC1fundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC1arg( node *arg_node, node *arg_info)
+ *   node *PREC1arg( node *arg_node, info *arg_info)
  *
  * description:
  *   An artificial argument is removed, the attribs are switched:
@@ -737,7 +791,7 @@ PREC1fundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC1arg (node *arg_node, node *arg_info)
+PREC1arg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC1arg");
 
@@ -767,7 +821,7 @@ PREC1arg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC1vardec( node *arg_node, node *arg_info)
+ *   node *PREC1vardec( node *arg_node, info *arg_info)
  *
  * Description:
  *   Removes artificial variable declarations.
@@ -775,7 +829,7 @@ PREC1arg (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC1vardec (node *arg_node, node *arg_info)
+PREC1vardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC1vardec");
 
@@ -797,7 +851,7 @@ PREC1vardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC1assign( node *arg_node, node *arg_info)
+ *   node *PREC1assign( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -805,7 +859,7 @@ PREC1vardec (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC1assign (node *arg_node, node *arg_info)
+PREC1assign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC1assign");
 
@@ -828,7 +882,7 @@ PREC1assign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC1let( node *arg_node, node *arg_info)
+ *   node *PREC1let( node *arg_node, info *arg_info)
  *
  * description:
  *   Removes all artificial identifiers on the left hand side of a let.
@@ -836,7 +890,7 @@ PREC1assign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC1let (node *arg_node, node *arg_info)
+PREC1let (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC1let");
 
@@ -854,7 +908,7 @@ PREC1let (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC1icm( node *arg_node, node *arg_info)
+ *   node *PREC1icm( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -862,7 +916,7 @@ PREC1let (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC1icm (node *arg_node, node *arg_info)
+PREC1icm (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC1icm");
 
@@ -974,7 +1028,7 @@ PREC1exprs_return (node *ret_exprs, node *ret_node)
 /******************************************************************************
  *
  * Function:
- *   node *PREC1ap( node *arg_node, node *arg_info)
+ *   node *PREC1ap( node *arg_node, info *arg_info)
  *
  * Description:
  *   Traverses the current arguments using function PREC1exprs_ap that is given
@@ -983,7 +1037,7 @@ PREC1exprs_return (node *ret_exprs, node *ret_node)
  ******************************************************************************/
 
 node *
-PREC1ap (node *arg_node, node *arg_info)
+PREC1ap (node *arg_node, info *arg_info)
 {
     node *arg;
     node *ret_node;
@@ -1037,7 +1091,7 @@ PREC1ap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC1return( node *arg_node, node *arg_info)
+ *   node *PREC1return( node *arg_node, info *arg_info)
  *
  * Description:
  *   Traverses the return values using function PREC1exprs_return.
@@ -1045,7 +1099,7 @@ PREC1ap (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC1return (node *arg_node, node *arg_info)
+PREC1return (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC1return");
 
@@ -1059,7 +1113,7 @@ PREC1return (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC1id( node *arg_node, node *arg_info)
+ *   node *PREC1id( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -1067,7 +1121,7 @@ PREC1return (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC1id (node *arg_node, node *arg_info)
+PREC1id (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC1id");
 
@@ -1140,7 +1194,7 @@ CompressArgtab (argtab_t *argtab)
 /******************************************************************************
  *
  * function:
- *   node *PREC2modul( node *arg_node, node *arg_info)
+ *   node *PREC2modul( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -1148,7 +1202,7 @@ CompressArgtab (argtab_t *argtab)
  ******************************************************************************/
 
 node *
-PREC2modul (node *arg_node, node *arg_info)
+PREC2modul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC2modul");
 
@@ -1380,7 +1434,7 @@ InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2fundef( node *arg_node, node *arg_info)
+ *   node *PREC2fundef( node *arg_node, info *arg_info)
  *
  * Description:
  *   Builds FUNDEF_ARGTAB.
@@ -1388,7 +1442,7 @@ InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
  ******************************************************************************/
 
 node *
-PREC2fundef (node *arg_node, node *arg_info)
+PREC2fundef (node *arg_node, info *arg_info)
 {
     types *rettypes;
     node *args;
@@ -1456,7 +1510,7 @@ PREC2fundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2assign( node *arg_node, node *arg_info)
+ *   node *PREC2assign( node *arg_node, info *arg_info)
  *
  * Description:
  *   Inserts the assignments found in INFO_PREC2_PRE/POSTASSIGNS into the AST.
@@ -1464,7 +1518,7 @@ PREC2fundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2assign (node *arg_node, node *arg_info)
+PREC2assign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC2assign");
 
@@ -1490,7 +1544,7 @@ PREC2assign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *MakeMergeAssigns( argtab_t *argtab, node *arg_info)
+ *   node *MakeMergeAssigns( argtab_t *argtab, info *arg_info)
  *
  * Description:
  *   Builds merging assignments for inout-arguments if needed and stores them
@@ -1498,8 +1552,8 @@ PREC2assign (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
-static node *
-MakeMergeAssigns (argtab_t *argtab, node *arg_info)
+static info *
+MakeMergeAssigns (argtab_t *argtab, info *arg_info)
 {
     node *expr;
     int i;
@@ -1592,7 +1646,7 @@ MakeMergeAssigns (argtab_t *argtab, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2let( node *arg_node, node *arg_info)
+ *   node *PREC2let( node *arg_node, info *arg_info)
  *
  * Description:
  *   Builds AP_ARGTAB and generates merging assignments for inout-arguments
@@ -1601,7 +1655,7 @@ MakeMergeAssigns (argtab_t *argtab, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2let (node *arg_node, node *arg_info)
+PREC2let (node *arg_node, info *arg_info)
 {
     node *ap, *fundef;
     argtab_t *ap_argtab, *argtab;
@@ -1728,7 +1782,7 @@ PREC2let (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2apORprf( node *arg_node, node *arg_info)
+ *   node *PREC2apORprf( node *arg_node, info *arg_info)
  *
  * Description:
  *   Lifts scalars from all N_ap and some N_prf applications.
@@ -1736,7 +1790,7 @@ PREC2let (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC2apORprf (node *arg_node, node *arg_info)
+PREC2apORprf (node *arg_node, info *arg_info)
 {
     prf *prf;
     node *args, *arg;
@@ -1869,7 +1923,7 @@ AdjustFoldFundef (node *fundef, ids *acc, node *cexpr)
 /******************************************************************************
  *
  * Function:
- *   node *PREC3fundef( node *arg_node, node *arg_info)
+ *   node *PREC3fundef( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -1877,7 +1931,7 @@ AdjustFoldFundef (node *fundef, ids *acc, node *cexpr)
  ******************************************************************************/
 
 node *
-PREC3fundef (node *arg_node, node *arg_info)
+PREC3fundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC3fundef");
 
@@ -1901,7 +1955,7 @@ PREC3fundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC3block( node *arg_node, node *arg_info)
+ *   node *PREC3block( node *arg_node, info *arg_info)
  *
  * Description:
  *   Saves and restores INFO_PREC3_LASTASSIGN.
@@ -1909,7 +1963,7 @@ PREC3fundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC3block (node *arg_node, node *arg_info)
+PREC3block (node *arg_node, info *arg_info)
 {
     node *old_lastassign;
 
@@ -1933,7 +1987,7 @@ PREC3block (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC3assign( node *arg_node, node *arg_info)
+ *   node *PREC3assign( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -1941,7 +1995,7 @@ PREC3block (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC3assign (node *arg_node, node *arg_info)
+PREC3assign (node *arg_node, info *arg_info)
 {
     node *return_node;
 
@@ -1968,7 +2022,7 @@ PREC3assign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC3let( node *arg_node, node *arg_info)
+ *   node *PREC3let( node *arg_node, info *arg_info)
  *
  * description:
  *   For each id from the LHS:
@@ -1984,7 +2038,7 @@ PREC3assign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC3let (node *arg_node, node *arg_info)
+PREC3let (node *arg_node, info *arg_info)
 {
     node *old_let;
     node *let_expr;
@@ -2079,7 +2133,7 @@ PREC3let (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC3with( node *arg_node, node *arg_info)
+ *   node *PREC3with( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -2087,7 +2141,7 @@ PREC3let (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC3with (node *arg_node, node *arg_info)
+PREC3with (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC3with");
 
@@ -2111,7 +2165,7 @@ PREC3with (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC3with2( node *arg_node, node *arg_info)
+ *   node *PREC3with2( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -2119,7 +2173,7 @@ PREC3with (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC3with2 (node *arg_node, node *arg_info)
+PREC3with2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC3with2");
 
@@ -2144,7 +2198,7 @@ PREC3with2 (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC3withop( node *arg_node, node *arg_info)
+ *   node *PREC3withop( node *arg_node, info *arg_info)
  *
  * description:
  *   New, unique and adjusted pseudo fold-funs are created.
@@ -2155,7 +2209,7 @@ PREC3with2 (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC3withop (node *arg_node, node *arg_info)
+PREC3withop (node *arg_node, info *arg_info)
 {
     ids *let_ids;
     node *let_expr;
@@ -2213,7 +2267,7 @@ PREC3withop (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC3code( node *arg_node, node *arg_info)
+ *   node *PREC3code( node *arg_node, info *arg_info)
  *
  * description:
  *   Checks whether all NCODE_CEXPR nodes of fold-WLs have identical names.
@@ -2224,7 +2278,7 @@ PREC3withop (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC3code (node *arg_node, node *arg_info)
+PREC3code (node *arg_node, info *arg_info)
 {
     node *let_expr;
 
@@ -2682,7 +2736,7 @@ RenameIds (ids *arg)
 /******************************************************************************
  *
  * function:
- *   node *PREC4modul( node *arg_node, node *arg_info)
+ *   node *PREC4modul( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -2690,7 +2744,7 @@ RenameIds (ids *arg)
  ******************************************************************************/
 
 node *
-PREC4modul (node *arg_node, node *arg_info)
+PREC4modul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC4modul");
 
@@ -2716,7 +2770,7 @@ PREC4modul (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC4typedef( node *arg_node, node *arg_info)
+ *   node *PREC4typedef( node *arg_node, info *arg_info)
  *
  * Description:
  *   Renames types. All types defined in SAC get the prefix "SAC_" to avoid
@@ -2725,7 +2779,7 @@ PREC4modul (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4typedef (node *arg_node, node *arg_info)
+PREC4typedef (node *arg_node, info *arg_info)
 {
     char *tmp;
 
@@ -2784,7 +2838,7 @@ PREC4typedef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC4objdef( node *arg_node, node *arg_info)
+ *   node *PREC4objdef( node *arg_node, info *arg_info)
  *
  * Description:
  *   Renames global objects.
@@ -2795,7 +2849,7 @@ PREC4typedef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4objdef (node *arg_node, node *arg_info)
+PREC4objdef (node *arg_node, info *arg_info)
 {
     char *new_name;
 
@@ -2854,7 +2908,7 @@ PREC4objdef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC4fundef( node *arg_node, node *arg_info)
+ *   node *PREC4fundef( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -2862,7 +2916,7 @@ PREC4objdef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4fundef (node *arg_node, node *arg_info)
+PREC4fundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC4fundef");
 
@@ -2910,7 +2964,7 @@ PREC4fundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC4arg( node *arg_node, node *arg_info)
+ *   node *PREC4arg( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -2918,7 +2972,7 @@ PREC4fundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4arg (node *arg_node, node *arg_info)
+PREC4arg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC4arg");
 
@@ -2947,7 +3001,7 @@ PREC4arg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC4vardec( node *arg_node, node *arg_info)
+ *   node *PREC4vardec( node *arg_node, info *arg_info)
  *
  * Description:
  *   Renames types of declared variables.
@@ -2955,7 +3009,7 @@ PREC4arg (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4vardec (node *arg_node, node *arg_info)
+PREC4vardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC4vardec");
 
@@ -2972,7 +3026,7 @@ PREC4vardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC4let( node *arg_node, node *arg_info)
+ *   node *PREC4let( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -2980,7 +3034,7 @@ PREC4vardec (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4let (node *arg_node, node *arg_info)
+PREC4let (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC4let");
 
@@ -2994,7 +3048,7 @@ PREC4let (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC4return( node *arg_node, node *arg_info)
+ *   node *PREC4return( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -3002,7 +3056,7 @@ PREC4let (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4return (node *arg_node, node *arg_info)
+PREC4return (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC4return");
 
@@ -3020,7 +3074,7 @@ PREC4return (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC4ap( node *arg_node, node *arg_info)
+ *   node *PREC4ap( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -3028,7 +3082,7 @@ PREC4return (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4ap (node *arg_node, node *arg_info)
+PREC4ap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC4ap");
 
@@ -3042,7 +3096,7 @@ PREC4ap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC4icm( node *arg_node, node *arg_info)
+ *   node *PREC4icm( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -3050,7 +3104,7 @@ PREC4ap (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4icm (node *arg_node, node *arg_info)
+PREC4icm (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC4icm");
 
@@ -3064,7 +3118,7 @@ PREC4icm (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC4array( node *arg_node, node *arg_info)
+ *   node *PREC4array( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -3072,7 +3126,7 @@ PREC4icm (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4array (node *arg_node, node *arg_info)
+PREC4array (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC4array");
 
@@ -3088,7 +3142,7 @@ PREC4array (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC4id( node *arg_node, node *arg_info)
+ *   node *PREC4id( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -3096,7 +3150,7 @@ PREC4array (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4id (node *arg_node, node *arg_info)
+PREC4id (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC4id");
 
@@ -3113,7 +3167,7 @@ PREC4id (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC4do( node *arg_node, node *arg_info)
+ *   node *PREC4do( node *arg_node, info *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -3124,7 +3178,7 @@ PREC4id (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4do (node *arg_node, node *arg_info)
+PREC4do (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC4do");
 
@@ -3140,7 +3194,7 @@ PREC4do (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC4cond( node *arg_node, node *arg_info)
+ *   node *PREC4cond( node *arg_node, info *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -3151,7 +3205,7 @@ PREC4do (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4cond (node *arg_node, node *arg_info)
+PREC4cond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC4cond");
 
@@ -3168,7 +3222,7 @@ PREC4cond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC4with( node *arg_node, node *arg_info)
+ *   node *PREC4with( node *arg_node, info *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -3179,7 +3233,7 @@ PREC4cond (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4with (node *arg_node, node *arg_info)
+PREC4with (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC4with");
 
@@ -3199,7 +3253,7 @@ PREC4with (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC4with2( node *arg_node, node *arg_info)
+ *   node *PREC4with2( node *arg_node, info *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -3210,7 +3264,7 @@ PREC4with (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4with2 (node *arg_node, node *arg_info)
+PREC4with2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC4with2");
 
@@ -3231,7 +3285,7 @@ PREC4with2 (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC4withid( node *arg_node, node *arg_info)
+ *   node *PREC4withid( node *arg_node, info *arg_info)
  *
  * description:
  *   This function does the renaming of the index vector variable
@@ -3243,7 +3297,7 @@ PREC4with2 (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4withid (node *arg_node, node *arg_info)
+PREC4withid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC4withid");
 
@@ -3256,7 +3310,7 @@ PREC4withid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC4code( node *arg_node, node *arg_info)
+ *   node *PREC4code( node *arg_node, info *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -3270,7 +3324,7 @@ PREC4withid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4code (node *arg_node, node *arg_info)
+PREC4code (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC4code");
 
@@ -3289,7 +3343,7 @@ PREC4code (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC4WLsegx( node *arg_node, node *arg_info)
+ *   node *PREC4WLsegx( node *arg_node, info *arg_info)
  *
  * description:
  *   Since the scheduling specification and WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX
@@ -3300,7 +3354,7 @@ PREC4code (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC4WLsegx (node *arg_node, node *arg_info)
+PREC4WLsegx (node *arg_node, info *arg_info)
 {
     int d;
 
@@ -3358,7 +3412,7 @@ PREC4WLsegx (node *arg_node, node *arg_info)
 node *
 Precompile (node *syntax_tree)
 {
-    node *info;
+    info *info;
 
     DBUG_ENTER ("Precompile");
 
@@ -3368,28 +3422,28 @@ Precompile (node *syntax_tree)
     act_tab = precomp1_tab;
     info = MakeInfo ();
     syntax_tree = Trav (syntax_tree, info);
-    info = FreeTree (info);
+    info = FreeInfo (info);
 
     if (strcmp (break_specifier, "prec1")) {
         DBUG_EXECUTE ("PREC", NOTE (("step 2: transform fundefs/aps\n")));
         act_tab = precomp2_tab;
         info = MakeInfo ();
         syntax_tree = Trav (syntax_tree, info);
-        info = FreeTree (info);
+        info = FreeInfo (info);
 
         if (strcmp (break_specifier, "prec2")) {
             DBUG_EXECUTE ("PREC", NOTE (("step 3: flatten code\n")));
             act_tab = precomp3_tab;
             info = MakeInfo ();
             syntax_tree = Trav (syntax_tree, info);
-            info = FreeTree (info);
+            info = FreeInfo (info);
 
             if (strcmp (break_specifier, "prec3")) {
                 DBUG_EXECUTE ("PREC", NOTE (("step 4: rename identifiers\n")));
                 act_tab = precomp4_tab;
                 info = MakeInfo ();
                 syntax_tree = Trav (syntax_tree, info);
-                info = FreeTree (info);
+                info = FreeInfo (info);
             }
         }
     }

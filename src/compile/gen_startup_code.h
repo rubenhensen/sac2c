@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/07/17 17:07:16  sah
+ * switch to new INFO structure
+ * PHASE I
+ *
  * Revision 3.3  2002/04/16 21:07:12  dkr
  * GSCPrintMain() added
  *
@@ -60,8 +64,8 @@ extern void GSCPrintMainEnd ();
 
 extern int GSCCalcMasterclass (int num_threads);
 
-extern node *GSCfundef (node *arg_node, node *arg_info);
-extern node *GSCspmd (node *arg_node, node *arg_info);
-extern node *GSCicm (node *arg_node, node *arg_info);
+extern node *GSCfundef (node *arg_node, info *arg_info);
+extern node *GSCspmd (node *arg_node, info *arg_info);
+extern node *GSCicm (node *arg_node, info *arg_info);
 
 #endif /* _SAC_GEN_STARTUP_CODE_H_ */
