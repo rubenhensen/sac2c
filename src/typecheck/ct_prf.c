@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2003/04/07 14:34:41  sbs
+ * (most) type computations extended for AKV types 8-)
+ *
  * Revision 1.11  2003/03/19 10:34:30  sbs
  * NTCPRF_drop_SxV and NTCPRF_cat_VxV added.
  *
@@ -42,14 +45,42 @@
 
 #include "dbug.h"
 #include "ct_prf.h"
+#include "constants.h"
 #include "type_errors.h"
 #include "user_types.h"
 
 ct_funptr NTCPRF_funtab[] = {
-#define PRF_IF(a, b, c, d, e, f, g) g
+#define PRF_IF(a, b, c, d, e, f, g, h) g
 #include "prf_node_info.mac"
 #undef PRF_IF
 };
+
+void *NTCPRF_cffuntab[] = {
+#define PRF_IF(a, b, c, d, e, f, g, h) (void *)h
+#include "prf_node_info.mac"
+#undef PRF_IF
+};
+
+static constant *
+ApplyCF (te_info *info, ntype *args)
+{
+    constant *res = NULL;
+
+    DBUG_ENTER ("NTCApplyCF");
+
+    switch (TYGetProductSize (args)) {
+    case 2:
+        res = ((binCF)TEGetCFFun (info)) (TYGetValue (TYGetProductMember (args, 0)),
+                                          TYGetValue (TYGetProductMember (args, 1)));
+        break;
+    default:
+        DBUG_ASSERT (FALSE, "Constant Folding failed for the given number of arguments!");
+    }
+    DBUG_ASSERT (res != NULL,
+                 "Constant Folding failed despite legal arguments were found!");
+
+    DBUG_RETURN (res);
+}
 
 /******************************************************************************
  ***
@@ -89,6 +120,7 @@ ntype *
 NTCPRF_array (te_info *info, ntype *elems)
 {
     ntype *elem, *elem2, *res;
+    constant *val, *tmp;
     shape *shp;
     int num_elems;
     int i;
@@ -106,22 +138,37 @@ NTCPRF_array (te_info *info, ntype *elems)
         elem = elem2;
     }
 
-    switch (TYGetConstr (elem)) {
-    case TC_aks:
+    if (TYIsProdOfAKV (elems)) {
+        val = TYGetValue (TYGetProductMember (elems, 0));
+        for (i = 1; i < num_elems; i++) {
+            tmp = val;
+            val = COCat (tmp, TYGetValue (TYGetProductMember (elems, i)));
+            tmp = COFreeConstant (tmp);
+        }
         shp = SHCreateShape (1, num_elems);
-        res = TYMakeAKS (TYGetScalar (elem), SHAppendShapes (shp, TYGetShape (elem)));
+        tmp = COMakeConstantFromShape (SHAppendShapes (shp, TYGetShape (elem)));
         SHFreeShape (shp);
-        break;
-    case TC_akd:
-        res = TYMakeAKD (TYGetScalar (elem), TYGetDim (elem) + 1, SHMakeShape (0));
-        break;
-    case TC_audgz:
-    case TC_aud:
-        res = TYMakeAUDGZ (TYGetScalar (elem));
-        break;
-    default:
-        DBUG_ASSERT ((FALSE), "array elements of non array types not yet supported");
-        res = NULL; /* just to please gcc */
+        res = TYMakeAKV (TYCopyType (TYGetScalar (elem)), COReshape (tmp, val));
+        tmp = COFreeConstant (tmp);
+        val = COFreeConstant (val);
+    } else {
+        switch (TYGetConstr (elem)) {
+        case TC_aks:
+            shp = SHCreateShape (1, num_elems);
+            res = TYMakeAKS (TYGetScalar (elem), SHAppendShapes (shp, TYGetShape (elem)));
+            SHFreeShape (shp);
+            break;
+        case TC_akd:
+            res = TYMakeAKD (TYGetScalar (elem), TYGetDim (elem) + 1, SHMakeShape (0));
+            break;
+        case TC_audgz:
+        case TC_aud:
+            res = TYMakeAUDGZ (TYGetScalar (elem));
+            break;
+        default:
+            DBUG_ASSERT ((FALSE), "array elements of non array types not yet supported");
+            res = NULL; /* just to please gcc */
+        }
     }
 
     TYFreeTypeConstructor (elem);
@@ -263,16 +310,22 @@ NTCPRF_cast (te_info *info, ntype *elems)
 ntype *
 NTCPRF_dim (te_info *info, ntype *args)
 {
+    ntype *array;
     ntype *res;
 
     DBUG_ENTER ("NTCPRF_dim");
     DBUG_ASSERT (TYGetProductSize (args) == 1,
                  "dim called with incorrect number of arguments");
 
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 1),
-                        TYGetProductMember (args, 0));
+    array = TYGetProductMember (args, 0);
+    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 1), array);
 
-    res = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (0));
+    if (TYIsAKV (array) || TYIsAKS (array) || TYIsAKD (array)) {
+        res = TYMakeAKV (TYMakeSimpleType (T_int),
+                         COMakeConstantFromInt (TYGetDim (array)));
+    } else {
+        res = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (0));
+    }
 
     DBUG_RETURN (TYMakeProductType (1, res));
 }
@@ -291,6 +344,7 @@ NTCPRF_shape (te_info *info, ntype *args)
 {
     ntype *arg;
     ntype *res = NULL;
+    shape *shp;
     int n;
 
     DBUG_ENTER ("NTCPRF_shape");
@@ -302,7 +356,11 @@ NTCPRF_shape (te_info *info, ntype *args)
     TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 1), arg);
 
     switch (TYGetConstr (arg)) {
+    case TC_akv:
     case TC_aks:
+        shp = TYGetShape (arg);
+        res = TYMakeAKV (TYMakeSimpleType (T_int), COMakeConstantFromShape (shp));
+        break;
     case TC_akd:
         n = TYGetDim (arg);
         res = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (1, n));
@@ -388,8 +446,14 @@ NTCPRF_selS (te_info *info, ntype *args)
     TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array);
     TEAssureShpMatchesDim (TEPrfArg2Obj (TEGetNameStr (info), 1), idx, TEArg2Obj (2),
                            array);
+    TEAssureValMatchesShape (TEPrfArg2Obj (TEGetNameStr (info), 1), idx, TEArg2Obj (2),
+                             array);
 
-    res = TYMakeAKS (TYCopyType (TYGetScalar (array)), SHMakeShape (0));
+    if (TYIsAKV (idx) && TYIsAKV (array)) {
+        res = TYMakeAKV (TYCopyType (TYGetScalar (array)), ApplyCF (info, args));
+    } else {
+        res = TYMakeAKS (TYCopyType (TYGetScalar (array)), SHMakeShape (0));
+    }
 
     DBUG_RETURN (TYMakeProductType (1, res));
 }
@@ -421,6 +485,8 @@ NTCPRF_modarrayS (te_info *info, ntype *args)
     TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array);
     TEAssureShpMatchesDim (TEPrfArg2Obj (TEGetNameStr (info), 2), idx, TEArg2Obj (1),
                            array);
+    TEAssureValMatchesShape (TEPrfArg2Obj (TEGetNameStr (info), 2), idx, TEArg2Obj (1),
+                             array);
     TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 3), val);
     TEAssureScalar (TEPrfArg2Obj (TEGetNameStr (info), 3), val);
     TEAssureSameSimpleType (TEArg2Obj (2), idx, TEPrfArg2Obj (TEGetNameStr (info), 3),
@@ -461,7 +527,11 @@ NTCPRF_ari_op_SxS (te_info *info, ntype *args)
     TEAssureScalar (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
     TEAssureScalar (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
 
-    res = TYMakeAKS (TYCopyType (TYGetScalar (array1)), SHMakeShape (0));
+    if (TYIsAKV (array1) && TYIsAKV (array2)) {
+        res = TYMakeAKV (TYCopyType (TYGetScalar (array1)), ApplyCF (info, args));
+    } else {
+        res = TYMakeAKS (TYCopyType (TYGetScalar (array1)), SHMakeShape (0));
+    }
 
     DBUG_RETURN (TYMakeProductType (1, res));
 }
@@ -495,7 +565,11 @@ NTCPRF_ari_op_SxA (te_info *info, ntype *args)
                             array2);
     TEAssureScalar (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
 
-    res = TYCopyType (array2);
+    if (TYIsAKV (array1) && TYIsAKV (array2)) {
+        res = TYMakeAKV (TYCopyType (TYGetScalar (array1)), ApplyCF (info, args));
+    } else {
+        res = TYCopyType (array2);
+    }
 
     DBUG_RETURN (TYMakeProductType (1, res));
 }
@@ -529,7 +603,11 @@ NTCPRF_ari_op_AxS (te_info *info, ntype *args)
                             array2);
     TEAssureScalar (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
 
-    res = TYCopyType (array1);
+    if (TYIsAKV (array1) && TYIsAKV (array2)) {
+        res = TYMakeAKV (TYCopyType (TYGetScalar (array1)), ApplyCF (info, args));
+    } else {
+        res = TYCopyType (array1);
+    }
 
     DBUG_RETURN (TYMakeProductType (1, res));
 }
@@ -563,6 +641,11 @@ NTCPRF_ari_op_AxA (te_info *info, ntype *args)
                             array2);
     res = TEAssureSameShape (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
                              array2);
+
+    if (TYIsAKV (array1) && TYIsAKV (array2)) {
+        res = TYFreeType (res);
+        res = TYMakeAKV (TYCopyType (TYGetScalar (array1)), ApplyCF (info, args));
+    }
 
     DBUG_RETURN (TYMakeProductType (1, res));
 }
@@ -599,6 +682,11 @@ NTCPRF_rel_op_AxA (te_info *info, ntype *args)
 
     res = TYSetScalar (res, TYMakeSimpleType (T_bool));
 
+    if (TYIsAKV (array1) && TYIsAKV (array2)) {
+        res = TYFreeType (res);
+        res = TYMakeAKV (TYMakeSimpleType (T_bool), ApplyCF (info, args));
+    }
+
     DBUG_RETURN (TYMakeProductType (1, res));
 }
 
@@ -630,6 +718,11 @@ NTCPRF_log_op_AxA (te_info *info, ntype *args)
     res = TEAssureSameShape (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
                              array2);
 
+    if (TYIsAKV (array1) && TYIsAKV (array2)) {
+        res = TYFreeType (res);
+        res = TYMakeAKV (TYMakeSimpleType (T_bool), ApplyCF (info, args));
+    }
+
     DBUG_RETURN (TYMakeProductType (1, res));
 }
 
@@ -659,7 +752,11 @@ NTCPRF_int_op_SxS (te_info *info, ntype *args)
     TEAssureIntS (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
     TEAssureIntS (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
 
-    res = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (0));
+    if (TYIsAKV (array1) && TYIsAKV (array2)) {
+        res = TYMakeAKV (TYMakeSimpleType (T_int), ApplyCF (info, args));
+    } else {
+        res = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (0));
+    }
 
     DBUG_RETURN (TYMakeProductType (1, res));
 }
@@ -679,6 +776,7 @@ NTCPRF_drop_SxV (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *array1, *array2;
+    shape *shp;
 
     DBUG_ENTER ("NTCPRF_drop_SxV");
     DBUG_ASSERT (TYGetProductSize (args) == 2,
@@ -691,7 +789,19 @@ NTCPRF_drop_SxV (te_info *info, ntype *args)
     TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
     TEAssureVect (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
 
-    res = TYMakeAKD (TYCopyType (TYGetScalar (array2)), 1, SHMakeShape (0));
+    if (TYIsAKV (array1) && (TYIsAKV (array2) || TYIsAKS (array2))) {
+        if (TYIsAKV (array2)) {
+            res = TYMakeAKV (TYCopyType (TYGetScalar (array2)), ApplyCF (info, args));
+        } else {
+            shp = SHCopyShape (TYGetShape (array2));
+            shp = SHSetExtent (shp, 0,
+                               SHGetExtent (shp, 0)
+                                 - abs (((int *)COGetDataVec (TYGetValue (array1)))[0]));
+            res = TYMakeAKS (TYCopyType (TYGetScalar (array2)), shp);
+        }
+    } else {
+        res = TYMakeAKD (TYCopyType (TYGetScalar (array2)), 1, SHMakeShape (0));
+    }
 
     DBUG_RETURN (TYMakeProductType (1, res));
 }
@@ -726,9 +836,13 @@ NTCPRF_cat_VxV (te_info *info, ntype *args)
     TEAssureVect (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
     TEAssureVect (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
 
-    if (TYIsAKS (array1) && TYIsAKS (array2)) {
+    if (TYIsAKV (array1) && TYIsAKV (array2)) {
+        res = TYMakeAKV (TYCopyType (TYGetScalar (array1)), ApplyCF (info, args));
+    } else if ((TYIsAKV (array1) || TYIsAKS (array1))
+               && (TYIsAKV (array2) || TYIsAKS (array2))) {
         res = TYMakeAKS (TYCopyType (TYGetScalar (array1)),
-                         SHAppendShapes (TYGetShape (array1), TYGetShape (array2)));
+                         SHCreateShape (1, SHGetExtent (TYGetShape (array1), 0)
+                                             + SHGetExtent (TYGetShape (array2), 0)));
     } else {
         res = TYMakeAKD (TYCopyType (TYGetScalar (array1)), 1, SHMakeShape (0));
     }
