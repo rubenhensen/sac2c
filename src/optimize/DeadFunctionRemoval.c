@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/23 16:16:50  sbs
+ * mem_dead_fun in DeadFunctionRemoval enclosed in ifndef DBUG_OFF
+ * for avoiding a warning when compiling product version.
+ *
  * Revision 3.1  2000/11/20 18:00:29  sacbase
  * new release made
  *
@@ -60,7 +64,9 @@ node *
 DeadFunctionRemoval (node *arg_node, node *arg_info)
 {
     funtab *tmp_tab;
+#ifndef DBUG_OFF
     int mem_dead_fun = dead_fun;
+#endif
 
     DBUG_ENTER ("DeadFunctionRemoval");
     DBUG_PRINT ("OPT", ("DEAD FUNCTION REMOVAL"));
