@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.86  1996/08/29 17:45:27  sbs
+ * Revision 1.87  1996/09/11 06:27:38  cg
+ * Some very dirty bugs fixed.
+ *
+ * Revision 1.86  1996/08/29  17:45:27  sbs
  * res_stype in CmpPrf was not initialised at all!!
  *
  * Revision 1.85  1996/08/04  14:40:12  sbs
@@ -4049,7 +4052,7 @@ CompPrf (node *arg_node, node *arg_info)
         arg_node = arg_node->node[0]->node[0];
         FREE (dummy->node[0]); /* free N_exprs node */
         FREE (dummy);          /* free N_prf node */
-    } else if ((PRF_PRF (arg_node) == F_toi) || (PRF_PRF (arg_node) == F_tod)
+    } else if ((PRF_PRF (arg_node) == F_toi) || (PRF_PRF (arg_node) == F_tof)
                || (PRF_PRF (arg_node) == F_tod))
         arg_node = CompConvert (arg_node, arg_info);
 
@@ -4283,9 +4286,9 @@ CompId (node *arg_node, node *arg_info)
 node *
 CompAp (node *arg_node, node *arg_info)
 {
-    node *tmp, *next, *exprs, *icm_arg, *id_node, *tag_node, *next_assign, *first_assign,
-      *add_assigns_before, *fundef_args, *add_assigns_after, *last_assign, **icm_tab,
-      *icm_tab_entry;
+    node *tmp, *next, *exprs, *icm_arg, *save_icm_arg, *id_node, *tag_node, *next_assign,
+      *first_assign, *add_assigns_before, *fundef_args, *add_assigns_after, *last_assign,
+      **icm_tab, *icm_tab_entry;
     ids *ids;
     int i, cnt_param, tab_size, ids_for_dots = 0;
     types *fundef_rettypes;
@@ -4570,12 +4573,21 @@ CompAp (node *arg_node, node *arg_info)
         }
 
         if (ids_for_dots) {
+            icm_arg = save_icm_arg;
+
             MAKE_NEXT_ICM_ARG (icm_arg, MAKE_IDNODE (tag));
             EXPRS_NEXT (icm_arg) = exprs;
             icm_arg->nnode = 2;
             EXPRS_NEXT (exprs) = NULL;
             exprs->nnode = 1;
             icm_arg = exprs;
+
+            save_icm_arg = icm_arg;
+            /*
+             *  The value of icm_arg has to be saved here because a
+             *  very intelligent programmer used this variable implicitly(!!)
+             *  in macros like CREATE_3_ARY_ICM.
+             */
 
             if (next == NULL) {
                 InsertApDotsParam (icm_tab, icm_tab_entry);
@@ -4591,6 +4603,8 @@ CompAp (node *arg_node, node *arg_info)
                 EXPRS_NEXT (exprs) = NULL;
                 exprs->nnode = 1;
                 icm_arg = exprs;
+
+                save_icm_arg = icm_arg;
 
                 if (next == NULL) {
                     InsertApDotsParam (icm_tab, icm_tab_entry);
