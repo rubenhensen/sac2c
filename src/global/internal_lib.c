@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2004/09/23 21:13:47  sah
+ * TmpVar(): added set traversal
+ *
  * Revision 3.51  2004/09/22 13:19:11  sah
  * changed argument to StringCopy to const char*
  * as the functions does not modify it
@@ -1164,6 +1167,8 @@ PrefixForTmpVar (void)
         s = "crwiw";
     } else if (act_tab == repfun_tab) {
         s = "repfun";
+    } else if (act_tab == set_tab) {
+        s = "set";
     } else
 #else
     if (act_tab == flat_tab) {
@@ -1188,6 +1193,8 @@ PrefixForTmpVar (void)
         s = "cwc";
     } else if (act_tab == nt2ot_tab) {
         s = "nt2ot";
+    } else if (act_tab == set_tab) {
+        s = "set";
     } else
 #endif /* NEW_AST */
     {
