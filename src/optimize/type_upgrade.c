@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.26  2005/02/20 16:55:06  mwe
+ * some assertions updated
+ *
  * Revision 1.25  2005/02/18 22:19:02  mwe
  * bug fixed
  *
@@ -1532,7 +1535,8 @@ TUPreturn (node *arg_node, info *arg_info)
 
     if ((NULL != RETURN_EXPRS (arg_node))
         && (!FUNDEF_ISEXPORTED (INFO_TUP_FUNDEF (arg_info)))
-        && (!FUNDEF_ISPROVIDED (INFO_TUP_FUNDEF (arg_info)))) {
+        && (!FUNDEF_ISPROVIDED (INFO_TUP_FUNDEF (arg_info)))
+        && (INFO_TUP_CORRECTFUNCTION (arg_info))) {
 
         /* convert ntypes of return values to return type of function add them to
          * ret-node*/
@@ -1549,8 +1553,10 @@ TUPreturn (node *arg_node, info *arg_info)
             case TY_eq: /* same types, nothing changed */
                 break;
 
-            case TY_gt: /* lost type information, should not happen */
-                DBUG_ASSERT ((FALSE), "lost type information");
+            case TY_gt: /* lost type information, should only happen, if
+                         * we are dealing with dead functions */
+                /*DBUG_ASSERT( (FALSE), "lost type information");*/
+
                 break;
 
             case TY_hcs:
@@ -2041,6 +2047,8 @@ TUPap (node *arg_node, info *arg_info)
                     INFO_TUP_CORRECTFUNCTION (arg_info) = FALSE;
                     break;
                 case TY_hcs:
+                    INFO_TUP_CORRECTFUNCTION (arg_info) = FALSE;
+                    break;
                 case TY_dis: /* both types are unrelated, should not be possible */
                     DBUG_ASSERT ((FALSE), "Former type is unrelated to new type! ");
                     INFO_TUP_CORRECTFUNCTION (arg_info) = FALSE;
