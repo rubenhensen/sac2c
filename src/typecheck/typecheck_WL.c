@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.4  1999/10/19 12:55:26  sacbase
+ * TCWLprf changed; now psi-applications are computed using constants!
+ *
  * Revision 2.3  1999/07/15 20:40:44  sbs
  * in ReduceShape we now make sure that an appropriate CONSTVEC info will be
  * created.
@@ -35,6 +38,9 @@
 #include "internal_lib.h"
 #include "globals.h"
 #include "ConstantFolding.h"
+#include "constants.h"
+
+extern types *TI_array (node *arg_node, node *arg_info); /* from typecheck.c */
 
 /*
  * This files exports a function ReduceGenarrayShape() which tries to
@@ -102,6 +108,8 @@ TCWLarray (node *arg_node, node *arg_info)
         tmpn = EXPRS_NEXT (tmpn);
     }
 
+    ARRAY_TYPE (arg_node) = TI_array (arg_node, arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
@@ -119,6 +127,8 @@ TCWLarray (node *arg_node, node *arg_info)
 node *
 TCWLprf (node *arg_node, node *arg_info)
 {
+    constant *arg1, *arg2, *res;
+
     DBUG_ENTER ("TCWLprf");
 
     if (F_shape == PRF_PRF (arg_node)) {
@@ -150,10 +160,25 @@ TCWLprf (node *arg_node, node *arg_info)
             && (N_array == NODE_TYPE (PRF_ARG2 (arg_node))
                 || N_num == NODE_TYPE (PRF_ARG2 (arg_node)))) {
             /* CF prf now. */
-            arg_node = CFprf (arg_node, arg_info);
-            if (N_prf == NODE_TYPE (arg_node)) /* not successful */
-                expr_ok = 0;
+            if (PRF_PRF (arg_node) == F_psi) {
+                if (IsConstantArray (PRF_ARG1 (arg_node), N_num)
+                    && IsConstantArray (PRF_ARG2 (arg_node), 0)) {
+                    arg1 = COMakeConstantFromArray (PRF_ARG1 (arg_node));
+                    arg2 = COMakeConstantFromArray (PRF_ARG2 (arg_node));
+                    res = COPsi (arg1, arg2);
+                    FreeTree (arg_node);
+                    arg_node = COConstant2AST (res);
+                }
+            } else {
+                arg_node = CFprf (arg_node, arg_info);
+                if (N_prf == NODE_TYPE (arg_node)) /* not successful */
+                    expr_ok = 0;
+            }
         }
+    }
+
+    if (NODE_TYPE (arg_node) == N_array) {
+        ARRAY_TYPE (arg_node) = TI_array (arg_node, arg_info);
     }
 
     DBUG_RETURN (arg_node);
