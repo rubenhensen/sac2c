@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.124  1998/05/11 16:10:54  dkr
+ * with flag -c Print() is now called only once
+ *
  * Revision 1.123  1998/05/05 12:35:02  srs
  * inserted new switch -noWLT. This deactivates
  * - CF of constant bounds into generator
@@ -1332,10 +1335,13 @@ MAIN
 
 BREAK:
 
-    if (compiler_phase >= PH_scanparse)
-        Print (syntax_tree);
-    else
+    if (compiler_phase >= PH_scanparse) {
+        if (compiler_phase < PH_genccode) {
+            Print (syntax_tree);
+        }
+    } else {
         RSCShowResources ();
+    }
 
     NEWLINE (2);
     NOTE2 (("*** Compilation successful ***"));
