@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/08/27 11:05:59  jhs
+ * Added spmdco_tab.
+ * Deleted hundreds of disgusting blank lines making the code totally
+ * unreadable and ugly.
+ *
  * Revision 2.7  1999/08/05 13:34:25  jhs
  * Added spmdlc, spmddn and spmdpm.
  *
@@ -254,6 +259,7 @@ extern funptr tsi_tab[];
 extern funptr spmdlc_tab[];
 extern funptr spmddn_tab[];
 extern funptr spmdpm_tab[];
+extern funptr spmdco_tab[];
 
 extern int nnode[];
 

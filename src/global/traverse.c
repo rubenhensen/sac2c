@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/08/27 11:05:59  jhs
+ * Added spmdco_tab.
+ * Deleted hundreds of disgusting blank lines making the code totally
+ * unreadable and ugly.
+ *
  * Revision 2.10  1999/08/05 13:34:25  jhs
  * Added spmdlc, spmddn and spmdpm.
  *
@@ -147,11 +152,11 @@
 funptr *act_tab;
 
 /*
- *
  * global definitions of all funtabs needed for Trav
- *
- *
- * 1) imp_tab
+ */
+
+/*
+ *  (1) imp_tab
  */
 #define NIFimp(it_imp) it_imp
 funptr imp_tab[] = {
@@ -159,7 +164,7 @@ funptr imp_tab[] = {
 };
 
 /*
- * 2) flat_tab
+ *  (2) flat_tab
  */
 #define NIFflat(it_flat) it_flat
 funptr flat_tab[] = {
@@ -167,505 +172,456 @@ funptr flat_tab[] = {
 };
 
 /*
- * 3) print_tab
+ *  (3) print_tab
  */
-
 #define NIFprint(it_print) it_print
 funptr print_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 4) type_tab
+ *  (4) type_tab
  */
-
 #define NIFtype(it_type) it_type
 funptr type_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 5) genmask_tab
+ *  (5) genmask_tab
  */
-
 #define NIFgenmask(it_genmask) it_genmask
 funptr genmask_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 6) dead_tab
+ *  (6) dead_tab
  */
-
 #define NIFdcr(it_dcr) it_dcr
 funptr dcr_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 7) wlf_tab
+ *  (7) wlf_tab
  */
-
 #define NIFwlf(it_wlf) it_wlf
 funptr wlf_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 8) free_tab
+ *  (8) free_tab
  */
-
 #define NIFfree(it_free) it_free
 funptr free_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 9) cf_tab
+ *  (9) cf_tab
  */
-
 #define NIFcf(it_cf) it_cf
 funptr cf_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 10) refcnt_tab
+ *  (10) refcnt_tab
  */
-
 #define NIFrefcnt(it_refcnt) it_refcnt
 funptr refcnt_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 11) comp_tab
+ *  (11) comp_tab
  */
-
 #define NIFcomp(it_comp) it_comp
 funptr comp_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 12) lir_tab
+ *  (12) lir_tab
  */
-
 #define NIFlir(it_lir) it_lir
 funptr lir_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 13) dup_tab
+ *  (13) dup_tab
  */
-
 #define NIFdup(it_dup) it_dup
 funptr dup_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 14) inline_tab
+ *  (14) inline_tab
  */
-
 #define NIFinline(it_inline) it_inline
 funptr inline_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 15) unroll_tab
+ *  (15) unroll_tab
  */
-
 #define NIFunroll(it_unroll) it_unroll
 funptr unroll_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 16) lir_mov_tab
+ *  (16) lir_mov_tab
  */
-
 #define NIFlir_mov(it_lir_mov) it_lir_mov
 funptr lir_mov_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 17) idx_tab
+ *  (17) idx_tab
  */
-
 #define NIFidx(it_idx) it_idx
 funptr idx_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 18) unswitch_tab
+ *  (18) unswitch_tab
  */
-
 #define NIFunswitch(it_unswitch) it_unswitch
 funptr unswitch_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 19) wli_tab
+ *  (19) wli_tab
  */
-
 #define NIFwli(it_wli) it_wli
 funptr wli_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 20) ae_tab
+ *  (20) ae_tab
  */
-
 #define NIFae(it_ae) it_ae
 funptr ae_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 21) writesib_tab
+ *  (21) writesib_tab
  */
-
 #define NIFwritesib(it_writesib) it_writesib
 funptr writesib_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 22) obj_tab
+ *  (22) obj_tab
  */
-
 #define NIFobj(it_obj) it_obj
 funptr obj_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 23) impltype_tab
+ *  (23) impltype_tab
  */
-
 #define NIFimpltype(it_impltype) it_impltype
 funptr impltype_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 24) objinit_tab
+ *  (24) objinit_tab
  */
-
 #define NIFobjinit(it_objinit) it_objinit
 funptr objinit_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 25) analy_tab
+ *  (25) analy_tab
  */
-
 #define NIFanaly(it_analy) it_analy
 funptr analy_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
- * 26) checkdec_tab
+ *  (26) checkdec_tab
  */
-
 #define NIFcheckdec(it_checkdec) it_checkdec
 funptr checkdec_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 27) writedec_tab
+ *  (27) writedec_tab
  */
-
 #define NIFwritedec(it_writedec) it_writedec
 funptr writedec_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 28) unique_tab
+ *  (28) unique_tab
  */
-
 #define NIFunique(it_unique) it_unique
 funptr unique_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 29) rmvoid_tab
+ *  (29) rmvoid_tab
  */
-
 #define NIFrmvoid(it_rmvoid) it_rmvoid
 funptr rmvoid_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 30) precomp_tab
+ *  (30) precomp_tab
  */
-
 #define NIFprecomp(it_precomp) it_precomp
 funptr precomp_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 31) active_tab
+ *  (31) active_tab
  */
-
 #define NIFactive(it_active) it_active
 funptr active_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 32) readsib_tab
+ *  (32) readsib_tab
  */
-
 #define NIFreadsib(it_readsib) it_readsib
 funptr readsib_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 33) wlt_tab
+ *  (33) wlt_tab
  */
-
 #define NIFwlt(it_wlt) it_wlt
 funptr wlt_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 34) cse_tab
+ *  (34) cse_tab
  */
-
 #define NIFcse(it_cse) it_cse
 funptr cse_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 35) dfr_tab
+ *  (35) dfr_tab
  */
-
 #define NIFdfr(it_dfr) it_dfr
 funptr dfr_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 36) tcwl_tab
+ *  (36) tcwl_tab
  */
-
 #define NIFtcwl(it_cwl) it_cwl
 funptr tcwl_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 37) spmdinit_tab
+ *  (37) spmdinit_tab
  */
-
 #define NIFspmdinit(it_spmdinit) it_spmdinit
 funptr spmdinit_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 38) spmdopt_tab
+ *  (38) spmdopt_tab
  */
-
 #define NIFspmdopt(it_spmdopt) it_spmdopt
 funptr spmdopt_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 39) spmdlift_tab
+ *  (39) spmdlift_tab
  */
-
 #define NIFspmdlift(it_spmdlift) it_spmdlift
 funptr spmdlift_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 40) syncinit_tab
+ *  (40) syncinit_tab
  */
-
 #define NIFsyncinit(it_syncinit) it_syncinit
 funptr syncinit_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 41) syncopt_tab
+ *  (41) syncopt_tab
  */
-
 #define NIFsyncopt(it_syncopt) it_syncopt
 funptr syncopt_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 42) wltrans_tab
+ *  (42) wltrans_tab
  */
-
 #define NIFwltrans(it_wltrans) it_wltrans
 funptr wltrans_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 43) gsc_tab
+ *  (43) gsc_tab
  */
-
 #define NIFgsc(it_gsc) it_gsc
 funptr gsc_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 44) reuse_tab
+ *  (44) reuse_tab
  */
-
 #define NIFreuse(it_reuse) it_reuse
 funptr reuse_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 45) o2nWith_tab
+ *  (45) o2nWith_tab
  */
-
 #define NIFo2nWith(it_o2nWith) it_o2nWith
 funptr o2nWith_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 46) sched_tab
+ *  (46) sched_tab
  */
-
 #define NIFsched(it_sched) it_sched
 funptr sched_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 47) conc_tab
+ *  (47) conc_tab
  */
-
 #define NIFconc(it_conc) it_conc
 funptr conc_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 48) opt_tab
+ *  (48) opt_tab
  */
-
 #define NIFopt(it_opt) it_opt
 funptr opt_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- * 49) wlaa_tab
+ *  (49) wlaa_tab
  */
-
 #define NIFwlaa(it_wlaa) it_wlaa
 funptr wlaa_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- *  50) freemask_tab
+ *  (50) freemask_tab
  */
-
 #define NIFfreemask(it_freemask) it_freemask
 funptr freemask_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- *  51) spmdrmtrav_tab
+ *  (51) spmdrmtrav_tab
  */
-
 #define NIFspmdrm(it_spmdrm) it_spmdrm
 funptr spmdrmtrav_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- *  52) spmdrotrav_tab
+ *  (52) spmdrotrav_tab
  */
-
 #define NIFspmdro(it_spmdro) it_spmdro
 funptr spmdrotrav_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- *  53) spmdcons_tab
+ *  (53) spmdcons_tab
  */
-
 #define NIFspmdcons(it_spmdcons) it_spmdcons
 funptr spmdcons_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- *  54) tsi_tab
+ *  (54) tsi_tab
  */
-
 #define NIFtsi(it_tsi) it_tsi
 funptr tsi_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- *  55) spmdlc_tab
+ *  (55) spmdlc_tab
  */
-
 #define NIFspmdlc(it_spmdlc) it_spmdlc
 funptr spmdlc_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- *  56) spmddn_tab
+ *  (56) spmddn_tab
  */
-
 #define NIFspmddn(it_spmddn) it_spmddn
 funptr spmddn_tab[] = {
 #include "node_info.mac"
 };
 
 /*
- *  57) spmddn_tab
+ *  (57) spmdpm_tab
  */
-
 #define NIFspmdpm(it_spmdpm) it_spmdpm
 funptr spmdpm_tab[] = {
 #include "node_info.mac"
 };
 
 /*
+ *  (58) spmdco_tab
+ */
+#define NIFspmdco(it_spmdco) it_spmdco
+funptr spmdco_tab[] = {
+#include "node_info.mac"
+};
+
+/*
  *  nnode
  */
-
 #define NIFnnode(nnode) nnode
 int nnode[] = {
 #include "node_info.mac"
