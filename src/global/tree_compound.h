@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.32  1996/01/07 16:55:09  cg
+ * Revision 1.33  1996/01/12 15:53:28  asi
+ * added LET_VARNO
+ *
+ * Revision 1.32  1996/01/07  16:55:09  cg
  * function CountFunctionParams now counts return type void
  *
  * Revision 1.31  1996/01/02  12:48:41  cg
@@ -1027,6 +1030,7 @@ extern node *GetCompoundNode (node *arg_node);
 #define LET_NAME(n) (IDS_NAME (LET_IDS (n)))
 #define LET_MOD(n) (IDS_MOD (LET_IDS (n)))
 #define LET_STATUS(n) (IDS_STATUS (LET_IDS (n)))
+#define LET_VARNO(n) (VARDEC_VARNO (LET_VARDEC (n)))
 
 /*--------------------------------------------------------------------------*/
 
