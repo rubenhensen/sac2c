@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.146  1998/04/26 12:32:06  dkr
+ * changed a comment for N_fundef
+ *
  * Revision 1.145  1998/04/25 12:35:26  dkr
  * changed a comment for NCODE_COPY
  *
@@ -1132,6 +1135,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *          ST_objinitfun   generic function for object initialization
  *          ST_imported     imported function (maybe declaration only)
  *          ST_generic      class conversion function
+ *          ST_spmdfun      function containing lifted SPMD-region
  *
  *  ATTRIB: ST_regular      dimension-dependent or non-array function
  *          ST_independent  dimension-independent array function
