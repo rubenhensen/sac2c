@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.76  1995/07/24 09:10:17  hw
+ * Revision 1.77  1995/07/26 08:41:57  cg
+ * parser extended for parsing sac information blocks
+ *
+ * Revision 1.76  1995/07/24  09:10:17  hw
  * moved 'enum' file_kind to tree.h
  *
  * Revision 1.75  1995/07/19  12:18:03  hw
@@ -282,8 +285,10 @@ extern char yytext[];
 int indent, i;
 node *syntax_tree;
 node *decl_tree;
+node *sib_tree;
 
-static char *mod_name;
+
+static char *mod_name=NULL;
 
 /* used to distinguish the different kinds of files  */
 /* which are parsed with this single parser          */
@@ -303,9 +308,10 @@ static file_type file_kind = F_prog;
          double          cdbl;
          nums            *nums;
          prf             prf;
+         statustype      statustype;
        }
 
-%token PARSE_PRG, PARSE_DEC
+%token PARSE_PRG, PARSE_DEC, PARSE_SIB
 %token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC,
        COMMA, ASSIGN, AMPERS,
        INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF,
@@ -327,8 +333,9 @@ static file_type file_kind = F_prog;
 %type <nodetype> modclass
 %type <cint> evextern
 %type <ids> ids
-%type <id> fun_name prf_name
+%type <id> fun_name prf_name sibparam
 %type <nums> nums
+%type <statustype> sibobjattrib
 %type <types> localtype, type, types, simpletype, complextype, returntypes;
 %type <node> arg, args, fundefs, fundef, main, prg, modimp,
              argtypes, argtype,
@@ -341,7 +348,10 @@ static file_type file_kind = F_prog;
              moddec, expdesc, expdesc2, expdesc3, expdesc4, fundecs, fundec,
 	     exptypes, exptype, objdecs, objdec, evimport
              imptypes, imptype, import, imports, impdesc, impdesc2, impdesc3,
-             impdesc4, array, exprORarray, exprsNOarray, foldfun;
+             impdesc4, array, exprORarray, exprsNOarray, foldfun,
+             sib, sib2, sib3, sibtypes, sibtype, sibfuns, sibfun, sibfunbody,
+             sibargs, sibarg, sibimplobjects, sibimplobject, sibfun2,
+             sibfun3;
 
 %left OR
 %left AND
@@ -362,6 +372,10 @@ static file_type file_kind = F_prog;
 file:   PARSE_PRG prg {syntax_tree=$2;}
 	| PARSE_PRG modimp {syntax_tree=$2;}
 	| PARSE_DEC moddec {decl_tree=$2;}
+   | PARSE_SIB sib {sib_tree=$2;}
+
+                 
+  
 	;
 
 moddec: modclass evextern ID COLON { if($2 == 1) mod_name=NULL;
@@ -1975,6 +1989,235 @@ simpletype: TYPE_INT
                                      $$, mdb_type[$$->simpletype], $$->name));
                }
             ;
+
+
+/**********************************************************************/
+
+/*   Remaining rules exclusively for parsing SAC Information Blocks   */
+
+/**********************************************************************/
+
+sib: sibtypes sib2
+        {
+          $$=$2;
+          $$->node[0]=$1;
+        }
+   | sib2
+        {
+          $$=$1;
+        }
+      ;
+
+sib2: sibfuns sib3
+         {
+           $$=$2;
+           $$->node[1]=$1;
+         }
+       ;
+
+sib3: 
+         {
+           $$=MakeNode(N_sib);
+
+           DBUG_PRINT("GENTREE",("%s"P_FORMAT,
+                               mdb_nodetype[$$->nodetype],$$));
+         }
+       ;
+
+sibtypes: sibtype sibtypes
+            {
+              $$=$1;
+              $$->node[0]=$2;
+              $$->nnode++;
+            }
+        | sibtype
+            {
+              $$=$1;
+            } 
+          ;
+
+sibtype: typedef
+           {
+             $$=$1;
+           }
+         ;
+
+sibfuns: sibfun sibfuns
+            {
+              $$=$1;
+              $$->node[1]=$2;
+              $$->nnode++;
+            }
+       | sibfun
+            {
+              $$=$1;
+            }
+       ;
+
+sibfun: fun_name BRACKET_L sibfun2
+          {
+            $$=$3;
+            $$->info.types->id=$1;    /*  function name */
+          }
+        ;
+
+sibfun2: sibargs BRACKET_R sibfun3
+           {
+             $$=$3;
+             $$->node[2]=$1;
+             $$->nnode++;
+           }
+       | BRACKET_R sibfun3
+           {
+             $$=$2;
+           }
+       ;
+
+sibfun3: sibimplobjects sibfunbody
+           {
+             $$=$2;
+             $$->node[4]=$1;
+           }
+       | sibfunbody
+           {
+             $$=$1;
+           }
+       ;
+
+sibargs: sibarg COMMA sibargs
+           {
+             $$=$1;
+             $$->node[0]=$3;
+             $$->nnode++;
+           }
+       | sibarg
+           {
+             $$=$1;
+           }
+       ;
+
+sibarg: type sibparam
+          {
+            $$=MakeNode(N_arg);
+            $$->info.types=$1;
+            $$->info.types->id=$2;
+
+              DBUG_PRINT("GENTREE",
+                         ("%s: "P_FORMAT", Id: %s, Attrib: %d, Status: %d  ",
+                          mdb_nodetype[ $$->nodetype ], $$, 
+                          $$->info.types->id, $$->info.types->attrib,
+                          $$->info.types->status));
+          }
+      | TYPE_DOTS
+          {
+            $$=MakeNode(N_arg);
+            $$->info.types=MakeTypes(T_dots); 
+
+              DBUG_PRINT("GENTREE",
+                         ("%s: "P_FORMAT", Id: %s, Attrib: %d, Status: %d  ",
+                          mdb_nodetype[ $$->nodetype ], $$, 
+                          $$->info.types->id, $$->info.types->attrib,
+                          $$->info.types->status));
+          }
+      | type AMPERS sibparam
+          {
+            $$=MakeNode(N_arg);
+            $$->info.types=$1;
+            $$->info.types->id=$3;
+            $$->info.types->attrib=ST_reference;
+
+              DBUG_PRINT("GENTREE",
+                         ("%s: "P_FORMAT", Id: %s, Attrib: %d, Status: %d  ",
+                          mdb_nodetype[ $$->nodetype ], $$, 
+                          $$->info.types->id, $$->info.types->attrib,
+                          $$->info.types->status));
+          }
+      | type BRACKET_L AMPERS BRACKET_R sibparam
+          {
+            $$=MakeNode(N_arg);
+            $$->info.types=$1;
+            $$->info.types->id=$5;
+            $$->info.types->attrib=ST_readonly_reference;
+
+              DBUG_PRINT("GENTREE",
+                         ("%s: "P_FORMAT", Id: %s, Attrib: %d, Status: %d  ",
+                          mdb_nodetype[ $$->nodetype ], $$, 
+                          $$->info.types->id, $$->info.types->attrib,
+                          $$->info.types->status));
+          }
+      ;
+
+sibparam: ID
+            {
+              $$=$1;
+            }
+        |
+            {
+              $$=NULL;
+            }
+        ;
+
+sibimplobjects: sibimplobject COMMA sibimplobjects
+                  {
+                    $$=$1;
+                    $$->node[0]=$3;
+                    $$->nnode++;
+                  }
+              | sibimplobject
+                  {
+                    $$=$1;
+                  }
+              ;
+
+sibimplobject: type sibobjattrib ID COLON ID
+                 {
+                   $$=MakeNode(N_arg);
+                   $$->info.types=$1;
+                   $$->info.types->id=$5;
+                   $$->info.types->id_mod=$3;
+                   $$->info.types->status=ST_artificial;
+                   $$->info.types->attrib=$2;
+
+              DBUG_PRINT("GENTREE",
+                         ("%s: "P_FORMAT", Id: %s, Attrib: %d, Status: %d  ",
+                          mdb_nodetype[ $$->nodetype ], $$, 
+                          $$->info.types->id, $$->info.types->attrib,
+                          $$->info.types->status));
+                 }
+               ;
+
+sibobjattrib: BRACKET_L AMPERS BRACKET_R
+                 {
+                   $$=ST_readonly_reference;
+                 }
+             | AMPERS
+                 {
+                   $$=ST_reference;
+                 }
+             ;
+
+sibfunbody: exprblock
+              {
+                $$=MakeNode(N_fundef);
+                $$->info.types=MakeTypes(T_hidden);
+                $$->node[0]=$1;
+                $$->flag=1;    /* mark function as inline function */
+         
+            DBUG_PRINT("GENTREE",
+                       ("%s:"P_FORMAT" %s"P_FORMAT,
+                        mdb_nodetype[ $$->nodetype ], $$, 
+                        mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
+              }
+          | SEMIC
+              {
+                $$=MakeNode(N_fundef);
+                $$->info.types=MakeTypes(T_hidden);
+         
+            DBUG_PRINT("GENTREE",
+                       ("%s:"P_FORMAT,
+                        mdb_nodetype[ $$->nodetype ], $$));
+              }
+                
 
 %%
 
