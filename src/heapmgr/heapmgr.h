@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/14 10:26:20  sbs
+ * Neither _REENTRANT nor POSIX_SOURCE preset anymore since these will be set
+ * in sac_mt.h anyways!
+ *
  * Revision 3.1  2000/11/20 18:02:52  sacbase
  * new release made
  *
@@ -222,14 +226,6 @@
 #define HEAPMGR_H
 
 #ifdef MT
-
-#ifndef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 199506L
-#endif
-
-#ifndef _REENTRANT
-#define _REENTRANT
-#endif
 
 #define SAC_DO_MULTITHREAD 1
 #define SAC_DO_THREADS_STATIC 1
