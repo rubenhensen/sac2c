@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/05/15 15:43:56  cg
+ * first bugs removed
+ *
  * Revision 1.3  1998/05/15 09:20:20  cg
  * first complete version
  *
@@ -119,7 +122,7 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg)
 #include "icm_trace.c"
 #undef MT_SPMD_FUN_DEC
 
-    fprintf (outfile, "#if SAC_DO_MULTITHREADED\n\n");
+    fprintf (outfile, "#if SAC_DO_MULTITHREAD\n\n");
 
     fprintf (outfile, "#undef SAC_MT_CURRENT_FUN()\n");
     fprintf (outfile, "#define SAC_MT_CURRENT_FUN() %s\n", from);
@@ -131,7 +134,10 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg)
 
     fprintf (outfile, "\n");
 
-    fprintf (outfile, "unsigned int %s SAC_MT_SPMD_FUN_REAL_PARAM_LIST()\n", name);
+    fprintf (outfile,
+             "SAC_MT_SPMD_FUN_REAL_RETTYPE()"
+             " %s( SAC_MT_SPMD_FUN_REAL_PARAM_LIST())\n",
+             name);
     fprintf (outfile, "{\n");
 
     indent++;
@@ -209,7 +215,7 @@ ICMCompileMT_SPMD_FUN_RET (int narg, char **vararg)
 
     fprintf (outfile, "\n");
 
-    fprintf (outfile, "#endif  /* SAC_DO_MULTITHREADED */\n\n");
+    fprintf (outfile, "#endif  /* SAC_DO_MULTITHREAD */\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -574,8 +580,8 @@ ICMCompileMT_CONTINUE (int narg, char **vararg)
  *     - it calls the spmd function on behalf of the master thread.
  *     - finally, it resumes and returns to sequential execution order.
  *
- *   Tags may be from the set in | out | in_rc | out_rc | inout_rc<n> | pre.
- *   'pre' specifies an spmd argument that is preset by using the ICM
+ *   Tags may be from the set in | out | in_rc | out_rc | inout_rc<n> | preset.
+ *   'preset' specifies an spmd argument that is preset by using the ICM
  *   MT_SPMD_PRESET().
  *
  ******************************************************************************/
@@ -595,7 +601,7 @@ ICMCompileMT_SPMD_BLOCK (char *name, int narg, char **vararg)
 
     fprintf (outfile, "\n");
 
-    fprintf (outfile, "#if SAC_DO_MULTITHREADED\n\n");
+    fprintf (outfile, "#if SAC_DO_MULTITHREAD\n\n");
 
     INDENT;
     fprintf (outfile, "if (SAC_MT_not_yet_parallel)\n");
@@ -642,7 +648,7 @@ ICMCompileMT_SPMD_BLOCK (char *name, int narg, char **vararg)
     INDENT;
     fprintf (outfile, "else\n");
 
-    fprintf (outfile, "\n#endif  /* SAC_DO_MULTITHREADED */\n\n");
+    fprintf (outfile, "\n#endif  /* SAC_DO_MULTITHREAD */\n\n");
 
     DBUG_VOID_RETURN;
 }

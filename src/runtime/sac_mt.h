@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/05/15 15:43:56  cg
+ * first bugs removed
+ *
  * Revision 1.3  1998/05/15 09:22:57  cg
  * first complete version
  *
@@ -151,13 +154,13 @@ typedef union {
     type *name;                                                                          \
     int *SAC_ND_A_RC (name);
 
-#define SAC_MT_SPMD_ARG_inout(type, name)                                                \
+#define SAC_MT_SPMD_ARG_inout_rc(type, name)                                             \
     type name;                                                                           \
     int SAC_ND_A_RC (name);
 
-#define SAC_MT_SPMD_ARG_pre(type, name) type name;
+#define SAC_MT_SPMD_ARG_preset(type, name) type name;
 
-#define SAC_MT_SPMD_ARG_pre_rc(type, name)                                               \
+#define SAC_MT_SPMD_ARG_preset_rc(type, name)                                            \
     type name;                                                                           \
     int SAC_ND_A_RC (name);
 
@@ -223,10 +226,12 @@ typedef union {
     }
 
 #define SAC_MT_SPMD_FUN_REAL_PARAM_LIST()                                                \
-    (unsigned int SAC_MT_mythread, unsigned int SAC_MT_myworkerclass,                    \
-     unsigned int SAC_MT_worker_flag)
+    unsigned int SAC_MT_mythread, unsigned int SAC_MT_myworkerclass,                     \
+      unsigned int SAC_MT_worker_flag
 
 #define SAC_MT_SPMD_FUN_REAL_RETURN() return (SAC_MT_worker_flag);
+
+#define SAC_MT_SPMD_FUN_REAL_RETTYPE() static unsigned int
 
 #define SAC_MT_MYTHREAD() SAC_MT_mythread
 
