@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.122  2002/10/09 02:04:26  dkr
+ * PrintNgen(): correct N_Nwithid used now 8-)
+ *
  * Revision 3.121  2002/10/07 04:48:07  dkr
  * PrintAST(): NWITHOP_TYPE added
  *
@@ -3272,14 +3275,11 @@ PrintMTalloc (node *arg_node, node *arg_info)
 node *
 PrintNwith (node *arg_node, node *arg_info)
 {
-    node *buffer, *tmp_nwith;
+    node *buffer;
 
     DBUG_ENTER ("PrintNwith");
 
     buffer = INFO_PRINT_INT_SYN (arg_info);
-
-    tmp_nwith = INFO_PRINT_NWITH (arg_info);
-    INFO_PRINT_NWITH (arg_info) = arg_node;
 
     DBUG_EXECUTE ("WLI",
                   fprintf (outfile,
@@ -3350,7 +3350,6 @@ PrintNwith (node *arg_node, node *arg_info)
 
     indent--;
 
-    INFO_PRINT_NWITH (arg_info) = tmp_nwith;
     INFO_PRINT_INT_SYN (arg_info) = buffer;
 
     DBUG_RETURN (arg_node);
@@ -3395,7 +3394,7 @@ PrintNwithid (node *arg_node, node *arg_info)
  * description:
  *   prints a generator.
  *
- *   The index variable is found in NWITH_WITHID( INFO_PRINT_NWITH( arg_info)).
+ *   The index variable is found in NPART_WITHID( INFO_PRINT_NPART( arg_info)).
  *
  ******************************************************************************/
 
@@ -3416,13 +3415,13 @@ PrintNgenerator (node *arg_node, node *arg_info)
     fprintf (outfile, " %s ", prf_symbol[NGEN_OP1 (arg_node)]);
 
     /* print indices */
-    if (INFO_PRINT_NWITH (arg_info) != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NWITH (arg_info)) == N_Nwith),
-                     "INFO_PRINT_NWITH is no N_Nwith node");
+    if (INFO_PRINT_NPART (arg_info) != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NPART (arg_info)) == N_Npart),
+                     "INFO_PRINT_NPART is no N_Npart node");
 
-        DBUG_ASSERT ((NWITH_WITHID (INFO_PRINT_NWITH (arg_info)) != NULL),
-                     "NWITH_WITHID not found!");
-        Trav (NWITH_WITHID (INFO_PRINT_NWITH (arg_info)), arg_info);
+        DBUG_ASSERT ((NPART_WITHID (INFO_PRINT_NPART (arg_info)) != NULL),
+                     "NPART_WITHID not found!");
+        Trav (NPART_WITHID (INFO_PRINT_NPART (arg_info)), arg_info);
     } else {
         fprintf (outfile, "?");
     }
@@ -3531,7 +3530,12 @@ PrintNcode (node *arg_node, node *arg_info)
 node *
 PrintNpart (node *arg_node, node *arg_info)
 {
+    node *tmp_npart;
+
     DBUG_ENTER ("PrintNpart");
+
+    tmp_npart = INFO_PRINT_NPART (arg_info);
+    INFO_PRINT_NPART (arg_info) = arg_node;
 
     DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n"); INDENT;
                   fprintf (outfile, "**MASKS - Npart: \n"); INDENT;
@@ -3561,6 +3565,8 @@ PrintNpart (node *arg_node, node *arg_info)
     } else {
         fprintf (outfile, "\n");
     }
+
+    INFO_PRINT_NPART (arg_info) = tmp_npart;
 
     DBUG_RETURN (arg_node);
 }
@@ -3645,8 +3651,8 @@ PrintNwith2 (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintNwith2");
 
-    tmp_nwith2 = INFO_PRINT_NWITH (arg_info);
-    INFO_PRINT_NWITH (arg_info) = arg_node;
+    tmp_nwith2 = INFO_PRINT_NWITH2 (arg_info);
+    INFO_PRINT_NWITH2 (arg_info) = arg_node;
 
     indent++;
 
@@ -3710,7 +3716,7 @@ PrintNwith2 (node *arg_node, node *arg_info)
 
     indent--;
 
-    INFO_PRINT_NWITH (arg_info) = tmp_nwith2;
+    INFO_PRINT_NWITH2 (arg_info) = tmp_nwith2;
 
     DBUG_RETURN (arg_node);
 }
@@ -3913,11 +3919,11 @@ PrintWLcode (node *arg_node, node *arg_info)
 
         fprintf (outfile, "op_%d", NCODE_ID (arg_node));
     } else {
-        if (INFO_PRINT_NWITH (arg_info) != NULL) {
-            DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NWITH (arg_info)) == N_Nwith2),
-                         "INFO_PRINT_NWITH( arg_info) contains no N_Nwith2 node");
+        if (INFO_PRINT_NWITH2 (arg_info) != NULL) {
+            DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NWITH2 (arg_info)) == N_Nwith2),
+                         "INFO_PRINT_NWITH2 is no N_Nwith2 node");
 
-            switch (NWITH2_TYPE (INFO_PRINT_NWITH (arg_info))) {
+            switch (NWITH2_TYPE (INFO_PRINT_NWITH2 (arg_info))) {
             case WO_genarray:
                 fprintf (outfile, "init");
                 break;
