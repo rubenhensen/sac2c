@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/06/27 08:56:06  ben
+ * 2 compiler warnings for Self-Scheduling fixed
+ *
  * Revision 3.14  2001/06/20 12:25:12  ben
  * Self modified for using parameter first_task
  *
@@ -631,7 +634,7 @@ ICMCompileMT_SCHEDULER_Self_BEGIN (int sched_id, char *first_task, int tasks_per
     INDENT;
     fprintf (outfile, "int SAC_MT_taskid,SAC_MT_worktodo;\n");
     INDENT;
-    if (strcmp (first_task, "SACl_FirstAutomatic") == 0)
+    if (strcmp (first_task, "SACl_FirstAutomatic") == 0) {
         if (sched_id > 0) {
             fprintf (outfile,
                      "SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC(%d,SAC_MT_taskid);\n",
@@ -641,6 +644,7 @@ ICMCompileMT_SCHEDULER_Self_BEGIN (int sched_id, char *first_task, int tasks_per
                      "SAC_MT_SCHEDULER_Self_FIRST_TASK_STATIC(%d,SAC_MT_taskid);\n",
                      sched_id);
         }
+    }
     if (strcmp (first_task, "SACl_FirstStatic") == 0)
         fprintf (outfile, "SAC_MT_SCHEDULER_Self_FIRST_TASK_STATIC(%d,SAC_MT_taskid);\n",
                  sched_id);
@@ -704,14 +708,14 @@ ICMCompileMT_SCHEDULER_Self_INIT (int sched_id, char *first_task, int tasks_per_
     if (strcmp (first_task, "SACl_FirstDynamic") == 0)
         fprintf (outfile, "SAC_MT_SCHEDULER_SET_TASKS(%d,0);\n", sched_id);
 
-    if (strcmp (first_task, "SACl_FirstAutomatic") == 0)
+    if (strcmp (first_task, "SACl_FirstAutomatic") == 0) {
         if (sched_id == 0) {
             INDENT;
             fprintf (outfile, "SAC_MT_TASK(%d,0)=SAC_MT_THREADS();\n", sched_id);
         } else {
             fprintf (outfile, "SAC_MT_SCHEDULER_SET_TASKS(%d,0);\n", sched_id);
         }
-
+    }
     if (strcmp (first_task, "SACl_FirstStatic") == 0) {
         INDENT;
         fprintf (outfile, "SAC_MT_TASK(%d,0)=SAC_MT_THREADS();\n", sched_id);
