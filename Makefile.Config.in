@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.14  2004/09/30 19:54:31  sah
+# added NEWAST flag
+#
 # Revision 1.13  2004/08/07 13:55:22  sah
 # if available, gnu indent is used instead of cb
 # which improves readability of generated code
@@ -82,8 +85,10 @@ ifeq ($(shell test -f $(PROJECT_ROOT)/_NEW_AST && echo yes),yes)
   CCDEPS_FLAGS := $(CCDEPS_FLAGS) -DNEW_AST
   CCPROD_FLAGS := $(CCPROD_FLAGS) -DNEW_AST
   XSLTENGINE := sabcmd
+  NEWAST := yes
 else
   XSLTENGINE := true
+  NEWAST := no
 endif
 
 MAKE_NORM    := $(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)"
