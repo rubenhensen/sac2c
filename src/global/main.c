@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.49  1995/06/09 15:27:36  hw
+ * Revision 1.50  1995/06/13 08:31:20  asi
+ * added parameter -maxunroll and variables unrnum and opt_unr
+ *
+ * Revision 1.49  1995/06/09  15:27:36  hw
  * new option '-fcheck_boundary'  inserted
  *
  * Revision 1.48  1995/06/07  15:38:28  hw
@@ -189,6 +192,7 @@ int sac_optimize = 1;
 int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1, opt_inl = 1, opt_unr = 1;
 int optvar = 50;
 int inlnum = 1;
+int unrnum = 2;
 
 int psi_optimize = 1;
 int psi_opt_ive = 1;
@@ -237,6 +241,9 @@ MAIN
             break;
         case '2':
             strcat (ccflagsstr, "-O2 ");
+            break;
+        case '3':
+            strcat (ccflagsstr, "-O3 ");
             break;
         default:
             ERROR1 (("unknown optimize parameter \"%s\"", *argv));
@@ -374,17 +381,19 @@ MAIN
             ++argv;
             --argc;
             optvar = atoi (*argv);
+        } else {
+            if (!strncmp (*argv, "axinline", 8)) {
+                ++argv;
+                --argc;
+                inlnum = atoi (*argv);
+            } else {
+                if (!strncmp (*argv, "axunroll", 8)) {
+                    ++argv;
+                    --argc;
+                    unrnum = atoi (*argv);
+                }
+            }
         }
-        if (!strncmp (*argv, "axinline", 8)) {
-            ++argv;
-            --argc;
-            inlnum = atoi (*argv);
-        }
-    }
-    NEXTOPT
-    ARG 'v' : PARM
-    {
-        optvar = atoi (*argv);
     }
     NEXTOPT
     ARG 'o' : PARM
