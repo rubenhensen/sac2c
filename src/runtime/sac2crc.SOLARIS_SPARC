@@ -200,6 +200,17 @@ CACHE2_ASSOC   :=  1
 CACHE2_MSCA    :=  3
 
 
+target ultra2_entr450:
+
+CACHE1_SIZE    :=  16
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  1
+
+CACHE2_SIZE    :=  4096
+CACHE2_LINE    :=  64
+CACHE2_ASSOC   :=  1
+
+
 
 /*******************************************************************************
  *
@@ -282,6 +293,8 @@ target blitz::ultra_entr3000:
 
 target picard::ultra2_entr4000:
 
+target idefix:: ultra2_entr450:
+
 
 
 /*******************************************************************************
@@ -318,6 +331,11 @@ CCFLAGS        +=  "-xtarget=ultra -xcache=16/32/1:512/64/1"
 target picard_cc::suncc::ultra2_entr4000:
 
 CCFLAGS        +=  "-xtarget=ultra2 -xcache=16/32/1:1024/64/1"
+
+
+target picard_cc::suncc::ultra2_entr450:
+
+CCFLAGS        +=  "-xtarget=ultra2 -xcache=16/32/1:4096/64/1"
 
 
 
