@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/03/29 01:37:40  dkr
+ * naive inlining added
+ *
  * Revision 3.8  2001/03/27 13:48:08  dkr
  * signature of Inline() modified
  *
@@ -99,8 +102,6 @@
 #include "DupTree.h"
 #include "Inline.h"
 
-#define INL_COUNT 1
-
 #define INLINE_PREFIX "__inl"
 
 static int inline_nr = 0;
@@ -108,27 +109,35 @@ static int inline_nr = 0;
 /******************************************************************************
  *
  * Function:
- *   char *CreateInlineName( char *old_name)
+ *   char *CreateInlineName( char *old_name, node *arg_info)
  *
  * Description:
  *   Renames the given variable.
- *   Example:
+ *
+ *   INFO_INL_TYPE & INL_NAIVE:
+ *     a  ->  _inl_87
+ *   otherwise:
  *     a  ->  _inl100_a     if (inline_nr == 100) and (INLINE_PREFIX == "_inl")
  *
  ******************************************************************************/
 
 static char *
-CreateInlineName (char *old_name)
+CreateInlineName (char *old_name, node *arg_info)
 {
     char *new_name;
 
     DBUG_ENTER ("CreateInlineName");
 
-    new_name = (char *)MALLOC (sizeof (char)
-                               * (strlen (old_name) + strlen (INLINE_PREFIX) + 1 + /* _ */
-                                  NumberOfDigits (inline_nr) + 1)); /* '\0' */
+    if (INFO_INL_TYPE (arg_info) & INL_NAIVE) {
+        new_name = TmpVar ();
+    } else {
+        new_name
+          = (char *)MALLOC (sizeof (char)
+                            * (strlen (old_name) + strlen (INLINE_PREFIX) + 1 + /* _ */
+                               NumberOfDigits (inline_nr) + 1));                /* '\0' */
 
-    sprintf (new_name, INLINE_PREFIX "%d_%s", inline_nr, old_name);
+        sprintf (new_name, INLINE_PREFIX "%d_%s", inline_nr, old_name);
+    }
 
     DBUG_RETURN (new_name);
 }
@@ -161,6 +170,83 @@ ResetInlineNo (node *module)
     DBUG_VOID_RETURN;
 }
 
+#define TUTU 0
+#if TUTU
+/******************************************************************************
+ *
+ * Function:
+ *   node *AdjustIntAssign( node *int_assign, node *ext_let)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+AdjustIntAssign (node *int_assign, node *ext_let)
+{
+    node *int_let;
+    node *int_args, *ext_args;
+    node *int_arg, *ext_arg;
+    ids *int_ids, *ext_ids;
+    node *prolog = NULL;
+    node *epilog = NULL;
+
+    DBUG_ENTER ("AdjustIntAssign");
+
+    DBUG_ASSERT (((int_assign != NULL) && (NODE_TYPE (int_assign) == N_assign)
+                  && (NODE_TYPE (ASSIGN_INSTR (int_assign)) == N_let)
+                  && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (int_assign))) == N_ap)),
+                 "dummy fold-fun: FUNDEF_INT_ASSIGN corrupted!");
+
+    DBUG_ASSERT (((ext_let != NULL) && (NODE_TYPE (ext_let) == N_let)),
+                 "no N_let node found!");
+
+    int_let = ASSIGN_INSTR (int_assign);
+
+    int_ids = LET_IDS (int_let);
+    ext_ids = LET_IDS (ext_let);
+    while (int_ids != NULL) {
+        if (strcmp (IDS_NAME (int_ids), IDS_NAME (ext_ids))) {
+            epilog
+              = MakeAssign (MakeLet (DupIds_Id (ext_ids), DupOneIds (int_ids)), epilog);
+        }
+        int_ids = IDS_NEXT (int_ids);
+        ext_ids = IDS_NEXT (ext_ids);
+    }
+
+    int_args = AP_ARGS (LET_EXPR (int_let));
+    ext_args = AP_ARGS (LET_EXPR (ext_let));
+    while (int_args != NULL) {
+        int_arg = EXPRS_EXPR (int_args);
+        ext_arg = EXPRS_EXPR (ext_args);
+        DBUG_ASSERT ((NODE_TYPE (ext_arg) == N_id), "illegal argument found!");
+        if ((NODE_TYPE (int_arg) != N_id)
+            || (strcmp (ID_NAME (int_arg), ID_NAME (ext_arg)))) {
+            prolog
+              = MakeAssign (MakeLet (DupNode (int_arg), DupId_Ids (ext_arg)), prolog);
+        }
+        int_args = EXPRS_NEXT (int_args);
+        ext_args = EXPRS_NEXT (ext_args);
+    }
+
+    if (prolog != NULL) {
+        ASSIGN_INSTR (int_assign) = ASSIGN_INSTR (prolog);
+        ASSIGN_INSTR (prolog) = NULL;
+        prolog = FreeNode (prolog);
+        prolog = AppendAssign (prolog, DupNode (ext_let));
+    } else {
+        ASSIGN_INSTR (int_assign) = DupNode (ext_let);
+    }
+    int_let = FreeTree (int_let);
+
+    ASSIGN_NEXT (int_assign)
+      = AppendAssign (prolog, AppendAssign (epilog, ASSIGN_NEXT (int_assign)));
+
+    DBUG_RETURN (int_assign);
+}
+#endif
+
 /******************************************************************************
  *
  * Function:
@@ -174,9 +260,10 @@ ResetInlineNo (node *module)
 static node *
 InlineArg (node *arg_node, node *arg_info)
 {
-    node *new_vardec;
+    node *arg;
     node *new_ass;
-    char *new_name;
+    node *new_vardec = NULL;
+    char *new_name = NULL;
 
     DBUG_ENTER ("InlineArg");
 
@@ -186,19 +273,60 @@ InlineArg (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NODE_TYPE (INFO_INL_ARG (arg_info)) == N_exprs),
                  "illegal INFO_INL_ARG found!");
 
-    /*
-     * build a new vardec based on 'arg_node' and rename it
-     */
-    new_vardec = MakeVardecFromArg (arg_node);
-    new_name = CreateInlineName (ARG_NAME (arg_node));
-    FREE (VARDEC_NAME (new_vardec));
-    VARDEC_NAME (new_vardec) = new_name;
+    arg = EXPRS_EXPR (INFO_INL_ARG (arg_info));
 
     /*
-     * insert new vardec into INFO_INL_VARDECS chain
+     * check whether an epilog assignment is needed
      */
-    VARDEC_NEXT (new_vardec) = INFO_INL_VARDECS (arg_info);
-    INFO_INL_VARDECS (arg_info) = new_vardec;
+    if (INFO_INL_TYPE (arg_info) == INL_NAIVE) {
+        if (NODE_TYPE (arg) == N_id) {
+            node *tmp = EXPRS_NEXT (INFO_INL_ARG (arg_info));
+            bool found_twice = FALSE;
+
+            while (tmp != NULL) {
+                if ((NODE_TYPE (EXPRS_EXPR (tmp)) == N_id)
+                    && (!strcmp (ID_NAME (arg), ID_NAME (EXPRS_EXPR (tmp))))) {
+                    /*
+                     * current actual argument occurs twice in argument list
+                     *  -> epilog assignment needed
+                     */
+                    found_twice = TRUE;
+                }
+
+                tmp = EXPRS_NEXT (tmp);
+            }
+
+            if (!found_twice) {
+                new_vardec = ID_VARDEC (arg);
+                new_name = ID_NAME (arg);
+            }
+        }
+    }
+
+    if (new_vardec == NULL) {
+        /*
+         * build a new vardec based on 'arg_node' and rename it
+         */
+        new_vardec = MakeVardecFromArg (arg_node);
+        new_name = CreateInlineName (ARG_NAME (arg_node), arg_info);
+        FREE (VARDEC_NAME (new_vardec));
+        VARDEC_NAME (new_vardec) = new_name;
+
+        /*
+         * insert new vardec into INFO_INL_VARDECS chain
+         */
+        VARDEC_NEXT (new_vardec) = INFO_INL_VARDECS (arg_info);
+        INFO_INL_VARDECS (arg_info) = new_vardec;
+
+        /*
+         * insert assignment
+         *   VARDEC_NAME( new_vardec) = arg;
+         * into INFO_INL_PROLOG
+         */
+        new_ass = MakeAssignLet (StringCopy (new_name), new_vardec, DupNode (arg));
+        ASSIGN_NEXT (new_ass) = INFO_INL_PROLOG (arg_info);
+        INFO_INL_PROLOG (arg_info) = new_ass;
+    }
 
     /*
      * insert pointers ['arg_node', 'new_vardec'] into INFO_INL_LUT
@@ -212,17 +340,7 @@ InlineArg (node *arg_node, node *arg_info)
     INFO_INL_LUT (arg_info)
       = InsertIntoLUT_S (INFO_INL_LUT (arg_info), ARG_NAME (arg_node), new_name);
 
-    /*
-     * insert assignment
-     *   VARDEC_NAME( new_vardec) = EXPRS_EXPR( INFO_INL_ARG( arg_info));
-     * into INFO_INL_PROLOG
-     */
-    new_ass = MakeAssignLet (StringCopy (new_name), new_vardec,
-                             DupTree (EXPRS_EXPR (INFO_INL_ARG (arg_info))));
-    ASSIGN_NEXT (new_ass) = INFO_INL_PROLOG (arg_info);
-    INFO_INL_PROLOG (arg_info) = new_ass;
-
-    if (ARG_NEXT (arg_node)) {
+    if (ARG_NEXT (arg_node) != NULL) {
         INFO_INL_ARG (arg_info) = EXPRS_NEXT (INFO_INL_ARG (arg_info));
         ARG_NEXT (arg_node) = InlineArg (ARG_NEXT (arg_node), arg_info);
     }
@@ -253,8 +371,8 @@ InlineVardec (node *arg_node, node *arg_info)
     /*
      * build a new vardec based on 'arg_node' and rename it
      */
-    new_vardec = DupTree (arg_node);
-    new_name = CreateInlineName (VARDEC_NAME (arg_node));
+    new_vardec = DupNode (arg_node);
+    new_name = CreateInlineName (VARDEC_NAME (arg_node), arg_info);
     FREE (VARDEC_NAME (new_vardec));
     VARDEC_NAME (new_vardec) = new_name;
 
@@ -276,7 +394,7 @@ InlineVardec (node *arg_node, node *arg_info)
     INFO_INL_LUT (arg_info)
       = InsertIntoLUT_S (INFO_INL_LUT (arg_info), VARDEC_NAME (arg_node), new_name);
 
-    if (VARDEC_NEXT (arg_node)) {
+    if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = InlineVardec (VARDEC_NEXT (arg_node), arg_info);
     }
 
@@ -286,7 +404,7 @@ InlineVardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *InlineReturn( node *arg_node, node *arg_info)
+ *   node *InlineRetExprs( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -294,31 +412,34 @@ InlineVardec (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 static node *
-InlineReturn (node *arg_node, node *arg_info)
+InlineRetExprs (node *arg_node, node *arg_info)
 {
-    node *exprs;
+    node *new_expr;
 
-    DBUG_ENTER ("InlineReturn");
+    DBUG_ENTER ("InlineRetExprs");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_return), "no N_return node found!");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_exprs), "no N_exprs node found!");
 
-    exprs = RETURN_EXPRS (arg_node);
-    while (exprs != NULL) {
-        DBUG_ASSERT ((INFO_INL_IDS (arg_info) != NULL), "INFO_INL_IDS not found!");
+    DBUG_ASSERT ((INFO_INL_IDS (arg_info) != NULL), "INFO_INL_IDS not found!");
 
+    new_expr
+      = DupNodeLUT_Type (EXPRS_EXPR (arg_node), INFO_INL_LUT (arg_info), DUP_INLINE);
+
+    if ((NODE_TYPE (new_expr) != N_id)
+        || (strcmp (ID_NAME (new_expr), IDS_NAME (INFO_INL_IDS (arg_info))))) {
         /*
          * insert assignment
-         *   INFO_INL_IDS( arg_info) = DupTree( EXPRS_EXPR( exprs), INFO_INL_LUT);
+         *   INFO_INL_IDS( arg_info) = new_expr;
          * into INFO_INL_EPILOG
          */
         INFO_INL_EPILOG (arg_info)
-          = MakeAssign (MakeLet (DupTreeLUT_Type (EXPRS_EXPR (exprs),
-                                                  INFO_INL_LUT (arg_info), DUP_INLINE),
-                                 DupOneIds (INFO_INL_IDS (arg_info))),
+          = MakeAssign (MakeLet (new_expr, DupOneIds (INFO_INL_IDS (arg_info))),
                         INFO_INL_EPILOG (arg_info));
+    }
 
+    if (EXPRS_NEXT (arg_node) != NULL) {
         INFO_INL_IDS (arg_info) = IDS_NEXT (INFO_INL_IDS (arg_info));
-        exprs = EXPRS_NEXT (exprs);
+        EXPRS_NEXT (arg_node) = InlineRetExprs (EXPRS_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -339,6 +460,7 @@ DoInline (node *let_node, node *arg_info)
 {
     node *ap_node;
     node *inl_fundef;
+    node *ret_exprs;
     node *inl_nodes;
 
     DBUG_ENTER ("DoInline");
@@ -354,7 +476,9 @@ DoInline (node *let_node, node *arg_info)
     INFO_INL_LUT (arg_info) = GenerateLUT ();
     INFO_INL_PROLOG (arg_info) = NULL;
     INFO_INL_EPILOG (arg_info) = NULL;
-    inl_fun++;
+    if (INFO_INL_TYPE (arg_info) & INL_COUNT) {
+        inl_fun++;
+    }
 
     /*
      * generate new vardecs and fill INFO_INL_LUT
@@ -379,7 +503,10 @@ DoInline (node *let_node, node *arg_info)
      */
     if (FUNDEF_RETURN (inl_fundef) != NULL) {
         INFO_INL_IDS (arg_info) = LET_IDS (let_node);
-        FUNDEF_RETURN (inl_fundef) = InlineReturn (FUNDEF_RETURN (inl_fundef), arg_info);
+        ret_exprs = RETURN_EXPRS (FUNDEF_RETURN (inl_fundef));
+        if (ret_exprs != NULL) {
+            ret_exprs = InlineRetExprs (ret_exprs, arg_info);
+        }
     }
 
     /*
@@ -394,9 +521,19 @@ DoInline (node *let_node, node *arg_info)
     inl_nodes = AppendAssign (INFO_INL_PROLOG (arg_info), inl_nodes);
     inl_nodes = AppendAssign (inl_nodes, INFO_INL_EPILOG (arg_info));
 
-    if (INFO_INL_TYPE (arg_info) & INL_COUNT) {
-        inline_nr++;
+#if TUTU
+    if ((FUNDEF_STATUS (inl_fundef) == ST_dofun)
+        || (FUNDEF_STATUS (inl_fundef) == ST_whilefun)) {
+        node *int_assign
+          = SearchInLUT_P (INFO_INL_LUT (arg_info), FUNDEF_INT_ASSIGN (inl_fundef));
+
+        DBUG_ASSERT ((int_assign != FUNDEF_INT_ASSIGN (inl_fundef)),
+                     "duplicated FUNDEF_INT_ASSIGN not found in LUT!");
+        int_assign = AdjustIntAssign (int_assign, let_node);
     }
+#endif
+
+    inline_nr++;
     INFO_INL_LUT (arg_info) = RemoveLUT (INFO_INL_LUT (arg_info));
 
     DBUG_RETURN (inl_nodes);
@@ -532,7 +669,7 @@ INLassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *InlineSingleApplication( node *let, node *fundef)
+ *  node *InlineSingleApplication( node *let, node *fundef, int type)
  *
  * description:
  *   This function allows a single function application to be inlined.
@@ -543,10 +680,57 @@ INLassign (node *arg_node, node *arg_info)
  *   It returns an assignment-chain to be inserted for the N_assign node
  *   which has <let_node> as its body!
  *
+ *   parameter 'type' is a bit field:
+ *     INL_COUNT: increment 'inline_nr'
+ *     INL_NAIVE: do inlining naively
+ *
+ *   Example for inlining:
+ *
+ *     type, type, ... fun( type a_0, type a_1, ...)
+ *     {
+ *       type l_0;
+ *       type l_1;
+ *       ...
+ *
+ *       [...]                      <-- function body
+ *
+ *       return( r_0, r_1, ...);    <-- { r_? } subset of { a_?, l_? }
+ *     }
+ *
+ *     ...
+ *     R_0, R_1, ... = fun( A_0, A_1, ...);
+ *     ...
+ *
+ *   Normal inlining:
+ *
+ *     type _inl_l_?;
+ *
+ *     _inl_a_? = A_?;     <-- epilog assignments
+ *
+ *     [...]               <-- renamed function body: a_? -> _inl_a_?
+ *                                                    l_? -> _inl_l_?
+ *
+ *     R_? = _inl_r_?;     <-- prolog assignments
+ *
+ *   Naive inlining (possible only in some special cases, e.g. inlining of
+ *   dummy functions):
+ *
+ *     type _inl_l_?;
+ *
+ *     _inl_a_i = A_i;     <-- epilog assignments; needed only iff
+ *                             (A_i != N_id) or (exists j>i: A_j == A_i)
+ *
+ *     [...]               <-- renamed function body: a_? -> A_?
+ *                                                    a_i -> _inl_a_i  (epilog)
+ *                                                    l_? -> _inl_l_?
+ *
+ *     R_i = _inl_?_i;     <-- prolog assignments; needed only iff
+ *                             (! (r_i -> R_i))
+ *
  ******************************************************************************/
 
 node *
-InlineSingleApplication (node *let, node *fundef)
+InlineSingleApplication (node *let, node *fundef, int type)
 {
     node *arg_info;
     node *assigns;
@@ -557,7 +741,7 @@ InlineSingleApplication (node *let, node *fundef)
     mem_tab = act_tab;
     act_tab = inline_tab;
     arg_info = MakeInfo ();
-    INFO_INL_TYPE (arg_info) = 0;
+    INFO_INL_TYPE (arg_info) = type;
     INFO_INL_VARDECS (arg_info) = FUNDEF_VARDEC (fundef);
 
     assigns = DoInline (let, arg_info);
