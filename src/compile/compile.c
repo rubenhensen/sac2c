@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.65  2000/07/05 12:24:12  dkr
+ * unused variable hidden now
+ *
  * Revision 2.64  2000/07/04 14:55:57  jhs
  * Added mtn-stuff.
  * ./
@@ -5360,7 +5363,10 @@ node *
 BuildParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
 {
     node *vardec;
-    char *rc_tag, *this_tag;
+    char *rc_tag;
+#if 0
+  char *this_tag;
+#endif
 
     DBUG_ENTER ("BuildParamsByDFM");
 
@@ -5371,28 +5377,28 @@ BuildParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
 
         DBUG_PRINT ("JHS", ("%s", NODE_TEXT (vardec)));
         DBUG_PRINT ("JHS", ("%s", VARDEC_OR_ARG_NAME (vardec)));
-        /*
-            if (VARDEC_OR_ARG_REFCNT( vardec) >= 0) {
-              this_tag = rc_tag;
-            } else {
-              this_tag = tag;
-            }
-            icm_args = MakeExprs( MakeId1( this_tag),
-                       MakeExprs( MakeId1( MakeTypeString(VARDEC_OR_ARG_TYPE( vardec))),
-                       MakeExprs( MakeId1( VARDEC_OR_ARG_NAME( vardec)),
-                                  icm_args)));
-            if (num_args != NULL) {
-              *num_args = *num_args + 1;
-            }
+#if 0
+    if (VARDEC_OR_ARG_REFCNT( vardec) >= 0) {
+      this_tag = rc_tag;
+    } else {
+      this_tag = tag;
+    }
+    icm_args = MakeExprs( MakeId1( this_tag),
+               MakeExprs( MakeId1( MakeTypeString(VARDEC_OR_ARG_TYPE( vardec))),
+               MakeExprs( MakeId1( VARDEC_OR_ARG_NAME( vardec)),
+                          icm_args)));
+    if (num_args != NULL) {
+      *num_args = *num_args + 1;
+    }
 
-            if (num_args != NULL) {
-              DBUG_PRINT("SPMD", ("bpbdfm num_args:%i %s",
-                                  *num_args, VARDEC_OR_ARG_NAME( vardec )));
-            } else {
-              DBUG_PRINT("SPMD", ("bpbdfm num_args:- %s",
-                                  VARDEC_OR_ARG_NAME( vardec )));
-            }
-        */
+    if (num_args != NULL) {
+      DBUG_PRINT("SPMD", ("bpbdfm num_args:%i %s", 
+                          *num_args, VARDEC_OR_ARG_NAME( vardec )));
+    } else {
+      DBUG_PRINT("SPMD", ("bpbdfm num_args:- %s", 
+                          VARDEC_OR_ARG_NAME( vardec )));
+    }
+#endif
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
