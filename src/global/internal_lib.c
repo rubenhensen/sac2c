@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2002/09/03 14:40:28  sbs
+ * ntc prefix for tmp_var added
+ *
  * Revision 3.25  2002/09/03 13:18:06  sbs
  * StrBuf support added
  *
@@ -873,6 +876,8 @@ TmpVar ()
         s = "hd";
     } else if (act_tab == cwc_tab) {
         s = "cwc";
+    } else if (act_tab == ntc_tab) {
+        s = "ntc";
     } else if (act_tab == al_tab) {
         s = "al";
     } else {
