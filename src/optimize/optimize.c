@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2004/02/02 16:00:57  skt
+ * use DoSSA and UndoSSA instead of calling Lac2Fun, SSATransform etc.
+ *
  * Revision 3.54  2003/08/16 08:44:25  ktr
  * SelectionPropagation added. Must currently be activated with -dosp.
  *
@@ -300,6 +303,7 @@
 #include "UndoSSATransform.h"
 #include "lac2fun.h"
 #include "fun2lac.h"
+#include "ssa.h"
 #include "SSADeadCodeRemoval.h"
 #include "SSACSE.h"
 #include "SSAConstantFolding.h"
@@ -661,28 +665,14 @@ OPTmodul (node *arg_node, node *arg_info)
     if (use_ssaform) {
         NOTE (("using ssa-form based optimizations."));
 
-        /* transform all while to do-loops (required for SSALIR) */
-        arg_node = TransformWhile2Do (arg_node);
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-            && (0 == strcmp (break_specifier, "w2d"))) {
-            goto DONE;
-        }
-
-        arg_node = Lac2Fun (arg_node);
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-            && (0 == strcmp (break_specifier, "l2f"))) {
-            goto DONE;
-        }
-
-        arg_node = CheckAvis (arg_node);
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-            && (0 == strcmp (break_specifier, "cha"))) {
-            goto DONE;
-        }
-
-        arg_node = SSATransform (arg_node);
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-            && (0 == strcmp (break_specifier, "ssa"))) {
+        arg_node = DoSSA (arg_node);
+        /* necessary to guarantee, that the compilation can be stopped
+           during the call of DoSSA */
+        if ((break_after == PH_sacopt)
+            && ((0 == strcmp (break_specifier, "w2d"))
+                || (0 == strcmp (break_specifier, "l2f"))
+                || (0 == strcmp (break_specifier, "cha"))
+                || (0 == strcmp (break_specifier, "ssa")))) {
             goto DONE;
         }
     }
@@ -712,17 +702,12 @@ OPTmodul (node *arg_node, node *arg_info)
 
     if (use_ssaform) {
         NOTE (("undo ssa-form"));
-        arg_node = UndoSSATransform (arg_node);
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-            && (0 == strcmp (break_specifier, "ussa"))) {
-            goto DONE;
-        }
-
-        /* undo lac2fun transformation */
-        arg_node = Fun2Lac (arg_node);
-
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-            && (0 == strcmp (break_specifier, "f2l"))) {
+        arg_node = UndoSSA (arg_node);
+        /* necessary to guarantee, that the compilation can be stopped
+           during the call of UndoSSA */
+        if ((break_after == PH_sacopt)
+            && ((0 == strcmp (break_specifier, "ussa"))
+                || (0 == strcmp (break_specifier, "f2l")))) {
             goto DONE;
         }
     }
