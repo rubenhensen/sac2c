@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.62  1995/05/31 13:03:11  hw
+ * Revision 1.63  1995/06/09 10:01:34  cg
+ * inline warning deleted.
+ *
+ * Revision 1.62  1995/05/31  13:03:11  hw
  * node[1] of N_foldfun is not an N_exprs anymore
  *
  * Revision 1.61  1995/05/31  11:38:23  hw
@@ -561,12 +564,12 @@ fundef: types ID BRACKET_L fundef2
            $$->info.types=$1;          /*  result type(s) */
            $$->info.types->id=$2;      /*  function name */
         }
-	| types INLINE {warn("inline not yet implemented!");} ID BRACKET_L fundef2
+	| types INLINE ID BRACKET_L fundef2
             {id *function_name;
 
-             $$=$6;
+             $$=$5;
              $$->info.types=$1;          /* result type(s) */
-             $$->info.types->id=$4;      /*  function name */
+             $$->info.types->id=$3;      /*  function name */
              $$->flag=1;                 /* flag to sign, that this function
                                           * should be inlined
                                           */             
