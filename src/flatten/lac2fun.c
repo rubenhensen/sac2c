@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/04/23 13:38:27  dkr
+ * fixed a bug in Lac2Fun:
+ * after lifting and clean-up InferDFMs() is called once more in order
+ * to get correct DFMs!
+ *
  * Revision 3.15  2001/04/19 07:42:40  dkr
  * macro F_PTR used as format string for pointers
  *
@@ -652,7 +657,7 @@ L2Fdo (node *arg_node, node *arg_info)
  *   node *Lac2Fun( node *syntax_tree)
  *
  * description:
- *   Converts all loops and conditions into (annotated) functions.
+ *   Converts all loops and conditions into (special) functions.
  *
  ******************************************************************************/
 
@@ -683,6 +688,11 @@ Lac2Fun (node *syntax_tree)
      * cleanup declarations (remove unused vardecs, ...)
      */
     syntax_tree = CleanupDecls (syntax_tree);
+
+    /*
+     * after lifting and clean-up the current DFMs are not valid anymore!!!
+     */
+    syntax_tree = InferDFMs (syntax_tree, HIDE_LOCALS_NEVER);
 
     DBUG_RETURN (syntax_tree);
 }
