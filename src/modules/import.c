@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/10/31 16:04:01  sbs
+ * closing comment added
+ *
  * Revision 3.15  2002/10/31 13:46:36  sbs
  * some comments added; some macro usages added;
  * module prefix in GenMod adapted to sbs==1
@@ -760,7 +763,7 @@ ResolvePragmaReadonly (node *arg_node, node *pragma, int count_params)
  *
  * Now, the import-tab functions:
  *
- *
+ */
 
 /*
  *
