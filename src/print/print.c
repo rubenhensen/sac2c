@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2000/12/06 11:42:51  dkr
+ * PrintTravPre, PrintTravPost added
+ * DBUG-string PRINT_LINE added: prints NODE_LINE for each node
+ *
  * Revision 3.4  2000/12/04 13:32:58  dkr
  * DoPrintTypesAST extended
  *
@@ -3797,6 +3801,45 @@ PrintTrav (node *syntax_tree, node *arg_info)
     act_tab = old_tab;
 
     DBUG_RETURN (syntax_tree);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintTravPre( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   This function is called before the traversal of each node.
+ *
+ ******************************************************************************/
+
+node *
+PrintTravPre (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintTravPre");
+
+    DBUG_PRINT ("PRINT_LINE", ("line (%s) %i\n", mdb_nodetype[NODE_TYPE (arg_node)],
+                               NODE_LINE (arg_node)));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintTravPost( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   This function is called after the traversal of each node.
+ *
+ ******************************************************************************/
+
+node *
+PrintTravPost (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintTravPost");
+
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
