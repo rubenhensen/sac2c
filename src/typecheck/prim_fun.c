@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.39  1999/01/18 15:30:18  sbs
+ * to[dif] made selectable for intrinsics
+ *
  * Revision 1.38  1999/01/15 15:27:39  cg
  * Usage of INTRINSIC_PSI removed.
  *
@@ -440,6 +443,16 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
      */
 
     switch (prf_old) {
+    case F_toi:
+    case F_toi_A:
+    case F_tof:
+    case F_tof_A:
+    case F_tod:
+    case F_tod_A:
+        wanted = (INTRINSIC_TO & intrinsics);
+        intrinsic = (wanted || (type_c == f_i) || (type_c == d_i) || (type_c == i_f)
+                     || (type_c == d_f) || (type_c == i_d) || (type_c == f_d));
+        break;
     case F_add_AxA:
     case F_add_AxS:
     case F_add_SxA:
