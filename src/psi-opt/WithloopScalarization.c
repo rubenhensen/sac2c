@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2003/01/27 16:18:58  ktr
+ * Code is now explicitely unshared before WLS
+ *
  * Revision 1.25  2003/01/25 22:06:23  ktr
  * Fixed a lot of memory management and related issues.
  *
@@ -206,10 +209,11 @@
  */
 typedef enum {
     wls_probe,
+    wls_unshare,
     wls_withloopification,
     wls_normgen,
     wls_distribute,
-    wls_scalarize,
+    wls_scalarize
 } wls_phase_type;
 
 /**
@@ -664,6 +668,36 @@ probePart (node *arg_node, node *arg_info)
         }
     }
     DBUG_RETURN (arg_node);
+}
+
+/****************************************************************************
+ *
+ * Code unsharing
+ *
+ ****************************************************************************/
+
+/**
+ * ensures that a part's code is not used by other parts.
+ * This is achieved by copying the part's code.
+ *
+ * @param arg_node N_NPart
+ * @param arg_info N_info
+ *
+ * @return The same part but with a unique NPART_CODE
+ */
+node *
+unsharePart (node *arg_node, node *arg_info)
+{
+    node *temp;
+
+    if (NCODE_USED (NPART_CODE (arg_node)) > 1) {
+        NCODE_USED (NPART_CODE (arg_node))--;
+        temp = DupNode (NPART_CODE (arg_node));
+        NCODE_NEXT (temp) = NCODE_NEXT (NPART_CODE (arg_node));
+        NCODE_NEXT (NPART_CODE (arg_node)) = temp;
+        NPART_CODE (arg_node) = temp;
+    }
+    return arg_node;
 }
 
 /****************************************************************************
@@ -1287,6 +1321,8 @@ distributePart (node *arg_node, node *arg_info)
 
         /* Duplicate the part */
         tmpnode = DupTreeLUT (arg_node, lut);
+
+        /* Duplicate the codes */
         NPART_CODE (tmpnode) = DupNodeLUT (NPART_CODE (arg_node), lut);
         NCODE_USED (NPART_CODE (tmpnode))++;
 
@@ -1773,6 +1809,20 @@ WLSNwith (node *arg_node, node *arg_info)
 
         /***************************************************************************
          *
+         *  CODE UNSHARING
+         *
+         *  Ensure all the Parts are using different N_NCode nodes.
+         *
+         ***************************************************************************/
+
+        WLS_PHASE (arg_info) = wls_unshare;
+
+        if (NWITH_PART (arg_node) != NULL) {
+            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+        }
+
+        /***************************************************************************
+         *
          *  WITHLOOPIFICATION
          *
          *  The applicabilty of the WLS is increased in the part by means of
@@ -1887,6 +1937,14 @@ WLSNpart (node *arg_node, node *arg_info)
     switch (WLS_PHASE (arg_info)) {
     case wls_probe:
         arg_node = probePart (arg_node, arg_info);
+
+        if ((INFO_WLS_POSSIBLE (arg_info)) && (NPART_NEXT (arg_node) != NULL)) {
+            NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+        }
+        break;
+
+    case wls_unshare:
+        arg_node = unsharePart (arg_node, arg_info);
 
         if ((INFO_WLS_POSSIBLE (arg_info)) && (NPART_NEXT (arg_node) != NULL)) {
             NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
