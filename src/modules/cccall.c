@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1997/03/19 13:46:23  cg
+ * Revision 1.12  1997/04/24 10:07:37  cg
+ * call to gcc converted to new environment variable SACBASE
+ *
+ * Revision 1.11  1997/03/19  13:46:23  cg
  * entirely re-implemented
  * now a global dependency tree is built up by import.c and readsib.c
  * So, linking should work now.
@@ -925,7 +928,7 @@ InvokeCC ()
 
     if (filetype == F_prog) {
         SystemCall ("gcc %s -Wall -Wno-unused -fno-builtin "
-                    "-I$RCSROOT/src/compile/ -L$RCSROOT/src/compile/ "
+                    "-I$SACBASE/runtime/ -L$SACBASE/runtime/ "
                     "-L%s "
                     "-o %s %s %s -lsac",
                     ccflagsstr, tmp_dirname, outfilename, cfilename,
@@ -933,23 +936,24 @@ InvokeCC ()
     } else {
         if (linkstyle == 1) {
             SystemCall ("gcc %s -Wall -Wno-unused -fno-builtin "
-                        "-I$RCSROOT/src/compile/ -L$RCSROOT/src/compile/ "
+                        "-I$SACBASE/runtime/ -L$SACBASE/runtime/ "
                         "-o %s%s.o -c %s/%s.c",
                         ccflagsstr, tmp_dirname, modulename, tmp_dirname, modulename);
         } else {
             SystemCall ("gcc %s -Wall -Wno-unused -fno-builtin "
-                        "-I$RCSROOT/src/compile/ -L$RCSROOT/src/compile/ "
+                        "-I$SACBASE/runtime/ -L$SACBASE/runtime/ "
                         "-o %s/globals.o -c %s/globals.c",
                         ccflagsstr, tmp_dirname, tmp_dirname);
-            NOTE ((" **\n"));
+            NOTEDOT;
 
             for (i = 1; i < function_counter; i++) {
                 SystemCall ("gcc %s -Wall -Wno-unused -fno-builtin "
-                            "-I$RCSROOT/src/compile/ -L$RCSROOT/src/compile/ "
+                            "-I$SACBASE/runtime/ -L$SACBASE/runtime/ "
                             "-o %s/fun%d.o -c %s/fun%d.c",
                             ccflagsstr, tmp_dirname, i, tmp_dirname, i);
-                NOTE ((" ** %d\n", i));
+                NOTEDOT;
             }
+            NOTE (("\n"));
         }
     }
 
