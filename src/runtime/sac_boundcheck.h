@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/07/06 11:00:57  sbs
+ * SAC_DO_BOUNDCHECK changed in SAC_DO_CHECK_BOUNDARY !
+ *
  * Revision 2.2  1999/04/12 09:41:44  cg
  * Boundchecking is completely redesigned.
  * Now, any C array access can be checked on demand.
@@ -46,7 +49,7 @@
 
 #define SAC_BOUNDCHECK_H
 
-#if SAC_DO_BOUNDCHECK
+#if SAC_DO_CHECK_BOUNDARY
 
 #include "sac_message.h"
 
@@ -63,11 +66,11 @@ extern char SAC_BC_format_read[];
        ? 0                                                                               \
        : SAC_RuntimeError (SAC_BC_format_read, #name, SAC_ND_A_SIZE (name), pos)),
 
-#else /* SAC_DO_BOUNDCHECK */
+#else /* SAC_DO_CHECK_BOUNDARY */
 
 #define SAC_BC_WRITE(name, pos)
 #define SAC_BC_READ(name, pos)
 
-#endif /* SAC_DO_BOUNDCHECK */
+#endif /* SAC_DO_CHECK_BOUNDARY */
 
 #endif /* SAC_BOUNDCHECK_H */
