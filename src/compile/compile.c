@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.94  2000/10/24 14:48:32  dkr
+ * some brushing done
+ *
  * Revision 2.93  2000/10/24 11:09:47  dkr
  * some functions renamed
  * compilation of prfs streamlined, corrected and simplified
@@ -558,7 +561,7 @@ MakeTypeString (types *type)
     DBUG_ENTER ("MakeTypeString");
 
     /*
-     * We do not necessaryly needed the basic type here, because the compiled
+     * We do not necessaryly need the basic type here, because the compiled
      * code contains proper typedef statements already :-)
      */
 #if 1
@@ -3126,7 +3129,6 @@ COMPPrfPsi (node *arg_node, node *arg_info)
     node *icm_node, *last_node;
     node *arg1, *arg2;
     ids *let_ids;
-    node *last_arg, *arg1_exprs;
 
     DBUG_ENTER ("COMPPrfPsi");
 
@@ -3156,17 +3158,10 @@ COMPPrfPsi (node *arg_node, node *arg_info)
         } else {
             /* 'arg1' is a N_array node */
             arg_node
-              = MakeAssignIcm3 ("ND_KD_PSI_CxA_S", DupNode (arg2), DupIds_Id (let_ids),
-                                MakeNum (GetExprsLength (ARRAY_AELEMS (arg1))));
+              = MakeAssignIcm4 ("ND_KD_PSI_CxA_S", DupNode (arg2), DupIds_Id (let_ids),
+                                MakeNum (GetExprsLength (ARRAY_AELEMS (arg1))),
+                                DupTree (ARRAY_AELEMS (arg1)));
             last_node = arg_node;
-
-            /* append all array elements of 'arg1' to the arg chain of the ICM */
-            last_arg = ICM_EXPRS3 (ASSIGN_INSTR (last_node));
-            arg1_exprs = ARRAY_AELEMS (arg1);
-            while (arg1_exprs != NULL) {
-                last_arg = EXPRS_NEXT (last_arg) = DupNode (arg1_exprs);
-                arg1_exprs = EXPRS_NEXT (arg1_exprs);
-            }
         }
     } else {
         /* 'let_ids' is an array */
@@ -3187,18 +3182,11 @@ COMPPrfPsi (node *arg_node, node *arg_info)
         } else {
             /* 'arg1' is a N_array node */
             icm_node
-              = MakeAssignIcm4 ("ND_KD_PSI_CxA_A", MakeNum (GetDim (ID_TYPE (arg2))),
+              = MakeAssignIcm5 ("ND_KD_PSI_CxA_A", MakeNum (GetDim (ID_TYPE (arg2))),
                                 DupNode (arg2), DupIds_Id (let_ids),
-                                MakeNum (GetExprsLength (ARRAY_AELEMS (arg1))));
+                                MakeNum (GetExprsLength (ARRAY_AELEMS (arg1))),
+                                DupTree (ARRAY_AELEMS (arg1)));
             last_node = ASSIGN_NEXT (last_node) = icm_node;
-
-            /* append all array elements of 'arg1' to the arg chain of the ICM */
-            last_arg = ICM_EXPRS3 (ASSIGN_INSTR (last_node));
-            arg1_exprs = ARRAY_AELEMS (arg1);
-            while (arg1_exprs != NULL) {
-                last_arg = EXPRS_NEXT (last_arg) = DupNode (arg1_exprs);
-                arg1_exprs = EXPRS_NEXT (arg1_exprs);
-            }
         }
     }
 
@@ -3243,7 +3231,6 @@ COMPPrfModarray (node *arg_node, node *arg_info)
     node *arg1, *arg2, *arg3;
     ids *let_ids;
     node *res_dim, *res_type;
-    node *last_arg, *arg2_exprs;
     char *icm_name;
 
     DBUG_ENTER ("COMPPrfModarray");
@@ -3294,18 +3281,11 @@ COMPPrfModarray (node *arg_node, node *arg_info)
             }
         }
 
-        arg_node = MakeAssignIcm6 (icm_name, res_type, res_dim, DupIds_Id (let_ids),
+        arg_node = MakeAssignIcm7 (icm_name, res_type, res_dim, DupIds_Id (let_ids),
                                    DupNode (arg1), DupNode (arg3),
-                                   MakeNum (GetExprsLength (ARRAY_AELEMS (arg2))));
+                                   MakeNum (GetExprsLength (ARRAY_AELEMS (arg2))),
+                                   DupTree (ARRAY_AELEMS (arg2)));
         last_node = arg_node;
-
-        /* append all array elements of 'arg2' to the arg chain of the ICM */
-        last_arg = ICM_EXPRS6 (ASSIGN_INSTR (last_node));
-        arg2_exprs = ARRAY_AELEMS (arg2);
-        while (arg2_exprs != NULL) {
-            last_arg = EXPRS_NEXT (last_arg) = DupNode (arg2_exprs);
-            arg2_exprs = EXPRS_NEXT (arg2_exprs);
-        }
     } else {
         /* 'arg2' is a N_id node */
         DBUG_ASSERT (((TYPES_DIM (ID_TYPE (arg2)) == 1)
@@ -5897,7 +5877,7 @@ COMPSync (node *arg_node, node *arg_info)
             tag = "in";
         }
         icm_args3
-          = AppendExprs (icm_args3,
+          = ExprsConcat (icm_args3,
                          MakeExprs (MakeId_Copy (tag),
                                     MakeExprs (MakeId_Copy (MakeTypeString (
                                                  VARDEC_OR_ARG_TYPE (vardec))),
@@ -5921,7 +5901,7 @@ COMPSync (node *arg_node, node *arg_info)
     while (vardec != NULL) {
 
         sync_args
-          = AppendExprs (sync_args,
+          = ExprsConcat (sync_args,
                          MakeExprs (MakeId_Copy (VARDEC_OR_ARG_NAME (vardec)), NULL));
 
         DBUG_PRINT ("COMPi", ("%s", VARDEC_OR_ARG_NAME (vardec)));
@@ -6038,7 +6018,7 @@ COMPSync (node *arg_node, node *arg_info)
             icm_args = MakeExprs (MakeId_Copy (fold_type),
                                   MakeExprs (DupIds_Id (with_ids), NULL));
 
-            barrier_args = AppendExprs (barrier_args, icm_args);
+            barrier_args = ExprsConcat (barrier_args, icm_args);
 
             DBUG_PRINT ("COMP", ("%s", IDS_NAME (with_ids)));
 
@@ -6046,7 +6026,7 @@ COMPSync (node *arg_node, node *arg_info)
              * <tmp_var>, <fold_op>
              */
             DBUG_ASSERT ((NWITH2_FUNDEF (with) != NULL), "no fundef found");
-            barrier_args = AppendExprs (barrier_args,
+            barrier_args = ExprsConcat (barrier_args,
                                         MakeExprs (DupNode (NWITH2_CEXPR (with)),
                                                    MakeExprs (MakeId_Copy (FUNDEF_NAME (
                                                                 NWITH2_FUNDEF (with))),
@@ -6445,7 +6425,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
             /*
              * insert vardecs of pseudo fold-fun
              */
-            FUNDEF_VARDEC (fundef) = AppendVardecs (FUNDEF_VARDEC (fundef), fold_vardecs);
+            FUNDEF_VARDEC (fundef) = AppendVardec (FUNDEF_VARDEC (fundef), fold_vardecs);
 
             /*
              * update DFM-base
@@ -7196,7 +7176,7 @@ COMPWLgrid (node *arg_node, node *arg_info)
     num_args = 0;
     withid_ids = NWITHID_IDS (NWITH2_WITHID (wl_node));
     while (withid_ids != NULL) {
-        icm_args2 = AppendExprs (icm_args2, MakeExprs (DupIds_Id (withid_ids), NULL));
+        icm_args2 = ExprsConcat (icm_args2, MakeExprs (DupIds_Id (withid_ids), NULL));
         num_args++;
         withid_ids = IDS_NEXT (withid_ids);
     }
@@ -7589,7 +7569,7 @@ COMPWLgridVar (node *arg_node, node *arg_info)
         num_args = 0;
         withid_ids = NWITHID_IDS (NWITH2_WITHID (wl_node));
         while (withid_ids != NULL) {
-            icm_args2 = AppendExprs (icm_args2, MakeExprs (DupIds_Id (withid_ids), NULL));
+            icm_args2 = ExprsConcat (icm_args2, MakeExprs (DupIds_Id (withid_ids), NULL));
             num_args++;
             withid_ids = IDS_NEXT (withid_ids);
         }
