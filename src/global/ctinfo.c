@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/02/07 16:35:04  cg
+ * Adapted usage of vsnprintf Solaris.
+ *
  * Revision 1.6  2005/01/21 18:05:09  cg
  * Layout bug fixed in error messages.
  *
@@ -16,7 +19,7 @@
  * Revision 1.2  2005/01/07 19:54:13  cg
  * Some streamlining done.
  *
- * Revision 1.1  2005/01/07 16:48:21  cg
+ * Revision 1.1  2005/01/07 16:48:21  cg1
  * Initial revision
  *
  *
@@ -168,8 +171,12 @@ PrintMessage (const char *header, const char *format, va_list arg_p)
 
     len = vsnprintf (message_buffer, message_buffer_size, format, arg_p);
 
-    if (len >= message_buffer_size) {
-        /* buffer too small */
+    if ((len < 0) || (len >= message_buffer_size)) {
+        /* buffer too small or output error */
+        if (len < 0) {
+            len = 120;
+        }
+
         ILIBfree (message_buffer);
         message_buffer = (char *)ILIBmalloc (len + 2);
         message_buffer_size = len + 2;
