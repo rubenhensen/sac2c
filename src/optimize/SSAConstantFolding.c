@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.63  2004/09/21 17:32:20  ktr
+ * sel( iv, shape(A)) is now compiled into shape_sel(iv, A);
+ * However, shape_sel itself is not yet treated by the CF.
+ *
  * Revision 1.62  2004/09/21 16:07:21  ktr
  * Replaced bloated StructOpWrapper with seperate functions for
  * Sel, Reshape, idx_sel, Take, Drop
@@ -1789,12 +1793,16 @@ SSACFSel (node *idx_expr, node *array_expr)
     node *result;
     node *prf_mod;
     node *prf_sel;
+    node *prf_shape;
     node *concat;
     node *mod_arr_expr;
     node *mod_idx_expr;
     node *mod_elem_expr;
     constant *idx_co;
     constant *mod_idx_co;
+    constant *old_hidden_co;
+    constant *zero_co;
+    struct_constant *idx_struc;
 
     DBUG_ENTER ("SSACFSel");
 
@@ -1807,8 +1815,10 @@ SSACFSel (node *idx_expr, node *array_expr)
     if ((NODE_TYPE (array_expr) == N_id)
         && (AVIS_SSAASSIGN (ID_AVIS (array_expr)) != NULL)
         && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)))) == N_prf)) {
-        if (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)))) == F_modarray) {
 
+        switch (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr))))) {
+
+        case F_modarray:
             prf_mod = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
 
             /* get parameter of modarray */
@@ -1859,18 +1869,59 @@ SSACFSel (node *idx_expr, node *array_expr)
             if (mod_idx_co != NULL) {
                 mod_idx_co = COFreeConstant (mod_idx_co);
             }
-        } else if (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr))))
-                   == F_sel) {
 
+            break;
+
+        case F_sel:
             prf_sel = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
             concat = SSACFCatVxV (EXPRS_EXPR (PRF_ARGS (prf_sel)), idx_expr);
 
-            if (concat != NULL)
-                result = MakePrf (F_sel,
-                                  MakeExprs (concat,
-                                             MakeExprs (DupTree (EXPRS_EXPR (EXPRS_NEXT (
-                                                          PRF_ARGS (prf_sel)))),
-                                                        NULL)));
+            if (concat != NULL) {
+                result
+                  = MakePrf2 (F_sel, concat,
+                              DupTree (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (prf_sel)))));
+            }
+            break;
+
+        case F_shape:
+            /*
+             * sel( [i], shape( A)) can be optimized using F_shape_sel.
+             *
+             * => _shape_sel_( [i], A)
+             */
+            prf_shape = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
+
+            idx_struc = SCOExpr2StructConstant (idx_expr);
+            if (idx_struc != NULL) {
+                /*
+                 * save internal hidden input constant
+                 */
+                old_hidden_co = SCO_HIDDENCO (idx_struc);
+
+                zero_co = COMakeConstantFromInt (0);
+                SCO_HIDDENCO (idx_struc) = COIdxSel (zero_co, SCO_HIDDENCO (idx_struc));
+                zero_co = COFreeConstant (zero_co);
+
+                /*
+                 * free internal input constant
+                 */
+                old_hidden_co = COFreeConstant (old_hidden_co);
+
+                result = MakePrf2 (F_idx_shape_sel, SCODupStructConstant2Expr (idx_struc),
+                                   DupNode (PRF_ARG1 (prf_shape)));
+
+                /*
+                 * free scruct constant
+                 */
+                idx_struc = SCOFreeStructConstant (idx_struc);
+            } else {
+                result = MakePrf2 (F_shape_sel, DupNode (idx_expr),
+                                   DupNode (PRF_ARG1 (prf_shape)));
+            }
+            break;
+
+        default:
+            break;
         }
     }
 
