@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2004/09/27 19:08:15  sbs
+ * sharing of FUNDEF_RET_TYPEs eliminated when extracting return types
+ * from the split wrappers using TYGetWrapperRetType
+ *
  * Revision 1.21  2004/08/26 18:12:47  sbs
  * INFO_CWC_WITH added, CWCwith added,
  * CorrectFundefPointer signature changed (arg_types instead of args)
@@ -250,7 +254,7 @@ SplitWrapper (node *fundef)
         DBUG_EXECUTE ("CWC", tmp_str = Free (tmp_str););
 
         FUNDEF_TYPE (new_fundef) = new_type;
-        FUNDEF_RET_TYPE (new_fundef) = TYGetWrapperRetType (new_type);
+        FUNDEF_RET_TYPE (new_fundef) = TYCopyType (TYGetWrapperRetType (new_type));
         FUNDEF_ARGS (new_fundef)
           = TYCorrectWrapperArgTypes (FUNDEF_ARGS (new_fundef), new_type);
         FUNDEF_NEXT (new_fundef) = new_fundefs;
