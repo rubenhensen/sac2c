@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2000/07/19 12:37:30  mab
+ * added AccessClass2Group
+ *
  * Revision 1.6  2000/06/29 10:23:05  mab
  * renamed APCNwith to APCwith
  *
@@ -66,7 +69,7 @@ APcollect (node *arg_node)
 
     DBUG_ENTER ("APcollect");
 
-    DBUG_PRINT ("AP", ("Array Padding: collecting data..."));
+    DBUG_PRINT ("APC", ("Array Padding: collecting data..."));
 
     tmp_tab = act_tab;
     act_tab = apc_tab;
@@ -84,6 +87,60 @@ APcollect (node *arg_node)
 /*****************************************************************************
  *
  * function:
+ *   static shpseg* AccessClass2Group(accessclass_t class, int dim)
+ *
+ * description:
+ *   convert access class into vector of integer factors
+ *   accessing with ACL_const means [0]*index+offset
+ *   accessing with ACL_offset means [1]*index+offset
+ *   currently no other access classes are supported
+ *   result is NULL, if access class is unsupported
+ *
+ *****************************************************************************/
+
+static shpseg *
+AccessClass2Group (accessclass_t class, int dim)
+{
+
+    shpseg *vector;
+    int element;
+    int i;
+
+    DBUG_ENTER ("AccessClass2Vector");
+
+    switch (class) {
+    case ACL_offset:
+        element = 1;
+        break;
+    case ACL_const:
+        element = 0;
+        break;
+    default:
+        element = -1;
+        break;
+    }
+
+    if (element != -1) {
+
+        /* supported access class */
+
+        vector = MakeShpseg (NULL);
+
+        for (i = 0; i < dim; i++) {
+            SHPSEG_SHAPE (vector, i) = element;
+        }
+    } else {
+
+        /* unsupported access class */
+        vector = NULL;
+    }
+
+    DBUG_RETURN (vector);
+}
+
+/*****************************************************************************
+ *
+ * function:
  *   node *APCarg(node *arg_node, node *arg_info)
  *
  * description:
@@ -96,7 +153,7 @@ APCarg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APCarg");
 
-    DBUG_PRINT ("AP", ("arg-node detected\n"));
+    DBUG_PRINT ("APC", ("arg-node detected\n"));
 
     DBUG_RETURN (arg_node);
 }
@@ -116,7 +173,7 @@ APCvardec (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APCvardec");
 
-    DBUG_PRINT ("AP", ("vardec-node detected\n"));
+    DBUG_PRINT ("APC", ("vardec-node detected\n"));
 
     DBUG_RETURN (arg_node);
 }
@@ -136,7 +193,7 @@ APCarray (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APCarray");
 
-    DBUG_PRINT ("AP", ("array-node detected\n"));
+    DBUG_PRINT ("APC", ("array-node detected\n"));
 
     DBUG_RETURN (arg_node);
 }
@@ -156,7 +213,7 @@ APCwith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APCwith");
 
-    DBUG_PRINT ("AP", ("with-node detected\n"));
+    DBUG_PRINT ("APC", ("with-node detected\n"));
 
     DBUG_RETURN (arg_node);
 }
@@ -176,7 +233,7 @@ APCap (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APCap");
 
-    DBUG_PRINT ("AP", ("ap-node detected"));
+    DBUG_PRINT ("APC", ("ap-node detected"));
 
     DBUG_RETURN (arg_node);
 }
@@ -196,7 +253,7 @@ APCexprs (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APCexprs");
 
-    DBUG_PRINT ("AP", ("exprs-node detected"));
+    DBUG_PRINT ("APC", ("exprs-node detected"));
 
     DBUG_RETURN (arg_node);
 }
@@ -216,7 +273,7 @@ APCid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APCid");
 
-    DBUG_PRINT ("AP", ("id-node detected"));
+    DBUG_PRINT ("APC", ("id-node detected"));
 
     DBUG_RETURN (arg_node);
 }
@@ -236,7 +293,7 @@ APCprf (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APCprf");
 
-    DBUG_PRINT ("AP", ("prf-node detected"));
+    DBUG_PRINT ("APC", ("prf-node detected"));
 
     DBUG_RETURN (arg_node);
 }
@@ -256,7 +313,7 @@ APCfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APCfundef");
 
-    DBUG_PRINT ("AP", ("fundef-node detected"));
+    DBUG_PRINT ("APC", ("fundef-node detected"));
 
     DBUG_RETURN (arg_node);
 }
@@ -276,7 +333,7 @@ APCblock (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APCblock");
 
-    DBUG_PRINT ("AP", ("block-node detected"));
+    DBUG_PRINT ("APC", ("block-node detected"));
 
     DBUG_RETURN (arg_node);
 }
@@ -296,7 +353,7 @@ APClet (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APClet");
 
-    DBUG_PRINT ("AP", ("let-node detected"));
+    DBUG_PRINT ("APC", ("let-node detected"));
 
     DBUG_RETURN (arg_node);
 }
