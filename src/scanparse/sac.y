@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.129  1997/09/11 11:55:52  dkr
+ * added % and %=
+ *
  * Revision 1.128  1997/05/05 11:53:18  cg
  * SIB syntax slightly modified
  *
@@ -509,14 +512,14 @@ static file_type file_kind = F_prog;
 %token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC,
        COMMA, AMPERS, ASSIGN, DOT,
        INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF, CLASSTYPE,
-       INC, DEC, ADDON, SUBON, MULON, DIVON,
+       INC, DEC, ADDON, SUBON, MULON, DIVON, MODON
        K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, FOLD,
        MODDEC, MODIMP, CLASSDEC, IMPORT, ALL, IMPLICIT, EXPLICIT, TYPES, FUNS,
        OWN, CONSTANTS, GLOBAL, OBJECTS, CLASSIMP,
        ARRAY,SC, TRUE, FALSE, EXTERN, C_KEYWORD,
        PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
        TOUCH, COPYFUN, FREEFUN, INITFUN, LINKWITH
-%token <id> ID, STR,AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PLUS,
+%token <id> ID, STR,AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PRF_MOD, PLUS,
             F2I, F2D, I2F,I2D, D2I, D2F,
             TOI, TOF, TOD, 
             MINUS, PRIVATEID,
@@ -560,7 +563,7 @@ static file_type file_kind = F_prog;
 %left EQ, NEQ
 %left LE, LT, GE, GT
 %left PLUS, MINUS
-%left MUL, DIV
+%left MUL, DIV, PRF_MOD
 %left TAKE, DROP, RESHAPE
 %left SQBR_L
 %right CAST
@@ -1478,6 +1481,7 @@ prf_name : AND { $$=$1; }
          | MINUS { $$=$1; }
          | DIV { $$=$1; }
          | MUL { $$=$1; }
+         | PRF_MOD { $$=$1; }
          | RESHAPE { $$=$1; }
          | SHAPE { $$=$1; }
          | TAKE { $$=$1; }
@@ -1833,6 +1837,10 @@ letassign: ids LET exprORarray
         | id DIVON exprORarray
            {
               $$=MakeLetNode($1,$3,F_div);
+           }
+        | id MODON exprORarray
+           {
+              $$=MakeLetNode($1,$3,F_mod);
            }
          ;
 
@@ -2246,6 +2254,9 @@ expr:   apl {$$=$1;}
       | exprORarray MUL exprORarray 
         { $$=GenPrfNode(F_mul,$1,$3); 
         }
+      | exprORarray PRF_MOD exprORarray 
+        { $$=GenPrfNode(F_mod,$1,$3); 
+        }
       | exprORarray AND exprORarray
         { $$=GenPrfNode(F_and,$1,$3);
         } 
@@ -2562,13 +2573,13 @@ foldfun:  id COMMA
         $$->info.fun_name.id_mod=$1;
      }
     ;
-
      
  
 foldop: PLUS {$$=F_add; }
 	| MINUS {$$=F_sub;}
 	| DIV {$$=F_div;}
 	| MUL {$$=F_mul;}
+	| PRF_MOD {$$=F_mod;}
 	| AND {$$=F_and;}
 	| OR {$$=F_or;}
 	| EQ {$$=F_eq;}

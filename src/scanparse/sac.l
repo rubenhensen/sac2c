@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.42  1997/09/11 11:55:21  dkr
+ * added % and %=
+ *
  * Revision 1.41  1997/08/04 19:09:30  dkr
  * added strcpy in FILTER7
  *
@@ -257,6 +260,7 @@ int start_token;
 "-"				{FILTER7( MINUS,prf_name_str[F_sub] );}
 "/"				{FILTER7( DIV,prf_name_str[F_div] );}
 "*"				{FILTER7( MUL,prf_name_str[F_mul] );}
+"%"				{FILTER7( PRF_MOD,prf_name_str[F_div] );}
 
 "++"				{FILTER( INC );}
 "--" 				{FILTER( DEC );}
@@ -265,6 +269,7 @@ int start_token;
 "-="				{FILTER( SUBON );}
 "*="				{FILTER( MULON );}
 "/="				{FILTER( DIVON );}
+"%="				{FILTER( MODON );}
 
 "reshape"			{FILTER7( RESHAPE, prf_name_str[F_reshape] );}
 "shape"				{FILTER7( SHAPE,prf_name_str[F_shape] );}
