@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/04/17 17:32:32  dkr
+ * removed unused vars
+ *
  * Revision 1.6  1998/04/17 15:44:19  dkr
  * fixed a few bugs:
  *   IntersectStridesArray() now uses InsertWLnodes to sort the strides/grids
@@ -45,7 +48,7 @@
 node *
 IntersectStridesArray (node *strides, node *aelems1, node *aelems2)
 {
-    node *isect, *nextdim, *code, *new_grids, *grids, *grid1, *grid2;
+    node *isect, *nextdim, *code, *new_grids, *grids;
     int bound1, bound2, step, width, offset, grid1_b1, grid1_b2, grid2_b1, grid2_b2;
     int empty = 0; /* is the intersection empty in the current dim? */
 
