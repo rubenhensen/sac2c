@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/29 14:22:48  cg
+ * Added support for new ICM MT_DECL_MYTHREAD.
+ *
  * Revision 3.2  2000/12/12 12:25:35  dkr
  * nodes N_pre, N_post, N_inc, N_dec removed
  *
@@ -1343,7 +1346,8 @@ MakeIcm (char *name, node *args)
         ICM_INDENT_AFTER (tmp) = 0;
     }
 
-    if (strcmp (name, "ND_KS_DECL_ARRAY") == 0) {
+    if ((strcmp (name, "ND_KS_DECL_ARRAY") == 0)
+        || (strcmp (name, "MT_DECL_MYTHREAD") == 0)) {
         ICM_END_OF_STATEMENT (tmp) = TRUE;
     } else {
         ICM_END_OF_STATEMENT (tmp) = FALSE;
