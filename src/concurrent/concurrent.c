@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  2000/01/21 13:22:44  jhs
+ * Added some comments ...
+ *
  * Revision 2.10  1999/11/11 10:30:36  jhs
  * Added some DBUG_PRINTs to check which phases fail (if they do).
  *
@@ -96,6 +99,8 @@
  *   This function starts the process of building spmd- and synchronisation
  *   blocks. Throughout this process arg_info points to an N_info node which
  *   is generated here.
+ *
+ *   *** This is the process building the old support for multithread. ***
  *
  ******************************************************************************/
 
