@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.39  1998/05/28 07:48:53  cg
+ * added entry ST_spmd_inout for enum statustype.
+ *
  * Revision 1.38  1998/05/20 20:14:07  sbs
  * contextflag for INFO_FLTN inserted.
  *
@@ -236,6 +239,7 @@ typedef enum {
     ST_was_reference,      /* for eliminated reference parameter     */
     ST_readonly_reference, /* readonly reference param (unique)  */
     ST_inout,              /* for compilation of reference params    */
+    ST_spmd_inout,         /* for comp. of spmd-fun inout params     */
     ST_artificial,         /* unique type inserted during            */
                            /* signature expansion                    */
     ST_independent,        /* dimension-independent function         */
