@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/12/07 18:01:15  sah
+ * fixed stupid bug
+ *
  * Revision 1.5  2004/11/29 15:04:51  sah
  * fixed-a-bug(tm)
  *
@@ -652,7 +655,7 @@ FPClet (node *arg_node, info *arg_info)
                 /*
                  * while handling true return values, get index
                  */
-                idx = GetArgtabIndexOut (args, argtab);
+                idx = GetArgtabIndexOut (rets, argtab);
             }
             DBUG_ASSERT ((idx + dots_offset < ap_argtab->size), "illegal index");
 
