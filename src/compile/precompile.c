@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.60  2002/10/07 23:34:51  dkr
- * DBUG_ASSERT about WLSEGVAR_IDX_MIN/MAX added
+ * Revision 3.61  2002/10/08 01:50:33  dkr
+ * ReplaceSpecialCharacters() modified
  *
  * Revision 3.59  2002/09/16 13:29:39  dkr
  * RenameFunName(): individual names for wrapper functions
@@ -2543,6 +2543,11 @@ ReplaceSpecialCharacters (char *name)
 
     for (i = 0, j = 0; i < strlen (name); i++, j++) {
         switch (name[i]) {
+        case '.':
+            tmp = "_DO";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
         case '+':
             tmp = "_PL";
             strcat (&(new_name[j]), tmp);
