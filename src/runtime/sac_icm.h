@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 1.6  2000/07/06 08:24:07  dkr
+ * macros BuildArgs? added
+ *
  * Revision 1.5  1999/06/24 14:31:32  rob
  * Fix Bernecky's lack of understanding of RCS vs RCS-files.
  *
@@ -15,7 +17,6 @@
  *
  * Revision 1.1  1999/06/10 14:46:45  rob
  * Initial revision
- *
  */
 
 /*****************************************************************************
@@ -31,7 +32,7 @@
  *
  *****************************************************************************/
 
-#ifndef SAC_ICM_H_
+#ifndef SAC_ICM_H
 
 #define SAC_ICM_H
 
@@ -64,11 +65,11 @@
  *  Parameters are specified as (parm0,(parm1,(parm2,(parm3...)))).
  *
  *  The xcat macro is used to glue items together. Thus, the result of:
- *  #define foo(tuple) \
- *  xcat(xcat(Item4 tuple,Item3 tuple),Item2 tuple)
- *  foo((I,(see,(rats,(and,(mice,))))))
- * is:
- *     miceandrats
+ *    #define foo(tuple) \
+ *    xcat(xcat(Item4 tuple,Item3 tuple),Item2 tuple)
+ *    foo((I,(see,(rats,(and,(mice,))))))
+ *  is:
+ *    miceandrats
  *  NB. Note the trailing comma in the invocation's innermost nest
  */
 
@@ -80,15 +81,15 @@
 #define Item5(a, b) Item4 b
 
 /*
- * The odd-looking cat macro is required to provide a degree
- * of indirection for mixed catenates and macro expansions.
+ * The odd-looking cat macro is required to provide a degree of
+ * indirection for mixed catenates and macro expansions.
  * Replacing it with ## will NOT work. This is documented in
  * K&R, Section A.12.3.
  *
- *  For the same reason, we define AddParens to wrap
- *  parentheses around a generated item, and BuildArgs2 to
- *  add commas and parentheses to a two-parameter argument list.
- *  If you need a 3-parameter argument list, write BuildArgs3, etc.
+ * For the same reason, we define AddParens to wrap parentheses around a
+ * generated item, and BuildArgs2 to add commas and parentheses to a
+ * two-parameter argument list.
+ * If you need a 3-parameter argument list, write BuildArgs3, etc.
  */
 
 #define cat(x, y) xcat (x, y)
@@ -101,17 +102,22 @@
 #define xPrependComma(a) , ##a
 
 /*
- * Catenate two arguments, insert commas, add parens.
- * Sigh.
+ * Catenate arguments, insert commas, add parens.
  */
 
 #define BuildArgs2(a, b) xBuildArgs2 (a, b)
 #define xBuildArgs2(a, b) (##a##, ##b##)
 
+#define BuildArgs3(a, b, c) xBuildArgs3 (a, b, c)
+#define xBuildArgs3(a, b, c) (##a##, ##b##, ##c##)
+
+#define BuildArgs4(a, b, c, d) xBuildArgs4 (a, b, c, d)
+#define xBuildArgs4(a, b, c, d) (##a##, ##b##, ##c##, ##d##)
+
 /*
  * VIEW is  Handy viewer for testing macros
  */
 
-#define VIEW(a) This makes : AddParens (a)
+#define VIEW(a) #a expands to AddParens(a)
 
-#endif /* SAC_ICM_H_ */
+#endif /* SAC_ICM_H */
