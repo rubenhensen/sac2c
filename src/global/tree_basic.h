@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.31  1999/06/30 07:53:35  jhs
+ * Added INFO_COMP_LAST_SYNC to the Mmacros of N_info.
+ *
  * Revision 2.30  1999/06/25 14:56:26  jhs
  * Added some macros INFO_SPMDT_xxx.
  *
@@ -2348,6 +2351,7 @@ extern node *MakeInfo ();
 #define INFO_COMP_VARDECS(n) (n->node[3])
 #define INFO_COMP_WITHBEGIN(n) (n->node[4])
 #define INFO_COMP_MODUL(n) (n->node[5])
+#define INFO_COMP_LAST_SYNC(n) ((node *)(n->int_data))
 
 /* reuse */
 #define INFO_REUSE_WL_IDS(n) (n->info.ids)
