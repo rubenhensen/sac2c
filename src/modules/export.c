@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/12/19 17:54:26  sah
+ * bugfix
+ *
  * Revision 1.11  2004/11/29 13:34:36  sah
  * dfr is now switchable
  *
@@ -177,7 +180,7 @@ EXPexport (node *arg_node, info *arg_info)
     }
 
     if (INFO_EXP_FILETYPE (arg_info) != F_prog) {
-        if (CheckExport (PROVIDE_ALL (arg_node), PROVIDE_SYMBOL (arg_node), arg_info)) {
+        if (CheckExport (EXPORT_ALL (arg_node), EXPORT_SYMBOL (arg_node), arg_info)) {
             INFO_EXP_EXPORTED (arg_info) = TRUE;
         }
     } else {
