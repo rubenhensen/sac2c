@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.19  2003/04/16 11:58:16  sah
+dnl added macos specific cppfile flags
+dnl
 dnl Revision 1.18  2003/04/14 21:24:02  sah
 dnl mac support (testing)
 dnl
@@ -320,6 +323,7 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(MKCCFLAGS, ["-ansi -Wall -g"])
   AC_SUBST(PDCCFLAGS, ["-ansi -Wall -g -O3"])
   AC_SUBST(DEPSFLAG, ["-M"])
+  AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
   AC_MSG_RESULT([gcc settings])
 elif [ test "$SUNC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -332,6 +336,7 @@ elif [ test "$SUNC" = yes ]; then
   AC_SUBST(MKCCFLAGS, ["-erroff=E_CAST_DOESNT_YIELD_LVALUE -g"])
   AC_SUBST(PDCCFLAGS, ["-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4"])
   AC_SUBST(DEPSFLAG, ["-xM"])
+  AC_SUBST(CPPFILE, ["cc -E -C -x c"])
   AC_MSG_RESULT([Sun cc settings])
 elif [ test "$DECC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -344,6 +349,7 @@ elif [ test "$DECC" = yes ]; then
   AC_SUBST(MKCCFLAGS, ["-g"])
   AC_SUBST(PDCCFLAGS, ["-g3"])
   AC_SUBST(DEPSFLAG, ["-M"])
+  AC_SUBST(CPPFILE, ["cc -E -C -x c"])
   AC_MSG_RESULT([Compaq/DEC cc settings])
 elif [ test "$MACC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -356,6 +362,7 @@ elif [ test "$MACC" = yes ]; then
   AC_SUBST(MKCCFLAGS, ["-g"])
   AC_SUBST(PDCCFLAGS, ["-g3"])
   AC_SUBST(DEPSFLAG, ["-M"])
+  AC_SUBST(CPPFILE, ["cpp -C"])
   AC_MSG_RESULT([Apple cc settings])
 else
   AC_SUBST(OPT_O0, [""])
