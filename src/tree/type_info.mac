@@ -1,0 +1,176 @@
+/*
+ *
+ * $Log$
+ * Revision 1.1  2000/01/21 15:39:28  dkr
+ * Initial revision
+ *
+ * Revision 2.6  1999/10/22 14:17:27  sbs
+ * added a few new cv2cv funs
+ *
+ * Revision 2.5  1999/10/19 12:56:14  sacbase
+ * the new .mac mechanism introduced as well as cv2xxx tables added.
+ *
+ * Revision 2.4  1999/04/08 17:13:18  jhs
+ * T_nothing as virtual type for elements of empti arrays added.
+ *
+ * Revision 2.3  1999/03/22 19:10:52  bs
+ * bug fixed
+ *
+ * Revision 2.2  1999/03/19 09:26:37  bs
+ * T_unknown changed to 1st position. This is necessary, since
+ * initializing routines are using 0 for unknown values.
+ *
+ * Revision 2.1  1999/02/23 12:40:13  sacbase
+ * new release made
+ *
+ * Revision 1.11  1998/06/03 14:31:26  cg
+ * names of types used for the renaming of functions shortened:
+ * int -> i, double -> d
+ *
+ * Revision 1.10  1996/02/21 15:03:40  cg
+ * changed print string for N_str from 'char*' to 'string'
+ * with respect to usage within SIBs
+ *
+;; Revision 1.9  1996/01/16  16:55:40  cg
+;; added new entry for macro TYP_IF giving the size of the type
+;;
+;; Revision 1.8  1995/12/20  08:17:15  cg
+;; added new primitive type char.
+;;
+;; Revision 1.7  1995/07/07  13:08:55  cg
+;; new type T_void added, old type T_unique removed.
+;;
+;; Revision 1.6  1995/06/23  12:20:41  hw
+;; enlarged macro TYP_IF( string to use for renameing of functions added)
+;;
+;; Revision 1.5  1995/05/30  08:56:15  cg
+;; grammar version 0.5 extended types added.
+;;
+;; Revision 1.4  1995/01/09  13:18:47  hw
+;; now type bool is bool
+;;
+;; Revision 1.3  1995/01/05  12:45:12  sbs
+;; third component done
+;;
+;; Revision 1.2  1995/01/05  11:58:57  sbs
+;; T_str inserted
+;;
+;; Revision 1.1  1994/12/21  11:32:37  hw
+;; Initial revision
+;;
+;;
+;;
+ *
+ */
+
+/*
+**
+** Some macro definitions used for the automatic creation
+** of tables which depend on the correct order of the tags
+** for the type Type
+**
+** T_unknown changed to 1st position. This is necessary, since
+** initializing routines are using 0 for unknown values.
+*/
+
+#ifndef TYP_IFname
+#define TYP_IFname(it_name)
+#endif
+
+#ifndef TYP_IFdb_str
+#define TYP_IFdb_str(it_db_str)
+#endif
+
+#ifndef TYP_IFpr_str
+#define TYP_IFpr_str(it_pr_str)
+#endif
+
+#ifndef TYP_IFfunr_str
+#define TYP_IFfunr_str(it_funr_str)
+#endif
+
+#ifndef TYP_IFcv2scal
+#define TYP_IFcv2scal(it_cv2scal)
+#endif
+
+#ifndef TYP_IFcv2cv
+#define TYP_IFcv2cv(it_cv2cv)
+#endif
+
+#ifndef TYP_IFunused2
+#define TYP_IFunused2(it_unused2)
+#endif
+
+#ifndef TYP_IFsize
+#define TYP_IFsize(it_size)
+#endif
+
+#define TYP_IF(it_name, it_db_str, it_pr_str, it_funr_str, it_cv2scal, it_cv2cv,         \
+               it_unused2, it_size)                                                      \
+                                                                                         \
+    TYP_IFname (it_name) TYP_IFdb_str (it_db_str) TYP_IFpr_str (it_pr_str)               \
+      TYP_IFfunr_str (it_funr_str) TYP_IFcv2scal (it_cv2scal) TYP_IFcv2cv (it_cv2cv)     \
+        TYP_IFunused2 (it_unused2) TYP_IFsize (it_size)
+
+/*
+ *      simpletype          mdb_type            type_string        rename_type
+ *      cv2scalar           cv2cv               unused             simpletype_size
+ */
+
+TYP_IF (T_unknown, "unknown", "_unknown_", "", COCv2ScalarDummy, COCv2CvDummy, dummy, 0),
+
+  TYP_IF (T_int, "int", "int", "i", COCv2Num, COCv2CvInt, dummy, sizeof (int)),
+
+  TYP_IF (T_short, "short", "short", "s", COCv2ScalarDummy, COCv2CvShort, dummy,
+          sizeof (short int)),
+
+  TYP_IF (T_long, "long", "long", "l", COCv2ScalarDummy, COCv2CvLong, dummy,
+          sizeof (long int)),
+
+  TYP_IF (T_uint, "unsigned int", "unsigned int", "ui", COCv2ScalarDummy, COCv2CvUInt,
+          dummy, sizeof (int)),
+
+  TYP_IF (T_ushort, "unsigned short", "unsigned short", "us", COCv2ScalarDummy,
+          COCv2CvUShort, dummy, sizeof (short int)),
+
+  TYP_IF (T_ulong, "unsigned long", "unsigned long", "ul", COCv2ScalarDummy, COCv2CvULong,
+          dummy, sizeof (long int)),
+
+  TYP_IF (T_float, "float", "float", "f", COCv2ScalarDummy, COCv2CvFloat, dummy,
+          sizeof (float)),
+
+  TYP_IF (T_double, "double", "double", "d", COCv2Double, COCv2CvDouble, dummy,
+          sizeof (double)),
+
+  TYP_IF (T_longdbl, "long double", "long double", "ld", COCv2ScalarDummy,
+          COCv2CvLongDouble, dummy, sizeof (long double)),
+
+  TYP_IF (T_bool, "bool", "bool", "b", COCv2ScalarDummy, COCv2CvInt, dummy, sizeof (int)),
+
+  TYP_IF (T_str, "string", "string", "st", COCv2ScalarDummy, COCv2CvDummy, dummy,
+          sizeof (char *)),
+
+  TYP_IF (T_char, "char", "char", "c", COCv2ScalarDummy, COCv2CvDummy, dummy,
+          sizeof (char)),
+
+  TYP_IF (T_hidden, "hidden", "void *", "v", COCv2ScalarDummy, COCv2CvDummy, dummy,
+          sizeof (void *)),
+
+  TYP_IF (T_void, "void", "void", "v", COCv2ScalarDummy, COCv2CvDummy, dummy, 0),
+
+  TYP_IF (T_dots, "...", "...", "d", COCv2ScalarDummy, COCv2CvDummy, dummy, 0),
+
+  TYP_IF (T_user, "user", "_user_", "", COCv2ScalarDummy, COCv2CvDummy, dummy, 0),
+
+  TYP_IF (T_nothing, "nothing", "nothing", "n", COCv2ScalarDummy, COCv2CvDummy, dummy, 0)
+
+#undef TYP_IFname
+#undef TYP_IFdb_str
+#undef TYP_IFpr_str
+#undef TYP_IFfunr_str
+#undef TYP_IFcv2scal
+#undef TYP_IFcv2cv
+#undef TYP_IFunused2
+#undef TYP_IFsize
+
+#undef TYP_IF

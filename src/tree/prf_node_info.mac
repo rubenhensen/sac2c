@@ -1,0 +1,143 @@
+/*
+ *
+ * $Log$
+ * Revision 1.1  2000/01/21 15:39:33  dkr
+ * Initial revision
+ *
+ * Revision 2.1  1999/02/23 12:39:37  sacbase
+ * new release made
+ *
+ * Revision 1.22  1999/01/19 16:14:25  cg
+ * changed internal representation of overloaded primitive functions,
+ * e.g. _rotate is converted to rotate.
+ * All operators keep their internal function names beginning
+ * with an underscore.
+ *
+ * Revision 1.21  1998/12/07 08:39:46  sbs
+ * dbug-string (in comment) changed to mdb_prf !!
+ *
+ * Revision 1.20  1998/12/03 14:22:03  sbs
+ * ftoi and friends eliminated
+ * some comments inserted.
+ *
+ * Revision 1.19  1998/06/02 12:07:56  sbs
+ * added CFprf in comment...
+ *
+ * Revision 1.18  1997/10/07 14:11:16  srs
+ * new prfs F_min, F_max
+ *
+ * Revision 1.17  1997/10/03 17:59:49  dkr
+ * added prf abs()
+ *
+ * Revision 1.14  1997/09/11 11:56:24  dkr
+ * added prf % (F_mod)
+ *
+ * Revision 1.13  1997/05/29 13:42:53  sbs
+ * F_idx_modarray added
+ *
+;; Revision 1.12  1995/12/04  16:13:56  hw
+;; added primitve functions toi, tof & tod
+;;
+;; Revision 1.11  1995/08/11  17:26:00  hw
+;; N_modarray & N_genarray inserted
+;;
+;; Revision 1.10  1995/08/03  12:35:13  asi
+;; some dbug-string's corrected and prim. functions with only one argument seperated
+;;
+;; Revision 1.9  1995/07/07  14:52:14  hw
+;; enlarged macro PRF_IF( there are 4 args now) to generate a new table
+;; called 'prf_name'( this will be done in typecheck.c)
+;;
+;; Revision 1.8  1995/07/04  11:38:35  hw
+;; primitive functions ifod, ftod, dtoi, dtof inserted
+;;
+;; Revision 1.7  1995/06/30  12:21:23  hw
+;; F_ftoi, F_itof, F_ftoi_A & F_itof_A (primitive functions itof &
+;; ftoi) inserted
+;;
+;; Revision 1.6  1995/06/26  10:00:12  sbs
+;; F_idx_psi inserted
+;;
+;; Revision 1.5  1995/03/08  14:21:53  hw
+;; added new enumerators for primitive functions add, mul, sub, div
+;; to  distinguish weather one argument is a scalar or array
+;; (these enumerators are inserted while typechecking)
+;;
+;; Revision 1.4  1995/02/09  09:00:28  hw
+;; changed string of F_cat
+;;
+;; Revision 1.3  1994/11/10  15:44:34  sbs
+;; RCS-header inserted
+;;
+ *
+ */
+
+/*
+**
+** Some macro definitions used for the automatic creation
+** of tables which depend on the correct order of the tags
+** for the prf Type
+**
+*/
+
+/*
+ * NOTE: At the time being, there are 3 categories of prf's:
+ *       - the first legal prf is "F_toi" !!
+ *           USED IN : gen_pseudo_fun.c , checkdec.c
+ *
+ *       - funs with exactly 1 scalar arg. The last fun of this
+ *         category HAS TO BE  "F_not"  !!
+ *           USED IN : CFprf, ... ?
+ *
+ *       - funs which require more than one argument. All of the fun's
+ *         arguments should be scalars (not arrays). The last fun of
+ *         this category HAS TO BE  "F_neq"  !!
+ *           USED IN : CFprf, compile.c, ... ?
+ *
+ *       - funs that require at least one non-scalar (array) argument.
+ *         The first fun of this category HAS TO BE  "F_take"  !!
+ *           USED IN : ... ?
+ *
+ *       - the last legal prf is "F_genarray" !!
+ *           USED IN : gen_pseudo_fun.c  , checkdec.c
+ *
+ */
+
+/*   Node_name          mdb_prf[]    prf_string[]          prf_name_str[]*/
+
+PRF_IF (F_toi, "F_foi", "toi", "toi"), PRF_IF (F_tof, "F_fof", "tof", "tof"),
+  PRF_IF (F_tod, "F_fod", "tod", "tod"), PRF_IF (F_abs, "F_abs", "abs", "abs"),
+  PRF_IF (F_not, "F_not", "!", "_not"),
+
+  PRF_IF (F_min, "F_min", "min", "min"), PRF_IF (F_max, "F_max", "max", "max"),
+  PRF_IF (F_add, "F_add", "+", "_add"), PRF_IF (F_sub, "F_sub", "-", "_sub"),
+  PRF_IF (F_mul, "F_mul", "*", "_mul"), PRF_IF (F_div, "F_div", "/", "_div"),
+  PRF_IF (F_mod, "F_mod", "%", "_mod"), PRF_IF (F_and, "F_and", "&&", "_and"),
+  PRF_IF (F_or, "F_or", "||", "_or"), PRF_IF (F_le, "F_le", "<=", "_le"),
+  PRF_IF (F_lt, "F_lt", "<", "_lt"), PRF_IF (F_eq, "F_eq", "==", "_eq"),
+  PRF_IF (F_ge, "F_ge", ">=", "_ge"), PRF_IF (F_gt, "F_gt", ">", "_gt"),
+  PRF_IF (F_neq, "F_neq", "!=", "_neq"),
+
+  PRF_IF (F_take, "F_take", "take", "take"), PRF_IF (F_drop, "F_drop", "drop", "drop"),
+  PRF_IF (F_psi, "F_psi", "psi", "psi"),
+  PRF_IF (F_idx_psi, "F_idx_psi", "idx_psi", "idx_psi"),
+  PRF_IF (F_shape, "F_shape", "shape", "shape"),
+  PRF_IF (F_reshape, "F_reshape", "reshape", "reshape"),
+  PRF_IF (F_cat, "F_cat", "cat", "cat"), PRF_IF (F_dim, "F_dim", "dim", "dim"),
+  PRF_IF (F_rotate, "F_rotate", "rotate", "rotate"),
+  PRF_IF (F_toi_A, "F_toi_A", "toi", "toi"), PRF_IF (F_tof_A, "F_tof_A", "tof", "tof"),
+  PRF_IF (F_tod_A, "F_tod_A", "tod", "tod"), PRF_IF (F_add_SxA, "F_add_SxA", "+", "_add"),
+  PRF_IF (F_add_AxS, "F_add_AxS", "+", "_add"),
+  PRF_IF (F_add_AxA, "F_add_AxA", "+", "_add"),
+  PRF_IF (F_sub_SxA, "F_sub_SxA", "-", "_sub"),
+  PRF_IF (F_sub_AxS, "F_sub_AxS", "-", "_sub"),
+  PRF_IF (F_sub_AxA, "F_sub_AxA", "-", "_sub"),
+  PRF_IF (F_mul_SxA, "F_mul_SxA", "*", "_mul"),
+  PRF_IF (F_mul_AxS, "F_mul_AxS", "*", "_mul"),
+  PRF_IF (F_mul_AxA, "F_mul_AxA", "*", "_mul"),
+  PRF_IF (F_div_SxA, "F_div_SxA", "/", "_div"),
+  PRF_IF (F_div_AxS, "F_div_AxS", "/", "_div"),
+  PRF_IF (F_div_AxA, "F_div_AxA", "/", "_div"),
+  PRF_IF (F_modarray, "F_modarray", "modarray", "modarray"),
+  PRF_IF (F_idx_modarray, "F_idx_modarray", "idx_modarray", "idx_modarray"),
+  PRF_IF (F_genarray, "F_genarray", "genarray", "genarray")
