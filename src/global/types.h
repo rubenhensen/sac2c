@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.25  2000/02/23 20:24:53  cg
+ * Node status ST_imported replaced by ST_imported_mod and
+ * ST_imported_class in order to allow distinction between enteties
+ * that are imported from a module and those that are imported from a
+ * class.
+ *
  * Revision 2.24  2000/02/21 17:59:04  jhs
  * Improved spelling.
  *
@@ -359,7 +365,9 @@ typedef enum {
     ST_unresolved,         /* objects from called function are not    */
                            /* yet analysed.                           */
     ST_global,             /* identifier is global object             */
-    ST_imported,           /* function, type, or object imported      */
+    ST_imported_class,     /* function, type, or object imported      */
+                           /* from other class                        */
+    ST_imported_mod,       /* function, type, or object imported      */
                            /* from other module                       */
     ST_Cfun,               /* function implemented in C               */
     ST_used,               /* var declaration is used in body         */
