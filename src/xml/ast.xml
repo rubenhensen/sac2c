@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.61  2004/11/25 00:07:10  skt
+  profiling traversal added
+
   Revision 1.60  2004/11/24 23:42:43  ktr
   DO_SKIP is a son now.
 
@@ -415,6 +418,15 @@
         </traverror>
       </traversal>
 
+    </phase>
+    <phase id="profiling" name="Annotate Profiling Data">
+      <traversal id="PF" name="Annotate Function Calls " default="sons" include="annotate_fun_calls.h">
+        <user>
+          <node name="Ap" />
+          <node name="Assign" />
+          <node name="Fundef" />
+        </user>  
+      </traversal>
     </phase>
     <phase id="export" name="Exporting symbols">
       <traversal id="SER" name="Serialize Module" default="sons" include="serialize_node.h" />
