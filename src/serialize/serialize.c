@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2005/02/15 21:07:40  sah
+ * module system fixes
+ *
  * Revision 1.6  2004/11/27 01:52:55  ktr
  * fixed
  *
@@ -34,7 +37,7 @@
 #include "globals.h"
 #include "tree_basic.h"
 #include "filemgr.h"
-#include "convert.h"
+#include "type_utils.h"
 #include <string.h>
 
 #define MAX_FUN_NAME_LEN 255
@@ -309,16 +312,18 @@ SerializeDependencyTable (node *module)
 }
 
 static void
-GenerateSerFunTypeSignature (char *funname, node *args)
+AppendSerFunTypeSignature (char *funname, node *fundef)
 {
-    DBUG_ENTER ("GenerateSerFunTypeSignature");
+    char *signature;
 
-    while (args != NULL) {
-        strcat (funname, "_");
-        strcat (funname, CVtype2String (ARG_TYPE (args), 2, TRUE));
+    DBUG_ENTER ("AppendSerFunTypeSignature");
 
-        args = ARG_NEXT (args);
-    }
+    signature = TUtypeSignature2String (fundef);
+
+    strcat (funname, "_");
+    strcat (funname, signature);
+
+    ILIBfree (signature);
 
     DBUG_VOID_RETURN;
 }
@@ -337,7 +342,7 @@ SERgenerateSerFunName (stentrytype_t type, node *node)
         snprintf (result, MAX_FUN_NAME_LEN, "SBDY_%s_%s_%d_", FUNDEF_MOD (node),
                   FUNDEF_NAME (node), type);
 
-        GenerateSerFunTypeSignature (result, FUNDEF_ARGS (node));
+        AppendSerFunTypeSignature (result, node);
 
         break;
     case SET_funhead:
@@ -345,7 +350,7 @@ SERgenerateSerFunName (stentrytype_t type, node *node)
         snprintf (result, MAX_FUN_NAME_LEN, "SHD_%s_%s_%d_", FUNDEF_MOD (node),
                   FUNDEF_NAME (node), type);
 
-        GenerateSerFunTypeSignature (result, FUNDEF_ARGS (node));
+        AppendSerFunTypeSignature (result, node);
 
         break;
     case SET_typedef:
@@ -597,7 +602,7 @@ SERserializeFundefLink (node *fundef, FILE *file)
     if (fundef == NULL) {
         fprintf (file, "NULL");
     } else {
-        fprintf (file, "DeserializeLookupFunction( \"%s\", \"%s\")", FUNDEF_MOD (fundef),
+        fprintf (file, "DSlookupFunction( \"%s\", \"%s\")", FUNDEF_MOD (fundef),
                  SERgenerateSerFunName (SET_funhead, fundef));
     }
 

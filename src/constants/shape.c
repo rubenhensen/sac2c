@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2005/02/15 21:07:40  sah
+ * module system fixes
+ *
  * Revision 1.23  2004/12/08 18:03:14  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -189,7 +192,7 @@ SHcreateShape (int dim, ...)
     int i;
     shape *result;
 
-    DBUG_ENTER ("SHCreateShape");
+    DBUG_ENTER ("SHcreateShape");
     result = SHmakeShape (dim);
 
     DBUG_ASSERT (result != NULL, ("CreateShape: Get NULL shape from MakeShape!"));
@@ -298,7 +301,7 @@ SHserializeShape (FILE *file, shape *shp)
 
     DBUG_ENTER ("SHserializeShape");
 
-    fprintf (file, "SHCreateShape( %d", SHAPE_DIM (shp));
+    fprintf (file, "SHcreateShape( %d", SHAPE_DIM (shp));
 
     for (cnt = 0; cnt < SHAPE_DIM (shp); cnt++) {
         fprintf (file, ", %d", SHAPE_EXT (shp, cnt));

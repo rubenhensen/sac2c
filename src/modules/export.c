@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/02/15 21:07:40  sah
+ * module system fixes
+ *
  * Revision 1.13  2005/01/11 12:32:52  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -220,7 +223,12 @@ EXPfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EXPfundef");
 
+    DBUG_PRINT ("EXP", ("Processing Fundef %s:%s...", FUNDEF_MOD (arg_node),
+                        FUNDEF_NAME (arg_node)));
+
     if (FUNDEF_ISLOCAL (arg_node)) {
+        DBUG_PRINT ("EXP", ("...local fundef"));
+
         INFO_EXP_SYMBOL (arg_info) = FUNDEF_NAME (arg_node);
         INFO_EXP_EXPORTED (arg_info) = FALSE;
         INFO_EXP_PROVIDED (arg_info) = FALSE;
@@ -231,12 +239,18 @@ EXPfundef (node *arg_node, info *arg_info)
         }
 
         if (INFO_EXP_EXPORTED (arg_info)) {
+            DBUG_PRINT ("EXP", ("...is exported"));
+
             FUNDEF_ISEXPORTED (arg_node) = TRUE;
             FUNDEF_ISPROVIDED (arg_node) = TRUE;
         } else if (INFO_EXP_PROVIDED (arg_info)) {
+            DBUG_PRINT ("EXP", ("...is provided"));
+
             FUNDEF_ISEXPORTED (arg_node) = FALSE;
             FUNDEF_ISPROVIDED (arg_node) = TRUE;
         } else {
+            DBUG_PRINT ("EXP", ("...is not visible"));
+
             FUNDEF_ISEXPORTED (arg_node) = FALSE;
             FUNDEF_ISPROVIDED (arg_node) = FALSE;
         }
@@ -246,6 +260,8 @@ EXPfundef (node *arg_node, info *arg_info)
          */
         if (INFO_EXP_FILETYPE (arg_info) == F_prog) {
             if (ILIBstringCompare (FUNDEF_NAME (arg_node), "main")) {
+                DBUG_PRINT ("EXP", ("...override for main"));
+
                 FUNDEF_ISEXPORTED (arg_node) = FALSE;
                 FUNDEF_ISPROVIDED (arg_node) = TRUE;
             }
@@ -267,7 +283,7 @@ EXPfundef (node *arg_node, info *arg_info)
 #endif
     }
 
-    DBUG_PRINT ("EXP", ("Fundef %s:%s has status %d/%d [PROVIDE/EXPORT].",
+    DBUG_PRINT ("EXP", ("Fundef %s:%s has final status %d/%d [PROVIDE/EXPORT].",
                         FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node),
                         FUNDEF_ISPROVIDED (arg_node), FUNDEF_ISEXPORTED (arg_node)));
 

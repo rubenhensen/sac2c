@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/02/15 21:07:40  sah
+ * module system fixes
+ *
  * Revision 1.4  2004/12/19 18:09:33  sah
  * post dk fixes
  *
@@ -72,7 +75,7 @@ SATserializeString (info *info, char *attr, node *parent)
     } else {
         DBUG_PRINT ("SET", ("Processing String `%s'", attr));
 
-        fprintf (INFO_SER_FILE (info), "StringCopy(\"%s\")", attr);
+        fprintf (INFO_SER_FILE (info), "ILIBstringCopy(\"%s\")", attr);
     }
 
     DBUG_VOID_RETURN;
@@ -102,7 +105,7 @@ SATserializeSharedString (info *info, char *attr, node *parent)
     } else {
         DBUG_PRINT ("SET", ("Processing String `%s'", attr));
 
-        fprintf (INFO_SER_FILE (info), "StringCopy(\"%s\")", attr);
+        fprintf (INFO_SER_FILE (info), "ILIBstringCopy(\"%s\")", attr);
     }
 
     DBUG_VOID_RETURN;

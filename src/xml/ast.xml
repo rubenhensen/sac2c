@@ -462,7 +462,13 @@
 	  <node name="Module" />
 	</travuser>
       </traversal>
-      <traversal id="SER" name="Serialize Module" default="sons" include="serialize_node.h" />
+      <traversal id="SER" name="Serialize Module" default="sons" include="serialize.h">
+        <travuser>
+	  <node name="Fundef" />
+	  <node name="Typedef" />
+	  <node name="Objdef" />
+	</travuser>
+      </traversal>
     </phase>
     <phase id="objects" name="Object Handling">
       <traversal id="OBJINI" name="Object Initialisation" default="sons" include="objinit.h">
