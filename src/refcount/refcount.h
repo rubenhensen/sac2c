@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/03/31 14:10:39  dkr
+ * N_Nwith2 added
+ *
  * Revision 2.4  2000/02/24 15:55:28  dkr
  * RC functions for old with-loop removed
  *
@@ -102,5 +105,6 @@ extern node *RCNcode (node *arg_node, node *arg_info);
 extern node *RCNgen (node *arg_node, node *arg_info);
 extern node *RCNwithid (node *arg_node, node *arg_info);
 extern node *RCNwithop (node *arg_node, node *arg_info);
+extern node *RCNwith2 (node *arg_node, node *arg_info);
 
 #endif /* _refcount_h */
